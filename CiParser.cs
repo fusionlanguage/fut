@@ -19,50 +19,23 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Foxoft.Ci
 {
 
-public class CiParser
+public partial class CiParser : CiLexer
 {
-	public readonly CiLexer Lexer;
 	SymbolTable Symbols;
 
-	public CiParser(CiLexer lexer)
+	public CiParser(TextReader reader) : base(reader)
 	{
-		this.Lexer = lexer;
 	}
 
-	public void NextToken()
+	string ParseId()
 	{
-		this.Lexer.NextToken();
-	}
-
-	public bool See(CiToken token)
-	{
-		return this.Lexer.CurrentToken == token;
-	}
-
-	public bool Eat(CiToken token)
-	{
-		if (See(token)) {
-			NextToken();
-			return true;
-		}
-		return false;
-	}
-
-	public void Expect(CiToken expected)
-	{
-		if (!See(expected))
-			throw new ParseException("Expected {0}, got {1}", expected, this.Lexer.CurrentToken);
-		NextToken();
-	}
-
-	public string ParseId()
-	{
-		string id = this.Lexer.CurrentString;
+		string id = this.CurrentString;
 		Expect(CiToken.Id);
 		return id;
 	}
@@ -70,8 +43,7 @@ public class CiParser
 	CiCodeDoc ParseDoc()
 	{
 		if (See(CiToken.DocComment)) {
-			CiDocLexer lexer = new CiDocLexer(this.Lexer);
-			CiDocParser parser = new CiDocParser(lexer);
+			CiDocParser parser = new CiDocParser(this);
 			return parser.ParseCodeDoc();
 		}
 		return null;
@@ -100,7 +72,7 @@ public class CiParser
 	CiType ParseType(string baseName)
 	{
 		if (Eat(CiToken.LeftBracket)) {
-			int len = this.Lexer.CurrentInt;
+			int len = this.CurrentInt;
 			if (Eat(CiToken.IntConstant)) {
 				Expect(CiToken.RightBracket);
 				return new CiArrayStorageType {
@@ -113,7 +85,7 @@ public class CiParser
 		}
 		if (Eat(CiToken.LeftParenthesis)) {
 			if (baseName == "string") {
-				int len = this.Lexer.CurrentInt;
+				int len = this.CurrentInt;
 				Expect(CiToken.IntConstant);
 				Expect(CiToken.RightParenthesis);
 				return new CiStringStorageType { Length = len };
@@ -145,12 +117,12 @@ public class CiParser
 		def.Type = ParseType();
 		def.Name = ParseId();
 		Expect(CiToken.Assign);
-		def.Value = this.Lexer.CurrentInt;
+		def.Value = this.CurrentInt;
 		if (Eat(CiToken.IntConstant)) {
 		}
 		else if (Eat(CiToken.LeftBrace)) {
 			do {
-				//this.Lexer.CurrentInt;
+				//this.CurrentInt;
 				Expect(CiToken.IntConstant);
 				// TODO
 			} while (Eat(CiToken.Comma));
@@ -216,13 +188,13 @@ public class CiParser
 	CiExpr ParsePrimaryExpr()
 	{
 		if (See(CiToken.Increment) || See(CiToken.Decrement) || See(CiToken.Minus) || See(CiToken.Not) || See(CiToken.CondNot)) {
-			CiToken op = this.Lexer.CurrentToken;
+			CiToken op = this.CurrentToken;
 			NextToken();
 			return new CiUnaryExpr { Op = op, Inner = ParsePrimaryExpr() };
 		}
 		CiExpr result;
 		if (See(CiToken.IntConstant)) {
-			int value = this.Lexer.CurrentInt;
+			int value = this.CurrentInt;
 			NextToken();
 			result = new CiConstExpr { Value = value };
 		}
@@ -249,8 +221,10 @@ public class CiParser
 				return ParseFunctionCall(call);
 			}
 			else if (symbol is CiMacro) {
-				CiMacroProcessor.Expand(this, (CiMacro) symbol);
-				return null; // TODO
+				Expand((CiMacro) symbol);
+				Expect(CiToken.LeftParenthesis);
+				result = ParseExpr();
+				Expect(CiToken.RightParenthesis);
 			}
 			else
 				throw new ParseException("Invalid expression");
@@ -279,7 +253,7 @@ public class CiParser
 			}
 			else if (See(CiToken.Increment) || See(CiToken.Decrement)) {
 				ExpectType(result, CiIntType.Value);
-				CiToken op = this.Lexer.CurrentToken;
+				CiToken op = this.CurrentToken;
 				NextToken();
 				CiLValue lvalue = result as CiLValue;
 				if (lvalue == null)
@@ -296,7 +270,7 @@ public class CiParser
 	{
 		CiExpr left = ParsePrimaryExpr();
 		while (See(CiToken.Asterisk) || See(CiToken.Slash) || See(CiToken.Mod) || See(CiToken.And) || See(CiToken.ShiftLeft) || See(CiToken.ShiftRight)) {
-			CiToken op = this.Lexer.CurrentToken;
+			CiToken op = this.CurrentToken;
 			NextToken();
 			CiExpr right = ParsePrimaryExpr();
 			left = new CiBinaryExpr { Left = left, Op = op, Right = right };
@@ -308,7 +282,7 @@ public class CiParser
 	{
 		CiExpr left = ParseMulExpr();
 		while (See(CiToken.Plus) || See(CiToken.Minus) || See(CiToken.Or) || See(CiToken.Xor)) {
-			CiToken op = this.Lexer.CurrentToken;
+			CiToken op = this.CurrentToken;
 			NextToken();
 			CiExpr right = ParseMulExpr();
 			left = new CiBinaryExpr { Left = left, Op = op, Right = right };
@@ -320,7 +294,7 @@ public class CiParser
 	{
 		CiExpr left = ParseAddExpr();
 		while (See(CiToken.Equal) || See(CiToken.NotEqual) || See(CiToken.Less) || See(CiToken.LessOrEqual) || See(CiToken.Greater) || See(CiToken.GreaterOrEqual)) {
-			CiToken op = this.Lexer.CurrentToken;
+			CiToken op = this.CurrentToken;
 			NextToken();
 			CiExpr right = ParseAddExpr();
 			left = new CiRelExpr { Left = left, Op = op, Right = right };
@@ -370,7 +344,7 @@ public class CiParser
 	CiMaybeAssign ParseMaybeAssign()
 	{
 		CiExpr left = ParseExpr();
-		CiToken op = this.Lexer.CurrentToken;
+		CiToken op = this.CurrentToken;
 		if (op == CiToken.Assign || op == CiToken.AddAssign || op == CiToken.SubAssign || op == CiToken.MulAssign || op == CiToken.DivAssign || op == CiToken.ModAssign
 		 || op == CiToken.AndAssign || op == CiToken.OrAssign || op == CiToken.XorAssign || op == CiToken.ShiftLeftAssign || op == CiToken.ShiftRightAssign) {
 			NextToken();
@@ -423,11 +397,11 @@ public class CiParser
 
 	ICiStatement ParseVarOrExpr()
 	{
-		CiSymbol symbol = this.Symbols.Lookup(this.Lexer.CurrentString);
+		CiSymbol symbol = this.Symbols.Lookup(this.CurrentString);
 		if (symbol is CiMacro) {
 			NextToken();
-			CiMacroProcessor.Expand(this, (CiMacro) symbol);
-			return null; // TODO ParseStatement();
+			Expand((CiMacro) symbol);
+			return ParseStatement();
 		}
 		if (symbol is CiType || symbol is CiClass)
 			return ParseVar();
@@ -439,7 +413,7 @@ public class CiParser
 	ICiStatement ParseStatement()
 	{
 		while (Eat(CiToken.Macro))
-			this.Symbols.Add(CiMacroProcessor.ParseDefinition(this));
+			this.Symbols.Add(ParseMacro());
 		if (See(CiToken.Id))
 			return ParseVarOrExpr();
 		if (See(CiToken.LeftBrace)) {
@@ -512,7 +486,7 @@ public class CiParser
 				CiCase caze;
 				if (Eat(CiToken.Case)) {
 					caze = new CiCase();
-					caze.Value = this.Lexer.CurrentInt;
+					caze.Value = this.CurrentInt;
 					Expect(CiToken.IntConstant);
 				}
 				else if (Eat(CiToken.Default))
@@ -600,7 +574,7 @@ public class CiParser
 
 		while (!See(CiToken.EndOfFile)) {
 			while (Eat(CiToken.Macro))
-				this.Symbols.Add(CiMacroProcessor.ParseDefinition(this));
+				this.Symbols.Add(ParseMacro());
 			CiCodeDoc doc = ParseDoc();
 			bool pub = Eat(CiToken.Public);
 			CiSymbol symbol;

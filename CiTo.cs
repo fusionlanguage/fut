@@ -70,14 +70,12 @@ public class CiTo
 			Usage();
 			return 1;
 		}
-		CiLexer lexer = new CiLexer(File.OpenText(inputPath));
-//		lexer.Debug();
-		CiParser parser = new CiParser(lexer);
+		CiParser parser = new CiParser(File.OpenText(inputPath));
 		CiProgram program;
 		try {
 			program = parser.ParseProgram();
 		} catch (Exception) {
-			Console.Error.WriteLine("at line {0}", lexer.InputLineNo);
+			Console.Error.WriteLine("at line {0}", parser.InputLineNo);
 			throw;
 		}
 		SourceGenerator gen;

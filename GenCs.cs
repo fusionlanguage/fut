@@ -119,10 +119,10 @@ public class GenCs : SourceGenerator
 		OpenBlock();
 		bool first = true;
 		foreach (CiEnumValue value in enu.Values) {
-			if (!first)
-				WriteLine(",");
-			else
+			if (first)
 				first = false;
+			else
+				WriteLine(",");
 			Write(value);
 		}
 		WriteLine();

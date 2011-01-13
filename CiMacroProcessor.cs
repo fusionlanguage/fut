@@ -19,6 +19,7 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 
 namespace Foxoft.Ci
@@ -31,89 +32,144 @@ public class CiMacro : CiSymbol
 	public string Body;
 }
 
-public class CiMacroProcessor
+public class MacroExpansion
 {
-	static void ParseBody(CiParser parser, CiToken left, CiToken right)
+	public Dictionary<string, string> Args;
+	public TextReader ParentReader;
+	public string LookupArg(string name)
+	{
+		string value;
+		if (this.Args.TryGetValue(name, out value))
+			return value;
+		return name;
+	}
+}
+
+public partial class CiParser : CiLexer
+{
+	void ParseBody(CiToken left, CiToken right)
 	{
 		int level = 1;
 		for (;;) {
-			parser.NextToken();
-			if (parser.See(CiToken.EndOfFile))
+			NextToken();
+			if (See(CiToken.EndOfFile))
 				throw new ParseException("Macro definition not terminated");
-			if (parser.See(left))
+			if (See(left))
 				level++;
-			else if (parser.See(right))
+			else if (See(right))
 				if (--level == 0)
 					break;
 		}
-		parser.NextToken();
 	}
 
-	public static CiMacro ParseDefinition(CiParser parser)
+	CiMacro ParseMacro()
 	{
 		CiMacro macro = new CiMacro();
-		macro.Name = parser.ParseId();
-		parser.Expect(CiToken.LeftParenthesis);
+		macro.Name = ParseId();
+		Expect(CiToken.LeftParenthesis);
 		List<string> arguments = new List<string>();
-		if (parser.See(CiToken.Id)) {
-			do
-				arguments.Add(parser.ParseId());
-			while (parser.Eat(CiToken.Comma));
+		if (See(CiToken.Id)) {
+			do {
+				string name = ParseId();
+				if (arguments.Contains(name))
+					throw new ParseException("Duplicate macro argument {0}", name);
+				arguments.Add(name);
+			} while (Eat(CiToken.Comma));
 		}
-		parser.Expect(CiToken.RightParenthesis);
+		Expect(CiToken.RightParenthesis);
 		macro.Arguments = arguments.ToArray();
 		StringBuilder sb = new StringBuilder();
-		parser.Lexer.CopyTo = sb;
+		this.CopyTo = sb;
 		try {
-			if (parser.See(CiToken.LeftParenthesis)) {
+			if (See(CiToken.LeftParenthesis)) {
 				sb.Append('(');
-				ParseBody(parser, CiToken.LeftParenthesis, CiToken.RightParenthesis);
+				ParseBody(CiToken.LeftParenthesis, CiToken.RightParenthesis);
 			}
-			else if (parser.See(CiToken.LeftBrace)) {
-				ParseBody(parser, CiToken.LeftBrace, CiToken.RightBrace);
+			else if (See(CiToken.LeftBrace)) {
+				ParseBody(CiToken.LeftBrace, CiToken.RightBrace);
 				Trace.Assert(sb[sb.Length - 1] == '}');
 				sb.Length--;
 				macro.IsStatement = true;
 			}
 		}
 		finally {
-			parser.Lexer.CopyTo = null;
+			this.CopyTo = null;
 		}
 		macro.Body = sb.ToString();
+		NextToken();
 		return macro;
 	}
 
-	static string ParseArg(CiParser parser)
+	void ParseArg()
 	{
 		int level = 0;
 		for (;;) {
-			parser.NextToken();
-			if (parser.See(CiToken.EndOfFile))
+			NextToken();
+			if (See(CiToken.EndOfFile))
 				throw new ParseException("Macro definition not terminated");
-			if (parser.See(CiToken.LeftParenthesis))
+			if (See(CiToken.LeftParenthesis))
 				level++;
-			else if (parser.See(CiToken.RightParenthesis))
+			else if (See(CiToken.RightParenthesis)) {
 				if (--level < 0)
 					break;
-			else if (level == 0 && parser.See(CiToken.Comma))
+			}
+			else if (level == 0 && See(CiToken.Comma))
 				break;
 		}
-		return null; // TODO
 	}
 
-	public static void Expand(CiParser parser, CiMacro macro)
+	readonly Stack<MacroExpansion> MacroStack = new Stack<MacroExpansion>();
+
+	void Expand(CiMacro macro)
 	{
-		parser.Expect(CiToken.LeftParenthesis);
-		if (!parser.See(CiToken.RightParenthesis)) {
-			do
-				ParseArg(parser);
-			while (parser.Eat(CiToken.Comma));
-//			StringBuilder sb = new StringBuilder();
-//			parser.Lexer.CopyTo = 
+		Dictionary<string, string> args = new Dictionary<string, string>();
+		StringBuilder sb = new StringBuilder();
+		this.CopyTo = sb;
+		try {
+			Expect(CiToken.LeftParenthesis);
+			bool first = true;
+			foreach (string name in macro.Arguments) {
+				if (first)
+					first = false;
+				else
+					Expect(CiToken.Comma);
+				ParseArg();
+				char c = sb[sb.Length - 1];
+				Trace.Assert(c == ',' || c == ')');
+				sb.Length--;
+				args.Add(name, sb.ToString());
+				sb.Clear();
+			}
 		}
-		parser.Expect(CiToken.RightParenthesis);
-		if (macro.IsStatement)
-			parser.Expect(CiToken.Semicolon);
+		finally {
+			this.CopyTo = null;
+		}
+		Check(CiToken.RightParenthesis);
+		if (macro.IsStatement) {
+			NextToken();
+			Check(CiToken.Semicolon);
+		}
+		this.MacroStack.Push(new MacroExpansion {
+			Args = args,
+			ParentReader = SetReader(new StringReader(macro.Body))
+		});
+	}
+
+	public string LookupMacroArg(string name)
+	{
+		if (this.MacroStack.Count > 0)
+			return this.MacroStack.Peek().LookupArg(name);
+		return name;
+	}
+
+	public bool EndMacroExpansion()
+	{
+		if (this.MacroStack.Count > 0) {
+			MacroExpansion top = this.MacroStack.Pop();
+			SetReader(top.ParentReader);
+			return true;
+		}
+		return false;
 	}
 }
 

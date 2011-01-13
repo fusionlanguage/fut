@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -111,15 +112,23 @@ public class CiLexer
 {
 	TextReader Reader;
 	public int InputLineNo = 1;
-	public CiToken CurrentToken;
-	public string CurrentString;
-	public int CurrentInt;
-	public StringBuilder CopyTo;
+	protected CiToken CurrentToken;
+	protected string CurrentString;
+	protected int CurrentInt;
+	protected StringBuilder CopyTo;
 
 	public CiLexer(TextReader reader)
 	{
 		this.Reader = reader;
 		NextToken();
+	}
+
+	protected TextReader SetReader(TextReader reader)
+	{
+		TextReader old = this.Reader;
+		this.Reader = reader;
+		NextToken();
+		return old;
 	}
 
 	public int PeekChar()
@@ -130,7 +139,7 @@ public class CiLexer
 	public int ReadChar()
 	{
 		int c = this.Reader.Read();
-		if (c == '\n')
+		if (c == '\n' && !(this.Reader is StringReader))
 			this.InputLineNo++;
 		if (this.CopyTo != null)
 			this.CopyTo.Append((char) c);
@@ -174,12 +183,38 @@ public class CiLexer
 		}
 	}
 
+	static bool IsLetter(int c)
+	{
+		if (c >= 'a' && c <= 'z') return true;
+		if (c >= 'A' && c <= 'Z') return true;
+		if (c >= '0' && c <= '9') return true;
+		return c == '_';
+	}
+
+	string ReadId(int c)
+	{
+		StringBuilder sb = new StringBuilder();
+		for (;;) {
+			sb.Append((char) c);
+			c = PeekChar();
+			if (!IsLetter(c))
+				break;
+			ReadChar();
+		}
+		string s = sb.ToString();
+		if (this is CiParser)
+			return ((CiParser) this).LookupMacroArg(s);
+		return s;
+	}
+
 	CiToken ReadToken()
 	{
 		for (;;) {
 			int c = ReadChar();
 			switch (c) {
 			case -1:
+				if (this is CiParser && ((CiParser) this).EndMacroExpansion())
+					return this.CurrentToken;
 				return CiToken.EndOfFile;
 			case '\t': case '\n': case '\r': case ' ':
 				continue;
@@ -316,16 +351,21 @@ public class CiLexer
 			case 'p': case 'q': case 'r': case 's': case 't':
 			case 'u': case 'v': case 'w': case 'x': case 'y':
 			case 'z': {
-				StringBuilder sb = new StringBuilder();
-				for (;;) {
-					sb.Append((char) c);
-					c = PeekChar();
-					if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')
-						ReadChar();
-					else
+				string s = ReadId(c);
+				while (EatChar('#') && EatChar('#')) {
+					c = ReadChar();
+					if (!IsLetter(c))
 						break;
+					s += ReadId(c);
 				}
-				string s = sb.ToString();
+				c = s[0];
+				if (c >= '0' && c <= '9') {
+					if (s.Length >= 2 && s[1] == 'x')
+						this.CurrentInt = int.Parse(s.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+					else
+						this.CurrentInt = int.Parse(s, NumberStyles.Integer, CultureInfo.InvariantCulture);
+					return CiToken.IntConstant;
+				}
 				switch (s) {
 				case "break": return CiToken.Break;
 				case "case": return CiToken.Case;
@@ -364,7 +404,33 @@ public class CiLexer
 		return token;
 	}
 
-	public void Debug()
+	public bool See(CiToken token)
+	{
+		return this.CurrentToken == token;
+	}
+
+	public bool Eat(CiToken token)
+	{
+		if (See(token)) {
+			NextToken();
+			return true;
+		}
+		return false;
+	}
+
+	public void Check(CiToken expected)
+	{
+		if (!See(expected))
+			throw new ParseException("Expected {0}, got {1}", expected, this.CurrentToken);
+	}
+
+	public void Expect(CiToken expected)
+	{
+		Check(expected);
+		NextToken();
+	}
+
+	public void DebugLexer()
 	{
 		while (this.CurrentToken != CiToken.EndOfFile) {
 			Console.WriteLine(this.CurrentToken);

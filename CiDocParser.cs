@@ -23,23 +23,15 @@ using System.Text;
 namespace Foxoft.Ci
 {
 
-public class CiDocParser
+public class CiDocParser : CiDocLexer
 {
-	readonly CiDocLexer Lexer;
-
-	public CiDocParser(CiDocLexer lexer)
+	public CiDocParser(CiLexer ciLexer) : base(ciLexer)
 	{
-		this.Lexer = lexer;
-	}
-
-	void NextToken()
-	{
-		this.Lexer.NextToken();
 	}
 
 	bool See(CiDocToken token)
 	{
-		return this.Lexer.CurrentToken == token;
+		return this.CurrentToken == token;
 	}
 
 	bool Eat(CiDocToken token)
@@ -54,7 +46,7 @@ public class CiDocParser
 	void Expect(CiDocToken expected)
 	{
 		if (!See(expected))
-			throw new ParseException("Expected {0}, got {1}", expected, this.Lexer.CurrentToken);
+			throw new ParseException("Expected {0}, got {1}", expected, this.CurrentToken);
 		NextToken();
 	}
 
@@ -62,7 +54,7 @@ public class CiDocParser
 	{
 		StringBuilder sb = new StringBuilder();
 		while (See(CiDocToken.Char)) {
-			sb.Append((char) this.Lexer.CurrentChar);
+			sb.Append((char) this.CurrentChar);
 			NextToken();
 		}
 		return sb.ToString();
