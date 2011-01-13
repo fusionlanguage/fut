@@ -1,5 +1,7 @@
 // CiTo.cs - Ci translator
 //
+// Copyright (C) 2011  Piotr Fusik
+//
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
 // CiTo is free software: you can redistribute it and/or modify
@@ -74,7 +76,7 @@ public class CiTo
 		CiProgram program;
 		try {
 			program = parser.ParseProgram();
-		} catch (ParseException) {
+		} catch (Exception) {
 			Console.Error.WriteLine("at line {0}", lexer.InputLineNo);
 			throw;
 		}

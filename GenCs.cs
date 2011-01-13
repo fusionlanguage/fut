@@ -1,5 +1,7 @@
 // GenCs.cs - C# code generator
 //
+// Copyright (C) 2011  Piotr Fusik
+//
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
 // CiTo is free software: you can redistribute it and/or modify
@@ -101,6 +103,32 @@ public class GenCs : SourceGenerator
 		}
 	}
 
+	void Write(CiEnumValue value)
+	{
+		Write(value.Documentation);
+		StartLine(value.Name);
+	}
+
+	void Write(CiEnum enu)
+	{
+		WriteLine();
+		Write(enu.Documentation);
+		StartLine(enu.IsPublic ? "public " : "internal ");
+		Write("enum ");
+		Write(enu.Name);
+		OpenBlock();
+		bool first = true;
+		foreach (CiEnumValue value in enu.Values) {
+			if (!first)
+				WriteLine(",");
+			else
+				first = false;
+			Write(value);
+		}
+		WriteLine();
+		CloseBlock();
+	}
+
 	void WriteBaseType(CiType type)
 	{
 		if (type is CiStringType)
@@ -113,7 +141,7 @@ public class GenCs : SourceGenerator
 			Write("bool");
 		else if (type == CiType.Byte)
 			Write("byte");
-		else if (type == CiType.Int)
+		else if (type == CiIntType.Value)
 			Write("int");
 		else
 			throw new ApplicationException();
@@ -167,14 +195,37 @@ public class GenCs : SourceGenerator
 		CloseBlock();
 	}
 
+	void Write(CiConst def)
+	{
+		Write(def.Documentation);
+		StartLine(def.IsPublic ? "public " : "");
+		Write("const ");
+		Write(def.Type);
+		Write(def.Name);
+		Write(" = ");
+		// TODO
+		WriteLine(";");
+	}
+
 	public override void Write(CiProgram prog)
 	{
 		WriteLine("// Generated automatically with \"cito\". Do not edit.");
 		Write("namespace ");
 		Write(string.Join(".", prog.NamespaceElements.Where(e => e[0] >= 'A' && e[0] <= 'Z').ToArray()));
 		OpenBlock();
-		foreach (CiClass clazz in prog.Classes)
-			Write(clazz);
+		foreach (CiSymbol symbol in prog.Globals.List) {
+			if (symbol is CiEnum)
+				Write((CiEnum) symbol);
+			else if (symbol is CiClass)
+				Write((CiClass) symbol);
+		}
+		StartLine("public partial class ASAP");
+		OpenBlock();
+		foreach (CiSymbol symbol in prog.Globals.List) {
+//			if (symbol is CiConst)
+//				Write((CiConst) symbol);
+		}
+		CloseBlock();
 		CloseBlock();
 	}
 }

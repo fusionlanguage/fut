@@ -1,5 +1,7 @@
 // CiParser.cs - Ci parser
 //
+// Copyright (C) 2011  Piotr Fusik
+//
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
 // CiTo is free software: you can redistribute it and/or modify
@@ -24,7 +26,7 @@ namespace Foxoft.Ci
 
 public class CiParser
 {
-	readonly CiLexer Lexer;
+	public readonly CiLexer Lexer;
 	SymbolTable Symbols;
 
 	public CiParser(CiLexer lexer)
@@ -32,17 +34,17 @@ public class CiParser
 		this.Lexer = lexer;
 	}
 
-	void NextToken()
+	public void NextToken()
 	{
 		this.Lexer.NextToken();
 	}
 
-	bool See(CiToken token)
+	public bool See(CiToken token)
 	{
 		return this.Lexer.CurrentToken == token;
 	}
 
-	bool Eat(CiToken token)
+	public bool Eat(CiToken token)
 	{
 		if (See(token)) {
 			NextToken();
@@ -51,14 +53,14 @@ public class CiParser
 		return false;
 	}
 
-	void Expect(CiToken expected)
+	public void Expect(CiToken expected)
 	{
 		if (!See(expected))
 			throw new ParseException("Expected {0}, got {1}", expected, this.Lexer.CurrentToken);
 		NextToken();
 	}
 
-	string ParseId()
+	public string ParseId()
 	{
 		string id = this.Lexer.CurrentString;
 		Expect(CiToken.Id);
@@ -73,6 +75,26 @@ public class CiParser
 			return parser.ParseCodeDoc();
 		}
 		return null;
+	}
+
+	CiEnum ParseEnum()
+	{
+		CiEnum enu = new CiEnum();
+		Expect(CiToken.Enum);
+		enu.Name = ParseId();
+		Expect(CiToken.LeftBrace);
+		List<CiEnumValue> values = new List<CiEnumValue>();
+		do {
+			CiEnumValue value = new CiEnumValue();
+			value.Documentation = ParseDoc();
+			value.Name = ParseId();
+			value.Parent = enu;
+			values.Add(value);
+		} while (Eat(CiToken.Comma));
+		Expect(CiToken.RightBrace);
+		enu.Values = values.ToArray();
+		this.Symbols.Add(enu);
+		return enu;
 	}
 
 	CiType ParseType(string baseName)
@@ -116,12 +138,10 @@ public class CiParser
 		return ParseType(baseName);
 	}
 
-	CiConst ParseConst(CiCodeDoc doc, bool pub)
+	CiConst ParseConst()
 	{
 		Expect(CiToken.Const);
 		CiConst def = new CiConst();
-		def.Documentation = doc;
-		def.IsPublic = pub;
 		def.Type = ParseType();
 		def.Name = ParseId();
 		Expect(CiToken.Assign);
@@ -158,11 +178,9 @@ public class CiParser
 		};
 	}
 
-	CiClass ParseClass(CiCodeDoc doc, bool pub)
+	CiClass ParseClass()
 	{
 		CiClass clazz = new CiClass();
-		clazz.Documentation = doc;
-		clazz.IsPublic = pub;
 		Expect(CiToken.Class);
 		clazz.Name = ParseId();
 		this.Symbols.Add(clazz);
@@ -173,6 +191,26 @@ public class CiParser
 		NextToken();
 		clazz.Fields = fields.ToArray();
 		return clazz;
+	}
+
+	CiFunctionCall ParseFunctionCall(CiFunctionCall call)
+	{
+		Expect(CiToken.LeftParenthesis);
+		List<CiExpr> arguments = new List<CiExpr>();
+		if (!See(CiToken.RightParenthesis)) {
+			do
+				arguments.Add(ParseExpr());
+			while (Eat(CiToken.Comma));
+		}
+		Expect(CiToken.RightParenthesis);
+		call.Arguments = arguments.ToArray();
+		return call;
+	}
+
+	void ExpectType(CiExpr expr, CiType expected)
+	{
+		if (expr.Type != expected)
+			throw new ParseException("Expected {0}, got {1}", expected, expr.Type);
 	}
 
 	CiExpr ParsePrimaryExpr()
@@ -198,17 +236,21 @@ public class CiParser
 				result = new CiVarAccess { Var = (CiVar) symbol };
 			else if (symbol is CiConst)
 				result = new CiConstExpr { Value = ((CiConst) symbol).Value };
+			else if (symbol is CiEnum) {
+				CiEnumAccess ea = new CiEnumAccess();
+				Expect(CiToken.Dot);
+				string name = ParseId();
+				ea.Value = ((CiEnum) symbol).Values.Single(v => v.Name == name);
+				return ea;
+			}
 			else if (symbol is CiFunction) {
 				CiFunctionCall call = new CiFunctionCall();
 				call.Function = (CiFunction) symbol;
-				Expect(CiToken.LeftParenthesis);
-				List<CiExpr> arguments = new List<CiExpr>();
-				do
-					arguments.Add(ParseExpr());
-				while (Eat(CiToken.Comma));
-				Expect(CiToken.RightParenthesis);
-				call.Arguments = arguments.ToArray();
-				return call;
+				return ParseFunctionCall(call);
+			}
+			else if (symbol is CiMacro) {
+				CiMacroProcessor.Expand(this, (CiMacro) symbol);
+				return null; // TODO
 			}
 			else
 				throw new ParseException("Invalid expression");
@@ -217,18 +259,26 @@ public class CiParser
 			throw new ParseException("Invalid expression");
 		for (;;) {
 			if (Eat(CiToken.Dot)) {
-				ParseId(); // TODO
+				CiSymbol member = result.Type.LookupMember(ParseId());
+				if (See(CiToken.LeftParenthesis)) {
+					CiMethodCall call = new CiMethodCall();
+					call.Obj = result;
+					// TODO
+					return ParseFunctionCall(call);
+				}
 				result = new CiFieldAccess {
 					Obj = result,
-					Field = null // TODO
+					Field = (CiField) member
 				};
 			}
 			else if (Eat(CiToken.LeftBracket)) {
 				CiExpr index = ParseExpr();
+//				ExpectType(index, CiIntType.Value);
 				Expect(CiToken.RightBracket);
 				result = new CiArrayAccess { Array = result, Index = index };
 			}
 			else if (See(CiToken.Increment) || See(CiToken.Decrement)) {
+				ExpectType(result, CiIntType.Value);
 				CiToken op = this.Lexer.CurrentToken;
 				NextToken();
 				CiLValue lvalue = result as CiLValue;
@@ -273,7 +323,7 @@ public class CiParser
 			CiToken op = this.Lexer.CurrentToken;
 			NextToken();
 			CiExpr right = ParseAddExpr();
-			left = new CiBinaryExpr { Left = left, Op = op, Right = right };
+			left = new CiRelExpr { Left = left, Op = op, Right = right };
 		}
 		return left;
 	}
@@ -281,16 +331,24 @@ public class CiParser
 	CiExpr ParseCondAndExpr()
 	{
 		CiExpr left = ParseRelExpr();
-		while (Eat(CiToken.CondAnd))
-			left = new CiBinaryExpr { Left = left, Op = CiToken.CondAnd, Right = ParseRelExpr() };
+		while (Eat(CiToken.CondAnd)) {
+			ExpectType(left, CiType.Bool);
+			CiExpr right = ParseRelExpr();
+			ExpectType(right, CiType.Bool);
+			left = new CiBinaryExpr { Left = left, Op = CiToken.CondAnd, Right = right };
+		}
 		return left;
 	}
 
 	CiExpr ParseCondOrExpr()
 	{
 		CiExpr left = ParseCondAndExpr();
-		while (Eat(CiToken.CondOr))
-			left = new CiBinaryExpr { Left = left, Op = CiToken.CondOr, Right = ParseCondAndExpr() };
+		while (Eat(CiToken.CondOr)) {
+			ExpectType(left, CiType.Bool);
+			CiExpr right = ParseCondAndExpr();
+			ExpectType(right, CiType.Bool);
+			left = new CiBinaryExpr { Left = left, Op = CiToken.CondOr, Right = right };
+		}
 		return left;
 	}
 
@@ -298,6 +356,7 @@ public class CiParser
 	{
 		CiExpr left = ParseCondOrExpr();
 		if (Eat(CiToken.QuestionMark)) {
+			ExpectType(left, CiType.Bool);
 			CiCondExpr result = new CiCondExpr();
 			result.Cond = left;
 			result.OnTrue = ParseExpr();
@@ -335,6 +394,7 @@ public class CiParser
 	{
 		Expect(CiToken.LeftParenthesis);
 		CiExpr cond = ParseExpr();
+		ExpectType(cond, CiType.Bool);
 		Expect(CiToken.RightParenthesis);
 		return cond;
 	}
@@ -361,16 +421,27 @@ public class CiParser
 		return def;
 	}
 
+	ICiStatement ParseVarOrExpr()
+	{
+		CiSymbol symbol = this.Symbols.Lookup(this.Lexer.CurrentString);
+		if (symbol is CiMacro) {
+			NextToken();
+			CiMacroProcessor.Expand(this, (CiMacro) symbol);
+			return null; // TODO ParseStatement();
+		}
+		if (symbol is CiType || symbol is CiClass)
+			return ParseVar();
+		ICiStatement result = ParseExprWithSideEffect();
+		Expect(CiToken.Semicolon);
+		return result;
+	}
+
 	ICiStatement ParseStatement()
 	{
-		if (See(CiToken.Id)) {
-			CiSymbol symbol = this.Symbols.Lookup(this.Lexer.CurrentString);
-			if (symbol is CiType || symbol is CiClass)
-				return ParseVar();
-			ICiStatement result = ParseExprWithSideEffect();
-			Expect(CiToken.Semicolon);
-			return result;
-		}
+		while (Eat(CiToken.Macro))
+			this.Symbols.Add(CiMacroProcessor.ParseDefinition(this));
+		if (See(CiToken.Id))
+			return ParseVarOrExpr();
 		if (See(CiToken.LeftBrace)) {
 			OpenScope();
 			CiBlock result = ParseBlock();
@@ -382,7 +453,7 @@ public class CiParser
 			return new CiBreak();
 		}
 		if (See(CiToken.Const))
-			return ParseConst(null, false);
+			return ParseConst();
 		if (Eat(CiToken.Continue)) {
 			Expect(CiToken.Semicolon);
 			return new CiContinue();
@@ -399,10 +470,14 @@ public class CiParser
 			Expect(CiToken.LeftParenthesis);
 			OpenScope();
 			CiFor result = new CiFor();
-			if (!Eat(CiToken.Semicolon))
-				result.Init = ParseVar();
-			if (!See(CiToken.Semicolon))
+			if (See(CiToken.Id))
+				result.Init = ParseVarOrExpr();
+			else
+				Expect(CiToken.Semicolon);
+			if (!See(CiToken.Semicolon)) {
 				result.Cond = ParseExpr();
+				ExpectType(result.Cond, CiType.Bool);
+			}
 			Expect(CiToken.Semicolon);
 			if (!See(CiToken.RightParenthesis))
 				result.Advance = ParseExprWithSideEffect();
@@ -474,11 +549,9 @@ public class CiParser
 		return new CiBlock { Statements = statements.ToArray() };
 	}
 
-	CiFunction ParseFunction(CiCodeDoc doc, bool pub)
+	CiFunction ParseFunction()
 	{
 		CiFunction func = new CiFunction();
-		func.Documentation = doc;
-		func.IsPublic = pub;
 		if (Eat(CiToken.Void))
 			func.ReturnType = CiType.Void;
 		else
@@ -491,7 +564,7 @@ public class CiParser
 		List<CiArg> arguments = new List<CiArg>();
 		do {
 			CiArg arg = new CiArg();
-//			arg.Documentation = ParseDoc();
+			arg.Documentation = ParseDoc();
 			arg.Type = ParseType();
 			arg.Name = ParseId();
 			this.Symbols.Add(arg);
@@ -506,14 +579,15 @@ public class CiParser
 
 	public CiProgram ParseProgram()
 	{
-		this.Symbols = new SymbolTable();
-		this.Symbols.Add(CiType.Bool);
-		this.Symbols.Add(CiType.Byte);
-		this.Symbols.Add(CiType.Int);
-		this.Symbols.Add(CiStringType.Ptr);
-		this.Symbols.Add(new CiConst { Name = "true", Value = true });
-		this.Symbols.Add(new CiConst { Name = "false", Value = false });
-		this.Symbols.Add(new CiConst { Name = "null", Value = null });
+		SymbolTable globals = new SymbolTable();
+		globals.Add(CiType.Bool);
+		globals.Add(CiType.Byte);
+		globals.Add(CiIntType.Value);
+		globals.Add(CiStringType.Ptr);
+		globals.Add(new CiConst { Name = "true", Value = true });
+		globals.Add(new CiConst { Name = "false", Value = false });
+		globals.Add(new CiConst { Name = "null", Value = null });
+		this.Symbols = globals;
 
 		Expect(CiToken.Namespace);
 		List<string> namespaceElements = new List<string>();
@@ -524,23 +598,27 @@ public class CiParser
 		}
 		Expect(CiToken.Semicolon);
 
-		List<CiClass> classes = new List<CiClass>();
-		List<CiFunction> functions = new List<CiFunction>();
 		while (!See(CiToken.EndOfFile)) {
+			while (Eat(CiToken.Macro))
+				this.Symbols.Add(CiMacroProcessor.ParseDefinition(this));
 			CiCodeDoc doc = ParseDoc();
 			bool pub = Eat(CiToken.Public);
+			CiSymbol symbol;
 			if (See(CiToken.Const))
-				ParseConst(doc, pub);
+				symbol = ParseConst();
+			else if (See(CiToken.Enum))
+				symbol = ParseEnum();
 			else if (See(CiToken.Class))
-				classes.Add(ParseClass(doc, pub));
+				symbol = ParseClass();
 			else
-				functions.Add(ParseFunction(doc, pub));
+				symbol = ParseFunction();
+			symbol.Documentation = doc;
+			symbol.IsPublic = pub;
 		}
 
 		return new CiProgram {
 			NamespaceElements = namespaceElements.ToArray(),
-			Classes = classes.ToArray(),
-			Functions = functions.ToArray()
+			Globals = globals
 		};
 	}
 }

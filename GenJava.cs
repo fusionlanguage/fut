@@ -1,5 +1,7 @@
 // GenJava.cs - Java code generator
 //
+// Copyright (C) 2011  Piotr Fusik
+//
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
 // CiTo is free software: you can redistribute it and/or modify
@@ -109,7 +111,7 @@ public class GenJava : SourceGenerator
 			Write("boolean");
 		else if (type == CiType.Byte)
 			Write("byte");
-		else if (type == CiType.Int)
+		else if (type == CiIntType.Value)
 			Write("int");
 		else
 			throw new ApplicationException();
@@ -169,8 +171,9 @@ public class GenJava : SourceGenerator
 		Write("package ");
 		Write(string.Join(".", prog.NamespaceElements));
 		WriteLine(";");
-		foreach (CiClass clazz in prog.Classes)
-			Write(clazz);
+		foreach (CiSymbol symbol in prog.Globals.List)
+			if (symbol is CiClass)
+				Write((CiClass) symbol);
 	}
 }
 

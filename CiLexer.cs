@@ -1,5 +1,7 @@
 // CiLexer.cs - Ci lexer
 //
+// Copyright (C) 2011  Piotr Fusik
+//
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
 // CiTo is free software: you can redistribute it and/or modify
@@ -73,6 +75,7 @@ public enum CiToken
 	QuestionMark,
 	Colon,
 	DocComment,
+	PasteTokens,
 	Break,
 	Case,
 	Class,
@@ -81,8 +84,10 @@ public enum CiToken
 	Default,
 	Do,
 	Else,
+	Enum,
 	For,
 	If,
+	Macro,
 	Namespace,
 	Public,
 	Return,
@@ -109,6 +114,7 @@ public class CiLexer
 	public CiToken CurrentToken;
 	public string CurrentString;
 	public int CurrentInt;
+	public StringBuilder CopyTo;
 
 	public CiLexer(TextReader reader)
 	{
@@ -126,6 +132,8 @@ public class CiLexer
 		int c = this.Reader.Read();
 		if (c == '\n')
 			this.InputLineNo++;
+		if (this.CopyTo != null)
+			this.CopyTo.Append((char) c);
 		return c;
 	}
 
@@ -175,6 +183,8 @@ public class CiLexer
 				return CiToken.EndOfFile;
 			case '\t': case '\n': case '\r': case ' ':
 				continue;
+			case '#': if (EatChar('#')) return CiToken.PasteTokens;
+				break;
 			case ';': return CiToken.Semicolon;
 			case '.': return CiToken.Dot;
 			case ',': return CiToken.Comma;
@@ -299,7 +309,7 @@ public class CiLexer
 			case 'K': case 'L': case 'M': case 'N': case 'O':
 			case 'P': case 'Q': case 'R': case 'S': case 'T':
 			case 'U': case 'V': case 'W': case 'X': case 'Y':
-			case 'Z':
+			case 'Z': case '_':
 			case 'a': case 'b': case 'c': case 'd': case 'e':
 			case 'f': case 'g': case 'h': case 'i': case 'j':
 			case 'k': case 'l': case 'm': case 'n': case 'o':
@@ -325,8 +335,10 @@ public class CiLexer
 				case "default": return CiToken.Default;
 				case "do": return CiToken.Do;
 				case "else": return CiToken.Else;
+				case "enum": return CiToken.Enum;
 				case "for": return CiToken.For;
 				case "if": return CiToken.If;
+				case "macro": return CiToken.Macro;
 				case "namespace": return CiToken.Namespace;
 				case "public": return CiToken.Public;
 				case "return": return CiToken.Return;
@@ -339,8 +351,9 @@ public class CiLexer
 				}
 			}
 			default:
-				throw new ParseException("Invalid character");
+				break;
 			}
+			throw new ParseException("Invalid character");
 		}
 	}
 

@@ -1,5 +1,7 @@
 // SymbolTable.cs - symbol table
 //
+// Copyright (C) 2011  Piotr Fusik
+//
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
 // CiTo is free software: you can redistribute it and/or modify
@@ -24,6 +26,7 @@ public class SymbolTable
 {
 	public SymbolTable Parent;
 	readonly Dictionary<string, CiSymbol> Dict = new Dictionary<string, CiSymbol>();
+	public readonly List<CiSymbol> List = new List<CiSymbol>();
 
 	public void Add(CiSymbol symbol)
 	{
@@ -32,6 +35,7 @@ public class SymbolTable
 			if (t.Dict.ContainsKey(name))
 				throw new ParseException("Symbol {0} already defined", name);
 		this.Dict.Add(name, symbol);
+		this.List.Add(symbol);
 	}
 
 	public CiSymbol Lookup(string name)

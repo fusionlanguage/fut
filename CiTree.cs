@@ -1,5 +1,7 @@
 // CiTree.cs - Ci object model
 //
+// Copyright (C) 2011  Piotr Fusik
+//
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
 // CiTo is free software: you can redistribute it and/or modify
@@ -15,10 +17,13 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
+using System;
+using System.Linq;
+
 namespace Foxoft.Ci
 {
 
-public class CiDocInline
+public abstract class CiDocInline
 {
 }
 
@@ -32,7 +37,7 @@ public class CiDocCode : CiDocInline
 	public string Text;
 }
 
-public class CiDocBlock
+public abstract class CiDocBlock
 {
 }
 
@@ -52,8 +57,10 @@ public class CiCodeDoc
 	public CiDocBlock[] Details;
 }
 
-public class CiSymbol
+public abstract class CiSymbol
 {
+	public CiCodeDoc Documentation;
+	public bool IsPublic;
 	public string Name;
 }
 
@@ -61,15 +68,40 @@ public class CiType : CiSymbol
 {
 	public static readonly CiType Bool = new CiType { Name = "bool" };
 	public static readonly CiType Byte = new CiType { Name = "byte" };
-	public static readonly CiType Int = new CiType { Name = "int" };
+	public static readonly CiType Null = new CiType { Name = "null" };
 	public static readonly CiType Void = new CiType { Name = "void" };
 	public virtual CiType BaseType { get { return this; } }
 	public virtual int ArrayLevel { get { return 0; } }
+	public virtual CiSymbol LookupMember(string name)
+	{
+		throw new ParseException("{0} has no members", this.GetType());
+	}
+}
+
+public class CiIntType : CiType
+{
+	private CiIntType() { }
+	public static readonly CiIntType Value = new CiIntType { Name = "int" };
+	public override CiSymbol LookupMember(string name)
+	{
+		switch (name) {
+		case "LowByte": return null; // TODO
+		case "MulDiv": return null; // TODO
+		default: throw new ParseException("No member {0} in int", name);
+		}
+	}
 }
 
 public class CiStringType : CiType
 {
 	public static readonly CiStringType Ptr = new CiStringType { Name = "string" };
+	public override CiSymbol LookupMember(string name)
+	{
+		switch (name) {
+		case "Length": return null; // TODO
+		default: throw new ParseException("No member {0} in string", name);
+		}
+	}
 }
 
 public class CiStringStorageType : CiStringType
@@ -77,9 +109,16 @@ public class CiStringStorageType : CiStringType
 	public int Length;
 }
 
-public class CiClassType : CiType
+public abstract class CiClassType : CiType
 {
 	public CiClass Class;
+	public override CiSymbol LookupMember(string name)
+	{
+		CiField field = this.Class.Fields.SingleOrDefault(f => f.Name == name);
+		if (field == null)
+			throw new ParseException("No field {0} in class {1}", name, this.Class.Name);
+		return field;
+	}
 }
 
 public class CiClassPtrType : CiClassType
@@ -90,7 +129,7 @@ public class CiClassStorageType : CiClassType
 {
 }
 
-public class CiArrayType : CiType
+public abstract class CiArrayType : CiType
 {
 	public CiType ElementType;
 	public override CiType BaseType { get { return this.ElementType.BaseType; } }
@@ -99,25 +138,44 @@ public class CiArrayType : CiType
 
 public class CiArrayPtrType : CiArrayType
 {
+	public override CiSymbol LookupMember(string name)
+	{
+		switch (name) {
+		case "CopyTo": return null; // TODO
+		default: throw new ParseException("No member {0} in array", name);
+		}
+	}
 }
 
 public class CiArrayStorageType : CiArrayType
 {
 	public int Length;
+	public override CiSymbol LookupMember(string name)
+	{
+		switch (name) {
+		case "Clear": return null; // TODO
+		default: return base.LookupMember(name);
+		}
+	}
 }
 
-public class CiField
+public class CiEnumValue : CiSymbol
 {
-	public CiCodeDoc Documentation;
-	public bool IsPublic;
+	public CiEnum Parent;
+}
+
+public class CiEnum : CiType
+{
+	public CiEnumValue[] Values;
+}
+
+public class CiField : CiSymbol
+{
 	public CiType Type;
-	public string Name;
 }
 
 public class CiClass : CiSymbol
 {
-	public CiCodeDoc Documentation;
-	public bool IsPublic;
 	public CiField[] Fields;
 }
 
@@ -127,8 +185,6 @@ public interface ICiStatement
 
 public class CiConst : CiSymbol, ICiStatement
 {
-	public CiCodeDoc Documentation;
-	public bool IsPublic;
 	public CiType Type;
 	public object Value;
 }
@@ -141,59 +197,95 @@ public class CiVar : CiSymbol, ICiStatement
 
 public class CiArg : CiVar
 {
-//	public CiCodeDoc Documentation;
 }
 
-public class CiMaybeAssign
+public abstract class CiMaybeAssign
 {
 }
 
-public class CiExpr : CiMaybeAssign
+public abstract class CiExpr : CiMaybeAssign
 {
+	public abstract CiType Type { get; }
 }
 
 public class CiConstExpr : CiExpr
 {
 	public object Value;
+	public override CiType Type
+	{
+		get
+		{
+			if (this.Value is int) return CiIntType.Value;
+			if (this.Value is bool) return CiType.Bool;
+			if (this.Value is string) return CiStringType.Ptr;
+			if (this.Value == null) return CiType.Null;
+			// TODO
+			throw new NotImplementedException();
+		}
+	}
 }
 
-public class CiLValue : CiExpr
+public abstract class CiLValue : CiExpr
 {
 }
 
 public class CiVarAccess : CiLValue
 {
 	public CiVar Var;
+	public override CiType Type { get { return this.Var.Type; } }
+}
+
+public class CiEnumAccess : CiExpr
+{
+	public CiEnumValue Value;
+	public override CiType Type { get { return this.Value.Parent; } }
 }
 
 public class CiFieldAccess : CiLValue
 {
 	public CiExpr Obj;
 	public CiField Field;
+	public override CiType Type { get { return this.Field.Type; } }
 }
 
 public class CiArrayAccess : CiLValue
 {
 	public CiExpr Array;
 	public CiExpr Index;
+	public override CiType Type
+	{
+		get
+		{
+			CiArrayType at = (CiArrayType) this.Array.Type;
+			return at.ElementType;
+		}
+	}
 }
 
 public class CiFunctionCall : CiExpr, ICiStatement
 {
 	public CiFunction Function;
 	public CiExpr[] Arguments;
+	public override CiType Type { get { return this.Function.ReturnType; } }
+}
+
+public class CiMethodCall : CiFunctionCall
+{
+	public CiExpr Obj;
 }
 
 public class CiUnaryExpr : CiExpr
 {
 	public CiToken Op;
 	public CiExpr Inner;
+	public override CiType Type { get { return this.Inner.Type; } }
 }
 
 public class CiPostfixExpr : CiExpr, ICiStatement
 {
 	public CiLValue Inner;
 	public CiToken Op;
+	public override CiType Type { get { return this.Inner.Type; } }
 }
 
 public class CiBinaryExpr : CiExpr
@@ -201,6 +293,19 @@ public class CiBinaryExpr : CiExpr
 	public CiExpr Left;
 	public CiToken Op;
 	public CiExpr Right;
+	public override CiType Type
+	{
+		get
+		{
+			// TODO
+			return this.Left.Type;
+		}
+	}
+}
+
+public class CiRelExpr : CiBinaryExpr
+{
+	public override CiType Type { get { return CiType.Bool; } }
 }
 
 public class CiCondExpr : CiExpr
@@ -208,6 +313,14 @@ public class CiCondExpr : CiExpr
 	public CiExpr Cond;
 	public CiExpr OnTrue;
 	public CiExpr OnFalse;
+	public override CiType Type
+	{
+		get
+		{
+			// TODO
+			return this.OnTrue.Type;
+		}
+	}
 }
 
 public class CiAssign : CiMaybeAssign, ICiStatement
@@ -238,7 +351,7 @@ public class CiDoWhile : ICiStatement
 
 public class CiFor : ICiStatement
 {
-	public CiVar Init;
+	public ICiStatement Init;
 	public CiExpr Cond;
 	public ICiStatement Advance;
 	public ICiStatement Body;
@@ -276,8 +389,6 @@ public class CiWhile : ICiStatement
 
 public class CiFunction : CiSymbol
 {
-	public CiCodeDoc Documentation;
-	public bool IsPublic;
 	public CiType ReturnType;
 	public CiArg[] Arguments;
 	public CiBlock Body;
@@ -286,8 +397,7 @@ public class CiFunction : CiSymbol
 public class CiProgram
 {
 	public string[] NamespaceElements;
-	public CiClass[] Classes;
-	public CiFunction[] Functions;
+	public SymbolTable Globals;
 }
 
 }
