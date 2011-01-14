@@ -52,7 +52,7 @@ public partial class CiParser : CiLexer
 		int level = 1;
 		for (;;) {
 			NextToken();
-			if (See(CiToken.EndOfStream))
+			if (See(CiToken.EndOfFile))
 				throw new ParseException("Macro definition not terminated");
 			if (See(left))
 				level++;
@@ -105,7 +105,7 @@ public partial class CiParser : CiLexer
 		int level = 0;
 		for (;;) {
 			NextToken();
-			if (See(CiToken.EndOfStream))
+			if (See(CiToken.EndOfFile))
 				throw new ParseException("Macro argument not terminated");
 			if (See(CiToken.LeftParenthesis))
 				level++;
