@@ -572,7 +572,7 @@ public partial class CiParser : CiLexer
 		}
 		Expect(CiToken.Semicolon);
 
-		while (!See(CiToken.EndOfFile)) {
+		while (!See(CiToken.EndOfStream)) {
 			while (Eat(CiToken.Macro))
 				this.Symbols.Add(ParseMacro());
 			CiCodeDoc doc = ParseDoc();

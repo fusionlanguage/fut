@@ -39,9 +39,9 @@ public class MacroExpansion
 	public string LookupArg(string name)
 	{
 		string value;
-		if (this.Args.TryGetValue(name, out value))
+		if (this.Args != null && this.Args.TryGetValue(name, out value))
 			return value;
-		return name;
+		return null;
 	}
 }
 
@@ -52,7 +52,7 @@ public partial class CiParser : CiLexer
 		int level = 1;
 		for (;;) {
 			NextToken();
-			if (See(CiToken.EndOfFile))
+			if (See(CiToken.EndOfStream))
 				throw new ParseException("Macro definition not terminated");
 			if (See(left))
 				level++;
@@ -105,8 +105,8 @@ public partial class CiParser : CiLexer
 		int level = 0;
 		for (;;) {
 			NextToken();
-			if (See(CiToken.EndOfFile))
-				throw new ParseException("Macro definition not terminated");
+			if (See(CiToken.EndOfStream))
+				throw new ParseException("Macro argument not terminated");
 			if (See(CiToken.LeftParenthesis))
 				level++;
 			else if (See(CiToken.RightParenthesis)) {
@@ -119,6 +119,14 @@ public partial class CiParser : CiLexer
 	}
 
 	readonly Stack<MacroExpansion> MacroStack = new Stack<MacroExpansion>();
+
+	void BeginExpand(string content, Dictionary<string, string> args)
+	{
+		this.MacroStack.Push(new MacroExpansion {
+			Args = args,
+			ParentReader = SetReader(new StringReader(content))
+		});
+	}
 
 	void Expand(CiMacro macro)
 	{
@@ -149,20 +157,31 @@ public partial class CiParser : CiLexer
 			NextToken();
 			Check(CiToken.Semicolon);
 		}
-		this.MacroStack.Push(new MacroExpansion {
-			Args = args,
-			ParentReader = SetReader(new StringReader(macro.Body))
-		});
+		BeginExpand(macro.Body, args);
+		NextToken();
 	}
 
-	public string LookupMacroArg(string name)
+	protected override bool IsExpandingMacro
 	{
-		if (this.MacroStack.Count > 0)
-			return this.MacroStack.Peek().LookupArg(name);
-		return name;
+		get
+		{
+			return this.MacroStack.Count > 0;
+		}
 	}
 
-	public bool EndMacroExpansion()
+	protected override bool ExpandMacroArg(string name)
+	{
+		if (this.MacroStack.Count > 0) {
+			string value = this.MacroStack.Peek().LookupArg(name);
+			if (value != null) {
+				BeginExpand(value, null);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	protected override bool OnStreamEnd()
 	{
 		if (this.MacroStack.Count > 0) {
 			MacroExpansion top = this.MacroStack.Pop();

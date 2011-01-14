@@ -18,7 +18,6 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
-using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -27,7 +26,7 @@ namespace Foxoft.Ci
 
 public enum CiToken
 {
-	EndOfFile,
+	EndOfStream,
 	Id,
 	IntConstant,
 	StringConstant,
@@ -123,25 +122,86 @@ public class CiLexer
 		NextToken();
 	}
 
+	protected virtual bool IsExpandingMacro
+	{
+		get
+		{
+			return false;
+		}
+	}
+
+	protected virtual bool ExpandMacroArg(string name)
+	{
+		return false;
+	}
+
+	protected virtual bool OnStreamEnd()
+	{
+		return false;
+	}
+
 	protected TextReader SetReader(TextReader reader)
 	{
 		TextReader old = this.Reader;
 		this.Reader = reader;
-		NextToken();
 		return old;
 	}
 
+	StringReader IdReader = null;
+
 	public int PeekChar()
 	{
+		if (this.IdReader != null) {
+			int c = this.IdReader.Peek();
+			if (c >= 0)
+				return c;
+		}
 		return this.Reader.Peek();
+	}
+
+	static bool IsLetter(int c)
+	{
+		if (c >= 'a' && c <= 'z') return true;
+		if (c >= 'A' && c <= 'Z') return true;
+		if (c >= '0' && c <= '9') return true;
+		return c == '_';
 	}
 
 	public int ReadChar()
 	{
-		int c = this.Reader.Read();
-		if (c == '\n' && !(this.Reader is StringReader))
+		int c;
+		if (this.IdReader != null) {
+			c = this.IdReader.Read();
+			if (c >= 0)
+				return c;
+			this.IdReader = null;
+		}
+		c = this.Reader.Read();
+		if (c == '\n' && !this.IsExpandingMacro)
 			this.InputLineNo++;
-		if (this.CopyTo != null)
+		if (IsLetter(c)) {
+			StringBuilder sb = new StringBuilder();
+			for (;;) {
+				sb.Append((char) c);
+				c = PeekChar();
+				if (!IsLetter(c))
+					break;
+				this.Reader.Read();
+			}
+			if (c == '#' && this.IsExpandingMacro) {
+				this.Reader.Read();
+				if (this.Reader.Read() != '#')
+					throw new ParseException("Invalid character");
+			}
+			string s = sb.ToString();
+			if (!ExpandMacroArg(s)) {
+				this.IdReader = new StringReader(s);
+				if (this.CopyTo != null)
+					this.CopyTo.Append(s);
+			}
+			return ReadChar();
+		}
+		if (c >= 0 && this.CopyTo != null)
 			this.CopyTo.Append((char) c);
 		return c;
 	}
@@ -183,39 +243,15 @@ public class CiLexer
 		}
 	}
 
-	static bool IsLetter(int c)
-	{
-		if (c >= 'a' && c <= 'z') return true;
-		if (c >= 'A' && c <= 'Z') return true;
-		if (c >= '0' && c <= '9') return true;
-		return c == '_';
-	}
-
-	string ReadId(int c)
-	{
-		StringBuilder sb = new StringBuilder();
-		for (;;) {
-			sb.Append((char) c);
-			c = PeekChar();
-			if (!IsLetter(c))
-				break;
-			ReadChar();
-		}
-		string s = sb.ToString();
-		if (this is CiParser)
-			return ((CiParser) this).LookupMacroArg(s);
-		return s;
-	}
-
 	CiToken ReadToken()
 	{
 		for (;;) {
 			int c = ReadChar();
 			switch (c) {
 			case -1:
-				if (this is CiParser && ((CiParser) this).EndMacroExpansion())
-					return this.CurrentToken;
-				return CiToken.EndOfFile;
+				if (OnStreamEnd())
+					continue;
+				return CiToken.EndOfStream;
 			case '\t': case '\n': case '\r': case ' ':
 				continue;
 			case '#': if (EatChar('#')) return CiToken.PasteTokens;
@@ -351,21 +387,14 @@ public class CiLexer
 			case 'p': case 'q': case 'r': case 's': case 't':
 			case 'u': case 'v': case 'w': case 'x': case 'y':
 			case 'z': {
-				string s = ReadId(c);
-				while (EatChar('#') && EatChar('#')) {
-					c = ReadChar();
-					if (!IsLetter(c))
+				StringBuilder sb = new StringBuilder();
+				for (;;) {
+					sb.Append((char) c);
+					if (!IsLetter(PeekChar()))
 						break;
-					s += ReadId(c);
+					c = ReadChar();
 				}
-				c = s[0];
-				if (c >= '0' && c <= '9') {
-					if (s.Length >= 2 && s[1] == 'x')
-						this.CurrentInt = int.Parse(s.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
-					else
-						this.CurrentInt = int.Parse(s, NumberStyles.Integer, CultureInfo.InvariantCulture);
-					return CiToken.IntConstant;
-				}
+				string s = sb.ToString();
 				switch (s) {
 				case "break": return CiToken.Break;
 				case "case": return CiToken.Case;
@@ -432,7 +461,7 @@ public class CiLexer
 
 	public void DebugLexer()
 	{
-		while (this.CurrentToken != CiToken.EndOfFile) {
+		while (this.CurrentToken != CiToken.EndOfStream) {
 			Console.WriteLine(this.CurrentToken);
 			NextToken();
 		}
