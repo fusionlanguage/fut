@@ -76,6 +76,12 @@ public abstract class SourceGenerator
 		Write(s);
 	}
 
+	protected void Print(string s)
+	{
+		StartLine(s);
+		WriteLine();
+	}
+
 	protected void CloseBlock()
 	{
 		indent--;
@@ -92,6 +98,112 @@ public abstract class SourceGenerator
 				Write(storageType.Length);
 			Write(']');
 		}
+	}
+
+	protected void Write(CiExpr expr)
+	{
+		// TODO
+	}
+
+	protected void Write(CiBlock block)
+	{
+		OpenBlock();
+		foreach (ICiStatement stmt in block.Statements)
+			Write(stmt);
+		CloseBlock();
+	}
+
+	protected void WriteChild(ICiStatement stmt)
+	{
+		if (stmt is CiBlock)
+			Write((CiBlock) stmt);
+		else {
+			WriteLine();
+			indent++;
+			Write(stmt);
+			indent--;
+		}
+	}
+
+	protected abstract void Write(CiVar stmt);
+
+	void Write(CiDoWhile stmt)
+	{
+		StartLine("do");
+		WriteChild(stmt.Body);
+		StartLine("while (");
+		Write(stmt.Cond);
+		WriteLine(");");
+	}
+
+	void Write(CiFor stmt)
+	{
+		StartLine("for (");
+		if (stmt.Init != null)
+			Write(stmt.Init);
+		else
+			Write(";");
+		if (stmt.Cond != null)
+			Write(stmt.Cond);
+		if (stmt.Advance != null)
+			Write(stmt.Advance);
+		Write(";");
+		Write(")");
+		WriteChild(stmt.Body);
+	}
+
+	void Write(CiIf stmt)
+	{
+		StartLine("if (");
+		Write(stmt.Cond);
+		Write(")");
+		WriteChild(stmt.OnTrue);
+		if (stmt.OnFalse != null) {
+			StartLine("else");
+			WriteChild(stmt.OnFalse);
+		}
+	}
+
+	void Write(CiReturn stmt)
+	{
+		if (stmt.Value == null)
+			Print("return;");
+		else {
+			StartLine("return ");
+			Write(stmt.Value);
+			WriteLine(";");
+		}
+	}
+
+	void Write(CiWhile stmt)
+	{
+		StartLine("while (");
+		Write(stmt.Cond);
+		Write(")");
+		WriteChild(stmt.Body);
+	}
+
+	protected void Write(ICiStatement stmt)
+	{
+		if (stmt is CiBlock)
+			Write((CiBlock) stmt);
+		else if (stmt is CiVar)
+			Write((CiVar) stmt);
+		else if (stmt is CiBreak)
+			Print("break;");
+		else if (stmt is CiContinue)
+			Print("continue;");
+		else if (stmt is CiDoWhile)
+			Write((CiDoWhile) stmt);
+		else if (stmt is CiFor)
+			Write((CiFor) stmt);
+		else if (stmt is CiIf)
+			Write((CiIf) stmt);
+		else if (stmt is CiReturn)
+			Write((CiReturn) stmt);
+		else if (stmt is CiWhile)
+			Write((CiWhile) stmt);
+		// TODO
 	}
 
 	public abstract void Write(CiProgram prog);

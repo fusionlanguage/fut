@@ -95,11 +95,11 @@ public partial class CiParser : CiLexer
 			CiClass clazz = this.Symbols.Lookup(baseName) as CiClass;
 			if (clazz == null)
 				throw new ParseException("{0} is not a class", baseName);
-			return new CiClassStorageType { Class = clazz };
+			return new CiClassStorageType { Name = baseName, Class = clazz };
 		}
 		CiSymbol symbol = this.Symbols.Lookup(baseName);
 		if (symbol is CiClass)
-			return new CiClassPtrType { Class = (CiClass) symbol};
+			return new CiClassPtrType { Name = baseName, Class = (CiClass) symbol};
 		if (symbol is CiType)
 			return (CiType) symbol;
 		throw new ParseException("{0} is not a type", baseName);
@@ -564,17 +564,17 @@ public partial class CiParser : CiLexer
 	
 		Expect(CiToken.LeftParenthesis);
 		OpenScope();
-		List<CiArg> arguments = new List<CiArg>();
+		List<CiParam> paramz = new List<CiParam>();
 		do {
-			CiArg arg = new CiArg();
-			arg.Documentation = ParseDoc();
-			arg.Type = ParseType();
-			arg.Name = ParseId();
-			this.Symbols.Add(arg);
-			arguments.Add(arg);
+			CiParam param = new CiParam();
+			param.Documentation = ParseDoc();
+			param.Type = ParseType();
+			param.Name = ParseId();
+			this.Symbols.Add(param);
+			paramz.Add(param);
 		} while (Eat(CiToken.Comma));
 		Expect(CiToken.RightParenthesis);
-		func.Arguments = arguments.ToArray();
+		func.Params = paramz.ToArray();
 		func.Body = ParseBlock();
 		CloseScope();
 		return func;

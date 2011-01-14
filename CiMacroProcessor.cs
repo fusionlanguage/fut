@@ -27,7 +27,7 @@ namespace Foxoft.Ci
 
 public class CiMacro : CiSymbol
 {
-	public string[] Arguments;
+	public string[] Params;
 	public bool IsStatement;
 	public string Body;
 }
@@ -67,17 +67,17 @@ public partial class CiParser : CiLexer
 		CiMacro macro = new CiMacro();
 		macro.Name = ParseId();
 		Expect(CiToken.LeftParenthesis);
-		List<string> arguments = new List<string>();
+		List<string> paramz = new List<string>();
 		if (See(CiToken.Id)) {
 			do {
 				string name = ParseId();
-				if (arguments.Contains(name))
-					throw new ParseException("Duplicate macro argument {0}", name);
-				arguments.Add(name);
+				if (paramz.Contains(name))
+					throw new ParseException("Duplicate macro parameter {0}", name);
+				paramz.Add(name);
 			} while (Eat(CiToken.Comma));
 		}
 		Expect(CiToken.RightParenthesis);
-		macro.Arguments = arguments.ToArray();
+		macro.Params = paramz.ToArray();
 		StringBuilder sb = new StringBuilder();
 		this.CopyTo = sb;
 		try {
@@ -136,7 +136,7 @@ public partial class CiParser : CiLexer
 		try {
 			Expect(CiToken.LeftParenthesis);
 			bool first = true;
-			foreach (string name in macro.Arguments) {
+			foreach (string name in macro.Params) {
 				if (first)
 					first = false;
 				else

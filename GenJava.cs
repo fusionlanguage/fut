@@ -165,6 +165,18 @@ public class GenJava : SourceGenerator
 		CloseBlock();
 	}
 
+	protected override void Write(CiVar stmt)
+	{
+		StartLine("");
+		Write(stmt.Type);
+		Write(stmt.Name);
+		if (stmt.InitialValue != null) {
+			Write(" = ");
+			Write(stmt.InitialValue);
+		}
+		WriteLine(";");
+	}
+
 	public override void Write(CiProgram prog)
 	{
 		WriteLine("// Generated automatically with \"cito\". Do not edit.");

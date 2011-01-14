@@ -135,20 +135,7 @@ public class GenCs : SourceGenerator
 
 	void WriteBaseType(CiType type)
 	{
-		if (type is CiStringType)
-			Write("string");
-		else if (type is CiClassType) {
-			CiClassType classType = (CiClassType) type;
-			Write(classType.Class.Name);
-		}
-		else if (type == CiBoolType.Value)
-			Write("bool");
-		else if (type == CiByteType.Value)
-			Write("byte");
-		else if (type == CiIntType.Value)
-			Write("int");
-		else
-			throw new ApplicationException();
+		Write(type.Name);
 	}
 
 	void Write(CiType type)
@@ -219,6 +206,39 @@ public class GenCs : SourceGenerator
 		WriteLine(";");
 	}
 
+	protected override void Write(CiVar stmt)
+	{
+		StartLine("");
+		Write(stmt.Type);
+		Write(stmt.Name);
+		if (stmt.InitialValue != null) {
+			Write(" = ");
+			Write(stmt.InitialValue);
+		}
+		WriteLine(";");
+	}
+
+	void Write(CiFunction func)
+	{
+		WriteLine();
+		Write(func.Documentation);
+		StartLine(func.IsPublic ? "public " : "");
+		Write(func.ReturnType);
+		Write(func.Name);
+		Write("(");
+		bool first = true;
+		foreach (CiParam param in func.Params) {
+			if (first)
+				first = false;
+			else
+				Write(", ");
+			Write(param.Type);
+			Write(param.Name);
+		}
+		Write(")");
+		Write(func.Body);
+	}
+
 	public override void Write(CiProgram prog)
 	{
 		WriteLine("// Generated automatically with \"cito\". Do not edit.");
@@ -236,6 +256,8 @@ public class GenCs : SourceGenerator
 		foreach (CiSymbol symbol in prog.Globals.List) {
 			if (symbol is CiConst && symbol.IsPublic)
 				Write((CiConst) symbol);
+			else if (symbol is CiFunction)
+				Write((CiFunction) symbol);
 		}
 		CloseBlock();
 		CloseBlock();

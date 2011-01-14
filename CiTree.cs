@@ -210,7 +210,7 @@ public class CiVar : CiSymbol, ICiStatement
 	public CiExpr InitialValue;
 }
 
-public class CiArg : CiVar
+public class CiParam : CiVar
 {
 }
 
@@ -406,7 +406,7 @@ public class CiWhile : ICiStatement
 public class CiFunction : CiSymbol
 {
 	public CiType ReturnType;
-	public CiArg[] Arguments;
+	public CiParam[] Params;
 	public CiBlock Body;
 }
 
