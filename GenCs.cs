@@ -17,7 +17,11 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
+using Microsoft.CSharp;
 using System;
+using System.CodeDom;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 
 namespace Foxoft.Ci
@@ -137,9 +141,9 @@ public class GenCs : SourceGenerator
 			CiClassType classType = (CiClassType) type;
 			Write(classType.Class.Name);
 		}
-		else if (type == CiType.Bool)
+		else if (type == CiBoolType.Value)
 			Write("bool");
-		else if (type == CiType.Byte)
+		else if (type == CiByteType.Value)
 			Write("byte");
 		else if (type == CiIntType.Value)
 			Write("int");
@@ -195,6 +199,14 @@ public class GenCs : SourceGenerator
 		CloseBlock();
 	}
 
+	void WriteConst(object value)
+	{
+		CodePrimitiveExpression expr = new CodePrimitiveExpression(value);
+		StringWriter sw = new StringWriter();
+		new CSharpCodeProvider().GenerateCodeFromExpression(expr, sw, null);
+		Write(sw.ToString());
+	}
+
 	void Write(CiConst def)
 	{
 		Write(def.Documentation);
@@ -203,7 +215,7 @@ public class GenCs : SourceGenerator
 		Write(def.Type);
 		Write(def.Name);
 		Write(" = ");
-		// TODO
+		WriteConst(def.Value);
 		WriteLine(";");
 	}
 
@@ -222,8 +234,8 @@ public class GenCs : SourceGenerator
 		StartLine("public partial class ASAP");
 		OpenBlock();
 		foreach (CiSymbol symbol in prog.Globals.List) {
-//			if (symbol is CiConst)
-//				Write((CiConst) symbol);
+			if (symbol is CiConst && symbol.IsPublic)
+				Write((CiConst) symbol);
 		}
 		CloseBlock();
 		CloseBlock();

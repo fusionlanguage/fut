@@ -107,9 +107,9 @@ public class GenJava : SourceGenerator
 			CiClassType classType = (CiClassType) type;
 			Write(classType.Class.Name);
 		}
-		else if (type == CiType.Bool)
+		else if (type == CiBoolType.Value)
 			Write("boolean");
-		else if (type == CiType.Byte)
+		else if (type == CiByteType.Value)
 			Write("byte");
 		else if (type == CiIntType.Value)
 			Write("int");

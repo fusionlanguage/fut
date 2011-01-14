@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -110,6 +111,47 @@ public partial class CiParser : CiLexer
 		return ParseType(baseName);
 	}
 
+	object ParseConstInitializer(CiType type)
+	{
+		if (type == CiIntType.Value) {
+			int result = this.CurrentInt;
+			Expect(CiToken.IntConstant);
+			return result;
+		}
+		if (type == CiByteType.Value) {
+			int result = this.CurrentInt;
+			Expect(CiToken.IntConstant);
+			if (result < 0 || result > 255)
+				throw new ParseException("Byte constant out of range");
+			return (byte) result;
+		}
+		if (type == CiStringType.Ptr) {
+			string result = this.CurrentString;
+			Expect(CiToken.StringConstant);
+			return result;
+		}
+		if (type is CiArrayType) {
+			CiType elementType = ((CiArrayType) type).ElementType;
+			if (Eat(CiToken.LeftBrace)) {
+				ArrayList list = new ArrayList();
+				if (!See(CiToken.RightBrace)) {
+					do
+						list.Add(ParseConstInitializer(elementType));
+					while (Eat(CiToken.Comma));
+				}
+				Expect(CiToken.RightBrace);
+				if (type is CiArrayStorageType) {
+					int expected = ((CiArrayStorageType) type).Length;
+					if (list.Count != expected)
+						throw new ParseException("Expected {0} array elements, got {1}", expected, list.Count);
+				}
+				return list.ToArray(elementType.DotNetType);
+			}
+			return ParseConstInitializer(elementType);
+		}
+		throw new ParseException("Invalid const type");
+	}
+
 	CiConst ParseConst()
 	{
 		Expect(CiToken.Const);
@@ -117,19 +159,7 @@ public partial class CiParser : CiLexer
 		def.Type = ParseType();
 		def.Name = ParseId();
 		Expect(CiToken.Assign);
-		def.Value = this.CurrentInt;
-		if (Eat(CiToken.IntConstant)) {
-		}
-		else if (Eat(CiToken.LeftBrace)) {
-			do {
-				//this.CurrentInt;
-				Expect(CiToken.IntConstant);
-				// TODO
-			} while (Eat(CiToken.Comma));
-			Expect(CiToken.RightBrace);
-			// TODO
-		}
-		// TODO
+		def.Value = ParseConstInitializer(def.Type);
 		Expect(CiToken.Semicolon);
 		this.Symbols.Add(def);
 		return def;
@@ -306,9 +336,9 @@ public partial class CiParser : CiLexer
 	{
 		CiExpr left = ParseRelExpr();
 		while (Eat(CiToken.CondAnd)) {
-			ExpectType(left, CiType.Bool);
+			ExpectType(left, CiBoolType.Value);
 			CiExpr right = ParseRelExpr();
-			ExpectType(right, CiType.Bool);
+			ExpectType(right, CiBoolType.Value);
 			left = new CiBinaryExpr { Left = left, Op = CiToken.CondAnd, Right = right };
 		}
 		return left;
@@ -318,9 +348,9 @@ public partial class CiParser : CiLexer
 	{
 		CiExpr left = ParseCondAndExpr();
 		while (Eat(CiToken.CondOr)) {
-			ExpectType(left, CiType.Bool);
+			ExpectType(left, CiBoolType.Value);
 			CiExpr right = ParseCondAndExpr();
-			ExpectType(right, CiType.Bool);
+			ExpectType(right, CiBoolType.Value);
 			left = new CiBinaryExpr { Left = left, Op = CiToken.CondOr, Right = right };
 		}
 		return left;
@@ -330,7 +360,7 @@ public partial class CiParser : CiLexer
 	{
 		CiExpr left = ParseCondOrExpr();
 		if (Eat(CiToken.QuestionMark)) {
-			ExpectType(left, CiType.Bool);
+			ExpectType(left, CiBoolType.Value);
 			CiCondExpr result = new CiCondExpr();
 			result.Cond = left;
 			result.OnTrue = ParseExpr();
@@ -368,7 +398,7 @@ public partial class CiParser : CiLexer
 	{
 		Expect(CiToken.LeftParenthesis);
 		CiExpr cond = ParseExpr();
-		ExpectType(cond, CiType.Bool);
+		ExpectType(cond, CiBoolType.Value);
 		Expect(CiToken.RightParenthesis);
 		return cond;
 	}
@@ -450,7 +480,7 @@ public partial class CiParser : CiLexer
 				Expect(CiToken.Semicolon);
 			if (!See(CiToken.Semicolon)) {
 				result.Cond = ParseExpr();
-				ExpectType(result.Cond, CiType.Bool);
+				ExpectType(result.Cond, CiBoolType.Value);
 			}
 			Expect(CiToken.Semicolon);
 			if (!See(CiToken.RightParenthesis))
@@ -510,7 +540,6 @@ public partial class CiParser : CiLexer
 			result.Body = ParseStatement();
 			return result;
 		}
-		// TODO
 		throw new ParseException("Invalid statement");
 	}
 
@@ -554,8 +583,8 @@ public partial class CiParser : CiLexer
 	public CiProgram ParseProgram()
 	{
 		SymbolTable globals = new SymbolTable();
-		globals.Add(CiType.Bool);
-		globals.Add(CiType.Byte);
+		globals.Add(CiBoolType.Value);
+		globals.Add(CiByteType.Value);
 		globals.Add(CiIntType.Value);
 		globals.Add(CiStringType.Ptr);
 		globals.Add(new CiConst { Name = "true", Value = true });

@@ -66,10 +66,9 @@ public abstract class CiSymbol
 
 public class CiType : CiSymbol
 {
-	public static readonly CiType Bool = new CiType { Name = "bool" };
-	public static readonly CiType Byte = new CiType { Name = "byte" };
 	public static readonly CiType Null = new CiType { Name = "null" };
 	public static readonly CiType Void = new CiType { Name = "void" };
+	public virtual Type DotNetType { get { throw new ApplicationException("No corresponding .NET type"); } }
 	public virtual CiType BaseType { get { return this; } }
 	public virtual int ArrayLevel { get { return 0; } }
 	public virtual CiSymbol LookupMember(string name)
@@ -78,10 +77,25 @@ public class CiType : CiSymbol
 	}
 }
 
+public class CiBoolType : CiType
+{
+	private CiBoolType() { }
+	public static readonly CiBoolType Value = new CiBoolType { Name = "bool" };
+	public override Type DotNetType { get { return typeof(bool); } }
+}
+
+public class CiByteType : CiType
+{
+	private CiByteType() { }
+	public static readonly CiByteType Value = new CiByteType { Name = "byte" };
+	public override Type DotNetType { get { return typeof(byte); } }
+}
+
 public class CiIntType : CiType
 {
 	private CiIntType() { }
 	public static readonly CiIntType Value = new CiIntType { Name = "int" };
+	public override Type DotNetType { get { return typeof(int); } }
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
@@ -95,6 +109,7 @@ public class CiIntType : CiType
 public class CiStringType : CiType
 {
 	public static readonly CiStringType Ptr = new CiStringType { Name = "string" };
+	public override Type DotNetType { get { return typeof(string); } }
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
@@ -215,8 +230,9 @@ public class CiConstExpr : CiExpr
 	{
 		get
 		{
+			if (this.Value is bool) return CiBoolType.Value;
+			if (this.Value is byte) return CiByteType.Value;
 			if (this.Value is int) return CiIntType.Value;
-			if (this.Value is bool) return CiType.Bool;
 			if (this.Value is string) return CiStringType.Ptr;
 			if (this.Value == null) return CiType.Null;
 			// TODO
@@ -305,7 +321,7 @@ public class CiBinaryExpr : CiExpr
 
 public class CiRelExpr : CiBinaryExpr
 {
-	public override CiType Type { get { return CiType.Bool; } }
+	public override CiType Type { get { return CiBoolType.Value; } }
 }
 
 public class CiCondExpr : CiExpr

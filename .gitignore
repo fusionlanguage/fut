@@ -1,5 +1,5 @@
 *.exe
 *.pdb
-asap.ci
+*.ci
 asapci.cs
 asapci.java
