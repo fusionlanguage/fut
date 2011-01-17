@@ -133,7 +133,10 @@ public class GenCs : SourceGenerator
 
 	void WriteBaseType(CiType type)
 	{
-		Write(type.Name);
+		if (type is CiStringType)
+			Write("string");
+		else
+			Write(type.Name);
 	}
 
 	void Write(CiType type)
@@ -196,23 +199,70 @@ public class GenCs : SourceGenerator
 		WriteLine(";");
 	}
 
-	protected override void Write(CiVar stmt)
+	protected override void Write(CiConstAccess expr)
 	{
-		StartLine("");
+		if (expr.Const.GlobalName != null)
+			Write(expr.Const.GlobalName);
+		else
+			base.Write(expr);
+	}
+
+	protected override int GetPriority(CiExpr expr)
+	{
+		if (expr is CiPropertyAccess && ((CiPropertyAccess) expr).Property == CiIntType.LowByteProperty)
+			return 2;
+		return base.GetPriority(expr);
+	}
+
+	protected override void Write(CiPropertyAccess expr)
+	{
+		if (expr.Property == CiIntType.LowByteProperty) {
+			Write("(byte) ");
+			WriteChild(expr, expr.Obj);
+		}
+		// TODO
+		else
+			throw new ApplicationException(expr.Property.Name);
+	}
+
+	protected override void Write(CiMethodCall expr)
+	{
+		if (expr.Function == CiArrayStorageType.ClearMethod) {
+			Write("Array_Clear(");
+			Write(expr.Obj);
+			Write(')');
+		}
+		// TODO
+		else
+			throw new ApplicationException(expr.Function.Name);
+	}
+
+	protected override void WriteInline(CiVar stmt)
+	{
 		Write(stmt.Type);
 		Write(stmt.Name);
 		if (stmt.InitialValue != null) {
 			Write(" = ");
 			Write(stmt.InitialValue);
 		}
-		WriteLine(";");
+	}
+
+	protected override void WriteAssignSource(CiAssign assign)
+	{
+		if (assign.CastIntToByte) {
+			Write("(byte) (");
+			base.WriteAssignSource(assign);
+			Write(')');
+		}
+		else
+			base.WriteAssignSource(assign);
 	}
 
 	void Write(CiFunction func)
 	{
 		WriteLine();
 		Write(func.Documentation);
-		StartLine(func.IsPublic ? "public " : "");
+		StartLine(func.IsPublic ? "public static " : "static ");
 		Write(func.ReturnType);
 		Write(func.Name);
 		Write("(");
@@ -243,6 +293,14 @@ public class GenCs : SourceGenerator
 		}
 		StartLine("public partial class ASAP");
 		OpenBlock();
+		foreach (CiConst konst in prog.ConstArrays) {
+			StartLine("static ");
+			Write(konst.Type);
+			Write(konst.GlobalName);
+			Write(" = ");
+			WriteConst(konst.Value);
+			WriteLine(";");
+		}
 		foreach (CiSymbol symbol in prog.Globals.List) {
 			if (symbol is CiConst && symbol.IsPublic)
 				Write((CiConst) symbol);

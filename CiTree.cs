@@ -98,11 +98,19 @@ public class CiIntType : CiType
 	public static readonly CiIntType Value = new CiIntType { Name = "int" };
 	public override Type DotNetType { get { return typeof(int); } }
 	public static readonly CiProperty LowByteProperty = new CiProperty { Name = "LowByte", Type = CiByteType.Value };
+	public static readonly CiFunction MulDivMethod = new CiFunction {
+		Name = "MulDiv",
+		ReturnType = CiIntType.Value,
+		Params = new CiParam[] {
+			new CiParam { Type = CiIntType.Value, Name = "numerator" },
+			new CiParam { Type = CiIntType.Value, Name = "denominator" }
+		}
+	};
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
 		case "LowByte": return LowByteProperty;
-		case "MulDiv": return null; // TODO
+		case "MulDiv": return MulDivMethod;
 		default: throw new ParseException("No member {0} in int", name);
 		}
 	}
@@ -156,7 +164,8 @@ public class CiClassPtrType : CiClassType
 {
 	public override bool IsAssignableFrom(CiType that)
 	{
-		return that is CiClassType || that == CiType.Null;
+		return (that is CiClassType && this.Class == ((CiClassType) that).Class)
+			|| that == CiType.Null;
 	}
 }
 
@@ -182,17 +191,24 @@ public class CiArrayPtrType : CiArrayType
 {
 	public override bool IsAssignableFrom(CiType that)
 	{
-		return that is CiArrayType || that == CiType.Null;
+		// FIXME
+		return (that is CiArrayType && this.ElementType == ((CiArrayType) that).ElementType)
+			|| that == CiType.Null;
 	}
 }
 
 public class CiArrayStorageType : CiArrayType
 {
 	public int Length;
+	public static readonly CiFunction ClearMethod = new CiFunction {
+		Name = "Clear",
+		ReturnType = CiType.Void,
+		Params = new CiParam[0]
+	};
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
-		case "Clear": return null; // TODO
+		case "Clear": return ClearMethod;
 		default: return base.LookupMember(name);
 		}
 	}
@@ -238,6 +254,7 @@ public class CiConst : CiSymbol, ICiStatement
 {
 	public CiType Type;
 	public object Value;
+	public string GlobalName;
 }
 
 public class CiVar : CiSymbol, ICiStatement
@@ -252,11 +269,11 @@ public class CiParam : CiVar
 
 public abstract class CiMaybeAssign
 {
+	public abstract CiType Type { get; }
 }
 
 public abstract class CiExpr : CiMaybeAssign
 {
-	public abstract CiType Type { get; }
 }
 
 public class CiConstExpr : CiExpr
@@ -272,7 +289,6 @@ public class CiConstExpr : CiExpr
 			if (this.Value is string) return CiStringPtrType.Value;
 			if (this.Value is CiEnumValue) return ((CiEnumValue) this.Value).Type;
 			if (this.Value == null) return CiType.Null;
-			// TODO
 			throw new NotImplementedException();
 		}
 	}
@@ -280,6 +296,12 @@ public class CiConstExpr : CiExpr
 
 public abstract class CiLValue : CiExpr
 {
+}
+
+public class CiConstAccess : CiExpr
+{
+	public CiConst Const;
+	public override CiType Type { get { return this.Const.Type; } }
 }
 
 public class CiVarAccess : CiLValue
@@ -370,8 +392,9 @@ public class CiCondExpr : CiExpr
 	{
 		get
 		{
-			// TODO
-			return this.OnTrue.Type;
+			if (this.OnTrue.Type.IsAssignableFrom(this.OnFalse.Type))
+				return this.OnTrue.Type;
+			return this.OnFalse.Type;
 		}
 	}
 }
@@ -381,6 +404,8 @@ public class CiAssign : CiMaybeAssign, ICiStatement
 	public CiLValue Target;
 	public CiToken Op;
 	public CiMaybeAssign Source;
+	public bool CastIntToByte;
+	public override CiType Type { get { return this.Target.Type; } }
 }
 
 public class CiBlock : ICiStatement
@@ -424,7 +449,7 @@ public class CiReturn : ICiStatement
 
 public class CiCase
 {
-	public int? Value;
+	public object Value;
 	public ICiStatement[] Body;
 }
 
@@ -451,6 +476,7 @@ public class CiProgram
 {
 	public string[] NamespaceElements;
 	public SymbolTable Globals;
+	public CiConst[] ConstArrays;
 }
 
 }

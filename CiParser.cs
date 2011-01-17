@@ -29,6 +29,7 @@ namespace Foxoft.Ci
 public partial class CiParser : CiLexer
 {
 	SymbolTable Symbols;
+	List<CiConst> ConstArrays;
 
 	public CiParser(TextReader reader) : base(reader)
 	{
@@ -162,6 +163,10 @@ public partial class CiParser : CiLexer
 		def.Value = ParseConstInitializer(def.Type);
 		Expect(CiToken.Semicolon);
 		this.Symbols.Add(def);
+		if (this.Symbols.Parent != null && def.Type is CiArrayType) {
+			this.ConstArrays.Add(def);
+			def.GlobalName = "CiConstArray_" + this.ConstArrays.Count;
+		}
 		return def;
 	}
 
@@ -209,10 +214,16 @@ public partial class CiParser : CiLexer
 		return call;
 	}
 
-	void ExpectType(CiExpr expr, CiType expected)
+	void ExpectType(CiMaybeAssign expr, CiType expected)
 	{
-		if (expr.Type != expected)
+		if (!expected.IsAssignableFrom(expr.Type))
 			throw new ParseException("Expected {0}, got {1}", expected, expr.Type);
+	}
+
+	void CheckCompatibleTypes(CiExpr expr1, CiExpr expr2)
+	{
+		if (!expr1.Type.IsAssignableFrom(expr2.Type) && !expr2.Type.IsAssignableFrom(expr1.Type))
+			throw new ParseException("Incompatible types");
 	}
 
 	CiExpr ParsePrimaryExpr()
@@ -243,8 +254,13 @@ public partial class CiParser : CiLexer
 			CiSymbol symbol = this.Symbols.Lookup(ParseId());
 			if (symbol is CiVar)
 				result = new CiVarAccess { Var = (CiVar) symbol };
-			else if (symbol is CiConst)
-				result = new CiConstExpr { Value = ((CiConst) symbol).Value };
+			else if (symbol is CiConst) {
+				CiConst konst = (CiConst) symbol;
+				if (konst.Type is CiArrayType)
+					result = new CiConstAccess { Const = konst };
+				else
+					result = new CiConstExpr { Value = konst.Value };
+			}
 			else if (symbol is CiEnum) {
 				Expect(CiToken.Dot);
 				CiEnum enu = (CiEnum) symbol;
@@ -270,10 +286,10 @@ public partial class CiParser : CiLexer
 			if (Eat(CiToken.Dot)) {
 				string name = ParseId();
 				CiSymbol member = result.Type.LookupMember(name);
-				if (See(CiToken.LeftParenthesis)) {
+				if (member is CiFunction) {
 					CiMethodCall call = new CiMethodCall();
 					call.Obj = result;
-					// TODO
+					call.Function = (CiFunction) member;
 					return ParseFunctionCall(call);
 				}
 				if (member is CiField) {
@@ -292,8 +308,9 @@ public partial class CiParser : CiLexer
 					throw new ParseException("Member {0} is of incorrect type");
 			}
 			else if (Eat(CiToken.LeftBracket)) {
+				// TODO: type check, string
 				CiExpr index = ParseExpr();
-//				ExpectType(index, CiIntType.Value);
+				ExpectType(index, CiIntType.Value);
 				Expect(CiToken.RightBracket);
 				result = new CiArrayAccess { Array = result, Index = index };
 			}
@@ -316,9 +333,11 @@ public partial class CiParser : CiLexer
 	{
 		CiExpr left = ParsePrimaryExpr();
 		while (See(CiToken.Asterisk) || See(CiToken.Slash) || See(CiToken.Mod) || See(CiToken.And) || See(CiToken.ShiftLeft) || See(CiToken.ShiftRight)) {
+			ExpectType(left, CiIntType.Value);
 			CiToken op = this.CurrentToken;
 			NextToken();
 			CiExpr right = ParsePrimaryExpr();
+			ExpectType(right, CiIntType.Value);
 			left = new CiBinaryExpr { Left = left, Op = op, Right = right };
 		}
 		return left;
@@ -328,9 +347,11 @@ public partial class CiParser : CiLexer
 	{
 		CiExpr left = ParseMulExpr();
 		while (See(CiToken.Plus) || See(CiToken.Minus) || See(CiToken.Or) || See(CiToken.Xor)) {
+			ExpectType(left, CiIntType.Value);
 			CiToken op = this.CurrentToken;
 			NextToken();
 			CiExpr right = ParseMulExpr();
+			ExpectType(right, CiIntType.Value);
 			left = new CiBinaryExpr { Left = left, Op = op, Right = right };
 		}
 		return left;
@@ -343,6 +364,7 @@ public partial class CiParser : CiLexer
 			CiToken op = this.CurrentToken;
 			NextToken();
 			CiExpr right = ParseAddExpr();
+			CheckCompatibleTypes(left, right);
 			left = new CiBoolBinaryExpr { Left = left, Op = op, Right = right };
 		}
 		return left;
@@ -382,9 +404,19 @@ public partial class CiParser : CiLexer
 			result.OnTrue = ParseExpr();
 			Expect(CiToken.Colon);
 			result.OnFalse = ParseExpr();
+//			CheckCompatibleTypes(result.OnTrue, result.OnFalse);
 			return result;
 		}
 		return left;
+	}
+
+	object ParseConstExpr(CiType type)
+	{
+		CiConstExpr expr = ParseExpr() as CiConstExpr;
+		if (expr == null)
+			throw new ParseException("Expression is not constant");
+		ExpectType(expr, type);
+		return expr.Value;
 	}
 
 	CiMaybeAssign ParseMaybeAssign()
@@ -397,7 +429,15 @@ public partial class CiParser : CiLexer
 			CiLValue target = left as CiLValue;
 			if (target == null)
 				throw new ParseException("Not an l-value for an assignment");
-			return new CiAssign { Target = target, Op = op, Source = ParseMaybeAssign() };
+			CiAssign result = new CiAssign();
+			result.Target = target;
+			result.Op = op;
+			result.Source = ParseMaybeAssign();
+			if (target.Type == CiByteType.Value && result.Source.Type == CiIntType.Value)
+				result.CastIntToByte = true;
+			else
+				ExpectType(result.Source, target.Type);
+			return result;
 		}
 		return left;
 	}
@@ -525,6 +565,7 @@ public partial class CiParser : CiLexer
 			Expect(CiToken.LeftParenthesis);
 			CiSwitch result = new CiSwitch();
 			result.Value = ParseExpr();
+			CiType type = result.Value.Type;
 			Expect(CiToken.RightParenthesis);
 			Expect(CiToken.LeftBrace);
 			List<CiCase> cases = new List<CiCase>();
@@ -532,8 +573,7 @@ public partial class CiParser : CiLexer
 				CiCase caze;
 				if (Eat(CiToken.Case)) {
 					caze = new CiCase();
-					caze.Value = this.CurrentInt;
-					Expect(CiToken.IntConstant);
+					caze.Value = ParseConstExpr(type);
 				}
 				else if (Eat(CiToken.Default))
 					caze = new CiCase();
@@ -607,6 +647,7 @@ public partial class CiParser : CiLexer
 		globals.Add(new CiConst { Name = "false", Value = false });
 		globals.Add(new CiConst { Name = "null", Value = null });
 		this.Symbols = globals;
+		this.ConstArrays = new List<CiConst>();
 
 		Expect(CiToken.Namespace);
 		List<string> namespaceElements = new List<string>();
@@ -637,7 +678,8 @@ public partial class CiParser : CiLexer
 
 		return new CiProgram {
 			NamespaceElements = namespaceElements.ToArray(),
-			Globals = globals
+			Globals = globals,
+			ConstArrays = this.ConstArrays.ToArray()
 		};
 	}
 }

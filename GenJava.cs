@@ -165,16 +165,37 @@ public class GenJava : SourceGenerator
 		CloseBlock();
 	}
 
-	protected override void Write(CiVar stmt)
+	protected override int GetPriority(CiExpr expr)
 	{
-		StartLine("");
+		if (expr is CiPropertyAccess && ((CiPropertyAccess) expr).Property == CiIntType.LowByteProperty)
+			return 8;
+		return base.GetPriority(expr);
+	}
+
+	protected override void Write(CiPropertyAccess expr)
+	{
+		if (expr.Property == CiIntType.LowByteProperty) {
+			WriteChild(expr, expr.Obj);
+			Write(" & 0xff");
+		}
+		// TODO
+		else
+			throw new ApplicationException(expr.Property.Name);
+	}
+
+	protected override void Write(CiMethodCall expr)
+	{
+		// TODO
+	}
+
+	protected override void WriteInline(CiVar stmt)
+	{
 		Write(stmt.Type);
 		Write(stmt.Name);
 		if (stmt.InitialValue != null) {
 			Write(" = ");
 			Write(stmt.InitialValue);
 		}
-		WriteLine(";");
 	}
 
 	public override void Write(CiProgram prog)
