@@ -203,14 +203,16 @@ public partial class CiParser : CiLexer
 	CiFunctionCall ParseFunctionCall(CiFunctionCall call)
 	{
 		Expect(CiToken.LeftParenthesis);
-		List<CiExpr> arguments = new List<CiExpr>();
-		if (!See(CiToken.RightParenthesis)) {
-			do
-				arguments.Add(ParseExpr());
-			while (Eat(CiToken.Comma));
+		CiParam[] paramz = call.Function.Params;
+		call.Arguments = new CiExpr[paramz.Length];
+		for (int i = 0; i < paramz.Length; i++) {
+			if (i > 0)
+				Expect(CiToken.Comma);
+			CiExpr arg = ParseExpr();
+			ExpectType(arg, paramz[i].Type);
+			call.Arguments[i] = arg;
 		}
 		Expect(CiToken.RightParenthesis);
-		call.Arguments = arguments.ToArray();
 		return call;
 	}
 
