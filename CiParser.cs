@@ -340,7 +340,21 @@ public partial class CiParser : CiLexer
 			NextToken();
 			CiExpr right = ParsePrimaryExpr();
 			ExpectType(right, CiIntType.Value);
-			left = new CiBinaryExpr { Left = left, Op = op, Right = right };
+			if (left is CiConstExpr && right is CiConstExpr) {
+				int a = (int) ((CiConstExpr) left).Value;
+				int b = (int) ((CiConstExpr) right).Value;
+				switch (op) {
+				case CiToken.Asterisk: a *= b; break;
+				case CiToken.Slash: a /= b; break;
+				case CiToken.Mod: a %= b; break;
+				case CiToken.And: a &= b; break;
+				case CiToken.ShiftLeft: a <<= b; break;
+				case CiToken.ShiftRight: a >>= b; break;
+				}
+				left = new CiConstExpr { Value = a };
+			}
+			else
+				left = new CiBinaryExpr { Left = left, Op = op, Right = right };
 		}
 		return left;
 	}
@@ -354,7 +368,19 @@ public partial class CiParser : CiLexer
 			NextToken();
 			CiExpr right = ParseMulExpr();
 			ExpectType(right, CiIntType.Value);
-			left = new CiBinaryExpr { Left = left, Op = op, Right = right };
+			if (left is CiConstExpr && right is CiConstExpr) {
+				int a = (int) ((CiConstExpr) left).Value;
+				int b = (int) ((CiConstExpr) right).Value;
+				switch (op) {
+				case CiToken.Plus: a += b; break;
+				case CiToken.Minus: a -= b; break;
+				case CiToken.Or: a |= b; break;
+				case CiToken.Xor: a ^= b; break;
+				}
+				left = new CiConstExpr { Value = a };
+			}
+			else
+				left = new CiBinaryExpr { Left = left, Op = op, Right = right };
 		}
 		return left;
 	}
@@ -407,6 +433,8 @@ public partial class CiParser : CiLexer
 			Expect(CiToken.Colon);
 			result.OnFalse = ParseExpr();
 //			CheckCompatibleTypes(result.OnTrue, result.OnFalse);
+			if (left is CiConstExpr)
+				return (bool) ((CiConstExpr) left).Value ? result.OnTrue : result.OnFalse;
 			return result;
 		}
 		return left;
