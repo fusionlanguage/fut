@@ -17,9 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-using Microsoft.CSharp;
 using System;
-using System.CodeDom;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -184,14 +182,6 @@ public class GenCs : SourceGenerator
 		foreach (CiField field in clazz.Fields)
 			Write(field);
 		CloseBlock();
-	}
-
-	void WriteConst(object value)
-	{
-		CodePrimitiveExpression expr = new CodePrimitiveExpression(value);
-		StringWriter sw = new StringWriter();
-		new CSharpCodeProvider().GenerateCodeFromExpression(expr, sw, null);
-		Write(sw.ToString());
 	}
 
 	void Write(CiConst def)

@@ -61,7 +61,7 @@ public partial class CiParser : CiLexer
 			CiEnumValue value = new CiEnumValue();
 			value.Documentation = ParseDoc();
 			value.Name = ParseId();
-			value.Parent = enu;
+			value.Type = enu;
 			values.Add(value);
 		} while (Eat(CiToken.Comma));
 		Expect(CiToken.RightBrace);
@@ -125,7 +125,7 @@ public partial class CiParser : CiLexer
 				throw new ParseException("Byte constant out of range");
 			return (byte) result;
 		}
-		if (type == CiStringType.Ptr) {
+		if (type == CiStringPtrType.Value) {
 			string result = this.CurrentString;
 			Expect(CiToken.StringConstant);
 			return result;
@@ -217,10 +217,17 @@ public partial class CiParser : CiLexer
 
 	CiExpr ParsePrimaryExpr()
 	{
-		if (See(CiToken.Increment) || See(CiToken.Decrement) || See(CiToken.Minus) || See(CiToken.Not) || See(CiToken.CondNot)) {
+		if (See(CiToken.Increment) || See(CiToken.Decrement) || See(CiToken.Minus) || See(CiToken.Not)) {
 			CiToken op = this.CurrentToken;
 			NextToken();
-			return new CiUnaryExpr { Op = op, Inner = ParsePrimaryExpr() };
+			CiExpr inner = ParsePrimaryExpr();
+			ExpectType(inner, CiIntType.Value);
+			return new CiUnaryExpr { Op = op, Inner = inner };
+		}
+		if (Eat(CiToken.CondNot)) {
+			CiExpr inner = ParsePrimaryExpr();
+			ExpectType(inner, CiBoolType.Value);
+			return new CiCondNotExpr { Inner = inner };
 		}
 		CiExpr result;
 		if (See(CiToken.IntConstant)) {
@@ -239,11 +246,9 @@ public partial class CiParser : CiLexer
 			else if (symbol is CiConst)
 				result = new CiConstExpr { Value = ((CiConst) symbol).Value };
 			else if (symbol is CiEnum) {
-				CiEnumAccess ea = new CiEnumAccess();
 				Expect(CiToken.Dot);
-				string name = ParseId();
-				ea.Value = ((CiEnum) symbol).Values.Single(v => v.Name == name);
-				return ea;
+				CiEnum enu = (CiEnum) symbol;
+				return new CiConstExpr { Value = enu.LookupMember(ParseId()) };
 			}
 			else if (symbol is CiFunction) {
 				CiFunctionCall call = new CiFunctionCall();
@@ -263,17 +268,28 @@ public partial class CiParser : CiLexer
 			throw new ParseException("Invalid expression");
 		for (;;) {
 			if (Eat(CiToken.Dot)) {
-				CiSymbol member = result.Type.LookupMember(ParseId());
+				string name = ParseId();
+				CiSymbol member = result.Type.LookupMember(name);
 				if (See(CiToken.LeftParenthesis)) {
 					CiMethodCall call = new CiMethodCall();
 					call.Obj = result;
 					// TODO
 					return ParseFunctionCall(call);
 				}
-				result = new CiFieldAccess {
-					Obj = result,
-					Field = (CiField) member
-				};
+				if (member is CiField) {
+					result = new CiFieldAccess {
+						Obj = result,
+						Field = (CiField) member
+					};
+				}
+				else if (member is CiProperty) {
+					result = new CiPropertyAccess {
+						Obj = result,
+						Property = (CiProperty) member
+					};
+				}
+				else
+					throw new ParseException("Member {0} is of incorrect type");
 			}
 			else if (Eat(CiToken.LeftBracket)) {
 				CiExpr index = ParseExpr();
@@ -327,7 +343,7 @@ public partial class CiParser : CiLexer
 			CiToken op = this.CurrentToken;
 			NextToken();
 			CiExpr right = ParseAddExpr();
-			left = new CiRelExpr { Left = left, Op = op, Right = right };
+			left = new CiBoolBinaryExpr { Left = left, Op = op, Right = right };
 		}
 		return left;
 	}
@@ -339,7 +355,7 @@ public partial class CiParser : CiLexer
 			ExpectType(left, CiBoolType.Value);
 			CiExpr right = ParseRelExpr();
 			ExpectType(right, CiBoolType.Value);
-			left = new CiBinaryExpr { Left = left, Op = CiToken.CondAnd, Right = right };
+			left = new CiBoolBinaryExpr { Left = left, Op = CiToken.CondAnd, Right = right };
 		}
 		return left;
 	}
@@ -351,7 +367,7 @@ public partial class CiParser : CiLexer
 			ExpectType(left, CiBoolType.Value);
 			CiExpr right = ParseCondAndExpr();
 			ExpectType(right, CiBoolType.Value);
-			left = new CiBinaryExpr { Left = left, Op = CiToken.CondOr, Right = right };
+			left = new CiBoolBinaryExpr { Left = left, Op = CiToken.CondOr, Right = right };
 		}
 		return left;
 	}
@@ -586,7 +602,7 @@ public partial class CiParser : CiLexer
 		globals.Add(CiBoolType.Value);
 		globals.Add(CiByteType.Value);
 		globals.Add(CiIntType.Value);
-		globals.Add(CiStringType.Ptr);
+		globals.Add(CiStringPtrType.Value);
 		globals.Add(new CiConst { Name = "true", Value = true });
 		globals.Add(new CiConst { Name = "false", Value = false });
 		globals.Add(new CiConst { Name = "null", Value = null });

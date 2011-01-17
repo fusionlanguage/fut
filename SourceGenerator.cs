@@ -100,17 +100,244 @@ public abstract class SourceGenerator
 		}
 	}
 
-	protected void Write(CiExpr expr)
+	protected virtual void WriteConst(object value)
+	{
+		if (value is bool)
+			Write((bool) value ? "true" : "false");
+		else if (value is byte)
+			Write((byte) value);
+		else if (value is int)
+			Write((int) value);
+		else if (value is string) {
+			Write('"');
+			foreach (char c in (string) value) {
+				switch (c) {
+				case '\t': Write("\\t"); break;
+				case '\r': Write("\\r"); break;
+				case '\n': Write("\\n"); break;
+				case '\\': Write("\\\\"); break;
+				case '\"': Write("\\\""); break;
+				default: Write(c); break;
+				}
+			}
+			Write('"');
+		}
+		else if (value is CiEnumValue) {
+			CiEnumValue ev = (CiEnumValue) value;
+			Write(ev.Type.Name);
+			Write('.');
+			Write(ev.Name);
+		}
+		else if (value == null)
+			Write("null");
+		// TODO
+//		else
+//			throw new ApplicationException(value.ToString());
+	}
+
+	int GetPriority(CiExpr expr)
+	{
+		if (expr is CiConstExpr
+		 || expr is CiVarAccess
+		 || expr is CiFieldAccess
+		 || expr is CiPropertyAccess
+		 || expr is CiArrayAccess
+		 || expr is CiFunctionCall
+		 || expr is CiMethodCall)
+			return 1;
+		if (expr is CiUnaryExpr
+		 || expr is CiCondNotExpr
+		 || expr is CiPostfixExpr)
+			return 2;
+		if (expr is CiBinaryExpr) {
+			switch (((CiBinaryExpr) expr).Op) {
+			case CiToken.Asterisk:
+			case CiToken.Slash:
+			case CiToken.Mod:
+				return 3;
+			case CiToken.Plus:
+			case CiToken.Minus:
+				return 4;
+			case CiToken.ShiftLeft:
+			case CiToken.ShiftRight:
+				return 5;
+			case CiToken.Less:
+			case CiToken.LessOrEqual:
+			case CiToken.Greater:
+			case CiToken.GreaterOrEqual:
+				return 6;
+			case CiToken.Equal:
+			case CiToken.NotEqual:
+				return 7;
+			case CiToken.And:
+				return 8;
+			case CiToken.Xor:
+				return 9;
+			case CiToken.Or:
+				return 10;
+			case CiToken.CondAnd:
+				return 11;
+			case CiToken.CondOr:
+				return 12;
+			default:
+				throw new ApplicationException();
+			}
+		}
+		if (expr is CiCondExpr)
+			return 13;
+		throw new ApplicationException();
+	}
+
+	protected void WriteChild(CiExpr parent, CiExpr child)
+	{
+		if (GetPriority(child) > GetPriority(parent)) {
+			Write('(');
+			Write(child);
+			Write(')');
+		}
+		else
+			Write(child);
+	}
+
+	protected virtual void Write(CiFieldAccess expr)
+	{
+		WriteChild(expr, expr.Obj);
+		Write('.');
+		Write(expr.Field.Name);
+	}
+
+	protected virtual void Write(CiPropertyAccess expr)
+	{
+		WriteChild(expr, expr.Obj);
+		Write('.');
+		Write(expr.Property.Name);
+		// TODO
+	}
+
+	void Write(CiArrayAccess expr)
+	{
+		WriteChild(expr, expr.Array);
+		Write('[');
+		Write(expr.Index);
+		Write(']');
+	}
+
+	void Write(CiFunctionCall expr)
+	{
+		Write(expr.Function.Name);
+		Write('(');
+		bool first = true;
+		foreach (CiExpr arg in expr.Arguments)
+		{
+			if (first)
+				first = false;
+			else
+				Write(", ");
+			Write(arg);
+		}
+		Write(')');
+	}
+
+	protected void Write(CiMethodCall expr)
 	{
 		// TODO
 	}
 
-	protected void Write(CiBlock block)
+	void Write(CiUnaryExpr expr)
 	{
-		OpenBlock();
-		foreach (ICiStatement stmt in block.Statements)
-			Write(stmt);
-		CloseBlock();
+		switch (expr.Op) {
+		case CiToken.Increment: Write("++"); break;
+		case CiToken.Decrement: Write("--"); break;
+		case CiToken.Minus: Write('-'); break;
+		case CiToken.Not: Write('~'); break;
+		default: throw new ApplicationException();
+		}
+		WriteChild(expr, expr.Inner);
+	}
+
+	void Write(CiCondNotExpr expr)
+	{
+		Write('!');
+		WriteChild(expr, expr.Inner);
+	}
+
+	void Write(CiPostfixExpr expr)
+	{
+		WriteChild(expr, expr.Inner);
+		switch (expr.Op) {
+		case CiToken.Increment: Write("++"); break;
+		case CiToken.Decrement: Write("--"); break;
+		default: throw new ApplicationException();
+		}
+	}
+
+	protected virtual void Write(CiBinaryExpr expr)
+	{
+		WriteChild(expr, expr.Left);
+		switch (expr.Op) {
+		case CiToken.Plus: Write(" + "); break;
+		case CiToken.Minus: Write(" - "); break;
+		case CiToken.Asterisk: Write(" * "); break;
+		case CiToken.Slash: Write(" / "); break;
+		case CiToken.Mod: Write(" % "); break;
+		case CiToken.ShiftLeft: Write(" << "); break;
+		case CiToken.ShiftRight: Write(" >> "); break;
+		case CiToken.Less: Write(" < "); break;
+		case CiToken.LessOrEqual: Write(" <= "); break;
+		case CiToken.Greater: Write(" > "); break;
+		case CiToken.GreaterOrEqual: Write(" >= "); break;
+		case CiToken.Equal: Write(" == "); break;
+		case CiToken.NotEqual: Write(" != "); break;
+		case CiToken.And: Write(" & "); break;
+		case CiToken.Or: Write(" | "); break;
+		case CiToken.Xor: Write(" ^ "); break;
+		case CiToken.CondAnd: Write(" && "); break;
+		case CiToken.CondOr: Write(" || "); break;
+		default:
+			throw new ApplicationException();
+		}
+		WriteChild(expr, expr.Right);
+	}
+
+	void Write(CiCondExpr expr)
+	{
+		WriteChild(expr, expr.Cond);
+		Write(" ? ");
+		WriteChild(expr, expr.OnTrue);
+		Write(" : ");
+		WriteChild(expr, expr.OnFalse);
+	}
+
+	protected void Write(CiExpr expr)
+	{
+		if (expr is CiConstExpr)
+			WriteConst(((CiConstExpr) expr).Value);
+		else if (expr is CiVarAccess)
+			Write(((CiVarAccess) expr).Var.Name);
+		else if (expr is CiFieldAccess)
+			Write((CiFieldAccess) expr);
+		else if (expr is CiPropertyAccess)
+			Write((CiPropertyAccess) expr);
+		else if (expr is CiArrayAccess)
+			Write((CiArrayAccess) expr);
+		else if (expr is CiFunctionCall) {
+			if (expr is CiMethodCall)
+				Write((CiMethodCall) expr);
+			else
+				Write((CiFunctionCall) expr);
+		}
+		else if (expr is CiUnaryExpr)
+			Write((CiUnaryExpr) expr);
+		else if (expr is CiCondNotExpr)
+			Write((CiCondNotExpr) expr);
+		else if (expr is CiPostfixExpr)
+			Write((CiPostfixExpr) expr);
+		else if (expr is CiBinaryExpr)
+			Write((CiBinaryExpr) expr);
+		else if (expr is CiCondExpr)
+			Write((CiCondExpr) expr);
+		else
+			throw new ApplicationException(expr.ToString());
 	}
 
 	protected void WriteChild(ICiStatement stmt)
@@ -126,6 +353,38 @@ public abstract class SourceGenerator
 	}
 
 	protected abstract void Write(CiVar stmt);
+
+	void Write(CiAssign assign)
+	{
+		Write(assign.Target);
+		switch (assign.Op) {
+		case CiToken.Assign: Write(" = "); break;
+		case CiToken.AddAssign: Write(" += "); break;
+		case CiToken.SubAssign: Write(" -= "); break;
+		case CiToken.MulAssign: Write(" *= "); break;
+		case CiToken.DivAssign: Write(" /= "); break;
+		case CiToken.ModAssign: Write(" %= "); break;
+		case CiToken.ShiftLeftAssign: Write(" <<= "); break;
+		case CiToken.ShiftRightAssign: Write(" >>= "); break;
+		case CiToken.AndAssign: Write(" &= "); break;
+		case CiToken.OrAssign: Write(" |= "); break;
+		case CiToken.XorAssign: Write(" ^= "); break;
+		default:
+			throw new ApplicationException();
+		}
+		if (assign.Source is CiExpr)
+			Write((CiExpr) assign.Source);
+		else if (assign.Source is CiAssign)
+			Write((CiAssign) assign.Source);
+	}
+
+	protected void Write(CiBlock block)
+	{
+		OpenBlock();
+		foreach (ICiStatement stmt in block.Statements)
+			Write(stmt);
+		CloseBlock();
+	}
 
 	void Write(CiDoWhile stmt)
 	{
@@ -145,9 +404,9 @@ public abstract class SourceGenerator
 			Write(";");
 		if (stmt.Cond != null)
 			Write(stmt.Cond);
+		Write(";");
 		if (stmt.Advance != null)
 			Write(stmt.Advance);
-		Write(";");
 		Write(")");
 		WriteChild(stmt.Body);
 	}
@@ -175,17 +434,50 @@ public abstract class SourceGenerator
 		}
 	}
 
+	void Write(CiSwitch stmt)
+	{
+		StartLine("switch (");
+		Write(stmt.Value);
+		Write(')');
+		OpenBlock();
+		foreach (CiCase caze in stmt.Cases) {
+			if (caze.Value != null) {
+				StartLine("case ");
+//				Write(caze.Value);
+			}
+			else
+				StartLine("default");
+			WriteLine(":");
+			indent++;
+			foreach (ICiStatement child in caze.Body)
+				Write(child);
+			indent--;
+		}
+		// TODO
+		CloseBlock();
+	}
+
 	void Write(CiWhile stmt)
 	{
 		StartLine("while (");
 		Write(stmt.Cond);
-		Write(")");
+		Write(')');
 		WriteChild(stmt.Body);
 	}
 
 	protected void Write(ICiStatement stmt)
 	{
-		if (stmt is CiBlock)
+		if (stmt is CiAssign) {
+			StartLine("");
+			Write((CiAssign) stmt);
+			WriteLine(";");
+		}
+		else if (stmt is CiExpr) {
+			StartLine("");
+			Write((CiExpr) stmt);
+			WriteLine(";");
+		}
+		else if (stmt is CiBlock)
 			Write((CiBlock) stmt);
 		else if (stmt is CiVar)
 			Write((CiVar) stmt);
@@ -201,6 +493,8 @@ public abstract class SourceGenerator
 			Write((CiIf) stmt);
 		else if (stmt is CiReturn)
 			Write((CiReturn) stmt);
+		else if (stmt is CiSwitch)
+			Write((CiSwitch) stmt);
 		else if (stmt is CiWhile)
 			Write((CiWhile) stmt);
 		// TODO

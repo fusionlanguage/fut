@@ -75,6 +75,7 @@ public class CiType : CiSymbol
 	{
 		throw new ParseException("{0} has no members", this.GetType());
 	}
+	public virtual bool IsAssignableFrom(CiType that) { return this == that; }
 }
 
 public class CiBoolType : CiType
@@ -96,26 +97,41 @@ public class CiIntType : CiType
 	private CiIntType() { }
 	public static readonly CiIntType Value = new CiIntType { Name = "int" };
 	public override Type DotNetType { get { return typeof(int); } }
+	public static readonly CiProperty LowByteProperty = new CiProperty { Name = "LowByte", Type = CiByteType.Value };
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
-		case "LowByte": return null; // TODO
+		case "LowByte": return LowByteProperty;
 		case "MulDiv": return null; // TODO
 		default: throw new ParseException("No member {0} in int", name);
 		}
+	}
+	public override bool IsAssignableFrom(CiType that)
+	{
+		return this == that || that == CiByteType.Value;
 	}
 }
 
 public class CiStringType : CiType
 {
-	public static readonly CiStringType Ptr = new CiStringType { Name = "string" };
 	public override Type DotNetType { get { return typeof(string); } }
+	public static readonly CiProperty LengthProperty = new CiProperty { Name = "Length", Type = CiIntType.Value };
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
-		case "Length": return null; // TODO
+		case "Length": return LengthProperty;
 		default: throw new ParseException("No member {0} in string", name);
 		}
+	}
+}
+
+public class CiStringPtrType : CiStringType
+{
+	private CiStringPtrType() { }
+	public static readonly CiStringPtrType Value = new CiStringPtrType { Name = "string" };
+	public override bool IsAssignableFrom(CiType that)
+	{
+		return that is CiStringType || that == CiType.Null;
 	}
 }
 
@@ -138,6 +154,10 @@ public abstract class CiClassType : CiType
 
 public class CiClassPtrType : CiClassType
 {
+	public override bool IsAssignableFrom(CiType that)
+	{
+		return that is CiClassType || that == CiType.Null;
+	}
 }
 
 public class CiClassStorageType : CiClassType
@@ -149,16 +169,20 @@ public abstract class CiArrayType : CiType
 	public CiType ElementType;
 	public override CiType BaseType { get { return this.ElementType.BaseType; } }
 	public override int ArrayLevel { get { return 1 + this.ElementType.ArrayLevel; } }
-}
-
-public class CiArrayPtrType : CiArrayType
-{
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
 		case "CopyTo": return null; // TODO
 		default: throw new ParseException("No member {0} in array", name);
 		}
+	}
+}
+
+public class CiArrayPtrType : CiArrayType
+{
+	public override bool IsAssignableFrom(CiType that)
+	{
+		return that is CiArrayType || that == CiType.Null;
 	}
 }
 
@@ -176,15 +200,27 @@ public class CiArrayStorageType : CiArrayType
 
 public class CiEnumValue : CiSymbol
 {
-	public CiEnum Parent;
+	public CiEnum Type;
 }
 
 public class CiEnum : CiType
 {
 	public CiEnumValue[] Values;
+	public override CiSymbol LookupMember(string name)
+	{
+		CiEnumValue value = this.Values.SingleOrDefault(v => v.Name == name);
+		if (value == null)
+			throw new ParseException("{0} not found in enum {1}", name, this.Name);
+		return value;
+	}
 }
 
 public class CiField : CiSymbol
+{
+	public CiType Type;
+}
+
+public class CiProperty : CiSymbol
 {
 	public CiType Type;
 }
@@ -233,7 +269,8 @@ public class CiConstExpr : CiExpr
 			if (this.Value is bool) return CiBoolType.Value;
 			if (this.Value is byte) return CiByteType.Value;
 			if (this.Value is int) return CiIntType.Value;
-			if (this.Value is string) return CiStringType.Ptr;
+			if (this.Value is string) return CiStringPtrType.Value;
+			if (this.Value is CiEnumValue) return ((CiEnumValue) this.Value).Type;
 			if (this.Value == null) return CiType.Null;
 			// TODO
 			throw new NotImplementedException();
@@ -251,17 +288,18 @@ public class CiVarAccess : CiLValue
 	public override CiType Type { get { return this.Var.Type; } }
 }
 
-public class CiEnumAccess : CiExpr
-{
-	public CiEnumValue Value;
-	public override CiType Type { get { return this.Value.Parent; } }
-}
-
 public class CiFieldAccess : CiLValue
 {
 	public CiExpr Obj;
 	public CiField Field;
 	public override CiType Type { get { return this.Field.Type; } }
+}
+
+public class CiPropertyAccess : CiExpr
+{
+	public CiExpr Obj;
+	public CiProperty Property;
+	public override CiType Type { get { return this.Property.Type; } }
 }
 
 public class CiArrayAccess : CiLValue
@@ -294,14 +332,20 @@ public class CiUnaryExpr : CiExpr
 {
 	public CiToken Op;
 	public CiExpr Inner;
-	public override CiType Type { get { return this.Inner.Type; } }
+	public override CiType Type { get { return CiIntType.Value; } }
+}
+
+public class CiCondNotExpr : CiExpr
+{
+	public CiExpr Inner;
+	public override CiType Type { get { return CiBoolType.Value; } }
 }
 
 public class CiPostfixExpr : CiExpr, ICiStatement
 {
 	public CiLValue Inner;
 	public CiToken Op;
-	public override CiType Type { get { return this.Inner.Type; } }
+	public override CiType Type { get { return CiIntType.Value; } }
 }
 
 public class CiBinaryExpr : CiExpr
@@ -309,17 +353,10 @@ public class CiBinaryExpr : CiExpr
 	public CiExpr Left;
 	public CiToken Op;
 	public CiExpr Right;
-	public override CiType Type
-	{
-		get
-		{
-			// TODO
-			return this.Left.Type;
-		}
-	}
+	public override CiType Type { get { return CiIntType.Value; } }
 }
 
-public class CiRelExpr : CiBinaryExpr
+public class CiBoolBinaryExpr : CiBinaryExpr
 {
 	public override CiType Type { get { return CiBoolType.Value; } }
 }
