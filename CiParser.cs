@@ -30,6 +30,7 @@ public partial class CiParser : CiLexer
 {
 	SymbolTable Symbols;
 	List<CiConst> ConstArrays;
+	CiFunction CurrentFunction;
 
 	public CiParser(TextReader reader) : base(reader)
 	{
@@ -586,8 +587,10 @@ public partial class CiParser : CiLexer
 		}
 		if (Eat(CiToken.Return)) {
 			CiReturn result = new CiReturn();
-			if (!See(CiToken.Semicolon))
+			if (this.CurrentFunction.ReturnType != CiType.Void) {
 				result.Value = ParseExpr();
+				ExpectType(result.Value, this.CurrentFunction.ReturnType);
+			}
 			Expect(CiToken.Semicolon);
 			return result;
 		}
@@ -647,6 +650,7 @@ public partial class CiParser : CiLexer
 			func.ReturnType = ParseType();
 		func.Name = ParseId();
 		this.Symbols.Add(func);
+		this.CurrentFunction = func;
 	
 		Expect(CiToken.LeftParenthesis);
 		OpenScope();
@@ -663,6 +667,7 @@ public partial class CiParser : CiLexer
 		func.Params = paramz.ToArray();
 		func.Body = ParseBlock();
 		CloseScope();
+		this.CurrentFunction = null;
 		return func;
 	}
 
@@ -678,6 +683,7 @@ public partial class CiParser : CiLexer
 		globals.Add(new CiConst { Name = "null", Value = null });
 		this.Symbols = globals;
 		this.ConstArrays = new List<CiConst>();
+		this.CurrentFunction = null;
 
 		Expect(CiToken.Namespace);
 		List<string> namespaceElements = new List<string>();
