@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Foxoft.Ci
@@ -32,11 +33,14 @@ public class CiTo
 		Console.WriteLine("-l cs    Translate to C#");
 		Console.WriteLine("-l java  Translate to Java");
 		Console.WriteLine("-o FILE  Write to the specified file (C#) or directory (Java)");
+		Console.WriteLine("-D NAME  Define conditional compilation symbol");
 		Console.WriteLine("--help   This help");
 	}
 
 	public static int Main(string[] args)
 	{
+		HashSet<string> preSymbols = new HashSet<string>();
+		preSymbols.Add("true");
 		string inputPath = null;
 		string lang = null;
 		string outputPath = null;
@@ -56,6 +60,12 @@ public class CiTo
 				case "-o":
 					outputPath = args[++i];
 					break;
+				case "-D":
+					string symbol = args[++i];
+					if (symbol == "true" || symbol == "false")
+						throw new ApplicationException(symbol + " is reserved");
+					preSymbols.Add(symbol);
+					break;
 				default:
 					throw new ApplicationException("Unknown option: " + arg);
 				}
@@ -71,6 +81,7 @@ public class CiTo
 			return 1;
 		}
 		CiParser parser = new CiParser(File.OpenText(inputPath));
+		parser.PreSymbols = preSymbols;
 		CiProgram program;
 		try {
 			program = parser.ParseProgram();

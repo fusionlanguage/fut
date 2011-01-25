@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -93,7 +94,12 @@ public enum CiToken
 	Return,
 	Switch,
 	Void,
-	While
+	While,
+	EndOfLine,
+	PreIf,
+	PreElIf,
+	PreElse,
+	PreEndIf
 }
 
 public class ParseException : ApplicationException
@@ -115,10 +121,15 @@ public class CiLexer
 	protected string CurrentString;
 	protected int CurrentInt;
 	protected StringBuilder CopyTo;
+	public HashSet<string> PreSymbols;
+	bool AtLineStart = true;
+	bool LineMode = false;
 
 	public CiLexer(TextReader reader)
 	{
 		this.Reader = reader;
+		this.PreSymbols = new HashSet<string>();
+		this.PreSymbols.Add("true");
 		NextToken();
 	}
 
@@ -193,12 +204,18 @@ public class CiLexer
 					this.IdReader = new StringReader(s);
 				return ReadChar();
 			}
-			if (c == '\n' && !this.IsExpandingMacro)
+			if (c == '\n' && !this.IsExpandingMacro) {
 				this.InputLineNo++;
+				this.AtLineStart = true;
+			}
 		}
 		if (c >= 0) {
 			if (this.CopyTo != null)
 				this.CopyTo.Append((char) c);
+			switch (c) {
+			case '\t': case '\r': case ' ': case '\n': break;
+			default: this.AtLineStart = false; break;
+			}
 			while (this.Reader.Peek() < 0 && OnStreamEnd());
 		}
 		return c;
@@ -241,17 +258,45 @@ public class CiLexer
 		}
 	}
 
-	CiToken ReadToken()
+	string ReadId(int c)
+	{
+		StringBuilder sb = new StringBuilder();
+		for (;;) {
+			sb.Append((char) c);
+			if (!IsLetter(PeekChar()))
+				break;
+			c = ReadChar();
+		}
+		return sb.ToString();
+	}
+
+	CiToken ReadPreToken()
 	{
 		for (;;) {
+			bool atLineStart = this.AtLineStart;
 			int c = ReadChar();
 			switch (c) {
 			case -1:
 				return CiToken.EndOfFile;
-			case '\t': case '\n': case '\r': case ' ':
+			case '\t': case '\r': case ' ':
 				continue;
-			case '#': if (EatChar('#')) return CiToken.PasteTokens;
-				break;
+			case '\n':
+				if (this.LineMode) return CiToken.EndOfLine;
+				continue;
+			case '#':
+				c = ReadChar();
+				if (c == '#') return CiToken.PasteTokens;
+				if (atLineStart && IsLetter(c)) {
+					string s = ReadId(c);
+					switch (s) {
+					case "if": return CiToken.PreIf;
+					case "elif": return CiToken.PreElIf;
+					case "else": return CiToken.PreElse;
+					case "endif": return CiToken.PreEndIf;
+					default: throw new ParseException("Unknown preprocessor directive #" + s);
+					}
+				}
+				throw new ParseException("Invalid character");
 			case ';': return CiToken.Semicolon;
 			case '.': return CiToken.Dot;
 			case ',': return CiToken.Comma;
@@ -281,6 +326,7 @@ public class CiLexer
 					}
 					while (c != '\n' && c >= 0)
 						c = ReadChar();
+					if (c == '\n' && this.LineMode) return CiToken.EndOfLine;
 					continue;
 				}
 				if (EatChar('=')) return CiToken.DivAssign;
@@ -383,14 +429,7 @@ public class CiLexer
 			case 'p': case 'q': case 'r': case 's': case 't':
 			case 'u': case 'v': case 'w': case 'x': case 'y':
 			case 'z': {
-				StringBuilder sb = new StringBuilder();
-				for (;;) {
-					sb.Append((char) c);
-					if (!IsLetter(PeekChar()))
-						break;
-					c = ReadChar();
-				}
-				string s = sb.ToString();
+				string s = ReadId(c);
 				switch (s) {
 				case "break": return CiToken.Break;
 				case "case": return CiToken.Case;
@@ -419,6 +458,188 @@ public class CiLexer
 				break;
 			}
 			throw new ParseException("Invalid character");
+		}
+	}
+
+	void NextPreToken()
+	{
+		this.CurrentToken = ReadPreToken();
+	}
+
+	bool EatPre(CiToken token)
+	{
+		if (See(token)) {
+			NextPreToken();
+			return true;
+		}
+		return false;
+	}
+
+	bool ParsePrePrimary()
+	{
+		if (EatPre(CiToken.CondNot))
+			return !ParsePrePrimary();
+		if (EatPre(CiToken.LeftParenthesis)) {
+			bool result = ParsePreOr();
+			Check(CiToken.RightParenthesis);
+			NextPreToken();
+			return result;
+		}
+		if (See(CiToken.Id)) {
+			bool result = this.PreSymbols.Contains(this.CurrentString);
+			NextPreToken();
+			return result;
+		}
+		throw new ParseException("Invalid preprocessor expression");
+	}
+
+	bool ParsePreAnd()
+	{
+		bool result = ParsePrePrimary();
+		while (EatPre(CiToken.CondAnd))
+			result &= ParsePrePrimary();
+		return result;
+	}
+
+	bool ParsePreOr()
+	{
+		bool result = ParsePreAnd();
+		while (EatPre(CiToken.CondOr))
+			result |= ParsePreAnd();
+		return result;
+	}
+
+	bool ParsePreExpr()
+	{
+		this.LineMode = true;
+		NextPreToken();
+		bool result = ParsePreOr();
+		Check(CiToken.EndOfLine);
+		this.LineMode = false;
+		return result;
+	}
+
+	void ExpectEndOfLine(string directive)
+	{
+		this.LineMode = true;
+		CiToken token = ReadPreToken();
+		if (token != CiToken.EndOfLine && token != CiToken.EndOfFile)
+			throw new ParseException("Unexpected characters after " + directive);
+		this.LineMode = false;
+	}
+
+	enum PreDirectiveClass
+	{
+		IfOrElIf,
+		Else
+	}
+
+	readonly Stack<PreDirectiveClass> PreStack = new Stack<PreDirectiveClass>();
+
+	void PopPreStack(string directive)
+	{
+		try {
+			PreDirectiveClass pdc = this.PreStack.Pop();
+			if (directive != "#endif" && pdc == PreDirectiveClass.Else)
+				throw new ParseException(directive + " after #else");
+		}
+		catch (InvalidOperationException) {
+			throw new ParseException(directive + " with no matching #if");
+		}
+	}
+
+	void SkipUntilPreMet()
+	{
+		for (;;) {
+			// we are in a conditional that wasn't met yet
+			switch (ReadPreToken()) {
+			case CiToken.EndOfFile:
+				throw new ParseException("Expected #endif, got end of file");
+			case CiToken.PreIf:
+				ParsePreExpr();
+				SkipUntilPreEndIf(false);
+				break;
+			case CiToken.PreElIf:
+				if (ParsePreExpr()) {
+					this.PreStack.Push(PreDirectiveClass.IfOrElIf);
+					return;
+				}
+				break;
+			case CiToken.PreElse:
+				ExpectEndOfLine("#else");
+				this.PreStack.Push(PreDirectiveClass.Else);
+				return;
+			case CiToken.PreEndIf:
+				ExpectEndOfLine("#endif");
+				return;
+			}
+		}
+	}
+
+	void SkipUntilPreEndIf(bool wasElse)
+	{
+		for (;;) {
+			// we are in a conditional that was met before
+			switch (ReadPreToken()) {
+			case CiToken.EndOfFile:
+				throw new ParseException("Expected #endif, got end of file");
+			case CiToken.PreIf:
+				ParsePreExpr();
+				SkipUntilPreEndIf(false);
+				break;
+			case CiToken.PreElIf:
+				if (wasElse)
+					throw new ParseException("#elif after #else");
+				ParsePreExpr();
+				break;
+			case CiToken.PreElse:
+				if (wasElse)
+					throw new ParseException("#else after #else");
+				ExpectEndOfLine("#else");
+				wasElse = true;
+				break;
+			case CiToken.PreEndIf:
+				ExpectEndOfLine("#endif");
+				return;
+			}
+		}
+	}
+
+	CiToken ReadToken()
+	{
+		for (;;) {
+			// we are in no conditionals or in all met
+			CiToken token = ReadPreToken();
+			switch (token) {
+			case CiToken.EndOfFile:
+				if (this.PreStack.Count != 0)
+					throw new ParseException("Expected #endif, got end of file");
+				return CiToken.EndOfFile;
+			case CiToken.PreIf:
+				if (ParsePreExpr()) {
+					this.PreStack.Push(PreDirectiveClass.IfOrElIf);
+					break;
+				}
+				else
+					SkipUntilPreMet();
+				break;
+			case CiToken.PreElIf:
+				PopPreStack("#elif");
+				ParsePreExpr();
+				SkipUntilPreEndIf(false);
+				break;
+			case CiToken.PreElse:
+				PopPreStack("#else");
+				ExpectEndOfLine("#else");
+				SkipUntilPreEndIf(true);
+				break;
+			case CiToken.PreEndIf:
+				PopPreStack("#endif");
+				ExpectEndOfLine("#endif");
+				break;
+			default:
+				return token;
+			}
 		}
 	}
 
