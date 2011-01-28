@@ -90,6 +90,13 @@ public class CiByteType : CiType
 	private CiByteType() { }
 	public static readonly CiByteType Value = new CiByteType { Name = "byte" };
 	public override Type DotNetType { get { return typeof(byte); } }
+	public override CiSymbol LookupMember(string name)
+	{
+		switch (name) {
+		case "SByte": return CiIntType.SByteProperty;
+		default: throw new ParseException("No member {0} in byte", name);
+		}
+	}
 }
 
 public class CiIntType : CiType
@@ -98,6 +105,8 @@ public class CiIntType : CiType
 	public static readonly CiIntType Value = new CiIntType { Name = "int" };
 	public override Type DotNetType { get { return typeof(int); } }
 	public static readonly CiProperty LowByteProperty = new CiProperty { Name = "LowByte", Type = CiByteType.Value };
+	// SByte defined here and not in CiByteType to avoid circular dependency between static initializers of CiByteType and CiIntType
+	public static readonly CiProperty SByteProperty = new CiProperty { Name = "SByte", Type = CiIntType.Value };
 	public static readonly CiFunction MulDivMethod = new CiFunction {
 		Name = "MulDiv",
 		ReturnType = CiIntType.Value,

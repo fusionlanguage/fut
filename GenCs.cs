@@ -209,14 +209,21 @@ public class GenCs : SourceGenerator
 
 	protected override int GetPriority(CiExpr expr)
 	{
-		if (expr is CiPropertyAccess && ((CiPropertyAccess) expr).Property == CiIntType.LowByteProperty)
+		if (expr is CiPropertyAccess) {
+			CiProperty prop = ((CiPropertyAccess) expr).Property;
+			if (prop == CiIntType.SByteProperty || prop == CiIntType.LowByteProperty)
 			return 2;
+		}
 		return base.GetPriority(expr);
 	}
 
 	protected override void Write(CiPropertyAccess expr)
 	{
-		if (expr.Property == CiIntType.LowByteProperty) {
+		if (expr.Property == CiIntType.SByteProperty) {
+			Write("(sbyte) ");
+			WriteChild(expr, expr.Obj);
+		}
+		else if (expr.Property == CiIntType.LowByteProperty) {
 			Write("(byte) ");
 			WriteChild(expr, expr.Obj);
 		}
