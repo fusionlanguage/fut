@@ -133,6 +133,13 @@ public class CiStringType : CiType
 {
 	public override Type DotNetType { get { return typeof(string); } }
 	public static readonly CiProperty LengthProperty = new CiProperty { Name = "Length", Type = CiIntType.Value };
+	public static readonly CiFunction CharAtMethod = new CiFunction {
+		Name = "CharAt",
+		ReturnType = CiIntType.Value,
+		Params = new CiParam[] {
+			new CiParam { Type = CiIntType.Value, Name = "index" }
+		}
+	};
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
@@ -187,17 +194,32 @@ public abstract class CiArrayType : CiType
 	public CiType ElementType;
 	public override CiType BaseType { get { return this.ElementType.BaseType; } }
 	public override int ArrayLevel { get { return 1 + this.ElementType.ArrayLevel; } }
+	public static readonly CiFunction CopyToMethod = new CiFunction {
+		Name = "CopyTo",
+		ReturnType = CiType.Void,
+		Params = new CiParam[] {
+			new CiParam { Type = CiIntType.Value, Name = "sourceIndex" },
+			new CiParam { Type = CiArrayPtrType.ByteArray, Name = "destinationArray" },
+			new CiParam { Type = CiIntType.Value, Name = "destinationIndex" },
+			new CiParam { Type = CiIntType.Value, Name = "length" }
+		}
+	};
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
-		case "CopyTo": return null; // TODO
-		default: throw new ParseException("No member {0} in array", name);
+		case "CopyTo":
+			if (this.ElementType == CiByteType.Value)
+				return CopyToMethod;
+			throw new ParseException("CopyTo available only for byte arrays");
+		default:
+			throw new ParseException("No member {0} in array", name);
 		}
 	}
 }
 
 public class CiArrayPtrType : CiArrayType
 {
+	public static readonly CiArrayPtrType ByteArray = new CiArrayPtrType { ElementType = CiByteType.Value };
 	public override bool IsAssignableFrom(CiType that)
 	{
 		// FIXME
@@ -218,6 +240,7 @@ public class CiArrayStorageType : CiArrayType
 	{
 		switch (name) {
 		case "Clear": return ClearMethod;
+		case "Length": return new CiConst { Value = this.Length };
 		default: return base.LookupMember(name);
 		}
 	}

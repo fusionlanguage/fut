@@ -141,33 +141,35 @@ public class GenCs : SourceGenerator
 
 	void Write(CiType type)
 	{
-		if (type is CiClassStorageType || type is CiArrayStorageType)
-			Write("readonly ");
 		WriteBaseType(type.BaseType);
 		for (int i = 0; i < type.ArrayLevel; i++)
 			Write("[]");
 		Write(' ');
 	}
 
-	void WriteInit(CiType type)
+	bool WriteInit(CiType type)
 	{
 		CiClassStorageType classType = type as CiClassStorageType;
 		if (classType != null) {
 			Write(" = new {0}()", classType.Class.Name);
-			return;
+			return true;
 		}
 		CiArrayStorageType arrayType = type as CiArrayStorageType;
 		if (arrayType != null) {
 			Write(" = new ");
 			WriteBaseType(arrayType.BaseType);
 			WriteInitializer(arrayType);
+			return true;
 		}
+		return false;
 	}
 
 	void Write(CiField field)
 	{
 		Write(field.Documentation);
 		StartLine(field.IsPublic ? "public " : "internal ");
+		if (field.Type is CiClassStorageType || field.Type is CiArrayStorageType)
+			Write("readonly ");
 		Write(field.Type);
 		Write(field.Name);
 		WriteInit(field.Type);
@@ -227,6 +229,10 @@ public class GenCs : SourceGenerator
 			Write("(byte) ");
 			WriteChild(expr, expr.Obj);
 		}
+		else if (expr.Property == CiStringType.LengthProperty) {
+			WriteChild(expr, expr.Obj);
+			Write(".Length");
+		}
 		// TODO
 		else
 			throw new ApplicationException(expr.Property.Name);
@@ -234,7 +240,35 @@ public class GenCs : SourceGenerator
 
 	protected override void Write(CiMethodCall expr)
 	{
-		if (expr.Function == CiArrayStorageType.ClearMethod) {
+		if (expr.Function == CiIntType.MulDivMethod) {
+			Write("(int) ((long) (");
+			Write(expr.Obj);
+			Write(") * (");
+			Write(expr.Arguments[0]);
+			Write(") / (");
+			Write(expr.Arguments[1]);
+			Write("))");
+		}
+		else if (expr.Function == CiStringType.CharAtMethod) {
+			Write(expr.Obj);
+			Write('[');
+			Write(expr.Arguments[0]);
+			Write(']');
+		}
+		else if (expr.Function == CiArrayType.CopyToMethod) {
+			Write("System.Array.Copy(");
+			Write(expr.Obj);
+			Write(", ");
+			Write(expr.Arguments[0]);
+			Write(", ");
+			Write(expr.Arguments[1]);
+			Write(", ");
+			Write(expr.Arguments[2]);
+			Write(", ");
+			Write(expr.Arguments[3]);
+			Write(')');
+		}
+		else if (expr.Function == CiArrayStorageType.ClearMethod) {
 			Write("Array_Clear(");
 			Write(expr.Obj);
 			Write(')');
@@ -248,7 +282,7 @@ public class GenCs : SourceGenerator
 	{
 		Write(stmt.Type);
 		Write(stmt.Name);
-		if (stmt.InitialValue != null) {
+		if (!WriteInit(stmt.Type) && stmt.InitialValue != null) {
 			Write(" = ");
 			Write(stmt.InitialValue);
 		}
@@ -269,7 +303,7 @@ public class GenCs : SourceGenerator
 	{
 		WriteLine();
 		Write(func.Documentation);
-		StartLine(func.IsPublic ? "public static " : "static ");
+		StartLine("static ");
 		Write(func.ReturnType);
 		Write(func.Name);
 		Write("(");

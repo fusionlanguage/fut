@@ -229,6 +229,23 @@ public partial class CiParser : CiLexer
 			throw new ParseException("Incompatible types");
 	}
 
+	static int GetConstInt(CiExpr expr)
+	{
+		object o = ((CiConstExpr) expr).Value;
+		if (o is int)
+			return (int) o;
+		if (o is byte)
+			return (byte) o;
+		throw new ApplicationException();
+	}
+
+	static CiConstExpr NewConstInt(int value)
+	{
+		return new CiConstExpr {
+			Value = value >= 0 && value <= 255 ? (byte) value : (object) value
+		};
+	}
+
 	CiExpr ParsePrimaryExpr()
 	{
 		if (See(CiToken.Increment) || See(CiToken.Decrement) || See(CiToken.Minus) || See(CiToken.Not)) {
@@ -245,9 +262,12 @@ public partial class CiParser : CiLexer
 		}
 		CiExpr result;
 		if (See(CiToken.IntConstant)) {
-			int value = this.CurrentInt;
+			result = NewConstInt(this.CurrentInt);
 			NextToken();
-			result = new CiConstExpr { Value = value };
+		}
+		else if (See(CiToken.StringConstant)) {
+			result = new CiConstExpr { Value = this.CurrentString };
+			NextToken();
 		}
 		else if (Eat(CiToken.LeftParenthesis)) {
 			result = ParseExpr();
@@ -307,15 +327,35 @@ public partial class CiParser : CiLexer
 						Property = (CiProperty) member
 					};
 				}
+				else if (member is CiConst) {
+					result = new CiConstExpr { Value = ((CiConst) member).Value };
+				}
 				else
-					throw new ParseException("Member {0} is of incorrect type");
+					throw new ParseException("Member {0} is of incorrect type", name);
 			}
 			else if (Eat(CiToken.LeftBracket)) {
-				// TODO: type check, string
 				CiExpr index = ParseExpr();
 				ExpectType(index, CiIntType.Value);
 				Expect(CiToken.RightBracket);
-				result = new CiArrayAccess { Array = result, Index = index };
+				if (result.Type is CiStringType) {
+					if (result is CiConstExpr && index is CiConstExpr) {
+						string s = (string) ((CiConstExpr) result).Value;
+						int i = GetConstInt(index);
+						result = NewConstInt(s[i]);
+					}
+					else {
+						result = new CiMethodCall {
+							Function = CiStringType.CharAtMethod,
+							Obj = result,
+							Arguments = new CiExpr[1] { index }
+						};
+					}
+				}
+				else {
+					if (!(result.Type is CiArrayType))
+						throw new ParseException("Indexed object is neither array or string");
+					result = new CiArrayAccess { Array = result, Index = index };
+				}
 			}
 			else if (See(CiToken.Increment) || See(CiToken.Decrement)) {
 				ExpectType(result, CiIntType.Value);
@@ -342,8 +382,8 @@ public partial class CiParser : CiLexer
 			CiExpr right = ParsePrimaryExpr();
 			ExpectType(right, CiIntType.Value);
 			if (left is CiConstExpr && right is CiConstExpr) {
-				int a = (int) ((CiConstExpr) left).Value;
-				int b = (int) ((CiConstExpr) right).Value;
+				int a = GetConstInt(left);
+				int b = GetConstInt(right);
 				switch (op) {
 				case CiToken.Asterisk: a *= b; break;
 				case CiToken.Slash: a /= b; break;
@@ -370,8 +410,8 @@ public partial class CiParser : CiLexer
 			CiExpr right = ParseMulExpr();
 			ExpectType(right, CiIntType.Value);
 			if (left is CiConstExpr && right is CiConstExpr) {
-				int a = (int) ((CiConstExpr) left).Value;
-				int b = (int) ((CiConstExpr) right).Value;
+				int a = GetConstInt(left);
+				int b = GetConstInt(right);
 				switch (op) {
 				case CiToken.Plus: a += b; break;
 				case CiToken.Minus: a -= b; break;

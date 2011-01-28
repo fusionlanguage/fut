@@ -119,8 +119,6 @@ public class GenJava : SourceGenerator
 
 	void Write(CiType type)
 	{
-		if (type is CiClassStorageType || type is CiArrayStorageType)
-			Write("final ");
 		WriteBaseType(type.BaseType);
 		for (int i = 0; i < type.ArrayLevel; i++)
 			Write("[]");
@@ -146,6 +144,8 @@ public class GenJava : SourceGenerator
 	{
 		Write(field.Documentation);
 		StartLine(field.IsPublic ? "public " : "");
+		if (field.Type is CiClassStorageType || field.Type is CiArrayStorageType)
+			Write("final ");
 		Write(field.Type);
 		Write(field.Name);
 		WriteInit(field.Type);
