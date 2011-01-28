@@ -85,9 +85,13 @@ public class CiTo
 		CiProgram program;
 		try {
 			program = parser.ParseProgram();
-		} catch (Exception) {
-			Console.Error.WriteLine("at line {0}", parser.InputLineNo);
-			throw;
+		} catch (Exception ex) {
+			Console.Error.WriteLine("{0}({1}): ERROR: {2}", inputPath, parser.InputLineNo, ex.Message);
+			parser.PrintMacroStack();
+			if (parser.CurrentFunction != null)
+				Console.Error.WriteLine("   in function {0}", parser.CurrentFunction.Name);
+			return 1;
+//			throw;
 		}
 		SourceGenerator gen;
 		switch (lang) {

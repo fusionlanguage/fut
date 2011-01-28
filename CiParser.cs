@@ -30,7 +30,7 @@ public partial class CiParser : CiLexer
 {
 	SymbolTable Symbols;
 	List<CiConst> ConstArrays;
-	CiFunction CurrentFunction;
+	public CiFunction CurrentFunction;
 
 	public CiParser(TextReader reader) : base(reader)
 	{

@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -34,6 +35,7 @@ public class CiMacro : CiSymbol
 
 public class MacroExpansion
 {
+	public string FriendlyName;
 	public Dictionary<string, string> Args;
 	public TextReader ParentReader;
 	public string LookupArg(string name)
@@ -120,9 +122,16 @@ public partial class CiParser : CiLexer
 
 	readonly Stack<MacroExpansion> MacroStack = new Stack<MacroExpansion>();
 
-	void BeginExpand(string content, Dictionary<string, string> args)
+	public void PrintMacroStack()
+	{
+		foreach (MacroExpansion me in this.MacroStack)
+			Console.Error.WriteLine("   in {0}", me.FriendlyName);
+	}
+
+	void BeginExpand(string friendlyName, string content, Dictionary<string, string> args)
 	{
 		this.MacroStack.Push(new MacroExpansion {
+			FriendlyName = friendlyName,
 			Args = args,
 			ParentReader = SetReader(new StringReader(content))
 		});
@@ -157,7 +166,7 @@ public partial class CiParser : CiLexer
 			NextToken();
 			Check(CiToken.Semicolon);
 		}
-		BeginExpand(macro.Body, args);
+		BeginExpand("macro " + macro.Name, macro.Body, args);
 		NextToken();
 	}
 
@@ -174,7 +183,7 @@ public partial class CiParser : CiLexer
 		if (this.MacroStack.Count > 0) {
 			string value = this.MacroStack.Peek().LookupArg(name);
 			if (value != null) {
-				BeginExpand(value, null);
+				BeginExpand("macro argument " + name, value, null);
 				return true;
 			}
 		}
