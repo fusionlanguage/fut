@@ -106,7 +106,6 @@ public partial class CiParser : CiLexer
 	{
 		int level = 0;
 		for (;;) {
-			NextToken();
 			if (See(CiToken.EndOfFile))
 				throw new ParseException("Macro argument not terminated");
 			if (See(CiToken.LeftParenthesis))
@@ -117,6 +116,7 @@ public partial class CiParser : CiLexer
 			}
 			else if (level == 0 && See(CiToken.Comma))
 				break;
+			NextToken();
 		}
 	}
 
