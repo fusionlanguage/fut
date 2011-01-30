@@ -335,7 +335,7 @@ public class GenCs : SourceGenerator
 		StartLine("public partial class ASAP");
 		OpenBlock();
 		foreach (CiConst konst in prog.ConstArrays) {
-			StartLine("static ");
+			StartLine("static readonly ");
 			Write(konst.Type);
 			Write(konst.GlobalName);
 			Write(" = ");
