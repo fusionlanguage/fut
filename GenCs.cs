@@ -255,6 +255,14 @@ public class GenCs : SourceGenerator
 			Write(expr.Arguments[0]);
 			Write(']');
 		}
+		else if (expr.Function == CiStringType.SubstringMethod) {
+			Write(expr.Obj);
+			Write(".Substring(");
+			Write(expr.Arguments[0]);
+			Write(", ");
+			Write(expr.Arguments[1]);
+			Write(')');
+		}
 		else if (expr.Function == CiArrayType.CopyToMethod) {
 			Write("System.Array.Copy(");
 			Write(expr.Obj);

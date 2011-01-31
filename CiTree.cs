@@ -129,7 +129,7 @@ public class CiIntType : CiType
 	}
 }
 
-public class CiStringType : CiType
+public abstract class CiStringType : CiType
 {
 	public override Type DotNetType { get { return typeof(string); } }
 	public static readonly CiProperty LengthProperty = new CiProperty { Name = "Length", Type = CiIntType.Value };
@@ -140,10 +140,20 @@ public class CiStringType : CiType
 			new CiParam { Type = CiIntType.Value, Name = "index" }
 		}
 	};
+	public static readonly CiFunction SubstringMethod = new CiFunction {
+		Name = "Substring",
+		ReturnType = CiStringPtrType.Value,
+		Params = new CiParam[] {
+			new CiParam { Type = CiIntType.Value, Name = "startIndex" },
+			new CiParam { Type = CiIntType.Value, Name = "length" }
+		}
+	};
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
 		case "Length": return LengthProperty;
+		case "Substring": return SubstringMethod;
+		// CharAt is available only via bracket indexing
 		default: throw new ParseException("No member {0} in string", name);
 		}
 	}
@@ -212,7 +222,7 @@ public abstract class CiArrayType : CiType
 		Name = "ToString",
 		ReturnType = CiStringPtrType.Value,
 		Params = new CiParam[] {
-			new CiParam { Type = CiIntType.Value, Name = "index" },
+			new CiParam { Type = CiIntType.Value, Name = "startIndex" },
 			new CiParam { Type = CiIntType.Value, Name = "length" }
 		}
 	};
