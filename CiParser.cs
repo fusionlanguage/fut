@@ -20,6 +20,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -219,6 +220,14 @@ public partial class CiParser : CiLexer
 		throw new ApplicationException();
 	}
 
+	static string GetConstString(CiExpr expr)
+	{
+		object o = ((CiConstExpr) expr).Value;
+		if (o is string || o is int || o is byte)
+			return Convert.ToString(o, CultureInfo.InvariantCulture);
+		throw new ParseException("Cannot convert {0} to string", expr.Type);
+	}
+
 	static CiConstExpr NewConstInt(int value)
 	{
 		return new CiConstExpr {
@@ -384,24 +393,33 @@ public partial class CiParser : CiLexer
 	{
 		CiExpr left = ParseMulExpr();
 		while (See(CiToken.Plus) || See(CiToken.Minus) || See(CiToken.Or) || See(CiToken.Xor)) {
-			ExpectType(left, CiIntType.Value);
 			CiToken op = this.CurrentToken;
 			NextToken();
 			CiExpr right = ParseMulExpr();
-			ExpectType(right, CiIntType.Value);
-			if (left is CiConstExpr && right is CiConstExpr) {
-				int a = GetConstInt(left);
-				int b = GetConstInt(right);
-				switch (op) {
-				case CiToken.Plus: a += b; break;
-				case CiToken.Minus: a -= b; break;
-				case CiToken.Or: a |= b; break;
-				case CiToken.Xor: a ^= b; break;
-				}
-				left = new CiConstExpr { Value = a };
+			if (op == CiToken.Plus && (left.Type is CiStringType || right.Type is CiStringType)) {
+				if (!(left is CiConstExpr && right is CiConstExpr))
+					throw new ParseException("String concatenation allowed only for constants. Consider using +=");
+				string a = GetConstString(left);
+				string b = GetConstString(right);
+				left = new CiConstExpr { Value = a + b };
 			}
-			else
-				left = new CiBinaryExpr { Left = left, Op = op, Right = right };
+			else {
+				ExpectType(left, CiIntType.Value);
+				ExpectType(right, CiIntType.Value);
+				if (left is CiConstExpr && right is CiConstExpr) {
+					int a = GetConstInt(left);
+					int b = GetConstInt(right);
+					switch (op) {
+					case CiToken.Plus: a += b; break;
+					case CiToken.Minus: a -= b; break;
+					case CiToken.Or: a |= b; break;
+					case CiToken.Xor: a ^= b; break;
+					}
+					left = new CiConstExpr { Value = a };
+				}
+				else
+					left = new CiBinaryExpr { Left = left, Op = op, Right = right };
+			}
 		}
 		return left;
 	}
