@@ -75,21 +75,18 @@ public partial class CiParser : CiLexer
 	CiType ParseType(string baseName)
 	{
 		if (Eat(CiToken.LeftBracket)) {
-			int len = this.CurrentInt;
-			if (Eat(CiToken.IntConstant)) {
-				Expect(CiToken.RightBracket);
-				return new CiArrayStorageType {
-					Length = len,
-					ElementType = ParseType(baseName)
-				};
-			}
+			if (Eat(CiToken.RightBracket))
+				return new CiArrayPtrType { ElementType = ParseType(baseName) };
+			int len = (int) ParseConstExpr(CiIntType.Value);
 			Expect(CiToken.RightBracket);
-			return new CiArrayPtrType { ElementType = ParseType(baseName) };
+			return new CiArrayStorageType {
+				Length = len,
+				ElementType = ParseType(baseName)
+			};
 		}
 		if (Eat(CiToken.LeftParenthesis)) {
 			if (baseName == "string") {
-				int len = this.CurrentInt;
-				Expect(CiToken.IntConstant);
+				int len = (int) ParseConstExpr(CiIntType.Value);
 				Expect(CiToken.RightParenthesis);
 				return new CiStringStorageType { Length = len };
 			}
