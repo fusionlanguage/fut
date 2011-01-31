@@ -115,23 +115,6 @@ public partial class CiParser : CiLexer
 
 	object ParseConstInitializer(CiType type)
 	{
-		if (type == CiIntType.Value) {
-			int result = this.CurrentInt;
-			Expect(CiToken.IntConstant);
-			return result;
-		}
-		if (type == CiByteType.Value) {
-			int result = this.CurrentInt;
-			Expect(CiToken.IntConstant);
-			if (result < 0 || result > 255)
-				throw new ParseException("Byte constant out of range");
-			return (byte) result;
-		}
-		if (type == CiStringPtrType.Value) {
-			string result = this.CurrentString;
-			Expect(CiToken.StringConstant);
-			return result;
-		}
 		if (type is CiArrayType) {
 			CiType elementType = ((CiArrayType) type).ElementType;
 			if (Eat(CiToken.LeftBrace)) {
@@ -151,7 +134,7 @@ public partial class CiParser : CiLexer
 			}
 			return ParseConstInitializer(elementType);
 		}
-		throw new ParseException("Invalid const type");
+		return ParseConstExpr(type);
 	}
 
 	CiConst ParseConst()
@@ -487,6 +470,8 @@ public partial class CiParser : CiLexer
 		if (expr == null)
 			throw new ParseException("Expression is not constant");
 		ExpectType(expr, type);
+		if (type == CiIntType.Value && expr.Value is byte)
+			return (int) (byte) expr.Value;
 		return expr.Value;
 	}
 
