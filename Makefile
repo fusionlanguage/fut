@@ -1,5 +1,5 @@
 run: ../../a8/asap/git/asap.ci cito.exe
-	./cito.exe -l cs $< | dos2unix >../../a8/asap/git/csharp/asapci.cs
+	./cito.exe -I ../../a8/asap/git/players -l cs $< | dos2unix >../../a8/asap/git/csharp/asapci.cs
 	$(MAKE) -C ../../a8/asap/git/csharp
 	#./cito.exe -l java asap.ci | dos2unix >asapci.java
 

@@ -321,6 +321,12 @@ public class CiVar : CiSymbol, ICiStatement
 	public CiExpr InitialValue;
 }
 
+public class CiBinaryResource : CiSymbol
+{
+	public byte[] Content;
+	public CiArrayStorageType Type;
+}
+
 public class CiParam : CiVar
 {
 }
@@ -457,6 +463,12 @@ public class CiCondExpr : CiExpr
 	}
 }
 
+public class CiBinaryResourceExpr : CiExpr
+{
+	public CiBinaryResource Resource;
+	public override CiType Type { get { return this.Resource.Type; } }
+}
+
 public class CiAssign : CiMaybeAssign, ICiStatement
 {
 	public CiLValue Target;
@@ -535,6 +547,7 @@ public class CiProgram
 	public string[] NamespaceElements;
 	public SymbolTable Globals;
 	public CiConst[] ConstArrays;
+	public CiBinaryResource[] BinaryResources;
 }
 
 }

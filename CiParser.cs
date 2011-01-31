@@ -32,9 +32,24 @@ public partial class CiParser : CiLexer
 	SymbolTable Symbols;
 	List<CiConst> ConstArrays;
 	public CiFunction CurrentFunction;
+	public IEnumerable<string> SearchDirs;
+	SortedDictionary<string, CiBinaryResource> BinaryResources;
 
 	public CiParser(TextReader reader) : base(reader)
 	{
+		this.SearchDirs = new string[0];
+	}
+
+	string FindFile(string name)
+	{
+		foreach (string dir in this.SearchDirs) {
+			string full = Path.Combine(dir, name);
+			if (File.Exists(full))
+				return full;
+		}
+		if (File.Exists(name))
+			return name;
+		throw new ParseException("File {0} not found", name);
 	}
 
 	string ParseId()
@@ -182,6 +197,22 @@ public partial class CiParser : CiLexer
 		return clazz;
 	}
 
+	CiBinaryResourceExpr ParseBinaryResource()
+	{
+		Expect(CiToken.LeftParenthesis);
+		string name = (string) ParseConstExpr(CiStringPtrType.Value);
+		Expect(CiToken.RightParenthesis);
+		CiBinaryResource resource;
+		if (!this.BinaryResources.TryGetValue(name, out resource)) {
+			resource = new CiBinaryResource();
+			resource.Name = name;
+			resource.Content = File.ReadAllBytes(FindFile(name));
+			resource.Type = new CiArrayStorageType { ElementType = CiByteType.Value, Length = resource.Content.Length };
+			this.BinaryResources.Add(name, resource);
+		}
+		return new CiBinaryResourceExpr { Resource = resource };
+	}
+
 	CiFunctionCall ParseFunctionCall(CiFunctionCall call)
 	{
 		Expect(CiToken.LeftParenthesis);
@@ -263,7 +294,10 @@ public partial class CiParser : CiLexer
 			Expect(CiToken.RightParenthesis);
 		}
 		else if (See(CiToken.Id)) {
-			CiSymbol symbol = this.Symbols.Lookup(ParseId());
+			string name = ParseId();
+			if (name == "BinaryResource")
+				return ParseBinaryResource();
+			CiSymbol symbol = this.Symbols.Lookup(name);
 			if (symbol is CiVar)
 				result = new CiVarAccess { Var = (CiVar) symbol };
 			else if (symbol is CiConst) {
@@ -724,6 +758,7 @@ public partial class CiParser : CiLexer
 		this.Symbols = globals;
 		this.ConstArrays = new List<CiConst>();
 		this.CurrentFunction = null;
+		this.BinaryResources = new SortedDictionary<string, CiBinaryResource>();
 
 		Expect(CiToken.Namespace);
 		List<string> namespaceElements = new List<string>();
@@ -755,7 +790,8 @@ public partial class CiParser : CiLexer
 		return new CiProgram {
 			NamespaceElements = namespaceElements.ToArray(),
 			Globals = globals,
-			ConstArrays = this.ConstArrays.ToArray()
+			ConstArrays = this.ConstArrays.ToArray(),
+			BinaryResources = this.BinaryResources.Values.ToArray()
 		};
 	}
 }

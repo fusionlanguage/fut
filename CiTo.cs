@@ -34,6 +34,7 @@ public class CiTo
 		Console.WriteLine("-l java  Translate to Java");
 		Console.WriteLine("-o FILE  Write to the specified file (C#) or directory (Java)");
 		Console.WriteLine("-D NAME  Define conditional compilation symbol");
+		Console.WriteLine("-I DIR   Add directory for BinaryResource");
 		Console.WriteLine("--help   This help");
 	}
 
@@ -41,6 +42,7 @@ public class CiTo
 	{
 		HashSet<string> preSymbols = new HashSet<string>();
 		preSymbols.Add("true");
+		List<string> searchDirs = new List<string>();
 		string inputPath = null;
 		string lang = null;
 		string outputPath = null;
@@ -66,6 +68,9 @@ public class CiTo
 						throw new ApplicationException(symbol + " is reserved");
 					preSymbols.Add(symbol);
 					break;
+				case "-I":
+					searchDirs.Add(args[++i]);
+					break;
 				default:
 					throw new ApplicationException("Unknown option: " + arg);
 				}
@@ -82,6 +87,7 @@ public class CiTo
 		}
 		CiParser parser = new CiParser(File.OpenText(inputPath));
 		parser.PreSymbols = preSymbols;
+		parser.SearchDirs = searchDirs;
 		CiProgram program;
 		try {
 			program = parser.ParseProgram();
@@ -90,8 +96,8 @@ public class CiTo
 			parser.PrintMacroStack();
 			if (parser.CurrentFunction != null)
 				Console.Error.WriteLine("   in function {0}", parser.CurrentFunction.Name);
-			return 1;
-//			throw;
+//			return 1;
+			throw;
 		}
 		SourceGenerator gen;
 		switch (lang) {

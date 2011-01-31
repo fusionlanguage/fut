@@ -167,7 +167,7 @@ public class CiLexer
 		return this.Reader.Peek();
 	}
 
-	static bool IsLetter(int c)
+	public static bool IsLetter(int c)
 	{
 		if (c >= 'a' && c <= 'z') return true;
 		if (c >= 'A' && c <= 'Z') return true;

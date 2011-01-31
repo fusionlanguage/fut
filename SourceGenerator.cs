@@ -129,14 +129,18 @@ public abstract class SourceGenerator
 			Write(ev.Name);
 		}
 		else if (value is Array) {
+			Array array = (Array) value;
 			Write("{ ");
-			bool first = true;
-			foreach (object element in (Array) value) {
-				if (first)
-					first = false;
-				else
-					Write(", ");
-				WriteConst(element);
+			for (int i = 0; i < array.Length; i++) {
+				if (i > 0) {
+					if (i % 16 == 0) {
+						WriteLine(",");
+						StartLine("\t");
+					}
+					else
+						Write(", ");
+				}
+				WriteConst(array.GetValue(i));
 			}
 			Write(" }");
 		}
@@ -160,7 +164,8 @@ public abstract class SourceGenerator
 		 || expr is CiPropertyAccess
 		 || expr is CiArrayAccess
 		 || expr is CiFunctionCall
-		 || expr is CiMethodCall)
+		 || expr is CiMethodCall
+		 || expr is CiBinaryResourceExpr)
 			return 1;
 		if (expr is CiUnaryExpr
 		 || expr is CiCondNotExpr
@@ -327,6 +332,18 @@ public abstract class SourceGenerator
 		WriteChild(expr, expr.OnFalse);
 	}
 
+	protected void WriteName(CiBinaryResource resource)
+	{
+		Write("CiBinaryResource_");
+		foreach (char c in resource.Name)
+			Write(CiLexer.IsLetter(c) ? c : '_');
+	}
+
+	protected virtual void Write(CiBinaryResourceExpr expr)
+	{
+		WriteName(expr.Resource);
+	}
+
 	protected void Write(CiExpr expr)
 	{
 		if (expr is CiConstExpr)
@@ -357,6 +374,8 @@ public abstract class SourceGenerator
 			Write((CiBinaryExpr) expr);
 		else if (expr is CiCondExpr)
 			Write((CiCondExpr) expr);
+		else if (expr is CiBinaryResourceExpr)
+			Write((CiBinaryResourceExpr) expr);
 		else
 			throw new ApplicationException(expr.ToString());
 	}

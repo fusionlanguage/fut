@@ -359,6 +359,13 @@ public class GenCs : SourceGenerator
 			WriteConst(konst.Value);
 			WriteLine(";");
 		}
+		foreach (CiBinaryResource resource in prog.BinaryResources) {
+			StartLine("static readonly byte[] ");
+			WriteName(resource);
+			Write(" = ");
+			WriteConst(resource.Content);
+			WriteLine(";");
+		}
 		foreach (CiSymbol symbol in prog.Globals.List) {
 			if (symbol is CiConst && symbol.IsPublic)
 				Write((CiConst) symbol);
