@@ -126,26 +126,27 @@ public partial class CiParser : CiLexer
 		return ParseType(baseName);
 	}
 
-	object ParseConstInitializer(CiType type)
+	object ParseConstInitializer(ref CiType type)
 	{
 		if (type is CiArrayType) {
+			Expect(CiToken.LeftBrace);
 			CiType elementType = ((CiArrayType) type).ElementType;
-			if (Eat(CiToken.LeftBrace)) {
-				ArrayList list = new ArrayList();
-				if (!See(CiToken.RightBrace)) {
-					do
-						list.Add(ParseConstInitializer(elementType));
-					while (Eat(CiToken.Comma));
-				}
-				Expect(CiToken.RightBrace);
-				if (type is CiArrayStorageType) {
-					int expected = ((CiArrayStorageType) type).Length;
-					if (list.Count != expected)
-						throw new ParseException("Expected {0} array elements, got {1}", expected, list.Count);
-				}
-				return list.ToArray(elementType.DotNetType);
+			ArrayList list = new ArrayList();
+			if (!See(CiToken.RightBrace)) {
+				do
+					list.Add(ParseConstInitializer(ref elementType));
+				while (Eat(CiToken.Comma));
 			}
-			return ParseConstInitializer(elementType);
+			Expect(CiToken.RightBrace);
+			if (type is CiArrayStorageType) {
+				int expected = ((CiArrayStorageType) type).Length;
+				if (list.Count != expected)
+					throw new ParseException("Expected {0} array elements, got {1}", expected, list.Count);
+			}
+			else {
+				type = new CiArrayStorageType { ElementType = elementType, Length = list.Count };
+			}
+			return list.ToArray(elementType.DotNetType);
 		}
 		return ParseConstExpr(type);
 	}
@@ -157,7 +158,7 @@ public partial class CiParser : CiLexer
 		def.Type = ParseType();
 		def.Name = ParseId();
 		Expect(CiToken.Assign);
-		def.Value = ParseConstInitializer(def.Type);
+		def.Value = ParseConstInitializer(ref def.Type);
 		Expect(CiToken.Semicolon);
 		this.Symbols.Add(def);
 		if (this.Symbols.Parent != null && def.Type is CiArrayType) {
