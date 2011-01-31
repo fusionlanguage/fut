@@ -268,6 +268,15 @@ public class GenCs : SourceGenerator
 			Write(expr.Arguments[3]);
 			Write(')');
 		}
+		else if (expr.Function == CiArrayType.ToStringMethod) {
+			Write("System.Text.Encoding.UTF8.GetString(");
+			Write(expr.Obj);
+			Write(", ");
+			Write(expr.Arguments[0]);
+			Write(", ");
+			Write(expr.Arguments[1]);
+			Write(')');
+		}
 		else if (expr.Function == CiArrayStorageType.ClearMethod) {
 			Write("Array_Clear(");
 			Write(expr.Obj);

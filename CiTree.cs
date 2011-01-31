@@ -162,6 +162,10 @@ public class CiStringPtrType : CiStringType
 public class CiStringStorageType : CiStringType
 {
 	public int Length;
+	public override bool IsAssignableFrom(CiType that)
+	{
+		return that is CiStringType;
+	}
 }
 
 public abstract class CiClassType : CiType
@@ -204,6 +208,14 @@ public abstract class CiArrayType : CiType
 			new CiParam { Type = CiIntType.Value, Name = "length" }
 		}
 	};
+	public static readonly CiFunction ToStringMethod = new CiFunction {
+		Name = "ToString",
+		ReturnType = CiStringPtrType.Value,
+		Params = new CiParam[] {
+			new CiParam { Type = CiIntType.Value, Name = "index" },
+			new CiParam { Type = CiIntType.Value, Name = "length" }
+		}
+	};
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
@@ -211,6 +223,10 @@ public abstract class CiArrayType : CiType
 			if (this.ElementType == CiByteType.Value)
 				return CopyToMethod;
 			throw new ParseException("CopyTo available only for byte arrays");
+		case "ToString":
+			if (this.ElementType == CiByteType.Value)
+				return ToStringMethod;
+			throw new ParseException("ToString available only for byte arrays");
 		default:
 			throw new ParseException("No member {0} in array", name);
 		}
