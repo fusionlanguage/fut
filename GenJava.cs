@@ -99,22 +99,37 @@ public class GenJava : SourceGenerator
 		WriteLine();
 	}
 
+	void Write(CiEnum enu)
+	{
+		WriteLine();
+		Write(enu.Documentation);
+		StartLine(enu.IsPublic ? "public " : "internal ");
+		Write("interface ");
+		Write(enu.Name);
+		OpenBlock();
+		for (int i = 0; i < enu.Values.Length; i++) {
+			CiEnumValue value = enu.Values[i];
+			Write(value.Documentation);
+			StartLine("int ");
+			Write(value.Name);
+			Write(" = ");
+			Write(i);
+			WriteLine(";");
+		}
+		WriteLine();
+		CloseBlock();
+	}
+
 	void WriteBaseType(CiType type)
 	{
 		if (type is CiStringType)
 			Write("String");
-		else if (type is CiClassType) {
-			CiClassType classType = (CiClassType) type;
-			Write(classType.Class.Name);
-		}
 		else if (type == CiBoolType.Value)
 			Write("boolean");
-		else if (type == CiByteType.Value)
-			Write("byte");
-		else if (type == CiIntType.Value)
+		else if (type is CiEnum)
 			Write("int");
 		else
-			throw new ApplicationException();
+			Write(type.Name);
 	}
 
 	void Write(CiType type)
@@ -125,19 +140,21 @@ public class GenJava : SourceGenerator
 		Write(' ');
 	}
 
-	void WriteInit(CiType type)
+	bool WriteInit(CiType type)
 	{
 		CiClassStorageType classType = type as CiClassStorageType;
 		if (classType != null) {
 			Write(" = new {0}()", classType.Class.Name);
-			return;
+			return true;
 		}
 		CiArrayStorageType arrayType = type as CiArrayStorageType;
 		if (arrayType != null) {
 			Write(" = new ");
 			WriteBaseType(arrayType.BaseType);
 			WriteInitializer(arrayType);
+			return true;
 		}
+		return false;
 	}
 
 	void Write(CiField field)
@@ -165,18 +182,37 @@ public class GenJava : SourceGenerator
 		CloseBlock();
 	}
 
+	protected override void WriteConst(object value)
+	{
+		if (value is byte)
+			Write((sbyte) (byte) value);
+		else
+			base.WriteConst(value);
+	}
+
 	protected override int GetPriority(CiExpr expr)
 	{
-		if (expr is CiPropertyAccess && ((CiPropertyAccess) expr).Property == CiIntType.LowByteProperty)
-			return 8;
+		if (expr is CiPropertyAccess) {
+			CiProperty prop = ((CiPropertyAccess) expr).Property;
+			if (prop == CiIntType.SByteProperty || prop == CiIntType.LowByteProperty)
+				return 2;
+		}
 		return base.GetPriority(expr);
 	}
 
 	protected override void Write(CiPropertyAccess expr)
 	{
-		if (expr.Property == CiIntType.LowByteProperty) {
+		if (expr.Property == CiIntType.SByteProperty) {
+			Write("(byte) ");
 			WriteChild(expr, expr.Obj);
-			Write(" & 0xff");
+		}
+		else if (expr.Property == CiIntType.LowByteProperty) {
+			Write("(byte) ");
+			WriteChild(expr, expr.Obj);
+		}
+		else if (expr.Property == CiStringType.LengthProperty) {
+			WriteChild(expr, expr.Obj);
+			Write(".length()");
 		}
 		// TODO
 		else
@@ -185,17 +221,109 @@ public class GenJava : SourceGenerator
 
 	protected override void Write(CiMethodCall expr)
 	{
+		if (expr.Function == CiIntType.MulDivMethod) {
+			Write("(int) ((long) (");
+			Write(expr.Obj);
+			Write(") * (");
+			Write(expr.Arguments[0]);
+			Write(") / (");
+			Write(expr.Arguments[1]);
+			Write("))");
+		}
+		else if (expr.Function == CiStringType.CharAtMethod) {
+			Write(expr.Obj);
+			Write(".charAt(");
+			Write(expr.Arguments[0]);
+			Write(')');
+		}
+		else if (expr.Function == CiStringType.SubstringMethod) {
+			Write("String_Substring(");
+			Write(expr.Obj);
+			Write(", ");
+			Write(expr.Arguments[0]);
+			Write(", ");
+			Write(expr.Arguments[1]);
+			Write(')');
+		}
+		else if (expr.Function == CiArrayType.CopyToMethod) {
+			Write("System.arraycopy(");
+			Write(expr.Obj);
+			Write(", ");
+			Write(expr.Arguments[0]);
+			Write(", ");
+			Write(expr.Arguments[1]);
+			Write(", ");
+			Write(expr.Arguments[2]);
+			Write(", ");
+			Write(expr.Arguments[3]);
+			Write(')');
+		}
+		else if (expr.Function == CiArrayType.ToStringMethod) {
+			Write("new String(");
+			Write(expr.Obj);
+			Write(", ");
+			Write(expr.Arguments[0]);
+			Write(", ");
+			Write(expr.Arguments[1]);
+			Write(')');
+		}
+		else if (expr.Function == CiArrayStorageType.ClearMethod) {
+			Write("Array_Clear(");
+			Write(expr.Obj);
+			Write(')');
+		}
 		// TODO
+		else
+			throw new ApplicationException(expr.Function.Name);
+	}
+
+	protected override void Write(CiBinaryResourceExpr expr)
+	{
+		Write("BinaryResource_Get(");
+		WriteConst(expr.Resource.Name);
+		Write(')');
 	}
 
 	protected override void WriteInline(CiVar stmt)
 	{
 		Write(stmt.Type);
 		Write(stmt.Name);
-		if (stmt.InitialValue != null) {
+		if (!WriteInit(stmt.Type) && stmt.InitialValue != null) {
 			Write(" = ");
 			Write(stmt.InitialValue);
 		}
+	}
+
+	protected override void WriteAssignSource(CiAssign assign)
+	{
+		if (assign.CastIntToByte) {
+			Write("(byte) (");
+			base.WriteAssignSource(assign);
+			Write(')');
+		}
+		else
+			base.WriteAssignSource(assign);
+	}
+
+	void Write(CiFunction func)
+	{
+		WriteLine();
+		Write(func.Documentation);
+		StartLine("private static ");
+		Write(func.ReturnType);
+		Write(func.Name);
+		Write("(");
+		bool first = true;
+		foreach (CiParam param in func.Params) {
+			if (first)
+				first = false;
+			else
+				Write(", ");
+			Write(param.Type);
+			Write(param.Name);
+		}
+		Write(")");
+		Write(func.Body);
 	}
 
 	public override void Write(CiProgram prog)
@@ -204,9 +332,29 @@ public class GenJava : SourceGenerator
 		Write("package ");
 		Write(string.Join(".", prog.NamespaceElements));
 		WriteLine(";");
-		foreach (CiSymbol symbol in prog.Globals.List)
-			if (symbol is CiClass)
+		foreach (CiSymbol symbol in prog.Globals.List) {
+			if (symbol is CiEnum)
+				Write((CiEnum) symbol);
+			else if (symbol is CiClass)
 				Write((CiClass) symbol);
+		}
+		StartLine("final class ASAP"); // TODO: public
+		OpenBlock();
+		foreach (CiConst konst in prog.ConstArrays) {
+			StartLine("static final ");
+			Write(konst.Type);
+			Write(konst.GlobalName);
+			Write(" = ");
+			WriteConst(konst.Value);
+			WriteLine(";");
+		}
+		foreach (CiSymbol symbol in prog.Globals.List) {
+			if (symbol is CiConst && symbol.IsPublic)
+				Write((CiConst) symbol);
+			else if (symbol is CiFunction)
+				Write((CiFunction) symbol);
+		}
+		CloseBlock();
 	}
 }
 

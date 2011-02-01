@@ -105,12 +105,6 @@ public class GenCs : SourceGenerator
 		}
 	}
 
-	void Write(CiEnumValue value)
-	{
-		Write(value.Documentation);
-		StartLine(value.Name);
-	}
-
 	void Write(CiEnum enu)
 	{
 		WriteLine();
@@ -125,7 +119,8 @@ public class GenCs : SourceGenerator
 				first = false;
 			else
 				WriteLine(",");
-			Write(value);
+			Write(value.Documentation);
+			StartLine(value.Name);
 		}
 		WriteLine();
 		CloseBlock();
@@ -201,20 +196,12 @@ public class GenCs : SourceGenerator
 		WriteLine(";");
 	}
 
-	protected override void Write(CiConstAccess expr)
-	{
-		if (expr.Const.GlobalName != null)
-			Write(expr.Const.GlobalName);
-		else
-			base.Write(expr);
-	}
-
 	protected override int GetPriority(CiExpr expr)
 	{
 		if (expr is CiPropertyAccess) {
 			CiProperty prop = ((CiPropertyAccess) expr).Property;
 			if (prop == CiIntType.SByteProperty || prop == CiIntType.LowByteProperty)
-			return 2;
+				return 2;
 		}
 		return base.GetPriority(expr);
 	}

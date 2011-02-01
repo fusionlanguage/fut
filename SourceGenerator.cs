@@ -150,9 +150,12 @@ public abstract class SourceGenerator
 			throw new ApplicationException(value.ToString());
 	}
 
-	protected virtual void Write(CiConstAccess expr)
+	void Write(CiConstAccess expr)
 	{
-		Write(expr.Const.Name);
+		if (expr.Const.GlobalName != null)
+			Write(expr.Const.GlobalName);
+		else
+			Write(expr.Const.Name);
 	}
 
 	protected virtual int GetPriority(CiExpr expr)
