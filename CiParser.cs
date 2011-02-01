@@ -541,8 +541,12 @@ public partial class CiParser : CiLexer
 			result.Source = ParseMaybeAssign();
 			if (target.Type == CiByteType.Value && result.Source.Type == CiIntType.Value)
 				result.CastIntToByte = true;
-			else
+			else if (op == CiToken.Assign)
 				ExpectType(result.Source, target.Type);
+			else if (op == CiToken.AddAssign && target.Type is CiStringType && result.Source.Type is CiStringType)
+				{} // OK
+			else if (target.Type != CiIntType.Value || !CiIntType.Value.IsAssignableFrom(result.Source.Type))
+				throw new ParseException("Invalid types for {0}", op);
 			return result;
 		}
 		return left;
