@@ -32,6 +32,7 @@ public class CiTo
 		Console.WriteLine("Options:");
 		Console.WriteLine("-l cs    Translate to C#");
 		Console.WriteLine("-l java  Translate to Java");
+		Console.WriteLine("-l js    Translate to JavaScript");
 		Console.WriteLine("-o FILE  Write to the specified file (C#) or directory (Java)");
 		Console.WriteLine("-D NAME  Define conditional compilation symbol");
 		Console.WriteLine("-I DIR   Add directory for BinaryResource");
@@ -103,6 +104,7 @@ public class CiTo
 		switch (lang) {
 		case "cs": gen = new GenCs(outputPath); break;
 		case "java": gen = new GenJava(outputPath); break;
+		case "js": gen = new GenJs(outputPath); break;
 		default: throw new ApplicationException("Unknown language: " + lang);
 		}
 		gen.Write(program);

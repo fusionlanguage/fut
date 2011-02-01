@@ -100,6 +100,21 @@ public abstract class SourceGenerator
 		}
 	}
 
+	protected void WriteContent(Array array)
+	{
+		for (int i = 0; i < array.Length; i++) {
+			if (i > 0) {
+				if (i % 16 == 0) {
+					WriteLine(",");
+					StartLine("\t");
+				}
+				else
+					Write(", ");
+			}
+			WriteConst(array.GetValue(i));
+		}
+	}
+
 	protected virtual void WriteConst(object value)
 	{
 		if (value is bool)
@@ -129,19 +144,8 @@ public abstract class SourceGenerator
 			Write(ev.Name);
 		}
 		else if (value is Array) {
-			Array array = (Array) value;
 			Write("{ ");
-			for (int i = 0; i < array.Length; i++) {
-				if (i > 0) {
-					if (i % 16 == 0) {
-						WriteLine(",");
-						StartLine("\t");
-					}
-					else
-						Write(", ");
-				}
-				WriteConst(array.GetValue(i));
-			}
+			WriteContent((Array) value);
 			Write(" }");
 		}
 		else if (value == null)
