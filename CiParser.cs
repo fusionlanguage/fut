@@ -34,6 +34,8 @@ public partial class CiParser : CiLexer
 	public CiFunction CurrentFunction;
 	public IEnumerable<string> SearchDirs;
 	SortedDictionary<string, CiBinaryResource> BinaryResources;
+	int LoopLevel;
+	int SwitchLevel;
 
 	public CiParser(TextReader reader) : base(reader)
 	{
@@ -606,6 +608,14 @@ public partial class CiParser : CiLexer
 		return result;
 	}
 
+	ICiStatement ParseLoop()
+	{
+		this.LoopLevel++;
+		ICiStatement body = ParseStatement();
+		this.LoopLevel--;
+		return body;
+	}
+
 	ICiStatement ParseStatement()
 	{
 		while (Eat(CiToken.Macro))
@@ -619,18 +629,22 @@ public partial class CiParser : CiLexer
 			return result;
 		}
 		if (Eat(CiToken.Break)) {
+			if (this.LoopLevel == 0 && this.SwitchLevel == 0)
+				throw new ParseException("break outside loop and switch");
 			Expect(CiToken.Semicolon);
 			return new CiBreak();
 		}
 		if (See(CiToken.Const))
 			return ParseConst();
 		if (Eat(CiToken.Continue)) {
+			if (this.LoopLevel == 0)
+				throw new ParseException("continue outside loop");
 			Expect(CiToken.Semicolon);
 			return new CiContinue();
 		}
 		if (Eat(CiToken.Do)) {
 			CiDoWhile result = new CiDoWhile();
-			result.Body = ParseStatement();
+			result.Body = ParseLoop();
 			Expect(CiToken.While);
 			result.Cond = ParseCond();
 			Expect(CiToken.Semicolon);
@@ -652,7 +666,7 @@ public partial class CiParser : CiLexer
 			if (!See(CiToken.RightParenthesis))
 				result.Advance = ParseExprWithSideEffect();
 			Expect(CiToken.RightParenthesis);
-			result.Body = ParseStatement();
+			result.Body = ParseLoop();
 			CloseScope();
 			return result;
 		}
@@ -680,6 +694,7 @@ public partial class CiParser : CiLexer
 			CiType type = result.Value.Type;
 			Expect(CiToken.RightParenthesis);
 			Expect(CiToken.LeftBrace);
+			this.SwitchLevel++;
 			List<CiCase> cases = new List<CiCase>();
 			for (;;) {
 				CiCase caze;
@@ -698,6 +713,7 @@ public partial class CiParser : CiLexer
 				caze.Body = statements.ToArray();
 				cases.Add(caze);
 			}
+			this.SwitchLevel--;
 			Expect(CiToken.RightBrace);
 			result.Cases = cases.ToArray();
 			return result;
@@ -705,7 +721,7 @@ public partial class CiParser : CiLexer
 		if (Eat(CiToken.While)) {
 			CiWhile result = new CiWhile();
 			result.Cond = ParseCond();
-			result.Body = ParseStatement();
+			result.Body = ParseLoop();
 			return result;
 		}
 		throw new ParseException("Invalid statement");
@@ -764,6 +780,8 @@ public partial class CiParser : CiLexer
 		this.ConstArrays = new List<CiConst>();
 		this.CurrentFunction = null;
 		this.BinaryResources = new SortedDictionary<string, CiBinaryResource>();
+		this.LoopLevel = 0;
+		this.SwitchLevel = 0;
 
 		Expect(CiToken.Namespace);
 		List<string> namespaceElements = new List<string>();
