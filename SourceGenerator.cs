@@ -493,7 +493,12 @@ public abstract class SourceGenerator
 		WriteChild(stmt.OnTrue);
 		if (stmt.OnFalse != null) {
 			Write("else");
-			WriteChild(stmt.OnFalse);
+			if (stmt.OnFalse is CiIf) {
+				Write(' ');
+				Write(stmt.OnFalse);
+			}
+			else
+				WriteChild(stmt.OnFalse);
 		}
 	}
 
