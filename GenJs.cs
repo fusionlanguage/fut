@@ -58,12 +58,11 @@ public class GenJs : SourceGenerator
 
 	bool WriteInit(CiType type)
 	{
-// TODO
-//		CiClassStorageType classType = type as CiClassStorageType;
-//		if (classType != null) {
-//			Write(" = new {0}()", classType.Class.Name);
-//			return true;
-//		}
+		CiClassStorageType classType = type as CiClassStorageType;
+		if (classType != null) {
+			Write(" = new {0}()", classType.Class.Name);
+			return true;
+		}
 		CiArrayStorageType arrayType = type as CiArrayStorageType;
 		if (arrayType != null) {
 			Write(" = new Array(");
@@ -73,16 +72,18 @@ public class GenJs : SourceGenerator
 		}
 		return false;
 	}
-/*
+
 	void Write(CiField field)
 	{
 		Write(field.Documentation);
-		StartLine(field.IsPublic ? "public " : "");
-		if (field.Type is CiClassStorageType || field.Type is CiArrayStorageType)
-			Write("final ");
-		Write(field.Type);
+		Write("this.");
 		Write(field.Name);
-		WriteInit(field.Type);
+		if (field.Type is CiBoolType)
+			Write(" = false");
+		else if (field.Type is CiByteType || field.Type is CiIntType)
+			Write(" = 0");
+		else if (!WriteInit(field.Type))
+			Write(" = null");
 		WriteLine(";");
 	}
 
@@ -90,15 +91,14 @@ public class GenJs : SourceGenerator
 	{
 		WriteLine();
 		Write(clazz.Documentation);
-		StartLine(clazz.IsPublic ? "public " : "");
-		Write("final class ");
+		Write("function ");
 		Write(clazz.Name);
+		WriteLine("()");
 		OpenBlock();
 		foreach (CiField field in clazz.Fields)
 			Write(field);
 		CloseBlock();
 	}
-*/
 
 	protected override void WriteConst(object value)
 	{
@@ -253,8 +253,8 @@ public class GenJs : SourceGenerator
 		foreach (CiSymbol symbol in prog.Globals.List) {
 			if (symbol is CiEnum)
 				Write((CiEnum) symbol);
-//			else if (symbol is CiClass)
-//				Write((CiClass) symbol);
+			else if (symbol is CiClass)
+				Write((CiClass) symbol);
 		}
 		foreach (CiConst konst in prog.ConstArrays) {
 			Write("var ");
