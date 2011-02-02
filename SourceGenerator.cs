@@ -416,7 +416,7 @@ public abstract class SourceGenerator
 			WriteInline((CiAssign) assign.Source);
 	}
 
-	void WriteInline(CiAssign assign)
+	protected virtual void WriteInline(CiAssign assign)
 	{
 		Write(assign.Target);
 		switch (assign.Op) {

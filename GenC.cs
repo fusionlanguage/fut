@@ -206,13 +206,7 @@ public class GenC : SourceGenerator
 		}
 		else if (expr.Function == CiStringType.SubstringMethod) {
 			// TODO
-			Write("String_Substring(");
-			Write("NULL");
-			Write(", ");
-			Write(expr.Arguments[0]);
-			Write(", ");
-			Write(expr.Arguments[1]);
-			Write(')');
+			throw new ApplicationException();
 		}
 		else if (expr.Function == CiArrayType.CopyToMethod) {
 			Write("memcpy(");
@@ -225,15 +219,7 @@ public class GenC : SourceGenerator
 		}
 		else if (expr.Function == CiArrayType.ToStringMethod) {
 			// TODO
-			Write("String_Substring(");
-			Write("NULL");
-			Write(", ");
-			Write(expr.Obj);
-			Write(", ");
-			Write(expr.Arguments[0]);
-			Write(", ");
-			Write(expr.Arguments[1]);
-			Write(')');
+			throw new ApplicationException();
 		}
 		else if (expr.Function == CiArrayStorageType.ClearMethod) {
 			WriteClearArray(expr.Obj);
@@ -265,19 +251,76 @@ public class GenC : SourceGenerator
 			base.WriteAssignSource(assign);
 	}
 
+	protected override void WriteInline(CiAssign assign)
+	{
+		if (assign.Target.Type is CiStringStorageType) {
+			if (assign.Op == CiToken.Assign) {
+				if (assign.Source is CiMethodCall) {
+					CiMethodCall mc = (CiMethodCall) assign.Source;
+					if (mc.Function == CiStringType.SubstringMethod
+					 || mc.Function == CiArrayType.ToStringMethod) {
+						Write("String_Substring(");
+						Write(assign.Target);
+						Write(", ");
+						WriteSum(mc.Obj, mc.Arguments[0]);
+						Write(", ");
+						Write(mc.Arguments[1]);
+						Write(')');
+						return;
+					}
+				}
+				if (assign.Source is CiConstExpr) {
+					string s = ((CiConstExpr) assign.Source).Value as string;
+					if (s != null && s.Length == 0) {
+						Write(assign.Target);
+						Write("[0] = '\\0'");
+						return;
+					}
+				}
+				Write("strcpy(");
+				Write(assign.Target);
+				Write(", ");
+				// TODO: not an assignment
+				Write((CiExpr) assign.Source);
+				Write(')');
+				return;
+			}
+			if (assign.Op == CiToken.AddAssign) {
+				Write("strcat(");
+				Write(assign.Target);
+				Write(", ");
+				// TODO: not an assignment
+				Write((CiExpr) assign.Source);
+				Write(')');
+				return;
+			}
+		}
+		base.WriteInline(assign);
+	}
+
 	protected override void Write(ICiStatement stmt)
 	{
 		if (stmt is CiVar) {
 			CiVar def = (CiVar) stmt;
 			Write(def.Type, def.Name);
-			if (def.InitialValue != null && !(def.Type is CiArrayStorageType)) {
+			if (def.InitialValue != null && !(def.Type is CiStringStorageType) && !(def.Type is CiArrayStorageType)) {
 				Write(" = ");
 				Write(def.InitialValue);
 			}
 			WriteLine(";");
-			if (def.InitialValue != null && def.Type is CiArrayStorageType) {
-				WriteClearArray(new CiVarAccess { Var = def });
-				WriteLine(";");
+			if (def.InitialValue != null) {
+				if (def.Type is CiStringStorageType) {
+					WriteInline(new CiAssign {
+						Target = new CiVarAccess { Var = def },
+						Op = CiToken.Assign,
+						Source = def.InitialValue
+					});
+					WriteLine(";");
+				}
+				else if (def.Type is CiArrayStorageType) {
+					WriteClearArray(new CiVarAccess { Var = def });
+					WriteLine(";");
+				}
 			}
 		}
 		else
@@ -307,6 +350,8 @@ public class GenC : SourceGenerator
 	public override void Write(CiProgram prog)
 	{
 		WriteLine("// Generated automatically with \"cito\". Do not edit.");
+		WriteLine("#include <stdbool.h>");
+		WriteLine("#include <string.h>");
 		foreach (CiSymbol symbol in prog.Globals.List) {
 			if (symbol is CiEnum)
 				Write((CiEnum) symbol);
