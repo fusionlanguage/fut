@@ -35,7 +35,7 @@ public class GenJava : SourceGenerator
 			case '&': Write("&amp;"); break;
 			case '<': Write("&lt;"); break;
 			case '>': Write("&gt;"); break;
-			case '\n': WriteLine(); StartLine(" * "); break;
+			case '\n': WriteLine(); Write(" * "); break;
 			default: Write(c); break;
 			}
 		}
@@ -65,16 +65,14 @@ public class GenJava : SourceGenerator
 		CiDocList list = block as CiDocList;
 		if (list != null) {
 			WriteLine();
-			StartLine(" * <ul>");
-			WriteLine();
+			WriteLine(" * <ul>");
 			foreach (CiDocPara item in list.Items) {
-				StartLine(" * <li>");
+				Write(" * <li>");
 				Write(item);
 				WriteLine("</li>");
 			}
-			StartLine(" * </ul>");
-			WriteLine();
-			StartLine(" * ");
+			WriteLine(" * </ul>");
+			Write(" * ");
 			return;
 		}
 		Write((CiDocPara) block);
@@ -84,33 +82,31 @@ public class GenJava : SourceGenerator
 	{
 		if (doc == null)
 			return;
-		StartLine("/**");
-		WriteLine();
-		StartLine(" * ");
+		WriteLine("/**");
+		Write(" * ");
 		Write(doc.Summary);
 		if (doc.Details.Length > 0) {
 			WriteLine();
-			StartLine(" * ");
+			Write(" * ");
 			foreach (CiDocBlock block in doc.Details)
 				Write(block);
 		}
 		WriteLine();
-		StartLine(" */");
-		WriteLine();
+		WriteLine(" */");
 	}
 
 	void Write(CiEnum enu)
 	{
 		WriteLine();
 		Write(enu.Documentation);
-		StartLine(enu.IsPublic ? "public " : "internal ");
+		Write(enu.IsPublic ? "public " : "internal ");
 		Write("interface ");
 		Write(enu.Name);
 		OpenBlock();
 		for (int i = 0; i < enu.Values.Length; i++) {
 			CiEnumValue value = enu.Values[i];
 			Write(value.Documentation);
-			StartLine("int ");
+			Write("int ");
 			Write(value.Name);
 			Write(" = ");
 			Write(i);
@@ -160,7 +156,8 @@ public class GenJava : SourceGenerator
 	void Write(CiField field)
 	{
 		Write(field.Documentation);
-		StartLine(field.IsPublic ? "public " : "");
+		if (field.IsPublic)
+			Write("public ");
 		if (field.Type is CiClassStorageType || field.Type is CiArrayStorageType)
 			Write("final ");
 		Write(field.Type);
@@ -173,7 +170,8 @@ public class GenJava : SourceGenerator
 	{
 		WriteLine();
 		Write(clazz.Documentation);
-		StartLine(clazz.IsPublic ? "public " : "");
+		if (clazz.IsPublic)
+			Write("public ");
 		Write("final class ");
 		Write(clazz.Name);
 		OpenBlock();
@@ -309,7 +307,7 @@ public class GenJava : SourceGenerator
 	{
 		WriteLine();
 		Write(func.Documentation);
-		StartLine("private static ");
+		Write("private static ");
 		Write(func.ReturnType);
 		Write(func.Name);
 		Write("(");
@@ -338,10 +336,10 @@ public class GenJava : SourceGenerator
 			else if (symbol is CiClass)
 				Write((CiClass) symbol);
 		}
-		StartLine("final class ASAP"); // TODO: public
+		Write("public final class ASAP");
 		OpenBlock();
 		foreach (CiConst konst in prog.ConstArrays) {
-			StartLine("static final ");
+			Write("static final ");
 			Write(konst.Type);
 			Write(konst.GlobalName);
 			Write(" = ");

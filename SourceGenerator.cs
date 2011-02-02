@@ -25,68 +25,73 @@ namespace Foxoft.Ci
 
 public abstract class SourceGenerator
 {
-	TextWriter writer = Console.Out;
-	int indent = 0;
+	TextWriter Writer = Console.Out;
+	int Indent = 0;
+	bool AtLineStart = true;
+
+	void StartLine()
+	{
+		if (this.AtLineStart) {
+			for (int i = 0; i < this.Indent; i++)
+				this.Writer.Write('\t');
+			this.AtLineStart = false;
+		}
+	}
 
 	protected void Write(char c)
 	{
-		writer.Write(c);
+		StartLine();
+		this.Writer.Write(c);
 	}
 
 	protected void Write(string s)
 	{
-		writer.Write(s);
+		StartLine();
+		this.Writer.Write(s);
 	}
 
 	protected void Write(int i)
 	{
-		writer.Write(i);
+		StartLine();
+		this.Writer.Write(i);
 	}
 
 	protected void Write(string format, params object[] args)
 	{
-		writer.Write(format, args);
+		StartLine();
+		this.Writer.Write(format, args);
 	}
 
 	protected void WriteLine()
 	{
-		writer.WriteLine();
+		this.Writer.WriteLine();
+		this.AtLineStart = true;
 	}
 
 	protected void WriteLine(string s)
 	{
-		writer.WriteLine(s);
+		StartLine();
+		this.Writer.WriteLine(s);
+		this.AtLineStart = true;
 	}
 
 	protected void WriteLine(string format, params object[] args)
 	{
-		writer.WriteLine(format, args);
+		StartLine();
+		this.Writer.WriteLine(format, args);
+		this.AtLineStart = true;
 	}
 
 	protected void OpenBlock()
 	{
 		WriteLine(" {");
-		indent++;
-	}
-
-	protected void StartLine(string s)
-	{
-		for (int i = 0; i < indent; i++)
-			Write('\t');
-		Write(s);
-	}
-
-	protected void Print(string s)
-	{
-		StartLine(s);
-		WriteLine();
+		this.Indent++;
 	}
 
 	protected void CloseBlock()
 	{
-		indent--;
-		StartLine("}");
-		WriteLine();
+		this.Indent--;
+		WriteLine("}");
 	}
 
 	protected void WriteInitializer(CiArrayType type)
@@ -106,7 +111,7 @@ public abstract class SourceGenerator
 			if (i > 0) {
 				if (i % 16 == 0) {
 					WriteLine(",");
-					StartLine("\t");
+					Write('\t');
 				}
 				else
 					Write(", ");
@@ -393,9 +398,9 @@ public abstract class SourceGenerator
 			Write((CiBlock) stmt);
 		else {
 			WriteLine();
-			indent++;
+			this.Indent++;
 			Write(stmt);
-			indent--;
+			this.Indent--;
 		}
 	}
 
@@ -452,16 +457,16 @@ public abstract class SourceGenerator
 
 	void Write(CiDoWhile stmt)
 	{
-		StartLine("do");
+		Write("do");
 		WriteChild(stmt.Body);
-		StartLine("while (");
+		Write("while (");
 		Write(stmt.Cond);
 		WriteLine(");");
 	}
 
 	void Write(CiFor stmt)
 	{
-		StartLine("for (");
+		Write("for (");
 		if (stmt.Init != null)
 			WriteInline(stmt.Init);
 		Write(';');
@@ -480,12 +485,12 @@ public abstract class SourceGenerator
 
 	void Write(CiIf stmt)
 	{
-		StartLine("if (");
+		Write("if (");
 		Write(stmt.Cond);
 		Write(')');
 		WriteChild(stmt.OnTrue);
 		if (stmt.OnFalse != null) {
-			StartLine("else");
+			Write("else");
 			WriteChild(stmt.OnFalse);
 		}
 	}
@@ -493,9 +498,9 @@ public abstract class SourceGenerator
 	void Write(CiReturn stmt)
 	{
 		if (stmt.Value == null)
-			Print("return;");
+			WriteLine("return;");
 		else {
-			StartLine("return ");
+			Write("return ");
 			Write(stmt.Value);
 			WriteLine(";");
 		}
@@ -503,29 +508,29 @@ public abstract class SourceGenerator
 
 	void Write(CiSwitch stmt)
 	{
-		StartLine("switch (");
+		Write("switch (");
 		Write(stmt.Value);
 		Write(')');
 		OpenBlock();
 		foreach (CiCase caze in stmt.Cases) {
 			if (caze.Value != null) {
-				StartLine("case ");
+				Write("case ");
 				WriteConst(caze.Value);
 			}
 			else
-				StartLine("default");
+				Write("default");
 			WriteLine(":");
-			indent++;
+			this.Indent++;
 			foreach (ICiStatement child in caze.Body)
 				Write(child);
-			indent--;
+			this.Indent--;
 		}
 		CloseBlock();
 	}
 
 	void Write(CiWhile stmt)
 	{
-		StartLine("while (");
+		Write("while (");
 		Write(stmt.Cond);
 		Write(')');
 		WriteChild(stmt.Body);
@@ -536,18 +541,17 @@ public abstract class SourceGenerator
 		if (stmt is CiAssign
 		 || stmt is CiExpr
 		 || stmt is CiVar) {
-			StartLine("");
 			WriteInline(stmt);
 			WriteLine(";");
 		}
 		else if (stmt is CiBlock)
 			Write((CiBlock) stmt);
 		else if (stmt is CiBreak)
-			Print("break;");
+			WriteLine("break;");
 		else if (stmt is CiConst)
 			{}
 		else if (stmt is CiContinue)
-			Print("continue;");
+			WriteLine("continue;");
 		else if (stmt is CiDoWhile)
 			Write((CiDoWhile) stmt);
 		else if (stmt is CiFor)

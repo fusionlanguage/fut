@@ -39,7 +39,7 @@ public class GenJs : SourceGenerator
 	{
 		WriteLine();
 		Write(enu.Documentation);
-		StartLine("var ");
+		Write("var ");
 		Write(enu.Name);
 		Write(" = ");
 		OpenBlock();
@@ -48,7 +48,7 @@ public class GenJs : SourceGenerator
 				WriteLine(",");
 			CiEnumValue value = enu.Values[i];
 			Write(value.Documentation);
-			StartLine(value.Name);
+			Write(value.Name);
 			Write(" : ");
 			Write(i);
 		}
@@ -232,7 +232,7 @@ public class GenJs : SourceGenerator
 	{
 		WriteLine();
 		Write(func.Documentation);
-		StartLine("function ");
+		Write("function ");
 		Write(func.Name);
 		Write("(");
 		bool first = true;
@@ -257,14 +257,14 @@ public class GenJs : SourceGenerator
 //				Write((CiClass) symbol);
 		}
 		foreach (CiConst konst in prog.ConstArrays) {
-			StartLine("var ");
+			Write("var ");
 			Write(konst.GlobalName);
 			Write(" = ");
 			WriteConst(konst.Value);
 			WriteLine(";");
 		}
 		foreach (CiBinaryResource resource in prog.BinaryResources) {
-			StartLine("var ");
+			Write("var ");
 			WriteName(resource);
 			Write(" = ");
 			WriteConst(resource.Content);

@@ -38,7 +38,7 @@ public class GenCs : SourceGenerator
 			case '&': Write("&amp;"); break;
 			case '<': Write("&lt;"); break;
 			case '>': Write("&gt;"); break;
-			case '\n': WriteLine(); StartLine("/// "); break;
+			case '\n': WriteLine(); Write("/// "); break;
 			default: Write(c); break;
 			}
 		}
@@ -75,16 +75,15 @@ public class GenCs : SourceGenerator
 		CiDocList list = block as CiDocList;
 		if (list != null) {
 			WriteLine();
-			StartLine("/// <list type=\"bullet\">");
-			WriteLine();
+			WriteLine("/// <list type=\"bullet\">");
 			foreach (CiDocPara item in list.Items) {
-				StartLine("/// <item>");
+				Write("/// <item>");
 				Write(item);
 				WriteLine("</item>");
 			}
-			StartLine("/// </list>");
+			Write("/// </list>");
 			WriteLine();
-			StartLine("/// ");
+			Write("/// ");
 			return;
 		}
 		Write((CiDocPara) block);
@@ -94,11 +93,11 @@ public class GenCs : SourceGenerator
 	{
 		if (doc == null)
 			return;
-		StartLine("/// <summary>");
+		Write("/// <summary>");
 		Write(doc.Summary);
 		WriteLine("</summary>");
 		if (doc.Details.Length > 0) {
-			StartLine("/// <remarks>");
+			Write("/// <remarks>");
 			foreach (CiDocBlock block in doc.Details)
 				Write(block);
 			WriteLine("</remarks>");
@@ -109,7 +108,7 @@ public class GenCs : SourceGenerator
 	{
 		WriteLine();
 		Write(enu.Documentation);
-		StartLine(enu.IsPublic ? "public " : "internal ");
+		Write(enu.IsPublic ? "public " : "internal ");
 		Write("enum ");
 		Write(enu.Name);
 		OpenBlock();
@@ -120,7 +119,7 @@ public class GenCs : SourceGenerator
 			else
 				WriteLine(",");
 			Write(value.Documentation);
-			StartLine(value.Name);
+			Write(value.Name);
 		}
 		WriteLine();
 		CloseBlock();
@@ -162,7 +161,7 @@ public class GenCs : SourceGenerator
 	void Write(CiField field)
 	{
 		Write(field.Documentation);
-		StartLine(field.IsPublic ? "public " : "internal ");
+		Write(field.IsPublic ? "public " : "internal ");
 		if (field.Type is CiClassStorageType || field.Type is CiArrayStorageType)
 			Write("readonly ");
 		Write(field.Type);
@@ -175,7 +174,7 @@ public class GenCs : SourceGenerator
 	{
 		WriteLine();
 		Write(clazz.Documentation);
-		StartLine(clazz.IsPublic ? "public " : "internal ");
+		Write(clazz.IsPublic ? "public " : "internal ");
 		Write("class ");
 		Write(clazz.Name);
 		OpenBlock();
@@ -187,7 +186,8 @@ public class GenCs : SourceGenerator
 	void Write(CiConst def)
 	{
 		Write(def.Documentation);
-		StartLine(def.IsPublic ? "public " : "");
+		if (def.IsPublic)
+			Write("public ");
 		Write("const ");
 		Write(def.Type);
 		Write(def.Name);
@@ -307,7 +307,7 @@ public class GenCs : SourceGenerator
 	{
 		WriteLine();
 		Write(func.Documentation);
-		StartLine("static ");
+		Write("static ");
 		Write(func.ReturnType);
 		Write(func.Name);
 		Write("(");
@@ -336,10 +336,10 @@ public class GenCs : SourceGenerator
 			else if (symbol is CiClass)
 				Write((CiClass) symbol);
 		}
-		StartLine("public partial class ASAP");
+		Write("public partial class ASAP");
 		OpenBlock();
 		foreach (CiConst konst in prog.ConstArrays) {
-			StartLine("static readonly ");
+			Write("static readonly ");
 			Write(konst.Type);
 			Write(konst.GlobalName);
 			Write(" = ");
@@ -347,7 +347,7 @@ public class GenCs : SourceGenerator
 			WriteLine(";");
 		}
 		foreach (CiBinaryResource resource in prog.BinaryResources) {
-			StartLine("static readonly byte[] ");
+			Write("static readonly byte[] ");
 			WriteName(resource);
 			Write(" = ");
 			WriteConst(resource.Content);
