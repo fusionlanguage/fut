@@ -84,7 +84,7 @@ public abstract class SourceGenerator
 
 	protected void OpenBlock()
 	{
-		WriteLine(" {");
+		WriteLine("{");
 		this.Indent++;
 	}
 
@@ -394,8 +394,10 @@ public abstract class SourceGenerator
 
 	protected void WriteChild(ICiStatement stmt)
 	{
-		if (stmt is CiBlock)
+		if (stmt is CiBlock) {
+			Write(' ');
 			Write((CiBlock) stmt);
+		}
 		else {
 			WriteLine();
 			this.Indent++;
@@ -510,7 +512,7 @@ public abstract class SourceGenerator
 	{
 		Write("switch (");
 		Write(stmt.Value);
-		Write(')');
+		Write(") ");
 		OpenBlock();
 		foreach (CiCase caze in stmt.Cases) {
 			if (caze.Value != null) {

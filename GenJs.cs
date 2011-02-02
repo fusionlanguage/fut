@@ -243,7 +243,7 @@ public class GenJs : SourceGenerator
 				Write(", ");
 			Write(param.Name);
 		}
-		Write(")");
+		WriteLine(")");
 		Write(func.Body);
 	}
 

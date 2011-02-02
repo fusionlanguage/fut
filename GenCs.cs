@@ -110,7 +110,7 @@ public class GenCs : SourceGenerator
 		Write(enu.Documentation);
 		Write(enu.IsPublic ? "public " : "internal ");
 		Write("enum ");
-		Write(enu.Name);
+		WriteLine(enu.Name);
 		OpenBlock();
 		bool first = true;
 		foreach (CiEnumValue value in enu.Values) {
@@ -176,7 +176,7 @@ public class GenCs : SourceGenerator
 		Write(clazz.Documentation);
 		Write(clazz.IsPublic ? "public " : "internal ");
 		Write("class ");
-		Write(clazz.Name);
+		WriteLine(clazz.Name);
 		OpenBlock();
 		foreach (CiField field in clazz.Fields)
 			Write(field);
@@ -320,7 +320,7 @@ public class GenCs : SourceGenerator
 			Write(param.Type);
 			Write(param.Name);
 		}
-		Write(")");
+		WriteLine(")");
 		Write(func.Body);
 	}
 
@@ -328,7 +328,7 @@ public class GenCs : SourceGenerator
 	{
 		WriteLine("// Generated automatically with \"cito\". Do not edit.");
 		Write("namespace ");
-		Write(string.Join(".", prog.NamespaceElements.Where(e => e[0] >= 'A' && e[0] <= 'Z').ToArray()));
+		WriteLine(string.Join(".", prog.NamespaceElements.Where(e => e[0] >= 'A' && e[0] <= 'Z').ToArray()));
 		OpenBlock();
 		foreach (CiSymbol symbol in prog.Globals.List) {
 			if (symbol is CiEnum)
@@ -336,7 +336,7 @@ public class GenCs : SourceGenerator
 			else if (symbol is CiClass)
 				Write((CiClass) symbol);
 		}
-		Write("public partial class ASAP");
+		WriteLine("public partial class ASAP");
 		OpenBlock();
 		foreach (CiConst konst in prog.ConstArrays) {
 			Write("static readonly ");
