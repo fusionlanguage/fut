@@ -586,8 +586,10 @@ public partial class CiParser : CiLexer
 		CiVar def = new CiVar();
 		def.Type = ParseType();
 		def.Name = ParseId();
-		if (Eat(CiToken.Assign))
+		if (Eat(CiToken.Assign)) {
 			def.InitialValue = ParseExpr();
+//TODO			ExpectType(def.InitialValue, def.Type);
+		}
 		Expect(CiToken.Semicolon);
 		this.Symbols.Add(def);
 		return def;

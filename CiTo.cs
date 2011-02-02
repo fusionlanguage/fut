@@ -102,6 +102,7 @@ public class CiTo
 		}
 		SourceGenerator gen;
 		switch (lang) {
+		case "c": gen = new GenC(outputPath); break;
 		case "cs": gen = new GenCs(outputPath); break;
 		case "java": gen = new GenJava(outputPath); break;
 		case "js": gen = new GenJs(outputPath); break;

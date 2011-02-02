@@ -543,7 +543,7 @@ public abstract class SourceGenerator
 		WriteChild(stmt.Body);
 	}
 
-	protected void Write(ICiStatement stmt)
+	protected virtual void Write(ICiStatement stmt)
 	{
 		if (stmt is CiAssign
 		 || stmt is CiExpr

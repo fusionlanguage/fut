@@ -1,4 +1,4 @@
-// GenCs.cs - C# code generator
+// GenC.cs - C code generator
 //
 // Copyright (C) 2011  Piotr Fusik
 //
@@ -18,97 +18,28 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
-using System.Linq;
 
 namespace Foxoft.Ci
 {
 
-public class GenCs : SourceGenerator
+public class GenC : SourceGenerator
 {
-	public GenCs(string outputPath)
+	public GenC(string outputPath)
 	{
-	}
-
-	void WriteDoc(string text)
-	{
-		foreach (char c in text) {
-			switch (c) {
-			case '&': Write("&amp;"); break;
-			case '<': Write("&lt;"); break;
-			case '>': Write("&gt;"); break;
-			case '\n': WriteLine(); Write("/// "); break;
-			default: Write(c); break;
-			}
-		}
-	}
-
-	void Write(CiDocPara para)
-	{
-		foreach (CiDocInline inline in para.Children) {
-			CiDocText text = inline as CiDocText;
-			if (text != null) {
-				WriteDoc(text.Text);
-				continue;
-			}
-			CiDocCode code = inline as CiDocCode;
-			if (code != null) {
-				switch (code.Text) {
-				case "true": Write("<see langword=\"true\" />"); break;
-				case "false": Write("<see langword=\"false\" />"); break;
-				case "null": Write("<see langword=\"null\" />"); break;
-				default:
-					Write("<c>");
-					WriteDoc(code.Text);
-					Write("</c>");
-					break;
-				}
-				continue;
-			}
-			throw new ApplicationException();
-		}
-	}
-
-	void Write(CiDocBlock block)
-	{
-		CiDocList list = block as CiDocList;
-		if (list != null) {
-			WriteLine();
-			WriteLine("/// <list type=\"bullet\">");
-			foreach (CiDocPara item in list.Items) {
-				Write("/// <item>");
-				Write(item);
-				WriteLine("</item>");
-			}
-			Write("/// </list>");
-			WriteLine();
-			Write("/// ");
-			return;
-		}
-		Write((CiDocPara) block);
 	}
 
 	void Write(CiCodeDoc doc)
 	{
 		if (doc == null)
 			return;
-		Write("/// <summary>");
-		Write(doc.Summary);
-		WriteLine("</summary>");
-		if (doc.Details.Length > 0) {
-			Write("/// <remarks>");
-			foreach (CiDocBlock block in doc.Details)
-				Write(block);
-			WriteLine("</remarks>");
-		}
+		// TODO
 	}
 
 	void Write(CiEnum enu)
 	{
 		WriteLine();
 		Write(enu.Documentation);
-		Write(enu.IsPublic ? "public " : "internal ");
-		Write("enum ");
-		WriteLine(enu.Name);
+		Write("typedef enum ");
 		OpenBlock();
 		bool first = true;
 		foreach (CiEnumValue value in enu.Values) {
@@ -117,54 +48,51 @@ public class GenCs : SourceGenerator
 			else
 				WriteLine(",");
 			Write(value.Documentation);
+			Write(enu.Name);
+			Write('_');
 			Write(value.Name);
 		}
 		WriteLine();
 		CloseBlock();
+		Write(enu.Name);
+		WriteLine(";");
 	}
 
 	void WriteBaseType(CiType type)
 	{
-		if (type is CiStringType)
-			Write("string");
-		else
+		// TODO
+		if (type is CiByteType)
+			Write("unsigned char ");
+		else if (type is CiStringPtrType)
+			Write("const char *");
+		else if (type is CiStringStorageType)
+			Write("char ");
+		else {
 			Write(type.Name);
+			Write(' ');
+			if (type is CiClassPtrType)
+				Write('*');
+		}
 	}
 
-	void Write(CiType type)
+	void Write(CiType type, string name)
 	{
+		// TODO
 		WriteBaseType(type.BaseType);
-		for (int i = 0; i < type.ArrayLevel; i++)
-			Write("[]");
-		Write(' ');
-	}
-
-	bool WriteInit(CiType type)
-	{
-		CiClassStorageType classType = type as CiClassStorageType;
-		if (classType != null) {
-			Write(" = new {0}()", classType.Class.Name);
-			return true;
+		Write(name);
+		if (type is CiArrayType)
+			WriteInitializer((CiArrayType) type);
+		if (type.BaseType is CiStringStorageType) {
+			Write('[');
+			Write(((CiStringStorageType) type.BaseType).Length + 1);
+			Write(']');
 		}
-		CiArrayStorageType arrayType = type as CiArrayStorageType;
-		if (arrayType != null) {
-			Write(" = new ");
-			WriteBaseType(arrayType.BaseType);
-			WriteInitializer(arrayType);
-			return true;
-		}
-		return false;
 	}
 
 	void Write(CiField field)
 	{
 		Write(field.Documentation);
-		Write(field.IsPublic ? "public " : "internal ");
-		if (field.Type is CiClassStorageType || field.Type is CiArrayStorageType)
-			Write("readonly ");
-		Write(field.Type);
-		Write(field.Name);
-		WriteInit(field.Type);
+		Write(field.Type, field.Name);
 		WriteLine(";");
 	}
 
@@ -172,26 +100,23 @@ public class GenCs : SourceGenerator
 	{
 		WriteLine();
 		Write(clazz.Documentation);
-		Write(clazz.IsPublic ? "public " : "internal ");
-		Write("class ");
-		WriteLine(clazz.Name);
+		Write("typedef struct ");
 		OpenBlock();
 		foreach (CiField field in clazz.Fields)
 			Write(field);
 		CloseBlock();
+		Write(clazz.Name);
+		WriteLine(";");
 	}
 
 	void Write(CiConst def)
 	{
 		Write(def.Documentation);
-		if (def.IsPublic)
-			Write("public ");
-		Write("const ");
-		Write(def.Type);
+		Write("#define ");
 		Write(def.Name);
-		Write(" = ");
+		Write("  ");
 		WriteConst(def.Value);
-		WriteLine(";");
+		WriteLine();
 	}
 
 	protected override int GetPriority(CiExpr expr)
@@ -204,29 +129,68 @@ public class GenCs : SourceGenerator
 		return base.GetPriority(expr);
 	}
 
+	protected override void WriteConst(object value)
+	{
+		if (value is CiEnumValue) {
+			CiEnumValue ev = (CiEnumValue) value;
+			Write(ev.Type.Name);
+			Write('_');
+			Write(ev.Name);
+		}
+		else if (value == null)
+			Write("NULL");
+		else
+			base.WriteConst(value);
+	}
+
+	protected override void Write(CiFieldAccess expr)
+	{
+		WriteChild(expr, expr.Obj);
+		if (expr.Obj.Type is CiClassPtrType)
+			Write("->");
+		else
+			Write('.');
+		Write(expr.Field.Name);
+	}
+
 	protected override void Write(CiPropertyAccess expr)
 	{
 		if (expr.Property == CiIntType.SByteProperty) {
-			Write("(sbyte) ");
+			Write("(signed char) ");
 			WriteChild(expr, expr.Obj);
 		}
 		else if (expr.Property == CiIntType.LowByteProperty) {
-			Write("(byte) ");
+			Write("(unsigned char) ");
 			WriteChild(expr, expr.Obj);
 		}
 		else if (expr.Property == CiStringType.LengthProperty) {
+			Write("strlen(");
 			WriteChild(expr, expr.Obj);
-			Write(".Length");
+			Write(')');
 		}
 		// TODO
 		else
 			throw new ApplicationException(expr.Property.Name);
 	}
 
+	void WriteClearArray(CiExpr expr)
+	{
+		Write("memset(");
+		Write(expr);
+		Write(", 0, sizeof(");
+		Write(expr);
+		Write("))");
+	}
+
+	void WriteSum(CiExpr left, CiExpr right)
+	{
+		Write(new CiBinaryExpr { Left = left, Op = CiToken.Plus, Right = right });
+	}
+
 	protected override void Write(CiMethodCall expr)
 	{
 		if (expr.Function == CiIntType.MulDivMethod) {
-			Write("(int) ((long) (");
+			Write("(int) ((double) (");
 			Write(expr.Obj);
 			Write(") * (");
 			Write(expr.Arguments[0]);
@@ -241,28 +205,29 @@ public class GenCs : SourceGenerator
 			Write(']');
 		}
 		else if (expr.Function == CiStringType.SubstringMethod) {
-			Write(expr.Obj);
-			Write(".Substring(");
+			// TODO
+			Write("String_Substring(");
+			Write("NULL");
+			Write(", ");
 			Write(expr.Arguments[0]);
 			Write(", ");
 			Write(expr.Arguments[1]);
 			Write(')');
 		}
 		else if (expr.Function == CiArrayType.CopyToMethod) {
-			Write("System.Array.Copy(");
-			Write(expr.Obj);
+			Write("memcpy(");
+			WriteSum(expr.Arguments[1], expr.Arguments[2]);
 			Write(", ");
-			Write(expr.Arguments[0]);
-			Write(", ");
-			Write(expr.Arguments[1]);
-			Write(", ");
-			Write(expr.Arguments[2]);
+			WriteSum(expr.Obj, expr.Arguments[0]);
 			Write(", ");
 			Write(expr.Arguments[3]);
 			Write(')');
 		}
 		else if (expr.Function == CiArrayType.ToStringMethod) {
-			Write("System.Text.Encoding.UTF8.GetString(");
+			// TODO
+			Write("String_Substring(");
+			Write("NULL");
+			Write(", ");
 			Write(expr.Obj);
 			Write(", ");
 			Write(expr.Arguments[0]);
@@ -271,9 +236,7 @@ public class GenCs : SourceGenerator
 			Write(')');
 		}
 		else if (expr.Function == CiArrayStorageType.ClearMethod) {
-			Write("Array_Clear(");
-			Write(expr.Obj);
-			Write(')');
+			WriteClearArray(expr.Obj);
 		}
 		// TODO
 		else
@@ -282,9 +245,10 @@ public class GenCs : SourceGenerator
 
 	protected override void WriteInline(CiVar stmt)
 	{
-		Write(stmt.Type);
-		Write(stmt.Name);
-		if (!WriteInit(stmt.Type) && stmt.InitialValue != null) {
+		Write(stmt.Type, stmt.Name);
+		if (stmt.InitialValue != null) {
+			if (stmt.Type is CiArrayStorageType)
+				throw new Exception("Cannot initialize array inline");
 			Write(" = ");
 			Write(stmt.InitialValue);
 		}
@@ -293,7 +257,7 @@ public class GenCs : SourceGenerator
 	protected override void WriteAssignSource(CiAssign assign)
 	{
 		if (assign.CastIntToByte) {
-			Write("(byte) (");
+			Write("(unsigned char) (");
 			base.WriteAssignSource(assign);
 			Write(')');
 		}
@@ -301,13 +265,32 @@ public class GenCs : SourceGenerator
 			base.WriteAssignSource(assign);
 	}
 
+	protected override void Write(ICiStatement stmt)
+	{
+		if (stmt is CiVar) {
+			CiVar def = (CiVar) stmt;
+			Write(def.Type, def.Name);
+			if (def.InitialValue != null && !(def.Type is CiArrayStorageType)) {
+				Write(" = ");
+				Write(def.InitialValue);
+			}
+			WriteLine(";");
+			if (def.InitialValue != null && def.Type is CiArrayStorageType) {
+				WriteClearArray(new CiVarAccess { Var = def });
+				WriteLine(";");
+			}
+		}
+		else
+			base.Write(stmt);
+	}
+
 	void Write(CiFunction func)
 	{
 		WriteLine();
 		Write(func.Documentation);
-		Write("static ");
-		Write(func.ReturnType);
-		Write(func.Name);
+		if (!func.IsPublic)
+			Write("static ");
+		Write(func.ReturnType, func.Name); // TODO
 		Write("(");
 		bool first = true;
 		foreach (CiParam param in func.Params) {
@@ -315,8 +298,7 @@ public class GenCs : SourceGenerator
 				first = false;
 			else
 				Write(", ");
-			Write(param.Type);
-			Write(param.Name);
+			Write(param.Type, param.Name);
 		}
 		WriteLine(")");
 		Write(func.Body);
@@ -325,29 +307,25 @@ public class GenCs : SourceGenerator
 	public override void Write(CiProgram prog)
 	{
 		WriteLine("// Generated automatically with \"cito\". Do not edit.");
-		Write("namespace ");
-		WriteLine(string.Join(".", prog.NamespaceElements.Where(e => e[0] >= 'A' && e[0] <= 'Z').ToArray()));
-		OpenBlock();
 		foreach (CiSymbol symbol in prog.Globals.List) {
 			if (symbol is CiEnum)
 				Write((CiEnum) symbol);
 			else if (symbol is CiClass)
 				Write((CiClass) symbol);
 		}
-		WriteLine("public partial class ASAP");
-		OpenBlock();
 		foreach (CiConst konst in prog.ConstArrays) {
-			Write("static readonly ");
-			Write(konst.Type);
-			Write(konst.GlobalName);
+			Write("static const ");
+			Write(konst.Type, konst.GlobalName);
 			Write(" = ");
 			WriteConst(konst.Value);
 			WriteLine(";");
 		}
 		foreach (CiBinaryResource resource in prog.BinaryResources) {
-			Write("static readonly byte[] ");
+			Write("static const unsigned char ");
 			WriteName(resource);
-			Write(" = ");
+			Write('[');
+			Write(resource.Content.Length);
+			Write("] = ");
 			WriteConst(resource.Content);
 			WriteLine(";");
 		}
@@ -357,8 +335,6 @@ public class GenCs : SourceGenerator
 			else if (symbol is CiFunction)
 				Write((CiFunction) symbol);
 		}
-		CloseBlock();
-		CloseBlock();
 	}
 }
 
