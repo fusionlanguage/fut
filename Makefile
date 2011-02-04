@@ -1,7 +1,7 @@
 run: ../../a8/asap/git/asap.ci cito.exe
-	./cito.exe -I ../../a8/asap/git/players -l cs $< | dos2unix >../../a8/asap/git/csharp/asapci.cs
+	./cito.exe -I ../../a8/asap/git/players -l cs -n Sf.Asap $< | dos2unix >../../a8/asap/git/csharp/asapci.cs
 	$(MAKE) -C ../../a8/asap/git/csharp
-	./cito.exe -I ../../a8/asap/git/players -l java $< | dos2unix >asapci.java
+	./cito.exe -I ../../a8/asap/git/players -l java -n net.sf.asap $< | dos2unix >asapci.java
 	./cito.exe -I ../../a8/asap/git/players -l js $< | dos2unix >asapci.js
 	./cito.exe -I ../../a8/asap/git/players -l c $< | dos2unix >asapci.c
 

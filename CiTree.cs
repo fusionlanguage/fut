@@ -544,7 +544,6 @@ public class CiFunction : CiSymbol
 
 public class CiProgram
 {
-	public string[] NamespaceElements;
 	public SymbolTable Globals;
 	public CiConst[] ConstArrays;
 	public CiBinaryResource[] BinaryResources;

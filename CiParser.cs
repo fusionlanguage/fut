@@ -785,15 +785,6 @@ public partial class CiParser : CiLexer
 		this.LoopLevel = 0;
 		this.SwitchLevel = 0;
 
-		Expect(CiToken.Namespace);
-		List<string> namespaceElements = new List<string>();
-		namespaceElements.Add(ParseId());
-		while (See(CiToken.Dot)) {
-			NextToken();
-			namespaceElements.Add(ParseId());
-		}
-		Expect(CiToken.Semicolon);
-
 		while (!See(CiToken.EndOfFile)) {
 			while (Eat(CiToken.Macro))
 				this.Symbols.Add(ParseMacro());
@@ -813,7 +804,6 @@ public partial class CiParser : CiLexer
 		}
 
 		return new CiProgram {
-			NamespaceElements = namespaceElements.ToArray(),
 			Globals = globals,
 			ConstArrays = this.ConstArrays.ToArray(),
 			BinaryResources = this.BinaryResources.Values.ToArray()

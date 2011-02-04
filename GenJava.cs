@@ -24,8 +24,11 @@ namespace Foxoft.Ci
 
 public class GenJava : SourceGenerator
 {
-	public GenJava(string outputPath)
+	string Namespace;
+
+	public GenJava(string outputPath, string namespace_)
 	{
+		this.Namespace = namespace_;
 	}
 
 	void WriteDoc(string text)
@@ -327,9 +330,11 @@ public class GenJava : SourceGenerator
 	public override void Write(CiProgram prog)
 	{
 		WriteLine("// Generated automatically with \"cito\". Do not edit.");
-		Write("package ");
-		Write(string.Join(".", prog.NamespaceElements));
-		WriteLine(";");
+		if (this.Namespace != null) {
+			Write("package ");
+			Write(this.Namespace);
+			WriteLine(";");
+		}
 		foreach (CiSymbol symbol in prog.Globals.List) {
 			if (symbol is CiEnum)
 				Write((CiEnum) symbol);

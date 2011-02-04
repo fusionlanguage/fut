@@ -34,6 +34,7 @@ public class CiTo
 		Console.WriteLine("-l java  Translate to Java");
 		Console.WriteLine("-l js    Translate to JavaScript");
 		Console.WriteLine("-o FILE  Write to the specified file (C#) or directory (Java)");
+		Console.WriteLine("-n NAME  Specify namespace or Java package");
 		Console.WriteLine("-D NAME  Define conditional compilation symbol");
 		Console.WriteLine("-I DIR   Add directory for BinaryResource");
 		Console.WriteLine("--help   This help");
@@ -47,6 +48,7 @@ public class CiTo
 		string inputPath = null;
 		string lang = null;
 		string outputPath = null;
+		string namespace_ = null;
 		for (int i = 0; i < args.Length; i++) {
 			string arg = args[i];
 			if (arg[0] == '-') {
@@ -62,6 +64,9 @@ public class CiTo
 					break;
 				case "-o":
 					outputPath = args[++i];
+					break;
+				case "-n":
+					namespace_ = args[++i];
 					break;
 				case "-D":
 					string symbol = args[++i];
@@ -103,8 +108,8 @@ public class CiTo
 		SourceGenerator gen;
 		switch (lang) {
 		case "c": gen = new GenC(outputPath); break;
-		case "cs": gen = new GenCs(outputPath); break;
-		case "java": gen = new GenJava(outputPath); break;
+		case "cs": gen = new GenCs(outputPath, namespace_); break;
+		case "java": gen = new GenJava(outputPath, namespace_); break;
 		case "js": gen = new GenJs(outputPath); break;
 		default: throw new ApplicationException("Unknown language: " + lang);
 		}

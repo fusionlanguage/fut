@@ -89,7 +89,6 @@ public enum CiToken
 	For,
 	If,
 	Macro,
-	Namespace,
 	Public,
 	Return,
 	Switch,
@@ -443,7 +442,6 @@ public class CiLexer
 				case "for": return CiToken.For;
 				case "if": return CiToken.If;
 				case "macro": return CiToken.Macro;
-				case "namespace": return CiToken.Namespace;
 				case "public": return CiToken.Public;
 				case "return": return CiToken.Return;
 				case "switch": return CiToken.Switch;

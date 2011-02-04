@@ -18,15 +18,17 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
-using System.Linq;
 
 namespace Foxoft.Ci
 {
 
 public class GenCs : SourceGenerator
 {
-	public GenCs(string outputPath)
+	string Namespace;
+
+	public GenCs(string outputPath, string namespace_)
 	{
+		this.Namespace = namespace_;
 	}
 
 	void WriteDoc(string text)
@@ -325,9 +327,11 @@ public class GenCs : SourceGenerator
 	public override void Write(CiProgram prog)
 	{
 		WriteLine("// Generated automatically with \"cito\". Do not edit.");
-		Write("namespace ");
-		WriteLine(string.Join(".", prog.NamespaceElements.Where(e => e[0] >= 'A' && e[0] <= 'Z').ToArray()));
-		OpenBlock();
+		if (this.Namespace != null) {
+			Write("namespace ");
+			WriteLine(this.Namespace);
+			OpenBlock();
+		}
 		foreach (CiSymbol symbol in prog.Globals.List) {
 			if (symbol is CiEnum)
 				Write((CiEnum) symbol);
@@ -358,7 +362,8 @@ public class GenCs : SourceGenerator
 				Write((CiFunction) symbol);
 		}
 		CloseBlock();
-		CloseBlock();
+		if (this.Namespace != null)
+			CloseBlock();
 	}
 }
 
