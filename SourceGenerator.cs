@@ -181,7 +181,8 @@ public abstract class SourceGenerator
 			return 1;
 		if (expr is CiUnaryExpr
 		 || expr is CiCondNotExpr
-		 || expr is CiPostfixExpr)
+		 || expr is CiPostfixExpr
+		 || expr is CiCoercion)
 			return 2;
 		if (expr is CiBinaryExpr) {
 			switch (((CiBinaryExpr) expr).Op) {
@@ -356,6 +357,19 @@ public abstract class SourceGenerator
 		WriteName(expr.Resource);
 	}
 
+	void WriteInline(CiMaybeAssign expr)
+	{
+		if (expr is CiExpr)
+			Write((CiExpr) expr);
+		else
+			WriteInline((CiAssign) expr);
+	}
+
+	protected virtual void Write(CiCoercion expr)
+	{
+		WriteInline(expr.Inner);
+	}
+
 	protected void Write(CiExpr expr)
 	{
 		if (expr is CiConstExpr)
@@ -388,6 +402,8 @@ public abstract class SourceGenerator
 			Write((CiCondExpr) expr);
 		else if (expr is CiBinaryResourceExpr)
 			Write((CiBinaryResourceExpr) expr);
+		else if (expr is CiCoercion)
+			Write((CiCoercion) expr);
 		else
 			throw new ApplicationException(expr.ToString());
 	}
@@ -408,14 +424,6 @@ public abstract class SourceGenerator
 
 	protected abstract void WriteInline(CiVar stmt);
 
-	protected virtual void WriteAssignSource(CiAssign assign)
-	{
-		if (assign.Source is CiExpr)
-			Write((CiExpr) assign.Source);
-		else if (assign.Source is CiAssign)
-			WriteInline((CiAssign) assign.Source);
-	}
-
 	protected virtual void WriteInline(CiAssign assign)
 	{
 		Write(assign.Target);
@@ -434,7 +442,7 @@ public abstract class SourceGenerator
 		default:
 			throw new ApplicationException();
 		}
-		WriteAssignSource(assign);
+		WriteInline(assign.Source);
 	}
 
 	void WriteInline(ICiStatement stmt)

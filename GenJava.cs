@@ -295,17 +295,6 @@ public class GenJava : SourceGenerator
 		}
 	}
 
-	protected override void WriteAssignSource(CiAssign assign)
-	{
-		if (assign.CastIntToByte) {
-			Write("(byte) (");
-			base.WriteAssignSource(assign);
-			Write(')');
-		}
-		else
-			base.WriteAssignSource(assign);
-	}
-
 	void Write(CiFunction func)
 	{
 		WriteLine();

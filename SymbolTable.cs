@@ -38,14 +38,22 @@ public class SymbolTable
 		this.List.Add(symbol);
 	}
 
-	public CiSymbol Lookup(string name)
+	public CiSymbol TryLookup(string name)
 	{
 		for (SymbolTable t = this; t != null; t = t.Parent) {
 			CiSymbol result;
 			if (t.Dict.TryGetValue(name, out result))
 				return result;
 		}
-		throw new ParseException("Unknown symbol {0}", name);
+		return null;
+	}
+
+	public CiSymbol Lookup(string name)
+	{
+		CiSymbol result = TryLookup(name);
+		if (result == null)
+			throw new ParseException("Unknown symbol {0}", name);
+		return result;
 	}
 }
 

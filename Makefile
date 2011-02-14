@@ -5,7 +5,7 @@ run: ../../a8/asap/git/asap.ci cito.exe
 	./cito.exe -I ../../a8/asap/git/players -l js $< | dos2unix >asapci.js
 	./cito.exe -I ../../a8/asap/git/players -l c $< | dos2unix >asapci.c
 
-cito.exe: CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs SourceGenerator.cs GenC.cs GenCs.cs GenJava.cs GenJs.cs CiTo.cs
+cito.exe: CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenCs.cs GenJava.cs GenJs.cs CiTo.cs
 	csc -nologo -o+ -debug -out:$@ $^
 
 clean:

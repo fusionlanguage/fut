@@ -91,9 +91,9 @@ public class CiTo
 			Usage();
 			return 1;
 		}
+
 		CiParser parser = new CiParser(File.OpenText(inputPath));
 		parser.PreSymbols = preSymbols;
-		parser.SearchDirs = searchDirs;
 		CiProgram program;
 		try {
 			program = parser.ParseProgram();
@@ -105,6 +105,11 @@ public class CiTo
 //			return 1;
 			throw;
 		}
+
+		CiResolver resolver = new CiResolver();
+		resolver.SearchDirs = searchDirs;
+		resolver.Resolve(program);
+
 		SourceGenerator gen;
 		switch (lang) {
 		case "c": gen = new GenC(outputPath); break;

@@ -64,6 +64,15 @@ public abstract class CiSymbol
 	public string Name;
 }
 
+public interface ICiTypeVisitor
+{
+	CiType Visit(CiUnknownType type);
+	CiType Visit(CiStringStorageType type);
+	CiType Visit(CiClassType type);
+	CiType Visit(CiArrayType type);
+	CiType Visit(CiArrayStorageType type);
+}
+
 public class CiType : CiSymbol
 {
 	public static readonly CiType Null = new CiType { Name = "null" };
@@ -71,11 +80,17 @@ public class CiType : CiSymbol
 	public virtual Type DotNetType { get { throw new ApplicationException("No corresponding .NET type"); } }
 	public virtual CiType BaseType { get { return this; } }
 	public virtual int ArrayLevel { get { return 0; } }
+	public virtual CiType Ptr { get { return null; } }
 	public virtual CiSymbol LookupMember(string name)
 	{
 		throw new ParseException("{0} has no members", this.GetType());
 	}
-	public virtual bool IsAssignableFrom(CiType that) { return this == that; }
+	public virtual CiType Accept(ICiTypeVisitor v) { return this; }
+}
+
+public class CiUnknownType : CiType
+{
+	public override CiType Accept(ICiTypeVisitor v) { return v.Visit(this); }
 }
 
 public class CiBoolType : CiType
@@ -123,10 +138,6 @@ public class CiIntType : CiType
 		default: throw new ParseException("No member {0} in int", name);
 		}
 	}
-	public override bool IsAssignableFrom(CiType that)
-	{
-		return this == that || that == CiByteType.Value;
-	}
 }
 
 public abstract class CiStringType : CiType
@@ -163,19 +174,23 @@ public class CiStringPtrType : CiStringType
 {
 	private CiStringPtrType() { }
 	public static readonly CiStringPtrType Value = new CiStringPtrType { Name = "string" };
-	public override bool IsAssignableFrom(CiType that)
-	{
-		return that is CiStringType || that == CiType.Null;
-	}
 }
 
 public class CiStringStorageType : CiStringType
 {
+	public CiExpr LengthExpr;
 	public int Length;
-	public override bool IsAssignableFrom(CiType that)
+	public override bool Equals(object obj)
 	{
-		return that is CiStringType;
+		CiStringStorageType that = obj as CiStringStorageType;
+		return that != null && this.Length == that.Length;
 	}
+	public override int GetHashCode()
+	{
+		return this.Length.GetHashCode();
+	}
+	public override CiType Ptr { get { return CiStringPtrType.Value; } }
+	public override CiType Accept(ICiTypeVisitor v) { return v.Visit(this); }
 }
 
 public abstract class CiClassType : CiType
@@ -188,19 +203,34 @@ public abstract class CiClassType : CiType
 			throw new ParseException("No field {0} in class {1}", name, this.Class.Name);
 		return field;
 	}
+	public override CiType Accept(ICiTypeVisitor v) { return v.Visit(this); }
 }
 
 public class CiClassPtrType : CiClassType
 {
-	public override bool IsAssignableFrom(CiType that)
+	public override bool Equals(object obj)
 	{
-		return (that is CiClassType && this.Class == ((CiClassType) that).Class)
-			|| that == CiType.Null;
+		CiClassPtrType that = obj as CiClassPtrType;
+		return that != null && this.Class == that.Class;
+	}
+	public override int GetHashCode()
+	{
+		return this.Class.GetHashCode();
 	}
 }
 
 public class CiClassStorageType : CiClassType
 {
+	public override bool Equals(object obj)
+	{
+		CiClassStorageType that = obj as CiClassStorageType;
+		return that != null && this.Class == that.Class;
+	}
+	public override int GetHashCode()
+	{
+		return this.Class.GetHashCode();
+	}
+	public override CiType Ptr { get { return new CiClassPtrType { Class = this.Class }; } }
 }
 
 public abstract class CiArrayType : CiType
@@ -241,22 +271,28 @@ public abstract class CiArrayType : CiType
 			throw new ParseException("No member {0} in array", name);
 		}
 	}
+	public override CiType Accept(ICiTypeVisitor v) { return v.Visit(this); }
 }
 
 public class CiArrayPtrType : CiArrayType
 {
 	public static readonly CiArrayPtrType ByteArray = new CiArrayPtrType { ElementType = CiByteType.Value };
-	public override bool IsAssignableFrom(CiType that)
+	public override bool Equals(object obj)
 	{
-		// FIXME
-		return (that is CiArrayType && this.ElementType == ((CiArrayType) that).ElementType)
-			|| that == CiType.Null;
+		CiArrayPtrType that = obj as CiArrayPtrType;
+		return that != null && this.ElementType.Equals(that.ElementType);
+	}
+	public override int GetHashCode()
+	{
+		return this.ElementType.GetHashCode();
 	}
 }
 
 public class CiArrayStorageType : CiArrayType
 {
+	public CiExpr LengthExpr;
 	public int Length;
+	public override CiType Ptr { get { return new CiArrayPtrType { ElementType = this.ElementType }; } }
 	public static readonly CiFunction ClearMethod = new CiFunction {
 		Name = "Clear",
 		ReturnType = CiType.Void,
@@ -270,6 +306,11 @@ public class CiArrayStorageType : CiArrayType
 		default: return base.LookupMember(name);
 		}
 	}
+	public override CiType Accept(ICiTypeVisitor v) { return v.Visit(this); }
+}
+
+public class CiUnknownSymbol : CiSymbol
+{
 }
 
 public class CiEnumValue : CiSymbol
@@ -304,8 +345,30 @@ public class CiClass : CiSymbol
 	public CiField[] Fields;
 }
 
+public class CiUnknownClass : CiClass
+{
+}
+
+public interface ICiStatementVisitor
+{
+	void Visit(CiConst statement);
+	void Visit(CiVar statement);
+	void Visit(CiFunctionCall statement);
+	void Visit(CiPostfixExpr statement);
+	void Visit(CiAssign statement);
+	void Visit(CiBreak statement);
+	void Visit(CiContinue statement);
+	void Visit(CiDoWhile statement);
+	void Visit(CiFor statement);
+	void Visit(CiIf statement);
+	void Visit(CiReturn statement);
+	void Visit(CiSwitch statement);
+	void Visit(CiWhile statement);
+}
+
 public interface ICiStatement
 {
+	void Accept(ICiStatementVisitor v);
 }
 
 public class CiConst : CiSymbol, ICiStatement
@@ -313,12 +376,14 @@ public class CiConst : CiSymbol, ICiStatement
 	public CiType Type;
 	public object Value;
 	public string GlobalName;
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiVar : CiSymbol, ICiStatement
 {
 	public CiType Type;
 	public CiExpr InitialValue;
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiBinaryResource : CiSymbol
@@ -336,8 +401,25 @@ public abstract class CiMaybeAssign
 	public abstract CiType Type { get; }
 }
 
+public interface ICiExprVisitor
+{
+	CiExpr Visit(CiSymbolAccess expr);
+	CiExpr Visit(CiUnknownMemberAccess expr);
+	CiExpr Visit(CiIndexAccess expr);
+	CiExpr Visit(CiFunctionCall expr);
+	CiExpr Visit(CiMethodCall expr);
+	CiExpr Visit(CiUnaryExpr expr);
+	CiExpr Visit(CiCondNotExpr expr);
+	CiExpr Visit(CiPostfixExpr expr);
+	CiExpr Visit(CiBinaryExpr expr);
+	CiExpr Visit(CiBoolBinaryExpr expr);
+	CiExpr Visit(CiCondExpr expr);
+	CiExpr Visit(CiBinaryResourceExpr expr);
+}
+
 public abstract class CiExpr : CiMaybeAssign
 {
+	public virtual CiExpr Accept(ICiExprVisitor v) { return this; }
 }
 
 public class CiConstExpr : CiExpr
@@ -362,6 +444,13 @@ public abstract class CiLValue : CiExpr
 {
 }
 
+public class CiSymbolAccess : CiExpr
+{
+	public CiSymbol Symbol;
+	public override CiType Type { get { throw new ApplicationException(); } }
+	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
+}
+
 public class CiConstAccess : CiExpr
 {
 	public CiConst Const;
@@ -372,6 +461,14 @@ public class CiVarAccess : CiLValue
 {
 	public CiVar Var;
 	public override CiType Type { get { return this.Var.Type; } }
+}
+
+public class CiUnknownMemberAccess : CiExpr
+{
+	public CiExpr Parent;
+	public string Name;
+	public override CiType Type { get { throw new ApplicationException(); } }
+	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
 public class CiFieldAccess : CiLValue
@@ -386,6 +483,14 @@ public class CiPropertyAccess : CiExpr
 	public CiExpr Obj;
 	public CiProperty Property;
 	public override CiType Type { get { return this.Property.Type; } }
+}
+
+public class CiIndexAccess : CiExpr
+{
+	public CiExpr Parent;
+	public CiExpr Index;
+	public override CiType Type { get { throw new ApplicationException(); } }
+	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
 public class CiArrayAccess : CiLValue
@@ -404,14 +509,18 @@ public class CiArrayAccess : CiLValue
 
 public class CiFunctionCall : CiExpr, ICiStatement
 {
+	public string Name;
 	public CiFunction Function;
 	public CiExpr[] Arguments;
 	public override CiType Type { get { return this.Function.ReturnType; } }
+	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiMethodCall : CiFunctionCall
 {
 	public CiExpr Obj;
+	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
 public class CiUnaryExpr : CiExpr
@@ -419,19 +528,23 @@ public class CiUnaryExpr : CiExpr
 	public CiToken Op;
 	public CiExpr Inner;
 	public override CiType Type { get { return CiIntType.Value; } }
+	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
 public class CiCondNotExpr : CiExpr
 {
 	public CiExpr Inner;
 	public override CiType Type { get { return CiBoolType.Value; } }
+	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
 public class CiPostfixExpr : CiExpr, ICiStatement
 {
-	public CiLValue Inner;
+	public CiExpr Inner;
 	public CiToken Op;
 	public override CiType Type { get { return CiIntType.Value; } }
+	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiBinaryExpr : CiExpr
@@ -440,61 +553,74 @@ public class CiBinaryExpr : CiExpr
 	public CiToken Op;
 	public CiExpr Right;
 	public override CiType Type { get { return CiIntType.Value; } }
+	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
 public class CiBoolBinaryExpr : CiBinaryExpr
 {
 	public override CiType Type { get { return CiBoolType.Value; } }
+	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
 public class CiCondExpr : CiExpr
 {
 	public CiExpr Cond;
+	public CiType ResultType;
 	public CiExpr OnTrue;
 	public CiExpr OnFalse;
-	public override CiType Type
-	{
-		get
-		{
-			if (this.OnTrue.Type.IsAssignableFrom(this.OnFalse.Type))
-				return this.OnTrue.Type;
-			return this.OnFalse.Type;
-		}
-	}
+	public override CiType Type { get { return this.ResultType; } }
+	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
 public class CiBinaryResourceExpr : CiExpr
 {
+	public CiExpr NameExpr;
 	public CiBinaryResource Resource;
 	public override CiType Type { get { return this.Resource.Type; } }
+	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
+}
+
+public class CiCoercion : CiExpr
+{
+	public CiType ResultType;
+	public CiMaybeAssign Inner;
+	public override CiType Type { get { return this.ResultType; } }
 }
 
 public class CiAssign : CiMaybeAssign, ICiStatement
 {
-	public CiLValue Target;
+	public CiExpr Target;
 	public CiToken Op;
 	public CiMaybeAssign Source;
-	public bool CastIntToByte;
 	public override CiType Type { get { return this.Target.Type; } }
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiBlock : ICiStatement
 {
 	public ICiStatement[] Statements;
+	public void Accept(ICiStatementVisitor v)
+	{
+		foreach (ICiStatement child in this.Statements)
+			child.Accept(v);
+	}
 }
 
 public class CiBreak : ICiStatement
 {
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiContinue : ICiStatement
 {
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiDoWhile : ICiStatement
 {
 	public ICiStatement Body;
 	public CiExpr Cond;
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiFor : ICiStatement
@@ -503,6 +629,7 @@ public class CiFor : ICiStatement
 	public CiExpr Cond;
 	public ICiStatement Advance;
 	public ICiStatement Body;
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiIf : ICiStatement
@@ -510,11 +637,13 @@ public class CiIf : ICiStatement
 	public CiExpr Cond;
 	public ICiStatement OnTrue;
 	public ICiStatement OnFalse;
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiReturn : ICiStatement
 {
 	public CiExpr Value;
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiCase
@@ -527,12 +656,14 @@ public class CiSwitch : ICiStatement
 {
 	public CiExpr Value;
 	public CiCase[] Cases;
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiWhile : ICiStatement
 {
 	public CiExpr Cond;
 	public ICiStatement Body;
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiFunction : CiSymbol

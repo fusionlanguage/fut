@@ -18,11 +18,8 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
-using System.Linq;
 
 namespace Foxoft.Ci
 {
@@ -32,26 +29,11 @@ public partial class CiParser : CiLexer
 	SymbolTable Symbols;
 	List<CiConst> ConstArrays;
 	public CiFunction CurrentFunction;
-	public IEnumerable<string> SearchDirs;
-	SortedDictionary<string, CiBinaryResource> BinaryResources;
 	int LoopLevel;
 	int SwitchLevel;
 
 	public CiParser(TextReader reader) : base(reader)
 	{
-		this.SearchDirs = new string[0];
-	}
-
-	string FindFile(string name)
-	{
-		foreach (string dir in this.SearchDirs) {
-			string full = Path.Combine(dir, name);
-			if (File.Exists(full))
-				return full;
-		}
-		if (File.Exists(name))
-			return name;
-		throw new ParseException("File {0} not found", name);
 	}
 
 	string ParseId()
@@ -90,36 +72,43 @@ public partial class CiParser : CiLexer
 		return enu;
 	}
 
+	CiType LookupType(string name)
+	{
+		CiSymbol symbol = this.Symbols.TryLookup(name);
+		if (symbol is CiType)
+			return (CiType) symbol;
+		if (symbol is CiClass)
+			return new CiClassPtrType { Name = name, Class = (CiClass) symbol};
+		if (symbol == null) {
+			CiType unknown = new CiUnknownType();
+			unknown.Name = name;
+			return unknown;
+		}
+		throw new ParseException("{0} is not a type", name);
+	}
+
 	CiType ParseType(string baseName)
 	{
 		if (Eat(CiToken.LeftBracket)) {
 			if (Eat(CiToken.RightBracket))
 				return new CiArrayPtrType { ElementType = ParseType(baseName) };
-			int len = (int) ParseConstExpr(CiIntType.Value);
+			CiExpr len = ParseExpr();
 			Expect(CiToken.RightBracket);
 			return new CiArrayStorageType {
-				Length = len,
+				LengthExpr = len,
 				ElementType = ParseType(baseName)
 			};
 		}
 		if (Eat(CiToken.LeftParenthesis)) {
 			if (baseName == "string") {
-				int len = (int) ParseConstExpr(CiIntType.Value);
+				CiExpr len = ParseExpr();
 				Expect(CiToken.RightParenthesis);
-				return new CiStringStorageType { Length = len };
+				return new CiStringStorageType { LengthExpr = len };
 			}
 			Expect(CiToken.RightParenthesis);
-			CiClass clazz = this.Symbols.Lookup(baseName) as CiClass;
-			if (clazz == null)
-				throw new ParseException("{0} is not a class", baseName);
-			return new CiClassStorageType { Name = baseName, Class = clazz };
+			return new CiClassStorageType { Name = baseName, Class = new CiUnknownClass { Name = baseName } };
 		}
-		CiSymbol symbol = this.Symbols.Lookup(baseName);
-		if (symbol is CiClass)
-			return new CiClassPtrType { Name = baseName, Class = (CiClass) symbol};
-		if (symbol is CiType)
-			return (CiType) symbol;
-		throw new ParseException("{0} is not a type", baseName);
+		return LookupType(baseName);
 	}
 
 	CiType ParseType()
@@ -128,46 +117,38 @@ public partial class CiParser : CiLexer
 		return ParseType(baseName);
 	}
 
-	object ParseConstInitializer(ref CiType type)
+	object ParseConstInitializer(CiType type)
 	{
 		if (type is CiArrayType) {
 			Expect(CiToken.LeftBrace);
 			CiType elementType = ((CiArrayType) type).ElementType;
-			ArrayList list = new ArrayList();
+			List<object> list = new List<object>();
 			if (!See(CiToken.RightBrace)) {
 				do
-					list.Add(ParseConstInitializer(ref elementType));
+					list.Add(ParseConstInitializer(elementType));
 				while (Eat(CiToken.Comma));
 			}
 			Expect(CiToken.RightBrace);
-			if (type is CiArrayStorageType) {
-				int expected = ((CiArrayStorageType) type).Length;
-				if (list.Count != expected)
-					throw new ParseException("Expected {0} array elements, got {1}", expected, list.Count);
-			}
-			else {
-				type = new CiArrayStorageType { ElementType = elementType, Length = list.Count };
-			}
-			return list.ToArray(elementType.DotNetType);
+			return list.ToArray();
 		}
-		return ParseConstExpr(type);
+		return ParseExpr();
 	}
 
 	CiConst ParseConst()
 	{
 		Expect(CiToken.Const);
-		CiConst def = new CiConst();
-		def.Type = ParseType();
-		def.Name = ParseId();
+		CiConst konst = new CiConst();
+		konst.Type = ParseType();
+		konst.Name = ParseId();
 		Expect(CiToken.Assign);
-		def.Value = ParseConstInitializer(ref def.Type);
+		konst.Value = ParseConstInitializer(konst.Type);
 		Expect(CiToken.Semicolon);
-		this.Symbols.Add(def);
-		if (this.Symbols.Parent != null && def.Type is CiArrayType) {
-			this.ConstArrays.Add(def);
-			def.GlobalName = "CiConstArray_" + this.ConstArrays.Count;
+		this.Symbols.Add(konst);
+		if (this.Symbols.Parent != null && konst.Type is CiArrayType) {
+			this.ConstArrays.Add(konst);
+			konst.GlobalName = "CiConstArray_" + this.ConstArrays.Count;
 		}
-		return def;
+		return konst;
 	}
 
 	CiField ParseField()
@@ -187,85 +168,42 @@ public partial class CiParser : CiLexer
 
 	CiClass ParseClass()
 	{
-		CiClass clazz = new CiClass();
+		CiClass klass = new CiClass();
 		Expect(CiToken.Class);
-		clazz.Name = ParseId();
-		this.Symbols.Add(clazz);
+		klass.Name = ParseId();
+		this.Symbols.Add(klass);
 		Expect(CiToken.LeftBrace);
 		List<CiField> fields = new List<CiField>();
-		while (!See(CiToken.RightBrace))
+		while (!Eat(CiToken.RightBrace))
 			fields.Add(ParseField());
-		NextToken();
-		clazz.Fields = fields.ToArray();
-		return clazz;
+		klass.Fields = fields.ToArray();
+		return klass;
 	}
 
 	CiBinaryResourceExpr ParseBinaryResource()
 	{
 		Expect(CiToken.LeftParenthesis);
-		string name = (string) ParseConstExpr(CiStringPtrType.Value);
+		CiExpr nameExpr = ParseExpr();
 		Expect(CiToken.RightParenthesis);
-		CiBinaryResource resource;
-		if (!this.BinaryResources.TryGetValue(name, out resource)) {
-			resource = new CiBinaryResource();
-			resource.Name = name;
-			resource.Content = File.ReadAllBytes(FindFile(name));
-			resource.Type = new CiArrayStorageType { ElementType = CiByteType.Value, Length = resource.Content.Length };
-			this.BinaryResources.Add(name, resource);
-		}
-		return new CiBinaryResourceExpr { Resource = resource };
+		return new CiBinaryResourceExpr { NameExpr = nameExpr };
 	}
 
-	CiFunctionCall ParseFunctionCall(CiFunctionCall call)
+	void ParseFunctionCall(CiFunctionCall call)
 	{
 		Expect(CiToken.LeftParenthesis);
-		CiParam[] paramz = call.Function.Params;
-		call.Arguments = new CiExpr[paramz.Length];
-		for (int i = 0; i < paramz.Length; i++) {
-			if (i > 0)
+		List<CiExpr> args = new List<CiExpr>();
+		while (!Eat(CiToken.RightParenthesis)) {
+			if (args.Count > 0)
 				Expect(CiToken.Comma);
-			CiExpr arg = ParseExpr();
-			ExpectType(arg, paramz[i].Type);
-			call.Arguments[i] = arg;
+			args.Add(ParseExpr());
 		}
-		Expect(CiToken.RightParenthesis);
-		return call;
-	}
-
-	void ExpectType(CiMaybeAssign expr, CiType expected)
-	{
-		if (!expected.IsAssignableFrom(expr.Type))
-			throw new ParseException("Expected {0}, got {1}", expected, expr.Type);
-	}
-
-	void CheckCompatibleTypes(CiExpr expr1, CiExpr expr2)
-	{
-		if (!expr1.Type.IsAssignableFrom(expr2.Type) && !expr2.Type.IsAssignableFrom(expr1.Type))
-			throw new ParseException("Incompatible types");
-	}
-
-	static int GetConstInt(CiExpr expr)
-	{
-		object o = ((CiConstExpr) expr).Value;
-		if (o is int)
-			return (int) o;
-		if (o is byte)
-			return (byte) o;
-		throw new ApplicationException();
-	}
-
-	static string GetConstString(CiExpr expr)
-	{
-		object o = ((CiConstExpr) expr).Value;
-		if (o is string || o is int || o is byte)
-			return Convert.ToString(o, CultureInfo.InvariantCulture);
-		throw new ParseException("Cannot convert {0} to string", expr.Type);
+		call.Arguments = args.ToArray();
 	}
 
 	static CiConstExpr NewConstInt(int value)
 	{
 		return new CiConstExpr {
-			Value = value >= 0 && value <= 255 ? (byte) value : (object) value
+			Value = value >= 0 && value <= 255 ? (byte) value : value
 		};
 	}
 
@@ -275,12 +213,10 @@ public partial class CiParser : CiLexer
 			CiToken op = this.CurrentToken;
 			NextToken();
 			CiExpr inner = ParsePrimaryExpr();
-			ExpectType(inner, CiIntType.Value);
 			return new CiUnaryExpr { Op = op, Inner = inner };
 		}
 		if (Eat(CiToken.CondNot)) {
 			CiExpr inner = ParsePrimaryExpr();
-			ExpectType(inner, CiBoolType.Value);
 			return new CiCondNotExpr { Inner = inner };
 		}
 		CiExpr result;
@@ -301,127 +237,63 @@ public partial class CiParser : CiLexer
 			if (name == "BinaryResource")
 				return ParseBinaryResource();
 			CiSymbol symbol = this.Symbols.Lookup(name);
-			if (symbol is CiVar)
-				result = new CiVarAccess { Var = (CiVar) symbol };
-			else if (symbol is CiConst) {
-				CiConst konst = (CiConst) symbol;
-				if (konst.Type is CiArrayType)
-					result = new CiConstAccess { Const = konst };
-				else
-					result = new CiConstExpr { Value = konst.Value };
-			}
-			else if (symbol is CiEnum) {
-				Expect(CiToken.Dot);
-				CiEnum enu = (CiEnum) symbol;
-				return new CiConstExpr { Value = enu.LookupMember(ParseId()) };
-			}
-			else if (symbol is CiFunction) {
-				CiFunctionCall call = new CiFunctionCall();
-				call.Function = (CiFunction) symbol;
-				return ParseFunctionCall(call);
-			}
-			else if (symbol is CiMacro) {
+			if (symbol is CiMacro) {
 				Expand((CiMacro) symbol);
 				Expect(CiToken.LeftParenthesis);
 				result = ParseExpr();
 				Expect(CiToken.RightParenthesis);
 			}
-			else
-				throw new ParseException("Invalid expression");
+			else {
+				if (symbol == null)
+					symbol = new CiUnknownSymbol { Name = name };
+				if (See(CiToken.LeftParenthesis)) {
+					CiFunctionCall call = new CiFunctionCall();
+					call.Name = name;
+					ParseFunctionCall(call);
+					result = call;
+				}
+				else
+					result = new CiSymbolAccess { Symbol = symbol };
+			}
 		}
 		else
 			throw new ParseException("Invalid expression");
 		for (;;) {
 			if (Eat(CiToken.Dot)) {
 				string name = ParseId();
-				CiSymbol member = result.Type.LookupMember(name);
-				if (member is CiFunction) {
+				if (See(CiToken.LeftParenthesis)) {
 					CiMethodCall call = new CiMethodCall();
 					call.Obj = result;
-					call.Function = (CiFunction) member;
-					return ParseFunctionCall(call);
-				}
-				if (member is CiField) {
-					result = new CiFieldAccess {
-						Obj = result,
-						Field = (CiField) member
-					};
-				}
-				else if (member is CiProperty) {
-					result = new CiPropertyAccess {
-						Obj = result,
-						Property = (CiProperty) member
-					};
-				}
-				else if (member is CiConst) {
-					result = new CiConstExpr { Value = ((CiConst) member).Value };
+					call.Name = name;
+					ParseFunctionCall(call);
+					result = call;
 				}
 				else
-					throw new ParseException("Member {0} is of incorrect type", name);
+					result = new CiUnknownMemberAccess { Parent = result, Name = name };
 			}
 			else if (Eat(CiToken.LeftBracket)) {
 				CiExpr index = ParseExpr();
-				ExpectType(index, CiIntType.Value);
 				Expect(CiToken.RightBracket);
-				if (result.Type is CiStringType) {
-					if (result is CiConstExpr && index is CiConstExpr) {
-						string s = (string) ((CiConstExpr) result).Value;
-						int i = GetConstInt(index);
-						result = NewConstInt(s[i]);
-					}
-					else {
-						result = new CiMethodCall {
-							Function = CiStringType.CharAtMethod,
-							Obj = result,
-							Arguments = new CiExpr[1] { index }
-						};
-					}
-				}
-				else {
-					if (!(result.Type is CiArrayType))
-						throw new ParseException("Indexed object is neither array or string");
-					result = new CiArrayAccess { Array = result, Index = index };
-				}
+				result = new CiIndexAccess { Parent = result, Index = index };
 			}
 			else if (See(CiToken.Increment) || See(CiToken.Decrement)) {
-				ExpectType(result, CiIntType.Value);
 				CiToken op = this.CurrentToken;
 				NextToken();
-				CiLValue lvalue = result as CiLValue;
-				if (lvalue == null)
-					throw new ParseException("Not an l-value for the postfix operator");
-				return new CiPostfixExpr { Inner = lvalue, Op = op };
+				return new CiPostfixExpr { Inner = result, Op = op };
 			}
 			else
-				break;
+				return result;
 		}
-		return result;
 	}
 
 	CiExpr ParseMulExpr()
 	{
 		CiExpr left = ParsePrimaryExpr();
 		while (See(CiToken.Asterisk) || See(CiToken.Slash) || See(CiToken.Mod) || See(CiToken.And) || See(CiToken.ShiftLeft) || See(CiToken.ShiftRight)) {
-			ExpectType(left, CiIntType.Value);
 			CiToken op = this.CurrentToken;
 			NextToken();
 			CiExpr right = ParsePrimaryExpr();
-			ExpectType(right, CiIntType.Value);
-			if (left is CiConstExpr && right is CiConstExpr) {
-				int a = GetConstInt(left);
-				int b = GetConstInt(right);
-				switch (op) {
-				case CiToken.Asterisk: a *= b; break;
-				case CiToken.Slash: a /= b; break;
-				case CiToken.Mod: a %= b; break;
-				case CiToken.And: a &= b; break;
-				case CiToken.ShiftLeft: a <<= b; break;
-				case CiToken.ShiftRight: a >>= b; break;
-				}
-				left = new CiConstExpr { Value = a };
-			}
-			else
-				left = new CiBinaryExpr { Left = left, Op = op, Right = right };
+			left = new CiBinaryExpr { Left = left, Op = op, Right = right };
 		}
 		return left;
 	}
@@ -433,30 +305,7 @@ public partial class CiParser : CiLexer
 			CiToken op = this.CurrentToken;
 			NextToken();
 			CiExpr right = ParseMulExpr();
-			if (op == CiToken.Plus && (left.Type is CiStringType || right.Type is CiStringType)) {
-				if (!(left is CiConstExpr && right is CiConstExpr))
-					throw new ParseException("String concatenation allowed only for constants. Consider using +=");
-				string a = GetConstString(left);
-				string b = GetConstString(right);
-				left = new CiConstExpr { Value = a + b };
-			}
-			else {
-				ExpectType(left, CiIntType.Value);
-				ExpectType(right, CiIntType.Value);
-				if (left is CiConstExpr && right is CiConstExpr) {
-					int a = GetConstInt(left);
-					int b = GetConstInt(right);
-					switch (op) {
-					case CiToken.Plus: a += b; break;
-					case CiToken.Minus: a -= b; break;
-					case CiToken.Or: a |= b; break;
-					case CiToken.Xor: a ^= b; break;
-					}
-					left = new CiConstExpr { Value = a };
-				}
-				else
-					left = new CiBinaryExpr { Left = left, Op = op, Right = right };
-			}
+			left = new CiBinaryExpr { Left = left, Op = op, Right = right };
 		}
 		return left;
 	}
@@ -468,7 +317,6 @@ public partial class CiParser : CiLexer
 			CiToken op = this.CurrentToken;
 			NextToken();
 			CiExpr right = ParseAddExpr();
-			CheckCompatibleTypes(left, right);
 			left = new CiBoolBinaryExpr { Left = left, Op = op, Right = right };
 		}
 		return left;
@@ -478,9 +326,7 @@ public partial class CiParser : CiLexer
 	{
 		CiExpr left = ParseRelExpr();
 		while (Eat(CiToken.CondAnd)) {
-			ExpectType(left, CiBoolType.Value);
 			CiExpr right = ParseRelExpr();
-			ExpectType(right, CiBoolType.Value);
 			left = new CiBoolBinaryExpr { Left = left, Op = CiToken.CondAnd, Right = right };
 		}
 		return left;
@@ -490,9 +336,7 @@ public partial class CiParser : CiLexer
 	{
 		CiExpr left = ParseCondAndExpr();
 		while (Eat(CiToken.CondOr)) {
-			ExpectType(left, CiBoolType.Value);
 			CiExpr right = ParseCondAndExpr();
-			ExpectType(right, CiBoolType.Value);
 			left = new CiBoolBinaryExpr { Left = left, Op = CiToken.CondOr, Right = right };
 		}
 		return left;
@@ -502,29 +346,14 @@ public partial class CiParser : CiLexer
 	{
 		CiExpr left = ParseCondOrExpr();
 		if (Eat(CiToken.QuestionMark)) {
-			ExpectType(left, CiBoolType.Value);
 			CiCondExpr result = new CiCondExpr();
 			result.Cond = left;
 			result.OnTrue = ParseExpr();
 			Expect(CiToken.Colon);
 			result.OnFalse = ParseExpr();
-//			CheckCompatibleTypes(result.OnTrue, result.OnFalse);
-			if (left is CiConstExpr)
-				return (bool) ((CiConstExpr) left).Value ? result.OnTrue : result.OnFalse;
 			return result;
 		}
 		return left;
-	}
-
-	object ParseConstExpr(CiType type)
-	{
-		CiConstExpr expr = ParseExpr() as CiConstExpr;
-		if (expr == null)
-			throw new ParseException("Expression is not constant");
-		ExpectType(expr, type);
-		if (type == CiIntType.Value && expr.Value is byte)
-			return (int) (byte) expr.Value;
-		return expr.Value;
 	}
 
 	CiMaybeAssign ParseMaybeAssign()
@@ -534,21 +363,10 @@ public partial class CiParser : CiLexer
 		if (op == CiToken.Assign || op == CiToken.AddAssign || op == CiToken.SubAssign || op == CiToken.MulAssign || op == CiToken.DivAssign || op == CiToken.ModAssign
 		 || op == CiToken.AndAssign || op == CiToken.OrAssign || op == CiToken.XorAssign || op == CiToken.ShiftLeftAssign || op == CiToken.ShiftRightAssign) {
 			NextToken();
-			CiLValue target = left as CiLValue;
-			if (target == null)
-				throw new ParseException("Not an l-value for an assignment");
 			CiAssign result = new CiAssign();
-			result.Target = target;
+			result.Target = left;
 			result.Op = op;
 			result.Source = ParseMaybeAssign();
-			if (target.Type == CiByteType.Value && result.Source.Type == CiIntType.Value)
-				result.CastIntToByte = true;
-			else if (op == CiToken.Assign)
-				ExpectType(result.Source, target.Type);
-			else if (op == CiToken.AddAssign && target.Type is CiStringType && result.Source.Type is CiStringType)
-				{} // OK
-			else if (target.Type != CiIntType.Value || !CiIntType.Value.IsAssignableFrom(result.Source.Type))
-				throw new ParseException("Invalid types for {0}", op);
 			return result;
 		}
 		return left;
@@ -566,7 +384,6 @@ public partial class CiParser : CiLexer
 	{
 		Expect(CiToken.LeftParenthesis);
 		CiExpr cond = ParseExpr();
-		ExpectType(cond, CiBoolType.Value);
 		Expect(CiToken.RightParenthesis);
 		return cond;
 	}
@@ -586,10 +403,8 @@ public partial class CiParser : CiLexer
 		CiVar def = new CiVar();
 		def.Type = ParseType();
 		def.Name = ParseId();
-		if (Eat(CiToken.Assign)) {
+		if (Eat(CiToken.Assign))
 			def.InitialValue = ParseExpr();
-//TODO			ExpectType(def.InitialValue, def.Type);
-		}
 		Expect(CiToken.Semicolon);
 		this.Symbols.Add(def);
 		return def;
@@ -597,7 +412,7 @@ public partial class CiParser : CiLexer
 
 	ICiStatement ParseVarOrExpr()
 	{
-		CiSymbol symbol = this.Symbols.Lookup(this.CurrentString);
+		CiSymbol symbol = this.Symbols.TryLookup(this.CurrentString);
 		if (symbol is CiMacro) {
 			NextToken();
 			Expand((CiMacro) symbol);
@@ -605,6 +420,9 @@ public partial class CiParser : CiLexer
 		}
 		if (symbol is CiType || symbol is CiClass)
 			return ParseVar();
+		if (symbol == null) {
+			#warning TODO: var or expr
+		}
 		ICiStatement result = ParseExprWithSideEffect();
 		Expect(CiToken.Semicolon);
 		return result;
@@ -660,10 +478,8 @@ public partial class CiParser : CiLexer
 				result.Init = ParseVarOrExpr();
 			else
 				Expect(CiToken.Semicolon);
-			if (!See(CiToken.Semicolon)) {
+			if (!See(CiToken.Semicolon))
 				result.Cond = ParseExpr();
-				ExpectType(result.Cond, CiBoolType.Value);
-			}
 			Expect(CiToken.Semicolon);
 			if (!See(CiToken.RightParenthesis))
 				result.Advance = ParseExprWithSideEffect();
@@ -682,10 +498,8 @@ public partial class CiParser : CiLexer
 		}
 		if (Eat(CiToken.Return)) {
 			CiReturn result = new CiReturn();
-			if (this.CurrentFunction.ReturnType != CiType.Void) {
+			if (this.CurrentFunction.ReturnType != CiType.Void)
 				result.Value = ParseExpr();
-				ExpectType(result.Value, this.CurrentFunction.ReturnType);
-			}
 			Expect(CiToken.Semicolon);
 			return result;
 		}
@@ -693,7 +507,6 @@ public partial class CiParser : CiLexer
 			Expect(CiToken.LeftParenthesis);
 			CiSwitch result = new CiSwitch();
 			result.Value = ParseExpr();
-			CiType type = result.Value.Type;
 			Expect(CiToken.RightParenthesis);
 			Expect(CiToken.LeftBrace);
 			this.SwitchLevel++;
@@ -702,7 +515,7 @@ public partial class CiParser : CiLexer
 				CiCase caze;
 				if (Eat(CiToken.Case)) {
 					caze = new CiCase();
-					caze.Value = ParseConstExpr(type);
+					caze.Value = ParseExpr();
 				}
 				else if (Eat(CiToken.Default))
 					caze = new CiCase();
@@ -775,13 +588,12 @@ public partial class CiParser : CiLexer
 		globals.Add(CiByteType.Value);
 		globals.Add(CiIntType.Value);
 		globals.Add(CiStringPtrType.Value);
-		globals.Add(new CiConst { Name = "true", Value = true });
-		globals.Add(new CiConst { Name = "false", Value = false });
-		globals.Add(new CiConst { Name = "null", Value = null });
+		globals.Add(new CiConst { Name = "true", Value = true, Type = CiBoolType.Value });
+		globals.Add(new CiConst { Name = "false", Value = false, Type = CiBoolType.Value });
+		globals.Add(new CiConst { Name = "null", Value = null, Type = CiType.Null });
 		this.Symbols = globals;
 		this.ConstArrays = new List<CiConst>();
 		this.CurrentFunction = null;
-		this.BinaryResources = new SortedDictionary<string, CiBinaryResource>();
 		this.LoopLevel = 0;
 		this.SwitchLevel = 0;
 
@@ -805,8 +617,7 @@ public partial class CiParser : CiLexer
 
 		return new CiProgram {
 			Globals = globals,
-			ConstArrays = this.ConstArrays.ToArray(),
-			BinaryResources = this.BinaryResources.Values.ToArray()
+			ConstArrays = this.ConstArrays.ToArray()
 		};
 	}
 }

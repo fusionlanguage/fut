@@ -282,6 +282,16 @@ public class GenCs : SourceGenerator
 			throw new ApplicationException(expr.Function.Name);
 	}
 
+	protected override void Write(CiCoercion expr)
+	{
+		if (expr.ResultType == CiByteType.Value && expr.Inner.Type == CiIntType.Value) {
+			Write("(byte) ");
+			WriteChild(expr, (CiExpr) expr.Inner); // TODO: Assign
+		}
+		else
+			base.Write(expr);
+	}
+
 	protected override void WriteInline(CiVar stmt)
 	{
 		Write(stmt.Type);
@@ -290,17 +300,6 @@ public class GenCs : SourceGenerator
 			Write(" = ");
 			Write(stmt.InitialValue);
 		}
-	}
-
-	protected override void WriteAssignSource(CiAssign assign)
-	{
-		if (assign.CastIntToByte) {
-			Write("(byte) (");
-			base.WriteAssignSource(assign);
-			Write(')');
-		}
-		else
-			base.WriteAssignSource(assign);
 	}
 
 	void Write(CiFunction func)

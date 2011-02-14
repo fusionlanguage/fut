@@ -229,6 +229,16 @@ public class GenC : SourceGenerator
 			throw new ApplicationException(expr.Function.Name);
 	}
 
+	protected override void Write(CiCoercion expr)
+	{
+		if (expr.ResultType is CiClassPtrType && expr.Inner.Type is CiClassStorageType) {
+			Write('&');
+			WriteChild(expr, (CiExpr) expr.Inner); // TODO: Assign
+		}
+		else
+			base.Write(expr);
+	}
+
 	protected override void WriteInline(CiVar stmt)
 	{
 		Write(stmt.Type, stmt.Name);
@@ -238,17 +248,6 @@ public class GenC : SourceGenerator
 			Write(" = ");
 			Write(stmt.InitialValue);
 		}
-	}
-
-	protected override void WriteAssignSource(CiAssign assign)
-	{
-		if (assign.CastIntToByte) {
-			Write("(unsigned char) (");
-			base.WriteAssignSource(assign);
-			Write(')');
-		}
-		else
-			base.WriteAssignSource(assign);
 	}
 
 	protected override void WriteInline(CiAssign assign)
