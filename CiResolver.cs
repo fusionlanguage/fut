@@ -439,8 +439,10 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 	{
 		statement.Type = Resolve(statement.Type);
 		if (statement.InitialValue != null) {
-			statement.InitialValue = Resolve(statement.InitialValue);
-			#warning TODO: type-check InitialValue
+			CiType type = statement.Type;
+			if (type is CiArrayStorageType)
+				type = ((CiArrayStorageType) type).ElementType;
+			statement.InitialValue = Coerce(Resolve(statement.InitialValue), type);
 		}
 	}
 
