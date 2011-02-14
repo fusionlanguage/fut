@@ -376,6 +376,7 @@ public class CiConst : CiSymbol, ICiStatement
 	public CiType Type;
 	public object Value;
 	public string GlobalName;
+	public bool CurrentlyResolving;
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 

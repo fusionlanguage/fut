@@ -194,8 +194,12 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 
 	void Resolve(CiConst konst)
 	{
+		if (konst.CurrentlyResolving)
+			throw new ResolveException("Circular dependency for {0}", konst.Name);
+		konst.CurrentlyResolving = true;
 		konst.Type = Resolve(konst.Type);
 		konst.Value = ResolveConstInitializer(ref konst.Type, konst.Value);
+		konst.CurrentlyResolving = false;
 	}
 
 	static string GetConstString(CiExpr expr)

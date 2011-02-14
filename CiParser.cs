@@ -229,7 +229,7 @@ public partial class CiParser : CiLexer
 			string name = ParseId();
 			if (name == "BinaryResource")
 				return ParseBinaryResource();
-			CiSymbol symbol = this.Symbols.Lookup(name);
+			CiSymbol symbol = this.Symbols.TryLookup(name);
 			if (symbol is CiMacro) {
 				Expand((CiMacro) symbol);
 				Expect(CiToken.LeftParenthesis);
@@ -237,16 +237,17 @@ public partial class CiParser : CiLexer
 				Expect(CiToken.RightParenthesis);
 			}
 			else {
-				if (symbol == null)
-					symbol = new CiUnknownSymbol { Name = name };
 				if (See(CiToken.LeftParenthesis)) {
 					CiFunctionCall call = new CiFunctionCall();
 					call.Name = name;
 					ParseFunctionCall(call);
 					result = call;
 				}
-				else
+				else {
+					if (symbol == null)
+						symbol = new CiUnknownSymbol { Name = name };
 					result = new CiSymbolAccess { Symbol = symbol };
+				}
 			}
 		}
 		else
