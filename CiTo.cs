@@ -108,7 +108,14 @@ public class CiTo
 
 		CiResolver resolver = new CiResolver();
 		resolver.SearchDirs = searchDirs;
-		resolver.Resolve(program);
+		try {
+			resolver.Resolve(program);
+		} catch (Exception ex) {
+			if (resolver.CurrentFunction != null)
+				Console.Error.WriteLine("   in function {0}", resolver.CurrentFunction.Name);
+//			return 1;
+			throw;
+		}
 
 		SourceGenerator gen;
 		switch (lang) {
