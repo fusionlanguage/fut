@@ -351,10 +351,10 @@ public class CiUnknownClass : CiClass
 
 public interface ICiStatementVisitor
 {
+	void Visit(CiBlock statement);
 	void Visit(CiConst statement);
 	void Visit(CiVar statement);
-	void Visit(CiFunctionCall statement);
-	void Visit(CiPostfixExpr statement);
+	void Visit(CiExpr statement);
 	void Visit(CiAssign statement);
 	void Visit(CiBreak statement);
 	void Visit(CiContinue statement);
@@ -425,6 +425,14 @@ public abstract class CiExpr : CiMaybeAssign
 public class CiConstExpr : CiExpr
 {
 	public object Value;
+	public CiConstExpr(object value)
+	{
+		this.Value = value;
+	}
+	public CiConstExpr(int value)
+	{
+		this.Value = value >= 0 && value <= 255 ? (byte) value : (object) value;
+	}
 	public override CiType Type
 	{
 		get
@@ -599,11 +607,7 @@ public class CiAssign : CiMaybeAssign, ICiStatement
 public class CiBlock : ICiStatement
 {
 	public ICiStatement[] Statements;
-	public void Accept(ICiStatementVisitor v)
-	{
-		foreach (ICiStatement child in this.Statements)
-			child.Accept(v);
-	}
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiBreak : ICiStatement

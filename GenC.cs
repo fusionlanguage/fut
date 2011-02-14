@@ -126,6 +126,11 @@ public class GenC : SourceGenerator
 			if (prop == CiIntType.SByteProperty || prop == CiIntType.LowByteProperty)
 				return 2;
 		}
+		else if (expr is CiCoercion) {
+			CiCoercion c = (CiCoercion) expr;
+			if (c.ResultType is CiClassPtrType && c.Inner.Type is CiClassStorageType)
+				return 2;
+		}
 		return base.GetPriority(expr);
 	}
 
@@ -239,7 +244,7 @@ public class GenC : SourceGenerator
 			base.Write(expr);
 	}
 
-	protected override void WriteInline(CiVar stmt)
+	public override void Visit(CiVar stmt)
 	{
 		Write(stmt.Type, stmt.Name);
 		if (stmt.InitialValue != null) {
@@ -250,7 +255,7 @@ public class GenC : SourceGenerator
 		}
 	}
 
-	protected override void WriteInline(CiAssign assign)
+	public override void Visit(CiAssign assign)
 	{
 		if (assign.Target.Type is CiStringStorageType) {
 			if (assign.Op == CiToken.Assign) {
@@ -294,7 +299,7 @@ public class GenC : SourceGenerator
 				return;
 			}
 		}
-		base.WriteInline(assign);
+		base.Visit(assign);
 	}
 
 	protected override void Write(ICiStatement stmt)
@@ -309,12 +314,11 @@ public class GenC : SourceGenerator
 			WriteLine(";");
 			if (def.InitialValue != null) {
 				if (def.Type is CiStringStorageType) {
-					WriteInline(new CiAssign {
+					Write(new CiAssign {
 						Target = new CiVarAccess { Var = def },
 						Op = CiToken.Assign,
 						Source = def.InitialValue
 					});
-					WriteLine(";");
 				}
 				else if (def.Type is CiArrayStorageType) {
 					WriteClearArray(new CiVarAccess { Var = def });

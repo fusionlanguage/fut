@@ -203,6 +203,11 @@ public class GenCs : SourceGenerator
 			if (prop == CiIntType.SByteProperty || prop == CiIntType.LowByteProperty)
 				return 2;
 		}
+		else if (expr is CiCoercion) {
+			CiCoercion c = (CiCoercion) expr;
+			if (c.ResultType == CiByteType.Value && c.Inner.Type == CiIntType.Value)
+				return 2;
+		}
 		return base.GetPriority(expr);
 	}
 
@@ -292,7 +297,7 @@ public class GenCs : SourceGenerator
 			base.Write(expr);
 	}
 
-	protected override void WriteInline(CiVar stmt)
+	public override void Visit(CiVar stmt)
 	{
 		Write(stmt.Type);
 		Write(stmt.Name);

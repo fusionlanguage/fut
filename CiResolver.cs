@@ -104,6 +104,69 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		return type.Accept(this);
 	}
 
+	CiMaybeAssign Coerce(CiMaybeAssign expr, CiType expected)
+	{
+		CiType got = expr.Type;
+		if (expected.Equals(got))
+			return expr;
+		if (expected == CiIntType.Value && got == CiByteType.Value) {
+			CiConstExpr konst = expr as CiConstExpr;
+			if (konst != null)
+				return new CiConstExpr((object) (int) (byte) konst.Value);
+			return new CiCoercion { ResultType = expected, Inner = expr };
+		}
+		if (expected == CiByteType.Value && got == CiIntType.Value) {
+			CiConstExpr konst = expr as CiConstExpr;
+			if (konst != null)
+				return new CiConstExpr((object) (byte) (int) konst.Value);
+			return new CiCoercion { ResultType = expected, Inner = expr };
+		}
+		if (expected == CiStringPtrType.Value && (got == CiType.Null || got is CiStringType))
+			return expr;
+		if (expected is CiStringStorageType && got is CiStringType)
+			return expr;
+		if (expected is CiClassPtrType) {
+			if (got == CiType.Null)
+				return expr;
+			CiClassType gotClass = got as CiClassType;
+			if (got != null && ((CiClassPtrType) expected).Class == gotClass.Class) {
+				if (got is CiClassPtrType)
+					return expr;
+				CiCondExpr cond = expr as CiCondExpr;
+				if (cond != null) {
+					// C doesn't like &(cond ? foo : bar)
+					return new CiCondExpr {
+						Cond = cond.Cond,
+						OnTrue = new CiCoercion { ResultType = expected, Inner = cond.OnTrue },
+						OnFalse = new CiCoercion { ResultType = expected, Inner = cond.OnFalse }
+					};
+				}
+				return new CiCoercion { ResultType = expected, Inner = expr };
+			}
+		}
+		if (expected is CiArrayPtrType) {
+			if (got == CiType.Null)
+				return expr;
+			CiArrayType gotArray = got as CiArrayType;
+			if (got != null && ((CiArrayPtrType) expected).ElementType.Equals(gotArray.ElementType))
+				return expr;
+		}
+		throw new ResolveException("Expected {0}, got {1}", expected, got);
+	}
+
+	CiExpr Coerce(CiExpr expr, CiType expected)
+	{
+		return (CiExpr) Coerce((CiMaybeAssign) expr, expected);
+	}
+
+	object ResolveConstExpr(CiExpr expr, CiType type)
+	{
+		CiConstExpr ce = Coerce(Resolve(expr), type) as CiConstExpr;
+		if (ce == null)
+			throw new ResolveException("Expression is not constant");
+		return ce.Value;
+	}
+
 	object ResolveConstInitializer(ref CiType type, object value)
 	{
 		if (type is CiArrayType) {
@@ -167,7 +230,7 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 			if (konst.Type is CiArrayType)
 				return new CiConstAccess { Const = konst };
 			else
-				return new CiConstExpr { Value = konst.Value };
+				return new CiConstExpr(konst.Value);
 		}
 		throw new ResolveException("Invalid expression");
 	}
@@ -177,7 +240,7 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		if (expr.Parent is CiSymbolAccess) {
 			CiEnum enu = Lookup((CiSymbolAccess) expr.Parent) as CiEnum;
 			if (enu != null)
-				return new CiConstExpr { Value = enu.LookupMember(expr.Name) };
+				return new CiConstExpr(enu.LookupMember(expr.Name));
 		}
 		CiExpr parent = Resolve(expr.Parent);
 		CiSymbol member = parent.Type.LookupMember(expr.Name);
@@ -186,7 +249,7 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		if (member is CiProperty)
 			return new CiPropertyAccess { Obj = parent, Property = (CiProperty) member };
 		if (member is CiConst)
-			return new CiConstExpr { Value = ((CiConst) member).Value };
+			return new CiConstExpr(((CiConst) member).Value);
 		throw new ResolveException(member.ToString());
 	}
 
@@ -200,7 +263,7 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 			if (parent is CiConstExpr && index is CiConstExpr) {
 				string s = (string) ((CiConstExpr) parent).Value;
 				int i = GetConstInt(index);
-				return new CiConstExpr { Value = (int) s[i] };
+				return new CiConstExpr((int) s[i]);
 			}
 			return new CiMethodCall {
 				Function = CiStringType.CharAtMethod,
@@ -266,7 +329,7 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 				throw new ResolveException("String concatenation allowed only for constants. Consider using +=");
 			string a = GetConstString(left);
 			string b = GetConstString(right);
-			return new CiConstExpr { Value = a + b };
+			return new CiConstExpr(a + b);
 		}
 		left = Coerce(left, CiIntType.Value);
 		right = Coerce(right, CiIntType.Value);
@@ -285,7 +348,7 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 			case CiToken.Or: a |= b; break;
 			case CiToken.Xor: a ^= b; break;
 			}
-			return new CiConstExpr { Value = a };
+			return new CiConstExpr(a);
 		}
 		expr.Left = left;
 		expr.Right = right;
@@ -361,73 +424,16 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		return expr.Accept(this);
 	}
 
-	CiMaybeAssign Coerce(CiMaybeAssign expr, CiType expected)
-	{
-		CiType got = expr.Type;
-		if (expected.Equals(got))
-			return expr;
-		if (expected == CiIntType.Value && got == CiByteType.Value) {
-			CiConstExpr konst = expr as CiConstExpr;
-			if (konst != null)
-				return new CiConstExpr { Value = (int) (byte) konst.Value };
-			return new CiCoercion { ResultType = expected, Inner = expr };
-		}
-		if (expected == CiByteType.Value && got == CiIntType.Value) {
-			CiConstExpr konst = expr as CiConstExpr;
-			if (konst != null)
-				return new CiConstExpr { Value = (byte) (int) konst.Value };
-			return new CiCoercion { ResultType = expected, Inner = expr };
-		}
-		if (expected == CiStringPtrType.Value && (got == CiType.Null || got is CiStringType))
-			return expr;
-		if (expected is CiStringStorageType && got is CiStringType)
-			return expr;
-		if (expected is CiClassPtrType) {
-			if (got == CiType.Null)
-				return expr;
-			CiClassType gotClass = got as CiClassType;
-			if (got != null && ((CiClassPtrType) expected).Class == gotClass.Class) {
-				if (got is CiClassPtrType)
-					return expr;
-				CiCondExpr cond = expr as CiCondExpr;
-				if (cond != null) {
-					// C doesn't like &(cond ? foo : bar)
-					return new CiCondExpr {
-						Cond = cond.Cond,
-						OnTrue = new CiCoercion { ResultType = expected, Inner = cond.OnTrue },
-						OnFalse = new CiCoercion { ResultType = expected, Inner = cond.OnFalse }
-					};
-				}
-				return new CiCoercion { ResultType = expected, Inner = expr };
-			}
-		}
-		if (expected is CiArrayPtrType) {
-			if (got == CiType.Null)
-				return expr;
-			CiArrayType gotArray = got as CiArrayType;
-			if (got != null && ((CiArrayPtrType) expected).ElementType.Equals(gotArray.ElementType))
-				return expr;
-		}
-		throw new ResolveException("Expected {0}, got {1}", expected, got);
-	}
-
-	CiExpr Coerce(CiExpr expr, CiType expected)
-	{
-		return (CiExpr) Coerce((CiMaybeAssign) expr, expected);
-	}
-
-	object ResolveConstExpr(CiExpr expr, CiType type)
-	{
-		CiConstExpr ce = Coerce(Resolve(expr), type) as CiConstExpr;
-		if (ce == null)
-			throw new ResolveException("Expression is not constant");
-		return ce.Value;
-	}
-
 	void Resolve(CiClass klass)
 	{
 		foreach (CiField field in klass.Fields)
 			field.Type = Resolve(field.Type);
+	}
+
+	void ICiStatementVisitor.Visit(CiBlock statement)
+	{
+		foreach (ICiStatement child in statement.Statements)
+			child.Accept(this);
 	}
 
 	void ICiStatementVisitor.Visit(CiConst statement)
@@ -446,12 +452,7 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		}
 	}
 
-	void ICiStatementVisitor.Visit(CiFunctionCall statement)
-	{
-		Resolve((CiExpr) statement);
-	}
-
-	void ICiStatementVisitor.Visit(CiPostfixExpr statement)
+	void ICiStatementVisitor.Visit(CiExpr statement)
 	{
 		Resolve((CiExpr) statement);
 	}
@@ -555,7 +556,6 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 			if (symbol is CiFunction)
 				Resolve((CiFunction) symbol);
 		}
-		// TODO
 		program.BinaryResources = this.BinaryResources.Values.ToArray();
 	}
 }

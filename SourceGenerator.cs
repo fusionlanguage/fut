@@ -23,7 +23,7 @@ using System.IO;
 namespace Foxoft.Ci
 {
 
-public abstract class SourceGenerator
+public abstract class SourceGenerator : ICiStatementVisitor
 {
 	TextWriter Writer = Console.Out;
 	int Indent = 0;
@@ -181,9 +181,10 @@ public abstract class SourceGenerator
 			return 1;
 		if (expr is CiUnaryExpr
 		 || expr is CiCondNotExpr
-		 || expr is CiPostfixExpr
-		 || expr is CiCoercion)
+		 || expr is CiPostfixExpr)
 			return 2;
+		if (expr is CiCoercion)
+			return GetPriority((CiExpr) ((CiCoercion) expr).Inner);
 		if (expr is CiBinaryExpr) {
 			switch (((CiBinaryExpr) expr).Op) {
 			case CiToken.Asterisk:
@@ -362,7 +363,7 @@ public abstract class SourceGenerator
 		if (expr is CiExpr)
 			Write((CiExpr) expr);
 		else
-			WriteInline((CiAssign) expr);
+			Visit((CiAssign) expr);
 	}
 
 	protected virtual void Write(CiCoercion expr)
@@ -408,6 +409,14 @@ public abstract class SourceGenerator
 			throw new ApplicationException(expr.ToString());
 	}
 
+	void ICiStatementVisitor.Visit(CiBlock block)
+	{
+		OpenBlock();
+		foreach (ICiStatement stmt in block.Statements)
+			Write(stmt);
+		CloseBlock();
+	}
+
 	protected void WriteChild(ICiStatement stmt)
 	{
 		if (stmt is CiBlock) {
@@ -422,9 +431,14 @@ public abstract class SourceGenerator
 		}
 	}
 
-	protected abstract void WriteInline(CiVar stmt);
+	void ICiStatementVisitor.Visit(CiExpr expr)
+	{
+		Write(expr);
+	}
 
-	protected virtual void WriteInline(CiAssign assign)
+	public abstract void Visit(CiVar stmt);
+
+	public virtual void Visit(CiAssign assign)
 	{
 		Write(assign.Target);
 		switch (assign.Op) {
@@ -445,27 +459,21 @@ public abstract class SourceGenerator
 		WriteInline(assign.Source);
 	}
 
-	void WriteInline(ICiStatement stmt)
+	void ICiStatementVisitor.Visit(CiBreak stmt)
 	{
-		if (stmt is CiAssign)
-			WriteInline((CiAssign) stmt);
-		else if (stmt is CiExpr)
-			Write((CiExpr) stmt);
-		else if (stmt is CiVar)
-			WriteInline((CiVar) stmt);
-		else
-			throw new ApplicationException(stmt.ToString());
+		WriteLine("break;");
 	}
 
-	protected void Write(CiBlock block)
+	void ICiStatementVisitor.Visit(CiConst stmt)
 	{
-		OpenBlock();
-		foreach (ICiStatement stmt in block.Statements)
-			Write(stmt);
-		CloseBlock();
 	}
 
-	void Write(CiDoWhile stmt)
+	void ICiStatementVisitor.Visit(CiContinue stmt)
+	{
+		WriteLine("continue;");
+	}
+
+	void ICiStatementVisitor.Visit(CiDoWhile stmt)
 	{
 		Write("do");
 		WriteChild(stmt.Body);
@@ -474,11 +482,11 @@ public abstract class SourceGenerator
 		WriteLine(");");
 	}
 
-	void Write(CiFor stmt)
+	void ICiStatementVisitor.Visit(CiFor stmt)
 	{
 		Write("for (");
 		if (stmt.Init != null)
-			WriteInline(stmt.Init);
+			stmt.Init.Accept(this);
 		Write(';');
 		if (stmt.Cond != null) {
 			Write(' ');
@@ -487,13 +495,13 @@ public abstract class SourceGenerator
 		Write(';');
 		if (stmt.Advance != null) {
 			Write(' ');
-			WriteInline(stmt.Advance);
+			stmt.Advance.Accept(this);
 		}
 		Write(')');
 		WriteChild(stmt.Body);
 	}
 
-	void Write(CiIf stmt)
+	void ICiStatementVisitor.Visit(CiIf stmt)
 	{
 		Write("if (");
 		Write(stmt.Cond);
@@ -510,7 +518,7 @@ public abstract class SourceGenerator
 		}
 	}
 
-	void Write(CiReturn stmt)
+	void ICiStatementVisitor.Visit(CiReturn stmt)
 	{
 		if (stmt.Value == null)
 			WriteLine("return;");
@@ -521,7 +529,7 @@ public abstract class SourceGenerator
 		}
 	}
 
-	void Write(CiSwitch stmt)
+	void ICiStatementVisitor.Visit(CiSwitch stmt)
 	{
 		Write("switch (");
 		Write(stmt.Value);
@@ -543,7 +551,7 @@ public abstract class SourceGenerator
 		CloseBlock();
 	}
 
-	void Write(CiWhile stmt)
+	void ICiStatementVisitor.Visit(CiWhile stmt)
 	{
 		Write("while (");
 		Write(stmt.Cond);
@@ -553,34 +561,9 @@ public abstract class SourceGenerator
 
 	protected virtual void Write(ICiStatement stmt)
 	{
-		if (stmt is CiAssign
-		 || stmt is CiExpr
-		 || stmt is CiVar) {
-			WriteInline(stmt);
+		stmt.Accept(this);
+		if (stmt is CiMaybeAssign || stmt is CiVar)
 			WriteLine(";");
-		}
-		else if (stmt is CiBlock)
-			Write((CiBlock) stmt);
-		else if (stmt is CiBreak)
-			WriteLine("break;");
-		else if (stmt is CiConst)
-			{}
-		else if (stmt is CiContinue)
-			WriteLine("continue;");
-		else if (stmt is CiDoWhile)
-			Write((CiDoWhile) stmt);
-		else if (stmt is CiFor)
-			Write((CiFor) stmt);
-		else if (stmt is CiIf)
-			Write((CiIf) stmt);
-		else if (stmt is CiReturn)
-			Write((CiReturn) stmt);
-		else if (stmt is CiSwitch)
-			Write((CiSwitch) stmt);
-		else if (stmt is CiWhile)
-			Write((CiWhile) stmt);
-		else
-			throw new ApplicationException(stmt.ToString());
 	}
 
 	public abstract void Write(CiProgram prog);

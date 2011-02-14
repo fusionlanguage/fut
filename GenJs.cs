@@ -218,7 +218,7 @@ public class GenJs : SourceGenerator
 			base.Write(expr);
 	}
 
-	protected override void WriteInline(CiVar stmt)
+	public override void Visit(CiVar stmt)
 	{
 		Write("var ");
 		Write(stmt.Name);

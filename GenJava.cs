@@ -198,6 +198,13 @@ public class GenJava : SourceGenerator
 			if (prop == CiIntType.SByteProperty || prop == CiIntType.LowByteProperty)
 				return 2;
 		}
+		else if (expr is CiCoercion) {
+			CiCoercion c = (CiCoercion) expr;
+			if (c.ResultType == CiByteType.Value && c.Inner.Type == CiIntType.Value)
+				return 2;
+			if (c.ResultType == CiIntType.Value && c.Inner.Type == CiByteType.Value)
+				return 8;
+		}
 		return base.GetPriority(expr);
 	}
 
@@ -285,7 +292,22 @@ public class GenJava : SourceGenerator
 		Write(')');
 	}
 
-	protected override void WriteInline(CiVar stmt)
+	protected override void Write(CiCoercion expr)
+	{
+		if (expr.ResultType == CiByteType.Value && expr.Inner.Type == CiIntType.Value) {
+			Write("(byte) ");
+			WriteChild(expr, (CiExpr) expr.Inner); // TODO: Assign
+		}
+		else if (expr.ResultType == CiIntType.Value && expr.Inner.Type == CiByteType.Value) {
+			Write('(');
+			Write((CiExpr) expr.Inner); // TODO: Assign
+			Write(") & 0xff");
+		}
+		else
+			base.Write(expr);
+	}
+
+	public override void Visit(CiVar stmt)
 	{
 		Write(stmt.Type);
 		Write(stmt.Name);

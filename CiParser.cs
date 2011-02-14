@@ -200,13 +200,6 @@ public partial class CiParser : CiLexer
 		call.Arguments = args.ToArray();
 	}
 
-	static CiConstExpr NewConstInt(int value)
-	{
-		return new CiConstExpr {
-			Value = value >= 0 && value <= 255 ? (byte) value : value
-		};
-	}
-
 	CiExpr ParsePrimaryExpr()
 	{
 		if (See(CiToken.Increment) || See(CiToken.Decrement) || See(CiToken.Minus) || See(CiToken.Not)) {
@@ -221,11 +214,11 @@ public partial class CiParser : CiLexer
 		}
 		CiExpr result;
 		if (See(CiToken.IntConstant)) {
-			result = NewConstInt(this.CurrentInt);
+			result = new CiConstExpr(this.CurrentInt);
 			NextToken();
 		}
 		else if (See(CiToken.StringConstant)) {
-			result = new CiConstExpr { Value = this.CurrentString };
+			result = new CiConstExpr(this.CurrentString);
 			NextToken();
 		}
 		else if (Eat(CiToken.LeftParenthesis)) {
