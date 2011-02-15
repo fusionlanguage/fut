@@ -1,4 +1,4 @@
-SOURCES = ../../a8/asap/git/apokeysnd.ci ../../a8/asap/git/asap.ci
+SOURCES = ../../a8/asap/git/asap.ci ../../a8/asap/git/apokeysnd.ci ../../a8/asap/git/acpu.ci
 
 run: $(SOURCES) cito.exe
 	./cito.exe -I ../../a8/asap/git/players -l cs -n Sf.Asap $(SOURCES) | dos2unix >../../a8/asap/git/csharp/asapci.cs

@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace Foxoft.Ci
 {
@@ -413,9 +414,34 @@ public partial class CiParser : CiLexer
 		return def;
 	}
 
+	ICiStatement ParseVarOrExpr(string name)
+	{
+		// try var
+		StringBuilder sb = new StringBuilder();
+		this.CopyTo = sb;
+		try {
+			return ParseVar();
+		}
+		catch (ParseException) {
+		}
+		finally {
+			this.CopyTo = null;
+		}
+
+		// try expr
+		this.CurrentString = name;
+		this.CurrentToken = CiToken.Id;
+		BeginExpand("ambigous code", sb.ToString(), null);
+		SetReader(new StringReader(sb.ToString()));
+		ICiStatement result = ParseExprWithSideEffect();
+		Expect(CiToken.Semicolon);
+		return result;
+	}
+
 	ICiStatement ParseVarOrExpr()
 	{
-		CiSymbol symbol = this.Symbols.TryLookup(this.CurrentString);
+		string name = this.CurrentString;
+		CiSymbol symbol = this.Symbols.TryLookup(name);
 		if (symbol is CiMacro) {
 			NextToken();
 			Expand((CiMacro) symbol);
@@ -423,9 +449,8 @@ public partial class CiParser : CiLexer
 		}
 		if (symbol is CiType || symbol is CiClass)
 			return ParseVar();
-		if (symbol == null) {
-			#warning TODO: var or expr
-		}
+		if (symbol == null)
+			return ParseVarOrExpr(name);
 		ICiStatement result = ParseExprWithSideEffect();
 		Expect(CiToken.Semicolon);
 		return result;
