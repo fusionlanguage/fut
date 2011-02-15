@@ -96,16 +96,30 @@ public class GenC : SourceGenerator
 		WriteLine(";");
 	}
 
-	void Write(CiClass clazz)
+	void Write(CiClass klass)
 	{
+		// topological sorting of class storage
+		if (klass.WriteStatus == CiWriteStatus.Done)
+			return;
+		if (klass.WriteStatus == CiWriteStatus.InProgress)
+			throw new ResolveException("Circular dependency for class {0}", klass.Name);
+		klass.WriteStatus = CiWriteStatus.InProgress;
+		foreach (CiField field in klass.Fields) {
+			CiClassStorageType stg = field.Type as CiClassStorageType;
+			if (stg != null)
+				Write(stg.Class);
+		}
+		klass.WriteStatus = CiWriteStatus.Done;
+
 		WriteLine();
-		Write(clazz.Documentation);
+		Write(klass.Documentation);
 		Write("typedef struct ");
+		WriteLine(klass.Name);
 		OpenBlock();
-		foreach (CiField field in clazz.Fields)
+		foreach (CiField field in klass.Fields)
 			Write(field);
 		CloseBlock();
-		Write(clazz.Name);
+		Write(klass.Name);
 		WriteLine(";");
 	}
 
@@ -330,14 +344,13 @@ public class GenC : SourceGenerator
 			base.Write(stmt);
 	}
 
-	void Write(CiFunction func)
+	void WriteSignature(CiFunction func)
 	{
-		WriteLine();
-		Write(func.Documentation);
 		if (!func.IsPublic)
 			Write("static ");
-		Write(func.ReturnType, func.Name); // TODO
-		Write("(");
+		Write(func.ReturnType, func.Name);
+		#warning TODO function returns array
+		Write('(');
 		bool first = true;
 		foreach (CiParam param in func.Params) {
 			if (first)
@@ -346,7 +359,15 @@ public class GenC : SourceGenerator
 				Write(", ");
 			Write(param.Type, param.Name);
 		}
-		WriteLine(")");
+		Write(')');
+	}
+
+	void Write(CiFunction func)
+	{
+		WriteLine();
+		Write(func.Documentation);
+		WriteSignature(func);
+		WriteLine();
 		Write(func.Body);
 	}
 
@@ -355,10 +376,14 @@ public class GenC : SourceGenerator
 		WriteLine("// Generated automatically with \"cito\". Do not edit.");
 		WriteLine("#include <stdbool.h>");
 		WriteLine("#include <string.h>");
-		foreach (CiSymbol symbol in prog.Globals.List) {
+		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiEnum)
 				Write((CiEnum) symbol);
 			else if (symbol is CiClass)
+				((CiClass) symbol).WriteStatus = CiWriteStatus.NotYet;
+		}
+		foreach (CiSymbol symbol in prog.Globals) {
+			if (symbol is CiClass)
 				Write((CiClass) symbol);
 		}
 		foreach (CiConst konst in prog.ConstArrays) {
@@ -377,10 +402,16 @@ public class GenC : SourceGenerator
 			WriteConst(resource.Content);
 			WriteLine(";");
 		}
-		foreach (CiSymbol symbol in prog.Globals.List) {
+		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiConst && symbol.IsPublic)
 				Write((CiConst) symbol);
-			else if (symbol is CiFunction)
+			else if (symbol is CiFunction) {
+				WriteSignature((CiFunction) symbol);
+				WriteLine(";");
+			}
+		}
+		foreach (CiSymbol symbol in prog.Globals) {
+			if (symbol is CiFunction)
 				Write((CiFunction) symbol);
 		}
 	}

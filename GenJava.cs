@@ -346,7 +346,7 @@ public class GenJava : SourceGenerator
 			Write(this.Namespace);
 			WriteLine(";");
 		}
-		foreach (CiSymbol symbol in prog.Globals.List) {
+		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiEnum)
 				Write((CiEnum) symbol);
 			else if (symbol is CiClass)
@@ -362,7 +362,7 @@ public class GenJava : SourceGenerator
 			WriteConst(konst.Value);
 			WriteLine(";");
 		}
-		foreach (CiSymbol symbol in prog.Globals.List) {
+		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiConst && symbol.IsPublic)
 				Write((CiConst) symbol);
 			else if (symbol is CiFunction)

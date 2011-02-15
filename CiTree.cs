@@ -340,9 +340,17 @@ public class CiProperty : CiSymbol
 	public CiType Type;
 }
 
+public enum CiWriteStatus
+{
+	NotYet,
+	InProgress,
+	Done
+}
+
 public class CiClass : CiSymbol
 {
 	public CiField[] Fields;
+	public CiWriteStatus WriteStatus;
 }
 
 public class CiUnknownClass : CiClass

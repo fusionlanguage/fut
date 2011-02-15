@@ -538,6 +538,15 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		statement.Accept(this);
 	}
 
+	void ResolveSignature(CiFunction func)
+	{
+		this.CurrentFunction = func;
+		func.ReturnType = Resolve(func.ReturnType);
+		foreach (CiParam param in func.Params)
+			param.Type = Resolve(param.Type);
+		this.CurrentFunction = null;
+	}
+
 	void Resolve(CiFunction func)
 	{
 		this.CurrentFunction = func;
@@ -550,13 +559,17 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		this.Globals = program.Globals;
 		foreach (CiConst konst in program.ConstArrays)
 			Resolve(konst);
-		foreach (CiSymbol symbol in program.Globals.List) {
+		foreach (CiSymbol symbol in program.Globals) {
 			if (symbol is CiConst)
 				Resolve((CiConst) symbol);
 			else if (symbol is CiClass)
 				Resolve((CiClass) symbol);
 		}
-		foreach (CiSymbol symbol in program.Globals.List) {
+		foreach (CiSymbol symbol in program.Globals) {
+			if (symbol is CiFunction)
+				ResolveSignature((CiFunction) symbol);
+		}
+		foreach (CiSymbol symbol in program.Globals) {
 			if (symbol is CiFunction)
 				Resolve((CiFunction) symbol);
 		}

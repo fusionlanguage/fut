@@ -27,13 +27,22 @@ namespace Foxoft.Ci
 public partial class CiParser : CiLexer
 {
 	SymbolTable Symbols;
-	List<CiConst> ConstArrays;
-	public CiFunction CurrentFunction;
-	int LoopLevel;
-	int SwitchLevel;
+	readonly List<CiConst> ConstArrays = new List<CiConst>();
+	public CiFunction CurrentFunction = null;
+	int LoopLevel = 0;
+	int SwitchLevel = 0;
 
-	public CiParser(TextReader reader) : base(reader)
+	public CiParser()
 	{
+		SymbolTable globals = new SymbolTable();
+		globals.Add(CiBoolType.Value);
+		globals.Add(CiByteType.Value);
+		globals.Add(CiIntType.Value);
+		globals.Add(CiStringPtrType.Value);
+		globals.Add(new CiConst { Name = "true", Value = true, Type = CiBoolType.Value });
+		globals.Add(new CiConst { Name = "false", Value = false, Type = CiBoolType.Value });
+		globals.Add(new CiConst { Name = "null", Value = null, Type = CiType.Null });
+		this.Symbols = globals;
 	}
 
 	string ParseId()
@@ -575,22 +584,9 @@ public partial class CiParser : CiLexer
 		return func;
 	}
 
-	public CiProgram ParseProgram()
+	public void Parse(TextReader reader)
 	{
-		SymbolTable globals = new SymbolTable();
-		globals.Add(CiBoolType.Value);
-		globals.Add(CiByteType.Value);
-		globals.Add(CiIntType.Value);
-		globals.Add(CiStringPtrType.Value);
-		globals.Add(new CiConst { Name = "true", Value = true, Type = CiBoolType.Value });
-		globals.Add(new CiConst { Name = "false", Value = false, Type = CiBoolType.Value });
-		globals.Add(new CiConst { Name = "null", Value = null, Type = CiType.Null });
-		this.Symbols = globals;
-		this.ConstArrays = new List<CiConst>();
-		this.CurrentFunction = null;
-		this.LoopLevel = 0;
-		this.SwitchLevel = 0;
-
+		Open(reader);
 		while (!See(CiToken.EndOfFile)) {
 			while (Eat(CiToken.Macro))
 				this.Symbols.Add(ParseMacro());
@@ -608,11 +604,17 @@ public partial class CiParser : CiLexer
 			symbol.Documentation = doc;
 			symbol.IsPublic = pub;
 		}
+	}
 
-		return new CiProgram {
-			Globals = globals,
-			ConstArrays = this.ConstArrays.ToArray()
-		};
+	public CiProgram Program
+	{
+		get
+		{
+			return new CiProgram {
+				Globals = this.Symbols,
+				ConstArrays = this.ConstArrays.ToArray()
+			};
+		}
 	}
 }
 

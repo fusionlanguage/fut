@@ -44,8 +44,8 @@ public class CiTo
 	{
 		HashSet<string> preSymbols = new HashSet<string>();
 		preSymbols.Add("true");
+		List<string> inputFiles = new List<string>();
 		List<string> searchDirs = new List<string>();
-		string inputPath = null;
 		string lang = null;
 		string outputPath = null;
 		string namespace_ = null;
@@ -82,29 +82,29 @@ public class CiTo
 				}
 			}
 			else {
-				if (inputPath != null)
-					throw new ApplicationException("Only one input file allowed!");
-				inputPath = arg;
+				inputFiles.Add(arg);
 			}
 		}
-		if (lang == null || inputPath == null) {
+		if (lang == null || inputFiles.Count == 0) {
 			Usage();
 			return 1;
 		}
 
-		CiParser parser = new CiParser(File.OpenText(inputPath));
+		CiParser parser = new CiParser();
 		parser.PreSymbols = preSymbols;
-		CiProgram program;
-		try {
-			program = parser.ParseProgram();
-		} catch (Exception ex) {
-			Console.Error.WriteLine("{0}({1}): ERROR: {2}", inputPath, parser.InputLineNo, ex.Message);
-			parser.PrintMacroStack();
-			if (parser.CurrentFunction != null)
-				Console.Error.WriteLine("   in function {0}", parser.CurrentFunction.Name);
-//			return 1;
-			throw;
+		foreach (string inputFile in inputFiles) {
+			try {
+				parser.Parse(File.OpenText(inputFile));
+			} catch (Exception ex) {
+				Console.Error.WriteLine("{0}({1}): ERROR: {2}", inputFile, parser.InputLineNo, ex.Message);
+				parser.PrintMacroStack();
+				if (parser.CurrentFunction != null)
+					Console.Error.WriteLine("   in function {0}", parser.CurrentFunction.Name);
+	//			return 1;
+				throw;
+			}
 		}
+		CiProgram program = parser.Program;
 
 		CiResolver resolver = new CiResolver();
 		resolver.SearchDirs = searchDirs;

@@ -336,7 +336,7 @@ public class GenCs : SourceGenerator
 			WriteLine(this.Namespace);
 			OpenBlock();
 		}
-		foreach (CiSymbol symbol in prog.Globals.List) {
+		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiEnum)
 				Write((CiEnum) symbol);
 			else if (symbol is CiClass)
@@ -359,7 +359,7 @@ public class GenCs : SourceGenerator
 			WriteConst(resource.Content);
 			WriteLine(";");
 		}
-		foreach (CiSymbol symbol in prog.Globals.List) {
+		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiConst && symbol.IsPublic)
 				Write((CiConst) symbol);
 			else if (symbol is CiFunction)

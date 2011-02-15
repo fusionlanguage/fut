@@ -250,7 +250,7 @@ public class GenJs : SourceGenerator
 	public override void Write(CiProgram prog)
 	{
 		WriteLine("// Generated automatically with \"cito\". Do not edit.");
-		foreach (CiSymbol symbol in prog.Globals.List) {
+		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiEnum)
 				Write((CiEnum) symbol);
 			else if (symbol is CiClass)
@@ -270,7 +270,7 @@ public class GenJs : SourceGenerator
 			WriteConst(resource.Content);
 			WriteLine(";");
 		}
-		foreach (CiSymbol symbol in prog.Globals.List) {
+		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiConst && symbol.IsPublic)
 				Write((CiConst) symbol);
 			else if (symbol is CiFunction)

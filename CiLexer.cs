@@ -124,11 +124,15 @@ public class CiLexer
 	bool AtLineStart = true;
 	bool LineMode = false;
 
-	public CiLexer(TextReader reader)
+	public CiLexer()
 	{
-		this.Reader = reader;
 		this.PreSymbols = new HashSet<string>();
 		this.PreSymbols.Add("true");
+	}
+
+	protected void Open(TextReader reader)
+	{
+		this.Reader = reader;
 		NextToken();
 	}
 
