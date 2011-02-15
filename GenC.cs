@@ -98,13 +98,16 @@ public class GenC : SourceGenerator
 
 	void Write(CiClass klass)
 	{
-		// topological sorting of class storage
+		// topological sorting of class storage fields
 		if (klass.WriteStatus == CiWriteStatus.Done)
 			return;
 		if (klass.WriteStatus == CiWriteStatus.InProgress)
 			throw new ResolveException("Circular dependency for class {0}", klass.Name);
 		klass.WriteStatus = CiWriteStatus.InProgress;
 		foreach (CiField field in klass.Fields) {
+			CiType type = field.Type;
+			while (type is CiArrayStorageType)
+				type = ((CiArrayStorageType) type).ElementType;
 			CiClassStorageType stg = field.Type as CiClassStorageType;
 			if (stg != null)
 				Write(stg.Class);
@@ -114,7 +117,6 @@ public class GenC : SourceGenerator
 		WriteLine();
 		Write(klass.Documentation);
 		Write("typedef struct ");
-		WriteLine(klass.Name);
 		OpenBlock();
 		foreach (CiField field in klass.Fields)
 			Write(field);
