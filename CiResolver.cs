@@ -496,7 +496,6 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 
 	void ICiStatementVisitor.Visit(CiConst statement)
 	{
-		#warning TODO: const
 	}
 
 	void ICiStatementVisitor.Visit(CiVar statement)

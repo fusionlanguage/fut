@@ -172,7 +172,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			throw new ApplicationException(value.ToString());
 	}
 
-	void Write(CiConstAccess expr)
+	protected virtual void Write(CiConstAccess expr)
 	{
 		if (expr.Const.GlobalName != null)
 			Write(expr.Const.GlobalName);
@@ -477,7 +477,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		WriteLine("break;");
 	}
 
-	void ICiStatementVisitor.Visit(CiConst stmt)
+	public virtual void Visit(CiConst stmt)
 	{
 	}
 

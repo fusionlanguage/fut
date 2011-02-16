@@ -160,6 +160,11 @@ public class GenC : SourceGenerator
 		WriteLine();
 	}
 
+	protected override void Write(CiConstAccess expr)
+	{
+		Write(expr.Const.Name);
+	}
+
 	protected override int GetPriority(CiExpr expr)
 	{
 		if (expr is CiPropertyAccess) {
@@ -343,6 +348,17 @@ public class GenC : SourceGenerator
 		base.Visit(assign);
 	}
 
+	public override void Visit(CiConst stmt)
+	{
+		if (stmt.Type is CiArrayType) {
+			Write("static const ");
+			Write(stmt.Type, stmt.Name);
+			Write(" = ");
+			WriteConst(stmt.Value);
+			WriteLine(";");
+		}
+	}
+
 	protected override void Write(ICiStatement stmt)
 	{
 		if (stmt is CiVar) {
@@ -403,13 +419,6 @@ public class GenC : SourceGenerator
 		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiClass)
 				Write((CiClass) symbol);
-		}
-		foreach (CiConst konst in prog.ConstArrays) {
-			Write("static const ");
-			Write(konst.Type, konst.GlobalName);
-			Write(" = ");
-			WriteConst(konst.Value);
-			WriteLine(";");
 		}
 		foreach (CiBinaryResource resource in prog.BinaryResources) {
 			Write("static const unsigned char ");
