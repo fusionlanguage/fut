@@ -26,10 +26,6 @@ namespace Foxoft.Ci
 
 public class GenC : SourceGenerator
 {
-	public GenC(string outputPath)
-	{
-	}
-
 	void Write(CiCodeDoc doc)
 	{
 		if (doc == null)
@@ -395,7 +391,7 @@ public class GenC : SourceGenerator
 
 	public override void Write(CiProgram prog)
 	{
-		WriteLine("// Generated automatically with \"cito\". Do not edit.");
+		CreateFile(this.OutputPath);
 		WriteLine("#include <stdbool.h>");
 		WriteLine("#include <string.h>");
 		foreach (CiSymbol symbol in prog.Globals) {
@@ -436,6 +432,7 @@ public class GenC : SourceGenerator
 			if (symbol is CiFunction)
 				Write((CiFunction) symbol);
 		}
+		CloseFile();
 	}
 }
 

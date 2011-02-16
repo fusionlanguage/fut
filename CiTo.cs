@@ -28,7 +28,7 @@ public class CiTo
 {
 	static void Usage()
 	{
-		Console.WriteLine("Usage: cito [OPTIONS] -l LANG INPUT.ci");
+		Console.WriteLine("Usage: cito [OPTIONS] -l LANG -o FILE INPUT.ci");
 		Console.WriteLine("Options:");
 		Console.WriteLine("-l cs    Translate to C#");
 		Console.WriteLine("-l java  Translate to Java");
@@ -85,7 +85,7 @@ public class CiTo
 				inputFiles.Add(arg);
 			}
 		}
-		if (lang == null || inputFiles.Count == 0) {
+		if (lang == null || outputPath == null || inputFiles.Count == 0) {
 			Usage();
 			return 1;
 		}
@@ -119,12 +119,13 @@ public class CiTo
 
 		SourceGenerator gen;
 		switch (lang) {
-		case "c": gen = new GenC(outputPath); break;
-		case "cs": gen = new GenCs(outputPath, namespace_); break;
-		case "java": gen = new GenJava(outputPath, namespace_); break;
-		case "js": gen = new GenJs(outputPath); break;
+		case "c": gen = new GenC(); break;
+		case "cs": gen = new GenCs(namespace_); break;
+		case "java": gen = new GenJava(namespace_); break;
+		case "js": gen = new GenJs(); break;
 		default: throw new ApplicationException("Unknown language: " + lang);
 		}
+		gen.OutputPath = outputPath;
 		gen.Write(program);
 		return 0;
 	}

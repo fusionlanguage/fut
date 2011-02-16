@@ -24,10 +24,6 @@ namespace Foxoft.Ci
 
 public class GenJs : SourceGenerator
 {
-	public GenJs(string outputPath)
-	{
-	}
-
 	void Write(CiCodeDoc doc)
 	{
 		if (doc == null)
@@ -87,15 +83,15 @@ public class GenJs : SourceGenerator
 		WriteLine(";");
 	}
 
-	void Write(CiClass clazz)
+	void Write(CiClass klass)
 	{
 		WriteLine();
-		Write(clazz.Documentation);
+		Write(klass.Documentation);
 		Write("function ");
-		Write(clazz.Name);
+		Write(klass.Name);
 		WriteLine("()");
 		OpenBlock();
-		foreach (CiField field in clazz.Fields)
+		foreach (CiField field in klass.Fields)
 			Write(field);
 		CloseBlock();
 	}
@@ -249,7 +245,7 @@ public class GenJs : SourceGenerator
 
 	public override void Write(CiProgram prog)
 	{
-		WriteLine("// Generated automatically with \"cito\". Do not edit.");
+		CreateFile(this.OutputPath);
 		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiEnum)
 				Write((CiEnum) symbol);
@@ -276,6 +272,7 @@ public class GenJs : SourceGenerator
 			else if (symbol is CiFunction)
 				Write((CiFunction) symbol);
 		}
+		CloseFile();
 	}
 }
 

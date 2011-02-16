@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.IO;
 
 namespace Foxoft.Ci
 {
@@ -26,7 +27,7 @@ public class GenJava : SourceGenerator
 {
 	string Namespace;
 
-	public GenJava(string outputPath, string namespace_)
+	public GenJava(string namespace_)
 	{
 		this.Namespace = namespace_;
 	}
@@ -98,14 +99,33 @@ public class GenJava : SourceGenerator
 		WriteLine(" */");
 	}
 
+	void CreateJavaFile(string type, CiSymbol symbol)
+	{
+		CreateFile(Path.Combine(this.OutputPath, symbol.Name + ".java"));
+		if (this.Namespace != null) {
+			Write("package ");
+			Write(this.Namespace);
+			WriteLine(";");
+		}
+		WriteLine();
+		Write(symbol.Documentation);
+		if (symbol.IsPublic)
+			Write("public ");
+		Write(type);
+		Write(' ');
+		WriteLine(symbol.Name);
+		OpenBlock();
+	}
+
+	void CloseJavaFile()
+	{
+		CloseBlock();
+		CloseFile();
+	}
+
 	void Write(CiEnum enu)
 	{
-		WriteLine();
-		Write(enu.Documentation);
-		Write(enu.IsPublic ? "public " : "internal ");
-		Write("interface ");
-		WriteLine(enu.Name);
-		OpenBlock();
+		CreateJavaFile("interface", enu);
 		for (int i = 0; i < enu.Values.Length; i++) {
 			CiEnumValue value = enu.Values[i];
 			Write(value.Documentation);
@@ -115,8 +135,7 @@ public class GenJava : SourceGenerator
 			Write(i);
 			WriteLine(";");
 		}
-		WriteLine();
-		CloseBlock();
+		CloseJavaFile();
 	}
 
 	void WriteBaseType(CiType type)
@@ -169,18 +188,12 @@ public class GenJava : SourceGenerator
 		WriteLine(";");
 	}
 
-	void Write(CiClass clazz)
+	void Write(CiClass klass)
 	{
-		WriteLine();
-		Write(clazz.Documentation);
-		if (clazz.IsPublic)
-			Write("public ");
-		Write("final class ");
-		WriteLine(clazz.Name);
-		OpenBlock();
-		foreach (CiField field in clazz.Fields)
+		CreateJavaFile("final class", klass);
+		foreach (CiField field in klass.Fields)
 			Write(field);
-		CloseBlock();
+		CloseJavaFile();
 	}
 
 	protected override void WriteConst(object value)
@@ -340,20 +353,13 @@ public class GenJava : SourceGenerator
 
 	public override void Write(CiProgram prog)
 	{
-		WriteLine("// Generated automatically with \"cito\". Do not edit.");
-		if (this.Namespace != null) {
-			Write("package ");
-			Write(this.Namespace);
-			WriteLine(";");
-		}
 		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiEnum)
 				Write((CiEnum) symbol);
 			else if (symbol is CiClass)
 				Write((CiClass) symbol);
 		}
-		WriteLine("public final class ASAP");
-		OpenBlock();
+		CreateJavaFile("final class", new CiClass { IsPublic = true, Name = "ASAP" });
 		foreach (CiConst konst in prog.ConstArrays) {
 			Write("static final ");
 			Write(konst.Type);
@@ -368,7 +374,7 @@ public class GenJava : SourceGenerator
 			else if (symbol is CiFunction)
 				Write((CiFunction) symbol);
 		}
-		CloseBlock();
+		CloseJavaFile();
 	}
 }
 

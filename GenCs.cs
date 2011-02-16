@@ -26,7 +26,7 @@ public class GenCs : SourceGenerator
 {
 	string Namespace;
 
-	public GenCs(string outputPath, string namespace_)
+	public GenCs(string namespace_)
 	{
 		this.Namespace = namespace_;
 	}
@@ -170,15 +170,15 @@ public class GenCs : SourceGenerator
 		WriteLine(";");
 	}
 
-	void Write(CiClass clazz)
+	void Write(CiClass klass)
 	{
 		WriteLine();
-		Write(clazz.Documentation);
-		Write(clazz.IsPublic ? "public " : "internal ");
+		Write(klass.Documentation);
+		Write(klass.IsPublic ? "public " : "internal ");
 		Write("class ");
-		WriteLine(clazz.Name);
+		WriteLine(klass.Name);
 		OpenBlock();
-		foreach (CiField field in clazz.Fields)
+		foreach (CiField field in klass.Fields)
 			Write(field);
 		CloseBlock();
 	}
@@ -330,7 +330,7 @@ public class GenCs : SourceGenerator
 
 	public override void Write(CiProgram prog)
 	{
-		WriteLine("// Generated automatically with \"cito\". Do not edit.");
+		CreateFile(this.OutputPath);
 		if (this.Namespace != null) {
 			Write("namespace ");
 			WriteLine(this.Namespace);
@@ -368,6 +368,7 @@ public class GenCs : SourceGenerator
 		CloseBlock();
 		if (this.Namespace != null)
 			CloseBlock();
+		CloseFile();
 	}
 }
 

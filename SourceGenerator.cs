@@ -25,9 +25,22 @@ namespace Foxoft.Ci
 
 public abstract class SourceGenerator : ICiStatementVisitor
 {
-	TextWriter Writer = Console.Out;
+	public string OutputPath;
+	TextWriter Writer;
 	int Indent = 0;
 	bool AtLineStart = true;
+
+	protected void CreateFile(string filename)
+	{
+		this.Writer = File.CreateText(filename);
+		this.Writer.NewLine = "\n";
+		WriteLine("// Generated automatically with \"cito\". Do not edit.");
+	}
+
+	protected void CloseFile()
+	{
+		this.Writer.Close();
+	}
 
 	void StartLine()
 	{
