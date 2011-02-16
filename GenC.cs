@@ -60,6 +60,13 @@ public class GenC : SourceGenerator
 		WriteLine(";");
 	}
 
+	static void InsertPtr(StringBuilder sb, PtrWritability wr)
+	{
+		sb.Insert(0, '*');
+		if (wr != PtrWritability.ReadWrite)
+			sb.Insert(0, "const ");
+	}
+
 	static string ToString(CiType type, string s)
 	{
 		StringBuilder sb = new StringBuilder(s);
@@ -77,9 +84,7 @@ public class GenC : SourceGenerator
 				sb.Append(']');
 			}
 			else {
-				sb.Insert(0, '*');
-				// if (const)
-				//	sb.Insert(0, "const ");
+				InsertPtr(sb, ((CiArrayPtrType) type).Writability);
 				needParens = true;
 			}
 			type = ((CiArrayType) type).ElementType;
@@ -100,11 +105,8 @@ public class GenC : SourceGenerator
 			sb.Append(']');
 		}
 		else {
-			if (type is CiClassPtrType) {
-				sb.Insert(0, '*');
-				// if (const)
-				//	sb.Insert(0, "const ");
-			}
+			if (type is CiClassPtrType)
+				InsertPtr(sb, ((CiClassPtrType) type).Writability);
 			sb.Insert(0, ' ');
 			sb.Insert(0, type.Name);
 		}

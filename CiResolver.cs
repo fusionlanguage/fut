@@ -40,9 +40,15 @@ public class ResolveException : ApplicationException
 public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 {
 	public IEnumerable<string> SearchDirs = new string[0];
-	SortedDictionary<string, CiBinaryResource> BinaryResources = new SortedDictionary<string, CiBinaryResource>();
+	readonly SortedDictionary<string, CiBinaryResource> BinaryResources = new SortedDictionary<string, CiBinaryResource>();
 	SymbolTable Globals;
+	readonly HashSet<ICiPtrType> WritablePtrTypes = new HashSet<ICiPtrType>();
 	public CiFunction CurrentFunction;
+
+	public CiResolver()
+	{
+		this.WritablePtrTypes.Add(CiArrayPtrType.WritableByteArray);
+	}
 
 	string FindFile(string name)
 	{
@@ -278,13 +284,59 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		throw new ResolveException("Indexed object is neither array or string");
 	}
 
+	void MarkWritable(CiExpr target)
+	{
+		for (;;) {
+			if (target is CiFieldAccess)
+				target = ((CiFieldAccess) target).Obj;
+			else if (target is CiArrayAccess)
+				target = ((CiArrayAccess) target).Array;
+			else
+				break;
+			ICiPtrType pt = target.Type as ICiPtrType;
+			if (pt != null) {
+				this.WritablePtrTypes.Add(pt);
+				break;
+			}
+		}
+	}
+
+	static void CheckCopyPtr(CiType target, CiMaybeAssign source)
+	{
+		ICiPtrType tp = target as ICiPtrType;
+		if (tp == null)
+			return;
+		CiCondExpr cond = source as CiCondExpr;
+		if (cond != null) {
+			CheckCopyPtr(target, cond.OnTrue);
+			CheckCopyPtr(target, cond.OnFalse);
+			return;
+		}
+		for (;;) {
+			ICiPtrType sp = source.Type as ICiPtrType;
+			if (sp != null) {
+				tp.Sources.Add(sp);
+				break;
+			}
+			if (source is CiFieldAccess)
+				source = ((CiFieldAccess) source).Obj;
+			else if (source is CiArrayAccess)
+				source = ((CiArrayAccess) source).Array;
+			else
+				break;
+		}
+	}
+
 	void CoerceArguments(CiFunctionCall expr)
 	{
 		CiParam[] paramz = expr.Function.Params;
 		if (expr.Arguments.Length != paramz.Length)
 			throw new ResolveException("Invalid number of arguments for {0}, expected {1}, got {2}", expr.Name, paramz.Length, expr.Arguments.Length);
-		for (int i = 0; i < paramz.Length; i++)
-			expr.Arguments[i] = Coerce(Resolve(expr.Arguments[i]), paramz[i].Type);
+		for (int i = 0; i < paramz.Length; i++) {
+			CiExpr arg = Resolve(expr.Arguments[i]);
+			CheckCopyPtr(paramz[i].Type, arg);
+			expr.Arguments[i] = Coerce(arg, paramz[i].Type);
+		}
 	}
 
 	CiExpr ICiExprVisitor.Visit(CiFunctionCall expr)
@@ -303,6 +355,8 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		if (expr.Function == null)
 			throw new ResolveException("{0} is not a method", expr.Name);
 		CoerceArguments(expr);
+		if (expr.Function.IsMutatorMethod)
+			MarkWritable(expr.Obj);
 		return expr;
 	}
 
@@ -452,7 +506,9 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 			CiType type = statement.Type;
 			if (type is CiArrayStorageType)
 				type = ((CiArrayStorageType) type).ElementType;
-			statement.InitialValue = Coerce(Resolve(statement.InitialValue), type);
+			CiExpr initialValue = Resolve(statement.InitialValue);
+			CheckCopyPtr(type, statement.InitialValue);
+			statement.InitialValue = Coerce(initialValue, type);
 		}
 	}
 
@@ -466,11 +522,14 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		statement.Target = Resolve(statement.Target) as CiLValue;
 		if (statement.Target == null)
 			throw new ResolveException("Not an l-value for an assignment");
+		MarkWritable(statement.Target);
+
 		CiMaybeAssign source = statement.Source;
 		if (source is CiAssign)
 			Resolve((ICiStatement) source);
 		else
 			source = Resolve((CiExpr) source);
+		CheckCopyPtr(statement.Target.Type, source);
 		statement.Source = Coerce(source, statement.Target.Type);
 	}
 
@@ -554,6 +613,17 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		this.CurrentFunction = null;
 	}
 
+	static void MarkWritable(ICiPtrType type)
+	{
+		if (type.Writability == PtrWritability.ReadWrite)
+			return;
+		if (type.Writability == PtrWritability.ReadOnly)
+			throw new ResolveException("Attempt to write a read-only array");
+		type.Writability = PtrWritability.ReadWrite;
+		foreach (ICiPtrType source in type.Sources)
+			MarkWritable(source);
+	}
+
 	public void Resolve(CiProgram program)
 	{
 		this.Globals = program.Globals;
@@ -574,6 +644,8 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 				Resolve((CiFunction) symbol);
 		}
 		program.BinaryResources = this.BinaryResources.Values.ToArray();
+		foreach (ICiPtrType type in this.WritablePtrTypes)
+			MarkWritable(type);
 	}
 }
 }

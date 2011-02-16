@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Foxoft.Ci
@@ -86,6 +87,7 @@ public class CiType : CiSymbol
 		throw new ParseException("{0} has no members", this.GetType());
 	}
 	public virtual CiType Accept(ICiTypeVisitor v) { return this; }
+	public virtual bool Equals(CiType obj) { return this == obj; }
 }
 
 public class CiUnknownType : CiType
@@ -180,17 +182,26 @@ public class CiStringStorageType : CiStringType
 {
 	public CiExpr LengthExpr;
 	public int Length;
-	public override bool Equals(object obj)
+	public override bool Equals(CiType obj)
 	{
 		CiStringStorageType that = obj as CiStringStorageType;
 		return that != null && this.Length == that.Length;
 	}
-	public override int GetHashCode()
-	{
-		return this.Length.GetHashCode();
-	}
 	public override CiType Ptr { get { return CiStringPtrType.Value; } }
 	public override CiType Accept(ICiTypeVisitor v) { return v.Visit(this); }
+}
+
+public enum PtrWritability
+{
+	Unknown,
+	ReadOnly,
+	ReadWrite
+}
+
+public interface ICiPtrType
+{
+	PtrWritability Writability { get; set; }
+	HashSet<ICiPtrType> Sources { get; }
 }
 
 public abstract class CiClassType : CiType
@@ -206,29 +217,25 @@ public abstract class CiClassType : CiType
 	public override CiType Accept(ICiTypeVisitor v) { return v.Visit(this); }
 }
 
-public class CiClassPtrType : CiClassType
+public class CiClassPtrType : CiClassType, ICiPtrType
 {
-	public override bool Equals(object obj)
+	PtrWritability _writability = PtrWritability.Unknown;
+	public PtrWritability Writability { get { return this._writability; } set { this._writability = value; } }
+	readonly HashSet<ICiPtrType> _sources = new HashSet<ICiPtrType>();
+	public HashSet<ICiPtrType> Sources { get { return this._sources; } }
+	public override bool Equals(CiType obj)
 	{
 		CiClassPtrType that = obj as CiClassPtrType;
 		return that != null && this.Class == that.Class;
-	}
-	public override int GetHashCode()
-	{
-		return this.Class.GetHashCode();
 	}
 }
 
 public class CiClassStorageType : CiClassType
 {
-	public override bool Equals(object obj)
+	public override bool Equals(CiType obj)
 	{
 		CiClassStorageType that = obj as CiClassStorageType;
 		return that != null && this.Class == that.Class;
-	}
-	public override int GetHashCode()
-	{
-		return this.Class.GetHashCode();
 	}
 	public override CiType Ptr { get { return new CiClassPtrType { Class = this.Class }; } }
 }
@@ -243,7 +250,7 @@ public abstract class CiArrayType : CiType
 		ReturnType = CiType.Void,
 		Params = new CiParam[] {
 			new CiParam { Type = CiIntType.Value, Name = "sourceIndex" },
-			new CiParam { Type = CiArrayPtrType.ByteArray, Name = "destinationArray" },
+			new CiParam { Type = CiArrayPtrType.WritableByteArray, Name = "destinationArray" },
 			new CiParam { Type = CiIntType.Value, Name = "destinationIndex" },
 			new CiParam { Type = CiIntType.Value, Name = "length" }
 		}
@@ -274,17 +281,17 @@ public abstract class CiArrayType : CiType
 	public override CiType Accept(ICiTypeVisitor v) { return v.Visit(this); }
 }
 
-public class CiArrayPtrType : CiArrayType
+public class CiArrayPtrType : CiArrayType, ICiPtrType
 {
-	public static readonly CiArrayPtrType ByteArray = new CiArrayPtrType { ElementType = CiByteType.Value };
-	public override bool Equals(object obj)
+	PtrWritability _writability = PtrWritability.Unknown;
+	public PtrWritability Writability { get { return this._writability; } set { this._writability = value; } }
+	readonly HashSet<ICiPtrType> _sources = new HashSet<ICiPtrType>();
+	public HashSet<ICiPtrType> Sources { get { return this._sources; } }
+	public static readonly CiArrayPtrType WritableByteArray = new CiArrayPtrType { ElementType = CiByteType.Value };
+	public override bool Equals(CiType obj)
 	{
 		CiArrayPtrType that = obj as CiArrayPtrType;
 		return that != null && this.ElementType.Equals(that.ElementType);
-	}
-	public override int GetHashCode()
-	{
-		return this.ElementType.GetHashCode();
 	}
 }
 
@@ -296,7 +303,8 @@ public class CiArrayStorageType : CiArrayType
 	public static readonly CiFunction ClearMethod = new CiFunction {
 		Name = "Clear",
 		ReturnType = CiType.Void,
-		Params = new CiParam[0]
+		Params = new CiParam[0],
+		IsMutatorMethod = true
 	};
 	public override CiSymbol LookupMember(string name)
 	{
@@ -684,6 +692,7 @@ public class CiFunction : CiSymbol
 	public CiType ReturnType;
 	public CiParam[] Params;
 	public CiBlock Body;
+	public bool IsMutatorMethod;
 }
 
 public class CiProgram
