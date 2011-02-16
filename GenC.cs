@@ -18,6 +18,8 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Linq;
+using System.Text;
 
 namespace Foxoft.Ci
 {
@@ -58,35 +60,60 @@ public class GenC : SourceGenerator
 		WriteLine(";");
 	}
 
-	void WriteBaseType(CiType type)
+	static string ToString(CiType type, string s)
 	{
-		// TODO
-		if (type is CiByteType)
-			Write("unsigned char ");
-		else if (type is CiStringPtrType)
-			Write("const char *");
-		else if (type is CiStringStorageType)
-			Write("char ");
-		else {
-			Write(type.Name);
-			Write(' ');
-			if (type is CiClassPtrType)
-				Write('*');
+		StringBuilder sb = new StringBuilder(s);
+		bool needParens = false;
+		while (type is CiArrayType) {
+			CiArrayStorageType stg = type as CiArrayStorageType;
+			if (stg != null) {
+				if (needParens) {
+					sb.Insert(0, '(');
+					sb.Append(')');
+					needParens = false;
+				}
+				sb.Append('[');
+				sb.Append(stg.Length);
+				sb.Append(']');
+			}
+			else {
+				sb.Insert(0, '*');
+				// if (const)
+				//	sb.Insert(0, "const ");
+				needParens = true;
+			}
+			type = ((CiArrayType) type).ElementType;
 		}
+
+		if (type is CiByteType)
+			sb.Insert(0, "unsigned char ");
+		else if (type is CiStringPtrType)
+			sb.Insert(0, "const char *");
+		else if (type is CiStringStorageType) {
+			if (needParens) {
+				sb.Insert(0, '(');
+				sb.Append(')');
+			}
+			sb.Insert(0, "char ");
+			sb.Append('[');
+			sb.Append(((CiStringStorageType) type).Length + 1);
+			sb.Append(']');
+		}
+		else {
+			if (type is CiClassPtrType) {
+				sb.Insert(0, '*');
+				// if (const)
+				//	sb.Insert(0, "const ");
+			}
+			sb.Insert(0, ' ');
+			sb.Insert(0, type.Name);
+		}
+		return sb.ToString();
 	}
 
 	void Write(CiType type, string name)
 	{
-		// TODO
-		WriteBaseType(type.BaseType);
-		Write(name);
-		if (type is CiArrayType)
-			WriteInitializer((CiArrayType) type);
-		if (type.BaseType is CiStringStorageType) {
-			Write('[');
-			Write(((CiStringStorageType) type.BaseType).Length + 1);
-			Write(']');
-		}
+		Write(ToString(type, name));
 	}
 
 	void Write(CiField field)
@@ -350,18 +377,9 @@ public class GenC : SourceGenerator
 	{
 		if (!func.IsPublic)
 			Write("static ");
-		Write(func.ReturnType, func.Name);
-		#warning TODO function returns array
-		Write('(');
-		bool first = true;
-		foreach (CiParam param in func.Params) {
-			if (first)
-				first = false;
-			else
-				Write(", ");
-			Write(param.Type, param.Name);
-		}
-		Write(')');
+		string s = string.Join(", ",  func.Params.Select(param => ToString(param.Type, param.Name)));
+		s = func.Name + "(" + s + ")";
+		Write(func.ReturnType, s);
 	}
 
 	void Write(CiFunction func)
