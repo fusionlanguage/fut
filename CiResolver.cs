@@ -221,6 +221,58 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		return (int) ((CiConstExpr) expr).Value;
 	}
 
+	void MarkWritable(CiExpr target)
+	{
+		for (;;) {
+			if (target is CiFieldAccess)
+				target = ((CiFieldAccess) target).Obj;
+			else if (target is CiArrayAccess)
+				target = ((CiArrayAccess) target).Array;
+			else
+				break;
+			ICiPtrType pt = target.Type as ICiPtrType;
+			if (pt != null) {
+				this.WritablePtrTypes.Add(pt);
+				break;
+			}
+		}
+	}
+
+	static void CheckCopyPtr(CiType target, CiMaybeAssign source)
+	{
+		ICiPtrType tp = target as ICiPtrType;
+		if (tp == null)
+			return;
+		CiCondExpr cond = source as CiCondExpr;
+		if (cond != null) {
+			CheckCopyPtr(target, cond.OnTrue);
+			CheckCopyPtr(target, cond.OnFalse);
+			return;
+		}
+		for (;;) {
+			ICiPtrType sp = source.Type as ICiPtrType;
+			if (sp != null) {
+				tp.Sources.Add(sp);
+				break;
+			}
+			if (source is CiFieldAccess)
+				source = ((CiFieldAccess) source).Obj;
+			else if (source is CiArrayAccess)
+				source = ((CiArrayAccess) source).Array;
+			else
+				break;
+		}
+	}
+
+	CiLValue ResolveLValue(CiExpr expr)
+	{
+		CiLValue result = Resolve(expr) as CiLValue;
+		if (result == null)
+			throw new ResolveException("Expected l-value");
+		MarkWritable(result);
+		return result;
+	}
+
 	CiSymbol Lookup(CiSymbolAccess expr)
 	{
 		CiSymbol symbol = expr.Symbol;
@@ -284,49 +336,6 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		throw new ResolveException("Indexed object is neither array or string");
 	}
 
-	void MarkWritable(CiExpr target)
-	{
-		for (;;) {
-			if (target is CiFieldAccess)
-				target = ((CiFieldAccess) target).Obj;
-			else if (target is CiArrayAccess)
-				target = ((CiArrayAccess) target).Array;
-			else
-				break;
-			ICiPtrType pt = target.Type as ICiPtrType;
-			if (pt != null) {
-				this.WritablePtrTypes.Add(pt);
-				break;
-			}
-		}
-	}
-
-	static void CheckCopyPtr(CiType target, CiMaybeAssign source)
-	{
-		ICiPtrType tp = target as ICiPtrType;
-		if (tp == null)
-			return;
-		CiCondExpr cond = source as CiCondExpr;
-		if (cond != null) {
-			CheckCopyPtr(target, cond.OnTrue);
-			CheckCopyPtr(target, cond.OnFalse);
-			return;
-		}
-		for (;;) {
-			ICiPtrType sp = source.Type as ICiPtrType;
-			if (sp != null) {
-				tp.Sources.Add(sp);
-				break;
-			}
-			if (source is CiFieldAccess)
-				source = ((CiFieldAccess) source).Obj;
-			else if (source is CiArrayAccess)
-				source = ((CiArrayAccess) source).Array;
-			else
-				break;
-		}
-	}
-
 	void CoerceArguments(CiFunctionCall expr)
 	{
 		CiParam[] paramz = expr.Function.Params;
@@ -362,7 +371,12 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 
 	CiExpr ICiExprVisitor.Visit(CiUnaryExpr expr)
 	{
-		expr.Inner = Coerce(Resolve(expr.Inner), CiIntType.Value);
+		CiExpr resolved;
+		if (expr.Op == CiToken.Increment || expr.Op == CiToken.Decrement)
+			resolved = ResolveLValue(expr.Inner);
+		else
+			resolved = Resolve(expr.Inner);
+		expr.Inner = Coerce(resolved, CiIntType.Value);
 		return expr;
 	}
 
@@ -374,7 +388,7 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 
 	CiExpr ICiExprVisitor.Visit(CiPostfixExpr expr)
 	{
-		expr.Inner = Coerce(Resolve(expr.Inner), CiIntType.Value);
+		expr.Inner = Coerce(ResolveLValue(expr.Inner), CiIntType.Value);
 		return expr;
 	}
 
@@ -518,11 +532,7 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 
 	void ICiStatementVisitor.Visit(CiAssign statement)
 	{
-		statement.Target = Resolve(statement.Target) as CiLValue;
-		if (statement.Target == null)
-			throw new ResolveException("Not an l-value for an assignment");
-		MarkWritable(statement.Target);
-
+		statement.Target = ResolveLValue(statement.Target);
 		CiMaybeAssign source = statement.Source;
 		if (source is CiAssign)
 			Resolve((ICiStatement) source);
