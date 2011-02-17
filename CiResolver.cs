@@ -558,8 +558,12 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 
 	void ICiStatementVisitor.Visit(CiFor statement)
 	{
-		if (statement.Init != null)
+		if (statement.Init != null) {
 			Resolve(statement.Init);
+			CiVar def = statement.Init as CiVar;
+			if (def != null && def.InitialValue != null && (def.Type is CiStringStorageType || def.Type is CiArrayStorageType))
+				throw new ResolveException("Cannot initialize variable of this type in the for statement");
+		}
 		if (statement.Cond != null)
 			statement.Cond = Coerce(Resolve(statement.Cond), CiBoolType.Value);
 		if (statement.Advance != null)

@@ -63,7 +63,12 @@ public class GenC : SourceGenerator
 			sb.Insert(0, "const ");
 	}
 
-	static string ToString(CiType type, string s)
+	protected virtual string ToString(CiType type)
+	{
+		return type.Name;
+	}
+
+	string ToString(CiType type, string s)
 	{
 		StringBuilder sb = new StringBuilder(s);
 		bool needParens = false;
@@ -104,12 +109,12 @@ public class GenC : SourceGenerator
 			if (type is CiClassPtrType)
 				InsertPtr(sb, ((CiClassPtrType) type).Writability);
 			sb.Insert(0, ' ');
-			sb.Insert(0, type.Name);
+			sb.Insert(0, ToString(type));
 		}
 		return sb.ToString();
 	}
 
-	void Write(CiType type, string name)
+	protected void Write(CiType type, string name)
 	{
 		Write(ToString(type, name));
 	}
@@ -224,7 +229,7 @@ public class GenC : SourceGenerator
 			throw new ApplicationException(expr.Property.Name);
 	}
 
-	void WriteClearArray(CiExpr expr)
+	protected void WriteClearArray(CiExpr expr)
 	{
 		Write("memset(");
 		Write(expr);
@@ -294,10 +299,22 @@ public class GenC : SourceGenerator
 	{
 		Write(stmt.Type, stmt.Name);
 		if (stmt.InitialValue != null) {
-			if (stmt.Type is CiArrayStorageType)
-				throw new Exception("Cannot initialize array inline");
-			Write(" = ");
-			Write(stmt.InitialValue);
+			if (stmt.Type is CiStringStorageType) {
+				WriteLine(";");
+				Visit(new CiAssign {
+					Target = new CiVarAccess { Var = stmt },
+					Op = CiToken.Assign,
+					Source = stmt.InitialValue
+				});
+			}
+			else if (stmt.Type is CiArrayStorageType) {
+				WriteLine(";");
+				WriteClearArray(new CiVarAccess { Var = stmt });
+			}
+			else {
+				Write(" = ");
+				Write(stmt.InitialValue);
+			}
 		}
 	}
 
@@ -359,34 +376,6 @@ public class GenC : SourceGenerator
 		}
 	}
 
-	protected override void Write(ICiStatement stmt)
-	{
-		if (stmt is CiVar) {
-			CiVar def = (CiVar) stmt;
-			Write(def.Type, def.Name);
-			if (def.InitialValue != null && !(def.Type is CiStringStorageType) && !(def.Type is CiArrayStorageType)) {
-				Write(" = ");
-				Write(def.InitialValue);
-			}
-			WriteLine(";");
-			if (def.InitialValue != null) {
-				if (def.Type is CiStringStorageType) {
-					Write(new CiAssign {
-						Target = new CiVarAccess { Var = def },
-						Op = CiToken.Assign,
-						Source = def.InitialValue
-					});
-				}
-				else if (def.Type is CiArrayStorageType) {
-					WriteClearArray(new CiVarAccess { Var = def });
-					WriteLine(";");
-				}
-			}
-		}
-		else
-			base.Write(stmt);
-	}
-
 	void WriteSignature(CiFunction func)
 	{
 		if (!func.IsPublic)
@@ -405,11 +394,16 @@ public class GenC : SourceGenerator
 		Write(func.Body);
 	}
 
+	protected virtual void WriteBoolType()
+	{
+		WriteLine("#include <stdbool.h>");
+	}
+
 	public override void Write(CiProgram prog)
 	{
 		CreateFile(this.OutputPath);
-		WriteLine("#include <stdbool.h>");
 		WriteLine("#include <string.h>");
+		WriteBoolType();
 		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiEnum)
 				Write((CiEnum) symbol);

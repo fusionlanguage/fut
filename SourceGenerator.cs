@@ -30,18 +30,6 @@ public abstract class SourceGenerator : ICiStatementVisitor
 	int Indent = 0;
 	bool AtLineStart = true;
 
-	protected void CreateFile(string filename)
-	{
-		this.Writer = File.CreateText(filename);
-		this.Writer.NewLine = "\n";
-		WriteLine("// Generated automatically with \"cito\". Do not edit.");
-	}
-
-	protected void CloseFile()
-	{
-		this.Writer.Close();
-	}
-
 	void StartLine()
 	{
 		if (this.AtLineStart) {
@@ -93,6 +81,23 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		StartLine();
 		this.Writer.WriteLine(format, args);
 		this.AtLineStart = true;
+	}
+
+	protected virtual void WriteBanner()
+	{
+		WriteLine("// Generated automatically with \"cito\". Do not edit.");
+	}
+
+	protected void CreateFile(string filename)
+	{
+		this.Writer = File.CreateText(filename);
+		this.Writer.NewLine = "\n";
+		WriteBanner();
+	}
+
+	protected void CloseFile()
+	{
+		this.Writer.Close();
 	}
 
 	protected void OpenBlock()
@@ -422,7 +427,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			throw new ApplicationException(expr.ToString());
 	}
 
-	void ICiStatementVisitor.Visit(CiBlock block)
+	public virtual void Visit(CiBlock block)
 	{
 		OpenBlock();
 		foreach (ICiStatement stmt in block.Statements)
@@ -542,25 +547,30 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		}
 	}
 
+	protected virtual void Write(CiCase[] kases)
+	{
+		foreach (CiCase kase in kases) {
+			if (kase.Value != null) {
+				Write("case ");
+				WriteConst(kase.Value);
+			}
+			else
+				Write("default");
+			WriteLine(":");
+			this.Indent++;
+			foreach (ICiStatement stmt in kase.Body)
+				Write(stmt);
+			this.Indent--;
+		}
+	}
+
 	void ICiStatementVisitor.Visit(CiSwitch stmt)
 	{
 		Write("switch (");
 		Write(stmt.Value);
 		Write(") ");
 		OpenBlock();
-		foreach (CiCase caze in stmt.Cases) {
-			if (caze.Value != null) {
-				Write("case ");
-				WriteConst(caze.Value);
-			}
-			else
-				Write("default");
-			WriteLine(":");
-			this.Indent++;
-			foreach (ICiStatement child in caze.Body)
-				Write(child);
-			this.Indent--;
-		}
+		Write(stmt.Cases);
 		CloseBlock();
 	}
 
@@ -572,7 +582,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		WriteChild(stmt.Body);
 	}
 
-	protected virtual void Write(ICiStatement stmt)
+	protected void Write(ICiStatement stmt)
 	{
 		stmt.Accept(this);
 		if (stmt is CiMaybeAssign || stmt is CiVar)

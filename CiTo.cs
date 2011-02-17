@@ -28,13 +28,15 @@ public class CiTo
 {
 	static void Usage()
 	{
-		Console.WriteLine("Usage: cito [OPTIONS] -l LANG -o FILE INPUT.ci");
+		Console.WriteLine("Usage: cito [OPTIONS] -l LANG -o PATH INPUT.ci");
 		Console.WriteLine("Options:");
+		Console.WriteLine("-l c     Translate to C89");
+		Console.WriteLine("-l c99   Translate to C99");
 		Console.WriteLine("-l cs    Translate to C#");
 		Console.WriteLine("-l java  Translate to Java");
 		Console.WriteLine("-l js    Translate to JavaScript");
-		Console.WriteLine("-o FILE  Write to the specified file (C#) or directory (Java)");
-		Console.WriteLine("-n NAME  Specify namespace or Java package");
+		Console.WriteLine("-o PATH  Write to the specified directory (Java) or file (other languages)");
+		Console.WriteLine("-n NAME  Specify C# namespace or Java package");
 		Console.WriteLine("-D NAME  Define conditional compilation symbol");
 		Console.WriteLine("-I DIR   Add directory for BinaryResource");
 		Console.WriteLine("--help   This help");
@@ -119,7 +121,8 @@ public class CiTo
 
 		SourceGenerator gen;
 		switch (lang) {
-		case "c": gen = new GenC(); break;
+		case "c": gen = new GenC89(); break;
+		case "c99": gen = new GenC(); break;
 		case "cs": gen = new GenCs(namespace_); break;
 		case "java": gen = new GenJava(namespace_); break;
 		case "js": gen = new GenJs(); break;
