@@ -92,6 +92,7 @@ public enum CiToken
 	Public,
 	Return,
 	Switch,
+	Throw,
 	Void,
 	While,
 	EndOfLine,
@@ -449,6 +450,7 @@ public class CiLexer
 				case "public": return CiToken.Public;
 				case "return": return CiToken.Return;
 				case "switch": return CiToken.Switch;
+				case "throw": return CiToken.Throw;
 				case "void": return CiToken.Void;
 				case "while": return CiToken.While;
 				default:

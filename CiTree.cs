@@ -379,6 +379,7 @@ public interface ICiStatementVisitor
 	void Visit(CiIf statement);
 	void Visit(CiReturn statement);
 	void Visit(CiSwitch statement);
+	void Visit(CiThrow statement);
 	void Visit(CiWhile statement);
 }
 
@@ -680,6 +681,12 @@ public class CiSwitch : ICiStatement
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
+public class CiThrow : ICiStatement
+{
+	public CiExpr Message;
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
+}
+
 public class CiWhile : ICiStatement
 {
 	public CiExpr Cond;
@@ -692,6 +699,8 @@ public class CiFunction : CiSymbol
 	public CiType ReturnType;
 	public CiParam[] Params;
 	public CiBlock Body;
+	public bool Throws;
+	public object ErrorReturnValue;
 	public bool IsMutatorMethod;
 }
 

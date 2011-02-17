@@ -330,6 +330,13 @@ public class GenJava : SourceGenerator
 		}
 	}
 
+	public override void Visit(CiThrow stmt)
+	{
+		Write("throw new Exception(");
+		Write(stmt.Message);
+		WriteLine(");");
+	}
+
 	void Write(CiFunction func)
 	{
 		WriteLine();
@@ -347,7 +354,10 @@ public class GenJava : SourceGenerator
 			Write(param.Type);
 			Write(param.Name);
 		}
-		WriteLine(")");
+		if (func.Throws)
+			WriteLine(") throws Exception");
+		else
+			WriteLine(")");
 		Write(func.Body);
 	}
 

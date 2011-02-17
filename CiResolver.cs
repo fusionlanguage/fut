@@ -599,6 +599,24 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		#warning TODO: multiple "default", duplicate "case"
 	}
 
+	static object GetErrorValue(CiType type)
+	{
+		if (type == CiType.Void)
+			return false;
+		if (type == CiIntType.Value)
+			return -1;
+		if (type == CiStringPtrType.Value || type is CiClassPtrType || type is CiArrayPtrType)
+			return null;
+		throw new ResolveException("throw in a method of unsupported return type");
+	}
+
+	void ICiStatementVisitor.Visit(CiThrow statement)
+	{
+		statement.Message = Coerce(Resolve(statement.Message), CiStringPtrType.Value);
+		this.CurrentFunction.Throws = true;
+		this.CurrentFunction.ErrorReturnValue = GetErrorValue(this.CurrentFunction.ReturnType);
+	}
+
 	void ICiStatementVisitor.Visit(CiWhile statement)
 	{
 		statement.Cond = Coerce(Resolve(statement.Cond), CiBoolType.Value);

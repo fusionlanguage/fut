@@ -307,6 +307,13 @@ public class GenCs : SourceGenerator
 		}
 	}
 
+	public override void Visit(CiThrow stmt)
+	{
+		Write("throw new System.Exception(");
+		Write(stmt.Message);
+		WriteLine(");");
+	}
+
 	void Write(CiFunction func)
 	{
 		WriteLine();

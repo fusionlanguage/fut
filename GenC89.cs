@@ -98,7 +98,7 @@ public class GenC89 : GenC
 				WriteVar(def);
 			else if (stmt is CiFor) {
 				def = ((CiFor) stmt).Init as CiVar;
-				#warning TODO: check for variables are same type
+				#warning TODO: check "for" variables are same type
 				if (def != null && !forVars.Contains(def.Name)) {
 					forVars.Add(def.Name);
 					WriteVar(def);
@@ -118,6 +118,7 @@ public class GenC89 : GenC
 			if (def == null || def.InitialValue != null) // avoid lines with just semicolons
 				Write(stmt);
 		}
+
 		CloseBlock();
 	}
 

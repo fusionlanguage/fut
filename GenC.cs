@@ -26,6 +26,8 @@ namespace Foxoft.Ci
 
 public class GenC : SourceGenerator
 {
+	CiFunction CurrentFunction;
+
 	void Write(CiCodeDoc doc)
 	{
 		if (doc == null)
@@ -376,22 +378,45 @@ public class GenC : SourceGenerator
 		}
 	}
 
+	public override void Visit(CiReturn stmt)
+	{
+		if (false.Equals(this.CurrentFunction.ErrorReturnValue)) {
+			Write("return ");
+			WriteConst(true);
+			WriteLine(";");
+		}
+		else
+			base.Visit(stmt);
+	}
+
+	public override void Visit(CiThrow stmt)
+	{
+		Write("return ");
+		WriteConst(this.CurrentFunction.ErrorReturnValue);
+		WriteLine(";");
+	}
+
 	void WriteSignature(CiFunction func)
 	{
 		if (!func.IsPublic)
 			Write("static ");
 		string s = string.Join(", ",  func.Params.Select(param => ToString(param.Type, param.Name)));
 		s = func.Name + "(" + s + ")";
-		Write(func.ReturnType, s);
+		CiType type = func.ReturnType;
+		if (func.Throws && type == CiType.Void)
+			type = CiBoolType.Value;
+		Write(type, s);
 	}
 
 	void Write(CiFunction func)
 	{
 		WriteLine();
+		this.CurrentFunction = func;
 		Write(func.Documentation);
 		WriteSignature(func);
 		WriteLine();
 		Write(func.Body);
+		this.CurrentFunction = null;
 	}
 
 	protected virtual void WriteBoolType()

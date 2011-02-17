@@ -536,7 +536,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		}
 	}
 
-	void ICiStatementVisitor.Visit(CiReturn stmt)
+	public virtual void Visit(CiReturn stmt)
 	{
 		if (stmt.Value == null)
 			WriteLine("return;");
@@ -573,6 +573,8 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		Write(stmt.Cases);
 		CloseBlock();
 	}
+
+	public abstract void Visit(CiThrow stmt);
 
 	void ICiStatementVisitor.Visit(CiWhile stmt)
 	{

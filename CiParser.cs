@@ -561,6 +561,12 @@ public partial class CiParser : CiLexer
 			result.Cases = cases.ToArray();
 			return result;
 		}
+		if (Eat(CiToken.Throw)) {
+			CiThrow result = new CiThrow();
+			result.Message = ParseExpr();
+			Expect(CiToken.Semicolon);
+			return result;
+		}
 		if (Eat(CiToken.While)) {
 			CiWhile result = new CiWhile();
 			result.Cond = ParseCond();
