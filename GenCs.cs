@@ -318,6 +318,16 @@ public class GenCs : SourceGenerator
 	{
 		WriteLine();
 		Write(func.Documentation);
+		foreach (CiParam param in func.Params) {
+			if (param.Documentation != null) {
+				Write("/// <param name=\"");
+				Write(param.Name);
+				Write("\">");
+				Write(param.Documentation.Summary);
+				WriteLine("</param>");
+			}
+		}
+
 		Write("static ");
 		Write(func.ReturnType);
 		Write(func.Name);
