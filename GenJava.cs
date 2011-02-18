@@ -82,7 +82,7 @@ public class GenJava : SourceGenerator
 		Write((CiDocPara) block);
 	}
 
-	void Write(CiCodeDoc doc)
+	void WriteDontClose(CiCodeDoc doc)
 	{
 		if (doc == null)
 			return;
@@ -96,6 +96,11 @@ public class GenJava : SourceGenerator
 				Write(block);
 		}
 		WriteLine();
+	}
+
+	void Write(CiCodeDoc doc)
+	{
+		WriteDontClose(doc);
 		WriteLine(" */");
 	}
 
@@ -340,7 +345,17 @@ public class GenJava : SourceGenerator
 	void Write(CiFunction func)
 	{
 		WriteLine();
-		Write(func.Documentation);
+		WriteDontClose(func.Documentation);
+		foreach (CiParam param in func.Params) {
+			if (param.Documentation != null) {
+				Write(" * @param ");
+				Write(param.Name);
+				Write(' ');
+				Write(param.Documentation.Summary);
+				WriteLine();
+			}
+		}
+		WriteLine(" */");
 		Write("private static ");
 		Write(func.ReturnType);
 		Write(func.Name);
