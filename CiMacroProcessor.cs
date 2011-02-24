@@ -31,6 +31,7 @@ public class CiMacro : CiSymbol
 	public string[] Params;
 	public bool IsStatement;
 	public string Body;
+	public override void Accept(ICiSymbolVisitor v) { }
 }
 
 public class MacroExpansion
@@ -154,7 +155,7 @@ public partial class CiParser : CiLexer
 				char c = sb[sb.Length - 1];
 				Trace.Assert(c == ',' || c == ')');
 				sb.Length--;
-				args.Add(name, sb.ToString());
+				args.Add(name, sb.ToString().Trim());
 				sb.Clear();
 			}
 		}

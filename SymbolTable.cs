@@ -62,7 +62,7 @@ public class SymbolTable : IEnumerable<CiSymbol>
 	{
 		CiSymbol result = TryLookup(name);
 		if (result == null)
-			throw new ParseException("Unknown symbol {0}", name);
+			throw new ResolveException("Unknown symbol {0}", name);
 		return result;
 	}
 }

@@ -100,9 +100,9 @@ public class CiTo
 			} catch (Exception ex) {
 				Console.Error.WriteLine("{0}({1}): ERROR: {2}", inputFile, parser.InputLineNo, ex.Message);
 				parser.PrintMacroStack();
-				if (parser.CurrentFunction != null)
-					Console.Error.WriteLine("   in function {0}", parser.CurrentFunction.Name);
-	//			return 1;
+				if (parser.CurrentMethod != null)
+					Console.Error.WriteLine("   in method {0}", parser.CurrentMethod.Name);
+//				return 1;
 				throw;
 			}
 		}
@@ -113,8 +113,8 @@ public class CiTo
 		try {
 			resolver.Resolve(program);
 		} catch (Exception ex) {
-			if (resolver.CurrentFunction != null)
-				Console.Error.WriteLine("   in function {0}", resolver.CurrentFunction.Name);
+			if (resolver.CurrentMethod != null)
+				Console.Error.WriteLine("   in method {0}", resolver.CurrentMethod.Name);
 //			return 1;
 			throw;
 		}

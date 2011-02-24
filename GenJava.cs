@@ -23,7 +23,7 @@ using System.IO;
 namespace Foxoft.Ci
 {
 
-public class GenJava : SourceGenerator
+public class GenJava : SourceGenerator, ICiSymbolVisitor
 {
 	string Namespace;
 
@@ -84,8 +84,6 @@ public class GenJava : SourceGenerator
 
 	void WriteDontClose(CiCodeDoc doc)
 	{
-		if (doc == null)
-			return;
 		WriteLine("/**");
 		Write(" * ");
 		Write(doc.Summary);
@@ -100,8 +98,10 @@ public class GenJava : SourceGenerator
 
 	void Write(CiCodeDoc doc)
 	{
-		WriteDontClose(doc);
-		WriteLine(" */");
+		if (doc != null) {
+			WriteDontClose(doc);
+			WriteLine(" */");
+		}
 	}
 
 	void CreateJavaFile(string type, CiSymbol symbol)
@@ -128,7 +128,7 @@ public class GenJava : SourceGenerator
 		CloseFile();
 	}
 
-	void Write(CiEnum enu)
+	void ICiSymbolVisitor.Visit(CiEnum enu)
 	{
 		CreateJavaFile("interface", enu);
 		for (int i = 0; i < enu.Values.Length; i++) {
@@ -180,7 +180,7 @@ public class GenJava : SourceGenerator
 		return false;
 	}
 
-	void Write(CiField field)
+	void ICiSymbolVisitor.Visit(CiField field)
 	{
 		Write(field.Documentation);
 		if (field.IsPublic)
@@ -193,12 +193,9 @@ public class GenJava : SourceGenerator
 		WriteLine(";");
 	}
 
-	void Write(CiClass klass)
+	void ICiSymbolVisitor.Visit(CiProperty prop)
 	{
-		CreateJavaFile("final class", klass);
-		foreach (CiField field in klass.Fields)
-			Write(field);
-		CloseJavaFile();
+		throw new NotImplementedException();
 	}
 
 	protected override void WriteConst(object value)
@@ -247,7 +244,7 @@ public class GenJava : SourceGenerator
 
 	protected override void Write(CiMethodCall expr)
 	{
-		if (expr.Function == CiIntType.MulDivMethod) {
+		if (expr.Method == CiIntType.MulDivMethod) {
 			Write("(int) ((long) (");
 			Write(expr.Obj);
 			Write(") * (");
@@ -256,13 +253,13 @@ public class GenJava : SourceGenerator
 			Write(expr.Arguments[1]);
 			Write("))");
 		}
-		else if (expr.Function == CiStringType.CharAtMethod) {
+		else if (expr.Method == CiStringType.CharAtMethod) {
 			Write(expr.Obj);
 			Write(".charAt(");
 			Write(expr.Arguments[0]);
 			Write(')');
 		}
-		else if (expr.Function == CiStringType.SubstringMethod) {
+		else if (expr.Method == CiStringType.SubstringMethod) {
 			Write("String_Substring(");
 			Write(expr.Obj);
 			Write(", ");
@@ -271,7 +268,7 @@ public class GenJava : SourceGenerator
 			Write(expr.Arguments[1]);
 			Write(')');
 		}
-		else if (expr.Function == CiArrayType.CopyToMethod) {
+		else if (expr.Method == CiArrayType.CopyToMethod) {
 			Write("System.arraycopy(");
 			Write(expr.Obj);
 			Write(", ");
@@ -284,7 +281,7 @@ public class GenJava : SourceGenerator
 			Write(expr.Arguments[3]);
 			Write(')');
 		}
-		else if (expr.Function == CiArrayType.ToStringMethod) {
+		else if (expr.Method == CiArrayType.ToStringMethod) {
 			Write("new String(");
 			Write(expr.Obj);
 			Write(", ");
@@ -293,14 +290,13 @@ public class GenJava : SourceGenerator
 			Write(expr.Arguments[1]);
 			Write(')');
 		}
-		else if (expr.Function == CiArrayStorageType.ClearMethod) {
+		else if (expr.Method == CiArrayStorageType.ClearMethod) {
 			Write("Array_Clear(");
 			Write(expr.Obj);
 			Write(')');
 		}
-		// TODO
 		else
-			throw new ApplicationException(expr.Function.Name);
+			base.Write(expr);
 	}
 
 	protected override void Write(CiBinaryResourceExpr expr)
@@ -342,26 +338,29 @@ public class GenJava : SourceGenerator
 		WriteLine(");");
 	}
 
-	void Write(CiFunction func)
+	void ICiSymbolVisitor.Visit(CiMethod method)
 	{
 		WriteLine();
-		WriteDontClose(func.Documentation);
-		foreach (CiParam param in func.Params) {
-			if (param.Documentation != null) {
-				Write(" * @param ");
-				Write(param.Name);
-				Write(' ');
-				Write(param.Documentation.Summary);
-				WriteLine();
+		if (method.Documentation != null) {
+			WriteDontClose(method.Documentation);
+			foreach (CiParam param in method.Params) {
+				if (param.Documentation != null) {
+					Write(" * @param ");
+					Write(param.Name);
+					Write(' ');
+					Write(param.Documentation.Summary);
+					WriteLine();
+				}
 			}
+			WriteLine(" */");
 		}
-		WriteLine(" */");
-		Write("private static ");
-		Write(func.ReturnType);
-		Write(func.Name);
+		if (method.IsStatic)
+			Write("static ");
+		Write(method.ReturnType);
+		Write(method.Name);
 		Write("(");
 		bool first = true;
-		foreach (CiParam param in func.Params) {
+		foreach (CiParam param in method.Params) {
 			if (first)
 				first = false;
 			else
@@ -369,23 +368,19 @@ public class GenJava : SourceGenerator
 			Write(param.Type);
 			Write(param.Name);
 		}
-		if (func.Throws)
+		if (method.Throws)
 			WriteLine(") throws Exception");
 		else
 			WriteLine(")");
-		Write(func.Body);
+		Write(method.Body);
 	}
 
-	public override void Write(CiProgram prog)
+	void ICiSymbolVisitor.Visit(CiClass klass)
 	{
-		foreach (CiSymbol symbol in prog.Globals) {
-			if (symbol is CiEnum)
-				Write((CiEnum) symbol);
-			else if (symbol is CiClass)
-				Write((CiClass) symbol);
-		}
-		CreateJavaFile("final class", new CiClass { IsPublic = true, Name = "ASAP" });
-		foreach (CiConst konst in prog.ConstArrays) {
+		CreateJavaFile("final class", klass);
+		foreach (CiSymbol member in klass.Members)
+			member.Accept(this);
+		foreach (CiConst konst in klass.ConstArrays) {
 			Write("static final ");
 			Write(konst.Type);
 			Write(konst.GlobalName);
@@ -393,13 +388,23 @@ public class GenJava : SourceGenerator
 			WriteConst(konst.Value);
 			WriteLine(";");
 		}
+		CloseJavaFile();
+	}
+
+	public override void Write(CiProgram prog)
+	{
+		foreach (CiSymbol symbol in prog.Globals)
+			symbol.Accept(this);
+		/*
+		CreateJavaFile("final class", new CiClass { IsPublic = true, Name = "ASAP" });
 		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiConst && symbol.IsPublic)
 				Write((CiConst) symbol);
 			else if (symbol is CiFunction)
-				Write((CiFunction) symbol);
+				((CiFunction) symbol).Accept(this);
 		}
 		CloseJavaFile();
+		*/
 	}
 }
 

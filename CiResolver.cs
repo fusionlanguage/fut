@@ -37,13 +37,13 @@ public class ResolveException : ApplicationException
 	}
 }
 
-public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
+public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 {
 	public IEnumerable<string> SearchDirs = new string[0];
 	readonly SortedDictionary<string, CiBinaryResource> BinaryResources = new SortedDictionary<string, CiBinaryResource>();
-	SymbolTable Globals;
+	SymbolTable Symbols;
 	readonly HashSet<ICiPtrType> WritablePtrTypes = new HashSet<ICiPtrType>();
-	public CiFunction CurrentFunction;
+	public CiMethod CurrentMethod;
 
 	public CiResolver()
 	{
@@ -64,7 +64,7 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 
 	CiType ICiTypeVisitor.Visit(CiUnknownType type)
 	{
-		CiSymbol symbol = this.Globals.Lookup(type.Name);
+		CiSymbol symbol = this.Symbols.Lookup(type.Name);
 		if (symbol is CiType)
 			return (CiType) symbol;
 		if (symbol is CiClass)
@@ -82,7 +82,7 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 	{
 		if (type.Class is CiUnknownClass) {
 			string name = type.Class.Name;
-			type.Class = this.Globals.Lookup(name) as CiClass;
+			type.Class = this.Symbols.Lookup(name) as CiClass;
 			if (type.Class == null)
 				throw new ResolveException("{0} is not a class", name);
 		}
@@ -198,7 +198,11 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		return value;
 	}
 
-	void Resolve(CiConst konst)
+	void ICiSymbolVisitor.Visit(CiEnum enu)
+	{
+	}
+
+	void ICiSymbolVisitor.Visit(CiConst konst)
 	{
 		if (konst.CurrentlyResolving)
 			throw new ResolveException("Circular dependency for {0}", konst.Name);
@@ -277,7 +281,7 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 	{
 		CiSymbol symbol = expr.Symbol;
 		if (symbol is CiUnknownSymbol)
-			symbol = this.Globals.Lookup(((CiUnknownSymbol) symbol).Name);
+			symbol = this.Symbols.Lookup(((CiUnknownSymbol) symbol).Name);
 		return symbol;
 	}
 
@@ -288,11 +292,20 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 			return new CiVarAccess { Var = (CiVar) symbol };
 		else if (symbol is CiConst) {
 			CiConst konst = (CiConst) symbol;
-			Resolve(konst);
+			((ICiSymbolVisitor) this).Visit(konst);
 			if (konst.Type is CiArrayType)
 				return new CiConstAccess { Const = konst };
 			else
 				return new CiConstExpr(konst.Value);
+		}
+		else if (symbol is CiField) {
+			if (this.CurrentMethod.IsStatic)
+				throw new ResolveException("Cannot access field from a static method");
+			symbol.Accept(this);
+			return new CiFieldAccess {
+				Obj = this.CurrentMethod.This,
+				Field = (CiField) symbol
+			};
 		}
 		throw new ResolveException("Invalid expression");
 	}
@@ -306,10 +319,19 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		}
 		CiExpr parent = Resolve(expr.Parent);
 		CiSymbol member = parent.Type.LookupMember(expr.Name);
+		member.Accept(this);
 		if (member is CiField)
 			return new CiFieldAccess { Obj = parent, Field = (CiField) member };
-		if (member is CiProperty)
-			return new CiPropertyAccess { Obj = parent, Property = (CiProperty) member };
+		if (member is CiProperty) {
+			CiProperty prop = (CiProperty) member;
+			if (parent is CiConstExpr) {
+				if (prop == CiIntType.LowByteProperty)
+					return new CiConstExpr((byte) GetConstInt(parent));
+				if (prop == CiIntType.SByteProperty)
+					return new CiConstExpr((int) (sbyte) GetConstInt(parent));
+			}
+			return new CiPropertyAccess { Obj = parent, Property = prop };
+		}
 		if (member is CiConst)
 			return new CiConstExpr(((CiConst) member).Value);
 		throw new ResolveException(member.ToString());
@@ -328,7 +350,7 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 				return new CiConstExpr((int) s[i]);
 			}
 			return new CiMethodCall {
-				Function = CiStringType.CharAtMethod,
+				Method = CiStringType.CharAtMethod,
 				Obj = parent,
 				Arguments = new CiExpr[1] { index }
 			};
@@ -336,9 +358,17 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		throw new ResolveException("Indexed object is neither array or string");
 	}
 
-	void CoerceArguments(CiFunctionCall expr)
+	void ResolveSignature(CiMethod method)
 	{
-		CiParam[] paramz = expr.Function.Params;
+		method.ReturnType = Resolve(method.ReturnType);
+		foreach (CiParam param in method.Params)
+			param.Type = Resolve(param.Type);
+	}
+
+	void CoerceArguments(CiMethodCall expr)
+	{
+		ResolveSignature(expr.Method);
+		CiParam[] paramz = expr.Method.Params;
 		if (expr.Arguments.Length != paramz.Length)
 			throw new ResolveException("Invalid number of arguments for {0}, expected {1}, got {2}", expr.Name, paramz.Length, expr.Arguments.Length);
 		for (int i = 0; i < paramz.Length; i++) {
@@ -348,23 +378,18 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		}
 	}
 
-	CiExpr ICiExprVisitor.Visit(CiFunctionCall expr)
-	{
-		expr.Function = this.Globals.Lookup(expr.Name) as CiFunction;
-		if (expr.Function == null)
-			throw new ResolveException("{0} is not a function", expr.Name);
-		CoerceArguments(expr);
-		return expr;
-	}
-
 	CiExpr ICiExprVisitor.Visit(CiMethodCall expr)
 	{
-		expr.Obj = Resolve(expr.Obj);
-		expr.Function = expr.Obj.Type.LookupMember(expr.Name) as CiFunction;
-		if (expr.Function == null)
+		if (expr.Obj != null) {
+			expr.Obj = Resolve(expr.Obj);
+			expr.Method = expr.Obj.Type.LookupMember(expr.Name) as CiMethod;
+		}
+		else
+			expr.Method = this.Symbols.Lookup(expr.Name) as CiMethod;
+		if (expr.Method == null)
 			throw new ResolveException("{0} is not a method", expr.Name);
 		CoerceArguments(expr);
-		if (expr.Function.IsMutatorMethod)
+		if (expr.Method.IsMutator)
 			MarkWritable(expr.Obj);
 		return expr;
 	}
@@ -496,10 +521,14 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		return expr.Accept(this);
 	}
 
-	void Resolve(CiClass klass)
+	void ICiSymbolVisitor.Visit(CiField field)
 	{
-		foreach (CiField field in klass.Fields)
-			field.Type = Resolve(field.Type);
+		field.Type = Resolve(field.Type);
+	}
+
+	void ICiSymbolVisitor.Visit(CiProperty prop)
+	{
+		prop.Type = Resolve(prop.Type);
 	}
 
 	void ICiStatementVisitor.Visit(CiBlock statement)
@@ -581,7 +610,7 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 
 	void ICiStatementVisitor.Visit(CiReturn statement)
 	{
-		CiType type = this.CurrentFunction.ReturnType;
+		CiType type = this.CurrentMethod.ReturnType;
 		if (type != CiType.Void)
 			statement.Value = Coerce(Resolve(statement.Value), type);
 	}
@@ -613,8 +642,8 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 	void ICiStatementVisitor.Visit(CiThrow statement)
 	{
 		statement.Message = Coerce(Resolve(statement.Message), CiStringPtrType.Value);
-		this.CurrentFunction.Throws = true;
-		this.CurrentFunction.ErrorReturnValue = GetErrorValue(this.CurrentFunction.ReturnType);
+		this.CurrentMethod.Throws = true;
+		this.CurrentMethod.ErrorReturnValue = GetErrorValue(this.CurrentMethod.ReturnType);
 	}
 
 	void ICiStatementVisitor.Visit(CiWhile statement)
@@ -628,20 +657,22 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 		statement.Accept(this);
 	}
 
-	void ResolveSignature(CiFunction func)
+	void ICiSymbolVisitor.Visit(CiMethod method)
 	{
-		this.CurrentFunction = func;
-		func.ReturnType = Resolve(func.ReturnType);
-		foreach (CiParam param in func.Params)
-			param.Type = Resolve(param.Type);
-		this.CurrentFunction = null;
+		this.CurrentMethod = method;
+		ResolveSignature(method);
+		Resolve(method.Body);
+		this.CurrentMethod = null;
 	}
 
-	void Resolve(CiFunction func)
+	void ICiSymbolVisitor.Visit(CiClass klass)
 	{
-		this.CurrentFunction = func;
-		Resolve(func.Body);
-		this.CurrentFunction = null;
+		this.Symbols = klass.Members;
+		foreach (CiSymbol member in klass.Members)
+			member.Accept(this);
+		klass.BinaryResources = this.BinaryResources.Values.ToArray();
+		this.BinaryResources.Clear();
+		this.Symbols = this.Symbols.Parent;
 	}
 
 	static void MarkWritable(ICiPtrType type)
@@ -657,24 +688,9 @@ public class CiResolver : ICiTypeVisitor, ICiExprVisitor, ICiStatementVisitor
 
 	public void Resolve(CiProgram program)
 	{
-		this.Globals = program.Globals;
-		foreach (CiConst konst in program.ConstArrays)
-			Resolve(konst);
-		foreach (CiSymbol symbol in program.Globals) {
-			if (symbol is CiConst)
-				Resolve((CiConst) symbol);
-			else if (symbol is CiClass)
-				Resolve((CiClass) symbol);
-		}
-		foreach (CiSymbol symbol in program.Globals) {
-			if (symbol is CiFunction)
-				ResolveSignature((CiFunction) symbol);
-		}
-		foreach (CiSymbol symbol in program.Globals) {
-			if (symbol is CiFunction)
-				Resolve((CiFunction) symbol);
-		}
-		program.BinaryResources = this.BinaryResources.Values.ToArray();
+		this.Symbols = program.Globals;
+		foreach (CiSymbol symbol in program.Globals)
+			symbol.Accept(this);
 		foreach (ICiPtrType type in this.WritablePtrTypes)
 			MarkWritable(type);
 	}

@@ -22,7 +22,7 @@ using System;
 namespace Foxoft.Ci
 {
 
-public class GenCs : SourceGenerator
+public class GenCs : SourceGenerator, ICiSymbolVisitor
 {
 	string Namespace;
 
@@ -104,7 +104,7 @@ public class GenCs : SourceGenerator
 		}
 	}
 
-	void Write(CiEnum enu)
+	void ICiSymbolVisitor.Visit(CiEnum enu)
 	{
 		WriteLine();
 		Write(enu.Documentation);
@@ -158,7 +158,7 @@ public class GenCs : SourceGenerator
 		return false;
 	}
 
-	void Write(CiField field)
+	void ICiSymbolVisitor.Visit(CiField field)
 	{
 		Write(field.Documentation);
 		Write(field.IsPublic ? "public " : "internal ");
@@ -170,25 +170,17 @@ public class GenCs : SourceGenerator
 		WriteLine(";");
 	}
 
-	void Write(CiClass klass)
+	void ICiSymbolVisitor.Visit(CiProperty prop)
 	{
-		WriteLine();
-		Write(klass.Documentation);
-		Write(klass.IsPublic ? "public " : "internal ");
-		Write("class ");
-		WriteLine(klass.Name);
-		OpenBlock();
-		foreach (CiField field in klass.Fields)
-			Write(field);
-		CloseBlock();
+		throw new NotImplementedException();
 	}
 
-	void Write(CiConst def)
+	void ICiSymbolVisitor.Visit(CiConst def)
 	{
+		if (!def.IsPublic)
+			return;
 		Write(def.Documentation);
-		if (def.IsPublic)
-			Write("public ");
-		Write("const ");
+		Write("public const ");
 		Write(def.Type);
 		Write(def.Name);
 		Write(" = ");
@@ -232,7 +224,7 @@ public class GenCs : SourceGenerator
 
 	protected override void Write(CiMethodCall expr)
 	{
-		if (expr.Function == CiIntType.MulDivMethod) {
+		if (expr.Method == CiIntType.MulDivMethod) {
 			Write("(int) ((long) (");
 			Write(expr.Obj);
 			Write(") * (");
@@ -241,13 +233,13 @@ public class GenCs : SourceGenerator
 			Write(expr.Arguments[1]);
 			Write("))");
 		}
-		else if (expr.Function == CiStringType.CharAtMethod) {
+		else if (expr.Method == CiStringType.CharAtMethod) {
 			Write(expr.Obj);
 			Write('[');
 			Write(expr.Arguments[0]);
 			Write(']');
 		}
-		else if (expr.Function == CiStringType.SubstringMethod) {
+		else if (expr.Method == CiStringType.SubstringMethod) {
 			Write(expr.Obj);
 			Write(".Substring(");
 			Write(expr.Arguments[0]);
@@ -255,7 +247,7 @@ public class GenCs : SourceGenerator
 			Write(expr.Arguments[1]);
 			Write(')');
 		}
-		else if (expr.Function == CiArrayType.CopyToMethod) {
+		else if (expr.Method == CiArrayType.CopyToMethod) {
 			Write("System.Array.Copy(");
 			Write(expr.Obj);
 			Write(", ");
@@ -268,7 +260,7 @@ public class GenCs : SourceGenerator
 			Write(expr.Arguments[3]);
 			Write(')');
 		}
-		else if (expr.Function == CiArrayType.ToStringMethod) {
+		else if (expr.Method == CiArrayType.ToStringMethod) {
 			Write("System.Text.Encoding.UTF8.GetString(");
 			Write(expr.Obj);
 			Write(", ");
@@ -277,14 +269,15 @@ public class GenCs : SourceGenerator
 			Write(expr.Arguments[1]);
 			Write(')');
 		}
-		else if (expr.Function == CiArrayStorageType.ClearMethod) {
-			Write("Array_Clear(");
+		else if (expr.Method == CiArrayStorageType.ClearMethod) {
+			Write("System.Array.Clear(");
 			Write(expr.Obj);
+			Write(", 0, ");
+			Write(((CiArrayStorageType) expr.Obj.Type).Length);
 			Write(')');
 		}
-		// TODO
 		else
-			throw new ApplicationException(expr.Function.Name);
+			base.Write(expr);
 	}
 
 	protected override void Write(CiCoercion expr)
@@ -314,11 +307,11 @@ public class GenCs : SourceGenerator
 		WriteLine(");");
 	}
 
-	void Write(CiFunction func)
+	void ICiSymbolVisitor.Visit(CiMethod method)
 	{
 		WriteLine();
-		Write(func.Documentation);
-		foreach (CiParam param in func.Params) {
+		Write(method.Documentation);
+		foreach (CiParam param in method.Params) {
 			if (param.Documentation != null) {
 				Write("/// <param name=\"");
 				Write(param.Name);
@@ -328,12 +321,14 @@ public class GenCs : SourceGenerator
 			}
 		}
 
-		Write("static ");
-		Write(func.ReturnType);
-		Write(func.Name);
+		Write(method.IsPublic ? "public " : "internal ");
+		if (method.IsStatic)
+			Write("static ");
+		Write(method.ReturnType);
+		Write(method.Name);
 		Write("(");
 		bool first = true;
-		foreach (CiParam param in func.Params) {
+		foreach (CiParam param in method.Params) {
 			if (first)
 				first = false;
 			else
@@ -342,7 +337,35 @@ public class GenCs : SourceGenerator
 			Write(param.Name);
 		}
 		WriteLine(")");
-		Write(func.Body);
+		Write(method.Body);
+	}
+
+	void ICiSymbolVisitor.Visit(CiClass klass)
+	{
+		WriteLine();
+		Write(klass.Documentation);
+		Write(klass.IsPublic ? "public " : "internal ");
+		Write("class ");
+		WriteLine(klass.Name);
+		OpenBlock();
+		foreach (CiSymbol member in klass.Members)
+			member.Accept(this);
+		foreach (CiConst konst in klass.ConstArrays) {
+			Write("static readonly ");
+			Write(konst.Type);
+			Write(konst.GlobalName);
+			Write(" = ");
+			WriteConst(konst.Value);
+			WriteLine(";");
+		}
+		foreach (CiBinaryResource resource in klass.BinaryResources) {
+			Write("static readonly byte[] ");
+			WriteName(resource);
+			Write(" = ");
+			WriteConst(resource.Content);
+			WriteLine(";");
+		}
+		CloseBlock();
 	}
 
 	public override void Write(CiProgram prog)
@@ -353,36 +376,8 @@ public class GenCs : SourceGenerator
 			WriteLine(this.Namespace);
 			OpenBlock();
 		}
-		foreach (CiSymbol symbol in prog.Globals) {
-			if (symbol is CiEnum)
-				Write((CiEnum) symbol);
-			else if (symbol is CiClass)
-				Write((CiClass) symbol);
-		}
-		WriteLine("public partial class ASAP");
-		OpenBlock();
-		foreach (CiConst konst in prog.ConstArrays) {
-			Write("static readonly ");
-			Write(konst.Type);
-			Write(konst.GlobalName);
-			Write(" = ");
-			WriteConst(konst.Value);
-			WriteLine(";");
-		}
-		foreach (CiBinaryResource resource in prog.BinaryResources) {
-			Write("static readonly byte[] ");
-			WriteName(resource);
-			Write(" = ");
-			WriteConst(resource.Content);
-			WriteLine(";");
-		}
-		foreach (CiSymbol symbol in prog.Globals) {
-			if (symbol is CiConst && symbol.IsPublic)
-				Write((CiConst) symbol);
-			else if (symbol is CiFunction)
-				Write((CiFunction) symbol);
-		}
-		CloseBlock();
+		foreach (CiSymbol symbol in prog.Globals)
+			symbol.Accept(this);
 		if (this.Namespace != null)
 			CloseBlock();
 		CloseFile();

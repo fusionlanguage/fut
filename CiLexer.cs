@@ -91,6 +91,7 @@ public enum CiToken
 	Macro,
 	Public,
 	Return,
+	Static,
 	Switch,
 	Throw,
 	Void,
@@ -116,7 +117,7 @@ public class ParseException : ApplicationException
 public class CiLexer
 {
 	TextReader Reader;
-	public int InputLineNo = 1;
+	public int InputLineNo;
 	protected CiToken CurrentToken;
 	protected string CurrentString;
 	protected int CurrentInt;
@@ -134,6 +135,7 @@ public class CiLexer
 	protected void Open(TextReader reader)
 	{
 		this.Reader = reader;
+		this.InputLineNo = 1;
 		NextToken();
 	}
 
@@ -449,6 +451,7 @@ public class CiLexer
 				case "macro": return CiToken.Macro;
 				case "public": return CiToken.Public;
 				case "return": return CiToken.Return;
+				case "static": return CiToken.Static;
 				case "switch": return CiToken.Switch;
 				case "throw": return CiToken.Throw;
 				case "void": return CiToken.Void;

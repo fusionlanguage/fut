@@ -58,11 +58,22 @@ public class CiCodeDoc
 	public CiDocBlock[] Details;
 }
 
+public interface ICiSymbolVisitor
+{
+	void Visit(CiEnum symbol);
+	void Visit(CiConst symbol);
+	void Visit(CiField symbol);
+	void Visit(CiProperty symbol);
+	void Visit(CiMethod symbol);
+	void Visit(CiClass symbol);
+}
+
 public abstract class CiSymbol
 {
 	public CiCodeDoc Documentation;
 	public bool IsPublic;
 	public string Name;
+	public virtual void Accept(ICiSymbolVisitor v) { throw new NotImplementedException(this.ToString()); }
 }
 
 public interface ICiTypeVisitor
@@ -124,7 +135,7 @@ public class CiIntType : CiType
 	public static readonly CiProperty LowByteProperty = new CiProperty { Name = "LowByte", Type = CiByteType.Value };
 	// SByte defined here and not in CiByteType to avoid circular dependency between static initializers of CiByteType and CiIntType
 	public static readonly CiProperty SByteProperty = new CiProperty { Name = "SByte", Type = CiIntType.Value };
-	public static readonly CiFunction MulDivMethod = new CiFunction {
+	public static readonly CiMethod MulDivMethod = new CiMethod {
 		Name = "MulDiv",
 		ReturnType = CiIntType.Value,
 		Params = new CiParam[] {
@@ -146,16 +157,17 @@ public abstract class CiStringType : CiType
 {
 	public override Type DotNetType { get { return typeof(string); } }
 	public static readonly CiProperty LengthProperty = new CiProperty { Name = "Length", Type = CiIntType.Value };
-	public static readonly CiFunction CharAtMethod = new CiFunction {
+	public static readonly CiMethod CharAtMethod = new CiMethod {
 		Name = "CharAt",
 		ReturnType = CiIntType.Value,
 		Params = new CiParam[] {
 			new CiParam { Type = CiIntType.Value, Name = "index" }
 		}
 	};
-	public static readonly CiFunction SubstringMethod = new CiFunction {
+	public static readonly CiMethod SubstringMethod = new CiMethod {
 		Name = "Substring",
-		ReturnType = CiStringPtrType.Value,
+		// Doesn't work, is initialized in static constructor of CiStringPtrType instead:
+		// ReturnType = CiStringPtrType.Value,
 		Params = new CiParam[] {
 			new CiParam { Type = CiIntType.Value, Name = "startIndex" },
 			new CiParam { Type = CiIntType.Value, Name = "length" }
@@ -176,6 +188,7 @@ public class CiStringPtrType : CiStringType
 {
 	private CiStringPtrType() { }
 	public static readonly CiStringPtrType Value = new CiStringPtrType { Name = "string" };
+	static CiStringPtrType() { CiStringType.SubstringMethod.ReturnType = CiStringPtrType.Value; }
 }
 
 public class CiStringStorageType : CiStringType
@@ -209,10 +222,7 @@ public abstract class CiClassType : CiType
 	public CiClass Class;
 	public override CiSymbol LookupMember(string name)
 	{
-		CiField field = this.Class.Fields.SingleOrDefault(f => f.Name == name);
-		if (field == null)
-			throw new ParseException("No field {0} in class {1}", name, this.Class.Name);
-		return field;
+		return this.Class.Members.Lookup(name);
 	}
 	public override CiType Accept(ICiTypeVisitor v) { return v.Visit(this); }
 }
@@ -245,7 +255,7 @@ public abstract class CiArrayType : CiType
 	public CiType ElementType;
 	public override CiType BaseType { get { return this.ElementType.BaseType; } }
 	public override int ArrayLevel { get { return 1 + this.ElementType.ArrayLevel; } }
-	public static readonly CiFunction CopyToMethod = new CiFunction {
+	public static readonly CiMethod CopyToMethod = new CiMethod {
 		Name = "CopyTo",
 		ReturnType = CiType.Void,
 		Params = new CiParam[] {
@@ -255,7 +265,7 @@ public abstract class CiArrayType : CiType
 			new CiParam { Type = CiIntType.Value, Name = "length" }
 		}
 	};
-	public static readonly CiFunction ToStringMethod = new CiFunction {
+	public static readonly CiMethod ToStringMethod = new CiMethod {
 		Name = "ToString",
 		ReturnType = CiStringPtrType.Value,
 		Params = new CiParam[] {
@@ -300,17 +310,17 @@ public class CiArrayStorageType : CiArrayType
 	public CiExpr LengthExpr;
 	public int Length;
 	public override CiType Ptr { get { return new CiArrayPtrType { ElementType = this.ElementType }; } }
-	public static readonly CiFunction ClearMethod = new CiFunction {
+	public static readonly CiMethod ClearMethod = new CiMethod {
 		Name = "Clear",
 		ReturnType = CiType.Void,
 		Params = new CiParam[0],
-		IsMutatorMethod = true
+		IsMutator = true
 	};
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
 		case "Clear": return ClearMethod;
-		case "Length": return new CiConst { Value = this.Length };
+		case "Length": return new CiConst { Type = CiIntType.Value, Value = this.Length };
 		default: return base.LookupMember(name);
 		}
 	}
@@ -336,33 +346,19 @@ public class CiEnum : CiType
 			throw new ParseException("{0} not found in enum {1}", name, this.Name);
 		return value;
 	}
+	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
 }
 
 public class CiField : CiSymbol
 {
 	public CiType Type;
+	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
 }
 
 public class CiProperty : CiSymbol
 {
 	public CiType Type;
-}
-
-public enum CiWriteStatus
-{
-	NotYet,
-	InProgress,
-	Done
-}
-
-public class CiClass : CiSymbol
-{
-	public CiField[] Fields;
-	public CiWriteStatus WriteStatus;
-}
-
-public class CiUnknownClass : CiClass
-{
+	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
 }
 
 public interface ICiStatementVisitor
@@ -394,6 +390,7 @@ public class CiConst : CiSymbol, ICiStatement
 	public object Value;
 	public string GlobalName;
 	public bool CurrentlyResolving;
+	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
@@ -424,7 +421,6 @@ public interface ICiExprVisitor
 	CiExpr Visit(CiSymbolAccess expr);
 	CiExpr Visit(CiUnknownMemberAccess expr);
 	CiExpr Visit(CiIndexAccess expr);
-	CiExpr Visit(CiFunctionCall expr);
 	CiExpr Visit(CiMethodCall expr);
 	CiExpr Visit(CiUnaryExpr expr);
 	CiExpr Visit(CiCondNotExpr expr);
@@ -523,30 +519,18 @@ public class CiArrayAccess : CiLValue
 {
 	public CiExpr Array;
 	public CiExpr Index;
-	public override CiType Type
-	{
-		get
-		{
-			CiArrayType at = (CiArrayType) this.Array.Type;
-			return at.ElementType;
-		}
-	}
+	public override CiType Type { get { return ((CiArrayType) this.Array.Type).ElementType; } }
 }
 
-public class CiFunctionCall : CiExpr, ICiStatement
-{
-	public string Name;
-	public CiFunction Function;
-	public CiExpr[] Arguments;
-	public override CiType Type { get { return this.Function.ReturnType; } }
-	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
-	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
-}
-
-public class CiMethodCall : CiFunctionCall
+public class CiMethodCall : CiExpr, ICiStatement
 {
 	public CiExpr Obj;
+	public string Name;
+	public CiMethod Method;
+	public CiExpr[] Arguments;
+	public override CiType Type { get { return this.Method.ReturnType; } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiUnaryExpr : CiExpr
@@ -647,6 +631,7 @@ public class CiDoWhile : ICiStatement
 
 public class CiFor : ICiStatement
 {
+	public SymbolTable Symbols;
 	public ICiStatement Init;
 	public CiExpr Cond;
 	public ICiStatement Advance;
@@ -694,21 +679,42 @@ public class CiWhile : ICiStatement
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
-public class CiFunction : CiSymbol
+public class CiMethod : CiSymbol
 {
+	public bool IsStatic;
 	public CiType ReturnType;
+	public CiVarAccess This;
 	public CiParam[] Params;
 	public CiBlock Body;
 	public bool Throws;
 	public object ErrorReturnValue;
-	public bool IsMutatorMethod;
+	public bool IsMutator;
+	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
+}
+
+public enum CiWriteStatus
+{
+	NotYet,
+	InProgress,
+	Done
+}
+
+public class CiClass : CiSymbol
+{
+	public SymbolTable Members;
+	public CiConst[] ConstArrays;
+	public CiBinaryResource[] BinaryResources;
+	public CiWriteStatus WriteStatus;
+	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
+}
+
+public class CiUnknownClass : CiClass
+{
 }
 
 public class CiProgram
 {
 	public SymbolTable Globals;
-	public CiConst[] ConstArrays;
-	public CiBinaryResource[] BinaryResources;
 }
 
 }

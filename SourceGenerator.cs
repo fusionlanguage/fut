@@ -193,7 +193,6 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		 || expr is CiFieldAccess
 		 || expr is CiPropertyAccess
 		 || expr is CiArrayAccess
-		 || expr is CiFunctionCall
 		 || expr is CiMethodCall
 		 || expr is CiBinaryResourceExpr)
 			return 1;
@@ -281,9 +280,13 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		Write(']');
 	}
 
-	void Write(CiFunctionCall expr)
+	protected virtual void Write(CiMethodCall expr)
 	{
-		Write(expr.Function.Name);
+		if (expr.Obj != null) {
+			Write(expr.Obj);
+			Write('.');
+		}
+		Write(expr.Method.Name);
 		Write('(');
 		bool first = true;
 		foreach (CiExpr arg in expr.Arguments)
@@ -296,8 +299,6 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		}
 		Write(')');
 	}
-
-	protected abstract void Write(CiMethodCall expr);
 
 	void Write(CiUnaryExpr expr)
 	{
@@ -403,12 +404,8 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			Write((CiPropertyAccess) expr);
 		else if (expr is CiArrayAccess)
 			Write((CiArrayAccess) expr);
-		else if (expr is CiFunctionCall) {
-			if (expr is CiMethodCall)
-				Write((CiMethodCall) expr);
-			else
-				Write((CiFunctionCall) expr);
-		}
+		else if (expr is CiMethodCall)
+			Write((CiMethodCall) expr);
 		else if (expr is CiUnaryExpr)
 			Write((CiUnaryExpr) expr);
 		else if (expr is CiCondNotExpr)

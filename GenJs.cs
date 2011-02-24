@@ -22,7 +22,7 @@ using System;
 namespace Foxoft.Ci
 {
 
-public class GenJs : SourceGenerator
+public class GenJs : SourceGenerator, ICiSymbolVisitor
 {
 	void Write(CiCodeDoc doc)
 	{
@@ -31,7 +31,7 @@ public class GenJs : SourceGenerator
 		// TODO
 	}
 
-	void Write(CiEnum enu)
+	void ICiSymbolVisitor.Visit(CiEnum enu)
 	{
 		WriteLine();
 		Write(enu.Documentation);
@@ -69,7 +69,7 @@ public class GenJs : SourceGenerator
 		return false;
 	}
 
-	void Write(CiField field)
+	void ICiSymbolVisitor.Visit(CiField field)
 	{
 		Write(field.Documentation);
 		Write("this.");
@@ -83,17 +83,9 @@ public class GenJs : SourceGenerator
 		WriteLine(";");
 	}
 
-	void Write(CiClass klass)
+	void ICiSymbolVisitor.Visit(CiProperty prop)
 	{
-		WriteLine();
-		Write(klass.Documentation);
-		Write("function ");
-		Write(klass.Name);
-		WriteLine("()");
-		OpenBlock();
-		foreach (CiField field in klass.Fields)
-			Write(field);
-		CloseBlock();
+		throw new NotImplementedException();
 	}
 
 	protected override void WriteConst(object value)
@@ -145,7 +137,7 @@ public class GenJs : SourceGenerator
 
 	protected override void Write(CiMethodCall expr)
 	{
-		if (expr.Function == CiIntType.MulDivMethod) {
+		if (expr.Method == CiIntType.MulDivMethod) {
 			Write("Math.floor((");
 			Write(expr.Obj);
 			Write(") * (");
@@ -154,13 +146,13 @@ public class GenJs : SourceGenerator
 			Write(expr.Arguments[1]);
 			Write("))");
 		}
-		else if (expr.Function == CiStringType.CharAtMethod) {
+		else if (expr.Method == CiStringType.CharAtMethod) {
 			Write(expr.Obj);
 			Write(".charCodeAt(");
 			Write(expr.Arguments[0]);
 			Write(')');
 		}
-		else if (expr.Function == CiStringType.SubstringMethod) {
+		else if (expr.Method == CiStringType.SubstringMethod) {
 			Write("String_Substring(");
 			Write(expr.Obj);
 			Write(", ");
@@ -169,7 +161,7 @@ public class GenJs : SourceGenerator
 			Write(expr.Arguments[1]);
 			Write(')');
 		}
-		else if (expr.Function == CiArrayType.CopyToMethod) {
+		else if (expr.Method == CiArrayType.CopyToMethod) {
 			Write("ByteArray_Copy(");
 			Write(expr.Obj);
 			Write(", ");
@@ -182,7 +174,7 @@ public class GenJs : SourceGenerator
 			Write(expr.Arguments[3]);
 			Write(')');
 		}
-		else if (expr.Function == CiArrayType.ToStringMethod) {
+		else if (expr.Method == CiArrayType.ToStringMethod) {
 			Write("ByteArray_ToString(");
 			Write(expr.Obj);
 			Write(", ");
@@ -191,14 +183,13 @@ public class GenJs : SourceGenerator
 			Write(expr.Arguments[1]);
 			Write(')');
 		}
-		else if (expr.Function == CiArrayStorageType.ClearMethod) {
+		else if (expr.Method == CiArrayStorageType.ClearMethod) {
 			Write("Array_Clear(");
 			Write(expr.Obj);
 			Write(')');
 		}
-		// TODO
 		else
-			throw new ApplicationException(expr.Function.Name);
+			base.Write(expr);
 	}
 
 	protected override void Write(CiBinaryExpr expr)
@@ -231,15 +222,15 @@ public class GenJs : SourceGenerator
 		WriteLine(";");
 	}
 
-	void Write(CiFunction func)
+	void ICiSymbolVisitor.Visit(CiMethod method)
 	{
 		WriteLine();
-		Write(func.Documentation);
+		Write(method.Documentation);
 		Write("function ");
-		Write(func.Name);
+		Write(method.Name);
 		Write("(");
 		bool first = true;
-		foreach (CiParam param in func.Params) {
+		foreach (CiParam param in method.Params) {
 			if (first)
 				first = false;
 			else
@@ -247,18 +238,28 @@ public class GenJs : SourceGenerator
 			Write(param.Name);
 		}
 		WriteLine(")");
-		Write(func.Body);
+		Write(method.Body);
+	}
+
+	void ICiSymbolVisitor.Visit(CiClass klass)
+	{
+		WriteLine();
+		Write(klass.Documentation);
+		Write("function ");
+		Write(klass.Name);
+		WriteLine("()");
+		OpenBlock();
+		foreach (CiSymbol member in klass.Members)
+			member.Accept(this);
+		CloseBlock();
 	}
 
 	public override void Write(CiProgram prog)
 	{
 		CreateFile(this.OutputPath);
-		foreach (CiSymbol symbol in prog.Globals) {
-			if (symbol is CiEnum)
-				Write((CiEnum) symbol);
-			else if (symbol is CiClass)
-				Write((CiClass) symbol);
-		}
+		foreach (CiSymbol symbol in prog.Globals)
+			symbol.Accept(this);
+		/*
 		foreach (CiConst konst in prog.ConstArrays) {
 			Write("var ");
 			Write(konst.GlobalName);
@@ -273,12 +274,7 @@ public class GenJs : SourceGenerator
 			WriteConst(resource.Content);
 			WriteLine(";");
 		}
-		foreach (CiSymbol symbol in prog.Globals) {
-			if (symbol is CiConst && symbol.IsPublic)
-				Write((CiConst) symbol);
-			else if (symbol is CiFunction)
-				Write((CiFunction) symbol);
-		}
+		*/
 		CloseFile();
 	}
 }
