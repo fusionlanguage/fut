@@ -110,6 +110,16 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		return type.Accept(this);
 	}
 
+	CiCondExpr Coerce(CiCondExpr expr, CiType expected)
+	{
+		return new CiCondExpr {
+			Cond = expr.Cond,
+			ResultType = expected,
+			OnTrue = Coerce(expr.OnTrue, expected),
+			OnFalse = Coerce(expr.OnFalse, expected)
+		};
+	}
+
 	CiMaybeAssign Coerce(CiMaybeAssign expr, CiType expected)
 	{
 		CiType got = expr.Type;
@@ -119,6 +129,11 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			CiConstExpr konst = expr as CiConstExpr;
 			if (konst != null)
 				return new CiConstExpr((object) (int) (byte) konst.Value);
+			CiCondExpr cond = expr as CiCondExpr;
+			if (cond != null && (cond.OnTrue is CiConstExpr || cond.OnFalse is CiConstExpr)) {
+				// avoid ((foo ? 1 : 0) & 0xff) in Java
+				return Coerce(cond, expected);
+			}
 			return new CiCoercion { ResultType = expected, Inner = expr };
 		}
 		if (expected == CiByteType.Value && got == CiIntType.Value) {
@@ -138,14 +153,9 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			if (got != null && ((CiClassPtrType) expected).Class == gotClass.Class) {
 				if (got is CiClassPtrType)
 					return expr;
-				CiCondExpr cond = expr as CiCondExpr;
-				if (cond != null) {
+				if (expr is CiCondExpr) {
 					// C doesn't like &(cond ? foo : bar)
-					return new CiCondExpr {
-						Cond = cond.Cond,
-						OnTrue = new CiCoercion { ResultType = expected, Inner = cond.OnTrue },
-						OnFalse = new CiCoercion { ResultType = expected, Inner = cond.OnFalse }
-					};
+					return Coerce((CiCondExpr) expr, expected);
 				}
 				return new CiCoercion { ResultType = expected, Inner = expr };
 			}
