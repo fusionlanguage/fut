@@ -416,6 +416,8 @@ public class CiLexer
 						this.CurrentInt = i;
 						return CiToken.IntConstant;
 					}
+					if (i == 0)
+						throw new ParseException("Octal numbers not supported");
 					if (i > 214748364)
 						throw new ParseException("Integer too big");
 					i = 10 * i + d;
