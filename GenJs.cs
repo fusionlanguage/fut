@@ -56,7 +56,9 @@ public class GenJs : SourceGenerator, ICiSymbolVisitor
 	{
 		CiClassStorageType classType = type as CiClassStorageType;
 		if (classType != null) {
-			Write(" = new {0}()", classType.Class.Name);
+			Write(" = new ");
+			Write(classType.Class.Name);
+			Write("()");
 			return true;
 		}
 		CiArrayStorageType arrayType = type as CiArrayStorageType;

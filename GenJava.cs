@@ -26,6 +26,7 @@ namespace Foxoft.Ci
 public class GenJava : SourceGenerator, ICiSymbolVisitor
 {
 	string Namespace;
+	bool UsesSubstringMethod;
 
 	public GenJava(string namespace_)
 	{
@@ -135,7 +136,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			CiEnumValue value = enu.Values[i];
 			Write(value.Documentation);
 			Write("int ");
-			Write(value.Name);
+			WriteUppercaseWithUnderscores(value.Name);
 			Write(" = ");
 			Write(i);
 			WriteLine(";");
@@ -167,7 +168,9 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 	{
 		CiClassStorageType classType = type as CiClassStorageType;
 		if (classType != null) {
-			Write(" = new {0}()", classType.Class.Name);
+			Write(" = new ");
+			Write(classType.Class.Name);
+			Write("()");
 			return true;
 		}
 		CiArrayStorageType arrayType = type as CiArrayStorageType;
@@ -188,7 +191,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		if (field.Type is CiClassStorageType || field.Type is CiArrayStorageType)
 			Write("final ");
 		Write(field.Type);
-		Write(field.Name);
+		WriteCamelCase(field.Name);
 		WriteInit(field.Type);
 		WriteLine(";");
 	}
@@ -198,12 +201,39 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		throw new NotImplementedException();
 	}
 
+	void ICiSymbolVisitor.Visit(CiConst def)
+	{
+		if (!def.IsPublic)
+			return;
+		Write(def.Documentation);
+		Write("public static final ");
+		Write(def.Type);
+		WriteUppercaseWithUnderscores(def.Name);
+		Write(" = ");
+		WriteConst(def.Value);
+		WriteLine(";");
+	}
+
 	protected override void WriteConst(object value)
 	{
 		if (value is byte)
 			Write((sbyte) (byte) value);
+		else if (value is CiEnumValue) {
+			CiEnumValue ev = (CiEnumValue) value;
+			Write(ev.Type.Name);
+			Write('.');
+			WriteUppercaseWithUnderscores(ev.Name);
+		}
 		else
 			base.WriteConst(value);
+	}
+
+	protected override void Write(CiConstAccess expr)
+	{
+		if (expr.Const.GlobalName != null)
+			WriteUppercaseWithUnderscores(expr.Const.GlobalName);
+		else
+			Write(expr.Const.Name);
 	}
 
 	protected override int GetPriority(CiExpr expr)
@@ -221,6 +251,13 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 				return 8;
 		}
 		return base.GetPriority(expr);
+	}
+
+	protected override void Write(CiFieldAccess expr)
+	{
+		WriteChild(expr, expr.Obj);
+		Write('.');
+		WriteCamelCase(expr.Field.Name);
 	}
 
 	protected override void Write(CiPropertyAccess expr)
@@ -242,16 +279,21 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			throw new ApplicationException(expr.Property.Name);
 	}
 
+	protected override void WriteMethodName(string name)
+	{
+		WriteCamelCase(name);
+	}
+
 	protected override void Write(CiMethodCall expr)
 	{
 		if (expr.Method == CiIntType.MulDivMethod) {
-			Write("(int) ((long) (");
-			Write(expr.Obj);
-			Write(") * (");
-			Write(expr.Arguments[0]);
-			Write(") / (");
-			Write(expr.Arguments[1]);
-			Write("))");
+			Write("(int) ((long) ");
+			WriteChild(2, expr.Obj);
+			Write(" * ");
+			WriteChild(3, expr.Arguments[0]);
+			Write(" / ");
+			WriteRightChild(3, expr.Arguments[1]);
+			Write(")");
 		}
 		else if (expr.Method == CiStringType.CharAtMethod) {
 			Write(expr.Obj);
@@ -260,13 +302,24 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			Write(')');
 		}
 		else if (expr.Method == CiStringType.SubstringMethod) {
-			Write("String_Substring(");
-			Write(expr.Obj);
-			Write(", ");
-			Write(expr.Arguments[0]);
-			Write(", ");
-			Write(expr.Arguments[1]);
-			Write(')');
+			if (expr.Arguments[0].HasSideEffect) {
+				Write("substring(");
+				Write(expr.Obj);
+				Write(", ");
+				Write(expr.Arguments[0]);
+				Write(", ");
+				Write(expr.Arguments[1]);
+				Write(')');
+				this.UsesSubstringMethod = true;
+			}
+			else {
+				Write(expr.Obj);
+				Write(".substring(");
+				Write(expr.Arguments[0]);
+				Write(", ");
+				Write(new CiBinaryExpr { Left = expr.Arguments[0], Op = CiToken.Plus, Right = expr.Arguments[1] });
+				Write(')');
+			}
 		}
 		else if (expr.Method == CiArrayType.CopyToMethod) {
 			Write("System.arraycopy(");
@@ -291,7 +344,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			Write(')');
 		}
 		else if (expr.Method == CiArrayStorageType.ClearMethod) {
-			Write("Array_Clear(");
+			Write("clear(");
 			Write(expr.Obj);
 			Write(')');
 		}
@@ -301,8 +354,10 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 
 	protected override void Write(CiBinaryResourceExpr expr)
 	{
-		Write("BinaryResource_Get(");
+		Write("getBinaryResource(");
 		WriteConst(expr.Resource.Name);
+		Write(", ");
+		Write(expr.Resource.Content.Length);
 		Write(')');
 	}
 
@@ -313,9 +368,8 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			WriteChild(expr, (CiExpr) expr.Inner); // TODO: Assign
 		}
 		else if (expr.ResultType == CiIntType.Value && expr.Inner.Type == CiByteType.Value) {
-			Write('(');
-			Write((CiExpr) expr.Inner); // TODO: Assign
-			Write(") & 0xff");
+			WriteChild(8, (CiExpr) expr.Inner); // TODO: Assign
+			Write(" & 0xff");
 		}
 		else
 			base.Write(expr);
@@ -354,10 +408,12 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			}
 			WriteLine(" */");
 		}
+		if (method.IsPublic)
+			Write("public ");
 		if (method.IsStatic)
 			Write("static ");
 		Write(method.ReturnType);
-		Write(method.Name);
+		WriteCamelCase(method.Name);
 		Write("(");
 		bool first = true;
 		foreach (CiParam param in method.Params) {
@@ -375,15 +431,89 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		Write(method.Body);
 	}
 
+	void WriteClearMethod(string elementType)
+	{
+		Write("private static void clear(");
+		Write(elementType);
+		WriteLine("[] array)");
+		OpenBlock();
+		WriteLine("for (int i = 0; i < array.length; i++)");
+		this.Indent++;
+		WriteLine("array[i] = 0;");
+		this.Indent--;
+		CloseBlock();
+	}
+
+	void WriteSubstringMethod()
+	{
+		WriteLine("private static String substring(String s, int offset, int length)");
+		OpenBlock();
+		WriteLine("return s.substring(offset, offset + length);");
+		CloseBlock();
+	}
+
+	void WriteGetBinaryResource(CiClass klass)
+	{
+		WriteLine("/**");
+		WriteLine(" * Reads bytes from the stream into the byte array");
+		WriteLine(" * until end of stream or array is full.");
+		WriteLine(" * @param is source stream");
+		WriteLine(" * @param b output array");
+		WriteLine(" * @return number of bytes read");
+		WriteLine(" */");
+		WriteLine("public static int readAndClose(java.io.InputStream is, byte[] b) throws java.io.IOException");
+		OpenBlock();
+		WriteLine("int got = 0;");
+		WriteLine("int need = b.length;");
+		Write("try "); OpenBlock();
+		Write("while (need > 0) "); OpenBlock();
+		WriteLine("int i = is.read(b, got, need);");
+		WriteLine("if (i <= 0)");
+		this.Indent++; WriteLine("break;"); this.Indent--;
+		WriteLine("got += i;");
+		WriteLine("need -= i;");
+		CloseBlock();
+		CloseBlock();
+		Write("finally "); OpenBlock();
+		WriteLine("is.close();");
+		CloseBlock();
+		WriteLine("return got;");
+		CloseBlock();
+		WriteLine();
+		WriteLine("private static byte[] getBinaryResource(String name, int length)");
+		OpenBlock();
+		Write("java.io.InputStream is = ");
+		Write(klass.Name);
+		WriteLine(".class.getResourceAsStream(name);");
+		Write("try "); OpenBlock();
+		WriteLine("byte[] result = new byte[length];");
+		WriteLine("readAndClose(is, result);");
+		WriteLine("return result;");
+		CloseBlock();
+		Write("catch (java.io.IOException e) "); OpenBlock();
+		WriteLine("throw new RuntimeException();");
+		CloseBlock();
+		CloseBlock();
+	}
+
 	void ICiSymbolVisitor.Visit(CiClass klass)
 	{
 		CreateJavaFile("final class", klass);
+		this.UsesSubstringMethod = false;
 		foreach (CiSymbol member in klass.Members)
 			member.Accept(this);
+		if (klass.UsesClearBytesMethod)
+			WriteClearMethod("byte");
+		if (klass.UsesClearIntsMethod)
+			WriteClearMethod("int");
+		if (this.UsesSubstringMethod)
+			WriteSubstringMethod();
+		if (klass.BinaryResources.Length > 0)
+			WriteGetBinaryResource(klass);
 		foreach (CiConst konst in klass.ConstArrays) {
 			Write("static final ");
 			Write(konst.Type);
-			Write(konst.GlobalName);
+			WriteUppercaseWithUnderscores(konst.GlobalName);
 			Write(" = ");
 			WriteConst(konst.Value);
 			WriteLine(";");
@@ -395,16 +525,6 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 	{
 		foreach (CiSymbol symbol in prog.Globals)
 			symbol.Accept(this);
-		/*
-		CreateJavaFile("final class", new CiClass { IsPublic = true, Name = "ASAP" });
-		foreach (CiSymbol symbol in prog.Globals) {
-			if (symbol is CiConst && symbol.IsPublic)
-				Write((CiConst) symbol);
-			else if (symbol is CiFunction)
-				((CiFunction) symbol).Accept(this);
-		}
-		CloseJavaFile();
-		*/
 	}
 }
 

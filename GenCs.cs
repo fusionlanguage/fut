@@ -145,7 +145,9 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 	{
 		CiClassStorageType classType = type as CiClassStorageType;
 		if (classType != null) {
-			Write(" = new {0}()", classType.Class.Name);
+			Write(" = new ");
+			Write(classType.Class.Name);
+			Write("()");
 			return true;
 		}
 		CiArrayStorageType arrayType = type as CiArrayStorageType;
@@ -225,13 +227,13 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 	protected override void Write(CiMethodCall expr)
 	{
 		if (expr.Method == CiIntType.MulDivMethod) {
-			Write("(int) ((long) (");
-			Write(expr.Obj);
-			Write(") * (");
-			Write(expr.Arguments[0]);
-			Write(") / (");
-			Write(expr.Arguments[1]);
-			Write("))");
+			Write("(int) ((long) ");
+			WriteChild(2, expr.Obj);
+			Write(" * ");
+			WriteChild(3, expr.Arguments[0]);
+			Write(" / ");
+			WriteRightChild(3, expr.Arguments[1]);
+			Write(")");
 		}
 		else if (expr.Method == CiStringType.CharAtMethod) {
 			Write(expr.Obj);

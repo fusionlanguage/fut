@@ -43,7 +43,9 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 	readonly SortedDictionary<string, CiBinaryResource> BinaryResources = new SortedDictionary<string, CiBinaryResource>();
 	SymbolTable Symbols;
 	readonly HashSet<ICiPtrType> WritablePtrTypes = new HashSet<ICiPtrType>();
-	public CiMethod CurrentMethod;
+	readonly HashSet<CiMethod> ThrowingMethods = new HashSet<CiMethod>();
+	public CiClass CurrentClass = null;
+	public CiMethod CurrentMethod = null;
 
 	public CiResolver()
 	{
@@ -399,8 +401,18 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		if (expr.Method == null)
 			throw new ResolveException("{0} is not a method", expr.Name);
 		CoerceArguments(expr);
+		if (expr.Method == CiArrayStorageType.ClearMethod) {
+			CiType type = ((CiArrayStorageType) expr.Obj.Type).ElementType;
+			if (type == CiByteType.Value)
+				this.CurrentClass.UsesClearBytesMethod = true;
+			else if (type == CiIntType.Value)
+				this.CurrentClass.UsesClearIntsMethod = true;
+			else
+				throw new ApplicationException();
+		}
 		if (expr.Method.IsMutator)
 			MarkWritable(expr.Obj);
+		expr.Method.CalledBy.Add(this.CurrentMethod);
 		return expr;
 	}
 
@@ -652,7 +664,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 	void ICiStatementVisitor.Visit(CiThrow statement)
 	{
 		statement.Message = Coerce(Resolve(statement.Message), CiStringPtrType.Value);
-		this.CurrentMethod.Throws = true;
+		this.ThrowingMethods.Add(this.CurrentMethod);
 		this.CurrentMethod.ErrorReturnValue = GetErrorValue(this.CurrentMethod.ReturnType);
 	}
 
@@ -677,12 +689,14 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 
 	void ICiSymbolVisitor.Visit(CiClass klass)
 	{
+		this.CurrentClass = klass;
 		this.Symbols = klass.Members;
 		foreach (CiSymbol member in klass.Members)
 			member.Accept(this);
 		klass.BinaryResources = this.BinaryResources.Values.ToArray();
 		this.BinaryResources.Clear();
 		this.Symbols = this.Symbols.Parent;
+		this.CurrentClass = null;
 	}
 
 	static void MarkWritable(ICiPtrType type)
@@ -696,6 +710,15 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			MarkWritable(source);
 	}
 
+	static void MarkThrows(CiMethod method)
+	{
+		if (method.Throws)
+			return;
+		method.Throws = true;
+		foreach (CiMethod calledBy in method.CalledBy)
+			MarkThrows(calledBy);
+	}
+
 	public void Resolve(CiProgram program)
 	{
 		this.Symbols = program.Globals;
@@ -703,6 +726,8 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			symbol.Accept(this);
 		foreach (ICiPtrType type in this.WritablePtrTypes)
 			MarkWritable(type);
+		foreach (CiMethod method in this.ThrowingMethods)
+			MarkThrows(method);
 	}
 }
 }

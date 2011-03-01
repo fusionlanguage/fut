@@ -27,7 +27,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 {
 	public string OutputPath;
 	TextWriter Writer;
-	int Indent = 0;
+	protected int Indent = 0;
 	bool AtLineStart = true;
 
 	void StartLine()
@@ -57,10 +57,26 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		this.Writer.Write(i);
 	}
 
-	protected void Write(string format, params object[] args)
+	protected void WriteCamelCase(string s)
 	{
 		StartLine();
-		this.Writer.Write(format, args);
+		this.Writer.Write(char.ToLowerInvariant(s[0]));
+		this.Writer.Write(s.Substring(1));
+	}
+
+	protected void WriteUppercaseWithUnderscores(string s)
+	{
+		StartLine();
+		bool first = true;
+		foreach (char c in s) {
+			if (char.IsUpper(c) && !first) {
+				this.Writer.Write('_');
+				this.Writer.Write(c);
+			}
+			else
+				this.Writer.Write(char.ToUpper(c));
+			first = false;
+		}
 	}
 
 	protected void WriteLine()
@@ -241,9 +257,25 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		throw new ApplicationException();
 	}
 
+	protected void WriteChild(int parentPriority, CiExpr child)
+	{
+		if (GetPriority(child) > parentPriority) {
+			Write('(');
+			Write(child);
+			Write(')');
+		}
+		else
+			Write(child);
+	}
+
 	protected void WriteChild(CiExpr parent, CiExpr child)
 	{
-		if (GetPriority(child) > GetPriority(parent)) {
+		WriteChild(GetPriority(parent), child);
+	}
+
+	protected void WriteRightChild(int parentPriority, CiExpr child)
+	{
+		if (GetPriority(child) >= parentPriority) {
 			Write('(');
 			Write(child);
 			Write(')');
@@ -254,13 +286,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 
 	protected void WriteRightChild(CiExpr parent, CiExpr child)
 	{
-		if (GetPriority(child) >= GetPriority(parent)) {
-			Write('(');
-			Write(child);
-			Write(')');
-		}
-		else
-			Write(child);
+		WriteRightChild(GetPriority(parent), child);
 	}
 
 	protected virtual void Write(CiFieldAccess expr)
@@ -280,13 +306,18 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		Write(']');
 	}
 
+	protected virtual void WriteMethodName(string name)
+	{
+		Write(name);
+	}
+
 	protected virtual void Write(CiMethodCall expr)
 	{
 		if (expr.Obj != null) {
 			Write(expr.Obj);
 			Write('.');
 		}
-		Write(expr.Method.Name);
+		WriteMethodName(expr.Method.Name);
 		Write('(');
 		bool first = true;
 		foreach (CiExpr arg in expr.Arguments)

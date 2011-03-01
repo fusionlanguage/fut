@@ -319,7 +319,10 @@ public class CiArrayStorageType : CiArrayType
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
-		case "Clear": return ClearMethod;
+		case "Clear":
+			if (this.ElementType == CiByteType.Value || this.ElementType == CiIntType.Value)
+				return ClearMethod;
+			throw new ParseException("Clear available only for byte and int arrays");
 		case "Length": return new CiConst { Type = CiIntType.Value, Value = this.Length };
 		default: return base.LookupMember(name);
 		}
@@ -433,6 +436,7 @@ public interface ICiExprVisitor
 
 public abstract class CiExpr : CiMaybeAssign
 {
+	public virtual bool HasSideEffect { get { return false; } }
 	public virtual CiExpr Accept(ICiExprVisitor v) { return this; }
 }
 
@@ -529,6 +533,7 @@ public class CiMethodCall : CiExpr, ICiStatement
 	public CiMethod Method;
 	public CiExpr[] Arguments;
 	public override CiType Type { get { return this.Method.ReturnType; } }
+	public override bool HasSideEffect { get { return true; } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
@@ -538,6 +543,7 @@ public class CiUnaryExpr : CiExpr
 	public CiToken Op;
 	public CiExpr Inner;
 	public override CiType Type { get { return CiIntType.Value; } }
+	public override bool HasSideEffect { get { return this.Op == CiToken.Increment || this.Op == CiToken.Decrement; } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
@@ -553,6 +559,7 @@ public class CiPostfixExpr : CiExpr, ICiStatement
 	public CiExpr Inner;
 	public CiToken Op;
 	public override CiType Type { get { return CiIntType.Value; } }
+	public override bool HasSideEffect { get { return true; } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
@@ -688,6 +695,7 @@ public class CiMethod : CiSymbol
 	public CiBlock Body;
 	public bool Throws;
 	public object ErrorReturnValue;
+	public readonly HashSet<CiMethod> CalledBy = new HashSet<CiMethod>();
 	public bool IsMutator;
 	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
 }
@@ -704,6 +712,8 @@ public class CiClass : CiSymbol
 	public SymbolTable Members;
 	public CiConst[] ConstArrays;
 	public CiBinaryResource[] BinaryResources;
+	public bool UsesClearBytesMethod;
+	public bool UsesClearIntsMethod;
 	public CiWriteStatus WriteStatus;
 	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
 }
