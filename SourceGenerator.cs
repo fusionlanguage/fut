@@ -585,21 +585,12 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		}
 	}
 
-	protected virtual void Write(CiCase[] kases)
+	protected virtual void StartSwitch(CiCase[] kases)
 	{
-		foreach (CiCase kase in kases) {
-			if (kase.Value != null) {
-				Write("case ");
-				WriteConst(kase.Value);
-			}
-			else
-				Write("default");
-			WriteLine(":");
-			this.Indent++;
-			foreach (ICiStatement stmt in kase.Body)
-				Write(stmt);
-			this.Indent--;
-		}
+	}
+
+	protected virtual void StartCase(ICiStatement stmt)
+	{
 	}
 
 	void ICiStatementVisitor.Visit(CiSwitch stmt)
@@ -608,7 +599,23 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		Write(stmt.Value);
 		Write(") ");
 		OpenBlock();
-		Write(stmt.Cases);
+		StartSwitch(stmt.Cases);
+		foreach (CiCase kase in stmt.Cases) {
+			if (kase.Value != null) {
+				Write("case ");
+				WriteConst(kase.Value);
+			}
+			else
+				Write("default");
+			WriteLine(":");
+			if (kase.Body.Length > 0) {
+				this.Indent++;
+				StartCase(kase.Body[0]);
+				foreach (ICiStatement child in kase.Body)
+					Write(child);
+				this.Indent--;
+			}
+		}
 		CloseBlock();
 	}
 

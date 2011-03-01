@@ -176,7 +176,7 @@ public class GenC : SourceGenerator
 
 	protected override void Write(CiVarAccess expr)
 	{
-		if (expr == this.CurrentMethod.This)
+		if (expr.Var == this.CurrentMethod.This)
 			Write("self");
 		else
 			base.Write(expr);
@@ -326,13 +326,18 @@ public class GenC : SourceGenerator
 					CiMethodCall mc = (CiMethodCall) assign.Source;
 					if (mc.Method == CiStringType.SubstringMethod
 					 || mc.Method == CiArrayType.ToStringMethod) {
-						Write("String_Substring(");
+						// TODO: make sure no side effects in assign.Target and mc.Arguments[1]
+						Write("memcpy(");
 						Write(assign.Target);
 						Write(", ");
 						WriteSum(mc.Obj, mc.Arguments[0]);
 						Write(", ");
 						Write(mc.Arguments[1]);
-						Write(')');
+						WriteLine(");");
+						Write(assign.Target);
+						Write('[');
+						Write(mc.Arguments[1]);
+						Write("] = '\\0'");
 						return;
 					}
 				}
@@ -385,6 +390,13 @@ public class GenC : SourceGenerator
 		}
 		else
 			base.Visit(stmt);
+	}
+
+	protected override void StartCase(ICiStatement stmt)
+	{
+		// prevent "error: a label can only be part of a statement and a declaration is not a statement"
+		if (stmt is CiVar)
+			WriteLine(";");
 	}
 
 	public override void Visit(CiThrow stmt)

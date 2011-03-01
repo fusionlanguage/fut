@@ -315,7 +315,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 				throw new ResolveException("Cannot access field from a static method");
 			symbol.Accept(this);
 			return new CiFieldAccess {
-				Obj = this.CurrentMethod.This,
+				Obj = new CiVarAccess { Var = this.CurrentMethod.This },
 				Field = (CiField) symbol
 			};
 		}
@@ -393,13 +393,29 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 	CiExpr ICiExprVisitor.Visit(CiMethodCall expr)
 	{
 		if (expr.Obj != null) {
-			expr.Obj = Resolve(expr.Obj);
-			expr.Method = expr.Obj.Type.LookupMember(expr.Name) as CiMethod;
+			CiExpr obj = Resolve(expr.Obj);
+			expr.Method = obj.Type.LookupMember(expr.Name) as CiMethod;
+			if (expr.Method == null)
+				throw new ResolveException("{0} is not a method", expr.Name);
+			if (expr.Method.This != null) {
+				// user-defined method
+				CheckCopyPtr(expr.Method.This.Type, obj);
+				obj = Coerce(obj, expr.Method.This.Type);
+			}
+			expr.Obj = obj;
 		}
-		else
+		else {
 			expr.Method = this.Symbols.Lookup(expr.Name) as CiMethod;
-		if (expr.Method == null)
-			throw new ResolveException("{0} is not a method", expr.Name);
+			if (expr.Method == null)
+				throw new ResolveException("{0} is not a method", expr.Name);
+			if (!expr.Method.IsStatic) {
+				if (this.CurrentMethod.IsStatic)
+					throw new ResolveException("Cannot call instance method from a static method");
+				CiExpr obj = new CiVarAccess { Var = this.CurrentMethod.This };
+				CheckCopyPtr(expr.Method.This.Type, obj);
+				expr.Obj = obj;
+			}
+		}
 		CoerceArguments(expr);
 		if (expr.Method == CiArrayStorageType.ClearMethod) {
 			CiType type = ((CiArrayStorageType) expr.Obj.Type).ElementType;

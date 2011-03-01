@@ -139,8 +139,8 @@ public class CiIntType : CiType
 		Name = "MulDiv",
 		ReturnType = CiIntType.Value,
 		Params = new CiParam[] {
-			new CiParam { Type = CiIntType.Value, Name = "numerator" },
-			new CiParam { Type = CiIntType.Value, Name = "denominator" }
+			new CiParam(CiIntType.Value, "numerator"),
+			new CiParam(CiIntType.Value, "denominator")
 		}
 	};
 	public override CiSymbol LookupMember(string name)
@@ -161,7 +161,7 @@ public abstract class CiStringType : CiType
 		Name = "CharAt",
 		ReturnType = CiIntType.Value,
 		Params = new CiParam[] {
-			new CiParam { Type = CiIntType.Value, Name = "index" }
+			new CiParam(CiIntType.Value, "index")
 		}
 	};
 	public static readonly CiMethod SubstringMethod = new CiMethod {
@@ -169,8 +169,8 @@ public abstract class CiStringType : CiType
 		// Doesn't work, is initialized in static constructor of CiStringPtrType instead:
 		// ReturnType = CiStringPtrType.Value,
 		Params = new CiParam[] {
-			new CiParam { Type = CiIntType.Value, Name = "startIndex" },
-			new CiParam { Type = CiIntType.Value, Name = "length" }
+			new CiParam(CiIntType.Value, "startIndex"),
+			new CiParam(CiIntType.Value, "length")
 		}
 	};
 	public override CiSymbol LookupMember(string name)
@@ -188,7 +188,10 @@ public class CiStringPtrType : CiStringType
 {
 	private CiStringPtrType() { }
 	public static readonly CiStringPtrType Value = new CiStringPtrType { Name = "string" };
-	static CiStringPtrType() { CiStringType.SubstringMethod.ReturnType = CiStringPtrType.Value; }
+	static CiStringPtrType()
+	{
+		CiStringType.SubstringMethod.ReturnType = CiStringPtrType.Value;
+	}
 }
 
 public class CiStringStorageType : CiStringType
@@ -259,18 +262,18 @@ public abstract class CiArrayType : CiType
 		Name = "CopyTo",
 		ReturnType = CiType.Void,
 		Params = new CiParam[] {
-			new CiParam { Type = CiIntType.Value, Name = "sourceIndex" },
-			new CiParam { Type = CiArrayPtrType.WritableByteArray, Name = "destinationArray" },
-			new CiParam { Type = CiIntType.Value, Name = "destinationIndex" },
-			new CiParam { Type = CiIntType.Value, Name = "length" }
+			new CiParam(CiIntType.Value, "sourceIndex"),
+			new CiParam(CiArrayPtrType.WritableByteArray, "destinationArray"),
+			new CiParam(CiIntType.Value, "destinationIndex"),
+			new CiParam(CiIntType.Value, "length")
 		}
 	};
 	public static readonly CiMethod ToStringMethod = new CiMethod {
 		Name = "ToString",
 		ReturnType = CiStringPtrType.Value,
 		Params = new CiParam[] {
-			new CiParam { Type = CiIntType.Value, Name = "startIndex" },
-			new CiParam { Type = CiIntType.Value, Name = "length" }
+			new CiParam(CiIntType.Value, "startIndex"),
+			new CiParam(CiIntType.Value, "length")
 		}
 	};
 	public override CiSymbol LookupMember(string name)
@@ -412,6 +415,12 @@ public class CiBinaryResource : CiSymbol
 
 public class CiParam : CiVar
 {
+	public CiParam() { }
+	public CiParam(CiType type, string name)
+	{
+		this.Type = type;
+		this.Name = name;
+	}
 }
 
 public abstract class CiMaybeAssign
@@ -436,7 +445,7 @@ public interface ICiExprVisitor
 
 public abstract class CiExpr : CiMaybeAssign
 {
-	public virtual bool HasSideEffect { get { return false; } }
+	public abstract bool HasSideEffect { get; }
 	public virtual CiExpr Accept(ICiExprVisitor v) { return this; }
 }
 
@@ -464,6 +473,7 @@ public class CiConstExpr : CiExpr
 			throw new NotImplementedException();
 		}
 	}
+	public override bool HasSideEffect { get { return false; } }
 }
 
 public abstract class CiLValue : CiExpr
@@ -474,6 +484,7 @@ public class CiSymbolAccess : CiExpr
 {
 	public CiSymbol Symbol;
 	public override CiType Type { get { throw new ApplicationException(); } }
+	public override bool HasSideEffect { get { throw new ApplicationException(); } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
@@ -481,12 +492,14 @@ public class CiConstAccess : CiExpr
 {
 	public CiConst Const;
 	public override CiType Type { get { return this.Const.Type; } }
+	public override bool HasSideEffect { get { return false; } }
 }
 
 public class CiVarAccess : CiLValue
 {
 	public CiVar Var;
 	public override CiType Type { get { return this.Var.Type; } }
+	public override bool HasSideEffect { get { return false; } }
 }
 
 public class CiUnknownMemberAccess : CiExpr
@@ -494,6 +507,7 @@ public class CiUnknownMemberAccess : CiExpr
 	public CiExpr Parent;
 	public string Name;
 	public override CiType Type { get { throw new ApplicationException(); } }
+	public override bool HasSideEffect { get { throw new ApplicationException(); } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
@@ -502,6 +516,7 @@ public class CiFieldAccess : CiLValue
 	public CiExpr Obj;
 	public CiField Field;
 	public override CiType Type { get { return this.Field.Type; } }
+	public override bool HasSideEffect { get { return this.Obj.HasSideEffect; } }
 }
 
 public class CiPropertyAccess : CiExpr
@@ -509,6 +524,7 @@ public class CiPropertyAccess : CiExpr
 	public CiExpr Obj;
 	public CiProperty Property;
 	public override CiType Type { get { return this.Property.Type; } }
+	public override bool HasSideEffect { get { return this.Obj.HasSideEffect; } }
 }
 
 public class CiIndexAccess : CiExpr
@@ -516,6 +532,7 @@ public class CiIndexAccess : CiExpr
 	public CiExpr Parent;
 	public CiExpr Index;
 	public override CiType Type { get { throw new ApplicationException(); } }
+	public override bool HasSideEffect { get { throw new ApplicationException(); } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
@@ -524,6 +541,7 @@ public class CiArrayAccess : CiLValue
 	public CiExpr Array;
 	public CiExpr Index;
 	public override CiType Type { get { return ((CiArrayType) this.Array.Type).ElementType; } }
+	public override bool HasSideEffect { get { return this.Array.HasSideEffect || this.Index.HasSideEffect; } }
 }
 
 public class CiMethodCall : CiExpr, ICiStatement
@@ -543,7 +561,7 @@ public class CiUnaryExpr : CiExpr
 	public CiToken Op;
 	public CiExpr Inner;
 	public override CiType Type { get { return CiIntType.Value; } }
-	public override bool HasSideEffect { get { return this.Op == CiToken.Increment || this.Op == CiToken.Decrement; } }
+	public override bool HasSideEffect { get { return this.Op == CiToken.Increment || this.Op == CiToken.Decrement || this.Inner.HasSideEffect; } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
@@ -551,6 +569,7 @@ public class CiCondNotExpr : CiExpr
 {
 	public CiExpr Inner;
 	public override CiType Type { get { return CiBoolType.Value; } }
+	public override bool HasSideEffect { get { return this.Inner.HasSideEffect; } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
@@ -570,6 +589,7 @@ public class CiBinaryExpr : CiExpr
 	public CiToken Op;
 	public CiExpr Right;
 	public override CiType Type { get { return CiIntType.Value; } }
+	public override bool HasSideEffect { get { return this.Left.HasSideEffect || this.Right.HasSideEffect; } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
@@ -586,6 +606,7 @@ public class CiCondExpr : CiExpr
 	public CiExpr OnTrue;
 	public CiExpr OnFalse;
 	public override CiType Type { get { return this.ResultType; } }
+	public override bool HasSideEffect { get { return this.Cond.HasSideEffect || this.OnTrue.HasSideEffect || this.OnFalse.HasSideEffect; } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
@@ -594,6 +615,7 @@ public class CiBinaryResourceExpr : CiExpr
 	public CiExpr NameExpr;
 	public CiBinaryResource Resource;
 	public override CiType Type { get { return this.Resource.Type; } }
+	public override bool HasSideEffect { get { return false; } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
@@ -602,6 +624,7 @@ public class CiCoercion : CiExpr
 	public CiType ResultType;
 	public CiMaybeAssign Inner;
 	public override CiType Type { get { return this.ResultType; } }
+	public override bool HasSideEffect { get { return ((CiExpr) this.Inner).HasSideEffect; } } // TODO
 }
 
 public class CiAssign : CiMaybeAssign, ICiStatement
@@ -691,7 +714,7 @@ public class CiMethod : CiSymbol
 	public CiClass Class;
 	public bool IsStatic;
 	public CiType ReturnType;
-	public CiVarAccess This;
+	public CiParam This;
 	public CiParam[] Params;
 	public CiBlock Body;
 	public bool Throws;

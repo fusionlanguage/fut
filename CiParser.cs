@@ -579,7 +579,7 @@ public partial class CiParser : CiLexer
 			thiz.Type = new CiClassPtrType { Name = this.CurrentClass.Name, Class = this.CurrentClass };
 			thiz.Name = "this";
 			this.Symbols.Add(thiz);
-			method.This = new CiVarAccess { Var = thiz };
+			method.This = thiz;
 		}
 		List<CiParam> paramz = new List<CiParam>();
 		if (!Eat(CiToken.RightParenthesis)) {

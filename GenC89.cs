@@ -141,7 +141,7 @@ public class GenC89 : GenC
 	{
 	}
 
-	protected override void Write(CiCase[] kases)
+	protected override void StartSwitch(CiCase[] kases)
 	{
 		foreach (CiCase kase in kases) {
 			foreach (ICiStatement stmt in kase.Body) {
@@ -151,7 +151,10 @@ public class GenC89 : GenC
 					WriteVar((CiVar) stmt);
 			}
 		}
-		base.Write(kases);
+	}
+
+	protected override void StartCase(ICiStatement stmt)
+	{
 	}
 }
 
