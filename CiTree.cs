@@ -688,6 +688,7 @@ public class CiWhile : ICiStatement
 
 public class CiMethod : CiSymbol
 {
+	public CiClass Class;
 	public bool IsStatic;
 	public CiType ReturnType;
 	public CiVarAccess This;

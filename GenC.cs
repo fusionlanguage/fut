@@ -24,7 +24,7 @@ using System.Text;
 namespace Foxoft.Ci
 {
 
-public class GenC : SourceGenerator, ICiSymbolVisitor
+public class GenC : SourceGenerator
 {
 	CiMethod CurrentMethod;
 
@@ -35,7 +35,7 @@ public class GenC : SourceGenerator, ICiSymbolVisitor
 		// TODO
 	}
 
-	void ICiSymbolVisitor.Visit(CiEnum enu)
+	void Write(CiEnum enu)
 	{
 		WriteLine();
 		Write(enu.Documentation);
@@ -50,7 +50,7 @@ public class GenC : SourceGenerator, ICiSymbolVisitor
 			Write(value.Documentation);
 			Write(enu.Name);
 			Write('_');
-			Write(value.Name);
+			WriteUppercaseWithUnderscores(value.Name);
 		}
 		WriteLine();
 		CloseBlock();
@@ -121,31 +121,23 @@ public class GenC : SourceGenerator, ICiSymbolVisitor
 		Write(ToString(type, name));
 	}
 
-	void ICiSymbolVisitor.Visit(CiField field)
+	void Write(CiField field)
 	{
 		Write(field.Documentation);
-		Write(field.Type, field.Name);
+		Write(field.Type, ToCamelCase(field.Name));
 		WriteLine(";");
 	}
 
-	void ICiSymbolVisitor.Visit(CiProperty prop)
-	{
-		throw new NotImplementedException();
-	}
-
-	void Write(CiConst def)
+	void Write(CiClass klass, CiConst def)
 	{
 		Write(def.Documentation);
 		Write("#define ");
-		Write(def.Name);
+		Write(klass.Name);
+		Write('_');
+		WriteUppercaseWithUnderscores(def.Name);
 		Write("  ");
 		WriteConst(def.Value);
 		WriteLine();
-	}
-
-	protected override void Write(CiConstAccess expr)
-	{
-		Write(expr.Const.Name);
 	}
 
 	protected override int GetPriority(CiExpr expr)
@@ -169,12 +161,25 @@ public class GenC : SourceGenerator, ICiSymbolVisitor
 			CiEnumValue ev = (CiEnumValue) value;
 			Write(ev.Type.Name);
 			Write('_');
-			Write(ev.Name);
+			WriteUppercaseWithUnderscores(ev.Name);
 		}
 		else if (value == null)
 			Write("NULL");
 		else
 			base.WriteConst(value);
+	}
+
+	protected override void Write(CiConstAccess expr)
+	{
+		Write(expr.Const.Name);
+	}
+
+	protected override void Write(CiVarAccess expr)
+	{
+		if (expr == this.CurrentMethod.This)
+			Write("self");
+		else
+			base.Write(expr);
 	}
 
 	protected override void Write(CiFieldAccess expr)
@@ -184,7 +189,7 @@ public class GenC : SourceGenerator, ICiSymbolVisitor
 			Write("->");
 		else
 			Write('.');
-		Write(expr.Field.Name);
+		WriteCamelCase(expr.Field.Name);
 	}
 
 	protected override void Write(CiPropertyAccess expr)
@@ -224,13 +229,13 @@ public class GenC : SourceGenerator, ICiSymbolVisitor
 	protected override void Write(CiMethodCall expr)
 	{
 		if (expr.Method == CiIntType.MulDivMethod) {
-			Write("(int) ((double) (");
-			Write(expr.Obj);
-			Write(") * (");
-			Write(expr.Arguments[0]);
-			Write(") / (");
-			Write(expr.Arguments[1]);
-			Write("))");
+			Write("(int) ((double) ");
+			WriteChild(2, expr.Obj);
+			Write(" * ");
+			WriteChild(3, expr.Arguments[0]);
+			Write(" / ");
+			WriteRightChild(3, expr.Arguments[1]);
+			Write(')');
 		}
 		else if (expr.Method == CiStringType.CharAtMethod) {
 			Write(expr.Obj);
@@ -258,8 +263,26 @@ public class GenC : SourceGenerator, ICiSymbolVisitor
 		else if (expr.Method == CiArrayStorageType.ClearMethod) {
 			WriteClearArray(expr.Obj);
 		}
-		else
-			base.Write(expr);
+		else {
+			Write(expr.Method.Class.Name);
+			Write('_');
+			Write(expr.Method.Name);
+			Write('(');
+			bool first = true;
+			if (expr.Obj != null) {
+				Write(expr.Obj);
+				first = false;
+			}
+			foreach (CiExpr arg in expr.Arguments)
+			{
+				if (first)
+					first = false;
+				else
+					Write(", ");
+				Write(arg);
+			}
+			Write(')');
+		}
 	}
 
 	protected override void Write(CiCoercion expr)
@@ -375,15 +398,18 @@ public class GenC : SourceGenerator, ICiSymbolVisitor
 	{
 		if (!method.IsPublic)
 			Write("static ");
-		string s = string.Join(", ",  method.Params.Select(param => ToString(param.Type, param.Name)));
-		s = method.Name + "(" + s + ")";
+		var paramz = method.Params.Select(param => ToString(param.Type, param.Name));
+		if (!method.IsStatic)
+			paramz = new string[1] { ToString(method.This.Type, "self") }.Concat(paramz);
+		string s = string.Join(", ", paramz);
+		s = method.Class.Name + "_" + method.Name + "(" + s + ")";
 		CiType type = method.ReturnType;
 		if (method.Throws && type == CiType.Void)
 			type = CiBoolType.Value;
 		Write(type, s);
 	}
 
-	void ICiSymbolVisitor.Visit(CiMethod method)
+	void Write(CiMethod method)
 	{
 		WriteLine();
 		this.CurrentMethod = method;
@@ -394,7 +420,17 @@ public class GenC : SourceGenerator, ICiSymbolVisitor
 		this.CurrentMethod = null;
 	}
 
-	void ICiSymbolVisitor.Visit(CiClass klass)
+	void WriteTypedef(CiClass klass)
+	{
+		klass.WriteStatus = CiWriteStatus.NotYet;
+		Write("typedef struct ");
+		Write(klass.Name);
+		Write(' ');
+		Write(klass.Name);
+		WriteLine(";");
+	}
+
+	void WriteStruct(CiClass klass)
 	{
 		// topological sorting of class storage fields
 		if (klass.WriteStatus == CiWriteStatus.Done)
@@ -409,20 +445,48 @@ public class GenC : SourceGenerator, ICiSymbolVisitor
 					type = ((CiArrayStorageType) type).ElementType;
 				CiClassStorageType stg = type as CiClassStorageType;
 				if (stg != null)
-					stg.Class.Accept(this);
+					WriteStruct(stg.Class);
 			}
 		}
 		klass.WriteStatus = CiWriteStatus.Done;
 
 		WriteLine();
 		Write(klass.Documentation);
-		Write("typedef struct ");
-		OpenBlock();
-		foreach (CiSymbol member in klass.Members)
-			member.Accept(this);
-		CloseBlock();
+		Write("struct ");
 		Write(klass.Name);
-		WriteLine(";");
+		Write(' ');
+		OpenBlock();
+		foreach (CiSymbol member in klass.Members) {
+			if (member is CiField)
+				Write((CiField) member);
+		}
+		this.Indent--;
+		WriteLine("};");
+		foreach (CiSymbol member in klass.Members) {
+			if (member is CiConst && member.IsPublic)
+				Write(klass, (CiConst) member);
+			else if (member is CiMethod) {
+				WriteSignature((CiMethod) member);
+				WriteLine(";");
+			}
+		}
+		foreach (CiBinaryResource resource in klass.BinaryResources) {
+			Write("static const unsigned char ");
+			WriteName(resource);
+			Write('[');
+			Write(resource.Content.Length);
+			Write("] = ");
+			WriteConst(resource.Content);
+			WriteLine(";");
+		}
+	}
+
+	void WriteCode(CiClass klass)
+	{
+		foreach (CiSymbol member in klass.Members) {
+			if (member is CiMethod)
+				Write((CiMethod) member);
+		}
 	}
 
 	protected virtual void WriteBoolType()
@@ -437,36 +501,17 @@ public class GenC : SourceGenerator, ICiSymbolVisitor
 		WriteBoolType();
 		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiEnum)
-				symbol.Accept(this);
+				Write((CiEnum) symbol);
 			else if (symbol is CiClass)
-				((CiClass) symbol).WriteStatus = CiWriteStatus.NotYet;
+				WriteTypedef((CiClass) symbol);
 		}
 		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiClass)
-				symbol.Accept(this);
-		}
-		/*
-		foreach (CiBinaryResource resource in prog.BinaryResources) {
-			Write("static const unsigned char ");
-			WriteName(resource);
-			Write('[');
-			Write(resource.Content.Length);
-			Write("] = ");
-			WriteConst(resource.Content);
-			WriteLine(";");
-		}
-		*/
-		foreach (CiSymbol symbol in prog.Globals) {
-			if (symbol is CiConst && symbol.IsPublic)
-				Write((CiConst) symbol);
-			else if (symbol is CiMethod) {
-				WriteSignature((CiMethod) symbol);
-				WriteLine(";");
-			}
+				WriteStruct((CiClass) symbol);
 		}
 		foreach (CiSymbol symbol in prog.Globals) {
-			if (symbol is CiMethod)
-				((CiMethod) symbol).Accept(this);
+			if (symbol is CiClass)
+				WriteCode((CiClass) symbol);
 		}
 		CloseFile();
 	}

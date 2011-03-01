@@ -57,6 +57,11 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		this.Writer.Write(i);
 	}
 
+	protected string ToCamelCase(string s)
+	{
+		return char.ToLowerInvariant(s[0]) + s.Substring(1);
+	}
+
 	protected void WriteCamelCase(string s)
 	{
 		StartLine();
@@ -193,14 +198,6 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			throw new ApplicationException(value.ToString());
 	}
 
-	protected virtual void Write(CiConstAccess expr)
-	{
-		if (expr.Const.GlobalName != null)
-			Write(expr.Const.GlobalName);
-		else
-			Write(expr.Const.Name);
-	}
-
 	protected virtual int GetPriority(CiExpr expr)
 	{
 		if (expr is CiConstExpr
@@ -287,6 +284,19 @@ public abstract class SourceGenerator : ICiStatementVisitor
 	protected void WriteRightChild(CiExpr parent, CiExpr child)
 	{
 		WriteRightChild(GetPriority(parent), child);
+	}
+
+	protected virtual void Write(CiConstAccess expr)
+	{
+		if (expr.Const.GlobalName != null)
+			Write(expr.Const.GlobalName);
+		else
+			Write(expr.Const.Name);
+	}
+
+	protected virtual void Write(CiVarAccess expr)
+	{
+		Write(expr.Var.Name);
 	}
 
 	protected virtual void Write(CiFieldAccess expr)
@@ -428,7 +438,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		else if (expr is CiConstAccess)
 			Write((CiConstAccess) expr);
 		else if (expr is CiVarAccess)
-			Write(((CiVarAccess) expr).Var.Name);
+			Write((CiVarAccess) expr);
 		else if (expr is CiFieldAccess)
 			Write((CiFieldAccess) expr);
 		else if (expr is CiPropertyAccess)

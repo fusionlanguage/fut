@@ -576,7 +576,7 @@ public partial class CiParser : CiLexer
 		OpenScope();
 		if (!method.IsStatic) {
 			CiParam thiz = new CiParam();
-			thiz.Type = new CiClassPtrType { Class = this.CurrentClass };
+			thiz.Type = new CiClassPtrType { Name = this.CurrentClass.Name, Class = this.CurrentClass };
 			thiz.Name = "this";
 			this.Symbols.Add(thiz);
 			method.This = new CiVarAccess { Var = thiz };
@@ -625,7 +625,12 @@ public partial class CiParser : CiLexer
 					type = ParseType();
 				string name = ParseId();
 				if (Eat(CiToken.LeftParenthesis)) {
-					CiMethod method = new CiMethod { IsStatic = isStatic, ReturnType = type, Name = name };
+					CiMethod method = new CiMethod {
+						Class = klass,
+						IsStatic = isStatic,
+						ReturnType = type,
+						Name = name
+					};
 					ParseMethod(method);
 					symbol = method;
 				}
