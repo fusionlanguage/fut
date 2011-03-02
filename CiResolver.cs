@@ -716,6 +716,8 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 	{
 		this.CurrentClass = klass;
 		this.Symbols = klass.Members;
+		if (klass.Constructor != null)
+			klass.Constructor.Accept(this);
 		foreach (CiSymbol member in klass.Members)
 			member.Accept(this);
 		klass.BinaryResources = this.BinaryResources.Values.ToArray();

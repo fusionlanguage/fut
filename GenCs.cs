@@ -350,6 +350,12 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 		Write("class ");
 		WriteLine(klass.Name);
 		OpenBlock();
+		if (klass.Constructor != null) {
+			Write("public ");
+			Write(klass.Name);
+			WriteLine("()");
+			Write(klass.Constructor.Body);
+		}
 		foreach (CiSymbol member in klass.Members)
 			member.Accept(this);
 		foreach (CiConst konst in klass.ConstArrays) {

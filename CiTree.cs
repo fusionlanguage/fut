@@ -734,11 +734,13 @@ public enum CiWriteStatus
 public class CiClass : CiSymbol
 {
 	public SymbolTable Members;
+	public CiMethod Constructor;
 	public CiConst[] ConstArrays;
 	public CiBinaryResource[] BinaryResources;
 	public bool UsesClearBytesMethod;
 	public bool UsesClearIntsMethod;
-	public CiWriteStatus WriteStatus;
+	public CiWriteStatus WriteStatus; // C only
+	public bool ConstructsFields; // C only
 	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
 }
 

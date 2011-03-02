@@ -413,7 +413,7 @@ public class GenC : SourceGenerator
 		var paramz = method.Params.Select(param => ToString(param.Type, param.Name));
 		if (!method.IsStatic)
 			paramz = new string[1] { ToString(method.This.Type, "self") }.Concat(paramz);
-		string s = string.Join(", ", paramz);
+		string s = paramz.Any() ? string.Join(", ", paramz) : "void";
 		s = method.Class.Name + "_" + method.Name + "(" + s + ")";
 		CiType type = method.ReturnType;
 		if (method.Throws && type == CiType.Void)
@@ -430,6 +430,95 @@ public class GenC : SourceGenerator
 		WriteLine();
 		Write(method.Body);
 		this.CurrentMethod = null;
+	}
+
+	void WriteConstructorSignature(CiClass klass)
+	{
+		Write("static void ");
+		Write(klass.Name);
+		Write("_Construct(");
+		Write(klass.Name);
+		Write(" *self)");
+	}
+
+	void WriteNewSignature(CiClass klass)
+	{
+		Write(klass.Name);
+		Write(" *");
+		Write(klass.Name);
+		Write("_New(void)");
+	}
+
+	void WriteDeleteSignature(CiClass klass)
+	{
+		Write("void ");
+		Write(klass.Name);
+		Write("_Delete(");
+		Write(klass.Name);
+		Write(" *self)");
+	}
+
+	void ForEachStorageField(CiClass klass, Action<CiField, CiClass> action)
+	{
+		foreach (CiSymbol member in klass.Members) {
+			CiField field = member as CiField;
+			if (field != null) {
+				CiType type = field.Type;
+				while (type is CiArrayStorageType)
+					type = ((CiArrayStorageType) type).ElementType;
+				CiClassStorageType stg = type as CiClassStorageType;
+				if (stg != null)
+					action(field, stg.Class);
+			}
+		}
+	}
+
+	void WriteConstructorNewDelete(CiClass klass)
+	{
+		bool hasConstructor = klass.Constructor != null || klass.ConstructsFields;
+		if (hasConstructor) {
+			WriteConstructorSignature(klass);
+			WriteLine();
+			OpenBlock();
+			ForEachStorageField(klass, (field, fieldClass) => {
+				if (fieldClass.Constructor != null || fieldClass.ConstructsFields) {
+					Write(fieldClass.Name);
+					Write("_Construct(&self->");
+					WriteCamelCase(field.Name);
+					WriteLine(");");
+				}
+			});
+			if (klass.Constructor != null) {
+				this.CurrentMethod = klass.Constructor;
+				Write(klass.Constructor.Body.Statements);
+				this.CurrentMethod = null;
+			}
+			CloseBlock();
+		}
+		if (klass.IsPublic) {
+			WriteNewSignature(klass);
+			WriteLine();
+			OpenBlock();
+			Write(klass.Name);
+			Write(" *self = malloc(sizeof(");
+			Write(klass.Name);
+			WriteLine("));");
+			if (hasConstructor) {
+				WriteLine("if (self != NULL)");
+				this.Indent++;
+				Write(klass.Name);
+				WriteLine("_Construct(self);");
+				this.Indent--;
+			}
+			WriteLine("return self;");
+			CloseBlock();
+
+			WriteDeleteSignature(klass);
+			WriteLine();
+			OpenBlock();
+			WriteLine("free(self);");
+			CloseBlock();
+		}
 	}
 
 	void WriteTypedef(CiClass klass)
@@ -456,8 +545,11 @@ public class GenC : SourceGenerator
 				while (type is CiArrayStorageType)
 					type = ((CiArrayStorageType) type).ElementType;
 				CiClassStorageType stg = type as CiClassStorageType;
-				if (stg != null)
+				if (stg != null) {
 					WriteStruct(stg.Class);
+					if (stg.Class.Constructor != null || stg.Class.ConstructsFields)
+						klass.ConstructsFields = true;
+				}
 			}
 		}
 		klass.WriteStatus = CiWriteStatus.Done;
@@ -474,6 +566,16 @@ public class GenC : SourceGenerator
 		}
 		this.Indent--;
 		WriteLine("};");
+		if (klass.Constructor != null || klass.ConstructsFields) {
+			WriteConstructorSignature(klass);
+			WriteLine(";");
+		}
+		if (klass.IsPublic) {
+			WriteNewSignature(klass);
+			WriteLine(";");
+			WriteDeleteSignature(klass);
+			WriteLine(";");
+		}
 		foreach (CiSymbol member in klass.Members) {
 			if (member is CiConst && member.IsPublic)
 				Write(klass, (CiConst) member);
@@ -495,6 +597,7 @@ public class GenC : SourceGenerator
 
 	void WriteCode(CiClass klass)
 	{
+		WriteConstructorNewDelete(klass);
 		foreach (CiSymbol member in klass.Members) {
 			if (member is CiMethod)
 				Write((CiMethod) member);
@@ -509,6 +612,7 @@ public class GenC : SourceGenerator
 	public override void Write(CiProgram prog)
 	{
 		CreateFile(this.OutputPath);
+		WriteLine("#include <stdlib.h>");
 		WriteLine("#include <string.h>");
 		WriteBoolType();
 		foreach (CiSymbol symbol in prog.Globals) {

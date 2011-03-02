@@ -500,6 +500,12 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 	{
 		CreateJavaFile("final class", klass);
 		this.UsesSubstringMethod = false;
+		if (klass.Constructor != null) {
+			Write("public ");
+			Write(klass.Name);
+			WriteLine("()");
+			Write(klass.Constructor.Body);
+		}
 		foreach (CiSymbol member in klass.Members)
 			member.Accept(this);
 		if (klass.UsesClearBytesMethod)

@@ -570,17 +570,21 @@ public partial class CiParser : CiLexer
 		return new CiBlock { Statements = statements.ToArray() };
 	}
 
+	CiParam CreateThis()
+	{
+		CiParam thiz = new CiParam();
+		thiz.Type = new CiClassPtrType { Name = this.CurrentClass.Name, Class = this.CurrentClass };
+		thiz.Name = "this";
+		this.Symbols.Add(thiz);
+		return thiz;
+	}
+
 	void ParseMethod(CiMethod method)
 	{
 		this.CurrentMethod = method;
 		OpenScope();
-		if (!method.IsStatic) {
-			CiParam thiz = new CiParam();
-			thiz.Type = new CiClassPtrType { Name = this.CurrentClass.Name, Class = this.CurrentClass };
-			thiz.Name = "this";
-			this.Symbols.Add(thiz);
-			method.This = thiz;
-		}
+		if (!method.IsStatic)
+			method.This = CreateThis();
 		List<CiParam> paramz = new List<CiParam>();
 		if (!Eat(CiToken.RightParenthesis)) {
 			do {
@@ -597,6 +601,26 @@ public partial class CiParser : CiLexer
 		method.Body = ParseBlock();
 		CloseScope();
 		this.CurrentMethod = null;
+	}
+
+	CiMethod ParseConstructor()
+	{
+		NextToken();
+		Expect(CiToken.LeftParenthesis);
+		Expect(CiToken.RightParenthesis);
+		OpenScope();
+		CiMethod method = new CiMethod {
+			Class = this.CurrentClass,
+			IsStatic = false,
+			ReturnType = CiType.Void,
+			This = CreateThis(),
+			Params = new CiParam[0]
+		};
+		this.CurrentMethod = method;
+		method.Body = ParseBlock();
+		CloseScope();
+		this.CurrentMethod = null;
+		return method;
 	}
 
 	CiClass ParseClass()
@@ -617,6 +641,12 @@ public partial class CiParser : CiLexer
 			else if (Eat(CiToken.Macro))
 				symbol = ParseMacro();
 			else {
+				if (See(CiToken.Id) && this.CurrentString == klass.Name) {
+					if (klass.Constructor != null)
+						throw new ParseException("Duplicate constructor");
+					klass.Constructor = ParseConstructor();
+					continue;
+				}
 				bool isStatic = Eat(CiToken.Static);
 				CiType type;
 				if (Eat(CiToken.Void))

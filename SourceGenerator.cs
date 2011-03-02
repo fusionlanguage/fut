@@ -465,11 +465,16 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			throw new ApplicationException(expr.ToString());
 	}
 
+	protected void Write(ICiStatement[] statements)
+	{
+		foreach (ICiStatement stmt in statements)
+			Write(stmt);
+	}
+
 	public virtual void Visit(CiBlock block)
 	{
 		OpenBlock();
-		foreach (ICiStatement stmt in block.Statements)
-			Write(stmt);
+		Write(block.Statements);
 		CloseBlock();
 	}
 
@@ -611,8 +616,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			if (kase.Body.Length > 0) {
 				this.Indent++;
 				StartCase(kase.Body[0]);
-				foreach (ICiStatement child in kase.Body)
-					Write(child);
+				Write(kase.Body);
 				this.Indent--;
 			}
 		}
