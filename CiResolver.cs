@@ -297,20 +297,23 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		return symbol;
 	}
 
+	CiExpr GetValue(CiConst konst)
+	{
+		((ICiSymbolVisitor) this).Visit(konst);
+		if (konst.Type is CiArrayType)
+			return new CiConstAccess { Const = konst };
+		else
+			return new CiConstExpr(konst.Value);
+	}
+
 	CiExpr ICiExprVisitor.Visit(CiSymbolAccess expr)
 	{
 		CiSymbol symbol = Lookup(expr);
 		if (symbol is CiVar)
 			return new CiVarAccess { Var = (CiVar) symbol };
-		else if (symbol is CiConst) {
-			CiConst konst = (CiConst) symbol;
-			((ICiSymbolVisitor) this).Visit(konst);
-			if (konst.Type is CiArrayType)
-				return new CiConstAccess { Const = konst };
-			else
-				return new CiConstExpr(konst.Value);
-		}
-		else if (symbol is CiField) {
+		if (symbol is CiConst)
+			return GetValue((CiConst) symbol);
+		if (symbol is CiField) {
 			if (this.CurrentMethod.IsStatic)
 				throw new ResolveException("Cannot access field from a static method");
 			symbol.Accept(this);
@@ -325,9 +328,15 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 	CiExpr ICiExprVisitor.Visit(CiUnknownMemberAccess expr)
 	{
 		if (expr.Parent is CiSymbolAccess) {
-			CiEnum enu = Lookup((CiSymbolAccess) expr.Parent) as CiEnum;
-			if (enu != null)
-				return new CiConstExpr(enu.LookupMember(expr.Name));
+			CiSymbol symbol = Lookup((CiSymbolAccess) expr.Parent);
+			if (symbol is CiEnum)
+				return new CiConstExpr(((CiEnum) symbol).LookupMember(expr.Name));
+			if (symbol is CiClass) {
+				symbol = ((CiClass) symbol).Members.Lookup(expr.Name);
+				if (symbol is CiConst)
+					return GetValue((CiConst) symbol);
+				throw new ResolveException("Cannot access " + expr.Name);
+			}
 		}
 		CiExpr parent = Resolve(expr.Parent);
 		CiSymbol member = parent.Type.LookupMember(expr.Name);
