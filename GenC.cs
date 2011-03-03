@@ -328,16 +328,14 @@ if (expr.Method.Throws) Write(" /* throws */");
 					CiMethodCall mc = (CiMethodCall) assign.Source;
 					if (mc.Method == CiStringType.SubstringMethod
 					 || mc.Method == CiArrayType.ToStringMethod) {
-						// TODO: make sure no side effects in assign.Target and mc.Arguments[1]
-						Write("memcpy(");
+						// TODO: make sure no side effects in mc.Arguments[1]
+						Write("((char *) memcpy(");
 						Write(assign.Target);
 						Write(", ");
 						WriteSum(mc.Obj, mc.Arguments[0]);
 						Write(", ");
 						Write(mc.Arguments[1]);
-						WriteLine(");");
-						Write(assign.Target);
-						Write('[');
+						Write("))[");
 						Write(mc.Arguments[1]);
 						Write("] = '\\0'");
 						return;
