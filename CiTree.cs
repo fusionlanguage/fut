@@ -387,6 +387,7 @@ public interface ICiStatementVisitor
 
 public interface ICiStatement
 {
+	bool CompletesNormally { get; }
 	void Accept(ICiStatementVisitor v);
 }
 
@@ -396,6 +397,7 @@ public class CiConst : CiSymbol, ICiStatement
 	public object Value;
 	public string GlobalName;
 	public bool CurrentlyResolving;
+	public bool CompletesNormally { get { return true; } }
 	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
@@ -404,6 +406,7 @@ public class CiVar : CiSymbol, ICiStatement
 {
 	public CiType Type;
 	public CiExpr InitialValue;
+	public bool CompletesNormally { get { return true; } }
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
@@ -552,6 +555,7 @@ public class CiMethodCall : CiExpr, ICiStatement
 	public CiExpr[] Arguments;
 	public override CiType Type { get { return this.Method.ReturnType; } }
 	public override bool HasSideEffect { get { return true; } }
+	public bool CompletesNormally { get { return true; } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
@@ -579,6 +583,7 @@ public class CiPostfixExpr : CiExpr, ICiStatement
 	public CiToken Op;
 	public override CiType Type { get { return CiIntType.Value; } }
 	public override bool HasSideEffect { get { return true; } }
+	public bool CompletesNormally { get { return true; } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
@@ -633,53 +638,65 @@ public class CiAssign : CiMaybeAssign, ICiStatement
 	public CiToken Op;
 	public CiMaybeAssign Source;
 	public override CiType Type { get { return this.Target.Type; } }
+	public bool CompletesNormally { get { return true; } }
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
-public class CiBlock : ICiStatement
+public abstract class CiCondCompletionStatement : ICiStatement
+{
+	public bool CompletesNormally { get; set; }
+	public abstract void Accept(ICiStatementVisitor v);
+}
+
+public abstract class CiLoop : CiCondCompletionStatement
+{
+	public CiExpr Cond;
+	public ICiStatement Body;
+}
+
+public class CiBlock : CiCondCompletionStatement
 {
 	public ICiStatement[] Statements;
-	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
+	public override void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiBreak : ICiStatement
 {
+	public bool CompletesNormally { get { return false; } }
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiContinue : ICiStatement
 {
+	public bool CompletesNormally { get { return false; } }
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
-public class CiDoWhile : ICiStatement
+public class CiDoWhile : CiLoop
 {
-	public ICiStatement Body;
-	public CiExpr Cond;
-	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
+	public override void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
-public class CiFor : ICiStatement
+public class CiFor : CiLoop
 {
 	public SymbolTable Symbols;
 	public ICiStatement Init;
-	public CiExpr Cond;
 	public ICiStatement Advance;
-	public ICiStatement Body;
-	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
+	public override void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
-public class CiIf : ICiStatement
+public class CiIf : CiCondCompletionStatement
 {
 	public CiExpr Cond;
 	public ICiStatement OnTrue;
 	public ICiStatement OnFalse;
-	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
+	public override void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiReturn : ICiStatement
 {
 	public CiExpr Value;
+	public bool CompletesNormally { get { return false; } }
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
@@ -689,24 +706,23 @@ public class CiCase
 	public ICiStatement[] Body;
 }
 
-public class CiSwitch : ICiStatement
+public class CiSwitch : CiCondCompletionStatement
 {
 	public CiExpr Value;
 	public CiCase[] Cases;
-	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
+	public override void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiThrow : ICiStatement
 {
 	public CiExpr Message;
+	public bool CompletesNormally { get { return false; } }
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
-public class CiWhile : ICiStatement
+public class CiWhile : CiLoop
 {
-	public CiExpr Cond;
-	public ICiStatement Body;
-	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
+	public override void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiMethod : CiSymbol

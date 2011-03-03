@@ -283,6 +283,7 @@ public class GenC : SourceGenerator
 				Write(arg);
 			}
 			Write(')');
+if (expr.Method.Throws) Write(" /* throws */");
 		}
 	}
 
@@ -382,13 +383,17 @@ public class GenC : SourceGenerator
 		}
 	}
 
+	void WriteReturnTrue()
+	{
+		Write("return ");
+		WriteConst(true);
+		WriteLine(";");
+	}
+
 	public override void Visit(CiReturn stmt)
 	{
-		if (false.Equals(this.CurrentMethod.ErrorReturnValue)) {
-			Write("return ");
-			WriteConst(true);
-			WriteLine(";");
-		}
+		if (false.Equals(this.CurrentMethod.ErrorReturnValue))
+			WriteReturnTrue();
 		else
 			base.Visit(stmt);
 	}
@@ -431,7 +436,11 @@ public class GenC : SourceGenerator
 		Write(method.Documentation);
 		WriteSignature(method);
 		WriteLine();
-		Write(method.Body);
+		OpenBlock();
+		Write(method.Body.Statements);
+		if (method.Throws && method.ReturnType == CiType.Void && method.Body.CompletesNormally)
+			WriteReturnTrue();
+		CloseBlock();
 		this.CurrentMethod = null;
 	}
 

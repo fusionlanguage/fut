@@ -31,8 +31,6 @@ public partial class CiParser : CiLexer
 	readonly List<CiConst> ConstArrays = new List<CiConst>();
 	public CiClass CurrentClass = null;
 	public CiMethod CurrentMethod = null;
-	int LoopLevel = 0;
-	int SwitchLevel = 0;
 
 	public CiParser()
 	{
@@ -438,14 +436,6 @@ public partial class CiParser : CiLexer
 		return result;
 	}
 
-	ICiStatement ParseLoop()
-	{
-		this.LoopLevel++;
-		ICiStatement body = ParseStatement();
-		this.LoopLevel--;
-		return body;
-	}
-
 	ICiStatement ParseStatement()
 	{
 		while (Eat(CiToken.Macro))
@@ -459,8 +449,6 @@ public partial class CiParser : CiLexer
 			return result;
 		}
 		if (Eat(CiToken.Break)) {
-			if (this.LoopLevel == 0 && this.SwitchLevel == 0)
-				throw new ParseException("break outside loop and switch");
 			Expect(CiToken.Semicolon);
 			return new CiBreak();
 		}
@@ -470,14 +458,12 @@ public partial class CiParser : CiLexer
 			return konst;
 		}
 		if (Eat(CiToken.Continue)) {
-			if (this.LoopLevel == 0)
-				throw new ParseException("continue outside loop");
 			Expect(CiToken.Semicolon);
 			return new CiContinue();
 		}
 		if (Eat(CiToken.Do)) {
 			CiDoWhile result = new CiDoWhile();
-			result.Body = ParseLoop();
+			result.Body = ParseStatement();
 			Expect(CiToken.While);
 			result.Cond = ParseCond();
 			Expect(CiToken.Semicolon);
@@ -497,7 +483,7 @@ public partial class CiParser : CiLexer
 			if (!See(CiToken.RightParenthesis))
 				result.Advance = ParseExprWithSideEffect();
 			Expect(CiToken.RightParenthesis);
-			result.Body = ParseLoop();
+			result.Body = ParseStatement();
 			CloseScope();
 			return result;
 		}
@@ -522,7 +508,6 @@ public partial class CiParser : CiLexer
 			result.Value = ParseExpr();
 			Expect(CiToken.RightParenthesis);
 			Expect(CiToken.LeftBrace);
-			this.SwitchLevel++;
 			List<CiCase> cases = new List<CiCase>();
 			for (;;) {
 				CiCase caze;
@@ -541,7 +526,6 @@ public partial class CiParser : CiLexer
 				caze.Body = statements.ToArray();
 				cases.Add(caze);
 			}
-			this.SwitchLevel--;
 			Expect(CiToken.RightBrace);
 			result.Cases = cases.ToArray();
 			return result;
@@ -555,7 +539,7 @@ public partial class CiParser : CiLexer
 		if (Eat(CiToken.While)) {
 			CiWhile result = new CiWhile();
 			result.Cond = ParseCond();
-			result.Body = ParseLoop();
+			result.Body = ParseStatement();
 			return result;
 		}
 		throw new ParseException("Invalid statement");

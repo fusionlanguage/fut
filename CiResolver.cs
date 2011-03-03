@@ -46,6 +46,8 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 	readonly HashSet<CiMethod> ThrowingMethods = new HashSet<CiMethod>();
 	public CiClass CurrentClass = null;
 	public CiMethod CurrentMethod = null;
+	CiLoop CurrentLoop = null;
+	CiCondCompletionStatement CurrentLoopOrSwitch = null;
 
 	public CiResolver()
 	{
@@ -579,10 +581,21 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		prop.Type = Resolve(prop.Type);
 	}
 
+	bool Resolve(ICiStatement[] statements)
+	{
+		bool reachable = true;
+		foreach (ICiStatement child in statements) {
+			if (!reachable)
+				throw new ResolveException("Unreachable statement");
+			child.Accept(this);
+			reachable = child.CompletesNormally;
+		}
+		return reachable;
+	}
+
 	void ICiStatementVisitor.Visit(CiBlock statement)
 	{
-		foreach (ICiStatement child in statement.Statements)
-			child.Accept(this);
+		statement.CompletesNormally = Resolve(statement.Statements);
 	}
 
 	void ICiStatementVisitor.Visit(CiConst statement)
@@ -621,16 +634,41 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 
 	void ICiStatementVisitor.Visit(CiBreak statement)
 	{
+		if (this.CurrentLoopOrSwitch == null)
+			throw new ResolveException("break outside loop and switch");
+		this.CurrentLoopOrSwitch.CompletesNormally = true;
 	}
 
 	void ICiStatementVisitor.Visit(CiContinue statement)
 	{
+		if (this.CurrentLoop == null)
+			throw new ResolveException("continue outside loop");
+	}
+
+	static bool IsFalse(CiExpr expr)
+	{
+		CiConstExpr ce = expr as CiConstExpr;
+		return ce != null && false.Equals(ce.Value);
+	}
+
+	void ResolveLoop(CiLoop statement)
+	{
+		statement.CompletesNormally = false;
+		if (statement.Cond != null) {
+			statement.Cond = Coerce(Resolve(statement.Cond), CiBoolType.Value);
+			statement.CompletesNormally = !IsFalse(statement.Cond);
+		}
+		CiLoop oldLoop = this.CurrentLoop;
+		CiCondCompletionStatement oldLoopOrSwitch = this.CurrentLoopOrSwitch;
+		this.CurrentLoopOrSwitch = this.CurrentLoop = statement;
+		Resolve(statement.Body);
+		this.CurrentLoop = oldLoop;
+		this.CurrentLoopOrSwitch = oldLoopOrSwitch;
 	}
 
 	void ICiStatementVisitor.Visit(CiDoWhile statement)
 	{
-		Resolve(statement.Body);
-		statement.Cond = Coerce(Resolve(statement.Cond), CiBoolType.Value);
+		ResolveLoop(statement);
 	}
 
 	void ICiStatementVisitor.Visit(CiFor statement)
@@ -641,19 +679,21 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			if (def != null && def.InitialValue != null && (def.Type is CiStringStorageType || def.Type is CiArrayStorageType))
 				throw new ResolveException("Cannot initialize variable of this type in the for statement");
 		}
-		if (statement.Cond != null)
-			statement.Cond = Coerce(Resolve(statement.Cond), CiBoolType.Value);
 		if (statement.Advance != null)
 			Resolve(statement.Advance);
-		Resolve(statement.Body);
+		ResolveLoop(statement);
 	}
 
 	void ICiStatementVisitor.Visit(CiIf statement)
 	{
 		statement.Cond = Coerce(Resolve(statement.Cond), CiBoolType.Value);
 		Resolve(statement.OnTrue);
-		if (statement.OnFalse != null)
+		if (statement.OnFalse != null) {
 			Resolve(statement.OnFalse);
+			statement.CompletesNormally = statement.OnTrue.CompletesNormally || statement.OnFalse.CompletesNormally;
+		}
+		else
+			statement.CompletesNormally = true;
 	}
 
 	void ICiStatementVisitor.Visit(CiReturn statement)
@@ -667,13 +707,20 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 	{
 		statement.Value = Resolve(statement.Value);
 		CiType type = statement.Value.Type;
+		HashSet<object> values = new HashSet<object>();
+		CiCondCompletionStatement oldLoopOrSwitch = this.CurrentLoopOrSwitch;
+		this.CurrentLoopOrSwitch = statement;
 		foreach (CiCase kase in statement.Cases) {
-			if (kase.Value != null)
+			if (kase.Value != null) {
 				kase.Value = ResolveConstExpr((CiExpr) kase.Value, type);
-			foreach (ICiStatement child in kase.Body)
-				Resolve(child);
+				if (!values.Add(kase.Value))
+					throw new ResolveException("Duplicate case value");
+			}
+			else if (!values.Add(null))
+				throw new ResolveException("Duplicate default case");
+			Resolve(kase.Body);
 		}
-		#warning TODO: multiple "default", duplicate "case"
+		this.CurrentLoopOrSwitch = oldLoopOrSwitch;
 	}
 
 	static object GetErrorValue(CiType type)
@@ -696,8 +743,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 
 	void ICiStatementVisitor.Visit(CiWhile statement)
 	{
-		statement.Cond = Coerce(Resolve(statement.Cond), CiBoolType.Value);
-		Resolve(statement.Body);
+		ResolveLoop(statement);
 	}
 
 	void Resolve(ICiStatement statement)
@@ -710,6 +756,8 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		this.CurrentMethod = method;
 		ResolveSignature(method);
 		Resolve(method.Body);
+		if (method.ReturnType != CiType.Void && method.Body.CompletesNormally)
+			throw new ResolveException("Method can complete without a return value");
 		this.CurrentMethod = null;
 	}
 

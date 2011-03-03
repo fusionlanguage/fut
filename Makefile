@@ -10,6 +10,7 @@ run: $(SOURCES) cito.exe
 	$(MAKE) -C ../../a8/asap/git/csharp
 	$(MAKE) -C ../../a8/asap/git/java
 	$(MAKE) -C ../../a8/asap/git/win32 apokeysnd.dll
+	gcc -c -O2 -Wall --std=c99 asapci99.c
 
 cito.exe: CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs CiTo.cs
 	csc -nologo -debug -out:$@ $^
