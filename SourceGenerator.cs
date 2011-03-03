@@ -492,7 +492,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		}
 	}
 
-	void ICiStatementVisitor.Visit(CiExpr expr)
+	public virtual void Visit(CiExpr expr)
 	{
 		Write(expr);
 	}

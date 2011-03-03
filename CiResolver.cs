@@ -723,22 +723,10 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		this.CurrentLoopOrSwitch = oldLoopOrSwitch;
 	}
 
-	static object GetErrorValue(CiType type)
-	{
-		if (type == CiType.Void)
-			return false;
-		if (type == CiIntType.Value)
-			return -1;
-		if (type == CiStringPtrType.Value || type is CiClassPtrType || type is CiArrayPtrType)
-			return null;
-		throw new ResolveException("throw in a method of unsupported return type");
-	}
-
 	void ICiStatementVisitor.Visit(CiThrow statement)
 	{
 		statement.Message = Coerce(Resolve(statement.Message), CiStringPtrType.Value);
 		this.ThrowingMethods.Add(this.CurrentMethod);
-		this.CurrentMethod.ErrorReturnValue = GetErrorValue(this.CurrentMethod.ReturnType);
 	}
 
 	void ICiStatementVisitor.Visit(CiWhile statement)
@@ -786,11 +774,23 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			MarkWritable(source);
 	}
 
+	static object GetErrorValue(CiType type)
+	{
+		if (type == CiType.Void)
+			return false;
+		if (type == CiIntType.Value)
+			return -1;
+		if (type == CiStringPtrType.Value || type is CiClassPtrType || type is CiArrayPtrType)
+			return null;
+		throw new ResolveException("throw in a method of unsupported return type");
+	}
+
 	static void MarkThrows(CiMethod method)
 	{
 		if (method.Throws)
 			return;
 		method.Throws = true;
+		method.ErrorReturnValue = GetErrorValue(method.ReturnType);
 		foreach (CiMethod calledBy in method.CalledBy)
 			MarkThrows(calledBy);
 	}

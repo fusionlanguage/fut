@@ -297,6 +297,45 @@ if (expr.Method.Throws) Write(" /* throws */");
 			base.Write(expr);
 	}
 
+	void WriteChild(CiMaybeAssign expr)
+	{
+		if (expr is CiMethodCall)
+			Write((CiMethodCall) expr);
+		else {
+			Write('(');
+			base.Visit((CiAssign) expr);
+			Write(')');
+		}
+	}
+
+	void CheckAndThrow(CiMaybeAssign expr, object errorReturnValue)
+	{
+		Write("if (");
+		if (false.Equals(errorReturnValue)) {
+			Write('!');
+			WriteChild(expr);
+		}
+		else {
+			WriteChild(expr);
+			Write(" == ");
+			WriteConst(errorReturnValue);
+		}
+		WriteLine(")");
+		this.Indent++;
+		Write("return ");
+		WriteConst(this.CurrentMethod.ErrorReturnValue);
+		this.Indent--;
+	}
+
+	public override void Visit(CiExpr expr)
+	{
+		CiMethodCall call = expr as CiMethodCall;
+		if (call != null && call.Method.Throws)
+			CheckAndThrow(call, call.Method.ErrorReturnValue);
+		else
+			base.Visit(expr);
+	}
+
 	public override void Visit(CiVar stmt)
 	{
 		Write(stmt.Type, stmt.Name);
@@ -367,7 +406,11 @@ if (expr.Method.Throws) Write(" /* throws */");
 				return;
 			}
 		}
-		base.Visit(assign);
+		CiMethodCall call = assign.Source as CiMethodCall;
+		if (call != null && call.Method.Throws)
+			CheckAndThrow(assign, call.Method.ErrorReturnValue);
+		else
+			base.Visit(assign);
 	}
 
 	public override void Visit(CiConst stmt)
