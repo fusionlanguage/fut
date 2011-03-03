@@ -638,8 +638,11 @@ public partial class CiParser : CiLexer
 			CiSymbol symbol;
 			if (See(CiToken.Const))
 				symbol = ParseConst();
-			else if (Eat(CiToken.Macro))
+			else if (Eat(CiToken.Macro)) {
+				if (pub)
+					throw new ParseException("Public macros are not supported");
 				symbol = ParseMacro();
+			}
 			else {
 				if (See(CiToken.Id) && this.CurrentString == klass.Name) {
 					if (klass.Constructor != null)
@@ -665,11 +668,13 @@ public partial class CiParser : CiLexer
 					symbol = method;
 				}
 				else {
-					Expect(CiToken.Semicolon);
+					if (pub)
+						throw new ParseException("Public fields are not supported");
 					if (isStatic)
-						throw new ParseException("Static fields not supported");
+						throw new ParseException("Static fields are not supported");
 					if (type == CiType.Void)
 						throw new ParseException("Field is void");
+					Expect(CiToken.Semicolon);
 					symbol = new CiField { Type = type, Name = name };
 				}
 			}
