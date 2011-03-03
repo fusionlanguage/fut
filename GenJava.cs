@@ -228,12 +228,9 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			base.WriteConst(value);
 	}
 
-	protected override void Write(CiConstAccess expr)
+	protected override void WriteName(CiConst konst)
 	{
-		if (expr.Const.GlobalName != null)
-			WriteUppercaseWithUnderscores(expr.Const.GlobalName);
-		else
-			Write(expr.Const.Name);
+		WriteUppercaseWithUnderscores(konst.GlobalName);
 	}
 
 	protected override int GetPriority(CiExpr expr)
@@ -279,9 +276,9 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			throw new ApplicationException(expr.Property.Name);
 	}
 
-	protected override void WriteMethodName(string name)
+	protected override void WriteName(CiMethod method)
 	{
-		WriteCamelCase(name);
+		WriteCamelCase(method.Name);
 	}
 
 	protected override void Write(CiMethodCall expr)

@@ -170,9 +170,9 @@ public class GenC : SourceGenerator
 			base.WriteConst(value);
 	}
 
-	protected override void Write(CiConstAccess expr)
+	protected override void WriteName(CiConst konst)
 	{
-		Write(expr.Const.Name);
+		Write(konst.Name);
 	}
 
 	protected override void Write(CiVarAccess expr)

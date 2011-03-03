@@ -286,12 +286,12 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		WriteRightChild(GetPriority(parent), child);
 	}
 
-	protected virtual void Write(CiConstAccess expr)
+	protected virtual void WriteName(CiConst konst)
 	{
-		if (expr.Const.GlobalName != null)
-			Write(expr.Const.GlobalName);
+		if (konst.GlobalName != null)
+			Write(konst.GlobalName);
 		else
-			Write(expr.Const.Name);
+			Write(konst.Name);
 	}
 
 	protected virtual void Write(CiVarAccess expr)
@@ -316,9 +316,9 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		Write(']');
 	}
 
-	protected virtual void WriteMethodName(string name)
+	protected virtual void WriteName(CiMethod method)
 	{
-		Write(name);
+		Write(method.Name);
 	}
 
 	protected virtual void Write(CiMethodCall expr)
@@ -327,7 +327,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			Write(expr.Obj);
 			Write('.');
 		}
-		WriteMethodName(expr.Method.Name);
+		WriteName(expr.Method);
 		Write('(');
 		bool first = true;
 		foreach (CiExpr arg in expr.Arguments)
@@ -406,7 +406,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		WriteChild(expr, expr.OnFalse);
 	}
 
-	protected void WriteName(CiBinaryResource resource)
+	protected virtual void WriteName(CiBinaryResource resource)
 	{
 		Write("CiBinaryResource_");
 		foreach (char c in resource.Name)
@@ -436,7 +436,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		if (expr is CiConstExpr)
 			WriteConst(((CiConstExpr) expr).Value);
 		else if (expr is CiConstAccess)
-			Write((CiConstAccess) expr);
+			WriteName(((CiConstAccess) expr).Const);
 		else if (expr is CiVarAccess)
 			Write((CiVarAccess) expr);
 		else if (expr is CiFieldAccess)

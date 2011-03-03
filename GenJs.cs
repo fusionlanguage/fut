@@ -18,12 +18,20 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Collections.Generic;
 
 namespace Foxoft.Ci
 {
 
-public class GenJs : SourceGenerator, ICiSymbolVisitor
+public class GenJs : SourceGenerator
 {
+	CiClass CurrentClass;
+	bool UsesToSByteMethod;
+	bool UsesSubstringMethod;
+	bool UsesCopyArrayMethod;
+	bool UsesBytesToStringMethod;
+	bool UsesClearArrayMethod;
+
 	void Write(CiCodeDoc doc)
 	{
 		if (doc == null)
@@ -31,7 +39,7 @@ public class GenJs : SourceGenerator, ICiSymbolVisitor
 		// TODO
 	}
 
-	void ICiSymbolVisitor.Visit(CiEnum enu)
+	void Write(CiEnum enu)
 	{
 		WriteLine();
 		Write(enu.Documentation);
@@ -44,7 +52,7 @@ public class GenJs : SourceGenerator, ICiSymbolVisitor
 				WriteLine(",");
 			CiEnumValue value = enu.Values[i];
 			Write(value.Documentation);
-			Write(value.Name);
+			WriteUppercaseWithUnderscores(value.Name);
 			Write(" : ");
 			Write(i);
 		}
@@ -71,34 +79,47 @@ public class GenJs : SourceGenerator, ICiSymbolVisitor
 		return false;
 	}
 
-	void ICiSymbolVisitor.Visit(CiField field)
+	void Write(CiField field)
 	{
 		Write(field.Documentation);
 		Write("this.");
-		Write(field.Name);
-		if (field.Type is CiBoolType)
+		WriteCamelCase(field.Name);
+		CiType type = field.Type;
+		if (type == CiBoolType.Value)
 			Write(" = false");
-		else if (field.Type is CiByteType || field.Type is CiIntType)
+		else if (type == CiByteType.Value || type == CiIntType.Value)
 			Write(" = 0");
-		else if (!WriteInit(field.Type))
+		else if (type is CiEnum) {
+			Write(" = ");
+			WriteConst(((CiEnum) type).Values[0]);
+		}
+		else if (!WriteInit(type))
 			Write(" = null");
 		WriteLine(";");
 	}
 
-	void ICiSymbolVisitor.Visit(CiProperty prop)
-	{
-		throw new NotImplementedException();
-	}
-
 	protected override void WriteConst(object value)
 	{
-		if (value is Array) {
+		if (value is CiEnumValue) {
+			CiEnumValue ev = (CiEnumValue) value;
+			Write(ev.Type.Name);
+			Write('.');
+			WriteUppercaseWithUnderscores(ev.Name);
+		}
+		else if (value is Array) {
 			Write("[ ");
 			WriteContent((Array) value);
 			Write(" ]");
 		}
 		else
 			base.WriteConst(value);
+	}
+
+	protected override void WriteName(CiConst konst)
+	{
+		Write(this.CurrentClass.Name);
+		Write('.');
+		WriteUppercaseWithUnderscores(konst.GlobalName);
 	}
 
 	protected override int GetPriority(CiExpr expr)
@@ -117,12 +138,20 @@ public class GenJs : SourceGenerator, ICiSymbolVisitor
 		return base.GetPriority(expr);
 	}
 
+	protected override void Write(CiFieldAccess expr)
+	{
+		WriteChild(expr, expr.Obj);
+		Write('.');
+		WriteCamelCase(expr.Field.Name);
+	}
+
 	protected override void Write(CiPropertyAccess expr)
 	{
 		if (expr.Property == CiIntType.SByteProperty) {
-			Write("Byte_SByte(");
+			Write("Ci.toSByte(");
 			WriteChild(expr, expr.Obj);
 			Write(')');
+			this.UsesToSByteMethod = true;
 		}
 		else if (expr.Property == CiIntType.LowByteProperty) {
 			WriteChild(expr, expr.Obj);
@@ -137,16 +166,33 @@ public class GenJs : SourceGenerator, ICiSymbolVisitor
 			throw new ApplicationException(expr.Property.Name);
 	}
 
+	protected override void WriteName(CiBinaryResource resource)
+	{
+		Write(this.CurrentClass.Name);
+		Write(".CI_BINARY_RESOURCE_");
+		foreach (char c in resource.Name)
+			Write(CiLexer.IsLetter(c) ? char.ToUpperInvariant(c) : '_');
+	}
+
+	protected override void WriteName(CiMethod method)
+	{
+		if (method.IsStatic) {
+			Write(method.Class.Name);
+			Write('.');
+		}
+		WriteCamelCase(method.Name);
+	}
+
 	protected override void Write(CiMethodCall expr)
 	{
 		if (expr.Method == CiIntType.MulDivMethod) {
-			Write("Math.floor((");
-			Write(expr.Obj);
-			Write(") * (");
-			Write(expr.Arguments[0]);
-			Write(") / (");
-			Write(expr.Arguments[1]);
-			Write("))");
+			Write("Math.floor(");
+			WriteChild(3, expr.Obj);
+			Write(" * ");
+			WriteChild(3, expr.Arguments[0]);
+			Write(" / ");
+			WriteRightChild(3, expr.Arguments[1]);
+			Write(')');
 		}
 		else if (expr.Method == CiStringType.CharAtMethod) {
 			Write(expr.Obj);
@@ -155,16 +201,27 @@ public class GenJs : SourceGenerator, ICiSymbolVisitor
 			Write(')');
 		}
 		else if (expr.Method == CiStringType.SubstringMethod) {
-			Write("String_Substring(");
-			Write(expr.Obj);
-			Write(", ");
-			Write(expr.Arguments[0]);
-			Write(", ");
-			Write(expr.Arguments[1]);
-			Write(')');
+			if (expr.Arguments[0].HasSideEffect) {
+				Write("Ci.substring(");
+				Write(expr.Obj);
+				Write(", ");
+				Write(expr.Arguments[0]);
+				Write(", ");
+				Write(expr.Arguments[1]);
+				Write(')');
+				this.UsesSubstringMethod = true;
+			}
+			else {
+				Write(expr.Obj);
+				Write(".substring(");
+				Write(expr.Arguments[0]);
+				Write(", ");
+				Write(new CiBinaryExpr { Left = expr.Arguments[0], Op = CiToken.Plus, Right = expr.Arguments[1] });
+				Write(')');
+			}
 		}
 		else if (expr.Method == CiArrayType.CopyToMethod) {
-			Write("ByteArray_Copy(");
+			Write("Ci.copyArray(");
 			Write(expr.Obj);
 			Write(", ");
 			Write(expr.Arguments[0]);
@@ -175,20 +232,23 @@ public class GenJs : SourceGenerator, ICiSymbolVisitor
 			Write(", ");
 			Write(expr.Arguments[3]);
 			Write(')');
+			this.UsesCopyArrayMethod = true;
 		}
 		else if (expr.Method == CiArrayType.ToStringMethod) {
-			Write("ByteArray_ToString(");
+			Write("Ci.bytesToString(");
 			Write(expr.Obj);
 			Write(", ");
 			Write(expr.Arguments[0]);
 			Write(", ");
 			Write(expr.Arguments[1]);
 			Write(')');
+			this.UsesBytesToStringMethod = true;
 		}
 		else if (expr.Method == CiArrayStorageType.ClearMethod) {
-			Write("Array_Clear(");
+			Write("Ci.clearArray(");
 			Write(expr.Obj);
 			Write(')');
+			this.UsesClearArrayMethod = true;
 		}
 		else
 			base.Write(expr);
@@ -198,9 +258,9 @@ public class GenJs : SourceGenerator, ICiSymbolVisitor
 	{
 		if (expr.Op == CiToken.Slash) {
 			Write("Math.floor(");
-			WriteChild(expr, expr.Left);
+			WriteChild(3, expr.Left);
 			Write(" / ");
-			WriteRightChild(expr, expr.Right);
+			WriteRightChild(3, expr.Right);
 			Write(')');
 		}
 		else
@@ -224,13 +284,15 @@ public class GenJs : SourceGenerator, ICiSymbolVisitor
 		WriteLine(";");
 	}
 
-	void ICiSymbolVisitor.Visit(CiMethod method)
+	void Write(CiMethod method)
 	{
 		WriteLine();
-		Write(method.Documentation);
-		Write("function ");
-		Write(method.Name);
-		Write("(");
+		Write(method.Class.Name);
+		Write('.');
+		if (!method.IsStatic)
+			Write("prototype.");
+		WriteCamelCase(method.Name);
+		Write(" = function(");
 		bool first = true;
 		foreach (CiParam param in method.Params) {
 			if (first)
@@ -239,44 +301,118 @@ public class GenJs : SourceGenerator, ICiSymbolVisitor
 				Write(", ");
 			Write(param.Name);
 		}
-		WriteLine(")");
+		Write(") ");
 		Write(method.Body);
 	}
 
-	void ICiSymbolVisitor.Visit(CiClass klass)
+	void Write(CiClass klass)
 	{
+		this.CurrentClass = klass;
 		WriteLine();
 		Write(klass.Documentation);
 		Write("function ");
 		Write(klass.Name);
 		WriteLine("()");
 		OpenBlock();
-		foreach (CiSymbol member in klass.Members)
-			member.Accept(this);
+		foreach (CiSymbol member in klass.Members) {
+			if (member is CiField)
+				Write((CiField) member);
+		}
 		CloseBlock();
-	}
-
-	public override void Write(CiProgram prog)
-	{
-		CreateFile(this.OutputPath);
-		foreach (CiSymbol symbol in prog.Globals)
-			symbol.Accept(this);
-		/*
-		foreach (CiConst konst in prog.ConstArrays) {
-			Write("var ");
-			Write(konst.GlobalName);
+		foreach (CiSymbol member in klass.Members) {
+			if (member is CiMethod)
+				Write((CiMethod) member);
+		}
+		foreach (CiConst konst in klass.ConstArrays) {
+			WriteName(konst);
 			Write(" = ");
 			WriteConst(konst.Value);
 			WriteLine(";");
 		}
-		foreach (CiBinaryResource resource in prog.BinaryResources) {
-			Write("var ");
+		foreach (CiBinaryResource resource in klass.BinaryResources) {
 			WriteName(resource);
 			Write(" = ");
 			WriteConst(resource.Content);
 			WriteLine(";");
 		}
-		*/
+		this.CurrentClass = null;
+	}
+
+	void WriteBuiltins()
+	{
+		List<string[]> code = new List<string[]>();
+		if (this.UsesToSByteMethod) {
+			code.Add(new string[] {
+				"toSByte : function(x)",
+				"return x < 0x80 ? x : x - 256;"
+			});
+		}
+		if (UsesSubstringMethod) {
+			code.Add(new string[] {
+				"substring : function(s, offset, length)",
+				"return s.substring(offset, offset + length);"
+			});
+		}
+		if (UsesCopyArrayMethod) {
+			code.Add(new string[] {
+				"copyArray : function(sa, soffset, da, doffset, length)",
+				"for (var i = 0; i < length; i++)",
+				"\tda[doffset + i] = sa[soffset + i];"
+			});
+		}
+		if (UsesBytesToStringMethod) {
+			code.Add(new string[] {
+				"bytesToString : function(a, offset, length)",
+				"var s = \"\";",
+				"for (var i = 0; i < length; i++)",
+				"\ts += String.fromCharCode(a[offset + i]);",
+				"return s;"
+			});
+		}
+		if (UsesClearArrayMethod) {
+			code.Add(new string[] {
+				"clearArray : function(a)",
+				"for (var i = 0; i < a.length; i++)",
+				"\ta[i] = 0;"
+			});
+		}
+		if (code.Count > 0) {
+			WriteLine("var Ci = {");
+			this.Indent++;
+			for (int i = 0; ; ) {
+				string[] lines = code[i];
+				Write(lines[0]);
+				WriteLine(" {");
+				this.Indent++;
+				for (int j = 1; j < lines.Length; j++)
+					WriteLine(lines[j]);
+				this.Indent--;
+				Write('}');
+				if (++i >= code.Count)
+					break;
+				WriteLine(",");
+			}
+			WriteLine();
+			this.Indent--;
+			WriteLine("};");
+		}
+	}
+
+	public override void Write(CiProgram prog)
+	{
+		CreateFile(this.OutputPath);
+		this.UsesToSByteMethod = false;
+		this.UsesSubstringMethod = false;
+		this.UsesCopyArrayMethod = false;
+		this.UsesBytesToStringMethod = false;
+		this.UsesClearArrayMethod = false;
+		foreach (CiSymbol symbol in prog.Globals) {
+			if (symbol is CiEnum)
+				Write((CiEnum) symbol);
+			else if (symbol is CiClass)
+				Write((CiClass) symbol);
+		}
+		WriteBuiltins();
 		CloseFile();
 	}
 }
