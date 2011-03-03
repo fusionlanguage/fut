@@ -438,6 +438,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		if (expr.Method.IsMutator)
 			MarkWritable(expr.Obj);
 		expr.Method.CalledBy.Add(this.CurrentMethod);
+		this.CurrentMethod.Calls.Add(expr.Method);
 		return expr;
 	}
 
@@ -746,6 +747,25 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			MarkThrows(calledBy);
 	}
 
+	static void MarkDead(CiMethod method)
+	{
+		if (method.IsPublic || method.IsDead || method.CalledBy.Count > 0)
+			return;
+		method.IsDead = true;
+		foreach (CiMethod called in method.Calls) {
+			called.CalledBy.Remove(method);
+			MarkDead(called);
+		}
+	}
+
+	static void MarkDead(CiClass klass)
+	{
+		foreach (CiSymbol member in klass.Members) {
+			if (member is CiMethod)
+				MarkDead((CiMethod) member);
+		}
+	}
+
 	public void Resolve(CiProgram program)
 	{
 		this.Symbols = program.Globals;
@@ -755,6 +775,10 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			MarkWritable(type);
 		foreach (CiMethod method in this.ThrowingMethods)
 			MarkThrows(method);
+		foreach (CiSymbol symbol in program.Globals) {
+			if (symbol is CiClass)
+				MarkDead((CiClass) symbol);
+		}
 	}
 }
 }

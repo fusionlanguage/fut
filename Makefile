@@ -6,8 +6,10 @@ run: $(SOURCES) cito.exe
 	./cito.exe -I ../../a8/asap/git/players -l js -o asapci.js $(SOURCES)
 	./cito.exe -I ../../a8/asap/git/players -l c -o asapci89.c $(SOURCES)
 	./cito.exe -I ../../a8/asap/git/players -l c99 -o asapci99.c $(SOURCES)
+	./cito.exe -I ../../a8/asap/git/players -l c99 -D APOKEYSND -o ../../a8/asap/git/win32/rmt/pokey.c ../../a8/asap/git/pokey.ci
 	$(MAKE) -C ../../a8/asap/git/csharp
 	$(MAKE) -C ../../a8/asap/git/java
+	$(MAKE) -C ../../a8/asap/git/win32 apokeysnd.dll
 
 cito.exe: CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs CiTo.cs
 	csc -nologo -debug -out:$@ $^

@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -423,6 +424,8 @@ public class GenC : SourceGenerator
 
 	void Write(CiMethod method)
 	{
+		if (method.IsDead)
+			return;
 		WriteLine();
 		this.CurrentMethod = method;
 		Write(method.Documentation);
@@ -531,6 +534,42 @@ public class GenC : SourceGenerator
 		WriteLine(";");
 	}
 
+	void WriteTypedefs(CiProgram prog, bool pub)
+	{
+		foreach (CiSymbol symbol in prog.Globals) {
+			if (symbol.IsPublic == pub) {
+				if (symbol is CiEnum)
+					Write((CiEnum) symbol);
+				else if (symbol is CiClass)
+					WriteTypedef((CiClass) symbol);
+			}
+		}
+	}
+
+	void WriteSignatures(CiClass klass, bool pub)
+	{
+		if (!pub && (klass.Constructor != null || klass.ConstructsFields)) {
+			WriteConstructorSignature(klass);
+			WriteLine(";");
+		}
+		if (pub && klass.IsPublic) {
+			WriteNewSignature(klass);
+			WriteLine(";");
+			WriteDeleteSignature(klass);
+			WriteLine(";");
+		}
+		foreach (CiSymbol member in klass.Members) {
+			if (member.IsPublic == pub) {
+				if (member is CiConst && pub)
+					Write(klass, (CiConst) member);
+				else if (member is CiMethod && !((CiMethod) member).IsDead) {
+					WriteSignature((CiMethod) member);
+					WriteLine(";");
+				}
+			}
+		}
+	}
+
 	void WriteStruct(CiClass klass)
 	{
 		// topological sorting of class storage fields
@@ -566,24 +605,7 @@ public class GenC : SourceGenerator
 		}
 		this.Indent--;
 		WriteLine("};");
-		if (klass.Constructor != null || klass.ConstructsFields) {
-			WriteConstructorSignature(klass);
-			WriteLine(";");
-		}
-		if (klass.IsPublic) {
-			WriteNewSignature(klass);
-			WriteLine(";");
-			WriteDeleteSignature(klass);
-			WriteLine(";");
-		}
-		foreach (CiSymbol member in klass.Members) {
-			if (member is CiConst && member.IsPublic)
-				Write(klass, (CiConst) member);
-			else if (member is CiMethod) {
-				WriteSignature((CiMethod) member);
-				WriteLine(";");
-			}
-		}
+		WriteSignatures(klass, false);
 		foreach (CiBinaryResource resource in klass.BinaryResources) {
 			Write("static const unsigned char ");
 			WriteName(resource);
@@ -611,16 +633,23 @@ public class GenC : SourceGenerator
 
 	public override void Write(CiProgram prog)
 	{
+		string headerPath = Path.ChangeExtension(this.OutputPath, "h");
+		CreateFile(headerPath);
+		WriteBoolType();
+		WriteTypedefs(prog, true);
+		foreach (CiSymbol symbol in prog.Globals) {
+			if (symbol is CiClass && symbol.IsPublic)
+				WriteSignatures((CiClass) symbol, true);
+		}
+		CloseFile();
+
 		CreateFile(this.OutputPath);
 		WriteLine("#include <stdlib.h>");
 		WriteLine("#include <string.h>");
-		WriteBoolType();
-		foreach (CiSymbol symbol in prog.Globals) {
-			if (symbol is CiEnum)
-				Write((CiEnum) symbol);
-			else if (symbol is CiClass)
-				WriteTypedef((CiClass) symbol);
-		}
+		Write("#include \"");
+		Write(Path.GetFileName(headerPath));
+		WriteLine("\"");
+		WriteTypedefs(prog, false);
 		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiClass)
 				WriteStruct((CiClass) symbol);

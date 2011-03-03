@@ -720,7 +720,9 @@ public class CiMethod : CiSymbol
 	public bool Throws;
 	public object ErrorReturnValue;
 	public readonly HashSet<CiMethod> CalledBy = new HashSet<CiMethod>();
+	public readonly HashSet<CiMethod> Calls = new HashSet<CiMethod>();
 	public bool IsMutator;
+	public bool IsDead;
 	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
 }
 
