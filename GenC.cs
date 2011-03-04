@@ -297,6 +297,40 @@ if (expr.Method.Throws) Write(" /* throws */");
 			base.Write(expr);
 	}
 
+	bool TryWriteCallAndReturn(ICiStatement[] statements, int lastCallIndex, CiExpr returnValue)
+	{
+		CiMethodCall call = statements[lastCallIndex] as CiMethodCall;
+		if (call == null || !call.Method.Throws)
+			return false;
+		Write(statements, lastCallIndex);
+		Write("return ");
+		Write(call);
+		object errorReturnValue = call.Method.ErrorReturnValue;
+		if (!false.Equals(errorReturnValue)) {
+			Write(" != ");
+			WriteConst(errorReturnValue);
+		}
+		if (returnValue != null) {
+			Write(" ? ");
+			Write(returnValue);
+			Write(" : ");
+			WriteConst(this.CurrentMethod.ErrorReturnValue);
+		}
+		WriteLine(";");
+		return true;
+	}
+
+	protected override void Write(ICiStatement[] statements)
+	{
+		int i = statements.Length - 2;
+		if (i >= 0) {
+			CiReturn ret = statements[i + 1] as CiReturn;
+			if (ret != null && TryWriteCallAndReturn(statements, i, ret.Value))
+				return;
+		}
+		base.Write(statements);
+	}
+
 	void WriteChild(CiMaybeAssign expr)
 	{
 		if (expr is CiMethodCall)
@@ -478,9 +512,15 @@ if (expr.Method.Throws) Write(" /* throws */");
 		WriteSignature(method);
 		WriteLine();
 		OpenBlock();
-		Write(method.Body.Statements);
-		if (method.Throws && method.ReturnType == CiType.Void && method.Body.CompletesNormally)
-			WriteReturnTrue();
+		ICiStatement[] statements = method.Body.Statements;
+		if (method.Throws && method.ReturnType == CiType.Void && method.Body.CompletesNormally) {
+			if (!TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
+				Write(statements);
+				WriteReturnTrue();
+			}
+		}
+		else
+			Write(statements);
 		CloseBlock();
 		this.CurrentMethod = null;
 	}

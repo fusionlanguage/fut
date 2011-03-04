@@ -465,10 +465,15 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			throw new ApplicationException(expr.ToString());
 	}
 
-	protected void Write(ICiStatement[] statements)
+	protected void Write(ICiStatement[] statements, int length)
 	{
-		foreach (ICiStatement stmt in statements)
-			Write(stmt);
+		for (int i = 0; i < length; i++)
+			Write(statements[i]);
+	}
+
+	protected virtual void Write(ICiStatement[] statements)
+	{
+		Write(statements, statements.Length);
 	}
 
 	public virtual void Visit(CiBlock block)
