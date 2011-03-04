@@ -735,11 +735,17 @@ public class GenC : SourceGenerator
 		string headerPath = Path.ChangeExtension(this.OutputPath, "h");
 		CreateFile(headerPath);
 		WriteBoolType();
+		WriteLine("#ifdef __cplusplus");
+		WriteLine("extern \"C\" {");
+		WriteLine("#endif");
 		WriteTypedefs(prog, true);
 		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiClass && symbol.IsPublic)
 				WriteSignatures((CiClass) symbol, true);
 		}
+		WriteLine("#ifdef __cplusplus");
+		WriteLine("}");
+		WriteLine("#endif");
 		CloseFile();
 
 		CreateFile(this.OutputPath);
