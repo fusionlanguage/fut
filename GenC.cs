@@ -283,7 +283,7 @@ public class GenC : SourceGenerator
 				Write(arg);
 			}
 			Write(')');
-if (expr.Method.Throws) Write(" /* throws */");
+			// if (expr.Method.Throws) Write(" /* throws */");
 		}
 	}
 
@@ -374,7 +374,7 @@ if (expr.Method.Throws) Write(" /* throws */");
 	{
 		Write(stmt.Type, stmt.Name);
 		if (stmt.InitialValue != null) {
-			if (stmt.Type is CiStringStorageType) {
+			if (stmt.Type is CiStringStorageType || (stmt.InitialValue is CiMethodCall && ((CiMethodCall) stmt.InitialValue).Method.Throws)) {
 				WriteLine(";");
 				Visit(new CiAssign {
 					Target = new CiVarAccess { Var = stmt },
@@ -570,6 +570,7 @@ if (expr.Method.Throws) Write(" /* throws */");
 	{
 		bool hasConstructor = klass.Constructor != null || klass.ConstructsFields;
 		if (hasConstructor) {
+			WriteLine();
 			WriteConstructorSignature(klass);
 			WriteLine();
 			OpenBlock();
@@ -589,6 +590,7 @@ if (expr.Method.Throws) Write(" /* throws */");
 			CloseBlock();
 		}
 		if (klass.IsPublic) {
+			WriteLine();
 			WriteNewSignature(klass);
 			WriteLine();
 			OpenBlock();
@@ -606,6 +608,7 @@ if (expr.Method.Throws) Write(" /* throws */");
 			WriteLine("return self;");
 			CloseBlock();
 
+			WriteLine();
 			WriteDeleteSignature(klass);
 			WriteLine();
 			OpenBlock();

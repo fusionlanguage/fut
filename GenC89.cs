@@ -64,6 +64,8 @@ public class GenC89 : GenC
 			return true;
 		if (def.Type is CiStringStorageType || def.Type is CiArrayStorageType)
 			return false;
+		if (def.InitialValue is CiMethodCall && ((CiMethodCall) def.InitialValue).Method.Throws)
+			return false;
 		return true;
 	}
 
