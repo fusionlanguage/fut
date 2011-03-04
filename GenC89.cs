@@ -73,16 +73,15 @@ public class GenC89 : GenC
 	{
 		Write(def.Type, def.Name);
 		WriteLine(";");
+		def.WriteInitialValue = true;
 	}
 
-	public override void Visit(CiBlock block)
+	protected override void StartBlock(ICiStatement[] statements)
 	{
-		OpenBlock();
-
 		// variable and const definitions, with initializers if possible
 		bool canInitVar = true;
 		HashSet<string> forVars = new HashSet<string>();
-		foreach (ICiStatement stmt in block.Statements) {
+		foreach (ICiStatement stmt in statements) {
 			if (stmt is CiConst) {
 				base.Visit((CiConst) stmt);
 				continue;
@@ -91,6 +90,7 @@ public class GenC89 : GenC
 			if (canInitVar) {
 				if (IsInlineVar(def)) {
 					base.Visit(def);
+					def.WriteInitialValue = false;
 					WriteLine(";");
 					continue;
 				}
@@ -101,32 +101,28 @@ public class GenC89 : GenC
 			else if (stmt is CiFor) {
 				def = ((CiFor) stmt).Init as CiVar;
 				#warning TODO: check "for" variables are same type
-				if (def != null && !forVars.Contains(def.Name)) {
-					forVars.Add(def.Name);
-					WriteVar(def);
+				if (def != null) {
+					if (!forVars.Contains(def.Name)) {
+						forVars.Add(def.Name);
+						WriteVar(def);
+					}
+					def.WriteInitialValue = true;
 				}
 			}
 		}
+	}
 
-		// other statements
-		canInitVar = true;
-		foreach (ICiStatement stmt in block.Statements) {
-			CiVar def = stmt as CiVar;
-			if (canInitVar) {
-				if (IsInlineVar(def))
-					continue;
-				canInitVar = false;
-			}
-			if (def == null || def.InitialValue != null) // avoid lines with just semicolons
-				Write(stmt);
-		}
-
+	public override void Visit(CiBlock block)
+	{
+		OpenBlock();
+		StartBlock(block.Statements);
+		Write(block.Statements);
 		CloseBlock();
 	}
 
 	public override void Visit(CiVar stmt)
 	{
-		if (stmt.InitialValue != null) {
+		if (stmt.InitialValue != null && stmt.WriteInitialValue) {
 			if (stmt.Type is CiArrayStorageType)
 				WriteClearArray(new CiVarAccess { Var = stmt });
 			else {
@@ -136,6 +132,7 @@ public class GenC89 : GenC
 					Source = stmt.InitialValue
 				});
 			}
+			stmt.WriteInitialValue = false;
 		}
 	}
 

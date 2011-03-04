@@ -641,7 +641,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 	protected void Write(ICiStatement stmt)
 	{
 		stmt.Accept(this);
-		if (stmt is CiMaybeAssign || stmt is CiVar)
+		if ((stmt is CiMaybeAssign || stmt is CiVar) && !this.AtLineStart)
 			WriteLine(";");
 	}
 

@@ -331,6 +331,10 @@ public class GenC : SourceGenerator
 		base.Write(statements);
 	}
 
+	protected virtual void StartBlock(ICiStatement[] statements)
+	{
+	}
+
 	void WriteChild(CiMaybeAssign expr)
 	{
 		if (expr is CiMethodCall)
@@ -513,6 +517,7 @@ public class GenC : SourceGenerator
 		WriteLine();
 		OpenBlock();
 		ICiStatement[] statements = method.Body.Statements;
+		StartBlock(statements);
 		if (method.Throws && method.ReturnType == CiType.Void && method.Body.CompletesNormally) {
 			if (!TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
 				Write(statements);
@@ -571,9 +576,12 @@ public class GenC : SourceGenerator
 		bool hasConstructor = klass.Constructor != null || klass.ConstructsFields;
 		if (hasConstructor) {
 			WriteLine();
+			this.CurrentMethod = klass.Constructor;
 			WriteConstructorSignature(klass);
 			WriteLine();
 			OpenBlock();
+			if (klass.Constructor != null)
+				StartBlock(klass.Constructor.Body.Statements);
 			ForEachStorageField(klass, (field, fieldClass) => {
 				if (fieldClass.Constructor != null || fieldClass.ConstructsFields) {
 					Write(fieldClass.Name);
@@ -582,12 +590,10 @@ public class GenC : SourceGenerator
 					WriteLine(");");
 				}
 			});
-			if (klass.Constructor != null) {
-				this.CurrentMethod = klass.Constructor;
+			if (klass.Constructor != null)
 				Write(klass.Constructor.Body.Statements);
-				this.CurrentMethod = null;
-			}
 			CloseBlock();
+			this.CurrentMethod = null;
 		}
 		if (klass.IsPublic) {
 			WriteLine();

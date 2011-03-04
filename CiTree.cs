@@ -406,6 +406,7 @@ public class CiVar : CiSymbol, ICiStatement
 {
 	public CiType Type;
 	public CiExpr InitialValue;
+	public bool WriteInitialValue; // C89 only
 	public bool CompletesNormally { get { return true; } }
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
