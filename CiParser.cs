@@ -521,9 +521,19 @@ public partial class CiParser : CiLexer
 					break;
 				Expect(CiToken.Colon);
 				List<ICiStatement> statements = new List<ICiStatement>();
-				while (!See(CiToken.Case) && !See(CiToken.Default) && !See(CiToken.RightBrace))
+				while (!See(CiToken.Case) && !See(CiToken.Default) && !See(CiToken.Goto) && !See(CiToken.RightBrace))
 					statements.Add(ParseStatement());
 				caze.Body = statements.ToArray();
+				if (Eat(CiToken.Goto)) {
+					if (Eat(CiToken.Case))
+						caze.FallthroughTo = ParseExpr();
+					else if (Eat(CiToken.Default))
+						caze.FallthroughTo = null;
+					else
+						throw new ParseException("Expected goto case or goto default");
+					Expect(CiToken.Semicolon);
+					caze.Fallthrough = true;
+				}
 				cases.Add(caze);
 			}
 			Expect(CiToken.RightBrace);

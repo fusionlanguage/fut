@@ -87,6 +87,7 @@ public enum CiToken
 	Else,
 	Enum,
 	For,
+	Goto,
 	If,
 	Macro,
 	Public,
@@ -449,6 +450,7 @@ public class CiLexer
 				case "else": return CiToken.Else;
 				case "enum": return CiToken.Enum;
 				case "for": return CiToken.For;
+				case "goto": return CiToken.Goto;
 				case "if": return CiToken.If;
 				case "macro": return CiToken.Macro;
 				case "public": return CiToken.Public;

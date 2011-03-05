@@ -705,6 +705,8 @@ public class CiCase
 {
 	public object Value;
 	public ICiStatement[] Body;
+	public bool Fallthrough;
+	public CiExpr FallthroughTo;
 }
 
 public class CiSwitch : CiCondCompletionStatement

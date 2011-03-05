@@ -710,16 +710,30 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		HashSet<object> values = new HashSet<object>();
 		CiCondCompletionStatement oldLoopOrSwitch = this.CurrentLoopOrSwitch;
 		this.CurrentLoopOrSwitch = statement;
+		CiCase fallthroughFrom = null;
 		foreach (CiCase kase in statement.Cases) {
 			if (kase.Value != null) {
 				kase.Value = ResolveConstExpr((CiExpr) kase.Value, type);
 				if (!values.Add(kase.Value))
 					throw new ResolveException("Duplicate case value");
+				if (fallthroughFrom != null) {
+					if (fallthroughFrom.FallthroughTo == null)
+						throw new ResolveException("goto default followed by case");
+					if (!ResolveConstExpr(fallthroughFrom.FallthroughTo, type).Equals(kase.Value))
+						throw new ResolveException("goto case doesn't match the next case");
+				}
 			}
-			else if (!values.Add(null))
-				throw new ResolveException("Duplicate default case");
+			else {
+				if (!values.Add(null))
+					throw new ResolveException("Duplicate default case");
+				if (fallthroughFrom != null && fallthroughFrom.FallthroughTo != null)
+					throw new ResolveException("goto case followed by default");
+			}
 			Resolve(kase.Body);
+			fallthroughFrom = kase.Fallthrough ? kase : null;
 		}
+		if (fallthroughFrom != null)
+			throw new ResolveException("goto cannot be the last statement in switch");
 		this.CurrentLoopOrSwitch = oldLoopOrSwitch;
 	}
 
