@@ -729,8 +729,17 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 				if (fallthroughFrom != null && fallthroughFrom.FallthroughTo != null)
 					throw new ResolveException("goto case followed by default");
 			}
-			Resolve(kase.Body);
-			fallthroughFrom = kase.Fallthrough ? kase : null;
+			bool reachable = Resolve(kase.Body);
+			if (kase.Fallthrough) {
+				if (!reachable)
+					throw new ResolveException("goto is not reachable");
+				fallthroughFrom = kase;
+			}
+			else {
+				if (reachable && kase.Body.Length > 0)
+					throw new ResolveException("Missing break, return, throw or goto");
+				fallthroughFrom = null;
+			}
 		}
 		if (fallthroughFrom != null)
 			throw new ResolveException("goto cannot be the last statement in switch");
