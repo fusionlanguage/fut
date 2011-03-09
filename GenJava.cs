@@ -514,7 +514,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		if (klass.BinaryResources.Length > 0)
 			WriteGetBinaryResource(klass);
 		foreach (CiConst konst in klass.ConstArrays) {
-			Write("static final ");
+			Write("private static final ");
 			Write(konst.Type);
 			WriteUppercaseWithUnderscores(konst.GlobalName);
 			Write(" = ");
