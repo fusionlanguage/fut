@@ -273,11 +273,10 @@ public partial class CiParser : CiLexer
 	CiExpr ParseMulExpr()
 	{
 		CiExpr left = ParsePrimaryExpr();
-		while (See(CiToken.Asterisk) || See(CiToken.Slash) || See(CiToken.Mod) || See(CiToken.And) || See(CiToken.ShiftLeft) || See(CiToken.ShiftRight)) {
+		while (See(CiToken.Asterisk) || See(CiToken.Slash) || See(CiToken.Mod)) {
 			CiToken op = this.CurrentToken;
 			NextToken();
-			CiExpr right = ParsePrimaryExpr();
-			left = new CiBinaryExpr { Left = left, Op = op, Right = right };
+			left = new CiBinaryExpr { Left = left, Op = op, Right = ParsePrimaryExpr() };
 		}
 		return left;
 	}
@@ -285,44 +284,84 @@ public partial class CiParser : CiLexer
 	CiExpr ParseAddExpr()
 	{
 		CiExpr left = ParseMulExpr();
-		while (See(CiToken.Plus) || See(CiToken.Minus) || See(CiToken.Or) || See(CiToken.Xor)) {
+		while (See(CiToken.Plus) || See(CiToken.Minus)) {
 			CiToken op = this.CurrentToken;
 			NextToken();
-			CiExpr right = ParseMulExpr();
-			left = new CiBinaryExpr { Left = left, Op = op, Right = right };
+			left = new CiBinaryExpr { Left = left, Op = op, Right = ParseMulExpr() };
+		}
+		return left;
+	}
+
+	CiExpr ParseShiftExpr()
+	{
+		CiExpr left = ParseAddExpr();
+		while (See(CiToken.ShiftLeft) || See(CiToken.ShiftRight)) {
+			CiToken op = this.CurrentToken;
+			NextToken();
+			left = new CiBinaryExpr { Left = left, Op = op, Right = ParseAddExpr() };
 		}
 		return left;
 	}
 
 	CiExpr ParseRelExpr()
 	{
-		CiExpr left = ParseAddExpr();
-		while (See(CiToken.Equal) || See(CiToken.NotEqual) || See(CiToken.Less) || See(CiToken.LessOrEqual) || See(CiToken.Greater) || See(CiToken.GreaterOrEqual)) {
+		CiExpr left = ParseShiftExpr();
+		while (See(CiToken.Less) || See(CiToken.LessOrEqual) || See(CiToken.Greater) || See(CiToken.GreaterOrEqual)) {
 			CiToken op = this.CurrentToken;
 			NextToken();
-			CiExpr right = ParseAddExpr();
-			left = new CiBoolBinaryExpr { Left = left, Op = op, Right = right };
+			left = new CiBoolBinaryExpr { Left = left, Op = op, Right = ParseShiftExpr() };
 		}
+		return left;
+	}
+
+	CiExpr ParseEqualityExpr()
+	{
+		CiExpr left = ParseRelExpr();
+		while (See(CiToken.Equal) || See(CiToken.NotEqual)) {
+			CiToken op = this.CurrentToken;
+			NextToken();
+			left = new CiBoolBinaryExpr { Left = left, Op = op, Right = ParseRelExpr() };
+		}
+		return left;
+	}
+
+	CiExpr ParseAndExpr()
+	{
+		CiExpr left = ParseEqualityExpr();
+		while (Eat(CiToken.And))
+			left = new CiBinaryExpr { Left = left, Op = CiToken.And, Right = ParseEqualityExpr() };
+		return left;
+	}
+
+	CiExpr ParseXorExpr()
+	{
+		CiExpr left = ParseAndExpr();
+		while (Eat(CiToken.Xor))
+			left = new CiBinaryExpr { Left = left, Op = CiToken.Xor, Right = ParseAndExpr() };
+		return left;
+	}
+
+	CiExpr ParseOrExpr()
+	{
+		CiExpr left = ParseXorExpr();
+		while (Eat(CiToken.Or))
+			left = new CiBinaryExpr { Left = left, Op = CiToken.Or, Right = ParseXorExpr() };
 		return left;
 	}
 
 	CiExpr ParseCondAndExpr()
 	{
-		CiExpr left = ParseRelExpr();
-		while (Eat(CiToken.CondAnd)) {
-			CiExpr right = ParseRelExpr();
-			left = new CiBoolBinaryExpr { Left = left, Op = CiToken.CondAnd, Right = right };
-		}
+		CiExpr left = ParseOrExpr();
+		while (Eat(CiToken.CondAnd))
+			left = new CiBoolBinaryExpr { Left = left, Op = CiToken.CondAnd, Right = ParseOrExpr() };
 		return left;
 	}
 
 	CiExpr ParseCondOrExpr()
 	{
 		CiExpr left = ParseCondAndExpr();
-		while (Eat(CiToken.CondOr)) {
-			CiExpr right = ParseCondAndExpr();
-			left = new CiBoolBinaryExpr { Left = left, Op = CiToken.CondOr, Right = right };
-		}
+		while (Eat(CiToken.CondOr))
+			left = new CiBoolBinaryExpr { Left = left, Op = CiToken.CondOr, Right = ParseCondAndExpr() };
 		return left;
 	}
 
