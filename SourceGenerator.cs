@@ -369,17 +369,16 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		}
 	}
 
-	protected virtual void Write(CiBinaryExpr expr)
+	protected void WriteOp(CiBinaryExpr expr)
 	{
-		WriteChild(expr, expr.Left);
 		switch (expr.Op) {
 		case CiToken.Plus: Write(" + "); break;
-		case CiToken.Minus: Write(" - "); WriteNonAssocChild(expr, expr.Right); return;
+		case CiToken.Minus: Write(" - "); return;
 		case CiToken.Asterisk: Write(" * "); break;
-		case CiToken.Slash: Write(" / "); WriteNonAssocChild(expr, expr.Right); return;
-		case CiToken.Mod: Write(" % "); WriteNonAssocChild(expr, expr.Right); return;
-		case CiToken.ShiftLeft: Write(" << "); WriteNonAssocChild(expr, expr.Right); return;
-		case CiToken.ShiftRight: Write(" >> "); WriteNonAssocChild(expr, expr.Right); return;
+		case CiToken.Slash: Write(" / "); break;
+		case CiToken.Mod: Write(" % "); break;
+		case CiToken.ShiftLeft: Write(" << "); break;
+		case CiToken.ShiftRight: Write(" >> "); break;
 		case CiToken.Less: Write(" < "); break;
 		case CiToken.LessOrEqual: Write(" <= "); break;
 		case CiToken.Greater: Write(" > "); break;
@@ -391,10 +390,41 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		case CiToken.Xor: Write(" ^ "); break;
 		case CiToken.CondAnd: Write(" && "); break;
 		case CiToken.CondOr: Write(" || "); break;
+		default: throw new ApplicationException();
+		}
+	}
+
+	protected virtual void Write(CiBinaryExpr expr)
+	{
+		WriteChild(expr, expr.Left);
+		switch (expr.Op) {
+		case CiToken.Plus:
+		case CiToken.Asterisk:
+		case CiToken.Less:
+		case CiToken.LessOrEqual:
+		case CiToken.Greater:
+		case CiToken.GreaterOrEqual:
+		case CiToken.Equal:
+		case CiToken.NotEqual:
+		case CiToken.And:
+		case CiToken.Or:
+		case CiToken.Xor:
+		case CiToken.CondAnd:
+		case CiToken.CondOr:
+			WriteOp(expr);
+			WriteChild(expr, expr.Right);
+			break;
+		case CiToken.Minus:
+		case CiToken.Slash:
+		case CiToken.Mod:
+		case CiToken.ShiftLeft:
+		case CiToken.ShiftRight:
+			WriteOp(expr);
+			WriteNonAssocChild(expr, expr.Right);
+			break;
 		default:
 			throw new ApplicationException();
 		}
-		WriteChild(expr, expr.Right);
 	}
 
 	void Write(CiCondExpr expr)

@@ -287,6 +287,41 @@ public class GenC : SourceGenerator
 		}
 	}
 
+	void WriteChildWithSuggestedParentheses(CiBinaryExpr parent, CiExpr child, int suggestedParentPriority, bool assoc)
+	{
+		if (assoc && GetPriority(parent) == GetPriority(child))
+			Write(child);
+		else
+			WriteChild(suggestedParentPriority, child);
+	}
+
+	protected override void Write(CiBinaryExpr expr)
+	{
+		switch (expr.Op) {
+		case CiToken.ShiftLeft:
+		case CiToken.ShiftRight:
+			WriteChildWithSuggestedParentheses(expr, expr.Left, 3, true);
+			WriteOp(expr);
+			WriteChildWithSuggestedParentheses(expr, expr.Right, 3, false);
+			break;
+		case CiToken.And:
+		case CiToken.Or:
+		case CiToken.Xor:
+			WriteChildWithSuggestedParentheses(expr, expr.Left, 3, true);
+			WriteOp(expr);
+			WriteChildWithSuggestedParentheses(expr, expr.Right, 3, true);
+			break;
+		case CiToken.CondOr:
+			WriteChildWithSuggestedParentheses(expr, expr.Left, 11, true);
+			Write(" || ");
+			WriteChildWithSuggestedParentheses(expr, expr.Right, 11, true);
+			break;
+		default:
+			base.Write(expr);
+			break;
+		}
+	}
+
 	protected override void Write(CiCoercion expr)
 	{
 		if (expr.ResultType is CiClassPtrType && expr.Inner.Type is CiClassStorageType) {
