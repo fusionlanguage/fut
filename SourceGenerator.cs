@@ -270,7 +270,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		WriteChild(GetPriority(parent), child);
 	}
 
-	protected void WriteRightChild(int parentPriority, CiExpr child)
+	protected void WriteNonAssocChild(int parentPriority, CiExpr child)
 	{
 		if (GetPriority(child) >= parentPriority) {
 			Write('(');
@@ -281,9 +281,9 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			Write(child);
 	}
 
-	protected void WriteRightChild(CiExpr parent, CiExpr child)
+	protected void WriteNonAssocChild(CiExpr parent, CiExpr child)
 	{
-		WriteRightChild(GetPriority(parent), child);
+		WriteNonAssocChild(GetPriority(parent), child);
 	}
 
 	protected virtual void WriteName(CiConst konst)
@@ -374,12 +374,12 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		WriteChild(expr, expr.Left);
 		switch (expr.Op) {
 		case CiToken.Plus: Write(" + "); break;
-		case CiToken.Minus: Write(" - "); WriteRightChild(expr, expr.Right); return;
+		case CiToken.Minus: Write(" - "); WriteNonAssocChild(expr, expr.Right); return;
 		case CiToken.Asterisk: Write(" * "); break;
-		case CiToken.Slash: Write(" / "); WriteRightChild(expr, expr.Right); return;
-		case CiToken.Mod: Write(" % "); WriteRightChild(expr, expr.Right); return;
-		case CiToken.ShiftLeft: Write(" << "); WriteRightChild(expr, expr.Right); return;
-		case CiToken.ShiftRight: Write(" >> "); WriteRightChild(expr, expr.Right); return;
+		case CiToken.Slash: Write(" / "); WriteNonAssocChild(expr, expr.Right); return;
+		case CiToken.Mod: Write(" % "); WriteNonAssocChild(expr, expr.Right); return;
+		case CiToken.ShiftLeft: Write(" << "); WriteNonAssocChild(expr, expr.Right); return;
+		case CiToken.ShiftRight: Write(" >> "); WriteNonAssocChild(expr, expr.Right); return;
 		case CiToken.Less: Write(" < "); break;
 		case CiToken.LessOrEqual: Write(" <= "); break;
 		case CiToken.Greater: Write(" > "); break;
@@ -399,7 +399,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 
 	void Write(CiCondExpr expr)
 	{
-		WriteChild(expr, expr.Cond);
+		WriteNonAssocChild(expr, expr.Cond);
 		Write(" ? ");
 		WriteChild(expr, expr.OnTrue);
 		Write(" : ");

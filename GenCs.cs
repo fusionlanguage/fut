@@ -232,7 +232,7 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 			Write(" * ");
 			WriteChild(3, expr.Arguments[0]);
 			Write(" / ");
-			WriteRightChild(3, expr.Arguments[1]);
+			WriteNonAssocChild(3, expr.Arguments[1]);
 			Write(')');
 		}
 		else if (expr.Method == CiStringType.CharAtMethod) {
