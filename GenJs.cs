@@ -119,7 +119,7 @@ public class GenJs : SourceGenerator
 	{
 		Write(this.CurrentClass.Name);
 		Write('.');
-		WriteUppercaseWithUnderscores(konst.GlobalName);
+		WriteUppercaseWithUnderscores(konst.GlobalName ?? konst.Name);
 	}
 
 	protected override int GetPriority(CiExpr expr)
@@ -305,6 +305,14 @@ public class GenJs : SourceGenerator
 		Write(method.Body);
 	}
 
+	void Write(CiConst konst)
+	{
+		WriteName(konst);
+		Write(" = ");
+		WriteConst(konst.Value);
+		WriteLine(";");
+	}
+
 	void Write(CiClass klass)
 	{
 		this.CurrentClass = klass;
@@ -322,13 +330,11 @@ public class GenJs : SourceGenerator
 		foreach (CiSymbol member in klass.Members) {
 			if (member is CiMethod)
 				Write((CiMethod) member);
+			else if (member is CiConst && member.IsPublic)
+				Write((CiConst) member);
 		}
-		foreach (CiConst konst in klass.ConstArrays) {
-			WriteName(konst);
-			Write(" = ");
-			WriteConst(konst.Value);
-			WriteLine(";");
-		}
+		foreach (CiConst konst in klass.ConstArrays)
+			Write(konst);
 		foreach (CiBinaryResource resource in klass.BinaryResources) {
 			WriteName(resource);
 			Write(" = ");
