@@ -614,6 +614,11 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		}
 	}
 
+	void ICiStatementVisitor.Visit(CiNativeBlock statement)
+	{
+		Write(statement.Content);
+	}
+
 	public virtual void Visit(CiReturn stmt)
 	{
 		if (stmt.Value == null)

@@ -379,6 +379,7 @@ public interface ICiStatementVisitor
 	void Visit(CiDoWhile statement);
 	void Visit(CiFor statement);
 	void Visit(CiIf statement);
+	void Visit(CiNativeBlock statement);
 	void Visit(CiReturn statement);
 	void Visit(CiSwitch statement);
 	void Visit(CiThrow statement);
@@ -692,6 +693,13 @@ public class CiIf : CiCondCompletionStatement
 	public ICiStatement OnTrue;
 	public ICiStatement OnFalse;
 	public override void Accept(ICiStatementVisitor v) { v.Visit(this); }
+}
+
+public class CiNativeBlock : ICiStatement
+{
+	public string Content;
+	public bool CompletesNormally { get { return true; } }
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
 public class CiReturn : ICiStatement

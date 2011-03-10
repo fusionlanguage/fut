@@ -696,6 +696,10 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			statement.CompletesNormally = true;
 	}
 
+	void ICiStatementVisitor.Visit(CiNativeBlock statement)
+	{
+	}
+
 	void ICiStatementVisitor.Visit(CiReturn statement)
 	{
 		CiType type = this.CurrentMethod.ReturnType;

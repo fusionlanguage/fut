@@ -90,6 +90,7 @@ public enum CiToken
 	Goto,
 	If,
 	Macro,
+	Native,
 	Public,
 	Return,
 	Static,
@@ -453,6 +454,7 @@ public class CiLexer
 				case "goto": return CiToken.Goto;
 				case "if": return CiToken.If;
 				case "macro": return CiToken.Macro;
+				case "native": return CiToken.Native;
 				case "public": return CiToken.Public;
 				case "return": return CiToken.Return;
 				case "static": return CiToken.Static;

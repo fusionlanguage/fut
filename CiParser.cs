@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 
@@ -475,6 +476,33 @@ public partial class CiParser : CiLexer
 		return result;
 	}
 
+	CiNativeBlock ParseNativeBlock()
+	{
+		StringBuilder sb = new StringBuilder();
+		this.CopyTo = sb;
+		try {
+			Expect(CiToken.LeftBrace);
+			int level = 1;
+			for (;;) {
+				if (See(CiToken.EndOfFile))
+					throw new ParseException("Native block not terminated");
+				if (See(CiToken.LeftBrace))
+					level++;
+				else if (See(CiToken.RightBrace))
+					if (--level == 0)
+						break;
+				NextToken();
+			}
+		}
+		finally {
+			this.CopyTo = null;
+		}
+		NextToken();
+		Trace.Assert(sb[sb.Length - 1] == '}');
+		sb.Length--;
+		return new CiNativeBlock { Content = sb.ToString() };
+	}
+
 	ICiStatement ParseStatement()
 	{
 		while (Eat(CiToken.Macro))
@@ -534,6 +562,8 @@ public partial class CiParser : CiLexer
 				result.OnFalse = ParseStatement();
 			return result;
 		}
+		if (Eat(CiToken.Native))
+			return ParseNativeBlock();
 		if (Eat(CiToken.Return)) {
 			CiReturn result = new CiReturn();
 			if (this.CurrentMethod.ReturnType != CiType.Void)
