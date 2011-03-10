@@ -94,6 +94,8 @@ public partial class CiParser : CiLexer
 				sb.Length--;
 				macro.IsStatement = true;
 			}
+			else
+				throw new ParseException("Macro definition must be wrapped in parentheses or braces");
 		}
 		finally {
 			this.CopyTo = null;
