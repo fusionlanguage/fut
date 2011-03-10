@@ -172,11 +172,6 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 		WriteLine(";");
 	}
 
-	void ICiSymbolVisitor.Visit(CiProperty prop)
-	{
-		throw new NotImplementedException();
-	}
-
 	void ICiSymbolVisitor.Visit(CiConst konst)
 	{
 		if (!konst.IsPublic)
@@ -342,7 +337,7 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 			Write("static ");
 		Write(method.ReturnType);
 		Write(method.Name);
-		Write("(");
+		Write('(');
 		bool first = true;
 		foreach (CiParam param in method.Params) {
 			if (first)

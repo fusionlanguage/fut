@@ -5,14 +5,16 @@ run: $(SOURCES) cito.exe
 	./cito.exe -I ../../a8/asap/git/players -l java -n net.sf.asap -o ../../a8/asap/git/java $(SOURCES)
 	./cito.exe -I ../../a8/asap/git/players -l js -o ../../a8/asap/git/javascript/asap.js $(SOURCES)
 	./cito.exe -I ../../a8/asap/git/players -l js -D FLASH -o ../../a8/asap/git/javascript/air/asap.js $(SOURCES)
+	./cito.exe -I ../../a8/asap/git/players -l as -n net.sf.asap -D FLASH -o net/sf/asap $(SOURCES)
 	./cito.exe -I ../../a8/asap/git/players -l c -o ../../a8/asap/git/asapci.c $(SOURCES)
 	./cito.exe -I ../../a8/asap/git/players -l c99 -o asapci99.c $(SOURCES)
 	./cito.exe -I ../../a8/asap/git/players -l c99 -D APOKEYSND -o ../../a8/asap/git/win32/rmt/pokey.c ../../a8/asap/git/pokey.ci
-	$(MAKE) -C ../../a8/asap/git/csharp
-	$(MAKE) -C ../../a8/asap/git/java
-	$(MAKE) -C ../../a8/asap/git/win32 apokeysnd.dll asap-sdl.exe asap_dsf.dll bass_asap.dll xbmc_asap.dll
+#	$(MAKE) -C ../../a8/asap/git/csharp
+#	$(MAKE) -C ../../a8/asap/git/java
+#	$(MAKE) -C ../../a8/asap/git/win32 apokeysnd.dll asap-sdl.exe asap_dsf.dll bass_asap.dll xbmc_asap.dll
+	mxmlc -o asap.swf -compiler.optimize -compiler.warn-duplicate-variable-def=false -static-link-runtime-shared-libraries -target-player 10 -compiler.source-path . -- net/sf/asap/ASAP.as
 
-cito.exe: CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs CiTo.cs
+cito.exe: CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs GenAs.cs CiTo.cs
 	csc -nologo -debug -out:$@ $^
 # -o+
 

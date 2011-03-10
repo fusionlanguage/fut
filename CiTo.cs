@@ -35,8 +35,9 @@ public class CiTo
 		Console.WriteLine("-l cs    Translate to C#");
 		Console.WriteLine("-l java  Translate to Java");
 		Console.WriteLine("-l js    Translate to JavaScript");
-		Console.WriteLine("-o PATH  Write to the specified directory (Java) or file (other languages)");
-		Console.WriteLine("-n NAME  Specify C# namespace or Java package");
+		Console.WriteLine("-l as    Translate to ActionScript");
+		Console.WriteLine("-o PATH  Write to the specified directory (Java, ActionScript) or file (other languages)");
+		Console.WriteLine("-n NAME  Specify C# namespace or Java/ActionScript package");
 		Console.WriteLine("-D NAME  Define conditional compilation symbol");
 		Console.WriteLine("-I DIR   Add directory for BinaryResource");
 		Console.WriteLine("--help   This help");
@@ -126,6 +127,7 @@ public class CiTo
 		case "cs": gen = new GenCs(namespace_); break;
 		case "java": gen = new GenJava(namespace_); break;
 		case "js": gen = new GenJs(); break;
+		case "as": gen = new GenAs(namespace_); break;
 		default: throw new ApplicationException("Unknown language: " + lang);
 		}
 		gen.OutputPath = outputPath;

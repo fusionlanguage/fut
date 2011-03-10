@@ -196,11 +196,6 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		WriteLine(";");
 	}
 
-	void ICiSymbolVisitor.Visit(CiProperty prop)
-	{
-		throw new NotImplementedException();
-	}
-
 	void ICiSymbolVisitor.Visit(CiConst konst)
 	{
 		if (!konst.IsPublic)
@@ -411,7 +406,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			Write("static ");
 		Write(method.ReturnType);
 		WriteCamelCase(method.Name);
-		Write("(");
+		Write('(');
 		bool first = true;
 		foreach (CiParam param in method.Params) {
 			if (first)

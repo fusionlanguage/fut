@@ -576,11 +576,6 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		field.Type = Resolve(field.Type);
 	}
 
-	void ICiSymbolVisitor.Visit(CiProperty prop)
-	{
-		prop.Type = Resolve(prop.Type);
-	}
-
 	bool Resolve(ICiStatement[] statements)
 	{
 		bool reachable = true;

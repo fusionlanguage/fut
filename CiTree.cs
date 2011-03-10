@@ -63,7 +63,6 @@ public interface ICiSymbolVisitor
 	void Visit(CiEnum symbol);
 	void Visit(CiConst symbol);
 	void Visit(CiField symbol);
-	void Visit(CiProperty symbol);
 	void Visit(CiMethod symbol);
 	void Visit(CiClass symbol);
 }
@@ -364,7 +363,7 @@ public class CiField : CiSymbol
 public class CiProperty : CiSymbol
 {
 	public CiType Type;
-	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
+	public override void Accept(ICiSymbolVisitor v) { }
 }
 
 public interface ICiStatementVisitor
