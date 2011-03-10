@@ -201,16 +201,16 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		throw new NotImplementedException();
 	}
 
-	void ICiSymbolVisitor.Visit(CiConst def)
+	void ICiSymbolVisitor.Visit(CiConst konst)
 	{
-		if (!def.IsPublic)
+		if (!konst.IsPublic)
 			return;
-		Write(def.Documentation);
+		Write(konst.Documentation);
 		Write("public static final ");
-		Write(def.Type);
-		WriteUppercaseWithUnderscores(def.Name);
+		Write(konst.Type);
+		WriteUppercaseWithUnderscores(konst.Name);
 		Write(" = ");
-		WriteConst(def.Value);
+		WriteConst(konst.Value);
 		WriteLine(";");
 	}
 

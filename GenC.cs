@@ -129,15 +129,15 @@ public class GenC : SourceGenerator
 		WriteLine(";");
 	}
 
-	void Write(CiClass klass, CiConst def)
+	void Write(CiClass klass, CiConst konst)
 	{
-		Write(def.Documentation);
+		Write(konst.Documentation);
 		Write("#define ");
 		Write(klass.Name);
 		Write('_');
-		WriteUppercaseWithUnderscores(def.Name);
+		WriteUppercaseWithUnderscores(konst.Name);
 		Write("  ");
-		WriteConst(def.Value);
+		WriteConst(konst.Value);
 		WriteLine();
 	}
 

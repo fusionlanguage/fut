@@ -288,10 +288,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 
 	protected virtual void WriteName(CiConst konst)
 	{
-		if (konst.GlobalName != null)
-			Write(konst.GlobalName);
-		else
-			Write(konst.Name);
+		Write(konst.GlobalName ?? konst.Name);
 	}
 
 	protected virtual void Write(CiVarAccess expr)

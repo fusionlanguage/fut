@@ -177,16 +177,16 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 		throw new NotImplementedException();
 	}
 
-	void ICiSymbolVisitor.Visit(CiConst def)
+	void ICiSymbolVisitor.Visit(CiConst konst)
 	{
-		if (!def.IsPublic)
+		if (!konst.IsPublic)
 			return;
-		Write(def.Documentation);
+		Write(konst.Documentation);
 		Write("public const ");
-		Write(def.Type);
-		Write(def.Name);
+		Write(konst.Type);
+		Write(konst.Name);
 		Write(" = ");
-		WriteConst(def.Value);
+		WriteConst(konst.Value);
 		WriteLine(";");
 	}
 
