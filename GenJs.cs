@@ -326,6 +326,8 @@ public class GenJs : SourceGenerator
 			if (member is CiField)
 				Write((CiField) member);
 		}
+		if (klass.Constructor != null)
+			Write(klass.Constructor.Body.Statements);
 		CloseBlock();
 		foreach (CiSymbol member in klass.Members) {
 			if (member is CiMethod)

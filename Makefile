@@ -3,7 +3,8 @@ SOURCES = ../../a8/asap/git/pokey.ci ../../a8/asap/git/cpu6502.ci ../../a8/asap/
 run: $(SOURCES) cito.exe
 	./cito.exe -I ../../a8/asap/git/players -l cs -n Sf.Asap -o ../../a8/asap/git/csharp/asapci.cs $(SOURCES)
 	./cito.exe -I ../../a8/asap/git/players -l java -n net.sf.asap -o ../../a8/asap/git/java $(SOURCES)
-	./cito.exe -I ../../a8/asap/git/players -l js -o asapci.js $(SOURCES)
+	./cito.exe -I ../../a8/asap/git/players -l js -o ../../a8/asap/git/javascript/asap.js $(SOURCES)
+	./cito.exe -I ../../a8/asap/git/players -l js -D FLASH -o ../../a8/asap/git/javascript/air/asap.js $(SOURCES)
 	./cito.exe -I ../../a8/asap/git/players -l c -o ../../a8/asap/git/asapci.c $(SOURCES)
 	./cito.exe -I ../../a8/asap/git/players -l c99 -o asapci99.c $(SOURCES)
 	./cito.exe -I ../../a8/asap/git/players -l c99 -D APOKEYSND -o ../../a8/asap/git/win32/rmt/pokey.c ../../a8/asap/git/pokey.ci
