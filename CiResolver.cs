@@ -419,6 +419,8 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		expr.Method = obj.Type.LookupMember(expr.Name) as CiMethod;
 		if (expr.Method == null)
 			throw new ResolveException("{0} is not a method", expr.Name);
+		if (expr.Method.IsStatic)
+			throw new ResolveException("{0} is a static method", expr.Name);
 		if (expr.Method.This != null) {
 			// user-defined method
 			CheckCopyPtr(expr.Method.This.Type, obj);
