@@ -67,10 +67,18 @@ public interface ICiSymbolVisitor
 	void Visit(CiClass symbol);
 }
 
+public enum CiVisibility
+{
+	Dead,
+	Private,
+	Internal,
+	Public
+}
+
 public abstract class CiSymbol
 {
 	public CiCodeDoc Documentation;
-	public bool IsPublic;
+	public CiVisibility Visibility;
 	public string Name;
 	public virtual void Accept(ICiSymbolVisitor v) { throw new NotImplementedException(this.ToString()); }
 }
@@ -748,7 +756,6 @@ public class CiMethod : CiSymbol
 	public readonly HashSet<CiMethod> CalledBy = new HashSet<CiMethod>();
 	public readonly HashSet<CiMethod> Calls = new HashSet<CiMethod>();
 	public bool IsMutator;
-	public bool IsDead;
 	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
 }
 

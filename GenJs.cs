@@ -332,7 +332,7 @@ public class GenJs : SourceGenerator
 		foreach (CiSymbol member in klass.Members) {
 			if (member is CiMethod)
 				Write((CiMethod) member);
-			else if (member is CiConst && member.IsPublic)
+			else if (member is CiConst && member.Visibility == CiVisibility.Public)
 				Write((CiConst) member);
 		}
 		foreach (CiConst konst in klass.ConstArrays)

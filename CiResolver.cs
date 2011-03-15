@@ -343,8 +343,14 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		CiExpr parent = Resolve(expr.Parent);
 		CiSymbol member = parent.Type.LookupMember(expr.Name);
 		member.Accept(this);
-		if (member is CiField)
+		if (member is CiField) {
+			if (member.Visibility == CiVisibility.Private) {
+				CiClass klass = ((CiClassType) parent.Type).Class;
+				if (klass != this.CurrentClass)
+					member.Visibility = CiVisibility.Internal;
+			}
 			return new CiFieldAccess { Obj = parent, Field = (CiField) member };
+		}
 		if (member is CiProperty) {
 			CiProperty prop = (CiProperty) member;
 			if (parent is CiConstExpr) {
@@ -431,8 +437,11 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 
 	CiExpr ICiExprVisitor.Visit(CiMethodCall expr)
 	{
-		if (expr.Obj != null)
+		if (expr.Obj != null) {
 			ResolveObj(expr);
+			if (expr.Method.Visibility == CiVisibility.Private && expr.Method.Class != this.CurrentClass)
+				expr.Method.Visibility = CiVisibility.Internal;
+		}
 		else {
 			expr.Method = this.Symbols.Lookup(expr.Name) as CiMethod;
 			if (expr.Method == null)
@@ -837,12 +846,13 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 
 	static void MarkDead(CiMethod method)
 	{
-		if (method.IsPublic || method.IsDead || method.CalledBy.Count > 0)
-			return;
-		method.IsDead = true;
-		foreach (CiMethod called in method.Calls) {
-			called.CalledBy.Remove(method);
-			MarkDead(called);
+		if ((method.Visibility == CiVisibility.Private || method.Visibility == CiVisibility.Internal)
+		 && method.CalledBy.Count == 0) {
+			method.Visibility = CiVisibility.Dead;
+			foreach (CiMethod called in method.Calls) {
+				called.CalledBy.Remove(method);
+				MarkDead(called);
+			}
 		}
 	}
 

@@ -39,6 +39,22 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		// TODO
 	}
 
+	void Write(CiVisibility visibility)
+	{
+		switch (visibility) {
+		case CiVisibility.Dead:
+		case CiVisibility.Private:
+			Write("private ");
+			break;
+		case CiVisibility.Internal:
+			Write("internal ");
+			break;
+		case CiVisibility.Public:
+			Write("public ");
+			break;
+		}
+	}
+
 	void CreateAsFile(CiSymbol symbol)
 	{
 		CreateFile(Path.Combine(this.OutputPath, symbol.Name + ".as"));
@@ -52,7 +68,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		WriteLine("import flash.utils.ByteArray;");
 		WriteLine();
 		Write(symbol.Documentation);
-		Write(symbol.IsPublic ? "public " : "internal ");
+		Write(symbol.Visibility);
 		Write("class ");
 		WriteLine(symbol.Name);
 		OpenBlock();
@@ -121,7 +137,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 	void ICiSymbolVisitor.Visit(CiField field)
 	{
 		Write(field.Documentation);
-		Write(field.IsPublic ? "public " : "internal ");
+		Write(field.Visibility);
 		if (field.Type is CiClassStorageType || field.Type is CiArrayStorageType)
 			Write("const ");
 		else
@@ -134,7 +150,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 
 	void ICiSymbolVisitor.Visit(CiConst konst)
 	{
-		if (!konst.IsPublic)
+		if (konst.Visibility != CiVisibility.Public)
 			return;
 		Write(konst.Documentation);
 		Write("public static const ");
@@ -334,7 +350,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 //			}
 //			WriteLine(" */");
 		}
-		Write(method.IsPublic ? "public " : "internal ");
+		Write(method.Visibility);
 		if (method.IsStatic)
 			Write("static ");
 		Write("function ");

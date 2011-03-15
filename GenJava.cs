@@ -105,6 +105,21 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		}
 	}
 
+	void Write(CiVisibility visibility)
+	{
+		switch (visibility) {
+		case CiVisibility.Dead:
+		case CiVisibility.Private:
+			Write("private ");
+			break;
+		case CiVisibility.Internal:
+			break;
+		case CiVisibility.Public:
+			Write("public ");
+			break;
+		}
+	}
+
 	void CreateJavaFile(string type, CiSymbol symbol)
 	{
 		CreateFile(Path.Combine(this.OutputPath, symbol.Name + ".java"));
@@ -115,8 +130,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		}
 		WriteLine();
 		Write(symbol.Documentation);
-		if (symbol.IsPublic)
-			Write("public ");
+		Write(symbol.Visibility);
 		Write(type);
 		Write(' ');
 		WriteLine(symbol.Name);
@@ -186,8 +200,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 	void ICiSymbolVisitor.Visit(CiField field)
 	{
 		Write(field.Documentation);
-		if (field.IsPublic)
-			Write("public ");
+		Write(field.Visibility);
 		if (field.Type is CiClassStorageType || field.Type is CiArrayStorageType)
 			Write("final ");
 		Write(field.Type);
@@ -198,7 +211,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 
 	void ICiSymbolVisitor.Visit(CiConst konst)
 	{
-		if (!konst.IsPublic)
+		if (konst.Visibility != CiVisibility.Public)
 			return;
 		Write(konst.Documentation);
 		Write("public static final ");
@@ -400,8 +413,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			}
 			WriteLine(" */");
 		}
-		if (method.IsPublic)
-			Write("public ");
+		Write(method.Visibility);
 		if (method.IsStatic)
 			Write("static ");
 		Write(method.ReturnType);

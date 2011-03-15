@@ -104,11 +104,26 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 		}
 	}
 
+	void Write(CiVisibility visibility)
+	{
+		switch (visibility) {
+		case CiVisibility.Dead:
+		case CiVisibility.Private:
+			break;
+		case CiVisibility.Internal:
+			Write("internal ");
+			break;
+		case CiVisibility.Public:
+			Write("public ");
+			break;
+		}
+	}
+
 	void ICiSymbolVisitor.Visit(CiEnum enu)
 	{
 		WriteLine();
 		Write(enu.Documentation);
-		Write(enu.IsPublic ? "public " : "internal ");
+		Write(enu.Visibility);
 		Write("enum ");
 		WriteLine(enu.Name);
 		OpenBlock();
@@ -163,7 +178,7 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 	void ICiSymbolVisitor.Visit(CiField field)
 	{
 		Write(field.Documentation);
-		Write(field.IsPublic ? "public " : "internal ");
+		Write(field.Visibility);
 		if (field.Type is CiClassStorageType || field.Type is CiArrayStorageType)
 			Write("readonly ");
 		Write(field.Type);
@@ -174,7 +189,7 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 
 	void ICiSymbolVisitor.Visit(CiConst konst)
 	{
-		if (!konst.IsPublic)
+		if (konst.Visibility != CiVisibility.Public)
 			return;
 		Write(konst.Documentation);
 		Write("public const ");
@@ -332,7 +347,7 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 			}
 		}
 
-		Write(method.IsPublic ? "public " : "internal ");
+		Write(method.Visibility);
 		if (method.IsStatic)
 			Write("static ");
 		Write(method.ReturnType);
@@ -355,7 +370,7 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 	{
 		WriteLine();
 		Write(klass.Documentation);
-		Write(klass.IsPublic ? "public " : "internal ");
+		Write(klass.Visibility);
 		Write("class ");
 		WriteLine(klass.Name);
 		OpenBlock();

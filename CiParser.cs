@@ -731,7 +731,7 @@ public partial class CiParser : CiLexer
 				}
 			}
 			symbol.Documentation = doc;
-			symbol.IsPublic = pub;
+			symbol.Visibility = pub ? CiVisibility.Public : CiVisibility.Private;
 			klass.Members.Add(symbol);
 		}
 		this.CurrentClass = null;
@@ -755,7 +755,7 @@ public partial class CiParser : CiLexer
 			else
 				throw new ParseException("Expected enum or class");
 			symbol.Documentation = doc;
-			symbol.IsPublic = pub;
+			symbol.Visibility = pub ? CiVisibility.Public : CiVisibility.Internal;
 			this.Symbols.Add(symbol);
 		}
 	}

@@ -528,7 +528,7 @@ public class GenC : SourceGenerator
 
 	void WriteSignature(CiMethod method)
 	{
-		if (!method.IsPublic)
+		if (method.Visibility != CiVisibility.Public)
 			Write("static ");
 		var paramz = method.Params.Select(param => ToString(param.Type, param.Name));
 		if (!method.IsStatic)
@@ -543,7 +543,7 @@ public class GenC : SourceGenerator
 
 	void Write(CiMethod method)
 	{
-		if (method.IsDead)
+		if (method.Visibility == CiVisibility.Dead)
 			return;
 		WriteLine();
 		this.CurrentMethod = method;
@@ -630,7 +630,7 @@ public class GenC : SourceGenerator
 			CloseBlock();
 			this.CurrentMethod = null;
 		}
-		if (klass.IsPublic) {
+		if (klass.Visibility == CiVisibility.Public) {
 			WriteLine();
 			WriteNewSignature(klass);
 			WriteLine();
@@ -668,10 +668,10 @@ public class GenC : SourceGenerator
 		WriteLine(";");
 	}
 
-	void WriteTypedefs(CiProgram prog, bool pub)
+	void WriteTypedefs(CiProgram prog, CiVisibility visibility)
 	{
 		foreach (CiSymbol symbol in prog.Globals) {
-			if (symbol.IsPublic == pub) {
+			if (symbol.Visibility == visibility) {
 				if (symbol is CiEnum)
 					Write((CiEnum) symbol);
 				else if (symbol is CiClass)
@@ -686,17 +686,17 @@ public class GenC : SourceGenerator
 			WriteConstructorSignature(klass);
 			WriteLine(";");
 		}
-		if (pub && klass.IsPublic) {
+		if (pub && klass.Visibility == CiVisibility.Public) {
 			WriteNewSignature(klass);
 			WriteLine(";");
 			WriteDeleteSignature(klass);
 			WriteLine(";");
 		}
 		foreach (CiSymbol member in klass.Members) {
-			if (member.IsPublic == pub) {
+			if ((member.Visibility == CiVisibility.Public) == pub) {
 				if (member is CiConst && pub)
 					Write(klass, (CiConst) member);
-				else if (member is CiMethod && !((CiMethod) member).IsDead) {
+				else if (member is CiMethod && member.Visibility != CiVisibility.Dead) {
 					WriteSignature((CiMethod) member);
 					WriteLine(";");
 				}
@@ -773,9 +773,9 @@ public class GenC : SourceGenerator
 		WriteLine("#ifdef __cplusplus");
 		WriteLine("extern \"C\" {");
 		WriteLine("#endif");
-		WriteTypedefs(prog, true);
+		WriteTypedefs(prog, CiVisibility.Public);
 		foreach (CiSymbol symbol in prog.Globals) {
-			if (symbol is CiClass && symbol.IsPublic)
+			if (symbol is CiClass && symbol.Visibility == CiVisibility.Public)
 				WriteSignatures((CiClass) symbol, true);
 		}
 		WriteLine("#ifdef __cplusplus");
@@ -789,7 +789,7 @@ public class GenC : SourceGenerator
 		Write("#include \"");
 		Write(Path.GetFileName(headerPath));
 		WriteLine("\"");
-		WriteTypedefs(prog, false);
+		WriteTypedefs(prog, CiVisibility.Internal);
 		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiClass)
 				WriteStruct((CiClass) symbol);
