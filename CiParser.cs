@@ -434,8 +434,15 @@ public partial class CiParser : CiLexer
 		return def;
 	}
 
-	ICiStatement ParseVarOrExpr(string name)
+	ICiStatement ParseVarOrExpr()
 	{
+		string name = this.CurrentString;
+		CiSymbol symbol = this.Symbols.TryLookup(name);
+		if (symbol is CiMacro) {
+			NextToken();
+			Expand((CiMacro) symbol);
+			return ParseStatement();
+		}
 		// try var
 		StringBuilder sb = new StringBuilder();
 		this.CopyTo = sb;
@@ -453,24 +460,6 @@ public partial class CiParser : CiLexer
 		this.CurrentToken = CiToken.Id;
 		BeginExpand("ambigous code", sb.ToString(), null);
 		SetReader(new StringReader(sb.ToString()));
-		ICiStatement result = ParseExprWithSideEffect();
-		Expect(CiToken.Semicolon);
-		return result;
-	}
-
-	ICiStatement ParseVarOrExpr()
-	{
-		string name = this.CurrentString;
-		CiSymbol symbol = this.Symbols.TryLookup(name);
-		if (symbol is CiMacro) {
-			NextToken();
-			Expand((CiMacro) symbol);
-			return ParseStatement();
-		}
-		if (symbol is CiType || symbol is CiClass)
-			return ParseVar();
-		if (symbol == null)
-			return ParseVarOrExpr(name);
 		ICiStatement result = ParseExprWithSideEffect();
 		Expect(CiToken.Semicolon);
 		return result;

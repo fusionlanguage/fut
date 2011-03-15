@@ -401,20 +401,36 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		}
 	}
 
+	void ResolveObj(CiMethodCall expr)
+	{
+		if (expr.Obj is CiSymbolAccess) {
+			CiSymbol symbol = Lookup((CiSymbolAccess) expr.Obj);
+			if (symbol is CiClass) {
+				expr.Method = ((CiClass) symbol).Members.Lookup(expr.Name) as CiMethod;
+				if (expr.Method == null)
+					throw new ResolveException("{0} is not a method", expr.Name);
+				if (!expr.Method.IsStatic)
+					throw new ResolveException("{0} is a non-static method", expr.Name);
+				expr.Obj = null;
+				return;
+			}
+		}
+		CiExpr obj = Resolve(expr.Obj);
+		expr.Method = obj.Type.LookupMember(expr.Name) as CiMethod;
+		if (expr.Method == null)
+			throw new ResolveException("{0} is not a method", expr.Name);
+		if (expr.Method.This != null) {
+			// user-defined method
+			CheckCopyPtr(expr.Method.This.Type, obj);
+			obj = Coerce(obj, expr.Method.This.Type);
+		}
+		expr.Obj = obj;
+	}
+
 	CiExpr ICiExprVisitor.Visit(CiMethodCall expr)
 	{
-		if (expr.Obj != null) {
-			CiExpr obj = Resolve(expr.Obj);
-			expr.Method = obj.Type.LookupMember(expr.Name) as CiMethod;
-			if (expr.Method == null)
-				throw new ResolveException("{0} is not a method", expr.Name);
-			if (expr.Method.This != null) {
-				// user-defined method
-				CheckCopyPtr(expr.Method.This.Type, obj);
-				obj = Coerce(obj, expr.Method.This.Type);
-			}
-			expr.Obj = obj;
-		}
+		if (expr.Obj != null)
+			ResolveObj(expr);
 		else {
 			expr.Method = this.Symbols.Lookup(expr.Name) as CiMethod;
 			if (expr.Method == null)
