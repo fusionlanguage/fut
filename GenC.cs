@@ -760,6 +760,15 @@ public class GenC : SourceGenerator
 		}
 	}
 
+	void WriteGuard(string directive)
+	{
+		Write(directive);
+		Write(" _");
+		foreach (char c in Path.GetFileNameWithoutExtension(this.OutputPath))
+			Write(CiLexer.IsLetter(c) ? char.ToUpperInvariant(c) : '_');
+		WriteLine("_H_");
+	}
+
 	protected virtual void WriteBoolType()
 	{
 		WriteLine("#include <stdbool.h>");
@@ -769,6 +778,8 @@ public class GenC : SourceGenerator
 	{
 		string headerPath = Path.ChangeExtension(this.OutputPath, "h");
 		CreateFile(headerPath);
+		WriteGuard("#ifndef");
+		WriteGuard("#define");
 		WriteBoolType();
 		WriteLine("#ifdef __cplusplus");
 		WriteLine("extern \"C\" {");
@@ -780,6 +791,7 @@ public class GenC : SourceGenerator
 		}
 		WriteLine("#ifdef __cplusplus");
 		WriteLine("}");
+		WriteLine("#endif");
 		WriteLine("#endif");
 		CloseFile();
 
