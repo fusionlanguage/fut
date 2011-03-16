@@ -243,9 +243,11 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 
 	protected override int GetPriority(CiExpr expr)
 	{
-		if (expr is CiPropertyAccess) {
-			CiProperty prop = ((CiPropertyAccess) expr).Property;
-			if (prop == CiIntType.SByteProperty || prop == CiIntType.LowByteProperty)
+		CiPropertyAccess pa = expr as CiPropertyAccess;
+		if (pa != null) {
+			if (pa.Property == CiIntType.SByteProperty)
+				return GetPriority(pa.Obj);
+			if (pa.Property == CiIntType.LowByteProperty)
 				return 2;
 		}
 		else if (expr is CiCoercion) {
@@ -267,10 +269,8 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 
 	protected override void Write(CiPropertyAccess expr)
 	{
-		if (expr.Property == CiIntType.SByteProperty) {
-			Write("(byte) ");
-			WriteChild(expr, expr.Obj);
-		}
+		if (expr.Property == CiIntType.SByteProperty)
+			Write(expr.Obj);
 		else if (expr.Property == CiIntType.LowByteProperty) {
 			Write("(byte) ");
 			WriteChild(expr, expr.Obj);
