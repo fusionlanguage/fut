@@ -645,6 +645,8 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 	void ICiStatementVisitor.Visit(CiAssign statement)
 	{
 		statement.Target = ResolveLValue(statement.Target);
+		if (statement.Target is CiVarAccess && ((CiVarAccess) statement.Target).Var == this.CurrentMethod.This)
+			throw new ResolveException("Cannot assign to this");
 		CiMaybeAssign source = statement.Source;
 		if (source is CiAssign)
 			Resolve((ICiStatement) source);
