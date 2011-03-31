@@ -26,7 +26,6 @@ namespace Foxoft.Ci
 public class GenJs : SourceGenerator
 {
 	CiClass CurrentClass;
-	bool UsesToSByteMethod;
 	bool UsesSubstringMethod;
 	bool UsesCopyArrayMethod;
 	bool UsesBytesToStringMethod;
@@ -127,7 +126,7 @@ public class GenJs : SourceGenerator
 		if (expr is CiPropertyAccess) {
 			CiProperty prop = ((CiPropertyAccess) expr).Property;
 			if (prop == CiIntType.SByteProperty)
-				return 2;
+				return 4;
 			if (prop == CiIntType.LowByteProperty)
 				return 8;
 		}
@@ -148,10 +147,9 @@ public class GenJs : SourceGenerator
 	protected override void Write(CiPropertyAccess expr)
 	{
 		if (expr.Property == CiIntType.SByteProperty) {
-			Write("Ci.toSByte(");
-			WriteChild(expr, expr.Obj);
-			Write(')');
-			this.UsesToSByteMethod = true;
+			Write('(');
+			WriteChild(9, expr.Obj);
+			Write(" ^ 128) - 128");
 		}
 		else if (expr.Property == CiIntType.LowByteProperty) {
 			WriteChild(expr, expr.Obj);
@@ -348,12 +346,6 @@ public class GenJs : SourceGenerator
 	void WriteBuiltins()
 	{
 		List<string[]> code = new List<string[]>();
-		if (this.UsesToSByteMethod) {
-			code.Add(new string[] {
-				"toSByte : function(x)",
-				"return x < 0x80 ? x : x - 256;"
-			});
-		}
 		if (UsesSubstringMethod) {
 			code.Add(new string[] {
 				"substring : function(s, offset, length)",
@@ -408,7 +400,6 @@ public class GenJs : SourceGenerator
 	public override void Write(CiProgram prog)
 	{
 		CreateFile(this.OutputPath);
-		this.UsesToSByteMethod = false;
 		this.UsesSubstringMethod = false;
 		this.UsesCopyArrayMethod = false;
 		this.UsesBytesToStringMethod = false;

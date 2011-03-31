@@ -188,7 +188,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		if (expr is CiPropertyAccess) {
 			CiProperty prop = ((CiPropertyAccess) expr).Property;
 			if (prop == CiIntType.SByteProperty)
-				return 2;
+				return 4;
 			if (prop == CiIntType.LowByteProperty)
 				return 8;
 		}
@@ -209,10 +209,9 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 	protected override void Write(CiPropertyAccess expr)
 	{
 		if (expr.Property == CiIntType.SByteProperty) {
-			Write("Ci.toSByte(");
-			WriteChild(expr, expr.Obj);
-			Write(')');
-//			this.UsesToSByteMethod = true;
+			Write('(');
+			WriteChild(9, expr.Obj);
+			Write(" ^ 128) - 128");
 		}
 		else if (expr.Property == CiIntType.LowByteProperty) {
 			WriteChild(expr, expr.Obj);
