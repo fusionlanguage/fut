@@ -229,7 +229,6 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 			WriteChild(expr, expr.Obj);
 			Write(".Length");
 		}
-		// TODO
 		else
 			throw new ApplicationException(expr.Property.Name);
 	}

@@ -161,7 +161,6 @@ public class GenJs : SourceGenerator
 			WriteChild(expr, expr.Obj);
 			Write(".length");
 		}
-		// TODO
 		else
 			throw new ApplicationException(expr.Property.Name);
 	}

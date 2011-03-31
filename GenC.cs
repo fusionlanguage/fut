@@ -208,7 +208,6 @@ public class GenC : SourceGenerator
 			WriteChild(expr, expr.Obj);
 			Write(')');
 		}
-		// TODO
 		else
 			throw new ApplicationException(expr.Property.Name);
 	}

@@ -279,7 +279,6 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			WriteChild(expr, expr.Obj);
 			Write(".length()");
 		}
-		// TODO
 		else
 			throw new ApplicationException(expr.Property.Name);
 	}
