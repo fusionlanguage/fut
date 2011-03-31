@@ -656,7 +656,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		statement.Source = Coerce(source, statement.Target.Type);
 		if (statement.Op != CiToken.Assign && statement.Target.Type != CiIntType.Value) {
 			if (statement.Op == CiToken.AddAssign && statement.Target.Type is CiStringStorageType && statement.Source.Type is CiStringType)
-				; // OK
+				{} // OK
 			else
 				throw new ResolveException("Invalid compound assignment");
 		}
