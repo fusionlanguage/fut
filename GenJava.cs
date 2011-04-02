@@ -27,6 +27,8 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 {
 	string Namespace;
 	bool UsesSubstringMethod;
+	bool UsesClearBytesMethod;
+	bool UsesClearIntsMethod;
 
 	public GenJava(string namespace_)
 	{
@@ -351,6 +353,13 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			Write("clear(");
 			Write(expr.Obj);
 			Write(')');
+			CiType type = ((CiArrayStorageType) expr.Obj.Type).ElementType;
+			if (type == CiByteType.Value)
+				this.UsesClearBytesMethod = true;
+			else if (type == CiIntType.Value)
+				this.UsesClearIntsMethod = true;
+			else
+				throw new ApplicationException();
 		}
 		else
 			base.Write(expr);
@@ -503,6 +512,8 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 	{
 		CreateJavaFile("final class", klass);
 		this.UsesSubstringMethod = false;
+		this.UsesClearBytesMethod = false;
+		this.UsesClearIntsMethod = false;
 		if (klass.Constructor != null) {
 			Write("public ");
 			Write(klass.Name);
@@ -511,12 +522,12 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		}
 		foreach (CiSymbol member in klass.Members)
 			member.Accept(this);
-		if (klass.UsesClearBytesMethod)
-			WriteClearMethod("byte");
-		if (klass.UsesClearIntsMethod)
-			WriteClearMethod("int");
 		if (this.UsesSubstringMethod)
 			WriteSubstringMethod();
+		if (this.UsesClearBytesMethod)
+			WriteClearMethod("byte");
+		if (this.UsesClearIntsMethod)
+			WriteClearMethod("int");
 		if (klass.BinaryResources.Length > 0)
 			WriteGetBinaryResource(klass);
 		foreach (CiConst konst in klass.ConstArrays) {

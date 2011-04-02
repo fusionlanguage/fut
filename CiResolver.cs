@@ -455,15 +455,6 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			}
 		}
 		CoerceArguments(expr);
-		if (expr.Method == CiArrayStorageType.ClearMethod) {
-			CiType type = ((CiArrayStorageType) expr.Obj.Type).ElementType;
-			if (type == CiByteType.Value)
-				this.CurrentClass.UsesClearBytesMethod = true;
-			else if (type == CiIntType.Value)
-				this.CurrentClass.UsesClearIntsMethod = true;
-			else
-				throw new ApplicationException();
-		}
 		if (expr.Method.IsMutator)
 			MarkWritable(expr.Obj);
 		expr.Method.CalledBy.Add(this.CurrentMethod);
