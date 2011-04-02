@@ -346,20 +346,20 @@ public class GenJs : SourceGenerator
 	void WriteBuiltins()
 	{
 		List<string[]> code = new List<string[]>();
-		if (UsesSubstringMethod) {
+		if (this.UsesSubstringMethod) {
 			code.Add(new string[] {
 				"substring : function(s, offset, length)",
 				"return s.substring(offset, offset + length);"
 			});
 		}
-		if (UsesCopyArrayMethod) {
+		if (this.UsesCopyArrayMethod) {
 			code.Add(new string[] {
 				"copyArray : function(sa, soffset, da, doffset, length)",
 				"for (var i = 0; i < length; i++)",
 				"\tda[doffset + i] = sa[soffset + i];"
 			});
 		}
-		if (UsesBytesToStringMethod) {
+		if (this.UsesBytesToStringMethod) {
 			code.Add(new string[] {
 				"bytesToString : function(a, offset, length)",
 				"var s = \"\";",
@@ -368,7 +368,7 @@ public class GenJs : SourceGenerator
 				"return s;"
 			});
 		}
-		if (UsesClearArrayMethod) {
+		if (this.UsesClearArrayMethod) {
 			code.Add(new string[] {
 				"clearArray : function(a)",
 				"for (var i = 0; i < a.length; i++)",

@@ -26,6 +26,11 @@ namespace Foxoft.Ci
 public class GenAs : SourceGenerator, ICiSymbolVisitor
 {
 	string Namespace;
+	bool UsesSubstringMethod;
+	bool UsesCopyArrayMethod;
+	bool UsesBytesToStringMethod;
+	bool UsesClearBytesMethod;
+	bool UsesClearIntsMethod;
 
 	public GenAs(string namespace_)
 	{
@@ -250,14 +255,14 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		}
 		else if (expr.Method == CiStringType.SubstringMethod) {
 			if (expr.Arguments[0].HasSideEffect) {
-				Write("Ci.substring(");
+				Write("substring(");
 				Write(expr.Obj);
 				Write(", ");
 				Write(expr.Arguments[0]);
 				Write(", ");
 				Write(expr.Arguments[1]);
 				Write(')');
-//				this.UsesSubstringMethod = true;
+				this.UsesSubstringMethod = true;
 			}
 			else {
 				Write(expr.Obj);
@@ -269,7 +274,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 			}
 		}
 		else if (expr.Method == CiArrayType.CopyToMethod) {
-			Write("Ci.copyArray(");
+			Write("copyArray(");
 			Write(expr.Obj);
 			Write(", ");
 			Write(expr.Arguments[0]);
@@ -280,23 +285,32 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 			Write(", ");
 			Write(expr.Arguments[3]);
 			Write(')');
-//			this.UsesCopyArrayMethod = true;
+			this.UsesCopyArrayMethod = true;
 		}
 		else if (expr.Method == CiArrayType.ToStringMethod) {
-			Write("Ci.bytesToString(");
+			Write("bytesToString(");
 			Write(expr.Obj);
 			Write(", ");
 			Write(expr.Arguments[0]);
 			Write(", ");
 			Write(expr.Arguments[1]);
 			Write(')');
-//			this.UsesBytesToStringMethod = true;
+			this.UsesBytesToStringMethod = true;
 		}
 		else if (expr.Method == CiArrayStorageType.ClearMethod) {
-			Write("Ci.clearArray(");
+			CiType type = ((CiArrayStorageType) expr.Obj.Type).ElementType;
+			if (type == CiByteType.Value) {
+				Write("clearByteArray(");
+				this.UsesClearBytesMethod = true;
+			}
+			else if (type == CiIntType.Value) {
+				Write("clearIntArray(");
+				this.UsesClearIntsMethod = true;
+			}
+			else
+				throw new ApplicationException();
 			Write(expr.Obj);
 			Write(')');
-//			this.UsesClearArrayMethod = true;
 		}
 		else
 			base.Write(expr);
@@ -378,9 +392,55 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		CloseBlock();
 	}
 
+	void WriteClearMethod(string signature)
+	{
+		Write("private static function ");
+		Write(signature);
+		WriteLine(" : void");
+		OpenBlock();
+		WriteLine("for (var i : int = 0; i < a.length; i++)");
+		WriteLine("\ta[i] = 0;");
+		CloseBlock();
+	}
+
+	void WriteBuiltins()
+	{
+		if (this.UsesSubstringMethod) {
+			WriteLine("private static function substring(s : String, offset : int, length : int) : String");
+			OpenBlock();
+			WriteLine("return s.substring(offset, offset + length);");
+			CloseBlock();
+		}
+		if (this.UsesCopyArrayMethod) {
+			WriteLine("private static function copyArray(sa : ByteArray, soffset : int, da : ByteArray, doffset : int, length : int) : void");
+			OpenBlock();
+			WriteLine("for (var i : int = 0; i < length; i++)");
+			WriteLine("\tda[doffset + i] = sa[soffset + i];");
+			CloseBlock();
+		}
+		if (this.UsesBytesToStringMethod) {
+			WriteLine("private static function bytesToString(a : ByteArray, offset : int, length : int) : String");
+			OpenBlock();
+			WriteLine("var s : String = \"\";");
+			WriteLine("for (var i : int = 0; i < length; i++)");
+			WriteLine("\ts += String.fromCharCode(a[offset + i]);");
+			WriteLine("return s;");
+			CloseBlock();
+		}
+		if (this.UsesClearBytesMethod)
+			WriteClearMethod("clearByteArray(a : ByteArray)");
+		if (this.UsesClearIntsMethod)
+			WriteClearMethod("clearIntArray(a : Array)");
+	}
+
 	void ICiSymbolVisitor.Visit(CiClass klass)
 	{
 		CreateAsFile(klass);
+		this.UsesSubstringMethod = false;
+		this.UsesCopyArrayMethod = false;
+		this.UsesBytesToStringMethod = false;
+		this.UsesClearBytesMethod = false;
+		this.UsesClearIntsMethod = false;
 		// TODO: constructor
 		foreach (CiSymbol member in klass.Members)
 			member.Accept(this);
@@ -391,6 +451,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 			WriteConst(konst.Value);
 			WriteLine(";");
 		}
+		WriteBuiltins();
 		CloseAsFile();
 	}
 
