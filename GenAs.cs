@@ -367,7 +367,15 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		Write(")");
 		Write(method.ReturnType);
 		WriteLine();
-		Write(method.Body);
+		OpenBlock();
+		ICiStatement[] statements = method.Body.Statements;
+		Write(statements);
+		if (method.ReturnType != CiType.Void && statements.Length > 0) {
+			CiFor lastLoop = statements[statements.Length - 1] as CiFor;
+			if (lastLoop != null && lastLoop.Cond == null)
+				WriteLine("throw \"Unreachable\";");
+		}
+		CloseBlock();
 	}
 
 	void ICiSymbolVisitor.Visit(CiClass klass)
