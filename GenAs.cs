@@ -329,6 +329,12 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 			base.Write(expr);
 	}
 
+	protected override void Write(CiBinaryResourceExpr expr)
+	{
+		Write("new ");
+		WriteName(expr.Resource);
+	}
+
 	public override void Visit(CiVar stmt)
 	{
 		Write("var ");
@@ -450,6 +456,14 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 			Write(" : Array = ");
 			WriteConst(konst.Value);
 			WriteLine(";");
+		}
+		foreach (CiBinaryResource resource in klass.BinaryResources) {
+			Write("[Embed(source=\"/");
+			Write(resource.Name);
+			WriteLine("\", mimeType=\"application/octet-stream\")]");
+			Write("private static const ");
+			WriteName(resource);
+			WriteLine(": Class;");
 		}
 		WriteBuiltins();
 		CloseAsFile();
