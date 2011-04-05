@@ -498,22 +498,29 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		}
 		left = Coerce(left, CiIntType.Value);
 		right = Coerce(right, CiIntType.Value);
-		if (left is CiConstExpr && right is CiConstExpr) {
-			int a = GetConstInt(left);
+		if (right is CiConstExpr) {
 			int b = GetConstInt(right);
-			switch (expr.Op) {
-			case CiToken.Asterisk: a *= b; break;
-			case CiToken.Slash: a /= b; break;
-			case CiToken.Mod: a %= b; break;
-			case CiToken.And: a &= b; break;
-			case CiToken.ShiftLeft: a <<= b; break;
-			case CiToken.ShiftRight: a >>= b; break;
-			case CiToken.Plus: a += b; break;
-			case CiToken.Minus: a -= b; break;
-			case CiToken.Or: a |= b; break;
-			case CiToken.Xor: a ^= b; break;
+			if (left is CiConstExpr) {
+				int a = GetConstInt(left);
+				switch (expr.Op) {
+				case CiToken.Asterisk: a *= b; break;
+				case CiToken.Slash: a /= b; break;
+				case CiToken.Mod: a %= b; break;
+				case CiToken.And: a &= b; break;
+				case CiToken.ShiftLeft: a <<= b; break;
+				case CiToken.ShiftRight: a >>= b; break;
+				case CiToken.Plus: a += b; break;
+				case CiToken.Minus: a -= b; break;
+				case CiToken.Or: a |= b; break;
+				case CiToken.Xor: a ^= b; break;
+				}
+				return new CiConstExpr(a);
 			}
-			return new CiConstExpr(a);
+			if (expr.Op == CiToken.And && (b & ~0xff) == 0) {
+				CiCoercion c = left as CiCoercion;
+				if (c != null && c.Inner.Type == CiByteType.Value)
+					left = (CiExpr) c.Inner;
+			}
 		}
 		expr.Left = left;
 		expr.Right = right;
