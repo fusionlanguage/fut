@@ -404,6 +404,7 @@ public class CiConst : CiSymbol, ICiStatement
 	public CiType Type;
 	public object Value;
 	public string GlobalName;
+	public bool Is7Bit;
 	public bool CurrentlyResolving;
 	public bool CompletesNormally { get { return true; } }
 	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }

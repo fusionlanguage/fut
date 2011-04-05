@@ -138,6 +138,11 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 				// avoid ((foo ? 1 : 0) & 0xff) in Java
 				return Coerce(cond, expected);
 			}
+			if (expr is CiArrayAccess) {
+				CiConstAccess ca = ((CiArrayAccess) expr).Array as CiConstAccess;
+				if (ca != null && ca.Const.Is7Bit)
+					return expr;
+			}
 			return new CiCoercion { ResultType = expected, Inner = expr };
 		}
 		if (expected == CiByteType.Value && got == CiIntType.Value) {
@@ -216,6 +221,14 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 	{
 	}
 
+	static bool Is7Bit(byte[] bytes)
+	{
+		foreach (byte b in bytes)
+			if ((b & ~0x7f) != 0)
+				return false;
+		return true;
+	}
+
 	void ICiSymbolVisitor.Visit(CiConst konst)
 	{
 		if (konst.CurrentlyResolving)
@@ -223,6 +236,9 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		konst.CurrentlyResolving = true;
 		konst.Type = Resolve(konst.Type);
 		konst.Value = ResolveConstInitializer(ref konst.Type, konst.Value);
+		byte[] bytes = konst.Value as byte[];
+		if (bytes != null)
+			konst.Is7Bit = Is7Bit(bytes);
 		konst.CurrentlyResolving = false;
 	}
 
