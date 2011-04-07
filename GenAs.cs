@@ -447,7 +447,12 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		this.UsesBytesToStringMethod = false;
 		this.UsesClearBytesMethod = false;
 		this.UsesClearIntsMethod = false;
-		// TODO: constructor
+		if (klass.Constructor != null) {
+			Write("public function ");
+			Write(klass.Name);
+			WriteLine("()");
+			Write(klass.Constructor.Body);
+		}
 		foreach (CiSymbol member in klass.Members)
 			member.Accept(this);
 		foreach (CiConst konst in klass.ConstArrays) {
