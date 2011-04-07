@@ -35,78 +35,6 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		this.Namespace = namespace_;
 	}
 
-	void WriteDoc(string text)
-	{
-		foreach (char c in text) {
-			switch (c) {
-			case '&': Write("&amp;"); break;
-			case '<': Write("&lt;"); break;
-			case '>': Write("&gt;"); break;
-			case '\n': WriteLine(); Write(" * "); break;
-			default: Write(c); break;
-			}
-		}
-	}
-
-	void Write(CiDocPara para)
-	{
-		foreach (CiDocInline inline in para.Children) {
-			CiDocText text = inline as CiDocText;
-			if (text != null) {
-				WriteDoc(text.Text);
-				continue;
-			}
-			CiDocCode code = inline as CiDocCode;
-			if (code != null) {
-				Write("<code>");
-				WriteDoc(code.Text);
-				Write("</code>");
-				continue;
-			}
-			throw new ApplicationException();
-		}
-	}
-
-	void Write(CiDocBlock block)
-	{
-		CiDocList list = block as CiDocList;
-		if (list != null) {
-			WriteLine();
-			WriteLine(" * <ul>");
-			foreach (CiDocPara item in list.Items) {
-				Write(" * <li>");
-				Write(item);
-				WriteLine("</li>");
-			}
-			WriteLine(" * </ul>");
-			Write(" * ");
-			return;
-		}
-		Write((CiDocPara) block);
-	}
-
-	void WriteDontClose(CiCodeDoc doc)
-	{
-		WriteLine("/**");
-		Write(" * ");
-		Write(doc.Summary);
-		if (doc.Details.Length > 0) {
-			WriteLine();
-			Write(" * ");
-			foreach (CiDocBlock block in doc.Details)
-				Write(block);
-		}
-		WriteLine();
-	}
-
-	void Write(CiCodeDoc doc)
-	{
-		if (doc != null) {
-			WriteDontClose(doc);
-			WriteLine(" */");
-		}
-	}
-
 	void Write(CiVisibility visibility)
 	{
 		switch (visibility) {
@@ -408,19 +336,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 	void ICiSymbolVisitor.Visit(CiMethod method)
 	{
 		WriteLine();
-		if (method.Documentation != null) {
-			WriteDontClose(method.Documentation);
-			foreach (CiParam param in method.Params) {
-				if (param.Documentation != null) {
-					Write(" * @param ");
-					Write(param.Name);
-					Write(' ');
-					Write(param.Documentation.Summary);
-					WriteLine();
-				}
-			}
-			WriteLine(" */");
-		}
+		WriteDoc(method);
 		Write(method.Visibility);
 		if (method.IsStatic)
 			Write("static ");

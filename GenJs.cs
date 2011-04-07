@@ -31,7 +31,7 @@ public class GenJs : SourceGenerator
 	bool UsesBytesToStringMethod;
 	bool UsesClearArrayMethod;
 
-	void Write(CiCodeDoc doc)
+	protected override void Write(CiCodeDoc doc)
 	{
 		if (doc == null)
 			return;

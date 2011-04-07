@@ -37,21 +37,16 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		this.Namespace = namespace_;
 	}
 
-	void Write(CiCodeDoc doc)
+	void WriteVisibility(CiSymbol symbol)
 	{
-		if (doc == null)
-			return;
-		// TODO
-	}
-
-	void Write(CiVisibility visibility)
-	{
-		switch (visibility) {
+		switch (symbol.Visibility) {
 		case CiVisibility.Dead:
 		case CiVisibility.Private:
 			Write("private ");
 			break;
 		case CiVisibility.Internal:
+			if (symbol.Documentation == null)
+				WriteLine("/** @private */");
 			Write("internal ");
 			break;
 		case CiVisibility.Public:
@@ -73,7 +68,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		WriteLine("import flash.utils.ByteArray;");
 		WriteLine();
 		Write(symbol.Documentation);
-		Write(symbol.Visibility);
+		WriteVisibility(symbol);
 		Write("class ");
 		WriteLine(symbol.Name);
 		OpenBlock();
@@ -142,7 +137,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 	void ICiSymbolVisitor.Visit(CiField field)
 	{
 		Write(field.Documentation);
-		Write(field.Visibility);
+		WriteVisibility(field);
 		if (field.Type is CiClassStorageType || field.Type is CiArrayStorageType)
 			Write("const ");
 		else
@@ -356,20 +351,8 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 	void ICiSymbolVisitor.Visit(CiMethod method)
 	{
 		WriteLine();
-		if (method.Documentation != null) {
-//			WriteDontClose(method.Documentation);
-//			foreach (CiParam param in method.Params) {
-//				if (param.Documentation != null) {
-//					Write(" * @param ");
-//					Write(param.Name);
-//					Write(' ');
-//					Write(param.Documentation.Summary);
-//					WriteLine();
-//				}
-//			}
-//			WriteLine(" */");
-		}
-		Write(method.Visibility);
+		WriteDoc(method);
+		WriteVisibility(method);
 		if (method.IsStatic)
 			Write("static ");
 		Write("function ");

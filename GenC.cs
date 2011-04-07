@@ -29,7 +29,7 @@ public class GenC : SourceGenerator
 {
 	CiMethod CurrentMethod;
 
-	void Write(CiCodeDoc doc)
+	protected override void Write(CiCodeDoc doc)
 	{
 		if (doc == null)
 			return;
