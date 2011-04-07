@@ -458,9 +458,23 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		foreach (CiConst konst in klass.ConstArrays) {
 			Write("private static const ");
 			WriteUppercaseWithUnderscores(konst.GlobalName);
-			Write(" : Array = ");
-			WriteConst(konst.Value);
-			WriteLine(";");
+			byte[] bytes = konst.Value as byte[];
+			if (bytes != null) {
+				WriteLine(" : ByteArray = new ByteArray();");
+				OpenBlock();
+				foreach (byte b in bytes) {
+					WriteUppercaseWithUnderscores(konst.GlobalName);
+					Write(".writeByte(");
+					Write(b);
+					WriteLine(");");
+				}
+				CloseBlock();
+			}
+			else {
+				Write(" : Array = ");
+				WriteConst(konst.Value);
+				WriteLine(";");
+			}
 		}
 		foreach (CiBinaryResource resource in klass.BinaryResources) {
 			Write("[Embed(source=\"/");
