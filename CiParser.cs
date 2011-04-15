@@ -474,6 +474,50 @@ public partial class CiParser : CiLexer
 		return new CiNativeBlock { Content = sb.ToString() };
 	}
 
+	CiSwitch ParseSwitch()
+	{
+		Expect(CiToken.LeftParenthesis);
+		CiSwitch result = new CiSwitch();
+		result.Value = ParseExpr();
+		Expect(CiToken.RightParenthesis);
+		Expect(CiToken.LeftBrace);
+		List<CiCase> cases = new List<CiCase>();
+		for (;;) {
+			CiCase kase;
+			if (Eat(CiToken.Case)) {
+				kase = new CiCase();
+				kase.Value = ParseExpr();
+			}
+			else if (Eat(CiToken.Default))
+				kase = new CiCase();
+			else
+				break;
+			Expect(CiToken.Colon);
+			List<ICiStatement> statements = new List<ICiStatement>();
+			while (!See(CiToken.Case) && !See(CiToken.Default) && !See(CiToken.Goto) && !See(CiToken.RightBrace))
+				statements.Add(ParseStatement());
+			kase.Body = statements.ToArray();
+			if (Eat(CiToken.Goto)) {
+				if (Eat(CiToken.Case))
+					kase.FallthroughTo = ParseExpr();
+				else if (Eat(CiToken.Default))
+					kase.FallthroughTo = null;
+				else
+					throw new ParseException("Expected goto case or goto default");
+				Expect(CiToken.Semicolon);
+				kase.Fallthrough = true;
+			}
+			cases.Add(kase);
+		}
+		Expect(CiToken.RightBrace);
+		if (cases.Count == 0)
+			throw new ParseException("Switch with no cases");
+		if (cases[cases.Count - 1].Body.Length == 0)
+			throw new ParseException("Missing statements in the final case");
+		result.Cases = cases.ToArray();
+		return result;
+	}
+
 	ICiStatement ParseStatement()
 	{
 		while (Eat(CiToken.Macro))
@@ -542,48 +586,8 @@ public partial class CiParser : CiLexer
 			Expect(CiToken.Semicolon);
 			return result;
 		}
-		if (Eat(CiToken.Switch)) {
-			Expect(CiToken.LeftParenthesis);
-			CiSwitch result = new CiSwitch();
-			result.Value = ParseExpr();
-			Expect(CiToken.RightParenthesis);
-			Expect(CiToken.LeftBrace);
-			List<CiCase> cases = new List<CiCase>();
-			for (;;) {
-				CiCase caze;
-				if (Eat(CiToken.Case)) {
-					caze = new CiCase();
-					caze.Value = ParseExpr();
-				}
-				else if (Eat(CiToken.Default))
-					caze = new CiCase();
-				else
-					break;
-				Expect(CiToken.Colon);
-				List<ICiStatement> statements = new List<ICiStatement>();
-				while (!See(CiToken.Case) && !See(CiToken.Default) && !See(CiToken.Goto) && !See(CiToken.RightBrace))
-					statements.Add(ParseStatement());
-				caze.Body = statements.ToArray();
-				if (Eat(CiToken.Goto)) {
-					if (Eat(CiToken.Case))
-						caze.FallthroughTo = ParseExpr();
-					else if (Eat(CiToken.Default))
-						caze.FallthroughTo = null;
-					else
-						throw new ParseException("Expected goto case or goto default");
-					Expect(CiToken.Semicolon);
-					caze.Fallthrough = true;
-				}
-				cases.Add(caze);
-			}
-			Expect(CiToken.RightBrace);
-			if (cases.Count == 0)
-				throw new ParseException("Switch with no cases");
-			if (cases[cases.Count - 1].Body.Length == 0)
-				throw new ParseException("Missing statements in the final case");
-			result.Cases = cases.ToArray();
-			return result;
-		}
+		if (Eat(CiToken.Switch))
+			return ParseSwitch();
 		if (Eat(CiToken.Throw)) {
 			CiThrow result = new CiThrow();
 			result.Message = ParseExpr();
