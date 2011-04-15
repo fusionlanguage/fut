@@ -671,11 +671,31 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		statement.Type = Resolve(statement.Type);
 		if (statement.InitialValue != null) {
 			CiType type = statement.Type;
-			if (type is CiArrayStorageType)
-				type = ((CiArrayStorageType) type).ElementType;
 			CiExpr initialValue = Resolve(statement.InitialValue);
 			CheckCopyPtr(type, statement.InitialValue);
-			statement.InitialValue = Coerce(initialValue, type);
+			if (type is CiArrayStorageType) {
+				type = ((CiArrayStorageType) type).ElementType;
+				CiConstExpr ce = Coerce(initialValue, type) as CiConstExpr;
+				if (ce == null)
+					throw new ResolveException("Array initializer is not constant");
+				statement.InitialValue = ce;
+				if (type == CiBoolType.Value) {
+					if (!false.Equals(ce.Value))
+						throw new ResolveException("Bool arrays can only be initialized with false");
+				}
+				else if (type == CiByteType.Value) {
+					if (!((byte) 0).Equals(ce.Value))
+						throw new ResolveException("Byte arrays can only be initialized with zero");
+				}
+				else if (type == CiIntType.Value) {
+					if (!0.Equals(ce.Value))
+						throw new ResolveException("Int arrays can only be initialized with zero");
+				}
+				else
+					throw new ResolveException("Invalid array initializer");
+			}
+			else
+				statement.InitialValue = Coerce(initialValue, type);
 		}
 	}
 
