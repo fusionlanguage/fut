@@ -30,7 +30,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 	bool UsesCopyArrayMethod;
 	bool UsesBytesToStringMethod;
 	bool UsesClearBytesMethod;
-	bool UsesClearIntsMethod;
+	bool UsesClearMethod;
 
 	public GenAs(string namespace_)
 	{
@@ -228,6 +228,33 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 			throw new ApplicationException(expr.Property.Name);
 	}
 
+	void WriteClearArray(CiExpr expr)
+	{
+		CiArrayStorageType array = (CiArrayStorageType) expr.Type;
+		if (array.ElementType == CiBoolType.Value) {
+			Write("clearArray(");
+			Write(expr);
+			Write(", false)");
+			this.UsesClearMethod = true;
+		}
+		else if (array.ElementType == CiByteType.Value) {
+			Write("clearByteArray(");
+			Write(expr);
+			Write(", ");
+			Write(array.Length);
+			Write(')');
+			this.UsesClearBytesMethod = true;
+		}
+		else if (array.ElementType == CiIntType.Value) {
+			Write("clearArray(");
+			Write(expr);
+			Write(", 0)");
+			this.UsesClearMethod = true;
+		}
+		else
+			throw new ApplicationException();
+	}
+
 	protected override void WriteName(CiMethod method)
 	{
 		WriteCamelCase(method.Name);
@@ -294,21 +321,8 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 			Write(')');
 			this.UsesBytesToStringMethod = true;
 		}
-		else if (expr.Method == CiArrayStorageType.ClearMethod) {
-			CiType type = ((CiArrayStorageType) expr.Obj.Type).ElementType;
-			if (type == CiByteType.Value) {
-				Write("clearByteArray(");
-				this.UsesClearBytesMethod = true;
-			}
-			else if (type == CiIntType.Value) {
-				Write("clearIntArray(");
-				this.UsesClearIntsMethod = true;
-			}
-			else
-				throw new ApplicationException();
-			Write(expr.Obj);
-			Write(')');
-		}
+		else if (expr.Method == CiArrayStorageType.ClearMethod)
+			WriteClearArray(expr.Obj);
 		else
 			base.Write(expr);
 	}
@@ -337,9 +351,16 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		Write("var ");
 		Write(stmt.Name);
 		Write(stmt.Type);
-		if (!WriteInit(stmt.Type) && stmt.InitialValue != null) {
-			Write(" = ");
-			Write(stmt.InitialValue);
+		WriteInit(stmt.Type);
+		if (stmt.InitialValue != null) {
+			if (stmt.Type is CiArrayStorageType) {
+				WriteLine(";");
+				WriteClearArray(new CiVarAccess { Var = stmt });
+			}
+			else {
+				Write(" = ");
+				Write(stmt.InitialValue);
+			}
 		}
 	}
 
@@ -383,17 +404,6 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		CloseBlock();
 	}
 
-	void WriteClearMethod(string signature)
-	{
-		Write("private static function ");
-		Write(signature);
-		WriteLine(" : void");
-		OpenBlock();
-		WriteLine("for (var i : int = 0; i < a.length; i++)");
-		WriteLine("\ta[i] = 0;");
-		CloseBlock();
-	}
-
 	void WriteBuiltins()
 	{
 		if (this.UsesSubstringMethod) {
@@ -418,10 +428,20 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 			WriteLine("return s;");
 			CloseBlock();
 		}
-		if (this.UsesClearBytesMethod)
-			WriteClearMethod("clearByteArray(a : ByteArray)");
-		if (this.UsesClearIntsMethod)
-			WriteClearMethod("clearIntArray(a : Array)");
+		if (this.UsesClearBytesMethod) {
+			WriteLine("private static function clearByteArray(a : ByteArray, length : int) : void");
+			OpenBlock();
+			WriteLine("for (var i : int = 0; i < length; i++)");
+			WriteLine("\ta[i] = 0;");
+			CloseBlock();
+		}
+		if (this.UsesClearMethod) {
+			WriteLine("private static function clearArray(a : Array, value : *) : void");
+			OpenBlock();
+			WriteLine("for (var i : int = 0; i < a.length; i++)");
+			WriteLine("\ta[i] = value;");
+			CloseBlock();
+		}
 	}
 
 	void ICiSymbolVisitor.Visit(CiClass klass)
@@ -431,7 +451,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		this.UsesCopyArrayMethod = false;
 		this.UsesBytesToStringMethod = false;
 		this.UsesClearBytesMethod = false;
-		this.UsesClearIntsMethod = false;
+		this.UsesClearMethod = false;
 		if (klass.Constructor != null) {
 			Write("public function ");
 			Write(klass.Name);
