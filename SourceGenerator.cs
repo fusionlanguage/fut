@@ -182,7 +182,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 	{
 		if (method.Documentation != null) {
 			WriteDontClose(method.Documentation);
-			foreach (CiParam param in method.Params) {
+			foreach (CiParam param in method.Signature.Params) {
 				if (param.Documentation != null) {
 					Write(" * @param ");
 					Write(param.Name);
@@ -411,13 +411,23 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		Write(method.Name);
 	}
 
+	protected virtual void WriteDelegateCall(CiExpr expr)
+	{
+		Write(expr);
+	}
+
 	protected virtual void Write(CiMethodCall expr)
 	{
-		if (expr.Obj != null) {
-			Write(expr.Obj);
+		if (expr.Method != null) {
+			if (expr.Obj != null)
+				Write(expr.Obj);
+			else
+				Write(expr.Method.Class.Name);
 			Write('.');
+			WriteName(expr.Method);
 		}
-		WriteName(expr.Method);
+		else
+			WriteDelegateCall(expr.Obj);
 		Write('(');
 		bool first = true;
 		foreach (CiExpr arg in expr.Arguments)

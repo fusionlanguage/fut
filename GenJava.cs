@@ -339,18 +339,13 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		WriteLine(");");
 	}
 
-	void ICiSymbolVisitor.Visit(CiMethod method)
+	void WriteSignature(CiDelegate del, string name)
 	{
-		WriteLine();
-		WriteDoc(method);
-		Write(method.Visibility);
-		if (method.IsStatic)
-			Write("static ");
-		Write(method.ReturnType);
-		WriteCamelCase(method.Name);
+		Write(del.ReturnType);
+		WriteCamelCase(name);
 		Write('(');
 		bool first = true;
-		foreach (CiParam param in method.Params) {
+		foreach (CiParam param in del.Params) {
 			if (first)
 				first = false;
 			else
@@ -358,10 +353,21 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			Write(param.Type);
 			Write(param.Name);
 		}
+		Write(')');
+	}
+
+	void ICiSymbolVisitor.Visit(CiMethod method)
+	{
+		WriteLine();
+		WriteDoc(method);
+		Write(method.Visibility);
+		if (method.IsStatic)
+			Write("static ");
+		WriteSignature(method.Signature, method.Name);
 		if (method.Throws)
-			WriteLine(") throws Exception");
+			WriteLine(" throws Exception");
 		else
-			WriteLine(")");
+			WriteLine();
 		Write(method.Body);
 	}
 
@@ -388,45 +394,25 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 
 	void WriteGetBinaryResource(CiClass klass)
 	{
-		WriteLine("/**");
-		WriteLine(" * Reads bytes from the stream into the byte array");
-		WriteLine(" * until end of stream or array is full.");
-		WriteLine(" * @param is source stream");
-		WriteLine(" * @param b output array");
-		WriteLine(" * @return number of bytes read");
-		WriteLine(" */");
-		WriteLine("public static int readAndClose(java.io.InputStream is, byte[] b) throws java.io.IOException");
-		OpenBlock();
-		WriteLine("int got = 0;");
-		WriteLine("int need = b.length;");
-		Write("try "); OpenBlock();
-		Write("while (need > 0) "); OpenBlock();
-		WriteLine("int i = is.read(b, got, need);");
-		WriteLine("if (i <= 0)");
-		this.Indent++; WriteLine("break;"); this.Indent--;
-		WriteLine("got += i;");
-		WriteLine("need -= i;");
-		CloseBlock();
-		CloseBlock();
-		Write("finally "); OpenBlock();
-		WriteLine("is.close();");
-		CloseBlock();
-		WriteLine("return got;");
-		CloseBlock();
 		WriteLine();
 		WriteLine("private static byte[] getBinaryResource(String name, int length)");
 		OpenBlock();
-		Write("java.io.InputStream is = ");
+		Write("java.io.DataInputStream dis = new java.io.DataInputStream(");
 		Write(klass.Name);
-		WriteLine(".class.getResourceAsStream(name);");
-		Write("try "); OpenBlock();
+		WriteLine(".class.getResourceAsStream(name));");
 		WriteLine("byte[] result = new byte[length];");
-		WriteLine("readAndClose(is, result);");
-		WriteLine("return result;");
+		Write("try "); OpenBlock();
+		Write("try "); OpenBlock();
+		WriteLine("dis.readFully(result);");
+		CloseBlock();
+		Write("finally "); OpenBlock();
+		WriteLine("dis.close();");
+		CloseBlock();
 		CloseBlock();
 		Write("catch (java.io.IOException e) "); OpenBlock();
 		WriteLine("throw new RuntimeException();");
 		CloseBlock();
+		WriteLine("return result;");
 		CloseBlock();
 	}
 
@@ -460,6 +446,15 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			WriteConst(konst.Value);
 			WriteLine(";");
 		}
+		CloseJavaFile();
+	}
+
+	void ICiSymbolVisitor.Visit(CiDelegate del)
+	{
+		// TODO: doc
+		CreateJavaFile("interface", del);
+		WriteSignature(del, "run");
+		WriteLine(";");
 		CloseJavaFile();
 	}
 

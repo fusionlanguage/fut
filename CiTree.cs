@@ -65,6 +65,7 @@ public interface ICiSymbolVisitor
 	void Visit(CiField symbol);
 	void Visit(CiMethod symbol);
 	void Visit(CiClass symbol);
+	void Visit(CiDelegate symbol);
 }
 
 public enum CiVisibility
@@ -90,6 +91,7 @@ public interface ICiTypeVisitor
 	CiType Visit(CiClassType type);
 	CiType Visit(CiArrayType type);
 	CiType Visit(CiArrayStorageType type);
+	CiType Visit(CiDelegate type);
 }
 
 public class CiType : CiSymbol
@@ -142,14 +144,10 @@ public class CiIntType : CiType
 	public static readonly CiProperty LowByteProperty = new CiProperty { Name = "LowByte", Type = CiByteType.Value };
 	// SByte defined here and not in CiByteType to avoid circular dependency between static initializers of CiByteType and CiIntType
 	public static readonly CiProperty SByteProperty = new CiProperty { Name = "SByte", Type = CiIntType.Value };
-	public static readonly CiMethod MulDivMethod = new CiMethod {
-		Name = "MulDiv",
-		ReturnType = CiIntType.Value,
-		Params = new CiParam[] {
-			new CiParam(CiIntType.Value, "numerator"),
-			new CiParam(CiIntType.Value, "denominator")
-		}
-	};
+	public static readonly CiMethod MulDivMethod = new CiMethod(
+		CiIntType.Value, "MulDiv",
+		new CiParam(CiIntType.Value, "numerator"),
+		new CiParam(CiIntType.Value, "denominator"));
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
@@ -164,22 +162,15 @@ public abstract class CiStringType : CiType
 {
 	public override Type DotNetType { get { return typeof(string); } }
 	public static readonly CiProperty LengthProperty = new CiProperty { Name = "Length", Type = CiIntType.Value };
-	public static readonly CiMethod CharAtMethod = new CiMethod {
-		Name = "CharAt",
-		ReturnType = CiIntType.Value,
-		Params = new CiParam[] {
-			new CiParam(CiIntType.Value, "index")
-		}
-	};
-	public static readonly CiMethod SubstringMethod = new CiMethod {
-		Name = "Substring",
+	public static readonly CiMethod CharAtMethod = new CiMethod(
+		CiIntType.Value, "CharAt",
+		new CiParam(CiIntType.Value, "index"));
+	public static readonly CiMethod SubstringMethod = new CiMethod(
 		// Doesn't work, is initialized in static constructor of CiStringPtrType instead:
-		// ReturnType = CiStringPtrType.Value,
-		Params = new CiParam[] {
-			new CiParam(CiIntType.Value, "startIndex"),
-			new CiParam(CiIntType.Value, "length")
-		}
-	};
+		// CiStringPtrType.Value,
+		null, "Substring",
+		new CiParam(CiIntType.Value, "startIndex"),
+		new CiParam(CiIntType.Value, "length"));
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
@@ -197,7 +188,7 @@ public class CiStringPtrType : CiStringType
 	public static readonly CiStringPtrType Value = new CiStringPtrType { Name = "string" };
 	static CiStringPtrType()
 	{
-		CiStringType.SubstringMethod.ReturnType = CiStringPtrType.Value;
+		CiStringType.SubstringMethod.Signature.ReturnType = CiStringPtrType.Value;
 	}
 }
 
@@ -265,24 +256,16 @@ public abstract class CiArrayType : CiType
 	public CiType ElementType;
 	public override CiType BaseType { get { return this.ElementType.BaseType; } }
 	public override int ArrayLevel { get { return 1 + this.ElementType.ArrayLevel; } }
-	public static readonly CiMethod CopyToMethod = new CiMethod {
-		Name = "CopyTo",
-		ReturnType = CiType.Void,
-		Params = new CiParam[] {
-			new CiParam(CiIntType.Value, "sourceIndex"),
-			new CiParam(CiArrayPtrType.WritableByteArray, "destinationArray"),
-			new CiParam(CiIntType.Value, "destinationIndex"),
-			new CiParam(CiIntType.Value, "length")
-		}
-	};
-	public static readonly CiMethod ToStringMethod = new CiMethod {
-		Name = "ToString",
-		ReturnType = CiStringPtrType.Value,
-		Params = new CiParam[] {
-			new CiParam(CiIntType.Value, "startIndex"),
-			new CiParam(CiIntType.Value, "length")
-		}
-	};
+	public static readonly CiMethod CopyToMethod = new CiMethod(
+		CiType.Void, "CopyTo",
+		new CiParam(CiIntType.Value, "sourceIndex"),
+		new CiParam(CiArrayPtrType.WritableByteArray, "destinationArray"),
+		new CiParam(CiIntType.Value, "destinationIndex"),
+		new CiParam(CiIntType.Value, "length"));
+	public static readonly CiMethod ToStringMethod = new CiMethod(
+		CiStringPtrType.Value, "ToString",
+		new CiParam(CiIntType.Value, "startIndex"),
+		new CiParam(CiIntType.Value, "length"));
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
@@ -320,12 +303,8 @@ public class CiArrayStorageType : CiArrayType
 	public CiExpr LengthExpr;
 	public int Length;
 	public override CiType Ptr { get { return new CiArrayPtrType { ElementType = this.ElementType }; } }
-	public static readonly CiMethod ClearMethod = new CiMethod {
-		Name = "Clear",
-		ReturnType = CiType.Void,
-		Params = new CiParam[0],
-		IsMutator = true
-	};
+	public static readonly CiMethod ClearMethod = new CiMethod(
+		CiType.Void, "Clear") { IsMutator = true };
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
@@ -560,10 +539,10 @@ public class CiArrayAccess : CiLValue
 public class CiMethodCall : CiExpr, ICiStatement
 {
 	public CiExpr Obj;
-	public string Name;
 	public CiMethod Method;
 	public CiExpr[] Arguments;
-	public override CiType Type { get { return this.Method.ReturnType; } }
+	public CiDelegate Signature { get { return this.Method != null ? this.Method.Signature : (CiDelegate) this.Obj.Type; } }
+	public override CiType Type { get { return this.Signature.ReturnType; } }
 	public override bool HasSideEffect { get { return true; } }
 	public bool CompletesNormally { get { return true; } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
@@ -744,19 +723,32 @@ public class CiWhile : CiLoop
 	public override void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 
+public class CiDelegate : CiType
+{
+	public CiType ReturnType;
+	public CiParam[] Params;
+	public CiWriteStatus WriteStatus; // C only
+	public override CiType Accept(ICiTypeVisitor v) { return v.Visit(this); }
+	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
+}
+
 public class CiMethod : CiSymbol
 {
 	public CiClass Class;
 	public bool IsStatic;
-	public CiType ReturnType;
+	public CiDelegate Signature;
 	public CiParam This;
-	public CiParam[] Params;
 	public CiBlock Body;
 	public bool Throws;
 	public object ErrorReturnValue;
 	public readonly HashSet<CiMethod> CalledBy = new HashSet<CiMethod>();
 	public readonly HashSet<CiMethod> Calls = new HashSet<CiMethod>();
 	public bool IsMutator;
+	public CiMethod(CiType returnType, string name, params CiParam[] paramz)
+	{
+		this.Name = name;
+		this.Signature = new CiDelegate { Name = name, ReturnType = returnType, Params = paramz };
+	}
 	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
 }
 

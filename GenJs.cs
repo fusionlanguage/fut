@@ -173,10 +173,6 @@ public class GenJs : SourceGenerator
 
 	protected override void WriteName(CiMethod method)
 	{
-		if (method.IsStatic) {
-			Write(method.Class.Name);
-			Write('.');
-		}
 		WriteCamelCase(method.Name);
 	}
 
@@ -291,7 +287,7 @@ public class GenJs : SourceGenerator
 		WriteCamelCase(method.Name);
 		Write(" = function(");
 		bool first = true;
-		foreach (CiParam param in method.Params) {
+		foreach (CiParam param in method.Signature.Params) {
 			if (first)
 				first = false;
 			else

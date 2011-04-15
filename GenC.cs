@@ -264,13 +264,23 @@ public class GenC : SourceGenerator
 			WriteClearArray(expr.Obj);
 		}
 		else {
-			Write(expr.Method.Class.Name);
-			Write('_');
-			Write(expr.Method.Name);
-			Write('(');
 			bool first = true;
-			if (expr.Obj != null) {
+			if (expr.Method != null) {
+				Write(expr.Method.Class.Name);
+				Write('_');
+				Write(expr.Method.Name);
+				Write('(');
+				if (expr.Obj != null) {
+					Write(expr.Obj);
+					first = false;
+				}
+			}
+			else {
+				// delegate
 				Write(expr.Obj);
+				Write(".func(");
+				Write(expr.Obj);
+				Write(".obj");
 				first = false;
 			}
 			foreach (CiExpr arg in expr.Arguments)
@@ -402,7 +412,7 @@ public class GenC : SourceGenerator
 	public override void Visit(CiExpr expr)
 	{
 		CiMethodCall call = expr as CiMethodCall;
-		if (call != null && call.Method.Throws)
+		if (call != null && call.Method != null && call.Method.Throws)
 			CheckAndThrow(call, call.Method.ErrorReturnValue);
 		else
 			base.Visit(expr);
@@ -529,12 +539,12 @@ public class GenC : SourceGenerator
 	{
 		if (method.Visibility != CiVisibility.Public)
 			Write("static ");
-		var paramz = method.Params.Select(param => ToString(param.Type, param.Name));
+		var paramz = method.Signature.Params.Select(param => ToString(param.Type, param.Name));
 		if (!method.IsStatic)
 			paramz = new string[1] { ToString(method.This.Type, "self") }.Concat(paramz);
 		string s = paramz.Any() ? string.Join(", ", paramz) : "void";
 		s = method.Class.Name + "_" + method.Name + "(" + s + ")";
-		CiType type = method.ReturnType;
+		CiType type = method.Signature.ReturnType;
 		if (method.Throws && type == CiType.Void)
 			type = CiBoolType.Value;
 		Write(type, s);
@@ -552,7 +562,7 @@ public class GenC : SourceGenerator
 		OpenBlock();
 		ICiStatement[] statements = method.Body.Statements;
 		StartBlock(statements);
-		if (method.Throws && method.ReturnType == CiType.Void && method.Body.CompletesNormally) {
+		if (method.Throws && method.Signature.ReturnType == CiType.Void && method.Body.CompletesNormally) {
 			if (!TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
 				Write(statements);
 				WriteReturnTrue();
@@ -667,6 +677,32 @@ public class GenC : SourceGenerator
 		WriteLine(";");
 	}
 
+	void Write(CiDelegate del)
+	{
+		if (del.WriteStatus == CiWriteStatus.Done)
+			return;
+		if (del.WriteStatus == CiWriteStatus.InProgress)
+			throw new ResolveException("Circular dependency for delegate {0}", del.Name);
+		del.WriteStatus = CiWriteStatus.InProgress;
+		foreach (CiParam param in del.Params) {
+			CiDelegate paramDel = param.Type as CiDelegate;
+			if (paramDel != null)
+				Write(paramDel);
+		}
+		del.WriteStatus = CiWriteStatus.Done;
+
+		WriteLine("typedef struct ");
+		OpenBlock();
+		WriteLine("void *obj;");
+		var paramz = del.Params.Select(param => ", " + ToString(param.Type, param.Name));
+		string s = "(*func)(void *obj" + string.Concat(paramz) + ")";
+		Write(del.ReturnType, s);
+		WriteLine(";");
+		CloseBlock();
+		Write(del.Name);
+		WriteLine(";");
+	}
+
 	void WriteTypedefs(CiProgram prog, CiVisibility visibility)
 	{
 		foreach (CiSymbol symbol in prog.Globals) {
@@ -675,8 +711,13 @@ public class GenC : SourceGenerator
 					Write((CiEnum) symbol);
 				else if (symbol is CiClass)
 					WriteTypedef((CiClass) symbol);
+				else if (symbol is CiDelegate)
+					((CiDelegate) symbol).WriteStatus = CiWriteStatus.NotYet;
 			}
 		}
+		foreach (CiSymbol symbol in prog.Globals)
+			if (symbol.Visibility == visibility && symbol is CiDelegate)
+				Write((CiDelegate) symbol);
 	}
 
 	void WriteSignatures(CiClass klass, bool pub)

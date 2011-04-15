@@ -403,19 +403,89 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		throw new ResolveException("Indexed object is neither array or string");
 	}
 
-	void ResolveSignature(CiMethod method)
+	void ICiSymbolVisitor.Visit(CiDelegate del)
 	{
-		method.ReturnType = Resolve(method.ReturnType);
-		foreach (CiParam param in method.Params)
+		del.ReturnType = Resolve(del.ReturnType);
+		foreach (CiParam param in del.Params)
 			param.Type = Resolve(param.Type);
+	}
+
+	CiType ICiTypeVisitor.Visit(CiDelegate del)
+	{
+		((ICiSymbolVisitor) this).Visit(del);
+		return del;
+	}	
+
+	void ResolveObj(CiMethodCall expr)
+	{
+		if (expr.Obj is CiSymbolAccess) {
+			// Foo(...)
+			CiMethod method = Lookup((CiSymbolAccess) expr.Obj) as CiMethod;
+			if (method != null) {
+				expr.Method = method;
+				if (method.IsStatic)
+					expr.Obj = null;
+				else {
+					if (this.CurrentMethod.IsStatic)
+						throw new ResolveException("Cannot call instance method from a static method");
+					expr.Obj = new CiVarAccess { Var = this.CurrentMethod.This };
+					CheckCopyPtr(method.This.Type, expr.Obj);
+				}
+				return;
+			}
+		}
+		else if (expr.Obj is CiUnknownMemberAccess) {
+			// ???.Foo(...)
+			CiUnknownMemberAccess uma = (CiUnknownMemberAccess) expr.Obj;
+			if (uma.Parent is CiSymbolAccess) {
+				CiClass klass = Lookup((CiSymbolAccess) uma.Parent) as CiClass;
+				if (klass != null) {
+					// Class.Foo(...)
+					CiMethod method = klass.Members.Lookup(uma.Name) as CiMethod;
+					if (method != null) {
+						if (!method.IsStatic)
+							throw new ResolveException("{0} is a non-static method", method.Name);
+						if (method.Visibility == CiVisibility.Private && klass != this.CurrentClass)
+							method.Visibility = CiVisibility.Internal;
+						expr.Method = method;
+						expr.Obj = null;
+						return;
+					}
+				}
+			}
+			CiExpr obj = Resolve(uma.Parent);
+			{
+				CiMethod method = obj.Type.LookupMember(uma.Name) as CiMethod;
+				if (method != null) {
+					// obj.Foo(...)
+					if (method.IsStatic)
+						throw new ResolveException("{0} is a static method", method.Name);
+					if (method.This != null) {
+						// user-defined method
+						CheckCopyPtr(method.This.Type, obj);
+						obj = Coerce(obj, method.This.Type);
+					}
+					if (method.Visibility == CiVisibility.Private && method.Class != this.CurrentClass)
+						method.Visibility = CiVisibility.Internal;
+					expr.Method = method;
+					expr.Obj = obj;
+					return;
+				}
+			}
+		}
+		expr.Obj = Resolve(expr.Obj);
+		if (!(expr.Obj.Type is CiDelegate))
+			throw new ResolveException("Invalid call");
+		if (expr.Obj.HasSideEffect)
+			throw new ResolveException("Side effects not allowed in delegate call");
 	}
 
 	void CoerceArguments(CiMethodCall expr)
 	{
-		ResolveSignature(expr.Method);
-		CiParam[] paramz = expr.Method.Params;
+		expr.Signature.Accept(this);
+		CiParam[] paramz = expr.Signature.Params;
 		if (expr.Arguments.Length != paramz.Length)
-			throw new ResolveException("Invalid number of arguments for {0}, expected {1}, got {2}", expr.Name, paramz.Length, expr.Arguments.Length);
+			throw new ResolveException("Invalid number of arguments for {0}, expected {1}, got {2}", expr.Signature.Name, paramz.Length, expr.Arguments.Length);
 		for (int i = 0; i < paramz.Length; i++) {
 			CiExpr arg = Resolve(expr.Arguments[i]);
 			CheckCopyPtr(paramz[i].Type, arg);
@@ -423,58 +493,16 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		}
 	}
 
-	void ResolveObj(CiMethodCall expr)
-	{
-		if (expr.Obj is CiSymbolAccess) {
-			CiSymbol symbol = Lookup((CiSymbolAccess) expr.Obj);
-			if (symbol is CiClass) {
-				expr.Method = ((CiClass) symbol).Members.Lookup(expr.Name) as CiMethod;
-				if (expr.Method == null)
-					throw new ResolveException("{0} is not a method", expr.Name);
-				if (!expr.Method.IsStatic)
-					throw new ResolveException("{0} is a non-static method", expr.Name);
-				expr.Obj = null;
-				return;
-			}
-		}
-		CiExpr obj = Resolve(expr.Obj);
-		expr.Method = obj.Type.LookupMember(expr.Name) as CiMethod;
-		if (expr.Method == null)
-			throw new ResolveException("{0} is not a method", expr.Name);
-		if (expr.Method.IsStatic)
-			throw new ResolveException("{0} is a static method", expr.Name);
-		if (expr.Method.This != null) {
-			// user-defined method
-			CheckCopyPtr(expr.Method.This.Type, obj);
-			obj = Coerce(obj, expr.Method.This.Type);
-		}
-		expr.Obj = obj;
-	}
-
 	CiExpr ICiExprVisitor.Visit(CiMethodCall expr)
 	{
-		if (expr.Obj != null) {
-			ResolveObj(expr);
-			if (expr.Method.Visibility == CiVisibility.Private && expr.Method.Class != this.CurrentClass)
-				expr.Method.Visibility = CiVisibility.Internal;
-		}
-		else {
-			expr.Method = this.Symbols.Lookup(expr.Name) as CiMethod;
-			if (expr.Method == null)
-				throw new ResolveException("{0} is not a method", expr.Name);
-			if (!expr.Method.IsStatic) {
-				if (this.CurrentMethod.IsStatic)
-					throw new ResolveException("Cannot call instance method from a static method");
-				CiExpr obj = new CiVarAccess { Var = this.CurrentMethod.This };
-				CheckCopyPtr(expr.Method.This.Type, obj);
-				expr.Obj = obj;
-			}
-		}
+		ResolveObj(expr);
 		CoerceArguments(expr);
-		if (expr.Method.IsMutator)
-			MarkWritable(expr.Obj);
-		expr.Method.CalledBy.Add(this.CurrentMethod);
-		this.CurrentMethod.Calls.Add(expr.Method);
+		if (expr.Method != null && expr.Method != this.CurrentMethod) {
+			if (expr.Method.IsMutator)
+				MarkWritable(expr.Obj);
+			expr.Method.CalledBy.Add(this.CurrentMethod);
+			this.CurrentMethod.Calls.Add(expr.Method);
+		}
 		return expr;
 	}
 
@@ -746,7 +774,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 
 	void ICiStatementVisitor.Visit(CiReturn statement)
 	{
-		CiType type = this.CurrentMethod.ReturnType;
+		CiType type = this.CurrentMethod.Signature.ReturnType;
 		if (type != CiType.Void)
 			statement.Value = Coerce(Resolve(statement.Value), type);
 	}
@@ -813,9 +841,9 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 	void ICiSymbolVisitor.Visit(CiMethod method)
 	{
 		this.CurrentMethod = method;
-		ResolveSignature(method);
+		Resolve(method.Signature);
 		Resolve(method.Body);
-		if (method.ReturnType != CiType.Void && method.Body.CompletesNormally)
+		if (method.Signature.ReturnType != CiType.Void && method.Body.CompletesNormally)
 			throw new ResolveException("Method can complete without a return value");
 		this.CurrentMethod = null;
 	}
@@ -861,7 +889,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		if (method.Throws)
 			return;
 		method.Throws = true;
-		method.ErrorReturnValue = GetErrorValue(method.ReturnType);
+		method.ErrorReturnValue = GetErrorValue(method.Signature.ReturnType);
 		foreach (CiMethod calledBy in method.CalledBy)
 			MarkThrows(calledBy);
 	}

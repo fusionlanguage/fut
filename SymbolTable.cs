@@ -58,6 +58,15 @@ public class SymbolTable : IEnumerable<CiSymbol>
 		return null;
 	}
 
+	void Dump()
+	{
+		foreach (CiSymbol symbol in this)
+			Console.Error.Write("{0} {1}, ", symbol.GetType().Name, symbol.Name);
+		Console.Error.WriteLine();
+		if (Parent != null)
+			Parent.Dump();
+	}
+
 	public CiSymbol Lookup(string name)
 	{
 		CiSymbol result = TryLookup(name);

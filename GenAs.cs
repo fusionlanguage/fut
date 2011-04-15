@@ -107,6 +107,8 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 			Write("int");
 		else if (type is CiArrayType)
 			Write(((CiArrayType) type).ElementType == CiByteType.Value ? "ByteArray" : "Array");
+		else if (type is CiDelegate)
+			Write("Function");
 		else
 			Write(type.Name);
 	}
@@ -359,7 +361,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		WriteCamelCase(method.Name);
 		Write('(');
 		bool first = true;
-		foreach (CiParam param in method.Params) {
+		foreach (CiParam param in method.Signature.Params) {
 			if (first)
 				first = false;
 			else
@@ -368,12 +370,12 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 			Write(param.Type);
 		}
 		Write(")");
-		Write(method.ReturnType);
+		Write(method.Signature.ReturnType);
 		WriteLine();
 		OpenBlock();
 		ICiStatement[] statements = method.Body.Statements;
 		Write(statements);
-		if (method.ReturnType != CiType.Void && statements.Length > 0) {
+		if (method.Signature.ReturnType != CiType.Void && statements.Length > 0) {
 			CiFor lastLoop = statements[statements.Length - 1] as CiFor;
 			if (lastLoop != null && lastLoop.Cond == null)
 				WriteLine("throw \"Unreachable\";");
@@ -469,6 +471,10 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		}
 		WriteBuiltins();
 		CloseAsFile();
+	}
+
+	void ICiSymbolVisitor.Visit(CiDelegate del)
+	{
 	}
 
 	public override void Write(CiProgram prog)

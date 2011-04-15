@@ -178,19 +178,6 @@ public partial class CiParser : CiLexer
 		return new CiBinaryResourceExpr { NameExpr = nameExpr };
 	}
 
-	void ParseMethodCall(CiMethodCall call)
-	{
-		Expect(CiToken.LeftParenthesis);
-		List<CiExpr> args = new List<CiExpr>();
-		if (!Eat(CiToken.RightParenthesis)) {
-			do
-				args.Add(ParseExpr());
-			while (Eat(CiToken.Comma));
-			Expect(CiToken.RightParenthesis);
-		}
-		call.Arguments = args.ToArray();
-	}
-
 	CiExpr ParsePrimaryExpr()
 	{
 		if (See(CiToken.Increment) || See(CiToken.Decrement) || See(CiToken.Minus) || See(CiToken.Not)) {
@@ -228,33 +215,28 @@ public partial class CiParser : CiLexer
 				Expect(CiToken.RightParenthesis);
 			}
 			else {
-				if (See(CiToken.LeftParenthesis)) {
-					CiMethodCall call = new CiMethodCall();
-					call.Name = name;
-					ParseMethodCall(call);
-					result = call;
-				}
-				else {
-					if (symbol == null)
-						symbol = new CiUnknownSymbol { Name = name };
-					result = new CiSymbolAccess { Symbol = symbol };
-				}
+				if (symbol == null)
+					symbol = new CiUnknownSymbol { Name = name };
+				result = new CiSymbolAccess { Symbol = symbol };
 			}
 		}
 		else
 			throw new ParseException("Invalid expression");
 		for (;;) {
-			if (Eat(CiToken.Dot)) {
-				string name = ParseId();
-				if (See(CiToken.LeftParenthesis)) {
-					CiMethodCall call = new CiMethodCall();
-					call.Obj = result;
-					call.Name = name;
-					ParseMethodCall(call);
-					result = call;
+			if (Eat(CiToken.Dot))
+				result = new CiUnknownMemberAccess { Parent = result, Name = ParseId() };
+			else if (Eat(CiToken.LeftParenthesis)) {
+				CiMethodCall call = new CiMethodCall();
+				call.Obj = result;
+				List<CiExpr> args = new List<CiExpr>();
+				if (!See(CiToken.RightParenthesis)) {
+					do
+						args.Add(ParseExpr());
+					while (Eat(CiToken.Comma));
 				}
-				else
-					result = new CiUnknownMemberAccess { Parent = result, Name = name };
+				Expect(CiToken.RightParenthesis);
+				call.Arguments = args.ToArray();
+				result = call;
 			}
 			else if (Eat(CiToken.LeftBracket)) {
 				CiExpr index = ParseExpr();
@@ -555,7 +537,7 @@ public partial class CiParser : CiLexer
 			return ParseNativeBlock();
 		if (Eat(CiToken.Return)) {
 			CiReturn result = new CiReturn();
-			if (this.CurrentMethod.ReturnType != CiType.Void)
+			if (this.CurrentMethod.Signature.ReturnType != CiType.Void)
 				result.Value = ParseExpr();
 			Expect(CiToken.Semicolon);
 			return result;
@@ -631,14 +613,18 @@ public partial class CiParser : CiLexer
 		return thiz;
 	}
 
-	void ParseMethod(CiMethod method)
+	CiType ParseReturnType()
 	{
-		this.CurrentMethod = method;
-		OpenScope();
-		if (!method.IsStatic)
-			method.This = CreateThis();
+		if (Eat(CiToken.Void))
+			return CiType.Void;
+		return ParseType();
+	}
+
+	CiParam[] ParseParams()
+	{
+		Expect(CiToken.LeftParenthesis);
 		List<CiParam> paramz = new List<CiParam>();
-		if (!Eat(CiToken.RightParenthesis)) {
+		if (!See(CiToken.RightParenthesis)) {
 			do {
 				CiParam param = new CiParam();
 				param.Documentation = ParseDoc();
@@ -647,9 +633,18 @@ public partial class CiParser : CiLexer
 				this.Symbols.Add(param);
 				paramz.Add(param);
 			} while (Eat(CiToken.Comma));
-			Expect(CiToken.RightParenthesis);
 		}
-		method.Params = paramz.ToArray();
+		Expect(CiToken.RightParenthesis);
+		return paramz.ToArray();
+	}
+
+	void ParseMethod(CiMethod method)
+	{
+		this.CurrentMethod = method;
+		OpenScope();
+		if (!method.IsStatic)
+			method.This = CreateThis();
+		method.Signature.Params = ParseParams();
 		method.Body = ParseBlock();
 		CloseScope();
 		this.CurrentMethod = null;
@@ -661,12 +656,11 @@ public partial class CiParser : CiLexer
 		Expect(CiToken.LeftParenthesis);
 		Expect(CiToken.RightParenthesis);
 		OpenScope();
-		CiMethod method = new CiMethod {
+		CiMethod method = new CiMethod(
+			CiType.Void, "<constructor>") {
 			Class = this.CurrentClass,
 			IsStatic = false,
-			ReturnType = CiType.Void,
-			This = CreateThis(),
-			Params = new CiParam[0]
+			This = CreateThis()
 		};
 		this.CurrentMethod = method;
 		method.Body = ParseBlock();
@@ -703,18 +697,12 @@ public partial class CiParser : CiLexer
 					continue;
 				}
 				bool isStatic = Eat(CiToken.Static);
-				CiType type;
-				if (Eat(CiToken.Void))
-					type = CiType.Void;
-				else
-					type = ParseType();
+				CiType type = ParseReturnType();
 				string name = ParseId();
-				if (Eat(CiToken.LeftParenthesis)) {
-					CiMethod method = new CiMethod {
+				if (See(CiToken.LeftParenthesis)) {
+					CiMethod method = new CiMethod(type, name) {
 						Class = klass,
-						IsStatic = isStatic,
-						ReturnType = type,
-						Name = name
+						IsStatic = isStatic
 					};
 					ParseMethod(method);
 					symbol = method;
@@ -741,6 +729,19 @@ public partial class CiParser : CiLexer
 		return klass;
 	}
 
+	CiDelegate ParseDelegate()
+	{
+		CiDelegate del = new CiDelegate();
+		Expect(CiToken.Delegate);
+		del.ReturnType = ParseReturnType();
+		del.Name = ParseId();
+		OpenScope();
+		del.Params = ParseParams();
+		CloseScope();
+		Expect(CiToken.Semicolon);
+		return del;
+	}
+
 	public void Parse(TextReader reader)
 	{
 		Open(reader);
@@ -752,8 +753,10 @@ public partial class CiParser : CiLexer
 				symbol = ParseEnum();
 			else if (See(CiToken.Class))
 				symbol = ParseClass();
+			else if (See(CiToken.Delegate))
+				symbol = ParseDelegate();
 			else
-				throw new ParseException("Expected enum or class");
+				throw new ParseException("Expected class, enum or delegate");
 			symbol.Documentation = doc;
 			symbol.Visibility = pub ? CiVisibility.Public : CiVisibility.Internal;
 			this.Symbols.Add(symbol);

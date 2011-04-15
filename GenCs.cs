@@ -332,11 +332,28 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 		WriteLine(");");
 	}
 
+	void WriteSignature(CiDelegate del)
+	{
+		Write(del.ReturnType);
+		Write(del.Name);
+		Write('(');
+		bool first = true;
+		foreach (CiParam param in del.Params) {
+			if (first)
+				first = false;
+			else
+				Write(", ");
+			Write(param.Type);
+			Write(param.Name);
+		}
+		Write(')');
+	}
+
 	void ICiSymbolVisitor.Visit(CiMethod method)
 	{
 		WriteLine();
 		Write(method.Documentation);
-		foreach (CiParam param in method.Params) {
+		foreach (CiParam param in method.Signature.Params) {
 			if (param.Documentation != null) {
 				Write("/// <param name=\"");
 				Write(param.Name);
@@ -349,19 +366,8 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 		Write(method.Visibility);
 		if (method.IsStatic)
 			Write("static ");
-		Write(method.ReturnType);
-		Write(method.Name);
-		Write('(');
-		bool first = true;
-		foreach (CiParam param in method.Params) {
-			if (first)
-				first = false;
-			else
-				Write(", ");
-			Write(param.Type);
-			Write(param.Name);
-		}
-		WriteLine(")");
+		WriteSignature(method.Signature);
+		WriteLine();
 		Write(method.Body);
 	}
 
@@ -397,6 +403,15 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 			WriteLine(";");
 		}
 		CloseBlock();
+	}
+
+	void ICiSymbolVisitor.Visit(CiDelegate del)
+	{
+		Write(del.Documentation);
+		Write(del.Visibility);
+		Write("delegate ");
+		WriteSignature(del);
+		WriteLine(";");
 	}
 
 	public override void Write(CiProgram prog)
