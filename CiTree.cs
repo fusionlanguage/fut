@@ -766,6 +766,7 @@ public class CiClass : CiSymbol
 	public CiConst[] ConstArrays;
 	public CiBinaryResource[] BinaryResources;
 	public CiWriteStatus WriteStatus; // C only
+	public bool HasFields; // C only
 	public bool ConstructsFields; // C only
 	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
 }

@@ -670,6 +670,9 @@ public class GenC : SourceGenerator
 	void WriteTypedef(CiClass klass)
 	{
 		klass.WriteStatus = CiWriteStatus.NotYet;
+		klass.HasFields = klass.Members.Any(member => member is CiField);
+		if (!klass.HasFields)
+			return;
 		Write("typedef struct ");
 		Write(klass.Name);
 		Write(' ');
@@ -722,15 +725,17 @@ public class GenC : SourceGenerator
 
 	void WriteSignatures(CiClass klass, bool pub)
 	{
-		if (!pub && (klass.Constructor != null || klass.ConstructsFields)) {
-			WriteConstructorSignature(klass);
-			WriteLine(";");
-		}
-		if (pub && klass.Visibility == CiVisibility.Public) {
-			WriteNewSignature(klass);
-			WriteLine(";");
-			WriteDeleteSignature(klass);
-			WriteLine(";");
+		if (klass.HasFields) {
+			if (!pub && (klass.Constructor != null || klass.ConstructsFields)) {
+				WriteConstructorSignature(klass);
+				WriteLine(";");
+			}
+			if (pub && klass.Visibility == CiVisibility.Public) {
+				WriteNewSignature(klass);
+				WriteLine(";");
+				WriteDeleteSignature(klass);
+				WriteLine(";");
+			}
 		}
 		foreach (CiSymbol member in klass.Members) {
 			if ((member.Visibility == CiVisibility.Public) == pub) {
@@ -768,17 +773,19 @@ public class GenC : SourceGenerator
 		klass.WriteStatus = CiWriteStatus.Done;
 
 		WriteLine();
-		Write(klass.Documentation);
-		Write("struct ");
-		Write(klass.Name);
-		Write(' ');
-		OpenBlock();
-		foreach (CiSymbol member in klass.Members) {
-			if (member is CiField)
-				Write((CiField) member);
+		if (klass.HasFields) {
+			Write(klass.Documentation);
+			Write("struct ");
+			Write(klass.Name);
+			Write(' ');
+			OpenBlock();
+			foreach (CiSymbol member in klass.Members) {
+				if (member is CiField)
+					Write((CiField) member);
+			}
+			this.Indent--;
+			WriteLine("};");
 		}
-		this.Indent--;
-		WriteLine("};");
 		WriteSignatures(klass, false);
 		foreach (CiBinaryResource resource in klass.BinaryResources) {
 			Write("static const unsigned char ");
@@ -793,7 +800,8 @@ public class GenC : SourceGenerator
 
 	void WriteCode(CiClass klass)
 	{
-		WriteConstructorNewDelete(klass);
+		if (klass.HasFields)
+			WriteConstructorNewDelete(klass);
 		foreach (CiSymbol member in klass.Members) {
 			if (member is CiMethod)
 				Write((CiMethod) member);
