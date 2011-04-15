@@ -240,7 +240,7 @@ public class GenJs : SourceGenerator
 		else if (expr.Method == CiArrayStorageType.ClearMethod) {
 			Write("Ci.clearArray(");
 			Write(expr.Obj);
-			Write(')');
+			Write(", 0)");
 			this.UsesClearArrayMethod = true;
 		}
 		else
@@ -264,9 +264,21 @@ public class GenJs : SourceGenerator
 	{
 		Write("var ");
 		Write(stmt.Name);
-		if (!WriteInit(stmt.Type) && stmt.InitialValue != null) {
-			Write(" = ");
-			Write(stmt.InitialValue);
+		WriteInit(stmt.Type);
+		if (stmt.InitialValue != null) {
+			if (stmt.Type is CiArrayStorageType) {
+				WriteLine(";");
+				Write("Ci.clearArray(");
+				Write(stmt.Name);
+				Write(", ");
+				Write(stmt.InitialValue);
+				Write(')');
+				this.UsesClearArrayMethod = true;
+			}
+			else {
+				Write(" = ");
+				Write(stmt.InitialValue);
+			}
 		}
 	}
 
@@ -366,9 +378,9 @@ public class GenJs : SourceGenerator
 		}
 		if (this.UsesClearArrayMethod) {
 			code.Add(new string[] {
-				"clearArray : function(a)",
+				"clearArray : function(a, value)",
 				"for (var i = 0; i < a.length; i++)",
-				"\ta[i] = 0;"
+				"\ta[i] = value;"
 			});
 		}
 		if (code.Count > 0) {
