@@ -514,6 +514,8 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		else
 			resolved = Resolve(expr.Inner);
 		expr.Inner = Coerce(resolved, CiIntType.Value);
+		if (expr.Op == CiToken.Minus && expr.Inner is CiConstExpr)
+			return new CiConstExpr(-GetConstInt(expr.Inner));
 		return expr;
 	}
 
