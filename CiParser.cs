@@ -577,6 +577,10 @@ public partial class CiParser : CiLexer
 				cases.Add(caze);
 			}
 			Expect(CiToken.RightBrace);
+			if (cases.Count == 0)
+				throw new ParseException("Switch with no cases");
+			if (cases[cases.Count - 1].Body.Length == 0)
+				throw new ParseException("Missing statements in the final case");
 			result.Cases = cases.ToArray();
 			return result;
 		}
