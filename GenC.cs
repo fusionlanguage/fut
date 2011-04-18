@@ -645,7 +645,9 @@ public class GenC : SourceGenerator
 			WriteLine();
 			OpenBlock();
 			Write(klass.Name);
-			Write(" *self = malloc(sizeof(");
+			Write(" *self = (");
+			Write(klass.Name);
+			Write(" *) malloc(sizeof(");
 			Write(klass.Name);
 			WriteLine("));");
 			if (hasConstructor) {
