@@ -218,6 +218,12 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		WriteCamelCase(method.Name);
 	}
 
+	protected override void WriteDelegateCall(CiExpr expr)
+	{
+		Write(expr);
+		Write(".run");
+	}
+
 	protected override void Write(CiMethodCall expr)
 	{
 		if (expr.Method == CiIntType.MulDivMethod) {
