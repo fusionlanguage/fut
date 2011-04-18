@@ -688,13 +688,17 @@ public partial class CiParser : CiLexer
 		klass.Members = this.Symbols;
 		while (!Eat(CiToken.RightBrace)) {
 			CiCodeDoc doc = ParseDoc();
-			bool pub = Eat(CiToken.Public);
+			CiVisibility visibility = CiVisibility.Private;
+			if (Eat(CiToken.Public))
+				visibility = CiVisibility.Public;
+			else if (Eat(CiToken.Internal))
+				visibility = CiVisibility.Internal;
 			CiSymbol symbol;
 			if (See(CiToken.Const))
 				symbol = ParseConst();
 			else if (Eat(CiToken.Macro)) {
-				if (pub)
-					throw new ParseException("Public macros are not supported");
+				if (visibility != CiVisibility.Private)
+					throw new ParseException("Macros must be private");
 				symbol = ParseMacro();
 			}
 			else {
@@ -716,8 +720,8 @@ public partial class CiParser : CiLexer
 					symbol = method;
 				}
 				else {
-					if (pub)
-						throw new ParseException("Public fields are not supported");
+					if (visibility != CiVisibility.Private)
+						throw new ParseException("Fields must be private");
 					if (isStatic)
 						throw new ParseException("Static fields are not supported");
 					if (type == CiType.Void)
@@ -727,7 +731,7 @@ public partial class CiParser : CiLexer
 				}
 			}
 			symbol.Documentation = doc;
-			symbol.Visibility = pub ? CiVisibility.Public : CiVisibility.Private;
+			symbol.Visibility = visibility;
 			klass.Members.Add(symbol);
 		}
 		this.CurrentClass = null;

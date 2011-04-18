@@ -445,8 +445,6 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 					if (method != null) {
 						if (!method.IsStatic)
 							throw new ResolveException("{0} is a non-static method", method.Name);
-						if (method.Visibility == CiVisibility.Private && klass != this.CurrentClass)
-							method.Visibility = CiVisibility.Internal;
 						expr.Method = method;
 						expr.Obj = null;
 						return;
@@ -465,8 +463,6 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 						CheckCopyPtr(method.This.Type, obj);
 						obj = Coerce(obj, method.This.Type);
 					}
-					if (method.Visibility == CiVisibility.Private && method.Class != this.CurrentClass)
-						method.Visibility = CiVisibility.Internal;
 					expr.Method = method;
 					expr.Obj = obj;
 					return;
@@ -918,8 +914,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 
 	static void MarkDead(CiMethod method)
 	{
-		if ((method.Visibility == CiVisibility.Private || method.Visibility == CiVisibility.Internal)
-		 && method.CalledBy.Count == 0) {
+		if (method.Visibility == CiVisibility.Private && method.CalledBy.Count == 0) {
 			method.Visibility = CiVisibility.Dead;
 			foreach (CiMethod called in method.Calls) {
 				called.CalledBy.Remove(method);
@@ -936,6 +931,20 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		}
 	}
 
+	static void MarkInternal(CiMethod method)
+	{
+		if (method.Visibility == CiVisibility.Private && method.CalledBy.Any(caller => caller.Class != method.Class))
+			method.Visibility = CiVisibility.Internal;
+	}
+
+	static void MarkInternal(CiClass klass)
+	{
+		foreach (CiSymbol member in klass.Members) {
+			if (member is CiMethod)
+				MarkInternal((CiMethod) member);
+		}
+	}
+
 	public void Resolve(CiProgram program)
 	{
 		this.Symbols = program.Globals;
@@ -948,6 +957,10 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		foreach (CiSymbol symbol in program.Globals) {
 			if (symbol is CiClass)
 				MarkDead((CiClass) symbol);
+		}
+		foreach (CiSymbol symbol in program.Globals) {
+			if (symbol is CiClass)
+				MarkInternal((CiClass) symbol);
 		}
 	}
 }
