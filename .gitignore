@@ -1,3 +1,10 @@
 *.exe
 *.pdb
-*.ci
+hello.c
+hello.h
+hello99.c
+hello99.h
+HelloCi.java
+hello.cs
+hello.js
+HelloCi.as

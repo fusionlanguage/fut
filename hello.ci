@@ -1,0 +1,14 @@
+public class HelloCi
+{
+	public const string Version = "0.1";
+
+	public static int Add(int a, int b)
+	{
+		return a + b;
+	}
+
+	public static string GetMessage()
+	{
+		return "Hello, world!";
+	}
+}

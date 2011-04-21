@@ -113,7 +113,7 @@ public class CiTo
 		resolver.SearchDirs = searchDirs;
 		try {
 			resolver.Resolve(program);
-		} catch (Exception ex) {
+		} catch (Exception) {
 			if (resolver.CurrentMethod != null)
 				Console.Error.WriteLine("   in method {0}", resolver.CurrentMethod.Name);
 //			return 1;

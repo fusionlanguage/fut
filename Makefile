@@ -1,26 +1,24 @@
-SOURCES = ../../a8/asap/git/pokey.ci ../../a8/asap/git/cpu6502.ci ../../a8/asap/git/asapinfo.ci ../../a8/asap/git/asap.ci
+all: test install
 
-run: $(SOURCES) cito.exe
-	./cito.exe -I ../../a8/asap/git/players -l cs -n Sf.Asap -o ../../a8/asap/git/csharp/asapci.cs $(SOURCES)
-	./cito.exe -I ../../a8/asap/git/players -l java -n net.sf.asap -o ../../a8/asap/git/java $(SOURCES)
-	./cito.exe -I ../../a8/asap/git/players -l js -o ../../a8/asap/git/javascript/asap.js $(SOURCES)
-	./cito.exe -I ../../a8/asap/git/players -l js -D FLASH -o ../../a8/asap/git/javascript/air/asap.js $(SOURCES)
-	./cito.exe -I ../../a8/asap/git/players -l as -n net.sf.asap -D FLASH -o net/sf/asap $(SOURCES)
-	./cito.exe -I ../../a8/asap/git/players -l c -o ../../a8/asap/git/asapci.c $(SOURCES)
-	./cito.exe -I ../../a8/asap/git/players -l c99 -o asapci99.c $(SOURCES)
-	./cito.exe -I ../../a8/asap/git/players -l c99 -D APOKEYSND -o ../../a8/asap/git/win32/rmt/pokey.c ../../a8/asap/git/pokey.ci
-#	$(MAKE) -C ../../a8/asap/git/csharp
-#	$(MAKE) -C ../../a8/asap/git/java
-#	$(MAKE) -C ../../a8/asap/git/win32 apokeysnd.dll asap-sdl.exe asap_dsf.dll bass_asap.dll xbmc_asap.dll
-	mxmlc -o asap.swf -compiler.optimize -compiler.warn-duplicate-variable-def=false -static-link-runtime-shared-libraries -target-player 10 -compiler.source-path . -- net/sf/asap/ASAP.as
+test: hello.ci cito.exe
+	./cito.exe -l c -o hello.c hello.ci
+	./cito.exe -l c99 -o hello99.c hello.ci
+	./cito.exe -l java -o . hello.ci
+	./cito.exe -l cs -o hello.cs hello.ci
+	./cito.exe -l js -o hello.js hello.ci
+	./cito.exe -l as -o . hello.ci
+
+install: /cygdrive/c/bin/cito.exe
+
+/cygdrive/c/bin/cito.exe: cito.exe
+	cp $< $@
 
 cito.exe: CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs GenAs.cs CiTo.cs
-	csc -nologo -debug -out:$@ $^
-# -o+
+	csc -nologo -out:$@ -o+ $^
 
 clean:
 	rm cito.exe cito.pdb
 
-.PHONY: clean
+.PHONY: all test install clean
 
 .DELETE_ON_ERROR:
