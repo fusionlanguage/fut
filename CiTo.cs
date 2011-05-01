@@ -36,6 +36,7 @@ public class CiTo
 		Console.WriteLine("-l java  Translate to Java");
 		Console.WriteLine("-l js    Translate to JavaScript");
 		Console.WriteLine("-l as    Translate to ActionScript");
+		Console.WriteLine("-l d     Translate to D");
 		Console.WriteLine("-o PATH  Write to the specified directory (Java, ActionScript) or file (other languages)");
 		Console.WriteLine("-n NAME  Specify C# namespace or Java/ActionScript package");
 		Console.WriteLine("-D NAME  Define conditional compilation symbol");
@@ -128,6 +129,7 @@ public class CiTo
 		case "java": gen = new GenJava(namespace_); break;
 		case "js": gen = new GenJs(); break;
 		case "as": gen = new GenAs(namespace_); break;
+		case "d": gen = new GenD(); break;
 		default: throw new ApplicationException("Unknown language: " + lang);
 		}
 		gen.OutputPath = outputPath;
