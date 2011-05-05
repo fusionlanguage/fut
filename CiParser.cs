@@ -159,17 +159,6 @@ public partial class CiParser : CiLexer
 		return konst;
 	}
 
-	CiField ParseField()
-	{
-		CiType type = ParseType();
-		string name = ParseId();
-		Expect(CiToken.Semicolon);
-		return new CiField {
-			Type = type,
-			Name = name
-		};
-	}
-
 	CiBinaryResourceExpr ParseBinaryResource()
 	{
 		Expect(CiToken.LeftParenthesis);

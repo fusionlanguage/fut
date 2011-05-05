@@ -18,7 +18,7 @@ cito.exe: CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMac
 	csc -nologo -out:$@ -o+ $^
 
 clean:
-	rm cito.exe cito.pdb
+	rm -f cito.exe cito.pdb
 
 .PHONY: all test install clean
 
