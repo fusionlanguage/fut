@@ -542,7 +542,7 @@ public class GenC : SourceGenerator
 		var paramz = method.Signature.Params.Select(param => ToString(param.Type, param.Name));
 		if (!method.IsStatic)
 			paramz = new string[1] { ToString(method.This.Type, "self") }.Concat(paramz);
-		string s = paramz.Any() ? string.Join(", ", paramz) : "void";
+		string s = paramz.Any() ? string.Join(", ", paramz.ToArray()) : "void";
 		s = method.Class.Name + "_" + method.Name + "(" + s + ")";
 		CiType type = method.Signature.ReturnType;
 		if (method.Throws && type == CiType.Void)

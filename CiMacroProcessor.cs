@@ -158,7 +158,7 @@ public partial class CiParser : CiLexer
 				Trace.Assert(c == ',' || c == ')');
 				sb.Length--;
 				args.Add(name, sb.ToString().Trim());
-				sb.Clear();
+				sb.Length = 0;
 			}
 		}
 		finally {

@@ -361,10 +361,10 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		WriteLine(");");
 	}
 
-	void WriteSignature(CiDelegate del, string nameSubst = null)
+	void WriteSignature(CiDelegate del, string name)
 	{
 		Write(del.ReturnType);
-		WriteVarName(nameSubst == null ? del.Name : nameSubst);
+		WriteVarName(name);
 		Write('(');
 		bool first = true;
 		foreach (CiParam param in del.Params) {
@@ -400,7 +400,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		Write(method.Visibility);
 		if (method.IsStatic)
 			Write("static ");
-		WriteSignature(method.Signature);
+		WriteSignature(method.Signature, method.Name);
 		WriteLine();
 		Write(method.Body);
 	}
