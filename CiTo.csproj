@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<AssemblyName>CiTo</AssemblyName>
+		<TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+	</PropertyGroup>
+	<ItemGroup>
+		<Reference Include="System" />
+		<Reference Include="System.Core" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Include="AssemblyInfo.cs" />
+		<Compile Include="CiDocLexer.cs" />
+		<Compile Include="CiDocParser.cs" />
+		<Compile Include="CiLexer.cs" />
+		<Compile Include="CiMacroProcessor.cs" />
+		<Compile Include="CiParser.cs" />
+		<Compile Include="CiResolver.cs" />
+		<Compile Include="CiTo.cs" />
+		<Compile Include="CiTree.cs" />
+		<Compile Include="GenAs.cs" />
+		<Compile Include="GenC.cs" />
+		<Compile Include="GenC89.cs" />
+		<Compile Include="GenCs.cs" />
+		<Compile Include="GenD.cs" />
+		<Compile Include="GenJava.cs" />
+		<Compile Include="GenJs.cs" />
+		<Compile Include="SourceGenerator.cs" />
+		<Compile Include="SymbolTable.cs" />
+	</ItemGroup>
+	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

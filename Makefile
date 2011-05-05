@@ -14,11 +14,11 @@ install: /cygdrive/c/bin/cito.exe
 /cygdrive/c/bin/cito.exe: cito.exe
 	cp $< $@
 
-cito.exe: CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs GenAs.cs GenD.cs CiTo.cs
+cito.exe: AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs GenAs.cs GenD.cs CiTo.cs
 	csc -nologo -out:$@ -o+ $^
 
 clean:
-	rm -f cito.exe cito.pdb
+	rm -f cito.exe cito.pdb hello.c hello.h hello99.c hello99.h HelloCi.java hello.cs hello.js HelloCi.as hello.d
 
 .PHONY: all test install clean
 
