@@ -439,6 +439,16 @@ public class GenC : SourceGenerator
 				Write(stmt.InitialValue);
 			}
 		}
+		else if (stmt.Type is CiClassStorageType) {
+			CiClass klass = ((CiClassStorageType) stmt.Type).Class;
+			if (klass.Constructor != null || klass.ConstructsFields) {
+				WriteLine(";");
+				Write(klass.Name);
+				Write("_Construct(&");
+				WriteCamelCase(stmt.Name);
+				Write(')');
+			}
+		}
 	}
 
 	public override void Visit(CiAssign assign)
