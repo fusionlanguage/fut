@@ -321,7 +321,7 @@ public class GenC : SourceGenerator
 			WriteChildWithSuggestedParentheses(expr, expr.Right, 3, true);
 			break;
 		case CiToken.CondOr:
-			WriteChildWithSuggestedParentheses(expr, expr.Left, 11, true);
+			WriteChildWithSuggestedParentheses(expr, expr.Left, 10, true);
 			Write(" || ");
 			WriteChildWithSuggestedParentheses(expr, expr.Right, 10, true);
 			break;
