@@ -60,6 +60,10 @@ public class GenC89 : GenC
 	{
 		if (def == null)
 			return false;
+		if (def.Type is CiClassStorageType) {
+			CiClass klass = ((CiClassStorageType) def.Type).Class;
+			return klass.Constructor == null && !klass.ConstructsFields;
+		}
 		if (def.InitialValue == null)
 			return true;
 		if (def.Type is CiStringStorageType || def.Type is CiArrayStorageType)
@@ -122,15 +126,26 @@ public class GenC89 : GenC
 
 	public override void Visit(CiVar stmt)
 	{
-		if (stmt.InitialValue != null && stmt.WriteInitialValue) {
-			if (stmt.Type is CiArrayStorageType)
-				WriteClearArray(new CiVarAccess { Var = stmt });
-			else {
-				Visit(new CiAssign {
-					Target = new CiVarAccess { Var = stmt },
-					Op = CiToken.Assign,
-					Source = stmt.InitialValue
-				});
+		if (stmt.WriteInitialValue) {
+			if (stmt.InitialValue != null) {
+				if (stmt.Type is CiArrayStorageType)
+					WriteClearArray(new CiVarAccess { Var = stmt });
+				else {
+					Visit(new CiAssign {
+						Target = new CiVarAccess { Var = stmt },
+						Op = CiToken.Assign,
+						Source = stmt.InitialValue
+					});
+				}
+			}
+			else if (stmt.Type is CiClassStorageType) {
+				CiClass klass = ((CiClassStorageType) stmt.Type).Class;
+				if (klass.Constructor != null || klass.ConstructsFields) {
+					Write(klass.Name);
+					Write("_Construct(&");
+					WriteCamelCase(stmt.Name);
+					Write(')');
+				}
 			}
 			stmt.WriteInitialValue = false;
 		}
