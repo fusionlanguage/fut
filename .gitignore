@@ -2,6 +2,7 @@ bin
 obj
 *.exe
 *.pdb
+index.html
 hello.c
 hello.h
 hello99.c

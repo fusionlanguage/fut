@@ -17,9 +17,14 @@ install: /bin/cito.exe
 /bin/cito.exe: cito.exe
 	cp $< $@
 
+www: index.html
+
+index.html: README
+	asciidoc -o - -a www $< | xmllint --valid --nonet -o $@ -
+
 clean:
 	rm -f cito.exe cito.pdb hello.c hello.h hello99.c hello99.h HelloCi.java hello.cs hello.js HelloCi.as hello.d
 
-.PHONY: all check install clean
+.PHONY: all check install www clean
 
 .DELETE_ON_ERROR:
