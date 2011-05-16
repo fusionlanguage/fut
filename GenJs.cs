@@ -407,7 +407,7 @@ public class GenJs : SourceGenerator
 
 	public override void Write(CiProgram prog)
 	{
-		CreateFile(this.OutputPath);
+		CreateFile(this.OutputFile);
 		this.UsesSubstringMethod = false;
 		this.UsesCopyArrayMethod = false;
 		this.UsesBytesToStringMethod = false;

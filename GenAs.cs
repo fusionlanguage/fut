@@ -57,7 +57,8 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 
 	void CreateAsFile(CiSymbol symbol)
 	{
-		CreateFile(Path.Combine(this.OutputPath, symbol.Name + ".as"));
+		string dir = Path.GetDirectoryName(this.OutputFile);
+		CreateFile(Path.Combine(dir, symbol.Name + ".as"));
 		if (this.Namespace != null) {
 			Write("package ");
 			WriteLine(this.Namespace);

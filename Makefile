@@ -4,13 +4,13 @@ cito.exe: AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDo
 	csc -nologo -out:$@ -o+ $^
 
 check: hello.ci cito.exe
-	./cito.exe -l c -o hello.c hello.ci
+	./cito.exe -o hello.c hello.ci
 	./cito.exe -l c99 -o hello99.c hello.ci
-	./cito.exe -l java -o . hello.ci
-	./cito.exe -l cs -o hello.cs hello.ci
-	./cito.exe -l js -o hello.js hello.ci
-	./cito.exe -l as -o . hello.ci
-	./cito.exe -l d -o hello.d hello.ci
+	./cito.exe -o HelloCi.java hello.ci
+	./cito.exe -o hello.cs hello.ci
+	./cito.exe -o hello.js hello.ci
+	./cito.exe -o HelloCi.as hello.ci
+	./cito.exe -o hello.d hello.ci
 
 install: /bin/cito.exe
 

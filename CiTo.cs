@@ -28,7 +28,7 @@ public class CiTo
 {
 	static void Usage()
 	{
-		Console.WriteLine("Usage: cito [OPTIONS] -l LANG -o PATH INPUT.ci");
+		Console.WriteLine("Usage: cito [OPTIONS] -o FILE INPUT.ci");
 		Console.WriteLine("Options:");
 		Console.WriteLine("-l c     Translate to C89");
 		Console.WriteLine("-l c99   Translate to C99");
@@ -37,7 +37,7 @@ public class CiTo
 		Console.WriteLine("-l js    Translate to JavaScript");
 		Console.WriteLine("-l as    Translate to ActionScript");
 		Console.WriteLine("-l d     Translate to D");
-		Console.WriteLine("-o PATH  Write to the specified directory (Java, ActionScript) or file (other languages)");
+		Console.WriteLine("-o FILE  Write to the specified file");
 		Console.WriteLine("-n NAME  Specify C# namespace or Java/ActionScript package");
 		Console.WriteLine("-D NAME  Define conditional compilation symbol");
 		Console.WriteLine("-I DIR   Add directory for BinaryResource");
@@ -51,7 +51,7 @@ public class CiTo
 		List<string> inputFiles = new List<string>();
 		List<string> searchDirs = new List<string>();
 		string lang = null;
-		string outputPath = null;
+		string outputFile = null;
 		string namespace_ = null;
 		for (int i = 0; i < args.Length; i++) {
 			string arg = args[i];
@@ -67,7 +67,7 @@ public class CiTo
 					lang = args[++i];
 					break;
 				case "-o":
-					outputPath = args[++i];
+					outputFile = args[++i];
 					break;
 				case "-n":
 					namespace_ = args[++i];
@@ -89,7 +89,12 @@ public class CiTo
 				inputFiles.Add(arg);
 			}
 		}
-		if (lang == null || outputPath == null || inputFiles.Count == 0) {
+		if (lang == null && outputFile != null) {
+			string ext = Path.GetExtension(outputFile);
+			if (ext.Length >= 2)
+				lang = ext.Substring(1);
+		}
+		if (lang == null || outputFile == null || inputFiles.Count == 0) {
 			Usage();
 			return 1;
 		}
@@ -132,7 +137,7 @@ public class CiTo
 		case "d": gen = new GenD(); break;
 		default: throw new ApplicationException("Unknown language: " + lang);
 		}
-		gen.OutputPath = outputPath;
+		gen.OutputFile = outputFile;
 		gen.Write(program);
 		return 0;
 	}

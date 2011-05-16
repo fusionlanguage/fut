@@ -52,7 +52,8 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 
 	void CreateJavaFile(string type, CiSymbol symbol)
 	{
-		CreateFile(Path.Combine(this.OutputPath, symbol.Name + ".java"));
+		string dir = Path.GetDirectoryName(this.OutputFile);
+		CreateFile(Path.Combine(dir, symbol.Name + ".java"));
 		if (this.Namespace != null) {
 			Write("package ");
 			Write(this.Namespace);

@@ -824,7 +824,7 @@ public class GenC : SourceGenerator
 	{
 		Write(directive);
 		Write(" _");
-		foreach (char c in Path.GetFileNameWithoutExtension(this.OutputPath))
+		foreach (char c in Path.GetFileNameWithoutExtension(this.OutputFile))
 			Write(CiLexer.IsLetter(c) ? char.ToUpperInvariant(c) : '_');
 		WriteLine("_H_");
 	}
@@ -836,8 +836,8 @@ public class GenC : SourceGenerator
 
 	public override void Write(CiProgram prog)
 	{
-		string headerPath = Path.ChangeExtension(this.OutputPath, "h");
-		CreateFile(headerPath);
+		string headerFile = Path.ChangeExtension(this.OutputFile, "h");
+		CreateFile(headerFile);
 		WriteGuard("#ifndef");
 		WriteGuard("#define");
 		WriteBoolType();
@@ -855,11 +855,11 @@ public class GenC : SourceGenerator
 		WriteLine("#endif");
 		CloseFile();
 
-		CreateFile(this.OutputPath);
+		CreateFile(this.OutputFile);
 		WriteLine("#include <stdlib.h>");
 		WriteLine("#include <string.h>");
 		Write("#include \"");
-		Write(Path.GetFileName(headerPath));
+		Write(Path.GetFileName(headerFile));
 		WriteLine("\"");
 		WriteTypedefs(prog, CiVisibility.Internal);
 		foreach (CiSymbol symbol in prog.Globals) {

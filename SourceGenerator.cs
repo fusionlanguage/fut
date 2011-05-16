@@ -25,7 +25,7 @@ namespace Foxoft.Ci
 
 public abstract class SourceGenerator : ICiStatementVisitor
 {
-	public string OutputPath;
+	public string OutputFile;
 	TextWriter Writer;
 	protected int Indent = 0;
 	bool AtLineStart = true;

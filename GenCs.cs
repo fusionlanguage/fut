@@ -416,7 +416,7 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 
 	public override void Write(CiProgram prog)
 	{
-		CreateFile(this.OutputPath);
+		CreateFile(this.OutputFile);
 		if (this.Namespace != null) {
 			Write("namespace ");
 			WriteLine(this.Namespace);

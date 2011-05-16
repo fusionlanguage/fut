@@ -472,7 +472,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 
 	public override void Write(CiProgram prog)
 	{
-		CreateFile(this.OutputPath);
+		CreateFile(this.OutputFile);
 		WriteLine("import std.utf;");
 		foreach (CiSymbol symbol in prog.Globals)
 			symbol.Accept(this);
