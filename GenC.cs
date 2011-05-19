@@ -29,13 +29,6 @@ public class GenC : SourceGenerator
 {
 	CiMethod CurrentMethod;
 
-	protected override void Write(CiCodeDoc doc)
-	{
-		if (doc == null)
-			return;
-		// TODO
-	}
-
 	void Write(CiEnum enu)
 	{
 		WriteLine();
@@ -131,6 +124,7 @@ public class GenC : SourceGenerator
 
 	void Write(CiClass klass, CiConst konst)
 	{
+		WriteLine();
 		Write(konst.Documentation);
 		Write("#define ");
 		Write(klass.Name);
@@ -566,7 +560,6 @@ public class GenC : SourceGenerator
 			return;
 		WriteLine();
 		this.CurrentMethod = method;
-		Write(method.Documentation);
 		WriteSignature(method);
 		WriteLine();
 		OpenBlock();
@@ -706,6 +699,8 @@ public class GenC : SourceGenerator
 		}
 		del.WriteStatus = CiWriteStatus.Done;
 
+		WriteLine();
+		Write(del.Documentation);
 		WriteLine("typedef struct ");
 		OpenBlock();
 		WriteLine("void *obj;");
@@ -743,6 +738,7 @@ public class GenC : SourceGenerator
 				WriteLine(";");
 			}
 			if (pub && klass.Visibility == CiVisibility.Public) {
+				WriteLine();
 				WriteNewSignature(klass);
 				WriteLine(";");
 				WriteDeleteSignature(klass);
@@ -754,6 +750,10 @@ public class GenC : SourceGenerator
 				if (member is CiConst && pub)
 					Write(klass, (CiConst) member);
 				else if (member is CiMethod && member.Visibility != CiVisibility.Dead) {
+					if (pub) {
+						WriteLine();
+						WriteDoc((CiMethod) member);
+					}
 					WriteSignature((CiMethod) member);
 					WriteLine(";");
 				}
@@ -786,7 +786,6 @@ public class GenC : SourceGenerator
 
 		WriteLine();
 		if (klass.HasFields) {
-			Write(klass.Documentation);
 			Write("struct ");
 			Write(klass.Name);
 			Write(' ');
@@ -849,6 +848,7 @@ public class GenC : SourceGenerator
 			if (symbol is CiClass && symbol.Visibility == CiVisibility.Public)
 				WriteSignatures((CiClass) symbol, true);
 		}
+		WriteLine();
 		WriteLine("#ifdef __cplusplus");
 		WriteLine("}");
 		WriteLine("#endif");
