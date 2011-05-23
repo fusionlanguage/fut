@@ -618,7 +618,7 @@ public class CiCoercion : CiExpr
 	public CiType ResultType;
 	public CiMaybeAssign Inner;
 	public override CiType Type { get { return this.ResultType; } }
-	public override bool HasSideEffect { get { return ((CiExpr) this.Inner).HasSideEffect; } } // TODO
+	public override bool HasSideEffect { get { return ((CiExpr) this.Inner).HasSideEffect; } } // TODO: Assign
 }
 
 public class CiAssign : CiMaybeAssign, ICiStatement
