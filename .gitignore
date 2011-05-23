@@ -2,7 +2,8 @@ bin
 obj
 *.exe
 *.pdb
-index.html
+*.html
+MANIFEST
 hello.c
 hello.h
 hello99.c
