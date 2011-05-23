@@ -40,7 +40,7 @@ public class CiTo
 		Console.WriteLine("-o FILE  Write to the specified file");
 		Console.WriteLine("-n NAME  Specify C# namespace or Java/ActionScript package");
 		Console.WriteLine("-D NAME  Define conditional compilation symbol");
-		Console.WriteLine("-I DIR   Add directory for BinaryResource");
+		Console.WriteLine("-I DIR   Add directory to BinaryResource search path");
 		Console.WriteLine("--help   This help");
 	}
 
