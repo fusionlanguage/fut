@@ -1,0 +1,45 @@
+Jak skompilować cito
+====================
+
+(nie mylić z używaniem `cito`)
+
+Pobranie kodu źródłowego
+------------------------
+
+Kod źródłowy można pobrać na jeden z dwóch sposobów:
+
+Z oficjalnej paczki::
+http://sourceforge.net/projects/cito/files/[Pobieramy] plik z rozszerzeniem `.tar.gz`, następnie rozpakowujemy go. Pod Windowsem można użyć http://7-zip.org[7-Zip].
+
+Z repozytorium Git::
+W ten sposób uzyskamy najnowszy kod, z wszystkimi tego konsekwencjami (np. nieaktualna dokumentacja). Należy użyć klienta Git, np. z linii poleceń:
++
+--------------------------------------------------------------------------------
+git clone git://cito.git.sourceforge.net/gitroot/cito/cito
+--------------------------------------------------------------------------------
+
+Kompilacja
+----------
+
+Mając kod źródłowy mamy następujące możliwości skompilowania go:
+
+Używając MSBuild::
+MSBuild jest wbudowany w .NET Framework. W katalogu ze źródłami wydajemy polecenie `msbuild`.
+
+Używając Mono i `xbuild`::
+Należy mieć zainstalowany kompilator C# (`gmcs`) i odpowiednik MSBuild (`xbuild`). W katalogu ze źródłami wydajemy polecenie `xbuild`.
+
+Używając GNU Make::
+Wymagany jest kompilator C# (`csc` lub `gmcs`).  W katalogu ze źródłami wydajemy polecenie `make`.
+
+Używając Visual Studio::
+Otwieramy plik `CiTo.csproj`. Kompilujemy.
+
+Instalacja (Linux)
+------------------
+
+Instalację polegającą na skopiowaniu `cito.exe` wykonujemy poleceniem:
+--------------------------------------------------------------------------------
+sudo make install
+--------------------------------------------------------------------------------
+Domyślnie program jest umieszczany w katalogu `/usr/local/bin`.

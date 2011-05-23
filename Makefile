@@ -30,7 +30,13 @@ uninstall:
 $(srcdir)README.html: $(srcdir)README
 	$(call ASCIIDOC,)
 
-www: index.html
+$(srcdir)INSTALL.html: $(srcdir)INSTALL
+	$(call ASCIIDOC,)
+
+$(srcdir)ci.html: $(srcdir)ci.txt
+	$(call ASCIIDOC,-a toc)
+
+www: index.html $(srcdir)INSTALL.html $(srcdir)ci.html
 
 index.html: $(srcdir)README
 	$(call ASCIIDOC,-a www)
@@ -40,19 +46,23 @@ clean:
 
 dist: ../cito-$(VERSION)-bin.zip srcdist
 
-../cito-$(VERSION)-bin.zip: cito.exe $(srcdir)README.html
+../cito-$(VERSION)-bin.zip: cito.exe $(srcdir)README.html $(srcdir)ci.html $(srcdir)hello.ci
 	$(RM) $@ && $(SEVENZIP) -tzip $@ $(^:%=./%)
 # "./" makes 7z don't store paths in the archive
 
-srcdist: $(srcdir)MANIFEST $(srcdir)README.html
+srcdist: $(srcdir)MANIFEST $(srcdir)README.html $(srcdir)INSTALL.html $(srcdir)ci.html
 	$(RM) ../cito-$(VERSION).tar.gz && tar -c --numeric-owner --owner=0 --group=0 --mode=644 -T MANIFEST --transform=s,,cito-$(VERSION)/, | $(SEVENZIP) -tgzip -si ../cito-$(VERSION).tar.gz
 
 $(srcdir)MANIFEST:
 	if test -e $(srcdir).git; then \
 		(git ls-tree -r --name-only --full-tree master | grep -vF .gitignore \
-			&& echo MANIFEST && echo README.html ) | sort -u >$@; \
+			&& echo MANIFEST && echo README.html && echo INSTALL.html && echo ci.html ) | sort -u >$@; \
 	fi
 
-.PHONY: all check install uninstall www clean srcdist $(srcdir)MANIFEST
+version:
+	@grep -H Version $(srcdir)AssemblyInfo.cs
+	@grep -H '"cito ' $(srcdir)CiTo.cs
+
+.PHONY: all check install uninstall www clean srcdist $(srcdir)MANIFEST version
 
 .DELETE_ON_ERROR:

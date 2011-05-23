@@ -1,0 +1,499 @@
+Język programowania Ć
+=====================
+
+Ć jest językiem programowania, który może być automatycznie tłumaczony na C, Javę, C#, JavaScript, ActionScript oraz http://www.digitalmars.com/d/[D]. Tłumaczenia dokonuje program `cito`.
+
+Ć jest przeznaczony do pisania 'bardzo' przenośnych bibliotek programistycznych. Przenośne biblioteki pisze się obecnie w języku C. Są z tym następujące problemy:
+
+1. Java i C# (że nie wspomnę o innych językach) umożliwiają wywołanie funkcji napisanej w języku C. Nie dotyczy to jednak (na szczęście) maszyn wirtualnych działających w przeglądarkach internetowych oraz telefonach komórkowych (bywają wyjątki). Ć można przetłumaczyć na języki, dla których przeznaczone są te maszyny wirtualne.
+
+2. Biblioteki, które pragną być bardzo przenośne, oprócz właściwego kodu w języku C posiadają powiązania (ang. bindings, wrappers) do innych języków. Wymaga to jednak dodatkowego nakładu pracy, aby utrzymywać powiązania w zgodzie z rozwijającą się biblioteką. Zastosowanie Ć eliminuje sens powiązań, gdyż implementacja w Ć jest w całości tłumaczona na docelowy język. `cito` dba o to, aby konwencje nazewnicze były dostosowane do docelowego języka - np. w Javie pojawi się metoda "doFoo" i stała "FOO_BAR", a w C# odpowiednio "DoFoo" i "FooBar". Komentarze dokumentacyjne również są tłumaczone.
+
+3. C wygląda archaicznie w porównaniu do nowszych języków. W dodatku kompilator Microsoft z 2010 roku nie obsługuje standardu C99, czyli brakuje standardowego typu logicznego (`bool`), a wszystkie zmienne lokalne trzeba definiować na początku bloku. Ć wygląda bardziej jak C# lub Java, a `cito` potrafi z tego zrobić zarówno C99 jak i C89.
+
+Teraz trochę o ograniczeniach Ć:
+
+1. Ć nie posiada własnej biblioteki, jeśli nie liczyć kilku bardzo prostych metod wbudowanych. Zapomnij o graficznym interfejsie użytkownika (chyba, że sam go zaimplementujesz w Ć), o usługach sieciowych itp. Ć jest pomyślane do zadań niskopoziomowych, operujących bezpośrednio na bitach i bajtach. Jest http://asap.sourceforge.net[dowód], że można programować w Ć emulację procesorów i innych układów scalonych oraz algorytmy kompresji. Są też zapewne inne zastosowania, o których jeszcze nie pomyślałem.
+
+2. Na dzień dzisiejszy nie ma programu napisanego w całości w języku Ć. Z uwagi na punkt pierwszy, chociażby interfejs użytkownika musi zostać zaprogramowany w innej technologii.
+
+Pliki źródłowe
+--------------
+
+Dla spokoju proponuję używać rozszerzenia nazwy pliku `.ci` zamiast `.ć`. Podobnie w treści pliku używamy tylko znaków ASCII i to nie tych kontrolnych. Mamy dwudziesty pierwszy wiek, globalizację, Unicode itp. jednak wiele narzędzi dławi się polskimi ogonkami, a programiści nie rozumieją komentarzy po japońsku.
+
+Białe znaki zwykle nie mają znaczenia w źródle programu w języku Ć. Dzięki temu można dalej toczyć wojny o to, który styl umieszczania klamer jest najlepszy.
+
+Dostępne są komentarze jednolinijkowe: od `//` do końca linii. O komentarzach dokumentacyjnych piszę poniżej. `/* takich komentarzy nie ma */`.
+
+Typy danych
+-----------
+
+Typy całkowitoliczbowe
+~~~~~~~~~~~~~~~~~~~~~~
+
+Typ `int` to (jakże by inaczej) 32 bity ze znakiem. Stałe zapisujemy dziesiętnie lub szesnastkowo (`0x123`). Przed stałymi ósemkowymi (`0123`) język Ć póki co się broni. Zobaczymy, jak długo.
+
+Stałe znakowe (`a`) przekładają się na kod ASCII znaku, typu `int` (nie `char`, gdyż w Ć nie ma takiego typu): Można też użyć:
+
+* `'\t'` - tabulacja
+* `'\r'` - CR
+* `'\n'` - LF
+* `'\\'` - odwrotny ukośnik
+* `'\''` - apostrof
+* `'\"'` - cudzysłów
+
+Operatory dwuargumentowe typu `int` to znajome `+ - * / % & | ^ << >>`, również w wersji z przypisaniem (np. `*=`). Mamy też zwiększanie i zmniejszanie o jeden (`x++ ++x x-- --x`), zmianę znaku (`-`), negację bitów (`~`) oraz porównania (`== != < <= > >=`).
+
+Drugim typem całkowitoliczbowym jest `byte` - tu uwaga piszący w Javie - bez znaku, czyli od 0 do 255. Istnieje niejawna konwersja z `byte` do `int`, więc operacje na bajtach można wykonywać jak wyżej.
+
+Zapis `x.LowByte` oznacza rzutowanie `x` typu `int` na `byte`. W języku Ć nie można rzutować podając nazwę typu w nawiasie.
+
+`x.MulDiv(y, z)` oznacza `(x * y / z)` przy ograniczeniu ryzyka przepełnienia. Na Javę i C# tłumaczy się to jako `((int) (long) x * y / z)`.
+
+`x.SByte` dla `x` typu `byte` zwróci wartość bajtu ze znakiem - czyli dla `x` z przedziału 128..255 otrzymamy wartość z przedziału `-128..-1`.
+
+Typ logiczny
+~~~~~~~~~~~~
+
+Typ logiczny nazywa się `bool`, a jego stałe to `true` i `false`.
+
+Operatory logiczne to zwyczajowe `!` (negacja), `&&` i `||` oraz operator trójargumentowy `x ? y : z`.
+
+Wyjaśnienia wymaga tłumaczenie typu logicznego na język C. W tłumaczeniu na C89 uzyskamy:
+
+-------------------
+typedef int cibool;
+#ifndef TRUE
+#define TRUE 1
+#endif
+#ifndef FALSE
+#define FALSE 0
+#endif
+-------------------
+
+i dalej będą używane `cibool`, `TRUE` i `FALSE`. Tłumaczenie na C99 to:
+
+-------------------
+#include <stdbool.h>
+-------------------
+
+i dalej mamy `bool`, `true`, `false`.
+
+Zwracam uwagę, że powyższe zapisy stanowią wyłącznie tłumaczenie na język C. W języku Ć nie można stosować `true` zamienne z `1` ani `false` z `0`.
+
+Typy wyliczeniowe
+~~~~~~~~~~~~~~~~~
+
+Oto prosty przykład definicji typu wyliczeniowego:
+
+-------------------
+enum DayOfWeek
+{
+    Monday,
+    Tuesday,
+    Wednesday,
+    Thursday,
+    Friday,
+    Saturday,
+    Sunday
+}
+-------------------
+
+Identyfikatorom wyliczeniowym nie można przypisywać wartości całkowitoliczbowych. Nie istnieje też żadna konwersja między typami wyliczeniowymi a całkowitoliczbowymi.
+
+`enum` można poprzedzić słowem kluczowym `public`, co oznacza widoczność poza kodem w Ć, tzn. typ wyliczeniowy stanowi fragment publicznego interfejsu biblioteki zaprogramowanej w Ć.
+
+Odwołując się do wartości typu wyliczeniowego zawsze musimy podać nazwę typu, np. `DayOfWeek.Friday`. Dla programujących w języku Java: dotyczy to również konstrukcji `case`.
+
+Ciągi tekstowe
+~~~~~~~~~~~~~~
+
+Jeśli masz przetwarzać tekst, zdecydowanie wybierz Perl zamiast Ć.
+
+W Ć mamy dwa rodzaje typów dla ciągów tekstowych:
+
+* Wskaźnik do ciągu tekstowego, zapisywany po prostu jako `string`. Na C tłumaczy się to jako `const char *`.
+* Magazyn (ang. storage) ciągu tekstowego, zapisywany jako `string(n)`, gdzie `n` jest stałą całkowitoliczbową (ogólniej: wyrażeniem, którego wartością w trakcie kompilacji jest stała całkowitoliczbowa) określającą maksmalną długość ciągu. `string(15) s` w Ć tłumaczy się na C jako `char s[16]`.
+
+Powyższe rozróżnienie będzie widoczne tylko w tłumaczeniu na język C. W pozostałych językach będzie użyty ten sam typ `String`.
+
+Stałe tekstowe zapisujemy w cudzysłowach: `"Ala ma kota"`. Można używać sekwencji `\n` i podobnych, które opisano przy stałych znakowych. Stałe tekstowe można łączyć operatorem `+`. Nie można jednak użyć tego operatora do zmiennych tekstowych.
+
+Dozwoloną wartością wskaźnika (nie tylko do ciągu tekstowego, ale też opisanych dalej tablicy i klasy) jest `null`.
+
+Istnieją niejawne konwersje magazynów (ciągu tekstowego, tablicy, klasy) do wskaźników. Nie ma potrzeby używania znanego z C operatora `&`.
+
+Długość ciągu `s` uzyskamy pisząc `s.Length`. Kod znaku na pozycji `i` można pobrać pisząc `s[i]`. Podciąg pobieramy przez `s.Substring(startIndex, length)`, ale uwaga - trzeba go koniecznie przypisać do magazynu ciągu tekstowego.
+
+Przypisując ciąg do magazynu programista musi zatroszczyć się o to, aby długość ciągu nie przekraczała pojemności magazynu, gdyż tłumaczy się to na `strcpy`. Podobnie w przypadku operatora `+=`, który odpowiada `strcat`.
+
+Tablice
+~~~~~~~
+
+Mamy dwa rodzaje typów tablicowych:
+
+* Wskaźnik do tablicy: `T[]`, gdzie `T` jest typem bazowym tablicy.
+* Magazyn tablicy: `T[n]`, gdzie `n` to rozmiar tablicy.
+
+Element tablicy `array` można odczytać i zmodyfikować stosując składnię `array[i]`. Tablice o elementach typu `byte` można kopiować (`sourceArray.CopyTo(sourceIndex, destinationArray, destinationIndex, length)`) i przekształcać zawarte w nich kody znaków na ciągi tekstowe (`sourceArray.ToString(startIndex, length)`).
+
+Rozmiar tablicy można pobrać tylko dla magazynu, przez `array.Length`. Można zerować wszystkie elementy magazynów tablic `byte` i `int` pisząc `array.Clear()`.
+
+Jest możliwość definowania stałych tablic bajtów wypełnionych zawartością pliku na etapie kompilacji. Np. `BinaryResource("foo.bar")` to wyrażenie, którego wartością jest tablica zawierająca bajty pliku `foo.bar` w momencie wywołania `cito`.
+
+Klasy
+~~~~~
+
+Definicja klasy wygląda znajomo:
+-------------------
+class HelloCi
+{
+    // tutaj zawartość, czyli członkowie klasy
+}
+-------------------
+
+Nie należy umieszczać średnika po klamrze zamykającej definicję klasy.
+
+Obecna wersja języka Ć nie obsługuje dziedziczenia klas.
+
+W jednym pliku źródłowym `.ci` można zdefiniować wiele klas. Nie ma żadnego związku między nazwą klasy a nazwą pliku, w którym jest ona zdefiniowana.
+
+Zdefiniowana w powyższy sposób klasa jest widoczna dla kodu w Ć. Aby była widoczna z zewnątrz, dodajemy modyfikator `public`.
+
+Domyślnie członkowie są widoczni dla całego kodu w Ć. Jeśli odwołania do nich występują tylko z wnętrza tej samej klasy, `cito` przetłumaczy ich widoczność na `private`. Modyfikatora `public` można użyć do metod i stałych, ale nie do pól klasy.
+
+Członkami klasy mogą być:
+
+* stałe
+* pola
+* metody
+* konstruktor
+* makra
+
+W języku Ć nie można definować znanych z języka C# właściwości (ang. properties). Istnieją natomiast właściwości wbudowane, opisane wyżej, jak na przykład `Length`.
+
+Dla każdej klasy `C` dostępne są typy:
+
+* Wskaźnik do klasy: `C`.
+* Magazyn klasy: `C()`, czyli utworzona instancja klasy `C`.
+
+Delegaty
+~~~~~~~~
+
+Delegat (ang. delegate) to znane z C# połączenie wskaźnika do metody oraz obiektu:
+-------------------
+public delegate void ByteWriter(int data);
+...
+public class MyWriter
+{
+    public void WriteTo(ByteWriter bw)
+    {
+        ...
+        bw(x);
+        ...
+    }
+}
+-------------------
+
+Obsługa delegatów nie jest jeszcze pełna.
+
+Stałe
+-----
+
+Oto przykłady definicji stałych:
+-------------------
+public class ConstDemo
+{
+    const int Foo = 5;
+    public const int Bar = Foo + 3;
+    public const string Hello = "Hello, " + "world!";
+    const byte[] Rainbow = { 0xff, 0xff, 0x00, 0x06, 0x08, 0x06, 0xad, 0x0b, 0xd4, 0x8d, 0x1a, 0xd0, 0x4c, 0x00, 0x06 };
+}
+-------------------
+
+W przetłumaczonym kodzie pojawiają się tylko stałe publiczne i stałe tablice. Pozostałe stałe są zamieniane na swoją wartość.
+
+`cito` dokonuje zwijania stałych, tj. operacje dotyczące wyłącznie stałych są wykonywane na etapie tłumaczenia. Np. `2*3` zostanie przetłumaczone na `6`.
+
+Pola
+----
+
+Pola definiujemy w typowy sposób:
+-------------------
+public class FieldDemo
+{
+    int Field1;
+    SomeClass AClassPointer;
+    SomeClass() AClassStorage;
+}
+-------------------
+
+Pola nie mogą być publiczne -- należy definiować publiczne metody, które pobierają i ustawiają wartość pól.
+
+Metody
+------
+
+Metody domyślnie mają dostęp do instancji klasy, w której są zdefiniowane - poprzez wskaźnik `this`. Nie dotyczy to metod statycznych (zdefiniowanych z modyfikatorem `static`).
+
+W definicji metody nazwa musi być poprzedzona zwracanym typem. `void` oznacza, że metoda nie zwraca żadnej wartości.
+
+Ć nie obsługuje przeciążenia metod - znaczy to, że nazwy metod w obrębie klasy muszą być unikalne.
+
+-------------------
+class MethodDemo
+{
+    int Counter;
+    static int Sum(int x, int y)
+    {
+        return x + y;
+    }
+    public void Increment()
+    {
+        Counter++;
+    }
+    public int Test(MethodDemo md, int x)
+    {
+        md.Increment();
+        return MethodDemo.Sum(md.Counter, 3);
+    }
+}
+-------------------
+
+Konstruktor
+-----------
+
+Klasa może zawierać jeden bezparametrowy konstruktor. Zadaniem konstruktora jest inicjalizacja nowej instancji klasy.
+-------------------
+class ConstructorDemo
+{
+    int Counter;
+    ConstructorDemo()
+    {
+        Counter = 0;
+    }
+}
+-------------------
+
+Instrukcje
+----------
+
+Instrukcje używane są w metodach i konstruktorach. Bardzo przypominają te znane Ci już z innych języków.
+
+W Ć nie ma instrukcji pustej, składającej się z samego średnika. Taka instrukcja jest często oznaką pomyłki programisty. Zamiast instrukcji pustej można użyć pustego bloku: `{ }`.
+
+Bloki
+~~~~~
+
+Blokiem nazywamy ciąg instrukcji objęty klamrami.
+
+Definicje zmiennych
+~~~~~~~~~~~~~~~~~~~
+
+Zmienne muszą być definiowane pojedynczo, to znaczy tak:
+-------------------
+int x;
+int y;
+-------------------
+
+a nie tak:
+-------------------
+int x, y; // BŁĄD
+-------------------
+
+Definicja zmiennej może zawierać wartość początkową:
+-------------------
+int x = 5;
+int[4] array = 0; // tablica zawierająca początkowo cztery zera
+-------------------
+
+Wyrażenia
+~~~~~~~~~
+
+W kontekście instrukcji mogą zostać użyte tylko niektóre wyrażenia. Poprawnymi instrukcjami są:
+-------------------
+DoFoo(4, 2); // wywołanie metody
+i++;
+-------------------
+
+Natomiast nie są nimi:
+-------------------
+4 + 2; // BŁĄD
+++i; // BŁĄD, bez dyskusji należy zamienić na i++
+-------------------
+
+W języku Ć nie ma operatora przecinka.
+
+Przypisania
+~~~~~~~~~~~
+
+Przypisanie jest instrukcją, a nie operatorem. Nie można więc użyć przypisania w dowolnym wyrażeniu.
+-------------------
+x = y;
+y = 5;
+x = y = 3; // przypisania można łączyć
+x += 4; // dodaje 4 do x
+if ((x = Foo()) != null) { Bar(); } // BŁĄD
+-------------------
+
+Stałe
+~~~~~
+
+Powyżej była mowa o definiowaniu stałych w klasie. Można też zrobić to wszędzie, gdzie jest oczekiwana instrukcja. Taka definicja ma wtedy zasięg ograniczony do bloku, w którym występuje (w szczególności bloku stanowiącego treść metody), a więc nie może zawierać modyfikatora `public`.
+
+Zwracanie wyniku metody
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Działanie metody można zakończyć instrukcją `return`. Z wyjątkiem metod `void`, należy po `return` podać wyrażenie określające zwracaną przez metodę wartość.
+
+Instrukcja warunkowa
+~~~~~~~~~~~~~~~~~~~~
+
+Jest to znana instrukcja `if` z opcjonalnym `else`.
+
+-------------------
+if (x == 7)
+    DoFoo();
+else
+    DoBar();
+-------------------
+
+Pętle
+~~~~~
+
+Mamy do dyspozycji trzy rodzaje pętli:
+
+* `while`, w której warunek jest sprawdzany na początku,
+* `do/while` sprawdzająca warunek po pierwszym obiegu pętli,
+* `for` zawierająca dodatkowo instrukcję wykonywaną na początku oraz po każdym obiegu.
+
+Wewnątrz pętli można użyć:
+
+* `break` w celu przerwania pętli (najbardziej wewnętrznej, gdyż nie są obecnie obsługiwane etykiety),
+* `continue` w celu zakończenia bieżącego obiegu pętli i przejściu do następnego.
+
+Instrukcja wyboru
+~~~~~~~~~~~~~~~~~
+
+W instrukcji `switch` bloki `case` muszą być prawidłowo zakończone, na przykład:
+-------------------
+switch (x) {
+case 1:
+    DoFoo();
+    // BŁĄD: czegoś tu brakuje
+case 2:
+    DoBar();
+    break;
+}
+-------------------
+
+Prawidłowe zakończenie oznacza instrukcję, która nie pozwoli na przejście dalej: `break`, `continue`, `return`, `throw` lub znaną z C# instrukcję `goto case` / `goto default`, która wykona skok do następnego bloku.
+-------------------
+switch (x) {
+case 1:
+    DoFoo();
+    goto case 2; // teraz wiadomo, o co chodzi
+case 2:
+    DoBar();
+    break;
+}
+-------------------
+
+Wyjątki
+~~~~~~~
+
+W języku Ć można rzucać wyjątki, ale póki co nie można ich obsługiwać. Zamysł jest taki, że wyjątki będą obsługiwane przez kod używający bibliteki w Ć.
+
+Rzucenie wyjątku odbywa się poprzez instrukcję `throw` z argumentem typu ciąg tekstowy. Nie ma możliwości określenia klasy wyjątku, jest ona określona na sztywno w `cito` (np. `java.lang.Exception`).
+
+Wyjaśnienia wymaga tłumaczenie wyjątków na język C. Ciąg tekstowy nie pojawia się w tłumaczeniu, a instrukcja `throw` jest zastępowana przez `return` z magiczną wartością oznaczającą błąd:
+
+* `-1` w metodzie zwracającej `int`,
+* `NULL` w metodzie wracającej wskaźnik,
+* `false` w metodze `void`, która jest tłumaczona na metodę `bool` (`true` oznacza poprawne wykonanie metody).
+
+Bloki natywne
+~~~~~~~~~~~~~
+
+Kod, który nie może zostać wyrażony w języku Ć, można zapisać w języku docelowym stosując konstrukcję:
+-------------------
+native {
+    printf("Hello, world!\n");
+}
+-------------------
+
+Bloki natywne powinny być używane wewnątrz `#if`.
+
+Makra
+-----
+
+Makra w Ć przypominają te znane z języka C, jednak składnia jest inna. Istnieją dwa rodzaje makr:
+
+Makro wyrażeniowe::
+Definicja:
++
+-------------------
+macro MY_EXPR_MACRO(arg1, arg2) (expr) // nawiasy są wymagane
+-------------------
++
+Rozwinięcie makra wyrażeniowego zawsze zawiera zewnętrzne nawiasy.
+
+Makro-instrukcja::
+Definicja:
++
+-------------------
+macro MY_STATEMENT_MACRO(arg1, arg2) { statement; }
+-------------------
++
+Podczas rozwijania makro-instrukcji zostaną pominięte nawiasy klamrowe, a także końcowy średnik, dzięki czemu wywołanie `MY_STATEMENT_MACRO(1, 2);` nie kończy się dwoma średnikami.
+
+W odróżnieniu od języków C i C++ jeśli definicja makra składa się z wielu linii, nie należy stosować odwrotnych ukośników na końcach linii. Koniec makra jest rozpoznawany przez dopasowywanie par nawiasów.
+
+Makra mogą przyjmować dowolną liczbę argumentów. Nawiasy otaczające parametry w definicji oraz argumenty w wywołaniu są wymagane. Stałe nie powinny być definiowane przy pomocy makr, lecz `const`.
+
+Makra mogą być definowane jako członkowie klasy oraz wszędzie, gdzie może zostać użyta instrukcja. Zasięg makr jest ograniczony odpowiednio do klas oraz bloków.
+
+Można stosować znany z preprocesora języka C operator łączenia identyfikatorów: `##`.
+
+Kompilacja warunkowa
+--------------------
+
+Kompilacja warunkowa w Ć jest wzorowana na języku C#. Symbole kompilacji warunkowej można podawać tylko z linii poleceń `cito` i są one niezależne od makr opisanych w poprzednim punkcie. Symbole kompilacji warunkowej nie mają przypisanych wartości, badana może być tylko ich obecność.
+
+Najprostszy przykład:
+
+-------------------
+#if MY_SYMBOL
+    MyOptionalFunction();
+#endif
+-------------------
+
+Bardziej skomplikowany przykład:
+-------------------
+#if WINDOWS
+    DeleteFile(filename);
+#elif LINUX || UNIX
+    unlink(filename);
+#else
+    UNKNOWN OPERATING SYSTEM!
+#endif
+-------------------
+
+Operatory dozwolone w `#if` i `#elif` to `! && ||`. Można używać symbolu `true`, który jest zawsze zdefiniowany.
+
+Komentarze dokumentacyjne
+-------------------------
+
+Komentarze dokumentacyjne mogą dotyczyć klas, typów wyliczeniowych, stałych, metod oraz ich parametrów. Trwają prace nad specyfikacją składni i implementacją tłumaczenia komentarzy dokumentacyjnych.
+
+// czcionka nieproporcjonalna, akapity, listy
+
+Konwencje nazewnicze
+--------------------
+
+Sugerowane jest stosowanie w Ć następującej konwencji nazewniczej:
+
+* zmienne lokalne i parametry rozpoczynamy małą literą, stosując wielką literę dla kolejnych słów, czyli `camelCase`,
+* wszystkie inne identyfikatory rozpoczynamy wielką literą, czyli `PascalCase`.
+
+Generatory dla poszczególnych języków utworzą identyfikatory o konwencji stosowanej w danym języku, np. stałe w postaci `UPPERCASE_WITH_UNDERSCORES`.
