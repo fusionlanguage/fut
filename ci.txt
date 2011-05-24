@@ -1,4 +1,4 @@
-Język programowania Ć
+﻿Język programowania Ć
 =====================
 
 Ć jest językiem programowania, który może być automatycznie tłumaczony na C, Javę, C#, JavaScript, ActionScript oraz http://www.digitalmars.com/d/[D]. Tłumaczenia dokonuje program `cito`.
@@ -34,16 +34,16 @@ Typy całkowitoliczbowe
 
 Typ `int` to (jakże by inaczej) 32 bity ze znakiem. Stałe zapisujemy dziesiętnie lub szesnastkowo (`0x123`). Przed stałymi ósemkowymi (`0123`) język Ć póki co się broni. Zobaczymy, jak długo.
 
-Stałe znakowe (`a`) przekładają się na kod ASCII znaku, typu `int` (nie `char`, gdyż w Ć nie ma takiego typu): Można też użyć:
+Stałe znakowe (np. `'a'`) przekładają się na kod ASCII znaku, typu `int` (nie `char`, gdyż w Ć nie ma takiego typu). Można też użyć:
 
 * `'\t'` - tabulacja
 * `'\r'` - CR
 * `'\n'` - LF
-* `'\\'` - odwrotny ukośnik
+* `'\\'` - odwrotny ukośnik (ang. backslash)
 * `'\''` - apostrof
 * `'\"'` - cudzysłów
 
-Operatory dwuargumentowe typu `int` to znajome `+ - * / % & | ^ << >>`, również w wersji z przypisaniem (np. `*=`). Mamy też zwiększanie i zmniejszanie o jeden (`x++ ++x x-- --x`), zmianę znaku (`-`), negację bitów (`~`) oraz porównania (`== != < <= > >=`).
+Operatory dwuargumentowe dla typu `int` to znajome `+ - * / % & | ^ << >>`, również w wersji z przypisaniem (np. `*=`). Mamy też zwiększanie i zmniejszanie o jeden (`x++ ++x x-- --x`), zmianę znaku (`-`), negację bitów (`~`) oraz porównania (`== != < <= > >=`).
 
 Drugim typem całkowitoliczbowym jest `byte` - tu uwaga piszący w Javie - bez znaku, czyli od 0 do 255. Istnieje niejawna konwersja z `byte` do `int`, więc operacje na bajtach można wykonywać jak wyżej.
 
@@ -114,7 +114,7 @@ Jeśli masz przetwarzać tekst, zdecydowanie wybierz Perl zamiast Ć.
 W Ć mamy dwa rodzaje typów dla ciągów tekstowych:
 
 * Wskaźnik do ciągu tekstowego, zapisywany po prostu jako `string`. Na C tłumaczy się to jako `const char *`.
-* Magazyn (ang. storage) ciągu tekstowego, zapisywany jako `string(n)`, gdzie `n` jest stałą całkowitoliczbową (ogólniej: wyrażeniem, którego wartością w trakcie kompilacji jest stała całkowitoliczbowa) określającą maksmalną długość ciągu. `string(15) s` w Ć tłumaczy się na C jako `char s[16]`.
+* Magazyn (ang. storage) ciągu tekstowego, zapisywany jako `string(n)`, gdzie `n` jest stałą całkowitoliczbową (ogólniej: wyrażeniem, którego wartością w trakcie kompilacji jest stała całkowitoliczbowa) określającą maksmalną długość ciągu. "`string(15) s`" w Ć tłumaczy się na C jako "`char s[16]`".
 
 Powyższe rozróżnienie będzie widoczne tylko w tłumaczeniu na język C. W pozostałych językach będzie użyty ten sam typ `String`.
 
@@ -175,8 +175,19 @@ W języku Ć nie można definować znanych z języka C# właściwości (ang. pro
 
 Dla każdej klasy `C` dostępne są typy:
 
-* Wskaźnik do klasy: `C`.
-* Magazyn klasy: `C()`, czyli utworzona instancja klasy `C`.
+* Wskaźnik do klasy: zapisywany po prostu jako nazwa klasy: `C`.
+* Magazyn klasy: zapisywany jako nazwa klasy z parą nawiasów: `C()`.
+
+Np.
+-------------------
+MyClass() foo;
+-------------------
+
+przekłada się na Javę następująco:
+-------------------
+MyClass foo = new MyClass();
+-------------------
+
 
 Delegaty
 ~~~~~~~~
@@ -196,7 +207,7 @@ public class MyWriter
 }
 -------------------
 
-Obsługa delegatów nie jest jeszcze pełna.
+Obsługa delegatów nie jest jeszcze ukończona.
 
 Stałe
 -----
@@ -447,9 +458,9 @@ macro MY_STATEMENT_MACRO(arg1, arg2) { statement; }
 +
 Podczas rozwijania makro-instrukcji zostaną pominięte nawiasy klamrowe, a także końcowy średnik, dzięki czemu wywołanie `MY_STATEMENT_MACRO(1, 2);` nie kończy się dwoma średnikami.
 
-W odróżnieniu od języków C i C++ jeśli definicja makra składa się z wielu linii, nie należy stosować odwrotnych ukośników na końcach linii. Koniec makra jest rozpoznawany przez dopasowywanie par nawiasów.
+W odróżnieniu od języków C i C++ jeśli definicja makra składa się z wielu linii, nie należy stosować odwrotnych ukośników na końcach linii. Koniec makra jest oznaczany nawiasem zamykającym.
 
-Makra mogą przyjmować dowolną liczbę argumentów. Nawiasy otaczające parametry w definicji oraz argumenty w wywołaniu są wymagane. Stałe nie powinny być definiowane przy pomocy makr, lecz `const`.
+Makra mogą przyjmować dowolną, lecz z góry określoną liczbę argumentów. Nawiasy otaczające parametry w definicji oraz argumenty w wywołaniu są wymagane. Stałe nie powinny być definiowane przy pomocy makr, lecz `const`.
 
 Makra mogą być definowane jako członkowie klasy oraz wszędzie, gdzie może zostać użyta instrukcja. Zasięg makr jest ograniczony odpowiednio do klas oraz bloków.
 

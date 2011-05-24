@@ -1,4 +1,4 @@
-Tłumacz języka programowania Ć
+﻿Tłumacz języka programowania Ć
 ==============================
 
 ifdef::www[]
@@ -14,7 +14,8 @@ Instalacja
 
 `cito` został napisany w języku C#. Do jego uruchomienia wymagane jest zainstalowanie .NET Frameworka (co najmniej 3.5) lub http://www.mono-project.com[Mono].
 
-Po pobraniu dystrybucji binarnej wystarczy umieścić `cito.exe` w katalogu wymienionym w zmiennej środowiskowej `PATH`.
+Po http://sourceforge.net/projects/cito/files/cito/0.1.0/cito-0.1.0-bin.zip/download[pobraniu dystrybucji binarnej]
+wystarczy umieścić `cito.exe` w katalogu wymienionym w zmiennej środowiskowej `PATH`.
 
 Zainteresowanych samodzielnym kompilowaniem `cito` odsyłam do http://cito.sourceforge.net/INSTALL.html[opisu kompilacji].
 
@@ -38,7 +39,7 @@ Autorzy
 -------
 
 Piotr Fusik::
-Twórca języka Ć.
+Twórca języka Ć i programu `cito`.
 
 Adrian Matoga::
 Stworzył back-end dla języka D.
