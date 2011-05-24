@@ -9,7 +9,7 @@ Pobranie kodu źródłowego
 Kod źródłowy można pobrać na jeden z dwóch sposobów:
 
 Z oficjalnej paczki::
-http://sourceforge.net/projects/cito/files/[Pobieramy] plik z rozszerzeniem `.tar.gz`, następnie rozpakowujemy go. Pod Windowsem można użyć http://7-zip.org[7-Zip].
+http://sourceforge.net/projects/cito/files/cito/[Pobieramy] plik z rozszerzeniem `.tar.gz`, następnie rozpakowujemy go. Pod Windowsem można użyć http://7-zip.org[7-Zip].
 
 Z repozytorium Git::
 W ten sposób uzyskamy najnowszy kod, z wszystkimi tego konsekwencjami (np. nieaktualna dokumentacja). Należy użyć klienta Git, np. z linii poleceń:
