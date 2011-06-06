@@ -157,6 +157,7 @@ public class GenC89 : GenC
 
 	protected override void StartSwitch(CiCase[] kases)
 	{
+		this.Indent++;
 		foreach (CiCase kase in kases) {
 			foreach (ICiStatement stmt in kase.Body) {
 				if (stmt is CiConst)
@@ -165,6 +166,7 @@ public class GenC89 : GenC
 					WriteVar((CiVar) stmt);
 			}
 		}
+		this.Indent--;
 	}
 
 	protected override void StartCase(ICiStatement stmt)

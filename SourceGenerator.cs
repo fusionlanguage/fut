@@ -746,8 +746,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 	{
 		Write("switch (");
 		Write(stmt.Value);
-		Write(") ");
-		OpenBlock();
+		WriteLine(") {");
 		StartSwitch(stmt.Cases);
 		foreach (CiCase kase in stmt.Cases) {
 			if (kase.Value != null) {
@@ -765,7 +764,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 				this.Indent--;
 			}
 		}
-		CloseBlock();
+		WriteLine("}");
 	}
 
 	public abstract void Visit(CiThrow stmt);
