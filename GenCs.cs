@@ -291,6 +291,23 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 			base.Write(expr);
 	}
 
+	void WriteCondChild(CiCondExpr condExpr, CiExpr expr)
+	{
+		// avoid error CS0172
+		if (condExpr.ResultType == CiByteType.Value && expr is CiConstExpr)
+			Write("(byte) ");
+		WriteChild(condExpr, expr);
+	}
+
+	protected override void Write(CiCondExpr expr)
+	{
+		WriteNonAssocChild(expr, expr.Cond);
+		Write(" ? ");
+		WriteCondChild(expr, expr.OnTrue);
+		Write(" : ");
+		WriteCondChild(expr, expr.OnFalse);
+	}
+
 	protected override void Write(CiCoercion expr)
 	{
 		if (expr.ResultType == CiByteType.Value && expr.Inner.Type == CiIntType.Value) {

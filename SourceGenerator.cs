@@ -527,7 +527,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		}
 	}
 
-	void Write(CiCondExpr expr)
+	protected virtual void Write(CiCondExpr expr)
 	{
 		WriteNonAssocChild(expr, expr.Cond);
 		Write(" ? ");
