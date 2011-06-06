@@ -104,7 +104,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 			Write("String");
 		else if (type == CiBoolType.Value)
 			Write("Boolean");
-		else if (type is CiEnum)
+		else if (type == CiByteType.Value || type is CiEnum)
 			Write("int");
 		else if (type is CiArrayType)
 			Write(((CiArrayType) type).ElementType == CiByteType.Value ? "ByteArray" : "Array");
