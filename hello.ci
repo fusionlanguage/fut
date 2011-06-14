@@ -11,4 +11,9 @@ public class HelloCi
 	{
 		return "Hello, world!";
 	}
+
+	public static bool IsNullOrEmpty(string s)
+	{
+		return s == null || s.Length == 0;
+	}
 }

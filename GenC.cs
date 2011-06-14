@@ -301,6 +301,21 @@ public class GenC : SourceGenerator
 	protected override void Write(CiBinaryExpr expr)
 	{
 		switch (expr.Op) {
+		case CiToken.Equal:
+		case CiToken.NotEqual:
+		case CiToken.Greater:
+			// optimize str.Length == 0, str.Length != 0, str.Length > 0
+			CiPropertyAccess pa = expr.Left as CiPropertyAccess;
+			if (pa != null && pa.Property == CiStringType.LengthProperty) {
+				CiConstExpr ce = expr.Right as CiConstExpr;
+				if (ce != null && 0.Equals(ce.Value)) {
+					WriteChild(1, pa.Obj);
+					Write(expr.Op == CiToken.Equal ? "[0] == '\\0'" : "[0] != '\\0'");
+					break;
+				}
+			}
+			base.Write(expr);
+			break;
 		case CiToken.ShiftLeft:
 		case CiToken.ShiftRight:
 			WriteChildWithSuggestedParentheses(expr, expr.Left, 3, true);
