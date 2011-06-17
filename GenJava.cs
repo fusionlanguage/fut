@@ -309,6 +309,27 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		Write(')');
 	}
 
+	protected override void Write(CiBinaryExpr expr)
+	{
+		switch (expr.Op) {
+		case CiToken.Equal:
+		case CiToken.NotEqual:
+			if (expr.Left.Type is CiStringType && !expr.Left.IsConst(null) && !expr.Right.IsConst(null)) {
+				if (expr.Op == CiToken.NotEqual)
+					Write('!');
+				Write(expr.Left);
+				Write(".equals(");
+				Write(expr.Right);
+				Write(')');
+				return;
+			}
+			break;
+		default:
+			break;
+		}
+		base.Write(expr);
+	}
+
 	protected override void Write(CiCoercion expr)
 	{
 		if (expr.ResultType == CiByteType.Value && expr.Inner.Type == CiIntType.Value) {

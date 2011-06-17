@@ -16,4 +16,9 @@ public class HelloCi
 	{
 		return s == null || s.Length == 0;
 	}
+
+	public static bool Differ(string s1, string s2)
+	{
+		return s1 != s2;
+	}
 }
