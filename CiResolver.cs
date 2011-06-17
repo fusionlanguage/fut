@@ -735,18 +735,12 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			throw new ResolveException("continue outside loop");
 	}
 
-	static bool IsFalse(CiExpr expr)
-	{
-		CiConstExpr ce = expr as CiConstExpr;
-		return ce != null && false.Equals(ce.Value);
-	}
-
 	void ResolveLoop(CiLoop statement)
 	{
 		statement.CompletesNormally = false;
 		if (statement.Cond != null) {
 			statement.Cond = Coerce(Resolve(statement.Cond), CiBoolType.Value);
-			statement.CompletesNormally = !IsFalse(statement.Cond);
+			statement.CompletesNormally = !statement.Cond.IsConst(false);
 		}
 		CiLoop oldLoop = this.CurrentLoop;
 		CiCondCompletionStatement oldLoopOrSwitch = this.CurrentLoopOrSwitch;

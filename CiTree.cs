@@ -437,6 +437,7 @@ public interface ICiExprVisitor
 
 public abstract class CiExpr : CiMaybeAssign
 {
+	public virtual bool IsConst(object value) { return false; }
 	public abstract bool HasSideEffect { get; }
 	public virtual CiExpr Accept(ICiExprVisitor v) { return this; }
 }
@@ -465,6 +466,7 @@ public class CiConstExpr : CiExpr
 			throw new NotImplementedException();
 		}
 	}
+	public override bool IsConst(object value) { return object.Equals(this.Value, value); }
 	public override bool HasSideEffect { get { return false; } }
 }
 
