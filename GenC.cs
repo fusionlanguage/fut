@@ -304,6 +304,16 @@ public class GenC : SourceGenerator
 		case CiToken.Equal:
 		case CiToken.NotEqual:
 		case CiToken.Greater:
+			if (expr.Left.Type is CiStringType && !expr.Left.IsConst(null) && !expr.Right.IsConst(null)) {
+				Write("strcmp(");
+				Write(expr.Left);
+				Write(", ");
+				Write(expr.Right);
+				Write(')');
+				WriteOp(expr);
+				Write('0');
+				break;
+			}
 			// optimize str.Length == 0, str.Length != 0, str.Length > 0
 			CiPropertyAccess pa = expr.Left as CiPropertyAccess;
 			if (pa != null && pa.Property == CiStringType.LengthProperty) {
