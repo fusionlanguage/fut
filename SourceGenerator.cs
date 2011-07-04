@@ -23,12 +23,22 @@ using System.IO;
 namespace Foxoft.Ci
 {
 
+public delegate TextWriter TextWriterFactory(string filename);
+
 public abstract class SourceGenerator : ICiStatementVisitor
 {
 	public string OutputFile;
+	public TextWriterFactory CreateTextWriter = CreateFileWriter;
 	TextWriter Writer;
 	protected int Indent = 0;
 	bool AtLineStart = true;
+
+	static TextWriter CreateFileWriter(string filename)
+	{
+		TextWriter w = File.CreateText(filename);
+		w.NewLine = "\n";
+		return w;
+	}
 
 	void StartLine()
 	{
@@ -204,8 +214,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 
 	protected void CreateFile(string filename)
 	{
-		this.Writer = File.CreateText(filename);
-		this.Writer.NewLine = "\n";
+		this.Writer = CreateTextWriter(filename);
 		WriteBanner();
 	}
 

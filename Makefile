@@ -7,10 +7,13 @@ SEVENZIP = 7z a -mx=9 -bd
 VERSION := 0.1.0
 MAKEFLAGS = -r
 
-all: cito.exe
+all: cito.exe cipad.exe
 
 cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs GenAs.cs GenD.cs CiTo.cs)
 	$(CSC) -nologo -out:$@ -o+ $^
+
+cipad.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs GenAs.cs GenD.cs CiPad.cs)
+	$(CSC) -nologo -out:$@ -o+ -debug+ -t:winexe $^
 
 check: $(srcdir)hello.ci cito.exe
 	./cito.exe -o hello.c $<

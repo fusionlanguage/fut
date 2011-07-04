@@ -1,10 +1,13 @@
 public class HelloCi
 {
-	public const string Version = "0.1";
-
-	public static int Add(int a, int b)
+	public static bool Differ(string s1, string s2)
 	{
-		return a + b;
+		return s1 != s2;
+	}
+
+	public static int Div(int a, int b)
+	{
+		return a / b;
 	}
 
 	public static string GetMessage()
@@ -17,8 +20,5 @@ public class HelloCi
 		return s == null || s.Length == 0;
 	}
 
-	public static bool Differ(string s1, string s2)
-	{
-		return s1 != s2;
-	}
+	public const string Version = "0.1";
 }
