@@ -20,6 +20,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
+
+[assembly: AssemblyTitle("CiTo")]
+[assembly: AssemblyDescription("Ci Translator")]
 
 namespace Foxoft.Ci
 {

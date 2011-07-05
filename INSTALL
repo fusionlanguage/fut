@@ -24,10 +24,10 @@ Kompilacja
 Mając kod źródłowy mamy następujące możliwości skompilowania go:
 
 Używając MSBuild::
-MSBuild jest wbudowany w .NET Framework. W katalogu ze źródłami wydajemy polecenie `msbuild`.
+MSBuild jest wbudowany w .NET Framework. W katalogu ze źródłami wydajemy polecenie `msbuild CiTo.csproj`.
 
 Używając Mono i `xbuild`::
-Należy mieć zainstalowany kompilator C# (`gmcs`) i odpowiednik MSBuild (`xbuild`). W katalogu ze źródłami wydajemy polecenie `xbuild`.
+Należy mieć zainstalowany kompilator C# (`gmcs`) i odpowiednik MSBuild (`xbuild`). W katalogu ze źródłami wydajemy polecenie `xbuild CiTo.csproj`.
 
 Używając GNU Make::
 Wymagany jest kompilator C# (`csc` lub `gmcs`).  W katalogu ze źródłami wydajemy polecenie `make`.

@@ -3,6 +3,7 @@ obj
 *.exe
 *.pdb
 *.html
+*.suo
 MANIFEST
 hello.c
 hello.h
