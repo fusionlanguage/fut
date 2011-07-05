@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="4.37cm" height="7.68cm" viewBox="0 0 437 768" xmlns="http://www.w3.org/2000/svg" version="1.1">
+	<title>Ć Programming Language Logo</title>
+	<path d="M256,512 l181,-181 a256,256 0 1,0 0,362 z" fill="orange" />
+	<path d="M256,256 l-181,-181 a256,256 0 0,1 362,0 z" fill="orange" />
+</svg>

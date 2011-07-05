@@ -6,6 +6,7 @@
 		<AssemblyName>CiPad</AssemblyName>
 		<TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
 		<ProjectGuid>{706860A9-7545-4F7C-9A67-CF4DA81DDE03}</ProjectGuid>
+		<ApplicationIcon>ci-logo.ico</ApplicationIcon>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
 		<DebugSymbols>true</DebugSymbols>
@@ -47,6 +48,9 @@
 		<Compile Include="GenJs.cs" />
 		<Compile Include="SourceGenerator.cs" />
 		<Compile Include="SymbolTable.cs" />
+	</ItemGroup>
+	<ItemGroup>
+		<Content Include="ci-logo.ico" />
 	</ItemGroup>
 	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

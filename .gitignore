@@ -4,6 +4,8 @@ obj
 *.pdb
 *.html
 *.suo
+ci-logo.ico
+ci-logo.png
 MANIFEST
 hello.c
 hello.h
@@ -14,3 +16,4 @@ hello.cs
 hello.js
 HelloCi.as
 hello.d
+prettify.*

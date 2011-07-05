@@ -12,8 +12,14 @@ all: cito.exe cipad.exe
 cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs GenAs.cs GenD.cs CiTo.cs)
 	$(CSC) -nologo -out:$@ -o+ $^
 
-cipad.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs GenAs.cs GenD.cs CiPad.cs)
-	$(CSC) -nologo -out:$@ -o+ -debug+ -t:winexe $^
+cipad.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs GenAs.cs GenD.cs CiPad.cs ci-logo.ico)
+	$(CSC) -nologo -out:$@ -o+ -debug+ -t:winexe -win32icon:$(filter %.ico,$^) $(filter %.cs,$^)
+
+ci-logo.png: $(srcdir)ci-logo.svg
+	convert -background none $< -resize "52x64!" -extent 64x64 $@
+
+$(srcdir)ci-logo.ico: $(srcdir)ci-logo.svg
+	convert -background none $< -resize "26x32!" -extent 32x32 $@
 
 check: $(srcdir)hello.ci cito.exe
 	./cito.exe -o hello.c $<
@@ -53,13 +59,13 @@ dist: ../cito-$(VERSION)-bin.zip srcdist
 	$(RM) $@ && $(SEVENZIP) -tzip $@ $(^:%=./%)
 # "./" makes 7z don't store paths in the archive
 
-srcdist: $(srcdir)MANIFEST $(srcdir)README.html $(srcdir)INSTALL.html $(srcdir)ci.html
+srcdist: $(addprefix $(srcdir),MANIFEST README.html INSTALL.html ci.html ci-logo.ico)
 	$(RM) ../cito-$(VERSION).tar.gz && tar -c --numeric-owner --owner=0 --group=0 --mode=644 -T MANIFEST --transform=s,,cito-$(VERSION)/, | $(SEVENZIP) -tgzip -si ../cito-$(VERSION).tar.gz
 
 $(srcdir)MANIFEST:
 	if test -e $(srcdir).git; then \
 		(git ls-tree -r --name-only --full-tree master | grep -vF .gitignore \
-			&& echo MANIFEST && echo README.html && echo INSTALL.html && echo ci.html ) | sort -u >$@; \
+			&& echo MANIFEST && echo README.html && echo INSTALL.html && echo ci.html && echo ci-logo.ico) | sort -u >$@; \
 	fi
 
 version:
