@@ -1,6 +1,7 @@
 bin
 obj
 *.exe
+*.exe.mdb
 *.pdb
 *.html
 *.suo

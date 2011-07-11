@@ -1,10 +1,10 @@
 prefix := /usr/local
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
-CSC := $(if $(WINDIR),csc,gmcs)
+CSC := $(if $(WINDIR),c:/Windows/Microsoft.NET/Framework/v3.5/csc.exe,gmcs)
 ASCIIDOC = asciidoc -o - $(1) $< | xmllint --valid --nonet -o $@ -
 SEVENZIP = 7z a -mx=9 -bd
 
-VERSION := 0.1.0
+VERSION := 0.2.0
 MAKEFLAGS = -r
 
 all: cito.exe cipad.exe
@@ -13,7 +13,7 @@ cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexer
 	$(CSC) -nologo -out:$@ -o+ $^
 
 cipad.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs GenAs.cs GenD.cs CiPad.cs ci-logo.ico)
-	$(CSC) -nologo -out:$@ -o+ -debug+ -t:winexe -win32icon:$(filter %.ico,$^) $(filter %.cs,$^)
+	$(CSC) -nologo -out:$@ -o+ -t:winexe -win32icon:$(filter %.ico,$^) $(filter %.cs,$^) -r:System.Drawing.dll -r:System.Windows.Forms.dll
 
 ci-logo.png: $(srcdir)ci-logo.svg
 	convert -background none $< -resize "52x64!" -extent 64x64 $@
@@ -30,11 +30,12 @@ check: $(srcdir)hello.ci cito.exe
 	./cito.exe -o HelloCi.as $<
 	./cito.exe -o hello.d $<
 
-install: cito.exe
-	cp $< $(DESTDIR)$(prefix)/bin/cito.exe
+install: cito.exe cipad.exe
+	cp cito.exe $(DESTDIR)$(prefix)/bin/cito.exe
+	cp cipad.exe $(DESTDIR)$(prefix)/bin/cipad.exe
 
 uninstall:
-	$(RM) $(DESTDIR)$(prefix)/bin/cito.exe
+	$(RM) $(DESTDIR)$(prefix)/bin/cito.exe $(DESTDIR)$(prefix)/bin/cipad.exe
 
 $(srcdir)README.html: $(srcdir)README
 	$(call ASCIIDOC,)
@@ -51,11 +52,11 @@ index.html: $(srcdir)README
 	$(call ASCIIDOC,-a www)
 
 clean:
-	$(RM) cito.exe cito.pdb hello.c hello.h hello99.c hello99.h HelloCi.java hello.cs hello.js HelloCi.as hello.d index.html
+	$(RM) cito.exe cipad.exe hello.c hello.h hello99.c hello99.h HelloCi.java hello.cs hello.js HelloCi.as hello.d index.html
 
 dist: ../cito-$(VERSION)-bin.zip srcdist
 
-../cito-$(VERSION)-bin.zip: cito.exe $(srcdir)README.html $(srcdir)ci.html $(srcdir)hello.ci
+../cito-$(VERSION)-bin.zip: cito.exe cipad.exe $(srcdir)README.html $(srcdir)ci.html $(srcdir)hello.ci
 	$(RM) $@ && $(SEVENZIP) -tzip $@ $(^:%=./%)
 # "./" makes 7z don't store paths in the archive
 
