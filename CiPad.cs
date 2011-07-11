@@ -46,7 +46,7 @@ public class CiPad : Form
 
 	void InitializeComponent()
 	{
-		this.Size = new Size(760, 500);
+		this.ClientSize = new Size(760, 500);
 		this.Text = "CiPad";
 		this.Messages = new TextBox();
 		this.Messages.Multiline = true;
