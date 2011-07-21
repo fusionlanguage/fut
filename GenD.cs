@@ -249,6 +249,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 			WriteChild(expr, expr.Obj);
 		}
 		else if (expr.Property == CiStringType.LengthProperty) {
+			Write("cast(int) ");
 			WriteChild(expr, expr.Obj);
 			Write(".length");
 		}
