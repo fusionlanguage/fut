@@ -751,6 +751,10 @@ public abstract class SourceGenerator : ICiStatementVisitor
 	{
 	}
 
+	protected virtual void EndSwitch(CiCase[] kases)
+	{
+	}
+
 	void ICiStatementVisitor.Visit(CiSwitch stmt)
 	{
 		Write("switch (");
@@ -773,6 +777,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 				this.Indent--;
 			}
 		}
+		EndSwitch(stmt.Cases);
 		WriteLine("}");
 	}
 
