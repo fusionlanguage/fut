@@ -729,7 +729,7 @@ public class GenC : SourceGenerator
 		WriteLine("typedef struct ");
 		OpenBlock();
 		WriteLine("void *obj;");
-		var paramz = del.Params.Select(param => ", " + ToString(param.Type, param.Name));
+		string[] paramz = del.Params.Select(param => ", " + ToString(param.Type, param.Name)).ToArray();
 		string s = "(*func)(void *obj" + string.Concat(paramz) + ")";
 		Write(del.ReturnType, s);
 		WriteLine(";");
