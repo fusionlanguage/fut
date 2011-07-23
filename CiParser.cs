@@ -96,34 +96,38 @@ public partial class CiParser : CiLexer
 		throw new ParseException("{0} is not a type", name);
 	}
 
-	CiType ParseType(string baseName)
+	CiType ParseArrayType(CiType baseType)
 	{
 		if (Eat(CiToken.LeftBracket)) {
 			if (Eat(CiToken.RightBracket))
-				return new CiArrayPtrType { ElementType = ParseType(baseName) };
+				return new CiArrayPtrType { ElementType = ParseArrayType(baseType) };
 			CiExpr len = ParseExpr();
 			Expect(CiToken.RightBracket);
 			return new CiArrayStorageType {
 				LengthExpr = len,
-				ElementType = ParseType(baseName)
+				ElementType = ParseArrayType(baseType)
 			};
 		}
-		if (Eat(CiToken.LeftParenthesis)) {
-			if (baseName == "string") {
-				CiExpr len = ParseExpr();
-				Expect(CiToken.RightParenthesis);
-				return new CiStringStorageType { LengthExpr = len };
-			}
-			Expect(CiToken.RightParenthesis);
-			return new CiClassStorageType { Name = baseName, Class = new CiUnknownClass { Name = baseName } };
-		}
-		return LookupType(baseName);
+		return baseType;
 	}
 
 	CiType ParseType()
 	{
 		string baseName = ParseId();
-		return ParseType(baseName);
+		CiType baseType;
+		if (Eat(CiToken.LeftParenthesis)) {
+			if (baseName == "string") {
+				baseType = new CiStringStorageType { LengthExpr = ParseExpr() };
+				Expect(CiToken.RightParenthesis);
+			}
+			else {
+				Expect(CiToken.RightParenthesis);
+				baseType = new CiClassStorageType { Name = baseName, Class = new CiUnknownClass { Name = baseName } };
+			}
+		}
+		else
+			baseType = LookupType(baseName);
+		return ParseArrayType(baseType);
 	}
 
 	object ParseConstInitializer(CiType type)
