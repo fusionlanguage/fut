@@ -437,28 +437,27 @@ public class GenC : SourceGenerator
 			base.Visit(expr);
 	}
 
+	protected static bool IsInlineVar(CiVar def)
+	{
+		if (def.Type is CiClassStorageType) {
+			CiClass klass = ((CiClassStorageType) def.Type).Class;
+			return klass.Constructor == null && !klass.ConstructsFields;
+		}
+		if (def.InitialValue == null)
+			return true;
+		if (def.Type is CiArrayStorageType)
+			return false;
+		if (def.Type is CiStringStorageType)
+			return def.InitialValue is CiConstExpr;
+		if (def.InitialValue is CiMethodCall && ((CiMethodCall) def.InitialValue).Method.Throws)
+			return false;
+		return true;
+	}
+
 	public override void Visit(CiVar stmt)
 	{
 		Write(stmt.Type, stmt.Name);
-		if (stmt.InitialValue != null) {
-			if (stmt.Type is CiStringStorageType || (stmt.InitialValue is CiMethodCall && ((CiMethodCall) stmt.InitialValue).Method.Throws)) {
-				WriteLine(";");
-				Visit(new CiAssign {
-					Target = new CiVarAccess { Var = stmt },
-					Op = CiToken.Assign,
-					Source = stmt.InitialValue
-				});
-			}
-			else if (stmt.Type is CiArrayStorageType) {
-				WriteLine(";");
-				WriteClearArray(new CiVarAccess { Var = stmt });
-			}
-			else {
-				Write(" = ");
-				Write(stmt.InitialValue);
-			}
-		}
-		else if (stmt.Type is CiClassStorageType) {
+		if (stmt.Type is CiClassStorageType) {
 			CiClass klass = ((CiClassStorageType) stmt.Type).Class;
 			if (klass.Constructor != null || klass.ConstructsFields) {
 				WriteLine(";");
@@ -466,6 +465,24 @@ public class GenC : SourceGenerator
 				Write("_Construct(&");
 				WriteCamelCase(stmt.Name);
 				Write(')');
+			}
+		}
+		else if (stmt.InitialValue != null) {
+			if (stmt.Type is CiArrayStorageType) {
+				WriteLine(";");
+				WriteClearArray(new CiVarAccess { Var = stmt });
+			}
+			else if (IsInlineVar(stmt)) {
+				Write(" = ");
+				Write(stmt.InitialValue);
+			}
+			else {
+				WriteLine(";");
+				Visit(new CiAssign {
+					Target = new CiVarAccess { Var = stmt },
+					Op = CiToken.Assign,
+					Source = stmt.InitialValue
+				});
 			}
 		}
 	}

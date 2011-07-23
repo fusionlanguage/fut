@@ -56,23 +56,6 @@ public class GenC89 : GenC
 		WriteLine("#endif");
 	}
 
-	static bool IsInlineVar(CiVar def)
-	{
-		if (def == null)
-			return false;
-		if (def.Type is CiClassStorageType) {
-			CiClass klass = ((CiClassStorageType) def.Type).Class;
-			return klass.Constructor == null && !klass.ConstructsFields;
-		}
-		if (def.InitialValue == null)
-			return true;
-		if (def.Type is CiStringStorageType || def.Type is CiArrayStorageType)
-			return false;
-		if (def.InitialValue is CiMethodCall && ((CiMethodCall) def.InitialValue).Method.Throws)
-			return false;
-		return true;
-	}
-
 	void WriteVar(CiVar def)
 	{
 		Write(def.Type, def.Name);
@@ -92,7 +75,7 @@ public class GenC89 : GenC
 			}
 			CiVar def = stmt as CiVar;
 			if (canInitVar) {
-				if (IsInlineVar(def)) {
+				if (def != null && IsInlineVar(def)) {
 					base.Visit(def);
 					def.WriteInitialValue = false;
 					WriteLine(";");
