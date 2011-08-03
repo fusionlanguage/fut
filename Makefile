@@ -56,7 +56,7 @@ clean:
 
 dist: ../cito-$(VERSION)-bin.zip srcdist
 
-../cito-$(VERSION)-bin.zip: cito.exe cipad.exe $(srcdir)README.html $(srcdir)ci.html $(srcdir)hello.ci
+../cito-$(VERSION)-bin.zip: cito.exe cipad.exe $(srcdir)COPYING $(srcdir)README.html $(srcdir)ci.html $(srcdir)hello.ci
 	$(RM) $@ && $(SEVENZIP) -tzip $@ $(^:%=./%)
 # "./" makes 7z don't store paths in the archive
 
