@@ -35,18 +35,19 @@ public class CiTo
 	{
 		Console.WriteLine("Usage: cito [OPTIONS] -o FILE INPUT.ci");
 		Console.WriteLine("Options:");
-		Console.WriteLine("-l c     Translate to C89");
-		Console.WriteLine("-l c99   Translate to C99");
-		Console.WriteLine("-l cs    Translate to C#");
-		Console.WriteLine("-l java  Translate to Java");
-		Console.WriteLine("-l js    Translate to JavaScript");
-		Console.WriteLine("-l as    Translate to ActionScript");
-		Console.WriteLine("-l d     Translate to D");
-		Console.WriteLine("-o FILE  Write to the specified file");
-		Console.WriteLine("-n NAME  Specify C# namespace or Java/ActionScript package");
-		Console.WriteLine("-D NAME  Define conditional compilation symbol");
-		Console.WriteLine("-I DIR   Add directory to BinaryResource search path");
-		Console.WriteLine("--help   This help");
+		Console.WriteLine("-l c       Translate to C89");
+		Console.WriteLine("-l c99     Translate to C99");
+		Console.WriteLine("-l java    Translate to Java");
+		Console.WriteLine("-l cs      Translate to C#");
+		Console.WriteLine("-l js      Translate to JavaScript");
+		Console.WriteLine("-l as      Translate to ActionScript");
+		Console.WriteLine("-l d       Translate to D");
+		Console.WriteLine("-o FILE    Write to the specified file");
+		Console.WriteLine("-n NAME    Specify C# namespace or Java/ActionScript package");
+		Console.WriteLine("-D NAME    Define conditional compilation symbol");
+		Console.WriteLine("-I DIR     Add directory to BinaryResource search path");
+		Console.WriteLine("--help     Display this information");
+		Console.WriteLine("--version  Display version information");
 	}
 
 	public static int Main(string[] args)
@@ -66,7 +67,7 @@ public class CiTo
 					Usage();
 					return 0;
 				case "--version":
-					Console.WriteLine("cito 0.1.0");
+					Console.WriteLine("cito 0.2.0");
 					return 0;
 				case "-l":
 					lang = args[++i];
@@ -135,8 +136,8 @@ public class CiTo
 		switch (lang) {
 		case "c": gen = new GenC89(); break;
 		case "c99": gen = new GenC(); break;
-		case "cs": gen = new GenCs(namespace_); break;
 		case "java": gen = new GenJava(namespace_); break;
+		case "cs": gen = new GenCs(namespace_); break;
 		case "js": gen = new GenJs(); break;
 		case "as": gen = new GenAs(namespace_); break;
 		case "d": gen = new GenD(); break;

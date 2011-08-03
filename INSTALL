@@ -1,45 +1,43 @@
-﻿Jak skompilować cito
-====================
+﻿How to compile cito
+===================
 
-(nie mylić z używaniem `cito`)
+Getting source code
+-------------------
 
-Pobranie kodu źródłowego
-------------------------
+There are two ways to get the source code:
 
-Kod źródłowy można pobrać na jeden z dwóch sposobów:
+From an official release::
+http://sourceforge.net/projects/cito/files/cito/[Download] a `.tar.gz` file and uncompress it. On Windows you may use http://7-zip.org[7-Zip] for decompression.
 
-Z oficjalnej paczki::
-http://sourceforge.net/projects/cito/files/cito/[Pobieramy] plik z rozszerzeniem `.tar.gz`, następnie rozpakowujemy go. Pod Windowsem można użyć http://7-zip.org[7-Zip].
-
-Z repozytorium Git::
-W ten sposób uzyskamy najnowszy kod, z wszystkimi tego konsekwencjami (np. nieaktualna dokumentacja). Należy użyć klienta Git, np. z linii poleceń:
+From the Git repository::
+This way you'll get the latest code with all its consequences (such as out-of-date documentation). Use a Git client. For a command-line Git client type:
 +
 --------------------------------------------------------------------------------
 git clone git://cito.git.sourceforge.net/gitroot/cito/cito
 --------------------------------------------------------------------------------
 
-Kompilacja
-----------
+Compilation
+-----------
 
-Mając kod źródłowy mamy następujące możliwości skompilowania go:
+Once you have the source code you have the following options of compiling it:
 
-Używając MSBuild::
-MSBuild jest wbudowany w .NET Framework. W katalogu ze źródłami wydajemy polecenie `msbuild CiTo.csproj`.
+Using MSBuild::
+MSBuild is part of the .NET Framework. In the directory with the sources run `msbuild CiTo.csproj`.
 
-Używając Mono i `xbuild`::
-Należy mieć zainstalowany kompilator C# (`gmcs`) i odpowiednik MSBuild (`xbuild`). W katalogu ze źródłami wydajemy polecenie `xbuild CiTo.csproj`.
+Using Mono i `xbuild`::
+You need a C# compiler (`gmcs`) and the Mono counterpart of MSBuild (`xbuild`). In the directory with the sources run `xbuild CiTo.csproj`.
 
-Używając GNU Make::
-Wymagany jest kompilator C# (`csc` lub `gmcs`).  W katalogu ze źródłami wydajemy polecenie `make`.
+Using GNU Make::
+You need a C# compiler (`csc` lub `gmcs`).  In the directory with the sources run `make`.
 
-Używając Visual Studio::
-Otwieramy plik `CiTo.csproj`. Kompilujemy.
+Using Visual Studio::
+Open `CiTo.csproj`. Build.
 
-Instalacja (Linux)
+Installing (Linux)
 ------------------
 
-Instalację polegającą na skopiowaniu `cito.exe` wykonujemy poleceniem:
+To install, run:
 --------------------------------------------------------------------------------
 sudo make install
 --------------------------------------------------------------------------------
-Domyślnie program jest umieszczany w katalogu `/usr/local/bin`.
+This will copy `cito.exe` and `cipad.exe` to the default directory `/usr/local/bin`.

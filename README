@@ -1,48 +1,68 @@
-﻿Tłumacz języka programowania Ć
-==============================
+﻿Ć Programming Language
+======================
 
 ifdef::www[]
-http://sourceforge.net/projects/cito/files/[Pobierz] |
-http://cito.git.sourceforge.net/git/gitweb.cgi?p=cito/cito;a=summary[Zajrzyj do repozytorium Git] |
-http://sourceforge.net/projects/cito/[Strona projektu na SourceForge]
+http://sourceforge.net/projects/cito/files/[Download] |
+http://cito.git.sourceforge.net/git/gitweb.cgi?p=cito/cito;a=summary[Browse source code (Git)] |
+http://sourceforge.net/projects/cito/[SourceForge project page]
 endif::www[]
 
-Program `cito` automatycznie tłumaczy link:ci.html[język programowania Ć] na C, Javę, C#, JavaScript, ActionScript oraz http://www.digitalmars.com/d/[D].
+`cito` automatically translates link:ci.html[the Ć programming language] to C, Java, C#, JavaScript, ActionScript and http://www.digitalmars.com/d/[D].
 
-Instalacja
-----------
+How to install
+--------------
 
-`cito` został napisany w języku C#. Do jego uruchomienia wymagane jest zainstalowanie .NET Frameworka (co najmniej 3.5) lub http://www.mono-project.com[Mono].
+`cito` is written in C#. You need the .NET Framework (3.5 or above) or http://www.mono-project.com[Mono].
 
-Po http://sourceforge.net/projects/cito/files/cito/0.1.0/cito-0.1.0-bin.zip/download[pobraniu dystrybucji binarnej]
-wystarczy umieścić `cito.exe` w katalogu wymienionym w zmiennej środowiskowej `PATH`.
+http://sourceforge.net/projects/cito/files/cito/0.2.0/cito-0.2.0-bin.zip/download[Download the binary distribution]
+and extract `cito.exe` and `cipad.exe` to a directory in your `PATH` environment variable.
 
-Zainteresowanych samodzielnym kompilowaniem `cito` odsyłam do http://cito.sourceforge.net/INSTALL.html[opisu kompilacji].
+If you want to compile from source code, see http://cito.sourceforge.net/INSTALL.html[compilation instructions].
 
-"Witaj, świecie!" (tudzież "Ahoj, przygodo!")
----------------------------------------------
+"Hello, world!"
+---------------
 
-`cito` wywołujemy z linii poleceń podając pliki źródłowe (z rozszerzeniem `.ci`) oraz jeden z plików docelowych (na podstawie jego rozszerzenia zostanie ustalony docelowy język), np.
+Call `cito` from command prompt passing source files (with the extension `.ci`) and one of the destination files (its filename extension determines the target language), for example:
 -------------------
 cito.exe -o hello.c hello.ci
 cito.exe -o HelloCi.java hello.ci
 -------------------
 
-Zwracam uwagę, że w przypadku języków Java i ActionScript nazwa pliku musi odpowiadać nazwie zawartej w nim klasy publicznej.
+ifdef::www[]
+If you're lazy: see link:hello.html[here] for some translated code.
+endif::www[]
 
-Kontakt
+Contact
 -------
 
-Osoby zainteresowane projektem proszone są o zapisanie się na https://lists.sourceforge.net/lists/listinfo/cito-users[listę mailingową].
+If you're interested, please subscribe https://lists.sourceforge.net/lists/listinfo/cito-users[the mailing list].
 
-Autorzy
+History
+-------
+
+cito 0.2.0 (2011-08-03)::
+
+- Created `cipad` - a simple Ć editor with on-the-fly translation.
+- Changed syntax of arrays of storage: `MyClass[]()` -> `MyClass()[]`, `string[](8)` -> `string(8)[]`.
+- Fixes for the `byte` type in ActionScript and C#.
+- Implemented string comparisons in C and Java.
+- Fixed translation of delegates to C in `cito` compiled on .NET < 4.
+- Fixed errors with the new and 64-bit D compilers.
+- Some optimizations for string handling in C.
+- Documentation has been translated to English.
+
+cito 0.1.0 (2011-05-24)::
+
+Initial release.
+
+Authors
 -------
 
 Piotr Fusik::
-Twórca języka Ć i programu `cito`.
+Created Ć and tools.
 
 Adrian Matoga::
-Stworzył back-end dla języka D.
+Created the D back-end.
 
 ifdef::www[]
 image::http://sflogo.sourceforge.net/sflogo.php?group_id=389251&amp;type=10["Get Ć Translator at SourceForge.net. Fast, secure and Free Open Source software downloads",width=80,height=15,link="http://sourceforge.net/projects/cito"]

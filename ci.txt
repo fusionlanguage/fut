@@ -1,66 +1,74 @@
-﻿Język programowania Ć
-=====================
+﻿The Ć Programming Language
+==========================
 
-Ć jest językiem programowania, który może być automatycznie tłumaczony na C, Javę, C#, JavaScript, ActionScript oraz http://www.digitalmars.com/d/[D]. Tłumaczenia dokonuje program `cito`.
+Ć is a programming language which can be automatically translated to C, Java, C#, JavaScript, ActionScript and http://www.digitalmars.com/d/[D]. The translator is called `cito`.
 
-Ć jest przeznaczony do pisania 'bardzo' przenośnych bibliotek programistycznych. Przenośne biblioteki pisze się obecnie w języku C. Są z tym następujące problemy:
+Ć is useful for writing 'very' portable programming libraries. Portable libraries are currently being written in C. There are the following problems with that:
 
-1. Java i C# (że nie wspomnę o innych językach) umożliwiają wywołanie funkcji napisanej w języku C. Nie dotyczy to jednak (na szczęście) maszyn wirtualnych działających w przeglądarkach internetowych oraz telefonach komórkowych (bywają wyjątki). Ć można przetłumaczyć na języki, dla których przeznaczone są te maszyny wirtualne.
+1. Java and C# (not to mention other languages) allow calling a function written in C. This is however (fortunately) not allowed for virtual machines working inside web browsers and on mobile phones. Ć can be translated to the languages these virtual machines are meant for.
 
-2. Biblioteki, które pragną być bardzo przenośne, oprócz właściwego kodu w języku C posiadają powiązania (ang. bindings, wrappers) do innych języków. Wymaga to jednak dodatkowego nakładu pracy, aby utrzymywać powiązania w zgodzie z rozwijającą się biblioteką. Zastosowanie Ć eliminuje sens powiązań, gdyż implementacja w Ć jest w całości tłumaczona na docelowy język. `cito` dba o to, aby konwencje nazewnicze były dostosowane do docelowego języka - np. w Javie pojawi się metoda "doFoo" i stała "FOO_BAR", a w C# odpowiednio "DoFoo" i "FooBar". Komentarze dokumentacyjne również są tłumaczone.
+2. Libraries which aim to be very portable contain bindings (wrappers) for languages other than C. This requires some additional work to keep the bindings synchronized with the updated library. With Ć there's no need for bindings, because an implementation in Ć is translated completely to the target language. `cito` takes care of naming conventions matching the target language - for example in Java there's a method "doFoo" and a constant "FOO_BAR" whereas in C# they will be called "DoFoo" and "FooBar". Documentation comments are translated as well.
 
-3. C wygląda archaicznie w porównaniu do nowszych języków. W dodatku kompilator Microsoft z 2010 roku nie obsługuje standardu C99, czyli brakuje standardowego typu logicznego (`bool`), a wszystkie zmienne lokalne trzeba definiować na początku bloku. Ć wygląda bardziej jak C# lub Java, a `cito` potrafi z tego zrobić zarówno C99 jak i C89.
+3. C is an archaic language. Moreover, the 2010's Microsoft compiler doesn't support C99, so there's no standard `bool` type and all local variables must be defined at the beginning of a block. Ć looks more like C# or Java, and `cito` translates it to C99 as well as C89.
 
-Teraz trochę o ograniczeniach Ć:
+There are of course limitations of Ć:
 
-1. Ć nie posiada własnej biblioteki, jeśli nie liczyć kilku bardzo prostych metod wbudowanych. Zapomnij o graficznym interfejsie użytkownika (chyba, że sam go zaimplementujesz w Ć), o usługach sieciowych itp. Ć jest pomyślane do zadań niskopoziomowych, operujących bezpośrednio na bitach i bajtach. Jest http://asap.sourceforge.net[dowód], że można programować w Ć emulację procesorów i innych układów scalonych oraz algorytmy kompresji. Są też zapewne inne zastosowania, o których jeszcze nie pomyślałem.
+1. Ć has no own library except for a few simple built-in methods. Forget GUI (unless you implement it yourself in Ć), web services etc. Ć is meant for low-level tasks, operating directly on bits and bytes. It's http://asap.sourceforge.net[proved] that emulation of microprocessors and other chips, sound synthesis and compression algorithms can all be programmed in Ć. There are probably other uses of Ć which I didn't think of.
 
-2. Na dzień dzisiejszy nie ma programu napisanego w całości w języku Ć. Z uwagi na punkt pierwszy, chociażby interfejs użytkownika musi zostać zaprogramowany w innej technologii.
+2. At this moment there's no single program written completely in Ć. Owing to above point at least the user interface must be programmed in a different language.
 
-Pliki źródłowe
---------------
+Source files
+------------
 
-Dla spokoju proponuję używać rozszerzenia nazwy pliku `.ci` zamiast `.ć`. Podobnie w treści pliku używamy tylko znaków ASCII i to nie tych kontrolnych. Mamy dwudziesty pierwszy wiek, globalizację, Unicode itp. jednak wiele narzędzi dławi się polskimi ogonkami, a programiści nie rozumieją komentarzy po japońsku.
+For your convenience use the `.ci` filename extension instead of `.ć`.
 
-Białe znaki zwykle nie mają znaczenia w źródle programu w języku Ć. Dzięki temu można dalej toczyć wojny o to, który styl umieszczania klamer jest najlepszy.
+NOTE: In Polish "ci" is pronounced identically to "ć".
 
-Dostępne są komentarze jednolinijkowe: od `//` do końca linii. O komentarzach dokumentacyjnych piszę poniżej. `/* takich komentarzy nie ma */`.
+Likewise, in file contents use only ASCII characters except for the control characters. It's twenty first century, there's globalization, Unicode, etc. but still many tools don't handle Polish letters and many programmers don't understand Japanese comments.
 
-Typy danych
------------
+Most of the time whitespace is insignificant in Ć source code. Let's continue indentation style flame wars.
 
-Typy całkowitoliczbowe
-~~~~~~~~~~~~~~~~~~~~~~
+There are single-line comments from `//` till the end of line. Documentation comments are described below. There are no `/* multiline comments */`.
 
-Typ `int` to (jakże by inaczej) 32 bity ze znakiem. Stałe zapisujemy dziesiętnie lub szesnastkowo (`0x123`). Przed stałymi ósemkowymi (`0123`) język Ć póki co się broni. Zobaczymy, jak długo.
+Data types
+----------
 
-Stałe znakowe (np. `'a'`) przekładają się na kod ASCII znaku, typu `int` (nie `char`, gdyż w Ć nie ma takiego typu). Można też użyć:
+Integer types
+~~~~~~~~~~~~~
 
-* `'\t'` - tabulacja
+`int` is of course 32-bit signed. Constants can be written in decimal or hexadecimal (`0x12ab`). I don't want octal numbers (`0123`) in Ć. I may change my mind later.
+
+Character constants (for example `'a'`) represent the ASCII code of the character as an `int` (not `char` because there's no such type in Ć). You may also use the following escape sequences:
+
+* `'\t'` - horizontal tab
 * `'\r'` - CR
 * `'\n'` - LF
-* `'\\'` - odwrotny ukośnik (ang. backslash)
-* `'\''` - apostrof
-* `'\"'` - cudzysłów
+* `'\\'` - backslash
+* `'\''` - apostrophe
+* `'\"'` - double quote
 
-Operatory dwuargumentowe dla typu `int` to znajome `+ - * / % & | ^ << >>`, również w wersji z przypisaniem (np. `*=`). Mamy też zwiększanie i zmniejszanie o jeden (`x++ ++x x-- --x`), zmianę znaku (`-`), negację bitów (`~`) oraz porównania (`== != < <= > >=`).
+You should be already familiar with the binary operators for `int`: `+ - * / % & | ^ << >>`, compound assignments (such as `*=`), incrementations and decrementations (`x++ ++x x-- --x`), negation (`-`), bitwise complement (`~`) and comparisons (`== != < <= > >=`).
 
-Drugim typem całkowitoliczbowym jest `byte` - tu uwaga piszący w Javie - bez znaku, czyli od 0 do 255. Istnieje niejawna konwersja z `byte` do `int`, więc operacje na bajtach można wykonywać jak wyżej.
+The other integer type is `byte`.
 
-Zapis `x.LowByte` oznacza rzutowanie `x` typu `int` na `byte`. W języku Ć nie można rzutować podając nazwę typu w nawiasie.
+NOTE: Unlike in Java, `byte` in Ć is unsigned.
 
-`x.MulDiv(y, z)` oznacza `(x * y / z)` przy ograniczeniu ryzyka przepełnienia. Na Javę i C# tłumaczy się to jako `((int) (long) x * y / z)`.
+There's an implicit conversion from `byte` to `int` so you can use the above operators on byte values.
 
-`x.SByte` dla `x` typu `byte` zwróci wartość bajtu ze znakiem - czyli dla `x` z przedziału 128..255 otrzymamy wartość z przedziału `-128..-1`.
+`x.LowByte` is an explicit conversion of `x` of type `int` to `byte`. Casting by specifying type in parentheses is not supported.
 
-Typ logiczny
+`x.MulDiv(y, z)` means `(x * y / z)` with reduced risk of overflow. It's translated to Java and C# as `((int) (long) x * y / z)`.
+
+`x.SByte` for `x` of type `byte` returns a signed byte. That is, for `x` in the range 128..255 it returns a value from the range `-128..-1`.
+
+Boolean type
 ~~~~~~~~~~~~
 
-Typ logiczny nazywa się `bool`, a jego stałe to `true` i `false`.
+The boolean type is called `bool` and its constants are `true` and `false`.
 
-Operatory logiczne to zwyczajowe `!` (negacja), `&&` i `||` oraz operator trójargumentowy `x ? y : z`.
+Boolean operators are `!` (not), `&&` (and), `||` (or) and the ternary operator `x ? y : z` (if x then y else z).
 
-Wyjaśnienia wymaga tłumaczenie typu logicznego na język C. W tłumaczeniu na C89 uzyskamy:
+Translation of the boolean type to C needs an explanation. The translation to C89 starts with:
 
 -------------------
 typedef int cibool;
@@ -72,20 +80,20 @@ typedef int cibool;
 #endif
 -------------------
 
-i dalej będą używane `cibool`, `TRUE` i `FALSE`. Tłumaczenie na C99 to:
+with later uses of `cibool`, `TRUE` and `FALSE`. Translation to C99 starts with:
 
 -------------------
 #include <stdbool.h>
 -------------------
 
-i dalej mamy `bool`, `true`, `false`.
+and later references `bool`, `true`, `false`.
 
-Zwracam uwagę, że powyższe zapisy stanowią wyłącznie tłumaczenie na język C. W języku Ć nie można stosować `true` zamienne z `1` ani `false` z `0`.
+NOTE: These are only the translations to C. In Ć `true` is not a synonym for `1` nor `false` for `0`.
 
-Typy wyliczeniowe
-~~~~~~~~~~~~~~~~~
+Enumerations
+~~~~~~~~~~~~
 
-Oto prosty przykład definicji typu wyliczeniowego:
+This is a simple definition of an enumerated type:
 
 -------------------
 enum DayOfWeek
@@ -100,99 +108,101 @@ enum DayOfWeek
 }
 -------------------
 
-Identyfikatorom wyliczeniowym nie można przypisywać wartości całkowitoliczbowych. Nie istnieje też żadna konwersja między typami wyliczeniowymi a całkowitoliczbowymi.
+Elements of enumerations cannot be assigned integer values. There's no conversion between enumerated and integer types.
 
-`enum` można poprzedzić słowem kluczowym `public`, co oznacza widoczność poza kodem w Ć, tzn. typ wyliczeniowy stanowi fragment publicznego interfejsu biblioteki zaprogramowanej w Ć.
+`enum` may be preceded with the keyword `public` to extend the visibility of the type outside Ć, that is, the enumerated type is part of the public interface of the library implemented in Ć.
 
-Odwołując się do wartości typu wyliczeniowego zawsze musimy podać nazwę typu, np. `DayOfWeek.Friday`. Dla programujących w języku Java: dotyczy to również konstrukcji `case`.
+When referencing a value of an enumerated type you need to include the type name, for example `DayOfWeek.Friday`. Note to Java programmers: this includes the `case` clauses.
 
-Ciągi tekstowe
-~~~~~~~~~~~~~~
-
-Jeśli masz przetwarzać tekst, zdecydowanie wybierz Perl zamiast Ć.
-
-W Ć mamy dwa rodzaje typów dla ciągów tekstowych:
-
-* Wskaźnik do ciągu tekstowego, zapisywany po prostu jako `string`. Na C tłumaczy się to jako `const char *`.
-* Magazyn (ang. storage) ciągu tekstowego, zapisywany jako `string(n)`, gdzie `n` jest stałą całkowitoliczbową (ogólniej: wyrażeniem, którego wartością w trakcie kompilacji jest stała całkowitoliczbowa) określającą maksmalną długość ciągu. "`string(15) s`" w Ć tłumaczy się na C jako "`char s[16]`".
-
-Powyższe rozróżnienie będzie widoczne tylko w tłumaczeniu na język C. W pozostałych językach będzie użyty ten sam typ `String`.
-
-Stałe tekstowe zapisujemy w cudzysłowach: `"Ala ma kota"`. Można używać sekwencji `\n` i podobnych, które opisano przy stałych znakowych. Stałe tekstowe można łączyć operatorem `+`. Nie można jednak użyć tego operatora do zmiennych tekstowych.
-
-Dozwoloną wartością wskaźnika (nie tylko do ciągu tekstowego, ale też opisanych dalej tablicy i klasy) jest `null`.
-
-Istnieją niejawne konwersje magazynów (ciągu tekstowego, tablicy, klasy) do wskaźników. Nie ma potrzeby używania znanego z C operatora `&`.
-
-Długość ciągu `s` uzyskamy pisząc `s.Length`. Kod znaku na pozycji `i` można pobrać pisząc `s[i]`. Podciąg pobieramy przez `s.Substring(startIndex, length)`, ale uwaga - trzeba go koniecznie przypisać do magazynu ciągu tekstowego.
-
-Przypisując ciąg do magazynu programista musi zatroszczyć się o to, aby długość ciągu nie przekraczała pojemności magazynu, gdyż tłumaczy się to na `strcpy`. Podobnie w przypadku operatora `+=`, który odpowiada `strcat`.
-
-Tablice
+Strings
 ~~~~~~~
 
-Mamy dwa rodzaje typów tablicowych:
+For text processing please choose Perl and not Ć.
 
-* Wskaźnik do tablicy: `T[]`, gdzie `T` jest typem bazowym tablicy.
-* Magazyn tablicy: `T[n]`, gdzie `n` to rozmiar tablicy.
+In Ć there are two string data types:
 
-Element tablicy `array` można odczytać i zmodyfikować stosując składnię `array[i]`. Tablice o elementach typu `byte` można kopiować (`sourceArray.CopyTo(sourceIndex, destinationArray, destinationIndex, length)`) i przekształcać zawarte w nich kody znaków na ciągi tekstowe (`sourceArray.ToString(startIndex, length)`).
+* Pointer to a string, written simply as `string`. It's translated to C as `const char *`.
+* String storage, written as `string(n)`, where `n` is an integer constant. The constant specifies maximum string length. "`string(15) s`" in Ć translates to C as "`char s[16]`".
 
-Rozmiar tablicy można pobrać tylko dla magazynu, przez `array.Length`. Można zerować wszystkie elementy magazynów tablic `byte` i `int` pisząc `array.Clear()`.
+The above distinction is only visible in the translation to C. In other languages the same `String` type will be used.
 
-Jest możliwość definowania stałych tablic bajtów wypełnionych zawartością pliku na etapie kompilacji. Np. `BinaryResource("foo.bar")` to wyrażenie, którego wartością jest tablica zawierająca bajty pliku `foo.bar` w momencie wywołania `cito`.
+String constants are written in double quotes: `"Hello world"`. You may use `\n` and the other escape sequences as in character constants. String constants may be concatenated with the `+` operator. However, you cannot use this operator for string variables.
 
-Klasy
-~~~~~
+A pointer (to a string or the described later array and object) may have the value `null`.
 
-Definicja klasy wygląda znajomo:
+There are implicit conversions of storages (of a string, array, object) to pointers. There's no `&` operator known from C.
+
+`s.Length` returns string length. `s[i]` returns the code of the character at position `i`. `s.Substring(startIndex, length)` returns a substring, which must be assigned to a string storage.
+
+When assigning a string to a string storage it is programmer's responsibility to assure that string length doesn't exceed storage size. String assignment translates to C's `strcpy`. Similarly for the `+=` operator translated to `strcat`.
+
+Arrays
+~~~~~~
+
+There are two kinds of array types:
+
+* Pointer to an array: `T[]`, where `T` is the type of array elements.
+* Array storage: `T[n]`, where `n` is array size.
+
+`array[i]` represents an element of an array that can be read and written to.
+
+`byte` arrays can be copied (`sourceArray.CopyTo(sourceIndex, destinationArray, destinationIndex, length)`) and converted to strings (`sourceArray.ToString(startIndex, length)`).
+
+Array size is only available for array storage, via `array.Length`. You can zero all elements of `byte` and `int` array storage with `array.Clear()`.
+
+You may declare constant byte arrays, which contain compile-time file contents. For example `BinaryResource("foo.bar")` is an array consisting of bytes of the file `foo.bar` read while running `cito`.
+
+Classes
+~~~~~~~
+
+You shouldn't be surprised by the syntax of class definition:
 -------------------
 class HelloCi
 {
-    // tutaj zawartość, czyli członkowie klasy
+    // class contents (members) goes here
 }
 -------------------
 
-Nie należy umieszczać średnika po klamrze zamykającej definicję klasy.
+Do not place a semicolon after the closing brace.
 
-Obecna wersja języka Ć nie obsługuje dziedziczenia klas.
+Inheritance is not supported in the current version of Ć.
 
-W jednym pliku źródłowym `.ci` można zdefiniować wiele klas. Nie ma żadnego związku między nazwą klasy a nazwą pliku, w którym jest ona zdefiniowana.
+You may define many classes in one `.ci` source file. There's no restriction on class vs source file names.
 
-Zdefiniowana w powyższy sposób klasa jest widoczna dla kodu w Ć. Aby była widoczna z zewnątrz, dodajemy modyfikator `public`.
+A class defined as above is only visible to Ć code. To make it visible from the outside, add the `public` modifier.
 
-Domyślnie członkowie są widoczni dla całego kodu w Ć. Jeśli odwołania do nich występują tylko z wnętrza tej samej klasy, `cito` przetłumaczy ich widoczność na `private`. Modyfikatora `public` można użyć do metod i stałych, ale nie do pól klasy.
+By default, members are visible to all Ć code. If they aren't accessed from other classes, `cito` will translate their visibility to `private`. The `public` modifier can be used on methods and constants but not fields.
 
-Członkami klasy mogą być:
+Class members can be:
 
-* stałe
-* pola
-* metody
-* konstruktor
-* makra
+* constants
+* fields
+* methods
+* a constructor
+* macros
 
-W języku Ć nie można definować znanych z języka C# właściwości (ang. properties). Istnieją natomiast właściwości wbudowane, opisane wyżej, jak na przykład `Length`.
+You cannot define properties known from C#. However, there are some described above built-in properties, such as `Length`.
 
-Dla każdej klasy `C` dostępne są typy:
+For each class `C` there are the following types:
 
-* Wskaźnik do klasy: zapisywany po prostu jako nazwa klasy: `C`.
-* Magazyn klasy: zapisywany jako nazwa klasy z parą nawiasów: `C()`.
+* Pointer to an object: written simply as class name: `C`.
+* Object storage: written as class name with a pair of parentheses: `C()`.
 
-Np.
+For example:
 -------------------
-MyClass() foo;
--------------------
-
-przekłada się na Javę następująco:
--------------------
-MyClass foo = new MyClass();
+MyObject() foo;
 -------------------
 
+translates to Java as follows:
+-------------------
+MyObject foo = new MyObject();
+-------------------
 
-Delegaty
-~~~~~~~~
 
-Delegat (ang. delegate) to znane z C# połączenie wskaźnika do metody oraz obiektu:
+Delegates
+~~~~~~~~~
+
+A delegate combines a pointer to a method with a pointer to an object, just like in C#:
 -------------------
 public delegate void ByteWriter(int data);
 ...
@@ -207,12 +217,12 @@ public class MyWriter
 }
 -------------------
 
-Obsługa delegatów nie jest jeszcze ukończona.
+Support for delegates is incomplete in this version of Ć.
 
-Stałe
------
+Constants
+---------
 
-Oto przykłady definicji stałych:
+Here are some examples of constant definitions:
 -------------------
 public class ConstDemo
 {
@@ -223,33 +233,33 @@ public class ConstDemo
 }
 -------------------
 
-W przetłumaczonym kodzie pojawiają się tylko stałe publiczne i stałe tablice. Pozostałe stałe są zamieniane na swoją wartość.
+The translated code only contains public constants and constant arrays. All other constants are expanded to their values.
 
-`cito` dokonuje zwijania stałych, tj. operacje dotyczące wyłącznie stałych są wykonywane na etapie tłumaczenia. Np. `2*3` zostanie przetłumaczone na `6`.
+`cito` performs constant folding, that is operations on constants are computed during the translation. For example, `2*3` gets translated to `6`.
 
-Pola
-----
+Fields
+------
 
-Pola definiujemy w typowy sposób:
+Fields are defined as follows:
 -------------------
 public class FieldDemo
 {
     int Field1;
-    SomeClass AClassPointer;
-    SomeClass() AClassStorage;
+    SomeObject AnObjectPointer;
+    SomeObject() AnObjectStorage;
 }
 -------------------
 
-Pola nie mogą być publiczne -- należy definiować publiczne metody, które pobierają i ustawiają wartość pól.
+Fields cannot be public -- instead, define public methods to get and set values of fields.
 
-Metody
-------
+Methods
+-------
 
-Metody domyślnie mają dostęp do instancji klasy, w której są zdefiniowane - poprzez wskaźnik `this`. Nie dotyczy to metod statycznych (zdefiniowanych z modyfikatorem `static`).
+By default, methods have an access to an instance of the class they are defined in - via the `this` pointer. An exception are static methods (defined with the `static` modifier).
 
-W definicji metody nazwa musi być poprzedzona zwracanym typem. `void` oznacza, że metoda nie zwraca żadnej wartości.
+In method definition the method name must be preceded with the returned type. `void` means that method returns no value.
 
-Ć nie obsługuje przeciążenia metod - znaczy to, że nazwy metod w obrębie klasy muszą być unikalne.
+Ć doesn't support method overloading. This means that method names must be unique within the class.
 
 -------------------
 class MethodDemo
@@ -271,10 +281,11 @@ class MethodDemo
 }
 -------------------
 
-Konstruktor
+Constructor
 -----------
 
-Klasa może zawierać jeden bezparametrowy konstruktor. Zadaniem konstruktora jest inicjalizacja nowej instancji klasy.
+A class may contain one parameterless constructor. The constructor initializes new instance of the class.
+
 -------------------
 class ConstructorDemo
 {
@@ -286,81 +297,81 @@ class ConstructorDemo
 }
 -------------------
 
-Instrukcje
+Statements
 ----------
 
-Instrukcje używane są w metodach i konstruktorach. Bardzo przypominają te znane Ci już z innych języków.
+Statements are used in methods and constructors. Their syntax in Ć is nearly identical to the languages you already know.
 
-W Ć nie ma instrukcji pustej, składającej się z samego średnika. Taka instrukcja jest często oznaką pomyłki programisty. Zamiast instrukcji pustej można użyć pustego bloku: `{ }`.
+In Ć there's no empty statement consisting of the sole semicolon. Such a statement could be a programmer's type. Instead of an empty statement you may use an empty block: `{ }`.
 
-Bloki
-~~~~~
+Blocks
+~~~~~~
 
-Blokiem nazywamy ciąg instrukcji objęty klamrami.
+A block is a sequence of statements wrapped in braces.
 
-Definicje zmiennych
-~~~~~~~~~~~~~~~~~~~
+Variable definitions
+~~~~~~~~~~~~~~~~~~~~
 
-Zmienne muszą być definiowane pojedynczo, to znaczy tak:
+Each variable must be defined separately, like this:
 -------------------
 int x;
 int y;
 -------------------
 
-a nie tak:
+and not that:
 -------------------
-int x, y; // BŁĄD
+int x, y; // ERROR
 -------------------
 
-Definicja zmiennej może zawierać wartość początkową:
+Variable definition may include an initial value:
 -------------------
 int x = 5;
-int[4] array = 0; // tablica zawierająca początkowo cztery zera
+int[4] array = 0; // the array initially contains four zeros
 -------------------
 
-Wyrażenia
-~~~~~~~~~
+Expressions
+~~~~~~~~~~~
 
-W kontekście instrukcji mogą zostać użyte tylko niektóre wyrażenia. Poprawnymi instrukcjami są:
+Not all expressions may be used as statements. These are valid statements:
 -------------------
-DoFoo(4, 2); // wywołanie metody
+DoFoo(4, 2); // method call
 i++;
 -------------------
 
-Natomiast nie są nimi:
+These are not valid statements:
 -------------------
-4 + 2; // BŁĄD
-++i; // BŁĄD, bez dyskusji należy zamienić na i++
+4 + 2; // ERROR
+++i; // ERROR, use i++ instead
 -------------------
 
-W języku Ć nie ma operatora przecinka.
+There is no comma operator in Ć.
 
-Przypisania
+Assignments
 ~~~~~~~~~~~
 
-Przypisanie jest instrukcją, a nie operatorem. Nie można więc użyć przypisania w dowolnym wyrażeniu.
+An assignment is a statement and not an operator. Therefore expressions cannot include assignments.
 -------------------
 x = y;
 y = 5;
-x = y = 3; // przypisania można łączyć
-x += 4; // dodaje 4 do x
-if ((x = Foo()) != null) { Bar(); } // BŁĄD
+x = y = 3; // you may combine assignments
+x += 4; // adds 4 to x
+if ((x = Foo()) != null) { Bar(); } // ERROR
 -------------------
 
-Stałe
-~~~~~
+Constants
+~~~~~~~~~
 
-Powyżej była mowa o definiowaniu stałych w klasie. Można też zrobić to wszędzie, gdzie jest oczekiwana instrukcja. Taka definicja ma wtedy zasięg ograniczony do bloku, w którym występuje (w szczególności bloku stanowiącego treść metody), a więc nie może zawierać modyfikatora `public`.
+Constant definitions in classes were already described. Constant definitions are also allowed at the level of statements. Such a definition has a scope limited to the containing block (particularly the block which is a method body). For this reason it's not allowed to decorate these definitions with `public`.
 
-Zwracanie wyniku metody
+Returning method result
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Działanie metody można zakończyć instrukcją `return`. Z wyjątkiem metod `void`, należy po `return` podać wyrażenie określające zwracaną przez metodę wartość.
+A method can end its execution with a `return` statement. `return` must be followed with the returned value, except for `void` methods of course.
 
-Instrukcja warunkowa
-~~~~~~~~~~~~~~~~~~~~
+Conditional statement
+~~~~~~~~~~~~~~~~~~~~~
 
-Jest to znana instrukcja `if` z opcjonalnym `else`.
+That's the familiar `if` with an optional `else` clause.
 
 -------------------
 if (x == 7)
@@ -369,109 +380,109 @@ else
     DoBar();
 -------------------
 
-Pętle
+Loops
 ~~~~~
 
-Mamy do dyspozycji trzy rodzaje pętli:
+There are three kinds of loops:
 
-* `while`, w której warunek jest sprawdzany na początku,
-* `do/while` sprawdzająca warunek po pierwszym obiegu pętli,
-* `for` zawierająca dodatkowo instrukcję wykonywaną na początku oraz po każdym obiegu.
+* `while` checking the condition at the beginning of each run.
+* `do/while` checking the condition after the first run.
+* `for` which contains an initial statement and a statement ending each run.
 
-Wewnątrz pętli można użyć:
+Inside loops you may use:
 
-* `break` w celu przerwania pętli (najbardziej wewnętrznej, gdyż nie są obecnie obsługiwane etykiety),
-* `continue` w celu zakończenia bieżącego obiegu pętli i przejściu do następnego.
+* `break` to leave the loop (the inner one as there are no loop labels).
+* `continue` to skip to the next run.
 
-Instrukcja wyboru
+Switch statement
 ~~~~~~~~~~~~~~~~~
 
-W instrukcji `switch` bloki `case` muszą być prawidłowo zakończone, na przykład:
+`case` clauses must be correctly terminated, for example:
 -------------------
 switch (x) {
 case 1:
     DoFoo();
-    // BŁĄD: czegoś tu brakuje
+    // ERROR: something's missing here
 case 2:
     DoBar();
     break;
 }
 -------------------
 
-Prawidłowe zakończenie oznacza instrukcję, która nie pozwoli na przejście dalej: `break`, `continue`, `return`, `throw` lub znaną z C# instrukcję `goto case` / `goto default`, która wykona skok do następnego bloku.
+Correct termination means a statement that doesn't fall to the next statement: `break`, `continue`, `return`, `throw` or the known from C# statement `goto case` / `goto default`, which jumps to the next case.
 -------------------
 switch (x) {
 case 1:
     DoFoo();
-    goto case 2; // teraz wiadomo, o co chodzi
+    goto case 2; // now it's clear what the programmer meant
 case 2:
     DoBar();
     break;
 }
 -------------------
 
-Wyjątki
-~~~~~~~
+Exceptions
+~~~~~~~~~~
 
-W języku Ć można rzucać wyjątki, ale póki co nie można ich obsługiwać. Zamysł jest taki, że wyjątki będą obsługiwane przez kod używający bibliteki w Ć.
+Ć can throw exceptions, but cannot handle them at the moment. The idea is that the exceptions will be handled by the code using the library written in Ć.
 
-Rzucenie wyjątku odbywa się poprzez instrukcję `throw` z argumentem typu ciąg tekstowy. Nie ma możliwości określenia klasy wyjątku, jest ona określona na sztywno w `cito` (np. `java.lang.Exception`).
+An exception can be thrown with the `throw` statement with a string argument. You cannot specify the class of the exception, it's hardcoded in `cito` (for example `java.lang.Exception`).
 
-Wyjaśnienia wymaga tłumaczenie wyjątków na język C. Ciąg tekstowy nie pojawia się w tłumaczeniu, a instrukcja `throw` jest zastępowana przez `return` z magiczną wartością oznaczającą błąd:
+Translation of exceptions to C needs an explanation. The string argument is lost in the translation and the `throw` statement is replaced with `return` with a magic value representing an error:
 
-* `-1` w metodzie zwracającej `int`,
-* `NULL` w metodzie wracającej wskaźnik,
-* `false` w metodze `void`, która jest tłumaczona na metodę `bool` (`true` oznacza poprawne wykonanie metody).
+* `-1` in a method returning `int`.
+* `NULL` in a method returning a pointer.
+* `false` in a `void` method. The method will be translated to `bool` and `true` will be returned if the method succeeds.
 
-Bloki natywne
+Native blocks
 ~~~~~~~~~~~~~
 
-Kod, który nie może zostać wyrażony w języku Ć, można zapisać w języku docelowym stosując konstrukcję:
+Code which cannot be expressed in Ć can be written in the target language using the following syntax:
 -------------------
 native {
     printf("Hello, world!\n");
 }
 -------------------
 
-Bloki natywne powinny być używane wewnątrz `#if`.
+Generally, native blocks should be used inside `#if` (see below).
 
-Makra
------
+Macros
+------
 
-Makra w Ć przypominają te znane z języka C, jednak składnia jest inna. Istnieją dwa rodzaje makr:
+Macros in Ć are similar to the ones known from C, yet the syntax is different. There are two kinds of macros:
 
-Makro wyrażeniowe::
-Definicja:
+Expression macro::
+Defined as:
 +
 -------------------
-macro MY_EXPR_MACRO(arg1, arg2) (expr) // nawiasy są wymagane
+macro MY_EXPR_MACRO(arg1, arg2) (expr) // all parentheses are required
 -------------------
 +
-Rozwinięcie makra wyrażeniowego zawsze zawiera zewnętrzne nawiasy.
+Expression macro is always expanded with its outer parentheses.
 
-Makro-instrukcja::
-Definicja:
+Statement macro::
+Defined as:
 +
 -------------------
 macro MY_STATEMENT_MACRO(arg1, arg2) { statement; }
 -------------------
 +
-Podczas rozwijania makro-instrukcji zostaną pominięte nawiasy klamrowe, a także końcowy średnik, dzięki czemu wywołanie `MY_STATEMENT_MACRO(1, 2);` nie kończy się dwoma średnikami.
+Statement macro is expanded without the outer braces or the trailing semicolon. This way the expansion of `MY_STATEMENT_MACRO(1, 2);` doesn't end with two semicolons.
 
-W odróżnieniu od języków C i C++ jeśli definicja makra składa się z wielu linii, nie należy stosować odwrotnych ukośników na końcach linii. Koniec makra jest oznaczany nawiasem zamykającym.
+Unlike in C and C++, multi-line macro definitions don't include trailing backslashes. The end of the macro is detected by matching the parentheses or braces.
 
-Makra mogą przyjmować dowolną, lecz z góry określoną liczbę argumentów. Nawiasy otaczające parametry w definicji oraz argumenty w wywołaniu są wymagane. Stałe nie powinny być definiowane przy pomocy makr, lecz `const`.
+Macros can have any, but constant number of arguments. The parentheses surrounding the parameters in the definition and the arguments in the reference are required. You should not use macros for constants -- use `const` instead.
 
-Makra mogą być definowane jako członkowie klasy oraz wszędzie, gdzie może zostać użyta instrukcja. Zasięg makr jest ograniczony odpowiednio do klas oraz bloków.
+Macros can be defined as class members and at the statement level. This limits their scope to classes and blocks respectively.
 
-Można stosować znany z preprocesora języka C operator łączenia identyfikatorów: `##`.
+There's a known from C token pasting operator: `##`.
 
-Kompilacja warunkowa
---------------------
+Conditional compilation
+-----------------------
 
-Kompilacja warunkowa w Ć jest wzorowana na języku C#. Symbole kompilacji warunkowej można podawać tylko z linii poleceń `cito` i są one niezależne od makr opisanych w poprzednim punkcie. Symbole kompilacji warunkowej nie mają przypisanych wartości, badana może być tylko ich obecność.
+Conditional compilation in Ć is modeled after C#. Conditional compilation symbols can only be given on the `cito` command line and are unrelated to the macros described above. Conditional compilation symbols have no assigned value, they are only present or not.
 
-Najprostszy przykład:
+A simplest example:
 
 -------------------
 #if MY_SYMBOL
@@ -479,7 +490,7 @@ Najprostszy przykład:
 #endif
 -------------------
 
-Bardziej skomplikowany przykład:
+A more complicated one:
 -------------------
 #if WINDOWS
     DeleteFile(filename);
@@ -490,21 +501,21 @@ Bardziej skomplikowany przykład:
 #endif
 -------------------
 
-Operatory dozwolone w `#if` i `#elif` to `! && ||`. Można używać symbolu `true`, który jest zawsze zdefiniowany.
+The operators allowed in `#if` and `#elif` are `!`, `&&` and `||`. You may reference `true`, which is a symbol that is always defined. `false` should be never defined.
 
-Komentarze dokumentacyjne
--------------------------
+Documentation comments
+----------------------
 
-Komentarze dokumentacyjne mogą dotyczyć klas, typów wyliczeniowych, stałych, metod oraz ich parametrów. Trwają prace nad specyfikacją składni i implementacją tłumaczenia komentarzy dokumentacyjnych.
+Documentation comments can describe classes, enumerated types, constants, methods and their parameters. Syntax and implementation of documentation comments is a work in progress.
 
-// czcionka nieproporcjonalna, akapity, listy
+// fixed-width font, paragraphs, lists
 
-Konwencje nazewnicze
---------------------
+Naming conventions
+------------------
 
-Sugerowane jest stosowanie w Ć następującej konwencji nazewniczej:
+It is advised to use the following naming conventions in Ć code:
 
-* zmienne lokalne i parametry rozpoczynamy małą literą, stosując wielką literę dla kolejnych słów, czyli `camelCase`,
-* wszystkie inne identyfikatory rozpoczynamy wielką literą, czyli `PascalCase`.
+* Local variables and parameters start with a lowercase letter, capitalize the first letter of the following words -- that is, `camelCase`.
+* All other identifiers should start with an uppercase letter -- that is, `PascalCase`.
 
-Generatory dla poszczególnych języków utworzą identyfikatory o konwencji stosowanej w danym języku, np. stałe w postaci `UPPERCASE_WITH_UNDERSCORES`.
+Generators will translate the above convention to the one native to the output language, for example constants written as `UPPERCASE_WITH_UNDERSCORES`.
