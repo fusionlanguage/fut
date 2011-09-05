@@ -186,9 +186,10 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 
 	object ResolveConstExpr(CiExpr expr, CiType type)
 	{
-		CiConstExpr ce = Coerce(Resolve(expr), type) as CiConstExpr;
+		expr = Coerce(Resolve(expr), type);
+		CiConstExpr ce = expr as CiConstExpr;
 		if (ce == null)
-			throw new ResolveException("Expression is not constant");
+			throw new ResolveException("{0} is not constant", expr);
 		return ce.Value;
 	}
 
@@ -374,6 +375,8 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 					return new CiConstExpr((byte) GetConstInt(parent));
 				if (prop == CiIntType.SByteProperty)
 					return new CiConstExpr((int) (sbyte) GetConstInt(parent));
+				if (prop == CiStringType.LengthProperty)
+					return new CiConstExpr(((string) ((CiConstExpr) parent).Value).Length);
 			}
 			return new CiPropertyAccess { Obj = parent, Property = prop };
 		}
@@ -392,7 +395,8 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			if (parent is CiConstExpr && index is CiConstExpr) {
 				string s = (string) ((CiConstExpr) parent).Value;
 				int i = GetConstInt(index);
-				return new CiConstExpr((int) s[i]);
+				if (i < s.Length)
+					return new CiConstExpr((int) s[i]);
 			}
 			return new CiMethodCall {
 				Method = CiStringType.CharAtMethod,
@@ -596,14 +600,53 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		CiExpr left = Resolve(expr.Left);
 		CiExpr right = Resolve(expr.Right);
 		CiType type;
-		if (expr.Op == CiToken.CondAnd || expr.Op == CiToken.CondOr)
+		switch (expr.Op) {
+		case CiToken.CondAnd:
+		case CiToken.CondOr:
 			type = CiBoolType.Value;
-		else if (expr.Op == CiToken.Equal || expr.Op == CiToken.NotEqual)
+			break;
+		case CiToken.Equal:
+		case CiToken.NotEqual:
 			type = FindCommonType(left, right);
-		else
+			break;
+		default:
 			type = CiIntType.Value;
+			break;
+		}
 		expr.Left = Coerce(left, type);
 		expr.Right = Coerce(right, type);
+		CiConstExpr cleft = expr.Left as CiConstExpr;
+		if (cleft != null) {
+			switch (expr.Op) {
+			case CiToken.CondAnd:
+				return (bool) cleft.Value ? expr.Right : new CiConstExpr(false);
+			case CiToken.CondOr:
+				return (bool) cleft.Value ? new CiConstExpr(true) : expr.Right;
+			case CiToken.Equal:
+			case CiToken.NotEqual:
+				CiConstExpr cright = expr.Right as CiConstExpr;
+				if (cright != null) {
+					bool eq = object.Equals(cleft.Value, cright.Value);
+					return new CiConstExpr(expr.Op == CiToken.Equal ? eq : !eq);
+				}
+				break;
+			default:
+				if (expr.Right is CiConstExpr) {
+					int a = GetConstInt(cleft);
+					int b = GetConstInt(expr.Right);
+					bool result;
+					switch (expr.Op) {
+					case CiToken.Less: result = a < b; break;
+					case CiToken.LessOrEqual: result = a <= b; break;
+					case CiToken.Greater: result = a > b; break;
+					case CiToken.GreaterOrEqual: result = a >= b; break;
+					default: return expr;
+					}
+					return new CiConstExpr(result);
+				}
+				break;
+			}
+		}
 		return expr;
 	}
 
@@ -615,6 +658,9 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		expr.ResultType = FindCommonType(expr1, expr2);
 		expr.OnTrue = Coerce(expr1, expr.ResultType);
 		expr.OnFalse = Coerce(expr2, expr.ResultType);
+		CiConstExpr konst = expr.Cond as CiConstExpr;
+		if (konst != null)
+			return (bool) konst.Value ? expr.OnTrue : expr.OnFalse;
 		return expr;
 	}
 
