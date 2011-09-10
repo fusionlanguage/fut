@@ -198,7 +198,7 @@ public class GenC : SourceGenerator
 			WriteChild(expr, expr.Obj);
 		}
 		else if (expr.Property == CiStringType.LengthProperty) {
-			Write("strlen(");
+			Write("(int) strlen(");
 			WriteChild(expr, expr.Obj);
 			Write(')');
 		}
