@@ -70,9 +70,6 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		WriteLine();
 		Write(symbol.Documentation);
 		WriteVisibility(symbol);
-		Write("class ");
-		WriteLine(symbol.Name);
-		OpenBlock();
 	}
 
 	void CloseAsFile()
@@ -85,6 +82,9 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 	void ICiSymbolVisitor.Visit(CiEnum enu)
 	{
 		CreateAsFile(enu);
+		Write("class ");
+		WriteLine(enu.Name);
+		OpenBlock();
 		for (int i = 0; i < enu.Values.Length; i++) {
 			CiEnumValue value = enu.Values[i];
 			Write(value.Documentation);
@@ -447,6 +447,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 	void ICiSymbolVisitor.Visit(CiClass klass)
 	{
 		CreateAsFile(klass);
+		OpenClass(klass, " : ");
 		this.UsesSubstringMethod = false;
 		this.UsesCopyArrayMethod = false;
 		this.UsesBytesToStringMethod = false;

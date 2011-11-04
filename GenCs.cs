@@ -393,9 +393,7 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 		WriteLine();
 		Write(klass.Documentation);
 		Write(klass.Visibility);
-		Write("class ");
-		WriteLine(klass.Name);
-		OpenBlock();
+		OpenClass(klass, " : ");
 		if (klass.Constructor != null) {
 			Write("public ");
 			Write(klass.Name);

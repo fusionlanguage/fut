@@ -184,6 +184,8 @@ public class GenC : SourceGenerator
 			Write("->");
 		else
 			Write('.');
+		for (CiClass klass = ((CiClassType) expr.Obj.Type).Class; klass != expr.Field.Class; klass = klass.BaseClass)
+			Write("base.");
 		WriteCamelCase(expr.Field.Name);
 	}
 
@@ -265,7 +267,20 @@ public class GenC : SourceGenerator
 				Write(expr.Method.Name);
 				Write('(');
 				if (expr.Obj != null) {
-					Write(expr.Obj);
+					CiClass klass = ((CiClassType) expr.Obj.Type).Class;
+					if (klass != expr.Method.Class) {
+						Write('&');
+						Write(expr.Obj);
+						Write("->base");
+						for (;;) {
+							klass = klass.BaseClass;
+							if (klass == expr.Method.Class)
+								break;
+							Write(".base");
+						}
+					}
+					else
+						Write(expr.Obj);
 					first = false;
 				}
 			}
@@ -355,6 +370,9 @@ public class GenC : SourceGenerator
 		if (expr.ResultType is CiClassPtrType && expr.Inner.Type is CiClassStorageType) {
 			Write('&');
 			WriteChild(expr, (CiExpr) expr.Inner); // TODO: Assign
+			CiClass resultClass = ((CiClassPtrType) expr.ResultType).Class;
+			for (CiClass klass = ((CiClassStorageType) expr.Inner.Type).Class; klass != resultClass; klass = klass.BaseClass)
+				Write(".base");
 		}
 		else
 			base.Write(expr);
@@ -441,7 +459,7 @@ public class GenC : SourceGenerator
 	{
 		if (def.Type is CiClassStorageType) {
 			CiClass klass = ((CiClassStorageType) def.Type).Class;
-			return klass.Constructor == null && !klass.ConstructsFields;
+			return !klass.Constructs;
 		}
 		if (def.InitialValue == null)
 			return true;
@@ -459,7 +477,7 @@ public class GenC : SourceGenerator
 		Write(stmt.Type, stmt.Name);
 		if (stmt.Type is CiClassStorageType) {
 			CiClass klass = ((CiClassStorageType) stmt.Type).Class;
-			if (klass.Constructor != null || klass.ConstructsFields) {
+			if (klass.Constructs) {
 				WriteLine(";");
 				Write(klass.Name);
 				Write("_Construct(&");
@@ -662,8 +680,7 @@ public class GenC : SourceGenerator
 
 	void WriteConstructorNewDelete(CiClass klass)
 	{
-		bool hasConstructor = klass.Constructor != null || klass.ConstructsFields;
-		if (hasConstructor) {
+		if (klass.Constructs) {
 			WriteLine();
 			this.CurrentMethod = klass.Constructor;
 			WriteConstructorSignature(klass);
@@ -671,8 +688,12 @@ public class GenC : SourceGenerator
 			OpenBlock();
 			if (klass.Constructor != null)
 				StartBlock(klass.Constructor.Body.Statements);
+			if (klass.BaseClass != null && klass.BaseClass.Constructs) {
+				Write(klass.BaseClass.Name);
+				WriteLine("_Construct(&self->base);");
+			}
 			ForEachStorageField(klass, (field, fieldClass) => {
-				if (fieldClass.Constructor != null || fieldClass.ConstructsFields) {
+				if (fieldClass.Constructs) {
 					Write(fieldClass.Name);
 					Write("_Construct(&self->");
 					WriteCamelCase(field.Name);
@@ -695,7 +716,7 @@ public class GenC : SourceGenerator
 			Write(" *) malloc(sizeof(");
 			Write(klass.Name);
 			WriteLine("));");
-			if (hasConstructor) {
+			if (klass.Constructs) {
 				WriteLine("if (self != NULL)");
 				this.Indent++;
 				Write(klass.Name);
@@ -775,7 +796,7 @@ public class GenC : SourceGenerator
 	void WriteSignatures(CiClass klass, bool pub)
 	{
 		if (klass.HasFields) {
-			if (!pub && (klass.Constructor != null || klass.ConstructsFields)) {
+			if (!pub && klass.Constructs) {
 				WriteConstructorSignature(klass);
 				WriteLine(";");
 			}
@@ -805,12 +826,18 @@ public class GenC : SourceGenerator
 
 	void WriteStruct(CiClass klass)
 	{
-		// topological sorting of class storage fields
+		// topological sorting of class hierarchy and class storage fields
 		if (klass.WriteStatus == CiWriteStatus.Done)
 			return;
 		if (klass.WriteStatus == CiWriteStatus.InProgress)
 			throw new ResolveException("Circular dependency for class {0}", klass.Name);
 		klass.WriteStatus = CiWriteStatus.InProgress;
+		klass.Constructs = klass.Constructor != null;
+		if (klass.BaseClass != null) {
+			WriteStruct(klass.BaseClass);
+			if (klass.BaseClass.Constructs)
+				klass.Constructs = true;
+		}
 		foreach (CiSymbol member in klass.Members) {
 			if (member is CiField) {
 				CiType type = ((CiField) member).Type;
@@ -819,8 +846,8 @@ public class GenC : SourceGenerator
 				CiClassStorageType stg = type as CiClassStorageType;
 				if (stg != null) {
 					WriteStruct(stg.Class);
-					if (stg.Class.Constructor != null || stg.Class.ConstructsFields)
-						klass.ConstructsFields = true;
+					if (stg.Class.Constructs)
+						klass.Constructs = true;
 				}
 			}
 		}
@@ -832,6 +859,10 @@ public class GenC : SourceGenerator
 			Write(klass.Name);
 			Write(' ');
 			OpenBlock();
+			if (klass.BaseClass != null) {
+				Write(klass.BaseClass.Name);
+				WriteLine(" base;");
+			}
 			foreach (CiSymbol member in klass.Members) {
 				if (member is CiField)
 					Write((CiField) member);

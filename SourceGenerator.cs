@@ -798,6 +798,18 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			WriteLine(";");
 	}
 
+	protected void OpenClass(CiClass klass, string extendsClause)
+	{
+		Write("class ");
+		Write(klass.Name);
+		if (klass.BaseClass != null) {
+			Write(extendsClause);
+			Write(klass.BaseClass.Name);
+		}
+		WriteLine();
+		OpenBlock();
+	}
+
 	public abstract void Write(CiProgram prog);
 }
 

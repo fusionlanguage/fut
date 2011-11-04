@@ -677,6 +677,8 @@ public partial class CiParser : CiLexer
 		CiClass klass = new CiClass();
 		Expect(CiToken.Class);
 		klass.Name = ParseId();
+		if (Eat(CiToken.Colon))
+			klass.BaseClass = new CiUnknownClass { Name = ParseId() };
 		Expect(CiToken.LeftBrace);
 		OpenScope();
 		this.CurrentClass = klass;
@@ -722,7 +724,7 @@ public partial class CiParser : CiLexer
 					if (type == CiType.Void)
 						throw new ParseException("Field is void");
 					Expect(CiToken.Semicolon);
-					symbol = new CiField { Type = type, Name = name };
+					symbol = new CiField { Class = klass, Type = type, Name = name };
 				}
 			}
 			symbol.Documentation = doc;

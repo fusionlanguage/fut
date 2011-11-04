@@ -1,5 +1,18 @@
-public class HelloCi
+public class HelloCi : Super
 {
+	int y;
+
+	public int TestInheritance()
+	{
+		BaseMethod();
+		HelloCi() h;
+		h.BaseMethod();
+		//TODO Super s = this;
+		//TODO s = h;
+		//TODO (true ? this : h).BaseMethod();
+		return this.x + x + y;
+	}
+
 	public static bool Differ(string s1, string s2)
 	{
 		return s1 != s2;
@@ -10,7 +23,7 @@ public class HelloCi
 		return a / b;
 	}
 
-	public static string GetMessage()
+	public string GetMessage()
 	{
 		return "Hello, world!";
 	}
@@ -21,4 +34,17 @@ public class HelloCi
 	}
 
 	public const string Version = "0.1";
+}
+
+public class Super
+{
+	int x;
+	Super()
+	{
+		this.x = 5;
+	}
+
+	public void BaseMethod()
+	{
+	}
 }

@@ -343,6 +343,7 @@ public class CiEnum : CiType
 
 public class CiField : CiSymbol
 {
+	public CiClass Class;
 	public CiType Type;
 	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
 }
@@ -763,13 +764,15 @@ public enum CiWriteStatus
 
 public class CiClass : CiSymbol
 {
+	public CiClass BaseClass;
 	public SymbolTable Members;
 	public CiMethod Constructor;
 	public CiConst[] ConstArrays;
 	public CiBinaryResource[] BinaryResources;
+	public bool IsResolved;
 	public CiWriteStatus WriteStatus; // C only
 	public bool HasFields; // C only
-	public bool ConstructsFields; // C only
+	public bool Constructs; // C only
 	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
 }
 

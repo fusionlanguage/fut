@@ -123,7 +123,7 @@ public class GenC89 : GenC
 			}
 			else if (stmt.Type is CiClassStorageType) {
 				CiClass klass = ((CiClassStorageType) stmt.Type).Class;
-				if (klass.Constructor != null || klass.ConstructsFields) {
+				if (klass.Constructs) {
 					Write(klass.Name);
 					Write("_Construct(&");
 					WriteCamelCase(stmt.Name);

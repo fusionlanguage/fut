@@ -422,15 +422,13 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		WriteLine();
 		Write(klass.Documentation);
 		Write(klass.Visibility);
-		Write("class ");
-		WriteLine(klass.Name);
-		OpenBlock();
+		OpenClass(klass, " : ");
+		bool hasConstructor = klass.Constructor != null;
 		foreach (CiSymbol member in klass.Members) {
-			if (!klass.ConstructsFields) {
+			if (!hasConstructor) {
 				CiField field = member as CiField;
-				if (field != null && (field.Type is CiClassStorageType || field.Type is CiArrayStorageType)) {
-					klass.ConstructsFields = true;
-				}
+				if (field != null && (field.Type is CiClassStorageType || field.Type is CiArrayStorageType))
+					hasConstructor = true;
 			}
 			member.Accept(this);
 		}
@@ -452,7 +450,6 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 			WriteConst(resource.Content);
 			WriteLine(";");
 		}
-		bool hasConstructor = klass.Constructor != null || klass.ConstructsFields;
 		if (hasConstructor) {
 			WriteLine("this()");
 			OpenBlock();

@@ -50,7 +50,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		}
 	}
 
-	void CreateJavaFile(string type, CiSymbol symbol)
+	void CreateJavaFile(CiSymbol symbol)
 	{
 		string dir = Path.GetDirectoryName(this.OutputFile);
 		CreateFile(Path.Combine(dir, symbol.Name + ".java"));
@@ -62,10 +62,6 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		WriteLine();
 		Write(symbol.Documentation);
 		Write(symbol.Visibility);
-		Write(type);
-		Write(' ');
-		WriteLine(symbol.Name);
-		OpenBlock();
 	}
 
 	void CloseJavaFile()
@@ -76,7 +72,10 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 
 	void ICiSymbolVisitor.Visit(CiEnum enu)
 	{
-		CreateJavaFile("interface", enu);
+		CreateJavaFile(enu);
+		Write("interface ");
+		WriteLine(enu.Name);
+		OpenBlock();
 		for (int i = 0; i < enu.Values.Length; i++) {
 			CiEnumValue value = enu.Values[i];
 			Write(value.Documentation);
@@ -446,7 +445,8 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 
 	void ICiSymbolVisitor.Visit(CiClass klass)
 	{
-		CreateJavaFile("final class", klass);
+		CreateJavaFile(klass);
+		OpenClass(klass, " extends ");
 		this.UsesSubstringMethod = false;
 		this.UsesClearBytesMethod = false;
 		this.UsesClearIntsMethod = false;
@@ -480,7 +480,10 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 	void ICiSymbolVisitor.Visit(CiDelegate del)
 	{
 		// TODO: doc
-		CreateJavaFile("interface", del);
+		CreateJavaFile(del);
+		Write("interface ");
+		WriteLine(del.Name);
+		OpenBlock();
 		WriteSignature(del, "run");
 		WriteLine(";");
 		CloseJavaFile();

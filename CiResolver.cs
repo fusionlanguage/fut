@@ -82,14 +82,20 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		return type;
 	}
 
-	CiType ICiTypeVisitor.Visit(CiClassType type)
+	CiClass ResolveClass(CiClass klass)
 	{
-		if (type.Class is CiUnknownClass) {
-			string name = type.Class.Name;
-			type.Class = this.Symbols.Lookup(name) as CiClass;
-			if (type.Class == null)
+		if (klass is CiUnknownClass) {
+			string name = klass.Name;
+			klass = this.Symbols.Lookup(name) as CiClass;
+			if (klass == null)
 				throw new ResolveException("{0} is not a class", name);
 		}
+		return klass;
+	}
+
+	CiType ICiTypeVisitor.Visit(CiClassType type)
+	{
+		type.Class = ResolveClass(type.Class);
 		return type;
 	}
 
@@ -122,6 +128,20 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			OnTrue = Coerce(expr.OnTrue, expected),
 			OnFalse = Coerce(expr.OnFalse, expected)
 		};
+	}
+
+	static bool Extends(CiType type, CiClass baseClass)
+	{
+		if (!(type is CiClassType))
+			return false;
+		CiClass klass = ((CiClassType) type).Class;
+		while (klass != baseClass) {
+			// TODO: resolve, make sure no loops
+			klass = klass.BaseClass;
+			if (klass == null)
+				return false;
+		}
+		return true;
 	}
 
 	CiMaybeAssign Coerce(CiMaybeAssign expr, CiType expected)
@@ -158,8 +178,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		if (expected is CiClassPtrType) {
 			if (got == CiType.Null)
 				return expr;
-			CiClassType gotClass = got as CiClassType;
-			if (got != null && ((CiClassPtrType) expected).Class == gotClass.Class) {
+			if (Extends(got, ((CiClassPtrType) expected).Class)) {
 				if (got is CiClassPtrType)
 					return expr;
 				if (expr is CiCondExpr) {
@@ -908,6 +927,22 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 
 	void ICiSymbolVisitor.Visit(CiClass klass)
 	{
+		// !klass.IsResolved && (klass.BaseClass == null || klass.BaseClass is CiUnknownClass) => not resolved
+		// !klass.IsResolved && (klass.BaseClass != null && !(klass.BaseClass is CiUnknownClass)) => resolving
+		// klass.IsResolved => resolved
+		if (klass.IsResolved)
+			return;
+		if (klass.BaseClass != null) {
+			if (!(klass.BaseClass is CiUnknownClass)) {
+				this.CurrentClass = klass;
+				throw new ResolveException("Circular base class dependency");
+			}
+			klass.BaseClass = ResolveClass(klass.BaseClass);
+			klass.BaseClass.Accept(this);
+			klass.Members.Parent = klass.BaseClass.Members;
+		}
+		klass.IsResolved = true;
+
 		this.CurrentClass = klass;
 		this.Symbols = klass.Members;
 		if (klass.Constructor != null)

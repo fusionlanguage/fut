@@ -334,6 +334,13 @@ public class GenJs : SourceGenerator
 		if (klass.Constructor != null)
 			Write(klass.Constructor.Body.Statements);
 		CloseBlock();
+		if (klass.BaseClass != null) {
+			// seems that base class doesn't have to be defined earlier
+			Write(klass.Name);
+			Write(".prototype = new ");
+			Write(klass.BaseClass.Name);
+			WriteLine("();");
+		}
 		foreach (CiSymbol member in klass.Members) {
 			if (member is CiMethod)
 				Write((CiMethod) member);
