@@ -59,6 +59,13 @@ public class GenJs : SourceGenerator
 		CloseBlock();
 	}
 
+	protected virtual void WriteInit(CiArrayStorageType type)
+	{
+		Write(" = new Array(");
+		Write(type.Length);
+		Write(')');
+	}
+
 	bool WriteInit(CiType type)
 	{
 		CiClassStorageType classType = type as CiClassStorageType;
@@ -70,9 +77,7 @@ public class GenJs : SourceGenerator
 		}
 		CiArrayStorageType arrayType = type as CiArrayStorageType;
 		if (arrayType != null) {
-			Write(" = new Array(");
-			Write(arrayType.Length);
-			Write(')');
+			WriteInit(arrayType);
 			return true;
 		}
 		return false;
@@ -260,21 +265,25 @@ public class GenJs : SourceGenerator
 			base.Write(expr);
 	}
 
+	protected virtual void WriteInitArrayStorageVar(CiVar stmt)
+	{
+		WriteLine(";");
+		Write("Ci.clearArray(");
+		Write(stmt.Name);
+		Write(", ");
+		Write(stmt.InitialValue);
+		Write(')');
+		this.UsesClearArrayMethod = true;
+	}
+
 	public override void Visit(CiVar stmt)
 	{
 		Write("var ");
 		Write(stmt.Name);
 		WriteInit(stmt.Type);
 		if (stmt.InitialValue != null) {
-			if (stmt.Type is CiArrayStorageType) {
-				WriteLine(";");
-				Write("Ci.clearArray(");
-				Write(stmt.Name);
-				Write(", ");
-				Write(stmt.InitialValue);
-				Write(')');
-				this.UsesClearArrayMethod = true;
-			}
+			if (stmt.Type is CiArrayStorageType)
+				WriteInitArrayStorageVar(stmt);
 			else {
 				Write(" = ");
 				Write(stmt.InitialValue);

@@ -40,6 +40,7 @@ public class CiTo
 		Console.WriteLine("-l java    Translate to Java");
 		Console.WriteLine("-l cs      Translate to C#");
 		Console.WriteLine("-l js      Translate to JavaScript");
+		Console.WriteLine("-l js-ta   Translate to JavaScript with Typed Arrays");
 		Console.WriteLine("-l as      Translate to ActionScript");
 		Console.WriteLine("-l d       Translate to D");
 		Console.WriteLine("-o FILE    Write to the specified file");
@@ -139,6 +140,7 @@ public class CiTo
 		case "java": gen = new GenJava(namespace_); break;
 		case "cs": gen = new GenCs(namespace_); break;
 		case "js": gen = new GenJs(); break;
+		case "js-ta": gen = new GenJsWithTypedArrays(); break;
 		case "as": gen = new GenAs(namespace_); break;
 		case "d": gen = new GenD(); break;
 		default: throw new ApplicationException("Unknown language: " + lang);

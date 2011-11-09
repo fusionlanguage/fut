@@ -40,6 +40,7 @@
 		<Compile Include="GenD.cs" />
 		<Compile Include="GenJava.cs" />
 		<Compile Include="GenJs.cs" />
+		<Compile Include="GenJsWithTypedArrays.cs" />
 		<Compile Include="SourceGenerator.cs" />
 		<Compile Include="SymbolTable.cs" />
 	</ItemGroup>
