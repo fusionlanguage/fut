@@ -144,7 +144,7 @@ public class GenC : SourceGenerator
 		}
 		else if (expr is CiCoercion) {
 			CiCoercion c = (CiCoercion) expr;
-			if (c.ResultType is CiClassPtrType && c.Inner.Type is CiClassStorageType)
+			if (c.ResultType is CiClassType)
 				return 2;
 		}
 		return base.GetPriority(expr);
@@ -179,13 +179,11 @@ public class GenC : SourceGenerator
 
 	protected override void Write(CiFieldAccess expr)
 	{
-		WriteChild(expr, expr.Obj);
+		Write(expr.Obj);
 		if (expr.Obj.Type is CiClassPtrType)
 			Write("->");
 		else
 			Write('.');
-		for (CiClass klass = ((CiClassType) expr.Obj.Type).Class; klass != expr.Field.Class; klass = klass.BaseClass)
-			Write("base.");
 		WriteCamelCase(expr.Field.Name);
 	}
 
@@ -267,20 +265,7 @@ public class GenC : SourceGenerator
 				Write(expr.Method.Name);
 				Write('(');
 				if (expr.Obj != null) {
-					CiClass klass = ((CiClassType) expr.Obj.Type).Class;
-					if (klass != expr.Method.Class) {
-						Write('&');
-						Write(expr.Obj);
-						Write("->base");
-						for (;;) {
-							klass = klass.BaseClass;
-							if (klass == expr.Method.Class)
-								break;
-							Write(".base");
-						}
-					}
-					else
-						Write(expr.Obj);
+					Write(expr.Obj);
 					first = false;
 				}
 			}
@@ -367,11 +352,17 @@ public class GenC : SourceGenerator
 
 	protected override void Write(CiCoercion expr)
 	{
-		if (expr.ResultType is CiClassPtrType && expr.Inner.Type is CiClassStorageType) {
-			Write('&');
+		if (expr.ResultType is CiClassType) {
+			if (expr.ResultType is CiClassPtrType)
+				Write('&');
 			WriteChild(expr, (CiExpr) expr.Inner); // TODO: Assign
-			CiClass resultClass = ((CiClassPtrType) expr.ResultType).Class;
-			for (CiClass klass = ((CiClassStorageType) expr.Inner.Type).Class; klass != resultClass; klass = klass.BaseClass)
+			CiClass klass = ((CiClassType) expr.Inner.Type).Class;
+			if (expr.Inner.Type is CiClassPtrType) {
+				Write("->base");
+				klass = klass.BaseClass;
+			}
+			CiClass resultClass = ((CiClassType) expr.ResultType).Class;
+			for (; klass != resultClass; klass = klass.BaseClass)
 				Write(".base");
 		}
 		else

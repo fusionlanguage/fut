@@ -7,8 +7,8 @@ public class HelloCi : Super
 		BaseMethod();
 		HelloCi() h;
 		h.BaseMethod();
-		//TODO Super s = this;
-		//TODO s = h;
+		Super s = this;
+		s = h;
 		//TODO (true ? this : h).BaseMethod();
 		return this.x + x + y;
 	}
@@ -44,7 +44,7 @@ public class Super
 		this.x = 5;
 	}
 
-	public void BaseMethod()
+	void BaseMethod()
 	{
 	}
 }

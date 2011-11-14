@@ -447,7 +447,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 	void ICiSymbolVisitor.Visit(CiClass klass)
 	{
 		CreateAsFile(klass);
-		OpenClass(klass, " : ");
+		OpenClass(klass, " extends ");
 		this.UsesSubstringMethod = false;
 		this.UsesCopyArrayMethod = false;
 		this.UsesBytesToStringMethod = false;

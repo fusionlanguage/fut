@@ -175,12 +175,10 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			return expr;
 		if (expected is CiStringStorageType && got is CiStringType)
 			return expr;
-		if (expected is CiClassPtrType) {
+		if (expected is CiClassType) {
 			if (got == CiType.Null)
 				return expr;
-			if (Extends(got, ((CiClassPtrType) expected).Class)) {
-				if (got is CiClassPtrType)
-					return expr;
+			if (Extends(got, ((CiClassType) expected).Class)) {
 				if (expr is CiCondExpr) {
 					// C doesn't like &(cond ? foo : bar)
 					return Coerce((CiCondExpr) expr, expected);
@@ -344,6 +342,15 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			return new CiConstExpr(konst.Value);
 	}
 
+	CiFieldAccess CreateFieldAccess(CiExpr obj, CiField field)
+	{
+		if (field.Class != this.CurrentClass && field.Visibility == CiVisibility.Private)
+			field.Visibility = CiVisibility.Internal;
+		if (!(obj.Type is CiClassPtrType) || ((CiClassPtrType) obj.Type).Class != field.Class)
+			obj = Coerce(obj, new CiClassStorageType { Class = field.Class });
+		return new CiFieldAccess { Obj = obj, Field = field };
+	}
+
 	CiExpr ICiExprVisitor.Visit(CiSymbolAccess expr)
 	{
 		CiSymbol symbol = Lookup(expr);
@@ -355,10 +362,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			if (this.CurrentMethod.IsStatic)
 				throw new ResolveException("Cannot access field from a static method");
 			symbol.Accept(this);
-			return new CiFieldAccess {
-				Obj = new CiVarAccess { Var = this.CurrentMethod.This },
-				Field = (CiField) symbol
-			};
+			return CreateFieldAccess(new CiVarAccess { Var = this.CurrentMethod.This }, (CiField) symbol);
 		}
 		throw new ResolveException("Invalid expression");
 	}
@@ -379,14 +383,8 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		CiExpr parent = Resolve(expr.Parent);
 		CiSymbol member = parent.Type.LookupMember(expr.Name);
 		member.Accept(this);
-		if (member is CiField) {
-			if (member.Visibility == CiVisibility.Private) {
-				CiClass klass = ((CiClassType) parent.Type).Class;
-				if (klass != this.CurrentClass)
-					member.Visibility = CiVisibility.Internal;
-			}
-			return new CiFieldAccess { Obj = parent, Field = (CiField) member };
-		}
+		if (member is CiField)
+			return CreateFieldAccess(parent, (CiField) member);
 		if (member is CiProperty) {
 			CiProperty prop = (CiProperty) member;
 			if (parent is CiConstExpr) {
@@ -451,7 +449,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 				else {
 					if (this.CurrentMethod.IsStatic)
 						throw new ResolveException("Cannot call instance method from a static method");
-					expr.Obj = new CiVarAccess { Var = this.CurrentMethod.This };
+					expr.Obj = Coerce(new CiVarAccess { Var = this.CurrentMethod.This }, new CiClassPtrType { Class = method.Class });
 					CheckCopyPtr(method.This.Type, expr.Obj);
 				}
 				return;
@@ -484,7 +482,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 					if (method.This != null) {
 						// user-defined method
 						CheckCopyPtr(method.This.Type, obj);
-						obj = Coerce(obj, method.This.Type);
+						obj = Coerce(obj, new CiClassPtrType { Class = method.Class });
 					}
 					expr.Method = method;
 					expr.Obj = obj;
@@ -735,7 +733,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		if (statement.InitialValue != null) {
 			CiType type = statement.Type;
 			CiExpr initialValue = Resolve(statement.InitialValue);
-			CheckCopyPtr(type, statement.InitialValue);
+			CheckCopyPtr(type, initialValue);
 			if (type is CiArrayStorageType) {
 				type = ((CiArrayStorageType) type).ElementType;
 				CiConstExpr ce = Coerce(initialValue, type) as CiConstExpr;
