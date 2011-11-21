@@ -77,6 +77,7 @@ public enum CiToken
 	Colon,
 	DocComment,
 	PasteTokens,
+	Abstract,
 	Break,
 	Case,
 	Class,
@@ -93,11 +94,13 @@ public enum CiToken
 	Internal,
 	Macro,
 	Native,
+	Override,
 	Public,
 	Return,
 	Static,
 	Switch,
 	Throw,
+	Virtual,
 	Void,
 	While,
 	EndOfLine,
@@ -443,6 +446,7 @@ public class CiLexer
 			case 'z': {
 				string s = ReadId(c);
 				switch (s) {
+				case "abstract": return CiToken.Abstract;
 				case "break": return CiToken.Break;
 				case "case": return CiToken.Case;
 				case "class": return CiToken.Class;
@@ -459,11 +463,13 @@ public class CiLexer
 				case "internal": return CiToken.Internal;
 				case "macro": return CiToken.Macro;
 				case "native": return CiToken.Native;
+				case "override": return CiToken.Override;
 				case "public": return CiToken.Public;
 				case "return": return CiToken.Return;
 				case "static": return CiToken.Static;
 				case "switch": return CiToken.Switch;
 				case "throw": return CiToken.Throw;
+				case "virtual": return CiToken.Virtual;
 				case "void": return CiToken.Void;
 				case "while": return CiToken.While;
 				default:

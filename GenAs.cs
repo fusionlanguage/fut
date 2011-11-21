@@ -376,8 +376,12 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		WriteLine();
 		WriteDoc(method);
 		WriteVisibility(method);
-		if (method.IsStatic)
-			Write("static ");
+		switch (method.CallType) {
+		case CiCallType.Static: Write("static "); break;
+		case CiCallType.Normal: if (method.Visibility != CiVisibility.Private) Write("final "); break;
+		case CiCallType.Override: Write("override "); break;
+		default: break;
+		}
 		Write("function ");
 		WriteCamelCase(method.Name);
 		Write('(');
@@ -394,12 +398,16 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		Write(method.Signature.ReturnType);
 		WriteLine();
 		OpenBlock();
-		ICiStatement[] statements = method.Body.Statements;
-		Write(statements);
-		if (method.Signature.ReturnType != CiType.Void && statements.Length > 0) {
-			CiFor lastLoop = statements[statements.Length - 1] as CiFor;
-			if (lastLoop != null && lastLoop.Cond == null)
-				WriteLine("throw \"Unreachable\";");
+		if (method.CallType == CiCallType.Abstract)
+			WriteLine("throw \"Abstract method called\";");
+		else {
+			ICiStatement[] statements = method.Body.Statements;
+			Write(statements);
+			if (method.Signature.ReturnType != CiType.Void && statements.Length > 0) {
+				CiFor lastLoop = statements[statements.Length - 1] as CiFor;
+				if (lastLoop != null && lastLoop.Cond == null)
+					WriteLine("throw \"Unreachable\";");
+			}
 		}
 		CloseBlock();
 	}
@@ -447,7 +455,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 	void ICiSymbolVisitor.Visit(CiClass klass)
 	{
 		CreateAsFile(klass);
-		OpenClass(klass, " extends ");
+		OpenClass(false, klass, " extends ");
 		this.UsesSubstringMethod = false;
 		this.UsesCopyArrayMethod = false;
 		this.UsesBytesToStringMethod = false;

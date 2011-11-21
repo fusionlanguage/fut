@@ -595,7 +595,7 @@ public class GenC : SourceGenerator
 		if (method.Visibility != CiVisibility.Public)
 			Write("static ");
 		var paramz = method.Signature.Params.Select(param => ToString(param.Type, param.Name));
-		if (!method.IsStatic)
+		if (method.CallType != CiCallType.Static)
 			paramz = new string[1] { ToString(method.This.Type, "self") }.Concat(paramz);
 		string s = paramz.Any() ? string.Join(", ", paramz.ToArray()) : "void";
 		s = method.Class.Name + "_" + method.Name + "(" + s + ")";
@@ -607,7 +607,7 @@ public class GenC : SourceGenerator
 
 	void Write(CiMethod method)
 	{
-		if (method.Visibility == CiVisibility.Dead)
+		if (method.Visibility == CiVisibility.Dead || method.CallType == CiCallType.Abstract)
 			return;
 		WriteLine();
 		this.CurrentMethod = method;
@@ -803,13 +803,16 @@ public class GenC : SourceGenerator
 			if ((member.Visibility == CiVisibility.Public) == pub) {
 				if (member is CiConst && pub)
 					Write(klass, (CiConst) member);
-				else if (member is CiMethod && member.Visibility != CiVisibility.Dead) {
-					if (pub) {
-						WriteLine();
-						WriteDoc((CiMethod) member);
+				else if (member.Visibility != CiVisibility.Dead) {
+					CiMethod method = member as CiMethod;
+					if (method != null && method.CallType != CiCallType.Abstract) {
+						if (pub) {
+							WriteLine();
+							WriteDoc(method);
+						}
+						WriteSignature(method);
+						WriteLine(";");
 					}
-					WriteSignature((CiMethod) member);
-					WriteLine(";");
 				}
 			}
 		}

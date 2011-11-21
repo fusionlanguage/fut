@@ -735,10 +735,19 @@ public class CiDelegate : CiType
 	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
 }
 
+public enum CiCallType
+{
+	Static,
+	Normal,
+	Abstract,
+	Virtual,
+	Override
+}
+
 public class CiMethod : CiSymbol
 {
 	public CiClass Class;
-	public bool IsStatic;
+	public CiCallType CallType;
 	public CiDelegate Signature;
 	public CiParam This;
 	public CiBlock Body;
@@ -764,6 +773,7 @@ public enum CiWriteStatus
 
 public class CiClass : CiSymbol
 {
+	public bool IsAbstract;
 	public CiClass BaseClass;
 	public SymbolTable Members;
 	public CiMethod Constructor;

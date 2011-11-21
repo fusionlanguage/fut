@@ -387,15 +387,24 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 	{
 		WriteLine();
 		WriteDoc(method);
+		if (method.CallType == CiCallType.Override)
+			WriteLine("@Override");
 		Write(method.Visibility);
-		if (method.IsStatic)
-			Write("static ");
+		switch (method.CallType) {
+		case CiCallType.Static: Write("static "); break;
+		case CiCallType.Normal: if (method.Visibility != CiVisibility.Private) Write("final "); break;
+		case CiCallType.Abstract: Write("abstract "); break;
+		default: break;
+		}
 		WriteSignature(method.Signature, method.Name);
 		if (method.Throws)
-			WriteLine(" throws Exception");
-		else
+			Write(" throws Exception");
+		if (method.CallType == CiCallType.Abstract)
+			WriteLine(";");
+		else {
 			WriteLine();
-		Write(method.Body);
+			Write(method.Body);
+		}
 	}
 
 	void WriteClearMethod(string elementType)
@@ -446,7 +455,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 	void ICiSymbolVisitor.Visit(CiClass klass)
 	{
 		CreateJavaFile(klass);
-		OpenClass(klass, " extends ");
+		OpenClass(klass.IsAbstract, klass, " extends ");
 		this.UsesSubstringMethod = false;
 		this.UsesClearBytesMethod = false;
 		this.UsesClearIntsMethod = false;

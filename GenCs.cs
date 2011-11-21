@@ -381,11 +381,20 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 		}
 
 		Write(method.Visibility);
-		if (method.IsStatic)
-			Write("static ");
+		switch (method.CallType) {
+		case CiCallType.Static: Write("static "); break;
+		case CiCallType.Normal: break;
+		case CiCallType.Abstract: Write("abstract "); break;
+		case CiCallType.Virtual: Write("virtual "); break;
+		case CiCallType.Override: Write("override "); break;
+		}
 		WriteSignature(method.Signature);
-		WriteLine();
-		Write(method.Body);
+		if (method.CallType == CiCallType.Abstract)
+			WriteLine(";");
+		else {
+			WriteLine();
+			Write(method.Body);
+		}
 	}
 
 	void ICiSymbolVisitor.Visit(CiClass klass)
@@ -393,7 +402,7 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 		WriteLine();
 		Write(klass.Documentation);
 		Write(klass.Visibility);
-		OpenClass(klass, " : ");
+		OpenClass(klass.IsAbstract, klass, " : ");
 		if (klass.Constructor != null) {
 			Write("public ");
 			Write(klass.Name);

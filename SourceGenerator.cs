@@ -798,8 +798,10 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			WriteLine(";");
 	}
 
-	protected void OpenClass(CiClass klass, string extendsClause)
+	protected void OpenClass(bool isAbstract, CiClass klass, string extendsClause)
 	{
+		if (isAbstract)
+			Write("abstract ");
 		Write("class ");
 		Write(klass.Name);
 		if (klass.BaseClass != null) {

@@ -410,11 +410,20 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		}
 
 		Write(method.Visibility);
-		if (method.IsStatic)
-			Write("static ");
+		switch (method.CallType) {
+		case CiCallType.Static: Write("static "); break;
+		case CiCallType.Normal: if (method.Visibility != CiVisibility.Private) Write("final "); break;
+		case CiCallType.Abstract: Write("abstract "); break;
+		case CiCallType.Virtual: break;
+		case CiCallType.Override: Write("override "); break;
+		}
 		WriteSignature(method.Signature, method.Name);
-		WriteLine();
-		Write(method.Body);
+		if (method.CallType == CiCallType.Abstract)
+			WriteLine(";");
+		else {
+			WriteLine();
+			Write(method.Body);
+		}
 	}
 
 	void ICiSymbolVisitor.Visit(CiClass klass)
@@ -422,7 +431,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		WriteLine();
 		Write(klass.Documentation);
 		Write(klass.Visibility);
-		OpenClass(klass, " : ");
+		OpenClass(klass.IsAbstract, klass, " : ");
 		bool hasConstructor = klass.Constructor != null;
 		foreach (CiSymbol member in klass.Members) {
 			if (!hasConstructor) {

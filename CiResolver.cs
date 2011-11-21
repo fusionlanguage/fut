@@ -359,7 +359,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		if (symbol is CiConst)
 			return GetValue((CiConst) symbol);
 		if (symbol is CiField) {
-			if (this.CurrentMethod.IsStatic)
+			if (this.CurrentMethod.CallType == CiCallType.Static)
 				throw new ResolveException("Cannot access field from a static method");
 			symbol.Accept(this);
 			return CreateFieldAccess(new CiVarAccess { Var = this.CurrentMethod.This }, (CiField) symbol);
@@ -444,10 +444,10 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			CiMethod method = Lookup((CiSymbolAccess) expr.Obj) as CiMethod;
 			if (method != null) {
 				expr.Method = method;
-				if (method.IsStatic)
+				if (method.CallType == CiCallType.Static)
 					expr.Obj = null;
 				else {
-					if (this.CurrentMethod.IsStatic)
+					if (this.CurrentMethod.CallType == CiCallType.Static)
 						throw new ResolveException("Cannot call instance method from a static method");
 					expr.Obj = Coerce(new CiVarAccess { Var = this.CurrentMethod.This }, new CiClassPtrType { Class = method.Class });
 					CheckCopyPtr(method.This.Type, expr.Obj);
@@ -464,7 +464,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 					// Class.Foo(...)
 					CiMethod method = klass.Members.Lookup(uma.Name) as CiMethod;
 					if (method != null) {
-						if (!method.IsStatic)
+						if (method.CallType != CiCallType.Static)
 							throw new ResolveException("{0} is a non-static method", method.Name);
 						expr.Method = method;
 						expr.Obj = null;
@@ -477,7 +477,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 				CiMethod method = obj.Type.LookupMember(uma.Name) as CiMethod;
 				if (method != null) {
 					// obj.Foo(...)
-					if (method.IsStatic)
+					if (method.CallType == CiCallType.Static)
 						throw new ResolveException("{0} is a static method", method.Name);
 					if (method.This != null) {
 						// user-defined method
@@ -917,9 +917,11 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 	{
 		this.CurrentMethod = method;
 		Resolve(method.Signature);
-		Resolve(method.Body);
-		if (method.Signature.ReturnType != CiType.Void && method.Body.CompletesNormally)
-			throw new ResolveException("Method can complete without a return value");
+		if (method.CallType != CiCallType.Abstract) {
+			Resolve(method.Body);
+			if (method.Signature.ReturnType != CiType.Void && method.Body.CompletesNormally)
+				throw new ResolveException("Method can complete without a return value");
+		}
 		this.CurrentMethod = null;
 	}
 

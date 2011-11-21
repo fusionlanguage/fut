@@ -13,6 +13,14 @@ public class HelloCi : Super
 		return this.x + x + y;
 	}
 
+	public override void AbstractMethod()
+	{
+	}
+
+	public override void VirtualMethod()
+	{
+	}
+
 	public static bool Differ(string s1, string s2)
 	{
 		return s1 != s2;
@@ -36,7 +44,7 @@ public class HelloCi : Super
 	public const string Version = "0.1";
 }
 
-public class Super
+public abstract class Super
 {
 	int x;
 	Super()
@@ -45,6 +53,12 @@ public class Super
 	}
 
 	void BaseMethod()
+	{
+	}
+
+	public abstract void AbstractMethod();
+
+	public virtual void VirtualMethod()
 	{
 	}
 }

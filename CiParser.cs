@@ -645,10 +645,13 @@ public partial class CiParser : CiLexer
 	{
 		this.CurrentMethod = method;
 		OpenScope();
-		if (!method.IsStatic)
+		if (method.CallType != CiCallType.Static)
 			method.This = CreateThis();
 		method.Signature.Params = ParseParams();
-		method.Body = ParseBlock();
+		if (method.CallType == CiCallType.Abstract)
+			Expect(CiToken.Semicolon);
+		else
+			method.Body = ParseBlock();
 		CloseScope();
 		this.CurrentMethod = null;
 	}
@@ -662,7 +665,7 @@ public partial class CiParser : CiLexer
 		CiMethod method = new CiMethod(
 			CiType.Void, "<constructor>") {
 			Class = this.CurrentClass,
-			IsStatic = false,
+			CallType = CiCallType.Normal,
 			This = CreateThis()
 		};
 		this.CurrentMethod = method;
@@ -675,6 +678,8 @@ public partial class CiParser : CiLexer
 	CiClass ParseClass()
 	{
 		CiClass klass = new CiClass();
+		if (Eat(CiToken.Abstract))
+			klass.IsAbstract = true;
 		Expect(CiToken.Class);
 		klass.Name = ParseId();
 		if (Eat(CiToken.Colon))
@@ -705,13 +710,26 @@ public partial class CiParser : CiLexer
 					klass.Constructor = ParseConstructor();
 					continue;
 				}
-				bool isStatic = Eat(CiToken.Static);
+				CiCallType callType;
+				if (Eat(CiToken.Static))
+					callType = CiCallType.Static;
+				else if (Eat(CiToken.Abstract)) {
+					if (!klass.IsAbstract)
+						throw new ParseException("Abstract methods only allowed in abstract classes");
+					callType = CiCallType.Abstract;
+				}
+				else if (Eat(CiToken.Virtual))
+					callType = CiCallType.Virtual;
+				else if (Eat(CiToken.Override))
+					callType = CiCallType.Override;
+				else
+					callType = CiCallType.Normal;
 				CiType type = ParseReturnType();
 				string name = ParseId();
 				if (See(CiToken.LeftParenthesis)) {
 					CiMethod method = new CiMethod(type, name) {
 						Class = klass,
-						IsStatic = isStatic
+						CallType = callType
 					};
 					ParseMethod(method);
 					symbol = method;
@@ -719,8 +737,8 @@ public partial class CiParser : CiLexer
 				else {
 					if (visibility != CiVisibility.Private)
 						throw new ParseException("Fields must be private");
-					if (isStatic)
-						throw new ParseException("Static fields are not supported");
+					if (callType != CiCallType.Normal)
+						throw new ParseException("Fields cannot be static, abstract, virtual or override");
 					if (type == CiType.Void)
 						throw new ParseException("Field is void");
 					Expect(CiToken.Semicolon);
@@ -760,7 +778,7 @@ public partial class CiParser : CiLexer
 			CiSymbol symbol;
 			if (See(CiToken.Enum))
 				symbol = ParseEnum();
-			else if (See(CiToken.Class))
+			else if (See(CiToken.Class) || See(CiToken.Abstract))
 				symbol = ParseClass();
 			else if (See(CiToken.Delegate))
 				symbol = ParseDelegate();

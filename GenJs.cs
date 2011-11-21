@@ -300,10 +300,12 @@ public class GenJs : SourceGenerator
 
 	void Write(CiMethod method)
 	{
+		if (method.CallType == CiCallType.Abstract)
+			return;
 		WriteLine();
 		Write(method.Class.Name);
 		Write('.');
-		if (!method.IsStatic)
+		if (method.CallType != CiCallType.Static)
 			Write("prototype.");
 		WriteCamelCase(method.Name);
 		Write(" = function(");
