@@ -1,6 +1,6 @@
 // CiTree.cs - Ci object model
 //
-// Copyright (C) 2011  Piotr Fusik
+// Copyright (C) 2011-2012  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -759,6 +759,7 @@ public class CiMethod : CiSymbol
 	public CiMethod(CiType returnType, string name, params CiParam[] paramz)
 	{
 		this.Name = name;
+		this.CallType = CiCallType.Normal;
 		this.Signature = new CiDelegate { Name = name, ReturnType = returnType, Params = paramz };
 	}
 	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }

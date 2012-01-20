@@ -1,6 +1,6 @@
 // GenC.cs - C code generator
 //
-// Copyright (C) 2011  Piotr Fusik
+// Copyright (C) 2011-2012  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -463,6 +464,16 @@ public class GenC : SourceGenerator
 		return true;
 	}
 
+	protected void WriteConstruct(CiClass klass, CiVar stmt)
+	{
+		Write(klass.Name);
+		Write("_Construct(&");
+		WriteCamelCase(stmt.Name);
+		if (HasVirtualMethods(klass))
+			Write(", NULL");
+		Write(')');
+	}
+
 	public override void Visit(CiVar stmt)
 	{
 		Write(stmt.Type, stmt.Name);
@@ -470,10 +481,7 @@ public class GenC : SourceGenerator
 			CiClass klass = ((CiClassStorageType) stmt.Type).Class;
 			if (klass.Constructs) {
 				WriteLine(";");
-				Write(klass.Name);
-				Write("_Construct(&");
-				WriteCamelCase(stmt.Name);
-				Write(')');
+				WriteConstruct(klass, stmt);
 			}
 		}
 		else if (stmt.InitialValue != null) {
@@ -634,7 +642,13 @@ public class GenC : SourceGenerator
 		Write(klass.Name);
 		Write("_Construct(");
 		Write(klass.Name);
-		Write(" *self)");
+		Write(" *self");
+		if (HasVirtualMethods(klass)) {
+			Write(", const ");
+			Write(GetVtblPtrClass(klass).Name);
+			Write("Vtbl *vtbl");
+		}
+		Write(')');
 	}
 
 	void WriteNewSignature(CiClass klass)
@@ -679,15 +693,38 @@ public class GenC : SourceGenerator
 			OpenBlock();
 			if (klass.Constructor != null)
 				StartBlock(klass.Constructor.Body.Statements);
+			CiClass ptrClass = GetVtblPtrClass(klass);
+			if (HasVtblValue(klass)) {
+				WriteLine("if (vtbl == NULL)");
+				this.Indent++;
+				Write("vtbl = ");
+				CiClass structClass = GetVtblStructClass(klass);
+				if (structClass != ptrClass) {
+					Write("(const ");
+					Write(structClass.Name);
+					Write("Vtbl *) ");
+				}
+				Write("&CiVtbl_");
+				Write(klass.Name);
+				WriteLine(";");
+				this.Indent--;
+			}
+			if (ptrClass == klass)
+				WriteLine("self->vtbl = vtbl;");
 			if (klass.BaseClass != null && klass.BaseClass.Constructs) {
 				Write(klass.BaseClass.Name);
-				WriteLine("_Construct(&self->base);");
+				Write("_Construct(&self->base");
+				if (HasVirtualMethods(klass.BaseClass))
+					Write(", vtbl");
+				WriteLine(");");
 			}
 			ForEachStorageField(klass, (field, fieldClass) => {
 				if (fieldClass.Constructs) {
 					Write(fieldClass.Name);
 					Write("_Construct(&self->");
 					WriteCamelCase(field.Name);
+					if (HasVirtualMethods(fieldClass))
+						Write(", NULL");
 					WriteLine(");");
 				}
 			});
@@ -711,7 +748,10 @@ public class GenC : SourceGenerator
 				WriteLine("if (self != NULL)");
 				this.Indent++;
 				Write(klass.Name);
-				WriteLine("_Construct(self);");
+				Write("_Construct(self");
+				if (HasVirtualMethods(klass))
+					Write(", NULL");
+				WriteLine(");");
 				this.Indent--;
 			}
 			WriteLine("return self;");
@@ -784,6 +824,85 @@ public class GenC : SourceGenerator
 				Write((CiDelegate) symbol);
 	}
 
+	static bool AddsVirtualMethods(CiClass klass)
+	{
+		return klass.Members.OfType<CiMethod>().Any(
+			method => method.CallType == CiCallType.Abstract || method.CallType == CiCallType.Virtual);
+	}
+
+	static CiClass GetVtblStructClass(CiClass klass)
+	{
+		while (!AddsVirtualMethods(klass))
+			klass = klass.BaseClass;
+		return klass;
+	}
+
+	static CiClass GetVtblPtrClass(CiClass klass)
+	{
+		CiClass result = null;
+		do {
+			if (AddsVirtualMethods(klass))
+				result = klass;
+			klass = klass.BaseClass;
+		} while (klass != null);
+		return result;
+	}
+
+	static bool HasVirtualMethods(CiClass klass)
+	{
+		// == return EnumVirtualMethods(klass).Any();
+		while (!AddsVirtualMethods(klass)) {
+			klass = klass.BaseClass;
+			if (klass == null)
+				return false;
+		}
+		return true;
+	}
+
+	static IEnumerable<CiMethod> EnumVirtualMethods(CiClass klass)
+	{
+		IEnumerable<CiMethod> myMethods = klass.Members.OfType<CiMethod>().Where(
+			method => method.CallType == CiCallType.Abstract || method.CallType == CiCallType.Virtual);
+		if (klass.BaseClass != null)
+			return EnumVirtualMethods(klass.BaseClass).Concat(myMethods);
+		else
+			return myMethods;
+	}
+
+	void WritePtr(CiMethod method, string name)
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.Append("(*");
+		sb.Append(name);
+		sb.Append(")(");
+		sb.Append(method.Class.Name);
+		sb.Append(" *self");
+		foreach (CiParam param in method.Signature.Params) {
+			sb.Append(", ");
+			sb.Append(ToString(param.Type, param.Name));
+		}
+		sb.Append(')');
+		CiType type = method.Signature.ReturnType;
+		if (method.Throws && type == CiType.Void) // TODO: check subclasses
+			type = CiBoolType.Value;
+		Write(type, sb.ToString());
+	}
+
+	void WriteVtblStruct(CiClass klass)
+	{
+		if (!AddsVirtualMethods(klass))
+			return;
+		Write("typedef struct ");
+		OpenBlock();
+		foreach (CiMethod method in EnumVirtualMethods(klass)) {
+			WritePtr(method, ToCamelCase(method.Name));
+			WriteLine(";");
+		}
+		CloseBlock();
+		Write(klass.Name);
+		WriteLine("Vtbl;");
+	}
+
 	void WriteSignatures(CiClass klass, bool pub)
 	{
 		if (klass.HasFields) {
@@ -818,6 +937,57 @@ public class GenC : SourceGenerator
 		}
 	}
 
+	static bool HasVtblValue(CiClass klass)
+	{
+		bool result = false;
+		foreach (CiSymbol member in klass.Members) {
+			CiMethod method = member as CiMethod;
+			if (method != null) {
+				switch (method.CallType) {
+				case CiCallType.Abstract:
+					return false;
+				case CiCallType.Virtual:
+				case CiCallType.Override:
+					result = true;
+					break;
+				}
+			}
+		}
+		return result;
+	}
+
+	void WriteVtblValue(CiClass klass)
+	{
+		if (!HasVtblValue(klass))
+			return;
+		CiClass structClass = GetVtblStructClass(klass);
+		Write("static const ");
+		Write(structClass.Name);
+		Write("Vtbl CiVtbl_");
+		Write(klass.Name);
+		Write(" = ");
+		OpenBlock();
+		bool first = true;
+		foreach (CiMethod method in EnumVirtualMethods(structClass)) {
+			CiMethod impl = (CiMethod) klass.Members.Lookup(method.Name);
+			if (first)
+				first = false;
+			else
+				WriteLine(",");
+			if (impl.CallType == CiCallType.Override) {
+				Write('(');
+				WritePtr(method, string.Empty);
+				Write(") ");
+			}
+			Write(impl.Class.Name);
+			Write('_');
+			Write(impl.Name);
+		}
+		WriteLine();
+		this.Indent--;
+		WriteLine("};");
+	}
+
 	void WriteStruct(CiClass klass)
 	{
 		// topological sorting of class hierarchy and class storage fields
@@ -826,7 +996,7 @@ public class GenC : SourceGenerator
 		if (klass.WriteStatus == CiWriteStatus.InProgress)
 			throw new ResolveException("Circular dependency for class {0}", klass.Name);
 		klass.WriteStatus = CiWriteStatus.InProgress;
-		klass.Constructs = klass.Constructor != null;
+		klass.Constructs = klass.Constructor != null || HasVirtualMethods(klass);
 		if (klass.BaseClass != null) {
 			WriteStruct(klass.BaseClass);
 			if (klass.BaseClass.Constructs)
@@ -848,6 +1018,7 @@ public class GenC : SourceGenerator
 		klass.WriteStatus = CiWriteStatus.Done;
 
 		WriteLine();
+		WriteVtblStruct(klass);
 		if (klass.HasFields) {
 			Write("struct ");
 			Write(klass.Name);
@@ -857,6 +1028,11 @@ public class GenC : SourceGenerator
 				Write(klass.BaseClass.Name);
 				WriteLine(" base;");
 			}
+			if (GetVtblPtrClass(klass) == klass) {
+				Write("const ");
+				Write(klass.Name);
+				WriteLine("Vtbl *vtbl;");
+			}
 			foreach (CiSymbol member in klass.Members) {
 				if (member is CiField)
 					Write((CiField) member);
@@ -865,6 +1041,7 @@ public class GenC : SourceGenerator
 			WriteLine("};");
 		}
 		WriteSignatures(klass, false);
+		WriteVtblValue(klass);
 		foreach (CiBinaryResource resource in klass.BinaryResources) {
 			Write("static const unsigned char ");
 			WriteName(resource);

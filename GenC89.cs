@@ -1,6 +1,6 @@
 // GenC89.cs - C89 code generator
 //
-// Copyright (C) 2011  Piotr Fusik
+// Copyright (C) 2011-2012  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -123,12 +123,8 @@ public class GenC89 : GenC
 			}
 			else if (stmt.Type is CiClassStorageType) {
 				CiClass klass = ((CiClassStorageType) stmt.Type).Class;
-				if (klass.Constructs) {
-					Write(klass.Name);
-					Write("_Construct(&");
-					WriteCamelCase(stmt.Name);
-					Write(')');
-				}
+				if (klass.Constructs)
+					WriteConstruct(klass, stmt);
 			}
 			stmt.WriteInitialValue = false;
 		}
