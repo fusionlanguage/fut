@@ -381,6 +381,7 @@ public interface ICiStatement
 
 public class CiConst : CiSymbol, ICiStatement
 {
+	public CiClass Class;
 	public CiType Type;
 	public object Value;
 	public string GlobalName;

@@ -696,8 +696,10 @@ public partial class CiParser : CiLexer
 			else if (Eat(CiToken.Internal))
 				visibility = CiVisibility.Internal;
 			CiSymbol symbol;
-			if (See(CiToken.Const))
+			if (See(CiToken.Const)) {
 				symbol = ParseConst();
+				(symbol as CiConst).Class = klass;
+			}
 			else if (Eat(CiToken.Macro)) {
 				if (visibility != CiVisibility.Private)
 					throw new ParseException("Macros must be private");
