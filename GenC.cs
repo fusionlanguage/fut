@@ -127,12 +127,29 @@ public class GenC : SourceGenerator
 	{
 		WriteLine();
 		Write(konst.Documentation);
-		Write("#define ");
-		Write(klass.Name);
-		Write('_');
-		WriteUppercaseWithUnderscores(konst.Name);
-		Write("  ");
-		WriteConst(konst.Value);
+		if (konst.Type is CiArrayStorageType) {
+			CiArrayStorageType stg = konst.Type as CiArrayStorageType;
+			Write("extern const ");
+			Write(konst.Type, klass.Name + "_" + konst.Name);
+			Write(';');
+			WriteLine();
+			Write("#define ");
+			Write(klass.Name);
+			Write('_');
+			Write(konst.Name);
+			Write('_');
+			Write("LENGTH");
+			Write("  ");
+			Write(stg.Length);
+		}
+		else {
+			Write("#define ");
+			Write(klass.Name);
+			Write('_');
+			WriteUppercaseWithUnderscores(konst.Name);
+			Write("  ");
+			WriteConst(konst.Value);
+		}
 		WriteLine();
 	}
 
@@ -167,7 +184,13 @@ public class GenC : SourceGenerator
 
 	protected override void WriteName(CiConst konst)
 	{
-		Write(konst.Name);
+		if (konst.Class != null) {
+			Write(konst.Class.Name);
+			Write('_');
+			Write(konst.Name);
+		}
+		else
+			Write(konst.Name);
 	}
 
 	protected override void Write(CiVarAccess expr)
@@ -770,7 +793,8 @@ public class GenC : SourceGenerator
 	{
 		klass.WriteStatus = CiWriteStatus.NotYet;
 		klass.HasFields = klass.Members.Any(member => member is CiField);
-		if (!klass.HasFields)
+		bool klassHasMethods = klass.Members.Any(member => member is CiMethod);
+		if (!(klass.HasFields || klassHasMethods))
 			return;
 		Write("typedef struct ");
 		Write(klass.Name);
@@ -1042,6 +1066,17 @@ public class GenC : SourceGenerator
 		}
 		WriteSignatures(klass, false);
 		WriteVtblValue(klass);
+		foreach (CiConst konst in klass.ConstArrays) {
+			if (konst.Class != null) {
+				if (konst.Visibility != CiVisibility.Public)
+					Write("static ");
+				Write("const ");
+				Write(konst.Type, konst.Class.Name + "_" + konst.Name);
+				Write(" = ");
+				WriteConst(konst.Value);
+				WriteLine(";");
+			}
+		}
 		foreach (CiBinaryResource resource in klass.BinaryResources) {
 			Write("static const unsigned char ");
 			WriteName(resource);
