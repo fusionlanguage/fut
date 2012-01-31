@@ -24,6 +24,8 @@ namespace Foxoft.Ci
 
 public class GenD : SourceGenerator, ICiSymbolVisitor
 {
+	protected CiClass CurrentClass;
+
 	protected override void Write(CiVarAccess expr)
 	{
 		WriteVarName(expr.Var.Name);
@@ -47,6 +49,19 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		}
 		else
 			base.WriteConst(value);
+	}
+
+	protected override void WriteName(CiConst konst)
+	{
+		if (konst.Class != null) {
+			if (konst.Class != CurrentClass) {
+				Write(konst.Class.Name);
+				Write('.');
+			}
+			Write(konst.Name);
+		}
+		else
+			Write(konst.GlobalName ?? konst.Name);
 	}
 
 	void WriteDoc(string text, bool inMacro)
@@ -180,7 +195,6 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		WriteBaseType(type.BaseType);
 		for (int i = 0; i < type.ArrayLevel; i++)
 			Write("[]");
-		Write(' ');
 	}
 
 	bool WriteInit(CiType type)
@@ -206,6 +220,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		Write(field.Documentation);
 		Write(field.Visibility);
 		Write(field.Type);
+		Write(' ');
 		WriteVarName(field.Name);
 		WriteLine(";");
 	}
@@ -215,8 +230,9 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		if (konst.Visibility != CiVisibility.Public)
 			return;
 		Write(konst.Documentation);
-		Write("public immutable ");
+		Write("public static immutable(");
 		Write(konst.Type);
+		Write(") ");
 		WriteVarName(konst.Name);
 		Write(" = ");
 		WriteConst(konst.Value);
@@ -335,6 +351,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 	public override void Visit(CiVar stmt)
 	{
 		Write(stmt.Type);
+		Write(' ');
 		WriteVarName(stmt.Name);
 		if (!WriteInit(stmt.Type) && stmt.InitialValue != null) {
 			Write(" = ");
@@ -377,6 +394,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 	void WriteSignature(CiDelegate del, string name)
 	{
 		Write(del.ReturnType);
+		Write(' ');
 		WriteVarName(name);
 		Write('(');
 		bool first = true;
@@ -386,6 +404,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 			else
 				Write(", ");
 			Write(param.Type);
+			Write(' ');
 			WriteVarName(param.Name);
 		}
 		Write(')');
@@ -433,6 +452,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		Write(klass.Documentation);
 		Write(klass.Visibility);
 		OpenClass(klass.IsAbstract, klass, " : ");
+		CurrentClass = klass;
 		bool hasConstructor = klass.Constructor != null;
 		foreach (CiSymbol member in klass.Members) {
 			if (!hasConstructor) {
@@ -443,13 +463,15 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 			member.Accept(this);
 		}
 		foreach (CiConst konst in klass.ConstArrays) {
-			Write("static immutable(");
-			Write(konst.Type);
-			Write(") ");
-			Write(konst.GlobalName);
-			Write(" = ");
-			WriteConst(konst.Value);
-			WriteLine(";");
+			if (konst.Visibility != CiVisibility.Public) {
+				Write("static immutable(");
+				Write(konst.Type);
+				Write(") ");
+				Write(konst.Class == CurrentClass ? konst.Name : konst.GlobalName);
+				Write(" = ");
+				WriteConst(konst.Value);
+				WriteLine(";");
+			}
 		}
 		foreach (CiBinaryResource resource in klass.BinaryResources) {
 			// FIXME: it's better to declare them as immutable(ubyte)[]
@@ -477,6 +499,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 			CloseBlock();
 		}
 		CloseBlock();
+		CurrentClass = null;
 	}
 
 	void ICiSymbolVisitor.Visit(CiDelegate del)
