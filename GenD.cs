@@ -215,7 +215,8 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		if (konst.Visibility != CiVisibility.Public)
 			return;
 		Write(konst.Documentation);
-		Write("enum ");
+		Write("public immutable ");
+		Write(konst.Type);
 		WriteVarName(konst.Name);
 		Write(" = ");
 		WriteConst(konst.Value);
@@ -442,8 +443,9 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 			member.Accept(this);
 		}
 		foreach (CiConst konst in klass.ConstArrays) {
-			Write("static ");
+			Write("static immutable(");
 			Write(konst.Type);
+			Write(") ");
 			Write(konst.GlobalName);
 			Write(" = ");
 			WriteConst(konst.Value);
