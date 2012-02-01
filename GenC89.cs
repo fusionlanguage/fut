@@ -63,6 +63,21 @@ public class GenC89 : GenC
 		def.WriteInitialValue = true;
 	}
 
+	protected override void Write(CiMethodCall expr)
+	{
+		if (expr.Method == CiIntType.MulDivMethod) {
+			Write("(int) ((double) ");
+			WriteChild(2, expr.Obj);
+			Write(" * ");
+			WriteChild(3, expr.Arguments[0]);
+			Write(" / ");
+			WriteNonAssocChild(3, expr.Arguments[1]);
+			Write(')');
+		}
+		else
+			base.Write(expr);
+	}
+
 	protected override void StartBlock(ICiStatement[] statements)
 	{
 		// variable and const definitions, with initializers if possible

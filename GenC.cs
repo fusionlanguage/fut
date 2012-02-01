@@ -247,7 +247,7 @@ public class GenC : SourceGenerator
 	protected override void Write(CiMethodCall expr)
 	{
 		if (expr.Method == CiIntType.MulDivMethod) {
-			Write("(int) ((double) ");
+			Write("(int) ((long long int) ");
 			WriteChild(2, expr.Obj);
 			Write(" * ");
 			WriteChild(3, expr.Arguments[0]);
