@@ -425,6 +425,16 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		Write(expr);
 	}
 
+	protected void WriteMulDiv(int firstPriority, CiMethodCall expr)
+	{
+		WriteChild(firstPriority, expr.Obj);
+		Write(" * ");
+		WriteChild(3, expr.Arguments[0]);
+		Write(" / ");
+		WriteNonAssocChild(3, expr.Arguments[1]);
+		Write(')');
+	}
+
 	protected virtual void Write(CiMethodCall expr)
 	{
 		if (expr.Method != null) {

@@ -128,18 +128,15 @@ public class GenC : SourceGenerator
 		WriteLine();
 		Write(konst.Documentation);
 		if (konst.Type is CiArrayStorageType) {
-			CiArrayStorageType stg = konst.Type as CiArrayStorageType;
+			CiArrayStorageType stg = (CiArrayStorageType) konst.Type;
 			Write("extern const ");
 			Write(konst.Type, klass.Name + "_" + konst.Name);
-			Write(';');
-			WriteLine();
+			WriteLine(";");
 			Write("#define ");
 			Write(klass.Name);
 			Write('_');
 			Write(konst.Name);
-			Write('_');
-			Write("LENGTH");
-			Write("  ");
+			Write("_LENGTH  ");
 			Write(stg.Length);
 		}
 		else {
@@ -248,12 +245,7 @@ public class GenC : SourceGenerator
 	{
 		if (expr.Method == CiIntType.MulDivMethod) {
 			Write("(int) ((long long int) ");
-			WriteChild(2, expr.Obj);
-			Write(" * ");
-			WriteChild(3, expr.Arguments[0]);
-			Write(" / ");
-			WriteNonAssocChild(3, expr.Arguments[1]);
-			Write(')');
+			WriteMulDiv(2, expr);
 		}
 		else if (expr.Method == CiStringType.CharAtMethod) {
 			Write(expr.Obj);

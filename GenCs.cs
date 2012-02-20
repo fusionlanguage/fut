@@ -237,12 +237,7 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 	{
 		if (expr.Method == CiIntType.MulDivMethod) {
 			Write("(int) ((long) ");
-			WriteChild(2, expr.Obj);
-			Write(" * ");
-			WriteChild(3, expr.Arguments[0]);
-			Write(" / ");
-			WriteNonAssocChild(3, expr.Arguments[1]);
-			Write(')');
+			WriteMulDiv(2, expr);
 		}
 		else if (expr.Method == CiStringType.CharAtMethod) {
 			Write(expr.Obj);

@@ -698,7 +698,7 @@ public partial class CiParser : CiLexer
 			CiSymbol symbol;
 			if (See(CiToken.Const)) {
 				symbol = ParseConst();
-				(symbol as CiConst).Class = klass;
+				((CiConst) symbol).Class = klass;
 			}
 			else if (Eat(CiToken.Macro)) {
 				if (visibility != CiVisibility.Private)
