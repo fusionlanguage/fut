@@ -1,6 +1,6 @@
 // CiTo.cs - Ci translator
 //
-// Copyright (C) 2011  Piotr Fusik
+// Copyright (C) 2011-2012  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -29,8 +29,12 @@ using System.Runtime.InteropServices;
 namespace Foxoft.Ci
 {
 
-public class CiTo
+public sealed class CiTo
 {
+	CiTo()
+	{
+	}
+
 	static void Usage()
 	{
 		Console.WriteLine("Usage: cito [OPTIONS] -o FILE INPUT.ci");
@@ -41,7 +45,7 @@ public class CiTo
 		Console.WriteLine("-l cs      Translate to C#");
 		Console.WriteLine("-l js      Translate to JavaScript");
 		Console.WriteLine("-l js-ta   Translate to JavaScript with Typed Arrays");
-		Console.WriteLine("-l as      Translate to ActionScript");
+		Console.WriteLine("-l as      Translate to ActionScript 3");
 		Console.WriteLine("-l d       Translate to D");
 		Console.WriteLine("-o FILE    Write to the specified file");
 		Console.WriteLine("-n NAME    Specify C# namespace or Java/ActionScript package");
@@ -82,14 +86,14 @@ public class CiTo
 				case "-D":
 					string symbol = args[++i];
 					if (symbol == "true" || symbol == "false")
-						throw new ApplicationException(symbol + " is reserved");
+						throw new ArgumentException(symbol + " is reserved");
 					preSymbols.Add(symbol);
 					break;
 				case "-I":
 					searchDirs.Add(args[++i]);
 					break;
 				default:
-					throw new ApplicationException("Unknown option: " + arg);
+					throw new ArgumentException("Unknown option: " + arg);
 				}
 			}
 			else {
@@ -143,7 +147,7 @@ public class CiTo
 		case "js-ta": gen = new GenJsWithTypedArrays(); break;
 		case "as": gen = new GenAs(namespace_); break;
 		case "d": gen = new GenD(); break;
-		default: throw new ApplicationException("Unknown language: " + lang);
+		default: throw new ArgumentException("Unknown language: " + lang);
 		}
 		gen.OutputFile = outputFile;
 		gen.Write(program);

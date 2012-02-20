@@ -1,6 +1,6 @@
 // CiLexer.cs - Ci lexer
 //
-// Copyright (C) 2011  Piotr Fusik
+// Copyright (C) 2011-2012  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -110,7 +110,8 @@ public enum CiToken
 	PreEndIf
 }
 
-public class ParseException : ApplicationException
+[Serializable]
+public class ParseException : Exception
 {
 	public ParseException(string message) : base(message)
 	{

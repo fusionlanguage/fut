@@ -1,6 +1,6 @@
 // SourceGenerator.cs - base class for code generators
 //
-// Copyright (C) 2011  Piotr Fusik
+// Copyright (C) 2011-2012  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -67,7 +67,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		this.Writer.Write(i);
 	}
 
-	protected string ToCamelCase(string s)
+	protected static string ToCamelCase(string s)
 	{
 		return char.ToLowerInvariant(s[0]) + s.Substring(1);
 	}
@@ -89,7 +89,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 				this.Writer.Write(c);
 			}
 			else
-				this.Writer.Write(char.ToUpper(c));
+				this.Writer.Write(char.ToUpperInvariant(c));
 			first = false;
 		}
 	}
@@ -144,7 +144,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 				Write("</code>");
 				continue;
 			}
-			throw new ApplicationException();
+			throw new ArgumentException(inline.GetType().Name);
 		}
 	}
 
@@ -297,7 +297,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		else if (value == null)
 			Write("null");
 		else
-			throw new ApplicationException(value.ToString());
+			throw new ArgumentException(value.ToString());
 	}
 
 	protected virtual int GetPriority(CiExpr expr)
@@ -348,12 +348,12 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			case CiToken.CondOr:
 				return 12;
 			default:
-				throw new ApplicationException();
+				throw new ArgumentException(((CiBinaryExpr) expr).Op.ToString());
 			}
 		}
 		if (expr is CiCondExpr)
 			return 13;
-		throw new ApplicationException();
+		throw new ArgumentException(expr.GetType().Name);
 	}
 
 	protected void WriteChild(int parentPriority, CiExpr child)
@@ -457,7 +457,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		case CiToken.Decrement: Write("--"); break;
 		case CiToken.Minus: Write('-'); break;
 		case CiToken.Not: Write('~'); break;
-		default: throw new ApplicationException();
+		default: throw new ArgumentException(expr.Op.ToString());
 		}
 		WriteChild(expr, expr.Inner);
 	}
@@ -474,7 +474,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		switch (expr.Op) {
 		case CiToken.Increment: Write("++"); break;
 		case CiToken.Decrement: Write("--"); break;
-		default: throw new ApplicationException();
+		default: throw new ArgumentException(expr.Op.ToString());
 		}
 	}
 
@@ -499,7 +499,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		case CiToken.Xor: Write(" ^ "); break;
 		case CiToken.CondAnd: Write(" && "); break;
 		case CiToken.CondOr: Write(" || "); break;
-		default: throw new ApplicationException();
+		default: throw new ArgumentException(expr.Op.ToString());
 		}
 	}
 
@@ -532,7 +532,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			WriteNonAssocChild(expr, expr.Right);
 			break;
 		default:
-			throw new ApplicationException();
+			throw new ArgumentException(expr.Op.ToString());
 		}
 	}
 
@@ -601,7 +601,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		else if (expr is CiCoercion)
 			Write((CiCoercion) expr);
 		else
-			throw new ApplicationException(expr.ToString());
+			throw new ArgumentException(expr.ToString());
 	}
 
 	protected void Write(ICiStatement[] statements, int length)
@@ -658,8 +658,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		case CiToken.AndAssign: Write(" &= "); break;
 		case CiToken.OrAssign: Write(" |= "); break;
 		case CiToken.XorAssign: Write(" ^= "); break;
-		default:
-			throw new ApplicationException();
+		default: throw new ArgumentException(assign.Op.ToString());
 		}
 		WriteInline(assign.Source);
 	}

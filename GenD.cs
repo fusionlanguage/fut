@@ -1,6 +1,6 @@
 // GenD.cs - D code generator
 //
-// Copyright (C) 2011  Adrian Matoga
+// Copyright (C) 2011-2012  Adrian Matoga
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -88,7 +88,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 				WriteDoc(code.Text, true);
 				continue;
 			}
-			throw new ApplicationException();
+			throw new ArgumentException(inline.GetType().Name);
 		}
 	}
 
@@ -254,7 +254,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 			Write(".length");
 		}
 		else
-			throw new ApplicationException(expr.Property.Name);
+			throw new ArgumentException(expr.Property.Name);
 	}
 
 	protected override void Write(CiMethodCall expr)

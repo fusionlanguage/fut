@@ -1,6 +1,6 @@
 // GenAs.cs - ActionScript code generator
 //
-// Copyright (C) 2011  Piotr Fusik
+// Copyright (C) 2011-2012  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -225,7 +225,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 			Write(".length");
 		}
 		else
-			throw new ApplicationException(expr.Property.Name);
+			throw new ArgumentException(expr.Property.Name);
 	}
 
 	void WriteClearArray(CiExpr expr)
@@ -252,7 +252,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 			this.UsesClearMethod = true;
 		}
 		else
-			throw new ApplicationException();
+			throw new ArgumentException(array.ElementType.Name);
 	}
 
 	protected override void WriteName(CiMethod method)

@@ -1,6 +1,6 @@
 // CiResolver.cs - Ci symbol resolver
 //
-// Copyright (C) 2011  Piotr Fusik
+// Copyright (C) 2011-2012  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -26,7 +26,8 @@ using System.Linq;
 namespace Foxoft.Ci
 {
 
-public class ResolveException : ApplicationException
+[Serializable]
+public class ResolveException : Exception
 {
 	public ResolveException(string message) : base(message)
 	{
@@ -590,7 +591,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		return expr;
 	}
 
-	CiType FindCommonType(CiExpr expr1, CiExpr expr2)
+	static CiType FindCommonType(CiExpr expr1, CiExpr expr2)
 	{
 		CiType type1 = expr1.Type;
 		CiType type2 = expr2.Type;

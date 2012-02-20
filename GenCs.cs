@@ -1,6 +1,6 @@
 // GenCs.cs - C# code generator
 //
-// Copyright (C) 2011  Piotr Fusik
+// Copyright (C) 2011-2012  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -66,7 +66,7 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 				}
 				continue;
 			}
-			throw new ApplicationException();
+			throw new ArgumentException(inline.GetType().Name);
 		}
 	}
 
@@ -230,7 +230,7 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 			Write(".Length");
 		}
 		else
-			throw new ApplicationException(expr.Property.Name);
+			throw new ArgumentException(expr.Property.Name);
 	}
 
 	protected override void Write(CiMethodCall expr)

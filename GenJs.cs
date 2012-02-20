@@ -1,6 +1,6 @@
 // GenJs.cs - JavaScript code generator
 //
-// Copyright (C) 2011  Piotr Fusik
+// Copyright (C) 2011-2012  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -165,7 +165,7 @@ public class GenJs : SourceGenerator
 			Write(".length");
 		}
 		else
-			throw new ApplicationException(expr.Property.Name);
+			throw new ArgumentException(expr.Property.Name);
 	}
 
 	protected override void WriteName(CiBinaryResource resource)

@@ -98,7 +98,7 @@ public class CiType : CiSymbol
 {
 	public static readonly CiType Null = new CiType { Name = "null" };
 	public static readonly CiType Void = new CiType { Name = "void" };
-	public virtual Type DotNetType { get { throw new ApplicationException("No corresponding .NET type"); } }
+	public virtual Type DotNetType { get { throw new NotSupportedException("No corresponding .NET type"); } }
 	public virtual CiType BaseType { get { return this; } }
 	public virtual int ArrayLevel { get { return 0; } }
 	public virtual CiType Ptr { get { return null; } }
@@ -478,8 +478,8 @@ public abstract class CiLValue : CiExpr
 public class CiSymbolAccess : CiExpr
 {
 	public CiSymbol Symbol;
-	public override CiType Type { get { throw new ApplicationException(); } }
-	public override bool HasSideEffect { get { throw new ApplicationException(); } }
+	public override CiType Type { get { throw new NotSupportedException(); } }
+	public override bool HasSideEffect { get { throw new NotSupportedException(); } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
@@ -501,8 +501,8 @@ public class CiUnknownMemberAccess : CiExpr
 {
 	public CiExpr Parent;
 	public string Name;
-	public override CiType Type { get { throw new ApplicationException(); } }
-	public override bool HasSideEffect { get { throw new ApplicationException(); } }
+	public override CiType Type { get { throw new NotSupportedException(); } }
+	public override bool HasSideEffect { get { throw new NotSupportedException(); } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
@@ -526,8 +526,8 @@ public class CiIndexAccess : CiExpr
 {
 	public CiExpr Parent;
 	public CiExpr Index;
-	public override CiType Type { get { throw new ApplicationException(); } }
-	public override bool HasSideEffect { get { throw new ApplicationException(); } }
+	public override CiType Type { get { throw new NotSupportedException(); } }
+	public override bool HasSideEffect { get { throw new NotSupportedException(); } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 

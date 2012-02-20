@@ -204,7 +204,7 @@ public class GenC : SourceGenerator
 			Write(')');
 		}
 		else
-			throw new ApplicationException(expr.Property.Name);
+			throw new ArgumentException(expr.Property.Name);
 	}
 
 	protected void WriteClearArray(CiExpr expr)
@@ -240,7 +240,7 @@ public class GenC : SourceGenerator
 		}
 		else if (expr.Method == CiStringType.SubstringMethod) {
 			// TODO
-			throw new ApplicationException();
+			throw new ArgumentException("Substring");
 		}
 		else if (expr.Method == CiArrayType.CopyToMethod) {
 			Write("memcpy(");
@@ -253,7 +253,7 @@ public class GenC : SourceGenerator
 		}
 		else if (expr.Method == CiArrayType.ToStringMethod) {
 			// TODO
-			throw new ApplicationException();
+			throw new ArgumentException("Array.ToString");
 		}
 		else if (expr.Method == CiArrayStorageType.ClearMethod) {
 			WriteClearArray(expr.Obj);
@@ -668,7 +668,7 @@ public class GenC : SourceGenerator
 		Write(" *self)");
 	}
 
-	void ForEachStorageField(CiClass klass, Action<CiField, CiClass> action)
+	static void ForEachStorageField(CiClass klass, Action<CiField, CiClass> action)
 	{
 		foreach (CiSymbol member in klass.Members) {
 			CiField field = member as CiField;
