@@ -114,14 +114,14 @@ public sealed class CiTo
 		parser.PreSymbols = preSymbols;
 		foreach (string inputFile in inputFiles) {
 			try {
-				parser.Parse(File.OpenText(inputFile));
+				parser.Parse(inputFile, File.OpenText(inputFile));
 			} catch (Exception ex) {
 				Console.Error.WriteLine("{0}({1}): ERROR: {2}", inputFile, parser.InputLineNo, ex.Message);
 				parser.PrintMacroStack();
 				if (parser.CurrentMethod != null)
 					Console.Error.WriteLine("   in method {0}", parser.CurrentMethod.Name);
-//				return 1;
-				throw;
+				return 1;
+//				throw;
 			}
 		}
 		CiProgram program = parser.Program;
@@ -130,11 +130,16 @@ public sealed class CiTo
 		resolver.SearchDirs = searchDirs;
 		try {
 			resolver.Resolve(program);
-		} catch (Exception) {
+		} catch (Exception ex) {
+			if (resolver.CurrentClass != null) {
+				Console.Error.Write(resolver.CurrentClass.SourceFilename);
+				Console.Error.Write(": ");
+			}
+			Console.Error.WriteLine("ERROR: {0}", ex.Message);
 			if (resolver.CurrentMethod != null)
 				Console.Error.WriteLine("   in method {0}", resolver.CurrentMethod.Name);
-//			return 1;
-			throw;
+			return 1;
+//			throw;
 		}
 
 		SourceGenerator gen;

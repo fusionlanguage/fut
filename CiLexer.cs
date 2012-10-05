@@ -125,6 +125,7 @@ public class ParseException : Exception
 public class CiLexer
 {
 	TextReader Reader;
+	protected string Filename;
 	public int InputLineNo;
 	protected CiToken CurrentToken;
 	protected string CurrentString;
@@ -140,8 +141,9 @@ public class CiLexer
 		this.PreSymbols.Add("true");
 	}
 
-	protected void Open(TextReader reader)
+	protected void Open(string filename, TextReader reader)
 	{
+		this.Filename = filename;
 		this.Reader = reader;
 		this.InputLineNo = 1;
 		NextToken();

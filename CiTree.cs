@@ -782,6 +782,7 @@ public class CiClass : CiSymbol
 	public CiConst[] ConstArrays;
 	public CiBinaryResource[] BinaryResources;
 	public bool IsResolved;
+	public string SourceFilename;
 	public CiWriteStatus WriteStatus; // C only
 	public bool HasFields; // C only
 	public bool Constructs; // C only

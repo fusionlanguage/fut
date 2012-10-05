@@ -678,6 +678,7 @@ public partial class CiParser : CiLexer
 	CiClass ParseClass()
 	{
 		CiClass klass = new CiClass();
+		klass.SourceFilename = this.Filename;
 		if (Eat(CiToken.Abstract))
 			klass.IsAbstract = true;
 		Expect(CiToken.Class);
@@ -771,9 +772,9 @@ public partial class CiParser : CiLexer
 		return del;
 	}
 
-	public void Parse(TextReader reader)
+	public void Parse(string filename, TextReader reader)
 	{
-		Open(reader);
+		Open(filename, reader);
 		while (!See(CiToken.EndOfFile)) {
 			CiCodeDoc doc = ParseDoc();
 			bool pub = Eat(CiToken.Public);

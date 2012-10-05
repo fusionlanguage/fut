@@ -1,6 +1,6 @@
 // CiPad.cs - small Ci editor with on-the-fly translation
 //
-// Copyright (C) 2011  Piotr Fusik
+// Copyright (C) 2011-2012  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -117,8 +117,8 @@ public class CiPad : Form
 	{
 		try {
 			CiParser parser = new CiParser();
-			foreach (string content in this.CiGroup.Contents)
-				parser.Parse(new StringReader(content));
+			foreach (TabPage page in this.CiGroup.TabPages)
+				parser.Parse(page.Text, new StringReader(page.Controls[0].Text));
 			CiProgram program = parser.Program;
 			CiResolver resolver = new CiResolver();
 			resolver.Resolve(program);
@@ -183,13 +183,11 @@ class CiPadGroup
 		this.TabControl.SetBounds(x, y, w, h);
 	}
 
-	public IEnumerable<string> Contents
+	public IEnumerable<TabPage> TabPages
 	{
 		get
 		{
-			return
-				from TabPage page in this.TabControl.TabPages
-				select page.Controls[0].Text;
+			return this.TabControl.TabPages.Cast<TabPage>();
 		}
 	}
 
@@ -229,7 +227,7 @@ class CiPadGroup
 	{
 		gen.OutputFile = outputFile;
 		gen.CreateTextWriter = this.CreatePadWriter;
-		this.TabsToRemove = new HashSet<TabPage>(from TabPage page in this.TabControl.TabPages select page);
+		this.TabsToRemove = new HashSet<TabPage>(this.TabControl.TabPages.Cast<TabPage>());
 		gen.Write(program);
 		foreach (TabPage page in this.TabsToRemove)
 			this.TabControl.TabPages.Remove(page);
