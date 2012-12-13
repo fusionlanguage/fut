@@ -10,10 +10,10 @@ From an official release::
 http://sourceforge.net/projects/cito/files/cito/[Download] a `.tar.gz` file and uncompress it. On Windows you may use http://7-zip.org[7-Zip] for decompression.
 
 From the Git repository::
-This way you'll get the latest code with all its consequences (such as out-of-date documentation). Use a Git client. For a command-line Git client type:
+This way you'll get the latest code with all its consequences (such as out-of-date documentation). Use a Git client. For a command-line Git client, type:
 +
 --------------------------------------------------------------------------------
-git clone git://cito.git.sourceforge.net/gitroot/cito/cito
+git clone git://git.code.sf.net/p/cito/code cito-code
 --------------------------------------------------------------------------------
 
 Compilation

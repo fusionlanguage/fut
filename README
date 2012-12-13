@@ -3,7 +3,7 @@
 
 ifdef::www[]
 http://sourceforge.net/projects/cito/files/[Download] |
-http://cito.git.sourceforge.net/git/gitweb.cgi?p=cito/cito;a=summary[Browse source code (Git)] |
+http://sourceforge.net/p/cito/code[Browse source code (Git)] |
 http://sourceforge.net/projects/cito/[SourceForge project page]
 endif::www[]
 
