@@ -1,6 +1,6 @@
 // GenC.cs - C code generator
 //
-// Copyright (C) 2011-2012  Piotr Fusik
+// Copyright (C) 2011-2013  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -154,7 +154,7 @@ public class GenC : SourceGenerator
 	{
 		if (expr is CiPropertyAccess) {
 			CiProperty prop = ((CiPropertyAccess) expr).Property;
-			if (prop == CiIntType.SByteProperty || prop == CiIntType.LowByteProperty)
+			if (prop == CiLibrary.SByteProperty || prop == CiLibrary.LowByteProperty)
 				return 2;
 		}
 		else if (expr is CiCoercion) {
@@ -210,15 +210,15 @@ public class GenC : SourceGenerator
 
 	protected override void Write(CiPropertyAccess expr)
 	{
-		if (expr.Property == CiIntType.SByteProperty) {
+		if (expr.Property == CiLibrary.SByteProperty) {
 			Write("(signed char) ");
 			WriteChild(expr, expr.Obj);
 		}
-		else if (expr.Property == CiIntType.LowByteProperty) {
+		else if (expr.Property == CiLibrary.LowByteProperty) {
 			Write("(unsigned char) ");
 			WriteChild(expr, expr.Obj);
 		}
-		else if (expr.Property == CiStringType.LengthProperty) {
+		else if (expr.Property == CiLibrary.StringLengthProperty) {
 			Write("(int) strlen(");
 			WriteChild(expr, expr.Obj);
 			Write(')');
@@ -243,21 +243,21 @@ public class GenC : SourceGenerator
 
 	protected override void Write(CiMethodCall expr)
 	{
-		if (expr.Method == CiIntType.MulDivMethod) {
+		if (expr.Method == CiLibrary.MulDivMethod) {
 			Write("(int) ((long long int) ");
 			WriteMulDiv(2, expr);
 		}
-		else if (expr.Method == CiStringType.CharAtMethod) {
+		else if (expr.Method == CiLibrary.CharAtMethod) {
 			Write(expr.Obj);
 			Write('[');
 			Write(expr.Arguments[0]);
 			Write(']');
 		}
-		else if (expr.Method == CiStringType.SubstringMethod) {
+		else if (expr.Method == CiLibrary.SubstringMethod) {
 			// TODO
 			throw new ArgumentException("Substring");
 		}
-		else if (expr.Method == CiArrayType.CopyToMethod) {
+		else if (expr.Method == CiLibrary.ArrayCopyToMethod) {
 			Write("memcpy(");
 			WriteSum(expr.Arguments[1], expr.Arguments[2]);
 			Write(", ");
@@ -266,11 +266,11 @@ public class GenC : SourceGenerator
 			Write(expr.Arguments[3]);
 			Write(')');
 		}
-		else if (expr.Method == CiArrayType.ToStringMethod) {
+		else if (expr.Method == CiLibrary.ArrayToStringMethod) {
 			// TODO
 			throw new ArgumentException("Array.ToString");
 		}
-		else if (expr.Method == CiArrayStorageType.ClearMethod) {
+		else if (expr.Method == CiLibrary.ArrayStorageClearMethod) {
 			WriteClearArray(expr.Obj);
 		}
 		else {
@@ -332,7 +332,7 @@ public class GenC : SourceGenerator
 			}
 			// optimize str.Length == 0, str.Length != 0, str.Length > 0
 			CiPropertyAccess pa = expr.Left as CiPropertyAccess;
-			if (pa != null && pa.Property == CiStringType.LengthProperty) {
+			if (pa != null && pa.Property == CiLibrary.StringLengthProperty) {
 				CiConstExpr ce = expr.Right as CiConstExpr;
 				if (ce != null && 0.Equals(ce.Value)) {
 					WriteChild(1, pa.Obj);
@@ -525,8 +525,8 @@ public class GenC : SourceGenerator
 			if (assign.Op == CiToken.Assign) {
 				if (assign.Source is CiMethodCall) {
 					CiMethodCall mc = (CiMethodCall) assign.Source;
-					if (mc.Method == CiStringType.SubstringMethod
-					 || mc.Method == CiArrayType.ToStringMethod) {
+					if (mc.Method == CiLibrary.SubstringMethod
+					 || mc.Method == CiLibrary.ArrayToStringMethod) {
 						// TODO: make sure no side effects in mc.Arguments[1]
 						Write("((char *) memcpy(");
 						Write(assign.Target);

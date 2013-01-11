@@ -1,6 +1,6 @@
 // GenC89.cs - C89 code generator
 //
-// Copyright (C) 2011-2012  Piotr Fusik
+// Copyright (C) 2011-2013  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -65,7 +65,7 @@ public class GenC89 : GenC
 
 	protected override void Write(CiMethodCall expr)
 	{
-		if (expr.Method == CiIntType.MulDivMethod) {
+		if (expr.Method == CiLibrary.MulDivMethod) {
 			Write("(int) ((double) ");
 			WriteMulDiv(2, expr);
 		}

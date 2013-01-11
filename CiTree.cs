@@ -1,6 +1,6 @@
 // CiTree.cs - Ci object model
 //
-// Copyright (C) 2011-2012  Piotr Fusik
+// Copyright (C) 2011-2013  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -130,7 +130,7 @@ public class CiByteType : CiType
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
-		case "SByte": return CiIntType.SByteProperty;
+		case "SByte": return CiLibrary.SByteProperty;
 		default: throw new ParseException("No member {0} in byte", name);
 		}
 	}
@@ -141,18 +141,11 @@ public class CiIntType : CiType
 	private CiIntType() { }
 	public static readonly CiIntType Value = new CiIntType { Name = "int" };
 	public override Type DotNetType { get { return typeof(int); } }
-	public static readonly CiProperty LowByteProperty = new CiProperty { Name = "LowByte", Type = CiByteType.Value };
-	// SByte defined here and not in CiByteType to avoid circular dependency between static initializers of CiByteType and CiIntType
-	public static readonly CiProperty SByteProperty = new CiProperty { Name = "SByte", Type = CiIntType.Value };
-	public static readonly CiMethod MulDivMethod = new CiMethod(
-		CiIntType.Value, "MulDiv",
-		new CiParam(CiIntType.Value, "numerator"),
-		new CiParam(CiIntType.Value, "denominator"));
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
-		case "LowByte": return LowByteProperty;
-		case "MulDiv": return MulDivMethod;
+		case "LowByte": return CiLibrary.LowByteProperty;
+		case "MulDiv": return CiLibrary.MulDivMethod;
 		default: throw new ParseException("No member {0} in int", name);
 		}
 	}
@@ -161,21 +154,11 @@ public class CiIntType : CiType
 public abstract class CiStringType : CiType
 {
 	public override Type DotNetType { get { return typeof(string); } }
-	public static readonly CiProperty LengthProperty = new CiProperty { Name = "Length", Type = CiIntType.Value };
-	public static readonly CiMethod CharAtMethod = new CiMethod(
-		CiIntType.Value, "CharAt",
-		new CiParam(CiIntType.Value, "index"));
-	public static readonly CiMethod SubstringMethod = new CiMethod(
-		// Doesn't work, is initialized in static constructor of CiStringPtrType instead:
-		// CiStringPtrType.Value,
-		null, "Substring",
-		new CiParam(CiIntType.Value, "startIndex"),
-		new CiParam(CiIntType.Value, "length"));
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
-		case "Length": return LengthProperty;
-		case "Substring": return SubstringMethod;
+		case "Length": return CiLibrary.StringLengthProperty;
+		case "Substring": return CiLibrary.SubstringMethod;
 		// CharAt is available only via bracket indexing
 		default: throw new ParseException("No member {0} in string", name);
 		}
@@ -186,10 +169,6 @@ public class CiStringPtrType : CiStringType
 {
 	private CiStringPtrType() { }
 	public static readonly CiStringPtrType Value = new CiStringPtrType { Name = "string" };
-	static CiStringPtrType()
-	{
-		CiStringType.SubstringMethod.Signature.ReturnType = CiStringPtrType.Value;
-	}
 }
 
 public class CiStringStorageType : CiStringType
@@ -256,26 +235,16 @@ public abstract class CiArrayType : CiType
 	public CiType ElementType;
 	public override CiType BaseType { get { return this.ElementType.BaseType; } }
 	public override int ArrayLevel { get { return 1 + this.ElementType.ArrayLevel; } }
-	public static readonly CiMethod CopyToMethod = new CiMethod(
-		CiType.Void, "CopyTo",
-		new CiParam(CiIntType.Value, "sourceIndex"),
-		new CiParam(CiArrayPtrType.WritableByteArray, "destinationArray"),
-		new CiParam(CiIntType.Value, "destinationIndex"),
-		new CiParam(CiIntType.Value, "length"));
-	public static readonly CiMethod ToStringMethod = new CiMethod(
-		CiStringPtrType.Value, "ToString",
-		new CiParam(CiIntType.Value, "startIndex"),
-		new CiParam(CiIntType.Value, "length"));
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
 		case "CopyTo":
 			if (this.ElementType == CiByteType.Value)
-				return CopyToMethod;
+				return CiLibrary.ArrayCopyToMethod;
 			throw new ParseException("CopyTo available only for byte arrays");
 		case "ToString":
 			if (this.ElementType == CiByteType.Value)
-				return ToStringMethod;
+				return CiLibrary.ArrayToStringMethod;
 			throw new ParseException("ToString available only for byte arrays");
 		default:
 			throw new ParseException("No member {0} in array", name);
@@ -303,20 +272,48 @@ public class CiArrayStorageType : CiArrayType
 	public CiExpr LengthExpr;
 	public int Length;
 	public override CiType Ptr { get { return new CiArrayPtrType { ElementType = this.ElementType }; } }
-	public static readonly CiMethod ClearMethod = new CiMethod(
-		CiType.Void, "Clear") { IsMutator = true };
 	public override CiSymbol LookupMember(string name)
 	{
 		switch (name) {
 		case "Clear":
 			if (this.ElementType == CiByteType.Value || this.ElementType == CiIntType.Value)
-				return ClearMethod;
+				return CiLibrary.ArrayStorageClearMethod;
 			throw new ParseException("Clear available only for byte and int arrays");
 		case "Length": return new CiConst { Type = CiIntType.Value, Value = this.Length };
 		default: return base.LookupMember(name);
 		}
 	}
 	public override CiType Accept(ICiTypeVisitor v) { return v.Visit(this); }
+}
+
+public class CiLibrary
+{
+	public static readonly CiProperty LowByteProperty = new CiProperty { Name = "LowByte", Type = CiByteType.Value };
+	public static readonly CiProperty SByteProperty = new CiProperty { Name = "SByte", Type = CiIntType.Value };
+	public static readonly CiMethod MulDivMethod = new CiMethod(
+		CiIntType.Value, "MulDiv",
+		new CiParam(CiIntType.Value, "numerator"),
+		new CiParam(CiIntType.Value, "denominator"));
+	public static readonly CiProperty StringLengthProperty = new CiProperty { Name = "Length", Type = CiIntType.Value };
+	public static readonly CiMethod CharAtMethod = new CiMethod(
+		CiIntType.Value, "CharAt",
+		new CiParam(CiIntType.Value, "index"));
+	public static readonly CiMethod SubstringMethod = new CiMethod(
+		CiStringPtrType.Value, "Substring",
+		new CiParam(CiIntType.Value, "startIndex"),
+		new CiParam(CiIntType.Value, "length"));
+	public static readonly CiMethod ArrayCopyToMethod = new CiMethod(
+		CiType.Void, "CopyTo",
+		new CiParam(CiIntType.Value, "sourceIndex"),
+		new CiParam(CiArrayPtrType.WritableByteArray, "destinationArray"),
+		new CiParam(CiIntType.Value, "destinationIndex"),
+		new CiParam(CiIntType.Value, "length"));
+	public static readonly CiMethod ArrayToStringMethod = new CiMethod(
+		CiStringPtrType.Value, "ToString",
+		new CiParam(CiIntType.Value, "startIndex"),
+		new CiParam(CiIntType.Value, "length"));
+	public static readonly CiMethod ArrayStorageClearMethod = new CiMethod(
+		CiType.Void, "Clear") { IsMutator = true };
 }
 
 public class CiUnknownSymbol : CiSymbol

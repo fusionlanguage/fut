@@ -1,6 +1,6 @@
 // GenD.cs - D code generator
 //
-// Copyright (C) 2011-2012  Adrian Matoga
+// Copyright (C) 2011-2013  Adrian Matoga
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -244,7 +244,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		// TODO: check if this compatible with D priorities
 		if (expr is CiPropertyAccess) {
 			CiProperty prop = ((CiPropertyAccess) expr).Property;
-			if (prop == CiIntType.SByteProperty || prop == CiIntType.LowByteProperty)
+			if (prop == CiLibrary.SByteProperty || prop == CiLibrary.LowByteProperty)
 				return 2;
 		}
 		else if (expr is CiCoercion) {
@@ -257,15 +257,15 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 
 	protected override void Write(CiPropertyAccess expr)
 	{
-		if (expr.Property == CiIntType.SByteProperty) {
+		if (expr.Property == CiLibrary.SByteProperty) {
 			Write("cast(byte) ");
 			WriteChild(expr, expr.Obj);
 		}
-		else if (expr.Property == CiIntType.LowByteProperty) {
+		else if (expr.Property == CiLibrary.LowByteProperty) {
 			Write("cast(ubyte) ");
 			WriteChild(expr, expr.Obj);
 		}
-		else if (expr.Property == CiStringType.LengthProperty) {
+		else if (expr.Property == CiLibrary.StringLengthProperty) {
 			Write("cast(int) ");
 			WriteChild(expr, expr.Obj);
 			Write(".length");
@@ -276,17 +276,17 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 
 	protected override void Write(CiMethodCall expr)
 	{
-		if (expr.Method == CiIntType.MulDivMethod) {
+		if (expr.Method == CiLibrary.MulDivMethod) {
 			Write("cast(int) (cast(long) ");
 			WriteMulDiv(2, expr);
 		}
-		else if (expr.Method == CiStringType.CharAtMethod) {
+		else if (expr.Method == CiLibrary.CharAtMethod) {
 			Write(expr.Obj);
 			Write('[');
 			Write(expr.Arguments[0]);
 			Write(']');
 		}
-		else if (expr.Method == CiStringType.SubstringMethod) {
+		else if (expr.Method == CiLibrary.SubstringMethod) {
 			Write(expr.Obj);
 			Write('[');
 			Write(expr.Arguments[0]);
@@ -296,7 +296,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 			Write(expr.Arguments[1]);
 			Write(']');
 		}
-		else if (expr.Method == CiArrayType.CopyToMethod) {
+		else if (expr.Method == CiLibrary.ArrayCopyToMethod) {
 			Write(expr.Arguments[1]);
 			Write('[');
 			Write(expr.Arguments[2]);
@@ -314,7 +314,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 			Write(expr.Arguments[3]);
 			Write(']');
 		}
-		else if (expr.Method == CiArrayType.ToStringMethod) {
+		else if (expr.Method == CiLibrary.ArrayToStringMethod) {
 			Write("toUTF8(cast(char[]) ");
 			Write(expr.Obj);
 			Write('[');
@@ -325,7 +325,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 			Write(expr.Arguments[1]);
 			Write("])");
 		}
-		else if (expr.Method == CiArrayStorageType.ClearMethod) {
+		else if (expr.Method == CiLibrary.ArrayStorageClearMethod) {
 			Write(expr.Obj);
 			Write("[] = 0");
 		}

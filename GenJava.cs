@@ -1,6 +1,6 @@
 // GenJava.cs - Java code generator
 //
-// Copyright (C) 2011-2012  Piotr Fusik
+// Copyright (C) 2011-2013  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -175,9 +175,9 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 	{
 		CiPropertyAccess pa = expr as CiPropertyAccess;
 		if (pa != null) {
-			if (pa.Property == CiIntType.SByteProperty)
+			if (pa.Property == CiLibrary.SByteProperty)
 				return GetPriority(pa.Obj);
-			if (pa.Property == CiIntType.LowByteProperty)
+			if (pa.Property == CiLibrary.LowByteProperty)
 				return 2;
 		}
 		else if (expr is CiCoercion) {
@@ -199,13 +199,13 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 
 	protected override void Write(CiPropertyAccess expr)
 	{
-		if (expr.Property == CiIntType.SByteProperty)
+		if (expr.Property == CiLibrary.SByteProperty)
 			Write(expr.Obj);
-		else if (expr.Property == CiIntType.LowByteProperty) {
+		else if (expr.Property == CiLibrary.LowByteProperty) {
 			Write("(byte) ");
 			WriteChild(expr, expr.Obj);
 		}
-		else if (expr.Property == CiStringType.LengthProperty) {
+		else if (expr.Property == CiLibrary.StringLengthProperty) {
 			WriteChild(expr, expr.Obj);
 			Write(".length()");
 		}
@@ -226,17 +226,17 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 
 	protected override void Write(CiMethodCall expr)
 	{
-		if (expr.Method == CiIntType.MulDivMethod) {
+		if (expr.Method == CiLibrary.MulDivMethod) {
 			Write("(int) ((long) ");
 			WriteMulDiv(2, expr);
 		}
-		else if (expr.Method == CiStringType.CharAtMethod) {
+		else if (expr.Method == CiLibrary.CharAtMethod) {
 			Write(expr.Obj);
 			Write(".charAt(");
 			Write(expr.Arguments[0]);
 			Write(')');
 		}
-		else if (expr.Method == CiStringType.SubstringMethod) {
+		else if (expr.Method == CiLibrary.SubstringMethod) {
 			if (expr.Arguments[0].HasSideEffect) {
 				Write("substring(");
 				Write(expr.Obj);
@@ -256,7 +256,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 				Write(')');
 			}
 		}
-		else if (expr.Method == CiArrayType.CopyToMethod) {
+		else if (expr.Method == CiLibrary.ArrayCopyToMethod) {
 			Write("System.arraycopy(");
 			Write(expr.Obj);
 			Write(", ");
@@ -269,7 +269,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			Write(expr.Arguments[3]);
 			Write(')');
 		}
-		else if (expr.Method == CiArrayType.ToStringMethod) {
+		else if (expr.Method == CiLibrary.ArrayToStringMethod) {
 			Write("new String(");
 			Write(expr.Obj);
 			Write(", ");
@@ -278,7 +278,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			Write(expr.Arguments[1]);
 			Write(')');
 		}
-		else if (expr.Method == CiArrayStorageType.ClearMethod) {
+		else if (expr.Method == CiLibrary.ArrayStorageClearMethod) {
 			Write("clear(");
 			Write(expr.Obj);
 			Write(')');

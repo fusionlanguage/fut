@@ -1,6 +1,6 @@
 // GenJs.cs - JavaScript code generator
 //
-// Copyright (C) 2011-2012  Piotr Fusik
+// Copyright (C) 2011-2013  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -130,9 +130,9 @@ public class GenJs : SourceGenerator
 	{
 		if (expr is CiPropertyAccess) {
 			CiProperty prop = ((CiPropertyAccess) expr).Property;
-			if (prop == CiIntType.SByteProperty)
+			if (prop == CiLibrary.SByteProperty)
 				return 4;
-			if (prop == CiIntType.LowByteProperty)
+			if (prop == CiLibrary.LowByteProperty)
 				return 8;
 		}
 		else if (expr is CiBinaryExpr) {
@@ -151,16 +151,16 @@ public class GenJs : SourceGenerator
 
 	protected override void Write(CiPropertyAccess expr)
 	{
-		if (expr.Property == CiIntType.SByteProperty) {
+		if (expr.Property == CiLibrary.SByteProperty) {
 			Write('(');
 			WriteChild(9, expr.Obj);
 			Write(" ^ 128) - 128");
 		}
-		else if (expr.Property == CiIntType.LowByteProperty) {
+		else if (expr.Property == CiLibrary.LowByteProperty) {
 			WriteChild(expr, expr.Obj);
 			Write(" & 0xff");
 		}
-		else if (expr.Property == CiStringType.LengthProperty) {
+		else if (expr.Property == CiLibrary.StringLengthProperty) {
 			WriteChild(expr, expr.Obj);
 			Write(".length");
 		}
@@ -183,17 +183,17 @@ public class GenJs : SourceGenerator
 
 	protected override void Write(CiMethodCall expr)
 	{
-		if (expr.Method == CiIntType.MulDivMethod) {
+		if (expr.Method == CiLibrary.MulDivMethod) {
 			Write("Math.floor(");
 			WriteMulDiv(3, expr);
 		}
-		else if (expr.Method == CiStringType.CharAtMethod) {
+		else if (expr.Method == CiLibrary.CharAtMethod) {
 			Write(expr.Obj);
 			Write(".charCodeAt(");
 			Write(expr.Arguments[0]);
 			Write(')');
 		}
-		else if (expr.Method == CiStringType.SubstringMethod) {
+		else if (expr.Method == CiLibrary.SubstringMethod) {
 			if (expr.Arguments[0].HasSideEffect) {
 				Write("Ci.substring(");
 				Write(expr.Obj);
@@ -213,7 +213,7 @@ public class GenJs : SourceGenerator
 				Write(')');
 			}
 		}
-		else if (expr.Method == CiArrayType.CopyToMethod) {
+		else if (expr.Method == CiLibrary.ArrayCopyToMethod) {
 			Write("Ci.copyArray(");
 			Write(expr.Obj);
 			Write(", ");
@@ -227,7 +227,7 @@ public class GenJs : SourceGenerator
 			Write(')');
 			this.UsesCopyArrayMethod = true;
 		}
-		else if (expr.Method == CiArrayType.ToStringMethod) {
+		else if (expr.Method == CiLibrary.ArrayToStringMethod) {
 			Write("Ci.bytesToString(");
 			Write(expr.Obj);
 			Write(", ");
@@ -237,7 +237,7 @@ public class GenJs : SourceGenerator
 			Write(')');
 			this.UsesBytesToStringMethod = true;
 		}
-		else if (expr.Method == CiArrayStorageType.ClearMethod) {
+		else if (expr.Method == CiLibrary.ArrayStorageClearMethod) {
 			Write("Ci.clearArray(");
 			Write(expr.Obj);
 			Write(", 0)");

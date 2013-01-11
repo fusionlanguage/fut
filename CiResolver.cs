@@ -389,11 +389,11 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		if (member is CiProperty) {
 			CiProperty prop = (CiProperty) member;
 			if (parent is CiConstExpr) {
-				if (prop == CiIntType.LowByteProperty)
+				if (prop == CiLibrary.LowByteProperty)
 					return new CiConstExpr((byte) GetConstInt(parent));
-				if (prop == CiIntType.SByteProperty)
+				if (prop == CiLibrary.SByteProperty)
 					return new CiConstExpr((int) (sbyte) GetConstInt(parent));
-				if (prop == CiStringType.LengthProperty)
+				if (prop == CiLibrary.StringLengthProperty)
 					return new CiConstExpr(((string) ((CiConstExpr) parent).Value).Length);
 			}
 			return new CiPropertyAccess { Obj = parent, Property = prop };
@@ -417,7 +417,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 					return new CiConstExpr((int) s[i]);
 			}
 			return new CiMethodCall {
-				Method = CiStringType.CharAtMethod,
+				Method = CiLibrary.CharAtMethod,
 				Obj = parent,
 				Arguments = new CiExpr[1] { index }
 			};

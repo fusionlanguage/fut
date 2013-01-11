@@ -1,6 +1,6 @@
 // GenCs.cs - C# code generator
 //
-// Copyright (C) 2011-2012  Piotr Fusik
+// Copyright (C) 2011-2013  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -204,7 +204,7 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 	{
 		if (expr is CiPropertyAccess) {
 			CiProperty prop = ((CiPropertyAccess) expr).Property;
-			if (prop == CiIntType.SByteProperty || prop == CiIntType.LowByteProperty)
+			if (prop == CiLibrary.SByteProperty || prop == CiLibrary.LowByteProperty)
 				return 2;
 		}
 		else if (expr is CiCoercion) {
@@ -217,15 +217,15 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 
 	protected override void Write(CiPropertyAccess expr)
 	{
-		if (expr.Property == CiIntType.SByteProperty) {
+		if (expr.Property == CiLibrary.SByteProperty) {
 			Write("(sbyte) ");
 			WriteChild(expr, expr.Obj);
 		}
-		else if (expr.Property == CiIntType.LowByteProperty) {
+		else if (expr.Property == CiLibrary.LowByteProperty) {
 			Write("(byte) ");
 			WriteChild(expr, expr.Obj);
 		}
-		else if (expr.Property == CiStringType.LengthProperty) {
+		else if (expr.Property == CiLibrary.StringLengthProperty) {
 			WriteChild(expr, expr.Obj);
 			Write(".Length");
 		}
@@ -235,17 +235,17 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 
 	protected override void Write(CiMethodCall expr)
 	{
-		if (expr.Method == CiIntType.MulDivMethod) {
+		if (expr.Method == CiLibrary.MulDivMethod) {
 			Write("(int) ((long) ");
 			WriteMulDiv(2, expr);
 		}
-		else if (expr.Method == CiStringType.CharAtMethod) {
+		else if (expr.Method == CiLibrary.CharAtMethod) {
 			Write(expr.Obj);
 			Write('[');
 			Write(expr.Arguments[0]);
 			Write(']');
 		}
-		else if (expr.Method == CiStringType.SubstringMethod) {
+		else if (expr.Method == CiLibrary.SubstringMethod) {
 			Write(expr.Obj);
 			Write(".Substring(");
 			Write(expr.Arguments[0]);
@@ -253,7 +253,7 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 			Write(expr.Arguments[1]);
 			Write(')');
 		}
-		else if (expr.Method == CiArrayType.CopyToMethod) {
+		else if (expr.Method == CiLibrary.ArrayCopyToMethod) {
 			Write("System.Array.Copy(");
 			Write(expr.Obj);
 			Write(", ");
@@ -266,7 +266,7 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 			Write(expr.Arguments[3]);
 			Write(')');
 		}
-		else if (expr.Method == CiArrayType.ToStringMethod) {
+		else if (expr.Method == CiLibrary.ArrayToStringMethod) {
 			Write("System.Text.Encoding.UTF8.GetString(");
 			Write(expr.Obj);
 			Write(", ");
@@ -275,7 +275,7 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 			Write(expr.Arguments[1]);
 			Write(')');
 		}
-		else if (expr.Method == CiArrayStorageType.ClearMethod) {
+		else if (expr.Method == CiLibrary.ArrayStorageClearMethod) {
 			Write("System.Array.Clear(");
 			Write(expr.Obj);
 			Write(", 0, ");
