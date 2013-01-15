@@ -922,24 +922,16 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		this.CurrentMethod = null;
 	}
 
-	void ICiSymbolVisitor.Visit(CiClass klass)
+	void ResolveBase(CiClass klass)
 	{
-		// !klass.IsResolved && (klass.BaseClass == null || klass.BaseClass is CiUnknownClass) => not resolved
-		// !klass.IsResolved && (klass.BaseClass != null && !(klass.BaseClass is CiUnknownClass)) => resolving
-		// klass.IsResolved => resolved
-		if (klass.IsResolved)
-			return;
 		if (klass.BaseClass != null) {
-			if (!(klass.BaseClass is CiUnknownClass)) {
-				this.CurrentClass = klass;
-				throw new ResolveException("Circular base class dependency");
-			}
 			klass.BaseClass = ResolveClass(klass.BaseClass);
-			klass.BaseClass.Accept(this);
 			klass.Members.Parent = klass.BaseClass.Members;
 		}
-		klass.IsResolved = true;
+	}
 
+	void ICiSymbolVisitor.Visit(CiClass klass)
+	{
 		this.CurrentClass = klass;
 		this.Symbols = klass.Members;
 		if (klass.Constructor != null)
@@ -1020,6 +1012,10 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 	public void Resolve(CiProgram program)
 	{
 		this.Symbols = program.Globals;
+		foreach (CiSymbol symbol in program.Globals) {
+			if (symbol is CiClass)
+				ResolveBase((CiClass) symbol);
+		}
 		foreach (CiSymbol symbol in program.Globals)
 			symbol.Accept(this);
 		foreach (ICiPtrType type in this.WritablePtrTypes)
