@@ -1,6 +1,6 @@
 // SourceGenerator.cs - base class for code generators
 //
-// Copyright (C) 2011-2012  Piotr Fusik
+// Copyright (C) 2011-2013  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -696,7 +696,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		WriteLine(");");
 	}
 
-	void ICiStatementVisitor.Visit(CiFor stmt)
+	public virtual void Visit(CiFor stmt)
 	{
 		Write("for (");
 		if (stmt.Init != null)

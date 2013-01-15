@@ -18,7 +18,6 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
-using System.Collections.Generic;
 
 namespace Foxoft.Ci
 {
@@ -73,11 +72,23 @@ public class GenC89 : GenC
 			base.Write(expr);
 	}
 
+	public override void Visit(CiFor stmt)
+	{
+		CiVar def = stmt.Init as CiVar;
+		if (def != null) {
+			OpenBlock();
+			WriteVar(def);
+			base.Visit(stmt);
+			CloseBlock();
+		}
+		else
+			base.Visit(stmt);
+	}
+
 	protected override void StartBlock(ICiStatement[] statements)
 	{
 		// variable and const definitions, with initializers if possible
 		bool canInitVar = true;
-		HashSet<string> forVars = new HashSet<string>();
 		foreach (ICiStatement stmt in statements) {
 			if (stmt is CiConst) {
 				base.Visit((CiConst) stmt);
@@ -95,17 +106,6 @@ public class GenC89 : GenC
 			}
 			if (def != null)
 				WriteVar(def);
-			else if (stmt is CiFor) {
-				def = ((CiFor) stmt).Init as CiVar;
-				// TODO: check "for" variables are same type
-				if (def != null) {
-					if (!forVars.Contains(def.Name)) {
-						forVars.Add(def.Name);
-						WriteVar(def);
-					}
-					def.WriteInitialValue = true;
-				}
-			}
 		}
 	}
 

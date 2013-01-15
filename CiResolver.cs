@@ -1,6 +1,6 @@
 // CiResolver.cs - Ci symbol resolver
 //
-// Copyright (C) 2011-2012  Piotr Fusik
+// Copyright (C) 2011-2013  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -821,12 +821,8 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 
 	void ICiStatementVisitor.Visit(CiFor statement)
 	{
-		if (statement.Init != null) {
+		if (statement.Init != null)
 			Resolve(statement.Init);
-			CiVar def = statement.Init as CiVar;
-			if (def != null && def.InitialValue != null && (def.Type is CiStringStorageType || def.Type is CiArrayStorageType))
-				throw new ResolveException("Cannot initialize variable of this type in the for statement");
-		}
 		if (statement.Advance != null)
 			Resolve(statement.Advance);
 		ResolveLoop(statement);
