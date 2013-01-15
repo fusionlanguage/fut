@@ -326,6 +326,16 @@ public class GenJs : SourceGenerator
 
 	void Write(CiClass klass)
 	{
+		// topological sorting of class hierarchy
+		if (klass.WriteStatus == CiWriteStatus.Done)
+			return;
+		if (klass.WriteStatus == CiWriteStatus.InProgress)
+			throw new ResolveException("Circular dependency for class {0}", klass.Name);
+		klass.WriteStatus = CiWriteStatus.InProgress;
+		if (klass.BaseClass != null)
+			Write(klass.BaseClass);
+		klass.WriteStatus = CiWriteStatus.Done;
+
 		this.CurrentClass = klass;
 		WriteLine();
 		Write(klass.Documentation);
@@ -341,7 +351,6 @@ public class GenJs : SourceGenerator
 			Write(klass.Constructor.Body.Statements);
 		CloseBlock();
 		if (klass.BaseClass != null) {
-			// seems that base class doesn't have to be defined earlier
 			Write(klass.Name);
 			Write(".prototype = new ");
 			Write(klass.BaseClass.Name);
@@ -425,6 +434,9 @@ public class GenJs : SourceGenerator
 		this.UsesCopyArrayMethod = false;
 		this.UsesBytesToStringMethod = false;
 		this.UsesClearArrayMethod = false;
+		foreach (CiSymbol symbol in prog.Globals)
+			if (symbol is CiClass)
+				((CiClass) symbol).WriteStatus = CiWriteStatus.NotYet;
 		foreach (CiSymbol symbol in prog.Globals) {
 			if (symbol is CiEnum)
 				Write((CiEnum) symbol);

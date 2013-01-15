@@ -780,7 +780,7 @@ public class CiClass : CiSymbol
 	public CiBinaryResource[] BinaryResources;
 	public bool IsResolved;
 	public string SourceFilename;
-	public CiWriteStatus WriteStatus; // C only
+	public CiWriteStatus WriteStatus; // C, JS only
 	public bool HasFields; // C only
 	public bool Constructs; // C only
 	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
