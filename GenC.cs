@@ -198,13 +198,18 @@ public class GenC : SourceGenerator
 			base.Write(expr);
 	}
 
-	protected override void Write(CiFieldAccess expr)
+	void StartFieldAccess(CiExpr expr)
 	{
-		Write(expr.Obj);
-		if (expr.Obj.Type is CiClassPtrType)
+		Write(expr);
+		if (expr.Type is CiClassPtrType)
 			Write("->");
 		else
 			Write('.');
+	}
+
+	protected override void Write(CiFieldAccess expr)
+	{
+		StartFieldAccess(expr.Obj);
 		WriteCamelCase(expr.Field.Name);
 	}
 
@@ -276,13 +281,54 @@ public class GenC : SourceGenerator
 		else {
 			bool first = true;
 			if (expr.Method != null) {
-				Write(expr.Method.Class.Name);
-				Write('_');
-				Write(expr.Method.Name);
-				Write('(');
-				if (expr.Obj != null) {
+				switch (expr.Method.CallType) {
+				case CiCallType.Static:
+					Write(expr.Method.Class.Name);
+					Write('_');
+					Write(expr.Method.Name);
+					Write('(');
+					break;
+				case CiCallType.Normal:
+					Write(expr.Method.Class.Name);
+					Write('_');
+					Write(expr.Method.Name);
+					Write('(');
 					Write(expr.Obj);
 					first = false;
+					break;
+				case CiCallType.Abstract:
+				case CiCallType.Virtual:
+				case CiCallType.Override:
+					CiClass objClass = ((CiClassType) expr.Obj.Type).Class;
+					CiClass ptrClass = GetVtblPtrClass(expr.Method.Class);
+					CiClass defClass;
+					for (defClass = expr.Method.Class; !AddsVirtualMethod(defClass, expr.Method.Name); defClass = defClass.BaseClass)
+						;
+					if (defClass != ptrClass) {
+						Write("((const ");
+						Write(defClass.Name);
+						Write("Vtbl *) ");
+					}
+					StartFieldAccess(expr.Obj);
+					for (CiClass baseClass = objClass; baseClass != ptrClass; baseClass = baseClass.BaseClass)
+						Write("base.");
+					Write("vtbl");
+					if (defClass != ptrClass)
+						Write(')');
+					Write("->");
+					WriteCamelCase(expr.Method.Name);
+					Write('(');
+					if (objClass == defClass)
+						Write(expr.Obj);
+					else {
+						Write('&');
+						StartFieldAccess(expr.Obj);
+						Write("base");
+						for (CiClass baseClass = objClass.BaseClass; baseClass != defClass; baseClass = baseClass.BaseClass)
+							Write(".base");
+					}
+					first = false;
+					break;
 				}
 			}
 			else {
@@ -716,7 +762,7 @@ public class GenC : SourceGenerator
 				CiClass structClass = GetVtblStructClass(klass);
 				if (structClass != ptrClass) {
 					Write("(const ");
-					Write(structClass.Name);
+					Write(ptrClass.Name);
 					Write("Vtbl *) ");
 				}
 				Write("&CiVtbl_");
@@ -883,6 +929,12 @@ public class GenC : SourceGenerator
 			return EnumVirtualMethods(klass.BaseClass).Concat(myMethods);
 		else
 			return myMethods;
+	}
+
+	static bool AddsVirtualMethod(CiClass klass, string methodName)
+	{
+		return klass.Members.OfType<CiMethod>().Any(method =>
+			method.Name == methodName && (method.CallType == CiCallType.Abstract || method.CallType == CiCallType.Virtual));
 	}
 
 	void WritePtr(CiMethod method, string name)
