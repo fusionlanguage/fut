@@ -785,14 +785,14 @@ public class GenC : SourceGenerator
 	{
 		klass.WriteStatus = CiWriteStatus.NotYet;
 		klass.HasFields = klass.Members.Any(member => member is CiField);
-		bool klassHasMethods = klass.Members.Any(member => member is CiMethod);
-		if (!(klass.HasFields || klassHasMethods))
-			return;
-		Write("typedef struct ");
-		Write(klass.Name);
-		Write(' ');
-		Write(klass.Name);
-		WriteLine(";");
+		bool klassHasInstanceMethods = klass.Members.Any(member => member is CiMethod && ((CiMethod) member).CallType != CiCallType.Static);
+		if (klass.BaseClass != null || klass.HasFields || klassHasInstanceMethods) {
+			Write("typedef struct ");
+			Write(klass.Name);
+			Write(' ');
+			Write(klass.Name);
+			WriteLine(";");
+		}
 	}
 
 	void Write(CiDelegate del)
