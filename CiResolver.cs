@@ -978,7 +978,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 
 	static void MarkDead(CiMethod method)
 	{
-		if (method.Visibility == CiVisibility.Private && method.CalledBy.Count == 0) {
+		if (method.Visibility == CiVisibility.Private && method.CallType != CiCallType.Override && method.CalledBy.Count == 0) {
 			method.Visibility = CiVisibility.Dead;
 			foreach (CiMethod called in method.Calls) {
 				called.CalledBy.Remove(method);
