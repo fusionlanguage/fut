@@ -720,11 +720,19 @@ public partial class CiParser : CiLexer
 					if (!klass.IsAbstract)
 						throw new ParseException("Abstract methods only allowed in abstract classes");
 					callType = CiCallType.Abstract;
+					if (visibility == CiVisibility.Private)
+						visibility = CiVisibility.Internal;
 				}
-				else if (Eat(CiToken.Virtual))
+				else if (Eat(CiToken.Virtual)) {
 					callType = CiCallType.Virtual;
-				else if (Eat(CiToken.Override))
+					if (visibility == CiVisibility.Private)
+						visibility = CiVisibility.Internal;
+				}
+				else if (Eat(CiToken.Override)) {
 					callType = CiCallType.Override;
+					if (visibility == CiVisibility.Private)
+						visibility = CiVisibility.Internal;
+				}
 				else
 					callType = CiCallType.Normal;
 				CiType type = ParseReturnType();
