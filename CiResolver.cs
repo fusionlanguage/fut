@@ -283,6 +283,8 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 				target = ((CiArrayAccess) target).Array;
 			else
 				break;
+			while (target is CiCoercion)
+				target = (CiExpr) ((CiCoercion) target).Inner;
 			ICiPtrType pt = target.Type as ICiPtrType;
 			if (pt != null) {
 				this.WritablePtrTypes.Add(pt);
@@ -303,6 +305,8 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			return;
 		}
 		for (;;) {
+			while (source is CiCoercion)
+				source = ((CiCoercion) source).Inner;
 			ICiPtrType sp = source.Type as ICiPtrType;
 			if (sp != null) {
 				tp.Sources.Add(sp);
