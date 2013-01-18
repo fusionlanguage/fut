@@ -921,18 +921,16 @@ public class GenC : SourceGenerator
 
 	void WriteSignatures(CiClass klass, bool pub)
 	{
-		if (klass.HasFields) {
-			if (!pub && klass.Constructs) {
-				WriteConstructorSignature(klass);
-				WriteLine(";");
-			}
-			if (pub && klass.Visibility == CiVisibility.Public) {
-				WriteLine();
-				WriteNewSignature(klass);
-				WriteLine(";");
-				WriteDeleteSignature(klass);
-				WriteLine(";");
-			}
+		if (!pub && klass.Constructs) {
+			WriteConstructorSignature(klass);
+			WriteLine(";");
+		}
+		if (pub && klass.Visibility == CiVisibility.Public && klass.HasFields) {
+			WriteLine();
+			WriteNewSignature(klass);
+			WriteLine(";");
+			WriteDeleteSignature(klass);
+			WriteLine(";");
 		}
 		foreach (CiSymbol member in klass.Members) {
 			if ((member.Visibility == CiVisibility.Public) == pub) {
@@ -1035,7 +1033,7 @@ public class GenC : SourceGenerator
 
 		WriteLine();
 		WriteVtblStruct(klass);
-		if (klass.HasFields) {
+		if (klass.BaseClass != null || klass.HasFields) {
 			Write("struct ");
 			Write(klass.Name);
 			Write(' ');
@@ -1082,7 +1080,7 @@ public class GenC : SourceGenerator
 
 	void WriteCode(CiClass klass)
 	{
-		if (klass.HasFields)
+		if (klass.BaseClass != null || klass.HasFields)
 			WriteConstructorNewDelete(klass);
 		foreach (CiSymbol member in klass.Members) {
 			if (member is CiMethod)
