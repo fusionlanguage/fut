@@ -703,7 +703,9 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 
 	CiExpr ICiExprVisitor.Visit(CiNewExpr expr)
 	{
-		Resolve(expr.ArrayStorageType);
+		CiArrayStorageType type = expr.ArrayStorageType;
+		type.ElementType = Resolve(type.ElementType);
+		type.LengthExpr = Coerce(Resolve(type.LengthExpr), CiIntType.Value);
 		return expr;
 	}
 

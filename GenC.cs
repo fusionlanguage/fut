@@ -412,12 +412,12 @@ public class GenC : SourceGenerator
 		}
 	}
 
-	protected override void WriteNew(CiArrayStorageType arrayStorageType)
+	protected override void WriteNew(CiArrayStorageType type)
 	{
 		Write("malloc(");
-		Write(arrayStorageType.Length);
+		WriteChild(3, type.LengthExpr);
 		Write(" * sizeof(");
-		Write(arrayStorageType.ElementType, string.Empty);
+		Write(type.ElementType, string.Empty);
 		Write("))");
 	}
 

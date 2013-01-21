@@ -156,13 +156,6 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 		Write(' ');
 	}
 
-	protected override void WriteNew(CiArrayStorageType arrayStorageType)
-	{
-		Write("new ");
-		WriteBaseType(arrayStorageType.BaseType);
-		WriteInitializer(arrayStorageType);
-	}
-
 	bool WriteInit(CiType type)
 	{
 		CiClassStorageType classType = type as CiClassStorageType;
@@ -307,6 +300,13 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 		WriteCondChild(expr, expr.OnTrue);
 		Write(" : ");
 		WriteCondChild(expr, expr.OnFalse);
+	}
+
+	protected override void WriteNew(CiArrayStorageType type)
+	{
+		Write("new ");
+		WriteBaseType(type.BaseType);
+		WriteInitializer(type);
 	}
 
 	protected override void Write(CiCoercion expr)

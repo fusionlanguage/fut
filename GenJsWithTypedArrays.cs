@@ -22,20 +22,28 @@ namespace Foxoft.Ci
 
 public class GenJsWithTypedArrays : GenJs
 {
-	protected override void WriteNew(CiArrayStorageType arrayStorageType)
+	protected override void WriteNew(CiArrayStorageType type)
 	{
-		if (arrayStorageType.ElementType == CiByteType.Value) {
+		if (type.ElementType == CiByteType.Value) {
 			Write("new Uint8Array(new ArrayBuffer(");
-			Write(arrayStorageType.Length);
+			if (type.LengthExpr != null)
+				Write(type.LengthExpr);
+			else
+				Write(type.Length);
 			Write("))");
 		}
-		else if (arrayStorageType.ElementType == CiIntType.Value) {
+		else if (type.ElementType == CiIntType.Value) {
 			Write("new Int32Array(new ArrayBuffer(");
-			Write(arrayStorageType.Length * 4);
+			if (type.LengthExpr != null) {
+				WriteChild(5, type.LengthExpr);
+				Write(" << 2");
+			}
+			else
+				Write(type.Length << 2);
 			Write("))");
 		}
 		else
-			base.WriteNew(arrayStorageType);
+			base.WriteNew(type);
 	}
 
 	protected override void WriteInitArrayStorageVar(CiVar stmt)

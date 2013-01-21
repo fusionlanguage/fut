@@ -59,10 +59,13 @@ public class GenJs : SourceGenerator
 		CloseBlock();
 	}
 
-	protected override void WriteNew(CiArrayStorageType arrayStorageType)
+	protected override void WriteNew(CiArrayStorageType type)
 	{
 		Write("new Array(");
-		Write(arrayStorageType.Length);
+		if (type.LengthExpr != null)
+			Write(type.LengthExpr);
+		else
+			Write(type.Length);
 		Write(')');
 	}
 

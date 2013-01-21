@@ -240,8 +240,12 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		for (; type != null; type = type.ElementType as CiArrayType) {
 			Write('[');
 			CiArrayStorageType storageType = type as CiArrayStorageType;
-			if (storageType != null)
-				Write(storageType.Length);
+			if (storageType != null) {
+				if (storageType.LengthExpr != null)
+					Write(storageType.LengthExpr);
+				else
+					Write(storageType.Length);
+			}
 			Write(']');
 		}
 	}
@@ -568,7 +572,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		WriteName(expr.Resource);
 	}
 
-	protected abstract void WriteNew(CiArrayStorageType expr);
+	protected abstract void WriteNew(CiArrayStorageType type);
 
 	void WriteInline(CiMaybeAssign expr)
 	{
