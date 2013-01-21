@@ -701,6 +701,12 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		return expr;
 	}
 
+	CiExpr ICiExprVisitor.Visit(CiNewExpr expr)
+	{
+		Resolve(expr.ArrayStorageType);
+		return expr;
+	}
+
 	CiExpr Resolve(CiExpr expr)
 	{
 		return expr.Accept(this);
@@ -788,6 +794,15 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			else
 				throw new ResolveException("Invalid compound assignment");
 		}
+	}
+
+	void ICiStatementVisitor.Visit(CiDelete statement)
+	{
+		statement.Expr = Resolve(statement.Expr);
+		if (!(statement.Expr.Type is CiArrayPtrType))
+			throw new ResolveException("'delete' takes an array pointer");
+		if (statement.Expr.HasSideEffect)
+			throw new ResolveException("Side effects not allowed in 'delete'");
 	}
 
 	void ICiStatementVisitor.Visit(CiBreak statement)

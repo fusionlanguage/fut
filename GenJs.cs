@@ -59,10 +59,10 @@ public class GenJs : SourceGenerator
 		CloseBlock();
 	}
 
-	protected virtual void WriteInit(CiArrayStorageType type)
+	protected override void WriteNew(CiArrayStorageType arrayStorageType)
 	{
-		Write(" = new Array(");
-		Write(type.Length);
+		Write("new Array(");
+		Write(arrayStorageType.Length);
 		Write(')');
 	}
 
@@ -77,7 +77,8 @@ public class GenJs : SourceGenerator
 		}
 		CiArrayStorageType arrayType = type as CiArrayStorageType;
 		if (arrayType != null) {
-			WriteInit(arrayType);
+			Write(" = ");
+			WriteNew(arrayType);
 			return true;
 		}
 		return false;

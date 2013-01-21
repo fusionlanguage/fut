@@ -1,6 +1,6 @@
 // GenJsWithTypedArrays.cs - JavaScript with Typed Arrays code generator
 //
-// Copyright (C) 2011  Piotr Fusik
+// Copyright (C) 2011-2013  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -22,20 +22,20 @@ namespace Foxoft.Ci
 
 public class GenJsWithTypedArrays : GenJs
 {
-	protected override void WriteInit(CiArrayStorageType type)
+	protected override void WriteNew(CiArrayStorageType arrayStorageType)
 	{
-		if (type.ElementType == CiByteType.Value) {
-			Write(" = new Uint8Array(new ArrayBuffer(");
-			Write(type.Length);
+		if (arrayStorageType.ElementType == CiByteType.Value) {
+			Write("new Uint8Array(new ArrayBuffer(");
+			Write(arrayStorageType.Length);
 			Write("))");
 		}
-		else if (type.ElementType == CiIntType.Value) {
-			Write(" = new Int32Array(new ArrayBuffer(");
-			Write(type.Length * 4);
+		else if (arrayStorageType.ElementType == CiIntType.Value) {
+			Write("new Int32Array(new ArrayBuffer(");
+			Write(arrayStorageType.Length * 4);
 			Write("))");
 		}
 		else
-			base.WriteInit(type);
+			base.WriteNew(arrayStorageType);
 	}
 
 	protected override void WriteInitArrayStorageVar(CiVar stmt)

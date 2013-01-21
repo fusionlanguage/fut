@@ -114,6 +114,17 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 			Write(type.Name);
 	}
 
+	protected override void WriteNew(CiArrayStorageType arrayStorageType)
+	{
+		if (arrayStorageType.ElementType == CiByteType.Value)
+			Write("new ByteArray()");
+		else {
+			Write("new Array(");
+			Write(arrayStorageType.Length);
+			Write(')');
+		}
+	}
+
 	bool WriteInit(CiType type)
 	{
 		CiClassStorageType classType = type as CiClassStorageType;
@@ -125,13 +136,8 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		}
 		CiArrayStorageType arrayType = type as CiArrayStorageType;
 		if (arrayType != null) {
-			if (arrayType.ElementType == CiByteType.Value) {
-				Write(" = new ByteArray()");
-				return true;
-			}
-			Write(" = new Array(");
-			Write(arrayType.Length);
-			Write(')');
+			Write(" = ");
+			WriteNew(arrayType);
 			return true;
 		}
 		return false;

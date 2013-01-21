@@ -309,7 +309,8 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		 || expr is CiPropertyAccess
 		 || expr is CiArrayAccess
 		 || expr is CiMethodCall
-		 || expr is CiBinaryResourceExpr)
+		 || expr is CiBinaryResourceExpr
+		 || expr is CiNewExpr)
 			return 1;
 		if (expr is CiUnaryExpr
 		 || expr is CiCondNotExpr
@@ -567,6 +568,8 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		WriteName(expr.Resource);
 	}
 
+	protected abstract void WriteNew(CiArrayStorageType expr);
+
 	void WriteInline(CiMaybeAssign expr)
 	{
 		if (expr is CiExpr)
@@ -608,6 +611,8 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			Write((CiCondExpr) expr);
 		else if (expr is CiBinaryResourceExpr)
 			Write((CiBinaryResourceExpr) expr);
+		else if (expr is CiNewExpr)
+			WriteNew(((CiNewExpr) expr).ArrayStorageType);
 		else if (expr is CiCoercion)
 			Write((CiCoercion) expr);
 		else
@@ -671,6 +676,11 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		default: throw new ArgumentException(assign.Op.ToString());
 		}
 		WriteInline(assign.Source);
+	}
+
+	public virtual void Visit(CiDelete stmt)
+	{
+		// do nothing - assume automatic garbage collector
 	}
 
 	void ICiStatementVisitor.Visit(CiBreak stmt)

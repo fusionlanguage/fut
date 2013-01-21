@@ -1,6 +1,6 @@
 // CiParser.cs - Ci parser
 //
-// Copyright (C) 2011  Piotr Fusik
+// Copyright (C) 2011-2013  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -214,6 +214,12 @@ public partial class CiParser : CiLexer
 					result = new CiSymbolAccess { Symbol = symbol };
 				}
 			}
+		}
+		else if (Eat(CiToken.New)) {
+			CiArrayStorageType arrayStorageType = ParseType() as CiArrayStorageType;
+			if (arrayStorageType == null)
+				throw new ParseException("'new' can only create arrays");
+			result = new CiNewExpr { ArrayStorageType = arrayStorageType };
 		}
 		else
 			throw new ParseException("Invalid expression");
@@ -537,6 +543,11 @@ public partial class CiParser : CiLexer
 		if (Eat(CiToken.Continue)) {
 			Expect(CiToken.Semicolon);
 			return new CiContinue();
+		}
+		if (Eat(CiToken.Delete)) {
+			CiExpr expr = ParseExpr();
+			Expect(CiToken.Semicolon);
+			return new CiDelete { Expr = expr };
 		}
 		if (Eat(CiToken.Do)) {
 			CiDoWhile result = new CiDoWhile();

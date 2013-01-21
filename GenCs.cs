@@ -156,6 +156,13 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 		Write(' ');
 	}
 
+	protected override void WriteNew(CiArrayStorageType arrayStorageType)
+	{
+		Write("new ");
+		WriteBaseType(arrayStorageType.BaseType);
+		WriteInitializer(arrayStorageType);
+	}
+
 	bool WriteInit(CiType type)
 	{
 		CiClassStorageType classType = type as CiClassStorageType;
@@ -167,9 +174,8 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 		}
 		CiArrayStorageType arrayType = type as CiArrayStorageType;
 		if (arrayType != null) {
-			Write(" = new ");
-			WriteBaseType(arrayType.BaseType);
-			WriteInitializer(arrayType);
+			Write(" = ");
+			WriteNew(arrayType);
 			return true;
 		}
 		return false;

@@ -1,6 +1,6 @@
 // CiLexer.cs - Ci lexer
 //
-// Copyright (C) 2011-2012  Piotr Fusik
+// Copyright (C) 2011-2013  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -85,6 +85,7 @@ public enum CiToken
 	Continue,
 	Default,
 	Delegate,
+	Delete,
 	Do,
 	Else,
 	Enum,
@@ -94,6 +95,7 @@ public enum CiToken
 	Internal,
 	Macro,
 	Native,
+	New,
 	Override,
 	Public,
 	Return,
@@ -457,6 +459,7 @@ public class CiLexer
 				case "continue": return CiToken.Continue;
 				case "default": return CiToken.Default;
 				case "delegate": return CiToken.Delegate;
+				case "delete": return CiToken.Delete;
 				case "do": return CiToken.Do;
 				case "else": return CiToken.Else;
 				case "enum": return CiToken.Enum;
@@ -466,6 +469,7 @@ public class CiLexer
 				case "internal": return CiToken.Internal;
 				case "macro": return CiToken.Macro;
 				case "native": return CiToken.Native;
+				case "new": return CiToken.New;
 				case "override": return CiToken.Override;
 				case "public": return CiToken.Public;
 				case "return": return CiToken.Return;

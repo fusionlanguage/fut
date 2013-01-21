@@ -358,6 +358,7 @@ public interface ICiStatementVisitor
 	void Visit(CiVar statement);
 	void Visit(CiExpr statement);
 	void Visit(CiAssign statement);
+	void Visit(CiDelete statement);
 	void Visit(CiBreak statement);
 	void Visit(CiContinue statement);
 	void Visit(CiDoWhile statement);
@@ -432,6 +433,7 @@ public interface ICiExprVisitor
 	CiExpr Visit(CiBoolBinaryExpr expr);
 	CiExpr Visit(CiCondExpr expr);
 	CiExpr Visit(CiBinaryResourceExpr expr);
+	CiExpr Visit(CiNewExpr expr);
 }
 
 public abstract class CiExpr : CiMaybeAssign
@@ -614,6 +616,14 @@ public class CiBinaryResourceExpr : CiExpr
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
+public class CiNewExpr : CiExpr
+{
+	public CiArrayStorageType ArrayStorageType;
+	public override CiType Type { get { return this.ArrayStorageType.Ptr; } }
+	public override bool HasSideEffect { get { return true; } }
+	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
+}
+
 public class CiCoercion : CiExpr
 {
 	public CiType ResultType;
@@ -628,6 +638,13 @@ public class CiAssign : CiMaybeAssign, ICiStatement
 	public CiToken Op;
 	public CiMaybeAssign Source;
 	public override CiType Type { get { return this.Target.Type; } }
+	public bool CompletesNormally { get { return true; } }
+	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
+}
+
+public class CiDelete : ICiStatement
+{
+	public CiExpr Expr;
 	public bool CompletesNormally { get { return true; } }
 	public void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }

@@ -412,6 +412,15 @@ public class GenC : SourceGenerator
 		}
 	}
 
+	protected override void WriteNew(CiArrayStorageType arrayStorageType)
+	{
+		Write("malloc(");
+		Write(arrayStorageType.Length);
+		Write(" * sizeof(");
+		Write(arrayStorageType.ElementType, string.Empty);
+		Write("))");
+	}
+
 	protected override void Write(CiCoercion expr)
 	{
 		if (expr.ResultType is CiClassType) {
@@ -617,6 +626,13 @@ public class GenC : SourceGenerator
 			CheckAndThrow(assign, call.Method.ErrorReturnValue);
 		else
 			base.Visit(assign);
+	}
+
+	public override void Visit(CiDelete stmt)
+	{
+		Write("free(");
+		Write(stmt.Expr);
+		WriteLine(");");
 	}
 
 	public override void Visit(CiConst stmt)
