@@ -414,7 +414,9 @@ public class GenC : SourceGenerator
 
 	protected override void WriteNew(CiArrayStorageType type)
 	{
-		Write("malloc(");
+		Write('(');
+		Write(type.ElementType, "*");
+		Write(") malloc(");
 		WriteChild(3, type.LengthExpr);
 		Write(" * sizeof(");
 		Write(type.ElementType, string.Empty);
