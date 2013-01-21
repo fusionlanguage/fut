@@ -253,8 +253,12 @@ public class CiLexer
 		int c = PeekChar();
 		if (c >= '0' && c <= '9')
 			return ReadChar() - '0';
-		if (hex && c >= 'a' && c <= 'f')
-			return ReadChar() - 'a' + 10;
+		if (hex) {
+			if (c >= 'a' && c <= 'f')
+				return ReadChar() - 'a' + 10;
+			if (c >= 'A' && c <= 'F')
+				return ReadChar() - 'A' + 10;
+		}
 		return -1;
 	}
 
