@@ -1072,6 +1072,39 @@ public class GenC : SourceGenerator
 		WriteLine("};");
 	}
 
+	// Common pointer sizes are 32-bit and 64-bit.
+	// We assume 64-bit, because this avoids mixing pointers and ints
+	// which could add extra alignment if pointers are 64-bit.
+	const int SizeOfPointer = 8;
+
+	static int SizeOf(CiClass klass)
+	{
+		int result = klass.Members.OfType<CiField>().Sum(field => SizeOf(field.Type));
+		if (klass.BaseClass != null)
+			result += SizeOf(klass.BaseClass);
+		if (GetVtblPtrClass(klass) == klass)
+			result += SizeOfPointer;
+		return result;
+	}
+
+	static int SizeOf(CiType type)
+	{
+		if (type  == CiIntType.Value
+		 || type == CiBoolType.Value
+		 || type is CiEnum)
+			return 4;
+		if (type == CiByteType.Value)
+			return 1;
+		if (type is CiStringStorageType)
+			return ((CiStringStorageType) type).Length + 1;
+		if (type is CiClassStorageType)
+			return SizeOf(((CiClassStorageType) type).Class);
+		CiArrayStorageType arrayType = type as CiArrayStorageType;
+		if (arrayType != null)
+			return arrayType.Length * SizeOf(arrayType.ElementType);
+		return SizeOfPointer;
+	}
+
 	void WriteStruct(CiClass klass)
 	{
 		// topological sorting of class hierarchy and class storage fields
@@ -1117,10 +1150,9 @@ public class GenC : SourceGenerator
 				Write(klass.Name);
 				WriteLine("Vtbl *vtbl;");
 			}
-			foreach (CiSymbol member in klass.Members) {
-				if (member is CiField)
-					Write((CiField) member);
-			}
+			IEnumerable<CiField> fields = klass.Members.OfType<CiField>().OrderBy(field => SizeOf(field.Type));
+			foreach (CiField field in fields)
+				Write(field);
 			this.Indent--;
 			WriteLine("};");
 		}
