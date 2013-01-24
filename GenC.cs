@@ -160,7 +160,7 @@ public class GenC : SourceGenerator
 		else if (expr is CiCoercion) {
 			CiCoercion c = (CiCoercion) expr;
 			if (c.ResultType is CiClassType)
-				return 2;
+				return c.ResultType is CiClassPtrType ? 2 : 1;
 		}
 		return base.GetPriority(expr);
 	}
@@ -200,7 +200,7 @@ public class GenC : SourceGenerator
 
 	void StartFieldAccess(CiExpr expr)
 	{
-		Write(expr);
+		WriteChild(1, expr);
 		if (expr.Type is CiClassPtrType)
 			Write("->");
 		else
