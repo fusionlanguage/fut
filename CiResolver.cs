@@ -788,10 +788,11 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			Resolve((ICiStatement) source);
 		else
 			source = Resolve((CiExpr) source);
-		CheckCopyPtr(statement.Target.Type, source);
-		statement.Source = Coerce(source, statement.Target.Type);
-		if (statement.Op != CiToken.Assign && statement.Target.Type != CiIntType.Value) {
-			if (statement.Op == CiToken.AddAssign && statement.Target.Type is CiStringStorageType && statement.Source.Type is CiStringType)
+		CiType type = statement.Target.Type;
+		CheckCopyPtr(type, source);
+		statement.Source = Coerce(source, type);
+		if (statement.Op != CiToken.Assign && type != CiIntType.Value && type != CiByteType.Value) {
+			if (statement.Op == CiToken.AddAssign && type is CiStringStorageType && statement.Source.Type is CiStringType)
 				{} // OK
 			else
 				throw new ResolveException("Invalid compound assignment");
