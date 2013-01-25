@@ -68,24 +68,21 @@ public class CiDocLexer
 				return CiDocToken.EndOfFile;
 			case '`':
 				return CiDocToken.CodeDelimiter;
+			case '*':
+				if (lastChar == '\n' && PeekChar() == ' ') {
+					ReadChar();
+					return CiDocToken.Bullet;
+				}
+				return CiDocToken.Char;
 			case '\r':
 				continue;
 			case '\n':
-				c = PeekChar();
-				if (c == '\n') {
-					ReadChar();
-					return CiDocToken.Para;
-				}
-				if (c == '*') {
-					ReadChar();
-					if (PeekChar() == ' ')
-						ReadChar();
-					return CiDocToken.Bullet;
-				}
 				if (this.CheckPeriod && lastChar == '.') {
 					this.CheckPeriod = false;
 					return CiDocToken.Period;
 				}
+				if (lastChar == '\n')
+					return CiDocToken.Para;
 				return CiDocToken.Char;
 			default:
 				return CiDocToken.Char;
