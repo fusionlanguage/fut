@@ -802,10 +802,12 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 	void ICiStatementVisitor.Visit(CiDelete statement)
 	{
 		statement.Expr = Resolve(statement.Expr);
-		if (!(statement.Expr.Type is CiArrayPtrType))
+		CiArrayPtrType arrayPtrType = statement.Expr.Type as CiArrayPtrType;
+		if (arrayPtrType == null)
 			throw new ResolveException("'delete' takes an array pointer");
 		if (statement.Expr.HasSideEffect)
 			throw new ResolveException("Side effects not allowed in 'delete'");
+		this.WritablePtrTypes.Add(arrayPtrType);
 	}
 
 	void ICiStatementVisitor.Visit(CiBreak statement)
