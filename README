@@ -7,14 +7,14 @@ http://sourceforge.net/p/cito/code[Browse source code (Git)] |
 http://sourceforge.net/projects/cito/[SourceForge project page]
 endif::www[]
 
-`cito` automatically translates link:ci.html[the Ć programming language] to C, Java, C#, JavaScript, ActionScript and http://www.digitalmars.com/d/[D].
+`cito` automatically translates link:ci.html[the Ć programming language] to C, Java, C#, JavaScript, ActionScript and http://dlang.org/[D].
 
 How to install
 --------------
 
 `cito` is written in C#. You need the .NET Framework (3.5 or above) or http://www.mono-project.com[Mono].
 
-http://sourceforge.net/projects/cito/files/cito/0.2.0/cito-0.2.0-bin.zip/download[Download the binary distribution]
+http://sourceforge.net/projects/cito/files/cito/0.3.0/cito-0.3.0-bin.zip/download[Download the binary distribution]
 and extract `cito.exe` and `cipad.exe` to a directory in your `PATH` environment variable.
 
 If you want to compile from source code, see http://cito.sourceforge.net/INSTALL.html[compilation instructions].
@@ -39,6 +39,13 @@ If you're interested, please subscribe https://lists.sourceforge.net/lists/listi
 
 History
 -------
+
+cito 0.3.0 (2013-02-??)::
+
+- Class inheritance with virtual methods.
+- Extended constant folding.
+- JavaScript Typed Arrays.
+- Installs Mono wrappers for `cito` and `cipad`.
 
 cito 0.2.0 (2011-08-03)::
 

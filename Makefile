@@ -1,10 +1,11 @@
 prefix := /usr/local
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
 CSC := $(if $(WINDIR),c:/Windows/Microsoft.NET/Framework/v3.5/csc.exe,gmcs)
+MONO := $(if $(WINDIR),,mono)
 ASCIIDOC = asciidoc -o - $(1) $< | xmllint --valid --nonet -o $@ -
 SEVENZIP = 7z a -mx=9 -bd
 
-VERSION := 0.2.0
+VERSION := 0.3.0
 MAKEFLAGS = -r
 
 all: cito.exe cipad.exe
@@ -16,26 +17,37 @@ cipad.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexe
 	$(CSC) -nologo -out:$@ -o+ -t:winexe -win32icon:$(filter %.ico,$^) $(filter %.cs,$^) -r:System.Drawing.dll -r:System.Windows.Forms.dll
 
 ci-logo.png: $(srcdir)ci-logo.svg
-	convert -background none $< -gravity Center -resize "52x64!" -extent 64x64 $@
+	convert -background none $< -gravity Center -resize "52x64!" -extent 64x64 -quality 95 $@
 
 $(srcdir)ci-logo.ico: $(srcdir)ci-logo.svg
 	convert -background none $< -gravity Center -resize "26x32!" -extent 32x32 $@
 
 check: $(srcdir)hello.ci cito.exe
-	./cito.exe -o hello.c $<
-	./cito.exe -l c99 -o hello99.c $<
-	./cito.exe -o HelloCi.java $<
-	./cito.exe -o hello.cs $<
-	./cito.exe -o hello.js $<
-	./cito.exe -o HelloCi.as $<
-	./cito.exe -o hello.d $<
+	$(MONO) ./cito.exe -o hello.c $<
+	$(MONO) ./cito.exe -l c99 -o hello99.c $<
+	$(MONO) ./cito.exe -o HelloCi.java $<
+	$(MONO) ./cito.exe -o hello.cs $<
+	$(MONO) ./cito.exe -o hello.js $<
+	$(MONO) ./cito.exe -o HelloCi.as $<
+	$(MONO) ./cito.exe -o hello.d $<
 
-install: cito.exe cipad.exe
-	cp cito.exe $(DESTDIR)$(prefix)/bin/cito.exe
-	cp cipad.exe $(DESTDIR)$(prefix)/bin/cipad.exe
+install: install-cito install-cipad
+
+install-cito: cito.exe
+	mkdir -p $(DESTDIR)$(prefix)/lib/cito $(DESTDIR)$(prefix)/bin
+	cp $< $(DESTDIR)$(prefix)/lib/cito/cito.exe
+	(echo '#!/bin/sh' && echo 'exec /usr/bin/mono $(DESTDIR)$(prefix)/lib/cito/cito.exe "$$@"') >$(DESTDIR)$(prefix)/bin/cito
+	chmod 755 $(DESTDIR)$(prefix)/bin/cito
+
+install-cipad: cipad.exe
+	mkdir -p $(DESTDIR)$(prefix)/lib/cito $(DESTDIR)$(prefix)/bin
+	cp $< $(DESTDIR)$(prefix)/lib/cito/cipad.exe
+	(echo '#!/bin/sh' && echo 'exec /usr/bin/mono $(DESTDIR)$(prefix)/lib/cito/cipad.exe "$$@"') >$(DESTDIR)$(prefix)/bin/cipad
+	chmod 755 $(DESTDIR)$(prefix)/bin/cipad
 
 uninstall:
-	$(RM) $(DESTDIR)$(prefix)/bin/cito.exe $(DESTDIR)$(prefix)/bin/cipad.exe
+	$(RM) $(DESTDIR)$(prefix)/bin/cito $(DESTDIR)$(prefix)/lib/cito/cito.exe $(DESTDIR)$(prefix)/bin/cipad $(DESTDIR)$(prefix)/lib/cito/cipad.exe
+	rmdir $(DESTDIR)$(prefix)/lib/cito
 
 $(srcdir)README.html: $(srcdir)README
 	$(call ASCIIDOC,)
@@ -73,6 +85,6 @@ version:
 	@grep -H Version $(srcdir)AssemblyInfo.cs
 	@grep -H '"cito ' $(srcdir)CiTo.cs
 
-.PHONY: all check install uninstall www clean srcdist $(srcdir)MANIFEST version
+.PHONY: all check install install-cito install-cipad uninstall www clean srcdist $(srcdir)MANIFEST version
 
 .DELETE_ON_ERROR:

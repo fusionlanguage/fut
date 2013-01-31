@@ -40,4 +40,4 @@ To install, run:
 --------------------------------------------------------------------------------
 sudo make install
 --------------------------------------------------------------------------------
-This will copy `cito.exe` and `cipad.exe` to the default directory `/usr/local/bin`.
+This will create Mono wrappers `cito` and `cipad` in the default directory `/usr/local/bin`.
