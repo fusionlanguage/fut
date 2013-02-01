@@ -57,6 +57,8 @@ public class CiDocParser : CiDocLexer
 			sb.Append((char) this.CurrentChar);
 			NextToken();
 		}
+		if (sb.Length > 0 && sb[sb.Length - 1] == '\n')
+			sb.Length--;
 		return sb.ToString();
 	}
 
