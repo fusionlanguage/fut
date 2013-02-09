@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Text;
 
 namespace Foxoft.Ci
 {
@@ -192,9 +193,23 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 
 	void Write(CiType type)
 	{
+		StringBuilder sb = new StringBuilder();
+		bool haveConst = false;
+		while (type is CiArrayType) {
+			sb.Insert(0, "[]");
+			if (!haveConst) {
+				CiArrayPtrType ptr = type as CiArrayPtrType;
+				if (ptr != null && ptr.Writability != PtrWritability.ReadWrite) {
+					sb.Insert(0, ")");
+					haveConst = true;
+				}
+			}
+			type = ((CiArrayType) type).ElementType;
+		}
+		if (haveConst)
+			Write("const(");
 		WriteBaseType(type.BaseType);
-		for (int i = 0; i < type.ArrayLevel; i++)
-			Write("[]");
+		Write(sb.ToString());
 	}
 
 	bool WriteInit(CiType type)
@@ -475,10 +490,9 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 			}
 		}
 		foreach (CiBinaryResource resource in klass.BinaryResources) {
-			// FIXME: it's better to declare them as immutable(ubyte)[]
-			// or immutable(char)[] and import from binary files,
+			// FIXME: it's better to import(resources) from binary files,
 			// rather than pasting tons of magic numbers in the source.
-			Write("static ubyte[] ");
+			Write("static immutable(ubyte[]) ");
 			WriteName(resource);
 			Write(" = ");
 			WriteConst(resource.Content);
@@ -492,7 +506,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 				if (field != null && (field.Type is CiClassStorageType || field.Type is CiArrayStorageType)) {
 					WriteVarName(field.Name);
 					WriteInit(field.Type);
-					WriteLine(";");						
+					WriteLine(";");
 				}
 			} 
 			if (klass.Constructor != null)
