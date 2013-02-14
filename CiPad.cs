@@ -1,6 +1,6 @@
 // CiPad.cs - small Ci editor with on-the-fly translation
 //
-// Copyright (C) 2011-2012  Piotr Fusik
+// Copyright (C) 2011-2013  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -71,27 +71,66 @@ public class CiPad : Form
 		this.CiGroup.Set("hello.ci",
 @"public class HelloCi
 {
-	public static bool Differ(string s1, string s2)
+	public const int VersionMajor = 0;
+	public const int VersionMinor = 3;
+	public const string Version = VersionMajor + ""."" + VersionMinor;
+
+	/// Returns `true` if and only if `x` is a power of 2 (1, 2, 4, 8, 16, ...).
+	public static bool IsPowerOfTwo(int x)
 	{
-		return s1 != s2;
+		return (x & x - 1) == 0 && x > 0;
 	}
 
-	public static int Div(int a, int b)
+	/// Calculates greatest common divisor of `a` and `b`.
+	public static int GreatestCommonDivisor(int a, int b)
 	{
-		return a / b;
+		// Euclidean algorithm
+		while (b != 0) {
+			int t = b;
+			b = a % b;
+			a = t;
+		}
+		return a;
 	}
 
-	public static string GetMessage()
+	/// Checks whether the given string is a palindrome.
+	/// Note: empty string is considered palindrome.
+	public static bool IsPalindrome(string s)
 	{
-		return ""Hello, world!"";
+		int j = s.Length;
+		for (int i = 0; i < --j; i++)
+			if (s[i] != s[j])
+				return false;
+		return true;
 	}
 
-	public static bool IsNullOrEmpty(string s)
+	/// Gets a boolean value out of strings `""true""` and `""false""`.
+	/// In other cases returns `defaultValue`.
+	public static bool ParseBool(string s, bool defaultValue)
 	{
-		return s == null || s.Length == 0;
+		if (s == ""true"")
+			return true;
+		if (s == ""false"")
+			return false;
+		return defaultValue;
 	}
 
-	public const string Version = ""0.1"";
+	/// Converts an unsigned integer from its decimal representation.
+	public static int ParseUnsignedInt(string s)
+	{
+		if (s == null || s.Length == 0)
+			throw ""null or empty argument"";
+		int n = s.Length;
+		int r = 0;
+		for (int i = 0; i < n; i++) {
+			int c = s[i];
+			if (c < '0' || c > '9')
+				throw ""Not a digit"";
+			// TODO: detect overflow
+			r = r * 10 + c - '0';
+		}
+		return r;
+	}
 }
 ".Replace("\n", "\r\n"), false);
 		Translate();
