@@ -7,42 +7,77 @@ http://sourceforge.net/p/cito/code[Browse source code (Git)] |
 http://sourceforge.net/projects/cito/[SourceForge project page]
 endif::www[]
 
-`cito` automatically translates link:ci.html[the Ć programming language] to C, Java, C#, JavaScript, ActionScript and http://dlang.org/[D].
+`cito` automatically translates the link:ci.html[Ć programming language]
+to C, Java, C#, JavaScript, ActionScript and http://dlang.org/[D].
+Ć is a new language, aimed at crafting 'portable programming libraries', with syntax akin to C#.
+The translated code is lightweight (no virtual machine, emulation nor large runtime), human-readable
+and fits well the target language (including naming conventions and documentation comments).
+
+Current version of Ć doesn't support standalone programs or even console output,
+so your "Hello world" could be the following 'library':
+-------------------
+public class HelloCi
+{
+    public static string GetMessage()
+    {
+        return "Hello, world!";
+    }
+}
+-------------------
+
+See http://cito.sourceforge.net/hello.html[here] for a slightly bigger example and its translations.
+See http://asap.sourceforge.net/[ASAP] and http://fail.sourceforge.net/[FAIL] for real programs written in Ć.
 
 How to install
 --------------
 
-`cito` is written in C#. You need the .NET Framework (3.5 or above) or http://www.mono-project.com[Mono].
+`cito` is written in C#.
 
-http://sourceforge.net/projects/cito/files/cito/0.3.0/cito-0.3.0-bin.zip/download[Download the binary distribution]
+On Windows you need .NET Framework 3.5.
+http://sourceforge.net/projects/cito/files/cito/0.3.0/cito-0.3.0-bin.zip/download[Download cito binaries]
 and extract `cito.exe` and `cipad.exe` to a directory in your `PATH` environment variable.
 
-If you want to compile from source code, see http://cito.sourceforge.net/INSTALL.html[compilation instructions].
-
-"Hello, world!"
----------------
-
-Call `cito` from command prompt passing source files (with the extension `.ci`) and one of the destination files (its filename extension determines the target language), for example:
+On other platforms install http://www.mono-project.com[Mono]. Mono runs .NET executables:
 -------------------
-cito.exe -o hello.c hello.ci
-cito.exe -o HelloCi.java hello.ci
+mono cito.exe
 -------------------
 
-ifdef::www[]
-If you're lazy: see link:hello.html[here] for some translated code.
-endif::www[]
+For your convenience, create Mono wrapper scripts such as:
+-------------------
+#!/bin/sh
+exec /usr/bin/mono /usr/local/lib/cito/cito.exe "$@"
+-------------------
+so that you can type `cito` instead of `mono cito.exe`.
+
+If you want to compile `cito` from source code, see http://cito.sourceforge.net/INSTALL.html[compilation instructions].
+
+How to use
+----------
+
+Call `cito` from command prompt passing source files (with the extension `.ci`) and one of the destination files
+(its filename extension determines the target language), for example:
+-------------------
+cito -o hello.c hello.ci
+cito -o HelloCi.java hello.ci
+-------------------
+
+`cito` only generates source code. It is your responsibility to compile it.
+
+`cipad` does live translation as you type Ć code. It has a small built-in sample.
 
 Contact
 -------
 
-If you're interested, please subscribe https://lists.sourceforge.net/lists/listinfo/cito-users[the mailing list].
+Please subscribe https://lists.sourceforge.net/lists/listinfo/cito-users[our mailing list].
+Any comments are welcome!
 
 History
 -------
 
-cito 0.3.0 (2013-02-??)::
+cito 0.3.0 (2013-02-15)::
 
 - Class inheritance with virtual methods.
+- Dynamic array allocation.
 - Extended constant folding.
 - JavaScript Typed Arrays.
 - Installs Mono wrappers for `cito` and `cipad`.
