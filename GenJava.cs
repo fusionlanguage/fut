@@ -323,6 +323,18 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		Write(')');
 	}
 
+	protected override void Write(CiCondExpr expr)
+	{
+		if (expr.ResultType == CiByteType.Value && expr.OnTrue is CiConstExpr && expr.OnFalse is CiConstExpr) {
+			// avoid error: possible loss of precision
+			Write("(byte) (");
+			base.Write(expr);
+			Write(')');
+		}
+		else
+			base.Write(expr);
+	}
+
 	protected override void WriteNew(CiArrayStorageType type)
 	{
 		Write("new ");
