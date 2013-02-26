@@ -116,17 +116,9 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 
 	bool WriteInit(CiType type)
 	{
-		CiClassStorageType classType = type as CiClassStorageType;
-		if (classType != null) {
-			Write(" = new ");
-			Write(classType.Class.Name);
-			Write("()");
-			return true;
-		}
-		CiArrayStorageType arrayType = type as CiArrayStorageType;
-		if (arrayType != null) {
+		if (type is CiClassStorageType || type is CiArrayStorageType) {
 			Write(" = ");
-			WriteNew(arrayType);
+			WriteNew(type);
 			return true;
 		}
 		return false;
@@ -336,17 +328,26 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		WriteName(expr.Resource);
 	}
 
-	protected override void WriteNew(CiArrayStorageType type)
+	protected override void WriteNew(CiType type)
 	{
-		if (type.ElementType == CiByteType.Value)
-			Write("new ByteArray()");
+		CiClassStorageType classType = type as CiClassStorageType;
+		if (classType != null) {
+			Write(" = new ");
+			Write(classType.Class.Name);
+			Write("()");
+		}
 		else {
-			Write("new Array(");
-			if (type.LengthExpr != null)
-				Write(type.LengthExpr);
-			else
-				Write(type.Length);
-			Write(')');
+			CiArrayStorageType arrayType = (CiArrayStorageType) type;
+			if (arrayType.ElementType == CiByteType.Value)
+				Write("new ByteArray()");
+			else {
+				Write("new Array(");
+				if (arrayType.LengthExpr != null)
+					Write(arrayType.LengthExpr);
+				else
+					Write(arrayType.Length);
+				Write(')');
+			}
 		}
 	}
 

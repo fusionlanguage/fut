@@ -572,7 +572,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		WriteName(expr.Resource);
 	}
 
-	protected abstract void WriteNew(CiArrayStorageType type);
+	protected abstract void WriteNew(CiType type);
 
 	void WriteInline(CiMaybeAssign expr)
 	{
@@ -616,7 +616,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		else if (expr is CiBinaryResourceExpr)
 			Write((CiBinaryResourceExpr) expr);
 		else if (expr is CiNewExpr)
-			WriteNew(((CiNewExpr) expr).ArrayStorageType);
+			WriteNew(((CiNewExpr) expr).NewType);
 		else if (expr is CiCoercion)
 			Write((CiCoercion) expr);
 		else

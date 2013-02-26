@@ -217,6 +217,8 @@ translates to Java as follows:
 final MyObject foo = new MyObject();
 -------------------
 
+`new C()` allocates new instance of class `C` and returns pointer to it. Should you use translate it to C (programming language, no pun intented), `delete` the allocated object some time later.
+
 
 Delegates
 ~~~~~~~~~

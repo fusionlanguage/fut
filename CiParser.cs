@@ -216,10 +216,10 @@ public partial class CiParser : CiLexer
 			}
 		}
 		else if (Eat(CiToken.New)) {
-			CiArrayStorageType arrayStorageType = ParseType() as CiArrayStorageType;
-			if (arrayStorageType == null)
-				throw new ParseException("'new' can only create arrays");
-			result = new CiNewExpr { ArrayStorageType = arrayStorageType };
+			CiType newType = ParseType();
+			if (!(newType is CiClassStorageType || newType is CiArrayStorageType))
+				throw new ParseException("'new' syntax error");
+			result = new CiNewExpr { NewType = newType };
 		}
 		else
 			throw new ParseException("Invalid expression");

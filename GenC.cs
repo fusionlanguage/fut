@@ -412,15 +412,23 @@ public class GenC : SourceGenerator
 		}
 	}
 
-	protected override void WriteNew(CiArrayStorageType type)
+	protected override void WriteNew(CiType type)
 	{
-		Write('(');
-		Write(type.ElementType, "*");
-		Write(") malloc(");
-		WriteChild(3, type.LengthExpr);
-		Write(" * sizeof(");
-		Write(type.ElementType, string.Empty);
-		Write("))");
+		CiClassStorageType classType = type as CiClassStorageType;
+		if (classType != null) {
+			Write(classType.Class.Name);
+			Write("_New()");
+		}
+		else {
+			CiArrayStorageType arrayType = (CiArrayStorageType) type;
+			Write('(');
+			Write(arrayType.ElementType, "*");
+			Write(") malloc(");
+			WriteChild(3, arrayType.LengthExpr);
+			Write(" * sizeof(");
+			Write(arrayType.ElementType, string.Empty);
+			Write("))");
+		}
 	}
 
 	protected override void Write(CiCoercion expr)
@@ -762,6 +770,31 @@ public class GenC : SourceGenerator
 		}
 	}
 
+	void WriteNew(CiClass klass)
+	{
+		WriteNewSignature(klass);
+		WriteLine();
+		OpenBlock();
+		Write(klass.Name);
+		Write(" *self = (");
+		Write(klass.Name);
+		Write(" *) malloc(sizeof(");
+		Write(klass.Name);
+		WriteLine("));");
+		if (klass.Constructs) {
+			WriteLine("if (self != NULL)");
+			this.Indent++;
+			Write(klass.Name);
+			Write("_Construct(self");
+			if (HasVirtualMethods(klass))
+				Write(", NULL");
+			WriteLine(");");
+			this.Indent--;
+		}
+		WriteLine("return self;");
+		CloseBlock();
+	}
+
 	void WriteConstructorNewDelete(CiClass klass)
 	{
 		if (klass.Constructs) {
@@ -814,27 +847,7 @@ public class GenC : SourceGenerator
 		}
 		if (klass.Visibility == CiVisibility.Public) {
 			WriteLine();
-			WriteNewSignature(klass);
-			WriteLine();
-			OpenBlock();
-			Write(klass.Name);
-			Write(" *self = (");
-			Write(klass.Name);
-			Write(" *) malloc(sizeof(");
-			Write(klass.Name);
-			WriteLine("));");
-			if (klass.Constructs) {
-				WriteLine("if (self != NULL)");
-				this.Indent++;
-				Write(klass.Name);
-				Write("_Construct(self");
-				if (HasVirtualMethods(klass))
-					Write(", NULL");
-				WriteLine(");");
-				this.Indent--;
-			}
-			WriteLine("return self;");
-			CloseBlock();
+			WriteNew(klass);
 
 			WriteLine();
 			WriteDeleteSignature(klass);
@@ -842,6 +855,11 @@ public class GenC : SourceGenerator
 			OpenBlock();
 			WriteLine("free(self);");
 			CloseBlock();
+		}
+		else if (klass.IsAllocated) {
+			WriteLine();
+			Write("static ");
+			WriteNew(klass);
 		}
 	}
 

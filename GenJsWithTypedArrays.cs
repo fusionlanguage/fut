@@ -22,28 +22,32 @@ namespace Foxoft.Ci
 
 public class GenJsWithTypedArrays : GenJs
 {
-	protected override void WriteNew(CiArrayStorageType type)
+	protected override void WriteNew(CiType type)
 	{
-		if (type.ElementType == CiByteType.Value) {
-			Write("new Uint8Array(new ArrayBuffer(");
-			if (type.LengthExpr != null)
-				Write(type.LengthExpr);
-			else
-				Write(type.Length);
-			Write("))");
-		}
-		else if (type.ElementType == CiIntType.Value) {
-			Write("new Int32Array(new ArrayBuffer(");
-			if (type.LengthExpr != null) {
-				WriteChild(5, type.LengthExpr);
-				Write(" << 2");
+		CiArrayStorageType arrayType = type as CiArrayStorageType;
+		if (arrayType != null) {
+			if (arrayType.ElementType == CiByteType.Value) {
+				Write("new Uint8Array(new ArrayBuffer(");
+				if (arrayType.LengthExpr != null)
+					Write(arrayType.LengthExpr);
+				else
+					Write(arrayType.Length);
+				Write("))");
+				return;
 			}
-			else
-				Write(type.Length << 2);
-			Write("))");
+			if (arrayType.ElementType == CiIntType.Value) {
+				Write("new Int32Array(new ArrayBuffer(");
+				if (arrayType.LengthExpr != null) {
+					WriteChild(5, arrayType.LengthExpr);
+					Write(" << 2");
+				}
+				else
+					Write(arrayType.Length << 2);
+				Write("))");
+				return;
+			}
 		}
-		else
-			base.WriteNew(type);
+		base.WriteNew(type);
 	}
 
 	protected override void WriteInitArrayStorageVar(CiVar stmt)

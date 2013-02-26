@@ -618,8 +618,8 @@ public class CiBinaryResourceExpr : CiExpr
 
 public class CiNewExpr : CiExpr
 {
-	public CiArrayStorageType ArrayStorageType;
-	public override CiType Type { get { return this.ArrayStorageType.Ptr; } }
+	public CiType NewType;
+	public override CiType Type { get { return this.NewType.Ptr; } }
 	public override bool HasSideEffect { get { return true; } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
@@ -800,6 +800,7 @@ public class CiClass : CiSymbol
 	public CiWriteStatus WriteStatus; // C, JS only
 	public bool HasFields; // C only
 	public bool Constructs; // C only
+	public bool IsAllocated; // C only
 	public override void Accept(ICiSymbolVisitor v) { v.Visit(this); }
 }
 

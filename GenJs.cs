@@ -59,29 +59,30 @@ public class GenJs : SourceGenerator
 		CloseBlock();
 	}
 
-	protected override void WriteNew(CiArrayStorageType type)
+	protected override void WriteNew(CiType type)
 	{
-		Write("new Array(");
-		if (type.LengthExpr != null)
-			Write(type.LengthExpr);
-		else
-			Write(type.Length);
-		Write(')');
+		CiClassStorageType classType = type as CiClassStorageType;
+		if (classType != null) {
+			Write("new ");
+			Write(classType.Class.Name);
+			Write("()");
+		}
+		else {
+			CiArrayStorageType arrayType = (CiArrayStorageType) type;
+			Write("new Array(");
+			if (arrayType.LengthExpr != null)
+				Write(arrayType.LengthExpr);
+			else
+				Write(arrayType.Length);
+			Write(')');
+		}
 	}
 
 	bool WriteInit(CiType type)
 	{
-		CiClassStorageType classType = type as CiClassStorageType;
-		if (classType != null) {
-			Write(" = new ");
-			Write(classType.Class.Name);
-			Write("()");
-			return true;
-		}
-		CiArrayStorageType arrayType = type as CiArrayStorageType;
-		if (arrayType != null) {
+		if (type is CiClassStorageType || type is CiArrayStorageType) {
 			Write(" = ");
-			WriteNew(arrayType);
+			WriteNew(type);
 			return true;
 		}
 		return false;

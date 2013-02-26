@@ -110,17 +110,9 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 
 	bool WriteInit(CiType type)
 	{
-		CiClassStorageType classType = type as CiClassStorageType;
-		if (classType != null) {
-			Write(" = new ");
-			Write(classType.Class.Name);
-			Write("()");
-			return true;
-		}
-		CiArrayStorageType arrayType = type as CiArrayStorageType;
-		if (arrayType != null) {
+		if (type is CiClassStorageType || type is CiArrayStorageType) {
 			Write(" = ");
-			WriteNew(arrayType);
+			WriteNew(type);
 			return true;
 		}
 		return false;
@@ -335,11 +327,20 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			base.Write(expr);
 	}
 
-	protected override void WriteNew(CiArrayStorageType type)
+	protected override void WriteNew(CiType type)
 	{
-		Write("new ");
-		WriteBaseType(type.BaseType);
-		WriteInitializer(type);
+		CiClassStorageType classType = type as CiClassStorageType;
+		if (classType != null) {
+			Write("new ");
+			Write(classType.Class.Name);
+			Write("()");
+		}
+		else {
+			CiArrayStorageType arrayType = (CiArrayStorageType) type;
+			Write("new ");
+			WriteBaseType(arrayType.BaseType);
+			WriteInitializer(arrayType);
+		}
 	}
 
 	protected override void Write(CiCoercion expr)

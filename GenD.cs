@@ -214,16 +214,9 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 
 	bool WriteInit(CiType type)
 	{
-		CiClassStorageType classType = type as CiClassStorageType;
-		if (classType != null) {
-			Write(" = new ");
-			Write(classType.Class.Name);
-			return true;
-		}
-		CiArrayStorageType arrayType = type as CiArrayStorageType;
-		if (arrayType != null) {
+		if (type is CiClassStorageType || type is CiArrayStorageType) {
 			Write(" = ");
-			WriteNew(arrayType);
+			WriteNew(type);
 			return true;
 		}
 		return false;
@@ -347,11 +340,13 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 			base.Write(expr);
 	}
 
-	protected override void WriteNew(CiArrayStorageType type)
+	protected override void WriteNew(CiType type)
 	{
 		Write("new ");
 		WriteBaseType(type.BaseType);
-		WriteInitializer(type);
+		CiArrayStorageType arrayType = type as CiArrayStorageType;
+		if (arrayType != null)
+			WriteInitializer(arrayType);
 	}
 
 	protected override void Write(CiCoercion expr)

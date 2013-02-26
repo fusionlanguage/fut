@@ -703,9 +703,17 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 
 	CiExpr ICiExprVisitor.Visit(CiNewExpr expr)
 	{
-		CiArrayStorageType type = expr.ArrayStorageType;
-		type.ElementType = Resolve(type.ElementType);
-		type.LengthExpr = Coerce(Resolve(type.LengthExpr), CiIntType.Value);
+		CiType type = expr.NewType;
+		CiClassStorageType classStorageType = type as CiClassStorageType;
+		if (classStorageType != null) {
+			classStorageType.Class = ResolveClass(classStorageType.Class);
+			classStorageType.Class.IsAllocated = true;
+		}
+		else {
+			CiArrayStorageType arrayStorageType = (CiArrayStorageType) type;
+			arrayStorageType.ElementType = Resolve(arrayStorageType.ElementType);
+			arrayStorageType.LengthExpr = Coerce(Resolve(arrayStorageType.LengthExpr), CiIntType.Value);
+		}
 		return expr;
 	}
 
@@ -802,12 +810,12 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 	void ICiStatementVisitor.Visit(CiDelete statement)
 	{
 		statement.Expr = Resolve(statement.Expr);
-		CiArrayPtrType arrayPtrType = statement.Expr.Type as CiArrayPtrType;
-		if (arrayPtrType == null)
-			throw new ResolveException("'delete' takes an array pointer");
+		ICiPtrType type = statement.Expr.Type as ICiPtrType;
+		if (type == null)
+			throw new ResolveException("'delete' takes a class or array pointer");
 		if (statement.Expr.HasSideEffect)
 			throw new ResolveException("Side effects not allowed in 'delete'");
-		this.WritablePtrTypes.Add(arrayPtrType);
+		this.WritablePtrTypes.Add(type);
 	}
 
 	void ICiStatementVisitor.Visit(CiBreak statement)
