@@ -332,7 +332,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 	{
 		CiClassStorageType classType = type as CiClassStorageType;
 		if (classType != null) {
-			Write(" = new ");
+			Write("new ");
 			Write(classType.Class.Name);
 			Write("()");
 		}
