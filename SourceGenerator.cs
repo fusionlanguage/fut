@@ -729,12 +729,17 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		WriteChild(stmt.Body);
 	}
 
+	protected virtual void WriteIfOnTrue(CiIf stmt)
+	{
+		WriteChild(stmt.OnTrue);
+	}
+
 	void ICiStatementVisitor.Visit(CiIf stmt)
 	{
 		Write("if (");
 		Write(stmt.Cond);
 		Write(')');
-		WriteChild(stmt.OnTrue);
+		WriteIfOnTrue(stmt);
 		if (stmt.OnFalse != null) {
 			Write("else");
 			if (stmt.OnFalse is CiIf) {

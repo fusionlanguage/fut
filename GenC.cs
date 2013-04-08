@@ -656,6 +656,31 @@ public class GenC : SourceGenerator
 		}
 	}
 
+	protected override void WriteIfOnTrue(CiIf stmt)
+	{
+		if (stmt.OnFalse != null) {
+			// avoid:
+			// if (c)
+			//    stmtThatThrows; // -> if (method() == ERROR_VALUE) return ERROR_VALUE;
+			// else // mismatched if
+			//    stmt;
+			CiMethodCall call;
+			CiAssign assign = stmt.OnTrue as CiAssign;
+			if (assign != null)
+				call = assign.Source as CiMethodCall;
+			else
+				call = stmt.OnTrue as CiMethodCall;
+			if (call != null && call.Method != null && call.Method.Throws) {
+				Write(' ');
+				OpenBlock();
+				base.WriteIfOnTrue(stmt);
+				CloseBlock();
+				return;
+			}
+		}
+		base.WriteIfOnTrue(stmt);
+	}
+
 	void WriteReturnTrue()
 	{
 		Write("return ");
