@@ -2,7 +2,7 @@
 ======================
 
 ifdef::www[]
-http://sourceforge.net/projects/cito/files/[Download] |
+http://sourceforge.net/projects/cito/files/cito/[Download] |
 http://sourceforge.net/p/cito/code[Browse source code (Git)] |
 http://sourceforge.net/projects/cito/[SourceForge project page]
 endif::www[]
