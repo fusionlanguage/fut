@@ -1,7 +1,7 @@
 ﻿The Ć Programming Language
 ==========================
 
-Ć is a programming language which can be automatically translated to C, Java, C#, JavaScript, ActionScript and http://dlang.org/[D]. The translator is called `cito`.
+Ć is a programming language which can be automatically translated to C, Java, C#, JavaScript, ActionScript, Perl and http://dlang.org/[D]. The translator is called `cito`.
 
 Ć is useful for writing 'very' portable programming 'libraries'. The idea is that you should be able to write code once and run it anywhere: on a desktop computer, on a smartphone, in your web browser. Yet the situation is as follows:
 

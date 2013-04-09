@@ -30,6 +30,7 @@ check: $(srcdir)hello.ci cito.exe
 	$(MONO) ./cito.exe -o hello.js $<
 	$(MONO) ./cito.exe -o HelloCi.as $<
 	$(MONO) ./cito.exe -o hello.d $<
+	$(MONO) ./cito.exe -o hello.pm $<
 
 install: install-cito install-cipad
 
@@ -64,7 +65,7 @@ index.html: $(srcdir)README
 	$(call ASCIIDOC,-a www)
 
 clean:
-	$(RM) cito.exe cipad.exe hello.c hello.h hello99.c hello99.h HelloCi.java hello.cs hello.js HelloCi.as hello.d index.html
+	$(RM) cito.exe cipad.exe hello.c hello.h hello99.c hello99.h HelloCi.java hello.cs hello.js HelloCi.as hello.d hello.pm index.html
 
 dist: ../cito-$(VERSION)-bin.zip srcdist
 

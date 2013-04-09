@@ -159,8 +159,11 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 				Write('$');
 				WriteName(ca.Const);
 			}
-			else
+			else {
+				if (expr.Array is CiBinaryResourceExpr)
+					Write('$');
 				WriteChild(expr, expr.Array);
+			}
 		}
 		Write('[');
 		Write(expr.Index);
@@ -169,6 +172,9 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 
 	void WriteSlice(CiExpr array, CiExpr index, CiExpr lenMinus1)
 	{
+		CiCoercion coercion = array as CiCoercion;
+		if (coercion != null)
+			array = (CiExpr) coercion.Inner; // FIXME: assign
 		Write(array);
 		Write('[');
 		Write(index);
@@ -239,22 +245,69 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 		}
 	}
 
+	void WriteDefined(CiExpr expr)
+	{
+		Write("defined(");
+		Write(expr);
+		Write(')');
+	}
+
 	protected override void Write(CiBinaryExpr expr)
 	{
-		if (expr.Op == CiToken.Slash) {
+		switch (expr.Op) {
+		case CiToken.Equal:
+		case CiToken.NotEqual:
+			if (expr.Left.IsConst(null)) {
+				// null != thing -> defined(thing)
+				// null == thing -> !defined(thing)
+				if (expr.Op == CiToken.Equal)
+					Write('!');
+				WriteDefined(expr.Right);
+			}
+			else if (expr.Right.IsConst(null)) {
+				// thing != null -> defined(thing)
+				// thing == null -> !defined(thing)
+				if (expr.Op == CiToken.Equal)
+					Write('!');
+				WriteDefined(expr.Left);
+			}
+			else if (expr.Left.Type is CiStringType) {
+				WriteChild(expr, expr.Left);
+				Write(expr.Op == CiToken.Equal ? " eq " : " ne ");
+				WriteChild(expr, expr.Right);
+			}
+			else
+				base.Write(expr);
+			break;
+		case CiToken.Slash:
 			Write("int(");
 			WriteChild(3, expr.Left);
 			Write(" / ");
 			WriteNonAssocChild(3, expr.Right);
 			Write(')');
-		}
-		else
+			break;
+		default:
 			base.Write(expr);
+			break;
+		}
+	}
+
+	protected override void Write(CiBinaryResourceExpr expr)
+	{
+		Write('@');
+		WriteName(expr.Resource);
 	}
 
 	protected override void WriteNew(CiType type)
 	{
-		// TODO
+		CiClassStorageType classType = type as CiClassStorageType;
+		if (classType != null) {
+			Write(this.Package);
+			Write(classType.Class.Name);
+			Write("->new()");
+		}
+		else
+			Write("[]"); // new array reference
 	}
 
 	protected override void Write(CiCoercion expr)
