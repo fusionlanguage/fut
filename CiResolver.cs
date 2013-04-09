@@ -192,7 +192,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 				return expr;
 			CiArrayType gotArray = got as CiArrayType;
 			if (got != null && ((CiArrayPtrType) expected).ElementType.Equals(gotArray.ElementType))
-				return expr;
+				return new CiCoercion { ResultType = expected, Inner = expr };
 		}
 		throw new ResolveException("Expected {0}, got {1}", expected, got);
 	}

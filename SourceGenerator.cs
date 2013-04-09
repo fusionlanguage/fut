@@ -94,6 +94,22 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		}
 	}
 
+	protected void WriteLowercaseWithUnderscores(string s)
+	{
+		StartLine();
+		bool first = true;
+		foreach (char c in s) {
+			if (char.IsUpper(c)) {
+				if (!first)
+					this.Writer.Write('_');
+				this.Writer.Write(char.ToLowerInvariant(c));
+			}
+			else
+				this.Writer.Write(c);
+			first = false;
+		}
+	}
+
 	protected void WriteLine()
 	{
 		this.Writer.WriteLine();
@@ -393,6 +409,11 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		WriteNonAssocChild(GetPriority(parent), child);
 	}
 
+	protected void WriteSum(CiExpr left, CiExpr right)
+	{
+		Write(new CiBinaryExpr { Left = left, Op = CiToken.Plus, Right = right });
+	}
+
 	protected virtual void WriteName(CiConst konst)
 	{
 		Write(konst.GlobalName ?? konst.Name);
@@ -412,7 +433,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 
 	protected abstract void Write(CiPropertyAccess expr);
 
-	void Write(CiArrayAccess expr)
+	protected virtual void Write(CiArrayAccess expr)
 	{
 		WriteChild(expr, expr.Array);
 		Write('[');
@@ -440,6 +461,21 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		Write(')');
 	}
 
+	protected void WriteArguments(CiMethodCall expr)
+	{
+		Write('(');
+		bool first = true;
+		foreach (CiExpr arg in expr.Arguments)
+		{
+			if (first)
+				first = false;
+			else
+				Write(", ");
+			Write(arg);
+		}
+		Write(')');
+	}
+
 	protected virtual void Write(CiMethodCall expr)
 	{
 		if (expr.Method != null) {
@@ -452,17 +488,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		}
 		else
 			WriteDelegateCall(expr.Obj);
-		Write('(');
-		bool first = true;
-		foreach (CiExpr arg in expr.Arguments)
-		{
-			if (first)
-				first = false;
-			else
-				Write(", ");
-			Write(arg);
-		}
-		Write(')');
+		WriteArguments(expr);
 	}
 
 	void Write(CiUnaryExpr expr)
@@ -641,7 +667,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		CloseBlock();
 	}
 
-	protected void WriteChild(ICiStatement stmt)
+	protected virtual void WriteChild(ICiStatement stmt)
 	{
 		if (stmt is CiBlock) {
 			Write(' ');
@@ -687,7 +713,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		// do nothing - assume automatic garbage collector
 	}
 
-	void ICiStatementVisitor.Visit(CiBreak stmt)
+	public virtual void Visit(CiBreak stmt)
 	{
 		WriteLine("break;");
 	}
@@ -696,7 +722,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 	{
 	}
 
-	void ICiStatementVisitor.Visit(CiContinue stmt)
+	public virtual void Visit(CiContinue stmt)
 	{
 		WriteLine("continue;");
 	}
@@ -734,7 +760,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		WriteChild(stmt.OnTrue);
 	}
 
-	void ICiStatementVisitor.Visit(CiIf stmt)
+	public virtual void Visit(CiIf stmt)
 	{
 		Write("if (");
 		Write(stmt.Cond);

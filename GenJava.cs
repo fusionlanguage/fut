@@ -243,7 +243,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 				Write(".substring(");
 				Write(expr.Arguments[0]);
 				Write(", ");
-				Write(new CiBinaryExpr { Left = expr.Arguments[0], Op = CiToken.Plus, Right = expr.Arguments[1] });
+				WriteSum(expr.Arguments[0], expr.Arguments[1]);
 				Write(')');
 			}
 		}

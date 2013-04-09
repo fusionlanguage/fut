@@ -1,6 +1,6 @@
 // CiTo.cs - Ci translator
 //
-// Copyright (C) 2011-2012  Piotr Fusik
+// Copyright (C) 2011-2013  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -47,8 +47,9 @@ public sealed class CiTo
 		Console.WriteLine("-l js-ta   Translate to JavaScript with Typed Arrays");
 		Console.WriteLine("-l as      Translate to ActionScript 3");
 		Console.WriteLine("-l d       Translate to D");
+		Console.WriteLine("-l pm      Translate to Perl 5 Module");
 		Console.WriteLine("-o FILE    Write to the specified file");
-		Console.WriteLine("-n NAME    Specify C# namespace or Java/ActionScript package");
+		Console.WriteLine("-n NAME    Specify C# namespace or Java/ActionScript/Perl package");
 		Console.WriteLine("-D NAME    Define conditional compilation symbol");
 		Console.WriteLine("-I DIR     Add directory to BinaryResource search path");
 		Console.WriteLine("--help     Display this information");
@@ -152,6 +153,7 @@ public sealed class CiTo
 		case "js-ta": gen = new GenJsWithTypedArrays(); break;
 		case "as": gen = new GenAs(namespace_); break;
 		case "d": gen = new GenD(); break;
+		case "pm": gen = new GenPerl5(namespace_); break;
 		default: throw new ArgumentException("Unknown language: " + lang);
 		}
 		gen.OutputFile = outputFile;

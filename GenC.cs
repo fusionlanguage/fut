@@ -241,11 +241,6 @@ public class GenC : SourceGenerator
 		Write("))");
 	}
 
-	void WriteSum(CiExpr left, CiExpr right)
-	{
-		Write(new CiBinaryExpr { Left = left, Op = CiToken.Plus, Right = right });
-	}
-
 	protected override void Write(CiMethodCall expr)
 	{
 		if (expr.Method == CiLibrary.MulDivMethod) {

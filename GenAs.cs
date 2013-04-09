@@ -513,9 +513,8 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 
 	public override void Write(CiProgram prog)
 	{
-		foreach (CiSymbol symbol in prog.Globals) {
+		foreach (CiSymbol symbol in prog.Globals)
 			symbol.Accept(this);
-		}
 	}
 }
 
