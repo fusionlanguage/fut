@@ -809,7 +809,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 	{
 	}
 
-	void ICiStatementVisitor.Visit(CiSwitch stmt)
+	public virtual void Visit(CiSwitch stmt)
 	{
 		Write("switch (");
 		Write(stmt.Value);

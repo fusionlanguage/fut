@@ -318,6 +318,50 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 		}
 	}
 
+	public override void Visit(CiSwitch stmt)
+	{
+		bool tmpVar = stmt.Value.HasSideEffect;
+		if (tmpVar) {
+			OpenBlock();
+			Write("my $CISWITCH = ");
+			Write(stmt.Value);
+			WriteLine(";");
+		}
+		for (int i = 0; i < stmt.Cases.Length; i++) {
+			CiCase kase = stmt.Cases[i];
+			if (kase.Value != null) {
+				if (i > 0)
+					Write("els");
+				Write("if (");
+				for (;;) {
+					if (tmpVar)
+						Write("$CISWITCH");
+					else
+						WriteChild(7, stmt.Value);
+					Write(" == ");
+					WriteConst(kase.Value);
+					if (kase.Body.Length > 0 || i + 1 >= stmt.Cases.Length)
+						break;
+					Write(" || ");
+					// TODO: "case 5: default:"
+					// TODO: optimize ranges "case 1: case 2: case 3:"
+					kase = stmt.Cases[++i];
+				}
+				Write(") ");
+			}
+			else
+				Write("else "); // TODO: default that doesn't come last
+			OpenBlock();
+			int length = kase.Body.Length;
+			if (length > 0 && kase.Body[length - 1] is CiBreak)
+				length--;
+			Write(kase.Body, length); // TODO: handle premature break and fallthrough with gotos
+			CloseBlock();
+		}
+		if (tmpVar)
+			CloseBlock();
+	}
+
 	public override void Visit(CiThrow stmt)
 	{
 		Write("die ");
