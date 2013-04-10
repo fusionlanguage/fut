@@ -39,6 +39,7 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 
 	void WritePackage(CiSymbol symbol)
 	{
+		WriteLine();
 		Write("package ");
 		Write(this.Package);
 		Write(symbol.Name);
@@ -55,7 +56,6 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 			Write(i);
 			WriteLine(" }");
 		}
-		WriteLine();
 	}
 
 	protected override void WriteConst(object value)
@@ -85,6 +85,7 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 			Write(ev.Type.Name);
 			Write("::");
 			WriteUppercaseWithUnderscores(ev.Name);
+			Write("()");
 		}
 		else if (value is Array) {
 			Write("( ");
@@ -496,20 +497,6 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 			Write(klass.BaseClass.Name);
 			WriteLine(");");
 		}
-		WriteLine();
-		if (klass.Constructor != null) {
-			this.CurrentMethod = klass.Constructor;
-			Write("sub new($) ");
-			OpenBlock();
-			WriteLine("my $self = bless {}, shift;");
-			Write(klass.Constructor.Body.Statements);
-			WriteLine("return $self;"); // TODO: premature returns
-			CloseBlock();
-			WriteLine();
-			this.CurrentMethod = null;
-		}
-		foreach (CiSymbol member in klass.Members)
-			member.Accept(this);
 		foreach (CiConst konst in klass.ConstArrays) {
 			Write("our @");
 			WriteUppercaseWithUnderscores(konst.GlobalName);
@@ -525,6 +512,19 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 			WriteLine(";");
 		}
 		WriteLine();
+		if (klass.Constructor != null) {
+			this.CurrentMethod = klass.Constructor;
+			Write("sub new($) ");
+			OpenBlock();
+			WriteLine("my $self = bless {}, shift;");
+			Write(klass.Constructor.Body.Statements);
+			WriteLine("return $self;"); // TODO: premature returns
+			CloseBlock();
+			WriteLine();
+			this.CurrentMethod = null;
+		}
+		foreach (CiSymbol member in klass.Members)
+			member.Accept(this);
 	}
 
 	void ICiSymbolVisitor.Visit(CiDelegate del)
@@ -534,6 +534,7 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 	public override void Write(CiProgram prog)
 	{
 		CreateFile(this.OutputFile);
+		WriteLine("use strict;");
 		foreach (CiSymbol symbol in prog.Globals)
 			symbol.Accept(this);
 		WriteLine("1;");
