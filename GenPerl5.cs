@@ -386,6 +386,17 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 		}
 	}
 
+	public override void Visit(CiAssign assign)
+	{
+		if (assign.Op == CiToken.AddAssign && assign.Target.Type is CiStringStorageType) {
+			Write(assign.Target);
+			Write(" .= ");
+			WriteInline(assign.Source);
+		}
+		else
+			base.Visit(assign);
+	}
+
 	public override void Visit(CiSwitch stmt)
 	{
 		bool tmpVar = stmt.Value.HasSideEffect;
