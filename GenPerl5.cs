@@ -18,6 +18,8 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Foxoft.Ci
 {
@@ -376,14 +378,9 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 			else
 				Write(stmt.InitialValue);
 		}
-		else {
-			CiClassStorageType classType = stmt.Type as CiClassStorageType;
-			if (classType != null) {
-				Write(" = ");
-				Write(this.Package);
-				Write(classType.Class.Name);
-				Write("->new()");
-			}
+		else if (stmt.Type is CiClassStorageType) {
+			Write(" = ");
+			WriteNew(stmt.Type);
 		}
 	}
 
@@ -488,6 +485,40 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 		this.CurrentMethod = null;
 	}
 
+	void WriteConstructor(CiClass klass)
+	{
+		// TODO: skip constructor if static methods only?
+
+		IEnumerable<CiField> classStorageFields = klass.Members
+			.OfType<CiField>().Where(field => field.Type is CiClassStorageType);
+		if (klass.Constructor == null && klass.BaseClass != null && !classStorageFields.Any()) {
+			// base constructor does the job
+			return;
+		}
+
+		Write("sub new($) ");
+		OpenBlock();
+		if (klass.BaseClass != null)
+			WriteLine("my $self = shift()->SUPER::new();");
+		else
+			WriteLine("my $self = bless {}, shift;");
+		foreach (CiField field in classStorageFields) {
+			Write("$self->{");
+			WriteLowercaseWithUnderscores(field.Name);
+			Write("} = ");
+			WriteNew(field.Type);
+			WriteLine(";");
+		}
+		if (klass.Constructor != null) {
+			this.CurrentMethod = klass.Constructor;
+			Write(klass.Constructor.Body.Statements);
+			this.CurrentMethod = null;
+		}
+		WriteLine("return $self;"); // TODO: premature returns
+		CloseBlock();
+		WriteLine();
+	}
+
 	void ICiSymbolVisitor.Visit(CiClass klass)
 	{
 		WritePackage(klass);
@@ -497,6 +528,7 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 			Write(klass.BaseClass.Name);
 			WriteLine(");");
 		}
+
 		foreach (CiConst konst in klass.ConstArrays) {
 			Write("our @");
 			WriteUppercaseWithUnderscores(konst.GlobalName);
@@ -512,17 +544,8 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 			WriteLine(";");
 		}
 		WriteLine();
-		if (klass.Constructor != null) {
-			this.CurrentMethod = klass.Constructor;
-			Write("sub new($) ");
-			OpenBlock();
-			WriteLine("my $self = bless {}, shift;");
-			Write(klass.Constructor.Body.Statements);
-			WriteLine("return $self;"); // TODO: premature returns
-			CloseBlock();
-			WriteLine();
-			this.CurrentMethod = null;
-		}
+
+		WriteConstructor(klass);
 		foreach (CiSymbol member in klass.Members)
 			member.Accept(this);
 	}
