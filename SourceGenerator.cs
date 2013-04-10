@@ -600,7 +600,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 
 	protected abstract void WriteNew(CiType type);
 
-	void WriteInline(CiMaybeAssign expr)
+	protected void WriteInline(CiMaybeAssign expr)
 	{
 		if (expr is CiExpr)
 			Write((CiExpr) expr);

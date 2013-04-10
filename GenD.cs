@@ -370,6 +370,17 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		}
 	}
 
+	public override void Visit(CiAssign assign)
+	{
+		if (assign.Op == CiToken.AddAssign && assign.Target.Type is CiStringStorageType) {
+			Write(assign.Target);
+			Write(" ~= ");
+			WriteInline(assign.Source);
+		}
+		else
+			base.Visit(assign);
+	}
+
 	protected override void EndCase(CiCase kase)
 	{
 		if (kase.Fallthrough) {
