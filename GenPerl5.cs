@@ -97,14 +97,6 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 			throw new ArgumentException(value.ToString());
 	}
 
-	void WriteName(CiVar v)
-	{
-		if (v == this.CurrentMethod.This)
-			Write("self");
-		else
-			Write(v.Name);
-	}
-
 	protected override void WriteName(CiConst konst)
 	{
 		WriteUppercaseWithUnderscores(konst.GlobalName ?? konst.Name);
@@ -112,8 +104,11 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 
 	protected override void Write(CiVarAccess expr)
 	{
-		Write(expr.Var.Type is CiArrayStorageType ? '@' : '$');
-		WriteName(expr.Var);
+		Write('$');
+		if (expr.Var == this.CurrentMethod.This)
+			Write("self");
+		else
+			Write(expr.Var.Name);
 	}
 
 	protected override void Write(CiFieldAccess expr)
@@ -146,36 +141,43 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 
 	protected override void Write(CiArrayAccess expr)
 	{
-		CiVarAccess va = expr.Array as CiVarAccess;
-		if (va != null) {
+		if (expr.Array is CiConstAccess || expr.Array is CiBinaryResourceExpr)
 			Write('$');
-			WriteName(va.Var);
-			if (va.Type is CiArrayPtrType)
-				Write("->");
-		}
-		else {
-			CiConstAccess ca = expr.Array as CiConstAccess;
-			if (ca != null) {
-				Write('$');
-				WriteName(ca.Const);
-			}
-			else {
-				if (expr.Array is CiBinaryResourceExpr)
-					Write('$');
-				WriteChild(expr, expr.Array);
-			}
-		}
+		WriteChild(expr, expr.Array);
+		if (expr.Array.Type is CiArrayPtrType)
+			Write("->");
 		Write('[');
 		Write(expr.Index);
 		Write(']');
 	}
 
+	bool WritePerlArray(string sigil, CiMaybeAssign expr)
+	{
+		bool isVar = expr is CiVarAccess;
+		if (isVar || expr is CiConstAccess || expr is CiBinaryResourceExpr) {
+			Write(sigil);
+			if (isVar)
+				Write(((CiVarAccess) expr).Var.Name);
+			else
+				Write((CiExpr) expr);
+			return true;
+		}
+		return false;
+	}
+
 	void WriteSlice(CiExpr array, CiExpr index, CiExpr lenMinus1)
 	{
-		CiCoercion coercion = array as CiCoercion;
-		if (coercion != null)
-			array = (CiExpr) coercion.Inner; // FIXME: assign
-		Write(array);
+		if (array is CiCoercion && WritePerlArray("@", ((CiCoercion) array).Inner)) {
+			// ok: @var, @const, @binaryResource
+		}
+		else if (array.Type is CiArrayStorageType && WritePerlArray("@", array)) {
+			// ok: @var, @const, @binaryResource
+		}
+		else {
+			Write("@{");
+			Write(array);
+			Write('}');
+		}
 		Write('[');
 		Write(index);
 		Write(" .. ");
@@ -212,14 +214,20 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 			WriteSlice(expr.Obj, expr.Arguments[0], lenMinus1);
 		}
 		else if (expr.Method == CiLibrary.ArrayToStringMethod) {
+			CiExpr lenMinus1 = new CiBinaryExpr { Left = expr.Arguments[1], Op = CiToken.Minus, Right = new CiConstExpr(1) };
 			Write("pack('U*', ");
-			Write(expr.Obj);
+			WriteSlice(expr.Obj, expr.Arguments[0], lenMinus1);
 			Write(')');
-			// TODO Write(expr.Arguments[0]);
-			// TODO Write(expr.Arguments[1]);
 		}
 		else if (expr.Method == CiLibrary.ArrayStorageClearMethod) {
-			Write(expr.Obj);
+			Write('@');
+			if (expr.Obj is CiVarAccess)
+				Write(((CiVarAccess) expr.Obj).Var.Name);
+			else {
+				Write('{');
+				Write(expr.Obj);
+				Write('}');
+			}
 			Write(" = (0) x ");
 			Write(((CiArrayStorageType) expr.Obj.Type).Length);
 		}
@@ -292,12 +300,6 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 		}
 	}
 
-	protected override void Write(CiBinaryResourceExpr expr)
-	{
-		Write('@');
-		WriteName(expr.Resource);
-	}
-
 	protected override void WriteNew(CiType type)
 	{
 		CiClassStorageType classType = type as CiClassStorageType;
@@ -312,9 +314,8 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 
 	protected override void Write(CiCoercion expr)
 	{
-		if (expr.ResultType is CiArrayPtrType) {
-			Write('\\');
-			WriteChild(expr, (CiExpr) expr.Inner); // TODO: Assign
+		if (expr.Inner.Type is CiArrayStorageType && WritePerlArray("\\@", expr.Inner)) {
+			// ok: \@var, \@const, \@binaryResource
 		}
 		else
 			base.Write(expr);
@@ -367,7 +368,21 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 		Write(stmt.Name);
 		if (stmt.InitialValue != null) {
 			Write(" = ");
-			Write(stmt.InitialValue);
+			if (stmt.Type is CiArrayStorageType) {
+				Write("(0) x ");
+				Write(((CiArrayStorageType) stmt.Type).Length);
+			}
+			else
+				Write(stmt.InitialValue);
+		}
+		else {
+			CiClassStorageType classType = stmt.Type as CiClassStorageType;
+			if (classType != null) {
+				Write(" = ");
+				Write(this.Package);
+				Write(classType.Class.Name);
+				Write("->new()");
+			}
 		}
 	}
 
