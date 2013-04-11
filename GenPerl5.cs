@@ -518,21 +518,23 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 			Write('$');
 		Write(") ");
 		OpenBlock();
-		Write("my (");
-		bool first = true;
-		if (method.CallType != CiCallType.Static) {
-			Write("$self");
-			first = false;
-		}
-		foreach (CiParam param in method.Signature.Params) {
-			if (first)
+		if (method.CallType != CiCallType.Static || method.Signature.Params.Length > 0) {
+			Write("my (");
+			bool first = true;
+			if (method.CallType != CiCallType.Static) {
+				Write("$self");
 				first = false;
-			else
-				Write(", ");
-			Write('$');
-			Write(param.Name);
+			}
+			foreach (CiParam param in method.Signature.Params) {
+				if (first)
+					first = false;
+				else
+					Write(", ");
+				Write('$');
+				Write(param.Name);
+			}
+			WriteLine(") = @_;");
 		}
-		WriteLine(") = @_;");
 		Write(method.Body.Statements);
 		CloseBlock();
 		WriteLine();
