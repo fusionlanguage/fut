@@ -48,18 +48,6 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 		WriteLine(";");
 	}
 
-	void ICiSymbolVisitor.Visit(CiEnum enu)
-	{
-		WritePackage(enu);
-		for (int i = 0; i < enu.Values.Length; i++) {
-			Write("sub ");
-			WriteUppercaseWithUnderscores(enu.Values[i].Name);
-			Write("() { ");
-			Write(i);
-			WriteLine(" }");
-		}
-	}
-
 	protected override void WriteConst(object value)
 	{
 		if (value is bool)
@@ -98,6 +86,30 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 			Write("undef");
 		else
 			throw new ArgumentException(value.ToString());
+	}
+
+	void WriteConst(string name, object value)
+	{
+		Write("sub ");
+		WriteUppercaseWithUnderscores(name);
+		Write("() { ");
+		WriteConst(value);
+		WriteLine(" }");
+	}
+
+	void ICiSymbolVisitor.Visit(CiEnum enu)
+	{
+		WritePackage(enu);
+		for (int i = 0; i < enu.Values.Length; i++)
+			WriteConst(enu.Values[i].Name, i);
+	}
+
+	public override void Visit(CiConst konst)
+	{
+		if (konst.Visibility == CiVisibility.Public) {
+			WriteConst(konst.Name, konst.Value);
+			WriteLine();
+		}
 	}
 
 	protected override void WriteName(CiConst konst)
