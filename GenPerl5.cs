@@ -57,18 +57,20 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 		else if (value is int)
 			Write((int) value);
 		else if (value is string) {
-			Write('\'');
+			Write('"');
 			foreach (char c in (string) value) {
 				switch (c) {
 				case '\t': Write("\\t"); break;
 				case '\r': Write("\\r"); break;
 				case '\n': Write("\\n"); break;
 				case '\\': Write("\\\\"); break;
-				case '\'': Write("\\\'"); break;
+				case '\"': Write("\\\""); break;
+				case '$': Write("\\$"); break;
+				case '@': Write("\\@"); break;
 				default: Write(c); break;
 				}
 			}
-			Write('\'');
+			Write('"');
 		}
 		else if (value is CiEnumValue) {
 			CiEnumValue ev = (CiEnumValue) value;
