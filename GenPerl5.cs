@@ -24,12 +24,12 @@ using System.Linq;
 namespace Foxoft.Ci
 {
 
-public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
+public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 {
 	string Package;
 	CiMethod CurrentMethod;
 
-	public GenPerl5(string package)
+	protected GenPerl5(string package)
 	{
 		this.Package = package == null ? string.Empty : package + "::";
 	}
@@ -324,27 +324,65 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 			base.Write(expr);
 	}
 
+	public override void Visit(CiBlock block)
+	{
+		// Avoid blocks, as they count as loops for last/next.
+		// At worst we'll get warning about duplicate "my" declarations.
+		Write(block.Statements);
+	}
+
 	protected override void WriteChild(ICiStatement stmt)
 	{
 		Write(' ');
 		OpenBlock();
-		CiBlock block = stmt as CiBlock;
-		if (block != null)
-			Write(block.Statements);
-		else
-			Write(stmt);
+		Write(stmt);
 		CloseBlock();
 	}
 
-	public override void Visit(CiBreak stmt)
+	public override void Visit(CiAssign assign)
 	{
-		// TODO: switch
-		WriteLine("last;");
+		if (assign.Op == CiToken.AddAssign && assign.Target.Type is CiStringStorageType) {
+			Write(assign.Target);
+			Write(" .= ");
+			WriteInline(assign.Source);
+		}
+		else
+			base.Visit(assign);
 	}
 
-	public override void Visit(CiContinue stmt)
+	public override abstract void Visit(CiBreak stmt);
+
+	public override abstract void Visit(CiContinue stmt);
+
+	protected static bool HasBreak(ICiStatement stmt)
 	{
-		WriteLine("next;");
+		// note: support stmt==null from ifStmt.OnFalse
+		if (stmt is CiBreak)
+			return true;
+		CiIf ifStmt = stmt as CiIf;
+		if (ifStmt != null)
+			return HasBreak(ifStmt.OnTrue) || HasBreak(ifStmt.OnFalse);
+		CiBlock block = stmt as CiBlock;
+		if (block != null)
+			return block.Statements.Any(s => HasBreak(s));
+		return false;
+	}
+
+	protected static bool HasContinue(ICiStatement stmt)
+	{
+		// note: support stmt==null from ifStmt.OnFalse
+		if (stmt is CiContinue)
+			return true;
+		CiIf ifStmt = stmt as CiIf;
+		if (ifStmt != null)
+			return HasContinue(ifStmt.OnTrue) || HasContinue(ifStmt.OnFalse);
+		CiBlock block = stmt as CiBlock;
+		if (block != null)
+			return block.Statements.Any(s => HasContinue(s));
+		CiSwitch switchStmt = stmt as CiSwitch;
+		if (switchStmt != null)
+			return switchStmt.Cases.Any(kase => kase.Body.Any(s => HasContinue(s)));
+		return false;
 	}
 
 	public override void Visit(CiIf stmt)
@@ -384,60 +422,15 @@ public class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 		}
 	}
 
-	public override void Visit(CiAssign assign)
+	protected static int BodyLengthWithoutLastBreak(CiCase kase)
 	{
-		if (assign.Op == CiToken.AddAssign && assign.Target.Type is CiStringStorageType) {
-			Write(assign.Target);
-			Write(" .= ");
-			WriteInline(assign.Source);
-		}
-		else
-			base.Visit(assign);
+		int length = kase.Body.Length;
+		if (length > 0 && kase.Body[length - 1] is CiBreak)
+			return length - 1;
+		return length;
 	}
 
-	public override void Visit(CiSwitch stmt)
-	{
-		bool tmpVar = stmt.Value.HasSideEffect;
-		if (tmpVar) {
-			OpenBlock();
-			Write("my $CISWITCH = ");
-			Write(stmt.Value);
-			WriteLine(";");
-		}
-		for (int i = 0; i < stmt.Cases.Length; i++) {
-			CiCase kase = stmt.Cases[i];
-			if (kase.Value != null) {
-				if (i > 0)
-					Write("els");
-				Write("if (");
-				for (;;) {
-					if (tmpVar)
-						Write("$CISWITCH");
-					else
-						WriteChild(7, stmt.Value);
-					Write(" == ");
-					WriteConst(kase.Value);
-					if (kase.Body.Length > 0 || i + 1 >= stmt.Cases.Length)
-						break;
-					Write(" || ");
-					// TODO: "case 5: default:"
-					// TODO: optimize ranges "case 1: case 2: case 3:"
-					kase = stmt.Cases[++i];
-				}
-				Write(") ");
-			}
-			else
-				Write("else "); // TODO: default that doesn't come last
-			OpenBlock();
-			int length = kase.Body.Length;
-			if (length > 0 && kase.Body[length - 1] is CiBreak)
-				length--;
-			Write(kase.Body, length); // TODO: handle premature break and fallthrough with gotos
-			CloseBlock();
-		}
-		if (tmpVar)
-			CloseBlock();
-	}
+	public override abstract void Visit(CiSwitch stmt);
 
 	public override void Visit(CiThrow stmt)
 	{

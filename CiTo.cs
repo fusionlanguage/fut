@@ -153,7 +153,7 @@ public sealed class CiTo
 		case "js-ta": gen = new GenJsWithTypedArrays(); break;
 		case "as": gen = new GenAs(namespace_); break;
 		case "d": gen = new GenD(); break;
-		case "pm": gen = new GenPerl5(namespace_); break;
+		case "pm": gen = new GenPerl58(namespace_); break;
 		default: throw new ArgumentException("Unknown language: " + lang);
 		}
 		gen.OutputFile = outputFile;

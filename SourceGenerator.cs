@@ -837,7 +837,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 
 	public abstract void Visit(CiThrow stmt);
 
-	void ICiStatementVisitor.Visit(CiWhile stmt)
+	public virtual void Visit(CiWhile stmt)
 	{
 		Write("while (");
 		Write(stmt.Cond);
