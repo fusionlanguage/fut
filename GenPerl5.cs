@@ -26,7 +26,7 @@ using System.Linq;
 namespace Foxoft.Ci
 {
 
-public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
+public abstract class GenPerl5 : SourceGenerator
 {
 	string Package;
 	CiMethod CurrentMethod;
@@ -101,19 +101,11 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 		WriteLine(" }");
 	}
 
-	void ICiSymbolVisitor.Visit(CiEnum enu)
+	void Write(CiEnum enu)
 	{
 		WritePackage(enu);
 		for (int i = 0; i < enu.Values.Length; i++)
 			WriteConst(enu.Values[i].Name, i);
-	}
-
-	public override void Visit(CiConst konst)
-	{
-		if (konst.Visibility == CiVisibility.Public) {
-			WriteConst(konst.Name, konst.Value);
-			WriteLine();
-		}
 	}
 
 	protected override void WriteName(CiConst konst)
@@ -526,11 +518,7 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 		WriteLine(";");
 	}
 
-	void ICiSymbolVisitor.Visit(CiField field)
-	{
-	}
-
-	void ICiSymbolVisitor.Visit(CiMethod method)
+	void Write(CiMethod method)
 	{
 		if (method.CallType == CiCallType.Abstract)
 			return;
@@ -601,7 +589,7 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 		WriteLine();
 	}
 
-	void ICiSymbolVisitor.Visit(CiClass klass)
+	void Write(CiClass klass)
 	{
 		WritePackage(klass);
 		if (klass.BaseClass != null) {
@@ -611,6 +599,13 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 			WriteLine("';");
 		}
 
+		foreach (CiSymbol member in klass.Members) {
+			if (member.Visibility == CiVisibility.Public) {
+				CiConst konst = member as CiConst;
+				if (konst != null)
+					WriteConst(konst.Name, konst.Value);
+			}
+		}
 		foreach (CiConst konst in klass.ConstArrays) {
 			Write("our @");
 			WriteUppercaseWithUnderscores(konst.GlobalName);
@@ -629,11 +624,8 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 
 		WriteConstructor(klass);
 		foreach (CiSymbol member in klass.Members)
-			member.Accept(this);
-	}
-
-	void ICiSymbolVisitor.Visit(CiDelegate del)
-	{
+			if (member is CiMethod)
+				Write((CiMethod) member);
 	}
 
 	protected virtual void WritePragmas(CiProgram prog)
@@ -643,13 +635,21 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 	public override void Write(CiProgram prog)
 	{
 		CreateFile(this.OutputFile);
+		WritePragmas(prog);
 #if USE_INTEGER
 		WriteLine("use integer;");
 #endif
-		WritePragmas(prog);
 		WriteLine("use strict;");
+
+		// Write enums first, otherwise
+		// given (foo) { when (Enum::VALUE()) { ... } }
+		// won't work as expected.
 		foreach (CiSymbol symbol in prog.Globals)
-			symbol.Accept(this);
+			if (symbol is CiEnum)
+				Write((CiEnum) symbol);
+		foreach (CiSymbol symbol in prog.Globals)
+			if (symbol is CiClass)
+				Write((CiClass) symbol);
 		WriteLine("1;");
 		CloseFile();
 	}
