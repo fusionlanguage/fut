@@ -350,7 +350,15 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 			base.Visit(assign);
 	}
 
-	public override abstract void Visit(CiBreak stmt);
+	protected bool BreakDoWhile = false;
+
+	public override void Visit(CiBreak stmt)
+	{
+		if (this.BreakDoWhile)
+			WriteLine("last DOWHILE;");
+		else
+			WriteLine("last;");
+	}
 
 	public override abstract void Visit(CiContinue stmt);
 
@@ -383,6 +391,59 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 		if (switchStmt != null)
 			return switchStmt.Cases.Any(kase => kase.Body.Any(s => HasContinue(s)));
 		return false;
+	}
+
+	protected virtual void WriteLoopLabel(CiLoop stmt)
+	{
+	}
+
+	public override void Visit(CiDoWhile stmt)
+	{
+		bool hasBreak = HasBreak(stmt.Body);
+		bool hasContinue = HasContinue(stmt.Body);
+		bool oldBreakDoWhile = this.BreakDoWhile;
+		if (hasBreak) {
+			if (hasContinue) {
+				this.BreakDoWhile = true;
+				Write("DOWHILE: ");
+			}
+			OpenBlock();
+		}
+		Write("do");
+		if (hasContinue) {
+			Write(' ');
+			OpenBlock();
+			WriteLoopLabel(stmt);
+			WriteChild(stmt.Body);
+			CloseBlock();
+		}
+		else
+			WriteChild(stmt.Body);
+		Write("while ");
+		Write(stmt.Cond);
+		WriteLine(";");
+		if (hasBreak) {
+			this.BreakDoWhile = oldBreakDoWhile;
+			CloseBlock();
+		}
+	}
+
+	public override void Visit(CiFor stmt)
+	{
+		bool oldBreakDoWhile = this.BreakDoWhile;
+		this.BreakDoWhile = false;
+		WriteLoopLabel(stmt);
+		base.Visit(stmt);
+		this.BreakDoWhile = oldBreakDoWhile;
+	}
+
+	public override void Visit(CiWhile stmt)
+	{
+		bool oldBreakDoWhile = this.BreakDoWhile;
+		this.BreakDoWhile = false;
+		WriteLoopLabel(stmt);
+		base.Visit(stmt);
+		this.BreakDoWhile = oldBreakDoWhile;
 	}
 
 	public override void Visit(CiIf stmt)

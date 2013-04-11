@@ -727,7 +727,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		WriteLine("continue;");
 	}
 
-	void ICiStatementVisitor.Visit(CiDoWhile stmt)
+	public virtual void Visit(CiDoWhile stmt)
 	{
 		Write("do");
 		WriteChild(stmt.Body);

@@ -32,11 +32,6 @@ public class GenPerl58 : GenPerl5
 
 	bool InEarlyBreakSwitch = false;
 
-	public override void Visit(CiBreak stmt)
-	{
-		WriteLine("last;");
-	}
-
 	public override void Visit(CiContinue stmt)
 	{
 		if (this.InEarlyBreakSwitch)
@@ -70,26 +65,16 @@ public class GenPerl58 : GenPerl5
 		return false;
 	}
 
-	void WriteLoopLabel(CiLoop stmt)
+	protected override void WriteLoopLabel(CiLoop stmt)
 	{
 		if (HasSwitchContinueAndEarlyBreak(stmt.Body))
 			Write("LOOP: ");
 	}
 
-	public override void Visit(CiFor stmt)
-	{
-		WriteLoopLabel(stmt);
-		base.Visit(stmt);
-	}
-
-	public override void Visit(CiWhile stmt)
-	{
-		WriteLoopLabel(stmt);
-		base.Visit(stmt);
-	}
-
 	public override void Visit(CiSwitch stmt)
 	{
+		bool oldBreakDoWhile = this.BreakDoWhile;
+		this.BreakDoWhile = false;
 		bool hasEarlyBreak = HasEarlyBreak(stmt);
 		bool oldInEarlyBreakSwitch = this.InEarlyBreakSwitch;
 		if (hasEarlyBreak) {
@@ -134,6 +119,7 @@ public class GenPerl58 : GenPerl5
 			CloseBlock();
 			this.InEarlyBreakSwitch = oldInEarlyBreakSwitch;
 		}
+		this.BreakDoWhile = oldBreakDoWhile;
 	}
 }
 
