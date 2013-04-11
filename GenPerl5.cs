@@ -403,7 +403,9 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 		bool hasContinue = HasContinue(stmt.Body);
 		bool oldBreakDoWhile = this.BreakDoWhile;
 		if (hasBreak) {
+			// { do { ... last; ... } while cond; }
 			if (hasContinue) {
+				// DOWHILE: { do { { ... last DOWHILE; ... next; ... } } while cond; }
 				this.BreakDoWhile = true;
 				Write("DOWHILE: ");
 			}
@@ -411,6 +413,7 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 		}
 		Write("do");
 		if (hasContinue) {
+			// do { { ... next; ... } } while cond;
 			Write(' ');
 			OpenBlock();
 			WriteLoopLabel(stmt);
@@ -579,10 +582,10 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 	{
 		WritePackage(klass);
 		if (klass.BaseClass != null) {
-			Write("our @ISA = qw(");
+			Write("our @ISA = '");
 			Write(this.Package);
 			Write(klass.BaseClass.Name);
-			WriteLine(");");
+			WriteLine("';");
 		}
 
 		foreach (CiConst konst in klass.ConstArrays) {
@@ -610,9 +613,14 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 	{
 	}
 
+	protected virtual void WritePragmas(CiProgram prog)
+	{
+	}
+
 	public override void Write(CiProgram prog)
 	{
 		CreateFile(this.OutputFile);
+		WritePragmas(prog);
 		WriteLine("use strict;");
 		foreach (CiSymbol symbol in prog.Globals)
 			symbol.Accept(this);

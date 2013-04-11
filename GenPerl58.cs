@@ -18,7 +18,6 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Foxoft.Ci
@@ -100,7 +99,7 @@ public class GenPerl58 : GenPerl5
 						WriteChild(7, stmt.Value);
 					Write(" == ");
 					WriteConst(kase.Value);
-					if (kase.Body.Length > 0 || i + 1 >= stmt.Cases.Length)
+					if (kase.Body.Length > 0)
 						break;
 					Write(" || ");
 					// TODO: "case 5: default:"

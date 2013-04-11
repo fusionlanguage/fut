@@ -48,6 +48,7 @@ public sealed class CiTo
 		Console.WriteLine("-l as      Translate to ActionScript 3");
 		Console.WriteLine("-l d       Translate to D");
 		Console.WriteLine("-l pm      Translate to Perl 5 Module");
+		Console.WriteLine("-l pm510   Translate to Perl 5.10+ Module");
 		Console.WriteLine("-o FILE    Write to the specified file");
 		Console.WriteLine("-n NAME    Specify C# namespace or Java/ActionScript/Perl package");
 		Console.WriteLine("-D NAME    Define conditional compilation symbol");
@@ -154,6 +155,7 @@ public sealed class CiTo
 		case "as": gen = new GenAs(namespace_); break;
 		case "d": gen = new GenD(); break;
 		case "pm": gen = new GenPerl58(namespace_); break;
+		case "pm510": gen = new GenPerl510(namespace_); break;
 		default: throw new ArgumentException("Unknown language: " + lang);
 		}
 		gen.OutputFile = outputFile;

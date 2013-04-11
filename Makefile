@@ -10,7 +10,7 @@ MAKEFLAGS = -r
 
 all: cito.exe cipad.exe
 
-cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs GenJsWithTypedArrays.cs GenAs.cs GenD.cs GenPerl5.cs GenPerl58.cs CiTo.cs)
+cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs GenJsWithTypedArrays.cs GenAs.cs GenD.cs GenPerl5.cs GenPerl58.cs GenPerl510.cs CiTo.cs)
 	$(CSC) -nologo -out:$@ -o+ $^
 
 cipad.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs GenAs.cs GenD.cs CiPad.cs ci-logo.ico)
@@ -31,6 +31,7 @@ check: $(srcdir)hello.ci cito.exe
 	$(MONO) ./cito.exe -o HelloCi.as $<
 	$(MONO) ./cito.exe -o hello.d $<
 	$(MONO) ./cito.exe -o hello.pm $<
+	$(MONO) ./cito.exe -l pm510 -o hello5.10.pm $<
 
 install: install-cito install-cipad
 
