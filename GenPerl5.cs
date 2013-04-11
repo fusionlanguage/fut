@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
+#define USE_INTEGER
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -205,7 +207,12 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 	protected override void Write(CiMethodCall expr)
 	{
 		if (expr.Method == CiLibrary.MulDivMethod) {
+#if USE_INTEGER
+			// FIXME: overflow on 32-bit perl
+			Write("(");
+#else
 			Write("int(");
+#endif
 			WriteMulDiv(3, expr);
 		}
 		else if (expr.Method == CiLibrary.CharAtMethod) {
@@ -304,6 +311,7 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 			else
 				base.Write(expr);
 			break;
+#if !USE_INTEGER
 		case CiToken.Slash:
 			Write("int(");
 			WriteChild(3, expr.Left);
@@ -311,6 +319,7 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 			WriteNonAssocChild(3, expr.Right);
 			Write(')');
 			break;
+#endif
 		default:
 			base.Write(expr);
 			break;
@@ -634,6 +643,9 @@ public abstract class GenPerl5 : SourceGenerator, ICiSymbolVisitor
 	public override void Write(CiProgram prog)
 	{
 		CreateFile(this.OutputFile);
+#if USE_INTEGER
+		WriteLine("use integer;");
+#endif
 		WritePragmas(prog);
 		WriteLine("use strict;");
 		foreach (CiSymbol symbol in prog.Globals)
