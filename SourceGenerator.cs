@@ -67,6 +67,12 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		this.Writer.Write(i);
 	}
 
+	protected void WriteLowercase(string s)
+	{
+		foreach (char c in s)
+			this.Writer.Write(char.ToLowerInvariant(c));
+	}
+
 	protected static string ToCamelCase(string s)
 	{
 		return char.ToLowerInvariant(s[0]) + s.Substring(1);

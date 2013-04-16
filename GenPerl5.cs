@@ -41,13 +41,82 @@ public abstract class GenPerl5 : SourceGenerator
 		WriteLine("# Generated automatically with \"cito\". Do not edit.");
 	}
 
+	void WriteDoc(string text)
+	{
+		foreach (char c in text) {
+			switch (c) {
+			case '<': Write("E<lt>"); break;
+			case '>': Write("E<gt>"); break;
+			default: Write(c); break;
+			}
+		}
+	}
+
+	void Write(CiDocPara para)
+	{
+		foreach (CiDocInline inline in para.Children) {
+			CiDocText text = inline as CiDocText;
+			if (text != null) {
+				WriteDoc(text.Text);
+				continue;
+			}
+			CiDocCode code = inline as CiDocCode;
+			if (code != null) {
+				Write("C<");
+				WriteDoc(code.Text);
+				Write('>');
+				continue;
+			}
+			throw new ArgumentException(inline.GetType().Name);
+		}
+		WriteLine();
+		WriteLine();
+	}
+
+	void Write(CiDocBlock block)
+	{
+		CiDocList list = block as CiDocList;
+		if (list != null) {
+			WriteLine("=over");
+			WriteLine();
+			foreach (CiDocPara item in list.Items) {
+				WriteLine("=item *");
+				WriteLine();
+				Write(item);
+			}
+			WriteLine("=back");
+			WriteLine();
+		}
+	}
+
+	protected override void Write(CiCodeDoc doc)
+	{
+		if (doc == null)
+			return;
+		Write(doc.Summary);
+		foreach (CiDocBlock block in doc.Details)
+			Write(block);
+	}
+
+	void WriteConstDoc(CiSymbol parent, CiSymbol child)
+	{
+		Write("=head2 C<");
+		Write(this.Package);
+		Write(parent.Name);
+		Write("::");
+		WriteUppercaseWithUnderscores(child.Name);
+		WriteLine("()>");
+		WriteLine();
+		Write(child.Documentation);
+	}
+
 	void WritePackage(CiSymbol symbol)
 	{
-		WriteLine();
 		Write("package ");
 		Write(this.Package);
 		Write(symbol.Name);
 		WriteLine(";");
+		WriteLine();
 	}
 
 	protected override void WriteConst(object value)
@@ -103,9 +172,21 @@ public abstract class GenPerl5 : SourceGenerator
 
 	void Write(CiEnum enu)
 	{
+		if (enu.Visibility == CiVisibility.Public) {
+			Write("=head1 Enum ");
+			Write(this.Package);
+			WriteLine(enu.Name);
+			WriteLine();
+			Write(enu.Documentation);
+			foreach (CiEnumValue value in enu.Values)
+				WriteConstDoc(enu, value);
+			WriteLine("=cut");
+			WriteLine();
+		}
 		WritePackage(enu);
 		for (int i = 0; i < enu.Values.Length; i++)
 			WriteConst(enu.Values[i].Name, i);
+		WriteLine();
 	}
 
 	protected override void WriteName(CiConst konst)
@@ -518,8 +599,60 @@ public abstract class GenPerl5 : SourceGenerator
 		WriteLine(";");
 	}
 
+	void WriteDocName(CiParam param)
+	{
+		if (param.Type is CiArrayType)
+			Write("\\@");
+		else
+			Write('$');
+		Write(param.Name);
+	}
+
 	void Write(CiMethod method)
 	{
+		if (method.Visibility == CiVisibility.Public) {
+			Write("=head2 C<");
+			if (method.CallType == CiCallType.Static) {
+				Write(this.Package);
+				Write(method.Class.Name);
+				Write("::");
+			}
+			else {
+				Write('$');
+				WriteLowercase(method.Class.Name);
+				Write("-E<gt>");
+			}
+			WriteLowercaseWithUnderscores(method.Name);
+			Write('(');
+			bool first = true;
+			foreach (CiParam param in method.Signature.Params) {
+				if (first)
+					first = false;
+				else
+					Write(", ");
+				WriteDocName(param);
+			}
+			WriteLine(")>");
+			WriteLine();
+			Write(method.Documentation);
+			if (method.Signature.Params.Any(param => param.Documentation != null)) {
+				WriteLine("Parameters:");
+				WriteLine();
+				WriteLine("=over");
+				WriteLine();
+				foreach (CiParam param in method.Signature.Params) {
+					Write("=item ");
+					WriteDocName(param);
+					WriteLine();
+					WriteLine();
+					Write(param.Documentation);
+				}
+				WriteLine("=back");
+				WriteLine();
+			}
+			WriteLine("=cut");
+			WriteLine();
+		}
 		if (method.CallType == CiCallType.Abstract)
 			return;
 		this.CurrentMethod = method;
@@ -559,6 +692,20 @@ public abstract class GenPerl5 : SourceGenerator
 	{
 		// TODO: skip constructor if static methods only?
 
+		if (klass.Visibility == CiVisibility.Public) {
+			Write("=head2 C<$");
+			WriteLowercase(klass.Name);
+			Write(" = ");
+			Write(this.Package);
+			Write(klass.Name);
+			WriteLine("-E<gt>new()>");
+			WriteLine();
+			if (klass.Constructor != null)
+				Write(klass.Constructor.Documentation);
+			WriteLine("=cut");
+			WriteLine();
+		}
+
 		IEnumerable<CiField> classStorageFields = klass.Members
 			.OfType<CiField>().Where(field => field.Type is CiClassStorageType);
 		if (klass.Constructor == null && klass.BaseClass != null && !classStorageFields.Any()) {
@@ -591,6 +738,15 @@ public abstract class GenPerl5 : SourceGenerator
 
 	void Write(CiClass klass)
 	{
+		if (klass.Visibility == CiVisibility.Public) {
+			Write("=head1 Class ");
+			Write(this.Package);
+			WriteLine(klass.Name);
+			WriteLine();
+			Write(klass.Documentation);
+			WriteLine("=cut");
+			WriteLine();
+		}
 		WritePackage(klass);
 		if (klass.BaseClass != null) {
 			Write("our @ISA = '");
@@ -602,8 +758,13 @@ public abstract class GenPerl5 : SourceGenerator
 		foreach (CiSymbol member in klass.Members) {
 			if (member.Visibility == CiVisibility.Public) {
 				CiConst konst = member as CiConst;
-				if (konst != null)
+				if (konst != null) {
+					WriteConstDoc(klass, konst);
+					WriteLine("=cut");
+					WriteLine();
 					WriteConst(konst.Name, konst.Value);
+					WriteLine();
+				}
 			}
 		}
 		foreach (CiConst konst in klass.ConstArrays) {
@@ -612,6 +773,7 @@ public abstract class GenPerl5 : SourceGenerator
 			Write(" = ");
 			WriteConst(konst.Value);
 			WriteLine(";");
+			WriteLine();
 		}
 		foreach (CiBinaryResource resource in klass.BinaryResources) {
 			Write("our @");
@@ -619,8 +781,8 @@ public abstract class GenPerl5 : SourceGenerator
 			Write(" = ");
 			WriteConst(resource.Content);
 			WriteLine(";");
+			WriteLine();
 		}
-		WriteLine();
 
 		WriteConstructor(klass);
 		foreach (CiSymbol member in klass.Members)
@@ -640,6 +802,7 @@ public abstract class GenPerl5 : SourceGenerator
 		WriteLine("use integer;");
 #endif
 		WriteLine("use strict;");
+		WriteLine();
 
 		// Write enums first, otherwise
 		// given (foo) { when (Enum::VALUE()) { ... } }
