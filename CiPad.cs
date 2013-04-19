@@ -135,6 +135,9 @@ public class CiPad : Form
 }
 ".Replace("\n", "\r\n"), false);
 		Translate();
+		TextBox ciBox = (TextBox) this.CiGroup.TabPages.First().Controls[0];
+		ciBox.Select(0, 0); // don't want all text initially selected
+		ciBox.Select(); // focus
 		this.ResumeLayout();
 	}
 
@@ -182,6 +185,9 @@ public class CiPad : Form
 	internal void CiText_TextChanged(object sender, EventArgs e)
 	{
 		Translate();
+		// When editing class name, TabControls for Java and AS get new TabPages and receive focus.
+		// Restore focus, so we can continue typing.
+		this.ActiveControl = (Control) sender;
 	}
 
 	public static void Main(string[] args)
@@ -273,7 +279,7 @@ class CiPadGroup
 	{
 		gen.OutputFile = outputFile;
 		gen.CreateTextWriter = this.CreatePadWriter;
-		this.TabsToRemove = new HashSet<TabPage>(this.TabControl.TabPages.Cast<TabPage>());
+		this.TabsToRemove = new HashSet<TabPage>(this.TabPages);
 		gen.Write(program);
 		foreach (TabPage page in this.TabsToRemove)
 			this.TabControl.TabPages.Remove(page);
