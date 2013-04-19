@@ -34,6 +34,7 @@ namespace Foxoft.Ci
 
 public class CiPad : Form
 {
+	string[] SearchDirs = new string[0];
 	readonly CiPadGroup CiGroup;
 	readonly CiPadGroup CGroup;
 	readonly CiPadGroup DGroup;
@@ -43,6 +44,29 @@ public class CiPad : Form
 	readonly CiPadGroup JsGroup;
 	readonly CiPadGroup AsGroup;
 	TextBox Messages;
+
+	void FocusCi()
+	{
+		TextBox ciBox = (TextBox) this.CiGroup.TabPages.First().Controls[0];
+		ciBox.Select(0, 0); // don't want all text initially selected
+		ciBox.Select(); // focus
+	}
+
+	void Menu_Open(object sender, EventArgs e)
+	{
+		OpenFileDialog dlg = new OpenFileDialog { DefaultExt = "ci", Filter = "Æ Source Code (*.ci)|*.ci", Multiselect = true };
+		if (dlg.ShowDialog() == DialogResult.OK) {
+			// Directory for BinaryResources. Let's assume all sources and resources are in the same directory.
+			this.SearchDirs = new string[1] { Path.GetDirectoryName(dlg.FileNames[0]) };
+
+			this.CiGroup.Clear();
+			foreach (string filename in dlg.FileNames) {
+				string content = File.ReadAllText(filename).Replace("\r\n", "\n").Replace("\n", "\r\n");
+				this.CiGroup.Set(Path.GetFileName(filename), content, false);
+			}
+			FocusCi();
+		}
+	}
 
 	void Menu_Font(object sender, EventArgs e)
 	{
@@ -63,6 +87,7 @@ public class CiPad : Form
 		this.Messages.WordWrap = false;
 		this.Controls.Add(this.Messages);
 		this.Menu = new MainMenu(new MenuItem[] {
+			new MenuItem("&Open", Menu_Open),
 			new MenuItem("&Font", Menu_Font)
 		});
 	}
@@ -145,9 +170,7 @@ public class CiPad : Form
 }
 ".Replace("\n", "\r\n"), false);
 		Translate();
-		TextBox ciBox = (TextBox) this.CiGroup.TabPages.First().Controls[0];
-		ciBox.Select(0, 0); // don't want all text initially selected
-		ciBox.Select(); // focus
+		FocusCi();
 		this.ResumeLayout();
 	}
 
@@ -174,6 +197,7 @@ public class CiPad : Form
 				parser.Parse(page.Text, new StringReader(page.Controls[0].Text));
 			CiProgram program = parser.Program;
 			CiResolver resolver = new CiResolver();
+			resolver.SearchDirs = this.SearchDirs;
 			resolver.Resolve(program);
 			this.CGroup.Load(program, new GenC89 { OutputFile = "hello.c" }, new GenC { OutputFile = "hello99.c" });
 			this.DGroup.Load(program, new GenD { OutputFile = "hello.d" });
@@ -200,6 +224,7 @@ public class CiPad : Form
 		this.ActiveControl = (Control) sender;
 	}
 
+	[STAThread] // without it ShowDialog() hangs
 	public static void Main(string[] args)
 	{
 		Application.Run(new CiPad());
@@ -247,6 +272,11 @@ class CiPadGroup
 		}
 	}
 
+	public void Clear()
+	{
+		this.TabControl.TabPages.Clear();
+	}
+
 	const int EM_SETTABSTOPS = 0xcb;
 
 	[DllImport("user32.dll")]
@@ -267,6 +297,7 @@ class CiPadGroup
 			}
 			text.Dock = DockStyle.Fill;
 			text.Multiline = true;
+			text.MaxLength = 1000000;
 			text.ReadOnly = readOnly;
 			text.ScrollBars = ScrollBars.Both;
 			text.TabStop = false;
