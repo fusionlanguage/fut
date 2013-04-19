@@ -231,6 +231,11 @@ class CiPadGroup
 		}
 	}
 
+	const int EM_SETTABSTOPS = 0xcb;
+
+	[DllImport("user32.dll")]
+	static extern IntPtr SendMessage(IntPtr wnd, uint msg, IntPtr wParam, int[] lParam);
+
 	public void Set(string name, string content, bool readOnly)
 	{
 		TabPage page = this.TabControl.TabPages[name];
@@ -250,6 +255,7 @@ class CiPadGroup
 			text.ScrollBars = ScrollBars.Both;
 			text.TabStop = false;
 			text.WordWrap = false;
+			SendMessage(text.Handle, EM_SETTABSTOPS, new IntPtr(1), new int[] { 12 });
 			page.Controls.Add(text);
 			this.TabControl.TabPages.Add(page);
 		}
