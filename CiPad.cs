@@ -35,13 +35,13 @@ namespace Foxoft.Ci
 public class CiPad : Form
 {
 	readonly CiPadGroup CiGroup;
-	readonly CiPadGroup C89Group;
-	readonly CiPadGroup C99Group;
+	readonly CiPadGroup CGroup;
+	readonly CiPadGroup DGroup;
 	readonly CiPadGroup JavaGroup;
 	readonly CiPadGroup CsGroup;
+	readonly CiPadGroup PerlGroup;
 	readonly CiPadGroup JsGroup;
 	readonly CiPadGroup AsGroup;
-	readonly CiPadGroup DGroup;
 	TextBox Messages;
 
 	void InitializeComponent()
@@ -62,13 +62,13 @@ public class CiPad : Form
 		this.SuspendLayout();
 		InitializeComponent();
 		this.CiGroup = new CiPadGroup(this);
-		this.C89Group = new CiPadGroup(this);
-		this.C99Group = new CiPadGroup(this);
+		this.CGroup = new CiPadGroup(this);
+		this.DGroup = new CiPadGroup(this);
 		this.JavaGroup = new CiPadGroup(this);
 		this.CsGroup = new CiPadGroup(this);
+		this.PerlGroup = new CiPadGroup(this);
 		this.JsGroup = new CiPadGroup(this);
 		this.AsGroup = new CiPadGroup(this);
-		this.DGroup = new CiPadGroup(this);
 		this.CiGroup.Set("hello.ci",
 @"public class HelloCi
 {
@@ -147,13 +147,13 @@ public class CiPad : Form
 		int cy = ClientRectangle.Height;
 		this.CiGroup.SetBounds(0, 0, cx / 3, cy / 2);
 		this.Messages.SetBounds(0, cy / 2, cx / 3, cy / 6);
-		this.C89Group.SetBounds(cx / 3, 0, cx / 3, cy / 3);
-		this.C99Group.SetBounds(cx * 2 / 3, 0, cx / 3, cy / 3);
+		this.CGroup.SetBounds(cx / 3, 0, cx / 3, cy / 3);
+		this.DGroup.SetBounds(cx * 2 / 3, 0, cx / 3, cy / 3);
 		this.JavaGroup.SetBounds(cx / 3, cy / 3, cx / 3, cy / 3);
 		this.CsGroup.SetBounds(cx * 2 / 3, cy / 3, cx / 3, cy / 3);
-		this.JsGroup.SetBounds(0, cy * 2 / 3, cx / 3, cy / 3);
-		this.AsGroup.SetBounds(cx / 3, cy * 2 / 3, cx / 3, cy / 3);
-		this.DGroup.SetBounds(cx * 2 / 3, cy * 2 / 3, cx / 3, cy / 3);
+		this.PerlGroup.SetBounds(0, cy * 2 / 3, cx / 3, cy / 3);
+		this.JsGroup.SetBounds(cx / 3, cy * 2 / 3, cx / 3, cy / 3);
+		this.AsGroup.SetBounds(cx * 2 / 3, cy * 2 / 3, cx / 3, cy / 3);
 	}
 
 	void Translate()
@@ -165,13 +165,13 @@ public class CiPad : Form
 			CiProgram program = parser.Program;
 			CiResolver resolver = new CiResolver();
 			resolver.Resolve(program);
-			this.C89Group.Load("hello.c", new GenC89(), program);
-			this.C99Group.Load("hello99.c", new GenC(), program);
-			this.JavaGroup.Load(".", new GenJava(null), program);
-			this.CsGroup.Load("hello.cs", new GenCs(null), program);
-			this.JsGroup.Load("hello.js", new GenJs(), program);
-			this.AsGroup.Load(".", new GenAs(null), program);
-			this.DGroup.Load("hello.d", new GenD(), program);
+			this.CGroup.Load(program, new GenC89 { OutputFile = "hello.c" }, new GenC { OutputFile = "hello99.c" });
+			this.DGroup.Load(program, new GenD { OutputFile = "hello.d" });
+			this.JavaGroup.Load(program, new GenJava(null) { OutputFile = "." });
+			this.CsGroup.Load(program, new GenCs(null) { OutputFile = "hello.cs" });
+			this.PerlGroup.Load(program, new GenPerl58(null) { OutputFile = "hello.pm" }, new GenPerl510(null) { OutputFile = "hello-5.10.pm" });
+			this.JsGroup.Load(program, new GenJs() { OutputFile = "hello.js" }, new GenJsWithTypedArrays() { OutputFile = "hello-Typed-Arrays.js" });
+			this.AsGroup.Load(program, new GenAs(null) { OutputFile = "." });
 			this.Messages.BackColor = SystemColors.Window;
 			this.Messages.Text = "OK";
 		}
@@ -275,12 +275,13 @@ class CiPadGroup
 		return new CiPadWriter(this, filename);
 	}
 
-	public void Load(string outputFile, SourceGenerator gen, CiProgram program)
+	public void Load(CiProgram program, params SourceGenerator[] gens)
 	{
-		gen.OutputFile = outputFile;
-		gen.CreateTextWriter = this.CreatePadWriter;
 		this.TabsToRemove = new HashSet<TabPage>(this.TabPages);
-		gen.Write(program);
+		foreach (SourceGenerator gen in gens) {
+			gen.CreateTextWriter = this.CreatePadWriter;
+			gen.Write(program);
+		}
 		foreach (TabPage page in this.TabsToRemove)
 			this.TabControl.TabPages.Remove(page);
 	}

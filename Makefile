@@ -13,7 +13,7 @@ all: cito.exe cipad.exe
 cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs GenJsWithTypedArrays.cs GenAs.cs GenD.cs GenPerl5.cs GenPerl58.cs GenPerl510.cs CiTo.cs)
 	$(CSC) -nologo -out:$@ -o+ $^
 
-cipad.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs GenAs.cs GenD.cs CiPad.cs ci-logo.ico)
+cipad.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiMacroProcessor.cs CiParser.cs CiResolver.cs SourceGenerator.cs GenC.cs GenC89.cs GenCs.cs GenJava.cs GenJs.cs GenJsWithTypedArrays.cs GenAs.cs GenD.cs GenPerl5.cs GenPerl58.cs GenPerl510.cs CiPad.cs ci-logo.ico)
 	$(CSC) -nologo -out:$@ -o+ -t:winexe -win32icon:$(filter %.ico,$^) $(filter %.cs,$^) -r:System.Drawing.dll -r:System.Windows.Forms.dll
 
 ci-logo.png: $(srcdir)ci-logo.svg
