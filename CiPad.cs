@@ -46,6 +46,7 @@ public class CiPad : Form
 
 	void InitializeComponent()
 	{
+		this.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
 		this.ClientSize = new Size(760, 500);
 		this.Text = "CiPad";
 		this.Messages = new TextBox();
