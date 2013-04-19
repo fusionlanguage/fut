@@ -44,6 +44,13 @@ public class CiPad : Form
 	readonly CiPadGroup AsGroup;
 	TextBox Messages;
 
+	void Menu_Font(object sender, EventArgs e)
+	{
+		FontDialog dlg = new FontDialog { Font = this.Font, ShowEffects = false };
+		if (dlg.ShowDialog() == DialogResult.OK)
+			this.Font = dlg.Font;
+	}
+
 	void InitializeComponent()
 	{
 		this.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
@@ -55,6 +62,9 @@ public class CiPad : Form
 		this.Messages.ScrollBars = ScrollBars.Both;
 		this.Messages.WordWrap = false;
 		this.Controls.Add(this.Messages);
+		this.Menu = new MainMenu(new MenuItem[] {
+			new MenuItem("&Font", Menu_Font)
+		});
 	}
 
 	public CiPad()
