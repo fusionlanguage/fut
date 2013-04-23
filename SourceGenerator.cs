@@ -799,7 +799,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		}
 	}
 
-	protected virtual void StartSwitch(CiCase[] kases)
+	protected virtual void StartSwitch(CiSwitch stmt)
 	{
 	}
 
@@ -807,11 +807,11 @@ public abstract class SourceGenerator : ICiStatementVisitor
 	{
 	}
 
-	protected virtual void EndCase(CiCase kase)
+	protected virtual void WriteFallthrough(CiExpr expr)
 	{
 	}
 
-	protected virtual void EndSwitch(CiCase[] kases)
+	protected virtual void EndSwitch(CiSwitch stmt)
 	{
 	}
 
@@ -820,24 +820,28 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		Write("switch (");
 		Write(stmt.Value);
 		WriteLine(") {");
-		StartSwitch(stmt.Cases);
+		StartSwitch(stmt);
 		foreach (CiCase kase in stmt.Cases) {
-			if (kase.Value != null) {
+			foreach (object value in kase.Values) {
 				Write("case ");
-				WriteConst(kase.Value);
+				WriteConst(value);
+				WriteLine(":");
 			}
-			else
-				Write("default");
-			WriteLine(":");
-			if (kase.Body.Length > 0) {
-				this.Indent++;
-				StartCase(kase.Body[0]);
-				Write(kase.Body);
-				EndCase(kase);
-				this.Indent--;
-			}
+			this.Indent++;
+			StartCase(kase.Body[0]);
+			Write(kase.Body);
+			if (kase.Fallthrough)
+				WriteFallthrough(kase.FallthroughTo);
+			this.Indent--;
 		}
-		EndSwitch(stmt.Cases);
+		if (stmt.DefaultBody != null) {
+			WriteLine("default:");
+			this.Indent++;
+			StartCase(stmt.DefaultBody[0]);
+			Write(stmt.DefaultBody);
+			this.Indent--;
+		}
+		EndSwitch(stmt);
 		WriteLine("}");
 	}
 

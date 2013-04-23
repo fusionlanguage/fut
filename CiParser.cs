@@ -482,22 +482,24 @@ public partial class CiParser : CiLexer
 		result.Value = ParseExpr();
 		Expect(CiToken.RightParenthesis);
 		Expect(CiToken.LeftBrace);
+
 		List<CiCase> cases = new List<CiCase>();
-		for (;;) {
-			CiCase kase;
-			if (Eat(CiToken.Case)) {
-				kase = new CiCase();
-				kase.Value = ParseExpr();
-			}
-			else if (Eat(CiToken.Default))
-				kase = new CiCase();
-			else
-				break;
-			Expect(CiToken.Colon);
+		while (Eat(CiToken.Case)) {
+			List<object> values = new List<object>();
+			do {
+				values.Add(ParseExpr());
+				Expect(CiToken.Colon);
+			} while (Eat(CiToken.Case));
+			if (See(CiToken.Default))
+				throw new ParseException("Please remove case before default");
+			CiCase kase = new CiCase { Values = values.ToArray() };
+
 			List<ICiStatement> statements = new List<ICiStatement>();
-			while (!See(CiToken.Case) && !See(CiToken.Default) && !See(CiToken.Goto) && !See(CiToken.RightBrace))
+			do
 				statements.Add(ParseStatement());
+			while (!See(CiToken.Case) && !See(CiToken.Default) && !See(CiToken.Goto) && !See(CiToken.RightBrace));
 			kase.Body = statements.ToArray();
+
 			if (Eat(CiToken.Goto)) {
 				if (Eat(CiToken.Case))
 					kase.FallthroughTo = ParseExpr();
@@ -510,12 +512,20 @@ public partial class CiParser : CiLexer
 			}
 			cases.Add(kase);
 		}
-		Expect(CiToken.RightBrace);
 		if (cases.Count == 0)
 			throw new ParseException("Switch with no cases");
-		if (cases[cases.Count - 1].Body.Length == 0)
-			throw new ParseException("Missing statements in the final case");
 		result.Cases = cases.ToArray();
+
+		if (Eat(CiToken.Default)) {
+			Expect(CiToken.Colon);
+			List<ICiStatement> statements = new List<ICiStatement>();
+			do
+				statements.Add(ParseStatement());
+			while (!See(CiToken.RightBrace));
+			result.DefaultBody = statements.ToArray();
+		}
+
+		Expect(CiToken.RightBrace);
 		return result;
 	}
 

@@ -330,18 +330,16 @@ public class GenCs : SourceGenerator, ICiSymbolVisitor
 		}
 	}
 
-	protected override void EndCase(CiCase kase)
+	protected override void WriteFallthrough(CiExpr expr)
 	{
-		if (kase.Fallthrough) {
-			Write("goto ");
-			if (kase.FallthroughTo != null) {
-				Write("case ");
-				Write(kase.FallthroughTo);
-			}
-			else
-				Write("default");
-			WriteLine(";");
+		Write("goto ");
+		if (expr != null) {
+			Write("case ");
+			Write(expr);
 		}
+		else
+			Write("default");
+		WriteLine(";");
 	}
 
 	public override void Visit(CiThrow stmt)

@@ -367,10 +367,9 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		}
 	}
 
-	protected override void EndCase(CiCase kase)
+	protected override void WriteFallthrough(CiExpr expr)
 	{
-		if (kase.Fallthrough)
-			WriteLine("//$FALL-THROUGH$");
+		WriteLine("//$FALL-THROUGH$");
 	}
 
 	public override void Visit(CiThrow stmt)

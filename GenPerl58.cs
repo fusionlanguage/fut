@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Foxoft.Ci
@@ -39,14 +40,17 @@ public class GenPerl58 : GenPerl5
 			WriteLine("next;");
 	}
 
+	static bool HasEarlyBreak(ICiStatement[] body)
+	{
+		return body.Any(stmt => HasBreak(stmt) && !(stmt is CiBreak));
+	}
+
 	static bool HasEarlyBreak(CiSwitch stmt)
 	{
-		foreach (CiCase kase in stmt.Cases) {
-			int length = BodyLengthWithoutLastBreak(kase);
-			for (int i = 0; i < length; i++)
-				if (HasBreak(kase.Body[i]))
-					return true;
-		}
+		if (stmt.Cases.Any(kase => HasEarlyBreak(kase.Body)))
+			return true;
+		if (stmt.DefaultBody != null && HasEarlyBreak(stmt.DefaultBody))
+			return true;
 		return false;
 	}
 
@@ -80,40 +84,51 @@ public class GenPerl58 : GenPerl5
 			this.InEarlyBreakSwitch = true;
 			OpenBlock(); // block that "last" will exit
 		}
+
 		bool tmpVar = stmt.Value.HasSideEffect;
 		if (tmpVar) {
 			Write("my $CISWITCH = ");
 			Write(stmt.Value);
 			WriteLine(";");
 		}
-		for (int i = 0; i < stmt.Cases.Length; i++) {
-			CiCase kase = stmt.Cases[i];
-			if (kase.Value != null) {
-				if (i > 0)
-					Write("els");
-				Write("if (");
-				for (;;) {
-					if (tmpVar)
-						Write("$CISWITCH");
-					else
-						WriteChild(7, stmt.Value);
-					Write(" == ");
-					WriteConst(kase.Value);
-					if (kase.Body.Length > 0)
-						break;
+
+		bool first = true;
+		foreach (CiCase kase in stmt.Cases) {
+			if (!first)
+				Write("els");
+			Write("if (");
+			first = true;
+			// TODO: optimize ranges "case 1: case 2: case 3:"
+			foreach (object value in kase.Values) {
+				if (first)
+					first = false;
+				else
 					Write(" || ");
-					// TODO: "case 5: default:"
-					// TODO: optimize ranges "case 1: case 2: case 3:"
-					kase = stmt.Cases[++i];
-				}
-				Write(") ");
+				if (tmpVar)
+					Write("$CISWITCH");
+				else
+					WriteChild(7, stmt.Value);
+				Write(" == ");
+				WriteConst(value);
 			}
-			else
-				Write("else "); // TODO: default that doesn't come last
+			Write(") ");
 			OpenBlock();
-			Write(kase.Body, BodyLengthWithoutLastBreak(kase)); // TODO: fallthrough with gotos
+			Write(kase.Body, BodyLengthWithoutLastBreak(kase.Body));
+			// TODO: fallthrough
 			CloseBlock();
+			Debug.Assert(!first);
 		}
+
+		if (stmt.DefaultBody != null) {
+			int length = BodyLengthWithoutLastBreak(stmt.DefaultBody);
+			if (length > 0) {
+				Write("else ");
+				OpenBlock();
+				Write(stmt.DefaultBody, length);
+				CloseBlock();
+			}
+		}
+
 		if (hasEarlyBreak) {
 			CloseBlock();
 			this.InEarlyBreakSwitch = oldInEarlyBreakSwitch;

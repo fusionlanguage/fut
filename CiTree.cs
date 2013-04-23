@@ -716,7 +716,7 @@ public class CiReturn : ICiStatement
 
 public class CiCase
 {
-	public object Value;
+	public object[] Values;
 	public ICiStatement[] Body;
 	public bool Fallthrough;
 	public CiExpr FallthroughTo;
@@ -726,6 +726,7 @@ public class CiSwitch : CiCondCompletionStatement
 {
 	public CiExpr Value;
 	public CiCase[] Cases;
+	public ICiStatement[] DefaultBody;
 	public override void Accept(ICiStatementVisitor v) { v.Visit(this); }
 }
 

@@ -79,32 +79,37 @@ public class GenPerl510 : GenPerl5
 		Write(stmt.Value);
 		Write(") ");
 		OpenBlock();
-		for (int i = 0; i < stmt.Cases.Length; i++) {
-			CiCase kase = stmt.Cases[i];
-			if (kase.Value != null) {
-				Write("when (");
-				if (kase.Body.Length == 0) {
-					Write("[ ");
-					for (;;) {
-						WriteConst(kase.Value);
-						if (kase.Body.Length > 0)
-							break;
+		foreach (CiCase kase in stmt.Cases) {
+			Write("when (");
+			if (kase.Values.Length > 1) {
+				Write("[ ");
+				bool first = true;
+				foreach (object value in kase.Values) {
+					if (first)
+						first = false;
+					else
 						Write(", ");
-						kase = stmt.Cases[++i];
-					}
-					Write(" ]");
+					WriteConst(value);
 				}
-				else
-					WriteConst(kase.Value);
-				Write(") ");
+				Write(" ]");
 			}
 			else
-				Write("default ");
+				WriteConst(kase.Values[0]);
+			Write(") ");
 			OpenBlock();
-			Write(kase.Body, BodyLengthWithoutLastBreak(kase));
+			Write(kase.Body, BodyLengthWithoutLastBreak(kase.Body));
 			if (kase.Fallthrough)
 				WriteLine("continue;");
 			CloseBlock();
+		}
+		if (stmt.DefaultBody != null) {
+			int length = BodyLengthWithoutLastBreak(stmt.DefaultBody);
+			if (length > 0) {
+				Write("default ");
+				OpenBlock();
+				Write(stmt.DefaultBody, length);
+				CloseBlock();
+			}
 		}
 		CloseBlock();
 		this.BreakDoWhile = oldBreakDoWhile;

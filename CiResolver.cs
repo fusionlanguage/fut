@@ -887,27 +887,22 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 	{
 		statement.Value = Resolve(statement.Value);
 		CiType type = statement.Value.Type;
-		HashSet<object> values = new HashSet<object>();
 		CiCondCompletionStatement oldLoopOrSwitch = this.CurrentLoopOrSwitch;
 		this.CurrentLoopOrSwitch = statement;
+
+		HashSet<object> values = new HashSet<object>();
 		CiCase fallthroughFrom = null;
 		foreach (CiCase kase in statement.Cases) {
-			if (kase.Value != null) {
-				kase.Value = ResolveConstExpr((CiExpr) kase.Value, type);
-				if (!values.Add(kase.Value))
+			for (int i = 0; i < kase.Values.Length; i++) {
+				kase.Values[i] = ResolveConstExpr((CiExpr) kase.Values[i], type);
+				if (!values.Add(kase.Values[i]))
 					throw new ResolveException("Duplicate case value");
-				if (fallthroughFrom != null) {
-					if (fallthroughFrom.FallthroughTo == null)
-						throw new ResolveException("goto default followed by case");
-					if (!ResolveConstExpr(fallthroughFrom.FallthroughTo, type).Equals(kase.Value))
-						throw new ResolveException("goto case doesn't match the next case");
-				}
 			}
-			else {
-				if (!values.Add(null))
-					throw new ResolveException("Duplicate default case");
-				if (fallthroughFrom != null && fallthroughFrom.FallthroughTo != null)
-					throw new ResolveException("goto case followed by default");
+			if (fallthroughFrom != null) {
+				if (fallthroughFrom.FallthroughTo == null)
+					throw new ResolveException("goto default followed by case");
+				if (!ResolveConstExpr(fallthroughFrom.FallthroughTo, type).Equals(kase.Values[0]))
+					throw new ResolveException("goto case doesn't match the next case");
 			}
 			bool reachable = Resolve(kase.Body);
 			if (kase.Fallthrough) {
@@ -916,13 +911,24 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 				fallthroughFrom = kase;
 			}
 			else {
-				if (reachable && kase.Body.Length > 0)
-					throw new ResolveException("Missing break, return, throw or goto");
+				if (reachable)
+					throw new ResolveException("case must end with break, return, throw or goto");
 				fallthroughFrom = null;
 			}
 		}
-		if (fallthroughFrom != null)
-			throw new ResolveException("goto cannot be the last statement in switch");
+
+		if (statement.DefaultBody != null) {
+			if (fallthroughFrom != null && fallthroughFrom.FallthroughTo != null)
+				throw new ResolveException("goto case followed by default");
+			bool reachable = Resolve(statement.DefaultBody);
+			if (reachable)
+				throw new ResolveException("default must end with break, return, throw or goto");
+		}
+		else {
+			if (fallthroughFrom != null)
+				throw new ResolveException("goto cannot be the last statement in switch");
+		}
+
 		this.CurrentLoopOrSwitch = oldLoopOrSwitch;
 	}
 

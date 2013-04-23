@@ -381,29 +381,26 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 			base.Visit(assign);
 	}
 
-	protected override void EndCase(CiCase kase)
+	protected override void WriteFallthrough(CiExpr expr)
 	{
-		if (kase.Fallthrough) {
-			Write("goto ");
-			if (kase.FallthroughTo != null) {
-				Write("case ");
-				Write(kase.FallthroughTo);
-			}
-			else
-				Write("default");
-			WriteLine(";");
+		Write("goto ");
+		if (expr != null) {
+			Write("case ");
+			Write(expr);
 		}
+		else
+			Write("default");
+		WriteLine(";");
 	}
 
-	protected override void EndSwitch(CiCase[] kases)
+	protected override void EndSwitch(CiSwitch stmt)
 	{
-		foreach (CiCase kase in kases)
-			if (kase.Value == null)
-				return;
-		WriteLine("default:");
-		this.Indent++;
-		WriteLine("break;");
-		this.Indent--;
+		if (stmt.DefaultBody == null) {
+			WriteLine("default:");
+			this.Indent++;
+			WriteLine("break;");
+			this.Indent--;
+		}
 	}
 
 	public override void Visit(CiThrow stmt)

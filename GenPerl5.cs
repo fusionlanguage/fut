@@ -600,10 +600,10 @@ public abstract class GenPerl5 : SourceGenerator
 		}
 	}
 
-	protected static int BodyLengthWithoutLastBreak(CiCase kase)
+	protected static int BodyLengthWithoutLastBreak(ICiStatement[] body)
 	{
-		int length = kase.Body.Length;
-		if (length > 0 && kase.Body[length - 1] is CiBreak)
+		int length = body.Length;
+		if (length > 0 && body[length - 1] is CiBreak)
 			return length - 1;
 		return length;
 	}

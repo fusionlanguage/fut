@@ -144,17 +144,23 @@ public class GenC89 : GenC
 	{
 	}
 
-	protected override void StartSwitch(CiCase[] kases)
+	void WriteSwitchDefs(ICiStatement[] body)
+	{
+		foreach (ICiStatement stmt in body) {
+			if (stmt is CiConst)
+				base.Visit((CiConst) stmt);
+			else if (stmt is CiVar)
+				WriteVar((CiVar) stmt);
+		}
+	}
+
+	protected override void StartSwitch(CiSwitch stmt)
 	{
 		this.Indent++;
-		foreach (CiCase kase in kases) {
-			foreach (ICiStatement stmt in kase.Body) {
-				if (stmt is CiConst)
-					base.Visit((CiConst) stmt);
-				else if (stmt is CiVar)
-					WriteVar((CiVar) stmt);
-			}
-		}
+		foreach (CiCase kase in stmt.Cases)
+			WriteSwitchDefs(kase.Body);
+		if (stmt.DefaultBody != null)
+			WriteSwitchDefs(stmt.DefaultBody);
 		this.Indent--;
 	}
 
