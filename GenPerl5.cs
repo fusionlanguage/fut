@@ -189,6 +189,24 @@ public abstract class GenPerl5 : SourceGenerator
 		WriteLine();
 	}
 
+	protected override int GetPriority(CiExpr expr)
+	{
+		if (expr is CiPropertyAccess) {
+			CiProperty prop = ((CiPropertyAccess) expr).Property;
+			if (prop == CiLibrary.SByteProperty)
+				return 4;
+			if (prop == CiLibrary.LowByteProperty)
+				return 8;
+		}
+#if !USE_INTEGER
+		else if (expr is CiBinaryExpr) {
+			if (((CiBinaryExpr) expr).Op == CiToken.Slash)
+				return 1;
+		}
+#endif
+		return base.GetPriority(expr);
+	}
+
 	protected override void WriteName(CiConst konst)
 	{
 		WriteUppercaseWithUnderscores(konst.GlobalName ?? konst.Name);
