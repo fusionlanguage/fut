@@ -61,7 +61,7 @@ public class CiPad : Form
 
 			this.CiGroup.Clear();
 			foreach (string filename in dlg.FileNames) {
-				string content = File.ReadAllText(filename).Replace("\r\n", "\n").Replace("\n", "\r\n");
+				string content = File.ReadAllText(filename).Replace("\r", "").Replace("\n", "\r\n");
 				this.CiGroup.Set(Path.GetFileName(filename), content, false);
 			}
 			FocusCi();
@@ -277,10 +277,14 @@ class CiPadGroup
 		this.TabControl.TabPages.Clear();
 	}
 
-	const int EM_SETTABSTOPS = 0xcb;
-
 	[DllImport("user32.dll")]
 	static extern IntPtr SendMessage(IntPtr wnd, uint msg, IntPtr wParam, int[] lParam);
+
+	static void SetNarrowTabs(TextBox text)
+	{
+		const int EM_SETTABSTOPS = 0xcb;
+		SendMessage(text.Handle, EM_SETTABSTOPS, new IntPtr(1), new int[] { 12 });
+	}
 
 	public void Set(string name, string content, bool readOnly)
 	{
@@ -302,7 +306,8 @@ class CiPadGroup
 			text.ScrollBars = ScrollBars.Both;
 			text.TabStop = false;
 			text.WordWrap = false;
-			SendMessage(text.Handle, EM_SETTABSTOPS, new IntPtr(1), new int[] { 12 });
+			if (Type.GetType("Mono.Runtime") == null)
+				SetNarrowTabs(text);
 			page.Controls.Add(text);
 			this.TabControl.TabPages.Add(page);
 		}
