@@ -329,8 +329,13 @@ class CiPadGroup
 			gen.CreateTextWriter = this.CreatePadWriter;
 			gen.Write(program);
 		}
-		foreach (TabPage page in this.TabsToRemove)
+		foreach (TabPage page in this.TabsToRemove) {
+			if (page == this.TabControl.SelectedTab)
+				this.TabControl.SelectedIndex = -1; // WORKAROUND Mono 2.10.9 BUG: Java/AS translations disappear when changing class name
 			this.TabControl.TabPages.Remove(page);
+		}
+		if (this.TabControl.SelectedIndex == -1)
+			this.TabControl.SelectedIndex = 0; // WORKAROUND continued
 	}
 }
 
