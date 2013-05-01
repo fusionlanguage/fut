@@ -74,7 +74,7 @@ public sealed class CiTo
 					Usage();
 					return 0;
 				case "--version":
-					Console.WriteLine("cito 0.3.0");
+					Console.WriteLine("cito 0.4.0");
 					return 0;
 				case "-l":
 					lang = args[++i];

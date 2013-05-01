@@ -5,7 +5,7 @@ MONO := $(if $(WINDIR),,mono)
 ASCIIDOC = asciidoc -o - $(1) $< | xmllint --valid --nonet -o $@ -
 SEVENZIP = 7z a -mx=9 -bd
 
-VERSION := 0.3.0
+VERSION := 0.4.0
 MAKEFLAGS = -r
 
 all: cito.exe cipad.exe
