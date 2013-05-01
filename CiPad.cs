@@ -274,6 +274,7 @@ class CiPadGroup
 
 	public void Clear()
 	{
+		this.TabControl.SelectedIndex = -1; // WORKAROUND Mono 2.10.9 BUG: ArgumentOutOfRangeException from TabPages.Clear()
 		this.TabControl.TabPages.Clear();
 	}
 
