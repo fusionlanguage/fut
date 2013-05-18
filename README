@@ -34,7 +34,7 @@ How to install
 `cito` is written in C#.
 
 On Windows you need .NET Framework 3.5.
-http://sourceforge.net/projects/cito/files/cito/0.3.0/cito-0.3.0-bin.zip/download[Download cito binaries]
+http://sourceforge.net/projects/cito/files/cito/0.4.0/cito-0.4.0-bin.zip/download[Download cito binaries]
 and extract `cito.exe` and `cipad.exe` to a directory in your `PATH` environment variable.
 
 On other platforms install http://www.mono-project.com[Mono]. Mono runs .NET executables:
@@ -74,7 +74,7 @@ Any comments are welcome!
 History
 -------
 
-cito 0.4.0 (2013-05-??)::
+cito 0.4.0 (2013-05-18)::
 
 - Perl 5 back-end.
 - Dynamic object allocation.
@@ -82,7 +82,7 @@ cito 0.4.0 (2013-05-??)::
 - String concatenation in D.
 - Java fix for code such as `cond ? 1 : 0`.
 - C fix for code such as `if (cond) methodThatThrows(); else stmt();`
-- `cipad` opens files, has font selection and UI improvements.
+- `cipad` opens files, has font selection and improved UI.
 
 cito 0.3.0 (2013-02-15)::
 

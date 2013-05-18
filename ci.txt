@@ -11,26 +11,26 @@
 
 Now suppose you have invented a new, revolutionary compression algorithm. How would you implement it so it is widely available? If you answer "in C", here are the reasons why Ć might be a better choice:
 
-1. Web browsers will not execute C code downloaded from the internet. You may either use a browser plugin (non-portable and sometimes unsafe) or some kind of emulation such as http://nestedvm.ibex.org/[NestedVM] (ineffective). In contrast, Ć can be translated to pure JavaScript, ActionScript, Java and C#. Java means you may target Android without resorting to JNI.
+1. Web browsers will not execute C code downloaded from the internet. You may either use a browser plugin (non-portable and sometimes unsafe) or some kind of emulation such as http://nestedvm.ibex.org/[NestedVM] (ineffective). In contrast, Ć can be translated to pure JavaScript, ActionScript, Java and C#. Java lets you target Android without resorting to JNI.
 
-2. Libraries which aim to be very portable contain bindings (wrappers) for languages other than C. This requires some additional work to keep the bindings synchronized with the updated library. With Ć there's no need for bindings, because an implementation in Ć is translated completely to the target language. `cito` even ensures that naming conventions match the target language -- for example in Java a method gets called `doFoo` and a constant `FOO_BAR` whereas in C# they will be called `DoFoo` and `FooBar` respectively. Documentation comments are translated as well.
+2. Libraries which aim to be very portable contain bindings (wrappers) for languages other than C. This requires some additional work to keep the bindings synchronized as the library is updated. With Ć there's no need for bindings, because an implementation in Ć is translated entirely to the target language. `cito` even ensures that naming conventions match the target language -- for example in Java a method gets called `doFoo` and a constant `FOO_BAR` whereas in C# they will be called `DoFoo` and `FooBar` respectively. Documentation comments are translated as well.
 
-3. C is old. Moreover, the 2012's Microsoft compiler doesn't even support C99, so there's no standard `bool` type and all local variables must be defined at the beginnings of blocks. Ć resembles C# or Java, and `cito` translates it to C99 as well as C89.
+3. C is old. Moreover, the 2012's Microsoft compiler doesn't even support C99, so there's no standard `bool` type and all local variables must be defined at the beginnings of blocks. Ć resembles C# or Java, and `cito` can translate it to C99 as well as C89.
 
 There are of course limitations of Ć:
 
-1. Ć has no own library except for a few simple built-in methods. There is no GUI, web services etc. Ć is meant for low-level tasks, operating directly on bits and bytes. It's been proved that compression algorithms, emulation of microprocessors and other chips, sound and bitmap synthesis can all be programmed in Ć. There are probably other uses of Ć which I didn't think of yet.
+1. Ć has no own library except for a few simple built-in methods. There is no standard I/O or GUI. Ć is meant for low-level tasks, operating directly on bits and bytes. It's been proved that compression algorithms, emulation of microprocessors and other chips, sound and bitmap synthesis can all be programmed in Ć.
 
-2. At this moment there's no single program written 'completely' in Ć. Owing to the above point at least the user interface must be programmed in a different language.
+2. At this moment there's no single program written 'entirely' in Ć. Owing to the above point at least the user interface must be programmed in a different language.
 
 Source files
 ------------
 
-Even in the twenty first century programmers usually avoid Unicode in filenames. So, you may use the `.ci` filename extension instead of `.ć`.
+Even in the twenty first century programmers tend to avoid Unicode in filenames. So, you may use the `.ci` filename extension instead of `.ć`.
 
 NOTE: In Polish "ci" is pronounced identically to "ć".
 
-Source file contents must be UTF-8 encoded with the optional (but recommended) BOM.
+Source file contents must be UTF-8 encoded with an optional (but recommended) BOM.
 
 Most of the time whitespace is insignificant in Ć source code. Let's continue indentation style flame wars!
 
@@ -70,7 +70,7 @@ There's an implicit conversion from `byte` to `int` so you can use the above ope
 Boolean type
 ~~~~~~~~~~~~
 
-The boolean type is called `bool` and its constants are `true` and `false`.
+The boolean type is called `bool` and its literals are `true` and `false`.
 
 Boolean operators are `!` (not), `&&` (and), `||` (or) and the ternary operator `x ? y : z` (if x then y else z).
 
@@ -115,14 +115,14 @@ enum DayOfWeek
 
 Elements of enumerations cannot be assigned integer values. There are no conversions between enumerated and integer types.
 
-`enum` may be preceded with the keyword `public` to extend the visibility of the type outside Ć, that is, the enumerated type is part of the public interface of the library implemented in Ć.
+`enum` may be preceded with the keyword `public` to extend the visibility of the type outside Ć, that is, make the enumerated type part of the public interface of the library implemented in Ć.
 
 When referencing a value of an enumerated type you need to include the type name, for example `DayOfWeek.Friday`. Note to Java programmers: this includes the `case` clauses.
 
 Strings
 ~~~~~~~
 
-For text processing please choose Perl and not Ć.
+For text processing please choose Perl and not Ć. Really.
 
 In Ć there are two string data types:
 
@@ -133,13 +133,15 @@ The above distinction is only visible in the translation to C. In other language
 
 String literals are written in double quotes: `"Hello world"`. You may use `\n` and the other escape sequences as in character literals. String literals may be concatenated with the `+` operator. However, in this version of Ć you cannot use this operator for string variables.
 
-A pointer (to a string or the described later array and object) may have the value `null`.
+Speaking of operators, compare strings with `==` and `!=`. `cito` will translate them to `strcmp` in C and `x.equals(y)` in Java.
 
-There are implicit conversions of storages (of a string, array, object) to pointers. There's no `&` operator known from C.
+A pointer (to a string or the described below array and object) may have the value `null`.
+
+Conversions of storage (of string, array, object) to pointers are implicit. There's no `&` operator known from C.
 
 If you feel any fear hearing "pointer", you really shouldn't. Ć pointer is same as Java reference. There is no pointer arithmetic. You cannot take a pointer to an `int`. Do you feel safer now?
 
-`s.Length` returns string length. `s[i]` returns the code of the character at position `i`. `s.Substring(startIndex, length)` returns a substring, which must be assigned to a string storage. Beware that the current translation to C is not Unicode-aware. Yes, `cito` is at version 0.3.0.
+`s.Length` returns string length. `s[i]` returns the code of the character at position `i`. `s.Substring(startIndex, length)` returns a substring, which must be assigned to a string storage. Beware that the current translation to C is not Unicode-aware. Yes, `cito` is at version 0.4.0.
 
 When assigning a string to a string storage it is programmer's responsibility to assure that string length doesn't exceed storage size. String assignment translates to C's `strcpy`. Similarly for the `+=` operator translated to `strcat`.
 
@@ -151,7 +153,7 @@ There are two kinds of array types:
 * Pointer to an array: `T[]`, where `T` is the type of array elements.
 * Array storage: `T[n]`, where `n` is array size.
 
-`array[i]` represents an element of an array that can be read and written to.
+`array[i]` represents an array element that can be read and written to.
 
 `byte` arrays can be copied (`sourceArray.CopyTo(sourceIndex, destinationArray, destinationIndex, length)`) and converted to strings (`sourceArray.ToString(startIndex, length)`). The latter will understand Unicode some day.
 
@@ -177,7 +179,7 @@ class HelloCi
 }
 -------------------
 
-Do not place a semicolon after the closing brace. But do so in C++ (would you expect an advice on Ć in a C++ manual?).
+Do not place a semicolon after the closing brace. But do so in C\++ (would you expect an advice on Ć in a C++ manual?).
 
 Ć now supports single inheritance. Put base class name after a colon:
 -------------------
@@ -217,7 +219,7 @@ translates to Java as follows:
 final MyObject foo = new MyObject();
 -------------------
 
-`new C()` allocates new instance of class `C` and returns pointer to it. Should you use translate it to C (programming language, no pun intented), `delete` the allocated object some time later.
+`new C()` allocates new instance of class `C` and returns a pointer to it. If you target the C programming language, `delete` the allocated object some time later.
 
 
 Delegates
@@ -373,7 +375,7 @@ int x, y; // ERROR
 Variable definition may include an initial value:
 -------------------
 int x = 5;
-int[4] array = 0; // the array initially contains four zeros
+int[4] array = 0; // this array is initialized to contain zeros
 -------------------
 
 Expressions
@@ -387,7 +389,7 @@ i++;
 
 These are not valid statements:
 -------------------
-4 + 2; // ERROR
+4 + 2; // ERROR, useless expression
 ++i; // ERROR, use i++ instead
 -------------------
 
@@ -408,7 +410,7 @@ if ((x = Foo()) != null) { Bar(); } // ERROR
 Constants
 ~~~~~~~~~
 
-Constant definitions in classes were already described. Constant definitions are also allowed at the level of statements. Such a definition has a scope limited to the containing block. For this reason it's not allowed to decorate such definitions with `public`.
+Constant definitions in classes were already described. Constant definitions are also allowed at the level of statements. Such a definition has a scope limited to the containing block. For this reason statement-level constant definitions cannot be `public`.
 
 Returning method result
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -456,7 +458,7 @@ case 2:
 }
 -------------------
 
-Correct termination means a statement that doesn't fall to the next statement: `break`, `continue`, `return`, `throw` or the known from C# statement `goto case` / `goto default`, which jumps to the next case.
+Correct termination means a statement that doesn't fall to the next statement: `break`, `continue`, `return`, `throw` or C#-style `goto case` / `goto default`, which jumps to the next case.
 -------------------
 switch (x) {
 case 1:
@@ -467,6 +469,8 @@ case 2:
     break;
 }
 -------------------
+
+The `default` clause if present, must be specified last.
 
 Exceptions
 ~~~~~~~~~~
@@ -516,7 +520,7 @@ macro MY_STATEMENT_MACRO(arg1, arg2) { statement; }
 +
 Statement macro is expanded without the outer braces or the trailing semicolon. This way the expansion of `MY_STATEMENT_MACRO(1, 2);` doesn't end with two semicolons.
 
-Unlike in C and C++, multi-line macro definitions don't include trailing backslashes. The end of the macro is detected by matching the parentheses or braces.
+Unlike in C and C++, multi-line macro definitions don't include trailing backslashes. The end of the macro is determined by matching the parentheses or braces.
 
 Macros can have any (but constant) number of arguments. The parentheses surrounding the parameters in the definition and the arguments in the reference are required. You should not use macros for constants -- use `const` instead.
 
