@@ -1,5 +1,6 @@
 bin
 obj
+tags
 *.exe
 *.exe.mdb
 *.pdb
