@@ -189,19 +189,19 @@ public abstract class GenPerl5 : SourceGenerator
 		WriteLine();
 	}
 
-	protected override int GetPriority(CiExpr expr)
+	protected override CiPriority GetPriority(CiExpr expr)
 	{
 		if (expr is CiPropertyAccess) {
 			CiProperty prop = ((CiPropertyAccess) expr).Property;
 			if (prop == CiLibrary.SByteProperty)
-				return 4;
+				return CiPriority.Additive;
 			if (prop == CiLibrary.LowByteProperty)
-				return 8;
+				return CiPriority.And;
 		}
 #if !USE_INTEGER
 		else if (expr is CiBinaryExpr) {
 			if (((CiBinaryExpr) expr).Op == CiToken.Slash)
-				return 1;
+				return CiPriority.Postfix;
 		}
 #endif
 		return base.GetPriority(expr);
@@ -223,7 +223,7 @@ public abstract class GenPerl5 : SourceGenerator
 
 	protected override void Write(CiFieldAccess expr)
 	{
-		WriteChild(1, expr.Obj);
+		WriteChild(CiPriority.Postfix, expr.Obj);
 		Write("->{");
 		WriteLowercaseWithUnderscores(expr.Field.Name);
 		Write('}');
@@ -233,7 +233,7 @@ public abstract class GenPerl5 : SourceGenerator
 	{
 		if (expr.Property == CiLibrary.SByteProperty) {
 			Write('(');
-			WriteChild(9, expr.Obj);
+			WriteChild(CiPriority.Xor, expr.Obj);
 			Write(" ^ 128) - 128");
 		}
 		else if (expr.Property == CiLibrary.LowByteProperty) {
@@ -304,7 +304,7 @@ public abstract class GenPerl5 : SourceGenerator
 #else
 			Write("int(");
 #endif
-			WriteMulDiv(3, expr);
+			WriteMulDiv(CiPriority.Multiplicative, expr);
 		}
 		else if (expr.Method == CiLibrary.CharAtMethod) {
 			Write("ord(substr(");

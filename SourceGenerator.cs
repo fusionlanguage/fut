@@ -326,7 +326,7 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			throw new ArgumentException(value.ToString());
 	}
 
-	protected virtual int GetPriority(CiExpr expr)
+	protected virtual CiPriority GetPriority(CiExpr expr)
 	{
 		if (expr is CiConstExpr
 		 || expr is CiConstAccess
@@ -336,12 +336,12 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		 || expr is CiArrayAccess
 		 || expr is CiMethodCall
 		 || expr is CiBinaryResourceExpr
-		 || expr is CiNewExpr)
-			return 1;
+		 || expr is CiNewExpr) // ?
+			return CiPriority.Postfix;
 		if (expr is CiUnaryExpr
 		 || expr is CiCondNotExpr
-		 || expr is CiPostfixExpr)
-			return 2;
+		 || expr is CiPostfixExpr) // ?
+			return CiPriority.Prefix;
 		if (expr is CiCoercion)
 			return GetPriority((CiExpr) ((CiCoercion) expr).Inner);
 		if (expr is CiBinaryExpr) {
@@ -349,43 +349,43 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			case CiToken.Asterisk:
 			case CiToken.Slash:
 			case CiToken.Mod:
-				return 3;
+				return CiPriority.Multiplicative;
 			case CiToken.Plus:
 			case CiToken.Minus:
-				return 4;
+				return CiPriority.Additive;
 			case CiToken.ShiftLeft:
 			case CiToken.ShiftRight:
-				return 5;
+				return CiPriority.Shift;
 			case CiToken.Less:
 			case CiToken.LessOrEqual:
 			case CiToken.Greater:
 			case CiToken.GreaterOrEqual:
-				return 6;
+				return CiPriority.Ordering;
 			case CiToken.Equal:
 			case CiToken.NotEqual:
-				return 7;
+				return CiPriority.Equality;
 			case CiToken.And:
-				return 8;
+				return CiPriority.And;
 			case CiToken.Xor:
-				return 9;
+				return CiPriority.Xor;
 			case CiToken.Or:
-				return 10;
+				return CiPriority.Or;
 			case CiToken.CondAnd:
-				return 11;
+				return CiPriority.CondAnd;
 			case CiToken.CondOr:
-				return 12;
+				return CiPriority.CondOr;
 			default:
 				throw new ArgumentException(((CiBinaryExpr) expr).Op.ToString());
 			}
 		}
 		if (expr is CiCondExpr)
-			return 13;
+			return CiPriority.CondExpr;
 		throw new ArgumentException(expr.GetType().Name);
 	}
 
-	protected void WriteChild(int parentPriority, CiExpr child)
+	protected void WriteChild(CiPriority parentPriority, CiExpr child)
 	{
-		if (GetPriority(child) > parentPriority) {
+		if (GetPriority(child) < parentPriority) {
 			Write('(');
 			Write(child);
 			Write(')');
@@ -399,9 +399,9 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		WriteChild(GetPriority(parent), child);
 	}
 
-	protected void WriteNonAssocChild(int parentPriority, CiExpr child)
+	protected void WriteNonAssocChild(CiPriority parentPriority, CiExpr child)
 	{
-		if (GetPriority(child) >= parentPriority) {
+		if (GetPriority(child) <= parentPriority) {
 			Write('(');
 			Write(child);
 			Write(')');
@@ -457,13 +457,13 @@ public abstract class SourceGenerator : ICiStatementVisitor
 		Write(expr);
 	}
 
-	protected void WriteMulDiv(int firstPriority, CiMethodCall expr)
+	protected void WriteMulDiv(CiPriority firstPriority, CiMethodCall expr)
 	{
 		WriteChild(firstPriority, expr.Obj);
 		Write(" * ");
-		WriteChild(3, expr.Arguments[0]);
+		WriteChild(CiPriority.Multiplicative, expr.Arguments[0]);
 		Write(" / ");
-		WriteNonAssocChild(3, expr.Arguments[1]);
+		WriteNonAssocChild(CiPriority.Multiplicative, expr.Arguments[1]);
 		Write(')');
 	}
 

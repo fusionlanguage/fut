@@ -24,6 +24,23 @@ using System.Linq;
 namespace Foxoft.Ci
 {
 
+public enum CiPriority
+{
+	CondExpr,
+	CondOr,
+	CondAnd,
+	Or,
+	Xor,
+	And,
+	Equality,
+	Ordering,
+	Shift,
+	Additive,
+	Multiplicative,
+	Prefix,
+	Postfix
+}
+
 public abstract class CiDocInline
 {
 }

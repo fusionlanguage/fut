@@ -150,17 +150,17 @@ public class GenC : SourceGenerator
 		WriteLine();
 	}
 
-	protected override int GetPriority(CiExpr expr)
+	protected override CiPriority GetPriority(CiExpr expr)
 	{
 		if (expr is CiPropertyAccess) {
 			CiProperty prop = ((CiPropertyAccess) expr).Property;
 			if (prop == CiLibrary.SByteProperty || prop == CiLibrary.LowByteProperty)
-				return 2;
+				return CiPriority.Prefix;
 		}
 		else if (expr is CiCoercion) {
 			CiCoercion c = (CiCoercion) expr;
 			if (c.ResultType is CiClassType)
-				return c.ResultType is CiClassPtrType ? 2 : 1;
+				return c.ResultType is CiClassPtrType ? CiPriority.Prefix : CiPriority.Postfix;
 		}
 		return base.GetPriority(expr);
 	}
@@ -200,7 +200,7 @@ public class GenC : SourceGenerator
 
 	void StartFieldAccess(CiExpr expr)
 	{
-		WriteChild(1, expr);
+		WriteChild(CiPriority.Postfix, expr);
 		if (expr.Type is CiClassPtrType)
 			Write("->");
 		else
@@ -245,7 +245,7 @@ public class GenC : SourceGenerator
 	{
 		if (expr.Method == CiLibrary.MulDivMethod) {
 			Write("(int) ((long long int) ");
-			WriteMulDiv(2, expr);
+			WriteMulDiv(CiPriority.Prefix, expr);
 		}
 		else if (expr.Method == CiLibrary.CharAtMethod) {
 			Write(expr.Obj);
@@ -347,7 +347,7 @@ public class GenC : SourceGenerator
 		}
 	}
 
-	void WriteChildWithSuggestedParentheses(CiBinaryExpr parent, CiExpr child, int suggestedParentPriority, bool assoc)
+	void WriteChildWithSuggestedParentheses(CiBinaryExpr parent, CiExpr child, CiPriority suggestedParentPriority, bool assoc)
 	{
 		if (assoc && GetPriority(parent) == GetPriority(child))
 			Write(child);
@@ -376,7 +376,7 @@ public class GenC : SourceGenerator
 			if (pa != null && pa.Property == CiLibrary.StringLengthProperty) {
 				CiConstExpr ce = expr.Right as CiConstExpr;
 				if (ce != null && 0.Equals(ce.Value)) {
-					WriteChild(1, pa.Obj);
+					WriteChild(CiPriority.Postfix, pa.Obj);
 					Write(expr.Op == CiToken.Equal ? "[0] == '\\0'" : "[0] != '\\0'");
 					break;
 				}
@@ -385,21 +385,21 @@ public class GenC : SourceGenerator
 			break;
 		case CiToken.ShiftLeft:
 		case CiToken.ShiftRight:
-			WriteChildWithSuggestedParentheses(expr, expr.Left, 3, true);
+			WriteChildWithSuggestedParentheses(expr, expr.Left, CiPriority.Multiplicative, true);
 			WriteOp(expr);
-			WriteChildWithSuggestedParentheses(expr, expr.Right, 3, false);
+			WriteChildWithSuggestedParentheses(expr, expr.Right, CiPriority.Multiplicative, false);
 			break;
 		case CiToken.And:
 		case CiToken.Or:
 		case CiToken.Xor:
-			WriteChildWithSuggestedParentheses(expr, expr.Left, 3, true);
+			WriteChildWithSuggestedParentheses(expr, expr.Left, CiPriority.Multiplicative, true);
 			WriteOp(expr);
-			WriteChildWithSuggestedParentheses(expr, expr.Right, 3, true);
+			WriteChildWithSuggestedParentheses(expr, expr.Right, CiPriority.Multiplicative, true);
 			break;
 		case CiToken.CondOr:
-			WriteChildWithSuggestedParentheses(expr, expr.Left, 10, true);
+			WriteChildWithSuggestedParentheses(expr, expr.Left, CiPriority.Or, true);
 			Write(" || ");
-			WriteChildWithSuggestedParentheses(expr, expr.Right, 10, true);
+			WriteChildWithSuggestedParentheses(expr, expr.Right, CiPriority.Or, true);
 			break;
 		default:
 			base.Write(expr);
@@ -419,7 +419,7 @@ public class GenC : SourceGenerator
 			Write('(');
 			Write(arrayType.ElementType, "*");
 			Write(") malloc(");
-			WriteChild(3, arrayType.LengthExpr);
+			WriteChild(CiPriority.Multiplicative, arrayType.LengthExpr);
 			Write(" * sizeof(");
 			Write(arrayType.ElementType, string.Empty);
 			Write("))");

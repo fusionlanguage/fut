@@ -107,7 +107,7 @@ public class GenPerl58 : GenPerl5
 				if (tmpVar)
 					Write("$CISWITCH");
 				else
-					WriteChild(7, stmt.Value);
+					WriteChild(CiPriority.Equality, stmt.Value);
 				Write(" == ");
 				WriteConst(value);
 			}

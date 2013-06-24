@@ -246,18 +246,18 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		WriteLine(";");
 	}
 
-	protected override int GetPriority(CiExpr expr)
+	protected override CiPriority GetPriority(CiExpr expr)
 	{
 		// TODO: check if this compatible with D priorities
 		if (expr is CiPropertyAccess) {
 			CiProperty prop = ((CiPropertyAccess) expr).Property;
 			if (prop == CiLibrary.SByteProperty || prop == CiLibrary.LowByteProperty)
-				return 2;
+				return CiPriority.Prefix;
 		}
 		else if (expr is CiCoercion) {
 			CiCoercion c = (CiCoercion) expr;
 			if (c.ResultType == CiByteType.Value && c.Inner.Type == CiIntType.Value)
-				return 2;
+				return CiPriority.Prefix;
 		}
 		return base.GetPriority(expr);
 	}
@@ -285,7 +285,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 	{
 		if (expr.Method == CiLibrary.MulDivMethod) {
 			Write("cast(int) (cast(long) ");
-			WriteMulDiv(2, expr);
+			WriteMulDiv(CiPriority.Prefix, expr);
 		}
 		else if (expr.Method == CiLibrary.CharAtMethod) {
 			Write(expr.Obj);

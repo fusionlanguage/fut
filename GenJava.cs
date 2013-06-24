@@ -162,21 +162,21 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		WriteUppercaseWithUnderscores(konst.GlobalName);
 	}
 
-	protected override int GetPriority(CiExpr expr)
+	protected override CiPriority GetPriority(CiExpr expr)
 	{
 		CiPropertyAccess pa = expr as CiPropertyAccess;
 		if (pa != null) {
 			if (pa.Property == CiLibrary.SByteProperty)
 				return GetPriority(pa.Obj);
 			if (pa.Property == CiLibrary.LowByteProperty)
-				return 2;
+				return CiPriority.Prefix;
 		}
 		else if (expr is CiCoercion) {
 			CiCoercion c = (CiCoercion) expr;
 			if (c.ResultType == CiByteType.Value && c.Inner.Type == CiIntType.Value)
-				return 2;
+				return CiPriority.Prefix;
 			if (c.ResultType == CiIntType.Value && c.Inner.Type == CiByteType.Value)
-				return 8;
+				return CiPriority.And;
 		}
 		return base.GetPriority(expr);
 	}
@@ -219,7 +219,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 	{
 		if (expr.Method == CiLibrary.MulDivMethod) {
 			Write("(int) ((long) ");
-			WriteMulDiv(2, expr);
+			WriteMulDiv(CiPriority.Prefix, expr);
 		}
 		else if (expr.Method == CiLibrary.CharAtMethod) {
 			Write(expr.Obj);
@@ -350,7 +350,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 			WriteChild(expr, (CiExpr) expr.Inner); // TODO: Assign
 		}
 		else if (expr.ResultType == CiIntType.Value && expr.Inner.Type == CiByteType.Value) {
-			WriteChild(8, (CiExpr) expr.Inner); // TODO: Assign
+			WriteChild(CiPriority.And, (CiExpr) expr.Inner); // TODO: Assign
 			Write(" & 0xff");
 		}
 		else

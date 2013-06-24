@@ -38,7 +38,7 @@ public class GenJsWithTypedArrays : GenJs
 			if (arrayType.ElementType == CiIntType.Value) {
 				Write("new Int32Array(new ArrayBuffer(");
 				if (arrayType.LengthExpr != null) {
-					WriteChild(5, arrayType.LengthExpr);
+					WriteChild(CiPriority.Shift, arrayType.LengthExpr);
 					Write(" << 2");
 				}
 				else

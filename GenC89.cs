@@ -66,7 +66,7 @@ public class GenC89 : GenC
 	{
 		if (expr.Method == CiLibrary.MulDivMethod) {
 			Write("(int) ((double) ");
-			WriteMulDiv(2, expr);
+			WriteMulDiv(CiPriority.Prefix, expr);
 		}
 		else
 			base.Write(expr);

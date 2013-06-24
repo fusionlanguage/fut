@@ -173,18 +173,18 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		WriteUppercaseWithUnderscores(konst.GlobalName ?? konst.Name);
 	}
 
-	protected override int GetPriority(CiExpr expr)
+	protected override CiPriority GetPriority(CiExpr expr)
 	{
 		if (expr is CiPropertyAccess) {
 			CiProperty prop = ((CiPropertyAccess) expr).Property;
 			if (prop == CiLibrary.SByteProperty)
-				return 4;
+				return CiPriority.Additive;
 			if (prop == CiLibrary.LowByteProperty)
-				return 8;
+				return CiPriority.And;
 		}
 		else if (expr is CiBinaryExpr) {
 			if (((CiBinaryExpr) expr).Op == CiToken.Slash)
-				return 1;
+				return CiPriority.Postfix;
 		}
 		return base.GetPriority(expr);
 	}
@@ -200,7 +200,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 	{
 		if (expr.Property == CiLibrary.SByteProperty) {
 			Write('(');
-			WriteChild(9, expr.Obj);
+			WriteChild(CiPriority.Xor, expr.Obj);
 			Write(" ^ 128) - 128");
 		}
 		else if (expr.Property == CiLibrary.LowByteProperty) {
@@ -251,7 +251,7 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 	{
 		if (expr.Method == CiLibrary.MulDivMethod) {
 			Write("int(");
-			WriteMulDiv(3, expr);
+			WriteMulDiv(CiPriority.Multiplicative, expr);
 		}
 		else if (expr.Method == CiLibrary.CharAtMethod) {
 			Write(expr.Obj);
@@ -313,9 +313,9 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 	{
 		if (expr.Op == CiToken.Slash) {
 			Write("int(");
-			WriteChild(3, expr.Left);
+			WriteChild(CiPriority.Multiplicative, expr.Left);
 			Write(" / ");
-			WriteNonAssocChild(3, expr.Right);
+			WriteNonAssocChild(CiPriority.Multiplicative, expr.Right);
 			Write(')');
 		}
 		else
