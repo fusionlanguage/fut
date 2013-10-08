@@ -513,6 +513,12 @@ public class GenC : SourceGenerator
 		this.Indent--;
 	}
 
+	static bool Throws(CiExpr expr)
+	{
+		CiMethodCall call = expr as CiMethodCall;
+		return call != null && call.Method != null && call.Method.Throws;
+	}
+
 	public override void Visit(CiExpr expr)
 	{
 		CiMethodCall call = expr as CiMethodCall;
@@ -534,7 +540,7 @@ public class GenC : SourceGenerator
 			return false;
 		if (def.Type is CiStringStorageType)
 			return def.InitialValue is CiConstExpr;
-		if (def.InitialValue is CiMethodCall && ((CiMethodCall) def.InitialValue).Method.Throws)
+		if (Throws(def.InitialValue))
 			return false;
 		return true;
 	}
@@ -627,7 +633,7 @@ public class GenC : SourceGenerator
 			}
 		}
 		CiMethodCall call = assign.Source as CiMethodCall;
-		if (call != null && call.Method.Throws)
+		if (call != null && call.Method != null && call.Method.Throws)
 			CheckAndThrow(assign, call.Method.ErrorReturnValue);
 		else
 			base.Visit(assign);
