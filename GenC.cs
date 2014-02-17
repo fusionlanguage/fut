@@ -793,6 +793,11 @@ public class GenC : SourceGenerator
 		}
 	}
 
+	static bool HasCStruct(CiClass klass)
+	{
+		return klass.BaseClass != null || klass.HasFields || AddsVirtualMethods(klass);
+	}
+
 	void WriteNew(CiClass klass)
 	{
 		WriteNewSignature(klass);
@@ -868,21 +873,23 @@ public class GenC : SourceGenerator
 			CloseBlock();
 			this.CurrentMethod = null;
 		}
-		if (klass.Visibility == CiVisibility.Public) {
-			WriteLine();
-			WriteNew(klass);
+		if (!klass.IsAbstract && HasCStruct(klass)) {
+			if (klass.Visibility == CiVisibility.Public) {
+				WriteLine();
+				WriteNew(klass);
 
-			WriteLine();
-			WriteDeleteSignature(klass);
-			WriteLine();
-			OpenBlock();
-			WriteLine("free(self);");
-			CloseBlock();
-		}
-		else if (klass.IsAllocated) {
-			WriteLine();
-			Write("static ");
-			WriteNew(klass);
+				WriteLine();
+				WriteDeleteSignature(klass);
+				WriteLine();
+				OpenBlock();
+				WriteLine("free(self);");
+				CloseBlock();
+			}
+			else if (klass.IsAllocated) {
+				WriteLine();
+				Write("static ");
+				WriteNew(klass);
+			}
 		}
 	}
 
@@ -1036,7 +1043,7 @@ public class GenC : SourceGenerator
 			WriteConstructorSignature(klass);
 			WriteLine(";");
 		}
-		if (pub && klass.Visibility == CiVisibility.Public && klass.HasFields) {
+		if (pub && klass.Visibility == CiVisibility.Public && !klass.IsAbstract && HasCStruct(klass)) {
 			WriteLine();
 			WriteNewSignature(klass);
 			WriteLine(";");
@@ -1167,7 +1174,7 @@ public class GenC : SourceGenerator
 
 		WriteLine();
 		WriteVtblStruct(klass);
-		if (klass.BaseClass != null || klass.HasFields) {
+		if (HasCStruct(klass)) {
 			Write("struct ");
 			Write(klass.Name);
 			Write(' ');
@@ -1213,8 +1220,7 @@ public class GenC : SourceGenerator
 
 	void WriteCode(CiClass klass)
 	{
-		if (klass.BaseClass != null || klass.HasFields)
-			WriteConstructorNewDelete(klass);
+		WriteConstructorNewDelete(klass);
 		foreach (CiSymbol member in klass.Members) {
 			if (member is CiMethod)
 				Write((CiMethod) member);
