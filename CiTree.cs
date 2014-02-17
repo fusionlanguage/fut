@@ -1,6 +1,6 @@
 // CiTree.cs - Ci object model
 //
-// Copyright (C) 2011-2013  Piotr Fusik
+// Copyright (C) 2011-2014  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -125,6 +125,7 @@ public class CiType : CiSymbol
 	}
 	public virtual CiType Accept(ICiTypeVisitor v) { return this; }
 	public virtual bool Equals(CiType obj) { return this == obj; }
+	public virtual CiClass StorageClass { get { return null; } }
 }
 
 public class CiUnknownType : CiType
@@ -245,6 +246,7 @@ public class CiClassStorageType : CiClassType
 		return that != null && this.Class == that.Class;
 	}
 	public override CiType Ptr { get { return new CiClassPtrType { Class = this.Class }; } }
+	public override CiClass StorageClass { get { return this.Class; } }
 }
 
 public abstract class CiArrayType : CiType
@@ -301,6 +303,7 @@ public class CiArrayStorageType : CiArrayType
 		}
 	}
 	public override CiType Accept(ICiTypeVisitor v) { return v.Visit(this); }
+	public override CiClass StorageClass { get { return this.ElementType.StorageClass; } }
 }
 
 public class CiLibrary

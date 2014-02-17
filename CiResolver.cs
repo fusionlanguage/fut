@@ -1,6 +1,6 @@
 // CiResolver.cs - Ci symbol resolver
 //
-// Copyright (C) 2011-2013  Piotr Fusik
+// Copyright (C) 2011-2014  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -701,6 +701,13 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 		return expr;
 	}
 
+	void CheckCreatable(CiType type)
+	{
+		CiClass storageClass = type.StorageClass;
+		if (storageClass != null && storageClass.IsAbstract)
+			throw new ResolveException("Cannot create instances of an abstract class {0}", storageClass.Name);
+	}
+
 	CiExpr ICiExprVisitor.Visit(CiNewExpr expr)
 	{
 		CiType type = expr.NewType;
@@ -714,6 +721,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 			arrayStorageType.ElementType = Resolve(arrayStorageType.ElementType);
 			arrayStorageType.LengthExpr = Coerce(Resolve(arrayStorageType.LengthExpr), CiIntType.Value);
 		}
+		CheckCreatable(type);
 		return expr;
 	}
 
@@ -750,9 +758,10 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 
 	void ICiStatementVisitor.Visit(CiVar statement)
 	{
-		statement.Type = Resolve(statement.Type);
+		CiType type = Resolve(statement.Type);
+		statement.Type = type;
+		CheckCreatable(type);
 		if (statement.InitialValue != null) {
-			CiType type = statement.Type;
 			CiExpr initialValue = Resolve(statement.InitialValue);
 			CheckCopyPtr(type, initialValue);
 			if (type is CiArrayStorageType) {
