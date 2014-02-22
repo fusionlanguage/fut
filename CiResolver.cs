@@ -733,6 +733,7 @@ public class CiResolver : ICiSymbolVisitor, ICiTypeVisitor, ICiExprVisitor, ICiS
 	void ICiSymbolVisitor.Visit(CiField field)
 	{
 		field.Type = Resolve(field.Type);
+		CheckCreatable(field.Type);
 	}
 
 	bool Resolve(ICiStatement[] statements)
