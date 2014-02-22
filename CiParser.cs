@@ -1,6 +1,6 @@
 // CiParser.cs - Ci parser
 //
-// Copyright (C) 2011-2013  Piotr Fusik
+// Copyright (C) 2011-2014  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -679,9 +679,6 @@ public partial class CiParser : CiLexer
 
 	CiMethod ParseConstructor()
 	{
-		NextToken();
-		Expect(CiToken.LeftParenthesis);
-		Expect(CiToken.RightParenthesis);
 		OpenScope();
 		CiMethod method = new CiMethod(
 			CiType.Void, "<constructor>") {
@@ -728,12 +725,6 @@ public partial class CiParser : CiLexer
 				symbol = ParseMacro();
 			}
 			else {
-				if (See(CiToken.Id) && this.CurrentString == klass.Name) {
-					if (klass.Constructor != null)
-						throw new ParseException("Duplicate constructor");
-					klass.Constructor = ParseConstructor();
-					continue;
-				}
 				CiCallType callType;
 				if (Eat(CiToken.Static))
 					callType = CiCallType.Static;
@@ -757,6 +748,16 @@ public partial class CiParser : CiLexer
 				else
 					callType = CiCallType.Normal;
 				CiType type = ParseReturnType();
+				if (type is CiClassStorageType && See(CiToken.LeftBrace)) {
+					if (type.Name != klass.Name)
+						throw new ParseException("{0}() looks like a constructor, but it is in a different class {1}", type.Name, klass.Name);
+					if (callType != CiCallType.Normal)
+						throw new ParseException("Constructor cannot be static, abstract, virtual or override");
+					if (klass.Constructor != null)
+						throw new ParseException("Duplicate constructor");
+					klass.Constructor = ParseConstructor();
+					continue;
+				}
 				string name = ParseId();
 				if (See(CiToken.LeftParenthesis)) {
 					CiMethod method = new CiMethod(type, name) {
