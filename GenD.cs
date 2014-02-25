@@ -410,11 +410,8 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		WriteLine(");");
 	}
 
-	void WriteSignature(CiDelegate del, string name)
+	void WriteArgumentList(CiDelegate del)
 	{
-		Write(del.ReturnType);
-		Write(' ');
-		WriteVarName(name);
 		Write('(');
 		bool first = true;
 		foreach (CiParam param in del.Params) {
@@ -427,6 +424,14 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 			WriteVarName(param.Name);
 		}
 		Write(')');
+	}
+
+	void WriteSignature(CiDelegate del)
+	{
+		Write(del.ReturnType);
+		Write(' ');
+		WriteVarName(del.Name);
+		WriteArgumentList(del);
 	}
 
 	void ICiSymbolVisitor.Visit(CiMethod method)
@@ -456,7 +461,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		case CiCallType.Virtual: break;
 		case CiCallType.Override: Write("override "); break;
 		}
-		WriteSignature(method.Signature, method.Name);
+		WriteSignature(method.Signature);
 		if (method.CallType == CiCallType.Abstract)
 			WriteLine(";");
 		else {
@@ -522,12 +527,14 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 
 	void ICiSymbolVisitor.Visit(CiDelegate del)
 	{
-		// TODO: test this
 		Write(del.Documentation);
 		Write(del.Visibility);
-		WriteSignature(del, "delegate");
-		Write(' ');
+		Write("alias ");
 		Write(del.Name);
+		Write(" = ");
+		Write(del.ReturnType);
+		Write(" delegate");
+		WriteArgumentList(del);
 		WriteLine(";");
 	}
 
