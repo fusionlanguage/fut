@@ -1,6 +1,6 @@
 // SourceGenerator.cs - base class for code generators
 //
-// Copyright (C) 2011-2013  Piotr Fusik
+// Copyright (C) 2011-2014  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -259,6 +259,22 @@ public abstract class SourceGenerator : ICiStatementVisitor
 
 	protected void WriteInitializer(CiArrayType type)
 	{
+		if (type.ElementType is CiClassStorageType) {
+			CiArrayStorageType storageType = type as CiArrayStorageType;
+			if (storageType != null) {
+				int len = storageType.Length;
+				if (len > 0) {
+					Write("[] { ");
+					for (int i = 0; i < len; i++) {
+						if (i > 0)
+							Write(", ");
+						WriteNew(type.ElementType);
+					}
+					Write(" }");
+					return;
+				}
+			}
+		}
 		for (; type != null; type = type.ElementType as CiArrayType) {
 			Write('[');
 			CiArrayStorageType storageType = type as CiArrayStorageType;
