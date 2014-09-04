@@ -34,6 +34,7 @@ namespace Foxoft.Ci
 
 public class CiPad : Form
 {
+	string ProjectName = "hello";
 	string[] SearchDirs = new string[0];
 	readonly CiPadGroup CiGroup;
 	readonly CiPadGroup CGroup;
@@ -54,6 +55,13 @@ public class CiPad : Form
 
 	void Open(string[] filenames)
 	{
+		if (filenames.Length == 1)
+			ProjectName = Path.GetFileNameWithoutExtension(filenames[0]);
+		else {
+			string dir = Path.GetDirectoryName(filenames[0]);
+			ProjectName = string.IsNullOrEmpty(dir) ? "unknown" : Path.GetFileName(dir);
+		}
+
 		// Directories for BinaryResources. Let's assume resources are in the directories of sources.
 		this.SearchDirs = filenames.Select(filename => Path.GetDirectoryName(filename)).Distinct().ToArray();
 
@@ -97,11 +105,7 @@ public class CiPad : Form
 		this.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
 		this.ClientSize = new Size(760, 500);
 		this.Text = "CiPad";
-		this.Messages = new TextBox();
-		this.Messages.Multiline = true;
-		this.Messages.ReadOnly = true;
-		this.Messages.ScrollBars = ScrollBars.Both;
-		this.Messages.WordWrap = false;
+		this.Messages = new TextBox { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Both, WordWrap = false };
 		this.Controls.Add(this.Messages);
 		this.Menu = new MainMenu(new MenuItem[] {
 			new MenuItem("&Open", Menu_Open) { Shortcut = Shortcut.CtrlO },
@@ -220,12 +224,12 @@ public class CiPad : Form
 			CiResolver resolver = new CiResolver();
 			resolver.SearchDirs = this.SearchDirs;
 			resolver.Resolve(program);
-			this.CGroup.Load(program, new GenC89 { OutputFile = "hello.c" }, new GenC { OutputFile = "hello99.c" });
-			this.DGroup.Load(program, new GenD { OutputFile = "hello.d" });
+			this.CGroup.Load(program, new GenC89 { OutputFile = ProjectName + ".c" }, new GenC { OutputFile = ProjectName + "99.c" });
+			this.DGroup.Load(program, new GenD { OutputFile = ProjectName + ".d" });
 			this.JavaGroup.Load(program, new GenJava(null) { OutputFile = "." });
-			this.CsGroup.Load(program, new GenCs(null) { OutputFile = "hello.cs" });
-			this.PerlGroup.Load(program, new GenPerl58(null) { OutputFile = "hello.pm" }, new GenPerl510(null) { OutputFile = "hello-5.10.pm" });
-			this.JsGroup.Load(program, new GenJs() { OutputFile = "hello.js" }, new GenJsWithTypedArrays() { OutputFile = "hello-Typed-Arrays.js" });
+			this.CsGroup.Load(program, new GenCs(null) { OutputFile = ProjectName + ".cs" });
+			this.PerlGroup.Load(program, new GenPerl58(null) { OutputFile = ProjectName + ".pm" }, new GenPerl510(null) { OutputFile = ProjectName + "-5.10.pm" });
+			this.JsGroup.Load(program, new GenJs { OutputFile = ProjectName + ".js" }, new GenJsWithTypedArrays { OutputFile = ProjectName + "-Typed-Arrays.js" });
 			this.AsGroup.Load(program, new GenAs(null) { OutputFile = "." });
 			this.Messages.BackColor = SystemColors.Window;
 			this.Messages.Text = "OK";
