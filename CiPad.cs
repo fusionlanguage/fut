@@ -104,7 +104,7 @@ public class CiPad : Form
 		this.Messages.WordWrap = false;
 		this.Controls.Add(this.Messages);
 		this.Menu = new MainMenu(new MenuItem[] {
-			new MenuItem("&Open", Menu_Open),
+			new MenuItem("&Open", Menu_Open) { Shortcut = Shortcut.CtrlO },
 			new MenuItem("&Font", Menu_Font)
 		});
 
