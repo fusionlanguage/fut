@@ -17,7 +17,7 @@ cipad.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiTree.cs SymbolTable.cs CiLexe
 	$(CSC) -nologo -out:$@ -o+ -t:winexe -win32icon:$(filter %.ico,$^) $(filter %.cs,$^) -r:System.Drawing.dll -r:System.Windows.Forms.dll
 
 ci-logo.png: $(srcdir)ci-logo.svg
-	convert -background none $< -gravity Center -resize "52x64!" -extent 64x64 -quality 95 $@
+	convert -background none $< -gravity Center -resize "52x64!" -extent 64x64 -quality 95 -strip $@
 
 $(srcdir)ci-logo.ico: $(srcdir)ci-logo.svg
 	convert -background none $< -gravity Center -resize "26x32!" -extent 32x32 $@
