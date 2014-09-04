@@ -1,6 +1,6 @@
 // CiPad.cs - small Ci editor with on-the-fly translation
 //
-// Copyright (C) 2011-2013  Piotr Fusik
+// Copyright (C) 2011-2014  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -52,20 +52,24 @@ public class CiPad : Form
 		ciBox.Select(); // focus
 	}
 
+	void Open(string[] filenames)
+	{
+		// Directories for BinaryResources. Let's assume resources are in the directories of sources.
+		this.SearchDirs = filenames.Select(filename => Path.GetDirectoryName(filename)).Distinct().ToArray();
+
+		this.CiGroup.Clear();
+		foreach (string filename in filenames) {
+			string content = File.ReadAllText(filename).Replace("\r", "").Replace("\n", "\r\n");
+			this.CiGroup.Set(Path.GetFileName(filename), content, false);
+		}
+		FocusCi();
+	}
+
 	void Menu_Open(object sender, EventArgs e)
 	{
 		OpenFileDialog dlg = new OpenFileDialog { DefaultExt = "ci", Filter = "Æ Source Code (*.ci)|*.ci", Multiselect = true };
-		if (dlg.ShowDialog() == DialogResult.OK) {
-			// Directory for BinaryResources. Let's assume all sources and resources are in the same directory.
-			this.SearchDirs = new string[1] { Path.GetDirectoryName(dlg.FileNames[0]) };
-
-			this.CiGroup.Clear();
-			foreach (string filename in dlg.FileNames) {
-				string content = File.ReadAllText(filename).Replace("\r", "").Replace("\n", "\r\n");
-				this.CiGroup.Set(Path.GetFileName(filename), content, false);
-			}
-			FocusCi();
-		}
+		if (dlg.ShowDialog() == DialogResult.OK)
+			Open(dlg.FileNames);
 	}
 
 	void Menu_Font(object sender, EventArgs e)
@@ -73,6 +77,19 @@ public class CiPad : Form
 		FontDialog dlg = new FontDialog { Font = this.Font, ShowEffects = false };
 		if (dlg.ShowDialog() == DialogResult.OK)
 			this.Font = dlg.Font;
+	}
+
+	void Form_DragEnter(object sender, DragEventArgs e)
+	{
+		if (e.Data.GetDataPresent(DataFormats.FileDrop))
+			e.Effect = DragDropEffects.Copy;
+	}
+
+	void Form_DragDrop(object sender, DragEventArgs e)
+	{
+		object o = e.Data.GetData(DataFormats.FileDrop, false);
+		if (o != null)
+			Open((string[]) o);
 	}
 
 	void InitializeComponent()
@@ -90,6 +107,10 @@ public class CiPad : Form
 			new MenuItem("&Open", Menu_Open),
 			new MenuItem("&Font", Menu_Font)
 		});
+
+		this.DragEnter += Form_DragEnter;
+		this.DragDrop += Form_DragDrop;
+		this.AllowDrop = true;
 	}
 
 	public CiPad()
