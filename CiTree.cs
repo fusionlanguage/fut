@@ -443,6 +443,7 @@ public abstract class CiMaybeAssign
 public interface ICiExprVisitor
 {
 	CiExpr Visit(CiSymbolAccess expr);
+	CiExpr Visit(CiVarAccess expr);
 	CiExpr Visit(CiUnknownMemberAccess expr);
 	CiExpr Visit(CiIndexAccess expr);
 	CiExpr Visit(CiMethodCall expr);
@@ -489,6 +490,7 @@ public class CiConstExpr : CiExpr
 	}
 	public override bool IsConst(object value) { return object.Equals(this.Value, value); }
 	public override bool HasSideEffect { get { return false; } }
+	public override string ToString() { return this.Value == null ? "null" : this.Value.ToString(); }
 }
 
 public abstract class CiLValue : CiExpr
@@ -501,6 +503,7 @@ public class CiSymbolAccess : CiExpr
 	public override CiType Type { get { throw new NotSupportedException(); } }
 	public override bool HasSideEffect { get { throw new NotSupportedException(); } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
+	public override string ToString() { return this.Symbol.Name; }
 }
 
 public class CiConstAccess : CiExpr
@@ -515,6 +518,7 @@ public class CiVarAccess : CiLValue
 	public CiVar Var;
 	public override CiType Type { get { return this.Var.Type; } }
 	public override bool HasSideEffect { get { return false; } }
+	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
 public class CiUnknownMemberAccess : CiExpr
@@ -524,6 +528,7 @@ public class CiUnknownMemberAccess : CiExpr
 	public override CiType Type { get { throw new NotSupportedException(); } }
 	public override bool HasSideEffect { get { throw new NotSupportedException(); } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
+	public override string ToString() { return this.Parent + "." + this.Name; }
 }
 
 public class CiFieldAccess : CiLValue
@@ -549,6 +554,7 @@ public class CiIndexAccess : CiExpr
 	public override CiType Type { get { throw new NotSupportedException(); } }
 	public override bool HasSideEffect { get { throw new NotSupportedException(); } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
+	public override string ToString() { return this.Parent + "[" + this.Index + "]"; }
 }
 
 public class CiArrayAccess : CiLValue
@@ -605,9 +611,37 @@ public class CiBinaryExpr : CiExpr
 	public CiExpr Left;
 	public CiToken Op;
 	public CiExpr Right;
+	public string OpString
+	{
+		get
+		{
+			switch (this.Op) {
+			case CiToken.Plus: return "+";
+			case CiToken.Minus: return "-";
+			case CiToken.Asterisk: return "*";
+			case CiToken.Slash: return "/";
+			case CiToken.Mod: return "%";
+			case CiToken.ShiftLeft: return "<<";
+			case CiToken.ShiftRight: return ">>";
+			case CiToken.Less: return "<";
+			case CiToken.LessOrEqual: return "<=";
+			case CiToken.Greater: return ">";
+			case CiToken.GreaterOrEqual: return ">=";
+			case CiToken.Equal: return "==";
+			case CiToken.NotEqual: return "!=";
+			case CiToken.And: return "&";
+			case CiToken.Or: return "|";
+			case CiToken.Xor: return "^";
+			case CiToken.CondAnd: return "&&";
+			case CiToken.CondOr: return "||";
+			default: throw new ArgumentException(this.Op.ToString());
+			}
+		}
+	}
 	public override CiType Type { get { return CiIntType.Value; } }
 	public override bool HasSideEffect { get { return this.Left.HasSideEffect || this.Right.HasSideEffect; } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
+	public override string ToString() { return "(" + this.Left + " " + this.OpString + " " + this.Right + ")"; }
 }
 
 public class CiBoolBinaryExpr : CiBinaryExpr
@@ -625,6 +659,7 @@ public class CiCondExpr : CiExpr
 	public override CiType Type { get { return this.ResultType; } }
 	public override bool HasSideEffect { get { return this.Cond.HasSideEffect || this.OnTrue.HasSideEffect || this.OnFalse.HasSideEffect; } }
 	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
+	public override string ToString() { return "(" + this.Cond + " ? " + this.OnTrue + " : " + this.OnFalse + ")"; }
 }
 
 public class CiBinaryResourceExpr : CiExpr

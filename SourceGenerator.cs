@@ -543,27 +543,9 @@ public abstract class SourceGenerator : ICiStatementVisitor
 
 	protected void WriteOp(CiBinaryExpr expr)
 	{
-		switch (expr.Op) {
-		case CiToken.Plus: Write(" + "); break;
-		case CiToken.Minus: Write(" - "); return;
-		case CiToken.Asterisk: Write(" * "); break;
-		case CiToken.Slash: Write(" / "); break;
-		case CiToken.Mod: Write(" % "); break;
-		case CiToken.ShiftLeft: Write(" << "); break;
-		case CiToken.ShiftRight: Write(" >> "); break;
-		case CiToken.Less: Write(" < "); break;
-		case CiToken.LessOrEqual: Write(" <= "); break;
-		case CiToken.Greater: Write(" > "); break;
-		case CiToken.GreaterOrEqual: Write(" >= "); break;
-		case CiToken.Equal: Write(" == "); break;
-		case CiToken.NotEqual: Write(" != "); break;
-		case CiToken.And: Write(" & "); break;
-		case CiToken.Or: Write(" | "); break;
-		case CiToken.Xor: Write(" ^ "); break;
-		case CiToken.CondAnd: Write(" && "); break;
-		case CiToken.CondOr: Write(" || "); break;
-		default: throw new ArgumentException(expr.Op.ToString());
-		}
+		Write(' ');
+		Write(expr.OpString);
+		Write(' ');
 	}
 
 	protected virtual void Write(CiBinaryExpr expr)
