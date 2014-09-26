@@ -735,16 +735,21 @@ public class GenC : SourceGenerator
 		WriteSignature(method);
 		WriteLine();
 		OpenBlock();
-		ICiStatement[] statements = method.Body.Statements;
-		StartBlock(statements);
-		if (method.Throws && method.Signature.ReturnType == CiType.Void && method.Body.CompletesNormally) {
-			if (!TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
-				Write(statements);
-				WriteReturnTrue();
+		CiBlock block = method.Body as CiBlock;
+		if (block != null) {
+			ICiStatement[] statements = block.Statements;
+			StartBlock(statements);
+			if (method.Throws && method.Signature.ReturnType == CiType.Void && method.Body.CompletesNormally) {
+				if (!TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
+					Write(statements);
+					WriteReturnTrue();
+				}
 			}
+			else
+				Write(statements);
 		}
 		else
-			Write(statements);
+			Write(method.Body);
 		CloseBlock();
 		this.CurrentMethod = null;
 	}
@@ -832,7 +837,7 @@ public class GenC : SourceGenerator
 			WriteLine();
 			OpenBlock();
 			if (klass.Constructor != null)
-				StartBlock(klass.Constructor.Body.Statements);
+				StartBlock(((CiBlock) klass.Constructor.Body).Statements);
 			CiClass ptrClass = GetVtblPtrClass(klass);
 			if (HasVtblValue(klass)) {
 				WriteLine("if (vtbl == NULL)");
@@ -869,7 +874,7 @@ public class GenC : SourceGenerator
 				}
 			});
 			if (klass.Constructor != null)
-				Write(klass.Constructor.Body.Statements);
+				Write(((CiBlock) klass.Constructor.Body).Statements);
 			CloseBlock();
 			this.CurrentMethod = null;
 		}

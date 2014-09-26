@@ -1,6 +1,6 @@
 // GenJava.cs - Java code generator
 //
-// Copyright (C) 2011-2013  Piotr Fusik
+// Copyright (C) 2011-2014  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -412,12 +412,7 @@ public class GenJava : SourceGenerator, ICiSymbolVisitor
 		WriteSignature(method.Signature, method.Name);
 		if (method.Throws)
 			Write(" throws Exception");
-		if (method.CallType == CiCallType.Abstract)
-			WriteLine(";");
-		else {
-			WriteLine();
-			Write(method.Body);
-		}
+		WriteBody(method);
 	}
 
 	void WriteClearMethod(string elementType)

@@ -475,6 +475,15 @@ public partial class CiParser : CiLexer
 		return new CiNativeBlock { Content = sb.ToString() };
 	}
 
+	CiReturn ParseReturn()
+	{
+		CiReturn result = new CiReturn();
+		if (this.CurrentMethod.Signature.ReturnType != CiType.Void)
+			result.Value = ParseExpr();
+		Expect(CiToken.Semicolon);
+		return result;
+	}
+
 	CiSwitch ParseSwitch()
 	{
 		Expect(CiToken.LeftParenthesis);
@@ -595,13 +604,8 @@ public partial class CiParser : CiLexer
 		}
 		if (Eat(CiToken.Native))
 			return ParseNativeBlock();
-		if (Eat(CiToken.Return)) {
-			CiReturn result = new CiReturn();
-			if (this.CurrentMethod.Signature.ReturnType != CiType.Void)
-				result.Value = ParseExpr();
-			Expect(CiToken.Semicolon);
-			return result;
-		}
+		if (Eat(CiToken.Return))
+			return ParseReturn();
 		if (Eat(CiToken.Switch))
 			return ParseSwitch();
 		if (Eat(CiToken.Throw)) {
@@ -671,6 +675,8 @@ public partial class CiParser : CiLexer
 		method.Signature.Params = ParseParams();
 		if (method.CallType == CiCallType.Abstract)
 			Expect(CiToken.Semicolon);
+		else if (method.Signature.ReturnType != CiType.Void && Eat(CiToken.Return))
+			method.Body = ParseReturn();
 		else
 			method.Body = ParseBlock();
 		CloseScope();

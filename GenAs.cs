@@ -1,6 +1,6 @@
 // GenAs.cs - ActionScript code generator
 //
-// Copyright (C) 2011-2013  Piotr Fusik
+// Copyright (C) 2011-2014  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -406,13 +406,18 @@ public class GenAs : SourceGenerator, ICiSymbolVisitor
 		if (method.CallType == CiCallType.Abstract)
 			WriteLine("throw \"Abstract method called\";");
 		else {
-			ICiStatement[] statements = method.Body.Statements;
-			Write(statements);
-			if (method.Signature.ReturnType != CiType.Void && statements.Length > 0) {
-				CiFor lastLoop = statements[statements.Length - 1] as CiFor;
-				if (lastLoop != null && lastLoop.Cond == null)
-					WriteLine("throw \"Unreachable\";");
+			CiBlock block = method.Body as CiBlock;
+			if (block != null) {
+				ICiStatement[] statements = block.Statements;
+				Write(statements);
+				if (method.Signature.ReturnType != CiType.Void && statements.Length > 0) {
+					CiFor lastLoop = statements[statements.Length - 1] as CiFor;
+					if (lastLoop != null && lastLoop.Cond == null)
+						WriteLine("throw \"Unreachable\";");
+				}
 			}
+			else
+				Write(method.Body);
 		}
 		CloseBlock();
 	}

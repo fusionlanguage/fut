@@ -1,6 +1,6 @@
 // GenD.cs - D code generator
 //
-// Copyright (C) 2011-2013  Adrian Matoga
+// Copyright (C) 2011-2014  Adrian Matoga
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -462,12 +462,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 		case CiCallType.Override: Write("override "); break;
 		}
 		WriteSignature(method.Signature);
-		if (method.CallType == CiCallType.Abstract)
-			WriteLine(";");
-		else {
-			WriteLine();
-			Write(method.Body);
-		}
+		WriteBody(method);
 	}
 
 	void ICiSymbolVisitor.Visit(CiClass klass)
@@ -518,7 +513,7 @@ public class GenD : SourceGenerator, ICiSymbolVisitor
 				}
 			} 
 			if (klass.Constructor != null)
-				Write(klass.Constructor.Body.Statements);
+				Write(((CiBlock) klass.Constructor.Body).Statements);
 			CloseBlock();
 		}
 		CloseBlock();

@@ -878,6 +878,22 @@ public abstract class SourceGenerator : ICiStatementVisitor
 			WriteLine(";");
 	}
 
+	protected void WriteBody(CiMethod method)
+	{
+		if (method.CallType == CiCallType.Abstract)
+			WriteLine(";");
+		else {
+			WriteLine();
+			if (method.Body is CiBlock)
+				Write(method.Body);
+			else {
+				OpenBlock();
+				Write(method.Body);
+				CloseBlock();
+			}
+		}
+	}
+
 	protected void OpenClass(bool isAbstract, CiClass klass, string extendsClause)
 	{
 		if (isAbstract)

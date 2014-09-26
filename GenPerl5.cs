@@ -1,6 +1,6 @@
 // GenPerl5.cs - Perl 5 code generator
 //
-// Copyright (C) 2013  Piotr Fusik
+// Copyright (C) 2013-2014  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -700,7 +700,11 @@ public abstract class GenPerl5 : SourceGenerator
 			}
 			WriteLine(") = @_;");
 		}
-		Write(method.Body.Statements);
+		CiBlock block = method.Body as CiBlock;
+		if (block != null)
+			Write(block.Statements);
+		else
+			Write(method.Body);
 		CloseBlock();
 		WriteLine();
 		this.CurrentMethod = null;
@@ -746,7 +750,7 @@ public abstract class GenPerl5 : SourceGenerator
 		}
 		if (klass.Constructor != null) {
 			this.CurrentMethod = klass.Constructor;
-			Write(klass.Constructor.Body.Statements);
+			Write(((CiBlock) klass.Constructor.Body).Statements);
 			this.CurrentMethod = null;
 		}
 		WriteLine("return $self;"); // TODO: premature returns

@@ -1,6 +1,6 @@
 // GenJs.cs - JavaScript code generator
 //
-// Copyright (C) 2011-2013  Piotr Fusik
+// Copyright (C) 2011-2014  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -318,7 +318,13 @@ public class GenJs : SourceGenerator
 			Write(param.Name);
 		}
 		Write(") ");
-		Write(method.Body);
+		if (method.Body is CiBlock)
+			Write(method.Body);
+		else {
+			OpenBlock();
+			Write(method.Body);
+			CloseBlock();
+		}
 	}
 
 	void Write(CiConst konst)
@@ -353,7 +359,7 @@ public class GenJs : SourceGenerator
 				Write((CiField) member);
 		}
 		if (klass.Constructor != null)
-			Write(klass.Constructor.Body.Statements);
+			Write(((CiBlock) klass.Constructor.Body).Statements);
 		CloseBlock();
 		if (klass.BaseClass != null) {
 			Write(klass.Name);
