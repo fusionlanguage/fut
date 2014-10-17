@@ -444,6 +444,7 @@ public interface ICiExprVisitor
 {
 	CiExpr Visit(CiSymbolAccess expr);
 	CiExpr Visit(CiVarAccess expr);
+	CiExpr Visit(CiPropertyAccess expr);
 	CiExpr Visit(CiUnknownMemberAccess expr);
 	CiExpr Visit(CiIndexAccess expr);
 	CiExpr Visit(CiMethodCall expr);
@@ -545,6 +546,7 @@ public class CiPropertyAccess : CiExpr
 	public CiProperty Property;
 	public override CiType Type { get { return this.Property.Type; } }
 	public override bool HasSideEffect { get { return this.Obj.HasSideEffect; } }
+	public override CiExpr Accept(ICiExprVisitor v) { return v.Visit(this); }
 }
 
 public class CiIndexAccess : CiExpr
