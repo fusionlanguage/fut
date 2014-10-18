@@ -1,6 +1,6 @@
 // SymbolTable.cs - symbol table
 //
-// Copyright (C) 2011  Piotr Fusik
+// Copyright (C) 2011-2014  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -20,6 +20,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Linq;
 
 namespace Foxoft.Ci
 {
@@ -27,7 +29,7 @@ namespace Foxoft.Ci
 public class SymbolTable : IEnumerable<CiSymbol>
 {
 	public SymbolTable Parent;
-	readonly SortedDictionary<string, CiSymbol> Dict = new SortedDictionary<string, CiSymbol>(StringComparer.Ordinal);
+	readonly OrderedDictionary Dict = new OrderedDictionary();
 
 	IEnumerator IEnumerable.GetEnumerator()
 	{
@@ -36,14 +38,14 @@ public class SymbolTable : IEnumerable<CiSymbol>
 
 	public IEnumerator<CiSymbol> GetEnumerator()
 	{
-		return this.Dict.Values.GetEnumerator();
+		return this.Dict.Values.Cast<CiSymbol>().GetEnumerator();
 	}
 
 	public void Add(CiSymbol symbol)
 	{
 		string name = symbol.Name;
 		for (SymbolTable t = this; t != null; t = t.Parent)
-			if (t.Dict.ContainsKey(name))
+			if (t.Dict.Contains(name))
 				throw new ParseException("Symbol {0} already defined", name);
 		this.Dict.Add(name, symbol);
 	}
@@ -51,9 +53,9 @@ public class SymbolTable : IEnumerable<CiSymbol>
 	public CiSymbol TryLookup(string name)
 	{
 		for (SymbolTable t = this; t != null; t = t.Parent) {
-			CiSymbol result;
-			if (t.Dict.TryGetValue(name, out result))
-				return result;
+			object result = t.Dict[name];
+			if (result != null)
+				return(CiSymbol) result;
 		}
 		return null;
 	}
