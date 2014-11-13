@@ -96,11 +96,11 @@ public enum CiToken
 	Protected,
 	Public,
 	Return,
+	Sealed,
 	Static,
 	Switch,
 	Throw,
 	Virtual,
-	Void,
 	While,
 	EndOfLine,
 	PreIf,
@@ -385,6 +385,9 @@ public class CiLexer
 			case ']': return CiToken.RightBracket;
 			case '{': return CiToken.LeftBrace;
 			case '}': return CiToken.RightBrace;
+			case '~': return CiToken.Tilde;
+			case '?': return CiToken.QuestionMark;
+			case ':': return CiToken.Colon;
 			case '+':
 				if (EatChar('+')) return CiToken.Increment;
 				if (EatChar('=')) return CiToken.AddAssign;
@@ -450,12 +453,6 @@ public class CiLexer
 				}
 				if (EatChar('=')) return CiToken.GreaterOrEqual;
 				return CiToken.Greater;
-			case '~':
-				return CiToken.Tilde;
-			case '?':
-				return CiToken.QuestionMark;
-			case ':':
-				return CiToken.Colon;
 			case '\'':
 				if (PeekChar() == '\'')
 					throw new ParseException("Empty character literal");
@@ -512,11 +509,11 @@ public class CiLexer
 				case "protected": return CiToken.Protected;
 				case "public": return CiToken.Public;
 				case "return": return CiToken.Return;
+				case "sealed": return CiToken.Sealed;
 				case "static": return CiToken.Static;
 				case "switch": return CiToken.Switch;
 				case "throw": return CiToken.Throw;
 				case "virtual": return CiToken.Virtual;
-				case "void": return CiToken.Void;
 				case "while": return CiToken.While;
 				default:
 					this.CurrentValue = s;
@@ -702,8 +699,8 @@ public class CiLexer
 
 	protected CiToken NextToken()
 	{
-		CiToken token = ReadToken();
-		this.CurrentToken = token;
+		CiToken token = this.CurrentToken;
+		this.CurrentToken = ReadToken();
 		return token;
 	}
 
