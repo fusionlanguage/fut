@@ -34,6 +34,9 @@ public static class CiTo
 	{
 		Console.WriteLine("Usage: cito [OPTIONS] -o FILE INPUT.ci");
 		Console.WriteLine("Options:");
+		Console.WriteLine("-l cs      Translate to C#");
+		Console.WriteLine("-o FILE    Write to the specified file");
+		Console.WriteLine("-n NAME    Specify C# namespace or Java/ActionScript/Perl package");
 		Console.WriteLine("-D NAME    Define conditional compilation symbol");
 		Console.WriteLine("--help     Display this information");
 		Console.WriteLine("--version  Display version information");
@@ -43,6 +46,9 @@ public static class CiTo
 	{
 		CiParser parser = new CiParser();
 		List<string> inputFiles = new List<string>();
+		string lang = null;
+		string outputFile = null;
+		string namespace_ = null;
 		for (int i = 0; i < args.Length; i++) {
 			string arg = args[i];
 			if (arg[0] == '-') {
@@ -53,6 +59,15 @@ public static class CiTo
 				case "--version":
 					Console.WriteLine("cito 1.0.0");
 					return 0;
+				case "-l":
+					lang = args[++i];
+					break;
+				case "-o":
+					outputFile = args[++i];
+					break;
+				case "-n":
+					namespace_ = args[++i];
+					break;
 				case "-D":
 					string symbol = args[++i];
 					if (symbol == "true" || symbol == "false")
@@ -67,22 +82,36 @@ public static class CiTo
 				inputFiles.Add(arg);
 			}
 		}
-		if (inputFiles.Count == 0) {
+		if (lang == null && outputFile != null) {
+			string ext = Path.GetExtension(outputFile);
+			if (ext.Length >= 2)
+				lang = ext.Substring(1);
+		}
+		if (lang == null || outputFile == null || inputFiles.Count == 0) {
 			Usage();
 			return 1;
 		}
+		GenBase gen;
+		switch (lang) {
+		case "cs": gen = new GenCs(namespace_); break;
+		default: throw new ArgumentException("Unknown language: " + lang);
+		}
+		gen.OutputFile = outputFile;
 
-		foreach (string inputFile in inputFiles) {
-			try {
+		CiProgram program;
+		try {
+			foreach (string inputFile in inputFiles)
 				parser.Parse(inputFile, File.OpenText(inputFile));
-			} catch (Exception ex) {
-				Console.Error.WriteLine("{0}({1}): ERROR: {2}", inputFile, parser.Line, ex.Message);
-				return 1;
-//				throw;
-			}
+			program = parser.Program;
+		} catch (CiException ex) {
+			Console.Error.WriteLine("{0}({1}): ERROR: {2}", ex.Filename, ex.Line, ex.Message);
+			return 1;
+//			throw;
 		}
 
+		gen.Write(program);
 		return 0;
 	}
 }
+
 }

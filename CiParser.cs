@@ -26,13 +26,17 @@ namespace Foxoft.Ci
 
 public class CiParser : CiLexer
 {
-	readonly CiScope Symbols;
+	readonly List<CiClass> Classes = new List<CiClass>();
+	readonly List<CiEnum> Enums = new List<CiEnum>();
 
-	public CiParser()
+	CiException StatementException(CiStatement statement, string message)
 	{
-		CiScope globals = new CiScope();
-		// TODO: add built-in types and constants
-		this.Symbols = new CiScope { Parent = globals };
+		return new CiException(this.Filename, statement.Line, message);
+	}
+
+	CiException StatementException(CiStatement statement, string format, params object[] args)
+	{
+		return StatementException(statement, string.Format(format, args));
 	}
 
 	string ParseId()
@@ -97,7 +101,7 @@ public class CiParser : CiLexer
 			result = ParseSymbolReference();
 			break;
 		default:
-			throw new ParseException("Invalid expression");
+			throw ParseException("Invalid expression");
 		}
 		for (;;) {
 			switch (this.CurrentToken) {
@@ -266,7 +270,7 @@ public class CiParser : CiLexer
 
 	CiVar ParseVar(CiExpr type)
 	{
-		CiVar def = new CiVar { Type = type, Name = ParseId() };
+		CiVar def = new CiVar { Line = this.Line, Type = type, Name = ParseId() };
 		if (Eat(CiToken.Assign))
 			def.Value = ParseAssign(false);
 		return def;
@@ -280,7 +284,7 @@ public class CiParser : CiLexer
 	CiConst ParseConst()
 	{
 		Expect(CiToken.Const);
-		CiConst konst = new CiConst { Type = ParseType(), Name = ParseId() };
+		CiConst konst = new CiConst { Line = this.Line, Type = ParseType(), Name = ParseId() };
 		Expect(CiToken.Assign);
 		konst.Value = ParseConstInitializer();
 		Expect(CiToken.Semicolon);
@@ -289,11 +293,12 @@ public class CiParser : CiLexer
 
 	CiBlock ParseBlock()
 	{
+		int line = this.Line;
 		Expect(CiToken.LeftBrace);
 		List<CiStatement> statements = new List<CiStatement>();
 		while (!Eat(CiToken.RightBrace))
 			statements.Add(ParseStatement());
-		return new CiBlock { Statements = statements.ToArray() };
+		return new CiBlock { Line = this.Line, Statements = statements.ToArray() };
 	}
 
 	CiBreak ParseBreak()
@@ -381,12 +386,14 @@ public class CiParser : CiLexer
 		List<CiCase> cases = new List<CiCase>();
 		while (Eat(CiToken.Case)) {
 			List<CiExpr> values = new List<CiExpr>();
+			CiExpr value;
 			do {
-				values.Add(ParseExpr());
+				value = ParseExpr();
+				values.Add(value);
 				Expect(CiToken.Colon);
 			} while (Eat(CiToken.Case));
 			if (See(CiToken.Default))
-				throw new ParseException("Please remove case before default");
+				throw StatementException(value, "Please remove case before default");
 			CiCase kase = new CiCase { Values = values.ToArray() };
 
 			List<CiStatement> statements = new List<CiStatement>();
@@ -409,7 +416,7 @@ public class CiParser : CiLexer
 						NextToken();
 						break;
 					default:
-						throw new ParseException("Expected goto case or goto default");
+						throw ParseException("Expected goto case or goto default");
 					}
 					Expect(CiToken.Semicolon);
 					break;
@@ -422,7 +429,7 @@ public class CiParser : CiLexer
 			cases.Add(kase);
 		}
 		if (cases.Count == 0)
-			throw new ParseException("Switch with no cases");
+			throw ParseException("Switch with no cases");
 		result.Cases = cases.ToArray();
 
 		if (Eat(CiToken.Default)) {
@@ -493,10 +500,10 @@ public class CiParser : CiLexer
 	void ParseDestructor(CiClass klass)
 	{
 		if (klass.Destructor != null)
-			throw new ParseException("Duplicate destructor");
+			throw ParseException("Duplicate destructor, already defined in line {0}", klass.Destructor.Line);
 		Expect(CiToken.Tilde);
 		if (ParseId() != klass.Name)
-			throw new ParseException("Destructor name doesn't match class name");
+			throw ParseException("Destructor name doesn't match class name");
 		Expect(CiToken.LeftParenthesis);
 		Expect(CiToken.RightParenthesis);
 		klass.Destructor = ParseBlock();
@@ -545,13 +552,17 @@ public class CiParser : CiLexer
 			method.Body = ParseBlock();
 	}
 
-	public CiClass ParseClass(CiCallType callType)
+	public void ParseClass(bool isPublic, CiCallType callType)
 	{
 		Expect(CiToken.Class);
-		CiClass klass = new CiClass { CallType = callType, Name = ParseId() };
+		CiClass klass = new CiClass { SourceFilename = this.Filename, Line = this.Line, IsPublic = isPublic, CallType = callType, Name = ParseId() };
 		if (Eat(CiToken.Colon))
 			klass.BaseClassName = ParseId();
 		Expect(CiToken.LeftBrace);
+
+		List<CiConst> consts = new List<CiConst>();
+		List<CiField> fields = new List<CiField>();
+		List<CiMethod> methods = new List<CiMethod>();
 		while (!Eat(CiToken.RightBrace)) {
 			CiVisibility visibility;
 			switch (this.CurrentToken) {
@@ -567,119 +578,144 @@ public class CiParser : CiLexer
 				visibility = CiVisibility.Public;
 				NextToken();
 				break;
+
 			case CiToken.Tilde:
+				// destructor
 				ParseDestructor(klass);
 				continue;
+
 			default:
 				visibility = CiVisibility.Private;
 				break;
 			}
-			CiMember member;
-			if (See(CiToken.Const))
-				member = ParseConst();
-			else {
-				callType = ParseCallType();
-				// \ class | static | normal | abstract | sealed
-				// member \|        |        |          |
-				// --------+--------+--------+----------+-------
-				// static  |   +    |   +    |    +     |   +
-				// normal  |   -    |   +    |    +     |   +
-				// abstract|   -    |   -    |    +     |   -
-				// virtual |   -    |   +    |    +     |   -
-				// override|   -    |   +    |    +     |   +
-				// sealed  |   -    |   +    |    +     |   +
-				if (callType == CiCallType.Static || klass.CallType == CiCallType.Abstract) {
-					// ok
-				}
-				else if (klass.CallType == CiCallType.Static)
-					throw new ParseException("Only static members allowed in a static class");
-				else if (callType == CiCallType.Abstract)
-					throw new ParseException("Abstract methods allowed only in an abstract class");
-				else if (klass.CallType == CiCallType.Sealed && callType == CiCallType.Virtual)
-					throw new ParseException("Virtual methods disallowed in a sealed class");
 
-				CiExpr type = ParseType();
-				if (See(CiToken.LeftBrace)) {
-					CiBinaryExpr call = type as CiBinaryExpr;
-					if (call != null && call.Op == CiToken.LeftParenthesis) {
-						CiSymbolReference sr = call.Left as CiSymbolReference;
-						if (sr != null) {
-							if (sr.Name != klass.Name)
-								throw new ParseException("Constructor name doesn't match class name");
-							if (callType != CiCallType.Normal)
-								throw new ParseException("Constructor cannot be " + callType);
-							if (((CiCollection) call.Right).Items.Length != 0)
-								throw new ParseException("Constructor parameters not supported");
-							if (klass.Constructor != null)
-								throw new ParseException("Duplicate constructor");
-							klass.Constructor = new CiMethodBase { Visibility = visibility, Body = ParseBlock() };
-							continue;
-						}
+			if (See(CiToken.Const)) {
+				// const
+				CiConst konst = ParseConst();
+				konst.Visibility = visibility;
+				consts.Add(konst);
+				continue;
+			}
+
+			callType = ParseCallType();
+			// \ class | static | normal | abstract | sealed
+			// member \|        |        |          |
+			// --------+--------+--------+----------+-------
+			// static  |   +    |   +    |    +     |   +
+			// normal  |   -    |   +    |    +     |   +
+			// abstract|   -    |   -    |    +     |   -
+			// virtual |   -    |   +    |    +     |   -
+			// override|   -    |   +    |    +     |   +
+			// sealed  |   -    |   +    |    +     |   +
+			if (callType == CiCallType.Static || klass.CallType == CiCallType.Abstract) {
+				// ok
+			}
+			else if (klass.CallType == CiCallType.Static)
+				throw ParseException("Only static members allowed in a static class");
+			else if (callType == CiCallType.Abstract)
+				throw ParseException("Abstract methods allowed only in an abstract class");
+			else if (klass.CallType == CiCallType.Sealed && callType == CiCallType.Virtual)
+				throw ParseException("Virtual methods disallowed in a sealed class");
+			if (visibility == CiVisibility.Private && callType != CiCallType.Static && callType != CiCallType.Normal)
+				throw ParseException("{0} method cannot be private", callType);
+
+			CiExpr type = ParseType();
+			if (See(CiToken.LeftBrace)) {
+				CiBinaryExpr call = type as CiBinaryExpr;
+				if (call != null && call.Op == CiToken.LeftParenthesis) {
+					CiSymbolReference sr = call.Left as CiSymbolReference;
+					if (sr != null) {
+						// constructor
+						if (sr.Name != klass.Name)
+							throw ParseException("Constructor name doesn't match class name");
+						if (callType != CiCallType.Normal)
+							throw ParseException("Constructor cannot be {0}", callType);
+						if (((CiCollection) call.Right).Items.Length != 0)
+							throw ParseException("Constructor parameters not supported");
+						if (klass.Constructor != null)
+							throw ParseException("Duplicate constructor, already defined in line {0}", klass.Constructor.Line);
+						klass.Constructor = new CiMethodBase { Line = sr.Line, Visibility = visibility, Body = ParseBlock() };
+						continue;
 					}
 				}
-				string name = ParseId();
-				if (See(CiToken.LeftParenthesis) || See(CiToken.ExclamationMark)) {
-					CiMethod method = new CiMethod { CallType = callType, Type = type, Name = name };
-					ParseMethod(method);
-					member = method;
-				}
-				else {
-					if (visibility == CiVisibility.Public)
-						throw new ParseException("Fields cannot be public");
-					if (callType != CiCallType.Normal)
-						throw new ParseException("Constructor cannot be " + callType);
-					Expect(CiToken.Semicolon);
-					member = new CiField { Type = type, Name = name };
-				}
 			}
-			member.Visibility = visibility;
-			klass.Add(member);
+
+			string name = ParseId();
+			if (See(CiToken.LeftParenthesis) || See(CiToken.ExclamationMark)) {
+				// method
+				CiMethod method = new CiMethod { Line = type.Line, Visibility = visibility, CallType = callType, Type = type, Name = name };
+				ParseMethod(method);
+				methods.Add(method);
+				continue;
+			}
+
+			// field
+			if (visibility == CiVisibility.Public)
+				throw ParseException("Field cannot be public");
+			if (callType != CiCallType.Normal)
+				throw ParseException("Field cannot be {0}", callType);
+			Expect(CiToken.Semicolon);
+			fields.Add(new CiField { Line = type.Line, Visibility = visibility, Type = type, Name = name });
 		}
-		return klass;
+
+		klass.Consts = consts.ToArray();
+		klass.Fields = fields.ToArray();
+		klass.Methods = methods.ToArray();
+		this.Classes.Add(klass);
 	}
 
-	public CiEnum ParseEnum()
+	public void ParseEnum(bool isPublic)
 	{
 		Expect(CiToken.Enum);
-		CiEnum enu = new CiEnum { IsFlags = Eat(CiToken.Asterisk), Name = ParseId() };
+		CiEnum enu = new CiEnum { SourceFilename = this.Filename, IsFlags = Eat(CiToken.Asterisk), Line = this.Line, IsPublic = isPublic, Name = ParseId() };
 		Expect(CiToken.LeftBrace);
 		do {
-			CiConst konst = new CiConst { Name = ParseId() };
+			CiConst konst = new CiConst { Line = this.Line, Name = ParseId() };
+			CiSymbol duplicate = enu.TryLookup(konst.Name);
+			if (duplicate != null)
+				throw StatementException(konst, "Duplicate enum value {0}, already defined in line {1}", konst.Name, duplicate.Line);
 			if (Eat(CiToken.Assign))
 				konst.Value = ParseExpr();
 			else if (enu.IsFlags)
-				throw new ParseException("enum* symbol must be assigned a value");
+				throw ParseException("enum* symbol must be assigned a value");
 			enu.Add(konst);
 		} while (Eat(CiToken.Comma));
 		Expect(CiToken.RightBrace);
-		return enu;
+		this.Enums.Add(enu);
 	}
 
 	public void Parse(string filename, TextReader reader)
 	{
 		Open(filename, reader);
 		while (!See(CiToken.EndOfFile)) {
-			CiContainerType symbol;
-			CiVisibility visibility = Eat(CiToken.Public) ? CiVisibility.Public : CiVisibility.Internal;
+			bool isPublic = Eat(CiToken.Public);
 			switch (this.CurrentToken) {
+			// class
 			case CiToken.Class:
-				symbol = ParseClass(CiCallType.Normal);
+				ParseClass(isPublic, CiCallType.Normal);
 				break;
 			case CiToken.Static:
 			case CiToken.Abstract:
 			case CiToken.Sealed:
-				symbol = ParseClass(ParseCallType());
+				ParseClass(isPublic, ParseCallType());
 				break;
 
+			// enum
 			case CiToken.Enum:
-				symbol = ParseEnum();
+				ParseEnum(isPublic);
 				break;
+
 			default:
-				throw new ParseException("Expected class or enum");
+				throw ParseException("Expected class or enum");
 			}
-			symbol.SourceFilename = filename;
-			symbol.Visibility = visibility;
-			this.Symbols.Add(symbol);
+		}
+	}
+
+	public CiProgram Program
+	{
+		get
+		{
+			return new CiProgram { Classes = this.Classes.ToArray(), Enums = this.Enums.ToArray() };
 		}
 	}
 }

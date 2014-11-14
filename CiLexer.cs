@@ -109,18 +109,6 @@ public enum CiToken
 	PreEndIf
 }
 
-[Serializable]
-public class ParseException : Exception
-{
-	public ParseException(string message) : base(message)
-	{
-	}
-
-	public ParseException(string format, params object[] args) : this(string.Format(format, args))
-	{
-	}
-}
-
 public class CiLexer
 {
 	enum PreDirectiveClass
@@ -150,6 +138,16 @@ public class CiLexer
 		this.Reader = reader;
 		this.Line = 1;
 		NextToken();
+	}
+
+	protected CiException ParseException(string message)
+	{
+		return new CiException(this.Filename, this.Line, message);
+	}
+
+	protected CiException ParseException(string format, params object[] args)
+	{
+		return ParseException(string.Format(format, args));
 	}
 
 	int PeekChar()
@@ -228,7 +226,7 @@ public class CiLexer
 	{
 		long i = ReadHexDigit();
 		if (i < 0)
-			throw new ParseException("Invalid hex number");
+			throw ParseException("Invalid hex number");
 		for (;;) {
 			ReadChar();
 			int d = ReadHexDigit();
@@ -237,7 +235,7 @@ public class CiLexer
 				return CiToken.Literal;
 			}
 			if (i > 0xfffffffffffffff)
-				throw new ParseException("Hex number too big");
+				throw ParseException("Hex number too big");
 			i = (i << 4) + d;
 		}
 	}
@@ -304,12 +302,12 @@ public class CiLexer
 				return CiToken.Literal;
 			}
 			if (i == 0)
-				throw new ParseException("Octal numbers not supported");
+				throw ParseException("Octal numbers not supported");
 			if (i > 922337203685477580)
-				throw new ParseException("Integer too big");
+				throw ParseException("Integer too big");
 			i = 10 * i + d;
 			if (i < 0)
-				throw new ParseException("Integer too big");
+				throw ParseException("Integer too big");
 			ReadChar();
 		}
 	}
@@ -318,7 +316,7 @@ public class CiLexer
 	{
 		int c = ReadChar();
 		if (c < 32)
-			throw new ParseException("Invalid character in literal");
+			throw ParseException("Invalid character in literal");
 		if (c != '\\')
 			return (char) c;
 		switch (ReadChar()) {
@@ -332,14 +330,14 @@ public class CiLexer
 		case 'r': return '\r';
 		case 't': return '\t';
 		case 'v': return '\v';
-		default: throw new ParseException("Unknown escape sequence");
+		default: throw ParseException("Unknown escape sequence");
 		}
 	}
 
 	string ReadId(int c)
 	{
 		if (!IsLetterOrDigit(c))
-			throw new ParseException("Invalid character");
+			throw ParseException("Invalid character");
 		StringBuilder sb = new StringBuilder();
 		for (;;) {
 			sb.Append((char) c);
@@ -368,13 +366,13 @@ public class CiLexer
 				continue;
 			case '#':
 				if (!atLineStart)
-					throw new ParseException("Invalid character");
+					throw ParseException("Invalid character");
 				switch (ReadId(ReadChar())) {
 				case "if": return CiToken.PreIf;
 				case "elif": return CiToken.PreElIf;
 				case "else": return CiToken.PreElse;
 				case "endif": return CiToken.PreEndIf;
-				default: throw new ParseException("Unknown preprocessor directive");
+				default: throw ParseException("Unknown preprocessor directive");
 				}
 			case ';': return CiToken.Semicolon;
 			case '.': return CiToken.Dot;
@@ -412,7 +410,7 @@ public class CiLexer
 					do {
 						c = ReadChar();
 						if (c < 0)
-							throw new ParseException("Unterminated multi-line comment, started in line " + startLine);
+							throw ParseException("Unterminated multi-line comment, started in line {0}", startLine);
 					} while (c != '*' || PeekChar() != '/');
 					ReadChar();
 					continue;
@@ -455,10 +453,10 @@ public class CiLexer
 				return CiToken.Greater;
 			case '\'':
 				if (PeekChar() == '\'')
-					throw new ParseException("Empty character literal");
+					throw ParseException("Empty character literal");
 				this.CurrentValue = (long) ReadCharLiteral();
 				if (ReadChar() != '\'')
-					throw new ParseException("Unterminated character literal");
+					throw ParseException("Unterminated character literal");
 				return CiToken.Literal;
 			case '"': {
 				StringBuilder sb = new StringBuilder();
@@ -552,7 +550,7 @@ public class CiLexer
 			NextPreToken();
 			return result;
 		}
-		throw new ParseException("Invalid preprocessor expression");
+		throw ParseException("Invalid preprocessor expression");
 	}
 
 	bool ParsePreAnd()
@@ -586,7 +584,7 @@ public class CiLexer
 		this.LineMode = true;
 		CiToken token = ReadPreToken();
 		if (token != CiToken.EndOfLine && token != CiToken.EndOfFile)
-			throw new ParseException("Unexpected characters after " + directive);
+			throw ParseException("Unexpected characters after {0}", directive);
 		this.LineMode = false;
 	}
 
@@ -595,10 +593,10 @@ public class CiLexer
 		try {
 			PreDirectiveClass pdc = this.PreStack.Pop();
 			if (directive != "#endif" && pdc == PreDirectiveClass.Else)
-				throw new ParseException(directive + " after #else");
+				throw ParseException("{0} after #else", directive);
 		}
 		catch (InvalidOperationException) {
-			throw new ParseException(directive + " with no matching #if");
+			throw ParseException("{0} with no matching #if", directive);
 		}
 	}
 
@@ -608,7 +606,7 @@ public class CiLexer
 			// we are in a conditional that wasn't met yet
 			switch (ReadPreToken()) {
 			case CiToken.EndOfFile:
-				throw new ParseException("Expected #endif, got end of file");
+				throw ParseException("Expected #endif, got end of file");
 			case CiToken.PreIf:
 				ParsePreExpr();
 				SkipUntilPreEndIf(false);
@@ -636,19 +634,19 @@ public class CiLexer
 			// we are in a conditional that was met before
 			switch (ReadPreToken()) {
 			case CiToken.EndOfFile:
-				throw new ParseException("Expected #endif, got end of file");
+				throw ParseException("Expected #endif, got end of file");
 			case CiToken.PreIf:
 				ParsePreExpr();
 				SkipUntilPreEndIf(false);
 				break;
 			case CiToken.PreElIf:
 				if (wasElse)
-					throw new ParseException("#elif after #else");
+					throw ParseException("#elif after #else");
 				ParsePreExpr();
 				break;
 			case CiToken.PreElse:
 				if (wasElse)
-					throw new ParseException("#else after #else");
+					throw ParseException("#else after #else");
 				ExpectEndOfLine("#else");
 				wasElse = true;
 				break;
@@ -667,7 +665,7 @@ public class CiLexer
 			switch (token) {
 			case CiToken.EndOfFile:
 				if (this.PreStack.Count != 0)
-					throw new ParseException("Expected #endif, got end of file");
+					throw ParseException("Expected #endif, got end of file");
 				return CiToken.EndOfFile;
 			case CiToken.PreIf:
 				if (ParsePreExpr()) {
@@ -718,10 +716,10 @@ public class CiLexer
 		return false;
 	}
 
-	protected void Check(CiToken expected)
+	void Check(CiToken expected)
 	{
 		if (!See(expected))
-			throw new ParseException("Expected {0}, got {1}", expected, this.CurrentToken);
+			throw ParseException("Expected {0}, got {1}", expected, this.CurrentToken);
 	}
 
 	protected void Expect(CiToken expected)

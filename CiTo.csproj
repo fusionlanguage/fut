@@ -25,10 +25,13 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="AssemblyInfo.cs" />
+		<Compile Include="CiException.cs" />
 		<Compile Include="CiLexer.cs" />
 		<Compile Include="CiParser.cs" />
 		<Compile Include="CiTo.cs" />
 		<Compile Include="CiTree.cs" />
+		<Compile Include="GenBase.cs" />
+		<Compile Include="GenCs.cs" />
 	</ItemGroup>
 	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

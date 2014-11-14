@@ -7,7 +7,7 @@ MAKEFLAGS = -r
 
 all: cito.exe
 
-cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiTree.cs CiLexer.cs CiParser.cs CiTo.cs)
+cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiParser.cs GenBase.cs GenCs.cs CiTo.cs)
 	$(CSC) -nologo -out:$@ -o+ $^
 
 install: install-cito

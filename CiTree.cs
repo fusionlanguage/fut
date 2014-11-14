@@ -18,7 +18,6 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 
@@ -62,7 +61,7 @@ public abstract class CiSymbol : CiExpr
 	public string Name;
 }
 
-public class CiScope : CiSymbol, IEnumerable<CiSymbol>
+public class CiScope : CiSymbol, IEnumerable
 {
 	public CiScope Parent;
 	readonly OrderedDictionary Dict = new OrderedDictionary();
@@ -70,11 +69,6 @@ public class CiScope : CiSymbol, IEnumerable<CiSymbol>
 	IEnumerator IEnumerable.GetEnumerator()
 	{
 		return this.Dict.Values.GetEnumerator();
-	}
-
-	public IEnumerator<CiSymbol> GetEnumerator()
-	{
-		return ((IEnumerable) this).Cast<CiSymbol>().GetEnumerator();
 	}
 
 	public CiSymbol TryLookup(string name)
@@ -89,10 +83,7 @@ public class CiScope : CiSymbol, IEnumerable<CiSymbol>
 
 	public void Add(CiSymbol symbol)
 	{
-		string name = symbol.Name;
-		if (TryLookup(name) != null)
-			throw new ParseException("Symbol {0} already defined", name);
-		this.Dict.Add(name, symbol);
+		this.Dict.Add(symbol.Name, symbol);
 	}
 }
 
@@ -113,22 +104,6 @@ public class CiVar : CiNamedValue
 
 public class CiConst : CiMember
 {
-}
-
-public class CiField : CiMember
-{
-}
-
-public class CiMethodBase : CiMember
-{
-	public CiStatement Body;
-}
-
-public class CiMethod : CiMethodBase
-{
-	public CiCallType CallType;
-	public bool IsMutator;
-	public CiVar[] Parameters;
 }
 
 public class CiLiteral : CiExpr
@@ -239,6 +214,22 @@ public class CiWhile : CiLoop
 {
 }
 
+public class CiField : CiMember
+{
+}
+
+public class CiMethodBase : CiMember
+{
+	public CiStatement Body;
+}
+
+public class CiMethod : CiMethodBase
+{
+	public CiCallType CallType;
+	public bool IsMutator;
+	public CiVar[] Parameters;
+}
+
 public abstract class CiType : CiScope
 {
 }
@@ -246,7 +237,7 @@ public abstract class CiType : CiScope
 public abstract class CiContainerType : CiType
 {
 	public string SourceFilename;
-	public CiVisibility Visibility;
+	public bool IsPublic;
 }
 
 public class CiEnum : CiContainerType
@@ -260,6 +251,15 @@ public class CiClass : CiContainerType
 	public string BaseClassName;
 	public CiMethodBase Constructor;
 	public CiBlock Destructor;
+	public CiConst[] Consts;
+	public CiField[] Fields;
+	public CiMethod[] Methods;
+}
+
+public class CiProgram
+{
+	public CiClass[] Classes;
+	public CiEnum[] Enums;
 }
 
 }
