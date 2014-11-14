@@ -17,6 +17,11 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Linq;
+
 namespace Foxoft.Ci
 {
 
@@ -38,64 +43,6 @@ public enum CiCallType
 	Sealed
 }
 
-public abstract class CiSymbol
-{
-	public string Name;
-}
-
-public class CiNamedValue : CiSymbol
-{
-	public CiExpr Type;
-	public CiExpr Value;
-}
-
-public class CiVar : CiNamedValue
-{
-}
-
-public abstract class CiType : CiSymbol
-{
-}
-
-public abstract class CiContainerType : CiType
-{
-	public string SourceFilename;
-	public CiVisibility Visibility;
-	public SymbolTable Members;
-}
-
-public class CiEnum : CiContainerType
-{
-	public bool IsFlags;
-}
-
-public class CiMember : CiNamedValue
-{
-	public CiVisibility Visibility;
-}
-
-public class CiConst : CiMember
-{
-}
-
-public class CiField : CiMember
-{
-}
-
-public class CiMethod : CiMember
-{
-	public CiCallType CallType;
-	public bool IsMutator;
-	public CiVar[] Parameters;
-	public CiStatement Body;
-}
-
-public class CiClass : CiContainerType
-{
-	public CiCallType CallType;
-	public CiSymbolReference BaseClass;
-}
-
 public abstract class CiStatement
 {
 	public int Line;
@@ -108,6 +55,80 @@ public abstract class CiExpr : CiStatement
 public class CiCollection : CiExpr
 {
 	public CiExpr[] Items;
+}
+
+public abstract class CiSymbol : CiExpr
+{
+	public string Name;
+}
+
+public class CiScope : CiSymbol, IEnumerable<CiSymbol>
+{
+	public CiScope Parent;
+	readonly OrderedDictionary Dict = new OrderedDictionary();
+
+	IEnumerator IEnumerable.GetEnumerator()
+	{
+		return this.Dict.Values.GetEnumerator();
+	}
+
+	public IEnumerator<CiSymbol> GetEnumerator()
+	{
+		return ((IEnumerable) this).Cast<CiSymbol>().GetEnumerator();
+	}
+
+	public CiSymbol TryLookup(string name)
+	{
+		for (CiScope scope = this; scope != null; scope = scope.Parent) {
+			object result = scope.Dict[name];
+			if (result != null)
+				return (CiSymbol) result;
+		}
+		return null;
+	}
+
+	public void Add(CiSymbol symbol)
+	{
+		string name = symbol.Name;
+		if (TryLookup(name) != null)
+			throw new ParseException("Symbol {0} already defined", name);
+		this.Dict.Add(name, symbol);
+	}
+}
+
+public abstract class CiNamedValue : CiSymbol
+{
+	public CiExpr Type;
+	public CiExpr Value;
+}
+
+public class CiMember : CiNamedValue
+{
+	public CiVisibility Visibility;
+}
+
+public class CiVar : CiNamedValue
+{
+}
+
+public class CiConst : CiMember
+{
+}
+
+public class CiField : CiMember
+{
+}
+
+public class CiMethodBase : CiMember
+{
+	public CiStatement Body;
+}
+
+public class CiMethod : CiMethodBase
+{
+	public CiCallType CallType;
+	public bool IsMutator;
+	public CiVar[] Parameters;
 }
 
 public class CiLiteral : CiExpr
@@ -175,7 +196,8 @@ public class CiDoWhile : CiLoop
 
 public class CiFor : CiLoop
 {
-	// TODO
+	public CiExpr Init;
+	public CiExpr Advance;
 }
 
 public class CiIf : CiStatement
@@ -215,6 +237,29 @@ public class CiThrow : CiStatement
 
 public class CiWhile : CiLoop
 {
+}
+
+public abstract class CiType : CiScope
+{
+}
+
+public abstract class CiContainerType : CiType
+{
+	public string SourceFilename;
+	public CiVisibility Visibility;
+}
+
+public class CiEnum : CiContainerType
+{
+	public bool IsFlags;
+}
+
+public class CiClass : CiContainerType
+{
+	public CiCallType CallType;
+	public string BaseClassName;
+	public CiMethodBase Constructor;
+	public CiBlock Destructor;
 }
 
 }

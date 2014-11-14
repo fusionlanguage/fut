@@ -26,13 +26,13 @@ namespace Foxoft.Ci
 
 public class CiParser : CiLexer
 {
-	SymbolTable Symbols;
+	readonly CiScope Symbols;
 
 	public CiParser()
 	{
-		SymbolTable globals = new SymbolTable();
+		CiScope globals = new CiScope();
 		// TODO: add built-in types and constants
-		this.Symbols = new SymbolTable { Parent = globals };
+		this.Symbols = new CiScope { Parent = globals };
 	}
 
 	string ParseId()
@@ -234,32 +234,47 @@ public class CiParser : CiLexer
 		return left;
 	}
 
-	CiCallType ParseCallType()
-	{
-		switch (this.CurrentToken) {
-		case CiToken.Static:
-			NextToken();
-			return CiCallType.Static;
-		case CiToken.Abstract:
-			NextToken();
-			return CiCallType.Abstract;
-		case CiToken.Virtual:
-			NextToken();
-			return CiCallType.Virtual;
-		case CiToken.Override:
-			NextToken();
-			return CiCallType.Override;
-		case CiToken.Sealed:
-			NextToken();
-			return CiCallType.Sealed;
-		default:
-			return CiCallType.Normal;
-		}
-	}
-
 	CiExpr ParseType()
 	{
 		return ParseRelExpr();
+	}
+
+	CiExpr ParseAssign(bool allowVar)
+	{
+		CiExpr left = ParseExpr();
+		switch (this.CurrentToken) {
+		case CiToken.Assign:
+		case CiToken.AddAssign:
+		case CiToken.SubAssign:
+		case CiToken.MulAssign:
+		case CiToken.DivAssign:
+		case CiToken.ModAssign:
+		case CiToken.AndAssign:
+		case CiToken.OrAssign:
+		case CiToken.XorAssign:
+		case CiToken.ShiftLeftAssign:
+		case CiToken.ShiftRightAssign:
+			return new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAssign(false) };
+		case CiToken.Id:
+			if (allowVar)
+				return ParseVar(left);
+			return left;
+		default:
+			return left;
+		}
+	}
+
+	CiVar ParseVar(CiExpr type)
+	{
+		CiVar def = new CiVar { Type = type, Name = ParseId() };
+		if (Eat(CiToken.Assign))
+			def.Value = ParseAssign(false);
+		return def;
+	}
+
+	CiVar ParseVar()
+	{
+		return ParseVar(ParseType());
 	}
 
 	CiConst ParseConst()
@@ -270,14 +285,6 @@ public class CiParser : CiLexer
 		konst.Value = ParseConstInitializer();
 		Expect(CiToken.Semicolon);
 		return konst;
-	}
-
-	CiVar ParseVar()
-	{
-		CiVar def = new CiVar { Type = ParseType(), Name = ParseId() };
-		if (Eat(CiToken.Assign))
-			def.Value = ParseExpr();
-		return def;
 	}
 
 	CiBlock ParseBlock()
@@ -330,11 +337,14 @@ public class CiParser : CiLexer
 		CiFor result = new CiFor();
 		Expect(CiToken.For);
 		Expect(CiToken.LeftParenthesis);
-		// TODO
+		if (!See(CiToken.Semicolon))
+			result.Init = ParseAssign(true);
+		Expect(CiToken.Semicolon);
 		if (!See(CiToken.Semicolon))
 			result.Cond = ParseExpr();
 		Expect(CiToken.Semicolon);
-		// TODO
+		if (!See(CiToken.RightParenthesis))
+			result.Advance = ParseAssign(false);
 		Expect(CiToken.RightParenthesis);
 		result.Body = ParseStatement();
 		return result;
@@ -453,7 +463,8 @@ public class CiParser : CiLexer
 			return ParseBlock();
 		case CiToken.Break:
 			return ParseBreak();
-		// TODO case CiToken.Const:
+		case CiToken.Const:
+			return ParseConst();
 		case CiToken.Continue:
 			return ParseContinue();
 		case CiToken.Delete:
@@ -473,11 +484,44 @@ public class CiParser : CiLexer
 		case CiToken.While:
 			return ParseWhile();
 		default:
-			// expr();
-			// foo = bar;
-			// int foo;
-			ParseExpr();
-			throw new ParseException("TODO");
+			CiExpr expr = ParseAssign(true);
+			Expect(CiToken.Semicolon);
+			return expr;
+		}
+	}
+
+	void ParseDestructor(CiClass klass)
+	{
+		if (klass.Destructor != null)
+			throw new ParseException("Duplicate destructor");
+		Expect(CiToken.Tilde);
+		if (ParseId() != klass.Name)
+			throw new ParseException("Destructor name doesn't match class name");
+		Expect(CiToken.LeftParenthesis);
+		Expect(CiToken.RightParenthesis);
+		klass.Destructor = ParseBlock();
+	}
+
+	CiCallType ParseCallType()
+	{
+		switch (this.CurrentToken) {
+		case CiToken.Static:
+			NextToken();
+			return CiCallType.Static;
+		case CiToken.Abstract:
+			NextToken();
+			return CiCallType.Abstract;
+		case CiToken.Virtual:
+			NextToken();
+			return CiCallType.Virtual;
+		case CiToken.Override:
+			NextToken();
+			return CiCallType.Override;
+		case CiToken.Sealed:
+			NextToken();
+			return CiCallType.Sealed;
+		default:
+			return CiCallType.Normal;
 		}
 	}
 
@@ -493,7 +537,9 @@ public class CiParser : CiLexer
 		}
 		Expect(CiToken.RightParenthesis);
 		method.Parameters = parameters.ToArray();
-		if (See(CiToken.Return))
+		if (method.CallType == CiCallType.Abstract)
+			Expect(CiToken.Semicolon);
+		else if (See(CiToken.Return))
 			method.Body = ParseReturn();
 		else
 			method.Body = ParseBlock();
@@ -504,7 +550,7 @@ public class CiParser : CiLexer
 		Expect(CiToken.Class);
 		CiClass klass = new CiClass { CallType = callType, Name = ParseId() };
 		if (Eat(CiToken.Colon))
-			klass.BaseClass = new CiSymbolReference { Name = ParseId() };
+			klass.BaseClassName = ParseId();
 		Expect(CiToken.LeftBrace);
 		while (!Eat(CiToken.RightBrace)) {
 			CiVisibility visibility;
@@ -521,6 +567,9 @@ public class CiParser : CiLexer
 				visibility = CiVisibility.Public;
 				NextToken();
 				break;
+			case CiToken.Tilde:
+				ParseDestructor(klass);
+				continue;
 			default:
 				visibility = CiVisibility.Private;
 				break;
@@ -530,19 +579,25 @@ public class CiParser : CiLexer
 				member = ParseConst();
 			else {
 				callType = ParseCallType();
-				if (klass.CallType == CiCallType.Static && callType != CiCallType.Static)
-					throw new ParseException("Only static members allowed in a static class");
-				if (callType == CiCallType.Abstract && klass.CallType != CiCallType.Abstract)
-					throw new ParseException("Abstract methods allowed only in an abstract class");
-				if (Eat(CiToken.Tilde)) {
-					// TODO: destructor: visibility, call type
-					if (ParseId() != klass.Name)
-						throw new ParseException("Destructor name doesn't match class name");
-					Expect(CiToken.LeftParenthesis);
-					Expect(CiToken.RightParenthesis);
-					ParseBlock();
-					// TODO
+				// \ class | static | normal | abstract | sealed
+				// member \|        |        |          |
+				// --------+--------+--------+----------+-------
+				// static  |   +    |   +    |    +     |   +
+				// normal  |   -    |   +    |    +     |   +
+				// abstract|   -    |   -    |    +     |   -
+				// virtual |   -    |   +    |    +     |   -
+				// override|   -    |   +    |    +     |   +
+				// sealed  |   -    |   +    |    +     |   +
+				if (callType == CiCallType.Static || klass.CallType == CiCallType.Abstract) {
+					// ok
 				}
+				else if (klass.CallType == CiCallType.Static)
+					throw new ParseException("Only static members allowed in a static class");
+				else if (callType == CiCallType.Abstract)
+					throw new ParseException("Abstract methods allowed only in an abstract class");
+				else if (klass.CallType == CiCallType.Sealed && callType == CiCallType.Virtual)
+					throw new ParseException("Virtual methods disallowed in a sealed class");
+
 				CiExpr type = ParseType();
 				if (See(CiToken.LeftBrace)) {
 					CiBinaryExpr call = type as CiBinaryExpr;
@@ -555,8 +610,10 @@ public class CiParser : CiLexer
 								throw new ParseException("Constructor cannot be " + callType);
 							if (((CiCollection) call.Right).Items.Length != 0)
 								throw new ParseException("Constructor parameters not supported");
-							ParseBlock();
-							// TODO: constructor
+							if (klass.Constructor != null)
+								throw new ParseException("Duplicate constructor");
+							klass.Constructor = new CiMethodBase { Visibility = visibility, Body = ParseBlock() };
+							continue;
 						}
 					}
 				}
@@ -576,7 +633,7 @@ public class CiParser : CiLexer
 				}
 			}
 			member.Visibility = visibility;
-			// TODO
+			klass.Add(member);
 		}
 		return klass;
 	}
@@ -592,7 +649,7 @@ public class CiParser : CiLexer
 				konst.Value = ParseExpr();
 			else if (enu.IsFlags)
 				throw new ParseException("enum* symbol must be assigned a value");
-			// TODO
+			enu.Add(konst);
 		} while (Eat(CiToken.Comma));
 		Expect(CiToken.RightBrace);
 		return enu;

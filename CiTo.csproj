@@ -29,7 +29,6 @@
 		<Compile Include="CiParser.cs" />
 		<Compile Include="CiTo.cs" />
 		<Compile Include="CiTree.cs" />
-		<Compile Include="SymbolTable.cs" />
 	</ItemGroup>
 	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
