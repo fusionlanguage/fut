@@ -88,7 +88,7 @@ public class CiParser : CiLexer
 		case CiToken.Tilde:
 		case CiToken.ExclamationMark:
 		case CiToken.New:
-			return new CiUnaryExpr { Line = this.Line, Op = NextToken(), Inner = ParsePrimaryExpr() };
+			return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParsePrimaryExpr() };
 		case CiToken.Literal:
 			result = new CiLiteral { Line = this.Line, Value = this.CurrentValue };
 			NextToken();
@@ -160,7 +160,7 @@ public class CiParser : CiLexer
 	CiExpr ParseRelExpr()
 	{
 		if (See(CiToken.Less) || See(CiToken.LessOrEqual))
-			return new CiUnaryExpr { Line = this.Line, Op = NextToken(), Inner = ParseShiftExpr() };
+			return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParseShiftExpr() };
 		CiExpr left = ParseShiftExpr();
 		for (;;) {
 			switch (this.CurrentToken) {

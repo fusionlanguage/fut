@@ -47,7 +47,8 @@ public enum CiCallType
 public enum CiPriority
 {
 	Statement,
-	// TODO
+	Assign,
+	Cond,
 	CondOr,
 	CondAnd,
 	Or,
@@ -58,7 +59,7 @@ public enum CiPriority
 	Shift,
 	Add,
 	Mul,
-	// TODO
+	Primary
 }
 
 public abstract class CiVisitor
@@ -67,7 +68,7 @@ public abstract class CiVisitor
 	public abstract CiExpr Visit(CiVar expr, CiPriority parent);
 	public abstract CiExpr Visit(CiLiteral expr, CiPriority parent);
 	public abstract CiExpr Visit(CiSymbolReference expr, CiPriority parent);
-	public abstract CiExpr Visit(CiUnaryExpr expr, CiPriority parent);
+	public abstract CiExpr Visit(CiPrefixExpr expr, CiPriority parent);
 	public abstract CiExpr Visit(CiPostfixExpr expr, CiPriority parent);
 	public abstract CiExpr Visit(CiBinaryExpr expr, CiPriority parent);
 	public abstract CiExpr Visit(CiCondExpr expr, CiPriority parent);
@@ -208,10 +209,14 @@ public class CiSymbolReference : CiExpr
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
 }
 
-public class CiUnaryExpr : CiExpr
+public abstract class CiUnaryExpr : CiExpr
 {
 	public CiToken Op;
 	public CiExpr Inner;
+}
+
+public class CiPrefixExpr : CiUnaryExpr
+{
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
 }
 
