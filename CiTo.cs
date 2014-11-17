@@ -103,6 +103,7 @@ public static class CiTo
 			foreach (string inputFile in inputFiles)
 				parser.Parse(inputFile, File.OpenText(inputFile));
 			program = parser.Program;
+			new CiResolver(program);
 		} catch (CiException ex) {
 			Console.Error.WriteLine("{0}({1}): ERROR: {2}", ex.Filename, ex.Line, ex.Message);
 			return 1;

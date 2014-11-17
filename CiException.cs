@@ -33,6 +33,14 @@ public class CiException : Exception
 		this.Filename = filename;
 		this.Line = line;
 	}
+
+	public CiException(CiScope scope, string message) : this(scope.Filename, scope.Line, message)
+	{
+	}
+
+	public CiException(CiScope scope, string format, params object[] args) : this(scope, string.Format(format, args))
+	{
+	}
 }
 
 }

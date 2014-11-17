@@ -26,8 +26,7 @@ namespace Foxoft.Ci
 
 public class CiParser : CiLexer
 {
-	readonly List<CiClass> Classes = new List<CiClass>();
-	readonly List<CiEnum> Enums = new List<CiEnum>();
+	public readonly CiProgram Program = new CiProgram();
 
 	CiException StatementException(CiStatement statement, string message)
 	{
@@ -64,7 +63,7 @@ public class CiParser : CiLexer
 		List<CiExpr> items = new List<CiExpr>();
 		if (!See(closing)) {
 			do
-				items.Add(ParseConstInitializer());
+				items.Add(ParseExpr());
 			while (Eat(CiToken.Comma));
 		}
 		Expect(closing);
@@ -118,7 +117,8 @@ public class CiParser : CiLexer
 			case CiToken.Increment:
 			case CiToken.Decrement:
 			case CiToken.ExclamationMark:
-				return new CiPostfixExpr { Line = this.Line, Inner = result, Op = NextToken() };
+				result = new CiPostfixExpr { Line = this.Line, Inner = result, Op = NextToken() };
+				break;
 			default:
 				return result;
 			}
@@ -535,15 +535,14 @@ public class CiParser : CiLexer
 	void ParseMethod(CiMethod method)
 	{
 		method.IsMutator = Eat(CiToken.ExclamationMark);
+		method.Parameters.Filename = this.Filename;
 		Expect(CiToken.LeftParenthesis);
-		List<CiVar> parameters = new List<CiVar>();
 		if (!See(CiToken.RightParenthesis)) {
 			do
-				parameters.Add(ParseVar());
+				method.Parameters.Add(ParseVar());
 			while (Eat(CiToken.Comma));
 		}
 		Expect(CiToken.RightParenthesis);
-		method.Parameters = parameters.ToArray();
 		if (method.CallType == CiCallType.Abstract)
 			Expect(CiToken.Semicolon);
 		else if (See(CiToken.Return))
@@ -552,10 +551,10 @@ public class CiParser : CiLexer
 			method.Body = ParseBlock();
 	}
 
-	public void ParseClass(bool isPublic, CiCallType callType)
+	public CiClass ParseClass(CiCallType callType)
 	{
 		Expect(CiToken.Class);
-		CiClass klass = new CiClass { SourceFilename = this.Filename, Line = this.Line, IsPublic = isPublic, CallType = callType, Name = ParseId() };
+		CiClass klass = new CiClass { Filename = this.Filename, Line = this.Line, CallType = callType, Name = ParseId() };
 		if (Eat(CiToken.Colon))
 			klass.BaseClassName = ParseId();
 		Expect(CiToken.LeftBrace);
@@ -599,7 +598,7 @@ public class CiParser : CiLexer
 
 			callType = ParseCallType();
 			// \ class | static | normal | abstract | sealed
-			// member \|        |        |          |
+			// method \|        |        |          |
 			// --------+--------+--------+----------+-------
 			// static  |   +    |   +    |    +     |   +
 			// normal  |   -    |   +    |    +     |   +
@@ -661,19 +660,16 @@ public class CiParser : CiLexer
 		klass.Consts = consts.ToArray();
 		klass.Fields = fields.ToArray();
 		klass.Methods = methods.ToArray();
-		this.Classes.Add(klass);
+		return klass;
 	}
 
-	public void ParseEnum(bool isPublic)
+	public CiEnum ParseEnum()
 	{
 		Expect(CiToken.Enum);
-		CiEnum enu = new CiEnum { SourceFilename = this.Filename, IsFlags = Eat(CiToken.Asterisk), Line = this.Line, IsPublic = isPublic, Name = ParseId() };
+		CiEnum enu = new CiEnum { Filename = this.Filename, IsFlags = Eat(CiToken.Asterisk), Line = this.Line, Name = ParseId() };
 		Expect(CiToken.LeftBrace);
 		do {
 			CiConst konst = new CiConst { Line = this.Line, Name = ParseId() };
-			CiSymbol duplicate = enu.TryLookup(konst.Name);
-			if (duplicate != null)
-				throw StatementException(konst, "Duplicate enum value {0}, already defined in line {1}", konst.Name, duplicate.Line);
 			if (Eat(CiToken.Assign))
 				konst.Value = ParseExpr();
 			else if (enu.IsFlags)
@@ -681,41 +677,36 @@ public class CiParser : CiLexer
 			enu.Add(konst);
 		} while (Eat(CiToken.Comma));
 		Expect(CiToken.RightBrace);
-		this.Enums.Add(enu);
+		return enu;
 	}
 
 	public void Parse(string filename, TextReader reader)
 	{
 		Open(filename, reader);
 		while (!See(CiToken.EndOfFile)) {
+			CiContainerType type;
 			bool isPublic = Eat(CiToken.Public);
 			switch (this.CurrentToken) {
 			// class
 			case CiToken.Class:
-				ParseClass(isPublic, CiCallType.Normal);
+				type = ParseClass(CiCallType.Normal);
 				break;
 			case CiToken.Static:
 			case CiToken.Abstract:
 			case CiToken.Sealed:
-				ParseClass(isPublic, ParseCallType());
+				type = ParseClass(ParseCallType());
 				break;
 
 			// enum
 			case CiToken.Enum:
-				ParseEnum(isPublic);
+				type = ParseEnum();
 				break;
 
 			default:
 				throw ParseException("Expected class or enum");
 			}
-		}
-	}
-
-	public CiProgram Program
-	{
-		get
-		{
-			return new CiProgram { Classes = this.Classes.ToArray(), Enums = this.Enums.ToArray() };
+			type.IsPublic = isPublic;
+			this.Program.Add(type);
 		}
 	}
 }

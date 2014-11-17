@@ -28,6 +28,7 @@
 		<Compile Include="CiException.cs" />
 		<Compile Include="CiLexer.cs" />
 		<Compile Include="CiParser.cs" />
+		<Compile Include="CiResolver.cs" />
 		<Compile Include="CiTo.cs" />
 		<Compile Include="CiTree.cs" />
 		<Compile Include="GenBase.cs" />

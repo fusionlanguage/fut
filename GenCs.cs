@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Linq;
 
 namespace Foxoft.Ci
 {
@@ -71,6 +72,13 @@ public class GenCs : GenBase
 		}
 	}
 
+	public override void Visit(CiThrow statement)
+	{
+		Write("throw new System.Exception(");
+		statement.Message.Accept(this, CiPriority.Statement);
+		WriteLine(");");
+	}
+
 	void Write(CiEnum enu)
 	{
 		WriteLine();
@@ -88,7 +96,7 @@ public class GenCs : GenBase
 			Write(konst.Name);
 			if (konst.Value != null) {
 				Write(" = ");
-				// TODO
+				konst.Value.Accept(this, CiPriority.Statement);
 			}
 		}
 		WriteLine();
@@ -106,7 +114,7 @@ public class GenCs : GenBase
 			Write(klass.Constructor.Visibility);
 			Write(klass.Name);
 			WriteLine("()");
-			// Write(klass.Constructor.Body)
+			Visit((CiBlock) klass.Constructor.Body);
 		}
 		else if (klass.IsPublic && klass.CallType != CiCallType.Static) {
 			if (klass.CallType != CiCallType.Sealed)
@@ -123,7 +131,7 @@ public class GenCs : GenBase
 			// TODO: type
 			Write(konst.Name);
 			Write(" = ");
-			// TODO: value
+			konst.Value.Accept(this, CiPriority.Statement);
 			WriteLine(";");
 		}
 
@@ -141,16 +149,17 @@ public class GenCs : GenBase
 			// TODO: type
 			Write(method.Name);
 			Write('(');
-			for (int i = 0; i < method.Parameters.Length; i++) {
-				CiVar param = method.Parameters[i];
-				if (i > 0)
+			bool first = true;
+			foreach (CiVar param in method.Parameters) {
+				if (!first)
 					Write(", ");
+				first = false;
 				// TODO: type
 				Write(param.Name);
 				// TODO: default value?
 			}
 			Write(')');
-			// TODO: body
+			WriteBody(method);
 		}
 
 		CloseBlock();
@@ -164,7 +173,7 @@ public class GenCs : GenBase
 			WriteLine(this.Namespace);
 			OpenBlock();
 		}
-		foreach (CiEnum enu in program.Enums)
+		foreach (CiEnum enu in program.OfType<CiEnum>())
 			Write(enu);
 		foreach (CiClass klass in program.Classes)
 			Write(klass);
