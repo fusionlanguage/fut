@@ -159,6 +159,15 @@ public abstract class GenBase : CiVisitor
 		WriteLine("}");
 	}
 
+	protected abstract void Write(CiType type);
+
+	protected void WriteTypeAndName(CiNamedValue value)
+	{
+		Write(value.Type);
+		Write(' ');
+		Write(value.Name);
+	}
+
 	public override CiExpr Visit(CiCollection expr, CiPriority parent)
 	{
 		Write("{ ");
@@ -173,8 +182,7 @@ public abstract class GenBase : CiVisitor
 
 	public override CiExpr Visit(CiVar expr, CiPriority parent)
 	{
-		// TODO: type
-		Write(expr.Name);
+		WriteTypeAndName(expr);
 		if (expr.Value != null) {
 			Write(" = ");
 			expr.Value.Accept(this, CiPriority.Statement);
@@ -352,7 +360,7 @@ public abstract class GenBase : CiVisitor
 		case CiToken.LeftParenthesis:
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write('(');
-			CiExpr[] args = ((CiCollection) expr.Right).Items;
+			CiExpr[] args = expr.RightCollection;
 			for (int i = 0; i < args.Length; i++) {
 				if (i > 0)
 					Write(", ");

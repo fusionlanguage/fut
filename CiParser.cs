@@ -26,7 +26,7 @@ namespace Foxoft.Ci
 
 public class CiParser : CiLexer
 {
-	public readonly CiProgram Program = new CiProgram();
+	public readonly CiProgram Program = new CiProgram { Parent = CiSystem.Value };
 
 	CiException StatementException(CiStatement statement, string message)
 	{
@@ -270,7 +270,7 @@ public class CiParser : CiLexer
 
 	CiVar ParseVar(CiExpr type)
 	{
-		CiVar def = new CiVar { Line = this.Line, Type = type, Name = ParseId() };
+		CiVar def = new CiVar { Line = this.Line, TypeExpr = type, Name = ParseId() };
 		if (Eat(CiToken.Assign))
 			def.Value = ParseAssign(false);
 		return def;
@@ -284,7 +284,7 @@ public class CiParser : CiLexer
 	CiConst ParseConst()
 	{
 		Expect(CiToken.Const);
-		CiConst konst = new CiConst { Line = this.Line, Type = ParseType(), Name = ParseId() };
+		CiConst konst = new CiConst { Line = this.Line, Name = ParseId() };
 		Expect(CiToken.Assign);
 		konst.Value = ParseConstInitializer();
 		Expect(CiToken.Semicolon);
@@ -618,7 +618,7 @@ public class CiParser : CiLexer
 			if (visibility == CiVisibility.Private && callType != CiCallType.Static && callType != CiCallType.Normal)
 				throw ParseException("{0} method cannot be private", callType);
 
-			CiExpr type = ParseType();
+			CiExpr type = Eat(CiToken.Void) ? null : ParseType();
 			if (See(CiToken.LeftBrace)) {
 				CiBinaryExpr call = type as CiBinaryExpr;
 				if (call != null && call.Op == CiToken.LeftParenthesis) {
@@ -629,7 +629,7 @@ public class CiParser : CiLexer
 							throw ParseException("Constructor name doesn't match class name");
 						if (callType != CiCallType.Normal)
 							throw ParseException("Constructor cannot be {0}", callType);
-						if (((CiCollection) call.Right).Items.Length != 0)
+						if (call.RightCollection.Length != 0)
 							throw ParseException("Constructor parameters not supported");
 						if (klass.Constructor != null)
 							throw ParseException("Duplicate constructor, already defined in line {0}", klass.Constructor.Line);
@@ -639,10 +639,11 @@ public class CiParser : CiLexer
 				}
 			}
 
+			int line = this.Line;
 			string name = ParseId();
 			if (See(CiToken.LeftParenthesis) || See(CiToken.ExclamationMark)) {
 				// method
-				CiMethod method = new CiMethod { Line = type.Line, Visibility = visibility, CallType = callType, Type = type, Name = name };
+				CiMethod method = new CiMethod { Line = line, Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
 				ParseMethod(method);
 				methods.Add(method);
 				continue;
@@ -653,8 +654,10 @@ public class CiParser : CiLexer
 				throw ParseException("Field cannot be public");
 			if (callType != CiCallType.Normal)
 				throw ParseException("Field cannot be {0}", callType);
+			if (type == null)
+				throw ParseException("Field cannot be void");
 			Expect(CiToken.Semicolon);
-			fields.Add(new CiField { Line = type.Line, Visibility = visibility, Type = type, Name = name });
+			fields.Add(new CiField { Line = line, Visibility = visibility, TypeExpr = type, Name = name });
 		}
 
 		klass.Consts = consts.ToArray();

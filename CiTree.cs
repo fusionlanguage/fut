@@ -177,7 +177,8 @@ public class CiScope : CiSymbol, IEnumerable
 
 public abstract class CiNamedValue : CiSymbol
 {
-	public CiExpr Type;
+	public CiExpr TypeExpr;
+	public CiType Type;
 	public CiExpr Value;
 }
 
@@ -230,6 +231,7 @@ public class CiBinaryExpr : CiExpr
 	public CiExpr Left;
 	public CiToken Op;
 	public CiExpr Right;
+	public CiExpr[] RightCollection { get { return ((CiCollection) this.Right).Items; } }
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
 }
 
@@ -372,6 +374,71 @@ public class CiClass : CiContainerType
 	public CiField[] Fields;
 	public CiMethod[] Methods;
 	public CiVisitStatus VisitStatus;
+}
+
+public class CiIntegerType : CiType
+{
+}
+
+public class CiRangeType : CiIntegerType
+{
+	public readonly long MinValue;
+	public readonly long MaxValue;
+	public CiRangeType(long min, long max)
+	{
+		this.MinValue = min;
+		this.MaxValue = max;
+	}
+}
+
+public class CiStringType : CiType
+{
+}
+
+public class CiClassPtrType : CiType
+{
+	public CiClass Class;
+	public bool Mutable;
+}
+
+public abstract class CiArrayType : CiType
+{
+	public CiType ElementType;
+}
+
+public class CiArrayPtrType : CiArrayType
+{
+	public bool Mutable;
+}
+
+public class CiArrayStorageType : CiArrayType
+{
+	public int Length;
+}
+
+public class CiSystem : CiScope
+{
+	public static readonly CiIntegerType IntType = new CiIntegerType { Name = "int" };
+	public static readonly CiIntegerType LongType = new CiIntegerType { Name = "long" };
+	public static readonly CiRangeType ByteType = new CiRangeType(0, 0xff) { Name = "byte" };
+	public static readonly CiConst False = new CiConst { Name = "false" };
+	public static readonly CiConst True = new CiConst { Name = "true" };
+	public static readonly CiEnum BoolType = new CiEnum { Name = "bool" };
+	public static readonly CiStringType StringPtrType = new CiStringType { Name = "string" };
+	public static readonly CiStringType StringStorageType = new CiStringType();
+
+	CiSystem()
+	{
+		Add(IntType);
+		Add(LongType);
+		Add(ByteType);
+		BoolType.Add(False);
+		BoolType.Add(True);
+		Add(BoolType);
+		Add(StringPtrType);
+	}
+
+	public static readonly CiSystem Value = new CiSystem();
 }
 
 public class CiProgram : CiScope

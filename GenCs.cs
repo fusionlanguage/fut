@@ -72,6 +72,23 @@ public class GenCs : GenBase
 		}
 	}
 
+	protected override void Write(CiType type)
+	{
+		if (type == null) {
+			Write("void");
+			return;
+		}
+
+		CiArrayType array = type as CiArrayType;
+		if (array != null) {
+			Write(array.ElementType);
+			Write("[]");
+			return;
+		}
+
+		Write(type.Name);
+	}
+
 	public override void Visit(CiThrow statement)
 	{
 		Write("throw new System.Exception(");
@@ -137,8 +154,7 @@ public class GenCs : GenBase
 
 		foreach (CiField field in klass.Fields) {
 			Write(field.Visibility);
-			// TODO: type
-			Write(field.Name);
+			WriteTypeAndName(field);
 			WriteLine(";");
 		}
 
@@ -146,17 +162,14 @@ public class GenCs : GenBase
 			WriteLine();
 			Write(method.Visibility);
 			Write(method.CallType);
-			// TODO: type
-			Write(method.Name);
+			WriteTypeAndName(method);
 			Write('(');
 			bool first = true;
 			foreach (CiVar param in method.Parameters) {
 				if (!first)
 					Write(", ");
 				first = false;
-				// TODO: type
-				Write(param.Name);
-				// TODO: default value?
+				WriteTypeAndName(param);
 			}
 			Write(')');
 			WriteBody(method);

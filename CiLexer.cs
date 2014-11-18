@@ -101,6 +101,7 @@ public enum CiToken
 	Switch,
 	Throw,
 	Virtual,
+	Void,
 	While,
 	EndOfLine,
 	PreIf,
@@ -512,6 +513,7 @@ public class CiLexer
 				case "switch": return CiToken.Switch;
 				case "throw": return CiToken.Throw;
 				case "virtual": return CiToken.Virtual;
+				case "void": return CiToken.Void;
 				case "while": return CiToken.While;
 				default:
 					this.CurrentValue = s;
