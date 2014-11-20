@@ -376,7 +376,11 @@ public class CiClass : CiContainerType
 	public CiVisitStatus VisitStatus;
 }
 
-public class CiIntegerType : CiType
+public class CiNumericType : CiType
+{
+}
+
+public class CiIntegerType : CiNumericType
 {
 }
 
@@ -421,6 +425,10 @@ public class CiSystem : CiScope
 	public static readonly CiIntegerType IntType = new CiIntegerType { Name = "int" };
 	public static readonly CiIntegerType LongType = new CiIntegerType { Name = "long" };
 	public static readonly CiRangeType ByteType = new CiRangeType(0, 0xff) { Name = "byte" };
+	public static readonly CiRangeType ShortType = new CiRangeType(-0x8000, 0x7fff) { Name = "short" };
+	public static readonly CiRangeType UShortType = new CiRangeType(0, 0xffff) { Name = "ushort" };
+	public static readonly CiNumericType FloatType = new CiNumericType { Name = "float" };
+	public static readonly CiNumericType DoubleType = new CiNumericType { Name = "double" };
 	public static readonly CiConst False = new CiConst { Name = "false" };
 	public static readonly CiConst True = new CiConst { Name = "true" };
 	public static readonly CiEnum BoolType = new CiEnum { Name = "bool" };
@@ -432,6 +440,10 @@ public class CiSystem : CiScope
 		Add(IntType);
 		Add(LongType);
 		Add(ByteType);
+		Add(ShortType);
+		Add(UShortType);
+		Add(FloatType);
+		Add(DoubleType);
 		BoolType.Add(False);
 		BoolType.Add(True);
 		Add(BoolType);
