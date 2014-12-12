@@ -341,6 +341,7 @@ public class CiMethod : CiMethodBase
 	public CiCallType CallType;
 	public bool IsMutator;
 	public readonly CiScope Parameters = new CiScope();
+	public bool Throws;
 }
 
 public abstract class CiType : CiScope

@@ -543,6 +543,7 @@ public class CiParser : CiLexer
 			while (Eat(CiToken.Comma));
 		}
 		Expect(CiToken.RightParenthesis);
+		method.Throws = Eat(CiToken.Throws);
 		if (method.CallType == CiCallType.Abstract)
 			Expect(CiToken.Semicolon);
 		else if (See(CiToken.Return))

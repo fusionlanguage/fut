@@ -100,6 +100,7 @@ public enum CiToken
 	Static,
 	Switch,
 	Throw,
+	Throws,
 	Virtual,
 	Void,
 	While,
@@ -512,6 +513,7 @@ public class CiLexer
 				case "static": return CiToken.Static;
 				case "switch": return CiToken.Switch;
 				case "throw": return CiToken.Throw;
+				case "throws": return CiToken.Throws;
 				case "virtual": return CiToken.Virtual;
 				case "void": return CiToken.Void;
 				case "while": return CiToken.While;
