@@ -404,7 +404,7 @@ public class CiResolver : CiVisitor
 				throw StatementException(expr, "Type {0} not found", symbol.Name);
 			CiClass klass = type as CiClass;
 			if (klass != null)
-				return new CiClassPtrType { Class = klass, Mutable = mutable };
+				return new CiClassPtrType { Name = klass.Name, Class = klass, Mutable = mutable };
 			if (mutable)
 				throw StatementException(expr, "Unexpected exclamation mark on non-reference type");
 			return type;
