@@ -98,6 +98,7 @@ public abstract class CiStatement
 
 public abstract class CiExpr : CiStatement
 {
+	public CiType Type;
 	public virtual CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		throw new NotImplementedException(GetType().Name);
@@ -129,7 +130,7 @@ public class CiScope : CiSymbol, IEnumerable
 
 	public int Count { get { return this.Dict.Count; } }
 
-	public CiSymbol TryLookup(string name)
+	public virtual CiSymbol TryLookup(string name)
 	{
 		for (CiScope scope = this; scope != null; scope = scope.Parent) {
 			object result = scope.Dict[name];
@@ -178,7 +179,6 @@ public class CiScope : CiSymbol, IEnumerable
 public abstract class CiNamedValue : CiSymbol
 {
 	public CiExpr TypeExpr;
-	public CiType Type;
 	public CiExpr Value;
 }
 
@@ -194,12 +194,27 @@ public class CiVar : CiNamedValue
 
 public class CiConst : CiMember
 {
+	public CiVisitStatus VisitStatus;
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }
 
 public class CiLiteral : CiExpr
 {
-	public object Value;
+	public readonly object Value;
+	public CiLiteral(object value)
+	{
+		if (value is long) {
+			long i = (long) value;
+			this.Type = new CiRangeType(i, i);
+		}
+		else if (value is double)
+			this.Type = CiSystem.DoubleType;
+		else if (value is string)
+			this.Type = CiSystem.StringPtrType;
+		else
+			throw new NotImplementedException(value.GetType().Name);
+		this.Value = value;
+	}
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
 }
 
@@ -381,23 +396,75 @@ public class CiNumericType : CiType
 {
 }
 
-public class CiIntegerType : CiNumericType
+public abstract class CiIntegerType : CiNumericType
 {
+	public abstract TypeCode TypeCode { get; }
+}
+
+public class CiIntType : CiIntegerType
+{
+	public override TypeCode TypeCode { get { return TypeCode.Int32; } }
+}
+
+public class CiLongType : CiIntegerType
+{
+	public override TypeCode TypeCode { get { return TypeCode.Int64; } }
 }
 
 public class CiRangeType : CiIntegerType
 {
-	public readonly long MinValue;
-	public readonly long MaxValue;
+	public readonly long Min;
+	public readonly long Max;
 	public CiRangeType(long min, long max)
 	{
-		this.MinValue = min;
-		this.MaxValue = max;
+		this.Min = min;
+		this.Max = max;
+	}
+	public CiRangeType(long a, long b, long c, long d)
+	{
+		if (a > b) {
+			long t = a;
+			a = b;
+			b = t;
+		}
+		if (c > d) {
+			long t = c;
+			c = d;
+			d = t;
+		}
+		this.Min = a <= c ? a : c;
+		this.Max = b >= d ? b : d;
+	}
+	public override TypeCode TypeCode
+	{
+		get
+		{
+			if (this.Min < int.MinValue || this.Max > int.MaxValue)
+				return TypeCode.Int64;
+			if (this.Min < 0) {
+				if (this.Min < short.MinValue || this.Max > short.MaxValue)
+					return TypeCode.Int32;
+				if (this.Min < sbyte.MinValue || this.Max > sbyte.MaxValue)
+					return TypeCode.Int16;
+				return TypeCode.SByte;
+			}
+			if (this.Max > ushort.MaxValue)
+				return TypeCode.Int32;
+			if (this.Max > byte.MaxValue)
+				return TypeCode.UInt16;
+			return TypeCode.Byte;
+		}
 	}
 }
 
 public class CiStringType : CiType
 {
+	public override CiSymbol TryLookup(string name)
+	{
+		if (name == "Length")
+			return CiSystem.StringLength;
+		return null;
+	}
 }
 
 public class CiClassPtrType : CiType
@@ -419,12 +486,18 @@ public class CiArrayPtrType : CiArrayType
 public class CiArrayStorageType : CiArrayType
 {
 	public int Length;
+	public override CiSymbol TryLookup(string name)
+	{
+		// TODO: length
+		return null;
+	}
 }
 
 public class CiSystem : CiScope
 {
-	public static readonly CiIntegerType IntType = new CiIntegerType { Name = "int" };
-	public static readonly CiIntegerType LongType = new CiIntegerType { Name = "long" };
+	public static readonly CiIntType IntType = new CiIntType { Name = "int" };
+	public static readonly CiRangeType UIntType = new CiRangeType(0, int.MaxValue) { Name = "uint" };
+	public static readonly CiLongType LongType = new CiLongType { Name = "long" };
 	public static readonly CiRangeType ByteType = new CiRangeType(0, 0xff) { Name = "byte" };
 	public static readonly CiRangeType ShortType = new CiRangeType(-0x8000, 0x7fff) { Name = "short" };
 	public static readonly CiRangeType UShortType = new CiRangeType(0, 0xffff) { Name = "ushort" };
@@ -435,10 +508,12 @@ public class CiSystem : CiScope
 	public static readonly CiEnum BoolType = new CiEnum { Name = "bool" };
 	public static readonly CiStringType StringPtrType = new CiStringType { Name = "string" };
 	public static readonly CiStringType StringStorageType = new CiStringType();
+	public static readonly CiMember StringLength = new CiMember { Name = "Length", Type = UIntType };
 
 	CiSystem()
 	{
 		Add(IntType);
+		Add(UIntType);
 		Add(LongType);
 		Add(ByteType);
 		Add(ShortType);

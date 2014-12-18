@@ -90,7 +90,7 @@ public class CiParser : CiLexer
 		case CiToken.New:
 			return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParsePrimaryExpr() };
 		case CiToken.Literal:
-			result = new CiLiteral { Line = this.Line, Value = this.CurrentValue };
+			result = new CiLiteral(this.CurrentValue) { Line = this.Line };
 			NextToken();
 			break;
 		case CiToken.LeftParenthesis:

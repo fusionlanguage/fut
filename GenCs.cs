@@ -86,6 +86,20 @@ public class GenCs : GenBase
 			return;
 		}
 
+		CiIntegerType integer = type as CiIntegerType;
+		if (integer != null) {
+			switch (integer.TypeCode) {
+			case TypeCode.SByte: Write("sbyte"); break;
+			case TypeCode.Byte: Write("byte"); break;
+			case TypeCode.Int16: Write("short"); break;
+			case TypeCode.UInt16: Write("ushort"); break;
+			case TypeCode.Int32: Write("int"); break;
+			case TypeCode.Int64: Write("long"); break;
+			default: throw new NotImplementedException(integer.TypeCode.ToString());
+			}
+			return;
+		}
+
 		Write(type.Name);
 	}
 
@@ -145,8 +159,7 @@ public class GenCs : GenBase
 		foreach (CiConst konst in klass.Consts) {
 			Write(konst.Visibility);
 			Write("const ");
-			// TODO: type
-			Write(konst.Name);
+			WriteTypeAndName(konst);
 			Write(" = ");
 			konst.Value.Accept(this, CiPriority.Statement);
 			WriteLine(";");
