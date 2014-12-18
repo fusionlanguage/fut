@@ -658,8 +658,11 @@ public class CiParser : CiLexer
 				throw ParseException("Field cannot be {0}", callType);
 			if (type == null)
 				throw ParseException("Field cannot be void");
+			CiField field = new CiField { Line = line, Visibility = visibility, TypeExpr = type, Name = name };
+			if (Eat(CiToken.Assign))
+				field.Value = ParseExpr();
 			Expect(CiToken.Semicolon);
-			fields.Add(new CiField { Line = line, Visibility = visibility, TypeExpr = type, Name = name });
+			fields.Add(field);
 		}
 
 		klass.Consts = consts.ToArray();
