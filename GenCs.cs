@@ -158,7 +158,10 @@ public class GenCs : GenBase
 
 		foreach (CiConst konst in klass.Consts) {
 			Write(konst.Visibility);
-			Write("const ");
+			if (konst.Type is CiArrayStorageType)
+				Write("readonly ");
+			else
+				Write("const ");
 			WriteTypeAndName(konst);
 			Write(" = ");
 			konst.Value.Accept(this, CiPriority.Statement);

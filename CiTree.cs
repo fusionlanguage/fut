@@ -258,7 +258,7 @@ public class CiCondExpr : CiExpr
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
 }
 
-public abstract class CiLoop : CiStatement
+public abstract class CiLoop : CiScope
 {
 	public CiExpr Cond;
 	public CiStatement Body;
@@ -435,6 +435,7 @@ public class CiRangeType : CiIntegerType
 		this.Min = a <= c ? a : c;
 		this.Max = b >= d ? b : d;
 	}
+	public bool ContainsZero { get { return this.Min <= 0 && this.Max >= 0; } }
 	public override TypeCode TypeCode
 	{
 		get
@@ -471,11 +472,21 @@ public class CiClassPtrType : CiType
 {
 	public CiClass Class;
 	public bool Mutable;
+	public override CiSymbol TryLookup(string name)
+	{
+		return this.Class.TryLookup(name);
+	}
 }
 
 public abstract class CiArrayType : CiType
 {
 	public CiType ElementType;
+	public override CiSymbol TryLookup(string name)
+	{
+		if (name == "CopyTo")
+			return CiSystem.ArrayCopyTo;
+		return null;
+	}
 }
 
 public class CiArrayPtrType : CiArrayType
@@ -488,8 +499,10 @@ public class CiArrayStorageType : CiArrayType
 	public int Length;
 	public override CiSymbol TryLookup(string name)
 	{
+		if (name == "Fill")
+			return CiSystem.ArrayFill;
 		// TODO: length
-		return null;
+		return base.TryLookup(name);
 	}
 }
 
@@ -503,12 +516,16 @@ public class CiSystem : CiScope
 	public static readonly CiRangeType UShortType = new CiRangeType(0, 0xffff) { Name = "ushort" };
 	public static readonly CiNumericType FloatType = new CiNumericType { Name = "float" };
 	public static readonly CiNumericType DoubleType = new CiNumericType { Name = "double" };
-	public static readonly CiConst False = new CiConst { Name = "false" };
-	public static readonly CiConst True = new CiConst { Name = "true" };
+	public static readonly CiRangeType CharType = new CiRangeType(-0x80, 0xffff);
 	public static readonly CiEnum BoolType = new CiEnum { Name = "bool" };
 	public static readonly CiStringType StringPtrType = new CiStringType { Name = "string" };
 	public static readonly CiStringType StringStorageType = new CiStringType();
+	public static readonly CiConst False = new CiConst { Name = "false", Type = BoolType, VisitStatus = CiVisitStatus.Done };
+	public static readonly CiConst True = new CiConst { Name = "true", Type = BoolType, VisitStatus = CiVisitStatus.Done };
 	public static readonly CiMember StringLength = new CiMember { Name = "Length", Type = UIntType };
+	public static readonly CiMethod ArrayCopyTo = new CiMethod { Name = "CopyTo" };
+	public static readonly CiMethod ArrayFill = new CiMethod { Name = "Fill" };
+	public static readonly CiMethod BinaryResource = new CiMethod { Name = "BinaryResource", Type = new CiArrayStorageType { ElementType = ByteType } }; // FIXME: Length
 
 	CiSystem()
 	{
@@ -520,10 +537,11 @@ public class CiSystem : CiScope
 		Add(UShortType);
 		Add(FloatType);
 		Add(DoubleType);
-		BoolType.Add(False);
-		BoolType.Add(True);
 		Add(BoolType);
 		Add(StringPtrType);
+		Add(False);
+		Add(True);
+		Add(BinaryResource); // FIXME
 	}
 
 	public static readonly CiSystem Value = new CiSystem();

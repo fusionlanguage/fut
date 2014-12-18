@@ -298,7 +298,7 @@ public class CiParser : CiLexer
 		List<CiStatement> statements = new List<CiStatement>();
 		while (!Eat(CiToken.RightBrace))
 			statements.Add(ParseStatement());
-		return new CiBlock { Line = this.Line, Statements = statements.ToArray() };
+		return new CiBlock { Filename = this.Filename, Line = this.Line, Statements = statements.ToArray() };
 	}
 
 	CiBreak ParseBreak()
@@ -555,7 +555,7 @@ public class CiParser : CiLexer
 	public CiClass ParseClass(CiCallType callType)
 	{
 		Expect(CiToken.Class);
-		CiClass klass = new CiClass { Filename = this.Filename, Line = this.Line, CallType = callType, Name = ParseId() };
+		CiClass klass = new CiClass { Parent = this.Program, Filename = this.Filename, Line = this.Line, CallType = callType, Name = ParseId() };
 		if (Eat(CiToken.Colon))
 			klass.BaseClassName = ParseId();
 		Expect(CiToken.LeftBrace);
@@ -645,6 +645,7 @@ public class CiParser : CiLexer
 			if (See(CiToken.LeftParenthesis) || See(CiToken.ExclamationMark)) {
 				// method
 				CiMethod method = new CiMethod { Line = line, Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
+				method.Parameters.Parent = klass;
 				ParseMethod(method);
 				methods.Add(method);
 				continue;
@@ -670,7 +671,7 @@ public class CiParser : CiLexer
 	public CiEnum ParseEnum()
 	{
 		Expect(CiToken.Enum);
-		CiEnum enu = new CiEnum { Filename = this.Filename, IsFlags = Eat(CiToken.Asterisk), Line = this.Line, Name = ParseId() };
+		CiEnum enu = new CiEnum { Parent = this.Program, Filename = this.Filename, IsFlags = Eat(CiToken.Asterisk), Line = this.Line, Name = ParseId() };
 		Expect(CiToken.LeftBrace);
 		do {
 			CiConst konst = new CiConst { Line = this.Line, Name = ParseId() };

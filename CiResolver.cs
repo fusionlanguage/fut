@@ -29,11 +29,11 @@ namespace Foxoft.Ci
 public class CiResolver : CiVisitor
 {
 	readonly CiProgram Program;
-	CiClass CurrentClass;
+	CiScope CurrentScope;
 
 	CiException StatementException(CiStatement statement, string message)
 	{
-		return new CiException(this.CurrentClass.Filename, statement.Line, message);
+		return new CiException(this.CurrentScope.Filename, statement.Line, message);
 	}
 
 	CiException StatementException(CiStatement statement, string format, params object[] args)
@@ -138,38 +138,52 @@ public class CiResolver : CiVisitor
 
 	public override CiExpr Visit(CiVar expr, CiPriority parent)
 	{
-		return expr; // TODO
+		expr.Type = ToType(expr.TypeExpr);
+		if (expr.Value != null) {
+			expr.Value = expr.Value.Accept(this, CiPriority.Statement);
+			// TODO: typecheck
+		}
+		this.CurrentScope.Add(expr);
+		return expr;
 	}
 
 	public override CiExpr Visit(CiLiteral expr, CiPriority parent)
 	{
-		return expr; // TODO
+		return expr;
 	}
 
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	CiExpr Lookup(CiSymbolReference expr, CiScope scope)
 	{
 		if (expr.Symbol == null) {
-			expr.Symbol = this.CurrentClass.TryLookup(expr.Name);
+			expr.Symbol = scope.TryLookup(expr.Name);
 			if (expr.Symbol == null)
 				throw StatementException(expr, "{0} not found", expr.Name);
+			expr.Type = expr.Symbol.Type;
+		}
+		if (!(scope is CiEnum)) {
 			CiConst konst = expr.Symbol as CiConst;
 			if (konst != null) {
 				ResolveConst(konst);
-				return konst.Value;
+				if (konst.Value is CiLiteral)
+					return konst.Value;
 			}
-			expr.Type = expr.Symbol.Type;
 		}
 		return expr;
 	}
 
+	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	{
+		return Lookup(expr, this.CurrentScope);
+	}
+
 	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
 	{
-		CiExpr inner = expr.Inner.Accept(this, parent);
-		CiType type;
 		switch (expr.Op) {
 		case CiToken.Minus:
+			CiExpr inner = expr.Inner.Accept(this, parent);
 			if (!(inner.Type is CiNumericType))
 				throw StatementException(expr, "Argument of unary minus must be numeric");
+			CiType type;
 			CiRangeType range = inner.Type as CiRangeType;
 			if (range != null) {
 				if (range.Min == range.Max)
@@ -189,7 +203,20 @@ public class CiResolver : CiVisitor
 
 	public override CiExpr Visit(CiPostfixExpr expr, CiPriority parent)
 	{
-		return expr; // TODO
+		expr.Inner = expr.Inner.Accept(this, parent);
+		switch (expr.Op) {
+		case CiToken.Increment:
+		case CiToken.Decrement:
+			if (!(expr.Inner.Type is CiNumericType))
+				throw StatementException(expr, "Argument of ++/-- must be numeric");
+			expr.Type = expr.Inner.Type;
+			// TODO: check lvalue
+			return expr;
+		case CiToken.ExclamationMark:
+			throw StatementException(expr, "Unexpected '!'");
+		default:
+			throw new NotImplementedException(expr.Op.ToString());
+		}
 	}
 
 	static bool IsLong(CiType type)
@@ -215,17 +242,30 @@ public class CiResolver : CiVisitor
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
 		CiExpr left = expr.Left.Accept(this, parent);
-		if (expr.Op == CiToken.Dot) {
-			string name = ((CiSymbolReference) expr.Right).Name;
-			CiSymbol symbol = left.Type.TryLookup(name);
-			if (symbol == null)
-				throw StatementException(expr, "{0} not found", name);
-			if (symbol == CiSystem.StringLength) {
+		switch (expr.Op) {
+		case CiToken.Dot:
+			CiScope scope;
+			CiSymbolReference leftSymbol = left as CiSymbolReference;
+			CiSymbolReference rightSymbol = (CiSymbolReference) expr.Right;
+			if (leftSymbol != null && leftSymbol.Symbol is CiScope)
+				scope = (CiScope) leftSymbol.Symbol;
+			else
+				scope = left.Type;
+			CiExpr result = Lookup(rightSymbol, scope);
+			if (result != rightSymbol)
+				return result;
+			if (rightSymbol.Symbol == CiSystem.StringLength) {
 				CiLiteral leftLiteral = left as CiLiteral;
 				if (leftLiteral != null)
 					return new CiLiteral((long) ((string) leftLiteral.Value).Length);
 			}
-			return new CiBinaryExpr { Left = left, Op = expr.Op, Right = expr.Right, Type = symbol.Type };
+			return new CiBinaryExpr { Left = left, Op = expr.Op, Right = rightSymbol, Type = result.Type };
+		case CiToken.LeftParenthesis:
+			// TODO: check arguments
+			expr.Type = left.Type;
+			return expr;
+		default:
+			break;
 		}
 		CiExpr right = expr.Right.Accept(this, parent);
 		CiType type;
@@ -233,6 +273,20 @@ public class CiResolver : CiVisitor
 		CiRangeType rightRange = right.Type as CiRangeType;
 	
 		switch (expr.Op) {
+		case CiToken.LeftBracket:
+			// TODO: type check
+//			if (!(right.Type is CiIntegerType))
+//				throw StatementException(expr.Right, "Index is not an integer");
+//			if (IsLong(right.Type))
+//				throw StatementException(expr.Right, "Index is not 32-bit");
+			CiArrayType array = left.Type as CiArrayType;
+			if (array != null)
+				type = array.ElementType;
+			else if (left.Type is CiStringType)
+				type = CiSystem.CharType;
+			else
+				throw StatementException(expr.Left, "Indexed object is neither array or string");
+			break;
 		case CiToken.Plus:
 			if (leftRange != null && rightRange != null) {
 				type = new CiRangeType(
@@ -276,8 +330,25 @@ public class CiResolver : CiVisitor
 				// TODO: type check, constant folding
 			}
 			break;
+		case CiToken.Slash:
+			if (leftRange != null && rightRange != null && !rightRange.ContainsZero) {
+				// FIXME
+				type = new CiRangeType(
+					leftRange.Min / rightRange.Min,
+					leftRange.Min / rightRange.Max,
+					leftRange.Max / rightRange.Min,
+					leftRange.Max / rightRange.Max);
+			}
+			else {
+				type = GetNumericType(expr);
+				// TODO: type check, constant folding
+			}
+			break;
 		default:
-			throw new NotImplementedException(expr.Op.ToString());
+			// TODO
+			// throw new NotImplementedException(expr.Op.ToString());
+			type = null;
+			break;
 		}
 		CiRangeType range = type as CiRangeType;
 		if (range != null && range.Min == range.Max)
@@ -292,17 +363,39 @@ public class CiResolver : CiVisitor
 
 	public override void Visit(CiConst statement)
 	{
-		// TODO
+		statement.Value = statement.Value.Accept(this, CiPriority.Statement);
+		statement.Type = statement.Value.Type;
+		this.CurrentScope.Add(statement);
 	}
 
 	public override void Visit(CiExpr statement)
 	{
-		// TODO
+		statement.Accept(this, CiPriority.Statement);
+	}
+
+	void Resolve(CiStatement[] statements)
+	{
+		foreach (CiStatement statement in statements)
+			statement.Accept(this);
+	}
+
+	void OpenScope(CiScope scope)
+	{
+		scope.Parent = this.CurrentScope;
+		this.CurrentScope = scope;
+	}
+
+	void CloseScope()
+	{
+		this.CurrentScope = this.CurrentScope.Parent;
 	}
 
 	public override void Visit(CiBlock statement)
 	{
+		OpenScope(statement);
+		Resolve(statement.Statements);
 		// TODO
+		CloseScope();
 	}
 
 	public override void Visit(CiBreak statement)
@@ -320,18 +413,33 @@ public class CiResolver : CiVisitor
 		// TODO
 	}
 
+	void ResolveLoop(CiLoop statement)
+	{
+		// TODO: statement.Cond
+		statement.Body.Accept(this);
+	}
+
 	public override void Visit(CiDoWhile statement)
 	{
-		// TODO
+		ResolveLoop(statement);
 	}
 
 	public override void Visit(CiFor statement)
 	{
-		// TODO
+		OpenScope(statement);
+		if (statement.Init != null)
+			statement.Init.Accept(this);
+		if (statement.Advance != null)
+			statement.Advance.Accept(this);
+		ResolveLoop(statement);
+		CloseScope();
 	}
 
 	public override void Visit(CiIf statement)
 	{
+		statement.OnTrue.Accept(this);
+		if (statement.OnFalse != null)
+			statement.OnFalse.Accept(this);
 		// TODO
 	}
 
@@ -343,6 +451,12 @@ public class CiResolver : CiVisitor
 	public override void Visit(CiSwitch statement)
 	{
 		// TODO
+		foreach (CiCase kase in statement.Cases) {
+			Resolve(kase.Body);
+		}
+		if (statement.DefaultBody != null) {
+			Resolve(statement.DefaultBody);
+		}
 	}
 
 	public override void Visit(CiThrow statement)
@@ -352,7 +466,7 @@ public class CiResolver : CiVisitor
 
 	public override void Visit(CiWhile statement)
 	{
-		// TODO
+		ResolveLoop(statement);
 	}
 
 	static bool IsMutableType(ref CiExpr expr)
@@ -499,20 +613,30 @@ public class CiResolver : CiVisitor
 	void ResolveConsts(CiClass klass)
 	{
 		foreach (CiConst konst in klass.Consts) {
-			this.CurrentClass = klass;
+			this.CurrentScope = klass;
 			ResolveConst(konst);
 		}
 	}
 
 	void ResolveTypes(CiClass klass)
 	{
-		this.CurrentClass = klass;
+		this.CurrentScope = klass;
 		foreach (CiField field in klass.Fields)
 			field.Type = ToType(field.TypeExpr);
 		foreach (CiMethod method in klass.Methods) {
 			method.Type = ToType(method.TypeExpr);
 			foreach (CiVar param in method.Parameters)
 				param.Type = ToType(param.TypeExpr);
+		}
+	}
+
+	void ResolveCode(CiClass klass)
+	{
+		foreach (CiMethod method in klass.Methods) {
+			if (method.Body != null) {
+				this.CurrentScope = method.Parameters;
+				method.Body.Accept(this);
+			}
 		}
 	}
 
@@ -525,6 +649,8 @@ public class CiResolver : CiVisitor
 			ResolveConsts(klass);
 		foreach (CiClass klass in program.Classes)
 			ResolveTypes(klass);
+		foreach (CiClass klass in program.Classes)
+			ResolveCode(klass);
 	}
 }
 
