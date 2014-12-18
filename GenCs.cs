@@ -103,6 +103,36 @@ public class GenCs : GenBase
 		Write(type.Name);
 	}
 
+	void WriteVar(CiNamedValue def)
+	{
+		WriteTypeAndName(def);
+		if (def.Type is CiClass) {
+			Write(" = new ");
+			Write(def.Type.Name);
+			Write("()");
+		}
+		else {
+			CiArrayStorageType array = def.Type as CiArrayStorageType;
+			if (array != null) {
+				Write(" = new ");
+				Write(array.ElementType); // FIXME: array types, arrays of object storage, initialized arrays
+				Write('[');
+				Write(array.Length);
+				Write(']');
+			}
+			else if (def.Value != null) {
+				Write(" = ");
+				def.Value.Accept(this, CiPriority.Statement);
+			}
+		}
+	}
+
+	public override CiExpr Visit(CiVar expr, CiPriority parent)
+	{
+		WriteVar(expr);
+		return expr;
+	}
+
 	public override void Visit(CiThrow statement)
 	{
 		Write("throw new System.Exception(");
@@ -170,7 +200,9 @@ public class GenCs : GenBase
 
 		foreach (CiField field in klass.Fields) {
 			Write(field.Visibility);
-			WriteTypeAndName(field);
+			if (field.Type is CiClass || field.Type is CiArrayStorageType)
+				Write("readonly ");
+			WriteVar(field);
 			WriteLine(";");
 		}
 
