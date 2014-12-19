@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Globalization;
 using System.IO;
 
 namespace Foxoft.Ci
@@ -63,7 +64,6 @@ public abstract class GenBase : CiVisitor
 
 	protected void Write(long i)
 	{
-		StartLine();
 		this.Writer.Write(i);
 	}
 
@@ -192,8 +192,10 @@ public abstract class GenBase : CiVisitor
 
 	protected virtual void WriteLiteral(object value)
 	{
-		if (value is long)
-			Write((long) value);
+		if (value == null)
+			Write("null");
+		else if (value is bool)
+			Write((bool) value ? "true" : "false");
 		else if (value is string) {
 			Write('"');
 			foreach (char c in (string) value) {
@@ -212,8 +214,8 @@ public abstract class GenBase : CiVisitor
 			}
 			Write('"');
 		}
-		else
-			throw new ArgumentException(value.GetType().Name);
+		else // long, double
+			Write(((IConvertible) value).ToString(CultureInfo.InvariantCulture));
 	}
 
 	public override CiExpr Visit(CiLiteral expr, CiPriority parent)

@@ -203,16 +203,27 @@ public class CiLiteral : CiExpr
 	public readonly object Value;
 	public CiLiteral(object value)
 	{
-		if (value is long) {
-			long i = (long) value;
-			this.Type = new CiRangeType(i, i);
+		if (value == null)
+			this.Type = CiSystem.NullType;
+		else {
+			switch (System.Type.GetTypeCode(value.GetType())) {
+			case TypeCode.Boolean:
+				this.Type = CiSystem.BoolType;
+				break;
+			case TypeCode.Int64:
+				long i = (long) value;
+				this.Type = new CiRangeType(i, i);
+				break;
+			case TypeCode.Double:
+				this.Type = CiSystem.DoubleType;
+				break;
+			case TypeCode.String:
+				this.Type = CiSystem.StringPtrType;
+				break;
+			default:
+				throw new NotImplementedException(value.GetType().Name);
+			}
 		}
-		else if (value is double)
-			this.Type = CiSystem.DoubleType;
-		else if (value is string)
-			this.Type = CiSystem.StringPtrType;
-		else
-			throw new NotImplementedException(value.GetType().Name);
 		this.Value = value;
 	}
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
@@ -359,7 +370,7 @@ public class CiMethod : CiMethodBase
 	public bool Throws;
 }
 
-public abstract class CiType : CiScope
+public class CiType : CiScope
 {
 }
 
@@ -435,7 +446,17 @@ public class CiRangeType : CiIntegerType
 		this.Min = a <= c ? a : c;
 		this.Max = b >= d ? b : d;
 	}
-	public bool ContainsZero { get { return this.Min <= 0 && this.Max >= 0; } }
+	public CiRangeType Union(CiRangeType that)
+	{
+		if (that.Min < this.Min) {
+			if (that.Max >= this.Max)
+				return that;
+			return new CiRangeType(that.Min, this.Max);
+		}
+		if (that.Max > this.Max)
+			return new CiRangeType(this.Min, that.Max);
+		return this;
+	}
 	public override TypeCode TypeCode
 	{
 		get
@@ -499,15 +520,20 @@ public class CiArrayStorageType : CiArrayType
 	public int Length;
 	public override CiSymbol TryLookup(string name)
 	{
-		if (name == "Fill")
+		switch (name) {
+		case "Fill":
 			return CiSystem.ArrayFill;
-		// TODO: length
-		return base.TryLookup(name);
+		case "Length":
+			return CiSystem.ArrayLength;
+		default:
+			return base.TryLookup(name);
+		}
 	}
 }
 
 public class CiSystem : CiScope
 {
+	public static readonly CiType NullType = new CiType();
 	public static readonly CiIntType IntType = new CiIntType { Name = "int" };
 	public static readonly CiRangeType UIntType = new CiRangeType(0, int.MaxValue) { Name = "uint" };
 	public static readonly CiLongType LongType = new CiLongType { Name = "long" };
@@ -520,9 +546,8 @@ public class CiSystem : CiScope
 	public static readonly CiEnum BoolType = new CiEnum { Name = "bool" };
 	public static readonly CiStringType StringPtrType = new CiStringType { Name = "string" };
 	public static readonly CiStringType StringStorageType = new CiStringType();
-	public static readonly CiConst False = new CiConst { Name = "false", Type = BoolType, VisitStatus = CiVisitStatus.Done };
-	public static readonly CiConst True = new CiConst { Name = "true", Type = BoolType, VisitStatus = CiVisitStatus.Done };
 	public static readonly CiMember StringLength = new CiMember { Name = "Length", Type = UIntType };
+	public static readonly CiMember ArrayLength = new CiMember { Name = "Length", Type = UIntType };
 	public static readonly CiMethod ArrayCopyTo = new CiMethod { Name = "CopyTo" };
 	public static readonly CiMethod ArrayFill = new CiMethod { Name = "Fill" };
 	public static readonly CiMethod BinaryResource = new CiMethod { Name = "BinaryResource", Type = new CiArrayStorageType { ElementType = ByteType } }; // FIXME: Length
@@ -539,8 +564,6 @@ public class CiSystem : CiScope
 		Add(DoubleType);
 		Add(BoolType);
 		Add(StringPtrType);
-		Add(False);
-		Add(True);
 		Add(BinaryResource); // FIXME
 	}
 

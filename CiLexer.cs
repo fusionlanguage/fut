@@ -123,16 +123,13 @@ public class CiLexer
 	protected string Filename;
 	public int Line;
 	protected CiToken CurrentToken;
-	protected object CurrentValue; // string for CiToken.Id; long/double/string for CiToken.Literal; not modified otherwise
+	protected object CurrentValue; // string for CiToken.Id; null/bool/long/double/string for CiToken.Literal; not modified otherwise
 	public readonly HashSet<string> PreSymbols = new HashSet<string>();
 	bool AtLineStart = true;
 	bool LineMode = false;
 	readonly Stack<PreDirectiveClass> PreStack = new Stack<PreDirectiveClass>();
-
-	protected CiLexer()
-	{
-		this.PreSymbols.Add("true");
-	}
+	static readonly object BoxedFalse = false;
+	static readonly object BoxedTrue = true;
 
 	protected void Open(string filename, TextReader reader)
 	{
@@ -517,6 +514,15 @@ public class CiLexer
 				case "virtual": return CiToken.Virtual;
 				case "void": return CiToken.Void;
 				case "while": return CiToken.While;
+				case "false":
+					this.CurrentValue = BoxedFalse;
+					return CiToken.Literal;
+				case "true":
+					this.CurrentValue = BoxedTrue;
+					return CiToken.Literal;
+				case "null":
+					this.CurrentValue = null;
+					return CiToken.Literal;
 				default:
 					this.CurrentValue = s;
 					return CiToken.Id;
@@ -551,6 +557,11 @@ public class CiLexer
 		}
 		if (See(CiToken.Id)) {
 			bool result = this.PreSymbols.Contains((string) this.CurrentValue);
+			NextPreToken();
+			return result;
+		}
+		if (See(CiToken.Literal) && this.CurrentValue is bool) {
+			bool result = (bool) this.CurrentValue;
 			NextPreToken();
 			return result;
 		}
