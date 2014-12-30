@@ -78,29 +78,19 @@ public class CiResolver : CiVisitor
 
 	CiType GetCommonType(CiExpr left, CiExpr right)
 	{
-		CiType leftType = left.Type;
-		CiType rightType = right.Type;
-		if (leftType.IsAssignableFrom(rightType))
-			return leftType;
-		if (rightType.IsAssignableFrom(leftType))
-			return rightType;
-		CiRangeType leftRange = leftType as CiRangeType;
-		CiRangeType rightRange = rightType as CiRangeType;
-		if (leftRange != null && rightRange != null)
-			return leftRange.Union(rightRange);
-		CiType type = leftType.Ptr;
-		if (type != null) {
-			// stg, ptr || stg, null
-			Coerce(right, type);
-			return type;
+		CiType ptr = left.Type.PtrOrSelf;
+		if (ptr.IsAssignableFrom(right.Type))
+			return ptr;
+		ptr = right.Type.PtrOrSelf;
+		if (ptr.IsAssignableFrom(left.Type))
+			return ptr;
+		CiRangeType leftRange = left.Type as CiRangeType;
+		if (leftRange != null) {
+			CiRangeType rightRange = right.Type as CiRangeType;
+			if (rightRange != null)
+				return leftRange.Union(rightRange);
 		}
-		type = rightType.Ptr;
-		if (type != null) {
-			// ptr, stg || null, stg
-			Coerce(left, type);
-			return type;
-		}
-		throw StatementException(left, "Incompatible types: {0} and {1}", leftType, rightType);
+		throw StatementException(left, "Incompatible types: {0} and {1}", left.Type, right.Type);
 	}
 
 	CiIntegerType GetIntegerType(CiExpr left, CiExpr right)
@@ -301,10 +291,14 @@ public class CiResolver : CiVisitor
 
 	public override CiExpr Visit(CiVar expr, CiPriority parent)
 	{
-		expr.Type = ToType(expr.TypeExpr);
+		CiType type = ToType(expr.TypeExpr);
+		expr.Type = type;
 		if (expr.Value != null) {
 			expr.Value = expr.Value.Accept(this, CiPriority.Statement);
-			// TODO: typecheck
+			CiArrayStorageType array = type as CiArrayStorageType;
+			if (array != null)
+				type = array.ElementType;
+			Coerce(expr.Value, type);
 		}
 		this.CurrentScope.Add(expr);
 		return expr;
@@ -385,7 +379,17 @@ public class CiResolver : CiVisitor
 			inner = ResolveBool(expr.Inner);
 			return new CiPrefixExpr { Op = CiToken.ExclamationMark, Inner = inner, Type = CiSystem.BoolType };
 		case CiToken.New:
-			return expr; // TODO
+			type = ToTypeDynamic(expr.Inner);
+			CiArrayStorageType array = type as CiArrayStorageType;
+			if (array != null) {
+				CiExpr length = array.LengthExpr.Accept(this, parent);
+				Coerce(length, CiSystem.IntType);
+				return new CiPrefixExpr { Line = expr.Line, Op = CiToken.New, Inner = length, Type = array.PtrOrSelf };
+			}
+			CiClass klass = type as CiClass;
+			if (klass != null)
+				return new CiPrefixExpr { Line = expr.Line, Op = CiToken.New, Type = klass.PtrOrSelf };
+			throw StatementException(expr, "Invalid argument to new");
 		case CiToken.Less:
 		case CiToken.LessOrEqual:
 			throw StatementException(expr, "Invalid expression");
@@ -394,7 +398,7 @@ public class CiResolver : CiVisitor
 		}
 		if (range != null && range.Min == range.Max)
 			return new CiLiteral(range.Min);
-		return new CiPrefixExpr { Op = expr.Op, Inner = inner, Type = type };
+		return new CiPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
 	}
 
 	public override CiExpr Visit(CiPostfixExpr expr, CiPriority parent)
@@ -603,7 +607,7 @@ public class CiResolver : CiVisitor
 		CiRangeType range = type as CiRangeType;
 		if (range != null && range.Min == range.Max)
 			return new CiLiteral(range.Min);
-		return new CiBinaryExpr { Left = left, Op = expr.Op, Right = right, Type = type };
+		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = type };
 	}
 
 	public override CiExpr Visit(CiCondExpr expr, CiPriority parent)
@@ -831,7 +835,7 @@ public class CiResolver : CiVisitor
 		throw StatementException(expr, "Invalid type");
 	}
 
-	CiType ToType(CiExpr expr)
+	CiType ToTypeDynamic(CiExpr expr)
 	{
 		if (expr == null)
 			return null; // void
@@ -845,7 +849,7 @@ public class CiResolver : CiVisitor
 			if (binary.Right != null) {
 				if (mutable)
 					throw StatementException(expr, "Unexpected exclamation mark on non-reference type");
-				outerArray = new CiArrayStorageType { Length = FoldConstUint(binary.Right), ElementType = outerArray };
+				outerArray = new CiArrayStorageType { LengthExpr = binary.Right, ElementType = outerArray };
 			}
 			else
 				outerArray = new CiArrayPtrType { Mutable = mutable, ElementType = outerArray };
@@ -860,6 +864,15 @@ public class CiResolver : CiVisitor
 			return baseType;
 		innerArray.ElementType = baseType;
 		return outerArray;
+	}
+
+	CiType ToType(CiExpr expr)
+	{
+		CiType type = ToTypeDynamic(expr);
+		CiArrayStorageType array = type as CiArrayStorageType;
+		if (array != null)
+			array.Length = FoldConstUint(array.LengthExpr);
+		return type;
 	}
 
 	void ResolveConst(CiConst konst)

@@ -106,19 +106,17 @@ public class GenCs : GenBase
 	void WriteVar(CiNamedValue def)
 	{
 		WriteTypeAndName(def);
-		if (def.Type is CiClass) {
-			Write(" = new ");
-			Write(def.Type.Name);
-			Write("()");
+		CiClass klass = def.Type as CiClass;
+		if (klass != null) {
+			Write(" = ");
+			WriteNew(klass);
 		}
 		else {
 			CiArrayStorageType array = def.Type as CiArrayStorageType;
 			if (array != null) {
-				Write(" = new ");
-				Write(array.ElementType); // FIXME: array types, arrays of object storage, initialized arrays
-				Write('[');
-				Write(array.Length);
-				Write(']');
+				Write(" = ");
+				WriteNewArray(array.ElementType, new CiLiteral((long) array.Length));
+				// FIXME: arrays of object storage, initialized arrays
 			}
 			else if (def.Value != null) {
 				Write(" = ");

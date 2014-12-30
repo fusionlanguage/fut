@@ -373,7 +373,7 @@ public class CiMethod : CiMethodBase
 public class CiType : CiScope
 {
 	public virtual bool IsAssignableFrom(CiType right) { return this == right; }
-	public virtual CiType Ptr { get { return null; } }
+	public virtual CiType PtrOrSelf { get { return this; } }
 }
 
 public abstract class CiContainerType : CiType
@@ -404,7 +404,7 @@ public class CiClass : CiContainerType
 	public CiMethod[] Methods;
 	public CiVisitStatus VisitStatus;
 	public override bool IsAssignableFrom(CiType right) { return false; }
-	public override CiType Ptr { get { return new CiClassPtrType { Class = this, Mutable = true }; } }
+	public override CiType PtrOrSelf { get { return new CiClassPtrType { Class = this, Mutable = true }; } }
 }
 
 public class CiNumericType : CiType
@@ -556,7 +556,7 @@ public class CiStringType : CiType
 
 public class CiStringStorageType : CiStringType
 {
-	public override CiType Ptr { get { return CiSystem.StringPtrType; } }
+	public override CiType PtrOrSelf { get { return CiSystem.StringPtrType; } }
 }
 
 public class CiClassPtrType : CiType
@@ -589,7 +589,7 @@ public class CiArrayPtrType : CiArrayType
 		if (array == null || array.ElementType != this.ElementType)
 			return false;
 		if (!this.Mutable)
-			return false;
+			return true;
 		CiArrayPtrType ptr = array as CiArrayPtrType;
 		return ptr == null || ptr.Mutable;
 	}
@@ -597,6 +597,7 @@ public class CiArrayPtrType : CiArrayType
 
 public class CiArrayStorageType : CiArrayType
 {
+	public CiExpr LengthExpr;
 	public int Length;
 	public override CiSymbol TryLookup(string name)
 	{
@@ -609,7 +610,7 @@ public class CiArrayStorageType : CiArrayType
 			return base.TryLookup(name);
 		}
 	}
-	public override CiType Ptr { get { return new CiArrayPtrType { ElementType = this.ElementType, Mutable = true }; } }
+	public override CiType PtrOrSelf { get { return new CiArrayPtrType { ElementType = this.ElementType, Mutable = true }; } }
 }
 
 public class CiSystem : CiScope

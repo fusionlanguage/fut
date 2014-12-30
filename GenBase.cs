@@ -230,6 +230,28 @@ public abstract class GenBase : CiVisitor
 		return expr;
 	}
 
+	protected void WriteNew(CiClass klass)
+	{
+		Write("new ");
+		Write(klass.Name);
+		Write("()");
+	}
+
+	protected void WriteNewArray(CiType type, CiExpr lengthExpr)
+	{
+		CiArrayType array = type as CiArrayType;
+		if (array != null) {
+			WriteNewArray(array.ElementType, lengthExpr);
+			Write("[]");
+			return;
+		}
+		Write("new ");
+		Write(type);
+		Write('[');
+		lengthExpr.Accept(this, CiPriority.Statement);
+		Write(']');
+	}
+
 	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
@@ -253,8 +275,12 @@ public abstract class GenBase : CiVisitor
 			Write('!');
 			break;
 		case CiToken.New:
-			Write("new ");
-			break;
+			CiClass klass = expr.Type as CiClass;
+			if (klass != null)
+				WriteNew(klass);
+			else
+				WriteNewArray(((CiArrayPtrType) expr.Type).ElementType, expr.Inner);
+			return expr;
 		default:
 			throw new ArgumentException(expr.Op.ToString());
 		}
