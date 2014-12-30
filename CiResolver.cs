@@ -70,13 +70,39 @@ public class CiResolver : CiVisitor
 			klass.Add(method);
 	}
 
+	static bool IsLong(CiType type)
+	{
+		if (type == CiSystem.LongType)
+			return true;
+		CiRangeType range = type as CiRangeType;
+		return range != null && (range.Min < int.MinValue || range.Max > int.MaxValue);
+	}
+
 	CiExpr Coerce(CiExpr expr, CiType expected)
 	{
 		CiType got = expr.Type;
 		if (got.Equals(expected))
 			return expr;
+		if (expected is CiNumericType) {
+			if (expected == CiSystem.DoubleType) {
+				if (got is CiNumericType)
+					return expr;
+			}
+			else if (expected == CiSystem.FloatType) {
+				if (got is CiNumericType && got != CiSystem.DoubleType)
+					return expr;
+			}
+			else if (expected == CiSystem.LongType) {
+				if (got is CiIntegerType)
+					return expr;
+			}
+			else if (expected == CiSystem.IntType) {
+				if (got is CiIntegerType && !IsLong(got))
+					return expr;
+			}
+		}
 		// TODO
-		return expr;
+		throw StatementException(expr, "Expected {0}, got {1}", expected, got);
 	}
 
 	static long SaturatedNeg(long a)
@@ -142,6 +168,71 @@ public class CiResolver : CiVisitor
 	static long SaturatedShiftRight(long a, long b)
 	{
 		return a >> (b >= 63 || b < 0 ? 63 : (int) b);
+	}
+
+	static CiRangeType UnsignedAnd(CiRangeType left, CiRangeType right)
+	{
+		long leftVariableBits = left.VariableBits;
+		long rightVariableBits = right.VariableBits;
+		// Bitwise "and" computes the digitwise minimum.
+		// Calculate the lower bound with variable bits zeroed
+		long min = (left.Min & ~leftVariableBits) & (right.Min & ~rightVariableBits);
+		// Calculate upper bound with variable bits set
+		long max = (left.Max | leftVariableBits) & (right.Max | rightVariableBits);
+		// The upper bound will never exceed the input
+		if (max > left.Max)
+			max = left.Max;
+		if (max > right.Max)
+			max = right.Max;
+		return new CiRangeType(min, max);
+	}
+
+	static CiRangeType UnsignedOr(CiRangeType left, CiRangeType right)
+	{
+		long leftVariableBits = left.VariableBits;
+		long rightVariableBits = right.VariableBits;
+		long min = (left.Min & ~leftVariableBits) | (right.Min & ~rightVariableBits);
+		long max = left.Max | right.Max | CiRangeType.GetMask(left.Max & right.Max);
+		// The lower bound will never be less than the input
+		if (min < left.Min)
+			min = left.Min;
+		if (min < right.Min)
+			min = right.Min;
+		return new CiRangeType(min, max);
+	}
+
+	static CiRangeType UnsignedXor(CiRangeType left, CiRangeType right)
+	{
+		long variableBits = left.VariableBits | right.VariableBits;
+		long min = (left.Min ^ right.Min) & ~variableBits;
+		long max = (left.Max ^ right.Max) | variableBits;
+		return new CiRangeType(min, max);
+	}
+
+	delegate CiRangeType UnsignedOp(CiRangeType left, CiRangeType right);
+
+	CiRangeType BitwiseOp(CiRangeType left, CiRangeType right, UnsignedOp op)
+	{
+		CiRangeType leftNegative;
+		CiRangeType leftPositive;
+		left.SplitBySign(out leftNegative, out leftPositive);
+		CiRangeType rightNegative;
+		CiRangeType rightPositive;
+		right.SplitBySign(out rightNegative, out rightPositive);
+		CiRangeType result = null;
+		if (leftNegative != null) {
+			if (rightNegative != null)
+				result = op(leftNegative, rightNegative);
+			if (rightPositive != null)
+				result = op(leftNegative, rightPositive).Union(result);
+		}
+		if (leftPositive != null) {
+			if (rightNegative != null)
+				result = op(leftPositive, rightNegative).Union(result);
+			if (rightPositive != null)
+				result = op(leftPositive, rightPositive).Union(result);
+		}
+		return result;
 	}
 
 	public override CiExpr Visit(CiCollection expr, CiPriority parent)
@@ -226,11 +317,13 @@ public class CiResolver : CiVisitor
 			// TODO: check lvalue
 			if (range != null) {
 				long delta = expr.Op == CiToken.Increment ? 1 : -1;
-				type = range = new CiRangeType(range.Min + delta, range.Max + delta);
+				type = new CiRangeType(range.Min + delta, range.Max + delta);
 			}
 			else
 				type = inner.Type;
-			break;
+			expr.Inner = inner;
+			expr.Type = type;
+			return expr;
 		case CiToken.Minus:
 			inner = expr.Inner.Accept(this, parent);
 			if (!(inner.Type is CiNumericType))
@@ -254,8 +347,13 @@ public class CiResolver : CiVisitor
 		case CiToken.ExclamationMark:
 			inner = ResolveBool(expr.Inner);
 			return new CiPrefixExpr { Op = CiToken.ExclamationMark, Inner = inner, Type = CiSystem.BoolType };
-		default: // TODO
-			return expr;
+		case CiToken.New:
+			return expr; // TODO
+		case CiToken.Less:
+		case CiToken.LessOrEqual:
+			throw StatementException(expr, "Invalid expression");
+		default:
+			throw new NotImplementedException(expr.Op.ToString());
 		}
 		if (range != null && range.Min == range.Max)
 			return new CiLiteral(range.Min);
@@ -278,14 +376,6 @@ public class CiResolver : CiVisitor
 		default:
 			throw new NotImplementedException(expr.Op.ToString());
 		}
-	}
-
-	static bool IsLong(CiType type)
-	{
-		if (type == CiSystem.LongType)
-			return true;
-		CiRangeType range = type as CiRangeType;
-		return range != null && (range.Min < int.MinValue || range.Max > int.MaxValue);
 	}
 
 	static CiIntegerType GetIntegerType(CiBinaryExpr expr)
@@ -442,10 +532,28 @@ public class CiResolver : CiVisitor
 			}
 			break;
 		case CiToken.And:
+			if (leftRange != null && rightRange != null)
+				type = BitwiseOp(leftRange, rightRange, UnsignedAnd);
+			else {
+				type = GetIntegerType(expr);
+				// TODO: type check
+			}
+			break;
 		case CiToken.Or:
+			if (leftRange != null && rightRange != null)
+				type = BitwiseOp(leftRange, rightRange, UnsignedOr);
+			else {
+				type = GetIntegerType(expr);
+				// TODO: type check
+			}
+			break;
 		case CiToken.Xor:
-			// TODO: VRP
-			type = GetIntegerType(expr);
+			if (leftRange != null && rightRange != null)
+				type = BitwiseOp(leftRange, rightRange, UnsignedXor);
+			else {
+				type = GetIntegerType(expr);
+				// TODO: type check
+			}
 			break;
 		case CiToken.ShiftLeft:
 			if (leftRange != null && rightRange != null) {
@@ -496,8 +604,10 @@ public class CiResolver : CiVisitor
 		case CiToken.ShiftLeftAssign:
 		case CiToken.ShiftRightAssign:
 			// TODO
-			type = left.Type;
-			break;
+			expr.Left = left;
+			expr.Right = right;
+			expr.Type = left.Type;
+			return expr;
 		default:
 			throw new NotImplementedException(expr.Op.ToString());
 		}

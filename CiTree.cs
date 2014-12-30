@@ -426,11 +426,13 @@ public class CiRangeType : CiIntegerType
 {
 	public readonly long Min;
 	public readonly long Max;
+
 	public CiRangeType(long min, long max)
 	{
 		this.Min = min;
 		this.Max = max;
 	}
+
 	public CiRangeType(long a, long b, long c, long d)
 	{
 		if (a > b) {
@@ -446,8 +448,11 @@ public class CiRangeType : CiIntegerType
 		this.Min = a <= c ? a : c;
 		this.Max = b >= d ? b : d;
 	}
+
 	public CiRangeType Union(CiRangeType that)
 	{
+		if (that == null)
+			return this;
 		if (that.Min < this.Min) {
 			if (that.Max >= this.Max)
 				return that;
@@ -457,6 +462,7 @@ public class CiRangeType : CiIntegerType
 			return new CiRangeType(this.Min, that.Max);
 		return this;
 	}
+
 	public override TypeCode TypeCode
 	{
 		get
@@ -475,6 +481,44 @@ public class CiRangeType : CiIntegerType
 			if (this.Max > byte.MaxValue)
 				return TypeCode.UInt16;
 			return TypeCode.Byte;
+		}
+	}
+
+	public static long GetMask(long v)
+	{
+		// http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+		v |= v >> 1;
+		v |= v >> 2;
+		v |= v >> 4;
+		v |= v >> 8;
+		v |= v >> 16;
+		v |= v >> 32;
+		return v;
+	}
+
+	public long VariableBits
+	{
+		get
+		{
+			return GetMask(this.Min ^ this.Max);
+		}
+	}
+
+	public void SplitBySign(out CiRangeType negative, out CiRangeType positive)
+	{
+		if (this.Min < 0) {
+			if (this.Max < 0) {
+				negative = this;
+				positive = null;
+			}
+			else {
+				negative = new CiRangeType(this.Min, -1);
+				positive = new CiRangeType(0, this.Max);
+			}
+		}
+		else {
+			negative = null;
+			positive = new CiRangeType(this.Min, this.Max);
 		}
 	}
 }
