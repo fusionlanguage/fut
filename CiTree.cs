@@ -372,6 +372,8 @@ public class CiMethod : CiMethodBase
 
 public class CiType : CiScope
 {
+	public virtual bool IsAssignableFrom(CiType right) { return this == right; }
+	public virtual CiType Ptr { get { return null; } }
 }
 
 public abstract class CiContainerType : CiType
@@ -401,6 +403,8 @@ public class CiClass : CiContainerType
 	public CiField[] Fields;
 	public CiMethod[] Methods;
 	public CiVisitStatus VisitStatus;
+	public override bool IsAssignableFrom(CiType right) { return false; }
+	public override CiType Ptr { get { return new CiClassPtrType { Class = this, Mutable = true }; } }
 }
 
 public class CiNumericType : CiType
@@ -409,16 +413,25 @@ public class CiNumericType : CiType
 
 public abstract class CiIntegerType : CiNumericType
 {
+	public abstract bool IsLong { get; }
 	public abstract TypeCode TypeCode { get; }
 }
 
 public class CiIntType : CiIntegerType
 {
+	public override bool IsAssignableFrom(CiType right)
+	{
+		CiIntegerType it = right as CiIntegerType;
+		return it != null && !it.IsLong;
+	}
+	public override bool IsLong { get { return false; } }
 	public override TypeCode TypeCode { get { return TypeCode.Int32; } }
 }
 
 public class CiLongType : CiIntegerType
 {
+	public override bool IsAssignableFrom(CiType right) { return right is CiIntegerType; }
+	public override bool IsLong { get { return true; } }
 	public override TypeCode TypeCode { get { return TypeCode.Int64; } }
 }
 
@@ -462,6 +475,14 @@ public class CiRangeType : CiIntegerType
 			return new CiRangeType(this.Min, that.Max);
 		return this;
 	}
+
+	public override bool IsAssignableFrom(CiType right)
+	{
+		CiRangeType range = right as CiRangeType;
+		return range != null && this.Min <= range.Min && this.Max >= range.Max;
+	}
+
+	public override bool IsLong { get { return this.Min < int.MinValue || this.Max > int.MaxValue; } }
 
 	public override TypeCode TypeCode
 	{
@@ -533,6 +554,11 @@ public class CiStringType : CiType
 	}
 }
 
+public class CiStringStorageType : CiStringType
+{
+	public override CiType Ptr { get { return CiSystem.StringPtrType; } }
+}
+
 public class CiClassPtrType : CiType
 {
 	public CiClass Class;
@@ -557,6 +583,16 @@ public abstract class CiArrayType : CiType
 public class CiArrayPtrType : CiArrayType
 {
 	public bool Mutable;
+	public override bool IsAssignableFrom(CiType right)
+	{
+		CiArrayType array = right as CiArrayType;
+		if (array == null || array.ElementType != this.ElementType)
+			return false;
+		if (!this.Mutable)
+			return false;
+		CiArrayPtrType ptr = array as CiArrayPtrType;
+		return ptr == null || ptr.Mutable;
+	}
 }
 
 public class CiArrayStorageType : CiArrayType
@@ -573,6 +609,7 @@ public class CiArrayStorageType : CiArrayType
 			return base.TryLookup(name);
 		}
 	}
+	public override CiType Ptr { get { return new CiArrayPtrType { ElementType = this.ElementType, Mutable = true }; } }
 }
 
 public class CiSystem : CiScope
@@ -589,7 +626,7 @@ public class CiSystem : CiScope
 	public static readonly CiRangeType CharType = new CiRangeType(-0x80, 0xffff);
 	public static readonly CiEnum BoolType = new CiEnum { Name = "bool" };
 	public static readonly CiStringType StringPtrType = new CiStringType { Name = "string" };
-	public static readonly CiStringType StringStorageType = new CiStringType();
+	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType();
 	public static readonly CiMember StringLength = new CiMember { Name = "Length", Type = UIntType };
 	public static readonly CiMember ArrayLength = new CiMember { Name = "Length", Type = UIntType };
 	public static readonly CiMethod ArrayCopyTo = new CiMethod { Name = "CopyTo" };

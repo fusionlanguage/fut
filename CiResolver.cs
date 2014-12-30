@@ -70,39 +70,69 @@ public class CiResolver : CiVisitor
 			klass.Add(method);
 	}
 
-	static bool IsLong(CiType type)
+	void Coerce(CiExpr expr, CiType type)
 	{
-		if (type == CiSystem.LongType)
-			return true;
-		CiRangeType range = type as CiRangeType;
-		return range != null && (range.Min < int.MinValue || range.Max > int.MaxValue);
+		if (!type.IsAssignableFrom(expr.Type))
+			throw StatementException(expr, "Cannot coerce {0} to {1}", expr.Type, type);
 	}
 
-	CiExpr Coerce(CiExpr expr, CiType expected)
+	CiType GetCommonType(CiExpr left, CiExpr right)
 	{
-		CiType got = expr.Type;
-		if (got.Equals(expected))
-			return expr;
-		if (expected is CiNumericType) {
-			if (expected == CiSystem.DoubleType) {
-				if (got is CiNumericType)
-					return expr;
-			}
-			else if (expected == CiSystem.FloatType) {
-				if (got is CiNumericType && got != CiSystem.DoubleType)
-					return expr;
-			}
-			else if (expected == CiSystem.LongType) {
-				if (got is CiIntegerType)
-					return expr;
-			}
-			else if (expected == CiSystem.IntType) {
-				if (got is CiIntegerType && !IsLong(got))
-					return expr;
-			}
+		CiType leftType = left.Type;
+		CiType rightType = right.Type;
+		if (leftType.IsAssignableFrom(rightType))
+			return leftType;
+		if (rightType.IsAssignableFrom(leftType))
+			return rightType;
+		CiRangeType leftRange = leftType as CiRangeType;
+		CiRangeType rightRange = rightType as CiRangeType;
+		if (leftRange != null && rightRange != null)
+			return leftRange.Union(rightRange);
+		CiType type = leftType.Ptr;
+		if (type != null) {
+			// stg, ptr || stg, null
+			Coerce(right, type);
+			return type;
 		}
-		// TODO
-		throw StatementException(expr, "Expected {0}, got {1}", expected, got);
+		type = rightType.Ptr;
+		if (type != null) {
+			// ptr, stg || null, stg
+			Coerce(left, type);
+			return type;
+		}
+		throw StatementException(left, "Incompatible types: {0} and {1}", leftType, rightType);
+	}
+
+	CiIntegerType GetIntegerType(CiExpr left, CiExpr right)
+	{
+		if (CiSystem.IntType.IsAssignableFrom(left.Type)
+		 && CiSystem.IntType.IsAssignableFrom(right.Type))
+			return CiSystem.IntType;
+		Coerce(left, CiSystem.LongType);
+		Coerce(right, CiSystem.LongType);
+		return CiSystem.LongType;
+	}
+
+	CiIntegerType GetShiftType(CiExpr left, CiExpr right)
+	{
+		Coerce(right, CiSystem.IntType);
+		if (CiSystem.IntType.IsAssignableFrom(left.Type))
+			return CiSystem.IntType;
+		Coerce(left, CiSystem.LongType);
+		return CiSystem.LongType;
+	}
+
+	CiType GetNumericType(CiExpr left, CiExpr right)
+	{
+		if (left.Type == CiSystem.DoubleType || left.Type == CiSystem.FloatType) {
+			Coerce(right, CiSystem.DoubleType);
+			return CiSystem.DoubleType;
+		}
+		if (right.Type == CiSystem.DoubleType || right.Type == CiSystem.FloatType) {
+			Coerce(left, CiSystem.DoubleType);
+			return CiSystem.DoubleType;
+		}
+		return GetIntegerType(left, right);
 	}
 
 	static long SaturatedNeg(long a)
@@ -211,28 +241,35 @@ public class CiResolver : CiVisitor
 
 	delegate CiRangeType UnsignedOp(CiRangeType left, CiRangeType right);
 
-	CiRangeType BitwiseOp(CiRangeType left, CiRangeType right, UnsignedOp op)
+	CiType BitwiseOp(CiExpr left, CiExpr right, UnsignedOp op)
 	{
-		CiRangeType leftNegative;
-		CiRangeType leftPositive;
-		left.SplitBySign(out leftNegative, out leftPositive);
-		CiRangeType rightNegative;
-		CiRangeType rightPositive;
-		right.SplitBySign(out rightNegative, out rightPositive);
-		CiRangeType result = null;
-		if (leftNegative != null) {
-			if (rightNegative != null)
-				result = op(leftNegative, rightNegative);
-			if (rightPositive != null)
-				result = op(leftNegative, rightPositive).Union(result);
+		CiRangeType leftRange = left.Type as CiRangeType;
+		if (leftRange != null) {
+			CiRangeType rightRange = right.Type as CiRangeType;
+			if (rightRange != null) {
+				CiRangeType leftNegative;
+				CiRangeType leftPositive;
+				leftRange.SplitBySign(out leftNegative, out leftPositive);
+				CiRangeType rightNegative;
+				CiRangeType rightPositive;
+				rightRange.SplitBySign(out rightNegative, out rightPositive);
+				CiRangeType range = null;
+				if (leftNegative != null) {
+					if (rightNegative != null)
+						range = op(leftNegative, rightNegative);
+					if (rightPositive != null)
+						range = op(leftNegative, rightPositive).Union(range);
+				}
+				if (leftPositive != null) {
+					if (rightNegative != null)
+						range = op(leftPositive, rightNegative).Union(range);
+					if (rightPositive != null)
+						range = op(leftPositive, rightPositive).Union(range);
+				}
+				return range;
+			}
 		}
-		if (leftPositive != null) {
-			if (rightNegative != null)
-				result = op(leftPositive, rightNegative).Union(result);
-			if (rightPositive != null)
-				result = op(leftPositive, rightPositive).Union(result);
-		}
-		return result;
+		return GetIntegerType(left, right);
 	}
 
 	public override CiExpr Visit(CiCollection expr, CiPriority parent)
@@ -378,23 +415,6 @@ public class CiResolver : CiVisitor
 		}
 	}
 
-	static CiIntegerType GetIntegerType(CiBinaryExpr expr)
-	{
-		if (IsLong(expr.Left.Type) || IsLong(expr.Right.Type))
-			return CiSystem.LongType;
-		return CiSystem.IntType;
-	}
-
-	static CiType GetNumericType(CiBinaryExpr expr)
-	{
-		CiType leftType = expr.Left.Type;
-		CiType rightType = expr.Right.Type;
-		if (leftType == CiSystem.DoubleType || rightType == CiSystem.DoubleType
-		 || leftType == CiSystem.FloatType || rightType == CiSystem.FloatType)
-			return CiSystem.DoubleType;
-		return GetIntegerType(expr);
-	}
-
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
 		CiExpr left = expr.Left.Accept(this, parent);
@@ -415,7 +435,7 @@ public class CiResolver : CiVisitor
 				if (leftLiteral != null)
 					return new CiLiteral((long) ((string) leftLiteral.Value).Length);
 			}
-			return new CiBinaryExpr { Left = left, Op = expr.Op, Right = rightSymbol, Type = result.Type };
+			return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = rightSymbol, Type = result.Type };
 		case CiToken.LeftParenthesis:
 			// TODO: check arguments
 			CiExpr[] arguments = expr.RightCollection;
@@ -433,11 +453,8 @@ public class CiResolver : CiVisitor
 	
 		switch (expr.Op) {
 		case CiToken.LeftBracket:
-			// TODO: type check
-//			if (!(right.Type is CiIntegerType))
-//				throw StatementException(expr.Right, "Index is not an integer");
-			if (IsLong(right.Type))
-				throw StatementException(expr.Right, "Index is not 32-bit");
+			if (!CiSystem.IntType.IsAssignableFrom(right.Type))
+				throw StatementException(expr.Right, "Index is not int");
 			CiArrayType array = left.Type as CiArrayType;
 			if (array != null)
 				type = array.ElementType;
@@ -469,10 +486,8 @@ public class CiResolver : CiVisitor
 				type = CiSystem.StringPtrType;
 				// TODO: type check
 			}
-			else {
-				type = GetNumericType(expr);
-				// TODO: type check
-			}
+			else
+				type = GetNumericType(left, right);
 			break;
 		case CiToken.Minus:
 			if (leftRange != null && rightRange != null) {
@@ -480,10 +495,8 @@ public class CiResolver : CiVisitor
 					SaturatedSub(leftRange.Min, rightRange.Max),
 					SaturatedSub(leftRange.Max, rightRange.Min));
 			}
-			else {
-				type = GetNumericType(expr);
-				// TODO: type check
-			}
+			else
+				type = GetNumericType(left, right);
 			break;
 		case CiToken.Asterisk:
 			if (leftRange != null && rightRange != null) {
@@ -493,10 +506,8 @@ public class CiResolver : CiVisitor
 					SaturatedMul(leftRange.Max, rightRange.Min),
 					SaturatedMul(leftRange.Max, rightRange.Max));
 			}
-			else {
-				type = GetNumericType(expr);
-				// TODO: type check
-			}
+			else
+				type = GetNumericType(left, right);
 			break;
 		case CiToken.Slash:
 			if (leftRange != null && rightRange != null) {
@@ -512,10 +523,8 @@ public class CiResolver : CiVisitor
 					SaturatedDiv(leftRange.Max, denMin),
 					SaturatedDiv(leftRange.Max, denMax));
 			}
-			else {
-				type = GetNumericType(expr);
-				// TODO: type check
-			}
+			else
+				type = GetNumericType(left, right);
 			break;
 		case CiToken.Mod:
 			if (leftRange != null && rightRange != null) {
@@ -526,34 +535,17 @@ public class CiResolver : CiVisitor
 					leftRange.Min >= 0 ? 0 : Math.Max(leftRange.Min, -den),
 					leftRange.Max < 0 ? 0 : Math.Min(leftRange.Max, den));
 			}
-			else {
-				type = GetIntegerType(expr);
-				// TODO: type check
-			}
+			else
+				type = GetIntegerType(left, right);
 			break;
 		case CiToken.And:
-			if (leftRange != null && rightRange != null)
-				type = BitwiseOp(leftRange, rightRange, UnsignedAnd);
-			else {
-				type = GetIntegerType(expr);
-				// TODO: type check
-			}
+			type = BitwiseOp(left, right, UnsignedAnd);
 			break;
 		case CiToken.Or:
-			if (leftRange != null && rightRange != null)
-				type = BitwiseOp(leftRange, rightRange, UnsignedOr);
-			else {
-				type = GetIntegerType(expr);
-				// TODO: type check
-			}
+			type = BitwiseOp(left, right, UnsignedOr);
 			break;
 		case CiToken.Xor:
-			if (leftRange != null && rightRange != null)
-				type = BitwiseOp(leftRange, rightRange, UnsignedXor);
-			else {
-				type = GetIntegerType(expr);
-				// TODO: type check
-			}
+			type = BitwiseOp(left, right, UnsignedXor);
 			break;
 		case CiToken.ShiftLeft:
 			if (leftRange != null && rightRange != null) {
@@ -563,10 +555,8 @@ public class CiResolver : CiVisitor
 					SaturatedShiftLeft(leftRange.Min, leftRange.Min < 0 ? rightRange.Max : rightRange.Min),
 					SaturatedShiftLeft(leftRange.Max, leftRange.Max < 0 ? rightRange.Min : rightRange.Max));
 			}
-			else {
-				type = GetIntegerType(expr);
-				// TODO: type check
-			}
+			else
+				type = GetShiftType(left, right);
 			break;
 		case CiToken.ShiftRight:
 			if (leftRange != null && rightRange != null) {
@@ -576,10 +566,8 @@ public class CiResolver : CiVisitor
 					SaturatedShiftRight(leftRange.Min, leftRange.Min < 0 ? rightRange.Min : rightRange.Max),
 					SaturatedShiftRight(leftRange.Max, leftRange.Max < 0 ? rightRange.Max : rightRange.Min));
 			}
-			else {
-				type = GetIntegerType(expr);
-				// TODO: type check
-			}
+			else
+				type = GetShiftType(left, right);
 			break;
 		case CiToken.Equal:
 		case CiToken.NotEqual:
@@ -603,7 +591,8 @@ public class CiResolver : CiVisitor
 		case CiToken.XorAssign:
 		case CiToken.ShiftLeftAssign:
 		case CiToken.ShiftRightAssign:
-			// TODO
+			// TODO: check lvalue
+			// TODO Coerce(right, left.Type);
 			expr.Left = left;
 			expr.Right = right;
 			expr.Type = left.Type;
@@ -619,7 +608,11 @@ public class CiResolver : CiVisitor
 
 	public override CiExpr Visit(CiCondExpr expr, CiPriority parent)
 	{
-		return expr; // TODO
+		CiExpr cond = ResolveBool(expr.Cond);
+		CiExpr onTrue = expr.OnTrue.Accept(this, CiPriority.Statement);
+		CiExpr onFalse = expr.OnFalse.Accept(this, CiPriority.Statement);
+		CiType type = GetCommonType(onTrue, onFalse);
+		return new CiCondExpr { Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
 	}
 
 	public override void Visit(CiConst statement)
@@ -636,7 +629,9 @@ public class CiResolver : CiVisitor
 
 	CiExpr ResolveBool(CiExpr expr)
 	{
-		return Coerce(expr.Accept(this, CiPriority.Statement), CiSystem.BoolType);
+		expr = expr.Accept(this, CiPriority.Statement);
+		Coerce(expr, CiSystem.BoolType);
+		return expr;
 	}
 
 	void Resolve(CiStatement[] statements)
