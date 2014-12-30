@@ -441,10 +441,28 @@ public class CiResolver : CiVisitor
 			}
 			return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = rightSymbol, Type = result.Type };
 		case CiToken.LeftParenthesis:
-			// TODO: check arguments
+			CiSymbolReference methodSymbol = left as CiSymbolReference;
+			if (methodSymbol == null) {
+				CiBinaryExpr dotExpr = left as CiBinaryExpr;
+				if (dotExpr == null || dotExpr.Op != CiToken.Dot)
+					throw StatementException(left, "Expected a method");
+				methodSymbol = (CiSymbolReference) dotExpr.Right;
+				// TODO: check static
+			}
+			CiMethod method = methodSymbol.Symbol as CiMethod;
+			if (method == null)
+				throw StatementException(left, "Expected a method");
 			CiExpr[] arguments = expr.RightCollection;
-			for (int i = 0; i < arguments.Length; i++)
-				arguments[i] = arguments[i].Accept(this, CiPriority.Statement);
+			int i = 0;
+			foreach (CiVar param in method.Parameters) {
+				if (i >= arguments.Length)
+					throw StatementException(expr, "Too few arguments");
+				CiExpr arg = arguments[i].Accept(this, CiPriority.Statement);
+				Coerce(arg, param.Type);
+				arguments[i++] = arg;
+			}
+			if (i < arguments.Length)
+				throw StatementException(arguments[i], "Too many arguments");
 			expr.Type = left.Type;
 			return expr;
 		default:
@@ -596,7 +614,7 @@ public class CiResolver : CiVisitor
 		case CiToken.ShiftLeftAssign:
 		case CiToken.ShiftRightAssign:
 			// TODO: check lvalue
-			// TODO Coerce(right, left.Type);
+			Coerce(right, left.Type);
 			expr.Left = left;
 			expr.Right = right;
 			expr.Type = left.Type;
@@ -616,7 +634,7 @@ public class CiResolver : CiVisitor
 		CiExpr onTrue = expr.OnTrue.Accept(this, CiPriority.Statement);
 		CiExpr onFalse = expr.OnFalse.Accept(this, CiPriority.Statement);
 		CiType type = GetCommonType(onTrue, onFalse);
-		return new CiCondExpr { Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
+		return new CiCondExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
 	}
 
 	public override void Visit(CiConst statement)

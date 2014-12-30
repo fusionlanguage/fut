@@ -462,6 +462,18 @@ public class CiRangeType : CiIntegerType
 		this.Max = b >= d ? b : d;
 	}
 
+	// TODO: needed?
+	public override bool Equals(object obj)
+	{
+		CiRangeType that = obj as CiRangeType;
+		return that != null && this.Min == that.Min && this.Max == that.Max;
+	}
+
+	public override int GetHashCode()
+	{
+		return this.Min.GetHashCode() ^ this.Max.GetHashCode();
+	}
+
 	public CiRangeType Union(CiRangeType that)
 	{
 		if (that == null)
@@ -567,6 +579,24 @@ public class CiClassPtrType : CiType
 	{
 		return this.Class.TryLookup(name);
 	}
+	public override bool IsAssignableFrom(CiType right)
+	{
+		if (right == CiSystem.NullType)
+			return true;
+		CiClass klass = right as CiClass;
+		if (klass == null) {
+			CiClassPtrType ptr = right as CiClassPtrType;
+			if (ptr == null)
+				return false;
+			klass = ptr.Class;
+		}
+		while (klass != Class) {
+			klass = (CiClass) klass.Parent;
+			if (klass == null)
+				return false;
+		}
+		return true;
+	}
 }
 
 public abstract class CiArrayType : CiType
@@ -574,8 +604,14 @@ public abstract class CiArrayType : CiType
 	public CiType ElementType;
 	public override CiSymbol TryLookup(string name)
 	{
-		if (name == "CopyTo")
-			return CiSystem.ArrayCopyTo;
+		if (name == "CopyTo") {
+			CiMethod method = new CiMethod { Name = "CopyTo" };
+			method.Parameters.Add(new CiVar { Type = CiSystem.IntType, Name = "sourceIndex" });
+			method.Parameters.Add(new CiVar { Type = this.PtrOrSelf , Name = "destinationArray" });
+			method.Parameters.Add(new CiVar { Type = CiSystem.IntType, Name = "destinationIndex" });
+			method.Parameters.Add(new CiVar { Type = CiSystem.IntType, Name = "length" });
+			return method;
+		}
 		return null;
 	}
 }
@@ -586,7 +622,7 @@ public class CiArrayPtrType : CiArrayType
 	public override bool IsAssignableFrom(CiType right)
 	{
 		CiArrayType array = right as CiArrayType;
-		if (array == null || array.ElementType != this.ElementType)
+		if (array == null || !array.ElementType.Equals(this.ElementType))
 			return false;
 		if (!this.Mutable)
 			return true;
@@ -603,7 +639,9 @@ public class CiArrayStorageType : CiArrayType
 	{
 		switch (name) {
 		case "Fill":
-			return CiSystem.ArrayFill;
+			CiMethod method = new CiMethod { Name = "Fill" };
+			method.Parameters.Add(new CiVar { Type = this.ElementType, Name = "value" });
+			return method;
 		case "Length":
 			return CiSystem.ArrayLength;
 		default:
@@ -630,8 +668,6 @@ public class CiSystem : CiScope
 	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType();
 	public static readonly CiMember StringLength = new CiMember { Name = "Length", Type = UIntType };
 	public static readonly CiMember ArrayLength = new CiMember { Name = "Length", Type = UIntType };
-	public static readonly CiMethod ArrayCopyTo = new CiMethod { Name = "CopyTo" };
-	public static readonly CiMethod ArrayFill = new CiMethod { Name = "Fill" };
 	public static readonly CiMethod BinaryResource = new CiMethod { Name = "BinaryResource", Type = new CiArrayStorageType { ElementType = ByteType } }; // FIXME: Length
 
 	CiSystem()
@@ -646,7 +682,9 @@ public class CiSystem : CiScope
 		Add(DoubleType);
 		Add(BoolType);
 		Add(StringPtrType);
-		Add(BinaryResource); // FIXME
+		// FIXME:
+		BinaryResource.Parameters.Add(new CiVar { Type = StringPtrType, Name = "name" });
+		Add(BinaryResource);
 	}
 
 	public static readonly CiSystem Value = new CiSystem();
