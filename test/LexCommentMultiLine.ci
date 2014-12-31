@@ -1,0 +1,9 @@
+/* comment 1
+   comment 2 */
+public static class Test
+{
+	public static bool Run()
+	{
+		return/* comment 3 */true;
+	}
+}

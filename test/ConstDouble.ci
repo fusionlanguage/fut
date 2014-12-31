@@ -1,0 +1,9 @@
+public static class Test
+{
+	public const Foo = 10.5;
+
+	public static bool Run()
+	{
+		return Foo == 10.5;
+	}
+}

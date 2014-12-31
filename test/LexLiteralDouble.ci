@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		return 1.235e2 == 123.5
+			&& 2e-3 == 0.002;
+	}
+}
