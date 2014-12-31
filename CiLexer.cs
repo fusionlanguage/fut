@@ -258,11 +258,11 @@ public class CiLexer
 			case '8':
 			case '9':
 			case '.':
-				sb.Append((char) c);
+				sb.Append((char) ReadChar());
 				break;
 			case 'e':
 			case 'E':
-				sb.Append((char) c);
+				sb.Append((char) ReadChar());
 				c = PeekChar();
 				if (c == '+' || c == '-') {
 					ReadChar();
