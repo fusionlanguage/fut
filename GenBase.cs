@@ -275,9 +275,9 @@ public abstract class GenBase : CiVisitor
 			Write('!');
 			break;
 		case CiToken.New:
-			CiClass klass = expr.Type as CiClass;
+			CiClassPtrType klass = expr.Type as CiClassPtrType;
 			if (klass != null)
-				WriteNew(klass);
+				WriteNew(klass.Class);
 			else
 				WriteNewArray(((CiArrayPtrType) expr.Type).ElementType, expr.Inner);
 			return expr;
