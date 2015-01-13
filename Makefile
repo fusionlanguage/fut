@@ -13,17 +13,14 @@ cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer
 	$(CSC) -nologo -debug -out:$@ -o+ $^
 
 test: cito.exe
-	@export passed=0 total=0; \
-		cd test; \
-		for ci in *.ci; do \
-			if $(MONO) ../cito.exe -o $$ci.cs $$ci && $(CSC) -nologo -out:$$ci.exe $$ci.cs Runner.cs && $(MONO) ./$$ci.exe; then \
-				passed=$$(($$passed+1)); \
+	@cd test; \
+		ls *.ci | xargs -L1 -I{} -P7 bash -c \
+			"if $(MONO) ../cito.exe -o {}.cs {} && $(CSC) -nologo -out:{}.exe {}.cs Runner.cs && $(MONO) ./{}.exe; then \
+				echo PASSED {}; \
 			else \
-				echo FAILED $$ci; \
-			fi; \
-			total=$$(($$total+1)); \
-		done; \
-		echo PASSED $$passed of $$total tests
+				echo FAILED {}; \
+			fi" | \
+			perl -e '/^PASSED/ ? $$p++ : print while<>;print "PASSED $$p of $$. tests\n"'
 	@export passed=0 total=0; \
 		cd test/error; \
 		for ci in *.ci; do \
