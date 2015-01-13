@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int a = 0x0a;
+		int b = 8;
+		return (a ^ b) == 2;
+	}
+}

@@ -1,0 +1,13 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int s = 0;
+		for (int i = 0; i < 15; i++) {
+			if (i == 5)
+				return s == 10;
+			s += i;
+		}
+		return false;
+	}
+}

@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		bool a = true;
+		int[] b = null;
+		return a ? true : b[0] == 5;
+	}
+}

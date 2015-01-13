@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+#if true && (false || true)
+		return true;
+#endif
+	}
+}

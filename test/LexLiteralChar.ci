@@ -1,0 +1,18 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		return ' ' == 0x20
+			&& 'A' == 0x41
+			&& '\'' == 0x27
+			&& '"' == 0x22
+			&& '\\' == 0x5c
+			&& '\a' == 0x07
+			&& '\b' == 0x08
+			&& '\f' == 0x0c
+			&& '\n' == 0x0a
+			&& '\r' == 0x0d
+			&& '\t' == 0x09
+			&& '\v' == 0x0b;
+	}
+}

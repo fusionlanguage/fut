@@ -1,0 +1,16 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int a = 42;
+		switch (a) {
+		case 4:
+		case 7:
+			return false;
+		case 40 + 2:
+			return true;
+		default:
+			return false;
+		}
+	}
+}

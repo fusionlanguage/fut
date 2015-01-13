@@ -1,0 +1,14 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int i = 0;
+		int s = 0;
+		while (i < 10) {
+			if (s > 9)
+				break;
+			s += i++;
+		}
+		return s == 10;
+	}
+}

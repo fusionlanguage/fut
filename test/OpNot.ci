@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		bool a = false;
+		return !a;
+	}
+}

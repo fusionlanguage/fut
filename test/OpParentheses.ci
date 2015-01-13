@@ -1,0 +1,7 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		return 2 * (2 + 3) == 10;
+	}
+}

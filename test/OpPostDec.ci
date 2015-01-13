@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int a = 42;
+		int b = a--;
+		return a == 41 && b == 42;
+	}
+}

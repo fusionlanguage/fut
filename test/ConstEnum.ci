@@ -1,0 +1,20 @@
+enum DayOfWeek
+{
+	Sunday,
+	Monday,
+	Tuesday,
+	Wednesday,
+	Thursday,
+	Friday,
+	Saturday
+}
+
+public static class Test
+{
+	const Worst = DayOfWeek.Monday;
+
+	public static bool Run()
+	{
+		return Worst == DayOfWeek.Monday;
+	}
+}

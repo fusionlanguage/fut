@@ -1,0 +1,7 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		break; // ERROR: Break outside a loop or switch
+	}
+}

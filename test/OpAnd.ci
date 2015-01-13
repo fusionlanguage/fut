@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int a = 0xa;
+		int b = 0x12;
+		return (a & b) == 2;
+	}
+}

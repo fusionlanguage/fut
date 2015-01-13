@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+#if true // comment 1
+		return true;
+#endif // comment 2
+	}
+}

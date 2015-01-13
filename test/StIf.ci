@@ -1,0 +1,11 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int a = 1;
+		int b = 2;
+		if (a == 1)
+			b++;
+		return b == 3;
+	}
+}

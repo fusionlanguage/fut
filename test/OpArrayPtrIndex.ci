@@ -1,0 +1,11 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int[2] a;
+		a[1] = 7;
+		a[0] = 5;
+		int[] b = a;
+		return b[0] == 5 && b[1] == 7;
+	}
+}
