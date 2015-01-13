@@ -1,6 +1,7 @@
 prefix := /usr/local
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
 CSC := $(if $(WINDIR),c:/Windows/Microsoft.NET/Framework/v3.5/csc.exe,gmcs)
+TESTCSC := $(if $(WINDIR),c:/Windows/Microsoft.NET/Framework/v2.0.50727/csc.exe,gmcs)
 MONO := $(if $(WINDIR),,mono)
 SLASH := $(if $(WINDIR),\\,/)
 
@@ -15,7 +16,7 @@ cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer
 test: cito.exe
 	@cd test; \
 		ls *.ci | xargs -L1 -I{} -P7 bash -c \
-			"if $(MONO) ../cito.exe -o {}.cs {} && $(CSC) -nologo -out:{}.exe {}.cs Runner.cs && $(MONO) ./{}.exe; then \
+			"if $(MONO) ../cito.exe -o {}.cs {} && $(TESTCSC) -nologo -out:{}.exe {}.cs Runner.cs && $(MONO) ./{}.exe; then \
 				echo PASSED {}; \
 			else \
 				echo FAILED {}; \
