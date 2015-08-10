@@ -369,7 +369,7 @@ public class CiParser : CiLexer
 	CiReturn ParseReturn()
 	{
 		CiReturn result = new CiReturn { Line = this.Line };
-		Expect(CiToken.Return);
+		NextToken();
 		if (!See(CiToken.Semicolon))
 			result.Value = ParseExpr();
 		Expect(CiToken.Semicolon);
@@ -546,7 +546,7 @@ public class CiParser : CiLexer
 		method.Throws = Eat(CiToken.Throws);
 		if (method.CallType == CiCallType.Abstract)
 			Expect(CiToken.Semicolon);
-		else if (See(CiToken.Return))
+		else if (See(CiToken.FatArrow))
 			method.Body = ParseReturn();
 		else
 			method.Body = ParseBlock();

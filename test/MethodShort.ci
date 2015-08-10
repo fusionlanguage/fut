@@ -1,0 +1,4 @@
+public static class Test
+{
+	public static bool Run() => true;
+}

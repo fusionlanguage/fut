@@ -75,6 +75,7 @@ public enum CiToken
 	Decrement,
 	QuestionMark,
 	Colon,
+	FatArrow,
 	Abstract,
 	Break,
 	Case,
@@ -432,6 +433,7 @@ public class CiLexer
 				return CiToken.Xor;
 			case '=':
 				if (EatChar('=')) return CiToken.Equal;
+				if (EatChar('>')) return CiToken.FatArrow;
 				return CiToken.Assign;
 			case '!':
 				if (EatChar('=')) return CiToken.NotEqual;
