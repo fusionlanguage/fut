@@ -131,6 +131,19 @@ public class GenCs : GenBase
 		return expr;
 	}
 
+	protected override void WriteCall(CiExpr obj, string method, CiExpr[] args)
+	{
+		if (obj.Type is CiArrayType && method == "CopyTo") {
+			Write("System.Array.Copy(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", ");
+			Write(args);
+			Write(')');
+		}
+		else
+			base.WriteCall(obj, method, args);
+	}
+
 	public override void Visit(CiThrow statement)
 	{
 		Write("throw new System.Exception(");

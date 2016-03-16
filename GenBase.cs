@@ -168,14 +168,19 @@ public abstract class GenBase : CiVisitor
 		Write(value.Name);
 	}
 
+	protected void Write(CiExpr[] exprs)
+	{
+		for (int i = 0; i < exprs.Length; i++) {
+			if (i > 0)
+				Write(", ");
+			exprs[i].Accept(this, CiPriority.Statement);
+		}
+	}
+
 	public override CiExpr Visit(CiCollection expr, CiPriority parent)
 	{
 		Write("{ ");
-		for (int i = 0; i < expr.Items.Length; i++) {
-			if (i > 0)
-				Write(", ");
-			expr.Items[i].Accept(this, CiPriority.Statement);
-		}
+		Write(expr.Items);
 		Write('}');
 		return expr;
 	}
@@ -321,6 +326,16 @@ public abstract class GenBase : CiVisitor
 		return Write(expr, parent, child, op, child);
 	}
 
+	protected virtual void WriteCall(CiExpr obj, string method, CiExpr[] args)
+	{
+		obj.Accept(this, CiPriority.Primary);
+		Write('.');
+		Write(method);
+		Write('(');
+		Write(args);
+		Write(')');
+	}
+
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
@@ -386,14 +401,17 @@ public abstract class GenBase : CiVisitor
 			return Write(expr, parent, CiPriority.Primary, ".");
 
 		case CiToken.LeftParenthesis:
+			CiBinaryExpr leftBinary = expr.Left as CiBinaryExpr;
+			if (leftBinary != null && leftBinary.Op == CiToken.Dot) {
+				CiSymbolReference symbol = leftBinary.Right as CiSymbolReference;
+				if (symbol != null) {
+					WriteCall(leftBinary.Left, symbol.Name, expr.RightCollection);
+					return expr;
+				}
+			}
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write('(');
-			CiExpr[] args = expr.RightCollection;
-			for (int i = 0; i < args.Length; i++) {
-				if (i > 0)
-					Write(", ");
-				args[i].Accept(this, CiPriority.Statement);
-			}
+			Write(expr.RightCollection);
 			Write(')');
 			return expr;
 
