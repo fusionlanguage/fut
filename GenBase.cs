@@ -1,6 +1,6 @@
 // SourceGenerator.cs - base class for code generators
 //
-// Copyright (C) 2011-2014  Piotr Fusik
+// Copyright (C) 2011-2016  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -326,6 +326,11 @@ public abstract class GenBase : CiVisitor
 		return Write(expr, parent, child, op, child);
 	}
 
+	protected virtual void WriteRight(CiExpr left, CiExpr right)
+	{
+		right.Accept(this, CiPriority.Statement);
+	}
+
 	protected virtual void WriteCall(CiExpr obj, string method, CiExpr[] args)
 	{
 		obj.Accept(this, CiPriority.Primary);
@@ -376,7 +381,10 @@ public abstract class GenBase : CiVisitor
 		case CiToken.CondOr:
 			return Write(expr, parent, CiPriority.CondOr, " || ");
 		case CiToken.Assign:
-			return Write(expr, parent, CiPriority.Assign, " = ", CiPriority.Statement);
+			expr.Left.Accept(this, CiPriority.Assign);
+			Write(" = ");
+			WriteRight(expr.Left, expr.Right);
+			return expr;
 		case CiToken.AddAssign:
 			return Write(expr, parent, CiPriority.Assign, " += ", CiPriority.Statement);
 		case CiToken.SubAssign:
@@ -427,14 +435,19 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
+	protected virtual void WriteCondChild(CiCondExpr cond, CiExpr expr)
+	{
+		expr.Accept(this, CiPriority.Cond);
+	}
+
 	public override CiExpr Visit(CiCondExpr expr, CiPriority parent)
 	{
 		if (parent > CiPriority.Cond) Write('(');
 		expr.Cond.Accept(this, CiPriority.Cond);
 		Write(" ? ");
-		expr.OnTrue.Accept(this, CiPriority.Cond);
+		WriteCondChild(expr, expr.OnTrue);
 		Write(" : ");
-		expr.OnFalse.Accept(this, CiPriority.Cond);
+		WriteCondChild(expr, expr.OnFalse);
 		if (parent > CiPriority.Cond) Write(')');
 		return expr;
 	}

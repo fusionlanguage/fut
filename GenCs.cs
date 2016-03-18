@@ -72,7 +72,7 @@ public class GenCs : GenBase
 		}
 	}
 
-	TypeCode GetTypeCode(CiIntegerType integer)
+	static TypeCode GetTypeCode(CiIntegerType integer)
 	{
 		if (integer is CiIntType)
 			return TypeCode.Int32;
@@ -93,6 +93,40 @@ public class GenCs : GenBase
 		return TypeCode.Byte;
 	}
 
+	void Write(TypeCode typeCode)
+	{
+		switch (typeCode) {
+		case TypeCode.SByte: Write("sbyte"); break;
+		case TypeCode.Byte: Write("byte"); break;
+		case TypeCode.Int16: Write("short"); break;
+		case TypeCode.UInt16: Write("ushort"); break;
+		case TypeCode.Int32: Write("int"); break;
+		case TypeCode.Int64: Write("long"); break;
+		default: throw new NotImplementedException(typeCode.ToString());
+		}
+	}
+
+	static TypeCode GetTypeCode(CiType type)
+	{
+		if (type is CiNumericType) {
+			CiIntegerType integer = type as CiIntegerType;
+			if (integer != null)
+				return GetTypeCode(integer);
+			if (type == CiSystem.DoubleType)
+				return TypeCode.Double;
+			if (type == CiSystem.FloatType)
+				return TypeCode.Single;
+			throw new NotImplementedException(type.ToString());
+		}
+		else if (type == CiSystem.BoolType)
+			return TypeCode.Boolean;
+		else if (type == CiSystem.NullType)
+			return TypeCode.Empty;
+		else if (type is CiStringType)
+			return TypeCode.String;
+		return TypeCode.Object;
+	}
+
 	protected override void Write(CiType type)
 	{
 		if (type == null) {
@@ -109,16 +143,7 @@ public class GenCs : GenBase
 
 		CiIntegerType integer = type as CiIntegerType;
 		if (integer != null) {
-			TypeCode typeCode = GetTypeCode(integer);
-			switch (typeCode) {
-			case TypeCode.SByte: Write("sbyte"); break;
-			case TypeCode.Byte: Write("byte"); break;
-			case TypeCode.Int16: Write("short"); break;
-			case TypeCode.UInt16: Write("ushort"); break;
-			case TypeCode.Int32: Write("int"); break;
-			case TypeCode.Int64: Write("long"); break;
-			default: throw new NotImplementedException(typeCode.ToString());
-			}
+			Write(GetTypeCode(integer));
 			return;
 		}
 
@@ -153,6 +178,86 @@ public class GenCs : GenBase
 		return expr;
 	}
 
+	static TypeCode GetPromotedTypeCode(CiExpr expr)
+	{
+		CiBinaryExpr binary = expr as CiBinaryExpr;
+		if (binary != null) {
+			switch (binary.Op) {
+			case CiToken.And:
+			case CiToken.Or:
+			case CiToken.Xor:
+				return ((CiIntegerType) binary.Left.Type).IsLong || ((CiIntegerType) binary.Right.Type).IsLong ? TypeCode.Int64 : TypeCode.Int32;
+			default:
+				break;
+			}
+		}
+		// TODO
+		return GetTypeCode(expr.Type);
+	}
+
+	static bool IsNarrower(TypeCode left, TypeCode right)
+	{
+		switch (left) {
+		case TypeCode.SByte:
+			switch (right) {
+			case TypeCode.Byte:
+			case TypeCode.Int16:
+			case TypeCode.UInt16:
+			case TypeCode.Int32:
+			case TypeCode.Int64:
+				return true;
+			default:
+				return false;
+			}
+		case TypeCode.Byte:
+			switch (right) {
+			case TypeCode.SByte:
+			case TypeCode.Int16:
+			case TypeCode.UInt16:
+			case TypeCode.Int32:
+			case TypeCode.Int64:
+				return true;
+			default:
+				return false;
+			}
+		case TypeCode.Int16:
+			switch (right) {
+			case TypeCode.UInt16:
+			case TypeCode.Int32:
+			case TypeCode.Int64:
+				return true;
+			default:
+				return false;
+			}
+		case TypeCode.UInt16:
+			switch (right) {
+			case TypeCode.Int16:
+			case TypeCode.Int32:
+			case TypeCode.Int64:
+				return true;
+			default:
+				return false;
+			}
+		case TypeCode.Int32:
+			return right == TypeCode.Int64;
+		default:
+			return false;
+		}
+	}
+
+	protected override void WriteRight(CiExpr left, CiExpr right)
+	{
+		TypeCode leftTypeCode = GetTypeCode(left.Type);
+		if (IsNarrower(leftTypeCode, GetPromotedTypeCode(right))) {
+			Write('(');
+			Write(leftTypeCode);
+			Write(") ");
+			right.Accept(this, CiPriority.Primary);
+		}
+		else
+			base.WriteRight(left, right);
+	}
+
 	protected override void WriteCall(CiExpr obj, string method, CiExpr[] args)
 	{
 		if (obj.Type is CiArrayType && method == "CopyTo") {
@@ -174,6 +279,21 @@ public class GenCs : GenBase
 		}
 		else
 			base.WriteCall(obj, method, args);
+	}
+
+	protected override void WriteCondChild(CiCondExpr cond, CiExpr expr)
+	{
+		if (expr is CiLiteral) {
+			TypeCode condTypeCode = GetTypeCode(cond.Type);
+			if (IsNarrower(condTypeCode, TypeCode.Int32)) {
+				Write('(');
+				Write(condTypeCode);
+				Write(") ");
+				expr.Accept(this, CiPriority.Primary);
+				return;
+			}
+		}
+		base.WriteCondChild(cond, expr);
 	}
 
 	public override void Visit(CiThrow statement)

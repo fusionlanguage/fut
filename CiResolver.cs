@@ -1,6 +1,6 @@
 // CiResolver.cs - Ci symbol resolver
 //
-// Copyright (C) 2011-2014  Piotr Fusik
+// Copyright (C) 2011-2016  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -732,7 +732,7 @@ public class CiResolver : CiVisitor
 	public override void Visit(CiReturn statement)
 	{
 		if (statement.Value != null)
-			statement.Value.Accept(this, CiPriority.Statement);
+			statement.Value = statement.Value.Accept(this, CiPriority.Statement);
 		// TODO
 	}
 
