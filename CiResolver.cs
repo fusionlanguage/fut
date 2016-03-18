@@ -642,6 +642,11 @@ public class CiResolver : CiVisitor
 		statement.Value = statement.Value.Accept(this, CiPriority.Statement);
 		statement.Type = statement.Value.Type;
 		this.CurrentScope.Add(statement);
+		if (statement.Type is CiArrayType) {
+			List<CiConst> constArrays = this.CurrentScope.ParentClass.ConstArrays;
+			constArrays.Add(statement);
+			statement.Name = "CiConstArray_" + constArrays.Count;
+		}
 	}
 
 	public override void Visit(CiExpr statement)
@@ -741,6 +746,8 @@ public class CiResolver : CiVisitor
 		// TODO
 		statement.Value.Accept(this, CiPriority.Statement);
 		foreach (CiCase kase in statement.Cases) {
+			for (int i = 0; i < kase.Values.Length; i++)
+				kase.Values[i] = kase.Values[i].Accept(this, CiPriority.Statement);
 			Resolve(kase.Body);
 		}
 		if (statement.DefaultBody != null) {
@@ -930,6 +937,10 @@ public class CiResolver : CiVisitor
 
 	void ResolveCode(CiClass klass)
 	{
+		if (klass.Constructor != null) {
+			this.CurrentScope = klass;
+			klass.Constructor.Body.Accept(this);
+		}
 		foreach (CiMethod method in klass.Methods) {
 			if (method.Body != null) {
 				this.CurrentScope = method.Parameters;

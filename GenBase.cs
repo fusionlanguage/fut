@@ -231,7 +231,7 @@ public abstract class GenBase : CiVisitor
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		Write(expr.Name);
+		Write(expr.Symbol.Name); // different from expr.Name for local const arrays
 		return expr;
 	}
 

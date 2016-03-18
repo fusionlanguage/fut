@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Foxoft.Ci
@@ -327,6 +328,21 @@ public class GenCs : GenBase
 		CloseBlock();
 	}
 
+	void WriteConsts(IEnumerable<CiConst> konsts)
+	{
+		foreach (CiConst konst in konsts) {
+			Write(konst.Visibility);
+			if (konst.Type is CiArrayStorageType)
+				Write("static readonly ");
+			else
+				Write("const ");
+			WriteTypeAndName(konst);
+			Write(" = ");
+			konst.Value.Accept(this, CiPriority.Statement);
+			WriteLine(";");
+		}
+	}
+
 	void Write(CiClass klass)
 	{
 		WriteLine();
@@ -349,17 +365,7 @@ public class GenCs : GenBase
 			CloseBlock();
 		}
 
-		foreach (CiConst konst in klass.Consts) {
-			Write(konst.Visibility);
-			if (konst.Type is CiArrayStorageType)
-				Write("readonly ");
-			else
-				Write("const ");
-			WriteTypeAndName(konst);
-			Write(" = ");
-			konst.Value.Accept(this, CiPriority.Statement);
-			WriteLine(";");
-		}
+		WriteConsts(klass.Consts);
 
 		foreach (CiField field in klass.Fields) {
 			Write(field.Visibility);
@@ -385,6 +391,8 @@ public class GenCs : GenBase
 			Write(')');
 			WriteBody(method);
 		}
+
+		WriteConsts(klass.ConstArrays);
 
 		CloseBlock();
 	}

@@ -130,6 +130,19 @@ public class CiScope : CiSymbol, IEnumerable
 
 	public int Count { get { return this.Dict.Count; } }
 
+	public CiClass ParentClass
+	{
+		get
+		{
+			for (CiScope scope = this; scope != null; scope = scope.Parent) {
+				CiClass klass = scope as CiClass;
+				if (klass != null)
+					return klass;
+			}
+			throw new InvalidOperationException();
+		}
+	}
+
 	public virtual CiSymbol TryLookup(string name)
 	{
 		for (CiScope scope = this; scope != null; scope = scope.Parent) {
@@ -226,8 +239,10 @@ public class CiLiteral : CiExpr
 		}
 		this.Value = value;
 	}
-	public bool IsDefaultValue {
-		get {
+	public bool IsDefaultValue
+	{
+		get
+		{
 			object value = this.Value;
 			if (value == null)
 				return true;
@@ -416,6 +431,7 @@ public class CiClass : CiContainerType
 	public CiConst[] Consts;
 	public CiField[] Fields;
 	public CiMethod[] Methods;
+	public readonly List<CiConst> ConstArrays = new List<CiConst>();
 	public CiVisitStatus VisitStatus;
 	public override bool IsAssignableFrom(CiType right) { return false; }
 	public override CiType PtrOrSelf { get { return new CiClassPtrType { Class = this, Mutable = true }; } }
@@ -611,6 +627,8 @@ public class CiArrayPtrType : CiArrayType
 	public bool Mutable;
 	public override bool IsAssignableFrom(CiType right)
 	{
+		if (right == CiSystem.NullType)
+			return true;
 		CiArrayType array = right as CiArrayType;
 		if (array == null || !array.ElementType.Equals(this.ElementType))
 			return false;
