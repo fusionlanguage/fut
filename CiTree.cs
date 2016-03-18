@@ -226,6 +226,20 @@ public class CiLiteral : CiExpr
 		}
 		this.Value = value;
 	}
+	public bool IsDefaultValue {
+		get {
+			object value = this.Value;
+			if (value == null)
+				return true;
+			if (value is long)
+				return (long) value == 0;
+			if (value is bool)
+				return !(bool) value;
+			if (value is double)
+				return BitConverter.DoubleToInt64Bits((double) value) == 0; // rule out -0.0
+			throw new NotImplementedException(value.GetType().Name);
+		}
+	}
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
 }
 
