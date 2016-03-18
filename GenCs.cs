@@ -168,7 +168,7 @@ public class GenCs : GenBase
 			}
 			else if (def.Value != null) {
 				Write(" = ");
-				def.Value.Accept(this, CiPriority.Statement);
+				WriteCoerced(def.Type, def.Value);
 			}
 		}
 	}
@@ -184,6 +184,19 @@ public class GenCs : GenBase
 		CiBinaryExpr binary = expr as CiBinaryExpr;
 		if (binary != null) {
 			switch (binary.Op) {
+			case CiToken.Plus:
+			case CiToken.Minus:
+			case CiToken.Asterisk:
+			case CiToken.Slash:
+			case CiToken.Mod:
+				if (binary.Left.Type == CiSystem.DoubleType || binary.Right.Type == CiSystem.DoubleType)
+					return TypeCode.Double;
+				if (binary.Left.Type == CiSystem.FloatType || binary.Right.Type == CiSystem.FloatType)
+					return TypeCode.Single;
+				return ((CiIntegerType) binary.Left.Type).IsLong || ((CiIntegerType) binary.Right.Type).IsLong ? TypeCode.Int64 : TypeCode.Int32;
+			case CiToken.ShiftLeft:
+			case CiToken.ShiftRight:
+				return ((CiIntegerType) binary.Left.Type).IsLong ? TypeCode.Int64 : TypeCode.Int32;
 			case CiToken.And:
 			case CiToken.Or:
 			case CiToken.Xor:
@@ -246,17 +259,17 @@ public class GenCs : GenBase
 		}
 	}
 
-	protected override void WriteRight(CiExpr left, CiExpr right)
+	protected override void WriteCoerced(CiType type, CiExpr expr)
 	{
-		TypeCode leftTypeCode = GetTypeCode(left.Type);
-		if (IsNarrower(leftTypeCode, GetPromotedTypeCode(right))) {
+		TypeCode typeCode = GetTypeCode(type);
+		if (IsNarrower(typeCode, GetPromotedTypeCode(expr))) {
 			Write('(');
-			Write(leftTypeCode);
+			Write(typeCode);
 			Write(") ");
-			right.Accept(this, CiPriority.Primary);
+			expr.Accept(this, CiPriority.Primary);
 		}
 		else
-			base.WriteRight(left, right);
+			base.WriteCoerced(type, expr);
 	}
 
 	protected override void WriteCall(CiExpr obj, string method, CiExpr[] args)

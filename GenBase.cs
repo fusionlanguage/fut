@@ -326,9 +326,9 @@ public abstract class GenBase : CiVisitor
 		return Write(expr, parent, child, op, child);
 	}
 
-	protected virtual void WriteRight(CiExpr left, CiExpr right)
+	protected virtual void WriteCoerced(CiType type, CiExpr expr)
 	{
-		right.Accept(this, CiPriority.Statement);
+		expr.Accept(this, CiPriority.Statement);
 	}
 
 	protected virtual void WriteCall(CiExpr obj, string method, CiExpr[] args)
@@ -383,7 +383,7 @@ public abstract class GenBase : CiVisitor
 		case CiToken.Assign:
 			expr.Left.Accept(this, CiPriority.Assign);
 			Write(" = ");
-			WriteRight(expr.Left, expr.Right);
+			WriteCoerced(expr.Left.Type, expr.Right);
 			return expr;
 		case CiToken.AddAssign:
 			return Write(expr, parent, CiPriority.Assign, " += ", CiPriority.Statement);
