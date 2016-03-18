@@ -1,6 +1,6 @@
 // CiParser.cs - Ci parser
 //
-// Copyright (C) 2011-2014  Piotr Fusik
+// Copyright (C) 2011-2016  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -153,7 +153,7 @@ public class CiParser : CiLexer
 	{
 		CiExpr left = ParseAddExpr();
 		while (See(CiToken.ShiftLeft) || See(CiToken.ShiftRight))
-			left = new CiBinaryExpr { Line = this.Line, Left =left, Op = NextToken(), Right = ParseAddExpr() };
+			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAddExpr() };
 		return left;
 	}
 
