@@ -1,6 +1,6 @@
 // CiTree.cs - Ci object model
 //
-// Copyright (C) 2011-2014  Piotr Fusik
+// Copyright (C) 2011-2016  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -428,7 +428,6 @@ public class CiNumericType : CiType
 public abstract class CiIntegerType : CiNumericType
 {
 	public abstract bool IsLong { get; }
-	public abstract TypeCode TypeCode { get; }
 }
 
 public class CiIntType : CiIntegerType
@@ -439,14 +438,12 @@ public class CiIntType : CiIntegerType
 		return it != null && !it.IsLong;
 	}
 	public override bool IsLong { get { return false; } }
-	public override TypeCode TypeCode { get { return TypeCode.Int32; } }
 }
 
 public class CiLongType : CiIntegerType
 {
 	public override bool IsAssignableFrom(CiType right) { return right is CiIntegerType; }
 	public override bool IsLong { get { return true; } }
-	public override TypeCode TypeCode { get { return TypeCode.Int64; } }
 }
 
 public class CiRangeType : CiIntegerType
@@ -509,27 +506,6 @@ public class CiRangeType : CiIntegerType
 	}
 
 	public override bool IsLong { get { return this.Min < int.MinValue || this.Max > int.MaxValue; } }
-
-	public override TypeCode TypeCode
-	{
-		get
-		{
-			if (this.Min < int.MinValue || this.Max > int.MaxValue)
-				return TypeCode.Int64;
-			if (this.Min < 0) {
-				if (this.Min < short.MinValue || this.Max > short.MaxValue)
-					return TypeCode.Int32;
-				if (this.Min < sbyte.MinValue || this.Max > sbyte.MaxValue)
-					return TypeCode.Int16;
-				return TypeCode.SByte;
-			}
-			if (this.Max > ushort.MaxValue)
-				return TypeCode.Int32;
-			if (this.Max > byte.MaxValue)
-				return TypeCode.UInt16;
-			return TypeCode.Byte;
-		}
-	}
 
 	public static long GetMask(long v)
 	{

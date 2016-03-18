@@ -1,6 +1,6 @@
 // GenCs.cs - C# code generator
 //
-// Copyright (C) 2011-2014  Piotr Fusik
+// Copyright (C) 2011-2016  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -72,6 +72,27 @@ public class GenCs : GenBase
 		}
 	}
 
+	TypeCode GetTypeCode(CiIntegerType integer)
+	{
+		if (integer is CiIntType)
+			return TypeCode.Int32;
+		if (integer.IsLong)
+			return TypeCode.Int64;
+		CiRangeType range = (CiRangeType) integer;
+		if (range.Min < 0) {
+			if (range.Min < short.MinValue || range.Max > short.MaxValue)
+				return TypeCode.Int32;
+			if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
+				return TypeCode.Int16;
+			return TypeCode.SByte;
+		}
+		if (range.Max > ushort.MaxValue)
+			return TypeCode.Int32;
+		if (range.Max > byte.MaxValue)
+			return TypeCode.UInt16;
+		return TypeCode.Byte;
+	}
+
 	protected override void Write(CiType type)
 	{
 		if (type == null) {
@@ -88,14 +109,15 @@ public class GenCs : GenBase
 
 		CiIntegerType integer = type as CiIntegerType;
 		if (integer != null) {
-			switch (integer.TypeCode) {
+			TypeCode typeCode = GetTypeCode(integer);
+			switch (typeCode) {
 			case TypeCode.SByte: Write("sbyte"); break;
 			case TypeCode.Byte: Write("byte"); break;
 			case TypeCode.Int16: Write("short"); break;
 			case TypeCode.UInt16: Write("ushort"); break;
 			case TypeCode.Int32: Write("int"); break;
 			case TypeCode.Int64: Write("long"); break;
-			default: throw new NotImplementedException(integer.TypeCode.ToString());
+			default: throw new NotImplementedException(typeCode.ToString());
 			}
 			return;
 		}
