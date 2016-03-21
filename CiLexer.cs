@@ -1,6 +1,6 @@
 // CiLexer.cs - Ci lexer
 //
-// Copyright (C) 2011-2014  Piotr Fusik
+// Copyright (C) 2011-2016  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -96,6 +96,7 @@ public enum CiToken
 	Override,
 	Protected,
 	Public,
+	Resource,
 	Return,
 	Sealed,
 	Static,
@@ -155,7 +156,7 @@ public class CiLexer
 		return this.Reader.Peek();
 	}
 
-	static bool IsLetterOrDigit(int c)
+	public static bool IsLetterOrDigit(int c)
 	{
 		if (c >= 'a' && c <= 'z') return true;
 		if (c >= 'A' && c <= 'Z') return true;
@@ -507,6 +508,7 @@ public class CiLexer
 				case "override": return CiToken.Override;
 				case "protected": return CiToken.Protected;
 				case "public": return CiToken.Public;
+				case "resource": return CiToken.Resource;
 				case "return": return CiToken.Return;
 				case "sealed": return CiToken.Sealed;
 				case "static": return CiToken.Static;

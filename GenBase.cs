@@ -159,6 +159,21 @@ public abstract class GenBase : CiVisitor
 		WriteLine("}");
 	}
 
+	protected void Write(byte[] array)
+	{
+		for (int i = 0; i < array.Length; i++) {
+			if (i > 0) {
+				if ((i & 15) == 0) {
+					WriteLine(",");
+					Write('\t');
+				}
+				else
+					Write(", ");
+			}
+			Write(array[i]);
+		}
+	}
+
 	protected abstract void Write(CiType type);
 
 	protected void WriteTypeAndName(CiNamedValue value)
@@ -257,6 +272,8 @@ public abstract class GenBase : CiVisitor
 		Write(']');
 	}
 
+	protected abstract void WriteResource(bool reference, string name);
+
 	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
@@ -285,6 +302,9 @@ public abstract class GenBase : CiVisitor
 				WriteNew(klass.Class);
 			else
 				WriteNewArray(((CiArrayPtrType) expr.Type).ElementType, expr.Inner);
+			return expr;
+		case CiToken.Resource:
+			WriteResource(true, (string) ((CiLiteral) expr.Inner).Value);
 			return expr;
 		default:
 			throw new ArgumentException(expr.Op.ToString());

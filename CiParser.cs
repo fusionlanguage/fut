@@ -99,6 +99,16 @@ public class CiParser : CiLexer
 		case CiToken.Id:
 			result = ParseSymbolReference();
 			break;
+		case CiToken.Resource:
+			NextToken();
+			Expect(CiToken.Less);
+			if (ParseId() != "byte")
+				throw ParseException("Expected resource<byte[]>");
+			Expect(CiToken.LeftBracket);
+			Expect(CiToken.RightBracket);
+			Expect(CiToken.Greater);
+			result = new CiPrefixExpr { Line = this.Line, Op = CiToken.Resource, Inner = ParseParenthesized() };
+			break;
 		default:
 			throw ParseException("Invalid expression");
 		}

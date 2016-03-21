@@ -179,6 +179,14 @@ public class GenCs : GenBase
 		return expr;
 	}
 
+	protected override void WriteResource(bool reference, string name)
+	{
+		if (reference)
+			Write("CiResource.");
+		foreach (char c in name)
+			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
+	}
+
 	static TypeCode GetPromotedTypeCode(CiExpr expr)
 	{
 		CiBinaryExpr binary = expr as CiBinaryExpr;
@@ -410,6 +418,21 @@ public class GenCs : GenBase
 		CloseBlock();
 	}
 
+	void WriteResources(Dictionary<string, byte[]> resources)
+	{
+		WriteLine("internal static class CiResource");
+		OpenBlock();
+		foreach (string name in resources.Keys.OrderBy(k => k)) {
+			Write("internal static readonly byte[] ");
+			WriteResource(false, name);
+			WriteLine(" = {");
+			Write('\t');
+			Write(resources[name]);
+			WriteLine(" };");
+		}
+		CloseBlock();
+	}
+
 	public override void Write(CiProgram program)
 	{
 		CreateFile(this.OutputFile);
@@ -422,6 +445,8 @@ public class GenCs : GenBase
 			Write(enu);
 		foreach (CiClass klass in program.Classes)
 			Write(klass);
+		if (program.Resources.Count > 0)
+			WriteResources(program.Resources);
 		if (this.Namespace != null)
 			CloseBlock();
 		CloseFile();

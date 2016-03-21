@@ -390,6 +390,22 @@ public class CiResolver : CiVisitor
 			if (klass != null)
 				return new CiPrefixExpr { Line = expr.Line, Op = CiToken.New, Type = klass.PtrOrSelf };
 			throw StatementException(expr, "Invalid argument to new");
+		case CiToken.Resource:
+			inner = expr.Inner.Accept(this, parent);
+			CiLiteral literal = inner as CiLiteral;
+			if (literal == null)
+				throw StatementException(expr, "Resource name must be compile-time constant");
+			string name = literal.Value as string;
+			if (name == null)
+				throw StatementException(expr, "Resource name must be string");
+			byte[] content;
+			if (!this.Program.Resources.TryGetValue(name, out content)) {
+				content = File.ReadAllBytes(name);
+				this.Program.Resources.Add(name, content);
+			}
+			type = new CiArrayStorageType { ElementType = CiSystem.ByteType, Length = content.Length };
+			range = null;
+			break;
 		case CiToken.Less:
 		case CiToken.LessOrEqual:
 			throw StatementException(expr, "Invalid expression");
@@ -463,6 +479,7 @@ public class CiResolver : CiVisitor
 			}
 			if (i < arguments.Length)
 				throw StatementException(arguments[i], "Too many arguments");
+			expr.Left = left;
 			expr.Type = left.Type;
 			return expr;
 		default:

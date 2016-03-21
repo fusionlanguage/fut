@@ -676,7 +676,6 @@ public class CiSystem : CiScope
 	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType();
 	public static readonly CiMember StringLength = new CiMember { Name = "Length", Type = UIntType };
 	public static readonly CiMember ArrayLength = new CiMember { Name = "Length", Type = UIntType };
-	public static readonly CiMethod BinaryResource = new CiMethod { Name = "BinaryResource", Type = new CiArrayStorageType { ElementType = ByteType } }; // FIXME: Length
 
 	CiSystem()
 	{
@@ -690,9 +689,6 @@ public class CiSystem : CiScope
 		Add(DoubleType);
 		Add(BoolType);
 		Add(StringPtrType);
-		// FIXME:
-		BinaryResource.Parameters.Add(new CiVar { Type = StringPtrType, Name = "name" });
-		Add(BinaryResource);
 	}
 
 	public static readonly CiSystem Value = new CiSystem();
@@ -701,6 +697,7 @@ public class CiSystem : CiScope
 public class CiProgram : CiScope
 {
 	public readonly List<CiClass> Classes = new List<CiClass>();
+	public readonly Dictionary<string, byte[]> Resources = new Dictionary<string, byte[]>();
 }
 
 }
