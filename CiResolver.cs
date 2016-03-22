@@ -30,6 +30,8 @@ public class CiResolver : CiVisitor
 {
 	readonly CiProgram Program;
 	CiScope CurrentScope;
+	readonly HashSet<CiMethod> CurrentPureMethods = new HashSet<CiMethod>();
+	readonly Dictionary<CiVar, CiExpr> CurrentPureArguments = new Dictionary<CiVar, CiExpr>();
 
 	CiException StatementException(CiStatement statement, string message)
 	{
@@ -330,7 +332,17 @@ public class CiResolver : CiVisitor
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		return Lookup(expr, this.CurrentScope);
+		CiExpr resolved = Lookup(expr, this.CurrentScope);
+		expr = resolved as CiSymbolReference;
+		if (expr != null) {
+			CiVar v = expr.Symbol as CiVar;
+			if (v != null) {
+				CiExpr arg;
+				if (this.CurrentPureArguments.TryGetValue(v, out arg))
+					return arg;
+			}
+		}
+		return resolved;
 	}
 
 	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
@@ -486,6 +498,24 @@ public class CiResolver : CiVisitor
 			}
 			if (i < arguments.Length)
 				throw StatementException(arguments[i], "Too many arguments");
+
+			if (method.CallType == CiCallType.Static) {
+				CiReturn ret = method.Body as CiReturn;
+				if (ret != null
+				 && arguments.All(arg => arg is CiLiteral)
+				 && this.CurrentPureMethods.Add(method)) {
+					i = 0;
+					foreach (CiVar param in method.Parameters)
+						this.CurrentPureArguments.Add(param, arguments[i++]);
+					CiLiteral literal = ret.Value.Accept(this, CiPriority.Statement) as CiLiteral;
+					foreach (CiVar param in method.Parameters)
+						this.CurrentPureArguments.Remove(param);
+					this.CurrentPureMethods.Remove(method);
+					if (literal != null)
+						return literal;
+				}
+			}
+
 			expr.Left = left;
 			expr.Type = left.Type;
 			return expr;
