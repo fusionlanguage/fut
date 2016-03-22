@@ -435,6 +435,12 @@ public class CiResolver : CiVisitor
 		}
 	}
 
+	void CheckComparison(CiExpr left, CiExpr right)
+	{
+		if (!(left.Type is CiNumericType) || !(right.Type is CiNumericType))
+			throw StatementException(left, "Arguments of comparison must be numeric");
+	}
+
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
 		CiExpr left = expr.Left.Accept(this, parent);
@@ -456,6 +462,7 @@ public class CiResolver : CiVisitor
 					return new CiLiteral((long) ((string) leftLiteral.Value).Length);
 			}
 			return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = rightSymbol, Type = result.Type };
+
 		case CiToken.LeftParenthesis:
 			CiSymbolReference methodSymbol = left as CiSymbolReference;
 			if (methodSymbol == null) {
@@ -485,6 +492,7 @@ public class CiResolver : CiVisitor
 		default:
 			break;
 		}
+
 		CiExpr right = expr.Right.Accept(this, parent);
 		CiType type;
 		CiRangeType leftRange = left.Type as CiRangeType;
@@ -511,6 +519,7 @@ public class CiResolver : CiVisitor
 			else
 				throw StatementException(expr.Left, "Indexed object is neither array or string");
 			break;
+
 		case CiToken.Plus:
 			if (leftRange != null && rightRange != null) {
 				type = new CiRangeType(
@@ -577,6 +586,7 @@ public class CiResolver : CiVisitor
 			else
 				type = GetIntegerType(left, right);
 			break;
+
 		case CiToken.And:
 			type = BitwiseOp(left, right, UnsignedAnd);
 			break;
@@ -586,6 +596,7 @@ public class CiResolver : CiVisitor
 		case CiToken.Xor:
 			type = BitwiseOp(left, right, UnsignedXor);
 			break;
+
 		case CiToken.ShiftLeft:
 			if (leftRange != null && rightRange != null) {
 				if (rightRange.Min < 0)
@@ -608,17 +619,91 @@ public class CiResolver : CiVisitor
 			else
 				type = GetShiftType(left, right);
 			break;
+
 		case CiToken.Equal:
-		case CiToken.NotEqual:
-		case CiToken.Less:
-		case CiToken.LessOrEqual:
-		case CiToken.Greater:
-		case CiToken.GreaterOrEqual:
-		case CiToken.CondAnd:
-		case CiToken.CondOr:
-			// TODO
+			if (leftRange != null && rightRange != null) {
+				if (leftRange.Min == leftRange.Max && leftRange.Min == rightRange.Min && leftRange.Min == rightRange.Max)
+					return CiLiteral.True;
+				if (leftRange.Max < rightRange.Min || leftRange.Min > rightRange.Max)
+					return CiLiteral.False;
+			}
+			// TODO: type check
 			type = CiSystem.BoolType;
 			break;
+		case CiToken.NotEqual:
+			if (leftRange != null && rightRange != null) {
+				if (leftRange.Max < rightRange.Min || leftRange.Min > rightRange.Max)
+					return CiLiteral.True;
+				if (leftRange.Min == leftRange.Max && leftRange.Min == rightRange.Min && leftRange.Min == rightRange.Max)
+					return CiLiteral.False;
+			}
+			// TODO: type check
+			type = CiSystem.BoolType;
+			break;
+		case CiToken.Less:
+			if (leftRange != null && rightRange != null) {
+				if (leftRange.Max < rightRange.Min)
+					return CiLiteral.True;
+				if (leftRange.Min >= rightRange.Max)
+					return CiLiteral.False;
+			}
+			else
+				CheckComparison(left, right);
+			type = CiSystem.BoolType;
+			break;
+		case CiToken.LessOrEqual:
+			if (leftRange != null && rightRange != null) {
+				if (leftRange.Max <= rightRange.Min)
+					return CiLiteral.True;
+				if (leftRange.Min > rightRange.Max)
+					return CiLiteral.False;
+			}
+			else
+				CheckComparison(left, right);
+			type = CiSystem.BoolType;
+			break;
+		case CiToken.Greater:
+			if (leftRange != null && rightRange != null) {
+				if (leftRange.Min > rightRange.Max)
+					return CiLiteral.True;
+				if (leftRange.Max <= rightRange.Min)
+					return CiLiteral.False;
+			}
+			else
+				CheckComparison(left, right);
+			type = CiSystem.BoolType;
+			break;
+		case CiToken.GreaterOrEqual:
+			if (leftRange != null && rightRange != null) {
+				if (leftRange.Min >= rightRange.Max)
+					return CiLiteral.True;
+				if (leftRange.Max < rightRange.Min)
+					return CiLiteral.False;
+			}
+			else
+				CheckComparison(left, right);
+			type = CiSystem.BoolType;
+			break;
+
+		case CiToken.CondAnd: {
+			Coerce(left, CiSystem.BoolType);
+			Coerce(right, CiSystem.BoolType);
+			CiLiteral leftLiteral = left as CiLiteral;
+			if (leftLiteral != null)
+				return (bool) leftLiteral.Value ? right : CiLiteral.False;
+			type = CiSystem.BoolType;
+			break;
+		}
+		case CiToken.CondOr: {
+			Coerce(left, CiSystem.BoolType);
+			Coerce(right, CiSystem.BoolType);
+			CiLiteral leftLiteral = left as CiLiteral;
+			if (leftLiteral != null)
+				return (bool) leftLiteral.Value ? CiLiteral.True : right;
+			type = CiSystem.BoolType;
+			break;
+		}
+
 		case CiToken.Assign:
 		case CiToken.AddAssign:
 		case CiToken.SubAssign:
@@ -651,6 +736,9 @@ public class CiResolver : CiVisitor
 		CiExpr onTrue = expr.OnTrue.Accept(this, CiPriority.Statement);
 		CiExpr onFalse = expr.OnFalse.Accept(this, CiPriority.Statement);
 		CiType type = GetCommonType(onTrue, onFalse);
+		CiLiteral literalCond = cond as CiLiteral;
+		if (literalCond != null)
+			return (bool) literalCond.Value ? onTrue : onFalse;
 		return new CiCondExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
 	}
 

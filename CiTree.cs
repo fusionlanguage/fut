@@ -255,7 +255,10 @@ public class CiLiteral : CiExpr
 			throw new NotImplementedException(value.GetType().Name);
 		}
 	}
+	public static readonly CiLiteral False = new CiLiteral(false);
+	public static readonly CiLiteral True = new CiLiteral(true);
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
+	public override string ToString() { return this.Value == null ? "null" : this.Value.ToString(); }
 }
 
 public class CiSymbolReference : CiExpr
@@ -263,6 +266,7 @@ public class CiSymbolReference : CiExpr
 	public string Name;
 	public CiSymbol Symbol;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
+	public override string ToString() { return this.Name; }
 }
 
 public abstract class CiUnaryExpr : CiExpr
@@ -288,6 +292,87 @@ public class CiBinaryExpr : CiExpr
 	public CiExpr Right;
 	public CiExpr[] RightCollection { get { return ((CiCollection) this.Right).Items; } }
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
+	string OpString
+	{
+		get
+		{
+			switch (this.Op) {
+			case CiToken.Plus:
+				return "+";
+			case CiToken.Minus:
+				return "-";
+			case CiToken.Asterisk:
+				return "*";
+			case CiToken.Slash:
+				return "/";
+			case CiToken.Mod:
+				return "%";
+			case CiToken.ShiftLeft:
+				return "<<";
+			case CiToken.ShiftRight:
+				return ">>";
+			case CiToken.Less:
+				return "<";
+			case CiToken.LessOrEqual:
+				return "<=";
+			case CiToken.Greater:
+				return ">";
+			case CiToken.GreaterOrEqual:
+				return ">=";
+			case CiToken.Equal:
+				return "==";
+			case CiToken.NotEqual:
+				return "!=";
+			case CiToken.And:
+				return "&";
+			case CiToken.Or:
+				return "|";
+			case CiToken.Xor:
+				return "^";
+			case CiToken.CondAnd:
+				return "&&";
+			case CiToken.CondOr:
+				return "||";
+			case CiToken.Assign:
+				return "=";
+			case CiToken.AddAssign:
+				return "+=";
+			case CiToken.SubAssign:
+				return "-=";
+			case CiToken.MulAssign:
+				return "*=";
+			case CiToken.DivAssign:
+				return "/=";
+			case CiToken.ModAssign:
+				return "%=";
+			case CiToken.ShiftLeftAssign:
+				return "<<=";
+			case CiToken.ShiftRightAssign:
+				return ">>=";
+			case CiToken.AndAssign:
+				return "&=";
+			case CiToken.OrAssign:
+				return "|=";
+			case CiToken.XorAssign:
+				return "^=";
+			case CiToken.LeftParenthesis:
+				return "(";
+			default:
+				throw new ArgumentException(this.Op.ToString());
+			}
+		}
+	}
+	public override string ToString()
+	{
+		switch (this.Op) {
+		case CiToken.Dot:
+			return this.Left + "." + this.Right;
+		case CiToken.LeftBracket:
+			return this.Left + "[" + this.Right + "]";
+		default:
+			return "(" + this.Left + " " + this.OpString + " " + this.Right + ")";
+		}
+	}
 }
 
 public class CiCondExpr : CiExpr
@@ -296,6 +381,7 @@ public class CiCondExpr : CiExpr
 	public CiExpr OnTrue;
 	public CiExpr OnFalse;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
+	public override string ToString() { return "(" + this.Cond + " ? " + this.OnTrue + " : " + this.OnFalse + ")"; }
 }
 
 public abstract class CiLoop : CiScope
