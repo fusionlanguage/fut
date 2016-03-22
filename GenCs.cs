@@ -420,6 +420,7 @@ public class GenCs : GenBase
 
 	void WriteResources(Dictionary<string, byte[]> resources)
 	{
+		WriteLine();
 		WriteLine("internal static class CiResource");
 		OpenBlock();
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
