@@ -214,7 +214,7 @@ public class CiResolver : CiVisitor
 		long leftVariableBits = left.VariableBits;
 		long rightVariableBits = right.VariableBits;
 		long min = (left.Min & ~leftVariableBits) | (right.Min & ~rightVariableBits);
-		long max = left.Max | right.Max | CiRangeType.GetMask(left.Max & right.Max);
+		long max = left.Max | right.Max | CiRangeType.GetMask(left.Max & right.Max & CiRangeType.GetMask(leftVariableBits | rightVariableBits));
 		// The lower bound will never be less than the input
 		if (min < left.Min)
 			min = left.Min;
