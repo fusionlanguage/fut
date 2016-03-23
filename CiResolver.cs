@@ -196,9 +196,7 @@ public class CiResolver : CiVisitor
 	{
 		long leftVariableBits = left.VariableBits;
 		long rightVariableBits = right.VariableBits;
-		// Bitwise "and" computes the digitwise minimum.
-		// Calculate the lower bound with variable bits zeroed
-		long min = (left.Min & ~leftVariableBits) & (right.Min & ~rightVariableBits);
+		long min = left.Min & right.Min & ~CiRangeType.GetMask(~left.Min & ~right.Min & (leftVariableBits | rightVariableBits));
 		// Calculate upper bound with variable bits set
 		long max = (left.Max | leftVariableBits) & (right.Max | rightVariableBits);
 		// The upper bound will never exceed the input
