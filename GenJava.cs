@@ -311,6 +311,13 @@ public class GenJava : GenBase
 			Write(args);
 			Write(')');
 		}
+		else if (obj.Type is CiArrayStorageType && method == "Fill") {
+			Write("java.util.Arrays.fill(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
 		else {
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
