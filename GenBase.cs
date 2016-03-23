@@ -576,7 +576,7 @@ public abstract class GenBase : CiVisitor
 			WriteLine("return;");
 		else {
 			Write("return ");
-			statement.Value.Accept(this, CiPriority.Statement);
+			WriteCoerced(statement.Value.Type, statement.Value);
 			WriteLine(";");
 		}
 	}
