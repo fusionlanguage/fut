@@ -1,6 +1,6 @@
 // CiTo.cs - Ci translator
 //
-// Copyright (C) 2011-2014  Piotr Fusik
+// Copyright (C) 2011-2016  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -35,6 +35,7 @@ public static class CiTo
 		Console.WriteLine("Usage: cito [OPTIONS] -o FILE INPUT.ci");
 		Console.WriteLine("Options:");
 		Console.WriteLine("-l cs      Translate to C#");
+		Console.WriteLine("-l java    Translate to Java");
 		Console.WriteLine("-o FILE    Write to the specified file");
 		Console.WriteLine("-n NAME    Specify C# namespace or Java/ActionScript/Perl package");
 		Console.WriteLine("-D NAME    Define conditional compilation symbol");
@@ -94,6 +95,7 @@ public static class CiTo
 		GenBase gen;
 		switch (lang) {
 		case "cs": gen = new GenCs(namespace_); break;
+		case "java": gen = new GenJava(namespace_); break;
 		default: throw new ArgumentException("Unknown language: " + lang);
 		}
 		gen.OutputFile = outputFile;

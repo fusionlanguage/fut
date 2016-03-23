@@ -176,11 +176,13 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void Write(CiType type);
 
+	protected abstract void WriteName(CiSymbol symbol);
+
 	protected void WriteTypeAndName(CiNamedValue value)
 	{
 		Write(value.Type);
 		Write(' ');
-		Write(value.Name);
+		WriteName(value);
 	}
 
 	protected void Write(CiExpr[] exprs)
@@ -246,7 +248,7 @@ public abstract class GenBase : CiVisitor
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		Write(expr.Symbol.Name); // different from expr.Name for local const arrays
+		WriteName(expr.Symbol);
 		return expr;
 	}
 
@@ -351,6 +353,10 @@ public abstract class GenBase : CiVisitor
 		expr.Accept(this, CiPriority.Statement);
 	}
 
+	protected abstract void WriteStringLength(CiExpr expr);
+
+	protected abstract void WriteCharAt(CiBinaryExpr expr);
+
 	protected virtual void WriteCall(CiExpr obj, string method, CiExpr[] args)
 	{
 		obj.Accept(this, CiPriority.Primary);
@@ -359,6 +365,14 @@ public abstract class GenBase : CiVisitor
 		Write('(');
 		Write(args);
 		Write(')');
+	}
+
+	protected void WriteIndexing(CiBinaryExpr expr)
+	{
+		expr.Left.Accept(this, CiPriority.Primary);
+		Write('[');
+		expr.Right.Accept(this, CiPriority.Statement);
+		Write(']');
 	}
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
@@ -426,6 +440,10 @@ public abstract class GenBase : CiVisitor
 		case CiToken.XorAssign:
 			return Write(expr, parent, CiPriority.Assign, " ^= ", CiPriority.Statement);
 		case CiToken.Dot:
+			if (((CiSymbolReference) expr.Right).Symbol == CiSystem.StringLength) {
+				WriteStringLength(expr.Left);
+				return expr;
+			}
 			return Write(expr, parent, CiPriority.Primary, ".");
 
 		case CiToken.LeftParenthesis:
@@ -444,10 +462,14 @@ public abstract class GenBase : CiVisitor
 			return expr;
 
 		case CiToken.LeftBracket:
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write('[');
-			expr.Right.Accept(this, CiPriority.Statement);
-			Write(']');
+			if (expr.Left.Type is CiStringType)
+				WriteCharAt(expr);
+			else {
+				expr.Left.Accept(this, CiPriority.Primary);
+				Write('[');
+				expr.Right.Accept(this, CiPriority.Statement);
+				Write(']');
+			}
 			return expr;
 
 		default:

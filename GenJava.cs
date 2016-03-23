@@ -1,4 +1,4 @@
-// GenCs.cs - C# code generator
+// GenJava.cs - Java code generator
 //
 // Copyright (C) 2011-2016  Piotr Fusik
 //
@@ -19,16 +19,17 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 
 namespace Foxoft.Ci
 {
 
-public class GenCs : GenBase
+public class GenJava : GenBase
 {
 	string Namespace;
+	string OutputDirectory;
 
-	public GenCs(string namespace_)
+	public GenJava(string namespace_)
 	{
 		this.Namespace = namespace_;
 	}
@@ -37,9 +38,9 @@ public class GenCs : GenBase
 	{
 		switch (visibility) {
 		case CiVisibility.Private:
+			Write("private ");
 			break;
 		case CiVisibility.Internal:
-			Write("internal ");
 			break;
 		case CiVisibility.Protected:
 			Write("protected ");
@@ -57,18 +58,16 @@ public class GenCs : GenBase
 			Write("static ");
 			break;
 		case CiCallType.Normal:
+		case CiCallType.Virtual:
 			break;
 		case CiCallType.Abstract:
 			Write("abstract ");
 			break;
-		case CiCallType.Virtual:
-			Write("virtual ");
-			break;
 		case CiCallType.Override:
-			Write("override ");
+			Write("@Override ");
 			break;
 		case CiCallType.Sealed:
-			Write("sealed ");
+			Write("final ");
 			break;
 		}
 	}
@@ -87,20 +86,19 @@ public class GenCs : GenBase
 				return TypeCode.Int16;
 			return TypeCode.SByte;
 		}
-		if (range.Max > ushort.MaxValue)
+		if (range.Max > short.MaxValue)
 			return TypeCode.Int32;
 		if (range.Max > byte.MaxValue)
-			return TypeCode.UInt16;
+			return TypeCode.Int16;
 		return TypeCode.Byte;
 	}
 
 	void Write(TypeCode typeCode)
 	{
 		switch (typeCode) {
-		case TypeCode.SByte: Write("sbyte"); break;
+		case TypeCode.SByte:
 		case TypeCode.Byte: Write("byte"); break;
 		case TypeCode.Int16: Write("short"); break;
-		case TypeCode.UInt16: Write("ushort"); break;
 		case TypeCode.Int32: Write("int"); break;
 		case TypeCode.Int64: Write("long"); break;
 		default: throw new NotImplementedException(typeCode.ToString());
@@ -135,6 +133,21 @@ public class GenCs : GenBase
 			return;
 		}
 
+		if (type == CiSystem.BoolType) {
+			Write("boolean");
+			return;
+		}
+
+		if (type is CiStringType) {
+			Write("String");
+			return;
+		}
+
+		if (type is CiEnum) {
+			Write("int");
+			return;
+		}
+
 		CiArrayType array = type as CiArrayType;
 		if (array != null) {
 			Write(array.ElementType);
@@ -153,7 +166,12 @@ public class GenCs : GenBase
 
 	protected override void WriteName(CiSymbol symbol)
 	{
-		Write(symbol.Name);
+		if (symbol is CiConst)
+			WriteUppercaseWithUnderscores(symbol.Name);
+		else if (symbol is CiMember)
+			WriteCamelCase(symbol.Name);
+		else
+			Write(symbol.Name);
 	}
 
 	void WriteVar(CiNamedValue def)
@@ -186,10 +204,9 @@ public class GenCs : GenBase
 
 	protected override void WriteResource(bool reference, string name)
 	{
-		if (reference)
-			Write("CiResource.");
-		foreach (char c in name)
-			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
+		Write("getByteArrayResource(");
+		WriteLiteral(name);
+		Write(')');
 	}
 
 	static TypeCode GetPromotedTypeCode(CiExpr expr)
@@ -227,9 +244,7 @@ public class GenCs : GenBase
 		switch (left) {
 		case TypeCode.SByte:
 			switch (right) {
-			case TypeCode.Byte:
 			case TypeCode.Int16:
-			case TypeCode.UInt16:
 			case TypeCode.Int32:
 			case TypeCode.Int64:
 				return true;
@@ -238,9 +253,7 @@ public class GenCs : GenBase
 			}
 		case TypeCode.Byte:
 			switch (right) {
-			case TypeCode.SByte:
 			case TypeCode.Int16:
-			case TypeCode.UInt16:
 			case TypeCode.Int32:
 			case TypeCode.Int64:
 				return true;
@@ -249,16 +262,6 @@ public class GenCs : GenBase
 			}
 		case TypeCode.Int16:
 			switch (right) {
-			case TypeCode.UInt16:
-			case TypeCode.Int32:
-			case TypeCode.Int64:
-				return true;
-			default:
-				return false;
-			}
-		case TypeCode.UInt16:
-			switch (right) {
-			case TypeCode.Int16:
 			case TypeCode.Int32:
 			case TypeCode.Int64:
 				return true;
@@ -288,91 +291,87 @@ public class GenCs : GenBase
 	protected override void WriteStringLength(CiExpr expr)
 	{
 		expr.Accept(this, CiPriority.Primary);
-		Write(".Length");
+		Write(".length()");
 	}
 
 	protected override void WriteCharAt(CiBinaryExpr expr)
 	{
-		WriteIndexing(expr);
+		expr.Left.Accept(this, CiPriority.Primary);
+		Write(".charAt(");
+		expr.Right.Accept(this, CiPriority.Statement);
+		Write(')');
 	}
 
 	protected override void WriteCall(CiExpr obj, string method, CiExpr[] args)
 	{
 		if (obj.Type is CiArrayType && method == "CopyTo") {
-			Write("System.Array.Copy(");
+			Write("System.arraycopy(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
 			Write(args);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayStorageType && method == "Fill") {
-			CiLiteral literal = args[0] as CiLiteral;
-			if (literal == null || !literal.IsDefaultValue)
-				throw new NotImplementedException("Only null, zero and false supported");
-			Write("System.Array.Clear(");
-			obj.Accept(this, CiPriority.Statement);
-			Write(", 0, ");
-			Write(((CiArrayStorageType) obj.Type).Length);
+		else {
+			obj.Accept(this, CiPriority.Primary);
+			Write('.');
+			WriteCamelCase(method);
+			Write('(');
+			Write(args);
 			Write(')');
 		}
-		else
-			base.WriteCall(obj, method, args);
-	}
-
-	protected override void WriteCondChild(CiCondExpr cond, CiExpr expr)
-	{
-		if (expr is CiLiteral) {
-			TypeCode condTypeCode = GetTypeCode(cond.Type);
-			if (IsNarrower(condTypeCode, TypeCode.Int32)) {
-				Write('(');
-				Write(condTypeCode);
-				Write(") ");
-				expr.Accept(this, CiPriority.Primary);
-				return;
-			}
-		}
-		base.WriteCondChild(cond, expr);
 	}
 
 	public override void Visit(CiThrow statement)
 	{
-		Write("throw new System.Exception(");
+		Write("throw new Exception(");
 		statement.Message.Accept(this, CiPriority.Statement);
 		WriteLine(");");
 	}
 
-	void Write(CiEnum enu)
+	void CreateJavaFile(CiContainerType type)
 	{
-		WriteLine();
-		if (enu.IsFlags)
-			WriteLine("[System.Flags]");
-		WritePublic(enu);
-		Write("enum ");
-		WriteLine(enu.Name);
-		OpenBlock();
-		bool first = true;
-		foreach (CiConst konst in enu) {
-			if (!first)
-				WriteLine(",");
-			first = false;
-			Write(konst.Name);
-			if (konst.Value != null) {
-				Write(" = ");
-				konst.Value.Accept(this, CiPriority.Statement);
-			}
+		CreateFile(Path.Combine(this.OutputDirectory, type.Name + ".java"));
+		if (this.Namespace != null) {
+			Write("package ");
+			Write(this.Namespace);
+			WriteLine(";");
 		}
 		WriteLine();
+		WritePublic(type);
+	}
+
+	void CloseJavaFile()
+	{
 		CloseBlock();
+		CloseFile();
+	}
+
+	void Write(CiEnum enu)
+	{
+		CreateJavaFile(enu);
+		Write("interface ");
+		WriteLine(enu.Name);
+		OpenBlock();
+		int i = 0;
+		foreach (CiConst konst in enu) {
+			Write("int ");
+			WriteUppercaseWithUnderscores(konst.Name);
+			Write(" = ");
+			if (konst.Value != null)
+				konst.Value.Accept(this, CiPriority.Statement);
+			else
+				Write(i);
+			WriteLine(";");
+			i++;
+		}
+		CloseJavaFile();
 	}
 
 	void WriteConsts(IEnumerable<CiConst> konsts)
 	{
 		foreach (CiConst konst in konsts) {
 			Write(konst.Visibility);
-			if (konst.Type is CiArrayStorageType)
-				Write("static readonly ");
-			else
-				Write("const ");
+			Write("static final ");
 			WriteTypeAndName(konst);
 			Write(" = ");
 			konst.Value.Accept(this, CiPriority.Statement);
@@ -382,11 +381,22 @@ public class GenCs : GenBase
 
 	void Write(CiClass klass)
 	{
-		WriteLine();
-		WritePublic(klass);
-		Write(klass.CallType);
-		OpenClass(klass, " : ");
-
+		CreateJavaFile(klass);
+		switch (klass.CallType) {
+		case CiCallType.Normal:
+			break;
+		case CiCallType.Abstract:
+			Write("abstract ");
+			break;
+		case CiCallType.Static:
+		case CiCallType.Sealed:
+			Write("final ");
+			break;
+		default:
+			throw new NotImplementedException(klass.CallType.ToString());
+		}
+		OpenClass(klass, " extends ");
+		
 		if (klass.Constructor != null) {
 			Write(klass.Constructor.Visibility);
 			Write(klass.Name);
@@ -407,7 +417,7 @@ public class GenCs : GenBase
 		foreach (CiField field in klass.Fields) {
 			Write(field.Visibility);
 			if (field.Type is CiClass || field.Type is CiArrayStorageType)
-				Write("readonly ");
+				Write("final ");
 			WriteVar(field);
 			WriteLine(";");
 		}
@@ -431,42 +441,22 @@ public class GenCs : GenBase
 
 		WriteConsts(klass.ConstArrays);
 
-		CloseBlock();
-	}
-
-	void WriteResources(Dictionary<string, byte[]> resources)
-	{
-		WriteLine();
-		WriteLine("internal static class CiResource");
-		OpenBlock();
-		foreach (string name in resources.Keys.OrderBy(k => k)) {
-			Write("internal static readonly byte[] ");
-			WriteResource(false, name);
-			WriteLine(" = {");
-			Write('\t');
-			Write(resources[name]);
-			WriteLine(" };");
-		}
-		CloseBlock();
+		CloseJavaFile();
 	}
 
 	public override void Write(CiProgram program)
 	{
-		CreateFile(this.OutputFile);
-		if (this.Namespace != null) {
-			Write("namespace ");
-			WriteLine(this.Namespace);
-			OpenBlock();
+		if (Directory.Exists(this.OutputFile))
+			this.OutputDirectory = this.OutputFile;
+		else
+			this.OutputDirectory = Path.GetDirectoryName(this.OutputFile);
+		foreach (CiContainerType type in program) {
+			CiClass klass = type as CiClass;
+			if (klass != null)
+				Write(klass);
+			else
+				Write((CiEnum) type);
 		}
-		foreach (CiEnum enu in program.OfType<CiEnum>())
-			Write(enu);
-		foreach (CiClass klass in program.Classes)
-			Write(klass);
-		if (program.Resources.Count > 0)
-			WriteResources(program.Resources);
-		if (this.Namespace != null)
-			CloseBlock();
-		CloseFile();
 	}
 }
 

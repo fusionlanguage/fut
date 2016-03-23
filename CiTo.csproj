@@ -33,6 +33,7 @@
 		<Compile Include="CiTree.cs" />
 		<Compile Include="GenBase.cs" />
 		<Compile Include="GenCs.cs" />
+		<Compile Include="GenJava.cs" />
 	</ItemGroup>
 	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
