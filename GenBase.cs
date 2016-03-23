@@ -196,7 +196,7 @@ public abstract class GenBase : CiVisitor
 	{
 		Write("{ ");
 		Write(expr.Items);
-		Write('}');
+		Write(" }");
 		return expr;
 	}
 
