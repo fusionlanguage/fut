@@ -555,6 +555,8 @@ public class CiRangeType : CiIntegerType
 
 	public CiRangeType(long min, long max)
 	{
+		if (min > max)
+			throw new ArgumentOutOfRangeException();
 		this.Min = min;
 		this.Max = max;
 	}

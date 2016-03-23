@@ -204,6 +204,8 @@ public class CiResolver : CiVisitor
 			max = left.Max;
 		if (max > right.Max)
 			max = right.Max;
+		if (min > max)
+			return new CiRangeType(max, min); // FIXME: this is wrong! e.g. min=0 max=0x8000000_00000000 then 5 should be in range
 		return new CiRangeType(min, max);
 	}
 
@@ -218,6 +220,8 @@ public class CiResolver : CiVisitor
 			min = left.Min;
 		if (min < right.Min)
 			min = right.Min;
+		if (min > max)
+			return new CiRangeType(max, min); // FIXME: this is wrong! e.g. min=0 max=0x8000000_00000000 then 5 should be in range
 		return new CiRangeType(min, max);
 	}
 
@@ -226,6 +230,8 @@ public class CiResolver : CiVisitor
 		long variableBits = left.VariableBits | right.VariableBits;
 		long min = (left.Min ^ right.Min) & ~variableBits;
 		long max = (left.Max ^ right.Max) | variableBits;
+		if (min > max)
+			return new CiRangeType(max, min); // FIXME: this is wrong! e.g. min=0 max=0x8000000_00000000 then 5 should be in range
 		return new CiRangeType(min, max);
 	}
 
