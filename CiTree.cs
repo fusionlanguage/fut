@@ -621,29 +621,21 @@ public class CiRangeType : CiIntegerType
 		return v;
 	}
 
-	public long VariableBits
-	{
-		get
-		{
-			return GetMask(this.Min ^ this.Max);
-		}
-	}
+	public long VariableBits { get { return GetMask(this.Min ^ this.Max); } }
 
 	public void SplitBySign(out CiRangeType negative, out CiRangeType positive)
 	{
-		if (this.Min < 0) {
-			if (this.Max < 0) {
-				negative = this;
-				positive = null;
-			}
-			else {
-				negative = new CiRangeType(this.Min, -1);
-				positive = new CiRangeType(0, this.Max);
-			}
+		if (this.Min >= 0) {
+			negative = null;
+			positive = this;
+		}
+		else if (this.Max < 0) {
+			negative = this;
+			positive = null;
 		}
 		else {
-			negative = null;
-			positive = new CiRangeType(this.Min, this.Max);
+			negative = new CiRangeType(this.Min, -1);
+			positive = new CiRangeType(0, this.Max);
 		}
 	}
 }
