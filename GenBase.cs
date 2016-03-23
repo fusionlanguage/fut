@@ -174,13 +174,13 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected abstract void Write(CiType type);
+	protected abstract void Write(CiType type, bool promote);
 
 	protected abstract void WriteName(CiSymbol symbol);
 
 	protected void WriteTypeAndName(CiNamedValue value)
 	{
-		Write(value.Type);
+		Write(value.Type, true);
 		Write(' ');
 		WriteName(value);
 	}
@@ -194,10 +194,20 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
+	protected void WriteCoerced(CiType type, CiExpr[] exprs)
+	{
+		for (int i = 0; i < exprs.Length; i++) {
+			if (i > 0)
+				Write(", ");
+			WriteCoerced(type, exprs[i]);
+		}
+	}
+
 	public override CiExpr Visit(CiCollection expr, CiPriority parent)
 	{
+		CiType type = ((CiArrayStorageType) expr.Type).ElementType;
 		Write("{ ");
-		Write(expr.Items);
+		WriteCoerced(type, expr.Items);
 		Write(" }");
 		return expr;
 	}
@@ -268,7 +278,7 @@ public abstract class GenBase : CiVisitor
 			return;
 		}
 		Write("new ");
-		Write(type);
+		Write(type, false);
 		Write('[');
 		lengthExpr.Accept(this, CiPriority.Statement);
 		Write(']');
@@ -415,30 +425,22 @@ public abstract class GenBase : CiVisitor
 		case CiToken.CondOr:
 			return Write(expr, parent, CiPriority.CondOr, " || ");
 		case CiToken.Assign:
+		case CiToken.AddAssign:
+		case CiToken.SubAssign:
+		case CiToken.MulAssign:
+		case CiToken.DivAssign:
+		case CiToken.ModAssign:
+		case CiToken.ShiftLeftAssign:
+		case CiToken.ShiftRightAssign:
+		case CiToken.AndAssign:
+		case CiToken.OrAssign:
+		case CiToken.XorAssign:
 			expr.Left.Accept(this, CiPriority.Assign);
-			Write(" = ");
+			Write(' ');
+			Write(expr.OpString);
+			Write(' ');
 			WriteCoerced(expr.Left.Type, expr.Right);
 			return expr;
-		case CiToken.AddAssign:
-			return Write(expr, parent, CiPriority.Assign, " += ", CiPriority.Statement);
-		case CiToken.SubAssign:
-			return Write(expr, parent, CiPriority.Assign, " -= ", CiPriority.Statement);
-		case CiToken.MulAssign:
-			return Write(expr, parent, CiPriority.Assign, " *= ", CiPriority.Statement);
-		case CiToken.DivAssign:
-			return Write(expr, parent, CiPriority.Assign, " /= ", CiPriority.Statement);
-		case CiToken.ModAssign:
-			return Write(expr, parent, CiPriority.Assign, " %= ", CiPriority.Statement);
-		case CiToken.ShiftLeftAssign:
-			return Write(expr, parent, CiPriority.Assign, " <<= ", CiPriority.Statement);
-		case CiToken.ShiftRightAssign:
-			return Write(expr, parent, CiPriority.Assign, " >>= ", CiPriority.Statement);
-		case CiToken.AndAssign:
-			return Write(expr, parent, CiPriority.Assign, " &= ", CiPriority.Statement);
-		case CiToken.OrAssign:
-			return Write(expr, parent, CiPriority.Assign, " |= ", CiPriority.Statement);
-		case CiToken.XorAssign:
-			return Write(expr, parent, CiPriority.Assign, " ^= ", CiPriority.Statement);
 		case CiToken.Dot:
 			if (((CiSymbolReference) expr.Right).Symbol == CiSystem.StringLength) {
 				WriteStringLength(expr.Left);

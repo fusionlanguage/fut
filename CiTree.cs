@@ -99,6 +99,7 @@ public abstract class CiStatement
 public abstract class CiExpr : CiStatement
 {
 	public CiType Type;
+	public virtual bool IntPromotion { get { throw new NotImplementedException(); } }
 	public virtual CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		throw new NotImplementedException(GetType().Name);
@@ -239,6 +240,7 @@ public class CiLiteral : CiExpr
 		}
 		this.Value = value;
 	}
+	public override bool IntPromotion { get { return false; } }
 	public bool IsDefaultValue
 	{
 		get
@@ -265,6 +267,7 @@ public class CiSymbolReference : CiExpr
 {
 	public string Name;
 	public CiSymbol Symbol;
+	public override bool IntPromotion { get { return true; } }
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
 	public override string ToString() { return this.Name; }
 }
@@ -273,6 +276,7 @@ public abstract class CiUnaryExpr : CiExpr
 {
 	public CiToken Op;
 	public CiExpr Inner;
+	public override bool IntPromotion { get { return true; } }
 }
 
 public class CiPrefixExpr : CiUnaryExpr
@@ -290,9 +294,54 @@ public class CiBinaryExpr : CiExpr
 	public CiExpr Left;
 	public CiToken Op;
 	public CiExpr Right;
+	public override bool IntPromotion
+	{
+		get
+		{
+			switch (this.Op) {
+			case CiToken.Plus:
+			case CiToken.Minus:
+			case CiToken.Asterisk:
+			case CiToken.Slash:
+			case CiToken.Mod:
+			case CiToken.ShiftLeft:
+			case CiToken.ShiftRight:
+			case CiToken.And:
+			case CiToken.Or:
+			case CiToken.Xor:
+			case CiToken.Dot:
+			case CiToken.LeftParenthesis:
+				return true;
+			case CiToken.Less:
+			case CiToken.LessOrEqual:
+			case CiToken.Greater:
+			case CiToken.GreaterOrEqual:
+			case CiToken.Equal:
+			case CiToken.NotEqual:
+			case CiToken.CondAnd:
+			case CiToken.CondOr:
+				// don't care
+			case CiToken.Assign:
+			case CiToken.AddAssign:
+			case CiToken.SubAssign:
+			case CiToken.MulAssign:
+			case CiToken.DivAssign:
+			case CiToken.ModAssign:
+			case CiToken.ShiftLeftAssign:
+			case CiToken.ShiftRightAssign:
+			case CiToken.AndAssign:
+			case CiToken.OrAssign:
+			case CiToken.XorAssign:
+			case CiToken.LeftBracket:
+				return false;
+			default:
+				throw new ArgumentException(this.Op.ToString());
+			}
+		}
+	}
 	public CiExpr[] RightCollection { get { return ((CiCollection) this.Right).Items; } }
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
-	string OpString
+	public string OpString
 	{
 		get
 		{
@@ -380,6 +429,7 @@ public class CiCondExpr : CiExpr
 	public CiExpr Cond;
 	public CiExpr OnTrue;
 	public CiExpr OnFalse;
+	public override bool IntPromotion { get { return false; } }
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
 	public override string ToString() { return "(" + this.Cond + " ? " + this.OnTrue + " : " + this.OnFalse + ")"; }
 }

@@ -73,12 +73,12 @@ public class GenCs : GenBase
 		}
 	}
 
-	static TypeCode GetTypeCode(CiIntegerType integer)
+	static TypeCode GetTypeCode(CiIntegerType integer, bool promote)
 	{
-		if (integer is CiIntType)
-			return TypeCode.Int32;
 		if (integer.IsLong)
 			return TypeCode.Int64;
+		if (promote || integer is CiIntType)
+			return TypeCode.Int32;
 		CiRangeType range = (CiRangeType) integer;
 		if (range.Min < 0) {
 			if (range.Min < short.MinValue || range.Max > short.MaxValue)
@@ -107,12 +107,12 @@ public class GenCs : GenBase
 		}
 	}
 
-	static TypeCode GetTypeCode(CiType type)
+	static TypeCode GetTypeCode(CiType type, bool promote)
 	{
 		if (type is CiNumericType) {
 			CiIntegerType integer = type as CiIntegerType;
 			if (integer != null)
-				return GetTypeCode(integer);
+				return GetTypeCode(integer, promote);
 			if (type == CiSystem.DoubleType)
 				return TypeCode.Double;
 			if (type == CiSystem.FloatType)
@@ -128,23 +128,23 @@ public class GenCs : GenBase
 		return TypeCode.Object;
 	}
 
-	protected override void Write(CiType type)
+	protected override void Write(CiType type, bool promote)
 	{
 		if (type == null) {
 			Write("void");
 			return;
 		}
 
-		CiArrayType array = type as CiArrayType;
-		if (array != null) {
-			Write(array.ElementType);
-			Write("[]");
+		CiIntegerType integer = type as CiIntegerType;
+		if (integer != null) {
+			Write(GetTypeCode(integer, promote));
 			return;
 		}
 
-		CiIntegerType integer = type as CiIntegerType;
-		if (integer != null) {
-			Write(GetTypeCode(integer));
+		CiArrayType array = type as CiArrayType;
+		if (array != null) {
+			Write(array.ElementType, false);
+			Write("[]");
 			return;
 		}
 
@@ -190,36 +190,6 @@ public class GenCs : GenBase
 			Write("CiResource.");
 		foreach (char c in name)
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
-	}
-
-	static TypeCode GetPromotedTypeCode(CiExpr expr)
-	{
-		CiBinaryExpr binary = expr as CiBinaryExpr;
-		if (binary != null) {
-			switch (binary.Op) {
-			case CiToken.Plus:
-			case CiToken.Minus:
-			case CiToken.Asterisk:
-			case CiToken.Slash:
-			case CiToken.Mod:
-				if (binary.Left.Type == CiSystem.DoubleType || binary.Right.Type == CiSystem.DoubleType)
-					return TypeCode.Double;
-				if (binary.Left.Type == CiSystem.FloatType || binary.Right.Type == CiSystem.FloatType)
-					return TypeCode.Single;
-				return ((CiIntegerType) binary.Left.Type).IsLong || ((CiIntegerType) binary.Right.Type).IsLong ? TypeCode.Int64 : TypeCode.Int32;
-			case CiToken.ShiftLeft:
-			case CiToken.ShiftRight:
-				return ((CiIntegerType) binary.Left.Type).IsLong ? TypeCode.Int64 : TypeCode.Int32;
-			case CiToken.And:
-			case CiToken.Or:
-			case CiToken.Xor:
-				return ((CiIntegerType) binary.Left.Type).IsLong || ((CiIntegerType) binary.Right.Type).IsLong ? TypeCode.Int64 : TypeCode.Int32;
-			default:
-				break;
-			}
-		}
-		// TODO
-		return GetTypeCode(expr.Type);
 	}
 
 	static bool IsNarrower(TypeCode left, TypeCode right)
@@ -274,8 +244,8 @@ public class GenCs : GenBase
 
 	protected override void WriteCoerced(CiType type, CiExpr expr)
 	{
-		TypeCode typeCode = GetTypeCode(type);
-		if (IsNarrower(typeCode, GetPromotedTypeCode(expr))) {
+		TypeCode typeCode = GetTypeCode(type, false);
+		if (IsNarrower(typeCode, GetTypeCode(expr.Type, expr.IntPromotion))) {
 			Write('(');
 			Write(typeCode);
 			Write(") ");
@@ -322,7 +292,7 @@ public class GenCs : GenBase
 	protected override void WriteCondChild(CiCondExpr cond, CiExpr expr)
 	{
 		if (expr is CiLiteral) {
-			TypeCode condTypeCode = GetTypeCode(cond.Type);
+			TypeCode condTypeCode = GetTypeCode(cond.Type, false);
 			if (IsNarrower(condTypeCode, TypeCode.Int32)) {
 				Write('(');
 				Write(condTypeCode);
