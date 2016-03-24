@@ -166,7 +166,7 @@ public class GenJava : GenTyped
 			Write("java.util.Arrays.fill(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Statement);
+			WriteCoercedLiteral(args[0].Type, args[0], CiPriority.Statement);
 			Write(')');
 		}
 		else {
