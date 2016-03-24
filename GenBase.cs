@@ -212,13 +212,31 @@ public abstract class GenBase : CiVisitor
 		return expr;
 	}
 
+	protected void WriteVar(CiNamedValue def)
+	{
+		WriteTypeAndName(def);
+		CiClass klass = def.Type as CiClass;
+		if (klass != null) {
+			Write(" = ");
+			WriteNew(klass);
+		}
+		else {
+			CiArrayStorageType array = def.Type as CiArrayStorageType;
+			if (array != null) {
+				Write(" = ");
+				WriteNewArray(array.ElementType, new CiLiteral((long) array.Length));
+				// FIXME: arrays of object storage, initialized arrays
+			}
+			else if (def.Value != null) {
+				Write(" = ");
+				def.Value.Accept(this, CiPriority.Statement);
+			}
+		}
+	}
+
 	public override CiExpr Visit(CiVar expr, CiPriority parent)
 	{
-		WriteTypeAndName(expr);
-		if (expr.Value != null) {
-			Write(" = ");
-			expr.Value.Accept(this, CiPriority.Statement);
-		}
+		WriteVar(expr);
 		return expr;
 	}
 
@@ -363,6 +381,11 @@ public abstract class GenBase : CiVisitor
 		expr.Accept(this, CiPriority.Statement);
 	}
 
+	protected virtual void WriteCoercedLiteral(CiType type, CiExpr expr, CiPriority priority)
+	{
+		expr.Accept(this, priority);
+	}
+
 	protected abstract void WriteStringLength(CiExpr expr);
 
 	protected abstract void WriteCharAt(CiBinaryExpr expr);
@@ -482,19 +505,14 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected virtual void WriteCondChild(CiCondExpr cond, CiExpr expr)
-	{
-		expr.Accept(this, CiPriority.Cond);
-	}
-
 	public override CiExpr Visit(CiCondExpr expr, CiPriority parent)
 	{
 		if (parent > CiPriority.Cond) Write('(');
 		expr.Cond.Accept(this, CiPriority.Cond);
 		Write(" ? ");
-		WriteCondChild(expr, expr.OnTrue);
+		WriteCoercedLiteral(expr.Type, expr.OnTrue, CiPriority.Cond);
 		Write(" : ");
-		WriteCondChild(expr, expr.OnFalse);
+		WriteCoercedLiteral(expr.Type, expr.OnFalse, CiPriority.Cond);
 		if (parent > CiPriority.Cond) Write(')');
 		return expr;
 	}

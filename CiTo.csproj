@@ -34,6 +34,7 @@
 		<Compile Include="GenBase.cs" />
 		<Compile Include="GenCs.cs" />
 		<Compile Include="GenJava.cs" />
+		<Compile Include="GenTyped.cs" />
 	</ItemGroup>
 	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

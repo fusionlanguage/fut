@@ -24,7 +24,7 @@ using System.IO;
 namespace Foxoft.Ci
 {
 
-public class GenJava : GenBase
+public class GenJava : GenTyped
 {
 	string Namespace;
 	string OutputDirectory;
@@ -51,7 +51,7 @@ public class GenJava : GenBase
 		}
 	}
 
-	static TypeCode GetTypeCode(CiIntegerType integer, bool promote)
+	protected override TypeCode GetTypeCode(CiIntegerType integer, bool promote)
 	{
 		if (integer.IsLong)
 			return TypeCode.Int64;
@@ -74,7 +74,7 @@ public class GenJava : GenBase
 		return TypeCode.SByte; // store unsigned bytes in Java signed bytes
 	}
 
-	void Write(TypeCode typeCode)
+	protected override void Write(TypeCode typeCode)
 	{
 		switch (typeCode) {
 		case TypeCode.Byte:
@@ -84,27 +84,6 @@ public class GenJava : GenBase
 		case TypeCode.Int64: Write("long"); break;
 		default: throw new NotImplementedException(typeCode.ToString());
 		}
-	}
-
-	static TypeCode GetTypeCode(CiType type, bool promote)
-	{
-		if (type is CiNumericType) {
-			CiIntegerType integer = type as CiIntegerType;
-			if (integer != null)
-				return GetTypeCode(integer, promote);
-			if (type == CiSystem.DoubleType)
-				return TypeCode.Double;
-			if (type == CiSystem.FloatType)
-				return TypeCode.Single;
-			throw new NotImplementedException(type.ToString());
-		}
-		else if (type == CiSystem.BoolType)
-			return TypeCode.Boolean;
-		else if (type == CiSystem.NullType)
-			return TypeCode.Empty;
-		else if (type is CiStringType)
-			return TypeCode.String;
-		return TypeCode.Object;
 	}
 
 	protected override void Write(CiType type, bool promote)
@@ -153,89 +132,11 @@ public class GenJava : GenBase
 			Write(symbol.Name);
 	}
 
-	void WriteVar(CiNamedValue def)
-	{
-		WriteTypeAndName(def);
-		CiClass klass = def.Type as CiClass;
-		if (klass != null) {
-			Write(" = ");
-			WriteNew(klass);
-		}
-		else {
-			CiArrayStorageType array = def.Type as CiArrayStorageType;
-			if (array != null) {
-				Write(" = ");
-				WriteNewArray(array.ElementType, new CiLiteral((long) array.Length));
-				// FIXME: arrays of object storage, initialized arrays
-			}
-			else if (def.Value != null) {
-				Write(" = ");
-				def.Value.Accept(this, CiPriority.Statement);
-			}
-		}
-	}
-
-	public override CiExpr Visit(CiVar expr, CiPriority parent)
-	{
-		WriteVar(expr);
-		return expr;
-	}
-
 	protected override void WriteResource(bool reference, string name)
 	{
 		Write("getByteArrayResource(");
 		WriteLiteral(name);
 		Write(')');
-	}
-
-	static bool IsNarrower(TypeCode left, TypeCode right)
-	{
-		switch (left) {
-		case TypeCode.SByte:
-			switch (right) {
-			case TypeCode.Byte:
-			case TypeCode.Int16:
-			case TypeCode.Int32:
-			case TypeCode.Int64:
-				return true;
-			default:
-				return false;
-			}
-		case TypeCode.Byte:
-			switch (right) {
-			case TypeCode.Int16:
-			case TypeCode.Int32:
-			case TypeCode.Int64:
-				return true;
-			default:
-				return false;
-			}
-		case TypeCode.Int16:
-			switch (right) {
-			case TypeCode.Int32:
-			case TypeCode.Int64:
-				return true;
-			default:
-				return false;
-			}
-		case TypeCode.Int32:
-			return right == TypeCode.Int64;
-		default:
-			return false;
-		}
-	}
-
-	protected override void WriteCoerced(CiType type, CiExpr expr)
-	{
-		TypeCode typeCode = GetTypeCode(type, false);
-		if (IsNarrower(typeCode, GetTypeCode(expr.Type, expr.IntPromotion))) {
-			Write('(');
-			Write(typeCode);
-			Write(") ");
-			expr.Accept(this, CiPriority.Primary);
-		}
-		else
-			base.WriteCoerced(type, expr);
 	}
 
 	protected override void WriteStringLength(CiExpr expr)
@@ -401,6 +302,8 @@ public class GenJava : GenBase
 			case CiCallType.Sealed:
 				Write("final ");
 				break;
+			default:
+				throw new NotImplementedException(method.CallType.ToString());
 			}
 			WriteTypeAndName(method);
 			Write('(');
