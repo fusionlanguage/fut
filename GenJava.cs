@@ -51,27 +51,6 @@ public class GenJava : GenBase
 		}
 	}
 
-	void Write(CiCallType callType)
-	{
-		switch (callType) {
-		case CiCallType.Static:
-			Write("static ");
-			break;
-		case CiCallType.Normal:
-		case CiCallType.Virtual:
-			break;
-		case CiCallType.Abstract:
-			Write("abstract ");
-			break;
-		case CiCallType.Override:
-			Write("@Override ");
-			break;
-		case CiCallType.Sealed:
-			Write("final ");
-			break;
-		}
-	}
-
 	static TypeCode GetTypeCode(CiIntegerType integer, bool promote)
 	{
 		if (integer.IsLong)
@@ -403,7 +382,26 @@ public class GenJava : GenBase
 		foreach (CiMethod method in klass.Methods) {
 			WriteLine();
 			Write(method.Visibility);
-			Write(method.CallType);
+			switch (method.CallType) {
+			case CiCallType.Static:
+				Write("static ");
+				break;
+			case CiCallType.Virtual:
+				break;
+			case CiCallType.Abstract:
+				Write("abstract ");
+				break;
+			case CiCallType.Override:
+				Write("@Override ");
+				break;
+			case CiCallType.Normal:
+				if (method.Visibility != CiVisibility.Private)
+					Write("final ");
+				break;
+			case CiCallType.Sealed:
+				Write("final ");
+				break;
+			}
 			WriteTypeAndName(method);
 			Write('(');
 			bool first = true;
