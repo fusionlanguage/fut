@@ -160,7 +160,7 @@ public class GenCs : GenTyped
 			Write("System.Array.Copy(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
-			Write(args);
+			WritePromoted(args);
 			Write(')');
 		}
 		else if (obj.Type is CiArrayStorageType && method == "Fill") {

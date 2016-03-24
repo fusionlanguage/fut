@@ -139,6 +139,24 @@ public class GenJava : GenTyped
 		Write(')');
 	}
 
+	protected override void WritePromoted(CiExpr expr, CiPriority parent)
+	{
+		CiBinaryExpr binary = expr as CiBinaryExpr;
+		if (binary != null && binary.Op == CiToken.LeftBracket) {
+			CiRangeType range = expr.Type as CiRangeType;
+			if (range != null && range.Min >= 0 && range.Max > sbyte.MaxValue && range.Max <= byte.MaxValue) {
+				if (parent > CiPriority.And)
+					Write('(');
+				base.WritePromoted(expr, CiPriority.And);
+				Write(" & 0xff");
+				if (parent > CiPriority.And)
+					Write(')');
+				return;
+			}
+		}
+		base.WritePromoted(expr, parent);
+	}
+
 	protected override void WriteStringLength(CiExpr expr)
 	{
 		expr.Accept(this, CiPriority.Primary);
@@ -149,7 +167,7 @@ public class GenJava : GenTyped
 	{
 		expr.Left.Accept(this, CiPriority.Primary);
 		Write(".charAt(");
-		expr.Right.Accept(this, CiPriority.Statement);
+		WritePromoted(expr.Right, CiPriority.Statement);
 		Write(')');
 	}
 
@@ -159,7 +177,7 @@ public class GenJava : GenTyped
 			Write("System.arraycopy(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
-			Write(args);
+			WritePromoted(args);
 			Write(')');
 		}
 		else if (obj.Type is CiArrayStorageType && method == "Fill") {
@@ -174,7 +192,7 @@ public class GenJava : GenTyped
 			Write('.');
 			WriteCamelCase(method);
 			Write('(');
-			Write(args);
+			WritePromoted(args);
 			Write(')');
 		}
 	}

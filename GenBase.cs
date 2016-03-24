@@ -185,12 +185,12 @@ public abstract class GenBase : CiVisitor
 		WriteName(value);
 	}
 
-	protected void Write(CiExpr[] exprs)
+	protected void WritePromoted(CiExpr[] exprs)
 	{
 		for (int i = 0; i < exprs.Length; i++) {
 			if (i > 0)
 				Write(", ");
-			exprs[i].Accept(this, CiPriority.Statement);
+			WritePromoted(exprs[i], CiPriority.Statement);
 		}
 	}
 
@@ -229,7 +229,7 @@ public abstract class GenBase : CiVisitor
 			}
 			else if (def.Value != null) {
 				Write(" = ");
-				def.Value.Accept(this, CiPriority.Statement);
+				WritePromoted(def.Value, CiPriority.Statement);
 			}
 		}
 	}
@@ -303,7 +303,7 @@ public abstract class GenBase : CiVisitor
 		Write("new ");
 		Write(type, false);
 		Write('[');
-		lengthExpr.Accept(this, CiPriority.Statement);
+		WritePromoted(lengthExpr, CiPriority.Statement);
 		Write(']');
 	}
 
@@ -324,10 +324,12 @@ public abstract class GenBase : CiVisitor
 			// FIXME: - --foo[bar]
 			if (inner != null && (inner.Op == CiToken.Minus || inner.Op == CiToken.Decrement))
 				Write(' ');
-			break;
+			WritePromoted(expr.Inner, CiPriority.Primary);
+			return expr;
 		case CiToken.Tilde:
 			Write('~');
-			break;
+			WritePromoted(expr.Inner, CiPriority.Primary);
+			return expr;
 		case CiToken.ExclamationMark:
 			Write('!');
 			break;
@@ -368,9 +370,9 @@ public abstract class GenBase : CiVisitor
 	{
 		if (parent > left)
 			Write('(');
-		expr.Left.Accept(this, left);
+		WritePromoted(expr.Left, left);
 		Write(op);
-		expr.Right.Accept(this, right);
+		WritePromoted(expr.Right, right);
 		if (parent > left)
 			Write(')');
 		return expr;
@@ -379,6 +381,11 @@ public abstract class GenBase : CiVisitor
 	CiExpr Write(CiBinaryExpr expr, CiPriority parent, CiPriority child, string op)
 	{
 		return Write(expr, parent, child, op, child);
+	}
+
+	protected virtual void WritePromoted(CiExpr expr, CiPriority parent)
+	{
+		expr.Accept(this, parent);
 	}
 
 	protected virtual void WriteCoerced(CiType type, CiExpr expr)
@@ -401,7 +408,7 @@ public abstract class GenBase : CiVisitor
 		Write('.');
 		Write(method);
 		Write('(');
-		Write(args);
+		WritePromoted(args);
 		Write(')');
 	}
 
@@ -409,7 +416,7 @@ public abstract class GenBase : CiVisitor
 	{
 		expr.Left.Accept(this, CiPriority.Primary);
 		Write('[');
-		expr.Right.Accept(this, CiPriority.Statement);
+		WritePromoted(expr.Right, CiPriority.Statement);
 		Write(']');
 	}
 
@@ -468,7 +475,7 @@ public abstract class GenBase : CiVisitor
 			Write(expr.OpString);
 			Write(' ');
 			if (expr.Left.IntPromotion)
-				expr.Right.Accept(this, CiPriority.Statement);
+				WritePromoted(expr.Right, CiPriority.Statement);
 			else
 				WriteCoerced(expr.Left.Type, expr.Right);
 			return expr;
@@ -495,19 +502,15 @@ public abstract class GenBase : CiVisitor
 			}
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write('(');
-			Write(expr.RightCollection);
+			WritePromoted(expr.RightCollection);
 			Write(')');
 			return expr;
 
 		case CiToken.LeftBracket:
 			if (expr.Left.Type is CiStringType)
 				WriteCharAt(expr);
-			else {
-				expr.Left.Accept(this, CiPriority.Primary);
-				Write('[');
-				expr.Right.Accept(this, CiPriority.Statement);
-				Write(']');
-			}
+			else
+				WriteIndexing(expr);
 			return expr;
 
 		default:
@@ -631,7 +634,7 @@ public abstract class GenBase : CiVisitor
 			WriteLine("return;");
 		else {
 			Write("return ");
-			statement.Value.Accept(this, CiPriority.Statement);
+			WritePromoted(statement.Value, CiPriority.Statement);
 			WriteLine(";");
 		}
 	}
