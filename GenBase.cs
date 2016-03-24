@@ -439,7 +439,10 @@ public abstract class GenBase : CiVisitor
 			Write(' ');
 			Write(expr.OpString);
 			Write(' ');
-			WriteCoerced(expr.Left.Type, expr.Right);
+			if (expr.Left.IntPromotion)
+				expr.Right.Accept(this, CiPriority.Statement);
+			else
+				WriteCoerced(expr.Left.Type, expr.Right);
 			return expr;
 		case CiToken.Dot:
 			if (((CiSymbolReference) expr.Right).Symbol == CiSystem.StringLength) {
@@ -600,20 +603,24 @@ public abstract class GenBase : CiVisitor
 			WriteLine("return;");
 		else {
 			Write("return ");
-			WriteCoerced(statement.Value.Type, statement.Value);
+			statement.Value.Accept(this, CiPriority.Statement);
 			WriteLine(";");
 		}
 	}
 
 	public override void Visit(CiSwitch statement)
 	{
+		CiType coerceTo = statement.Value.IntPromotion ? null : statement.Value.Type;
 		Write("switch (");
 		statement.Value.Accept(this, CiPriority.Statement);
 		WriteLine(") {");
 		foreach (CiCase kase in statement.Cases) {
 			foreach (CiExpr value in kase.Values) {
 				Write("case ");
-				value.Accept(this, CiPriority.Statement);
+				if (coerceTo != null)
+					WriteCoerced(coerceTo, value);
+				else
+					value.Accept(this, CiPriority.Statement);
 				WriteLine(":");
 			}
 			this.Indent++;

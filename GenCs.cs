@@ -173,7 +173,7 @@ public class GenCs : GenBase
 			}
 			else if (def.Value != null) {
 				Write(" = ");
-				WriteCoerced(def.Type, def.Value);
+				def.Value.Accept(this, CiPriority.Statement);
 			}
 		}
 	}

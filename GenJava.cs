@@ -90,7 +90,9 @@ public class GenJava : GenBase
 			return TypeCode.Int32;
 		if (range.Max > byte.MaxValue)
 			return TypeCode.Int16;
-		return TypeCode.Byte;
+		if (range.Min == range.Max && range.Max > sbyte.MaxValue) // CiLiteral
+			return TypeCode.Byte;
+		return TypeCode.SByte; // store unsigned bytes in Java signed bytes
 	}
 
 	void Write(TypeCode typeCode)
@@ -189,7 +191,7 @@ public class GenJava : GenBase
 			}
 			else if (def.Value != null) {
 				Write(" = ");
-				WriteCoerced(def.Type, def.Value);
+				def.Value.Accept(this, CiPriority.Statement);
 			}
 		}
 	}
@@ -212,6 +214,7 @@ public class GenJava : GenBase
 		switch (left) {
 		case TypeCode.SByte:
 			switch (right) {
+			case TypeCode.Byte:
 			case TypeCode.Int16:
 			case TypeCode.Int32:
 			case TypeCode.Int64:

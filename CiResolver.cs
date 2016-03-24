@@ -883,7 +883,7 @@ public class CiResolver : CiVisitor
 	public override void Visit(CiSwitch statement)
 	{
 		// TODO
-		statement.Value.Accept(this, CiPriority.Statement);
+		statement.Value = statement.Value.Accept(this, CiPriority.Statement);
 		foreach (CiCase kase in statement.Cases) {
 			for (int i = 0; i < kase.Values.Length; i++)
 				kase.Values[i] = kase.Values[i].Accept(this, CiPriority.Statement);
