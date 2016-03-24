@@ -51,7 +51,7 @@ public abstract class GenTyped : GenBase
 		return TypeCode.Object;
 	}
 
-	protected static bool IsNarrower(TypeCode left, TypeCode right)
+	static bool IsNarrower(TypeCode left, TypeCode right)
 	{
 		switch (left) {
 		case TypeCode.SByte:
