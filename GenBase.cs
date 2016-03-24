@@ -307,7 +307,7 @@ public abstract class GenBase : CiVisitor
 		Write(']');
 	}
 
-	protected abstract void WriteResource(bool reference, string name);
+	protected abstract void WriteResource(string name, int length);
 
 	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
 	{
@@ -341,7 +341,7 @@ public abstract class GenBase : CiVisitor
 				WriteNewArray(((CiArrayPtrType) expr.Type).ElementType, expr.Inner);
 			return expr;
 		case CiToken.Resource:
-			WriteResource(true, (string) ((CiLiteral) expr.Inner).Value);
+			WriteResource((string) ((CiLiteral) expr.Inner).Value, ((CiArrayStorageType) expr.Type).Length);
 			return expr;
 		default:
 			throw new ArgumentException(expr.Op.ToString());

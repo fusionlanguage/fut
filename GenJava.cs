@@ -132,10 +132,12 @@ public class GenJava : GenTyped
 			Write(symbol.Name);
 	}
 
-	protected override void WriteResource(bool reference, string name)
+	protected override void WriteResource(string name, int length)
 	{
-		Write("getByteArrayResource(");
+		Write("CiResource.getByteArray(");
 		WriteLiteral(name);
+		Write(", ");
+		Write(length);
 		Write(')');
 	}
 
@@ -204,15 +206,20 @@ public class GenJava : GenTyped
 		WriteLine(");");
 	}
 
-	void CreateJavaFile(CiContainerType type)
+	void CreateJavaFile(string className)
 	{
-		CreateFile(Path.Combine(this.OutputDirectory, type.Name + ".java"));
+		CreateFile(Path.Combine(this.OutputDirectory, className + ".java"));
 		if (this.Namespace != null) {
 			Write("package ");
 			Write(this.Namespace);
 			WriteLine(";");
 		}
 		WriteLine();
+	}
+
+	void CreateJavaFile(CiContainerType type)
+	{
+		CreateJavaFile(type.Name);
 		WritePublic(type);
 	}
 
@@ -341,6 +348,37 @@ public class GenJava : GenTyped
 		CloseJavaFile();
 	}
 
+	void WriteResources()
+	{
+		CreateJavaFile("CiResource");
+		Write("class CiResource");
+		WriteLine();
+		OpenBlock();
+		WriteLine("static byte[] getByteArray(String name, int length)");
+		OpenBlock();
+		Write("java.io.DataInputStream dis = new java.io.DataInputStream(");
+		WriteLine("CiResource.class.getResourceAsStream(name));");
+		WriteLine("byte[] result = new byte[length];");
+		Write("try ");
+		OpenBlock();
+		Write("try ");
+		OpenBlock();
+		WriteLine("dis.readFully(result);");
+		CloseBlock();
+		Write("finally ");
+		OpenBlock();
+		WriteLine("dis.close();");
+		CloseBlock();
+		CloseBlock();
+		Write("catch (java.io.IOException e) ");
+		OpenBlock();
+		WriteLine("throw new RuntimeException();");
+		CloseBlock();
+		WriteLine("return result;");
+		CloseBlock();
+		CloseJavaFile();
+	}
+
 	public override void Write(CiProgram program)
 	{
 		if (Directory.Exists(this.OutputFile))
@@ -354,6 +392,8 @@ public class GenJava : GenTyped
 			else
 				Write((CiEnum) type);
 		}
+		if (program.Resources.Count > 0)
+			WriteResources();
 	}
 }
 
