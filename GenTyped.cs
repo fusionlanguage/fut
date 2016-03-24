@@ -125,6 +125,14 @@ public abstract class GenTyped : GenBase
 		if (!(expr is CiLiteral) || !WriteCoerced(type, expr, TypeCode.Int32))
 			base.WriteCoercedLiteral(type, expr, parent);
 	}
+
+	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	{
+		if (expr.Symbol is CiField)
+			Write("this.");
+		WriteName(expr.Symbol);
+		return expr;
+	}
 }
 
 }

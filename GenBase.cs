@@ -274,6 +274,11 @@ public abstract class GenBase : CiVisitor
 		return expr;
 	}
 
+	protected virtual void Write(CiSymbolReference expr)
+	{
+		WriteName(expr.Symbol);
+	}
+
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
 		WriteName(expr.Symbol);
@@ -467,12 +472,17 @@ public abstract class GenBase : CiVisitor
 			else
 				WriteCoerced(expr.Left.Type, expr.Right);
 			return expr;
+
 		case CiToken.Dot:
-			if (((CiSymbolReference) expr.Right).Symbol == CiSystem.StringLength) {
+			CiSymbolReference rightSymbol = (CiSymbolReference) expr.Right;
+			if (rightSymbol.Symbol == CiSystem.StringLength) {
 				WriteStringLength(expr.Left);
 				return expr;
 			}
-			return Write(expr, parent, CiPriority.Primary, ".");
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write('.');
+			Write(rightSymbol);
+			return expr;
 
 		case CiToken.LeftParenthesis:
 			CiBinaryExpr leftBinary = expr.Left as CiBinaryExpr;
