@@ -141,6 +141,21 @@ public class GenJava : GenTyped
 		Write(')');
 	}
 
+	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+	{
+		if ((expr.Left.Type is CiStringType && expr.Right.Type != CiSystem.NullType)
+		 || (expr.Right.Type is CiStringType && expr.Left.Type != CiSystem.NullType)) {
+			 if (not)
+				 Write('!');
+			 expr.Left.Accept(this, CiPriority.Primary);
+			 Write(".equals(");
+			 expr.Right.Accept(this, CiPriority.Statement);
+			 Write(')');
+		}
+		else
+			base.WriteEqual(expr, parent, not);
+	}
+
 	protected override void WritePromoted(CiExpr expr, CiPriority parent)
 	{
 		CiBinaryExpr binary = expr as CiBinaryExpr;
