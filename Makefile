@@ -10,7 +10,7 @@ MAKEFLAGS = -r
 
 all: cito.exe
 
-cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiParser.cs CiResolver.cs GenBase.cs GenCs.cs GenJava.cs GenTyped.cs CiTo.cs)
+cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCs.cs GenJava.cs GenAs.cs CiTo.cs)
 	$(CSC) -nologo -debug -out:$@ -o+ $^
 
 test: cito.exe
