@@ -112,6 +112,9 @@ public class GenJava : GenTyped
 			return;
 		}
 
+		if (promote && (type is CiClass || type is CiArrayStorageType))
+			Write("final ");
+
 		CiArrayType array = type as CiArrayType;
 		if (array != null) {
 			Write(array.ElementType, false);
@@ -269,7 +272,9 @@ public class GenJava : GenTyped
 	{
 		foreach (CiConst konst in konsts) {
 			Write(konst.Visibility);
-			Write("static final ");
+			Write("static ");
+			if (!(konst.Type is CiArrayStorageType))
+				Write("final ");
 			WriteTypeAndName(konst);
 			Write(" = ");
 			konst.Value.Accept(this, CiPriority.Statement);
@@ -314,8 +319,6 @@ public class GenJava : GenTyped
 
 		foreach (CiField field in klass.Fields) {
 			Write(field.Visibility);
-			if (field.Type is CiClass || field.Type is CiArrayStorageType)
-				Write("final ");
 			WriteVar(field);
 			WriteLine(";");
 		}
