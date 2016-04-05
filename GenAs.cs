@@ -27,6 +27,8 @@ namespace Foxoft.Ci
 
 enum GenAsMethod
 {
+	CopyArray,
+	CopyByteArray,
 	FillArray,
 	FillByteArray,
 	Count
@@ -161,12 +163,30 @@ public class GenAs : GenBase
 	protected override void WriteCall(CiExpr obj, string method, CiExpr[] args)
 	{
 		if (obj.Type is CiArrayType && method == "CopyTo") {
-			// TODO
-			// Write("System.arraycopy(");
-			// obj.Accept(this, CiPriority.Statement);
-			// Write(", ");
-			// WritePromoted(args);
-			// Write(')');
+			if (IsByteArray(obj.Type)) {
+				if (this.Library[(int) GenAsMethod.CopyByteArray] == null) {
+					this.Library[(int) GenAsMethod.CopyByteArray] = new string[] {
+						"copyByteArray(sa : ByteArray, soffset : int, da : ByteArray, doffset : int, length : int) : void",
+						"for (var i : int = 0; i < length; i++)",
+						"\tda[doffset + i] = sa[soffset + i];"
+					};
+				}
+				Write("Ci.copyByteArray(");
+			}
+			else {
+				if (this.Library[(int) GenAsMethod.CopyArray] == null) {
+					this.Library[(int) GenAsMethod.CopyArray] = new string[] {
+						"copyArray(sa : Array, soffset : int, da : Array, doffset : int, length : int) : void",
+						"for (var i : int = 0; i < length; i++)",
+						"\tda[doffset + i] = sa[soffset + i];"
+					};
+				}
+				Write("Ci.copyArray(");
+			}
+			obj.Accept(this, CiPriority.Statement);
+			Write(", ");
+			WritePromoted(args);
+			Write(')');
 		}
 		else if (obj.Type is CiArrayStorageType && method == "Fill") {
 			if (IsByteArray(obj.Type)) {
@@ -373,6 +393,8 @@ public class GenAs : GenBase
 	void WriteLib(Dictionary<string, byte[]> resources)
 	{
 		CreateAsFile("Ci");
+		WriteLine("import flash.utils.ByteArray;");
+		WriteLine();
 		WriteLine("internal final class Ci");
 		OpenBlock();
 		foreach (string[] method in this.Library) {
