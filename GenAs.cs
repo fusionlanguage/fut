@@ -1,6 +1,6 @@
 // GenAs.cs - ActionScript code generator
 //
-// Copyright (C) 2011-2014  Piotr Fusik
+// Copyright (C) 2011-2016  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -25,10 +25,18 @@ using System.Linq;
 namespace Foxoft.Ci
 {
 
+enum GenAsMethod
+{
+	FillArray,
+	FillByteArray,
+	Count
+}
+
 public class GenAs : GenBase
 {
 	string Namespace;
 	string OutputDirectory;
+	readonly string[][] Library = new string[(int) GenAsMethod.Count][];
 
 	public GenAs(string namespace_)
 	{
@@ -131,7 +139,7 @@ public class GenAs : GenBase
 	protected override void WriteResource(string name, int length)
 	{
 		if (length >= 0) // reference as opposed to definition
-			Write("new CiResource.");
+			Write("new Ci.");
 		foreach (char c in name)
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
@@ -161,12 +169,32 @@ public class GenAs : GenBase
 			// Write(')');
 		}
 		else if (obj.Type is CiArrayStorageType && method == "Fill") {
-			// TODO
-			// Write("java.util.Arrays.fill(");
-			// obj.Accept(this, CiPriority.Statement);
-			// Write(", ");
-			// WriteCoercedLiteral(args[0].Type, args[0], CiPriority.Statement);
-			// Write(')');
+			if (IsByteArray(obj.Type)) {
+				if (this.Library[(int) GenAsMethod.FillByteArray] == null) {
+					this.Library[(int) GenAsMethod.FillByteArray] = new string[] {
+						"fillByteArray(a : ByteArray, length : int, value : int) : void",
+						"for (var i : int = 0; i < length; i++)",
+						"\ta[i] = value;"
+					};
+				}
+				Write("Ci.fillByteArray(");
+			}
+			else {
+				if (this.Library[(int) GenAsMethod.FillArray] == null) {
+					this.Library[(int) GenAsMethod.FillArray] = new string[] {
+						"fillArray(a : Array, length : int, value : *) : void",
+						"for (var i : int = 0; i < length; i++)",
+						"\ta[i] = value;"
+					};
+				}
+				Write("Ci.fillArray(");
+			}
+			obj.Accept(this, CiPriority.Statement);
+			Write(", ");
+			((CiArrayStorageType) obj.Type).LengthExpr.Accept(this, CiPriority.Statement);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
 		}
 		else {
 			obj.Accept(this, CiPriority.Primary);
@@ -342,12 +370,24 @@ public class GenAs : GenBase
 		CloseAsFile();
 	}
 
-	void WriteResources(Dictionary<string, byte[]> resources)
+	void WriteLib(Dictionary<string, byte[]> resources)
 	{
-		CreateAsFile("CiResource");
-		WriteLine("internal final class CiResource");
+		CreateAsFile("Ci");
+		WriteLine("internal final class Ci");
 		OpenBlock();
+		foreach (string[] method in this.Library) {
+			if (method != null) {
+				WriteLine();
+				Write("internal static function ");
+				WriteLine(method[0]);
+				OpenBlock();
+				for (int i = 1; i < method.Length; i++)
+					WriteLine(method[i]);
+				CloseBlock();
+			}
+		}
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
+			WriteLine();
 			Write("[Embed(source=\"/");
 			Write(name);
 			WriteLine("\", mimeType=\"application/octet-stream\")]");
@@ -360,6 +400,7 @@ public class GenAs : GenBase
 
 	public override void Write(CiProgram program)
 	{
+		Array.Clear(this.Library, 0, this.Library.Length);
 		if (Directory.Exists(this.OutputFile))
 			this.OutputDirectory = this.OutputFile;
 		else
@@ -371,8 +412,8 @@ public class GenAs : GenBase
 			else
 				Write((CiEnum) type);
 		}
-		if (program.Resources.Count > 0)
-			WriteResources(program.Resources);
+		if (program.Resources.Count > 0 || this.Library.Any(l => l != null))
+			WriteLib(program.Resources);
 	}
 }
 
