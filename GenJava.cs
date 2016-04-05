@@ -273,7 +273,7 @@ public class GenJava : GenTyped
 		foreach (CiConst konst in konsts) {
 			Write(konst.Visibility);
 			Write("static ");
-			if (!(konst.Type is CiArrayStorageType))
+			if (!(konst.Type is CiArrayStorageType)) // for array storage WriteTypeAndName will write "final"
 				Write("final ");
 			WriteTypeAndName(konst);
 			Write(" = ");
