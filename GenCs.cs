@@ -173,8 +173,11 @@ public class GenCs : GenTyped
 			Write(((CiArrayStorageType) obj.Type).Length);
 			Write(')');
 		}
-		else
+		else {
+			if (IsMathReference(obj))
+				Write("System.");
 			base.WriteCall(obj, method, args);
+		}
 	}
 
 	public override void Visit(CiThrow statement)

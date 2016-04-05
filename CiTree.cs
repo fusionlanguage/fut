@@ -188,6 +188,12 @@ public class CiScope : CiSymbol, IEnumerable
 		}
 		this.Dict.Add(name, symbol);
 	}
+
+	public void AddRange(IEnumerable<CiSymbol> symbols)
+	{
+		foreach (CiSymbol symbol in symbols)
+			Add(symbol);
+	}
 }
 
 public abstract class CiNamedValue : CiSymbol
@@ -203,6 +209,14 @@ public class CiMember : CiNamedValue
 
 public class CiVar : CiNamedValue
 {
+	public CiVar()
+	{
+	}
+	public CiVar(CiType type, string name)
+	{
+		this.Type = type;
+		this.Name = name;
+	}
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
 }
 
@@ -533,6 +547,16 @@ public class CiMethod : CiMethodBase
 	public bool IsMutator;
 	public readonly CiScope Parameters = new CiScope();
 	public bool Throws;
+	public CiMethod()
+	{
+	}
+	public CiMethod(CiCallType callType, CiType type, string name, params CiVar[] parameters)
+	{
+		this.CallType = callType;
+		this.Type = type;
+		this.Name = name;
+		this.Parameters.AddRange(parameters);
+	}
 }
 
 public class CiType : CiScope
@@ -571,6 +595,16 @@ public class CiClass : CiContainerType
 	public CiVisitStatus VisitStatus;
 	public override bool IsAssignableFrom(CiType right) { return false; }
 	public override CiType PtrOrSelf { get { return new CiClassPtrType { Class = this, Mutable = true }; } }
+	public CiClass()
+	{
+	}
+	public CiClass(CiCallType callType, string name, params CiMethod[] methods)
+	{
+		this.CallType = callType;
+		this.Name = name;
+		this.Methods = methods;
+		AddRange(methods);
+	}
 }
 
 public class CiNumericType : CiType
@@ -702,6 +736,22 @@ public class CiStringType : CiType
 	}
 }
 
+public class CiFloatType : CiNumericType
+{
+	public override bool IsAssignableFrom(CiType right)
+	{
+		return this == right || right is CiIntegerType;
+	}
+}
+
+public class CiDoubleType : CiNumericType
+{
+	public override bool IsAssignableFrom(CiType right)
+	{
+		return right is CiNumericType;
+	}
+}
+
 public class CiStringStorageType : CiStringType
 {
 	public override CiType PtrOrSelf { get { return CiSystem.StringPtrType; } }
@@ -741,12 +791,11 @@ public abstract class CiArrayType : CiType
 	public override CiSymbol TryLookup(string name)
 	{
 		if (name == "CopyTo") {
-			CiMethod method = new CiMethod { Name = "CopyTo" };
-			method.Parameters.Add(new CiVar { Type = CiSystem.IntType, Name = "sourceIndex" });
-			method.Parameters.Add(new CiVar { Type = this.PtrOrSelf , Name = "destinationArray" });
-			method.Parameters.Add(new CiVar { Type = CiSystem.IntType, Name = "destinationIndex" });
-			method.Parameters.Add(new CiVar { Type = CiSystem.IntType, Name = "length" });
-			return method;
+			return new CiMethod(CiCallType.Normal, null, "CopyTo" ,
+				new CiVar(CiSystem.IntType, "sourceIndex"),
+				new CiVar(this.PtrOrSelf , "destinationArray"),
+				new CiVar(CiSystem.IntType, "destinationIndex"),
+				new CiVar(CiSystem.IntType, "length"));
 		}
 		return null;
 	}
@@ -777,9 +826,7 @@ public class CiArrayStorageType : CiArrayType
 	{
 		switch (name) {
 		case "Fill":
-			CiMethod method = new CiMethod { Name = "Fill" };
-			method.Parameters.Add(new CiVar { Type = this.ElementType, Name = "value" });
-			return method;
+			return new CiMethod(CiCallType.Normal, null, "Fill", new CiVar(this.ElementType, "value"));
 		case "Length":
 			return CiSystem.ArrayLength;
 		default:
@@ -798,14 +845,28 @@ public class CiSystem : CiScope
 	public static readonly CiRangeType ByteType = new CiRangeType(0, 0xff) { Name = "byte" };
 	public static readonly CiRangeType ShortType = new CiRangeType(-0x8000, 0x7fff) { Name = "short" };
 	public static readonly CiRangeType UShortType = new CiRangeType(0, 0xffff) { Name = "ushort" };
-	public static readonly CiNumericType FloatType = new CiNumericType { Name = "float" };
-	public static readonly CiNumericType DoubleType = new CiNumericType { Name = "double" };
+	public static readonly CiNumericType FloatType = new CiFloatType { Name = "float" };
+	public static readonly CiNumericType DoubleType = new CiDoubleType { Name = "double" };
 	public static readonly CiRangeType CharType = new CiRangeType(-0x80, 0xffff);
 	public static readonly CiEnum BoolType = new CiEnum { Name = "bool" };
 	public static readonly CiStringType StringPtrType = new CiStringType { Name = "string" };
 	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType();
 	public static readonly CiMember StringLength = new CiMember { Name = "Length", Type = UIntType };
 	public static readonly CiMember ArrayLength = new CiMember { Name = "Length", Type = UIntType };
+	public static readonly CiClass MathClass = new CiClass(CiCallType.Static, "Math",
+		new CiMethod(CiCallType.Static, DoubleType, "Acos", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, DoubleType, "Asin", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, DoubleType, "Atan", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, DoubleType, "Atan2", new CiVar(DoubleType, "y"), new CiVar(DoubleType, "x")),
+		new CiMethod(CiCallType.Static, DoubleType, "Ceiling", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, DoubleType, "Cos", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, DoubleType, "Exp", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, DoubleType, "Floor", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, DoubleType, "Log", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, DoubleType, "Pow", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y")),
+		new CiMethod(CiCallType.Static, DoubleType, "Sin", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, DoubleType, "Sqrt", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, DoubleType, "Tan", new CiVar(DoubleType, "a")));
 
 	CiSystem()
 	{
@@ -819,6 +880,7 @@ public class CiSystem : CiScope
 		Add(DoubleType);
 		Add(BoolType);
 		Add(StringPtrType);
+		Add(MathClass);
 	}
 
 	public static readonly CiSystem Value = new CiSystem();

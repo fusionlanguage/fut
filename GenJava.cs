@@ -210,7 +210,10 @@ public class GenJava : GenTyped
 		else {
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
-			WriteCamelCase(method);
+			if (IsMathReference(obj) && method == "Ceiling")
+				Write("ceil");
+			else
+				WriteCamelCase(method);
 			Write('(');
 			WritePromoted(args);
 			Write(')');

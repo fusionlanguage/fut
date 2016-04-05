@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		double a = 1.75;
+		return Math.Floor(a) == 1;
+	}
+}

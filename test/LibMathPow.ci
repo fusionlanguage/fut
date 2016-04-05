@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		double x = 2;
+		double y = 3;
+		return Math.Pow(x, y) == 8;
+	}
+}

@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		double a = 1;
+		return Math.Acos(a) == 0;
+	}
+}

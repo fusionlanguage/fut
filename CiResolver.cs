@@ -64,12 +64,9 @@ public class CiResolver : CiVisitor
 		this.Program.Classes.Add(klass);
 		klass.VisitStatus = CiVisitStatus.Done;
 
-		foreach (CiConst konst in klass.Consts)
-			klass.Add(konst);
-		foreach (CiField field in klass.Fields)
-			klass.Add(field);
-		foreach (CiMethod method in klass.Methods)
-			klass.Add(method);
+		klass.AddRange(klass.Consts);
+		klass.AddRange(klass.Fields);
+		klass.AddRange(klass.Methods);
 	}
 
 	void Coerce(CiExpr expr, CiType type)
