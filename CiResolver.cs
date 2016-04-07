@@ -832,12 +832,6 @@ public class CiResolver : CiVisitor
 		// TODO
 	}
 
-	public override void Visit(CiDelete statement)
-	{
-		statement.Expr.Accept(this, CiPriority.Statement);
-		// TODO
-	}
-
 	void ResolveLoop(CiLoop statement)
 	{
 		if (statement.Cond != null)

@@ -83,7 +83,6 @@ public enum CiToken
 	Const,
 	Continue,
 	Default,
-	Delete,
 	Do,
 	Else,
 	Enum,
@@ -495,7 +494,6 @@ public class CiLexer
 				case "const": return CiToken.Const;
 				case "continue": return CiToken.Continue;
 				case "default": return CiToken.Default;
-				case "delete": return CiToken.Delete;
 				case "do": return CiToken.Do;
 				case "else": return CiToken.Else;
 				case "enum": return CiToken.Enum;

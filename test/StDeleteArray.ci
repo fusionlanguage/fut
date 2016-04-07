@@ -1,9 +1,0 @@
-public static class Test
-{
-	public static bool Run()
-	{
-		int[] a = new int[5];
-		delete a;
-		return true;
-	}
-}

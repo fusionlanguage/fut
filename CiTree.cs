@@ -77,7 +77,6 @@ public abstract class CiVisitor
 	public abstract void Visit(CiBlock statement);
 	public abstract void Visit(CiBreak statement);
 	public abstract void Visit(CiContinue statement);
-	public abstract void Visit(CiDelete statement);
 	public abstract void Visit(CiDoWhile statement);
 	public abstract void Visit(CiFor statement);
 	public abstract void Visit(CiIf statement);
@@ -467,12 +466,6 @@ public class CiBreak : CiStatement
 
 public class CiContinue : CiStatement
 {
-	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
-}
-
-public class CiDelete : CiStatement
-{
-	public CiExpr Expr;
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }
 

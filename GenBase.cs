@@ -591,11 +591,6 @@ public abstract class GenBase : CiVisitor
 		WriteLine("continue;");
 	}
 
-	public override void Visit(CiDelete stmt)
-	{
-		// do nothing - assume automatic garbage collector
-	}
-
 	public override void Visit(CiDoWhile statement)
 	{
 		Write("do");

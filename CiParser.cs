@@ -327,15 +327,6 @@ public class CiParser : CiLexer
 		return result;
 	}
 
-	CiDelete ParseDelete()
-	{
-		CiDelete result = new CiDelete();
-		Expect(CiToken.Delete);
-		result.Expr = ParseExpr();
-		Expect(CiToken.Semicolon);
-		return result;
-	}
-
 	CiDoWhile ParseDoWhile()
 	{
 		CiDoWhile result = new CiDoWhile();
@@ -484,8 +475,6 @@ public class CiParser : CiLexer
 			return ParseConst();
 		case CiToken.Continue:
 			return ParseContinue();
-		case CiToken.Delete:
-			return ParseDelete();
 		case CiToken.Do:
 			return ParseDoWhile();
 		case CiToken.For:
