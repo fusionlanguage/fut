@@ -507,18 +507,6 @@ public class CiParser : CiLexer
 		}
 	}
 
-	void ParseDestructor(CiClass klass)
-	{
-		if (klass.Destructor != null)
-			throw ParseException("Duplicate destructor, already defined in line {0}", klass.Destructor.Line);
-		Expect(CiToken.Tilde);
-		if (ParseId() != klass.Name)
-			throw ParseException("Destructor name doesn't match class name");
-		Expect(CiToken.LeftParenthesis);
-		Expect(CiToken.RightParenthesis);
-		klass.Destructor = ParseBlock();
-	}
-
 	CiCallType ParseCallType()
 	{
 		switch (this.CurrentToken) {
@@ -588,11 +576,6 @@ public class CiParser : CiLexer
 				visibility = CiVisibility.Public;
 				NextToken();
 				break;
-
-			case CiToken.Tilde:
-				// destructor
-				ParseDestructor(klass);
-				continue;
 
 			default:
 				visibility = CiVisibility.Private;

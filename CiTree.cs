@@ -587,7 +587,6 @@ public class CiClass : CiContainerType
 	public CiCallType CallType;
 	public string BaseClassName;
 	public CiMethodBase Constructor;
-	public CiBlock Destructor;
 	public CiConst[] Consts;
 	public CiField[] Fields;
 	public CiMethod[] Methods;
