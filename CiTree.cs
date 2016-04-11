@@ -586,7 +586,7 @@ public class CiClass : CiContainerType
 	public readonly List<CiConst> ConstArrays = new List<CiConst>();
 	public CiVisitStatus VisitStatus;
 	public override bool IsAssignableFrom(CiType right) { return false; }
-	public override CiType PtrOrSelf { get { return new CiClassPtrType { Class = this, Mutable = true }; } }
+	public override CiType PtrOrSelf { get { return new CiClassPtrType { Class = this, Modifier = CiToken.ExclamationMark }; } }
 	public CiClass()
 	{
 	}
@@ -752,7 +752,7 @@ public class CiStringStorageType : CiStringType
 public class CiClassPtrType : CiType
 {
 	public CiClass Class;
-	public bool Mutable;
+	public CiToken Modifier;
 	public override CiSymbol TryLookup(string name)
 	{
 		return this.Class.TryLookup(name);
@@ -773,6 +773,7 @@ public class CiClassPtrType : CiType
 			if (klass == null)
 				return false;
 		}
+		// TODO: modifiers
 		return true;
 	}
 }
@@ -795,7 +796,7 @@ public abstract class CiArrayType : CiType
 
 public class CiArrayPtrType : CiArrayType
 {
-	public bool Mutable;
+	public CiToken Modifier;
 	public override bool IsAssignableFrom(CiType right)
 	{
 		if (right == CiSystem.NullType)
@@ -803,10 +804,19 @@ public class CiArrayPtrType : CiArrayType
 		CiArrayType array = right as CiArrayType;
 		if (array == null || !array.ElementType.Equals(this.ElementType))
 			return false;
-		if (!this.Mutable)
+		CiArrayPtrType ptr;
+		switch (this.Modifier) {
+		case CiToken.EndOfFile:
 			return true;
-		CiArrayPtrType ptr = array as CiArrayPtrType;
-		return ptr == null || ptr.Mutable;
+		case CiToken.ExclamationMark:
+			ptr = array as CiArrayPtrType;
+			return ptr == null || ptr.Modifier != CiToken.EndOfFile;
+		case CiToken.Hash:
+			ptr = array as CiArrayPtrType;
+			return ptr != null && ptr.Modifier == CiToken.Hash;
+		default:
+			throw new NotImplementedException(this.Modifier.ToString());
+		}
 	}
 }
 
@@ -825,7 +835,8 @@ public class CiArrayStorageType : CiArrayType
 			return base.TryLookup(name);
 		}
 	}
-	public override CiType PtrOrSelf { get { return new CiArrayPtrType { ElementType = this.ElementType, Mutable = true }; } }
+	public override bool IsAssignableFrom(CiType right) { return false; }
+	public override CiType PtrOrSelf { get { return new CiArrayPtrType { ElementType = this.ElementType, Modifier = CiToken.ExclamationMark }; } }
 }
 
 public class CiSystem : CiScope

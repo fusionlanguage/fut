@@ -397,11 +397,13 @@ public class CiResolver : CiVisitor
 			if (array != null) {
 				CiExpr length = array.LengthExpr.Accept(this, parent);
 				Coerce(length, CiSystem.IntType);
-				return new CiPrefixExpr { Line = expr.Line, Op = CiToken.New, Inner = length, Type = array.PtrOrSelf };
+				return new CiPrefixExpr { Line = expr.Line, Op = CiToken.New, Inner = length,
+					Type = new CiArrayPtrType { ElementType = array.ElementType, Modifier = CiToken.Hash } };
 			}
 			CiClass klass = type as CiClass;
 			if (klass != null)
-				return new CiPrefixExpr { Line = expr.Line, Op = CiToken.New, Type = klass.PtrOrSelf };
+				return new CiPrefixExpr { Line = expr.Line, Op = CiToken.New,
+					Type = new CiClassPtrType { Class = klass, Modifier = CiToken.Hash } };
 			throw StatementException(expr, "Invalid argument to new");
 		case CiToken.Resource:
 			inner = expr.Inner.Accept(this, parent);
@@ -443,6 +445,8 @@ public class CiResolver : CiVisitor
 			return expr;
 		case CiToken.ExclamationMark:
 			throw StatementException(expr, "Unexpected '!'");
+		case CiToken.Hash:
+			throw StatementException(expr, "Unexpected '#'");
 		default:
 			throw new NotImplementedException(expr.Op.ToString());
 		}
@@ -895,13 +899,26 @@ public class CiResolver : CiVisitor
 		ResolveLoop(statement);
 	}
 
-	static bool IsMutableType(ref CiExpr expr)
+	static CiToken GetPtrModifier(ref CiExpr expr)
 	{
 		CiPostfixExpr postfix = expr as CiPostfixExpr;
-		if (postfix == null || postfix.Op != CiToken.ExclamationMark)
-			return false;
-		expr = postfix.Inner;
-		return true;
+		if (postfix != null) {
+			switch (postfix.Op) {
+			case CiToken.ExclamationMark:
+			case CiToken.Hash:
+				expr = postfix.Inner;
+				return postfix.Op;
+			default:
+				break;
+			}
+		}
+		return CiToken.EndOfFile; // no modifier
+	}
+
+	void ExpectNoPtrModifier(CiExpr expr, CiToken ptrModifier)
+	{
+		if (ptrModifier != CiToken.EndOfFile)
+			throw StatementException(expr, "Unexpected " + ptrModifier + " on a non-reference type");
 	}
 
 	long FoldConstLong(CiExpr expr)
@@ -934,7 +951,7 @@ public class CiResolver : CiVisitor
 		return new CiRangeType(min, max);
 	}
 
-	CiType ToBaseType(CiExpr expr, bool mutable)
+	CiType ToBaseType(CiExpr expr, CiToken ptrModifier)
 	{
 		CiSymbolReference symbol = expr as CiSymbolReference;
 		if (symbol != null) {
@@ -944,16 +961,14 @@ public class CiResolver : CiVisitor
 				throw StatementException(expr, "Type {0} not found", symbol.Name);
 			CiClass klass = type as CiClass;
 			if (klass != null)
-				return new CiClassPtrType { Name = klass.Name, Class = klass, Mutable = mutable };
-			if (mutable)
-				throw StatementException(expr, "Unexpected exclamation mark on non-reference type");
+				return new CiClassPtrType { Name = klass.Name, Class = klass, Modifier = ptrModifier };
+			ExpectNoPtrModifier(expr, ptrModifier);
 			return type;
 		}
 
 		CiBinaryExpr binary = expr as CiBinaryExpr;
 		if (binary != null) {
-			if (mutable)
-				throw StatementException(expr, "Unexpected exclamation mark on non-reference type");
+			ExpectNoPtrModifier(expr, ptrModifier);
 			switch (binary.Op) {
 			case CiToken.LeftParenthesis:
 				// string(), MyClass()
@@ -994,7 +1009,7 @@ public class CiResolver : CiVisitor
 	{
 		if (expr == null)
 			return null; // void
-		bool mutable = IsMutableType(ref expr);
+		CiToken ptrModifier = GetPtrModifier(ref expr);
 		CiArrayType outerArray = null; // left-most in source
 		CiArrayType innerArray = null; // right-most in source
 		do {
@@ -1002,19 +1017,18 @@ public class CiResolver : CiVisitor
 			if (binary == null || binary.Op != CiToken.LeftBracket)
 				break;
 			if (binary.Right != null) {
-				if (mutable)
-					throw StatementException(expr, "Unexpected exclamation mark on non-reference type");
+				ExpectNoPtrModifier(expr, ptrModifier);
 				outerArray = new CiArrayStorageType { LengthExpr = binary.Right, ElementType = outerArray };
 			}
 			else
-				outerArray = new CiArrayPtrType { Mutable = mutable, ElementType = outerArray };
+				outerArray = new CiArrayPtrType { Modifier = ptrModifier, ElementType = outerArray };
 			if (innerArray == null)
 				innerArray = outerArray;
 			expr = binary.Left;
-			mutable = IsMutableType(ref expr);
+			ptrModifier = GetPtrModifier(ref expr);
 		} while (outerArray is CiArrayPtrType);
 
-		CiType baseType = ToBaseType(expr, mutable);
+		CiType baseType = ToBaseType(expr, ptrModifier);
 		if (outerArray == null)
 			return baseType;
 		innerArray.ElementType = baseType;

@@ -60,6 +60,7 @@ public enum CiToken
 	CondAnd,
 	CondOr,
 	ExclamationMark,
+	Hash,
 	Assign,
 	AddAssign,
 	SubAssign,
@@ -366,7 +367,7 @@ public class CiLexer
 				continue;
 			case '#':
 				if (!atLineStart)
-					throw ParseException("Invalid character");
+					return CiToken.Hash;
 				switch (ReadId(ReadChar())) {
 				case "if": return CiToken.PreIf;
 				case "elif": return CiToken.PreElIf;

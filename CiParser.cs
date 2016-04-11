@@ -127,6 +127,7 @@ public class CiParser : CiLexer
 			case CiToken.Increment:
 			case CiToken.Decrement:
 			case CiToken.ExclamationMark:
+			case CiToken.Hash:
 				result = new CiPostfixExpr { Line = this.Line, Inner = result, Op = NextToken() };
 				break;
 			default:
