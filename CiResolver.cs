@@ -1,6 +1,6 @@
 // CiResolver.cs - Ci symbol resolver
 //
-// Copyright (C) 2011-2016  Piotr Fusik
+// Copyright (C) 2011-2017  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -941,11 +941,9 @@ public class CiResolver : CiVisitor
 		return (int) value;
 	}
 
-	CiRangeType ToRangeType(long min, CiExpr maxExpr, CiToken op)
+	CiRangeType ToRangeType(long min, CiExpr maxExpr)
 	{
 		long max = FoldConstLong(maxExpr);
-		if (op == CiToken.Less)
-			max--;
 		if (min > max)
 			throw StatementException(maxExpr, "Range min greated than max");
 		return new CiRangeType(min, max);
@@ -983,24 +981,16 @@ public class CiResolver : CiVisitor
 				if (klass == null)
 					throw StatementException(expr, "Class {0} not found", symbol.Name);
 				return klass;
-			case CiToken.Less: // a < b
 			case CiToken.LessOrEqual: // a <= b
-				return ToRangeType(FoldConstLong(binary.Left), binary.Right, binary.Op);
+				return ToRangeType(FoldConstLong(binary.Left), binary.Right);
 			default:
 				throw StatementException(expr, "Invalid type");
 			}
 		}
 
 		CiPrefixExpr prefix = expr as CiPrefixExpr;
-		if (prefix != null) {
-			switch (prefix.Op) {
-			case CiToken.Less: // <b
-			case CiToken.LessOrEqual: // <=b
-				return ToRangeType(0, prefix.Inner, prefix.Op);
-			default:
-				break;
-			}
-		}
+		if (prefix != null && prefix.Op == CiToken.LessOrEqual)
+			return ToRangeType(0, prefix.Inner);
 
 		throw StatementException(expr, "Invalid type");
 	}
