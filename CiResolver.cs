@@ -421,9 +421,6 @@ public class CiResolver : CiVisitor
 			type = new CiArrayStorageType { ElementType = CiSystem.ByteType, Length = content.Length };
 			range = null;
 			break;
-		case CiToken.Less:
-		case CiToken.LessOrEqual:
-			throw StatementException(expr, "Invalid expression");
 		default:
 			throw new NotImplementedException(expr.Op.ToString());
 		}
@@ -941,14 +938,6 @@ public class CiResolver : CiVisitor
 		return (int) value;
 	}
 
-	CiRangeType ToRangeType(long min, CiExpr maxExpr)
-	{
-		long max = FoldConstLong(maxExpr);
-		if (min > max)
-			throw StatementException(maxExpr, "Range min greated than max");
-		return new CiRangeType(min, max);
-	}
-
 	CiType ToBaseType(CiExpr expr, CiToken ptrModifier)
 	{
 		CiSymbolReference symbol = expr as CiSymbolReference;
@@ -982,15 +971,15 @@ public class CiResolver : CiVisitor
 					throw StatementException(expr, "Class {0} not found", symbol.Name);
 				return klass;
 			case CiToken.LessOrEqual: // a <= b
-				return ToRangeType(FoldConstLong(binary.Left), binary.Right);
+				long min = FoldConstLong(binary.Left);
+				long max = FoldConstLong(binary.Right);
+				if (min > max)
+					throw StatementException(expr, "Range min greated than max");
+				return new CiRangeType(min, max);
 			default:
 				throw StatementException(expr, "Invalid type");
 			}
 		}
-
-		CiPrefixExpr prefix = expr as CiPrefixExpr;
-		if (prefix != null && prefix.Op == CiToken.LessOrEqual)
-			return ToRangeType(0, prefix.Inner);
 
 		throw StatementException(expr, "Invalid type");
 	}
