@@ -1,9 +1,14 @@
 prefix := /usr/local
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
-CSC := $(if $(WINDIR),c:/Windows/Microsoft.NET/Framework/v3.5/csc.exe,gmcs)
-TESTCSC := $(if $(WINDIR),c:/Windows/Microsoft.NET/Framework/v2.0.50727/csc.exe,gmcs)
-MONO := $(if $(WINDIR),,mono)
-SLASH := $(if $(WINDIR),\\,/)
+ifdef COMSPEC
+CSC = c:/Windows/Microsoft.NET/Framework/v4.0.30319/csc.exe -nologo -out:$@ $(subst /,\,$^)
+MONO :=
+JAVACPSEP = ;
+else
+CSC := gmcs
+MONO := mono
+JAVACPSEP = :
+endif
 
 VERSION := 1.0.0
 MAKEFLAGS = -r
@@ -11,17 +16,9 @@ MAKEFLAGS = -r
 all: cito.exe
 
 cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCs.cs GenJava.cs GenAs.cs CiTo.cs)
-	$(CSC) -nologo -debug -out:$@ -o+ $^
+	$(CSC)
 
-test: cito.exe
-	@cd test; \
-		ls *.ci | xargs -L1 -I{} -P7 bash -c \
-			"if $(MONO) ../cito.exe -o {}.cs {} && $(TESTCSC) -nologo -out:{}.exe {}.cs Runner.cs && $(MONO) ./{}.exe; then \
-				echo PASSED {}; \
-			else \
-				echo FAILED {}; \
-			fi" | \
-			perl -e '/^PASSED/ ? $$p++ : print while<>;print "PASSED $$p of $$. tests\n"'
+test-error: cito.exe
 	@export passed=0 total=0; \
 		cd test/error; \
 		for ci in *.ci; do \
@@ -33,6 +30,30 @@ test: cito.exe
 			total=$$(($$total+1)); \
 		done; \
 		echo PASSED $$passed of $$total errors
+
+test: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci))
+	perl -e '/^PASSED$$/ ? $$p++ : print "$$ARGV $_" while <>; print "PASSED $$p of $$. tests\n"' $^
+
+test/bin/%/cs.txt: test/bin/%/cs.exe
+	($(MONO) $< && echo PASSED || echo FAILED) >$@
+
+test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
+	(java -cp "test/bin$(JAVACPSEP)$(<D)" Runner && echo PASSED || echo FAILED) >$@
+
+test/bin/%/cs.exe: test/bin/%/Test.cs test/Runner.cs
+	$(CSC)
+
+test/bin/%/Test.class: test/bin/%/Test.java
+	javac -d $(@D) $(<D)/*.java
+
+test/bin/%/Test.cs: test/%.ci cito.exe
+	mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+
+test/bin/%/Test.java: test/%.ci cito.exe
+	mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+
+test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
+	javac -d $(@D) -cp test/bin/Basic $<
 
 install: install-cito
 
@@ -47,7 +68,8 @@ uninstall:
 	rmdir $(DESTDIR)$(prefix)/lib/cito
 
 clean:
-	$(RM) cito.exe test/*.ci.cs test/*.exe
+	$(RM) cito.exe
+	$(RM) -r test/bin
 
 .PHONY: all test install install-cito uninstall clean
 
