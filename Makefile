@@ -32,13 +32,13 @@ test-error: cito.exe
 		echo PASSED $$passed of $$total errors
 
 test: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci))
-	perl -e '/^PASSED$$/ ? $$p++ : print "$$ARGV $_" while <>; print "PASSED $$p of $$. tests\n"' $^
+	perl -e '/^PASSED/ ? $$p++ : print "$$ARGV $_" while <>; print "PASSED $$p of $$. tests\n"' $^
 
 test/bin/%/cs.txt: test/bin/%/cs.exe
-	($(MONO) $< && echo PASSED || echo FAILED) >$@
+	$(MONO) $< >$@
 
 test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
-	(java -cp "test/bin$(JAVACPSEP)$(<D)" Runner && echo PASSED || echo FAILED) >$@
+	java -cp "test/bin$(JAVACPSEP)$(<D)" Runner >$@
 
 test/bin/%/cs.exe: test/bin/%/Test.cs test/Runner.cs
 	$(CSC)
