@@ -1,6 +1,6 @@
 // SourceGenerator.cs - base class for code generators
 //
-// Copyright (C) 2011-2016  Piotr Fusik
+// Copyright (C) 2011-2017  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -178,7 +178,7 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteName(CiSymbol symbol);
 
-	protected virtual void WriteTypeAndName(CiNamedValue value)
+	protected void WriteTypeAndName(CiNamedValue value)
 	{
 		Write(value.Type, true);
 		Write(' ');
@@ -212,7 +212,7 @@ public abstract class GenBase : CiVisitor
 		return expr;
 	}
 
-	protected virtual void WriteVar(CiNamedValue def)
+	protected void WriteVar(CiNamedValue def)
 	{
 		WriteTypeAndName(def);
 		CiClass klass = def.Type as CiClass;
@@ -292,7 +292,7 @@ public abstract class GenBase : CiVisitor
 		Write("()");
 	}
 
-	protected virtual void WriteNewArray(CiType type, CiExpr lengthExpr)
+	protected void WriteNewArray(CiType type, CiExpr lengthExpr)
 	{
 		CiArrayType array = type as CiArrayType;
 		if (array != null) {
