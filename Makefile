@@ -15,7 +15,7 @@ MAKEFLAGS = -r
 
 all: cito.exe
 
-cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCs.cs GenJava.cs CiTo.cs)
+cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCs.cs GenJava.cs GenJs.cs CiTo.cs)
 	$(CSC)
 
 test-error: cito.exe
@@ -31,7 +31,9 @@ test-error: cito.exe
 		done; \
 		echo PASSED $$passed of $$total errors
 
-test: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci))
+test: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) \
+      $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) \
+      $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
 	perl -e '/^PASSED/ ? $$p++ : print "$$ARGV $_" while <>; print "PASSED $$p of $$. tests\n"' $^
 
 test/bin/%/cs.txt: test/bin/%/cs.exe
@@ -40,17 +42,28 @@ test/bin/%/cs.txt: test/bin/%/cs.exe
 test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
 	java -cp "test/bin$(JAVACPSEP)$(<D)" Runner >$@
 
+test/bin/%/js.txt: test/bin/%/Run.js
+	cscript -nologo $< >$@
+
 test/bin/%/cs.exe: test/bin/%/Test.cs test/Runner.cs
 	$(CSC)
 
 test/bin/%/Test.class: test/bin/%/Test.java
 	javac -d $(@D) $(<D)/*.java
 
+test/bin/%/Run.js: test/bin/%/Test.js
+	cat $< test/Runner.js >$@
+
 test/bin/%/Test.cs: test/%.ci cito.exe
 	mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
 
 test/bin/%/Test.java: test/%.ci cito.exe
 	mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+
+test/bin/%/Test.js: test/%.ci cito.exe
+	mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+
+.PRECIOUS: test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js
 
 test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 	javac -d $(@D) -cp test/bin/Basic $<

@@ -11,10 +11,9 @@ public enum DayOfWeek
 
 public static class Test
 {
-	public const Worst = DayOfWeek.Monday;
-
 	public static bool Run()
 	{
-		return Worst == DayOfWeek.Monday;
+		const worst = DayOfWeek.Monday;
+		return worst == DayOfWeek.Monday;
 	}
 }

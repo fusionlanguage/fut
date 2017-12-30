@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		double a = 7;
+		double b = 2;
+		return a / b == 3.5;
+	}
+}

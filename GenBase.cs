@@ -178,7 +178,7 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteName(CiSymbol symbol);
 
-	protected void WriteTypeAndName(CiNamedValue value)
+	protected virtual void WriteTypeAndName(CiNamedValue value)
 	{
 		Write(value.Type, true);
 		Write(' ');
@@ -212,7 +212,7 @@ public abstract class GenBase : CiVisitor
 		return expr;
 	}
 
-	protected void WriteVar(CiNamedValue def)
+	protected virtual void WriteVar(CiNamedValue def)
 	{
 		WriteTypeAndName(def);
 		CiClass klass = def.Type as CiClass;
@@ -292,7 +292,7 @@ public abstract class GenBase : CiVisitor
 		Write("()");
 	}
 
-	protected void WriteNewArray(CiType type, CiExpr lengthExpr)
+	protected virtual void WriteNewArray(CiType type, CiExpr lengthExpr)
 	{
 		CiArrayType array = type as CiArrayType;
 		if (array != null) {
@@ -553,7 +553,7 @@ public abstract class GenBase : CiVisitor
 	{
 	}
 
-	void Write(CiStatement[] statements)
+	protected void Write(CiStatement[] statements)
 	{
 		foreach (CiStatement statement in statements)
 			statement.Accept(this);

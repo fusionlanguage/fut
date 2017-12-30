@@ -326,6 +326,9 @@ public class CiResolver : CiVisitor
 				ResolveConst(konst);
 				if (konst.Value is CiLiteral)
 					return konst.Value;
+				CiBinaryExpr dotExpr = konst.Value as CiBinaryExpr;
+				if (dotExpr != null && dotExpr.Op == CiToken.Dot)
+					return dotExpr; // const foo = MyEnum.Foo
 			}
 		}
 		return expr;
