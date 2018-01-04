@@ -1,6 +1,6 @@
 // SourceGenerator.cs - base class for code generators
 //
-// Copyright (C) 2011-2017  Piotr Fusik
+// Copyright (C) 2011-2018  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -244,6 +244,8 @@ public abstract class GenBase : CiVisitor
 	{
 		if (value == null)
 			Write("null");
+		else if (value is long)
+			Write((long) value);
 		else if (value is bool)
 			Write((bool) value ? "true" : "false");
 		else if (value is string) {
@@ -264,8 +266,10 @@ public abstract class GenBase : CiVisitor
 			}
 			Write('"');
 		}
-		else // long, double
-			Write(((IConvertible) value).ToString(CultureInfo.InvariantCulture));
+		else if (value is double)
+			Write(((double) value).ToString("R", CultureInfo.InvariantCulture));
+		else
+			throw new NotImplementedException(value.GetType().Name);
 	}
 
 	public override CiExpr Visit(CiLiteral expr, CiPriority parent)

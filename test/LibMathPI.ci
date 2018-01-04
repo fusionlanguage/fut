@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		double pi = Math.PI;
+		return pi > 3.14 && pi < 3.15;
+	}
+}

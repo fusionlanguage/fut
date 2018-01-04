@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		double e = Math.E;
+		return e > 2.71 && e < 2.72 && Math.Exp(1) == e && Math.Log(e) == 1;
+	}
+}

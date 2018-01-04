@@ -1,6 +1,6 @@
 // CiTree.cs - Ci object model
 //
-// Copyright (C) 2011-2016  Piotr Fusik
+// Copyright (C) 2011-2018  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -222,6 +222,15 @@ public class CiVar : CiNamedValue
 public class CiConst : CiMember
 {
 	public CiVisitStatus VisitStatus;
+	public CiConst()
+	{
+	}
+	public CiConst(string name, object value)
+	{
+		this.Name = name;
+		this.Value = new CiLiteral(value);
+		this.Type = this.Value.Type;
+	}
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }
 
@@ -883,6 +892,8 @@ public class CiSystem : CiScope
 		Add(DoubleType);
 		Add(BoolType);
 		Add(StringPtrType);
+		MathClass.Add(new CiConst("E", Math.E));
+		MathClass.Add(new CiConst("PI", Math.PI));
 		Add(MathClass);
 	}
 
