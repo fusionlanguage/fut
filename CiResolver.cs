@@ -1039,6 +1039,11 @@ public class CiResolver : CiVisitor
 		konst.Type = ToType(konst.TypeExpr);
 		konst.Value = konst.Value.Accept(this, CiPriority.Statement);
 		// TODO: Coerce(konst.Value, konst.Type);
+		CiArrayPtrType arrayPtrType = konst.Type as CiArrayPtrType;
+		if (arrayPtrType != null) {
+			CiArrayStorageType valueType = (CiArrayStorageType) konst.Value.Type;
+			konst.Type = new CiArrayStorageType { ElementType = arrayPtrType.ElementType, Length = valueType.Length };
+		}
 		konst.VisitStatus = CiVisitStatus.Done;
 	}
 
