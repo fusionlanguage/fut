@@ -428,7 +428,7 @@ public class CiResolver : CiVisitor
 			throw new NotImplementedException(expr.Op.ToString());
 		}
 		if (range != null && range.Min == range.Max)
-			return new CiLiteral(range.Min);
+			return new CiLiteral(range.Min) { Line = expr.Line };
 		return new CiPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
 	}
 
@@ -476,7 +476,7 @@ public class CiResolver : CiVisitor
 			if (rightSymbol.Symbol == CiSystem.StringLength) {
 				CiLiteral leftLiteral = left as CiLiteral;
 				if (leftLiteral != null)
-					return new CiLiteral((long) ((string) leftLiteral.Value).Length);
+					return new CiLiteral((long) ((string) leftLiteral.Value).Length) { Line = expr.Line };
 			}
 			return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = rightSymbol, Type = result.Type };
 
@@ -548,7 +548,7 @@ public class CiResolver : CiVisitor
 					string s = (string) leftLiteral.Value;
 					long i = (long) rightLiteral.Value;
 					if (i >= 0 && i < s.Length)
-						return new CiLiteral((long) s[(int) i]);
+						return new CiLiteral((long) s[(int) i]) { Line = expr.Line };
 				}
 			}
 			else
@@ -565,7 +565,8 @@ public class CiResolver : CiVisitor
 				CiLiteral leftLiteral = left as CiLiteral;
 				CiLiteral rightLiteral = right as CiLiteral;
 				if (leftLiteral != null && rightLiteral != null)
-					return new CiLiteral(Convert.ToString(leftLiteral.Value, CultureInfo.InvariantCulture) + Convert.ToString(rightLiteral.Value, CultureInfo.InvariantCulture));
+					return new CiLiteral(Convert.ToString(leftLiteral.Value, CultureInfo.InvariantCulture)
+						+ Convert.ToString(rightLiteral.Value, CultureInfo.InvariantCulture)) { Line = expr.Line };
 				type = CiSystem.StringPtrType;
 				// TODO: type check
 			}
@@ -751,7 +752,7 @@ public class CiResolver : CiVisitor
 		case CiToken.ShiftLeftAssign:
 		case CiToken.ShiftRightAssign:
 			// TODO: check lvalue
-			Coerce(right, left.Type);
+			// TODO Coerce(right, left.Type);
 			expr.Left = left;
 			expr.Right = right;
 			expr.Type = left.Type;
@@ -761,7 +762,7 @@ public class CiResolver : CiVisitor
 		}
 		CiRangeType range = type as CiRangeType;
 		if (range != null && range.Min == range.Max)
-			return new CiLiteral(range.Min);
+			return new CiLiteral(range.Min) { Line = expr.Line };
 		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = type };
 	}
 
