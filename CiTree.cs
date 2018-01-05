@@ -736,6 +736,10 @@ public class CiStringType : CiType
 			return CiSystem.StringLength;
 		return null;
 	}
+	public override bool IsAssignableFrom(CiType right)
+	{
+		return right is CiStringType;
+	}
 }
 
 public class CiFloatType : CiNumericType
