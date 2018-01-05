@@ -222,7 +222,7 @@ public abstract class GenBase : CiVisitor
 		}
 		else {
 			CiArrayStorageType array = def.Type as CiArrayStorageType;
-			if (array != null) {
+			if (array != null && !(def.Value is CiCollection)) {
 				Write(" = ");
 				WriteNewArray(array.ElementType, new CiLiteral((long) array.Length));
 				// FIXME: arrays of object storage, initialized arrays
