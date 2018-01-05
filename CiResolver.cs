@@ -1,6 +1,6 @@
 // CiResolver.cs - Ci symbol resolver
 //
-// Copyright (C) 2011-2017  Piotr Fusik
+// Copyright (C) 2011-2018  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -1036,8 +1036,9 @@ public class CiResolver : CiVisitor
 		case CiVisitStatus.Done:
 			return;
 		}
+		konst.Type = ToType(konst.TypeExpr);
 		konst.Value = konst.Value.Accept(this, CiPriority.Statement);
-		konst.Type = konst.Value.Type;
+		// TODO: Coerce(konst.Value, konst.Type);
 		konst.VisitStatus = CiVisitStatus.Done;
 	}
 

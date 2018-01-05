@@ -1,6 +1,6 @@
 public static class Test
 {
-	public const Foo = "foo";
+	public const string Foo = "foo";
 
 	public static bool Run()
 	{

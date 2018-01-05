@@ -230,6 +230,7 @@ public class CiConst : CiMember
 		this.Name = name;
 		this.Value = new CiLiteral(value);
 		this.Type = this.Value.Type;
+		this.VisitStatus = CiVisitStatus.Done;
 	}
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }

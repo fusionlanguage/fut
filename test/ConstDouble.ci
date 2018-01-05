@@ -1,6 +1,6 @@
 public static class Test
 {
-	public const Foo = 10.5;
+	public const double Foo = 10.5;
 
 	public static bool Run()
 	{

@@ -1,6 +1,6 @@
 public static class Test
 {
-	public const Foo = true;
+	public const bool Foo = true;
 
 	public static bool Run()
 	{

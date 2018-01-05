@@ -13,7 +13,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		const worst = DayOfWeek.Monday;
+		const DayOfWeek worst = DayOfWeek.Monday;
 		return worst == DayOfWeek.Monday;
 	}
 }

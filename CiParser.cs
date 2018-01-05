@@ -1,6 +1,6 @@
 // CiParser.cs - Ci parser
 //
-// Copyright (C) 2011-2017  Piotr Fusik
+// Copyright (C) 2011-2018  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -293,7 +293,7 @@ public class CiParser : CiLexer
 	CiConst ParseConst()
 	{
 		Expect(CiToken.Const);
-		CiConst konst = new CiConst { Line = this.Line, Name = ParseId() };
+		CiConst konst = new CiConst { Line = this.Line, TypeExpr = ParseType(), Name = ParseId() };
 		Expect(CiToken.Assign);
 		konst.Value = ParseConstInitializer();
 		Expect(CiToken.Semicolon);
