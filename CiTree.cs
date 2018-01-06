@@ -122,7 +122,7 @@ public class CiScope : CiSymbol, IEnumerable
 {
 	public string Filename;
 	public CiScope Parent;
-	readonly OrderedDictionary Dict = new OrderedDictionary();
+	protected readonly OrderedDictionary Dict = new OrderedDictionary();
 
 	IEnumerator IEnumerable.GetEnumerator()
 	{
@@ -600,6 +600,7 @@ public class CiClass : CiContainerType
 	public override CiType PtrOrSelf { get { return new CiClassPtrType { Class = this, Modifier = CiToken.ExclamationMark }; } }
 	public CiClass()
 	{
+		this.Dict.Add("this", new CiVar(this.PtrOrSelf, "this")); // shadows "this" in base class
 	}
 	public CiClass(CiCallType callType, string name, params CiMethod[] methods)
 	{
