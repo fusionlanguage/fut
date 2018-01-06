@@ -104,6 +104,7 @@ public abstract class CiExpr : CiStatement
 		throw new NotImplementedException(GetType().Name);
 	}
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
+	public CiLiteral ToLiteral(object value) { return new CiLiteral(value) { Line = this.Line }; }
 }
 
 public class CiCollection : CiExpr
