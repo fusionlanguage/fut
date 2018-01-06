@@ -1,0 +1,13 @@
+public static class Test
+{
+	static void TestThrow()
+		throws
+	{
+		throw "Foo";
+	}
+
+	public static bool Run()
+	{
+		return true;
+	}
+}

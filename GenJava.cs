@@ -1,6 +1,6 @@
 // GenJava.cs - Java code generator
 //
-// Copyright (C) 2011-2016  Piotr Fusik
+// Copyright (C) 2011-2018  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -361,6 +361,8 @@ public class GenJava : GenTyped
 				WriteTypeAndName(param);
 			}
 			Write(')');
+			if (method.Throws)
+				Write(" throws Exception");
 			WriteBody(method);
 		}
 
