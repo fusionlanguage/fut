@@ -1,0 +1,13 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		const int[] a = { 5, 10, 15 };
+		switch (3) {
+		case a.Length:
+			return true;
+		default:
+			return false;
+		}
+	}
+}

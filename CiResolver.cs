@@ -473,6 +473,12 @@ public class CiResolver : CiVisitor
 			CiExpr result = Lookup(rightSymbol, scope);
 			if (result != rightSymbol)
 				return result;
+			if (rightSymbol.Symbol == CiSystem.ArrayLength) {
+				CiArrayStorageType array = scope as CiArrayStorageType;
+				if (array == null)
+					throw new NotImplementedException(scope.GetType().Name);
+				return expr.ToLiteral((long) array.Length);
+			}
 			if (rightSymbol.Symbol == CiSystem.StringLength) {
 				CiLiteral leftLiteral = left as CiLiteral;
 				if (leftLiteral != null)
