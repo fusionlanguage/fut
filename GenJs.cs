@@ -1,6 +1,6 @@
 // GenJs.cs - JavaScript code generator
 //
-// Copyright (C) 2011-2017  Piotr Fusik
+// Copyright (C) 2011-2018  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -114,7 +114,7 @@ public class GenJs : GenBase
 			if (this.Library[(int) GenJsMethod.CopyArray] == null) {
 				this.Library[(int) GenJsMethod.CopyArray] = new string[] {
 					"copyArray : function(sa, soffset, da, doffset, length)",
-					"for (var i : int = 0; i < length; i++)",
+					"for (var i = 0; i < length; i++)",
 					"\tda[doffset + i] = sa[soffset + i];"
 				};
 			}
@@ -128,7 +128,7 @@ public class GenJs : GenBase
 			if (this.Library[(int) GenJsMethod.FillArray] == null) {
 				this.Library[(int) GenJsMethod.FillArray] = new string[] {
 					"fillArray : function(a, length, value)",
-					"for (var i : int = 0; i < length; i++)",
+					"for (var i = 0; i < length; i++)",
 					"\ta[i] = value;"
 				};
 			}
