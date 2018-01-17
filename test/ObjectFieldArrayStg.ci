@@ -1,0 +1,12 @@
+public class Test
+{
+	int[2] Foo;
+
+	public static bool Run()
+	{
+		Test() o;
+		o.Foo[0] = 5;
+		o.Foo[1] = 10;
+		return o.Foo[0] == 5 && o.Foo[1] == 10;
+	}
+}

@@ -251,7 +251,7 @@ public class GenJs : GenBase
 			if (field.Value != null || field.Type is CiClass || field.Type is CiArrayStorageType) {
 				Write("this.");
 				base.WriteVar(field);
-				WriteLine(";");
+				TerminateStatement();
 			}
 		}
 		if (klass.Constructor != null)

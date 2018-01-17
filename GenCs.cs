@@ -272,7 +272,7 @@ public class GenCs : GenTyped
 			if (field.Type is CiClass || field.Type is CiArrayStorageType)
 				Write("readonly ");
 			WriteVar(field);
-			WriteLine(";");
+			TerminateStatement();
 		}
 
 		foreach (CiMethod method in klass.Methods) {

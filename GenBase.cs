@@ -131,6 +131,12 @@ public abstract class GenBase : CiVisitor
 		this.AtLineStart = true;
 	}
 
+	protected void TerminateStatement()
+	{
+		if (!this.AtLineStart)
+			WriteLine(";");
+	}
+
 	protected virtual void WriteBanner()
 	{
 		WriteLine("// Generated automatically with \"cito\". Do not edit.");
@@ -329,7 +335,6 @@ public abstract class GenBase : CiVisitor
 	{
 		Write(" = ");
 		bool multiDim = WriteNewArray(array);
-		WriteLine(";");
 		if (multiDim) {
 			CiArrayStorageType innerArray = array;
 			while (innerArray.ElementType is CiArrayStorageType)
@@ -337,6 +342,7 @@ public abstract class GenBase : CiVisitor
 			if (!(innerArray.ElementType is CiClass))
 				return;
 		}
+		WriteLine(";");
 		int nesting = 0;
 		for (;;) {
 			CiClass klass = array.ElementType as CiClass;
@@ -614,8 +620,7 @@ public abstract class GenBase : CiVisitor
 	public override void Visit(CiExpr statement)
 	{
 		statement.Accept(this, CiPriority.Statement);
-		if (!this.AtLineStart)
-			WriteLine(";");
+		TerminateStatement();
 	}
 
 	public override void Visit(CiConst statement)
