@@ -135,7 +135,7 @@ public class GenCs : GenTyped
 		Write(symbol.Name);
 	}
 
-	protected override void WriteNewArray(CiType type)
+	protected override bool WriteNewArray(CiType type)
 	{
 		Write("new ");
 		Write(type.BaseType, false);
@@ -149,6 +149,7 @@ public class GenCs : GenTyped
 				break;
 			Write("[]");
 		}
+		return false; // inner dimensions not allocated
 	}
 
 	protected override void WriteResource(string name, int length)

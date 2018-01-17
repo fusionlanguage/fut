@@ -221,7 +221,7 @@ public abstract class GenBase : CiVisitor
 			WriteNew(klass);
 		}
 		else if (def.Type is CiArrayStorageType && !(def.Value is CiCollection)) {
-			WriteInitArray(def, 0, (CiArrayStorageType) def.Type);
+			WriteInitArray(def, (CiArrayStorageType) def.Type);
 			// FIXME: initialized arrays
 		}
 		else if (def.Value != null) {
@@ -292,7 +292,7 @@ public abstract class GenBase : CiVisitor
 		Write("()");
 	}
 
-	protected virtual void WriteNewArray(CiType type)
+	protected virtual bool WriteNewArray(CiType type)
 	{
 		Write("new ");
 		Write(type.BaseType, false);
@@ -307,6 +307,7 @@ public abstract class GenBase : CiVisitor
 			Write(']');
 			type = array.ElementType;
 		}
+		return true; // inner dimensions allocated
 	}
 
 	protected virtual void WriteInt()
@@ -324,36 +325,54 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WriteInitArray(CiNamedValue def, int nesting, CiArrayStorageType array)
+	protected void WriteInitArray(CiNamedValue def, CiArrayStorageType array)
 	{
 		Write(" = ");
-		WriteNewArray(array);
+		bool multiDim = WriteNewArray(array);
 		WriteLine(";");
-		CiClass klass = array.ElementType as CiClass;
-		CiArrayStorageType innerArray = array.ElementType as CiArrayStorageType;
-		if (klass == null && innerArray == null)
-			return;
-		Write("for (");
-		WriteInt();
-		Write(" _i");
-		Write(nesting);
-		Write(" = 0; _i");
-		Write(nesting);
-		Write(" < ");
-		array.LengthExpr.Accept(this, CiPriority.Rel);
-		Write("; _i");
-		Write(nesting);
-		Write("++) ");
-		OpenBlock();
-		WriteArrayElement(def, nesting + 1);
-		if (klass != null) {
-			Write(" = ");
-			WriteNew(klass);
-			WriteLine(";");
+		if (multiDim) {
+			CiArrayStorageType innerArray = array;
+			while (innerArray.ElementType is CiArrayStorageType)
+				innerArray = (CiArrayStorageType) innerArray.ElementType;
+			if (!(innerArray.ElementType is CiClass))
+				return;
 		}
-		else
-			WriteInitArray(def, nesting + 1, innerArray);
-		CloseBlock();
+		int nesting = 0;
+		for (;;) {
+			CiClass klass = array.ElementType as CiClass;
+			CiArrayStorageType innerArray = array.ElementType as CiArrayStorageType;
+			if (klass == null && innerArray == null)
+				break;
+			Write("for (");
+			WriteInt();
+			Write(" _i");
+			Write(nesting);
+			Write(" = 0; _i");
+			Write(nesting);
+			Write(" < ");
+			array.LengthExpr.Accept(this, CiPriority.Rel);
+			Write("; _i");
+			Write(nesting);
+			Write("++) ");
+			OpenBlock();
+			nesting++;
+			if (klass != null) {
+				WriteArrayElement(def, nesting);
+				Write(" = ");
+				WriteNew(klass);
+				WriteLine(";");
+				break;
+			}
+			if (!multiDim) {
+				WriteArrayElement(def, nesting);
+				Write(" = ");
+				WriteNewArray(innerArray);
+				WriteLine(";");
+			}
+			array = innerArray;
+		}
+		while (--nesting >= 0)
+			CloseBlock();
 	}
 
 	protected abstract void WriteResource(string name, int length);
