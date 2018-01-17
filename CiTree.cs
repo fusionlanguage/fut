@@ -566,6 +566,7 @@ public class CiMethod : CiMethodBase
 public class CiType : CiScope
 {
 	public virtual bool IsAssignableFrom(CiType right) { return this == right; }
+	public virtual CiType BaseType { get { return this; } }
 	public virtual CiType PtrOrSelf { get { return this; } }
 }
 
@@ -808,6 +809,7 @@ public abstract class CiArrayType : CiType
 		}
 		return null;
 	}
+	public override CiType BaseType { get { return this.ElementType.BaseType; } }
 }
 
 public class CiArrayPtrType : CiArrayType

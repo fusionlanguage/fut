@@ -1,6 +1,6 @@
 // GenCs.cs - C# code generator
 //
-// Copyright (C) 2011-2016  Piotr Fusik
+// Copyright (C) 2011-2018  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -133,6 +133,22 @@ public class GenCs : GenTyped
 	protected override void WriteName(CiSymbol symbol)
 	{
 		Write(symbol.Name);
+	}
+
+	protected override void WriteNewArray(CiType type)
+	{
+		Write("new ");
+		Write(type.BaseType, false);
+		CiArrayStorageType storage = (CiArrayStorageType) type;
+		Write('[');
+		WritePromoted(storage.LengthExpr, CiPriority.Statement);
+		Write(']');
+		for (CiArrayType array = storage; ; ) {
+			array = array.ElementType as CiArrayType;
+			if (array == null)
+				break;
+			Write("[]");
+		}
 	}
 
 	protected override void WriteResource(string name, int length)

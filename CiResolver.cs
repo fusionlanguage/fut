@@ -294,8 +294,7 @@ public class CiResolver : CiVisitor
 
 	public override CiExpr Visit(CiVar expr, CiPriority parent)
 	{
-		CiType type = ToType(expr.TypeExpr);
-		expr.Type = type;
+		CiType type = ResolveType(expr);
 		if (expr.Value != null) {
 			expr.Value = expr.Value.Accept(this, CiPriority.Statement);
 			CiArrayStorageType array = type as CiArrayStorageType;
@@ -393,29 +392,19 @@ public class CiResolver : CiVisitor
 			break;
 		case CiToken.ExclamationMark:
 			inner = ResolveBool(expr.Inner);
-			return new CiPrefixExpr { Op = CiToken.ExclamationMark, Inner = inner, Type = CiSystem.BoolType };
+			return new CiPrefixExpr { Line = expr.Line, Op = CiToken.ExclamationMark, Inner = inner, Type = CiSystem.BoolType };
 		case CiToken.New:
-			type = ToTypeDynamic(expr.Inner);
-			CiArrayStorageType array = type as CiArrayStorageType;
-			if (array != null) {
-				CiExpr length = array.LengthExpr.Accept(this, parent);
-				Coerce(length, CiSystem.IntType);
-				return new CiPrefixExpr { Line = expr.Line, Op = CiToken.New, Inner = length,
-					Type = new CiArrayPtrType { ElementType = array.ElementType, Modifier = CiToken.Hash } };
-			}
-			CiClass klass = type as CiClass;
-			if (klass != null)
-				return new CiPrefixExpr { Line = expr.Line, Op = CiToken.New,
-					Type = new CiClassPtrType { Class = klass, Modifier = CiToken.Hash } };
-			throw StatementException(expr, "Invalid argument to new");
+			type = ToType(expr.Inner, true);
+			if (!(type is CiArrayStorageType) && !(type is CiClass))
+				throw StatementException(expr, "Invalid argument to new");
+			expr.Type = type;
+			return expr;
 		case CiToken.Resource:
-			inner = expr.Inner.Accept(this, parent);
-			CiLiteral literal = inner as CiLiteral;
-			if (literal == null)
-				throw StatementException(expr, "Resource name must be compile-time constant");
+			CiLiteral literal = FoldConst(expr.Inner);
 			string name = literal.Value as string;
 			if (name == null)
 				throw StatementException(expr, "Resource name must be string");
+			inner = literal;
 			byte[] content;
 			if (!this.Program.Resources.TryGetValue(name, out content)) {
 				content = File.ReadAllBytes(name);
@@ -928,24 +917,20 @@ public class CiResolver : CiVisitor
 			throw StatementException(expr, "Unexpected " + ptrModifier + " on a non-reference type");
 	}
 
-	long FoldConstLong(CiExpr expr)
+	CiLiteral FoldConst(CiExpr expr)
 	{
 		CiLiteral literal = expr.Accept(this, CiPriority.Statement) as CiLiteral;
 		if (literal == null)
 			throw StatementException(expr, "Expected constant value");
+		return literal;
+	}
+
+	long FoldConstLong(CiExpr expr)
+	{
+		CiLiteral literal = FoldConst(expr);
 		if (literal.Value is long)
 			return (long) literal.Value;
 		throw StatementException(expr, "Expected integer");
-	}
-
-	int FoldConstUint(CiExpr expr)
-	{
-		long value = FoldConstLong(expr);
-		if (value < 0)
-			throw StatementException(expr, "Expected non-negative integer");
-		if (value > int.MaxValue)
-			throw StatementException(expr, "Integer too big");
-		return (int) value;
 	}
 
 	CiType ToBaseType(CiExpr expr, CiToken ptrModifier)
@@ -984,7 +969,7 @@ public class CiResolver : CiVisitor
 				long min = FoldConstLong(binary.Left);
 				long max = FoldConstLong(binary.Right);
 				if (min > max)
-					throw StatementException(expr, "Range min greated than max");
+					throw StatementException(expr, "Range min greater than max");
 				return new CiRangeType(min, max);
 			default:
 				throw StatementException(expr, "Invalid type");
@@ -994,28 +979,44 @@ public class CiResolver : CiVisitor
 		throw StatementException(expr, "Invalid type");
 	}
 
-	CiType ToTypeDynamic(CiExpr expr)
+	CiType ToType(CiExpr expr, bool dynamic)
 	{
 		if (expr == null)
 			return null; // void
 		CiToken ptrModifier = GetPtrModifier(ref expr);
 		CiArrayType outerArray = null; // left-most in source
 		CiArrayType innerArray = null; // right-most in source
-		do {
+		for (;;) {
 			CiBinaryExpr binary = expr as CiBinaryExpr;
 			if (binary == null || binary.Op != CiToken.LeftBracket)
 				break;
 			if (binary.Right != null) {
 				ExpectNoPtrModifier(expr, ptrModifier);
-				outerArray = new CiArrayStorageType { LengthExpr = binary.Right, ElementType = outerArray };
+				CiExpr lengthExpr = binary.Right.Accept(this, CiPriority.Statement);
+				Coerce(lengthExpr, CiSystem.IntType);
+				CiArrayStorageType arrayStorage = new CiArrayStorageType { LengthExpr = lengthExpr, ElementType = outerArray };
+				if (!dynamic) {
+					CiLiteral literal = lengthExpr as CiLiteral;
+					if (literal == null)
+						throw StatementException(lengthExpr, "Expected constant value");
+					long length = (long) literal.Value;
+					if (length < 0)
+						throw StatementException(expr, "Expected non-negative integer");
+					if (length > int.MaxValue)
+						throw StatementException(expr, "Integer too big");
+					arrayStorage.Length = (int) length;
+				}
+				outerArray = arrayStorage;
 			}
+			else if (outerArray is CiArrayStorageType)
+				throw StatementException(expr, "Pointers to fixed-size arrays not supported");
 			else
 				outerArray = new CiArrayPtrType { Modifier = ptrModifier, ElementType = outerArray };
 			if (innerArray == null)
 				innerArray = outerArray;
 			expr = binary.Left;
 			ptrModifier = GetPtrModifier(ref expr);
-		} while (outerArray is CiArrayPtrType);
+		}
 
 		CiType baseType = ToBaseType(expr, ptrModifier);
 		if (outerArray == null)
@@ -1024,13 +1025,10 @@ public class CiResolver : CiVisitor
 		return outerArray;
 	}
 
-	CiType ToType(CiExpr expr)
+	CiType ResolveType(CiNamedValue def)
 	{
-		CiType type = ToTypeDynamic(expr);
-		CiArrayStorageType array = type as CiArrayStorageType;
-		if (array != null)
-			array.Length = FoldConstUint(array.LengthExpr);
-		return type;
+		def.Type = ToType(def.TypeExpr, false);
+		return def.Type;
 	}
 
 	void ResolveConst(CiConst konst)
@@ -1043,7 +1041,7 @@ public class CiResolver : CiVisitor
 		case CiVisitStatus.Done:
 			return;
 		}
-		konst.Type = ToType(konst.TypeExpr);
+		ResolveType(konst);
 		konst.Value = konst.Value.Accept(this, CiPriority.Statement);
 		// TODO: Coerce(konst.Value, konst.Type);
 		CiArrayPtrType arrayPtrType = konst.Type as CiArrayPtrType;
@@ -1066,11 +1064,11 @@ public class CiResolver : CiVisitor
 	{
 		this.CurrentScope = klass;
 		foreach (CiField field in klass.Fields)
-			field.Type = ToType(field.TypeExpr);
+			ResolveType(field);
 		foreach (CiMethod method in klass.Methods) {
-			method.Type = ToType(method.TypeExpr);
+			ResolveType(method);
 			foreach (CiVar param in method.Parameters)
-				param.Type = ToType(param.TypeExpr);
+				ResolveType(param);
 		}
 	}
 

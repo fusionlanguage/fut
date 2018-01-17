@@ -79,11 +79,17 @@ public class GenJs : GenBase
 		return expr;
 	}
 
-	protected override void WriteNewArray(CiType type, CiExpr lengthExpr)
+	protected override void WriteNewArray(CiType type)
 	{
 		Write("new Array(");
-		lengthExpr.Accept(this, CiPriority.Statement);
+		CiArrayStorageType array = (CiArrayStorageType) type;
+		array.LengthExpr.Accept(this, CiPriority.Statement);
 		Write(')');
+	}
+
+	protected override void WriteInt()
+	{
+		Write("var");
 	}
 
 	protected override void WriteResource(string name, int length)

@@ -220,17 +220,13 @@ public abstract class GenBase : CiVisitor
 			Write(" = ");
 			WriteNew(klass);
 		}
-		else {
-			CiArrayStorageType array = def.Type as CiArrayStorageType;
-			if (array != null && !(def.Value is CiCollection)) {
-				Write(" = ");
-				WriteNewArray(array.ElementType, new CiLiteral((long) array.Length));
-				// FIXME: arrays of object storage, initialized arrays
-			}
-			else if (def.Value != null) {
-				Write(" = ");
-				WritePromoted(def.Value, CiPriority.Statement);
-			}
+		else if (def.Type is CiArrayStorageType && !(def.Value is CiCollection)) {
+			WriteInitArray(def, 0, (CiArrayStorageType) def.Type);
+			// FIXME: initialized arrays
+		}
+		else if (def.Value != null) {
+			Write(" = ");
+			WritePromoted(def.Value, CiPriority.Statement);
 		}
 	}
 
@@ -296,19 +292,68 @@ public abstract class GenBase : CiVisitor
 		Write("()");
 	}
 
-	protected virtual void WriteNewArray(CiType type, CiExpr lengthExpr)
+	protected virtual void WriteNewArray(CiType type)
 	{
-		CiArrayType array = type as CiArrayType;
-		if (array != null) {
-			WriteNewArray(array.ElementType, lengthExpr);
-			Write("[]");
-			return;
-		}
 		Write("new ");
-		Write(type, false);
-		Write('[');
-		WritePromoted(lengthExpr, CiPriority.Statement);
-		Write(']');
+		Write(type.BaseType, false);
+		for (;;) {
+			CiArrayType array = type as CiArrayType;
+			if (array == null)
+				break;
+			Write('[');
+			CiArrayStorageType arrayStorage = array as CiArrayStorageType;
+			if (arrayStorage != null)
+				arrayStorage.LengthExpr.Accept(this, CiPriority.Statement);
+			Write(']');
+			type = array.ElementType;
+		}
+	}
+
+	protected virtual void WriteInt()
+	{
+		Write("int");
+	}
+
+	void WriteArrayElement(CiNamedValue def, int nesting)
+	{
+		Write(def.Name);
+		for (int i = 0; i < nesting; i++) {
+			Write("[_i");
+			Write(i);
+			Write(']');
+		}
+	}
+
+	protected void WriteInitArray(CiNamedValue def, int nesting, CiArrayStorageType array)
+	{
+		Write(" = ");
+		WriteNewArray(array);
+		WriteLine(";");
+		CiClass klass = array.ElementType as CiClass;
+		CiArrayStorageType innerArray = array.ElementType as CiArrayStorageType;
+		if (klass == null && innerArray == null)
+			return;
+		Write("for (");
+		WriteInt();
+		Write(" _i");
+		Write(nesting);
+		Write(" = 0; _i");
+		Write(nesting);
+		Write(" < ");
+		array.LengthExpr.Accept(this, CiPriority.Rel);
+		Write("; _i");
+		Write(nesting);
+		Write("++) ");
+		OpenBlock();
+		WriteArrayElement(def, nesting + 1);
+		if (klass != null) {
+			Write(" = ");
+			WriteNew(klass);
+			WriteLine(";");
+		}
+		else
+			WriteInitArray(def, nesting + 1, innerArray);
+		CloseBlock();
 	}
 
 	protected abstract void WriteResource(string name, int length);
@@ -342,7 +387,7 @@ public abstract class GenBase : CiVisitor
 			if (klass != null)
 				WriteNew(klass.Class);
 			else
-				WriteNewArray(((CiArrayPtrType) expr.Type).ElementType, expr.Inner);
+				WriteNewArray(expr.Type);
 			return expr;
 		case CiToken.Resource:
 			WriteResource((string) ((CiLiteral) expr.Inner).Value, ((CiArrayStorageType) expr.Type).Length);
@@ -550,7 +595,8 @@ public abstract class GenBase : CiVisitor
 	public override void Visit(CiExpr statement)
 	{
 		statement.Accept(this, CiPriority.Statement);
-		WriteLine(";");
+		if (!this.AtLineStart)
+			WriteLine(";");
 	}
 
 	public override void Visit(CiConst statement)
