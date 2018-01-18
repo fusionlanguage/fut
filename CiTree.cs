@@ -116,6 +116,7 @@ public class CiCollection : CiExpr
 public abstract class CiSymbol : CiExpr
 {
 	public string Name;
+	public override string ToString() { return this.Name; }
 }
 
 public class CiScope : CiSymbol, IEnumerable
@@ -565,6 +566,7 @@ public class CiMethod : CiMethodBase
 
 public class CiType : CiScope
 {
+	public virtual string ArrayString { get { return ""; } }
 	public virtual bool IsAssignableFrom(CiType right) { return this == right; }
 	public virtual CiType BaseType { get { return this; } }
 	public virtual CiType PtrOrSelf { get { return this; } }
@@ -597,6 +599,7 @@ public class CiClass : CiContainerType
 	public CiMethod[] Methods;
 	public readonly List<CiConst> ConstArrays = new List<CiConst>();
 	public CiVisitStatus VisitStatus;
+	public override string ToString() { return this.Name + "()"; }
 	public override bool IsAssignableFrom(CiType right) { return false; }
 	public override CiType PtrOrSelf { get { return new CiClassPtrType { Class = this, Modifier = CiToken.ExclamationMark }; } }
 	public CiClass()
@@ -665,6 +668,8 @@ public class CiRangeType : CiIntegerType
 		this.Min = a <= c ? a : c;
 		this.Max = b >= d ? b : d;
 	}
+
+	public override string ToString() { return "(" + this.Min + " .. " + this.Max + ")"; }
 
 	// TODO: needed?
 	public override bool Equals(object obj)
@@ -763,6 +768,7 @@ public class CiDoubleType : CiNumericType
 
 public class CiStringStorageType : CiStringType
 {
+	public override string ToString() { return "string()"; }
 	public override CiType PtrOrSelf { get { return CiSystem.StringPtrType; } }
 }
 
@@ -770,6 +776,20 @@ public class CiClassPtrType : CiType
 {
 	public CiClass Class;
 	public CiToken Modifier;
+	public override string ToString()
+	{
+		switch (this.Modifier) {
+		case CiToken.EndOfFile:
+			return this.Class.Name;
+		case CiToken.ExclamationMark:
+			return this.Class.Name + '!';
+		case CiToken.Hash:
+			return this.Class.Name + '#';
+		default:
+			throw new NotImplementedException(this.Modifier.ToString());
+		}
+	}
+
 	public override CiSymbol TryLookup(string name)
 	{
 		return this.Class.TryLookup(name);
@@ -798,6 +818,9 @@ public class CiClassPtrType : CiType
 public abstract class CiArrayType : CiType
 {
 	public CiType ElementType;
+	public override string ToString() {
+		return this.BaseType + this.ArrayString + this.ElementType.ArrayString;
+	}
 	public override CiSymbol TryLookup(string name)
 	{
 		if (name == "CopyTo") {
@@ -815,6 +838,21 @@ public abstract class CiArrayType : CiType
 public class CiArrayPtrType : CiArrayType
 {
 	public CiToken Modifier;
+	public override string ArrayString
+	{
+		get {
+			switch (this.Modifier) {
+			case CiToken.EndOfFile:
+				return "[]";
+			case CiToken.ExclamationMark:
+				return "[]!";
+			case CiToken.Hash:
+				return "[]#";
+			default:
+				throw new NotImplementedException(this.Modifier.ToString());
+			}
+		}
+	}
 	public override bool IsAssignableFrom(CiType right)
 	{
 		if (right == CiSystem.NullType)
@@ -842,6 +880,7 @@ public class CiArrayStorageType : CiArrayType
 {
 	public CiExpr LengthExpr;
 	public int Length;
+	public override string ArrayString { get { return "[" + this.Length + "]"; } }
 	public override CiSymbol TryLookup(string name)
 	{
 		switch (name) {
