@@ -268,6 +268,9 @@ public class CiResolver : CiVisitor
 	public override CiExpr Visit(CiCollection expr, CiPriority parent)
 	{
 		CiExpr[] items = expr.Items;
+		for (int i = 0; i < items.Length; i++)
+			items[i] = items[i].Accept(this, parent);
+/* TODO: remove?
 		if (items.Length == 0)
 			throw StatementException(expr, "Cannot infer type of an empty array");
 		items[0] = items[0].Accept(this, parent);
@@ -289,6 +292,7 @@ public class CiResolver : CiVisitor
 				throw StatementException(expr, "Cannot infer type of array");
 		}
 		expr.Type = new CiArrayStorageType { ElementType = leftType, Length = items.Length };
+*/
 		return expr;
 	}
 
@@ -775,8 +779,7 @@ public class CiResolver : CiVisitor
 
 	public override void Visit(CiConst statement)
 	{
-		statement.Value = statement.Value.Accept(this, CiPriority.Statement);
-		statement.Type = statement.Value.Type;
+		ResolveConst(statement);
 		this.CurrentScope.Add(statement);
 		if (statement.Type is CiArrayType) {
 			List<CiConst> constArrays = this.CurrentScope.ParentClass.ConstArrays;
@@ -1043,12 +1046,22 @@ public class CiResolver : CiVisitor
 		}
 		ResolveType(konst);
 		konst.Value = konst.Value.Accept(this, CiPriority.Statement);
-		// TODO: Coerce(konst.Value, konst.Type);
-		CiArrayPtrType arrayPtrType = konst.Type as CiArrayPtrType;
-		if (arrayPtrType != null) {
-			CiArrayStorageType valueType = (CiArrayStorageType) konst.Value.Type;
-			konst.Type = new CiArrayStorageType { ElementType = arrayPtrType.ElementType, Length = valueType.Length };
+		CiCollection coll = konst.Value as CiCollection;
+		if (coll != null) {
+			CiArrayType arrayType = konst.Type as CiArrayType;
+			if (arrayType == null)
+				throw StatementException(konst, "Array initializer for scalar constant {0}", konst.Name);
+			foreach (CiExpr item in coll.Items)
+				Coerce(item, arrayType.ElementType);
+			CiArrayStorageType storageType = arrayType as CiArrayStorageType;
+			if (storageType == null)
+				konst.Type = storageType = new CiArrayStorageType { ElementType = arrayType.ElementType, Length = coll.Items.Length };
+			else if (storageType.Length != coll.Items.Length)
+				throw StatementException(konst, "Declared {0} elements, initialized {1}", storageType.Length, coll.Items.Length);
+			coll.Type = storageType;
 		}
+		else
+			Coerce(konst.Value, konst.Type);
 		konst.VisitStatus = CiVisitStatus.Done;
 	}
 

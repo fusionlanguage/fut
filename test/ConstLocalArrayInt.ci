@@ -1,0 +1,16 @@
+public static class Test
+{
+	static int Sum(int[] a, int length)
+	{
+		int sum = 0;
+		for (int i = 0; i < length; i++)
+			sum += a[i];
+		return sum;
+	}
+
+	public static bool Run()
+	{
+		const int[3] foo = { 5, 10, 15 };
+		return Sum(foo, foo.Length) == 30;
+	}
+}
