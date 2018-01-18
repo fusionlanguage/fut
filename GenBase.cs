@@ -414,6 +414,11 @@ public abstract class GenBase : CiVisitor
 			else
 				WriteNewArray(expr.Type);
 			return expr;
+		case CiToken.LeftParenthesis:
+			Write('(');
+			Write(expr.Type, false);
+			Write(") ");
+			break;
 		case CiToken.Resource:
 			WriteResource((string) ((CiLiteral) expr.Inner).Value, ((CiArrayStorageType) expr.Type).Length);
 			return expr;

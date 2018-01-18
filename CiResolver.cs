@@ -454,10 +454,12 @@ public class CiResolver : CiVisitor
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
 		CiExpr left = expr.Left.Accept(this, parent);
+		CiSymbolReference leftSymbol;
+		CiType type;
 		switch (expr.Op) {
 		case CiToken.Dot:
 			CiScope scope;
-			CiSymbolReference leftSymbol = left as CiSymbolReference;
+			leftSymbol = left as CiSymbolReference;
 			CiSymbolReference rightSymbol = (CiSymbolReference) expr.Right;
 			if (leftSymbol != null && leftSymbol.Symbol is CiScope)
 				scope = (CiScope) leftSymbol.Symbol;
@@ -480,18 +482,25 @@ public class CiResolver : CiVisitor
 			return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = rightSymbol, Type = result.Type };
 
 		case CiToken.LeftParenthesis:
-			CiSymbolReference methodSymbol = left as CiSymbolReference;
-			if (methodSymbol == null) {
+			leftSymbol = left as CiSymbolReference;
+			if (leftSymbol == null) {
 				CiBinaryExpr dotExpr = left as CiBinaryExpr;
 				if (dotExpr == null || dotExpr.Op != CiToken.Dot)
 					throw StatementException(left, "Expected a method");
-				methodSymbol = (CiSymbolReference) dotExpr.Right;
+				leftSymbol = (CiSymbolReference) dotExpr.Right;
 				// TODO: check static
 			}
-			CiMethod method = methodSymbol.Symbol as CiMethod;
+			CiExpr[] arguments = expr.RightCollection;
+			if (arguments.Length == 1) {
+				type = leftSymbol.Symbol as CiType;
+				if (type != null) {
+					CiExpr inner = arguments[0].Accept(this, CiPriority.Statement);
+					return new CiPrefixExpr { Line = expr.Line, Op = CiToken.LeftParenthesis, Inner = inner, Type = type };
+				}
+			}
+			CiMethod method = leftSymbol.Symbol as CiMethod;
 			if (method == null)
 				throw StatementException(left, "Expected a method");
-			CiExpr[] arguments = expr.RightCollection;
 			int i = 0;
 			foreach (CiVar param in method.Parameters) {
 				if (i >= arguments.Length)
@@ -528,7 +537,6 @@ public class CiResolver : CiVisitor
 		}
 
 		CiExpr right = expr.Right.Accept(this, parent);
-		CiType type;
 		CiRangeType leftRange = left.Type as CiRangeType;
 		CiRangeType rightRange = right.Type as CiRangeType;
 	
@@ -958,7 +966,7 @@ public class CiResolver : CiVisitor
 			case CiToken.LeftParenthesis:
 				// string(), MyClass()
 				if (binary.RightCollection.Length != 0)
-					throw StatementException(binary.Right, "Expected empty parentheses on storage type");
+					throw StatementException(binary.Right, "Expected empty parentheses for storage type");
 				symbol = binary.Left as CiSymbolReference;
 				if (symbol == null)
 					throw StatementException(binary.Left, "Expected name of storage type");
