@@ -742,6 +742,8 @@ public class CiStringType : CiType
 	{
 		if (name == "Length")
 			return CiSystem.StringLength;
+		if (name == "Substring")
+			return CiSystem.StringSubstring;
 		return null;
 	}
 	public override bool IsAssignableFrom(CiType right)
@@ -912,6 +914,7 @@ public class CiSystem : CiScope
 	public static readonly CiStringType StringPtrType = new CiStringType { Name = "string" };
 	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType();
 	public static readonly CiMember StringLength = new CiMember { Name = "Length", Type = UIntType };
+	public static readonly CiMethod StringSubstring = new CiMethod(CiCallType.Normal, null, "Substring", new CiVar(IntType, "offset"), new CiVar(IntType, "length")); // TODO: UIntType
 	public static readonly CiMember ArrayLength = new CiMember { Name = "Length", Type = UIntType };
 	public static readonly CiClass MathClass = new CiClass(CiCallType.Static, "Math",
 		new CiMethod(CiCallType.Static, DoubleType, "Acos", new CiVar(DoubleType, "a")),
