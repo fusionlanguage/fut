@@ -1,0 +1,11 @@
+public class Test
+{
+	string() Foo = "foo";
+
+	public static bool Run()
+	{
+		Test() o;
+		string() foo = "bar";
+		return o.Foo == "foo" && foo == "bar";
+	}
+}

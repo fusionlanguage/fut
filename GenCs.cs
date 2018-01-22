@@ -120,6 +120,11 @@ public class GenCs : GenTyped
 			return;
 		}
 
+		if (type is CiStringType) {
+			Write("string");
+			return;
+		}
+
 		CiArrayType array = type as CiArrayType;
 		if (array != null) {
 			Write(array.ElementType, false);
