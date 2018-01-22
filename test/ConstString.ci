@@ -4,6 +4,7 @@ public static class Test
 
 	public static bool Run()
 	{
-		return Foo == "foo";
+		const string foo = "bar";
+		return Foo == "foo" && foo == "bar";
 	}
 }

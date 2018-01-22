@@ -12,6 +12,8 @@ public static class Test
 
 	public static bool Run()
 	{
-		return Sum(Foo, Foo.Length) == 30;
+		const int[] foo = { 1, 2, 3, 4 };
+		return Sum(Foo, Foo.Length) == 30
+			&& Sum(foo, foo.Length) == 10;
 	}
 }
