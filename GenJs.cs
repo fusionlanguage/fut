@@ -35,6 +35,7 @@ public class GenJs : GenBase
 {
 	// TODO: Namespace
 	readonly string[][] Library = new string[(int) GenJsMethod.Count][];
+	CiClass CurrentClass;
 
 	protected override void Write(CiType type, bool promote)
 	{
@@ -73,8 +74,14 @@ public class GenJs : GenBase
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
 		CiMember member = expr.Symbol as CiMember;
-		if (member != null)
-			Write("this.");
+		if (member != null) {
+			if (member.IsStatic()) {
+				Write(this.CurrentClass.Name);
+				Write('.');
+			}
+			else
+				Write("this.");
+		}
 		WriteName(expr.Symbol);
 		return expr;
 	}
@@ -242,6 +249,7 @@ public class GenJs : GenBase
 
 	void Write(CiClass klass)
 	{
+		this.CurrentClass = klass;
 		WriteLine();
 		Write("function ");
 		Write(klass.Name);
@@ -267,6 +275,7 @@ public class GenJs : GenBase
 		foreach (CiMethod method in klass.Methods)
 			Write(klass, method);
 		WriteConsts(klass, klass.ConstArrays);
+		this.CurrentClass = null;
 	}
 
 	void WriteLib(Dictionary<string, byte[]> resources)
