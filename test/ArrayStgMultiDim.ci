@@ -1,5 +1,8 @@
-public static class Test
+public class Test
 {
+	int[2][3] TwoDim;
+	int[2][1][2] ThreeDim;
+
 	public static bool Run()
 	{
 		int[2][3] a;
@@ -14,13 +17,24 @@ public static class Test
 		b[0][0][1] = 2;
 		b[1][0][0] = 3;
 		b[1][0][1] = 4;
+		Test() o;
+		o.TwoDim[0][0] = 2;
+		o.TwoDim[0][1] = 3;
+		o.TwoDim[0][2] = 4;
+		o.TwoDim[1][0] = 5;
+		o.TwoDim[1][1] = 6;
+		o.TwoDim[1][2] = 7;
+		o.ThreeDim[0][0][0] = 5;
+		o.ThreeDim[0][0][1] = 10;
+		o.ThreeDim[1][0][0] = 15;
+		o.ThreeDim[1][0][1] = 20;
 		int sum = 0;
 		for (int i = 0; i < 2; i++)
 			for (int j = 0; j < 3; j++)
-				sum += a[i][j];
+				sum += a[i][j] + o.TwoDim[i][j];
 		for (int i = 0; i < 2; i++)
 			for (int j = 0; j < 2; j++)
-				sum += b[i][0][j];
-		return sum == 31;
+				sum += b[i][0][j] + o.ThreeDim[i][0][j];
+		return sum == 21 + 10 + 27 + 50;
 	}
 }

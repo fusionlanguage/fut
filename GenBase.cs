@@ -131,12 +131,6 @@ public abstract class GenBase : CiVisitor
 		this.AtLineStart = true;
 	}
 
-	protected void TerminateStatement()
-	{
-		if (!this.AtLineStart)
-			WriteLine(";");
-	}
-
 	protected virtual void WriteBanner()
 	{
 		WriteLine("// Generated automatically with \"cito\". Do not edit.");
@@ -227,8 +221,8 @@ public abstract class GenBase : CiVisitor
 			WriteNew(klass);
 		}
 		else if (def.Type is CiArrayStorageType && !(def.Value is CiCollection)) {
-			WriteInitArray(def, (CiArrayStorageType) def.Type);
-			// FIXME: initialized arrays
+			Write(" = ");
+			WriteNewArray(def.Type);
 		}
 		else if (def.Value != null) {
 			Write(" = ");
@@ -298,7 +292,7 @@ public abstract class GenBase : CiVisitor
 		Write("()");
 	}
 
-	protected virtual bool WriteNewArray(CiType type)
+	protected virtual void WriteNewArray(CiType type)
 	{
 		Write("new ");
 		Write(type.BaseType, false);
@@ -313,7 +307,6 @@ public abstract class GenBase : CiVisitor
 			Write(']');
 			type = array.ElementType;
 		}
-		return true; // inner dimensions allocated
 	}
 
 	protected virtual void WriteInt()
@@ -323,7 +316,9 @@ public abstract class GenBase : CiVisitor
 
 	void WriteArrayElement(CiNamedValue def, int nesting)
 	{
-		Write(def.Name);
+		if (def is CiField)
+			Write("this.");
+		WriteName(def);
 		for (int i = 0; i < nesting; i++) {
 			Write("[_i");
 			Write(i);
@@ -331,22 +326,24 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WriteInitArray(CiNamedValue def, CiArrayStorageType array)
+	protected virtual void WriteInnerArray(CiNamedValue def, int nesting, CiArrayStorageType array)
 	{
+		WriteArrayElement(def, nesting);
 		Write(" = ");
-		bool multiDim = WriteNewArray(array);
-		if (multiDim) {
-			CiArrayStorageType innerArray = array;
-			while (innerArray.ElementType is CiArrayStorageType)
-				innerArray = (CiArrayStorageType) innerArray.ElementType;
-			if (!(innerArray.ElementType is CiClass))
-				return;
-		}
+		WriteNewArray(array);
 		WriteLine(";");
+	}
+
+	protected void WriteInitCode(CiNamedValue def)
+	{
+		if (!HasInitCode(def))
+			return;
+		CiArrayStorageType array = (CiArrayStorageType) def.Type;
 		int nesting = 0;
 		for (;;) {
 			CiClass klass = array.ElementType as CiClass;
 			CiArrayStorageType innerArray = array.ElementType as CiArrayStorageType;
+			// TODO: initialized arrays
 			if (klass == null && innerArray == null)
 				break;
 			Write("for (");
@@ -369,12 +366,7 @@ public abstract class GenBase : CiVisitor
 				WriteLine(";");
 				break;
 			}
-			if (!multiDim) {
-				WriteArrayElement(def, nesting);
-				Write(" = ");
-				WriteNewArray(innerArray);
-				WriteLine(";");
-			}
+			WriteInnerArray(def, nesting, innerArray);
 			array = innerArray;
 		}
 		while (--nesting >= 0)
@@ -625,11 +617,22 @@ public abstract class GenBase : CiVisitor
 	public override void Visit(CiExpr statement)
 	{
 		statement.Accept(this, CiPriority.Statement);
-		TerminateStatement();
+		WriteLine(";");
+		CiVar def = statement as CiVar;
+		if (def != null)
+			WriteInitCode(def);
 	}
 
 	public override void Visit(CiConst statement)
 	{
+	}
+
+	protected virtual bool HasInitCode(CiNamedValue def)
+	{
+		CiArrayStorageType array = def.Type as CiArrayStorageType;
+		if (array == null)
+			return false;
+		return array.ElementType is CiArrayStorageType || array.ElementType is CiClass;
 	}
 
 	protected void Write(CiStatement[] statements)

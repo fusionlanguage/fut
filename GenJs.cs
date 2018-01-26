@@ -86,13 +86,12 @@ public class GenJs : GenBase
 		return expr;
 	}
 
-	protected override bool WriteNewArray(CiType type)
+	protected override void WriteNewArray(CiType type)
 	{
 		Write("new Array(");
 		CiArrayStorageType array = (CiArrayStorageType) type;
 		array.LengthExpr.Accept(this, CiPriority.Statement);
 		Write(')');
-		return false; // inner dimensions not allocated
 	}
 
 	protected override void WriteInt()
@@ -259,7 +258,8 @@ public class GenJs : GenBase
 			if (field.Value != null || field.Type is CiClass || field.Type is CiArrayStorageType) {
 				Write("this.");
 				base.WriteVar(field);
-				TerminateStatement();
+				WriteLine(";");
+				WriteInitCode(field);
 			}
 		}
 		if (klass.Constructor != null)

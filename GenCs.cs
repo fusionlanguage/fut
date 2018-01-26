@@ -140,7 +140,7 @@ public class GenCs : GenTyped
 		Write(symbol.Name);
 	}
 
-	protected override bool WriteNewArray(CiType type)
+	protected override void WriteNewArray(CiType type)
 	{
 		Write("new ");
 		Write(type.BaseType, false);
@@ -154,7 +154,6 @@ public class GenCs : GenTyped
 				break;
 			Write("[]");
 		}
-		return false; // inner dimensions not allocated
 	}
 
 	protected override void WriteResource(string name, int length)
@@ -255,18 +254,20 @@ public class GenCs : GenTyped
 		Write(klass.CallType);
 		OpenClass(klass, " : ");
 
-		if (klass.Constructor != null) {
-			Write(klass.Constructor.Visibility);
-			Write(klass.Name);
-			WriteLine("()");
-			Visit((CiBlock) klass.Constructor.Body);
-		}
-		else if (klass.IsPublic && klass.CallType != CiCallType.Static) {
-			if (klass.CallType != CiCallType.Sealed)
-				Write("protected ");
+		if (klass.Constructor != null
+		 || (klass.IsPublic && klass.CallType != CiCallType.Static)
+		 || klass.Fields.Any(field => HasInitCode(field))) {
+			if (klass.Constructor != null)
+				Write(klass.Constructor.Visibility);
+			else
+				Write("internal ");
 			Write(klass.Name);
 			WriteLine("()");
 			OpenBlock();
+			foreach (CiField field in klass.Fields)
+				WriteInitCode(field);
+			if (klass.Constructor != null)
+				Write(((CiBlock) klass.Constructor.Body).Statements);
 			CloseBlock();
 		}
 
@@ -277,7 +278,7 @@ public class GenCs : GenTyped
 			if (field.Type is CiClass || field.Type is CiArrayStorageType)
 				Write("readonly ");
 			WriteVar(field);
-			TerminateStatement();
+			WriteLine(";");
 		}
 
 		foreach (CiMethod method in klass.Methods) {

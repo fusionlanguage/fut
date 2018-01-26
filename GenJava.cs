@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Foxoft.Ci
 {
@@ -220,6 +221,20 @@ public class GenJava : GenTyped
 		}
 	}
 
+	protected override void WriteInnerArray(CiNamedValue def, int nesting, CiArrayStorageType array)
+	{
+	}
+
+	protected override bool HasInitCode(CiNamedValue def)
+	{
+		CiArrayStorageType array = def.Type as CiArrayStorageType;
+		if (array == null)
+			return false;
+		while (array.ElementType is CiArrayStorageType)
+			array = (CiArrayStorageType) array.ElementType;
+		return array.ElementType is CiClass;
+	}
+
 	public override void Visit(CiThrow statement)
 	{
 		Write("throw new Exception(");
@@ -303,18 +318,18 @@ public class GenJava : GenTyped
 		}
 		OpenClass(klass, " extends ");
 		
-		if (klass.Constructor != null) {
-			Write(klass.Constructor.Visibility);
-			Write(klass.Name);
-			WriteLine("()");
-			Visit((CiBlock) klass.Constructor.Body);
-		}
-		else if (klass.IsPublic && klass.CallType != CiCallType.Static) {
-			if (klass.CallType != CiCallType.Sealed)
-				Write("protected ");
+		if (klass.Constructor != null
+		 || (klass.IsPublic && klass.CallType != CiCallType.Static)
+		 || klass.Fields.Any(field => HasInitCode(field))) {
+			if (klass.Constructor != null)
+				Write(klass.Constructor.Visibility);
 			Write(klass.Name);
 			WriteLine("()");
 			OpenBlock();
+			foreach (CiField field in klass.Fields)
+				WriteInitCode(field);
+			if (klass.Constructor != null)
+				Write(((CiBlock) klass.Constructor.Body).Statements);
 			CloseBlock();
 		}
 
