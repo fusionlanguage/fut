@@ -886,10 +886,29 @@ public class CiResolver : CiVisitor
 	{
 		// TODO
 		statement.Value = statement.Value.Accept(this, CiPriority.Statement);
+		CiExpr fallthrough = null;
 		foreach (CiCase kase in statement.Cases) {
 			for (int i = 0; i < kase.Values.Length; i++)
+				// TODO: enum kase.Values[i] = FoldConst(kase.Values[i]);
 				kase.Values[i] = kase.Values[i].Accept(this, CiPriority.Statement);
+			if (fallthrough != null) {
+				if (fallthrough is CiGotoDefault)
+					throw StatementException(fallthrough, "Default must follow");
+				if (!object.Equals(((CiLiteral) fallthrough).Value, ((CiLiteral) kase.Values[0]).Value))
+					throw StatementException(fallthrough, "This case must follow");
+			}
 			Resolve(kase.Body);
+			fallthrough = kase.Fallthrough;
+			if (fallthrough != null && !(fallthrough is CiGotoDefault))
+				kase.Fallthrough = fallthrough = FoldConst(fallthrough);
+		}
+		if (fallthrough != null) {
+			if (fallthrough is CiGotoDefault) {
+				if (statement.DefaultBody == null)
+					throw StatementException(fallthrough, "Default must follow");
+			}
+			else
+				throw StatementException(fallthrough, "This case must follow");
 		}
 		if (statement.DefaultBody != null) {
 			Resolve(statement.DefaultBody);

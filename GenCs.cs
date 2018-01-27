@@ -201,6 +201,17 @@ public class GenCs : GenTyped
 		}
 	}
 
+	protected override void WriteFallthrough(CiExpr expr)
+	{
+		if (expr is CiGotoDefault)
+			WriteLine("goto default;");
+		else {
+			Write("goto case ");
+			expr.Accept(this, CiPriority.Statement);
+			WriteLine(";");
+		}
+	}
+
 	public override void Visit(CiThrow statement)
 	{
 		Write("throw new System.Exception(");

@@ -729,6 +729,10 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
+	protected virtual void WriteFallthrough(CiExpr expr)
+	{
+	}
+
 	public override void Visit(CiSwitch statement)
 	{
 		CiType coerceTo = statement.Value.IntPromotion ? null : statement.Value.Type;
@@ -746,6 +750,8 @@ public abstract class GenBase : CiVisitor
 			}
 			this.Indent++;
 			Write(kase.Body);
+			if (kase.Fallthrough != null)
+				WriteFallthrough(kase.Fallthrough);
 			this.Indent--;
 		}
 		if (statement.DefaultBody != null) {
