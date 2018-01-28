@@ -194,7 +194,17 @@ public class GenJava : GenTyped
 
 	protected override void WriteCall(CiExpr obj, string method, CiExpr[] args)
 	{
-		if (obj.Type is CiArrayType && method == "CopyTo") {
+		if (obj.Type is CiStringType && method == "Substring") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".substring(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Add); // TODO: side effect
+			Write(" + ");
+			args[1].Accept(this, CiPriority.Add);
+			Write(')');
+		}
+		else if (obj.Type is CiArrayType && method == "CopyTo") {
 			Write("System.arraycopy(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");

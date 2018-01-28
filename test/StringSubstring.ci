@@ -1,0 +1,13 @@
+public class Test
+{
+	string() Foo = "foobar";
+
+	public static bool Run()
+	{
+		Test() o;
+		string() foo = "barek";
+		string() objResult = o.Foo.Substring(1, 4);
+		string() localResult = foo.Substring(1, 4);
+		return objResult == "ooba" && localResult == "arek";
+	}
+}
