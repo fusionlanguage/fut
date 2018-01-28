@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int a = 100000;
+		long b = 10000000000;
+		return long(a) * a == b;
+	}
+}

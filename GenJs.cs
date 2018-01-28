@@ -108,6 +108,15 @@ public class GenJs : GenBase
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
+	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
+	{
+		if (expr.Op == CiToken.LeftParenthesis) {
+			expr.Inner.Accept(this, parent); // no-op
+			return expr;
+		}
+		return base.Visit(expr, parent);
+	}
+
 	protected override void WriteStringLength(CiExpr expr)
 	{
 		expr.Accept(this, CiPriority.Primary);
