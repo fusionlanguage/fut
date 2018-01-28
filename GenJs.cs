@@ -28,6 +28,7 @@ enum GenJsMethod
 {
 	CopyArray,
 	FillArray,
+	UTF8GetString,
 	Count
 }
 
@@ -121,16 +122,19 @@ public class GenJs : GenBase
 		Write(')');
 	}
 
+	void AddLibrary(GenJsMethod id, params string[] method)
+	{
+		if (this.Library[(int) id] == null)
+			this.Library[(int) id] = method;
+	}
+
 	protected override void WriteCall(CiExpr obj, string method, CiExpr[] args)
 	{
 		if (obj.Type is CiArrayType && method == "CopyTo") {
-			if (this.Library[(int) GenJsMethod.CopyArray] == null) {
-				this.Library[(int) GenJsMethod.CopyArray] = new string[] {
-					"copyArray : function(sa, soffset, da, doffset, length)",
-					"for (var i = 0; i < length; i++)",
-					"\tda[doffset + i] = sa[soffset + i];"
-				};
-			}
+			AddLibrary(GenJsMethod.CopyArray,
+				"copyArray : function(sa, soffset, da, doffset, length)",
+				"for (var i = 0; i < length; i++)",
+				"\tda[doffset + i] = sa[soffset + i];");
 			Write("Ci.copyArray(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
@@ -138,19 +142,40 @@ public class GenJs : GenBase
 			Write(')');
 		}
 		else if (obj.Type is CiArrayStorageType && method == "Fill") {
-			if (this.Library[(int) GenJsMethod.FillArray] == null) {
-				this.Library[(int) GenJsMethod.FillArray] = new string[] {
-					"fillArray : function(a, length, value)",
-					"for (var i = 0; i < length; i++)",
-					"\ta[i] = value;"
-				};
-			}
+			AddLibrary(GenJsMethod.FillArray,
+				"fillArray : function(a, length, value)",
+				"for (var i = 0; i < length; i++)",
+				"\ta[i] = value;");
 			Write("Ci.fillArray(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
 			((CiArrayStorageType) obj.Type).LengthExpr.Accept(this, CiPriority.Statement);
 			Write(", ");
 			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
+		else if (obj.Type == CiSystem.UTF8EncodingClass && method == "GetString") {
+			AddLibrary(GenJsMethod.UTF8GetString,
+				"utf8GetString : function(a, i, length)",
+				"length += i;",
+				"var s = \"\";",
+				"while (i < length) {",
+				"\tvar c = a[i];",
+				"\tif (c < 0x80)",
+				"\t\ti++;",
+				"\telse if ((c & 0xe0) == 0xc0) {",
+				"\t\tc = (c & 0x1f) << 6 | (a[i + 1] & 0x3f);",
+				"\t\ti += 2;",
+				"\t}",
+				"\telse if ((c & 0xf0) == 0xe0) {",
+				"\t\tc = (c & 0xf) << 12 | (a[i + 1] & 0x3f) << 6 | (a[i + 2] & 0x3f);",
+				"\t\ti += 3;",
+				"\t}",
+				"\ts += String.fromCharCode(c);",
+				"}",
+				"return s;");
+			Write("Ci.utf8GetString(");
+			WritePromoted(args);
 			Write(')');
 		}
 		else {

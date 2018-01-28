@@ -208,6 +208,11 @@ public class GenJava : GenTyped
 			WriteCoercedLiteral(args[0].Type, args[0], CiPriority.Statement);
 			Write(')');
 		}
+		else if (obj.Type == CiSystem.UTF8EncodingClass && method == "GetString") {
+			Write("new String(");
+			WritePromoted(args);
+			Write(", java.nio.charset.StandardCharsets.UTF_8)");
+		}
 		else {
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');

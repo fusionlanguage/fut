@@ -918,8 +918,12 @@ public class CiSystem : CiScope
 	public static readonly CiStringType StringPtrType = new CiStringType { Name = "string" };
 	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType();
 	public static readonly CiMember StringLength = new CiMember { Name = "Length", Type = UIntType };
-	public static readonly CiMethod StringSubstring = new CiMethod(CiCallType.Normal, null, "Substring", new CiVar(IntType, "offset"), new CiVar(IntType, "length")); // TODO: UIntType
+	public static readonly CiMethod StringSubstring = new CiMethod(CiCallType.Normal, StringStorageType, "Substring", new CiVar(IntType, "offset"), new CiVar(IntType, "length")); // TODO: UIntType
 	public static readonly CiMember ArrayLength = new CiMember { Name = "Length", Type = UIntType };
+	public static readonly CiArrayPtrType ByteArrayPtrType = new CiArrayPtrType { ElementType = ByteType, Modifier = CiToken.EndOfFile };
+	public static readonly CiClass UTF8EncodingClass = new CiClass(CiCallType.Normal, "UTF8Encoding",
+		new CiMethod(CiCallType.Normal, StringStorageType, "GetString", new CiVar(ByteArrayPtrType, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length"))); // TODO: UIntType
+	public static readonly CiClass EncodingClass = new CiClass(CiCallType.Static, "Encoding");
 	public static readonly CiClass MathClass = new CiClass(CiCallType.Static, "Math",
 		new CiMethod(CiCallType.Static, DoubleType, "Acos", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, DoubleType, "Asin", new CiVar(DoubleType, "a")),
@@ -947,6 +951,8 @@ public class CiSystem : CiScope
 		Add(DoubleType);
 		Add(BoolType);
 		Add(StringPtrType);
+		EncodingClass.Add(new CiMember { Name = "UTF8", Type = UTF8EncodingClass });
+		Add(EncodingClass);
 		MathClass.Add(new CiConst("E", Math.E));
 		MathClass.Add(new CiConst("PI", Math.PI));
 		Add(MathClass);

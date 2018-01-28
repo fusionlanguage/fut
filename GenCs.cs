@@ -194,6 +194,11 @@ public class GenCs : GenTyped
 			Write(((CiArrayStorageType) obj.Type).Length);
 			Write(')');
 		}
+		else if (obj.Type == CiSystem.UTF8EncodingClass && method == "GetString") {
+			Write("System.Text.Encoding.UTF8.GetString(");
+			WritePromoted(args);
+			Write(')');
+		}
 		else {
 			if (IsMathReference(obj))
 				Write("System.");
