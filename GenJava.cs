@@ -126,6 +126,16 @@ public class GenJava : GenTyped
 		Write(type.Name);
 	}
 
+	protected override void WriteLiteral(object value)
+	{
+		base.WriteLiteral(value);
+		if (value is long) {
+			long l = (long) value;
+			if (l != (int) l)
+				Write('L');
+		}
+	}
+
 	protected override void WriteName(CiSymbol symbol)
 	{
 		if (symbol is CiConst)
