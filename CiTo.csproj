@@ -35,7 +35,6 @@
 		<Compile Include="GenCs.cs" />
 		<Compile Include="GenJava.cs" />
 		<Compile Include="GenJs.cs" />
-		<Compile Include="GenJsWithTypedArrays.cs" />
 		<Compile Include="GenTyped.cs" />
 	</ItemGroup>
 	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

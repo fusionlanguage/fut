@@ -37,7 +37,6 @@ public static class CiTo
 		Console.WriteLine("-l cs      Translate to C#");
 		Console.WriteLine("-l java    Translate to Java");
 		Console.WriteLine("-l js      Translate to JavaScript");
-		Console.WriteLine("-l js-ta   Translate to JavaScript with Typed Arrays");
 		Console.WriteLine("-o FILE    Write to the specified file");
 		Console.WriteLine("-n NAME    Specify C# namespace or Java/ActionScript/Perl package");
 		Console.WriteLine("-D NAME    Define conditional compilation symbol");
@@ -99,7 +98,6 @@ public static class CiTo
 		case "cs": gen = new GenCs(namespace_); break;
 		case "java": gen = new GenJava(namespace_); break;
 		case "js": gen = new GenJs(); break;
-		case "js-ta": gen = new GenJsWithTypedArrays(); break;
 		default: throw new ArgumentException("Unknown language: " + lang);
 		}
 		gen.OutputFile = outputFile;
