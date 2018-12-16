@@ -43,7 +43,7 @@ test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
 	java -cp "test/bin$(JAVACPSEP)$(<D)" Runner >$@
 
 test/bin/%/js.txt: test/bin/%/Run.js
-	cscript -nologo $< >$@
+	node $< >$@
 
 test/bin/%/cs.exe: test/bin/%/Test.cs test/Runner.cs
 	$(CSC)

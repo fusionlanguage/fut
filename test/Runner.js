@@ -1,1 +1,1 @@
-WScript.Echo(Test.run() ? "PASSED" : "FAILED");
+console.log(Test.run() ? "PASSED" : "FAILED");
