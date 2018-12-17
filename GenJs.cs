@@ -27,7 +27,6 @@ namespace Foxoft.Ci
 enum GenJsMethod
 {
 	CopyArray,
-	FillArray,
 	UTF8GetString,
 	Count
 }
@@ -228,19 +227,6 @@ public class GenJs : GenBase
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
 			WritePromoted(args);
-			Write(')');
-		}
-		else if (obj.Type is CiArrayStorageType && method == "Fill") {
-			AddLibrary(GenJsMethod.FillArray,
-				"fillArray : function(a, length, value)",
-				"for (var i = 0; i < length; i++)",
-				"\ta[i] = value;");
-			Write("Ci.fillArray(");
-			obj.Accept(this, CiPriority.Statement);
-			Write(", ");
-			((CiArrayStorageType) obj.Type).LengthExpr.Accept(this, CiPriority.Statement);
-			Write(", ");
-			args[0].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
 		else if (obj.Type == CiSystem.UTF8EncodingClass && method == "GetString") {
