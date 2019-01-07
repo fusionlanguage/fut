@@ -1,0 +1,12 @@
+public class Test
+{
+	public static bool Run()
+	{
+		string() foo = "foobar";
+		return foo.StartsWith("")
+			&& foo.StartsWith("f")
+			&& foo.StartsWith("foo")
+			&& foo.StartsWith("foobar")
+			&& !foo.StartsWith("bar");
+	}
+}

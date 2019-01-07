@@ -1,0 +1,11 @@
+public class Test
+{
+	public static bool Run()
+	{
+		string() foo = "foobar";
+		return foo.EndsWith("")
+			&& foo.EndsWith("bar")
+			&& foo.EndsWith("foobar")
+			&& !foo.EndsWith("foo");
+	}
+}

@@ -1,6 +1,6 @@
 // GenJs.cs - JavaScript code generator
 //
-// Copyright (C) 2011-2018  Piotr Fusik
+// Copyright (C) 2011-2019  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -258,6 +258,8 @@ public class GenJs : GenBase
 			Write('.');
 			if (IsMathReference(obj) && method == "Ceiling")
 				Write("ceil");
+			else if (obj.Type is CiStringType && method == "Contains")
+				Write("includes");
 			else
 				WriteCamelCase(method);
 			Write('(');

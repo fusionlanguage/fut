@@ -1,6 +1,6 @@
 // CiTree.cs - Ci object model
 //
-// Copyright (C) 2011-2018  Piotr Fusik
+// Copyright (C) 2011-2019  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -744,11 +744,24 @@ public class CiStringType : CiType
 {
 	public override CiSymbol TryLookup(string name)
 	{
-		if (name == "Length")
+		switch (name) {
+		case "Contains":
+			return CiSystem.StringContains;
+		case "EndsWith":
+			return CiSystem.StringEndsWith;
+		case "IndexOf":
+			return CiSystem.StringIndexOf;
+		case "LastIndexOf":
+			return CiSystem.StringLastIndexOf;
+		case "Length":
 			return CiSystem.StringLength;
-		if (name == "Substring")
+		case "StartsWith":
+			return CiSystem.StringStartsWith;
+		case "Substring":
 			return CiSystem.StringSubstring;
-		return null;
+		default:
+			return null;
+		}
 	}
 	public override bool IsAssignableFrom(CiType right)
 	{
@@ -911,6 +924,7 @@ public class CiSystem : CiScope
 	public static readonly CiRangeType ByteType = new CiRangeType(0, 0xff) { Name = "byte" };
 	public static readonly CiRangeType ShortType = new CiRangeType(-0x8000, 0x7fff) { Name = "short" };
 	public static readonly CiRangeType UShortType = new CiRangeType(0, 0xffff) { Name = "ushort" };
+	public static readonly CiRangeType Minus1Type = new CiRangeType(-1, int.MaxValue);
 	public static readonly CiNumericType FloatType = new CiFloatType { Name = "float" };
 	public static readonly CiNumericType DoubleType = new CiDoubleType { Name = "double" };
 	public static readonly CiRangeType CharType = new CiRangeType(-0x80, 0xffff);
@@ -918,6 +932,11 @@ public class CiSystem : CiScope
 	public static readonly CiStringType StringPtrType = new CiStringType { Name = "string" };
 	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType();
 	public static readonly CiMember StringLength = new CiMember { Name = "Length", Type = UIntType };
+	public static readonly CiMethod StringContains = new CiMethod(CiCallType.Normal, BoolType, "Contains", new CiVar(StringPtrType, "value"));
+	public static readonly CiMethod StringEndsWith = new CiMethod(CiCallType.Normal, BoolType, "EndsWith", new CiVar(StringPtrType, "value"));
+	public static readonly CiMethod StringIndexOf = new CiMethod(CiCallType.Normal, Minus1Type, "IndexOf", new CiVar(StringPtrType, "value"));
+	public static readonly CiMethod StringLastIndexOf = new CiMethod(CiCallType.Normal, Minus1Type, "LastIndexOf", new CiVar(StringPtrType, "value"));
+	public static readonly CiMethod StringStartsWith = new CiMethod(CiCallType.Normal, BoolType, "StartsWith", new CiVar(StringPtrType, "value"));
 	public static readonly CiMethod StringSubstring = new CiMethod(CiCallType.Normal, StringStorageType, "Substring", new CiVar(IntType, "offset"), new CiVar(IntType, "length")); // TODO: UIntType
 	public static readonly CiMember ArrayLength = new CiMember { Name = "Length", Type = UIntType };
 	public static readonly CiArrayPtrType ByteArrayPtrType = new CiArrayPtrType { ElementType = ByteType, Modifier = CiToken.EndOfFile };

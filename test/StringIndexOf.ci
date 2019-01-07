@@ -1,0 +1,16 @@
+public class Test
+{
+	public static bool Run()
+	{
+		string() foo = "foobar";
+		return foo.IndexOf("") == 0
+			&& foo.IndexOf("f") == 0
+			&& foo.IndexOf("foo") == 0
+			&& foo.IndexOf("foobar") == 0
+			&& foo.IndexOf("o") == 1
+			&& foo.IndexOf("oo") == 1
+			&& foo.IndexOf("bar") == 3
+			&& foo.IndexOf("r") == 5
+			&& foo.IndexOf("barek") == -1;
+	}
+}

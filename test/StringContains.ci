@@ -1,0 +1,13 @@
+public class Test
+{
+	public static bool Run()
+	{
+		string() foo = "foobar";
+		return foo.Contains("f")
+			&& foo.Contains("ooba")
+			&& foo.Contains("bar")
+			&& foo.Contains("foobar")
+			&& foo.Contains("")
+			&& !foo.Contains("x");
+	}
+}
