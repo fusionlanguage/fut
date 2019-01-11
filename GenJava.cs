@@ -1,6 +1,6 @@
 // GenJava.cs - Java code generator
 //
-// Copyright (C) 2011-2018  Piotr Fusik
+// Copyright (C) 2011-2019  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -392,15 +392,7 @@ public class GenJava : GenTyped
 				throw new NotImplementedException(method.CallType.ToString());
 			}
 			WriteTypeAndName(method);
-			Write('(');
-			bool first = true;
-			foreach (CiVar param in method.Parameters) {
-				if (!first)
-					Write(", ");
-				first = false;
-				WriteTypeAndName(param);
-			}
-			Write(')');
+			WriteParameters(method);
 			if (method.Throws)
 				Write(" throws Exception");
 			WriteBody(method);

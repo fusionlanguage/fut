@@ -1,6 +1,6 @@
 // GenCs.cs - C# code generator
 //
-// Copyright (C) 2011-2018  Piotr Fusik
+// Copyright (C) 2011-2019  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -71,27 +71,6 @@ public class GenCs : GenTyped
 			Write("sealed ");
 			break;
 		}
-	}
-
-	protected override TypeCode GetTypeCode(CiIntegerType integer, bool promote)
-	{
-		if (integer.IsLong)
-			return TypeCode.Int64;
-		if (promote || integer is CiIntType)
-			return TypeCode.Int32;
-		CiRangeType range = (CiRangeType) integer;
-		if (range.Min < 0) {
-			if (range.Min < short.MinValue || range.Max > short.MaxValue)
-				return TypeCode.Int32;
-			if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
-				return TypeCode.Int16;
-			return TypeCode.SByte;
-		}
-		if (range.Max > ushort.MaxValue)
-			return TypeCode.Int32;
-		if (range.Max > byte.MaxValue)
-			return TypeCode.UInt16;
-		return TypeCode.Byte;
 	}
 
 	protected override void Write(TypeCode typeCode)
@@ -168,11 +147,6 @@ public class GenCs : GenTyped
 	{
 		expr.Accept(this, CiPriority.Primary);
 		Write(".Length");
-	}
-
-	protected override void WriteCharAt(CiBinaryExpr expr)
-	{
-		WriteIndexing(expr);
 	}
 
 	protected override void WriteCall(CiExpr obj, string method, CiExpr[] args)
@@ -302,15 +276,7 @@ public class GenCs : GenTyped
 			Write(method.Visibility);
 			Write(method.CallType);
 			WriteTypeAndName(method);
-			Write('(');
-			bool first = true;
-			foreach (CiVar param in method.Parameters) {
-				if (!first)
-					Write(", ");
-				first = false;
-				WriteTypeAndName(param);
-			}
-			Write(')');
+			WriteParameters(method);
 			WriteBody(method);
 		}
 

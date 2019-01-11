@@ -1,6 +1,6 @@
-// GenTyped.cs - C#/Java code generator
+// GenTyped.cs - C++/C#/Java code generator
 //
-// Copyright (C) 2011-2016  Piotr Fusik
+// Copyright (C) 2011-2019  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -26,7 +26,26 @@ namespace Foxoft.Ci
 
 public abstract class GenTyped : GenBase
 {
-	protected abstract TypeCode GetTypeCode(CiIntegerType integer, bool promote);
+	protected virtual TypeCode GetTypeCode(CiIntegerType integer, bool promote)
+	{
+		if (integer.IsLong)
+			return TypeCode.Int64;
+		if (promote || integer is CiIntType)
+			return TypeCode.Int32;
+		CiRangeType range = (CiRangeType) integer;
+		if (range.Min < 0) {
+			if (range.Min < short.MinValue || range.Max > short.MaxValue)
+				return TypeCode.Int32;
+			if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
+				return TypeCode.Int16;
+			return TypeCode.SByte;
+		}
+		if (range.Max > ushort.MaxValue)
+			return TypeCode.Int32;
+		if (range.Max > byte.MaxValue)
+			return TypeCode.UInt16;
+		return TypeCode.Byte;
+	}
 
 	protected abstract void Write(TypeCode typeCode);
 
@@ -49,6 +68,11 @@ public abstract class GenTyped : GenBase
 		else if (type is CiStringType)
 			return TypeCode.String;
 		return TypeCode.Object;
+	}
+
+	protected override void WriteCharAt(CiBinaryExpr expr)
+	{
+		WriteIndexing(expr);
 	}
 
 	static bool IsNarrower(TypeCode left, TypeCode right)
@@ -132,6 +156,19 @@ public abstract class GenTyped : GenBase
 			Write("this.");
 		WriteName(expr.Symbol);
 		return expr;
+	}
+
+	protected void WriteParameters(CiMethod method)
+	{
+		Write('(');
+		bool first = true;
+		foreach (CiVar param in method.Parameters) {
+			if (!first)
+				Write(", ");
+			first = false;
+			WriteTypeAndName(param);
+		}
+		Write(')');
 	}
 }
 

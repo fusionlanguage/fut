@@ -1,6 +1,6 @@
 // CiTo.cs - Ci translator
 //
-// Copyright (C) 2011-2018  Piotr Fusik
+// Copyright (C) 2011-2019  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -34,11 +34,12 @@ public static class CiTo
 	{
 		Console.WriteLine("Usage: cito [OPTIONS] -o FILE INPUT.ci");
 		Console.WriteLine("Options:");
+		Console.WriteLine("-l cpp     Translate to C++");
 		Console.WriteLine("-l cs      Translate to C#");
 		Console.WriteLine("-l java    Translate to Java");
 		Console.WriteLine("-l js      Translate to JavaScript");
 		Console.WriteLine("-o FILE    Write to the specified file");
-		Console.WriteLine("-n NAME    Specify C# namespace or Java/ActionScript/Perl package");
+		Console.WriteLine("-n NAME    Specify C++/C# namespace or Java package");
 		Console.WriteLine("-D NAME    Define conditional compilation symbol");
 		Console.WriteLine("--help     Display this information");
 		Console.WriteLine("--version  Display version information");
@@ -95,6 +96,7 @@ public static class CiTo
 		}
 		GenBase gen;
 		switch (lang) {
+		case "cpp": gen = new GenCpp(namespace_); break;
 		case "cs": gen = new GenCs(namespace_); break;
 		case "java": gen = new GenJava(namespace_); break;
 		case "js": gen = new GenJs(); break;

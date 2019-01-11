@@ -1,6 +1,6 @@
-// SourceGenerator.cs - base class for code generators
+// GenBase.cs - base class for code generators
 //
-// Copyright (C) 2011-2018  Piotr Fusik
+// Copyright (C) 2011-2019  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -474,6 +474,11 @@ public abstract class GenBase : CiVisitor
 		expr.Accept(this, priority);
 	}
 
+	protected virtual void WriteMemberOp(CiSymbolReference symbol)
+	{
+		Write('.');
+	}
+
 	protected abstract void WriteStringLength(CiExpr expr);
 
 	protected abstract void WriteCharAt(CiBinaryExpr expr);
@@ -571,7 +576,7 @@ public abstract class GenBase : CiVisitor
 				return expr;
 			}
 			expr.Left.Accept(this, CiPriority.Primary);
-			Write('.');
+			WriteMemberOp(rightSymbol);
 			Write(rightSymbol);
 			return expr;
 

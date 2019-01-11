@@ -9,13 +9,14 @@ CSC := gmcs
 MONO := mono
 JAVACPSEP = :
 endif
+CXX = clang
 
 VERSION := 1.0.0
 MAKEFLAGS = -r
 
 all: cito.exe
 
-cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCs.cs GenJava.cs GenJs.cs CiTo.cs)
+cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs CiTo.cs)
 	$(CSC)
 
 test-error: cito.exe
@@ -31,10 +32,14 @@ test-error: cito.exe
 		done; \
 		echo PASSED $$passed of $$total errors
 
-test: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) \
-      $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) \
-      $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
+test: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci))
+#      $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) \
+#      $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) \
+#      $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
 	perl -e '/^PASSED/ ? $$p++ : print "$$ARGV $_" while <>; print "PASSED $$p of $$. tests\n"' $^
+
+test/bin/%/cpp.txt: test/bin/%/cpp.exe
+	./$< >$@
 
 test/bin/%/cs.txt: test/bin/%/cs.exe
 	$(MONO) $< >$@
@@ -45,6 +50,9 @@ test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
 test/bin/%/js.txt: test/bin/%/Run.js
 	node $< >$@
 
+test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
+	-$(CXX) -o $@ -I $(<D) $^
+
 test/bin/%/cs.exe: test/bin/%/Test.cs test/Runner.cs
 	$(CSC)
 
@@ -53,6 +61,9 @@ test/bin/%/Test.class: test/bin/%/Test.java
 
 test/bin/%/Run.js: test/bin/%/Test.js
 	cat $< test/Runner.js >$@
+
+test/bin/%/Test.cpp: test/%.ci cito.exe
+	mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
 
 test/bin/%/Test.cs: test/%.ci cito.exe
 	mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
@@ -63,7 +74,7 @@ test/bin/%/Test.java: test/%.ci cito.exe
 test/bin/%/Test.js: test/%.ci cito.exe
 	mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
 
-.PRECIOUS: test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js
+.PRECIOUS: test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js
 
 test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 	javac -d $(@D) -cp test/bin/Basic $<
