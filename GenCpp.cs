@@ -60,8 +60,12 @@ public class GenCpp : GenTyped
 			return;
 		}
 
-		if (type is CiStringType) {
-			Write("std::string"); // FIXME
+		if (type == CiSystem.StringPtrType) {
+			Write("std::string_view");
+			return;
+		}
+		if (type == CiSystem.StringStorageType) {
+			Write("std::string");
 			return;
 		}
 
@@ -246,6 +250,7 @@ public class GenCpp : GenTyped
 		CreateFile(headerFile);
 		WriteLine("#pragma once");
 		WriteLine("#include <string>");
+		WriteLine("#include <string_view>");
 		if (this.Namespace != null) {
 			Write("namespace ");
 			WriteLine(this.Namespace);
