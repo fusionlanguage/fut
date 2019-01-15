@@ -242,7 +242,7 @@ public class GenCs : GenTyped
 		WriteLine();
 		WritePublic(klass);
 		Write(klass.CallType);
-		OpenClass(klass, " : ");
+		OpenClass(klass, "", " : ");
 
 		if (klass.Constructor != null
 		 || (klass.IsPublic && klass.CallType != CiCallType.Static)

@@ -782,10 +782,11 @@ public abstract class GenBase : CiVisitor
 			Write("public ");
 	}
 
-	protected void OpenClass(CiClass klass, string extendsClause)
+	protected void OpenClass(CiClass klass, string suffix, string extendsClause)
 	{
 		Write("class ");
 		Write(klass.Name);
+		Write(suffix);
 		if (klass.BaseClassName != null) {
 			Write(extendsClause);
 			Write(klass.BaseClassName);

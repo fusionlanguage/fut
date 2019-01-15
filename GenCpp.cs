@@ -203,6 +203,9 @@ public class GenCpp : GenTyped
 			case CiCallType.Override:
 				Write(" override");
 				break;
+			case CiCallType.Sealed:
+				Write(" final");
+				break;
 			default:
 				break;
 			}
@@ -215,7 +218,7 @@ public class GenCpp : GenTyped
 	void Write(CiClass klass)
 	{
 		WriteLine();
-		OpenClass(klass, " : public ");
+		OpenClass(klass, klass.CallType == CiCallType.Sealed ? " final" : "", " : public ");
 		this.Indent--;
 		WriteDeclarations(klass, CiVisibility.Public, "public");
 		WriteDeclarations(klass, CiVisibility.Protected, "protected");

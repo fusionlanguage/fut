@@ -341,7 +341,7 @@ public class GenJava : GenTyped
 		default:
 			throw new NotImplementedException(klass.CallType.ToString());
 		}
-		OpenClass(klass, " extends ");
+		OpenClass(klass, "", " extends ");
 		
 		if (klass.Constructor != null
 		 || (klass.IsPublic && klass.CallType != CiCallType.Static)
