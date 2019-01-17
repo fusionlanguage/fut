@@ -181,7 +181,7 @@ public class GenCpp : GenTyped
 
 		foreach (CiField field in fields)
 		{
-			WriteTypeAndName(field); // TODO: field.Value
+			WriteVar(field);
 			WriteLine(";");
 		}
 
