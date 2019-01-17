@@ -3,11 +3,18 @@ public static class Test
 	public static bool Run()
 	{
 		int[5] a;
-		for (int i = 0; i < 5; i++)
+		bool[5] b;
+		string[5] s;
+		for (int i = 0; i < 5; i++) {
 			a[i] = i;
+			b[i] = false;
+			s[i] = null;
+		}
 		a.Fill(0);
+		b.Fill(false);
+		s.Fill(null);
 		for (int i = 0; i < 5; i++)
-			if (a[i] != 0)
+			if (a[i] != 0 || b[i] || s[i] != null)
 				return false;
 		return true;
 	}
