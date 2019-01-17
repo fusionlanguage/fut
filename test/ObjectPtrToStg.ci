@@ -1,0 +1,20 @@
+public class Test
+{
+	int Foo = 42;
+
+	static bool Check(Test p)
+	{
+		return p.Foo == 42;
+	}
+
+	public static bool Run()
+	{
+		Test() o;
+		Test p = o;
+		Test p2;
+		p2 = o;
+		return p.Foo == 42
+			&& p2.Foo == 42
+			&& Check(o);
+	}
+}

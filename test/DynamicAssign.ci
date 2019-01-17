@@ -1,0 +1,11 @@
+public class Test
+{
+	int Foo = 42;
+
+	public static bool Run()
+	{
+		Test# p;
+		p = new Test();
+		return p.Foo == 42;
+	}
+}

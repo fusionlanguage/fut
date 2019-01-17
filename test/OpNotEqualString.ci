@@ -2,8 +2,16 @@ public static class Test
 {
 	public static bool Run()
 	{
-		string a = "foo";
-		string b = "bar";
-		return a != b;
+		string() s = "foo";
+		string() s2 = "bar";
+		string p = "bar";
+		string p2 = "foo";
+		return s != s2
+			&& s != p
+			&& p != s
+			&& p != p2
+			&& s != "bar"
+			&& p != "foo"
+			&& !(s != p2);
 	}
 }

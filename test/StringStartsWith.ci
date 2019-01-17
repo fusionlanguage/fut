@@ -2,11 +2,19 @@ public class Test
 {
 	public static bool Run()
 	{
-		string() foo = "foobar";
-		return foo.StartsWith("")
-			&& foo.StartsWith("f")
-			&& foo.StartsWith("foo")
-			&& foo.StartsWith("foobar")
-			&& !foo.StartsWith("bar");
+		string() s = "foobar";
+		string p = "foobar";
+		return s.StartsWith("")
+			&& s.StartsWith("f")
+			&& s.StartsWith("foo")
+			&& s.StartsWith("foobar")
+			&& !s.StartsWith("bar")
+			&& p.StartsWith("")
+			&& p.StartsWith("f")
+			&& p.StartsWith("foo")
+			&& p.StartsWith("foobar")
+			&& !p.StartsWith("bar")
+			&& "foobarek".StartsWith(s)
+			&& "foobarek".StartsWith(p);
 	}
 }

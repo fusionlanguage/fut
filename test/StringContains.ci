@@ -2,12 +2,21 @@ public class Test
 {
 	public static bool Run()
 	{
-		string() foo = "foobar";
-		return foo.Contains("f")
-			&& foo.Contains("ooba")
-			&& foo.Contains("bar")
-			&& foo.Contains("foobar")
-			&& foo.Contains("")
-			&& !foo.Contains("x");
+		string() s = "foobar";
+		string p = "foobar";
+		return s.Contains("f")
+			&& s.Contains("ooba")
+			&& s.Contains("bar")
+			&& s.Contains("foobar")
+			&& s.Contains("")
+			&& !s.Contains("x")
+			&& p.Contains("f")
+			&& p.Contains("ooba")
+			&& p.Contains("bar")
+			&& p.Contains("foobar")
+			&& p.Contains("")
+			&& !p.Contains("x")
+			&& "foobarek".Contains(s)
+			&& "barfoobar".Contains(p);
 	}
 }

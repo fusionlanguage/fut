@@ -1,0 +1,11 @@
+public class Test
+{
+	int Foo = 42;
+
+	public static bool Run()
+	{
+		Test# p = new Test();
+		p = null;
+		return p == null;
+	}
+}

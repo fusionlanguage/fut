@@ -2,13 +2,23 @@ public class Test
 {
 	public static bool Run()
 	{
-		string() foo = "foobar";
-		return (foo.LastIndexOf("") == 5 /* .NET */ || foo.LastIndexOf("") == 6 /* Java, JavaScript */)
-			&& foo.LastIndexOf("r") == 5
-			&& foo.LastIndexOf("bar") == 3
-			&& foo.LastIndexOf("foobar") == 0
-			&& foo.LastIndexOf("f") == 0
-			&& foo.LastIndexOf("oo") == 1
-			&& foo.LastIndexOf("barek") == -1;
+		string() s = "foobar";
+		string p = "foobar";
+		return (s.LastIndexOf("") == 5 /* .NET */ || s.LastIndexOf("") == 6 /* Java, JavaScript */)
+			&& s.LastIndexOf("r") == 5
+			&& s.LastIndexOf("bar") == 3
+			&& s.LastIndexOf("foobar") == 0
+			&& s.LastIndexOf("f") == 0
+			&& s.LastIndexOf("oo") == 1
+			&& s.LastIndexOf("barek") == -1
+			&& (p.LastIndexOf("") == 5 /* .NET */ || p.LastIndexOf("") == 6 /* Java, JavaScript */)
+			&& p.LastIndexOf("r") == 5
+			&& p.LastIndexOf("bar") == 3
+			&& p.LastIndexOf("foobar") == 0
+			&& p.LastIndexOf("f") == 0
+			&& p.LastIndexOf("oo") == 1
+			&& p.LastIndexOf("barek") == -1
+			&& "afoobarfoobar".LastIndexOf(s) == 7
+			&& "afoobarfoobar".LastIndexOf(p) == 7;
 	}
 }

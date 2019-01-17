@@ -1,7 +1,6 @@
 public static class Test
 {
-	static void TestThrow()
-		throws
+	static void TestThrow() throws
 	{
 		throw "Foo";
 	}

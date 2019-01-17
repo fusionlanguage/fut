@@ -1,13 +1,16 @@
 public class Test
 {
 	string() Foo = "foobar";
+	string Ptr = "foobar";
 
 	public static bool Run()
 	{
 		Test() o;
 		string() foo = "barek";
+		string ptr = "barek";
 		string() objResult = o.Foo.Substring(1, 4);
 		string() localResult = foo.Substring(1, 4);
-		return objResult == "ooba" && localResult == "arek";
+		return objResult == "ooba" && localResult == "arek"
+			&& o.Ptr.Substring(1, 4) == "ooba" && ptr.Substring(1, 4) == "arek";
 	}
 }

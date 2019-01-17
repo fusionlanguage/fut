@@ -4,6 +4,9 @@ public static class Test
 	{
 		int a = 42;
 		int b = 42;
-		return a == b;
+		double c = -5.25;
+		double d = -5.25;
+		return a == b
+			&& c == d;
 	}
 }

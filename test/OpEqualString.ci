@@ -2,8 +2,14 @@ public static class Test
 {
 	public static bool Run()
 	{
-		string a = "foo";
-		string b = "foo";
-		return a == b;
+		string() s = "foo";
+		string p = "foo";
+		return s == s
+			&& s == p
+			&& p == s
+			&& p == p
+			&& s == "foo"
+			&& p == "foo"
+			&& !(s == "bar");
 	}
 }

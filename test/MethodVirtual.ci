@@ -1,0 +1,24 @@
+abstract class Base
+{
+	public virtual bool Foo()
+	{
+		return false;
+	}
+}
+
+class Derived : Base
+{
+	public override bool Foo()
+	{
+		return true;
+	}
+}
+
+public static class Test
+{
+	public static bool Run()
+	{
+		Base# d = new Derived();
+		return d.Foo();
+	}
+}

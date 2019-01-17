@@ -2,15 +2,27 @@ public class Test
 {
 	public static bool Run()
 	{
-		string() foo = "foobar";
-		return foo.IndexOf("") == 0
-			&& foo.IndexOf("f") == 0
-			&& foo.IndexOf("foo") == 0
-			&& foo.IndexOf("foobar") == 0
-			&& foo.IndexOf("o") == 1
-			&& foo.IndexOf("oo") == 1
-			&& foo.IndexOf("bar") == 3
-			&& foo.IndexOf("r") == 5
-			&& foo.IndexOf("barek") == -1;
+		string() s = "foobar";
+		string p = "foobar";
+		return s.IndexOf("") == 0
+			&& s.IndexOf("f") == 0
+			&& s.IndexOf("foo") == 0
+			&& s.IndexOf("foobar") == 0
+			&& s.IndexOf("o") == 1
+			&& s.IndexOf("oo") == 1
+			&& s.IndexOf("bar") == 3
+			&& s.IndexOf("r") == 5
+			&& s.IndexOf("barek") == -1
+			&& p.IndexOf("") == 0
+			&& p.IndexOf("f") == 0
+			&& p.IndexOf("foo") == 0
+			&& p.IndexOf("foobar") == 0
+			&& p.IndexOf("o") == 1
+			&& p.IndexOf("oo") == 1
+			&& p.IndexOf("bar") == 3
+			&& p.IndexOf("r") == 5
+			&& p.IndexOf("barek") == -1
+			&& "afoobarek".IndexOf(s) == 1
+			&& "afoobarek".IndexOf(p) == 1;
 	}
 }

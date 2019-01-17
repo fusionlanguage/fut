@@ -9,7 +9,7 @@ CSC := gmcs
 MONO := mono
 JAVACPSEP = :
 endif
-CXX = clang
+CXX = clang++ -std=c++17
 
 VERSION := 1.0.0
 MAKEFLAGS = -r
@@ -33,7 +33,7 @@ test-error: cito.exe
 		echo PASSED $$passed of $$total errors
 
 test: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci))
-#      $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) \
+#test: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) \
 #      $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) \
 #      $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
 	perl -e '/^PASSED/ ? $$p++ : print "$$ARGV $_" while <>; print "PASSED $$p of $$. tests\n"' $^

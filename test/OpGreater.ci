@@ -4,6 +4,10 @@ public static class Test
 	{
 		int a = 1;
 		int b = 2;
-		return a <= b && a + 1 <= b;
+		double c = 3;
+		double d = 3.5;
+		return !(a > b)
+			&& !(c > d)
+			&& d > b;
 	}
 }

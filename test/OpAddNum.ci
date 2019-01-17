@@ -4,6 +4,9 @@ public static class Test
 	{
 		int a = 1;
 		int b = 2;
-		return !(a > b) && a + 1 >= b;
+		double c = -0.5;
+		double d = 3.75;
+		return a + b == 3
+			&& c + d == 3.25;
 	}
 }

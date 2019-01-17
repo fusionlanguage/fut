@@ -1,0 +1,13 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int a = 1;
+		int b = 2;
+		double c = 3;
+		double d = 3.5;
+		return !(a >= b) && a + 1 >= b
+			&& !(c >= d) && d - 0.5 >= c
+			&& d >= a;
+	}
+}

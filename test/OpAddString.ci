@@ -1,0 +1,20 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		string() s = "foo";
+		string p = "bar";
+		string() s2 = "quux";
+		s2 += s;
+		s2 += p;
+		return s + s == "foofoo"
+			&& s + p == "foobar"
+			&& p + s == "barfoo"
+			&& p + p == "barbar"
+			&& s + "quux" == "fooquux"
+			&& "quux" + s == "quuxfoo"
+			&& p + "quux" == "barquux"
+			&& "quux" + p == "quuxbar"
+			&& s2 == "quuxfoobar";
+	}
+}
