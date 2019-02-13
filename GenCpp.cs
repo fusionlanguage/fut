@@ -141,6 +141,13 @@ public class GenCpp : GenTyped
 		base.WriteCall(obj, method, args);
 	}
 
+	protected override void WriteNew(CiClass klass)
+	{
+		Write("std::make_shared<");
+		Write(klass.Name);
+		Write(">()");
+	}
+
 	protected override void WriteResource(string name, int length)
 	{
 		// TODO

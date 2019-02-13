@@ -1,6 +1,6 @@
 // CiResolver.cs - Ci symbol resolver
 //
-// Copyright (C) 2011-2018  Piotr Fusik
+// Copyright (C) 2011-2019  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -399,10 +399,17 @@ public class CiResolver : CiVisitor
 			return new CiPrefixExpr { Line = expr.Line, Op = CiToken.ExclamationMark, Inner = inner, Type = CiSystem.BoolType };
 		case CiToken.New:
 			type = ToType(expr.Inner, true);
-			if (!(type is CiArrayStorageType) && !(type is CiClass))
-				throw StatementException(expr, "Invalid argument to new");
-			expr.Type = type;
-			return expr;
+			CiClass klass = type as CiClass;
+			if (klass != null) {
+				expr.Type = new CiClassPtrType { Class = klass, Modifier = CiToken.Hash };
+				return expr;
+			}
+			CiArrayStorageType array = type as CiArrayStorageType;
+			if (array != null) {
+				expr.Type = new CiArrayPtrType { ElementType = array.ElementType, Modifier = CiToken.Hash };
+				return expr;
+			}
+			throw StatementException(expr, "Invalid argument to new");
 		case CiToken.Resource:
 			CiLiteral literal = FoldConst(expr.Inner);
 			string name = literal.Value as string;

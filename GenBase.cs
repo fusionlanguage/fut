@@ -285,7 +285,7 @@ public abstract class GenBase : CiVisitor
 		return expr;
 	}
 
-	protected void WriteNew(CiClass klass)
+	protected virtual void WriteNew(CiClass klass)
 	{
 		Write("new ");
 		Write(klass.Name);
