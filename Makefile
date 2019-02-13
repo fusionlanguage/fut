@@ -36,7 +36,7 @@ test: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) \
       $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) \
       $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) \
       $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
-	perl -e '$$n = @ARGV; /^PASSED/ ? $$p++ : print "$$ARGV $$_" while <>; print "PASSED $$p of $$n tests\n"' $^
+	perl test/summary.pl $^
 
 test/bin/%/cpp.txt: test/bin/%/cpp.exe
 	-./$< >$@
