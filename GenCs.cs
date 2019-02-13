@@ -149,16 +149,16 @@ public class GenCs : GenTyped
 		Write(".Length");
 	}
 
-	protected override void WriteCall(CiExpr obj, string method, CiExpr[] args)
+	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args)
 	{
-		if (obj.Type is CiArrayType && method == "CopyTo") {
+		if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			Write("System.Array.Copy(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
 			WritePromoted(args);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayStorageType && method == "Fill") {
+		else if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
 			CiLiteral literal = args[0] as CiLiteral;
 			if (literal == null || !literal.IsDefaultValue)
 				throw new NotImplementedException("Only null, zero and false supported");
@@ -168,7 +168,7 @@ public class GenCs : GenTyped
 			Write(((CiArrayStorageType) obj.Type).Length);
 			Write(')');
 		}
-		else if (obj.Type == CiSystem.UTF8EncodingClass && method == "GetString") {
+		else if (obj.Type == CiSystem.UTF8EncodingClass && method.Name == "GetString") {
 			Write("System.Text.Encoding.UTF8.GetString(");
 			WritePromoted(args);
 			Write(')');

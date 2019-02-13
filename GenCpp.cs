@@ -131,20 +131,30 @@ public class GenCpp : GenTyped
 			Write('.');
 	}
 
-	protected override void WriteCall(CiExpr obj, string method, CiExpr[] args)
+	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args)
 	{
 		if (IsMathReference(obj)) {
 			Write("std::");
-			if (method == "Ceiling")
+			if (method.Name == "Ceiling")
 				Write("ceil");
 			else
-				WriteLowercase(method);
+				WriteLowercase(method.Name);
 			Write('(');
 			WritePromoted(args);
 			Write(')');
 			return;
 		}
-		base.WriteCall(obj, method, args);
+		obj.Accept(this, CiPriority.Primary);
+		if (method.CallType == CiCallType.Static)
+			Write("::");
+		else if (obj.Type is CiClassPtrType)
+			Write("->");
+		else
+			Write('.');
+		WriteCamelCase(method.Name);
+		Write('(');
+		WritePromoted(args);
+		Write(')');
 	}
 
 	protected override void WriteNew(CiClass klass)

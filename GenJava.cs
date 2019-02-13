@@ -202,9 +202,9 @@ public class GenJava : GenTyped
 		Write(')');
 	}
 
-	protected override void WriteCall(CiExpr obj, string method, CiExpr[] args)
+	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args)
 	{
-		if (obj.Type is CiStringType && method == "Substring") {
+		if (method == CiSystem.StringSubstring) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".substring(");
 			args[0].Accept(this, CiPriority.Statement);
@@ -214,21 +214,21 @@ public class GenJava : GenTyped
 			args[1].Accept(this, CiPriority.Add);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayType && method == "CopyTo") {
+		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			Write("System.arraycopy(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
 			WritePromoted(args);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayStorageType && method == "Fill") {
+		else if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
 			Write("java.util.Arrays.fill(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
 			WriteCoercedLiteral(args[0].Type, args[0], CiPriority.Statement);
 			Write(')');
 		}
-		else if (obj.Type == CiSystem.UTF8EncodingClass && method == "GetString") {
+		else if (obj.Type == CiSystem.UTF8EncodingClass && method.Name == "GetString") {
 			Write("new String(");
 			WritePromoted(args);
 			Write(", java.nio.charset.StandardCharsets.UTF_8)");
@@ -236,10 +236,10 @@ public class GenJava : GenTyped
 		else {
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
-			if (IsMathReference(obj) && method == "Ceiling")
+			if (IsMathReference(obj) && method.Name == "Ceiling")
 				Write("ceil");
 			else
-				WriteCamelCase(method);
+				WriteCamelCase(method.Name);
 			Write('(');
 			WritePromoted(args);
 			Write(')');

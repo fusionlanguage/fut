@@ -493,11 +493,11 @@ public abstract class GenBase : CiVisitor
 		return symbolReference != null && symbolReference.Symbol == CiSystem.MathClass;
 	}
 
-	protected virtual void WriteCall(CiExpr obj, string method, CiExpr[] args)
+	protected virtual void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args)
 	{
 		obj.Accept(this, CiPriority.Primary);
 		Write('.');
-		Write(method);
+		Write(method.Name);
 		Write('(');
 		WritePromoted(args);
 		Write(')');
@@ -589,7 +589,7 @@ public abstract class GenBase : CiVisitor
 			if (leftBinary != null && leftBinary.Op == CiToken.Dot) {
 				CiSymbolReference symbol = leftBinary.Right as CiSymbolReference;
 				if (symbol != null) {
-					WriteCall(leftBinary.Left, symbol.Name, expr.RightCollection);
+					WriteCall(leftBinary.Left, (CiMethod) symbol.Symbol, expr.RightCollection);
 					return expr;
 				}
 			}

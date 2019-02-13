@@ -206,9 +206,9 @@ public class GenJs : GenBase
 			this.Library[(int) id] = method;
 	}
 
-	protected override void WriteCall(CiExpr obj, string method, CiExpr[] args)
+	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args)
 	{
-		if (obj.Type is CiStringType && method == "Substring") {
+		if (method == CiSystem.StringSubstring) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".substring(");
 			args[0].Accept(this, CiPriority.Statement);
@@ -218,7 +218,7 @@ public class GenJs : GenBase
 			args[1].Accept(this, CiPriority.Add);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayType && method == "CopyTo") {
+		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			AddLibrary(GenJsMethod.CopyArray,
 				"copyArray : function(sa, soffset, da, doffset, length)",
 				"for (var i = 0; i < length; i++)",
@@ -229,7 +229,7 @@ public class GenJs : GenBase
 			WritePromoted(args);
 			Write(')');
 		}
-		else if (obj.Type == CiSystem.UTF8EncodingClass && method == "GetString") {
+		else if (obj.Type == CiSystem.UTF8EncodingClass && method.Name == "GetString") {
 			AddLibrary(GenJsMethod.UTF8GetString,
 				"utf8GetString : function(a, i, length)",
 				"length += i;",
@@ -256,12 +256,12 @@ public class GenJs : GenBase
 		else {
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
-			if (IsMathReference(obj) && method == "Ceiling")
+			if (IsMathReference(obj) && method.Name == "Ceiling")
 				Write("ceil");
-			else if (obj.Type is CiStringType && method == "Contains")
+			else if (method == CiSystem.StringContains)
 				Write("includes");
 			else
-				WriteCamelCase(method);
+				WriteCamelCase(method.Name);
 			Write('(');
 			WritePromoted(args);
 			Write(')');
