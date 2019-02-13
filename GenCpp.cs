@@ -144,6 +144,31 @@ public class GenCpp : GenTyped
 			Write(')');
 			return;
 		}
+		if (method == CiSystem.StringContains) {
+			// TODO: avoid outer parentheses
+			Write('(');
+			obj.Accept(this, CiPriority.Primary);
+			Write(".find(");
+			WritePromoted(args);
+			Write(") != std::string::npos)");
+			return;
+		}
+		if (method == CiSystem.StringIndexOf) {
+			Write("static_cast<int32_t>(");
+			obj.Accept(this, CiPriority.Primary);
+			Write(".find(");
+			WritePromoted(args);
+			Write("))");
+			return;
+		}
+		if (method == CiSystem.StringLastIndexOf) {
+			Write("static_cast<int32_t>(");
+			obj.Accept(this, CiPriority.Primary);
+			Write(".rfind(");
+			WritePromoted(args);
+			Write("))");
+			return;
+		}
 		obj.Accept(this, CiPriority.Primary);
 		if (method.CallType == CiCallType.Static)
 			Write("::");
@@ -151,7 +176,14 @@ public class GenCpp : GenTyped
 			Write("->");
 		else
 			Write('.');
-		WriteCamelCase(method.Name);
+		if (method == CiSystem.StringStartsWith)
+			Write("starts_with");
+		else if (method == CiSystem.StringEndsWith)
+			Write("ends_with");
+		else if (method == CiSystem.StringSubstring)
+			Write("substr");
+		else
+			WriteCamelCase(method.Name);
 		Write('(');
 		WritePromoted(args);
 		Write(')');
