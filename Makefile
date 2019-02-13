@@ -32,47 +32,47 @@ test-error: cito.exe
 		done; \
 		echo PASSED $$passed of $$total errors
 
-test: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci))
-#test: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) \
-#      $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) \
-#      $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
-	perl -e '/^PASSED/ ? $$p++ : print "$$ARGV $_" while <>; print "PASSED $$p of $$. tests\n"' $^
+test: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) \
+      $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) \
+      $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) \
+      $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
+	perl -e '$$n = @ARGV; /^PASSED/ ? $$p++ : print "$$ARGV $$_" while <>; print "PASSED $$p of $$n tests\n"' $^
 
 test/bin/%/cpp.txt: test/bin/%/cpp.exe
-	./$< >$@
+	-./$< >$@
 
 test/bin/%/cs.txt: test/bin/%/cs.exe
-	$(MONO) $< >$@
+	-$(MONO) $< >$@
 
 test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
-	java -cp "test/bin$(JAVACPSEP)$(<D)" Runner >$@
+	-java -cp "test/bin$(JAVACPSEP)$(<D)" Runner >$@
 
 test/bin/%/js.txt: test/bin/%/Run.js
-	node $< >$@
+	-node $< >$@
 
 test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
 	-$(CXX) -o $@ -I $(<D) $^
 
 test/bin/%/cs.exe: test/bin/%/Test.cs test/Runner.cs
-	$(CSC)
+	-$(CSC)
 
 test/bin/%/Test.class: test/bin/%/Test.java
-	javac -d $(@D) $(<D)/*.java
+	-javac -d $(@D) $(<D)/*.java
 
 test/bin/%/Run.js: test/bin/%/Test.js
-	cat $< test/Runner.js >$@
+	-cat $< test/Runner.js >$@
 
 test/bin/%/Test.cpp: test/%.ci cito.exe
-	mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
 
 test/bin/%/Test.cs: test/%.ci cito.exe
-	mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
 
 test/bin/%/Test.java: test/%.ci cito.exe
-	mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
 
 test/bin/%/Test.js: test/%.ci cito.exe
-	mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
 
 .PRECIOUS: test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js
 
