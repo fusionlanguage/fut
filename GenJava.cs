@@ -386,7 +386,7 @@ public class GenJava : GenTyped
 					Write("final ");
 				break;
 			case CiCallType.Sealed:
-				Write("final ");
+				Write("final @Override ");
 				break;
 			default:
 				throw new NotImplementedException(method.CallType.ToString());

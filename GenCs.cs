@@ -50,7 +50,7 @@ public class GenCs : GenTyped
 		}
 	}
 
-	void Write(CiCallType callType)
+	void Write(CiCallType callType, string sealedString)
 	{
 		switch (callType) {
 		case CiCallType.Static:
@@ -68,7 +68,7 @@ public class GenCs : GenTyped
 			Write("override ");
 			break;
 		case CiCallType.Sealed:
-			Write("sealed ");
+			Write(sealedString);
 			break;
 		}
 	}
@@ -241,7 +241,7 @@ public class GenCs : GenTyped
 	{
 		WriteLine();
 		WritePublic(klass);
-		Write(klass.CallType);
+		Write(klass.CallType, "sealed ");
 		OpenClass(klass, "", " : ");
 
 		if (klass.Constructor != null
@@ -274,7 +274,7 @@ public class GenCs : GenTyped
 		foreach (CiMethod method in klass.Methods) {
 			WriteLine();
 			Write(method.Visibility);
-			Write(method.CallType);
+			Write(method.CallType, "sealed override ");
 			WriteTypeAndName(method);
 			WriteParameters(method);
 			WriteBody(method);
