@@ -117,10 +117,12 @@ public class GenCpp : GenTyped
 			base.WriteLiteral(value);
 	}
 
-	protected override void WriteMemberOp(CiSymbolReference symbol)
+	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
 		if (symbol.Symbol is CiConst) // FIXME
 			Write("::");
+		else if (left.Type is CiClassPtrType)
+			Write("->");
 		else
 			Write('.');
 	}

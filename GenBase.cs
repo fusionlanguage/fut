@@ -474,7 +474,7 @@ public abstract class GenBase : CiVisitor
 		expr.Accept(this, priority);
 	}
 
-	protected virtual void WriteMemberOp(CiSymbolReference symbol)
+	protected virtual void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
 		Write('.');
 	}
@@ -576,7 +576,7 @@ public abstract class GenBase : CiVisitor
 				return expr;
 			}
 			expr.Left.Accept(this, CiPriority.Primary);
-			WriteMemberOp(rightSymbol);
+			WriteMemberOp(expr.Left, rightSymbol);
 			Write(rightSymbol);
 			return expr;
 
