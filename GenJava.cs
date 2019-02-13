@@ -202,7 +202,7 @@ public class GenJava : GenTyped
 		Write(')');
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args)
+	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (method == CiSystem.StringSubstring) {
 			obj.Accept(this, CiPriority.Primary);

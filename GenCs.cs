@@ -149,7 +149,7 @@ public class GenCs : GenTyped
 		Write(".Length");
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args)
+	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			Write("System.Array.Copy(");
@@ -176,7 +176,7 @@ public class GenCs : GenTyped
 		else {
 			if (IsMathReference(obj))
 				Write("System.");
-			base.WriteCall(obj, method, args);
+			base.WriteCall(obj, method, args, parent);
 		}
 	}
 

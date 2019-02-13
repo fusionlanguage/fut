@@ -131,7 +131,7 @@ public class GenCpp : GenTyped
 			Write('.');
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args)
+	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (IsMathReference(obj)) {
 			Write("std::");
@@ -145,12 +145,14 @@ public class GenCpp : GenTyped
 			return;
 		}
 		if (method == CiSystem.StringContains) {
-			// TODO: avoid outer parentheses
-			Write('(');
+			if (parent > CiPriority.Equality)
+				Write('(');
 			obj.Accept(this, CiPriority.Primary);
 			Write(".find(");
 			WritePromoted(args);
-			Write(") != std::string::npos)");
+			Write(") != std::string::npos");
+			if (parent > CiPriority.Equality)
+				Write(')');
 			return;
 		}
 		if (method == CiSystem.StringIndexOf) {

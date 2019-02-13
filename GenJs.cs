@@ -206,7 +206,7 @@ public class GenJs : GenBase
 			this.Library[(int) id] = method;
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args)
+	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (method == CiSystem.StringSubstring) {
 			obj.Accept(this, CiPriority.Primary);
