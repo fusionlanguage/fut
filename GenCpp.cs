@@ -76,6 +76,28 @@ public class GenCpp : GenTyped
 			return;
 		}
 
+		CiClassPtrType ptr = type as CiClassPtrType;
+		if (ptr != null) {
+			switch (ptr.Modifier) {
+			case CiToken.EndOfFile:
+				Write("const ");
+				Write(ptr.Class.Name);
+				Write(" *");
+				return;
+			case CiToken.ExclamationMark:
+				Write(ptr.Class.Name);
+				Write(" *");
+				return;
+			case CiToken.Hash:
+				Write("std::shared_ptr<");
+				Write(ptr.Class.Name);
+				Write('>');
+				return;
+			default:
+				throw new NotImplementedException(ptr.Modifier.ToString());
+			}
+		}
+
 		Write(type.Name);
 	}
 
@@ -249,6 +271,7 @@ public class GenCpp : GenTyped
 		string headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
 		CreateFile(headerFile);
 		WriteLine("#pragma once");
+		WriteLine("#include <memory>");
 		WriteLine("#include <string>");
 		WriteLine("#include <string_view>");
 		if (this.Namespace != null) {
