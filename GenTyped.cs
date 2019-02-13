@@ -158,6 +158,13 @@ public abstract class GenTyped : GenBase
 		return expr;
 	}
 
+	protected bool NeedsConstructor(CiClass klass)
+	{
+		return klass.Constructor != null
+			|| (klass.IsPublic && klass.CallType != CiCallType.Static) // hide constructor by default
+			|| klass.Fields.Any(field => HasInitCode(field));
+	}
+
 	protected void WriteParameters(CiMethod method)
 	{
 		Write('(');

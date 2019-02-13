@@ -244,9 +244,7 @@ public class GenCs : GenTyped
 		Write(klass.CallType, "sealed ");
 		OpenClass(klass, "", " : ");
 
-		if (klass.Constructor != null
-		 || (klass.IsPublic && klass.CallType != CiCallType.Static)
-		 || klass.Fields.Any(field => HasInitCode(field))) {
+		if (NeedsConstructor(klass)) {
 			if (klass.Constructor != null)
 				Write(klass.Constructor.Visibility);
 			else

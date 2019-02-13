@@ -241,17 +241,40 @@ public class GenCpp : GenTyped
 		WriteLine("};");
 	}
 
+	CiVisibility GetConstructorVisibility(CiClass klass)
+	{
+		switch (klass.CallType) {
+		case CiCallType.Static:
+			return CiVisibility.Private;
+		case CiCallType.Abstract:
+			return CiVisibility.Protected;
+		default:
+			return CiVisibility.Public;
+		}
+	}
+
 	void WriteDeclarations(CiClass klass, CiVisibility visibility, string visibilityKeyword)
 	{
+		bool constructor = GetConstructorVisibility(klass) == visibility;
 		IEnumerable<CiConst> consts = klass.Consts.Where(c => c.Visibility == visibility);
 		IEnumerable<CiField> fields = klass.Fields.Where(f => f.Visibility == visibility);
 		IEnumerable<CiMethod> methods = klass.Methods.Where(m => m.Visibility == visibility);
-		if (!consts.Any() && !fields.Any() && !methods.Any())
+		if (!constructor && !consts.Any() && !fields.Any() && !methods.Any())
 			return;
 
 		Write(visibilityKeyword);
 		WriteLine(":");
 		this.Indent++;
+
+		if (constructor) {
+			Write(klass.Name);
+			Write("()");
+			if (klass.CallType == CiCallType.Static)
+				Write(" = delete");
+			else if (klass.Constructor == null)
+				Write(" = default");
+			WriteLine(";");
+		}
 
 		foreach (CiConst konst in consts) {
 			Write("static constexpr ");
@@ -312,6 +335,19 @@ public class GenCpp : GenTyped
 		WriteLine("};");
 	}
 
+	void WriteConstructor(CiClass klass)
+	{
+		if (klass.Constructor == null)
+			return;
+		Write(klass.Name);
+		Write("::");
+		Write(klass.Name);
+		WriteLine("()");
+		OpenBlock();
+		Write(((CiBlock) klass.Constructor.Body).Statements);
+		CloseBlock();
+	}
+
 	void WriteMethod(CiClass klass, CiMethod method)
 	{
 		if (method.CallType == CiCallType.Abstract)
@@ -353,9 +389,11 @@ public class GenCpp : GenTyped
 		Write(Path.GetFileName(headerFile));
 		WriteLine("\"");
 		WriteLine("using namespace std::string_view_literals;");
-		foreach (CiClass klass in program.Classes)
+		foreach (CiClass klass in program.Classes) {
+			WriteConstructor(klass);
 			foreach (CiMethod method in klass.Methods)
 				WriteMethod(klass, method);
+		}
 		CloseFile();
 	}
 }
