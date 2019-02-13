@@ -109,6 +109,10 @@ public class GenCpp : GenTyped
 			Write(symbol.Name);
 	}
 
+	protected override void WriteClassStgInit(CiClass klass)
+	{
+	}
+
 	protected override void WriteLiteral(object value)
 	{
 		if (value == null)
