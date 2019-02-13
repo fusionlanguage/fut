@@ -131,6 +131,18 @@ public class GenCpp : GenTyped
 			Write('.');
 	}
 
+	void WriteStringMethod(CiExpr obj, string name, CiExpr[] args)
+	{
+		obj.Accept(this, CiPriority.Primary);
+		if (obj is CiLiteral)
+			Write("sv");
+		Write('.');
+		Write(name);
+		Write('(');
+		WritePromoted(args);
+		Write(')');
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (IsMathReference(obj)) {
@@ -142,53 +154,44 @@ public class GenCpp : GenTyped
 			Write('(');
 			WritePromoted(args);
 			Write(')');
-			return;
 		}
-		if (method == CiSystem.StringContains) {
+		else if (method == CiSystem.StringContains) {
 			if (parent > CiPriority.Equality)
 				Write('(');
-			obj.Accept(this, CiPriority.Primary);
-			Write(".find(");
-			WritePromoted(args);
-			Write(") != std::string::npos");
+			WriteStringMethod(obj, "find", args);
+			Write(" != std::string::npos");
 			if (parent > CiPriority.Equality)
 				Write(')');
-			return;
 		}
-		if (method == CiSystem.StringIndexOf) {
+		else if (method == CiSystem.StringIndexOf) {
 			Write("static_cast<int32_t>(");
-			obj.Accept(this, CiPriority.Primary);
-			Write(".find(");
-			WritePromoted(args);
-			Write("))");
-			return;
+			WriteStringMethod(obj, "find", args);
+			Write(')');
 		}
-		if (method == CiSystem.StringLastIndexOf) {
+		else if (method == CiSystem.StringLastIndexOf) {
 			Write("static_cast<int32_t>(");
-			obj.Accept(this, CiPriority.Primary);
-			Write(".rfind(");
-			WritePromoted(args);
-			Write("))");
-			return;
+			WriteStringMethod(obj, "rfind", args);
+			Write(')');
 		}
-		obj.Accept(this, CiPriority.Primary);
-		if (method.CallType == CiCallType.Static)
-			Write("::");
-		else if (obj.Type is CiClassPtrType)
-			Write("->");
-		else
-			Write('.');
-		if (method == CiSystem.StringStartsWith)
-			Write("starts_with");
+		else if (method == CiSystem.StringStartsWith)
+			WriteStringMethod(obj, "starts_with", args);
 		else if (method == CiSystem.StringEndsWith)
-			Write("ends_with");
+			WriteStringMethod(obj, "ends_with", args);
 		else if (method == CiSystem.StringSubstring)
-			Write("substr");
-		else
+			WriteStringMethod(obj, "substr", args);
+		else {
+			obj.Accept(this, CiPriority.Primary);
+			if (method.CallType == CiCallType.Static)
+				Write("::");
+			else if (obj.Type is CiClassPtrType)
+				Write("->");
+			else
+				Write('.');
 			WriteCamelCase(method.Name);
-		Write('(');
-		WritePromoted(args);
-		Write(')');
+			Write('(');
+			WritePromoted(args);
+			Write(')');
+		}
 	}
 
 	protected override void WriteNew(CiClass klass)
@@ -349,10 +352,7 @@ public class GenCpp : GenTyped
 		Write("#include \"");
 		Write(Path.GetFileName(headerFile));
 		WriteLine("\"");
-		//foreach (CiEnum enu in program.OfType<CiEnum>())
-		//	Write(enu);
-		//if (program.Resources.Count > 0)
-		//	WriteResources(program.Resources);
+		WriteLine("using namespace std::string_view_literals;");
 		foreach (CiClass klass in program.Classes)
 			foreach (CiMethod method in klass.Methods)
 				WriteMethod(klass, method);
