@@ -261,6 +261,13 @@ public class GenCpp : GenTyped
 		}
 	}
 
+	void WriteParametersAndConst(CiMethod method)
+	{
+		WriteParameters(method);
+		if (method.CallType != CiCallType.Static && !method.IsMutator)
+			Write(" const");
+	}
+
 	void WriteDeclarations(CiClass klass, CiVisibility visibility, string visibilityKeyword)
 	{
 		bool constructor = GetConstructorVisibility(klass) == visibility;
@@ -312,7 +319,7 @@ public class GenCpp : GenTyped
 				break;
 			}
 			WriteTypeAndName(method);
-			WriteParameters(method);
+			WriteParametersAndConst(method);
 			switch (method.CallType) {
 			case CiCallType.Abstract:
 				Write(" = 0");
@@ -366,7 +373,7 @@ public class GenCpp : GenTyped
 		Write(klass.Name);
 		Write("::");
 		WriteCamelCase(method.Name);
-		WriteParameters(method);
+		WriteParametersAndConst(method);
 		WriteBody(method);
 	}
 
