@@ -109,6 +109,14 @@ public class GenCpp : GenTyped
 			Write(symbol.Name);
 	}
 
+	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	{
+		if (expr.Symbol is CiField)
+			Write("this->");
+		WriteName(expr.Symbol);
+		return expr;
+	}
+
 	protected override void WriteClassStgInit(CiClass klass)
 	{
 	}
