@@ -141,7 +141,11 @@ public class GenCpp : GenTyped
 		return expr;
 	}
 
-	protected override void WriteClassStgInit(CiClass klass)
+	protected override void WriteClassStorageInit(CiClass klass)
+	{
+	}
+
+	protected override void WriteArrayStorageInit(CiType type)
 	{
 	}
 
