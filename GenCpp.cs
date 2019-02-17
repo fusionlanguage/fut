@@ -71,8 +71,32 @@ public class GenCpp : GenTyped
 
 		CiArrayType array = type as CiArrayType;
 		if (array != null) {
-			Write(array.ElementType, false);
-			Write("[]"); // FIXME
+			CiArrayPtrType arrayPtr = type as CiArrayPtrType;
+			if (arrayPtr != null) {
+				switch (arrayPtr.Modifier) {
+				case CiToken.EndOfFile:
+					Write(arrayPtr.ElementType, false);
+					Write(" const *");
+					return;
+				case CiToken.ExclamationMark:
+					Write(arrayPtr.ElementType, false);
+					Write(" *");
+					return;
+				case CiToken.Hash:
+					Write("std::shared_ptr<");
+					Write(arrayPtr.ElementType, false);
+					Write("[]>");
+					return;
+				default:
+					throw new NotImplementedException(arrayPtr.Modifier.ToString());
+				}
+			}
+			CiArrayStorageType arrayStorage = (CiArrayStorageType) type;
+			Write("std::array<");
+			Write(arrayStorage.ElementType, false);
+			Write(", ");
+			Write(arrayStorage.Length);
+			Write('>');
 			return;
 		}
 
@@ -382,6 +406,7 @@ public class GenCpp : GenTyped
 		string headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
 		CreateFile(headerFile);
 		WriteLine("#pragma once");
+		WriteLine("#include <array>");
 		WriteLine("#include <memory>");
 		WriteLine("#include <string>");
 		WriteLine("#include <string_view>");

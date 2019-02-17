@@ -1,0 +1,16 @@
+public static class Test
+{
+	static int Get(byte[] a, int i)
+	{
+		return a[i] & 254;
+	}
+
+	public static bool Run()
+	{
+		byte[3] a;
+		a[1] = 200;
+		return a[1] == 200
+			&& (a[1] & 254) == 200
+			&& Get(a, 1) == 200;
+	}
+}
