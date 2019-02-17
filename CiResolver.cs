@@ -677,6 +677,12 @@ public class CiResolver : CiVisitor
 				if (leftRange.Max < rightRange.Min || leftRange.Min > rightRange.Max)
 					return CiLiteral.False;
 			}
+			else if (left.Type is CiStringType && right.Type is CiStringType) {
+				CiLiteral leftLiteral = left as CiLiteral;
+				CiLiteral rightLiteral = right as CiLiteral;
+				if (leftLiteral != null && rightLiteral != null)
+					return expr.ToLiteral((string) leftLiteral.Value == (string) rightLiteral.Value);
+			}
 			// TODO: type check
 			type = CiSystem.BoolType;
 			break;
@@ -686,6 +692,12 @@ public class CiResolver : CiVisitor
 					return CiLiteral.True;
 				if (leftRange.Min == leftRange.Max && leftRange.Min == rightRange.Min && leftRange.Min == rightRange.Max)
 					return CiLiteral.False;
+			}
+			else if (left.Type is CiStringType && right.Type is CiStringType) {
+				CiLiteral leftLiteral = left as CiLiteral;
+				CiLiteral rightLiteral = right as CiLiteral;
+				if (leftLiteral != null && rightLiteral != null)
+					return expr.ToLiteral((string) leftLiteral.Value != (string) rightLiteral.Value);
 			}
 			// TODO: type check
 			type = CiSystem.BoolType;
