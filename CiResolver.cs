@@ -30,6 +30,7 @@ public class CiResolver : CiVisitor
 {
 	readonly CiProgram Program;
 	CiScope CurrentScope;
+	CiMethod CurrentMethod;
 	readonly HashSet<CiMethod> CurrentPureMethods = new HashSet<CiMethod>();
 	readonly Dictionary<CiVar, CiExpr> CurrentPureArguments = new Dictionary<CiVar, CiExpr>();
 
@@ -896,9 +897,16 @@ public class CiResolver : CiVisitor
 
 	public override void Visit(CiReturn statement)
 	{
-		if (statement.Value != null)
+		if (this.CurrentMethod.Type == null) {
+			if (statement.Value != null)
+				throw StatementException(statement, "Void method cannot return a value");
+		}
+		else {
+			if (statement.Value == null)
+				throw StatementException(statement, "Missing return value");
 			statement.Value = statement.Value.Accept(this, CiPriority.Statement);
-		// TODO
+			Coerce(statement.Value, this.CurrentMethod.Type);
+		}
 	}
 
 	public override void Visit(CiSwitch statement)
@@ -1140,7 +1148,9 @@ public class CiResolver : CiVisitor
 		foreach (CiMethod method in klass.Methods) {
 			if (method.Body != null) {
 				this.CurrentScope = method.Parameters;
+				this.CurrentMethod = method;
 				method.Body.Accept(this);
+				this.CurrentMethod = null;
 			}
 		}
 	}
