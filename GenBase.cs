@@ -475,6 +475,11 @@ public abstract class GenBase : CiVisitor
 		Write(expr, parent, CiPriority.Equality, not ? " != " : " == ");
 	}
 
+	protected virtual void WriteAnd(CiBinaryExpr expr, CiPriority parent)
+	{
+		Write(expr, parent, CiPriority.And, " & ");
+	}
+
 	protected virtual void WriteCoerced(CiType type, CiExpr expr)
 	{
 		expr.Accept(this, CiPriority.Statement);
@@ -548,7 +553,8 @@ public abstract class GenBase : CiVisitor
 			WriteEqual(expr, parent, true);
 			return expr;
 		case CiToken.And:
-			return Write(expr, parent, CiPriority.And, " & ");
+			WriteAnd(expr, parent);
+			return expr;
 		case CiToken.Or:
 			return Write(expr, parent, CiPriority.Or, " | ");
 		case CiToken.Xor:

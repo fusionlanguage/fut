@@ -9,8 +9,11 @@ public static class Test
 	{
 		byte[3] a;
 		a[1] = 200;
+		int[1] ia;
+		ia[0] = a[1];
 		return a[1] == 200
 			&& (a[1] & 254) == 200
+			&& ia[0] == 200
 			&& Get(a, 1) == 200;
 	}
 }

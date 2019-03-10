@@ -170,6 +170,29 @@ public class GenJava : GenTyped
 			base.WriteEqual(expr, parent, not);
 	}
 
+	static bool IsUnsignedByte(CiType type)
+	{
+		CiRangeType range = type as CiRangeType;
+		return range != null && range.Min >= 0 && range.Max > sbyte.MaxValue && range.Max <= byte.MaxValue;
+	}
+
+	protected override void WriteAnd(CiBinaryExpr expr, CiPriority parent)
+	{
+		CiBinaryExpr leftBinary = expr.Left as CiBinaryExpr;
+		CiLiteral rightLiteral = expr.Right as CiLiteral;
+		if (leftBinary != null && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type) && rightLiteral != null) {
+			if (parent > CiPriority.And)
+				Write('(');
+			base.WriteIndexing(leftBinary, CiPriority.And);
+			Write(" & ");
+			Write(0xff & (long) rightLiteral.Value);
+			if (parent > CiPriority.And)
+				Write(')');
+		}
+		else
+			base.WriteAnd(expr, parent);
+	}
+
 	protected override void WriteStringLength(CiExpr expr)
 	{
 		expr.Accept(this, CiPriority.Primary);
@@ -228,19 +251,16 @@ public class GenJava : GenTyped
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (parent != CiPriority.Assign) {
-			CiRangeType range = expr.Type as CiRangeType;
-			if (range != null && range.Min >= 0 && range.Max > sbyte.MaxValue && range.Max <= byte.MaxValue) {
-				if (parent > CiPriority.And)
-					Write('(');
-				base.WriteIndexing(expr, CiPriority.And);
-				Write(" & 0xff");
-				if (parent > CiPriority.And)
-					Write(')');
-				return;
-			}
+		if (parent != CiPriority.Assign && IsUnsignedByte(expr.Type)) {
+			if (parent > CiPriority.And)
+				Write('(');
+			base.WriteIndexing(expr, CiPriority.And);
+			Write(" & 0xff");
+			if (parent > CiPriority.And)
+				Write(')');
 		}
-		base.WriteIndexing(expr, parent);
+		else
+			base.WriteIndexing(expr, parent);
 	}
 
 	protected override void WriteInnerArray(CiNamedValue def, int nesting, CiArrayStorageType array)
