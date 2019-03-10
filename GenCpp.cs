@@ -278,6 +278,11 @@ public class GenCpp : GenTyped
 		Write(')');
 	}
 
+	protected override bool HasInitCode(CiNamedValue def)
+	{
+		return false;
+	}
+
 	public override void Visit(CiThrow statement)
 	{
 		WriteLine("throw std::exception();");
