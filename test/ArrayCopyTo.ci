@@ -12,7 +12,7 @@ public static class Test
 		int[] p = a;
 		p.CopyTo(3, b, 0, 1);
 
-		p.CopyTo(3, p, 5, 2);
+		p.CopyTo(3, a, 5, 2);
 
 		int[]! p2 = a;
 		b.CopyTo(1, p2, 0, 1);

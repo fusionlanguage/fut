@@ -211,6 +211,19 @@ public class GenCpp : GenTyped
 			WriteStringMethod(obj, "ends_with", method, args);
 		else if (method == CiSystem.StringSubstring)
 			WriteStringMethod(obj, "substr", method, args);
+		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+			Write("std::copy_n(");
+			WriteArrayPtr(obj, CiPriority.Add);
+			Write(" + ");
+			args[0].Accept(this, CiPriority.Add);
+			Write(", ");
+			args[3].Accept(this, CiPriority.Statement);
+			Write(", ");
+			WriteArrayPtr(args[1], CiPriority.Add);
+			Write(" + ");
+			args[2].Accept(this, CiPriority.Add);
+			Write(')');
+		}
 		else {
 			obj.Accept(this, CiPriority.Primary);
 			if (method.CallType == CiCallType.Static)
@@ -236,6 +249,23 @@ public class GenCpp : GenTyped
 		// TODO
 	}
 
+	void WriteArrayPtr(CiExpr expr, CiPriority parent)
+	{
+		if (expr.Type is CiArrayStorageType) {
+			expr.Accept(this, CiPriority.Primary);
+			Write(".data()");
+		}
+		else {
+			CiArrayPtrType arrayPtr = expr.Type as CiArrayPtrType;
+			if (arrayPtr != null && arrayPtr.Modifier == CiToken.Hash) {
+				expr.Accept(this, CiPriority.Primary);
+				Write(".get()");
+			}
+			else
+				expr.Accept(this, parent);
+		}
+	}
+
 	protected override void WriteCoerced(CiType type, CiExpr expr)
 	{
 		if (type is CiClassPtrType && ((CiClassPtrType) type).Modifier != CiToken.Hash) {
@@ -254,19 +284,8 @@ public class GenCpp : GenTyped
 			}
 		}
 		else if (type is CiArrayPtrType && ((CiArrayPtrType) type).Modifier != CiToken.Hash) {
-			if (expr.Type is CiArrayStorageType) {
-				expr.Accept(this, CiPriority.Primary);
-				Write(".data()");
-				return;
-			}
-			else {
-				CiArrayPtrType arrayPtr = expr.Type as CiArrayPtrType;
-				if (arrayPtr != null && arrayPtr.Modifier == CiToken.Hash) {
-					expr.Accept(this, CiPriority.Primary);
-					Write(".get()");
-					return;
-				}
-			}
+			WriteArrayPtr(expr, CiPriority.Statement);
+			return;
 		}
 		base.WriteCoerced(type, expr);
 	}
@@ -466,6 +485,7 @@ public class GenCpp : GenTyped
 		CloseFile();
 
 		CreateFile(this.OutputFile);
+		WriteLine("#include <algorithm>");
 		WriteLine("#include <cmath>");
 		Write("#include \"");
 		Write(Path.GetFileName(headerFile));
