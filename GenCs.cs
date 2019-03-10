@@ -125,7 +125,7 @@ public class GenCs : GenTyped
 		Write(type.BaseType, false);
 		CiArrayStorageType storage = (CiArrayStorageType) type;
 		Write('[');
-		WritePromoted(storage.LengthExpr, CiPriority.Statement);
+		storage.LengthExpr.Accept(this, CiPriority.Statement);
 		Write(']');
 		for (CiArrayType array = storage; ; ) {
 			array = array.ElementType as CiArrayType;
@@ -155,7 +155,7 @@ public class GenCs : GenTyped
 			Write("System.Array.Copy(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
-			WritePromoted(args);
+			WriteArgs(method, args);
 			Write(')');
 		}
 		else if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
@@ -169,9 +169,8 @@ public class GenCs : GenTyped
 			Write(')');
 		}
 		else if (obj.Type == CiSystem.UTF8EncodingClass && method.Name == "GetString") {
-			Write("System.Text.Encoding.UTF8.GetString(");
-			WritePromoted(args);
-			Write(')');
+			Write("System.Text.Encoding.UTF8.GetString");
+			WriteArgsInParentheses(method, args);
 		}
 		else {
 			if (IsMathReference(obj))

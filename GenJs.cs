@@ -196,7 +196,7 @@ public class GenJs : GenBase
 	{
 		expr.Left.Accept(this, CiPriority.Primary);
 		Write(".charCodeAt(");
-		WritePromoted(expr.Right, CiPriority.Statement);
+		expr.Right.Accept(this, CiPriority.Statement);
 		Write(')');
 	}
 
@@ -226,7 +226,7 @@ public class GenJs : GenBase
 			Write("Ci.copyArray(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
-			WritePromoted(args);
+			WriteArgs(method, args);
 			Write(')');
 		}
 		else if (obj.Type == CiSystem.UTF8EncodingClass && method.Name == "GetString") {
@@ -249,9 +249,8 @@ public class GenJs : GenBase
 				"\ts += String.fromCharCode(c);",
 				"}",
 				"return s;");
-			Write("Ci.utf8GetString(");
-			WritePromoted(args);
-			Write(')');
+			Write("Ci.utf8GetString");
+			WriteArgsInParentheses(method, args);
 		}
 		else {
 			obj.Accept(this, CiPriority.Primary);
@@ -262,9 +261,7 @@ public class GenJs : GenBase
 				Write("includes");
 			else
 				WriteCamelCase(method.Name);
-			Write('(');
-			WritePromoted(args);
-			Write(')');
+			WriteArgsInParentheses(method, args);
 		}
 	}
 
@@ -273,9 +270,9 @@ public class GenJs : GenBase
 		if (expr.Op == CiToken.Slash && expr.Type is CiIntegerType) {
 			if (parent > CiPriority.Or)
 				Write('(');
-			WritePromoted(expr.Left, CiPriority.Mul);
+			expr.Left.Accept(this, CiPriority.Mul);
 			Write(" / ");
-			WritePromoted(expr.Right, CiPriority.Primary);
+			expr.Right.Accept(this, CiPriority.Primary);
 			Write(" | 0"); // FIXME: long: Math.trunc?
 			if (parent > CiPriority.Or)
 				Write(')');

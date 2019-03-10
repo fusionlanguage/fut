@@ -170,24 +170,6 @@ public class GenJava : GenTyped
 			base.WriteEqual(expr, parent, not);
 	}
 
-	protected override void WritePromoted(CiExpr expr, CiPriority parent)
-	{
-		CiBinaryExpr binary = expr as CiBinaryExpr;
-		if (binary != null && binary.Op == CiToken.LeftBracket) {
-			CiRangeType range = expr.Type as CiRangeType;
-			if (range != null && range.Min >= 0 && range.Max > sbyte.MaxValue && range.Max <= byte.MaxValue) {
-				if (parent > CiPriority.And)
-					Write('(');
-				base.WritePromoted(expr, CiPriority.And);
-				Write(" & 0xff");
-				if (parent > CiPriority.And)
-					Write(')');
-				return;
-			}
-		}
-		base.WritePromoted(expr, parent);
-	}
-
 	protected override void WriteStringLength(CiExpr expr)
 	{
 		expr.Accept(this, CiPriority.Primary);
@@ -198,7 +180,7 @@ public class GenJava : GenTyped
 	{
 		expr.Left.Accept(this, CiPriority.Primary);
 		Write(".charAt(");
-		WritePromoted(expr.Right, CiPriority.Statement);
+		expr.Right.Accept(this, CiPriority.Statement);
 		Write(')');
 	}
 
@@ -218,7 +200,7 @@ public class GenJava : GenTyped
 			Write("System.arraycopy(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
-			WritePromoted(args);
+			WriteArgs(method, args);
 			Write(')');
 		}
 		else if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
@@ -230,7 +212,7 @@ public class GenJava : GenTyped
 		}
 		else if (obj.Type == CiSystem.UTF8EncodingClass && method.Name == "GetString") {
 			Write("new String(");
-			WritePromoted(args);
+			WriteArgs(method, args);
 			Write(", java.nio.charset.StandardCharsets.UTF_8)");
 		}
 		else {
@@ -240,10 +222,25 @@ public class GenJava : GenTyped
 				Write("ceil");
 			else
 				WriteCamelCase(method.Name);
-			Write('(');
-			WritePromoted(args);
-			Write(')');
+			WriteArgsInParentheses(method, args);
 		}
+	}
+
+	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
+	{
+		if (parent != CiPriority.Assign) {
+			CiRangeType range = expr.Type as CiRangeType;
+			if (range != null && range.Min >= 0 && range.Max > sbyte.MaxValue && range.Max <= byte.MaxValue) {
+				if (parent > CiPriority.And)
+					Write('(');
+				base.WriteIndexing(expr, CiPriority.And);
+				Write(" & 0xff");
+				if (parent > CiPriority.And)
+					Write(')');
+				return;
+			}
+		}
+		base.WriteIndexing(expr, parent);
 	}
 
 	protected override void WriteInnerArray(CiNamedValue def, int nesting, CiArrayStorageType array)

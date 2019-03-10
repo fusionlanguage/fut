@@ -185,15 +185,6 @@ public abstract class GenBase : CiVisitor
 		WriteName(value);
 	}
 
-	protected void WritePromoted(CiExpr[] exprs)
-	{
-		for (int i = 0; i < exprs.Length; i++) {
-			if (i > 0)
-				Write(", ");
-			WritePromoted(exprs[i], CiPriority.Statement);
-		}
-	}
-
 	protected void WriteCoerced(CiType type, CiExpr[] exprs)
 	{
 		for (int i = 0; i < exprs.Length; i++) {
@@ -201,6 +192,25 @@ public abstract class GenBase : CiVisitor
 				Write(", ");
 			WriteCoerced(type, exprs[i]);
 		}
+	}
+
+	protected void WriteArgs(CiMethod method, CiExpr[] args)
+	{
+		int i = 0;
+		foreach (CiVar param in method.Parameters) {
+			if (i >= args.Length)
+				break;
+			if (i > 0)
+				Write(", ");
+			WriteCoerced(param.Type, args[i++]);
+		}
+	}
+
+	protected void WriteArgsInParentheses(CiMethod method, CiExpr[] args)
+	{
+		Write('(');
+		WriteArgs(method, args);
+		Write(')');
 	}
 
 	public override CiExpr Visit(CiCollection expr, CiPriority parent)
@@ -234,7 +244,7 @@ public abstract class GenBase : CiVisitor
 			WriteArrayStorageInit(def.Type);
 		else if (def.Value != null) {
 			Write(" = ");
-			WritePromoted(def.Value, CiPriority.Statement);
+			WriteCoerced(def.Type, def.Value);
 		}
 	}
 
@@ -398,12 +408,10 @@ public abstract class GenBase : CiVisitor
 			// FIXME: - --foo[bar]
 			if (inner != null && (inner.Op == CiToken.Minus || inner.Op == CiToken.Decrement))
 				Write(' ');
-			WritePromoted(expr.Inner, CiPriority.Primary);
-			return expr;
+			break;
 		case CiToken.Tilde:
 			Write('~');
-			WritePromoted(expr.Inner, CiPriority.Primary);
-			return expr;
+			break;
 		case CiToken.ExclamationMark:
 			Write('!');
 			break;
@@ -449,9 +457,9 @@ public abstract class GenBase : CiVisitor
 	{
 		if (parent > left)
 			Write('(');
-		WritePromoted(expr.Left, left);
+		expr.Left.Accept(this, left);
 		Write(op);
-		WritePromoted(expr.Right, right);
+		expr.Right.Accept(this, right);
 		if (parent > left)
 			Write(')');
 		return expr;
@@ -465,11 +473,6 @@ public abstract class GenBase : CiVisitor
 	protected virtual void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
 		Write(expr, parent, CiPriority.Equality, not ? " != " : " == ");
-	}
-
-	protected virtual void WritePromoted(CiExpr expr, CiPriority parent)
-	{
-		expr.Accept(this, parent);
 	}
 
 	protected virtual void WriteCoerced(CiType type, CiExpr expr)
@@ -502,16 +505,14 @@ public abstract class GenBase : CiVisitor
 		obj.Accept(this, CiPriority.Primary);
 		Write('.');
 		Write(method.Name);
-		Write('(');
-		WritePromoted(args);
-		Write(')');
+		WriteArgsInParentheses(method, args);
 	}
 
-	protected void WriteIndexing(CiBinaryExpr expr)
+	protected virtual void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
 		expr.Left.Accept(this, CiPriority.Primary);
 		Write('[');
-		WritePromoted(expr.Right, CiPriority.Statement);
+		expr.Right.Accept(this, CiPriority.Statement);
 		Write(']');
 	}
 
@@ -571,10 +572,7 @@ public abstract class GenBase : CiVisitor
 			Write(' ');
 			Write(expr.OpString);
 			Write(' ');
-			if (expr.Left.IntPromotion)
-				WritePromoted(expr.Right, CiPriority.Statement);
-			else
-				WriteCoerced(expr.Left.Type, expr.Right);
+			WriteCoerced(expr.Left.Type, expr.Right);
 			return expr;
 
 		case CiToken.Dot:
@@ -590,24 +588,24 @@ public abstract class GenBase : CiVisitor
 
 		case CiToken.LeftParenthesis:
 			CiBinaryExpr leftBinary = expr.Left as CiBinaryExpr;
+			CiSymbolReference symbol;
 			if (leftBinary != null && leftBinary.Op == CiToken.Dot) {
-				CiSymbolReference symbol = leftBinary.Right as CiSymbolReference;
+				symbol = leftBinary.Right as CiSymbolReference;
 				if (symbol != null) {
 					WriteCall(leftBinary.Left, (CiMethod) symbol.Symbol, expr.RightCollection, parent);
 					return expr;
 				}
 			}
 			expr.Left.Accept(this, CiPriority.Primary);
-			Write('(');
-			WritePromoted(expr.RightCollection);
-			Write(')');
+			symbol = (CiSymbolReference) expr.Left;
+			WriteArgsInParentheses((CiMethod) symbol.Symbol, expr.RightCollection);
 			return expr;
 
 		case CiToken.LeftBracket:
 			if (expr.Left.Type is CiStringType)
 				WriteCharAt(expr);
 			else
-				WriteIndexing(expr);
+				WriteIndexing(expr, parent);
 			return expr;
 
 		default:
@@ -737,7 +735,7 @@ public abstract class GenBase : CiVisitor
 			WriteLine("return;");
 		else {
 			Write("return ");
-			WritePromoted(statement.Value, CiPriority.Statement);
+			statement.Value.Accept(this, CiPriority.Statement);
 			WriteLine(";");
 		}
 	}
@@ -748,17 +746,13 @@ public abstract class GenBase : CiVisitor
 
 	public override void Visit(CiSwitch statement)
 	{
-		CiType coerceTo = statement.Value.IntPromotion ? null : statement.Value.Type;
 		Write("switch (");
 		statement.Value.Accept(this, CiPriority.Statement);
 		WriteLine(") {");
 		foreach (CiCase kase in statement.Cases) {
 			foreach (CiExpr value in kase.Values) {
 				Write("case ");
-				if (coerceTo != null)
-					WriteCoerced(coerceTo, value);
-				else
-					value.Accept(this, CiPriority.Statement);
+				WriteCoerced(statement.Value.Type, value);
 				WriteLine(":");
 			}
 			this.Indent++;

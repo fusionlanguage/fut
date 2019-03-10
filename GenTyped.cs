@@ -72,7 +72,7 @@ public abstract class GenTyped : GenBase
 
 	protected override void WriteCharAt(CiBinaryExpr expr)
 	{
-		WriteIndexing(expr);
+		WriteIndexing(expr, CiPriority.Statement);
 	}
 
 	static bool IsNarrower(TypeCode left, TypeCode right)

@@ -167,16 +167,14 @@ public class GenCpp : GenTyped
 			Write('.');
 	}
 
-	void WriteStringMethod(CiExpr obj, string name, CiExpr[] args)
+	void WriteStringMethod(CiExpr obj, string name, CiMethod method, CiExpr[] args)
 	{
 		obj.Accept(this, CiPriority.Primary);
 		if (obj is CiLiteral)
 			Write("sv");
 		Write('.');
 		Write(name);
-		Write('(');
-		WritePromoted(args);
-		Write(')');
+		WriteArgsInParentheses(method, args);
 	}
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
@@ -187,34 +185,32 @@ public class GenCpp : GenTyped
 				Write("ceil");
 			else
 				WriteLowercase(method.Name);
-			Write('(');
-			WritePromoted(args);
-			Write(')');
+			WriteArgsInParentheses(method, args);
 		}
 		else if (method == CiSystem.StringContains) {
 			if (parent > CiPriority.Equality)
 				Write('(');
-			WriteStringMethod(obj, "find", args);
+			WriteStringMethod(obj, "find", method, args);
 			Write(" != std::string::npos");
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}
 		else if (method == CiSystem.StringIndexOf) {
 			Write("static_cast<int32_t>(");
-			WriteStringMethod(obj, "find", args);
+			WriteStringMethod(obj, "find", method, args);
 			Write(')');
 		}
 		else if (method == CiSystem.StringLastIndexOf) {
 			Write("static_cast<int32_t>(");
-			WriteStringMethod(obj, "rfind", args);
+			WriteStringMethod(obj, "rfind", method, args);
 			Write(')');
 		}
 		else if (method == CiSystem.StringStartsWith)
-			WriteStringMethod(obj, "starts_with", args);
+			WriteStringMethod(obj, "starts_with", method, args);
 		else if (method == CiSystem.StringEndsWith)
-			WriteStringMethod(obj, "ends_with", args);
+			WriteStringMethod(obj, "ends_with", method, args);
 		else if (method == CiSystem.StringSubstring)
-			WriteStringMethod(obj, "substr", args);
+			WriteStringMethod(obj, "substr", method, args);
 		else {
 			obj.Accept(this, CiPriority.Primary);
 			if (method.CallType == CiCallType.Static)
@@ -224,9 +220,7 @@ public class GenCpp : GenTyped
 			else
 				Write('.');
 			WriteCamelCase(method.Name);
-			Write('(');
-			WritePromoted(args);
-			Write(')');
+			WriteArgsInParentheses(method, args);
 		}
 	}
 
@@ -240,6 +234,41 @@ public class GenCpp : GenTyped
 	protected override void WriteResource(string name, int length)
 	{
 		// TODO
+	}
+
+	protected override void WriteCoerced(CiType type, CiExpr expr)
+	{
+		if (type is CiClassPtrType && ((CiClassPtrType) type).Modifier != CiToken.Hash) {
+			if (expr.Type is CiClass) {
+				Write('&');
+				expr.Accept(this, CiPriority.Primary);
+				return;
+			}
+			else {
+				CiClassPtrType classPtr = expr.Type as CiClassPtrType;
+				if (classPtr != null && classPtr.Modifier == CiToken.Hash) {
+					expr.Accept(this, CiPriority.Primary);
+					Write(".get()");
+					return;
+				}
+			}
+		}
+		else if (type is CiArrayPtrType && ((CiArrayPtrType) type).Modifier != CiToken.Hash) {
+			if (expr.Type is CiArrayStorageType) {
+				expr.Accept(this, CiPriority.Primary);
+				Write(".data()");
+				return;
+			}
+			else {
+				CiArrayPtrType arrayPtr = expr.Type as CiArrayPtrType;
+				if (arrayPtr != null && arrayPtr.Modifier == CiToken.Hash) {
+					expr.Accept(this, CiPriority.Primary);
+					Write(".get()");
+					return;
+				}
+			}
+		}
+		base.WriteCoerced(type, expr);
 	}
 
 	protected override void WriteStringLength(CiExpr expr)
