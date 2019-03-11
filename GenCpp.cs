@@ -446,6 +446,7 @@ public class GenCpp : GenTyped
 		this.Indent--;
 		WriteDeclarations(klass, CiVisibility.Public, "public");
 		WriteDeclarations(klass, CiVisibility.Protected, "protected");
+		WriteDeclarations(klass, CiVisibility.Internal, "public");
 		WriteDeclarations(klass, CiVisibility.Private, "private");
 		WriteLine("};");
 	}
