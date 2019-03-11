@@ -177,6 +177,18 @@ public class GenCpp : GenTyped
 		WriteArgsInParentheses(method, args);
 	}
 
+	void WriteArrayPtrAdd(CiExpr array, CiExpr index)
+	{
+		CiLiteral literal = index as CiLiteral;
+		if (literal != null && (long) literal.Value == 0)
+			WriteArrayPtr(array, CiPriority.Statement);
+		else {
+			WriteArrayPtr(array, CiPriority.Add);
+			Write(" + ");
+			index.Accept(this, CiPriority.Add);
+		}
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (IsMathReference(obj)) {
@@ -213,15 +225,18 @@ public class GenCpp : GenTyped
 			WriteStringMethod(obj, "substr", method, args);
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			Write("std::copy_n(");
-			WriteArrayPtr(obj, CiPriority.Add);
-			Write(" + ");
-			args[0].Accept(this, CiPriority.Add);
+			WriteArrayPtrAdd(obj, args[0]);
 			Write(", ");
 			args[3].Accept(this, CiPriority.Statement);
 			Write(", ");
-			WriteArrayPtr(args[1], CiPriority.Add);
-			Write(" + ");
-			args[2].Accept(this, CiPriority.Add);
+			WriteArrayPtrAdd(args[1], args[2]);
+			Write(')');
+		}
+		else if (obj.Type == CiSystem.UTF8EncodingClass && method.Name == "GetString") {
+			Write("std::string_view(reinterpret_cast<const char *>(");
+			WriteArrayPtrAdd(args[0], args[1]);
+			Write("), ");
+			args[2].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
 		else {
