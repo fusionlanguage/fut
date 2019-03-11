@@ -307,9 +307,8 @@ public class GenCpp : GenTyped
 
 	protected override void WriteStringLength(CiExpr expr)
 	{
-		Write("strlen("); // TODO: std::string?
 		expr.Accept(this, CiPriority.Primary);
-		Write(')');
+		Write(".length()");
 	}
 
 	protected override bool HasInitCode(CiNamedValue def)
