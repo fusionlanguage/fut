@@ -1,0 +1,18 @@
+public static class Test
+{
+	static bool DoWork(Data data)
+	{
+		return data.Foo == 42;
+	}
+
+	public static bool Run()
+	{
+		Data() data;
+		return DoWork(data);
+	}
+}
+
+class Data
+{
+	internal int Foo = 42;
+}

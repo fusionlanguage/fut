@@ -507,6 +507,11 @@ public class GenCpp : GenTyped
 		}
 		foreach (CiEnum enu in program.OfType<CiEnum>())
 			Write(enu);
+		foreach (CiClass klass in program.Classes) {
+			Write("class ");
+			Write(klass.Name);
+			WriteLine(";");
+		}
 		foreach (CiClass klass in program.Classes)
 			Write(klass);
 		if (this.Namespace != null)
