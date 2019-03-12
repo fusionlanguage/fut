@@ -325,6 +325,20 @@ public class GenCpp : GenTyped
 		WriteLine(";");
 	}
 
+	protected override void WriteCaseBody(CiStatement[] statements)
+	{
+		bool block = false;
+		foreach (CiStatement statement in statements) {
+			if (!block && statement is CiVar) {
+				OpenBlock();
+				block = true;
+			}
+			statement.Accept(this);
+		}
+		if (block)
+			CloseBlock();
+	}
+
 	public override void Visit(CiThrow statement)
 	{
 		WriteLine("throw std::exception();");

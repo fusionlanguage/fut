@@ -746,6 +746,11 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
+	protected virtual void WriteCaseBody(CiStatement[] statements)
+	{
+		Write(statements);
+	}
+
 	protected virtual void WriteFallthrough(CiExpr expr)
 	{
 	}
@@ -762,7 +767,7 @@ public abstract class GenBase : CiVisitor
 				WriteLine(":");
 			}
 			this.Indent++;
-			Write(kase.Body);
+			WriteCaseBody(kase.Body);
 			if (kase.Fallthrough != null)
 				WriteFallthrough(kase.Fallthrough);
 			this.Indent--;
