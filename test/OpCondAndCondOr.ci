@@ -1,0 +1,10 @@
+public static class Test
+{
+	static bool IsLetter(int c)
+		=> (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+
+	public static bool Run()
+	{
+		return IsLetter('f');
+	}
+}

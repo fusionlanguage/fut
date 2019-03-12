@@ -525,9 +525,9 @@ public abstract class GenBase : CiVisitor
 	{
 		switch (expr.Op) {
 		case CiToken.Plus:
-			return Write(expr, parent, CiPriority.Add, " + ");
+			return Write(expr, parent == CiPriority.Shift ? CiPriority.Mul : parent, CiPriority.Add, " + ");
 		case CiToken.Minus:
-			return Write(expr, parent, CiPriority.Add, " - ", CiPriority.Mul);
+			return Write(expr, parent == CiPriority.Shift ? CiPriority.Mul : parent, CiPriority.Add, " - ", CiPriority.Mul);
 		case CiToken.Asterisk:
 			return Write(expr, parent, CiPriority.Mul, " * ");
 		case CiToken.Slash:
@@ -560,7 +560,7 @@ public abstract class GenBase : CiVisitor
 		case CiToken.Xor:
 			return Write(expr, parent, CiPriority.Xor, " ^ ");
 		case CiToken.CondAnd:
-			return Write(expr, parent, CiPriority.CondAnd, " && ");
+			return Write(expr, parent == CiPriority.CondOr ? CiPriority.Or : parent, CiPriority.CondAnd, " && ");
 		case CiToken.CondOr:
 			return Write(expr, parent, CiPriority.CondOr, " || ");
 		case CiToken.Assign:
