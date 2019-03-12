@@ -29,6 +29,8 @@ public class GenCpp : GenTyped
 {
 	string Namespace;
 
+	readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
+
 	public GenCpp(string namespace_)
 	{
 		this.Namespace = namespace_;
@@ -454,6 +456,21 @@ public class GenCpp : GenTyped
 
 	void Write(CiClass klass)
 	{
+		// topological sorting of class hierarchy and class storage fields
+		if (klass == null)
+			return;
+		bool done;
+		if (WrittenClasses.TryGetValue(klass, out done)) {
+			if (done)
+				return;
+			throw new CiException(klass, "Circular dependency for class {0}", klass.Name);
+		}
+		WrittenClasses.Add(klass, false);
+		Write(klass.Parent as CiClass);
+		foreach (CiField field in klass.Fields)
+			Write(field.Type.BaseType as CiClass);
+		WrittenClasses[klass] = true;
+
 		WriteLine();
 		OpenClass(klass, klass.CallType == CiCallType.Sealed ? " final" : "", " : public ");
 		this.Indent--;
@@ -493,6 +510,7 @@ public class GenCpp : GenTyped
 
 	public override void Write(CiProgram program)
 	{
+		WrittenClasses.Clear();
 		string headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
 		CreateFile(headerFile);
 		WriteLine("#pragma once");

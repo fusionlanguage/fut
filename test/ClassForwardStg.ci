@@ -1,0 +1,15 @@
+public class Test
+{
+	Data() Bar;
+
+	public static bool Run()
+	{
+		Test() o;
+		return o.Bar.Foo == 42;
+	}
+}
+
+class Data
+{
+	internal int Foo = 42;
+}
