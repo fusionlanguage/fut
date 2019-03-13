@@ -274,7 +274,10 @@ public class GenCpp : GenTyped
 
 	protected override void WriteResource(string name, int length)
 	{
-		// TODO
+		if (length >= 0) // reference as opposed to definition
+			Write("CiResource::");
+		foreach (char c in name)
+			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
 	void WriteArrayPtr(CiExpr expr, CiPriority parent)
@@ -525,6 +528,34 @@ public class GenCpp : GenTyped
 		WriteBody(method);
 	}
 
+	void WriteResources(Dictionary<string, byte[]> resources, bool define)
+	{
+		if (resources.Count == 0)
+			return;
+		WriteLine();
+		WriteLine("namespace");
+		OpenBlock();
+		WriteLine("namespace CiResource");
+		OpenBlock();
+		foreach (string name in resources.Keys.OrderBy(k => k)) {
+			if (!define)
+				Write("extern ");
+			Write("const std::array<uint8_t, ");
+			Write(resources[name].Length);
+			Write("> ");
+			WriteResource(name, -1);
+			if (define) {
+				WriteLine(" = {");
+				Write('\t');
+				Write(resources[name]);
+				Write(" }");
+			}
+			WriteLine(";");
+		}
+		CloseBlock();
+		CloseBlock();
+	}
+
 	public override void Write(CiProgram program)
 	{
 		WrittenClasses.Clear();
@@ -560,11 +591,13 @@ public class GenCpp : GenTyped
 		Write(Path.GetFileName(headerFile));
 		WriteLine("\"");
 		WriteLine("using namespace std::string_view_literals;");
+		WriteResources(program.Resources, false);
 		foreach (CiClass klass in program.Classes) {
 			WriteConstructor(klass);
 			foreach (CiMethod method in klass.Methods)
 				WriteMethod(klass, method);
 		}
+		WriteResources(program.Resources, true);
 		CloseFile();
 	}
 }
