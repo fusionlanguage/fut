@@ -329,13 +329,19 @@ public class GenCpp : GenTyped
 		return false;
 	}
 
-	public override void Visit(CiConst konst)
+	void WriteConst(CiConst konst)
 	{
 		Write("static constexpr ");
 		WriteTypeAndName(konst);
 		Write(" = ");
 		konst.Value.Accept(this, CiPriority.Statement);
 		WriteLine(";");
+	}
+
+	public override void Visit(CiConst konst)
+	{
+		if (konst.Type is CiArrayType)
+			WriteConst(konst);
 	}
 
 	protected override void WriteCaseBody(CiStatement[] statements)
@@ -423,7 +429,7 @@ public class GenCpp : GenTyped
 		}
 
 		foreach (CiConst konst in consts)
-			Visit(konst);
+			WriteConst(konst);
 
 		foreach (CiField field in fields)
 		{
