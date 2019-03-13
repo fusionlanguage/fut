@@ -151,6 +151,17 @@ public class GenCpp : GenTyped
 	{
 	}
 
+	protected override void WriteVarInit(CiNamedValue def)
+	{
+		if (def.Type == CiSystem.StringStorageType) {
+			Write('{');
+			WriteCoerced(def.Type, def.Value);
+			Write('}');
+		}
+		else
+			base.WriteVarInit(def);
+	}
+
 	protected override void WriteLiteral(object value)
 	{
 		if (value == null)
