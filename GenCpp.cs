@@ -367,6 +367,22 @@ public class GenCpp : GenTyped
 		// TODO: statement.Message.Accept(this, CiPriority.Statement);
 	}
 
+	void OpenNamespace()
+	{
+		if (this.Namespace == null)
+			return;
+		WriteLine();
+		Write("namespace ");
+		WriteLine(this.Namespace);
+		WriteLine("{");
+	}
+
+	void CloseNamespace()
+	{
+		if (this.Namespace != null)
+			WriteLine("}");
+	}
+
 	void Write(CiEnum enu)
 	{
 		WriteLine();
@@ -566,11 +582,7 @@ public class GenCpp : GenTyped
 		WriteLine("#include <memory>");
 		WriteLine("#include <string>");
 		WriteLine("#include <string_view>");
-		if (this.Namespace != null) {
-			Write("namespace ");
-			WriteLine(this.Namespace);
-			OpenBlock();
-		}
+		OpenNamespace();
 		foreach (CiEnum enu in program.OfType<CiEnum>())
 			Write(enu);
 		foreach (CiClass klass in program.Classes) {
@@ -580,8 +592,7 @@ public class GenCpp : GenTyped
 		}
 		foreach (CiClass klass in program.Classes)
 			Write(klass);
-		if (this.Namespace != null)
-			CloseBlock();
+		CloseNamespace();
 		CloseFile();
 
 		CreateFile(this.OutputFile);
@@ -592,12 +603,14 @@ public class GenCpp : GenTyped
 		WriteLine("\"");
 		WriteLine("using namespace std::string_view_literals;");
 		WriteResources(program.Resources, false);
+		OpenNamespace();
 		foreach (CiClass klass in program.Classes) {
 			WriteConstructor(klass);
 			foreach (CiMethod method in klass.Methods)
 				WriteMethod(klass, method);
 		}
 		WriteResources(program.Resources, true);
+		CloseNamespace();
 		CloseFile();
 	}
 }
