@@ -138,10 +138,10 @@ public abstract class GenTyped : GenBase
 		return false;
 	}
 
-	protected override void WriteCoerced(CiType type, CiExpr expr)
+	protected override void WriteCoercedInternal(CiType type, CiExpr expr)
 	{
 		if (!WriteCoerced(type, expr, GetTypeCode(expr.Type, expr.IntPromotion)))
-			base.WriteCoerced(type, expr);
+			base.WriteCoercedInternal(type, expr);
 	}
 
 	protected override void WriteCoercedLiteral(CiType type, CiExpr expr, CiPriority parent)

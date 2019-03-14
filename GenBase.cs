@@ -484,9 +484,23 @@ public abstract class GenBase : CiVisitor
 		Write(expr, parent, CiPriority.And, " & ");
 	}
 
-	protected virtual void WriteCoerced(CiType type, CiExpr expr)
+	protected virtual void WriteCoercedInternal(CiType type, CiExpr expr)
 	{
 		expr.Accept(this, CiPriority.Statement);
+	}
+
+	protected void WriteCoerced(CiType type, CiExpr expr)
+	{
+		CiCondExpr cond = expr as CiCondExpr;
+		if (cond != null) {
+			cond.Cond.Accept(this, CiPriority.Cond);
+			Write(" ? ");
+			WriteCoercedInternal(type, cond.OnTrue);
+			Write(" : ");
+			WriteCoercedInternal(type, cond.OnFalse);
+		}
+		else
+			WriteCoercedInternal(type, expr);
 	}
 
 	protected virtual void WriteCoercedLiteral(CiType type, CiExpr expr, CiPriority priority)

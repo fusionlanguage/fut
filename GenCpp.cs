@@ -298,7 +298,7 @@ public class GenCpp : GenTyped
 		}
 	}
 
-	protected override void WriteCoerced(CiType type, CiExpr expr)
+	protected override void WriteCoercedInternal(CiType type, CiExpr expr)
 	{
 		if (type is CiClassPtrType && ((CiClassPtrType) type).Modifier != CiToken.Hash) {
 			if (expr.Type is CiClass) {
@@ -319,7 +319,7 @@ public class GenCpp : GenTyped
 			WriteArrayPtr(expr, CiPriority.Statement);
 			return;
 		}
-		base.WriteCoerced(type, expr);
+		base.WriteCoercedInternal(type, expr);
 	}
 
 	protected override void WriteStringLength(CiExpr expr)
