@@ -243,8 +243,7 @@ public abstract class GenBase : CiVisitor
 	protected virtual void WriteVar(CiNamedValue def)
 	{
 		WriteTypeAndName(def);
-		CiClass klass = def.Type as CiClass;
-		if (klass != null)
+		if (def.Type is CiClass klass)
 			WriteClassStorageInit(klass);
 		else if (def.Type is CiArrayStorageType && !(def.Value is CiCollection))
 			WriteArrayStorageInit(def.Type);
@@ -260,15 +259,19 @@ public abstract class GenBase : CiVisitor
 
 	protected virtual void WriteLiteral(object value)
 	{
-		if (value == null)
+		switch (value) {
+		case null:
 			Write("null");
-		else if (value is long)
-			Write((long) value);
-		else if (value is bool)
-			Write((bool) value ? "true" : "false");
-		else if (value is string) {
+			break;
+		case long l:
+			Write(l);
+			break;
+		case bool b:
+			Write(b ? "true" : "false");
+			break;
+		case string s:
 			Write('"');
-			foreach (char c in (string) value) {
+			foreach (char c in s) {
 				switch (c) {
 				case '\a': Write("\\a"); break;
 				case '\b': Write("\\b"); break;
@@ -283,11 +286,13 @@ public abstract class GenBase : CiVisitor
 				}
 			}
 			Write('"');
-		}
-		else if (value is double)
-			Write(((double) value).ToString("R", CultureInfo.InvariantCulture));
-		else
+			break;
+		case double d:
+			Write(d.ToString("R", CultureInfo.InvariantCulture));
+			break;
+		default:
 			throw new NotImplementedException(value.GetType().Name);
+		}
 	}
 
 	public override CiExpr Visit(CiLiteral expr, CiPriority parent)
@@ -318,13 +323,9 @@ public abstract class GenBase : CiVisitor
 	{
 		Write("new ");
 		Write(type.BaseType, false);
-		for (;;) {
-			CiArrayType array = type as CiArrayType;
-			if (array == null)
-				break;
+		while (type is CiArrayType array) {
 			Write('[');
-			CiArrayStorageType arrayStorage = array as CiArrayStorageType;
-			if (arrayStorage != null)
+			if (array is CiArrayStorageType arrayStorage)
 				arrayStorage.LengthExpr.Accept(this, CiPriority.Statement);
 			Write(']');
 			type = array.ElementType;
@@ -408,9 +409,8 @@ public abstract class GenBase : CiVisitor
 			break;
 		case CiToken.Minus:
 			Write('-');
-			CiPrefixExpr inner = expr.Inner as CiPrefixExpr;
 			// FIXME: - --foo[bar]
-			if (inner != null && (inner.Op == CiToken.Minus || inner.Op == CiToken.Decrement))
+			if (expr.Inner is CiPrefixExpr inner && (inner.Op == CiToken.Minus || inner.Op == CiToken.Decrement))
 				Write(' ');
 			break;
 		case CiToken.Tilde:
@@ -420,8 +420,7 @@ public abstract class GenBase : CiVisitor
 			Write('!');
 			break;
 		case CiToken.New:
-			CiClassPtrType klass = expr.Type as CiClassPtrType;
-			if (klass != null)
+			if (expr.Type is CiClassPtrType klass)
 				WriteNew(klass.Class);
 			else
 				WriteNewArray(expr.Type);
@@ -519,8 +518,7 @@ public abstract class GenBase : CiVisitor
 
 	protected static bool IsMathReference(CiExpr expr)
 	{
-		CiSymbolReference symbolReference = expr as CiSymbolReference;
-		return symbolReference != null && symbolReference.Symbol == CiSystem.MathClass;
+		return expr is CiSymbolReference symbol && symbol.Symbol == CiSystem.MathClass;
 	}
 
 	protected virtual void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
@@ -611,9 +609,8 @@ public abstract class GenBase : CiVisitor
 			return expr;
 
 		case CiToken.LeftParenthesis:
-			CiBinaryExpr leftBinary = expr.Left as CiBinaryExpr;
 			CiSymbolReference symbol;
-			if (leftBinary != null && leftBinary.Op == CiToken.Dot) {
+			if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.Dot) {
 				symbol = leftBinary.Right as CiSymbolReference;
 				if (symbol != null) {
 					WriteCall(leftBinary.Left, (CiMethod) symbol.Symbol, expr.RightCollection, parent);
@@ -837,8 +834,7 @@ public abstract class GenBase : CiVisitor
 			WriteLine(";");
 		else {
 			WriteLine();
-			CiBlock block = method.Body as CiBlock;
-			if (block != null)
+			if (method.Body is CiBlock block)
 				Visit(block);
 			else {
 				OpenBlock();

@@ -52,80 +52,70 @@ public class GenCpp : GenTyped
 
 	protected override void Write(CiType type, bool promote)
 	{
-		if (type == null) {
+		switch (type) {
+		case null:
 			Write("void");
-			return;
-		}
-
-		CiIntegerType integer = type as CiIntegerType;
-		if (integer != null) {
+			break;
+		case CiIntegerType integer:
 			Write(GetTypeCode(integer, promote));
-			return;
-		}
-
-		if (type == CiSystem.StringPtrType) {
+			break;
+		case CiStringPtrType _:
 			Write("std::string_view");
-			return;
-		}
-		if (type == CiSystem.StringStorageType) {
+			break;
+		case CiStringStorageType _:
 			Write("std::string");
-			return;
-		}
-
-		CiArrayType array = type as CiArrayType;
-		if (array != null) {
-			CiArrayPtrType arrayPtr = type as CiArrayPtrType;
-			if (arrayPtr != null) {
-				switch (arrayPtr.Modifier) {
-				case CiToken.EndOfFile:
-					Write(arrayPtr.ElementType, false);
-					Write(" const *");
-					return;
-				case CiToken.ExclamationMark:
-					Write(arrayPtr.ElementType, false);
-					Write(" *");
-					return;
-				case CiToken.Hash:
-					Write("std::shared_ptr<");
-					Write(arrayPtr.ElementType, false);
-					Write("[]>");
-					return;
-				default:
-					throw new NotImplementedException(arrayPtr.Modifier.ToString());
-				}
+			break;
+		case CiArrayPtrType arrayPtr:
+			switch (arrayPtr.Modifier) {
+			case CiToken.EndOfFile:
+				Write(arrayPtr.ElementType, false);
+				Write(" const *");
+				break;
+			case CiToken.ExclamationMark:
+				Write(arrayPtr.ElementType, false);
+				Write(" *");
+				break;
+			case CiToken.Hash:
+				Write("std::shared_ptr<");
+				Write(arrayPtr.ElementType, false);
+				Write("[]>");
+				break;
+			default:
+				throw new NotImplementedException(arrayPtr.Modifier.ToString());
 			}
-			CiArrayStorageType arrayStorage = (CiArrayStorageType) type;
+			break;
+		case CiArrayStorageType arrayStorage:
 			Write("std::array<");
 			Write(arrayStorage.ElementType, false);
 			Write(", ");
 			Write(arrayStorage.Length);
 			Write('>');
-			return;
-		}
-
-		CiClassPtrType ptr = type as CiClassPtrType;
-		if (ptr != null) {
-			switch (ptr.Modifier) {
+			break;
+		case CiClassPtrType classPtr:
+			switch (classPtr.Modifier) {
 			case CiToken.EndOfFile:
 				Write("const ");
-				Write(ptr.Class.Name);
+				Write(classPtr.Class.Name);
 				Write(" *");
-				return;
+				break;
 			case CiToken.ExclamationMark:
-				Write(ptr.Class.Name);
+				Write(classPtr.Class.Name);
 				Write(" *");
-				return;
+				break;
 			case CiToken.Hash:
 				Write("std::shared_ptr<");
-				Write(ptr.Class.Name);
+				Write(classPtr.Class.Name);
 				Write('>');
-				return;
+				break;
 			default:
-				throw new NotImplementedException(ptr.Modifier.ToString());
+				throw new NotImplementedException(classPtr.Modifier.ToString());
 			}
+			break;
+		default:
+			Write(type.Name);
+			break;
 		}
 
-		Write(type.Name);
 	}
 
 	protected override void WriteName(CiSymbol symbol)
@@ -193,8 +183,7 @@ public class GenCpp : GenTyped
 
 	void WriteArrayPtrAdd(CiExpr array, CiExpr index)
 	{
-		CiLiteral literal = index as CiLiteral;
-		if (literal != null && (long) literal.Value == 0)
+		if (index is CiLiteral literal && (long) literal.Value == 0)
 			WriteArrayPtr(array, CiPriority.Statement);
 		else {
 			WriteArrayPtr(array, CiPriority.Add);
@@ -300,24 +289,26 @@ public class GenCpp : GenTyped
 
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr)
 	{
-		if (type is CiClassPtrType && ((CiClassPtrType) type).Modifier != CiToken.Hash) {
-			if (expr.Type is CiClass) {
+		switch (type) {
+		case CiClassPtrType leftClass when leftClass.Modifier != CiToken.Hash:
+			switch (expr.Type) {
+			case CiClass _:
 				Write('&');
 				expr.Accept(this, CiPriority.Primary);
 				return;
+			case CiClassPtrType rightPtr when rightPtr.Modifier == CiToken.Hash:
+				expr.Accept(this, CiPriority.Primary);
+				Write(".get()");
+				return;
+			default:
+				break;
 			}
-			else {
-				CiClassPtrType classPtr = expr.Type as CiClassPtrType;
-				if (classPtr != null && classPtr.Modifier == CiToken.Hash) {
-					expr.Accept(this, CiPriority.Primary);
-					Write(".get()");
-					return;
-				}
-			}
-		}
-		else if (type is CiArrayPtrType && ((CiArrayPtrType) type).Modifier != CiToken.Hash) {
+			break;
+		case CiArrayPtrType leftArray when leftArray.Modifier != CiToken.Hash:
 			WriteArrayPtr(expr, CiPriority.Statement);
 			return;
+		default:
+			break;
 		}
 		base.WriteCoercedInternal(type, expr);
 	}
@@ -501,8 +492,7 @@ public class GenCpp : GenTyped
 		// topological sorting of class hierarchy and class storage fields
 		if (klass == null)
 			return;
-		bool done;
-		if (this.WrittenClasses.TryGetValue(klass, out done)) {
+		if (this.WrittenClasses.TryGetValue(klass, out bool done)) {
 			if (done)
 				return;
 			throw new CiException(klass, "Circular dependency for class {0}", klass.Name);

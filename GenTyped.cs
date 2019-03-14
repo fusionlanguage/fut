@@ -52,8 +52,7 @@ public abstract class GenTyped : GenBase
 	TypeCode GetTypeCode(CiType type, bool promote)
 	{
 		if (type is CiNumericType) {
-			CiIntegerType integer = type as CiIntegerType;
-			if (integer != null)
+			if (type is CiIntegerType integer)
 				return GetTypeCode(integer, promote);
 			if (type == CiSystem.DoubleType)
 				return TypeCode.Double;

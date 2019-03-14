@@ -73,8 +73,7 @@ public class GenJs : GenBase
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		CiMember member = expr.Symbol as CiMember;
-		if (member != null) {
+		if (expr.Symbol is CiMember member) {
 			if (member.IsStatic()) {
 				Write(this.CurrentClass.Name);
 				Write('.');
@@ -151,15 +150,12 @@ public class GenJs : GenBase
 		Write("Array(new ArrayBuffer(");
 		if (shift == 0)
 			array.LengthExpr.Accept(this, CiPriority.Statement);
+		else if (array.LengthExpr is CiLiteral literalLength)
+			Write(((long) literalLength.Value) << shift);
 		else {
-			CiLiteral literalLength = array.LengthExpr as CiLiteral;
-			if (literalLength != null)
-				Write(((long) literalLength.Value) << shift);
-			else {
-				array.LengthExpr.Accept(this, CiPriority.Shift);
-				Write(" << ");
-				Write(shift);
-			}
+			array.LengthExpr.Accept(this, CiPriority.Shift);
+			Write(" << ");
+			Write(shift);
 		}
 		Write("))");
 	}

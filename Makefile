@@ -1,7 +1,7 @@
 prefix := /usr/local
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
 ifdef COMSPEC
-CSC = c:/Windows/Microsoft.NET/Framework/v4.0.30319/csc.exe -nologo -out:$@ $(subst /,\,$^)
+CSC = "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/MSBuild/15.0/Bin/Roslyn/csc.exe" -nologo -out:$@
 MONO :=
 JAVACPSEP = ;
 else
@@ -17,7 +17,7 @@ MAKEFLAGS = -r
 all: cito.exe
 
 cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs CiTo.cs)
-	$(CSC)
+	$(CSC) $^
 
 test-error: cito.exe
 	@export passed=0 total=0; \
@@ -54,7 +54,7 @@ test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
 	-$(CXX) -o $@ -I $(<D) $^
 
 test/bin/%/cs.exe: test/bin/%/Test.cs test/Runner.cs
-	-$(CSC)
+	-C:/Windows/Microsoft.NET/Framework/v4.0.30319/csc.exe -nologo -out:$@ $(subst /,\,$^)
 
 test/bin/%/Test.class: test/bin/%/Test.java
 	-javac -d $(@D) $(<D)/*.java

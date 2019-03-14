@@ -153,7 +153,7 @@ public class CiResolver : CiVisitor
 
 	static long SaturatedMul(long a, long b)
 	{
-		if (a == 0 || b== 0)
+		if (a == 0 || b == 0)
 			return 0;
 		if (a == long.MinValue)
 			return b >> 63 ^ a;
@@ -237,31 +237,23 @@ public class CiResolver : CiVisitor
 
 	CiType BitwiseOp(CiExpr left, CiExpr right, UnsignedOp op)
 	{
-		CiRangeType leftRange = left.Type as CiRangeType;
-		if (leftRange != null) {
-			CiRangeType rightRange = right.Type as CiRangeType;
-			if (rightRange != null) {
-				CiRangeType leftNegative;
-				CiRangeType leftPositive;
-				leftRange.SplitBySign(out leftNegative, out leftPositive);
-				CiRangeType rightNegative;
-				CiRangeType rightPositive;
-				rightRange.SplitBySign(out rightNegative, out rightPositive);
-				CiRangeType range = null;
-				if (leftNegative != null) {
-					if (rightNegative != null)
-						range = op(leftNegative, rightNegative);
-					if (rightPositive != null)
-						range = op(leftNegative, rightPositive).Union(range);
-				}
-				if (leftPositive != null) {
-					if (rightNegative != null)
-						range = op(leftPositive, rightNegative).Union(range);
-					if (rightPositive != null)
-						range = op(leftPositive, rightPositive).Union(range);
-				}
-				return range;
+		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {
+			leftRange.SplitBySign(out CiRangeType leftNegative, out CiRangeType leftPositive);
+			rightRange.SplitBySign(out CiRangeType rightNegative, out CiRangeType rightPositive);
+			CiRangeType range = null;
+			if (leftNegative != null) {
+				if (rightNegative != null)
+					range = op(leftNegative, rightNegative);
+				if (rightPositive != null)
+					range = op(leftNegative, rightPositive).Union(range);
 			}
+			if (leftPositive != null) {
+				if (rightNegative != null)
+					range = op(leftPositive, rightNegative).Union(range);
+				if (rightPositive != null)
+					range = op(leftPositive, rightPositive).Union(range);
+			}
+			return range;
 		}
 		return GetIntegerType(left, right);
 	}
@@ -302,8 +294,7 @@ public class CiResolver : CiVisitor
 		CiType type = ResolveType(expr);
 		if (expr.Value != null) {
 			expr.Value = expr.Value.Accept(this, CiPriority.Statement);
-			CiArrayStorageType array = type as CiArrayStorageType;
-			if (array != null)
+			if (type is CiArrayStorageType array)
 				type = array.ElementType;
 			Coerce(expr.Value, type);
 		}
@@ -325,13 +316,11 @@ public class CiResolver : CiVisitor
 			expr.Type = expr.Symbol.Type;
 		}
 		if (!(scope is CiEnum)) {
-			CiConst konst = expr.Symbol as CiConst;
-			if (konst != null) {
+			if (expr.Symbol is CiConst konst) {
 				ResolveConst(konst);
 				if (konst.Value is CiLiteral)
 					return konst.Value;
-				CiBinaryExpr dotExpr = konst.Value as CiBinaryExpr;
-				if (dotExpr != null && dotExpr.Op == CiToken.Dot)
+				if (konst.Value is CiBinaryExpr dotExpr && dotExpr.Op == CiToken.Dot)
 					return dotExpr; // const foo = MyEnum.Foo
 			}
 		}
@@ -341,15 +330,10 @@ public class CiResolver : CiVisitor
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
 		CiExpr resolved = Lookup(expr, this.CurrentScope);
-		expr = resolved as CiSymbolReference;
-		if (expr != null) {
-			CiVar v = expr.Symbol as CiVar;
-			if (v != null) {
-				CiExpr arg;
-				if (this.CurrentPureArguments.TryGetValue(v, out arg))
-					return arg;
-			}
-		}
+		if (resolved is CiSymbolReference symbol
+		 && symbol.Symbol is CiVar v
+		 && this.CurrentPureArguments.TryGetValue(v, out CiExpr arg))
+			return arg;
 		return resolved;
 	}
 
@@ -400,25 +384,22 @@ public class CiResolver : CiVisitor
 			return new CiPrefixExpr { Line = expr.Line, Op = CiToken.ExclamationMark, Inner = inner, Type = CiSystem.BoolType };
 		case CiToken.New:
 			type = ToType(expr.Inner, true);
-			CiClass klass = type as CiClass;
-			if (klass != null) {
+			switch (type) {
+			case CiClass klass:
 				expr.Type = new CiClassPtrType { Class = klass, Modifier = CiToken.Hash };
 				return expr;
-			}
-			CiArrayStorageType array = type as CiArrayStorageType;
-			if (array != null) {
+			case CiArrayStorageType array:
 				expr.Type = new CiArrayPtrType { ElementType = array.ElementType, Modifier = CiToken.Hash };
 				return expr;
+			default:
+				throw StatementException(expr, "Invalid argument to new");
 			}
-			throw StatementException(expr, "Invalid argument to new");
 		case CiToken.Resource:
 			CiLiteral literal = FoldConst(expr.Inner);
-			string name = literal.Value as string;
-			if (name == null)
+			if (!(literal.Value is string name))
 				throw StatementException(expr, "Resource name must be string");
 			inner = literal;
-			byte[] content;
-			if (!this.Program.Resources.TryGetValue(name, out content)) {
+			if (!this.Program.Resources.TryGetValue(name, out byte[] content)) {
 				content = File.ReadAllBytes(name);
 				this.Program.Resources.Add(name, content);
 			}
@@ -477,23 +458,18 @@ public class CiResolver : CiVisitor
 			if (result != rightSymbol)
 				return result;
 			if (rightSymbol.Symbol == CiSystem.ArrayLength) {
-				CiArrayStorageType array = scope as CiArrayStorageType;
-				if (array == null)
-					throw new NotImplementedException(scope.GetType().Name);
-				return expr.ToLiteral((long) array.Length);
+				if (scope is CiArrayStorageType array)
+					return expr.ToLiteral((long) array.Length);
+				throw new NotImplementedException(scope.GetType().Name);
 			}
-			if (rightSymbol.Symbol == CiSystem.StringLength) {
-				CiLiteral leftLiteral = left as CiLiteral;
-				if (leftLiteral != null)
-					return expr.ToLiteral((long) ((string) leftLiteral.Value).Length);
-			}
+			if (rightSymbol.Symbol == CiSystem.StringLength && left is CiLiteral leftLiteral)
+				return expr.ToLiteral((long) ((string) leftLiteral.Value).Length);
 			return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = rightSymbol, Type = result.Type };
 
 		case CiToken.LeftParenthesis:
 			leftSymbol = left as CiSymbolReference;
 			if (leftSymbol == null) {
-				CiBinaryExpr dotExpr = left as CiBinaryExpr;
-				if (dotExpr == null || dotExpr.Op != CiToken.Dot)
+				if (!(left is CiBinaryExpr dotExpr) || dotExpr.Op != CiToken.Dot)
 					throw StatementException(left, "Expected a method");
 				leftSymbol = (CiSymbolReference) dotExpr.Right;
 				// TODO: check static
@@ -506,8 +482,7 @@ public class CiResolver : CiVisitor
 					return new CiPrefixExpr { Line = expr.Line, Op = CiToken.LeftParenthesis, Inner = inner, Type = type };
 				}
 			}
-			CiMethod method = leftSymbol.Symbol as CiMethod;
-			if (method == null)
+			if (!(leftSymbol.Symbol is CiMethod method))
 				throw StatementException(left, "Expected a method");
 			int i = 0;
 			foreach (CiVar param in method.Parameters) {
@@ -520,21 +495,19 @@ public class CiResolver : CiVisitor
 			if (i < arguments.Length)
 				throw StatementException(arguments[i], "Too many arguments");
 
-			if (method.CallType == CiCallType.Static) {
-				CiReturn ret = method.Body as CiReturn;
-				if (ret != null
-				 && arguments.All(arg => arg is CiLiteral)
-				 && this.CurrentPureMethods.Add(method)) {
-					i = 0;
-					foreach (CiVar param in method.Parameters)
-						this.CurrentPureArguments.Add(param, arguments[i++]);
-					CiLiteral literal = ret.Value.Accept(this, CiPriority.Statement) as CiLiteral;
-					foreach (CiVar param in method.Parameters)
-						this.CurrentPureArguments.Remove(param);
-					this.CurrentPureMethods.Remove(method);
-					if (literal != null)
-						return literal;
-				}
+			if (method.CallType == CiCallType.Static
+			 && method.Body is CiReturn ret
+			 && arguments.All(arg => arg is CiLiteral)
+			 && this.CurrentPureMethods.Add(method)) {
+				i = 0;
+				foreach (CiVar param in method.Parameters)
+					this.CurrentPureArguments.Add(param, arguments[i++]);
+				CiLiteral literal = ret.Value.Accept(this, CiPriority.Statement) as CiLiteral;
+				foreach (CiVar param in method.Parameters)
+					this.CurrentPureArguments.Remove(param);
+				this.CurrentPureMethods.Remove(method);
+				if (literal != null)
+					return literal;
 			}
 
 			expr.Left = left;
@@ -552,22 +525,22 @@ public class CiResolver : CiVisitor
 		case CiToken.LeftBracket:
 			if (!CiSystem.IntType.IsAssignableFrom(right.Type))
 				throw StatementException(expr.Right, "Index is not int");
-			CiArrayType array = left.Type as CiArrayType;
-			if (array != null)
+			switch (left.Type) {
+			case CiArrayType array:
 				type = array.ElementType;
-			else if (left.Type is CiStringType) {
+				break;
+			case CiStringType _:
 				type = CiSystem.CharType;
-				CiLiteral leftLiteral = left as CiLiteral;
-				CiLiteral rightLiteral = right as CiLiteral;
-				if (leftLiteral != null && rightLiteral != null) {
+				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral) {
 					string s = (string) leftLiteral.Value;
 					long i = (long) rightLiteral.Value;
 					if (i >= 0 && i < s.Length)
 						return expr.ToLiteral((long) s[(int) i]);
 				}
-			}
-			else
+				break;
+			default:
 				throw StatementException(expr.Left, "Indexed object is neither array or string");
+			}
 			break;
 
 		case CiToken.Plus:
@@ -577,9 +550,7 @@ public class CiResolver : CiVisitor
 					SaturatedAdd(leftRange.Max, rightRange.Max));
 			}
 			else if (left.Type is CiStringType || right.Type is CiStringType) {
-				CiLiteral leftLiteral = left as CiLiteral;
-				CiLiteral rightLiteral = right as CiLiteral;
-				if (leftLiteral != null && rightLiteral != null)
+				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
 					return expr.ToLiteral(Convert.ToString(leftLiteral.Value, CultureInfo.InvariantCulture)
 						+ Convert.ToString(rightLiteral.Value, CultureInfo.InvariantCulture));
 				type = CiSystem.StringPtrType;
@@ -679,9 +650,7 @@ public class CiResolver : CiVisitor
 					return CiLiteral.False;
 			}
 			else if (left.Type is CiStringType && right.Type is CiStringType) {
-				CiLiteral leftLiteral = left as CiLiteral;
-				CiLiteral rightLiteral = right as CiLiteral;
-				if (leftLiteral != null && rightLiteral != null)
+				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
 					return expr.ToLiteral((string) leftLiteral.Value == (string) rightLiteral.Value);
 			}
 			// TODO: type check
@@ -751,8 +720,7 @@ public class CiResolver : CiVisitor
 		case CiToken.CondAnd: {
 			Coerce(left, CiSystem.BoolType);
 			Coerce(right, CiSystem.BoolType);
-			CiLiteral leftLiteral = left as CiLiteral;
-			if (leftLiteral != null)
+			if (left is CiLiteral leftLiteral)
 				return (bool) leftLiteral.Value ? right : CiLiteral.False;
 			type = CiSystem.BoolType;
 			break;
@@ -760,8 +728,7 @@ public class CiResolver : CiVisitor
 		case CiToken.CondOr: {
 			Coerce(left, CiSystem.BoolType);
 			Coerce(right, CiSystem.BoolType);
-			CiLiteral leftLiteral = left as CiLiteral;
-			if (leftLiteral != null)
+			if (left is CiLiteral leftLiteral)
 				return (bool) leftLiteral.Value ? CiLiteral.True : right;
 			type = CiSystem.BoolType;
 			break;
@@ -787,8 +754,7 @@ public class CiResolver : CiVisitor
 		default:
 			throw new NotImplementedException(expr.Op.ToString());
 		}
-		CiRangeType range = type as CiRangeType;
-		if (range != null && range.Min == range.Max)
+		if (type is CiRangeType range && range.Min == range.Max)
 			return expr.ToLiteral(range.Min);
 		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = type };
 	}
@@ -799,8 +765,7 @@ public class CiResolver : CiVisitor
 		CiExpr onTrue = expr.OnTrue.Accept(this, CiPriority.Statement);
 		CiExpr onFalse = expr.OnFalse.Accept(this, CiPriority.Statement);
 		CiType type = GetCommonType(onTrue, onFalse);
-		CiLiteral literalCond = cond as CiLiteral;
-		if (literalCond != null)
+		if (cond is CiLiteral literalCond)
 			return (bool) literalCond.Value ? onTrue : onFalse;
 		return new CiCondExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
 	}
@@ -976,10 +941,9 @@ public class CiResolver : CiVisitor
 
 	CiLiteral FoldConst(CiExpr expr)
 	{
-		CiLiteral literal = expr.Accept(this, CiPriority.Statement) as CiLiteral;
-		if (literal == null)
-			throw StatementException(expr, "Expected constant value");
-		return literal;
+		if (expr.Accept(this, CiPriority.Statement) is CiLiteral literal)
+			return literal;
+		throw StatementException(expr, "Expected constant value");
 	}
 
 	long FoldConstLong(CiExpr expr)
@@ -995,11 +959,9 @@ public class CiResolver : CiVisitor
 		CiSymbolReference symbol = expr as CiSymbolReference;
 		if (symbol != null) {
 			// built-in, MyEnum, MyClass, MyClass!
-			CiType type = this.Program.TryLookup(symbol.Name) as CiType;
-			if (type == null)
+			if (!(this.Program.TryLookup(symbol.Name) is CiType type))
 				throw StatementException(expr, "Type {0} not found", symbol.Name);
-			CiClass klass = type as CiClass;
-			if (klass != null)
+			if (type is CiClass klass)
 				return new CiClassPtrType { Name = klass.Name, Class = klass, Modifier = ptrModifier };
 			ExpectNoPtrModifier(expr, ptrModifier);
 			return type;
@@ -1018,10 +980,9 @@ public class CiResolver : CiVisitor
 					throw StatementException(binary.Left, "Expected name of storage type");
 				if (symbol.Name == "string")
 					return CiSystem.StringStorageType;
-				CiClass klass = this.Program.TryLookup(symbol.Name) as CiClass;
-				if (klass == null)
-					throw StatementException(expr, "Class {0} not found", symbol.Name);
-				return klass;
+				if (this.Program.TryLookup(symbol.Name) is CiClass klass)
+					return klass;
+				throw StatementException(expr, "Class {0} not found", symbol.Name);
 			case CiToken.LessOrEqual: // a <= b
 				long min = FoldConstLong(binary.Left);
 				long max = FoldConstLong(binary.Right);
@@ -1100,8 +1061,7 @@ public class CiResolver : CiVisitor
 		}
 		ResolveType(konst);
 		konst.Value = konst.Value.Accept(this, CiPriority.Statement);
-		CiCollection coll = konst.Value as CiCollection;
-		if (coll != null) {
+		if (konst.Value is CiCollection coll) {
 			CiArrayType arrayType = konst.Type as CiArrayType;
 			if (arrayType == null)
 				throw StatementException(konst, "Array initializer for scalar constant {0}", konst.Name);

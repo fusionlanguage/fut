@@ -137,8 +137,7 @@ public class CiScope : CiSymbol, IEnumerable
 		get
 		{
 			for (CiScope scope = this; scope != null; scope = scope.Parent) {
-				CiClass klass = scope as CiClass;
-				if (klass != null)
+				if (scope is CiClass klass)
 					return klass;
 			}
 			throw new InvalidOperationException();
@@ -272,16 +271,18 @@ public class CiLiteral : CiExpr
 	{
 		get
 		{
-			object value = this.Value;
-			if (value == null)
+			switch (this.Value) {
+			case null:
 				return true;
-			if (value is long)
-				return (long) value == 0;
-			if (value is bool)
-				return !(bool) value;
-			if (value is double)
-				return BitConverter.DoubleToInt64Bits((double) value) == 0; // rule out -0.0
-			throw new NotImplementedException(value.GetType().Name);
+			case long l:
+				return l == 0;
+			case bool b:
+				return b == false;
+			case double d:
+				return BitConverter.DoubleToInt64Bits(d) == 0; // rule out -0.0
+			default:
+				throw new NotImplementedException(this.Value.GetType().Name);
+			}
 		}
 	}
 	public static readonly CiLiteral False = new CiLiteral(false);
@@ -632,8 +633,7 @@ public class CiIntType : CiIntegerType
 {
 	public override bool IsAssignableFrom(CiType right)
 	{
-		CiIntegerType it = right as CiIntegerType;
-		return it != null && !it.IsLong;
+		return right is CiIntegerType it && !it.IsLong;
 	}
 	public override bool IsLong { get { return false; } }
 }
@@ -678,8 +678,7 @@ public class CiRangeType : CiIntegerType
 	// TODO: needed?
 	public override bool Equals(object obj)
 	{
-		CiRangeType that = obj as CiRangeType;
-		return that != null && this.Min == that.Min && this.Max == that.Max;
+		return obj is CiRangeType that && this.Min == that.Min && this.Max == that.Max;
 	}
 
 	public override int GetHashCode()
@@ -703,8 +702,7 @@ public class CiRangeType : CiIntegerType
 
 	public override bool IsAssignableFrom(CiType right)
 	{
-		CiRangeType range = right as CiRangeType;
-		return range != null && this.Min <= range.Min && this.Max >= range.Max;
+		return right is CiRangeType range && this.Min <= range.Min && this.Max >= range.Max;
 	}
 
 	public override bool IsLong { get { return this.Min < int.MinValue || this.Max > int.MaxValue; } }
@@ -827,8 +825,7 @@ public class CiClassPtrType : CiType
 			return true;
 		CiClass klass = right as CiClass;
 		if (klass == null) {
-			CiClassPtrType ptr = right as CiClassPtrType;
-			if (ptr == null)
+			if (!(right is CiClassPtrType ptr))
 				return false;
 			klass = ptr.Class;
 		}

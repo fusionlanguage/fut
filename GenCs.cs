@@ -88,30 +88,24 @@ public class GenCs : GenTyped
 
 	protected override void Write(CiType type, bool promote)
 	{
-		if (type == null) {
+		switch (type) {
+		case null:
 			Write("void");
-			return;
-		}
-
-		CiIntegerType integer = type as CiIntegerType;
-		if (integer != null) {
+			break;
+		case CiIntegerType integer:
 			Write(GetTypeCode(integer, promote));
-			return;
-		}
-
-		if (type is CiStringType) {
+			break;
+		case CiStringType _:
 			Write("string");
-			return;
-		}
-
-		CiArrayType array = type as CiArrayType;
-		if (array != null) {
+			break;
+		case CiArrayType array:
 			Write(array.ElementType, false);
 			Write("[]");
-			return;
+			break;
+		default:
+			Write(type.Name);
+			break;
 		}
-
-		Write(type.Name);
 	}
 
 	protected override void WriteName(CiSymbol symbol)

@@ -89,51 +89,38 @@ public class GenJava : GenTyped
 
 	protected override void Write(CiType type, bool promote)
 	{
-		if (type == null) {
+		switch (type) {
+		case null:
 			Write("void");
-			return;
-		}
-
-		CiIntegerType integer = type as CiIntegerType;
-		if (integer != null) {
+			break;
+		case CiIntegerType integer:
 			Write(GetTypeCode(integer, promote));
-			return;
-		}
-
-		if (type == CiSystem.BoolType) {
-			Write("boolean");
-			return;
-		}
-		if (type is CiStringType) {
+			break;
+		case CiStringType _:
 			Write("String");
-			return;
-		}
-		if (type is CiEnum) {
-			Write("int");
-			return;
-		}
-
-		if (promote && (type is CiClass || type is CiArrayStorageType))
-			Write("final ");
-
-		CiArrayType array = type as CiArrayType;
-		if (array != null) {
+			break;
+		case CiEnum enu:
+			Write(enu == CiSystem.BoolType ? "boolean" : "int");
+			break;
+		case CiArrayType array:
+			if (promote && array is CiArrayStorageType)
+				Write("final ");
 			Write(array.ElementType, false);
 			Write("[]");
-			return;
+			break;
+		default:
+			if (promote && type is CiClass)
+				Write("final ");
+			Write(type.Name);
+			break;
 		}
-
-		Write(type.Name);
 	}
 
 	protected override void WriteLiteral(object value)
 	{
 		base.WriteLiteral(value);
-		if (value is long) {
-			long l = (long) value;
-			if (l != (int) l)
-				Write('L');
-		}
+		if (value is long l && l != (int) l)
+			Write('L');
 	}
 
 	protected override void WriteName(CiSymbol symbol)
@@ -172,15 +159,13 @@ public class GenJava : GenTyped
 
 	static bool IsUnsignedByte(CiType type)
 	{
-		CiRangeType range = type as CiRangeType;
-		return range != null && range.Min >= 0 && range.Max > sbyte.MaxValue && range.Max <= byte.MaxValue;
+		return type is CiRangeType range && range.Min >= 0 && range.Max > sbyte.MaxValue && range.Max <= byte.MaxValue;
 	}
 
 	protected override void WriteAnd(CiBinaryExpr expr, CiPriority parent)
 	{
-		CiBinaryExpr leftBinary = expr.Left as CiBinaryExpr;
-		CiLiteral rightLiteral = expr.Right as CiLiteral;
-		if (leftBinary != null && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type) && rightLiteral != null) {
+		if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)
+		 && expr.Right is CiLiteral rightLiteral) {
 			if (parent > CiPriority.And)
 				Write('(');
 			base.WriteIndexing(leftBinary, CiPriority.And);
@@ -272,8 +257,8 @@ public class GenJava : GenTyped
 		CiArrayStorageType array = def.Type as CiArrayStorageType;
 		if (array == null)
 			return false;
-		while (array.ElementType is CiArrayStorageType)
-			array = (CiArrayStorageType) array.ElementType;
+		while (array.ElementType is CiArrayStorageType element)
+			array = element;
 		return array.ElementType is CiClass;
 	}
 
@@ -456,8 +441,7 @@ public class GenJava : GenTyped
 		else
 			this.OutputDirectory = Path.GetDirectoryName(this.OutputFile);
 		foreach (CiContainerType type in program) {
-			CiClass klass = type as CiClass;
-			if (klass != null)
+			if (type is CiClass klass)
 				Write(klass);
 			else
 				Write((CiEnum) type);
