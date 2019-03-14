@@ -29,6 +29,7 @@ public class GenCpp : GenTyped
 {
 	string Namespace;
 
+	CiMethod CurrentMethod;
 	readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
 
 	public GenCpp(string namespace_)
@@ -347,6 +348,11 @@ public class GenCpp : GenTyped
 			WriteConst(konst);
 	}
 
+	protected override void WriteReturnValue(CiExpr expr)
+	{
+		WriteCoerced(this.CurrentMethod.Type, expr);
+	}
+
 	protected override void WriteCaseBody(CiStatement[] statements)
 	{
 		bool block = false;
@@ -496,16 +502,16 @@ public class GenCpp : GenTyped
 		if (klass == null)
 			return;
 		bool done;
-		if (WrittenClasses.TryGetValue(klass, out done)) {
+		if (this.WrittenClasses.TryGetValue(klass, out done)) {
 			if (done)
 				return;
 			throw new CiException(klass, "Circular dependency for class {0}", klass.Name);
 		}
-		WrittenClasses.Add(klass, false);
+		this.WrittenClasses.Add(klass, false);
 		Write(klass.Parent as CiClass);
 		foreach (CiField field in klass.Fields)
 			Write(field.Type.BaseType as CiClass);
-		WrittenClasses[klass] = true;
+		this.WrittenClasses[klass] = true;
 
 		WriteLine();
 		OpenClass(klass, klass.CallType == CiCallType.Sealed ? " final" : "", " : public ");
@@ -541,7 +547,9 @@ public class GenCpp : GenTyped
 		Write("::");
 		WriteCamelCase(method.Name);
 		WriteParametersAndConst(method);
+		this.CurrentMethod = method;
 		WriteBody(method);
+		this.CurrentMethod = null;
 	}
 
 	void WriteResources(Dictionary<string, byte[]> resources, bool define)
@@ -574,7 +582,7 @@ public class GenCpp : GenTyped
 
 	public override void Write(CiProgram program)
 	{
-		WrittenClasses.Clear();
+		this.WrittenClasses.Clear();
 		string headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
 		CreateFile(headerFile);
 		WriteLine("#pragma once");
