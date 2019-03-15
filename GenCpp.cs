@@ -146,7 +146,7 @@ public class GenCpp : GenTyped
 	{
 		if (def.Type == CiSystem.StringStorageType) {
 			Write('{');
-			WriteCoerced(def.Type, def.Value);
+			WriteCoerced(def.Type, def.Value, CiPriority.Statement);
 			Write('}');
 		}
 		else
@@ -159,6 +159,26 @@ public class GenCpp : GenTyped
 			Write("nullptr");
 		else
 			base.WriteLiteral(value);
+	}
+
+	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+	{
+		CiClassPtrType coercedType;
+		if (expr.Left.Type is CiClassPtrType leftPtr && leftPtr.IsAssignableFrom(expr.Right.Type))
+			coercedType = leftPtr;
+		else if (expr.Right.Type is CiClassPtrType rightPtr && rightPtr.IsAssignableFrom(expr.Left.Type))
+			coercedType = rightPtr;
+		else {
+			base.WriteEqual(expr, parent, not);
+			return;
+		}
+		if (parent > CiPriority.Equality)
+			Write('(');
+		WriteCoerced(coercedType, expr.Left, CiPriority.Equality);
+		Write(not ? " != " : " == ");
+		WriteCoerced(coercedType, expr.Right, CiPriority.Equality);
+		if (parent > CiPriority.Equality)
+			Write(')');
 	}
 
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
@@ -287,7 +307,7 @@ public class GenCpp : GenTyped
 		}
 	}
 
-	protected override void WriteCoercedInternal(CiType type, CiExpr expr)
+	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 	{
 		switch (type) {
 		case CiClassPtrType leftClass when leftClass.Modifier != CiToken.Hash:
@@ -310,7 +330,7 @@ public class GenCpp : GenTyped
 		default:
 			break;
 		}
-		base.WriteCoercedInternal(type, expr);
+		base.WriteCoercedInternal(type, expr, parent);
 	}
 
 	protected override void WriteStringLength(CiExpr expr)
@@ -341,7 +361,7 @@ public class GenCpp : GenTyped
 
 	protected override void WriteReturnValue(CiExpr expr)
 	{
-		WriteCoerced(this.CurrentMethod.Type, expr);
+		WriteCoerced(this.CurrentMethod.Type, expr, CiPriority.Statement);
 	}
 
 	protected override void WriteCaseBody(CiStatement[] statements)

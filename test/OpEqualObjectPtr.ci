@@ -1,0 +1,18 @@
+class Data
+{
+}
+
+public class Test
+{
+	Data() Storage;
+	Data# Dynamic;
+
+	bool IsNull(bool dyn)
+		=> (dyn ? Dynamic : Storage) == null;
+
+	public static bool Run()
+	{
+		Test() o;
+		return o.IsNull(true);
+	}
+}

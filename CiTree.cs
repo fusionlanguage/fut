@@ -819,6 +819,7 @@ public class CiClassPtrType : CiType
 	{
 		return this.Class.TryLookup(name);
 	}
+
 	public override bool IsAssignableFrom(CiType right)
 	{
 		if (right == CiSystem.NullType)
@@ -836,6 +837,13 @@ public class CiClassPtrType : CiType
 		}
 		// TODO: modifiers
 		return true;
+	}
+
+	public override CiType PtrOrSelf
+	{
+		get {
+			return this.Modifier == CiToken.Hash ? this.Class.PtrOrSelf : this;
+		}
 	}
 }
 

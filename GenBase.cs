@@ -190,7 +190,7 @@ public abstract class GenBase : CiVisitor
 		for (int i = 0; i < exprs.Length; i++) {
 			if (i > 0)
 				Write(", ");
-			WriteCoerced(type, exprs[i]);
+			WriteCoerced(type, exprs[i], CiPriority.Statement);
 		}
 	}
 
@@ -202,7 +202,7 @@ public abstract class GenBase : CiVisitor
 				break;
 			if (i > 0)
 				Write(", ");
-			WriteCoerced(param.Type, args[i++]);
+			WriteCoerced(param.Type, args[i++], CiPriority.Statement);
 		}
 	}
 
@@ -237,7 +237,7 @@ public abstract class GenBase : CiVisitor
 	protected virtual void WriteVarInit(CiNamedValue def)
 	{
 		Write(" = ");
-		WriteCoerced(def.Type, def.Value);
+		WriteCoerced(def.Type, def.Value, CiPriority.Statement);
 	}
 
 	protected virtual void WriteVar(CiNamedValue def)
@@ -483,23 +483,27 @@ public abstract class GenBase : CiVisitor
 		Write(expr, parent, CiPriority.And, " & ");
 	}
 
-	protected virtual void WriteCoercedInternal(CiType type, CiExpr expr)
+	protected virtual void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 	{
-		expr.Accept(this, CiPriority.Statement);
+		expr.Accept(this, parent);
 	}
 
-	protected void WriteCoerced(CiType type, CiExpr expr)
+	protected void WriteCoerced(CiType type, CiExpr expr, CiPriority parent)
 	{
 		CiCondExpr cond = expr as CiCondExpr;
 		if (cond != null) {
+			if (parent > CiPriority.Cond)
+				Write('(');
 			cond.Cond.Accept(this, CiPriority.Cond);
 			Write(" ? ");
-			WriteCoercedInternal(type, cond.OnTrue);
+			WriteCoercedInternal(type, cond.OnTrue, CiPriority.Cond);
 			Write(" : ");
-			WriteCoercedInternal(type, cond.OnFalse);
+			WriteCoercedInternal(type, cond.OnFalse, CiPriority.Cond);
+			if (parent > CiPriority.Cond)
+				Write(')');
 		}
 		else
-			WriteCoercedInternal(type, expr);
+			WriteCoercedInternal(type, expr, parent);
 	}
 
 	protected virtual void WriteCoercedLiteral(CiType type, CiExpr expr, CiPriority priority)
@@ -594,7 +598,7 @@ public abstract class GenBase : CiVisitor
 			Write(' ');
 			Write(expr.OpString);
 			Write(' ');
-			WriteCoerced(expr.Left.Type, expr.Right);
+			WriteCoerced(expr.Left.Type, expr.Right, CiPriority.Statement);
 			return expr;
 
 		case CiToken.Dot:
@@ -636,13 +640,15 @@ public abstract class GenBase : CiVisitor
 
 	public override CiExpr Visit(CiCondExpr expr, CiPriority parent)
 	{
-		if (parent > CiPriority.Cond) Write('(');
+		if (parent > CiPriority.Cond)
+			Write('(');
 		expr.Cond.Accept(this, CiPriority.Cond);
 		Write(" ? ");
 		WriteCoercedLiteral(expr.Type, expr.OnTrue, CiPriority.Cond);
 		Write(" : ");
 		WriteCoercedLiteral(expr.Type, expr.OnFalse, CiPriority.Cond);
-		if (parent > CiPriority.Cond) Write(')');
+		if (parent > CiPriority.Cond)
+			Write(')');
 		return expr;
 	}
 
@@ -783,7 +789,7 @@ public abstract class GenBase : CiVisitor
 		foreach (CiCase kase in statement.Cases) {
 			foreach (CiExpr value in kase.Values) {
 				Write("case ");
-				WriteCoerced(statement.Value.Type, value);
+				WriteCoerced(statement.Value.Type, value, CiPriority.Statement);
 				WriteLine(":");
 			}
 			this.Indent++;
