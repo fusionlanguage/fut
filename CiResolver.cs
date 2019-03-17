@@ -55,8 +55,7 @@ public class CiResolver : CiVisitor
 			return;
 		}
 		if (klass.BaseClassName != null) {
-			CiClass baseClass = Program.TryLookup(klass.BaseClassName) as CiClass;
-			if (baseClass == null)
+			if (!(Program.TryLookup(klass.BaseClassName) is CiClass baseClass))
 				throw new CiException(klass, "Base class {0} not found", klass.BaseClassName);
 			klass.Parent = baseClass;
 			klass.VisitStatus = CiVisitStatus.InProgress;
@@ -84,12 +83,8 @@ public class CiResolver : CiVisitor
 		ptr = right.Type.PtrOrSelf;
 		if (ptr.IsAssignableFrom(left.Type))
 			return ptr;
-		CiRangeType leftRange = left.Type as CiRangeType;
-		if (leftRange != null) {
-			CiRangeType rightRange = right.Type as CiRangeType;
-			if (rightRange != null)
-				return leftRange.Union(rightRange);
-		}
+		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange)
+			return leftRange.Union(rightRange);
 		throw StatementException(left, "Incompatible types: {0} and {1}", left.Type, right.Type);
 	}
 
@@ -315,14 +310,12 @@ public class CiResolver : CiVisitor
 				throw StatementException(expr, "{0} not found", expr.Name);
 			expr.Type = expr.Symbol.Type;
 		}
-		if (!(scope is CiEnum)) {
-			if (expr.Symbol is CiConst konst) {
-				ResolveConst(konst);
-				if (konst.Value is CiLiteral)
-					return konst.Value;
-				if (konst.Value is CiBinaryExpr dotExpr && dotExpr.Op == CiToken.Dot)
-					return dotExpr; // const foo = MyEnum.Foo
-			}
+		if (!(scope is CiEnum) && expr.Symbol is CiConst konst) {
+			ResolveConst(konst);
+			if (konst.Value is CiLiteral)
+				return konst.Value;
+			if (konst.Value is CiBinaryExpr dotExpr && dotExpr.Op == CiToken.Dot)
+				return dotExpr; // const foo = MyEnum.Foo
 		}
 		return expr;
 	}
@@ -447,12 +440,9 @@ public class CiResolver : CiVisitor
 		CiType type;
 		switch (expr.Op) {
 		case CiToken.Dot:
-			CiScope scope;
 			leftSymbol = left as CiSymbolReference;
 			CiSymbolReference rightSymbol = (CiSymbolReference) expr.Right;
-			if (leftSymbol != null && leftSymbol.Symbol is CiScope)
-				scope = (CiScope) leftSymbol.Symbol;
-			else
+			if (leftSymbol == null || !(leftSymbol.Symbol is CiScope scope))
 				scope = left.Type;
 			CiExpr result = Lookup(rightSymbol, scope);
 			if (result != rightSymbol)
@@ -664,9 +654,7 @@ public class CiResolver : CiVisitor
 					return CiLiteral.False;
 			}
 			else if (left.Type is CiStringType && right.Type is CiStringType) {
-				CiLiteral leftLiteral = left as CiLiteral;
-				CiLiteral rightLiteral = right as CiLiteral;
-				if (leftLiteral != null && rightLiteral != null)
+				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
 					return expr.ToLiteral((string) leftLiteral.Value != (string) rightLiteral.Value);
 			}
 			// TODO: type check
@@ -919,8 +907,7 @@ public class CiResolver : CiVisitor
 
 	static CiToken GetPtrModifier(ref CiExpr expr)
 	{
-		CiPostfixExpr postfix = expr as CiPostfixExpr;
-		if (postfix != null) {
+		if (expr is CiPostfixExpr postfix) {
 			switch (postfix.Op) {
 			case CiToken.ExclamationMark:
 			case CiToken.Hash:
@@ -949,34 +936,32 @@ public class CiResolver : CiVisitor
 	long FoldConstLong(CiExpr expr)
 	{
 		CiLiteral literal = FoldConst(expr);
-		if (literal.Value is long)
-			return (long) literal.Value;
+		if (literal.Value is long l)
+			return l;
 		throw StatementException(expr, "Expected integer");
 	}
 
 	CiType ToBaseType(CiExpr expr, CiToken ptrModifier)
 	{
-		CiSymbolReference symbol = expr as CiSymbolReference;
-		if (symbol != null) {
+		switch (expr) {
+		case CiSymbolReference symbol:
 			// built-in, MyEnum, MyClass, MyClass!
-			if (!(this.Program.TryLookup(symbol.Name) is CiType type))
-				throw StatementException(expr, "Type {0} not found", symbol.Name);
-			if (type is CiClass klass)
-				return new CiClassPtrType { Name = klass.Name, Class = klass, Modifier = ptrModifier };
-			ExpectNoPtrModifier(expr, ptrModifier);
-			return type;
-		}
+			if (this.Program.TryLookup(symbol.Name) is CiType type) {
+				if (type is CiClass klass)
+					return new CiClassPtrType { Name = klass.Name, Class = klass, Modifier = ptrModifier };
+				ExpectNoPtrModifier(expr, ptrModifier);
+				return type;
+			}
+			throw StatementException(expr, "Type {0} not found", symbol.Name);
 
-		CiBinaryExpr binary = expr as CiBinaryExpr;
-		if (binary != null) {
+		case CiBinaryExpr binary:
 			ExpectNoPtrModifier(expr, ptrModifier);
 			switch (binary.Op) {
 			case CiToken.LeftParenthesis:
 				// string(), MyClass()
 				if (binary.RightCollection.Length != 0)
 					throw StatementException(binary.Right, "Expected empty parentheses for storage type");
-				symbol = binary.Left as CiSymbolReference;
-				if (symbol == null)
+				if (!(binary.Left is CiSymbolReference symbol))
 					throw StatementException(binary.Left, "Expected name of storage type");
 				if (symbol.Name == "string")
 					return CiSystem.StringStorageType;
@@ -992,9 +977,10 @@ public class CiResolver : CiVisitor
 			default:
 				throw StatementException(expr, "Invalid type");
 			}
-		}
 
-		throw StatementException(expr, "Invalid type");
+		default:
+			throw StatementException(expr, "Invalid type");
+		}
 	}
 
 	CiType ToType(CiExpr expr, bool dynamic)
@@ -1004,18 +990,14 @@ public class CiResolver : CiVisitor
 		CiToken ptrModifier = GetPtrModifier(ref expr);
 		CiArrayType outerArray = null; // left-most in source
 		CiArrayType innerArray = null; // right-most in source
-		for (;;) {
-			CiBinaryExpr binary = expr as CiBinaryExpr;
-			if (binary == null || binary.Op != CiToken.LeftBracket)
-				break;
+		while (expr is CiBinaryExpr binary && binary.Op == CiToken.LeftBracket) {
 			if (binary.Right != null) {
 				ExpectNoPtrModifier(expr, ptrModifier);
 				CiExpr lengthExpr = binary.Right.Accept(this, CiPriority.Statement);
 				Coerce(lengthExpr, CiSystem.IntType);
 				CiArrayStorageType arrayStorage = new CiArrayStorageType { LengthExpr = lengthExpr, ElementType = outerArray };
 				if (!dynamic) {
-					CiLiteral literal = lengthExpr as CiLiteral;
-					if (literal == null)
+					if (!(lengthExpr is CiLiteral literal))
 						throw StatementException(lengthExpr, "Expected constant value");
 					long length = (long) literal.Value;
 					if (length < 0)
@@ -1062,13 +1044,11 @@ public class CiResolver : CiVisitor
 		ResolveType(konst);
 		konst.Value = konst.Value.Accept(this, CiPriority.Statement);
 		if (konst.Value is CiCollection coll) {
-			CiArrayType arrayType = konst.Type as CiArrayType;
-			if (arrayType == null)
+			if (!(konst.Type is CiArrayType arrayType))
 				throw StatementException(konst, "Array initializer for scalar constant {0}", konst.Name);
 			foreach (CiExpr item in coll.Items)
 				Coerce(item, arrayType.ElementType);
-			CiArrayStorageType storageType = arrayType as CiArrayStorageType;
-			if (storageType == null)
+			if (!(arrayType is CiArrayStorageType storageType))
 				konst.Type = storageType = new CiArrayStorageType { ElementType = arrayType.ElementType, Length = coll.Items.Length };
 			else if (storageType.Length != coll.Items.Length)
 				throw StatementException(konst, "Declared {0} elements, initialized {1}", storageType.Length, coll.Items.Length);
