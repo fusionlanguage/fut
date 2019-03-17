@@ -555,9 +555,9 @@ public abstract class GenBase : CiVisitor
 		case CiToken.Mod:
 			return Write(expr, parent, CiPriority.Mul, " % ", CiPriority.Primary);
 		case CiToken.ShiftLeft:
-			return Write(expr, parent, CiPriority.Shift, " << ", CiPriority.Add);
+			return Write(expr, parent, CiPriority.Shift, " << ", CiPriority.Mul);
 		case CiToken.ShiftRight:
-			return Write(expr, parent, CiPriority.Shift, " >> ", CiPriority.Add);
+			return Write(expr, parent, CiPriority.Shift, " >> ", CiPriority.Mul);
 		case CiToken.Less:
 			return Write(expr, parent, CiPriority.Rel, " < ");
 		case CiToken.LessOrEqual:
