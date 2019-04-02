@@ -41,6 +41,7 @@ public static class CiTo
 		Console.WriteLine("-o FILE    Write to the specified file");
 		Console.WriteLine("-n NAME    Specify C++/C# namespace or Java package");
 		Console.WriteLine("-D NAME    Define conditional compilation symbol");
+		Console.WriteLine("-I DIR     Add directory to resource search path");
 		Console.WriteLine("--help     Display this information");
 		Console.WriteLine("--version  Display version information");
 	}
@@ -49,6 +50,7 @@ public static class CiTo
 	{
 		CiParser parser = new CiParser();
 		List<string> inputFiles = new List<string>();
+		List<string> searchDirs = new List<string>();
 		string lang = null;
 		string outputFile = null;
 		string namespace_ = null;
@@ -76,6 +78,9 @@ public static class CiTo
 					if (symbol == "true" || symbol == "false")
 						throw new ArgumentException(symbol + " is reserved");
 					parser.PreSymbols.Add(symbol);
+					break;
+				case "-I":
+					searchDirs.Add(args[++i]);
 					break;
 				default:
 					throw new ArgumentException("Unknown option: " + arg);
@@ -109,7 +114,7 @@ public static class CiTo
 			foreach (string inputFile in inputFiles)
 				parser.Parse(inputFile, File.OpenText(inputFile));
 			program = parser.Program;
-			new CiResolver(program);
+			new CiResolver(program, searchDirs);
 		} catch (CiException ex) {
 			Console.Error.WriteLine("{0}({1}): ERROR: {2}", ex.Filename, ex.Line, ex.Message);
 			return 1;

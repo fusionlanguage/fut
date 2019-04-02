@@ -29,6 +29,7 @@ namespace Foxoft.Ci
 public class CiResolver : CiVisitor
 {
 	readonly CiProgram Program;
+	readonly IEnumerable<string> SearchDirs;
 	CiScope CurrentScope;
 	CiMethod CurrentMethod;
 	readonly HashSet<CiMethod> CurrentPureMethods = new HashSet<CiMethod>();
@@ -42,6 +43,18 @@ public class CiResolver : CiVisitor
 	CiException StatementException(CiStatement statement, string format, params object[] args)
 	{
 		return StatementException(statement, string.Format(format, args));
+	}
+
+	string FindFile(string name, CiStatement statement)
+	{
+		foreach (string dir in this.SearchDirs) {
+			string path = Path.Combine(dir, name);
+			if (File.Exists(path))
+				return path;
+		}
+		if (File.Exists(name))
+			return name;
+		throw StatementException(statement, "File {0} not found", name);
 	}
 
 	void ResolveBase(CiClass klass)
@@ -393,7 +406,7 @@ public class CiResolver : CiVisitor
 				throw StatementException(expr, "Resource name must be string");
 			inner = literal;
 			if (!this.Program.Resources.TryGetValue(name, out byte[] content)) {
-				content = File.ReadAllBytes(name);
+				content = File.ReadAllBytes(FindFile(name, expr));
 				this.Program.Resources.Add(name, content);
 			}
 			type = new CiArrayStorageType { ElementType = CiSystem.ByteType, Length = content.Length };
@@ -1095,9 +1108,10 @@ public class CiResolver : CiVisitor
 		}
 	}
 
-	public CiResolver(CiProgram program)
+	public CiResolver(CiProgram program, IEnumerable<string> searchDirs)
 	{
 		this.Program = program;
+		this.SearchDirs = searchDirs;
 		foreach (CiClass klass in program.OfType<CiClass>())
 			ResolveBase(klass);
 		foreach (CiClass klass in program.Classes)
