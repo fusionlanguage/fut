@@ -138,8 +138,17 @@ public class GenCpp : GenTyped
 	{
 	}
 
-	protected override void WriteArrayStorageInit(CiType type)
+	protected override void WriteArrayStorageInit(CiNamedValue def)
 	{
+		switch (def.Value) {
+		case null:
+			break;
+		case CiLiteral literal when literal.IsDefaultValue:
+			Write(" {}");
+			break;
+		default:
+			throw new NotImplementedException("Only null, zero and false supported");
+		}
 	}
 
 	protected override void WriteVarInit(CiNamedValue def)

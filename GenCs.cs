@@ -153,8 +153,7 @@ public class GenCs : GenTyped
 			Write(')');
 		}
 		else if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
-			CiLiteral literal = args[0] as CiLiteral;
-			if (literal == null || !literal.IsDefaultValue)
+			if (!(args[0] is CiLiteral literal) || !literal.IsDefaultValue)
 				throw new NotImplementedException("Only null, zero and false supported");
 			Write("System.Array.Clear(");
 			obj.Accept(this, CiPriority.Statement);
