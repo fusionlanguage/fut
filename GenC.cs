@@ -102,7 +102,9 @@ public class GenC : GenCCpp
 
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
-		if (left.Type is CiClassPtrType)
+		if (symbol.Symbol is CiConst) // FIXME
+			Write('_');
+		else if (left.Type is CiClassPtrType)
 			Write("->");
 		else
 			Write('.');
@@ -195,7 +197,7 @@ public class GenC : GenCCpp
 			if (!first)
 				WriteLine(",");
 			first = false;
-			WriteCamelCase(konst.Name);
+			WriteUppercaseWithUnderscores(konst.Name);
 			if (konst.Value != null) {
 				Write(" = ");
 				konst.Value.Accept(this, CiPriority.Statement);
