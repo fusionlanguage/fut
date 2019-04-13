@@ -108,6 +108,16 @@ public class GenC : GenCCpp
 			Write('.');
 	}
 
+	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
+	{
+		if (type is CiClassPtrType && expr.Type is CiClass) {
+			Write('&');
+			expr.Accept(this, CiPriority.Primary);
+		}
+		else
+			base.WriteCoercedInternal(type, expr, parent);
+	}
+
 	protected override void WriteStringLength(CiExpr expr)
 	{
 		Write("(int) strlen(");
