@@ -141,17 +141,21 @@ public class GenC : GenCCpp
 			switch (obj.Type) {
 			case CiClass klass:
 				Write(klass.Name);
+				Write('_');
+				Write(method.Name);
+				Write("(&");
+				obj.Accept(this, CiPriority.Primary);
 				break;
 			case CiClassPtrType ptr:
 				Write(ptr.Class.Name);
+				Write('_');
+				Write(method.Name);
+				Write('(');
+				obj.Accept(this, CiPriority.Statement);
 				break;
 			default:
 				throw new NotImplementedException(obj.Type.ToString());
 			}
-			Write('_');
-			Write(method.Name);
-			Write('(');
-			obj.Accept(this, CiPriority.Primary);
 			if (args.Length > 0) {
 				Write(", ");
 				WriteArgs(method, args);
