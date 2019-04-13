@@ -241,7 +241,8 @@ public class GenC : GenCCpp
 
 	void WriteSignature(CiClass klass, CiMethod method)
 	{
-		WriteLine();
+		if (method.Visibility == CiVisibility.Private || method.Visibility == CiVisibility.Internal)
+			Write("static ");
 		Write(method.Type, true);
 		Write(' ');
 		Write(klass.Name);
@@ -332,6 +333,7 @@ public class GenC : GenCCpp
 			foreach (CiMethod method in klass.Methods) {
 				if (method.CallType == CiCallType.Abstract)
 					continue;
+				WriteLine();
 				WriteSignature(klass, method);
 				WriteBody(method);
 			}
