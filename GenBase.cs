@@ -28,6 +28,7 @@ public delegate TextWriter TextWriterFactory(string filename);
 
 public abstract class GenBase : CiVisitor
 {
+	public string Namespace;
 	public string OutputFile;
 	public TextWriterFactory CreateTextWriter = CreateFileWriter;
 	TextWriter Writer;

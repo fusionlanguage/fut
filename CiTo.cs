@@ -34,6 +34,7 @@ public static class CiTo
 	{
 		Console.WriteLine("Usage: cito [OPTIONS] -o FILE INPUT.ci");
 		Console.WriteLine("Options:");
+		Console.WriteLine("-l c       Translate to C");
 		Console.WriteLine("-l cpp     Translate to C++");
 		Console.WriteLine("-l cs      Translate to C#");
 		Console.WriteLine("-l java    Translate to Java");
@@ -101,12 +102,14 @@ public static class CiTo
 		}
 		GenBase gen;
 		switch (lang) {
-		case "cpp": gen = new GenCpp(namespace_); break;
-		case "cs": gen = new GenCs(namespace_); break;
-		case "java": gen = new GenJava(namespace_); break;
+		case "c": gen = new GenC(); break;
+		case "cpp": gen = new GenCpp(); break;
+		case "cs": gen = new GenCs(); break;
+		case "java": gen = new GenJava(); break;
 		case "js": gen = new GenJs(); break;
 		default: throw new ArgumentException("Unknown language: " + lang);
 		}
+		gen.Namespace = namespace_;
 		gen.OutputFile = outputFile;
 
 		CiProgram program;

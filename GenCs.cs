@@ -26,13 +26,6 @@ namespace Foxoft.Ci
 
 public class GenCs : GenTyped
 {
-	string Namespace;
-
-	public GenCs(string namespace_)
-	{
-		this.Namespace = namespace_;
-	}
-
 	void Write(CiVisibility visibility)
 	{
 		switch (visibility) {

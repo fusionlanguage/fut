@@ -27,13 +27,7 @@ namespace Foxoft.Ci
 
 public class GenJava : GenTyped
 {
-	string Namespace;
 	string OutputDirectory;
-
-	public GenJava(string namespace_)
-	{
-		this.Namespace = namespace_;
-	}
 
 	void Write(CiVisibility visibility)
 	{

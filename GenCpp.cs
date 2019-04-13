@@ -25,30 +25,9 @@ using System.Linq;
 namespace Foxoft.Ci
 {
 
-public class GenCpp : GenTyped
+public class GenCpp : GenCCpp
 {
-	string Namespace;
-
 	CiMethod CurrentMethod;
-	readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
-
-	public GenCpp(string namespace_)
-	{
-		this.Namespace = namespace_;
-	}
-
-	protected override void Write(TypeCode typeCode)
-	{
-		switch (typeCode) {
-		case TypeCode.SByte: Write("int8_t"); break;
-		case TypeCode.Byte: Write("uint8_t"); break;
-		case TypeCode.Int16: Write("int16_t"); break;
-		case TypeCode.UInt16: Write("uint16_t"); break;
-		case TypeCode.Int32: Write("int"); break;
-		case TypeCode.Int64: Write("int64_t"); break;
-		default: throw new NotImplementedException(typeCode.ToString());
-		}
-	}
 
 	protected override void Write(CiType type, bool promote)
 	{
@@ -115,7 +94,6 @@ public class GenCpp : GenTyped
 			Write(type.Name);
 			break;
 		}
-
 	}
 
 	protected override void WriteName(CiSymbol symbol)
@@ -132,10 +110,6 @@ public class GenCpp : GenTyped
 			Write("this->");
 		WriteName(expr.Symbol);
 		return expr;
-	}
-
-	protected override void WriteClassStorageInit(CiClass klass)
-	{
 	}
 
 	protected override void WriteArrayStorageInit(CiNamedValue def)

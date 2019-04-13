@@ -31,6 +31,8 @@
     <Compile Include="CiTo.cs" />
     <Compile Include="CiTree.cs" />
     <Compile Include="GenBase.cs" />
+    <Compile Include="GenC.cs" />
+    <Compile Include="GenCCpp.cs" />
     <Compile Include="GenCpp.cs" />
     <Compile Include="GenCs.cs" />
     <Compile Include="GenJava.cs" />

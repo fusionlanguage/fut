@@ -9,6 +9,7 @@ CSC := gmcs
 MONO := mono
 JAVACPSEP = :
 endif
+CC = clang
 CXX = clang++ -std=c++17
 
 VERSION := 1.0.0
@@ -16,7 +17,7 @@ MAKEFLAGS = -r
 
 all: cito.exe
 
-cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs CiTo.cs)
+cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs CiTo.cs)
 	$(CSC) $^
 
 test-error: cito.exe
@@ -32,11 +33,15 @@ test-error: cito.exe
 		done; \
 		echo PASSED $$passed of $$total errors
 
-test: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) \
-      $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) \
-      $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) \
-      $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
+test: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
+#      $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) \
+#      $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) \
+#      $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) \
+#      $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
 	perl test/summary.pl $^
+
+test/bin/%/c.txt: test/bin/%/c.exe
+	-./$< >$@
 
 test/bin/%/cpp.txt: test/bin/%/cpp.exe
 	-./$< >$@
@@ -50,6 +55,9 @@ test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
 test/bin/%/js.txt: test/bin/%/Run.js
 	-node $< >$@
 
+test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
+	-$(CC) -o $@ -I $(<D) $^
+
 test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
 	-$(CXX) -o $@ -I $(<D) $^
 
@@ -61,6 +69,9 @@ test/bin/%/Test.class: test/bin/%/Test.java
 
 test/bin/%/Run.js: test/bin/%/Test.js
 	-cat $< test/Runner.js >$@
+
+test/bin/%/Test.c: test/%.ci cito.exe
+	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
 
 test/bin/%/Test.cpp: test/%.ci cito.exe
 	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
@@ -74,7 +85,7 @@ test/bin/%/Test.java: test/%.ci cito.exe
 test/bin/%/Test.js: test/%.ci cito.exe
 	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
 
-.PRECIOUS: test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js
+.PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js
 
 test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 	javac -d $(@D) -cp test/bin/Basic $<
