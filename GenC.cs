@@ -360,7 +360,9 @@ public class GenC : GenCCpp
 					continue;
 				WriteLine();
 				WriteSignature(klass, method);
+				this.CurrentMethod = method;
 				WriteBody(method);
+				this.CurrentMethod = null;
 			}
 		}
 		CloseFile();

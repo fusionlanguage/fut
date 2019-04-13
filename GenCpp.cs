@@ -27,8 +27,6 @@ namespace Foxoft.Ci
 
 public class GenCpp : GenCCpp
 {
-	CiMethod CurrentMethod;
-
 	protected override void Write(CiType type, bool promote)
 	{
 		switch (type) {
@@ -340,11 +338,6 @@ public class GenCpp : GenCCpp
 	{
 		if (konst.Type is CiArrayType)
 			WriteConst(konst);
-	}
-
-	protected override void WriteReturnValue(CiExpr expr)
-	{
-		WriteCoerced(this.CurrentMethod.Type, expr, CiPriority.Statement);
 	}
 
 	protected override void WriteCaseBody(CiStatement[] statements)
