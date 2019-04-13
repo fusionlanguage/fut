@@ -175,6 +175,26 @@ public class GenC : GenCCpp
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
+	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+	{
+		if ((expr.Left.Type is CiStringType && expr.Right.Type != CiSystem.NullType)
+		 || (expr.Right.Type is CiStringType && expr.Left.Type != CiSystem.NullType)) {
+			if (parent > CiPriority.Equality)
+				Write('(');
+			 Write("strcmp(");
+			 expr.Left.Accept(this, CiPriority.Primary);
+			 Write(", ");
+			 expr.Right.Accept(this, CiPriority.Statement);
+			 Write(") ");
+			 Write(not ? '!' : '=');
+			 Write("= 0");
+			if (parent > CiPriority.Equality)
+				Write(')');
+		}
+		else
+			base.WriteEqual(expr, parent, not);
+	}
+
 	protected override void WriteCaseBody(CiStatement[] statements)
 	{
 		if (statements.Length > 0 && statements[0] is CiVar)
@@ -323,6 +343,7 @@ public class GenC : GenCCpp
 		CreateFile(this.OutputFile);
 		WriteLine("#include <math.h>");
 		WriteLine("#include <stdlib.h>");
+		WriteLine("#include <string.h>");
 		Write("#include \"");
 		Write(Path.GetFileName(headerFile));
 		WriteLine("\"");
