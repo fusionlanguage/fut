@@ -142,26 +142,6 @@ public class GenCpp : GenCCpp
 			base.WriteLiteral(value);
 	}
 
-	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
-	{
-		CiClassPtrType coercedType;
-		if (expr.Left.Type is CiClassPtrType leftPtr && leftPtr.IsAssignableFrom(expr.Right.Type))
-			coercedType = leftPtr;
-		else if (expr.Right.Type is CiClassPtrType rightPtr && rightPtr.IsAssignableFrom(expr.Left.Type))
-			coercedType = rightPtr;
-		else {
-			base.WriteEqual(expr, parent, not);
-			return;
-		}
-		if (parent > CiPriority.Equality)
-			Write('(');
-		WriteCoerced(coercedType, expr.Left, CiPriority.Equality);
-		Write(not ? " != " : " == ");
-		WriteCoerced(coercedType, expr.Right, CiPriority.Equality);
-		if (parent > CiPriority.Equality)
-			Write(')');
-	}
-
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
 		if (symbol.Symbol is CiConst) // FIXME
