@@ -296,25 +296,29 @@ public class GenC : GenCCpp
 
 	void WriteStruct(CiClass klass)
 	{
-		// topological sorting of class hierarchy and class storage fields
-		if (klass == null)
-			return;
 		if (klass.CallType != CiCallType.Static) {
+			// topological sorting of class hierarchy and class storage fields
 			if (this.WrittenClasses.TryGetValue(klass, out bool done)) {
 				if (done)
 					return;
 				throw new CiException(klass, "Circular dependency for class {0}", klass.Name);
 			}
 			this.WrittenClasses.Add(klass, false);
-			WriteStruct(klass.Parent as CiClass);
+			if (klass.Parent is CiClass baseClass)
+				WriteStruct(baseClass);
 			foreach (CiField field in klass.Fields)
-				WriteStruct(field.Type.BaseType as CiClass);
+				if (field.Type.BaseType is CiClass fieldClass)
+					WriteStruct(fieldClass);
 			this.WrittenClasses[klass] = true;
 
 			Write("struct ");
 			Write(klass.Name);
 			Write(' ');
 			OpenBlock();
+			if (klass.Parent is CiClass) {
+				Write(klass.Parent.Name);
+				WriteLine(" base;");
+			}
 			foreach (CiField field in klass.Fields) {
 				WriteVar(field);
 				WriteLine(";");
