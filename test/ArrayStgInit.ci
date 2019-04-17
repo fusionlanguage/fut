@@ -3,10 +3,11 @@ public static class Test
 	public static bool Run()
 	{
 		int[5] a = 0;
-		bool[5] b = false;
+		byte[5] b = 0;
+		bool[5] c = false;
 		string[5] s = null;
 		for (int i = 0; i < 5; i++)
-			if (a[i] != 0 || b[i] || s[i] != null)
+			if (a[i] != 0 || b[i] != 0 || c[i] || s[i] != null)
 				return false;
 		return true;
 	}
