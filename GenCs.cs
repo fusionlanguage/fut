@@ -106,19 +106,16 @@ public class GenCs : GenTyped
 		Write(symbol.Name);
 	}
 
-	protected override void WriteNewArray(CiType type)
+	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr)
 	{
 		Write("new ");
-		Write(type.BaseType, false);
-		CiArrayStorageType storage = (CiArrayStorageType) type;
+		Write(elementType.BaseType, false);
 		Write('[');
-		storage.LengthExpr.Accept(this, CiPriority.Statement);
+		lengthExpr.Accept(this, CiPriority.Statement);
 		Write(']');
-		for (CiArrayType array = storage; ; ) {
-			array = array.ElementType as CiArrayType;
-			if (array == null)
-				break;
+		while (elementType is CiArrayType array) {
 			Write("[]");
+			elementType = array.ElementType;
 		}
 	}
 

@@ -110,9 +110,9 @@ public class GenCpp : GenCCpp
 		return expr;
 	}
 
-	protected override void WriteArrayStorageInit(CiNamedValue def)
+	protected override void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
 	{
-		switch (def.Value) {
+		switch (value) {
 		case null:
 			break;
 		case CiLiteral literal when literal.IsDefaultValue:

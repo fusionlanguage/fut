@@ -229,10 +229,10 @@ public abstract class GenBase : CiVisitor
 		WriteNew(klass);
 	}
 
-	protected virtual void WriteArrayStorageInit(CiNamedValue def)
+	protected virtual void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
 	{
 		Write(" = ");
-		WriteNewArray(def.Type);
+		WriteNewArray(array.ElementType, array.LengthExpr);
 	}
 
 	protected virtual void WriteVarInit(CiNamedValue def)
@@ -246,8 +246,8 @@ public abstract class GenBase : CiVisitor
 		WriteTypeAndName(def);
 		if (def.Type is CiClass klass)
 			WriteClassStorageInit(klass);
-		else if (def.Type is CiArrayStorageType && !(def.Value is CiCollection))
-			WriteArrayStorageInit(def);
+		else if (def.Type is CiArrayStorageType array && !(def.Value is CiCollection))
+			WriteArrayStorageInit(array, def.Value);
 		else if (def.Value != null)
 			WriteVarInit(def);
 	}
@@ -320,16 +320,19 @@ public abstract class GenBase : CiVisitor
 		Write("()");
 	}
 
-	protected virtual void WriteNewArray(CiType type)
+	protected virtual void WriteNewArray(CiType elementType, CiExpr lengthExpr)
 	{
 		Write("new ");
-		Write(type.BaseType, false);
-		while (type is CiArrayType array) {
+		Write(elementType.BaseType, false);
+		Write('[');
+		lengthExpr.Accept(this, CiPriority.Statement);
+		Write(']');
+		while (elementType is CiArrayType array) {
 			Write('[');
 			if (array is CiArrayStorageType arrayStorage)
 				arrayStorage.LengthExpr.Accept(this, CiPriority.Statement);
 			Write(']');
-			type = array.ElementType;
+			elementType = array.ElementType;
 		}
 	}
 
@@ -354,7 +357,7 @@ public abstract class GenBase : CiVisitor
 	{
 		WriteArrayElement(def, nesting);
 		Write(" = ");
-		WriteNewArray(array);
+		WriteNewArray(array.ElementType, array.LengthExpr);
 		WriteLine(";");
 	}
 
@@ -424,7 +427,7 @@ public abstract class GenBase : CiVisitor
 			if (expr.Type is CiClassPtrType klass)
 				WriteNew(klass.Class);
 			else
-				WriteNewArray(expr.Type);
+				WriteNewArray(((CiArrayType) expr.Type).ElementType, expr.Inner);
 			return expr;
 		case CiToken.LeftParenthesis:
 			Write('(');

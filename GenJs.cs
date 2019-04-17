@@ -85,38 +85,36 @@ public class GenJs : GenBase
 		return expr;
 	}
 
-	protected override void WriteNewArray(CiType type)
+	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr)
 	{
-		CiArrayStorageType array = (CiArrayStorageType) type;
-		type = array.ElementType;
-		if (!(type is CiNumericType)) {
+		if (!(elementType is CiNumericType)) {
 			Write("new Array(");
-			array.LengthExpr.Accept(this, CiPriority.Statement);
+			lengthExpr.Accept(this, CiPriority.Statement);
 			Write(')');
 			return;
 		}
 
 		string name;
 		int shift;
-		if (type == CiSystem.IntType) {
+		if (elementType == CiSystem.IntType) {
 			name = "Int32";
 			shift = 2;
 		}
-		else if (type == CiSystem.DoubleType) {
+		else if (elementType == CiSystem.DoubleType) {
 			name = "Float64";
 			shift = 3;
 		}
-		else if (type == CiSystem.FloatType) {
+		else if (elementType == CiSystem.FloatType) {
 			name = "Float32";
 			shift = 2;
 		}
-		else if (((CiIntegerType) type).IsLong) {
+		else if (((CiIntegerType) elementType).IsLong) {
 			// TODO: UInt32 if possible?
 			name = "Float64"; // no 64-bit integers in JavaScript
 			shift = 3;
 		}
 		else {
-			CiRangeType range = (CiRangeType) type;
+			CiRangeType range = (CiRangeType) elementType;
 			if (range.Min < 0) {
 				if (range.Min < short.MinValue || range.Max > short.MaxValue) {
 					name = "Int32";
@@ -149,11 +147,11 @@ public class GenJs : GenBase
 		Write(name);
 		Write("Array(new ArrayBuffer(");
 		if (shift == 0)
-			array.LengthExpr.Accept(this, CiPriority.Statement);
-		else if (array.LengthExpr is CiLiteral literalLength)
+			lengthExpr.Accept(this, CiPriority.Statement);
+		else if (lengthExpr is CiLiteral literalLength)
 			Write(((long) literalLength.Value) << shift);
 		else {
-			array.LengthExpr.Accept(this, CiPriority.Shift);
+			lengthExpr.Accept(this, CiPriority.Shift);
 			Write(" << ");
 			Write(shift);
 		}

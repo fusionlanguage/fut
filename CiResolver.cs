@@ -396,6 +396,7 @@ public class CiResolver : CiVisitor
 				return expr;
 			case CiArrayStorageType array:
 				expr.Type = new CiArrayPtrType { ElementType = array.ElementType, Modifier = CiToken.Hash };
+				expr.Inner = array.LengthExpr;
 				return expr;
 			default:
 				throw StatementException(expr, "Invalid argument to new");
@@ -1009,7 +1010,7 @@ public class CiResolver : CiVisitor
 				CiExpr lengthExpr = binary.Right.Accept(this, CiPriority.Statement);
 				Coerce(lengthExpr, CiSystem.IntType);
 				CiArrayStorageType arrayStorage = new CiArrayStorageType { LengthExpr = lengthExpr, ElementType = outerArray };
-				if (!dynamic) {
+				if (!dynamic || (binary.Left is CiBinaryExpr outerBinary && outerBinary.Op == CiToken.LeftBracket)) {
 					if (!(lengthExpr is CiLiteral literal))
 						throw StatementException(lengthExpr, "Expected constant value");
 					long length = (long) literal.Value;
@@ -1021,8 +1022,6 @@ public class CiResolver : CiVisitor
 				}
 				outerArray = arrayStorage;
 			}
-			else if (outerArray is CiArrayStorageType)
-				throw StatementException(expr, "Pointers to fixed-size arrays not supported");
 			else
 				outerArray = new CiArrayPtrType { Modifier = ptrModifier, ElementType = outerArray };
 			if (innerArray == null)

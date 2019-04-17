@@ -675,7 +675,6 @@ public class CiRangeType : CiIntegerType
 
 	public override string ToString() { return "(" + this.Min + " .. " + this.Max + ")"; }
 
-	// TODO: needed?
 	public override bool Equals(object obj)
 	{
 		return obj is CiRangeType that && this.Min == that.Min && this.Max == that.Max;
@@ -889,8 +888,7 @@ public class CiArrayPtrType : CiArrayType
 	{
 		if (right == CiSystem.NullType)
 			return true;
-		CiArrayType array = right as CiArrayType;
-		if (array == null || !array.ElementType.Equals(this.ElementType))
+		if (!(right is CiArrayType array) || !array.ElementType.Equals(this.ElementType))
 			return false;
 		CiArrayPtrType ptr;
 		switch (this.Modifier) {
@@ -926,6 +924,16 @@ public class CiArrayStorageType : CiArrayType
 	}
 	public override bool IsAssignableFrom(CiType right) { return false; }
 	public override CiType PtrOrSelf { get { return new CiArrayPtrType { ElementType = this.ElementType, Modifier = CiToken.ExclamationMark }; } }
+
+	public override bool Equals(object obj)
+	{
+		return obj is CiArrayStorageType that && this.ElementType == that.ElementType && this.Length == that.Length;
+	}
+
+	public override int GetHashCode()
+	{
+		return this.ElementType.GetHashCode() ^ this.Length.GetHashCode();
+	}
 }
 
 public class CiSystem : CiScope

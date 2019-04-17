@@ -2,13 +2,12 @@ public static class Test
 {
 	public static bool Run()
 	{
-		int[2][3] a;
-		int[]![3] p = a;
+		int[]#[3] a = new int[2][3];
 		a[0][0] = 1;
-		p[0][1] = 2;
+		a[0][1] = 2;
 		a[0][2] = 3;
 		a[1][0] = 4;
-		p[1][1] = 5;
+		a[1][1] = 5;
 		a[1][2] = 6;
 		int sum = 0;
 		for (int i = 0; i < 2; i++)

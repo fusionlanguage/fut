@@ -33,11 +33,11 @@ test-error: cito.exe
 		done; \
 		echo PASSED $$passed of $$total errors
 
-test: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
-#      $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) \
-#      $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) \
-#      $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) \
-#      $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
+test: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci)) \
+      $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) \
+      $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) \
+      $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) \
+      $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
 	perl test/summary.pl $^
 
 test/bin/%/c.txt: test/bin/%/c.exe
