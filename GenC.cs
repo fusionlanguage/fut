@@ -25,42 +25,52 @@ namespace Foxoft.Ci
 
 public class GenC : GenCCpp
 {
-	protected override void Write(CiType type, bool promote)
+	protected override void WriteName(CiSymbol symbol)
 	{
-		switch (type) {
+		if (symbol is CiMember)
+			WriteCamelCase(symbol.Name);
+		else
+			Write(symbol.Name);
+	}
+
+	void WriteArrayPrefix(CiType type)
+	{
+		if (type is CiArrayType array) {
+			WriteArrayPrefix(array.ElementType);
+			if (type is CiArrayPtrType arrayPtr) {
+				if (array.ElementType is CiArrayStorageType)
+					Write('(');
+				switch (arrayPtr.Modifier) {
+				case CiToken.EndOfFile:
+					Write("const *");
+					break;
+				case CiToken.ExclamationMark:
+				case CiToken.Hash:
+					Write('*');
+					break;
+				default:
+					throw new NotImplementedException(arrayPtr.Modifier.ToString());
+				}
+			}
+		}
+	}
+
+	void WriteDefinition(CiType type, Action symbol)
+	{
+		CiType baseType = type.BaseType;
+		switch (baseType) {
 		case null:
-			Write("void");
+			Write("void ");
 			break;
 		case CiIntegerType integer:
-			Write(GetTypeCode(integer, promote));
+			Write(GetTypeCode(integer, type is CiArrayType));
+			Write(' ');
 			break;
 		case CiStringPtrType _:
 			Write("const char *");
 			break;
 		case CiStringStorageType _:
 			Write("char *");
-			break;
-		case CiArrayPtrType arrayPtr:
-			switch (arrayPtr.Modifier) {
-			case CiToken.EndOfFile:
-				Write(arrayPtr.ElementType, false);
-				Write(" const *");
-				break;
-			case CiToken.ExclamationMark:
-			case CiToken.Hash:
-				Write(arrayPtr.ElementType, false);
-				Write(" *");
-				break;
-			default:
-				throw new NotImplementedException(arrayPtr.Modifier.ToString());
-			}
-			break;
-		case CiArrayStorageType arrayStorage:
-			Write("std::array<"); // TODO
-			Write(arrayStorage.ElementType, false);
-			Write(", ");
-			Write(arrayStorage.Length);
-			Write('>');
 			break;
 		case CiClassPtrType classPtr:
 			switch (classPtr.Modifier) {
@@ -79,17 +89,27 @@ public class GenC : GenCCpp
 			}
 			break;
 		default:
-			Write(type.Name);
+			Write(baseType.Name);
+			Write(' ');
 			break;
+		}
+		WriteArrayPrefix(type);
+		symbol();
+		while (type is CiArrayType array) {
+			if (type is CiArrayStorageType arrayStorage) {
+				Write('[');
+				Write(arrayStorage.Length);
+				Write(']');
+			}
+			else if (array.ElementType is CiArrayStorageType)
+				Write(')');
+			type = array.ElementType;
 		}
 	}
 
-	protected override void WriteName(CiSymbol symbol)
+	protected override void WriteTypeAndName(CiNamedValue value)
 	{
-		if (symbol is CiMember)
-			WriteCamelCase(symbol.Name);
-		else
-			Write(symbol.Name);
+		WriteDefinition(value.Type, () => WriteName(value));
 	}
 
 	protected override void WriteLiteral(object value)
@@ -170,6 +190,16 @@ public class GenC : GenCCpp
 			Write("self->");
 		WriteName(expr.Symbol);
 		return expr;
+	}
+
+	protected override void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
+	{
+		// TODO
+	}
+
+	protected override bool HasInitCode(CiNamedValue def)
+	{
+		return false; // TODO
 	}
 
 	protected override void WriteResource(string name, int length)
@@ -267,21 +297,21 @@ public class GenC : GenCCpp
 	{
 		if (method.Visibility == CiVisibility.Private || method.Visibility == CiVisibility.Internal)
 			Write("static ");
-		Write(method.Type, true);
-		Write(' ');
-		Write(klass.Name);
-		Write("_");
-		Write(method.Name);
-		Write('(');
-		if (method.CallType == CiCallType.Static)
-			WriteParameters(method, true);
-		else {
-			if (!method.IsMutator)
-				Write("const ");
+		WriteDefinition(method.Type, () => {
 			Write(klass.Name);
-			Write(" *self");
-			WriteParameters(method, false);
-		}
+			Write("_");
+			Write(method.Name);
+			Write('(');
+			if (method.CallType == CiCallType.Static)
+				WriteParameters(method, true);
+			else {
+				if (!method.IsMutator)
+					Write("const ");
+				Write(klass.Name);
+				Write(" *self");
+				WriteParameters(method, false);
+			}
+		});
 	}
 
 	void WriteSignatures(CiClass klass, bool pub)

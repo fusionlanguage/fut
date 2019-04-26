@@ -248,8 +248,7 @@ public class GenJava : GenTyped
 
 	protected override bool HasInitCode(CiNamedValue def)
 	{
-		CiArrayStorageType array = def.Type as CiArrayStorageType;
-		if (array == null)
+		if (!(def.Type is CiArrayStorageType array))
 			return false;
 		while (array.ElementType is CiArrayStorageType element)
 			array = element;

@@ -37,11 +37,6 @@ public class GenJs : GenBase
 	readonly string[][] Library = new string[(int) GenJsMethod.Count][];
 	CiClass CurrentClass;
 
-	protected override void Write(CiType type, bool promote)
-	{
-		throw new InvalidOperationException();
-	}
-
 	protected override void WriteName(CiSymbol symbol)
 	{
 		if (symbol is CiConst)
@@ -161,6 +156,11 @@ public class GenJs : GenBase
 	protected override void WriteInt()
 	{
 		Write("var");
+	}
+
+	protected override void WriteCast(CiPrefixExpr expr, CiPriority parent)
+	{
+		expr.Inner.Accept(this, parent); // no-op
 	}
 
 	protected override void WriteResource(string name, int length)

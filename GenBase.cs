@@ -175,16 +175,9 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected abstract void Write(CiType type, bool promote);
-
 	protected abstract void WriteName(CiSymbol symbol);
 
-	protected virtual void WriteTypeAndName(CiNamedValue value)
-	{
-		Write(value.Type, true);
-		Write(' ');
-		WriteName(value);
-	}
+	protected abstract void WriteTypeAndName(CiNamedValue value);
 
 	protected void WriteCoerced(CiType type, CiExpr[] exprs)
 	{
@@ -320,21 +313,7 @@ public abstract class GenBase : CiVisitor
 		Write("()");
 	}
 
-	protected virtual void WriteNewArray(CiType elementType, CiExpr lengthExpr)
-	{
-		Write("new ");
-		Write(elementType.BaseType, false);
-		Write('[');
-		lengthExpr.Accept(this, CiPriority.Statement);
-		Write(']');
-		while (elementType is CiArrayType array) {
-			Write('[');
-			if (array is CiArrayStorageType arrayStorage)
-				arrayStorage.LengthExpr.Accept(this, CiPriority.Statement);
-			Write(']');
-			elementType = array.ElementType;
-		}
-	}
+	protected abstract void WriteNewArray(CiType elementType, CiExpr lengthExpr);
 
 	protected virtual void WriteInt()
 	{
@@ -400,6 +379,8 @@ public abstract class GenBase : CiVisitor
 			CloseBlock();
 	}
 
+	protected abstract void WriteCast(CiPrefixExpr expr, CiPriority parent);
+
 	protected abstract void WriteResource(string name, int length);
 
 	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
@@ -430,10 +411,8 @@ public abstract class GenBase : CiVisitor
 				WriteNewArray(((CiArrayType) expr.Type).ElementType, expr.Inner);
 			return expr;
 		case CiToken.LeftParenthesis:
-			Write('(');
-			Write(expr.Type, false);
-			Write(") ");
-			break;
+			WriteCast(expr, parent);
+			return expr;
 		case CiToken.Resource:
 			WriteResource((string) ((CiLiteral) expr.Inner).Value, ((CiArrayStorageType) expr.Type).Length);
 			return expr;

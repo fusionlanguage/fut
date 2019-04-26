@@ -69,6 +69,18 @@ public abstract class GenTyped : GenBase
 		return TypeCode.Object;
 	}
 
+	protected virtual void Write(CiType type, bool promote)
+	{
+		throw new InvalidOperationException();
+	}
+
+	protected override void WriteTypeAndName(CiNamedValue value)
+	{
+		Write(value.Type, true);
+		Write(' ');
+		WriteName(value);
+	}
+
 	protected override void WriteCharAt(CiBinaryExpr expr)
 	{
 		WriteIndexing(expr, CiPriority.Statement);
@@ -147,6 +159,30 @@ public abstract class GenTyped : GenBase
 	{
 		if (!(expr is CiLiteral) || !WriteCoerced(type, expr, TypeCode.Int32))
 			base.WriteCoercedLiteral(type, expr, parent);
+	}
+
+	protected override void WriteCast(CiPrefixExpr expr, CiPriority parent)
+	{
+		Write('(');
+		Write(expr.Type, false);
+		Write(") ");
+		expr.Inner.Accept(this, CiPriority.Primary);
+	}
+
+	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr)
+	{
+		Write("new ");
+		Write(elementType.BaseType, false);
+		Write('[');
+		lengthExpr.Accept(this, CiPriority.Statement);
+		Write(']');
+		while (elementType is CiArrayType array) {
+			Write('[');
+			if (array is CiArrayStorageType arrayStorage)
+				arrayStorage.LengthExpr.Accept(this, CiPriority.Statement);
+			Write(']');
+			elementType = array.ElementType;
+		}
 	}
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
