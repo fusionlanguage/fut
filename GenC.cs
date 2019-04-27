@@ -149,7 +149,16 @@ public class GenC : GenCCpp
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (IsMathReference(obj)) {
+		if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
+			if (!(args[0] is CiLiteral literal) || !literal.IsDefaultValue)
+				throw new NotImplementedException("Only null, zero and false supported");
+			Write("memset(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", 0, sizeof(");
+			obj.Accept(this, CiPriority.Statement);
+			Write("))");
+		}
+		else if (IsMathReference(obj)) {
 			if (method.Name == "Ceiling")
 				Write("ceil");
 			else
