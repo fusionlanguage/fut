@@ -69,10 +69,7 @@ public abstract class GenTyped : GenBase
 		return TypeCode.Object;
 	}
 
-	protected virtual void Write(CiType type, bool promote)
-	{
-		throw new InvalidOperationException();
-	}
+	protected abstract void Write(CiType type, bool promote);
 
 	protected override void WriteTypeAndName(CiNamedValue value)
 	{

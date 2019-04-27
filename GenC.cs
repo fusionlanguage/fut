@@ -107,6 +107,11 @@ public class GenC : GenCCpp
 		}
 	}
 
+	protected override void Write(CiType type, bool promote)
+	{
+		WriteDefinition(type, () => {});
+	}
+
 	protected override void WriteTypeAndName(CiNamedValue value)
 	{
 		WriteDefinition(value.Type, () => WriteName(value));
