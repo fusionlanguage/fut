@@ -181,6 +181,17 @@ public class GenC : GenCCpp
 				WriteLowercase(method.Name);
 			WriteArgsInParentheses(method, args);
 		}
+		else if (method == CiSystem.StringContains) {
+			if (parent > CiPriority.Equality)
+				Write('(');
+			Write("strstr(");
+			obj.Accept(this, CiPriority.Primary);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Primary);
+			Write(") != NULL");
+			if (parent > CiPriority.Equality)
+				Write(')');
+		}
 		// TODO
 		else {
 			switch (obj.Type) {
