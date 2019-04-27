@@ -236,7 +236,7 @@ public class GenC : GenCCpp
 			if (parent > CiPriority.Equality)
 				Write('(');
 			 Write("strcmp(");
-			 expr.Left.Accept(this, CiPriority.Primary);
+			 expr.Left.Accept(this, CiPriority.Statement);
 			 Write(", ");
 			 expr.Right.Accept(this, CiPriority.Statement);
 			 Write(") ");
