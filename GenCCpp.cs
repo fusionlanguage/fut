@@ -61,6 +61,22 @@ public abstract class GenCCpp : GenTyped
 			Write(')');
 	}
 
+	protected virtual void WriteArrayPtr(CiExpr expr, CiPriority parent)
+	{
+		expr.Accept(this, parent);
+	}
+
+	protected void WriteArrayPtrAdd(CiExpr array, CiExpr index)
+	{
+		if (index is CiLiteral literal && (long) literal.Value == 0)
+			WriteArrayPtr(array, CiPriority.Statement);
+		else {
+			WriteArrayPtr(array, CiPriority.Add);
+			Write(" + ");
+			index.Accept(this, CiPriority.Add);
+		}
+	}
+
 	protected override void WriteClassStorageInit(CiClass klass)
 	{
 	}

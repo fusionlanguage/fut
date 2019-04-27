@@ -162,17 +162,6 @@ public class GenCpp : GenCCpp
 		WriteArgsInParentheses(method, args);
 	}
 
-	void WriteArrayPtrAdd(CiExpr array, CiExpr index)
-	{
-		if (index is CiLiteral literal && (long) literal.Value == 0)
-			WriteArrayPtr(array, CiPriority.Statement);
-		else {
-			WriteArrayPtr(array, CiPriority.Add);
-			Write(" + ");
-			index.Accept(this, CiPriority.Add);
-		}
-	}
-
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (IsMathReference(obj)) {
@@ -251,20 +240,20 @@ public class GenCpp : GenCCpp
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
-	void WriteArrayPtr(CiExpr expr, CiPriority parent)
+	protected override void WriteArrayPtr(CiExpr expr, CiPriority parent)
 	{
-		if (expr.Type is CiArrayStorageType) {
+		switch (expr.Type) {
+		case CiArrayStorageType _:
 			expr.Accept(this, CiPriority.Primary);
 			Write(".data()");
-		}
-		else {
-			CiArrayPtrType arrayPtr = expr.Type as CiArrayPtrType;
-			if (arrayPtr != null && arrayPtr.Modifier == CiToken.Hash) {
-				expr.Accept(this, CiPriority.Primary);
-				Write(".get()");
-			}
-			else
-				expr.Accept(this, parent);
+			break;
+		case CiArrayPtrType arrayPtr when arrayPtr.Modifier == CiToken.Hash:
+			expr.Accept(this, CiPriority.Primary);
+			Write(".get()");
+			break;
+		default:
+			expr.Accept(this, parent);
+			break;
 		}
 	}
 

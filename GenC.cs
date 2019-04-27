@@ -149,7 +149,18 @@ public class GenC : GenCCpp
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
+		if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+			Write("memcpy(");
+			WriteArrayPtrAdd(args[1], args[2]);
+			Write(", ");
+			WriteArrayPtrAdd(obj, args[0]);
+			Write(", ");
+			args[3].Accept(this, CiPriority.Mul);
+			Write(" * sizeof(");
+			obj.Accept(this, CiPriority.Primary);
+			Write("[0]))");
+		}
+		else if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
 			if (!(args[0] is CiLiteral literal) || !literal.IsDefaultValue)
 				throw new NotImplementedException("Only null, zero and false supported");
 			Write("memset(");
