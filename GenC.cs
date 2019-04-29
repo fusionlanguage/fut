@@ -27,7 +27,12 @@ public class GenC : GenCCpp
 {
 	protected override void WriteName(CiSymbol symbol)
 	{
-		if (symbol is CiMember)
+		if (symbol is CiMethod) {
+			Write(symbol.Parent.Name);
+			Write('_');
+			Write(symbol.Name);
+		}
+		else if (symbol is CiMember)
 			WriteCamelCase(symbol.Name);
 		else
 			Write(symbol.Name);
@@ -194,28 +199,19 @@ public class GenC : GenCCpp
 		}
 		// TODO
 		else {
-			switch (obj.Type) {
-			case CiClass klass:
-				Write(klass.Name);
-				Write('_');
-				Write(method.Name);
-				Write("(&");
-				obj.Accept(this, CiPriority.Primary);
-				break;
-			case CiClassPtrType ptr:
-				Write(ptr.Class.Name);
-				Write('_');
-				Write(method.Name);
-				Write('(');
-				obj.Accept(this, CiPriority.Statement);
-				break;
-			default:
-				throw new NotImplementedException(obj.Type.ToString());
+			WriteName(method);
+			Write('(');
+			if (method.CallType != CiCallType.Static) {
+				if (obj.Type is CiClass) {
+					Write('&');
+					obj.Accept(this, CiPriority.Primary);
+				}
+				else
+					obj.Accept(this, CiPriority.Statement);
+				if (args.Length > 0)
+					Write(", ");
 			}
-			if (args.Length > 0) {
-				Write(", ");
-				WriteArgs(method, args);
-			}
+			WriteArgs(method, args);
 			Write(')');
 		}
 	}

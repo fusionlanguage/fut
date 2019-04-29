@@ -116,13 +116,13 @@ public class CiCollection : CiExpr
 public abstract class CiSymbol : CiExpr
 {
 	public string Name;
+	public CiScope Parent;
 	public override string ToString() { return this.Name; }
 }
 
 public class CiScope : CiSymbol, IEnumerable
 {
 	public string Filename;
-	public CiScope Parent;
 	protected readonly OrderedDictionary Dict = new OrderedDictionary();
 
 	IEnumerator IEnumerable.GetEnumerator()
@@ -186,6 +186,7 @@ public class CiScope : CiSymbol, IEnumerable
 				}
 			}
 		}
+		symbol.Parent = this;
 		this.Dict.Add(name, symbol);
 	}
 
