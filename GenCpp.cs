@@ -502,9 +502,7 @@ public class GenCpp : GenCCpp
 		Write("::");
 		WriteCamelCase(method.Name);
 		WriteParametersAndConst(method);
-		this.CurrentMethod = method;
 		WriteBody(method);
-		this.CurrentMethod = null;
 	}
 
 	void WriteResources(Dictionary<string, byte[]> resources, bool define)

@@ -26,7 +26,6 @@ namespace Foxoft.Ci
 public abstract class GenCCpp : GenTyped
 {
 	protected readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
-	protected CiMethod CurrentMethod;
 
 	protected override void Write(TypeCode typeCode)
 	{
@@ -79,11 +78,6 @@ public abstract class GenCCpp : GenTyped
 
 	protected override void WriteClassStorageInit(CiClass klass)
 	{
-	}
-
-	protected override void WriteReturnValue(CiExpr expr)
-	{
-		WriteCoerced(this.CurrentMethod.Type, expr, CiPriority.Statement);
 	}
 }
 

@@ -34,6 +34,7 @@ public abstract class GenBase : CiVisitor
 	TextWriter Writer;
 	protected int Indent = 0;
 	bool AtLineStart = true;
+	CiMethod CurrentMethod = null;
 
 	static TextWriter CreateFileWriter(string filename)
 	{
@@ -739,18 +740,13 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected virtual void WriteReturnValue(CiExpr expr)
-	{
-		expr.Accept(this, CiPriority.Statement);
-	}
-
 	public override void Visit(CiReturn statement)
 	{
 		if (statement.Value == null)
 			WriteLine("return;");
 		else {
 			Write("return ");
-			WriteReturnValue(statement.Value);
+			WriteCoerced(this.CurrentMethod.Type, statement.Value, CiPriority.Statement);
 			WriteLine(";");
 		}
 	}
@@ -823,6 +819,7 @@ public abstract class GenBase : CiVisitor
 			WriteLine(";");
 		else {
 			WriteLine();
+			this.CurrentMethod = method;
 			if (method.Body is CiBlock block)
 				Visit(block);
 			else {
@@ -830,6 +827,7 @@ public abstract class GenBase : CiVisitor
 				method.Body.Accept(this);
 				CloseBlock();
 			}
+			this.CurrentMethod = null;
 		}
 	}
 
