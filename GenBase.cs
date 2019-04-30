@@ -794,25 +794,6 @@ public abstract class GenBase : CiVisitor
 		WriteChild(statement.Body);
 	}
 
-	protected void WritePublic(CiContainerType container)
-	{
-		if (container.IsPublic)
-			Write("public ");
-	}
-
-	protected void OpenClass(CiClass klass, string suffix, string extendsClause)
-	{
-		Write("class ");
-		Write(klass.Name);
-		Write(suffix);
-		if (klass.BaseClassName != null) {
-			Write(extendsClause);
-			Write(klass.BaseClassName);
-		}
-		WriteLine();
-		OpenBlock();
-	}
-
 	protected void WriteBody(CiMethod method)
 	{
 		if (method.CallType == CiCallType.Abstract)

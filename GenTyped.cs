@@ -213,6 +213,25 @@ public abstract class GenTyped : GenBase
 		Write('(');
 		WriteParameters(method, true);
 	}
+
+	protected void WritePublic(CiContainerType container)
+	{
+		if (container.IsPublic)
+			Write("public ");
+	}
+
+	protected void OpenClass(CiClass klass, string suffix, string extendsClause)
+	{
+		Write("class ");
+		Write(klass.Name);
+		Write(suffix);
+		if (klass.BaseClassName != null) {
+			Write(extendsClause);
+			Write(klass.BaseClassName);
+		}
+		WriteLine();
+		OpenBlock();
+	}
 }
 
 }
