@@ -1,0 +1,26 @@
+public class Base
+{
+	protected int Foo;
+}
+
+public class Test : Base
+{
+	static bool Check(Base p)
+	{
+		return p.Foo == 42;
+	}
+
+	public static bool Run()
+	{
+		Test() o;
+		o.Foo = 42;
+		Base b = o;
+		Test p = o;
+		Base b2;
+		b2 = p;
+		return b.Foo == 42
+			&& b2.Foo == 42
+			&& Check(o)
+			&& Check(p);
+	}
+}

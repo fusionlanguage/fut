@@ -149,12 +149,30 @@ public class GenC : GenCCpp
 			Write("base.");
 	}
 
-	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
+	void WriteClassPtr(CiClass resultClass, CiExpr expr, CiPriority parent)
 	{
-		if (type is CiClassPtrType && expr.Type is CiClass) {
+		if (expr.Type is CiClass klass) {
 			Write('&');
 			expr.Accept(this, CiPriority.Primary);
 		}
+		else if (expr.Type is CiClassPtrType klassPtr && klassPtr.Class != resultClass) {
+			Write('&');
+			expr.Accept(this, CiPriority.Primary);
+			Write("->base");
+			klass = (CiClass) klassPtr.Class.Parent;
+		}
+		else {
+			expr.Accept(this, parent);
+			return;
+		}
+		for (; klass != resultClass; klass = (CiClass) klass.Parent)
+			Write(".base");
+	}
+
+	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
+	{
+		if (type is CiClassPtrType resultPtr)
+			WriteClassPtr(resultPtr.Class, expr, parent);
 		else
 			base.WriteCoercedInternal(type, expr, parent);
 	}
@@ -211,12 +229,7 @@ public class GenC : GenCCpp
 			WriteName(method);
 			Write('(');
 			if (method.CallType != CiCallType.Static) {
-				if (obj.Type is CiClass) {
-					Write('&');
-					obj.Accept(this, CiPriority.Primary);
-				}
-				else
-					obj.Accept(this, CiPriority.Statement);
+				WriteClassPtr((CiClass) method.Parent, obj, CiPriority.Statement);
 				if (args.Length > 0)
 					Write(", ");
 			}
