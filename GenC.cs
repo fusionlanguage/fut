@@ -34,6 +34,8 @@ public class GenC : GenCCpp
 		}
 		else if (symbol is CiMember)
 			WriteCamelCase(symbol.Name);
+		else if (symbol.Name == "this")
+			Write("self");
 		else
 			Write(symbol.Name);
 	}

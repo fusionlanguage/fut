@@ -10,9 +10,13 @@ public class Test
 	bool IsNull(bool dyn)
 		=> (dyn ? Dynamic : Storage) == null;
 
+	bool IsThis(Test that)
+		=> this == that;
+
 	public static bool Run()
 	{
 		Test() o;
-		return o.IsNull(true);
+		return o.IsNull(true)
+			&& o.IsThis(o);
 	}
 }

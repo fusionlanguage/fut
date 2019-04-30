@@ -4,11 +4,12 @@ public class Test
 
 	int GetFoo() => this.Foo;
 
+	int GetBar() => this.GetFoo();
+
 	public static bool Run()
 	{
 		Test() t;
 		t.Foo = 42;
-		return t.Foo == 42
-			&& t.GetFoo() == 42;
+		return t.GetBar() == 42;
 	}
 }
