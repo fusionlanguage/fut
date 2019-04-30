@@ -1,0 +1,14 @@
+public class Base
+{
+	protected int Foo;
+}
+
+public class Test : Base
+{
+	public static bool Run()
+	{
+		Test() o;
+		o.Foo = 42;
+		return o.Foo == 42;
+	}
+}

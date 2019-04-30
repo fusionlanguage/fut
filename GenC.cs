@@ -134,12 +134,19 @@ public class GenC : GenCCpp
 
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
-		if (symbol.Symbol is CiConst) // FIXME
+		if (symbol.Symbol is CiConst) {
+			// FIXME
 			Write('_');
-		else if (left.Type is CiClassPtrType)
-			Write("->");
-		else
+			return;
+		}
+		if (left.Type is CiClass klass)
 			Write('.');
+		else {
+			Write("->");
+			klass = ((CiClassPtrType) left.Type).Class;
+		}
+		for (CiClass symbolClass = (CiClass) symbol.Symbol.Parent; klass != symbolClass; klass = (CiClass) klass.Parent)
+			Write("base.");
 	}
 
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
