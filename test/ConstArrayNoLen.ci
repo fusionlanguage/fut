@@ -1,6 +1,6 @@
 public static class Test
 {
-	public const int[] ClassConst = { 5, 10, 15 };
+	const int[] ClassConst = { 5, 10, 15 };
 
 	static int Sum(int[] a, int length)
 	{

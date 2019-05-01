@@ -79,6 +79,14 @@ public abstract class GenCCpp : GenTyped
 	protected override void WriteClassStorageInit(CiClass klass)
 	{
 	}
+
+	protected abstract void WriteConst(CiConst konst);
+
+	public override void Visit(CiConst konst)
+	{
+		if (konst.Type is CiArrayType)
+			WriteConst(konst);
+	}
 }
 
 }

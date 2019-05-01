@@ -294,19 +294,13 @@ public class GenCpp : GenCCpp
 		return false;
 	}
 
-	void WriteConst(CiConst konst)
+	protected override void WriteConst(CiConst konst)
 	{
 		Write("static constexpr ");
 		WriteTypeAndName(konst);
 		Write(" = ");
 		konst.Value.Accept(this, CiPriority.Statement);
 		WriteLine(";");
-	}
-
-	public override void Visit(CiConst konst)
-	{
-		if (konst.Type is CiArrayType)
-			WriteConst(konst);
 	}
 
 	protected override void WriteCaseBody(CiStatement[] statements)

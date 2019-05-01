@@ -368,8 +368,29 @@ public class GenC : GenCCpp
 		});
 	}
 
+	protected override void WriteConst(CiConst konst)
+	{
+		if (konst.Type is CiArrayType) {
+			Write("static const ");
+			WriteTypeAndName(konst);
+			Write(" = ");
+			konst.Value.Accept(this, CiPriority.Statement);
+			WriteLine(";");
+		}
+		else {
+			Write("#define ");
+			WriteName(konst);
+			Write(' ');
+			konst.Value.Accept(this, CiPriority.Statement);
+			WriteLine("");
+		}
+	}
+
 	void WriteSignatures(CiClass klass, bool pub)
 	{
+		foreach (CiConst konst in klass.Consts)
+			if ((konst.Visibility == CiVisibility.Public) == pub)
+				WriteConst(konst);
 		foreach (CiMethod method in klass.Methods) {
 			if ((method.Visibility == CiVisibility.Public) == pub && method.CallType != CiCallType.Abstract) {
 				WriteSignature(klass, method);
