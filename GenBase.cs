@@ -341,7 +341,7 @@ public abstract class GenBase : CiVisitor
 		WriteLine(";");
 	}
 
-	protected void WriteInitCode(CiNamedValue def)
+	protected virtual void WriteInitCode(CiNamedValue def)
 	{
 		if (!HasInitCode(def))
 			return;

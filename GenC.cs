@@ -256,6 +256,19 @@ public class GenC : GenCCpp
 		return false; // TODO
 	}
 
+	protected override void WriteInitCode(CiNamedValue def)
+	{
+		if (def.Type is CiArrayStorageType && def.Value != null) {
+			if (!(def.Value is CiLiteral literal) || !literal.IsDefaultValue)
+				throw new NotImplementedException("Only null, zero and false supported");
+			Write("memset(");
+			WriteName(def);
+			Write(", 0, sizeof(");
+			WriteName(def);
+			WriteLine("));");
+		}
+	}
+
 	protected override void WriteResource(string name, int length)
 	{
 		// TODO
