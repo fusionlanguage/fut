@@ -776,11 +776,8 @@ public class CiResolver : CiVisitor
 	{
 		ResolveConst(statement);
 		this.CurrentScope.Add(statement);
-		if (statement.Type is CiArrayType) {
-			List<CiConst> constArrays = this.CurrentScope.ParentClass.ConstArrays;
-			constArrays.Add(statement);
-			statement.Name = "CiConstArray_" + constArrays.Count;
-		}
+		if (statement.Type is CiArrayType)
+			this.CurrentScope.ParentClass.ConstArrays.Add(statement);
 	}
 
 	public override void Visit(CiExpr statement)
@@ -1068,6 +1065,7 @@ public class CiResolver : CiVisitor
 		}
 		else
 			Coerce(konst.Value, konst.Type);
+		konst.InMethod = this.CurrentMethod;
 		konst.VisitStatus = CiVisitStatus.Done;
 	}
 

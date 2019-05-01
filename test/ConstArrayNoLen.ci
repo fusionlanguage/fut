@@ -1,9 +1,10 @@
 public static class Test
 {
-	public const int[] Foo = { 5, 10, 15 };
+	public const int[] ClassConst = { 5, 10, 15 };
 
 	static int Sum(int[] a, int length)
 	{
+		const int[] localConst = { 3, 2, 1 };
 		int sum = 0;
 		for (int i = 0; i < length; i++)
 			sum += a[i];
@@ -12,8 +13,8 @@ public static class Test
 
 	public static bool Run()
 	{
-		const int[] foo = { 1, 2, 3, 4 };
-		return Sum(Foo, Foo.Length) == 30
-			&& Sum(foo, foo.Length) == 10;
+		const int[] localConst = { 1, 2, 3, 4 };
+		return Sum(ClassConst, ClassConst.Length) == 30
+			&& Sum(localConst, localConst.Length) == 10;
 	}
 }

@@ -103,6 +103,8 @@ public class GenCs : GenTyped
 
 	protected override void WriteName(CiSymbol symbol)
 	{
+		if (symbol is CiConst konst && konst.InMethod != null)
+			Write(konst.InMethod.Name);
 		Write(symbol.Name);
 	}
 

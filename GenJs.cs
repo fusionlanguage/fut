@@ -39,8 +39,13 @@ public class GenJs : GenBase
 
 	protected override void WriteName(CiSymbol symbol)
 	{
-		if (symbol is CiConst)
+		if (symbol is CiConst konst) {
+			if (konst.InMethod != null) {
+				WriteUppercaseWithUnderscores(konst.InMethod.Name);
+				Write('_');
+			}
 			WriteUppercaseWithUnderscores(symbol.Name);
+		}
 		else if (symbol is CiMember)
 			WriteCamelCase(symbol.Name);
 		else

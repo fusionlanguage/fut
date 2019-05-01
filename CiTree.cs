@@ -224,6 +224,7 @@ public class CiVar : CiNamedValue
 
 public class CiConst : CiMember
 {
+	public CiMethod InMethod;
 	public CiVisitStatus VisitStatus;
 	public CiConst()
 	{
