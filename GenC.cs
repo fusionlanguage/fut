@@ -399,7 +399,7 @@ public class GenC : GenCCpp
 			WriteName(konst);
 			Write(' ');
 			konst.Value.Accept(this, CiPriority.Statement);
-			WriteLine("");
+			WriteLine();
 		}
 	}
 
@@ -433,6 +433,7 @@ public class GenC : GenCCpp
 					WriteStruct(fieldClass);
 			this.WrittenClasses[klass] = true;
 
+			WriteLine();
 			Write("struct ");
 			Write(klass.Name);
 			Write(' ');
@@ -465,6 +466,7 @@ public class GenC : GenCCpp
 		WriteTypedefs(program, true);
 		foreach (CiClass klass in program.Classes)
 			WriteSignatures(klass, true);
+		WriteLine();
 		WriteLine("#ifdef __cplusplus");
 		WriteLine("}");
 		WriteLine("#endif");
