@@ -32,6 +32,8 @@ public class GenC : GenCCpp
 			Write('_');
 			Write(symbol.Name);
 		}
+		else if (symbol is CiConst)
+			WriteUppercaseWithUnderscores(symbol.Name);
 		else if (symbol is CiMember)
 			WriteCamelCase(symbol.Name);
 		else if (symbol.Name == "this")
@@ -318,6 +320,8 @@ public class GenC : GenCCpp
 			if (!first)
 				WriteLine(",");
 			first = false;
+			Write(enu.Name);
+			Write('_');
 			WriteUppercaseWithUnderscores(konst.Name);
 			if (konst.Value != null) {
 				Write(" = ");
@@ -327,7 +331,7 @@ public class GenC : GenCCpp
 		WriteLine();
 		this.Indent--;
 		Write("} ");
-		WriteLine(enu.Name);
+		Write(enu.Name);
 		WriteLine(";");
 	}
 
