@@ -160,7 +160,10 @@ public class GenCs : GenTyped
 		else {
 			if (IsMathReference(obj))
 				Write("System.");
-			base.WriteCall(obj, method, args, parent);
+			obj.Accept(this, CiPriority.Primary);
+			Write('.');
+			Write(method.Name);
+			WriteArgsInParentheses(method, args);
 		}
 	}
 

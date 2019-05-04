@@ -35,7 +35,6 @@ public class GenJs : GenBase
 {
 	// TODO: Namespace
 	readonly string[][] Library = new string[(int) GenJsMethod.Count][];
-	CiClass CurrentClass;
 
 	protected override void WriteName(CiSymbol symbol)
 	{
@@ -71,17 +70,19 @@ public class GenJs : GenBase
 		base.WriteVar(def);
 	}
 
+	void WriteMember(CiMember member)
+	{
+		Write(member.IsStatic() ? this.CurrentMethod.Parent.Name : "this");
+		Write('.');
+		WriteName(member);
+	}
+
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Symbol is CiMember member) {
-			if (member.IsStatic()) {
-				Write(this.CurrentClass.Name);
-				Write('.');
-			}
-			else
-				Write("this.");
-		}
-		WriteName(expr.Symbol);
+		if (expr.Symbol is CiMember member)
+			WriteMember(member);
+		else
+			WriteName(expr.Symbol);
 		return expr;
 	}
 
@@ -264,6 +265,12 @@ public class GenJs : GenBase
 		}
 	}
 
+	protected override void WriteNearCall(CiMethod method, CiExpr[] args)
+	{
+		WriteMember(method);
+		WriteArgsInParentheses(method, args);
+	}
+
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Op == CiToken.Slash && expr.Type is CiIntegerType) {
@@ -346,7 +353,6 @@ public class GenJs : GenBase
 
 	void Write(CiClass klass)
 	{
-		this.CurrentClass = klass;
 		WriteLine();
 		Write("function ");
 		Write(klass.Name);
@@ -373,7 +379,6 @@ public class GenJs : GenBase
 		foreach (CiMethod method in klass.Methods)
 			Write(klass, method);
 		WriteConsts(klass, klass.ConstArrays);
-		this.CurrentClass = null;
 	}
 
 	void WriteLib(Dictionary<string, byte[]> resources)

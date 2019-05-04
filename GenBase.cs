@@ -34,7 +34,7 @@ public abstract class GenBase : CiVisitor
 	TextWriter Writer;
 	protected int Indent = 0;
 	bool AtLineStart = true;
-	CiMethod CurrentMethod = null;
+	protected CiMethod CurrentMethod = null;
 
 	static TextWriter CreateFileWriter(string filename)
 	{
@@ -509,11 +509,11 @@ public abstract class GenBase : CiVisitor
 		return expr is CiSymbolReference symbol && symbol.Symbol == CiSystem.MathClass;
 	}
 
-	protected virtual void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
+	protected abstract void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent);
+
+	protected virtual void WriteNearCall(CiMethod method, CiExpr[] args)
 	{
-		obj.Accept(this, CiPriority.Primary);
-		Write('.');
-		Write(method.Name);
+		WriteName(method);
 		WriteArgsInParentheses(method, args);
 	}
 
@@ -597,17 +597,10 @@ public abstract class GenBase : CiVisitor
 			return expr;
 
 		case CiToken.LeftParenthesis:
-			CiSymbolReference symbol;
-			if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.Dot) {
-				symbol = leftBinary.Right as CiSymbolReference;
-				if (symbol != null) {
-					WriteCall(leftBinary.Left, (CiMethod) symbol.Symbol, expr.RightCollection, parent);
-					return expr;
-				}
-			}
-			expr.Left.Accept(this, CiPriority.Primary);
-			symbol = (CiSymbolReference) expr.Left;
-			WriteArgsInParentheses((CiMethod) symbol.Symbol, expr.RightCollection);
+			if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.Dot)
+				WriteCall(leftBinary.Left, (CiMethod) ((CiSymbolReference) leftBinary.Right).Symbol, expr.RightCollection, parent);
+			else
+				WriteNearCall((CiMethod) ((CiSymbolReference) expr.Left).Symbol, expr.RightCollection);
 			return expr;
 
 		case CiToken.LeftBracket:

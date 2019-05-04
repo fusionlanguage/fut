@@ -240,6 +240,27 @@ public class GenC : GenCCpp
 		}
 	}
 
+	protected override void WriteNearCall(CiMethod method, CiExpr[] args)
+	{
+		WriteName(method);
+		Write('(');
+		if (method.CallType != CiCallType.Static) {
+			CiClass resultClass = (CiClass) method.Parent;
+			CiClass klass = (CiClass) this.CurrentMethod.Parent;
+			if (klass == resultClass)
+				Write("self");
+			else {
+				Write("&self->base");
+				for (klass = (CiClass) klass.Parent; klass != resultClass; klass = (CiClass) klass.Parent)
+					Write(".base");
+			}
+			if (args.Length > 0)
+				Write(", ");
+		}
+		WriteArgs(method, args);
+		Write(')');
+	}
+
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Symbol is CiField)
