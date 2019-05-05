@@ -521,6 +521,12 @@ public class GenC : GenCCpp
 				field.Value.Accept(this, CiPriority.Statement);
 				WriteLine(";");
 			}
+			else if (field.Type is CiClass fieldClass && NeedsConstructor(fieldClass)) {
+				Write(fieldClass.Name);
+				Write("_Construct(&self->");
+				WriteCamelCase(field.Name);
+				WriteLine(");");
+			}
 		}
 		if (klass.Constructor != null)
 			Write(((CiBlock) klass.Constructor.Body).Statements);
