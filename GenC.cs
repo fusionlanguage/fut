@@ -290,14 +290,26 @@ public class GenC : GenCCpp
 				WriteLine(");");
 			}
 		}
-		else if (def.Type is CiArrayStorageType && def.Value != null) {
-			if (!(def.Value is CiLiteral literal) || !literal.IsDefaultValue)
-				throw new NotImplementedException("Only null, zero and false supported");
-			Write("memset(");
-			WriteName(def);
-			Write(", 0, sizeof(");
-			WriteName(def);
-			WriteLine("));");
+		else if (def.Type is CiArrayStorageType array) {
+			if (def.Value != null) {
+				if (!(def.Value is CiLiteral literal) || !literal.IsDefaultValue)
+					throw new NotImplementedException("Only null, zero and false supported");
+				Write("memset(");
+				WriteName(def);
+				Write(", 0, sizeof(");
+				WriteName(def);
+				WriteLine("));");
+			}
+			else if (array.ElementType is CiClass elementClass) {
+				Write("for (size_t _i = 0; _i < ");
+				Write(array.Length);
+				WriteLine("; _i++)");
+				Write('\t');
+				Write(elementClass.Name);
+				Write("_Construct(");
+				Write(def.Name);
+				WriteLine(" + _i);");
+			}
 		}
 	}
 
