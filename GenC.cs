@@ -276,12 +276,21 @@ public class GenC : GenCCpp
 
 	protected override bool HasInitCode(CiNamedValue def)
 	{
-		return false; // TODO
+		return def.Value != null
+			|| (def.Type is CiClass klass && NeedsConstructor(klass));
 	}
 
 	protected override void WriteInitCode(CiNamedValue def)
 	{
-		if (def.Type is CiArrayStorageType && def.Value != null) {
+		if (def.Type is CiClass klass) {
+			if (NeedsConstructor(klass)) {
+				Write(klass.Name);
+				Write("_Construct(&");
+				Write(def.Name);
+				WriteLine(");");
+			}
+		}
+		else if (def.Type is CiArrayStorageType && def.Value != null) {
 			if (!(def.Value is CiLiteral literal) || !literal.IsDefaultValue)
 				throw new NotImplementedException("Only null, zero and false supported");
 			Write("memset(");
@@ -464,13 +473,38 @@ public class GenC : GenCCpp
 				WriteLine(" base;");
 			}
 			foreach (CiField field in klass.Fields) {
-				WriteVar(field);
+				WriteTypeAndName(field);
 				WriteLine(";");
 			}
 			this.Indent--;
 			WriteLine("};");
 		}
 		WriteSignatures(klass, false);
+	}
+
+	void WriteConstructor(CiClass klass)
+	{
+		if (!NeedsConstructor(klass))
+			return;
+		WriteLine();
+		Write("void ");
+		Write(klass.Name);
+		Write("_Construct(");
+		Write(klass.Name);
+		WriteLine(" *self)");
+		OpenBlock();
+		foreach (CiField field in klass.Fields) {
+			if (field.Value != null) {
+				Write("self->");
+				WriteCamelCase(field.Name);
+				Write(" = ");
+				field.Value.Accept(this, CiPriority.Statement);
+				WriteLine(";");
+			}
+		}
+		if (klass.Constructor != null)
+			Write(((CiBlock) klass.Constructor.Body).Statements);
+		CloseBlock();
 	}
 
 	public override void Write(CiProgram program)
@@ -504,6 +538,7 @@ public class GenC : GenCCpp
 		foreach (CiClass klass in program.Classes)
 			WriteStruct(klass);
 		foreach (CiClass klass in program.Classes) {
+			WriteConstructor(klass);
 			foreach (CiMethod method in klass.Methods) {
 				if (method.CallType == CiCallType.Abstract)
 					continue;

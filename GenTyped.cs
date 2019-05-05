@@ -193,7 +193,6 @@ public abstract class GenTyped : GenBase
 	protected bool NeedsConstructor(CiClass klass)
 	{
 		return klass.Constructor != null
-			|| (klass.IsPublic && klass.CallType != CiCallType.Static) // hide constructor by default
 			|| klass.Fields.Any(field => HasInitCode(field));
 	}
 
