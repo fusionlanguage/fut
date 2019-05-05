@@ -433,6 +433,15 @@ public class GenC : GenCCpp
 		}
 	}
 
+	void WriteConstructorSignature(CiClass klass)
+	{
+		Write("void ");
+		Write(klass.Name);
+		Write("_Construct(");
+		Write(klass.Name);
+		Write(" *self)");
+	}
+
 	void WriteSignatures(CiClass klass, bool pub)
 	{
 		foreach (CiConst konst in klass.Consts)
@@ -479,6 +488,10 @@ public class GenC : GenCCpp
 			this.Indent--;
 			WriteLine("};");
 		}
+		if (NeedsConstructor(klass)) {
+			WriteConstructorSignature(klass);
+			WriteLine(";");
+		}
 		WriteSignatures(klass, false);
 	}
 
@@ -487,11 +500,8 @@ public class GenC : GenCCpp
 		if (!NeedsConstructor(klass))
 			return;
 		WriteLine();
-		Write("void ");
-		Write(klass.Name);
-		Write("_Construct(");
-		Write(klass.Name);
-		WriteLine(" *self)");
+		WriteConstructorSignature(klass);
+		WriteLine();
 		OpenBlock();
 		foreach (CiField field in klass.Fields) {
 			if (field.Value != null) {
