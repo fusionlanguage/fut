@@ -414,16 +414,18 @@ public class GenC : GenCCpp
 			Write(klass.Name);
 			Write("_");
 			Write(method.Name);
-			Write('(');
-			if (method.CallType == CiCallType.Static)
-				WriteParameters(method, true);
-			else {
+			if (method.CallType != CiCallType.Static) {
+				Write('(');
 				if (!method.IsMutator)
 					Write("const ");
 				Write(klass.Name);
 				Write(" *self");
 				WriteParameters(method, false);
 			}
+			else if (method.Parameters.Count == 0)
+				Write("(void)");
+			else
+				WriteParameters(method);
 		});
 	}
 
