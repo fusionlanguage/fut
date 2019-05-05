@@ -433,6 +433,12 @@ public class GenC : GenCCpp
 		}
 	}
 
+	protected override bool NeedsConstructor(CiClass klass)
+	{
+		return base.NeedsConstructor(klass)
+			|| (klass.Parent is CiClass baseClass && NeedsConstructor(baseClass));
+	}
+
 	void WriteConstructorSignature(CiClass klass)
 	{
 		Write("void ");
@@ -503,6 +509,10 @@ public class GenC : GenCCpp
 		WriteConstructorSignature(klass);
 		WriteLine();
 		OpenBlock();
+		if (klass.Parent is CiClass baseClass && NeedsConstructor(baseClass)) {
+			Write(baseClass.Name);
+			WriteLine("_Construct(&self->base);");
+		}
 		foreach (CiField field in klass.Fields) {
 			if (field.Value != null) {
 				Write("self->");

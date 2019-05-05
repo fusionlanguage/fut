@@ -190,7 +190,7 @@ public abstract class GenTyped : GenBase
 		return expr;
 	}
 
-	protected bool NeedsConstructor(CiClass klass)
+	protected virtual bool NeedsConstructor(CiClass klass)
 	{
 		return klass.Constructor != null
 			|| klass.Fields.Any(field => HasInitCode(field));
