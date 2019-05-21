@@ -1,11 +1,11 @@
 abstract class Base
 {
-	public abstract bool Foo();
+	internal abstract bool Foo();
 }
 
 class Derived : Base
 {
-	public override bool Foo()
+	internal override bool Foo()
 	{
 		return true;
 	}

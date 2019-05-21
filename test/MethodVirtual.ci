@@ -1,6 +1,6 @@
 abstract class Base
 {
-	public virtual bool Foo()
+	internal virtual bool Foo()
 	{
 		return false;
 	}
@@ -8,7 +8,7 @@ abstract class Base
 
 class Derived : Base
 {
-	public override bool Foo()
+	internal override bool Foo()
 	{
 		return true;
 	}

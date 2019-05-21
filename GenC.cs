@@ -19,6 +19,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Foxoft.Ci
 {
@@ -406,6 +407,16 @@ public class GenC : GenCCpp
 		}
 	}
 
+	void WriteInstanceParameters(CiMethod method)
+	{
+		Write('(');
+		if (!method.IsMutator)
+			Write("const ");
+		Write(method.Parent.Name);
+		Write(" *self");
+		WriteParameters(method, false);
+	}
+
 	void WriteSignature(CiClass klass, CiMethod method)
 	{
 		if (method.Visibility == CiVisibility.Private || method.Visibility == CiVisibility.Internal)
@@ -414,19 +425,64 @@ public class GenC : GenCCpp
 			Write(klass.Name);
 			Write("_");
 			Write(method.Name);
-			if (method.CallType != CiCallType.Static) {
-				Write('(');
-				if (!method.IsMutator)
-					Write("const ");
-				Write(klass.Name);
-				Write(" *self");
-				WriteParameters(method, false);
-			}
+			if (method.CallType != CiCallType.Static)
+				WriteInstanceParameters(method);
 			else if (method.Parameters.Count == 0)
 				Write("(void)");
 			else
 				WriteParameters(method);
 		});
+	}
+
+	static bool AddsVirtualMethods(CiClass klass)
+	{
+		return klass.Methods.Any(method => method.CallType == CiCallType.Abstract || method.CallType == CiCallType.Virtual);
+	}
+
+	static CiClass GetVtblStructClass(CiClass klass)
+	{
+		while (!AddsVirtualMethods(klass))
+			klass = (CiClass) klass.Parent;
+		return klass;
+	}
+
+	static CiClass GetVtblPtrClass(CiClass klass)
+	{
+		for (CiClass result = null;;) {
+			if (AddsVirtualMethods(klass))
+				result = klass;
+			if (!(klass.Parent is CiClass baseClass))
+				return result;
+			klass = baseClass;
+		}
+	}
+
+	void WriteVtblFields(CiClass klass)
+	{
+		if (klass.Parent is CiClass baseClass)
+			WriteVtblFields(baseClass);
+		foreach (CiMethod method in klass.Methods) {
+			if (method.CallType == CiCallType.Abstract || method.CallType == CiCallType.Virtual) {
+				WriteDefinition(method.Type, () => {
+					Write("(*");
+					WriteCamelCase(method.Name);
+					Write(')');
+					WriteInstanceParameters(method);
+				});
+				WriteLine(";");
+			}
+		}
+	}
+
+	void WriteVtblStruct(CiClass klass)
+	{
+		Write("typedef struct ");
+		OpenBlock();
+		WriteVtblFields(klass);
+		this.Indent--;
+		Write("} ");
+		Write(klass.Name);
+		WriteLine("Vtbl;");
 	}
 
 	protected override void WriteConst(CiConst konst)
@@ -447,9 +503,17 @@ public class GenC : GenCCpp
 		}
 	}
 
+	static bool HasVtblValue(CiClass klass)
+	{
+		if (klass.CallType == CiCallType.Static || klass.CallType == CiCallType.Abstract)
+			return false;
+		return klass.Methods.Any(method => method.CallType == CiCallType.Virtual || method.CallType == CiCallType.Override);
+	}
+
 	protected override bool NeedsConstructor(CiClass klass)
 	{
 		return base.NeedsConstructor(klass)
+			|| HasVtblValue(klass)
 			|| (klass.Parent is CiClass baseClass && NeedsConstructor(baseClass));
 	}
 
@@ -493,10 +557,17 @@ public class GenC : GenCCpp
 			this.WrittenClasses[klass] = true;
 
 			WriteLine();
+			if (AddsVirtualMethods(klass))
+				WriteVtblStruct(klass);
 			Write("struct ");
 			Write(klass.Name);
 			Write(' ');
 			OpenBlock();
+			if (GetVtblPtrClass(klass) == klass) {
+				Write("const ");
+				Write(klass.Name);
+				WriteLine("Vtbl *vtbl;");
+			}
 			if (klass.Parent is CiClass) {
 				Write(klass.Parent.Name);
 				WriteLine(" base;");
@@ -515,6 +586,27 @@ public class GenC : GenCCpp
 		WriteSignatures(klass, false);
 	}
 
+	void WriteVtbl(CiClass definingClass, CiClass declaringClass)
+	{
+		if (declaringClass.Parent is CiClass baseClass)
+			WriteVtbl(definingClass, baseClass);
+		foreach (CiMethod declaredMethod in declaringClass.Methods) {
+			if (declaredMethod.CallType == CiCallType.Abstract || declaredMethod.CallType == CiCallType.Virtual) {
+				CiSymbol definedMethod = definingClass.TryLookup(declaredMethod.Name);
+				if (declaredMethod != definedMethod) {
+					Write('(');
+					WriteDefinition(declaredMethod.Type, () => {
+						Write("(*)");
+						WriteInstanceParameters(declaredMethod);
+					});
+					Write(") ");
+				}
+				WriteName(definedMethod);
+				WriteLine(",");
+			}
+		}
+	}
+
 	void WriteConstructor(CiClass klass)
 	{
 		if (!NeedsConstructor(klass))
@@ -526,6 +618,27 @@ public class GenC : GenCCpp
 		if (klass.Parent is CiClass baseClass && NeedsConstructor(baseClass)) {
 			Write(baseClass.Name);
 			WriteLine("_Construct(&self->base);");
+		}
+		if (HasVtblValue(klass)) {
+			CiClass structClass = GetVtblStructClass(klass);
+			Write("static const ");
+			Write(structClass.Name);
+			Write("Vtbl vtbl = ");
+			OpenBlock();
+			WriteVtbl(klass, structClass);
+			this.Indent--;
+			WriteLine("};");
+			Write("self->");
+			CiClass ptrClass = GetVtblPtrClass(klass);
+			for (CiClass tempClass = klass; tempClass != ptrClass; tempClass = (CiClass) tempClass.Parent)
+				Write("base.");
+			Write("vtbl = ");
+			if (ptrClass != structClass) {
+				Write("(const ");
+				Write(ptrClass.Name);
+				Write("Vtbl *) ");
+			}
+			WriteLine("&vtbl;");
 		}
 		foreach (CiField field in klass.Fields) {
 			if (field.Value != null) {
