@@ -135,21 +135,26 @@ public class GenC : GenCCpp
 			base.WriteLiteral(value);
 	}
 
-	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
+	void WriteMemberAccess(CiExpr left, CiClass symbolClass)
 	{
-		if (symbol.Symbol is CiConst) {
-			// FIXME
-			Write('_');
-			return;
-		}
 		if (left.Type is CiClass klass)
 			Write('.');
 		else {
 			Write("->");
 			klass = ((CiClassPtrType) left.Type).Class;
 		}
-		for (CiClass symbolClass = (CiClass) symbol.Symbol.Parent; klass != symbolClass; klass = (CiClass) klass.Parent)
+		for (; klass != symbolClass; klass = (CiClass) klass.Parent)
 			Write("base.");
+	}
+
+	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
+	{
+		if (symbol.Symbol is CiConst) {
+			// FIXME
+			Write('_');
+		}
+		else
+			WriteMemberAccess(left, (CiClass) symbol.Symbol.Parent);
 	}
 
 	void WriteClassPtr(CiClass resultClass, CiExpr expr, CiPriority parent)
@@ -229,7 +234,31 @@ public class GenC : GenCCpp
 		}
 		// TODO
 		else {
-			WriteName(method);
+			switch (method.CallType) {
+			case CiCallType.Abstract:
+			case CiCallType.Virtual:
+			case CiCallType.Override:
+				if (!(obj.Type is CiClass klass))
+					klass = ((CiClassPtrType) obj.Type).Class;
+				CiClass ptrClass = GetVtblPtrClass(klass);
+				CiClass structClass = GetVtblStructClass((CiClass) method.Parent);
+				if (structClass != ptrClass) {
+					Write("((const ");
+					Write(structClass.Name);
+					Write("Vtbl *) ");
+				}
+				obj.Accept(this, CiPriority.Primary);
+				WriteMemberAccess(obj, ptrClass);
+				Write("vtbl");
+				if (structClass != ptrClass)
+					Write(')');
+				Write("->");
+				WriteCamelCase(method.Name);
+				break;
+			default:
+				WriteName(method);
+				break;
+			}
 			Write('(');
 			if (method.CallType != CiCallType.Static) {
 				WriteClassPtr((CiClass) method.Parent, obj, CiPriority.Statement);
