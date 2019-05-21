@@ -380,8 +380,6 @@ public abstract class GenBase : CiVisitor
 			CloseBlock();
 	}
 
-	protected abstract void WriteCast(CiPrefixExpr expr, CiPriority parent);
-
 	protected abstract void WriteResource(string name, int length);
 
 	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
@@ -410,9 +408,6 @@ public abstract class GenBase : CiVisitor
 				WriteNew(klass.Class);
 			else
 				WriteNewArray(((CiArrayType) expr.Type).ElementType, expr.Inner);
-			return expr;
-		case CiToken.LeftParenthesis:
-			WriteCast(expr, parent);
 			return expr;
 		case CiToken.Resource:
 			WriteResource((string) ((CiLiteral) expr.Inner).Value, ((CiArrayStorageType) expr.Type).Length);

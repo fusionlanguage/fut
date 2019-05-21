@@ -1,9 +1,12 @@
 public static class Test
 {
 	public const long Foo = 1000000000000000;
+	public const long Bar = 1000000000;
 
 	public static bool Run()
 	{
-		return Foo == 1000000000000000;
+		int i = 1000000;
+		return Foo == 1000000000000000
+			&& i * Bar == Foo;
 	}
 }

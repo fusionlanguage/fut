@@ -158,14 +158,6 @@ public abstract class GenTyped : GenBase
 			base.WriteCoercedLiteral(type, expr, parent);
 	}
 
-	protected override void WriteCast(CiPrefixExpr expr, CiPriority parent)
-	{
-		Write('(');
-		Write(expr.Type, false);
-		Write(") ");
-		expr.Inner.Accept(this, CiPriority.Primary);
-	}
-
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr)
 	{
 		Write("new ");

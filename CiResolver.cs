@@ -479,13 +479,6 @@ public class CiResolver : CiVisitor
 				// TODO: check static
 			}
 			CiExpr[] arguments = expr.RightCollection;
-			if (arguments.Length == 1) {
-				type = leftSymbol.Symbol as CiType;
-				if (type != null) {
-					CiExpr inner = arguments[0].Accept(this, CiPriority.Statement);
-					return new CiPrefixExpr { Line = expr.Line, Op = CiToken.LeftParenthesis, Inner = inner, Type = type };
-				}
-			}
 			if (!(leftSymbol.Symbol is CiMethod method))
 				throw StatementException(left, "Expected a method");
 			int i = 0;
