@@ -832,7 +832,7 @@ public class CiClassPtrType : CiType
 			klass = ptr.Class;
 		}
 		while (klass != Class) {
-			klass = (CiClass) klass.Parent;
+			klass = klass.Parent as CiClass;
 			if (klass == null)
 				return false;
 		}
