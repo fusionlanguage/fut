@@ -59,7 +59,7 @@ public class GenJs : GenBase
 	public override CiExpr Visit(CiCollection expr, CiPriority parent)
 	{
 		Write("[ ");
-		WriteCoerced(null, expr.Items);
+		WriteCoercedLiterals(null, expr.Items);
 		Write(" ]");
 		return expr;
 	}

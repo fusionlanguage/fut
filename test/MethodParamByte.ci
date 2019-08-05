@@ -1,0 +1,12 @@
+public static class Test
+{
+	static bool Is255(byte b)
+	{
+		return b == 255;
+	}
+
+	public static bool Run()
+	{
+		return Is255(255);
+	}
+}

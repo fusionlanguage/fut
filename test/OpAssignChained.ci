@@ -1,0 +1,14 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		byte[4] ba;
+		int[4] ia;
+		ia[0] = ba[0] = 200;
+		ba[1] = ia[1] = 200;
+		ba[3] = ba[2] = 200;
+		return ba[0] == 200 && ia[0] == 200
+			&& ia[1] == 200 && ba[1] == 200
+			&& ba[2] == 200 && ba[3] == 200;
+	}
+}

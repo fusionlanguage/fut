@@ -133,29 +133,34 @@ public abstract class GenTyped : GenBase
 		}
 	}
 
-	bool WriteCoerced(CiType type, CiExpr expr, TypeCode exprTypeCode)
+	protected override void WriteAssignRight(CiBinaryExpr expr)
 	{
-		TypeCode typeCode = GetTypeCode(type, false);
-		if (IsNarrower(typeCode, exprTypeCode)) {
-			Write('(');
-			Write(typeCode);
-			Write(") ");
-			expr.Accept(this, CiPriority.Primary);
-			return true;
+		if (expr.Left.IsIndexing) {
+			TypeCode leftTypeCode = GetTypeCode(expr.Left.Type, false);
+			bool promote;
+			switch (expr.Right) {
+			case CiLiteral rightLiteral:
+			case CiBinaryExpr rightBinary when rightBinary.Op == CiToken.LeftBracket || rightBinary.IsAssign:
+				promote = false;
+				break;
+			default:
+				promote = true;
+				break;
+			}
+			TypeCode rightTypeCode = GetTypeCode(expr.Right.Type, promote);
+			if (leftTypeCode == TypeCode.SByte && rightTypeCode == TypeCode.SByte) {
+				expr.Right.Accept(this, CiPriority.Assign); // omit Java "& 0xff"
+				return;
+			}
+			if (IsNarrower(leftTypeCode, rightTypeCode)) {
+				Write('(');
+				Write(leftTypeCode);
+				Write(") ");
+				expr.Right.Accept(this, CiPriority.Primary);
+				return;
+			}
 		}
-		return false;
-	}
-
-	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
-	{
-		if (!WriteCoerced(type, expr, GetTypeCode(expr.Type, expr.IntPromotion)))
-			base.WriteCoercedInternal(type, expr, parent);
-	}
-
-	protected override void WriteCoercedLiteral(CiType type, CiExpr expr, CiPriority parent)
-	{
-		if (!(expr is CiLiteral) || !WriteCoerced(type, expr, TypeCode.Int32))
-			base.WriteCoercedLiteral(type, expr, parent);
+		WriteCoerced(expr.Left.Type, expr.Right, CiPriority.Statement);
 	}
 
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr)

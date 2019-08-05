@@ -180,12 +180,43 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteTypeAndName(CiNamedValue value);
 
-	protected void WriteCoerced(CiType type, CiExpr[] exprs)
+	protected virtual void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
+	{
+		expr.Accept(this, parent);
+	}
+
+	void WriteCoerced(CiType type, CiCondExpr expr, CiPriority parent)
+	{
+		if (parent > CiPriority.Cond)
+			Write('(');
+		expr.Cond.Accept(this, CiPriority.Cond);
+		Write(" ? ");
+		WriteCoerced(type, expr.OnTrue, CiPriority.Cond);
+		Write(" : ");
+		WriteCoerced(type, expr.OnFalse, CiPriority.Cond);
+		if (parent > CiPriority.Cond)
+			Write(')');
+	}
+
+	protected void WriteCoerced(CiType type, CiExpr expr, CiPriority parent)
+	{
+		if (expr is CiCondExpr cond)
+			WriteCoerced(type, cond, parent);
+		else
+			WriteCoercedInternal(type, expr, parent);
+	}
+
+	protected virtual void WriteCoercedLiteral(CiType type, object value)
+	{
+		WriteLiteral(value);
+	}
+
+	protected void WriteCoercedLiterals(CiType type, CiExpr[] exprs)
 	{
 		for (int i = 0; i < exprs.Length; i++) {
 			if (i > 0)
 				Write(", ");
-			WriteCoerced(type, exprs[i], CiPriority.Statement);
+			WriteCoercedLiteral(type, ((CiLiteral) exprs[i]).Value);
 		}
 	}
 
@@ -212,7 +243,7 @@ public abstract class GenBase : CiVisitor
 	{
 		CiType type = ((CiArrayStorageType) expr.Type).ElementType;
 		Write("{ ");
-		WriteCoerced(type, expr.Items);
+		WriteCoercedLiterals(type, expr.Items);
 		Write(" }");
 		return expr;
 	}
@@ -462,32 +493,9 @@ public abstract class GenBase : CiVisitor
 		Write(expr, parent, CiPriority.And, " & ");
 	}
 
-	protected virtual void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
+	protected virtual void WriteAssignRight(CiBinaryExpr expr)
 	{
-		expr.Accept(this, parent);
-	}
-
-	protected void WriteCoerced(CiType type, CiExpr expr, CiPriority parent)
-	{
-		CiCondExpr cond = expr as CiCondExpr;
-		if (cond != null) {
-			if (parent > CiPriority.Cond)
-				Write('(');
-			cond.Cond.Accept(this, CiPriority.Cond);
-			Write(" ? ");
-			WriteCoercedInternal(type, cond.OnTrue, CiPriority.Cond);
-			Write(" : ");
-			WriteCoercedInternal(type, cond.OnFalse, CiPriority.Cond);
-			if (parent > CiPriority.Cond)
-				Write(')');
-		}
-		else
-			WriteCoercedInternal(type, expr, parent);
-	}
-
-	protected virtual void WriteCoercedLiteral(CiType type, CiExpr expr, CiPriority priority)
-	{
-		expr.Accept(this, priority);
+		expr.Right.Accept(this, CiPriority.Statement);
 	}
 
 	protected virtual void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
@@ -563,6 +571,14 @@ public abstract class GenBase : CiVisitor
 		case CiToken.CondOr:
 			return Write(expr, parent, CiPriority.CondOr, " || ");
 		case CiToken.Assign:
+			if (parent > CiPriority.Assign)
+				Write('(');
+			expr.Left.Accept(this, CiPriority.Assign);
+			Write(" = ");
+			WriteAssignRight(expr);
+			if (parent > CiPriority.Assign)
+				Write(')');
+			return expr;
 		case CiToken.AddAssign:
 		case CiToken.SubAssign:
 		case CiToken.MulAssign:
@@ -573,11 +589,15 @@ public abstract class GenBase : CiVisitor
 		case CiToken.AndAssign:
 		case CiToken.OrAssign:
 		case CiToken.XorAssign:
+			if (parent > CiPriority.Assign)
+				Write('(');
 			expr.Left.Accept(this, CiPriority.Assign);
 			Write(' ');
 			Write(expr.OpString);
 			Write(' ');
-			WriteCoerced(expr.Left.Type, expr.Right, CiPriority.Statement);
+			expr.Right.Accept(this, CiPriority.Statement);
+			if (parent > CiPriority.Assign)
+				Write(')');
 			return expr;
 
 		case CiToken.Dot:
@@ -612,15 +632,7 @@ public abstract class GenBase : CiVisitor
 
 	public override CiExpr Visit(CiCondExpr expr, CiPriority parent)
 	{
-		if (parent > CiPriority.Cond)
-			Write('(');
-		expr.Cond.Accept(this, CiPriority.Cond);
-		Write(" ? ");
-		WriteCoercedLiteral(expr.Type, expr.OnTrue, CiPriority.Cond);
-		Write(" : ");
-		WriteCoercedLiteral(expr.Type, expr.OnFalse, CiPriority.Cond);
-		if (parent > CiPriority.Cond)
-			Write(')');
+		WriteCoerced(expr.Type, expr, parent);
 		return expr;
 	}
 

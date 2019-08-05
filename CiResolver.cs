@@ -1000,7 +1000,7 @@ public class CiResolver : CiVisitor
 				CiExpr lengthExpr = binary.Right.Accept(this, CiPriority.Statement);
 				Coerce(lengthExpr, CiSystem.IntType);
 				CiArrayStorageType arrayStorage = new CiArrayStorageType { LengthExpr = lengthExpr, ElementType = outerArray };
-				if (!dynamic || (binary.Left is CiBinaryExpr outerBinary && outerBinary.Op == CiToken.LeftBracket)) {
+				if (!dynamic || (binary.Left.IsIndexing)) {
 					if (!(lengthExpr is CiLiteral literal))
 						throw StatementException(lengthExpr, "Expected constant value");
 					long length = (long) literal.Value;

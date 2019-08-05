@@ -161,6 +161,14 @@ public class GenJava : GenTyped
 		return type is CiRangeType range && range.Min >= 0 && range.Max > sbyte.MaxValue && range.Max <= byte.MaxValue;
 	}
 
+	protected override void WriteCoercedLiteral(CiType type, object value)
+	{
+		if (IsUnsignedByte(type))
+			Write((sbyte) (long) value);
+		else
+			WriteLiteral(value);
+	}
+
 	protected override void WriteAnd(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)
@@ -210,11 +218,18 @@ public class GenJava : GenTyped
 			WriteArgs(method, args);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
+		else if (obj.Type is CiArrayStorageType array && method.Name == "Fill") {
 			Write("java.util.Arrays.fill(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
-			WriteCoercedLiteral(args[0].Type, args[0], CiPriority.Statement);
+			if (array.ElementType is CiRangeType range
+				&& ((range.Min >= 0 && range.Max <= byte.MaxValue)
+					|| (range.Min >= sbyte.MinValue && range.Max <= sbyte.MaxValue))) {
+				Write("(byte) ");
+				args[0].Accept(this, CiPriority.Primary);
+			}
+			else
+				args[0].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
 		else if (obj.Type == CiSystem.UTF8EncodingClass && method.Name == "GetString") {
@@ -245,6 +260,18 @@ public class GenJava : GenTyped
 		}
 		else
 			base.WriteIndexing(expr, parent);
+	}
+
+	protected override void WriteAssignRight(CiBinaryExpr expr)
+	{
+		if ((!expr.Left.IsIndexing || !IsUnsignedByte(expr.Left.Type))
+			&& expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign && IsUnsignedByte(expr.Right.Type)) {
+			Write('(');
+			base.WriteAssignRight(expr);
+			Write(") & 0xff");
+		}
+		else
+			base.WriteAssignRight(expr);
 	}
 
 	protected override void WriteInnerArray(CiNamedValue def, int nesting, CiArrayStorageType array)
