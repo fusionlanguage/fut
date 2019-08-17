@@ -728,11 +728,12 @@ public class GenC : GenCCpp
 	public override void Write(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
+		this.IncludeStdInt = new SystemInclude("stdint.h");
 		string headerFile = Path.ChangeExtension(this.OutputFile, "h");
 		CreateFile(headerFile);
 		WriteLine("#pragma once");
 		WriteLine("#include <stdbool.h>");
-		WriteLine("#include <stdint.h>");
+		Write(this.IncludeStdInt);
 		WriteLine("#ifdef __cplusplus");
 		WriteLine("extern \"C\" {");
 		WriteLine("#endif");
@@ -765,6 +766,7 @@ public class GenC : GenCCpp
 			CreateFile(this.OutputFile);
 			if (this.IncludeMath)
 				WriteLine("#include <math.h>");
+			Write(this.IncludeStdInt);
 			WriteLine("#include <stdlib.h>");
 			WriteLine("#include <string.h>");
 			Write("#include \"");

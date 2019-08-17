@@ -25,15 +25,6 @@ using System.Linq;
 namespace Foxoft.Ci
 {
 
-class SystemInclude
-{
-	internal string Name;
-	internal bool Needed = false;
-	internal SystemInclude(string name) {
-		this.Name = name;
-	}
-}
-
 public class GenCpp : GenCCpp
 {
 	SystemInclude IncludeArray;
@@ -41,16 +32,6 @@ public class GenCpp : GenCCpp
 	SystemInclude IncludeStringView;
 	bool IncludeAlgorithm;
 	bool UsingStringViewLiterals;
-
-	void Write(SystemInclude include)
-	{
-		if (!include.Needed || include.Name == null)
-			return;
-		Write("#include <");
-		Write(include.Name);
-		WriteLine(">");
-		include.Name = null;
-	}
 
 	protected override void Write(CiType type, bool promote)
 	{
@@ -212,12 +193,12 @@ public class GenCpp : GenCCpp
 				Write(')');
 		}
 		else if (method == CiSystem.StringIndexOf) {
-			Write("static_cast<int32_t>(");
+			Write("static_cast<int>(");
 			WriteStringMethod(obj, "find", method, args);
 			Write(')');
 		}
 		else if (method == CiSystem.StringLastIndexOf) {
-			Write("static_cast<int32_t>(");
+			Write("static_cast<int>(");
 			WriteStringMethod(obj, "rfind", method, args);
 			Write(')');
 		}
@@ -545,6 +526,7 @@ public class GenCpp : GenCCpp
 			if (!define)
 				Write("extern ");
 			this.IncludeArray.Needed = true;
+			this.IncludeStdInt.Needed = true;
 			Write("const std::array<uint8_t, ");
 			Write(resources[name].Length);
 			Write("> ");
@@ -565,6 +547,7 @@ public class GenCpp : GenCCpp
 	{
 		this.WrittenClasses.Clear();
 		this.IncludeArray = new SystemInclude("array");
+		this.IncludeStdInt = new SystemInclude("cstdint");
 		this.IncludeString = new SystemInclude("string");
 		this.IncludeStringView = new SystemInclude("string_view");
 		string headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
@@ -585,6 +568,7 @@ public class GenCpp : GenCCpp
 			CreateFile(headerFile);
 			WriteLine("#pragma once");
 			Write(this.IncludeArray);
+			Write(this.IncludeStdInt);
 			WriteLine("#include <memory>");
 			Write(this.IncludeString);
 			Write(this.IncludeStringView);
