@@ -2,7 +2,8 @@ public static class Test
 {
 	public static bool Run()
 	{
-		double a = 0;
-		return Math.Atan(a) == 0;
+		double y = 0;
+		double x = 1;
+		return Math.Atan2(y, x) == 0;
 	}
 }
