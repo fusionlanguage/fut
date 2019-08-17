@@ -25,9 +25,29 @@ using System.Linq;
 namespace Foxoft.Ci
 {
 
+class SystemInclude
+{
+	internal string Name;
+	internal bool Needed = false;
+	internal SystemInclude(string name) {
+		this.Name = name;
+	}
+}
+
 public class GenCpp : GenCCpp
 {
+	SystemInclude IncludeStringView;
 	bool UsingStringViewLiterals;
+
+	void Write(SystemInclude include)
+	{
+		if (!include.Needed || include.Name == null)
+			return;
+		Write("#include <");
+		Write(include.Name);
+		WriteLine(">");
+		include.Name = null;
+	}
 
 	protected override void Write(CiType type, bool promote)
 	{
@@ -39,6 +59,7 @@ public class GenCpp : GenCCpp
 			Write(GetTypeCode(integer, promote));
 			break;
 		case CiStringPtrType _:
+			this.IncludeStringView.Needed = true;
 			Write("std::string_view");
 			break;
 		case CiStringStorageType _:
@@ -210,6 +231,7 @@ public class GenCpp : GenCCpp
 			Write(')');
 		}
 		else if (obj.Type == CiSystem.UTF8EncodingClass && method.Name == "GetString") {
+			this.IncludeStringView.Needed = true;
 			Write("std::string_view(reinterpret_cast<const char *>(");
 			WriteArrayPtrAdd(args[0], args[1]);
 			Write("), ");
@@ -534,24 +556,30 @@ public class GenCpp : GenCCpp
 	public override void Write(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
+		this.IncludeStringView = new SystemInclude("string_view");
 		string headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
-		CreateFile(headerFile);
-		WriteLine("#pragma once");
-		WriteLine("#include <array>");
-		WriteLine("#include <memory>");
-		WriteLine("#include <string>");
-		WriteLine("#include <string_view>");
-		OpenNamespace();
-		foreach (CiEnum enu in program.OfType<CiEnum>())
-			Write(enu);
-		foreach (CiClass klass in program.Classes) {
-			Write("class ");
-			Write(klass.Name);
-			WriteLine(";");
+		using (StringWriter stringWriter = new StringWriter()) {
+			this.Writer = stringWriter;
+			OpenNamespace();
+			foreach (CiEnum enu in program.OfType<CiEnum>())
+				Write(enu);
+			foreach (CiClass klass in program.Classes) {
+				Write("class ");
+				Write(klass.Name);
+				WriteLine(";");
+			}
+			foreach (CiClass klass in program.Classes)
+				Write(klass);
+			CloseNamespace();
+
+			CreateFile(headerFile);
+			WriteLine("#pragma once");
+			WriteLine("#include <array>");
+			WriteLine("#include <memory>");
+			WriteLine("#include <string>");
+			Write(this.IncludeStringView);
+			this.Writer.Write(stringWriter.GetStringBuilder());
 		}
-		foreach (CiClass klass in program.Classes)
-			Write(klass);
-		CloseNamespace();
 		CloseFile();
 
 		this.UsingStringViewLiterals = false;
@@ -564,8 +592,7 @@ public class GenCpp : GenCCpp
 				foreach (CiMethod method in klass.Methods)
 					WriteMethod(klass, method);
 			}
-			WriteResources(program.Resources, true);
-			CloseNamespace();
+
 			CreateFile(this.OutputFile);
 			WriteLine("#include <algorithm>");
 			WriteLine("#include <cmath>");
@@ -575,6 +602,8 @@ public class GenCpp : GenCCpp
 			if (this.UsingStringViewLiterals)
 				WriteLine("using namespace std::string_view_literals;");
 			this.Writer.Write(stringWriter.GetStringBuilder());
+			WriteResources(program.Resources, true);
+			CloseNamespace();
 		}
 		CloseFile();
 	}
