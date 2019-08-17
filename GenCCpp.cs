@@ -25,6 +25,7 @@ namespace Foxoft.Ci
 
 public abstract class GenCCpp : GenTyped
 {
+	protected bool IncludeMath;
 	protected readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
 
 	protected override void Write(TypeCode typeCode)

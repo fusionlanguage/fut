@@ -40,7 +40,6 @@ public class GenCpp : GenCCpp
 	SystemInclude IncludeString;
 	SystemInclude IncludeStringView;
 	bool IncludeAlgorithm;
-	bool IncludeMath;
 	bool UsingStringViewLiterals;
 
 	void Write(SystemInclude include)

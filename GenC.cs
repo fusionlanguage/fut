@@ -215,6 +215,7 @@ public class GenC : GenCCpp
 			Write("))");
 		}
 		else if (IsMathReference(obj)) {
+			this.IncludeMath = true;
 			if (method.Name == "Ceiling")
 				Write("ceil");
 			else
@@ -744,26 +745,33 @@ public class GenC : GenCCpp
 		WriteLine("#endif");
 		CloseFile();
 
-		CreateFile(this.OutputFile);
-		WriteLine("#include <math.h>");
-		WriteLine("#include <stdlib.h>");
-		WriteLine("#include <string.h>");
-		Write("#include \"");
-		Write(Path.GetFileName(headerFile));
-		WriteLine("\"");
-		WriteTypedefs(program, false);
-		foreach (CiClass klass in program.Classes)
-			WriteStruct(klass);
-		foreach (CiClass klass in program.Classes) {
-			WriteConstructor(klass);
-			WriteDestructor(klass);
-			foreach (CiMethod method in klass.Methods) {
-				if (method.CallType == CiCallType.Abstract)
-					continue;
-				WriteLine();
-				WriteSignature(klass, method);
-				WriteBody(method);
+		this.IncludeMath = false;
+		using (StringWriter stringWriter = new StringWriter()) {
+			this.Writer = stringWriter;
+			foreach (CiClass klass in program.Classes)
+				WriteStruct(klass);
+			foreach (CiClass klass in program.Classes) {
+				WriteConstructor(klass);
+				WriteDestructor(klass);
+				foreach (CiMethod method in klass.Methods) {
+					if (method.CallType == CiCallType.Abstract)
+						continue;
+					WriteLine();
+					WriteSignature(klass, method);
+					WriteBody(method);
+				}
 			}
+
+			CreateFile(this.OutputFile);
+			if (this.IncludeMath)
+				WriteLine("#include <math.h>");
+			WriteLine("#include <stdlib.h>");
+			WriteLine("#include <string.h>");
+			Write("#include \"");
+			Write(Path.GetFileName(headerFile));
+			WriteLine("\"");
+			WriteTypedefs(program, false);
+			this.Writer.Write(stringWriter.GetStringBuilder());
 		}
 		CloseFile();
 	}
