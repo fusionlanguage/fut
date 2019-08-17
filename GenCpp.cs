@@ -28,9 +28,11 @@ namespace Foxoft.Ci
 public class GenCpp : GenCCpp
 {
 	SystemInclude IncludeArray;
+	SystemInclude IncludeMemory;
 	SystemInclude IncludeString;
 	SystemInclude IncludeStringView;
 	bool IncludeAlgorithm;
+	bool IncludeException;
 	bool UsingStringViewLiterals;
 
 	protected override void Write(CiType type, bool promote)
@@ -61,6 +63,7 @@ public class GenCpp : GenCCpp
 				Write(" *");
 				break;
 			case CiToken.Hash:
+				this.IncludeMemory.Needed = true;
 				Write("std::shared_ptr<");
 				Write(arrayPtr.ElementType, false);
 				Write("[]>");
@@ -89,6 +92,7 @@ public class GenCpp : GenCCpp
 				Write(" *");
 				break;
 			case CiToken.Hash:
+				this.IncludeMemory.Needed = true;
 				Write("std::shared_ptr<");
 				Write(classPtr.Class.Name);
 				Write('>');
@@ -241,6 +245,7 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteNew(CiClass klass)
 	{
+		this.IncludeMemory.Needed = true;
 		Write("std::make_shared<");
 		Write(klass.Name);
 		Write(">()");
@@ -333,6 +338,7 @@ public class GenCpp : GenCCpp
 
 	public override void Visit(CiThrow statement)
 	{
+		this.IncludeException = true;
 		WriteLine("throw std::exception();");
 		// TODO: statement.Message.Accept(this, CiPriority.Statement);
 	}
@@ -548,6 +554,7 @@ public class GenCpp : GenCCpp
 		this.WrittenClasses.Clear();
 		this.IncludeArray = new SystemInclude("array");
 		this.IncludeStdInt = new SystemInclude("cstdint");
+		this.IncludeMemory = new SystemInclude("memory");
 		this.IncludeString = new SystemInclude("string");
 		this.IncludeStringView = new SystemInclude("string_view");
 		string headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
@@ -569,7 +576,7 @@ public class GenCpp : GenCCpp
 			WriteLine("#pragma once");
 			Write(this.IncludeArray);
 			Write(this.IncludeStdInt);
-			WriteLine("#include <memory>");
+			Write(this.IncludeMemory);
 			Write(this.IncludeString);
 			Write(this.IncludeStringView);
 			this.Writer.Write(stringWriter.GetStringBuilder());
@@ -578,6 +585,7 @@ public class GenCpp : GenCCpp
 
 		this.IncludeAlgorithm = false;
 		this.IncludeMath = false;
+		this.IncludeException = false;
 		this.UsingStringViewLiterals = false;
 		using (StringWriter stringWriter = new StringWriter()) {
 			this.Writer = stringWriter;
@@ -594,8 +602,15 @@ public class GenCpp : GenCCpp
 			CreateFile(this.OutputFile);
 			if (this.IncludeAlgorithm)
 				WriteLine("#include <algorithm>");
+			Write(this.IncludeArray);
 			if (this.IncludeMath)
 				WriteLine("#include <cmath>");
+			if (this.IncludeException)
+				WriteLine("#include <exception>");
+			Write(this.IncludeStdInt);
+			Write(this.IncludeMemory);
+			Write(this.IncludeString);
+			Write(this.IncludeStringView);
 			Write("#include \"");
 			Write(Path.GetFileName(headerFile));
 			WriteLine("\"");
