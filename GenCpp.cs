@@ -36,6 +36,7 @@ class SystemInclude
 
 public class GenCpp : GenCCpp
 {
+	SystemInclude IncludeString;
 	SystemInclude IncludeStringView;
 	bool IncludeAlgorithm;
 	bool UsingStringViewLiterals;
@@ -64,6 +65,7 @@ public class GenCpp : GenCCpp
 			Write("std::string_view");
 			break;
 		case CiStringStorageType _:
+			this.IncludeString.Needed = true;
 			Write("std::string");
 			break;
 		case CiArrayPtrType arrayPtr:
@@ -558,6 +560,7 @@ public class GenCpp : GenCCpp
 	public override void Write(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
+		this.IncludeString = new SystemInclude("string");
 		this.IncludeStringView = new SystemInclude("string_view");
 		string headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
 		using (StringWriter stringWriter = new StringWriter()) {
@@ -578,7 +581,7 @@ public class GenCpp : GenCCpp
 			WriteLine("#pragma once");
 			WriteLine("#include <array>");
 			WriteLine("#include <memory>");
-			WriteLine("#include <string>");
+			Write(this.IncludeString);
 			Write(this.IncludeStringView);
 			this.Writer.Write(stringWriter.GetStringBuilder());
 		}
