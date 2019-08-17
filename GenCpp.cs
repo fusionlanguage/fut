@@ -27,13 +27,12 @@ namespace Foxoft.Ci
 
 public class GenCpp : GenCCpp
 {
-	SystemInclude IncludeArray;
-	SystemInclude IncludeMemory;
-	SystemInclude IncludeString;
-	SystemInclude IncludeStringView;
-	bool IncludeAlgorithm;
-	bool IncludeException;
 	bool UsingStringViewLiterals;
+
+	protected override void IncludeStdInt()
+	{
+		Include("cstdint");
+	}
 
 	protected override void Write(CiType type, bool promote)
 	{
@@ -45,11 +44,11 @@ public class GenCpp : GenCCpp
 			Write(GetTypeCode(integer, promote));
 			break;
 		case CiStringPtrType _:
-			this.IncludeStringView.Needed = true;
+			Include("string_view");
 			Write("std::string_view");
 			break;
 		case CiStringStorageType _:
-			this.IncludeString.Needed = true;
+			Include("string");
 			Write("std::string");
 			break;
 		case CiArrayPtrType arrayPtr:
@@ -63,7 +62,7 @@ public class GenCpp : GenCCpp
 				Write(" *");
 				break;
 			case CiToken.Hash:
-				this.IncludeMemory.Needed = true;
+				Include("memory");
 				Write("std::shared_ptr<");
 				Write(arrayPtr.ElementType, false);
 				Write("[]>");
@@ -73,7 +72,7 @@ public class GenCpp : GenCCpp
 			}
 			break;
 		case CiArrayStorageType arrayStorage:
-			this.IncludeArray.Needed = true;
+			Include("array");
 			Write("std::array<");
 			Write(arrayStorage.ElementType, false);
 			Write(", ");
@@ -92,7 +91,7 @@ public class GenCpp : GenCCpp
 				Write(" *");
 				break;
 			case CiToken.Hash:
-				this.IncludeMemory.Needed = true;
+				Include("memory");
 				Write("std::shared_ptr<");
 				Write(classPtr.Class.Name);
 				Write('>');
@@ -180,7 +179,7 @@ public class GenCpp : GenCCpp
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (IsMathReference(obj)) {
-			this.IncludeMath = true;
+			Include("cmath");
 			Write("std::");
 			if (method.Name == "Ceiling")
 				Write("ceil");
@@ -213,7 +212,7 @@ public class GenCpp : GenCCpp
 		else if (method == CiSystem.StringSubstring)
 			WriteStringMethod(obj, "substr", method, args);
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
-			this.IncludeAlgorithm = true;
+			Include("algorithm");
 			Write("std::copy_n(");
 			WriteArrayPtrAdd(obj, args[0]);
 			Write(", ");
@@ -223,7 +222,7 @@ public class GenCpp : GenCCpp
 			Write(')');
 		}
 		else if (obj.Type == CiSystem.UTF8EncodingClass && method.Name == "GetString") {
-			this.IncludeStringView.Needed = true;
+			Include("string_view");
 			Write("std::string_view(reinterpret_cast<const char *>(");
 			WriteArrayPtrAdd(args[0], args[1]);
 			Write("), ");
@@ -245,7 +244,7 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteNew(CiClass klass)
 	{
-		this.IncludeMemory.Needed = true;
+		Include("memory");
 		Write("std::make_shared<");
 		Write(klass.Name);
 		Write(">()");
@@ -338,7 +337,7 @@ public class GenCpp : GenCCpp
 
 	public override void Visit(CiThrow statement)
 	{
-		this.IncludeException = true;
+		Include("exception");
 		WriteLine("throw std::exception();");
 		// TODO: statement.Message.Accept(this, CiPriority.Statement);
 	}
@@ -531,8 +530,8 @@ public class GenCpp : GenCCpp
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
 			if (!define)
 				Write("extern ");
-			this.IncludeArray.Needed = true;
-			this.IncludeStdInt.Needed = true;
+			Include("array");
+			Include("cstdint");
 			Write("const std::array<uint8_t, ");
 			Write(resources[name].Length);
 			Write("> ");
@@ -552,12 +551,9 @@ public class GenCpp : GenCCpp
 	public override void Write(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
-		this.IncludeArray = new SystemInclude("array");
-		this.IncludeStdInt = new SystemInclude("cstdint");
-		this.IncludeMemory = new SystemInclude("memory");
-		this.IncludeString = new SystemInclude("string");
-		this.IncludeStringView = new SystemInclude("string_view");
 		string headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
+		SortedSet<string> headerIncludes = new SortedSet<string>();
+		this.Includes = headerIncludes;
 		using (StringWriter stringWriter = new StringWriter()) {
 			this.Writer = stringWriter;
 			OpenNamespace();
@@ -574,19 +570,12 @@ public class GenCpp : GenCCpp
 
 			CreateFile(headerFile);
 			WriteLine("#pragma once");
-			Write(this.IncludeArray);
-			Write(this.IncludeStdInt);
-			Write(this.IncludeMemory);
-			Write(this.IncludeString);
-			Write(this.IncludeStringView);
+			WriteIncludes();
 			this.Writer.Write(stringWriter.GetStringBuilder());
 		}
 		CloseFile();
 
-		this.IncludeAlgorithm = false;
-		this.IncludeMath = false;
-		this.IncludeException = false;
-		this.UsingStringViewLiterals = false;
+		this.Includes = new SortedSet<string>();
 		using (StringWriter stringWriter = new StringWriter()) {
 			this.Writer = stringWriter;
 			WriteResources(program.Resources, false);
@@ -600,17 +589,8 @@ public class GenCpp : GenCCpp
 			CloseNamespace();
 
 			CreateFile(this.OutputFile);
-			if (this.IncludeAlgorithm)
-				WriteLine("#include <algorithm>");
-			Write(this.IncludeArray);
-			if (this.IncludeMath)
-				WriteLine("#include <cmath>");
-			if (this.IncludeException)
-				WriteLine("#include <exception>");
-			Write(this.IncludeStdInt);
-			Write(this.IncludeMemory);
-			Write(this.IncludeString);
-			Write(this.IncludeStringView);
+			this.Includes.ExceptWith(headerIncludes);
+			WriteIncludes();
 			Write("#include \"");
 			Write(Path.GetFileName(headerFile));
 			WriteLine("\"");

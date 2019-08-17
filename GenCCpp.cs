@@ -23,56 +23,51 @@ using System.Collections.Generic;
 namespace Foxoft.Ci
 {
 
-public class SystemInclude
-{
-	internal string Name;
-	internal bool Needed = false;
-	internal SystemInclude(string name)
-	{
-		this.Name = name;
-	}
-}
-
 public abstract class GenCCpp : GenTyped
 {
-	protected bool IncludeMath;
-	protected SystemInclude IncludeStdInt;
+	protected SortedSet<string> Includes;
 	protected readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
 
-	protected void Write(SystemInclude include)
+	protected void Include(string name)
 	{
-		if (!include.Needed || include.Name == null)
-			return;
-		Write("#include <");
-		Write(include.Name);
-		WriteLine(">");
-		include.Name = null;
+		this.Includes.Add(name);
+	}
+
+	protected abstract void IncludeStdInt();
+
+	protected void WriteIncludes()
+	{
+		foreach (string name in this.Includes) {
+			Write("#include <");
+			Write(name);
+			WriteLine(">");
+		}
 	}
 
 	protected override void Write(TypeCode typeCode)
 	{
 		switch (typeCode) {
 		case TypeCode.SByte:
-			this.IncludeStdInt.Needed = true;
+			IncludeStdInt();
 			Write("int8_t");
 			break;
 		case TypeCode.Byte:
-			this.IncludeStdInt.Needed = true;
+			IncludeStdInt();
 			Write("uint8_t");
 			break;
 		case TypeCode.Int16:
-			this.IncludeStdInt.Needed = true;
+			IncludeStdInt();
 			Write("int16_t");
 			break;
 		case TypeCode.UInt16:
-			this.IncludeStdInt.Needed = true;
+			IncludeStdInt();
 			Write("uint16_t");
 			break;
 		case TypeCode.Int32:
 			Write("int");
 			break;
 		case TypeCode.Int64:
-			this.IncludeStdInt.Needed = true;
+			IncludeStdInt();
 			Write("int64_t");
 			break;
 		default:

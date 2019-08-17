@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -26,8 +27,10 @@ namespace Foxoft.Ci
 
 public class GenC : GenCCpp
 {
-	SystemInclude IncludeStdBool;
-	bool IncludeString;
+	protected override void IncludeStdInt()
+	{
+		Include("stdint.h");
+	}
 
 	protected override void WriteName(CiSymbol symbol)
 	{
@@ -103,7 +106,7 @@ public class GenC : GenCCpp
 			break;
 		default:
 			if (baseType == CiSystem.BoolType)
-				this.IncludeStdBool.Needed = true;
+				Include("stdbool.h");
 			Write(baseType.Name);
 			Write(' ');
 			break;
@@ -192,7 +195,7 @@ public class GenC : GenCCpp
 
 	protected override void WriteStringLength(CiExpr expr)
 	{
-		this.IncludeString = true;
+		Include("string.h");
 		Write("(int) strlen(");
 		expr.Accept(this, CiPriority.Primary);
 		Write(')');
@@ -201,7 +204,7 @@ public class GenC : GenCCpp
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (obj.Type is CiArrayType && method.Name == "CopyTo") {
-			this.IncludeString = true;
+			Include("string.h");
 			Write("memcpy(");
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(", ");
@@ -215,7 +218,7 @@ public class GenC : GenCCpp
 		else if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
 			if (!(args[0] is CiLiteral literal) || !literal.IsDefaultValue)
 				throw new NotImplementedException("Only null, zero and false supported");
-			this.IncludeString = true;
+			Include("string.h");
 			Write("memset(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", 0, sizeof(");
@@ -223,7 +226,7 @@ public class GenC : GenCCpp
 			Write("))");
 		}
 		else if (IsMathReference(obj)) {
-			this.IncludeMath = true;
+			Include("math.h");
 			if (method.Name == "Ceiling")
 				Write("ceil");
 			else
@@ -231,7 +234,7 @@ public class GenC : GenCCpp
 			WriteArgsInParentheses(method, args);
 		}
 		else if (method == CiSystem.StringContains) {
-			this.IncludeString = true;
+			Include("string.h");
 			if (parent > CiPriority.Equality)
 				Write('(');
 			Write("strstr(");
@@ -334,7 +337,7 @@ public class GenC : GenCCpp
 			if (def.Value != null) {
 				if (!(def.Value is CiLiteral literal) || !literal.IsDefaultValue)
 					throw new NotImplementedException("Only null, zero and false supported");
-				this.IncludeString = true;
+				Include("string.h");
 				Write("memset(");
 				WriteName(def);
 				Write(", 0, sizeof(");
@@ -365,7 +368,7 @@ public class GenC : GenCCpp
 	{
 		if ((expr.Left.Type is CiStringType && expr.Right.Type != CiSystem.NullType)
 		 || (expr.Right.Type is CiStringType && expr.Left.Type != CiSystem.NullType)) {
-			 this.IncludeString = true;
+			Include("string.h");
 			if (parent > CiPriority.Equality)
 				Write('(');
 			 Write("strcmp(");
@@ -739,9 +742,9 @@ public class GenC : GenCCpp
 	public override void Write(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
-		this.IncludeStdBool = new SystemInclude("stdbool.h");
-		this.IncludeStdInt = new SystemInclude("stdint.h");
 		string headerFile = Path.ChangeExtension(this.OutputFile, "h");
+		SortedSet<string> headerIncludes = new SortedSet<string>();
+		this.Includes = headerIncludes;
 		using (StringWriter stringWriter = new StringWriter()) {
 			this.Writer = stringWriter;
 			foreach (CiClass klass in program.Classes)
@@ -749,8 +752,7 @@ public class GenC : GenCCpp
 
 			CreateFile(headerFile);
 			WriteLine("#pragma once");
-			Write(this.IncludeStdBool);
-			Write(this.IncludeStdInt);
+			WriteIncludes();
 			WriteLine("#ifdef __cplusplus");
 			WriteLine("extern \"C\" {");
 			WriteLine("#endif");
@@ -763,8 +765,7 @@ public class GenC : GenCCpp
 		WriteLine("#endif");
 		CloseFile();
 
-		this.IncludeMath = false;
-		this.IncludeString = false;
+		this.Includes = new SortedSet<string>();
 		using (StringWriter stringWriter = new StringWriter()) {
 			this.Writer = stringWriter;
 			foreach (CiClass klass in program.Classes)
@@ -782,13 +783,9 @@ public class GenC : GenCCpp
 			}
 
 			CreateFile(this.OutputFile);
-			if (this.IncludeMath)
-				WriteLine("#include <math.h>");
-			Write(this.IncludeStdBool);
-			Write(this.IncludeStdInt);
-			WriteLine("#include <stdlib.h>");
-			if (this.IncludeString)
-				WriteLine("#include <string.h>");
+			this.Includes.ExceptWith(headerIncludes);
+			this.Includes.Add("stdlib.h");
+			WriteIncludes();
 			Write("#include \"");
 			Write(Path.GetFileName(headerFile));
 			WriteLine("\"");
