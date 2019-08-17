@@ -40,6 +40,7 @@ public class GenCpp : GenCCpp
 	SystemInclude IncludeString;
 	SystemInclude IncludeStringView;
 	bool IncludeAlgorithm;
+	bool IncludeMath;
 	bool UsingStringViewLiterals;
 
 	void Write(SystemInclude include)
@@ -195,6 +196,7 @@ public class GenCpp : GenCCpp
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (IsMathReference(obj)) {
+			this.IncludeMath = true;
 			Write("std::");
 			if (method.Name == "Ceiling")
 				Write("ceil");
@@ -592,6 +594,7 @@ public class GenCpp : GenCCpp
 		CloseFile();
 
 		this.IncludeAlgorithm = false;
+		this.IncludeMath = false;
 		this.UsingStringViewLiterals = false;
 		using (StringWriter stringWriter = new StringWriter()) {
 			this.Writer = stringWriter;
@@ -602,19 +605,20 @@ public class GenCpp : GenCCpp
 				foreach (CiMethod method in klass.Methods)
 					WriteMethod(klass, method);
 			}
+			WriteResources(program.Resources, true);
+			CloseNamespace();
 
 			CreateFile(this.OutputFile);
 			if (this.IncludeAlgorithm)
 				WriteLine("#include <algorithm>");
-			WriteLine("#include <cmath>");
+			if (this.IncludeMath)
+				WriteLine("#include <cmath>");
 			Write("#include \"");
 			Write(Path.GetFileName(headerFile));
 			WriteLine("\"");
 			if (this.UsingStringViewLiterals)
 				WriteLine("using namespace std::string_view_literals;");
 			this.Writer.Write(stringWriter.GetStringBuilder());
-			WriteResources(program.Resources, true);
-			CloseNamespace();
 		}
 		CloseFile();
 	}
