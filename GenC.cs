@@ -26,6 +26,7 @@ namespace Foxoft.Ci
 
 public class GenC : GenCCpp
 {
+	SystemInclude IncludeStdBool;
 	bool IncludeString;
 
 	protected override void WriteName(CiSymbol symbol)
@@ -101,6 +102,8 @@ public class GenC : GenCCpp
 			}
 			break;
 		default:
+			if (baseType == CiSystem.BoolType)
+				this.IncludeStdBool.Needed = true;
 			Write(baseType.Name);
 			Write(' ');
 			break;
@@ -736,18 +739,24 @@ public class GenC : GenCCpp
 	public override void Write(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
+		this.IncludeStdBool = new SystemInclude("stdbool.h");
 		this.IncludeStdInt = new SystemInclude("stdint.h");
 		string headerFile = Path.ChangeExtension(this.OutputFile, "h");
-		CreateFile(headerFile);
-		WriteLine("#pragma once");
-		WriteLine("#include <stdbool.h>");
-		Write(this.IncludeStdInt);
-		WriteLine("#ifdef __cplusplus");
-		WriteLine("extern \"C\" {");
-		WriteLine("#endif");
-		WriteTypedefs(program, true);
-		foreach (CiClass klass in program.Classes)
-			WriteSignatures(klass, true);
+		using (StringWriter stringWriter = new StringWriter()) {
+			this.Writer = stringWriter;
+			foreach (CiClass klass in program.Classes)
+				WriteSignatures(klass, true);
+
+			CreateFile(headerFile);
+			WriteLine("#pragma once");
+			Write(this.IncludeStdBool);
+			Write(this.IncludeStdInt);
+			WriteLine("#ifdef __cplusplus");
+			WriteLine("extern \"C\" {");
+			WriteLine("#endif");
+			WriteTypedefs(program, true);
+			this.Writer.Write(stringWriter.GetStringBuilder());
+		}
 		WriteLine();
 		WriteLine("#ifdef __cplusplus");
 		WriteLine("}");
@@ -775,6 +784,7 @@ public class GenC : GenCCpp
 			CreateFile(this.OutputFile);
 			if (this.IncludeMath)
 				WriteLine("#include <math.h>");
+			Write(this.IncludeStdBool);
 			Write(this.IncludeStdInt);
 			WriteLine("#include <stdlib.h>");
 			if (this.IncludeString)
