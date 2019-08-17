@@ -27,6 +27,8 @@ namespace Foxoft.Ci
 
 public class GenCpp : GenCCpp
 {
+	bool UsingStringViewLiterals;
+
 	protected override void Write(CiType type, bool promote)
 	{
 		switch (type) {
@@ -155,8 +157,10 @@ public class GenCpp : GenCCpp
 	void WriteStringMethod(CiExpr obj, string name, CiMethod method, CiExpr[] args)
 	{
 		obj.Accept(this, CiPriority.Primary);
-		if (obj is CiLiteral)
+		if (obj is CiLiteral) {
+			this.UsingStringViewLiterals = true;
 			Write("sv");
+		}
 		Write('.');
 		Write(name);
 		WriteArgsInParentheses(method, args);
@@ -550,22 +554,28 @@ public class GenCpp : GenCCpp
 		CloseNamespace();
 		CloseFile();
 
-		CreateFile(this.OutputFile);
-		WriteLine("#include <algorithm>");
-		WriteLine("#include <cmath>");
-		Write("#include \"");
-		Write(Path.GetFileName(headerFile));
-		WriteLine("\"");
-		WriteLine("using namespace std::string_view_literals;");
-		WriteResources(program.Resources, false);
-		OpenNamespace();
-		foreach (CiClass klass in program.Classes) {
-			WriteConstructor(klass);
-			foreach (CiMethod method in klass.Methods)
-				WriteMethod(klass, method);
+		this.UsingStringViewLiterals = false;
+		using (StringWriter stringWriter = new StringWriter()) {
+			this.Writer = stringWriter;
+			WriteResources(program.Resources, false);
+			OpenNamespace();
+			foreach (CiClass klass in program.Classes) {
+				WriteConstructor(klass);
+				foreach (CiMethod method in klass.Methods)
+					WriteMethod(klass, method);
+			}
+			WriteResources(program.Resources, true);
+			CloseNamespace();
+			CreateFile(this.OutputFile);
+			WriteLine("#include <algorithm>");
+			WriteLine("#include <cmath>");
+			Write("#include \"");
+			Write(Path.GetFileName(headerFile));
+			WriteLine("\"");
+			if (this.UsingStringViewLiterals)
+				WriteLine("using namespace std::string_view_literals;");
+			this.Writer.Write(stringWriter.GetStringBuilder());
 		}
-		WriteResources(program.Resources, true);
-		CloseNamespace();
 		CloseFile();
 	}
 }

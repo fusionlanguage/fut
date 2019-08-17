@@ -31,7 +31,7 @@ public abstract class GenBase : CiVisitor
 	public string Namespace;
 	public string OutputFile;
 	public TextWriterFactory CreateTextWriter = CreateFileWriter;
-	TextWriter Writer;
+	protected TextWriter Writer;
 	protected int Indent = 0;
 	bool AtLineStart = true;
 	protected CiMethod CurrentMethod = null;
