@@ -36,6 +36,7 @@ class SystemInclude
 
 public class GenCpp : GenCCpp
 {
+	SystemInclude IncludeArray;
 	SystemInclude IncludeString;
 	SystemInclude IncludeStringView;
 	bool IncludeAlgorithm;
@@ -88,6 +89,7 @@ public class GenCpp : GenCCpp
 			}
 			break;
 		case CiArrayStorageType arrayStorage:
+			this.IncludeArray.Needed = true;
 			Write("std::array<");
 			Write(arrayStorage.ElementType, false);
 			Write(", ");
@@ -541,6 +543,7 @@ public class GenCpp : GenCCpp
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
 			if (!define)
 				Write("extern ");
+			this.IncludeArray.Needed = true;
 			Write("const std::array<uint8_t, ");
 			Write(resources[name].Length);
 			Write("> ");
@@ -560,6 +563,7 @@ public class GenCpp : GenCCpp
 	public override void Write(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
+		this.IncludeArray = new SystemInclude("array");
 		this.IncludeString = new SystemInclude("string");
 		this.IncludeStringView = new SystemInclude("string_view");
 		string headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
@@ -579,7 +583,7 @@ public class GenCpp : GenCCpp
 
 			CreateFile(headerFile);
 			WriteLine("#pragma once");
-			WriteLine("#include <array>");
+			Write(this.IncludeArray);
 			WriteLine("#include <memory>");
 			Write(this.IncludeString);
 			Write(this.IncludeStringView);
