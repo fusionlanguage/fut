@@ -37,6 +37,7 @@ class SystemInclude
 public class GenCpp : GenCCpp
 {
 	SystemInclude IncludeStringView;
+	bool IncludeAlgorithm;
 	bool UsingStringViewLiterals;
 
 	void Write(SystemInclude include)
@@ -222,6 +223,7 @@ public class GenCpp : GenCCpp
 		else if (method == CiSystem.StringSubstring)
 			WriteStringMethod(obj, "substr", method, args);
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+			this.IncludeAlgorithm = true;
 			Write("std::copy_n(");
 			WriteArrayPtrAdd(obj, args[0]);
 			Write(", ");
@@ -582,6 +584,7 @@ public class GenCpp : GenCCpp
 		}
 		CloseFile();
 
+		this.IncludeAlgorithm = false;
 		this.UsingStringViewLiterals = false;
 		using (StringWriter stringWriter = new StringWriter()) {
 			this.Writer = stringWriter;
@@ -594,7 +597,8 @@ public class GenCpp : GenCCpp
 			}
 
 			CreateFile(this.OutputFile);
-			WriteLine("#include <algorithm>");
+			if (this.IncludeAlgorithm)
+				WriteLine("#include <algorithm>");
 			WriteLine("#include <cmath>");
 			Write("#include \"");
 			Write(Path.GetFileName(headerFile));
