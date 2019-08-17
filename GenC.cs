@@ -546,11 +546,19 @@ public class GenC : GenCCpp
 			|| (klass.Parent is CiClass baseClass && NeedsConstructor(baseClass));
 	}
 
-	void WriteConstructorSignature(CiClass klass)
+	bool NeedsDestructor(CiClass klass)
+	{
+		return klass.Fields.Any(field => field.Type is CiClass fieldClass && NeedsDestructor(fieldClass))
+			|| (klass.Parent is CiClass baseClass && NeedsDestructor(baseClass));
+	}
+
+	void WriteXstructorSignature(string name, CiClass klass)
 	{
 		Write("void ");
 		Write(klass.Name);
-		Write("_Construct(");
+		Write('_');
+		Write(name);
+		Write('(');
 		Write(klass.Name);
 		Write(" *self)");
 	}
@@ -609,7 +617,11 @@ public class GenC : GenCCpp
 			WriteLine("};");
 		}
 		if (NeedsConstructor(klass)) {
-			WriteConstructorSignature(klass);
+			WriteXstructorSignature("Construct", klass);
+			WriteLine(";");
+		}
+		if (NeedsDestructor(klass)) {
+			WriteXstructorSignature("Destruct", klass);
 			WriteLine(";");
 		}
 		WriteSignatures(klass, false);
@@ -641,7 +653,7 @@ public class GenC : GenCCpp
 		if (!NeedsConstructor(klass))
 			return;
 		WriteLine();
-		WriteConstructorSignature(klass);
+		WriteXstructorSignature("Construct", klass);
 		WriteLine();
 		OpenBlock();
 		if (klass.Parent is CiClass baseClass && NeedsConstructor(baseClass)) {
@@ -689,6 +701,29 @@ public class GenC : GenCCpp
 		CloseBlock();
 	}
 
+	void WriteDestructor(CiClass klass)
+	{
+		if (!NeedsDestructor(klass))
+			return;
+		WriteLine();
+		WriteXstructorSignature("Destruct", klass);
+		WriteLine();
+		OpenBlock();
+		foreach (CiField field in klass.Fields) {
+			if (field.Type is CiClass fieldClass && NeedsDestructor(fieldClass)) {
+				Write(fieldClass.Name);
+				Write("_Destruct(&self->");
+				WriteCamelCase(field.Name);
+				WriteLine(");");
+			}
+		}
+		if (klass.Parent is CiClass baseClass && NeedsConstructor(baseClass)) {
+			Write(baseClass.Name);
+			WriteLine("_Destruct(&self->base);");
+		}
+		CloseBlock();
+	}
+
 	public override void Write(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
@@ -721,6 +756,7 @@ public class GenC : GenCCpp
 			WriteStruct(klass);
 		foreach (CiClass klass in program.Classes) {
 			WriteConstructor(klass);
+			WriteDestructor(klass);
 			foreach (CiMethod method in klass.Methods) {
 				if (method.CallType == CiCallType.Abstract)
 					continue;
