@@ -26,6 +26,8 @@ namespace Foxoft.Ci
 
 public class GenC : GenCCpp
 {
+	bool IncludeString;
+
 	protected override void WriteName(CiSymbol symbol)
 	{
 		if (symbol is CiMethod) {
@@ -187,6 +189,7 @@ public class GenC : GenCCpp
 
 	protected override void WriteStringLength(CiExpr expr)
 	{
+		this.IncludeString = true;
 		Write("(int) strlen(");
 		expr.Accept(this, CiPriority.Primary);
 		Write(')');
@@ -195,6 +198,7 @@ public class GenC : GenCCpp
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+			this.IncludeString = true;
 			Write("memcpy(");
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(", ");
@@ -208,6 +212,7 @@ public class GenC : GenCCpp
 		else if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
 			if (!(args[0] is CiLiteral literal) || !literal.IsDefaultValue)
 				throw new NotImplementedException("Only null, zero and false supported");
+			this.IncludeString = true;
 			Write("memset(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", 0, sizeof(");
@@ -223,6 +228,7 @@ public class GenC : GenCCpp
 			WriteArgsInParentheses(method, args);
 		}
 		else if (method == CiSystem.StringContains) {
+			this.IncludeString = true;
 			if (parent > CiPriority.Equality)
 				Write('(');
 			Write("strstr(");
@@ -325,6 +331,7 @@ public class GenC : GenCCpp
 			if (def.Value != null) {
 				if (!(def.Value is CiLiteral literal) || !literal.IsDefaultValue)
 					throw new NotImplementedException("Only null, zero and false supported");
+				this.IncludeString = true;
 				Write("memset(");
 				WriteName(def);
 				Write(", 0, sizeof(");
@@ -355,6 +362,7 @@ public class GenC : GenCCpp
 	{
 		if ((expr.Left.Type is CiStringType && expr.Right.Type != CiSystem.NullType)
 		 || (expr.Right.Type is CiStringType && expr.Left.Type != CiSystem.NullType)) {
+			 this.IncludeString = true;
 			if (parent > CiPriority.Equality)
 				Write('(');
 			 Write("strcmp(");
@@ -747,6 +755,7 @@ public class GenC : GenCCpp
 		CloseFile();
 
 		this.IncludeMath = false;
+		this.IncludeString = false;
 		using (StringWriter stringWriter = new StringWriter()) {
 			this.Writer = stringWriter;
 			foreach (CiClass klass in program.Classes)
@@ -768,7 +777,8 @@ public class GenC : GenCCpp
 				WriteLine("#include <math.h>");
 			Write(this.IncludeStdInt);
 			WriteLine("#include <stdlib.h>");
-			WriteLine("#include <string.h>");
+			if (this.IncludeString)
+				WriteLine("#include <string.h>");
 			Write("#include \"");
 			Write(Path.GetFileName(headerFile));
 			WriteLine("\"");
