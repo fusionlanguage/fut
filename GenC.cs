@@ -27,6 +27,11 @@ namespace Foxoft.Ci
 
 public class GenC : GenCCpp
 {
+	bool StringIndexOf;
+	bool StringLastIndexOf;
+	bool StringStartsWith;
+	bool StringEndsWith;
+
 	protected override void IncludeStdInt()
 	{
 		Include("stdint.h");
@@ -203,6 +208,18 @@ public class GenC : GenCCpp
 		Write(')');
 	}
 
+	void WriteStringMethod(string name, CiExpr obj, CiExpr[] args)
+	{
+		Include("string.h");
+		Write("CiString_");
+		Write(name);
+		Write('(');
+		obj.Accept(this, CiPriority.Primary);
+		Write(", ");
+		args[0].Accept(this, CiPriority.Primary);
+		Write(')');
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (obj.Type is CiArrayType && method.Name == "CopyTo") {
@@ -246,6 +263,22 @@ public class GenC : GenCCpp
 			Write(") != NULL");
 			if (parent > CiPriority.Equality)
 				Write(')');
+		}
+		else if (method == CiSystem.StringIndexOf) {
+			this.StringIndexOf = true;
+			WriteStringMethod("IndexOf", obj, args);
+		}
+		else if (method == CiSystem.StringLastIndexOf) {
+			this.StringLastIndexOf = true;
+			WriteStringMethod("LastIndexOf", obj, args);
+		}
+		else if (method == CiSystem.StringStartsWith) {
+			this.StringStartsWith = true;
+			WriteStringMethod("StartsWith", obj, args);
+		}
+		else if (method == CiSystem.StringEndsWith) {
+			this.StringEndsWith = true;
+			WriteStringMethod("EndsWith", obj, args);
 		}
 		// TODO
 		else {
@@ -741,6 +774,50 @@ public class GenC : GenCCpp
 		CloseBlock();
 	}
 
+	void WriteLibrary()
+	{
+		if (this.StringIndexOf) {
+			WriteLine();
+			WriteLine("static int CiString_IndexOf(const char *str, const char *needle)");
+			OpenBlock();
+			WriteLine("const char *p = strstr(str, needle);");
+			WriteLine("return p == NULL ? -1 : (int) (p - str);");
+			CloseBlock();
+		}
+		if (this.StringLastIndexOf) {
+			WriteLine();
+			WriteLine("static int CiString_LastIndexOf(const char *str, const char *needle)");
+			OpenBlock();
+			WriteLine("if (needle[0] == '\\0')");
+			WriteLine("\treturn (int) strlen(str);");
+			WriteLine("int result = -1;");
+			WriteLine("const char *p = strstr(str, needle);");
+			Write("while (p != NULL) ");
+			OpenBlock();
+			WriteLine("result = (int) (p - str);");
+			WriteLine("p = strstr(p + 1, needle);");
+			CloseBlock();
+			WriteLine("return result;");
+			CloseBlock();
+		}
+		if (this.StringStartsWith) {
+			WriteLine();
+			WriteLine("static bool CiString_StartsWith(const char *str, const char *prefix)");
+			OpenBlock();
+			WriteLine("return memcmp(str, prefix, strlen(prefix)) == 0;");
+			CloseBlock();
+		}
+		if (this.StringEndsWith) {
+			WriteLine();
+			WriteLine("static bool CiString_EndsWith(const char *str, const char *suffix)");
+			OpenBlock();
+			WriteLine("size_t strLen = strlen(str);");
+			WriteLine("size_t suffixLen = strlen(suffix);");
+			WriteLine("return strLen >= suffixLen && memcmp(str + strLen - suffixLen, suffix, suffixLen) == 0;");
+			CloseBlock();
+		}
+	}
+
 	public override void Write(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
@@ -768,6 +845,10 @@ public class GenC : GenCCpp
 		CloseFile();
 
 		this.Includes = new SortedSet<string>();
+		this.StringIndexOf = false;
+		this.StringLastIndexOf = false;
+		this.StringStartsWith = false;
+		this.StringEndsWith = false;
 		using (StringWriter stringWriter = new StringWriter()) {
 			this.Writer = stringWriter;
 			foreach (CiClass klass in program.Classes)
@@ -791,6 +872,7 @@ public class GenC : GenCCpp
 			Write("#include \"");
 			Write(Path.GetFileName(headerFile));
 			WriteLine("\"");
+			WriteLibrary();
 			WriteTypedefs(program, false);
 			this.Writer.Write(stringWriter.GetStringBuilder());
 		}
