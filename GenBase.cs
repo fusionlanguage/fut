@@ -640,8 +640,7 @@ public abstract class GenBase : CiVisitor
 	{
 		statement.Accept(this, CiPriority.Statement);
 		WriteLine(";");
-		CiVar def = statement as CiVar;
-		if (def != null)
+		if (statement is CiVar def)
 			WriteInitCode(def);
 	}
 
@@ -672,8 +671,7 @@ public abstract class GenBase : CiVisitor
 
 	protected void WriteChild(CiStatement statement)
 	{
-		CiBlock block = statement as CiBlock;
-		if (block != null) {
+		if (statement is CiBlock block) {
 			Write(' ');
 			Visit(block);
 		}

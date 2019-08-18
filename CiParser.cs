@@ -601,26 +601,23 @@ public class CiParser : CiLexer
 				throw ParseException("{0} method cannot be private", callType);
 
 			CiExpr type = Eat(CiToken.Void) ? null : ParseType();
-			if (See(CiToken.LeftBrace)) {
-				CiBinaryExpr call = type as CiBinaryExpr;
-				if (call != null && call.Op == CiToken.LeftParenthesis) {
-					CiSymbolReference sr = call.Left as CiSymbolReference;
-					if (sr != null) {
-						// constructor
-						if (sr.Name != klass.Name)
-							throw ParseException("Constructor name doesn't match class name");
-						if (callType != CiCallType.Normal)
-							throw ParseException("Constructor cannot be {0}", callType);
-						if (call.RightCollection.Length != 0)
-							throw ParseException("Constructor parameters not supported");
-						if (klass.Constructor != null)
-							throw ParseException("Duplicate constructor, already defined in line {0}", klass.Constructor.Line);
-						if (visibility == CiVisibility.Private)
-							visibility = CiVisibility.Internal; // TODO
-						klass.Constructor = new CiMethodBase { Line = sr.Line, Visibility = visibility, Body = ParseBlock() };
-						continue;
-					}
-				}
+			if (See(CiToken.LeftBrace)
+			 && type is CiBinaryExpr call
+			 && call.Op == CiToken.LeftParenthesis
+			 && call.Left is CiSymbolReference sr) {
+				// constructor
+				if (sr.Name != klass.Name)
+					throw ParseException("Constructor name doesn't match class name");
+				if (callType != CiCallType.Normal)
+					throw ParseException("Constructor cannot be {0}", callType);
+				if (call.RightCollection.Length != 0)
+					throw ParseException("Constructor parameters not supported");
+				if (klass.Constructor != null)
+					throw ParseException("Duplicate constructor, already defined in line {0}", klass.Constructor.Line);
+				if (visibility == CiVisibility.Private)
+					visibility = CiVisibility.Internal; // TODO
+				klass.Constructor = new CiMethodBase { Line = sr.Line, Visibility = visibility, Body = ParseBlock() };
+				continue;
 			}
 
 			int line = this.Line;
