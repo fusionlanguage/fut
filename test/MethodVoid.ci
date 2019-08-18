@@ -1,0 +1,17 @@
+public class Test
+{
+	bool Result;
+
+	void SideEffect!()
+	{
+		this.Result = true;
+	}
+
+	public static bool Run()
+	{
+		Test() o;
+		o.Result = false;
+		o.SideEffect();
+		return o.Result;
+	}
+}

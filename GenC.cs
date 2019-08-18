@@ -73,11 +73,13 @@ public class GenC : GenCCpp
 
 	void WriteDefinition(CiType type, Action symbol)
 	{
+		if (type == null) {
+			Write("void ");
+			symbol();
+			return;
+		}
 		CiType baseType = type.BaseType;
 		switch (baseType) {
-		case null:
-			Write("void ");
-			break;
 		case CiIntegerType integer:
 			Write(GetTypeCode(integer, type is CiArrayType));
 			Write(' ');
