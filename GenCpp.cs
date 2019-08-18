@@ -137,9 +137,9 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteVarInit(CiNamedValue def)
 	{
-		if (def.Type == CiSystem.StringStorageType) {
+		if (def.Value != null && def.Type == CiSystem.StringStorageType) {
 			Write('{');
-			WriteCoerced(def.Type, def.Value, CiPriority.Statement);
+			def.Value.Accept(this, CiPriority.Statement);
 			Write('}');
 		}
 		else

@@ -142,6 +142,22 @@ public class GenC : GenCCpp
 		WriteDefinition(value.Type, () => WriteName(value));
 	}
 
+	protected override void WriteVarInit(CiNamedValue def)
+	{
+		if (def.Type == CiSystem.StringStorageType) {
+			if (def.Value == null)
+				Write(" = NULL");
+			else {
+				Include("string.h");
+				Write(" = strdup(");
+				def.Value.Accept(this, CiPriority.Statement);
+				Write(')');
+			}
+		}
+		else
+			base.WriteVarInit(def);
+	}
+
 	protected override void WriteLiteral(object value)
 	{
 		if (value == null)
@@ -598,7 +614,7 @@ public class GenC : GenCCpp
 
 	bool NeedsDestructor(CiClass klass)
 	{
-		return klass.Fields.Any(field => field.Type is CiClass fieldClass && NeedsDestructor(fieldClass))
+		return klass.Fields.Any(field => field.Type == CiSystem.StringStorageType || (field.Type is CiClass fieldClass && NeedsDestructor(fieldClass)))
 			|| (klass.Parent is CiClass baseClass && NeedsDestructor(baseClass));
 	}
 
@@ -732,11 +748,10 @@ public class GenC : GenCCpp
 			WriteLine("&vtbl;");
 		}
 		foreach (CiField field in klass.Fields) {
-			if (field.Value != null) {
+			if (field.Value != null || field.Type == CiSystem.StringStorageType) {
 				Write("self->");
 				WriteCamelCase(field.Name);
-				Write(" = ");
-				field.Value.Accept(this, CiPriority.Statement);
+				WriteVarInit(field);
 				WriteLine(";");
 			}
 			else if (field.Type is CiClass fieldClass && NeedsConstructor(fieldClass)) {
@@ -759,8 +774,13 @@ public class GenC : GenCCpp
 		WriteXstructorSignature("Destruct", klass);
 		WriteLine();
 		OpenBlock();
-		foreach (CiField field in klass.Fields) {
-			if (field.Type is CiClass fieldClass && NeedsDestructor(fieldClass)) {
+		foreach (CiField field in klass.Fields.Reverse()) {
+			if (field.Type == CiSystem.StringStorageType) {
+				Write("free(self->");
+				WriteCamelCase(field.Name);
+				WriteLine(");");
+			}
+			else if (field.Type is CiClass fieldClass && NeedsDestructor(fieldClass)) {
 				Write(fieldClass.Name);
 				Write("_Destruct(&self->");
 				WriteCamelCase(field.Name);

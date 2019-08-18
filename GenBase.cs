@@ -262,6 +262,8 @@ public abstract class GenBase : CiVisitor
 
 	protected virtual void WriteVarInit(CiNamedValue def)
 	{
+		if (def.Value == null)
+			return;
 		Write(" = ");
 		WriteCoerced(def.Type, def.Value, CiPriority.Statement);
 	}
@@ -273,7 +275,7 @@ public abstract class GenBase : CiVisitor
 			WriteClassStorageInit(klass);
 		else if (def.Type is CiArrayStorageType array && !(def.Value is CiCollection))
 			WriteArrayStorageInit(array, def.Value);
-		else if (def.Value != null)
+		else
 			WriteVarInit(def);
 	}
 
