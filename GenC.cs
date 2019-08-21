@@ -88,7 +88,7 @@ public class GenC : GenCCpp
 		CiType baseType = type.BaseType;
 		switch (baseType) {
 		case CiIntegerType integer:
-			Write(GetTypeCode(integer, type is CiArrayType));
+			Write(GetTypeCode(integer, type == baseType));
 			Write(' ');
 			break;
 		case CiStringPtrType _:
