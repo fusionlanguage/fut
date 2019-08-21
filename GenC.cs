@@ -524,7 +524,8 @@ public class GenC : GenCCpp
 
 	protected override void WriteCaseBody(CiStatement[] statements)
 	{
-		if (statements.Length > 0 && statements[0] is CiVar)
+		if (statements[0] is CiVar
+		 || (statements[0] is CiConst konst && konst.Type is CiArrayType))
 			WriteLine(";");
 		Write(statements);
 	}

@@ -780,7 +780,7 @@ public abstract class GenBase : CiVisitor
 		if (statement.DefaultBody != null) {
 			WriteLine("default:");
 			this.Indent++;
-			Write(statement.DefaultBody);
+			WriteCaseBody(statement.DefaultBody);
 			this.Indent--;
 		}
 		WriteLine("}");

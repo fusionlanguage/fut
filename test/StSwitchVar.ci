@@ -11,6 +11,7 @@ public static class Test
 		case 40 + 2:
 			return true;
 		default:
+			int c = 7;
 			return false;
 		}
 	}
