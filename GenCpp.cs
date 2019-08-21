@@ -221,7 +221,7 @@ public class GenCpp : GenCCpp
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(')');
 		}
-		else if (obj.Type == CiSystem.UTF8EncodingClass && method.Name == "GetString") {
+		else if (method == CiSystem.UTF8GetString) {
 			Include("string_view");
 			Write("std::string_view(reinterpret_cast<const char *>(");
 			WriteArrayPtrAdd(args[0], args[1]);

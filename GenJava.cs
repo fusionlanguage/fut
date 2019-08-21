@@ -232,7 +232,7 @@ public class GenJava : GenTyped
 				args[0].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
-		else if (obj.Type == CiSystem.UTF8EncodingClass && method.Name == "GetString") {
+		else if (method == CiSystem.UTF8GetString) {
 			Write("new String(");
 			WriteArgs(method, args);
 			Write(", java.nio.charset.StandardCharsets.UTF_8)");

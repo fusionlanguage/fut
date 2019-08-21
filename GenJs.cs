@@ -215,7 +215,7 @@ public class GenJs : GenBase
 			WriteArgs(method, args);
 			Write(')');
 		}
-		else if (obj.Type == CiSystem.UTF8EncodingClass && method.Name == "GetString") {
+		else if (method == CiSystem.UTF8GetString) {
 			AddLibrary(GenJsMethod.UTF8GetString,
 				"utf8GetString : function(a, i, length)",
 				"length += i;",

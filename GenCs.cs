@@ -153,7 +153,7 @@ public class GenCs : GenTyped
 			Write(((CiArrayStorageType) obj.Type).Length);
 			Write(')');
 		}
-		else if (obj.Type == CiSystem.UTF8EncodingClass && method.Name == "GetString") {
+		else if (method == CiSystem.UTF8GetString) {
 			Write("System.Text.Encoding.UTF8.GetString");
 			WriteArgsInParentheses(method, args);
 		}
