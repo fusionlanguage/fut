@@ -151,11 +151,17 @@ public class GenC : GenCCpp
 		 && call.Left is CiBinaryExpr leftBinary
 		 && leftBinary.Op == CiToken.Dot) {
 			CiMethod method = (CiMethod) ((CiSymbolReference) leftBinary.Right).Symbol;
+			CiExpr[] args = call.RightCollection;
 			if (method == CiSystem.StringSubstring) {
 				ptr = leftBinary.Left;
-				CiExpr[] args = call.RightCollection;
 				offset = args[0];
 				length = args[1];
+				return true;
+			}
+			if (method == CiSystem.UTF8GetString) {
+				ptr = args[0];
+				offset = args[1];
+				length = args[2];
 				return true;
 			}
 		}
