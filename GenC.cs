@@ -482,7 +482,7 @@ public class GenC : GenCCpp
 
 	protected override void WriteResource(string name, int length)
 	{
-		// TODO
+		Write("CiResource_");
 		foreach (char c in name)
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
@@ -954,6 +954,25 @@ public class GenC : GenCCpp
 		}
 	}
 
+	void WriteResources(Dictionary<string, byte[]> resources)
+	{
+		if (resources.Count == 0)
+			return;
+		WriteLine();
+		Include("stdint.h");
+		foreach (string name in resources.Keys.OrderBy(k => k)) {
+			Write("static const uint8_t ");
+			WriteResource(name, -1);
+			Write('[');
+			Write(resources[name].Length);
+			WriteLine("] = {");
+			Write('\t');
+			Write(resources[name]);
+			Write(" }");
+			WriteLine(";");
+		}
+	}
+
 	public override void Write(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
@@ -992,6 +1011,7 @@ public class GenC : GenCCpp
 			this.Writer = stringWriter;
 			foreach (CiClass klass in program.Classes)
 				WriteStruct(klass);
+			WriteResources(program.Resources);
 			foreach (CiClass klass in program.Classes) {
 				WriteConstructor(klass);
 				WriteDestructor(klass);
