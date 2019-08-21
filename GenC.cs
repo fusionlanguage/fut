@@ -29,6 +29,7 @@ public class GenC : GenCCpp
 {
 	bool StringAssign;
 	bool StringSubstring;
+	bool StringAppend;
 	bool StringIndexOf;
 	bool StringLastIndexOf;
 	bool StringStartsWith;
@@ -199,20 +200,6 @@ public class GenC : GenCCpp
 		}
 		else
 			base.WriteVarInit(def);
-	}
-
-	protected override void WriteAssign(CiBinaryExpr expr, CiPriority parent)
-	{
-		if (expr.Left.Type == CiSystem.StringStorageType) {
-			this.StringAssign = true;
-			Write("CiString_Assign(&");
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(", ");
-			WriteStringStorageValue(expr.Right);
-			Write(')');
-		}
-		else
-			base.WriteAssign(expr, parent);
 	}
 
 	protected override void WriteLiteral(object value)
@@ -410,6 +397,34 @@ public class GenC : GenCCpp
 		}
 		WriteArgs(method, args);
 		Write(')');
+	}
+
+	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
+	{
+		if (expr.Left.Type == CiSystem.StringStorageType) {
+			switch (expr.Op) {
+			case CiToken.Assign:
+				this.StringAssign = true;
+				Write("CiString_Assign(&");
+				expr.Left.Accept(this, CiPriority.Primary);
+				Write(", ");
+				WriteStringStorageValue(expr.Right);
+				Write(')');
+				return expr;
+			case CiToken.AddAssign:
+				Include("string.h");
+				this.StringAppend = true;
+				Write("CiString_Append(&");
+				expr.Left.Accept(this, CiPriority.Primary);
+				Write(", ");
+				expr.Right.Accept(this, CiPriority.Statement);
+				Write(')');
+				return expr;
+			default:
+				break;
+			}
+		}
+		return base.Visit(expr, parent);
 	}
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
@@ -885,6 +900,18 @@ public class GenC : GenCCpp
 			WriteLine("return p;");
 			CloseBlock();
 		}
+		if (this.StringAppend) {
+			WriteLine();
+			WriteLine("static void CiString_Append(char **str, const char *suffix)");
+			OpenBlock();
+			WriteLine("size_t suffixLen = strlen(suffix);");
+			WriteLine("if (suffixLen == 0)");
+			WriteLine("\treturn;");
+			WriteLine("size_t prefixLen = strlen(*str);");
+			WriteLine("*str = realloc(*str, prefixLen + suffixLen + 1);");
+			WriteLine("memcpy(*str + prefixLen, suffix, suffixLen + 1);");
+			CloseBlock();
+		}
 		if (this.StringIndexOf) {
 			WriteLine();
 			WriteLine("static int CiString_IndexOf(const char *str, const char *needle)");
@@ -956,6 +983,7 @@ public class GenC : GenCCpp
 		this.Includes = new SortedSet<string>();
 		this.StringAssign = false;
 		this.StringSubstring = false;
+		this.StringAppend = false;
 		this.StringIndexOf = false;
 		this.StringLastIndexOf = false;
 		this.StringStartsWith = false;
