@@ -27,6 +27,8 @@ namespace Foxoft.Ci
 
 public class GenC : GenCCpp
 {
+	bool StringAssign;
+	bool StringSubstring;
 	bool StringIndexOf;
 	bool StringLastIndexOf;
 	bool StringStartsWith;
@@ -142,20 +144,69 @@ public class GenC : GenCCpp
 		WriteDefinition(value.Type, () => WriteName(value));
 	}
 
+	static bool IsStringSubstring(CiExpr expr, out CiExpr ptr, out CiExpr offset, out CiExpr length)
+	{
+		if (expr is CiBinaryExpr call
+		 && call.Op == CiToken.LeftParenthesis
+		 && call.Left is CiBinaryExpr leftBinary
+		 && leftBinary.Op == CiToken.Dot) {
+			CiMethod method = (CiMethod) ((CiSymbolReference) leftBinary.Right).Symbol;
+			if (method == CiSystem.StringSubstring) {
+				ptr = leftBinary.Left;
+				CiExpr[] args = call.RightCollection;
+				offset = args[0];
+				length = args[1];
+				return true;
+			}
+		}
+		ptr = null;
+		offset = null;
+		length = null;
+		return false;
+	}
+
+	void WriteStringStorageValue(CiExpr expr)
+	{
+		Include("string.h");
+		if (IsStringSubstring(expr, out CiExpr ptr, out CiExpr offset, out CiExpr length)) {
+			this.StringSubstring = true;
+			Write("CiString_Substring(");
+			WriteArrayPtrAdd(ptr, offset);
+			Write(", ");
+			length.Accept(this, CiPriority.Statement);
+		}
+		else {
+			Write("strdup(");
+			expr.Accept(this, CiPriority.Statement);
+		}
+		Write(')');
+	}
+
 	protected override void WriteVarInit(CiNamedValue def)
 	{
 		if (def.Type == CiSystem.StringStorageType) {
+			Write(" = ");
 			if (def.Value == null)
-				Write(" = NULL");
-			else {
-				Include("string.h");
-				Write(" = strdup(");
-				def.Value.Accept(this, CiPriority.Statement);
-				Write(')');
-			}
+				Write("NULL");
+			else
+				WriteStringStorageValue(def.Value);
 		}
 		else
 			base.WriteVarInit(def);
+	}
+
+	protected override void WriteAssign(CiBinaryExpr expr, CiPriority parent)
+	{
+		if (expr.Left.Type == CiSystem.StringStorageType) {
+			this.StringAssign = true;
+			Write("CiString_Assign(&");
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(", ");
+			WriteStringStorageValue(expr.Right);
+			Write(')');
+		}
+		else
+			base.WriteAssign(expr, parent);
 	}
 
 	protected override void WriteLiteral(object value)
@@ -422,13 +473,27 @@ public class GenC : GenCCpp
 			Include("string.h");
 			if (parent > CiPriority.Equality)
 				Write('(');
-			 Write("strcmp(");
-			 expr.Left.Accept(this, CiPriority.Statement);
-			 Write(", ");
-			 expr.Right.Accept(this, CiPriority.Statement);
-			 Write(") ");
-			 Write(not ? '!' : '=');
-			 Write("= 0");
+			if (IsStringSubstring(expr.Left, out CiExpr ptr, out CiExpr offset, out CiExpr lengthExpr) && lengthExpr is CiLiteral literalLength && expr.Right is CiLiteral literal) {
+				long length = (long) literalLength.Value;
+				string right = (string) literal.Value;
+				if (length != right.Length)
+					throw new NotImplementedException(); // TODO: evaluate compile-time
+				Write("memcmp(");
+				WriteArrayPtrAdd(ptr, offset);
+				Write(", ");
+				expr.Right.Accept(this, CiPriority.Statement);
+				Write(", ");
+				Write(length);
+			}
+			else {
+				Write("strcmp(");
+				expr.Left.Accept(this, CiPriority.Statement);
+				Write(", ");
+				expr.Right.Accept(this, CiPriority.Statement);
+			}
+			Write(") ");
+			Write(not ? '!' : '=');
+			Write("= 0");
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}
@@ -796,6 +861,24 @@ public class GenC : GenCCpp
 
 	void WriteLibrary()
 	{
+		if (this.StringAssign) {
+			WriteLine();
+			WriteLine("static void CiString_Assign(char **str, char *value)");
+			OpenBlock();
+			WriteLine("free(*str);");
+			WriteLine("*str = value;");
+			CloseBlock();
+		}
+		if (this.StringSubstring) {
+			WriteLine();
+			WriteLine("static char *CiString_Substring(const char *str, int len)");
+			OpenBlock();
+			WriteLine("char *p = malloc(len + 1);");
+			WriteLine("memcpy(p, str, len);");
+			WriteLine("p[len] = '\\0';");
+			WriteLine("return p;");
+			CloseBlock();
+		}
 		if (this.StringIndexOf) {
 			WriteLine();
 			WriteLine("static int CiString_IndexOf(const char *str, const char *needle)");
@@ -865,6 +948,8 @@ public class GenC : GenCCpp
 		CloseFile();
 
 		this.Includes = new SortedSet<string>();
+		this.StringAssign = false;
+		this.StringSubstring = false;
 		this.StringIndexOf = false;
 		this.StringLastIndexOf = false;
 		this.StringStartsWith = false;

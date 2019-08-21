@@ -500,6 +500,17 @@ public abstract class GenBase : CiVisitor
 		expr.Right.Accept(this, CiPriority.Statement);
 	}
 
+	protected virtual void WriteAssign(CiBinaryExpr expr, CiPriority parent)
+	{
+		if (parent > CiPriority.Assign)
+			Write('(');
+		expr.Left.Accept(this, CiPriority.Assign);
+		Write(" = ");
+		WriteAssignRight(expr);
+		if (parent > CiPriority.Assign)
+			Write(')');
+	}
+
 	protected virtual void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
 		Write('.');
@@ -573,13 +584,7 @@ public abstract class GenBase : CiVisitor
 		case CiToken.CondOr:
 			return Write(expr, parent, CiPriority.CondOr, " || ");
 		case CiToken.Assign:
-			if (parent > CiPriority.Assign)
-				Write('(');
-			expr.Left.Accept(this, CiPriority.Assign);
-			Write(" = ");
-			WriteAssignRight(expr);
-			if (parent > CiPriority.Assign)
-				Write(')');
+			WriteAssign(expr, parent);
 			return expr;
 		case CiToken.AddAssign:
 		case CiToken.SubAssign:
