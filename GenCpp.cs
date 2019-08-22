@@ -554,50 +554,46 @@ public class GenCpp : GenCCpp
 		string headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
 		SortedSet<string> headerIncludes = new SortedSet<string>();
 		this.Includes = headerIncludes;
-		using (StringWriter stringWriter = new StringWriter()) {
-			this.Writer = stringWriter;
-			OpenNamespace();
-			foreach (CiEnum enu in program.OfType<CiEnum>())
-				Write(enu);
-			foreach (CiClass klass in program.Classes) {
-				Write("class ");
-				Write(klass.Name);
-				WriteLine(";");
-			}
-			foreach (CiClass klass in program.Classes)
-				Write(klass);
-			CloseNamespace();
-
-			CreateFile(headerFile);
-			WriteLine("#pragma once");
-			WriteIncludes();
-			this.Writer.Write(stringWriter.GetStringBuilder());
+		OpenStringWriter();
+		OpenNamespace();
+		foreach (CiEnum enu in program.OfType<CiEnum>())
+			Write(enu);
+		foreach (CiClass klass in program.Classes) {
+			Write("class ");
+			Write(klass.Name);
+			WriteLine(";");
 		}
+		foreach (CiClass klass in program.Classes)
+			Write(klass);
+		CloseNamespace();
+
+		CreateFile(headerFile);
+		WriteLine("#pragma once");
+		WriteIncludes();
+		CloseStringWriter();
 		CloseFile();
 
 		this.Includes = new SortedSet<string>();
-		using (StringWriter stringWriter = new StringWriter()) {
-			this.Writer = stringWriter;
-			WriteResources(program.Resources, false);
-			OpenNamespace();
-			foreach (CiClass klass in program.Classes) {
-				WriteConstructor(klass);
-				foreach (CiMethod method in klass.Methods)
-					WriteMethod(klass, method);
-			}
-			WriteResources(program.Resources, true);
-			CloseNamespace();
-
-			CreateFile(this.OutputFile);
-			this.Includes.ExceptWith(headerIncludes);
-			WriteIncludes();
-			Write("#include \"");
-			Write(Path.GetFileName(headerFile));
-			WriteLine("\"");
-			if (this.UsingStringViewLiterals)
-				WriteLine("using namespace std::string_view_literals;");
-			this.Writer.Write(stringWriter.GetStringBuilder());
+		OpenStringWriter();
+		WriteResources(program.Resources, false);
+		OpenNamespace();
+		foreach (CiClass klass in program.Classes) {
+			WriteConstructor(klass);
+			foreach (CiMethod method in klass.Methods)
+				WriteMethod(klass, method);
 		}
+		WriteResources(program.Resources, true);
+		CloseNamespace();
+
+		CreateFile(this.OutputFile);
+		this.Includes.ExceptWith(headerIncludes);
+		WriteIncludes();
+		Write("#include \"");
+		Write(Path.GetFileName(headerFile));
+		WriteLine("\"");
+		if (this.UsingStringViewLiterals)
+			WriteLine("using namespace std::string_view_literals;");
+		CloseStringWriter();
 		CloseFile();
 	}
 }

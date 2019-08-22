@@ -980,20 +980,18 @@ public class GenC : GenCCpp
 		string headerFile = Path.ChangeExtension(this.OutputFile, "h");
 		SortedSet<string> headerIncludes = new SortedSet<string>();
 		this.Includes = headerIncludes;
-		using (StringWriter stringWriter = new StringWriter()) {
-			this.Writer = stringWriter;
-			foreach (CiClass klass in program.Classes)
-				WriteSignatures(klass, true);
+		OpenStringWriter();
+		foreach (CiClass klass in program.Classes)
+			WriteSignatures(klass, true);
 
-			CreateFile(headerFile);
-			WriteLine("#pragma once");
-			WriteIncludes();
-			WriteLine("#ifdef __cplusplus");
-			WriteLine("extern \"C\" {");
-			WriteLine("#endif");
-			WriteTypedefs(program, true);
-			this.Writer.Write(stringWriter.GetStringBuilder());
-		}
+		CreateFile(headerFile);
+		WriteLine("#pragma once");
+		WriteIncludes();
+		WriteLine("#ifdef __cplusplus");
+		WriteLine("extern \"C\" {");
+		WriteLine("#endif");
+		WriteTypedefs(program, true);
+		CloseStringWriter();
 		WriteLine();
 		WriteLine("#ifdef __cplusplus");
 		WriteLine("}");
@@ -1008,34 +1006,32 @@ public class GenC : GenCCpp
 		this.StringLastIndexOf = false;
 		this.StringStartsWith = false;
 		this.StringEndsWith = false;
-		using (StringWriter stringWriter = new StringWriter()) {
-			this.Writer = stringWriter;
-			foreach (CiClass klass in program.Classes)
-				WriteStruct(klass);
-			WriteResources(program.Resources);
-			foreach (CiClass klass in program.Classes) {
-				WriteConstructor(klass);
-				WriteDestructor(klass);
-				foreach (CiMethod method in klass.Methods) {
-					if (method.CallType == CiCallType.Abstract)
-						continue;
-					WriteLine();
-					WriteSignature(klass, method);
-					WriteBody(method);
-				}
+		OpenStringWriter();
+		foreach (CiClass klass in program.Classes)
+			WriteStruct(klass);
+		WriteResources(program.Resources);
+		foreach (CiClass klass in program.Classes) {
+			WriteConstructor(klass);
+			WriteDestructor(klass);
+			foreach (CiMethod method in klass.Methods) {
+				if (method.CallType == CiCallType.Abstract)
+					continue;
+				WriteLine();
+				WriteSignature(klass, method);
+				WriteBody(method);
 			}
-
-			CreateFile(this.OutputFile);
-			this.Includes.ExceptWith(headerIncludes);
-			this.Includes.Add("stdlib.h");
-			WriteIncludes();
-			Write("#include \"");
-			Write(Path.GetFileName(headerFile));
-			WriteLine("\"");
-			WriteLibrary();
-			WriteTypedefs(program, false);
-			this.Writer.Write(stringWriter.GetStringBuilder());
 		}
+
+		CreateFile(this.OutputFile);
+		this.Includes.ExceptWith(headerIncludes);
+		this.Includes.Add("stdlib.h");
+		WriteIncludes();
+		Write("#include \"");
+		Write(Path.GetFileName(headerFile));
+		WriteLine("\"");
+		WriteLibrary();
+		WriteTypedefs(program, false);
+		CloseStringWriter();
 		CloseFile();
 	}
 }
