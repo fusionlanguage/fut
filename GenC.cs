@@ -390,11 +390,34 @@ public class GenC : GenCCpp
 
 	protected override void WriteNearCall(CiMethod method, CiExpr[] args)
 	{
-		WriteName(method);
+		CiClass klass = (CiClass) this.CurrentMethod.Parent;
+		switch (method.CallType) {
+		case CiCallType.Abstract:
+		case CiCallType.Virtual:
+		case CiCallType.Override:
+			CiClass ptrClass = GetVtblPtrClass(klass);
+			CiClass structClass = GetVtblStructClass((CiClass) method.Parent);
+			if (structClass != ptrClass) {
+				Write("((const ");
+				Write(structClass.Name);
+				Write("Vtbl *) ");
+			}
+			Write("self->");
+			for (CiClass baseClass = klass; baseClass != ptrClass; baseClass = (CiClass) baseClass.Parent)
+				Write("base.");
+			Write("vtbl");
+			if (structClass != ptrClass)
+				Write(')');
+			Write("->");
+			WriteCamelCase(method.Name);
+			break;
+		default:
+			WriteName(method);
+			break;
+		}
 		Write('(');
 		if (method.CallType != CiCallType.Static) {
 			CiClass resultClass = (CiClass) method.Parent;
-			CiClass klass = (CiClass) this.CurrentMethod.Parent;
 			if (klass == resultClass)
 				Write("self");
 			else {
