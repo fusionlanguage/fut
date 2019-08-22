@@ -47,8 +47,13 @@ public class GenC : GenCCpp
 			Write('_');
 			Write(symbol.Name);
 		}
-		else if (symbol is CiConst)
+		else if (symbol is CiConst) {
+			if (symbol.Parent is CiClass) {
+				Write(symbol.Parent.Name);
+				Write('_');
+			}
 			WriteUppercaseWithUnderscores(symbol.Name);
+		}
 		else if (symbol is CiMember)
 			WriteCamelCase(symbol.Name);
 		else if (symbol.Name == "this")
