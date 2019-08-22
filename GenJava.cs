@@ -222,9 +222,7 @@ public class GenJava : GenTyped
 			Write("java.util.Arrays.fill(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
-			if (array.ElementType is CiRangeType range
-				&& ((range.Min >= 0 && range.Max <= byte.MaxValue)
-					|| (range.Min >= sbyte.MinValue && range.Max <= sbyte.MaxValue))) {
+			if (array.IsByteArray()) {
 				Write("(byte) ");
 				args[0].Accept(this, CiPriority.Primary);
 			}

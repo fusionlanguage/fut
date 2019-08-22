@@ -287,17 +287,22 @@ public class GenC : GenCCpp
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+		if (obj.Type is CiArrayType array && method.Name == "CopyTo") {
 			Include("string.h");
 			Write("memcpy(");
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(", ");
 			WriteArrayPtrAdd(obj, args[0]);
 			Write(", ");
-			args[3].Accept(this, CiPriority.Mul);
-			Write(" * sizeof(");
-			obj.Accept(this, CiPriority.Primary);
-			Write("[0]))");
+			if (array.IsByteArray())
+				args[3].Accept(this, CiPriority.Statement);
+			else {
+				args[3].Accept(this, CiPriority.Mul);
+				Write(" * sizeof(");
+				obj.Accept(this, CiPriority.Primary);
+				Write("[0])");
+			}
+			Write(')');
 		}
 		else if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
 			if (!(args[0] is CiLiteral literal) || !literal.IsDefaultValue)
