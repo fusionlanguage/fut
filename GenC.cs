@@ -709,7 +709,7 @@ public class GenC : GenCCpp
 			konst.Value.Accept(this, CiPriority.Statement);
 			WriteLine(";");
 		}
-		else {
+		else if (konst.Visibility == CiVisibility.Public) {
 			Write("#define ");
 			WriteName(konst);
 			Write(' ');
