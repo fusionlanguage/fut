@@ -161,17 +161,22 @@ public abstract class GenBase : CiVisitor
 		WriteLine("}");
 	}
 
+	void WriteComma(int i)
+	{
+		if (i > 0) {
+			if ((i & 15) == 0) {
+				WriteLine(",");
+				Write('\t');
+			}
+			else
+				Write(", ");
+		}
+	}
+
 	protected void Write(byte[] array)
 	{
 		for (int i = 0; i < array.Length; i++) {
-			if (i > 0) {
-				if ((i & 15) == 0) {
-					WriteLine(",");
-					Write('\t');
-				}
-				else
-					Write(", ");
-			}
+			WriteComma(i);
 			Write(array[i]);
 		}
 	}
@@ -214,8 +219,7 @@ public abstract class GenBase : CiVisitor
 	protected void WriteCoercedLiterals(CiType type, CiExpr[] exprs)
 	{
 		for (int i = 0; i < exprs.Length; i++) {
-			if (i > 0)
-				Write(", ");
+			WriteComma(i);
 			WriteCoercedLiteral(type, ((CiLiteral) exprs[i]).Value);
 		}
 	}
