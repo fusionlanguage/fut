@@ -140,6 +140,16 @@ public class GenC : GenCCpp
 		}
 	}
 
+	void WriteSignature(CiMethod method, Action symbol)
+	{
+		if (method.Type == null) {
+			Write(method.Throws ? "bool " : "void ");
+			symbol();
+		}
+		else
+			WriteDefinition(method.Type, symbol);
+	}
+
 	protected override void Write(CiType type, bool promote)
 	{
 		WriteDefinition(type, () => {});
@@ -555,6 +565,14 @@ public class GenC : GenCCpp
 			base.WriteEqual(expr, parent, not);
 	}
 
+	public override void Visit(CiReturn statement)
+	{
+		if (statement.Value == null && this.CurrentMethod.Throws)
+			WriteLine("return true;");
+		else
+			base.Visit(statement);
+	}
+
 	protected override void WriteCaseBody(CiStatement[] statements)
 	{
 		if (statements[0] is CiVar
@@ -565,7 +583,21 @@ public class GenC : GenCCpp
 
 	public override void Visit(CiThrow statement)
 	{
-		WriteLine("return TODO;"); // TODO
+		switch (this.CurrentMethod.Type) {
+		case null:
+			WriteLine("return false;");
+			break;
+		case CiIntegerType _:
+			WriteLine("return -1;");
+			break;
+		case CiNumericType _:
+			Include("math.h");
+			WriteLine("return NAN;");
+			break;
+		default:
+			WriteLine("return NULL;");
+			break;
+		}
 	}
 
 	void Write(CiEnum enu)
@@ -636,7 +668,7 @@ public class GenC : GenCCpp
 	{
 		if (method.Visibility == CiVisibility.Private || method.Visibility == CiVisibility.Internal)
 			Write("static ");
-		WriteDefinition(method.Type, () => {
+		WriteSignature(method, () => {
 			Write(klass.Name);
 			Write("_");
 			Write(method.Name);
@@ -678,7 +710,7 @@ public class GenC : GenCCpp
 			WriteVtblFields(baseClass);
 		foreach (CiMethod method in klass.Methods) {
 			if (method.CallType == CiCallType.Abstract || method.CallType == CiCallType.Virtual) {
-				WriteDefinition(method.Type, () => {
+				WriteSignature(method, () => {
 					Write("(*");
 					WriteCamelCase(method.Name);
 					Write(')');
