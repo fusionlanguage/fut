@@ -740,7 +740,7 @@ public class GenC : GenCCpp
 
 	void WriteXstructorSignature(string name, CiClass klass)
 	{
-		Write("void ");
+		Write("static void ");
 		Write(klass.Name);
 		Write('_');
 		Write(name);
