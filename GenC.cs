@@ -919,6 +919,8 @@ public class GenC : GenCCpp
 		if (!klass.IsPublic || klass.Constructor == null || klass.Constructor.Visibility != CiVisibility.Public)
 			return;
 
+		if (define)
+			WriteLine();
 		Write(klass.Name);
 		Write(" *");
 		Write(klass.Name);
@@ -941,6 +943,7 @@ public class GenC : GenCCpp
 			}
 			WriteLine("return self;");
 			CloseBlock();
+			WriteLine();
 		}
 		else
 			WriteLine(";");
