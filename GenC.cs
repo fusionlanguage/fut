@@ -914,6 +914,60 @@ public class GenC : GenCCpp
 		CloseBlock();
 	}
 
+	void WriteNewDelete(CiClass klass, bool define)
+	{
+		if (!klass.IsPublic || klass.Constructor == null || klass.Constructor.Visibility != CiVisibility.Public)
+			return;
+
+		Write(klass.Name);
+		Write(" *");
+		Write(klass.Name);
+		Write("_New(void)");
+		if (define) {
+			WriteLine();
+			OpenBlock();
+			Write(klass.Name);
+			Write(" *self = (");
+			Write(klass.Name);
+			Write(" *) malloc(sizeof(");
+			Write(klass.Name);
+			WriteLine("));");
+			if (NeedsConstructor(klass)) {
+				WriteLine("if (self != NULL)");
+				this.Indent++;
+				Write(klass.Name);
+				WriteLine("_Construct(self);");
+				this.Indent--;
+			}
+			WriteLine("return self;");
+			CloseBlock();
+		}
+		else
+			WriteLine(";");
+
+		Write("void ");
+		Write(klass.Name);
+		Write("_Delete(");
+		Write(klass.Name);
+		Write(" *self)");
+		if (define) {
+			WriteLine();
+			OpenBlock();
+			if (NeedsDestructor(klass)) {
+				WriteLine("if (self == NULL)");
+				this.Indent++;
+				WriteLine("return;");
+				this.Indent--;
+				Write(klass.Name);
+				WriteLine("_Destruct(self);");
+			}
+			WriteLine("free(self);");
+			CloseBlock();
+		}
+		else
+			WriteLine(";");
+	}
+
 	void WriteLibrary()
 	{
 		if (this.StringAssign) {
@@ -1014,8 +1068,10 @@ public class GenC : GenCCpp
 		SortedSet<string> headerIncludes = new SortedSet<string>();
 		this.Includes = headerIncludes;
 		OpenStringWriter();
-		foreach (CiClass klass in program.Classes)
+		foreach (CiClass klass in program.Classes) {
+			WriteNewDelete(klass, false);
 			WriteSignatures(klass, true);
+		}
 
 		CreateFile(headerFile);
 		WriteLine("#pragma once");
@@ -1046,6 +1102,7 @@ public class GenC : GenCCpp
 		foreach (CiClass klass in program.Classes) {
 			WriteConstructor(klass);
 			WriteDestructor(klass);
+			WriteNewDelete(klass, true);
 			foreach (CiMethod method in klass.Methods) {
 				if (method.CallType == CiCallType.Abstract)
 					continue;
