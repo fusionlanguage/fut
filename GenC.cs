@@ -652,23 +652,75 @@ public class GenC : GenCCpp
 		Write(statements);
 	}
 
-	public override void Visit(CiThrow statement)
+	void WriteThrowReturnValue()
 	{
 		switch (this.CurrentMethod.Type) {
 		case null:
-			WriteLine("return false;");
+			Write("false");
 			break;
 		case CiIntegerType _:
-			WriteLine("return -1;");
+			Write("-1");
 			break;
 		case CiNumericType _:
 			Include("math.h");
-			WriteLine("return NAN;");
+			Write("NAN");
 			break;
 		default:
-			WriteLine("return NULL;");
+			Write("NULL");
 			break;
 		}
+	}
+
+	public override void Visit(CiThrow statement)
+	{
+		Write("return ");
+		WriteThrowReturnValue();
+		WriteLine(";");
+	}
+
+	bool TryWriteCallAndReturn(CiStatement[] statements, int lastCallIndex, CiExpr returnValue)
+	{
+		CiExpr call = statements[lastCallIndex] as CiExpr;
+		CiMethod throwingMethod = GetThrowingMethod(call);
+		if (throwingMethod == null)
+			return false;
+		Write(statements, lastCallIndex);
+		Write("return ");
+		switch (throwingMethod.Type) {
+		case null:
+			call.Accept(this, CiPriority.Cond);
+			break;
+		case CiIntegerType _:
+			call.Accept(this, CiPriority.Equality);
+			Write(" != -1");
+			break;
+		case CiNumericType _:
+			Include("math.h");
+			Write("!isnan(");
+			call.Accept(this, CiPriority.Statement);
+			Write(')');
+			break;
+		default:
+			call.Accept(this, CiPriority.Equality);
+			Write(" != NULL");
+			break;
+		}
+		if (returnValue != null) {
+			Write(" ? ");
+			returnValue.Accept(this, CiPriority.Cond);
+			Write(" : ");
+			WriteThrowReturnValue();
+		}
+		WriteLine(";");
+		return true;
+	}
+
+	protected override void Write(CiStatement[] statements)
+	{
+		int i = statements.Length - 2;
+		if (i >= 0 && statements[i + 1] is CiReturn ret && TryWriteCallAndReturn(statements, i, ret.Value))
+			return;
+		base.Write(statements);
 	}
 
 	void Write(CiEnum enu)
@@ -756,8 +808,11 @@ public class GenC : GenCCpp
 	{
 		if (this.CurrentMethod.Throws && this.CurrentMethod.Type == null) {
 			OpenBlock();
-			Write(block.Statements);
-			WriteLine("return true;");
+			CiStatement[] statements = block.Statements;
+			if (!TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
+				Write(statements);
+				WriteLine("return true;");
+			}
 			CloseBlock();
 		}
 		else

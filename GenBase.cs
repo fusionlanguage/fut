@@ -662,10 +662,15 @@ public abstract class GenBase : CiVisitor
 		return array.ElementType is CiArrayStorageType || array.ElementType is CiClass;
 	}
 
-	protected void Write(CiStatement[] statements)
+	protected void Write(CiStatement[] statements, int length)
 	{
-		foreach (CiStatement statement in statements)
-			statement.Accept(this);
+		for (int i = 0; i < length; i++)
+			statements[i].Accept(this);
+	}
+
+	protected virtual void Write(CiStatement[] statements)
+	{
+		Write(statements, statements.Length);
 	}
 
 	public override void Visit(CiBlock statement)
