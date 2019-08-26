@@ -160,7 +160,7 @@ public class GenC : GenCCpp
 		WriteDefinition(value.Type, () => WriteName(value));
 	}
 
-	static bool IsStringSubstring(CiExpr expr, out CiExpr ptr, out CiExpr offset, out CiExpr length)
+	static bool IsStringSubstring(CiExpr expr, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)
 	{
 		if (expr is CiBinaryExpr call
 		 && call.Op == CiToken.LeftParenthesis
@@ -169,18 +169,21 @@ public class GenC : GenCCpp
 			CiMethod method = (CiMethod) ((CiSymbolReference) leftBinary.Right).Symbol;
 			CiExpr[] args = call.RightCollection;
 			if (method == CiSystem.StringSubstring) {
+				cast = false;
 				ptr = leftBinary.Left;
 				offset = args[0];
 				length = args[1];
 				return true;
 			}
 			if (method == CiSystem.UTF8GetString) {
+				cast = true;
 				ptr = args[0];
 				offset = args[1];
 				length = args[2];
 				return true;
 			}
 		}
+		cast = false;
 		ptr = null;
 		offset = null;
 		length = null;
@@ -190,9 +193,11 @@ public class GenC : GenCCpp
 	void WriteStringStorageValue(CiExpr expr)
 	{
 		Include("string.h");
-		if (IsStringSubstring(expr, out CiExpr ptr, out CiExpr offset, out CiExpr length)) {
+		if (IsStringSubstring(expr, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)) {
 			this.StringSubstring = true;
 			Write("CiString_Substring(");
+			if (cast)
+				Write("(const char *) ");
 			WriteArrayPtrAdd(ptr, offset);
 			Write(", ");
 			length.Accept(this, CiPriority.Statement);
@@ -542,7 +547,7 @@ public class GenC : GenCCpp
 			Include("string.h");
 			if (parent > CiPriority.Equality)
 				Write('(');
-			if (IsStringSubstring(expr.Left, out CiExpr ptr, out CiExpr offset, out CiExpr lengthExpr) && lengthExpr is CiLiteral literalLength && expr.Right is CiLiteral literal) {
+			if (IsStringSubstring(expr.Left, out bool _, out CiExpr ptr, out CiExpr offset, out CiExpr lengthExpr) && lengthExpr is CiLiteral literalLength && expr.Right is CiLiteral literal) {
 				long length = (long) literalLength.Value;
 				string right = (string) literal.Value;
 				if (length != right.Length)
