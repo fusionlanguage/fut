@@ -472,21 +472,21 @@ public abstract class GenBase : CiVisitor
 		return expr;
 	}
 
-	CiExpr Write(CiBinaryExpr expr, CiPriority parent, CiPriority left, string op, CiPriority right)
+	CiExpr Write(CiBinaryExpr expr, bool parentheses, CiPriority left, string op, CiPriority right)
 	{
-		if (parent > left)
+		if (parentheses)
 			Write('(');
 		expr.Left.Accept(this, left);
 		Write(op);
 		expr.Right.Accept(this, right);
-		if (parent > left)
+		if (parentheses)
 			Write(')');
 		return expr;
 	}
 
 	CiExpr Write(CiBinaryExpr expr, CiPriority parent, CiPriority child, string op)
 	{
-		return Write(expr, parent, child, op, child);
+		return Write(expr, parent > child, child, op, child);
 	}
 
 	protected virtual void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
@@ -496,7 +496,7 @@ public abstract class GenBase : CiVisitor
 
 	protected virtual void WriteAnd(CiBinaryExpr expr, CiPriority parent)
 	{
-		Write(expr, parent, CiPriority.And, " & ");
+		Write(expr, parent > CiPriority.And, CiPriority.Mul, " & ", CiPriority.Mul);
 	}
 
 	protected virtual void WriteAssignRight(CiBinaryExpr expr)
@@ -538,19 +538,19 @@ public abstract class GenBase : CiVisitor
 	{
 		switch (expr.Op) {
 		case CiToken.Plus:
-			return Write(expr, parent == CiPriority.Shift ? CiPriority.Mul : parent, CiPriority.Add, " + ");
+			return Write(expr, parent, CiPriority.Add, " + ");
 		case CiToken.Minus:
-			return Write(expr, parent == CiPriority.Shift ? CiPriority.Mul : parent, CiPriority.Add, " - ", CiPriority.Mul);
+			return Write(expr, parent > CiPriority.Add, CiPriority.Add, " - ", CiPriority.Mul);
 		case CiToken.Asterisk:
 			return Write(expr, parent, CiPriority.Mul, " * ");
 		case CiToken.Slash:
-			return Write(expr, parent, CiPriority.Mul, " / ", CiPriority.Primary);
+			return Write(expr, parent > CiPriority.Mul, CiPriority.Mul, " / ", CiPriority.Primary);
 		case CiToken.Mod:
-			return Write(expr, parent, CiPriority.Mul, " % ", CiPriority.Primary);
+			return Write(expr, parent > CiPriority.Mul, CiPriority.Mul, " % ", CiPriority.Primary);
 		case CiToken.ShiftLeft:
-			return Write(expr, parent, CiPriority.Shift, " << ", CiPriority.Mul);
+			return Write(expr, parent > CiPriority.Shift, CiPriority.Mul, " << ", CiPriority.Mul);
 		case CiToken.ShiftRight:
-			return Write(expr, parent, CiPriority.Shift, " >> ", CiPriority.Mul);
+			return Write(expr, parent > CiPriority.Shift, CiPriority.Mul, " >> ", CiPriority.Mul);
 		case CiToken.Less:
 			return Write(expr, parent, CiPriority.Rel, " < ");
 		case CiToken.LessOrEqual:
