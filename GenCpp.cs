@@ -154,6 +154,25 @@ public class GenCpp : GenCCpp
 			base.WriteLiteral(value);
 	}
 
+	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+	{
+		if (expr.Left.Type == CiSystem.StringPtrType && expr.Right.Type == CiSystem.NullType) {
+			WriteCoerced(CiSystem.StringPtrType, expr.Left, CiPriority.Primary);
+			Write(".data() ");
+			Write(not ? '!' : '=');
+			Write("= nullptr");
+		}
+		else if (expr.Left.Type == CiSystem.NullType && expr.Right.Type == CiSystem.StringPtrType) {
+			Write("nullptr ");
+			Write(not ? '!' : '=');
+			Write("= ");
+			WriteCoerced(CiSystem.StringPtrType, expr.Right, CiPriority.Primary);
+			Write(".data() ");
+		}
+		else
+			base.WriteEqual(expr, parent, not);
+	}
+
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
 		if (symbol.Symbol is CiConst) // FIXME
