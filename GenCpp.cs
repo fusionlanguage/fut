@@ -314,6 +314,10 @@ public class GenCpp : GenCCpp
 		case CiArrayPtrType leftArray when leftArray.Modifier != CiToken.Hash:
 			WriteArrayPtr(expr, CiPriority.Statement);
 			return;
+		case CiStringPtrType _ when expr.Type == CiSystem.NullType:
+			Include("string_view");
+			Write("std::string_view(nullptr, 0)");
+			return;
 		default:
 			break;
 		}
