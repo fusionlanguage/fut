@@ -521,6 +521,11 @@ public class GenC : GenCCpp
 				WriteLine(" + _i);");
 			}
 		}
+		else {
+			CiMethod throwingMethod = GetThrowingMethod(def.Value);
+			if (throwingMethod != null)
+				WriteForwardThrow(parent => Write(def.Name), throwingMethod);
+		}
 	}
 
 	protected override void WriteResource(string name, int length)
@@ -563,6 +568,72 @@ public class GenC : GenCCpp
 		}
 		else
 			base.WriteEqual(expr, parent, not);
+	}
+
+	static CiMethod GetThrowingMethod(CiStatement statement)
+	{
+		if (!(statement is CiBinaryExpr binary))
+			return null;
+		switch (binary.Op) {
+		case CiToken.Assign:
+			return GetThrowingMethod(binary.Right);
+		case CiToken.LeftParenthesis:
+			CiSymbolReference symbol = (CiSymbolReference) (binary.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.Dot ? leftBinary.Right : binary.Left);
+			CiMethod method = (CiMethod) symbol.Symbol;
+			return method.Throws ? method : null;
+		default:
+			return null;
+		}
+	}
+
+	void WriteForwardThrow(Action<CiPriority> source, CiMethod throwingMethod)
+	{
+		Write("if (");
+		switch (throwingMethod.Type) {
+		case null:
+			Write('!');
+			source(CiPriority.Primary);
+			break;
+		case CiIntegerType _:
+			source(CiPriority.Equality);
+			Write(" == -1");
+			break;
+		case CiNumericType _:
+			Include("math.h");
+			Write("isnan(");
+			source(CiPriority.Statement);
+			Write(')');
+			break;
+		default:
+			source(CiPriority.Equality);
+			Write(" == NULL");
+			break;
+		}
+		WriteLine(")");
+		this.Indent++;
+		Visit((CiThrow) null);
+		this.Indent--;
+	}
+
+	protected override void WriteChild(CiStatement statement)
+	{
+		if (GetThrowingMethod(statement) != null) {
+			Write(' ');
+			OpenBlock();
+			statement.Accept(this);
+			CloseBlock();
+		}
+		else
+			base.WriteChild(statement);
+	}
+
+	public override void Visit(CiExpr statement)
+	{
+		CiMethod throwingMethod = GetThrowingMethod(statement);
+		if (throwingMethod != null)
+			WriteForwardThrow(parent => statement.Accept(this, parent), throwingMethod);
+		else
+			base.Visit(statement);
 	}
 
 	public override void Visit(CiReturn statement)

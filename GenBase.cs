@@ -675,7 +675,7 @@ public abstract class GenBase : CiVisitor
 		CloseBlock();
 	}
 
-	protected void WriteChild(CiStatement statement)
+	protected virtual void WriteChild(CiStatement statement)
 	{
 		if (statement is CiBlock block) {
 			Write(' ');
