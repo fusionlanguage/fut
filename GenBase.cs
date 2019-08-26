@@ -798,6 +798,11 @@ public abstract class GenBase : CiVisitor
 		WriteChild(statement.Body);
 	}
 
+	protected virtual void WriteMethodBody(CiBlock block)
+	{
+		Visit(block);
+	}
+
 	protected void WriteBody(CiMethod method)
 	{
 		if (method.CallType == CiCallType.Abstract)
@@ -806,7 +811,7 @@ public abstract class GenBase : CiVisitor
 			WriteLine();
 			this.CurrentMethod = method;
 			if (method.Body is CiBlock block)
-				Visit(block);
+				WriteMethodBody(block);
 			else {
 				OpenBlock();
 				method.Body.Accept(this);

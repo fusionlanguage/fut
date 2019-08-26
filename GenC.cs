@@ -752,6 +752,18 @@ public class GenC : GenCCpp
 		});
 	}
 
+	protected override void WriteMethodBody(CiBlock block)
+	{
+		if (this.CurrentMethod.Throws && this.CurrentMethod.Type == null) {
+			OpenBlock();
+			Write(block.Statements);
+			WriteLine("return true;");
+			CloseBlock();
+		}
+		else
+			base.WriteMethodBody(block);
+	}
+
 	static bool AddsVirtualMethods(CiClass klass)
 	{
 		return klass.Methods.Any(method => method.CallType == CiCallType.Abstract || method.CallType == CiCallType.Virtual);
