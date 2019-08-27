@@ -226,7 +226,8 @@ public class GenC : GenCCpp
 	protected override void WriteVar(CiNamedValue def)
 	{
 		base.WriteVar(def);
-		this.VarsToDestruct.Add((CiVar) def);
+		if (def.Type == CiSystem.StringStorageType || def.Type is CiClass)
+			this.VarsToDestruct.Add((CiVar) def);
 	}
 
 	protected override void WriteLiteral(object value)
@@ -621,40 +622,72 @@ public class GenC : GenCCpp
 			Write(" == NULL");
 			break;
 		}
-		WriteLine(")");
-		this.Indent++;
-		Visit((CiThrow) null);
-		this.Indent--;
+		Write(')');
+		if (this.VarsToDestruct.Count > 0) {
+			Write(' ');
+			OpenBlock();
+			Visit((CiThrow) null);
+			CloseBlock();
+		}
+		else {
+			WriteLine();
+			this.Indent++;
+			Visit((CiThrow) null);
+			this.Indent--;
+		}
+	}
+
+	void WriteDestruct(CiVar def)
+	{
+		if (def.Type == CiSystem.StringStorageType) {
+			Write("free(");
+			Write(def.Name);
+			WriteLine(");");
+		}
+		else if (def.Type is CiClass klass) {
+			Write(klass.Name);
+			Write("_Destruct(&");
+			Write(def.Name);
+			WriteLine(");");
+		}
+	}
+
+	void WriteDestructAll()
+	{
+		for (int i = this.VarsToDestruct.Count; --i >= 0; )
+			WriteDestruct(this.VarsToDestruct[i]);
 	}
 
 	public override void Visit(CiBlock statement)
 	{
 		OpenBlock();
 		Write(statement.Statements);
-		for (int i = this.VarsToDestruct.Count; i > 0; i--) {
+		int i = this.VarsToDestruct.Count;
+		for (; i > 0; i--) {
 			CiVar def = this.VarsToDestruct[i - 1];
-			if (def.Parent != statement) {
-				this.VarsToDestruct.RemoveRange(i, this.VarsToDestruct.Count - i);
+			if (def.Parent != statement)
 				break;
-			}
-			if (def.Type == CiSystem.StringStorageType) {
-				Write("free(");
-				Write(def.Name);
-				WriteLine(");");
-			}
-			else if (def.Type is CiClass klass) {
-				Write(klass.Name);
-				Write("_Destruct(&");
-				Write(def.Name);
-				WriteLine(");");
-			}
+			if (statement.CompletesNormally)
+				WriteDestruct(def);
 		}
+		this.VarsToDestruct.RemoveRange(i, this.VarsToDestruct.Count - i);
 		CloseBlock();
+	}
+
+	bool NeedBlock(CiStatement statement)
+	{
+		switch (statement) {
+		case CiReturn _:
+		case CiThrow _:
+			return this.VarsToDestruct.Count > 0;
+		default:
+			return GetThrowingMethod(statement) != null;
+		}
 	}
 
 	protected override void WriteChild(CiStatement statement)
 	{
-		if (GetThrowingMethod(statement) != null) {
+		if (NeedBlock(statement)) {
 			Write(' ');
 			OpenBlock();
 			statement.Accept(this);
@@ -675,6 +708,7 @@ public class GenC : GenCCpp
 
 	public override void Visit(CiReturn statement)
 	{
+		WriteDestructAll(); // TODO: referenced in the return value
 		if (statement.Value == null && this.CurrentMethod.Throws)
 			WriteLine("return true;");
 		else
@@ -710,6 +744,7 @@ public class GenC : GenCCpp
 
 	public override void Visit(CiThrow statement)
 	{
+		WriteDestructAll();
 		Write("return ");
 		WriteThrowReturnValue();
 		WriteLine(";");
@@ -848,6 +883,8 @@ public class GenC : GenCCpp
 			CiStatement[] statements = block.Statements;
 			if (!TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
 				Write(statements);
+				WriteDestructAll();
+				this.VarsToDestruct.Clear();
 				WriteLine("return true;");
 			}
 			CloseBlock();
