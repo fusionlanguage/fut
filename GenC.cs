@@ -34,6 +34,7 @@ public class GenC : GenCCpp
 	bool StringLastIndexOf;
 	bool StringStartsWith;
 	bool StringEndsWith;
+	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
 
 	protected override void IncludeStdInt()
 	{
@@ -220,6 +221,12 @@ public class GenC : GenCCpp
 		}
 		else
 			base.WriteVarInit(def);
+	}
+
+	protected override void WriteVar(CiNamedValue def)
+	{
+		base.WriteVar(def);
+		this.VarsToDestruct.Add((CiVar) def);
 	}
 
 	protected override void WriteLiteral(object value)
@@ -618,6 +625,31 @@ public class GenC : GenCCpp
 		this.Indent++;
 		Visit((CiThrow) null);
 		this.Indent--;
+	}
+
+	public override void Visit(CiBlock statement)
+	{
+		OpenBlock();
+		Write(statement.Statements);
+		for (int i = this.VarsToDestruct.Count; i > 0; i--) {
+			CiVar def = this.VarsToDestruct[i - 1];
+			if (def.Parent != statement) {
+				this.VarsToDestruct.RemoveRange(i, this.VarsToDestruct.Count - i);
+				break;
+			}
+			if (def.Type == CiSystem.StringStorageType) {
+				Write("free(");
+				Write(def.Name);
+				WriteLine(");");
+			}
+			else if (def.Type is CiClass klass) {
+				Write(klass.Name);
+				Write("_Destruct(&");
+				Write(def.Name);
+				WriteLine(");");
+			}
+		}
+		CloseBlock();
 	}
 
 	protected override void WriteChild(CiStatement statement)
