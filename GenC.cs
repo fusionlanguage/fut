@@ -811,7 +811,7 @@ public class GenC : GenCCpp
 
 	protected override void WriteMethodBody(CiBlock block)
 	{
-		if (this.CurrentMethod.Throws && this.CurrentMethod.Type == null) {
+		if (this.CurrentMethod.Throws && this.CurrentMethod.Type == null && block.CompletesNormally) {
 			OpenBlock();
 			CiStatement[] statements = block.Statements;
 			if (!TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
