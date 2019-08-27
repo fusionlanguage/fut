@@ -1,0 +1,19 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int a = 42;
+		switch (a) {
+		case 4:
+		case 7:
+			string() s1 = "foo";
+			return false;
+		case 40:
+			string() s2 = "bar";
+			return false;
+		default:
+			string() s3 = "quux";
+			return true;
+		}
+	}
+}

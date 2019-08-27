@@ -671,6 +671,11 @@ public class GenC : GenCCpp
 		}
 	}
 
+	void TrimVarsToDestruct(int i)
+	{
+		this.VarsToDestruct.RemoveRange(i, this.VarsToDestruct.Count - i);
+	}
+
 	public override void Visit(CiBlock statement)
 	{
 		OpenBlock();
@@ -683,7 +688,7 @@ public class GenC : GenCCpp
 			if (statement.CompletesNormally)
 				WriteDestruct(def);
 		}
-		this.VarsToDestruct.RemoveRange(i, this.VarsToDestruct.Count - i);
+		TrimVarsToDestruct(i);
 		CloseBlock();
 	}
 
@@ -753,7 +758,9 @@ public class GenC : GenCCpp
 		if (statements[0] is CiVar
 		 || (statements[0] is CiConst konst && konst.Type is CiArrayType))
 			WriteLine(";");
+		int varsToDestructCount = this.VarsToDestruct.Count;
 		Write(statements);
+		TrimVarsToDestruct(varsToDestructCount);
 	}
 
 	void WriteThrowReturnValue()
