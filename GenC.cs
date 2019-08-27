@@ -226,7 +226,8 @@ public class GenC : GenCCpp
 	protected override void WriteVar(CiNamedValue def)
 	{
 		base.WriteVar(def);
-		if (def.Type == CiSystem.StringStorageType || def.Type is CiClass)
+		if (def.Type == CiSystem.StringStorageType
+		 || (def.Type is CiClass klass && NeedsDestructor(klass)))
 			this.VarsToDestruct.Add((CiVar) def);
 	}
 
@@ -644,7 +645,7 @@ public class GenC : GenCCpp
 			Write(def.Name);
 			WriteLine(");");
 		}
-		else if (def.Type is CiClass klass) {
+		else if (def.Type is CiClass klass && NeedsDestructor(klass)) {
 			Write(klass.Name);
 			Write("_Destruct(&");
 			Write(def.Name);
