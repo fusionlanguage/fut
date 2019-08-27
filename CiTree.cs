@@ -471,16 +471,16 @@ public class CiBlock : CiCondCompletionStatement
 
 public class CiBreak : CiStatement
 {
-	public readonly CiCondCompletionStatement What;
-	public CiBreak(CiCondCompletionStatement what) { this.What = what; }
+	public readonly CiCondCompletionStatement LoopOrSwitch;
+	public CiBreak(CiCondCompletionStatement loopOrSwitch) { this.LoopOrSwitch = loopOrSwitch; }
 	public override bool CompletesNormally { get { return false; } }
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }
 
 public class CiContinue : CiStatement
 {
-	public readonly CiLoop What;
-	public CiContinue(CiLoop what) { this.What = what; }
+	public readonly CiLoop Loop;
+	public CiContinue(CiLoop loop) { this.Loop = loop; }
 	public override bool CompletesNormally { get { return false; } }
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }

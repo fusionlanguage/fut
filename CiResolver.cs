@@ -817,7 +817,7 @@ public class CiResolver : CiVisitor
 
 	public override void Visit(CiBreak statement)
 	{
-		statement.What.SetCompletesNormally(true);
+		statement.LoopOrSwitch.SetCompletesNormally(true);
 	}
 
 	public override void Visit(CiContinue statement)
@@ -837,7 +837,9 @@ public class CiResolver : CiVisitor
 
 	public override void Visit(CiDoWhile statement)
 	{
+		OpenScope(statement);
 		ResolveLoop(statement);
+		CloseScope();
 	}
 
 	public override void Visit(CiFor statement)
@@ -879,7 +881,7 @@ public class CiResolver : CiVisitor
 
 	public override void Visit(CiSwitch statement)
 	{
-		// TODO
+		OpenScope(statement);
 		statement.Value = statement.Value.Accept(this, CiPriority.Statement);
 		statement.SetCompletesNormally(false);
 		CiExpr fallthrough = null;
@@ -917,6 +919,7 @@ public class CiResolver : CiVisitor
 			if (reachable)
 				throw StatementException(statement.DefaultBody.Last(), "Default must end with break, continue, return or throw");
 		}
+		CloseScope();
 	}
 
 	public override void Visit(CiThrow statement)
@@ -926,7 +929,9 @@ public class CiResolver : CiVisitor
 
 	public override void Visit(CiWhile statement)
 	{
+		OpenScope(statement);
 		ResolveLoop(statement);
+		CloseScope();
 	}
 
 	static CiToken GetPtrModifier(ref CiExpr expr)

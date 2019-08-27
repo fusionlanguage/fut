@@ -659,13 +659,11 @@ public class GenC : GenCCpp
 			WriteDestruct(this.VarsToDestruct[i]);
 	}
 
-	void WriteDestructLoop(CiLoop loop)
+	void WriteDestructLoopOrSwitch(CiCondCompletionStatement loopOrSwitch)
 	{
-		if (!(loop.Body is CiBlock block))
-			return;
 		for (int i = this.VarsToDestruct.Count; --i >= 0; ) {
 			CiVar def = this.VarsToDestruct[i];
-			if (!block.Encloses(def))
+			if (!loopOrSwitch.Encloses(def))
 				break;
 			WriteDestruct(def);
 		}
@@ -692,12 +690,19 @@ public class GenC : GenCCpp
 		CloseBlock();
 	}
 
+	bool BreakOrContinueNeedsBlock(CiCondCompletionStatement loopOrSwitch)
+	{
+		int count = this.VarsToDestruct.Count;
+		return count > 0 && loopOrSwitch.Encloses(this.VarsToDestruct[count - 1]);
+	}
+
 	bool NeedsBlock(CiStatement statement)
 	{
 		switch (statement) {
+		case CiBreak brk:
+			return BreakOrContinueNeedsBlock(brk.LoopOrSwitch);
 		case CiContinue cont:
-			int count = this.VarsToDestruct.Count;
-			return count > 0 && cont.What.Body is CiBlock block && block.Encloses(this.VarsToDestruct[count - 1]);
+			return BreakOrContinueNeedsBlock(cont.Loop);
 		case CiReturn _:
 		case CiThrow _:
 			return this.VarsToDestruct.Count > 0;
@@ -718,9 +723,15 @@ public class GenC : GenCCpp
 			base.WriteChild(statement);
 	}
 
+	public override void Visit(CiBreak statement)
+	{
+		WriteDestructLoopOrSwitch(statement.LoopOrSwitch);
+		base.Visit(statement);
+	}
+
 	public override void Visit(CiContinue statement)
 	{
-		WriteDestructLoop(statement.What);
+		WriteDestructLoopOrSwitch(statement.Loop);
 		base.Visit(statement);
 	}
 

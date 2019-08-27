@@ -13,7 +13,8 @@ public static class Test
 			return false;
 		default:
 			string() s3 = "quux";
-			return true;
+			break;
 		}
+		return true;
 	}
 }
