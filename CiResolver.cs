@@ -893,10 +893,16 @@ public class CiResolver : CiVisitor
 				if (!object.Equals(((CiLiteral) fallthrough).Value, ((CiLiteral) kase.Values[0]).Value))
 					throw StatementException(fallthrough, "This case must follow");
 			}
-			Resolve(kase.Body);
+			bool reachable = Resolve(kase.Body);
 			fallthrough = kase.Fallthrough;
-			if (fallthrough != null && !(fallthrough is CiGotoDefault))
-				kase.Fallthrough = fallthrough = FoldConst(fallthrough);
+			if (fallthrough != null) {
+				if (!reachable)
+					throw StatementException(fallthrough, "goto is not reachable");
+				if (!(fallthrough is CiGotoDefault))
+					kase.Fallthrough = fallthrough = FoldConst(fallthrough);
+			}
+			else if (reachable)
+				throw StatementException(kase.Body.Last(), "Case must end with break, continue, return, throw or goto");
 		}
 		if (fallthrough != null) {
 			if (fallthrough is CiGotoDefault) {
@@ -907,7 +913,9 @@ public class CiResolver : CiVisitor
 				throw StatementException(fallthrough, "This case must follow");
 		}
 		if (statement.DefaultBody != null) {
-			Resolve(statement.DefaultBody);
+			bool reachable = Resolve(statement.DefaultBody);
+			if (reachable)
+				throw StatementException(statement.DefaultBody.Last(), "Default must end with break, continue, return or throw");
 		}
 	}
 
