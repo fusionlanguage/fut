@@ -785,10 +785,16 @@ public class CiResolver : CiVisitor
 		return expr;
 	}
 
-	void Resolve(CiStatement[] statements)
+	bool Resolve(CiStatement[] statements)
 	{
-		foreach (CiStatement statement in statements)
+		bool reachable = true;
+		foreach (CiStatement statement in statements) {
 			statement.Accept(this);
+			if (!reachable)
+				throw StatementException(statement, "Unreachable statement");
+			reachable = statement.CompletesNormally;
+		}
+		return reachable;
 	}
 
 	void OpenScope(CiScope scope)
@@ -805,25 +811,27 @@ public class CiResolver : CiVisitor
 	public override void Visit(CiBlock statement)
 	{
 		OpenScope(statement);
-		Resolve(statement.Statements);
-		// TODO
+		statement.SetCompletesNormally(Resolve(statement.Statements));
 		CloseScope();
 	}
 
 	public override void Visit(CiBreak statement)
 	{
-		// TODO
+		statement.What.SetCompletesNormally(true);
 	}
 
 	public override void Visit(CiContinue statement)
 	{
-		// TODO
 	}
 
 	void ResolveLoop(CiLoop statement)
 	{
-		if (statement.Cond != null)
+		if (statement.Cond != null) {
 			statement.Cond = ResolveBool(statement.Cond);
+			statement.SetCompletesNormally(!(statement.Cond is CiLiteral literal) || false.Equals(literal.Value));
+		}
+		else
+			statement.SetCompletesNormally(false);
 		statement.Body.Accept(this);
 	}
 
@@ -847,9 +855,12 @@ public class CiResolver : CiVisitor
 	{
 		statement.Cond = ResolveBool(statement.Cond);
 		statement.OnTrue.Accept(this);
-		if (statement.OnFalse != null)
+		if (statement.OnFalse != null) {
 			statement.OnFalse.Accept(this);
-		// TODO
+			statement.SetCompletesNormally(statement.OnTrue.CompletesNormally || statement.OnFalse.CompletesNormally);
+		}
+		else
+			statement.SetCompletesNormally(true);
 	}
 
 	public override void Visit(CiReturn statement)
@@ -870,6 +881,7 @@ public class CiResolver : CiVisitor
 	{
 		// TODO
 		statement.Value = statement.Value.Accept(this, CiPriority.Statement);
+		statement.SetCompletesNormally(false);
 		CiExpr fallthrough = null;
 		foreach (CiCase kase in statement.Cases) {
 			for (int i = 0; i < kase.Values.Length; i++)
@@ -1093,6 +1105,8 @@ public class CiResolver : CiVisitor
 				this.CurrentScope = method.Parameters;
 				this.CurrentMethod = method;
 				method.Body.Accept(this);
+				if (method.Type != null && method.Body.CompletesNormally)
+					throw StatementException(method.Body, "Method can complete without a return value");
 				this.CurrentMethod = null;
 			}
 		}

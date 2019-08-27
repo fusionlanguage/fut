@@ -1,6 +1,6 @@
 // CiParser.cs - Ci parser
 //
-// Copyright (C) 2011-2018  Piotr Fusik
+// Copyright (C) 2011-2019  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -27,6 +27,8 @@ namespace Foxoft.Ci
 public class CiParser : CiLexer
 {
 	public readonly CiProgram Program = new CiProgram { Parent = CiSystem.Value };
+	CiLoop CurrentLoop;
+	CiCondCompletionStatement CurrentLoopOrSwitch;
 
 	CiException StatementException(CiStatement statement, string message)
 	{
@@ -312,7 +314,9 @@ public class CiParser : CiLexer
 
 	CiBreak ParseBreak()
 	{
-		CiBreak result = new CiBreak { Line = this.Line };
+		if (this.CurrentLoopOrSwitch == null)
+			throw ParseException("break outside loop or switch");
+		CiBreak result = new CiBreak(this.CurrentLoopOrSwitch) { Line = this.Line };
 		Expect(CiToken.Break);
 		Expect(CiToken.Semicolon);
 		return result;
@@ -320,17 +324,29 @@ public class CiParser : CiLexer
 
 	CiContinue ParseContinue()
 	{
-		CiContinue result = new CiContinue { Line = this.Line };
+		if (this.CurrentLoop == null)
+			throw ParseException("continue outside loop");
+		CiContinue result = new CiContinue(this.CurrentLoop) { Line = this.Line };
 		Expect(CiToken.Continue);
 		Expect(CiToken.Semicolon);
 		return result;
+	}
+
+	void ParseLoopBody(CiLoop loop)
+	{
+		CiLoop outerLoop = this.CurrentLoop;
+		CiCondCompletionStatement outerLoopOrSwitch = this.CurrentLoopOrSwitch;
+		this.CurrentLoopOrSwitch = this.CurrentLoop = loop;
+		loop.Body = ParseStatement();
+		this.CurrentLoopOrSwitch = outerLoopOrSwitch;
+		this.CurrentLoop = outerLoop;
 	}
 
 	CiDoWhile ParseDoWhile()
 	{
 		CiDoWhile result = new CiDoWhile();
 		Expect(CiToken.Do);
-		result.Body = ParseStatement();
+		ParseLoopBody(result);
 		Expect(CiToken.While);
 		result.Cond = ParseParenthesized();
 		Expect(CiToken.Semicolon);
@@ -351,7 +367,7 @@ public class CiParser : CiLexer
 		if (!See(CiToken.RightParenthesis))
 			result.Advance = ParseAssign(false);
 		Expect(CiToken.RightParenthesis);
-		result.Body = ParseStatement();
+		ParseLoopBody(result);
 		return result;
 	}
 
@@ -383,6 +399,8 @@ public class CiParser : CiLexer
 		result.Value = ParseParenthesized();
 		Expect(CiToken.LeftBrace);
 
+		CiCondCompletionStatement outerLoopOrSwitch = this.CurrentLoopOrSwitch;
+		this.CurrentLoopOrSwitch = result;
 		List<CiCase> cases = new List<CiCase>();
 		while (Eat(CiToken.Case)) {
 			List<CiExpr> values = new List<CiExpr>();
@@ -442,6 +460,7 @@ public class CiParser : CiLexer
 		}
 
 		Expect(CiToken.RightBrace);
+		this.CurrentLoopOrSwitch = outerLoopOrSwitch;
 		return result;
 	}
 
@@ -459,7 +478,7 @@ public class CiParser : CiLexer
 		CiWhile result = new CiWhile();
 		Expect(CiToken.While);
 		result.Cond = ParseParenthesized();
-		result.Body = ParseStatement();
+		ParseLoopBody(result);
 		return result;
 	}
 

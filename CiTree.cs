@@ -89,6 +89,7 @@ public abstract class CiVisitor
 public abstract class CiStatement
 {
 	public int Line;
+	public abstract bool CompletesNormally { get; }
 	public virtual void Accept(CiVisitor visitor)
 	{
 		throw new NotImplementedException(GetType().Name);
@@ -98,6 +99,7 @@ public abstract class CiStatement
 public abstract class CiExpr : CiStatement
 {
 	public CiType Type;
+	public override bool CompletesNormally { get { return true; } }
 	public virtual bool IsIndexing { get { return false; } }
 	public virtual CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
@@ -346,6 +348,7 @@ public class CiBinaryExpr : CiExpr
 			}
 		}
 	}
+
 	public string OpString
 	{
 		get
@@ -438,13 +441,20 @@ public class CiCondExpr : CiExpr
 	public override string ToString() { return "(" + this.Cond + " ? " + this.OnTrue + " : " + this.OnFalse + ")"; }
 }
 
-public abstract class CiLoop : CiScope
+public abstract class CiCondCompletionStatement : CiScope
+{
+	bool CompletesNormallyValue;
+	public override bool CompletesNormally { get { return this.CompletesNormallyValue; } }
+	public void SetCompletesNormally(bool value) { this.CompletesNormallyValue = value; }
+}
+
+public abstract class CiLoop : CiCondCompletionStatement
 {
 	public CiExpr Cond;
 	public CiStatement Body;
 }
 
-public class CiBlock : CiScope
+public class CiBlock : CiCondCompletionStatement
 {
 	public CiStatement[] Statements;
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
@@ -452,11 +462,17 @@ public class CiBlock : CiScope
 
 public class CiBreak : CiStatement
 {
+	public readonly CiCondCompletionStatement What;
+	public CiBreak(CiCondCompletionStatement what) { this.What = what; }
+	public override bool CompletesNormally { get { return false; } }
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }
 
 public class CiContinue : CiStatement
 {
+	public readonly CiLoop What;
+	public CiContinue(CiLoop what) { this.What = what; }
+	public override bool CompletesNormally { get { return false; } }
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }
 
@@ -472,7 +488,7 @@ public class CiFor : CiLoop
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }
 
-public class CiIf : CiStatement
+public class CiIf : CiCondCompletionStatement
 {
 	public CiExpr Cond;
 	public CiStatement OnTrue;
@@ -483,6 +499,7 @@ public class CiIf : CiStatement
 public class CiReturn : CiStatement
 {
 	public CiExpr Value;
+	public override bool CompletesNormally { get { return false; } }
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }
 
@@ -497,7 +514,7 @@ public class CiCase
 	public CiExpr Fallthrough;
 }
 
-public class CiSwitch : CiStatement
+public class CiSwitch : CiCondCompletionStatement
 {
 	public CiExpr Value;
 	public CiCase[] Cases;
@@ -508,6 +525,7 @@ public class CiSwitch : CiStatement
 public class CiThrow : CiStatement
 {
 	public CiExpr Message;
+	public override bool CompletesNormally { get { return false; } }
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }
 
