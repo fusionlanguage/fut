@@ -730,11 +730,22 @@ public class GenC : GenCCpp
 
 	public override void Visit(CiReturn statement)
 	{
-		WriteDestructAll(); // TODO: referenced in the return value
-		if (statement.Value == null && this.CurrentMethod.Throws)
+		if (statement.Value == null && this.CurrentMethod.Throws) {
+			WriteDestructAll();
 			WriteLine("return true;");
-		else
+		}
+		else if (this.VarsToDestruct.Count == 0 || statement.Value == null || statement.Value is CiLiteral) {
+			WriteDestructAll();
 			base.Visit(statement);
+		}
+		else {
+			WriteDefinition(this.CurrentMethod.Type, () => Write("returnValue"));
+			Write(" = ");
+			statement.Value.Accept(this, CiPriority.Statement);
+			WriteLine(";");
+			WriteDestructAll();
+			WriteLine("return returnValue;");
+		}
 	}
 
 	protected override void WriteCaseBody(CiStatement[] statements)
