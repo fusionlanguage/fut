@@ -773,6 +773,8 @@ public class GenC : GenCCpp
 
 	bool TryWriteCallAndReturn(CiStatement[] statements, int lastCallIndex, CiExpr returnValue)
 	{
+		if (this.VarsToDestruct.Count > 0)
+			return false;
 		CiExpr call = statements[lastCallIndex] as CiExpr;
 		CiMethod throwingMethod = GetThrowingMethod(call);
 		if (throwingMethod == null)
