@@ -658,6 +658,18 @@ public class GenC : GenCCpp
 			WriteDestruct(this.VarsToDestruct[i]);
 	}
 
+	void WriteDestructLoop(CiLoop loop)
+	{
+		if (!(loop.Body is CiBlock block))
+			return;
+		for (int i = this.VarsToDestruct.Count; --i >= 0; ) {
+			CiVar def = this.VarsToDestruct[i];
+			if (!block.Encloses(def))
+				break;
+			WriteDestruct(def);
+		}
+	}
+
 	public override void Visit(CiBlock statement)
 	{
 		OpenBlock();
@@ -674,9 +686,12 @@ public class GenC : GenCCpp
 		CloseBlock();
 	}
 
-	bool NeedBlock(CiStatement statement)
+	bool NeedsBlock(CiStatement statement)
 	{
 		switch (statement) {
+		case CiContinue cont:
+			int count = this.VarsToDestruct.Count;
+			return count > 0 && cont.What.Body is CiBlock block && block.Encloses(this.VarsToDestruct[count - 1]);
 		case CiReturn _:
 		case CiThrow _:
 			return this.VarsToDestruct.Count > 0;
@@ -687,7 +702,7 @@ public class GenC : GenCCpp
 
 	protected override void WriteChild(CiStatement statement)
 	{
-		if (NeedBlock(statement)) {
+		if (NeedsBlock(statement)) {
 			Write(' ');
 			OpenBlock();
 			statement.Accept(this);
@@ -695,6 +710,12 @@ public class GenC : GenCCpp
 		}
 		else
 			base.WriteChild(statement);
+	}
+
+	public override void Visit(CiContinue statement)
+	{
+		WriteDestructLoop(statement.What);
+		base.Visit(statement);
 	}
 
 	public override void Visit(CiExpr statement)

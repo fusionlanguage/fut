@@ -197,6 +197,15 @@ public class CiScope : CiSymbol, IEnumerable
 		foreach (CiSymbol symbol in symbols)
 			Add(symbol);
 	}
+
+	public bool Encloses(CiSymbol symbol)
+	{
+		for (CiScope scope = symbol.Parent; scope != null; scope = scope.Parent) {
+			if (scope == this)
+				return true;
+		}
+		return false;
+	}
 }
 
 public abstract class CiNamedValue : CiSymbol
