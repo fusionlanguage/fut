@@ -223,11 +223,16 @@ public class GenC : GenCCpp
 			base.WriteVarInit(def);
 	}
 
+	static bool NeedToDestruct(CiSymbol symbol)
+	{
+		return symbol.Type == CiSystem.StringStorageType
+			|| (symbol.Type is CiClass klass && NeedsDestructor(klass));
+	}
+
 	protected override void WriteVar(CiNamedValue def)
 	{
 		base.WriteVar(def);
-		if (def.Type == CiSystem.StringStorageType
-		 || (def.Type is CiClass klass && NeedsDestructor(klass)))
+		if (NeedToDestruct(def))
 			this.VarsToDestruct.Add((CiVar) def);
 	}
 
@@ -484,11 +489,16 @@ public class GenC : GenCCpp
 		return base.Visit(expr, parent);
 	}
 
+	void WriteLocalName(CiSymbol symbol)
+	{
+		if (symbol is CiField)
+			Write("self->");
+		WriteName(symbol);
+	}
+
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Symbol is CiField)
-			Write("self->");
-		WriteName(expr.Symbol);
+		WriteLocalName(expr.Symbol);
 		return expr;
 	}
 
@@ -638,17 +648,17 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteDestruct(CiVar def)
+	void WriteDestruct(CiSymbol symbol)
 	{
-		if (def.Type == CiSystem.StringStorageType) {
+		if (symbol.Type == CiSystem.StringStorageType) {
 			Write("free(");
-			Write(def.Name);
+			WriteLocalName(symbol);
 			WriteLine(");");
 		}
-		else if (def.Type is CiClass klass && NeedsDestructor(klass)) {
+		else if (symbol.Type is CiClass klass && NeedsDestructor(klass)) {
 			Write(klass.Name);
 			Write("_Destruct(&");
-			Write(def.Name);
+			WriteLocalName(symbol);
 			WriteLine(");");
 		}
 	}
@@ -1029,9 +1039,9 @@ public class GenC : GenCCpp
 			|| (klass.Parent is CiClass baseClass && NeedsConstructor(baseClass));
 	}
 
-	bool NeedsDestructor(CiClass klass)
+	static bool NeedsDestructor(CiClass klass)
 	{
-		return klass.Fields.Any(field => field.Type == CiSystem.StringStorageType || (field.Type is CiClass fieldClass && NeedsDestructor(fieldClass)))
+		return klass.Fields.Any(field => NeedToDestruct(field))
 			|| (klass.Parent is CiClass baseClass && NeedsDestructor(baseClass));
 	}
 
@@ -1166,15 +1176,14 @@ public class GenC : GenCCpp
 		}
 		foreach (CiField field in klass.Fields) {
 			if (field.Value != null || field.Type == CiSystem.StringStorageType) {
-				Write("self->");
-				WriteCamelCase(field.Name);
+				WriteLocalName(field);
 				WriteVarInit(field);
 				WriteLine(";");
 			}
 			else if (field.Type is CiClass fieldClass && NeedsConstructor(fieldClass)) {
 				Write(fieldClass.Name);
-				Write("_Construct(&self->");
-				WriteCamelCase(field.Name);
+				Write("_Construct(&");
+				WriteLocalName(field);
 				WriteLine(");");
 			}
 		}
@@ -1191,19 +1200,8 @@ public class GenC : GenCCpp
 		WriteXstructorSignature("Destruct", klass);
 		WriteLine();
 		OpenBlock();
-		foreach (CiField field in klass.Fields.Reverse()) {
-			if (field.Type == CiSystem.StringStorageType) {
-				Write("free(self->");
-				WriteCamelCase(field.Name);
-				WriteLine(");");
-			}
-			else if (field.Type is CiClass fieldClass && NeedsDestructor(fieldClass)) {
-				Write(fieldClass.Name);
-				Write("_Destruct(&self->");
-				WriteCamelCase(field.Name);
-				WriteLine(");");
-			}
-		}
+		foreach (CiField field in klass.Fields.Reverse())
+			WriteDestruct(field);
 		if (klass.Parent is CiClass baseClass && NeedsConstructor(baseClass)) {
 			Write(baseClass.Name);
 			WriteLine("_Destruct(&self->base);");
