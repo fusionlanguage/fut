@@ -1,0 +1,10 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		string()[2] a;
+		a[0] = "foo";
+		a[1] = "bar";
+		return a[0] == "foo" && a[1] == "bar";
+	}
+}

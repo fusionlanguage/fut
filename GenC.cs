@@ -225,8 +225,11 @@ public class GenC : GenCCpp
 
 	static bool NeedToDestruct(CiSymbol symbol)
 	{
-		return symbol.Type == CiSystem.StringStorageType
-			|| (symbol.Type is CiClass klass && NeedsDestructor(klass));
+		CiType type = symbol.Type;
+		while (type is CiArrayStorageType array)
+			type = array.ElementType;
+		return type == CiSystem.StringStorageType
+			|| (type is CiClass klass && NeedsDestructor(klass));
 	}
 
 	protected override void WriteVar(CiNamedValue def)
@@ -651,17 +654,38 @@ public class GenC : GenCCpp
 
 	void WriteDestruct(CiSymbol symbol)
 	{
-		if (symbol.Type == CiSystem.StringStorageType) {
-			Write("free(");
-			WriteLocalName(symbol);
-			WriteLine(");");
+		if (!NeedToDestruct(symbol))
+			return;
+		CiType type = symbol.Type;
+		int nesting = 0;
+		while (type is CiArrayStorageType array) {
+			Write("for (int _i");
+			Write(nesting);
+			Write(" = ");
+			Write(array.Length - 1);
+			Write("; _i");
+			Write(nesting);
+			Write(" >= 0; _i");
+			Write(nesting);
+			WriteLine("--)");
+			this.Indent++;
+			nesting++;
+			type = array.ElementType;
 		}
-		else if (symbol.Type is CiClass klass && NeedsDestructor(klass)) {
+		if (type is CiClass klass) {
 			Write(klass.Name);
 			Write("_Destruct(&");
-			WriteLocalName(symbol);
-			WriteLine(");");
 		}
+		else
+			Write("free(");
+		WriteLocalName(symbol);
+		for (int i = 0; i < nesting; i++) {
+			Write("[_i");
+			Write(i);
+			Write(']');
+		}
+		WriteLine(");");
+		this.Indent -= nesting;
 	}
 
 	void WriteDestructAll()
