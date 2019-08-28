@@ -510,6 +510,7 @@ public class GenC : GenCCpp
 	protected override bool HasInitCode(CiNamedValue def)
 	{
 		return def.Value != null
+			|| def.Type == CiSystem.StringStorageType
 			|| (def.Type is CiClass klass && NeedsConstructor(klass));
 	}
 
