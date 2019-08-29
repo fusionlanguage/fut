@@ -292,11 +292,14 @@ public class CiLiteral : CiExpr
 				return b == false;
 			case double d:
 				return BitConverter.DoubleToInt64Bits(d) == 0; // rule out -0.0
+			case string _:
+				return false;
 			default:
 				throw new NotImplementedException(this.Value.GetType().Name);
 			}
 		}
 	}
+
 	public static readonly CiLiteral False = new CiLiteral(false);
 	public static readonly CiLiteral True = new CiLiteral(true);
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
