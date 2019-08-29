@@ -55,7 +55,7 @@ public abstract class GenCCpp : GenTyped
 		foreach (string name in this.Includes) {
 			Write("#include <");
 			Write(name);
-			WriteLine(">");
+			WriteLine('>');
 		}
 	}
 

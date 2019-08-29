@@ -119,6 +119,13 @@ public abstract class GenBase : CiVisitor
 		this.AtLineStart = true;
 	}
 
+	protected void WriteLine(char c)
+	{
+		StartLine();
+		this.Writer.WriteLine(c);
+		this.AtLineStart = true;
+	}
+
 	protected void WriteLine(string s)
 	{
 		StartLine();
@@ -151,21 +158,21 @@ public abstract class GenBase : CiVisitor
 
 	protected void OpenBlock()
 	{
-		WriteLine("{");
+		WriteLine('{');
 		this.Indent++;
 	}
 
 	protected void CloseBlock()
 	{
 		this.Indent--;
-		WriteLine("}");
+		WriteLine('}');
 	}
 
 	void WriteComma(int i)
 	{
 		if (i > 0) {
 			if ((i & 15) == 0) {
-				WriteLine(",");
+				WriteLine(',');
 				Write('\t');
 			}
 			else
@@ -378,7 +385,7 @@ public abstract class GenBase : CiVisitor
 		WriteArrayElement(def, nesting);
 		Write(" = ");
 		WriteNewArray(array.ElementType, array.LengthExpr);
-		WriteLine(";");
+		WriteLine(';');
 	}
 
 	protected virtual void WriteInitCode(CiNamedValue def)
@@ -410,7 +417,7 @@ public abstract class GenBase : CiVisitor
 				WriteArrayElement(def, nesting);
 				Write(" = ");
 				WriteNew(klass);
-				WriteLine(";");
+				WriteLine(';');
 				break;
 			}
 			WriteInnerArray(def, nesting, innerArray);
@@ -648,7 +655,7 @@ public abstract class GenBase : CiVisitor
 	public override void Visit(CiExpr statement)
 	{
 		statement.Accept(this, CiPriority.Statement);
-		WriteLine(";");
+		WriteLine(';');
 		if (statement is CiVar def)
 			WriteInitCode(def);
 	}
@@ -751,7 +758,7 @@ public abstract class GenBase : CiVisitor
 		else {
 			Write("return ");
 			WriteCoerced(this.CurrentMethod.Type, statement.Value, CiPriority.Statement);
-			WriteLine(";");
+			WriteLine(';');
 		}
 	}
 
@@ -773,7 +780,7 @@ public abstract class GenBase : CiVisitor
 			foreach (CiExpr value in kase.Values) {
 				Write("case ");
 				WriteCoerced(statement.Value.Type, value, CiPriority.Statement);
-				WriteLine(":");
+				WriteLine(':');
 			}
 			this.Indent++;
 			WriteCaseBody(kase.Body);
@@ -787,7 +794,7 @@ public abstract class GenBase : CiVisitor
 			WriteCaseBody(statement.DefaultBody);
 			this.Indent--;
 		}
-		WriteLine("}");
+		WriteLine('}');
 	}
 
 	public override void Visit(CiWhile statement)
@@ -806,7 +813,7 @@ public abstract class GenBase : CiVisitor
 	protected void WriteBody(CiMethod method)
 	{
 		if (method.CallType == CiCallType.Abstract)
-			WriteLine(";");
+			WriteLine(';');
 		else {
 			WriteLine();
 			this.CurrentMethod = method;

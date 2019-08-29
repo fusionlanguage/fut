@@ -277,7 +277,7 @@ public class GenJs : GenBase
 	{
 		Write("throw ");
 		statement.Message.Accept(this, CiPriority.Statement);
-		WriteLine(";");
+		WriteLine(';');
 	}
 
 	void Write(CiEnum enu)
@@ -290,7 +290,7 @@ public class GenJs : GenBase
 		int i = 0;
 		foreach (CiConst konst in enu) {
 			if (i > 0)
-				WriteLine(",");
+				WriteLine(',');
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" : ");
 			if (konst.Value != null)
@@ -332,7 +332,7 @@ public class GenJs : GenBase
 				Write(klass.Name);
 				Write('.');
 				base.WriteVar(konst);
-				WriteLine(";");
+				WriteLine(';');
 			}
 		}
 	}
@@ -348,7 +348,7 @@ public class GenJs : GenBase
 			if (field.Value != null || field.Type is CiClass || field.Type is CiArrayStorageType) {
 				Write("this.");
 				base.WriteVar(field);
-				WriteLine(";");
+				WriteLine(';');
 				WriteInitCode(field);
 			}
 		}
@@ -376,7 +376,7 @@ public class GenJs : GenBase
 		foreach (string[] method in this.Library) {
 			if (method != null) {
 				if (!first)
-					WriteLine(",");
+					WriteLine(',');
 				first = false;
 				WriteLine(method[0]);
 				OpenBlock();
@@ -389,7 +389,7 @@ public class GenJs : GenBase
 
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
 			if (!first)
-				WriteLine(",");
+				WriteLine(',');
 			first = false;
 			WriteResource(name, -1);
 			WriteLine(" : [");

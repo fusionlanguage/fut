@@ -174,7 +174,7 @@ public class GenCs : GenTyped
 		else {
 			Write("goto case ");
 			expr.Accept(this, CiPriority.Statement);
-			WriteLine(";");
+			WriteLine(';');
 		}
 	}
 
@@ -197,7 +197,7 @@ public class GenCs : GenTyped
 		bool first = true;
 		foreach (CiConst konst in enu) {
 			if (!first)
-				WriteLine(",");
+				WriteLine(',');
 			first = false;
 			Write(konst.Name);
 			if (konst.Value != null) {
@@ -220,7 +220,7 @@ public class GenCs : GenTyped
 			WriteTypeAndName(konst);
 			Write(" = ");
 			konst.Value.Accept(this, CiPriority.Statement);
-			WriteLine(";");
+			WriteLine(';');
 		}
 	}
 
@@ -253,7 +253,7 @@ public class GenCs : GenTyped
 			if (field.Type is CiClass || field.Type is CiArrayStorageType)
 				Write("readonly ");
 			WriteVar(field);
-			WriteLine(";");
+			WriteLine(';');
 		}
 
 		foreach (CiMethod method in klass.Methods) {

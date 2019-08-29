@@ -298,7 +298,7 @@ public class GenJava : GenTyped
 		if (this.Namespace != null) {
 			Write("package ");
 			Write(this.Namespace);
-			WriteLine(";");
+			WriteLine(';');
 		}
 		WriteLine();
 	}
@@ -330,7 +330,7 @@ public class GenJava : GenTyped
 				konst.Value.Accept(this, CiPriority.Statement);
 			else
 				Write(i);
-			WriteLine(";");
+			WriteLine(';');
 			i++;
 		}
 		CloseJavaFile();
@@ -346,7 +346,7 @@ public class GenJava : GenTyped
 			WriteTypeAndName(konst);
 			Write(" = ");
 			konst.Value.Accept(this, CiPriority.Statement);
-			WriteLine(";");
+			WriteLine(';');
 		}
 	}
 
@@ -386,7 +386,7 @@ public class GenJava : GenTyped
 		foreach (CiField field in klass.Fields) {
 			Write(field.Visibility);
 			WriteVar(field);
-			WriteLine(";");
+			WriteLine(';');
 		}
 
 		foreach (CiMethod method in klass.Methods) {

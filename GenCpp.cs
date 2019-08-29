@@ -341,7 +341,7 @@ public class GenCpp : GenCCpp
 		WriteTypeAndName(konst);
 		Write(" = ");
 		konst.Value.Accept(this, CiPriority.Statement);
-		WriteLine(";");
+		WriteLine(';');
 	}
 
 	protected override void WriteCaseBody(CiStatement[] statements)
@@ -372,13 +372,13 @@ public class GenCpp : GenCCpp
 		WriteLine();
 		Write("namespace ");
 		WriteLine(this.Namespace);
-		WriteLine("{");
+		WriteLine('{');
 	}
 
 	void CloseNamespace()
 	{
 		if (this.Namespace != null)
-			WriteLine("}");
+			WriteLine('}');
 	}
 
 	void Write(CiEnum enu)
@@ -390,7 +390,7 @@ public class GenCpp : GenCCpp
 		bool first = true;
 		foreach (CiConst konst in enu) {
 			if (!first)
-				WriteLine(",");
+				WriteLine(',');
 			first = false;
 			WriteCamelCase(konst.Name);
 			if (konst.Value != null) {
@@ -432,7 +432,7 @@ public class GenCpp : GenCCpp
 			return;
 
 		Write(visibilityKeyword);
-		WriteLine(":");
+		WriteLine(':');
 		this.Indent++;
 
 		if (constructor) {
@@ -442,7 +442,7 @@ public class GenCpp : GenCCpp
 				Write(" = delete");
 			else if (klass.Constructor == null)
 				Write(" = default");
-			WriteLine(";");
+			WriteLine(';');
 		}
 
 		foreach (CiConst konst in consts)
@@ -451,7 +451,7 @@ public class GenCpp : GenCCpp
 		foreach (CiField field in fields)
 		{
 			WriteVar(field);
-			WriteLine(";");
+			WriteLine(';');
 		}
 
 		foreach (CiMethod method in methods)
@@ -482,7 +482,7 @@ public class GenCpp : GenCCpp
 			default:
 				break;
 			}
-			WriteLine(";");
+			WriteLine(';');
 		}
 
 		this.Indent--;
@@ -565,7 +565,7 @@ public class GenCpp : GenCCpp
 				Write(resources[name]);
 				Write(" }");
 			}
-			WriteLine(";");
+			WriteLine(';');
 		}
 		CloseBlock();
 		CloseBlock();
@@ -584,7 +584,7 @@ public class GenCpp : GenCCpp
 		foreach (CiClass klass in program.Classes) {
 			Write("class ");
 			Write(klass.Name);
-			WriteLine(";");
+			WriteLine(';');
 		}
 		foreach (CiClass klass in program.Classes)
 			Write(klass);

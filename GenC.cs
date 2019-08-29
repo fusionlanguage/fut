@@ -805,7 +805,7 @@ public class GenC : GenCCpp
 			WriteDefinition(this.CurrentMethod.Type, () => Write("returnValue"));
 			Write(" = ");
 			statement.Value.Accept(this, CiPriority.Statement);
-			WriteLine(";");
+			WriteLine(';');
 			WriteDestructAll();
 			WriteLine("return returnValue;");
 		}
@@ -815,7 +815,7 @@ public class GenC : GenCCpp
 	{
 		if (statements[0] is CiVar
 		 || (statements[0] is CiConst konst && konst.Type is CiArrayType))
-			WriteLine(";");
+			WriteLine(';');
 		int varsToDestructCount = this.VarsToDestruct.Count;
 		Write(statements);
 		TrimVarsToDestruct(varsToDestructCount);
@@ -845,7 +845,7 @@ public class GenC : GenCCpp
 		WriteDestructAll();
 		Write("return ");
 		WriteThrowReturnValue();
-		WriteLine(";");
+		WriteLine(';');
 	}
 
 	bool TryWriteCallAndReturn(CiStatement[] statements, int lastCallIndex, CiExpr returnValue)
@@ -883,7 +883,7 @@ public class GenC : GenCCpp
 			Write(" : ");
 			WriteThrowReturnValue();
 		}
-		WriteLine(";");
+		WriteLine(';');
 		return true;
 	}
 
@@ -903,7 +903,7 @@ public class GenC : GenCCpp
 		bool first = true;
 		foreach (CiConst konst in enu) {
 			if (!first)
-				WriteLine(",");
+				WriteLine(',');
 			first = false;
 			Write(enu.Name);
 			Write('_');
@@ -917,7 +917,7 @@ public class GenC : GenCCpp
 		this.Indent--;
 		Write("} ");
 		Write(enu.Name);
-		WriteLine(";");
+		WriteLine(';');
 	}
 
 	void WriteTypedef(CiClass klass)
@@ -928,7 +928,7 @@ public class GenC : GenCCpp
 		Write(klass.Name);
 		Write(' ');
 		Write(klass.Name);
-		WriteLine(";");
+		WriteLine(';');
 	}
 
 	void WriteTypedefs(CiProgram program, bool pub)
@@ -1028,7 +1028,7 @@ public class GenC : GenCCpp
 					Write(')');
 					WriteInstanceParameters(method);
 				});
-				WriteLine(";");
+				WriteLine(';');
 			}
 		}
 	}
@@ -1051,7 +1051,7 @@ public class GenC : GenCCpp
 			WriteTypeAndName(konst);
 			Write(" = ");
 			konst.Value.Accept(this, CiPriority.Statement);
-			WriteLine(";");
+			WriteLine(';');
 		}
 		else if (konst.Visibility == CiVisibility.Public) {
 			Write("#define ");
@@ -1101,7 +1101,7 @@ public class GenC : GenCCpp
 		foreach (CiMethod method in klass.Methods) {
 			if ((method.Visibility == CiVisibility.Public) == pub && method.CallType != CiCallType.Abstract) {
 				WriteSignature(klass, method);
-				WriteLine(";");
+				WriteLine(';');
 			}
 		}
 	}
@@ -1141,18 +1141,18 @@ public class GenC : GenCCpp
 			}
 			foreach (CiField field in klass.Fields) {
 				WriteTypeAndName(field);
-				WriteLine(";");
+				WriteLine(';');
 			}
 			this.Indent--;
 			WriteLine("};");
 		}
 		if (NeedsConstructor(klass)) {
 			WriteXstructorSignature("Construct", klass);
-			WriteLine(";");
+			WriteLine(';');
 		}
 		if (NeedsDestructor(klass)) {
 			WriteXstructorSignature("Destruct", klass);
-			WriteLine(";");
+			WriteLine(';');
 		}
 		WriteSignatures(klass, false);
 	}
@@ -1173,7 +1173,7 @@ public class GenC : GenCCpp
 					Write(") ");
 				}
 				WriteName(definedMethod);
-				WriteLine(",");
+				WriteLine(',');
 			}
 		}
 	}
@@ -1215,7 +1215,7 @@ public class GenC : GenCCpp
 			if (field.Value != null || field.Type == CiSystem.StringStorageType) {
 				WriteLocalName(field);
 				WriteVarInit(field);
-				WriteLine(";");
+				WriteLine(';');
 			}
 			else if (field.Type is CiClass fieldClass && NeedsConstructor(fieldClass)) {
 				Write(fieldClass.Name);
@@ -1278,7 +1278,7 @@ public class GenC : GenCCpp
 			WriteLine();
 		}
 		else
-			WriteLine(";");
+			WriteLine(';');
 
 		Write("void ");
 		Write(klass.Name);
@@ -1300,7 +1300,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		else
-			WriteLine(";");
+			WriteLine(';');
 	}
 
 	void WriteLibrary()
@@ -1391,8 +1391,7 @@ public class GenC : GenCCpp
 			WriteLine("] = {");
 			Write('\t');
 			Write(resources[name]);
-			Write(" }");
-			WriteLine(";");
+			WriteLine(" };");
 		}
 	}
 
@@ -1418,7 +1417,7 @@ public class GenC : GenCCpp
 		CloseStringWriter();
 		WriteLine();
 		WriteLine("#ifdef __cplusplus");
-		WriteLine("}");
+		WriteLine('}');
 		WriteLine("#endif");
 		CloseFile();
 
