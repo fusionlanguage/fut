@@ -252,38 +252,6 @@ public abstract class GenBase : CiVisitor
 		return expr;
 	}
 
-	protected virtual void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
-	{
-		Write(" = ");
-		WriteNewArray(array.ElementType, array.LengthExpr);
-	}
-
-	protected virtual void WriteVarInit(CiNamedValue def)
-	{
-		if (def.Type is CiClass klass) {
-			Write(" = ");
-			WriteNew(klass);
-		}
-		else if (def.Type is CiArrayStorageType array && !(def.Value is CiCollection))
-			WriteArrayStorageInit(array, def.Value);
-		else if (def.Value != null) {
-			Write(" = ");
-			WriteCoerced(def.Type, def.Value, CiPriority.Statement);
-		}
-	}
-
-	protected virtual void WriteVar(CiNamedValue def)
-	{
-		WriteTypeAndName(def);
-		WriteVarInit(def);
-	}
-
-	public override CiExpr Visit(CiVar expr, CiPriority parent)
-	{
-		WriteVar(expr);
-		return expr;
-	}
-
 	protected virtual void WriteLiteral(object value)
 	{
 		switch (value) {
@@ -344,6 +312,46 @@ public abstract class GenBase : CiVisitor
 		Write("new ");
 		Write(klass.Name);
 		Write("()");
+	}
+
+	protected virtual void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
+	{
+		Write(" = ");
+		WriteNewArray(array.ElementType, array.LengthExpr);
+	}
+
+	protected virtual void WriteVarInit(CiNamedValue def)
+	{
+		if (def.Type is CiClass klass) {
+			Write(" = ");
+			WriteNew(klass);
+		}
+		else if (def.Type is CiArrayStorageType array && !(def.Value is CiCollection))
+			WriteArrayStorageInit(array, def.Value);
+		else if (def.Value != null) {
+			Write(" = ");
+			WriteCoerced(def.Type, def.Value, CiPriority.Statement);
+		}
+	}
+
+	protected virtual void WriteVar(CiNamedValue def)
+	{
+		WriteTypeAndName(def);
+		WriteVarInit(def);
+	}
+
+	public override CiExpr Visit(CiVar expr, CiPriority parent)
+	{
+		WriteVar(expr);
+		return expr;
+	}
+
+	protected virtual bool HasInitCode(CiNamedValue def)
+	{
+		CiArrayStorageType array = def.Type as CiArrayStorageType;
+		if (array == null)
+			return false;
+		return array.ElementType is CiArrayStorageType || array.ElementType is CiClass;
 	}
 
 	protected abstract void WriteNewArray(CiType elementType, CiExpr lengthExpr);
@@ -647,14 +655,6 @@ public abstract class GenBase : CiVisitor
 
 	public override void Visit(CiConst statement)
 	{
-	}
-
-	protected virtual bool HasInitCode(CiNamedValue def)
-	{
-		CiArrayStorageType array = def.Type as CiArrayStorageType;
-		if (array == null)
-			return false;
-		return array.ElementType is CiArrayStorageType || array.ElementType is CiClass;
 	}
 
 	protected void Write(CiStatement[] statements, int length)
