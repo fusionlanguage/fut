@@ -254,31 +254,31 @@ public class CiConst : CiMember
 public class CiLiteral : CiExpr
 {
 	public readonly object Value;
+
 	public CiLiteral(object value)
 	{
-		if (value == null)
+		switch (value) {
+		case null:
 			this.Type = CiSystem.NullType;
-		else {
-			switch (System.Type.GetTypeCode(value.GetType())) {
-			case TypeCode.Boolean:
-				this.Type = CiSystem.BoolType;
-				break;
-			case TypeCode.Int64:
-				long i = (long) value;
-				this.Type = new CiRangeType(i, i);
-				break;
-			case TypeCode.Double:
-				this.Type = CiSystem.DoubleType;
-				break;
-			case TypeCode.String:
-				this.Type = CiSystem.StringPtrType;
-				break;
-			default:
-				throw new NotImplementedException(value.GetType().Name);
-			}
+			break;
+		case long l:
+			this.Type = new CiRangeType(l, l);
+			break;
+		case bool _:
+			this.Type = CiSystem.BoolType;
+			break;
+		case double _:
+			this.Type = CiSystem.DoubleType;
+			break;
+		case string _:
+			this.Type = CiSystem.StringPtrType;
+			break;
+		default:
+			throw new NotImplementedException(value.GetType().Name);
 		}
 		this.Value = value;
 	}
+
 	public bool IsDefaultValue
 	{
 		get
