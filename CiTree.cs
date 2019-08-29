@@ -707,7 +707,7 @@ public class CiRangeType : CiIntegerType
 		return right is CiRangeType range && this.Min <= range.Min && this.Max >= range.Max;
 	}
 
-	public override bool IsLong { get { return this.Min < int.MinValue || this.Max > int.MaxValue; } }
+	public override bool IsLong { get { return this.Min < int.MinValue || this.Max > uint.MaxValue || (this.Min < 0 && this.Max > int.MaxValue); } }
 
 	public static long GetMask(long v)
 	{

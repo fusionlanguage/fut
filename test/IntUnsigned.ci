@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int i = 0xea << 24;
+		return ((i >> 24) & 0xff) == 0xea;
+	}
+}
