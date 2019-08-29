@@ -507,7 +507,19 @@ public class GenC : GenCCpp
 
 	protected override void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
 	{
-		// TODO
+		switch (value) {
+		case null:
+			if (array.BaseType is CiStringStorageType)
+				Write(" = { NULL }");
+			break;
+		case CiLiteral literal when literal.IsDefaultValue:
+			Write(" = { ");
+			WriteLiteral(literal.Value);
+			Write(" }");
+			break;
+		default:
+			throw new NotImplementedException("Only null, zero and false supported");
+		}
 	}
 
 	protected override bool HasInitCode(CiNamedValue def)

@@ -264,6 +264,8 @@ public abstract class GenBase : CiVisitor
 			Write(" = ");
 			WriteNew(klass);
 		}
+		else if (def.Type is CiArrayStorageType array && !(def.Value is CiCollection))
+			WriteArrayStorageInit(array, def.Value);
 		else if (def.Value != null) {
 			Write(" = ");
 			WriteCoerced(def.Type, def.Value, CiPriority.Statement);
@@ -273,10 +275,7 @@ public abstract class GenBase : CiVisitor
 	protected virtual void WriteVar(CiNamedValue def)
 	{
 		WriteTypeAndName(def);
-		if (def.Type is CiArrayStorageType array && !(def.Value is CiCollection))
-			WriteArrayStorageInit(array, def.Value);
-		else
-			WriteVarInit(def);
+		WriteVarInit(def);
 	}
 
 	public override CiExpr Visit(CiVar expr, CiPriority parent)
