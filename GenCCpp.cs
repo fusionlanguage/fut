@@ -126,8 +126,11 @@ public abstract class GenCCpp : GenTyped
 		}
 	}
 
-	protected override void WriteClassStorageInit(CiClass klass)
+	protected override void WriteVarInit(CiNamedValue def)
 	{
+		if (def.Type is CiClass klass)
+			return;
+		base.WriteVarInit(def);
 	}
 
 	protected abstract void WriteConst(CiConst konst);
