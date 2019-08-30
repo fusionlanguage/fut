@@ -188,9 +188,64 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
+	protected virtual void WriteLiteral(object value)
+	{
+		switch (value) {
+		case null:
+			Write("null");
+			break;
+		case long l:
+			Write(l);
+			break;
+		case bool b:
+			Write(b ? "true" : "false");
+			break;
+		case string s:
+			Write('"');
+			foreach (char c in s) {
+				switch (c) {
+				case '\a': Write("\\a"); break;
+				case '\b': Write("\\b"); break;
+				case '\f': Write("\\f"); break;
+				case '\n': Write("\\n"); break;
+				case '\r': Write("\\r"); break;
+				case '\t': Write("\\t"); break;
+				case '\v': Write("\\v"); break;
+				case '\\': Write("\\\\"); break;
+				case '\"': Write("\\\""); break;
+				default: Write(c); break;
+				}
+			}
+			Write('"');
+			break;
+		case double d:
+			Write(d.ToString("R", CultureInfo.InvariantCulture));
+			break;
+		default:
+			throw new NotImplementedException(value.GetType().Name);
+		}
+	}
+
+	public override CiExpr Visit(CiLiteral expr, CiPriority parent)
+	{
+		WriteLiteral(expr.Value);
+		return expr;
+	}
+
 	protected abstract void WriteName(CiSymbol symbol);
 
 	protected abstract void WriteTypeAndName(CiNamedValue value);
+
+	protected virtual void Write(CiSymbolReference expr)
+	{
+		WriteName(expr.Symbol);
+	}
+
+	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	{
+		WriteName(expr.Symbol);
+		return expr;
+	}
 
 	protected virtual void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 	{
@@ -259,67 +314,14 @@ public abstract class GenBase : CiVisitor
 		return expr;
 	}
 
-	protected virtual void WriteLiteral(object value)
-	{
-		switch (value) {
-		case null:
-			Write("null");
-			break;
-		case long l:
-			Write(l);
-			break;
-		case bool b:
-			Write(b ? "true" : "false");
-			break;
-		case string s:
-			Write('"');
-			foreach (char c in s) {
-				switch (c) {
-				case '\a': Write("\\a"); break;
-				case '\b': Write("\\b"); break;
-				case '\f': Write("\\f"); break;
-				case '\n': Write("\\n"); break;
-				case '\r': Write("\\r"); break;
-				case '\t': Write("\\t"); break;
-				case '\v': Write("\\v"); break;
-				case '\\': Write("\\\\"); break;
-				case '\"': Write("\\\""); break;
-				default: Write(c); break;
-				}
-			}
-			Write('"');
-			break;
-		case double d:
-			Write(d.ToString("R", CultureInfo.InvariantCulture));
-			break;
-		default:
-			throw new NotImplementedException(value.GetType().Name);
-		}
-	}
-
-	public override CiExpr Visit(CiLiteral expr, CiPriority parent)
-	{
-		WriteLiteral(expr.Value);
-		return expr;
-	}
-
-	protected virtual void Write(CiSymbolReference expr)
-	{
-		WriteName(expr.Symbol);
-	}
-
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
-	{
-		WriteName(expr.Symbol);
-		return expr;
-	}
-
 	protected virtual void WriteNew(CiClass klass)
 	{
 		Write("new ");
 		Write(klass.Name);
 		Write("()");
 	}
+
+	protected abstract void WriteNewArray(CiType elementType, CiExpr lengthExpr);
 
 	protected virtual void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
 	{
@@ -360,8 +362,6 @@ public abstract class GenBase : CiVisitor
 			return false;
 		return array.ElementType is CiArrayStorageType || array.ElementType is CiClass;
 	}
-
-	protected abstract void WriteNewArray(CiType elementType, CiExpr lengthExpr);
 
 	protected virtual void WriteInt()
 	{

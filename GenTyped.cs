@@ -78,9 +78,28 @@ public abstract class GenTyped : GenBase
 		WriteName(value);
 	}
 
-	protected override void WriteCharAt(CiBinaryExpr expr)
+	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		WriteIndexing(expr, CiPriority.Statement);
+		if (expr.Symbol is CiField)
+			Write("this.");
+		WriteName(expr.Symbol);
+		return expr;
+	}
+
+	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr)
+	{
+		Write("new ");
+		Write(elementType.BaseType, false);
+		Write('[');
+		lengthExpr.Accept(this, CiPriority.Statement);
+		Write(']');
+		while (elementType is CiArrayType array) {
+			Write('[');
+			if (array is CiArrayStorageType arrayStorage)
+				arrayStorage.LengthExpr.Accept(this, CiPriority.Statement);
+			Write(']');
+			elementType = array.ElementType;
+		}
 	}
 
 	static bool IsNarrower(TypeCode left, TypeCode right)
@@ -163,28 +182,9 @@ public abstract class GenTyped : GenBase
 		WriteCoerced(expr.Left.Type, expr.Right, CiPriority.Statement);
 	}
 
-	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr)
+	protected override void WriteCharAt(CiBinaryExpr expr)
 	{
-		Write("new ");
-		Write(elementType.BaseType, false);
-		Write('[');
-		lengthExpr.Accept(this, CiPriority.Statement);
-		Write(']');
-		while (elementType is CiArrayType array) {
-			Write('[');
-			if (array is CiArrayStorageType arrayStorage)
-				arrayStorage.LengthExpr.Accept(this, CiPriority.Statement);
-			Write(']');
-			elementType = array.ElementType;
-		}
-	}
-
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
-	{
-		if (expr.Symbol is CiField)
-			Write("this.");
-		WriteName(expr.Symbol);
-		return expr;
+		WriteIndexing(expr, CiPriority.Statement);
 	}
 
 	protected virtual bool NeedsConstructor(CiClass klass)
