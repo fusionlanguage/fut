@@ -26,6 +26,26 @@ namespace Foxoft.Ci
 
 public class GenCs : GenTyped
 {
+	protected override void WriteName(CiSymbol symbol)
+	{
+		if (symbol is CiConst konst && konst.InMethod != null)
+			Write(konst.InMethod.Name);
+		Write(symbol.Name);
+	}
+
+	protected override void Write(TypeCode typeCode)
+	{
+		switch (typeCode) {
+		case TypeCode.SByte: Write("sbyte"); break;
+		case TypeCode.Byte: Write("byte"); break;
+		case TypeCode.Int16: Write("short"); break;
+		case TypeCode.UInt16: Write("ushort"); break;
+		case TypeCode.Int32: Write("int"); break;
+		case TypeCode.Int64: Write("long"); break;
+		default: throw new NotImplementedException(typeCode.ToString());
+		}
+	}
+
 	void Write(CiVisibility visibility)
 	{
 		switch (visibility) {
@@ -66,19 +86,6 @@ public class GenCs : GenTyped
 		}
 	}
 
-	protected override void Write(TypeCode typeCode)
-	{
-		switch (typeCode) {
-		case TypeCode.SByte: Write("sbyte"); break;
-		case TypeCode.Byte: Write("byte"); break;
-		case TypeCode.Int16: Write("short"); break;
-		case TypeCode.UInt16: Write("ushort"); break;
-		case TypeCode.Int32: Write("int"); break;
-		case TypeCode.Int64: Write("long"); break;
-		default: throw new NotImplementedException(typeCode.ToString());
-		}
-	}
-
 	protected override void Write(CiType type, bool promote)
 	{
 		switch (type) {
@@ -99,13 +106,6 @@ public class GenCs : GenTyped
 			Write(type.Name);
 			break;
 		}
-	}
-
-	protected override void WriteName(CiSymbol symbol)
-	{
-		if (symbol is CiConst konst && konst.InMethod != null)
-			Write(konst.InMethod.Name);
-		Write(symbol.Name);
 	}
 
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr)

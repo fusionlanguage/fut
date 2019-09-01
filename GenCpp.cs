@@ -34,6 +34,30 @@ public class GenCpp : GenCCpp
 		Include("cstdint");
 	}
 
+	protected override void WriteLiteral(object value)
+	{
+		if (value == null)
+			Write("nullptr");
+		else
+			base.WriteLiteral(value);
+	}
+
+	protected override void WriteName(CiSymbol symbol)
+	{
+		if (symbol is CiMember)
+			WriteCamelCase(symbol.Name);
+		else
+			Write(symbol.Name);
+	}
+
+	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	{
+		if (expr.Symbol is CiField)
+			Write("this->");
+		WriteName(expr.Symbol);
+		return expr;
+	}
+
 	protected override void Write(CiType type, bool promote)
 	{
 		switch (type) {
@@ -106,20 +130,12 @@ public class GenCpp : GenCCpp
 		}
 	}
 
-	protected override void WriteName(CiSymbol symbol)
+	protected override void WriteNew(CiClass klass)
 	{
-		if (symbol is CiMember)
-			WriteCamelCase(symbol.Name);
-		else
-			Write(symbol.Name);
-	}
-
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
-	{
-		if (expr.Symbol is CiField)
-			Write("this->");
-		WriteName(expr.Symbol);
-		return expr;
+		Include("memory");
+		Write("std::make_shared<");
+		Write(klass.Name);
+		Write(">()");
 	}
 
 	protected override void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
@@ -146,12 +162,9 @@ public class GenCpp : GenCCpp
 			base.WriteVarInit(def);
 	}
 
-	protected override void WriteLiteral(object value)
+	protected override bool HasInitCode(CiNamedValue def)
 	{
-		if (value == null)
-			Write("nullptr");
-		else
-			base.WriteLiteral(value);
+		return false;
 	}
 
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
@@ -261,14 +274,6 @@ public class GenCpp : GenCCpp
 		}
 	}
 
-	protected override void WriteNew(CiClass klass)
-	{
-		Include("memory");
-		Write("std::make_shared<");
-		Write(klass.Name);
-		Write(">()");
-	}
-
 	protected override void WriteResource(string name, int length)
 	{
 		if (length >= 0) // reference as opposed to definition
@@ -328,11 +333,6 @@ public class GenCpp : GenCCpp
 	{
 		expr.Accept(this, CiPriority.Primary);
 		Write(".length()");
-	}
-
-	protected override bool HasInitCode(CiNamedValue def)
-	{
-		return false;
 	}
 
 	protected override void WriteConst(CiConst konst)

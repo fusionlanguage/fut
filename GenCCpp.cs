@@ -90,6 +90,13 @@ public abstract class GenCCpp : GenTyped
 		}
 	}
 
+	protected override void WriteVarInit(CiNamedValue def)
+	{
+		if (def.Type is CiClass klass)
+			return;
+		base.WriteVarInit(def);
+	}
+
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
 		CiClassPtrType coercedType;
@@ -124,13 +131,6 @@ public abstract class GenCCpp : GenTyped
 			Write(" + ");
 			index.Accept(this, CiPriority.Add);
 		}
-	}
-
-	protected override void WriteVarInit(CiNamedValue def)
-	{
-		if (def.Type is CiClass klass)
-			return;
-		base.WriteVarInit(def);
 	}
 
 	protected abstract void WriteConst(CiConst konst);

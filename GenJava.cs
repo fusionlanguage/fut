@@ -29,6 +29,28 @@ public class GenJava : GenTyped
 {
 	string OutputDirectory;
 
+	protected override void WriteLiteral(object value)
+	{
+		base.WriteLiteral(value);
+		if (value is long l && l != (int) l)
+			Write('L');
+	}
+
+	protected override void WriteName(CiSymbol symbol)
+	{
+		if (symbol is CiConst konst) {
+			if (konst.InMethod != null) {
+				WriteUppercaseWithUnderscores(konst.InMethod.Name);
+				Write('_');
+			}
+			WriteUppercaseWithUnderscores(symbol.Name);
+		}
+		else if (symbol is CiMember)
+			WriteCamelCase(symbol.Name);
+		else
+			Write(symbol.Name);
+	}
+
 	void Write(CiVisibility visibility)
 	{
 		switch (visibility) {
@@ -108,28 +130,6 @@ public class GenJava : GenTyped
 			Write(type.Name);
 			break;
 		}
-	}
-
-	protected override void WriteLiteral(object value)
-	{
-		base.WriteLiteral(value);
-		if (value is long l && l != (int) l)
-			Write('L');
-	}
-
-	protected override void WriteName(CiSymbol symbol)
-	{
-		if (symbol is CiConst konst) {
-			if (konst.InMethod != null) {
-				WriteUppercaseWithUnderscores(konst.InMethod.Name);
-				Write('_');
-			}
-			WriteUppercaseWithUnderscores(symbol.Name);
-		}
-		else if (symbol is CiMember)
-			WriteCamelCase(symbol.Name);
-		else
-			Write(symbol.Name);
 	}
 
 	protected override void WriteResource(string name, int length)
