@@ -236,6 +236,13 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteTypeAndName(CiNamedValue value);
 
+	protected virtual void WriteLocalName(CiSymbol symbol)
+	{
+		if (symbol is CiField)
+			Write("this.");
+		WriteName(symbol);
+	}
+
 	protected virtual void Write(CiSymbolReference expr)
 	{
 		WriteName(expr.Symbol);
@@ -357,10 +364,8 @@ public abstract class GenBase : CiVisitor
 
 	protected virtual bool HasInitCode(CiNamedValue def)
 	{
-		CiArrayStorageType array = def.Type as CiArrayStorageType;
-		if (array == null)
-			return false;
-		return array.ElementType is CiArrayStorageType || array.ElementType is CiClass;
+		return def.Type is CiArrayStorageType array
+			&& (array.ElementType is CiArrayStorageType || array.ElementType is CiClass);
 	}
 
 	protected virtual void WriteInt()
@@ -368,11 +373,25 @@ public abstract class GenBase : CiVisitor
 		Write("int");
 	}
 
-	void WriteArrayElement(CiNamedValue def, int nesting)
+	protected void StartArrayLoop(int nesting, CiArrayStorageType array)
 	{
-		if (def is CiField)
-			Write("this.");
-		WriteName(def);
+		Write("for (");
+		WriteInt();
+		Write(" _i");
+		Write(nesting);
+		Write(" = 0; _i");
+		Write(nesting);
+		Write(" < ");
+		array.LengthExpr.Accept(this, CiPriority.Rel);
+		Write("; _i");
+		Write(nesting);
+		Write("++) ");
+		OpenBlock();
+	}
+
+	protected void WriteArrayElement(CiNamedValue def, int nesting)
+	{
+		WriteLocalName(def);
 		for (int i = 0; i < nesting; i++) {
 			Write("[_i");
 			Write(i);
@@ -400,18 +419,7 @@ public abstract class GenBase : CiVisitor
 			// TODO: initialized arrays
 			if (klass == null && innerArray == null)
 				break;
-			Write("for (");
-			WriteInt();
-			Write(" _i");
-			Write(nesting);
-			Write(" = 0; _i");
-			Write(nesting);
-			Write(" < ");
-			array.LengthExpr.Accept(this, CiPriority.Rel);
-			Write("; _i");
-			Write(nesting);
-			Write("++) ");
-			OpenBlock();
+			StartArrayLoop(nesting, array);
 			nesting++;
 			if (klass != null) {
 				WriteArrayElement(def, nesting);

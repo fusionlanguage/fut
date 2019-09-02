@@ -71,6 +71,19 @@ public class GenC : GenCCpp
 			Write(symbol.Name);
 	}
 
+	protected override void WriteLocalName(CiSymbol symbol)
+	{
+		if (symbol is CiField)
+			Write("self->");
+		WriteName(symbol);
+	}
+
+	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	{
+		WriteLocalName(expr.Symbol);
+		return expr;
+	}
+
 	void WriteArrayPrefix(CiType type)
 	{
 		if (type is CiArrayType array) {
@@ -553,19 +566,6 @@ public class GenC : GenCCpp
 			}
 		}
 		return base.Visit(expr, parent);
-	}
-
-	void WriteLocalName(CiSymbol symbol)
-	{
-		if (symbol is CiField)
-			Write("self->");
-		WriteName(symbol);
-	}
-
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
-	{
-		WriteLocalName(expr.Symbol);
-		return expr;
 	}
 
 	protected override void WriteResource(string name, int length)
