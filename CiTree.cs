@@ -580,6 +580,7 @@ public class CiType : CiScope
 	public virtual string ArrayString { get { return ""; } }
 	public virtual bool IsAssignableFrom(CiType right) { return this == right; }
 	public virtual CiType BaseType { get { return this; } }
+	public virtual CiType StorageType { get { return this; } }
 	public virtual CiType PtrOrSelf { get { return this; } }
 }
 
@@ -934,6 +935,7 @@ public class CiArrayStorageType : CiArrayType
 		}
 	}
 	public override bool IsAssignableFrom(CiType right) { return false; }
+	public override CiType StorageType { get { return this.ElementType.StorageType; } }
 	public override CiType PtrOrSelf { get { return new CiArrayPtrType { ElementType = this.ElementType, Modifier = CiToken.ExclamationMark }; } }
 
 	public override bool Equals(object obj)

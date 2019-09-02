@@ -159,9 +159,35 @@ public class GenJs : GenBase
 		Write("))");
 	}
 
-	protected override void WriteInt()
+	bool HasInitCode(CiNamedValue def)
 	{
-		Write("var");
+		return def.Type is CiArrayStorageType array
+			&& (array.ElementType is CiClass || array.ElementType is CiArrayStorageType);
+	}
+
+	protected override void WriteInitCode(CiNamedValue def)
+	{
+		if (!HasInitCode(def))
+			return;
+		CiArrayStorageType array = (CiArrayStorageType) def.Type;
+		int nesting = 0;
+		while (array.ElementType is CiArrayStorageType innerArray) {
+			OpenLoop("var", nesting++, array.Length);
+			WriteArrayElement(def, nesting);
+			Write(" = ");
+			WriteNewArray(innerArray.ElementType, innerArray.LengthExpr);
+			WriteLine(';');
+			array = innerArray;
+		}
+		if (array.ElementType is CiClass klass) {
+			OpenLoop("var", nesting++, array.Length);
+			WriteArrayElement(def, nesting);
+			Write(" = ");
+			WriteNew(klass);
+			WriteLine(';');
+		}
+		while (--nesting >= 0)
+			CloseBlock();
 	}
 
 	protected override void WriteResource(string name, int length)

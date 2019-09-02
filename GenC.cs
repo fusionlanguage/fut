@@ -235,7 +235,7 @@ public class GenC : GenCCpp
 	{
 		switch (value) {
 		case null:
-			if (array.BaseType is CiStringStorageType)
+			if (array.StorageType is CiStringStorageType)
 				Write(" = { NULL }");
 			break;
 		case CiLiteral literal when literal.IsDefaultValue:
@@ -279,48 +279,46 @@ public class GenC : GenCCpp
 
 	protected override bool HasInitCode(CiNamedValue def)
 	{
-		return def.Value != null
-			|| def.Type == CiSystem.StringStorageType
-			|| (def.Type is CiClass klass && NeedsConstructor(klass));
+		return (def is CiField && (def.Value != null || def.Type.StorageType == CiSystem.StringStorageType))
+			|| GetThrowingMethod(def.Value) != null
+			|| (def.Type.StorageType is CiClass klass && NeedsConstructor(klass));
 	}
 
 	protected override void WriteInitCode(CiNamedValue def)
 	{
-		if (def.Type is CiClass klass) {
+		if (!HasInitCode(def))
+			return;
+		CiType type = def.Type;
+		int nesting = 0;
+		while (type is CiArrayStorageType array) {
+			OpenLoop("int", nesting++, array.Length);
+			type = array.ElementType;
+		}
+		if (type is CiClass klass) {
 			if (NeedsConstructor(klass)) {
 				Write(klass.Name);
 				Write("_Construct(&");
-				Write(def.Name);
+				WriteArrayElement(def, nesting);
 				WriteLine(");");
 			}
 		}
-		else if (def.Type is CiArrayStorageType array) {
-			if (def.Value != null) {
-				if (!(def.Value is CiLiteral literal) || !literal.IsDefaultValue)
-					throw new NotImplementedException("Only null, zero and false supported");
-				Include("string.h");
-				Write("memset(");
-				WriteName(def);
-				Write(", 0, sizeof(");
-				WriteName(def);
-				WriteLine("));");
-			}
-			else if (array.ElementType is CiClass elementClass) {
-				Write("for (size_t _i = 0; _i < ");
-				Write(array.Length);
-				WriteLine("; _i++)");
-				Write('\t');
-				Write(elementClass.Name);
-				Write("_Construct(");
-				Write(def.Name);
-				WriteLine(" + _i);");
-			}
-		}
 		else {
+			if (def is CiField) {
+				WriteArrayElement(def, nesting);
+				Write(" = ");
+				if (type == CiSystem.StringStorageType)
+					WriteLine("NULL;");
+				else {
+					WriteCoerced(type, def.Value, CiPriority.Statement);
+					WriteLine(';');
+				}
+			}
 			CiMethod throwingMethod = GetThrowingMethod(def.Value);
 			if (throwingMethod != null)
-				WriteForwardThrow(parent => Write(def.Name), throwingMethod);
+				WriteForwardThrow(parent => WriteArrayElement(def, nesting), throwingMethod);
 		}
+		while (--nesting >= 0)
+			CloseBlock();
 	}
 
 	void WriteMemberAccess(CiExpr left, CiClass symbolClass)

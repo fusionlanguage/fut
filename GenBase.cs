@@ -362,27 +362,16 @@ public abstract class GenBase : CiVisitor
 		return expr;
 	}
 
-	protected virtual bool HasInitCode(CiNamedValue def)
-	{
-		return def.Type is CiArrayStorageType array
-			&& (array.ElementType is CiArrayStorageType || array.ElementType is CiClass);
-	}
-
-	protected virtual void WriteInt()
-	{
-		Write("int");
-	}
-
-	protected void StartArrayLoop(int nesting, CiArrayStorageType array)
+	protected void OpenLoop(string intString, int nesting, int count)
 	{
 		Write("for (");
-		WriteInt();
+		Write(intString);
 		Write(" _i");
 		Write(nesting);
 		Write(" = 0; _i");
 		Write(nesting);
 		Write(" < ");
-		array.LengthExpr.Accept(this, CiPriority.Rel);
+		Write(count);
 		Write("; _i");
 		Write(nesting);
 		Write("++) ");
@@ -399,41 +388,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected virtual void WriteInnerArray(CiNamedValue def, int nesting, CiArrayStorageType array)
-	{
-		WriteArrayElement(def, nesting);
-		Write(" = ");
-		WriteNewArray(array.ElementType, array.LengthExpr);
-		WriteLine(';');
-	}
-
-	protected virtual void WriteInitCode(CiNamedValue def)
-	{
-		if (!HasInitCode(def))
-			return;
-		CiArrayStorageType array = (CiArrayStorageType) def.Type;
-		int nesting = 0;
-		for (;;) {
-			CiClass klass = array.ElementType as CiClass;
-			CiArrayStorageType innerArray = array.ElementType as CiArrayStorageType;
-			// TODO: initialized arrays
-			if (klass == null && innerArray == null)
-				break;
-			StartArrayLoop(nesting, array);
-			nesting++;
-			if (klass != null) {
-				WriteArrayElement(def, nesting);
-				Write(" = ");
-				WriteNew(klass);
-				WriteLine(';');
-				break;
-			}
-			WriteInnerArray(def, nesting, innerArray);
-			array = innerArray;
-		}
-		while (--nesting >= 0)
-			CloseBlock();
-	}
+	protected abstract void WriteInitCode(CiNamedValue def);
 
 	protected abstract void WriteResource(string name, int length);
 

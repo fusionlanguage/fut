@@ -272,17 +272,28 @@ public class GenJava : GenTyped
 			base.WriteAssignRight(expr);
 	}
 
-	protected override void WriteInnerArray(CiNamedValue def, int nesting, CiArrayStorageType array)
-	{
-	}
-
 	protected override bool HasInitCode(CiNamedValue def)
 	{
-		if (!(def.Type is CiArrayStorageType array))
-			return false;
-		while (array.ElementType is CiArrayStorageType element)
-			array = element;
-		return array.ElementType is CiClass;
+		return def.Type is CiArrayStorageType && def.Type.StorageType is CiClass;
+	}
+
+	protected override void WriteInitCode(CiNamedValue def)
+	{
+		if (!HasInitCode(def))
+			return;
+		CiArrayStorageType array = (CiArrayStorageType) def.Type;
+		int nesting = 0;
+		while (array.ElementType is CiArrayStorageType innerArray) {
+			OpenLoop("int", nesting++, array.Length);
+			array = innerArray;
+		}
+		OpenLoop("int", nesting++, array.Length);
+		WriteArrayElement(def, nesting);
+		Write(" = ");
+		WriteNew((CiClass) array.ElementType);
+		WriteLine(';');
+		while (--nesting >= 0)
+			CloseBlock();
 	}
 
 	public override void Visit(CiThrow statement)

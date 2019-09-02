@@ -187,6 +187,8 @@ public abstract class GenTyped : GenBase
 		WriteIndexing(expr, CiPriority.Statement);
 	}
 
+	protected abstract bool HasInitCode(CiNamedValue def);
+
 	protected virtual bool NeedsConstructor(CiClass klass)
 	{
 		return klass.Constructor != null

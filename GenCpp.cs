@@ -167,6 +167,10 @@ public class GenCpp : GenCCpp
 		return false;
 	}
 
+	protected override void WriteInitCode(CiNamedValue def)
+	{
+	}
+
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
 		if (expr.Left.Type == CiSystem.StringPtrType && expr.Right.Type == CiSystem.NullType) {
