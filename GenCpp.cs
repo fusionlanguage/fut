@@ -343,15 +343,13 @@ public class GenCpp : GenCCpp
 	{
 		if (expr.Left.Type == CiSystem.StringStorageType
 		 && expr.Op == CiToken.Assign
-		 && parent == CiPriority.Statement) {
-			CiExpr length = IsTrimSubstring(expr);
-			if (length != null) {
-				expr.Left.Accept(this, CiPriority.Primary);
-				Write(".resize(");
-				length.Accept(this, CiPriority.Statement);
-				Write(')');
-				return expr;
-			}
+		 && parent == CiPriority.Statement
+		 && IsTrimSubstring(expr) is CiExpr length) {
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(".resize(");
+			length.Accept(this, CiPriority.Statement);
+			Write(')');
+			return expr;
 		}
 		return base.Visit(expr, parent);
 	}

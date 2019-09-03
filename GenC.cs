@@ -341,6 +341,41 @@ public class GenC : GenCCpp
 			base.WriteCoercedInternal(type, expr, parent);
 	}
 
+	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+	{
+		if ((expr.Left.Type is CiStringType && expr.Right.Type != CiSystem.NullType)
+		 || (expr.Right.Type is CiStringType && expr.Left.Type != CiSystem.NullType)) {
+			Include("string.h");
+			if (parent > CiPriority.Equality)
+				Write('(');
+			if (IsStringSubstring(expr.Left, out bool _, out CiExpr ptr, out CiExpr offset, out CiExpr lengthExpr) && lengthExpr is CiLiteral literalLength && expr.Right is CiLiteral literal) {
+				long length = (long) literalLength.Value;
+				string right = (string) literal.Value;
+				if (length != right.Length)
+					throw new NotImplementedException(); // TODO: evaluate compile-time
+				Write("memcmp(");
+				WriteArrayPtrAdd(ptr, offset);
+				Write(", ");
+				expr.Right.Accept(this, CiPriority.Statement);
+				Write(", ");
+				Write(length);
+			}
+			else {
+				Write("strcmp(");
+				expr.Left.Accept(this, CiPriority.Statement);
+				Write(", ");
+				expr.Right.Accept(this, CiPriority.Statement);
+			}
+			Write(") ");
+			Write(not ? '!' : '=');
+			Write("= 0");
+			if (parent > CiPriority.Equality)
+				Write(')');
+		}
+		else
+			base.WriteEqual(expr, parent, not);
+	}
+
 	protected override void WriteStringLength(CiExpr expr)
 	{
 		Include("string.h");
@@ -513,15 +548,13 @@ public class GenC : GenCCpp
 		if (expr.Left.Type == CiSystem.StringStorageType) {
 			switch (expr.Op) {
 			case CiToken.Assign:
-				if (parent == CiPriority.Statement) {
-					CiExpr length = IsTrimSubstring(expr);
-					if (length != null) {
-						expr.Left.Accept(this, CiPriority.Primary);
-						Write('[');
-						length.Accept(this, CiPriority.Statement);
-						Write("] = '\\0'");
-						return expr;
-					}
+				if (parent == CiPriority.Statement
+				 && IsTrimSubstring(expr) is CiExpr length) {
+					expr.Left.Accept(this, CiPriority.Primary);
+					Write('[');
+					length.Accept(this, CiPriority.Statement);
+					Write("] = '\\0'");
+					return expr;
 				}
 				this.StringAssign = true;
 				Write("CiString_Assign(&");
@@ -551,41 +584,6 @@ public class GenC : GenCCpp
 		Write("CiResource_");
 		foreach (char c in name)
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
-	}
-
-	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
-	{
-		if ((expr.Left.Type is CiStringType && expr.Right.Type != CiSystem.NullType)
-		 || (expr.Right.Type is CiStringType && expr.Left.Type != CiSystem.NullType)) {
-			Include("string.h");
-			if (parent > CiPriority.Equality)
-				Write('(');
-			if (IsStringSubstring(expr.Left, out bool _, out CiExpr ptr, out CiExpr offset, out CiExpr lengthExpr) && lengthExpr is CiLiteral literalLength && expr.Right is CiLiteral literal) {
-				long length = (long) literalLength.Value;
-				string right = (string) literal.Value;
-				if (length != right.Length)
-					throw new NotImplementedException(); // TODO: evaluate compile-time
-				Write("memcmp(");
-				WriteArrayPtrAdd(ptr, offset);
-				Write(", ");
-				expr.Right.Accept(this, CiPriority.Statement);
-				Write(", ");
-				Write(length);
-			}
-			else {
-				Write("strcmp(");
-				expr.Left.Accept(this, CiPriority.Statement);
-				Write(", ");
-				expr.Right.Accept(this, CiPriority.Statement);
-			}
-			Write(") ");
-			Write(not ? '!' : '=');
-			Write("= 0");
-			if (parent > CiPriority.Equality)
-				Write(')');
-		}
-		else
-			base.WriteEqual(expr, parent, not);
 	}
 
 	static CiMethod GetThrowingMethod(CiStatement statement)
