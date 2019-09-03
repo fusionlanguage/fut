@@ -506,6 +506,7 @@ public class CiResolver : CiVisitor
 				if (literal != null)
 					return literal;
 			}
+			this.CurrentMethod.Calls.Add(method);
 
 			expr.Left = left;
 			expr.Type = left.Type;
@@ -1131,6 +1132,27 @@ public class CiResolver : CiVisitor
 		}
 	}
 
+	void SetLive(CiMethodBase method)
+	{
+		if (method.IsLive)
+			return;
+		method.IsLive = true;
+		foreach (CiMethod called in method.Calls)
+			SetLive(called);
+	}
+
+	void SetLive(CiClass klass)
+	{
+		if (!klass.IsPublic)
+			return;
+		foreach (CiMethod method in klass.Methods) {
+			if (method.Visibility == CiVisibility.Public || method.Visibility == CiVisibility.Protected)
+				SetLive(method);
+		}
+		if (klass.Constructor != null)
+			SetLive(klass.Constructor);
+	}
+
 	public CiResolver(CiProgram program, IEnumerable<string> searchDirs)
 	{
 		this.Program = program;
@@ -1143,6 +1165,8 @@ public class CiResolver : CiVisitor
 			ResolveTypes(klass);
 		foreach (CiClass klass in program.Classes)
 			ResolveCode(klass);
+		foreach (CiClass klass in program.Classes)
+			SetLive(klass);
 	}
 }
 

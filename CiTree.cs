@@ -560,6 +560,8 @@ public class CiMethodBase : CiMember
 {
 	public bool Throws;
 	public CiStatement Body;
+	public bool IsLive = false;
+	public readonly HashSet<CiMethod> Calls = new HashSet<CiMethod>();
 }
 
 public class CiMethod : CiMethodBase

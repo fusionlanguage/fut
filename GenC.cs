@@ -1093,7 +1093,7 @@ public class GenC : GenCCpp
 			if ((konst.Visibility == CiVisibility.Public) == pub)
 				WriteConst(konst);
 		foreach (CiMethod method in klass.Methods) {
-			if ((method.Visibility == CiVisibility.Public) == pub && method.CallType != CiCallType.Abstract) {
+			if (method.IsLive && (method.Visibility == CiVisibility.Public) == pub && method.CallType != CiCallType.Abstract) {
 				WriteSignature(klass, method);
 				WriteLine(';');
 			}
@@ -1431,7 +1431,7 @@ public class GenC : GenCCpp
 			WriteDestructor(klass);
 			WriteNewDelete(klass, true);
 			foreach (CiMethod method in klass.Methods) {
-				if (method.CallType == CiCallType.Abstract)
+				if (!method.IsLive || method.CallType == CiCallType.Abstract)
 					continue;
 				WriteLine();
 				WriteSignature(klass, method);
