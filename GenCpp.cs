@@ -339,6 +339,23 @@ public class GenCpp : GenCCpp
 		Write(".length()");
 	}
 
+	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
+	{
+		if (expr.Left.Type == CiSystem.StringStorageType
+		 && expr.Op == CiToken.Assign
+		 && parent == CiPriority.Statement) {
+			CiExpr length = IsTrimSubstring(expr);
+			if (length != null) {
+				expr.Left.Accept(this, CiPriority.Primary);
+				Write(".resize(");
+				length.Accept(this, CiPriority.Statement);
+				Write(')');
+				return expr;
+			}
+		}
+		return base.Visit(expr, parent);
+	}
+
 	protected override void WriteConst(CiConst konst)
 	{
 		Write("static constexpr ");

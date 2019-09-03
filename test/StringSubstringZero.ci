@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		string() s = "barek";
+		s = s.Substring(0, 3);
+		return s == "bar";
+	}
+}

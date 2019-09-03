@@ -133,6 +133,47 @@ public abstract class GenCCpp : GenTyped
 		}
 	}
 
+	protected static bool IsStringSubstring(CiExpr expr, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)
+	{
+		if (expr is CiBinaryExpr call
+		 && call.Op == CiToken.LeftParenthesis
+		 && call.Left is CiBinaryExpr leftBinary
+		 && leftBinary.Op == CiToken.Dot) {
+			CiMethod method = (CiMethod) ((CiSymbolReference) leftBinary.Right).Symbol;
+			CiExpr[] args = call.RightCollection;
+			if (method == CiSystem.StringSubstring) {
+				cast = false;
+				ptr = leftBinary.Left;
+				offset = args[0];
+				length = args[1];
+				return true;
+			}
+			if (method == CiSystem.UTF8GetString) {
+				cast = true;
+				ptr = args[0];
+				offset = args[1];
+				length = args[2];
+				return true;
+			}
+		}
+		cast = false;
+		ptr = null;
+		offset = null;
+		length = null;
+		return false;
+	}
+
+	protected static CiExpr IsTrimSubstring(CiBinaryExpr expr)
+	{
+		if (IsStringSubstring(expr.Right, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)
+		 && !cast
+		 && expr.Left is CiSymbolReference leftSymbol && ptr is CiSymbolReference rightSymbol && leftSymbol.Symbol == rightSymbol.Symbol // TODO: more complex expr
+		 && offset is CiLiteral literalOffset && (long) literalOffset.Value == 0) {
+			return length;
+		}
+		return null;
+	}
+
 	protected abstract void WriteConst(CiConst konst);
 
 	public override void Visit(CiConst konst)
