@@ -576,6 +576,24 @@ public class GenC : GenCCpp
 				break;
 			}
 		}
+
+		switch (expr.Op) {
+		case CiToken.Equal:
+		case CiToken.NotEqual:
+		case CiToken.Greater:
+			if (expr.Left is CiBinaryExpr property
+			 && property.Op == CiToken.Dot
+			 && ((CiSymbolReference) property.Right).Symbol == CiSystem.StringLength
+			 && expr.Right is CiLiteral literal && (long) literal.Value == 0) {
+				property.Left.Accept(this, CiPriority.Primary);
+				Write(expr.Op == CiToken.Equal ? "[0] == '\\0'" : "[0] != '\\0'");
+				return expr;
+			}
+			break;
+		default:
+			break;
+		}
+
 		return base.Visit(expr, parent);
 	}
 
