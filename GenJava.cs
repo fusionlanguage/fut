@@ -152,6 +152,16 @@ public class GenJava : GenTyped
 			 expr.Right.Accept(this, CiPriority.Statement);
 			 Write(')');
 		}
+		else if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)
+			&& expr.Right is CiLiteral rightLiteral && rightLiteral.Value is long l && l >= 0 && l <= byte.MaxValue) {
+			if (parent > CiPriority.Equality)
+				Write('(');
+			base.WriteIndexing(leftBinary, CiPriority.Equality); // omit "& 0xff"
+			Write(not ? " != " : " == ");
+			Write((sbyte) l);
+			if (parent > CiPriority.Equality)
+				Write(')');
+		}
 		else
 			base.WriteEqual(expr, parent, not);
 	}
