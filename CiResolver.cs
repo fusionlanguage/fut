@@ -31,7 +31,7 @@ public class CiResolver : CiVisitor
 	readonly CiProgram Program;
 	readonly IEnumerable<string> SearchDirs;
 	CiScope CurrentScope;
-	CiMethod CurrentMethod;
+	CiMethodBase CurrentMethod;
 	readonly HashSet<CiMethod> CurrentPureMethods = new HashSet<CiMethod>();
 	readonly Dictionary<CiVar, CiExpr> CurrentPureArguments = new Dictionary<CiVar, CiExpr>();
 
@@ -1115,7 +1115,9 @@ public class CiResolver : CiVisitor
 	{
 		if (klass.Constructor != null) {
 			this.CurrentScope = klass;
+			this.CurrentMethod = klass.Constructor;
 			klass.Constructor.Body.Accept(this);
+			this.CurrentMethod = null;
 		}
 		foreach (CiMethod method in klass.Methods) {
 			if (method.Body != null) {

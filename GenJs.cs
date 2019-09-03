@@ -378,8 +378,7 @@ public class GenJs : GenBase
 				WriteInitCode(field);
 			}
 		}
-		if (klass.Constructor != null)
-			Write(((CiBlock) klass.Constructor.Body).Statements);
+		WriteConstructorBody(klass);
 		CloseBlock();
 		if (klass.BaseClassName != null) {
 			Write(klass.Name);

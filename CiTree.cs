@@ -233,7 +233,7 @@ public class CiVar : CiNamedValue
 
 public class CiConst : CiMember
 {
-	public CiMethod InMethod;
+	public CiMethodBase InMethod;
 	public CiVisitStatus VisitStatus;
 	public CiConst()
 	{
@@ -558,6 +558,7 @@ public class CiField : CiMember
 
 public class CiMethodBase : CiMember
 {
+	public bool Throws;
 	public CiStatement Body;
 }
 
@@ -566,7 +567,6 @@ public class CiMethod : CiMethodBase
 	public CiCallType CallType;
 	public bool IsMutator;
 	public readonly CiScope Parameters = new CiScope();
-	public bool Throws;
 	public CiMethod()
 	{
 	}

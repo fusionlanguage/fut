@@ -1218,8 +1218,7 @@ public class GenC : GenCCpp
 				WriteLine(");");
 			}
 		}
-		if (klass.Constructor != null)
-			Write(((CiBlock) klass.Constructor.Body).Statements);
+		WriteConstructorBody(klass);
 		CloseBlock();
 	}
 

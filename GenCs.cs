@@ -272,8 +272,7 @@ public class GenCs : GenTyped
 			OpenBlock();
 			foreach (CiField field in klass.Fields)
 				WriteInitCode(field);
-			if (klass.Constructor != null)
-				Write(((CiBlock) klass.Constructor.Body).Statements);
+			WriteConstructorBody(klass);
 			CloseBlock();
 		}
 

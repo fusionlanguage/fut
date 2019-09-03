@@ -34,7 +34,7 @@ public abstract class GenBase : CiVisitor
 	protected TextWriter Writer;
 	protected int Indent = 0;
 	bool AtLineStart = true;
-	protected CiMethod CurrentMethod = null;
+	protected CiMethodBase CurrentMethod = null;
 
 	static TextWriter CreateFileWriter(string filename)
 	{
@@ -771,6 +771,15 @@ public abstract class GenBase : CiVisitor
 		statement.Cond.Accept(this, CiPriority.Statement);
 		Write(')');
 		WriteChild(statement.Body);
+	}
+
+	protected void WriteConstructorBody(CiClass klass)
+	{
+		if (klass.Constructor != null) {
+			this.CurrentMethod = klass.Constructor;
+			Write(((CiBlock) klass.Constructor.Body).Statements);
+			this.CurrentMethod = null;
+		}
 	}
 
 	protected virtual void WriteMethodBody(CiBlock block)

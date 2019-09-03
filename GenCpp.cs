@@ -542,7 +542,7 @@ public class GenCpp : GenCCpp
 		Write(klass.Name);
 		WriteLine("()");
 		OpenBlock();
-		Write(((CiBlock) klass.Constructor.Body).Statements);
+		WriteConstructorBody(klass);
 		CloseBlock();
 	}
 

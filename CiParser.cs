@@ -666,7 +666,7 @@ public class CiParser : CiLexer
 					throw ParseException("Duplicate constructor, already defined in line {0}", klass.Constructor.Line);
 				if (visibility == CiVisibility.Private)
 					visibility = CiVisibility.Internal; // TODO
-				klass.Constructor = new CiMethodBase { Line = sr.Line, Visibility = visibility, Body = ParseBlock() };
+				klass.Constructor = new CiMethodBase { Line = sr.Line, Visibility = visibility, Parent = klass, Name = klass.Name, Body = ParseBlock() };
 				continue;
 			}
 

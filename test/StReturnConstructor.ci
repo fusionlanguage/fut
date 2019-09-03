@@ -1,0 +1,17 @@
+public class Test
+{
+	int Foo;
+
+	Test()
+	{
+		const int[] a = { 42 };
+		Foo = a[0];
+		return;
+	}
+
+	public static bool Run()
+	{
+		Test() o;
+		return o.Foo == 42;
+	}
+}
