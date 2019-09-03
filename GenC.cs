@@ -543,6 +543,17 @@ public class GenC : GenCCpp
 		if (expr.Left.Type == CiSystem.StringStorageType) {
 			switch (expr.Op) {
 			case CiToken.Assign:
+				if (parent == CiPriority.Statement
+					&& IsStringSubstring(expr.Right, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)
+					&& !cast
+					&& expr.Left is CiSymbolReference leftSymbol && ptr is CiSymbolReference rightSymbol && leftSymbol.Symbol == rightSymbol.Symbol // TODO: more complex expr
+					&& offset is CiLiteral literalOffset && (long) literalOffset.Value == 0) {
+					expr.Left.Accept(this, CiPriority.Primary);
+					Write('[');
+					length.Accept(this, CiPriority.Statement);
+					Write("] = '\\0'");
+					return expr;
+				}
 				this.StringAssign = true;
 				Write("CiString_Assign(&");
 				expr.Left.Accept(this, CiPriority.Primary);
