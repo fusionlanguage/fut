@@ -1,6 +1,6 @@
 // CiLexer.cs - Ci lexer
 //
-// Copyright (C) 2011-2016  Piotr Fusik
+// Copyright (C) 2011-2019  Piotr Fusik
 //
 // This file is part of CiTo, see http://cito.sourceforge.net
 //
@@ -126,6 +126,7 @@ public class CiLexer
 	public int Line;
 	protected CiToken CurrentToken;
 	protected object CurrentValue; // string for CiToken.Id; null/bool/long/double/string for CiToken.Literal; not modified otherwise
+	protected StringBuilder CopyTo = null;
 	public readonly HashSet<string> PreSymbols = new HashSet<string>();
 	bool AtLineStart = true;
 	bool LineMode = false;
@@ -167,6 +168,8 @@ public class CiLexer
 	protected int ReadChar()
 	{
 		int c = this.Reader.Read();
+		if (this.CopyTo != null)
+			this.CopyTo.Append((char) c);
 		switch (c)
 		{
 		case '\t':

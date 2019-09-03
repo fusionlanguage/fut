@@ -19,7 +19,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Text;
 
 namespace Foxoft.Ci
 {
@@ -382,6 +384,33 @@ public class CiParser : CiLexer
 		return result;
 	}
 
+	CiNative ParseNative()
+	{
+		Expect(CiToken.Native);
+		StringBuilder sb = new StringBuilder();
+		this.CopyTo = sb;
+		try {
+			Expect(CiToken.LeftBrace);
+			int nesting = 1;
+			for (;;) {
+				if (See(CiToken.EndOfFile))
+					throw ParseException("Native block not terminated");
+				if (See(CiToken.LeftBrace))
+					nesting++;
+				else if (See(CiToken.RightBrace) && --nesting == 0)
+					break;
+				NextToken();
+			}
+		}
+		finally {
+			this.CopyTo = null;
+		}
+		NextToken();
+		Trace.Assert(sb[sb.Length - 1] == '}');
+		sb.Length--;
+		return new CiNative { Content = sb.ToString() };
+	}
+
 	CiReturn ParseReturn()
 	{
 		CiReturn result = new CiReturn { Line = this.Line };
@@ -499,6 +528,8 @@ public class CiParser : CiLexer
 			return ParseFor();
 		case CiToken.If:
 			return ParseIf();
+		case CiToken.Native:
+			return ParseNative();
 		case CiToken.Return:
 			return ParseReturn();
 		case CiToken.Switch:

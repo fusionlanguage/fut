@@ -865,6 +865,10 @@ public class CiResolver : CiVisitor
 			statement.SetCompletesNormally(true);
 	}
 
+	public override void Visit(CiNative statement)
+	{
+	}
+
 	public override void Visit(CiReturn statement)
 	{
 		if (this.CurrentMethod.Type == null) {

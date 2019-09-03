@@ -714,6 +714,11 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
+	public override void Visit(CiNative statement)
+	{
+		Write(statement.Content);
+	}
+
 	public override void Visit(CiReturn statement)
 	{
 		if (statement.Value == null)

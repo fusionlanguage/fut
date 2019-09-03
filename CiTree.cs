@@ -80,6 +80,7 @@ public abstract class CiVisitor
 	public abstract void Visit(CiDoWhile statement);
 	public abstract void Visit(CiFor statement);
 	public abstract void Visit(CiIf statement);
+	public abstract void Visit(CiNative statement);
 	public abstract void Visit(CiReturn statement);
 	public abstract void Visit(CiSwitch statement);
 	public abstract void Visit(CiThrow statement);
@@ -505,6 +506,13 @@ public class CiIf : CiCondCompletionStatement
 	public CiExpr Cond;
 	public CiStatement OnTrue;
 	public CiStatement OnFalse;
+	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
+}
+
+public class CiNative : CiStatement
+{
+	public string Content;
+	public override bool CompletesNormally { get { return true; } }
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }
 

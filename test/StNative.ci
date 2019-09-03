@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int a = 1;
+		native { a = 42; }
+		return a == 42;
+	}
+}
