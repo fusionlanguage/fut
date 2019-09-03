@@ -178,15 +178,12 @@ public class CiScope : CiSymbol, IEnumerable
 	{
 		string name = symbol.Name;
 		for (CiScope scope = this; scope != null; scope = scope.Parent) {
-			object duplicateObj = scope.Dict[name];
-			if (duplicateObj != null) {
-				CiSymbol duplicate = (CiSymbol) duplicateObj;
-				if (scope == this || (!IsPrivate(duplicateObj as CiMember) && !IsOverrideOf(symbol as CiMethod, duplicateObj as CiMethod))) {
-					CiScope symbolScope = symbol as CiScope ?? this;
-					CiScope duplicateScope = duplicate as CiScope ?? scope;
-					throw new CiException(symbolScope.Filename, symbol.Line,
-						string.Format("Duplicate symbol {0}, already defined in {1} line {2}", name, duplicateScope.Filename, duplicate.Line));
-				}
+			if (scope.Dict[name] is CiSymbol duplicate
+			 && (scope == this || (!IsPrivate(duplicate as CiMember) && !IsOverrideOf(symbol as CiMethod, duplicate as CiMethod)))) {
+				CiScope symbolScope = symbol as CiScope ?? this;
+				CiScope duplicateScope = duplicate as CiScope ?? scope;
+				throw new CiException(symbolScope.Filename, symbol.Line,
+					string.Format("Duplicate symbol {0}, already defined in {1} line {2}", name, duplicateScope.Filename, duplicate.Line));
 			}
 		}
 		symbol.Parent = this;
