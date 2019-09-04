@@ -10,7 +10,7 @@ MONO := mono
 JAVACPSEP = :
 endif
 CC = clang
-CXX = clang++ -std=c++17
+CXX = clang++ -std=c++2a
 
 VERSION := 1.0.0
 MAKEFLAGS = -r
