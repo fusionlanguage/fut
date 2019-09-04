@@ -7,7 +7,7 @@ public class Test : Base
 	}
 }
 
-class Base
+public class Base
 {
 	protected int Foo = 42;
 }

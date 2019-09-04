@@ -70,6 +70,8 @@ public class CiResolver : CiVisitor
 		if (klass.BaseClassName != null) {
 			if (!(Program.TryLookup(klass.BaseClassName) is CiClass baseClass))
 				throw new CiException(klass, "Base class {0} not found", klass.BaseClassName);
+			if (klass.IsPublic && !baseClass.IsPublic)
+				throw new CiException(klass, "Public class cannot derive from an internal class");
 			klass.Parent = baseClass;
 			klass.VisitStatus = CiVisitStatus.InProgress;
 			ResolveBase(baseClass);
