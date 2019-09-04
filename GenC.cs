@@ -34,6 +34,7 @@ public class GenC : GenCCpp
 	bool StringLastIndexOf;
 	bool StringStartsWith;
 	bool StringEndsWith;
+	bool SharedMake;
 	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
 
 	protected override void IncludeStdInt()
@@ -180,6 +181,24 @@ public class GenC : GenCCpp
 	protected override void WriteTypeAndName(CiNamedValue value)
 	{
 		WriteDefinition(value.Type, () => WriteName(value));
+	}
+
+	protected override void WriteNew(CiClass klass)
+	{
+		this.SharedMake = true;
+		Write('(');
+		Write(klass.Name);
+		Write(" *) CiShared_Make(1, sizeof(");
+		Write(klass.Name);
+		Write("), ");
+		if (NeedsConstructor(klass)) {
+			Write("(void (*)(void *)) ");
+			Write(klass.Name);
+			Write("_Construct");
+		}
+		else
+			Write("NULL");
+		Write(')');
 	}
 
 	void WriteStringStorageValue(CiExpr expr)
@@ -1368,6 +1387,21 @@ public class GenC : GenCCpp
 			WriteLine("return strLen >= suffixLen && memcmp(str + strLen - suffixLen, suffix, suffixLen) == 0;");
 			CloseBlock();
 		}
+		if (this.SharedMake) {
+			WriteLine();
+			WriteLine("static void *CiShared_Make(unsigned count, size_t size, void (*constructor)(void *))");
+			OpenBlock();
+			WriteLine("void *alloc = malloc(2 * sizeof(unsigned) + count * size);");
+			WriteLine("((unsigned *) alloc)[0] = count;");
+			WriteLine("((unsigned *) alloc)[1] = 1;");
+			Write("if (constructor != NULL) ");
+			OpenBlock();
+			WriteLine("for (unsigned i = 0; i < count; i++)");
+			WriteLine("\tconstructor((char *) alloc + 2 * sizeof(unsigned) + i * size);");
+			CloseBlock();
+			WriteLine("return (char *) alloc + 2 * sizeof(unsigned);");
+			CloseBlock();
+		}
 	}
 
 	void WriteResources(Dictionary<string, byte[]> resources)
@@ -1422,6 +1456,7 @@ public class GenC : GenCCpp
 		this.StringLastIndexOf = false;
 		this.StringStartsWith = false;
 		this.StringEndsWith = false;
+		this.SharedMake = false;
 		OpenStringWriter();
 		foreach (CiClass klass in program.Classes)
 			WriteStruct(klass);
