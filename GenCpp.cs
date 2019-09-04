@@ -138,6 +138,16 @@ public class GenCpp : GenCCpp
 		Write(">()");
 	}
 
+	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr)
+	{
+		Include("memory");
+		Write("std::make_shared<");
+		Write(elementType, false);
+		Write("[]>(");
+		lengthExpr.Accept(this, CiPriority.Statement);
+		Write(')');
+	}
+
 	protected override void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
 	{
 		switch (value) {
