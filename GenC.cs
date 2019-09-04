@@ -34,6 +34,7 @@ public class GenC : GenCCpp
 	bool StringLastIndexOf;
 	bool StringStartsWith;
 	bool StringEndsWith;
+	bool PtrConstruct;
 	bool SharedMake;
 	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
 
@@ -183,15 +184,30 @@ public class GenC : GenCCpp
 		WriteDefinition(value.Type, () => WriteName(value));
 	}
 
-	protected override void WriteNew(CiClass klass)
+	static bool IsDynamicPtr(CiType type)
+	{
+		return (type is CiClassPtrType classPtr && classPtr.Modifier == CiToken.Hash)
+			|| (type is CiArrayPtrType arrayPtr && arrayPtr.Modifier == CiToken.Hash);
+	}
+
+	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr)
 	{
 		this.SharedMake = true;
 		Write('(');
-		Write(klass.Name);
-		Write(" *) CiShared_Make(1, sizeof(");
-		Write(klass.Name);
+		WriteDefinition(elementType, () => Write(elementType is CiArrayType ? "(*)" : "*"));
+		Write(") CiShared_Make(");
+		if (lengthExpr != null)
+			lengthExpr.Accept(this, CiPriority.Statement);
+		else
+			Write('1');
+		Write(", sizeof(");
+		Write(elementType, false);
 		Write("), ");
-		if (NeedsConstructor(klass)) {
+		if (elementType == CiSystem.StringStorageType || IsDynamicPtr(elementType)) {
+			this.PtrConstruct = true;
+			Write("(void (*)(void *)) CiPtr_Construct");
+		}
+		else if (elementType is CiClass klass && NeedsConstructor(klass)) {
 			Write("(void (*)(void *)) ");
 			Write(klass.Name);
 			Write("_Construct");
@@ -199,6 +215,11 @@ public class GenC : GenCCpp
 		else
 			Write("NULL");
 		Write(')');
+	}
+
+	protected override void WriteNew(CiClass klass)
+	{
+		WriteNewArray(klass, null);
 	}
 
 	void WriteStringStorageValue(CiExpr expr)
@@ -224,7 +245,7 @@ public class GenC : GenCCpp
 	{
 		switch (value) {
 		case null:
-			if (array.StorageType is CiStringStorageType)
+			if (array.StorageType is CiStringStorageType || IsDynamicPtr(array.StorageType))
 				Write(" = { NULL }");
 			break;
 		case CiLiteral literal when literal.IsDefaultValue:
@@ -246,6 +267,8 @@ public class GenC : GenCCpp
 			else
 				WriteStringStorageValue(def.Value);
 		}
+		else if (def.Value == null && IsDynamicPtr(def.Type))
+			Write(" = NULL");
 		else
 			base.WriteVarInit(def);
 	}
@@ -268,7 +291,7 @@ public class GenC : GenCCpp
 
 	protected override bool HasInitCode(CiNamedValue def)
 	{
-		return (def is CiField && (def.Value != null || def.Type.StorageType == CiSystem.StringStorageType))
+		return (def is CiField && (def.Value != null || def.Type.StorageType == CiSystem.StringStorageType || IsDynamicPtr(def.Type)))
 			|| GetThrowingMethod(def.Value) != null
 			|| (def.Type.StorageType is CiClass klass && NeedsConstructor(klass));
 	}
@@ -295,12 +318,12 @@ public class GenC : GenCCpp
 			if (def is CiField) {
 				WriteArrayElement(def, nesting);
 				Write(" = ");
-				if (type == CiSystem.StringStorageType)
-					WriteLine("NULL;");
-				else {
+				if (def.Value != null) {
 					WriteCoerced(type, def.Value, CiPriority.Statement);
 					WriteLine(';');
 				}
+				else
+					WriteLine("NULL;");
 			}
 			CiMethod throwingMethod = GetThrowingMethod(def.Value);
 			if (throwingMethod != null)
@@ -1387,6 +1410,13 @@ public class GenC : GenCCpp
 			WriteLine("return strLen >= suffixLen && memcmp(str + strLen - suffixLen, suffix, suffixLen) == 0;");
 			CloseBlock();
 		}
+		if (this.PtrConstruct) {
+			WriteLine();
+			WriteLine("static void CiPtr_Construct(void **ptr)");
+			OpenBlock();
+			WriteLine("*ptr = NULL;");
+			CloseBlock();
+		}
 		if (this.SharedMake) {
 			WriteLine();
 			WriteLine("static void *CiShared_Make(unsigned count, size_t size, void (*constructor)(void *))");
@@ -1456,6 +1486,7 @@ public class GenC : GenCCpp
 		this.StringLastIndexOf = false;
 		this.StringStartsWith = false;
 		this.StringEndsWith = false;
+		this.PtrConstruct = false;
 		this.SharedMake = false;
 		OpenStringWriter();
 		foreach (CiClass klass in program.Classes)

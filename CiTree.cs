@@ -909,16 +909,13 @@ public class CiArrayPtrType : CiArrayType
 			return true;
 		if (!(right is CiArrayType array) || !array.ElementType.Equals(this.ElementType))
 			return false;
-		CiArrayPtrType ptr;
 		switch (this.Modifier) {
 		case CiToken.EndOfFile:
 			return true;
 		case CiToken.ExclamationMark:
-			ptr = array as CiArrayPtrType;
-			return ptr == null || ptr.Modifier != CiToken.EndOfFile;
+			return !(array is CiArrayPtrType ptr) || ptr.Modifier != CiToken.EndOfFile;
 		case CiToken.Hash:
-			ptr = array as CiArrayPtrType;
-			return ptr != null && ptr.Modifier == CiToken.Hash;
+			return array is CiArrayPtrType dynamicPtr && dynamicPtr.Modifier == CiToken.Hash;
 		default:
 			throw new NotImplementedException(this.Modifier.ToString());
 		}
