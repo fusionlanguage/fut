@@ -36,6 +36,8 @@ public class GenC : GenCCpp
 	bool StringEndsWith;
 	bool PtrConstruct;
 	bool SharedMake;
+	bool SharedAddRef;
+	bool SharedRelease;
 	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
 
 	protected override void IncludeStdInt()
@@ -190,6 +192,18 @@ public class GenC : GenCCpp
 			|| (type is CiArrayPtrType arrayPtr && arrayPtr.Modifier == CiToken.Hash);
 	}
 
+	void WriteXstructorPtr(bool need, CiClass klass, string name)
+	{
+		if (need) {
+			Write("(CiMethodPtr) ");
+			Write(klass.Name);
+			Write('_');
+			Write(name);
+		}
+		else
+			Write("NULL");
+	}
+
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr)
 	{
 		this.SharedMake = true;
@@ -203,17 +217,22 @@ public class GenC : GenCCpp
 		Write(", sizeof(");
 		Write(elementType, false);
 		Write("), ");
-		if (elementType == CiSystem.StringStorageType || IsDynamicPtr(elementType)) {
+		if (elementType == CiSystem.StringStorageType) {
 			this.PtrConstruct = true;
-			Write("(void (*)(void *)) CiPtr_Construct");
+			Write("(CiMethodPtr) CiPtr_Construct, free");
 		}
-		else if (elementType is CiClass klass && NeedsConstructor(klass)) {
-			Write("(void (*)(void *)) ");
-			Write(klass.Name);
-			Write("_Construct");
+		else if (IsDynamicPtr(elementType)) {
+			this.PtrConstruct = true;
+			this.SharedRelease = true;
+			Write("(CiMethodPtr) CiPtr_Construct, CiShared_Release");
+		}
+		else if (elementType is CiClass klass) {
+			WriteXstructorPtr(NeedsConstructor(klass), klass, "Construct");
+			Write(", ");
+			WriteXstructorPtr(NeedsDestructor(klass), klass, "Destruct");
 		}
 		else
-			Write("NULL");
+			Write("NULL, NULL");
 		Write(')');
 	}
 
@@ -279,6 +298,7 @@ public class GenC : GenCCpp
 		while (type is CiArrayStorageType array)
 			type = array.ElementType;
 		return type == CiSystem.StringStorageType
+			|| IsDynamicPtr(type)
 			|| (type is CiClass klass && NeedsDestructor(klass));
 	}
 
@@ -723,6 +743,10 @@ public class GenC : GenCCpp
 		if (type is CiClass klass) {
 			Write(klass.Name);
 			Write("_Destruct(&");
+		}
+		else if (IsDynamicPtr(type)) {
+			this.SharedRelease = true;
+			Write("CiShared_Release(");
 		}
 		else
 			Write("free(");
@@ -1248,7 +1272,7 @@ public class GenC : GenCCpp
 			WriteLine("&vtbl;");
 		}
 		foreach (CiField field in klass.Fields) {
-			if (field.Value != null || field.Type == CiSystem.StringStorageType) {
+			if (field.Value != null || field.Type == CiSystem.StringStorageType || IsDynamicPtr(field.Type)) {
 				WriteLocalName(field);
 				WriteVarInit(field);
 				WriteLine(';');
@@ -1417,19 +1441,58 @@ public class GenC : GenCCpp
 			WriteLine("*ptr = NULL;");
 			CloseBlock();
 		}
+		if (this.SharedMake || this.SharedAddRef || this.SharedRelease) {
+			WriteLine();
+			WriteLine("typedef void (*CiMethodPtr)(void *);");
+			WriteLine("typedef struct {");
+			this.Indent++;
+			WriteLine("size_t count;");
+			WriteLine("size_t unitSize;");
+			WriteLine("size_t refCount;");
+			WriteLine("CiMethodPtr destructor;");
+			this.Indent--;
+			WriteLine("} CiShared;");
+		}
 		if (this.SharedMake) {
 			WriteLine();
-			WriteLine("static void *CiShared_Make(unsigned count, size_t size, void (*constructor)(void *))");
+			WriteLine("static void *CiShared_Make(size_t count, size_t unitSize, CiMethodPtr constructor, CiMethodPtr destructor)");
 			OpenBlock();
-			WriteLine("void *alloc = malloc(2 * sizeof(unsigned) + count * size);");
-			WriteLine("((unsigned *) alloc)[0] = count;");
-			WriteLine("((unsigned *) alloc)[1] = 1;");
+			WriteLine("CiShared *self = (CiShared *) malloc(sizeof(CiShared) + count * unitSize);");
+			WriteLine("self->count = count;");
+			WriteLine("self->unitSize = unitSize;");
+			WriteLine("self->refCount = 1;");
+			WriteLine("self->destructor = destructor;");
 			Write("if (constructor != NULL) ");
 			OpenBlock();
-			WriteLine("for (unsigned i = 0; i < count; i++)");
-			WriteLine("\tconstructor((char *) alloc + 2 * sizeof(unsigned) + i * size);");
+			WriteLine("for (size_t i = 0; i < count; i++)");
+			WriteLine("\tconstructor((char *) (self + 1) + i * unitSize);");
 			CloseBlock();
-			WriteLine("return (char *) alloc + 2 * sizeof(unsigned);");
+			WriteLine("return self + 1;");
+			CloseBlock();
+		}
+		if (this.SharedAddRef) {
+			WriteLine();
+			WriteLine("static void CiShared_AddRef(void *ptr)");
+			OpenBlock();
+			WriteLine("if (ptr != NULL)");
+			WriteLine("\t((CiShared *) ptr)[-1].refCount++;");
+			CloseBlock();
+		}
+		if (this.SharedRelease) {
+			WriteLine();
+			WriteLine("static void CiShared_Release(void *ptr)");
+			OpenBlock();
+			WriteLine("if (ptr == NULL)");
+			WriteLine("\treturn;");
+			WriteLine("CiShared *self = (CiShared *) ptr - 1;");
+			WriteLine("if (--self->refCount != 0)");
+			WriteLine("\treturn;");
+			Write("if (self->destructor != NULL) ");
+			OpenBlock();
+			WriteLine("for (size_t i = self->count; i > 0;)");
+			WriteLine("\tself->destructor((char *) ptr + --i * self->unitSize);");
+			CloseBlock();
+			WriteLine("free(self);");
 			CloseBlock();
 		}
 	}
@@ -1488,6 +1551,8 @@ public class GenC : GenCCpp
 		this.StringEndsWith = false;
 		this.PtrConstruct = false;
 		this.SharedMake = false;
+		this.SharedAddRef = false;
+		this.SharedRelease = false;
 		OpenStringWriter();
 		foreach (CiClass klass in program.Classes)
 			WriteStruct(klass);
