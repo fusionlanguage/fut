@@ -86,7 +86,7 @@ public abstract class GenTyped : GenBase
 		return expr;
 	}
 
-	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr)
+	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		Write("new ");
 		Write(elementType.BaseType, false);

@@ -86,7 +86,7 @@ public class GenJs : GenBase
 		return expr;
 	}
 
-	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr)
+	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		if (!(elementType is CiNumericType)) {
 			Write("new Array(");
@@ -175,7 +175,7 @@ public class GenJs : GenBase
 			OpenLoop("var", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");
-			WriteNewArray(innerArray.ElementType, innerArray.LengthExpr);
+			WriteNewArray(innerArray.ElementType, innerArray.LengthExpr, CiPriority.Statement);
 			WriteLine(';');
 			array = innerArray;
 		}
@@ -183,7 +183,7 @@ public class GenJs : GenBase
 			OpenLoop("var", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");
-			WriteNew(klass);
+			WriteNew(klass, CiPriority.Statement);
 			WriteLine(';');
 		}
 		while (--nesting >= 0)

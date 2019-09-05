@@ -321,26 +321,26 @@ public abstract class GenBase : CiVisitor
 		return expr;
 	}
 
-	protected virtual void WriteNew(CiClass klass)
+	protected virtual void WriteNew(CiClass klass, CiPriority parent)
 	{
 		Write("new ");
 		Write(klass.Name);
 		Write("()");
 	}
 
-	protected abstract void WriteNewArray(CiType elementType, CiExpr lengthExpr);
+	protected abstract void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent);
 
 	protected virtual void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
 	{
 		Write(" = ");
-		WriteNewArray(array.ElementType, array.LengthExpr);
+		WriteNewArray(array.ElementType, array.LengthExpr, CiPriority.Statement);
 	}
 
 	protected virtual void WriteVarInit(CiNamedValue def)
 	{
 		if (def.Type is CiClass klass) {
 			Write(" = ");
-			WriteNew(klass);
+			WriteNew(klass, CiPriority.Statement);
 		}
 		else if (def.Type is CiArrayStorageType array && !(def.Value is CiCollection))
 			WriteArrayStorageInit(array, def.Value);
@@ -415,9 +415,9 @@ public abstract class GenBase : CiVisitor
 			break;
 		case CiToken.New:
 			if (expr.Type is CiClassPtrType klass)
-				WriteNew(klass.Class);
+				WriteNew(klass.Class, parent);
 			else
-				WriteNewArray(((CiArrayType) expr.Type).ElementType, expr.Inner);
+				WriteNewArray(((CiArrayType) expr.Type).ElementType, expr.Inner, parent);
 			return expr;
 		case CiToken.Resource:
 			WriteResource((string) ((CiLiteral) expr.Inner).Value, ((CiArrayStorageType) expr.Type).Length);

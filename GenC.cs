@@ -204,9 +204,11 @@ public class GenC : GenCCpp
 			Write("NULL");
 	}
 
-	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr)
+	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		this.SharedMake = true;
+		if (parent > CiPriority.Mul)
+			Write('(');
 		Write('(');
 		WriteDefinition(elementType, () => Write(elementType is CiArrayType ? "(*)" : "*"));
 		Write(") CiShared_Make(");
@@ -234,11 +236,13 @@ public class GenC : GenCCpp
 		else
 			Write("NULL, NULL");
 		Write(')');
+		if (parent > CiPriority.Mul)
+			Write(')');
 	}
 
-	protected override void WriteNew(CiClass klass)
+	protected override void WriteNew(CiClass klass, CiPriority parent)
 	{
-		WriteNewArray(klass, null);
+		WriteNewArray(klass, null, parent);
 	}
 
 	void WriteStringStorageValue(CiExpr expr)

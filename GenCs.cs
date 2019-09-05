@@ -108,7 +108,7 @@ public class GenCs : GenTyped
 		}
 	}
 
-	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr)
+	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		Write("new ");
 		Write(elementType.BaseType, false);
@@ -137,7 +137,7 @@ public class GenCs : GenTyped
 			OpenLoop("int", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");
-			WriteNewArray(innerArray.ElementType, innerArray.LengthExpr);
+			WriteNewArray(innerArray.ElementType, innerArray.LengthExpr, CiPriority.Statement);
 			WriteLine(';');
 			array = innerArray;
 		}
@@ -145,7 +145,7 @@ public class GenCs : GenTyped
 			OpenLoop("int", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");
-			WriteNew(klass);
+			WriteNew(klass, CiPriority.Statement);
 			WriteLine(';');
 		}
 		while (--nesting >= 0)

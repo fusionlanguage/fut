@@ -130,7 +130,7 @@ public class GenCpp : GenCCpp
 		}
 	}
 
-	protected override void WriteNew(CiClass klass)
+	protected override void WriteNew(CiClass klass, CiPriority parent)
 	{
 		Include("memory");
 		Write("std::make_shared<");
@@ -138,7 +138,7 @@ public class GenCpp : GenCCpp
 		Write(">()");
 	}
 
-	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr)
+	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		Include("memory");
 		Write("std::make_shared<");

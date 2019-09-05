@@ -300,7 +300,7 @@ public class GenJava : GenTyped
 		OpenLoop("int", nesting++, array.Length);
 		WriteArrayElement(def, nesting);
 		Write(" = ");
-		WriteNew((CiClass) array.ElementType);
+		WriteNew((CiClass) array.ElementType, CiPriority.Statement);
 		WriteLine(';');
 		while (--nesting >= 0)
 			CloseBlock();
