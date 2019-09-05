@@ -171,6 +171,7 @@ public class CiScope : CiSymbol, IEnumerable
 		if (baseMethod.CallType == CiCallType.Static || baseMethod.CallType == CiCallType.Normal)
 			return false;
 		// TODO: check parameter and return type
+		baseMethod.Calls.Add(derived);
 		return true;
 	}
 
