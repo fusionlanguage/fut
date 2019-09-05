@@ -1130,7 +1130,7 @@ public class GenC : GenCCpp
 	{
 		if (klass.CallType == CiCallType.Static || klass.CallType == CiCallType.Abstract)
 			return false;
-		return klass.Methods.Any(method => method.CallType == CiCallType.Virtual || method.CallType == CiCallType.Override);
+		return klass.Methods.Any(method => method.CallType == CiCallType.Virtual || method.CallType == CiCallType.Override || method.CallType == CiCallType.Sealed);
 	}
 
 	protected override bool NeedsConstructor(CiClass klass)
