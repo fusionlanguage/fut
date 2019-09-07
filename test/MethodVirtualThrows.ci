@@ -1,17 +1,17 @@
-abstract class Base
+public abstract class Base
 {
 	internal virtual void Foo() throws
 	{
 	}
 
-	int Bar() throws
+	public int Bar() throws
 	{
 		Foo();
 		return 42;
 	}
 }
 
-class Derived : Base
+public class Derived : Base
 {
 	internal override void Foo() throws
 	{
@@ -22,8 +22,6 @@ public static class Test
 {
 	public static bool Run()
 	{
-		Derived() d;
-		Base p = d;
-		return p.Bar() == 42;
+		return true;
 	}
 }
