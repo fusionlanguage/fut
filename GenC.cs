@@ -40,6 +40,7 @@ public class GenC : GenCCpp
 	bool SharedRelease;
 	bool SharedAssign;
 	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
+	CiClass CurrentClass;
 
 	protected override void IncludeStdInt()
 	{
@@ -76,10 +77,17 @@ public class GenC : GenCCpp
 			Write(symbol.Name);
 	}
 
+	void WriteSelfForField(CiClass fieldClass)
+	{
+		Write("self->");
+		for (CiClass klass = this.CurrentClass; klass != fieldClass; klass = (CiClass) klass.Parent)
+			Write("base.");
+	}
+
 	protected override void WriteLocalName(CiSymbol symbol)
 	{
 		if (symbol is CiField)
-			Write("self->");
+			WriteSelfForField((CiClass) symbol.Parent);
 		WriteName(symbol);
 	}
 
@@ -568,7 +576,7 @@ public class GenC : GenCCpp
 
 	protected override void WriteNearCall(CiMethod method, CiExpr[] args)
 	{
-		CiClass klass = (CiClass) this.CurrentMethod.Parent;
+		CiClass klass = this.CurrentClass;
 		switch (method.CallType) {
 		case CiCallType.Abstract:
 		case CiCallType.Virtual:
@@ -580,9 +588,7 @@ public class GenC : GenCCpp
 				Write(structClass.Name);
 				Write("Vtbl *) ");
 			}
-			Write("self->");
-			for (CiClass baseClass = klass; baseClass != ptrClass; baseClass = (CiClass) baseClass.Parent)
-				Write("base.");
+			WriteSelfForField(ptrClass);
 			Write("vtbl");
 			if (structClass != ptrClass)
 				Write(')');
@@ -1272,10 +1278,8 @@ public class GenC : GenCCpp
 			WriteVtbl(klass, structClass);
 			this.Indent--;
 			WriteLine("};");
-			Write("self->");
 			CiClass ptrClass = GetVtblPtrClass(klass);
-			for (CiClass tempClass = klass; tempClass != ptrClass; tempClass = (CiClass) tempClass.Parent)
-				Write("base.");
+			WriteSelfForField(ptrClass);
 			Write("vtbl = ");
 			if (ptrClass != structClass) {
 				Write("(const ");
@@ -1580,6 +1584,7 @@ public class GenC : GenCCpp
 			WriteStruct(klass);
 		WriteResources(program.Resources);
 		foreach (CiClass klass in program.Classes) {
+			this.CurrentClass = klass;
 			WriteConstructor(klass);
 			WriteDestructor(klass);
 			WriteNewDelete(klass, true);
