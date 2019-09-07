@@ -119,7 +119,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteDefinition(CiType type, Action symbol)
+	void WriteDefinition(CiType type, Action symbol, bool promote)
 	{
 		if (type == null) {
 			Write("void ");
@@ -129,7 +129,7 @@ public class GenC : GenCCpp
 		CiType baseType = type.BaseType;
 		switch (baseType) {
 		case CiIntegerType integer:
-			Write(GetTypeCode(integer, type == baseType));
+			Write(GetTypeCode(integer, promote && type == baseType));
 			Write(' ');
 			break;
 		case CiStringPtrType _:
@@ -182,17 +182,17 @@ public class GenC : GenCCpp
 			symbol();
 		}
 		else
-			WriteDefinition(method.Type, symbol);
+			WriteDefinition(method.Type, symbol, true);
 	}
 
 	protected override void Write(CiType type, bool promote)
 	{
-		WriteDefinition(type, () => {});
+		WriteDefinition(type, () => {}, promote);
 	}
 
 	protected override void WriteTypeAndName(CiNamedValue value)
 	{
-		WriteDefinition(value.Type, () => WriteName(value));
+		WriteDefinition(value.Type, () => WriteName(value), true);
 	}
 
 	static bool IsDynamicPtr(CiType type)
@@ -219,7 +219,7 @@ public class GenC : GenCCpp
 		if (parent > CiPriority.Mul)
 			Write('(');
 		Write('(');
-		WriteDefinition(elementType, () => Write(elementType is CiArrayType ? "(*)" : "*"));
+		WriteDefinition(elementType, () => Write(elementType is CiArrayType ? "(*)" : "*"), false);
 		Write(") CiShared_Make(");
 		if (lengthExpr != null)
 			lengthExpr.Accept(this, CiPriority.Statement);
@@ -881,7 +881,7 @@ public class GenC : GenCCpp
 			base.Visit(statement);
 		}
 		else {
-			WriteDefinition(this.CurrentMethod.Type, () => Write("returnValue"));
+			WriteDefinition(this.CurrentMethod.Type, () => Write("returnValue"), true);
 			Write(" = ");
 			statement.Value.Accept(this, CiPriority.Statement);
 			WriteLine(';');
