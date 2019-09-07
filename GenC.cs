@@ -1239,7 +1239,7 @@ public class GenC : GenCCpp
 				CiSymbol definedMethod = definingClass.TryLookup(declaredMethod.Name);
 				if (declaredMethod != definedMethod) {
 					Write('(');
-					WriteDefinition(declaredMethod.Type, () => {
+					WriteSignature(declaredMethod, () => {
 						Write("(*)");
 						WriteInstanceParameters(declaredMethod);
 					});
