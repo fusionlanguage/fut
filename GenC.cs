@@ -1315,7 +1315,7 @@ public class GenC : GenCCpp
 		OpenBlock();
 		foreach (CiField field in klass.Fields.Reverse())
 			WriteDestruct(field);
-		if (klass.Parent is CiClass baseClass && NeedsConstructor(baseClass)) {
+		if (klass.Parent is CiClass baseClass && NeedsDestructor(baseClass)) {
 			Write(baseClass.Name);
 			WriteLine("_Destruct(&self->base);");
 		}
