@@ -38,6 +38,7 @@ public class GenC : GenCCpp
 	bool SharedMake;
 	bool SharedAddRef;
 	bool SharedRelease;
+	bool SharedAssign;
 	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
 
 	protected override void IncludeStdInt()
@@ -611,9 +612,21 @@ public class GenC : GenCCpp
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Left.Type == CiSystem.StringStorageType) {
-			switch (expr.Op) {
-			case CiToken.Assign:
+		switch (expr.Op) {
+		case CiToken.Equal:
+		case CiToken.NotEqual:
+		case CiToken.Greater:
+			if (expr.Left is CiBinaryExpr property
+			 && property.Op == CiToken.Dot
+			 && ((CiSymbolReference) property.Right).Symbol == CiSystem.StringLength
+			 && expr.Right is CiLiteral literal && (long) literal.Value == 0) {
+				property.Left.Accept(this, CiPriority.Primary);
+				Write(expr.Op == CiToken.Equal ? "[0] == '\\0'" : "[0] != '\\0'");
+				return expr;
+			}
+			break;
+		case CiToken.Assign:
+			if (expr.Left.Type == CiSystem.StringStorageType) {
 				if (parent == CiPriority.Statement
 				 && IsTrimSubstring(expr) is CiExpr length) {
 					expr.Left.Accept(this, CiPriority.Primary);
@@ -629,7 +642,19 @@ public class GenC : GenCCpp
 				WriteStringStorageValue(expr.Right);
 				Write(')');
 				return expr;
-			case CiToken.AddAssign:
+			}
+			else if (IsDynamicPtr(expr.Left.Type)) {
+				this.SharedAssign = true;
+				Write("CiShared_Assign((void **) &");
+				expr.Left.Accept(this, CiPriority.Primary);
+				Write(", ");
+				expr.Right.Accept(this, CiPriority.Statement);
+				Write(')');
+				return expr;
+			}
+			break;
+		case CiToken.AddAssign:
+			if (expr.Left.Type == CiSystem.StringStorageType) {
 				Include("string.h");
 				this.StringAppend = true;
 				Write("CiString_Append(&");
@@ -637,22 +662,6 @@ public class GenC : GenCCpp
 				Write(", ");
 				expr.Right.Accept(this, CiPriority.Statement);
 				Write(')');
-				return expr;
-			default:
-				break;
-			}
-		}
-
-		switch (expr.Op) {
-		case CiToken.Equal:
-		case CiToken.NotEqual:
-		case CiToken.Greater:
-			if (expr.Left is CiBinaryExpr property
-			 && property.Op == CiToken.Dot
-			 && ((CiSymbolReference) property.Right).Symbol == CiSystem.StringLength
-			 && expr.Right is CiLiteral literal && (long) literal.Value == 0) {
-				property.Left.Accept(this, CiPriority.Primary);
-				Write(expr.Op == CiToken.Equal ? "[0] == '\\0'" : "[0] != '\\0'");
 				return expr;
 			}
 			break;
@@ -1482,7 +1491,7 @@ public class GenC : GenCCpp
 			WriteLine("\t((CiShared *) ptr)[-1].refCount++;");
 			CloseBlock();
 		}
-		if (this.SharedRelease) {
+		if (this.SharedRelease || this.SharedAssign) {
 			WriteLine();
 			WriteLine("static void CiShared_Release(void *ptr)");
 			OpenBlock();
@@ -1497,6 +1506,14 @@ public class GenC : GenCCpp
 			WriteLine("\tself->destructor((char *) ptr + --i * self->unitSize);");
 			CloseBlock();
 			WriteLine("free(self);");
+			CloseBlock();
+		}
+		if (this.SharedAssign) {
+			WriteLine();
+			WriteLine("static void CiShared_Assign(void **ptr, void *value)");
+			OpenBlock();
+			WriteLine("CiShared_Release(*ptr);");
+			WriteLine("*ptr = value;");
 			CloseBlock();
 		}
 	}
@@ -1557,6 +1574,7 @@ public class GenC : GenCCpp
 		this.SharedMake = false;
 		this.SharedAddRef = false;
 		this.SharedRelease = false;
+		this.SharedAssign = false;
 		OpenStringWriter();
 		foreach (CiClass klass in program.Classes)
 			WriteStruct(klass);
