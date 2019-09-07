@@ -1054,7 +1054,7 @@ public class GenC : GenCCpp
 		if (this.CurrentMethod.Throws && this.CurrentMethod.Type == null && block.CompletesNormally) {
 			OpenBlock();
 			CiStatement[] statements = block.Statements;
-			if (!TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
+			if (statements.Length == 0 || !TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
 				Write(statements);
 				WriteDestructAll();
 				this.VarsToDestruct.Clear();
