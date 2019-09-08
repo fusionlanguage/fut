@@ -538,14 +538,18 @@ public class GenC : GenCCpp
 		}
 		// TODO
 		else {
+			CiClass definingClass = (CiClass) method.Parent;
+			CiClass declaringClass = definingClass;
 			switch (method.CallType) {
+			case CiCallType.Override:
+				declaringClass = (CiClass) method.DeclaringMethod.Parent;
+				goto case CiCallType.Abstract;
 			case CiCallType.Abstract:
 			case CiCallType.Virtual:
-			case CiCallType.Override:
 				if (!(obj.Type is CiClass klass))
 					klass = ((CiClassPtrType) obj.Type).Class;
 				CiClass ptrClass = GetVtblPtrClass(klass);
-				CiClass structClass = GetVtblStructClass((CiClass) method.Parent);
+				CiClass structClass = GetVtblStructClass(definingClass);
 				if (structClass != ptrClass) {
 					Write("((const ");
 					Write(structClass.Name);
@@ -565,7 +569,7 @@ public class GenC : GenCCpp
 			}
 			Write('(');
 			if (method.CallType != CiCallType.Static) {
-				WriteClassPtr((CiClass) method.Parent, obj, CiPriority.Statement);
+				WriteClassPtr(declaringClass, obj, CiPriority.Statement);
 				if (args.Length > 0)
 					Write(", ");
 			}
@@ -577,12 +581,16 @@ public class GenC : GenCCpp
 	protected override void WriteNearCall(CiMethod method, CiExpr[] args)
 	{
 		CiClass klass = this.CurrentClass;
+		CiClass definingClass = (CiClass) method.Parent;
+		CiClass declaringClass = definingClass;
 		switch (method.CallType) {
+		case CiCallType.Override:
+			declaringClass = (CiClass) method.DeclaringMethod.Parent;
+			goto case CiCallType.Abstract;
 		case CiCallType.Abstract:
 		case CiCallType.Virtual:
-		case CiCallType.Override:
 			CiClass ptrClass = GetVtblPtrClass(klass);
-			CiClass structClass = GetVtblStructClass((CiClass) method.Parent);
+			CiClass structClass = GetVtblStructClass(definingClass);
 			if (structClass != ptrClass) {
 				Write("((const ");
 				Write(structClass.Name);
@@ -601,12 +609,11 @@ public class GenC : GenCCpp
 		}
 		Write('(');
 		if (method.CallType != CiCallType.Static) {
-			CiClass resultClass = (CiClass) method.Parent;
-			if (klass == resultClass)
+			if (klass == declaringClass)
 				Write("self");
 			else {
 				Write("&self->base");
-				for (klass = (CiClass) klass.Parent; klass != resultClass; klass = (CiClass) klass.Parent)
+				for (klass = (CiClass) klass.Parent; klass != declaringClass; klass = (CiClass) klass.Parent)
 					Write(".base");
 			}
 			if (args.Length > 0)

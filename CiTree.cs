@@ -581,6 +581,17 @@ public class CiMethod : CiMethodBase
 		this.Parameters.AddRange(parameters);
 	}
 	public override bool IsStatic() { return this.CallType == CiCallType.Static; }
+	public CiMethod DeclaringMethod
+	{
+		get
+		{
+			CiMethod method = this;
+			while (method.CallType == CiCallType.Override) {
+				method = (CiMethod) method.Parent.Parent.TryLookup(method.Name);
+			}
+			return method;
+		}
+	}
 }
 
 public class CiType : CiScope
