@@ -198,6 +198,27 @@ public class GenCs : GenTyped
 		}
 	}
 
+	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
+	{
+		switch (expr.Op) {
+		case CiToken.AndAssign:
+		case CiToken.OrAssign:
+		case CiToken.XorAssign:
+			if (parent > CiPriority.Assign)
+				Write('(');
+			expr.Left.Accept(this, CiPriority.Assign);
+			Write(' ');
+			Write(expr.OpString);
+			Write(' ');
+			WriteAssignRight(expr);
+			if (parent > CiPriority.Assign)
+				Write(')');
+			return expr;
+		default:
+			return base.Visit(expr, parent);
+		}
+	}
+
 	protected override void WriteFallthrough(CiExpr expr)
 	{
 		if (expr is CiGotoDefault)
