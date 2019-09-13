@@ -1,6 +1,5 @@
 public class Base
 {
-	int Bar;
 	protected bool Foo() => true;
 }
 

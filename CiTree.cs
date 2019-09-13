@@ -581,6 +581,7 @@ public class CiMethod : CiMethodBase
 		this.Parameters.AddRange(parameters);
 	}
 	public override bool IsStatic() { return this.CallType == CiCallType.Static; }
+	public bool IsAbstractOrVirtual() { return this.CallType == CiCallType.Abstract || this.CallType == CiCallType.Virtual; }
 	public CiMethod DeclaringMethod
 	{
 		get
@@ -633,6 +634,7 @@ public class CiClass : CiContainerType
 	public override string ToString() { return this.Name + "()"; }
 	public override bool IsAssignableFrom(CiType right) { return false; }
 	public override CiType PtrOrSelf { get { return new CiClassPtrType { Class = this, Modifier = CiToken.ExclamationMark }; } }
+	public bool AddsVirtualMethods() { return this.Methods.Any(method => method.IsAbstractOrVirtual()); }
 	public CiClass()
 	{
 		this.Dict.Add("this", new CiVar(this.PtrOrSelf, "this")); // shadows "this" in base class

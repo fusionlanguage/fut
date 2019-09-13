@@ -454,10 +454,11 @@ public class GenCpp : GenCCpp
 	void WriteDeclarations(CiClass klass, CiVisibility visibility, string visibilityKeyword)
 	{
 		bool constructor = GetConstructorVisibility(klass) == visibility;
+		bool destructor = visibility == CiVisibility.Public && klass.AddsVirtualMethods();
 		IEnumerable<CiConst> consts = klass.Consts.Where(c => c.Visibility == visibility);
 		IEnumerable<CiField> fields = klass.Fields.Where(f => f.Visibility == visibility);
 		IEnumerable<CiMethod> methods = klass.Methods.Where(m => m.Visibility == visibility);
-		if (!constructor && !consts.Any() && !fields.Any() && !methods.Any())
+		if (!constructor && !destructor && !consts.Any() && !fields.Any() && !methods.Any())
 			return;
 
 		Write(visibilityKeyword);
@@ -472,6 +473,12 @@ public class GenCpp : GenCCpp
 			else if (klass.Constructor == null)
 				Write(" = default");
 			WriteLine(';');
+		}
+
+		if (destructor) {
+			Write("virtual ~");
+			Write(klass.Name);
+			WriteLine("() = default;");
 		}
 
 		foreach (CiConst konst in consts)
