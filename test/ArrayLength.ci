@@ -5,7 +5,7 @@ public static class Test
 		const int[] a = { 5, 10, 15 };
 		switch (3) {
 		case a.Length:
-			return true;
+			return a[1] == 10;
 		default:
 			return false;
 		}

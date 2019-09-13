@@ -4,17 +4,17 @@ public static class Test
 
 	static int Sum(int[] a, int length)
 	{
-		const int[3] localConst = { 3, 2, 1 };
+		const int[4] localConst = { 3, 2, 1, 0 };
 		int sum = 0;
 		for (int i = 0; i < length; i++)
-			sum += a[i];
+			sum += a[i] + localConst[i];
 		return sum;
 	}
 
 	public static bool Run()
 	{
 		const int[4] localConst = { 1, 2, 3, 4 };
-		return Sum(ClassConst, ClassConst.Length) == 30
-			&& Sum(localConst, localConst.Length) == 10;
+		return Sum(ClassConst, ClassConst.Length) == 36
+			&& Sum(localConst, localConst.Length) == 16;
 	}
 }
