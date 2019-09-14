@@ -9,8 +9,8 @@ CSC := gmcs
 MONO := mono
 JAVACPSEP = :
 endif
-CC = clang
-CXX = clang++ -std=c++2a
+CC = clang -Wall -Wno-tautological-compare -Wno-unused-function -Werror
+CXX = clang++ -Wall -Wno-tautological-compare -Werror -std=c++2a
 
 VERSION := 1.0.0
 MAKEFLAGS = -r

@@ -1,9 +1,13 @@
 public static class Test
 {
+	static bool IsLetter(int c)
+		=> (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+
 	public static bool Run()
 	{
 		bool a = true;
 		int[] b = null;
-		return a || b[0] == 5;
+		return (a || b[0] == 5)
+			&& IsLetter('f');
 	}
 }

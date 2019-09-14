@@ -7,12 +7,12 @@ public static class Test
 		case 4:
 		case 7:
 			int b = 5;
-			return false;
+			return b != 5;
 		case 40 + 2:
 			return true;
 		default:
 			int c = 7;
-			return false;
+			return c != 7;
 		}
 	}
 }

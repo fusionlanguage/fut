@@ -4,6 +4,8 @@ public static class Test
 	{
 		int a = 7;
 		int b = 3;
-		return a / b == 2;
+		return a / b == 2
+			&& -7 / b == -2
+			&& a / -3 == -2;
 	}
 }

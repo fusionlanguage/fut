@@ -1,9 +1,0 @@
-public static class Test
-{
-	public static bool Run()
-	{
-		int a = -7;
-		int b = 3;
-		return a / b == -2;
-	}
-}

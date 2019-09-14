@@ -4,6 +4,9 @@ public static class Test
 	{
 		int a = 5;
 		int b = 3;
-		return (a | b) == 7;
+		bool c = true;
+		return (a | b) == 7
+			&& ((c ? a : b) | 2) == 7
+			&& (3 | (c ? a : b)) == 7;
 	}
 }
