@@ -445,6 +445,19 @@ public abstract class GenBase : CiVisitor
 		return expr;
 	}
 
+	static bool IsBitOp(CiPriority parent)
+	{
+		switch (parent) {
+		case CiPriority.Or:
+		case CiPriority.Xor:
+		case CiPriority.And:
+		case CiPriority.Shift:
+			return true;
+		default:
+			return false;
+		}
+	}
+
 	CiExpr Write(CiBinaryExpr expr, bool parentheses, CiPriority left, string op, CiPriority right)
 	{
 		if (parentheses)
@@ -469,7 +482,7 @@ public abstract class GenBase : CiVisitor
 
 	protected virtual void WriteAnd(CiBinaryExpr expr, CiPriority parent)
 	{
-		Write(expr, parent > CiPriority.And, CiPriority.Mul, " & ", CiPriority.Mul);
+		Write(expr, parent > CiPriority.CondAnd && parent != CiPriority.And, CiPriority.And, " & ", CiPriority.And);
 	}
 
 	protected virtual void WriteAssignRight(CiBinaryExpr expr)
@@ -511,9 +524,9 @@ public abstract class GenBase : CiVisitor
 	{
 		switch (expr.Op) {
 		case CiToken.Plus:
-			return Write(expr, parent, CiPriority.Add, " + ");
+			return Write(expr, parent > CiPriority.Add || IsBitOp(parent), CiPriority.Add, " + ", CiPriority.Add);
 		case CiToken.Minus:
-			return Write(expr, parent > CiPriority.Add, CiPriority.Add, " - ", CiPriority.Mul);
+			return Write(expr, parent > CiPriority.Add || IsBitOp(parent), CiPriority.Add, " - ", CiPriority.Mul);
 		case CiToken.Asterisk:
 			return Write(expr, parent, CiPriority.Mul, " * ");
 		case CiToken.Slash:
@@ -521,9 +534,9 @@ public abstract class GenBase : CiVisitor
 		case CiToken.Mod:
 			return Write(expr, parent > CiPriority.Mul, CiPriority.Mul, " % ", CiPriority.Primary);
 		case CiToken.ShiftLeft:
-			return Write(expr, parent > CiPriority.Shift, CiPriority.Mul, " << ", CiPriority.Mul);
+			return Write(expr, parent > CiPriority.Shift, CiPriority.Shift, " << ", CiPriority.Mul);
 		case CiToken.ShiftRight:
-			return Write(expr, parent > CiPriority.Shift, CiPriority.Mul, " >> ", CiPriority.Mul);
+			return Write(expr, parent > CiPriority.Shift, CiPriority.Shift, " >> ", CiPriority.Mul);
 		case CiToken.Less:
 			return Write(expr, parent, CiPriority.Rel, " < ");
 		case CiToken.LessOrEqual:
@@ -544,9 +557,9 @@ public abstract class GenBase : CiVisitor
 		case CiToken.Or:
 			return Write(expr, parent, CiPriority.Or, " | ");
 		case CiToken.Xor:
-			return Write(expr, parent, CiPriority.Xor, " ^ ");
+			return Write(expr, parent > CiPriority.Xor || parent == CiPriority.Or, CiPriority.Xor, " ^ ", CiPriority.Xor);
 		case CiToken.CondAnd:
-			return Write(expr, parent == CiPriority.CondOr ? CiPriority.Or : parent, CiPriority.CondAnd, " && ");
+			return Write(expr, parent > CiPriority.CondAnd || parent == CiPriority.CondOr, CiPriority.CondAnd, " && ", CiPriority.CondAnd);
 		case CiToken.CondOr:
 			return Write(expr, parent, CiPriority.CondOr, " || ");
 		case CiToken.Assign:

@@ -183,12 +183,12 @@ public class GenJava : GenTyped
 	{
 		if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)
 		 && expr.Right is CiLiteral rightLiteral) {
-			if (parent > CiPriority.And)
+			if (parent > CiPriority.CondAnd && parent != CiPriority.And)
 				Write('(');
 			base.WriteIndexing(leftBinary, CiPriority.And);
 			Write(" & ");
 			Write(0xff & (long) rightLiteral.Value);
-			if (parent > CiPriority.And)
+			if (parent > CiPriority.CondAnd && parent != CiPriority.And)
 				Write(')');
 		}
 		else
