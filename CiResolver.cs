@@ -92,14 +92,14 @@ public class CiResolver : CiVisitor
 
 	CiType GetCommonType(CiExpr left, CiExpr right)
 	{
+		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange)
+			return leftRange.Union(rightRange);
 		CiType ptr = left.Type.PtrOrSelf;
 		if (ptr.IsAssignableFrom(right.Type))
 			return ptr;
 		ptr = right.Type.PtrOrSelf;
 		if (ptr.IsAssignableFrom(left.Type))
 			return ptr;
-		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange)
-			return leftRange.Union(rightRange);
 		throw StatementException(left, "Incompatible types: {0} and {1}", left.Type, right.Type);
 	}
 

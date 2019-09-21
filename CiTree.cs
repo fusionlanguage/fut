@@ -661,7 +661,7 @@ public class CiIntType : CiIntegerType
 {
 	public override bool IsAssignableFrom(CiType right)
 	{
-		return right is CiIntegerType it && !it.IsLong;
+		return right is CiIntegerType it; // TODO? && !it.IsLong;
 	}
 	public override bool IsLong { get { return false; } }
 }
@@ -729,7 +729,8 @@ public class CiRangeType : CiIntegerType
 
 	public override bool IsAssignableFrom(CiType right)
 	{
-		return right is CiRangeType range && this.Min <= range.Min && this.Max >= range.Max;
+		// TODO? return right is CiRangeType range && this.Min <= range.Min && this.Max >= range.Max;
+		return right is CiRangeType range && (this.Min <= range.Max || this.Max >= range.Min);
 	}
 
 	public override bool IsLong { get { return this.Min < int.MinValue || this.Max > uint.MaxValue || (this.Min < 0 && this.Max > int.MaxValue); } }
