@@ -346,6 +346,10 @@ public class GenJs : GenBase
 				Write(", ");
 			first = false;
 			Write(param.Name);
+			if (param.Value != null) {
+				Write(" = ");
+				param.Value.Accept(this, CiPriority.Statement);
+			}
 		}
 		Write(')');
 		WriteBody(method);

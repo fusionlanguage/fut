@@ -195,21 +195,23 @@ public abstract class GenTyped : GenBase
 			|| klass.Fields.Any(field => HasInitCode(field));
 	}
 
-	protected void WriteParameters(CiMethod method, bool first)
+	protected void WriteParameters(CiMethod method, bool first, bool defaultArguments)
 	{
 		foreach (CiVar param in method.Parameters) {
 			if (!first)
 				Write(", ");
 			first = false;
 			WriteTypeAndName(param);
+			if (defaultArguments)
+				WriteVarInit(param);
 		}
 		Write(')');
 	}
 
-	protected void WriteParameters(CiMethod method)
+	protected void WriteParameters(CiMethod method, bool defaultArguments)
 	{
 		Write('(');
-		WriteParameters(method, true);
+		WriteParameters(method, true, defaultArguments);
 	}
 
 	protected void WritePublic(CiContainerType container)

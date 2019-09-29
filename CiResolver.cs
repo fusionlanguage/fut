@@ -485,8 +485,11 @@ public class CiResolver : CiVisitor
 				throw StatementException(left, "Expected a method");
 			int i = 0;
 			foreach (CiVar param in method.Parameters) {
-				if (i >= arguments.Length)
+				if (i >= arguments.Length) {
+					if (param.Value != null)
+						break;
 					throw StatementException(expr, "Too few arguments");
+				}
 				CiExpr arg = arguments[i].Accept(this, CiPriority.Statement);
 				Coerce(arg, param.Type);
 				arguments[i++] = arg;

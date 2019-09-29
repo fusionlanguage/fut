@@ -357,6 +357,74 @@ public class GenJava : GenTyped
 		CloseJavaFile();
 	}
 
+	void WriteSignature(CiMethod method, int paramCount)
+	{
+		WriteLine();
+		Write(method.Visibility);
+		switch (method.CallType) {
+		case CiCallType.Static:
+			Write("static ");
+			break;
+		case CiCallType.Virtual:
+			break;
+		case CiCallType.Abstract:
+			Write("abstract ");
+			break;
+		case CiCallType.Override:
+			Write("@Override ");
+			break;
+		case CiCallType.Normal:
+			if (method.Visibility != CiVisibility.Private)
+				Write("final ");
+			break;
+		case CiCallType.Sealed:
+			Write("final @Override ");
+			break;
+		default:
+			throw new NotImplementedException(method.CallType.ToString());
+		}
+		WriteTypeAndName(method);
+		Write('(');
+		int i = 0;
+		foreach (CiVar param in method.Parameters) {
+			if (i >= paramCount)
+				break;
+			if (i > 0)
+				Write(", ");
+			WriteTypeAndName(param);
+			i++;
+		}
+		Write(')');
+		if (method.Throws)
+			Write(" throws Exception");
+	}
+
+	void WriteOverloads(CiMethod method, int paramCount)
+	{
+		if (paramCount + 1 < method.Parameters.Count)
+			WriteOverloads(method, paramCount + 1);
+		WriteSignature(method, paramCount);
+		WriteLine();
+		OpenBlock();
+		if (method.Type != null)
+			Write("return ");
+		WriteName(method);
+		Write('(');
+		int i = 0;
+		foreach (CiVar param in method.Parameters) {
+			if (i > 0)
+				Write(", ");
+			if (i >= paramCount) {
+				param.Value.Accept(this, CiPriority.Statement);
+				break;
+			}
+			Write(param.Name);
+			i++;
+		}
+		WriteLine(");");
+		CloseBlock();
+	}
+
 	void WriteConsts(IEnumerable<CiConst> konsts)
 	{
 		foreach (CiConst konst in konsts) {
@@ -410,35 +478,16 @@ public class GenJava : GenTyped
 		}
 
 		foreach (CiMethod method in klass.Methods) {
-			WriteLine();
-			Write(method.Visibility);
-			switch (method.CallType) {
-			case CiCallType.Static:
-				Write("static ");
-				break;
-			case CiCallType.Virtual:
-				break;
-			case CiCallType.Abstract:
-				Write("abstract ");
-				break;
-			case CiCallType.Override:
-				Write("@Override ");
-				break;
-			case CiCallType.Normal:
-				if (method.Visibility != CiVisibility.Private)
-					Write("final ");
-				break;
-			case CiCallType.Sealed:
-				Write("final @Override ");
-				break;
-			default:
-				throw new NotImplementedException(method.CallType.ToString());
-			}
-			WriteTypeAndName(method);
-			WriteParameters(method);
-			if (method.Throws)
-				Write(" throws Exception");
+			WriteSignature(method, method.Parameters.Count);
 			WriteBody(method);
+			int i = 0;
+			foreach (CiVar param in method.Parameters) {
+				if (param.Value != null) {
+					WriteOverloads(method, i);
+					break;
+				}
+				i++;
+			}
 		}
 
 		WriteConsts(klass.ConstArrays);

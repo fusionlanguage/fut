@@ -312,7 +312,7 @@ public class GenCs : GenTyped
 			Write(method.Visibility);
 			Write(method.CallType, "sealed override ");
 			WriteTypeAndName(method);
-			WriteParameters(method);
+			WriteParameters(method, true);
 			WriteBody(method);
 		}
 

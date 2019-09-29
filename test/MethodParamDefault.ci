@@ -1,0 +1,12 @@
+public static class Test
+{
+	static bool Foo(int i = 42, bool b = true)
+	{
+		return i == 42 && b;
+	}
+
+	public static bool Run()
+	{
+		return Foo();
+	}
+}

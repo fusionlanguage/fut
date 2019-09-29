@@ -471,6 +471,21 @@ public class GenC : GenCCpp
 		Write(')');
 	}
 
+	void WriteArgsAndRightParenthesis(CiMethod method, CiExpr[] args)
+	{
+		int i = 0;
+		foreach (CiVar param in method.Parameters) {
+			if (i > 0 || method.CallType != CiCallType.Static)
+				Write(", ");
+			if (i >= args.Length)
+				param.Value.Accept(this, CiPriority.Statement);
+			else
+				WriteCoerced(param.Type, args[i], CiPriority.Statement);
+			i++;
+		}
+		Write(')');
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (obj.Type is CiArrayType array && method.Name == "CopyTo") {
@@ -568,13 +583,9 @@ public class GenC : GenCCpp
 				break;
 			}
 			Write('(');
-			if (method.CallType != CiCallType.Static) {
+			if (method.CallType != CiCallType.Static)
 				WriteClassPtr(declaringClass, obj, CiPriority.Statement);
-				if (args.Length > 0)
-					Write(", ");
-			}
-			WriteArgs(method, args);
-			Write(')');
+			WriteArgsAndRightParenthesis(method, args);
 		}
 	}
 
@@ -616,11 +627,8 @@ public class GenC : GenCCpp
 				for (klass = (CiClass) klass.Parent; klass != declaringClass; klass = (CiClass) klass.Parent)
 					Write(".base");
 			}
-			if (args.Length > 0)
-				Write(", ");
 		}
-		WriteArgs(method, args);
-		Write(')');
+		WriteArgsAndRightParenthesis(method, args);
 	}
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
@@ -1042,7 +1050,7 @@ public class GenC : GenCCpp
 			Write("const ");
 		Write(method.Parent.Name);
 		Write(" *self");
-		WriteParameters(method, false);
+		WriteParameters(method, false, false);
 	}
 
 	void WriteSignature(CiClass klass, CiMethod method)
@@ -1058,7 +1066,7 @@ public class GenC : GenCCpp
 			else if (method.Parameters.Count == 0)
 				Write("(void)");
 			else
-				WriteParameters(method);
+				WriteParameters(method, false);
 		});
 	}
 

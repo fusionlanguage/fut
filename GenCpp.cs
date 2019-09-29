@@ -444,9 +444,9 @@ public class GenCpp : GenCCpp
 		}
 	}
 
-	void WriteParametersAndConst(CiMethod method)
+	void WriteParametersAndConst(CiMethod method, bool defaultArguments)
 	{
-		WriteParameters(method);
+		WriteParameters(method, defaultArguments);
 		if (method.CallType != CiCallType.Static && !method.IsMutator)
 			Write(" const");
 	}
@@ -504,7 +504,7 @@ public class GenCpp : GenCCpp
 				break;
 			}
 			WriteTypeAndName(method);
-			WriteParametersAndConst(method);
+			WriteParametersAndConst(method, true);
 			switch (method.CallType) {
 			case CiCallType.Abstract:
 				Write(" = 0");
@@ -573,7 +573,7 @@ public class GenCpp : GenCCpp
 		Write(klass.Name);
 		Write("::");
 		WriteCamelCase(method.Name);
-		WriteParametersAndConst(method);
+		WriteParametersAndConst(method, false);
 		WriteBody(method);
 	}
 
