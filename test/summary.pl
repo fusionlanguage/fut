@@ -1,18 +1,14 @@
 #!perl
 use strict;
-my %t = map { m!/(\w+)/\w+\.txt$! or die; $1 => 1 } @ARGV;
+my %t;
 my %p;
-while (<>) {
-	if (/^PASSED/) {
-		$ARGV =~ m!/(\w+)\.txt$!g or die;
-		$p{$1}++;
-	}
-	else {
-		print "$ARGV $_";
-	}
+for (@ARGV) {
+	m!/(\w+)\.txt$! or die;
+	my $n = $1;
+	$t{$n}++;
+	open IN, $_ or die "$_: $!\n";
+	$p{$n} += <IN> =~ /^PASSED/;
 }
-print "PASSED ";
-for (sort keys %p) {
-	print "$_=$p{$_} ";
-}
-print "of ", scalar(keys %t), " tests\n";
+print "PASSED";
+print " $_=$p{$_}/$t{$_}" for sort keys %t;
+print "\n";

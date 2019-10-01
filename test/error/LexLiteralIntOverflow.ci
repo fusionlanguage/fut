@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		long a = 123456789012345678901234567890; // ERROR: Integer too big
+		long a = 123456789012345678901234567890; //ERROR: Integer too big
 		return true;
 	}
 }

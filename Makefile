@@ -20,24 +20,12 @@ all: cito.exe
 cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs CiTo.cs)
 	$(CSC) $^
 
-test-error: cito.exe
-	@export passed=0 total=0; \
-		cd test/error; \
-		for ci in *.ci; do \
-			if $(MONO) ../../cito.exe -o $$ci.cs $$ci; then \
-				echo FAILED $$ci; \
-			else \
-				passed=$$(($$passed+1)); \
-			fi; \
-			total=$$(($$total+1)); \
-		done; \
-		echo PASSED $$passed of $$total errors
-
 test: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci)) \
       $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) \
       $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) \
       $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) \
-      $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
+      $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) \
+      $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
 	perl test/summary.pl $^
 
 test/bin/%/c.txt: test/bin/%/c.exe
@@ -89,6 +77,10 @@ test/bin/%/Test.js: test/%.ci cito.exe
 
 test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 	javac -d $(@D) -cp test/bin/Basic $<
+
+test/bin/%/error.txt: test/error/%.ci cito.exe
+	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $(@:%.txt=%.cs) $< 2>$@
+	-perl -ne 'print "$$ARGV($$.): $$1" if m!//(ERROR: .+)!s' $< | diff -uZ - $@ && echo PASSED >$@
 
 install: install-cito
 
