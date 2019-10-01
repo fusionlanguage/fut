@@ -433,6 +433,8 @@ public class GenJs : GenBase
 	public override void Write(CiProgram program)
 	{
 		CreateFile(this.OutputFile);
+		WriteLine();
+		WriteLine("\"use strict\";");
 		foreach (CiEnum enu in program.OfType<CiEnum>())
 			Write(enu);
 		foreach (CiClass klass in program.OfType<CiClass>()) // TODO: topological sort of class hierarchy
