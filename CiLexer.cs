@@ -275,7 +275,11 @@ public class CiLexer
 				}
 				break;
 			default:
-				this.CurrentValue = double.Parse(sb.ToString(), CultureInfo.InvariantCulture);
+				if (!double.TryParse(sb.ToString(),
+					NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign,
+					CultureInfo.InvariantCulture, out double result))
+					throw ParseException("Invalid floating-point number");
+				this.CurrentValue = result;
 				return CiToken.Literal;
 			}
 		}
@@ -566,10 +570,9 @@ public class CiLexer
 			NextPreToken();
 			return result;
 		}
-		if (See(CiToken.Literal) && this.CurrentValue is bool) {
-			bool result = (bool) this.CurrentValue;
+		if (See(CiToken.Literal) && this.CurrentValue is bool value) {
 			NextPreToken();
-			return result;
+			return value;
 		}
 		throw ParseException("Invalid preprocessor expression");
 	}
@@ -611,14 +614,11 @@ public class CiLexer
 
 	void PopPreStack(string directive)
 	{
-		try {
-			PreDirectiveClass pdc = this.PreStack.Pop();
-			if (directive != "#endif" && pdc == PreDirectiveClass.Else)
-				throw ParseException("{0} after #else", directive);
-		}
-		catch (InvalidOperationException) {
+		if (this.PreStack.Count == 0)
 			throw ParseException("{0} with no matching #if", directive);
-		}
+		PreDirectiveClass pdc = this.PreStack.Pop();
+		if (directive != "#endif" && pdc == PreDirectiveClass.Else)
+			throw ParseException("{0} after #else", directive);
 	}
 
 	void SkipUntilPreMet()
