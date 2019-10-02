@@ -346,7 +346,7 @@ public class CiParser : CiLexer
 
 	CiDoWhile ParseDoWhile()
 	{
-		CiDoWhile result = new CiDoWhile();
+		CiDoWhile result = new CiDoWhile { Line = this.Line };
 		Expect(CiToken.Do);
 		ParseLoopBody(result);
 		Expect(CiToken.While);
@@ -357,7 +357,7 @@ public class CiParser : CiLexer
 
 	CiFor ParseFor()
 	{
-		CiFor result = new CiFor();
+		CiFor result = new CiFor { Line = this.Line };
 		Expect(CiToken.For);
 		Expect(CiToken.LeftParenthesis);
 		if (!See(CiToken.Semicolon))
@@ -375,7 +375,7 @@ public class CiParser : CiLexer
 
 	CiIf ParseIf()
 	{
-		CiIf result = new CiIf();
+		CiIf result = new CiIf { Line = this.Line };
 		Expect(CiToken.If);
 		result.Cond = ParseParenthesized();
 		result.OnTrue = ParseStatement();
@@ -386,6 +386,7 @@ public class CiParser : CiLexer
 
 	CiNative ParseNative()
 	{
+		int line = this.Line;
 		Expect(CiToken.Native);
 		StringBuilder sb = new StringBuilder();
 		this.CopyTo = sb;
@@ -408,7 +409,7 @@ public class CiParser : CiLexer
 		NextToken();
 		Trace.Assert(sb[sb.Length - 1] == '}');
 		sb.Length--;
-		return new CiNative { Content = sb.ToString() };
+		return new CiNative { Line = line, Content = sb.ToString() };
 	}
 
 	CiReturn ParseReturn()
@@ -423,7 +424,7 @@ public class CiParser : CiLexer
 
 	CiSwitch ParseSwitch()
 	{
-		CiSwitch result = new CiSwitch();
+		CiSwitch result = new CiSwitch { Line = this.Line };
 		Expect(CiToken.Switch);
 		result.Value = ParseParenthesized();
 		Expect(CiToken.LeftBrace);
@@ -504,7 +505,7 @@ public class CiParser : CiLexer
 
 	CiWhile ParseWhile()
 	{
-		CiWhile result = new CiWhile();
+		CiWhile result = new CiWhile { Line = this.Line };
 		Expect(CiToken.While);
 		result.Cond = ParseParenthesized();
 		ParseLoopBody(result);
