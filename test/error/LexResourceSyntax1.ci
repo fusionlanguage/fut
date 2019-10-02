@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		byte[] a = resource("foo"); //ERROR: Expected Less, got LeftParenthesis
+		return true;
+	}
+}

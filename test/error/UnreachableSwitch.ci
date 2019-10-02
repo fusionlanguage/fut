@@ -1,0 +1,18 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		switch (42) {
+		case 42:
+			return true;
+		default:
+			return false;
+		}
+		switch (5) { //ERROR: Unreachable statement
+		case 5:
+			return false;
+		default:
+			return false;
+		}
+	}
+}

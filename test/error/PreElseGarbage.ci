@@ -1,0 +1,10 @@
+public static class Test
+{
+	public static bool Run()
+	{
+#if false
+#else foo //ERROR: Unexpected characters after #else
+		return true;
+#endif
+	}
+}

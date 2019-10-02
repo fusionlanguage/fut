@@ -1,0 +1,11 @@
+public static class Test
+{
+	public static bool Run()
+	{
+#if false
+#else
+		return true;
+#elif true //ERROR: #elif after #else
+#endif
+	}
+}

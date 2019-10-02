@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		byte[] a = resource<int[]>("foo"); //ERROR: Expected resource<byte[]>
+		return true;
+	}
+}

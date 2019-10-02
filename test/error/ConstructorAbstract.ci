@@ -1,0 +1,5 @@
+public class Test
+{
+	public abstract Test() { //ERROR: Abstract methods allowed only in an abstract class
+	}
+}

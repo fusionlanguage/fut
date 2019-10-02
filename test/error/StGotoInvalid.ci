@@ -1,0 +1,16 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int a = 4;
+		switch (a) {
+		case 4:
+			a++;
+			goto 42; //ERROR: Expected goto case or goto default
+		case 42:
+			return true;
+		default:
+			return false;
+		}
+	}
+}

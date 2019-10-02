@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		byte[] a = resource<byte>("foo"); //ERROR: Expected LeftBracket, got Greater
+		return true;
+	}
+}

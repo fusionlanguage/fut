@@ -1,0 +1,11 @@
+abstract class Base
+{
+	internal abstract void Foo();
+}
+
+class Derived : Base
+{
+	override void Foo() //ERROR: Override method cannot be private
+	{
+	}
+}

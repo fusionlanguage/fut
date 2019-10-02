@@ -1,0 +1,4 @@
+public class Test
+{
+	void Foo; //ERROR: Field cannot be void
+}

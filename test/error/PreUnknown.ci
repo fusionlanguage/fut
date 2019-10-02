@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+#foo //ERROR: Unknown preprocessor directive
+		return true;
+	}
+}

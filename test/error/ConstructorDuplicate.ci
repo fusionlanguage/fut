@@ -1,0 +1,7 @@
+public class Test
+{
+	public Test() {
+	}
+	public Test() { //ERROR: Duplicate constructor, already defined in line 3
+	}
+}

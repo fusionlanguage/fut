@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int a = '\d'; //ERROR: Unknown escape sequence
+		return true;
+	}
+}

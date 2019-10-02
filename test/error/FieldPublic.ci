@@ -1,0 +1,4 @@
+public class Test
+{
+	public int Foo; //ERROR: Field cannot be public
+}

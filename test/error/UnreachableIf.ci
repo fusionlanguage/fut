@@ -1,0 +1,13 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		if (true)
+			return true;
+		else
+			return false;
+		if (true) //ERROR: Unreachable statement
+			return false;
+		return false;
+	}
+}

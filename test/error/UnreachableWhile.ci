@@ -1,0 +1,10 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		while (true) {
+		}
+		while (false) { //ERROR: Unreachable statement
+		}
+	}
+}

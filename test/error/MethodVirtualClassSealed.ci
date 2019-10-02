@@ -1,0 +1,7 @@
+public sealed class Test
+{
+	public virtual bool Run() //ERROR: Virtual methods disallowed in a sealed class
+	{
+		return true;
+	}
+}

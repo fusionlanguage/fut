@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int a = 'x; //ERROR: Unterminated character literal
+		return true;
+	}
+}
