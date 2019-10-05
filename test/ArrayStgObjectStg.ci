@@ -1,15 +1,22 @@
-public class Test
+class Inner
 {
-	int Foo;
+	internal int Foo;
 
-	Test()
+	internal Inner()
 	{
 		Foo = 42;
 	}
+}
+
+public class Test
+{
+	Inner()[2] Field;
 
 	public static bool Run()
 	{
-		Test()[2] a;
-		return a[0].Foo == 42 && a[1].Foo == 42;
+		Inner()[2] a;
+		Test() t;
+		return a[0].Foo == 42 && a[1].Foo == 42
+			&& t.Field[0].Foo == 42 && t.Field[1].Foo == 42;
 	}
 }

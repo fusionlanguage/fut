@@ -1298,19 +1298,8 @@ public class GenC : GenCCpp
 			}
 			WriteLine("&vtbl;");
 		}
-		foreach (CiField field in klass.Fields) {
-			if (field.Value != null || field.Type == CiSystem.StringStorageType || IsDynamicPtr(field.Type)) {
-				WriteLocalName(field);
-				WriteVarInit(field);
-				WriteLine(';');
-			}
-			else if (field.Type is CiClass fieldClass && NeedsConstructor(fieldClass)) {
-				Write(fieldClass.Name);
-				Write("_Construct(&");
-				WriteLocalName(field);
-				WriteLine(");");
-			}
-		}
+		foreach (CiField field in klass.Fields)
+			WriteInitCode(field);
 		WriteConstructorBody(klass);
 		CloseBlock();
 	}
