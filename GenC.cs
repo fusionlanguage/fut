@@ -350,13 +350,8 @@ public class GenC : GenCCpp
 		else {
 			if (def is CiField) {
 				WriteArrayElement(def, nesting);
-				Write(" = ");
-				if (def.Value != null) {
-					WriteCoerced(type, def.Value, CiPriority.Statement);
-					WriteLine(';');
-				}
-				else
-					WriteLine("NULL;");
+				WriteVarInit(def);
+				WriteLine(';');
 			}
 			CiMethod throwingMethod = GetThrowingMethod(def.Value);
 			if (throwingMethod != null)
