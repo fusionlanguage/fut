@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		const int[3] a = { 5, 10, 15 };
+		int[] p = a;
+		return p == a;
+	}
+}

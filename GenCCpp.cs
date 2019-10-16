@@ -97,13 +97,18 @@ public abstract class GenCCpp : GenTyped
 		base.WriteVarInit(def);
 	}
 
+	static bool IsPtrTo(CiExpr ptr, CiExpr other)
+	{
+		return (ptr.Type is CiClassPtrType || ptr.Type is CiArrayPtrType) && ptr.Type.IsAssignableFrom(other.Type);
+	}
+
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
-		CiClassPtrType coercedType;
-		if (expr.Left.Type is CiClassPtrType leftPtr && leftPtr.IsAssignableFrom(expr.Right.Type))
-			coercedType = leftPtr;
-		else if (expr.Right.Type is CiClassPtrType rightPtr && rightPtr.IsAssignableFrom(expr.Left.Type))
-			coercedType = rightPtr;
+		CiType coercedType;
+		if (IsPtrTo(expr.Left, expr.Right))
+			coercedType = expr.Left.Type;
+		else if (IsPtrTo(expr.Right, expr.Left))
+			coercedType = expr.Right.Type;
 		else {
 			base.WriteEqual(expr, parent, not);
 			return;
