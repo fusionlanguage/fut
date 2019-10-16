@@ -1001,15 +1001,20 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, DoubleType, "Asin", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, DoubleType, "Atan", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, DoubleType, "Atan2", new CiVar(DoubleType, "y"), new CiVar(DoubleType, "x")),
+		new CiMethod(CiCallType.Static, DoubleType, "Cbrt", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, DoubleType, "Ceiling", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, DoubleType, "Cos", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, DoubleType, "Cosh", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, DoubleType, "Exp", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, DoubleType, "Floor", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, DoubleType, "Log", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, DoubleType, "Log10", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, DoubleType, "Pow", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y")),
 		new CiMethod(CiCallType.Static, DoubleType, "Sin", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, DoubleType, "Sinh", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, DoubleType, "Sqrt", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Tan", new CiVar(DoubleType, "a")));
+		new CiMethod(CiCallType.Static, DoubleType, "Tan", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, DoubleType, "Tanh", new CiVar(DoubleType, "a")));
 
 	CiSystem()
 	{

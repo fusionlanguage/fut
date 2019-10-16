@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		double a = 0;
+		return Math.Sinh(a) == 0;
+	}
+}

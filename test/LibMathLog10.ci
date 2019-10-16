@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		double a = 100;
+		return Math.Log10(a) == 2;
+	}
+}
