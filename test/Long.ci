@@ -1,0 +1,17 @@
+public static class Test
+{
+	static int Foo(int i)
+	{
+		long l = i;
+		return l;
+	}
+
+	public static bool Run()
+	{
+		long l = 42;
+		int i = l;
+		i += l;
+		i <<= Foo(1);
+		return i == 168;
+	}
+}

@@ -261,7 +261,10 @@ public class CiLiteral : CiExpr
 			this.Type = CiSystem.NullType;
 			break;
 		case long l:
-			this.Type = new CiRangeType(l, l);
+			if (l >= int.MinValue && l <= int.MaxValue)
+				this.Type = new CiRangeType((int) l, (int) l);
+			else
+				this.Type = CiSystem.LongType;
 			break;
 		case bool _:
 			this.Type = CiSystem.BoolType;
@@ -652,32 +655,17 @@ public class CiNumericType : CiType
 {
 }
 
-public abstract class CiIntegerType : CiNumericType
-{
-	public abstract bool IsLong { get; }
-}
-
-public class CiIntType : CiIntegerType
-{
-	public override bool IsAssignableFrom(CiType right)
-	{
-		return right is CiIntegerType it; // TODO? && !it.IsLong;
-	}
-	public override bool IsLong { get { return false; } }
-}
-
-public class CiLongType : CiIntegerType
+public class CiIntegerType : CiNumericType
 {
 	public override bool IsAssignableFrom(CiType right) { return right is CiIntegerType; }
-	public override bool IsLong { get { return true; } }
 }
 
 public class CiRangeType : CiIntegerType
 {
-	public readonly long Min;
-	public readonly long Max;
+	public readonly int Min;
+	public readonly int Max;
 
-	public CiRangeType(long min, long max)
+	public CiRangeType(int min, int max)
 	{
 		if (min > max)
 			throw new ArgumentOutOfRangeException();
@@ -685,15 +673,15 @@ public class CiRangeType : CiIntegerType
 		this.Max = max;
 	}
 
-	public CiRangeType(long a, long b, long c, long d)
+	public CiRangeType(int a, int b, int c, int d)
 	{
 		if (a > b) {
-			long t = a;
+			int t = a;
 			a = b;
 			b = t;
 		}
 		if (c > d) {
-			long t = c;
+			int t = c;
 			c = d;
 			d = t;
 		}
@@ -729,13 +717,10 @@ public class CiRangeType : CiIntegerType
 
 	public override bool IsAssignableFrom(CiType right)
 	{
-		// TODO? return right is CiRangeType range && this.Min <= range.Min && this.Max >= range.Max;
-		return right is CiRangeType range && (this.Min <= range.Max || this.Max >= range.Min);
+		return right is CiRangeType range && this.Min <= range.Min && this.Max >= range.Max;
 	}
 
-	public override bool IsLong { get { return this.Min < int.MinValue || this.Max > uint.MaxValue || (this.Min < 0 && this.Max > int.MaxValue); } }
-
-	public static long GetMask(long v)
+	public static int GetMask(int v)
 	{
 		// http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 		v |= v >> 1;
@@ -743,11 +728,10 @@ public class CiRangeType : CiIntegerType
 		v |= v >> 4;
 		v |= v >> 8;
 		v |= v >> 16;
-		v |= v >> 32;
 		return v;
 	}
 
-	public long VariableBits { get { return GetMask(this.Min ^ this.Max); } }
+	public int VariableBits { get { return GetMask(this.Min ^ this.Max); } }
 
 	public void SplitBySign(out CiRangeType negative, out CiRangeType positive)
 	{
@@ -971,9 +955,9 @@ public class CiArrayStorageType : CiArrayType
 public class CiSystem : CiScope
 {
 	public static readonly CiType NullType = new CiType();
-	public static readonly CiIntType IntType = new CiIntType { Name = "int" };
+	public static readonly CiIntegerType IntType = new CiIntegerType { Name = "int" };
 	public static readonly CiRangeType UIntType = new CiRangeType(0, int.MaxValue) { Name = "uint" };
-	public static readonly CiLongType LongType = new CiLongType { Name = "long" };
+	public static readonly CiIntegerType LongType = new CiIntegerType { Name = "long" };
 	public static readonly CiRangeType ByteType = new CiRangeType(0, 0xff) { Name = "byte" };
 	public static readonly CiRangeType ShortType = new CiRangeType(-0x8000, 0x7fff) { Name = "short" };
 	public static readonly CiRangeType UShortType = new CiRangeType(0, 0xffff) { Name = "ushort" };

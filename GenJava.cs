@@ -70,9 +70,9 @@ public class GenJava : GenTyped
 
 	protected override TypeCode GetTypeCode(CiIntegerType integer, bool promote)
 	{
-		if (integer.IsLong)
+		if (integer == CiSystem.LongType)
 			return TypeCode.Int64;
-		if (promote || integer is CiIntType)
+		if (promote || integer == CiSystem.IntType)
 			return TypeCode.Int32;
 		CiRangeType range = (CiRangeType) integer;
 		if (range.Min < 0) {

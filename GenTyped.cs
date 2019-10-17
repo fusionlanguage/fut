@@ -28,9 +28,9 @@ public abstract class GenTyped : GenBase
 {
 	protected virtual TypeCode GetTypeCode(CiIntegerType integer, bool promote)
 	{
-		if (integer.IsLong)
+		if (integer == CiSystem.LongType)
 			return TypeCode.Int64;
-		if (promote || integer is CiIntType)
+		if (promote || integer == CiSystem.IntType)
 			return TypeCode.Int32;
 		CiRangeType range = (CiRangeType) integer;
 		if (range.Min < 0) {
@@ -180,6 +180,16 @@ public abstract class GenTyped : GenBase
 			}
 		}
 		WriteCoerced(expr.Left.Type, expr.Right, CiPriority.Statement);
+	}
+
+	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
+	{
+		if (type != CiSystem.LongType && expr.Type == CiSystem.LongType) {
+			Write("(int) ");
+			expr.Accept(this, CiPriority.Primary);
+		}
+		else
+			base.WriteCoercedInternal(type, expr, parent);
 	}
 
 	protected override void WriteCharAt(CiBinaryExpr expr)

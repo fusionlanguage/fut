@@ -109,7 +109,7 @@ public class GenJs : GenBase
 			name = "Float32";
 			shift = 2;
 		}
-		else if (((CiIntegerType) elementType).IsLong) {
+		else if (elementType == CiSystem.LongType) {
 			// TODO: UInt32 if possible?
 			name = "Float64"; // no 64-bit integers in JavaScript
 			shift = 3;
