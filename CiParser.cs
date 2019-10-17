@@ -98,7 +98,9 @@ public class CiParser : CiLexer
 			NextToken();
 			break;
 		case CiToken.LeftParenthesis:
-			result = ParseParenthesized();
+			Expect(CiToken.LeftParenthesis);
+			result = ParseType();
+			Expect(CiToken.RightParenthesis);
 			break;
 		case CiToken.Id:
 			result = ParseSymbolReference();
@@ -253,12 +255,15 @@ public class CiParser : CiLexer
 
 	CiExpr ParseType()
 	{
-		return ParseRelExpr();
+		CiExpr left = ParseExpr();
+		if (Eat(CiToken.Range))
+			return new CiBinaryExpr { Line = this.Line, Left = left, Op = CiToken.Range, Right = ParseExpr() };
+		return left;
 	}
 
 	CiExpr ParseAssign(bool allowVar)
 	{
-		CiExpr left = ParseExpr();
+		CiExpr left = ParseType();
 		switch (this.CurrentToken) {
 		case CiToken.Assign:
 		case CiToken.AddAssign:

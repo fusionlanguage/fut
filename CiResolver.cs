@@ -734,6 +734,8 @@ public class CiResolver : CiVisitor
 			expr.Right = right;
 			expr.Type = left.Type;
 			return expr;
+		case CiToken.Range:
+			throw StatementException(expr, "Range within an expression");
 		default:
 			throw new NotImplementedException(expr.Op.ToString());
 		}
@@ -992,7 +994,7 @@ public class CiResolver : CiVisitor
 				if (this.Program.TryLookup(symbol.Name) is CiClass klass)
 					return klass;
 				throw StatementException(expr, "Class {0} not found", symbol.Name);
-			case CiToken.LessOrEqual: // a <= b
+			case CiToken.Range: // a .. b
 				int min = FoldConstInt(binary.Left);
 				int max = FoldConstInt(binary.Right);
 				if (min > max)

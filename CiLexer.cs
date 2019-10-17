@@ -77,6 +77,7 @@ public enum CiToken
 	QuestionMark,
 	Colon,
 	FatArrow,
+	Range,
 	Abstract,
 	Break,
 	Case,
@@ -383,7 +384,9 @@ public class CiLexer
 				default: throw ParseException("Unknown preprocessor directive");
 				}
 			case ';': return CiToken.Semicolon;
-			case '.': return CiToken.Dot;
+			case '.':
+				if (EatChar('.')) return CiToken.Range;
+				return CiToken.Dot;
 			case ',': return CiToken.Comma;
 			case '(': return CiToken.LeftParenthesis;
 			case ')': return CiToken.RightParenthesis;

@@ -1,0 +1,12 @@
+public class Test
+{
+	0 .. 9 DigitField = 3;
+	const 0 .. 9 DigitConst = 7;
+
+	public static bool Run()
+	{
+		0 .. 9 digit = 5;
+		Test() o;
+		return digit == 5 && o.DigitField == 3 && DigitConst == 7;
+	}
+}
