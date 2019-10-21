@@ -1,7 +1,7 @@
 prefix := /usr/local
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
 ifdef COMSPEC
-CSC = "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/MSBuild/15.0/Bin/Roslyn/csc.exe" -nologo -out:$@
+CSC = "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/Roslyn/csc.exe" -nologo -out:$@
 MONO :=
 JAVACPSEP = ;
 else
