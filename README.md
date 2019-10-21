@@ -1,4 +1,6 @@
-﻿Ć Programming Language
+﻿[![Build Status](https://travis-ci.org/pfusik/cito.svg?branch=master)](https://travis-ci.org/pfusik/cito)
+
+Ć Programming Language
 ======================
 
 Ć is a programming language which can be translated automatically to C, C++,
