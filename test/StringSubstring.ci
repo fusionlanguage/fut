@@ -12,7 +12,13 @@ public class Test
 		string() localInit = foo.Substring(1, 4);
 		string() localAssign;
 		localAssign = ptr.Substring(1, 3);
+		string() objInit1 = o.Foo.Substring(1);
+		string() localInit1 = foo.Substring(1);
+		string() localAssign1;
+		localAssign1 = ptr.Substring(1);
 		return objInit == "ooba" && localInit == "arek" && localAssign == "are"
-			&& o.Ptr.Substring(1, 4) == "ooba" && ptr.Substring(1, 4) == "arek";
+			&& o.Ptr.Substring(1, 4) == "ooba" && ptr.Substring(1, 4) == "arek"
+			&& objInit1 == "oobar" && localInit1 == "arek" && localAssign1 == "arek"
+			&& o.Ptr.Substring(1) == "oobar" && ptr.Substring(1) == "arek";
 	}
 }

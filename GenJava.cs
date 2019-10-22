@@ -215,10 +215,12 @@ public class GenJava : GenTyped
 			obj.Accept(this, CiPriority.Primary);
 			Write(".substring(");
 			args[0].Accept(this, CiPriority.Statement);
-			Write(", ");
-			args[0].Accept(this, CiPriority.Add); // TODO: side effect
-			Write(" + ");
-			args[1].Accept(this, CiPriority.Add);
+			if (args.Length == 2) {
+				Write(", ");
+				args[0].Accept(this, CiPriority.Add); // TODO: side effect
+				Write(" + ");
+				args[1].Accept(this, CiPriority.Add);
+			}
 			Write(')');
 		}
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {

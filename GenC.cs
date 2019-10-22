@@ -546,6 +546,15 @@ public class GenC : GenCCpp
 			this.StringEndsWith = true;
 			WriteStringMethod("EndsWith", obj, args);
 		}
+		else if (method == CiSystem.StringSubstring && args.Length == 1) {
+			if (parent > CiPriority.Add)
+				Write('(');
+			obj.Accept(this, CiPriority.Add);
+			Write(" + ");
+			args[0].Accept(this, CiPriority.Add);
+			if (parent > CiPriority.Add)
+				Write(')');
+		}
 		// TODO
 		else {
 			CiClass definingClass = (CiClass) method.Parent;

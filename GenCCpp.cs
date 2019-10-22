@@ -146,7 +146,7 @@ public abstract class GenCCpp : GenTyped
 		 && leftBinary.Op == CiToken.Dot) {
 			CiMethod method = (CiMethod) ((CiSymbolReference) leftBinary.Right).Symbol;
 			CiExpr[] args = call.RightCollection;
-			if (method == CiSystem.StringSubstring) {
+			if (method == CiSystem.StringSubstring && args.Length == 2) {
 				cast = false;
 				ptr = leftBinary.Left;
 				offset = args[0];
