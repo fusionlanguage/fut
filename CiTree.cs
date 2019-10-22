@@ -775,15 +775,7 @@ public class CiStringType : CiType
 	}
 }
 
-public class CiFloatType : CiNumericType
-{
-	public override bool IsAssignableFrom(CiType right)
-	{
-		return this == right || right is CiIntegerType;
-	}
-}
-
-public class CiDoubleType : CiNumericType
+public class CiFloatingType : CiNumericType
 {
 	public override bool IsAssignableFrom(CiType right)
 	{
@@ -962,8 +954,8 @@ public class CiSystem : CiScope
 	public static readonly CiRangeType ShortType = new CiRangeType(-0x8000, 0x7fff) { Name = "short" };
 	public static readonly CiRangeType UShortType = new CiRangeType(0, 0xffff) { Name = "ushort" };
 	public static readonly CiRangeType Minus1Type = new CiRangeType(-1, int.MaxValue);
-	public static readonly CiNumericType FloatType = new CiFloatType { Name = "float" };
-	public static readonly CiNumericType DoubleType = new CiDoubleType { Name = "double" };
+	public static readonly CiFloatingType FloatType = new CiFloatingType { Name = "float" };
+	public static readonly CiFloatingType DoubleType = new CiFloatingType { Name = "double" };
 	public static readonly CiRangeType CharType = new CiRangeType(-0x80, 0xffff);
 	public static readonly CiEnum BoolType = new CiEnum { Name = "bool" };
 	public static readonly CiStringType StringPtrType = new CiStringPtrType { Name = "string" };

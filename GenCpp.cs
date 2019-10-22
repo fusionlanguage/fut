@@ -172,6 +172,15 @@ public class GenCpp : GenCCpp
 			base.WriteVarInit(def);
 	}
 
+	protected override void WriteStaticCast(string type, CiExpr expr)
+	{
+		Write("static_cast<");
+		Write(type);
+		Write(">(");
+		expr.Accept(this, CiPriority.Statement);
+		Write(')');
+	}
+
 	protected override bool HasInitCode(CiNamedValue def)
 	{
 		return false;

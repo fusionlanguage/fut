@@ -182,11 +182,25 @@ public abstract class GenTyped : GenBase
 		WriteCoerced(expr.Left.Type, expr.Right, CiPriority.Statement);
 	}
 
+	protected virtual void WriteStaticCast(string type, CiExpr expr)
+	{
+		Write('(');
+		Write(type);
+		Write(") ");
+		expr.Accept(this, CiPriority.Primary);
+	}
+
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 	{
-		if (type != CiSystem.LongType && expr.Type == CiSystem.LongType) {
-			Write("(int) ");
-			expr.Accept(this, CiPriority.Primary);
+		if (type != CiSystem.LongType && expr.Type == CiSystem.LongType)
+			WriteStaticCast("int", expr);
+		else if (type == CiSystem.FloatType && expr.Type == CiSystem.DoubleType) {
+			if (expr is CiLiteral) {
+				expr.Accept(this, CiPriority.Statement);
+				Write('f');
+			}
+			else
+				WriteStaticCast("float", expr);
 		}
 		else
 			base.WriteCoercedInternal(type, expr, parent);
