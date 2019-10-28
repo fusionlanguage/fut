@@ -2,7 +2,7 @@
 //
 // Copyright (C) 2014  Piotr Fusik
 //
-// This file is part of CiTo, see http://cito.sourceforge.net
+// This file is part of CiTo, see https://github.com/pfusik/cito
 //
 // CiTo is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
