@@ -34,4 +34,4 @@ including naming conventions and documentation comments.
 Instead, it is meant for implementing portable reusable libraries.
 See the complete [language reference](ci.md).
 
-For build instructions, see the [INSTALL] file.
+For build instructions, see the [INSTALL](INSTALL) file.
