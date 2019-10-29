@@ -1,43 +1,33 @@
 ﻿How to compile cito
 ===================
 
-Getting source code
--------------------
+`cito` is currently written in C#.
 
-There are two ways to get the source code:
+You can build it with .NET Core 3.0 on Windows, macOS and Linux
+or Visual Studio 2019 on Windows only.
 
-From an official release::
-http://sourceforge.net/projects/cito/files/cito/[Download] a `.tar.gz` file and uncompress it. On Windows you may use http://7-zip.org[7-Zip] for decompression.
+.NET Core SDK is available at https://dotnet.microsoft.com/download
+Build `cito` with the following command line:
 
-From the Git repository::
-This way you'll get the latest code with all its consequences (such as out-of-date documentation). Use a Git client. For a command-line Git client, type:
-+
---------------------------------------------------------------------------------
-git clone git://git.code.sf.net/p/cito/code cito-code
---------------------------------------------------------------------------------
+    dotnet build
 
-Compilation
------------
+The Visual Studio build is also command-line based and relies on GNU Make.
+I recommend installing GNU Make with https://www.msys2.org/
+Build using:
 
-Once you have the source code you have the following options of compiling it:
+    make
 
-Using MSBuild::
-MSBuild is part of the .NET Framework. In the directory with the sources run `msbuild CiTo.csproj`.
+## Testing
 
-Using Mono i `xbuild`::
-You need a C# compiler (`gmcs`) and the Mono counterpart of MSBuild (`xbuild`). In the directory with the sources run `xbuild CiTo.csproj`.
+The test system is under construction. Currently it only supports the VS build.
+Additionally you need:
+* Perl 5 (install from MSYS2)
+* Clang C and C++ compilers (install from MSYS2)
+* Java compiler
+* Node.js (install from MSYS2)
 
-Using GNU Make::
-You need a C# compiler (`csc` lub `gmcs`).  In the directory with the sources run `make`.
+Run the tests with:
 
-Using Visual Studio::
-Open `CiTo.csproj`. Build.
+    make test
 
-Installing (Linux)
-------------------
-
-To install, run:
---------------------------------------------------------------------------------
-sudo make install
---------------------------------------------------------------------------------
-This will create Mono wrappers `cito` and `cipad` in the default directory `/usr/local/bin`.
+`-jN` is supported and strongly recommended.
