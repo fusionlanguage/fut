@@ -422,6 +422,7 @@ public class GenCpp : GenCCpp
 	void Write(CiEnum enu)
 	{
 		WriteLine();
+		Write(enu.Documentation);
 		Write("enum class ");
 		WriteLine(enu.Name);
 		OpenBlock();
@@ -430,6 +431,7 @@ public class GenCpp : GenCCpp
 			if (!first)
 				WriteLine(',');
 			first = false;
+			Write(konst.Documentation);
 			WriteCamelCase(konst.Name);
 			if (konst.Value != null) {
 				Write(" = ");
@@ -475,6 +477,8 @@ public class GenCpp : GenCCpp
 		this.Indent++;
 
 		if (constructor) {
+			if (klass.Constructor != null)
+				Write(klass.Constructor.Documentation);
 			Write(klass.Name);
 			Write("()");
 			if (klass.CallType == CiCallType.Static)
@@ -490,17 +494,19 @@ public class GenCpp : GenCCpp
 			WriteLine("() = default;");
 		}
 
-		foreach (CiConst konst in consts)
+		foreach (CiConst konst in consts) {
+			Write(konst.Documentation);
 			WriteConst(konst);
+		}
 
-		foreach (CiField field in fields)
-		{
+		foreach (CiField field in fields) {
+			Write(field.Documentation);
 			WriteVar(field);
 			WriteLine(';');
 		}
 
-		foreach (CiMethod method in methods)
-		{
+		foreach (CiMethod method in methods) {
+			WriteDoc(method);
 			switch (method.CallType) {
 			case CiCallType.Static:
 				Write("static ");
@@ -550,6 +556,7 @@ public class GenCpp : GenCCpp
 		this.WrittenClasses[klass] = true;
 
 		WriteLine();
+		Write(klass.Documentation);
 		OpenClass(klass, klass.CallType == CiCallType.Sealed ? " final" : "", " : public ");
 		this.Indent--;
 		WriteDeclarations(klass, CiVisibility.Public, "public");

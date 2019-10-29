@@ -49,6 +49,13 @@ public class CiParser : CiLexer
 		return (string) id;
 	}
 
+	CiCodeDoc ParseDoc()
+	{
+		if (See(CiToken.DocComment))
+			return new CiDocParser(this).ParseCodeDoc();
+		return null;
+	}
+
 	CiExpr ParseSymbolReference()
 	{
 		return new CiSymbolReference { Line = this.Line, Name = ParseId() };
@@ -580,9 +587,12 @@ public class CiParser : CiLexer
 		method.Parameters.Filename = this.Filename;
 		Expect(CiToken.LeftParenthesis);
 		if (!See(CiToken.RightParenthesis)) {
-			do
-				method.Parameters.Add(ParseVar());
-			while (Eat(CiToken.Comma));
+			do {
+				CiCodeDoc doc = ParseDoc();
+				CiVar param = ParseVar();
+				param.Documentation = doc;
+				method.Parameters.Add(param);
+			} while (Eat(CiToken.Comma));
 		}
 		Expect(CiToken.RightParenthesis);
 		method.Throws = Eat(CiToken.Throws);
@@ -606,6 +616,8 @@ public class CiParser : CiLexer
 		List<CiField> fields = new List<CiField>();
 		List<CiMethod> methods = new List<CiMethod>();
 		while (!Eat(CiToken.RightBrace)) {
+			CiCodeDoc doc = ParseDoc();
+
 			CiVisibility visibility;
 			switch (this.CurrentToken) {
 			case CiToken.Internal:
@@ -629,6 +641,7 @@ public class CiParser : CiLexer
 			if (See(CiToken.Const)) {
 				// const
 				CiConst konst = ParseConst();
+				konst.Documentation = doc;
 				konst.Visibility = visibility;
 				consts.Add(konst);
 				continue;
@@ -672,7 +685,7 @@ public class CiParser : CiLexer
 					throw ParseException("Duplicate constructor, already defined in line {0}", klass.Constructor.Line);
 				if (visibility == CiVisibility.Private)
 					visibility = CiVisibility.Internal; // TODO
-				klass.Constructor = new CiMethodBase { Line = sr.Line, Visibility = visibility, Parent = klass, Name = klass.Name, Body = ParseBlock() };
+				klass.Constructor = new CiMethodBase { Line = sr.Line, Documentation = doc, Visibility = visibility, Parent = klass, Name = klass.Name, Body = ParseBlock() };
 				continue;
 			}
 
@@ -680,7 +693,7 @@ public class CiParser : CiLexer
 			string name = ParseId();
 			if (See(CiToken.LeftParenthesis) || See(CiToken.ExclamationMark)) {
 				// method
-				CiMethod method = new CiMethod { Line = line, Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
+				CiMethod method = new CiMethod { Line = line, Documentation = doc, Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
 				method.Parameters.Parent = klass;
 				ParseMethod(method);
 				methods.Add(method);
@@ -694,7 +707,7 @@ public class CiParser : CiLexer
 				throw ParseException("Field cannot be {0}", callType);
 			if (type == null)
 				throw ParseException("Field cannot be void");
-			CiField field = new CiField { Line = line, Visibility = visibility, TypeExpr = type, Name = name };
+			CiField field = new CiField { Line = line, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name };
 			if (Eat(CiToken.Assign))
 				field.Value = ParseExpr();
 			Expect(CiToken.Semicolon);
@@ -713,7 +726,7 @@ public class CiParser : CiLexer
 		CiEnum enu = new CiEnum { Parent = this.Program, Filename = this.Filename, IsFlags = Eat(CiToken.Asterisk), Line = this.Line, Name = ParseId() };
 		Expect(CiToken.LeftBrace);
 		do {
-			CiConst konst = new CiConst { Line = this.Line, Name = ParseId(), Type = enu };
+			CiConst konst = new CiConst { Documentation = ParseDoc(), Line = this.Line, Name = ParseId(), Type = enu };
 			if (Eat(CiToken.Assign))
 				konst.Value = ParseExpr();
 			else if (enu.IsFlags)
@@ -728,6 +741,7 @@ public class CiParser : CiLexer
 	{
 		Open(filename, reader);
 		while (!See(CiToken.EndOfFile)) {
+			CiCodeDoc doc = ParseDoc();
 			CiContainerType type;
 			bool isPublic = Eat(CiToken.Public);
 			switch (this.CurrentToken) {
@@ -749,6 +763,7 @@ public class CiParser : CiLexer
 			default:
 				throw ParseException("Expected class or enum");
 			}
+			type.Documentation = doc;
 			type.IsPublic = isPublic;
 			this.Program.Add(type);
 		}

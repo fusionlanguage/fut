@@ -311,6 +311,7 @@ public class GenJs : GenBase
 	void Write(CiEnum enu)
 	{
 		WriteLine();
+		Write(enu.Documentation);
 		Write("var ");
 		Write(enu.Name);
 		Write(" = ");
@@ -319,6 +320,7 @@ public class GenJs : GenBase
 		foreach (CiConst konst in enu) {
 			if (i > 0)
 				WriteLine(',');
+			Write(konst.Documentation);
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" : ");
 			if (konst.Value != null)
@@ -336,6 +338,7 @@ public class GenJs : GenBase
 		if (method.CallType == CiCallType.Abstract)
 			return;
 		WriteLine();
+		WriteDoc(method);
 		Write(klass.Name);
 		Write('.');
 		if (method.CallType != CiCallType.Static)
@@ -361,6 +364,8 @@ public class GenJs : GenBase
 	{
 		foreach (CiConst konst in konsts) {
 			if (konst.Visibility != CiVisibility.Private || konst.Type is CiArrayStorageType) {
+				WriteLine();
+				Write(konst.Documentation);
 				Write(klass.Name);
 				Write('.');
 				base.WriteVar(konst);
@@ -372,6 +377,7 @@ public class GenJs : GenBase
 	void Write(CiClass klass)
 	{
 		WriteLine();
+		Write(klass.Documentation);
 		Write("function ");
 		Write(klass.Name);
 		WriteLine("()");

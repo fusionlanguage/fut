@@ -329,6 +329,7 @@ public class GenJava : GenTyped
 	void CreateJavaFile(CiContainerType type)
 	{
 		CreateJavaFile(type.Name);
+		Write(type.Documentation);
 		WritePublic(type);
 	}
 
@@ -346,6 +347,7 @@ public class GenJava : GenTyped
 		OpenBlock();
 		int i = 0;
 		foreach (CiConst konst in enu) {
+			Write(konst.Documentation);
 			Write("int ");
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" = ");
@@ -362,6 +364,7 @@ public class GenJava : GenTyped
 	void WriteSignature(CiMethod method, int paramCount)
 	{
 		WriteLine();
+		WriteDoc(method);
 		Write(method.Visibility);
 		switch (method.CallType) {
 		case CiCallType.Static:
@@ -430,6 +433,8 @@ public class GenJava : GenTyped
 	void WriteConsts(IEnumerable<CiConst> konsts)
 	{
 		foreach (CiConst konst in konsts) {
+			WriteLine();
+			Write(konst.Documentation);
 			Write(konst.Visibility);
 			Write("static ");
 			if (!(konst.Type is CiArrayStorageType)) // for array storage WriteTypeAndName will write "final"

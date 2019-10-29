@@ -41,7 +41,7 @@ Let's continue indentation style flame wars!
 
 There are single-line comments from `//` till the end of line
 and `/* multiline comments */`.
-Future versions of Ć will include documentation comments.
+Documentation comments are described below.
 
 ## Data types
 
@@ -767,6 +767,66 @@ A more complicated one:
 The operators allowed in `#if` and `#elif` are `!`, `&&` and `||`.
 You may reference `true`, which is a symbol that is always defined.
 `false` should be never defined.
+
+## Documentation comments
+
+Documentation comments can describe classes, enumerated types, constants,
+methods and their parameters.
+They start with three slashes followed by a space and always immediately
+precede the documented thing, including the method parameters:
+
+```csharp
+/// Returns the extension of the original module format.
+/// For native modules it simply returns their extension.
+/// For the SAP format it attempts to detect the original module format.
+public string GetOriginalModuleExt(
+    /// Contents of the file.
+    byte[] module,
+    /// Length of the file.
+    int moduleLen)
+{
+    ...
+}
+```
+
+Documentation comments should be full sentences. The first sentence,
+terminated with a period at the end of line, becomes the summary.
+Next sentences (if any) give more details.
+
+There are limited formatting options: fixed-width font, paragraphs and bullets.
+
+A `fixed-width font` text (typically code) is delimited with backquotes:
+
+```csharp
+/// Returns `true` for NTSC song and `false` for PAL song.
+```
+
+In long comments, paragraphs are introduced
+with blank documentation comment lines:
+
+```csharp
+/// First paragraph.
+///
+/// Second paragraph.
+```
+
+Bullets are introduced with an asterisk followed by space:
+
+```csharp
+/// Sets music creation date.
+/// Some of the possible formats are:
+/// * YYYY
+/// * MM/YYYY
+/// * DD/MM/YYYY
+/// * YYYY-YYYY
+///
+/// An empty string means the date is unknown.
+public void SetDate(string value)
+{
+    CheckValidText(value);
+    Date = value;
+}
+```
 
 ## Naming conventions
 

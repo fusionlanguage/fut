@@ -140,6 +140,128 @@ public abstract class GenBase : CiVisitor
 		this.AtLineStart = true;
 	}
 
+	#region JavaDoc
+
+	protected virtual void StartDocLine()
+	{
+		Write(" * ");
+	}
+
+	protected void WriteDoc(string text)
+	{
+		foreach (char c in text) {
+			switch (c) {
+			case '&':
+				Write("&amp;");
+				break;
+			case '<':
+				Write("&lt;");
+				break;
+			case '>':
+				Write("&gt;");
+				break;
+			case '\n':
+				WriteLine();
+				StartDocLine();
+				break;
+			default:
+				Write(c);
+				break;
+			}
+		}
+	}
+
+	void Write(CiDocPara para)
+	{
+		foreach (CiDocInline inline in para.Children) {
+			switch (inline) {
+			case CiDocText text:
+				WriteDoc(text.Text);
+				break;
+			case CiDocCode code:;
+				Write("<code>");
+				WriteDoc(code.Text);
+				Write("</code>");
+				break;
+			default:
+				throw new ArgumentException(inline.GetType().Name);
+			}
+		}
+	}
+
+	protected virtual void Write(CiDocList list)
+	{
+		WriteLine();
+		WriteLine(" * <ul>");
+		foreach (CiDocPara item in list.Items) {
+			Write(" * <li>");
+			Write(item);
+			WriteLine("</li>");
+		}
+		WriteLine(" * </ul>");
+		Write(" * ");
+	}
+
+	protected void Write(CiDocBlock block)
+	{
+		switch (block) {
+		case CiDocPara para:
+			Write(para);
+			break;
+		case CiDocList list:
+			Write(list);
+			break;
+		default:
+			throw new ArgumentException(block.GetType().Name);
+		}
+	}
+
+	void StartDoc(CiCodeDoc doc)
+	{
+		WriteLine("/**");
+		Write(" * ");
+		Write(doc.Summary);
+		if (doc.Details.Length > 0) {
+			WriteLine();
+			Write(" * ");
+			foreach (CiDocBlock block in doc.Details)
+				Write(block);
+		}
+		WriteLine();
+	}
+
+	protected virtual void Write(CiCodeDoc doc)
+	{
+		if (doc != null) {
+			StartDoc(doc);
+			WriteLine(" */");
+		}
+	}
+
+	protected virtual void WriteSelfDoc(CiMethod method)
+	{
+	}
+
+	protected void WriteDoc(CiMethod method)
+	{
+		if (method.Documentation == null)
+			return;
+		StartDoc(method.Documentation);
+		WriteSelfDoc(method);
+		foreach (CiVar param in method.Parameters) {
+			if (param.Documentation != null) {
+				Write(" * @param ");
+				Write(param.Name);
+				Write(' ');
+				Write(param.Documentation.Summary);
+				WriteLine();
+			}
+		}
+		WriteLine(" */");
+	}
+
+	#endregion JavaDoc
+
 	protected virtual void WriteBanner()
 	{
 		WriteLine("// Generated automatically with \"cito\". Do not edit.");

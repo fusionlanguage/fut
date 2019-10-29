@@ -27,8 +27,8 @@ cito -o hello.js hello.ci
 ```
 
 The translated code is lightweight (no virtual machine, emulation nor
-dependencies), human-readable and fits well the target language, including
-naming conventions.
+dependencies), human-readable and fits well the target language,
+including naming conventions and documentation comments.
 
 Ć is _not_ a general-purpose programming language.
 Instead, it is meant for implementing portable reusable libraries.

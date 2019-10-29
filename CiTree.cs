@@ -116,10 +116,44 @@ public class CiCollection : CiExpr
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
 }
 
+public abstract class CiDocInline
+{
+	public string Text;
+}
+
+public class CiDocText : CiDocInline
+{
+}
+
+public class CiDocCode : CiDocInline
+{
+}
+
+public abstract class CiDocBlock
+{
+}
+
+public class CiDocPara : CiDocBlock
+{
+	public CiDocInline[] Children;
+}
+
+public class CiDocList : CiDocBlock
+{
+	public CiDocPara[] Items;
+}
+
+public class CiCodeDoc
+{
+	public CiDocPara Summary;
+	public CiDocBlock[] Details;
+}
+
 public abstract class CiSymbol : CiExpr
 {
 	public string Name;
 	public CiScope Parent;
+	public CiCodeDoc Documentation = null;
 	public override string ToString() { return this.Name; }
 }
 

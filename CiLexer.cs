@@ -78,6 +78,7 @@ public enum CiToken
 	Colon,
 	FatArrow,
 	Range,
+	DocComment,
 	Abstract,
 	Break,
 	Case,
@@ -143,17 +144,17 @@ public class CiLexer
 		NextToken();
 	}
 
-	protected CiException ParseException(string message)
+	public CiException ParseException(string message)
 	{
 		return new CiException(this.Filename, this.Line, message);
 	}
 
-	protected CiException ParseException(string format, params object[] args)
+	public CiException ParseException(string format, params object[] args)
 	{
 		return ParseException(string.Format(format, args));
 	}
 
-	int PeekChar()
+	public int PeekChar()
 	{
 		return this.Reader.Peek();
 	}
@@ -166,7 +167,7 @@ public class CiLexer
 		return c == '_';
 	}
 
-	protected int ReadChar()
+	public int ReadChar()
 	{
 		int c = this.Reader.Read();
 		if (this.CopyTo != null)
@@ -411,6 +412,10 @@ public class CiLexer
 			case '/':
 				if (EatChar('/')) {
 					c = ReadChar();
+					if (c == '/') {
+						while (EatChar(' '));
+						return CiToken.DocComment;
+					}
 					while (c != '\n' && c >= 0)
 						c = ReadChar();
 					if (c == '\n' && this.LineMode) return CiToken.EndOfLine;
@@ -719,14 +724,14 @@ public class CiLexer
 		}
 	}
 
-	protected CiToken NextToken()
+	public CiToken NextToken()
 	{
 		CiToken token = this.CurrentToken;
 		this.CurrentToken = ReadToken();
 		return token;
 	}
 
-	protected bool See(CiToken token)
+	public bool See(CiToken token)
 	{
 		return this.CurrentToken == token;
 	}

@@ -42,6 +42,15 @@ public class GenC : GenCCpp
 	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
 	CiClass CurrentClass;
 
+	protected override void WriteSelfDoc(CiMethod method)
+	{
+		if (method.CallType == CiCallType.Static)
+			return;
+		Write(" * @param self This <code>");
+		Write(method.Parent.Name);
+		WriteLine("</code>.");
+	}
+
 	protected override void IncludeStdInt()
 	{
 		Include("stdint.h");
@@ -996,6 +1005,7 @@ public class GenC : GenCCpp
 	void Write(CiEnum enu)
 	{
 		WriteLine();
+		Write(enu.Documentation);
 		Write("typedef enum ");
 		OpenBlock();
 		bool first = true;
@@ -1003,6 +1013,7 @@ public class GenC : GenCCpp
 			if (!first)
 				WriteLine(',');
 			first = false;
+			Write(konst.Documentation);
 			Write(enu.Name);
 			Write('_');
 			WriteUppercaseWithUnderscores(konst.Name);
@@ -1140,6 +1151,8 @@ public class GenC : GenCCpp
 	protected override void WriteConst(CiConst konst)
 	{
 		if (konst.Type is CiArrayType) {
+			WriteLine();
+			Write(konst.Documentation);
 			Write("static const ");
 			WriteTypeAndName(konst);
 			Write(" = ");
@@ -1147,6 +1160,8 @@ public class GenC : GenCCpp
 			WriteLine(';');
 		}
 		else if (konst.Visibility == CiVisibility.Public) {
+			WriteLine();
+			Write(konst.Documentation);
 			Write("#define ");
 			WriteName(konst);
 			Write(' ');
@@ -1193,6 +1208,8 @@ public class GenC : GenCCpp
 				WriteConst(konst);
 		foreach (CiMethod method in klass.Methods) {
 			if (method.IsLive && (method.Visibility == CiVisibility.Public) == pub && method.CallType != CiCallType.Abstract) {
+				WriteLine();
+				WriteDoc(method);
 				WriteSignature(klass, method);
 				WriteLine(';');
 			}
@@ -1219,6 +1236,7 @@ public class GenC : GenCCpp
 			WriteLine();
 			if (klass.AddsVirtualMethods())
 				WriteVtblStruct(klass);
+			Write(klass.Documentation);
 			Write("struct ");
 			Write(klass.Name);
 			Write(' ');

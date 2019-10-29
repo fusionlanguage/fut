@@ -26,6 +26,69 @@ namespace Foxoft.Ci
 
 public class GenCs : GenTyped
 {
+	protected override void StartDocLine()
+	{
+		Write("/// ");
+	}
+
+	void Write(CiDocPara para)
+	{
+		foreach (CiDocInline inline in para.Children) {
+			switch (inline) {
+			case CiDocText text:
+				WriteDoc(text.Text);
+				break;
+			case CiDocCode code:
+				switch (code.Text) {
+				case "true":
+				case "false":
+				case "null":
+					Write("<see langword=\"");
+					Write(code.Text);
+					Write("\" />");
+					break;
+				default:
+					Write("<c>");
+					WriteDoc(code.Text);
+					Write("</c>");
+					break;
+				}
+				break;
+			default:
+				throw new ArgumentException(inline.GetType().Name);
+			}
+		}
+	}
+
+	protected override void Write(CiDocList list)
+	{
+		WriteLine();
+		WriteLine("/// <list type=\"bullet\">");
+		foreach (CiDocPara item in list.Items) {
+			Write("/// <item>");
+			Write(item);
+			WriteLine("</item>");
+		}
+		Write("/// </list>");
+		WriteLine();
+		Write("/// ");
+	}
+
+	protected override void Write(CiCodeDoc doc)
+	{
+		if (doc == null)
+			return;
+		Write("/// <summary>");
+		Write(doc.Summary);
+		WriteLine("</summary>");
+		if (doc.Details.Length > 0) {
+			Write("/// <remarks>");
+			foreach (CiDocBlock block in doc.Details)
+				Write(block);
+			WriteLine("</remarks>");
+		}
+	}
+
 	protected override void WriteName(CiSymbol symbol)
 	{
 		if (symbol is CiConst konst && konst.InMethod != null)
@@ -240,6 +303,7 @@ public class GenCs : GenTyped
 	void Write(CiEnum enu)
 	{
 		WriteLine();
+		Write(enu.Documentation);
 		if (enu.IsFlags)
 			WriteLine("[System.Flags]");
 		WritePublic(enu);
@@ -251,6 +315,7 @@ public class GenCs : GenTyped
 			if (!first)
 				WriteLine(',');
 			first = false;
+			Write(konst.Documentation);
 			Write(konst.Name);
 			if (konst.Value != null) {
 				Write(" = ");
@@ -279,13 +344,16 @@ public class GenCs : GenTyped
 	void Write(CiClass klass)
 	{
 		WriteLine();
+		Write(klass.Documentation);
 		WritePublic(klass);
 		Write(klass.CallType, "sealed ");
 		OpenClass(klass, "", " : ");
 
 		if (NeedsConstructor(klass)) {
-			if (klass.Constructor != null)
+			if (klass.Constructor != null) {
+				Write(klass.Constructor.Documentation);
 				Write(klass.Constructor.Visibility);
+			}
 			else
 				Write("internal ");
 			Write(klass.Name);
@@ -300,6 +368,8 @@ public class GenCs : GenTyped
 		WriteConsts(klass.Consts);
 
 		foreach (CiField field in klass.Fields) {
+			WriteLine();
+			Write(field.Documentation);
 			Write(field.Visibility);
 			if (field.Type is CiClass || field.Type is CiArrayStorageType)
 				Write("readonly ");
@@ -309,6 +379,7 @@ public class GenCs : GenTyped
 
 		foreach (CiMethod method in klass.Methods) {
 			WriteLine();
+			WriteDoc(method);
 			Write(method.Visibility);
 			Write(method.CallType, "sealed override ");
 			WriteTypeAndName(method);
