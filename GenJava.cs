@@ -252,6 +252,8 @@ public class GenJava : GenTyped
 			Write('.');
 			if (IsMathReference(obj) && method.Name == "Ceiling")
 				Write("ceil");
+			else if (IsMathReference(obj) && method.Name == "FusedMultiplyAdd")
+				Write("fma");
 			else
 				WriteCamelCase(method.Name);
 			WriteArgsInParentheses(method, args);

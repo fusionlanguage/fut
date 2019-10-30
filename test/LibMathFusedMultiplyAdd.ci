@@ -1,0 +1,10 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		double x = 2;
+		double y = 3;
+		double z = 1;
+		return Math.FusedMultiplyAdd(x, y, z) == 7;
+	}
+}

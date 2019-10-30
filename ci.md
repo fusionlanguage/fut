@@ -132,6 +132,7 @@ There's a built-in `Math` class with the following static methods:
 * `Math.Cosh(double a)`
 * `Math.Exp(double a)`
 * `Math.Floor(double a)`
+* `Math.FusedMultiplyAdd(double x, double y, double z)`
 * `Math.Log(double a)`
 * `Math.Log10(double a)`
 * `Math.Pow(double x, double y)`
@@ -140,6 +141,7 @@ There's a built-in `Math` class with the following static methods:
 * `Math.Sqrt(double a)`
 * `Math.Tan(double a)`
 * `Math.Tanh(double a)`
+* `Math.Truncate(double a)`
 
 ### Enumerations
 

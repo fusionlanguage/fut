@@ -1017,6 +1017,7 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, DoubleType, "Cosh", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, DoubleType, "Exp", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, DoubleType, "Floor", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, DoubleType, "FusedMultiplyAdd", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y"), new CiVar(DoubleType, "z")),
 		new CiMethod(CiCallType.Static, DoubleType, "Log", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, DoubleType, "Log10", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, DoubleType, "Pow", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y")),

@@ -126,6 +126,8 @@ public abstract class GenCCpp : GenTyped
 	{
 		if (method.Name == "Ceiling")
 			Write("ceil");
+		else if (method.Name == "FusedMultiplyAdd")
+			Write("fma");
 		else if (method.Name == "Truncate")
 			Write("trunc");
 		else

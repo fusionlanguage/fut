@@ -266,6 +266,17 @@ public class GenJs : GenBase
 			Write("Ci.utf8GetString");
 			WriteArgsInParentheses(method, args);
 		}
+		else if (IsMathReference(obj) && method.Name == "FusedMultiplyAdd") {
+			if (parent > CiPriority.Add)
+				Write('(');
+			args[0].Accept(this, CiPriority.Mul);
+			Write(" * ");
+			args[1].Accept(this, CiPriority.Mul);
+			Write(" + ");
+			args[2].Accept(this, CiPriority.Add);
+			if (parent > CiPriority.Add)
+				Write(')');
+		}
 		else {
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
