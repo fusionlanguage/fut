@@ -122,6 +122,17 @@ public abstract class GenCCpp : GenTyped
 			Write(')');
 	}
 
+	protected void WriteMathCall(CiMethod method, CiExpr[] args)
+	{
+		if (method.Name == "Ceiling")
+			Write("ceil");
+		else if (method.Name == "Truncate")
+			Write("trunc");
+		else
+			WriteLowercase(method.Name);
+		WriteArgsInParentheses(method, args);
+	}
+
 	protected virtual void WriteArrayPtr(CiExpr expr, CiPriority parent)
 	{
 		expr.Accept(this, parent);

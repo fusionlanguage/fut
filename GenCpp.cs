@@ -236,11 +236,7 @@ public class GenCpp : GenCCpp
 		if (IsMathReference(obj)) {
 			Include("cmath");
 			Write("std::");
-			if (method.Name == "Ceiling")
-				Write("ceil");
-			else
-				WriteLowercase(method.Name);
-			WriteArgsInParentheses(method, args);
+			WriteMathCall(method, args);
 		}
 		else if (method == CiSystem.StringContains) {
 			if (parent > CiPriority.Equality)

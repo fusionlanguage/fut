@@ -521,11 +521,7 @@ public class GenC : GenCCpp
 		}
 		else if (IsMathReference(obj)) {
 			Include("math.h");
-			if (method.Name == "Ceiling")
-				Write("ceil");
-			else
-				WriteLowercase(method.Name);
-			WriteArgsInParentheses(method, args);
+			WriteMathCall(method, args);
 		}
 		else if (method == CiSystem.StringContains) {
 			Include("string.h");

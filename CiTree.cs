@@ -1024,7 +1024,8 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, DoubleType, "Sinh", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, DoubleType, "Sqrt", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, DoubleType, "Tan", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Tanh", new CiVar(DoubleType, "a")));
+		new CiMethod(CiCallType.Static, DoubleType, "Tanh", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, DoubleType, "Truncate", new CiVar(DoubleType, "a")));
 
 	CiSystem()
 	{

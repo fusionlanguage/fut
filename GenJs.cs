@@ -271,6 +271,8 @@ public class GenJs : GenBase
 			Write('.');
 			if (IsMathReference(obj) && method.Name == "Ceiling")
 				Write("ceil");
+			else if (IsMathReference(obj) && method.Name == "Truncate")
+				Write("trunc");
 			else if (method == CiSystem.StringContains)
 				Write("includes");
 			else
