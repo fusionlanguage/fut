@@ -1151,8 +1151,6 @@ public class GenC : GenCCpp
 	protected override void WriteConst(CiConst konst)
 	{
 		if (konst.Type is CiArrayType) {
-			WriteLine();
-			Write(konst.Documentation);
 			Write("static const ");
 			WriteTypeAndName(konst);
 			Write(" = ");
@@ -1160,8 +1158,6 @@ public class GenC : GenCCpp
 			WriteLine(';');
 		}
 		else if (konst.Visibility == CiVisibility.Public) {
-			WriteLine();
-			Write(konst.Documentation);
 			Write("#define ");
 			WriteName(konst);
 			Write(' ');
@@ -1203,9 +1199,15 @@ public class GenC : GenCCpp
 
 	void WriteSignatures(CiClass klass, bool pub)
 	{
-		foreach (CiConst konst in klass.Consts)
-			if ((konst.Visibility == CiVisibility.Public) == pub)
+		foreach (CiConst konst in klass.Consts) {
+			if ((konst.Visibility == CiVisibility.Public) == pub) {
+				if (pub) {
+					WriteLine();
+					Write(konst.Documentation);
+				}
 				WriteConst(konst);
+			}
+		}
 		foreach (CiMethod method in klass.Methods) {
 			if (method.IsLive && (method.Visibility == CiVisibility.Public) == pub && method.CallType != CiCallType.Abstract) {
 				WriteLine();
