@@ -135,6 +135,7 @@ There's a built-in `Math` class with the following static methods:
 * `Math.FusedMultiplyAdd(double x, double y, double z)`
 * `Math.Log(double a)`
 * `Math.Log10(double a)`
+* `Math.Log2(double a)`
 * `Math.Pow(double x, double y)`
 * `Math.Sin(double a)`
 * `Math.Sinh(double a)`

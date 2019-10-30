@@ -247,6 +247,15 @@ public class GenJava : GenTyped
 			WriteArgs(method, args);
 			Write(", java.nio.charset.StandardCharsets.UTF_8)");
 		}
+		else if (IsMathReference(obj) && method.Name == "Log2") {
+			if (parent > CiPriority.Mul)
+				Write('(');
+			Write("Math.log(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(") * 1.4426950408889635");
+			if (parent > CiPriority.Mul)
+				Write(')');
+		}
 		else {
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
