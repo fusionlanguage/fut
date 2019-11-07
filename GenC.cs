@@ -1346,8 +1346,7 @@ public class GenC : GenCCpp
 		if (!klass.IsPublic || klass.Constructor == null || klass.Constructor.Visibility != CiVisibility.Public)
 			return;
 
-		if (define)
-			WriteLine();
+		WriteLine();
 		Write(klass.Name);
 		Write(" *");
 		Write(klass.Name);
