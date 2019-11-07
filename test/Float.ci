@@ -5,6 +5,9 @@ public static class Test
 		float e = Math.E;
 		double d = Math.PI;
 		float f = d;
-		return e >= 2.71 && e <= 2.72 && f >= 3.14 && f <= 3.15;
+		float sum = e + f;
+		return e > 2.71 && e < 2.72
+			&& f > 3.14 && f < 3.15
+			&& sum > 5.85 && sum < 5.86;
 	}
 }

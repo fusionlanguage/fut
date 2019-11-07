@@ -122,13 +122,21 @@ public class CiResolver : CiVisitor
 
 	CiType GetNumericType(CiExpr left, CiExpr right)
 	{
-		if (left.Type == CiSystem.DoubleType || left.Type == CiSystem.FloatType) {
+		if (left.Type == CiSystem.DoubleType) {
 			Coerce(right, CiSystem.DoubleType);
 			return CiSystem.DoubleType;
 		}
-		if (right.Type == CiSystem.DoubleType || right.Type == CiSystem.FloatType) {
+		if (right.Type == CiSystem.DoubleType) {
 			Coerce(left, CiSystem.DoubleType);
 			return CiSystem.DoubleType;
+		}
+		if (left.Type == CiSystem.FloatType) {
+			Coerce(right, CiSystem.FloatType);
+			return CiSystem.FloatType;
+		}
+		if (right.Type == CiSystem.FloatType) {
+			Coerce(left, CiSystem.FloatType);
+			return CiSystem.FloatType;
 		}
 		return GetIntegerType(left, right);
 	}
