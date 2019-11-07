@@ -24,7 +24,7 @@ Additionally you need:
 * Perl 5 (install from MSYS2)
 * Clang C and C++ compilers (install from MSYS2)
 * Java compiler
-* Node.js (install from MSYS2)
+* Node.js
 
 Run the tests with:
 
