@@ -46,24 +46,22 @@ public class GenCpp : GenCCpp
 	{
 		Include("format");
 		Write("std::format(\"");
-		for (int i = 0; i < expr.Literals.Length; i++) {
-			foreach (char c in expr.Literals[i]) {
+		int i = 0;
+		foreach (CiInterpolatedPart part in expr.Parts) {
+			foreach (char c in part.Prefix) {
 				if (c == '{')
 					Write("{{");
 				else
 					WriteEscapedChar(c);
 			}
-			if (i < expr.Arguments.Length) {
+			if (part.Argument != null) {
 				Write('{');
-				Write(i);
+				Write(i++);
 				Write('}');
 			}
 		}
 		Write('"');
-		foreach (CiExpr arg in expr.Arguments) {
-			Write(", ");
-			arg.Accept(this, CiPriority.Statement);
-		}
+		WriteArgs(expr);
 		Write(')');
 		return expr;
 	}

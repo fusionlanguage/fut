@@ -174,16 +174,16 @@ public class GenCs : GenTyped
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
 		Write("$\"");
-		for (int i = 0; i < expr.Literals.Length; i++) {
-			foreach (char c in expr.Literals[i]) {
+		foreach (CiInterpolatedPart part in expr.Parts) {
+			foreach (char c in part.Prefix) {
 				if (c == '{')
 					Write("{{");
 				else
 					WriteEscapedChar(c);
 			}
-			if (i < expr.Arguments.Length) {
+			if (part.Argument != null) {
 				Write('{');
-				expr.Arguments[i].Accept(this, CiPriority.Statement);
+				part.Argument.Accept(this, CiPriority.Statement);
 				Write('}');
 			}
 		}

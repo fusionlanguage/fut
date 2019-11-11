@@ -92,26 +92,33 @@ public abstract class GenTyped : GenBase
 		}
 	}
 
+	protected void WriteArgs(CiInterpolatedString expr)
+	{
+		foreach (CiInterpolatedPart part in expr.Parts) {
+			if (part.Argument != null) {
+				Write(", ");
+				part.Argument.Accept(this, CiPriority.Statement);
+			}
+		}
+	}
+
 	protected void WriteSprintf(CiInterpolatedString expr)
 	{
 		Write('"');
-		for (int i = 0; i < expr.Literals.Length; i++) {
-			foreach (char c in expr.Literals[i]) {
+		foreach (CiInterpolatedPart part in expr.Parts) {
+			foreach (char c in part.Prefix) {
 				if (c == '%')
 					Write("%%");
 				else
 					WriteEscapedChar(c);
 			}
-			if (i < expr.Arguments.Length) {
+			if (part.Argument != null) {
 				Write('%');
-				Write(GetPrintfFormat(expr.Arguments[i].Type));
+				Write(GetPrintfFormat(part.Argument.Type));
 			}
 		}
 		Write('"');
-		foreach (CiExpr arg in expr.Arguments) {
-			Write(", ");
-			arg.Accept(this, CiPriority.Statement);
-		}
+		WriteArgs(expr);
 		Write(')');
 	}
 

@@ -73,16 +73,16 @@ public class GenJs : GenBase
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
 		Write('`');
-		for (int i = 0; i < expr.Literals.Length; i++) {
-			string s = expr.Literals[i];
+		foreach (CiInterpolatedPart part in expr.Parts) {
+			string s = part.Prefix;
 			for (int j = 0; j < s.Length; j++) {
 				if (s[j] == '$' && j + 1 < s.Length && s[j + 1] == '{')
 					Write('\\');
 				WriteEscapedChar(s[j]);
 			}
-			if (i < expr.Arguments.Length) {
+			if (part.Argument != null) {
 				Write("${");
-				expr.Arguments[i].Accept(this, CiPriority.Statement);
+				part.Argument.Accept(this, CiPriority.Statement);
 				Write('}');
 			}
 		}

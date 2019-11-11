@@ -344,10 +344,15 @@ public class CiLiteral : CiExpr
 	public override string ToString() { return this.Value == null ? "null" : this.Value.ToString(); }
 }
 
+public class CiInterpolatedPart
+{
+	public string Prefix;
+	public CiExpr Argument;
+}
+
 public class CiInterpolatedString : CiExpr
 {
-	public string[] Literals;
-	public CiExpr[] Arguments;
+	public CiInterpolatedPart[] Parts;
 	public CiInterpolatedString()
 	{
 		this.Type = CiSystem.StringStorageType;
@@ -357,11 +362,11 @@ public class CiInterpolatedString : CiExpr
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.Append("$\"");
-		for (int i = 0; i < this.Literals.Length; i++) {
-			sb.Append(this.Literals[i].Replace("{", "{{"));
-			if (i < this.Arguments.Length) {
+		foreach (CiInterpolatedPart part in this.Parts) {
+			sb.Append(part.Prefix.Replace("{", "{{"));
+			if (part.Argument != null) {
 				sb.Append('{');
-				sb.Append(this.Arguments[i]);
+				sb.Append(part.Argument);
 				sb.Append('}');
 			}
 		}

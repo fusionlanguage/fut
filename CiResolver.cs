@@ -311,12 +311,14 @@ public class CiResolver : CiVisitor
 
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
-		for (int i = 0; i < expr.Arguments.Length; i++) {
-			CiExpr arg = expr.Arguments[i].Accept(this, CiPriority.Statement);
-			if (arg.Type is CiNumericType || arg.Type is CiStringType)
-				expr.Arguments[i] = arg;
-			else
-				throw StatementException(arg, "Only numbers and strings can be interpolated in strings");
+		foreach (CiInterpolatedPart part in expr.Parts) {
+			if (part.Argument != null) {
+				CiExpr arg = part.Argument.Accept(this, CiPriority.Statement);
+				if (arg.Type is CiNumericType || arg.Type is CiStringType)
+					part.Argument = arg;
+				else
+					throw StatementException(arg, "Only numbers and strings can be interpolated in strings");
+			}
 		}
 		return expr;
 	}
