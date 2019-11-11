@@ -31,6 +31,7 @@ public enum CiToken
 	EndOfFile,
 	Id,
 	Literal,
+	InterpolatedString,
 	Semicolon,
 	Dot,
 	Comma,
@@ -172,8 +173,7 @@ public class CiLexer
 		int c = this.Reader.Read();
 		if (this.CopyTo != null)
 			this.CopyTo.Append((char) c);
-		switch (c)
-		{
+		switch (c) {
 		case '\t':
 		case ' ':
 			break;
@@ -199,8 +199,7 @@ public class CiLexer
 
 	int ReadHexDigit()
 	{
-		switch (PeekChar())
-		{
+		switch (PeekChar()) {
 		case '0': return 0;
 		case '1': return 1;
 		case '2': return 2;
@@ -252,8 +251,7 @@ public class CiLexer
 		sb.Append(i);
 		for (;;) {
 			int c = PeekChar();
-			switch (c)
-			{
+			switch (c) {
 			case '0':
 			case '1':
 			case '2':
@@ -291,8 +289,7 @@ public class CiLexer
 	{
 		for (;;) {
 			int d;
-			switch (PeekChar())
-			{
+			switch (PeekChar()) {
 			case '0': d = 0; break;
 			case '1': d = 1; break;
 			case '2': d = 2; break;
@@ -341,6 +338,29 @@ public class CiLexer
 		case 't': return '\t';
 		case 'v': return '\v';
 		default: throw ParseException("Unknown escape sequence");
+		}
+	}
+
+	protected CiToken ReadInterpolatedString()
+	{
+		StringBuilder sb = new StringBuilder();
+		for (;;) {
+			int c = PeekChar();
+			if (c == '"') {
+				ReadChar();
+				this.CurrentValue = sb.ToString();
+				return CiToken.Literal;
+			}
+			if (c == '{') {
+				ReadChar();
+				if (PeekChar() != '{') {
+					this.CurrentValue = sb.ToString();
+					return CiToken.InterpolatedString;
+				}
+				sb.Append('{');
+			}
+			else
+				sb.Append(ReadCharLiteral());
 		}
 	}
 
@@ -483,6 +503,10 @@ public class CiLexer
 				this.CurrentValue = sb.ToString();
 				return CiToken.Literal;
 			}
+			case '$':
+				if (ReadChar() != '"')
+					throw ParseException("Expected interpolated string");
+				return ReadInterpolatedString();
 			case '0':
 				c = PeekChar();
 				if (c == 'x' ||  c == 'X') {
@@ -745,7 +769,7 @@ public class CiLexer
 		return false;
 	}
 
-	void Check(CiToken expected)
+	protected void Check(CiToken expected)
 	{
 		if (!See(expected))
 			throw ParseException("Expected {0}, got {1}", expected, this.CurrentToken);

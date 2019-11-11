@@ -34,6 +34,7 @@ public class GenC : GenCCpp
 	bool StringLastIndexOf;
 	bool StringStartsWith;
 	bool StringEndsWith;
+	bool StringFormat;
 	bool PtrConstruct;
 	bool SharedMake;
 	bool SharedAddRef;
@@ -62,6 +63,16 @@ public class GenC : GenCCpp
 			Write("NULL");
 		else
 			base.WriteLiteral(value);
+	}
+
+	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
+	{
+		Include("stdarg.h");
+		Include("stdio.h");
+		this.StringFormat = true;
+		Write("CiString_Format(");
+		WriteSprintf(expr);
+		return expr;
 	}
 
 	protected override void WriteName(CiSymbol symbol)
@@ -1469,6 +1480,22 @@ public class GenC : GenCCpp
 			WriteLine("return strLen >= suffixLen && memcmp(str + strLen - suffixLen, suffix, suffixLen) == 0;");
 			CloseBlock();
 		}
+		if (this.StringFormat) {
+			WriteLine();
+			WriteLine("static char *CiString_Format(const char *format, ...)");
+			OpenBlock();
+			WriteLine("va_list args1;");
+			WriteLine("va_start(args1, format);");
+			WriteLine("va_list args2;");
+			WriteLine("va_copy(args2, args1);");
+			WriteLine("size_t len = vsnprintf(NULL, 0, format, args1) + 1;");
+			WriteLine("va_end(args1);");
+			WriteLine("char *str = malloc(len);");
+			WriteLine("vsnprintf(str, len, format, args2);");
+			WriteLine("va_end(args2);");
+			WriteLine("return str;");
+			CloseBlock();
+		}
 		if (this.PtrConstruct) {
 			WriteLine();
 			WriteLine("static void CiPtr_Construct(void **ptr)");
@@ -1592,6 +1619,7 @@ public class GenC : GenCCpp
 		this.StringLastIndexOf = false;
 		this.StringStartsWith = false;
 		this.StringEndsWith = false;
+		this.StringFormat = false;
 		this.PtrConstruct = false;
 		this.SharedMake = false;
 		this.SharedAddRef = false;

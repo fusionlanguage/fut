@@ -104,6 +104,19 @@ public class CiParser : CiLexer
 			result = new CiLiteral(this.CurrentValue) { Line = this.Line };
 			NextToken();
 			break;
+		case CiToken.InterpolatedString:
+			List<string> literals = new List<string>();
+			List<CiExpr> args = new List<CiExpr>();
+			do {
+				literals.Add((string) this.CurrentValue);
+				NextToken();
+				args.Add(ParseExpr());
+				Check(CiToken.RightBrace);
+			} while (ReadInterpolatedString() == CiToken.InterpolatedString);
+			literals.Add((string) this.CurrentValue);
+			result = new CiInterpolatedString { Line = this.Line, Literals = literals.ToArray(), Arguments = args.ToArray() };
+			NextToken();
+			break;
 		case CiToken.LeftParenthesis:
 			Expect(CiToken.LeftParenthesis);
 			result = ParseType();

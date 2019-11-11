@@ -22,6 +22,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Text;
 
 namespace Foxoft.Ci
 {
@@ -67,6 +68,7 @@ public abstract class CiVisitor
 	public abstract CiExpr Visit(CiCollection expr, CiPriority parent);
 	public abstract CiExpr Visit(CiVar expr, CiPriority parent);
 	public abstract CiExpr Visit(CiLiteral expr, CiPriority parent);
+	public abstract CiExpr Visit(CiInterpolatedString expr, CiPriority parent);
 	public abstract CiExpr Visit(CiSymbolReference expr, CiPriority parent);
 	public abstract CiExpr Visit(CiPrefixExpr expr, CiPriority parent);
 	public abstract CiExpr Visit(CiPostfixExpr expr, CiPriority parent);
@@ -340,6 +342,32 @@ public class CiLiteral : CiExpr
 	public static readonly CiLiteral True = new CiLiteral(true);
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
 	public override string ToString() { return this.Value == null ? "null" : this.Value.ToString(); }
+}
+
+public class CiInterpolatedString : CiExpr
+{
+	public string[] Literals;
+	public CiExpr[] Arguments;
+	public CiInterpolatedString()
+	{
+		this.Type = CiSystem.StringStorageType;
+	}
+	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
+	public override string ToString()
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.Append("$\"");
+		for (int i = 0; i < this.Literals.Length; i++) {
+			sb.Append(this.Literals[i].Replace("{", "{{"));
+			if (i < this.Arguments.Length) {
+				sb.Append('{');
+				sb.Append(this.Arguments[i]);
+				sb.Append('}');
+			}
+		}
+		sb.Append('"');
+		return sb.ToString();
+	}
 }
 
 public class CiSymbolReference : CiExpr

@@ -309,6 +309,18 @@ public class CiResolver : CiVisitor
 		return expr;
 	}
 
+	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
+	{
+		for (int i = 0; i < expr.Arguments.Length; i++) {
+			CiExpr arg = expr.Arguments[i].Accept(this, CiPriority.Statement);
+			if (arg.Type is CiNumericType || arg.Type is CiStringType)
+				expr.Arguments[i] = arg;
+			else
+				throw StatementException(arg, "Only numbers and strings can be interpolated in strings");
+		}
+		return expr;
+	}
+
 	CiExpr Lookup(CiSymbolReference expr, CiScope scope)
 	{
 		if (expr.Symbol == null) {

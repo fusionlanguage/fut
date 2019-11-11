@@ -36,6 +36,13 @@ public class GenJava : GenTyped
 			Write('L');
 	}
 
+	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
+	{
+		Write("String.format(");
+		WriteSprintf(expr);
+		return expr;
+	}
+
 	protected override void WriteName(CiSymbol symbol)
 	{
 		if (symbol is CiConst konst) {

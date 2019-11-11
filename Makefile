@@ -50,7 +50,7 @@ test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
 	-$(CXX) -o $@ -I $(<D) $^
 
 test/bin/%/cs.exe: test/bin/%/Test.cs test/Runner.cs
-	-C:/Windows/Microsoft.NET/Framework/v4.0.30319/csc.exe -nologo -out:$@ $(subst /,\,$^)
+	-$(CSC) $^
 
 test/bin/%/Test.class: test/bin/%/Test.java
 	-javac -d $(@D) $(<D)/*.java

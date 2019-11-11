@@ -78,6 +78,43 @@ public abstract class GenTyped : GenBase
 		WriteName(value);
 	}
 
+	static char GetPrintfFormat(CiType type)
+	{
+		switch (type) {
+		case CiStringType _:
+			return 's';
+		case CiIntegerType _:
+			return 'd';
+		case CiNumericType _:
+			return 'f';
+		default:
+			throw new NotImplementedException(type.ToString());
+		}
+	}
+
+	protected void WriteSprintf(CiInterpolatedString expr)
+	{
+		Write('"');
+		for (int i = 0; i < expr.Literals.Length; i++) {
+			foreach (char c in expr.Literals[i]) {
+				if (c == '%')
+					Write("%%");
+				else
+					WriteEscapedChar(c);
+			}
+			if (i < expr.Arguments.Length) {
+				Write('%');
+				Write(GetPrintfFormat(expr.Arguments[i].Type));
+			}
+		}
+		Write('"');
+		foreach (CiExpr arg in expr.Arguments) {
+			Write(", ");
+			arg.Accept(this, CiPriority.Statement);
+		}
+		Write(')');
+	}
+
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Symbol is CiField)

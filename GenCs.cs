@@ -171,6 +171,26 @@ public class GenCs : GenTyped
 		}
 	}
 
+	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
+	{
+		Write("$\"");
+		for (int i = 0; i < expr.Literals.Length; i++) {
+			foreach (char c in expr.Literals[i]) {
+				if (c == '{')
+					Write("{{");
+				else
+					WriteEscapedChar(c);
+			}
+			if (i < expr.Arguments.Length) {
+				Write('{');
+				expr.Arguments[i].Accept(this, CiPriority.Statement);
+				Write('}');
+			}
+		}
+		Write('"');
+		return expr;
+	}
+
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		Write("new ");

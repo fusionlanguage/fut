@@ -42,6 +42,32 @@ public class GenCpp : GenCCpp
 			base.WriteLiteral(value);
 	}
 
+	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
+	{
+		Include("format");
+		Write("std::format(\"");
+		for (int i = 0; i < expr.Literals.Length; i++) {
+			foreach (char c in expr.Literals[i]) {
+				if (c == '{')
+					Write("{{");
+				else
+					WriteEscapedChar(c);
+			}
+			if (i < expr.Arguments.Length) {
+				Write('{');
+				Write(i);
+				Write('}');
+			}
+		}
+		Write('"');
+		foreach (CiExpr arg in expr.Arguments) {
+			Write(", ");
+			arg.Accept(this, CiPriority.Statement);
+		}
+		Write(')');
+		return expr;
+	}
+
 	protected override void WriteName(CiSymbol symbol)
 	{
 		if (symbol is CiMember)

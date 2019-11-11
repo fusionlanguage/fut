@@ -229,6 +229,18 @@ as [UTF-8](https://en.wikipedia.org/wiki/UTF-8)
 or [UTF-16](https://en.wikipedia.org/wiki/UTF-16).
 However, Ć doesn't enforce any encoding.
 
+Ć also supports string _interpolated strings_.
+An interpolated string starts with `$"` and contains expressions in braces.
+The expressions are replaced with their string values.
+Example:
+
+```csharp
+string name = "John";
+int born = 1979;
+int now = 2019
+string() s = $"{name} is {now - born} years old";
+```
+
 ### Arrays
 
 Arrays are fixed-size collections, where every element has the same type

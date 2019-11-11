@@ -316,6 +316,22 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
+	protected void WriteEscapedChar(char c)
+	{
+		switch (c) {
+		case '\a': Write("\\a"); break;
+		case '\b': Write("\\b"); break;
+		case '\f': Write("\\f"); break;
+		case '\n': Write("\\n"); break;
+		case '\r': Write("\\r"); break;
+		case '\t': Write("\\t"); break;
+		case '\v': Write("\\v"); break;
+		case '\\': Write("\\\\"); break;
+		case '\"': Write("\\\""); break;
+		default: Write(c); break;
+		}
+	}
+
 	protected virtual void WriteLiteral(object value)
 	{
 		switch (value) {
@@ -330,20 +346,8 @@ public abstract class GenBase : CiVisitor
 			break;
 		case string s:
 			Write('"');
-			foreach (char c in s) {
-				switch (c) {
-				case '\a': Write("\\a"); break;
-				case '\b': Write("\\b"); break;
-				case '\f': Write("\\f"); break;
-				case '\n': Write("\\n"); break;
-				case '\r': Write("\\r"); break;
-				case '\t': Write("\\t"); break;
-				case '\v': Write("\\v"); break;
-				case '\\': Write("\\\\"); break;
-				case '\"': Write("\\\""); break;
-				default: Write(c); break;
-				}
-			}
+			foreach (char c in s)
+				WriteEscapedChar(c);
 			Write('"');
 			break;
 		case double d:

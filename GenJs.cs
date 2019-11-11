@@ -70,6 +70,26 @@ public class GenJs : GenBase
 		base.WriteVar(def);
 	}
 
+	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
+	{
+		Write('`');
+		for (int i = 0; i < expr.Literals.Length; i++) {
+			string s = expr.Literals[i];
+			for (int j = 0; j < s.Length; j++) {
+				if (s[j] == '$' && j + 1 < s.Length && s[j + 1] == '{')
+					Write('\\');
+				WriteEscapedChar(s[j]);
+			}
+			if (i < expr.Arguments.Length) {
+				Write("${");
+				expr.Arguments[i].Accept(this, CiPriority.Statement);
+				Write('}');
+			}
+		}
+		Write('`');
+		return expr;
+	}
+
 	void WriteMember(CiMember member)
 	{
 		Write(member.IsStatic() ? this.CurrentMethod.Parent.Name : "this");
