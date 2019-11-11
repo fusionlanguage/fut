@@ -883,6 +883,16 @@ public class CiClassPtrType : CiType
 			return this.Modifier == CiToken.Hash ? this.Class.PtrOrSelf : this;
 		}
 	}
+
+	public override bool Equals(object obj)
+	{
+		return obj is CiClassPtrType that && this.Class == that.Class && this.Modifier == that.Modifier;
+	}
+
+	public override int GetHashCode()
+	{
+		return this.Class.GetHashCode() ^ this.Modifier.GetHashCode();
+	}
 }
 
 public abstract class CiArrayType : CiType
@@ -913,6 +923,7 @@ public abstract class CiArrayType : CiType
 public class CiArrayPtrType : CiArrayType
 {
 	public CiToken Modifier;
+
 	public override string ArrayString
 	{
 		get {
@@ -928,6 +939,7 @@ public class CiArrayPtrType : CiArrayType
 			}
 		}
 	}
+
 	public override bool IsAssignableFrom(CiType right)
 	{
 		if (right == CiSystem.NullType)
@@ -945,12 +957,23 @@ public class CiArrayPtrType : CiArrayType
 			throw new NotImplementedException(this.Modifier.ToString());
 		}
 	}
+
+	public override bool Equals(object obj)
+	{
+		return obj is CiArrayPtrType that && this.ElementType.Equals(that.ElementType) && this.Modifier == that.Modifier;
+	}
+
+	public override int GetHashCode()
+	{
+		return this.ElementType.GetHashCode() ^ this.Modifier.GetHashCode();
+	}
 }
 
 public class CiArrayStorageType : CiArrayType
 {
 	public CiExpr LengthExpr;
 	public int Length;
+
 	public override string ArrayString { get { return "[" + this.Length + "]"; } }
 	public override CiSymbol TryLookup(string name)
 	{
