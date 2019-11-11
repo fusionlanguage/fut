@@ -357,10 +357,8 @@ public class CiLexer
 					this.CurrentValue = sb.ToString();
 					return CiToken.InterpolatedString;
 				}
-				sb.Append('{');
 			}
-			else
-				sb.Append(ReadCharLiteral());
+			sb.Append(ReadCharLiteral());
 		}
 	}
 

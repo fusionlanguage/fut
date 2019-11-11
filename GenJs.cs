@@ -75,10 +75,12 @@ public class GenJs : GenBase
 		Write('`');
 		foreach (CiInterpolatedPart part in expr.Parts) {
 			string s = part.Prefix;
-			for (int j = 0; j < s.Length; j++) {
-				if (s[j] == '$' && j + 1 < s.Length && s[j + 1] == '{')
+			for (int i = 0; i < s.Length; i++) {
+				char c = s[i];
+				if (c == '`'
+				 || (c == '$' && i + 1 < s.Length && s[i + 1] == '{'))
 					Write('\\');
-				WriteEscapedChar(s[j]);
+				WriteEscapedChar(c);
 			}
 			if (part.Argument != null) {
 				Write("${");
