@@ -46,7 +46,6 @@ public class GenCpp : GenCCpp
 	{
 		Include("format");
 		Write("std::format(\"");
-		int i = 0;
 		foreach (CiInterpolatedPart part in expr.Parts) {
 			foreach (char c in part.Prefix) {
 				if (c == '{')
@@ -54,11 +53,8 @@ public class GenCpp : GenCCpp
 				else
 					WriteEscapedChar(c);
 			}
-			if (part.Argument != null) {
-				Write('{');
-				Write(i++);
-				Write('}');
-			}
+			if (part.Argument != null)
+				Write("{}");
 		}
 		Write('"');
 		WriteArgs(expr);
