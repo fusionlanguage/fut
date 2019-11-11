@@ -369,6 +369,10 @@ public class CiInterpolatedString : CiExpr
 			if (part.Argument != null) {
 				sb.Append('{');
 				sb.Append(part.Argument);
+				if (part.WidthExpr != null) {
+					sb.Append(',');
+					sb.Append(part.WidthExpr);
+				}
 				sb.Append('}');
 			}
 		}

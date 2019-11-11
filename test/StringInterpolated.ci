@@ -3,7 +3,8 @@ public static class Test
 	public static bool Run()
 	{
 		int one = 1;
-		return $"1 + 2 == {one + 2}" == "1 + 2 == 3"
+		string s = "1 + 2";
+		return $"{s} == {one + 2}" == "1 + 2 == 3"
 			&& $"\"`{{${one}" == "\"`{$1";
 	}
 }

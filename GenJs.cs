@@ -84,7 +84,22 @@ public class GenJs : GenBase
 			}
 			if (part.Argument != null) {
 				Write("${");
-				part.Argument.Accept(this, CiPriority.Statement);
+				if (part.WidthExpr != null && part.Width != 0) {
+					part.Argument.Accept(this, CiPriority.Primary);
+					if (part.Argument.Type is CiNumericType)
+						Write(".toString()");
+					if (part.Width > 0) {
+						Write(".padStart(");
+						Write(part.Width);
+					}
+					else {
+						Write(".padEnd(");
+						Write(-part.Width);
+					}
+					Write(')');
+				}
+				else
+					part.Argument.Accept(this, CiPriority.Statement);
 				Write('}');
 			}
 		}
