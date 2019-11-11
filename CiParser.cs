@@ -81,6 +81,32 @@ public class CiParser : CiLexer
 		return new CiCollection { Line = line, Items = items.ToArray() };
 	}
 
+	CiInterpolatedString ParseInterpolatedString()
+	{
+		int line = this.Line;
+		List<CiInterpolatedPart> parts = new List<CiInterpolatedPart>();
+		do {
+			string prefix = (string) this.CurrentValue;
+			NextToken();
+			CiExpr arg = ParseExpr();
+			CiExpr width = null;
+			char format = ' ';
+			if (Eat(CiToken.Comma))
+				width = ParseExpr();
+			if (See(CiToken.Colon)) {
+				format = (char) ReadChar();
+				if ("dxX".IndexOf(format) < 0)
+					throw ParseException("Invalid format specifier");
+				NextToken();
+			}
+			parts.Add(new CiInterpolatedPart { Prefix = prefix, Argument = arg, WidthExpr = width, Format = format });
+			Check(CiToken.RightBrace);
+		} while (ReadInterpolatedString() == CiToken.InterpolatedString);
+		parts.Add(new CiInterpolatedPart { Prefix = (string) this.CurrentValue, Argument = null });
+		NextToken();
+		return new CiInterpolatedString { Line = line, Parts = parts.ToArray() };
+	}
+
 	CiExpr ParseParenthesized()
 	{
 		Expect(CiToken.LeftParenthesis);
@@ -105,20 +131,7 @@ public class CiParser : CiLexer
 			NextToken();
 			break;
 		case CiToken.InterpolatedString:
-			List<CiInterpolatedPart> parts = new List<CiInterpolatedPart>();
-			do {
-				string prefix = (string) this.CurrentValue;
-				NextToken();
-				CiExpr arg = ParseExpr();
-				CiExpr width = null;
-				if (Eat(CiToken.Comma))
-					width = ParseExpr();
-				parts.Add(new CiInterpolatedPart { Prefix = prefix, Argument = arg, WidthExpr = width });
-				Check(CiToken.RightBrace);
-			} while (ReadInterpolatedString() == CiToken.InterpolatedString);
-			parts.Add(new CiInterpolatedPart { Prefix = (string) this.CurrentValue, Argument = null });
-			result = new CiInterpolatedString { Line = this.Line, Parts = parts.ToArray() };
-			NextToken();
+			result = ParseInterpolatedString();
 			break;
 		case CiToken.LeftParenthesis:
 			Expect(CiToken.LeftParenthesis);

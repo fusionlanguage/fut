@@ -1,0 +1,11 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		string s = "foo";
+		int i = 15;
+		return $"{i,3} {s,4}" == " 15  foo"
+			&& $"{i,-3}{s,-5}" == "15 foo  "
+			&& $"{i:x} {i:X}" == "f F";
+	}
+}

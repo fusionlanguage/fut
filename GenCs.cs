@@ -188,6 +188,10 @@ public class GenCs : GenTyped
 					Write(',');
 					Write(part.Width);
 				}
+				if (part.Format != ' ') {
+					Write(':');
+					Write(part.Format);
+				}
 				Write('}');
 			}
 		}

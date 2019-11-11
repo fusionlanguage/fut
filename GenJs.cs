@@ -84,19 +84,31 @@ public class GenJs : GenBase
 			}
 			if (part.Argument != null) {
 				Write("${");
-				if (part.WidthExpr != null && part.Width != 0) {
+				if (part.Width != 0 || part.Format != ' ') {
 					part.Argument.Accept(this, CiPriority.Primary);
-					if (part.Argument.Type is CiNumericType)
-						Write(".toString()");
+					if (part.Argument.Type is CiNumericType) {
+						switch (part.Format) {
+						case 'x':
+							Write(".toString(16)");
+							break;
+						case 'X':
+							Write(".toString(16).toUpperCase()");
+							break;
+						default:
+							Write(".toString()");
+							break;
+						}
+					}
 					if (part.Width > 0) {
 						Write(".padStart(");
 						Write(part.Width);
+						Write(')');
 					}
-					else {
+					else if (part.Width < 0) {
 						Write(".padEnd(");
 						Write(-part.Width);
+						Write(')');
 					}
-					Write(')');
 				}
 				else
 					part.Argument.Accept(this, CiPriority.Statement);

@@ -350,6 +350,7 @@ public class CiInterpolatedPart
 	public CiExpr Argument;
 	public CiExpr WidthExpr;
 	public int Width;
+	public char Format;
 }
 
 public class CiInterpolatedString : CiExpr
@@ -372,6 +373,10 @@ public class CiInterpolatedString : CiExpr
 				if (part.WidthExpr != null) {
 					sb.Append(',');
 					sb.Append(part.WidthExpr);
+				}
+				if (part.Format != ' ') {
+					sb.Append(':');
+					sb.Append(part.Format);
 				}
 				sb.Append('}');
 			}
