@@ -318,6 +318,8 @@ public class CiResolver : CiVisitor
 					part.Argument = arg;
 				else
 					throw StatementException(arg, "Only numbers and strings can be interpolated in strings");
+				if (part.WidthExpr != null)
+					part.Width = FoldConstInt(part.WidthExpr);
 			}
 		}
 		return expr;

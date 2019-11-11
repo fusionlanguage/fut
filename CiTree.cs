@@ -348,6 +348,8 @@ public class CiInterpolatedPart
 {
 	public string Prefix;
 	public CiExpr Argument;
+	public CiExpr WidthExpr;
+	public int Width;
 }
 
 public class CiInterpolatedString : CiExpr

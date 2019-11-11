@@ -184,6 +184,10 @@ public class GenCs : GenTyped
 			if (part.Argument != null) {
 				Write('{');
 				part.Argument.Accept(this, CiPriority.Statement);
+				if (part.WidthExpr != null) {
+					Write(',');
+					Write(part.Width);
+				}
 				Write('}');
 			}
 		}

@@ -114,6 +114,8 @@ public abstract class GenTyped : GenBase
 			}
 			if (part.Argument != null) {
 				Write('%');
+				if (part.WidthExpr != null)
+					Write(part.Width);
 				Write(GetPrintfFormat(part.Argument.Type));
 			}
 		}

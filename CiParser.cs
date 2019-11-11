@@ -109,7 +109,11 @@ public class CiParser : CiLexer
 			do {
 				string prefix = (string) this.CurrentValue;
 				NextToken();
-				parts.Add(new CiInterpolatedPart { Prefix = prefix, Argument = ParseExpr() });
+				CiExpr arg = ParseExpr();
+				CiExpr width = null;
+				if (Eat(CiToken.Comma))
+					width = ParseExpr();
+				parts.Add(new CiInterpolatedPart { Prefix = prefix, Argument = arg, WidthExpr = width });
 				Check(CiToken.RightBrace);
 			} while (ReadInterpolatedString() == CiToken.InterpolatedString);
 			parts.Add(new CiInterpolatedPart { Prefix = (string) this.CurrentValue, Argument = null });
