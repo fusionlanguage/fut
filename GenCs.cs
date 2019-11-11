@@ -416,6 +416,7 @@ public class GenCs : GenTyped
 			WriteLine(this.Namespace);
 			OpenBlock();
 		}
+		WriteTopLevelNatives(program);
 		foreach (CiEnum enu in program.OfType<CiEnum>())
 			Write(enu);
 		foreach (CiClass klass in program.Classes)

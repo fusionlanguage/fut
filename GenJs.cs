@@ -456,6 +456,7 @@ public class GenJs : GenBase
 		CreateFile(this.OutputFile);
 		WriteLine();
 		WriteLine("\"use strict\";");
+		WriteTopLevelNatives(program);
 		foreach (CiEnum enu in program.OfType<CiEnum>())
 			Write(enu);
 		foreach (CiClass klass in program.OfType<CiClass>()) // TODO: topological sort of class hierarchy

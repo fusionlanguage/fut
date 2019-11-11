@@ -337,9 +337,11 @@ public class GenJava : GenTyped
 		WriteLine();
 	}
 
-	void CreateJavaFile(CiContainerType type)
+	void CreateJavaFile(CiContainerType type, CiProgram program)
 	{
 		CreateJavaFile(type.Name);
+		if (program != null)
+			WriteTopLevelNatives(program);
 		Write(type.Documentation);
 		WritePublic(type);
 	}
@@ -352,7 +354,7 @@ public class GenJava : GenTyped
 
 	void Write(CiEnum enu)
 	{
-		CreateJavaFile(enu);
+		CreateJavaFile(enu, null);
 		Write("interface ");
 		WriteLine(enu.Name);
 		OpenBlock();
@@ -457,9 +459,9 @@ public class GenJava : GenTyped
 		}
 	}
 
-	void Write(CiClass klass)
+	void Write(CiClass klass, CiProgram program)
 	{
-		CreateJavaFile(klass);
+		CreateJavaFile(klass, program);
 		switch (klass.CallType) {
 		case CiCallType.Normal:
 			break;
@@ -552,7 +554,7 @@ public class GenJava : GenTyped
 			this.OutputDirectory = Path.GetDirectoryName(this.OutputFile);
 		foreach (CiContainerType type in program) {
 			if (type is CiClass klass)
-				Write(klass);
+				Write(klass, program);
 			else
 				Write((CiEnum) type);
 		}

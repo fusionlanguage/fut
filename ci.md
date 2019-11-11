@@ -740,6 +740,9 @@ native {
 
 Generally, native blocks should be used inside `#if` (see below).
 
+Native blocks are allowed as statements in method bodies and at the top level
+(for `import` / `using` declarations).
+
 ## Conditional compilation
 
 Conditional compilation in Ć is modeled after C#.

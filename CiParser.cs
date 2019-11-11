@@ -760,6 +760,11 @@ public class CiParser : CiLexer
 				type = ParseEnum();
 				break;
 
+			// native
+			case CiToken.Native:
+				this.Program.TopLevelNatives.Add(ParseNative().Content);
+				continue;
+
 			default:
 				throw ParseException("Expected class or enum");
 			}

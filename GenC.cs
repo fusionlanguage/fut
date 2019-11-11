@@ -1616,6 +1616,7 @@ public class GenC : GenCCpp
 		}
 
 		CreateFile(this.OutputFile);
+		WriteTopLevelNatives(program);
 		this.Includes.ExceptWith(headerIncludes);
 		this.Includes.Add("stdlib.h");
 		WriteIncludes();

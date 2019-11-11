@@ -278,6 +278,12 @@ public abstract class GenBase : CiVisitor
 		this.Writer.Close();
 	}
 
+	protected void WriteTopLevelNatives(CiProgram program)
+	{
+		foreach (string content in program.TopLevelNatives)
+			Write(content);
+	}
+
 	protected void OpenBlock()
 	{
 		WriteLine('{');

@@ -1053,6 +1053,7 @@ public class CiSystem : CiScope
 
 public class CiProgram : CiScope
 {
+	public readonly List<string> TopLevelNatives = new List<string>();
 	public readonly List<CiClass> Classes = new List<CiClass>();
 	public readonly Dictionary<string, byte[]> Resources = new Dictionary<string, byte[]>();
 }
