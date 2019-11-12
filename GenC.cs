@@ -470,7 +470,7 @@ public class GenC : GenCCpp
 	{
 		Include("string.h");
 		Write("(int) strlen(");
-		expr.Accept(this, CiPriority.Primary);
+		expr.Accept(this, CiPriority.Statement);
 		Write(')');
 	}
 
@@ -480,9 +480,9 @@ public class GenC : GenCCpp
 		Write("CiString_");
 		Write(name);
 		Write('(');
-		obj.Accept(this, CiPriority.Primary);
+		obj.Accept(this, CiPriority.Statement);
 		Write(", ");
-		args[0].Accept(this, CiPriority.Primary);
+		args[0].Accept(this, CiPriority.Statement);
 		Write(')');
 	}
 
@@ -575,15 +575,15 @@ public class GenC : GenCCpp
 				Write('(');
 			if (IsOneAsciiString(args[0], out char c)) {
 				Write("strchr(");
-				obj.Accept(this, CiPriority.Primary);
+				obj.Accept(this, CiPriority.Statement);
 				Write(", ");
 				WriteCharLiteral(c);
 			}
 			else {
 				Write("strstr(");
-				obj.Accept(this, CiPriority.Primary);
+				obj.Accept(this, CiPriority.Statement);
 				Write(", ");
-				args[0].Accept(this, CiPriority.Primary);
+				args[0].Accept(this, CiPriority.Statement);
 			}
 			Write(") != NULL");
 			if (parent > CiPriority.Equality)
@@ -598,8 +598,19 @@ public class GenC : GenCCpp
 			WriteStringMethod("LastIndexOf", obj, args);
 		}
 		else if (method == CiSystem.StringStartsWith) {
-			this.StringStartsWith = true;
-			WriteStringMethod("StartsWith", obj, args);
+			if (IsOneAsciiString(args[0], out char c)) {
+				if (parent > CiPriority.Equality)
+					Write('(');
+				obj.Accept(this, CiPriority.Primary);
+				Write("[0] == ");
+				WriteCharLiteral(c);
+				if (parent > CiPriority.Equality)
+					Write(')');
+			}
+			else {
+				this.StringStartsWith = true;
+				WriteStringMethod("StartsWith", obj, args);
+			}
 		}
 		else if (method == CiSystem.StringEndsWith) {
 			this.StringEndsWith = true;
