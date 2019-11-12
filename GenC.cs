@@ -1112,7 +1112,8 @@ public class GenC : GenCCpp
 
 	void WriteSignature(CiClass klass, CiMethod method)
 	{
-		if (method.Visibility == CiVisibility.Private || method.Visibility == CiVisibility.Internal)
+		if (!klass.IsPublic
+		 || (method.Visibility == CiVisibility.Private || method.Visibility == CiVisibility.Internal))
 			Write("static ");
 		WriteSignature(method, () => {
 			Write(klass.Name);
