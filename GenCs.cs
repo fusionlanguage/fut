@@ -275,6 +275,15 @@ public class GenCs : GenTyped
 			Write(((CiArrayStorageType) obj.Type).Length);
 			Write(')');
 		}
+		else if ((method == CiSystem.StringIndexOf || method == CiSystem.StringLastIndexOf)
+			&& IsOneAsciiString(args[0], out char c)) {
+			obj.Accept(this, CiPriority.Primary);
+			Write('.');
+			Write(method.Name);
+			Write('(');
+			WriteCharLiteral(c);
+			Write(')');
+		}
 		else if (method == CiSystem.UTF8GetString) {
 			Write("System.Text.Encoding.UTF8.GetString");
 			WriteArgsInParentheses(method, args);
