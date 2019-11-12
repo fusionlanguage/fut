@@ -573,10 +573,18 @@ public class GenC : GenCCpp
 			Include("string.h");
 			if (parent > CiPriority.Equality)
 				Write('(');
-			Write("strstr(");
-			obj.Accept(this, CiPriority.Primary);
-			Write(", ");
-			args[0].Accept(this, CiPriority.Primary);
+			if (IsOneAsciiString(args[0], out char c)) {
+				Write("strchr(");
+				obj.Accept(this, CiPriority.Primary);
+				Write(", ");
+				WriteCharLiteral(c);
+			}
+			else {
+				Write("strstr(");
+				obj.Accept(this, CiPriority.Primary);
+				Write(", ");
+				args[0].Accept(this, CiPriority.Primary);
+			}
 			Write(") != NULL");
 			if (parent > CiPriority.Equality)
 				Write(')');

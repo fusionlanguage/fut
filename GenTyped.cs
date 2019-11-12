@@ -171,7 +171,17 @@ public abstract class GenTyped : GenBase
 		}
 	}
 
-	void WriteCharLiteral(char c)
+	protected bool IsOneAsciiString(CiExpr expr, out char c)
+	{
+		if (expr is CiLiteral literal && literal.Value is string s && s.Length == 1 && IsAscii(s[0])) {
+			c = s[0];
+			return true;
+		}
+		c = '\0';
+		return false;
+	}
+
+	protected void WriteCharLiteral(char c)
 	{
 		Write('\'');
 		WriteEscapedChar(c);
