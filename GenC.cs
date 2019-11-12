@@ -501,6 +501,37 @@ public class GenC : GenCCpp
 		Write(')');
 	}
 
+	void WriteConsoleWrite(CiExpr[] args, bool newLine)
+	{
+		Include("stdio.h");
+		if (args.Length == 0)
+			Write("putchar('\\n')");
+		else if (args[0] is CiInterpolatedString interpolated) {
+			Write("printf(");
+			WritePrintf(interpolated, newLine);
+		}
+		else if (newLine) {
+			Write("puts(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
+		else if (args[0] is CiLiteral literal) {
+			Write("printf(\"");
+			foreach (char c in (string) literal.Value) {
+				if (c == '%')
+					Write("%%");
+				else
+					WriteEscapedChar(c);
+			}
+			Write("\")");
+		}
+		else {
+			Write("printf(\"%s\", ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (obj.Type is CiArrayType array && method.Name == "CopyTo") {
@@ -530,20 +561,10 @@ public class GenC : GenCCpp
 			obj.Accept(this, CiPriority.Statement);
 			Write("))");
 		}
-		else if (method == CiSystem.ConsoleWriteLine) {
-			Include("stdio.h");
-			if (args.Length == 0)
-				Write("putchar('\\n')");
-			else if (args[0] is CiInterpolatedString interpolated) {
-				Write("printf(");
-				WritePrintf(interpolated, true);
-			}
-			else {
-				Write("puts(");
-				args[0].Accept(this, CiPriority.Statement);
-				Write(')');
-			}
-		}
+		else if (method == CiSystem.ConsoleWrite)
+			WriteConsoleWrite(args, false);
+		else if (method == CiSystem.ConsoleWriteLine)
+			WriteConsoleWrite(args, true);
 		else if (IsMathReference(obj)) {
 			Include("math.h");
 			WriteMathCall(method, args);

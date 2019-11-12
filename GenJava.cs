@@ -216,6 +216,20 @@ public class GenJava : GenTyped
 		Write(')');
 	}
 
+	void WriteConsoleWrite(CiMethod method, CiExpr[] args, bool newLine)
+	{
+		if (args.Length == 1 && args[0] is CiInterpolatedString interpolated) {
+			Write("System.out.format(");
+			WritePrintf(interpolated, newLine);
+		}
+		else {
+			Write("System.out.print");
+			if (newLine)
+				Write("ln");
+			WriteArgsInParentheses(method, args);
+		}
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (method == CiSystem.StringSubstring) {
@@ -249,16 +263,10 @@ public class GenJava : GenTyped
 				args[0].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
-		else if (method == CiSystem.ConsoleWriteLine) {
-			if (args.Length == 1 && args[0] is CiInterpolatedString interpolated) {
-				Write("System.out.format(");
-				WritePrintf(interpolated, true);
-			}
-			else {
-				Write("System.out.println");
-				WriteArgsInParentheses(method, args);
-			}
-		}
+		else if (method == CiSystem.ConsoleWrite)
+			WriteConsoleWrite(method, args, false);
+		else if (method == CiSystem.ConsoleWriteLine)
+			WriteConsoleWrite(method, args, true);
 		else if (method == CiSystem.UTF8GetString) {
 			Write("new String(");
 			WriteArgs(method, args);

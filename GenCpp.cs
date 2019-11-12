@@ -259,7 +259,7 @@ public class GenCpp : GenCCpp
 		Write("\\n\"");
 	}
 
-	void WriteConsoleWriteLine(CiExpr[] args)
+	void WriteConsoleWrite(CiExpr[] args, bool newLine)
 	{
 		Include("iostream");
 		Write("std::cout");
@@ -291,7 +291,7 @@ public class GenCpp : GenCCpp
 
 					if (part.Prefix.Length > 0) {
 						Write(" << ");
-						if (part.Argument == null) {
+						if (newLine && part.Argument == null) {
 							WriteStringLiteralWithNewLine(part.Prefix);
 							return;
 						}
@@ -306,14 +306,15 @@ public class GenCpp : GenCCpp
 			}
 			else {
 				Write(" << ");
-				if (args[0] is CiLiteral literal) {
+				if (newLine && args[0] is CiLiteral literal) {
 					WriteStringLiteralWithNewLine((string) literal.Value);
 					return;
 				}
 				args[0].Accept(this, CiPriority.Mul);
 			}
 		}
-		Write(" << '\\n'");
+		if (newLine)
+			Write(" << '\\n'");
 	}
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
@@ -357,8 +358,10 @@ public class GenCpp : GenCCpp
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(')');
 		}
+		else if (method == CiSystem.ConsoleWrite)
+			WriteConsoleWrite(args, false);
 		else if (method == CiSystem.ConsoleWriteLine)
-			WriteConsoleWriteLine(args);
+			WriteConsoleWrite(args, true);
 		else if (method == CiSystem.UTF8GetString) {
 			Include("string_view");
 			Write("std::string_view(reinterpret_cast<const char *>(");

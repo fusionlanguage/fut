@@ -292,7 +292,8 @@ public class GenJs : GenBase
 			WriteArgs(method, args);
 			Write(')');
 		}
-		else if (method == CiSystem.ConsoleWriteLine) {
+		else if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine) {
+			// XXX: Console.Write same as Console.WriteLine
 			Write("console.log");
 			if (args.Length == 0)
 				Write("(\"\")");
