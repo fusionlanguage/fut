@@ -292,6 +292,13 @@ public class GenJs : GenBase
 			WriteArgs(method, args);
 			Write(')');
 		}
+		else if (method == CiSystem.ConsoleWriteLine) {
+			Write("console.log");
+			if (args.Length == 0)
+				Write("(\"\")");
+			else
+				WriteArgsInParentheses(method, args);
+		}
 		else if (method == CiSystem.UTF8GetString) {
 			AddLibrary(GenJsMethod.UTF8GetString,
 				"utf8GetString : function(a, i, length)",

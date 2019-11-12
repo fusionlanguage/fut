@@ -530,6 +530,16 @@ public class GenC : GenCCpp
 			obj.Accept(this, CiPriority.Statement);
 			Write("))");
 		}
+		else if (method == CiSystem.ConsoleWriteLine) {
+			Include("stdio.h");
+			if (args.Length == 0)
+				Write("putchar('\\n')");
+			else {
+				Write("puts(");
+				args[0].Accept(this, CiPriority.Statement);
+				Write(')');
+			}
+		}
 		else if (IsMathReference(obj)) {
 			Include("math.h");
 			WriteMathCall(method, args);

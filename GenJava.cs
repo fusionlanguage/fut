@@ -249,6 +249,10 @@ public class GenJava : GenTyped
 				args[0].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
+		else if (method == CiSystem.ConsoleWriteLine) {
+			Write("System.out.println");
+			WriteArgsInParentheses(method, args);
+		}
 		else if (method == CiSystem.UTF8GetString) {
 			Write("new String(");
 			WriteArgs(method, args);

@@ -292,6 +292,15 @@ public class GenCpp : GenCCpp
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(')');
 		}
+		else if (method == CiSystem.ConsoleWriteLine) {
+			Include("iostream");
+			Write("std::cout");
+			if (args.Length == 1) {
+				Write(" << ");
+				args[0].Accept(this, CiPriority.Mul);
+			}
+			Write(" << '\\n'");
+		}
 		else if (method == CiSystem.UTF8GetString) {
 			Include("string_view");
 			Write("std::string_view(reinterpret_cast<const char *>(");
