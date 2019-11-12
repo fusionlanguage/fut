@@ -248,7 +248,13 @@ public class GenCpp : GenCCpp
 		}
 		Write('.');
 		Write(name);
-		WriteArgsInParentheses(method, args);
+		if (IsOneAsciiString(args[0], out char c)) {
+			Write('(');
+			WriteCharLiteral(c);
+			Write(')');
+		}
+		else
+			WriteArgsInParentheses(method, args);
 	}
 
 	void WriteStringLiteralWithNewLine(string s)
