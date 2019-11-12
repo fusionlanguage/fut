@@ -38,8 +38,32 @@ public class GenJava : GenTyped
 
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
-		Write("String.format(");
-		WritePrintf(expr, false);
+		if (expr.Parts.Length == 2
+		 && expr.Parts[0].Prefix.Length == 0
+		 && expr.Parts[1].Prefix.Length == 0
+		 && expr.Parts[0].WidthExpr == null
+		 && expr.Parts[0].Format == ' ') {
+			CiExpr arg = expr.Parts[0].Argument;
+			if (arg.Type == CiSystem.LongType)
+				Write("Long");
+			else if (arg.Type == CiSystem.DoubleType)
+				Write("Double");
+			else if (arg.Type == CiSystem.FloatType)
+				Write("Float");
+			else if (arg.Type is CiStringType) {
+				arg.Accept(this, parent);
+				return expr;
+			}
+			else
+				Write("Integer");
+			Write(".toString(");
+			arg.Accept(this, CiPriority.Statement);
+			Write(')');
+		}
+		else {
+			Write("String.format(");
+			WritePrintf(expr, false);
+		}
 		return expr;
 	}
 
