@@ -607,9 +607,14 @@ public abstract class GenBase : CiVisitor
 		return Write(expr, parent > child, child, op, child);
 	}
 
+	protected virtual void WriteComparison(CiBinaryExpr expr, CiPriority parent, CiPriority child, string op)
+	{
+		Write(expr, parent, child, op);
+	}
+
 	protected virtual void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
-		Write(expr, parent, CiPriority.Equality, not ? " != " : " == ");
+		WriteComparison(expr, parent, CiPriority.Equality, not ? " != " : " == ");
 	}
 
 	protected virtual void WriteAnd(CiBinaryExpr expr, CiPriority parent)
@@ -670,13 +675,17 @@ public abstract class GenBase : CiVisitor
 		case CiToken.ShiftRight:
 			return Write(expr, parent > CiPriority.Shift, CiPriority.Shift, " >> ", CiPriority.Mul);
 		case CiToken.Less:
-			return Write(expr, parent, CiPriority.Rel, " < ");
+			WriteComparison(expr, parent, CiPriority.Rel, " < ");
+			return expr;
 		case CiToken.LessOrEqual:
-			return Write(expr, parent, CiPriority.Rel, " <= ");
+			WriteComparison(expr, parent, CiPriority.Rel, " <= ");
+			return expr;
 		case CiToken.Greater:
-			return Write(expr, parent, CiPriority.Rel, " > ");
+			WriteComparison(expr, parent, CiPriority.Rel, " > ");
+			return expr;
 		case CiToken.GreaterOrEqual:
-			return Write(expr, parent, CiPriority.Rel, " >= ");
+			WriteComparison(expr, parent, CiPriority.Rel, " >= ");
+			return expr;
 		case CiToken.Equal:
 			WriteEqual(expr, parent, false);
 			return expr;

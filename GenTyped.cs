@@ -153,6 +153,47 @@ public abstract class GenTyped : GenBase
 		}
 	}
 
+	static bool IsAscii(long c)
+	{
+		if (c >= ' ' && c <= 0x7e)
+			return true;
+		switch (c) {
+		case '\a':
+		case '\b':
+		case '\f':
+		case '\n':
+		case '\r':
+		case '\t':
+		case '\v':
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	void WriteCharLiteral(char c)
+	{
+		Write('\'');
+		WriteEscapedChar(c);
+		Write('\'');
+	}
+
+	protected override void WriteComparison(CiBinaryExpr expr, CiPriority parent, CiPriority child, string op)
+	{
+		if (expr.Left.IsIndexing && expr.Left is CiBinaryExpr indexing && indexing.Left.Type is CiStringType
+		 && expr.Right is CiLiteral literal && literal.Value is long c && IsAscii(c)) {
+			if (parent > child)
+				Write('(');
+			expr.Left.Accept(this, child);
+			Write(op);
+			WriteCharLiteral((char) c);
+			if (parent > child)
+				Write(')');
+		}
+		else
+			base.WriteComparison(expr, parent, child, op);
+	}
+
 	static bool IsNarrower(TypeCode left, TypeCode right)
 	{
 		switch (left) {
