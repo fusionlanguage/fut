@@ -102,7 +102,7 @@ public abstract class GenTyped : GenBase
 		}
 	}
 
-	protected void WriteSprintf(CiInterpolatedString expr)
+	protected void WritePrintf(CiInterpolatedString expr, bool newLine)
 	{
 		Write('"');
 		foreach (CiInterpolatedPart part in expr.Parts) {
@@ -122,6 +122,8 @@ public abstract class GenTyped : GenBase
 					Write(GetPrintfFormat(part.Argument.Type));
 			}
 		}
+		if (newLine)
+			Write("\\n");
 		Write('"');
 		WriteArgs(expr);
 		Write(')');

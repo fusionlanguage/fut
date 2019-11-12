@@ -251,6 +251,71 @@ public class GenCpp : GenCCpp
 		WriteArgsInParentheses(method, args);
 	}
 
+	void WriteStringLiteralWithNewLine(string s)
+	{
+		Write('"');
+		foreach (char c in s)
+			WriteEscapedChar(c);
+		Write("\\n\"");
+	}
+
+	void WriteConsoleWriteLine(CiExpr[] args)
+	{
+		Include("iostream");
+		Write("std::cout");
+		if (args.Length == 1) {
+			if (args[0] is CiInterpolatedString interpolated) {
+				char format = 'd';
+				foreach (CiInterpolatedPart part in interpolated.Parts) {
+					switch (part.Format) {
+					case 'x':
+						if (format == 'X')
+							Write(" << std::nouppercase");
+						else if (format != 'x')
+							Write(" << std::hex");
+						break;
+					case 'X':
+						if (format == 'x')
+							Write(" << std::uppercase");
+						else if (format != 'X')
+							Write(" << std::uppercase << std::hex");
+						break;
+					default:
+						if (format == 'X')
+							Write(" << std::nouppercase << std::dec");
+						else if (format == 'x')
+							Write(" << std::dec");
+						break;
+					}
+					format = part.Format;
+
+					if (part.Prefix.Length > 0) {
+						Write(" << ");
+						if (part.Argument == null) {
+							WriteStringLiteralWithNewLine(part.Prefix);
+							return;
+						}
+						WriteLiteral(part.Prefix);
+					}
+
+					if (part.Argument != null) {
+						Write(" << ");
+						part.Argument.Accept(this, CiPriority.Mul);
+					}
+				}
+			}
+			else {
+				Write(" << ");
+				if (args[0] is CiLiteral literal) {
+					WriteStringLiteralWithNewLine((string) literal.Value);
+					return;
+				}
+				args[0].Accept(this, CiPriority.Mul);
+			}
+		}
+		Write(" << '\\n'");
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (IsMathReference(obj)) {
@@ -292,15 +357,8 @@ public class GenCpp : GenCCpp
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(')');
 		}
-		else if (method == CiSystem.ConsoleWriteLine) {
-			Include("iostream");
-			Write("std::cout");
-			if (args.Length == 1) {
-				Write(" << ");
-				args[0].Accept(this, CiPriority.Mul);
-			}
-			Write(" << '\\n'");
-		}
+		else if (method == CiSystem.ConsoleWriteLine)
+			WriteConsoleWriteLine(args);
 		else if (method == CiSystem.UTF8GetString) {
 			Include("string_view");
 			Write("std::string_view(reinterpret_cast<const char *>(");

@@ -71,7 +71,7 @@ public class GenC : GenCCpp
 		Include("stdio.h");
 		this.StringFormat = true;
 		Write("CiString_Format(");
-		WriteSprintf(expr);
+		WritePrintf(expr, false);
 		return expr;
 	}
 
@@ -534,6 +534,10 @@ public class GenC : GenCCpp
 			Include("stdio.h");
 			if (args.Length == 0)
 				Write("putchar('\\n')");
+			else if (args[0] is CiInterpolatedString interpolated) {
+				Write("printf(");
+				WritePrintf(interpolated, true);
+			}
 			else {
 				Write("puts(");
 				args[0].Accept(this, CiPriority.Statement);

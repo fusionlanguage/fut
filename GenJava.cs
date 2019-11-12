@@ -39,7 +39,7 @@ public class GenJava : GenTyped
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
 		Write("String.format(");
-		WriteSprintf(expr);
+		WritePrintf(expr, false);
 		return expr;
 	}
 
@@ -250,8 +250,14 @@ public class GenJava : GenTyped
 			Write(')');
 		}
 		else if (method == CiSystem.ConsoleWriteLine) {
-			Write("System.out.println");
-			WriteArgsInParentheses(method, args);
+			if (args.Length == 1 && args[0] is CiInterpolatedString interpolated) {
+				Write("System.out.format(");
+				WritePrintf(interpolated, true);
+			}
+			else {
+				Write("System.out.println");
+				WriteArgsInParentheses(method, args);
+			}
 		}
 		else if (method == CiSystem.UTF8GetString) {
 			Write("new String(");
