@@ -339,12 +339,7 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (obj.Type is CiListType && method.Name == "Add") {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".push_back");
-			WriteArgsInParentheses(method, args);
-		}
-		else if (IsMathReference(obj)) {
+		if (IsMathReference(obj)) {
 			Include("cmath");
 			Write("std::");
 			WriteMathCall(method, args);
@@ -381,6 +376,22 @@ public class GenCpp : GenCCpp
 			args[3].Accept(this, CiPriority.Statement);
 			Write(", ");
 			WriteArrayPtrAdd(args[1], args[2]);
+			Write(')');
+		}
+		else if (obj.Type is CiListType && method.Name == "Add") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".push_back");
+			WriteArgsInParentheses(method, args);
+		}
+		else if (method == CiSystem.ListRemoveAt) {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".erase(");
+			obj.Accept(this, CiPriority.Primary); // TODO: side effect
+			Write(".begin()");
+			if (!(args[0] is CiLiteral literal) || (long) literal.Value != 0) {
+				Write(" + ");
+				args[0].Accept(this, CiPriority.Add);
+			}
 			Write(')');
 		}
 		else if (method == CiSystem.ConsoleWrite)

@@ -7,7 +7,9 @@ public static class Test
 		list.Clear();
 		list.Add(1);
 		list.Add(2);
+		list.Add(3);
+		list.RemoveAt(1);
 		list[0] = 5;
-		return list.Count == 2 && list[0] == 5 && list[1] == 2;
+		return list.Count == 2 && list[0] == 5 && list[1] == 3;
 	}
 }

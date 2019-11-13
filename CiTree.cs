@@ -1059,6 +1059,8 @@ public class CiListType : CiArrayType
 			return CiSystem.ListClear;
 		case "Count":
 			return CiSystem.ListCount;
+		case "RemoveAt":
+			return CiSystem.ListRemoveAt;
 		default:
 			return base.TryLookup(name);
 		}
@@ -1091,6 +1093,7 @@ public class CiSystem : CiScope
 	public static readonly CiMember ArrayLength = new CiMember { Name = "Length", Type = UIntType };
 	public static readonly CiMember ListCount = new CiMember { Name = "Count", Type = UIntType };
 	public static readonly CiMethod ListClear = new CiMethod(CiCallType.Normal, null, "Clear");
+	public static readonly CiMethod ListRemoveAt = new CiMethod(CiCallType.Normal, null, "RemoveAt", new CiVar(IntType, "index"));
 	public static readonly CiMethod ConsoleWrite = new CiMethod(CiCallType.Static, null, "Write", new CiVar(StringPtrType, "value"));
 	public static readonly CiMethod ConsoleWriteLine = new CiMethod(CiCallType.Static, null, "WriteLine", new CiVar(StringPtrType, "value") { Value = new CiLiteral("") });
 	public static readonly CiClass ConsoleClass = new CiClass(CiCallType.Static, "Console",

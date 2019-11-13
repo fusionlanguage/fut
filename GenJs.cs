@@ -310,6 +310,12 @@ public class GenJs : GenBase
 			obj.Accept(this, CiPriority.Primary);
 			Write(".length = 0");
 		}
+		else if (method == CiSystem.ListRemoveAt) {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".splice(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", 1)");
+		}
 		else if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine) {
 			// XXX: Console.Write same as Console.WriteLine
 			Write("console.log");

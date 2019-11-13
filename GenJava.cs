@@ -336,7 +336,9 @@ public class GenJava : GenTyped
 		else {
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
-			if (IsMathReference(obj) && method.Name == "Ceiling")
+			if (method == CiSystem.ListRemoveAt)
+				Write("remove");
+			else if (IsMathReference(obj) && method.Name == "Ceiling")
 				Write("ceil");
 			else if (IsMathReference(obj) && method.Name == "FusedMultiplyAdd")
 				Write("fma");
