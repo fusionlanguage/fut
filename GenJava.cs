@@ -76,8 +76,12 @@ public class GenJava : GenTyped
 			}
 			WriteUppercaseWithUnderscores(symbol.Name);
 		}
-		else if (symbol is CiMember)
-			WriteCamelCase(symbol.Name);
+		else if (symbol is CiMember) {
+			if (symbol == CiSystem.ListCount)
+				Write("size()");
+			else
+				WriteCamelCase(symbol.Name);
+		}
 		else
 			Write(symbol.Name);
 	}
@@ -149,6 +153,11 @@ public class GenJava : GenTyped
 		case CiEnum enu:
 			Write(enu == CiSystem.BoolType ? "boolean" : "int");
 			break;
+		case CiListType list:
+			Write("java.util.ArrayList<");
+			Write(list.ElementType, false);
+			Write('>');
+			break;
 		case CiArrayType array:
 			if (promote && array is CiArrayStorageType)
 				Write("final ");
@@ -161,6 +170,13 @@ public class GenJava : GenTyped
 			Write(type.Name);
 			break;
 		}
+	}
+
+	protected override void WriteListStorageInit(CiListType list)
+	{
+		Write(" = new java.util.ArrayList<");
+		Write(list.ElementType, false);
+		Write(">()");
 	}
 
 	protected override void WriteResource(string name, int length)

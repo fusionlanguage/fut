@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		List<int>() list;
+		list.Add(42);
+		return list.Count == 1 && list[0] == 42;
+	}
+}

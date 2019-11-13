@@ -310,6 +310,11 @@ public class GenC : GenCCpp
 		}
 	}
 
+	protected override void WriteListStorageInit(CiListType list)
+	{
+		Write(" TODO");
+	}
+
 	protected override void WriteVarInit(CiNamedValue def)
 	{
 		if (def.Type == CiSystem.StringStorageType) {

@@ -468,6 +468,8 @@ public abstract class GenBase : CiVisitor
 		WriteNewArray(array.ElementType, array.LengthExpr, CiPriority.Statement);
 	}
 
+	protected abstract void WriteListStorageInit(CiListType list);
+
 	protected virtual void WriteVarInit(CiNamedValue def)
 	{
 		if (def.Type is CiClass klass) {
@@ -476,6 +478,8 @@ public abstract class GenBase : CiVisitor
 		}
 		else if (def.Type is CiArrayStorageType array && !(def.Value is CiCollection))
 			WriteArrayStorageInit(array, def.Value);
+		else if (def.Type is CiListType list)
+			WriteListStorageInit(list);
 		else if (def.Value != null) {
 			Write(" = ");
 			WriteCoerced(def.Type, def.Value, CiPriority.Statement);

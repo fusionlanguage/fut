@@ -64,8 +64,12 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteName(CiSymbol symbol)
 	{
-		if (symbol is CiMember)
-			WriteCamelCase(symbol.Name);
+		if (symbol is CiMember) {
+			if (symbol == CiSystem.ListCount)
+				Write("size()");
+			else
+				WriteCamelCase(symbol.Name);
+		}
 		else
 			Write(symbol.Name);
 	}
@@ -121,6 +125,12 @@ public class GenCpp : GenCCpp
 			Write(arrayStorage.ElementType, false);
 			Write(", ");
 			Write(arrayStorage.Length);
+			Write('>');
+			break;
+		case CiListType list:
+			Include("vector");
+			Write("std::vector<");
+			Write(list.ElementType, false);
 			Write('>');
 			break;
 		case CiClassPtrType classPtr:
@@ -179,6 +189,10 @@ public class GenCpp : GenCCpp
 		default:
 			throw new NotImplementedException("Only null, zero and false supported");
 		}
+	}
+
+	protected override void WriteListStorageInit(CiListType list)
+	{
 	}
 
 	protected override void WriteVarInit(CiNamedValue def)
@@ -325,7 +339,12 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (IsMathReference(obj)) {
+		if (obj.Type is CiListType && method.Name == "Add") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".push_back");
+			WriteArgsInParentheses(method, args);
+		}
+		else if (IsMathReference(obj)) {
 			Include("cmath");
 			Write("std::");
 			WriteMathCall(method, args);

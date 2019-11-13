@@ -58,6 +58,7 @@ public enum CiToken
 	LessOrEqual,
 	Greater,
 	GreaterOrEqual,
+	RightAngle,
 	CondAnd,
 	CondOr,
 	ExclamationMark,
@@ -94,6 +95,7 @@ public enum CiToken
 	Goto,
 	If,
 	Internal,
+	List,
 	Native,
 	New,
 	Override,
@@ -133,6 +135,7 @@ public class CiLexer
 	public readonly HashSet<string> PreSymbols = new HashSet<string>();
 	bool AtLineStart = true;
 	bool LineMode = false;
+	protected bool ParsingTypeArg = false;
 	readonly Stack<PreDirectiveClass> PreStack = new Stack<PreDirectiveClass>();
 	static readonly object BoxedFalse = false;
 	static readonly object BoxedTrue = true;
@@ -480,6 +483,7 @@ public class CiLexer
 				if (EatChar('=')) return CiToken.LessOrEqual;
 				return CiToken.Less;
 			case '>':
+				if (this.ParsingTypeArg) return CiToken.RightAngle;
 				if (EatChar('>')) {
 					if (EatChar('=')) return CiToken.ShiftRightAssign;
 					return CiToken.ShiftRight;
@@ -539,6 +543,7 @@ public class CiLexer
 				case "goto": return CiToken.Goto;
 				case "if": return CiToken.If;
 				case "internal": return CiToken.Internal;
+				case "List": return CiToken.List;
 				case "native": return CiToken.Native;
 				case "new": return CiToken.New;
 				case "override": return CiToken.Override;

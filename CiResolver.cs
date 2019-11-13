@@ -1011,13 +1011,16 @@ public class CiResolver : CiVisitor
 				// string(), MyClass()
 				if (binary.RightCollection.Length != 0)
 					throw StatementException(binary.Right, "Expected empty parentheses for storage type");
-				if (!(binary.Left is CiSymbolReference symbol))
-					throw StatementException(binary.Left, "Expected name of storage type");
-				if (symbol.Name == "string")
-					return CiSystem.StringStorageType;
-				if (this.Program.TryLookup(symbol.Name) is CiClass klass)
-					return klass;
-				throw StatementException(expr, "Class {0} not found", symbol.Name);
+				if (binary.Left is CiSymbolReference symbol) {
+					if (symbol.Name == "string")
+						return CiSystem.StringStorageType;
+					if (this.Program.TryLookup(symbol.Name) is CiClass klass)
+						return klass;
+					throw StatementException(expr, "Class {0} not found", symbol.Name);
+				}
+				if (binary.Left is CiPrefixExpr prefix && prefix.Op == CiToken.List)
+					return new CiListType { ElementType = ToType(prefix.Inner, false) };
+				throw StatementException(binary.Left, "Expected name of storage type");
 			case CiToken.Range: // a .. b
 				int min = FoldConstInt(binary.Left);
 				int max = FoldConstInt(binary.Right);

@@ -45,8 +45,12 @@ public class GenJs : GenBase
 			}
 			WriteUppercaseWithUnderscores(symbol.Name);
 		}
-		else if (symbol is CiMember)
-			WriteCamelCase(symbol.Name);
+		else if (symbol is CiMember) {
+			if (symbol == CiSystem.ListCount)
+				Write("length");
+			else
+				WriteCamelCase(symbol.Name);
+		}
 		else
 			Write(symbol.Name);
 	}
@@ -62,6 +66,11 @@ public class GenJs : GenBase
 		WriteCoercedLiterals(null, expr.Items);
 		Write(" ]");
 		return expr;
+	}
+
+	protected override void WriteListStorageInit(CiListType list)
+	{
+		Write(" = new Array()");
 	}
 
 	protected override void WriteVar(CiNamedValue def)
@@ -291,6 +300,11 @@ public class GenJs : GenBase
 			Write(", ");
 			WriteArgs(method, args);
 			Write(')');
+		}
+		else if (obj.Type is CiListType && method.Name == "Add") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".push");
+			WriteArgsInParentheses(method, args);
 		}
 		else if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine) {
 			// XXX: Console.Write same as Console.WriteLine

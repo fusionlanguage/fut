@@ -161,6 +161,11 @@ public class GenCs : GenTyped
 		case CiStringType _:
 			Write("string");
 			break;
+		case CiListType list:
+			Write("System.Collections.Generic.List<");
+			Write(list.ElementType, false);
+			Write('>');
+			break;
 		case CiArrayType array:
 			Write(array.ElementType, false);
 			Write("[]");
@@ -169,6 +174,13 @@ public class GenCs : GenTyped
 			Write(type.Name);
 			break;
 		}
+	}
+
+	protected override void WriteListStorageInit(CiListType list)
+	{
+		Write(" = new System.Collections.Generic.List<");
+		Write(list.ElementType, false);
+		Write(">()");
 	}
 
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
