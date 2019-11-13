@@ -334,30 +334,58 @@ public class GenJava : GenTyped
 		}
 	}
 
+	void WriteIndexingInternal(CiBinaryExpr expr, CiPriority parent)
+	{
+		if (expr.Left.Type is CiListType) {
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(".get(");
+			expr.Right.Accept(this, CiPriority.Statement);
+			Write(')');
+		}
+		else
+			base.WriteIndexing(expr, CiPriority.And);
+	}
+
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (parent != CiPriority.Assign && IsUnsignedByte(expr.Type)) {
 			if (parent > CiPriority.And)
 				Write('(');
-			base.WriteIndexing(expr, CiPriority.And);
+			WriteIndexingInternal(expr, CiPriority.And);
 			Write(" & 0xff");
 			if (parent > CiPriority.And)
 				Write(')');
 		}
 		else
-			base.WriteIndexing(expr, parent);
+			WriteIndexingInternal(expr, parent);
 	}
 
 	protected override void WriteAssignRight(CiBinaryExpr expr)
 	{
 		if ((!expr.Left.IsIndexing || !IsUnsignedByte(expr.Left.Type))
-			&& expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign && IsUnsignedByte(expr.Right.Type)) {
+		 && expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign && IsUnsignedByte(expr.Right.Type)) {
 			Write('(');
 			base.WriteAssignRight(expr);
 			Write(") & 0xff");
 		}
 		else
 			base.WriteAssignRight(expr);
+	}
+
+	protected override void WriteAssign(CiBinaryExpr expr, CiPriority parent)
+	{
+		if (expr.Left is CiBinaryExpr indexing
+		 && indexing.Op == CiToken.LeftBracket
+		 && indexing.Left.Type is CiListType) {
+			 indexing.Left.Accept(this, CiPriority.Primary);
+			 Write(".set(");
+			 indexing.Right.Accept(this, CiPriority.Statement);
+			 Write(", ");
+			 WriteAssignRight(expr);
+			 Write(')');
+		}
+		else
+			base.WriteAssign(expr, parent);
 	}
 
 	protected override bool HasInitCode(CiNamedValue def)

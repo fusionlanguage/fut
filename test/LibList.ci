@@ -3,7 +3,9 @@ public static class Test
 	public static bool Run()
 	{
 		List<int>() list;
-		list.Add(42);
-		return list.Count == 1 && list[0] == 42;
+		list.Add(1);
+		list.Add(2);
+		list[0] = 5;
+		return list.Count == 2 && list[0] == 5 && list[1] == 2;
 	}
 }
