@@ -407,6 +407,14 @@ public class GenCpp : GenCCpp
 			WriteListIterator(obj, args[0]); // FIXME: side effect
 			Write(')');
 		}
+		else if (method == CiSystem.ListSort) {
+			Include("algorithm");
+			Write("std::sort(");
+			obj.Accept(this, CiPriority.Primary);
+			Write(".begin(), ");
+			obj.Accept(this, CiPriority.Primary); // FIXME: side effect
+			Write(".end())");
+		}
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(args, false);
 		else if (method == CiSystem.ConsoleWriteLine)
