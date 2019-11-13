@@ -3,6 +3,8 @@ public static class Test
 	public static bool Run()
 	{
 		List<int>() list;
+		list.Add(42);
+		list.Clear();
 		list.Add(1);
 		list.Add(2);
 		list[0] = 5;

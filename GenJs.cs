@@ -306,6 +306,10 @@ public class GenJs : GenBase
 			Write(".push");
 			WriteArgsInParentheses(method, args);
 		}
+		else if (method == CiSystem.ListClear) {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".length = 0");
+		}
 		else if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine) {
 			// XXX: Console.Write same as Console.WriteLine
 			Write("console.log");
