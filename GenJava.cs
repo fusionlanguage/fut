@@ -126,36 +126,43 @@ public class GenJava : GenTyped
 		return TypeCode.SByte; // store unsigned bytes in Java signed bytes
 	}
 
-	protected override void Write(TypeCode typeCode)
+	void Write(TypeCode typeCode, bool klass)
 	{
 		switch (typeCode) {
 		case TypeCode.Byte:
-		case TypeCode.SByte: Write("byte"); break;
-		case TypeCode.Int16: Write("short"); break;
-		case TypeCode.Int32: Write("int"); break;
-		case TypeCode.Int64: Write("long"); break;
+		case TypeCode.SByte: Write(klass ? "Byte" : "byte"); break;
+		case TypeCode.Int16: Write(klass ? "Short" : "short"); break;
+		case TypeCode.Int32: Write(klass ? "Integer" : "int"); break;
+		case TypeCode.Int64: Write(klass ? "Long" : "long"); break;
 		default: throw new NotImplementedException(typeCode.ToString());
 		}
 	}
 
-	protected override void Write(CiType type, bool promote)
+	protected override void Write(TypeCode typeCode)
+	{
+		Write(typeCode, false);
+	}
+
+	void Write(CiType type, bool promote, bool klass)
 	{
 		switch (type) {
 		case null:
 			Write("void");
 			break;
 		case CiIntegerType integer:
-			Write(GetTypeCode(integer, promote));
+			Write(GetTypeCode(integer, promote), klass);
 			break;
 		case CiStringType _:
 			Write("String");
 			break;
 		case CiEnum enu:
-			Write(enu == CiSystem.BoolType ? "boolean" : "int");
+			Write(enu == CiSystem.BoolType
+				? klass ? "Boolean" : "boolean"
+				: klass ? "Integer" : "int");
 			break;
 		case CiListType list:
 			Write("java.util.ArrayList<");
-			Write(list.ElementType, false);
+			Write(list.ElementType, false, true);
 			Write('>');
 			break;
 		case CiArrayType array:
@@ -172,10 +179,15 @@ public class GenJava : GenTyped
 		}
 	}
 
+	protected override void Write(CiType type, bool promote)
+	{
+		Write(type, promote, false);
+	}
+
 	protected override void WriteListStorageInit(CiListType list)
 	{
 		Write(" = new java.util.ArrayList<");
-		Write(list.ElementType, false);
+		Write(list.ElementType, false, true);
 		Write(">()");
 	}
 
