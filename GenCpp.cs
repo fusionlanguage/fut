@@ -271,6 +271,16 @@ public class GenCpp : GenCCpp
 			WriteArgsInParentheses(method, args);
 	}
 
+	void WriteListIterator(CiExpr list, CiExpr index)
+	{
+		list.Accept(this, CiPriority.Primary); // TODO: side effect
+		Write(".begin()");
+		if (!(index is CiLiteral literal) || (long) literal.Value != 0) {
+			Write(" + ");
+			index.Accept(this, CiPriority.Add);
+		}
+	}
+
 	void WriteStringLiteralWithNewLine(string s)
 	{
 		Write('"');
@@ -383,15 +393,18 @@ public class GenCpp : GenCCpp
 			Write(".push_back");
 			WriteArgsInParentheses(method, args);
 		}
+		else if (obj.Type is CiListType list && method.Name == "Insert") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".insert(");
+			WriteListIterator(obj, args[0]); // FIXME: side effect
+			Write(", ");
+			WriteCoerced(list.ElementType, args[1], CiPriority.Statement);
+			Write(')');
+		}
 		else if (method == CiSystem.ListRemoveAt) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".erase(");
-			obj.Accept(this, CiPriority.Primary); // TODO: side effect
-			Write(".begin()");
-			if (!(args[0] is CiLiteral literal) || (long) literal.Value != 0) {
-				Write(" + ");
-				args[0].Accept(this, CiPriority.Add);
-			}
+			WriteListIterator(obj, args[0]); // FIXME: side effect
 			Write(')');
 		}
 		else if (method == CiSystem.ConsoleWrite)

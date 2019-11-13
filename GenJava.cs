@@ -336,7 +336,9 @@ public class GenJava : GenTyped
 		else {
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
-			if (method == CiSystem.ListRemoveAt)
+			if (obj.Type is CiListType && method.Name == "Insert")
+				Write("add");
+			else if (method == CiSystem.ListRemoveAt)
 				Write("remove");
 			else if (IsMathReference(obj) && method.Name == "Ceiling")
 				Write("ceil");

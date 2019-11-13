@@ -310,6 +310,14 @@ public class GenJs : GenBase
 			obj.Accept(this, CiPriority.Primary);
 			Write(".length = 0");
 		}
+		else if (obj.Type is CiListType && method.Name == "Insert") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".splice(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", 0, ");
+			args[1].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
 		else if (method == CiSystem.ListRemoveAt) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".splice(");

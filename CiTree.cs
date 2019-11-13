@@ -1059,6 +1059,8 @@ public class CiListType : CiArrayType
 			return CiSystem.ListClear;
 		case "Count":
 			return CiSystem.ListCount;
+		case "Insert":
+			return new CiMethod(CiCallType.Normal, null, "Insert", new CiVar(CiSystem.UIntType, "index"), new CiVar(this.ElementType, "value"));
 		case "RemoveAt":
 			return CiSystem.ListRemoveAt;
 		default:
