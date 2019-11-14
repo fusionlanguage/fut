@@ -941,7 +941,9 @@ public class CiResolver : CiVisitor
 
 	public override void Visit(CiThrow statement)
 	{
-		// TODO
+		statement.Message = Resolve(statement.Message);
+		if (!(statement.Message.Type is CiStringType))
+			throw StatementException(statement, "The argument of 'throw' must be a string");
 	}
 
 	public override void Visit(CiWhile statement)

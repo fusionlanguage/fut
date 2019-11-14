@@ -1,0 +1,7 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		throw new Test(); //ERROR: The argument of 'throw' must be a string
+	}
+}
