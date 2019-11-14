@@ -871,8 +871,12 @@ public class CiResolver : CiVisitor
 	{
 		OpenScope(statement);
 		ResolveType(statement.Element);
-		this.CurrentScope.Add(statement.Element);
 		statement.Collection.Accept(this);
+		if (!(statement.Collection.Type is CiArrayType array) || array is CiArrayPtrType)
+			throw StatementException(statement, "Expected a collection");
+		if (!statement.Element.Type.IsAssignableFrom(array.ElementType))
+			throw StatementException(statement, "Cannot coerce {0} to {1}", array.ElementType, statement.Element.Type);
+		this.CurrentScope.Add(statement.Element);
 		statement.SetCompletesNormally(true);
 		statement.Body.Accept(this);
 		CloseScope();
