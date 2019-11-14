@@ -867,6 +867,17 @@ public class CiResolver : CiVisitor
 		CloseScope();
 	}
 
+	public override void Visit(CiForeach statement)
+	{
+		OpenScope(statement);
+		ResolveType(statement.Element);
+		this.CurrentScope.Add(statement.Element);
+		statement.Collection.Accept(this);
+		statement.SetCompletesNormally(true);
+		statement.Body.Accept(this);
+		CloseScope();
+	}
+
 	public override void Visit(CiIf statement)
 	{
 		statement.Cond = ResolveBool(statement.Cond);

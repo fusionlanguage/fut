@@ -1,0 +1,14 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		List<int>() list;
+		list.Add(15);
+		list.Add(5);
+		list.Add(10);
+		int sum = 0;
+		foreach (int i in list)
+			sum += i;
+		return sum == 30;
+	}
+}

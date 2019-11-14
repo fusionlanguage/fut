@@ -1,0 +1,14 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int[3] a;
+		a[0] = 15;
+		a[1] = 5;
+		a[2] = 10;
+		int sum = 0;
+		foreach (int i in a)
+			sum += i;
+		return sum == 30;
+	}
+}

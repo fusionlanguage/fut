@@ -342,6 +342,16 @@ public class GenCs : GenTyped
 		}
 	}
 
+	public override void Visit(CiForeach statement)
+	{
+		Write("foreach (");
+		WriteTypeAndName(statement.Element);
+		Write(" in ");
+		statement.Collection.Accept(this, CiPriority.Statement);
+		Write(')');
+		WriteChild(statement.Body);
+	}
+
 	protected override void WriteFallthrough(CiExpr expr)
 	{
 		if (expr is CiGotoDefault)

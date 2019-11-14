@@ -81,6 +81,7 @@ public abstract class CiVisitor
 	public abstract void Visit(CiContinue statement);
 	public abstract void Visit(CiDoWhile statement);
 	public abstract void Visit(CiFor statement);
+	public abstract void Visit(CiForeach statement);
 	public abstract void Visit(CiIf statement);
 	public abstract void Visit(CiNative statement);
 	public abstract void Visit(CiReturn statement);
@@ -577,6 +578,13 @@ public class CiFor : CiLoop
 {
 	public CiExpr Init;
 	public CiExpr Advance;
+	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
+}
+
+public class CiForeach : CiLoop
+{
+	public CiVar Element;
+	public CiExpr Collection;
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }
 

@@ -92,8 +92,10 @@ public enum CiToken
 	Else,
 	Enum,
 	For,
+	Foreach,
 	Goto,
 	If,
+	In,
 	Internal,
 	List,
 	Native,
@@ -540,8 +542,10 @@ public class CiLexer
 				case "else": return CiToken.Else;
 				case "enum": return CiToken.Enum;
 				case "for": return CiToken.For;
+				case "foreach": return CiToken.Foreach;
 				case "goto": return CiToken.Goto;
 				case "if": return CiToken.If;
+				case "in": return CiToken.In;
 				case "internal": return CiToken.Internal;
 				case "List": return CiToken.List;
 				case "native": return CiToken.Native;

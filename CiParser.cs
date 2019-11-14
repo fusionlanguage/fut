@@ -331,24 +331,24 @@ public class CiParser : CiLexer
 			return new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAssign(false) };
 		case CiToken.Id:
 			if (allowVar)
-				return ParseVar(left);
+				return ParseVar(left, true);
 			return left;
 		default:
 			return left;
 		}
 	}
 
-	CiVar ParseVar(CiExpr type)
+	CiVar ParseVar(CiExpr type, bool allowValue)
 	{
 		CiVar def = new CiVar { Line = this.Line, TypeExpr = type, Name = ParseId() };
-		if (Eat(CiToken.Assign))
+		if (allowValue && Eat(CiToken.Assign))
 			def.Value = ParseAssign(false);
 		return def;
 	}
 
-	CiVar ParseVar()
+	CiVar ParseVar(bool allowValue)
 	{
-		return ParseVar(ParseType());
+		return ParseVar(ParseType(), allowValue);
 	}
 
 	CiConst ParseConst()
@@ -425,6 +425,19 @@ public class CiParser : CiLexer
 		Expect(CiToken.Semicolon);
 		if (!See(CiToken.RightParenthesis))
 			result.Advance = ParseAssign(false);
+		Expect(CiToken.RightParenthesis);
+		ParseLoopBody(result);
+		return result;
+	}
+
+	CiForeach ParseForeach()
+	{
+		CiForeach result = new CiForeach { Line = this.Line };
+		Expect(CiToken.Foreach);
+		Expect(CiToken.LeftParenthesis);
+		result.Element = ParseVar(false);
+		Expect(CiToken.In);
+		result.Collection = ParseExpr();
 		Expect(CiToken.RightParenthesis);
 		ParseLoopBody(result);
 		return result;
@@ -584,6 +597,8 @@ public class CiParser : CiLexer
 			return ParseDoWhile();
 		case CiToken.For:
 			return ParseFor();
+		case CiToken.Foreach:
+			return ParseForeach();
 		case CiToken.If:
 			return ParseIf();
 		case CiToken.Native:
@@ -634,7 +649,7 @@ public class CiParser : CiLexer
 		if (!See(CiToken.RightParenthesis)) {
 			do {
 				CiCodeDoc doc = ParseDoc();
-				CiVar param = ParseVar();
+				CiVar param = ParseVar(true);
 				param.Documentation = doc;
 				method.Parameters.Add(param);
 			} while (Eat(CiToken.Comma));

@@ -403,6 +403,16 @@ public class GenJs : GenBase
 		return base.Visit(expr, parent);
 	}
 
+	public override void Visit(CiForeach statement)
+	{
+		Write("for (const ");
+		Write(statement.Element.Name);
+		Write(" of ");
+		statement.Collection.Accept(this, CiPriority.Statement);
+		Write(')');
+		WriteChild(statement.Body);
+	}
+
 	public override void Visit(CiThrow statement)
 	{
 		Write("throw ");

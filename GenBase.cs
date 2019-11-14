@@ -860,6 +860,16 @@ public abstract class GenBase : CiVisitor
 		WriteChild(statement.Body);
 	}
 
+	public override void Visit(CiForeach statement)
+	{
+		Write("for (");
+		WriteTypeAndName(statement.Element);
+		Write(" : ");
+		statement.Collection.Accept(this, CiPriority.Statement);
+		Write(')');
+		WriteChild(statement.Body);
+	}
+
 	public override void Visit(CiIf statement)
 	{
 		Write("if (");
