@@ -732,7 +732,7 @@ public class CiResolver : CiVisitor
 		case CiToken.ShiftLeftAssign:
 		case CiToken.ShiftRightAssign:
 			// TODO: check lvalue
-			if (expr.Left is CiSymbolReference symbol && symbol.Symbol is CiForeachVar v)
+			if (expr.Left is CiSymbolReference symbol && symbol.Symbol.Parent is CiForeach)
 				throw StatementException(expr, "Cannot assign a foreach iteration variable");
 			// TODO Coerce(right, left.Type);
 			expr.Left = left;

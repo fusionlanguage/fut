@@ -435,7 +435,7 @@ public class CiParser : CiLexer
 		CiForeach result = new CiForeach { Line = this.Line };
 		Expect(CiToken.Foreach);
 		Expect(CiToken.LeftParenthesis);
-		result.Element = new CiForeachVar { Line = this.Line, TypeExpr = ParseType(), Name = ParseId() };
+		result.Element = new CiVar { Line = this.Line, TypeExpr = ParseType(), Name = ParseId() };
 		Expect(CiToken.In);
 		result.Collection = ParseExpr();
 		Expect(CiToken.RightParenthesis);

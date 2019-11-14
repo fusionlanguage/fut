@@ -244,7 +244,7 @@ public class GenCpp : GenCCpp
 	}
 
 	static bool IsForeachVar(CiExpr expr)
-		=> expr is CiSymbolReference symbol && symbol.Symbol is CiForeachVar;
+		=> expr is CiSymbolReference symbol && symbol.Symbol.Parent is CiForeach;
 
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
