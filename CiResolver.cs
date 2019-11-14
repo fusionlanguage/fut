@@ -264,30 +264,7 @@ public class CiResolver : CiVisitor
 	{
 		CiExpr[] items = expr.Items;
 		for (int i = 0; i < items.Length; i++)
-			items[i] = items[i].Accept(this, parent);
-/* TODO: remove?
-		if (items.Length == 0)
-			throw StatementException(expr, "Cannot infer type of an empty array");
-		items[0] = items[0].Accept(this, parent);
-		CiType leftType = items[0].Type;
-		for (int i = 1; i < items.Length; i++) {
-			items[i] = items[i].Accept(this, parent);
-			CiType rightType = items[i].Type;
-			if (rightType == leftType)
-				continue;
-			CiRangeType leftRange = leftType as CiRangeType;
-			CiRangeType rightRange = rightType as CiRangeType;
-			if (leftRange != null && rightType != null)
-				leftType = leftRange.Union(rightRange);
-			else if (leftType == CiSystem.DoubleType || rightType == CiSystem.DoubleType)
-				leftType = CiSystem.DoubleType;
-			else if (leftType == CiSystem.FloatType || rightType == CiSystem.FloatType)
-				leftType = CiSystem.FloatType;
-			else
-				throw StatementException(expr, "Cannot infer type of array");
-		}
-		expr.Type = new CiArrayStorageType { ElementType = leftType, Length = items.Length };
-*/
+			items[i] = Resolve(items[i]);
 		return expr;
 	}
 
