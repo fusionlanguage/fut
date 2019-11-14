@@ -295,7 +295,7 @@ public class CiResolver : CiVisitor
 	{
 		CiType type = ResolveType(expr);
 		if (expr.Value != null) {
-			expr.Value = expr.Value.Accept(this, CiPriority.Statement);
+			expr.Value = Resolve(expr.Value);
 			if (type is CiArrayStorageType array)
 				type = array.ElementType;
 			Coerce(expr.Value, type);
@@ -313,7 +313,7 @@ public class CiResolver : CiVisitor
 	{
 		foreach (CiInterpolatedPart part in expr.Parts) {
 			if (part.Argument != null) {
-				CiExpr arg = part.Argument.Accept(this, CiPriority.Statement);
+				CiExpr arg = Resolve(part.Argument);
 				if (arg.Type is CiNumericType || arg.Type is CiStringType)
 					part.Argument = arg;
 				else
@@ -361,7 +361,7 @@ public class CiResolver : CiVisitor
 		switch (expr.Op) {
 		case CiToken.Increment:
 		case CiToken.Decrement:
-			inner = expr.Inner.Accept(this, parent);
+			inner = Resolve(expr.Inner);
 			if (!(inner.Type is CiNumericType))
 				throw StatementException(expr, "Argument of ++/-- must be numeric");
 			range = inner.Type as CiRangeType;
@@ -376,7 +376,7 @@ public class CiResolver : CiVisitor
 			expr.Type = type;
 			return expr;
 		case CiToken.Minus:
-			inner = expr.Inner.Accept(this, parent);
+			inner = Resolve(expr.Inner);
 			if (!(inner.Type is CiNumericType))
 				throw StatementException(expr, "Argument of unary minus must be numeric");
 			range = inner.Type as CiRangeType;
@@ -386,7 +386,7 @@ public class CiResolver : CiVisitor
 				type = inner.Type;
 			break;
 		case CiToken.Tilde:
-			inner = expr.Inner.Accept(this, parent);
+			inner = Resolve(expr.Inner);
 			if (!(inner.Type is CiIntegerType))
 				throw StatementException(expr, "Argument of bitwise complement must be integer");
 			range = inner.Type as CiRangeType;
@@ -433,7 +433,7 @@ public class CiResolver : CiVisitor
 
 	public override CiExpr Visit(CiPostfixExpr expr, CiPriority parent)
 	{
-		expr.Inner = expr.Inner.Accept(this, parent);
+		expr.Inner = Resolve(expr.Inner);
 		switch (expr.Op) {
 		case CiToken.Increment:
 		case CiToken.Decrement:
@@ -459,7 +459,7 @@ public class CiResolver : CiVisitor
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
-		CiExpr left = expr.Left.Accept(this, parent);
+		CiExpr left = Resolve(expr.Left);
 		CiSymbolReference leftSymbol;
 		CiType type;
 		switch (expr.Op) {
@@ -498,7 +498,7 @@ public class CiResolver : CiVisitor
 						break;
 					throw StatementException(expr, "Too few arguments");
 				}
-				CiExpr arg = arguments[i].Accept(this, CiPriority.Statement);
+				CiExpr arg = Resolve(arguments[i]);
 				Coerce(arg, param.Type);
 				arguments[i++] = arg;
 			}
@@ -512,7 +512,7 @@ public class CiResolver : CiVisitor
 				i = 0;
 				foreach (CiVar param in method.Parameters)
 					this.CurrentPureArguments.Add(param, arguments[i++]);
-				CiLiteral literal = ret.Value.Accept(this, CiPriority.Statement) as CiLiteral;
+				CiLiteral literal = Resolve(ret.Value) as CiLiteral;
 				foreach (CiVar param in method.Parameters)
 					this.CurrentPureArguments.Remove(param);
 				this.CurrentPureMethods.Remove(method);
@@ -528,7 +528,7 @@ public class CiResolver : CiVisitor
 			break;
 		}
 
-		CiExpr right = expr.Right.Accept(this, parent);
+		CiExpr right = Resolve(expr.Right);
 		CiRangeType leftRange = left.Type as CiRangeType;
 		CiRangeType rightRange = right.Type as CiRangeType;
 	
@@ -773,8 +773,8 @@ public class CiResolver : CiVisitor
 	public override CiExpr Visit(CiCondExpr expr, CiPriority parent)
 	{
 		CiExpr cond = ResolveBool(expr.Cond);
-		CiExpr onTrue = expr.OnTrue.Accept(this, CiPriority.Statement);
-		CiExpr onFalse = expr.OnFalse.Accept(this, CiPriority.Statement);
+		CiExpr onTrue = Resolve(expr.OnTrue);
+		CiExpr onFalse = Resolve(expr.OnFalse);
 		CiType type = GetCommonType(onTrue, onFalse);
 		if (cond is CiLiteral literalCond)
 			return (bool) literalCond.Value ? onTrue : onFalse;
@@ -789,14 +789,17 @@ public class CiResolver : CiVisitor
 			this.CurrentScope.ParentClass.ConstArrays.Add(statement);
 	}
 
+	CiExpr Resolve(CiExpr expr)
+		=> expr.Accept(this, CiPriority.Statement);
+
 	public override void Visit(CiExpr statement)
 	{
-		statement.Accept(this, CiPriority.Statement);
+		Resolve(statement);
 	}
 
 	CiExpr ResolveBool(CiExpr expr)
 	{
-		expr = expr.Accept(this, CiPriority.Statement);
+		expr = Resolve(expr);
 		Coerce(expr, CiSystem.BoolType);
 		return expr;
 	}
@@ -909,7 +912,7 @@ public class CiResolver : CiVisitor
 		else {
 			if (statement.Value == null)
 				throw StatementException(statement, "Missing return value");
-			statement.Value = statement.Value.Accept(this, CiPriority.Statement);
+			statement.Value = Resolve(statement.Value);
 			Coerce(statement.Value, this.CurrentMethod.Type);
 		}
 	}
@@ -917,13 +920,13 @@ public class CiResolver : CiVisitor
 	public override void Visit(CiSwitch statement)
 	{
 		OpenScope(statement);
-		statement.Value = statement.Value.Accept(this, CiPriority.Statement);
+		statement.Value = Resolve(statement.Value);
 		statement.SetCompletesNormally(false);
 		CiExpr fallthrough = null;
 		foreach (CiCase kase in statement.Cases) {
 			for (int i = 0; i < kase.Values.Length; i++)
 				// TODO: enum kase.Values[i] = FoldConst(kase.Values[i]);
-				kase.Values[i] = kase.Values[i].Accept(this, CiPriority.Statement);
+				kase.Values[i] = Resolve(kase.Values[i]);
 			if (fallthrough != null) {
 				if (fallthrough is CiGotoDefault)
 					throw StatementException(fallthrough, "Default must follow");
@@ -992,7 +995,7 @@ public class CiResolver : CiVisitor
 
 	CiLiteral FoldConst(CiExpr expr)
 	{
-		if (expr.Accept(this, CiPriority.Statement) is CiLiteral literal)
+		if (Resolve(expr) is CiLiteral literal)
 			return literal;
 		throw StatementException(expr, "Expected constant value");
 	}
@@ -1063,7 +1066,7 @@ public class CiResolver : CiVisitor
 		while (expr is CiBinaryExpr binary && binary.Op == CiToken.LeftBracket) {
 			if (binary.Right != null) {
 				ExpectNoPtrModifier(expr, ptrModifier);
-				CiExpr lengthExpr = binary.Right.Accept(this, CiPriority.Statement);
+				CiExpr lengthExpr = Resolve(binary.Right);
 				Coerce(lengthExpr, CiSystem.IntType);
 				CiArrayStorageType arrayStorage = new CiArrayStorageType { LengthExpr = lengthExpr, ElementType = outerArray };
 				if (!dynamic || (binary.Left.IsIndexing)) {
@@ -1110,7 +1113,7 @@ public class CiResolver : CiVisitor
 			return;
 		}
 		ResolveType(konst);
-		konst.Value = konst.Value.Accept(this, CiPriority.Statement);
+		konst.Value = Resolve(konst.Value);
 		if (konst.Value is CiCollection coll) {
 			if (!(konst.Type is CiArrayType arrayType))
 				throw StatementException(konst, "Array initializer for scalar constant {0}", konst.Name);
