@@ -523,7 +523,10 @@ public class GenCpp : GenCCpp
 	public override void Visit(CiForeach statement)
 	{
 		Write("for (");
-		if (((CiArrayType) statement.Collection.Type).ElementType is CiClass klass) {
+		if (((CiArrayType) statement.Collection.Type).ElementType is CiClass klass
+		 && statement.Element.Type is CiClassPtrType ptr) {
+			if (ptr.Modifier == CiToken.EndOfFile)
+				Write("const ");
 			Write(klass.Name);
 			Write(" &");
 		}
