@@ -1,0 +1,7 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int i = List<int>(); //ERROR: Unexpected List
+	}
+}

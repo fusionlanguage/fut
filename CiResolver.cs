@@ -388,6 +388,8 @@ public class CiResolver : CiVisitor
 			default:
 				throw StatementException(expr, "Invalid argument to new");
 			}
+		case CiToken.List:
+			throw StatementException(expr, "Unexpected List");
 		case CiToken.Resource:
 			CiLiteral literal = FoldConst(expr.Inner);
 			if (!(literal.Value is string name))
