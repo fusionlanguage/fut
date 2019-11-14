@@ -331,24 +331,24 @@ public class CiParser : CiLexer
 			return new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAssign(false) };
 		case CiToken.Id:
 			if (allowVar)
-				return ParseVar(left, true);
+				return ParseVar(left);
 			return left;
 		default:
 			return left;
 		}
 	}
 
-	CiVar ParseVar(CiExpr type, bool allowValue)
+	CiVar ParseVar(CiExpr type)
 	{
 		CiVar def = new CiVar { Line = this.Line, TypeExpr = type, Name = ParseId() };
-		if (allowValue && Eat(CiToken.Assign))
+		if (Eat(CiToken.Assign))
 			def.Value = ParseAssign(false);
 		return def;
 	}
 
-	CiVar ParseVar(bool allowValue)
+	CiVar ParseVar()
 	{
-		return ParseVar(ParseType(), allowValue);
+		return ParseVar(ParseType());
 	}
 
 	CiConst ParseConst()
@@ -435,7 +435,7 @@ public class CiParser : CiLexer
 		CiForeach result = new CiForeach { Line = this.Line };
 		Expect(CiToken.Foreach);
 		Expect(CiToken.LeftParenthesis);
-		result.Element = ParseVar(false);
+		result.Element = new CiForeachVar { Line = this.Line, TypeExpr = ParseType(), Name = ParseId() };
 		Expect(CiToken.In);
 		result.Collection = ParseExpr();
 		Expect(CiToken.RightParenthesis);
@@ -649,7 +649,7 @@ public class CiParser : CiLexer
 		if (!See(CiToken.RightParenthesis)) {
 			do {
 				CiCodeDoc doc = ParseDoc();
-				CiVar param = ParseVar(true);
+				CiVar param = ParseVar();
 				param.Documentation = doc;
 				method.Parameters.Add(param);
 			} while (Eat(CiToken.Comma));

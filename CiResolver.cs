@@ -753,6 +753,8 @@ public class CiResolver : CiVisitor
 		case CiToken.ShiftLeftAssign:
 		case CiToken.ShiftRightAssign:
 			// TODO: check lvalue
+			if (expr.Left is CiSymbolReference symbol && symbol.Symbol is CiForeachVar v)
+				throw StatementException(expr, "Cannot assign a foreach iteration variable");
 			// TODO Coerce(right, left.Type);
 			expr.Left = left;
 			expr.Right = right;
@@ -876,8 +878,6 @@ public class CiResolver : CiVisitor
 			throw StatementException(statement, "Expected a collection");
 		if (!statement.Element.Type.IsAssignableFrom(array.ElementType))
 			throw StatementException(statement, "Cannot coerce {0} to {1}", array.ElementType, statement.Element.Type);
-		if (statement.Element.Type is CiClassPtrType classPtr)
-			classPtr.IsForeachElement = true;
 		this.CurrentScope.Add(statement.Element);
 		statement.SetCompletesNormally(true);
 		statement.Body.Accept(this);

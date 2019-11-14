@@ -1,0 +1,12 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int[2] a;
+		foreach (int i in a) {
+			i = 1; //ERROR: Cannot assign a foreach iteration variable
+		}
+		return true;
+	}
+}
+

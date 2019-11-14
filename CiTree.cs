@@ -269,6 +269,10 @@ public class CiVar : CiNamedValue
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
 }
 
+public class CiForeachVar : CiVar
+{
+}
+
 public class CiConst : CiMember
 {
 	public CiMethodBase InMethod;
@@ -891,7 +895,6 @@ public class CiClassPtrType : CiType
 {
 	public CiClass Class;
 	public CiToken Modifier;
-	public bool IsForeachElement = false;
 	public override string ToString()
 	{
 		switch (this.Modifier) {

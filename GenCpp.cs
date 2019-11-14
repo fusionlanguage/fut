@@ -243,11 +243,14 @@ public class GenCpp : GenCCpp
 			base.WriteEqual(expr, parent, not);
 	}
 
+	static bool IsForeachVar(CiExpr expr)
+		=> expr is CiSymbolReference symbol && symbol.Symbol is CiForeachVar;
+
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
 		if (symbol.Symbol is CiConst) // FIXME
 			Write("::");
-		else if (left.Type is CiClassPtrType classPtr && !classPtr.IsForeachElement)
+		else if (left.Type is CiClassPtrType classPtr && !IsForeachVar(left))
 			Write("->");
 		else
 			Write('.');
@@ -421,7 +424,7 @@ public class GenCpp : GenCCpp
 			obj.Accept(this, CiPriority.Primary);
 			if (method.CallType == CiCallType.Static)
 				Write("::");
-			else if (obj.Type is CiClassPtrType classPtr && !classPtr.IsForeachElement)
+			else if (obj.Type is CiClassPtrType && !IsForeachVar(obj))
 				Write("->");
 			else
 				Write('.');
@@ -465,7 +468,7 @@ public class GenCpp : GenCCpp
 		case CiClassPtrType leftClass when leftClass.Modifier != CiToken.Hash:
 			switch (expr.Type) {
 			case CiClass _:
-			case CiClassPtrType rightElement when rightElement.IsForeachElement:
+			case CiClassPtrType _ when IsForeachVar(expr):
 				Write('&');
 				expr.Accept(this, CiPriority.Primary);
 				return;
