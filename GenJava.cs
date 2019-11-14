@@ -439,6 +439,16 @@ public class GenJava : GenTyped
 			CloseBlock();
 	}
 
+	public override void Visit(CiForeach statement)
+	{
+		Write("for (");
+		WriteTypeAndName(statement.Element);
+		Write(" : ");
+		statement.Collection.Accept(this, CiPriority.Statement);
+		Write(')');
+		WriteChild(statement.Body);
+	}
+
 	public override void Visit(CiThrow statement)
 	{
 		Write("throw new Exception(");

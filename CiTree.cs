@@ -891,6 +891,7 @@ public class CiClassPtrType : CiType
 {
 	public CiClass Class;
 	public CiToken Modifier;
+	public bool IsForeachElement = false;
 	public override string ToString()
 	{
 		switch (this.Modifier) {

@@ -1,5 +1,7 @@
-public static class Test
+public class Test
 {
+	int Foo = 1;
+
 	public static bool Run()
 	{
 		int[3] a;
@@ -9,6 +11,13 @@ public static class Test
 		int sum = 0;
 		foreach (int i in a)
 			sum += i;
-		return sum == 30;
+
+		Test()[2] oa;
+		foreach (Test t in oa) {
+			Test p = t;
+			sum += t.Foo + p.Foo;
+		}
+
+		return sum == 34;
 	}
 }

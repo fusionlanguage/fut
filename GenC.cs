@@ -964,6 +964,11 @@ public class GenC : GenCCpp
 			base.Visit(statement);
 	}
 
+	public override void Visit(CiForeach statement)
+	{
+		Write("TODO: foreach");
+	}
+
 	public override void Visit(CiReturn statement)
 	{
 		if (statement.Value == null && this.CurrentMethod.Throws) {

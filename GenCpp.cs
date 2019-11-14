@@ -247,7 +247,7 @@ public class GenCpp : GenCCpp
 	{
 		if (symbol.Symbol is CiConst) // FIXME
 			Write("::");
-		else if (left.Type is CiClassPtrType)
+		else if (left.Type is CiClassPtrType classPtr && !classPtr.IsForeachElement)
 			Write("->");
 		else
 			Write('.');
@@ -421,7 +421,7 @@ public class GenCpp : GenCCpp
 			obj.Accept(this, CiPriority.Primary);
 			if (method.CallType == CiCallType.Static)
 				Write("::");
-			else if (obj.Type is CiClassPtrType)
+			else if (obj.Type is CiClassPtrType classPtr && !classPtr.IsForeachElement)
 				Write("->");
 			else
 				Write('.');
@@ -465,6 +465,7 @@ public class GenCpp : GenCCpp
 		case CiClassPtrType leftClass when leftClass.Modifier != CiToken.Hash:
 			switch (expr.Type) {
 			case CiClass _:
+			case CiClassPtrType rightElement when rightElement.IsForeachElement:
 				Write('&');
 				expr.Accept(this, CiPriority.Primary);
 				return;
@@ -517,6 +518,24 @@ public class GenCpp : GenCCpp
 		Write(" = ");
 		konst.Value.Accept(this, CiPriority.Statement);
 		WriteLine(';');
+	}
+
+	public override void Visit(CiForeach statement)
+	{
+		Write("for (");
+		if (((CiArrayType) statement.Collection.Type).ElementType is CiClass klass) {
+			Write(klass.Name);
+			Write(" &");
+		}
+		else {
+			Write(statement.Element.Type, true);
+			Write(' ');
+		}
+		Write(statement.Element.Name);
+		Write(" : ");
+		statement.Collection.Accept(this, CiPriority.Statement);
+		Write(')');
+		WriteChild(statement.Body);
 	}
 
 	protected override void WriteCaseBody(CiStatement[] statements)
