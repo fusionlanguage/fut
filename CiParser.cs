@@ -56,9 +56,9 @@ public class CiParser : CiLexer
 		return null;
 	}
 
-	CiExpr ParseSymbolReference()
+	CiExpr ParseSymbolReference(CiExpr left)
 	{
-		return new CiSymbolReference { Line = this.Line, Name = ParseId() };
+		return new CiSymbolReference { Line = this.Line, Left = left, Name = ParseId() };
 	}
 
 	CiExpr ParseListType()
@@ -152,7 +152,7 @@ public class CiParser : CiLexer
 			Expect(CiToken.RightParenthesis);
 			break;
 		case CiToken.Id:
-			result = ParseSymbolReference();
+			result = ParseSymbolReference(null);
 			break;
 		case CiToken.List:
 			result = ParseListType();
@@ -173,7 +173,8 @@ public class CiParser : CiLexer
 		for (;;) {
 			switch (this.CurrentToken) {
 			case CiToken.Dot:
-				result = new CiBinaryExpr { Line = this.Line, Left = result, Op = NextToken(), Right = ParseSymbolReference() };
+				NextToken();
+				result = ParseSymbolReference(result);
 				break;
 			case CiToken.LeftParenthesis:
 				result = new CiBinaryExpr { Line = this.Line, Left = result, Op = NextToken(), Right = ParseCollection(CiToken.RightParenthesis) };

@@ -76,9 +76,12 @@ public class GenCpp : GenCCpp
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Symbol is CiField)
+		if (expr.Left == null && expr.Symbol is CiField) {
 			Write("this->");
-		WriteName(expr.Symbol);
+			WriteCamelCase(expr.Symbol.Name);
+		}
+		else
+			base.Visit(expr, parent);
 		return expr;
 	}
 

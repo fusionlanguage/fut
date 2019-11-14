@@ -137,10 +137,10 @@ public class GenJs : GenBase
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Symbol is CiMember member)
+		if (expr.Left == null && expr.Symbol is CiMember member)
 			WriteMember(member);
 		else
-			WriteName(expr.Symbol);
+			base.Visit(expr, parent);
 		return expr;
 	}
 

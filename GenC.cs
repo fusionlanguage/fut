@@ -113,7 +113,10 @@ public class GenC : GenCCpp
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		WriteLocalName(expr.Symbol);
+		if (expr.Left == null)
+			WriteLocalName(expr.Symbol);
+		else
+			base.Visit(expr, parent);
 		return expr;
 	}
 
@@ -716,9 +719,7 @@ public class GenC : GenCCpp
 		case CiToken.Equal:
 		case CiToken.NotEqual:
 		case CiToken.Greater:
-			if (expr.Left is CiBinaryExpr property
-			 && property.Op == CiToken.Dot
-			 && ((CiSymbolReference) property.Right).Symbol == CiSystem.StringLength
+			if (expr.Left is CiSymbolReference property && property.Symbol == CiSystem.StringLength
 			 && expr.Right is CiLiteral literal && (long) literal.Value == 0) {
 				property.Left.Accept(this, CiPriority.Primary);
 				Write(expr.Op == CiToken.Equal ? "[0] == '\\0'" : "[0] != '\\0'");
@@ -787,7 +788,7 @@ public class GenC : GenCCpp
 		case CiToken.Assign:
 			return GetThrowingMethod(binary.Right);
 		case CiToken.LeftParenthesis:
-			CiSymbolReference symbol = (CiSymbolReference) (binary.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.Dot ? leftBinary.Right : binary.Left);
+			CiSymbolReference symbol = (CiSymbolReference) binary.Left;
 			CiMethod method = (CiMethod) symbol.Symbol;
 			return method.Throws ? method : null;
 		default:

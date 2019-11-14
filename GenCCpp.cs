@@ -155,13 +155,12 @@ public abstract class GenCCpp : GenTyped
 	{
 		if (expr is CiBinaryExpr call
 		 && call.Op == CiToken.LeftParenthesis
-		 && call.Left is CiBinaryExpr leftBinary
-		 && leftBinary.Op == CiToken.Dot) {
-			CiMethod method = (CiMethod) ((CiSymbolReference) leftBinary.Right).Symbol;
+		 && call.Left is CiSymbolReference symbol) {
+			CiMethod method = (CiMethod) symbol.Symbol;
 			CiExpr[] args = call.RightCollection;
 			if (method == CiSystem.StringSubstring && args.Length == 2) {
 				cast = false;
-				ptr = leftBinary.Left;
+				ptr = symbol.Left;
 				offset = args[0];
 				length = args[1];
 				return true;

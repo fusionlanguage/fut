@@ -312,16 +312,32 @@ public class CiResolver : CiVisitor
 		}
 		if (!(scope is CiEnum) && expr.Symbol is CiConst konst) {
 			ResolveConst(konst);
-			if (konst.Value is CiLiteral)
+			if (konst.Value is CiLiteral || konst.Value is CiSymbolReference)
 				return konst.Value;
-			if (konst.Value is CiBinaryExpr dotExpr && dotExpr.Op == CiToken.Dot)
-				return dotExpr; // const foo = MyEnum.Foo
 		}
 		return expr;
 	}
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
+		if (expr.Left != null) {
+			CiExpr left = Resolve(expr.Left);
+			CiSymbolReference leftSymbol = left as CiSymbolReference;
+			if (leftSymbol == null || !(leftSymbol.Symbol is CiScope scope))
+				scope = left.Type;
+			CiExpr result = Lookup(expr, scope);
+			if (result != expr)
+				return result;
+			if (expr.Symbol == CiSystem.ArrayLength) {
+				if (scope is CiArrayStorageType array)
+					return expr.ToLiteral((long) array.Length);
+				throw new NotImplementedException(scope.GetType().Name);
+			}
+			if (expr.Symbol == CiSystem.StringLength && left is CiLiteral leftLiteral)
+				return expr.ToLiteral((long) ((string) leftLiteral.Value).Length);
+			return new CiSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
+		}
+
 		CiExpr resolved = Lookup(expr, this.CurrentScope);
 		if (resolved is CiSymbolReference symbol
 		 && symbol.Symbol is CiVar v
@@ -439,37 +455,13 @@ public class CiResolver : CiVisitor
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
 		CiExpr left = Resolve(expr.Left);
-		CiSymbolReference leftSymbol;
 		CiType type;
 		switch (expr.Op) {
-		case CiToken.Dot:
-			leftSymbol = left as CiSymbolReference;
-			CiSymbolReference rightSymbol = (CiSymbolReference) expr.Right;
-			if (leftSymbol == null || !(leftSymbol.Symbol is CiScope scope))
-				scope = left.Type;
-			CiExpr result = Lookup(rightSymbol, scope);
-			if (result != rightSymbol)
-				return result;
-			if (rightSymbol.Symbol == CiSystem.ArrayLength) {
-				if (scope is CiArrayStorageType array)
-					return expr.ToLiteral((long) array.Length);
-				throw new NotImplementedException(scope.GetType().Name);
-			}
-			if (rightSymbol.Symbol == CiSystem.StringLength && left is CiLiteral leftLiteral)
-				return expr.ToLiteral((long) ((string) leftLiteral.Value).Length);
-			return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = rightSymbol, Type = result.Type };
-
 		case CiToken.LeftParenthesis:
-			leftSymbol = left as CiSymbolReference;
-			if (leftSymbol == null) {
-				if (!(left is CiBinaryExpr dotExpr) || dotExpr.Op != CiToken.Dot)
-					throw StatementException(left, "Expected a method");
-				leftSymbol = (CiSymbolReference) dotExpr.Right;
-				// TODO: check static
-			}
-			CiExpr[] arguments = expr.RightCollection;
-			if (!(leftSymbol.Symbol is CiMethod method))
+			// TODO: check static
+			if (!(((CiSymbolReference) left).Symbol is CiMethod method))
 				throw StatementException(left, "Expected a method");
+			CiExpr[] arguments = expr.RightCollection;
 			int i = 0;
 			foreach (CiVar param in method.Parameters) {
 				if (i >= arguments.Length) {

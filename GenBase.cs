@@ -375,13 +375,16 @@ public abstract class GenBase : CiVisitor
 		WriteName(symbol);
 	}
 
-	protected virtual void Write(CiSymbolReference expr)
-	{
-		WriteName(expr.Symbol);
-	}
-
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
+		if (expr.Left != null) {
+			if (expr.Symbol == CiSystem.StringLength) {
+				WriteStringLength(expr.Left);
+				return expr;
+			}
+			expr.Left.Accept(this, CiPriority.Primary);
+			WriteMemberOp(expr.Left, expr);
+		}
 		WriteName(expr.Symbol);
 		return expr;
 	}
@@ -742,22 +745,12 @@ public abstract class GenBase : CiVisitor
 				Write(')');
 			return expr;
 
-		case CiToken.Dot:
-			CiSymbolReference rightSymbol = (CiSymbolReference) expr.Right;
-			if (rightSymbol.Symbol == CiSystem.StringLength) {
-				WriteStringLength(expr.Left);
-				return expr;
-			}
-			expr.Left.Accept(this, CiPriority.Primary);
-			WriteMemberOp(expr.Left, rightSymbol);
-			Write(rightSymbol);
-			return expr;
-
 		case CiToken.LeftParenthesis:
-			if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.Dot)
-				WriteCall(leftBinary.Left, (CiMethod) ((CiSymbolReference) leftBinary.Right).Symbol, expr.RightCollection, parent);
+			CiSymbolReference leftSymbol = (CiSymbolReference) expr.Left;
+			if (leftSymbol.Left != null)
+				WriteCall(leftSymbol.Left, (CiMethod) leftSymbol.Symbol, expr.RightCollection, parent);
 			else
-				WriteNearCall((CiMethod) ((CiSymbolReference) expr.Left).Symbol, expr.RightCollection);
+				WriteNearCall((CiMethod) leftSymbol.Symbol, expr.RightCollection);
 			return expr;
 
 		case CiToken.LeftBracket:

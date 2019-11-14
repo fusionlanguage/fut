@@ -389,10 +389,11 @@ public class CiInterpolatedString : CiExpr
 
 public class CiSymbolReference : CiExpr
 {
+	public CiExpr Left;
 	public string Name;
 	public CiSymbol Symbol;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) { return visitor.Visit(this, parent); }
-	public override string ToString() { return this.Name; }
+	public override string ToString() { return this.Left != null ? this.Left + "." + this.Name : this.Name; }
 }
 
 public abstract class CiUnaryExpr : CiExpr
@@ -515,8 +516,6 @@ public class CiBinaryExpr : CiExpr
 	public override string ToString()
 	{
 		switch (this.Op) {
-		case CiToken.Dot:
-			return this.Left + "." + this.Right;
 		case CiToken.LeftBracket:
 			return this.Left + "[" + this.Right + "]";
 		default:
