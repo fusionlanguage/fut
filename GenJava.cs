@@ -296,7 +296,7 @@ public class GenJava : GenTyped
 			}
 			Write(')');
 		}
-		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+		else if (obj.Type is CiArrayType && !(obj.Type is CiListType) && method.Name == "CopyTo") {
 			Write("System.arraycopy(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");

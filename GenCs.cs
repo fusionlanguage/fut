@@ -271,7 +271,7 @@ public class GenCs : GenTyped
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+		if (obj.Type is CiArrayType && !(obj.Type is CiListType) && method.Name == "CopyTo") {
 			Write("System.Array.Copy(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");

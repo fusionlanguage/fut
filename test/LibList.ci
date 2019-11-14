@@ -11,7 +11,10 @@ public static class Test
 		list.RemoveAt(1);
 		list.Insert(1, 2);
 		list[0] = 5;
+		int[2] a;
+		list.CopyTo(1, a, 0, 2);
 		list.Sort();
-		return list.Count == 3 && list[0] == 2 && list[1] == 3 && list[2] == 5;
+		return list.Count == 3 && list[0] == 2 && list[1] == 3 && list[2] == 5
+			&& a[0] == 2 && a[1] == 3;
 	}
 }

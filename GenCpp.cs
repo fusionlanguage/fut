@@ -271,16 +271,6 @@ public class GenCpp : GenCCpp
 			WriteArgsInParentheses(method, args);
 	}
 
-	void WriteListIterator(CiExpr list, CiExpr index)
-	{
-		list.Accept(this, CiPriority.Primary); // TODO: side effect
-		Write(".begin()");
-		if (!(index is CiLiteral literal) || (long) literal.Value != 0) {
-			Write(" + ");
-			index.Accept(this, CiPriority.Add);
-		}
-	}
-
 	void WriteStringLiteralWithNewLine(string s)
 	{
 		Write('"');
@@ -404,7 +394,7 @@ public class GenCpp : GenCCpp
 		else if (obj.Type is CiListType list && method.Name == "Insert") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".insert(");
-			WriteListIterator(obj, args[0]); // FIXME: side effect
+			WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
 			Write(", ");
 			WriteCoerced(list.ElementType, args[1], CiPriority.Statement);
 			Write(')');
@@ -412,7 +402,7 @@ public class GenCpp : GenCCpp
 		else if (method == CiSystem.ListRemoveAt) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".erase(");
-			WriteListIterator(obj, args[0]); // FIXME: side effect
+			WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
 			Write(')');
 		}
 		else if (method == CiSystem.ConsoleWrite)
@@ -458,6 +448,10 @@ public class GenCpp : GenCCpp
 		case CiArrayPtrType arrayPtr when arrayPtr.Modifier == CiToken.Hash:
 			expr.Accept(this, CiPriority.Primary);
 			Write(".get()");
+			break;
+		case CiListType _:
+			expr.Accept(this, CiPriority.Primary);
+			Write(".begin()");
 			break;
 		default:
 			expr.Accept(this, parent);

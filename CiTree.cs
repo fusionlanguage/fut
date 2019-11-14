@@ -1071,6 +1071,7 @@ public class CiListType : CiArrayType
 			return base.TryLookup(name);
 		}
 	}
+	public override CiType PtrOrSelf { get { return new CiArrayPtrType { ElementType = this.ElementType, Modifier = CiToken.ExclamationMark }; } }
 }
 
 public class CiSystem : CiScope
