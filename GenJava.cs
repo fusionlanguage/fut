@@ -315,6 +315,17 @@ public class GenJava : GenTyped
 				args[0].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
+		else if (method == CiSystem.ArraySort) {
+			if (obj.Type is CiArrayStorageType) {
+				Write("java.util.Arrays.sort(");
+				obj.Accept(this, CiPriority.Statement);
+				Write(')');
+			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".sort(null)");
+			}
+		}
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(method, args, false);
 		else if (method == CiSystem.ConsoleWriteLine)

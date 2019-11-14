@@ -287,6 +287,17 @@ public class GenCs : GenTyped
 			Write(((CiArrayStorageType) obj.Type).Length);
 			Write(')');
 		}
+		else if (method == CiSystem.ArraySort) {
+			if (obj.Type is CiArrayStorageType) {
+				Write("System.Array.Sort(");
+				obj.Accept(this, CiPriority.Statement);
+				Write(')');
+			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".Sort()");
+			}
+		}
 		else if ((method == CiSystem.StringIndexOf || method == CiSystem.StringLastIndexOf)
 			&& IsOneAsciiString(args[0], out char c)) {
 			obj.Accept(this, CiPriority.Primary);

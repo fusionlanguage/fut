@@ -388,6 +388,14 @@ public class GenCpp : GenCCpp
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(')');
 		}
+		else if (method == CiSystem.ArraySort) {
+			Include("algorithm");
+			Write("std::sort(");
+			obj.Accept(this, CiPriority.Primary);
+			Write(".begin(), ");
+			obj.Accept(this, CiPriority.Primary); // FIXME: side effect
+			Write(".end())");
+		}
 		else if (obj.Type is CiListType && method.Name == "Add") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".push_back");
@@ -406,14 +414,6 @@ public class GenCpp : GenCCpp
 			Write(".erase(");
 			WriteListIterator(obj, args[0]); // FIXME: side effect
 			Write(')');
-		}
-		else if (method == CiSystem.ListSort) {
-			Include("algorithm");
-			Write("std::sort(");
-			obj.Accept(this, CiPriority.Primary);
-			Write(".begin(), ");
-			obj.Accept(this, CiPriority.Primary); // FIXME: side effect
-			Write(".end())");
 		}
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(args, false);
