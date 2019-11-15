@@ -241,8 +241,8 @@ int now = 2019
 string() s = $"{name} is {now - born} years old";
 ```
 
-The expressions might be formatted by specifying field width (after a comma)
-and/or format string (after a colon).
+The expressions might be formatted by specifying _field width_ (after a comma)
+and/or _format string_ (after a colon).
 
 ```csharp
 string name = "John";
@@ -262,7 +262,7 @@ The following format strings are supported:
 * `X` or `x` format an integer in hexadecimal.
   `X` uses uppercase digits, `x` uses lowercase digits.
   The optional number specifies padding with leading zeros.
-* `F<n>' or `f<n>` format a `float` or `double` with `n` digits
+* `F<n>` or `f<n>` format a `float` or `double` with `n` digits
   after the decimal point.
 * `E<n>` or `e<n>` format a `float` or `double` in exponential notation
   with `n` digits after the decimal point. The exponent symbol `E` or `e`
