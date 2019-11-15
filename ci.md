@@ -241,6 +241,33 @@ int now = 2019
 string() s = $"{name} is {now - born} years old";
 ```
 
+The expressions might be formatted by specifying field width (after a comma)
+and/or format string (after a colon).
+
+```csharp
+string name = "John";
+int i = 15;
+double d = 1.5
+string() s = $"{name, 5} {i:X2} {d,5:F2}"; // " John 0F  1.50"
+```
+
+If field width is specified, the formatted expression is padded with spaces.
+The expression is right-aligned if width is positive
+and left-aligned if width is negative.
+
+The following format strings are supported:
+
+* `D<n>` or `d<n>` format an integer in decimal,
+  padding with leading zeros to `n` digits.
+* `X` or `x` format an integer in hexadecimal.
+  `X` uses uppercase digits, `x` uses lowercase digits.
+  The optional number specifies padding with leading zeros.
+* `F<n>' or `f<n>` format a `float` or `double` with `n` digits
+  after the decimal point.
+* `E<n>` or `e<n>` format a `float` or `double` in exponential notation
+  with `n` digits after the decimal point. The exponent symbol `E` or `e`
+  matches the format string.
+
 ### Arrays
 
 Arrays are fixed-size collections, where every element has the same type
