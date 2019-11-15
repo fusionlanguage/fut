@@ -285,10 +285,13 @@ public class GenCpp : GenCCpp
 		Write("\\n\"");
 	}
 
-	void WriteConsoleWrite(CiExpr[] args, bool newLine)
+	void WriteConsoleWrite(CiExpr obj, CiExpr[] args, bool newLine)
 	{
 		Include("iostream");
-		Write("std::cout");
+		if (obj is CiSymbolReference symbol && symbol.Symbol == CiSystem.ConsoleError)
+			Write("std::cerr");
+		else
+			Write("std::cout");
 		if (args.Length == 1) {
 			if (args[0] is CiInterpolatedString interpolated) {
 				char format = 'd';
@@ -412,9 +415,9 @@ public class GenCpp : GenCCpp
 			Write(')');
 		}
 		else if (method == CiSystem.ConsoleWrite)
-			WriteConsoleWrite(args, false);
+			WriteConsoleWrite(obj, args, false);
 		else if (method == CiSystem.ConsoleWriteLine)
-			WriteConsoleWrite(args, true);
+			WriteConsoleWrite(obj, args, true);
 		else if (method == CiSystem.UTF8GetString) {
 			Include("string_view");
 			Write("std::string_view(reinterpret_cast<const char *>(");

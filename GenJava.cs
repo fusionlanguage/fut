@@ -268,14 +268,18 @@ public class GenJava : GenTyped
 		Write(')');
 	}
 
-	void WriteConsoleWrite(CiMethod method, CiExpr[] args, bool newLine)
+	void WriteConsoleWrite(CiExpr obj, CiMethod method, CiExpr[] args, bool newLine)
 	{
+		if (obj is CiSymbolReference symbol && symbol.Symbol == CiSystem.ConsoleError)
+			Write("System.err");
+		else
+			Write("System.out");
 		if (args.Length == 1 && args[0] is CiInterpolatedString interpolated) {
-			Write("System.out.format(");
+			Write(".format(");
 			WritePrintf(interpolated, newLine);
 		}
 		else {
-			Write("System.out.print");
+			Write(".print");
 			if (newLine)
 				Write("ln");
 			WriteArgsInParentheses(method, args);
@@ -327,9 +331,9 @@ public class GenJava : GenTyped
 			}
 		}
 		else if (method == CiSystem.ConsoleWrite)
-			WriteConsoleWrite(method, args, false);
+			WriteConsoleWrite(obj, method, args, false);
 		else if (method == CiSystem.ConsoleWriteLine)
-			WriteConsoleWrite(method, args, true);
+			WriteConsoleWrite(obj, method, args, true);
 		else if (method == CiSystem.UTF8GetString) {
 			Write("new String(");
 			WriteArgs(method, args);
