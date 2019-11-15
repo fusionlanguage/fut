@@ -202,7 +202,7 @@ public class CiLexer
 		return false;
 	}
 
-	int ReadHexDigit()
+	int PeekHexDigit()
 	{
 		switch (PeekChar()) {
 		case '0': return 0;
@@ -234,12 +234,12 @@ public class CiLexer
 
 	CiToken ReadHexLiteral()
 	{
-		long i = ReadHexDigit();
+		long i = PeekHexDigit();
 		if (i < 0)
 			throw ParseException("Invalid hex number");
 		for (;;) {
 			ReadChar();
-			int d = ReadHexDigit();
+			int d = PeekHexDigit();
 			if (d < 0) {
 				this.CurrentValue = i;
 				return CiToken.Literal;
