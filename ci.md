@@ -700,12 +700,22 @@ else
 
 ### Loops
 
-There are three kinds of loops:
+There are four kinds of loops:
 
-* `while` -- checking the condition at the beginning of each run
-* `do/while` -- checking the condition after the first run
-* `for` -- which contains an initial statement
+* `while` -- checking the condition at the beginning of each run.
+* `do/while` -- checking the condition after the first run.
+* `for` -- which contains an initial statement, the condition
   and a statement executed after each run.
+* `foreach` -- to iterate over array storage.
+
+```csharp
+int[3] array;
+array[0] = 5;
+array[1] = 10;
+array[2] = 15;
+foreach (int i in array)
+    Console.WriteLine(i);
+```
 
 Inside loops you may use:
 
