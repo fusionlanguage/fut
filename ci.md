@@ -766,6 +766,20 @@ is replaced with `return` with a magic value representing an error:
 * `false` in a `void` method. The method will be translated to `bool`
   and `true` will be returned if the method succeeds.
 
+### Standard output
+
+To print on the standard output, use `Console.Write` and `Console.WriteLine`
+with a string or number. To print several elements, use interpolated strings.
+
+```csharp
+Console.Write("The answer is ");
+Console.WriteLine(42);
+Console.WriteLine($"Yes, {40 + 2}");
+```
+
+Use `Console.Error.Write` and `Console.Error.WriteLine` to target
+the standard error stream.
+
 ### Native blocks
 
 Code which cannot be expressed in Ć can be written in the target language
