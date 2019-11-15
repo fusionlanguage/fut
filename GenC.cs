@@ -519,6 +519,15 @@ public class GenC : GenCCpp
 			Write(error ? "fprintf(stderr, " : "printf(");
 			WritePrintf(interpolated, newLine);
 		}
+		else if (args[0].Type is CiNumericType) {
+			Write(error ? "fprintf(stderr, " : "printf(");
+			Write(args[0].Type is CiIntegerType ? "\"%d" : "\"%g");
+			if (newLine)
+				Write("\\n");
+			Write("\", ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
 		else if (newLine && !error) {
 			Write("puts(");
 			args[0].Accept(this, CiPriority.Statement);
