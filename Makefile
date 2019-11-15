@@ -20,12 +20,25 @@ all: cito.exe
 cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs CiTo.cs)
 	$(CSC) $^
 
-test: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci)) \
-      $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) \
-      $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) \
-      $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) \
-      $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) \
-      $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
+test: test-c test-cpp test-cs test-java test-js test-error
+	perl test/summary.pl $(wildcard test/bin/*/*.txt)
+
+test-c: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
+	perl test/summary.pl $^
+
+test-cpp: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci))
+	perl test/summary.pl $^
+
+test-cs: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci))
+	perl test/summary.pl $^
+
+test-java: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci))
+	perl test/summary.pl $^
+
+test-js: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
+	perl test/summary.pl $^
+
+test-error: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
 	perl test/summary.pl $^
 
 test/bin/%/c.txt: test/bin/%/c.exe
@@ -98,6 +111,6 @@ clean:
 	$(RM) cito.exe
 	$(RM) -r test/bin
 
-.PHONY: all test install install-cito uninstall clean
+.PHONY: all test test-c test-cpp test-cs test-java test-js test-error install install-cito uninstall clean
 
 .DELETE_ON_ERROR:
