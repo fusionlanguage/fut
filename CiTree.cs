@@ -1112,11 +1112,11 @@ public class CiSystem : CiScope
 	public static readonly CiMethod ListRemoveAt = new CiMethod(CiCallType.Normal, null, "RemoveAt", new CiVar(IntType, "index"));
 	public static readonly CiMethod ConsoleWrite = new CiMethod(CiCallType.Static, null, "Write", new CiVar(StringPtrType, "value"));
 	public static readonly CiMethod ConsoleWriteLine = new CiMethod(CiCallType.Static, null, "WriteLine", new CiVar(StringPtrType, "value") { Value = new CiLiteral("") });
-	public static readonly CiClass ConsoleBase = new CiClass(CiCallType.Static, "Console",
+	public static readonly CiClass ConsoleBase = new CiClass(CiCallType.Static, "ConsoleBase",
 		ConsoleWrite,
 		ConsoleWriteLine);
 	public static readonly CiMember ConsoleError = new CiMember { Name = "Error", Type = ConsoleBase };
-	public static readonly CiClass ConsoleClass = new CiClass(CiCallType.Static, "Console") { Parent = ConsoleBase };
+	public static readonly CiClass ConsoleClass = new CiClass(CiCallType.Static, "Console");
 	public static readonly CiArrayPtrType ByteArrayPtrType = new CiArrayPtrType { ElementType = ByteType, Modifier = CiToken.EndOfFile };
 	public static readonly CiMethod UTF8GetString = new CiMethod(CiCallType.Normal, StringStorageType, "GetString", new CiVar(ByteArrayPtrType, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length")); // TODO: UIntType
 	public static readonly CiClass UTF8EncodingClass = new CiClass(CiCallType.Normal, "UTF8Encoding", UTF8GetString);
@@ -1158,6 +1158,7 @@ public class CiSystem : CiScope
 		Add(StringPtrType);
 		ConsoleClass.Add(ConsoleError);
 		Add(ConsoleClass);
+		ConsoleClass.Parent = ConsoleBase;
 		EncodingClass.Add(new CiMember { Name = "UTF8", Type = UTF8EncodingClass });
 		Add(EncodingClass);
 		MathClass.Add(new CiConst("E", Math.E));
