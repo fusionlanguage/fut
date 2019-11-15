@@ -294,29 +294,66 @@ public class GenCpp : GenCCpp
 			Write("std::cout");
 		if (args.Length == 1) {
 			if (args[0] is CiInterpolatedString interpolated) {
-				char format = 'd';
+				bool uppercase = false;
+				bool hex = false;
+				char flt = 'G';
 				foreach (CiInterpolatedPart part in interpolated.Parts) {
-					switch (part.Format) {
-					case 'x':
-						if (format == 'X')
-							Write(" << std::nouppercase");
-						else if (format != 'x')
-							Write(" << std::hex");
-						break;
+					char format = part.Argument != null ? part.Format : 'g';
+
+					switch (format) {
+					case 'E':
+					case 'G':
 					case 'X':
-						if (format == 'x')
+						if (!uppercase) {
 							Write(" << std::uppercase");
-						else if (format != 'X')
-							Write(" << std::uppercase << std::hex");
+							uppercase = true;
+						}
+						break;
+					case 'e':
+					case 'g':
+					case 'x':
+						if (uppercase) {
+							Write(" << std::nouppercase");
+							uppercase = false;
+						}
 						break;
 					default:
-						if (format == 'X')
-							Write(" << std::nouppercase << std::dec");
-						else if (format == 'x')
-							Write(" << std::dec");
 						break;
 					}
-					format = part.Format;
+
+					switch (format) {
+					case 'E':
+					case 'e':
+						if (flt != 'E') {
+							Write(" << std::scientific");
+							flt = 'E';
+						}
+						break;
+					case 'F':
+					case 'f':
+						if (flt != 'F') {
+							Write(" << std::fixed");
+							flt = 'F';
+						}
+						break;
+					case 'X':
+					case 'x':
+						if (!hex) {
+							Write(" << std::hex");
+							hex = true;
+						}
+						break;
+					default:
+						if (hex) {
+							Write(" << std::dec");
+							hex = false;
+						}
+						if (flt != 'G') {
+							Write(" << std::defaultfloat");
+							flt = 'G';
+						}
+						break;
+					}
 
 					if (part.Prefix.Length > 0) {
 						Write(" << ");

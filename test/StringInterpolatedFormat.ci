@@ -4,8 +4,12 @@ public static class Test
 	{
 		string s = "foo";
 		int i = 15;
+		double d = 1.5;
 		return $"{i,3} {s,4}" == " 15  foo"
 			&& $"{i,-3}{s,-5}" == "15 foo  "
-			&& $"{i:x} {i:X}" == "f F";
+			&& $"{i:X} {i:x}" == "F f"
+			&& $"{i:D3} {i:d3} {i:X2} {i:x2}" == "015 015 0F 0f"
+			&& $"{d:F2} {d:f2}" == "1.50 1.50"
+			&& ($"{d:E2} {d:e2}" == "1.50E+000 1.50e+000" /* C, C# */ || $"{d:E2} {d:e2}" == "1.50E+00 1.50e+00" /* Java */ || $"{d:E2} {d:e2}" == "1.50E+0 1.50e+0" /* JavaScript */);
 	}
 }

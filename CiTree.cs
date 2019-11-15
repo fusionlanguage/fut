@@ -352,6 +352,7 @@ public class CiInterpolatedPart
 	public CiExpr WidthExpr;
 	public int Width;
 	public char Format;
+	public int Precision;
 }
 
 public class CiInterpolatedString : CiExpr

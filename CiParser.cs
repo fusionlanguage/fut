@@ -94,6 +94,12 @@ public class CiParser : CiLexer
 		return new CiCollection { Line = line, Items = items.ToArray() };
 	}
 
+	bool SeeDigit()
+	{
+		int c = PeekChar();
+		return c >= '0' && c <= '9';
+	}
+
 	CiInterpolatedString ParseInterpolatedString()
 	{
 		int line = this.Line;
@@ -104,15 +110,22 @@ public class CiParser : CiLexer
 			CiExpr arg = ParseExpr();
 			CiExpr width = null;
 			char format = ' ';
+			int precision = -1;
 			if (Eat(CiToken.Comma))
 				width = ParseExpr();
 			if (See(CiToken.Colon)) {
 				format = (char) ReadChar();
-				if ("dxX".IndexOf(format) < 0)
+				if ("DdEeFfGgXx".IndexOf(format) < 0)
 					throw ParseException("Invalid format specifier");
+
+				if (SeeDigit()) {
+					precision = ReadChar() - '0';
+					if (SeeDigit())
+						precision = precision * 10 + ReadChar() - '0';
+				}
 				NextToken();
 			}
-			parts.Add(new CiInterpolatedPart { Prefix = prefix, Argument = arg, WidthExpr = width, Format = format });
+			parts.Add(new CiInterpolatedPart { Prefix = prefix, Argument = arg, WidthExpr = width, Format = format, Precision = precision });
 			Check(CiToken.RightBrace);
 		} while (ReadInterpolatedString() == CiToken.InterpolatedString);
 		parts.Add(new CiInterpolatedPart { Prefix = (string) this.CurrentValue, Argument = null });

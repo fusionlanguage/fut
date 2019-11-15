@@ -36,6 +36,18 @@ public class GenJava : GenTyped
 			Write('L');
 	}
 
+	protected override void WritePrintfWidth(CiInterpolatedPart part)
+	{
+		if (part.Precision >= 0 && part.Argument.Type is CiIntegerType) {
+			if (part.WidthExpr != null)
+				throw new NotImplementedException("Cannot format integer with both width and precision");
+			Write('0');
+			Write(part.Precision);
+		}
+		else
+			base.WritePrintfWidth(part);
+	}
+
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
 		if (expr.Parts.Length == 2

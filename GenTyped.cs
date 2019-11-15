@@ -78,15 +78,25 @@ public abstract class GenTyped : GenBase
 		WriteName(value);
 	}
 
-	static char GetPrintfFormat(CiType type)
+	protected virtual void WritePrintfWidth(CiInterpolatedPart part)
+	{
+		if (part.WidthExpr != null)
+			Write(part.Width);
+		if (part.Precision >= 0) {
+			Write('.');
+			Write(part.Precision);
+		}
+	}
+
+	static char GetPrintfFormat(CiType type, char format)
 	{
 		switch (type) {
 		case CiStringType _:
 			return 's';
 		case CiIntegerType _:
-			return 'd';
+			return format == 'x' || format == 'X' ? format : 'd';
 		case CiNumericType _:
-			return 'f';
+			return "EefGg".IndexOf(format) >= 0 ? format : format == 'F' ? 'f' : 'g';
 		default:
 			throw new NotImplementedException(type.ToString());
 		}
@@ -114,12 +124,8 @@ public abstract class GenTyped : GenBase
 			}
 			if (part.Argument != null) {
 				Write('%');
-				if (part.WidthExpr != null)
-					Write(part.Width);
-				if (part.Format != ' ')
-					Write(part.Format);
-				else
-					Write(GetPrintfFormat(part.Argument.Type));
+				WritePrintfWidth(part);
+				Write(GetPrintfFormat(part.Argument.Type, part.Format));
 			}
 		}
 		if (newLine)

@@ -97,15 +97,39 @@ public class GenJs : GenBase
 					part.Argument.Accept(this, CiPriority.Primary);
 					if (part.Argument.Type is CiNumericType) {
 						switch (part.Format) {
-						case 'x':
-							Write(".toString(16)");
+						case 'E':
+							Write(".toExponential(");
+							if (part.Precision >= 0)
+								Write(part.Precision);
+							Write(").toUpperCase()");
+							break;
+						case 'e':
+							Write(".toExponential(");
+							if (part.Precision >= 0)
+								Write(part.Precision);
+							Write(')');
+							break;
+						case 'F':
+						case 'f':
+							Write(".toFixed(");
+							if (part.Precision >= 0)
+								Write(part.Precision);
+							Write(')');
 							break;
 						case 'X':
 							Write(".toString(16).toUpperCase()");
 							break;
+						case 'x':
+							Write(".toString(16)");
+							break;
 						default:
 							Write(".toString()");
 							break;
+						}
+						if (part.Precision >= 0 && "DdXx".IndexOf(part.Format) >= 0) {
+							Write(".padStart(");
+							Write(part.Precision);
+							Write(", \"0\")");
 						}
 					}
 					if (part.Width > 0) {

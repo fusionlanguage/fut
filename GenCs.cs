@@ -203,6 +203,8 @@ public class GenCs : GenTyped
 				if (part.Format != ' ') {
 					Write(':');
 					Write(part.Format);
+					if (part.Precision >= 0)
+						Write(part.Precision);
 				}
 				Write('}');
 			}
