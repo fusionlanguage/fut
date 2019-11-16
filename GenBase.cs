@@ -382,17 +382,15 @@ public abstract class GenBase : CiVisitor
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Left != null) {
-			if (expr.Symbol == CiSystem.StringLength) {
-				WriteStringLength(expr.Left);
-				return expr;
-			}
+		if (expr.Left == null)
+			WriteLocalName(expr.Symbol, parent);
+		else if (expr.Symbol == CiSystem.StringLength)
+			WriteStringLength(expr.Left);
+		else {
 			expr.Left.Accept(this, CiPriority.Primary);
 			WriteMemberOp(expr.Left, expr);
 			WriteName(expr.Symbol);
 		}
-		else
-			WriteLocalName(expr.Symbol, parent);
 		return expr;
 	}
 
