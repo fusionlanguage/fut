@@ -9,6 +9,6 @@ public static class Test
 		dict[2] = 20;
 		dict[3] = 30;
 		dict.Remove(1);
-		return dict.Count == 2 && dict[2] == 20 && dict[3] == 30;
+		return dict.Count == 2 && dict[2] == 20 && dict[3] == 30 && dict.ContainsKey(2);
 	}
 }

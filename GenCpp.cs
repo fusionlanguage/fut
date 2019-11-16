@@ -477,11 +477,9 @@ public class GenCpp : GenCCpp
 			if (parent > CiPriority.Equality)
 				Write('(');
 			obj.Accept(this, CiPriority.Primary);
-			Write(".find");
+			Write(".count");
 			WriteArgsInParentheses(method, args);
-			Write(" != ");
-			obj.Accept(this, CiPriority.Primary); // FIXME: side effect
-			Write(".end()");
+			Write(" != 0");
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}
