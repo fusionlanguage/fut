@@ -451,6 +451,16 @@ public class GenCpp : GenCCpp
 			WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
 			Write(')');
 		}
+		else if (method == CiSystem.ListRemoveRange) {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".erase(");
+			WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
+			Write(", ");
+			WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
+			Write(" + ");
+			args[1].Accept(this, CiPriority.Add);
+			Write(')');
+		}
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(obj, args, false);
 		else if (method == CiSystem.ConsoleWriteLine)

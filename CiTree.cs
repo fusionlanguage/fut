@@ -1073,6 +1073,8 @@ public class CiListType : CiArrayType
 			return new CiMethod(CiCallType.Normal, null, "Insert", new CiVar(CiSystem.UIntType, "index"), new CiVar(this.ElementType, "value"));
 		case "RemoveAt":
 			return CiSystem.ListRemoveAt;
+		case "RemoveRange":
+			return CiSystem.ListRemoveRange;
 		case "Sort":
 			return CiSystem.ArraySort;
 		default:
@@ -1115,6 +1117,7 @@ public class CiSystem : CiScope
 	public static readonly CiMember ListCount = new CiMember { Name = "Count", Type = UIntType };
 	public static readonly CiMethod ListClear = new CiMethod(CiCallType.Normal, null, "Clear");
 	public static readonly CiMethod ListRemoveAt = new CiMethod(CiCallType.Normal, null, "RemoveAt", new CiVar(IntType, "index"));
+	public static readonly CiMethod ListRemoveRange = new CiMethod(CiCallType.Normal, null, "RemoveRange", new CiVar(IntType, "index"), new CiVar(IntType, "count"));
 	public static readonly CiType PrintableType = new CiPrintableType();
 	public static readonly CiMethod ConsoleWrite = new CiMethod(CiCallType.Static, null, "Write", new CiVar(PrintableType, "value"));
 	public static readonly CiMethod ConsoleWriteLine = new CiMethod(CiCallType.Static, null, "WriteLine", new CiVar(PrintableType, "value") { Value = new CiLiteral("") });

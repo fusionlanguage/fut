@@ -348,6 +348,14 @@ public class GenJs : GenBase
 			args[0].Accept(this, CiPriority.Statement);
 			Write(", 1)");
 		}
+		else if (method == CiSystem.ListRemoveRange) {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".splice(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", ");
+			args[1].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
 		else if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine) {
 			// XXX: Console.Write same as Console.WriteLine
 			if (obj is CiSymbolReference symbol && symbol.Symbol == CiSystem.ConsoleError)

@@ -342,6 +342,16 @@ public class GenJava : GenTyped
 				Write(".sort(null)");
 			}
 		}
+		else if (method == CiSystem.ListRemoveRange) {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".subList(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Add); // TODO: side effect
+			Write(" + ");
+			args[1].Accept(this, CiPriority.Add);
+			Write(").clear()");
+		}
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(obj, method, args, false);
 		else if (method == CiSystem.ConsoleWriteLine)

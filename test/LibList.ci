@@ -14,7 +14,9 @@ public static class Test
 		int[2] a;
 		list.CopyTo(1, a, 0, 2);
 		list.Sort();
-		return list.Count == 3 && list[0] == 2 && list[1] == 3 && list[2] == 5
+		list.Add(1);
+		list.RemoveRange(1, 1);
+		return list.Count == 3 && list[0] == 2 && list[1] == 5 && list[2] == 1
 			&& a[0] == 2 && a[1] == 3;
 	}
 }
