@@ -106,6 +106,22 @@ public class GenC : GenCCpp
 
 	protected override void WriteLocalName(CiSymbol symbol)
 	{
+		if (symbol.Parent is CiForeach forEach) {
+			if (((CiArrayType) forEach.Collection.Type).ElementType is CiClass klass) {
+				Write('('); // TODO: skip if not needed
+				forEach.Collection.Accept(this, CiPriority.Primary);
+				Write(" + ");
+				Write(symbol.Name);
+				Write(')');
+			}
+			else {
+				forEach.Collection.Accept(this, CiPriority.Primary);
+				Write('[');
+				Write(symbol.Name);
+				Write(']');
+			}
+			return;
+		}
 		if (symbol is CiField)
 			WriteSelfForField((CiClass) symbol.Parent);
 		WriteName(symbol);
@@ -967,7 +983,16 @@ public class GenC : GenCCpp
 
 	public override void Visit(CiForeach statement)
 	{
-		Write("TODO: foreach");
+		Write("for (int ");
+		Write(statement.Element.Name);
+		Write(" = 0; ");
+		Write(statement.Element.Name);
+		Write(" < ");
+		Write(((CiArrayStorageType) statement.Collection.Type).Length);
+		Write("; ");
+		Write(statement.Element.Name);
+		Write("++)");
+		WriteChild(statement.Body);
 	}
 
 	public override void Visit(CiReturn statement)
