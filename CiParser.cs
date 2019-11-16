@@ -64,7 +64,7 @@ public class CiParser : CiLexer
 	CiExpr ParseListType()
 	{
 		int line = this.Line;
-		NextToken();
+		Expect(CiToken.List);
 		Expect(CiToken.Less);
 		bool saveTypeArg = this.ParsingTypeArg;
 		this.ParsingTypeArg = true;
@@ -72,6 +72,21 @@ public class CiParser : CiLexer
 		this.ParsingTypeArg = saveTypeArg;
 		Expect(CiToken.RightAngle);
 		return new CiPrefixExpr { Line = line, Op = CiToken.List, Inner = elementType };
+	}
+
+	CiExpr ParseSortedDictionaryType()
+	{
+		int line = this.Line;
+		Expect(CiToken.SortedDictionary);
+		Expect(CiToken.Less);
+		bool saveTypeArg = this.ParsingTypeArg;
+		this.ParsingTypeArg = true;
+		CiExpr keyType = ParseType();
+		Expect(CiToken.Comma);
+		CiExpr valueType = ParseType();
+		this.ParsingTypeArg = saveTypeArg;
+		Expect(CiToken.RightAngle);
+		return new CiBinaryExpr { Line = line, Op = CiToken.SortedDictionary, Left = keyType, Right = valueType };
 	}
 
 	CiExpr ParseConstInitializer()
@@ -169,6 +184,9 @@ public class CiParser : CiLexer
 			break;
 		case CiToken.List:
 			result = ParseListType();
+			break;
+		case CiToken.SortedDictionary:
+			result = ParseSortedDictionaryType();
 			break;
 		case CiToken.Resource:
 			NextToken();

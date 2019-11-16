@@ -505,23 +505,28 @@ public class CiResolver : CiVisitor
 	
 		switch (expr.Op) {
 		case CiToken.LeftBracket:
-			if (!CiSystem.IntType.IsAssignableFrom(right.Type))
-				throw StatementException(expr.Right, "Index is not int");
-			switch (left.Type) {
-			case CiArrayType array:
-				type = array.ElementType;
-				break;
-			case CiStringType _:
-				type = CiSystem.CharType;
-				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral) {
-					string s = (string) leftLiteral.Value;
-					long i = (long) rightLiteral.Value;
-					if (i >= 0 && i < s.Length)
-						return expr.ToLiteral((long) s[(int) i]);
+			if (left.Type is CiSortedDictionaryType dict) {
+				Coerce(right, dict.KeyType);
+				type = dict.ValueType;
+			}
+			else {
+				Coerce(right, CiSystem.IntType);
+				switch (left.Type) {
+				case CiArrayType array:
+					type = array.ElementType;
+					break;
+				case CiStringType _:
+					type = CiSystem.CharType;
+					if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral) {
+						string s = (string) leftLiteral.Value;
+						long i = (long) rightLiteral.Value;
+						if (i >= 0 && i < s.Length)
+							return expr.ToLiteral((long) s[(int) i]);
+					}
+					break;
+				default:
+					throw StatementException(expr.Left, "Indexed object is neither array or string");
 				}
-				break;
-			default:
-				throw StatementException(expr.Left, "Indexed object is neither array or string");
 			}
 			break;
 
@@ -1013,6 +1018,8 @@ public class CiResolver : CiVisitor
 				}
 				if (binary.Left is CiPrefixExpr prefix && prefix.Op == CiToken.List)
 					return new CiListType { ElementType = ToType(prefix.Inner, false) };
+				if (binary.Left is CiBinaryExpr dict && dict.Op == CiToken.SortedDictionary)
+					return new CiSortedDictionaryType { KeyType = ToType(dict.Left, false), ValueType = ToType(dict.Right, false) };
 				throw StatementException(binary.Left, "Expected name of storage type");
 			case CiToken.Range: // a .. b
 				int min = FoldConstInt(binary.Left);

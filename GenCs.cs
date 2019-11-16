@@ -149,6 +149,15 @@ public class GenCs : GenTyped
 		}
 	}
 
+	void Write(CiSortedDictionaryType dict)
+	{
+		Write("System.Collections.Generic.SortedDictionary<");
+		Write(dict.KeyType, false);
+		Write(", ");
+		Write(dict.ValueType, false);
+		Write('>');
+	}
+
 	protected override void Write(CiType type, bool promote)
 	{
 		switch (type) {
@@ -166,6 +175,9 @@ public class GenCs : GenTyped
 			Write(list.ElementType, false);
 			Write('>');
 			break;
+		case CiSortedDictionaryType dict:
+			Write(dict);
+			break;
 		case CiArrayType array:
 			Write(array.ElementType, false);
 			Write("[]");
@@ -181,6 +193,13 @@ public class GenCs : GenTyped
 		Write(" = new System.Collections.Generic.List<");
 		Write(list.ElementType, false);
 		Write(">()");
+	}
+
+	protected override void WriteSortedDictionaryStorageInit(CiSortedDictionaryType dict)
+	{
+		Write(" = new ");
+		Write(dict);
+		Write("()");
 	}
 
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)

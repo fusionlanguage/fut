@@ -46,7 +46,7 @@ public class GenJs : GenBase
 			WriteUppercaseWithUnderscores(symbol.Name);
 		}
 		else if (symbol is CiMember) {
-			if (symbol == CiSystem.ListCount)
+			if (symbol == CiSystem.CollectionCount)
 				Write("length");
 			else
 				WriteCamelCase(symbol.Name);
@@ -71,6 +71,11 @@ public class GenJs : GenBase
 	protected override void WriteListStorageInit(CiListType list)
 	{
 		Write(" = new Array()");
+	}
+
+	protected override void WriteSortedDictionaryStorageInit(CiSortedDictionaryType dict)
+	{
+		Write(" = new Object()");
 	}
 
 	protected override void WriteVar(CiNamedValue def)
@@ -330,7 +335,7 @@ public class GenJs : GenBase
 			Write(".push");
 			WriteArgsInParentheses(method, args);
 		}
-		else if (method == CiSystem.ListClear) {
+		else if (method == CiSystem.CollectionClear) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".length = 0");
 		}

@@ -89,7 +89,7 @@ public class GenJava : GenTyped
 			WriteUppercaseWithUnderscores(symbol.Name);
 		}
 		else if (symbol is CiMember) {
-			if (symbol == CiSystem.ListCount)
+			if (symbol == CiSystem.CollectionCount)
 				Write("size()");
 			else
 				WriteCamelCase(symbol.Name);
@@ -155,6 +155,15 @@ public class GenJava : GenTyped
 		Write(typeCode, false);
 	}
 
+	void Write(CiSortedDictionaryType dict)
+	{
+		Write("java.util.TreeMap<");
+		Write(dict.KeyType, false, true);
+		Write(", ");
+		Write(dict.ValueType, false, true);
+		Write('>');
+	}
+
 	void Write(CiType type, bool promote, bool klass)
 	{
 		switch (type) {
@@ -176,6 +185,9 @@ public class GenJava : GenTyped
 			Write("java.util.ArrayList<");
 			Write(list.ElementType, false, true);
 			Write('>');
+			break;
+		case CiSortedDictionaryType dict:
+			Write(dict);
 			break;
 		case CiArrayType array:
 			if (promote && array is CiArrayStorageType)
@@ -201,6 +213,13 @@ public class GenJava : GenTyped
 		Write(" = new java.util.ArrayList<");
 		Write(list.ElementType, false, true);
 		Write(">()");
+	}
+
+	protected override void WriteSortedDictionaryStorageInit(CiSortedDictionaryType dict)
+	{
+		Write(" = new ");
+		Write(dict);
+		Write("()");
 	}
 
 	protected override void WriteResource(string name, int length)
@@ -387,9 +406,12 @@ public class GenJava : GenTyped
 		}
 	}
 
+	static bool IsCollection(CiType type)
+		=> type is CiListType || type is CiSortedDictionaryType;
+
 	void WriteIndexingInternal(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Left.Type is CiListType) {
+		if (IsCollection(expr.Left.Type)) {
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".get(");
 			expr.Right.Accept(this, CiPriority.Statement);
@@ -429,9 +451,9 @@ public class GenJava : GenTyped
 	{
 		if (expr.Left is CiBinaryExpr indexing
 		 && indexing.Op == CiToken.LeftBracket
-		 && indexing.Left.Type is CiListType) {
+		 && IsCollection(indexing.Left.Type)) {
 			 indexing.Left.Accept(this, CiPriority.Primary);
-			 Write(".set(");
+			 Write(indexing.Left.Type is CiSortedDictionaryType ? ".put(" : ".set(");
 			 indexing.Right.Accept(this, CiPriority.Statement);
 			 Write(", ");
 			 WriteAssignRight(expr);

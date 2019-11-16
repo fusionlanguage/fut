@@ -65,7 +65,7 @@ public class GenCpp : GenCCpp
 	protected override void WriteName(CiSymbol symbol)
 	{
 		if (symbol is CiMember) {
-			if (symbol == CiSystem.ListCount)
+			if (symbol == CiSystem.CollectionCount)
 				Write("size()");
 			else
 				WriteCamelCase(symbol.Name);
@@ -136,6 +136,14 @@ public class GenCpp : GenCCpp
 			Write(list.ElementType, false);
 			Write('>');
 			break;
+		case CiSortedDictionaryType dict:
+			Include("map");
+			Write("std::map<");
+			Write(dict.KeyType, false);
+			Write(", ");
+			Write(dict.ValueType, false);
+			Write('>');
+			break;
 		case CiClassPtrType classPtr:
 			switch (classPtr.Modifier) {
 			case CiToken.EndOfFile:
@@ -195,6 +203,10 @@ public class GenCpp : GenCCpp
 	}
 
 	protected override void WriteListStorageInit(CiListType list)
+	{
+	}
+
+	protected override void WriteSortedDictionaryStorageInit(CiSortedDictionaryType list)
 	{
 	}
 
@@ -460,6 +472,23 @@ public class GenCpp : GenCCpp
 			Write(" + ");
 			args[1].Accept(this, CiPriority.Add);
 			Write(')');
+		}
+		else if (obj.Type is CiSortedDictionaryType && method.Name == "ContainsKey") {
+			if (parent > CiPriority.Equality)
+				Write('(');
+			obj.Accept(this, CiPriority.Primary);
+			Write(".find");
+			WriteArgsInParentheses(method, args);
+			Write(" != ");
+			obj.Accept(this, CiPriority.Primary); // FIXME: side effect
+			Write(".end()");
+			if (parent > CiPriority.Equality)
+				Write(')');
+		}
+		else if (obj.Type is CiSortedDictionaryType && method.Name == "Remove") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".erase");
+			WriteArgsInParentheses(method, args);
 		}
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(obj, args, false);

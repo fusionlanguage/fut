@@ -334,6 +334,11 @@ public class GenC : GenCCpp
 		Write(" TODO");
 	}
 
+	protected override void WriteSortedDictionaryStorageInit(CiSortedDictionaryType list)
+	{
+		Write(" TODO");
+	}
+
 	protected override void WriteVarInit(CiNamedValue def)
 	{
 		if (def.Type == CiSystem.StringStorageType) {
