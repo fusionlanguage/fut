@@ -135,13 +135,6 @@ public abstract class GenTyped : GenBase
 		Write(')');
 	}
 
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
-	{
-		if (expr.Left == null && expr.Symbol is CiField)
-			Write("this.");
-		return base.Visit(expr, parent);
-	}
-
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		Write("new ");
