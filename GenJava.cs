@@ -94,6 +94,11 @@ public class GenJava : GenTyped
 			else
 				WriteCamelCase(symbol.Name);
 		}
+		else if (symbol.Parent is CiForeach forEach && forEach.Count == 2) {
+			CiVar element = forEach.Element;
+			Write(element.Name);
+			Write(symbol == element ? ".getKey()" : ".getValue()");
+		}
 		else
 			Write(symbol.Name);
 	}
@@ -155,9 +160,11 @@ public class GenJava : GenTyped
 		Write(typeCode, false);
 	}
 
-	void Write(CiSortedDictionaryType dict)
+	void Write(string name, CiSortedDictionaryType dict)
 	{
-		Write("java.util.TreeMap<");
+		Write("java.util.");
+		Write(name);
+		Write('<');
 		Write(dict.KeyType, false, true);
 		Write(", ");
 		Write(dict.ValueType, false, true);
@@ -187,7 +194,7 @@ public class GenJava : GenTyped
 			Write('>');
 			break;
 		case CiSortedDictionaryType dict:
-			Write(dict);
+			Write("TreeMap", dict);
 			break;
 		case CiArrayType array:
 			if (promote && array is CiArrayStorageType)
@@ -218,7 +225,7 @@ public class GenJava : GenTyped
 	protected override void WriteSortedDictionaryStorageInit(CiSortedDictionaryType dict)
 	{
 		Write(" = new ");
-		Write(dict);
+		Write("TreeMap", dict);
 		Write("()");
 	}
 
@@ -490,9 +497,19 @@ public class GenJava : GenTyped
 	public override void Visit(CiForeach statement)
 	{
 		Write("for (");
-		WriteTypeAndName(statement.Element);
-		Write(" : ");
-		statement.Collection.Accept(this, CiPriority.Statement);
+		if (statement.Collection.Type is CiSortedDictionaryType dict) {
+			Write("Map.Entry", dict);
+			Write(' ');
+			Write(statement.Element.Name);
+			Write(" : ");
+			statement.Collection.Accept(this, CiPriority.Primary);
+			Write(".entrySet()");
+		}
+		else {
+			WriteTypeAndName(statement.Element);
+			Write(" : ");
+			statement.Collection.Accept(this, CiPriority.Statement);
+		}
 		Write(')');
 		WriteChild(statement.Body);
 	}

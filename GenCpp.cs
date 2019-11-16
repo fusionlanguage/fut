@@ -607,19 +607,25 @@ public class GenCpp : GenCCpp
 
 	public override void Visit(CiForeach statement)
 	{
+		CiVar element = statement.Element;
 		Write("for (");
-		if (((CiArrayType) statement.Collection.Type).ElementType is CiClass klass
-		 && statement.Element.Type is CiClassPtrType ptr) {
+		if (statement.Count == 2) {
+			Write("const auto &[");
+			Write(element.Name);
+			Write(", ");
+			Write(statement.ValueVar.Name);
+			Write(']');
+		}
+		else if (((CiArrayType) statement.Collection.Type).ElementType is CiClass klass
+		 && element.Type is CiClassPtrType ptr) {
 			if (ptr.Modifier == CiToken.EndOfFile)
 				Write("const ");
 			Write(klass.Name);
 			Write(" &");
+			Write(element.Name);
 		}
-		else {
-			Write(statement.Element.Type, true);
-			Write(' ');
-		}
-		Write(statement.Element.Name);
+		else
+			WriteTypeAndName(element);
 		Write(" : ");
 		statement.Collection.Accept(this, CiPriority.Statement);
 		Write(')');

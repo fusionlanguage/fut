@@ -160,7 +160,7 @@ public abstract class CiSymbol : CiExpr
 	public override string ToString() { return this.Name; }
 }
 
-public class CiScope : CiSymbol, IEnumerable
+public class CiScope : CiSymbol, IEnumerable<CiSymbol>
 {
 	public string Filename;
 	protected readonly OrderedDictionary Dict = new OrderedDictionary();
@@ -168,6 +168,11 @@ public class CiScope : CiSymbol, IEnumerable
 	IEnumerator IEnumerable.GetEnumerator()
 	{
 		return this.Dict.Values.GetEnumerator();
+	}
+
+	IEnumerator<CiSymbol> IEnumerable<CiSymbol>.GetEnumerator()
+	{
+		return this.Dict.Values.Cast<CiSymbol>().GetEnumerator();
 	}
 
 	public int Count { get { return this.Dict.Count; } }
@@ -583,9 +588,10 @@ public class CiFor : CiLoop
 
 public class CiForeach : CiLoop
 {
-	public CiVar Element;
 	public CiExpr Collection;
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
+	public CiVar Element { get { return (CiVar) this.First(); } }
+	public CiVar ValueVar { get { return (CiVar) this.ElementAt(1); } }
 }
 
 public class CiIf : CiCondCompletionStatement

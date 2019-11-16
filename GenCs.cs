@@ -366,7 +366,15 @@ public class GenCs : GenTyped
 	public override void Visit(CiForeach statement)
 	{
 		Write("foreach (");
-		WriteTypeAndName(statement.Element);
+		if (statement.Count == 2) {
+			Write('(');
+			WriteTypeAndName(statement.Element);
+			Write(", ");
+			WriteTypeAndName(statement.ValueVar);
+			Write(')');
+		}
+		else
+			WriteTypeAndName(statement.Element);
 		Write(" in ");
 		statement.Collection.Accept(this, CiPriority.Statement);
 		Write(')');

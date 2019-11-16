@@ -988,14 +988,15 @@ public class GenC : GenCCpp
 
 	public override void Visit(CiForeach statement)
 	{
+		string element = statement.Element.Name;
 		Write("for (int ");
-		Write(statement.Element.Name);
+		Write(element);
 		Write(" = 0; ");
-		Write(statement.Element.Name);
+		Write(element);
 		Write(" < ");
 		Write(((CiArrayStorageType) statement.Collection.Type).Length);
 		Write("; ");
-		Write(statement.Element.Name);
+		Write(element);
 		Write("++)");
 		WriteChild(statement.Body);
 	}

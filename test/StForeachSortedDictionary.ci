@@ -1,0 +1,21 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		SortedDictionary<int, int>() dict;
+		dict[3] = 15;
+		dict[1] = 5;
+		dict[2] = 10;
+		int lastKey = 0;
+		int keySum = 0;
+		int valueSum = 0;
+		foreach ((int key, int value) in dict) {
+			if (lastKey >= key)
+				return false;
+			lastKey = key;
+			keySum += key;
+			valueSum += value;
+		}
+		return keySum == 6 && valueSum == 30;
+	}
+}

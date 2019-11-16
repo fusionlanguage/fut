@@ -851,13 +851,27 @@ public class CiResolver : CiVisitor
 	public override void Visit(CiForeach statement)
 	{
 		OpenScope(statement);
-		ResolveType(statement.Element);
+		CiVar element = statement.Element;
+		ResolveType(element);
 		statement.Collection.Accept(this);
-		if (!(statement.Collection.Type is CiArrayType array) || array is CiArrayPtrType)
-			throw StatementException(statement, "Expected a collection");
-		if (!statement.Element.Type.IsAssignableFrom(array.ElementType))
-			throw StatementException(statement, "Cannot coerce {0} to {1}", array.ElementType, statement.Element.Type);
-		this.CurrentScope.Add(statement.Element);
+		if (statement.Collection.Type is CiSortedDictionaryType dict) {
+			if (statement.Count != 2)
+				throw StatementException(statement, "Expected (TKey key, TValue value) iterator");
+			CiVar value = statement.ValueVar;
+			ResolveType(value);
+			if (!element.Type.IsAssignableFrom(dict.KeyType))
+				throw StatementException(statement, "Cannot coerce {0} to {1}", dict.KeyType, element.Type);
+			if (!value.Type.IsAssignableFrom(dict.ValueType))
+				throw StatementException(statement, "Cannot coerce {0} to {1}", dict.ValueType, value.Type);
+		}
+		else {
+			if (!(statement.Collection.Type is CiArrayType array) || array is CiArrayPtrType)
+				throw StatementException(statement.Collection, "Expected a collection");
+			if (statement.Count != 1)
+				throw StatementException(statement, "Expected one iterator variable");
+			if (!element.Type.IsAssignableFrom(array.ElementType))
+				throw StatementException(statement, "Cannot coerce {0} to {1}", array.ElementType, element.Type);
+		}
 		statement.SetCompletesNormally(true);
 		statement.Body.Accept(this);
 		CloseScope();

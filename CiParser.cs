@@ -462,12 +462,24 @@ public class CiParser : CiLexer
 		return result;
 	}
 
+	void ParseForeachIterator(CiForeach result)
+	{
+		result.Add(new CiVar { Line = this.Line, TypeExpr = ParseType(), Name = ParseId() });
+	}
+
 	CiForeach ParseForeach()
 	{
 		CiForeach result = new CiForeach { Line = this.Line };
 		Expect(CiToken.Foreach);
 		Expect(CiToken.LeftParenthesis);
-		result.Element = new CiVar { Line = this.Line, TypeExpr = ParseType(), Name = ParseId() };
+		if (Eat(CiToken.LeftParenthesis)) {
+			ParseForeachIterator(result);
+			Expect(CiToken.Comma);
+			ParseForeachIterator(result);
+			Expect(CiToken.RightParenthesis);
+		}
+		else
+			ParseForeachIterator(result);
 		Expect(CiToken.In);
 		result.Collection = ParseExpr();
 		Expect(CiToken.RightParenthesis);
