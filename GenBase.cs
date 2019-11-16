@@ -368,7 +368,7 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteTypeAndName(CiNamedValue value);
 
-	protected virtual void WriteLocalName(CiSymbol symbol)
+	protected virtual void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
 		if (symbol is CiField)
 			Write("this.");
@@ -523,7 +523,7 @@ public abstract class GenBase : CiVisitor
 
 	protected void WriteArrayElement(CiNamedValue def, int nesting)
 	{
-		WriteLocalName(def);
+		WriteLocalName(def, CiPriority.Primary);
 		for (int i = 0; i < nesting; i++) {
 			Write("[_i");
 			Write(i);

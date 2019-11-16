@@ -104,15 +104,17 @@ public class GenC : GenCCpp
 			Write("base.");
 	}
 
-	protected override void WriteLocalName(CiSymbol symbol)
+	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
 		if (symbol.Parent is CiForeach forEach) {
 			if (((CiArrayType) forEach.Collection.Type).ElementType is CiClass klass) {
-				Write('('); // TODO: skip if not needed
+				if (parent > CiPriority.Add)
+					Write('(');
 				forEach.Collection.Accept(this, CiPriority.Primary);
 				Write(" + ");
 				Write(symbol.Name);
-				Write(')');
+				if (parent > CiPriority.Add)
+					Write(')');
 			}
 			else {
 				forEach.Collection.Accept(this, CiPriority.Primary);
@@ -130,7 +132,7 @@ public class GenC : GenCCpp
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Left == null)
-			WriteLocalName(expr.Symbol);
+			WriteLocalName(expr.Symbol, parent);
 		else
 			base.Visit(expr, parent);
 		return expr;
@@ -885,7 +887,7 @@ public class GenC : GenCCpp
 		}
 		else
 			Write("free(");
-		WriteLocalName(symbol);
+		WriteLocalName(symbol, CiPriority.Primary);
 		for (int i = 0; i < nesting; i++) {
 			Write("[_i");
 			Write(i);
