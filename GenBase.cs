@@ -33,7 +33,7 @@ public abstract class GenBase : CiVisitor
 	public TextWriterFactory CreateTextWriter = CreateFileWriter;
 	protected TextWriter Writer;
 	protected int Indent = 0;
-	bool AtLineStart = true;
+	protected bool AtLineStart = true;
 	protected CiMethodBase CurrentMethod = null;
 
 	static TextWriter CreateFileWriter(string filename)
@@ -470,10 +470,15 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent);
 
+	protected void WriteNewArray(CiArrayStorageType array)
+	{
+		WriteNewArray(array.ElementType, array.LengthExpr, CiPriority.Statement);
+	}
+
 	protected virtual void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
 	{
 		Write(" = ");
-		WriteNewArray(array.ElementType, array.LengthExpr, CiPriority.Statement);
+		WriteNewArray(array);
 	}
 
 	protected abstract void WriteListStorageInit(CiListType list);

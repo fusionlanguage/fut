@@ -306,6 +306,14 @@ public class GenJava : GenTyped
 		Write(')');
 	}
 
+	void WriteNewStorage(CiType type)
+	{
+		if (type is CiClass klass)
+			WriteNew(klass, CiPriority.Statement);
+		else if (type is CiArrayStorageType array)
+			WriteNewArray(array);
+	}
+
 	void WriteConsoleWrite(CiExpr obj, CiMethod method, CiExpr[] args, bool newLine)
 	{
 		if (obj is CiSymbolReference symbol && symbol.Symbol == CiSystem.ConsoleError)
@@ -368,6 +376,30 @@ public class GenJava : GenTyped
 				Write(".sort(null)");
 			}
 		}
+		else if (obj.Type is CiListType list && method.Name == "Add") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".add");
+			if (method.Parameters.Count == 0) {
+				Write('(');
+				WriteNewStorage(list.ElementType);
+				Write(')');
+			}
+			else
+				WriteArgsInParentheses(method, args);
+		}
+		else if (obj.Type is CiListType list2 && method.Name == "Insert") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".add");
+			if (method.Parameters.Count == 1) {
+				Write('(');
+				args[0].Accept(this, CiPriority.Statement);
+				Write(", ");
+				WriteNewStorage(list2.ElementType);
+				Write(')');
+			}
+			else
+				WriteArgsInParentheses(method, args);
+		}
 		else if (method == CiSystem.ListRemoveRange) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".subList(");
@@ -399,9 +431,7 @@ public class GenJava : GenTyped
 		else {
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
-			if (obj.Type is CiListType && method.Name == "Insert")
-				Write("add");
-			else if (method == CiSystem.ListRemoveAt)
+			if (method == CiSystem.ListRemoveAt)
 				Write("remove");
 			else if (IsMathReference(obj) && method.Name == "Ceiling")
 				Write("ceil");

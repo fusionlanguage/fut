@@ -439,16 +439,33 @@ public class GenCpp : GenCCpp
 			Write(".end())");
 		}
 		else if (obj.Type is CiListType && method.Name == "Add") {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".push_back");
-			WriteArgsInParentheses(method, args);
+			if (method.Parameters.Count == 0) {
+				if (!this.AtLineStart)
+					Write('&');
+				obj.Accept(this, CiPriority.Primary);
+				Write(".emplace_back()");
+			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".push_back");
+				WriteArgsInParentheses(method, args);
+			}
 		}
 		else if (obj.Type is CiListType list && method.Name == "Insert") {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".insert(");
-			WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
-			Write(", ");
-			WriteCoerced(list.ElementType, args[1], CiPriority.Statement);
+			if (method.Parameters.Count == 1) {
+				if (!this.AtLineStart)
+					Write("&*");
+				obj.Accept(this, CiPriority.Primary);
+				Write(".emplace(");
+				WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
+			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".insert(");
+				WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
+				Write(", ");
+				WriteCoerced(list.ElementType, args[1], CiPriority.Statement);
+			}
 			Write(')');
 		}
 		else if (method == CiSystem.ListRemoveAt) {
