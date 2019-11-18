@@ -966,7 +966,7 @@ public abstract class CiArrayType : CiType
 				new CiVar(CiSystem.IntType, "sourceIndex"),
 				new CiVar(this.PtrOrSelf , "destinationArray"),
 				new CiVar(CiSystem.IntType, "destinationIndex"),
-				new CiVar(CiSystem.IntType, "length"));
+				new CiVar(CiSystem.IntType, "count"));
 		}
 		return null;
 	}
