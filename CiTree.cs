@@ -1041,7 +1041,9 @@ public class CiArrayStorageType : CiArrayType
 		case "Length":
 			return CiSystem.ArrayLength;
 		case "Sort":
-			return CiSystem.ArraySort;
+			if (this.ElementType is CiNumericType)
+				return CiSystem.ArraySort;
+			return null;
 		default:
 			return base.TryLookup(name);
 		}
@@ -1080,7 +1082,9 @@ public class CiListType : CiArrayType
 		case "RemoveRange":
 			return CiSystem.ListRemoveRange;
 		case "Sort":
-			return CiSystem.ArraySort;
+			if (this.ElementType is CiNumericType)
+				return CiSystem.ArraySort;
+			return null;
 		default:
 			return base.TryLookup(name);
 		}
