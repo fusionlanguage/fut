@@ -317,6 +317,9 @@ You can fill array storage anytime:
 arrayStorage.Fill(0);
 ```
 
+Array slices can be copied to other arrays and within the same array with
+`sourceArray.CopyTo(sourceIndex, destinationArray, destinationIndex, count)`.
+
 All reference types (including the dynamic reference) can have the value `null`.
 References might be compared -- this compares the identity of the arrays,
 not their contents:
@@ -594,6 +597,84 @@ In a non-mutator method, `this` is of type `C` (a read-only reference).
 Static methods do not have `this`, so the mutator/non-mutator
 classification doesn't apply.
 
+### Collections
+
+In addition to arrays, Ć has two built-in collection types:
+
+* `List<T>` is a resizeable array (`std::vector` in C++, `ArrayList` in Java)
+* `SortedDictionary<TKey, TValue>` is a dictionary sorted by key
+  (`std::map` in C++, `TreeMap` in Java)
+
+#### List
+
+A list must specify element type. This can be any Ć type.
+
+```csharp
+List<int>() listOfInts;
+List<string()>() listOfStringStorage;
+List<string>() listOfStringReferences;
+List<Circle()>() listOfCircles; // user-defined class
+List<Shape#>() listOfShapes; // dynamic references
+List<int[2]>() listOfIntPairs; // array storage
+```
+
+`Add` appends a new element at the end of the list.
+`Insert` inserts an element at any position.
+
+```csharp
+listOfInts.Add(42);
+listOfInts.Insert(0, 1337); // insert at the beginning
+```
+
+Object and array storage must be added/inserted without specifying the value.
+The methods return a read-write reference to the storage in the list.
+
+```csharp
+Circle! addedCircle = listOfCircles.Add();
+int[]! intPair = listOfIntPairs.Add();
+```
+
+Use indexing to retrieve and overwrite list elements.
+
+```csharp
+Circle! firstCircle = listOfCircles[0];
+listOfInts[1] = 5;
+```
+
+`Count` returns the number of elements in the list.
+
+You can remove:
+
+* All elements with `Clear()`.
+* One element with `RemoveAt(index)`.
+* A continuous sequence of elements with `RemoveRange(index, count)`.
+
+`list.CopyTo(sourceIndex, destinationArray, destinationIndex, count)`
+can be used to copy elements from a list to an array.
+
+#### SortedDictionary
+
+SortedDictionary provides fast access to a given _value_ associated
+with a _key_. Key must be a number or a string. Value can be of any type.
+
+```csharp
+SortedDictionary<string(), int> dict;
+```
+
+Index the dictionary with a key to insert/overwrite and retrieve elements.
+
+```csharp
+dict["foo"] = 42;
+dict["foo"] = 1337;
+Console.WriteLine(dict["foo"]);
+```
+
+Retrieving an element that does not exist is an invalid operation.
+Use `ContainsKey` to check for existence -- it returns a `bool`.
+
+`Count` return the number of key-value pairs.
+`Remove(key)` removes one mapping. `Clear()` removes all.
+
 ## Statements
 
 Statements are used in methods and constructors.
@@ -706,7 +787,7 @@ There are four kinds of loops:
 * `do/while` -- checking the condition after the first run.
 * `for` -- which contains an initial statement, the condition
   and a statement executed after each run.
-* `foreach` -- to iterate over array storage.
+* `foreach` -- to iterate over array storage, `List` or `SortedDictionary`.
 
 ```csharp
 int[3] array;
@@ -715,6 +796,11 @@ array[1] = 10;
 array[2] = 15;
 foreach (int i in array)
     Console.WriteLine(i);
+SortedDictionary<string(), int> dict;
+dict["foo"] = 1;
+dict["bar"] = 2;
+foreach ((string k, int v) in dict)
+    Console.WriteLine($"{k} => {v}");
 ```
 
 Inside loops you may use:
