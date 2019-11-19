@@ -160,7 +160,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteDefinition(CiType type, Action symbol, bool promote)
+	void WriteDefinition(CiType type, Action symbol, bool promote, bool space)
 	{
 		if (type == null) {
 			Write("void ");
@@ -171,7 +171,8 @@ public class GenC : GenCCpp
 		switch (baseType) {
 		case CiIntegerType integer:
 			Write(GetTypeCode(integer, promote && type == baseType));
-			Write(' ');
+			if (space)
+				Write(' ');
 			break;
 		case CiStringPtrType _:
 			Write("const char *");
@@ -199,7 +200,8 @@ public class GenC : GenCCpp
 			if (baseType == CiSystem.BoolType)
 				Include("stdbool.h");
 			Write(baseType.Name);
-			Write(' ');
+			if (space)
+				Write(' ');
 			break;
 		}
 		WriteArrayPrefix(type);
@@ -223,17 +225,17 @@ public class GenC : GenCCpp
 			symbol();
 		}
 		else
-			WriteDefinition(method.Type, symbol, true);
+			WriteDefinition(method.Type, symbol, true, true);
 	}
 
 	protected override void Write(CiType type, bool promote)
 	{
-		WriteDefinition(type, () => {}, promote);
+		WriteDefinition(type, () => {}, promote, false);
 	}
 
 	protected override void WriteTypeAndName(CiNamedValue value)
 	{
-		WriteDefinition(value.Type, () => WriteName(value), true);
+		WriteDefinition(value.Type, () => WriteName(value), true, true);
 	}
 
 	static bool IsDynamicPtr(CiType type)
@@ -260,7 +262,7 @@ public class GenC : GenCCpp
 		if (parent > CiPriority.Mul)
 			Write('(');
 		Write('(');
-		WriteDefinition(elementType, () => Write(elementType is CiArrayType ? "(*)" : "*"), false);
+		WriteDefinition(elementType, () => Write(elementType is CiArrayType ? "(*)" : "*"), false, true);
 		Write(") CiShared_Make(");
 		if (lengthExpr != null)
 			lengthExpr.Accept(this, CiPriority.Statement);
@@ -1014,7 +1016,7 @@ public class GenC : GenCCpp
 			base.Visit(statement);
 		}
 		else {
-			WriteDefinition(this.CurrentMethod.Type, () => Write("returnValue"), true);
+			WriteDefinition(this.CurrentMethod.Type, () => Write("returnValue"), true, true);
 			Write(" = ");
 			statement.Value.Accept(this, CiPriority.Statement);
 			WriteLine(';');
