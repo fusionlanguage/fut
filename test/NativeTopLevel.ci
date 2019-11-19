@@ -1,5 +1,4 @@
 native {
-	#include <vector>
 }
 
 public static class Test
