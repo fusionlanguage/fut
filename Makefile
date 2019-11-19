@@ -5,7 +5,7 @@ CSC = "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Cur
 MONO :=
 JAVACPSEP = ;
 else
-CSC := gmcs
+CSC := mcs
 MONO := mono
 JAVACPSEP = :
 endif

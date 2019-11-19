@@ -5,6 +5,7 @@
 
 You can build it with .NET Core 3.0 on Windows, macOS and Linux
 or Visual Studio 2019 on Windows only.
+The Mono compiler doesn't work (NotImplementedException).
 
 .NET Core SDK is available at https://dotnet.microsoft.com/download
 Build `cito` with the following command line:
