@@ -130,11 +130,11 @@ public class CiResolver : CiVisitor
 			Coerce(left, CiSystem.DoubleType);
 			return CiSystem.DoubleType;
 		}
-		if (left.Type == CiSystem.FloatType) {
+		if (left.Type == CiSystem.FloatType || left.Type == CiSystem.FloatIntType) {
 			Coerce(right, CiSystem.FloatType);
 			return CiSystem.FloatType;
 		}
-		if (right.Type == CiSystem.FloatType) {
+		if (right.Type == CiSystem.FloatType || right.Type == CiSystem.FloatIntType) {
 			Coerce(left, CiSystem.FloatType);
 			return CiSystem.FloatType;
 		}

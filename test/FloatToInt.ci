@@ -1,0 +1,10 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int e = Math.Truncate(Math.E);
+		float f = Math.PI;
+		int pi = Math.Floor(f);
+		return e == 2 && pi == 3;
+	}
+}

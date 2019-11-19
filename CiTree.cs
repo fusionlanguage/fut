@@ -749,7 +749,7 @@ public class CiNumericType : CiType
 
 public class CiIntegerType : CiNumericType
 {
-	public override bool IsAssignableFrom(CiType right) { return right is CiIntegerType; }
+	public override bool IsAssignableFrom(CiType right) { return right is CiIntegerType || right == CiSystem.FloatIntType; }
 }
 
 public class CiRangeType : CiIntegerType
@@ -1136,6 +1136,7 @@ public class CiSystem : CiScope
 	public static readonly CiRangeType Minus1Type = new CiRangeType(-1, int.MaxValue);
 	public static readonly CiFloatingType FloatType = new CiFloatingType { Name = "float" };
 	public static readonly CiFloatingType DoubleType = new CiFloatingType { Name = "double" };
+	public static readonly CiFloatingType FloatIntType = new CiFloatingType { Name = "float" };
 	public static readonly CiRangeType CharType = new CiRangeType(-0x80, 0xffff);
 	public static readonly CiEnum BoolType = new CiEnum { Name = "bool" };
 	public static readonly CiStringType StringPtrType = new CiStringPtrType { Name = "string" };
@@ -1165,28 +1166,29 @@ public class CiSystem : CiScope
 	public static readonly CiMethod UTF8GetString = new CiMethod(CiCallType.Normal, StringStorageType, "GetString", new CiVar(ByteArrayPtrType, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length")); // TODO: UIntType
 	public static readonly CiClass UTF8EncodingClass = new CiClass(CiCallType.Normal, "UTF8Encoding", UTF8GetString);
 	public static readonly CiClass EncodingClass = new CiClass(CiCallType.Static, "Encoding");
+	public static readonly CiMethod MathTruncate = new CiMethod(CiCallType.Static, FloatIntType, "Truncate", new CiVar(DoubleType, "a"));
 	public static readonly CiClass MathClass = new CiClass(CiCallType.Static, "Math",
-		new CiMethod(CiCallType.Static, DoubleType, "Acos", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Asin", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Atan", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Atan2", new CiVar(DoubleType, "y"), new CiVar(DoubleType, "x")),
-		new CiMethod(CiCallType.Static, DoubleType, "Cbrt", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Ceiling", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Cos", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Cosh", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Exp", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Floor", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "FusedMultiplyAdd", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y"), new CiVar(DoubleType, "z")),
-		new CiMethod(CiCallType.Static, DoubleType, "Log", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Log2", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Log10", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Pow", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y")),
-		new CiMethod(CiCallType.Static, DoubleType, "Sin", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Sinh", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Sqrt", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Tan", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Tanh", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, DoubleType, "Truncate", new CiVar(DoubleType, "a")));
+		new CiMethod(CiCallType.Static, FloatType, "Acos", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, FloatType, "Asin", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, FloatType, "Atan", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, FloatType, "Atan2", new CiVar(DoubleType, "y"), new CiVar(DoubleType, "x")),
+		new CiMethod(CiCallType.Static, FloatType, "Cbrt", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, FloatIntType, "Ceiling", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, FloatType, "Cos", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, FloatType, "Cosh", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, FloatType, "Exp", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, FloatIntType, "Floor", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, FloatType, "FusedMultiplyAdd", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y"), new CiVar(DoubleType, "z")),
+		new CiMethod(CiCallType.Static, FloatType, "Log", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, FloatType, "Log2", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, FloatType, "Log10", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, FloatType, "Pow", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y")),
+		new CiMethod(CiCallType.Static, FloatType, "Sin", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, FloatType, "Sinh", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, FloatType, "Sqrt", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, FloatType, "Tan", new CiVar(DoubleType, "a")),
+		new CiMethod(CiCallType.Static, FloatType, "Tanh", new CiVar(DoubleType, "a")),
+		MathTruncate);
 
 	CiSystem()
 	{

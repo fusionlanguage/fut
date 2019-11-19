@@ -144,6 +144,16 @@ There's a built-in `Math` class with the following static methods:
 * `Math.Tanh(double a)`
 * `Math.Truncate(double a)`
 
+Conversion from floating-point type to integer must be explicit,
+by using one of the above methods that return an integer.
+
+```csharp
+double d = 10.5;
+int i = Math.Trunc(d); // translated to: (int) d
+int j = Math.Ceiling(d);
+int k = Math.Floor(d);
+```
+
 ### Enumerations
 
 Enumerations have user-defined values. Example:

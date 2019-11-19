@@ -58,7 +58,7 @@ public class GenJava : GenTyped
 			CiExpr arg = expr.Parts[0].Argument;
 			if (arg.Type == CiSystem.LongType)
 				Write("Long");
-			else if (arg.Type == CiSystem.DoubleType)
+			else if (arg.Type == CiSystem.DoubleType || arg.Type == CiSystem.FloatIntType)
 				Write("Double");
 			else if (arg.Type == CiSystem.FloatType)
 				Write("Float");

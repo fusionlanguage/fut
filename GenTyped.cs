@@ -252,6 +252,14 @@ public abstract class GenTyped : GenBase
 		}
 	}
 
+	protected virtual void WriteStaticCast(CiType type, CiExpr expr)
+	{
+		Write('(');
+		Write(type, false);
+		Write(") ");
+		expr.Accept(this, CiPriority.Primary);
+	}
+
 	protected override void WriteAssignRight(CiBinaryExpr expr)
 	{
 		if (expr.Left.IsIndexing) {
@@ -272,35 +280,33 @@ public abstract class GenTyped : GenBase
 				return;
 			}
 			if (IsNarrower(leftTypeCode, rightTypeCode)) {
-				Write('(');
-				Write(leftTypeCode);
-				Write(") ");
-				expr.Right.Accept(this, CiPriority.Primary);
+				WriteStaticCast(expr.Left.Type, expr.Right);
 				return;
 			}
 		}
 		WriteCoerced(expr.Left.Type, expr.Right, CiPriority.Statement);
 	}
 
-	protected virtual void WriteStaticCast(string type, CiExpr expr)
-	{
-		Write('(');
-		Write(type);
-		Write(") ");
-		expr.Accept(this, CiPriority.Primary);
-	}
-
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 	{
-		if (type != CiSystem.LongType && expr.Type == CiSystem.LongType)
-			WriteStaticCast("int", expr);
+		if (type is CiIntegerType && type != CiSystem.LongType && expr.Type == CiSystem.LongType)
+			WriteStaticCast(type, expr);
 		else if (type == CiSystem.FloatType && expr.Type == CiSystem.DoubleType) {
 			if (expr is CiLiteral) {
 				expr.Accept(this, CiPriority.Statement);
 				Write('f');
 			}
 			else
-				WriteStaticCast("float", expr);
+				WriteStaticCast(type, expr);
+		}
+		else if (type is CiIntegerType && expr.Type == CiSystem.FloatIntType) {
+			if (expr is CiBinaryExpr call
+			 && call.Op == CiToken.LeftParenthesis
+			 && call.Left is CiSymbolReference symbol
+			 && symbol.Symbol == CiSystem.MathTruncate)
+				WriteStaticCast(type, call.RightCollection[0]);
+			else
+				WriteStaticCast(type, expr);
 		}
 		else
 			base.WriteCoercedInternal(type, expr, parent);

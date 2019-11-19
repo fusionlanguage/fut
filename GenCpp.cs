@@ -215,10 +215,10 @@ public class GenCpp : GenCCpp
 			base.WriteVarInit(def);
 	}
 
-	protected override void WriteStaticCast(string type, CiExpr expr)
+	protected override void WriteStaticCast(CiType type, CiExpr expr)
 	{
 		Write("static_cast<");
-		Write(type);
+		Write(type, false);
 		Write(">(");
 		expr.Accept(this, CiPriority.Statement);
 		Write(')');
