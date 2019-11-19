@@ -1,7 +1,7 @@
 prefix := /usr/local
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
 ifdef COMSPEC
-CSC = "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/Roslyn/csc.exe" -nologo -out:$@
+CSC = "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/Roslyn/csc.exe" -nologo
 MONO :=
 JAVACPSEP = ;
 else
@@ -18,7 +18,7 @@ MAKEFLAGS = -r
 all: cito.exe
 
 cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs CiTo.cs)
-	$(CSC) $^
+	$(CSC) -out:$@ $^
 
 test: test-c test-cpp test-cs test-java test-js test-error
 	perl test/summary.pl $(wildcard test/bin/*/*.txt)
@@ -63,7 +63,7 @@ test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
 	-$(CXX) -o $@ -I $(<D) $^
 
 test/bin/%/cs.exe: test/bin/%/Test.cs test/Runner.cs
-	-$(CSC) $^
+	-$(CSC) -out:$@ $^
 
 test/bin/%/Test.class: test/bin/%/Test.java
 	-javac -d $(@D) $(<D)/*.java
