@@ -306,14 +306,6 @@ public class GenJava : GenTyped
 		Write(')');
 	}
 
-	void WriteNewStorage(CiType type)
-	{
-		if (type is CiClass klass)
-			WriteNew(klass, CiPriority.Statement);
-		else if (type is CiArrayStorageType array)
-			WriteNewArray(array);
-	}
-
 	void WriteConsoleWrite(CiExpr obj, CiMethod method, CiExpr[] args, bool newLine)
 	{
 		if (obj is CiSymbolReference symbol && symbol.Symbol == CiSystem.ConsoleError)
@@ -409,6 +401,14 @@ public class GenJava : GenTyped
 			Write(" + ");
 			args[1].Accept(this, CiPriority.Add);
 			Write(").clear()");
+		}
+		else if (obj.Type is CiSortedDictionaryType dict && method.Name == "Add") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".put(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", ");
+			WriteNewStorage(dict.ValueType);
+			Write(')');
 		}
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(obj, method, args, false);

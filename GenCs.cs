@@ -319,6 +319,14 @@ public class GenCs : GenTyped
 				Write(".Sort()");
 			}
 		}
+		else if (obj.Type is CiSortedDictionaryType dict && method.Name == "Add") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".Add(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", ");
+			WriteNewStorage(dict.ValueType);
+			Write(')');
+		}
 		else if ((method == CiSystem.StringIndexOf || method == CiSystem.StringLastIndexOf)
 			&& IsOneAsciiString(args[0], out char c)) {
 			obj.Accept(this, CiPriority.Primary);

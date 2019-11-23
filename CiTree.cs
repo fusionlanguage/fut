@@ -1105,6 +1105,10 @@ public class CiSortedDictionaryType : CiType
 	public override CiSymbol TryLookup(string name)
 	{
 		switch (name) {
+		case "Add":
+			if (this.ValueType is CiClass || this.ValueType is CiArrayStorageType)
+				return new CiMethod(CiCallType.Normal, this.ValueType.PtrOrSelf, "Add", new CiVar(this.KeyType, "key")) { IsMutator = true };
+			return null;
 		case "Clear":
 			return CiSystem.CollectionClear;
 		case "ContainsKey":

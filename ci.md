@@ -636,7 +636,7 @@ listOfInts.Add(42);
 listOfInts.Insert(0, 1337); // insert at the beginning
 ```
 
-Object and array storage must be added/inserted without specifying the value.
+Object or array storage must be added/inserted without specifying the value.
 The methods return a read-write reference to the storage in the list.
 
 ```csharp
@@ -681,6 +681,9 @@ Console.WriteLine(dict["foo"]);
 
 Retrieving an element that does not exist is an invalid operation.
 Use `ContainsKey` to check for existence -- it returns a `bool`.
+
+If the value is object or array storage,
+create it in the dictionary with `Add(key)`.
 
 `Count` return the number of key-value pairs.
 `Remove(key)` removes one mapping. `Clear()` removes all.

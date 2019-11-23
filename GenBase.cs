@@ -481,6 +481,14 @@ public abstract class GenBase : CiVisitor
 		WriteNewArray(array);
 	}
 
+	protected void WriteNewStorage(CiType type)
+	{
+		if (type is CiClass klass)
+			WriteNew(klass, CiPriority.Statement);
+		else if (type is CiArrayStorageType array)
+			WriteNewArray(array);
+	}
+
 	protected abstract void WriteListStorageInit(CiListType list);
 
 	protected abstract void WriteSortedDictionaryStorageInit(CiSortedDictionaryType dict);
