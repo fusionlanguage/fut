@@ -1,0 +1,20 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		List<int[2]>() list;
+		int[]! p = list.Add();
+		p[0] = 100;
+		p[1] = 200;
+		list.Clear();
+		p = list.Add();
+		p[0] = 10;
+		p[1] = 11;
+		list.Add();
+		int[]! q = list.Insert(0);
+		q[0] = 20;
+		q[1] = 21;
+		return list.Count == 3 && list[0][0] == 20 && list[0][1] == 21 && list[1][0] == 10 && list[1][1] == 11
+			&& q == list[0];
+	}
+}

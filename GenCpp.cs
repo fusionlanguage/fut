@@ -438,12 +438,17 @@ public class GenCpp : GenCCpp
 			obj.Accept(this, CiPriority.Primary); // FIXME: side effect
 			Write(".end())");
 		}
-		else if (obj.Type is CiListType && method.Name == "Add") {
+		else if (obj.Type is CiListType list && method.Name == "Add") {
 			if (method.Parameters.Count == 0) {
-				if (!this.AtLineStart)
-					Write('&');
+				string suffix = ".emplace_back()";
+				if (!this.AtLineStart) {
+					if (list.ElementType is CiArrayStorageType)
+						suffix = ".emplace_back().data()";
+					else
+						Write('&');
+				}
 				obj.Accept(this, CiPriority.Primary);
-				Write(".emplace_back()");
+				Write(suffix);
 			}
 			else {
 				obj.Accept(this, CiPriority.Primary);
@@ -451,20 +456,27 @@ public class GenCpp : GenCCpp
 				WriteArgsInParentheses(method, args);
 			}
 		}
-		else if (obj.Type is CiListType list && method.Name == "Insert") {
+		else if (obj.Type is CiListType list2 && method.Name == "Insert") {
 			if (method.Parameters.Count == 1) {
-				if (!this.AtLineStart)
-					Write("&*");
+				bool array = false;
+				if (!this.AtLineStart) {
+					if (list2.ElementType is CiArrayStorageType)
+						array = true;
+					else
+						Write("&*");
+				}
 				obj.Accept(this, CiPriority.Primary);
 				Write(".emplace(");
 				WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
+				if (array)
+					Write(")->data(");
 			}
 			else {
 				obj.Accept(this, CiPriority.Primary);
 				Write(".insert(");
 				WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
 				Write(", ");
-				WriteCoerced(list.ElementType, args[1], CiPriority.Statement);
+				WriteCoerced(list2.ElementType, args[1], CiPriority.Statement);
 			}
 			Write(')');
 		}
