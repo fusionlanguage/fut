@@ -668,9 +668,9 @@ public class GenJava : GenTyped
 		CloseBlock();
 	}
 
-	void WriteConsts(IEnumerable<CiConst> konsts)
+	void WriteConsts(IEnumerable<CiConst> consts)
 	{
-		foreach (CiConst konst in konsts) {
+		foreach (CiConst konst in consts) {
 			WriteLine();
 			Write(konst.Documentation);
 			Write(konst.Visibility);

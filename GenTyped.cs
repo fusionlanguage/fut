@@ -266,7 +266,7 @@ public abstract class GenTyped : GenBase
 			TypeCode leftTypeCode = GetTypeCode(expr.Left.Type, false);
 			bool promote;
 			switch (expr.Right) {
-			case CiLiteral rightLiteral:
+			case CiLiteral _:
 			case CiBinaryExpr rightBinary when rightBinary.Op == CiToken.LeftBracket || rightBinary.IsAssign:
 				promote = false;
 				break;

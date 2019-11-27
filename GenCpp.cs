@@ -726,7 +726,7 @@ public class GenCpp : GenCCpp
 		WriteLine("};");
 	}
 
-	CiVisibility GetConstructorVisibility(CiClass klass)
+	static CiVisibility GetConstructorVisibility(CiClass klass)
 	{
 		switch (klass.CallType) {
 		case CiCallType.Static:

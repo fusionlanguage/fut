@@ -512,9 +512,9 @@ public class GenJs : GenBase
 		WriteBody(method);
 	}
 
-	void WriteConsts(CiClass klass, IEnumerable<CiConst> konsts)
+	void WriteConsts(CiClass klass, IEnumerable<CiConst> consts)
 	{
-		foreach (CiConst konst in konsts) {
+		foreach (CiConst konst in consts) {
 			if (konst.Visibility != CiVisibility.Private || konst.Type is CiArrayStorageType) {
 				WriteLine();
 				Write(konst.Documentation);

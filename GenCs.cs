@@ -433,9 +433,9 @@ public class GenCs : GenTyped
 		CloseBlock();
 	}
 
-	void WriteConsts(IEnumerable<CiConst> konsts)
+	void WriteConsts(IEnumerable<CiConst> consts)
 	{
-		foreach (CiConst konst in konsts) {
+		foreach (CiConst konst in consts) {
 			Write(konst.Visibility);
 			if (konst.Type is CiArrayStorageType)
 				Write("static readonly ");

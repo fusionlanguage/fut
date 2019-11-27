@@ -1165,7 +1165,7 @@ public class CiResolver : CiVisitor
 		}
 	}
 
-	void SetLive(CiMethodBase method)
+	static void SetLive(CiMethodBase method)
 	{
 		if (method.IsLive)
 			return;
@@ -1174,7 +1174,7 @@ public class CiResolver : CiVisitor
 			SetLive(called);
 	}
 
-	void SetLive(CiClass klass)
+	static void SetLive(CiClass klass)
 	{
 		if (!klass.IsPublic)
 			return;

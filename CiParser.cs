@@ -400,7 +400,7 @@ public class CiParser : CiLexer
 		List<CiStatement> statements = new List<CiStatement>();
 		while (!Eat(CiToken.RightBrace))
 			statements.Add(ParseStatement());
-		return new CiBlock { Filename = this.Filename, Line = this.Line, Statements = statements.ToArray() };
+		return new CiBlock { Filename = this.Filename, Line = line, Statements = statements.ToArray() };
 	}
 
 	CiBreak ParseBreak()
