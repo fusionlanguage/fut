@@ -80,7 +80,7 @@ public class GenJs : GenBase
 
 	protected override void WriteVar(CiNamedValue def)
 	{
-		Write("var ");
+		Write("let ");
 		base.WriteVar(def);
 	}
 
@@ -259,7 +259,7 @@ public class GenJs : GenBase
 		CiArrayStorageType array = (CiArrayStorageType) def.Type;
 		int nesting = 0;
 		while (array.ElementType is CiArrayStorageType innerArray) {
-			OpenLoop("var", nesting++, array.Length);
+			OpenLoop("let", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");
 			WriteNewArray(innerArray.ElementType, innerArray.LengthExpr, CiPriority.Statement);
@@ -267,7 +267,7 @@ public class GenJs : GenBase
 			array = innerArray;
 		}
 		if (array.ElementType is CiClass klass) {
-			OpenLoop("var", nesting++, array.Length);
+			OpenLoop("let", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");
 			WriteNew(klass, CiPriority.Statement);
@@ -322,7 +322,7 @@ public class GenJs : GenBase
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			AddLibrary(GenJsMethod.CopyArray,
 				"copyArray : function(sa, soffset, da, doffset, length)",
-				"for (var i = 0; i < length; i++)",
+				"for (let i = 0; i < length; i++)",
 				"\tda[doffset + i] = sa[soffset + i];");
 			Write("Ci.copyArray(");
 			obj.Accept(this, CiPriority.Statement);
@@ -376,9 +376,9 @@ public class GenJs : GenBase
 			AddLibrary(GenJsMethod.UTF8GetString,
 				"utf8GetString : function(a, i, length)",
 				"length += i;",
-				"var s = \"\";",
+				"let s = \"\";",
 				"while (i < length) {",
-				"\tvar c = a[i];",
+				"\tlet c = a[i];",
 				"\tif (c < 0x80)",
 				"\t\ti++;",
 				"\telse if ((c & 0xe0) == 0xc0) {",
@@ -464,7 +464,7 @@ public class GenJs : GenBase
 	{
 		WriteLine();
 		Write(enu.Documentation);
-		Write("var ");
+		Write("const ");
 		Write(enu.Name);
 		Write(" = ");
 		OpenBlock();
@@ -559,7 +559,7 @@ public class GenJs : GenBase
 	void WriteLib(Dictionary<string, byte[]> resources)
 	{
 		WriteLine();
-		Write("var Ci = ");
+		Write("const Ci = ");
 		OpenBlock();
 		bool first = true;
 		foreach (string[] method in this.Library) {
