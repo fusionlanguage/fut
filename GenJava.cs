@@ -189,11 +189,12 @@ public class GenJava : GenTyped
 				: klass ? "Integer" : "int");
 			break;
 		case CiListType list:
-			Write("java.util.ArrayList<");
+			Write("final java.util.ArrayList<");
 			Write(list.ElementType, false, true);
 			Write('>');
 			break;
 		case CiSortedDictionaryType dict:
+			Write("final ");
 			Write("TreeMap", dict);
 			break;
 		case CiArrayType array:
