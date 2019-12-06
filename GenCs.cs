@@ -478,7 +478,7 @@ public class GenCs : GenTyped
 			WriteLine();
 			Write(field.Documentation);
 			Write(field.Visibility);
-			if (field.Type is CiClass || field.Type is CiArrayStorageType)
+			if (field.Type.IsFinal)
 				Write("readonly ");
 			WriteVar(field);
 			WriteLine(';');

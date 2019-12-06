@@ -697,6 +697,7 @@ public class CiType : CiScope
 	public virtual CiType BaseType => this;
 	public virtual CiType StorageType => this;
 	public virtual CiType PtrOrSelf => this;
+	public virtual bool IsFinal => false;
 }
 
 public abstract class CiContainerType : CiType
@@ -729,6 +730,7 @@ public class CiClass : CiContainerType
 	public override string ToString() => this.Name + "()";
 	public override bool IsAssignableFrom(CiType right) => false;
 	public override CiType PtrOrSelf => new CiClassPtrType { Class = this, Modifier = CiToken.ExclamationMark };
+	public override bool IsFinal => true;
 	public bool AddsVirtualMethods() => this.Methods.Any(method => method.IsAbstractOrVirtual());
 	public CiClass()
 	{
@@ -1044,6 +1046,7 @@ public class CiArrayStorageType : CiArrayType
 	public override bool IsAssignableFrom(CiType right) => false;
 	public override CiType StorageType => this.ElementType.StorageType;
 	public override CiType PtrOrSelf => new CiArrayPtrType { ElementType = this.ElementType, Modifier = CiToken.ExclamationMark };
+	public override bool IsFinal => true;
 
 	public override bool Equals(object obj)
 	{
@@ -1087,6 +1090,7 @@ public class CiListType : CiArrayType
 		}
 	}
 	public override CiType PtrOrSelf => new CiArrayPtrType { ElementType = this.ElementType, Modifier = CiToken.ExclamationMark };
+	public override bool IsFinal => true;
 }
 
 public class CiSortedDictionaryType : CiType
@@ -1114,6 +1118,7 @@ public class CiSortedDictionaryType : CiType
 			return null;
 		}
 	}
+	public override bool IsFinal => true;
 }
 
 public class CiPrintableType : CiType
