@@ -80,7 +80,17 @@ public class GenJs : GenBase
 
 	protected override void WriteVar(CiNamedValue def)
 	{
-		Write("let ");
+		switch (def.Type) {
+		case CiClass _:
+		case CiArrayStorageType _:
+		case CiListType _:
+		case CiSortedDictionaryType _:
+			Write("const ");
+			break;
+		default:
+			Write("let ");
+			break;
+		}
 		base.WriteVar(def);
 	}
 
