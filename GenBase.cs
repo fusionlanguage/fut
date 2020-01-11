@@ -1,6 +1,6 @@
 // GenBase.cs - base class for code generators
 //
-// Copyright (C) 2011-2019  Piotr Fusik
+// Copyright (C) 2011-2020  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -43,7 +43,7 @@ public abstract class GenBase : CiVisitor
 		return w;
 	}
 
-	void StartLine()
+	protected virtual void StartLine()
 	{
 		if (this.AtLineStart) {
 			for (int i = 0; i < this.Indent; i++)
@@ -399,7 +399,7 @@ public abstract class GenBase : CiVisitor
 		expr.Accept(this, parent);
 	}
 
-	void WriteCoerced(CiType type, CiCondExpr expr, CiPriority parent)
+	protected virtual void WriteCoerced(CiType type, CiCondExpr expr, CiPriority parent)
 	{
 		if (parent > CiPriority.Cond)
 			Write('(');
@@ -619,7 +619,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	CiExpr Write(CiBinaryExpr expr, bool parentheses, CiPriority left, string op, CiPriority right)
+	protected CiExpr Write(CiBinaryExpr expr, bool parentheses, CiPriority left, string op, CiPriority right)
 	{
 		if (parentheses)
 			Write('(');
@@ -631,7 +631,7 @@ public abstract class GenBase : CiVisitor
 		return expr;
 	}
 
-	CiExpr Write(CiBinaryExpr expr, CiPriority parent, CiPriority child, string op)
+	protected CiExpr Write(CiBinaryExpr expr, CiPriority parent, CiPriority child, string op)
 	{
 		return Write(expr, parent > child, child, op, child);
 	}
@@ -949,6 +949,19 @@ public abstract class GenBase : CiVisitor
 		statement.Cond.Accept(this, CiPriority.Statement);
 		Write(')');
 		WriteChild(statement.Body);
+	}
+
+	protected void WriteParameters(CiMethod method, bool first, bool defaultArguments)
+	{
+		foreach (CiVar param in method.Parameters) {
+			if (!first)
+				Write(", ");
+			first = false;
+			WriteTypeAndName(param);
+			if (defaultArguments)
+				WriteVarInit(param);
+		}
+		Write(')');
 	}
 
 	protected void WriteConstructorBody(CiClass klass)

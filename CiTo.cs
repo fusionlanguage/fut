@@ -1,6 +1,6 @@
 // CiTo.cs - Ci translator
 //
-// Copyright (C) 2011-2019  Piotr Fusik
+// Copyright (C) 2011-2020  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -107,6 +107,7 @@ public static class CiTo
 		case "cs": gen = new GenCs(); break;
 		case "java": gen = new GenJava(); break;
 		case "js": gen = new GenJs(); break;
+		case "py": gen = new GenPy(); break;
 		default: throw new ArgumentException("Unknown language: " + lang);
 		}
 		gen.Namespace = namespace_;

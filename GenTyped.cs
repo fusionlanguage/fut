@@ -1,6 +1,6 @@
 // GenTyped.cs - C/C++/C#/Java code generator
 //
-// Copyright (C) 2011-2019  Piotr Fusik
+// Copyright (C) 2011-2020  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -323,19 +323,6 @@ public abstract class GenTyped : GenBase
 	{
 		return klass.Constructor != null
 			|| klass.Fields.Any(field => HasInitCode(field));
-	}
-
-	protected void WriteParameters(CiMethod method, bool first, bool defaultArguments)
-	{
-		foreach (CiVar param in method.Parameters) {
-			if (!first)
-				Write(", ");
-			first = false;
-			WriteTypeAndName(param);
-			if (defaultArguments)
-				WriteVarInit(param);
-		}
-		Write(')');
 	}
 
 	protected void WriteParameters(CiMethod method, bool defaultArguments)

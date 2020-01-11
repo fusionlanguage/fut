@@ -17,7 +17,7 @@ MAKEFLAGS = -r
 
 all: cito.exe
 
-cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs CiTo.cs)
+cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs GenPy.cs CiTo.cs)
 	$(CSC) -out:$@ $^
 
 test: test-c test-cpp test-cs test-java test-js test-error
@@ -38,6 +38,9 @@ test-java: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci))
 test-js: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
 	perl test/summary.pl $^
 
+test-py: $(patsubst test/%.ci, test/bin/%/py.txt, $(wildcard test/*.ci))
+	perl test/summary.pl $^
+
 test-error: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
 	perl test/summary.pl $^
 
@@ -56,6 +59,9 @@ test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
 test/bin/%/js.txt: test/bin/%/Run.js
 	-node $< >$@
 
+test/bin/%/py.txt: test/Runner.py test/bin/%/Test.py
+	-PYTHONPATH=$(@D) python $< >$@
+
 test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
 	-$(CC) -o $@ -I $(<D) $^
 
@@ -71,19 +77,7 @@ test/bin/%/Test.class: test/bin/%/Test.java
 test/bin/%/Run.js: test/bin/%/Test.js
 	-cat $< test/Runner.js >$@
 
-test/bin/%/Test.c: test/%.ci cito.exe
-	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
-
-test/bin/%/Test.cpp: test/%.ci cito.exe
-	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
-
-test/bin/%/Test.cs: test/%.ci cito.exe
-	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
-
-test/bin/%/Test.java: test/%.ci cito.exe
-	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
-
-test/bin/%/Test.js: test/%.ci cito.exe
+test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.py: test/%.ci cito.exe
 	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
 
 .PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js

@@ -497,18 +497,7 @@ public class GenJs : GenBase
 			Write("prototype.");
 		WriteCamelCase(method.Name);
 		Write(" = function(");
-		bool first = true;
-		foreach (CiVar param in method.Parameters) {
-			if (!first)
-				Write(", ");
-			first = false;
-			Write(param.Name);
-			if (param.Value != null) {
-				Write(" = ");
-				param.Value.Accept(this, CiPriority.Statement);
-			}
-		}
-		Write(')');
+		WriteParameters(method, true, true);
 		WriteBody(method);
 	}
 
