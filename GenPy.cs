@@ -126,6 +126,15 @@ public class GenPy : GenBase
 		Write(')');
 	}
 
+	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	{
+		if (expr.Symbol == CiSystem.CollectionCount) {
+			WriteStringLength(expr.Left);
+			return expr;
+		}
+		return base.Visit(expr, parent);
+	}
+
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
@@ -175,18 +184,38 @@ public class GenPy : GenBase
 		Write("()");
 	}
 
+	void WriteDefaultValue(CiType type)
+	{
+		if (type is CiNumericType)
+			Write('0');
+		else if (type == CiSystem.BoolType)
+			Write("False");
+		else if (type == CiSystem.StringStorageType)
+			Write("\"\"");
+		else
+			Write("None");
+	}
+
+	void WriteNewArray(CiType elementType, CiExpr value, CiExpr lengthExpr)
+	{
+		Write("[ ");
+		if (value == null)
+			WriteDefaultValue(elementType); // TODO: storage
+		else
+			value.Accept(this, CiPriority.Statement);
+		Write(" ] * ");
+		lengthExpr.Accept(this, CiPriority.Mul);
+	}
+
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
-		Write("[ 0 ] * "); // TODO
-		lengthExpr.Accept(this, CiPriority.Mul);
+		WriteNewArray(elementType, null, lengthExpr);
 	}
 
 	protected override void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
 	{
-		Write(" = [ ");
-		value.Accept(this, CiPriority.Statement);
-		Write(" ] * ");
-		array.LengthExpr.Accept(this, CiPriority.Mul);
+		Write(" = ");
+		WriteNewArray(array.ElementType, null, array.LengthExpr);
 	}
 
 	protected override void WriteListStorageInit(CiListType list)
@@ -206,7 +235,43 @@ public class GenPy : GenBase
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (method == CiSystem.ConsoleWriteLine) {
+		if (method == CiSystem.ListRemoveAt) {
+			Write("del ");
+			obj.Accept(this, CiPriority.Primary);
+			Write('[');
+			args[0].Accept(this, CiPriority.Statement);
+			Write(']');
+		}
+		else if (method == CiSystem.ListRemoveRange) {
+			Write("del ");
+			obj.Accept(this, CiPriority.Primary);
+			Write('[');
+			args[0].Accept(this, CiPriority.Statement);
+			Write(':');
+			args[0].Accept(this, CiPriority.Add); // TODO: side effect
+			Write(" + ");
+			args[1].Accept(this, CiPriority.Add);
+			Write(']');
+		}
+		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+			args[1].Accept(this, CiPriority.Primary);
+			Write('[');
+			args[2].Accept(this, CiPriority.Statement);
+			Write(':');
+			args[2].Accept(this, CiPriority.Add); // TODO: side effect
+			Write(" + ");
+			args[3].Accept(this, CiPriority.Add);
+			Write("] = ");
+			obj.Accept(this, CiPriority.Primary);
+			Write('[');
+			args[0].Accept(this, CiPriority.Statement);
+			Write(':');
+			args[0].Accept(this, CiPriority.Add); // TODO: side effect
+			Write(" + ");
+			args[3].Accept(this, CiPriority.Add); // TODO: side effect
+			Write(']');
+		}
+		else if (method == CiSystem.ConsoleWriteLine) {
 			Write("print(");
 			if (args.Length == 1)
 				args[0].Accept(this, CiPriority.Statement);
@@ -245,6 +310,8 @@ public class GenPy : GenBase
 				Write("startswith");
 			else if (method == CiSystem.StringEndsWith)
 				Write("endswith");
+			else if (obj.Type is CiListType list && method.Name == "Add")
+				Write("append");
 			else
 				WriteName(method);
 			WriteArgsInParentheses(method, args);
