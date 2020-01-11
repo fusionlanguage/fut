@@ -217,10 +217,36 @@ public class GenPy : GenBase
 			}
 			Write(')');
 		}
+		else if (method == CiSystem.StringContains) {
+			args[0].Accept(this, CiPriority.Primary);
+			Write(" in ");
+			obj.Accept(this, CiPriority.Primary);
+		}
+		else if (method == CiSystem.StringSubstring) {
+			obj.Accept(this, CiPriority.Primary);
+			Write('[');
+			args[0].Accept(this, CiPriority.Statement);
+			Write(':');
+			if (args.Length == 2) {
+				args[0].Accept(this, CiPriority.Add); // TODO: side effect
+				Write(" + ");
+				args[1].Accept(this, CiPriority.Add);
+			}
+			Write(']');
+		}
 		else {
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
-			WriteName(method);
+			if (method == CiSystem.StringIndexOf)
+				Write("find");
+			else if (method == CiSystem.StringLastIndexOf)
+				Write("rfind");
+			else if (method == CiSystem.StringStartsWith)
+				Write("startswith");
+			else if (method == CiSystem.StringEndsWith)
+				Write("endswith");
+			else
+				WriteName(method);
 			WriteArgsInParentheses(method, args);
 		}
 	}
