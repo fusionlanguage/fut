@@ -77,7 +77,28 @@ public class GenPy : GenBase
 
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
-		Write("TODO");
+		Write("f\"");
+		foreach (CiInterpolatedPart part in expr.Parts) {
+			foreach (char c in part.Prefix) {
+				if (c == '{')
+					Write("{{");
+				else
+					WriteEscapedChar(c);
+			}
+			if (part.Argument != null) {
+				Write('{');
+				part.Argument.Accept(this, CiPriority.Statement);
+				if (part.WidthExpr != null) {
+					Write(',');
+					Write(part.Width);
+				}
+				if (part.Format != ' ') {
+					// TODO
+				}
+				Write('}');
+			}
+		}
+		Write('"');
 		return expr;
 	}
 
