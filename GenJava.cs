@@ -162,7 +162,7 @@ public class GenJava : GenTyped
 
 	void Write(string name, CiSortedDictionaryType dict)
 	{
-		Write("java.util.");
+		Include("java.util." + name);
 		Write(name);
 		Write('<');
 		Write(dict.KeyType, false, true);
@@ -189,7 +189,8 @@ public class GenJava : GenTyped
 				: klass ? "Integer" : "int");
 			break;
 		case CiListType list:
-			Write("final java.util.ArrayList<");
+			Include("java.util.ArrayList");
+			Write("final ArrayList<");
 			Write(list.ElementType, false, true);
 			Write('>');
 			break;
@@ -218,7 +219,8 @@ public class GenJava : GenTyped
 
 	protected override void WriteListStorageInit(CiListType list)
 	{
-		Write(" = new java.util.ArrayList<");
+		Include("java.util.ArrayList");
+		Write(" = new ArrayList<");
 		Write(list.ElementType, false, true);
 		Write(">()");
 	}
@@ -344,7 +346,8 @@ public class GenJava : GenTyped
 			Write(')');
 		}
 		else if (obj.Type is CiArrayStorageType array && method.Name == "Fill") {
-			Write("java.util.Arrays.fill(");
+			Include("java.util.Arrays");
+			Write("Arrays.fill(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
 			if (array.IsByteArray()) {
@@ -357,7 +360,8 @@ public class GenJava : GenTyped
 		}
 		else if (method == CiSystem.ArraySort) {
 			if (obj.Type is CiArrayStorageType) {
-				Write("java.util.Arrays.sort(");
+				Include("java.util.Arrays");
+				Write("Arrays.sort(");
 				obj.Accept(this, CiPriority.Statement);
 				Write(')');
 			}
@@ -413,9 +417,10 @@ public class GenJava : GenTyped
 		else if (method == CiSystem.ConsoleWriteLine)
 			WriteConsoleWrite(obj, method, args, true);
 		else if (method == CiSystem.UTF8GetString) {
+			Include("java.nio.charset.StandardCharsets");
 			Write("new String(");
 			WriteArgs(method, args);
-			Write(", java.nio.charset.StandardCharsets.UTF_8)");
+			Write(", StandardCharsets.UTF_8)");
 		}
 		else if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "Log2") {
 			if (parent > CiPriority.Mul)
@@ -557,27 +562,14 @@ public class GenJava : GenTyped
 			Write(this.Namespace);
 			WriteLine(';');
 		}
-		WriteLine();
-	}
-
-	void CreateJavaFile(CiContainerType type, CiProgram program)
-	{
-		CreateJavaFile(type.Name);
-		if (program != null)
-			WriteTopLevelNatives(program);
-		Write(type.Documentation);
-		WritePublic(type);
-	}
-
-	void CloseJavaFile()
-	{
-		CloseBlock();
-		CloseFile();
 	}
 
 	void Write(CiEnum enu)
 	{
-		CreateJavaFile(enu, null);
+		CreateJavaFile(enu.Name);
+		WriteLine();
+		Write(enu.Documentation);
+		WritePublic(enu);
 		Write("interface ");
 		WriteLine(enu.Name);
 		OpenBlock();
@@ -594,7 +586,8 @@ public class GenJava : GenTyped
 			WriteLine(';');
 			i++;
 		}
-		CloseJavaFile();
+		CloseBlock();
+		CloseFile();
 	}
 
 	void WriteSignature(CiMethod method, int paramCount)
@@ -684,7 +677,11 @@ public class GenJava : GenTyped
 
 	void Write(CiClass klass, CiProgram program)
 	{
-		CreateJavaFile(klass, program);
+		this.Includes = new SortedSet<string>();
+		OpenStringWriter();
+
+		Write(klass.Documentation);
+		WritePublic(klass);
 		switch (klass.CallType) {
 		case CiCallType.Normal:
 			break;
@@ -734,19 +731,28 @@ public class GenJava : GenTyped
 		}
 
 		WriteConsts(klass.ConstArrays);
+		CloseBlock();
 
-		CloseJavaFile();
+		CreateJavaFile(klass.Name);
+		WriteTopLevelNatives(program);
+		WriteIncludes("import ", ";");
+		WriteLine();
+		CloseStringWriter();
+		CloseFile();
 	}
 
 	void WriteResources()
 	{
 		CreateJavaFile("CiResource");
+		WriteLine();
 		Write("class CiResource");
 		WriteLine();
 		OpenBlock();
 		WriteLine("static byte[] getByteArray(String name, int length)");
 		OpenBlock();
-		Write("java.io.DataInputStream dis = new java.io.DataInputStream(");
+		Include("java.io.DataInputStream");
+		Include("java.io.IOException");
+		Write("DataInputStream dis = new DataInputStream(");
 		WriteLine("CiResource.class.getResourceAsStream(name));");
 		WriteLine("byte[] result = new byte[length];");
 		Write("try ");
@@ -760,13 +766,14 @@ public class GenJava : GenTyped
 		WriteLine("dis.close();");
 		CloseBlock();
 		CloseBlock();
-		Write("catch (java.io.IOException e) ");
+		Write("catch (IOException e) ");
 		OpenBlock();
 		WriteLine("throw new RuntimeException();");
 		CloseBlock();
 		WriteLine("return result;");
 		CloseBlock();
-		CloseJavaFile();
+		CloseBlock();
+		CloseFile();
 	}
 
 	public override void Write(CiProgram program)
