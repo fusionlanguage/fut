@@ -151,7 +151,8 @@ public class GenCs : GenTyped
 
 	void Write(CiSortedDictionaryType dict)
 	{
-		Write("System.Collections.Generic.SortedDictionary<");
+		Include("System.Collections.Generic");
+		Write("SortedDictionary<");
 		Write(dict.KeyType, false);
 		Write(", ");
 		Write(dict.ValueType, false);
@@ -171,7 +172,8 @@ public class GenCs : GenTyped
 			Write("string");
 			break;
 		case CiListType list:
-			Write("System.Collections.Generic.List<");
+			Include("System.Collections.Generic");
+			Write("List<");
 			Write(list.ElementType, false);
 			Write('>');
 			break;
@@ -190,7 +192,8 @@ public class GenCs : GenTyped
 
 	protected override void WriteListStorageInit(CiListType list)
 	{
-		Write(" = new System.Collections.Generic.List<");
+		Include("System.Collections.Generic");
+		Write(" = new List<");
 		Write(list.ElementType, false);
 		Write(">()");
 	}
@@ -293,7 +296,8 @@ public class GenCs : GenTyped
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (obj.Type is CiArrayType && !(obj.Type is CiListType) && method.Name == "CopyTo") {
-			Write("System.Array.Copy(");
+			Include("System");
+			Write("Array.Copy(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
 			WriteArgs(method, args);
@@ -302,7 +306,8 @@ public class GenCs : GenTyped
 		else if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
 			if (!(args[0] is CiLiteral literal) || !literal.IsDefaultValue)
 				throw new NotImplementedException("Only null, zero and false supported");
-			Write("System.Array.Clear(");
+			Include("System");
+			Write("Array.Clear(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", 0, ");
 			Write(((CiArrayStorageType) obj.Type).Length);
@@ -310,7 +315,8 @@ public class GenCs : GenTyped
 		}
 		else if (method == CiSystem.ArraySort) {
 			if (obj.Type is CiArrayStorageType) {
-				Write("System.Array.Sort(");
+				Include("System");
+				Write("Array.Sort(");
 				obj.Accept(this, CiPriority.Statement);
 				Write(')');
 			}
@@ -337,12 +343,13 @@ public class GenCs : GenTyped
 			Write(')');
 		}
 		else if (method == CiSystem.UTF8GetString) {
-			Write("System.Text.Encoding.UTF8.GetString");
+			Include("System.Text");
+			Write("Encoding.UTF8.GetString");
 			WriteArgsInParentheses(method, args);
 		}
 		else {
 			if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine || obj.IsReferenceTo(CiSystem.MathClass))
-				Write("System.");
+				Include("System");
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
 			Write(method.Name);
@@ -402,7 +409,8 @@ public class GenCs : GenTyped
 
 	public override void Visit(CiThrow statement)
 	{
-		Write("throw new System.Exception(");
+		Include("System");
+		Write("throw new Exception(");
 		statement.Message.Accept(this, CiPriority.Statement);
 		WriteLine(");");
 	}
@@ -411,8 +419,10 @@ public class GenCs : GenTyped
 	{
 		WriteLine();
 		Write(enu.Documentation);
-		if (enu.IsFlags)
-			WriteLine("[System.Flags]");
+		if (enu.IsFlags) {
+			Include("System");
+			WriteLine("[Flags]");
+		}
 		WritePublic(enu);
 		Write("enum ");
 		WriteLine(enu.Name);
@@ -517,7 +527,8 @@ public class GenCs : GenTyped
 
 	public override void Write(CiProgram program)
 	{
-		CreateFile(this.OutputFile);
+		this.Includes = new SortedSet<string>();
+		OpenStringWriter();
 		if (this.Namespace != null) {
 			Write("namespace ");
 			WriteLine(this.Namespace);
@@ -532,6 +543,10 @@ public class GenCs : GenTyped
 			WriteResources(program.Resources);
 		if (this.Namespace != null)
 			CloseBlock();
+
+		CreateFile(this.OutputFile);
+		WriteIncludes("using ", ";");
+		CloseStringWriter();
 		CloseFile();
 	}
 }

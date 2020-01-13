@@ -26,37 +26,13 @@ namespace Foxoft.Ci
 
 public abstract class GenCCpp : GenTyped
 {
-	StringWriter StringWriter;
-	protected SortedSet<string> Includes;
 	protected readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
-
-	protected void OpenStringWriter()
-	{
-		this.StringWriter = new StringWriter();
-		this.StringWriter.NewLine = "\n";
-		this.Writer = this.StringWriter;
-	}
-
-	protected void CloseStringWriter()
-	{
-		this.Writer.Write(this.StringWriter.GetStringBuilder());
-		this.StringWriter = null;
-	}
-
-	protected void Include(string name)
-	{
-		this.Includes.Add(name);
-	}
 
 	protected abstract void IncludeStdInt();
 
 	protected void WriteIncludes()
 	{
-		foreach (string name in this.Includes) {
-			Write("#include <");
-			Write(name);
-			WriteLine('>');
-		}
+		WriteIncludes("#include <", ">");
 	}
 
 	protected override void Write(TypeCode typeCode)

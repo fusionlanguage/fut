@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 
@@ -31,9 +32,11 @@ public abstract class GenBase : CiVisitor
 	public string Namespace;
 	public string OutputFile;
 	public TextWriterFactory CreateTextWriter = CreateFileWriter;
-	protected TextWriter Writer;
+	TextWriter Writer;
+	StringWriter StringWriter;
 	protected int Indent = 0;
 	protected bool AtLineStart = true;
+	protected SortedSet<string> Includes;
 	protected CiMethodBase CurrentMethod = null;
 
 	static TextWriter CreateFileWriter(string filename)
@@ -276,6 +279,33 @@ public abstract class GenBase : CiVisitor
 	protected void CloseFile()
 	{
 		this.Writer.Close();
+	}
+
+	protected void OpenStringWriter()
+	{
+		this.StringWriter = new StringWriter();
+		this.StringWriter.NewLine = "\n";
+		this.Writer = this.StringWriter;
+	}
+
+	protected void CloseStringWriter()
+	{
+		this.Writer.Write(this.StringWriter.GetStringBuilder());
+		this.StringWriter = null;
+	}
+
+	protected void Include(string name)
+	{
+		this.Includes.Add(name);
+	}
+
+	protected void WriteIncludes(string prefix, string suffix)
+	{
+		foreach (string name in this.Includes) {
+			Write(prefix);
+			Write(name);
+			WriteLine(suffix);
+		}
 	}
 
 	protected void WriteTopLevelNatives(CiProgram program)
