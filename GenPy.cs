@@ -376,9 +376,28 @@ public class GenPy : GenBase
 		WriteLine("break");
 	}
 
+	static bool IsForInRange(CiFor statement)
+	{
+		return statement.Init is CiVar iter
+			&& iter.Type is CiIntegerType
+			&& iter.Value != null
+			&& statement.Cond is CiBinaryExpr cond
+			&& cond.Op == CiToken.Less
+			&& cond.Left.IsReferenceTo(iter)
+			&& cond.Right is CiLiteral limit
+			&& statement.Advance is CiUnaryExpr adv
+			&& adv.Op == CiToken.Increment
+			&& adv.Inner.IsReferenceTo(iter);
+	}
+
 	public override void Visit(CiContinue statement)
 	{
-		// TODO: for
+		if (statement.Loop is CiFor loop
+		 && loop.Advance != null
+		 && !IsForInRange(loop)) {
+			loop.Advance.Accept(this, CiPriority.Statement);
+			WriteLine();
+		}
 		WriteLine("continue");
 	}
 
@@ -396,15 +415,8 @@ public class GenPy : GenBase
 	public override void Visit(CiFor statement)
 	{
 		if (statement.Init != null) {
-			if (statement.Init is CiVar iter
-			 && iter.Type is CiIntegerType
-			 && iter.Value != null
-			 && statement.Cond is CiBinaryExpr cond
-			 && cond.Op == CiToken.Less
-			 && cond.Left.IsReferenceTo(iter)
-			 && cond.Right is CiLiteral limit
-			 && statement.Advance is CiUnaryExpr adv
-			 && adv.Op == CiToken.Increment) {
+			if (IsForInRange(statement)) {
+				CiVar iter = (CiVar) statement.Init;
 				Write("for ");
 				WriteName(iter);
 				Write(" in range(");
@@ -412,6 +424,7 @@ public class GenPy : GenBase
 					iter.Value.Accept(this, CiPriority.Statement);
 					Write(", ");
 				}
+				CiLiteral limit = (CiLiteral) ((CiBinaryExpr) statement.Cond).Right;
 				Write((long) limit.Value);
 				Write(')');
 				WriteChild(statement.Body);
