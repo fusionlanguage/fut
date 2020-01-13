@@ -225,7 +225,8 @@ public class GenPy : GenBase
 
 	protected override void WriteSortedDictionaryStorageInit(CiSortedDictionaryType dict)
 	{
-		Write(" = SortedDict()");
+		Include("sortedcontainers");
+		Write(" = sortedcontainers.SortedDict()");
 	}
 
 	protected override void WriteInitCode(CiNamedValue def)
