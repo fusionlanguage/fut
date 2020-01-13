@@ -1,6 +1,6 @@
 // GenCpp.cs - C++ code generator
 //
-// Copyright (C) 2011-2019  Piotr Fusik
+// Copyright (C) 2011-2020  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -294,10 +294,7 @@ public class GenCpp : GenCCpp
 	void WriteConsoleWrite(CiExpr obj, CiExpr[] args, bool newLine)
 	{
 		Include("iostream");
-		if (obj is CiSymbolReference symbol && symbol.Symbol == CiSystem.ConsoleError)
-			Write("std::cerr");
-		else
-			Write("std::cout");
+		Write(obj.IsReferenceTo(CiSystem.ConsoleError) ? "std::cerr" : "std::cout");
 		if (args.Length == 1) {
 			if (args[0] is CiInterpolatedString interpolated) {
 				bool uppercase = false;
@@ -391,7 +388,7 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (IsMathReference(obj)) {
+		if (obj.IsReferenceTo(CiSystem.MathClass)) {
 			Include("cmath");
 			Write("std::");
 			WriteMathCall(method, args);

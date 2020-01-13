@@ -302,8 +302,7 @@ public abstract class GenTyped : GenBase
 		else if (type is CiIntegerType && expr.Type == CiSystem.FloatIntType) {
 			if (expr is CiBinaryExpr call
 			 && call.Op == CiToken.LeftParenthesis
-			 && call.Left is CiSymbolReference symbol
-			 && symbol.Symbol == CiSystem.MathTruncate)
+			 && call.Left.IsReferenceTo(CiSystem.MathTruncate))
 				WriteStaticCast(type, call.RightCollection[0]);
 			else
 				WriteStaticCast(type, expr);

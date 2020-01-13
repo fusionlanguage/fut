@@ -275,7 +275,7 @@ public class GenPy : GenBase
 			Write("print(");
 			if (args.Length == 1)
 				args[0].Accept(this, CiPriority.Statement);
-			if (obj is CiSymbolReference symbol && symbol.Symbol == CiSystem.ConsoleError) {
+			if (obj.IsReferenceTo(CiSystem.ConsoleError)) {
 				if (args.Length == 1)
 					Write(", ");
 				Write("file=sys.stderr");
@@ -401,8 +401,7 @@ public class GenPy : GenBase
 			 && iter.Value != null
 			 && statement.Cond is CiBinaryExpr cond
 			 && cond.Op == CiToken.Less
-			 && cond.Left is CiSymbolReference symbol
-			 && symbol.Symbol == iter
+			 && cond.Left.IsReferenceTo(iter)
 			 && cond.Right is CiLiteral limit
 			 && statement.Advance is CiUnaryExpr adv
 			 && adv.Op == CiToken.Increment) {

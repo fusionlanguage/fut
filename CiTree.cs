@@ -1,6 +1,6 @@
 // CiTree.cs - Ci object model
 //
-// Copyright (C) 2011-2019  Piotr Fusik
+// Copyright (C) 2011-2020  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -111,6 +111,7 @@ public abstract class CiExpr : CiStatement
 	}
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 	public CiLiteral ToLiteral(object value) => new CiLiteral(value) { Line = this.Line };
+	public virtual bool IsReferenceTo(CiSymbol symbol) => false;
 }
 
 public class CiCollection : CiExpr
@@ -399,6 +400,7 @@ public class CiSymbolReference : CiExpr
 	public string Name;
 	public CiSymbol Symbol;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
+	public override bool IsReferenceTo(CiSymbol symbol) => this.Symbol == symbol;
 	public override string ToString() => this.Left != null ? this.Left + "." + this.Name : this.Name;
 }
 

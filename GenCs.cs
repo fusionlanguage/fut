@@ -1,6 +1,6 @@
 // GenCs.cs - C# code generator
 //
-// Copyright (C) 2011-2019  Piotr Fusik
+// Copyright (C) 2011-2020  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -341,7 +341,7 @@ public class GenCs : GenTyped
 			WriteArgsInParentheses(method, args);
 		}
 		else {
-			if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine || IsMathReference(obj))
+			if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine || obj.IsReferenceTo(CiSystem.MathClass))
 				Write("System.");
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');

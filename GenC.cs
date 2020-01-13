@@ -1,6 +1,6 @@
 // GenC.cs - C code generator
 //
-// Copyright (C) 2011-2019  Piotr Fusik
+// Copyright (C) 2011-2020  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -536,7 +536,7 @@ public class GenC : GenCCpp
 
 	void WriteConsoleWrite(CiExpr obj, CiExpr[] args, bool newLine)
 	{
-		bool error = obj is CiSymbolReference symbol && symbol.Symbol == CiSystem.ConsoleError;
+		bool error = obj.IsReferenceTo(CiSystem.ConsoleError);
 		Include("stdio.h");
 		if (args.Length == 0)
 			Write(error ? "putc('\\n', stderr)" : "putchar('\\n')");
@@ -598,7 +598,7 @@ public class GenC : GenCCpp
 			WriteConsoleWrite(obj, args, false);
 		else if (method == CiSystem.ConsoleWriteLine)
 			WriteConsoleWrite(obj, args, true);
-		else if (IsMathReference(obj)) {
+		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
 			Include("math.h");
 			WriteMathCall(method, args);
 		}

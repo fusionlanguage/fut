@@ -1,6 +1,6 @@
 // GenJs.cs - JavaScript code generator
 //
-// Copyright (C) 2011-2019  Piotr Fusik
+// Copyright (C) 2011-2020  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -363,10 +363,7 @@ public class GenJs : GenBase
 		}
 		else if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine) {
 			// XXX: Console.Write same as Console.WriteLine
-			if (obj is CiSymbolReference symbol && symbol.Symbol == CiSystem.ConsoleError)
-				Write("console.error");
-			else
-				Write("console.log");
+			Write(obj.IsReferenceTo(CiSystem.ConsoleError) ? "console.error" : "console.log");
 			if (args.Length == 0)
 				Write("(\"\")");
 			else
@@ -395,7 +392,7 @@ public class GenJs : GenBase
 			Write("Ci.utf8GetString");
 			WriteArgsInParentheses(method, args);
 		}
-		else if (IsMathReference(obj) && method.Name == "FusedMultiplyAdd") {
+		else if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "FusedMultiplyAdd") {
 			if (parent > CiPriority.Add)
 				Write('(');
 			args[0].Accept(this, CiPriority.Mul);
@@ -409,9 +406,9 @@ public class GenJs : GenBase
 		else {
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
-			if (IsMathReference(obj) && method.Name == "Ceiling")
+			if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "Ceiling")
 				Write("ceil");
-			else if (IsMathReference(obj) && method.Name == "Truncate")
+			else if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "Truncate")
 				Write("trunc");
 			else if (method == CiSystem.StringContains)
 				Write("includes");

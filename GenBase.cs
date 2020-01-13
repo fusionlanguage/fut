@@ -676,11 +676,6 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteCharAt(CiBinaryExpr expr);
 
-	protected static bool IsMathReference(CiExpr expr)
-	{
-		return expr is CiSymbolReference symbol && symbol.Symbol == CiSystem.MathClass;
-	}
-
 	protected abstract void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent);
 
 	protected virtual void WriteNearCall(CiMethod method, CiExpr[] args)

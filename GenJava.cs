@@ -1,6 +1,6 @@
 // GenJava.cs - Java code generator
 //
-// Copyright (C) 2011-2019  Piotr Fusik
+// Copyright (C) 2011-2020  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -309,10 +309,7 @@ public class GenJava : GenTyped
 
 	void WriteConsoleWrite(CiExpr obj, CiMethod method, CiExpr[] args, bool newLine)
 	{
-		if (obj is CiSymbolReference symbol && symbol.Symbol == CiSystem.ConsoleError)
-			Write("System.err");
-		else
-			Write("System.out");
+		Write(obj.IsReferenceTo(CiSystem.ConsoleError) ? "System.err" : "System.out");
 		if (args.Length == 1 && args[0] is CiInterpolatedString interpolated) {
 			Write(".format(");
 			WritePrintf(interpolated, newLine);
@@ -420,7 +417,7 @@ public class GenJava : GenTyped
 			WriteArgs(method, args);
 			Write(", java.nio.charset.StandardCharsets.UTF_8)");
 		}
-		else if (IsMathReference(obj) && method.Name == "Log2") {
+		else if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "Log2") {
 			if (parent > CiPriority.Mul)
 				Write('(');
 			Write("Math.log(");
@@ -434,9 +431,9 @@ public class GenJava : GenTyped
 			Write('.');
 			if (method == CiSystem.ListRemoveAt)
 				Write("remove");
-			else if (IsMathReference(obj) && method.Name == "Ceiling")
+			else if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "Ceiling")
 				Write("ceil");
-			else if (IsMathReference(obj) && method.Name == "FusedMultiplyAdd")
+			else if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "FusedMultiplyAdd")
 				Write("fma");
 			else
 				WriteCamelCase(method.Name);
