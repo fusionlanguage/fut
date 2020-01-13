@@ -300,7 +300,12 @@ public class GenPy : GenBase
 			Write(']');
 		}
 		else {
-			obj.Accept(this, CiPriority.Primary);
+			if (obj.IsReferenceTo(CiSystem.MathClass)) {
+				Include("math");
+				Write("math");
+			}
+			else
+				obj.Accept(this, CiPriority.Primary);
 			Write('.');
 			if (method == CiSystem.StringIndexOf)
 				Write("find");
@@ -312,6 +317,10 @@ public class GenPy : GenBase
 				Write("endswith");
 			else if (obj.Type is CiListType list && method.Name == "Add")
 				Write("append");
+			else if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "Ceiling")
+				Write("ceil");
+			else if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "Truncate")
+				Write("trunc");
 			else
 				WriteName(method);
 			WriteArgsInParentheses(method, args);
@@ -539,11 +548,15 @@ public class GenPy : GenBase
 
 	public override void Write(CiProgram program)
 	{
-		CreateFile(this.OutputFile);
-//		foreach (CiEnum enu in program.OfType<CiEnum>())
-//			Write(enu);
+		this.Includes = new SortedSet<string>();
+		OpenStringWriter();
 		foreach (CiClass klass in program.Classes)
 			Write(klass);
+		CreateFile(this.OutputFile);
+		WriteIncludes("import ", "");
+//		foreach (CiEnum enu in program.OfType<CiEnum>())
+//			Write(enu);
+		CloseStringWriter();
 		CloseFile();
 	}
 }
