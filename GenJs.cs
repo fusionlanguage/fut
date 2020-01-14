@@ -521,7 +521,7 @@ public class GenJs : GenBase
 		WriteLine("()");
 		OpenBlock();
 		foreach (CiField field in klass.Fields) {
-			if (field.Value != null || field.Type is CiClass || field.Type is CiArrayStorageType) {
+			if (field.Value != null || field.Type.IsFinal) {
 				Write("this.");
 				base.WriteVar(field);
 				WriteLine(';');

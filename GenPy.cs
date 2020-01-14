@@ -196,6 +196,14 @@ public class GenPy : GenBase
 			Write("None");
 	}
 
+	public override CiExpr Visit(CiCollection expr, CiPriority parent)
+	{
+		Write("[ ");
+		WriteCoercedLiterals(null, expr.Items);
+		Write(" ]");
+		return expr;
+	}
+
 	static bool IsByte(CiType type)
 		=> type is CiRangeType range && range.Min >= 0 && range.Max <= byte.MaxValue;
 
@@ -537,10 +545,24 @@ public class GenPy : GenBase
 		WriteChild(statement.Body);
 	}
 
+	void WriteConsts(IEnumerable<CiConst> consts)
+	{
+		foreach (CiConst konst in consts) {
+			if (konst.Visibility != CiVisibility.Private || konst.Type is CiArrayStorageType) {
+				WriteLine();
+				//TODO: Write(konst.Documentation);
+				base.WriteVar(konst);
+				WriteLine();
+			}
+		}
+	}
+
 	void Write(CiMethod method)
 	{
 		if (method.CallType == CiCallType.Abstract)
 			return;
+		WriteLine();
+		//TODO: Write(method.Documentation);
 		Write("def ");
 		WriteLowercaseWithUnderscores(method.Name);
 		Write('(');
@@ -568,12 +590,24 @@ public class GenPy : GenBase
 			Write(')');
 		}
 		OpenChild();
-		if (klass.Constructor != null) {
+		WriteConsts(klass.Consts);
+		if (klass.Constructor != null
+		 || klass.Fields.Any(field => field.Value != null || field.Type.IsFinal)) {
 			Write("def __init__(self)");
-			WriteChild(klass.Constructor.Body);
+			OpenChild();
+			foreach (CiField field in klass.Fields) {
+				if (field.Value != null || field.Type.IsFinal) {
+					Write("self.");
+					WriteVar(field);
+					WriteLine();
+				}
+			}
+			WriteConstructorBody(klass);
+			CloseChild();
 		}
 		foreach (CiMethod method in klass.Methods)
 			Write(method);
+		WriteConsts(klass.ConstArrays);
 		CloseChild();
 	}
 
