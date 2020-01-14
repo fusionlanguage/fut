@@ -246,7 +246,24 @@ public class GenPy : GenBase
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (method == CiSystem.ListRemoveAt) {
+		if (method == CiSystem.StringContains) {
+			args[0].Accept(this, CiPriority.Primary);
+			Write(" in ");
+			obj.Accept(this, CiPriority.Primary);
+		}
+		if (method == CiSystem.StringSubstring) {
+			obj.Accept(this, CiPriority.Primary);
+			Write('[');
+			args[0].Accept(this, CiPriority.Statement);
+			Write(':');
+			if (args.Length == 2) {
+				args[0].Accept(this, CiPriority.Add); // TODO: side effect
+				Write(" + ");
+				args[1].Accept(this, CiPriority.Add);
+			}
+			Write(']');
+		}
+		else if (method == CiSystem.ListRemoveAt) {
 			Write("del ");
 			obj.Accept(this, CiPriority.Primary);
 			Write('[');
@@ -293,22 +310,15 @@ public class GenPy : GenBase
 			}
 			Write(')');
 		}
-		else if (method == CiSystem.StringContains) {
+		else if (method == CiSystem.UTF8GetString) {
 			args[0].Accept(this, CiPriority.Primary);
-			Write(" in ");
-			obj.Accept(this, CiPriority.Primary);
-		}
-		else if (method == CiSystem.StringSubstring) {
-			obj.Accept(this, CiPriority.Primary);
 			Write('[');
-			args[0].Accept(this, CiPriority.Statement);
+			args[1].Accept(this, CiPriority.Statement);
 			Write(':');
-			if (args.Length == 2) {
-				args[0].Accept(this, CiPriority.Add); // TODO: side effect
-				Write(" + ");
-				args[1].Accept(this, CiPriority.Add);
-			}
-			Write(']');
+			args[1].Accept(this, CiPriority.Add); // TODO: side effect
+			Write(" + ");
+			args[2].Accept(this, CiPriority.Add);
+			Write("].decode(\"utf-8\")");
 		}
 		else {
 			if (obj.IsReferenceTo(CiSystem.MathClass)) {
