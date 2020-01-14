@@ -15,8 +15,10 @@ public class Test
 	public static bool Run()
 	{
 		Inner()[2] a;
+		a[0].Foo = 40;
 		Test() t;
-		return a[0].Foo == 42 && a[1].Foo == 42
-			&& t.Field[0].Foo == 42 && t.Field[1].Foo == 42;
+		t.Field[0].Foo = 41;
+		return a[0].Foo == 40 && a[1].Foo == 42
+			&& t.Field[0].Foo == 41 && t.Field[1].Foo == 42;
 	}
 }

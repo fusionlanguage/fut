@@ -214,6 +214,13 @@ public class GenPy : GenBase
 			lengthExpr.Accept(this, CiPriority.Statement);
 			Write(')');
 		}
+		else if (elementType is CiClass klass || elementType is CiArrayStorageType) {
+			Write("[ ");
+			WriteNewStorage(elementType);
+			Write(" for i in range(");
+			lengthExpr.Accept(this, CiPriority.Statement);
+			Write(") ]");
+		}
 		else {
 			Write("[ ");
 			if (value == null)
