@@ -244,6 +244,23 @@ public class GenPy : GenBase
 		// TODO
 	}
 
+	void WriteConsoleWrite(CiExpr obj, CiExpr[] args, bool newLine)
+	{
+		Write("print(");
+		if (args.Length == 1) {
+			args[0].Accept(this, CiPriority.Statement);
+			if (!newLine)
+				Write(", end=\"\"");
+		}
+		if (obj.IsReferenceTo(CiSystem.ConsoleError)) {
+			if (args.Length == 1)
+				Write(", ");
+			Include("sys");
+			Write("file=sys.stderr");
+		}
+		Write(')');
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (method == CiSystem.StringContains) {
@@ -299,17 +316,10 @@ public class GenPy : GenBase
 			args[3].Accept(this, CiPriority.Add); // TODO: side effect
 			Write(']');
 		}
-		else if (method == CiSystem.ConsoleWriteLine) {
-			Write("print(");
-			if (args.Length == 1)
-				args[0].Accept(this, CiPriority.Statement);
-			if (obj.IsReferenceTo(CiSystem.ConsoleError)) {
-				if (args.Length == 1)
-					Write(", ");
-				Write("file=sys.stderr");
-			}
-			Write(')');
-		}
+		else if (method == CiSystem.ConsoleWrite)
+			WriteConsoleWrite(obj, args, false);
+		else if (method == CiSystem.ConsoleWriteLine)
+			WriteConsoleWrite(obj, args, true);
 		else if (method == CiSystem.UTF8GetString) {
 			args[0].Accept(this, CiPriority.Primary);
 			Write('[');
