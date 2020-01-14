@@ -184,6 +184,17 @@ public class GenPy : GenBase
 		Write("()");
 	}
 
+	public override CiExpr Visit(CiCollection expr, CiPriority parent)
+	{
+		Write("[ ");
+		WriteCoercedLiterals(null, expr.Items);
+		Write(" ]");
+		return expr;
+	}
+
+	static bool IsByte(CiType type)
+		=> type is CiRangeType range && range.Min >= 0 && range.Max <= byte.MaxValue;
+
 	void WriteDefaultValue(CiType type)
 	{
 		if (type is CiNumericType)
@@ -195,17 +206,6 @@ public class GenPy : GenBase
 		else
 			Write("None");
 	}
-
-	public override CiExpr Visit(CiCollection expr, CiPriority parent)
-	{
-		Write("[ ");
-		WriteCoercedLiterals(null, expr.Items);
-		Write(" ]");
-		return expr;
-	}
-
-	static bool IsByte(CiType type)
-		=> type is CiRangeType range && range.Min >= 0 && range.Max <= byte.MaxValue;
 
 	void WriteNewArray(CiType elementType, CiExpr value, CiExpr lengthExpr)
 	{
@@ -249,7 +249,6 @@ public class GenPy : GenBase
 
 	protected override void WriteInitCode(CiNamedValue def)
 	{
-		// TODO
 	}
 
 	void WriteConsoleWrite(CiExpr obj, CiExpr[] args, bool newLine)
@@ -381,10 +380,10 @@ public class GenPy : GenBase
 
 	public override void Visit(CiExpr statement)
 	{
-		statement.Accept(this, CiPriority.Statement);
-		WriteLine();
-		if (statement is CiVar def)
-			WriteInitCode(def);
+		if (!(statement is CiVar def) || def.Value != null || def.Type.IsFinal) {
+			statement.Accept(this, CiPriority.Statement);
+			WriteLine();
+		}
 	}
 
 	public override void Visit(CiBlock statement)
