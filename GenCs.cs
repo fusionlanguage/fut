@@ -446,6 +446,8 @@ public class GenCs : GenTyped
 	void WriteConsts(IEnumerable<CiConst> consts)
 	{
 		foreach (CiConst konst in consts) {
+			WriteLine();
+			Write(konst.Documentation);
 			Write(konst.Visibility);
 			if (konst.Type is CiArrayStorageType)
 				Write("static readonly ");
