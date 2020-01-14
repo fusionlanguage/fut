@@ -282,7 +282,7 @@ public class GenPy : GenBase
 			Write(" in ");
 			obj.Accept(this, CiPriority.Primary);
 		}
-		if (method == CiSystem.StringSubstring) {
+		else if (method == CiSystem.StringSubstring) {
 			obj.Accept(this, CiPriority.Primary);
 			Write('[');
 			args[0].Accept(this, CiPriority.Statement);
