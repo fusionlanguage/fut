@@ -551,6 +551,30 @@ public class GenPy : GenBase
 		WriteChild(statement.Body);
 	}
 
+	void Write(CiEnum enu)
+	{
+		Include("enum");
+		WriteLine();
+		//TODO: Write(enu.Documentation);
+		Write("class ");
+		Write(enu.Name);
+		Write("(enum.Enum)");
+		OpenChild();
+		int i = 1;
+		foreach (CiConst konst in enu) {
+			//TODO: Write(konst.Documentation);
+			WriteUppercaseWithUnderscores(konst.Name);
+			Write(" = ");
+			if (konst.Value != null)
+				konst.Value.Accept(this, CiPriority.Statement);
+			else
+				Write(i);
+			WriteLine();
+			i++;
+		}
+		CloseChild();
+	}
+
 	void WriteConsts(IEnumerable<CiConst> consts)
 	{
 		foreach (CiConst konst in consts) {
@@ -588,6 +612,7 @@ public class GenPy : GenBase
 	void Write(CiClass klass)
 	{
 		WriteLine();
+		//TODO: Write(klass.Documentation);
 		Write("class ");
 		Write(klass.Name);
 		if (klass.BaseClassName != null) {
@@ -621,12 +646,12 @@ public class GenPy : GenBase
 	{
 		this.Includes = new SortedSet<string>();
 		OpenStringWriter();
+		foreach (CiEnum enu in program.OfType<CiEnum>())
+			Write(enu);
 		foreach (CiClass klass in program.Classes)
 			Write(klass);
 		CreateFile(this.OutputFile);
 		WriteIncludes("import ", "");
-//		foreach (CiEnum enu in program.OfType<CiEnum>())
-//			Write(enu);
 		CloseStringWriter();
 		CloseFile();
 	}
