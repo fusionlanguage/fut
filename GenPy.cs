@@ -88,13 +88,25 @@ public class GenPy : GenBase
 			if (part.Argument != null) {
 				Write('{');
 				part.Argument.Accept(this, CiPriority.Statement);
+				if (part.WidthExpr != null || part.Precision >= 0 || (part.Format != ' ' && part.Format != 'D'))
+					Write(':');
 				if (part.WidthExpr != null) {
-					Write(',');
-					Write(part.Width);
+					if (part.Width >= 0) {
+						if (!(part.Argument.Type is CiNumericType))
+							Write('>');
+						Write(part.Width);
+					}
+					else {
+						Write('<');
+						Write(-part.Width);
+					}
 				}
-				if (part.Format != ' ') {
-					// TODO
+				if (part.Precision >= 0) {
+					Write(part.Argument.Type is CiIntegerType ? '0' : '.');
+					Write(part.Precision);
 				}
+				if (part.Format != ' ' && part.Format != 'D')
+					Write(part.Format);
 				Write('}');
 			}
 		}
