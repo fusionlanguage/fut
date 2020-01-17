@@ -1170,6 +1170,8 @@ public class CiSystem : CiScope
 	public static readonly CiMethod UTF8GetString = new CiMethod(CiCallType.Normal, StringStorageType, "GetString", new CiVar(ByteArrayPtrType, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length")); // TODO: UIntType
 	public static readonly CiClass UTF8EncodingClass = new CiClass(CiCallType.Normal, "UTF8Encoding", UTF8GetString);
 	public static readonly CiClass EncodingClass = new CiClass(CiCallType.Static, "Encoding");
+	public static readonly CiMethod MathCeiling = new CiMethod(CiCallType.Static, FloatIntType, "Ceiling", new CiVar(DoubleType, "a"));
+	public static readonly CiMethod MathFusedMultiplyAdd = new CiMethod(CiCallType.Static, FloatType, "FusedMultiplyAdd", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y"), new CiVar(DoubleType, "z"));
 	public static readonly CiMethod MathTruncate = new CiMethod(CiCallType.Static, FloatIntType, "Truncate", new CiVar(DoubleType, "a"));
 	public static readonly CiClass MathClass = new CiClass(CiCallType.Static, "Math",
 		new CiMethod(CiCallType.Static, FloatType, "Acos", new CiVar(DoubleType, "a")),
@@ -1177,12 +1179,12 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, FloatType, "Atan", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, "Atan2", new CiVar(DoubleType, "y"), new CiVar(DoubleType, "x")),
 		new CiMethod(CiCallType.Static, FloatType, "Cbrt", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, FloatIntType, "Ceiling", new CiVar(DoubleType, "a")),
+		MathCeiling,
 		new CiMethod(CiCallType.Static, FloatType, "Cos", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, "Cosh", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, "Exp", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatIntType, "Floor", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, FloatType, "FusedMultiplyAdd", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y"), new CiVar(DoubleType, "z")),
+		MathFusedMultiplyAdd,
 		new CiMethod(CiCallType.Static, FloatType, "Log", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, "Log2", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, "Log10", new CiVar(DoubleType, "a")),

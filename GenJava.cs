@@ -436,9 +436,9 @@ public class GenJava : GenTyped
 			Write('.');
 			if (method == CiSystem.ListRemoveAt)
 				Write("remove");
-			else if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "Ceiling")
+			else if (method == CiSystem.MathCeiling)
 				Write("ceil");
-			else if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "FusedMultiplyAdd")
+			else if (method == CiSystem.MathFusedMultiplyAdd)
 				Write("fma");
 			else
 				WriteCamelCase(method.Name);

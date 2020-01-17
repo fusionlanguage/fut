@@ -100,11 +100,11 @@ public abstract class GenCCpp : GenTyped
 
 	protected void WriteMathCall(CiMethod method, CiExpr[] args)
 	{
-		if (method.Name == "Ceiling")
+		if (method == CiSystem.MathCeiling)
 			Write("ceil");
-		else if (method.Name == "FusedMultiplyAdd")
+		else if (method == CiSystem.MathFusedMultiplyAdd)
 			Write("fma");
-		else if (method.Name == "Truncate")
+		else if (method == CiSystem.MathTruncate)
 			Write("trunc");
 		else
 			WriteLowercase(method.Name);

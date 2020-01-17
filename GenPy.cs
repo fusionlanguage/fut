@@ -344,6 +344,11 @@ public class GenPy : GenBase
 			args[2].Accept(this, CiPriority.Add);
 			Write("].decode(\"utf-8\")");
 		}
+		else if (method == CiSystem.MathFusedMultiplyAdd) {
+			Include("pyfma");
+			Write("pyfma.fma");
+			WriteArgsInParentheses(method, args);
+		}
 		else {
 			if (obj.IsReferenceTo(CiSystem.MathClass)) {
 				Include("math");
@@ -362,9 +367,9 @@ public class GenPy : GenBase
 				Write("endswith");
 			else if (obj.Type is CiListType list && method.Name == "Add")
 				Write("append");
-			else if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "Ceiling")
+			else if (method == CiSystem.MathCeiling)
 				Write("ceil");
-			else if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "Truncate")
+			else if (method == CiSystem.MathTruncate)
 				Write("trunc");
 			else
 				WriteName(method);
@@ -442,6 +447,7 @@ public class GenPy : GenBase
 			&& statement.Advance is CiUnaryExpr adv
 			&& adv.Op == CiToken.Increment
 			&& adv.Inner.IsReferenceTo(iter);
+		// FIXME: check iter not modified in statement.Body
 	}
 
 	public override void Visit(CiContinue statement)

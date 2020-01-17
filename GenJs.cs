@@ -392,7 +392,7 @@ public class GenJs : GenBase
 			Write("Ci.utf8GetString");
 			WriteArgsInParentheses(method, args);
 		}
-		else if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "FusedMultiplyAdd") {
+		else if (method == CiSystem.MathFusedMultiplyAdd) {
 			if (parent > CiPriority.Add)
 				Write('(');
 			args[0].Accept(this, CiPriority.Mul);
@@ -406,9 +406,9 @@ public class GenJs : GenBase
 		else {
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
-			if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "Ceiling")
+			if (method == CiSystem.MathCeiling)
 				Write("ceil");
-			else if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "Truncate")
+			else if (method == CiSystem.MathTruncate)
 				Write("trunc");
 			else if (method == CiSystem.StringContains)
 				Write("includes");
