@@ -422,7 +422,7 @@ public class GenJava : GenTyped
 			WriteArgs(method, args);
 			Write(", StandardCharsets.UTF_8)");
 		}
-		else if (obj.IsReferenceTo(CiSystem.MathClass) && method.Name == "Log2") {
+		else if (method == CiSystem.MathLog2) {
 			if (parent > CiPriority.Mul)
 				Write('(');
 			Write("Math.log(");

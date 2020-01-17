@@ -1172,6 +1172,7 @@ public class CiSystem : CiScope
 	public static readonly CiClass EncodingClass = new CiClass(CiCallType.Static, "Encoding");
 	public static readonly CiMethod MathCeiling = new CiMethod(CiCallType.Static, FloatIntType, "Ceiling", new CiVar(DoubleType, "a"));
 	public static readonly CiMethod MathFusedMultiplyAdd = new CiMethod(CiCallType.Static, FloatType, "FusedMultiplyAdd", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y"), new CiVar(DoubleType, "z"));
+	public static readonly CiMethod MathLog2 = new CiMethod(CiCallType.Static, FloatType, "Log2", new CiVar(DoubleType, "a"));
 	public static readonly CiMethod MathTruncate = new CiMethod(CiCallType.Static, FloatIntType, "Truncate", new CiVar(DoubleType, "a"));
 	public static readonly CiClass MathClass = new CiClass(CiCallType.Static, "Math",
 		new CiMethod(CiCallType.Static, FloatType, "Acos", new CiVar(DoubleType, "a")),
@@ -1186,7 +1187,7 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, FloatIntType, "Floor", new CiVar(DoubleType, "a")),
 		MathFusedMultiplyAdd,
 		new CiMethod(CiCallType.Static, FloatType, "Log", new CiVar(DoubleType, "a")),
-		new CiMethod(CiCallType.Static, FloatType, "Log2", new CiVar(DoubleType, "a")),
+		MathLog2,
 		new CiMethod(CiCallType.Static, FloatType, "Log10", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, "Pow", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y")),
 		new CiMethod(CiCallType.Static, FloatType, "Sin", new CiVar(DoubleType, "a")),
