@@ -531,10 +531,11 @@ public class GenPy : GenBase
 		WriteLine("break");
 	}
 
-	bool OpenIf(CiExpr cond)
+	bool OpenCond(string statement, CiExpr cond)
 	{
 		VisitXcrement<CiPrefixExpr>(cond, true);
-		Write("if ");
+		Write(statement);
+		Write(' ');
 		cond.Accept(this, CiPriority.Statement);
 		OpenChild();
 		return VisitXcrement<CiPostfixExpr>(cond, true);
@@ -567,7 +568,7 @@ public class GenPy : GenBase
 	{
 		switch (statement.Loop) {
 		case CiDoWhile doWhile:
-			OpenIf(doWhile.Cond);
+			OpenCond("if", doWhile.Cond);
 			WriteLine("continue");
 			CloseChild();
 			VisitXcrement<CiPostfixExpr>(doWhile.Cond, true);
@@ -599,15 +600,6 @@ public class GenPy : GenBase
 		CloseChild();
 		VisitXcrement<CiPostfixExpr>(statement.Cond, true);
 		this.Indent--;
-	}
-
-	void OpenWhile(CiLoop loop)
-	{
-		VisitXcrement<CiPrefixExpr>(loop.Cond, true);
-		Write("while ");
-		loop.Cond.Accept(this, CiPriority.Statement);
-		OpenChild();
-		VisitXcrement<CiPostfixExpr>(loop.Cond, true);
 	}
 
 	void CloseWhile(CiLoop loop)
@@ -646,7 +638,7 @@ public class GenPy : GenBase
 			statement.Init.Accept(this);
 		}
 		if (statement.Cond != null)
-			OpenWhile(statement);
+			OpenCond("while", statement);
 		else {
 			Write("while True");
 			OpenChild();
@@ -667,7 +659,7 @@ public class GenPy : GenBase
 
 	public override void Visit(CiIf statement)
 	{
-		bool condPostXcrement = OpenIf(statement.Cond);
+		bool condPostXcrement = OpenCond("if", statement.Cond);
 		statement.OnTrue.Accept(this);
 		CloseChild();
 		if (statement.OnFalse != null || condPostXcrement) {
@@ -709,7 +701,7 @@ public class GenPy : GenBase
 
 	public override void Visit(CiWhile statement)
 	{
-		OpenWhile(statement);
+		OpenCond("while", statement);
 		statement.Body.Accept(this);
 		CloseWhile(statement);
 	}
