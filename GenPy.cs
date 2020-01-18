@@ -638,7 +638,7 @@ public class GenPy : GenBase
 			statement.Init.Accept(this);
 		}
 		if (statement.Cond != null)
-			OpenCond("while", statement);
+			OpenCond("while", statement.Cond);
 		else {
 			Write("while True");
 			OpenChild();
@@ -701,7 +701,7 @@ public class GenPy : GenBase
 
 	public override void Visit(CiWhile statement)
 	{
-		OpenCond("while", statement);
+		OpenCond("while", statement.Cond);
 		statement.Body.Accept(this);
 		CloseWhile(statement);
 	}
