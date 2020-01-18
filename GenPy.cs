@@ -662,7 +662,9 @@ public class GenPy : GenBase
 		bool condPostXcrement = OpenCond("if", statement.Cond);
 		statement.OnTrue.Accept(this);
 		CloseChild();
-		if (statement.OnFalse != null || condPostXcrement) {
+		if (statement.OnFalse == null && condPostXcrement && !statement.OnTrue.CompletesNormally)
+			VisitXcrement<CiPostfixExpr>(statement.Cond, true);
+		else if (statement.OnFalse != null || condPostXcrement) {
 			Write("el");
 			if (!condPostXcrement && statement.OnFalse is CiIf childIf && !VisitXcrement<CiPrefixExpr>(childIf.Cond, false))
 				Visit(childIf);
