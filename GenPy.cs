@@ -399,7 +399,10 @@ public class GenPy : GenBase
 
 	protected override void WriteResource(string name, int length)
 	{
-		Write("TODO");
+		if (length >= 0) // reference as opposed to definition
+			Write("CiResource.");
+		foreach (char c in name)
+			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
 	public override void Visit(CiExpr statement)
@@ -642,6 +645,7 @@ public class GenPy : GenBase
 		WriteConsts(klass.Consts);
 		if (klass.Constructor != null
 		 || klass.Fields.Any(field => field.Value != null || field.Type.IsFinal)) {
+			WriteLine();
 			Write("def __init__(self)");
 			OpenChild();
 			foreach (CiField field in klass.Fields) {
@@ -660,6 +664,32 @@ public class GenPy : GenBase
 		CloseChild();
 	}
 
+	void WriteResources(Dictionary<string, byte[]> resources)
+	{
+		if (resources.Count == 0)
+			return;
+		WriteLine();
+		Write("class CiResource");
+		OpenChild();
+		foreach (string name in resources.Keys.OrderBy(k => k)) {
+			WriteResource(name, -1);
+			Write(" = (");
+			int i = 0;
+			foreach (byte b in resources[name]) {
+				if ((i & 15) == 0) {
+					if (i > 0)
+						Write('"');
+					WriteLine();
+					Write("b\"");
+				}
+				Write($"\\x{b:x2}");
+				i++;
+			}
+			WriteLine(" )");
+		}
+		CloseChild();
+	}
+
 	public override void Write(CiProgram program)
 	{
 		this.Includes = new SortedSet<string>();
@@ -671,6 +701,7 @@ public class GenPy : GenBase
 		CreateFile(this.OutputFile);
 		WriteIncludes("import ", "");
 		CloseStringWriter();
+		WriteResources(program.Resources);
 		CloseFile();
 	}
 }
