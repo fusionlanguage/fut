@@ -20,7 +20,7 @@ all: cito.exe
 cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs GenPy.cs CiTo.cs)
 	$(CSC) -out:$@ $^
 
-test: test-c test-cpp test-cs test-java test-js test-error
+test: test-c test-cpp test-cs test-java test-js test-py test-error
 	perl test/summary.pl $(wildcard test/bin/*/*.txt)
 
 test-c: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
