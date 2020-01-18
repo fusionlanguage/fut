@@ -238,12 +238,6 @@ public class GenC : GenCCpp
 		WriteDefinition(value.Type, () => WriteName(value), true, true);
 	}
 
-	static bool IsDynamicPtr(CiType type)
-	{
-		return (type is CiClassPtrType classPtr && classPtr.Modifier == CiToken.Hash)
-			|| (type is CiArrayPtrType arrayPtr && arrayPtr.Modifier == CiToken.Hash);
-	}
-
 	void WriteXstructorPtr(bool need, CiClass klass, string name)
 	{
 		if (need) {
@@ -275,7 +269,7 @@ public class GenC : GenCCpp
 			this.PtrConstruct = true;
 			Write("(CiMethodPtr) CiPtr_Construct, free");
 		}
-		else if (IsDynamicPtr(elementType)) {
+		else if (elementType.IsDynamicPtr) {
 			this.PtrConstruct = true;
 			this.SharedRelease = true;
 			Write("(CiMethodPtr) CiPtr_Construct, CiShared_Release");
@@ -320,7 +314,7 @@ public class GenC : GenCCpp
 	{
 		switch (value) {
 		case null:
-			if (array.StorageType is CiStringStorageType || IsDynamicPtr(array.StorageType))
+			if (array.StorageType is CiStringStorageType || array.StorageType.IsDynamicPtr)
 				Write(" = { NULL }");
 			break;
 		case CiLiteral literal when literal.IsDefaultValue:
@@ -352,7 +346,7 @@ public class GenC : GenCCpp
 			else
 				WriteStringStorageValue(def.Value);
 		}
-		else if (def.Value == null && IsDynamicPtr(def.Type))
+		else if (def.Value == null && def.Type.IsDynamicPtr)
 			Write(" = NULL");
 		else
 			base.WriteVarInit(def);
@@ -364,7 +358,7 @@ public class GenC : GenCCpp
 		while (type is CiArrayStorageType array)
 			type = array.ElementType;
 		return type == CiSystem.StringStorageType
-			|| IsDynamicPtr(type)
+			|| type.IsDynamicPtr
 			|| (type is CiClass klass && NeedsDestructor(klass));
 	}
 
@@ -377,7 +371,7 @@ public class GenC : GenCCpp
 
 	protected override bool HasInitCode(CiNamedValue def)
 	{
-		return (def is CiField && (def.Value != null || def.Type.StorageType == CiSystem.StringStorageType || IsDynamicPtr(def.Type)))
+		return (def is CiField && (def.Value != null || def.Type.StorageType == CiSystem.StringStorageType || def.Type.IsDynamicPtr))
 			|| GetThrowingMethod(def.Value) != null
 			|| (def.Type.StorageType is CiClass klass && NeedsConstructor(klass));
 	}
@@ -769,7 +763,7 @@ public class GenC : GenCCpp
 				Write(')');
 				return expr;
 			}
-			else if (IsDynamicPtr(expr.Left.Type)) {
+			else if (expr.Left.Type.IsDynamicPtr) {
 				this.SharedAssign = true;
 				Write("CiShared_Assign((void **) &");
 				expr.Left.Accept(this, CiPriority.Primary);
@@ -883,7 +877,7 @@ public class GenC : GenCCpp
 			Write(klass.Name);
 			Write("_Destruct(&");
 		}
-		else if (IsDynamicPtr(type)) {
+		else if (type.IsDynamicPtr) {
 			this.SharedRelease = true;
 			Write("CiShared_Release(");
 		}

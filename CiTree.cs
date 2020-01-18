@@ -700,6 +700,7 @@ public class CiType : CiScope
 	public virtual CiType StorageType => this;
 	public virtual CiType PtrOrSelf => this;
 	public virtual bool IsFinal => false;
+	public virtual bool IsDynamicPtr => false;
 }
 
 public abstract class CiContainerType : CiType
@@ -940,6 +941,7 @@ public class CiClassPtrType : CiType
 	}
 
 	public override CiType PtrOrSelf => this.Modifier == CiToken.Hash ? this.Class.PtrOrSelf : this;
+	public override bool IsDynamicPtr => this.Modifier == CiToken.Hash;
 
 	public override bool Equals(object obj)
 	{
@@ -1012,6 +1014,8 @@ public class CiArrayPtrType : CiArrayType
 			throw new NotImplementedException(this.Modifier.ToString());
 		}
 	}
+
+	public override bool IsDynamicPtr => this.Modifier == CiToken.Hash;
 
 	public override bool Equals(object obj)
 	{

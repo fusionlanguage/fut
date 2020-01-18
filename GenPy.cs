@@ -282,6 +282,14 @@ public class GenPy : GenBase
 		Write(" = sortedcontainers.SortedDict()");
 	}
 
+	protected override void WriteVarInit(CiNamedValue def)
+	{
+		if (def.Value == null && def.Type.IsDynamicPtr)
+			Write(" = None");
+		else
+			base.WriteVarInit(def);
+	}
+
 	protected override void WriteInitCode(CiNamedValue def)
 	{
 	}
@@ -467,9 +475,12 @@ public class GenPy : GenBase
 		}
 	}
 
+	static bool NeedsInit(CiNamedValue def)
+		=> def.Value != null || def.Type.IsFinal || def.Type.IsDynamicPtr;
+
 	public override void Visit(CiExpr statement)
 	{
-		if (!(statement is CiVar def) || def.Value != null || def.Type.IsFinal) {
+		if (!(statement is CiVar def) || NeedsInit(def)) {
 			WriteXcrement<CiPrefixExpr>(statement);
 			if (!(statement is CiUnaryExpr unary) || (unary.Op != CiToken.Increment && unary.Op != CiToken.Decrement)) {
 				statement.Accept(this, CiPriority.Statement);
@@ -738,12 +749,12 @@ public class GenPy : GenBase
 		OpenChild();
 		WriteConsts(klass.Consts);
 		if (klass.Constructor != null
-		 || klass.Fields.Any(field => field.Value != null || field.Type.IsFinal)) {
+		 || klass.Fields.Any(NeedsInit)) {
 			WriteLine();
 			Write("def __init__(self)");
 			OpenChild();
 			foreach (CiField field in klass.Fields) {
-				if (field.Value != null || field.Type.IsFinal) {
+				if (NeedsInit(field)) {
 					Write("self.");
 					WriteVar(field);
 					WriteLine();
