@@ -80,7 +80,7 @@ test/bin/%/Run.js: test/bin/%/Test.js
 test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.py: test/%.ci cito.exe
 	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
 
-.PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js
+.PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.py
 
 test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 	javac -d $(@D) -cp test/bin/Basic $<
