@@ -1,0 +1,11 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int s = 0;
+		int i = 0;
+		while (++i < 4)
+			s += i;
+		return i == 4 && s == 6;
+	}
+}

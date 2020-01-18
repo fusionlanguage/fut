@@ -703,6 +703,7 @@ public class GenPy : GenBase
 	{
 		OpenCond("while", statement.Cond);
 		statement.Body.Accept(this);
+		VisitXcrement<CiPrefixExpr>(statement.Cond, true);
 		CloseWhile(statement);
 	}
 
