@@ -431,47 +431,47 @@ public class GenPy : GenBase
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
-	void WriteXcrement<T>(CiExpr expr) where T : CiUnaryExpr
+	bool WriteXcrement<T>(CiExpr expr) where T : CiUnaryExpr
 	{
+		bool seen;
 		switch (expr) {
 		case CiCollection coll:
+			seen = false;
 			foreach (CiExpr item in coll.Items)
-				WriteXcrement<T>(item);
-			break;
+				seen |= WriteXcrement<T>(item);
+			return seen;
 		case CiVar def:
-			if (def.Value != null)
-				WriteXcrement<T>(def.Value);
-			break;
+			return def.Value != null && WriteXcrement<T>(def.Value);
 		case CiLiteral literal:
-			break;
+			return false;
 		case CiInterpolatedString interp:
+			seen = false;
 			foreach (CiInterpolatedPart part in interp.Parts) {
 				if (part.Argument != null)
-					WriteXcrement<T>(part.Argument);
+					seen |= WriteXcrement<T>(part.Argument);
 			}
-			break;
+			return seen;
 		case CiSymbolReference symbol:
-			if (symbol.Left != null)
-				WriteXcrement<T>(symbol.Left);
-			break;
+			return symbol.Left != null && WriteXcrement<T>(symbol.Left);
 		case CiUnaryExpr unary:
-			WriteXcrement<T>(unary.Inner);
+			seen = WriteXcrement<T>(unary.Inner);
 			if ((unary.Op == CiToken.Increment || unary.Op == CiToken.Decrement) && unary is T) {
 				unary.Inner.Accept(this, CiPriority.Assign);
 				WriteLine(unary.Op == CiToken.Increment ? " += 1" : " -= 1");
+				seen = true;
 			}
-			break;
+			return seen;
 		case CiBinaryExpr binary:
-			WriteXcrement<T>(binary.Left);
+			seen = WriteXcrement<T>(binary.Left);
 			// FIXME: CondAnd, CondOr
-			WriteXcrement<T>(binary.Right);
-			break;
+			seen |= WriteXcrement<T>(binary.Right);
+			return seen;
 		case CiCondExpr cond:
-			WriteXcrement<T>(cond.Cond);
+			seen = WriteXcrement<T>(cond.Cond);
 			// FIXME
-			WriteXcrement<T>(cond.OnTrue);
-			WriteXcrement<T>(cond.OnFalse);
-			break;
+			seen |= WriteXcrement<T>(cond.OnTrue);
+			seen |= WriteXcrement<T>(cond.OnFalse);
+			return seen;
 		default:
 			throw new NotImplementedException(expr.GetType().Name);
 		}
@@ -635,15 +635,21 @@ public class GenPy : GenBase
 		WriteXcrement<CiPrefixExpr>(statement.Cond);
 		Write("if ");
 		statement.Cond.Accept(this, CiPriority.Statement);
-		// FIXME: WriteXcrement<CiPostfixExpr>(statement.Cond);
-		WriteChild(statement.OnTrue);
-		if (statement.OnFalse != null) {
+		OpenChild();
+		bool condPostXcrement = WriteXcrement<CiPostfixExpr>(statement.Cond);
+		statement.OnTrue.Accept(this);
+		CloseChild();
+		if (statement.OnFalse != null || condPostXcrement) {
 			Write("el");
 			if (statement.OnFalse is CiIf childIf)
 				Visit(childIf); // FIXME: Xcrement
 			else {
 				Write("se");
-				WriteChild(statement.OnFalse);
+				OpenChild();
+				WriteXcrement<CiPostfixExpr>(statement.Cond);
+				if (statement.OnFalse != null)
+					statement.OnFalse.Accept(this);
+				CloseChild();
 			}
 		}
 	}

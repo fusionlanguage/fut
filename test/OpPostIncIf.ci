@@ -1,0 +1,17 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int a = 0;
+		int b = 10;
+		if (a++ != b) {
+			a++;
+		}
+		else {
+			b = -1;
+		}
+		if (b++ == 10)
+			a++;
+		return a == 3 && b == 11;
+	}
+}
