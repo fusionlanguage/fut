@@ -1,6 +1,6 @@
 // CiParser.cs - Ci parser
 //
-// Copyright (C) 2011-2019  Piotr Fusik
+// Copyright (C) 2011-2020  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -410,6 +410,8 @@ public class CiParser : CiLexer
 		CiBreak result = new CiBreak(this.CurrentLoopOrSwitch) { Line = this.Line };
 		Expect(CiToken.Break);
 		Expect(CiToken.Semicolon);
+		if (this.CurrentLoopOrSwitch is CiLoop loop)
+			loop.HasBreak = true;
 		return result;
 	}
 

@@ -552,6 +552,7 @@ public abstract class CiLoop : CiCondCompletionStatement
 {
 	public CiExpr Cond;
 	public CiStatement Body;
+	public bool HasBreak = false;
 }
 
 public class CiBlock : CiCondCompletionStatement

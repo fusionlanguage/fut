@@ -1,0 +1,19 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int s = 0;
+		int i = 0;
+		int k;
+		for (k = 0; i++ < 3; k++)
+			s += i;
+
+		int j = 0;
+		for (; j++ < 3; k++) {
+			if (j == 2)
+				break;
+			s += j;
+		}
+		return i == 4 && j == 2 && s == 7 && k == 4;
+	}
+}

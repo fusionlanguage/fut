@@ -431,46 +431,48 @@ public class GenPy : GenBase
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
-	bool WriteXcrement<T>(CiExpr expr) where T : CiUnaryExpr
+	bool VisitXcrement<T>(CiExpr expr, bool write) where T : CiUnaryExpr
 	{
 		bool seen;
 		switch (expr) {
 		case CiCollection coll:
 			seen = false;
 			foreach (CiExpr item in coll.Items)
-				seen |= WriteXcrement<T>(item);
+				seen |= VisitXcrement<T>(item, write);
 			return seen;
 		case CiVar def:
-			return def.Value != null && WriteXcrement<T>(def.Value);
+			return def.Value != null && VisitXcrement<T>(def.Value, write);
 		case CiLiteral literal:
 			return false;
 		case CiInterpolatedString interp:
 			seen = false;
 			foreach (CiInterpolatedPart part in interp.Parts) {
 				if (part.Argument != null)
-					seen |= WriteXcrement<T>(part.Argument);
+					seen |= VisitXcrement<T>(part.Argument, write);
 			}
 			return seen;
 		case CiSymbolReference symbol:
-			return symbol.Left != null && WriteXcrement<T>(symbol.Left);
+			return symbol.Left != null && VisitXcrement<T>(symbol.Left, write);
 		case CiUnaryExpr unary:
-			seen = WriteXcrement<T>(unary.Inner);
+			seen = VisitXcrement<T>(unary.Inner, write);
 			if ((unary.Op == CiToken.Increment || unary.Op == CiToken.Decrement) && unary is T) {
-				unary.Inner.Accept(this, CiPriority.Assign);
-				WriteLine(unary.Op == CiToken.Increment ? " += 1" : " -= 1");
+				if (write) {
+					unary.Inner.Accept(this, CiPriority.Assign);
+					WriteLine(unary.Op == CiToken.Increment ? " += 1" : " -= 1");
+				}
 				seen = true;
 			}
 			return seen;
 		case CiBinaryExpr binary:
-			seen = WriteXcrement<T>(binary.Left);
+			seen = VisitXcrement<T>(binary.Left, write);
 			// FIXME: CondAnd, CondOr
-			seen |= WriteXcrement<T>(binary.Right);
+			seen |= VisitXcrement<T>(binary.Right, write);
 			return seen;
 		case CiCondExpr cond:
-			seen = WriteXcrement<T>(cond.Cond);
+			seen = VisitXcrement<T>(cond.Cond, write);
 			// FIXME
-			seen |= WriteXcrement<T>(cond.OnTrue);
-			seen |= WriteXcrement<T>(cond.OnFalse);
+			seen |= VisitXcrement<T>(cond.OnTrue, write);
+			seen |= VisitXcrement<T>(cond.OnFalse, write);
 			return seen;
 		default:
 			throw new NotImplementedException(expr.GetType().Name);
@@ -483,12 +485,12 @@ public class GenPy : GenBase
 	public override void Visit(CiExpr statement)
 	{
 		if (!(statement is CiVar def) || NeedsInit(def)) {
-			WriteXcrement<CiPrefixExpr>(statement);
+			VisitXcrement<CiPrefixExpr>(statement, true);
 			if (!(statement is CiUnaryExpr unary) || (unary.Op != CiToken.Increment && unary.Op != CiToken.Decrement)) {
 				statement.Accept(this, CiPriority.Statement);
 				WriteLine();
 			}
-			WriteXcrement<CiPostfixExpr>(statement);
+			VisitXcrement<CiPostfixExpr>(statement, true);
 		}
 	}
 
@@ -529,6 +531,15 @@ public class GenPy : GenBase
 		WriteLine("break");
 	}
 
+	bool OpenIf(CiExpr cond)
+	{
+		VisitXcrement<CiPrefixExpr>(cond, true);
+		Write("if ");
+		cond.Accept(this, CiPriority.Statement);
+		OpenChild();
+		return VisitXcrement<CiPostfixExpr>(cond, true);
+	}
+
 	static bool IsForInRange(CiFor statement)
 	{
 		return statement.Init is CiVar iter
@@ -549,25 +560,24 @@ public class GenPy : GenBase
 		if (statement.Advance != null)
 			statement.Advance.Accept(this);
 		if (statement.Cond != null)
-			WriteXcrement<CiPrefixExpr>(statement.Cond);
+			VisitXcrement<CiPrefixExpr>(statement.Cond, true);
 	}
 
 	public override void Visit(CiContinue statement)
 	{
 		switch (statement.Loop) {
 		case CiDoWhile doWhile:
-			WriteXcrement<CiPrefixExpr>(doWhile.Cond);
-			Write("if ");
-			doWhile.Cond.Accept(this, CiPriority.Statement);
-			WriteLine(": continue");
+			OpenIf(doWhile.Cond);
+			WriteLine("continue");
+			CloseChild();
+			VisitXcrement<CiPostfixExpr>(doWhile.Cond, true);
 			WriteLine("break");
-			// FIXME:WriteXcrement<CiPostfixExpr>(doWhile.Cond);
 			return;
 		case CiFor forLoop when !IsForInRange(forLoop):
 			EndBody(forLoop);
 			break;
 		case CiWhile whileLoop:
-			WriteXcrement<CiPrefixExpr>(whileLoop.Cond);
+			VisitXcrement<CiPrefixExpr>(whileLoop.Cond, true);
 			break;
 		default:
 			break;
@@ -580,12 +590,39 @@ public class GenPy : GenBase
 		Write("while True");
 		OpenChild();
 		statement.Body.Accept(this);
-		WriteXcrement<CiPrefixExpr>(statement.Cond);
+		VisitXcrement<CiPrefixExpr>(statement.Cond, true);
 		Write("if not ");
 		statement.Cond.Accept(this, CiPriority.Primary);
-		WriteLine(": break");
-		// FIXME:WriteXcrement<CiPostfixExpr>(statement.Cond);
+		OpenChild();
+		VisitXcrement<CiPostfixExpr>(statement.Cond, true);
+		WriteLine("break");
+		CloseChild();
+		VisitXcrement<CiPostfixExpr>(statement.Cond, true);
 		this.Indent--;
+	}
+
+	void OpenWhile(CiLoop loop)
+	{
+		VisitXcrement<CiPrefixExpr>(loop.Cond, true);
+		Write("while ");
+		loop.Cond.Accept(this, CiPriority.Statement);
+		OpenChild();
+		VisitXcrement<CiPostfixExpr>(loop.Cond, true);
+	}
+
+	void CloseWhile(CiLoop loop)
+	{
+		CloseChild();
+		if (loop.Cond != null && VisitXcrement<CiPostfixExpr>(loop.Cond, false)) {
+			if (loop.HasBreak) {
+				Write("else");
+				OpenChild();
+				VisitXcrement<CiPostfixExpr>(loop.Cond, true);
+				CloseChild();
+			}
+			else
+				VisitXcrement<CiPostfixExpr>(loop.Cond, true);
+		}
 	}
 
 	public override void Visit(CiFor statement)
@@ -608,17 +645,15 @@ public class GenPy : GenBase
 			}
 			statement.Init.Accept(this);
 		}
-		if (statement.Cond != null) {
-			WriteXcrement<CiPrefixExpr>(statement.Cond);
-			Write("while ");
-			statement.Cond.Accept(this, CiPriority.Statement);
-		}
-		else
+		if (statement.Cond != null)
+			OpenWhile(statement);
+		else {
 			Write("while True");
-		OpenChild();
+			OpenChild();
+		}
 		statement.Body.Accept(this);
 		EndBody(statement);
-		CloseChild();
+		CloseWhile(statement);
 	}
 
 	public override void Visit(CiForeach statement)
@@ -632,21 +667,17 @@ public class GenPy : GenBase
 
 	public override void Visit(CiIf statement)
 	{
-		WriteXcrement<CiPrefixExpr>(statement.Cond);
-		Write("if ");
-		statement.Cond.Accept(this, CiPriority.Statement);
-		OpenChild();
-		bool condPostXcrement = WriteXcrement<CiPostfixExpr>(statement.Cond);
+		bool condPostXcrement = OpenIf(statement.Cond);
 		statement.OnTrue.Accept(this);
 		CloseChild();
 		if (statement.OnFalse != null || condPostXcrement) {
 			Write("el");
-			if (statement.OnFalse is CiIf childIf)
-				Visit(childIf); // FIXME: Xcrement
+			if (!condPostXcrement && statement.OnFalse is CiIf childIf && !VisitXcrement<CiPrefixExpr>(childIf.Cond, false))
+				Visit(childIf);
 			else {
 				Write("se");
 				OpenChild();
-				WriteXcrement<CiPostfixExpr>(statement.Cond);
+				VisitXcrement<CiPostfixExpr>(statement.Cond, true);
 				if (statement.OnFalse != null)
 					statement.OnFalse.Accept(this);
 				CloseChild();
@@ -659,7 +690,7 @@ public class GenPy : GenBase
 		if (statement.Value == null)
 			WriteLine("return");
 		else {
-			WriteXcrement<CiPrefixExpr>(statement.Value);
+			VisitXcrement<CiPrefixExpr>(statement.Value, true);
 			Write("return ");
 			statement.Value.Accept(this, CiPriority.Statement);
 			WriteLine();
@@ -669,7 +700,7 @@ public class GenPy : GenBase
 
 	public override void Visit(CiThrow statement)
 	{
-		WriteXcrement<CiPrefixExpr>(statement.Message);
+		VisitXcrement<CiPrefixExpr>(statement.Message, true);
 		Write("raise Exception(");
 		statement.Message.Accept(this, CiPriority.Statement);
 		WriteLine(')');
@@ -678,11 +709,9 @@ public class GenPy : GenBase
 
 	public override void Visit(CiWhile statement)
 	{
-		WriteXcrement<CiPrefixExpr>(statement.Cond);
-		Write("while ");
-		statement.Cond.Accept(this, CiPriority.Statement);
-		//FIXME: WriteXcrement<CiPostfixExpr>(statement.Cond);
-		WriteChild(statement.Body);
+		OpenWhile(statement);
+		statement.Body.Accept(this);
+		CloseWhile(statement);
 	}
 
 	void Write(CiEnum enu)

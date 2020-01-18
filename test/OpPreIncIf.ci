@@ -12,6 +12,11 @@ public static class Test
 		}
 		if (++b == 2)
 			a++;
-		return a == 3 && b == 2;
+		if (a == 42) {
+		}
+		else if (++a == 4) {
+			b++;
+		}
+		return a == 4 && b == 3;
 	}
 }
