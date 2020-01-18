@@ -157,20 +157,13 @@ public class GenJs : GenBase
 		return expr;
 	}
 
-	void WriteMember(CiMember member)
+	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
-		Write(member.IsStatic() ? this.CurrentMethod.Parent.Name : "this");
-		Write('.');
-		WriteName(member);
-	}
-
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
-	{
-		if (expr.Left == null && expr.Symbol is CiMember member)
-			WriteMember(member);
-		else
-			base.Visit(expr, parent);
-		return expr;
+		if (symbol is CiMember member) {
+			Write(member.IsStatic() ? this.CurrentMethod.Parent.Name : "this");
+			Write('.');
+		}
+		WriteName(symbol);
 	}
 
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
@@ -420,7 +413,7 @@ public class GenJs : GenBase
 
 	protected override void WriteNearCall(CiMethod method, CiExpr[] args)
 	{
-		WriteMember(method);
+		WriteLocalName(method, CiPriority.Primary);
 		WriteArgsInParentheses(method, args);
 	}
 

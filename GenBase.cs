@@ -398,15 +398,10 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteTypeAndName(CiNamedValue value);
 
-	protected virtual void WriteThisForField()
-	{
-		Write("this.");
-	}
-
 	protected virtual void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
 		if (symbol is CiField)
-			WriteThisForField();
+			Write("this.");
 		WriteName(symbol);
 	}
 

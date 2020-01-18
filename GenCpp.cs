@@ -74,9 +74,11 @@ public class GenCpp : GenCCpp
 			Write(symbol.Name);
 	}
 
-	protected override void WriteThisForField()
+	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
-		Write("this->");
+		if (symbol is CiField)
+			Write("this->");
+		WriteName(symbol);
 	}
 
 	protected override void Write(CiType type, bool promote)

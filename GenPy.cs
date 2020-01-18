@@ -70,9 +70,13 @@ public class GenPy : GenBase
 		WriteName(value);
 	}
 
-	protected override void WriteThisForField()
+	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
-		Write("self.");
+		if (symbol is CiMember member) {
+			Write(member.IsStatic() ? this.CurrentMethod.Parent.Name : "self");
+			Write('.');
+		}
+		WriteName(symbol);
 	}
 
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
@@ -415,9 +419,7 @@ public class GenPy : GenBase
 
 	protected override void WriteNearCall(CiMethod method, CiExpr[] args)
 	{
-		Write(method.IsStatic() ? this.CurrentMethod.Parent.Name : "self");
-		Write('.');
-		WriteName(method);
+		WriteLocalName(method, CiPriority.Primary);
 		WriteArgsInParentheses(method, args);
 	}
 
