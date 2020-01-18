@@ -467,13 +467,20 @@ public class GenPy : GenBase
 
 	public override void Visit(CiContinue statement)
 	{
-		if (statement.Loop is CiFor loop
-		 && loop.Advance != null
-		 && !IsForInRange(loop)) {
-			loop.Advance.Accept(this, CiPriority.Statement);
-			WriteLine();
+		switch (statement.Loop) {
+		case CiDoWhile doWhile:
+			Write("if ");
+			doWhile.Cond.Accept(this, CiPriority.Statement);
+			WriteLine(": continue");
+			WriteLine("else: break");
+			break;
+		case CiFor forLoop when forLoop.Advance != null && !IsForInRange(forLoop):
+			forLoop.Advance.Accept(this);
+			goto default;
+		default:
+			WriteLine("continue");
+			break;
 		}
-		WriteLine("continue");
 	}
 
 	public override void Visit(CiDoWhile statement)
@@ -482,7 +489,7 @@ public class GenPy : GenBase
 		OpenChild();
 		statement.Body.Accept(this);
 		Write("if not ");
-		statement.Cond.Accept(this, CiPriority.Statement);
+		statement.Cond.Accept(this, CiPriority.Primary);
 		WriteLine(": break");
 		this.Indent--;
 	}
@@ -505,8 +512,7 @@ public class GenPy : GenBase
 				WriteChild(statement.Body);
 				return;
 			}
-			statement.Init.Accept(this, CiPriority.Statement);
-			WriteLine();
+			statement.Init.Accept(this);
 		}
 		Write("while ");
 		if (statement.Cond != null)
@@ -515,10 +521,8 @@ public class GenPy : GenBase
 			Write("True");
 		OpenChild();
 		statement.Body.Accept(this);
-		if (statement.Advance != null) {
-			statement.Advance.Accept(this, CiPriority.Statement);
-			WriteLine();
-		}
+		if (statement.Advance != null)
+			statement.Advance.Accept(this);
 		CloseChild();
 	}
 
