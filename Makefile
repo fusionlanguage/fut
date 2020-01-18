@@ -21,7 +21,7 @@ cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer
 	$(CSC) -out:$@ $^
 
 test: test-c test-cpp test-cs test-java test-js test-py test-error
-	perl test/summary.pl $(wildcard test/bin/*/*.txt)
+	perl test/summary.pl test/bin/*/*.txt
 
 test-c: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
 	perl test/summary.pl $^
@@ -77,7 +77,22 @@ test/bin/%/Test.class: test/bin/%/Test.java
 test/bin/%/Run.js: test/bin/%/Test.js
 	-cat $< test/Runner.js >$@
 
-test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.py: test/%.ci cito.exe
+test/bin/%/Test.c: test/%.ci cito.exe
+	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+
+test/bin/%/Test.cpp: test/%.ci cito.exe
+	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+
+test/bin/%/Test.cs: test/%.ci cito.exe
+	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+
+test/bin/%/Test.java: test/%.ci cito.exe
+	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+
+test/bin/%/Test.js: test/%.ci cito.exe
+	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+
+test/bin/%/Test.py: test/%.ci cito.exe
 	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
 
 .PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.py
