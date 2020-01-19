@@ -531,12 +531,11 @@ public class GenPy : GenBase
 		WriteLine("break");
 	}
 
-	bool OpenCond(string statement, CiExpr cond)
+	bool OpenCond(string statement, CiExpr cond, CiPriority parent)
 	{
 		VisitXcrement<CiPrefixExpr>(cond, true);
 		Write(statement);
-		Write(' ');
-		cond.Accept(this, CiPriority.Statement);
+		cond.Accept(this, parent);
 		OpenChild();
 		return VisitXcrement<CiPostfixExpr>(cond, true);
 	}
@@ -568,7 +567,7 @@ public class GenPy : GenBase
 	{
 		switch (statement.Loop) {
 		case CiDoWhile doWhile:
-			OpenCond("if", doWhile.Cond);
+			OpenCond("if ", doWhile.Cond, CiPriority.Statement);
 			WriteLine("continue");
 			CloseChild();
 			VisitXcrement<CiPostfixExpr>(doWhile.Cond, true);
@@ -591,11 +590,7 @@ public class GenPy : GenBase
 		Write("while True");
 		OpenChild();
 		statement.Body.Accept(this);
-		VisitXcrement<CiPrefixExpr>(statement.Cond, true);
-		Write("if not ");
-		statement.Cond.Accept(this, CiPriority.Primary);
-		OpenChild();
-		VisitXcrement<CiPostfixExpr>(statement.Cond, true);
+		OpenCond("if not ", statement.Cond, CiPriority.Primary);
 		WriteLine("break");
 		CloseChild();
 		VisitXcrement<CiPostfixExpr>(statement.Cond, true);
@@ -638,7 +633,7 @@ public class GenPy : GenBase
 			statement.Init.Accept(this);
 		}
 		if (statement.Cond != null)
-			OpenCond("while", statement.Cond);
+			OpenCond("while ", statement.Cond, CiPriority.Statement);
 		else {
 			Write("while True");
 			OpenChild();
@@ -659,7 +654,7 @@ public class GenPy : GenBase
 
 	public override void Visit(CiIf statement)
 	{
-		bool condPostXcrement = OpenCond("if", statement.Cond);
+		bool condPostXcrement = OpenCond("if ", statement.Cond, CiPriority.Statement);
 		statement.OnTrue.Accept(this);
 		CloseChild();
 		if (statement.OnFalse == null && condPostXcrement && !statement.OnTrue.CompletesNormally)
@@ -703,7 +698,7 @@ public class GenPy : GenBase
 
 	public override void Visit(CiWhile statement)
 	{
-		OpenCond("while", statement.Cond);
+		OpenCond("while ", statement.Cond, CiPriority.Statement);
 		statement.Body.Accept(this);
 		VisitXcrement<CiPrefixExpr>(statement.Cond, true);
 		CloseWhile(statement);
