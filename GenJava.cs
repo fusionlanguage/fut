@@ -744,14 +744,14 @@ public class GenJava : GenTyped
 	void WriteResources()
 	{
 		CreateJavaFile("CiResource");
+		WriteLine("import java.io.DataInputStream;");
+		WriteLine("import java.io.IOException;");
 		WriteLine();
 		Write("class CiResource");
 		WriteLine();
 		OpenBlock();
 		WriteLine("static byte[] getByteArray(String name, int length)");
 		OpenBlock();
-		Include("java.io.DataInputStream");
-		Include("java.io.IOException");
 		Write("DataInputStream dis = new DataInputStream(");
 		WriteLine("CiResource.class.getResourceAsStream(name));");
 		WriteLine("byte[] result = new byte[length];");
