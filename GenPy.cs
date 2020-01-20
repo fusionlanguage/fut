@@ -680,10 +680,18 @@ public class GenPy : GenBase
 			WriteLine("return");
 		else {
 			VisitXcrement<CiPrefixExpr>(statement.Value, true);
-			Write("return ");
-			statement.Value.Accept(this, CiPriority.Statement);
-			WriteLine();
-			// FIXME: WriteXcrement<CiPostfixExpr>(statement.Value);
+			if (VisitXcrement<CiPostfixExpr>(statement.Value, false)) {
+				Write("result = "); // FIXME: name clash? only matters if return ... result++, unlikely
+				statement.Value.Accept(this, CiPriority.Statement);
+				WriteLine();
+				VisitXcrement<CiPostfixExpr>(statement.Value, true);
+				WriteLine("return result");
+			}
+			else {
+				Write("return ");
+				statement.Value.Accept(this, CiPriority.Statement);
+				WriteLine();
+			}
 		}
 	}
 
