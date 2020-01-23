@@ -1024,6 +1024,8 @@ public class GenPy : GenBase
 				Write($"\\x{b:x2}");
 				i++;
 			}
+			if (i > 0)
+				Write('"');
 			WriteLine(" )");
 		}
 		CloseChild();
