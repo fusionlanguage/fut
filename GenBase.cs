@@ -933,10 +933,6 @@ public abstract class GenBase : CiVisitor
 		Write(statements);
 	}
 
-	protected virtual void WriteFallthrough(CiExpr expr)
-	{
-	}
-
 	public override void Visit(CiSwitch statement)
 	{
 		Write("switch (");
@@ -950,8 +946,6 @@ public abstract class GenBase : CiVisitor
 			}
 			this.Indent++;
 			WriteCaseBody(kase.Body);
-			if (kase.Fallthrough != null)
-				WriteFallthrough(kase.Fallthrough);
 			this.Indent--;
 		}
 		if (statement.DefaultBody != null) {

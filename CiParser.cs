@@ -568,22 +568,6 @@ public class CiParser : CiLexer
 				case CiToken.Default:
 				case CiToken.RightBrace:
 					break;
-				case CiToken.Goto:
-					NextToken();
-					switch (this.CurrentToken) {
-					case CiToken.Case:
-						NextToken();
-						kase.Fallthrough = ParseExpr();
-						break;
-					case CiToken.Default:
-						kase.Fallthrough = new CiGotoDefault { Line = this.Line };
-						NextToken();
-						break;
-					default:
-						throw ParseException("Expected goto case or goto default");
-					}
-					Expect(CiToken.Semicolon);
-					break;
 				default:
 					continue;
 				}

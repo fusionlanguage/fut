@@ -619,15 +619,10 @@ public class CiReturn : CiStatement
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }
 
-public class CiGotoDefault : CiExpr
-{
-}
-
 public class CiCase
 {
 	public CiExpr[] Values;
 	public CiStatement[] Body;
-	public CiExpr Fallthrough;
 }
 
 public class CiSwitch : CiCondCompletionStatement

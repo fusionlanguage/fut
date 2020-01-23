@@ -1,6 +1,6 @@
 // CiResolver.cs - Ci symbol resolver
 //
-// Copyright (C) 2011-2019  Piotr Fusik
+// Copyright (C) 2011-2020  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -912,35 +912,12 @@ public class CiResolver : CiVisitor
 		OpenScope(statement);
 		statement.Value = Resolve(statement.Value);
 		statement.SetCompletesNormally(false);
-		CiExpr fallthrough = null;
 		foreach (CiCase kase in statement.Cases) {
 			for (int i = 0; i < kase.Values.Length; i++)
 				// TODO: enum kase.Values[i] = FoldConst(kase.Values[i]);
 				kase.Values[i] = Resolve(kase.Values[i]);
-			if (fallthrough != null) {
-				if (fallthrough is CiGotoDefault)
-					throw StatementException(fallthrough, "Default must follow");
-				if (!object.Equals(((CiLiteral) fallthrough).Value, ((CiLiteral) kase.Values[0]).Value))
-					throw StatementException(fallthrough, "This case must follow");
-			}
-			bool reachable = Resolve(kase.Body);
-			fallthrough = kase.Fallthrough;
-			if (fallthrough != null) {
-				if (!reachable)
-					throw StatementException(fallthrough, "goto is not reachable");
-				if (!(fallthrough is CiGotoDefault))
-					kase.Fallthrough = fallthrough = FoldConst(fallthrough);
-			}
-			else if (reachable)
-				throw StatementException(kase.Body.Last(), "Case must end with break, continue, return, throw or goto");
-		}
-		if (fallthrough != null) {
-			if (fallthrough is CiGotoDefault) {
-				if (statement.DefaultBody == null)
-					throw StatementException(fallthrough, "Default must follow");
-			}
-			else
-				throw StatementException(fallthrough, "This case must follow");
+			if (Resolve(kase.Body))
+				throw StatementException(kase.Body.Last(), "Case must end with break, continue, return or throw");
 		}
 		if (statement.DefaultBody != null) {
 			bool reachable = Resolve(statement.DefaultBody);

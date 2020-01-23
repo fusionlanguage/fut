@@ -840,19 +840,7 @@ case 2:
 ```
 
 Correct termination means a statement that doesn't fall
-to the next statement: `break`, `continue`, `return`, `throw`
-or C#-style `goto case` / `goto default`, which jumps to the next case.
-
-```csharp
-switch (x) {
-case 1:
-    DoFoo();
-    goto case 2; // now it's clear what the programmer meant
-case 2:
-    DoBar();
-    break;
-}
-```
+to the next statement: `break`, `continue`, `return` or `throw`.
 
 The `default` clause, if present, must be specified last.
 
