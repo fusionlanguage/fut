@@ -5,6 +5,6 @@ public static class Test
 		const int[3] a = { 5, 10, 15 };
 		const int[3] b = { 5, 10, 15 };
 		int[] p = a;
-		return p == a && !(p == b);
+		return !(p != a) && p != b;
 	}
 }

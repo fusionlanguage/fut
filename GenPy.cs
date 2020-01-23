@@ -146,6 +146,16 @@ public class GenPy : GenBase
 		}
 	}
 
+	static bool IsPtr(CiExpr expr) => expr.Type is CiClassPtrType || expr.Type is CiArrayPtrType;
+
+	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+	{
+		string op = IsPtr(expr.Left) || IsPtr(expr.Right)
+			? not ? " is not " : " is "
+			: not ? " != " : " == ";
+		WriteComparison(expr, parent, CiPriority.Equality, op);
+	}
+
 	protected override void WriteCharAt(CiBinaryExpr expr)
 	{
 		Write("ord(");
