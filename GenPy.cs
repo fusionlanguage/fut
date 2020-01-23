@@ -148,7 +148,9 @@ public class GenPy : GenBase
 
 	protected override void WriteCharAt(CiBinaryExpr expr)
 	{
+		Write("ord(");
 		WriteIndexing(expr, CiPriority.Statement);
+		Write(')');
 	}
 
 	protected override void WriteStringLength(CiExpr expr)
