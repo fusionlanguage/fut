@@ -112,8 +112,15 @@ public class GenPy : GenBase
 		if (method.Documentation == null)
 			return;
 		StartPyDoc(method.Documentation);
+		bool first = true;
 		foreach (CiVar param in method.Parameters) {
 			if (param.Documentation != null) {
+				if (first) {
+					WriteLine();
+					WriteLine();
+					WriteLine("Parameters:");
+					first = false;
+				}
 				Write(param.Name);
 				Write(": ");
 				WritePyDoc(param.Documentation.Summary);
@@ -963,7 +970,7 @@ public class GenPy : GenBase
 		WriteParameters(method, first, true);
 		this.CurrentMethod = method;
 		OpenChild();
-		WritePyDoc(method.Documentation);
+		WritePyDoc(method);
 		method.Body.Accept(this);
 		CloseChild();
 		this.CurrentMethod = null;
