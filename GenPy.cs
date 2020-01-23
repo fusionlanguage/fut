@@ -256,7 +256,7 @@ public class GenPy : GenBase
 		else {
 			Write("[ ");
 			if (value == null)
-				WriteDefaultValue(elementType); // TODO: storage
+				WriteDefaultValue(elementType);
 			else
 				value.Accept(this, CiPriority.Statement);
 			Write(" ] * ");
@@ -692,6 +692,91 @@ public class GenPy : GenBase
 				statement.Value.Accept(this, CiPriority.Statement);
 				WriteLine();
 			}
+		}
+	}
+
+	static bool IsVarReference(CiExpr expr) => expr is CiSymbolReference symbol && symbol.Symbol is CiVar;
+
+	static int LengthWithoutTrailingBreak(CiStatement[] body)
+	{
+		int length = body.Length;
+		if (length > 0 && body[length - 1] is CiBreak)
+			length--;
+		return length;
+	}
+
+	static bool HasBreak(CiStatement statement)
+	{
+		switch (statement) {
+		case CiBreak brk:
+			return true;
+		case CiIf ifStatement:
+			return HasBreak(ifStatement.OnTrue) || (ifStatement.OnFalse != null && HasBreak(ifStatement.OnFalse));
+		case CiBlock block:
+			return block.Statements.Any(HasBreak);
+		default:
+			return false;
+		}
+	}
+
+	static bool HasEarlyBreak(CiStatement[] body)
+	{
+		int length = LengthWithoutTrailingBreak(body);
+		for (int i = 0; i < length; i++) {
+			if (HasBreak(body[i]))
+				return true;
+		}
+		return false;
+	}
+
+	void WritePyCaseBody(CiStatement[] body)
+	{
+		OpenChild();
+		Write(body, LengthWithoutTrailingBreak(body)); // FIXME: break
+		CloseChild();
+	}
+
+	public override void Visit(CiSwitch statement)
+	{
+		if (statement.Cases.Any(kase => HasEarlyBreak(kase.Body))
+		 || (statement.DefaultBody != null && HasEarlyBreak(statement.DefaultBody))) {
+			 WriteLine("TODO: early break");
+		}
+
+		CiExpr value = statement.Value;
+		VisitXcrement<CiPrefixExpr>(value, true);
+		switch (value) {
+		case CiSymbolReference symbol when symbol.Left == null || IsVarReference(symbol.Left):
+		case CiPrefixExpr prefix when IsVarReference(prefix.Inner): // ++x, --x, -x, ~x
+		case CiBinaryExpr binary when binary.Op == CiToken.LeftBracket && IsVarReference(binary.Left) && binary.Right is CiLiteral:
+			break;
+		default:
+			Write("ci_switch_tmp = ");
+			value.Accept(this, CiPriority.Statement);
+			WriteLine();
+			VisitXcrement<CiPostfixExpr>(value, true);
+			value = null;
+			break;
+		}
+
+		string op = "if ";
+		foreach (CiCase kase in statement.Cases) {
+			foreach (CiExpr caseValue in kase.Values) {
+				Write(op);
+				if (value == null)
+					Write("ci_switch_tmp");
+				else
+					value.Accept(this, CiPriority.Equality);
+				Write(" == ");
+				caseValue.Accept(this, CiPriority.Equality);
+				op = " or ";
+			}
+			WritePyCaseBody(kase.Body);
+			op = "elif ";
+		}
+		if (statement.DefaultBody != null && LengthWithoutTrailingBreak(statement.DefaultBody) > 0) {
+			Write("else");
+			WritePyCaseBody(statement.DefaultBody);
 		}
 	}
 
