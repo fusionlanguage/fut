@@ -4,7 +4,8 @@ Welcome to the description of yet another programming language.
 Unlike most languages that you learned before, Ć does _not_ claim
 to be the best universal programming language.
 Instead, it solves one specific problem: how to write code that can be
-_conveniently_ used from C, C++, Java, C# and JavaScript _at the same time_.
+_conveniently_ used from C, C++, C#, Java, JavaScript and Python
+_at the same time_.
 For example, if you invented a new compression format, you can implement
 it in Ć and have the automatic translator `cito` generate the source code
 in the mentioned languages, so programmers of these languages can use your code.
@@ -557,6 +558,7 @@ This translates as follows:
 Cat alik = new Cat(); // C#
 final Cat alik = new Cat(); // Java
 var alik = new Cat(); // JavaScript
+alik = Cat() # Python
 Cat alik; // C++
 Cat alik; // C, potentially followed by construction code
 ```

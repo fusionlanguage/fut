@@ -39,6 +39,7 @@ public static class CiTo
 		Console.WriteLine("-l cs      Translate to C#");
 		Console.WriteLine("-l java    Translate to Java");
 		Console.WriteLine("-l js      Translate to JavaScript");
+		Console.WriteLine("-l py      Translate to Python");
 		Console.WriteLine("-o FILE    Write to the specified file");
 		Console.WriteLine("-n NAME    Specify C++/C# namespace or Java package");
 		Console.WriteLine("-D NAME    Define conditional compilation symbol");
