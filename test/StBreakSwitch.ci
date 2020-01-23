@@ -1,0 +1,20 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int s = 0;
+		switch (s) {
+		case 0:
+			if (++s == 1)
+				break;
+			s = -10;
+			break;
+		case 1:
+			s = -20;
+			break;
+		default:
+			break;
+		}
+		return s == 1;
+	}
+}

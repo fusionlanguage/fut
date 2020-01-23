@@ -27,6 +27,7 @@ namespace Foxoft.Ci
 public class GenPy : GenBase
 {
 	bool ChildPass;
+	bool SwitchBreak;
 
 	protected override void WriteBanner()
 	{
@@ -540,7 +541,7 @@ public class GenPy : GenBase
 
 	public override void Visit(CiBreak statement)
 	{
-		WriteLine("break");
+		WriteLine(statement.LoopOrSwitch is CiSwitch ? "raise CiBreak()" : "break");
 	}
 
 	bool OpenCond(string statement, CiExpr cond, CiPriority parent)
@@ -750,9 +751,12 @@ public class GenPy : GenBase
 
 	public override void Visit(CiSwitch statement)
 	{
-		if (statement.Cases.Any(kase => HasEarlyBreak(kase.Body))
-		 || (statement.DefaultBody != null && HasEarlyBreak(statement.DefaultBody))) {
-			 WriteLine("TODO: early break");
+		bool earlyBreak = statement.Cases.Any(kase => HasEarlyBreak(kase.Body))
+			|| (statement.DefaultBody != null && HasEarlyBreak(statement.DefaultBody));
+		if (earlyBreak) {
+			this.SwitchBreak = true;
+			Write("try");
+			OpenChild();
 		}
 
 		CiExpr value = statement.Value;
@@ -789,6 +793,13 @@ public class GenPy : GenBase
 		if (statement.DefaultBody != null && LengthWithoutTrailingBreak(statement.DefaultBody) > 0) {
 			Write("else");
 			WritePyCaseBody(statement.DefaultBody);
+		}
+
+		if (earlyBreak) {
+			CloseChild();
+			Write("except CiBreak");
+			OpenChild();
+			CloseChild();
 		}
 	}
 
@@ -930,6 +941,7 @@ public class GenPy : GenBase
 	public override void Write(CiProgram program)
 	{
 		this.Includes = new SortedSet<string>();
+		this.SwitchBreak = false;
 		OpenStringWriter();
 		foreach (CiEnum enu in program.OfType<CiEnum>())
 			Write(enu);
@@ -937,6 +949,10 @@ public class GenPy : GenBase
 			Write(klass);
 		CreateFile(this.OutputFile);
 		WriteIncludes("import ", "");
+		if (this.SwitchBreak) {
+			WriteLine();
+			WriteLine("class CiBreak(Exception): pass");
+		}
 		CloseStringWriter();
 		WriteResources(program.Resources);
 		CloseFile();
