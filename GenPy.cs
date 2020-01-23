@@ -34,6 +34,95 @@ public class GenPy : GenBase
 		WriteLine("# Generated automatically with \"cito\". Do not edit.");
 	}
 
+	void WritePyDoc(string text)
+	{
+		foreach (char c in text) {
+			if (c == '\n')
+				WriteLine();
+			else
+				Write(c);
+		}
+	}
+
+	void WritePyDoc(CiDocPara para)
+	{
+		foreach (CiDocInline inline in para.Children) {
+			switch (inline) {
+			case CiDocText text:
+				WritePyDoc(text.Text);
+				break;
+			case CiDocCode code:;
+				Write('`');
+				WritePyDoc(code.Text);
+				Write('`');
+				break;
+			default:
+				throw new ArgumentException(inline.GetType().Name);
+			}
+		}
+	}
+
+	void WritePyDoc(CiDocList list)
+	{
+		WriteLine();
+		foreach (CiDocPara item in list.Items) {
+			Write(" * ");
+			WritePyDoc(item);
+			WriteLine();
+		}
+		WriteLine();
+	}
+
+	void WritePyDoc(CiDocBlock block)
+	{
+		switch (block) {
+		case CiDocPara para:
+			WritePyDoc(para);
+			break;
+		case CiDocList list:
+			WritePyDoc(list);
+			break;
+		default:
+			throw new ArgumentException(block.GetType().Name);
+		}
+	}
+
+	void StartPyDoc(CiCodeDoc doc)
+	{
+		Write("\"\"\"");
+		WritePyDoc(doc.Summary);
+		if (doc.Details.Length > 0) {
+			WriteLine();
+			WriteLine();
+			foreach (CiDocBlock block in doc.Details)
+				WritePyDoc(block);
+		}
+	}
+
+	void WritePyDoc(CiCodeDoc doc)
+	{
+		if (doc != null) {
+			StartPyDoc(doc);
+			WriteLine("\"\"\"");
+		}
+	}
+
+	void WritePyDoc(CiMethod method)
+	{
+		if (method.Documentation == null)
+			return;
+		StartPyDoc(method.Documentation);
+		foreach (CiVar param in method.Parameters) {
+			if (param.Documentation != null) {
+				Write(param.Name);
+				Write(": ");
+				WritePyDoc(param.Documentation.Summary);
+				WriteLine();
+			}
+		}
+		WriteLine("\"\"\"");
+	}
+
 	protected override void WriteLiteral(object value)
 	{
 		switch (value) {
@@ -745,7 +834,7 @@ public class GenPy : GenBase
 	void WritePyCaseBody(CiStatement[] body)
 	{
 		OpenChild();
-		Write(body, LengthWithoutTrailingBreak(body)); // FIXME: break
+		Write(body, LengthWithoutTrailingBreak(body));
 		CloseChild();
 	}
 
@@ -824,14 +913,14 @@ public class GenPy : GenBase
 	{
 		Include("enum");
 		WriteLine();
-		//TODO: Write(enu.Documentation);
 		Write("class ");
 		Write(enu.Name);
 		Write("(enum.Enum)");
 		OpenChild();
+		WritePyDoc(enu.Documentation);
 		int i = 1;
 		foreach (CiConst konst in enu) {
-			//TODO: Write(konst.Documentation);
+			//TODO: WritePyDoc(konst.Documentation);
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" = ");
 			if (konst.Value != null)
@@ -861,7 +950,6 @@ public class GenPy : GenBase
 		if (method.CallType == CiCallType.Abstract)
 			return;
 		WriteLine();
-		//TODO: Write(method.Documentation);
 		Write("def ");
 		WriteLowercaseWithUnderscores(method.Name);
 		Write('(');
@@ -874,14 +962,16 @@ public class GenPy : GenBase
 		}
 		WriteParameters(method, first, true);
 		this.CurrentMethod = method;
-		WriteChild(method.Body);
+		OpenChild();
+		WritePyDoc(method.Documentation);
+		method.Body.Accept(this);
+		CloseChild();
 		this.CurrentMethod = null;
 	}
 
 	void Write(CiClass klass)
 	{
 		WriteLine();
-		//TODO: Write(klass.Documentation);
 		Write("class ");
 		Write(klass.Name);
 		if (klass.BaseClassName != null) {
@@ -890,6 +980,7 @@ public class GenPy : GenBase
 			Write(')');
 		}
 		OpenChild();
+		WritePyDoc(klass.Documentation);
 		WriteConsts(klass.Consts);
 		if (klass.Constructor != null
 		 || klass.Fields.Any(NeedsInit)) {
