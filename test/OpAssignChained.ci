@@ -7,8 +7,19 @@ public static class Test
 		ia[0] = ba[0] = 200;
 		ba[1] = ia[1] = 200;
 		ba[3] = ba[2] = 200;
+
+		int i;
+		int s = 1;
+		s += i = 2;
+
+		int a = 3;
+		int x;
+		int nz;
+		nz = x = a &= 1;
 		return ba[0] == 200 && ia[0] == 200
 			&& ia[1] == 200 && ba[1] == 200
-			&& ba[2] == 200 && ba[3] == 200;
+			&& ba[2] == 200 && ba[3] == 200
+			&& i == 2 && s == 3
+			&& a == 1 && x == 1 && nz == 1;
 	}
 }

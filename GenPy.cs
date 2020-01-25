@@ -292,14 +292,33 @@ public class GenPy : GenBase
 			return Write(expr, parent > CiPriority.CondAnd || parent == CiPriority.CondOr, CiPriority.CondAnd, " and ", CiPriority.CondAnd);
 		case CiToken.CondOr:
 			return Write(expr, parent, CiPriority.CondOr, " or ");
-		case CiToken.DivAssign when expr.Type is CiIntegerType:
-			if (parent > CiPriority.Assign)
-				Write('(');
+		case CiToken.Assign:
+		case CiToken.AddAssign:
+		case CiToken.SubAssign:
+		case CiToken.MulAssign:
+		case CiToken.DivAssign:
+		case CiToken.ModAssign:
+		case CiToken.ShiftLeftAssign:
+		case CiToken.ShiftRightAssign:
+		case CiToken.AndAssign:
+		case CiToken.OrAssign:
+		case CiToken.XorAssign:
+			CiExpr right;
+			if (expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign
+			 && (expr.Op != CiToken.Assign || rightBinary.Op != CiToken.Assign)) {
+				Visit(rightBinary, CiPriority.Statement);
+				WriteLine();
+				right = rightBinary.Left; // TODO: side effect
+			}
+			else
+				right = expr.Right;
 			expr.Left.Accept(this, CiPriority.Assign);
-			Write(" //= ");
-			expr.Right.Accept(this, CiPriority.Statement);
-			if (parent > CiPriority.Assign)
-				Write(')');
+			Write(' ');
+			if (expr.Op == CiToken.DivAssign && expr.Type is CiIntegerType)
+				Write('/');
+			Write(expr.OpString);
+			Write(' ');
+			right.Accept(this, CiPriority.Statement);
 			return expr;
 		default:
 			return base.Visit(expr, parent);
