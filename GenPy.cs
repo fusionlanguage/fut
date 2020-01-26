@@ -293,6 +293,21 @@ public class GenPy : GenBase
 		case CiToken.CondOr:
 			return Write(expr, parent, CiPriority.CondOr, " or ");
 		case CiToken.Assign:
+			if (this.AtLineStart) {
+				for (CiExpr right = expr.Right; right is CiBinaryExpr rightBinary && rightBinary.IsAssign; right = rightBinary.Right) {
+					if (rightBinary.Op != CiToken.Assign) {
+						Visit(rightBinary, CiPriority.Statement);
+						WriteLine();
+						break;
+					}
+				}
+			}
+			expr.Left.Accept(this, CiPriority.Assign);
+			Write(" = ");
+			{
+				(expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign && rightBinary.Op != CiToken.Assign? rightBinary.Left /* TODO: side effect*/ : expr.Right).Accept(this, CiPriority.Assign);
+			}
+			return expr;
 		case CiToken.AddAssign:
 		case CiToken.SubAssign:
 		case CiToken.MulAssign:
@@ -303,22 +318,21 @@ public class GenPy : GenBase
 		case CiToken.AndAssign:
 		case CiToken.OrAssign:
 		case CiToken.XorAssign:
-			CiExpr right;
-			if (expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign
-			 && (expr.Op != CiToken.Assign || rightBinary.Op != CiToken.Assign)) {
-				Visit(rightBinary, CiPriority.Statement);
-				WriteLine();
-				right = rightBinary.Left; // TODO: side effect
+			{
+				CiExpr right = expr.Right;
+				if (right is CiBinaryExpr rightBinary && rightBinary.IsAssign) {
+					Visit(rightBinary, CiPriority.Statement);
+					WriteLine();
+					right = rightBinary.Left; // TODO: side effect
+				}
+				expr.Left.Accept(this, CiPriority.Assign);
+				Write(' ');
+				if (expr.Op == CiToken.DivAssign && expr.Type is CiIntegerType)
+					Write('/');
+				Write(expr.OpString);
+				Write(' ');
+				right.Accept(this, CiPriority.Statement);
 			}
-			else
-				right = expr.Right;
-			expr.Left.Accept(this, CiPriority.Assign);
-			Write(' ');
-			if (expr.Op == CiToken.DivAssign && expr.Type is CiIntegerType)
-				Write('/');
-			Write(expr.OpString);
-			Write(' ');
-			right.Accept(this, CiPriority.Statement);
 			return expr;
 		default:
 			return base.Visit(expr, parent);
