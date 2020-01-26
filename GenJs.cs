@@ -419,16 +419,33 @@ public class GenJs : GenBase
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Op == CiToken.Slash && expr.Type is CiIntegerType) {
-			if (parent > CiPriority.Or)
-				Write('(');
-			expr.Left.Accept(this, CiPriority.Mul);
-			Write(" / ");
-			expr.Right.Accept(this, CiPriority.Primary);
-			Write(" | 0"); // FIXME: long: Math.trunc?
-			if (parent > CiPriority.Or)
-				Write(')');
-			return expr;
+		if (expr.Type is CiIntegerType) {
+			switch (expr.Op) {
+			case CiToken.Slash:
+				if (parent > CiPriority.Or)
+					Write('(');
+				expr.Left.Accept(this, CiPriority.Mul);
+				Write(" / ");
+				expr.Right.Accept(this, CiPriority.Primary);
+				Write(" | 0"); // FIXME: long: Math.trunc?
+				if (parent > CiPriority.Or)
+					Write(')');
+				return expr;
+			case CiToken.DivAssign:
+				if (parent > CiPriority.Assign)
+					Write('(');
+				expr.Left.Accept(this, CiPriority.Assign);
+				Write(" = ");
+				expr.Left.Accept(this, CiPriority.Mul); // TODO: side effect
+				Write(" / ");
+				expr.Right.Accept(this, CiPriority.Primary);
+				Write(" | 0");
+				if (parent > CiPriority.Assign)
+					Write(')');
+				return expr;
+			default:
+				break;
+			}
 		}
 		return base.Visit(expr, parent);
 	}
