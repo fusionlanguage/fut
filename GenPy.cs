@@ -607,14 +607,14 @@ public class GenPy : GenBase
 			return seen;
 		case CiBinaryExpr binary:
 			seen = VisitXcrement<T>(binary.Left, write);
-			// FIXME: CondAnd, CondOr
+			// XXX: assert not seen on the right side of CondAnd, CondOr
 			seen |= VisitXcrement<T>(binary.Right, write);
 			return seen;
 		case CiCondExpr cond:
 			seen = VisitXcrement<T>(cond.Cond, write);
-			// FIXME
-			seen |= VisitXcrement<T>(cond.OnTrue, write);
-			seen |= VisitXcrement<T>(cond.OnFalse, write);
+			// XXX: assert not seen in OnTrue and OnFalse
+			// seen |= VisitXcrement<T>(cond.OnTrue, write);
+			// seen |= VisitXcrement<T>(cond.OnFalse, write);
 			return seen;
 		default:
 			throw new NotImplementedException(expr.GetType().Name);

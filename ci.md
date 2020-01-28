@@ -117,6 +117,11 @@ Operations on integers are conducted with the usual binary operators
 incrementations and decrementations (`x++ ++x x-- --x`), negation (`-`),
 bitwise complement (`~`) and comparisons (`== != < <= > >=`).
 
+Incrementations and decrementations cannot be conditional in an expression,
+that is, they cannot be used on the right side of `&&`, `||`
+or the ternary operato. This is because such expressions don't easily
+translate to Python, which lacks incrementation and decrementation operators.
+
 ### Floating-point numbers
 
 There are two floating-point types: `float` and `double`.

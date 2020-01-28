@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int i = 0;
+		return i == 5 || i-- == 0; //ERROR: -- not allowed on the right side of ||
+	}
+}

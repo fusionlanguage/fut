@@ -31,6 +31,7 @@ public class CiParser : CiLexer
 	public readonly CiProgram Program = new CiProgram { Parent = CiSystem.Value };
 	CiLoop CurrentLoop;
 	CiCondCompletionStatement CurrentLoopOrSwitch;
+	string XcrementParent = null;
 
 	CiException StatementException(CiStatement statement, string message)
 	{
@@ -109,6 +110,14 @@ public class CiParser : CiLexer
 		return new CiCollection { Line = line, Items = items.ToArray() };
 	}
 
+	void CheckXcrementParent()
+	{
+		if (this.XcrementParent != null) {
+			string op = this.CurrentToken == CiToken.Increment ? "++" : "--";
+			throw ParseException(op + " not allowed on the right side of " + this.XcrementParent);
+		}
+	}
+
 	bool SeeDigit()
 	{
 		int c = PeekChar();
@@ -162,6 +171,8 @@ public class CiParser : CiLexer
 		switch (this.CurrentToken) {
 		case CiToken.Increment:
 		case CiToken.Decrement:
+			CheckXcrementParent();
+			goto case CiToken.Minus;
 		case CiToken.Minus:
 		case CiToken.Tilde:
 		case CiToken.ExclamationMark:
@@ -216,6 +227,8 @@ public class CiParser : CiLexer
 				break;
 			case CiToken.Increment:
 			case CiToken.Decrement:
+				CheckXcrementParent();
+				goto case CiToken.ExclamationMark;
 			case CiToken.ExclamationMark:
 			case CiToken.Hash:
 				result = new CiPostfixExpr { Line = this.Line, Inner = result, Op = NextToken() };
@@ -310,16 +323,24 @@ public class CiParser : CiLexer
 	CiExpr ParseCondAndExpr()
 	{
 		CiExpr left = ParseOrExpr();
-		while (See(CiToken.CondAnd))
+		while (See(CiToken.CondAnd)) {
+			string saveXcrementParent = this.XcrementParent;
+			this.XcrementParent = "&&";
 			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseOrExpr() };
+			this.XcrementParent = saveXcrementParent;
+		}
 		return left;
 	}
 
 	CiExpr ParseCondOrExpr()
 	{
 		CiExpr left = ParseCondAndExpr();
-		while (See(CiToken.CondOr))
+		while (See(CiToken.CondOr)) {
+			string saveXcrementParent = this.XcrementParent;
+			this.XcrementParent = "||";
 			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseCondAndExpr() };
+			this.XcrementParent = saveXcrementParent;
+		}
 		return left;
 	}
 
@@ -329,9 +350,12 @@ public class CiParser : CiLexer
 		if (See(CiToken.QuestionMark)) {
 			CiCondExpr result = new CiCondExpr { Line = this.Line, Cond = left };
 			NextToken();
+			string saveXcrementParent = this.XcrementParent;
+			this.XcrementParent = "?";
 			result.OnTrue = ParseExpr();
 			Expect(CiToken.Colon);
 			result.OnFalse = ParseExpr();
+			this.XcrementParent = saveXcrementParent;
 			return result;
 		}
 		return left;
