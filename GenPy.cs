@@ -750,8 +750,8 @@ public class GenPy : GenBase
 				iter.Value.Accept(this, CiPriority.Statement);
 				Write(", ");
 			}
-			CiLiteral limit = (CiLiteral) ((CiBinaryExpr) statement.Cond).Right;
-			Write((long) limit.Value);
+			CiExpr limit = ((CiBinaryExpr) statement.Cond).Right;
+			limit.Accept(this, CiPriority.Statement);
 			Write(')');
 			WriteChild(statement.Body);
 			return;

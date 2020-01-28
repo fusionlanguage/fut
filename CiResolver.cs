@@ -359,6 +359,13 @@ public class CiResolver : CiVisitor
 			default:
 				break;
 			}
+			for (CiScope scope = this.CurrentScope; !(scope is CiClass); scope = scope.Parent) {
+				if (scope is CiFor forLoop
+				 && forLoop.IsRange
+				 && forLoop.Cond is CiBinaryExpr binaryCond
+				 && binaryCond.Right.IsReferenceTo(symbol.Symbol))
+					forLoop.IsRange = false;
+			}
 		}
 	}
 
@@ -865,7 +872,7 @@ public class CiResolver : CiVisitor
 			&& statement.Cond is CiBinaryExpr cond
 			&& cond.Op == CiToken.Less
 			&& cond.Left.IsReferenceTo(iter)
-			&& cond.Right is CiLiteral limit
+			&& (cond.Right is CiLiteral || (cond.Right is CiSymbolReference limitSymbol && limitSymbol.Symbol is CiVar))
 			&& statement.Advance is CiUnaryExpr adv
 			&& adv.Op == CiToken.Increment
 			&& adv.Inner.IsReferenceTo(iter);
