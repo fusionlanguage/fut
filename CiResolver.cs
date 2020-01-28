@@ -346,6 +346,22 @@ public class CiResolver : CiVisitor
 		return resolved;
 	}
 
+	void CheckLValue(CiExpr expr)
+	{
+		// TODO: check lvalue
+		if (expr is CiSymbolReference symbol) {
+			switch (symbol.Symbol.Parent) {
+			case CiFor forLoop:
+				forLoop.IsRange = false;
+				break;
+			case CiForeach foreachLoop:
+				throw StatementException(expr, "Cannot assign a foreach iteration variable");
+			default:
+				break;
+			}
+		}
+	}
+
 	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
 	{
 		CiExpr inner;
@@ -355,10 +371,10 @@ public class CiResolver : CiVisitor
 		case CiToken.Increment:
 		case CiToken.Decrement:
 			inner = Resolve(expr.Inner);
+			CheckLValue(inner);
 			if (!(inner.Type is CiNumericType))
 				throw StatementException(expr, "Argument of ++/-- must be numeric");
 			range = inner.Type as CiRangeType;
-			// TODO: check lvalue
 			if (range != null) {
 				int delta = expr.Op == CiToken.Increment ? 1 : -1;
 				type = new CiRangeType(range.Min + delta, range.Max + delta);
@@ -432,10 +448,10 @@ public class CiResolver : CiVisitor
 		switch (expr.Op) {
 		case CiToken.Increment:
 		case CiToken.Decrement:
+			CheckLValue(expr.Inner);
 			if (!(expr.Inner.Type is CiNumericType))
 				throw StatementException(expr, "Argument of ++/-- must be numeric");
 			expr.Type = expr.Inner.Type;
-			// TODO: check lvalue
 			return expr;
 		case CiToken.ExclamationMark:
 			throw StatementException(expr, "Unexpected '!'");
@@ -728,9 +744,7 @@ public class CiResolver : CiVisitor
 		case CiToken.XorAssign:
 		case CiToken.ShiftLeftAssign:
 		case CiToken.ShiftRightAssign:
-			// TODO: check lvalue
-			if (expr.Left is CiSymbolReference symbol && symbol.Symbol.Parent is CiForeach)
-				throw StatementException(expr, "Cannot assign a foreach iteration variable");
+			CheckLValue(left);
 			// TODO Coerce(right, left.Type);
 			expr.Left = left;
 			expr.Right = right;
@@ -819,7 +833,7 @@ public class CiResolver : CiVisitor
 	{
 	}
 
-	void ResolveLoop(CiLoop statement)
+	void ResolveLoopCond(CiLoop statement)
 	{
 		if (statement.Cond != null) {
 			statement.Cond = ResolveBool(statement.Cond);
@@ -827,13 +841,13 @@ public class CiResolver : CiVisitor
 		}
 		else
 			statement.SetCompletesNormally(false);
-		statement.Body.Accept(this);
 	}
 
 	public override void Visit(CiDoWhile statement)
 	{
 		OpenScope(statement);
-		ResolveLoop(statement);
+		ResolveLoopCond(statement);
+		statement.Body.Accept(this);
 		CloseScope();
 	}
 
@@ -842,9 +856,20 @@ public class CiResolver : CiVisitor
 		OpenScope(statement);
 		if (statement.Init != null)
 			statement.Init.Accept(this);
+		ResolveLoopCond(statement);
 		if (statement.Advance != null)
 			statement.Advance.Accept(this);
-		ResolveLoop(statement);
+		statement.IsRange = statement.Init is CiVar iter
+			&& iter.Type is CiIntegerType
+			&& iter.Value != null
+			&& statement.Cond is CiBinaryExpr cond
+			&& cond.Op == CiToken.Less
+			&& cond.Left.IsReferenceTo(iter)
+			&& cond.Right is CiLiteral limit
+			&& statement.Advance is CiUnaryExpr adv
+			&& adv.Op == CiToken.Increment
+			&& adv.Inner.IsReferenceTo(iter);
+		statement.Body.Accept(this);
 		CloseScope();
 	}
 
@@ -937,7 +962,8 @@ public class CiResolver : CiVisitor
 	public override void Visit(CiWhile statement)
 	{
 		OpenScope(statement);
-		ResolveLoop(statement);
+		ResolveLoopCond(statement);
+		statement.Body.Accept(this);
 		CloseScope();
 	}
 

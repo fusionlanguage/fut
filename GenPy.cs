@@ -682,21 +682,6 @@ public class GenPy : GenBase
 		return VisitXcrement<CiPostfixExpr>(cond, true);
 	}
 
-	static bool IsForInRange(CiFor statement)
-	{
-		return statement.Init is CiVar iter
-			&& iter.Type is CiIntegerType
-			&& iter.Value != null
-			&& statement.Cond is CiBinaryExpr cond
-			&& cond.Op == CiToken.Less
-			&& cond.Left.IsReferenceTo(iter)
-			&& cond.Right is CiLiteral limit
-			&& statement.Advance is CiUnaryExpr adv
-			&& adv.Op == CiToken.Increment
-			&& adv.Inner.IsReferenceTo(iter);
-		// FIXME: check iter not modified in statement.Body
-	}
-
 	void EndBody(CiFor statement)
 	{
 		if (statement.Advance != null)
@@ -715,7 +700,7 @@ public class GenPy : GenBase
 			VisitXcrement<CiPostfixExpr>(doWhile.Cond, true);
 			WriteLine("break");
 			return;
-		case CiFor forLoop when !IsForInRange(forLoop):
+		case CiFor forLoop when !forLoop.IsRange:
 			EndBody(forLoop);
 			break;
 		case CiWhile whileLoop:
@@ -756,24 +741,24 @@ public class GenPy : GenBase
 
 	public override void Visit(CiFor statement)
 	{
-		if (statement.Init != null) {
-			if (IsForInRange(statement)) {
-				CiVar iter = (CiVar) statement.Init;
-				Write("for ");
-				WriteName(iter);
-				Write(" in range(");
-				if (!(iter.Value is CiLiteral start) || (long) start.Value != 0) {
-					iter.Value.Accept(this, CiPriority.Statement);
-					Write(", ");
-				}
-				CiLiteral limit = (CiLiteral) ((CiBinaryExpr) statement.Cond).Right;
-				Write((long) limit.Value);
-				Write(')');
-				WriteChild(statement.Body);
-				return;
+		if (statement.IsRange) {
+			CiVar iter = (CiVar) statement.Init;
+			Write("for ");
+			WriteName(iter);
+			Write(" in range(");
+			if (!(iter.Value is CiLiteral start) || (long) start.Value != 0) {
+				iter.Value.Accept(this, CiPriority.Statement);
+				Write(", ");
 			}
-			statement.Init.Accept(this);
+			CiLiteral limit = (CiLiteral) ((CiBinaryExpr) statement.Cond).Right;
+			Write((long) limit.Value);
+			Write(')');
+			WriteChild(statement.Body);
+			return;
 		}
+
+		if (statement.Init != null)
+			statement.Init.Accept(this);
 		if (statement.Cond != null)
 			OpenCond("while ", statement.Cond, CiPriority.Statement);
 		else {
