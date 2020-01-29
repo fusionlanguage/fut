@@ -1,0 +1,16 @@
+public class Test
+{
+	int[5] Ints = 0;
+	byte[5] Bytes = 0;
+	bool[5] Bools = false;
+	string[5] Strings = null;
+
+	public static bool Run()
+	{
+		Test() o;
+		for (int i = 0; i < 5; i++)
+			if (o.Ints[i] != 0 || o.Bytes[i] != 0 || o.Bools[i] || o.Strings[i] != null)
+				return false;
+		return true;
+	}
+}

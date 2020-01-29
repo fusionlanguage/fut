@@ -397,7 +397,15 @@ public class GenC : GenCCpp
 		else {
 			if (def is CiField) {
 				WriteArrayElement(def, nesting);
-				WriteVarInit(def);
+				if (nesting > 0) {
+					Write(" = ");
+					if (type is CiStringStorageType || type.IsDynamicPtr)
+						Write("NULL");
+					else
+						def.Value.Accept(this, CiPriority.Statement);
+				}
+				else
+					WriteVarInit(def);
 				WriteLine(';');
 			}
 			CiMethod throwingMethod = GetThrowingMethod(def.Value);
