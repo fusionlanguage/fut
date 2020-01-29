@@ -586,7 +586,8 @@ public class CiFor : CiLoop
 {
 	public CiExpr Init;
 	public CiExpr Advance;
-	public bool IsRange;
+	public bool IsRange = false;
+	public long RangeStep;
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }
 

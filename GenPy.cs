@@ -752,6 +752,10 @@ public class GenPy : GenBase
 			}
 			CiExpr limit = ((CiBinaryExpr) statement.Cond).Right;
 			limit.Accept(this, CiPriority.Statement);
+			if (statement.RangeStep != 1) {
+				Write(", ");
+				Write(statement.RangeStep);
+			}
 			Write(')');
 			WriteChild(statement.Body);
 			return;

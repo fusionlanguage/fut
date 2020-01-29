@@ -866,16 +866,47 @@ public class CiResolver : CiVisitor
 		ResolveLoopCond(statement);
 		if (statement.Advance != null)
 			statement.Advance.Accept(this);
-		statement.IsRange = statement.Init is CiVar iter
+		if (statement.Init is CiVar iter
 			&& iter.Type is CiIntegerType
 			&& iter.Value != null
 			&& statement.Cond is CiBinaryExpr cond
-			&& cond.Op == CiToken.Less
 			&& cond.Left.IsReferenceTo(iter)
-			&& (cond.Right is CiLiteral || (cond.Right is CiSymbolReference limitSymbol && limitSymbol.Symbol is CiVar))
-			&& statement.Advance is CiUnaryExpr adv
-			&& adv.Op == CiToken.Increment
-			&& adv.Inner.IsReferenceTo(iter);
+			&& (cond.Right is CiLiteral || (cond.Right is CiSymbolReference limitSymbol && limitSymbol.Symbol is CiVar))) {
+			long step = 0;
+			switch (statement.Advance) {
+			case CiUnaryExpr unary when unary.Inner.IsReferenceTo(iter):
+				switch (unary.Op) {
+				case CiToken.Increment:
+					step = 1;
+					break;
+				case CiToken.Decrement:
+					step = -1;
+					break;
+				default:
+					break;
+				}
+				break;
+			case CiBinaryExpr binary when binary.Left.IsReferenceTo(iter) && binary.Right is CiLiteral literalStep:
+				switch (binary.Op) {
+				case CiToken.AddAssign:
+					step = (long) literalStep.Value;
+					break;
+				case CiToken.SubAssign:
+					step = -(long) literalStep.Value;
+					break;
+				default:
+					break;
+				}
+				break;
+			default:
+				break;
+			}
+			if (step != 0
+			 && cond.Op == (step > 0 ? CiToken.Less : CiToken.Greater)) {
+				statement.IsRange = true;
+				statement.RangeStep = step;
+			}
+		}
 		statement.Body.Accept(this);
 		CloseScope();
 	}
