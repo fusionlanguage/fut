@@ -728,6 +728,8 @@ public class CiResolver : CiVisitor
 			Coerce(right, CiSystem.BoolType);
 			if (left is CiLiteral leftLiteral)
 				return (bool) leftLiteral.Value ? right : CiLiteral.False;
+			if (right is CiLiteral rightLiteral && (bool) rightLiteral.Value)
+				return left;
 			type = CiSystem.BoolType;
 			break;
 		}
@@ -736,6 +738,8 @@ public class CiResolver : CiVisitor
 			Coerce(right, CiSystem.BoolType);
 			if (left is CiLiteral leftLiteral)
 				return (bool) leftLiteral.Value ? CiLiteral.True : right;
+			if (right is CiLiteral rightLiteral && !(bool) rightLiteral.Value)
+				return left;
 			type = CiSystem.BoolType;
 			break;
 		}
