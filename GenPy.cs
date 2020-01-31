@@ -984,6 +984,16 @@ public class GenPy : GenBase
 	static bool NeedsConstructor(CiClass klass)
 		=> klass.Constructor != null || klass.Fields.Any(NeedsInit);
 
+	static bool InheritsConstructor(CiClass klass)
+	{
+		while (klass.Parent is CiClass baseClass) {
+			if (NeedsConstructor(baseClass))
+				return true;
+			klass = baseClass;
+		}
+		return false;
+	}
+
 	void Write(CiMethod method)
 	{
 		if (method.CallType == CiCallType.Abstract)
@@ -1025,8 +1035,8 @@ public class GenPy : GenBase
 			WriteLine();
 			Write("def __init__(self)");
 			OpenChild();
-			if (klass.Parent is CiClass baseClass && NeedsConstructor(baseClass)) {
-				Write(baseClass.Name);
+			if (InheritsConstructor(klass)) {
+				Write(klass.BaseClassName);
 				WriteLine(".__init__(self)");
 			}
 			foreach (CiField field in klass.Fields) {

@@ -1,0 +1,26 @@
+public class Base
+{
+	internal int Foo;
+
+	Base()
+	{
+		Foo = 42;
+	}
+}
+
+public class Middle : Base
+{
+}
+
+public class Test : Middle
+{
+	Test()
+	{
+	}
+
+	public static bool Run()
+	{
+		Test() o;
+		return o.Foo == 42;
+	}
+}
