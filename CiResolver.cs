@@ -905,10 +905,16 @@ public class CiResolver : CiVisitor
 			default:
 				break;
 			}
-			if (step != 0
-			 && cond.Op == (step > 0 ? CiToken.Less : CiToken.Greater)) {
+			switch (cond.Op) {
+			case CiToken.Less when step > 0:
+			case CiToken.LessOrEqual when step > 0:
+			case CiToken.Greater when step < 0:
+			case CiToken.GreaterOrEqual when step < 0:
 				statement.IsRange = true;
 				statement.RangeStep = step;
+				break;
+			default:
+				break;
 			}
 		}
 		statement.Body.Accept(this);

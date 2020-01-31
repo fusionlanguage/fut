@@ -731,6 +731,16 @@ public class GenPy : GenBase
 		this.Indent--;
 	}
 
+	void WriteInclusiveLimit(CiExpr limit, int increment, string incrementString)
+	{
+		if (limit is CiLiteral literal)
+			Write((long) literal.Value + increment);
+		else {
+			limit.Accept(this, CiPriority.Add);
+			Write(incrementString);
+		}
+	}
+
 	void CloseWhile(CiLoop loop)
 	{
 		CloseChild();
@@ -757,8 +767,21 @@ public class GenPy : GenBase
 				iter.Value.Accept(this, CiPriority.Statement);
 				Write(", ");
 			}
-			CiExpr limit = ((CiBinaryExpr) statement.Cond).Right;
-			limit.Accept(this, CiPriority.Statement);
+			CiBinaryExpr cond = (CiBinaryExpr) statement.Cond;
+			switch (cond.Op) {
+			case CiToken.Less:
+			case CiToken.Greater:
+				cond.Right.Accept(this, CiPriority.Statement);
+				break;
+			case CiToken.LessOrEqual:
+				WriteInclusiveLimit(cond.Right, 1, " + 1");
+				break;
+			case CiToken.GreaterOrEqual:
+				WriteInclusiveLimit(cond.Right, -1, " - 1");
+				break;
+			default:
+				throw new NotImplementedException(cond.Op.ToString());
+			}
 			if (statement.RangeStep != 1) {
 				Write(", ");
 				Write(statement.RangeStep);
