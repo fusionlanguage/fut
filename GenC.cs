@@ -746,9 +746,8 @@ public class GenC : GenCCpp
 		case CiToken.Equal:
 		case CiToken.NotEqual:
 		case CiToken.Greater:
-			if (expr.Left is CiSymbolReference property && property.Symbol == CiSystem.StringLength
-			 && expr.Right is CiLiteral literal && (long) literal.Value == 0) {
-				property.Left.Accept(this, CiPriority.Primary);
+			if (IsStringEmpty(expr, out CiExpr str)) {
+				str.Accept(this, CiPriority.Primary);
 				Write(expr.Op == CiToken.Equal ? "[0] == '\\0'" : "[0] != '\\0'");
 				return expr;
 			}

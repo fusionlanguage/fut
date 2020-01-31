@@ -1,0 +1,22 @@
+public class Test
+{
+	public static bool Run()
+	{
+		string() s = "foobar";
+		string p = "foobar";
+		string() es = "";
+		string ep = "";
+		return s.Length == 6
+			&& p.Length == 6
+			&& "foobar".Length == 6
+			&& s.Length > 0
+			&& p.Length > 0
+			&& "foobar".Length > 0
+			&& s.Length != 0
+			&& p.Length != 0
+			&& "foobar".Length != 0
+			&& es.Length == 0
+			&& ep.Length == 0
+			&& "".Length == 0;
+	}
+}

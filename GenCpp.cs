@@ -615,15 +615,26 @@ public class GenCpp : GenCCpp
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Left.Type == CiSystem.StringStorageType
-		 && expr.Op == CiToken.Assign
-		 && parent == CiPriority.Statement
-		 && IsTrimSubstring(expr) is CiExpr length) {
+		switch (expr.Op) {
+		case CiToken.Equal:
+		case CiToken.NotEqual:
+		case CiToken.Greater:
+			if (IsStringEmpty(expr, out CiExpr str)) {
+				if (expr.Op != CiToken.Equal)
+					Write('!');
+				str.Accept(this, CiPriority.Primary);
+				Write(".empty()");
+				return expr;
+			}
+			break;
+		case CiToken.Assign when expr.Left.Type == CiSystem.StringStorageType && parent == CiPriority.Statement && IsTrimSubstring(expr) is CiExpr length:
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".resize(");
 			length.Accept(this, CiPriority.Statement);
 			Write(')');
 			return expr;
+		default:
+			break;
 		}
 		return base.Visit(expr, parent);
 	}

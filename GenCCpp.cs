@@ -98,6 +98,17 @@ public abstract class GenCCpp : GenTyped
 			Write(')');
 	}
 
+	protected static bool IsStringEmpty(CiBinaryExpr expr, out CiExpr str)
+	{
+		if (expr.Left is CiSymbolReference symbol && symbol.Symbol == CiSystem.StringLength
+			&& expr.Right is CiLiteral literal && (long) literal.Value == 0) {
+			str = symbol.Left;
+			return true;
+		}
+		str = null;
+		return false;
+	}
+
 	protected void WriteMathCall(CiMethod method, CiExpr[] args)
 	{
 		if (method == CiSystem.MathCeiling)
