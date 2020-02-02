@@ -1087,21 +1087,20 @@ public class GenPy : GenBase
 		OpenChild();
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
 			WriteResource(name, -1);
-			Write(" = (");
+			WriteLine(" = (");
+			this.Indent++;
+			Write("b\"");
 			int i = 0;
 			foreach (byte b in resources[name]) {
-				if ((i & 15) == 0) {
-					if (i > 0)
-						Write('"');
-					WriteLine();
+				if (i > 0 && (i & 15) == 0) {
+					WriteLine('"');
 					Write("b\"");
 				}
 				Write($"\\x{b:x2}");
 				i++;
 			}
-			if (i > 0)
-				Write('"');
-			WriteLine(" )");
+			WriteLine("\" )");
+			this.Indent--;
 		}
 		CloseChild();
 	}
