@@ -763,7 +763,7 @@ public class GenPy : GenBase
 			Write("for ");
 			WriteName(iter);
 			Write(" in range(");
-			if (!(iter.Value is CiLiteral start) || (long) start.Value != 0) {
+			if (statement.RangeStep != 1 || !(iter.Value is CiLiteral start) || (long) start.Value != 0) {
 				iter.Value.Accept(this, CiPriority.Statement);
 				Write(", ");
 			}
