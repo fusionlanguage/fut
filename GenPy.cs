@@ -280,12 +280,21 @@ public class GenPy : GenBase
 	{
 		switch (expr.Op) {
 		case CiToken.Slash when expr.Type is CiIntegerType:
-			if (parent > CiPriority.Or)
-				Write('(');
+			bool floorDiv;
+			if (expr.Left is CiRangeType leftRange && leftRange.Min >= 0
+			 && expr.Right is CiRangeType rightRange && rightRange.Min >= 0) {
+				if (parent > CiPriority.Or)
+					Write('(');
+				floorDiv = true;
+			}
+			else {
+				Write("int(");
+				floorDiv = false;
+			}
 			expr.Left.Accept(this, CiPriority.Mul);
-			Write(" // ");
+			Write(floorDiv ? " // " : " / ");
 			expr.Right.Accept(this, CiPriority.Primary);
-			if (parent > CiPriority.Or)
+			if (!floorDiv || parent > CiPriority.Or)
 				Write(')');
 			return expr;
 		case CiToken.CondAnd:
