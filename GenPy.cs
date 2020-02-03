@@ -155,10 +155,39 @@ public class GenPy : GenBase
 			WriteUppercaseWithUnderscores(symbol.Name);
 		}
 		else if (symbol is CiVar || symbol is CiMember) {
-			if (symbol.Name == "this")
+			switch (symbol.Name) {
+			case "this":
 				Write("self");
-			else
+				break;
+			case "and":
+			case "as":
+			case "async":
+			case "await":
+			case "def":
+			case "del":
+			case "elif":
+			case "except":
+			case "finally":
+			case "from":
+			case "global":
+			case "import":
+			case "is":
+			case "lambda":
+			case "nonlocal":
+			case "not":
+			case "or":
+			case "pass":
+			case "raise":
+			case "try":
+			case "with":
+			case "yield":
+				Write(symbol.Name);
+				Write('_');
+				break;
+			default:
 				WriteLowercaseWithUnderscores(symbol.Name);
+				break;
+			}
 		}
 		else
 			Write(symbol.Name); // class, enum
