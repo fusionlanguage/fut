@@ -82,6 +82,7 @@ public enum CiToken
 	Range,
 	DocComment,
 	Abstract,
+	Assert,
 	Break,
 	Case,
 	Class,
@@ -532,6 +533,7 @@ public class CiLexer
 				string s = ReadId(c);
 				switch (s) {
 				case "abstract": return CiToken.Abstract;
+				case "assert": return CiToken.Assert;
 				case "break": return CiToken.Break;
 				case "case": return CiToken.Case;
 				case "class": return CiToken.Class;

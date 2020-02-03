@@ -527,6 +527,17 @@ public class GenJava : GenTyped
 			CloseBlock();
 	}
 
+	public override void Visit(CiAssert statement)
+	{
+		Write("assert ");
+		statement.Cond.Accept(this, CiPriority.Statement);
+		if (statement.Message != null) {
+			Write(" : ");
+			statement.Message.Accept(this, CiPriority.Statement);
+		}
+		WriteLine(';');
+	}
+
 	public override void Visit(CiForeach statement)
 	{
 		Write("for (");

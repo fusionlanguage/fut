@@ -835,6 +835,16 @@ public class CiResolver : CiVisitor
 		CloseScope();
 	}
 
+	public override void Visit(CiAssert statement)
+	{
+		statement.Cond = ResolveBool(statement.Cond);
+		if (statement.Message != null) {
+			statement.Message = Resolve(statement.Message);
+			if (!(statement.Message.Type is CiStringType))
+				throw StatementException(statement, "The second argument of 'assert' must be a string");
+		}
+	}
+
 	public override void Visit(CiBreak statement)
 	{
 		statement.LoopOrSwitch.SetCompletesNormally(true);

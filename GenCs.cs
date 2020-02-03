@@ -378,6 +378,27 @@ public class GenCs : GenTyped
 		}
 	}
 
+	public override void Visit(CiAssert statement)
+	{
+		if (statement.CompletesNormally) {
+			Include("System.Diagnostics");
+			Write("Debug.Assert(");
+			statement.Cond.Accept(this, CiPriority.Statement);
+			if (statement.Message != null) {
+				Write(", ");
+				statement.Message.Accept(this, CiPriority.Statement);
+			}
+		}
+		else {
+			// assert false;
+			Include("System");
+			Write("throw new NotImplementedException(");
+			if (statement.Message != null)
+				statement.Message.Accept(this, CiPriority.Statement);
+		}
+		WriteLine(");");
+	}
+
 	public override void Visit(CiForeach statement)
 	{
 		Write("foreach (");

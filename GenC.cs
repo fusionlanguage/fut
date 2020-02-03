@@ -57,6 +57,11 @@ public class GenC : GenCCpp
 		Include("stdint.h");
 	}
 
+	protected override void IncludeAssert()
+	{
+		Include("assert.h");
+	}
+
 	protected override void WriteLiteral(object value)
 	{
 		if (value == null)

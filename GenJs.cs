@@ -450,6 +450,17 @@ public class GenJs : GenBase
 		return base.Visit(expr, parent);
 	}
 
+	public override void Visit(CiAssert statement)
+	{
+		Write("console.assert(");
+		statement.Cond.Accept(this, CiPriority.Statement);
+		if (statement.Message != null) {
+			Write(", ");
+			statement.Message.Accept(this, CiPriority.Statement);
+		}
+		WriteLine(");");
+	}
+
 	public override void Visit(CiForeach statement)
 	{
 		Write("for (const ");

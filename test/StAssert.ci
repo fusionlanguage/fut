@@ -1,0 +1,21 @@
+public static class Test
+{
+	static bool Eq(int x, int y) => x == y;
+
+	public static bool Run()
+	{
+		int i = 5;
+		string s = "foo";
+		assert i > 0;
+		assert i > 0, "i must be positive";
+		switch (i) {
+		case 5:
+			break;
+		default:
+			assert false;
+		}
+		assert s == "foo";
+		assert Eq(i, 5);
+		return true;
+	}
+}

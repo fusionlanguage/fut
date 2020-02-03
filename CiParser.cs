@@ -427,6 +427,17 @@ public class CiParser : CiLexer
 		return new CiBlock { Filename = this.Filename, Line = line, Statements = statements.ToArray() };
 	}
 
+	CiAssert ParseAssert()
+	{
+		CiAssert result = new CiAssert { Line = this.Line };
+		Expect(CiToken.Assert);
+		result.Cond = ParseExpr();
+		if (Eat(CiToken.Comma))
+			result.Message = ParseExpr();
+		Expect(CiToken.Semicolon);
+		return result;
+	}
+
 	CiBreak ParseBreak()
 	{
 		if (this.CurrentLoopOrSwitch == null)
@@ -641,6 +652,8 @@ public class CiParser : CiLexer
 		switch (this.CurrentToken) {
 		case CiToken.LeftBrace:
 			return ParseBlock();
+		case CiToken.Assert:
+			return ParseAssert();
 		case CiToken.Break:
 			return ParseBreak();
 		case CiToken.Const:

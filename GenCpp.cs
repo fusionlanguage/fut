@@ -34,6 +34,11 @@ public class GenCpp : GenCCpp
 		Include("cstdint");
 	}
 
+	protected override void IncludeAssert()
+	{
+		Include("cassert");
+	}
+
 	protected override void WriteLiteral(object value)
 	{
 		if (value == null)

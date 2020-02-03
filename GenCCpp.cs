@@ -30,6 +30,8 @@ public abstract class GenCCpp : GenTyped
 
 	protected abstract void IncludeStdInt();
 
+	protected abstract void IncludeAssert();
+
 	protected void WriteIncludes()
 	{
 		WriteIncludes("#include <", ">");
@@ -184,6 +186,20 @@ public abstract class GenCCpp : GenTyped
 	{
 		if (konst.Type is CiArrayType)
 			WriteConst(konst);
+	}
+
+	public override void Visit(CiAssert statement)
+	{
+		IncludeAssert();
+		Write("assert(");
+		if (statement.Message == null)
+			statement.Cond.Accept(this, CiPriority.Statement);
+		else {
+			statement.Cond.Accept(this, CiPriority.CondAnd);
+			Write(" && ");
+			statement.Message.Accept(this, CiPriority.Statement);
+		}
+		WriteLine(");");
 	}
 }
 

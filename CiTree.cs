@@ -77,6 +77,7 @@ public abstract class CiVisitor
 	public abstract void Visit(CiConst statement);
 	public abstract void Visit(CiExpr statement);
 	public abstract void Visit(CiBlock statement);
+	public abstract void Visit(CiAssert statement);
 	public abstract void Visit(CiBreak statement);
 	public abstract void Visit(CiContinue statement);
 	public abstract void Visit(CiDoWhile statement);
@@ -558,6 +559,14 @@ public abstract class CiLoop : CiCondCompletionStatement
 public class CiBlock : CiCondCompletionStatement
 {
 	public CiStatement[] Statements;
+	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
+}
+
+public class CiAssert : CiStatement
+{
+	public CiExpr Cond;
+	public CiExpr Message = null;
+	public override bool CompletesNormally => !(this.Cond is CiLiteral literal) || (bool) literal.Value;
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }
 
