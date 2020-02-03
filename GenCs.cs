@@ -94,6 +94,48 @@ public class GenCs : GenTyped
 		if (symbol is CiConst konst && konst.InMethod != null)
 			Write(konst.InMethod.Name);
 		Write(symbol.Name);
+		switch (symbol.Name) {
+		case "as":
+		case "base":
+		case "catch":
+		case "char":
+		case "checked":
+		case "decimal":
+		case "delegate":
+		case "event":
+		case "explicit":
+		case "extern":
+		case "finally":
+		case "fixed":
+		case "goto":
+		case "implicit":
+		case "interface":
+		case "is":
+		case "lock":
+		case "namespace":
+		case "object":
+		case "operator":
+		case "out":
+		case "params":
+		case "private":
+		case "readonly":
+		case "ref":
+		case "sbyte":
+		case "sizeof":
+		case "stackalloc":
+		case "struct":
+		case "try":
+		case "typeof":
+		case "ulong":
+		case "unchecked":
+		case "unsafe":
+		case "using":
+		case "volatile":
+			Write('_');
+			break;
+		default:
+			break;
+		}
 	}
 
 	protected override void Write(TypeCode typeCode)
