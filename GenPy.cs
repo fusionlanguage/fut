@@ -121,7 +121,7 @@ public class GenPy : GenBase
 					WriteLine("Parameters:");
 					first = false;
 				}
-				Write(param.Name);
+				WriteName(param);
 				Write(": ");
 				WritePyDoc(param.Documentation.Summary);
 				WriteLine();
@@ -154,12 +154,14 @@ public class GenPy : GenBase
 			}
 			WriteUppercaseWithUnderscores(symbol.Name);
 		}
-		else if (symbol is CiMember)
-			WriteLowercaseWithUnderscores(symbol.Name);
-		else if (symbol.Name == "this")
-			Write("self");
+		else if (symbol is CiVar || symbol is CiMember) {
+			if (symbol.Name == "this")
+				Write("self");
+			else
+				WriteLowercaseWithUnderscores(symbol.Name);
+		}
 		else
-			Write(symbol.Name);
+			Write(symbol.Name); // class, enum
 	}
 
 	protected override void WriteTypeAndName(CiNamedValue value)
@@ -363,7 +365,7 @@ public class GenPy : GenBase
 
 	protected override void WriteNew(CiClass klass, CiPriority parent)
 	{
-		Write(klass.Name);
+		WriteName(klass);
 		Write("()");
 	}
 
@@ -827,7 +829,7 @@ public class GenPy : GenBase
 	public override void Visit(CiForeach statement)
 	{
 		Write("for ");
-		Write(statement.Element.Name);
+		WriteName(statement.Element);
 		Write(" in ");
 		statement.Collection.Accept(this, CiPriority.Statement);
 		WriteChild(statement.Body);
@@ -993,7 +995,7 @@ public class GenPy : GenBase
 		Include("enum");
 		WriteLine();
 		Write("class ");
-		Write(enu.Name);
+		WriteName(enu);
 		Write("(enum.Enum)");
 		OpenChild();
 		WritePyDoc(enu.Documentation);
@@ -1043,7 +1045,7 @@ public class GenPy : GenBase
 			return;
 		WriteLine();
 		Write("def ");
-		WriteLowercaseWithUnderscores(method.Name);
+		WriteName(method);
 		Write('(');
 		bool first;
 		if (method.CallType == CiCallType.Static)
@@ -1065,7 +1067,7 @@ public class GenPy : GenBase
 	{
 		WriteLine();
 		Write("class ");
-		Write(klass.Name);
+		WriteName(klass);
 		if (klass.BaseClassName != null) {
 			Write('(');
 			Write(klass.BaseClassName);
