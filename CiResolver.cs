@@ -325,16 +325,24 @@ public class CiResolver : CiVisitor
 			CiSymbolReference leftSymbol = left as CiSymbolReference;
 			if (leftSymbol == null || !(leftSymbol.Symbol is CiScope scope))
 				scope = left.Type;
-			CiExpr result = Lookup(expr, scope);
-			if (result != expr)
-				return result;
-			if (expr.Symbol == CiSystem.ArrayLength) {
-				if (scope is CiArrayStorageType array)
-					return expr.ToLiteral((long) array.Length);
-				throw new NotImplementedException(scope.GetType().Name);
+			if (leftSymbol.Symbol == CiSystem.BasePtr) {
+				// TODO: error handling
+				CiClass baseClass = (CiClass) this.CurrentMethod.Parent.Parent;
+				expr.Symbol = (CiMethod) baseClass.TryShallowLookup(expr.Name);
+				expr.Type = expr.Symbol.Type;
 			}
-			if (expr.Symbol == CiSystem.StringLength && left is CiLiteral leftLiteral)
-				return expr.ToLiteral((long) ((string) leftLiteral.Value).Length);
+			else {
+				CiExpr result = Lookup(expr, scope);
+				if (result != expr)
+					return result;
+				if (expr.Symbol == CiSystem.ArrayLength) {
+					if (scope is CiArrayStorageType array)
+						return expr.ToLiteral((long) array.Length);
+					throw new NotImplementedException(scope.GetType().Name);
+				}
+				if (expr.Symbol == CiSystem.StringLength && left is CiLiteral leftLiteral)
+					return expr.ToLiteral((long) ((string) leftLiteral.Value).Length);
+			}
 			return new CiSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
 		}
 

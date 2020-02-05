@@ -396,6 +396,18 @@ public class GenJs : GenBase
 			if (parent > CiPriority.Add)
 				Write(')');
 		}
+		else if (obj.IsReferenceTo(CiSystem.BasePtr)) {
+			//TODO: with "class" syntax: Write("super");
+			WriteName(method.Parent);
+			Write(".prototype.");
+			WriteName(method);
+			Write(".call(this");
+			if (args.Length > 0) {
+				Write(", ");
+				WriteArgs(method, args);
+			}
+			Write(')');
+		}
 		else {
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
@@ -406,7 +418,7 @@ public class GenJs : GenBase
 			else if (method == CiSystem.StringContains)
 				Write("includes");
 			else
-				WriteCamelCase(method.Name);
+				WriteName(method);
 			WriteArgsInParentheses(method, args);
 		}
 	}

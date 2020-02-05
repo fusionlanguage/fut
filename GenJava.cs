@@ -432,7 +432,10 @@ public class GenJava : GenTyped
 				Write(')');
 		}
 		else {
-			obj.Accept(this, CiPriority.Primary);
+			if (obj.IsReferenceTo(CiSystem.BasePtr))
+				Write("super");
+			else
+				obj.Accept(this, CiPriority.Primary);
 			Write('.');
 			if (method == CiSystem.ListRemoveAt)
 				Write("remove");

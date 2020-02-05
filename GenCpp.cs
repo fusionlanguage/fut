@@ -540,13 +540,19 @@ public class GenCpp : GenCCpp
 			Write(')');
 		}
 		else {
-			obj.Accept(this, CiPriority.Primary);
-			if (method.CallType == CiCallType.Static)
+			if (obj.IsReferenceTo(CiSystem.BasePtr)) {
+				WriteName((CiClass) method.Parent);
 				Write("::");
-			else if (obj.Type is CiClassPtrType && !IsForeachVar(obj))
-				Write("->");
-			else
-				Write('.');
+			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				if (method.CallType == CiCallType.Static)
+					Write("::");
+				else if (obj.Type is CiClassPtrType && !IsForeachVar(obj))
+					Write("->");
+				else
+					Write('.');
+			}
 			WriteCamelCase(method.Name);
 			WriteArgsInParentheses(method, args);
 		}

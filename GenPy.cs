@@ -578,6 +578,17 @@ public class GenPy : GenBase
 			Write("pyfma.fma");
 			WriteArgsInParentheses(method, args);
 		}
+		else if (obj.IsReferenceTo(CiSystem.BasePtr)) {
+			WriteName(method.Parent);
+			Write('.');
+			WriteName(method);
+			Write("(self");
+			if (args.Length > 0) {
+				Write(", ");
+				WriteArgs(method, args);
+			}
+			Write(')');
+		}
 		else {
 			if (obj.IsReferenceTo(CiSystem.MathClass)) {
 				Include("math");

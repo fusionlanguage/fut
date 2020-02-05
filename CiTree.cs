@@ -753,6 +753,7 @@ public class CiClass : CiContainerType
 		this.Methods = methods;
 		AddRange(methods);
 	}
+	public CiSymbol TryShallowLookup(string name) => (CiSymbol) this.Dict[name];
 }
 
 public class CiNumericType : CiType
@@ -1207,6 +1208,7 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, FloatType, "Tan", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, "Tanh", new CiVar(DoubleType, "a")),
 		MathTruncate);
+	public static readonly CiScope BasePtr = new CiScope { Name = "base" };
 
 	CiSystem()
 	{
@@ -1228,6 +1230,7 @@ public class CiSystem : CiScope
 		MathClass.Add(new CiConst("E", Math.E));
 		MathClass.Add(new CiConst("PI", Math.PI));
 		Add(MathClass);
+		Add(BasePtr);
 	}
 
 	public static readonly CiSystem Value = new CiSystem();
