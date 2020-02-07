@@ -300,10 +300,8 @@ public abstract class GenTyped : GenBase
 				WriteStaticCast(type, expr);
 		}
 		else if (type is CiIntegerType && expr.Type == CiSystem.FloatIntType) {
-			if (expr is CiBinaryExpr call
-			 && call.Op == CiToken.LeftParenthesis
-			 && call.Left.IsReferenceTo(CiSystem.MathTruncate))
-				WriteStaticCast(type, call.RightCollection[0]);
+			if (expr is CiCallExpr call && call.Method.IsReferenceTo(CiSystem.MathTruncate))
+				WriteStaticCast(type, call.Arguments[0]);
 			else
 				WriteStaticCast(type, expr);
 		}

@@ -142,14 +142,12 @@ public abstract class GenCCpp : GenTyped
 
 	protected static bool IsStringSubstring(CiExpr expr, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)
 	{
-		if (expr is CiBinaryExpr call
-		 && call.Op == CiToken.LeftParenthesis
-		 && call.Left is CiSymbolReference symbol) {
-			CiMethod method = (CiMethod) symbol.Symbol;
-			CiExpr[] args = call.RightCollection;
+		if (expr is CiCallExpr call) {
+			CiMethod method = (CiMethod) call.Method.Symbol;
+			CiExpr[] args = call.Arguments;
 			if (method == CiSystem.StringSubstring && args.Length == 2) {
 				cast = false;
-				ptr = symbol.Left;
+				ptr = call.Method.Left;
 				offset = args[0];
 				length = args[1];
 				return true;

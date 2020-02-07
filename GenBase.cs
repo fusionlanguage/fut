@@ -787,14 +787,6 @@ public abstract class GenBase : CiVisitor
 				Write(')');
 			return expr;
 
-		case CiToken.LeftParenthesis:
-			CiSymbolReference leftSymbol = (CiSymbolReference) expr.Left;
-			if (leftSymbol.Left != null)
-				WriteCall(leftSymbol.Left, (CiMethod) leftSymbol.Symbol, expr.RightCollection, parent);
-			else
-				WriteNearCall((CiMethod) leftSymbol.Symbol, expr.RightCollection);
-			return expr;
-
 		case CiToken.LeftBracket:
 			if (expr.Left.Type is CiStringType)
 				WriteCharAt(expr);
@@ -810,6 +802,15 @@ public abstract class GenBase : CiVisitor
 	public override CiExpr Visit(CiCondExpr expr, CiPriority parent)
 	{
 		WriteCoerced(expr.Type, expr, parent);
+		return expr;
+	}
+
+	public override CiExpr Visit(CiCallExpr expr, CiPriority parent)
+	{
+		if (expr.Method.Left != null)
+			WriteCall(expr.Method.Left, (CiMethod) expr.Method.Symbol, expr.Arguments, parent);
+		else
+			WriteNearCall((CiMethod) expr.Method.Symbol, expr.Arguments);
 		return expr;
 	}
 

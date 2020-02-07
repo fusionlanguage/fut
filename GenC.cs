@@ -819,14 +819,11 @@ public class GenC : GenCCpp
 
 	static CiMethod GetThrowingMethod(CiStatement statement)
 	{
-		if (!(statement is CiBinaryExpr binary))
-			return null;
-		switch (binary.Op) {
-		case CiToken.Assign:
+		switch (statement) {
+		case CiBinaryExpr binary when binary.Op == CiToken.Assign:
 			return GetThrowingMethod(binary.Right);
-		case CiToken.LeftParenthesis:
-			CiSymbolReference symbol = (CiSymbolReference) binary.Left;
-			CiMethod method = (CiMethod) symbol.Symbol;
+		case CiCallExpr call:
+			CiMethod method = (CiMethod) call.Method.Symbol;
 			return method.Throws ? method : null;
 		default:
 			return null;

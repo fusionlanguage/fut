@@ -635,11 +635,6 @@ public class GenPy : GenBase
 	{
 		bool seen;
 		switch (expr) {
-		case CiCollection coll:
-			seen = false;
-			foreach (CiExpr item in coll.Items)
-				seen |= VisitXcrement<T>(item, write);
-			return seen;
 		case CiVar def:
 			return def.Value != null && VisitXcrement<T>(def.Value, write);
 		case CiLiteral literal:
@@ -673,6 +668,11 @@ public class GenPy : GenBase
 			// XXX: assert not seen in OnTrue and OnFalse
 			// seen |= VisitXcrement<T>(cond.OnTrue, write);
 			// seen |= VisitXcrement<T>(cond.OnFalse, write);
+			return seen;
+		case CiCallExpr call:
+			seen = VisitXcrement<T>(call.Method, write);
+			foreach (CiExpr item in call.Arguments)
+				seen |= VisitXcrement<T>(item, write);
 			return seen;
 		default:
 			throw new NotImplementedException(expr.GetType().Name);

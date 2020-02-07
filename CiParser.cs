@@ -72,7 +72,7 @@ public class CiParser : CiLexer
 		CiExpr elementType = ParseType();
 		this.ParsingTypeArg = saveTypeArg;
 		Expect(CiToken.RightAngle);
-		return new CiPrefixExpr { Line = line, Op = CiToken.List, Inner = elementType };
+		return new CiSymbolReference { Line = line, Left = elementType, Symbol = CiSystem.ListClass };
 	}
 
 	CiExpr ParseSortedDictionaryType()
@@ -87,19 +87,18 @@ public class CiParser : CiLexer
 		CiExpr valueType = ParseType();
 		this.ParsingTypeArg = saveTypeArg;
 		Expect(CiToken.RightAngle);
-		return new CiBinaryExpr { Line = line, Op = CiToken.SortedDictionary, Left = keyType, Right = valueType };
+		return new CiSymbolReference { Line = line, Left = new CiCollection { Items = new CiExpr[] { keyType, valueType } }, Symbol = CiSystem.SortedDictionaryClass };
 	}
 
 	CiExpr ParseConstInitializer()
 	{
 		if (Eat(CiToken.LeftBrace))
-			return ParseCollection(CiToken.RightBrace);
+			return new CiCollection { Line = this.Line, Items = ParseCollection(CiToken.RightBrace) };
 		return ParseExpr();
 	}
 
-	CiCollection ParseCollection(CiToken closing)
+	CiExpr[] ParseCollection(CiToken closing)
 	{
-		int line = this.Line;
 		List<CiExpr> items = new List<CiExpr>();
 		if (!See(closing)) {
 			do
@@ -107,7 +106,7 @@ public class CiParser : CiLexer
 			while (Eat(CiToken.Comma));
 		}
 		Expect(closing);
-		return new CiCollection { Line = line, Items = items.ToArray() };
+		return items.ToArray();
 	}
 
 	void CheckXcrementParent()
@@ -219,7 +218,10 @@ public class CiParser : CiLexer
 				result = ParseSymbolReference(result);
 				break;
 			case CiToken.LeftParenthesis:
-				result = new CiBinaryExpr { Line = this.Line, Left = result, Op = NextToken(), Right = ParseCollection(CiToken.RightParenthesis) };
+				if (!(result is CiSymbolReference symbol))
+					throw ParseException("Expected a method");
+				NextToken();
+				result = new CiCallExpr { Line = this.Line, Method = symbol, Arguments = ParseCollection(CiToken.RightParenthesis) };
 				break;
 			case CiToken.LeftBracket:
 				result = new CiBinaryExpr { Line = this.Line, Left = result, Op = NextToken(), Right = See(CiToken.RightBracket) ? null : ParseExpr() };
@@ -797,22 +799,19 @@ public class CiParser : CiLexer
 				throw ParseException("{0} method cannot be private", callType);
 
 			CiExpr type = Eat(CiToken.Void) ? null : ParseType();
-			if (See(CiToken.LeftBrace)
-			 && type is CiBinaryExpr call
-			 && call.Op == CiToken.LeftParenthesis
-			 && call.Left is CiSymbolReference sr) {
+			if (See(CiToken.LeftBrace) && type is CiCallExpr call) {
 				// constructor
-				if (sr.Name != klass.Name)
+				if (call.Method.Name != klass.Name)
 					throw ParseException("Constructor name doesn't match class name");
 				if (callType != CiCallType.Normal)
 					throw ParseException("Constructor cannot be {0}", callType);
-				if (call.RightCollection.Length != 0)
+				if (call.Arguments.Length != 0)
 					throw ParseException("Constructor parameters not supported");
 				if (klass.Constructor != null)
 					throw ParseException("Duplicate constructor, already defined in line {0}", klass.Constructor.Line);
 				if (visibility == CiVisibility.Private)
 					visibility = CiVisibility.Internal; // TODO
-				klass.Constructor = new CiMethodBase { Line = sr.Line, Documentation = doc, Visibility = visibility, Parent = klass, Name = klass.Name, Body = ParseBlock() };
+				klass.Constructor = new CiMethodBase { Line = call.Line, Documentation = doc, Visibility = visibility, Parent = klass, Name = klass.Name, Body = ParseBlock() };
 				continue;
 			}
 

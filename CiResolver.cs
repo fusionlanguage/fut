@@ -323,15 +323,14 @@ public class CiResolver : CiVisitor
 		if (expr.Left != null) {
 			CiExpr left = Resolve(expr.Left);
 			CiSymbolReference leftSymbol = left as CiSymbolReference;
-			if (leftSymbol == null || !(leftSymbol.Symbol is CiScope scope))
-				scope = left.Type;
-			if (leftSymbol.Symbol == CiSystem.BasePtr) {
+			if (leftSymbol != null && leftSymbol.Symbol == CiSystem.BasePtr) {
 				// TODO: error handling
 				CiClass baseClass = (CiClass) this.CurrentMethod.Parent.Parent;
 				expr.Symbol = (CiMethod) baseClass.TryShallowLookup(expr.Name);
-				expr.Type = expr.Symbol.Type;
 			}
 			else {
+				if (leftSymbol == null || !(leftSymbol.Symbol is CiScope scope))
+					scope = left.Type;
 				CiExpr result = Lookup(expr, scope);
 				if (result != expr)
 					return result;
@@ -362,7 +361,7 @@ public class CiResolver : CiVisitor
 			case CiFor forLoop:
 				forLoop.IsRange = false;
 				break;
-			case CiForeach foreachLoop:
+			case CiForeach _:
 				throw StatementException(expr, "Cannot assign a foreach iteration variable");
 			default:
 				break;
@@ -435,8 +434,6 @@ public class CiResolver : CiVisitor
 			default:
 				throw StatementException(expr, "Invalid argument to new");
 			}
-		case CiToken.List:
-			throw StatementException(expr, "Unexpected List");
 		case CiToken.Resource:
 			CiLiteral literal = FoldConst(expr.Inner);
 			if (!(literal.Value is string name))
@@ -486,51 +483,8 @@ public class CiResolver : CiVisitor
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
 		CiExpr left = Resolve(expr.Left);
-		CiType type;
-		switch (expr.Op) {
-		case CiToken.LeftParenthesis:
-			// TODO: check static
-			if (!(((CiSymbolReference) left).Symbol is CiMethod method))
-				throw StatementException(left, "Expected a method");
-			CiExpr[] arguments = expr.RightCollection;
-			int i = 0;
-			foreach (CiVar param in method.Parameters) {
-				if (i >= arguments.Length) {
-					if (param.Value != null)
-						break;
-					throw StatementException(expr, "Too few arguments");
-				}
-				CiExpr arg = Resolve(arguments[i]);
-				Coerce(arg, param.Type);
-				arguments[i++] = arg;
-			}
-			if (i < arguments.Length)
-				throw StatementException(arguments[i], "Too many arguments");
-
-			if (method.CallType == CiCallType.Static
-			 && method.Body is CiReturn ret
-			 && arguments.All(arg => arg is CiLiteral)
-			 && this.CurrentPureMethods.Add(method)) {
-				i = 0;
-				foreach (CiVar param in method.Parameters)
-					this.CurrentPureArguments.Add(param, arguments[i++]);
-				CiLiteral literal = Resolve(ret.Value) as CiLiteral;
-				foreach (CiVar param in method.Parameters)
-					this.CurrentPureArguments.Remove(param);
-				this.CurrentPureMethods.Remove(method);
-				if (literal != null)
-					return literal;
-			}
-			this.CurrentMethod.Calls.Add(method);
-
-			expr.Left = left;
-			expr.Type = left.Type;
-			return expr;
-		default:
-			break;
-		}
-
 		CiExpr right = Resolve(expr.Right);
+		CiType type;
 		CiRangeType leftRange = left.Type as CiRangeType;
 		CiRangeType rightRange = right.Type as CiRangeType;
 	
@@ -788,6 +742,48 @@ public class CiResolver : CiVisitor
 		if (cond is CiLiteral literalCond)
 			return (bool) literalCond.Value ? onTrue : onFalse;
 		return new CiCondExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
+	}
+
+	public override CiExpr Visit(CiCallExpr expr, CiPriority parent)
+	{
+		CiSymbolReference symbol = (CiSymbolReference) Resolve(expr.Method);
+		// TODO: check static
+		if (!(symbol.Symbol is CiMethod method))
+			throw StatementException(symbol, "Expected a method");
+		CiExpr[] arguments = expr.Arguments;
+		int i = 0;
+		foreach (CiVar param in method.Parameters) {
+			if (i >= arguments.Length) {
+				if (param.Value != null)
+					break;
+				throw StatementException(expr, "Too few arguments");
+			}
+			CiExpr arg = Resolve(arguments[i]);
+			Coerce(arg, param.Type);
+			arguments[i++] = arg;
+		}
+		if (i < arguments.Length)
+			throw StatementException(arguments[i], "Too many arguments");
+
+		if (method.CallType == CiCallType.Static
+		 && method.Body is CiReturn ret
+		 && arguments.All(arg => arg is CiLiteral)
+		 && this.CurrentPureMethods.Add(method)) {
+			i = 0;
+			foreach (CiVar param in method.Parameters)
+				this.CurrentPureArguments.Add(param, arguments[i++]);
+			CiLiteral literal = Resolve(ret.Value) as CiLiteral;
+			foreach (CiVar param in method.Parameters)
+				this.CurrentPureArguments.Remove(param);
+			this.CurrentPureMethods.Remove(method);
+			if (literal != null)
+				return literal;
+		}
+
+		this.CurrentMethod.Calls.Add(method);
+		expr.Method = symbol;
+		expr.Type = method.Type;
+		return expr;
 	}
 
 	public override void Visit(CiConst statement)
@@ -1085,34 +1081,32 @@ public class CiResolver : CiVisitor
 			}
 			throw StatementException(expr, "Type {0} not found", symbol.Name);
 
-		case CiBinaryExpr binary:
+		case CiBinaryExpr binary when binary.Op == CiToken.Range:
 			ExpectNoPtrModifier(expr, ptrModifier);
-			switch (binary.Op) {
-			case CiToken.LeftParenthesis:
-				// string(), MyClass()
-				if (binary.RightCollection.Length != 0)
-					throw StatementException(binary.Right, "Expected empty parentheses for storage type");
-				if (binary.Left is CiSymbolReference symbol) {
-					if (symbol.Name == "string")
-						return CiSystem.StringStorageType;
-					if (this.Program.TryLookup(symbol.Name) is CiClass klass)
-						return klass;
-					throw StatementException(expr, "Class {0} not found", symbol.Name);
-				}
-				if (binary.Left is CiPrefixExpr prefix && prefix.Op == CiToken.List)
-					return new CiListType { ElementType = ToType(prefix.Inner, false) };
-				if (binary.Left is CiBinaryExpr dict && dict.Op == CiToken.SortedDictionary)
-					return new CiSortedDictionaryType { KeyType = ToType(dict.Left, false), ValueType = ToType(dict.Right, false) };
-				throw StatementException(binary.Left, "Expected name of storage type");
-			case CiToken.Range: // a .. b
-				int min = FoldConstInt(binary.Left);
-				int max = FoldConstInt(binary.Right);
-				if (min > max)
-					throw StatementException(expr, "Range min greater than max");
-				return new CiRangeType(min, max);
-			default:
-				throw StatementException(expr, "Invalid type");
+			int min = FoldConstInt(binary.Left);
+			int max = FoldConstInt(binary.Right);
+			if (min > max)
+				throw StatementException(expr, "Range min greater than max");
+			return new CiRangeType(min, max);
+
+		case CiCallExpr call:
+			// string(), MyClass()
+			ExpectNoPtrModifier(expr, ptrModifier);
+			if (call.Arguments.Length != 0)
+				throw StatementException(call, "Expected empty parentheses for storage type");
+			if (call.Method.Symbol == CiSystem.ListClass)
+				return new CiListType { ElementType = ToType(call.Method.Left, false) };
+			if (call.Method.Symbol == CiSystem.SortedDictionaryClass) {
+				CiExpr[] items = ((CiCollection) call.Method.Left).Items;
+				return new CiSortedDictionaryType { KeyType = ToType(items[0], false), ValueType = ToType(items[1], false) };
 			}
+			if (call.Method.Name == "string")
+				return CiSystem.StringStorageType;
+			{
+				if (this.Program.TryLookup(call.Method.Name) is CiClass klass)
+					return klass;
+			}
+			throw StatementException(expr, "Class {0} not found", call.Method.Name);
 
 		default:
 			throw StatementException(expr, "Invalid type");

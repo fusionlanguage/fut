@@ -74,6 +74,7 @@ public abstract class CiVisitor
 	public abstract CiExpr Visit(CiPostfixExpr expr, CiPriority parent);
 	public abstract CiExpr Visit(CiBinaryExpr expr, CiPriority parent);
 	public abstract CiExpr Visit(CiCondExpr expr, CiPriority parent);
+	public abstract CiExpr Visit(CiCallExpr expr, CiPriority parent);
 	public abstract void Visit(CiConst statement);
 	public abstract void Visit(CiExpr statement);
 	public abstract void Visit(CiBlock statement);
@@ -154,7 +155,7 @@ public class CiCodeDoc
 	public CiDocBlock[] Details;
 }
 
-public abstract class CiSymbol : CiExpr
+public class CiSymbol : CiExpr
 {
 	public string Name;
 	public CiScope Parent;
@@ -426,7 +427,6 @@ public class CiBinaryExpr : CiExpr
 	public CiExpr Left;
 	public CiToken Op;
 	public CiExpr Right;
-	public CiExpr[] RightCollection => ((CiCollection) this.Right).Items;
 	public override bool IsIndexing => this.Op == CiToken.LeftBracket;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
 	public bool IsAssign
@@ -515,8 +515,6 @@ public class CiBinaryExpr : CiExpr
 				return "|=";
 			case CiToken.XorAssign:
 				return "^=";
-			case CiToken.LeftParenthesis:
-				return "(";
 			default:
 				throw new ArgumentException(this.Op.ToString());
 			}
@@ -540,6 +538,13 @@ public class CiCondExpr : CiExpr
 	public CiExpr OnFalse;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
 	public override string ToString() => "(" + this.Cond + " ? " + this.OnTrue + " : " + this.OnFalse + ")";
+}
+
+public class CiCallExpr : CiExpr
+{
+	public CiSymbolReference Method;
+	public CiExpr[] Arguments;
+	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
 }
 
 public abstract class CiCondCompletionStatement : CiScope
@@ -1208,7 +1213,9 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, FloatType, "Tan", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, "Tanh", new CiVar(DoubleType, "a")),
 		MathTruncate);
-	public static readonly CiScope BasePtr = new CiScope { Name = "base" };
+	public static readonly CiSymbol BasePtr = new CiSymbol { Name = "base" };
+	public static readonly CiSymbol ListClass = new CiSymbol();
+	public static readonly CiSymbol SortedDictionaryClass = new CiSymbol();
 
 	CiSystem()
 	{
