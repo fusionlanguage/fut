@@ -1084,17 +1084,14 @@ public class GenPy : GenBase
 		if (method.CallType == CiCallType.Abstract)
 			return;
 		WriteLine();
+		if (method.CallType == CiCallType.Static)
+			WriteLine("@staticmethod");
 		Write("def ");
 		WriteName(method);
 		Write('(');
-		bool first;
-		if (method.CallType == CiCallType.Static)
-			first = true;
-		else {
+		if (method.CallType != CiCallType.Static)
 			Write("self");
-			first = false;
-		}
-		WriteParameters(method, first, true);
+		WriteParameters(method, method.CallType == CiCallType.Static, true);
 		this.CurrentMethod = method;
 		OpenChild();
 		WritePyDoc(method);
