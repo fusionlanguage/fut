@@ -454,22 +454,25 @@ public class GenPy : GenBase
 			lengthExpr.Accept(this, CiPriority.Statement);
 			Write(") ]");
 			break;
-		case CiRangeType range when range.Min >= 0 && range.Max <= byte.MaxValue && (value == null || (value is CiLiteral literal && (long) literal.Value == 0)):
-			Write("bytearray(");
-			lengthExpr.Accept(this, CiPriority.Statement);
-			Write(')');
-			break;
 		case CiNumericType number:
-			Include("array");
-			Write("array.array(\"");
-			Write(GetArrayCode(number));
-			Write("\", [ ");
-			if (value == null)
-				Write('0');
-			else
-				value.Accept(this, CiPriority.Statement);
-			Write(" ]) * ");
-			lengthExpr.Accept(this, CiPriority.Mul);
+			char c = GetArrayCode(number);
+			if (c == 'B' && (value == null || (value is CiLiteral literal && (long) literal.Value == 0))) {
+				Write("bytearray(");
+				lengthExpr.Accept(this, CiPriority.Statement);
+				Write(')');
+			}
+			else {
+				Include("array");
+				Write("array.array(\"");
+				Write(GetArrayCode(number));
+				Write("\", [ ");
+				if (value == null)
+					Write('0');
+				else
+					value.Accept(this, CiPriority.Statement);
+				Write(" ]) * ");
+				lengthExpr.Accept(this, CiPriority.Mul);
+			}
 			break;
 		default:
 			Write("[ ");
@@ -496,17 +499,8 @@ public class GenPy : GenBase
 
 	protected override void WriteListStorageInit(CiListType list)
 	{
-		if (list.ElementType is CiNumericType number) {
-			char c = GetArrayCode(number);
-			if (c == 'B')
-				Write(" = bytearray()");
-			else {
-				Include("array");
-				Write(" = array.array(\"");
-				Write(c);
-				Write("\")");
-			}
-		}
+		if (list.ElementType is CiRangeType range && range.Min >= 0 && range.Max <= byte.MaxValue)
+			Write(" = bytearray()");
 		else
 			Write(" = []");
 	}
