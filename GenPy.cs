@@ -620,10 +620,8 @@ public class GenPy : GenBase
 		}
 		else if (obj.Type is CiArrayStorageType array && method.Name == "Fill") {
 			obj.Accept(this, CiPriority.Primary);
-			Write("[:] = [ ");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(" ] * ");
-			Write(array.Length);
+			Write("[:] = ");
+			WriteNewArray(array.ElementType, args[0], array.LengthExpr);
 		}
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(obj, args, false);
