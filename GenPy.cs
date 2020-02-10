@@ -145,52 +145,72 @@ public class GenPy : GenBase
 		}
 	}
 
+	void WriteNameNotKeyword(string name)
+	{
+		switch (name) {
+		case "this":
+			Write("self");
+			break;
+		case "and":
+		case "as":
+		case "async":
+		case "await":
+		case "def":
+		case "del":
+		case "elif":
+		case "except":
+		case "finally":
+		case "from":
+		case "global":
+		case "import":
+		case "is":
+		case "lambda":
+		case "nonlocal":
+		case "not":
+		case "or":
+		case "pass":
+		case "raise":
+		case "try":
+		case "with":
+		case "yield":
+			Write(name);
+			Write('_');
+			break;
+		default:
+			WriteLowercaseWithUnderscores(name);
+			break;
+		}
+	}
+
 	protected override void WriteName(CiSymbol symbol)
 	{
-		if (symbol is CiConst konst) {
+		switch (symbol) {
+		case CiConst konst:
 			if (konst.InMethod != null) {
 				WriteUppercaseWithUnderscores(konst.InMethod.Name);
 				Write('_');
 			}
 			WriteUppercaseWithUnderscores(symbol.Name);
-		}
-		else if (symbol is CiVar || symbol is CiMember) {
-			switch (symbol.Name) {
-			case "this":
-				Write("self");
-				break;
-			case "and":
-			case "as":
-			case "async":
-			case "await":
-			case "def":
-			case "del":
-			case "elif":
-			case "except":
-			case "finally":
-			case "from":
-			case "global":
-			case "import":
-			case "is":
-			case "lambda":
-			case "nonlocal":
-			case "not":
-			case "or":
-			case "pass":
-			case "raise":
-			case "try":
-			case "with":
-			case "yield":
-				Write(symbol.Name);
+			break;
+		case CiVar _:
+			WriteNameNotKeyword(symbol.Name);
+			break;
+		case CiMember member:
+			if (member.Visibility == CiVisibility.Public)
+				WriteNameNotKeyword(symbol.Name);
+			else {
 				Write('_');
-				break;
-			default:
 				WriteLowercaseWithUnderscores(symbol.Name);
-				break;
 			}
+			break;
+		case CiContainerType container:
+			if (!container.IsPublic)
+				Write('_');
+			Write(symbol.Name);
+			break;
+		default:
+			throw new NotImplementedException(symbol.GetType().Name);
 		}
-		else
-			Write(symbol.Name); // class, enum
 	}
 
 	protected override void WriteTypeAndName(CiNamedValue value)
@@ -201,7 +221,10 @@ public class GenPy : GenBase
 	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
 		if (symbol is CiMember member) {
-			Write(member.IsStatic() ? this.CurrentMethod.Parent.Name : "self");
+			if (member.IsStatic())
+				WriteName(this.CurrentMethod.Parent);
+			else
+				Write("self");
 			Write('.');
 		}
 		WriteName(symbol);
@@ -669,7 +692,7 @@ public class GenPy : GenBase
 	protected override void WriteResource(string name, int length)
 	{
 		if (length >= 0) // reference as opposed to definition
-			Write("CiResource.");
+			Write("_CiResource.");
 		foreach (char c in name)
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
@@ -782,7 +805,7 @@ public class GenPy : GenBase
 
 	public override void Visit(CiBreak statement)
 	{
-		WriteLine(statement.LoopOrSwitch is CiSwitch ? "raise CiBreak()" : "break");
+		WriteLine(statement.LoopOrSwitch is CiSwitch ? "raise _CiBreak()" : "break");
 	}
 
 	bool OpenCond(string statement, CiExpr cond, CiPriority parent)
@@ -1050,7 +1073,7 @@ public class GenPy : GenBase
 
 		if (earlyBreak) {
 			CloseChild();
-			Write("except CiBreak");
+			Write("except _CiBreak");
 			OpenChild();
 			CloseChild();
 		}
@@ -1148,9 +1171,9 @@ public class GenPy : GenBase
 		WriteLine();
 		Write("class ");
 		WriteName(klass);
-		if (klass.BaseClassName != null) {
+		if (klass.Parent is CiClass baseClass) {
 			Write('(');
-			Write(klass.BaseClassName);
+			WriteName(baseClass);
 			Write(')');
 		}
 		OpenChild();
@@ -1161,7 +1184,7 @@ public class GenPy : GenBase
 			Write("def __init__(self)");
 			OpenChild();
 			if (InheritsConstructor(klass)) {
-				Write(klass.BaseClassName);
+				WriteName(klass.Parent);
 				WriteLine(".__init__(self)");
 			}
 			foreach (CiField field in klass.Fields) {
@@ -1185,7 +1208,7 @@ public class GenPy : GenBase
 		if (resources.Count == 0)
 			return;
 		WriteLine();
-		Write("class CiResource");
+		Write("class _CiResource");
 		OpenChild();
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
 			WriteResource(name, -1);
@@ -1220,7 +1243,7 @@ public class GenPy : GenBase
 		WriteIncludes("import ", "");
 		if (this.SwitchBreak) {
 			WriteLine();
-			WriteLine("class CiBreak(Exception): pass");
+			WriteLine("class _CiBreak(Exception): pass");
 		}
 		CloseStringWriter();
 		WriteResources(program.Resources);
