@@ -522,8 +522,17 @@ public class GenPy : GenBase
 
 	protected override void WriteListStorageInit(CiListType list)
 	{
-		if (list.ElementType is CiRangeType range && range.Min >= 0 && range.Max <= byte.MaxValue)
-			Write(" = bytearray()");
+		if (list.ElementType is CiNumericType number) {
+			char c = GetArrayCode(number);
+			if (c == 'B')
+				Write(" = bytearray()");
+			else {
+				Include("array");
+				Write(" = array.array(\"");
+				Write(c);
+				Write("\")");
+			}
+		}
 		else
 			Write(" = []");
 	}
@@ -581,6 +590,11 @@ public class GenPy : GenBase
 				args[1].Accept(this, CiPriority.Add);
 			}
 			Write(']');
+		}
+		else if (obj.Type is CiListType list && method == CiSystem.CollectionClear && list.ElementType is CiNumericType number && GetArrayCode(number) != 'B') {
+			Write("del ");
+			obj.Accept(this, CiPriority.Primary);
+			Write("[:]");
 		}
 		else if (method == CiSystem.ListRemoveAt) {
 			Write("del ");
@@ -669,7 +683,7 @@ public class GenPy : GenBase
 				Write("startswith");
 			else if (method == CiSystem.StringEndsWith)
 				Write("endswith");
-			else if (obj.Type is CiListType list && method.Name == "Add")
+			else if (obj.Type is CiListType && method.Name == "Add")
 				Write("append");
 			else if (method == CiSystem.MathCeiling)
 				Write("ceil");
