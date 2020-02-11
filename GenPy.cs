@@ -473,7 +473,7 @@ public class GenPy : GenBase
 		case CiArrayStorageType _:
 			Write("[ ");
 			WriteNewStorage(elementType);
-			Write(" for i in range(");
+			Write(" for _ in range(");
 			lengthExpr.Accept(this, CiPriority.Statement);
 			Write(") ]");
 			break;
