@@ -684,6 +684,7 @@ public class CiMethod : CiMethodBase
 	}
 	public CiMethod(CiCallType callType, CiType type, string name, params CiVar[] parameters)
 	{
+		this.Visibility = CiVisibility.Public;
 		this.CallType = callType;
 		this.Type = type;
 		this.Name = name;
