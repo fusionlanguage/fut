@@ -1054,10 +1054,6 @@ public class CiArrayStorageType : CiArrayType
 			return new CiMethod(CiCallType.Normal, null, "Fill", new CiVar(this.ElementType, "value"));
 		case "Length":
 			return CiSystem.ArrayLength;
-		case "Sort":
-			if (this.ElementType is CiNumericType)
-				return CiSystem.ArraySort;
-			return null;
 		default:
 			return base.TryLookup(name);
 		}
@@ -1100,10 +1096,6 @@ public class CiListType : CiArrayType
 			return CiSystem.ListRemoveAt;
 		case "RemoveRange":
 			return CiSystem.ListRemoveRange;
-		case "Sort":
-			if (this.ElementType is CiNumericType)
-				return CiSystem.ArraySort;
-			return null;
 		default:
 			return base.TryLookup(name);
 		}
@@ -1170,7 +1162,6 @@ public class CiSystem : CiScope
 	public static readonly CiMethod StringStartsWith = new CiMethod(CiCallType.Normal, BoolType, "StartsWith", new CiVar(StringPtrType, "value"));
 	public static readonly CiMethod StringSubstring = new CiMethod(CiCallType.Normal, StringStorageType, "Substring", new CiVar(IntType, "offset"), new CiVar(IntType, "length") { Value = new CiLiteral(-1L) } ); // TODO: UIntType
 	public static readonly CiMember ArrayLength = new CiMember { Name = "Length", Type = UIntType };
-	public static readonly CiMethod ArraySort = new CiMethod(CiCallType.Normal, null, "Sort") { IsMutator = true };
 	public static readonly CiMember CollectionCount = new CiMember { Name = "Count", Type = UIntType };
 	public static readonly CiMethod CollectionClear = new CiMethod(CiCallType.Normal, null, "Clear") { IsMutator = true };
 	public static readonly CiMethod ListRemoveAt = new CiMethod(CiCallType.Normal, null, "RemoveAt", new CiVar(IntType, "index")) { IsMutator = true };

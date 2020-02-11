@@ -354,18 +354,6 @@ public class GenCs : GenTyped
 			Write(((CiArrayStorageType) obj.Type).Length);
 			Write(')');
 		}
-		else if (method == CiSystem.ArraySort) {
-			if (obj.Type is CiArrayStorageType) {
-				Include("System");
-				Write("Array.Sort(");
-				obj.Accept(this, CiPriority.Statement);
-				Write(')');
-			}
-			else {
-				obj.Accept(this, CiPriority.Primary);
-				Write(".Sort()");
-			}
-		}
 		else if (obj.Type is CiSortedDictionaryType dict && method.Name == "Add") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".Add(");

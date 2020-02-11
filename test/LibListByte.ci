@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		List<int>() list;
+		List<byte>() list;
 		list.Add(42);
 		list.Clear();
 		list.Add(1);
@@ -11,7 +11,7 @@ public static class Test
 		list.RemoveAt(1);
 		list.Insert(1, 2);
 		list[0] = 5;
-		int[2] a;
+		byte[2] a;
 		list.CopyTo(1, a, 0, 2);
 		list.Add(1);
 		list.RemoveRange(1, 1);

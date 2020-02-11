@@ -434,14 +434,6 @@ public class GenCpp : GenCCpp
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(')');
 		}
-		else if (method == CiSystem.ArraySort) {
-			Include("algorithm");
-			Write("std::sort(");
-			obj.Accept(this, CiPriority.Primary);
-			Write(".begin(), ");
-			obj.Accept(this, CiPriority.Primary); // FIXME: side effect
-			Write(".end())");
-		}
 		else if (obj.Type is CiListType list && method.Name == "Add") {
 			if (method.Parameters.Count == 0) {
 				string suffix = ".emplace_back()";
