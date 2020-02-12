@@ -311,36 +311,17 @@ public class GenJs : GenBase
 			Write(')');
 		}
 		else if (obj.Type is CiArrayType array && method.Name == "CopyTo") {
-			if (!(array is CiListType) && array.ElementType is CiNumericType) {
-				args[1].Accept(this, CiPriority.Primary);
-				Write(".set(");
-				if (array is CiArrayStorageType sourceArray
-				 && args[0] is CiLiteral sourceIndex && (long) sourceIndex.Value == 0
-				 && args[3] is CiLiteral count && (long) count.Value == sourceArray.Length)
-					obj.Accept(this, CiPriority.Statement);
-				else {
-					obj.Accept(this, CiPriority.Primary);
-					Write(".subarray(");
-					args[0].Accept(this, CiPriority.Statement);
-					Write(", ");
-					WriteAdd(args[0], args[3]); // TODO: side effect
-					Write(')');
-				}
-				if (!(args[2] is CiLiteral destinationIndex) || (long) destinationIndex.Value != 0) {
-					Write(", ");
-					args[2].Accept(this, CiPriority.Statement);
-				}
-			}
-			else {
-				AddLibrary(GenJsMethod.CopyArray,
-					"copyArray : function(sa, soffset, da, doffset, length)",
-					"for (let i = 0; i < length; i++)",
-					"\tda[doffset + i] = sa[soffset + i];");
-				Write("Ci.copyArray(");
-				obj.Accept(this, CiPriority.Statement);
-				Write(", ");
-				WriteArgs(method, args);
-			}
+			AddLibrary(GenJsMethod.CopyArray,
+				"copyArray : function(sa, soffset, da, doffset, length)",
+				"if (typeof(sa.subarray) == \"function\" && typeof(da.set) == \"function\")",
+				"\tda.set(sa.subarray(soffset, soffset + length), doffset);",
+				"else",
+				"\tfor (let i = 0; i < length; i++)",
+				"\t\tda[doffset + i] = sa[soffset + i];");
+			Write("Ci.copyArray(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", ");
+			WriteArgs(method, args);
 			Write(')');
 		}
 		else if (obj.Type is CiListType && method.Name == "Add") {
