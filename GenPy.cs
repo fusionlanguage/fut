@@ -584,11 +584,8 @@ public class GenPy : GenBase
 			Write('[');
 			args[0].Accept(this, CiPriority.Statement);
 			Write(':');
-			if (args.Length == 2) {
-				args[0].Accept(this, CiPriority.Add); // TODO: side effect
-				Write(" + ");
-				args[1].Accept(this, CiPriority.Add);
-			}
+			if (args.Length == 2)
+				WriteAdd(args[0], args[1]); // TODO: side effect
 			Write(']');
 		}
 		else if (obj.Type is CiListType list && method == CiSystem.CollectionClear && list.ElementType is CiNumericType number && GetArrayCode(number) != 'B') {
@@ -609,9 +606,7 @@ public class GenPy : GenBase
 			Write('[');
 			args[0].Accept(this, CiPriority.Statement);
 			Write(':');
-			args[0].Accept(this, CiPriority.Add); // TODO: side effect
-			Write(" + ");
-			args[1].Accept(this, CiPriority.Add);
+			WriteAdd(args[0], args[1]); // TODO: side effect
 			Write(']');
 		}
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
@@ -619,17 +614,13 @@ public class GenPy : GenBase
 			Write('[');
 			args[2].Accept(this, CiPriority.Statement);
 			Write(':');
-			args[2].Accept(this, CiPriority.Add); // TODO: side effect
-			Write(" + ");
-			args[3].Accept(this, CiPriority.Add);
+			WriteAdd(args[2], args[3]); // TODO: side effect
 			Write("] = ");
 			obj.Accept(this, CiPriority.Primary);
 			Write('[');
 			args[0].Accept(this, CiPriority.Statement);
 			Write(':');
-			args[0].Accept(this, CiPriority.Add); // TODO: side effect
-			Write(" + ");
-			args[3].Accept(this, CiPriority.Add); // TODO: side effect
+			WriteAdd(args[0], args[3]); // TODO: side effect twice
 			Write(']');
 		}
 		else if (obj.Type is CiArrayStorageType array && method.Name == "Fill") {
@@ -646,9 +637,7 @@ public class GenPy : GenBase
 			Write('[');
 			args[1].Accept(this, CiPriority.Statement);
 			Write(':');
-			args[1].Accept(this, CiPriority.Add); // TODO: side effect
-			Write(" + ");
-			args[2].Accept(this, CiPriority.Add);
+			WriteAdd(args[1], args[2]); // TODO: side effect
 			Write("].decode(\"utf-8\")");
 		}
 		else if (method == CiSystem.MathFusedMultiplyAdd) {

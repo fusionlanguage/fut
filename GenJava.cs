@@ -332,9 +332,7 @@ public class GenJava : GenTyped
 			args[0].Accept(this, CiPriority.Statement);
 			if (args.Length == 2) {
 				Write(", ");
-				args[0].Accept(this, CiPriority.Add); // TODO: side effect
-				Write(" + ");
-				args[1].Accept(this, CiPriority.Add);
+				WriteAdd(args[0], args[1]); // TODO: side effect
 			}
 			Write(')');
 		}
@@ -387,9 +385,7 @@ public class GenJava : GenTyped
 			Write(".subList(");
 			args[0].Accept(this, CiPriority.Statement);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Add); // TODO: side effect
-			Write(" + ");
-			args[1].Accept(this, CiPriority.Add);
+			WriteAdd(args[0], args[1]); // TODO: side effect
 			Write(").clear()");
 		}
 		else if (obj.Type is CiSortedDictionaryType dict && method.Name == "Add") {

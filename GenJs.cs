@@ -306,9 +306,7 @@ public class GenJs : GenBase
 			args[0].Accept(this, CiPriority.Statement);
 			if (args.Length == 2) {
 				Write(", ");
-				args[0].Accept(this, CiPriority.Add); // TODO: side effect
-				Write(" + ");
-				args[1].Accept(this, CiPriority.Add);
+				WriteAdd(args[0], args[1]); // TODO: side effect
 			}
 			Write(')');
 		}
@@ -325,9 +323,7 @@ public class GenJs : GenBase
 					Write(".subarray(");
 					args[0].Accept(this, CiPriority.Statement);
 					Write(", ");
-					args[0].Accept(this, CiPriority.Add); // TODO: side effect
-					Write(" + ");
-					args[3].Accept(this, CiPriority.Add);
+					WriteAdd(args[0], args[3]); // TODO: side effect
 					Write(')');
 				}
 				if (!(args[2] is CiLiteral destinationIndex) || (long) destinationIndex.Value != 0) {

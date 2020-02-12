@@ -862,7 +862,7 @@ public class CiResolver : CiVisitor
 	{
 		if (statement.Cond != null) {
 			statement.Cond = ResolveBool(statement.Cond);
-			statement.SetCompletesNormally(!(statement.Cond is CiLiteral literal) || false.Equals(literal.Value));
+			statement.SetCompletesNormally(!(statement.Cond is CiLiteral literal) || !(bool) literal.Value);
 		}
 		else
 			statement.SetCompletesNormally(false);

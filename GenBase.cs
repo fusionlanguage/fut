@@ -644,6 +644,28 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
+	protected void WriteAdd(CiExpr left, CiExpr right)
+	{
+		if (left is CiLiteral leftLiteral) {
+			long leftValue = (long) leftLiteral.Value;
+			if (leftValue == 0) {
+				right.Accept(this, CiPriority.Statement);
+				return;
+			}
+			if (right is CiLiteral rightLiteral) {
+				Write(leftValue + (long) rightLiteral.Value);
+				return;
+			}
+		}
+		else if (right is CiLiteral rightLiteral2 && (long) rightLiteral2.Value == 0) {
+			left.Accept(this, CiPriority.Statement);
+			return;
+		}
+		left.Accept(this, CiPriority.Add);
+		Write(" + ");
+		right.Accept(this, CiPriority.Add);
+	}
+
 	protected CiExpr Write(CiBinaryExpr expr, bool parentheses, CiPriority left, string op, CiPriority right)
 	{
 		if (parentheses)
