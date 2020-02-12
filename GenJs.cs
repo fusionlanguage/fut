@@ -316,15 +316,24 @@ public class GenJs : GenBase
 			if (!(array is CiListType) && array.ElementType is CiNumericType) {
 				args[1].Accept(this, CiPriority.Primary);
 				Write(".set(");
-				obj.Accept(this, CiPriority.Primary);
-				Write(".subarray(");
-				args[0].Accept(this, CiPriority.Statement);
-				Write(", ");
-				args[0].Accept(this, CiPriority.Add); // TODO: side effect
-				Write(" + ");
-				args[3].Accept(this, CiPriority.Add);
-				Write("), ");
-				args[2].Accept(this, CiPriority.Statement);
+				if (array is CiArrayStorageType sourceArray
+				 && args[0] is CiLiteral sourceIndex && (long) sourceIndex.Value == 0
+				 && args[3] is CiLiteral count && (long) count.Value == sourceArray.Length)
+					obj.Accept(this, CiPriority.Statement);
+				else {
+					obj.Accept(this, CiPriority.Primary);
+					Write(".subarray(");
+					args[0].Accept(this, CiPriority.Statement);
+					Write(", ");
+					args[0].Accept(this, CiPriority.Add); // TODO: side effect
+					Write(" + ");
+					args[3].Accept(this, CiPriority.Add);
+					Write(')');
+				}
+				if (!(args[2] is CiLiteral destinationIndex) || (long) destinationIndex.Value != 0) {
+					Write(", ");
+					args[2].Accept(this, CiPriority.Statement);
+				}
 			}
 			else {
 				AddLibrary(GenJsMethod.CopyArray,
