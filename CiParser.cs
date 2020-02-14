@@ -852,7 +852,7 @@ public class CiParser : CiLexer
 		CiEnum enu = new CiEnum { Parent = this.Program, Filename = this.Filename, IsFlags = Eat(CiToken.Asterisk), Line = this.Line, Name = ParseId() };
 		Expect(CiToken.LeftBrace);
 		do {
-			CiConst konst = new CiConst { Documentation = ParseDoc(), Line = this.Line, Name = ParseId(), Type = enu };
+			CiConst konst = new CiConst { Visibility = CiVisibility.Public, Documentation = ParseDoc(), Line = this.Line, Name = ParseId(), Type = enu };
 			if (Eat(CiToken.Assign))
 				konst.Value = ParseExpr();
 			else if (enu.IsFlags)
