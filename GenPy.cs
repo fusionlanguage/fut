@@ -118,9 +118,9 @@ public class GenPy : GenBase
 				if (first) {
 					WriteLine();
 					WriteLine();
-					WriteLine("Parameters:");
 					first = false;
 				}
+				Write(":param ");
 				WriteName(param);
 				Write(": ");
 				WritePyDoc(param.Documentation.Summary);
