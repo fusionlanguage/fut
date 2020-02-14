@@ -165,6 +165,7 @@ public class GenPy : GenBase
 		case "import":
 		case "is":
 		case "lambda":
+		case "len":
 		case "nonlocal":
 		case "not":
 		case "or":

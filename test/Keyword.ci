@@ -6,7 +6,6 @@ public static class Test
 		int as = 1;
 		int async = 1;
 		int await = 1;
-		int base = 1;
 		int catch = 1;
 		int char = 1;
 		int checked = 1;
@@ -56,6 +55,8 @@ public static class Test
 		int volatile = 1;
 		int with = 1;
 		int yield = 1;
+		string s = "foo";
+		int len = s.Length;
 		return true;
 	}
 }
