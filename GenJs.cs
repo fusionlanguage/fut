@@ -310,7 +310,7 @@ public class GenJs : GenBase
 			}
 			Write(')');
 		}
-		else if (obj.Type is CiArrayType array && method.Name == "CopyTo") {
+		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			AddLibrary(GenJsMethod.CopyArray,
 				"copyArray : function(sa, soffset, da, doffset, length)",
 				"if (typeof(sa.subarray) == \"function\" && typeof(da.set) == \"function\")",
