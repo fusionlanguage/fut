@@ -186,6 +186,8 @@ public class GenPy : GenBase
 	{
 		switch (symbol) {
 		case CiConst konst:
+			if (konst.Visibility != CiVisibility.Public)
+				Write('_');
 			if (konst.InMethod != null) {
 				WriteUppercaseWithUnderscores(konst.InMethod.Name);
 				Write('_');
