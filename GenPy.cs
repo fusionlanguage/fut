@@ -186,6 +186,11 @@ public class GenPy : GenBase
 	protected override void WriteName(CiSymbol symbol)
 	{
 		switch (symbol) {
+		case CiContainerType container:
+			if (!container.IsPublic)
+				Write('_');
+			Write(symbol.Name);
+			break;
 		case CiConst konst:
 			if (konst.Visibility != CiVisibility.Public)
 				Write('_');
@@ -205,11 +210,6 @@ public class GenPy : GenBase
 				Write('_');
 				WriteLowercaseWithUnderscores(symbol.Name);
 			}
-			break;
-		case CiContainerType container:
-			if (!container.IsPublic)
-				Write('_');
-			Write(symbol.Name);
 			break;
 		default:
 			throw new NotImplementedException(symbol.GetType().Name);

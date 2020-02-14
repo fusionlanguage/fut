@@ -80,26 +80,58 @@ public class GenC : GenCCpp
 		return expr;
 	}
 
+	void WriteCamelCaseNotKeyword(string name)
+	{
+		switch (name) {
+		case "this":
+			Write("self");
+			break;
+		case "auto":
+		case "char":
+		case "extern":
+		case "goto":
+		case "inline":
+		case "register":
+		case "restrict":
+		case "signed":
+		case "sizeof":
+		case "struct":
+		case "typedef":
+		case "typeof": // gcc extension
+		case "union":
+		case "unsigned":
+		case "volatile":
+			Write(name);
+			Write('_');
+			break;
+		default:
+			WriteCamelCase(name);
+			break;
+		}
+	}
+
 	protected override void WriteName(CiSymbol symbol)
 	{
-		if (symbol is CiMethod) {
+		switch (symbol) {
+		case CiContainerType _:
+			Write(symbol.Name);
+			break;
+		case CiMethod _:
 			Write(symbol.Parent.Name);
 			Write('_');
 			Write(symbol.Name);
-		}
-		else if (symbol is CiConst) {
+			break;
+		case CiConst _:
 			if (symbol.Parent is CiClass) {
 				Write(symbol.Parent.Name);
 				Write('_');
 			}
 			WriteUppercaseWithUnderscores(symbol.Name);
+			break;
+		default:
+			WriteCamelCaseNotKeyword(symbol.Name);
+			break;
 		}
-		else if (symbol is CiMember)
-			WriteCamelCase(symbol.Name);
-		else if (symbol.Name == "this")
-			Write("self");
-		else
-			Write(symbol.Name);
 	}
 
 	void WriteSelfForField(CiClass fieldClass)

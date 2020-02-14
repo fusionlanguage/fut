@@ -113,6 +113,9 @@ public class GenJava : GenTyped
 	protected override void WriteName(CiSymbol symbol)
 	{
 		switch (symbol) {
+		case CiContainerType _:
+			Write(symbol.Name);
+			break;
 		case CiConst konst:
 			if (konst.InMethod != null) {
 				WriteUppercaseWithUnderscores(konst.InMethod.Name);
@@ -125,9 +128,6 @@ public class GenJava : GenTyped
 				Write("size()");
 			else
 				WriteCamelCaseNotKeyword(symbol.Name);
-			break;
-		case CiContainerType _:
-			Write(symbol.Name);
 			break;
 		default:
 			if (symbol.Parent is CiForeach forEach && forEach.Count == 2) {
@@ -466,7 +466,7 @@ public class GenJava : GenTyped
 			else if (method == CiSystem.MathFusedMultiplyAdd)
 				Write("fma");
 			else
-				WriteCamelCase(method.Name);
+				WriteName(method);
 			WriteArgsInParentheses(method, args);
 		}
 	}
@@ -688,7 +688,7 @@ public class GenJava : GenTyped
 				param.Value.Accept(this, CiPriority.Statement);
 				break;
 			}
-			Write(param.Name);
+			WriteName(param);
 			i++;
 		}
 		WriteLine(");");

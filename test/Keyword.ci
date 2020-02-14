@@ -2,73 +2,154 @@ public static class Test
 {
 	public static bool Run()
 	{
-		int and = 1;
-		int as = 1;
-		int async = 1;
-		int await = 1;
-		int boolean = 1;
-		int catch = 1;
-		int char = 1;
-		int checked = 1;
-		int decimal = 1;
-		int def = 1;
-		int del = 1;
-		int delegate = 1;
-		int elif = 1;
-		int event = 1;
-		int except = 1;
-		int explicit = 1;
-		int exports = 1;
-		int extern = 1;
-		int final = 1;
-		int finally = 1;
-		int fixed = 1;
-		int from = 1;
-		int global = 1;
-		int goto = 1;
-		int implements = 1;
-		int implicit = 1;
-		int import = 1;
-		int instanceof = 1;
-		int interface = 1;
-		int is = 1;
-		int lambda = 1;
-		int lock = 1;
-		int module = 1;
-		int namespace = 1;
-		int nonlocal = 1;
-		int not = 1;
-		int object = 1;
-		int operator = 1;
-		int or = 1;
-		int out = 1;
-		int package = 1;
-		int params = 1;
-		int pass = 1;
-		int private = 1;
-		int raise = 1;
-		int record = 1;
-		int readonly = 1;
-		int ref = 1;
-		int sbyte = 1;
-		int sizeof = 1;
-		int stackalloc = 1;
-		int strictfp = 1;
-		int struct = 1;
-		int super = 1;
-		int synchronized = 1;
-		int transient = 1;
-		int try = 1;
-		int typeof = 1;
-		int ulong = 1;
-		int unchecked = 1;
-		int unsafe = 1;
-		int using = 1;
-		int volatile = 1;
-		int with = 1;
-		int yield = 1;
 		string s = "foo";
-		int len = s.Length;
-		return true;
+		bool and = true;
+		bool as = true;
+		bool async = true;
+		bool auto = true;
+		bool await = true;
+		bool boolean = true;
+		bool catch = true;
+		bool char = true;
+		bool checked = true;
+		bool decimal = true;
+		bool def = true;
+		bool del = true;
+		bool delegate = true;
+		bool elif = true;
+		bool event = true;
+		bool except = true;
+		bool explicit = true;
+		bool exports = true;
+		bool extern = true;
+		bool final = true;
+		bool finally = true;
+		bool fixed = true;
+		bool from = true;
+		bool global = true;
+		bool goto = true;
+		bool implements = true;
+		bool implicit = true;
+		bool import = true;
+		bool inline = true;
+		bool instanceof = true;
+		bool interface = true;
+		bool is = true;
+		bool lambda = true;
+		bool len = s.Length == 3;
+		bool lock = true;
+		bool module = true;
+		bool namespace = true;
+		bool nonlocal = true;
+		bool not = true;
+		bool object = true;
+		bool operator = true;
+		bool or = true;
+		bool out = true;
+		bool package = true;
+		bool params = true;
+		bool pass = true;
+		bool private = true;
+		bool raise = true;
+		bool readonly = true;
+		bool record = true;
+		bool ref = true;
+		bool register = true;
+		bool restrict = true;
+		bool sbyte = true;
+		bool signed = true;
+		bool sizeof = true;
+		bool stackalloc = true;
+		bool strictfp = true;
+		bool struct = true;
+		bool super = true;
+		bool synchronized = true;
+		bool transient = true;
+		bool try = true;
+		bool typedef = true;
+		bool typeof = true;
+		bool ulong = true;
+		bool unchecked = true;
+		bool union = true;
+		bool unsafe = true;
+		bool unsigned = true;
+		bool using = true;
+		bool volatile = true;
+		bool with = true;
+		bool yield = true;
+		return and
+			&& as
+			&& async
+			&& auto
+			&& await
+			&& boolean
+			&& catch
+			&& char
+			&& checked
+			&& decimal
+			&& def
+			&& del
+			&& delegate
+			&& elif
+			&& event
+			&& except
+			&& explicit
+			&& exports
+			&& extern
+			&& final
+			&& finally
+			&& fixed
+			&& from
+			&& global
+			&& goto
+			&& implements
+			&& implicit
+			&& import
+			&& inline
+			&& instanceof
+			&& interface
+			&& is
+			&& lambda
+			&& len
+			&& lock
+			&& module
+			&& namespace
+			&& nonlocal
+			&& not
+			&& object
+			&& operator
+			&& or
+			&& out
+			&& package
+			&& params
+			&& pass
+			&& private
+			&& raise
+			&& readonly
+			&& record
+			&& ref
+			&& register
+			&& restrict
+			&& sbyte
+			&& signed
+			&& sizeof
+			&& stackalloc
+			&& strictfp
+			&& struct
+			&& super
+			&& synchronized
+			&& transient
+			&& try
+			&& typedef
+			&& typeof
+			&& ulong
+			&& unchecked
+			&& union
+			&& unsafe
+			&& unsigned
+			&& using
+			&& volatile
+			&& with
+			&& yield;
 	}
 }
