@@ -1110,7 +1110,6 @@ public class GenPy : GenBase
 		WritePyDoc(enu.Documentation);
 		int i = 1;
 		foreach (CiConst konst in enu) {
-			//TODO: WritePyDoc(konst.Documentation);
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" = ");
 			if (konst.Value != null)
@@ -1118,6 +1117,7 @@ public class GenPy : GenBase
 			else
 				Write(i);
 			WriteLine();
+			WritePyDoc(konst.Documentation);
 			i++;
 		}
 		CloseChild();
@@ -1128,9 +1128,9 @@ public class GenPy : GenBase
 		foreach (CiConst konst in consts) {
 			if (konst.Visibility != CiVisibility.Private || konst.Type is CiArrayStorageType) {
 				WriteLine();
-				//TODO: Write(konst.Documentation);
 				base.WriteVar(konst);
 				WriteLine();
+				WritePyDoc(konst.Documentation);
 			}
 		}
 	}
