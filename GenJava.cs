@@ -79,28 +79,66 @@ public class GenJava : GenTyped
 		return expr;
 	}
 
+	void WriteCamelCaseNotKeyword(string name)
+	{
+		switch (name) {
+		case "boolean":
+		case "catch":
+		case "char":
+		case "final":
+		case "finally":
+		case "goto":
+		case "implements":
+		case "import":
+		case "instanceof":
+		case "interface":
+		case "package":
+		case "private":
+		case "strictfp":
+		case "super":
+		case "synchronized":
+		case "transient":
+		case "try":
+		case "volatile":
+		case "yield":
+			Write(name);
+			Write('_');
+			break;
+		default:
+			WriteCamelCase(name);
+			break;
+		}
+	}
+
 	protected override void WriteName(CiSymbol symbol)
 	{
-		if (symbol is CiConst konst) {
+		switch (symbol) {
+		case CiConst konst:
 			if (konst.InMethod != null) {
 				WriteUppercaseWithUnderscores(konst.InMethod.Name);
 				Write('_');
 			}
 			WriteUppercaseWithUnderscores(symbol.Name);
-		}
-		else if (symbol is CiMember) {
+			break;
+		case CiMember _:
 			if (symbol == CiSystem.CollectionCount)
 				Write("size()");
 			else
-				WriteCamelCase(symbol.Name);
-		}
-		else if (symbol.Parent is CiForeach forEach && forEach.Count == 2) {
-			CiVar element = forEach.Element;
-			Write(element.Name);
-			Write(symbol == element ? ".getKey()" : ".getValue()");
-		}
-		else
+				WriteCamelCaseNotKeyword(symbol.Name);
+			break;
+		case CiContainerType _:
 			Write(symbol.Name);
+			break;
+		default:
+			if (symbol.Parent is CiForeach forEach && forEach.Count == 2) {
+				CiVar element = forEach.Element;
+				WriteCamelCaseNotKeyword(element.Name);
+				Write(symbol == element ? ".getKey()" : ".getValue()");
+			}
+			else
+				WriteCamelCaseNotKeyword(symbol.Name);
+			break;
+		}
 	}
 
 	void Write(CiVisibility visibility)
