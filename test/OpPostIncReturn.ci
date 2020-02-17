@@ -3,7 +3,7 @@ public class Test
 	const byte[] A = { 5, 10, 15 };
 	int Offset = 0;
 
-	int Get() => A[Offset++];
+	int Get!() => A[Offset++];
 
 	public static bool Run()
 	{
