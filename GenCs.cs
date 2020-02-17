@@ -336,7 +336,21 @@ public class GenCs : GenTyped
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (obj.Type is CiArrayType && !(obj.Type is CiListType) && method.Name == "CopyTo") {
+		if ((method == CiSystem.StringIndexOf || method == CiSystem.StringLastIndexOf)
+			&& IsOneAsciiString(args[0], out char c)) {
+			obj.Accept(this, CiPriority.Primary);
+			Write('.');
+			Write(method.Name);
+			Write('(');
+			WriteCharLiteral(c);
+			Write(')');
+		}
+		else if (method == CiSystem.UTF8GetString) {
+			Include("System.Text");
+			Write("Encoding.UTF8.GetString");
+			WriteArgsInParentheses(method, args);
+		}
+		else if (obj.Type is CiArrayType && !(obj.Type is CiListType) && method.Name == "CopyTo") {
 			Include("System");
 			Write("Array.Copy(");
 			obj.Accept(this, CiPriority.Statement);
@@ -361,20 +375,6 @@ public class GenCs : GenTyped
 			Write(", ");
 			WriteNewStorage(dict.ValueType);
 			Write(')');
-		}
-		else if ((method == CiSystem.StringIndexOf || method == CiSystem.StringLastIndexOf)
-			&& IsOneAsciiString(args[0], out char c)) {
-			obj.Accept(this, CiPriority.Primary);
-			Write('.');
-			Write(method.Name);
-			Write('(');
-			WriteCharLiteral(c);
-			Write(')');
-		}
-		else if (method == CiSystem.UTF8GetString) {
-			Include("System.Text");
-			Write("Encoding.UTF8.GetString");
-			WriteArgsInParentheses(method, args);
 		}
 		else {
 			if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine || obj.IsReferenceTo(CiSystem.MathClass))

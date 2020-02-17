@@ -606,42 +606,7 @@ public class GenC : GenCCpp
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (obj.Type is CiArrayType array && method.Name == "CopyTo") {
-			Include("string.h");
-			Write("memcpy(");
-			WriteArrayPtrAdd(args[1], args[2]);
-			Write(", ");
-			WriteArrayPtrAdd(obj, args[0]);
-			Write(", ");
-			if (array.IsByteArray())
-				args[3].Accept(this, CiPriority.Statement);
-			else {
-				args[3].Accept(this, CiPriority.Mul);
-				Write(" * sizeof(");
-				obj.Accept(this, CiPriority.Primary);
-				Write("[0])");
-			}
-			Write(')');
-		}
-		else if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
-			if (!(args[0] is CiLiteral literal) || !literal.IsDefaultValue)
-				throw new NotImplementedException("Only null, zero and false supported");
-			Include("string.h");
-			Write("memset(");
-			obj.Accept(this, CiPriority.Statement);
-			Write(", 0, sizeof(");
-			obj.Accept(this, CiPriority.Statement);
-			Write("))");
-		}
-		else if (method == CiSystem.ConsoleWrite)
-			WriteConsoleWrite(obj, args, false);
-		else if (method == CiSystem.ConsoleWriteLine)
-			WriteConsoleWrite(obj, args, true);
-		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
-			Include("math.h");
-			WriteMathCall(method, args);
-		}
-		else if (method == CiSystem.StringContains) {
+		if (method == CiSystem.StringContains) {
 			Include("string.h");
 			if (parent > CiPriority.Equality)
 				Write('(');
@@ -696,6 +661,41 @@ public class GenC : GenCCpp
 			args[0].Accept(this, CiPriority.Add);
 			if (parent > CiPriority.Add)
 				Write(')');
+		}
+		else if (obj.Type is CiArrayType array && method.Name == "CopyTo") {
+			Include("string.h");
+			Write("memcpy(");
+			WriteArrayPtrAdd(args[1], args[2]);
+			Write(", ");
+			WriteArrayPtrAdd(obj, args[0]);
+			Write(", ");
+			if (array.IsByteArray())
+				args[3].Accept(this, CiPriority.Statement);
+			else {
+				args[3].Accept(this, CiPriority.Mul);
+				Write(" * sizeof(");
+				obj.Accept(this, CiPriority.Primary);
+				Write("[0])");
+			}
+			Write(')');
+		}
+		else if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
+			if (!(args[0] is CiLiteral literal) || !literal.IsDefaultValue)
+				throw new NotImplementedException("Only null, zero and false supported");
+			Include("string.h");
+			Write("memset(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", 0, sizeof(");
+			obj.Accept(this, CiPriority.Statement);
+			Write("))");
+		}
+		else if (method == CiSystem.ConsoleWrite)
+			WriteConsoleWrite(obj, args, false);
+		else if (method == CiSystem.ConsoleWriteLine)
+			WriteConsoleWrite(obj, args, true);
+		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
+			Include("math.h");
+			WriteMathCall(method, args);
 		}
 		// TODO
 		else {
