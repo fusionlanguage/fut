@@ -14,6 +14,13 @@ CXX = clang++ -Wall -Wno-tautological-compare -Werror -std=c++2a
 
 VERSION := 1.0.0
 MAKEFLAGS = -r
+ifdef V
+DO = 
+else
+DO = @echo $@ && 
+endif
+DO_SUMMARY = $(DO)perl test/summary.pl $^
+DO_CITO = $(DO)mkdir -p $(@D) && ($(MONO) ./cito.exe -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 
 all: cito.exe
 
@@ -24,81 +31,81 @@ test: test-c test-cpp test-cs test-java test-js test-py test-error
 	perl test/summary.pl test/bin/*/*.txt
 
 test-c: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
-	perl test/summary.pl $^
+	$(DO_SUMMARY)
 
 test-cpp: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci))
-	perl test/summary.pl $^
+	$(DO_SUMMARY)
 
 test-cs: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci))
-	perl test/summary.pl $^
+	$(DO_SUMMARY)
 
 test-java: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci))
-	perl test/summary.pl $^
+	$(DO_SUMMARY)
 
 test-js: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
-	perl test/summary.pl $^
+	$(DO_SUMMARY)
 
 test-py: $(patsubst test/%.ci, test/bin/%/py.txt, $(wildcard test/*.ci))
-	perl test/summary.pl $^
+	$(DO_SUMMARY)
 
 test-error: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
-	perl test/summary.pl $^
+	$(DO_SUMMARY)
 
 test/bin/%/c.txt: test/bin/%/c.exe
-	./$< >$@ || grep '//FAIL:.*\<c\>' test/$*.ci
+	$(DO)./$< >$@ || grep '//FAIL:.*\<c\>' test/$*.ci
 
 test/bin/%/cpp.txt: test/bin/%/cpp.exe
-	./$< >$@ || grep '//FAIL:.*\<cpp\>' test/$*.ci
+	$(DO)./$< >$@ || grep '//FAIL:.*\<cpp\>' test/$*.ci
 
 test/bin/%/cs.txt: test/bin/%/cs.exe
-	$(MONO) $< >$@ || grep '//FAIL:.*\<cs\>' test/$*.ci
+	$(DO)$(MONO) $< >$@ || grep '//FAIL:.*\<cs\>' test/$*.ci
 
 test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
-	java -cp "test/bin$(JAVACPSEP)$(<D)" Runner >$@ || grep '//FAIL:.*\<java\>' test/$*.ci
+	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)" Runner >$@ || grep '//FAIL:.*\<java\>' test/$*.ci
 
 test/bin/%/js.txt: test/bin/%/Run.js
-	node $< >$@ || grep '//FAIL:.*\<js\>' test/$*.ci
+	$(DO)node $< >$@ || grep '//FAIL:.*\<js\>' test/$*.ci
 
 test/bin/%/py.txt: test/Runner.py test/bin/%/Test.py
-	PYTHONPATH=$(@D) python $< >$@ || grep '//FAIL:.*\<py\>' test/$*.ci
+	$(DO)PYTHONPATH=$(@D) python $< >$@ || grep '//FAIL:.*\<py\>' test/$*.ci
 
 test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
-	$(CC) -o $@ -I $(<D) $^ || grep '//FAIL:.*\<c\>' test/$*.ci
+	$(DO)$(CC) -o $@ -I $(<D) $^ || grep '//FAIL:.*\<c\>' test/$*.ci
 
 test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
-	$(CXX) -o $@ -I $(<D) $^ || grep '//FAIL:.*\<cpp\>' test/$*.ci
+	$(DO)$(CXX) -o $@ -I $(<D) $^ || grep '//FAIL:.*\<cpp\>' test/$*.ci
 
 test/bin/%/cs.exe: test/bin/%/Test.cs test/Runner.cs
-	$(CSC) -out:$@ $^ || grep '//FAIL:.*\<cs\>' test/$*.ci
+	$(DO)$(CSC) -out:$@ $^ || grep '//FAIL:.*\<cs\>' test/$*.ci
 
 test/bin/%/Test.class: test/bin/%/Test.java
-	javac -d $(@D) $(<D)/*.java || grep '//FAIL:.*\<java\>' test/$*.ci
+	$(DO)javac -d $(@D) $(<D)/*.java || grep '//FAIL:.*\<java\>' test/$*.ci
 
 test/bin/%/Run.js: test/bin/%/Test.js
-	cat $< test/Runner.js >$@ || grep '//FAIL:.*\<js\>' test/$*.ci
+	$(DO)cat $< test/Runner.js >$@ || grep '//FAIL:.*\<js\>' test/$*.ci
 
 test/bin/%/Test.c: test/%.ci cito.exe
-	mkdir -p $(@D) && ($(MONO) ./cito.exe -o $@ $< || grep '//FAIL:.*\<c\>' $<)
+	$(DO_CITO)
 
 test/bin/%/Test.cpp: test/%.ci cito.exe
-	mkdir -p $(@D) && ($(MONO) ./cito.exe -o $@ $< || grep '//FAIL:.*\<cpp\>' $<)
+	$(DO_CITO)
 
 test/bin/%/Test.cs: test/%.ci cito.exe
-	mkdir -p $(@D) && ($(MONO) ./cito.exe -o $@ $< || grep '//FAIL:.*\<cs\>' $<)
+	$(DO_CITO)
 
 test/bin/%/Test.java: test/%.ci cito.exe
-	mkdir -p $(@D) && ($(MONO) ./cito.exe -o $@ $< || grep '//FAIL:.*\<java\>' $<)
+	$(DO_CITO)
 
 test/bin/%/Test.js: test/%.ci cito.exe
-	mkdir -p $(@D) && ($(MONO) ./cito.exe -o $@ $< || grep '//FAIL:.*\<js\>' $<)
+	$(DO_CITO)
 
 test/bin/%/Test.py: test/%.ci cito.exe
-	mkdir -p $(@D) && ($(MONO) ./cito.exe -o $@ $< || grep '//FAIL:.*\<py\>' $<)
+	$(DO_CITO)
 
 .PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.py
 
 test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
-	javac -d $(@D) -cp test/bin/Basic $<
+	$(DO)javac -d $(@D) -cp test/bin/Basic $<
 
 test/bin/%/error.txt: test/error/%.ci cito.exe
 	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $(@:%.txt=%.cs) $< 2>$@
@@ -120,6 +127,6 @@ clean:
 	$(RM) cito.exe
 	$(RM) -r test/bin
 
-.PHONY: all test test-c test-cpp test-cs test-java test-js test-error install install-cito uninstall clean
+.PHONY: all test test-c test-cpp test-cs test-java test-js test-py test-error install install-cito uninstall clean
 
 .DELETE_ON_ERROR:
