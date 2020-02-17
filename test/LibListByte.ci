@@ -2,8 +2,8 @@ public static class Test
 {
 	public static bool Run()
 	{
-		List<byte>() list;
-		list.Add(42);
+		List<byte>() list; //FAIL: c
+		list.Add(42); //FAIL: java TODO cast
 		list.Clear();
 		list.Add(1);
 		list.Add(42);

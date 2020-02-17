@@ -2,13 +2,13 @@ public static class Test
 {
 	public static bool Run()
 	{
-		SortedDictionary<int, int>() dict;
+		SortedDictionary<int, int>() dict; //FAIL: c py
 		dict[1] = 10;
 		dict.Clear();
 		dict[2] = 12;
 		dict[2] = 20;
 		dict[3] = 30;
-		dict.Remove(1);
+		dict.Remove(1); //FAIL: js TODO
 		return dict.Count == 2 && dict[2] == 20 && dict[3] == 30 && dict.ContainsKey(2);
 	}
 }

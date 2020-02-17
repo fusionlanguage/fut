@@ -2,14 +2,14 @@ public static class Test
 {
 	public static bool Run()
 	{
-		SortedDictionary<int, int>() dict;
+		SortedDictionary<int, int>() dict; //FAIL: c; py TODO
 		dict[3] = 15;
 		dict[1] = 5;
 		dict[2] = 10;
 		int lastKey = 0;
 		int keySum = 0;
 		int valueSum = 0;
-		foreach ((int key, int value) in dict) {
+		foreach ((int key, int value) in dict) { //FAIL: cs - .NET Core but not .NET Framework 4.8; js TODO
 			if (lastKey >= key)
 				return false;
 			lastKey = key;

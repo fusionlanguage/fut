@@ -2,8 +2,8 @@ public static class Test
 {
 	public static bool Run()
 	{
-		List<int[2]>() list;
-		int[]! p = list.Add();
+		List<int[2]>() list; //FAIL: c
+		int[]! p = list.Add(); //FAIL: cs java js py
 		p[0] = 100;
 		p[1] = 200;
 		list.Clear();

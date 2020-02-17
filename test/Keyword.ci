@@ -3,13 +3,13 @@ public static class Test
 	public static bool Run()
 	{
 		string s = "foo";
-		bool and = true;
+		bool and = true; //FAIL: cpp TODO
 		bool as = true;
 		bool async = true;
 		bool auto = true;
 		bool await = true;
 		bool boolean = true;
-		bool catch = true;
+		bool catch = true; //FAIL: js TODO
 		bool char = true;
 		bool checked = true;
 		bool decimal = true;

@@ -3,6 +3,6 @@ public static class Test
 	public static bool Run()
 	{
 		double a = 8;
-		return Math.Cbrt(a) == 2;
+		return Math.Cbrt(a) == 2; //FAIL: cs - .NET Core but not .NET Framework 4.8; py
 	}
 }

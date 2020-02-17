@@ -4,6 +4,6 @@ public static class Test
 	{
 		double a = 1.75;
 		double b = -3.25;
-		return Math.Truncate(a) == 1 && Math.Truncate(b) == -3;
+		return Math.Truncate(a) == 1 && Math.Truncate(b) == -3; //FAIL: java
 	}
 }

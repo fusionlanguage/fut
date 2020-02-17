@@ -45,55 +45,55 @@ test-error: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/er
 	perl test/summary.pl $^
 
 test/bin/%/c.txt: test/bin/%/c.exe
-	-./$< >$@
+	./$< >$@ || grep '//FAIL:.*\<c\>' test/$*.ci
 
 test/bin/%/cpp.txt: test/bin/%/cpp.exe
-	-./$< >$@
+	./$< >$@ || grep '//FAIL:.*\<cpp\>' test/$*.ci
 
 test/bin/%/cs.txt: test/bin/%/cs.exe
-	-$(MONO) $< >$@
+	$(MONO) $< >$@ || grep '//FAIL:.*\<cs\>' test/$*.ci
 
 test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
-	-java -cp "test/bin$(JAVACPSEP)$(<D)" Runner >$@
+	java -cp "test/bin$(JAVACPSEP)$(<D)" Runner >$@ || grep '//FAIL:.*\<java\>' test/$*.ci
 
 test/bin/%/js.txt: test/bin/%/Run.js
-	-node $< >$@
+	node $< >$@ || grep '//FAIL:.*\<js\>' test/$*.ci
 
 test/bin/%/py.txt: test/Runner.py test/bin/%/Test.py
-	-PYTHONPATH=$(@D) python $< >$@
+	PYTHONPATH=$(@D) python $< >$@ || grep '//FAIL:.*\<py\>' test/$*.ci
 
 test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
-	-$(CC) -o $@ -I $(<D) $^
+	$(CC) -o $@ -I $(<D) $^ || grep '//FAIL:.*\<c\>' test/$*.ci
 
 test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
-	-$(CXX) -o $@ -I $(<D) $^
+	$(CXX) -o $@ -I $(<D) $^ || grep '//FAIL:.*\<cpp\>' test/$*.ci
 
 test/bin/%/cs.exe: test/bin/%/Test.cs test/Runner.cs
-	-$(CSC) -out:$@ $^
+	$(CSC) -out:$@ $^ || grep '//FAIL:.*\<cs\>' test/$*.ci
 
 test/bin/%/Test.class: test/bin/%/Test.java
-	-javac -d $(@D) $(<D)/*.java
+	javac -d $(@D) $(<D)/*.java || grep '//FAIL:.*\<java\>' test/$*.ci
 
 test/bin/%/Run.js: test/bin/%/Test.js
-	-cat $< test/Runner.js >$@
+	cat $< test/Runner.js >$@ || grep '//FAIL:.*\<js\>' test/$*.ci
 
 test/bin/%/Test.c: test/%.ci cito.exe
-	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+	mkdir -p $(@D) && ($(MONO) ./cito.exe -o $@ $< || grep '//FAIL:.*\<c\>' $<)
 
 test/bin/%/Test.cpp: test/%.ci cito.exe
-	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+	mkdir -p $(@D) && ($(MONO) ./cito.exe -o $@ $< || grep '//FAIL:.*\<cpp\>' $<)
 
 test/bin/%/Test.cs: test/%.ci cito.exe
-	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+	mkdir -p $(@D) && ($(MONO) ./cito.exe -o $@ $< || grep '//FAIL:.*\<cs\>' $<)
 
 test/bin/%/Test.java: test/%.ci cito.exe
-	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+	mkdir -p $(@D) && ($(MONO) ./cito.exe -o $@ $< || grep '//FAIL:.*\<java\>' $<)
 
 test/bin/%/Test.js: test/%.ci cito.exe
-	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+	mkdir -p $(@D) && ($(MONO) ./cito.exe -o $@ $< || grep '//FAIL:.*\<js\>' $<)
 
 test/bin/%/Test.py: test/%.ci cito.exe
-	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $@ $<
+	mkdir -p $(@D) && ($(MONO) ./cito.exe -o $@ $< || grep '//FAIL:.*\<py\>' $<)
 
 .PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.py
 

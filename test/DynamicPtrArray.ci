@@ -4,7 +4,7 @@ public class Test
 	{
 		Test() o1;
 		Test() o2;
-		Test[]# a = new Test[2];
+		Test[]# a = new Test[2]; //FAIL: cpp - should work with C++20
 		a[0] = o1;
 		a[1] = o2;
 		return a[0] == o1 && a[1] == o2;

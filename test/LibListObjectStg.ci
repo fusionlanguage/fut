@@ -4,8 +4,8 @@ public class Test
 
 	public static bool Run()
 	{
-		List<Test()>() list;
-		Test! t = list.Add();
+		List<Test()>() list; //FAIL: c
+		Test! t = list.Add(); //FAIL: cs java js py
 		t.Foo = 0;
 		list.Clear();
 		t = list.Add();

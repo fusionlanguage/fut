@@ -5,7 +5,7 @@ public static class Test
 		string s = "foo";
 		int i = 15;
 		double d = 1.5;
-		return $"{i,3} {s,4}" == " 15  foo"
+		return $"{i,3} {s,4}" == " 15  foo" //FAIL: cpp - should work with C++20
 			&& $"{i,-3}{s,-5}" == "15 foo  "
 			&& $"{i:X} {i:x}" == "F f"
 			&& $"{i:D3} {i:d3} {i:X2} {i:x2}" == "015 015 0F 0f"

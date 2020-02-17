@@ -4,10 +4,10 @@ public class Test
 
 	public static bool Run()
 	{
-		SortedDictionary<int, Test()>() dict;
-		dict.Add(1);
+		SortedDictionary<int, Test()>() dict; //FAIL: c; py TODO
+		dict.Add(1); //FAIL: js TODO
 		dict.Clear();
-		Test! p = dict.Add(1);
+		Test! p = dict.Add(1); //FAIL: cs java
 		p = dict.Add(2);
 		p.Foo = 20;
 		dict.Add(3).Foo = 30;
