@@ -279,6 +279,18 @@ public class GenJava : GenTyped
 		Write(')');
 	}
 
+	void WriteIndexingInternal(CiBinaryExpr expr)
+	{
+		if (IsCollection(expr.Left.Type)) {
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(".get(");
+			expr.Right.Accept(this, CiPriority.Statement);
+			Write(')');
+		}
+		else
+			base.WriteIndexing(expr, CiPriority.And /* don't care */);
+	}
+
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
 		if ((expr.Left.Type is CiStringType && expr.Right.Type != CiSystem.NullType)
@@ -294,7 +306,7 @@ public class GenJava : GenTyped
 			&& expr.Right is CiLiteral rightLiteral && rightLiteral.Value is long l && l >= 0 && l <= byte.MaxValue) {
 			if (parent > CiPriority.Equality)
 				Write('(');
-			base.WriteIndexing(leftBinary, CiPriority.Equality); // omit "& 0xff"
+			WriteIndexingInternal(leftBinary); // omit "& 0xff"
 			Write(not ? " != " : " == ");
 			Write((sbyte) l);
 			if (parent > CiPriority.Equality)
@@ -474,30 +486,18 @@ public class GenJava : GenTyped
 	static bool IsCollection(CiType type)
 		=> type is CiListType || type is CiSortedDictionaryType;
 
-	void WriteIndexingInternal(CiBinaryExpr expr, CiPriority parent)
-	{
-		if (IsCollection(expr.Left.Type)) {
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".get(");
-			expr.Right.Accept(this, CiPriority.Statement);
-			Write(')');
-		}
-		else
-			base.WriteIndexing(expr, CiPriority.And);
-	}
-
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (parent != CiPriority.Assign && IsUnsignedByte(expr.Type)) {
 			if (parent > CiPriority.And)
 				Write('(');
-			WriteIndexingInternal(expr, CiPriority.And);
+			WriteIndexingInternal(expr);
 			Write(" & 0xff");
 			if (parent > CiPriority.And)
 				Write(')');
 		}
 		else
-			WriteIndexingInternal(expr, parent);
+			WriteIndexingInternal(expr);
 	}
 
 	protected override void WriteAssignRight(CiBinaryExpr expr)
