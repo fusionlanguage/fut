@@ -200,7 +200,6 @@ public class GenJava : GenTyped
 
 	void Write(string name, CiSortedDictionaryType dict)
 	{
-		Include("java.util." + name);
 		Write(name);
 		Write('<');
 		Write(dict.KeyType, false, true);
@@ -233,6 +232,7 @@ public class GenJava : GenTyped
 			Write('>');
 			break;
 		case CiSortedDictionaryType dict:
+			Include("java.util.TreeMap");
 			Write("final ");
 			Write("TreeMap", dict);
 			break;
@@ -265,6 +265,7 @@ public class GenJava : GenTyped
 
 	protected override void WriteSortedDictionaryStorageInit(CiSortedDictionaryType dict)
 	{
+		Include("java.util.TreeMap");
 		Write(" = new ");
 		Write("TreeMap", dict);
 		Write("()");
@@ -567,6 +568,7 @@ public class GenJava : GenTyped
 	{
 		Write("for (");
 		if (statement.Collection.Type is CiSortedDictionaryType dict) {
+			Include("java.util.Map");
 			Write("Map.Entry", dict);
 			Write(' ');
 			Write(statement.Element.Name);
