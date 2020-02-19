@@ -4,9 +4,13 @@ mono: none
 dotnet: 3.1.101
 jobs:
   - name: cpp
+    install: sudo apt install clang-9
     script: make -j2 test-cpp
   - name: cs
+    mono: latest
     script: make -j2 test-cs
   - name: py
-    install: pip install --user pyfma
+    install:
+      - sudo apt install python3-pip
+      - pip3 install --user pyfma
     script: make -j2 test-py
