@@ -8,6 +8,5 @@ jobs:
   - name: cs
     mono: latest
     script: make -j2 test-cs
-  - name: js, py, error
-    python: 3.8
-    script: make -j2 test-js test-py test-error
+  - name: js, error
+    script: make -j2 test-js test-error
