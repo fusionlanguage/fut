@@ -71,10 +71,10 @@ test/bin/%/js.txt: test/bin/%/Run.js
 	$(DO)node $< >$@ || grep '//FAIL:.*\<js\>' test/$*.ci
 
 test/bin/%/py.txt: test/Runner.py test/bin/%/Test.py
-	$(DO)PYTHONPATH=$(@D) python $< >$@ || grep '//FAIL:.*\<py\>' test/$*.ci
+	$(DO)PYTHONPATH=$(@D) python3 $< >$@ || grep '//FAIL:.*\<py\>' test/$*.ci
 
 test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
-	$(DO)$(CC) -o $@ -I $(<D) $^ || grep '//FAIL:.*\<c\>' test/$*.ci
+	$(DO)$(CC) -o $@ -I $(<D) $^ -lm || grep '//FAIL:.*\<c\>' test/$*.ci
 
 test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
 	$(DO)$(CXX) -o $@ -I $(<D) $^ || grep '//FAIL:.*\<cpp\>' test/$*.ci
