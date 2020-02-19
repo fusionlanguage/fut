@@ -1,11 +1,12 @@
+dist: bionic
 language: csharp
 mono: none
 dotnet: 3.1.101
 jobs:
-  - name: c
-    script: make -j2 test-c
   - name: cpp
     script: make -j2 test-cpp
+  - name: cs
+    script: make -j2 test-cs
   - name: py
-    install: pip3 install --user pyfma
+    install: pip install --user pyfma
     script: make -j2 test-py
