@@ -112,7 +112,7 @@ test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 	$(DO)javac -d $(@D) -cp test/bin/Basic $<
 
 test/bin/%/error.txt: test/error/%.ci cito.exe
-	-mkdir -p $(@D) && $(CITO) -o $(@:%.txt=%.cs) $< 2>$@
+	mkdir -p $(@D) && ! $(CITO) -o $(@:%.txt=%.cs) $< 2>$@
 	-perl -ne 'print "$$ARGV($$.): $$1" if m!//(ERROR: .+)!s' $< | diff -uZ - $@ && echo PASSED >$@
 
 install: install-cito
