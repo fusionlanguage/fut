@@ -2,10 +2,14 @@ prefix := /usr/local
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
 ifdef COMSPEC
 CSC = "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/Roslyn/csc.exe" -nologo
+DO_BUILD = $(CSC) -out:$@ $^
+CITO = ./cito.exe
 MONO :=
 JAVACPSEP = ;
 else
 CSC := mcs
+DO_BUILD = dotnet build
+CITO = dotnet run --
 MONO := mono
 JAVACPSEP = :
 endif
@@ -20,12 +24,12 @@ else
 DO = @echo $@ && 
 endif
 DO_SUMMARY = $(DO)perl test/summary.pl $^
-DO_CITO = $(DO)mkdir -p $(@D) && ($(MONO) ./cito.exe -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
+DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 
 all: cito.exe
 
 cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs GenPy.cs CiTo.cs)
-	$(CSC) -out:$@ $^
+	$(DO_BUILD)
 
 test: test-c test-cpp test-cs test-java test-js test-py test-error
 	perl test/summary.pl test/bin/*/*.txt
@@ -108,7 +112,7 @@ test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 	$(DO)javac -d $(@D) -cp test/bin/Basic $<
 
 test/bin/%/error.txt: test/error/%.ci cito.exe
-	-mkdir -p $(@D) && $(MONO) ./cito.exe -o $(@:%.txt=%.cs) $< 2>$@
+	-mkdir -p $(@D) && $(CITO) -o $(@:%.txt=%.cs) $< 2>$@
 	-perl -ne 'print "$$ARGV($$.): $$1" if m!//(ERROR: .+)!s' $< | diff -uZ - $@ && echo PASSED >$@
 
 install: install-cito
