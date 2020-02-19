@@ -96,6 +96,7 @@ public class GenCs : GenTyped
 		Write(symbol.Name);
 		switch (symbol.Name) {
 		case "as":
+		case "await":
 		case "catch":
 		case "char":
 		case "checked":
