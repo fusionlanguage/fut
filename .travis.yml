@@ -3,10 +3,13 @@ language: csharp
 mono: none
 dotnet: 3.1.101
 jobs:
-  - name: c, java
-    script: make -j2 test-c test-java
-  - name: cs
-    mono: latest
-    script: make -j2 test-cs
-  - name: js, error
-    script: make -j2 test-js test-error
+  - name: cpp
+    install: sudo apt install libstdc++-8-dev
+    script: make -j2 test-cpp
+  - name: py
+    install: python --version
+    script: make -j2 test-py
+  - name: py 3.8
+    python: 3.8
+    install: python --version
+    script: make -j2 test-py
