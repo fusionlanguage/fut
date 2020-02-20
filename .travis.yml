@@ -1,10 +1,13 @@
-dist: bionic
 language: csharp
+dist: bionic
 mono: none
 dotnet: 3.1.101
 jobs:
   - name: cpp
-    install: sudo apt install libstdc++-7-dev
+    install:
+      - lsb_release -a
+      - lscpu
+      - sudo apt install libstdc++-8-dev
     script: make -j2 test-cpp
   - name: py
     install: python3 --version
