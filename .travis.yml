@@ -4,9 +4,9 @@ dotnet: 3.1.101
 jobs:
   - name: py 3.8
     install:
-	  - sudo add-apt-repository ppa:deadsnakes/ppa
-	  - sudo apt update
+      - sudo add-apt-repository ppa:deadsnakes/ppa
+      - sudo apt update
       - sudo apt install python3.8
     script:
-	  - python3 --version
-	  - python3.8 --version
+      - python3 --version
+      - python3.8 --version
