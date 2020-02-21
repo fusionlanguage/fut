@@ -227,7 +227,7 @@ public class GenCpp : GenCCpp
 		Write("static_cast<");
 		Write(type, false);
 		Write(">(");
-		expr.Accept(this, CiPriority.Statement);
+		GetStaticCastInner(type, expr).Accept(this, CiPriority.Statement);
 		Write(')');
 	}
 

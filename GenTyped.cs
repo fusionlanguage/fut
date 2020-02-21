@@ -252,12 +252,39 @@ public abstract class GenTyped : GenBase
 		}
 	}
 
+	protected CiExpr GetStaticCastInner(CiType type, CiExpr expr)
+	{
+		if (expr is CiBinaryExpr binary && binary.Op == CiToken.And && binary.Right is CiLiteral rightMask
+		 && type is CiIntegerType integer) {
+			long mask;
+			switch (GetTypeCode(integer, false)) {
+			case TypeCode.Byte:
+			case TypeCode.SByte:
+				mask = 0xff;
+				break;
+			case TypeCode.Int16:
+			case TypeCode.UInt16:
+				mask = 0xffff;
+				break;
+			case TypeCode.Int32:
+			case TypeCode.UInt32:
+				mask = 0xffffffff;
+				break;
+			default:
+				return expr;
+			}
+			if (((long) rightMask.Value & mask) == mask)
+				return binary.Left;
+		}
+		return expr;
+	}
+
 	protected virtual void WriteStaticCast(CiType type, CiExpr expr)
 	{
 		Write('(');
 		Write(type, false);
 		Write(") ");
-		expr.Accept(this, CiPriority.Primary);
+		GetStaticCastInner(type, expr).Accept(this, CiPriority.Primary);
 	}
 
 	protected override void WriteAssignRight(CiBinaryExpr expr)
