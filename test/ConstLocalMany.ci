@@ -1,0 +1,24 @@
+public static class Test
+{
+	static int Sum(bool[] flags)
+	{
+		int sum = 0;
+		for (int i = 0; i < 3; i++) {
+			if (flags[i]) {
+				const int[3] localConst = { 3, 2, 1 };
+				sum += localConst[i];
+			}
+			else {
+				const int[3] localConst = { 5, 10, 15 }; //FAIL: cs java js py
+				sum += localConst[i];
+			}
+		}
+		return sum;
+	}
+
+	public static bool Run()
+	{
+		const bool[] flags = { true, false, true };
+		return Sum(flags) == 14;
+	}
+}
