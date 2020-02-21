@@ -15,6 +15,7 @@ JAVACPSEP = :
 endif
 CC = clang -Wall -Wno-tautological-compare -Wno-unused-function -Werror
 CXX = clang++ -Wall -Wno-tautological-compare -Werror -std=c++2a
+PYTHON = python3
 
 VERSION := 1.0.0
 MAKEFLAGS = -r
@@ -71,7 +72,7 @@ test/bin/%/js.txt: test/bin/%/Run.js
 	$(DO)node $< >$@ || grep '//FAIL:.*\<js\>' test/$*.ci
 
 test/bin/%/py.txt: test/Runner.py test/bin/%/Test.py
-	$(DO)PYTHONPATH=$(@D) python3 $< >$@ || grep '//FAIL:.*\<py\>' test/$*.ci
+	$(DO)PYTHONPATH=$(@D) $(PYTHON) $< >$@ || grep '//FAIL:.*\<py\>' test/$*.ci
 
 test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
 	$(DO)$(CC) -o $@ -I $(<D) $^ -lm || grep '//FAIL:.*\<c\>' test/$*.ci
