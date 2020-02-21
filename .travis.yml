@@ -2,13 +2,11 @@ language: csharp
 mono: none
 dotnet: 3.1.101
 jobs:
-  - name: cpp
-    dist: bionic
-    install: sudo apt install libstdc++-8-dev
-    script: make -j2 test-cpp
-  - name: py
-    dist: bionic
-    script: python3 --version
   - name: py 3.8
-    python: 3.8
-    script: python3 --version
+    install:
+	  - sudo add-apt-repository ppa:deadsnakes/ppa
+	  - sudo apt update
+      - sudo apt install python3.8
+    script:
+	  - python3 --version
+	  - python3.8 --version
