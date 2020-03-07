@@ -11,6 +11,8 @@ public static class Test
 		switch (i) {
 		case 5:
 			break;
+		case 42:
+			assert false, "NO!!!";
 		default:
 			assert false;
 		}

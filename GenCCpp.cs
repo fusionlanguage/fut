@@ -192,6 +192,10 @@ public abstract class GenCCpp : GenTyped
 		Write("assert(");
 		if (statement.Message == null)
 			statement.Cond.Accept(this, CiPriority.Statement);
+		else if (statement.Cond is CiLiteral literal && !(bool) literal.Value) {
+			Write('!');
+			statement.Message.Accept(this, CiPriority.Primary);
+		}
 		else {
 			statement.Cond.Accept(this, CiPriority.CondAnd);
 			Write(" && ");
