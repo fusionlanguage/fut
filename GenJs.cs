@@ -278,6 +278,17 @@ public class GenJs : GenBase
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
+	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	{
+		if (expr.Symbol == CiSystem.CollectionCount && expr.Left.Type is CiSortedDictionaryType) {
+			Write("Object.keys(");
+			expr.Left.Accept(this, CiPriority.Statement);
+			Write(").length");
+			return expr;
+		}
+		return base.Visit(expr, parent);
+	}
+
 	protected override void WriteStringLength(CiExpr expr)
 	{
 		expr.Accept(this, CiPriority.Primary);
@@ -330,8 +341,18 @@ public class GenJs : GenBase
 			WriteArgsInParentheses(method, args);
 		}
 		else if (method == CiSystem.CollectionClear) {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".length = 0");
+			if (obj.Type is CiSortedDictionaryType) {
+				Write("for (const key in ");
+				obj.Accept(this, CiPriority.Statement);
+				WriteLine(')');
+				Write("\tdelete ");
+				obj.Accept(this, CiPriority.Primary); // FIXME: side effect
+				Write("[key];");
+			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".length = 0");
+			}
 		}
 		else if (obj.Type is CiListType && method.Name == "Insert") {
 			obj.Accept(this, CiPriority.Primary);
@@ -354,6 +375,13 @@ public class GenJs : GenBase
 			Write(", ");
 			args[1].Accept(this, CiPriority.Statement);
 			Write(')');
+		}
+		else if (obj.Type is CiSortedDictionaryType && method.Name == "Remove") {
+			Write("delete ");
+			obj.Accept(this, CiPriority.Primary);
+			Write('[');
+			args[0].Accept(this, CiPriority.Statement);
+			Write(']');
 		}
 		else if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine) {
 			// XXX: Console.Write same as Console.WriteLine
@@ -418,6 +446,8 @@ public class GenJs : GenBase
 				Write("trunc");
 			else if (method == CiSystem.StringContains)
 				Write("includes");
+			else if (obj.Type is CiSortedDictionaryType && method.Name == "ContainsKey")
+				Write("hasOwnProperty");
 			else
 				WriteName(method);
 			WriteArgsInParentheses(method, args);
