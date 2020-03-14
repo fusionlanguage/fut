@@ -21,6 +21,7 @@ public static class Test
 		bool except = true;
 		bool explicit = true;
 		bool exports = true;
+		bool extends = true;
 		bool extern = true;
 		bool final = true;
 		bool finally = true;
@@ -95,6 +96,7 @@ public static class Test
 			&& except
 			&& explicit
 			&& exports
+			&& extends
 			&& extern
 			&& final
 			&& finally

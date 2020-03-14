@@ -85,6 +85,7 @@ public class GenJava : GenTyped
 		case "boolean":
 		case "catch":
 		case "char":
+		case "extends":
 		case "final":
 		case "finally":
 		case "goto":
@@ -123,13 +124,7 @@ public class GenJava : GenTyped
 			}
 			WriteUppercaseWithUnderscores(symbol.Name);
 			break;
-		case CiMember _:
-			if (symbol == CiSystem.CollectionCount)
-				Write("size()");
-			else
-				WriteCamelCaseNotKeyword(symbol.Name);
-			break;
-		default:
+		case CiVar _:
 			if (symbol.Parent is CiForeach forEach && forEach.Count == 2) {
 				CiVar element = forEach.Element;
 				WriteCamelCaseNotKeyword(element.Name);
@@ -138,6 +133,14 @@ public class GenJava : GenTyped
 			else
 				WriteCamelCaseNotKeyword(symbol.Name);
 			break;
+		case CiMember _:
+			if (symbol == CiSystem.CollectionCount)
+				Write("size()");
+			else
+				WriteCamelCaseNotKeyword(symbol.Name);
+			break;
+		default:
+			throw new NotImplementedException(symbol.GetType().Name);
 		}
 	}
 
