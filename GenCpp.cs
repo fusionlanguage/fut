@@ -67,16 +67,61 @@ public class GenCpp : GenCCpp
 		return expr;
 	}
 
+	void WriteCamelCaseNotKeyword(string name)
+	{
+		switch (name) {
+		case "and":
+		case "auto":
+		case "catch":
+		case "char":
+		case "delete":
+		case "explicit":
+		case "export":
+		case "extern":
+		case "goto":
+		case "inline":
+		case "namespace":
+		case "not":
+		case "operator":
+		case "or":
+		case "private":
+		case "register":
+		case "signed":
+		case "sizeof":
+		case "struct":
+		case "try":
+		case "typedef":
+		case "union":
+		case "unsigned":
+		case "using":
+		case "volatile":
+			Write(name);
+			Write('_');
+			break;
+		default:
+			WriteCamelCase(name);
+			break;
+		}
+	}
+
 	protected override void WriteName(CiSymbol symbol)
 	{
-		if (symbol is CiMember) {
+		switch (symbol) {
+		case CiContainerType _:
+			Write(symbol.Name);
+			break;
+		case CiVar _:
+			WriteCamelCaseNotKeyword(symbol.Name);
+			break;
+		case CiMember _:
 			if (symbol == CiSystem.CollectionCount)
 				Write("size()");
 			else
-				WriteCamelCase(symbol.Name);
+				WriteCamelCaseNotKeyword(symbol.Name);
+			break;
+		default:
+			throw new NotImplementedException(symbol.GetType().Name);
 		}
-		else
-			Write(symbol.Name);
 	}
 
 	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)

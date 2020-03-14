@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		string s = "foo";
-		bool and = true; //FAIL: cpp TODO
+		bool and = true;
 		bool as = true;
 		bool async = true;
 		bool auto = true;
