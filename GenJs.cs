@@ -36,23 +36,62 @@ public class GenJs : GenBase
 	// TODO: Namespace
 	readonly string[][] Library = new string[(int) GenJsMethod.Count][];
 
+	void WriteCamelCaseNotKeyword(string name)
+	{
+		switch (name) {
+		case "catch":
+		case "debugger":
+		case "delete":
+		case "export":
+		case "extends":
+		case "finally":
+		case "function":
+		case "implements":
+		case "import":
+		case "instanceof":
+		case "interface":
+		case "package":
+		case "private":
+		case "super":
+		case "try":
+		case "typeof":
+		case "var":
+		case "with":
+		case "yield":
+			Write(name);
+			Write('_');
+			break;
+		default:
+			WriteCamelCase(name);
+			break;
+		}
+	}
+
 	protected override void WriteName(CiSymbol symbol)
 	{
-		if (symbol is CiConst konst) {
+		switch (symbol) {
+		case CiContainerType _:
+			Write(symbol.Name);
+			break;
+		case CiConst konst:
 			if (konst.InMethod != null) {
 				WriteUppercaseWithUnderscores(konst.InMethod.Name);
 				Write('_');
 			}
 			WriteUppercaseWithUnderscores(symbol.Name);
-		}
-		else if (symbol is CiMember) {
+			break;
+		case CiVar _:
+			WriteCamelCaseNotKeyword(symbol.Name);
+			break;
+		case CiMember _:
 			if (symbol == CiSystem.CollectionCount)
 				Write("length");
 			else
-				WriteCamelCase(symbol.Name);
+				WriteCamelCaseNotKeyword(symbol.Name);
+			break;
+		default:
+			throw new NotImplementedException(symbol.GetType().Name);
 		}
-		else
-			Write(symbol.Name);
 	}
 
 	protected override void WriteTypeAndName(CiNamedValue value)

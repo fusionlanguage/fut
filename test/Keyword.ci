@@ -9,17 +9,20 @@ public static class Test
 		bool auto = true;
 		bool await = true;
 		bool boolean = true;
-		bool catch = true; //FAIL: js TODO
+		bool catch = true;
 		bool char = true;
 		bool checked = true;
+		bool debugger = true;
 		bool decimal = true;
 		bool def = true;
 		bool del = true;
 		bool delegate = true;
+		bool delete = true;
 		bool elif = true;
 		bool event = true;
 		bool except = true;
 		bool explicit = true;
+		bool export = true;
 		bool exports = true;
 		bool extends = true;
 		bool extern = true;
@@ -27,6 +30,7 @@ public static class Test
 		bool finally = true;
 		bool fixed = true;
 		bool from = true;
+		bool function = true;
 		bool global = true;
 		bool goto = true;
 		bool implements = true;
@@ -75,6 +79,7 @@ public static class Test
 		bool unsafe = true;
 		bool unsigned = true;
 		bool using = true;
+		bool var = true;
 		bool volatile = true;
 		bool with = true;
 		bool yield = true;
@@ -88,13 +93,16 @@ public static class Test
 			&& char
 			&& checked
 			&& decimal
+			&& debugger
 			&& def
 			&& del
 			&& delegate
+			&& delete
 			&& elif
 			&& event
 			&& except
 			&& explicit
+			&& export
 			&& exports
 			&& extends
 			&& extern
@@ -102,6 +110,7 @@ public static class Test
 			&& finally
 			&& fixed
 			&& from
+			&& function
 			&& global
 			&& goto
 			&& implements
@@ -150,6 +159,7 @@ public static class Test
 			&& unsafe
 			&& unsigned
 			&& using
+			&& var
 			&& volatile
 			&& with
 			&& yield;
