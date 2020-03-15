@@ -983,11 +983,6 @@ public abstract class CiArrayType : CiType
 		return null;
 	}
 	public override CiType BaseType => this.ElementType.BaseType;
-	public bool IsByteArray() {
-		return this.ElementType is CiRangeType range
-			&& ((range.Min >= 0 && range.Max <= byte.MaxValue)
-				|| (range.Min >= sbyte.MinValue && range.Max <= sbyte.MaxValue));
-	}
 }
 
 public class CiArrayPtrType : CiArrayType

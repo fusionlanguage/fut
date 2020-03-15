@@ -202,7 +202,7 @@ public abstract class GenTyped : GenBase
 			base.WriteComparison(expr, parent, child, op);
 	}
 
-	static bool IsNarrower(TypeCode left, TypeCode right)
+	protected static bool IsNarrower(TypeCode left, TypeCode right)
 	{
 		switch (left) {
 		case TypeCode.SByte:

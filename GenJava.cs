@@ -378,6 +378,15 @@ public class GenJava : GenTyped
 		}
 	}
 
+	void WriteNotPromoted(CiType type, CiExpr expr)
+	{
+		if (type is CiIntegerType elementType
+		 && IsNarrower(GetTypeCode(elementType, false), GetTypeCode((CiIntegerType) expr.Type, true)))
+			WriteStaticCast(elementType, expr);
+		else
+			expr.Accept(this, CiPriority.Statement);
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (method == CiSystem.StringSubstring) {
@@ -402,37 +411,28 @@ public class GenJava : GenTyped
 			Write("Arrays.fill(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
-			if (array.IsByteArray()) {
-				Write("(byte) ");
-				args[0].Accept(this, CiPriority.Primary);
-			}
-			else
-				args[0].Accept(this, CiPriority.Statement);
+			WriteNotPromoted(array.ElementType, args[0]);
 			Write(')');
 		}
 		else if (obj.Type is CiListType list && method.Name == "Add") {
 			obj.Accept(this, CiPriority.Primary);
-			Write(".add");
-			if (method.Parameters.Count == 0) {
-				Write('(');
+			Write(".add(");
+			if (method.Parameters.Count == 0)
 				WriteNewStorage(list.ElementType);
-				Write(')');
-			}
 			else
-				WriteArgsInParentheses(method, args);
+				WriteNotPromoted(list.ElementType, args[0]);
+			Write(')');
 		}
 		else if (obj.Type is CiListType list2 && method.Name == "Insert") {
 			obj.Accept(this, CiPriority.Primary);
-			Write(".add");
-			if (method.Parameters.Count == 1) {
-				Write('(');
-				args[0].Accept(this, CiPriority.Statement);
-				Write(", ");
+			Write(".add(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", ");
+			if (method.Parameters.Count == 1)
 				WriteNewStorage(list2.ElementType);
-				Write(')');
-			}
 			else
-				WriteArgsInParentheses(method, args);
+				WriteNotPromoted(list2.ElementType, args[1]);
+			Write(')');
 		}
 		else if (method == CiSystem.ListRemoveRange) {
 			obj.Accept(this, CiPriority.Primary);

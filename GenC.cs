@@ -669,7 +669,9 @@ public class GenC : GenCCpp
 			Write(", ");
 			WriteArrayPtrAdd(obj, args[0]);
 			Write(", ");
-			if (array.IsByteArray())
+			if (array.ElementType is CiRangeType range
+			 && ((range.Min >= 0 && range.Max <= byte.MaxValue)
+				|| (range.Min >= sbyte.MinValue && range.Max <= sbyte.MaxValue)))
 				args[3].Accept(this, CiPriority.Statement);
 			else {
 				args[3].Accept(this, CiPriority.Mul);
