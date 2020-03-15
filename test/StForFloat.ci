@@ -1,0 +1,10 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		float s = 0;
+		for (float f = 0.5; f < 5; f++)
+			s += f;
+		return s == 12.5;
+	}
+}
