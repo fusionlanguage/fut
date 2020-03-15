@@ -11,7 +11,8 @@ it in Ć and have the automatic translator `cito` generate the source code
 in the mentioned languages, so programmers of these languages can use your code.
 
 Ć is a language for programmers with vast experience in several languages.
-Ć is intentionally _lacking_ elements of surprise. Ć syntax is akin to C#.
+Ć follows the [Principle of least astonishment (POLA)](https://en.wikipedia.org/wiki/Principle_of_least_astonishment).
+The syntax is akin to C#.
 In fact, C# syntax highlighting works quite well for Ć (not perfectly, though).
 However, Ć is not a C# clone or a subset of it.
 The differences stem from the need to have _completely automated_ translation
@@ -32,7 +33,7 @@ the standard language.
 Programmers tend to avoid Unicode in filenames.
 Therefore Ć source files have the `.ci` filename extension instead of `.ć`.
 
-> In Polish "ci" is pronounced identically to "ć".
+> In Polish, "ci" is pronounced identically to "ć".
 
 Source file contents must be UTF-8 encoded
 with an optional (but recommended) BOM.
@@ -80,7 +81,7 @@ This is _not_ verified compile-time nor run-time.
 Also, you should avoid overflows, because wrapping of values
 to the specified range is _not_ guaranteed.
 
-There are aliases to the commonly used ranges:
+There are aliases for the commonly used ranges:
 
 * `byte` is `0 .. 255`
 * `short` is `-32768 .. 32767`
@@ -89,7 +90,7 @@ There are aliases to the commonly used ranges:
 
 Note that `uint` is _not_ 32-bit unsigned integer, but a 31-bit one.
 As such, it doesn't provide an extended range over `int`.
-It only serves as a message of "negative number not allowed".
+It only serves as a documentation that a negative number is not allowed.
 `byte` corresponds to `byte` in Java, even though it is _signed_ in Java.
 This is accomplished by `cito` injecting `& 0xff` in every retrieval
 of a `byte` value.
@@ -117,9 +118,9 @@ Operations on integers are conducted with the usual binary operators
 incrementations and decrementations (`x++ ++x x-- --x`), negation (`-`),
 bitwise complement (`~`) and comparisons (`== != < <= > >=`).
 
-Incrementations and decrementations cannot be conditional in an expression,
-that is, they cannot be used on the right side of `&&`, `||`
-or the ternary operato. This is because such expressions don't easily
+Incrementations and decrementations cannot be conditional in an expression.
+That is, they cannot be used on the right side of `&&`, `||`
+or the ternary operator. This is because such expressions don't easily
 translate to Python, which lacks incrementation and decrementation operators.
 
 ### Floating-point numbers
@@ -225,13 +226,13 @@ Possible string operations are:
   be used to check for `null` value -- use `str == null` or `str != null`.
   It is not legal to compare two string references if any of them is `null`.
 * Length retrieval with `str.Length`.
-* Character retrieval with `str[index]`.
+* _Code unit_ retrieval with `str[index]`.
 * `str1.StartsWith(str2)`, `str1.EndsWith(str2)` and `str1.Contains(str2)`
   return a boolean value.
 * `str1.IndexOf(str2)`, `str1.LastIndexOf(str2)` return an index
   to the beginning of `str2` within `str1`, or -1 if not found.
-* `str1.Substring(offset, length)` evaluates to the selected part of the string.
-* `str1.Substring(offset)` returns the part of the string
+* `str.Substring(offset, length)` evaluates to the selected part of the string.
+* `str.Substring(offset)` returns the part of the string
   from the specified position until the end of the string.
 * `Encoding.UTF8.GetString(bytes, offset, length)`
   creates a string from the specified part of a `byte` array.
@@ -245,7 +246,7 @@ as [UTF-8](https://en.wikipedia.org/wiki/UTF-8)
 or [UTF-16](https://en.wikipedia.org/wiki/UTF-16).
 However, Ć doesn't enforce any encoding.
 
-Ć also supports string _interpolated strings_.
+Ć also supports _interpolated strings_.
 An interpolated string starts with `$"` and contains expressions in braces.
 The expressions are replaced with their string values.
 Example:
@@ -302,12 +303,10 @@ Dynamic array references are allocated on the heap using `new`:
 int[]# dynamicArray = new int[1000];
 ```
 
-The length specified in the square brackets can be a variable.
-
 Dynamic array references can be assigned to other dynamic array references.
 The dynamic array is valid as long as there's at least one dynamic
 array reference to it.
-In C++ dynamic array references are implemented as `std::shared_ptr`.
+In C++, dynamic array references are implemented as `std::shared_ptr`.
 
 Read-only and read-write array reference can point to array storage
 and dynamic arrays.
@@ -400,7 +399,7 @@ Class members can be:
 
 Every member has _visibility_:
 
-* _private_ is the default visibility, there is _no_ `private` keyword.
+* _private_ is the default visibility. There is _no_ `private` keyword.
   This means the member is only visible to other members of the class.
 * `protected` means the member is visible to this class and its subclasses.
 * `internal` means the member is visible to the Ć code compiled with it.
@@ -504,6 +503,8 @@ called `this`.
 Abstract methods have no body. They must be overridden in a derived class.
 The `override` specifier is mandatory (unlike in C++ and Java).
 A `sealed` method (`final` in Java terms) is implicitly `override`.
+A `virtual` or `override` method can be called from a class that overrides
+this method via `base.MethodName(arguments)`.
 
 Method name must identify the method within the class.
 Ć does _not_ support overloading.
@@ -562,7 +563,7 @@ This translates as follows:
 ```csharp
 Cat alik = new Cat(); // C#
 final Cat alik = new Cat(); // Java
-var alik = new Cat(); // JavaScript
+const alik = new Cat(); // JavaScript
 alik = Cat() # Python
 Cat alik; // C++
 Cat alik; // C, potentially followed by construction code
@@ -643,7 +644,7 @@ listOfInts.Add(42);
 listOfInts.Insert(0, 1337); // insert at the beginning
 ```
 
-Object or array storage must be added/inserted without specifying the value.
+Object or array _storage_ must be added/inserted without specifying the value.
 The methods return a read-write reference to the storage in the list.
 
 ```csharp
@@ -667,7 +668,7 @@ You can remove:
 * A continuous sequence of elements with `RemoveRange(index, count)`.
 
 `list.CopyTo(sourceIndex, destinationArray, destinationIndex, count)`
-can be used to copy elements from a list to an array.
+copies elements from a list to an array.
 
 #### SortedDictionary
 
@@ -689,7 +690,7 @@ Console.WriteLine(dict["foo"]);
 Retrieving an element that does not exist is an invalid operation.
 Use `ContainsKey` to check for existence -- it returns a `bool`.
 
-If the value is object or array storage,
+If the value is object or array _storage_,
 create it in the dictionary with `Add(key)`.
 
 `Count` return the number of key-value pairs.
@@ -733,7 +734,7 @@ at an array or object outside of its scope.
 Constants can be declared not only at the level of classes
 (as described above), but also at the level of statements.
 Such a definition has a scope of the containing block.
-For this reason local constants do not specify visibility.
+For this reason, local constants do not specify visibility.
 
 ### Assignments
 
@@ -851,6 +852,26 @@ to the next statement: `break`, `continue`, `return` or `throw`.
 
 The `default` clause, if present, must be specified last.
 
+### Assert statement
+
+The `assert` statement checks if a condition is met at run time.
+If it is not, a fatal error occurs.
+The optional second argument is a string message.
+
+```csharp
+assert count >= 0;
+switch (foo) {
+case 1:
+    ...
+    break;
+case 2:
+    ...
+    break;
+default:
+    assert false, "foo must be 1 or 2";
+}
+```
+
 ### Exceptions
 
 Ć can throw exceptions, but cannot handle them at the moment.
@@ -936,7 +957,7 @@ You may reference `true`, which is a symbol that is always defined.
 Documentation comments can describe classes, enumerated types, constants,
 methods and their parameters.
 They start with three slashes followed by a space and always immediately
-precede the documented thing, including the method parameters:
+precede the documented thing, including a method parameter:
 
 ```csharp
 /// Returns the extension of the original module format.
@@ -995,11 +1016,11 @@ public void SetDate(string value)
 
 It is advised to use the following naming conventions in Ć code:
 
-* Local variables and parameters start with a lowercase letter,
+* Local variables, parameters and local constants start with a lowercase letter,
   capitalize the first letter of the following words -- that is, `camelCase`.
 * All other identifiers should start with an uppercase letter
   -- that is, `PascalCase`.
 
 Generators will translate the above convention
 to the one native to the output language,
-for example constants written as `UPPERCASE_WITH_UNDERSCORES`.
+for instance, constants written as `UPPERCASE_WITH_UNDERSCORES`.
