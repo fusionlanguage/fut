@@ -254,7 +254,7 @@ public class GenJs : GenBase
 				shift = 2;
 			}
 			else if (range.Max > byte.MaxValue) {
-				name = "UInt16";
+				name = "Uint16";
 				shift = 1;
 			}
 			else {

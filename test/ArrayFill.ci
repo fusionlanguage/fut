@@ -5,19 +5,25 @@ public static class Test
 		int[5] a;
 		byte[5] b;
 		bool[5] c;
+		short[5] d;
+		ushort[5] e;
 		string[5] s;
 		for (int i = 0; i < 5; i++) {
 			a[i] = i;
 			b[i] = i;
 			c[i] = true;
+			d[i] = i;
+			e[i] = i;
 			s[i] = null;
 		}
 		a.Fill(0);
 		b.Fill(0);
 		c.Fill(false);
+		d.Fill(0);
+		e.Fill(0);
 		s.Fill(null);
 		for (int i = 0; i < 5; i++)
-			if (a[i] != 0 || b[i] != 0 || c[i] || s[i] != null)
+			if (a[i] != 0 || b[i] != 0 || c[i] || d[i] != 0 || e[i] != 0 || s[i] != null)
 				return false;
 		return true;
 	}
