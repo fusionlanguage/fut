@@ -858,7 +858,7 @@ The `assert` statement checks if a condition is met at run time.
 If it is not, a fatal error occurs.
 The optional second argument is a string message.
 
-```csharp
+```java
 assert count >= 0;
 switch (foo) {
 case 1:
