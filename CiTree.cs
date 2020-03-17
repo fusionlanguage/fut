@@ -762,7 +762,7 @@ public class CiClass : CiContainerType
 	public CiSymbol TryShallowLookup(string name) => (CiSymbol) this.Dict[name];
 }
 
-public class CiNumericType : CiType
+public abstract class CiNumericType : CiType
 {
 }
 
@@ -861,7 +861,15 @@ public class CiRangeType : CiIntegerType
 	}
 }
 
-public class CiStringType : CiType
+public class CiFloatingType : CiNumericType
+{
+	public override bool IsAssignableFrom(CiType right)
+	{
+		return right is CiNumericType;
+	}
+}
+
+public abstract class CiStringType : CiType
 {
 	public override CiSymbol TryLookup(string name)
 	{
@@ -883,14 +891,6 @@ public class CiStringType : CiType
 		default:
 			return null;
 		}
-	}
-}
-
-public class CiFloatingType : CiNumericType
-{
-	public override bool IsAssignableFrom(CiType right)
-	{
-		return right is CiNumericType;
 	}
 }
 
