@@ -546,9 +546,29 @@ public class GenJs : GenBase
 	public override void Visit(CiForeach statement)
 	{
 		Write("for (const ");
-		Write(statement.Element.Name);
-		Write(" of ");
-		statement.Collection.Accept(this, CiPriority.Statement);
+		if (statement.Count == 2) {
+			Write('[');
+			WriteName(statement.Element);
+			Write(", ");
+			WriteName(statement.ValueVar);
+			Write("] of Object.entries(");
+			statement.Collection.Accept(this, CiPriority.Statement);
+			switch (statement.Element.Type) {
+			case CiStringType _:
+				Write(").sort((a, b) => a[0].localeCompare(b[0]))");
+				break;
+			case CiNumericType _:
+				Write(").map(e => [+e[0], e[1]]).sort((a, b) => a[0] - b[0])");
+				break;
+			default:
+				throw new NotImplementedException(statement.Element.Type.ToString());
+			}
+		}
+		else {
+			WriteName(statement.Element);
+			Write(" of ");
+			statement.Collection.Accept(this, CiPriority.Statement);
+		}
 		Write(')');
 		WriteChild(statement.Body);
 	}

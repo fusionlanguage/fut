@@ -9,7 +9,7 @@ public static class Test
 		int lastKey = 0;
 		int keySum = 0;
 		int valueSum = 0;
-		foreach ((int key, int value) in dict) { //FAIL: cs - .NET Core but not .NET Framework 4.8; js TODO
+		foreach ((int key, int value) in dict) { //FAIL: cs - .NET Core but not .NET Framework 4.8
 			if (lastKey >= key)
 				return false;
 			lastKey = key;
