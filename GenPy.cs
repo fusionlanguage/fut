@@ -630,6 +630,13 @@ public class GenPy : GenBase
 			Write("[:] = ");
 			WriteNewArray(array.ElementType, args[0], array.LengthExpr);
 		}
+		else if (obj.Type is CiSortedDictionaryType dict && method.Name == "Add") {
+			obj.Accept(this, CiPriority.Primary);
+			Write('[');
+			args[0].Accept(this, CiPriority.Statement);
+			Write("] = ");
+			WriteNewStorage(dict.ValueType);
+		}
 		else if (obj.Type is CiSortedDictionaryType && method.Name == "ContainsKey") {
 			args[0].Accept(this, CiPriority.Primary);
 			Write(" in ");

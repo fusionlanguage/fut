@@ -415,6 +415,17 @@ public class GenJs : GenBase
 			args[1].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
+		else if (obj.Type is CiSortedDictionaryType dict && method.Name == "Add") {
+			if (parent > CiPriority.Assign)
+				Write('(');
+			obj.Accept(this, CiPriority.Primary);
+			Write('[');
+			args[0].Accept(this, CiPriority.Statement);
+			Write("] = ");
+			WriteNewStorage(dict.ValueType);
+			if (parent > CiPriority.Assign)
+				Write(')');
+		}
 		else if (obj.Type is CiSortedDictionaryType && method.Name == "Remove") {
 			Write("delete ");
 			obj.Accept(this, CiPriority.Primary);
