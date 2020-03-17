@@ -951,8 +951,17 @@ public class GenPy : GenBase
 	{
 		Write("for ");
 		WriteName(statement.Element);
-		Write(" in ");
-		statement.Collection.Accept(this, CiPriority.Statement);
+		if (statement.Count == 2) {
+			Write(", ");
+			WriteName(statement.ValueVar);
+			Write(" in sorted(");
+			statement.Collection.Accept(this, CiPriority.Primary);
+			Write(".items())");
+		}
+		else {
+			Write(" in ");
+			statement.Collection.Accept(this, CiPriority.Statement);
+		}
 		WriteChild(statement.Body);
 	}
 
