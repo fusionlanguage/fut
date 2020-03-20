@@ -490,7 +490,7 @@ public class CiResolver : CiVisitor
 	
 		switch (expr.Op) {
 		case CiToken.LeftBracket:
-			if (left.Type is CiSortedDictionaryType dict) {
+			if (left.Type is CiDictionaryType dict) {
 				Coerce(right, dict.KeyType);
 				type = dict.ValueType;
 			}
@@ -941,7 +941,7 @@ public class CiResolver : CiVisitor
 		CiVar element = statement.Element;
 		ResolveType(element);
 		statement.Collection.Accept(this);
-		if (statement.Collection.Type is CiSortedDictionaryType dict) {
+		if (statement.Collection.Type is CiDictionaryType dict) {
 			if (statement.Count != 2)
 				throw StatementException(statement, "Expected (TKey key, TValue value) iterator");
 			CiVar value = statement.ValueVar;
@@ -1096,6 +1096,10 @@ public class CiResolver : CiVisitor
 				throw StatementException(call, "Expected empty parentheses for storage type");
 			if (call.Method.Symbol == CiSystem.ListClass)
 				return new CiListType { ElementType = ToType(call.Method.Left, false) };
+			if (call.Method.Symbol == CiSystem.DictionaryClass) {
+				CiExpr[] items = ((CiCollection) call.Method.Left).Items;
+				return new CiDictionaryType { KeyType = ToType(items[0], false), ValueType = ToType(items[1], false) };
+			}
 			if (call.Method.Symbol == CiSystem.SortedDictionaryClass) {
 				CiExpr[] items = ((CiCollection) call.Method.Left).Items;
 				return new CiSortedDictionaryType { KeyType = ToType(items[0], false), ValueType = ToType(items[1], false) };

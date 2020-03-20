@@ -75,10 +75,10 @@ public class CiParser : CiLexer
 		return new CiSymbolReference { Line = line, Left = elementType, Symbol = CiSystem.ListClass };
 	}
 
-	CiExpr ParseSortedDictionaryType()
+	CiExpr ParseDictionaryType(CiSymbol type)
 	{
 		int line = this.Line;
-		Expect(CiToken.SortedDictionary);
+		NextToken();
 		Expect(CiToken.Less);
 		bool saveTypeArg = this.ParsingTypeArg;
 		this.ParsingTypeArg = true;
@@ -87,7 +87,7 @@ public class CiParser : CiLexer
 		CiExpr valueType = ParseType();
 		this.ParsingTypeArg = saveTypeArg;
 		Expect(CiToken.RightAngle);
-		return new CiSymbolReference { Line = line, Left = new CiCollection { Items = new CiExpr[] { keyType, valueType } }, Symbol = CiSystem.SortedDictionaryClass };
+		return new CiSymbolReference { Line = line, Left = new CiCollection { Items = new CiExpr[] { keyType, valueType } }, Symbol = type };
 	}
 
 	CiExpr ParseConstInitializer()
@@ -195,8 +195,11 @@ public class CiParser : CiLexer
 		case CiToken.List:
 			result = ParseListType();
 			break;
+		case CiToken.Dictionary:
+			result = ParseDictionaryType(CiSystem.DictionaryClass);
+			break;
 		case CiToken.SortedDictionary:
-			result = ParseSortedDictionaryType();
+			result = ParseDictionaryType(CiSystem.SortedDictionaryClass);
 			break;
 		case CiToken.Resource:
 			NextToken();

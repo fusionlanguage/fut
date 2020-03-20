@@ -540,7 +540,7 @@ public class GenPy : GenBase
 			Write(" = []");
 	}
 
-	protected override void WriteSortedDictionaryStorageInit(CiSortedDictionaryType dict)
+	protected override void WriteDictionaryStorageInit(CiDictionaryType dict)
 	{
 		Write(" = {}");
 	}
@@ -630,19 +630,19 @@ public class GenPy : GenBase
 			Write("[:] = ");
 			WriteNewArray(array.ElementType, args[0], array.LengthExpr);
 		}
-		else if (obj.Type is CiSortedDictionaryType dict && method.Name == "Add") {
+		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
 			obj.Accept(this, CiPriority.Primary);
 			Write('[');
 			args[0].Accept(this, CiPriority.Statement);
 			Write("] = ");
 			WriteNewStorage(dict.ValueType);
 		}
-		else if (obj.Type is CiSortedDictionaryType && method.Name == "ContainsKey") {
+		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey") {
 			args[0].Accept(this, CiPriority.Primary);
 			Write(" in ");
 			obj.Accept(this, CiPriority.Primary);
 		}
-		else if (obj.Type is CiSortedDictionaryType && method.Name == "Remove") {
+		else if (obj.Type is CiDictionaryType && method.Name == "Remove") {
 			Write("del ");
 			obj.Accept(this, CiPriority.Primary);
 			Write('[');
@@ -961,9 +961,16 @@ public class GenPy : GenBase
 		if (statement.Count == 2) {
 			Write(", ");
 			WriteName(statement.ValueVar);
-			Write(" in sorted(");
-			statement.Collection.Accept(this, CiPriority.Primary);
-			Write(".items())");
+			Write(" in ");
+			if (statement.Collection.Type is CiSortedDictionaryType) {
+				Write("sorted(");
+				statement.Collection.Accept(this, CiPriority.Primary);
+				Write(".items())");
+			}
+			else {
+				statement.Collection.Accept(this, CiPriority.Primary);
+				Write(".items()");
+			}
 		}
 		else {
 			Write(" in ");

@@ -369,7 +369,7 @@ public class GenC : GenCCpp
 		Write(" TODO");
 	}
 
-	protected override void WriteSortedDictionaryStorageInit(CiSortedDictionaryType list)
+	protected override void WriteDictionaryStorageInit(CiDictionaryType list)
 	{
 		Write(" TODO");
 	}

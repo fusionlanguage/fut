@@ -1100,12 +1100,12 @@ public class CiListType : CiArrayType
 	public override bool IsFinal => true;
 }
 
-public class CiSortedDictionaryType : CiType
+public class CiDictionaryType : CiType
 {
 	public CiType KeyType;
 	public CiType ValueType;
 
-	public override string ToString() => "SortedDictionary<" + this.KeyType + ", " + this.ValueType + ">";
+	public override string ToString() => "Dictionary<" + this.KeyType + ", " + this.ValueType + ">";
 	public override CiSymbol TryLookup(string name)
 	{
 		switch (name) {
@@ -1126,6 +1126,11 @@ public class CiSortedDictionaryType : CiType
 		}
 	}
 	public override bool IsFinal => true;
+}
+
+public class CiSortedDictionaryType : CiDictionaryType
+{
+	public override string ToString() => "SortedDictionary<" + this.KeyType + ", " + this.ValueType + ">";
 }
 
 public class CiPrintableType : CiType
@@ -1202,6 +1207,7 @@ public class CiSystem : CiScope
 		MathTruncate);
 	public static readonly CiSymbol BasePtr = new CiSymbol { Name = "base" };
 	public static readonly CiSymbol ListClass = new CiSymbol();
+	public static readonly CiSymbol DictionaryClass = new CiSymbol();
 	public static readonly CiSymbol SortedDictionaryClass = new CiSymbol();
 
 	CiSystem()

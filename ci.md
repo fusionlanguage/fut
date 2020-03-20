@@ -617,9 +617,11 @@ classification doesn't apply.
 
 ### Collections
 
-In addition to arrays, Ć has two built-in collection types:
+In addition to arrays, Ć has three built-in collection types:
 
 * `List<T>` is a resizeable array (`std::vector` in C++, `ArrayList` in Java)
+* `Dictionary<TKey, TValue>` is a dictionary
+  (`std::unordered_map` in C++, `HashMap` in Java)
 * `SortedDictionary<TKey, TValue>` is a dictionary sorted by key
   (`std::map` in C++, `TreeMap` in Java)
 
@@ -670,13 +672,13 @@ You can remove:
 `list.CopyTo(sourceIndex, destinationArray, destinationIndex, count)`
 copies elements from a list to an array.
 
-#### SortedDictionary
+#### Dictionary
 
-SortedDictionary provides fast access to a given _value_ associated
+`Dictionary` provides fast access to a given _value_ associated
 with a _key_. Key must be a number or a string. Value can be of any type.
 
 ```csharp
-SortedDictionary<string(), int> dict;
+Dictionary<string(), int> dict;
 ```
 
 Index the dictionary with a key to insert/overwrite and retrieve elements.
@@ -695,6 +697,11 @@ create it in the dictionary with `Add(key)`.
 
 `Count` return the number of key-value pairs.
 `Remove(key)` removes one mapping. `Clear()` removes all.
+
+#### SortedDictionary
+
+`SortedDictionary` is same as `Dictionary`, but ensures that `foreach`
+iterates in the key order.
 
 ## Statements
 
@@ -808,7 +815,8 @@ There are four kinds of loops:
 * `do/while` -- checking the condition after the first run.
 * `for` -- which contains an initial statement, the condition
   and a statement executed after each run.
-* `foreach` -- to iterate over array storage, `List` or `SortedDictionary`.
+* `foreach` -- to iterate over array storage, `List`
+  `Dictionary` or `SortedDictionary`.
 
 ```csharp
 int[3] array;

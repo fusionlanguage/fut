@@ -191,10 +191,12 @@ public class GenCs : GenTyped
 		}
 	}
 
-	void Write(CiSortedDictionaryType dict)
+	void Write(CiDictionaryType dict)
 	{
 		Include("System.Collections.Generic");
-		Write("SortedDictionary<");
+		if (dict is CiSortedDictionaryType)
+			Write("Sorted");
+		Write("Dictionary<");
 		Write(dict.KeyType, false);
 		Write(", ");
 		Write(dict.ValueType, false);
@@ -219,7 +221,7 @@ public class GenCs : GenTyped
 			Write(list.ElementType, false);
 			Write('>');
 			break;
-		case CiSortedDictionaryType dict:
+		case CiDictionaryType dict:
 			Write(dict);
 			break;
 		case CiArrayType array:
@@ -240,7 +242,7 @@ public class GenCs : GenTyped
 		Write(">()");
 	}
 
-	protected override void WriteSortedDictionaryStorageInit(CiSortedDictionaryType dict)
+	protected override void WriteDictionaryStorageInit(CiDictionaryType dict)
 	{
 		Write(" = new ");
 		Write(dict);
@@ -369,7 +371,7 @@ public class GenCs : GenTyped
 			Write(((CiArrayStorageType) obj.Type).Length);
 			Write(')');
 		}
-		else if (obj.Type is CiSortedDictionaryType dict && method.Name == "Add") {
+		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".Add(");
 			args[0].Accept(this, CiPriority.Statement);

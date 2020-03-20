@@ -112,7 +112,7 @@ public class GenJs : GenBase
 		Write(" = new Array()");
 	}
 
-	protected override void WriteSortedDictionaryStorageInit(CiSortedDictionaryType dict)
+	protected override void WriteDictionaryStorageInit(CiDictionaryType dict)
 	{
 		Write(" = new Object()");
 	}
@@ -319,7 +319,7 @@ public class GenJs : GenBase
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Symbol == CiSystem.CollectionCount && expr.Left.Type is CiSortedDictionaryType) {
+		if (expr.Symbol == CiSystem.CollectionCount && expr.Left.Type is CiDictionaryType) {
 			Write("Object.keys(");
 			expr.Left.Accept(this, CiPriority.Statement);
 			Write(").length");
@@ -380,7 +380,7 @@ public class GenJs : GenBase
 			WriteArgsInParentheses(method, args);
 		}
 		else if (method == CiSystem.CollectionClear) {
-			if (obj.Type is CiSortedDictionaryType) {
+			if (obj.Type is CiDictionaryType) {
 				Write("for (const key in ");
 				obj.Accept(this, CiPriority.Statement);
 				WriteLine(')');
@@ -415,7 +415,7 @@ public class GenJs : GenBase
 			args[1].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
-		else if (obj.Type is CiSortedDictionaryType dict && method.Name == "Add") {
+		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
 			if (parent > CiPriority.Assign)
 				Write('(');
 			obj.Accept(this, CiPriority.Primary);
@@ -426,7 +426,7 @@ public class GenJs : GenBase
 			if (parent > CiPriority.Assign)
 				Write(')');
 		}
-		else if (obj.Type is CiSortedDictionaryType && method.Name == "Remove") {
+		else if (obj.Type is CiDictionaryType && method.Name == "Remove") {
 			Write("delete ");
 			obj.Accept(this, CiPriority.Primary);
 			Write('[');
@@ -496,7 +496,7 @@ public class GenJs : GenBase
 				Write("trunc");
 			else if (method == CiSystem.StringContains)
 				Write("includes");
-			else if (obj.Type is CiSortedDictionaryType && method.Name == "ContainsKey")
+			else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey")
 				Write("hasOwnProperty");
 			else
 				WriteName(method);
@@ -564,12 +564,16 @@ public class GenJs : GenBase
 			WriteName(statement.ValueVar);
 			Write("] of Object.entries(");
 			statement.Collection.Accept(this, CiPriority.Statement);
+			Write(')');
 			switch (statement.Element.Type) {
 			case CiStringType _:
-				Write(").sort((a, b) => a[0].localeCompare(b[0]))");
+				if (statement.Collection.Type is CiSortedDictionaryType)
+					Write(".sort((a, b) => a[0].localeCompare(b[0]))");
 				break;
 			case CiNumericType _:
-				Write(").map(e => [+e[0], e[1]]).sort((a, b) => a[0] - b[0])");
+				Write(".map(e => [+e[0], e[1]])");
+				if (statement.Collection.Type is CiSortedDictionaryType)
+					Write(".sort((a, b) => a[0] - b[0])");
 				break;
 			default:
 				throw new NotImplementedException(statement.Element.Type.ToString());

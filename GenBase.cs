@@ -516,7 +516,7 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteListStorageInit(CiListType list);
 
-	protected abstract void WriteSortedDictionaryStorageInit(CiSortedDictionaryType dict);
+	protected abstract void WriteDictionaryStorageInit(CiDictionaryType dict);
 
 	protected virtual void WriteVarInit(CiNamedValue def)
 	{
@@ -528,8 +528,8 @@ public abstract class GenBase : CiVisitor
 			WriteArrayStorageInit(array, def.Value);
 		else if (def.Type is CiListType list)
 			WriteListStorageInit(list);
-		else if (def.Type is CiSortedDictionaryType dict)
-			WriteSortedDictionaryStorageInit(dict);
+		else if (def.Type is CiDictionaryType dict)
+			WriteDictionaryStorageInit(dict);
 		else if (def.Value != null) {
 			Write(" = ");
 			WriteCoerced(def.Type, def.Value, CiPriority.Statement);

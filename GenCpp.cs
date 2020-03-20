@@ -182,9 +182,12 @@ public class GenCpp : GenCCpp
 			Write(list.ElementType, false);
 			Write('>');
 			break;
-		case CiSortedDictionaryType dict:
-			Include("map");
-			Write("std::map<");
+		case CiDictionaryType dict:
+			string cppType = dict is CiSortedDictionaryType ? "map" : "unordered_map";
+			Include(cppType);
+			Write("std::");
+			Write(cppType);
+			Write('<');
 			Write(dict.KeyType, false);
 			Write(", ");
 			Write(dict.ValueType, false);
@@ -252,7 +255,7 @@ public class GenCpp : GenCCpp
 	{
 	}
 
-	protected override void WriteSortedDictionaryStorageInit(CiSortedDictionaryType list)
+	protected override void WriteDictionaryStorageInit(CiDictionaryType list)
 	{
 	}
 
@@ -537,7 +540,7 @@ public class GenCpp : GenCCpp
 			args[1].Accept(this, CiPriority.Add);
 			Write(')');
 		}
-		else if (obj.Type is CiSortedDictionaryType && method.Name == "Add") {
+		else if (obj.Type is CiDictionaryType && method.Name == "Add") {
 			if (parent == CiPriority.Primary)
 				Write('(');
 			if (!this.AtLineStart)
@@ -549,7 +552,7 @@ public class GenCpp : GenCCpp
 			if (parent == CiPriority.Primary)
 				Write(')');
 		}
-		else if (obj.Type is CiSortedDictionaryType && method.Name == "ContainsKey") {
+		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey") {
 			if (parent > CiPriority.Equality)
 				Write('(');
 			obj.Accept(this, CiPriority.Primary);
@@ -559,7 +562,7 @@ public class GenCpp : GenCCpp
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}
-		else if (obj.Type is CiSortedDictionaryType && method.Name == "Remove") {
+		else if (obj.Type is CiDictionaryType && method.Name == "Remove") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".erase");
 			WriteArgsInParentheses(method, args);

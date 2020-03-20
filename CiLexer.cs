@@ -89,6 +89,7 @@ public enum CiToken
 	Const,
 	Continue,
 	Default,
+	Dictionary,
 	Do,
 	Else,
 	Enum,
@@ -540,6 +541,7 @@ public class CiLexer
 				case "const": return CiToken.Const;
 				case "continue": return CiToken.Continue;
 				case "default": return CiToken.Default;
+				case "Dictionary": return CiToken.Dictionary;
 				case "do": return CiToken.Do;
 				case "else": return CiToken.Else;
 				case "enum": return CiToken.Enum;

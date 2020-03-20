@@ -201,7 +201,7 @@ public class GenJava : GenTyped
 		Write(typeCode, false);
 	}
 
-	void Write(string name, CiSortedDictionaryType dict)
+	void Write(string name, CiDictionaryType dict)
 	{
 		Write(name);
 		Write('<');
@@ -239,6 +239,11 @@ public class GenJava : GenTyped
 			Write("final ");
 			Write("TreeMap", dict);
 			break;
+		case CiDictionaryType dict:
+			Include("java.util.HashMap");
+			Write("final ");
+			Write("HashMap", dict);
+			break;
 		case CiArrayType array:
 			if (promote && array is CiArrayStorageType)
 				Write("final ");
@@ -266,11 +271,12 @@ public class GenJava : GenTyped
 		Write(">()");
 	}
 
-	protected override void WriteSortedDictionaryStorageInit(CiSortedDictionaryType dict)
+	protected override void WriteDictionaryStorageInit(CiDictionaryType dict)
 	{
-		Include("java.util.TreeMap");
+		string javaType = dict is CiSortedDictionaryType ? "TreeMap" : "HashMap";
+		Include("java.util." + javaType);
 		Write(" = new ");
-		Write("TreeMap", dict);
+		Write(javaType, dict);
 		Write("()");
 	}
 
@@ -442,7 +448,7 @@ public class GenJava : GenTyped
 			WriteAdd(args[0], args[1]); // TODO: side effect
 			Write(").clear()");
 		}
-		else if (obj.Type is CiSortedDictionaryType dict && method.Name == "Add") {
+		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".put(");
 			args[0].Accept(this, CiPriority.Statement);
@@ -488,7 +494,7 @@ public class GenJava : GenTyped
 	}
 
 	static bool IsCollection(CiType type)
-		=> type is CiListType || type is CiSortedDictionaryType;
+		=> type is CiListType || type is CiDictionaryType;
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
@@ -522,7 +528,7 @@ public class GenJava : GenTyped
 		 && indexing.Op == CiToken.LeftBracket
 		 && IsCollection(indexing.Left.Type)) {
 			 indexing.Left.Accept(this, CiPriority.Primary);
-			 Write(indexing.Left.Type is CiSortedDictionaryType ? ".put(" : ".set(");
+			 Write(indexing.Left.Type is CiDictionaryType ? ".put(" : ".set(");
 			 indexing.Right.Accept(this, CiPriority.Statement);
 			 Write(", ");
 			 WriteAssignRight(expr);
@@ -570,7 +576,7 @@ public class GenJava : GenTyped
 	public override void Visit(CiForeach statement)
 	{
 		Write("for (");
-		if (statement.Collection.Type is CiSortedDictionaryType dict) {
+		if (statement.Collection.Type is CiDictionaryType dict) {
 			Include("java.util.Map");
 			Write("Map.Entry", dict);
 			Write(' ');
