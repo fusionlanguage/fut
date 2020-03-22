@@ -291,10 +291,23 @@ public class CiResolver : CiVisitor
 		foreach (CiInterpolatedPart part in expr.Parts) {
 			if (part.Argument != null) {
 				CiExpr arg = Resolve(part.Argument);
-				if (arg.Type is CiNumericType || arg.Type is CiStringType)
-					part.Argument = arg;
-				else
+				switch (arg.Type) {
+				case CiIntegerType _:
+					if (" DdXx".IndexOf(part.Format) < 0)
+						throw StatementException(arg, "Invalid integer format string");
+					break;
+				case CiFloatingType _:
+					if (" FfEe".IndexOf(part.Format) < 0)
+						throw StatementException(arg, "Invalid floating-point format string");
+					break;
+				case CiStringType _:
+					if (part.Format != ' ')
+						throw StatementException(arg, "Invalid string format string");
+					break;
+				default:
 					throw StatementException(arg, "Only numbers and strings can be interpolated in strings");
+				}
+				part.Argument = arg;
 				if (part.WidthExpr != null)
 					part.Width = FoldConstInt(part.WidthExpr);
 			}
