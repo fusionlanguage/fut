@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Foxoft.Ci
 {
@@ -288,7 +289,10 @@ public class CiResolver : CiVisitor
 
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
+		List<CiInterpolatedPart> parts = new List<CiInterpolatedPart>();
+		StringBuilder sb = new StringBuilder();
 		foreach (CiInterpolatedPart part in expr.Parts) {
+			sb.Append(part.Prefix);
 			if (part.Argument != null) {
 				CiExpr arg = Resolve(part.Argument);
 				switch (arg.Type) {
@@ -307,11 +311,26 @@ public class CiResolver : CiVisitor
 				default:
 					throw StatementException(arg, "Only numbers and strings can be interpolated in strings");
 				}
-				part.Argument = arg;
+				int width = 0;
 				if (part.WidthExpr != null)
-					part.Width = FoldConstInt(part.WidthExpr);
+					width = FoldConstInt(part.WidthExpr);
+				if (arg is CiLiteral literalArg && !(arg.Type is CiFloatingType)) { // float formatting is runtime-locale-specific
+					string stringArg = part.Format == ' ' ? literalArg.Value.ToString()
+						: ((long) literalArg.Value).ToString(part.Format + (part.Precision < 0 ? "" : part.Precision.ToString()));
+					if (part.WidthExpr != null)
+						stringArg = width >= 0 ? stringArg.PadLeft(width) : stringArg.PadRight(-width);
+					sb.Append(stringArg);
+				}
+				else {
+					parts.Add(new CiInterpolatedPart { Prefix = sb.ToString(), Argument = arg, WidthExpr = part.WidthExpr, Width = width, Format = part.Format, Precision = part.Precision });
+					sb.Clear();
+				}
 			}
 		}
+		if (parts.Count == 0)
+			return expr.ToLiteral(sb.ToString());
+		parts.Add(new CiInterpolatedPart { Prefix = sb.ToString(), Argument = null });
+		expr.Parts = parts.ToArray();
 		return expr;
 	}
 

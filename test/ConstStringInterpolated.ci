@@ -1,0 +1,18 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		const string s1 = $"foo";
+		const string s2 = $"<{s1}|{40 + 2}>";
+		const string s3 = $"<{s1,5}|{8 - 50, 4}>";
+		const string s4 = $"<{s1,-5}|{41 + 1, -4}>";
+		const string s5 = $"<{42:D3}|{42:X}|{42:x}|{42:X3}|{42:x3}" + ">";
+		const string s6 = $"<{42,4:D3}|{42,4:X}|{42,-4:x}" + $"|{42,4:X3}|{42,-4:x3}>";
+		return s1 == "foo"
+			&& s2 == "<foo|42>"
+			&& s3 == "<  foo| -42>"
+			&& s4 == "<foo  |42  >"
+			&& s5 == "<042|2A|2a|02A|02a>"
+			&& s6 == "< 042|  2A|2a  | 02A|02a >";
+	}
+}

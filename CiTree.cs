@@ -387,6 +387,8 @@ public class CiInterpolatedString : CiExpr
 				if (part.Format != ' ') {
 					sb.Append(':');
 					sb.Append(part.Format);
+					if (part.Precision >= 0)
+						sb.Append(part.Precision);
 				}
 				sb.Append('}');
 			}
