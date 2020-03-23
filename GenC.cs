@@ -341,7 +341,7 @@ public class GenC : GenCCpp
 			length.Accept(this, CiPriority.Statement);
 			Write(')');
 		}
-		else if (expr is CiCallExpr && expr.Type == CiSystem.StringStorageType)
+		else if (expr is CiCallExpr call && expr.Type == CiSystem.StringStorageType && !call.Method.IsReferenceTo(CiSystem.StringSubstring))
 			expr.Accept(this, CiPriority.Statement);
 		else {
 			Include("string.h");
