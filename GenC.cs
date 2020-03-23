@@ -330,8 +330,8 @@ public class GenC : GenCCpp
 
 	void WriteStringStorageValue(CiExpr expr)
 	{
-		Include("string.h");
 		if (IsStringSubstring(expr, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)) {
+			Include("string.h");
 			this.StringSubstring = true;
 			Write("CiString_Substring(");
 			if (cast)
@@ -339,19 +339,23 @@ public class GenC : GenCCpp
 			WriteArrayPtrAdd(ptr, offset);
 			Write(", ");
 			length.Accept(this, CiPriority.Statement);
+			Write(')');
 		}
+		else if (expr is CiCallExpr && expr.Type == CiSystem.StringStorageType)
+			expr.Accept(this, CiPriority.Statement);
 		else {
+			Include("string.h");
 			Write("strdup(");
 			expr.Accept(this, CiPriority.Statement);
+			Write(')');
 		}
-		Write(')');
 	}
 
 	protected override void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
 	{
 		switch (value) {
 		case null:
-			if (array.StorageType is CiStringStorageType || array.StorageType.IsDynamicPtr)
+			if (array.StorageType == CiSystem.StringStorageType || array.StorageType.IsDynamicPtr)
 				Write(" = { NULL }");
 			break;
 		case CiLiteral literal when literal.IsDefaultValue:
@@ -376,14 +380,7 @@ public class GenC : GenCCpp
 
 	protected override void WriteVarInit(CiNamedValue def)
 	{
-		if (def.Type == CiSystem.StringStorageType) {
-			Write(" = ");
-			if (def.Value == null)
-				Write("NULL");
-			else
-				WriteStringStorageValue(def.Value);
-		}
-		else if (def.Value == null && def.Type.IsDynamicPtr)
+		if (def.Value == null && (def.Type == CiSystem.StringStorageType || def.Type.IsDynamicPtr))
 			Write(" = NULL");
 		else
 			base.WriteVarInit(def);
@@ -436,7 +433,7 @@ public class GenC : GenCCpp
 				WriteArrayElement(def, nesting);
 				if (nesting > 0) {
 					Write(" = ");
-					if (type is CiStringStorageType || type.IsDynamicPtr)
+					if (type == CiSystem.StringStorageType || type.IsDynamicPtr)
 						Write("NULL");
 					else
 						def.Value.Accept(this, CiPriority.Statement);
@@ -497,7 +494,9 @@ public class GenC : GenCCpp
 
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 	{
-		if (type is CiClassPtrType resultPtr)
+		if (type == CiSystem.StringStorageType)
+			WriteStringStorageValue(expr);
+		else if (type is CiClassPtrType resultPtr)
 			WriteClassPtr(resultPtr.Class, expr, parent);
 		else
 			base.WriteCoercedInternal(type, expr, parent);
@@ -1050,18 +1049,31 @@ public class GenC : GenCCpp
 
 	public override void Visit(CiReturn statement)
 	{
-		if (statement.Value == null && this.CurrentMethod.Throws) {
+		if (statement.Value == null) {
 			WriteDestructAll();
-			WriteLine("return true;");
+			WriteLine(this.CurrentMethod.Throws ? "return true;" : "return;");
 		}
-		else if (this.VarsToDestruct.Count == 0 || statement.Value == null || statement.Value is CiLiteral) {
+		else if (this.VarsToDestruct.Count == 0 || statement.Value is CiLiteral) {
 			WriteDestructAll();
 			base.Visit(statement);
 		}
 		else {
+			if (this.CurrentMethod.Type == CiSystem.StringStorageType) {
+				for (int i = 0; i < this.VarsToDestruct.Count; i++) {
+					if (statement.Value.IsReferenceTo(this.VarsToDestruct[i])) {
+						// Optimization: avoid copy
+						this.VarsToDestruct.RemoveAt(i);
+						WriteDestructAll();
+						Write("return ");
+						statement.Value.Accept(this, CiPriority.Statement);
+						WriteLine(';');
+						return;
+					}
+				}
+			}
 			WriteDefinition(this.CurrentMethod.Type, () => Write("returnValue"), true, true);
 			Write(" = ");
-			statement.Value.Accept(this, CiPriority.Statement);
+			WriteCoerced(this.CurrentMethod.Type, statement.Value, CiPriority.Statement);
 			WriteLine(';');
 			WriteDestructAll();
 			WriteLine("return returnValue;");

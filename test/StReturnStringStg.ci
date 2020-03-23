@@ -1,0 +1,15 @@
+public static class Test
+{
+	static string() Twice(string s)
+	{
+		string() stg = s;
+		stg += s;
+		return stg;
+	}
+
+	public static bool Run()
+	{
+		string() stg = Twice("foo");
+		return stg == "foofoo";
+	}
+}
