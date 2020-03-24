@@ -1,20 +1,22 @@
 prefix := /usr/local
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
-ifdef COMSPEC
+CFLAGS = -Wall -Wno-tautological-compare -Werror
+ifeq ($(OS),Windows_NT)
 CSC = "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/Roslyn/csc.exe" -nologo
 DO_BUILD = $(CSC) -out:$@ $^
 CITO = ./cito.exe
-MONO :=
+MONO =
 JAVACPSEP = ;
 else
-CSC := mcs
+CSC = mcs
 DO_BUILD = dotnet build
 CITO = dotnet run --
-MONO := mono
+MONO = mono
 JAVACPSEP = :
+CFLAGS += -fsanitize=address
 endif
-CC = clang -Wall -Wno-tautological-compare -Wno-unused-function -Werror
-CXX = clang++ -Wall -Wno-tautological-compare -Werror -std=c++2a
+CC = clang -Wno-unused-function
+CXX = clang++ -std=c++2a
 PYTHON = python3
 
 VERSION := 1.0.0
@@ -75,10 +77,10 @@ test/bin/%/py.txt: test/Runner.py test/bin/%/Test.py
 	$(DO)PYTHONPATH=$(@D) $(PYTHON) $< >$@ || grep '//FAIL:.*\<py\>' test/$*.ci
 
 test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
-	$(DO)$(CC) -o $@ -I $(<D) $^ -lm || grep '//FAIL:.*\<c\>' test/$*.ci
+	$(DO)$(CC) -o $@ $(CFLAGS) -I $(<D) $^ -lm || grep '//FAIL:.*\<c\>' test/$*.ci
 
 test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
-	$(DO)$(CXX) -o $@ -I $(<D) $^ || grep '//FAIL:.*\<cpp\>' test/$*.ci
+	$(DO)$(CXX) -o $@ $(CFLAGS) -I $(<D) $^ || grep '//FAIL:.*\<cpp\>' test/$*.ci
 
 test/bin/%/cs.exe: test/bin/%/Test.cs test/Runner.cs
 	$(DO)$(CSC) -out:$@ $^ || grep '//FAIL:.*\<cs\>' test/$*.ci
