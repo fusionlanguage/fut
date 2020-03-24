@@ -1028,11 +1028,11 @@ public class GenC : GenCCpp
 		CiMethod throwingMethod = GetThrowingMethod(statement);
 		if (throwingMethod != null)
 			WriteForwardThrow(parent => statement.Accept(this, parent), throwingMethod);
-//		else if (statement is CiCallExpr && statement.Type == CiSystem.StringStorageType) {
-//			Write("free(");
-//			statement.Accept(this, CiPriority.Statement);
-//			WriteLine(");");
-//		}
+		else if (statement is CiCallExpr && statement.Type == CiSystem.StringStorageType) {
+			Write("free(");
+			statement.Accept(this, CiPriority.Statement);
+			WriteLine(");");
+		}
 		else
 			base.Visit(statement);
 	}
