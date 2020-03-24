@@ -15,7 +15,7 @@ MONO = mono
 JAVACPSEP = :
 CFLAGS += -fsanitize=address
 endif
-CC = clang -Wno-unused-function
+CC = clang
 CXX = clang++ -std=c++2a
 PYTHON = python3
 
@@ -77,7 +77,7 @@ test/bin/%/py.txt: test/Runner.py test/bin/%/Test.py
 	$(DO)PYTHONPATH=$(@D) $(PYTHON) $< >$@ || grep '//FAIL:.*\<py\>' test/$*.ci
 
 test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
-	$(DO)$(CC) -o $@ $(CFLAGS) -I $(<D) $^ -lm || grep '//FAIL:.*\<c\>' test/$*.ci
+	$(DO)$(CC) -o $@ $(CFLAGS) -Wno-unused-function -I $(<D) $^ -lm || grep '//FAIL:.*\<c\>' test/$*.ci
 
 test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
 	$(DO)$(CXX) -o $@ $(CFLAGS) -I $(<D) $^ || grep '//FAIL:.*\<cpp\>' test/$*.ci
