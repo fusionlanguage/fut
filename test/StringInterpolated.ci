@@ -7,7 +7,7 @@ public static class Test
 		string() s1 = $"{s} == {one + 2}"; //FAIL: cpp - should work with C++20
 		string() s2 = $"\"`{{${one}";
 		string() s3 = $"{one}";
-		return  s1 == "1 + 2 == 3" 
+		return  s1 == "1 + 2 == 3"
 			&& s2 == "\"`{$1"
 			&& s3 == "1";
 	}

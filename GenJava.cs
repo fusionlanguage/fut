@@ -743,7 +743,7 @@ public class GenJava : GenTyped
 			throw new NotImplementedException(klass.CallType.ToString());
 		}
 		OpenClass(klass, "", " extends ");
-		
+
 		if (NeedsConstructor(klass)) {
 			if (klass.Constructor != null)
 				Write(klass.Constructor.Visibility);

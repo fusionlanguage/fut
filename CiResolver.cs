@@ -519,7 +519,7 @@ public class CiResolver : CiVisitor
 		CiType type;
 		CiRangeType leftRange = left.Type as CiRangeType;
 		CiRangeType rightRange = right.Type as CiRangeType;
-	
+
 		switch (expr.Op) {
 		case CiToken.LeftBracket:
 			if (left.Type is CiDictionaryType dict) {
