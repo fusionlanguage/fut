@@ -987,7 +987,8 @@ public class GenC : GenCCpp
 		int i = this.VarsToDestruct.Count;
 		for (; i > 0; i--) {
 			CiVar def = this.VarsToDestruct[i - 1];
-			if (def.Parent != statement)
+			if (def.Parent != statement // destroy only the variables in this block
+			 && statement != this.CurrentMethod.Body) // if method body, parameters too
 				break;
 			if (statement.CompletesNormally)
 				WriteDestruct(def);
@@ -1824,7 +1825,12 @@ public class GenC : GenCCpp
 					continue;
 				WriteLine();
 				WriteSignature(klass, method);
+				foreach (CiVar param in method.Parameters) {
+					if (NeedToDestruct(param))
+						this.VarsToDestruct.Add(param);
+				}
 				WriteBody(method);
+				this.VarsToDestruct.Clear(); // cleanup after a short method with a dynamic pointer parameter, e.g. int Foo(Bar# p) => 42;
 			}
 		}
 

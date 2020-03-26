@@ -1,0 +1,13 @@
+public class Test
+{
+	int Foo = 42;
+
+	static Test# ReturnNew() => new Test();
+
+	public static bool Run()
+	{
+		Test# p = ReturnNew();
+		ReturnNew();
+		return p.Foo == 42;
+	}
+}

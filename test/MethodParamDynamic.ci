@@ -1,0 +1,22 @@
+public class Test
+{
+	Test# Parent;
+
+	void SetParent!(Test# parent)
+	{
+		this.Parent = parent;
+	}
+
+	static Test# Identity(Test# p) => p;
+
+	public static bool Run()
+	{
+		Test() o;
+		o.SetParent(new Test());
+		Test# p = new Test();
+		o.SetParent(p);
+		o.SetParent(Identity(p));
+		Identity(p);
+		return o.Parent == p;
+	}
+}
