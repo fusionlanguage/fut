@@ -4,10 +4,8 @@ public class Test
 
 	public static bool Run()
 	{
-		Test# p;
-		p = new Test();
-		Test# q;
-		q = p;
+		Test# p = new Test();
+		Test# q = p;
 		return p.Foo == 42 && q == p;
 	}
 }

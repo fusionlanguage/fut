@@ -497,8 +497,18 @@ public class GenC : GenCCpp
 	{
 		if (type == CiSystem.StringStorageType)
 			WriteStringStorageValue(expr);
-		else if (type is CiClassPtrType resultPtr)
-			WriteClassPtr(resultPtr.Class, expr, parent);
+		else if (type is CiClassPtrType resultPtr) {
+			if (resultPtr.Modifier == CiToken.Hash && expr is CiSymbolReference && parent != CiPriority.Equality) {
+				this.SharedAddRef = true;
+				Write('(');
+				Write(resultPtr.Class.Name);
+				Write(" *) CiShared_AddRef(");
+				expr.Accept(this, CiPriority.Statement);
+				Write(')');
+			}
+			else
+				WriteClassPtr(resultPtr.Class, expr, parent);
+		}
 		else
 			base.WriteCoercedInternal(type, expr, parent);
 	}
@@ -820,7 +830,14 @@ public class GenC : GenCCpp
 				Write("CiShared_Assign((void **) &");
 				expr.Left.Accept(this, CiPriority.Primary);
 				Write(", ");
-				expr.Right.Accept(this, CiPriority.Statement);
+				if (expr.Right is CiSymbolReference) {
+					this.SharedAddRef = true;
+					Write("CiShared_AddRef(");
+					expr.Right.Accept(this, CiPriority.Statement);
+					Write(')');
+				}
+				else
+					expr.Right.Accept(this, CiPriority.Statement);
 				Write(')');
 				return expr;
 			}
@@ -1031,6 +1048,12 @@ public class GenC : GenCCpp
 			WriteForwardThrow(parent => statement.Accept(this, parent), throwingMethod);
 		else if (statement is CiCallExpr && statement.Type == CiSystem.StringStorageType) {
 			Write("free(");
+			statement.Accept(this, CiPriority.Statement);
+			WriteLine(");");
+		}
+		else if (statement is CiCallExpr && statement.Type.IsDynamicPtr) {
+			this.SharedRelease = true;
+			Write("CiShared_Release(");
 			statement.Accept(this, CiPriority.Statement);
 			WriteLine(");");
 		}
@@ -1695,10 +1718,11 @@ public class GenC : GenCCpp
 		}
 		if (this.SharedAddRef) {
 			WriteLine();
-			WriteLine("static void CiShared_AddRef(void *ptr)");
+			WriteLine("static void *CiShared_AddRef(void *ptr)");
 			OpenBlock();
 			WriteLine("if (ptr != NULL)");
 			WriteLine("\t((CiShared *) ptr)[-1].refCount++;");
+			WriteLine("return ptr;");
 			CloseBlock();
 		}
 		if (this.SharedRelease || this.SharedAssign) {
