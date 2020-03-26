@@ -1051,7 +1051,7 @@ public class GenC : GenCCpp
 			statement.Accept(this, CiPriority.Statement);
 			WriteLine(");");
 		}
-		else if (statement is CiCallExpr && statement.Type.IsDynamicPtr) {
+		else if (statement is CiCallExpr && statement.Type != null && statement.Type.IsDynamicPtr) {
 			this.SharedRelease = true;
 			Write("CiShared_Release(");
 			statement.Accept(this, CiPriority.Statement);
