@@ -13,7 +13,7 @@ DO_BUILD = dotnet build
 CITO = dotnet run --
 MONO = mono
 JAVACPSEP = :
-CFLAGS += -fsanitize=address
+CFLAGS += -fsanitize=address -g
 endif
 CC = clang
 CXX = clang++ -std=c++2a

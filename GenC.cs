@@ -287,14 +287,20 @@ public class GenC : GenCCpp
 			Write("NULL");
 	}
 
+	void WriteDynamicArrayCast(CiType elementType)
+	{
+		Write('(');
+		WriteDefinition(elementType, () => Write(elementType is CiArrayType ? "(*)" : "*"), false, true);
+		Write(") ");
+	}
+
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		this.SharedMake = true;
 		if (parent > CiPriority.Mul)
 			Write('(');
-		Write('(');
-		WriteDefinition(elementType, () => Write(elementType is CiArrayType ? "(*)" : "*"), false, true);
-		Write(") CiShared_Make(");
+		WriteDynamicArrayCast(elementType);
+		Write("CiShared_Make(");
 		if (lengthExpr != null)
 			lengthExpr.Accept(this, CiPriority.Statement);
 		else
@@ -508,6 +514,13 @@ public class GenC : GenCCpp
 			}
 			else
 				WriteClassPtr(resultPtr.Class, expr, parent);
+		}
+		else if (type is CiArrayPtrType arrayPtr && arrayPtr.Modifier == CiToken.Hash && expr is CiSymbolReference && parent != CiPriority.Equality) {
+			this.SharedAddRef = true;
+			WriteDynamicArrayCast(arrayPtr.ElementType);
+			Write("CiShared_AddRef(");
+			expr.Accept(this, CiPriority.Statement);
+			Write(')');
 		}
 		else
 			base.WriteCoercedInternal(type, expr, parent);
