@@ -267,7 +267,7 @@ public class GenC : GenCCpp
 
 	protected override void Write(CiType type, bool promote)
 	{
-		WriteDefinition(type, () => {}, promote, false);
+		WriteDefinition(type, () => {}, promote, type is CiArrayPtrType);
 	}
 
 	protected override void WriteTypeAndName(CiNamedValue value)

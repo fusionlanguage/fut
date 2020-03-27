@@ -14,12 +14,12 @@ public class Test
 		int[2] a2;
 		a2[0] = 4;
 		a2[1] = 8;
-		int[]#[] aa = new int[2][]; //FAIL: c TODO
+		int[]#[] aa = new int[2][];
 		aa[0] = a1;
 		aa[1] = a2;
 		return a[0] == o1 && a[1] == o2
 			&& aa[0][0] == 3 && aa[0][1] == 6
-			&& aa[1][0] == 4 && aa[1][1] == 7
+			&& aa[1][0] == 4 && aa[1][1] == 8
 			&& aa[0] == a1 && aa[1] == a2;
 	}
 }
