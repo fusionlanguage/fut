@@ -2,12 +2,21 @@ public class Test
 {
 	int Foo = 42;
 
-	static Test# ReturnNew() => new Test();
+	static Test# CreateTest() => new Test();
+
+	static int[]# CreateIntArray()
+	{
+		int[]# a = new int[2];
+		a[0] = 5;
+		a[1] = 10;
+		return a;
+	}
 
 	public static bool Run()
 	{
-		Test# p = ReturnNew();
-		ReturnNew();
-		return p.Foo == 42;
+		Test# p = CreateTest();
+		CreateTest();
+		int[]# a = CreateIntArray();
+		return p.Foo == 42 && a[0] == 5 && a[1] == 10;
 	}
 }

@@ -13,12 +13,25 @@ public class Test
 
 	Data ReturnConditional(bool dyn) => dyn ? Dynamic : Storage;
 
+	int[2] ArrayStorage;
+	int[]# ArrayDynamic;
+
+	int[] ReturnArrayStorage() => ArrayStorage;
+
+	int[] ReturnArrayDynamic() => ArrayDynamic;
+
+	int[] ReturnArrayConditional(bool dyn) => dyn ? ArrayDynamic : ArrayStorage;
+
 	public static bool Run()
 	{
 		Test() o;
 		return o.ReturnStorage() == o.Storage
 			&& o.ReturnDynamic() == o.Dynamic
 			&& o.ReturnConditional(false) == o.Storage
-			&& o.ReturnConditional(true) == o.Dynamic;
+			&& o.ReturnConditional(true) == o.Dynamic
+			&& o.ReturnArrayStorage() == o.ArrayStorage
+			&& o.ReturnArrayDynamic() == o.ArrayDynamic
+			&& o.ReturnArrayConditional(false) == o.ArrayStorage
+			&& o.ReturnArrayConditional(true) == o.ArrayDynamic;
 	}
 }

@@ -6,6 +6,12 @@ public class Test
 	{
 		Test# p = new Test();
 		Test# q = p;
-		return p.Foo == 42 && q == p;
+
+		int[]# a=  new int[2];
+		a[1] = 10;
+		a[0] = 5;
+		int[]# b = a;
+		return p.Foo == 42 && q == p
+			&& a[0] == 5 && a[1] == 10 && b[0] == 5 && b[1] == 10 && b == a;
 	}
 }

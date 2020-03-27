@@ -4,6 +4,9 @@ public class Test
 	{
 		Test# p = new Test();
 		p = null;
-		return p == null;
+
+		int[]# a = new int[2];
+		a = null;
+		return p == null && a == null;
 	}
 }

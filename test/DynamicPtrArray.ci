@@ -7,6 +7,19 @@ public class Test
 		Test[]# a = new Test[2]; //FAIL: cpp - should work with C++20
 		a[0] = o1;
 		a[1] = o2;
-		return a[0] == o1 && a[1] == o2;
+
+		int[2] a1;
+		a1[0] = 3;
+		a1[1] = 6;
+		int[2] a2;
+		a2[0] = 4;
+		a2[1] = 8;
+		int[]#[] aa = new int[2][]; //FAIL: c TODO
+		aa[0] = a1;
+		aa[1] = a2;
+		return a[0] == o1 && a[1] == o2
+			&& aa[0][0] == 3 && aa[0][1] == 6
+			&& aa[1][0] == 4 && aa[1][1] == 7
+			&& aa[0] == a1 && aa[1] == a2;
 	}
 }

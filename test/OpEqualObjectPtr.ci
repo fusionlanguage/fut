@@ -13,10 +13,17 @@ public class Test
 	bool IsThis(Test that)
 		=> this == that;
 
+	int[2] ArrayStorage;
+	int[]# ArrayDynamic;
+
+	bool IsArrayNull(bool dyn)
+		=> (dyn ? ArrayDynamic : ArrayStorage) == null;
+
 	public static bool Run()
 	{
 		Test() o;
-		return o.IsNull(true)
-			&& o.IsThis(o);
+		return o.IsNull(true) && !o.IsNull(false)
+			&& o.IsThis(o)
+			&& o.IsArrayNull(true) && !o.IsArrayNull(false);
 	}
 }

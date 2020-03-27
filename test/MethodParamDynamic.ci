@@ -9,6 +9,29 @@ public class Test
 
 	static Test# Identity(Test# p) => p;
 
+	static bool Discard(Test# p)
+	{
+		return true;
+	}
+
+	static bool DiscardShort(Test# p) => true;
+
+	int[]# Array;
+
+	void SetArray!(int[]# a)
+	{
+		this.Array = a;
+	}
+
+	static int[]# ArrayIdentity(int[]# a) => a;
+
+	static bool DiscardArray(int[]# p)
+	{
+		return true;
+	}
+
+	static bool DiscardArrayShort(int[]# p) => true;
+
 	public static bool Run()
 	{
 		Test() o;
@@ -17,6 +40,21 @@ public class Test
 		o.SetParent(p);
 		o.SetParent(Identity(p));
 		Identity(p);
-		return o.Parent == p;
+		Discard(p);
+		DiscardShort(p);
+
+		o.SetArray(new int[2]);
+		int[]# a = new int[3];
+		o.SetArray(a);
+		o.Array[2] = 15;
+		o.SetArray(ArrayIdentity(a));
+		ArrayIdentity(a);
+		DiscardArray(a);
+		DiscardArrayShort(a);
+		return o.Parent == p
+			&& Discard(p) && DiscardShort(p)
+			&& o.Array == a
+			&& a[2] == 15
+			&& DiscardArray(a) && DiscardArrayShort(a);
 	}
 }
