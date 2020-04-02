@@ -42,6 +42,7 @@ public static class Test
 		bool is = true;
 		bool lambda = true;
 		bool len = s.Length == 3;
+		bool let = true;
 		bool lock = true;
 		bool module = true;
 		bool namespace = true;
@@ -122,6 +123,7 @@ public static class Test
 			&& is
 			&& lambda
 			&& len
+			&& let
 			&& lock
 			&& module
 			&& namespace

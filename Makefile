@@ -31,7 +31,7 @@ DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .
 
 all: cito.exe
 
-cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs GenPy.cs CiTo.cs)
+cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs GenPy.cs GenSwift.cs CiTo.cs)
 	$(DO_BUILD)
 
 test: test-c test-cpp test-cs test-java test-js test-py test-error
@@ -55,6 +55,9 @@ test-js: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
 test-py: $(patsubst test/%.ci, test/bin/%/py.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
+test-swift: $(patsubst test/%.ci, test/bin/%/swift.txt, $(wildcard test/*.ci))
+	$(DO_SUMMARY)
+
 test-error: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
 	$(DO_SUMMARY)
 
@@ -75,6 +78,9 @@ test/bin/%/js.txt: test/bin/%/Run.js
 
 test/bin/%/py.txt: test/Runner.py test/bin/%/Test.py
 	$(DO)PYTHONPATH=$(@D) $(PYTHON) $< >$@ || grep '//FAIL:.*\<py\>' test/$*.ci
+
+test/bin/%/swift.txt: test/bin/%/Test.swift
+	# TODO
 
 test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
 	$(DO)$(CC) -o $@ $(CFLAGS) -Wno-unused-function -I $(<D) $^ -lm || grep '//FAIL:.*\<c\>' test/$*.ci
@@ -109,7 +115,10 @@ test/bin/%/Test.js: test/%.ci cito.exe
 test/bin/%/Test.py: test/%.ci cito.exe
 	$(DO_CITO)
 
-.PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.py
+test/bin/%/Test.swift: test/%.ci cito.exe
+	$(DO_CITO)
+
+.PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.py test/bin/%/Test.swift
 
 test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 	$(DO)javac -d $(@D) -cp test/bin/Basic $<
@@ -134,6 +143,6 @@ clean:
 	$(RM) cito.exe
 	$(RM) -r test/bin
 
-.PHONY: all test test-c test-cpp test-cs test-java test-js test-py test-error install install-cito uninstall clean
+.PHONY: all test test-c test-cpp test-cs test-java test-js test-py test-swift test-error install install-cito uninstall clean
 
 .DELETE_ON_ERROR:

@@ -109,6 +109,7 @@ public static class CiTo
 		case "java": gen = new GenJava(); break;
 		case "js": gen = new GenJs(); break;
 		case "py": gen = new GenPy(); break;
+		case "swift": gen = new GenSwift(); break;
 		default: throw new ArgumentException("Unknown language: " + lang);
 		}
 		gen.Namespace = namespace_;

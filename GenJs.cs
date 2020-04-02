@@ -50,6 +50,7 @@ public class GenJs : GenBase
 		case "import":
 		case "instanceof":
 		case "interface":
+		case "let":
 		case "package":
 		case "private":
 		case "super":
