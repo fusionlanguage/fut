@@ -120,7 +120,7 @@ public abstract class GenCCpp : GenTyped
 		else if (method == CiSystem.MathTruncate)
 			Write("trunc");
 		else
-			WriteLowercase(method.Name);
+			WriteCamelCase(method.Name);
 		WriteArgsInParentheses(method, args);
 	}
 

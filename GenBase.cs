@@ -72,16 +72,17 @@ public abstract class GenBase : CiVisitor
 		this.Writer.Write(i);
 	}
 
-	protected void WriteLowercase(string s)
-	{
-		foreach (char c in s)
-			this.Writer.Write(char.ToLowerInvariant(c));
-	}
-
 	protected void WriteCamelCase(string s)
 	{
 		StartLine();
 		this.Writer.Write(char.ToLowerInvariant(s[0]));
+		this.Writer.Write(s.Substring(1));
+	}
+
+	protected void WritePascalCase(string s)
+	{
+		StartLine();
+		this.Writer.Write(char.ToUpperInvariant(s[0]));
 		this.Writer.Write(s.Substring(1));
 	}
 

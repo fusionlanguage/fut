@@ -5,6 +5,7 @@ public static class Test
 		string s = "foo";
 		bool and = true;
 		bool as = true;
+		bool associatedtype = true;
 		bool async = true;
 		bool auto = true;
 		bool await = true;
@@ -15,6 +16,8 @@ public static class Test
 		bool debugger = true;
 		bool decimal = true;
 		bool def = true;
+		bool defer = true;
+		bool deinit = true;
 		bool del = true;
 		bool delegate = true;
 		bool delete = true;
@@ -25,18 +28,25 @@ public static class Test
 		bool export = true;
 		bool exports = true;
 		bool extends = true;
+		bool extension = true;
 		bool extern = true;
+		bool fallthrough = true;
+		bool fileprivate = true;
 		bool final = true;
 		bool finally = true;
 		bool fixed = true;
 		bool from = true;
+		bool func = true;
 		bool function = true;
 		bool global = true;
 		bool goto = true;
+		bool guard = true;
 		bool implements = true;
 		bool implicit = true;
 		bool import = true;
+		bool init = true;
 		bool inline = true;
+		bool inout = true;
 		bool instanceof = true;
 		bool interface = true;
 		bool is = true;
@@ -46,6 +56,7 @@ public static class Test
 		bool lock = true;
 		bool module = true;
 		bool namespace = true;
+		bool nil = true;
 		bool nonlocal = true;
 		bool not = true;
 		bool object = true;
@@ -56,22 +67,28 @@ public static class Test
 		bool params = true;
 		bool pass = true;
 		bool private = true;
+		bool protocol = true;
 		bool raise = true;
 		bool readonly = true;
 		bool record = true;
 		bool ref = true;
 		bool register = true;
+		bool repeat = true;
 		bool restrict = true;
+		bool rethrows = true;
 		bool sbyte = true;
+		bool self = true;
 		bool signed = true;
 		bool sizeof = true;
 		bool stackalloc = true;
 		bool strictfp = true;
 		bool struct = true;
+		bool subscript = true;
 		bool super = true;
 		bool synchronized = true;
 		bool transient = true;
 		bool try = true;
+		bool typealias = true;
 		bool typedef = true;
 		bool typeof = true;
 		bool ulong = true;
@@ -82,10 +99,12 @@ public static class Test
 		bool using = true;
 		bool var = true;
 		bool volatile = true;
+		bool where = true;
 		bool with = true;
 		bool yield = true;
 		return and
 			&& as
+			&& associatedtype
 			&& async
 			&& auto
 			&& await
@@ -96,6 +115,8 @@ public static class Test
 			&& decimal
 			&& debugger
 			&& def
+			&& defer
+			&& deinit
 			&& del
 			&& delegate
 			&& delete
@@ -106,18 +127,25 @@ public static class Test
 			&& export
 			&& exports
 			&& extends
+			&& extension
 			&& extern
+			&& fallthrough
+			&& fileprivate
 			&& final
 			&& finally
 			&& fixed
 			&& from
+			&& func
 			&& function
 			&& global
 			&& goto
+			&& guard
 			&& implements
 			&& implicit
 			&& import
+			&& init
 			&& inline
+			&& inout
 			&& instanceof
 			&& interface
 			&& is
@@ -127,6 +155,7 @@ public static class Test
 			&& lock
 			&& module
 			&& namespace
+			&& nil
 			&& nonlocal
 			&& not
 			&& object
@@ -137,22 +166,28 @@ public static class Test
 			&& params
 			&& pass
 			&& private
+			&& protocol
 			&& raise
 			&& readonly
 			&& record
 			&& ref
 			&& register
+			&& repeat
 			&& restrict
+			&& rethrows
 			&& sbyte
+			&& self
 			&& signed
 			&& sizeof
 			&& stackalloc
 			&& strictfp
 			&& struct
+			&& subscript
 			&& super
 			&& synchronized
 			&& transient
 			&& try
+			&& typealias
 			&& typedef
 			&& typeof
 			&& ulong
@@ -163,6 +198,7 @@ public static class Test
 			&& using
 			&& var
 			&& volatile
+			&& where
 			&& with
 			&& yield;
 	}

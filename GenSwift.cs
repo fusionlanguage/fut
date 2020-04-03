@@ -18,6 +18,8 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Foxoft.Ci
 {
@@ -30,18 +32,35 @@ public class GenSwift : GenTyped
 		case "this":
 			Write("self");
 			break;
-		// TODO
 		case "as":
+		case "associatedtype":
 		case "catch":
+		case "defer":
+		case "deinit":
+		case "extension":
+		case "fallthrough":
+		case "fileprivate":
+		case "func":
+		case "guard":
 		case "import":
+		case "init":
+		case "inout":
 		case "is":
 		case "let":
+		case "nil":
 		case "operator":
 		case "private":
+		case "protocol":
+		case "repeat":
+		case "rethrows":
+		case "self":
 		case "struct":
+		case "subscript":
 		case "super":
 		case "try":
+		case "typealias":
 		case "var":
+		case "where":
 			Write(name);
 			Write('_');
 			break;
@@ -57,6 +76,10 @@ public class GenSwift : GenTyped
 		case CiContainerType _:
 			Write(symbol.Name);
 			break;
+		case CiConst konst when konst.InMethod != null:
+			WriteCamelCase(konst.InMethod.Name);
+			WritePascalCase(symbol.Name);
+			break;
 		case CiVar _:
 		case CiMember _:
 			WriteCamelCaseNotKeyword(symbol.Name);
@@ -64,6 +87,20 @@ public class GenSwift : GenTyped
 		default:
 			throw new NotImplementedException(symbol.GetType().Name);
 		}
+	}
+
+	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
+	{
+		if (symbol is CiField)
+			Write("self.");
+		WriteName(symbol);
+	}
+
+	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
+	{
+		if (left.Type is CiClassPtrType)
+			Write('!');
+		Write('.');
 	}
 
 	protected override void Write(TypeCode typeCode)
@@ -169,34 +206,104 @@ public class GenSwift : GenTyped
 	protected override void WriteStringLength(CiExpr expr)
 	{
 		expr.Accept(this, CiPriority.Primary);
+		if (expr.Type == CiSystem.StringPtrType)
+			Write('!');
 		Write(".count");
 	}
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (obj.IsReferenceTo(CiSystem.BasePtr))
-			Write("super");
-		else
-			obj.Accept(this, CiPriority.Primary);
-		Write('.');
-		WriteName(method);
-		WriteArgsInParentheses(method, args);
+		if (method == CiSystem.ConsoleWrite) {
+			// TODO: stderr
+			Write("print(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", terminator: \"\")");
+		}
+		else if (method == CiSystem.ConsoleWriteLine) {
+			// TODO: stderr
+			Write("print");
+			WriteArgsInParentheses(method, args);
+		}
+		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
+			Include("Foundation");
+			if (method == CiSystem.MathCeiling)
+				Write("ceil");
+			else if (method == CiSystem.MathFusedMultiplyAdd)
+				Write("fma");
+			else if (method == CiSystem.MathTruncate)
+				Write("trunc");
+			else
+				WriteName(method);
+			WriteArgsInParentheses(method, args);
+		}
+		else {
+			if (obj.IsReferenceTo(CiSystem.BasePtr))
+				Write("super");
+			else
+				obj.Accept(this, CiPriority.Primary);
+			WriteMemberOp(obj, null);
+			if (method == CiSystem.StringStartsWith)
+				Write("hasPrefix");
+			else if (method == CiSystem.StringEndsWith)
+				Write("hasSuffix");
+			else if (obj.Type is CiListType && method.Name == "Add")
+				Write("append");
+			else
+				WriteName(method);
+			WriteArgsInParentheses(method, args);
+		}
 	}
 
 	protected override void WriteListStorageInit(CiListType list)
 	{
-		throw new NotImplementedException();
+		Write(" = [");
+		Write(list.ElementType, false);
+		Write("]()");
 	}
 
 	protected override void WriteDictionaryStorageInit(CiDictionaryType dict)
 	{
-		throw new NotImplementedException();
+		Write(" = [");
+		Write(dict.KeyType, true);
+		Write(": ");
+		Write(dict.ValueType, true);
+		Write("]()");
+	}
+
+	public override CiExpr Visit(CiCollection expr, CiPriority parent)
+	{
+		CiType type = ((CiArrayStorageType) expr.Type).ElementType;
+		Write("[ ");
+		WriteCoercedLiterals(type, expr.Items);
+		Write(" ]");
+		return expr;
 	}
 
 	protected override void WriteNew(CiClass klass, CiPriority parent)
 	{
 		WriteName(klass);
 		Write("()");
+	}
+
+	void WriteDefaultValue(CiType type)
+	{
+		if (type is CiNumericType)
+			Write('0');
+		else if (type == CiSystem.BoolType)
+			Write("false");
+		else if (type == CiSystem.StringStorageType)
+			Write("\"\"");
+		else
+			Write("nil");
+	}
+
+	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
+	{
+		Write("Array(repeating: ");
+		WriteDefaultValue(elementType);
+		Write(", count: ");
+		lengthExpr.Accept(this, CiPriority.Statement);
+		Write(')');
 	}
 
 	protected override bool HasInitCode(CiNamedValue def)
@@ -213,69 +320,37 @@ public class GenSwift : GenTyped
 		Write("TODO");
 	}
 
+	protected override void WriteChild(CiStatement statement)
+	{
+		Write(' ');
+		OpenBlock();
+		if (statement is CiBlock block)
+			Write(block.Statements);
+		statement.Accept(this);
+		CloseBlock();
+	}
+
 	public override void Visit(CiExpr statement)
 	{
 		statement.Accept(this, CiPriority.Statement);
 		WriteLine();
 	}
 
-	void WriteDefaultValue(CiType type)
-	{
-		if (type is CiNumericType)
-			Write('0');
-		else if (type == CiSystem.BoolType)
-			Write("false");
-		else if (type == CiSystem.StringStorageType)
-			Write("\"\"");
-		else
-			Write("nil");
-	}
-
 	protected override void WriteVar(CiNamedValue def)
 	{
-		switch (def.Type) {
-		case CiClass _:
-			Write("let ");
-			WriteName(def);
-			Write(" = ");
-			WriteName(def.Type);
-			Write("()");
-			break;
-		case CiArrayStorageType array:
-			Write("let ");
-			WriteName(def);
-			Write(" = Array(repeating: ");
-			WriteDefaultValue(array.ElementType);
-			Write(", count: ");
-			Write(array.Length);
-			Write(')');
-			break;
-		case CiListType list:
-			Write("let ");
-			WriteName(def);
-			Write(" = [");
-			Write(list.ElementType, false);
-			Write("]()");
-			break;
-		case CiDictionaryType dict:
-			Write("let ");
-			WriteName(def);
-			Write(" = [");
-			Write(dict.KeyType, true);
-			Write(": ");
-			Write(dict.ValueType, true);
-			Write("]()");
-			break;
-		default:
-			Write("var ");
-			base.WriteVar(def);
-			break;
-		}
+		Write(def.Type is CiClass ? "let " : "var ");
+		base.WriteVar(def);
 	}
 
 	public override void Visit(CiAssert statement)
 	{
-		Write("TODO");
+		Write("assert(");
+		statement.Cond.Accept(this, CiPriority.Statement);
+		if (statement.Message != null) {
+			Write(", ");
+			statement.Message.Accept(this, CiPriority.Statement);
+		}
+		WriteLine(')');
 	}
 
 	public override void Visit(CiBreak statement)
@@ -320,26 +395,43 @@ public class GenSwift : GenTyped
 			Write("for ");
 			WriteName(iter);
 			Write(" in ");
-			iter.Value.Accept(this, CiPriority.Statement);
 			CiBinaryExpr cond = (CiBinaryExpr) statement.Cond;
-			switch (cond.Op) {
-			case CiToken.Less:
-				Write("..<");
-				cond.Right.Accept(this, CiPriority.Statement);
-				break;
-			case CiToken.LessOrEqual:
-				Write("..");
-				cond.Right.Accept(this, CiPriority.Statement);
-				break;
-			case CiToken.Greater:
-			case CiToken.GreaterOrEqual:
-				Write("TODO");
-				break;
-			default:
-				throw new NotImplementedException(cond.Op.ToString());
+			if (statement.RangeStep == 1) {
+				iter.Value.Accept(this, CiPriority.Statement);
+				switch (cond.Op) {
+				case CiToken.Less:
+					Write("..<");
+					cond.Right.Accept(this, CiPriority.Statement);
+					break;
+				case CiToken.LessOrEqual:
+					Write("..");
+					cond.Right.Accept(this, CiPriority.Statement);
+					break;
+				default:
+					throw new NotImplementedException(cond.Op.ToString());
+				}
 			}
-			if (statement.RangeStep != 1)
-				Write("TODO");
+			else {
+				Write("stride(from: ");
+				iter.Value.Accept(this, CiPriority.Statement);
+				switch (cond.Op) {
+				case CiToken.Less:
+				case CiToken.Greater:
+					Write(", to: ");
+					cond.Right.Accept(this, CiPriority.Statement);
+					break;
+				case CiToken.LessOrEqual:
+				case CiToken.GreaterOrEqual:
+					Write(", through: ");
+					cond.Right.Accept(this, CiPriority.Statement);
+					break;
+				default:
+					throw new NotImplementedException(cond.Op.ToString());
+				}
+				Write(", by: ");
+				Write(statement.RangeStep);
+				Write(')');
+			}
 			WriteChild(statement.Body);
 			return;
 		}
@@ -362,7 +454,15 @@ public class GenSwift : GenTyped
 	public override void Visit(CiForeach statement)
 	{
 		Write("for ");
-		WriteName(statement.Element);
+		if (statement.Count == 2) {
+			Write('(');
+			WriteName(statement.Element);
+			Write(", ");
+			WriteName(statement.ValueVar);
+			Write(')');
+		}
+		else
+			WriteName(statement.Element);
 		Write(" in ");
 		statement.Collection.Accept(this, CiPriority.Statement);
 		WriteChild(statement.Body);
@@ -408,7 +508,6 @@ public class GenSwift : GenTyped
 		Write("throw ");
 		statement.Message.Accept(this, CiPriority.Statement);
 		WriteLine();
-		// FIXME: WriteXcrement<CiPostfixExpr>(statement.Message);
 	}
 
 	public override void Visit(CiWhile statement)
@@ -416,6 +515,25 @@ public class GenSwift : GenTyped
 		Write("while ");
 		statement.Cond.Accept(this, CiPriority.Statement);
 		WriteChild(statement.Body);
+	}
+
+	void Write(CiEnum enu)
+	{
+		WriteLine();
+		WritePublic(enu);
+		Write("enum ");
+		WriteLine(enu.Name);
+		OpenBlock();
+		foreach (CiConst konst in enu) {
+			Write("case ");
+			WriteName(konst);
+			/* TODO if (konst.Value != null) {
+				Write(" = ");
+				konst.Value.Accept(this, CiPriority.Statement);
+			} */
+			WriteLine();
+		}
+		CloseBlock();
 	}
 
 	void Write(CiVisibility visibility)
@@ -436,6 +554,19 @@ public class GenSwift : GenTyped
 		}
 	}
 
+	void WriteConsts(IEnumerable<CiConst> consts)
+	{
+		foreach (CiConst konst in consts) {
+			WriteLine();
+			Write(konst.Visibility);
+			Write("static let ");
+			WriteTypeAndName(konst);
+			Write(" = ");
+			konst.Value.Accept(this, CiPriority.Statement);
+			WriteLine();
+		}
+	}
+
 	void Write(CiClass klass)
 	{
 		WriteLine();
@@ -444,7 +575,16 @@ public class GenSwift : GenTyped
 		if (klass.CallType == CiCallType.Sealed)
 			Write("final ");
 		OpenClass(klass, "", " : ");
-		
+
+		if (klass.Constructor != null) {
+			WriteLine("init()");
+			OpenBlock();
+			WriteConstructorBody(klass);
+			CloseBlock();
+		}
+
+		WriteConsts(klass.Consts);
+
 		foreach (CiField field in klass.Fields) {
 			WriteLine();
 			Write(field.Visibility);
@@ -477,17 +617,34 @@ public class GenSwift : GenTyped
 				Write(" -> ");
 				Write(method.Type, true);
 			}
-			WriteBody(method);
+			if (method.CallType == CiCallType.Abstract) {
+				WriteLine();
+				OpenBlock();
+				WriteLine("preconditionFailure(\"Abstract method called\")");
+				CloseBlock();
+			}
+			else {
+				WriteBody(method);
+			}
 		}
+
+		WriteConsts(klass.ConstArrays);
 
 		CloseBlock();
 	}
 
 	public override void Write(CiProgram program)
 	{
-		CreateFile(this.OutputFile);
+		this.Includes = new SortedSet<string>();
+		OpenStringWriter();
+		foreach (CiEnum enu in program.OfType<CiEnum>())
+			Write(enu);
 		foreach (CiClass klass in program.Classes)
 			Write(klass);
+
+		CreateFile(this.OutputFile);
+		WriteIncludes("import ", "");
+		CloseStringWriter();
 		CloseFile();
 	}
 }

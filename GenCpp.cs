@@ -314,7 +314,7 @@ public class GenCpp : GenCCpp
 	{
 		if (symbol.Symbol is CiConst) // FIXME
 			Write("::");
-		else if (left.Type is CiClassPtrType classPtr && !IsForeachVar(left))
+		else if (left.Type is CiClassPtrType && !IsForeachVar(left))
 			Write("->");
 		else
 			Write('.');

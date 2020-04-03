@@ -1,0 +1,40 @@
+enum Direction
+{
+	North,
+	South,
+	East,
+	West
+}
+
+public class Test
+{
+	int X = 0;
+	int Y = 0;
+
+	void Move!(Direction dir)
+	{
+		switch (dir) {
+		case Direction.North:
+			Y--;
+			break;
+		case Direction.South:
+			Y++;
+			break;
+		case Direction.East:
+			X--;
+			break;
+		case Direction.West:
+			X++;
+			break;
+		}
+	}
+
+	public static bool Run()
+	{
+		Test() o;
+		o.Move(Direction.West);
+		o.Move(Direction.South);
+		o.Move(Direction.West);
+		return o.X == 2 && o.Y == 1;
+	}
+}

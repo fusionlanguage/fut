@@ -375,11 +375,6 @@ public class GenJs : GenBase
 			WriteArgs(method, args);
 			Write(')');
 		}
-		else if (obj.Type is CiListType && method.Name == "Add") {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".push");
-			WriteArgsInParentheses(method, args);
-		}
 		else if (method == CiSystem.CollectionClear) {
 			if (obj.Type is CiDictionaryType) {
 				Write("for (const key in ");
@@ -497,6 +492,8 @@ public class GenJs : GenBase
 				Write("trunc");
 			else if (method == CiSystem.StringContains)
 				Write("includes");
+			else if (obj.Type is CiListType && method.Name == "Add")
+				Write("push");
 			else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey")
 				Write("hasOwnProperty");
 			else
