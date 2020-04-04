@@ -174,8 +174,10 @@ public class GenSwift : GenTyped
 	protected override void WriteTypeAndName(CiNamedValue value)
 	{
 		WriteName(value);
-		Write(" : ");
-		Write(value.Type, true);
+		if (!value.Type.IsFinal) {
+			Write(" : ");
+			Write(value.Type, true);
+		}
 	}
 
 	protected override void WriteLiteral(object value)
@@ -221,7 +223,35 @@ public class GenSwift : GenTyped
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (method == CiSystem.ConsoleWrite) {
+		if (obj.Type is CiListType && method.Name == "Insert") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".insert(");
+			args[1].Accept(this, CiPriority.Statement);
+			Write(", at: ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
+		else if (method == CiSystem.ListRemoveAt) {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".remove(at: ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
+		else if (method == CiSystem.ListRemoveRange) {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".removeSubrange(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write("..<");
+			WriteAdd(args[0], args[1]); // TODO: side effect
+			Write(')');
+		}
+		else if (obj.Type is CiDictionaryType && method.Name == "Remove") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".removeValue(forKey: ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
+		else if (method == CiSystem.ConsoleWrite) {
 			// TODO: stderr
 			Write("print(");
 			args[0].Accept(this, CiPriority.Statement);
@@ -254,6 +284,8 @@ public class GenSwift : GenTyped
 				Write("hasPrefix");
 			else if (method == CiSystem.StringEndsWith)
 				Write("hasSuffix");
+			else if (method == CiSystem.CollectionClear)
+				Write("removeAll");
 			else if (obj.Type is CiListType && method.Name == "Add")
 				Write("append");
 			else
@@ -307,7 +339,9 @@ public class GenSwift : GenTyped
 
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
-		Write("Array(repeating: ");
+		Write('[');
+		Write(elementType, false);
+		Write("](repeating: ");
 		WriteDefaultValue(elementType);
 		Write(", count: ");
 		lengthExpr.Accept(this, CiPriority.Statement);
@@ -472,7 +506,12 @@ public class GenSwift : GenTyped
 		else
 			WriteName(statement.Element);
 		Write(" in ");
-		statement.Collection.Accept(this, CiPriority.Statement);
+		if (statement.Collection.Type is CiSortedDictionaryType) {
+			statement.Collection.Accept(this, CiPriority.Primary);
+			Write(".sorted(by: { $0.key < $1.key })");
+		}
+		else
+			statement.Collection.Accept(this, CiPriority.Statement);
 		WriteChild(statement.Body);
 	}
 
