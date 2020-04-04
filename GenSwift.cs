@@ -211,6 +211,14 @@ public class GenSwift : GenTyped
 		Write(".count");
 	}
 
+	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+	{
+		if (expr.Left.Type is CiClassPtrType || expr.Right.Type is CiClassPtrType)
+			WriteComparison(expr, parent, CiPriority.Equality, not ? " !== " : " === ");
+		else
+			base.WriteEqual(expr, parent, not);
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (method == CiSystem.ConsoleWrite) {
