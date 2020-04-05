@@ -223,7 +223,21 @@ public class GenSwift : GenTyped
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (obj.Type is CiListType && method.Name == "Insert") {
+		if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+			args[1].Accept(this, CiPriority.Primary);
+			Write('[');
+			args[2].Accept(this, CiPriority.Shift);
+			Write("..<");
+			WriteAdd(args[2], args[3]); // TODO: side effect
+			Write("] = ");
+			obj.Accept(this, CiPriority.Primary);
+			Write('[');
+			args[0].Accept(this, CiPriority.Shift);
+			Write("..<");
+			WriteAdd(args[0], args[3]); // TODO: side effect
+			Write(']');
+		}
+		else if (obj.Type is CiListType && method.Name == "Insert") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".insert(");
 			args[1].Accept(this, CiPriority.Statement);
@@ -261,6 +275,15 @@ public class GenSwift : GenTyped
 			// TODO: stderr
 			Write("print");
 			WriteArgsInParentheses(method, args);
+		}
+		else if (method == CiSystem.UTF8GetString) {
+			Write("String(bytes: ");
+			args[0].Accept(this, CiPriority.Primary);
+			Write('[');
+			args[1].Accept(this, CiPriority.Shift);
+			Write("..<");
+			WriteAdd(args[1], args[2]); // TODO: side effect
+			Write("], encoding: .utf8)!");
 		}
 		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
 			Include("Foundation");
@@ -368,7 +391,8 @@ public class GenSwift : GenTyped
 		OpenBlock();
 		if (statement is CiBlock block)
 			Write(block.Statements);
-		statement.Accept(this);
+		else
+			statement.Accept(this);
 		CloseBlock();
 	}
 
@@ -439,15 +463,15 @@ public class GenSwift : GenTyped
 			Write(" in ");
 			CiBinaryExpr cond = (CiBinaryExpr) statement.Cond;
 			if (statement.RangeStep == 1) {
-				iter.Value.Accept(this, CiPriority.Statement);
+				iter.Value.Accept(this, CiPriority.Shift);
 				switch (cond.Op) {
 				case CiToken.Less:
 					Write("..<");
-					cond.Right.Accept(this, CiPriority.Statement);
+					cond.Right.Accept(this, CiPriority.Shift);
 					break;
 				case CiToken.LessOrEqual:
-					Write("..");
-					cond.Right.Accept(this, CiPriority.Statement);
+					Write("...");
+					cond.Right.Accept(this, CiPriority.Shift);
 					break;
 				default:
 					throw new NotImplementedException(cond.Op.ToString());

@@ -5,6 +5,11 @@ public static class Test
 		int s = 0;
 		for (int i = 3; i > 1; i--)
 			s += i;
-		return s == 5;
+	
+		int t = 0;
+		for (int i = 3; i >= 1; i--)
+			t += i;
+
+		return s == 5 && t == 6;
 	}
 }
