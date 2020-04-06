@@ -363,6 +363,8 @@ public class GenSwift : GenTyped
 			Write("false");
 		else if (type == CiSystem.StringStorageType)
 			Write("\"\"");
+		else if (type is CiArrayStorageType array)
+			WriteNewArray(array);
 		else
 			Write("nil");
 	}
