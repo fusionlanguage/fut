@@ -348,6 +348,13 @@ public class GenSwift : GenTyped
 		Write("()");
 	}
 
+	static bool IsClassStorage(CiType type)
+	{
+		while (type is CiArrayStorageType array)
+			type = array.ElementType;
+		return type is CiClass;
+	}
+
 	void WriteDefaultValue(CiType type)
 	{
 		if (type is CiNumericType)
@@ -362,13 +369,22 @@ public class GenSwift : GenTyped
 
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
-		Write('[');
-		Write(elementType, false);
-		Write("](repeating: ");
-		WriteDefaultValue(elementType);
-		Write(", count: ");
-		lengthExpr.Accept(this, CiPriority.Statement);
-		Write(')');
+		if (IsClassStorage(elementType)) {
+			Write("(1...");
+			lengthExpr.Accept(this, CiPriority.Shift);
+			Write(").map({ _ in ");
+			WriteNewStorage(elementType);
+			Write(" })");
+		}
+		else {
+			Write('[');
+			Write(elementType, false);
+			Write("](repeating: ");
+			WriteDefaultValue(elementType);
+			Write(", count: ");
+			lengthExpr.Accept(this, CiPriority.Statement);
+			Write(')');
+		}
 	}
 
 	protected override bool HasInitCode(CiNamedValue def)
@@ -404,7 +420,7 @@ public class GenSwift : GenTyped
 
 	protected override void WriteVar(CiNamedValue def)
 	{
-		Write(def.Type is CiClass ? "let " : "var ");
+		Write(IsClassStorage(def.Type) ? "let " : "var ");
 		base.WriteVar(def);
 	}
 
