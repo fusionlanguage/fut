@@ -26,6 +26,9 @@ namespace Foxoft.Ci
 
 public class GenSwift : GenTyped
 {
+	bool StringIndexOf;
+	bool StringSubstring;
+
 	void WriteCamelCaseNotKeyword(string name)
 	{
 		switch (name) {
@@ -223,7 +226,42 @@ public class GenSwift : GenTyped
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+		if (method == CiSystem.StringIndexOf) {
+			Include("Foundation");
+			this.StringIndexOf = true;
+			Write("ciStringIndexOf(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
+		else if (method == CiSystem.StringIndexOf) {
+			Include("Foundation");
+			this.StringIndexOf = true;
+			Write("ciStringIndexOf(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(")");
+		}
+		else if (method == CiSystem.StringSubstring) {
+			if (args[0] is CiLiteral literalOffset && (long) literalOffset.Value == 0)
+				obj.Accept(this, CiPriority.Primary);
+			else {
+				this.StringSubstring = true;
+				Write("ciStringSubstring(");
+				obj.Accept(this, CiPriority.Statement);
+				Write(", ");
+				args[0].Accept(this, CiPriority.Statement);
+				Write(')');
+			}
+			if (args.Length == 2) {
+				Write(".prefix(");
+				args[1].Accept(this, CiPriority.Statement);
+				Write(')');
+			}
+		}
+		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			args[1].Accept(this, CiPriority.Primary);
 			Write('[');
 			args[2].Accept(this, CiPriority.Shift);
@@ -729,9 +767,30 @@ public class GenSwift : GenTyped
 		CloseBlock();
 	}
 
+	void WriteLibrary()
+	{
+		if (this.StringIndexOf) {
+			WriteLine();
+			WriteLine("fileprivate func ciStringIndexOf(_ haystack: String, _ needle: String, _ options: String.CompareOptions = .literal) -> Int");
+			OpenBlock();
+			WriteLine("guard let index = haystack.range(of: needle, options: options) else { return -1 }");
+			WriteLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");
+			CloseBlock();
+		}
+		if (this.StringSubstring) {
+			WriteLine();
+			WriteLine("fileprivate func ciStringSubstring(_ s: String, _ offset: Int) -> Substring");
+			OpenBlock();
+			WriteLine("return s[s.index(s.startIndex, offsetBy: offset)...]");
+			CloseBlock();
+		}
+	}
+
 	public override void Write(CiProgram program)
 	{
 		this.Includes = new SortedSet<string>();
+		this.StringIndexOf = false;
+		this.StringSubstring = false;
 		OpenStringWriter();
 		foreach (CiEnum enu in program.OfType<CiEnum>())
 			Write(enu);
@@ -741,6 +800,7 @@ public class GenSwift : GenTyped
 		CreateFile(this.OutputFile);
 		WriteIncludes("import ", "");
 		CloseStringWriter();
+		WriteLibrary();
 		CloseFile();
 	}
 }
