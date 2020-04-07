@@ -193,18 +193,23 @@ public class GenSwift : GenTyped
 
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
-		Write('"');
-		foreach (CiInterpolatedPart part in expr.Parts) {
-			foreach (char c in part.Prefix)
-				WriteEscapedChar(c);
-			if (part.Argument != null) {
-				Write("\\(");
-				part.Argument.Accept(this, CiPriority.Statement);
-				// TODO
-				Write(')');
-			}
+		if (expr.Parts.Any(part => part.WidthExpr != null || part.Format != ' ' || part.Precision >= 0)) {
+			Write("String(format: ");
+			WritePrintf(expr, false);
 		}
-		Write('"');
+		else {
+			Write('"');
+			foreach (CiInterpolatedPart part in expr.Parts) {
+				foreach (char c in part.Prefix)
+					WriteEscapedChar(c);
+				if (part.Argument != null) {
+					Write("\\(");
+					part.Argument.Accept(this, CiPriority.Statement);
+					Write(')');
+				}
+			}
+			Write('"');
+		}
 		return expr;
 	}
 
