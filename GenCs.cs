@@ -210,7 +210,7 @@ public class GenCs : GenTyped
 			Write("void");
 			break;
 		case CiIntegerType integer:
-			Write(GetTypeCode(integer, promote));
+			Write(GetIntegerTypeCode(integer, promote));
 			break;
 		case CiStringType _:
 			Write("string");

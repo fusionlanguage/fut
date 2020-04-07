@@ -24,7 +24,7 @@ using System.Linq;
 namespace Foxoft.Ci
 {
 
-public class GenPy : GenBase
+public class GenPy : GenPySwift
 {
 	bool ChildPass;
 	bool SwitchBreak;
@@ -274,30 +274,13 @@ public class GenPy : GenBase
 
 	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
 	{
-		switch (expr.Op) {
-		case CiToken.Increment:
-		case CiToken.Decrement:
-			expr.Inner.Accept(this, parent);
-			return expr;
-		case CiToken.ExclamationMark:
+		if (expr.Op == CiToken.ExclamationMark) {
 			Write("not ");
 			expr.Inner.Accept(this, CiPriority.Primary);
 			return expr;
-		default:
-			return base.Visit(expr, parent);
 		}
-	}
-
-	public override CiExpr Visit(CiPostfixExpr expr, CiPriority parent)
-	{
-		switch (expr.Op) {
-		case CiToken.Increment:
-		case CiToken.Decrement:
-			expr.Inner.Accept(this, parent);
-			return expr;
-		default:
+		else
 			return base.Visit(expr, parent);
-		}
 	}
 
 	static bool IsPtr(CiExpr expr) => expr.Type is CiClassPtrType || expr.Type is CiArrayPtrType;
@@ -416,20 +399,6 @@ public class GenPy : GenBase
 		WriteCoerced(type, expr.OnFalse, CiPriority.Cond);
 		if (parent > CiPriority.Cond)
 			Write(')');
-	}
-
-	protected override void WriteNew(CiClass klass, CiPriority parent)
-	{
-		WriteName(klass);
-		Write("()");
-	}
-
-	public override CiExpr Visit(CiCollection expr, CiPriority parent)
-	{
-		Write("[ ");
-		WriteCoercedLiterals(null, expr.Items);
-		Write(" ]");
-		return expr;
 	}
 
 	static char GetArrayCode(CiNumericType type)
@@ -717,69 +686,6 @@ public class GenPy : GenBase
 			Write("_CiResource.");
 		foreach (char c in name)
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
-	}
-
-	bool VisitXcrement<T>(CiExpr expr, bool write) where T : CiUnaryExpr
-	{
-		bool seen;
-		switch (expr) {
-		case CiVar def:
-			return def.Value != null && VisitXcrement<T>(def.Value, write);
-		case CiLiteral literal:
-			return false;
-		case CiInterpolatedString interp:
-			seen = false;
-			foreach (CiInterpolatedPart part in interp.Parts) {
-				if (part.Argument != null)
-					seen |= VisitXcrement<T>(part.Argument, write);
-			}
-			return seen;
-		case CiSymbolReference symbol:
-			return symbol.Left != null && VisitXcrement<T>(symbol.Left, write);
-		case CiUnaryExpr unary:
-			seen = VisitXcrement<T>(unary.Inner, write);
-			if ((unary.Op == CiToken.Increment || unary.Op == CiToken.Decrement) && unary is T) {
-				if (write) {
-					unary.Inner.Accept(this, CiPriority.Assign);
-					WriteLine(unary.Op == CiToken.Increment ? " += 1" : " -= 1");
-				}
-				seen = true;
-			}
-			return seen;
-		case CiBinaryExpr binary:
-			seen = VisitXcrement<T>(binary.Left, write);
-			// XXX: assert not seen on the right side of CondAnd, CondOr
-			seen |= VisitXcrement<T>(binary.Right, write);
-			return seen;
-		case CiCondExpr cond:
-			seen = VisitXcrement<T>(cond.Cond, write);
-			// XXX: assert not seen in OnTrue and OnFalse
-			// seen |= VisitXcrement<T>(cond.OnTrue, write);
-			// seen |= VisitXcrement<T>(cond.OnFalse, write);
-			return seen;
-		case CiCallExpr call:
-			seen = VisitXcrement<T>(call.Method, write);
-			foreach (CiExpr item in call.Arguments)
-				seen |= VisitXcrement<T>(item, write);
-			return seen;
-		default:
-			throw new NotImplementedException(expr.GetType().Name);
-		}
-	}
-
-	static bool NeedsInit(CiNamedValue def)
-		=> def.Value != null || def.Type.IsFinal || def.Type.IsDynamicPtr;
-
-	public override void Visit(CiExpr statement)
-	{
-		if (!(statement is CiVar def) || NeedsInit(def)) {
-			VisitXcrement<CiPrefixExpr>(statement, true);
-			if (!(statement is CiUnaryExpr unary) || (unary.Op != CiToken.Increment && unary.Op != CiToken.Decrement)) {
-				statement.Accept(this, CiPriority.Statement);
-				WriteLine();
-			}
-			VisitXcrement<CiPostfixExpr>(statement, true);
-		}
 	}
 
 	public override void Visit(CiBlock statement)

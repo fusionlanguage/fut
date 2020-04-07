@@ -138,7 +138,7 @@ public class GenCpp : GenCCpp
 			Write("void");
 			break;
 		case CiIntegerType integer:
-			Write(GetTypeCode(integer, promote));
+			Write(GetIntegerTypeCode(integer, promote));
 			break;
 		case CiStringPtrType _:
 			Include("string_view");

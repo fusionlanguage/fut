@@ -161,7 +161,7 @@ public class GenJava : GenTyped
 		}
 	}
 
-	protected override TypeCode GetTypeCode(CiIntegerType integer, bool promote)
+	protected override TypeCode GetIntegerTypeCode(CiIntegerType integer, bool promote)
 	{
 		if (integer == CiSystem.LongType)
 			return TypeCode.Int64;
@@ -218,7 +218,7 @@ public class GenJava : GenTyped
 			Write("void");
 			break;
 		case CiIntegerType integer:
-			Write(GetTypeCode(integer, promote), klass);
+			Write(GetIntegerTypeCode(integer, promote), klass);
 			break;
 		case CiStringType _:
 			Write("String");
@@ -387,7 +387,7 @@ public class GenJava : GenTyped
 	void WriteNotPromoted(CiType type, CiExpr expr)
 	{
 		if (type is CiIntegerType elementType
-		 && IsNarrower(GetTypeCode(elementType, false), GetTypeCode((CiIntegerType) expr.Type, true)))
+		 && IsNarrower(GetIntegerTypeCode(elementType, false), GetIntegerTypeCode((CiIntegerType) expr.Type, true)))
 			WriteStaticCast(elementType, expr);
 		else
 			expr.Accept(this, CiPriority.Statement);

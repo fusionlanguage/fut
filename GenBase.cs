@@ -397,7 +397,7 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteName(CiSymbol symbol);
 
-	protected virtual TypeCode GetTypeCode(CiIntegerType integer, bool promote)
+	protected virtual TypeCode GetIntegerTypeCode(CiIntegerType integer, bool promote)
 	{
 		if (integer == CiSystem.LongType)
 			return TypeCode.Int64;
@@ -554,15 +554,6 @@ public abstract class GenBase : CiVisitor
 		Write('(');
 		WriteArgs(method, args);
 		Write(')');
-	}
-
-	public override CiExpr Visit(CiCollection expr, CiPriority parent)
-	{
-		CiType type = ((CiArrayStorageType) expr.Type).ElementType;
-		Write("{ ");
-		WriteCoercedLiterals(type, expr.Items);
-		Write(" }");
-		return expr;
 	}
 
 	protected virtual void WriteNew(CiClass klass, CiPriority parent)

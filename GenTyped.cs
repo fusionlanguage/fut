@@ -32,7 +32,7 @@ public abstract class GenTyped : GenBase
 	{
 		if (type is CiNumericType) {
 			if (type is CiIntegerType integer)
-				return GetTypeCode(integer, promote);
+				return GetIntegerTypeCode(integer, promote);
 			if (type == CiSystem.DoubleType)
 				return TypeCode.Double;
 			if (type == CiSystem.FloatType)
@@ -55,6 +55,15 @@ public abstract class GenTyped : GenBase
 		Write(value.Type, true);
 		Write(' ');
 		WriteName(value);
+	}
+
+	public override CiExpr Visit(CiCollection expr, CiPriority parent)
+	{
+		CiType type = ((CiArrayStorageType) expr.Type).ElementType;
+		Write("{ ");
+		WriteCoercedLiterals(type, expr.Items);
+		Write(" }");
+		return expr;
 	}
 
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
@@ -179,7 +188,7 @@ public abstract class GenTyped : GenBase
 		if (expr is CiBinaryExpr binary && binary.Op == CiToken.And && binary.Right is CiLiteral rightMask
 		 && type is CiIntegerType integer) {
 			long mask;
-			switch (GetTypeCode(integer, false)) {
+			switch (GetIntegerTypeCode(integer, false)) {
 			case TypeCode.Byte:
 			case TypeCode.SByte:
 				mask = 0xff;

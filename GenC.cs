@@ -207,7 +207,7 @@ public class GenC : GenCCpp
 		CiType baseType = type.BaseType;
 		switch (baseType) {
 		case CiIntegerType integer:
-			Write(GetTypeCode(integer, promote && type == baseType));
+			Write(GetIntegerTypeCode(integer, promote && type == baseType));
 			if (space)
 				Write(' ');
 			break;

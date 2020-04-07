@@ -1,6 +1,7 @@
 /.vs
 /bin
 /obj
+/Properties
 /tags
 *.exe
 *.pdb

@@ -24,7 +24,7 @@ using System.Linq;
 namespace Foxoft.Ci
 {
 
-public class GenSwift : GenBase
+public class GenSwift : GenPySwift
 {
 	bool StringCharAt;
 	bool StringIndexOf;
@@ -111,7 +111,7 @@ public class GenSwift : GenBase
 	{
 		switch (type) {
 		case CiIntegerType integer:
-			switch (GetTypeCode(integer, promote)) {
+			switch (GetIntegerTypeCode(integer, promote)) {
 			case TypeCode.SByte:
 				Write("Int8");
 				break;
@@ -389,21 +389,6 @@ public class GenSwift : GenBase
 		Write("]()");
 	}
 
-	public override CiExpr Visit(CiCollection expr, CiPriority parent)
-	{
-		CiType type = ((CiArrayStorageType) expr.Type).ElementType;
-		Write("[ ");
-		WriteCoercedLiterals(type, expr.Items);
-		Write(" ]");
-		return expr;
-	}
-
-	protected override void WriteNew(CiClass klass, CiPriority parent)
-	{
-		WriteName(klass);
-		Write("()");
-	}
-
 	static bool IsClassStorage(CiType type)
 	{
 		while (type is CiArrayStorageType array)
@@ -463,12 +448,6 @@ public class GenSwift : GenBase
 		else
 			statement.Accept(this);
 		CloseBlock();
-	}
-
-	public override void Visit(CiExpr statement)
-	{
-		statement.Accept(this, CiPriority.Statement);
-		WriteLine();
 	}
 
 	protected override void WriteVar(CiNamedValue def)
