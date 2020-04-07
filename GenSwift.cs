@@ -430,6 +430,37 @@ public class GenSwift : GenPySwift
 		}
 	}
 
+	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
+	{
+		switch (expr.Op) {
+		case CiToken.Assign:
+		case CiToken.AddAssign:
+		case CiToken.SubAssign:
+		case CiToken.MulAssign:
+		case CiToken.DivAssign:
+		case CiToken.ModAssign:
+		case CiToken.ShiftLeftAssign:
+		case CiToken.ShiftRightAssign:
+		case CiToken.AndAssign:
+		case CiToken.OrAssign:
+		case CiToken.XorAssign:
+			CiExpr right = expr.Right;
+			if (right is CiBinaryExpr rightBinary && rightBinary.IsAssign) {
+				Visit(rightBinary, CiPriority.Statement);
+				WriteLine();
+				right = rightBinary.Left; // TODO: side effect
+			}
+			expr.Left.Accept(this, CiPriority.Assign);
+			Write(' ');
+			Write(expr.OpString);
+			Write(' ');
+			right.Accept(this, CiPriority.Statement);
+			return expr;
+		default:
+			return base.Visit(expr, parent);
+		}
+	}
+
 	protected override void WriteInitCode(CiNamedValue def)
 	{
 	}
