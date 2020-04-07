@@ -688,6 +688,15 @@ public class GenPy : GenPySwift
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
+	static bool NeedsInit(CiNamedValue def)
+		=> def.Value != null || def.Type.IsFinal || def.Type.IsDynamicPtr;
+
+	public override void Visit(CiExpr statement)
+	{
+		if (!(statement is CiVar def) || NeedsInit(def))
+			base.Visit(statement);
+	}
+
 	public override void Visit(CiBlock statement)
 	{
 		Write(statement.Statements);

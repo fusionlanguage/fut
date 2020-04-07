@@ -111,19 +111,14 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
-	protected static bool NeedsInit(CiNamedValue def)
-		=> def.Value != null || def.Type.IsFinal || def.Type.IsDynamicPtr;
-
 	public override void Visit(CiExpr statement)
 	{
-		if (!(statement is CiVar def) || NeedsInit(def)) {
-			VisitXcrement<CiPrefixExpr>(statement, true);
-			if (!(statement is CiUnaryExpr unary) || (unary.Op != CiToken.Increment && unary.Op != CiToken.Decrement)) {
-				statement.Accept(this, CiPriority.Statement);
-				WriteLine();
-			}
-			VisitXcrement<CiPostfixExpr>(statement, true);
+		VisitXcrement<CiPrefixExpr>(statement, true);
+		if (!(statement is CiUnaryExpr unary) || (unary.Op != CiToken.Increment && unary.Op != CiToken.Decrement)) {
+			statement.Accept(this, CiPriority.Statement);
+			WriteLine();
 		}
+		VisitXcrement<CiPostfixExpr>(statement, true);
 	}
 }
 
