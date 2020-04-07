@@ -26,6 +26,7 @@ namespace Foxoft.Ci
 
 public class GenSwift : GenTyped
 {
+	bool StringCharAt;
 	bool StringIndexOf;
 	bool StringSubstring;
 
@@ -219,6 +220,16 @@ public class GenSwift : GenTyped
 		if (expr.Type == CiSystem.StringPtrType)
 			Write('!');
 		Write(".count");
+	}
+
+	protected override void WriteCharAt(CiBinaryExpr expr)
+	{
+		this.StringCharAt = true;
+		Write("ciStringCharAt(");
+		expr.Left.Accept(this, CiPriority.Primary);
+		Write(", ");
+		expr.Right.Accept(this, CiPriority.Statement);
+		Write(')');
 	}
 
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
@@ -782,6 +793,13 @@ public class GenSwift : GenTyped
 
 	void WriteLibrary()
 	{
+		if (this.StringCharAt) {
+			WriteLine();
+			WriteLine("fileprivate func ciStringCharAt(_ s: String, _ offset: Int) -> Int");
+			OpenBlock();
+			WriteLine("return Int(s.unicodeScalars[s.index(s.startIndex, offsetBy: offset)].value)");
+			CloseBlock();
+		}
 		if (this.StringIndexOf) {
 			WriteLine();
 			WriteLine("fileprivate func ciStringIndexOf(_ haystack: String, _ needle: String, _ options: String.CompareOptions = .literal) -> Int");
@@ -802,6 +820,7 @@ public class GenSwift : GenTyped
 	public override void Write(CiProgram program)
 	{
 		this.Includes = new SortedSet<string>();
+		this.StringCharAt = false;
 		this.StringIndexOf = false;
 		this.StringSubstring = false;
 		OpenStringWriter();
