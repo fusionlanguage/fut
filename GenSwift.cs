@@ -24,7 +24,7 @@ using System.Linq;
 namespace Foxoft.Ci
 {
 
-public class GenSwift : GenTyped
+public class GenSwift : GenBase
 {
 	bool StringCharAt;
 	bool StringIndexOf;
@@ -107,40 +107,35 @@ public class GenSwift : GenTyped
 		Write('.');
 	}
 
-	protected override void Write(TypeCode typeCode)
-	{
-		switch (typeCode) {
-		case TypeCode.SByte:
-			Write("Int8");
-			break;
-		case TypeCode.Byte:
-			Write("UInt8");
-			break;
-		case TypeCode.Int16:
-			Write("Int16");
-			break;
-		case TypeCode.UInt16:
-			Write("UInt16");
-			break;
-		case TypeCode.Int32:
-			Write("Int");
-			break;
-		case TypeCode.UInt32:
-			Write("UInt32");
-			break;
-		case TypeCode.Int64:
-			Write("Int64");
-			break;
-		default:
-			throw new NotImplementedException(typeCode.ToString());
-		}
-	}
-
-	protected override void Write(CiType type, bool promote)
+	void Write(CiType type, bool promote)
 	{
 		switch (type) {
 		case CiIntegerType integer:
-			Write(GetTypeCode(integer, promote));
+			switch (GetTypeCode(integer, promote)) {
+			case TypeCode.SByte:
+				Write("Int8");
+				break;
+			case TypeCode.Byte:
+				Write("UInt8");
+				break;
+			case TypeCode.Int16:
+				Write("Int16");
+				break;
+			case TypeCode.UInt16:
+				Write("UInt16");
+				break;
+			case TypeCode.Int32:
+				Write("Int");
+				break;
+			case TypeCode.UInt32:
+				Write("UInt32");
+				break;
+			case TypeCode.Int64:
+				Write("Int64");
+				break;
+			default:
+				throw new NotImplementedException(integer.ToString());
+			}
 			break;
 		case CiFloatingType _:
 			Write(type == CiSystem.DoubleType ? "Double" : "Float");
@@ -448,19 +443,6 @@ public class GenSwift : GenTyped
 			lengthExpr.Accept(this, CiPriority.Statement);
 			Write(')');
 		}
-	}
-
-	protected override void WriteStaticCast(CiType type, CiExpr expr)
-	{
-		Write(type, false);
-		Write('(');
-		GetStaticCastInner(type, expr).Accept(this, CiPriority.Statement);
-		Write(')');
-	}
-
-	protected override bool HasInitCode(CiNamedValue def)
-	{
-		return false;
 	}
 
 	protected override void WriteInitCode(CiNamedValue def)

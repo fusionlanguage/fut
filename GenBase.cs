@@ -397,6 +397,27 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteName(CiSymbol symbol);
 
+	protected virtual TypeCode GetTypeCode(CiIntegerType integer, bool promote)
+	{
+		if (integer == CiSystem.LongType)
+			return TypeCode.Int64;
+		if (promote || integer == CiSystem.IntType)
+			return TypeCode.Int32;
+		CiRangeType range = (CiRangeType) integer;
+		if (range.Min < 0) {
+			if (range.Min < short.MinValue || range.Max > short.MaxValue)
+				return TypeCode.Int32;
+			if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
+				return TypeCode.Int16;
+			return TypeCode.SByte;
+		}
+		if (range.Max > ushort.MaxValue)
+			return TypeCode.Int32;
+		if (range.Max > byte.MaxValue)
+			return TypeCode.UInt16;
+		return TypeCode.Byte;
+	}
+
 	protected abstract void WriteTypeAndName(CiNamedValue value);
 
 	protected virtual void WriteLocalName(CiSymbol symbol, CiPriority parent)
@@ -404,6 +425,63 @@ public abstract class GenBase : CiVisitor
 		if (symbol is CiField)
 			Write("this.");
 		WriteName(symbol);
+	}
+
+	protected virtual void WritePrintfWidth(CiInterpolatedPart part)
+	{
+		if (part.WidthExpr != null)
+			Write(part.Width);
+		if (part.Precision >= 0) {
+			Write('.');
+			Write(part.Precision);
+		}
+	}
+
+	static char GetPrintfFormat(CiType type, char format)
+	{
+		switch (type) {
+		case CiStringType _:
+			return 's';
+		case CiIntegerType _:
+			return format == 'x' || format == 'X' ? format : 'd';
+		case CiNumericType _:
+			return "EefGg".IndexOf(format) >= 0 ? format : format == 'F' ? 'f' : 'g';
+		default:
+			throw new NotImplementedException(type.ToString());
+		}
+	}
+
+	protected void WriteArgs(CiInterpolatedString expr)
+	{
+		foreach (CiInterpolatedPart part in expr.Parts) {
+			if (part.Argument != null) {
+				Write(", ");
+				part.Argument.Accept(this, CiPriority.Statement);
+			}
+		}
+	}
+
+	protected void WritePrintf(CiInterpolatedString expr, bool newLine)
+	{
+		Write('"');
+		foreach (CiInterpolatedPart part in expr.Parts) {
+			foreach (char c in part.Prefix) {
+				if (c == '%')
+					Write("%%");
+				else
+					WriteEscapedChar(c);
+			}
+			if (part.Argument != null) {
+				Write('%');
+				WritePrintfWidth(part);
+				Write(GetPrintfFormat(part.Argument.Type, part.Format));
+			}
+		}
+		if (newLine)
+			Write("\\n");
+		Write('"');
+		WriteArgs(expr);
+		Write(')');
 	}
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
@@ -1002,6 +1080,12 @@ public abstract class GenBase : CiVisitor
 		Write(')');
 	}
 
+	protected void WriteParameters(CiMethod method, bool defaultArguments)
+	{
+		Write('(');
+		WriteParameters(method, true, defaultArguments);
+	}
+
 	protected void WriteConstructorBody(CiClass klass)
 	{
 		if (klass.Constructor != null) {
@@ -1032,6 +1116,25 @@ public abstract class GenBase : CiVisitor
 			}
 			this.CurrentMethod = null;
 		}
+	}
+
+	protected void WritePublic(CiContainerType container)
+	{
+		if (container.IsPublic)
+			Write("public ");
+	}
+
+	protected void OpenClass(CiClass klass, string suffix, string extendsClause)
+	{
+		Write("class ");
+		Write(klass.Name);
+		Write(suffix);
+		if (klass.BaseClassName != null) {
+			Write(extendsClause);
+			Write(klass.BaseClassName);
+		}
+		WriteLine();
+		OpenBlock();
 	}
 
 	public abstract void Write(CiProgram program);
