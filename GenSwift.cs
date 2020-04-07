@@ -237,6 +237,13 @@ public class GenSwift : GenTyped
 			WriteAdd(args[0], args[3]); // TODO: side effect
 			Write(']');
 		}
+		else if (obj.Type is CiArrayStorageType array && method.Name == "Fill") {
+			if (!(args[0] is CiLiteral literal) || !literal.IsDefaultValue)
+				throw new NotImplementedException("Only null, zero and false supported");
+			obj.Accept(this, CiPriority.Primary);
+			Write(" = ");
+			WriteNewArray(array);
+		}
 		else if (obj.Type is CiListType && method.Name == "Insert") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".insert(");
