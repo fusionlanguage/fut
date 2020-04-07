@@ -434,6 +434,14 @@ public class GenSwift : GenTyped
 		}
 	}
 
+	protected override void WriteStaticCast(CiType type, CiExpr expr)
+	{
+		Write(type, false);
+		Write('(');
+		GetStaticCastInner(type, expr).Accept(this, CiPriority.Statement);
+		Write(')');
+	}
+
 	protected override bool HasInitCode(CiNamedValue def)
 	{
 		return false;
