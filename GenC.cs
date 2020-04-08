@@ -1000,8 +1000,7 @@ public class GenC : GenCCpp
 		int i = this.VarsToDestruct.Count;
 		for (; i > 0; i--) {
 			CiVar def = this.VarsToDestruct[i - 1];
-			if (def.Parent != statement // destroy only the variables in this block
-			 && statement != this.CurrentMethod.Body) // if method body, parameters too
+			if (def.Parent != statement) // destroy only the variables in this block
 				break;
 			if (statement.CompletesNormally)
 				WriteDestruct(def);
@@ -1288,21 +1287,6 @@ public class GenC : GenCCpp
 			else
 				WriteParameters(method, false);
 		});
-	}
-
-	protected override void WriteMethodBody(CiBlock block)
-	{
-		if (this.CurrentMethod.Throws && this.CurrentMethod.Type == null && block.CompletesNormally) {
-			CiStatement[] statements = block.Statements;
-			if (statements.Length == 0 || !TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
-				Write(statements);
-				WriteDestructAll();
-				this.VarsToDestruct.Clear();
-				WriteLine("return true;");
-			}
-		}
-		else
-			base.WriteMethodBody(block);
 	}
 
 	static CiClass GetVtblStructClass(CiClass klass)
@@ -1840,8 +1824,28 @@ public class GenC : GenCCpp
 					if (NeedToDestruct(param))
 						this.VarsToDestruct.Add(param);
 				}
-				WriteBody(method);
-				this.VarsToDestruct.Clear(); // cleanup after a short method with a dynamic pointer parameter, e.g. int Foo(Bar# p) => 42;
+				WriteLine();
+				this.CurrentMethod = method;
+				OpenBlock();
+				if (method.Body is CiBlock block) {
+					CiStatement[] statements = block.Statements;
+					if (method.Throws && method.Type == null && block.CompletesNormally) {
+						if (statements.Length == 0 || !TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
+							Write(statements);
+							WriteDestructAll();
+							WriteLine("return true;");
+						}
+					}
+					else {
+						Write(statements);
+						WriteDestructAll();
+					}
+				}
+				else
+					method.Body.Accept(this);
+				this.VarsToDestruct.Clear();
+				CloseBlock();
+				this.CurrentMethod = null;
 			}
 		}
 
