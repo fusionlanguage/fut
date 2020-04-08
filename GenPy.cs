@@ -697,36 +697,24 @@ public class GenPy : GenPySwift
 			base.Visit(statement);
 	}
 
-	public override void Visit(CiBlock statement)
-	{
-		Write(statement.Statements);
-	}
-
 	protected override void StartLine()
 	{
 		base.StartLine();
 		this.ChildPass = false;
 	}
 
-	void OpenChild()
+	protected override void OpenChild()
 	{
 		WriteLine(':');
 		this.Indent++;
 		this.ChildPass = true;
 	}
 
-	void CloseChild()
+	protected override void CloseChild()
 	{
 		if (this.ChildPass)
 			WriteLine("pass");
 		this.Indent--;
-	}
-
-	protected override void WriteChild(CiStatement statement)
-	{
-		OpenChild();
-		statement.Accept(this);
-		CloseChild();
 	}
 
 	public override void Visit(CiAssert statement)
@@ -745,43 +733,13 @@ public class GenPy : GenPySwift
 		WriteLine(statement.LoopOrSwitch is CiSwitch ? "raise _CiBreak()" : "break");
 	}
 
-	bool OpenCond(string statement, CiExpr cond, CiPriority parent)
+	protected override void WriteContinueDoWhile(CiExpr cond)
 	{
-		VisitXcrement<CiPrefixExpr>(cond, true);
-		Write(statement);
-		cond.Accept(this, parent);
-		OpenChild();
-		return VisitXcrement<CiPostfixExpr>(cond, true);
-	}
-
-	void EndBody(CiFor statement)
-	{
-		if (statement.Advance != null)
-			statement.Advance.Accept(this);
-		if (statement.Cond != null)
-			VisitXcrement<CiPrefixExpr>(statement.Cond, true);
-	}
-
-	public override void Visit(CiContinue statement)
-	{
-		switch (statement.Loop) {
-		case CiDoWhile doWhile:
-			OpenCond("if ", doWhile.Cond, CiPriority.Statement);
-			WriteLine("continue");
-			CloseChild();
-			VisitXcrement<CiPostfixExpr>(doWhile.Cond, true);
-			WriteLine("break");
-			return;
-		case CiFor forLoop when !forLoop.IsRange:
-			EndBody(forLoop);
-			break;
-		case CiWhile whileLoop:
-			VisitXcrement<CiPrefixExpr>(whileLoop.Cond, true);
-			break;
-		default:
-			break;
-		}
+		OpenCond("if ", cond, CiPriority.Statement);
 		WriteLine("continue");
+		CloseChild();
+		VisitXcrement<CiPostfixExpr>(cond, true);
+		WriteLine("break");
 	}
 
 	public override void Visit(CiDoWhile statement)
@@ -894,47 +852,14 @@ public class GenPy : GenPySwift
 		WriteChild(statement.Body);
 	}
 
-	public override void Visit(CiIf statement)
+	protected override void WriteElseIf()
 	{
-		bool condPostXcrement = OpenCond("if ", statement.Cond, CiPriority.Statement);
-		statement.OnTrue.Accept(this);
-		CloseChild();
-		if (statement.OnFalse == null && condPostXcrement && !statement.OnTrue.CompletesNormally)
-			VisitXcrement<CiPostfixExpr>(statement.Cond, true);
-		else if (statement.OnFalse != null || condPostXcrement) {
-			Write("el");
-			if (!condPostXcrement && statement.OnFalse is CiIf childIf && !VisitXcrement<CiPrefixExpr>(childIf.Cond, false))
-				Visit(childIf);
-			else {
-				Write("se");
-				OpenChild();
-				VisitXcrement<CiPostfixExpr>(statement.Cond, true);
-				if (statement.OnFalse != null)
-					statement.OnFalse.Accept(this);
-				CloseChild();
-			}
-		}
+		Write("el");
 	}
 
-	public override void Visit(CiReturn statement)
+	protected override void WriteResultVar(CiReturn statement)
 	{
-		if (statement.Value == null)
-			WriteLine("return");
-		else {
-			VisitXcrement<CiPrefixExpr>(statement.Value, true);
-			if (VisitXcrement<CiPostfixExpr>(statement.Value, false)) {
-				Write("result = "); // FIXME: name clash? only matters if return ... result++, unlikely
-				statement.Value.Accept(this, CiPriority.Statement);
-				WriteLine();
-				VisitXcrement<CiPostfixExpr>(statement.Value, true);
-				WriteLine("return result");
-			}
-			else {
-				Write("return ");
-				statement.Value.Accept(this, CiPriority.Statement);
-				WriteLine();
-			}
-		}
+		Write("result");
 	}
 
 	static bool IsVarReference(CiExpr expr) => expr is CiSymbolReference symbol && symbol.Symbol is CiVar;

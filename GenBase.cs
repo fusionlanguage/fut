@@ -1088,7 +1088,7 @@ public abstract class GenBase : CiVisitor
 
 	protected virtual void WriteMethodBody(CiBlock block)
 	{
-		Visit(block);
+		Write(block.Statements);
 	}
 
 	protected void WriteBody(CiMethod method)
@@ -1098,13 +1098,12 @@ public abstract class GenBase : CiVisitor
 		else {
 			WriteLine();
 			this.CurrentMethod = method;
+			OpenBlock();
 			if (method.Body is CiBlock block)
 				WriteMethodBody(block);
-			else {
-				OpenBlock();
+			else
 				method.Body.Accept(this);
-				CloseBlock();
-			}
+			CloseBlock();
 			this.CurrentMethod = null;
 		}
 	}

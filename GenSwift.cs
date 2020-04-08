@@ -470,14 +470,14 @@ public class GenSwift : GenPySwift
 		Write("TODO");
 	}
 
-	protected override void WriteChild(CiStatement statement)
+	protected override void OpenChild()
 	{
 		Write(' ');
 		OpenBlock();
-		if (statement is CiBlock block)
-			Write(block.Statements);
-		else
-			statement.Accept(this);
+	}
+
+	protected override void CloseChild()
+	{
 		CloseBlock();
 	}
 
@@ -503,8 +503,9 @@ public class GenSwift : GenPySwift
 		WriteLine("break");
 	}
 
-	public override void Visit(CiContinue statement)
+	protected override void WriteContinueDoWhile(CiExpr cond)
 	{
+		VisitXcrement<CiPrefixExpr>(cond, true);
 		WriteLine("continue");
 	}
 
@@ -517,20 +518,9 @@ public class GenSwift : GenPySwift
 		WriteLine();
 	}
 
-	public override void Visit(CiIf statement)
+	protected override void WriteElseIf()
 	{
-		Write("if ");
-		statement.Cond.Accept(this, CiPriority.Statement);
-		WriteChild(statement.OnTrue);
-		if (statement.OnFalse != null) {
-			Write("else");
-			if (statement.OnFalse is CiIf) {
-				Write(' ');
-				statement.OnFalse.Accept(this);
-			}
-			else
-				WriteChild(statement.OnFalse);
-		}
+		Write("else ");
 	}
 
 	public override void Visit(CiFor statement)
@@ -588,12 +578,10 @@ public class GenSwift : GenPySwift
 			statement.Cond.Accept(this, CiPriority.Statement);
 		else
 			Write("True");
-		Write(' ');
-		OpenBlock();
+		OpenChild();
 		statement.Body.Accept(this);
-		if (statement.Advance != null)
-			statement.Advance.Accept(this);
-		CloseBlock();
+		EndBody(statement);
+		CloseChild();
 	}
 
 	public override void Visit(CiForeach statement)
@@ -618,15 +606,10 @@ public class GenSwift : GenPySwift
 		WriteChild(statement.Body);
 	}
 
-	public override void Visit(CiReturn statement)
+	protected override void WriteResultVar(CiReturn statement)
 	{
-		if (statement.Value == null)
-			WriteLine("return");
-		else {
-			Write("return ");
-			statement.Value.Accept(this, CiPriority.Statement);
-			WriteLine();
-		}
+		Write("let result : ");
+		Write(statement.Value.Type, true);
 	}
 
 	public override void Visit(CiSwitch statement)
@@ -655,6 +638,7 @@ public class GenSwift : GenPySwift
 
 	public override void Visit(CiThrow statement)
 	{
+		VisitXcrement<CiPrefixExpr>(statement.Message, true);
 		Write("throw ");
 		statement.Message.Accept(this, CiPriority.Statement);
 		WriteLine();
@@ -662,9 +646,9 @@ public class GenSwift : GenPySwift
 
 	public override void Visit(CiWhile statement)
 	{
-		Write("while ");
-		statement.Cond.Accept(this, CiPriority.Statement);
-		WriteChild(statement.Body);
+		OpenCond("while ", statement.Cond, CiPriority.Statement);
+		statement.Body.Accept(this);
+		CloseChild();
 	}
 
 	void Write(CiEnum enu)

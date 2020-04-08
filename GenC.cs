@@ -1293,7 +1293,6 @@ public class GenC : GenCCpp
 	protected override void WriteMethodBody(CiBlock block)
 	{
 		if (this.CurrentMethod.Throws && this.CurrentMethod.Type == null && block.CompletesNormally) {
-			OpenBlock();
 			CiStatement[] statements = block.Statements;
 			if (statements.Length == 0 || !TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
 				Write(statements);
@@ -1301,7 +1300,6 @@ public class GenC : GenCCpp
 				this.VarsToDestruct.Clear();
 				WriteLine("return true;");
 			}
-			CloseBlock();
 		}
 		else
 			base.WriteMethodBody(block);

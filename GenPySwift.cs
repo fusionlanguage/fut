@@ -120,6 +120,108 @@ public abstract class GenPySwift : GenBase
 		}
 		VisitXcrement<CiPostfixExpr>(statement, true);
 	}
+
+	protected abstract void OpenChild();
+
+	protected abstract void CloseChild();
+
+	protected override void WriteChild(CiStatement statement)
+	{
+		OpenChild();
+		statement.Accept(this);
+		CloseChild();
+	}
+
+	public override void Visit(CiBlock statement)
+	{
+		Write(statement.Statements);
+	}
+
+	protected abstract void WriteContinueDoWhile(CiExpr cond);
+
+	protected void EndBody(CiFor statement)
+	{
+		if (statement.Advance != null)
+			statement.Advance.Accept(this);
+		if (statement.Cond != null)
+			VisitXcrement<CiPrefixExpr>(statement.Cond, true);
+	}
+
+	public override void Visit(CiContinue statement)
+	{
+		switch (statement.Loop) {
+		case CiDoWhile doWhile:
+			WriteContinueDoWhile(doWhile.Cond);
+			return;
+		case CiFor forLoop when !forLoop.IsRange:
+			EndBody(forLoop);
+			break;
+		case CiWhile whileLoop:
+			VisitXcrement<CiPrefixExpr>(whileLoop.Cond, true);
+			break;
+		default:
+			break;
+		}
+		WriteLine("continue");
+	}
+
+	protected bool OpenCond(string statement, CiExpr cond, CiPriority parent)
+	{
+		VisitXcrement<CiPrefixExpr>(cond, true);
+		Write(statement);
+		cond.Accept(this, parent);
+		OpenChild();
+		return VisitXcrement<CiPostfixExpr>(cond, true);
+	}
+
+	protected abstract void WriteElseIf();
+
+	public override void Visit(CiIf statement)
+	{
+		bool condPostXcrement = OpenCond("if ", statement.Cond, CiPriority.Statement);
+		statement.OnTrue.Accept(this);
+		CloseChild();
+		if (statement.OnFalse == null && condPostXcrement && !statement.OnTrue.CompletesNormally)
+			VisitXcrement<CiPostfixExpr>(statement.Cond, true);
+		else if (statement.OnFalse != null || condPostXcrement) {
+			if (!condPostXcrement && statement.OnFalse is CiIf childIf && !VisitXcrement<CiPrefixExpr>(childIf.Cond, false)) {
+				WriteElseIf();
+				Visit(childIf);
+			}
+			else {
+				Write("else");
+				OpenChild();
+				VisitXcrement<CiPostfixExpr>(statement.Cond, true);
+				if (statement.OnFalse != null)
+					statement.OnFalse.Accept(this);
+				CloseChild();
+			}
+		}
+	}
+
+	protected abstract void WriteResultVar(CiReturn statement);
+
+	public override void Visit(CiReturn statement)
+	{
+		if (statement.Value == null)
+			WriteLine("return");
+		else {
+			VisitXcrement<CiPrefixExpr>(statement.Value, true);
+			if (VisitXcrement<CiPostfixExpr>(statement.Value, false)) {
+				WriteResultVar(statement);// FIXME: name clash? only matters if return ... result++, unlikely
+				Write(" = ");
+				statement.Value.Accept(this, CiPriority.Statement);
+				WriteLine();
+				VisitXcrement<CiPostfixExpr>(statement.Value, true);
+				WriteLine("return result");
+			}
+			else {
+				Write("return ");
+				statement.Value.Accept(this, CiPriority.Statement);
+				WriteLine();
+			}
+		}
+	}
 }
 
 }
