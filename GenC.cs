@@ -1588,6 +1588,40 @@ public class GenC : GenCCpp
 			WriteLine(';');
 	}
 
+	void Write(CiClass klass, CiMethod method)
+	{
+		if (!method.IsLive || method.CallType == CiCallType.Abstract)
+			return;
+		WriteLine();
+		WriteSignature(klass, method);
+		foreach (CiVar param in method.Parameters) {
+			if (NeedToDestruct(param))
+				this.VarsToDestruct.Add(param);
+		}
+		WriteLine();
+		this.CurrentMethod = method;
+		OpenBlock();
+		if (method.Body is CiBlock block) {
+			CiStatement[] statements = block.Statements;
+			if (method.Throws && method.Type == null && block.CompletesNormally) {
+				if (statements.Length == 0 || !TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
+					Write(statements);
+					WriteDestructAll();
+					WriteLine("return true;");
+				}
+			}
+			else {
+				Write(statements);
+				WriteDestructAll();
+			}
+		}
+		else
+			method.Body.Accept(this);
+		this.VarsToDestruct.Clear();
+		CloseBlock();
+		this.CurrentMethod = null;
+	}
+
 	void WriteLibrary()
 	{
 		if (this.StringAssign) {
@@ -1815,38 +1849,8 @@ public class GenC : GenCCpp
 			WriteConstructor(klass);
 			WriteDestructor(klass);
 			WriteNewDelete(klass, true);
-			foreach (CiMethod method in klass.Methods) {
-				if (!method.IsLive || method.CallType == CiCallType.Abstract)
-					continue;
-				WriteLine();
-				WriteSignature(klass, method);
-				foreach (CiVar param in method.Parameters) {
-					if (NeedToDestruct(param))
-						this.VarsToDestruct.Add(param);
-				}
-				WriteLine();
-				this.CurrentMethod = method;
-				OpenBlock();
-				if (method.Body is CiBlock block) {
-					CiStatement[] statements = block.Statements;
-					if (method.Throws && method.Type == null && block.CompletesNormally) {
-						if (statements.Length == 0 || !TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
-							Write(statements);
-							WriteDestructAll();
-							WriteLine("return true;");
-						}
-					}
-					else {
-						Write(statements);
-						WriteDestructAll();
-					}
-				}
-				else
-					method.Body.Accept(this);
-				this.VarsToDestruct.Clear();
-				CloseBlock();
-				this.CurrentMethod = null;
-			}
+			foreach (CiMethod method in klass.Methods)
+				Write(klass, method);
 		}
 
 		CreateFile(this.OutputFile);
