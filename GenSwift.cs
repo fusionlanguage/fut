@@ -369,6 +369,16 @@ public class GenSwift : GenPySwift
 		}
 	}
 
+	protected override void WriteNearCall(CiMethod method, CiExpr[] args)
+	{
+		if (method.IsStatic()) {
+			WriteName(this.CurrentMethod.Parent);
+			Write('.');
+		}
+		WriteName(method);
+		WriteArgsInParentheses(method, args);
+	}
+
 	protected override void WriteListStorageInit(CiListType list)
 	{
 		Write(" = [");
