@@ -26,6 +26,7 @@ namespace Foxoft.Ci
 
 public class GenSwift : GenPySwift
 {
+	bool Throw;
 	bool StringCharAt;
 	bool StringIndexOf;
 	bool StringSubstring;
@@ -633,10 +634,11 @@ public class GenSwift : GenPySwift
 
 	public override void Visit(CiThrow statement)
 	{
+		this.Throw = true;
 		VisitXcrement<CiPrefixExpr>(statement.Message, true);
-		Write("throw ");
+		Write("throw CiError.error(");
 		statement.Message.Accept(this, CiPriority.Statement);
-		WriteLine();
+		WriteLine(')');
 	}
 
 	public override void Visit(CiWhile statement)
@@ -764,6 +766,13 @@ public class GenSwift : GenPySwift
 
 	void WriteLibrary()
 	{
+		if (this.Throw) {
+			WriteLine();
+			WriteLine("public enum CiError : Error");
+			OpenBlock();
+			WriteLine("case error(String)");
+			CloseBlock();
+		}
 		if (this.StringCharAt) {
 			WriteLine();
 			WriteLine("fileprivate func ciStringCharAt(_ s: String, _ offset: Int) -> Int");
@@ -791,6 +800,7 @@ public class GenSwift : GenPySwift
 	public override void Write(CiProgram program)
 	{
 		this.Includes = new SortedSet<string>();
+		this.Throw = false;
 		this.StringCharAt = false;
 		this.StringIndexOf = false;
 		this.StringSubstring = false;
