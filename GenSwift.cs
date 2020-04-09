@@ -795,7 +795,9 @@ public class GenSwift : GenPySwift
 			WriteLine();
 			Write(konst.Visibility);
 			Write("static let ");
-			WriteTypeAndName(konst);
+			WriteName(konst);
+			Write(" : ");
+			Write(konst.Type);
 			Write(" = ");
 			konst.Value.Accept(this, CiPriority.Statement);
 			WriteLine();
