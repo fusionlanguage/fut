@@ -699,7 +699,6 @@ public class GenSwift : GenPySwift
 	void Write(CiClass klass)
 	{
 		WriteLine();
-		Write(klass.Documentation);
 		WritePublic(klass);
 		if (klass.CallType == CiCallType.Sealed)
 			Write("final ");
