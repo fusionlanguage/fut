@@ -222,6 +222,8 @@ public class GenSwift : GenPySwift
 		this.StringCharAt = true;
 		Write("ciStringCharAt(");
 		expr.Left.Accept(this, CiPriority.Primary);
+		if (expr.Left.Type == CiSystem.StringPtrType)
+			Write('!');
 		Write(", ");
 		expr.Right.Accept(this, CiPriority.Statement);
 		Write(')');
