@@ -350,6 +350,8 @@ public class GenSwift : GenPySwift
 			WriteArgsInParentheses(method, args);
 		}
 		else {
+			if (method.Throws)
+				Write("try ");
 			if (obj.IsReferenceTo(CiSystem.BasePtr))
 				Write("super");
 			else
@@ -371,6 +373,8 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteNearCall(CiMethod method, CiExpr[] args)
 	{
+		if (method.Throws)
+			Write("try ");
 		if (method.IsStatic()) {
 			WriteName(this.CurrentMethod.Parent);
 			Write('.');
