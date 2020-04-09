@@ -154,6 +154,8 @@ public class GenSwift : GenPySwift
 			Write(']');
 			break;
 		case CiArrayType array:
+			if (array is CiArrayPtrType)
+				Write("inout ");
 			Write('[');
 			Write(array.ElementType, false);
 			Write(']');
