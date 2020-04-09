@@ -456,14 +456,10 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Right is CiLiteral || GetTypeCode(expr.Right.Type, false) == TypeCode.Int32)
-			base.WriteIndexing(expr, parent);
-		else {
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write("[Int(");
-			expr.Right.Accept(this, CiPriority.Statement);
-			Write(")]");
-		}
+		expr.Left.Accept(this, CiPriority.Primary);
+		Write('[');
+		WriteCoerced(CiSystem.IntType, expr.Right, CiPriority.Statement);
+		Write(']');
 	}
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
