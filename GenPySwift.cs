@@ -222,14 +222,14 @@ public abstract class GenPySwift : GenBase
 			if (VisitXcrement<CiPostfixExpr>(statement.Value, false)) {
 				WriteResultVar(statement);// FIXME: name clash? only matters if return ... result++, unlikely
 				Write(" = ");
-				statement.Value.Accept(this, CiPriority.Statement);
+				WriteCoerced(this.CurrentMethod.Type, statement.Value, CiPriority.Statement);
 				WriteLine();
 				VisitXcrement<CiPostfixExpr>(statement.Value, true);
 				WriteLine("return result");
 			}
 			else {
 				Write("return ");
-				statement.Value.Accept(this, CiPriority.Statement);
+				WriteCoerced(this.CurrentMethod.Type, statement.Value, CiPriority.Statement);
 				WriteLine();
 			}
 		}

@@ -205,6 +205,18 @@ public class GenSwift : GenPySwift
 		return expr;
 	}
 
+	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
+	{
+		if (type is CiNumericType && !(expr is CiLiteral) && GetTypeCode(type, false) != GetTypeCode(expr.Type, false)) {
+			Write(type);
+			Write('(');
+			expr.Accept(this, CiPriority.Statement);
+			Write(')');
+		}
+		else
+			expr.Accept(this, parent);
+	}
+
 	protected override void WriteStringLength(CiExpr expr)
 	{
 		expr.Accept(this, CiPriority.Primary);
@@ -478,14 +490,7 @@ public class GenSwift : GenPySwift
 			Write(' ');
 			Write(expr.OpString);
 			Write(' ');
-			if (expr.Type is CiNumericType && !(right is CiLiteral) && GetTypeCode(expr.Left.Type, false) != GetTypeCode(right.Type, right.IsIndexing)) {
-				Write(expr.Left.Type);
-				Write('(');
-				right.Accept(this, CiPriority.Statement);
-				Write(')');
-			}
-			else
-				right.Accept(this, CiPriority.Statement);
+			WriteCoerced(expr.Type, right, CiPriority.Statement);
 			return expr;
 		default:
 			return base.Visit(expr, parent);
