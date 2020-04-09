@@ -711,6 +711,7 @@ public class GenSwift : GenPySwift
 		OpenClass(klass, "", " : ");
 
 		if (klass.Constructor != null) {
+			Write(klass.Constructor.Visibility);
 			WriteLine("init()");
 			OpenBlock();
 			WriteConstructorBody(klass);
