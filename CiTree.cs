@@ -266,6 +266,7 @@ public class CiMember : CiNamedValue
 
 public class CiVar : CiNamedValue
 {
+	public bool IsAssigned = false;
 	public CiVar()
 	{
 	}

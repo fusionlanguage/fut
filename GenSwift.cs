@@ -683,10 +683,21 @@ public class GenSwift : GenPySwift
 		CloseChild();
 	}
 
+	void WriteReadOnlyParameter(CiVar param)
+	{
+		Write("ciParam");
+		WritePascalCase(param.Name);
+	}
+
 	protected override void WriteParameter(CiVar param)
 	{
 		Write("_ ");
-		WriteTypeAndName(param);
+		if (param.IsAssigned)
+			WriteReadOnlyParameter(param);
+		else
+			WriteName(param);
+		Write(" : ");
+		Write(param.Type);
 	}
 
 	void Write(CiEnum enu)
@@ -724,6 +735,53 @@ public class GenSwift : GenPySwift
 			Write("public ");
 			break;
 		}
+	}
+
+	void Write(CiMethod method)
+	{
+		WriteLine();
+		Write(method.Visibility);
+		switch (method.CallType) {
+		case CiCallType.Static:
+			Write("static ");
+			break;
+		case CiCallType.Override:
+			Write("override ");
+			break;
+		case CiCallType.Sealed:
+			Write("final override ");
+			break;
+		default:
+			break;
+		}
+		Write("func ");
+		WriteName(method);
+		WriteParameters(method, true);
+		if (method.Throws)
+			Write(" throws");
+		if (method.Type != null) {
+			Write(" -> ");
+			Write(method.Type);
+		}
+		WriteLine();
+		OpenBlock();
+		if (method.CallType == CiCallType.Abstract)
+			WriteLine("preconditionFailure(\"Abstract method called\")");
+		else {
+			foreach (CiVar param in method.Parameters) {
+				if (param.IsAssigned) {
+					Write("var ");
+					WriteTypeAndName(param);
+					Write(" = ");
+					WriteReadOnlyParameter(param);
+					WriteLine();
+				}
+			}
+			this.CurrentMethod = method;
+			method.Body.Accept(this);
+			this.CurrentMethod = null;
+		}
+		CloseBlock();
 	}
 
 	void WriteConsts(IEnumerable<CiConst> consts)
@@ -764,41 +822,8 @@ public class GenSwift : GenPySwift
 			WriteLine();
 		}
 
-		foreach (CiMethod method in klass.Methods) {
-			WriteLine();
-			Write(method.Visibility);
-			switch (method.CallType) {
-			case CiCallType.Static:
-				Write("static ");
-				break;
-			case CiCallType.Override:
-				Write("override ");
-				break;
-			case CiCallType.Sealed:
-				Write("final override ");
-				break;
-			default:
-				break;
-			}
-			Write("func ");
-			WriteName(method);
-			WriteParameters(method, true);
-			if (method.Throws)
-				Write(" throws");
-			if (method.Type != null) {
-				Write(" -> ");
-				Write(method.Type);
-			}
-			if (method.CallType == CiCallType.Abstract) {
-				WriteLine();
-				OpenBlock();
-				WriteLine("preconditionFailure(\"Abstract method called\")");
-				CloseBlock();
-			}
-			else {
-				WriteBody(method);
-			}
-		}
+		foreach (CiMethod method in klass.Methods)
+			Write(method);
 
 		WriteConsts(klass.ConstArrays);
 

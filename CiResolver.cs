@@ -389,14 +389,17 @@ public class CiResolver : CiVisitor
 	{
 		// TODO: check lvalue
 		if (expr is CiSymbolReference symbol) {
-			switch (symbol.Symbol.Parent) {
-			case CiFor forLoop:
-				forLoop.IsRange = false;
-				break;
-			case CiForeach _:
-				throw StatementException(expr, "Cannot assign a foreach iteration variable");
-			default:
-				break;
+			if (symbol.Symbol is CiVar def) {
+				def.IsAssigned = true;
+				switch (symbol.Symbol.Parent) {
+				case CiFor forLoop:
+					forLoop.IsRange = false;
+					break;
+				case CiForeach _:
+					throw StatementException(expr, "Cannot assign a foreach iteration variable");
+				default:
+					break;
+				}
 			}
 			for (CiScope scope = this.CurrentScope; !(scope is CiClass); scope = scope.Parent) {
 				if (scope is CiFor forLoop
