@@ -1058,13 +1058,18 @@ public abstract class GenBase : CiVisitor
 		WriteChild(statement.Body);
 	}
 
+	protected virtual void WriteParameter(CiVar param)
+	{
+		WriteTypeAndName(param);
+	}
+
 	protected void WriteParameters(CiMethod method, bool first, bool defaultArguments)
 	{
 		foreach (CiVar param in method.Parameters) {
 			if (!first)
 				Write(", ");
 			first = false;
-			WriteTypeAndName(param);
+			WriteParameter(param);
 			if (defaultArguments)
 				WriteVarInit(param);
 		}

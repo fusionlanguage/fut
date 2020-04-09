@@ -648,6 +648,12 @@ public class GenSwift : GenPySwift
 		CloseChild();
 	}
 
+	protected override void WriteParameter(CiVar param)
+	{
+		Write("_ ");
+		WriteTypeAndName(param);
+	}
+
 	void Write(CiEnum enu)
 	{
 		WriteLine();
