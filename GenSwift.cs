@@ -101,11 +101,11 @@ public class GenSwift : GenPySwift
 		Write('.');
 	}
 
-	void Write(CiType type, bool promote)
+	void Write(CiType type)
 	{
 		switch (type) {
 		case CiIntegerType integer:
-			switch (GetIntegerTypeCode(integer, promote)) {
+			switch (GetIntegerTypeCode(integer, false)) {
 			case TypeCode.SByte:
 				Write("Int8");
 				break;
@@ -148,16 +148,16 @@ public class GenSwift : GenPySwift
 			break;
 		case CiDictionaryType dict:
 			Write('[');
-			Write(dict.KeyType, true);
+			Write(dict.KeyType);
 			Write(": ");
-			Write(dict.ValueType, true);
+			Write(dict.ValueType);
 			Write(']');
 			break;
 		case CiArrayType array:
 			if (array is CiArrayPtrType)
 				Write("inout ");
 			Write('[');
-			Write(array.ElementType, false);
+			Write(array.ElementType);
 			Write(']');
 			break;
 		default:
@@ -171,7 +171,7 @@ public class GenSwift : GenPySwift
 		WriteName(value);
 		if (!value.Type.IsFinal) {
 			Write(" : ");
-			Write(value.Type, true);
+			Write(value.Type);
 		}
 	}
 
@@ -388,16 +388,16 @@ public class GenSwift : GenPySwift
 	protected override void WriteListStorageInit(CiListType list)
 	{
 		Write(" = [");
-		Write(list.ElementType, false);
+		Write(list.ElementType);
 		Write("]()");
 	}
 
 	protected override void WriteDictionaryStorageInit(CiDictionaryType dict)
 	{
 		Write(" = [");
-		Write(dict.KeyType, true);
+		Write(dict.KeyType);
 		Write(": ");
-		Write(dict.ValueType, true);
+		Write(dict.ValueType);
 		Write("]()");
 	}
 
@@ -433,7 +433,7 @@ public class GenSwift : GenPySwift
 		}
 		else {
 			Write('[');
-			Write(elementType, false);
+			Write(elementType);
 			Write("](repeating: ");
 			WriteDefaultValue(elementType);
 			Write(", count: ");
@@ -466,7 +466,14 @@ public class GenSwift : GenPySwift
 			Write(' ');
 			Write(expr.OpString);
 			Write(' ');
-			right.Accept(this, CiPriority.Statement);
+			if (expr.Type is CiNumericType && !(right is CiLiteral) && GetTypeCode(expr.Left.Type, false) != GetTypeCode(right.Type, right.IsIndexing)) {
+				Write(expr.Left.Type);
+				Write('(');
+				right.Accept(this, CiPriority.Statement);
+				Write(')');
+			}
+			else
+				right.Accept(this, CiPriority.Statement);
 			return expr;
 		default:
 			return base.Visit(expr, parent);
@@ -621,7 +628,7 @@ public class GenSwift : GenPySwift
 	protected override void WriteResultVar(CiReturn statement)
 	{
 		Write("let result : ");
-		Write(statement.Value.Type, true);
+		Write(statement.Value.Type);
 	}
 
 	public override void Visit(CiSwitch statement)
@@ -768,7 +775,7 @@ public class GenSwift : GenPySwift
 				Write(" throws");
 			if (method.Type != null) {
 				Write(" -> ");
-				Write(method.Type, true);
+				Write(method.Type);
 			}
 			if (method.CallType == CiCallType.Abstract) {
 				WriteLine();

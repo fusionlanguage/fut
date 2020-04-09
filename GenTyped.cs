@@ -28,26 +28,6 @@ public abstract class GenTyped : GenBase
 {
 	protected abstract void Write(TypeCode typeCode);
 
-	TypeCode GetTypeCode(CiType type, bool promote)
-	{
-		if (type is CiNumericType) {
-			if (type is CiIntegerType integer)
-				return GetIntegerTypeCode(integer, promote);
-			if (type == CiSystem.DoubleType)
-				return TypeCode.Double;
-			if (type == CiSystem.FloatType)
-				return TypeCode.Single;
-			throw new NotImplementedException(type.ToString());
-		}
-		else if (type == CiSystem.BoolType)
-			return TypeCode.Boolean;
-		else if (type == CiSystem.NullType)
-			return TypeCode.Empty;
-		else if (type is CiStringType)
-			return TypeCode.String;
-		return TypeCode.Object;
-	}
-
 	protected abstract void Write(CiType type, bool promote);
 
 	protected override void WriteTypeAndName(CiNamedValue value)
