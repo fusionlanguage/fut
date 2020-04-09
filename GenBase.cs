@@ -425,7 +425,7 @@ public abstract class GenBase : CiVisitor
 				return GetIntegerTypeCode(integer, promote);
 			if (type == CiSystem.DoubleType)
 				return TypeCode.Double;
-			if (type == CiSystem.FloatType)
+			if (type == CiSystem.FloatType || type == CiSystem.FloatIntType)
 				return TypeCode.Single;
 			throw new NotImplementedException(type.ToString());
 		}
