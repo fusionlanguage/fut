@@ -24,6 +24,18 @@ namespace Foxoft.Ci
 
 public abstract class GenPySwift : GenBase
 {
+	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
+	{
+		if (symbol is CiMember member) {
+			if (member.IsStatic())
+				WriteName(this.CurrentMethod.Parent);
+			else
+				Write("self");
+			Write('.');
+		}
+		WriteName(symbol);
+	}
+
 	public override CiExpr Visit(CiCollection expr, CiPriority parent)
 	{
 		CiType type = ((CiArrayStorageType) expr.Type).ElementType;

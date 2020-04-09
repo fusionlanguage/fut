@@ -221,18 +221,6 @@ public class GenPy : GenPySwift
 		WriteName(value);
 	}
 
-	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
-	{
-		if (symbol is CiMember member) {
-			if (member.IsStatic())
-				WriteName(this.CurrentMethod.Parent);
-			else
-				Write("self");
-			Write('.');
-		}
-		WriteName(symbol);
-	}
-
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
 		Write("f\"");

@@ -93,13 +93,6 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
-	{
-		if (symbol is CiField)
-			Write("self.");
-		WriteName(symbol);
-	}
-
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
 		if (left.Type is CiClassPtrType)
