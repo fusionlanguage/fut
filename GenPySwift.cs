@@ -186,6 +186,49 @@ public abstract class GenPySwift : GenBase
 		return VisitXcrement<CiPostfixExpr>(cond, true);
 	}
 
+	protected void CloseWhile(CiLoop loop)
+	{
+		CloseChild();
+		if (loop.Cond != null && VisitXcrement<CiPostfixExpr>(loop.Cond, false)) {
+			if (loop.HasBreak) {
+				Write("else");
+				OpenChild();
+				VisitXcrement<CiPostfixExpr>(loop.Cond, true);
+				CloseChild();
+			}
+			else
+				VisitXcrement<CiPostfixExpr>(loop.Cond, true);
+		}
+	}
+
+	protected abstract void WriteForRange(CiVar iter, CiBinaryExpr cond, long rangeStep);
+
+	public override void Visit(CiFor statement)
+	{
+		if (statement.IsRange) {
+			CiVar iter = (CiVar) statement.Init;
+			Write("for ");
+			WriteName(iter);
+			Write(" in ");
+			WriteForRange(iter, (CiBinaryExpr) statement.Cond, statement.RangeStep);
+			WriteChild(statement.Body);
+		}
+		else {
+			if (statement.Init != null)
+				statement.Init.Accept(this);
+			if (statement.Cond != null)
+				OpenCond("while ", statement.Cond, CiPriority.Statement);
+			else {
+				Write("while ");
+				WriteLiteral(true);
+				OpenChild();
+			}
+			statement.Body.Accept(this);
+			EndBody(statement);
+			CloseWhile(statement);
+		}
+	}
+
 	protected abstract void WriteElseIf();
 
 	public override void Visit(CiIf statement)

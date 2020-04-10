@@ -752,67 +752,32 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	void CloseWhile(CiLoop loop)
+	protected override void WriteForRange(CiVar iter, CiBinaryExpr cond, long rangeStep)
 	{
-		CloseChild();
-		if (loop.Cond != null && VisitXcrement<CiPostfixExpr>(loop.Cond, false)) {
-			if (loop.HasBreak) {
-				Write("else");
-				OpenChild();
-				VisitXcrement<CiPostfixExpr>(loop.Cond, true);
-				CloseChild();
-			}
-			else
-				VisitXcrement<CiPostfixExpr>(loop.Cond, true);
+		Write("range(");
+		if (rangeStep != 1 || !(iter.Value is CiLiteral start) || (long) start.Value != 0) {
+			iter.Value.Accept(this, CiPriority.Statement);
+			Write(", ");
 		}
-	}
-
-	public override void Visit(CiFor statement)
-	{
-		if (statement.IsRange) {
-			CiVar iter = (CiVar) statement.Init;
-			Write("for ");
-			WriteName(iter);
-			Write(" in range(");
-			if (statement.RangeStep != 1 || !(iter.Value is CiLiteral start) || (long) start.Value != 0) {
-				iter.Value.Accept(this, CiPriority.Statement);
-				Write(", ");
-			}
-			CiBinaryExpr cond = (CiBinaryExpr) statement.Cond;
-			switch (cond.Op) {
-			case CiToken.Less:
-			case CiToken.Greater:
-				cond.Right.Accept(this, CiPriority.Statement);
-				break;
-			case CiToken.LessOrEqual:
-				WriteInclusiveLimit(cond.Right, 1, " + 1");
-				break;
-			case CiToken.GreaterOrEqual:
-				WriteInclusiveLimit(cond.Right, -1, " - 1");
-				break;
-			default:
-				throw new NotImplementedException(cond.Op.ToString());
-			}
-			if (statement.RangeStep != 1) {
-				Write(", ");
-				Write(statement.RangeStep);
-			}
-			Write(')');
-			WriteChild(statement.Body);
-			return;
+		switch (cond.Op) {
+		case CiToken.Less:
+		case CiToken.Greater:
+			cond.Right.Accept(this, CiPriority.Statement);
+			break;
+		case CiToken.LessOrEqual:
+			WriteInclusiveLimit(cond.Right, 1, " + 1");
+			break;
+		case CiToken.GreaterOrEqual:
+			WriteInclusiveLimit(cond.Right, -1, " - 1");
+			break;
+		default:
+			throw new NotImplementedException(cond.Op.ToString());
 		}
-
-		if (statement.Init != null)
-			statement.Init.Accept(this);
-		if (statement.Cond != null)
-			OpenCond("while ", statement.Cond, CiPriority.Statement);
-		else {
-			Write("while True");
-			OpenChild();
+		if (rangeStep != 1) {
+			Write(", ");
+			Write(rangeStep);
 		}
-		statement.Body.Accept(this);
-		EndBody(statement);
-		CloseWhile(statement);
+		Write(')');
 	}
 
 	public override void Visit(CiForeach statement)

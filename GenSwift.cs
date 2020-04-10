@@ -555,65 +555,44 @@ public class GenSwift : GenPySwift
 		Write("else ");
 	}
 
-	public override void Visit(CiFor statement)
+	protected override void WriteForRange(CiVar iter, CiBinaryExpr cond, long rangeStep)
 	{
-		if (statement.IsRange) {
-			CiVar iter = (CiVar) statement.Init;
-			Write("for ");
-			WriteName(iter);
-			Write(" in ");
-			CiBinaryExpr cond = (CiBinaryExpr) statement.Cond;
-			if (statement.RangeStep == 1) {
-				iter.Value.Accept(this, CiPriority.Shift);
-				switch (cond.Op) {
-				case CiToken.Less:
-					Write("..<");
-					cond.Right.Accept(this, CiPriority.Shift);
-					break;
-				case CiToken.LessOrEqual:
-					Write("...");
-					cond.Right.Accept(this, CiPriority.Shift);
-					break;
-				default:
-					throw new NotImplementedException(cond.Op.ToString());
-				}
+		if (rangeStep == 1) {
+			iter.Value.Accept(this, CiPriority.Shift);
+			switch (cond.Op) {
+			case CiToken.Less:
+				Write("..<");
+				cond.Right.Accept(this, CiPriority.Shift);
+				break;
+			case CiToken.LessOrEqual:
+				Write("...");
+				cond.Right.Accept(this, CiPriority.Shift);
+				break;
+			default:
+				throw new NotImplementedException(cond.Op.ToString());
 			}
-			else {
-				Write("stride(from: ");
-				iter.Value.Accept(this, CiPriority.Statement);
-				switch (cond.Op) {
-				case CiToken.Less:
-				case CiToken.Greater:
-					Write(", to: ");
-					cond.Right.Accept(this, CiPriority.Statement);
-					break;
-				case CiToken.LessOrEqual:
-				case CiToken.GreaterOrEqual:
-					Write(", through: ");
-					cond.Right.Accept(this, CiPriority.Statement);
-					break;
-				default:
-					throw new NotImplementedException(cond.Op.ToString());
-				}
-				Write(", by: ");
-				Write(statement.RangeStep);
-				Write(')');
-			}
-			WriteChild(statement.Body);
-			return;
 		}
-
-		if (statement.Init != null)
-			statement.Init.Accept(this);
-		Write("while ");
-		if (statement.Cond != null)
-			statement.Cond.Accept(this, CiPriority.Statement);
-		else
-			Write("True");
-		OpenChild();
-		statement.Body.Accept(this);
-		EndBody(statement);
-		CloseChild();
+		else {
+			Write("stride(from: ");
+			iter.Value.Accept(this, CiPriority.Statement);
+			switch (cond.Op) {
+			case CiToken.Less:
+			case CiToken.Greater:
+				Write(", to: ");
+				cond.Right.Accept(this, CiPriority.Statement);
+				break;
+			case CiToken.LessOrEqual:
+			case CiToken.GreaterOrEqual:
+				Write(", through: ");
+				cond.Right.Accept(this, CiPriority.Statement);
+				break;
+			default:
+				throw new NotImplementedException(cond.Op.ToString());
+			}
+			Write(", by: ");
+			Write(rangeStep);
+			Write(')');
+		}
 	}
 
 	public override void Visit(CiForeach statement)
