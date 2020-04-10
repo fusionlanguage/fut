@@ -254,7 +254,7 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
-	protected abstract void WriteResultVar(CiReturn statement);
+	protected abstract void WriteResultVar();
 
 	public override void Visit(CiReturn statement)
 	{
@@ -263,7 +263,7 @@ public abstract class GenPySwift : GenBase
 		else {
 			VisitXcrement<CiPrefixExpr>(statement.Value, true);
 			if (VisitXcrement<CiPostfixExpr>(statement.Value, false)) {
-				WriteResultVar(statement);// FIXME: name clash? only matters if return ... result++, unlikely
+				WriteResultVar(); // FIXME: name clash? only matters if return ... result++, unlikely
 				Write(" = ");
 				WriteCoerced(this.CurrentMethod.Type, statement.Value, CiPriority.Statement);
 				WriteLine();

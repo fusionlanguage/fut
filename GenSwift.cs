@@ -617,10 +617,10 @@ public class GenSwift : GenPySwift
 		WriteChild(statement.Body);
 	}
 
-	protected override void WriteResultVar(CiReturn statement)
+	protected override void WriteResultVar()
 	{
 		Write("let result : ");
-		Write(statement.Value.Type);
+		Write(this.CurrentMethod.Type);
 	}
 
 	public override void Visit(CiSwitch statement)

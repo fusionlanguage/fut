@@ -810,7 +810,7 @@ public class GenPy : GenPySwift
 		Write("el");
 	}
 
-	protected override void WriteResultVar(CiReturn statement)
+	protected override void WriteResultVar()
 	{
 		Write("result");
 	}
