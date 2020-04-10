@@ -629,11 +629,12 @@ public class GenSwift : GenPySwift
 		statement.Value.Accept(this, CiPriority.Statement);
 		WriteLine(" {");
 		foreach (CiCase kase in statement.Cases) {
-			foreach (CiExpr value in kase.Values) {
-				Write("case ");
-				WriteCoerced(statement.Value.Type, value, CiPriority.Statement);
-				WriteLine(':');
+			Write("case ");
+			for (int i = 0; i < kase.Values.Length; i++) {
+				WriteComma(i);
+				WriteCoerced(statement.Value.Type, kase.Values[i], CiPriority.Statement);
 			}
+			WriteLine(':');
 			this.Indent++;
 			WriteCaseBody(kase.Body);
 			this.Indent--;

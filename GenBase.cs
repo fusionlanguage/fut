@@ -327,7 +327,7 @@ public abstract class GenBase : CiVisitor
 		WriteLine('}');
 	}
 
-	void WriteComma(int i)
+	protected void WriteComma(int i)
 	{
 		if (i > 0) {
 			if ((i & 15) == 0) {
