@@ -499,7 +499,10 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteResource(string name, int length)
 	{
-		Write("TODO");
+		if (length >= 0) // reference as opposed to definition
+			Write("CiResource.");
+		foreach (char c in name)
+			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
 	protected override void OpenChild()
@@ -846,6 +849,24 @@ public class GenSwift : GenPySwift
 		}
 	}
 
+	void WriteResources(Dictionary<string, byte[]> resources)
+	{
+		if (resources.Count == 0)
+			return;
+		WriteLine();
+		WriteLine("fileprivate final class CiResource");
+		OpenBlock();
+		foreach (string name in resources.Keys.OrderBy(k => k)) {
+			Write("let ");
+			WriteResource(name, -1);
+			WriteLine(" : [UInt8] = [");
+			Write('\t');
+			Write(resources[name]);
+			WriteLine(" ]");
+		}
+		CloseBlock();
+	}
+
 	public override void Write(CiProgram program)
 	{
 		this.Includes = new SortedSet<string>();
@@ -863,6 +884,7 @@ public class GenSwift : GenPySwift
 		WriteIncludes("import ", "");
 		CloseStringWriter();
 		WriteLibrary();
+		WriteResources(program.Resources);
 		CloseFile();
 	}
 }
