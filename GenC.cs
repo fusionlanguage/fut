@@ -1603,7 +1603,9 @@ public class GenC : GenCCpp
 		OpenBlock();
 		if (method.Body is CiBlock block) {
 			CiStatement[] statements = block.Statements;
-			if (method.Throws && method.Type == null && block.CompletesNormally) {
+			if (!block.CompletesNormally)
+				Write(statements);
+			else if (method.Throws && method.Type == null) {
 				if (statements.Length == 0 || !TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
 					Write(statements);
 					WriteDestructAll();
