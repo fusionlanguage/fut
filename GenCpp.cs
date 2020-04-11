@@ -69,7 +69,65 @@ public class GenCpp : GenCCpp
 
 	void WriteCamelCaseNotKeyword(string name)
 	{
+		WriteCamelCase(name);
 		switch (name) {
+		case "And":
+		case "Auto":
+		case "Bool":
+		case "Break":
+		case "Byte":
+		case "Case":
+		case "Catch":
+		case "Char":
+		case "Class":
+		case "Const":
+		case "Continue":
+		case "Default":
+		case "Delete":
+		case "Do":
+		case "Double":
+		case "Else":
+		case "Enum":
+		case "Explicit":
+		case "Export":
+		case "Extern":
+		case "False":
+		case "Float":
+		case "For":
+		case "Goto":
+		case "If":
+		case "Inline":
+		case "Int":
+		case "Long":
+		case "Namespace":
+		case "New":
+		case "Not":
+		case "Nullptr":
+		case "Operator":
+		case "Or":
+		case "Override":
+		case "Private":
+		case "Protected":
+		case "Public":
+		case "Register":
+		case "Return":
+		case "Short":
+		case "Signed":
+		case "Sizeof":
+		case "Static":
+		case "Struct":
+		case "Switch":
+		case "Throw":
+		case "True":
+		case "Try":
+		case "Typedef":
+		case "Union":
+		case "Unsigned":
+		case "Using":
+		case "Virtual":
+		case "Void":
+		case "Volatile":
+		case "While":
 		case "and":
 		case "auto":
 		case "catch":
@@ -82,6 +140,7 @@ public class GenCpp : GenCCpp
 		case "inline":
 		case "namespace":
 		case "not":
+		case "nullptr":
 		case "operator":
 		case "or":
 		case "private":
@@ -95,11 +154,9 @@ public class GenCpp : GenCCpp
 		case "unsigned":
 		case "using":
 		case "volatile":
-			Write(name);
 			Write('_');
 			break;
 		default:
-			WriteCamelCase(name);
 			break;
 		}
 	}

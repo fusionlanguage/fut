@@ -1,7 +1,152 @@
-public static class Test
+public class Test
 {
+	bool Abstract = true;
+	bool And = true;
+	bool As = true;
+	bool Associatedtype = true;
+	bool Assert = true;
+	bool Async = true;
+	bool Auto = true;
+	bool Await = true;
+	bool Bool = true;
+	bool Boolean = true;
+	bool Break = true;
+	bool Byte = true;
+	bool Case = true;
+	bool Catch = true;
+	bool Char = true;
+	bool Checked = true;
+	bool Class = true;
+	bool Const = true;
+	bool Continue = true;
+	bool Debugger = true;
+	bool Decimal = true;
+	bool Def = true;
+	bool Default = true;
+	bool Defer = true;
+	bool Deinit = true;
+	bool Del = true;
+	bool Delegate = true;
+	bool Delete = true;
+	bool Do = true;
+	bool Double = true;
+	bool Elif = true;
+	bool Else = true;
+	bool Enum = true;
+	bool Event = true;
+	bool Except = true;
+	bool Explicit = true;
+	bool Export = true;
+	bool Exports = true;
+	bool Extends = true;
+	bool Extension = true;
+	bool Extern = true;
+	bool Fallthrough = true;
+	bool False = true;
+	bool Fileprivate = true;
+	bool Final = true;
+	bool Finally = true;
+	bool Fixed = true;
+	bool Float = true;
+	bool For = true;
+	bool Foreach = true;
+	bool From = true;
+	bool Func = true;
+	bool Function = true;
+	bool Global = true;
+	bool Goto = true;
+	bool Guard = true;
+	bool If = true;
+	bool Implements = true;
+	bool Implicit = true;
+	bool Import = true;
+	bool In = true;
+	bool Init = true;
+	bool Inline = true;
+	bool Inout = true;
+	bool Instanceof = true;
+	bool Int = true;
+	bool Interface = true;
+	bool Internal = true;
+	bool Is = true;
+	bool Lambda = true;
+	bool Len = true;
+	bool Let = true;
+	bool Lock = true;
+	bool Long = true;
+	bool Module = true;
+	bool Namespace = true;
+	bool Native = true;
+	bool New = true;
+	bool Nil = true;
+	bool Nonlocal = true;
+	bool Not = true;
+	bool Null = true;
+	bool Nullptr = true;
+	bool Object = true;
+	bool Operator = true;
+	bool Or = true;
+	bool Out = true;
+	bool Override = true;
+	bool Package = true;
+	bool Params = true;
+	bool Pass = true;
+	bool Private = true;
+	bool Protected = true;
+	bool Protocol = true;
+	bool Public = true;
+	bool Raise = true;
+	bool Readonly = true;
+	bool Record = true;
+	bool Ref = true;
+	bool Register = true;
+	bool Repeat = true;
+	bool Restrict = true;
+	bool Rethrows = true;
+	bool Return = true;
+	bool Sbyte = true;
+	bool Sealed = true;
+	bool Self = true;
+	bool Short = true;
+	bool Signed = true;
+	bool Sizeof = true;
+	bool Stackalloc = true;
+	bool Static = true;
+	bool Strictfp = true;
+	bool String = true;
+	bool Struct = true;
+	bool Subscript = true;
+	bool Super = true;
+	bool Switch = true;
+	bool Synchronized = true;
+	bool Throw = true;
+	bool Throws = true;
+	bool Transient = true;
+	bool True = true;
+	bool Try = true;
+	bool Typealias = true;
+	bool Typedef = true;
+	bool Typeof = true;
+	bool Uint = true;
+	bool Ulong = true;
+	bool Unchecked = true;
+	bool Ushort = true;
+	bool Union = true;
+	bool Unsafe = true;
+	bool Unsigned = true;
+	bool Using = true;
+	bool Var = true;
+	bool Virtual = true;
+	bool Void = true;
+	bool Volatile = true;
+	bool Where = true;
+	bool While = true;
+	bool With = true;
+	bool Yield = true;
+
 	public static bool Run()
 	{
+		Test() o;
 		string s = "foo";
 		bool and = true;
 		bool as = true;
@@ -59,6 +204,7 @@ public static class Test
 		bool nil = true;
 		bool nonlocal = true;
 		bool not = true;
+		bool nullptr = true;
 		bool object = true;
 		bool operator = true;
 		bool or = true;
@@ -102,7 +248,150 @@ public static class Test
 		bool where = true;
 		bool with = true;
 		bool yield = true;
-		return and
+		return o.Abstract
+			&& o.And
+			&& o.As
+			&& o.Assert
+			&& o.Associatedtype
+			&& o.Async
+			&& o.Auto
+			&& o.Await
+			&& o.Bool
+			&& o.Boolean
+			&& o.Break
+			&& o.Byte
+			&& o.Case
+			&& o.Catch
+			&& o.Char
+			&& o.Checked
+			&& o.Class
+			&& o.Const
+			&& o.Continue
+			&& o.Decimal
+			&& o.Debugger
+			&& o.Def
+			&& o.Default
+			&& o.Defer
+			&& o.Deinit
+			&& o.Del
+			&& o.Delegate
+			&& o.Delete
+			&& o.Do
+			&& o.Double
+			&& o.Elif
+			&& o.Else
+			&& o.Enum
+			&& o.Event
+			&& o.Except
+			&& o.Explicit
+			&& o.Export
+			&& o.Exports
+			&& o.Extends
+			&& o.Extension
+			&& o.Extern
+			&& o.Fallthrough
+			&& o.False
+			&& o.Fileprivate
+			&& o.Final
+			&& o.Finally
+			&& o.Fixed
+			&& o.Float
+			&& o.For
+			&& o.Foreach
+			&& o.From
+			&& o.Func
+			&& o.Function
+			&& o.Global
+			&& o.Goto
+			&& o.Guard
+			&& o.If
+			&& o.Implements
+			&& o.Implicit
+			&& o.Import
+			&& o.In
+			&& o.Init
+			&& o.Inline
+			&& o.Inout
+			&& o.Instanceof
+			&& o.Int
+			&& o.Interface
+			&& o.Internal
+			&& o.Is
+			&& o.Lambda
+			&& o.Len
+			&& o.Let
+			&& o.Lock
+			&& o.Long
+			&& o.Module
+			&& o.Namespace
+			&& o.Native
+			&& o.New
+			&& o.Nil
+			&& o.Nonlocal
+			&& o.Not
+			&& o.Null
+			&& o.Nullptr
+			&& o.Object
+			&& o.Operator
+			&& o.Or
+			&& o.Out
+			&& o.Override
+			&& o.Package
+			&& o.Params
+			&& o.Pass
+			&& o.Private
+			&& o.Protected
+			&& o.Protocol
+			&& o.Public
+			&& o.Raise
+			&& o.Readonly
+			&& o.Record
+			&& o.Ref
+			&& o.Register
+			&& o.Repeat
+			&& o.Restrict
+			&& o.Rethrows
+			&& o.Return
+			&& o.Sbyte
+			&& o.Sealed
+			&& o.Self
+			&& o.Short
+			&& o.Signed
+			&& o.Sizeof
+			&& o.Static
+			&& o.Stackalloc
+			&& o.Strictfp
+			&& o.String
+			&& o.Struct
+			&& o.Subscript
+			&& o.Super
+			&& o.Switch
+			&& o.Synchronized
+			&& o.Transient
+			&& o.Throw
+			&& o.Throws
+			&& o.True
+			&& o.Try
+			&& o.Typealias
+			&& o.Typedef
+			&& o.Typeof
+			&& o.Uint
+			&& o.Ulong
+			&& o.Ushort
+			&& o.Unchecked
+			&& o.Union
+			&& o.Unsafe
+			&& o.Unsigned
+			&& o.Using
+			&& o.Var
+			&& o.Virtual
+			&& o.Void
+			&& o.Volatile
+			&& o.Where
+			&& o.While
+			&& o.With
+			&& o.Yield
+			&& and
 			&& as
 			&& associatedtype
 			&& async
@@ -158,6 +447,7 @@ public static class Test
 			&& nil
 			&& nonlocal
 			&& not
+			&& nullptr
 			&& object
 			&& operator
 			&& or

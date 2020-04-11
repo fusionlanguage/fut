@@ -81,7 +81,63 @@ public class GenJava : GenTyped
 
 	void WriteCamelCaseNotKeyword(string name)
 	{
+		WriteCamelCase(name);
 		switch (name) {
+		case "Abstract":
+		case "Assert":
+		case "Boolean":
+		case "Break":
+		case "Byte":
+		case "Case":
+		case "Catch":
+		case "Char":
+		case "Class":
+		case "Const":
+		case "Continue":
+		case "Default":
+		case "Do":
+		case "Double":
+		case "Else":
+		case "Enum":
+		case "Extends":
+		case "False":
+		case "Final":
+		case "Finally":
+		case "Float":
+		case "For":
+		case "Foreach":
+		case "Goto":
+		case "If":
+		case "Implements":
+		case "Import":
+		case "Instanceof":
+		case "Int":
+		case "Interface":
+		case "Long":
+		case "Native":
+		case "New":
+		case "Null":
+		case "Package":
+		case "Private":
+		case "Protected":
+		case "Public":
+		case "Return":
+		case "Short":
+		case "Static":
+		case "Strictfp":
+		case "String":
+		case "Super":
+		case "Switch":
+		case "Synchronized":
+		case "Transient":
+		case "Throw":
+		case "Throws":
+		case "True":
+		case "Try":
+		case "Void":
+		case "Volatile":
+		case "While":
+		case "Yield":
 		case "boolean":
 		case "catch":
 		case "char":
@@ -102,11 +158,9 @@ public class GenJava : GenTyped
 		case "try":
 		case "volatile":
 		case "yield":
-			Write(name);
 			Write('_');
 			break;
 		default:
-			WriteCamelCase(name);
 			break;
 		}
 	}

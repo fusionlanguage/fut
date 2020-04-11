@@ -86,6 +86,48 @@ public class GenC : GenCCpp
 		case "this":
 			Write("self");
 			break;
+		case "Assert":
+		case "Auto":
+		case "Bool":
+		case "Break":
+		case "Byte":
+		case "Case":
+		case "Char":
+		case "Class":
+		case "Const":
+		case "Continue":
+		case "Default":
+		case "Do":
+		case "Double":
+		case "Else":
+		case "Enum":
+		case "Extern":
+		case "False":
+		case "Float":
+		case "For":
+		case "Foreach":
+		case "Goto":
+		case "If":
+		case "Inline":
+		case "Int":
+		case "Long":
+		case "Register":
+		case "Restrict":
+		case "Return":
+		case "Short":
+		case "Signed":
+		case "Sizeof":
+		case "Static":
+		case "Struct":
+		case "Switch":
+		case "True":
+		case "Typedef":
+		case "Typeof": // gcc extension
+		case "Union":
+		case "Unsigned":
+		case "Void":
+		case "Volatile":
+		case "While":
 		case "auto":
 		case "char":
 		case "extern":
@@ -101,7 +143,7 @@ public class GenC : GenCCpp
 		case "union":
 		case "unsigned":
 		case "volatile":
-			Write(name);
+			WriteCamelCase(name);
 			Write('_');
 			break;
 		default:

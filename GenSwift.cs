@@ -37,6 +37,59 @@ public class GenSwift : GenPySwift
 		case "this":
 			Write("self");
 			break;
+		case "As":
+		case "Associatedtype":
+		case "Break":
+		case "Case":
+		case "Catch":
+		case "Class":
+		case "Continue":
+		case "Default":
+		case "Defer":
+		case "Deinit":
+		case "Do":
+		case "Else":
+		case "Enum":
+		case "Extension":
+		case "Fallthrough":
+		case "False":
+		case "Fileprivate":
+		case "For":
+		case "Foreach":
+		case "Func":
+		case "Guard":
+		case "If":
+		case "Import":
+		case "In":
+		case "Init":
+		case "Inout":
+		case "Int":
+		case "Internal":
+		case "Is":
+		case "Let":
+		case "Nil":
+		case "Operator":
+		case "Private":
+		case "Protocol":
+		case "Public":
+		case "Repeat":
+		case "Rethrows":
+		case "Return":
+		case "Self":
+		case "Static":
+		case "Struct":
+		case "Switch":
+		case "Subscript":
+		case "Super":
+		case "Throw":
+		case "Throws":
+		case "True":
+		case "Try":
+		case "Typealias":
+		case "Var":
+		case "Void":
+		case "Where":
+		case "While":
 		case "as":
 		case "associatedtype":
 		case "catch":
@@ -66,7 +119,7 @@ public class GenSwift : GenPySwift
 		case "typealias":
 		case "var":
 		case "where":
-			Write(name);
+			WriteCamelCase(name);
 			Write('_');
 			break;
 		default:
