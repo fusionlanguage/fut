@@ -148,12 +148,12 @@ public class CiParser : CiLexer
 				}
 				NextToken();
 			}
-			parts.Add(new CiInterpolatedPart { Prefix = prefix, Argument = arg, WidthExpr = width, Format = format, Precision = precision });
+			parts.Add(new CiInterpolatedPart(prefix, arg) { WidthExpr = width, Format = format, Precision = precision });
 			Check(CiToken.RightBrace);
 		} while (ReadInterpolatedString() == CiToken.InterpolatedString);
-		parts.Add(new CiInterpolatedPart((string) this.CurrentValue));
+		string suffix = (string) this.CurrentValue;
 		NextToken();
-		return new CiInterpolatedString { Line = line, Parts = parts.ToArray() };
+		return new CiInterpolatedString(parts.ToArray(), suffix) { Line = line };
 	}
 
 	CiExpr ParseParenthesized()

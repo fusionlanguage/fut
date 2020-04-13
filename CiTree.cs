@@ -362,17 +362,9 @@ public class CiInterpolatedPart
 	public int Width;
 	public char Format;
 	public int Precision;
-	public CiInterpolatedPart()
+	public CiInterpolatedPart(string prefix, CiExpr arg)
 	{
-	}
-	public CiInterpolatedPart(string s)
-	{
-		this.Prefix = s;
-		this.Argument = null;
-	}
-	public CiInterpolatedPart(CiExpr arg)
-	{
-		this.Prefix = "";
+		this.Prefix = prefix;
 		this.Argument = arg;
 		this.WidthExpr = null;
 		this.Format = ' ';
@@ -383,9 +375,12 @@ public class CiInterpolatedPart
 public class CiInterpolatedString : CiExpr
 {
 	public CiInterpolatedPart[] Parts;
-	public CiInterpolatedString()
+	public string Suffix;
+	public CiInterpolatedString(CiInterpolatedPart[] parts, string suffix)
 	{
 		this.Type = CiSystem.StringStorageType;
+		this.Parts = parts;
+		this.Suffix = suffix;
 	}
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
 	public override string ToString()
@@ -394,22 +389,21 @@ public class CiInterpolatedString : CiExpr
 		sb.Append("$\"");
 		foreach (CiInterpolatedPart part in this.Parts) {
 			sb.Append(part.Prefix.Replace("{", "{{"));
-			if (part.Argument != null) {
-				sb.Append('{');
-				sb.Append(part.Argument);
-				if (part.WidthExpr != null) {
-					sb.Append(',');
-					sb.Append(part.WidthExpr);
-				}
-				if (part.Format != ' ') {
-					sb.Append(':');
-					sb.Append(part.Format);
-					if (part.Precision >= 0)
-						sb.Append(part.Precision);
-				}
-				sb.Append('}');
+			sb.Append('{');
+			sb.Append(part.Argument);
+			if (part.WidthExpr != null) {
+				sb.Append(',');
+				sb.Append(part.WidthExpr);
 			}
+			if (part.Format != ' ') {
+				sb.Append(':');
+				sb.Append(part.Format);
+				if (part.Precision >= 0)
+					sb.Append(part.Precision);
+			}
+			sb.Append('}');
 		}
+		sb.Append(this.Suffix.Replace("{", "{{"));
 		sb.Append('"');
 		return sb.ToString();
 	}

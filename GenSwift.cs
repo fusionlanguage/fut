@@ -236,6 +236,12 @@ public class GenSwift : GenPySwift
 			base.WriteLiteral(value);
 	}
 
+	void WriteInterpolatedLiteral(string s)
+	{
+		foreach (char c in s)
+			WriteEscapedChar(c);
+	}
+
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
 		if (expr.Parts.Any(part => part.WidthExpr != null || part.Format != ' ' || part.Precision >= 0)) {
@@ -245,14 +251,12 @@ public class GenSwift : GenPySwift
 		else {
 			Write('"');
 			foreach (CiInterpolatedPart part in expr.Parts) {
-				foreach (char c in part.Prefix)
-					WriteEscapedChar(c);
-				if (part.Argument != null) {
-					Write("\\(");
-					part.Argument.Accept(this, CiPriority.Statement);
-					Write(')');
-				}
+				WriteInterpolatedLiteral(part.Prefix);
+				Write("\\(");
+				part.Argument.Accept(this, CiPriority.Statement);
+				Write(')');
 			}
+			WriteInterpolatedLiteral(expr.Suffix);
 			Write('"');
 		}
 		return expr;

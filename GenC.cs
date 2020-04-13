@@ -905,9 +905,9 @@ public class GenC : GenCCpp
 					expr.Left.Accept(this, CiPriority.Primary);
 					Write(", ");
 					CiInterpolatedPart[] parts = new CiInterpolatedPart[1 + rightInterpolated.Parts.Length];
-					parts[0] = new CiInterpolatedPart(expr.Left); // TODO: side effect
+					parts[0] = new CiInterpolatedPart("", expr.Left); // TODO: side effect
 					rightInterpolated.Parts.CopyTo(parts, 1);
-					Visit(new CiInterpolatedString { Parts = parts }, CiPriority.Statement);
+					Visit(new CiInterpolatedString(parts, rightInterpolated.Suffix), CiPriority.Statement);
 				}
 				else {
 					Include("string.h");

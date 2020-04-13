@@ -50,9 +50,9 @@ public class GenJava : GenTyped
 
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
-		if (expr.Parts.Length == 2
+		if (expr.Suffix.Length == 0
+		 && expr.Parts.Length == 1
 		 && expr.Parts[0].Prefix.Length == 0
-		 && expr.Parts[1].Prefix.Length == 0
 		 && expr.Parts[0].WidthExpr == null
 		 && expr.Parts[0].Format == ' ') {
 			CiExpr arg = expr.Parts[0].Argument;

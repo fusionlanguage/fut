@@ -447,6 +447,26 @@ public abstract class GenBase : CiVisitor
 		WriteName(symbol);
 	}
 
+	protected void WriteEscapingBrace(string s)
+	{
+		foreach (char c in s) {
+			if (c == '{')
+				Write("{{");
+			else
+				WriteEscapedChar(c);
+		}
+	}
+
+	void WritePrintfLiteral(string s)
+	{
+		foreach (char c in s) {
+			if (c == '%')
+				Write("%%");
+			else
+				WriteEscapedChar(c);
+		}
+	}
+
 	protected virtual void WritePrintfWidth(CiInterpolatedPart part)
 	{
 		if (part.WidthExpr != null)
@@ -474,10 +494,8 @@ public abstract class GenBase : CiVisitor
 	protected void WriteArgs(CiInterpolatedString expr)
 	{
 		foreach (CiInterpolatedPart part in expr.Parts) {
-			if (part.Argument != null) {
-				Write(", ");
-				part.Argument.Accept(this, CiPriority.Statement);
-			}
+			Write(", ");
+			part.Argument.Accept(this, CiPriority.Statement);
 		}
 	}
 
@@ -485,18 +503,12 @@ public abstract class GenBase : CiVisitor
 	{
 		Write('"');
 		foreach (CiInterpolatedPart part in expr.Parts) {
-			foreach (char c in part.Prefix) {
-				if (c == '%')
-					Write("%%");
-				else
-					WriteEscapedChar(c);
-			}
-			if (part.Argument != null) {
-				Write('%');
-				WritePrintfWidth(part);
-				Write(GetPrintfFormat(part.Argument.Type, part.Format));
-			}
+			WritePrintfLiteral(part.Prefix);
+			Write('%');
+			WritePrintfWidth(part);
+			Write(GetPrintfFormat(part.Argument.Type, part.Format));
 		}
+		WritePrintfLiteral(expr.Suffix);
 		if (newLine)
 			Write("\\n");
 		Write('"');

@@ -124,75 +124,78 @@ public class GenJs : GenBase
 		base.WriteVar(def);
 	}
 
+	void WriteInterpolatedLiteral(string s)
+	{
+		for (int i = 0; i < s.Length; i++) {
+			char c = s[i];
+			if (c == '`'
+			 || (c == '$' && i + 1 < s.Length && s[i + 1] == '{'))
+				Write('\\');
+			WriteEscapedChar(c);
+		}
+	}
+
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
 		Write('`');
 		foreach (CiInterpolatedPart part in expr.Parts) {
-			string s = part.Prefix;
-			for (int i = 0; i < s.Length; i++) {
-				char c = s[i];
-				if (c == '`'
-				 || (c == '$' && i + 1 < s.Length && s[i + 1] == '{'))
-					Write('\\');
-				WriteEscapedChar(c);
-			}
-			if (part.Argument != null) {
-				Write("${");
-				if (part.Width != 0 || part.Format != ' ') {
-					part.Argument.Accept(this, CiPriority.Primary);
-					if (part.Argument.Type is CiNumericType) {
-						switch (part.Format) {
-						case 'E':
-							Write(".toExponential(");
-							if (part.Precision >= 0)
-								Write(part.Precision);
-							Write(").toUpperCase()");
-							break;
-						case 'e':
-							Write(".toExponential(");
-							if (part.Precision >= 0)
-								Write(part.Precision);
-							Write(')');
-							break;
-						case 'F':
-						case 'f':
-							Write(".toFixed(");
-							if (part.Precision >= 0)
-								Write(part.Precision);
-							Write(')');
-							break;
-						case 'X':
-							Write(".toString(16).toUpperCase()");
-							break;
-						case 'x':
-							Write(".toString(16)");
-							break;
-						default:
-							Write(".toString()");
-							break;
-						}
-						if (part.Precision >= 0 && "DdXx".IndexOf(part.Format) >= 0) {
-							Write(".padStart(");
+			WriteInterpolatedLiteral(part.Prefix);
+			Write("${");
+			if (part.Width != 0 || part.Format != ' ') {
+				part.Argument.Accept(this, CiPriority.Primary);
+				if (part.Argument.Type is CiNumericType) {
+					switch (part.Format) {
+					case 'E':
+						Write(".toExponential(");
+						if (part.Precision >= 0)
 							Write(part.Precision);
-							Write(", \"0\")");
-						}
+						Write(").toUpperCase()");
+						break;
+					case 'e':
+						Write(".toExponential(");
+						if (part.Precision >= 0)
+							Write(part.Precision);
+						Write(')');
+						break;
+					case 'F':
+					case 'f':
+						Write(".toFixed(");
+						if (part.Precision >= 0)
+							Write(part.Precision);
+						Write(')');
+						break;
+					case 'X':
+						Write(".toString(16).toUpperCase()");
+						break;
+					case 'x':
+						Write(".toString(16)");
+						break;
+					default:
+						Write(".toString()");
+						break;
 					}
-					if (part.Width > 0) {
+					if (part.Precision >= 0 && "DdXx".IndexOf(part.Format) >= 0) {
 						Write(".padStart(");
-						Write(part.Width);
-						Write(')');
-					}
-					else if (part.Width < 0) {
-						Write(".padEnd(");
-						Write(-part.Width);
-						Write(')');
+						Write(part.Precision);
+						Write(", \"0\")");
 					}
 				}
-				else
-					part.Argument.Accept(this, CiPriority.Statement);
-				Write('}');
+				if (part.Width > 0) {
+					Write(".padStart(");
+					Write(part.Width);
+					Write(')');
+				}
+				else if (part.Width < 0) {
+					Write(".padEnd(");
+					Write(-part.Width);
+					Write(')');
+				}
 			}
+			else
+				part.Argument.Accept(this, CiPriority.Statement);
+			Write('}');
 		}
+		WriteInterpolatedLiteral(expr.Suffix);
 		Write('`');
 		return expr;
 	}

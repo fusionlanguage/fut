@@ -253,28 +253,22 @@ public class GenCs : GenTyped
 	{
 		Write("$\"");
 		foreach (CiInterpolatedPart part in expr.Parts) {
-			foreach (char c in part.Prefix) {
-				if (c == '{')
-					Write("{{");
-				else
-					WriteEscapedChar(c);
+			WriteEscapingBrace(part.Prefix);
+			Write('{');
+			part.Argument.Accept(this, CiPriority.Statement);
+			if (part.WidthExpr != null) {
+				Write(',');
+				Write(part.Width);
 			}
-			if (part.Argument != null) {
-				Write('{');
-				part.Argument.Accept(this, CiPriority.Statement);
-				if (part.WidthExpr != null) {
-					Write(',');
-					Write(part.Width);
-				}
-				if (part.Format != ' ') {
-					Write(':');
-					Write(part.Format);
-					if (part.Precision >= 0)
-						Write(part.Precision);
-				}
-				Write('}');
+			if (part.Format != ' ') {
+				Write(':');
+				Write(part.Format);
+				if (part.Precision >= 0)
+					Write(part.Precision);
 			}
+			Write('}');
 		}
+		WriteEscapingBrace(expr.Suffix);
 		Write('"');
 		return expr;
 	}

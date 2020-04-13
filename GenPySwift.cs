@@ -85,10 +85,8 @@ public abstract class GenPySwift : GenBase
 			return false;
 		case CiInterpolatedString interp:
 			seen = false;
-			foreach (CiInterpolatedPart part in interp.Parts) {
-				if (part.Argument != null)
-					seen |= VisitXcrement<T>(part.Argument, write);
-			}
+			foreach (CiInterpolatedPart part in interp.Parts)
+				seen |= VisitXcrement<T>(part.Argument, write);
 			return seen;
 		case CiSymbolReference symbol:
 			return symbol.Left != null && VisitXcrement<T>(symbol.Left, write);

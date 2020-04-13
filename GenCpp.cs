@@ -52,15 +52,10 @@ public class GenCpp : GenCCpp
 		Include("format");
 		Write("std::format(\"");
 		foreach (CiInterpolatedPart part in expr.Parts) {
-			foreach (char c in part.Prefix) {
-				if (c == '{')
-					Write("{{");
-				else
-					WriteEscapedChar(c);
-			}
-			if (part.Argument != null)
-				Write("{}");
+			WriteEscapingBrace(part.Prefix);
+			Write("{}");
 		}
+		WriteEscapingBrace(expr.Suffix);
 		Write('"');
 		WriteArgs(expr);
 		Write(')');
@@ -413,9 +408,7 @@ public class GenCpp : GenCCpp
 				bool hex = false;
 				char flt = 'G';
 				foreach (CiInterpolatedPart part in interpolated.Parts) {
-					char format = part.Argument != null ? part.Format : 'g';
-
-					switch (format) {
+					switch (part.Format) {
 					case 'E':
 					case 'G':
 					case 'X':
@@ -436,7 +429,7 @@ public class GenCpp : GenCCpp
 						break;
 					}
 
-					switch (format) {
+					switch (part.Format) {
 					case 'E':
 					case 'e':
 						if (flt != 'E') {
@@ -472,17 +465,26 @@ public class GenCpp : GenCCpp
 
 					if (part.Prefix.Length > 0) {
 						Write(" << ");
-						if (newLine && part.Argument == null) {
-							WriteStringLiteralWithNewLine(part.Prefix);
-							return;
-						}
 						WriteLiteral(part.Prefix);
 					}
 
-					if (part.Argument != null) {
-						Write(" << ");
-						part.Argument.Accept(this, CiPriority.Mul);
+					Write(" << ");
+					part.Argument.Accept(this, CiPriority.Mul);
+				}
+
+				if (uppercase)
+					Write(" << std::nouppercase");
+				if (hex)
+					Write(" << std::dec");
+				if (flt != 'G')
+					Write(" << std::defaultfloat");
+				if (interpolated.Suffix.Length > 0) {
+					Write(" << ");
+					if (newLine) {
+						WriteStringLiteralWithNewLine(interpolated.Suffix);
+						return;
 					}
+					WriteLiteral(interpolated.Suffix);
 				}
 			}
 			else {

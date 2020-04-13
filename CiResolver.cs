@@ -293,44 +293,43 @@ public class CiResolver : CiVisitor
 		StringBuilder sb = new StringBuilder();
 		foreach (CiInterpolatedPart part in expr.Parts) {
 			sb.Append(part.Prefix);
-			if (part.Argument != null) {
-				CiExpr arg = Resolve(part.Argument);
-				switch (arg.Type) {
-				case CiIntegerType _:
-					if (" DdXx".IndexOf(part.Format) < 0)
-						throw StatementException(arg, "Invalid integer format string");
-					break;
-				case CiFloatingType _:
-					if (" FfEe".IndexOf(part.Format) < 0)
-						throw StatementException(arg, "Invalid floating-point format string");
-					break;
-				case CiStringType _:
-					if (part.Format != ' ')
-						throw StatementException(arg, "Invalid string format string");
-					break;
-				default:
-					throw StatementException(arg, "Only numbers and strings can be interpolated in strings");
-				}
-				int width = 0;
+			CiExpr arg = Resolve(part.Argument);
+			switch (arg.Type) {
+			case CiIntegerType _:
+				if (" DdXx".IndexOf(part.Format) < 0)
+					throw StatementException(arg, "Invalid integer format string");
+				break;
+			case CiFloatingType _:
+				if (" FfEe".IndexOf(part.Format) < 0)
+					throw StatementException(arg, "Invalid floating-point format string");
+				break;
+			case CiStringType _:
+				if (part.Format != ' ')
+					throw StatementException(arg, "Invalid string format string");
+				break;
+			default:
+				throw StatementException(arg, "Only numbers and strings can be interpolated in strings");
+			}
+			int width = 0;
+			if (part.WidthExpr != null)
+				width = FoldConstInt(part.WidthExpr);
+			if (arg is CiLiteral literalArg && !(arg.Type is CiFloatingType)) { // float formatting is runtime-locale-specific
+				string stringArg = part.Format == ' ' ? literalArg.Value.ToString()
+					: ((long) literalArg.Value).ToString(part.Format + (part.Precision < 0 ? "" : part.Precision.ToString()));
 				if (part.WidthExpr != null)
-					width = FoldConstInt(part.WidthExpr);
-				if (arg is CiLiteral literalArg && !(arg.Type is CiFloatingType)) { // float formatting is runtime-locale-specific
-					string stringArg = part.Format == ' ' ? literalArg.Value.ToString()
-						: ((long) literalArg.Value).ToString(part.Format + (part.Precision < 0 ? "" : part.Precision.ToString()));
-					if (part.WidthExpr != null)
-						stringArg = width >= 0 ? stringArg.PadLeft(width) : stringArg.PadRight(-width);
-					sb.Append(stringArg);
-				}
-				else {
-					parts.Add(new CiInterpolatedPart { Prefix = sb.ToString(), Argument = arg, WidthExpr = part.WidthExpr, Width = width, Format = part.Format, Precision = part.Precision });
-					sb.Clear();
-				}
+					stringArg = width >= 0 ? stringArg.PadLeft(width) : stringArg.PadRight(-width);
+				sb.Append(stringArg);
+			}
+			else {
+				parts.Add(new CiInterpolatedPart(sb.ToString(), arg) { WidthExpr = part.WidthExpr, Width = width, Format = part.Format, Precision = part.Precision });
+				sb.Clear();
 			}
 		}
+		sb.Append(expr.Suffix);
 		if (parts.Count == 0)
 			return expr.ToLiteral(sb.ToString());
-		parts.Add(new CiInterpolatedPart(sb.ToString()));
 		expr.Parts = parts.ToArray();
+		expr.Suffix = sb.ToString();
 		return expr;
 	}
 
@@ -514,20 +513,21 @@ public class CiResolver : CiVisitor
 		if (expr is CiInterpolatedString interpolated)
 			return interpolated;
 		if (expr is CiLiteral literal)
-			return new CiInterpolatedString { Parts = new CiInterpolatedPart[1] {
-				new CiInterpolatedPart(Convert.ToString(literal.Value, CultureInfo.InvariantCulture)) } };
-		return new CiInterpolatedString { Parts = new CiInterpolatedPart[2] {
-				new CiInterpolatedPart(expr), new CiInterpolatedPart("") } };
+			return new CiInterpolatedString(new CiInterpolatedPart[0],
+				Convert.ToString(literal.Value, CultureInfo.InvariantCulture));
+		return new CiInterpolatedString(new CiInterpolatedPart[1] { new CiInterpolatedPart("", expr) }, "");
 	}
 
 	static CiInterpolatedString Concatenate(CiInterpolatedString left, CiInterpolatedString right)
 	{
-		int i = left.Parts.Length - 1;
+		if (right.Parts.Length == 0)
+			return new CiInterpolatedString(left.Parts, left.Suffix + right.Suffix);
+		int i = left.Parts.Length;
 		CiInterpolatedPart[] parts = new CiInterpolatedPart[i + right.Parts.Length];
 		left.Parts.CopyTo(parts, 0);
 		right.Parts.CopyTo(parts, i);
-		parts[i].Prefix = left.Parts[i].Prefix + right.Parts[0].Prefix;
-		return new CiInterpolatedString { Parts = parts };
+		parts[i].Prefix = left.Suffix + right.Parts[0].Prefix;
+		return new CiInterpolatedString(parts, right.Suffix);
 	}
 
 	void CheckComparison(CiExpr left, CiExpr right)
