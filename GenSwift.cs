@@ -314,19 +314,19 @@ public class GenSwift : GenPySwift
 			Include("Foundation");
 			this.StringIndexOf = true;
 			Write("ciStringIndexOf(");
-			WriteUnwrappedString(obj, CiPriority.Primary);
+			WriteUnwrappedString(obj, CiPriority.Statement);
 			Write(", ");
-			WriteUnwrappedString(args[0], CiPriority.Primary);
+			WriteUnwrappedString(args[0], CiPriority.Statement);
 			Write(')');
 		}
-		else if (method == CiSystem.StringIndexOf) {
+		else if (method == CiSystem.StringLastIndexOf) {
 			Include("Foundation");
 			this.StringIndexOf = true;
 			Write("ciStringIndexOf(");
-			WriteUnwrappedString(obj, CiPriority.Primary);
+			WriteUnwrappedString(obj, CiPriority.Statement);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(")");
+			WriteUnwrappedString(args[0], CiPriority.Statement);
+			Write(", .backwards)");
 		}
 		else if (method == CiSystem.StringSubstring) {
 			if (args[0] is CiLiteral literalOffset && (long) literalOffset.Value == 0)
