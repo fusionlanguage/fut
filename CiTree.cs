@@ -362,6 +362,22 @@ public class CiInterpolatedPart
 	public int Width;
 	public char Format;
 	public int Precision;
+	public CiInterpolatedPart()
+	{
+	}
+	public CiInterpolatedPart(string s)
+	{
+		this.Prefix = s;
+		this.Argument = null;
+	}
+	public CiInterpolatedPart(CiExpr arg)
+	{
+		this.Prefix = "";
+		this.Argument = arg;
+		this.WidthExpr = null;
+		this.Format = ' ';
+		this.Precision = -1;
+	}
 }
 
 public class CiInterpolatedString : CiExpr

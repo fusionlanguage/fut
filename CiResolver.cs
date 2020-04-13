@@ -329,7 +329,7 @@ public class CiResolver : CiVisitor
 		}
 		if (parts.Count == 0)
 			return expr.ToLiteral(sb.ToString());
-		parts.Add(new CiInterpolatedPart { Prefix = sb.ToString(), Argument = null });
+		parts.Add(new CiInterpolatedPart(sb.ToString()));
 		expr.Parts = parts.ToArray();
 		return expr;
 	}
@@ -509,6 +509,27 @@ public class CiResolver : CiVisitor
 		}
 	}
 
+	static CiInterpolatedString ToInterpolatedString(CiExpr expr)
+	{
+		if (expr is CiInterpolatedString interpolated)
+			return interpolated;
+		if (expr is CiLiteral literal)
+			return new CiInterpolatedString { Parts = new CiInterpolatedPart[1] {
+				new CiInterpolatedPart(Convert.ToString(literal.Value, CultureInfo.InvariantCulture)) } };
+		return new CiInterpolatedString { Parts = new CiInterpolatedPart[2] {
+				new CiInterpolatedPart(expr), new CiInterpolatedPart("") } };
+	}
+
+	static CiInterpolatedString Concatenate(CiInterpolatedString left, CiInterpolatedString right)
+	{
+		int i = left.Parts.Length - 1;
+		CiInterpolatedPart[] parts = new CiInterpolatedPart[i + right.Parts.Length];
+		left.Parts.CopyTo(parts, 0);
+		right.Parts.CopyTo(parts, i);
+		parts[i].Prefix = left.Parts[i].Prefix + right.Parts[0].Prefix;
+		return new CiInterpolatedString { Parts = parts };
+	}
+
 	void CheckComparison(CiExpr left, CiExpr right)
 	{
 		if (!(left.Type is CiNumericType) || !(right.Type is CiNumericType))
@@ -557,11 +578,13 @@ public class CiResolver : CiVisitor
 					SaturatedAdd(leftRange.Max, rightRange.Max));
 			}
 			else if (left.Type is CiStringType || right.Type is CiStringType) {
+				// TODO: type check
 				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
 					return expr.ToLiteral(Convert.ToString(leftLiteral.Value, CultureInfo.InvariantCulture)
 						+ Convert.ToString(rightLiteral.Value, CultureInfo.InvariantCulture));
+				if (left is CiInterpolatedString || right is CiInterpolatedString)
+					return Concatenate(ToInterpolatedString(left), ToInterpolatedString(right));
 				type = CiSystem.StringPtrType;
-				// TODO: type check
 			}
 			else
 				type = GetNumericType(left, right);
