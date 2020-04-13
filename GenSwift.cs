@@ -914,7 +914,7 @@ public class GenSwift : GenPySwift
 		WriteLine("fileprivate final class CiResource");
 		OpenBlock();
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
-			Write("let ");
+			Write("static let ");
 			WriteResource(name, -1);
 			WriteLine(" : [UInt8] = [");
 			Write('\t');
