@@ -4,9 +4,6 @@ public static class Test
 	{
 		string() s = "foo";
 		string p = "bar";
-		string() s2 = "quux";
-		s2 += s;
-		s2 += p;
 		return s + s == "foofoo" //FAIL: c
 			&& s + p == "foobar" //FAIL: cpp https://stackoverflow.com/questions/44636549/why-is-there-no-support-for-concatenating-stdstring-and-stdstring-view
 			&& p + s == "barfoo"
@@ -14,7 +11,6 @@ public static class Test
 			&& s + "quux" == "fooquux"
 			&& "quux" + s == "quuxfoo"
 			&& p + "quux" == "barquux"
-			&& "quux" + p == "quuxbar"
-			&& s2 == "quuxfoobar";
+			&& "quux" + p == "quuxbar";
 	}
 }

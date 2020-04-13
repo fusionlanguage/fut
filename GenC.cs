@@ -899,12 +899,24 @@ public class GenC : GenCCpp
 			break;
 		case CiToken.AddAssign:
 			if (expr.Left.Type == CiSystem.StringStorageType) {
-				Include("string.h");
-				this.StringAppend = true;
-				Write("CiString_Append(&");
-				expr.Left.Accept(this, CiPriority.Primary);
-				Write(", ");
-				expr.Right.Accept(this, CiPriority.Statement);
+				if (expr.Right is CiInterpolatedString rightInterpolated) {
+					this.StringAssign = true;
+					Write("CiString_Assign(&");
+					expr.Left.Accept(this, CiPriority.Primary);
+					Write(", ");
+					CiInterpolatedPart[] parts = new CiInterpolatedPart[1 + rightInterpolated.Parts.Length];
+					parts[0] = new CiInterpolatedPart(expr.Left); // TODO: side effect
+					rightInterpolated.Parts.CopyTo(parts, 1);
+					Visit(new CiInterpolatedString { Parts = parts }, CiPriority.Statement);
+				}
+				else {
+					Include("string.h");
+					this.StringAppend = true;
+					Write("CiString_Append(&");
+					expr.Left.Accept(this, CiPriority.Primary);
+					Write(", ");
+					expr.Right.Accept(this, CiPriority.Statement);
+				}
 				Write(')');
 				return expr;
 			}

@@ -1,0 +1,13 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		string() s = "foo";
+		string p = "bar";
+		string() s2 = "quux";
+		s2 += s;
+		s2 += p;
+		s2 += p + $"{p}" + s; //FAIL: cpp - should work with C++20
+		return s2 == "quuxfoobar" + "barbarfoo";
+	}
+}
