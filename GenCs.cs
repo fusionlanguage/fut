@@ -31,7 +31,7 @@ public class GenCs : GenTyped
 		Write("/// ");
 	}
 
-	void Write(CiDocPara para)
+	protected override void Write(CiDocPara para)
 	{
 		foreach (CiDocInline inline in para.Children) {
 			switch (inline) {

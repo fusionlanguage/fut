@@ -31,6 +31,63 @@ public class GenSwift : GenPySwift
 	bool StringIndexOf;
 	bool StringSubstring;
 
+	protected void WriteSwiftDoc(string text)
+	{
+		foreach (char c in text) {
+			if (c == '\n') {
+				WriteLine();
+				Write("/// ");
+			}
+			else
+				Write(c);
+		}
+	}
+
+	protected override void Write(CiDocPara para)
+	{
+		foreach (CiDocInline inline in para.Children) {
+			switch (inline) {
+			case CiDocText text:
+				WriteSwiftDoc(text.Text);
+				break;
+			case CiDocCode code:
+				Write('`');
+				WriteSwiftDoc(code.Text);
+				Write('`');
+				break;
+			default:
+				throw new ArgumentException(inline.GetType().Name);
+			}
+		}
+	}
+
+	protected override void Write(CiDocList list)
+	{
+		WriteLine();
+		foreach (CiDocPara item in list.Items) {
+			Write("/// * ");
+			Write(item);
+			WriteLine();
+		}
+		WriteLine();
+		Write("/// ");
+	}
+
+	protected override void Write(CiCodeDoc doc)
+	{
+		if (doc == null)
+			return;
+		Write("/// ");
+		Write(doc.Summary);
+		WriteLine();
+		if (doc.Details.Length > 0) {
+			Write("/// ");
+			foreach (CiDocBlock block in doc.Details)
+				Write(block);
+			WriteLine();
+		}
+	}
+
 	void WriteCamelCaseNotKeyword(string name)
 	{
 		switch (name) {
@@ -750,11 +807,13 @@ public class GenSwift : GenPySwift
 	void Write(CiEnum enu)
 	{
 		WriteLine();
+		Write(enu.Documentation);
 		WritePublic(enu);
 		Write("enum ");
 		WriteLine(enu.Name);
 		OpenBlock();
 		foreach (CiConst konst in enu) {
+			Write(konst.Documentation);
 			Write("case ");
 			WriteName(konst);
 			/* TODO if (konst.Value != null) {
@@ -787,6 +846,16 @@ public class GenSwift : GenPySwift
 	void Write(CiMethod method)
 	{
 		WriteLine();
+		Write(method.Documentation);
+		foreach (CiVar param in method.Parameters) {
+			if (param.Documentation != null) {
+				Write("/// - parameter ");
+				Write(param.Name);
+				Write(' ');
+				Write(param.Documentation.Summary);
+				WriteLine();
+			}
+		}
 		Write(method.Visibility);
 		switch (method.CallType) {
 		case CiCallType.Static:
@@ -835,6 +904,7 @@ public class GenSwift : GenPySwift
 	{
 		foreach (CiConst konst in consts) {
 			WriteLine();
+			Write(konst.Documentation);
 			Write(konst.Visibility);
 			Write("static let ");
 			WriteName(konst);
@@ -849,12 +919,14 @@ public class GenSwift : GenPySwift
 	void Write(CiClass klass)
 	{
 		WriteLine();
+		Write(klass.Documentation);
 		WritePublic(klass);
 		if (klass.CallType == CiCallType.Sealed)
 			Write("final ");
 		OpenClass(klass, "", " : ");
 
 		if (klass.Constructor != null) {
+			Write(klass.Constructor.Documentation);
 			Write(klass.Constructor.Visibility);
 			WriteLine("init()");
 			OpenBlock();
@@ -866,6 +938,7 @@ public class GenSwift : GenPySwift
 
 		foreach (CiField field in klass.Fields) {
 			WriteLine();
+			Write(field.Documentation);
 			Write(field.Visibility);
 			WriteVar(field);
 			WriteLine();

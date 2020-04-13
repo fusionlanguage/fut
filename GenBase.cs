@@ -175,7 +175,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	void Write(CiDocPara para)
+	protected virtual void Write(CiDocPara para)
 	{
 		foreach (CiDocInline inline in para.Children) {
 			switch (inline) {
@@ -225,13 +225,13 @@ public abstract class GenBase : CiVisitor
 		WriteLine("/**");
 		Write(" * ");
 		Write(doc.Summary);
+		WriteLine();
 		if (doc.Details.Length > 0) {
-			WriteLine();
 			Write(" * ");
 			foreach (CiDocBlock block in doc.Details)
 				Write(block);
+			WriteLine();
 		}
-		WriteLine();
 	}
 
 	protected virtual void Write(CiCodeDoc doc)
