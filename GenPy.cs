@@ -34,75 +34,28 @@ public class GenPy : GenPySwift
 		WriteLine("# Generated automatically with \"cito\". Do not edit.");
 	}
 
-	void WritePyDoc(string text)
+	protected override void StartDocLine()
 	{
-		foreach (char c in text) {
-			if (c == '\n')
-				WriteLine();
-			else
-				Write(c);
-		}
 	}
 
-	void WritePyDoc(CiDocPara para)
-	{
-		foreach (CiDocInline inline in para.Children) {
-			switch (inline) {
-			case CiDocText text:
-				WritePyDoc(text.Text);
-				break;
-			case CiDocCode code:;
-				Write('`');
-				WritePyDoc(code.Text);
-				Write('`');
-				break;
-			default:
-				throw new ArgumentException(inline.GetType().Name);
-			}
-		}
-	}
+	protected override string DocBullet => " * ";
 
-	void WritePyDoc(CiDocList list)
-	{
-		WriteLine();
-		foreach (CiDocPara item in list.Items) {
-			Write(" * ");
-			WritePyDoc(item);
-			WriteLine();
-		}
-		WriteLine();
-	}
-
-	void WritePyDoc(CiDocBlock block)
-	{
-		switch (block) {
-		case CiDocPara para:
-			WritePyDoc(para);
-			break;
-		case CiDocList list:
-			WritePyDoc(list);
-			break;
-		default:
-			throw new ArgumentException(block.GetType().Name);
-		}
-	}
-
-	void StartPyDoc(CiCodeDoc doc)
+	void StartDoc(CiCodeDoc doc)
 	{
 		Write("\"\"\"");
-		WritePyDoc(doc.Summary);
+		Write(doc.Summary);
 		if (doc.Details.Length > 0) {
 			WriteLine();
 			WriteLine();
 			foreach (CiDocBlock block in doc.Details)
-				WritePyDoc(block);
+				Write(block);
 		}
 	}
 
-	void WritePyDoc(CiCodeDoc doc)
+	protected override void Write(CiCodeDoc doc)
 	{
 		if (doc != null) {
-			StartPyDoc(doc);
+			StartDoc(doc);
 			WriteLine("\"\"\"");
 		}
 	}
@@ -111,7 +64,7 @@ public class GenPy : GenPySwift
 	{
 		if (method.Documentation == null)
 			return;
-		StartPyDoc(method.Documentation);
+		StartDoc(method.Documentation);
 		bool first = true;
 		foreach (CiVar param in method.Parameters) {
 			if (param.Documentation != null) {
@@ -123,7 +76,7 @@ public class GenPy : GenPySwift
 				Write(":param ");
 				WriteName(param);
 				Write(": ");
-				WritePyDoc(param.Documentation.Summary);
+				Write(param.Documentation.Summary);
 				WriteLine();
 			}
 		}
@@ -929,7 +882,7 @@ public class GenPy : GenPySwift
 		WriteName(enu);
 		Write("(enum.Enum)");
 		OpenChild();
-		WritePyDoc(enu.Documentation);
+		Write(enu.Documentation);
 		int i = 1;
 		foreach (CiConst konst in enu) {
 			WriteUppercaseWithUnderscores(konst.Name);
@@ -939,7 +892,7 @@ public class GenPy : GenPySwift
 			else
 				Write(i);
 			WriteLine();
-			WritePyDoc(konst.Documentation);
+			Write(konst.Documentation);
 			i++;
 		}
 		CloseChild();
@@ -952,7 +905,7 @@ public class GenPy : GenPySwift
 				WriteLine();
 				base.WriteVar(konst);
 				WriteLine();
-				WritePyDoc(konst.Documentation);
+				Write(konst.Documentation);
 			}
 		}
 	}
@@ -1002,7 +955,7 @@ public class GenPy : GenPySwift
 			Write(')');
 		}
 		OpenChild();
-		WritePyDoc(klass.Documentation);
+		Write(klass.Documentation);
 		WriteConsts(klass.Consts);
 		if (NeedsConstructor(klass)) {
 			WriteLine();

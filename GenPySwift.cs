@@ -24,6 +24,50 @@ namespace Foxoft.Ci
 
 public abstract class GenPySwift : GenBase
 {
+	void WriteDoc(string text)
+	{
+		foreach (char c in text) {
+			if (c == '\n') {
+				WriteLine();
+				StartDocLine();
+			}
+			else
+				Write(c);
+		}
+	}
+
+	protected override void Write(CiDocPara para)
+	{
+		foreach (CiDocInline inline in para.Children) {
+			switch (inline) {
+			case CiDocText text:
+				WriteDoc(text.Text);
+				break;
+			case CiDocCode code:
+				Write('`');
+				WriteDoc(code.Text);
+				Write('`');
+				break;
+			default:
+				throw new ArgumentException(inline.GetType().Name);
+			}
+		}
+	}
+
+	protected abstract string DocBullet { get; }
+
+	protected override void Write(CiDocList list)
+	{
+		WriteLine();
+		foreach (CiDocPara item in list.Items) {
+			Write(this.DocBullet);
+			Write(item);
+			WriteLine();
+		}
+		WriteLine();
+		StartDocLine();
+	}
+
 	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
 		if (symbol is CiMember member) {

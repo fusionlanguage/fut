@@ -36,7 +36,7 @@ public class GenCs : GenTyped
 		foreach (CiDocInline inline in para.Children) {
 			switch (inline) {
 			case CiDocText text:
-				WriteDoc(text.Text);
+				WriteXmlDoc(text.Text);
 				break;
 			case CiDocCode code:
 				switch (code.Text) {
@@ -49,7 +49,7 @@ public class GenCs : GenTyped
 					break;
 				default:
 					Write("<c>");
-					WriteDoc(code.Text);
+					WriteXmlDoc(code.Text);
 					Write("</c>");
 					break;
 				}

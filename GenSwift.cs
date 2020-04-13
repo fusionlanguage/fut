@@ -31,47 +31,12 @@ public class GenSwift : GenPySwift
 	bool StringIndexOf;
 	bool StringSubstring;
 
-	protected void WriteSwiftDoc(string text)
+	protected override void StartDocLine()
 	{
-		foreach (char c in text) {
-			if (c == '\n') {
-				WriteLine();
-				Write("/// ");
-			}
-			else
-				Write(c);
-		}
-	}
-
-	protected override void Write(CiDocPara para)
-	{
-		foreach (CiDocInline inline in para.Children) {
-			switch (inline) {
-			case CiDocText text:
-				WriteSwiftDoc(text.Text);
-				break;
-			case CiDocCode code:
-				Write('`');
-				WriteSwiftDoc(code.Text);
-				Write('`');
-				break;
-			default:
-				throw new ArgumentException(inline.GetType().Name);
-			}
-		}
-	}
-
-	protected override void Write(CiDocList list)
-	{
-		WriteLine();
-		foreach (CiDocPara item in list.Items) {
-			Write("/// * ");
-			Write(item);
-			WriteLine();
-		}
-		WriteLine();
 		Write("/// ");
 	}
+
+	protected override string DocBullet => "/// * ";
 
 	protected override void Write(CiCodeDoc doc)
 	{

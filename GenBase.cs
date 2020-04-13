@@ -151,7 +151,7 @@ public abstract class GenBase : CiVisitor
 		Write(" * ");
 	}
 
-	protected void WriteDoc(string text)
+	protected void WriteXmlDoc(string text)
 	{
 		foreach (char c in text) {
 			switch (c) {
@@ -180,11 +180,11 @@ public abstract class GenBase : CiVisitor
 		foreach (CiDocInline inline in para.Children) {
 			switch (inline) {
 			case CiDocText text:
-				WriteDoc(text.Text);
+				WriteXmlDoc(text.Text);
 				break;
 			case CiDocCode code:;
 				Write("<code>");
-				WriteDoc(code.Text);
+				WriteXmlDoc(code.Text);
 				Write("</code>");
 				break;
 			default:
