@@ -242,6 +242,16 @@ public class GenSwift : GenPySwift
 			WriteEscapedChar(c);
 	}
 
+	void WriteUnwrappedString(CiExpr expr, CiPriority parent)
+	{
+		if (!(expr is CiLiteral) && expr.Type == CiSystem.StringPtrType) {
+			expr.Accept(this, CiPriority.Primary);
+			Write('!');
+		}
+		else
+			expr.Accept(this, parent);
+	}
+
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
 		if (expr.Parts.Any(part => part.WidthExpr != null || part.Format != ' ' || part.Precision >= 0)) {
@@ -253,7 +263,7 @@ public class GenSwift : GenPySwift
 			foreach (CiInterpolatedPart part in expr.Parts) {
 				WriteInterpolatedLiteral(part.Prefix);
 				Write("\\(");
-				part.Argument.Accept(this, CiPriority.Statement);
+				WriteUnwrappedString(part.Argument, CiPriority.Statement);
 				Write(')');
 			}
 			WriteInterpolatedLiteral(expr.Suffix);
@@ -276,9 +286,7 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteStringLength(CiExpr expr)
 	{
-		expr.Accept(this, CiPriority.Primary);
-		if (expr.Type == CiSystem.StringPtrType)
-			Write('!');
+		WriteUnwrappedString(expr, CiPriority.Primary);
 		Write(".count");
 	}
 
@@ -286,9 +294,7 @@ public class GenSwift : GenPySwift
 	{
 		this.StringCharAt = true;
 		Write("ciStringCharAt(");
-		expr.Left.Accept(this, CiPriority.Primary);
-		if (expr.Left.Type == CiSystem.StringPtrType)
-			Write('!');
+		WriteUnwrappedString(expr.Left, CiPriority.Statement);
 		Write(", ");
 		expr.Right.Accept(this, CiPriority.Statement);
 		Write(')');
@@ -308,27 +314,27 @@ public class GenSwift : GenPySwift
 			Include("Foundation");
 			this.StringIndexOf = true;
 			Write("ciStringIndexOf(");
-			obj.Accept(this, CiPriority.Statement);
+			WriteUnwrappedString(obj, CiPriority.Primary);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Statement);
+			WriteUnwrappedString(args[0], CiPriority.Primary);
 			Write(')');
 		}
 		else if (method == CiSystem.StringIndexOf) {
 			Include("Foundation");
 			this.StringIndexOf = true;
 			Write("ciStringIndexOf(");
-			obj.Accept(this, CiPriority.Statement);
+			WriteUnwrappedString(obj, CiPriority.Primary);
 			Write(", ");
 			args[0].Accept(this, CiPriority.Statement);
 			Write(")");
 		}
 		else if (method == CiSystem.StringSubstring) {
 			if (args[0] is CiLiteral literalOffset && (long) literalOffset.Value == 0)
-				obj.Accept(this, CiPriority.Primary);
+				WriteUnwrappedString(obj, CiPriority.Primary);
 			else {
 				this.StringSubstring = true;
 				Write("ciStringSubstring(");
-				obj.Accept(this, CiPriority.Statement);
+				WriteUnwrappedString(obj, CiPriority.Statement);
 				Write(", ");
 				args[0].Accept(this, CiPriority.Statement);
 				Write(')');
