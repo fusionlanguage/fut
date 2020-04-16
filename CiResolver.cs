@@ -791,7 +791,7 @@ public class CiResolver : CiVisitor
 		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = type };
 	}
 
-	public override CiExpr Visit(CiCondExpr expr, CiPriority parent)
+	public override CiExpr Visit(CiSelectExpr expr, CiPriority parent)
 	{
 		CiExpr cond = ResolveBool(expr.Cond);
 		CiExpr onTrue = Resolve(expr.OnTrue);
@@ -799,7 +799,7 @@ public class CiResolver : CiVisitor
 		CiType type = GetCommonType(onTrue, onFalse);
 		if (cond is CiLiteral literalCond)
 			return (bool) literalCond.Value ? onTrue : onFalse;
-		return new CiCondExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
+		return new CiSelectExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
 	}
 
 	public override CiExpr Visit(CiCallExpr expr, CiPriority parent)

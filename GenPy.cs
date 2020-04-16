@@ -323,16 +323,16 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	protected override void WriteCoerced(CiType type, CiCondExpr expr, CiPriority parent)
+	protected override void WriteCoerced(CiType type, CiSelectExpr expr, CiPriority parent)
 	{
-		if (parent > CiPriority.Cond)
+		if (parent > CiPriority.Select)
 			Write('(');
-		WriteCoerced(type, expr.OnTrue, CiPriority.Cond);
+		WriteCoerced(type, expr.OnTrue, CiPriority.Select);
 		Write(" if ");
-		expr.Cond.Accept(this, CiPriority.Cond);
+		expr.Cond.Accept(this, CiPriority.Select);
 		Write(" else ");
-		WriteCoerced(type, expr.OnFalse, CiPriority.Cond);
-		if (parent > CiPriority.Cond)
+		WriteCoerced(type, expr.OnFalse, CiPriority.Select);
+		if (parent > CiPriority.Select)
 			Write(')');
 	}
 

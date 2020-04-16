@@ -353,7 +353,7 @@ public class CiParser : CiLexer
 	{
 		CiExpr left = ParseCondOrExpr();
 		if (See(CiToken.QuestionMark)) {
-			CiCondExpr result = new CiCondExpr { Line = this.Line, Cond = left };
+			CiSelectExpr result = new CiSelectExpr { Line = this.Line, Cond = left };
 			NextToken();
 			string saveXcrementParent = this.XcrementParent;
 			this.XcrementParent = "?";

@@ -1225,7 +1225,7 @@ public class GenC : GenCCpp
 		Write("return ");
 		switch (throwingMethod.Type) {
 		case null:
-			call.Accept(this, CiPriority.Cond);
+			call.Accept(this, CiPriority.Select);
 			break;
 		case CiIntegerType _:
 			call.Accept(this, CiPriority.Equality);
@@ -1244,7 +1244,7 @@ public class GenC : GenCCpp
 		}
 		if (returnValue != null) {
 			Write(" ? ");
-			returnValue.Accept(this, CiPriority.Cond);
+			returnValue.Accept(this, CiPriority.Select);
 			Write(" : ");
 			WriteThrowReturnValue();
 		}

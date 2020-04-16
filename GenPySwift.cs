@@ -149,11 +149,11 @@ public abstract class GenPySwift : GenBase
 			// XXX: assert not seen on the right side of CondAnd, CondOr
 			seen |= VisitXcrement<T>(binary.Right, write);
 			return seen;
-		case CiCondExpr cond:
-			seen = VisitXcrement<T>(cond.Cond, write);
+		case CiSelectExpr select:
+			seen = VisitXcrement<T>(select.Cond, write);
 			// XXX: assert not seen in OnTrue and OnFalse
-			// seen |= VisitXcrement<T>(cond.OnTrue, write);
-			// seen |= VisitXcrement<T>(cond.OnFalse, write);
+			// seen |= VisitXcrement<T>(select.OnTrue, write);
+			// seen |= VisitXcrement<T>(select.OnFalse, write);
 			return seen;
 		case CiCallExpr call:
 			seen = VisitXcrement<T>(call.Method, write);

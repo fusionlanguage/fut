@@ -535,23 +535,23 @@ public abstract class GenBase : CiVisitor
 		expr.Accept(this, parent);
 	}
 
-	protected virtual void WriteCoerced(CiType type, CiCondExpr expr, CiPriority parent)
+	protected virtual void WriteCoerced(CiType type, CiSelectExpr expr, CiPriority parent)
 	{
-		if (parent > CiPriority.Cond)
+		if (parent > CiPriority.Select)
 			Write('(');
-		expr.Cond.Accept(this, CiPriority.Cond);
+		expr.Cond.Accept(this, CiPriority.Select);
 		Write(" ? ");
-		WriteCoerced(type, expr.OnTrue, CiPriority.Cond);
+		WriteCoerced(type, expr.OnTrue, CiPriority.Select);
 		Write(" : ");
-		WriteCoerced(type, expr.OnFalse, CiPriority.Cond);
-		if (parent > CiPriority.Cond)
+		WriteCoerced(type, expr.OnFalse, CiPriority.Select);
+		if (parent > CiPriority.Select)
 			Write(')');
 	}
 
 	protected void WriteCoerced(CiType type, CiExpr expr, CiPriority parent)
 	{
-		if (expr is CiCondExpr cond)
-			WriteCoerced(type, cond, parent);
+		if (expr is CiSelectExpr select)
+			WriteCoerced(type, select, parent);
 		else
 			WriteCoercedInternal(type, expr, parent);
 	}
@@ -923,7 +923,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	public override CiExpr Visit(CiCondExpr expr, CiPriority parent)
+	public override CiExpr Visit(CiSelectExpr expr, CiPriority parent)
 	{
 		WriteCoerced(expr.Type, expr, parent);
 		return expr;

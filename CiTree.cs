@@ -49,7 +49,7 @@ public enum CiPriority
 {
 	Statement,
 	Assign,
-	Cond,
+	Select,
 	CondOr,
 	CondAnd,
 	Or,
@@ -73,7 +73,7 @@ public abstract class CiVisitor
 	public abstract CiExpr Visit(CiPrefixExpr expr, CiPriority parent);
 	public abstract CiExpr Visit(CiPostfixExpr expr, CiPriority parent);
 	public abstract CiExpr Visit(CiBinaryExpr expr, CiPriority parent);
-	public abstract CiExpr Visit(CiCondExpr expr, CiPriority parent);
+	public abstract CiExpr Visit(CiSelectExpr expr, CiPriority parent);
 	public abstract CiExpr Visit(CiCallExpr expr, CiPriority parent);
 	public abstract void Visit(CiConst statement);
 	public abstract void Visit(CiExpr statement);
@@ -544,7 +544,7 @@ public class CiBinaryExpr : CiExpr
 	}
 }
 
-public class CiCondExpr : CiExpr
+public class CiSelectExpr : CiExpr
 {
 	public CiExpr Cond;
 	public CiExpr OnTrue;
