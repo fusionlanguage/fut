@@ -303,6 +303,8 @@ public class GenSwift : GenPySwift
 			expr.Accept(this, CiPriority.Statement);
 			Write(')');
 		}
+		else if (type == CiSystem.StringStorageType)
+			WriteUnwrappedString(expr, parent);
 		else
 			expr.Accept(this, parent);
 	}
