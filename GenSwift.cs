@@ -429,13 +429,13 @@ public class GenSwift : GenPySwift
 			WriteArgsInParentheses(method, args);
 		}
 		else if (method == CiSystem.UTF8GetString) {
-			Write("String(bytes: ");
+			Write("String(decoding: ");
 			args[0].Accept(this, CiPriority.Primary);
 			Write('[');
 			args[1].Accept(this, CiPriority.Shift);
 			Write("..<");
 			WriteAdd(args[1], args[2]); // TODO: side effect
-			Write("], encoding: .utf8)!");
+			Write("], as: UTF8.self)");
 		}
 		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
 			Include("Foundation");
