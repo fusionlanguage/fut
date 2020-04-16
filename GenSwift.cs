@@ -264,11 +264,16 @@ public class GenSwift : GenPySwift
 			WriteEscapedChar(c);
 	}
 
-	void WriteUnwrappedString(CiExpr expr, CiPriority parent)
+	void WriteUnwrappedString(CiExpr expr, CiPriority parent, bool substringOk)
 	{
 		if (!(expr is CiLiteral) && expr.Type == CiSystem.StringPtrType) {
 			expr.Accept(this, CiPriority.Primary);
 			Write('!');
+		}
+		else if (!substringOk && expr is CiCallExpr call && call.Method.IsReferenceTo(CiSystem.StringSubstring)) {
+			Write("String(");
+			expr.Accept(this, CiPriority.Statement);
+			Write(')');
 		}
 		else
 			expr.Accept(this, parent);
@@ -285,7 +290,7 @@ public class GenSwift : GenPySwift
 			foreach (CiInterpolatedPart part in expr.Parts) {
 				WriteInterpolatedLiteral(part.Prefix);
 				Write("\\(");
-				WriteUnwrappedString(part.Argument, CiPriority.Statement);
+				WriteUnwrappedString(part.Argument, CiPriority.Statement, true);
 				Write(')');
 			}
 			WriteInterpolatedLiteral(expr.Suffix);
@@ -304,14 +309,14 @@ public class GenSwift : GenPySwift
 			Write(')');
 		}
 		else if (type == CiSystem.StringStorageType)
-			WriteUnwrappedString(expr, parent);
+			WriteUnwrappedString(expr, parent, false);
 		else
 			expr.Accept(this, parent);
 	}
 
 	protected override void WriteStringLength(CiExpr expr)
 	{
-		WriteUnwrappedString(expr, CiPriority.Primary);
+		WriteUnwrappedString(expr, CiPriority.Primary, true);
 		Write(".count");
 	}
 
@@ -319,7 +324,7 @@ public class GenSwift : GenPySwift
 	{
 		this.StringCharAt = true;
 		Write("ciStringCharAt(");
-		WriteUnwrappedString(expr.Left, CiPriority.Statement);
+		WriteUnwrappedString(expr.Left, CiPriority.Statement, false);
 		Write(", ");
 		expr.Right.Accept(this, CiPriority.Statement);
 		Write(')');
@@ -339,27 +344,27 @@ public class GenSwift : GenPySwift
 			Include("Foundation");
 			this.StringIndexOf = true;
 			Write("ciStringIndexOf(");
-			WriteUnwrappedString(obj, CiPriority.Statement);
+			WriteUnwrappedString(obj, CiPriority.Statement, true);
 			Write(", ");
-			WriteUnwrappedString(args[0], CiPriority.Statement);
+			WriteUnwrappedString(args[0], CiPriority.Statement, true);
 			Write(')');
 		}
 		else if (method == CiSystem.StringLastIndexOf) {
 			Include("Foundation");
 			this.StringIndexOf = true;
 			Write("ciStringIndexOf(");
-			WriteUnwrappedString(obj, CiPriority.Statement);
+			WriteUnwrappedString(obj, CiPriority.Statement, true);
 			Write(", ");
-			WriteUnwrappedString(args[0], CiPriority.Statement);
+			WriteUnwrappedString(args[0], CiPriority.Statement, true);
 			Write(", .backwards)");
 		}
 		else if (method == CiSystem.StringSubstring) {
 			if (args[0] is CiLiteral literalOffset && (long) literalOffset.Value == 0)
-				WriteUnwrappedString(obj, CiPriority.Primary);
+				WriteUnwrappedString(obj, CiPriority.Primary, true);
 			else {
 				this.StringSubstring = true;
 				Write("ciStringSubstring(");
-				WriteUnwrappedString(obj, CiPriority.Statement);
+				WriteUnwrappedString(obj, CiPriority.Statement, false);
 				Write(", ");
 				args[0].Accept(this, CiPriority.Statement);
 				Write(')');
@@ -965,7 +970,7 @@ public class GenSwift : GenPySwift
 		}
 		if (this.StringIndexOf) {
 			WriteLine();
-			WriteLine("fileprivate func ciStringIndexOf(_ haystack: String, _ needle: String, _ options: String.CompareOptions = .literal) -> Int");
+			WriteLine("fileprivate func ciStringIndexOf<S1 : StringProtocol, S2 : StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
 			OpenBlock();
 			WriteLine("guard let index = haystack.range(of: needle, options: options) else { return -1 }");
 			WriteLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");
