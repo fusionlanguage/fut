@@ -296,7 +296,8 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 	{
-		if (type is CiNumericType && !(expr is CiLiteral) && GetTypeCode(type, false) != GetTypeCode(expr.Type, false)) {
+		if (type is CiNumericType && !(expr is CiLiteral)
+		 && GetTypeCode(type, false) != GetTypeCode(expr.Type, expr is CiBinaryExpr binary && binary.Op != CiToken.LeftBracket)) {
 			Write(type);
 			Write('(');
 			expr.Accept(this, CiPriority.Statement);
@@ -545,6 +546,33 @@ public class GenSwift : GenPySwift
 		Write('[');
 		WriteCoerced(CiSystem.IntType, expr.Right, CiPriority.Statement);
 		Write(']');
+	}
+
+	protected override void Write(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
+	{
+		if (expr is CiSymbolReference || expr.IsIndexing) {
+			switch (binary.Op) {
+			case CiToken.Plus when binary.Type is CiNumericType:
+			case CiToken.Minus:
+			case CiToken.Asterisk:
+			case CiToken.Slash:
+			case CiToken.Mod:
+			case CiToken.And:
+			case CiToken.Or:
+			case CiToken.Xor:
+			case CiToken.ShiftLeft when expr == binary.Left:
+			case CiToken.ShiftRight when expr == binary.Left:
+				CiType type = CiBinaryExpr.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
+				if (type != expr.Type) {
+					WriteCoerced(type, expr, parent);
+					return;
+				}
+				break;
+			default:
+				break;
+			}
+		}
+		expr.Accept(this, parent);
 	}
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)

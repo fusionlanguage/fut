@@ -768,13 +768,18 @@ public abstract class GenBase : CiVisitor
 		right.Accept(this, CiPriority.Add);
 	}
 
+	protected virtual void Write(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
+	{
+		expr.Accept(this, parent);
+	}
+
 	protected CiExpr Write(CiBinaryExpr expr, bool parentheses, CiPriority left, string op, CiPriority right)
 	{
 		if (parentheses)
 			Write('(');
-		expr.Left.Accept(this, left);
+		Write(expr.Left, left, expr);
 		Write(op);
-		expr.Right.Accept(this, right);
+		Write(expr.Right, right, expr);
 		if (parentheses)
 			Write(')');
 		return expr;

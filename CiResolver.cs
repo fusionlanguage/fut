@@ -104,9 +104,9 @@ public class CiResolver : CiVisitor
 		throw StatementException(left, "Incompatible types: {0} and {1}", left.Type, right.Type);
 	}
 
-	CiIntegerType GetIntegerType(CiExpr left, CiExpr right)
+	CiType GetIntegerType(CiExpr left, CiExpr right)
 	{
-		CiIntegerType type = left.Type == CiSystem.LongType || right.Type == CiSystem.LongType ? CiSystem.LongType : CiSystem.IntType;
+		CiType type = CiBinaryExpr.PromoteIntegerTypes(left.Type, right.Type);
 		Coerce(left, type);
 		Coerce(right, type);
 		return type;
@@ -123,23 +123,10 @@ public class CiResolver : CiVisitor
 
 	CiType GetNumericType(CiExpr left, CiExpr right)
 	{
-		if (left.Type == CiSystem.DoubleType) {
-			Coerce(right, CiSystem.DoubleType);
-			return CiSystem.DoubleType;
-		}
-		if (right.Type == CiSystem.DoubleType) {
-			Coerce(left, CiSystem.DoubleType);
-			return CiSystem.DoubleType;
-		}
-		if (left.Type == CiSystem.FloatType || left.Type == CiSystem.FloatIntType) {
-			Coerce(right, CiSystem.FloatType);
-			return CiSystem.FloatType;
-		}
-		if (right.Type == CiSystem.FloatType || right.Type == CiSystem.FloatIntType) {
-			Coerce(left, CiSystem.FloatType);
-			return CiSystem.FloatType;
-		}
-		return GetIntegerType(left, right);
+		CiType type = CiBinaryExpr.PromoteNumericTypes(left.Type, right.Type);
+		Coerce(left, type);
+		Coerce(right, type);
+		return type;
 	}
 
 	static int SaturatedNeg(int a)

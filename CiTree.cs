@@ -533,6 +533,22 @@ public class CiBinaryExpr : CiExpr
 			}
 		}
 	}
+
+	public static CiType PromoteIntegerTypes(CiType left, CiType right)
+	{
+		return left == CiSystem.LongType || right == CiSystem.LongType ? CiSystem.LongType : CiSystem.IntType;
+	}
+
+	public static CiType PromoteNumericTypes(CiType left, CiType right)
+	{
+		if (left == CiSystem.DoubleType || right == CiSystem.DoubleType)
+			return CiSystem.DoubleType;
+		if (left == CiSystem.FloatType || right == CiSystem.FloatType
+		 || left == CiSystem.FloatIntType || right == CiSystem.FloatIntType)
+			return CiSystem.FloatType;
+		return PromoteIntegerTypes(left, right);
+	}
+
 	public override string ToString()
 	{
 		switch (this.Op) {
