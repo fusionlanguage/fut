@@ -490,6 +490,13 @@ public class GenSwift : GenPySwift
 		WriteArgsInParentheses(method, args);
 	}
 
+	public override CiExpr Visit(CiCallExpr expr, CiPriority parent)
+	{
+		if (parent == CiPriority.Statement && this.AtLineStart && expr.Type != null)
+			Write("_ = ");
+		return base.Visit(expr, parent);
+	}
+
 	protected override void WriteListStorageInit(CiListType list)
 	{
 		Write(" = [");
