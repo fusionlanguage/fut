@@ -79,8 +79,8 @@ test/bin/%/js.txt: test/bin/%/Run.js
 test/bin/%/py.txt: test/Runner.py test/bin/%/Test.py
 	$(DO)PYTHONPATH=$(@D) $(PYTHON) $< >$@ || grep '//FAIL:.*\<py\>' test/$*.ci
 
-test/bin/%/swift.txt: test/bin/%/Test.swift
-	# TODO
+test/bin/%/swift.txt: test/bin/%/swift.exe
+	$(DO)./$< >$@ || grep '//FAIL:.*\<swift\>' test/$*.ci
 
 test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
 	$(DO)$(CC) -o $@ $(CFLAGS) -Wno-unused-function -I $(<D) $^ -lm || grep '//FAIL:.*\<c\>' test/$*.ci
@@ -96,6 +96,9 @@ test/bin/%/Test.class: test/bin/%/Test.java
 
 test/bin/%/Run.js: test/bin/%/Test.js
 	$(DO)cat $< test/Runner.js >$@ || grep '//FAIL:.*\<js\>' test/$*.ci
+
+test/bin/%/swift.exe: test/bin/%/Test.swift test/main.swift
+	$(DO)swiftc -o $@ $^ || grep '//FAIL:.*\<swift\>' test/$*.ci
 
 test/bin/%/Test.c: test/%.ci cito.exe
 	$(DO_CITO)
