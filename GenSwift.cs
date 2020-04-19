@@ -282,6 +282,7 @@ public class GenSwift : GenPySwift
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
 		if (expr.Parts.Any(part => part.WidthExpr != null || part.Format != ' ' || part.Precision >= 0)) {
+			Include("Foundation");
 			Write("String(format: ");
 			WritePrintf(expr, false);
 		}
