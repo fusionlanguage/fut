@@ -2,6 +2,12 @@ public class Runner
 {
 	public static void main(String[] args)
 	{
-		System.out.println(Test.run() ? "PASSED" : "FAILED");
+		if (Test.run()) {
+			System.out.println("PASSED");
+		}
+		else {
+			System.out.println("FAILED");
+			System.exit(1);
+		}
 	}
 }

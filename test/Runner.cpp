@@ -4,5 +4,12 @@
 
 int main()
 {
-	std::puts(Test::run() ? "PASSED" : "FAILED");
+	if (Test::run()) {
+		std::puts("PASSED");
+		return 0;
+	}
+	else {
+		std::puts("FAILED");
+		return 1;
+	}
 }

@@ -4,6 +4,12 @@
 
 int main()
 {
-	puts(Test_Run() ? "PASSED" : "FAILED");
-	return 0;
+	if (Test_Run()) {
+		puts("PASSED");
+		return 0;
+	}
+	else {
+		puts("FAILED");
+		return 1;
+	}
 }

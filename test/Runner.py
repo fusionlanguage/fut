@@ -1,2 +1,8 @@
+import sys
 import Test
-print("PASSED" if Test.Test.run() else "FAILED")
+
+if Test.Test.run():
+	print("PASSED")
+else:
+	print("FAILED")
+	sys.exit(1)

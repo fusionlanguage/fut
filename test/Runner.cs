@@ -1,7 +1,14 @@
 public class Runner
 {
-	public static void Main()
+	public static int Main()
 	{
-		System.Console.WriteLine(Test.Run() ? "PASSED" : "FAILED");
+		if (Test.Run()) {
+			System.Console.WriteLine("PASSED");
+			return 0;
+		}
+		else {
+			System.Console.WriteLine("FAILED");
+			return 1;
+		}
 	}
 }
