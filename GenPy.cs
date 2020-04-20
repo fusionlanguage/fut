@@ -866,14 +866,6 @@ public class GenPy : GenPySwift
 		// FIXME: WriteXcrement<CiPostfixExpr>(statement.Message);
 	}
 
-	public override void Visit(CiWhile statement)
-	{
-		OpenCond("while ", statement.Cond, CiPriority.Statement);
-		statement.Body.Accept(this);
-		VisitXcrement<CiPrefixExpr>(statement.Cond, true);
-		CloseWhile(statement);
-	}
-
 	void Write(CiEnum enu)
 	{
 		Include("enum");

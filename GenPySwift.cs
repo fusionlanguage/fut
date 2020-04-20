@@ -228,7 +228,7 @@ public abstract class GenPySwift : GenBase
 		return VisitXcrement<CiPostfixExpr>(cond, true);
 	}
 
-	protected void CloseWhile(CiLoop loop)
+	void CloseWhile(CiLoop loop)
 	{
 		CloseChild();
 		if (loop.Cond != null && VisitXcrement<CiPostfixExpr>(loop.Cond, false)) {
@@ -318,6 +318,14 @@ public abstract class GenPySwift : GenBase
 				WriteLine();
 			}
 		}
+	}
+
+	public override void Visit(CiWhile statement)
+	{
+		OpenCond("while ", statement.Cond, CiPriority.Statement);
+		statement.Body.Accept(this);
+		VisitXcrement<CiPrefixExpr>(statement.Cond, true);
+		CloseWhile(statement);
 	}
 }
 

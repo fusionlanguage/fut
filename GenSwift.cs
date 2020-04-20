@@ -815,13 +815,6 @@ public class GenSwift : GenPySwift
 		WriteLine(')');
 	}
 
-	public override void Visit(CiWhile statement)
-	{
-		OpenCond("while ", statement.Cond, CiPriority.Statement);
-		statement.Body.Accept(this);
-		CloseChild();
-	}
-
 	void WriteReadOnlyParameter(CiVar param)
 	{
 		Write("ciParam");
