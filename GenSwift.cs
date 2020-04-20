@@ -592,9 +592,13 @@ public class GenSwift : GenPySwift
 
 	protected override void Write(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
 	{
+		if (binary.Op == CiToken.Plus && binary.Type == CiSystem.StringPtrType) {
+			WriteUnwrappedString(expr, parent, true);
+			return;
+		}
 		if (expr is CiSymbolReference || expr.IsIndexing) {
 			switch (binary.Op) {
-			case CiToken.Plus when binary.Type is CiNumericType:
+			case CiToken.Plus:
 			case CiToken.Minus:
 			case CiToken.Asterisk:
 			case CiToken.Slash:
