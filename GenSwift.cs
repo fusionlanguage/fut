@@ -673,7 +673,7 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteVar(CiNamedValue def)
 	{
-		Write(IsClassStorage(def.Type) || (def is CiVar local && !local.IsAssigned && !(def.Type is CiArrayType)) ? "let " : "var ");
+		Write(IsClassStorage(def.Type) || (def is CiVar local && !local.IsAssigned && !(def.Type is CiArrayType) && !(def.Type is CiDictionaryType)) ? "let " : "var ");
 		base.WriteVar(def);
 	}
 
