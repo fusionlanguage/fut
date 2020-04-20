@@ -169,10 +169,24 @@ public class GenSwift : GenPySwift
 		}
 	}
 
+	static bool NeedsUnwrap(CiExpr expr)
+	{
+		if (!(expr.Type is CiClassPtrType))
+			return false;
+		if (!(expr is CiSymbolReference symbol))
+			return true;
+		if (symbol.Name == "this")
+			return false;
+		if (symbol.Symbol.Parent is CiForeach forEach
+		 && forEach.Collection.Type is CiArrayType array
+		 && array.ElementType is CiClass)
+			return false;
+		return true;
+	}
+
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
-		if (left.Type is CiClassPtrType
-		 && (!(left is CiSymbolReference leftSymbol) || leftSymbol.Name != "this"))
+		if (NeedsUnwrap(left))
 			Write('!');
 		Write('.');
 	}
