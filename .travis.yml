@@ -1,6 +1,6 @@
 language: csharp
 mono: none
-dotnet: 3.1.101
+dotnet: 3.1.201
 jobs:
   - name: c, java, js
     script: make -j2 test-c test-java test-js
