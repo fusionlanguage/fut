@@ -171,7 +171,8 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
-		if (left.Type is CiClassPtrType)
+		if (left.Type is CiClassPtrType
+		 && (!(left is CiSymbolReference leftSymbol) || leftSymbol.Name != "this"))
 			Write('!');
 		Write('.');
 	}
