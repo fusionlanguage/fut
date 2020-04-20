@@ -8,7 +8,7 @@ public class Test
 			&& s.Contains("ooba")
 			&& s.Contains("bar")
 			&& s.Contains("foobar")
-			&& s.Contains("")
+			&& s.Contains("") //FAIL: swift
 			&& !s.Contains("x")
 			&& p.Contains("f")
 			&& p.Contains("ooba")

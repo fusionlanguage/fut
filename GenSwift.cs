@@ -339,9 +339,25 @@ public class GenSwift : GenPySwift
 			base.WriteEqual(expr, parent, not);
 	}
 
+	void WriteStringContains(CiExpr obj, string name, CiExpr[] args)
+	{
+		WriteUnwrappedString(obj, CiPriority.Statement, true);
+		Write('.');
+		Write(name);
+		Write('(');
+		WriteUnwrappedString(args[0], CiPriority.Statement, true);
+		Write(')');
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (method == CiSystem.StringIndexOf) {
+		if (method == CiSystem.StringContains)
+			WriteStringContains(obj, "contains", args);
+		else if (method == CiSystem.StringStartsWith)
+			WriteStringContains(obj, "hasPrefix", args);
+		else if (method == CiSystem.StringEndsWith)
+			WriteStringContains(obj, "hasSuffix", args);
+		else if (method == CiSystem.StringIndexOf) {
 			Include("Foundation");
 			this.StringIndexOf = true;
 			Write("ciStringIndexOf(");
@@ -465,11 +481,7 @@ public class GenSwift : GenPySwift
 			else
 				obj.Accept(this, CiPriority.Primary);
 			WriteMemberOp(obj, null);
-			if (method == CiSystem.StringStartsWith)
-				Write("hasPrefix");
-			else if (method == CiSystem.StringEndsWith)
-				Write("hasSuffix");
-			else if (method == CiSystem.CollectionClear)
+			if (method == CiSystem.CollectionClear)
 				Write("removeAll");
 			else if (obj.Type is CiListType && method.Name == "Add")
 				Write("append");
