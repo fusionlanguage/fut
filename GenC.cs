@@ -669,6 +669,57 @@ public class GenC : GenCCpp
 		}
 	}
 
+	void WriteCCall(CiExpr obj, CiMethod method, CiExpr[] args)
+	{
+		CiClass klass = this.CurrentClass;
+		CiClass definingClass = (CiClass) method.Parent;
+		CiClass declaringClass = definingClass;
+		switch (method.CallType) {
+		case CiCallType.Override:
+			declaringClass = (CiClass) method.DeclaringMethod.Parent;
+			goto case CiCallType.Abstract;
+		case CiCallType.Abstract:
+		case CiCallType.Virtual:
+			if (obj != null)
+				klass = obj.Type as CiClass ?? ((CiClassPtrType) obj.Type).Class;
+			CiClass ptrClass = GetVtblPtrClass(klass);
+			CiClass structClass = GetVtblStructClass(definingClass);
+			if (structClass != ptrClass) {
+				Write("((const ");
+				Write(structClass.Name);
+				Write("Vtbl *) ");
+			}
+			if (obj != null) {
+				obj.Accept(this, CiPriority.Primary);
+				WriteMemberAccess(obj, ptrClass);
+			}
+			else
+				WriteSelfForField(ptrClass);
+			Write("vtbl");
+			if (structClass != ptrClass)
+				Write(')');
+			Write("->");
+			WriteCamelCase(method.Name);
+			break;
+		default:
+			WriteName(method);
+			break;
+		}
+		Write('(');
+		if (method.CallType != CiCallType.Static) {
+			if (obj != null)
+				WriteClassPtr(declaringClass, obj, CiPriority.Statement);
+			else if (klass == declaringClass)
+				Write("self");
+			else {
+				Write("&self->base");
+				for (klass = (CiClass) klass.Parent; klass != declaringClass; klass = (CiClass) klass.Parent)
+					Write(".base");
+			}
+		}
+		WriteArgsAndRightParenthesis(method, args);
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (method == CiSystem.StringContains) {
@@ -765,89 +816,18 @@ public class GenC : GenCCpp
 			WriteMathCall(method, args);
 		}
 		// TODO
-		else {
-			CiClass definingClass = (CiClass) method.Parent;
-			if (obj.IsReferenceTo(CiSystem.BasePtr)) {
-				WriteName(method);
-				Write("(&self->base");
-			}
-			else {
-				CiClass declaringClass = definingClass;
-				switch (method.CallType) {
-				case CiCallType.Override:
-					declaringClass = (CiClass) method.DeclaringMethod.Parent;
-					goto case CiCallType.Abstract;
-				case CiCallType.Abstract:
-				case CiCallType.Virtual:
-					if (!(obj.Type is CiClass klass))
-						klass = ((CiClassPtrType) obj.Type).Class;
-					CiClass ptrClass = GetVtblPtrClass(klass);
-					CiClass structClass = GetVtblStructClass(definingClass);
-					if (structClass != ptrClass) {
-						Write("((const ");
-						Write(structClass.Name);
-						Write("Vtbl *) ");
-					}
-					obj.Accept(this, CiPriority.Primary);
-					WriteMemberAccess(obj, ptrClass);
-					Write("vtbl");
-					if (structClass != ptrClass)
-						Write(')');
-					Write("->");
-					WriteCamelCase(method.Name);
-					break;
-				default:
-					WriteName(method);
-					break;
-				}
-				Write('(');
-				if (method.CallType != CiCallType.Static)
-					WriteClassPtr(declaringClass, obj, CiPriority.Statement);
-			}
+		else if (obj.IsReferenceTo(CiSystem.BasePtr)) {
+			WriteName(method);
+			Write("(&self->base");
 			WriteArgsAndRightParenthesis(method, args);
 		}
+		else
+			WriteCCall(obj, method, args);
 	}
 
 	protected override void WriteNearCall(CiMethod method, CiExpr[] args)
 	{
-		CiClass klass = this.CurrentClass;
-		CiClass definingClass = (CiClass) method.Parent;
-		CiClass declaringClass = definingClass;
-		switch (method.CallType) {
-		case CiCallType.Override:
-			declaringClass = (CiClass) method.DeclaringMethod.Parent;
-			goto case CiCallType.Abstract;
-		case CiCallType.Abstract:
-		case CiCallType.Virtual:
-			CiClass ptrClass = GetVtblPtrClass(klass);
-			CiClass structClass = GetVtblStructClass(definingClass);
-			if (structClass != ptrClass) {
-				Write("((const ");
-				Write(structClass.Name);
-				Write("Vtbl *) ");
-			}
-			WriteSelfForField(ptrClass);
-			Write("vtbl");
-			if (structClass != ptrClass)
-				Write(')');
-			Write("->");
-			WriteCamelCase(method.Name);
-			break;
-		default:
-			WriteName(method);
-			break;
-		}
-		Write('(');
-		if (method.CallType != CiCallType.Static) {
-			if (klass == declaringClass)
-				Write("self");
-			else {
-				Write("&self->base");
-				for (klass = (CiClass) klass.Parent; klass != declaringClass; klass = (CiClass) klass.Parent)
-					Write(".base");
-			}
-		}
-		WriteArgsAndRightParenthesis(method, args);
+		WriteCCall(null, method, args);
 	}
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
