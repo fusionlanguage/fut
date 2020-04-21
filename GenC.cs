@@ -722,7 +722,9 @@ public class GenC : GenCCpp
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (method == CiSystem.StringContains) {
+		if (obj == null)
+			WriteCCall(null, method, args);
+		else if (method == CiSystem.StringContains) {
 			Include("string.h");
 			if (parent > CiPriority.Equality)
 				Write('(');
@@ -823,11 +825,6 @@ public class GenC : GenCCpp
 		}
 		else
 			WriteCCall(obj, method, args);
-	}
-
-	protected override void WriteNearCall(CiMethod method, CiExpr[] args)
-	{
-		WriteCCall(null, method, args);
 	}
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)

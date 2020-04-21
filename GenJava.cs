@@ -449,7 +449,11 @@ public class GenJava : GenTyped
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (method == CiSystem.StringSubstring) {
+		if (obj == null) {
+			WriteName(method);
+			WriteArgsInParentheses(method, args);
+		}
+		else if (method == CiSystem.StringSubstring) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".substring(");
 			args[0].Accept(this, CiPriority.Statement);

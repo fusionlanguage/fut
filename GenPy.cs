@@ -480,7 +480,11 @@ public class GenPy : GenPySwift
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (method == CiSystem.StringContains) {
+		if (obj == null) {
+			WriteLocalName(method, CiPriority.Primary);
+			WriteArgsInParentheses(method, args);
+		}
+		else if (method == CiSystem.StringContains) {
 			args[0].Accept(this, CiPriority.Primary);
 			Write(" in ");
 			obj.Accept(this, CiPriority.Primary);
@@ -607,12 +611,6 @@ public class GenPy : GenPySwift
 				WriteName(method);
 			WriteArgsInParentheses(method, args);
 		}
-	}
-
-	protected override void WriteNearCall(CiMethod method, CiExpr[] args)
-	{
-		WriteLocalName(method, CiPriority.Primary);
-		WriteArgsInParentheses(method, args);
 	}
 
 	protected override void WriteResource(string name, int length)

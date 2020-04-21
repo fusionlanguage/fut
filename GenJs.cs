@@ -354,7 +354,11 @@ public class GenJs : GenBase
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (method == CiSystem.StringSubstring) {
+		if (obj == null) {
+			WriteLocalName(method, CiPriority.Primary);
+			WriteArgsInParentheses(method, args);
+		}
+		else if (method == CiSystem.StringSubstring) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".substring(");
 			args[0].Accept(this, CiPriority.Statement);
@@ -503,12 +507,6 @@ public class GenJs : GenBase
 				WriteName(method);
 			WriteArgsInParentheses(method, args);
 		}
-	}
-
-	protected override void WriteNearCall(CiMethod method, CiExpr[] args)
-	{
-		WriteLocalName(method, CiPriority.Primary);
-		WriteArgsInParentheses(method, args);
 	}
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)

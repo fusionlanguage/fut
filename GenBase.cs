@@ -832,12 +832,6 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent);
 
-	protected virtual void WriteNearCall(CiMethod method, CiExpr[] args)
-	{
-		WriteName(method);
-		WriteArgsInParentheses(method, args);
-	}
-
 	protected virtual void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
 		expr.Left.Accept(this, CiPriority.Primary);
@@ -936,10 +930,7 @@ public abstract class GenBase : CiVisitor
 
 	public override CiExpr Visit(CiCallExpr expr, CiPriority parent)
 	{
-		if (expr.Method.Left != null)
-			WriteCall(expr.Method.Left, (CiMethod) expr.Method.Symbol, expr.Arguments, parent);
-		else
-			WriteNearCall((CiMethod) expr.Method.Symbol, expr.Arguments);
+		WriteCall(expr.Method.Left, (CiMethod) expr.Method.Symbol, expr.Arguments, parent);
 		return expr;
 	}
 

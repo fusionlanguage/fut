@@ -333,7 +333,11 @@ public class GenCs : GenTyped
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if ((method == CiSystem.StringIndexOf || method == CiSystem.StringLastIndexOf)
+		if (obj == null) {
+			WriteName(method);
+			WriteArgsInParentheses(method, args);
+		}
+		else if ((method == CiSystem.StringIndexOf || method == CiSystem.StringLastIndexOf)
 			&& IsOneAsciiString(args[0], out char c)) {
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
@@ -378,7 +382,7 @@ public class GenCs : GenTyped
 				Include("System");
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
-			Write(method.Name);
+			WriteName(method);
 			WriteArgsInParentheses(method, args);
 		}
 	}

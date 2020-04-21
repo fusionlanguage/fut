@@ -502,7 +502,11 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (obj.IsReferenceTo(CiSystem.MathClass)) {
+		if (obj == null) {
+			WriteName(method);
+			WriteArgsInParentheses(method, args);
+		}
+		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
 			Include("cmath");
 			Write("std::");
 			WriteMathCall(method, args);
@@ -652,7 +656,7 @@ public class GenCpp : GenCCpp
 				else
 					Write('.');
 			}
-			WriteCamelCase(method.Name);
+			WriteName(method);
 			WriteArgsInParentheses(method, args);
 		}
 	}

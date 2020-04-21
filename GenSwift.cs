@@ -366,7 +366,19 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (method == CiSystem.StringContains)
+		if (parent == CiPriority.Statement && this.AtLineStart && method.Type != null)
+			Write("_ = ");
+		if (method.Throws)
+			Write("try ");
+		if (obj == null) {
+			if (method.IsStatic()) {
+				WriteName(this.CurrentMethod.Parent);
+				Write('.');
+			}
+			WriteName(method);
+			WriteArgsInParentheses(method, args);
+		}
+		else if (method == CiSystem.StringContains)
 			WriteStringContains(obj, "contains", args);
 		else if (method == CiSystem.StringStartsWith)
 			WriteStringContains(obj, "hasPrefix", args);
@@ -489,8 +501,6 @@ public class GenSwift : GenPySwift
 			WriteArgsInParentheses(method, args);
 		}
 		else {
-			if (method.Throws)
-				Write("try ");
 			if (obj.IsReferenceTo(CiSystem.BasePtr))
 				Write("super");
 			else
@@ -504,25 +514,6 @@ public class GenSwift : GenPySwift
 				WriteName(method);
 			WriteArgsInParentheses(method, args);
 		}
-	}
-
-	protected override void WriteNearCall(CiMethod method, CiExpr[] args)
-	{
-		if (method.Throws)
-			Write("try ");
-		if (method.IsStatic()) {
-			WriteName(this.CurrentMethod.Parent);
-			Write('.');
-		}
-		WriteName(method);
-		WriteArgsInParentheses(method, args);
-	}
-
-	public override CiExpr Visit(CiCallExpr expr, CiPriority parent)
-	{
-		if (parent == CiPriority.Statement && this.AtLineStart && expr.Type != null)
-			Write("_ = ");
-		return base.Visit(expr, parent);
 	}
 
 	protected override void WriteListStorageInit(CiListType list)
