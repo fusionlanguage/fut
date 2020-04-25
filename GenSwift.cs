@@ -637,6 +637,10 @@ public class GenSwift : GenPySwift
 			return Write(expr, parent > CiPriority.Mul, CiPriority.Primary, " << ", CiPriority.Primary);
 		case CiToken.ShiftRight:
 			return Write(expr, parent > CiPriority.Mul, CiPriority.Primary, " >> ", CiPriority.Primary);
+		case CiToken.Or:
+			return Write(expr, parent > CiPriority.Add, CiPriority.Add, " | ", CiPriority.Mul);
+		case CiToken.Xor:
+			return Write(expr, parent > CiPriority.Add, CiPriority.Add, " ^ ", CiPriority.Mul);
 		case CiToken.Assign:
 		case CiToken.AddAssign:
 		case CiToken.SubAssign:
