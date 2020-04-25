@@ -587,27 +587,40 @@ public class GenSwift : GenPySwift
 			WriteUnwrappedString(expr, parent, true);
 			return;
 		}
-		if (expr is CiSymbolReference || expr.IsIndexing) {
-			switch (binary.Op) {
-			case CiToken.Plus:
-			case CiToken.Minus:
-			case CiToken.Asterisk:
-			case CiToken.Slash:
-			case CiToken.Mod:
-			case CiToken.And:
-			case CiToken.Or:
-			case CiToken.Xor:
-			case CiToken.ShiftLeft when expr == binary.Left:
-			case CiToken.ShiftRight when expr == binary.Left:
-				CiType type = CiBinaryExpr.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
+		CiType type;
+		switch (binary.Op) {
+		case CiToken.Plus:
+		case CiToken.Minus:
+		case CiToken.Asterisk:
+		case CiToken.Slash:
+		case CiToken.Mod:
+		case CiToken.And:
+		case CiToken.Or:
+		case CiToken.Xor:
+		case CiToken.ShiftLeft when expr == binary.Left:
+		case CiToken.ShiftRight when expr == binary.Left:
+			if (expr is CiSymbolReference || expr.IsIndexing) {
+				type = CiBinaryExpr.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
 				if (type != expr.Type) {
 					WriteCoerced(type, expr, parent);
 					return;
 				}
-				break;
-			default:
-				break;
 			}
+			break;
+		case CiToken.Less:
+		case CiToken.LessOrEqual:
+		case CiToken.Greater:
+		case CiToken.GreaterOrEqual:
+		case CiToken.Equal:
+		case CiToken.NotEqual:
+			type = CiBinaryExpr.PromoteFloatingTypes(binary.Left.Type, binary.Right.Type);
+			if (type != null && type != expr.Type) {
+				WriteCoerced(type, expr, parent);
+				return;
+			}
+			break;
+		default:
+			break;
 		}
 		expr.Accept(this, parent);
 	}

@@ -539,14 +539,19 @@ public class CiBinaryExpr : CiExpr
 		return left == CiSystem.LongType || right == CiSystem.LongType ? CiSystem.LongType : CiSystem.IntType;
 	}
 
-	public static CiType PromoteNumericTypes(CiType left, CiType right)
+	public static CiType PromoteFloatingTypes(CiType left, CiType right)
 	{
 		if (left == CiSystem.DoubleType || right == CiSystem.DoubleType)
 			return CiSystem.DoubleType;
 		if (left == CiSystem.FloatType || right == CiSystem.FloatType
 		 || left == CiSystem.FloatIntType || right == CiSystem.FloatIntType)
 			return CiSystem.FloatType;
-		return PromoteIntegerTypes(left, right);
+		return null;
+	}
+
+	public static CiType PromoteNumericTypes(CiType left, CiType right)
+	{
+		return PromoteFloatingTypes(left, right) ?? PromoteIntegerTypes(left, right);
 	}
 
 	public override string ToString()
