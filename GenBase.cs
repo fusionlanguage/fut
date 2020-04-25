@@ -620,6 +620,11 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteDictionaryStorageInit(CiDictionaryType dict);
 
+	protected virtual void WriteCoercedExpr(CiType type, CiExpr expr)
+	{
+		WriteCoerced(type, expr, CiPriority.Statement);
+	}
+
 	protected virtual void WriteVarInit(CiNamedValue def)
 	{
 		if (def.Type is CiClass klass) {
@@ -634,7 +639,7 @@ public abstract class GenBase : CiVisitor
 			WriteDictionaryStorageInit(dict);
 		else if (def.Value != null) {
 			Write(" = ");
-			WriteCoerced(def.Type, def.Value, CiPriority.Statement);
+			WriteCoercedExpr(def.Type, def.Value);
 		}
 	}
 

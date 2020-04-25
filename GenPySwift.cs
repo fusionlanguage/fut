@@ -119,6 +119,11 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
+	protected virtual void WriteExpr(CiExpr expr, CiPriority parent)
+	{
+		expr.Accept(this, parent);
+	}
+
 	protected bool VisitXcrement<T>(CiExpr expr, bool write) where T : CiUnaryExpr
 	{
 		bool seen;
@@ -138,7 +143,7 @@ public abstract class GenPySwift : GenBase
 			seen = VisitXcrement<T>(unary.Inner, write);
 			if ((unary.Op == CiToken.Increment || unary.Op == CiToken.Decrement) && unary is T) {
 				if (write) {
-					unary.Inner.Accept(this, CiPriority.Assign);
+					WriteExpr(unary.Inner, CiPriority.Assign);
 					WriteLine(unary.Op == CiToken.Increment ? " += 1" : " -= 1");
 				}
 				seen = true;
@@ -169,7 +174,7 @@ public abstract class GenPySwift : GenBase
 	{
 		VisitXcrement<CiPrefixExpr>(statement, true);
 		if (!(statement is CiUnaryExpr unary) || (unary.Op != CiToken.Increment && unary.Op != CiToken.Decrement)) {
-			statement.Accept(this, CiPriority.Statement);
+			WriteExpr(statement, CiPriority.Statement);
 			WriteLine();
 		}
 		VisitXcrement<CiPostfixExpr>(statement, true);
@@ -223,7 +228,7 @@ public abstract class GenPySwift : GenBase
 	{
 		VisitXcrement<CiPrefixExpr>(cond, true);
 		Write(statement);
-		cond.Accept(this, parent);
+		WriteExpr(cond, parent);
 		OpenChild();
 		return VisitXcrement<CiPostfixExpr>(cond, true);
 	}
@@ -307,14 +312,14 @@ public abstract class GenPySwift : GenBase
 			if (VisitXcrement<CiPostfixExpr>(statement.Value, false)) {
 				WriteResultVar(); // FIXME: name clash? only matters if return ... result++, unlikely
 				Write(" = ");
-				WriteCoerced(this.CurrentMethod.Type, statement.Value, CiPriority.Statement);
+				WriteCoercedExpr(this.CurrentMethod.Type, statement.Value);
 				WriteLine();
 				VisitXcrement<CiPostfixExpr>(statement.Value, true);
 				WriteLine("return result");
 			}
 			else {
 				Write("return ");
-				WriteCoerced(this.CurrentMethod.Type, statement.Value, CiPriority.Statement);
+				WriteCoercedExpr(this.CurrentMethod.Type, statement.Value);
 				WriteLine();
 			}
 		}

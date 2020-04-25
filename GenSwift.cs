@@ -366,10 +366,6 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
-		if (parent == CiPriority.Statement && this.AtLineStart && method.Type != null)
-			Write("_ = ");
-		if (method.Throws)
-			Write("try ");
 		if (obj == null) {
 			if (method.IsStatic()) {
 				WriteName(this.CurrentMethod.Parent);
@@ -681,6 +677,58 @@ public class GenSwift : GenPySwift
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
+	static bool Throws(CiExpr expr)
+	{
+		switch (expr) {
+		case CiVar _:
+		case CiLiteral _:
+			return false;
+		case CiInterpolatedString interp:
+			foreach (CiInterpolatedPart part in interp.Parts) {
+				if (Throws(part.Argument))
+					return true;
+			}
+			return false;
+		case CiSymbolReference symbol:
+			return symbol.Left != null && Throws(symbol.Left);
+		case CiUnaryExpr unary:
+			return Throws(unary.Inner);
+		case CiBinaryExpr binary:
+			return Throws(binary.Left) || Throws(binary.Right);
+		case CiSelectExpr select:
+			return Throws(select.Cond) || Throws(select.OnTrue) || Throws(select.OnFalse);
+		case CiCallExpr call:
+			foreach (CiExpr arg in call.Arguments) {
+				if (Throws(arg))
+					return true;
+			}
+			return ((CiMethod) call.Method.Symbol).Throws || (call.Method.Left != null && Throws(call.Method.Left));
+		default:
+			throw new NotImplementedException(expr.GetType().Name);
+		}
+	}
+
+	protected override void WriteExpr(CiExpr expr, CiPriority parent)
+	{
+		if (Throws(expr))
+			Write("try ");
+		base.WriteExpr(expr, parent);
+	}
+
+	protected override void WriteCoercedExpr(CiType type, CiExpr expr)
+	{
+		if (Throws(expr))
+			Write("try ");
+		base.WriteCoercedExpr(type, expr);
+	}
+
+	public override void Visit(CiExpr statement)
+	{
+		if (statement is CiCallExpr && statement.Type != null)
+			Write("_ = ");
+		base.Visit(statement);
+	}
+
 	protected override void OpenChild()
 	{
 		Write(' ');
@@ -701,10 +749,10 @@ public class GenSwift : GenPySwift
 	public override void Visit(CiAssert statement)
 	{
 		Write("assert(");
-		statement.Cond.Accept(this, CiPriority.Statement);
+		WriteExpr(statement.Cond, CiPriority.Statement);
 		if (statement.Message != null) {
 			Write(", ");
-			statement.Message.Accept(this, CiPriority.Statement);
+			WriteExpr(statement.Message, CiPriority.Statement);
 		}
 		WriteLine(')');
 	}
@@ -725,7 +773,7 @@ public class GenSwift : GenPySwift
 		Write("repeat");
 		WriteChild(statement.Body);
 		Write("while ");
-		statement.Cond.Accept(this, CiPriority.Statement);
+		WriteExpr(statement.Cond, CiPriority.Statement);
 		WriteLine();
 	}
 
@@ -737,7 +785,7 @@ public class GenSwift : GenPySwift
 	protected override void WriteForRange(CiVar iter, CiBinaryExpr cond, long rangeStep)
 	{
 		if (rangeStep == 1) {
-			iter.Value.Accept(this, CiPriority.Shift);
+			WriteExpr(iter.Value, CiPriority.Shift);
 			switch (cond.Op) {
 			case CiToken.Less:
 				Write("..<");
@@ -753,17 +801,17 @@ public class GenSwift : GenPySwift
 		}
 		else {
 			Write("stride(from: ");
-			iter.Value.Accept(this, CiPriority.Statement);
+			WriteExpr(iter.Value, CiPriority.Statement);
 			switch (cond.Op) {
 			case CiToken.Less:
 			case CiToken.Greater:
 				Write(", to: ");
-				cond.Right.Accept(this, CiPriority.Statement);
+				WriteExpr(cond.Right, CiPriority.Statement);
 				break;
 			case CiToken.LessOrEqual:
 			case CiToken.GreaterOrEqual:
 				Write(", through: ");
-				cond.Right.Accept(this, CiPriority.Statement);
+				WriteExpr(cond.Right, CiPriority.Statement);
 				break;
 			default:
 				throw new NotImplementedException(cond.Op.ToString());
@@ -792,7 +840,7 @@ public class GenSwift : GenPySwift
 			Write(".sorted(by: { $0.key < $1.key })");
 		}
 		else
-			statement.Collection.Accept(this, CiPriority.Statement);
+			WriteExpr(statement.Collection, CiPriority.Statement);
 		WriteChild(statement.Body);
 	}
 
@@ -805,7 +853,7 @@ public class GenSwift : GenPySwift
 	public override void Visit(CiSwitch statement)
 	{
 		Write("switch ");
-		statement.Value.Accept(this, CiPriority.Statement);
+		WriteExpr(statement.Value, CiPriority.Statement);
 		WriteLine(" {");
 		foreach (CiCase kase in statement.Cases) {
 			Write("case ");
@@ -832,7 +880,7 @@ public class GenSwift : GenPySwift
 		this.Throw = true;
 		VisitXcrement<CiPrefixExpr>(statement.Message, true);
 		Write("throw CiError.error(");
-		statement.Message.Accept(this, CiPriority.Statement);
+		WriteExpr(statement.Message, CiPriority.Statement);
 		WriteLine(')');
 	}
 
