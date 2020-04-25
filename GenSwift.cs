@@ -633,6 +633,10 @@ public class GenSwift : GenPySwift
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
+		case CiToken.ShiftLeft:
+			return Write(expr, parent > CiPriority.Mul, CiPriority.Primary, " << ", CiPriority.Primary);
+		case CiToken.ShiftRight:
+			return Write(expr, parent > CiPriority.Mul, CiPriority.Primary, " >> ", CiPriority.Primary);
 		case CiToken.Assign:
 		case CiToken.AddAssign:
 		case CiToken.SubAssign:
