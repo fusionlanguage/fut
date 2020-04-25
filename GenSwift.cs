@@ -625,6 +625,11 @@ public class GenSwift : GenPySwift
 		expr.Accept(this, parent);
 	}
 
+	protected override void WriteAnd(CiBinaryExpr expr, CiPriority parent)
+	{
+		Write(expr, parent > CiPriority.Mul, CiPriority.Mul, " & ", CiPriority.Primary);
+	}
+
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
