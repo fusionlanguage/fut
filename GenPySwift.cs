@@ -140,6 +140,8 @@ public abstract class GenPySwift : GenBase
 		case CiSymbolReference symbol:
 			return symbol.Left != null && VisitXcrement<T>(symbol.Left, write);
 		case CiUnaryExpr unary:
+			if (unary.Inner == null) // new C()
+				return false;
 			seen = VisitXcrement<T>(unary.Inner, write);
 			if ((unary.Op == CiToken.Increment || unary.Op == CiToken.Decrement) && unary is T) {
 				if (write) {

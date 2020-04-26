@@ -692,7 +692,7 @@ public class GenSwift : GenPySwift
 		case CiSymbolReference symbol:
 			return symbol.Left != null && Throws(symbol.Left);
 		case CiUnaryExpr unary:
-			return Throws(unary.Inner);
+			return unary.Inner != null /* new C() */ && Throws(unary.Inner);
 		case CiBinaryExpr binary:
 			return Throws(binary.Left) || Throws(binary.Right);
 		case CiSelectExpr select:

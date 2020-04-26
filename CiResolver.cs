@@ -447,6 +447,7 @@ public class CiResolver : CiVisitor
 			switch (type) {
 			case CiClass klass:
 				expr.Type = new CiClassPtrType { Class = klass, Modifier = CiToken.Hash };
+				expr.Inner = null;
 				return expr;
 			case CiArrayStorageType array:
 				expr.Type = new CiArrayPtrType { ElementType = array.ElementType, Modifier = CiToken.Hash };
