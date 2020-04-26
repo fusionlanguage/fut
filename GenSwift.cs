@@ -1040,6 +1040,10 @@ public class GenSwift : GenPySwift
 			Write(field.Documentation);
 			Write(field.Visibility);
 			WriteVar(field);
+			if (field.Value == null && !field.Type.IsFinal) {
+				Write(" = ");
+				WriteDefaultValue(field.Type);
+			}
 			WriteLine();
 		}
 
