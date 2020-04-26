@@ -321,7 +321,10 @@ public class GenSwift : GenPySwift
 		 && GetTypeCode(type, false) != GetTypeCode(expr.Type, expr is CiBinaryExpr binary && binary.Op != CiToken.LeftBracket)) {
 			Write(type);
 			Write('(');
-			expr.Accept(this, CiPriority.Statement);
+			if (type is CiIntegerType && expr is CiCallExpr call && call.Method.IsReferenceTo(CiSystem.MathTruncate))
+				call.Arguments[0].Accept(this, CiPriority.Statement);
+			else
+				expr.Accept(this, CiPriority.Statement);
 			Write(')');
 		}
 		else if (type == CiSystem.StringStorageType)
