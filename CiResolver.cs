@@ -443,6 +443,8 @@ public class CiResolver : CiVisitor
 			inner = ResolveBool(expr.Inner);
 			return new CiPrefixExpr { Line = expr.Line, Op = CiToken.ExclamationMark, Inner = inner, Type = CiSystem.BoolType };
 		case CiToken.New:
+			if (expr.Type != null)
+				return expr;
 			type = ToType(expr.Inner, true);
 			switch (type) {
 			case CiClass klass:
