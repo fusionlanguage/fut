@@ -1025,6 +1025,8 @@ public class GenSwift : GenPySwift
 		if (klass.Constructor != null) {
 			Write(klass.Constructor.Documentation);
 			Write(klass.Constructor.Visibility);
+			if (klass.Parent is CiClass baseClass && baseClass.Constructor != null)
+				Write("override ");
 			WriteLine("init()");
 			OpenBlock();
 			WriteConstructorBody(klass);
