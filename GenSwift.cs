@@ -542,8 +542,15 @@ public class GenSwift : GenPySwift
 	{
 		if (type is CiNumericType)
 			Write('0');
-		else if (type == CiSystem.BoolType)
-			Write("false");
+		else if (type is CiEnum) {
+			if (type == CiSystem.BoolType)
+				Write("false");
+			else {
+				WriteName(type);
+				Write('.');
+				WriteName(type.First());
+			}
+		}
 		else if (type == CiSystem.StringStorageType)
 			Write("\"\"");
 		else if (type is CiArrayStorageType array)

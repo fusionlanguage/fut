@@ -1,0 +1,27 @@
+public enum DayOfWeek
+{
+	Sunday,
+	Monday,
+	Tuesday,
+	Wednesday,
+	Thursday,
+	Friday,
+	Saturday
+}
+
+public class Test
+{
+	DayOfWeek Day;
+
+	public static bool Run()
+	{
+		DayOfWeek[2] a;
+		Test() o;
+		a[0] = DayOfWeek.Saturday;
+		a[1] = DayOfWeek.Sunday;
+		o.Day = DayOfWeek.Wednesday;
+		return a[0] == DayOfWeek.Saturday
+			&& a[1] == DayOfWeek.Sunday
+			&& o.Day == DayOfWeek.Wednesday;
+	}
+}
