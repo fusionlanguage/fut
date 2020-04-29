@@ -574,6 +574,7 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
+		this.ArrayRef = true;
 		Write("ArrayRef<");
 		Write(elementType);
 		if (IsClassStorage(elementType)) {
