@@ -366,7 +366,8 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
-		if (expr.Left.Type is CiClassPtrType || expr.Right.Type is CiClassPtrType)
+		if (expr.Left.Type is CiClassPtrType || expr.Right.Type is CiClassPtrType
+		 || expr.Left.Type is CiArrayPtrType || expr.Right.Type is CiArrayPtrType)
 			WriteComparison(expr, parent, CiPriority.Equality, not ? " !== " : " === ");
 		else
 			base.WriteEqual(expr, parent, not);
