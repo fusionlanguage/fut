@@ -1027,7 +1027,7 @@ public class GenSwift : GenPySwift
 			Write("static let ");
 			WriteName(konst);
 			Write(" = ");
-			if (konst.Type == CiSystem.IntType || konst.Type == CiSystem.BoolType || konst.Type == CiSystem.StringPtrType)
+			if (konst.Type == CiSystem.IntType || konst.Type is CiEnum || konst.Type == CiSystem.StringPtrType)
 				konst.Value.Accept(this, CiPriority.Statement);
 			else {
 				Write(konst.Type);
