@@ -1,6 +1,6 @@
 public static class Test
 {
-	static string() Twice(string s)
+	static string() Twice(string s) //FAIL: cl
 	{
 		string() stg = s;
 		stg += s;

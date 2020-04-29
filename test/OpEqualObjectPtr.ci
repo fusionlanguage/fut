@@ -5,7 +5,7 @@ class Data
 public class Test
 {
 	Data() Storage;
-	Data# Dynamic;
+	Data# Dynamic; //FAIL: cl
 
 	bool IsNull(bool dyn)
 		=> (dyn ? Dynamic : Storage) == null;

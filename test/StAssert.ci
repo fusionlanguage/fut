@@ -6,7 +6,7 @@ public static class Test
 	{
 		int i = 5;
 		string s = "foo";
-		assert i > 0;
+		assert i > 0; //FAIL: cl
 		assert i > 0, "i must be positive";
 		switch (i) {
 		case 5:

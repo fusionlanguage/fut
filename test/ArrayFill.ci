@@ -16,7 +16,7 @@ public static class Test
 			e[i] = i;
 			s[i] = null;
 		}
-		a.Fill(0);
+		a.Fill(0); //FAIL: cl
 		b.Fill(0);
 		c.Fill(false);
 		d.Fill(0);

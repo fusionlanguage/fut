@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		int[]#[3] a = new int[2][3]; //FAIL: cpp - should work with C++20; cs js TODO
+		int[]#[3] a = new int[2][3]; //FAIL: cpp - should work with C++20; cs js TODO; cl
 		a[0][0] = 1;
 		a[0][1] = 2;
 		a[0][2] = 3;

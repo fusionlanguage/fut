@@ -18,6 +18,7 @@ public class Test
 	bool Checked = true;
 	bool Class = true;
 	bool Const = true;
+	bool Constant = true;
 	bool Continue = true;
 	bool Debugger = true;
 	bool Decimal = true;
@@ -72,6 +73,7 @@ public class Test
 	bool Lambda = true;
 	bool Len = true;
 	bool Let = true;
+	bool Local = true;
 	bool Lock = true;
 	bool Long = true;
 	bool Module = true;
@@ -158,6 +160,7 @@ public class Test
 		bool catch = true;
 		bool char = true;
 		bool checked = true;
+		bool constant = true;
 		bool debugger = true;
 		bool decimal = true;
 		bool def = true;
@@ -198,6 +201,7 @@ public class Test
 		bool lambda = true;
 		bool len = s.Length == 3;
 		bool let = true;
+		bool local = true;
 		bool lock = true;
 		bool module = true;
 		bool namespace = true;
@@ -266,6 +270,7 @@ public class Test
 			&& o.Checked
 			&& o.Class
 			&& o.Const
+			&& o.Constant
 			&& o.Continue
 			&& o.Decimal
 			&& o.Debugger
@@ -320,6 +325,7 @@ public class Test
 			&& o.Lambda
 			&& o.Len
 			&& o.Let
+			&& o.Local
 			&& o.Lock
 			&& o.Long
 			&& o.Module
@@ -401,6 +407,7 @@ public class Test
 			&& catch
 			&& char
 			&& checked
+			&& constant
 			&& decimal
 			&& debugger
 			&& def
@@ -441,6 +448,7 @@ public class Test
 			&& lambda
 			&& len
 			&& let
+			&& local
 			&& lock
 			&& module
 			&& namespace

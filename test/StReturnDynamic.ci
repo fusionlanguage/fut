@@ -2,7 +2,7 @@ public class Test
 {
 	int Foo = 42;
 
-	static Test# CreateTest() => new Test();
+	static Test# CreateTest() => new Test(); //FAIL: cl
 
 	static int[]# CreateIntArray()
 	{

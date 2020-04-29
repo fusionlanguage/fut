@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		string() s = "barek";
+		string() s = "barek"; //FAIL: cl
 		s = s.Substring(0, 3);
 		return s == "bar";
 	}

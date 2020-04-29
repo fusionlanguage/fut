@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		List<int[2]>() list; //FAIL: c
+		List<int[2]>() list; //FAIL: c cl
 		int[]! p = list.Add(); //FAIL: cs java js py swift
 		p[0] = 100;
 		p[1] = 200;

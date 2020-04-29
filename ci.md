@@ -4,7 +4,7 @@ Welcome to the description of yet another programming language.
 Unlike most languages that you learned before, Ć does _not_ claim
 to be the best universal programming language.
 Instead, it solves one specific problem: how to write code that can be
-_conveniently_ used from C, C++, C#, Java, JavaScript and Python
+_conveniently_ used from C, C++, C#, Java, JavaScript, Python and OpenCL
 _at the same time_.
 For example, if you invented a new compression format, you can implement
 it in Ć and have the automatic translator `cito` generate the source code

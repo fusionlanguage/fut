@@ -4,7 +4,7 @@ public class Test
 
 	public static bool Run()
 	{
-		SortedDictionary<int, Test()>() dict; //FAIL: c
+		SortedDictionary<int, Test()>() dict; //FAIL: c cl
 		dict.Add(1);
 		dict.Clear();
 		Test! p = dict.Add(1); //FAIL: cs java

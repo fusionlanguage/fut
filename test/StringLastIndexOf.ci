@@ -2,7 +2,7 @@ public class Test
 {
 	public static bool Run()
 	{
-		string() s = "foobar";
+		string() s = "foobar"; //FAIL: cl
 		string p = "foobar";
 		return (s.LastIndexOf("") == 5 /* .NET */ || s.LastIndexOf("") == 6 /* Java, JavaScript */)
 			&& s.LastIndexOf("r") == 5

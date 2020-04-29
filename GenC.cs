@@ -41,7 +41,7 @@ public class GenC : GenCCpp
 	bool SharedRelease;
 	bool SharedAssign;
 	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
-	CiClass CurrentClass;
+	protected CiClass CurrentClass;
 
 	protected override void WriteSelfDoc(CiMethod method)
 	{
@@ -62,6 +62,16 @@ public class GenC : GenCCpp
 		Include("assert.h");
 	}
 
+	protected virtual void IncludeStdBool()
+	{
+		Include("stdbool.h");
+	}
+
+	protected virtual void IncludeMath()
+	{
+		Include("math.h");
+	}
+
 	protected override void WriteLiteral(object value)
 	{
 		if (value == null)
@@ -80,7 +90,7 @@ public class GenC : GenCCpp
 		return expr;
 	}
 
-	void WriteCamelCaseNotKeyword(string name)
+	protected virtual void WriteCamelCaseNotKeyword(string name)
 	{
 		switch (name) {
 		case "this":
@@ -217,6 +227,11 @@ public class GenC : GenCCpp
 		return expr;
 	}
 
+	protected virtual void WriteStringPtrType()
+	{
+		Write("const char *");
+	}
+
 	void WriteArrayPrefix(CiType type)
 	{
 		if (type is CiArrayType array) {
@@ -254,7 +269,7 @@ public class GenC : GenCCpp
 				Write(' ');
 			break;
 		case CiStringPtrType _:
-			Write("const char *");
+			WriteStringPtrType();
 			break;
 		case CiStringStorageType _:
 			Write("char *");
@@ -277,7 +292,7 @@ public class GenC : GenCCpp
 			break;
 		default:
 			if (baseType == CiSystem.BoolType)
-				Include("stdbool.h");
+				IncludeStdBool();
 			Write(baseType.Name);
 			if (space)
 				Write(' ');
@@ -669,7 +684,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteCCall(CiExpr obj, CiMethod method, CiExpr[] args)
+	protected void WriteCCall(CiExpr obj, CiMethod method, CiExpr[] args)
 	{
 		CiClass klass = this.CurrentClass;
 		CiClass definingClass = (CiClass) method.Parent;
@@ -938,7 +953,7 @@ public class GenC : GenCCpp
 			Write(" == -1");
 			break;
 		case CiNumericType _:
-			Include("math.h");
+			IncludeMath();
 			Write("isnan(");
 			source(CiPriority.Statement);
 			Write(')');
@@ -1173,7 +1188,7 @@ public class GenC : GenCCpp
 			Write("-1");
 			break;
 		case CiNumericType _:
-			Include("math.h");
+			IncludeMath();
 			Write("NAN");
 			break;
 		default:
@@ -1209,7 +1224,7 @@ public class GenC : GenCCpp
 			Write(" != -1");
 			break;
 		case CiNumericType _:
-			Include("math.h");
+			IncludeMath();
 			Write("!isnan(");
 			call.Accept(this, CiPriority.Statement);
 			Write(')');
@@ -1275,7 +1290,7 @@ public class GenC : GenCCpp
 		WriteLine(';');
 	}
 
-	void WriteTypedefs(CiProgram program, bool pub)
+	protected void WriteTypedefs(CiProgram program, bool pub)
 	{
 		foreach (CiContainerType type in program) {
 			if (type.IsPublic == pub) {
@@ -1415,7 +1430,7 @@ public class GenC : GenCCpp
 		Write(" *self)");
 	}
 
-	void WriteSignatures(CiClass klass, bool pub)
+	protected void WriteSignatures(CiClass klass, bool pub)
 	{
 		foreach (CiConst konst in klass.Consts) {
 			if ((konst.Visibility == CiVisibility.Public) == pub) {
@@ -1436,7 +1451,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteStruct(CiClass klass)
+	protected void WriteStruct(CiClass klass)
 	{
 		if (klass.CallType != CiCallType.Static) {
 			// topological sorting of class hierarchy and class storage fields
@@ -1509,7 +1524,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteConstructor(CiClass klass)
+	protected void WriteConstructor(CiClass klass)
 	{
 		if (!NeedsConstructor(klass))
 			return;
@@ -1546,7 +1561,7 @@ public class GenC : GenCCpp
 		CloseBlock();
 	}
 
-	void WriteDestructor(CiClass klass)
+	protected void WriteDestructor(CiClass klass)
 	{
 		if (!NeedsDestructor(klass))
 			return;
@@ -1619,7 +1634,7 @@ public class GenC : GenCCpp
 			WriteLine(';');
 	}
 
-	void Write(CiClass klass, CiMethod method)
+	protected void Write(CiClass klass, CiMethod method)
 	{
 		if (!method.IsLive || method.CallType == CiCallType.Abstract)
 			return;
@@ -1815,7 +1830,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteResources(Dictionary<string, byte[]> resources)
+	protected void WriteResources(Dictionary<string, byte[]> resources)
 	{
 		if (resources.Count == 0)
 			return;

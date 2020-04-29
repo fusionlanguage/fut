@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		string()[2] a;
+		string()[2] a; //FAIL: cl
 		a[0] = "foo";
 		a[1] = "bar";
 		return a[0] == "foo" && a[1] == "bar";

@@ -4,7 +4,7 @@ public class Test
 
 	public static bool Run()
 	{
-		List<Test()>() list; //FAIL: c
+		List<Test()>() list; //FAIL: c cl
 		Test! t = list.Add(); //FAIL: cs java js py swift
 		t.Foo = 0;
 		list.Clear();

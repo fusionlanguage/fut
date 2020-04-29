@@ -4,7 +4,7 @@ public class Test
 
 	public static bool Run()
 	{
-		Test# p;
+		Test# p; //FAIL: cl
 		p = new Test();
 		Test# q;
 		q = p;

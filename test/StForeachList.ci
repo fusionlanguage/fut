@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		List<int>() list; //FAIL: c
+		List<int>() list; //FAIL: c cl
 		list.Add(15);
 		list.Add(5);
 		list.Add(10);

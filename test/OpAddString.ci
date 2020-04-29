@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		string() s = "foo";
+		string() s = "foo"; //FAIL: cl
 		string p = "bar";
 		return s + s == "foofoo" //FAIL: c
 			&& s + p == "foobar" //FAIL: cpp https://stackoverflow.com/questions/44636549/why-is-there-no-support-for-concatenating-stdstring-and-stdstring-view

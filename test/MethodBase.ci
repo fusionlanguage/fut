@@ -1,6 +1,6 @@
 abstract class Base
 {
-	internal virtual int Foo()
+	internal virtual int Foo() //FAIL: cl
 	{
 		return 5;
 	}

@@ -40,6 +40,8 @@ public static class CiTo
 		Console.WriteLine("-l java    Translate to Java");
 		Console.WriteLine("-l js      Translate to JavaScript");
 		Console.WriteLine("-l py      Translate to Python");
+		Console.WriteLine("-l swift   Translate to Swift");
+		Console.WriteLine("-l cl      Translate to OpenCL C");
 		Console.WriteLine("-o FILE    Write to the specified file");
 		Console.WriteLine("-n NAME    Specify C++/C# namespace or Java package");
 		Console.WriteLine("-D NAME    Define conditional compilation symbol");
@@ -110,6 +112,7 @@ public static class CiTo
 		case "js": gen = new GenJs(); break;
 		case "py": gen = new GenPy(); break;
 		case "swift": gen = new GenSwift(); break;
+		case "cl": gen = new GenCl(); break;
 		default: throw new ArgumentException("Unknown language: " + lang);
 		}
 		gen.Namespace = namespace_;

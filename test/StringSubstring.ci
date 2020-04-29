@@ -1,6 +1,6 @@
 public class Test
 {
-	string() Foo = "foobar";
+	string() Foo = "foobar"; //FAIL: cl
 	string Ptr = "foobar";
 
 	public static bool Run()

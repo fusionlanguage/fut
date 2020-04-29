@@ -3,7 +3,7 @@ public class Test
 	public static bool Run()
 	{
 		string p = "foobar";
-		string() s = p;
+		string() s = p; //FAIL: cl
 		return s == "foobar";
 	}
 }

@@ -1,6 +1,6 @@
 public class Test
 {
-	Test# Parent;
+	Test# Parent; //FAIL: cl
 
 	void SetParent!(Test# parent)
 	{

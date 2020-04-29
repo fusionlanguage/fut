@@ -1,6 +1,6 @@
 public abstract class Base
 {
-	internal virtual void Foo() throws
+	internal virtual void Foo() throws //FAIL: cl
 	{
 	}
 

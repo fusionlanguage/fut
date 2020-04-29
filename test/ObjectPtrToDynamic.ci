@@ -9,7 +9,7 @@ public class Test
 
 	public static bool Run()
 	{
-		Test# d = new Test();
+		Test# d = new Test(); //FAIL: cl
 		Test p = d;
 		Test p2;
 		p2 = d;

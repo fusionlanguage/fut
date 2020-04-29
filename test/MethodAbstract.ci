@@ -1,6 +1,6 @@
 abstract class Base
 {
-	internal abstract bool Foo();
+	internal abstract bool Foo(); //FAIL: cl
 }
 
 class Derived : Base

@@ -2,7 +2,7 @@ public class Test
 {
 	public static bool Run()
 	{
-		string() s = "foobar";
+		string() s = "foobar"; //FAIL: cl
 		string p = "foobar";
 		return s.Contains("f")
 			&& s.Contains("ooba")
