@@ -27,6 +27,7 @@ namespace Foxoft.Ci
 public class GenSwift : GenPySwift
 {
 	bool Throw;
+	bool ArrayRef;
 	bool StringCharAt;
 	bool StringIndexOf;
 	bool StringSubstring;
@@ -191,6 +192,14 @@ public class GenSwift : GenPySwift
 		Write('.');
 	}
 
+	void OpenIndexing(CiExpr array)
+	{
+		array.Accept(this, CiPriority.Primary);
+		if (array.Type is CiArrayPtrType)
+			Write('!');
+		Write('[');
+	}
+
 	void Write(CiType type)
 	{
 		switch (type) {
@@ -236,6 +245,11 @@ public class GenSwift : GenPySwift
 			Write(classPtr.Class.Name);
 			Write('?');
 			break;
+		case CiListType list:
+			Write('[');
+			Write(list.ElementType);
+			Write(']');
+			break;
 		case CiDictionaryType dict:
 			Write('[');
 			Write(dict.KeyType);
@@ -244,11 +258,12 @@ public class GenSwift : GenPySwift
 			Write(']');
 			break;
 		case CiArrayType array:
-			if (array is CiArrayPtrType)
-				Write("inout ");
-			Write('[');
+			this.ArrayRef = true;
+			Write("ArrayRef<");
 			Write(array.ElementType);
-			Write(']');
+			Write('>');
+			if (array is CiArrayPtrType)
+				Write('?');
 			break;
 		default:
 			Write(type.Name);
@@ -419,14 +434,12 @@ public class GenSwift : GenPySwift
 			}
 		}
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
-			args[1].Accept(this, CiPriority.Primary);
-			Write('[');
+			OpenIndexing(args[1]);
 			args[2].Accept(this, CiPriority.Shift);
 			Write("..<");
 			WriteAdd(args[2], args[3]); // TODO: side effect
 			Write("] = ");
-			obj.Accept(this, CiPriority.Primary);
-			Write('[');
+			OpenIndexing(obj);
 			args[0].Accept(this, CiPriority.Shift);
 			Write("..<");
 			WriteAdd(args[0], args[3]); // TODO: side effect
@@ -480,8 +493,7 @@ public class GenSwift : GenPySwift
 		}
 		else if (method == CiSystem.UTF8GetString) {
 			Write("String(decoding: ");
-			args[0].Accept(this, CiPriority.Primary);
-			Write('[');
+			OpenIndexing(args[0]);
 			args[1].Accept(this, CiPriority.Shift);
 			Write("..<");
 			WriteAdd(args[1], args[2]); // TODO: side effect
@@ -561,28 +573,25 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
+		Write("ArrayRef<");
+		Write(elementType);
 		if (IsClassStorage(elementType)) {
-			Write("(1...");
-			lengthExpr.Accept(this, CiPriority.Shift);
-			Write(").map({ _ in ");
+			Write(">(factory: { ");
 			WriteNewStorage(elementType);
-			Write(" })");
+			Write(" }");
 		}
 		else {
-			Write('[');
-			Write(elementType);
-			Write("](repeating: ");
+			Write(">(repeating: ");
 			WriteDefaultValue(elementType);
-			Write(", count: ");
-			lengthExpr.Accept(this, CiPriority.Statement);
-			Write(')');
 		}
+		Write(", count: ");
+		lengthExpr.Accept(this, CiPriority.Statement);
+		Write(')');
 	}
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
-		expr.Left.Accept(this, CiPriority.Primary);
-		Write('[');
+		OpenIndexing(expr.Left);
 		WriteCoerced(CiSystem.IntType, expr.Right, CiPriority.Statement);
 		Write(']');
 	}
@@ -1015,10 +1024,15 @@ public class GenSwift : GenPySwift
 			Write(konst.Visibility);
 			Write("static let ");
 			WriteName(konst);
-			Write(" : ");
-			Write(konst.Type);
 			Write(" = ");
-			konst.Value.Accept(this, CiPriority.Statement);
+			if (konst.Type == CiSystem.IntType || konst.Type == CiSystem.BoolType || konst.Type == CiSystem.StringPtrType)
+				konst.Value.Accept(this, CiPriority.Statement);
+			else {
+				Write(konst.Type);
+				Write('(');
+				konst.Value.Accept(this, CiPriority.Statement);
+				Write(')');
+			}
 			WriteLine();
 		}
 	}
@@ -1074,6 +1088,51 @@ public class GenSwift : GenPySwift
 			WriteLine("case error(String)");
 			CloseBlock();
 		}
+		if (this.ArrayRef) {
+			WriteLine();
+			WriteLine("public class ArrayRef<T>");
+			OpenBlock();
+			WriteLine("var array : [T]");
+			WriteLine();
+			WriteLine("init(_ array : [T])");
+			OpenBlock();
+			WriteLine("self.array = array");
+			CloseBlock();
+			WriteLine();
+			WriteLine("init(repeating: T, count: Int)");
+			OpenBlock();
+			WriteLine("self.array = [T](repeating: repeating, count: count)");
+			CloseBlock();
+			WriteLine();
+			WriteLine("init(factory: () -> T, count: Int)");
+			OpenBlock();
+			WriteLine("self.array = (1...count).map({_ in factory() })");
+			CloseBlock();
+			WriteLine();
+			WriteLine("subscript(index: Int) -> T");
+			OpenBlock();
+			WriteLine("get");
+			OpenBlock();
+			WriteLine("return array[index]");
+			CloseBlock();
+			WriteLine("set(value)");
+			OpenBlock();
+			WriteLine("array[index] = value");
+			CloseBlock();
+			CloseBlock();
+			WriteLine("subscript(bounds: Range<Int>) -> ArraySlice<T>");
+			OpenBlock();
+			WriteLine("get");
+			OpenBlock();
+			WriteLine("return array[bounds]");
+			CloseBlock();
+			WriteLine("set(value)");
+			OpenBlock();
+			WriteLine("array[bounds] = value");
+			CloseBlock();
+			CloseBlock();
+			CloseBlock();
+		}
 		if (this.StringCharAt) {
 			WriteLine();
 			WriteLine("fileprivate func ciStringCharAt(_ s: String, _ offset: Int) -> Int");
@@ -1102,16 +1161,17 @@ public class GenSwift : GenPySwift
 	{
 		if (resources.Count == 0)
 			return;
+		this.ArrayRef = true;
 		WriteLine();
 		WriteLine("fileprivate final class CiResource");
 		OpenBlock();
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
 			Write("static let ");
 			WriteResource(name, -1);
-			WriteLine(" : [UInt8] = [");
+			WriteLine(" = ArrayRef<UInt8>([");
 			Write('\t');
 			Write(resources[name]);
-			WriteLine(" ]");
+			WriteLine(" ])");
 		}
 		CloseBlock();
 	}
@@ -1120,6 +1180,7 @@ public class GenSwift : GenPySwift
 	{
 		this.Includes = new SortedSet<string>();
 		this.Throw = false;
+		this.ArrayRef = false;
 		this.StringCharAt = false;
 		this.StringIndexOf = false;
 		this.StringSubstring = false;

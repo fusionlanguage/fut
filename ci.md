@@ -4,7 +4,7 @@ Welcome to the description of yet another programming language.
 Unlike most languages that you learned before, Ć does _not_ claim
 to be the best universal programming language.
 Instead, it solves one specific problem: how to write code that can be
-_conveniently_ used from C, C++, C#, Java, JavaScript, Python and OpenCL
+_conveniently_ used from C, C++, C#, Java, JavaScript, Python, Swift and OpenCL
 _at the same time_.
 For example, if you invented a new compression format, you can implement
 it in Ć and have the automatic translator `cito` generate the source code
@@ -121,7 +121,8 @@ bitwise complement (`~`) and comparisons (`== != < <= > >=`).
 Incrementations and decrementations cannot be conditional in an expression.
 That is, they cannot be used on the right side of `&&`, `||`
 or the ternary operator. This is because such expressions don't easily
-translate to Python, which lacks incrementation and decrementation operators.
+translate to Python or Swift, which lack incrementation and decrementation
+operators.
 
 ### Floating-point numbers
 
@@ -565,6 +566,7 @@ Cat alik = new Cat(); // C#
 final Cat alik = new Cat(); // Java
 const alik = new Cat(); // JavaScript
 alik = Cat() # Python
+let alik = Cat() // Swift
 Cat alik; // C++
 Cat alik; // C, potentially followed by construction code
 ```
