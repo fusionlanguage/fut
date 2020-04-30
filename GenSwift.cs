@@ -946,8 +946,6 @@ public class GenSwift : GenPySwift
 			Write("fileprivate ");
 			break;
 		case CiVisibility.Protected:
-			Write("open ");
-			break;
 		case CiVisibility.Public:
 			Write("public ");
 			break;
@@ -967,18 +965,25 @@ public class GenSwift : GenPySwift
 				WriteLine();
 			}
 		}
-		Write(method.Visibility);
 		switch (method.CallType) {
 		case CiCallType.Static:
+			Write(method.Visibility);
 			Write("static ");
 			break;
+		case CiCallType.Normal:
+			Write(method.Visibility);
+			break;
+		case CiCallType.Abstract:
+		case CiCallType.Virtual:
+			Write(method.Visibility == CiVisibility.Internal ? "fileprivate " : "open ");
+			break;
 		case CiCallType.Override:
+			Write(method.Visibility == CiVisibility.Internal ? "fileprivate " : "open ");
 			Write("override ");
 			break;
 		case CiCallType.Sealed:
+			Write(method.Visibility);
 			Write("final override ");
-			break;
-		default:
 			break;
 		}
 		Write("func ");
