@@ -785,10 +785,15 @@ public class GenSwift : GenPySwift
 	public override void Visit(CiDoWhile statement)
 	{
 		Write("repeat");
-		WriteChild(statement.Body);
+		OpenChild();
+		statement.Body.Accept(this);
+		VisitXcrement<CiPrefixExpr>(statement.Cond, true);
+		CloseChild();
 		Write("while ");
 		WriteExpr(statement.Cond, CiPriority.Statement);
 		WriteLine();
+		if (VisitXcrement<CiPostfixExpr>(statement.Cond, true) && statement.HasBreak)
+			throw new NotImplementedException("do-while with a post-in/decrement and a break");
 	}
 
 	protected override void WriteElseIf()
