@@ -803,8 +803,10 @@ public class GenJava : GenTyped
 		OpenClass(klass, "", " extends ");
 
 		if (NeedsConstructor(klass)) {
-			if (klass.Constructor != null)
+			if (klass.Constructor != null) {
+				Write(klass.Constructor.Documentation);
 				Write(klass.Constructor.Visibility);
+			}
 			Write(klass.Name);
 			WriteLine("()");
 			OpenBlock();
