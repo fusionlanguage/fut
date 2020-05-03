@@ -951,6 +951,8 @@ public class GenPy : GenPySwift
 			WriteLine();
 			Write("def __init__(self)");
 			OpenChild();
+			if (klass.Constructor != null)
+				Write(klass.Constructor.Documentation);
 			if (InheritsConstructor(klass)) {
 				WriteName(klass.Parent);
 				WriteLine(".__init__(self)");
