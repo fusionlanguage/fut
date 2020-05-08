@@ -446,10 +446,13 @@ public class GenSwift : GenPySwift
 			WriteAdd(args[0], args[3]); // TODO: side effect
 			Write(']');
 		}
-		else if (obj.Type is CiListType && method.Name == "Insert") {
+		else if (obj.Type is CiListType list && method.Name == "Insert") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".insert(");
-			args[1].Accept(this, CiPriority.Statement);
+			if (method.Parameters.Count == 1)
+				WriteNewStorage(list.ElementType);
+			else
+				args[1].Accept(this, CiPriority.Statement);
 			Write(", at: ");
 			args[0].Accept(this, CiPriority.Statement);
 			Write(')');
