@@ -4,7 +4,7 @@ public class Test
 	{
 		string() s = "foobar"; //FAIL: cl
 		string p = "foobar";
-		return s.IndexOf("") == 0
+		return s.IndexOf("") == 0 //FAIL: swift TODO
 			&& s.IndexOf("f") == 0
 			&& s.IndexOf("foo") == 0
 			&& s.IndexOf("foobar") == 0

@@ -4,7 +4,7 @@ public class Test
 	{
 		string() s = "foobar"; //FAIL: cl
 		string p = "foobar";
-		return (s.LastIndexOf("") == 5 /* .NET */ || s.LastIndexOf("") == 6 /* Java, JavaScript */)
+		return (s.LastIndexOf("") == 5 /* .NET */ || s.LastIndexOf("") == 6 /* Java, JavaScript */) //FAIL: swift TODO
 			&& s.LastIndexOf("r") == 5
 			&& s.LastIndexOf("bar") == 3
 			&& s.LastIndexOf("foobar") == 0
