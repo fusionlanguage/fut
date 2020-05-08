@@ -468,6 +468,16 @@ public class GenSwift : GenPySwift
 			WriteAdd(args[0], args[1]); // TODO: side effect
 			Write(')');
 		}
+		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey") {
+			if (parent > CiPriority.Equality)
+				Write('(');
+			obj.Accept(this, CiPriority.Primary);
+			Write('[');
+			args[0].Accept(this, CiPriority.Statement);
+			Write("] != nil");
+			if (parent > CiPriority.Equality)
+				Write(')');
+		}
 		else if (obj.Type is CiDictionaryType && method.Name == "Remove") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeValue(forKey: ");
