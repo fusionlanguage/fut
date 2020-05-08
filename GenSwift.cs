@@ -757,7 +757,7 @@ public class GenSwift : GenPySwift
 
 	public override void Visit(CiExpr statement)
 	{
-		if (statement is CiCallExpr call && statement.Type != null && !(call.Method.Left.Type is CiDictionaryType && call.Method.Name == "Add"))
+		if (statement is CiCallExpr call && statement.Type != null && !(call.Method.Left != null && call.Method.Left.Type is CiDictionaryType && call.Method.Name == "Add"))
 			Write("_ = ");
 		base.Visit(statement);
 	}
