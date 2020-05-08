@@ -599,6 +599,8 @@ public class GenSwift : GenPySwift
 		OpenIndexing(expr.Left);
 		WriteCoerced(CiSystem.IntType, expr.Right, CiPriority.Statement);
 		Write(']');
+		if (parent != CiPriority.Assign && expr.Left.Type is CiDictionaryType)
+			Write('!');
 	}
 
 	protected override void Write(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
