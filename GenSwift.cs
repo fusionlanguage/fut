@@ -1107,7 +1107,7 @@ public class GenSwift : GenPySwift
 		}
 		if (this.ArrayRef) {
 			WriteLine();
-			WriteLine("public class ArrayRef<T>");
+			WriteLine("public class ArrayRef<T> : Sequence");
 			OpenBlock();
 			WriteLine("var array : [T]");
 			WriteLine();
@@ -1152,6 +1152,11 @@ public class GenSwift : GenPySwift
 			WriteLine("func fill(_ value: T)");
 			OpenBlock();
 			WriteLine("array = [T](repeating: value, count: array.count)");
+			CloseBlock();
+			WriteLine();
+			WriteLine("public func makeIterator() -> IndexingIterator<Array<T>>");
+			OpenBlock();
+			WriteLine("return array.makeIterator()");
 			CloseBlock();
 			CloseBlock();
 		}
