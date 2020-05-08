@@ -554,13 +554,6 @@ public class GenSwift : GenPySwift
 		Write("]()");
 	}
 
-	static bool IsClassStorage(CiType type)
-	{
-		while (type is CiArrayStorageType array)
-			type = array.ElementType;
-		return type is CiClass;
-	}
-
 	void WriteDefaultValue(CiType type)
 	{
 		if (type is CiNumericType)
@@ -587,7 +580,7 @@ public class GenSwift : GenPySwift
 		this.ArrayRef = true;
 		Write("ArrayRef<");
 		Write(elementType);
-		if (IsClassStorage(elementType)) {
+		if (elementType is CiArrayStorageType || elementType is CiClass) {
 			Write(">(factory: { ");
 			WriteNewStorage(elementType);
 			Write(" }");
