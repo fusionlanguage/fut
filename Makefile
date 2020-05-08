@@ -18,6 +18,7 @@ endif
 CC = clang
 CXX = clang++ -std=c++2a
 PYTHON = python3
+SWIFTC = swiftc
 
 VERSION := 1.0.0
 MAKEFLAGS = -r
@@ -104,7 +105,7 @@ test/bin/%/Run.js: test/bin/%/Test.js
 	$(DO)cat $< test/Runner.js >$@ || grep '//FAIL:.*\<js\>' test/$*.ci
 
 test/bin/%/swift.exe: test/bin/%/Test.swift test/main.swift
-	$(DO)swiftc -o $@ $^ || grep '//FAIL:.*\<swift\>' test/$*.ci
+	$(DO)$(SWIFTC) -o $@ $^ || grep '//FAIL:.*\<swift\>' test/$*.ci
 
 test/bin/%/Test.c: test/%.ci cito.exe
 	$(DO_CITO)
