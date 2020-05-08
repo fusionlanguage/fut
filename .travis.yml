@@ -14,10 +14,10 @@ jobs:
   - name: cs
     mono: latest
     script: make -j2 test-cs
-  - name: java, cl, error
-    script: make -j2 test-java test-cl test-error
-  - name: swift
+  - name: java, error
+    script: make -j2 test-java test-error
+  - name: swift, cl
     install:
       - wget https://swift.org/builds/swift-5.2.3-release/ubuntu1604/swift-5.2.3-RELEASE/swift-5.2.3-RELEASE-ubuntu16.04.tar.gz
       - tar xf swift-5.2.3-RELEASE-ubuntu16.04.tar.gz -C ..
-    script: make -j2 test-swift SWIFTC=../swift-5.2.3-RELEASE-ubuntu16.04/usr/bin/swiftc
+    script: make -j2 test-swift test-cl SWIFTC=../swift-5.2.3-RELEASE-ubuntu16.04/usr/bin/swiftc
