@@ -7,10 +7,10 @@ public class Test
 		Dictionary<int, Test()>() dict; //FAIL: c cl
 		dict.Add(1);
 		dict.Clear();
-		Test! p = dict.Add(1); //FAIL: cs java
+		Test! p = dict.Add(1); //FAIL: cs java swift
 		p = dict.Add(2);
 		p.Foo = 20;
-		dict.Add(3).Foo = 30; //FAIL: py swift
+		dict.Add(3).Foo = 30; //FAIL: py
 		dict.Remove(1);
 		return dict.Count == 2 && dict[2].Foo == 20 && dict[3].Foo == 30 && dict.ContainsKey(2);
 	}

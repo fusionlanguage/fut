@@ -9,7 +9,7 @@ public static class Test
 				sum += localConst[i];
 			}
 			else {
-				const int[3] localConst = { 5, 10, 15 }; //FAIL: cs java js py
+				const int[3] localConst = { 5, 10, 15 }; //FAIL: cs java js py swift
 				sum += localConst[i];
 			}
 		}
