@@ -468,6 +468,13 @@ public class GenSwift : GenPySwift
 			WriteAdd(args[0], args[1]); // TODO: side effect
 			Write(')');
 		}
+		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
+			obj.Accept(this, CiPriority.Primary);
+			Write('[');
+			args[0].Accept(this, CiPriority.Statement);
+			Write("] = ");
+			WriteNewStorage(dict.ValueType);
+		}
 		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey") {
 			if (parent > CiPriority.Equality)
 				Write('(');
@@ -750,7 +757,7 @@ public class GenSwift : GenPySwift
 
 	public override void Visit(CiExpr statement)
 	{
-		if (statement is CiCallExpr && statement.Type != null)
+		if (statement is CiCallExpr call && statement.Type != null && !(call.Method.Left.Type is CiDictionaryType && call.Method.Name == "Add"))
 			Write("_ = ");
 		base.Visit(statement);
 	}
