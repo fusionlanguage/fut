@@ -687,7 +687,13 @@ public class GenSwift : GenPySwift
 			Write(' ');
 			Write(expr.OpString);
 			Write(' ');
-			WriteCoerced(expr.Type, right, CiPriority.Statement);
+			if (right is CiLiteral literal && literal.Value == null
+			 && expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && leftBinary.Left.Type is CiDictionaryType dict) {
+				Write(dict.ValueType);
+				Write(".none");
+			}
+			else
+				WriteCoerced(expr.Type, right, CiPriority.Statement);
 			return expr;
 		default:
 			return base.Visit(expr, parent);
