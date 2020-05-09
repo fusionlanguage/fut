@@ -36,8 +36,14 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
-	protected override void Write(CiDocPara para)
+	protected override void Write(CiDocPara para, bool many)
 	{
+		if (many) {
+			WriteLine();
+			StartDocLine();
+			WriteLine();
+			StartDocLine();
+		}
 		foreach (CiDocInline inline in para.Children) {
 			switch (inline) {
 			case CiDocText text:
@@ -61,10 +67,9 @@ public abstract class GenPySwift : GenBase
 		WriteLine();
 		foreach (CiDocPara item in list.Items) {
 			Write(this.DocBullet);
-			Write(item);
+			Write(item, false);
 			WriteLine();
 		}
-		WriteLine();
 		StartDocLine();
 	}
 

@@ -1,0 +1,16 @@
+/// Test for `cito` documentation comments.
+///
+/// Detailed description follows. First paragraph.
+///
+/// List.
+/// * item1
+/// * item2
+///
+/// One more paragraph.
+public static class Test
+{
+	public static bool Run()
+	{
+		return true;
+	}
+}

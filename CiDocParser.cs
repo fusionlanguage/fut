@@ -59,6 +59,7 @@ public class CiDocParser : CiDocLexer
 			else
 				break;
 		}
+		Eat(CiDocToken.Para);
 		return new CiDocPara { Children = children.ToArray() };
 	}
 
@@ -80,6 +81,7 @@ public class CiDocParser : CiDocLexer
 		CiDocPara summary = ParsePara();
 		List<CiDocBlock> details = new List<CiDocBlock>();
 		if (Eat(CiDocToken.Period)) {
+			Eat(CiDocToken.Para);
 			while (!See(CiDocToken.EndOfFile))
 				details.Add(ParseBlock());
 		}

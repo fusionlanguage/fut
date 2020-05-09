@@ -43,12 +43,13 @@ public class GenPy : GenPySwift
 	void StartDoc(CiCodeDoc doc)
 	{
 		Write("\"\"\"");
-		Write(doc.Summary);
+		Write(doc.Summary, false);
 		if (doc.Details.Length > 0) {
 			WriteLine();
-			WriteLine();
-			foreach (CiDocBlock block in doc.Details)
-				Write(block);
+			foreach (CiDocBlock block in doc.Details) {
+				WriteLine();
+				Write(block, false);
+			}
 		}
 	}
 
@@ -76,7 +77,7 @@ public class GenPy : GenPySwift
 				Write(":param ");
 				WriteName(param);
 				Write(": ");
-				Write(param.Documentation.Summary);
+				Write(param.Documentation.Summary, false);
 				WriteLine();
 			}
 		}

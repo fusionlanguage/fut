@@ -31,8 +31,12 @@ public class GenCs : GenTyped
 		Write("/// ");
 	}
 
-	protected override void Write(CiDocPara para)
+	protected override void Write(CiDocPara para, bool many)
 	{
+		if (many) {
+			WriteLine();
+			Write("/// <para>");
+		}
 		foreach (CiDocInline inline in para.Children) {
 			switch (inline) {
 			case CiDocText text:
@@ -58,6 +62,8 @@ public class GenCs : GenTyped
 				throw new ArgumentException(inline.GetType().Name);
 			}
 		}
+		if (many)
+			Write("</para>");
 	}
 
 	protected override void Write(CiDocList list)
@@ -66,12 +72,10 @@ public class GenCs : GenTyped
 		WriteLine("/// <list type=\"bullet\">");
 		foreach (CiDocPara item in list.Items) {
 			Write("/// <item>");
-			Write(item);
+			Write(item, false);
 			WriteLine("</item>");
 		}
 		Write("/// </list>");
-		WriteLine();
-		Write("/// ");
 	}
 
 	protected override void Write(CiCodeDoc doc)
@@ -79,12 +83,16 @@ public class GenCs : GenTyped
 		if (doc == null)
 			return;
 		Write("/// <summary>");
-		Write(doc.Summary);
+		Write(doc.Summary, false);
 		WriteLine("</summary>");
 		if (doc.Details.Length > 0) {
 			Write("/// <remarks>");
-			foreach (CiDocBlock block in doc.Details)
-				Write(block);
+			if (doc.Details.Length == 1)
+				Write(doc.Details[0], false);
+			else {
+				foreach (CiDocBlock block in doc.Details)
+					Write(block, true);
+			}
 			WriteLine("</remarks>");
 		}
 	}

@@ -175,8 +175,12 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected virtual void Write(CiDocPara para)
+	protected virtual void Write(CiDocPara para, bool many)
 	{
+		if (many) {
+			WriteLine();
+			Write(" * <p>");
+		}
 		foreach (CiDocInline inline in para.Children) {
 			switch (inline) {
 			case CiDocText text:
@@ -199,18 +203,17 @@ public abstract class GenBase : CiVisitor
 		WriteLine(" * <ul>");
 		foreach (CiDocPara item in list.Items) {
 			Write(" * <li>");
-			Write(item);
+			Write(item, false);
 			WriteLine("</li>");
 		}
-		WriteLine(" * </ul>");
-		Write(" * ");
+		Write(" * </ul>");
 	}
 
-	protected void Write(CiDocBlock block)
+	protected void Write(CiDocBlock block, bool many)
 	{
 		switch (block) {
 		case CiDocPara para:
-			Write(para);
+			Write(para, many);
 			break;
 		case CiDocList list:
 			Write(list);
@@ -220,16 +223,19 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	void StartDoc(CiCodeDoc doc)
+	protected void WriteContent(CiCodeDoc doc)
 	{
-		WriteLine("/**");
-		Write(" * ");
-		Write(doc.Summary);
+		StartDocLine();
+		Write(doc.Summary, false);
 		WriteLine();
 		if (doc.Details.Length > 0) {
-			Write(" * ");
-			foreach (CiDocBlock block in doc.Details)
-				Write(block);
+			StartDocLine();
+			if (doc.Details.Length == 1)
+				Write(doc.Details[0], false);
+			else {
+				foreach (CiDocBlock block in doc.Details)
+					Write(block, true);
+			}
 			WriteLine();
 		}
 	}
@@ -237,7 +243,8 @@ public abstract class GenBase : CiVisitor
 	protected virtual void Write(CiCodeDoc doc)
 	{
 		if (doc != null) {
-			StartDoc(doc);
+			WriteLine("/**");
+			WriteContent(doc);
 			WriteLine(" */");
 		}
 	}
@@ -250,14 +257,15 @@ public abstract class GenBase : CiVisitor
 	{
 		if (method.Documentation == null)
 			return;
-		StartDoc(method.Documentation);
+		WriteLine("/**");
+		WriteContent(method.Documentation);
 		WriteSelfDoc(method);
 		foreach (CiVar param in method.Parameters) {
 			if (param.Documentation != null) {
 				Write(" * @param ");
 				Write(param.Name);
 				Write(' ');
-				Write(param.Documentation.Summary);
+				Write(param.Documentation.Summary, false);
 				WriteLine();
 			}
 		}

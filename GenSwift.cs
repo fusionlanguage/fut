@@ -41,17 +41,8 @@ public class GenSwift : GenPySwift
 
 	protected override void Write(CiCodeDoc doc)
 	{
-		if (doc == null)
-			return;
-		Write("/// ");
-		Write(doc.Summary);
-		WriteLine();
-		if (doc.Details.Length > 0) {
-			Write("/// ");
-			foreach (CiDocBlock block in doc.Details)
-				Write(block);
-			WriteLine();
-		}
+		if (doc != null)
+			WriteContent(doc);
 	}
 
 	void WriteCamelCaseNotKeyword(string name)
@@ -993,7 +984,7 @@ public class GenSwift : GenPySwift
 				Write("/// - parameter ");
 				Write(param.Name);
 				Write(' ');
-				Write(param.Documentation.Summary);
+				Write(param.Documentation.Summary, false);
 				WriteLine();
 			}
 		}
