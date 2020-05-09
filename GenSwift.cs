@@ -583,13 +583,19 @@ public class GenSwift : GenPySwift
 		this.ArrayRef = true;
 		Write("ArrayRef<");
 		Write(elementType);
-		if (elementType is CiArrayStorageType || elementType is CiClass) {
-			Write(">(factory: { ");
+		Write(">(");
+		if (elementType is CiArrayStorageType) {
+			Write("factory: { ");
 			WriteNewStorage(elementType);
 			Write(" }");
 		}
+		else if (elementType is CiClass) {
+			Write("factory: ");
+			WriteName(elementType);
+			Write(".init");
+		}
 		else {
-			Write(">(repeating: ");
+			Write("repeating: ");
 			WriteDefaultValue(elementType);
 		}
 		Write(", count: ");
