@@ -18,7 +18,7 @@ endif
 CC = clang
 CXX = clang++ -std=c++2a
 PYTHON = python3
-SWIFTC = swiftc
+SWIFTC = swiftc -sanitize=address
 
 VERSION := 1.0.0
 MAKEFLAGS = -r

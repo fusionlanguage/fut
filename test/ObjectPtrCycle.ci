@@ -1,0 +1,11 @@
+public class Test
+{
+	Test Ref;
+
+	public static bool Run()
+	{
+		Test() o;
+		o.Ref = o;
+		return true;
+	}
+}
