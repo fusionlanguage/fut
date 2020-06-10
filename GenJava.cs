@@ -802,7 +802,14 @@ public class GenJava : GenTyped
 		}
 		OpenClass(klass, "", " extends ");
 
-		if (NeedsConstructor(klass)) {
+		if (klass.CallType == CiCallType.Static) {
+			Write("private ");
+			Write(klass.Name);
+			WriteLine("()");
+			OpenBlock();
+			CloseBlock();
+		}
+		else if (NeedsConstructor(klass)) {
 			if (klass.Constructor != null) {
 				Write(klass.Constructor.Documentation);
 				Write(klass.Constructor.Visibility);
