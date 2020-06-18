@@ -1,4 +1,4 @@
-public class HelloCi
+public static class HelloCi
 {
 	public const int VersionMajor = 0;
 	public const int VersionMinor = 3;
