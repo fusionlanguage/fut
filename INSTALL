@@ -1,34 +1,47 @@
-﻿How to compile cito
-===================
+﻿How to compile and test cito
+============================
 
-`cito` is currently written in C#.
+cito is currently written in C#.
 
-You can build it with .NET Core 3.0 on Windows, macOS and Linux
-or Visual Studio 2019 on Windows only.
-The Mono compiler doesn't work (NotImplementedException).
+You can build it with .NET Core 3.1 on Windows/macOS/Linux
+or .NET Framework on Windows only.
+The Mono compiler doesn't work (reports a NotImplementedException).
 
-.NET Core SDK is available at https://dotnet.microsoft.com/download
-Build `cito` with the following command line:
+On Windows install Visual Studio 2019.
+On other platforms install .NET Core SDK (https://dotnet.microsoft.com/)
+
+Build cito with the following command line:
 
     dotnet build
 
-The Visual Studio build is also command-line based and relies on GNU Make.
-I recommend installing GNU Make with https://www.msys2.org/
-Build using:
+Alternatively, if you have GNU Make, build using:
 
     make
 
+On Windows, this will build for .NET Framework.
+On other platforms it is equivalent to "dotnet build".
+
 ## Testing
 
-The test system is under construction. Currently it only supports the VS build.
-Additionally you need:
-* Perl 5 (install from MSYS2)
-* Clang C and C++ compilers (install from MSYS2)
-* Java compiler
-* Node.js
+To run cito tests, you will need:
+* GNU Make
+* perl
+* GNU diff
+* Clang C and C++ compilers
+* Visual Studio 2019 or Mono
+* Java compiler (https://www.oracle.com/java/technologies/javase-jdk14-downloads.html)
+* Node.js (https://nodejs.org/)
+* Python
+* Swift (https://swift.org/, currently not available on Windows)
+
+To get GNU Make, perl, GNU diff, Clang and Python on Windows,
+install MSYS2 (https://www.msys2.org/), start "MSYS2 MinGW 64-bit"
+and add packages with:
+
+    pacman -S make perl diffutils mingw-w64-x86_64-clang mingw-w64-x86_64-python
 
 Run the tests with:
 
     make test
 
-`-jN` is supported and strongly recommended.
+The -jN option is supported and strongly recommended.
