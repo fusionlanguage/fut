@@ -1,0 +1,9 @@
+public class Test
+{
+	public static bool Run()
+	{
+		while (x) { //ERROR: x not found
+		}
+		return true;
+	}
+}

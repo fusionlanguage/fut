@@ -1,6 +1,6 @@
 // CiException.cs - error in a Ci program
 //
-// Copyright (C) 2014  Piotr Fusik
+// Copyright (C) 2014 -2020 Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -34,7 +34,7 @@ public class CiException : Exception
 		this.Line = line;
 	}
 
-	public CiException(CiScope scope, string message) : this(scope.Filename, scope.Line, message)
+	public CiException(CiScope scope, string message) : this(scope.Container.Filename, scope.Line, message)
 	{
 	}
 

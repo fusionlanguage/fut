@@ -38,7 +38,7 @@ public class CiResolver : CiVisitor
 
 	CiException StatementException(CiStatement statement, string message)
 	{
-		return new CiException(this.CurrentScope.Filename, statement.Line, message);
+		return new CiException(this.CurrentScope.Container.Filename, statement.Line, message);
 	}
 
 	CiException StatementException(CiStatement statement, string format, params object[] args)
@@ -839,7 +839,7 @@ public class CiResolver : CiVisitor
 		ResolveConst(statement);
 		this.CurrentScope.Add(statement);
 		if (statement.Type is CiArrayType)
-			this.CurrentScope.ParentClass.ConstArrays.Add(statement);
+			((CiClass) this.CurrentScope.Container).ConstArrays.Add(statement);
 	}
 
 	CiExpr Resolve(CiExpr expr)

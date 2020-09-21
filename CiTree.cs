@@ -165,7 +165,6 @@ public class CiSymbol : CiExpr
 
 public class CiScope : CiSymbol, IEnumerable<CiSymbol>
 {
-	public string Filename;
 	protected readonly OrderedDictionary Dict = new OrderedDictionary();
 
 	IEnumerator IEnumerable.GetEnumerator()
@@ -180,13 +179,13 @@ public class CiScope : CiSymbol, IEnumerable<CiSymbol>
 
 	public int Count => this.Dict.Count;
 
-	public CiClass ParentClass
+	public CiContainerType Container
 	{
 		get
 		{
 			for (CiScope scope = this; scope != null; scope = scope.Parent) {
-				if (scope is CiClass klass)
-					return klass;
+				if (scope is CiContainerType container)
+					return container;
 			}
 			throw new InvalidOperationException();
 		}
@@ -228,8 +227,8 @@ public class CiScope : CiSymbol, IEnumerable<CiSymbol>
 			 && (scope == this || (!IsPrivate(duplicate as CiMember) && !IsOverrideOf(symbol as CiMethod, duplicate as CiMethod)))) {
 				CiScope symbolScope = symbol as CiScope ?? this;
 				CiScope duplicateScope = duplicate as CiScope ?? scope;
-				throw new CiException(symbolScope.Filename, symbol.Line,
-					string.Format("Duplicate symbol {0}, already defined in {1} line {2}", name, duplicateScope.Filename, duplicate.Line));
+				throw new CiException(symbolScope.Container.Filename, symbol.Line,
+					string.Format("Duplicate symbol {0}, already defined in {1} line {2}", name, duplicateScope.Container.Filename, duplicate.Line));
 			}
 		}
 		symbol.Parent = this;
@@ -753,6 +752,7 @@ public class CiType : CiScope
 public abstract class CiContainerType : CiType
 {
 	public bool IsPublic;
+	public string Filename;
 }
 
 public class CiEnum : CiContainerType

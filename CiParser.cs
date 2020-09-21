@@ -429,7 +429,7 @@ public class CiParser : CiLexer
 		List<CiStatement> statements = new List<CiStatement>();
 		while (!Eat(CiToken.RightBrace))
 			statements.Add(ParseStatement());
-		return new CiBlock { Filename = this.Filename, Line = line, Statements = statements.ToArray() };
+		return new CiBlock { Line = line, Statements = statements.ToArray() };
 	}
 
 	CiAssert ParseAssert()
@@ -716,7 +716,6 @@ public class CiParser : CiLexer
 	void ParseMethod(CiMethod method)
 	{
 		method.IsMutator = Eat(CiToken.ExclamationMark);
-		method.Parameters.Filename = this.Filename;
 		Expect(CiToken.LeftParenthesis);
 		if (!See(CiToken.RightParenthesis)) {
 			do {
