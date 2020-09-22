@@ -48,7 +48,7 @@ public class GenC : GenCCpp
 		if (method.CallType == CiCallType.Static)
 			return;
 		Write(" * @param self This <code>");
-		Write(method.Parent.Name);
+		WriteName(method.Parent);
 		WriteLine("</code>.");
 	}
 
@@ -166,15 +166,18 @@ public class GenC : GenCCpp
 	{
 		switch (symbol) {
 		case CiContainerType _:
+			Write(this.Namespace);
 			Write(symbol.Name);
 			break;
 		case CiMethod _:
+			Write(this.Namespace);
 			Write(symbol.Parent.Name);
 			Write('_');
 			Write(symbol.Name);
 			break;
 		case CiConst _:
 			if (symbol.Parent is CiClass) {
+				Write(this.Namespace);
 				Write(symbol.Parent.Name);
 				Write('_');
 			}
@@ -278,21 +281,29 @@ public class GenC : GenCCpp
 			switch (classPtr.Modifier) {
 			case CiToken.EndOfFile:
 				Write("const ");
-				Write(classPtr.Class.Name);
+				WriteName(classPtr.Class);
 				Write(" *");
 				break;
 			case CiToken.ExclamationMark:
 			case CiToken.Hash:
-				Write(classPtr.Class.Name);
+				WriteName(classPtr.Class);
 				Write(" *");
 				break;
 			default:
 				throw new NotImplementedException(classPtr.Modifier.ToString());
 			}
 			break;
-		default:
-			if (baseType == CiSystem.BoolType)
+		case CiContainerType _:
+			if (baseType == CiSystem.BoolType) {
 				IncludeStdBool();
+				Write("bool");
+			}
+			else
+				WriteName(baseType);
+			if (space)
+				Write(' ');
+			break;
+		default:
 			Write(baseType.Name);
 			if (space)
 				Write(' ');
@@ -336,7 +347,7 @@ public class GenC : GenCCpp
 	{
 		if (need) {
 			Write("(CiMethodPtr) ");
-			Write(klass.Name);
+			WriteName(klass);
 			Write('_');
 			Write(name);
 		}
@@ -486,7 +497,7 @@ public class GenC : GenCCpp
 		}
 		if (type is CiClass klass) {
 			if (NeedsConstructor(klass)) {
-				Write(klass.Name);
+				WriteName(klass);
 				Write("_Construct(&");
 				WriteArrayElement(def, nesting);
 				WriteLine(");");
@@ -564,7 +575,7 @@ public class GenC : GenCCpp
 			if (resultPtr.Modifier == CiToken.Hash && expr is CiSymbolReference && parent != CiPriority.Equality) {
 				this.SharedAddRef = true;
 				Write('(');
-				Write(resultPtr.Class.Name);
+				WriteName(resultPtr.Class);
 				Write(" *) CiShared_AddRef(");
 				expr.Accept(this, CiPriority.Statement);
 				Write(')');
@@ -701,7 +712,7 @@ public class GenC : GenCCpp
 			CiClass structClass = GetVtblStructClass(definingClass);
 			if (structClass != ptrClass) {
 				Write("((const ");
-				Write(structClass.Name);
+				WriteName(structClass);
 				Write("Vtbl *) ");
 			}
 			if (obj != null) {
@@ -999,7 +1010,7 @@ public class GenC : GenCCpp
 			type = array.ElementType;
 		}
 		if (type is CiClass klass) {
-			Write(klass.Name);
+			WriteName(klass);
 			Write("_Destruct(&");
 		}
 		else if (type.IsDynamicPtr) {
@@ -1264,7 +1275,7 @@ public class GenC : GenCCpp
 				WriteLine(',');
 			first = false;
 			Write(konst.Documentation);
-			Write(enu.Name);
+			WriteName(enu);
 			Write('_');
 			WriteUppercaseWithUnderscores(konst.Name);
 			if (konst.Value != null) {
@@ -1275,7 +1286,7 @@ public class GenC : GenCCpp
 		WriteLine();
 		this.Indent--;
 		Write("} ");
-		Write(enu.Name);
+		WriteName(enu);
 		WriteLine(';');
 	}
 
@@ -1284,9 +1295,9 @@ public class GenC : GenCCpp
 		if (klass.CallType == CiCallType.Static)
 			return;
 		Write("typedef struct ");
-		Write(klass.Name);
+		WriteName(klass);
 		Write(' ');
-		Write(klass.Name);
+		WriteName(klass);
 		WriteLine(';');
 	}
 
@@ -1313,7 +1324,7 @@ public class GenC : GenCCpp
 		Write('(');
 		if (!method.IsMutator)
 			Write("const ");
-		Write(method.Parent.Name);
+		WriteName(method.Parent);
 		Write(" *self");
 		WriteParameters(method, false, false);
 	}
@@ -1323,8 +1334,8 @@ public class GenC : GenCCpp
 		if (!klass.IsPublic || method.Visibility != CiVisibility.Public)
 			Write("static ");
 		WriteSignature(method, () => {
-			Write(klass.Name);
-			Write("_");
+			WriteName(klass);
+			Write('_');
 			Write(method.Name);
 			if (method.CallType != CiCallType.Static)
 				WriteInstanceParameters(method);
@@ -1377,7 +1388,7 @@ public class GenC : GenCCpp
 		WriteVtblFields(klass);
 		this.Indent--;
 		Write("} ");
-		Write(klass.Name);
+		WriteName(klass);
 		WriteLine("Vtbl;");
 	}
 
@@ -1422,11 +1433,11 @@ public class GenC : GenCCpp
 	void WriteXstructorSignature(string name, CiClass klass)
 	{
 		Write("static void ");
-		Write(klass.Name);
+		WriteName(klass);
 		Write('_');
 		Write(name);
 		Write('(');
-		Write(klass.Name);
+		WriteName(klass);
 		Write(" *self)");
 	}
 
@@ -1473,16 +1484,16 @@ public class GenC : GenCCpp
 				WriteVtblStruct(klass);
 			Write(klass.Documentation);
 			Write("struct ");
-			Write(klass.Name);
+			WriteName(klass);
 			Write(' ');
 			OpenBlock();
 			if (GetVtblPtrClass(klass) == klass) {
 				Write("const ");
-				Write(klass.Name);
+				WriteName(klass);
 				WriteLine("Vtbl *vtbl;");
 			}
 			if (klass.Parent is CiClass) {
-				Write(klass.Parent.Name);
+				WriteName(klass.Parent);
 				WriteLine(" base;");
 			}
 			foreach (CiField field in klass.Fields) {
@@ -1533,13 +1544,13 @@ public class GenC : GenCCpp
 		WriteLine();
 		OpenBlock();
 		if (klass.Parent is CiClass baseClass && NeedsConstructor(baseClass)) {
-			Write(baseClass.Name);
+			WriteName(baseClass);
 			WriteLine("_Construct(&self->base);");
 		}
 		if (HasVtblValue(klass)) {
 			CiClass structClass = GetVtblStructClass(klass);
 			Write("static const ");
-			Write(structClass.Name);
+			WriteName(structClass);
 			Write("Vtbl vtbl = ");
 			OpenBlock();
 			WriteVtbl(klass, structClass);
@@ -1550,7 +1561,7 @@ public class GenC : GenCCpp
 			Write("vtbl = ");
 			if (ptrClass != structClass) {
 				Write("(const ");
-				Write(ptrClass.Name);
+				WriteName(ptrClass);
 				Write("Vtbl *) ");
 			}
 			WriteLine("&vtbl;");
@@ -1572,7 +1583,7 @@ public class GenC : GenCCpp
 		foreach (CiField field in klass.Fields.Reverse())
 			WriteDestruct(field);
 		if (klass.Parent is CiClass baseClass && NeedsDestructor(baseClass)) {
-			Write(baseClass.Name);
+			WriteName(baseClass);
 			WriteLine("_Destruct(&self->base);");
 		}
 		CloseBlock();
@@ -1584,23 +1595,23 @@ public class GenC : GenCCpp
 			return;
 
 		WriteLine();
-		Write(klass.Name);
+		WriteName(klass);
 		Write(" *");
-		Write(klass.Name);
+		WriteName(klass);
 		Write("_New(void)");
 		if (define) {
 			WriteLine();
 			OpenBlock();
-			Write(klass.Name);
+			WriteName(klass);
 			Write(" *self = (");
-			Write(klass.Name);
+			WriteName(klass);
 			Write(" *) malloc(sizeof(");
-			Write(klass.Name);
+			WriteName(klass);
 			WriteLine("));");
 			if (NeedsConstructor(klass)) {
 				WriteLine("if (self != NULL)");
 				this.Indent++;
-				Write(klass.Name);
+				WriteName(klass);
 				WriteLine("_Construct(self);");
 				this.Indent--;
 			}
@@ -1612,9 +1623,9 @@ public class GenC : GenCCpp
 			WriteLine(';');
 
 		Write("void ");
-		Write(klass.Name);
+		WriteName(klass);
 		Write("_Delete(");
-		Write(klass.Name);
+		WriteName(klass);
 		Write(" *self)");
 		if (define) {
 			WriteLine();
@@ -1624,7 +1635,7 @@ public class GenC : GenCCpp
 				this.Indent++;
 				WriteLine("return;");
 				this.Indent--;
-				Write(klass.Name);
+				WriteName(klass);
 				WriteLine("_Destruct(self);");
 			}
 			WriteLine("free(self);");
