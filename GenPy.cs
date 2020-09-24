@@ -570,6 +570,14 @@ public class GenPy : GenPySwift
 			WriteAdd(args[1], args[2]); // TODO: side effect
 			Write("].decode(\"utf-8\")");
 		}
+		else if (method == CiSystem.RegexIsMatch) {
+			Include("re");
+			Write("re.search(");
+			args[1].Accept(this, CiPriority.Statement);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
 		else if (method == CiSystem.MathFusedMultiplyAdd) {
 			Include("pyfma");
 			Write("pyfma.fma");

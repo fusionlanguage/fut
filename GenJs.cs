@@ -467,6 +467,13 @@ public class GenJs : GenBase
 			Write("Ci.utf8GetString");
 			WriteArgsInParentheses(method, args);
 		}
+		else if (method == CiSystem.RegexIsMatch) {
+			Write("new RegExp(");
+			args[1].Accept(this, CiPriority.Statement);
+			Write(").test(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
 		else if (method == CiSystem.MathFusedMultiplyAdd) {
 			if (parent > CiPriority.Add)
 				Write('(');

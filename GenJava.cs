@@ -524,6 +524,14 @@ public class GenJava : GenTyped
 			WriteArgs(method, args);
 			Write(", StandardCharsets.UTF_8)");
 		}
+		else if (method == CiSystem.RegexIsMatch) {
+			Include("java.util.regex.Pattern");
+			Write("Pattern.compile(");
+			args[1].Accept(this, CiPriority.Statement);
+			Write(").matcher(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(").find()");
+		}
 		else if (method == CiSystem.MathLog2) {
 			if (parent > CiPriority.Mul)
 				Write('(');
