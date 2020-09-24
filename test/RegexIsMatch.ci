@@ -7,7 +7,7 @@ public class Test
 			&& Regex.IsMatch(s, "3")
 			&& !Regex.IsMatch(s, "x")
 			&& Regex.IsMatch("foo", "FOO", RegexOptions.IgnoreCase)
-// TODO			&& Regex.IsMatch("\na", "^A", RegexOptions.IgnoreCase | RegexOptions.Multiline)
-			&& Regex.IsMatch("\n", ".", RegexOptions.Singleline);
+			&& Regex.IsMatch("a\nb", "^B", RegexOptions.IgnoreCase | RegexOptions.Multiline)
+			&& Regex.IsMatch("\n", ".", RegexOptions.Singleline & ~RegexOptions.Multiline);
 	}
 }

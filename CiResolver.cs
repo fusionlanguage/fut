@@ -245,6 +245,8 @@ public class CiResolver : CiVisitor
 			}
 			return range;
 		}
+		if (left.Type is CiEnum enu && enu.IsFlags && right.Type == left.Type)
+			return enu;
 		return GetIntegerType(left, right);
 	}
 
@@ -431,13 +433,19 @@ public class CiResolver : CiVisitor
 			break;
 		case CiToken.Tilde:
 			inner = Resolve(expr.Inner);
-			if (!(inner.Type is CiIntegerType))
-				throw StatementException(expr, "Argument of bitwise complement must be integer");
-			range = inner.Type as CiRangeType;
-			if (range != null)
-				type = range = new CiRangeType(~range.Max, ~range.Min);
-			else
+			if (inner.Type is CiEnum enu && enu.IsFlags) {
 				type = inner.Type;
+				range = null;
+			}
+			else {
+				if (!(inner.Type is CiIntegerType))
+					throw StatementException(expr, "Argument of bitwise complement must be integer");
+				range = inner.Type as CiRangeType;
+				if (range != null)
+					type = range = new CiRangeType(~range.Max, ~range.Min);
+				else
+					type = inner.Type;
+			}
 			break;
 		case CiToken.ExclamationMark:
 			inner = ResolveBool(expr.Inner);
@@ -1221,7 +1229,8 @@ public class CiResolver : CiVisitor
 		case CiVisitStatus.Done:
 			return;
 		}
-		ResolveType(konst);
+		if (!(this.CurrentScope is CiEnum))
+			ResolveType(konst);
 		konst.Value = Resolve(konst.Value);
 		if (konst.Value is CiCollection coll) {
 			if (!(konst.Type is CiArrayType arrayType))
@@ -1234,16 +1243,24 @@ public class CiResolver : CiVisitor
 				throw StatementException(konst, "Declared {0} elements, initialized {1}", storageType.Length, coll.Items.Length);
 			coll.Type = storageType;
 		}
+		else if (this.CurrentScope is CiEnum && konst.Value.Type is CiRangeType) {
+			// OK
+		}
 		else
 			Coerce(konst.Value, konst.Type);
 		konst.InMethod = this.CurrentMethod;
 		konst.VisitStatus = CiVisitStatus.Done;
 	}
 
-	void ResolveConsts(CiClass klass)
+	void ResolveConsts(CiContainerType container)
 	{
-		foreach (CiConst konst in klass.Consts) {
-			this.CurrentScope = klass;
+		IEnumerable<CiConst> konsts = container switch {
+			CiClass klass => klass.Consts,
+			CiEnum enu => enu.Cast<CiConst>().Where(konst => konst.Value != null),
+			_ => throw new NotImplementedException(container.ToString())
+		};
+		foreach (CiConst konst in konsts) {
+			this.CurrentScope = container;
 			ResolveConst(konst);
 		}
 	}
@@ -1307,8 +1324,8 @@ public class CiResolver : CiVisitor
 		this.SearchDirs = searchDirs;
 		foreach (CiClass klass in program.OfType<CiClass>())
 			ResolveBase(klass);
-		foreach (CiClass klass in program.Classes)
-			ResolveConsts(klass);
+		foreach (CiContainerType container in program.Cast<CiContainerType>())
+			ResolveConsts(container);
 		foreach (CiClass klass in program.Classes)
 			ResolveTypes(klass);
 		foreach (CiClass klass in program.Classes)

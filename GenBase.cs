@@ -849,6 +849,14 @@ public abstract class GenBase : CiVisitor
 		switch (expr) {
 		case CiSymbolReference symbol:
 			return (RegexOptions) (long) ((CiLiteral) ((CiConst) symbol.Symbol).Value).Value;
+		case CiPrefixExpr unary when unary.Op == CiToken.Tilde:
+			return ~GetRegexOptions(unary.Inner);
+		case CiBinaryExpr binary when binary.Op == CiToken.And:
+			return GetRegexOptions(binary.Left) & GetRegexOptions(binary.Right);
+		case CiBinaryExpr binary when binary.Op == CiToken.Or:
+			return GetRegexOptions(binary.Left) | GetRegexOptions(binary.Right);
+		case CiBinaryExpr binary when binary.Op == CiToken.Xor:
+			return GetRegexOptions(binary.Left) ^ GetRegexOptions(binary.Right);
 		default:
 			throw new NotImplementedException(expr.ToString());
 		}
