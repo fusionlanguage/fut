@@ -1244,6 +1244,8 @@ public class CiResolver : CiVisitor
 				throw StatementException(konst, "Declared {0} elements, initialized {1}", storageType.Length, coll.Items.Length);
 			coll.Type = storageType;
 		}
+		else if (!(konst.Value is CiLiteral))
+			throw StatementException(konst.Value, "Value for constant {0} is not constant", konst.Name);
 		else if (this.CurrentScope is CiEnum && konst.Value.Type is CiRangeType) {
 			// OK
 		}

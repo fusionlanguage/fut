@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int x = 5;
+		const int y = x; //ERROR: Value for constant y is not constant
+		return true;
+	}
+}
