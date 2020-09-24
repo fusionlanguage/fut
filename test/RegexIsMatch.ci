@@ -5,6 +5,9 @@ public class Test
 		string s = "123";
 		return Regex.IsMatch(s, "^\\d+$") //FAIL: c cpp swift TODO; cl
 			&& Regex.IsMatch(s, "3")
-			&& !Regex.IsMatch(s, "x");
+			&& !Regex.IsMatch(s, "x")
+			&& Regex.IsMatch("foo", "FOO", RegexOptions.IgnoreCase)
+// TODO			&& Regex.IsMatch("\na", "^A", RegexOptions.IgnoreCase | RegexOptions.Multiline)
+			&& Regex.IsMatch("\n", ".", RegexOptions.Singleline);
 	}
 }

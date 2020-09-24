@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Foxoft.Ci
 {
@@ -842,6 +843,39 @@ public abstract class GenBase : CiVisitor
 	protected abstract void WriteStringLength(CiExpr expr);
 
 	protected abstract void WriteCharAt(CiBinaryExpr expr);
+
+	static RegexOptions GetRegexOptions(CiExpr expr)
+	{
+		switch (expr) {
+		case CiSymbolReference symbol:
+			return (RegexOptions) (long) ((CiLiteral) ((CiConst) symbol.Symbol).Value).Value;
+		default:
+			throw new NotImplementedException(expr.ToString());
+		}
+	}
+
+	protected void WriteRegexIsMatchOptions(CiExpr[] args, string prefix, string infix, string suffix, string i, string m, string s)
+	{
+		if (args.Length != 3)
+			return;
+		RegexOptions options = GetRegexOptions(args[2]);
+		if (options == RegexOptions.None)
+			return;
+		Write(prefix);
+		if (options.HasFlag(RegexOptions.IgnoreCase))
+			Write(i);
+		if (options.HasFlag(RegexOptions.Multiline)) {
+			if (options.HasFlag(RegexOptions.IgnoreCase))
+				Write(infix);
+			Write(m);
+		}
+		if (options.HasFlag(RegexOptions.Singleline)) {
+			if (options.HasFlag(RegexOptions.IgnoreCase | RegexOptions.Multiline))
+				Write(infix);
+			Write(s);
+		}
+		Write(suffix);
+	}
 
 	protected abstract void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent);
 

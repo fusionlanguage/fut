@@ -1210,10 +1210,15 @@ public class CiSystem : CiScope
 	public static readonly CiMember ConsoleError = new CiMember { Name = "Error", Type = ConsoleBase };
 	public static readonly CiClass ConsoleClass = new CiClass(CiCallType.Static, "Console");
 	public static readonly CiArrayPtrType ByteArrayPtrType = new CiArrayPtrType { ElementType = ByteType, Modifier = CiToken.EndOfFile };
-	public static readonly CiMethod UTF8GetString = new CiMethod(CiCallType.Static, StringStorageType, "GetString", new CiVar(ByteArrayPtrType, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length")); // TODO: UIntType
-	public static readonly CiClass UTF8EncodingClass = new CiClass(CiCallType.Static, "UTF8Encoding", UTF8GetString);
+	public static readonly CiMethod UTF8GetString = new CiMethod(CiCallType.Normal, StringStorageType, "GetString", new CiVar(ByteArrayPtrType, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length")); // TODO: UIntType
+	public static readonly CiClass UTF8EncodingClass = new CiClass(CiCallType.Normal, "UTF8Encoding", UTF8GetString);
 	public static readonly CiClass EncodingClass = new CiClass(CiCallType.Static, "Encoding");
-	public static readonly CiMethod RegexIsMatch = new CiMethod(CiCallType.Static, BoolType, "IsMatch", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"));
+	public static readonly CiConst RegexOptionsNone = new CiConst("None", 0L);
+	public static readonly CiConst RegexOptionsIgnoreCase = new CiConst("IgnoreCase", 1L);
+	public static readonly CiConst RegexOptionsMultiline = new CiConst("Multiline", 2L);
+	public static readonly CiConst RegexOptionsSingleline = new CiConst("Singleline", 16L);
+	public static readonly CiEnum RegexOptionsEnum = new CiEnum { Name = "RegexOptions", IsFlags = true };
+	public static readonly CiMethod RegexIsMatch = new CiMethod(CiCallType.Static, BoolType, "IsMatch", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone });
 	public static readonly CiClass RegexClass = new CiClass(CiCallType.Static, "Regex", RegexIsMatch);
 	public static readonly CiMethod MathCeiling = new CiMethod(CiCallType.Static, FloatIntType, "Ceiling", new CiVar(DoubleType, "a"));
 	public static readonly CiMethod MathFusedMultiplyAdd = new CiMethod(CiCallType.Static, FloatType, "FusedMultiplyAdd", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y"), new CiVar(DoubleType, "z"));
@@ -1246,6 +1251,12 @@ public class CiSystem : CiScope
 	public static readonly CiSymbol DictionaryClass = new CiSymbol();
 	public static readonly CiSymbol SortedDictionaryClass = new CiSymbol();
 
+	static void AddEnumValue(CiEnum enu, CiConst value)
+	{
+		value.Type = enu;
+		enu.Add(value);
+	}
+
 	CiSystem()
 	{
 		Add(IntType);
@@ -1263,6 +1274,11 @@ public class CiSystem : CiScope
 		ConsoleClass.Parent = ConsoleBase;
 		EncodingClass.Add(new CiMember { Name = "UTF8", Type = UTF8EncodingClass });
 		Add(EncodingClass);
+		AddEnumValue(RegexOptionsEnum, RegexOptionsNone);
+		AddEnumValue(RegexOptionsEnum, RegexOptionsIgnoreCase);
+		AddEnumValue(RegexOptionsEnum, RegexOptionsMultiline);
+		AddEnumValue(RegexOptionsEnum, RegexOptionsSingleline);
+		Add(RegexOptionsEnum);
 		Add(RegexClass);
 		MathClass.Add(new CiConst("E", Math.E));
 		MathClass.Add(new CiConst("PI", Math.PI));

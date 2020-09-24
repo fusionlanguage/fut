@@ -470,6 +470,7 @@ public class GenJs : GenBase
 		else if (method == CiSystem.RegexIsMatch) {
 			Write("new RegExp(");
 			args[1].Accept(this, CiPriority.Statement);
+			WriteRegexIsMatchOptions(args, ", \"", "", "\"", "i", "m", "s");
 			Write(").test(");
 			args[0].Accept(this, CiPriority.Statement);
 			Write(')');

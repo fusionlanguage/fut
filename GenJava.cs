@@ -528,6 +528,7 @@ public class GenJava : GenTyped
 			Include("java.util.regex.Pattern");
 			Write("Pattern.compile(");
 			args[1].Accept(this, CiPriority.Statement);
+			WriteRegexIsMatchOptions(args, ", ", " | ", "", "Pattern.CASE_INSENSITIVE", "Pattern.MULTILINE", "Pattern.DOTALL");
 			Write(").matcher(");
 			args[0].Accept(this, CiPriority.Statement);
 			Write(").find()");
