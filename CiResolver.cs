@@ -1229,6 +1229,7 @@ public class CiResolver : CiVisitor
 		case CiVisitStatus.Done:
 			return;
 		}
+		konst.VisitStatus = CiVisitStatus.InProgress;
 		if (!(this.CurrentScope is CiEnum))
 			ResolveType(konst);
 		konst.Value = Resolve(konst.Value);
