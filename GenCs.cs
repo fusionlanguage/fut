@@ -388,7 +388,7 @@ public class GenCs : GenTyped
 		else {
 			if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine || obj.IsReferenceTo(CiSystem.MathClass))
 				Include("System");
-			else if (method == CiSystem.RegexIsMatch)
+			else if (method == CiSystem.RegexEscape || method == CiSystem.RegexIsMatch)
 				Include("System.Text.RegularExpressions");
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');

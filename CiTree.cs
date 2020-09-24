@@ -1218,8 +1218,11 @@ public class CiSystem : CiScope
 	public static readonly CiConst RegexOptionsMultiline = new CiConst("Multiline", 2L);
 	public static readonly CiConst RegexOptionsSingleline = new CiConst("Singleline", 16L);
 	public static readonly CiEnum RegexOptionsEnum = new CiEnum { Name = "RegexOptions", IsFlags = true };
+	public static readonly CiMethod RegexEscape = new CiMethod(CiCallType.Static, StringStorageType, "Escape", new CiVar(StringPtrType, "str"));
 	public static readonly CiMethod RegexIsMatch = new CiMethod(CiCallType.Static, BoolType, "IsMatch", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone });
-	public static readonly CiClass RegexClass = new CiClass(CiCallType.Static, "Regex", RegexIsMatch);
+	public static readonly CiClass RegexClass = new CiClass(CiCallType.Static, "Regex",
+		RegexEscape,
+		RegexIsMatch);
 	public static readonly CiMethod MathCeiling = new CiMethod(CiCallType.Static, FloatIntType, "Ceiling", new CiVar(DoubleType, "a"));
 	public static readonly CiMethod MathFusedMultiplyAdd = new CiMethod(CiCallType.Static, FloatType, "FusedMultiplyAdd", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y"), new CiVar(DoubleType, "z"));
 	public static readonly CiMethod MathLog2 = new CiMethod(CiCallType.Static, FloatType, "Log2", new CiVar(DoubleType, "a"));

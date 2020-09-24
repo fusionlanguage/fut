@@ -600,6 +600,10 @@ public class GenPy : GenPySwift
 				Include("math");
 				Write("math");
 			}
+			else if (method == CiSystem.RegexEscape) {
+				Include("re");
+				Write("re");
+			}
 			else
 				obj.Accept(this, CiPriority.Primary);
 			Write('.');

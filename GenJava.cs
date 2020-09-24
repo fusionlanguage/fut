@@ -524,6 +524,12 @@ public class GenJava : GenTyped
 			WriteArgs(method, args);
 			Write(", StandardCharsets.UTF_8)");
 		}
+		else if (method == CiSystem.RegexEscape) {
+			Include("java.util.regex.Pattern");
+			Write("Pattern.quote(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
 		else if (method == CiSystem.RegexIsMatch) {
 			Include("java.util.regex.Pattern");
 			Write("Pattern.compile(");

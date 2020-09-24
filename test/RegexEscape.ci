@@ -1,0 +1,8 @@
+public class Test
+{
+	public static bool Run()
+	{
+		string() pattern = Regex.Escape("b+c");
+		return Regex.IsMatch("a+b+c", pattern); //FAIL: c cpp js swift TODO; cl
+	}
+}
