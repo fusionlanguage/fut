@@ -893,7 +893,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WriteRegexIsMatchOptions(CiExpr[] args, string prefix, string infix, string suffix, string i, string m, string s)
+	protected void WriteRegexIsMatchOptions(CiExpr[] args, string prefix, string separator, string suffix, string i, string m, string s)
 	{
 		if (args.Length != 3)
 			return;
@@ -905,12 +905,12 @@ public abstract class GenBase : CiVisitor
 			Write(i);
 		if (options.HasFlag(RegexOptions.Multiline)) {
 			if (options.HasFlag(RegexOptions.IgnoreCase))
-				Write(infix);
+				Write(separator);
 			Write(m);
 		}
 		if (options.HasFlag(RegexOptions.Singleline)) {
-			if (options.HasFlag(RegexOptions.IgnoreCase | RegexOptions.Multiline))
-				Write(infix);
+			if (options != RegexOptions.Singleline)
+				Write(separator);
 			Write(s);
 		}
 		Write(suffix);
