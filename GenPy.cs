@@ -249,6 +249,8 @@ public class GenPy : GenPySwift
 			WriteStringLength(expr.Left);
 			return expr;
 		}
+		if (WriteJavaMatchProperty(expr, parent))
+			return expr;
 		return base.Visit(expr, parent);
 	}
 
@@ -479,6 +481,17 @@ public class GenPy : GenPySwift
 		Write(')');
 	}
 
+	void WriteRegexSearch(CiExpr[] args)
+	{
+		Include("re");
+		Write("re.search(");
+		args[1].Accept(this, CiPriority.Statement);
+		Write(", ");
+		args[0].Accept(this, CiPriority.Statement);
+		WriteRegexIsMatchOptions(args, ", ", " | ", "", "re.I", "re.M", "re.S");
+		Write(')');
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (obj == null) {
@@ -571,12 +584,25 @@ public class GenPy : GenPySwift
 			Write("].decode(\"utf-8\")");
 		}
 		else if (method == CiSystem.RegexIsMatch) {
-			Include("re");
-			Write("re.search(");
-			args[1].Accept(this, CiPriority.Statement);
-			Write(", ");
+			if (parent > CiPriority.Equality)
+				Write('(');
+			WriteRegexSearch(args);
+			Write(" is not None");
+			if (parent > CiPriority.Equality)
+				Write(')');
+		}
+		else if (method == CiSystem.MatchFind) {
+			if (parent > CiPriority.Equality)
+				Write('(');
+			obj.Accept(this, CiPriority.Equality);
+			Write(" is not None");
+			if (parent > CiPriority.Equality)
+				Write(')');
+		}
+		else if (method == CiSystem.MatchGetCapture) {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".group(");
 			args[0].Accept(this, CiPriority.Statement);
-			WriteRegexIsMatchOptions(args, ", ", " | ", "", "re.I", "re.M", "re.S");
 			Write(')');
 		}
 		else if (method == CiSystem.MathFusedMultiplyAdd) {
@@ -633,6 +659,18 @@ public class GenPy : GenPySwift
 			Write("_CiResource.");
 		foreach (char c in name)
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
+	}
+
+	protected override bool VisitPreCall(CiCallExpr call)
+	{
+		if (call.Method.Symbol == CiSystem.MatchFind) {
+			call.Method.Left.Accept(this, CiPriority.Assign);
+			Write(" = ");
+			WriteRegexSearch(call.Arguments);
+			WriteLine();
+			return true;
+		}
+		return false;
 	}
 
 	static bool NeedsInit(CiNamedValue def)

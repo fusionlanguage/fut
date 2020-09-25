@@ -305,9 +305,15 @@ public class GenJava : GenTyped
 			Write("[]");
 			break;
 		default:
-			if (promote && type is CiClass)
-				Write("final ");
-			Write(type.Name);
+			if (type == CiSystem.MatchClass) {
+				Include("java.util.regex.Matcher");
+				Write("Matcher");
+			}
+			else {
+				if (promote && type is CiClass)
+					Write("final ");
+				Write(type.Name);
+			}
 			break;
 		}
 	}
@@ -332,17 +338,6 @@ public class GenJava : GenTyped
 		Write(" = new ");
 		Write(javaType, dict);
 		Write("()");
-	}
-
-	protected override void WriteVar(CiNamedValue def)
-	{
-		if (def.Type == CiSystem.MatchClass) {
-			Include("java.util.regex.Matcher");
-			Write("Matcher ");
-			WriteName(def);
-		}
-		else
-			base.WriteVar(def);
 	}
 
 	protected override void WriteResource(string name, int length)

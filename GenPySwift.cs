@@ -129,6 +129,8 @@ public abstract class GenPySwift : GenBase
 		expr.Accept(this, parent);
 	}
 
+	protected virtual bool VisitPreCall(CiCallExpr call) => false;
+
 	protected bool VisitXcrement<T>(CiExpr expr, bool write) where T : CiUnaryExpr
 	{
 		bool seen;
@@ -171,6 +173,8 @@ public abstract class GenPySwift : GenBase
 			seen = VisitXcrement<T>(call.Method, write);
 			foreach (CiExpr item in call.Arguments)
 				seen |= VisitXcrement<T>(item, write);
+			if (typeof(T) == typeof(CiPrefixExpr))
+				seen |= VisitPreCall(call);
 			return seen;
 		default:
 			throw new NotImplementedException(expr.GetType().Name);

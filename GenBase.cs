@@ -668,8 +668,10 @@ public abstract class GenBase : CiVisitor
 	protected virtual void WriteVarInit(CiNamedValue def)
 	{
 		if (def.Type is CiClass klass) {
-			Write(" = ");
-			WriteNew(klass, CiPriority.Statement);
+			if (klass.IsFinal) {
+				Write(" = ");
+				WriteNew(klass, CiPriority.Statement);
+			}
 		}
 		else if (def.Type is CiArrayStorageType array && !(def.Value is CiCollection))
 			WriteArrayStorageInit(array, def.Value);

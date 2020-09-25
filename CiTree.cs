@@ -780,7 +780,7 @@ public class CiClass : CiContainerType
 	public override string ToString() => this.Name + "()";
 	public override bool IsAssignableFrom(CiType right) => false;
 	public override CiType PtrOrSelf => new CiClassPtrType { Class = this, Modifier = CiToken.ExclamationMark };
-	public override bool IsFinal => true;
+	public override bool IsFinal => this != CiSystem.MatchClass;
 	public bool AddsVirtualMethods() => this.Methods.Any(method => method.IsAbstractOrVirtual());
 	public CiClass()
 	{

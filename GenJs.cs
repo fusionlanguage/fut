@@ -120,14 +120,8 @@ public class GenJs : GenBase
 
 	protected override void WriteVar(CiNamedValue def)
 	{
-		if (def.Type == CiSystem.MatchClass) {
-			Write("let ");
-			WriteName(def);
-		}
-		else {
-			Write(def.Type.IsFinal ? "const " : "let ");
-			base.WriteVar(def);
-		}
+		Write(def.Type.IsFinal ? "const " : "let ");
+		base.WriteVar(def);
 	}
 
 	void WriteInterpolatedLiteral(string s)

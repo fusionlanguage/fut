@@ -257,17 +257,6 @@ public class GenCs : GenTyped
 		Write("()");
 	}
 
-	protected override void WriteVar(CiNamedValue def)
-	{
-		if (def.Type == CiSystem.MatchClass) {
-			Include("System.Text.RegularExpressions");
-			Write("Match ");
-			WriteName(def);
-		}
-		else
-			base.WriteVar(def);
-	}
-
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
 		Write("$\"");
@@ -391,6 +380,7 @@ public class GenCs : GenTyped
 			WriteArgsInParentheses(method, args);
 		}
 		else if (method == CiSystem.MatchFind) {
+			Include("System.Text.RegularExpressions");
 			Write('(');
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = Regex.Match");
