@@ -93,6 +93,8 @@ public abstract class GenTyped : GenBase
 	protected void WriteCharLiteral(char c)
 	{
 		Write('\'');
+		if (c == '\'')
+			Write('\\');
 		WriteEscapedChar(c);
 		Write('\'');
 	}

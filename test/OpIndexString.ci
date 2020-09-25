@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		string() s = "foo"; //FAIL: cl
-		string p = "bar";
-		return s[1] == 'o' && p[1] == 'a';
+		string p = "ba'r";
+		return s[1] == 'o' && p[1] == 'a' && p[2] == '\'';
 	}
 }
