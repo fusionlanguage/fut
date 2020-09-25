@@ -257,6 +257,17 @@ public class GenCs : GenTyped
 		Write("()");
 	}
 
+	protected override void WriteVar(CiNamedValue def)
+	{
+		if (def.Type == CiSystem.MatchClass) {
+			Include("System.Text.RegularExpressions");
+			Write("Match ");
+			WriteName(def);
+		}
+		else
+			base.WriteVar(def);
+	}
+
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
 		Write("$\"");
@@ -339,6 +350,26 @@ public class GenCs : GenTyped
 		Write(".Length");
 	}
 
+	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	{
+		if (expr.Symbol == CiSystem.MatchStart) {
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(".Index");
+			return expr;
+		}
+		if (expr.Symbol == CiSystem.MatchEnd) {
+			if (parent > CiPriority.Add)
+				Write('(');
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(".Index + ");
+			WriteStringLength(expr.Left); // FIXME: side effect
+			if (parent > CiPriority.Add)
+				Write(')');
+			return expr;
+		}
+		return base.Visit(expr, parent);
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (obj == null) {
@@ -358,6 +389,19 @@ public class GenCs : GenTyped
 			Include("System.Text");
 			Write("Encoding.UTF8.GetString");
 			WriteArgsInParentheses(method, args);
+		}
+		else if (method == CiSystem.MatchFind) {
+			Write('(');
+			obj.Accept(this, CiPriority.Assign);
+			Write(" = Regex.Match");
+			WriteArgsInParentheses(method, args);
+			Write(").Success");
+		}
+		else if (method == CiSystem.MatchGetCapture) {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".Groups[");
+			args[0].Accept(this, CiPriority.Statement);
+			Write("].Value");
 		}
 		else if (obj.Type is CiArrayType && !(obj.Type is CiListType) && method.Name == "CopyTo") {
 			Include("System");

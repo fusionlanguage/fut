@@ -334,6 +334,17 @@ public class GenJava : GenTyped
 		Write("()");
 	}
 
+	protected override void WriteVar(CiNamedValue def)
+	{
+		if (def.Type == CiSystem.MatchClass) {
+			Include("java.util.regex.Matcher");
+			Write("Matcher ");
+			WriteName(def);
+		}
+		else
+			base.WriteVar(def);
+	}
+
 	protected override void WriteResource(string name, int length)
 	{
 		Write("CiResource.getByteArray(");
@@ -423,6 +434,20 @@ public class GenJava : GenTyped
 		Write(')');
 	}
 
+	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	{
+		return WriteJavaMatchProperty(expr, parent) ? expr : base.Visit(expr, parent);
+	}
+
+	void WriteNotPromoted(CiType type, CiExpr expr)
+	{
+		if (type is CiIntegerType elementType
+		 && IsNarrower(GetIntegerTypeCode(elementType, false), GetIntegerTypeCode((CiIntegerType) expr.Type, true)))
+			WriteStaticCast(elementType, expr);
+		else
+			expr.Accept(this, CiPriority.Statement);
+	}
+
 	void WriteConsoleWrite(CiExpr obj, CiMethod method, CiExpr[] args, bool newLine)
 	{
 		Write(obj.IsReferenceTo(CiSystem.ConsoleError) ? "System.err" : "System.out");
@@ -438,13 +463,15 @@ public class GenJava : GenTyped
 		}
 	}
 
-	void WriteNotPromoted(CiType type, CiExpr expr)
+	void WriteRegexMatcher(CiExpr[] args)
 	{
-		if (type is CiIntegerType elementType
-		 && IsNarrower(GetIntegerTypeCode(elementType, false), GetIntegerTypeCode((CiIntegerType) expr.Type, true)))
-			WriteStaticCast(elementType, expr);
-		else
-			expr.Accept(this, CiPriority.Statement);
+		Include("java.util.regex.Pattern");
+		Write("Pattern.compile(");
+		args[1].Accept(this, CiPriority.Statement);
+		WriteRegexIsMatchOptions(args, ", ", " | ", "", "Pattern.CASE_INSENSITIVE", "Pattern.MULTILINE", "Pattern.DOTALL");
+		Write(").matcher(");
+		args[0].Accept(this, CiPriority.Statement);
+		Write(')');
 	}
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
@@ -531,13 +558,21 @@ public class GenJava : GenTyped
 			Write(')');
 		}
 		else if (method == CiSystem.RegexIsMatch) {
-			Include("java.util.regex.Pattern");
-			Write("Pattern.compile(");
-			args[1].Accept(this, CiPriority.Statement);
-			WriteRegexIsMatchOptions(args, ", ", " | ", "", "Pattern.CASE_INSENSITIVE", "Pattern.MULTILINE", "Pattern.DOTALL");
-			Write(").matcher(");
-			args[0].Accept(this, CiPriority.Statement);
+			WriteRegexMatcher(args);
+			Write(".find()");
+		}
+		else if (method == CiSystem.MatchFind) {
+			Write('(');
+			obj.Accept(this, CiPriority.Assign);
+			Write(" = ");
+			WriteRegexMatcher(args);
 			Write(").find()");
+		}
+		else if (method == CiSystem.MatchGetCapture) {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".group(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
 		}
 		else if (method == CiSystem.MathLog2) {
 			if (parent > CiPriority.Mul)

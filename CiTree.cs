@@ -1223,6 +1223,15 @@ public class CiSystem : CiScope
 	public static readonly CiClass RegexClass = new CiClass(CiCallType.Static, "Regex",
 		RegexEscape,
 		RegexIsMatch);
+	public static readonly CiMethod MatchFind = new CiMethod(CiCallType.Normal, BoolType, "Find", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone });
+	public static readonly CiMember MatchStart = new CiMember { Name = "Start", Type = IntType };
+	public static readonly CiMember MatchEnd = new CiMember { Name = "End", Type = IntType };
+	public static readonly CiMember MatchLength = new CiMember { Name = "Length", Type = UIntType };
+	public static readonly CiMember MatchValue = new CiMember { Name = "Value", Type = StringPtrType };
+	public static readonly CiMethod MatchGetCapture = new CiMethod(CiCallType.Normal, StringPtrType, "GetCapture", new CiVar(UIntType, "group"));
+	public static readonly CiClass MatchClass = new CiClass(CiCallType.Normal, "Match",
+		MatchFind,
+		MatchGetCapture);
 	public static readonly CiMethod MathCeiling = new CiMethod(CiCallType.Static, FloatIntType, "Ceiling", new CiVar(DoubleType, "a"));
 	public static readonly CiMethod MathFusedMultiplyAdd = new CiMethod(CiCallType.Static, FloatType, "FusedMultiplyAdd", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y"), new CiVar(DoubleType, "z"));
 	public static readonly CiMethod MathLog2 = new CiMethod(CiCallType.Static, FloatType, "Log2", new CiVar(DoubleType, "a"));
@@ -1283,6 +1292,11 @@ public class CiSystem : CiScope
 		AddEnumValue(RegexOptionsEnum, RegexOptionsSingleline);
 		Add(RegexOptionsEnum);
 		Add(RegexClass);
+		MatchClass.Add(MatchStart);
+		MatchClass.Add(MatchEnd);
+		MatchClass.Add(MatchLength);
+		MatchClass.Add(MatchValue);
+		Add(MatchClass);
 		MathClass.Add(new CiConst("E", Math.E));
 		MathClass.Add(new CiConst("PI", Math.PI));
 		Add(MathClass);

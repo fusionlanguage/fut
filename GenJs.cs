@@ -120,8 +120,14 @@ public class GenJs : GenBase
 
 	protected override void WriteVar(CiNamedValue def)
 	{
-		Write(def.Type.IsFinal ? "const " : "let ");
-		base.WriteVar(def);
+		if (def.Type == CiSystem.MatchClass) {
+			Write("let ");
+			WriteName(def);
+		}
+		else {
+			Write(def.Type.IsFinal ? "const " : "let ");
+			base.WriteVar(def);
+		}
 	}
 
 	void WriteInterpolatedLiteral(string s)
@@ -329,6 +335,32 @@ public class GenJs : GenBase
 			Write(").length");
 			return expr;
 		}
+		if (expr.Symbol == CiSystem.MatchStart) {
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(".index");
+			return expr;
+		}
+		if (expr.Symbol == CiSystem.MatchEnd) {
+			if (parent > CiPriority.Add)
+				Write('(');
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(".index + ");
+			expr.Left.Accept(this, CiPriority.Primary); // FIXME: side effect
+			Write("[0].length");
+			if (parent > CiPriority.Add)
+				Write(')');
+			return expr;
+		}
+		if (expr.Symbol == CiSystem.MatchLength) {
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write("[0].length");
+			return expr;
+		}
+		if (expr.Symbol == CiSystem.MatchValue) {
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write("[0]");
+			return expr;
+		}
 		return base.Visit(expr, parent);
 	}
 
@@ -350,6 +382,14 @@ public class GenJs : GenBase
 	{
 		if (this.Library[(int) id] == null)
 			this.Library[(int) id] = method;
+	}
+
+	void WriteNewRegExp(CiExpr[] args)
+	{
+		Write("new RegExp(");
+		args[1].Accept(this, CiPriority.Statement);
+		WriteRegexIsMatchOptions(args, ", \"", "", "\"", "i", "m", "s");
+		Write(')');
 	}
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
@@ -468,12 +508,29 @@ public class GenJs : GenBase
 			WriteArgsInParentheses(method, args);
 		}
 		else if (method == CiSystem.RegexIsMatch) {
-			Write("new RegExp(");
-			args[1].Accept(this, CiPriority.Statement);
-			WriteRegexIsMatchOptions(args, ", \"", "", "\"", "i", "m", "s");
-			Write(").test(");
+			WriteNewRegExp(args);
+			Write(".test(");
 			args[0].Accept(this, CiPriority.Statement);
 			Write(')');
+		}
+		else if (method == CiSystem.MatchFind) {
+			if (parent > CiPriority.Equality)
+				Write('(');
+			Write('(');
+			obj.Accept(this, CiPriority.Assign);
+			Write(" = ");
+			WriteNewRegExp(args);
+			Write(".exec(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(")) != null");
+			if (parent > CiPriority.Equality)
+				Write(')');
+		}
+		else if (method == CiSystem.MatchGetCapture) {
+			obj.Accept(this, CiPriority.Primary);
+			Write('[');
+			args[0].Accept(this, CiPriority.Statement);
+			Write(']');
 		}
 		else if (method == CiSystem.MathFusedMultiplyAdd) {
 			if (parent > CiPriority.Add)

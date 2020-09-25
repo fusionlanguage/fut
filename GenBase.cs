@@ -525,6 +525,37 @@ public abstract class GenBase : CiVisitor
 		Write(')');
 	}
 
+	protected bool WriteJavaMatchProperty(CiSymbolReference expr, CiPriority parent)
+	{
+		if (expr.Symbol == CiSystem.MatchStart) {
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(".start()");
+			return true;
+		}
+		if (expr.Symbol == CiSystem.MatchEnd) {
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(".end()");
+			return true;
+		}
+		if (expr.Symbol == CiSystem.MatchLength) {
+			if (parent > CiPriority.Add)
+				Write('(');
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(".end() - ");
+			expr.Left.Accept(this, CiPriority.Primary); // FIXME: side effect
+			Write(".start()");
+			if (parent > CiPriority.Add)
+				Write(')');
+			return true;
+		}
+		if (expr.Symbol == CiSystem.MatchValue) {
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(".group()");
+			return true;
+		}
+		return false;
+	}
+
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Left == null)
