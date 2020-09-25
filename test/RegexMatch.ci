@@ -4,7 +4,7 @@ public class Test
 	{
 		Match() m;
 		string s = "The quick brown fox jumps over the lazy dog";
-		return m.Find(s, "(B.+?) (\\wo\\w)", RegexOptions.IgnoreCase | RegexOptions.Singleline) //FAIL: c cpp py swift TODO; cl
+		return m.Find(s, "(B.+?) (\\wo\\w)", RegexOptions.IgnoreCase | RegexOptions.Singleline) //FAIL: c cpp swift TODO; cl
 			&& m.Start == 10
 			&& m.End == 19
 			&& m.Length == 9
