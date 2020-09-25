@@ -386,10 +386,23 @@ public class GenJs : GenBase
 
 	void WriteNewRegExp(CiExpr[] args)
 	{
-		Write("new RegExp(");
-		args[1].Accept(this, CiPriority.Statement);
-		WriteRegexIsMatchOptions(args, ", \"", "", "\"", "i", "m", "s");
-		Write(')');
+		CiExpr pattern = args[1];
+		if (pattern is CiLiteral literal) {
+			Write('/');
+			foreach (char c in (string) literal.Value) {
+				if (c == '/')
+					Write('\\');
+				WriteEscapedChar(c, false);
+			}
+			Write('/');
+			WriteRegexIsMatchOptions(args, "", "", "", "i", "m", "s");
+		}
+		else {
+			Write("new RegExp(");
+			pattern.Accept(this, CiPriority.Statement);
+			WriteRegexIsMatchOptions(args, ", \"", "", "\"", "i", "m", "s");
+			Write(')');
+		}
 	}
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)

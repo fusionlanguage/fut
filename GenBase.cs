@@ -356,7 +356,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WriteEscapedChar(char c)
+	protected void WriteEscapedChar(char c, bool quoted = true)
 	{
 		switch (c) {
 		case '\a': Write("\\a"); break;
@@ -366,8 +366,8 @@ public abstract class GenBase : CiVisitor
 		case '\r': Write("\\r"); break;
 		case '\t': Write("\\t"); break;
 		case '\v': Write("\\v"); break;
-		case '\\': Write("\\\\"); break;
-		case '\"': Write("\\\""); break;
+		case '\\' when quoted: Write("\\\\"); break;
+		case '\"' when quoted: Write("\\\""); break;
 		default: Write(c); break;
 		}
 	}
