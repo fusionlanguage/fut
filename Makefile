@@ -1,6 +1,7 @@
 prefix := /usr/local
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
 CFLAGS = -Wall -Wno-tautological-compare -Werror
+SWIFTC = swiftc
 ifeq ($(OS),Windows_NT)
 CSC = "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/Roslyn/csc.exe" -nologo
 DO_BUILD = $(CSC) -out:$@ $^
@@ -14,11 +15,11 @@ CITO = dotnet run --
 MONO = mono
 JAVACPSEP = :
 CFLAGS += -fsanitize=address -g
+SWIFTC += -sanitize=address
 endif
 CC = clang
 CXX = clang++ -std=c++2a
 PYTHON = python3
-SWIFTC = swiftc -sanitize=address
 
 VERSION := 1.0.0
 MAKEFLAGS = -r
@@ -35,7 +36,7 @@ all: cito.exe
 cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs GenPySwift.cs GenPy.cs GenSwift.cs GenCl.cs CiTo.cs)
 	$(DO_BUILD)
 
-test: test-c test-cpp test-cs test-java test-js test-py test-cl test-error
+test: test-c test-cpp test-cs test-java test-js test-py test-swift test-cl test-error
 	perl test/summary.pl test/bin/*/*.txt
 
 test-c: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))

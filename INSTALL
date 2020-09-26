@@ -32,7 +32,7 @@ To run cito tests, you will need:
 * Java compiler (https://www.oracle.com/java/technologies/javase-jdk14-downloads.html)
 * Node.js (https://nodejs.org/)
 * Python
-* Swift (https://swift.org/, currently not available on Windows)
+* Swift (https://swift.org/)
 
 To get GNU Make, perl, GNU diff, Clang and Python on Windows,
 install MSYS2 (https://www.msys2.org/), start "MSYS2 MinGW 64-bit"
