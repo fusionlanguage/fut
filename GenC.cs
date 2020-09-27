@@ -176,7 +176,7 @@ public class GenC : GenCCpp
 			Write(symbol.Name);
 			break;
 		case CiConst _:
-			if (symbol.Parent is CiClass) {
+			if (symbol.Parent is CiContainerType) {
 				Write(this.Namespace);
 				Write(symbol.Parent.Name);
 				Write('_');
@@ -223,7 +223,7 @@ public class GenC : GenCCpp
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Left == null)
+		if (expr.Left == null || expr.Symbol is CiConst)
 			WriteLocalName(expr.Symbol, parent);
 		else
 			base.Visit(expr, parent);
@@ -539,12 +539,7 @@ public class GenC : GenCCpp
 
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
-		if (symbol.Symbol is CiConst) {
-			// FIXME
-			Write('_');
-		}
-		else
-			WriteMemberAccess(left, (CiClass) symbol.Symbol.Parent);
+		WriteMemberAccess(left, (CiClass) symbol.Symbol.Parent);
 	}
 
 	void WriteClassPtr(CiClass resultClass, CiExpr expr, CiPriority parent)
