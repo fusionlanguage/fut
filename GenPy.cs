@@ -922,7 +922,7 @@ public class GenPy : GenPySwift
 		WriteLine();
 		Write("class ");
 		WriteName(enu);
-		Write("(enum.Enum)");
+		Write(enu.IsFlags ? "(enum.Flag)" : "(enum.Enum)");
 		OpenChild();
 		Write(enu.Documentation);
 		int i = 1;
