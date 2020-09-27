@@ -8,7 +8,7 @@ enum* DaysOfWeek
 	Thursday = 1 << 4,
 	Friday = 1 << 5,
 	Saturday = 1 << 6,
-	Weekend = Saturday | Sunday //FAIL: c cl cpp js py swift TODO
+	Weekend = Saturday | Sunday //FAIL: c cl cpp py swift TODO
 }
 
 public static class Test
