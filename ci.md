@@ -265,7 +265,8 @@ as [UTF-8](https://en.wikipedia.org/wiki/UTF-8)
 or [UTF-16](https://en.wikipedia.org/wiki/UTF-16).
 However, Ć doesn't enforce any encoding.
 
-Ć also supports _interpolated strings_.
+#### Interpolated strings
+
 An interpolated string starts with `$"` and contains expressions in braces.
 The expressions are replaced with their string values.
 Example:
@@ -303,6 +304,58 @@ The following format strings are supported:
 * `E<n>` or `e<n>` format a `float` or `double` in exponential notation
   with `n` digits after the decimal point. The exponent symbol `E` or `e`
   matches the format string.
+
+#### Regular expressions
+
+Strings can be tested against
+a [regular expression](https://en.wikipedia.org/wiki/Regular_expression):
+
+```csharp
+string s = "456";
+bool isInteger = Regex.IsMatch(s, "^\\d+$");
+```
+
+`Regex.IsMatch` accepts an additional argument of type `RegexOptions`:
+
+* `RegexOptions.IgnoreCase` matches both upper- and lower-case letters.
+* `RegexOptions.Multiline` changes the behavior of `^` and `$`
+  to match at the beginning and end of a line instead of just the beginning
+  and end of the string. Lines are separated by the newline (`'\n'`) characters.
+* `RegexOptions.Singleline` changes the behavior of the dot (`.`)
+  so that it matches every character.
+  Normally it doesn't match the newline (`'\n'`).
+* The above options can be combined with the "or" operator (`|`).
+
+To retrieve location and contents of the match, create a `Match()` object
+and call its `Find` method:
+
+```csharp
+Match() match;
+if (match.Find(s, "^.{81,}$", RegexOptions.Multiline)) {
+    Console.WriteLine($"Found long line of {match.Length} characters, "
+        + $"starting at {match.Start}, ending at {match.End}:\n{match.Value}");
+}
+```
+
+The properties `Start`, `End`, `Length` and `Value` can be accessed
+only if `Find` returned `true`.
+The same restriction applies to the `GetCapture(int group)` method that
+retrieves a part of the match corresponding to parentheses in the pattern.
+
+```csharp
+Match() match;
+if (match.Find(url, "^(\\w+)://") && match.GetCapture(1) == "https") {
+    Console.WriteLine("Secure connection");
+}
+```
+
+Use `Regex.Escape` to escape a string so that its characters
+won't be interpreted as wildcards:
+
+```csharp
+string youtube = Regex.Escape("www.youtube.com"); // dots matched literally
+bool isYoutubeMovie = Regex.IsMatch(url, youtube + "/watch\\?v=\\w+");
+```
 
 ### Arrays
 
