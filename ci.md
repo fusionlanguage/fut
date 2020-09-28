@@ -189,6 +189,24 @@ When referencing a value of an enumerated type, you need to include
 the type name, for example `DayOfWeek.Friday`.
 Note to Java programmers: this includes the `case` clauses.
 
+For values which are not mutually exclusive, use `enum*`
+and assign integer values:
+
+```csharp
+enum* Seasons
+{
+    Spring = 1 << 0,
+    Summer = 1 << 1,
+    Fall = 1 << 2,
+    Winter = 1 << 3,
+    Autumn = Fall,
+    Warm = Spring | Summer,
+    Cold = Fall | Winter
+}
+```
+
+`enum*` values can be combined with the `| & ^ ~` operators.
+
 ### Strings
 
 For text processing please choose Perl and not Ć. Really.
