@@ -8,7 +8,7 @@ enum* DaysOfWeek
 	Thursday = 1 << 4,
 	Friday = 1 << 5,
 	Saturday = 1 << 6,
-	Weekend = Saturday | Sunday //FAIL: cpp swift TODO
+	Weekend = Saturday | Sunday //FAIL: swift TODO
 }
 
 public static class Test
@@ -16,6 +16,7 @@ public static class Test
 	public static bool Run()
 	{
 		DaysOfWeek d = DaysOfWeek.Friday | DaysOfWeek.Weekend;
+		d |= DaysOfWeek.Saturday;
 		return (d & DaysOfWeek.Sunday) != DaysOfWeek.None;
 	}
 }
