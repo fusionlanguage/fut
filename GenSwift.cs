@@ -944,16 +944,19 @@ public class GenSwift : GenPySwift
 		Write(enu.Documentation);
 		WritePublic(enu);
 		Write("enum ");
-		WriteLine(enu.Name);
+		Write(enu.Name);
+		if (enu.Any(symbol => ((CiConst) symbol).Value != null))
+			Write(" : Int");
+		WriteLine();
 		OpenBlock();
 		foreach (CiConst konst in enu) {
 			Write(konst.Documentation);
 			Write("case ");
 			WriteName(konst);
-			/* TODO if (konst.Value != null) {
+			if (konst.Value != null) {
 				Write(" = ");
 				konst.Value.Accept(this, CiPriority.Statement);
-			} */
+			}
 			WriteLine();
 		}
 		CloseBlock();
