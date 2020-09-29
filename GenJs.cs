@@ -562,10 +562,18 @@ public class GenJs : GenBase
 			if (parent > CiPriority.Add)
 				Write(')');
 		}
-		else if (method == CiSystem.MathIsNaN) {
-			Write("isNaN(");
+		else if (method == CiSystem.MathIsFinite || method == CiSystem.MathIsNaN) {
+			WriteCamelCase(method.Name);
+			WriteArgsInParentheses(method, args);
+		}
+		else if (method == CiSystem.MathIsInfinity) {
+			if (parent > CiPriority.Equality)
+				Write('(');
+			Write("Math.abs(");
 			args[0].Accept(this, CiPriority.Statement);
-			Write(')');
+			Write(") == Infinity");
+			if (parent > CiPriority.Equality)
+				Write(')');
 		}
 		else if (obj.IsReferenceTo(CiSystem.BasePtr)) {
 			//TODO: with "class" syntax: Write("super");

@@ -4,6 +4,8 @@ public static class Test
 	{
 		float inf = Math.PositiveInfinity;
 		float minusInf = Math.NegativeInfinity;
-		return inf > 1e300 && minusInf < -1e300;
+		return inf > 1e300 && minusInf < -1e300
+			&& Math.IsInfinity(inf) && Math.IsInfinity(minusInf)
+			&& !Math.IsFinite(inf) && !Math.IsFinite(minusInf); //FAIL: cs - .NET Core but not .NET Framework 4.8
 	}
 }

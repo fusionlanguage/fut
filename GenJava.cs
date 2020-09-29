@@ -580,10 +580,13 @@ public class GenJava : GenTyped
 			args[0].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
-		else if (method == CiSystem.MathIsNaN) {
-			Write("Double.isNaN(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(')');
+		else if (method == CiSystem.MathIsFinite || method == CiSystem.MathIsInfinity || method == CiSystem.MathIsNaN) {
+			Write("Double.is");
+			Write(method == CiSystem.MathIsFinite ? "Finite"
+				: method == CiSystem.MathIsInfinity ? "Infinite"
+				: method == CiSystem.MathIsNaN ? "NaN"
+				: throw new NotImplementedException(method.Name));
+			WriteArgsInParentheses(method, args);
 		}
 		else if (method == CiSystem.MathLog2) {
 			if (parent > CiPriority.Mul)

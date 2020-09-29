@@ -622,6 +622,8 @@ public class GenPy : GenPySwift
 				Write("math.");
 				if (method == CiSystem.MathCeiling)
 					Write("ceil");
+				else if (method == CiSystem.MathIsInfinity)
+					Write("isinf");
 				else if (method == CiSystem.MathTruncate)
 					Write("trunc");
 				else

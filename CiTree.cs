@@ -1237,6 +1237,8 @@ public class CiSystem : CiScope
 	public static readonly CiMember MathPositiveInfinity = new CiMember { Name = "PositiveInfinity", Type = FloatType };
 	public static readonly CiMethod MathCeiling = new CiMethod(CiCallType.Static, FloatIntType, "Ceiling", new CiVar(DoubleType, "a"));
 	public static readonly CiMethod MathFusedMultiplyAdd = new CiMethod(CiCallType.Static, FloatType, "FusedMultiplyAdd", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y"), new CiVar(DoubleType, "z"));
+	public static readonly CiMethod MathIsFinite = new CiMethod(CiCallType.Static, BoolType, "IsFinite", new CiVar(DoubleType, "a"));
+	public static readonly CiMethod MathIsInfinity = new CiMethod(CiCallType.Static, BoolType, "IsInfinity", new CiVar(DoubleType, "a"));
 	public static readonly CiMethod MathIsNaN = new CiMethod(CiCallType.Static, BoolType, "IsNaN", new CiVar(DoubleType, "a"));
 	public static readonly CiMethod MathLog2 = new CiMethod(CiCallType.Static, FloatType, "Log2", new CiVar(DoubleType, "a"));
 	public static readonly CiMethod MathTruncate = new CiMethod(CiCallType.Static, FloatIntType, "Truncate", new CiVar(DoubleType, "a"));
@@ -1252,6 +1254,8 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, FloatType, "Exp", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatIntType, "Floor", new CiVar(DoubleType, "a")),
 		MathFusedMultiplyAdd,
+		MathIsFinite,
+		MathIsInfinity,
 		MathIsNaN,
 		new CiMethod(CiCallType.Static, FloatType, "Log", new CiVar(DoubleType, "a")),
 		MathLog2,

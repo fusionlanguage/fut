@@ -518,7 +518,15 @@ public class GenSwift : GenPySwift
 			Write("], as: UTF8.self)");
 		}
 		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
-			if (method == CiSystem.MathIsNaN) {
+			if (method == CiSystem.MathIsFinite) {
+				args[0].Accept(this, CiPriority.Primary);
+				Write(".isFinite");
+			}
+			else if (method == CiSystem.MathIsInfinity) {
+				args[0].Accept(this, CiPriority.Primary);
+				Write(".isInfinite");
+			}
+			else if (method == CiSystem.MathIsNaN) {
 				args[0].Accept(this, CiPriority.Primary);
 				Write(".isNaN");
 			}

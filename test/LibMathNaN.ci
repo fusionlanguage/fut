@@ -2,6 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		return Math.IsNaN(Math.NaN);
+		return Math.IsNaN(Math.NaN)
+			&& !Math.IsFinite(Math.NaN); //FAIL: cs - .NET Core but not .NET Framework 4.8
 	}
 }

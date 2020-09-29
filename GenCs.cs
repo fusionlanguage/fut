@@ -397,11 +397,6 @@ public class GenCs : GenTyped
 			args[0].Accept(this, CiPriority.Statement);
 			Write("].Value");
 		}
-		else if (method == CiSystem.MathIsNaN) {
-			Write("double.IsNaN(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(')');
-		}
 		else if (obj.Type is CiArrayType && !(obj.Type is CiListType) && method.Name == "CopyTo") {
 			Include("System");
 			Write("Array.Copy(");
@@ -429,11 +424,15 @@ public class GenCs : GenTyped
 			Write(')');
 		}
 		else {
-			if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine || obj.IsReferenceTo(CiSystem.MathClass))
-				Include("System");
-			else if (method == CiSystem.RegexEscape || method == CiSystem.RegexIsMatch)
-				Include("System.Text.RegularExpressions");
-			obj.Accept(this, CiPriority.Primary);
+			if (method == CiSystem.MathIsFinite || method == CiSystem.MathIsInfinity || method == CiSystem.MathIsNaN)
+				Write("double");
+			else {
+				if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine || obj.IsReferenceTo(CiSystem.MathClass))
+					Include("System");
+				else if (method == CiSystem.RegexEscape || method == CiSystem.RegexIsMatch)
+					Include("System.Text.RegularExpressions");
+				obj.Accept(this, CiPriority.Primary);
+			}
 			Write('.');
 			WriteName(method);
 			WriteArgsInParentheses(method, args);

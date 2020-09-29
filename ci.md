@@ -149,6 +149,8 @@ and static methods:
 * `Math.Exp(double a)`
 * `Math.Floor(double a)`
 * `Math.FusedMultiplyAdd(double x, double y, double z)`
+* `Math.IsFinite(double a)`
+* `Math.IsInfinity(double a)`
 * `Math.IsNaN(double a)`
 * `Math.Log(double a)`
 * `Math.Log10(double a)`

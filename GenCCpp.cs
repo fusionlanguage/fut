@@ -133,6 +133,8 @@ public abstract class GenCCpp : GenTyped
 			Write("ceil");
 		else if (method == CiSystem.MathFusedMultiplyAdd)
 			Write("fma");
+		else if (method == CiSystem.MathIsInfinity)
+			Write("isinf");
 		else if (method == CiSystem.MathTruncate)
 			Write("trunc");
 		else
