@@ -505,16 +505,22 @@ public class GenSwift : GenPySwift
 			Write("], as: UTF8.self)");
 		}
 		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
-			Include("Foundation");
-			if (method == CiSystem.MathCeiling)
-				Write("ceil");
-			else if (method == CiSystem.MathFusedMultiplyAdd)
-				Write("fma");
-			else if (method == CiSystem.MathTruncate)
-				Write("trunc");
-			else
-				WriteName(method);
-			WriteArgsInParentheses(method, args);
+			if (method == CiSystem.MathIsNaN) {
+				args[0].Accept(this, CiPriority.Primary);
+				Write(".isNaN");
+			}
+			else {
+				Include("Foundation");
+				if (method == CiSystem.MathCeiling)
+					Write("ceil");
+				else if (method == CiSystem.MathFusedMultiplyAdd)
+					Write("fma");
+				else if (method == CiSystem.MathTruncate)
+					Write("trunc");
+				else
+					WriteName(method);
+				WriteArgsInParentheses(method, args);
+			}
 		}
 		else {
 			if (obj.IsReferenceTo(CiSystem.BasePtr))

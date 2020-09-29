@@ -559,6 +559,11 @@ public class GenJs : GenBase
 			if (parent > CiPriority.Add)
 				Write(')');
 		}
+		else if (method == CiSystem.MathIsNaN) {
+			Write("isNaN(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
 		else if (obj.IsReferenceTo(CiSystem.BasePtr)) {
 			//TODO: with "class" syntax: Write("super");
 			WriteName(method.Parent);

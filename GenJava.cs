@@ -569,6 +569,11 @@ public class GenJava : GenTyped
 			args[0].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
+		else if (method == CiSystem.MathIsNaN) {
+			Write("Double.isNaN(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
 		else if (method == CiSystem.MathLog2) {
 			if (parent > CiPriority.Mul)
 				Write('(');

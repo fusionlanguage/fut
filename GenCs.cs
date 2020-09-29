@@ -393,6 +393,11 @@ public class GenCs : GenTyped
 			args[0].Accept(this, CiPriority.Statement);
 			Write("].Value");
 		}
+		else if (method == CiSystem.MathIsNaN) {
+			Write("double.IsNaN(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
 		else if (obj.Type is CiArrayType && !(obj.Type is CiListType) && method.Name == "CopyTo") {
 			Include("System");
 			Write("Array.Copy(");

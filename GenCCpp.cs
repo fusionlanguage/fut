@@ -119,8 +119,10 @@ public abstract class GenCCpp : GenTyped
 			Write("fma");
 		else if (method == CiSystem.MathTruncate)
 			Write("trunc");
-		else
-			WriteCamelCase(method.Name);
+		else {
+			foreach (char c in method.Name)
+				Write(char.ToLowerInvariant(c));
+		}
 		WriteArgsInParentheses(method, args);
 	}
 

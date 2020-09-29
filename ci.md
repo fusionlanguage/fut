@@ -141,6 +141,7 @@ There's a built-in `Math` class with the following static methods:
 * `Math.Exp(double a)`
 * `Math.Floor(double a)`
 * `Math.FusedMultiplyAdd(double x, double y, double z)`
+* `Math.IsNaN(double a)`
 * `Math.Log(double a)`
 * `Math.Log10(double a)`
 * `Math.Log2(double a)`

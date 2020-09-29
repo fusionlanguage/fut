@@ -1234,6 +1234,7 @@ public class CiSystem : CiScope
 		MatchGetCapture);
 	public static readonly CiMethod MathCeiling = new CiMethod(CiCallType.Static, FloatIntType, "Ceiling", new CiVar(DoubleType, "a"));
 	public static readonly CiMethod MathFusedMultiplyAdd = new CiMethod(CiCallType.Static, FloatType, "FusedMultiplyAdd", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y"), new CiVar(DoubleType, "z"));
+	public static readonly CiMethod MathIsNaN = new CiMethod(CiCallType.Static, BoolType, "IsNaN", new CiVar(DoubleType, "a"));
 	public static readonly CiMethod MathLog2 = new CiMethod(CiCallType.Static, FloatType, "Log2", new CiVar(DoubleType, "a"));
 	public static readonly CiMethod MathTruncate = new CiMethod(CiCallType.Static, FloatIntType, "Truncate", new CiVar(DoubleType, "a"));
 	public static readonly CiClass MathClass = new CiClass(CiCallType.Static, "Math",
@@ -1248,6 +1249,7 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, FloatType, "Exp", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatIntType, "Floor", new CiVar(DoubleType, "a")),
 		MathFusedMultiplyAdd,
+		MathIsNaN,
 		new CiMethod(CiCallType.Static, FloatType, "Log", new CiVar(DoubleType, "a")),
 		MathLog2,
 		new CiMethod(CiCallType.Static, FloatType, "Log10", new CiVar(DoubleType, "a")),

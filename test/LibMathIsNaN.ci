@@ -1,0 +1,10 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		float zero = 0.0;
+		float f = zero / zero; //FAIL: py
+		double d = zero / zero;
+		return Math.IsNaN(f) && Math.IsNaN(d);
+	}
+}
