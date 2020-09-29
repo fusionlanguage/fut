@@ -391,7 +391,27 @@ public abstract class GenBase : CiVisitor
 			Write('"');
 			break;
 		case double d:
-			Write(d.ToString("R", CultureInfo.InvariantCulture));
+			string s2 = d.ToString("R", CultureInfo.InvariantCulture);
+			Write(s2);
+			foreach (char c in s2) {
+				switch (c) {
+				case '-':
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9':
+					break;
+				default:
+					return;
+				}
+			}
+			Write(".0"); // it looked like an integer
 			break;
 		default:
 			throw new NotImplementedException(value.GetType().Name);
