@@ -89,6 +89,8 @@ public class CiResolver : CiVisitor
 	{
 		if (!type.IsAssignableFrom(expr.Type))
 			throw StatementException(expr, "Cannot coerce {0} to {1}", expr.Type, type);
+		if (expr is CiPrefixExpr prefix && prefix.Op == CiToken.New && !type.IsDynamicPtr)
+			throw StatementException(expr, "Dynamically allocated {0} must be assigned to a {1} reference", expr.Type is CiArrayType ? "array" : "object", expr.Type);
 	}
 
 	CiType GetCommonType(CiExpr left, CiExpr right)

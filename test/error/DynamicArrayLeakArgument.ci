@@ -1,0 +1,12 @@
+public static class Test
+{
+	static void Foo(int[] p)
+	{
+	}
+
+	public static bool Run()
+	{
+		Foo(new int[2]); //ERROR: Dynamically allocated array must be assigned to a int[]# reference
+		return true;
+	}
+}

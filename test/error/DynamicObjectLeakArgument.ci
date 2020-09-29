@@ -1,0 +1,12 @@
+public class Test
+{
+	static void Foo(Test t)
+	{
+	}
+
+	public static bool Run()
+	{
+		Foo(new Test()); //ERROR: Dynamically allocated object must be assigned to a Test# reference
+		return true;
+	}
+}
