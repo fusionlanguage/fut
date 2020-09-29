@@ -32,6 +32,8 @@ public abstract class GenCCpp : GenTyped
 
 	protected abstract void IncludeAssert();
 
+	protected abstract void IncludeMath();
+
 	protected void WriteIncludes()
 	{
 		WriteIncludes("#include <", ">");
@@ -66,6 +68,20 @@ public abstract class GenCCpp : GenTyped
 		default:
 			throw new NotImplementedException(typeCode.ToString());
 		}
+	}
+
+	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	{
+		if (expr.Left != null && expr.Left.IsReferenceTo(CiSystem.MathClass)) {
+			IncludeMath();
+			Write(expr.Symbol == CiSystem.MathNaN ? "NAN"
+				: expr.Symbol == CiSystem.MathNegativeInfinity ? "-INFINITY"
+				: expr.Symbol == CiSystem.MathPositiveInfinity ? "INFINITY"
+				: throw new NotImplementedException(expr.ToString()));
+		}
+		else
+			return base.Visit(expr, parent);
+		return expr;
 	}
 
 	protected override void WriteVarInit(CiNamedValue def)
@@ -119,10 +135,8 @@ public abstract class GenCCpp : GenTyped
 			Write("fma");
 		else if (method == CiSystem.MathTruncate)
 			Write("trunc");
-		else {
-			foreach (char c in method.Name)
-				Write(char.ToLowerInvariant(c));
-		}
+		else
+			WriteLowercase(method.Name);
 		WriteArgsInParentheses(method, args);
 	}
 

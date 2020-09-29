@@ -1232,6 +1232,9 @@ public class CiSystem : CiScope
 	public static readonly CiClass MatchClass = new CiClass(CiCallType.Normal, "Match",
 		MatchFind,
 		MatchGetCapture);
+	public static readonly CiMember MathNaN = new CiMember { Name = "NaN", Type = FloatType };
+	public static readonly CiMember MathNegativeInfinity = new CiMember { Name = "NegativeInfinity", Type = FloatType };
+	public static readonly CiMember MathPositiveInfinity = new CiMember { Name = "PositiveInfinity", Type = FloatType };
 	public static readonly CiMethod MathCeiling = new CiMethod(CiCallType.Static, FloatIntType, "Ceiling", new CiVar(DoubleType, "a"));
 	public static readonly CiMethod MathFusedMultiplyAdd = new CiMethod(CiCallType.Static, FloatType, "FusedMultiplyAdd", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y"), new CiVar(DoubleType, "z"));
 	public static readonly CiMethod MathIsNaN = new CiMethod(CiCallType.Static, BoolType, "IsNaN", new CiVar(DoubleType, "a"));
@@ -1301,6 +1304,9 @@ public class CiSystem : CiScope
 		Add(MatchClass);
 		MathClass.Add(new CiConst("E", Math.E));
 		MathClass.Add(new CiConst("PI", Math.PI));
+		MathClass.Add(MathNaN);
+		MathClass.Add(MathNegativeInfinity);
+		MathClass.Add(MathPositiveInfinity);
 		Add(MathClass);
 		Add(BasePtr);
 	}

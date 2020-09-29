@@ -431,7 +431,18 @@ public class GenJava : GenTyped
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		return WriteJavaMatchProperty(expr, parent) ? expr : base.Visit(expr, parent);
+		if (expr.Left != null && expr.Left.IsReferenceTo(CiSystem.MathClass)) {
+			Write("Float.");
+			Write(expr.Symbol == CiSystem.MathNaN ? "NaN"
+				: expr.Symbol == CiSystem.MathNegativeInfinity ? "NEGATIVE_INFINITY"
+				: expr.Symbol == CiSystem.MathPositiveInfinity ? "POSITIVE_INFINITY"
+				: throw new NotImplementedException(expr.ToString()));
+		}
+		else if (WriteJavaMatchProperty(expr, parent))
+			return expr;
+		else
+			return base.Visit(expr, parent);
+		return expr;
 	}
 
 	void WriteNotPromoted(CiType type, CiExpr expr)

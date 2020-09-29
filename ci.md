@@ -128,7 +128,15 @@ operators.
 
 There are two floating-point types: `float` and `double`.
 Use the aforementioned operators, except for bitwise operations.
-There's a built-in `Math` class with the following static methods:
+There's a built-in `Math` class with the following constants:
+
+* `Math.PI`
+* `Math.E`
+* `Math.PositiveInfinity`
+* `Math.NegativeInfinity`
+* `Math.NaN`
+
+and static methods:
 
 * `Math.Acos(double a)`
 * `Math.Asin(double a)`

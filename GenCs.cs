@@ -344,9 +344,8 @@ public class GenCs : GenTyped
 		if (expr.Symbol == CiSystem.MatchStart) {
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".Index");
-			return expr;
 		}
-		if (expr.Symbol == CiSystem.MatchEnd) {
+		else if (expr.Symbol == CiSystem.MatchEnd) {
 			if (parent > CiPriority.Add)
 				Write('(');
 			expr.Left.Accept(this, CiPriority.Primary);
@@ -354,9 +353,14 @@ public class GenCs : GenTyped
 			WriteStringLength(expr.Left); // FIXME: side effect
 			if (parent > CiPriority.Add)
 				Write(')');
-			return expr;
 		}
-		return base.Visit(expr, parent);
+		else if (expr.Left != null && expr.Left.IsReferenceTo(CiSystem.MathClass)) { // NaN, NegativeInfinity, PositiveInfinity
+			Write("float.");
+			Write(expr.Symbol.Name);
+		}
+		else
+			return base.Visit(expr, parent);
+		return expr;
 	}
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)

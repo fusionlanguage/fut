@@ -245,13 +245,20 @@ public class GenPy : GenPySwift
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Symbol == CiSystem.CollectionCount) {
+		if (expr.Symbol == CiSystem.CollectionCount)
 			WriteStringLength(expr.Left);
+		else if (WriteJavaMatchProperty(expr, parent))
 			return expr;
+		else if (expr.Left != null && expr.Left.IsReferenceTo(CiSystem.MathClass)) {
+			Include("math");
+			Write(expr.Symbol == CiSystem.MathNaN ? "math.nan"
+				: expr.Symbol == CiSystem.MathNegativeInfinity ? "-math.inf"
+				: expr.Symbol == CiSystem.MathPositiveInfinity ? "math.inf"
+				: throw new NotImplementedException(expr.ToString()));
 		}
-		if (WriteJavaMatchProperty(expr, parent))
-			return expr;
-		return base.Visit(expr, parent);
+		else
+			return base.Visit(expr, parent);
+		return expr;
 	}
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
@@ -605,9 +612,21 @@ public class GenPy : GenPySwift
 			args[0].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
-		else if (method == CiSystem.MathFusedMultiplyAdd) {
-			Include("pyfma");
-			Write("pyfma.fma");
+		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
+			if (method == CiSystem.MathFusedMultiplyAdd) {
+				Include("pyfma");
+				Write("pyfma.fma");
+			}
+			else {
+				Include("math");
+				Write("math.");
+				if (method == CiSystem.MathCeiling)
+					Write("ceil");
+				else if (method == CiSystem.MathTruncate)
+					Write("trunc");
+				else
+					WriteLowercase(method.Name);
+			}
 			WriteArgsInParentheses(method, args);
 		}
 		else if (obj.IsReferenceTo(CiSystem.BasePtr)) {
@@ -622,11 +641,7 @@ public class GenPy : GenPySwift
 			Write(')');
 		}
 		else {
-			if (obj.IsReferenceTo(CiSystem.MathClass)) {
-				Include("math");
-				Write("math");
-			}
-			else if (method == CiSystem.RegexEscape) {
+			if (method == CiSystem.RegexEscape) {
 				Include("re");
 				Write("re");
 			}
@@ -643,10 +658,6 @@ public class GenPy : GenPySwift
 				Write("endswith");
 			else if (obj.Type is CiListType && method.Name == "Add")
 				Write("append");
-			else if (method == CiSystem.MathCeiling)
-				Write("ceil");
-			else if (method == CiSystem.MathTruncate)
-				Write("trunc");
 			else
 				WriteName(method);
 			WriteArgsInParentheses(method, args);

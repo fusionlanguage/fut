@@ -39,6 +39,11 @@ public class GenCpp : GenCCpp
 		Include("cassert");
 	}
 
+	protected override void IncludeMath()
+	{
+		Include("cmath");
+	}
+
 	protected override void WriteLiteral(object value)
 	{
 		if (value == null)

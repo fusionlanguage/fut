@@ -355,6 +355,19 @@ public class GenSwift : GenPySwift
 		Write(')');
 	}
 
+	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	{
+		if (expr.Left != null && expr.Left.IsReferenceTo(CiSystem.MathClass)) {
+			Write(expr.Symbol == CiSystem.MathNaN ? "Float.nan"
+				: expr.Symbol == CiSystem.MathNegativeInfinity ? "-Float.infinity"
+				: expr.Symbol == CiSystem.MathPositiveInfinity ? "Float.infinity"
+				: throw new NotImplementedException(expr.ToString()));
+		}
+		else
+			return base.Visit(expr, parent);
+		return expr;
+	}
+
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
 		if (expr.Left.Type is CiClassPtrType || expr.Right.Type is CiClassPtrType

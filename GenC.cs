@@ -62,14 +62,14 @@ public class GenC : GenCCpp
 		Include("assert.h");
 	}
 
+	protected override void IncludeMath()
+	{
+		Include("math.h");
+	}
+
 	protected virtual void IncludeStdBool()
 	{
 		Include("stdbool.h");
-	}
-
-	protected virtual void IncludeMath()
-	{
-		Include("math.h");
 	}
 
 	protected override void WriteLiteral(object value)
@@ -226,7 +226,7 @@ public class GenC : GenCCpp
 		if (expr.Left == null || expr.Symbol is CiConst)
 			WriteLocalName(expr.Symbol, parent);
 		else
-			base.Visit(expr, parent);
+			return base.Visit(expr, parent);
 		return expr;
 	}
 

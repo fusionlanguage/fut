@@ -336,14 +336,12 @@ public class GenJs : GenBase
 			Write("Object.keys(");
 			expr.Left.Accept(this, CiPriority.Statement);
 			Write(").length");
-			return expr;
 		}
-		if (expr.Symbol == CiSystem.MatchStart) {
+		else if (expr.Symbol == CiSystem.MatchStart) {
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".index");
-			return expr;
 		}
-		if (expr.Symbol == CiSystem.MatchEnd) {
+		else if (expr.Symbol == CiSystem.MatchEnd) {
 			if (parent > CiPriority.Add)
 				Write('(');
 			expr.Left.Accept(this, CiPriority.Primary);
@@ -352,19 +350,24 @@ public class GenJs : GenBase
 			Write("[0].length");
 			if (parent > CiPriority.Add)
 				Write(')');
-			return expr;
 		}
-		if (expr.Symbol == CiSystem.MatchLength) {
+		else if (expr.Symbol == CiSystem.MatchLength) {
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write("[0].length");
-			return expr;
 		}
-		if (expr.Symbol == CiSystem.MatchValue) {
+		else if (expr.Symbol == CiSystem.MatchValue) {
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write("[0]");
-			return expr;
 		}
-		return base.Visit(expr, parent);
+		else if (expr.Left != null && expr.Left.IsReferenceTo(CiSystem.MathClass)) {
+			Write(expr.Symbol == CiSystem.MathNaN ? "NaN"
+				: expr.Symbol == CiSystem.MathNegativeInfinity ? "-Infinity"
+				: expr.Symbol == CiSystem.MathPositiveInfinity ? "Infinity"
+				: throw new NotImplementedException(expr.ToString()));
+		}
+		else
+			return base.Visit(expr, parent);
+		return expr;
 	}
 
 	protected override void WriteStringLength(CiExpr expr)
