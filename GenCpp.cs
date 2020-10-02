@@ -272,7 +272,12 @@ public class GenCpp : GenCCpp
 			}
 			break;
 		default:
-			Write(type.Name);
+			if (type == CiSystem.MatchClass) {
+				Include("regex");
+				Write("std::cmatch");
+			}
+			else
+				Write(type.Name);
 			break;
 		}
 	}
@@ -635,7 +640,7 @@ public class GenCpp : GenCCpp
 			Write(".erase");
 			WriteArgsInParentheses(method, args);
 		}
-		else if (method == CiSystem.RegexIsMatch) {
+		else if (method == CiSystem.RegexIsMatch || method == CiSystem.MatchFind) {
 			Include("regex");
 			Write("std::regex_search(");
 			if (args[0].Type == CiSystem.StringPtrType && !(args[0] is CiLiteral)) {
@@ -646,10 +651,20 @@ public class GenCpp : GenCCpp
 			}
 			else
 				args[0].Accept(this, CiPriority.Statement);
+			if (method == CiSystem.MatchFind) {
+				Write(", ");
+				obj.Accept(this, CiPriority.Statement);
+			}
 			Write(", std::regex(");
 			args[1].Accept(this, CiPriority.Statement);
 			WriteRegexOptions(args, ", std::regex::ECMAScript | ", " | ", "", "std::regex::icase", "std::regex::multiline", "std::regex::NOT_SUPPORTED_singleline");
 			Write("))");
+		}
+		else if (method == CiSystem.MatchGetCapture) {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".str(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
 		}
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(obj, args, false);
@@ -746,6 +761,32 @@ public class GenCpp : GenCCpp
 	{
 		expr.Accept(this, CiPriority.Primary);
 		Write(".length()");
+	}
+
+	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	{
+		if (expr.Symbol == CiSystem.MatchStart) {
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(".position()");
+		}
+		else if (expr.Symbol == CiSystem.MatchEnd) {
+			if (parent > CiPriority.Add)
+				Write('(');
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(".position() + ");
+			WriteStringLength(expr.Left); // FIXME: side effect
+			if (parent > CiPriority.Add)
+				Write(')');
+		}
+		else if (expr.Symbol == CiSystem.MatchLength)
+			WriteStringLength(expr.Left);
+		else if (expr.Symbol == CiSystem.MatchValue) {
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(".str()");
+		}
+		else
+			return base.Visit(expr, parent);
+		return expr;
 	}
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
