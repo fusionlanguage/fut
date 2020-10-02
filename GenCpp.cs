@@ -635,6 +635,22 @@ public class GenCpp : GenCCpp
 			Write(".erase");
 			WriteArgsInParentheses(method, args);
 		}
+		else if (method == CiSystem.RegexIsMatch) {
+			Include("regex");
+			Write("std::regex_search(");
+			if (args[0].Type == CiSystem.StringPtrType && !(args[0] is CiLiteral)) {
+				args[0].Accept(this, CiPriority.Primary);
+				Write(".begin(), ");
+				args[0].Accept(this, CiPriority.Primary); // FIXME: side effect
+				Write(".end()");
+			}
+			else
+				args[0].Accept(this, CiPriority.Statement);
+			Write(", std::regex(");
+			args[1].Accept(this, CiPriority.Statement);
+			WriteRegexOptions(args, ", std::regex::ECMAScript | ", " | ", "", "std::regex::icase", "std::regex::multiline", "std::regex::NOT_SUPPORTED_singleline");
+			Write("))");
+		}
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(obj, args, false);
 		else if (method == CiSystem.ConsoleWriteLine)

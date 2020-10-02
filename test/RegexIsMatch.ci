@@ -3,11 +3,11 @@ public class Test
 	public static bool Run()
 	{
 		string s = "123";
-		return Regex.IsMatch(s, "^\\d+$") //FAIL: c cpp swift TODO; cl
+		return Regex.IsMatch(s, "^\\d+$") //FAIL: c swift TODO; cl
 			&& Regex.IsMatch(s, "3")
 			&& !Regex.IsMatch(s, "x")
 			&& Regex.IsMatch("foo", "FOO", RegexOptions.IgnoreCase)
 			&& Regex.IsMatch("a\nb", "^B", RegexOptions.IgnoreCase | RegexOptions.Multiline)
-			&& Regex.IsMatch("\n", ".", RegexOptions.Singleline & ~RegexOptions.Multiline);
+			&& Regex.IsMatch("\n", ".", RegexOptions.Singleline & ~RegexOptions.Multiline); //FAIL: cpp
 	}
 }

@@ -495,7 +495,7 @@ public class GenPy : GenPySwift
 		args[1].Accept(this, CiPriority.Statement);
 		Write(", ");
 		args[0].Accept(this, CiPriority.Statement);
-		WriteRegexIsMatchOptions(args, ", ", " | ", "", "re.I", "re.M", "re.S");
+		WriteRegexOptions(args, ", ", " | ", "", "re.I", "re.M", "re.S");
 		Write(')');
 	}
 

@@ -922,7 +922,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WriteRegexIsMatchOptions(CiExpr[] args, string prefix, string separator, string suffix, string i, string m, string s)
+	protected void WriteRegexOptions(CiExpr[] args, string prefix, string separator, string suffix, string i, string m, string s)
 	{
 		if (args.Length != 3)
 			return;

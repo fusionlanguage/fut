@@ -401,12 +401,12 @@ public class GenJs : GenBase
 				WriteEscapedChar(c, false);
 			}
 			Write('/');
-			WriteRegexIsMatchOptions(args, "", "", "", "i", "m", "s");
+			WriteRegexOptions(args, "", "", "", "i", "m", "s");
 		}
 		else {
 			Write("new RegExp(");
 			pattern.Accept(this, CiPriority.Statement);
-			WriteRegexIsMatchOptions(args, ", \"", "", "\"", "i", "m", "s");
+			WriteRegexOptions(args, ", \"", "", "\"", "i", "m", "s");
 			Write(')');
 		}
 	}
