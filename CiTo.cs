@@ -43,7 +43,7 @@ public static class CiTo
 		Console.WriteLine("-l swift   Translate to Swift");
 		Console.WriteLine("-l cl      Translate to OpenCL C");
 		Console.WriteLine("-o FILE    Write to the specified file");
-		Console.WriteLine("-n NAME    Specify C++/C# namespace or Java package");
+		Console.WriteLine("-n NAME    Specify C++/C# namespace, Java package or C name prefix");
 		Console.WriteLine("-D NAME    Define conditional compilation symbol");
 		Console.WriteLine("-I DIR     Add directory to resource search path");
 		Console.WriteLine("--help     Display this information");
