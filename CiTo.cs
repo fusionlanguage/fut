@@ -45,15 +45,26 @@ public static class CiTo
 		Console.WriteLine("-o FILE    Write to the specified file");
 		Console.WriteLine("-n NAME    Specify C++/C# namespace, Java package or C name prefix");
 		Console.WriteLine("-D NAME    Define conditional compilation symbol");
+		Console.WriteLine("-r FILE.ci Read the specified source file but don't emit code");
 		Console.WriteLine("-I DIR     Add directory to resource search path");
 		Console.WriteLine("--help     Display this information");
 		Console.WriteLine("--version  Display version information");
+	}
+
+	static CiProgram ParseAndResolve(CiParser parser, CiScope parent, List<string> files, List<string> searchDirs)
+	{
+		parser.Program = new CiProgram { Parent = parent };
+		foreach (string file in files)
+			parser.Parse(file, File.OpenText(file));
+		new CiResolver(parser.Program, searchDirs);
+		return parser.Program;
 	}
 
 	public static int Main(string[] args)
 	{
 		CiParser parser = new CiParser();
 		List<string> inputFiles = new List<string>();
+		List<string> referencedFiles = new List<string>();
 		List<string> searchDirs = new List<string>();
 		string lang = null;
 		string outputFile = null;
@@ -82,6 +93,9 @@ public static class CiTo
 					if (symbol == "true" || symbol == "false")
 						throw new ArgumentException(symbol + " is reserved");
 					parser.PreSymbols.Add(symbol);
+					break;
+				case "-r":
+					referencedFiles.Add(args[++i]);
 					break;
 				case "-I":
 					searchDirs.Add(args[++i]);
@@ -120,10 +134,10 @@ public static class CiTo
 
 		CiProgram program;
 		try {
-			foreach (string inputFile in inputFiles)
-				parser.Parse(inputFile, File.OpenText(inputFile));
-			program = parser.Program;
-			new CiResolver(program, searchDirs);
+			CiScope parent = CiSystem.Value;
+			if (referencedFiles.Count > 0)
+				parent = ParseAndResolve(parser, parent, referencedFiles, searchDirs);
+			program = ParseAndResolve(parser, parent, inputFiles, searchDirs);
 		} catch (CiException ex) {
 			Console.Error.WriteLine("{0}({1}): ERROR: {2}", ex.Filename, ex.Line, ex.Message);
 			return 1;

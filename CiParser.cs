@@ -28,7 +28,7 @@ namespace Foxoft.Ci
 
 public class CiParser : CiLexer
 {
-	public readonly CiProgram Program = new CiProgram { Parent = CiSystem.Value };
+	public CiProgram Program;
 	CiLoop CurrentLoop;
 	CiCondCompletionStatement CurrentLoopOrSwitch;
 	string XcrementParent = null;
