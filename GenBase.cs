@@ -924,9 +924,10 @@ public abstract class GenBase : CiVisitor
 
 	protected void WriteRegexOptions(CiExpr[] args, string prefix, string separator, string suffix, string i, string m, string s)
 	{
-		if (args.Length != 3)
+		CiExpr expr = args[args.Length - 1];
+		if (expr.Type != CiSystem.RegexOptionsEnum)
 			return;
-		RegexOptions options = GetRegexOptions(args[2]);
+		RegexOptions options = GetRegexOptions(expr);
 		if (options == RegexOptions.None)
 			return;
 		Write(prefix);

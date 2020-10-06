@@ -390,9 +390,9 @@ public class GenJs : GenBase
 			this.Library[(int) id] = method;
 	}
 
-	void WriteNewRegExp(CiExpr[] args)
+	void WriteRegex(CiExpr[] args, int argIndex)
 	{
-		CiExpr pattern = args[1];
+		CiExpr pattern = args[argIndex];
 		if (pattern is CiLiteral literal) {
 			Write('/');
 			foreach (char c in (string) literal.Value) {
@@ -526,8 +526,10 @@ public class GenJs : GenBase
 			Write("Ci.utf8GetString");
 			WriteArgsInParentheses(method, args);
 		}
+		else if (method == CiSystem.RegexCompile)
+			WriteRegex(args, 0);
 		else if (method == CiSystem.RegexIsMatch) {
-			WriteNewRegExp(args);
+			WriteRegex(args, 1);
 			Write(".test(");
 			args[0].Accept(this, CiPriority.Statement);
 			Write(')');
@@ -538,7 +540,7 @@ public class GenJs : GenBase
 			Write('(');
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = ");
-			WriteNewRegExp(args);
+			WriteRegex(args, 1);
 			Write(".exec(");
 			args[0].Accept(this, CiPriority.Statement);
 			Write(")) != null");

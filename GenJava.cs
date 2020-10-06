@@ -305,8 +305,11 @@ public class GenJava : GenTyped
 			Write("[]");
 			break;
 		default:
-			if (type == CiSystem.MatchClass
-			 || (type is CiClassPtrType ptr && ptr.Class == CiSystem.MatchClass)) {
+			if (type.IsClass(CiSystem.RegexClass)) {
+				Include("java.util.regex.Pattern");
+				Write("Pattern");
+			}
+			else if (type.IsClass(CiSystem.MatchClass)) {
 				Include("java.util.regex.Matcher");
 				Write("Matcher");
 			}
@@ -470,13 +473,19 @@ public class GenJava : GenTyped
 		}
 	}
 
-	void WriteRegexMatcher(CiExpr[] args)
+	void WriteRegex(CiExpr[] args, int argIndex)
 	{
 		Include("java.util.regex.Pattern");
 		Write("Pattern.compile(");
-		args[1].Accept(this, CiPriority.Statement);
+		args[argIndex].Accept(this, CiPriority.Statement);
 		WriteRegexOptions(args, ", ", " | ", "", "Pattern.CASE_INSENSITIVE", "Pattern.MULTILINE", "Pattern.DOTALL");
-		Write(").matcher(");
+		Write(')');
+	}
+
+	void WriteRegexMatcher(CiExpr[] args)
+	{
+		WriteRegex(args, 1);
+		Write(".matcher(");
 		args[0].Accept(this, CiPriority.Statement);
 		Write(')');
 	}
@@ -558,6 +567,8 @@ public class GenJava : GenTyped
 			WriteArgs(method, args);
 			Write(", StandardCharsets.UTF_8)");
 		}
+		else if (method == CiSystem.RegexCompile)
+			WriteRegex(args, 0);
 		else if (method == CiSystem.RegexEscape) {
 			Include("java.util.regex.Pattern");
 			Write("Pattern.quote(");

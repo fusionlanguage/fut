@@ -264,7 +264,12 @@ public class GenCpp : GenCCpp
 			switch (classPtr.Modifier) {
 			case CiToken.EndOfFile:
 				Write("const ");
-				WriteBaseType(classPtr.Class);
+				if (classPtr.Class == CiSystem.RegexClass) {
+					Include("regex");
+					Write("std::regex");
+				}
+				else
+					WriteBaseType(classPtr.Class);
 				Write(" *");
 				break;
 			case CiToken.ExclamationMark:
@@ -272,10 +277,16 @@ public class GenCpp : GenCCpp
 				Write(" *");
 				break;
 			case CiToken.Hash:
-				Include("memory");
-				Write("std::shared_ptr<");
-				Write(classPtr.Class.Name);
-				Write('>');
+				if (classPtr.Class == CiSystem.RegexClass) {
+					Include("regex");
+					Write("std::regex");
+				}
+				else {
+					Include("memory");
+					Write("std::shared_ptr<");
+					Write(classPtr.Class.Name);
+					Write('>');
+				}
 				break;
 			default:
 				throw new NotImplementedException(classPtr.Modifier.ToString());
@@ -403,6 +414,15 @@ public class GenCpp : GenCCpp
 		}
 		else
 			WriteArgsInParentheses(method, args);
+	}
+
+	void WriteRegex(CiExpr[] args, int argIndex)
+	{
+		Include("regex");
+		Write("std::regex(");
+		args[argIndex].Accept(this, CiPriority.Statement);
+		WriteRegexOptions(args, ", std::regex::ECMAScript | ", " | ", "", "std::regex::icase", "std::regex::multiline", "std::regex::NOT_SUPPORTED_singleline");
+		Write(')');
 	}
 
 	void WriteStringLiteralWithNewLine(string s)
@@ -645,8 +665,9 @@ public class GenCpp : GenCCpp
 			Write(".erase");
 			WriteArgsInParentheses(method, args);
 		}
+		else if (method == CiSystem.RegexCompile)
+			WriteRegex(args, 0);
 		else if (method == CiSystem.RegexIsMatch || method == CiSystem.MatchFind) {
-			Include("regex");
 			Write("std::regex_search(");
 			if (args[0].Type == CiSystem.StringPtrType && !(args[0] is CiLiteral)) {
 				args[0].Accept(this, CiPriority.Primary);
@@ -660,10 +681,9 @@ public class GenCpp : GenCCpp
 				Write(", ");
 				obj.Accept(this, CiPriority.Statement);
 			}
-			Write(", std::regex(");
-			args[1].Accept(this, CiPriority.Statement);
-			WriteRegexOptions(args, ", std::regex::ECMAScript | ", " | ", "", "std::regex::icase", "std::regex::multiline", "std::regex::NOT_SUPPORTED_singleline");
-			Write("))");
+			Write(", ");
+			WriteRegex(args, 1);
+			Write(')');
 		}
 		else if (method == CiSystem.MatchGetCapture) {
 			obj.Accept(this, CiPriority.Primary);

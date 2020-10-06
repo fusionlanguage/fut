@@ -237,6 +237,8 @@ public class GenCs : GenTyped
 			Write("[]");
 			break;
 		default:
+			if (type.IsClass(CiSystem.RegexClass) || type.IsClass(CiSystem.MatchClass))
+				Include("System.Text.RegularExpressions");
 			Write(type.Name);
 			break;
 		}
@@ -381,6 +383,11 @@ public class GenCs : GenTyped
 		else if (method == CiSystem.UTF8GetString) {
 			Include("System.Text");
 			Write("Encoding.UTF8.GetString");
+			WriteArgsInParentheses(method, args);
+		}
+		else if (method == CiSystem.RegexCompile) {
+			Include("System.Text.RegularExpressions");
+			Write("new Regex");
 			WriteArgsInParentheses(method, args);
 		}
 		else if (method == CiSystem.MatchFind) {

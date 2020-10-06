@@ -746,6 +746,7 @@ public class CiType : CiScope
 	public virtual CiType StorageType => this;
 	public virtual CiType PtrOrSelf => this;
 	public virtual bool IsFinal => false;
+	public virtual bool IsClass(CiClass klass) => false;
 	public virtual bool IsDynamicPtr => false;
 }
 
@@ -781,6 +782,7 @@ public class CiClass : CiContainerType
 	public override bool IsAssignableFrom(CiType right) => false;
 	public override CiType PtrOrSelf => new CiClassPtrType { Class = this, Modifier = CiToken.ExclamationMark };
 	public override bool IsFinal => this != CiSystem.MatchClass;
+	public override bool IsClass(CiClass klass) => this == klass;
 	public bool AddsVirtualMethods() => this.Methods.Any(method => method.IsAbstractOrVirtual());
 	public CiClass()
 	{
@@ -989,6 +991,7 @@ public class CiClassPtrType : CiType
 	}
 
 	public override CiType PtrOrSelf => this.Modifier == CiToken.Hash ? this.Class.PtrOrSelf : this;
+	public override bool IsClass(CiClass klass) => this.Class == klass;
 	public override bool IsDynamicPtr => this.Modifier == CiToken.Hash;
 
 	public override bool Equals(object obj)
@@ -1218,9 +1221,11 @@ public class CiSystem : CiScope
 	public static readonly CiConst RegexOptionsMultiline = new CiConst("Multiline", 2L);
 	public static readonly CiConst RegexOptionsSingleline = new CiConst("Singleline", 16L);
 	public static readonly CiEnum RegexOptionsEnum = new CiEnum { Name = "RegexOptions", IsFlags = true };
+	public static readonly CiMethod RegexCompile = new CiMethod(CiCallType.Static, null /* filled later to avoid cyclic reference */, "Compile", new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone });
 	public static readonly CiMethod RegexEscape = new CiMethod(CiCallType.Static, StringStorageType, "Escape", new CiVar(StringPtrType, "str"));
 	public static readonly CiMethod RegexIsMatch = new CiMethod(CiCallType.Static, BoolType, "IsMatch", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone });
-	public static readonly CiClass RegexClass = new CiClass(CiCallType.Static, "Regex",
+	public static readonly CiClass RegexClass = new CiClass(CiCallType.Sealed, "Regex",
+		RegexCompile,
 		RegexEscape,
 		RegexIsMatch);
 	public static readonly CiMethod MatchFind = new CiMethod(CiCallType.Normal, BoolType, "Find", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone }) { IsMutator = true };
@@ -1300,6 +1305,7 @@ public class CiSystem : CiScope
 		AddEnumValue(RegexOptionsEnum, RegexOptionsMultiline);
 		AddEnumValue(RegexOptionsEnum, RegexOptionsSingleline);
 		Add(RegexOptionsEnum);
+		RegexCompile.Type = new CiClassPtrType { Class = RegexClass, Modifier = CiToken.Hash };
 		Add(RegexClass);
 		MatchClass.Add(MatchStart);
 		MatchClass.Add(MatchEnd);

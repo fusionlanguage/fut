@@ -106,12 +106,14 @@ public class GenPy : GenPySwift
 			Write("self");
 			break;
 		case "and":
+		case "array":
 		case "as":
 		case "async":
 		case "await":
 		case "def":
 		case "del":
 		case "elif":
+		case "enum":
 		case "except":
 		case "finally":
 		case "from":
@@ -120,11 +122,15 @@ public class GenPy : GenPySwift
 		case "is":
 		case "lambda":
 		case "len":
+		case "math":
 		case "nonlocal":
 		case "not":
 		case "or":
 		case "pass":
+		case "pyfma":
 		case "raise":
+		case "re":
+		case "sys":
 		case "try":
 		case "with":
 		case "yield":
@@ -488,14 +494,19 @@ public class GenPy : GenPySwift
 		Write(')');
 	}
 
-	void WriteRegexSearch(CiExpr[] args)
+	void WriteRegexOptions(CiExpr[] args)
 	{
 		Include("re");
+		WriteRegexOptions(args, ", ", " | ", "", "re.I", "re.M", "re.S");
+	}
+
+	void WriteRegexSearch(CiExpr[] args)
+	{
 		Write("re.search(");
 		args[1].Accept(this, CiPriority.Statement);
 		Write(", ");
 		args[0].Accept(this, CiPriority.Statement);
-		WriteRegexOptions(args, ", ", " | ", "", "re.I", "re.M", "re.S");
+		WriteRegexOptions(args);
 		Write(')');
 	}
 
@@ -589,6 +600,12 @@ public class GenPy : GenPySwift
 			Write(':');
 			WriteAdd(args[1], args[2]); // TODO: side effect
 			Write("].decode(\"utf-8\")");
+		}
+		else if (method == CiSystem.RegexCompile) {
+			Write("re.compile(");
+			args[0].Accept(this, CiPriority.Statement);
+			WriteRegexOptions(args);
+			Write(')');
 		}
 		else if (method == CiSystem.RegexIsMatch) {
 			if (parent > CiPriority.Equality)
