@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace Foxoft.Ci
@@ -41,6 +40,7 @@ namespace Foxoft.Ci
       Write(enu.Documentation);
       Write("export enum ");
       Write(enu.Name);
+      Write(' ');
       OpenBlock();
       int i = 0;
       foreach (CiConst konst in enu)
@@ -256,42 +256,6 @@ namespace Foxoft.Ci
         Write(klass);
       CloseFile();
     }
-
-    // If we later implement full TS source code generation we can implement these methods
-
-    protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent) { throw new NotImplementedException(); }
-    protected override void WriteListStorageInit(CiListType list) { throw new NotImplementedException(); }
-    protected override void WriteDictionaryStorageInit(CiDictionaryType dict) { throw new NotImplementedException(); }
-    protected override void WriteInitCode(CiNamedValue def) { throw new NotImplementedException(); }
-    protected override void WriteResource(string name, int length) { throw new NotImplementedException(); }
-    protected override void WriteStringLength(CiExpr expr) { throw new NotImplementedException(); }
-    protected override void WriteCharAt(CiBinaryExpr expr) { throw new NotImplementedException(); }
-    protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent) { throw new NotImplementedException(); }
-    public override CiExpr Visit(CiCollection expr, CiPriority parent) { throw new NotImplementedException(); }
-    public override CiExpr Visit(CiVar expr, CiPriority parent) { throw new NotImplementedException(); }
-    public override CiExpr Visit(CiLiteral expr, CiPriority parent) { throw new NotImplementedException(); }
-    public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent) { throw new NotImplementedException(); }
-    public override CiExpr Visit(CiSymbolReference expr, CiPriority parent) { throw new NotImplementedException(); }
-    public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent) { throw new NotImplementedException(); }
-    public override CiExpr Visit(CiPostfixExpr expr, CiPriority parent) { throw new NotImplementedException(); }
-    public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent) { throw new NotImplementedException(); }
-    public override CiExpr Visit(CiSelectExpr expr, CiPriority parent) { throw new NotImplementedException(); }
-    public override CiExpr Visit(CiCallExpr expr, CiPriority parent) { throw new NotImplementedException(); }
-    public override void Visit(CiConst statement) { throw new NotImplementedException(); }
-    public override void Visit(CiExpr statement) { throw new NotImplementedException(); }
-    public override void Visit(CiBlock statement) { throw new NotImplementedException(); }
-    public override void Visit(CiAssert statement) { throw new NotImplementedException(); }
-    public override void Visit(CiBreak statement) { throw new NotImplementedException(); }
-    public override void Visit(CiContinue statement) { throw new NotImplementedException(); }
-    public override void Visit(CiDoWhile statement) { throw new NotImplementedException(); }
-    public override void Visit(CiFor statement) { throw new NotImplementedException(); }
-    public override void Visit(CiForeach statement) { throw new NotImplementedException(); }
-    public override void Visit(CiIf statement) { throw new NotImplementedException(); }
-    public override void Visit(CiNative statement) { throw new NotImplementedException(); }
-    public override void Visit(CiReturn statement) { throw new NotImplementedException(); }
-    public override void Visit(CiSwitch statement) { throw new NotImplementedException(); }
-    public override void Visit(CiThrow statement) { throw new NotImplementedException(); }
-    public override void Visit(CiWhile statement) { throw new NotImplementedException(); }
   }
 
 }
