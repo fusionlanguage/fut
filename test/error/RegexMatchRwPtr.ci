@@ -1,0 +1,19 @@
+public class Test
+{
+	static bool Find(Match! m) //ERROR: Read-write references to the built-in class Match are not supported
+	{
+		string s = "The quick brown fox jumps over the lazy dog";
+		return m.Find(s, "(B.+?) (\\wo\\w)", RegexOptions.IgnoreCase)
+			&& m.Start == 10
+			&& m.End == 19
+			&& m.Length == 9
+			&& m.Value == "brown fox"
+			&& m.GetCapture(1) == "brown" && m.GetCapture(2) == "fox";
+	}
+
+	public static bool Run()
+	{
+		Match() m;
+		return Find(m);
+	}
+}

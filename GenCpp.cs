@@ -165,7 +165,12 @@ public class GenCpp : GenCCpp
 	{
 		switch (symbol) {
 		case CiContainerType _:
-			Write(symbol.Name);
+			if (symbol == CiSystem.MatchClass) {
+				Include("regex");
+				Write("std::cmatch");
+			}
+			else
+				Write(symbol.Name);
 			break;
 		case CiVar _:
 			WriteCamelCaseNotKeyword(symbol.Name);
@@ -254,7 +259,7 @@ public class GenCpp : GenCCpp
 			switch (classPtr.Modifier) {
 			case CiToken.EndOfFile:
 				Write("const ");
-				Write(classPtr.Class.Name);
+				WriteName(classPtr.Class);
 				Write(" *");
 				break;
 			case CiToken.ExclamationMark:
@@ -272,12 +277,7 @@ public class GenCpp : GenCCpp
 			}
 			break;
 		default:
-			if (type == CiSystem.MatchClass) {
-				Include("regex");
-				Write("std::cmatch");
-			}
-			else
-				Write(type.Name);
+			WriteName(type);
 			break;
 		}
 	}
@@ -374,7 +374,7 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
-		if (symbol.Symbol is CiConst) // FIXME
+		if (symbol != null && symbol.Symbol is CiConst) // FIXME
 			Write("::");
 		else if (left.Type is CiClassPtrType && !IsForeachVar(left))
 			Write("->");
@@ -662,7 +662,8 @@ public class GenCpp : GenCCpp
 		}
 		else if (method == CiSystem.MatchGetCapture) {
 			obj.Accept(this, CiPriority.Primary);
-			Write(".str(");
+			WriteMemberOp(obj, null);
+			Write("str(");
 			args[0].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
@@ -763,27 +764,31 @@ public class GenCpp : GenCCpp
 		Write(".length()");
 	}
 
+	void WriteMatchProperty(CiSymbolReference expr, string name)
+	{
+		expr.Left.Accept(this, CiPriority.Primary);
+		WriteMemberOp(expr.Left, null);
+		Write(name);
+		Write("()");
+	}
+
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Symbol == CiSystem.MatchStart) {
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".position()");
-		}
+		if (expr.Symbol == CiSystem.MatchStart)
+			WriteMatchProperty(expr, "position");
 		else if (expr.Symbol == CiSystem.MatchEnd) {
 			if (parent > CiPriority.Add)
 				Write('(');
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".position() + ");
-			WriteStringLength(expr.Left); // FIXME: side effect
+			WriteMatchProperty(expr, "position");
+			Write(" + ");
+			WriteMatchProperty(expr, "length"); // FIXME: side effect
 			if (parent > CiPriority.Add)
 				Write(')');
 		}
 		else if (expr.Symbol == CiSystem.MatchLength)
-			WriteStringLength(expr.Left);
-		else if (expr.Symbol == CiSystem.MatchValue) {
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".str()");
-		}
+			WriteMatchProperty(expr, "length");
+		else if (expr.Symbol == CiSystem.MatchValue)
+			WriteMatchProperty(expr, "str");
 		else
 			return base.Visit(expr, parent);
 		return expr;

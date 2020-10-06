@@ -305,7 +305,8 @@ public class GenJava : GenTyped
 			Write("[]");
 			break;
 		default:
-			if (type == CiSystem.MatchClass) {
+			if (type == CiSystem.MatchClass
+			 || (type is CiClassPtrType ptr && ptr.Class == CiSystem.MatchClass)) {
 				Include("java.util.regex.Matcher");
 				Write("Matcher");
 			}

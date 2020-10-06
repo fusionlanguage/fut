@@ -1132,8 +1132,11 @@ public class CiResolver : CiVisitor
 		case CiSymbolReference symbol:
 			// built-in, MyEnum, MyClass, MyClass!
 			if (this.Program.TryLookup(symbol.Name) is CiType type) {
-				if (type is CiClass klass)
+				if (type is CiClass klass) {
+					if (type == CiSystem.MatchClass && ptrModifier != CiToken.EndOfFile)
+						throw StatementException(expr, "Read-write references to the built-in class Match are not supported");
 					return new CiClassPtrType { Name = klass.Name, Class = klass, Modifier = ptrModifier };
+				}
 				ExpectNoPtrModifier(expr, ptrModifier);
 				return type;
 			}
