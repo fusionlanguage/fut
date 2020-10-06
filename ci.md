@@ -368,6 +368,18 @@ string youtube = Regex.Escape("www.youtube.com"); // dots matched literally
 bool isYoutubeMovie = Regex.IsMatch(url, youtube + "/watch\\?v=\\w+");
 ```
 
+For better performance of repeated matches of the same regular expression,
+create a `Regex` object and use it:
+
+```csharp
+Regex# re = Regex.Compile("\\d+"); // specify RegexOptions if needed
+bool containsInteger = re.IsMatch(s);
+Match() match;
+if (match.Find(s, re)) {
+   Console.WriteLine($"Found integer: {match.Value}");
+}
+```
+
 ### Arrays
 
 Arrays are fixed-size collections, where every element has the same type
