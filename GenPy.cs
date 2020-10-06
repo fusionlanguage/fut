@@ -607,11 +607,21 @@ public class GenPy : GenPySwift
 			WriteRegexOptions(args);
 			Write(')');
 		}
-		else if (method == CiSystem.RegexIsMatch) {
+		else if (method == CiSystem.RegexIsMatchStr) {
 			if (parent > CiPriority.Equality)
 				Write('(');
 			WriteRegexSearch(args);
 			Write(" is not None");
+			if (parent > CiPriority.Equality)
+				Write(')');
+		}
+		else if (method == CiSystem.RegexIsMatchRegex) {
+			if (parent > CiPriority.Equality)
+				Write('(');
+			obj.Accept(this, CiPriority.Primary);
+			Write(".search(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(") is not None");
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}

@@ -528,8 +528,14 @@ public class GenJs : GenBase
 		}
 		else if (method == CiSystem.RegexCompile)
 			WriteRegex(args, 0);
-		else if (method == CiSystem.RegexIsMatch) {
+		else if (method == CiSystem.RegexIsMatchStr) {
 			WriteRegex(args, 1);
+			Write(".test(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
+		else if (method == CiSystem.RegexIsMatchRegex) {
+			obj.Accept(this, CiPriority.Primary);
 			Write(".test(");
 			args[0].Accept(this, CiPriority.Statement);
 			Write(')');

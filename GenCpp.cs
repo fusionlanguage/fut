@@ -667,7 +667,7 @@ public class GenCpp : GenCCpp
 		}
 		else if (method == CiSystem.RegexCompile)
 			WriteRegex(args, 0);
-		else if (method == CiSystem.RegexIsMatch || method == CiSystem.MatchFind) {
+		else if (method == CiSystem.RegexIsMatchStr || method == CiSystem.RegexIsMatchRegex || method == CiSystem.MatchFind) {
 			Write("std::regex_search(");
 			if (args[0].Type == CiSystem.StringPtrType && !(args[0] is CiLiteral)) {
 				args[0].Accept(this, CiPriority.Primary);
@@ -682,7 +682,10 @@ public class GenCpp : GenCCpp
 				obj.Accept(this, CiPriority.Statement);
 			}
 			Write(", ");
-			WriteRegex(args, 1);
+			if (method == CiSystem.RegexIsMatchStr)
+				WriteRegex(args, 1);
+			else
+				obj.Accept(this, CiPriority.Statement);
 			Write(')');
 		}
 		else if (method == CiSystem.MatchGetCapture) {

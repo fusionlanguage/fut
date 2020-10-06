@@ -3,6 +3,7 @@ public class Test
 	public static bool Run()
 	{
 		Regex# re = Regex.Compile("^\\d+$"); //FAIL: c swift TODO; cl
-		return true;
+		string s = "123";
+		return re.IsMatch(s);
 	}
 }

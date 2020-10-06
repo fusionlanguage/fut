@@ -802,26 +802,46 @@ public class CiResolver : CiVisitor
 		return new CiSelectExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
 	}
 
+	static bool CanCall(CiMethod method, CiExpr[] arguments)
+	{
+		int i = 0;
+		foreach (CiVar param in method.Parameters) {
+			if (i >= arguments.Length)
+				return param.Value != null;
+			if (!param.Type.IsAssignableFrom(arguments[i++].Type))
+				return false;
+		}
+		return i == arguments.Length;
+	}
+
 	public override CiExpr Visit(CiCallExpr expr, CiPriority parent)
 	{
 		CiSymbolReference symbol = (CiSymbolReference) Resolve(expr.Method);
-		// TODO: check static
-		if (!(symbol.Symbol is CiMethod method))
-			throw StatementException(symbol, "Expected a method");
 		CiExpr[] arguments = expr.Arguments;
-		int i = 0;
+		int i;
+		for (i = 0; i < arguments.Length; i++)
+			arguments[i] = Resolve(arguments[i]);
+		CiMethod method = symbol.Symbol switch {
+			CiMethod m => m,
+			CiMethodGroup group => group.Methods.FirstOrDefault(m => CanCall(m, arguments))
+				?? /* pick first for the error message */ group.Methods[0],
+			_ => throw StatementException(symbol, "Expected a method")
+		};
+
+		// TODO: check static
+		i = 0;
 		foreach (CiVar param in method.Parameters) {
 			if (i >= arguments.Length) {
 				if (param.Value != null)
 					break;
 				throw StatementException(expr, "Too few arguments");
 			}
-			CiExpr arg = Resolve(arguments[i]);
-			Coerce(arg, param.Type);
-			arguments[i++] = arg;
+			Coerce(arguments[i++], param.Type);
 		}
 		if (i < arguments.Length)
 			throw StatementException(arguments[i], "Too many arguments");
+
+		symbol.Symbol = method;
 
 		if (method.CallType == CiCallType.Static
 		 && method.Body is CiReturn ret

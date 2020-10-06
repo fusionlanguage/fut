@@ -484,7 +484,6 @@ public class GenJava : GenTyped
 
 	void WriteRegexMatcher(CiExpr[] args)
 	{
-		WriteRegex(args, 1);
 		Write(".matcher(");
 		args[0].Accept(this, CiPriority.Statement);
 		Write(')');
@@ -575,7 +574,13 @@ public class GenJava : GenTyped
 			args[0].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
-		else if (method == CiSystem.RegexIsMatch) {
+		else if (method == CiSystem.RegexIsMatchStr) {
+			WriteRegex(args, 1);
+			WriteRegexMatcher(args);
+			Write(".find()");
+		}
+		else if (method == CiSystem.RegexIsMatchRegex) {
+			obj.Accept(this, CiPriority.Primary);
 			WriteRegexMatcher(args);
 			Write(".find()");
 		}
@@ -583,6 +588,7 @@ public class GenJava : GenTyped
 			Write('(');
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = ");
+			WriteRegex(args, 1);
 			WriteRegexMatcher(args);
 			Write(").find()");
 		}

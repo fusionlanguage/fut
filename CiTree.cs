@@ -738,6 +738,16 @@ public class CiMethod : CiMethodBase
 	}
 }
 
+public class CiMethodGroup : CiMember
+{
+	public readonly CiMethod[] Methods;
+	public CiMethodGroup(params CiMethod[] methods)
+	{
+		this.Name = methods[0].Name;
+		this.Methods = methods;
+	}
+}
+
 public class CiType : CiScope
 {
 	public virtual string ArrayString => "";
@@ -1223,11 +1233,11 @@ public class CiSystem : CiScope
 	public static readonly CiEnum RegexOptionsEnum = new CiEnum { Name = "RegexOptions", IsFlags = true };
 	public static readonly CiMethod RegexCompile = new CiMethod(CiCallType.Static, null /* filled later to avoid cyclic reference */, "Compile", new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone });
 	public static readonly CiMethod RegexEscape = new CiMethod(CiCallType.Static, StringStorageType, "Escape", new CiVar(StringPtrType, "str"));
-	public static readonly CiMethod RegexIsMatch = new CiMethod(CiCallType.Static, BoolType, "IsMatch", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone });
+	public static readonly CiMethod RegexIsMatchStr = new CiMethod(CiCallType.Static, BoolType, "IsMatch", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone });
+	public static readonly CiMethod RegexIsMatchRegex = new CiMethod(CiCallType.Normal, BoolType, "IsMatch", new CiVar(StringPtrType, "input"));
 	public static readonly CiClass RegexClass = new CiClass(CiCallType.Sealed, "Regex",
 		RegexCompile,
-		RegexEscape,
-		RegexIsMatch);
+		RegexEscape);
 	public static readonly CiMethod MatchFind = new CiMethod(CiCallType.Normal, BoolType, "Find", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone }) { IsMutator = true };
 	public static readonly CiMember MatchStart = new CiMember { Name = "Start", Type = IntType };
 	public static readonly CiMember MatchEnd = new CiMember { Name = "End", Type = IntType };
@@ -1306,6 +1316,7 @@ public class CiSystem : CiScope
 		AddEnumValue(RegexOptionsEnum, RegexOptionsSingleline);
 		Add(RegexOptionsEnum);
 		RegexCompile.Type = new CiClassPtrType { Class = RegexClass, Modifier = CiToken.Hash };
+		RegexClass.Add(new CiMethodGroup(RegexIsMatchStr, RegexIsMatchRegex));
 		Add(RegexClass);
 		MatchClass.Add(MatchStart);
 		MatchClass.Add(MatchEnd);
