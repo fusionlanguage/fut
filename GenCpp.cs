@@ -165,12 +165,7 @@ public class GenCpp : GenCCpp
 	{
 		switch (symbol) {
 		case CiContainerType _:
-			if (symbol == CiSystem.MatchClass) {
-				Include("regex");
-				Write("std::cmatch");
-			}
-			else
-				Write(symbol.Name);
+			Write(symbol.Name);
 			break;
 		case CiVar _:
 			WriteCamelCaseNotKeyword(symbol.Name);
@@ -191,6 +186,16 @@ public class GenCpp : GenCCpp
 		if (symbol is CiField)
 			Write("this->");
 		WriteName(symbol);
+	}
+
+	void WriteBaseType(CiType type)
+	{
+		if (type == CiSystem.MatchClass) {
+			Include("regex");
+			Write("std::cmatch");
+		}
+		else
+			Write(type.Name);
 	}
 
 	protected override void Write(CiType type, bool promote)
@@ -259,7 +264,7 @@ public class GenCpp : GenCCpp
 			switch (classPtr.Modifier) {
 			case CiToken.EndOfFile:
 				Write("const ");
-				WriteName(classPtr.Class);
+				WriteBaseType(classPtr.Class);
 				Write(" *");
 				break;
 			case CiToken.ExclamationMark:
@@ -277,7 +282,7 @@ public class GenCpp : GenCCpp
 			}
 			break;
 		default:
-			WriteName(type);
+			WriteBaseType(type);
 			break;
 		}
 	}
