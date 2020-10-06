@@ -79,7 +79,7 @@ namespace Foxoft.Ci
           Write("string");
           break;
         case CiEnum enu:
-          Write(enu.Name);
+          Write(enu == CiSystem.BoolType ? "boolean" : enu.Name);
           break;
         case CiListType list:
           Write(list.ElementType);
@@ -215,7 +215,7 @@ namespace Foxoft.Ci
 
       if (klass.CallType == CiCallType.Static || klass.CallType == CiCallType.Sealed)
       {
-        Write("private constructor();");
+        WriteLine("private constructor();");
       }
       else if (klass.Constructor != null && klass.Constructor.Visibility != CiVisibility.Public)
       {
