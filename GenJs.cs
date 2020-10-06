@@ -393,7 +393,9 @@ public class GenJs : GenBase
 	void WriteRegex(CiExpr[] args, int argIndex)
 	{
 		CiExpr pattern = args[argIndex];
-		if (pattern is CiLiteral literal) {
+		if (pattern.Type.IsClass(CiSystem.RegexClass))
+			pattern.Accept(this, CiPriority.Primary);
+		else if (pattern is CiLiteral literal) {
 			Write('/');
 			foreach (char c in (string) literal.Value) {
 				if (c == '/')
@@ -540,7 +542,7 @@ public class GenJs : GenBase
 			args[0].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
-		else if (method == CiSystem.MatchFind) {
+		else if (method == CiSystem.MatchFindStr || method == CiSystem.MatchFindRegex) {
 			if (parent > CiPriority.Equality)
 				Write('(');
 			Write('(');

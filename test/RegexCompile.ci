@@ -4,6 +4,16 @@ public class Test
 	{
 		Regex# re = Regex.Compile("^\\d+$"); //FAIL: c swift TODO; cl
 		string s = "123";
-		return re.IsMatch(s);
+		if (!re.IsMatch(s))
+			return false;
+		s = "The quick brown fox jumps over the lazy dog";
+		re = Regex.Compile("(B.+?) (\\wo\\w)", RegexOptions.IgnoreCase);
+		Match() m;
+		return m.Find(s, re)
+			&& m.Start == 10
+			&& m.End == 19
+			&& m.Length == 9
+			&& m.Value == "brown fox"
+			&& m.GetCapture(1) == "brown" && m.GetCapture(2) == "fox";
 	}
 }

@@ -625,7 +625,7 @@ public class GenPy : GenPySwift
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}
-		else if (method == CiSystem.MatchFind) {
+		else if (method == CiSystem.MatchFindStr || method == CiSystem.MatchFindRegex) {
 			if (parent > CiPriority.Equality)
 				Write('(');
 			obj.Accept(this, CiPriority.Equality);
@@ -703,11 +703,20 @@ public class GenPy : GenPySwift
 
 	protected override bool VisitPreCall(CiCallExpr call)
 	{
-		if (call.Method.Symbol == CiSystem.MatchFind) {
+		if (call.Method.Symbol == CiSystem.MatchFindStr) {
 			call.Method.Left.Accept(this, CiPriority.Assign);
 			Write(" = ");
 			WriteRegexSearch(call.Arguments);
 			WriteLine();
+			return true;
+		}
+		if (call.Method.Symbol == CiSystem.MatchFindRegex) {
+			call.Method.Left.Accept(this, CiPriority.Assign);
+			Write(" = ");
+			call.Arguments[1].Accept(this, CiPriority.Primary);
+			Write(".search(");
+			call.Arguments[0].Accept(this, CiPriority.Statement);
+			WriteLine(')');
 			return true;
 		}
 		return false;

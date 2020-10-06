@@ -475,11 +475,16 @@ public class GenJava : GenTyped
 
 	void WriteRegex(CiExpr[] args, int argIndex)
 	{
-		Include("java.util.regex.Pattern");
-		Write("Pattern.compile(");
-		args[argIndex].Accept(this, CiPriority.Statement);
-		WriteRegexOptions(args, ", ", " | ", "", "Pattern.CASE_INSENSITIVE", "Pattern.MULTILINE", "Pattern.DOTALL");
-		Write(')');
+		CiExpr pattern = args[argIndex];
+		if (pattern.Type.IsClass(CiSystem.RegexClass))
+			pattern.Accept(this, CiPriority.Primary);
+		else {
+			Include("java.util.regex.Pattern");
+			Write("Pattern.compile(");
+			pattern.Accept(this, CiPriority.Statement);
+			WriteRegexOptions(args, ", ", " | ", "", "Pattern.CASE_INSENSITIVE", "Pattern.MULTILINE", "Pattern.DOTALL");
+			Write(')');
+		}
 	}
 
 	void WriteRegexMatcher(CiExpr[] args)
@@ -584,7 +589,7 @@ public class GenJava : GenTyped
 			WriteRegexMatcher(args);
 			Write(".find()");
 		}
-		else if (method == CiSystem.MatchFind) {
+		else if (method == CiSystem.MatchFindStr || method == CiSystem.MatchFindRegex) {
 			Write('(');
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = ");

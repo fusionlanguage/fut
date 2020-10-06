@@ -1238,14 +1238,14 @@ public class CiSystem : CiScope
 	public static readonly CiClass RegexClass = new CiClass(CiCallType.Sealed, "Regex",
 		RegexCompile,
 		RegexEscape);
-	public static readonly CiMethod MatchFind = new CiMethod(CiCallType.Normal, BoolType, "Find", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone }) { IsMutator = true };
+	public static readonly CiMethod MatchFindStr = new CiMethod(CiCallType.Normal, BoolType, "Find", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone }) { IsMutator = true };
+	public static readonly CiMethod MatchFindRegex = new CiMethod(CiCallType.Normal, BoolType, "Find", new CiVar(StringPtrType, "input"), new CiVar(new CiClassPtrType { Class = RegexClass, Modifier = CiToken.EndOfFile } , "pattern")) { IsMutator = true };
 	public static readonly CiMember MatchStart = new CiMember { Name = "Start", Type = IntType };
 	public static readonly CiMember MatchEnd = new CiMember { Name = "End", Type = IntType };
 	public static readonly CiMember MatchLength = new CiMember { Name = "Length", Type = UIntType };
 	public static readonly CiMember MatchValue = new CiMember { Name = "Value", Type = StringPtrType };
 	public static readonly CiMethod MatchGetCapture = new CiMethod(CiCallType.Normal, StringPtrType, "GetCapture", new CiVar(UIntType, "group"));
 	public static readonly CiClass MatchClass = new CiClass(CiCallType.Sealed, "Match",
-		MatchFind,
 		MatchGetCapture);
 	public static readonly CiMember MathNaN = new CiMember { Name = "NaN", Type = FloatType };
 	public static readonly CiMember MathNegativeInfinity = new CiMember { Name = "NegativeInfinity", Type = FloatType };
@@ -1318,6 +1318,7 @@ public class CiSystem : CiScope
 		RegexCompile.Type = new CiClassPtrType { Class = RegexClass, Modifier = CiToken.Hash };
 		RegexClass.Add(new CiMethodGroup(RegexIsMatchStr, RegexIsMatchRegex));
 		Add(RegexClass);
+		MatchClass.Add(new CiMethodGroup(MatchFindStr, MatchFindRegex));
 		MatchClass.Add(MatchStart);
 		MatchClass.Add(MatchEnd);
 		MatchClass.Add(MatchLength);

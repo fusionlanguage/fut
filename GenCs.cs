@@ -390,13 +390,23 @@ public class GenCs : GenTyped
 			Write("new Regex");
 			WriteArgsInParentheses(method, args);
 		}
-		else if (method == CiSystem.MatchFind) {
+		else if (method == CiSystem.MatchFindStr) {
 			Include("System.Text.RegularExpressions");
 			Write('(');
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = Regex.Match");
 			WriteArgsInParentheses(method, args);
 			Write(").Success");
+		}
+		else if (method == CiSystem.MatchFindRegex) {
+			Include("System.Text.RegularExpressions");
+			Write('(');
+			obj.Accept(this, CiPriority.Assign);
+			Write(" = ");
+			args[1].Accept(this, CiPriority.Primary);
+			Write(".Match(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(")).Success");
 		}
 		else if (method == CiSystem.MatchGetCapture) {
 			obj.Accept(this, CiPriority.Primary);
