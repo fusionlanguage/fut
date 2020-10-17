@@ -1,0 +1,42 @@
+# https://EditorConfig.org
+
+root = true
+
+[*]
+indent_style = tab
+indent_size = 4
+end_of_line = lf
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.cs]
+csharp_new_line_before_open_brace = methods, types
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = false
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = false
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+csharp_space_after_cast = true
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_around_binary_operators = before_and_after
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+csharp_space_between_method_declaration_name_and_open_parenthesis = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+csharp_space_before_dot = false
+csharp_space_after_semicolon_in_for_statement = true
+csharp_space_before_semicolon_in_for_statement = false
+csharp_space_around_declaration_statements = false
+csharp_space_before_open_square_brackets = false
+csharp_space_between_empty_square_brackets = false
+csharp_space_between_square_brackets = false
+csharp_preserve_single_line_blocks = true
+csharp_using_directive_placement = outside_namespace
