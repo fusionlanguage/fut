@@ -36,8 +36,13 @@ all: cito.exe
 cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs GenPySwift.cs GenPy.cs GenSwift.cs GenCl.cs CiTo.cs)
 	$(DO_BUILD)
 
-test: test-c test-cpp test-cs test-java test-js test-py test-swift test-cl test-error
+
+
+test: test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-cl test-error
 	perl test/summary.pl test/bin/*/*.txt
+
+node_modules/.bin/ts-node:
+	npm i ts-node typescript
 
 test-c: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
@@ -52,6 +57,9 @@ test-java: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
 test-js: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
+	$(DO_SUMMARY)
+
+test-ts: $(patsubst test/%.ci, test/bin/%/ts.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
 test-py: $(patsubst test/%.ci, test/bin/%/py.txt, $(wildcard test/*.ci))
@@ -80,6 +88,9 @@ test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
 
 test/bin/%/js.txt: test/bin/%/Run.js
 	$(DO)node $< >$@ || grep '//FAIL:.*\<js\>' test/$*.ci
+
+test/bin/%/ts.txt: test/bin/%/Test.ts node_modules/.bin/ts-node
+	$(DO)node_modules/.bin/ts-node $< >$@ || grep '//FAIL:.*\<ts\>' test/$*.ci
 
 test/bin/%/py.txt: test/Runner.py test/bin/%/Test.py
 	$(DO)PYTHONPATH=$(@D) $(PYTHON) $< >$@ || grep '//FAIL:.*\<py\>' test/$*.ci
@@ -123,6 +134,9 @@ test/bin/%/Test.java: test/%.ci cito.exe
 test/bin/%/Test.js: test/%.ci cito.exe
 	$(DO_CITO)
 
+test/bin/%/Test.ts: test/%.ci cito.exe
+	$(DO_CITO)
+
 test/bin/%/Test.py: test/%.ci cito.exe
 	$(DO_CITO)
 
@@ -132,7 +146,7 @@ test/bin/%/Test.swift: test/%.ci cito.exe
 test/bin/%/Test.cl: test/%.ci cito.exe
 	$(DO_CITO)
 
-.PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.py test/bin/%/Test.swift test/bin/%/Test.cl
+.PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.d.ts test/bin/%/Test.py test/bin/%/Test.swift test/bin/%/Test.cl
 
 test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 	$(DO)javac -d $(@D) -cp test/bin/Basic $<
@@ -156,6 +170,6 @@ clean:
 	$(RM) cito.exe
 	$(RM) -r test/bin
 
-.PHONY: all test test-c test-cpp test-cs test-java test-js test-py test-swift test-cl test-error install install-cito uninstall clean
+.PHONY: all test test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-cl test-error install install-cito uninstall clean
 
 .DELETE_ON_ERROR:

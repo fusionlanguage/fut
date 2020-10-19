@@ -35,7 +35,7 @@ enum GenJsMethod
 public class GenJs : GenBase
 {
 	// TODO: Namespace
-	readonly string[][] Library = new string[(int) GenJsMethod.Count][];
+	protected readonly string[][] Library = new string[(int) GenJsMethod.Count][];
 
 	void WriteCamelCaseNotKeyword(string name)
 	{
@@ -787,7 +787,7 @@ public class GenJs : GenBase
 		WriteConsts(klass, klass.ConstArrays);
 	}
 
-	void WriteLib(Dictionary<string, byte[]> resources)
+	protected void WriteLib(Dictionary<string, byte[]> resources)
 	{
 		WriteLine();
 		Write("const Ci = ");

@@ -42,6 +42,7 @@ public static class CiTo
 		Console.WriteLine("-l py      Translate to Python");
 		Console.WriteLine("-l swift   Translate to Swift");
 		Console.WriteLine("-l cl      Translate to OpenCL C");
+		Console.WriteLine("-l ts      Translate to TypeScript");
 		Console.WriteLine("-l d.ts    Translate to TypeScript declarations");
 		Console.WriteLine("-o FILE    Write to the specified file");
 		Console.WriteLine("-n NAME    Specify C++/C# namespace, Java package or C name prefix");
@@ -130,6 +131,7 @@ public static class CiTo
 		case "py": gen = new GenPy(); break;
 		case "swift": gen = new GenSwift(); break;
 		case "cl": gen = new GenCl(); break;
+		case "ts": gen = new GenTs().WithGenFullCode(); break;
 		case "d.ts": gen = new GenTs(); break;
 		default: throw new ArgumentException("Unknown language: " + lang);
 		}

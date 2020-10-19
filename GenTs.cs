@@ -30,6 +30,13 @@ namespace Foxoft.Ci
 /// In the future we could implement full TS source code generation.
 public class GenTs : GenJs
 {
+	public bool GenFullCode = false;
+
+	public GenTs WithGenFullCode() {
+		GenFullCode = true;
+		return this;
+	}
+
 	void Write(CiEnum enu)
 	{
 		// WARNING: TypeScript enums allow reverse lookup that the Js generator currently
@@ -84,9 +91,44 @@ public class GenTs : GenJs
 				Write(dict.ValueType);
 				Write('>');
 				break;
-			case CiArrayType array:
-				Write(array.ElementType);
+			case CiListType list:
+				Write(list.ElementType);
 				Write("[]");
+				break;
+			case CiArrayType array:
+				CiType elementType = array.ElementType;
+				if (elementType is CiNumericType) {
+					if (elementType == CiSystem.IntType)
+						Write("Int32");
+					else if (elementType == CiSystem.DoubleType)
+						Write("Float64");
+					else if (elementType == CiSystem.FloatType)
+						Write("Float32");
+					else if (elementType == CiSystem.LongType)
+						Write("Float64");
+					else {
+						CiRangeType range = (CiRangeType) elementType;
+						if (range.Min < 0) {
+							if (range.Min < short.MinValue || range.Max > short.MaxValue)
+								Write("Int32");
+							else if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
+								Write("Int16");
+							else
+								Write("Int8");
+						}
+						else if (range.Max > ushort.MaxValue)
+							Write("Int32");
+						else if (range.Max > byte.MaxValue)
+							Write("Uint16");
+						else
+							Write("Uint8");
+					}
+					Write("Array");
+				}
+				else {
+					Write(elementType);
+					Write("[]");
+				}
 				break;
 			default:
 				Write(type.Name);
@@ -111,7 +153,7 @@ public class GenTs : GenJs
 		}
 	}
 
-	void WriteSignature(CiMethod method, int paramCount)
+	void Write(CiClass klass, CiMethod method)
 	{
 		WriteDoc(method);
 		Write(method.Visibility);
@@ -139,20 +181,23 @@ public class GenTs : GenJs
 		Write('(');
 		int i = 0;
 		foreach (CiVar param in method.Parameters) {
-			if (i >= paramCount)
-				break;
 			if (i > 0)
 				Write(", ");
 			WriteName(param);
-			if (param.Value != null)
+			if (param.Value != null && !this.GenFullCode)
 				Write('?');
 			Write(": ");
 			Write(param.Type);
+			if (param.Value != null && this.GenFullCode)
+				WriteVarInit(param);
 			i++;
 		}
 		Write("): ");
 		Write(method.Type);
-		WriteLine(";");
+		if (this.GenFullCode)
+			WriteBody(method);
+		else
+			WriteLine(";");
 	}
 
 	void WriteConsts(IEnumerable<CiConst> consts)
@@ -186,14 +231,33 @@ public class GenTs : GenJs
 		}
 		OpenClass(klass, "", " extends ");
 
-		if (klass.CallType == CiCallType.Static || klass.CallType == CiCallType.Sealed)
-			WriteLine("private constructor();");
-		else if (klass.Constructor != null && klass.Constructor.Visibility != CiVisibility.Public) {
-			if (klass.Constructor != null) {
-				Write(klass.Constructor.Documentation);
-				Write(klass.Constructor.Visibility);
+		CiMethodBase constructor = klass.Constructor;
+		if (klass.CallType == CiCallType.Static || klass.CallType == CiCallType.Sealed) {
+			if (constructor == null) constructor = new CiMethodBase();
+			constructor.Visibility = CiVisibility.Private;
+		}
+
+		if (constructor != null) {
+			Write(constructor.Documentation);
+			Write(constructor.Visibility);
+			Write("constructor()");
+			if (this.GenFullCode) {
+				OpenBlock();
+				if (klass.BaseClassName != null)
+					WriteLine("super();");
+				foreach (CiField field in klass.Fields) {
+					if (field.Value != null || field.Type.IsFinal) {
+						Write("this.");
+						base.WriteVar(field);
+						WriteLine(';');
+						WriteInitCode(field);
+					}
+				}
+				WriteConstructorBody(klass);
+				CloseBlock();
+			} else {
+				WriteLine(';');
 			}
-			WriteLine("constructor();");
 		}
 
 		WriteConsts(klass.Consts);
@@ -205,7 +269,7 @@ public class GenTs : GenJs
 		}
 
 		foreach (CiMethod method in klass.Methods) {
-			WriteSignature(method, method.Parameters.Count);
+			Write(klass, method);
 		}
 
 		WriteConsts(klass.ConstArrays);
@@ -217,10 +281,14 @@ public class GenTs : GenJs
 	public override void Write(CiProgram program)
 	{
 		CreateFile(this.OutputFile);
+		if (this.GenFullCode)
+			WriteTopLevelNatives(program);
 		foreach (CiEnum enu in program.OfType<CiEnum>())
 			Write(enu);
 		foreach (CiClass klass in program.OfType<CiClass>()) // TODO: topological sort of class hierarchy
 			Write(klass);
+		if (this.GenFullCode && program.Resources.Count > 0 || this.Library.Any(l => l != null))
+			WriteLib(program.Resources);
 		CloseFile();
 	}
 }

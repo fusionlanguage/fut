@@ -1,0 +1,11 @@
+{
+  "name": "cito",
+  "private": true,
+  "version": "0.0.0-development",
+  "repository": "https://github.com/pfusik/cito.git",
+  "author": "Piotr Fusik",
+  "dependencies": {
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.3"
+  }
+}
