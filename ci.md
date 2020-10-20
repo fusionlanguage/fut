@@ -16,7 +16,7 @@ The syntax is akin to C#.
 In fact, C# syntax highlighting works quite well for Ć (not perfectly, though).
 However, Ć is not a C# clone or a subset of it.
 The differences stem from the need to have _completely automated_ translation
-to _efficient_ C and JavaScript code.
+to _efficient_ C and JavaScript code in particular.
 
 Ć is object-oriented, because most of the target languages are object-oriented
 and you are probably familiar with this paradigm. This can be seen as
@@ -27,6 +27,12 @@ There is no runtime library dependency. The C output is a self-contained pair
 of `.c/.h` files containing portable, human-readable C99 code.
 Similarly, the outputs in other languages do _not_ rely on anything except
 the standard language.
+
+Memory management is native to the target language.
+A garbage collector will be used if available in the target language.
+Otherwise (in C and C++), objects and arrays are allocated on the stack
+for maximum performance or on the heap for extra flexibility.
+Heap allocations use C++ smart pointers.
 
 ## Source files
 
