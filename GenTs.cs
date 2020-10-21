@@ -30,6 +30,8 @@ namespace Foxoft.Ci
 /// In the future we could implement full TS source code generation.
 public class GenTs : GenJs
 {
+	protected readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
+
 	public bool GenFullCode = false;
 
 	public GenTs WithGenFullCode() {
@@ -214,6 +216,20 @@ public class GenTs : GenJs
 
 	void Write(CiClass klass)
 	{
+		// topological sorting of class hierarchy and class storage fields
+		if (klass == null)
+			return;
+		if (this.WrittenClasses.TryGetValue(klass, out bool done)) {
+			if (done)
+				return;
+			throw new CiException(klass, "Circular dependency for class {0}", klass.Name);
+		}
+		this.WrittenClasses.Add(klass, false);
+		Write(klass.Parent as CiClass);
+		foreach (CiField field in klass.Fields)
+			Write(field.Type.BaseType as CiClass);
+		this.WrittenClasses[klass] = true;
+
 		Write(klass.Documentation);
 		Write("export ");
 		switch (klass.CallType) {
