@@ -3,9 +3,9 @@ public static class Test
 	public static bool Run()
 	{
 		List<int[2]>() list; //FAIL: c cl
-		list.Add();
-		list[0][0] = 100;
-		list[0][1] = 200;
+		int[]! p = list.Add(); //FAIL: cs java js ts py swift
+		p[0] = 100;
+		p[1] = 200;
 		list.Clear();
 		list.Add();
 		list[0][0] = 10;

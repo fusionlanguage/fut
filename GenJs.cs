@@ -111,12 +111,12 @@ public class GenJs : GenBase
 
 	protected override void WriteListStorageInit(CiListType list)
 	{
-		Write(" = new Array()");
+		Write(" = []");
 	}
 
 	protected override void WriteDictionaryStorageInit(CiDictionaryType dict)
 	{
-		Write(" = new Object()");
+		Write(" = {}");
 	}
 
 	protected override void WriteVar(CiNamedValue def)

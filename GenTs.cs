@@ -248,7 +248,7 @@ public class GenTs : GenJs
 		OpenClass(klass, "", " extends ");
 
 		CiMethodBase constructor = klass.Constructor;
-		if (klass.CallType == CiCallType.Static || klass.CallType == CiCallType.Sealed) {
+		if (klass.CallType == CiCallType.Static) {
 			if (constructor == null) constructor = new CiMethodBase();
 			constructor.Visibility = CiVisibility.Private;
 		}
