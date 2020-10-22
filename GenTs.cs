@@ -71,7 +71,13 @@ public class GenTs : GenJs
 		Write(value.Type);
 	}
 
-	void Write(CiType type)
+	protected void WriteTypeAndName(CiConst konst) {
+		WriteName(konst);
+		Write(": ");
+		Write(konst.Type, false);
+	}
+
+	void Write(CiType type, bool useTypedNumberArrays = true, bool unionTypedNumberArrays = false)
 	{
 		switch (type) {
 			case null:
@@ -99,7 +105,8 @@ public class GenTs : GenJs
 				break;
 			case CiArrayType array:
 				CiType elementType = array.ElementType;
-				if (elementType is CiNumericType) {
+				if (elementType is CiNumericType && useTypedNumberArrays) {
+					if (unionTypedNumberArrays) Write("number[] | ");
 					if (elementType == CiSystem.IntType)
 						Write("Int32");
 					else if (elementType == CiSystem.DoubleType)
@@ -189,7 +196,7 @@ public class GenTs : GenJs
 			if (param.Value != null && !this.GenFullCode)
 				Write('?');
 			Write(": ");
-			Write(param.Type);
+			Write(param.Type, true, true);
 			if (param.Value != null && this.GenFullCode)
 				WriteVarInit(param);
 			i++;
@@ -210,6 +217,8 @@ public class GenTs : GenJs
 			Write(konst.Visibility);
 			Write("static readonly ");
 			WriteTypeAndName(konst);
+			if (this.GenFullCode)
+				WriteVarInit(konst);
 			WriteLine(';');
 		}
 	}
@@ -261,14 +270,6 @@ public class GenTs : GenJs
 				OpenBlock();
 				if (klass.BaseClassName != null)
 					WriteLine("super();");
-				foreach (CiField field in klass.Fields) {
-					if (field.Value != null || field.Type.IsFinal) {
-						Write("this.");
-						base.WriteVar(field);
-						WriteLine(';');
-						WriteInitCode(field);
-					}
-				}
 				WriteConstructorBody(klass);
 				CloseBlock();
 			} else {
@@ -281,6 +282,9 @@ public class GenTs : GenJs
 		foreach (CiField field in klass.Fields) {
 			Write(field.Visibility);
 			WriteTypeAndName(field);
+			if (this.GenFullCode) {
+				WriteVarInit(field);
+			}
 			WriteLine(';');
 		}
 
