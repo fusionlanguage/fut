@@ -154,7 +154,13 @@ public class GenTs : GenJs
 				}
 				break;
 			default:
-				Write(type.Name);
+				CiType baseType = type is CiClassPtrType ? ((CiClassPtrType) type).Class : type;
+				if (baseType == CiSystem.RegexClass)
+					Write("RegExp");
+				else if (baseType == CiSystem.MatchClass)
+					Write("RegExpMatchArray");
+				else
+					Write(type.Name);
 				break;
 		}
 	}
