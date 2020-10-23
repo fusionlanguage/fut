@@ -5,8 +5,8 @@ public class Test
 	public static bool Run()
 	{
 		List<Test()>() list; //FAIL: c cl
-		Test! t = list.Add(); //FAIL: cs java js ts py swift
-		t.Foo = 0;
+		list.Add();
+		list[0].Foo = 0;
 		list.Clear();
 		list.Add();
 		list[0].Foo = 2;
