@@ -28,7 +28,8 @@ enum GenJsMethod
 {
 	CopyArray,
 	UTF8GetString,
-	Count
+	RegexEscape,
+	Count,
 }
 
 public class GenJs : GenBase
@@ -525,6 +526,13 @@ public class GenJs : GenBase
 		}
 		else if (method == CiSystem.RegexCompile)
 			WriteRegex(args, 0);
+		else if (method == CiSystem.RegexEscape) {
+			AddLibrary(GenJsMethod.RegexEscape,
+				"regexEscape : function(s)",
+				"return s.replace(/[-\\/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&');");
+			Write("Ci.regexEscape");
+			WriteArgsInParentheses(method, args);
+		}
 		else if (method == CiSystem.RegexIsMatchStr) {
 			WriteRegex(args, 1);
 			Write(".test(");
