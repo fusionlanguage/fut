@@ -74,10 +74,10 @@ public class GenTs : GenJs
 	protected void WriteTypeAndName(CiConst konst) {
 		WriteName(konst);
 		Write(": ");
-		Write(konst.Type, false);
+		Write(konst.Type, true);
 	}
 
-	void Write(CiType type, bool useTypedNumberArrays = true, bool unionTypedNumberArrays = false)
+	void Write(CiType type, bool forConst = false)
 	{
 		switch (type) {
 			case null:
@@ -94,19 +94,25 @@ public class GenTs : GenJs
 				break;
 			case CiDictionaryType dict:
 				Write("Record<");
-				Write(dict.KeyType);
+				Write(dict.KeyType, forConst);
 				Write(", ");
-				Write(dict.ValueType);
+				Write(dict.ValueType, forConst);
 				Write('>');
 				break;
 			case CiListType list:
-				Write(list.ElementType);
+				Write(list.ElementType, forConst);
 				Write("[]");
 				break;
 			case CiArrayType array:
 				CiType elementType = array.ElementType;
-				if (elementType is CiNumericType && useTypedNumberArrays) {
-					if (unionTypedNumberArrays) Write("number[] | ");
+				if (!forConst && elementType is CiNumericType) {
+					if (!(array is CiArrayStorageType)) {
+						if (array.IsReadonlyPtr)
+							Write("readonly ");
+						Write("number[] | ");
+					}
+					if (array.IsReadonlyPtr)
+						Write("Readonly<");
 					if (elementType == CiSystem.IntType)
 						Write("Int32");
 					else if (elementType == CiSystem.DoubleType)
@@ -133,11 +139,26 @@ public class GenTs : GenJs
 							Write("Uint8");
 					}
 					Write("Array");
+					if (array.IsReadonlyPtr)
+						Write('>');
 				}
 				else {
-					Write(elementType);
+					if (forConst || array.IsReadonlyPtr)
+						Write("readonly ");
+					if (elementType is CiArrayType)
+						Write('(');
+					Write(elementType, forConst);
+					if (elementType is CiArrayType)
+						Write(')');
 					Write("[]");
 				}
+				break;
+			case CiClassPtrType klass:
+				if (klass.IsReadonlyPtr)
+					Write("Readonly<");
+				Write(type.Name);
+				if (klass.IsReadonlyPtr)
+					Write('>');
 				break;
 			default:
 				Write(type.Name);
@@ -196,7 +217,7 @@ public class GenTs : GenJs
 			if (param.Value != null && !this.GenFullCode)
 				Write('?');
 			Write(": ");
-			Write(param.Type, true, true);
+			Write(param.Type);
 			if (param.Value != null && this.GenFullCode)
 				WriteVarInit(param);
 			i++;
