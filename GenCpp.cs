@@ -581,40 +581,21 @@ public class GenCpp : GenCCpp
 			Write(')');
 		}
 		else if (obj.Type is CiListType list && method.Name == "Add") {
-			if (method.Parameters.Count == 0) {
-				string suffix = ".emplace_back()";
-				if (!this.AtLineStart) {
-					if (list.ElementType is CiArrayStorageType)
-						suffix = ".emplace_back().data()";
-					else
-						Write('&');
-				}
-				obj.Accept(this, CiPriority.Primary);
-				Write(suffix);
-			}
+			obj.Accept(this, CiPriority.Primary);
+			if (method.Parameters.Count == 0)
+				Write(".emplace_back()");
 			else {
-				obj.Accept(this, CiPriority.Primary);
 				Write(".push_back");
 				WriteArgsInParentheses(method, args);
 			}
 		}
 		else if (obj.Type is CiListType list2 && method.Name == "Insert") {
+			obj.Accept(this, CiPriority.Primary);
 			if (method.Parameters.Count == 1) {
-				bool array = false;
-				if (!this.AtLineStart) {
-					if (list2.ElementType is CiArrayStorageType)
-						array = true;
-					else
-						Write("&*");
-				}
-				obj.Accept(this, CiPriority.Primary);
 				Write(".emplace(");
 				WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
-				if (array)
-					Write(")->data(");
 			}
 			else {
-				obj.Accept(this, CiPriority.Primary);
 				Write(".insert(");
 				WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
 				Write(", ");

@@ -749,11 +749,10 @@ listOfInts.Insert(0, 1337); // insert at the beginning
 ```
 
 Object or array _storage_ must be added/inserted without specifying the value.
-The methods return a read-write reference to the storage in the list.
 
 ```csharp
-Circle! addedCircle = listOfCircles.Add();
-int[]! intPair = listOfIntPairs.Add();
+listOfCircles.Add();
+listOfIntPairs.Insert(0); // insert at the beginning
 ```
 
 Use indexing to retrieve and overwrite list elements.

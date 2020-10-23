@@ -5,17 +5,17 @@ public class Test
 	public static bool Run()
 	{
 		List<Test()>() list; //FAIL: c cl
-		Test! t = list.Add(); //FAIL: cs java js py swift TODO
-		t.Foo = 0;
-		list.Clear();
-		t = list.Add();
-		t.Foo = 2;
 		list.Add();
-		Test! u = list.Insert(0);
-		u.Foo = 1;
+		list[0].Foo = 0;
+		list.Clear();
+		list.Add();
+		list[0].Foo = 2;
+		list.Add();
+		list.Insert(0);
+		list[0].Foo = 1;
 		Test()[2] a;
-		list.CopyTo(0, a, 0, 2);
+		list.CopyTo(0, a, 0, 2); //FAIL: java TODO
 		return list.Count == 3 && list[0].Foo == 1 && list[1].Foo == 2 && list[2].Foo == 42
-			&& u == list[0] && a[0].Foo == 1 && a[1].Foo == 2;
+			&& a[0].Foo == 1 && a[1].Foo == 2;
 	}
 }

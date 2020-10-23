@@ -1125,7 +1125,7 @@ public class CiListType : CiArrayType
 		switch (name) {
 		case "Add":
 			if (this.ElementType is CiClass || this.ElementType is CiArrayStorageType)
-				return new CiMethod(CiCallType.Normal, this.ElementType.PtrOrSelf, "Add") { IsMutator = true };
+				return new CiMethod(CiCallType.Normal, null, "Add") { IsMutator = true };
 			return new CiMethod(CiCallType.Normal, null, "Add", new CiVar(this.ElementType, "value")) { IsMutator = true };
 		case "Clear":
 			return CiSystem.CollectionClear;
@@ -1133,7 +1133,7 @@ public class CiListType : CiArrayType
 			return CiSystem.CollectionCount;
 		case "Insert":
 			if (this.ElementType is CiClass || this.ElementType is CiArrayStorageType)
-				return new CiMethod(CiCallType.Normal, this.ElementType.PtrOrSelf, "Insert", new CiVar(CiSystem.UIntType, "index")) { IsMutator = true };
+				return new CiMethod(CiCallType.Normal, null, "Insert", new CiVar(CiSystem.UIntType, "index")) { IsMutator = true };
 			return new CiMethod(CiCallType.Normal, null, "Insert", new CiVar(CiSystem.UIntType, "index"), new CiVar(this.ElementType, "value")) { IsMutator = true };
 		case "RemoveAt":
 			return CiSystem.ListRemoveAt;
