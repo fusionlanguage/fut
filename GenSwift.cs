@@ -450,11 +450,20 @@ public class GenSwift : GenPySwift
 			WriteAdd(args[0], args[3]); // TODO: side effect
 			Write(']');
 		}
-		else if (obj.Type is CiListType list && method.Name == "Insert") {
+		else if (obj.Type is CiListType list && method.Name == "Add") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".append(");
+			if (method.Parameters.Count == 0)
+				WriteNewStorage(list.ElementType);
+			else
+				args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
+		else if (obj.Type is CiListType list2 && method.Name == "Insert") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".insert(");
 			if (method.Parameters.Count == 1)
-				WriteNewStorage(list.ElementType);
+				WriteNewStorage(list2.ElementType);
 			else
 				args[1].Accept(this, CiPriority.Statement);
 			Write(", at: ");
@@ -551,8 +560,6 @@ public class GenSwift : GenPySwift
 			WriteMemberOp(obj, null);
 			if (method == CiSystem.CollectionClear)
 				Write("removeAll");
-			else if (obj.Type is CiListType && method.Name == "Add")
-				Write("append");
 			else
 				WriteName(method);
 			WriteArgsInParentheses(method, args);

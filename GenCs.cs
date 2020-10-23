@@ -432,6 +432,9 @@ public class GenCs : GenTyped
 			Write(((CiArrayStorageType) obj.Type).Length);
 			Write(')');
 		}
+		else if (WriteListAddInsert(obj, method, args, "Add", "Insert", ", ")) {
+			// done
+		}
 		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".Add(");

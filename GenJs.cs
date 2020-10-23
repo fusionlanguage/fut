@@ -457,13 +457,8 @@ public class GenJs : GenBase
 				Write(".length = 0");
 			}
 		}
-		else if (obj.Type is CiListType && method.Name == "Insert") {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".splice(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(", 0, ");
-			args[1].Accept(this, CiPriority.Statement);
-			Write(')');
+		else if (WriteListAddInsert(obj, method, args, "push", "splice", ", 0, ")) {
+			// done
 		}
 		else if (method == CiSystem.ListRemoveAt) {
 			obj.Accept(this, CiPriority.Primary);
@@ -606,8 +601,6 @@ public class GenJs : GenBase
 				Write("trunc");
 			else if (method == CiSystem.StringContains)
 				Write("includes");
-			else if (obj.Type is CiListType && method.Name == "Add")
-				Write("push");
 			else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey")
 				Write("hasOwnProperty");
 			else

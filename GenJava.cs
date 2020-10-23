@@ -449,7 +449,7 @@ public class GenJava : GenTyped
 		return expr;
 	}
 
-	void WriteNotPromoted(CiType type, CiExpr expr)
+	protected override void WriteNotPromoted(CiType type, CiExpr expr)
 	{
 		if (type is CiIntegerType elementType
 		 && IsNarrower(GetIntegerTypeCode(elementType, false), GetIntegerTypeCode((CiIntegerType) expr.Type, true)))
@@ -525,25 +525,8 @@ public class GenJava : GenTyped
 			WriteNotPromoted(array.ElementType, args[0]);
 			Write(')');
 		}
-		else if (obj.Type is CiListType list && method.Name == "Add") {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".add(");
-			if (method.Parameters.Count == 0)
-				WriteNewStorage(list.ElementType);
-			else
-				WriteNotPromoted(list.ElementType, args[0]);
-			Write(')');
-		}
-		else if (obj.Type is CiListType list2 && method.Name == "Insert") {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".add(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(", ");
-			if (method.Parameters.Count == 1)
-				WriteNewStorage(list2.ElementType);
-			else
-				WriteNotPromoted(list2.ElementType, args[1]);
-			Write(')');
+		else if (WriteListAddInsert(obj, method, args, "add", "add", ", ")) {
+			// done
 		}
 		else if (method == CiSystem.ListRemoveRange) {
 			obj.Accept(this, CiPriority.Primary);

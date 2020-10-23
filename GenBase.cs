@@ -904,6 +904,45 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteCharAt(CiBinaryExpr expr);
 
+	protected virtual void WriteNotPromoted(CiType type, CiExpr expr)
+	{
+		expr.Accept(this, CiPriority.Statement);
+	}
+
+	protected bool WriteListAddInsert(CiExpr obj, CiMethod method, CiExpr[] args, string add, string insert, string insertSeparator)
+	{
+		if (obj.Type is CiListType list) {
+			int i;
+			switch (method.Name) {
+			case "Add":
+				obj.Accept(this, CiPriority.Primary);
+				Write('.');
+				Write(add);
+				Write('(');
+				i = 0;
+				break;
+			case "Insert":
+				obj.Accept(this, CiPriority.Primary);
+				Write('.');
+				Write(insert);
+				Write('(');
+				args[0].Accept(this, CiPriority.Statement);
+				Write(insertSeparator);
+				i = 1;
+				break;
+			default:
+				return false;
+			}
+			if (method.Parameters.Count == i)
+				WriteNewStorage(list.ElementType);
+			else
+				WriteNotPromoted(list.ElementType, args[i]);
+			Write(')');
+			return true;
+		}
+		return false;
+	}
+
 	static RegexOptions GetRegexOptions(CiExpr expr)
 	{
 		switch (expr) {

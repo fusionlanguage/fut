@@ -570,6 +570,9 @@ public class GenPy : GenPySwift
 			Write("[:] = ");
 			WriteNewArray(array.ElementType, args[0], array.LengthExpr);
 		}
+		else if (WriteListAddInsert(obj, method, args, "append", "insert", ", ")) {
+			// done
+		}
 		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
 			obj.Accept(this, CiPriority.Primary);
 			Write('[');
@@ -685,8 +688,6 @@ public class GenPy : GenPySwift
 				Write("startswith");
 			else if (method == CiSystem.StringEndsWith)
 				Write("endswith");
-			else if (obj.Type is CiListType && method.Name == "Add")
-				Write("append");
 			else
 				WriteName(method);
 			WriteArgsInParentheses(method, args);
