@@ -153,13 +153,6 @@ public class GenTs : GenJs
 					Write("[]");
 				}
 				break;
-			case CiClassPtrType klass:
-				if (klass.IsReadonlyPtr)
-					Write("Readonly<");
-				Write(type.Name);
-				if (klass.IsReadonlyPtr)
-					Write('>');
-				break;
 			default:
 				Write(type.Name);
 				break;
