@@ -4,6 +4,11 @@ public static class Test
 	{
 		string() s = "foo"; //FAIL: cl
 		string p = "foo";
+#if TS
+  native {
+    // @ts-ignore
+  }
+#endif
 		return s == s
 			&& s == p
 			&& p == s

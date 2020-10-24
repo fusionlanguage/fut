@@ -135,7 +135,7 @@ test/bin/%/Test.js: test/%.ci cito.exe
 	$(DO_CITO)
 
 test/bin/%/Test.ts: test/%.ci cito.exe
-	$(DO_CITO)
+	$(DO)mkdir -p $(@D) && ($(CITO) -D TS -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 
 test/bin/%/Test.py: test/%.ci cito.exe
 	$(DO_CITO)
