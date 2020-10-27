@@ -44,7 +44,7 @@ public class Test
 		DiscardShort(p);
 
 		o.SetArray(new int[2]);
-		int[]# a = new int[3];
+		int[]# a = new int[3]; //FAIL: cpp - not supported by Xcode
 		o.SetArray(a);
 		o.Array[2] = 15; //FAIL: cpp - AddressSanitizer: heap-buffer-overflow; buggy implementation of C++20?
 		o.SetArray(ArrayIdentity(a));

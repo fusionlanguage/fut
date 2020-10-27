@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		byte[]# a = new byte[3]; //FAIL: cl
+		byte[]# a = new byte[3]; //FAIL: cl; cpp - not supported by Xcode
 		a[0] = 5;
 		a[1] = 10;
 		a[2] = 15;
