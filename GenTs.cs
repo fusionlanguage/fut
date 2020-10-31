@@ -1,6 +1,5 @@
 // GenTs.cs - TypeScript code generator
 //
-// Copyright (C) 2011-2020  Piotr Fusik
 // Copyright (C) 2020 Andy Edwards
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
@@ -43,6 +42,7 @@ public class GenTs : GenJs
 	{
 		// WARNING: TypeScript enums allow reverse lookup that the Js generator currently
 		// doesn't implement
+		// https://www.typescriptlang.org/docs/handbook/enums.html#reverse-mappings
 		WriteLine();
 		Write(enu.Documentation);
 		Write("export enum ");
@@ -269,7 +269,7 @@ public class GenTs : GenJs
 				break;
 			case CiCallType.Static:
 			case CiCallType.Sealed:
-				// there's no final/sealed keyword, but we can accomplish it by marking the constructor private
+				// there's no final/sealed keyword, but we accomplish it by marking the constructor private
 				break;
 			default:
 				throw new NotImplementedException(klass.CallType.ToString());
@@ -312,7 +312,8 @@ public class GenTs : GenJs
 			Write(klass, method);
 		}
 
-		WriteConsts(klass.ConstArrays);
+		if (this.GenFullCode)
+			WriteConsts(klass.ConstArrays);
 		CloseBlock();
 		WriteLine();
 	}
