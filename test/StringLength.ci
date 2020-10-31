@@ -6,6 +6,11 @@ public class Test
 		string p = "foobar";
 		string() es = "";
 		string ep = "";
+#if TS
+  native {
+    // @ts-ignore
+  }
+#endif
 		return s.Length == 6
 			&& p.Length == 6
 			&& "foobar".Length == 6
