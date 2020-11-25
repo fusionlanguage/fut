@@ -23,17 +23,17 @@ using System.Linq;
 
 namespace Foxoft.Ci
 {
-/// TypeScript code generator
-///
-/// At the moment, this only generates TypeScript declarations (.d.ts files) which don't contain method bodies.
-/// In the future we could implement full TS source code generation.
+
 public class GenTs : GenJs
 {
 	protected readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
 
-	public bool GenFullCode = false;
+	// GenFullCode = false: only generate TypeScript declarations (.d.ts files)
+	// GenFullCode = true: generate full TypeScript code
+	bool GenFullCode = false;
 
-	public GenTs WithGenFullCode() {
+	public GenTs WithGenFullCode()
+	{
 		GenFullCode = true;
 		return this;
 	}
@@ -71,7 +71,8 @@ public class GenTs : GenJs
 		Write(value.Type);
 	}
 
-	protected void WriteTypeAndName(CiConst konst) {
+	protected void WriteTypeAndName(CiConst konst)
+	{
 		WriteName(konst);
 		Write(": ");
 		Write(konst.Type, true);
@@ -80,105 +81,105 @@ public class GenTs : GenJs
 	void Write(CiType type, bool forConst = false)
 	{
 		switch (type) {
-			case null:
-				Write("void");
-				break;
-			case CiNumericType _:
-				Write("number");
-				break;
-			case CiStringType _:
-				Write("string");
-				break;
-			case CiEnum enu:
-				Write(enu == CiSystem.BoolType ? "boolean" : enu.Name);
-				break;
-			case CiDictionaryType dict:
-				Write("Record<");
-				Write(dict.KeyType, forConst);
-				Write(", ");
-				Write(dict.ValueType, forConst);
-				Write('>');
-				break;
-			case CiListType list:
-				Write(list.ElementType, forConst);
-				Write("[]");
-				break;
-			case CiArrayType array:
-				CiType elementType = array.ElementType;
-				if (!forConst && elementType is CiNumericType) {
-					if (!(array is CiArrayStorageType)) {
-						if (array.IsReadonlyPtr)
-							Write("readonly ");
-						Write("number[] | ");
-					}
+		case null:
+			Write("void");
+			break;
+		case CiNumericType _:
+			Write("number");
+			break;
+		case CiStringType _:
+			Write("string");
+			break;
+		case CiEnum enu:
+			Write(enu == CiSystem.BoolType ? "boolean" : enu.Name);
+			break;
+		case CiDictionaryType dict:
+			Write("Record<");
+			Write(dict.KeyType, forConst);
+			Write(", ");
+			Write(dict.ValueType, forConst);
+			Write('>');
+			break;
+		case CiListType list:
+			Write(list.ElementType, forConst);
+			Write("[]");
+			break;
+		case CiArrayType array:
+			CiType elementType = array.ElementType;
+			if (!forConst && elementType is CiNumericType) {
+				if (!(array is CiArrayStorageType)) {
 					if (array.IsReadonlyPtr)
-						Write("Readonly<");
-					if (elementType == CiSystem.IntType)
-						Write("Int32");
-					else if (elementType == CiSystem.DoubleType)
-						Write("Float64");
-					else if (elementType == CiSystem.FloatType)
-						Write("Float32");
-					else if (elementType == CiSystem.LongType)
-						Write("Float64");
-					else {
-						CiRangeType range = (CiRangeType) elementType;
-						if (range.Min < 0) {
-							if (range.Min < short.MinValue || range.Max > short.MaxValue)
-								Write("Int32");
-							else if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
-								Write("Int16");
-							else
-								Write("Int8");
-						}
-						else if (range.Max > ushort.MaxValue)
-							Write("Int32");
-						else if (range.Max > byte.MaxValue)
-							Write("Uint16");
-						else
-							Write("Uint8");
-					}
-					Write("Array");
-					if (array.IsReadonlyPtr)
-						Write('>');
-				}
-				else {
-					if (forConst || array.IsReadonlyPtr)
 						Write("readonly ");
-					if (elementType is CiArrayType)
-						Write('(');
-					Write(elementType, forConst);
-					if (elementType is CiArrayType)
-						Write(')');
-					Write("[]");
+					Write("number[] | ");
 				}
-				break;
-			default:
-				CiType baseType = type is CiClassPtrType ? ((CiClassPtrType) type).Class : type;
-				if (baseType == CiSystem.RegexClass)
-					Write("RegExp");
-				else if (baseType == CiSystem.MatchClass)
-					Write("RegExpMatchArray");
-				else
-					Write(type.Name);
-				break;
+				if (array.IsReadonlyPtr)
+					Write("Readonly<");
+				if (elementType == CiSystem.IntType)
+					Write("Int32");
+				else if (elementType == CiSystem.DoubleType)
+					Write("Float64");
+				else if (elementType == CiSystem.FloatType)
+					Write("Float32");
+				else if (elementType == CiSystem.LongType)
+					Write("Float64");
+				else {
+					CiRangeType range = (CiRangeType) elementType;
+					if (range.Min < 0) {
+						if (range.Min < short.MinValue || range.Max > short.MaxValue)
+							Write("Int32");
+						else if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
+							Write("Int16");
+						else
+							Write("Int8");
+					}
+					else if (range.Max > ushort.MaxValue)
+						Write("Int32");
+					else if (range.Max > byte.MaxValue)
+						Write("Uint16");
+					else
+						Write("Uint8");
+				}
+				Write("Array");
+				if (array.IsReadonlyPtr)
+					Write('>');
+			}
+			else {
+				if (forConst || array.IsReadonlyPtr)
+					Write("readonly ");
+				if (elementType is CiArrayType)
+					Write('(');
+				Write(elementType, forConst);
+				if (elementType is CiArrayType)
+					Write(')');
+				Write("[]");
+			}
+			break;
+		default:
+			CiType baseType = type is CiClassPtrType classPtr ? classPtr.Class : type;
+			if (baseType == CiSystem.RegexClass)
+				Write("RegExp");
+			else if (baseType == CiSystem.MatchClass)
+				Write("RegExpMatchArray");
+			else
+				Write(type.Name);
+			break;
 		}
 	}
 
 	void Write(CiVisibility visibility)
 	{
 		switch (visibility) {
-			case CiVisibility.Private:
-				Write("private ");
-				break;
-			case CiVisibility.Internal:
-				break;
-			case CiVisibility.Protected:
-				Write("protected ");
-				break;
-			case CiVisibility.Public:
-				Write("public ");
-				break;
+		case CiVisibility.Private:
+			Write("private ");
+			break;
+		case CiVisibility.Internal:
+			break;
+		case CiVisibility.Protected:
+			Write("protected ");
+			break;
+		case CiVisibility.Public:
+			Write("public ");
+			break;
 		}
 	}
 
@@ -187,24 +188,24 @@ public class GenTs : GenJs
 		WriteDoc(method);
 		Write(method.Visibility);
 		switch (method.CallType) {
-			case CiCallType.Static:
-				Write("static ");
-				break;
-			case CiCallType.Virtual:
-				break;
-			case CiCallType.Abstract:
-				Write("abstract ");
-				break;
-			case CiCallType.Override:
-				break;
-			case CiCallType.Normal:
-				// no final methods in TS
-				break;
-			case CiCallType.Sealed:
-				// no final methods in TS
-				break;
-			default:
-				throw new NotImplementedException(method.CallType.ToString());
+		case CiCallType.Static:
+			Write("static ");
+			break;
+		case CiCallType.Virtual:
+			break;
+		case CiCallType.Abstract:
+			Write("abstract ");
+			break;
+		case CiCallType.Override:
+			break;
+		case CiCallType.Normal:
+			// no final methods in TS
+			break;
+		case CiCallType.Sealed:
+			// no final methods in TS
+			break;
+		default:
+			throw new NotImplementedException(method.CallType.ToString());
 		}
 		WriteName(method);
 		Write('(');
@@ -262,23 +263,24 @@ public class GenTs : GenJs
 		Write(klass.Documentation);
 		Write("export ");
 		switch (klass.CallType) {
-			case CiCallType.Normal:
-				break;
-			case CiCallType.Abstract:
-				Write("abstract ");
-				break;
-			case CiCallType.Static:
-			case CiCallType.Sealed:
-				// there's no final/sealed keyword, but we accomplish it by marking the constructor private
-				break;
-			default:
-				throw new NotImplementedException(klass.CallType.ToString());
+		case CiCallType.Normal:
+			break;
+		case CiCallType.Abstract:
+			Write("abstract ");
+			break;
+		case CiCallType.Static:
+		case CiCallType.Sealed:
+			// there's no final/sealed keyword, but we accomplish it by marking the constructor private
+			break;
+		default:
+			throw new NotImplementedException(klass.CallType.ToString());
 		}
 		OpenClass(klass, "", " extends ");
 
 		CiMethodBase constructor = klass.Constructor;
 		if (klass.CallType == CiCallType.Static) {
-			if (constructor == null) constructor = new CiMethodBase();
+			if (constructor == null)
+				constructor = new CiMethodBase();
 			constructor.Visibility = CiVisibility.Private;
 		}
 
@@ -292,9 +294,9 @@ public class GenTs : GenJs
 					WriteLine("super();");
 				WriteConstructorBody(klass);
 				CloseBlock();
-			} else {
-				WriteLine(';');
 			}
+			else
+				WriteLine(';');
 		}
 
 		WriteConsts(klass.Consts);
@@ -302,22 +304,19 @@ public class GenTs : GenJs
 		foreach (CiField field in klass.Fields) {
 			Write(field.Visibility);
 			WriteTypeAndName(field);
-			if (this.GenFullCode) {
+			if (this.GenFullCode)
 				WriteVarInit(field);
-			}
 			WriteLine(';');
 		}
 
-		foreach (CiMethod method in klass.Methods) {
+		foreach (CiMethod method in klass.Methods)
 			Write(klass, method);
-		}
 
 		if (this.GenFullCode)
 			WriteConsts(klass.ConstArrays);
 		CloseBlock();
 		WriteLine();
 	}
-
 
 	public override void Write(CiProgram program)
 	{
@@ -328,7 +327,7 @@ public class GenTs : GenJs
 			Write(enu);
 		foreach (CiClass klass in program.OfType<CiClass>()) // TODO: topological sort of class hierarchy
 			Write(klass);
-		if (this.GenFullCode && program.Resources.Count > 0 || this.Library.Any(l => l != null))
+		if (this.GenFullCode && (program.Resources.Count > 0 || this.Library.Any(l => l != null)))
 			WriteLib(program.Resources);
 		CloseFile();
 	}
