@@ -111,11 +111,13 @@ public static class CiTo
 			}
 		}
 		if (lang == null && outputFile != null) {
-			string ext = Path.GetExtension(outputFile);
-			if (ext.Equals(".ts") && outputFile.EndsWith(".d.ts"))
-          ext = ".d.ts";
-			if (ext.Length >= 2)
-				lang = ext.Substring(1);
+			if (outputFile.EndsWith(".d.ts"))
+				lang = "d.ts";
+			else {
+				string ext = Path.GetExtension(outputFile);
+				if (ext.Length >= 2) // have an extension?
+					lang = ext.Substring(1); // skip the dot
+			}
 		}
 		if (lang == null || outputFile == null || inputFiles.Count == 0) {
 			Usage();
