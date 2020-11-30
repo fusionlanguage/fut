@@ -3,7 +3,7 @@
 
 cito is currently written in C#.
 
-You can build it with .NET Core 3.1 on Windows/macOS/Linux
+You can build it with .NET 5.0 on Windows/macOS/Linux
 or .NET Framework on Windows only.
 The Mono compiler doesn't work (reports a NotImplementedException).
 
