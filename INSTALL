@@ -29,7 +29,7 @@ To run cito tests, you will need:
 * GNU diff
 * Clang C and C++ compilers
 * Visual Studio 2019 or Mono
-* Java compiler (https://www.oracle.com/java/technologies/javase-jdk14-downloads.html)
+* Java compiler (https://www.oracle.com/java/technologies/javase-jdk15-downloads.html)
 * Node.js (https://nodejs.org/)
 * Python
 * Swift (https://swift.org/)
