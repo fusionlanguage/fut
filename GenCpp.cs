@@ -1,6 +1,6 @@
 // GenCpp.cs - C++ code generator
 //
-// Copyright (C) 2011-2020  Piotr Fusik
+// Copyright (C) 2011-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -578,6 +578,16 @@ public class GenCpp : GenCCpp
 			args[3].Accept(this, CiPriority.Statement);
 			Write(", ");
 			WriteArrayPtrAdd(args[1], args[2]);
+			Write(')');
+		}
+		else if (obj.Type is CiArrayType && method.Name == "Fill" && args.Length == 3) {
+			Include("algorithm");
+			Write("std::fill_n(");
+			WriteArrayPtrAdd(obj, args[1]);
+			Write(", ");
+			args[2].Accept(this, CiPriority.Statement);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
 		else if (obj.Type is CiListType list && method.Name == "Add") {

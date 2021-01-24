@@ -1,6 +1,6 @@
 // GenCs.cs - C# code generator
 //
-// Copyright (C) 2011-2020  Piotr Fusik
+// Copyright (C) 2011-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -422,14 +422,22 @@ public class GenCs : GenTyped
 			WriteArgs(method, args);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
+		else if (obj.Type is CiArrayType && method.Name == "Fill") {
 			if (!(args[0] is CiLiteral literal) || !literal.IsDefaultValue)
 				throw new NotImplementedException("Only null, zero and false supported");
 			Include("System");
 			Write("Array.Clear(");
 			obj.Accept(this, CiPriority.Statement);
-			Write(", 0, ");
-			Write(((CiArrayStorageType) obj.Type).Length);
+			Write(", ");
+			if (args.Length == 1) {
+				Write("0, ");
+				Write(((CiArrayStorageType) obj.Type).Length);
+			}
+			else {
+				args[1].Accept(this, CiPriority.Statement);
+				Write(", ");
+				args[2].Accept(this, CiPriority.Statement);
+			}
 			Write(')');
 		}
 		else if (WriteListAddInsert(obj, method, args, "Add", "Insert", ", ")) {

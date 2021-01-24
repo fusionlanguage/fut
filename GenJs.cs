@@ -1,6 +1,6 @@
 // GenJs.cs - JavaScript code generator
 //
-// Copyright (C) 2011-2020  Piotr Fusik
+// Copyright (C) 2011-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -442,6 +442,18 @@ public class GenJs : GenBase
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
 			WriteArgs(method, args);
+			Write(')');
+		}
+		else if (obj.Type is CiArrayType array && method.Name == "Fill") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".fill(");
+			args[0].Accept(this, CiPriority.Statement);
+			if (args.Length == 3) {
+				Write(", ");
+				args[1].Accept(this, CiPriority.Statement);
+				Write(", ");
+				WriteAdd(args[1], args[2]); // TODO: side effect
+			}
 			Write(')');
 		}
 		else if (method == CiSystem.CollectionClear) {

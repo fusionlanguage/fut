@@ -1,6 +1,6 @@
 // GenC.cs - C code generator
 //
-// Copyright (C) 2011-2020  Piotr Fusik
+// Copyright (C) 2011-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -820,15 +820,26 @@ public class GenC : GenCCpp
 			}
 			Write(')');
 		}
-		else if (obj.Type is CiArrayStorageType && method.Name == "Fill") {
+		else if (obj.Type is CiArrayType && method.Name == "Fill") {
 			if (!(args[0] is CiLiteral literal) || !literal.IsDefaultValue)
 				throw new NotImplementedException("Only null, zero and false supported");
 			Include("string.h");
 			Write("memset(");
-			obj.Accept(this, CiPriority.Statement);
-			Write(", 0, sizeof(");
-			obj.Accept(this, CiPriority.Statement);
-			Write("))");
+			if (args.Length == 1) {
+				obj.Accept(this, CiPriority.Statement);
+				Write(", 0, sizeof(");
+				obj.Accept(this, CiPriority.Statement);
+				Write(')');
+			}
+			else {
+				WriteArrayPtrAdd(obj, args[1]);
+				Write(", 0, ");
+				args[2].Accept(this, CiPriority.Mul);
+				Write(" * sizeof(");
+				obj.Accept(this, CiPriority.Primary);
+				Write("[0])");
+			}
+			Write(')');
 		}
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(obj, args, false);

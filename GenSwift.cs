@@ -1,6 +1,6 @@
 // GenSwift.cs - Swift code generator
 //
-// Copyright (C) 2020  Piotr Fusik
+// Copyright (C) 2020-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -1197,6 +1197,11 @@ public class GenSwift : GenPySwift
 			WriteLine("func fill(_ value: T)");
 			OpenBlock();
 			WriteLine("array = [T](repeating: value, count: array.count)");
+			CloseBlock();
+			WriteLine();
+			WriteLine("func fill(_ value: T, _ startIndex : Int, _ count : Int)");
+			OpenBlock();
+			WriteLine("array[startIndex ..< startIndex + count] = ArraySlice(repeating: value, count: count)");
 			CloseBlock();
 			WriteLine();
 			WriteLine("public func makeIterator() -> IndexingIterator<Array<T>>");

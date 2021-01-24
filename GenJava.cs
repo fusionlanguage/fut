@@ -1,6 +1,6 @@
 // GenJava.cs - Java code generator
 //
-// Copyright (C) 2011-2020  Piotr Fusik
+// Copyright (C) 2011-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -517,11 +517,17 @@ public class GenJava : GenTyped
 			WriteArgs(method, args);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayStorageType array && method.Name == "Fill") {
+		else if (obj.Type is CiArrayType array && method.Name == "Fill") {
 			Include("java.util.Arrays");
 			Write("Arrays.fill(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
+			if (args.Length == 3) {
+				args[1].Accept(this, CiPriority.Statement);
+				Write(", ");
+				WriteAdd(args[1], args[2]); // TODO: side effect
+				Write(", ");
+			}
 			WriteNotPromoted(array.ElementType, args[0]);
 			Write(')');
 		}

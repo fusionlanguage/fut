@@ -2,29 +2,16 @@ public static class Test
 {
 	public static bool Run()
 	{
-		int[5] a;
-		byte[5] b;
-		bool[5] c;
-		short[5] d;
-		ushort[5] e;
-		string[5] s;
-		for (int i = 0; i < 5; i++) {
-			a[i] = i;
-			b[i] = i;
-			c[i] = true;
-			d[i] = i;
-			e[i] = i;
-			s[i] = null;
-		}
-		a.Fill(0); //FAIL: cl
-		b.Fill(0);
-		c.Fill(false);
-		d.Fill(0);
-		e.Fill(0);
-		s.Fill(null);
-		for (int i = 0; i < 5; i++)
-			if (a[i] != 0 || b[i] != 0 || c[i] || d[i] != 0 || e[i] != 0 || s[i] != null)
-				return false;
-		return true;
+		int[7] a;
+		byte[]# d = new byte[7];
+		for (int i = 0; i < a.Length; i++)
+			d[i] = a[i] = (i + 1) * 5;
+		a.Fill(0, 1, 2); //FAIL: cl
+		int[]! p = a;
+		p.Fill(0, 4, 2);
+		d.Fill(0, 2, 3);
+		return a[0] == 5 && a[1] == 0 && a[2] == 0 && a[3] == 20
+			&& a[4] == 0 && a[5] == 0 && a[6] == 35
+			&& d[0] == 5 && d[1] == 10 && d[2] == 0 && d[3] == 0 && d[4] == 0 && d[5] == 30 && d[6] == 35;
 	}
 }

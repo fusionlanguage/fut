@@ -1,6 +1,6 @@
 // CiTree.cs - Ci object model
 //
-// Copyright (C) 2011-2020  Piotr Fusik
+// Copyright (C) 2011-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -1032,6 +1032,10 @@ public abstract class CiArrayType : CiType
 		return null;
 	}
 	public override CiType BaseType => this.ElementType.BaseType;
+	protected CiMethod Fill => new CiMethod(CiCallType.Normal, null, "Fill",
+		new CiVar(this.ElementType, "value"),
+		new CiVar(CiSystem.IntType, "startIndex"),
+		new CiVar(CiSystem.IntType, "count"));
 }
 
 public class CiArrayPtrType : CiArrayType
@@ -1076,6 +1080,13 @@ public class CiArrayPtrType : CiArrayType
 	public override bool IsReadonlyPtr => this.Modifier == CiToken.EndOfFile;
 	public override bool IsDynamicPtr => this.Modifier == CiToken.Hash;
 
+	public override CiSymbol TryLookup(string name)
+	{
+		if (name == "Fill" && this.Modifier != CiToken.EndOfFile)
+			return this.Fill;
+		return base.TryLookup(name);
+	}
+
 	public override bool Equals(object obj)
 	{
 		return obj is CiArrayPtrType that && this.ElementType.Equals(that.ElementType) && this.Modifier == that.Modifier;
@@ -1097,7 +1108,9 @@ public class CiArrayStorageType : CiArrayType
 	{
 		switch (name) {
 		case "Fill":
-			return new CiMethod(CiCallType.Normal, null, "Fill", new CiVar(this.ElementType, "value"));
+			return new CiMethodGroup(
+				new CiMethod(CiCallType.Normal, null, "Fill", new CiVar(this.ElementType, "value")),
+				this.Fill);
 		case "Length":
 			return CiSystem.ArrayLength;
 		default:

@@ -1,6 +1,6 @@
 // GenPy.cs - Python code generator
 //
-// Copyright (C) 2020  Piotr Fusik
+// Copyright (C) 2020-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -565,10 +565,20 @@ public class GenPy : GenPySwift
 			WriteAdd(args[0], args[3]); // TODO: side effect twice
 			Write(']');
 		}
-		else if (obj.Type is CiArrayStorageType array && method.Name == "Fill") {
+		else if (obj.Type is CiArrayType array && method.Name == "Fill") {
 			obj.Accept(this, CiPriority.Primary);
-			Write("[:] = ");
-			WriteNewArray(array.ElementType, args[0], array.LengthExpr);
+			Write('[');
+			if (args.Length == 1) {
+				Write(":] = ");
+				WriteNewArray(array.ElementType, args[0], ((CiArrayStorageType) array).LengthExpr);
+			}
+			else {
+				args[1].Accept(this, CiPriority.Statement);
+				Write(':');
+				WriteAdd(args[1], args[2]); // TODO: side effect
+				Write("] = ");
+				WriteNewArray(array.ElementType, args[0], args[2]); // TODO: side effect
+			}
 		}
 		else if (WriteListAddInsert(obj, method, args, "append", "insert", ", ")) {
 			// done
