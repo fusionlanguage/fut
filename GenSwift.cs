@@ -163,6 +163,8 @@ public class GenSwift : GenPySwift
 
 	static bool NeedsUnwrap(CiExpr expr)
 	{
+		if (expr.Type is CiArrayPtrType)
+			return true;
 		if (!(expr.Type is CiClassPtrType))
 			return false;
 		if (!(expr is CiSymbolReference symbol))
