@@ -229,67 +229,38 @@ public class GenJs : GenBase
 		}
 
 		string name;
-		int shift;
-		if (elementType == CiSystem.IntType) {
+		if (elementType == CiSystem.IntType)
 			name = "Int32";
-			shift = 2;
-		}
-		else if (elementType == CiSystem.DoubleType) {
+		else if (elementType == CiSystem.DoubleType)
 			name = "Float64";
-			shift = 3;
-		}
-		else if (elementType == CiSystem.FloatType) {
+		else if (elementType == CiSystem.FloatType)
 			name = "Float32";
-			shift = 2;
-		}
-		else if (elementType == CiSystem.LongType) {
+		else if (elementType == CiSystem.LongType)
 			// TODO: UInt32 if possible?
 			name = "Float64"; // no 64-bit integers in JavaScript
-			shift = 3;
-		}
 		else {
 			CiRangeType range = (CiRangeType) elementType;
 			if (range.Min < 0) {
-				if (range.Min < short.MinValue || range.Max > short.MaxValue) {
+				if (range.Min < short.MinValue || range.Max > short.MaxValue)
 					name = "Int32";
-					shift = 2;
-				}
-				else if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue) {
+				else if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
 					name = "Int16";
-					shift = 1;
-				}
-				else {
+				else
 					name = "Int8";
-					shift = 0;
-				}
 			}
-			else if (range.Max > ushort.MaxValue) {
+			else if (range.Max > ushort.MaxValue)
 				name = "Int32";
-				shift = 2;
-			}
-			else if (range.Max > byte.MaxValue) {
+			else if (range.Max > byte.MaxValue)
 				name = "Uint16";
-				shift = 1;
-			}
-			else {
+			else
 				name = "Uint8";
-				shift = 0;
-			}
 		}
 
 		Write("new ");
 		Write(name);
-		Write("Array(new ArrayBuffer(");
-		if (shift == 0)
-			lengthExpr.Accept(this, CiPriority.Statement);
-		else if (lengthExpr is CiLiteral literalLength)
-			Write(((long) literalLength.Value) << shift);
-		else {
-			lengthExpr.Accept(this, CiPriority.Shift);
-			Write(" << ");
-			Write(shift);
-		}
-		Write("))");
+		Write("Array(");
+		lengthExpr.Accept(this, CiPriority.Statement);
+		Write(')');
 	}
 
 	bool HasInitCode(CiNamedValue def)
