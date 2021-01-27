@@ -427,7 +427,13 @@ unless explicitly specified:
 int[100] oneHundredZeros = 0;
 ```
 
-You can fill array storage anytime:
+You can fill a part of an array with a single value:
+
+```csharp
+array.Fill(value, startIndex, count);
+```
+
+or the whole array storage:
 
 ```csharp
 arrayStorage.Fill(0);
