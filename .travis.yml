@@ -1,6 +1,6 @@
 language: csharp
 mono: none
-dotnet: 5.0.102
+dotnet: 5.0.103
 env:
   - SWIFT_VERSION=5.3.3
 jobs:
