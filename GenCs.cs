@@ -440,6 +440,14 @@ public class GenCs : GenTyped
 			}
 			Write(')');
 		}
+		else if (method == CiSystem.CollectionSortPart) {
+			Include("System");
+			Write("Array.Sort(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", ");
+			WriteArgs(method, args);
+			Write(')');
+		}
 		else if (WriteListAddInsert(obj, method, args, "Add", "Insert", ", ")) {
 			// done
 		}

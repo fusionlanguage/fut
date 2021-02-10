@@ -590,6 +590,16 @@ public class GenCpp : GenCCpp
 			args[0].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
+		else if (method == CiSystem.CollectionSortPart) {
+			Include("algorithm");
+			Write("std::sort(");
+			WriteArrayPtrAdd(obj, args[0]);
+			Write(", ");
+			WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
+			Write(" + ");
+			args[1].Accept(this, CiPriority.Add);
+			Write(')');
+		}
 		else if (obj.Type is CiListType list && method.Name == "Add") {
 			obj.Accept(this, CiPriority.Primary);
 			if (method.Parameters.Count == 0)

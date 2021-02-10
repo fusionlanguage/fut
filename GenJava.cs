@@ -531,6 +531,16 @@ public class GenJava : GenTyped
 			WriteNotPromoted(array.ElementType, args[0]);
 			Write(')');
 		}
+		else if (method == CiSystem.CollectionSortPart) {
+			Include("java.util.Arrays");
+			Write("Arrays.sort(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", ");
+			WriteAdd(args[0], args[1]); // TODO: side effect
+			Write(')');
+		}
 		else if (WriteListAddInsert(obj, method, args, "add", "add", ", ")) {
 			// done
 		}

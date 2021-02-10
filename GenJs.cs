@@ -427,6 +427,14 @@ public class GenJs : GenBase
 			}
 			Write(')');
 		}
+		else if (method == CiSystem.CollectionSortPart) {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".subarray(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", ");
+			WriteAdd(args[0], args[1]); // TODO: side effect
+			Write(").sort()");
+		}
 		else if (method == CiSystem.CollectionClear) {
 			if (obj.Type is CiDictionaryType) {
 				Write("for (const key in ");
