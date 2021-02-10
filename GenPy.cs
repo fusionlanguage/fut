@@ -477,6 +477,16 @@ public class GenPy : GenPySwift
 	{
 	}
 
+	void WriteSlice(CiExpr startIndex, CiExpr length)
+	{
+		Write('[');
+		startIndex.Accept(this, CiPriority.Statement);
+		Write(':');
+		if (length != null)
+			WriteAdd(startIndex, length); // TODO: side effect
+		Write(']');
+	}
+
 	void WriteConsoleWrite(CiExpr obj, CiExpr[] args, bool newLine)
 	{
 		Write("print(");
@@ -523,12 +533,7 @@ public class GenPy : GenPySwift
 		}
 		else if (method == CiSystem.StringSubstring) {
 			obj.Accept(this, CiPriority.Primary);
-			Write('[');
-			args[0].Accept(this, CiPriority.Statement);
-			Write(':');
-			if (args.Length == 2)
-				WriteAdd(args[0], args[1]); // TODO: side effect
-			Write(']');
+			WriteSlice(args[0], args.Length == 2 ? args[1] : null);
 		}
 		else if (obj.Type is CiListType list && method == CiSystem.CollectionClear && list.ElementType is CiNumericType number && GetArrayCode(number) != 'B') {
 			Write("del ");
@@ -545,38 +550,24 @@ public class GenPy : GenPySwift
 		else if (method == CiSystem.ListRemoveRange) {
 			Write("del ");
 			obj.Accept(this, CiPriority.Primary);
-			Write('[');
-			args[0].Accept(this, CiPriority.Statement);
-			Write(':');
-			WriteAdd(args[0], args[1]); // TODO: side effect
-			Write(']');
+			WriteSlice(args[0], args[1]);
 		}
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			args[1].Accept(this, CiPriority.Primary);
-			Write('[');
-			args[2].Accept(this, CiPriority.Statement);
-			Write(':');
-			WriteAdd(args[2], args[3]); // TODO: side effect
-			Write("] = ");
+			WriteSlice(args[2], args[3]);
+			Write(" = ");
 			obj.Accept(this, CiPriority.Primary);
-			Write('[');
-			args[0].Accept(this, CiPriority.Statement);
-			Write(':');
-			WriteAdd(args[0], args[3]); // TODO: side effect twice
-			Write(']');
+			WriteSlice(args[0], args[3]);
 		}
 		else if (obj.Type is CiArrayType array && method.Name == "Fill") {
 			obj.Accept(this, CiPriority.Primary);
-			Write('[');
 			if (args.Length == 1) {
-				Write(":] = ");
+				Write("[:] = ");
 				WriteNewArray(array.ElementType, args[0], ((CiArrayStorageType) array).LengthExpr);
 			}
 			else {
-				args[1].Accept(this, CiPriority.Statement);
-				Write(':');
-				WriteAdd(args[1], args[2]); // TODO: side effect
-				Write("] = ");
+				WriteSlice(args[1], args[2]);
+				Write(" = ");
 				WriteNewArray(array.ElementType, args[0], args[2]); // TODO: side effect
 			}
 		}
@@ -608,11 +599,8 @@ public class GenPy : GenPySwift
 			WriteConsoleWrite(obj, args, true);
 		else if (method == CiSystem.UTF8GetString) {
 			args[0].Accept(this, CiPriority.Primary);
-			Write('[');
-			args[1].Accept(this, CiPriority.Statement);
-			Write(':');
-			WriteAdd(args[1], args[2]); // TODO: side effect
-			Write("].decode(\"utf-8\")");
+			WriteSlice(args[1], args[2]);
+			Write(".decode(\"utf-8\")");
 		}
 		else if (method == CiSystem.RegexCompile) {
 			Write("re.compile(");
