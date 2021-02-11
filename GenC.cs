@@ -40,6 +40,7 @@ public class GenC : GenCCpp
 	bool SharedAddRef;
 	bool SharedRelease;
 	bool SharedAssign;
+	readonly SortedSet<TypeCode> Compares = new SortedSet<TypeCode>();
 	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
 	protected CiClass CurrentClass;
 
@@ -885,6 +886,39 @@ public class GenC : GenCCpp
 				Write(')');
 			}
 			Write(')');
+		}
+		else if (method == CiSystem.CollectionSortAll) {
+			TypeCode typeCode = GetIntegerTypeCode((CiIntegerType) ((CiArrayType) obj.Type).ElementType, false);
+			if (obj.Type is CiArrayStorageType arrayStorage) {
+				Write("qsort(");
+				WriteArrayPtr(obj, CiPriority.Statement);
+				Write(", ");
+				Write(arrayStorage.Length);
+				Write(", sizeof(");
+				Write(typeCode);
+				Write(')');
+			}
+			else {
+				Write("g_array_sort(");
+				obj.Accept(this, CiPriority.Statement);
+			}
+			Write(", CiCompare_");
+			Write(typeCode);
+			Write(')');
+			this.Compares.Add(typeCode);
+		}
+		else if (method == CiSystem.CollectionSortPart) {
+			Write("qsort(");
+			WriteArrayPtrAdd(obj, args[0]);
+			Write(", ");
+			args[1].Accept(this, CiPriority.Primary);
+			Write(", sizeof(");
+			TypeCode typeCode = GetIntegerTypeCode((CiIntegerType) ((CiArrayType) obj.Type).ElementType, false);
+			Write(typeCode);
+			Write("), CiCompare_");
+			Write(typeCode);
+			Write(')');
+			this.Compares.Add(typeCode);
 		}
 		else if (obj.Type is CiListType && method.Name == "Add")
 			WriteListAddInsert(obj, "g_array_append_val", args);
@@ -1932,6 +1966,25 @@ public class GenC : GenCCpp
 			WriteLine("*ptr = value;");
 			CloseBlock();
 		}
+		foreach (TypeCode typeCode in this.Compares) {
+			WriteLine();
+			Write("static int CiCompare_");
+			Write(typeCode);
+			WriteLine("(const void *pa, const void *pb)");
+			OpenBlock();
+			Write(typeCode);
+			Write(" a = *(const ");
+			Write(typeCode);
+			WriteLine(" *) pa;");
+			Write(typeCode);
+			Write(" b = *(const ");
+			Write(typeCode);
+			WriteLine(" *) pb;");
+			WriteLine(typeCode == TypeCode.Int32 || typeCode == TypeCode.Int64
+				? "return (a > b) - (a < b);"
+				: "return a - b;");
+			CloseBlock();
+		}
 	}
 
 	protected void WriteResources(Dictionary<string, byte[]> resources)
@@ -1992,6 +2045,7 @@ public class GenC : GenCCpp
 		this.SharedAddRef = false;
 		this.SharedRelease = false;
 		this.SharedAssign = false;
+		this.Compares.Clear();
 		OpenStringWriter();
 		foreach (CiClass klass in program.Classes)
 			WriteStruct(klass);
