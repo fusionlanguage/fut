@@ -425,11 +425,8 @@ public class GenJs : GenBase
 			}
 			Write(')');
 		}
-		else if (method == CiSystem.CollectionSortAll) {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".sort()");
-		}
 		else if (method == CiSystem.CollectionSortPart) {
+			// TODO: list
 			obj.Accept(this, CiPriority.Primary);
 			Write(".subarray(");
 			WriteStartEnd(args[0], args[1]);

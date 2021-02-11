@@ -1,0 +1,17 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		List<int>() list;
+		list.Add(8);
+		list.Add(3);
+		list.Add(2);
+		list.Add(7);
+		list.Add(5);
+		list.Sort(1, 3); //FAIL: js py swift TODO; c cl
+		if (list[0] != 8 || list[1] != 2 || list[2] != 3 || list[3] != 7 || list[4] != 5)
+			return false;
+		list.Sort();
+		return list[0] == 2 && list[1] == 3 && list[2] == 5 && list[3] == 7 && list[4] == 8;
+	}
+}

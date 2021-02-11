@@ -1165,6 +1165,8 @@ public class CiListType : CiArrayType
 			return CiSystem.ListRemoveAt;
 		case "RemoveRange":
 			return CiSystem.ListRemoveRange;
+		case "Sort":
+			return this.ElementType is CiIntegerType ? CiSystem.CollectionSort : null;
 		default:
 			return base.TryLookup(name);
 		}

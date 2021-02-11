@@ -440,15 +440,27 @@ public class GenCs : GenTyped
 			}
 			Write(')');
 		}
-		else if (method == CiSystem.CollectionSortAll || method == CiSystem.CollectionSortPart) {
+		else if (obj.Type is CiArrayStorageType && method == CiSystem.CollectionSortAll) {
 			Include("System");
 			Write("Array.Sort(");
 			obj.Accept(this, CiPriority.Statement);
-			if (method == CiSystem.CollectionSortPart) {
+			Write(')');
+		}
+		else if (method == CiSystem.CollectionSortPart) {
+			if (obj.Type is CiListType) {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".Sort(");
+				WriteArgs(method, args);
+				Write(", null)");
+			}
+			else {
+				Include("System");
+				Write("Array.Sort(");
+				obj.Accept(this, CiPriority.Statement);
 				Write(", ");
 				WriteArgs(method, args);
+				Write(')');
 			}
-			Write(')');
 		}
 		else if (WriteListAddInsert(obj, method, args, "Add", "Insert", ", ")) {
 			// done

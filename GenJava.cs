@@ -529,15 +529,33 @@ public class GenJava : GenTyped
 			WriteNotPromoted(array.ElementType, args[0]);
 			Write(')');
 		}
-		else if (method == CiSystem.CollectionSortAll || method == CiSystem.CollectionSortPart) {
-			Include("java.util.Arrays");
-			Write("Arrays.sort(");
-			obj.Accept(this, CiPriority.Statement);
-			if (method == CiSystem.CollectionSortPart) {
+		else if (method == CiSystem.CollectionSortAll) {
+			if (obj.Type is CiArrayStorageType) {
+				Include("java.util.Arrays");
+				Write("Arrays.sort(");
+				obj.Accept(this, CiPriority.Statement);
+				Write(')');
+			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".sort(null)");
+			}
+		}
+		else if (method == CiSystem.CollectionSortPart) {
+			if (obj.Type is CiListType) {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".subList(");
+				WriteStartEnd(args[0], args[1]);
+				Write(").sort(null)");
+			}
+			else {
+				Include("java.util.Arrays");
+				Write("Arrays.sort(");
+				obj.Accept(this, CiPriority.Statement);
 				Write(", ");
 				WriteStartEnd(args[0], args[1]);
+				Write(')');
 			}
-			Write(')');
 		}
 		else if (WriteListAddInsert(obj, method, args, "add", "add", ", ")) {
 			// done
