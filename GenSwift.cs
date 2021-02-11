@@ -389,6 +389,13 @@ public class GenSwift : GenPySwift
 		Write(')');
 	}
 
+	void WriteRange(CiExpr startIndex, CiExpr length)
+	{
+		startIndex.Accept(this, CiPriority.Shift);
+		Write("..<");
+		WriteAdd(startIndex, length); // TODO: side effect
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (obj == null) {
@@ -442,14 +449,10 @@ public class GenSwift : GenPySwift
 		}
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			OpenIndexing(args[1]);
-			args[2].Accept(this, CiPriority.Shift);
-			Write("..<");
-			WriteAdd(args[2], args[3]); // TODO: side effect
+			WriteRange(args[2], args[3]);
 			Write("] = ");
 			OpenIndexing(obj);
-			args[0].Accept(this, CiPriority.Shift);
-			Write("..<");
-			WriteAdd(args[0], args[3]); // TODO: side effect
+			WriteRange(args[0], args[3]);
 			Write(']');
 		}
 		else if (obj.Type is CiListType list && method.Name == "Add") {
@@ -481,9 +484,7 @@ public class GenSwift : GenPySwift
 		else if (method == CiSystem.ListRemoveRange) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeSubrange(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write("..<");
-			WriteAdd(args[0], args[1]); // TODO: side effect
+			WriteRange(args[0], args[1]);
 			Write(')');
 		}
 		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
@@ -523,9 +524,7 @@ public class GenSwift : GenPySwift
 		else if (method == CiSystem.UTF8GetString) {
 			Write("String(decoding: ");
 			OpenIndexing(args[0]);
-			args[1].Accept(this, CiPriority.Shift);
-			Write("..<");
-			WriteAdd(args[1], args[2]); // TODO: side effect
+			WriteRange(args[1], args[2]);
 			Write("], as: UTF8.self)");
 		}
 		else if (obj.IsReferenceTo(CiSystem.MathClass)) {

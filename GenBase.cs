@@ -842,6 +842,13 @@ public abstract class GenBase : CiVisitor
 		right.Accept(this, CiPriority.Add);
 	}
 
+	protected void WriteStartEnd(CiExpr startIndex, CiExpr length)
+	{
+		startIndex.Accept(this, CiPriority.Statement);
+		Write(", ");
+		WriteAdd(startIndex, length); // TODO: side effect
+	}
+
 	protected virtual void Write(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
 	{
 		expr.Accept(this, parent);

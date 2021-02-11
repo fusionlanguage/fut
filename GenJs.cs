@@ -421,18 +421,14 @@ public class GenJs : GenBase
 			args[0].Accept(this, CiPriority.Statement);
 			if (args.Length == 3) {
 				Write(", ");
-				args[1].Accept(this, CiPriority.Statement);
-				Write(", ");
-				WriteAdd(args[1], args[2]); // TODO: side effect
+				WriteStartEnd(args[1], args[2]);
 			}
 			Write(')');
 		}
 		else if (method == CiSystem.CollectionSortPart) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".subarray(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(", ");
-			WriteAdd(args[0], args[1]); // TODO: side effect
+			WriteStartEnd(args[0], args[1]);
 			Write(").sort()");
 		}
 		else if (method == CiSystem.CollectionClear) {

@@ -523,9 +523,7 @@ public class GenJava : GenTyped
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
 			if (args.Length == 3) {
-				args[1].Accept(this, CiPriority.Statement);
-				Write(", ");
-				WriteAdd(args[1], args[2]); // TODO: side effect
+				WriteStartEnd(args[1], args[2]);
 				Write(", ");
 			}
 			WriteNotPromoted(array.ElementType, args[0]);
@@ -536,9 +534,7 @@ public class GenJava : GenTyped
 			Write("Arrays.sort(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(", ");
-			WriteAdd(args[0], args[1]); // TODO: side effect
+			WriteStartEnd(args[0], args[1]);
 			Write(')');
 		}
 		else if (WriteListAddInsert(obj, method, args, "add", "add", ", ")) {
@@ -547,9 +543,7 @@ public class GenJava : GenTyped
 		else if (method == CiSystem.ListRemoveRange) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".subList(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(", ");
-			WriteAdd(args[0], args[1]); // TODO: side effect
+			WriteStartEnd(args[0], args[1]);
 			Write(").clear()");
 		}
 		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
