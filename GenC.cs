@@ -225,6 +225,10 @@ public class GenC : GenCCpp
 	{
 		if (expr.Left == null || expr.Symbol is CiConst)
 			WriteLocalName(expr.Symbol, parent);
+		else if (expr.Symbol == CiSystem.CollectionCount) {
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write("->len");
+		}
 		else
 			return base.Visit(expr, parent);
 		return expr;
@@ -261,6 +265,12 @@ public class GenC : GenCCpp
 	{
 		if (type == null) {
 			Write("void ");
+			symbol();
+			return;
+		}
+		if (type is CiListType) {
+			Include("glib.h");
+			Write("GArray *");
 			symbol();
 			return;
 		}
@@ -445,7 +455,9 @@ public class GenC : GenCCpp
 
 	protected override void WriteListStorageInit(CiListType list)
 	{
-		Write(" TODO");
+		Write(" = g_array_new(false, false, sizeof(");
+		Write(list.ElementType, false);
+		Write("))");
 	}
 
 	protected override void WriteDictionaryStorageInit(CiDictionaryType list)
@@ -468,6 +480,7 @@ public class GenC : GenCCpp
 			type = array.ElementType;
 		return type == CiSystem.StringStorageType
 			|| type.IsDynamicPtr
+			|| type is CiListType
 			|| (type is CiClass klass && NeedsDestructor(klass));
 	}
 
@@ -540,6 +553,19 @@ public class GenC : GenCCpp
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
 		WriteMemberAccess(left, (CiClass) symbol.Symbol.Parent);
+	}
+
+	protected override void WriteArrayPtr(CiExpr expr, CiPriority parent)
+	{
+		if (expr.Type is CiListType list) {
+			Write('(');
+			Write(list.ElementType, false);
+			Write(" *) ");
+			expr.Accept(this, CiPriority.Primary);
+			Write("->data");
+		}
+		else
+			expr.Accept(this, parent);
 	}
 
 	void WriteClassPtr(CiClass resultClass, CiExpr expr, CiPriority parent)
@@ -642,6 +668,25 @@ public class GenC : GenCCpp
 		Write(", ");
 		args[0].Accept(this, CiPriority.Statement);
 		Write(')');
+	}
+
+	void WriteListAddInsert(CiExpr obj, string method, CiExpr[] args)
+	{
+		// TODO: don't emit temporary variable if already a var/field of matching type - beware of integer promotions!
+		OpenBlock();
+		WriteDefinition(((CiListType) obj.Type).ElementType, () => Write("cival"), false, true);
+		Write(" = ");
+		args[args.Length - 1].Accept(this, CiPriority.Statement);
+		WriteLine(';');
+		Write(method);
+		Write('(');
+		obj.Accept(this, CiPriority.Statement);
+		if (args.Length == 2) {
+			Write(", ");
+			args[0].Accept(this, CiPriority.Statement);
+		}
+		WriteLine(", cival);");
+		CloseBlock();
 	}
 
 	void WriteArgsAndRightParenthesis(CiMethod method, CiExpr[] args)
@@ -815,12 +860,12 @@ public class GenC : GenCCpp
 			else {
 				args[3].Accept(this, CiPriority.Mul);
 				Write(" * sizeof(");
-				obj.Accept(this, CiPriority.Primary);
-				Write("[0])");
+				Write(array.ElementType, false);
+				Write(')');
 			}
 			Write(')');
 		}
-		else if (obj.Type is CiArrayType && method.Name == "Fill") {
+		else if (obj.Type is CiArrayType array2 && method.Name == "Fill") {
 			if (!(args[0] is CiLiteral literal) || !literal.IsDefaultValue)
 				throw new NotImplementedException("Only null, zero and false supported");
 			Include("string.h");
@@ -836,9 +881,32 @@ public class GenC : GenCCpp
 				Write(", 0, ");
 				args[2].Accept(this, CiPriority.Mul);
 				Write(" * sizeof(");
-				obj.Accept(this, CiPriority.Primary);
-				Write("[0])");
+				Write(array2.ElementType, false);
+				Write(')');
 			}
+			Write(')');
+		}
+		else if (obj.Type is CiListType && method.Name == "Add")
+			WriteListAddInsert(obj, "g_array_append_val", args);
+		else if (method == CiSystem.CollectionClear) {
+			Write("g_array_set_size(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", 0)");
+		}
+		else if (obj.Type is CiListType && method.Name == "Insert")
+			WriteListAddInsert(obj, "g_array_insert_val", args);
+		else if (method == CiSystem.ListRemoveAt) {
+			Write("g_array_remove_index(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
+		else if (method == CiSystem.ListRemoveRange) {
+			Write("g_array_remove_range(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", ");
+			WriteArgs(method, args);
 			Write(')');
 		}
 		else if (method == CiSystem.ConsoleWrite)
@@ -857,6 +925,21 @@ public class GenC : GenCCpp
 		}
 		else
 			WriteCCall(obj, method, args);
+	}
+
+	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
+	{
+		if (expr.Left.Type is CiListType list) {
+			Write("g_array_index(");
+			expr.Left.Accept(this, CiPriority.Statement);
+			Write(", ");
+			Write(list.ElementType, false);
+			Write(", ");
+			expr.Right.Accept(this, CiPriority.Statement);
+			Write(')');
+		}
+		else
+			base.WriteIndexing(expr, parent);
 	}
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
@@ -1023,6 +1106,8 @@ public class GenC : GenCCpp
 			this.SharedRelease = true;
 			Write("CiShared_Release(");
 		}
+		else if (type is CiListType)
+			Write("g_array_free(");
 		else
 			Write("free(");
 		WriteLocalName(symbol, CiPriority.Primary);
@@ -1031,6 +1116,8 @@ public class GenC : GenCCpp
 			Write(i);
 			Write(']');
 		}
+		if (type is CiListType)
+			Write(", true");
 		WriteLine(");");
 		this.Indent -= nesting;
 	}

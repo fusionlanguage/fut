@@ -1,6 +1,6 @@
 // GenCCpp.cs - C/C++ code generator
 //
-// Copyright (C) 2011-2020  Piotr Fusik
+// Copyright (C) 2011-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -142,10 +142,7 @@ public abstract class GenCCpp : GenTyped
 		WriteArgsInParentheses(method, args);
 	}
 
-	protected virtual void WriteArrayPtr(CiExpr expr, CiPriority parent)
-	{
-		expr.Accept(this, parent);
-	}
+	protected abstract void WriteArrayPtr(CiExpr expr, CiPriority parent);
 
 	protected void WriteArrayPtrAdd(CiExpr array, CiExpr index)
 	{
