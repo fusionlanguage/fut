@@ -529,12 +529,14 @@ public class GenJava : GenTyped
 			WriteNotPromoted(array.ElementType, args[0]);
 			Write(')');
 		}
-		else if (method == CiSystem.CollectionSortPart) {
+		else if (method == CiSystem.CollectionSortAll || method == CiSystem.CollectionSortPart) {
 			Include("java.util.Arrays");
 			Write("Arrays.sort(");
 			obj.Accept(this, CiPriority.Statement);
-			Write(", ");
-			WriteStartEnd(args[0], args[1]);
+			if (method == CiSystem.CollectionSortPart) {
+				Write(", ");
+				WriteStartEnd(args[0], args[1]);
+			}
 			Write(')');
 		}
 		else if (WriteListAddInsert(obj, method, args, "add", "add", ", ")) {

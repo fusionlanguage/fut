@@ -1120,7 +1120,7 @@ public class CiArrayStorageType : CiArrayType
 				new CiMethod(CiCallType.Normal, null, "Fill", new CiVar(this.ElementType, "value")),
 				this.Fill);
 		case "Sort":
-			return this.ElementType is CiIntegerType ? CiSystem.CollectionSortPart : null;
+			return this.ElementType is CiIntegerType ? CiSystem.CollectionSort : null;
 		case "Length":
 			return CiSystem.ArrayLength;
 		default:
@@ -1238,7 +1238,9 @@ public class CiSystem : CiScope
 	public static readonly CiMember ArrayLength = new CiMember { Name = "Length", Type = UIntType };
 	public static readonly CiMember CollectionCount = new CiMember { Name = "Count", Type = UIntType };
 	public static readonly CiMethod CollectionClear = new CiMethod(CiCallType.Normal, null, "Clear") { IsMutator = true };
+	public static readonly CiMethod CollectionSortAll = new CiMethod(CiCallType.Normal, null, "Sort") { IsMutator = true };
 	public static readonly CiMethod CollectionSortPart = new CiMethod(CiCallType.Normal, null, "Sort", new CiVar(CiSystem.IntType, "startIndex"), new CiVar(CiSystem.IntType, "count")) { IsMutator = true };
+	public static readonly CiMethodGroup CollectionSort = new CiMethodGroup(CollectionSortAll, CollectionSortPart);
 	public static readonly CiMethod ListRemoveAt = new CiMethod(CiCallType.Normal, null, "RemoveAt", new CiVar(IntType, "index")) { IsMutator = true };
 	public static readonly CiMethod ListRemoveRange = new CiMethod(CiCallType.Normal, null, "RemoveRange", new CiVar(IntType, "index"), new CiVar(IntType, "count")) { IsMutator = true };
 	public static readonly CiType PrintableType = new CiPrintableType();
