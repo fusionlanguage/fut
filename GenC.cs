@@ -35,6 +35,8 @@ public class GenC : GenCCpp
 	bool StringStartsWith;
 	bool StringEndsWith;
 	bool StringFormat;
+	bool MatchFind;
+	bool MatchPos;
 	bool PtrConstruct;
 	bool SharedMake;
 	bool SharedAddRef;
@@ -222,6 +224,16 @@ public class GenC : GenCCpp
 		WriteName(symbol);
 	}
 
+	void WriteMatchProperty(CiSymbolReference expr, int which)
+	{
+		this.MatchPos = true;
+		Write("CiMatch_GetPos(");
+		expr.Left.Accept(this, CiPriority.Statement);
+		Write(", ");
+		Write(which);
+		Write(')');
+	}
+
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Left == null || expr.Symbol is CiConst)
@@ -229,6 +241,17 @@ public class GenC : GenCCpp
 		else if (expr.Symbol == CiSystem.CollectionCount) {
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write("->len");
+		}
+		else if (expr.Symbol == CiSystem.MatchStart)
+			WriteMatchProperty(expr, 0);
+		else if (expr.Symbol == CiSystem.MatchEnd)
+			WriteMatchProperty(expr, 1);
+		else if (expr.Symbol == CiSystem.MatchLength)
+			WriteMatchProperty(expr, 2);
+		else if (expr.Symbol == CiSystem.MatchValue) {
+			Write("g_match_info_fetch(");
+			expr.Left.Accept(this, CiPriority.Statement);
+			Write(", 0)");
 		}
 		else
 			return base.Visit(expr, parent);
@@ -289,25 +312,29 @@ public class GenC : GenCCpp
 			Write("char *");
 			break;
 		case CiClassPtrType classPtr:
-			switch (classPtr.Modifier) {
-			case CiToken.EndOfFile:
+			if (classPtr.Modifier == CiToken.EndOfFile)
 				Write("const ");
-				WriteName(classPtr.Class);
-				Write(" *");
-				break;
-			case CiToken.ExclamationMark:
-			case CiToken.Hash:
-				WriteName(classPtr.Class);
-				Write(" *");
-				break;
-			default:
-				throw new NotImplementedException(classPtr.Modifier.ToString());
+			if (classPtr.Class == CiSystem.RegexClass) {
+				Include("glib.h");
+				Write("GRegex");
 			}
+			else if (classPtr.Class == CiSystem.MatchClass) {
+				Include("glib.h");
+				Write("GMatchInfo");
+			}
+			else
+				WriteName(classPtr.Class);
+			Write(" *");
 			break;
 		case CiContainerType _:
 			if (baseType == CiSystem.BoolType) {
 				IncludeStdBool();
 				Write("bool");
+			}
+			else if (baseType == CiSystem.MatchClass) {
+				Include("glib.h");
+				Write("GMatchInfo *");
+				space = false;
 			}
 			else
 				WriteName(baseType);
@@ -482,7 +509,7 @@ public class GenC : GenCCpp
 		return type == CiSystem.StringStorageType
 			|| type.IsDynamicPtr
 			|| type is CiListType
-			|| (type is CiClass klass && NeedsDestructor(klass));
+			|| (type is CiClass klass && (klass == CiSystem.MatchClass || NeedsDestructor(klass)));
 	}
 
 	protected override void WriteVar(CiNamedValue def)
@@ -571,7 +598,7 @@ public class GenC : GenCCpp
 
 	void WriteClassPtr(CiClass resultClass, CiExpr expr, CiPriority parent)
 	{
-		if (expr.Type is CiClass klass) {
+		if (expr.Type is CiClass klass && klass != CiSystem.MatchClass) {
 			Write('&');
 			expr.Accept(this, CiPriority.Primary);
 		}
@@ -703,6 +730,12 @@ public class GenC : GenCCpp
 			i++;
 		}
 		Write(')');
+	}
+
+	void WriteRegexOptions(CiExpr[] args)
+	{
+		if (!WriteRegexOptions(args, "", " | ", "", "G_REGEX_CASELESS", "G_REGEX_MULTILINE", "G_REGEX_DOTALL"))
+			Write('0');
 	}
 
 	void WriteConsoleWrite(CiExpr obj, CiExpr[] args, bool newLine)
@@ -943,6 +976,65 @@ public class GenC : GenCCpp
 			WriteArgs(method, args);
 			Write(')');
 		}
+		else if (method == CiSystem.RegexCompile) {
+			Include("glib.h");
+			Write("g_regex_new(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", ");
+			WriteRegexOptions(args);
+			Write(", 0, NULL)");
+		}
+		else if (method == CiSystem.RegexEscape) {
+			Include("glib.h");
+			Write("g_regex_escape_string(");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", -1)");
+		}
+		else if (method == CiSystem.RegexIsMatchStr) {
+			Include("glib.h");
+			Write("g_regex_match_simple(");
+			args[1].Accept(this, CiPriority.Statement);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", ");
+			WriteRegexOptions(args);
+			Write(", 0)");
+		}
+		else if (method == CiSystem.RegexIsMatchRegex) {
+			Write("g_regex_match(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", 0, NULL)");
+		}
+		else if (method == CiSystem.MatchFindStr) {
+			this.MatchFind = true;
+			Write("CiMatch_Find(&");
+			obj.Accept(this, CiPriority.Primary);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", ");
+			args[1].Accept(this, CiPriority.Statement);
+			Write(", ");
+			WriteRegexOptions(args);
+			Write(')');
+		}
+		else if (method == CiSystem.MatchFindRegex) {
+			Write("g_regex_match(");
+			args[1].Accept(this, CiPriority.Statement);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(", 0, &");
+			obj.Accept(this, CiPriority.Primary);
+			Write(')');
+		}
+		else if (method == CiSystem.MatchGetCapture) {
+			Write("g_match_info_fetch(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(')');
+		}
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(obj, args, false);
 		else if (method == CiSystem.ConsoleWriteLine)
@@ -1007,20 +1099,28 @@ public class GenC : GenCCpp
 				return expr;
 			}
 			else if (expr.Left.Type.IsDynamicPtr) {
-				this.SharedAssign = true;
-				Write("CiShared_Assign((void **) &");
-				expr.Left.Accept(this, CiPriority.Primary);
-				Write(", ");
-				if (expr.Right is CiSymbolReference) {
-					this.SharedAddRef = true;
-					Write("CiShared_AddRef(");
-					expr.Right.Accept(this, CiPriority.Statement);
-					Write(')');
+				if (expr.Left.Type.IsClass(CiSystem.RegexClass)) {
+					// TODO: only if previously assigned non-null
+					// Write("g_regex_unref(");
+					// expr.Left.Accept(this, CiPriority.Statement);
+					// WriteLine(");");
 				}
-				else
-					expr.Right.Accept(this, CiPriority.Statement);
-				Write(')');
-				return expr;
+				else {
+					this.SharedAssign = true;
+					Write("CiShared_Assign((void **) &");
+					expr.Left.Accept(this, CiPriority.Primary);
+					Write(", ");
+					if (expr.Right is CiSymbolReference) {
+						this.SharedAddRef = true;
+						Write("CiShared_AddRef(");
+						expr.Right.Accept(this, CiPriority.Statement);
+						Write(')');
+					}
+					else
+						expr.Right.Accept(this, CiPriority.Statement);
+					Write(')');
+					return expr;
+				}
 			}
 			break;
 		case CiToken.AddAssign:
@@ -1133,12 +1233,20 @@ public class GenC : GenCCpp
 			type = array.ElementType;
 		}
 		if (type is CiClass klass) {
-			WriteName(klass);
-			Write("_Destruct(&");
+			if (klass == CiSystem.MatchClass)
+				Write("g_match_info_free(");
+			else {
+				WriteName(klass);
+				Write("_Destruct(&");
+			}
 		}
 		else if (type.IsDynamicPtr) {
-			this.SharedRelease = true;
-			Write("CiShared_Release(");
+			if (type.IsClass(CiSystem.RegexClass))
+				Write("g_regex_unref(");
+			else {
+				this.SharedRelease = true;
+				Write("CiShared_Release(");
+			}
 		}
 		else if (type is CiListType)
 			Write("g_array_free(");
@@ -1546,6 +1654,8 @@ public class GenC : GenCCpp
 
 	protected override bool NeedsConstructor(CiClass klass)
 	{
+		if (klass == CiSystem.MatchClass)
+			return false;
 		return base.NeedsConstructor(klass)
 			|| HasVtblValue(klass)
 			|| (klass.Parent is CiClass baseClass && NeedsConstructor(baseClass));
@@ -1896,6 +2006,33 @@ public class GenC : GenCCpp
 			WriteLine("return str;");
 			CloseBlock();
 		}
+		if (this.MatchFind) {
+			WriteLine();
+			WriteLine("static bool CiMatch_Find(GMatchInfo **match_info, const char *input, const char *pattern, GRegexCompileFlags options)");
+			OpenBlock();
+			WriteLine("GRegex *regex = g_regex_new(pattern, options, 0, NULL);");
+			WriteLine("bool result = g_regex_match(regex, input, 0, match_info);");
+			WriteLine("g_regex_unref(regex);");
+			WriteLine("return result;");
+			CloseBlock();
+		}
+		if (this.MatchPos) {
+			WriteLine();
+			WriteLine("static int CiMatch_GetPos(const GMatchInfo *match_info, int which)");
+			OpenBlock();
+			WriteLine("int start;");
+			WriteLine("int end;");
+			WriteLine("g_match_info_fetch_pos(match_info, 0, &start, &end);");
+			WriteLine("switch (which) {");
+			WriteLine("case 0:");
+			WriteLine("\treturn start;");
+			WriteLine("case 1:");
+			WriteLine("\treturn end;");
+			WriteLine("default:");
+			WriteLine("\treturn end - start;");
+			WriteLine('}');
+			CloseBlock();
+		}
 		if (this.PtrConstruct) {
 			WriteLine();
 			WriteLine("static void CiPtr_Construct(void **ptr)");
@@ -2040,6 +2177,8 @@ public class GenC : GenCCpp
 		this.StringStartsWith = false;
 		this.StringEndsWith = false;
 		this.StringFormat = false;
+		this.MatchFind = false;
+		this.MatchPos = false;
 		this.PtrConstruct = false;
 		this.SharedMake = false;
 		this.SharedAddRef = false;

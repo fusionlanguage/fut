@@ -1,6 +1,6 @@
 // GenBase.cs - base class for code generators
 //
-// Copyright (C) 2011-2020  Piotr Fusik
+// Copyright (C) 2011-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -968,14 +968,14 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WriteRegexOptions(CiExpr[] args, string prefix, string separator, string suffix, string i, string m, string s)
+	protected bool WriteRegexOptions(CiExpr[] args, string prefix, string separator, string suffix, string i, string m, string s)
 	{
 		CiExpr expr = args[args.Length - 1];
 		if (expr.Type != CiSystem.RegexOptionsEnum)
-			return;
+			return false;
 		RegexOptions options = GetRegexOptions(expr);
 		if (options == RegexOptions.None)
-			return;
+			return false;
 		Write(prefix);
 		if (options.HasFlag(RegexOptions.IgnoreCase))
 			Write(i);
@@ -990,6 +990,7 @@ public abstract class GenBase : CiVisitor
 			Write(s);
 		}
 		Write(suffix);
+		return true;
 	}
 
 	protected abstract void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent);
