@@ -410,7 +410,7 @@ public class GenPy : GenPySwift
 			else {
 				Include("array");
 				Write("array.array(\"");
-				Write(GetArrayCode(number));
+				Write(c);
 				Write("\", [ ");
 				if (value == null)
 					Write('0');
@@ -485,6 +485,23 @@ public class GenPy : GenPySwift
 		if (length != null)
 			WriteAdd(startIndex, length); // TODO: side effect
 		Write(']');
+	}
+
+	void WriteAssignSorted(CiExpr obj, string byteArray)
+	{
+		Write(" = ");
+		char c = GetArrayCode((CiIntegerType) ((CiArrayType) obj.Type).ElementType);
+		if (c == 'B') {
+			Write(byteArray);
+			Write('(');
+		}
+		else {
+			Include("array");
+			Write("array.array(\"");
+			Write(c);
+			Write("\", ");
+		}
+		Write("sorted(");
 	}
 
 	void WriteConsoleWrite(CiExpr obj, CiExpr[] args, bool newLine)
@@ -570,6 +587,20 @@ public class GenPy : GenPySwift
 				Write(" = ");
 				WriteNewArray(array.ElementType, args[0], args[2]); // TODO: side effect
 			}
+		}
+		else if (method == CiSystem.CollectionSortAll) {
+			obj.Accept(this, CiPriority.Assign);
+			WriteAssignSorted(obj, "bytearray");
+			obj.Accept(this, CiPriority.Statement);
+			Write("))");
+		}
+		else if (method == CiSystem.CollectionSortPart) {
+			obj.Accept(this, CiPriority.Primary);
+			WriteSlice(args[0], args[1]);
+			WriteAssignSorted(obj, "bytes");
+			obj.Accept(this, CiPriority.Primary);
+			WriteSlice(args[0], args[1]);
+			Write("))");
 		}
 		else if (WriteListAddInsert(obj, method, args, "append", "insert", ", ")) {
 			// done

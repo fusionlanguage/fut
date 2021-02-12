@@ -9,7 +9,7 @@ public static class Test
 		d[2] = a[2] = 2;
 		d[3] = a[3] = 17;
 		d[4] = a[4] = 5;
-		a.Sort(0, 2); //FAIL: py swift TODO; cl
+		a.Sort(0, 2); //FAIL: swift TODO; cl
 		int[]! p = a;
 		p.Sort(3, 2);
 		d.Sort(1, 3);

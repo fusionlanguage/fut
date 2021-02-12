@@ -8,14 +8,13 @@ public static class Test
 		list.Add(27);
 		list.Add(7);
 		list.Add(5);
-		list.Sort(1, 3); //FAIL: py swift TODO; cl
-		if (list[0] != 8 || list[1] != 3 || list[2] != 7 || list[3] != 27 || list[4] != 5)
-			return false;
+		list.Sort(1, 3); //FAIL: swift TODO; cl
 		List<byte>() list2;
 		list2.Add(11);
 		list2.Add(5);
 		list2.Add(7);
 		list2.Sort();
-		return list2[0] == 5 && list2[1] == 7 && list2[2] == 11;
+		return list[0] == 8 && list[1] == 3 && list[2] == 7 && list[3] == 27 && list[4] == 5
+			&& list2[0] == 5 && list2[1] == 7 && list2[2] == 11;
 	}
 }
