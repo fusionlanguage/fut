@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		List<byte>() list; //FAIL: c cl
+		List<byte>() list; //FAIL: cl
 		list.Add(42);
 		list.Clear();
 		list.Add(1);

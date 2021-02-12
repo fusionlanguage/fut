@@ -2,8 +2,8 @@ public class Test
 {
 	Test[2] ArrayStg;
 	Test[] ArrayPtr;
-	List<Test>() ListStg; //FAIL: c cl
-	Dictionary<int, Test>() DictStg;
+	List<Test>() ListStg; //FAIL: cl
+	Dictionary<int, Test>() DictStg; //FAIL: c
 
 	public static bool Run()
 	{

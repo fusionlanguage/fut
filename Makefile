@@ -102,7 +102,7 @@ test/bin/%/cl.txt: test/bin/%/Test.cl
 	$(DO)clang -x cl -cl-std=CL2.0 -include opencl-c.h -c $< && echo PASSED >$@ || (grep '//FAIL:.*\<cl\>' test/$*.ci && touch $@)
 
 test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
-	$(DO)$(CC) -o $@ $(CFLAGS) -Wno-unused-function -I $(<D) $^ -lm || grep '//FAIL:.*\<c\>' test/$*.ci
+	$(DO)$(CC) -o $@ $(CFLAGS) -Wno-unused-function -I $(<D) $^ `pkg-config --cflags --libs glib-2.0` -lm || grep '//FAIL:.*\<c\>' test/$*.ci
 
 test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
 	$(DO)$(CXX) -o $@ $(CFLAGS) -I $(<D) $^ || grep '//FAIL:.*\<cpp\>' test/$*.ci

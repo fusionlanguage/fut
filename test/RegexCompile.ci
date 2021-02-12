@@ -2,12 +2,12 @@ public class Test
 {
 	public static bool Run()
 	{
-		Regex# re = Regex.Compile("^\\d+$"); //FAIL: c swift TODO; cl
+		Regex# re = Regex.Compile("^\\d+$"); //FAIL: swift TODO; cl
 		string s = "123";
 		if (!re.IsMatch(s))
 			return false;
 		s = "The quick brown fox jumps over the lazy dog";
-		re = Regex.Compile("(B.+?) (\\wo\\w)", RegexOptions.IgnoreCase);
+		re = Regex.Compile("(B.+?) (\\wo\\w)", RegexOptions.IgnoreCase); //FAIL: c TODO memleak
 		Match() m;
 		return m.Find(s, re)
 			&& m.Start == 10
