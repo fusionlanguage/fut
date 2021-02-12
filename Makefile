@@ -99,7 +99,7 @@ test/bin/%/swift.txt: test/bin/%/swift.exe
 	$(DO)./$< >$@ || grep '//FAIL:.*\<swift\>' test/$*.ci
 
 test/bin/%/cl.txt: test/bin/%/Test.cl
-	$(DO)clang -x cl -cl-std=CL2.0 -include opencl-c.h -c $< && echo PASSED >$@ || (grep '//FAIL:.*\<cl\>' test/$*.ci && touch $@)
+	$(DO)clang -x cl -cl-std=CL2.0 -include opencl-c.h -fsyntax-only $< && echo PASSED >$@ || (grep '//FAIL:.*\<cl\>' test/$*.ci && touch $@)
 
 test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
 	$(DO)$(CC) -o $@ $(CFLAGS) -Wno-unused-function -I $(<D) $^ `pkg-config --cflags --libs glib-2.0` -lm || grep '//FAIL:.*\<c\>' test/$*.ci
