@@ -27,6 +27,7 @@ namespace Foxoft.Ci
 enum GenJsMethod
 {
 	CopyArray,
+	SortListPart,
 	UTF8GetString,
 	RegexEscape,
 	Count,
@@ -425,12 +426,29 @@ public class GenJs : GenBase
 			}
 			Write(')');
 		}
-		else if (method == CiSystem.CollectionSortPart) {
-			// TODO: list
+		else if (obj.Type is CiListType && method == CiSystem.CollectionSortAll) {
 			obj.Accept(this, CiPriority.Primary);
-			Write(".subarray(");
-			WriteStartEnd(args[0], args[1]);
-			Write(").sort()");
+			Write(".sort((a, b) => a - b)");
+		}
+		else if (method == CiSystem.CollectionSortPart) {
+			if (obj.Type is CiListType) {
+				AddLibrary(GenJsMethod.SortListPart,
+					"sortListPart: function(a, offset, length)",
+					"const sorted = a.slice(offset, offset + length).sort((a, b) => a - b);",
+					"for (let i = 0; i < length; i++)",
+					"\ta[offset + i] = sorted[i];");
+				Write("Ci.sortListPart(");
+				obj.Accept(this, CiPriority.Statement);
+				Write(", ");
+				WriteArgs(method, args);
+				Write(')');
+			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".subarray(");
+				WriteStartEnd(args[0], args[1]);
+				Write(").sort()");
+			}
 		}
 		else if (method == CiSystem.CollectionClear) {
 			if (obj.Type is CiDictionaryType) {
