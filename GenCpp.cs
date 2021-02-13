@@ -570,6 +570,31 @@ public class GenCpp : GenCCpp
 			WriteStringMethod(obj, "ends_with", method, args);
 		else if (method == CiSystem.StringSubstring)
 			WriteStringMethod(obj, "substr", method, args);
+		else if (obj.Type is CiArrayType array && method.Name == "BinarySearch") {
+			Include("algorithm");
+			if (parent > CiPriority.Add)
+				Write('(');
+			Write("std::lower_bound(");
+			if (args.Length == 1) {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".begin(), ");
+				obj.Accept(this, CiPriority.Primary); // FIXME: side effect
+				Write(".end()");
+			}
+			else {
+				WriteArrayPtrAdd(obj, args[1]);
+				Write(", ");
+				WriteArrayPtrAdd(obj, args[1]); // FIXME: side effect
+				Write(" + ");
+				args[2].Accept(this, CiPriority.Add);
+			}
+			Write(", ");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(") - ");
+			WriteArrayPtr(obj, CiPriority.Mul);
+			if (parent > CiPriority.Add)
+				Write(')');
+		}
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			Include("algorithm");
 			Write("std::copy_n(");

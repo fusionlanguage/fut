@@ -414,6 +414,20 @@ public class GenCs : GenTyped
 			args[0].Accept(this, CiPriority.Statement);
 			Write("].Value");
 		}
+		else if (obj.Type is CiArrayType array && method.Name == "BinarySearch") {
+			Include("System");
+			Write("Array.BinarySearch(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", ");
+			if (args.Length == 3) {
+				args[1].Accept(this, CiPriority.Statement);
+				Write(", ");
+				args[2].Accept(this, CiPriority.Statement);
+				Write(", ");
+			}
+			WriteNotPromoted(array.ElementType, args[0]);
+			Write(')');
+		}
 		else if (obj.Type is CiArrayType && !(obj.Type is CiListType) && method.Name == "CopyTo") {
 			Include("System");
 			Write("Array.Copy(");

@@ -894,26 +894,55 @@ public class GenC : GenCCpp
 			if (parent > CiPriority.Add)
 				Write(')');
 		}
-		else if (obj.Type is CiArrayType array && method.Name == "CopyTo") {
+		else if (obj.Type is CiArrayType array && method.Name == "BinarySearch") {
+			if (parent > CiPriority.Add)
+				Write('(');
+			Write("(const ");
+			Write(array.ElementType, false);
+			Write(" *) bsearch(&");
+			args[0].Accept(this, CiPriority.Statement); // TODO: not lvalue, promoted
+			Write(", ");
+			if (args.Length == 1)
+				WriteArrayPtr(obj, CiPriority.Statement);
+			else
+				WriteArrayPtrAdd(obj, args[1]);
+			Write(", ");
+			if (args.Length == 1)
+				Write(((CiArrayStorageType) array).Length);
+			else
+				args[2].Accept(this, CiPriority.Primary);
+			Write(", sizeof(");
+			TypeCode typeCode = GetTypeCode(array.ElementType, false);
+			Write(typeCode);
+			Write("), CiCompare_");
+			Write(typeCode);
+			Write(')');
+			this.Compares.Add(typeCode);
+			Write(" - ");
+			WriteArrayPtr(obj, CiPriority.Mul);
+			if (parent > CiPriority.Add)
+				Write(')');
+		}
+		else if (obj.Type is CiArrayType array2 && method.Name == "CopyTo") {
 			Include("string.h");
 			Write("memcpy(");
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(", ");
 			WriteArrayPtrAdd(obj, args[0]);
 			Write(", ");
-			if (array.ElementType is CiRangeType range
+			if (array2.ElementType is CiRangeType range
 			 && ((range.Min >= 0 && range.Max <= byte.MaxValue)
 				|| (range.Min >= sbyte.MinValue && range.Max <= sbyte.MaxValue)))
 				args[3].Accept(this, CiPriority.Statement);
 			else {
 				args[3].Accept(this, CiPriority.Mul);
 				Write(" * sizeof(");
-				Write(array.ElementType, false);
+				Write(array2.ElementType, false);
 				Write(')');
 			}
 			Write(')');
 		}
-		else if (obj.Type is CiArrayType array2 && method.Name == "Fill") {
+		else if (obj.Type is CiArrayType array3 && method.Name == "Fill") {
 			if (!(args[0] is CiLiteral literal) || !literal.IsDefaultValue)
 				throw new NotImplementedException("Only null, zero and false supported");
 			Include("string.h");
@@ -929,7 +958,7 @@ public class GenC : GenCCpp
 				Write(", 0, ");
 				args[2].Accept(this, CiPriority.Mul);
 				Write(" * sizeof(");
-				Write(array2.ElementType, false);
+				Write(array3.ElementType, false);
 				Write(')');
 			}
 			Write(')');

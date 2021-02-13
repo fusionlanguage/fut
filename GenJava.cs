@@ -449,13 +449,20 @@ public class GenJava : GenTyped
 		return expr;
 	}
 
-	protected override void WriteNotPromoted(CiType type, CiExpr expr)
+	void WriteArrayBinarySearchFill(CiExpr obj, string method, CiExpr[] args)
 	{
-		if (type is CiIntegerType elementType
-		 && IsNarrower(GetIntegerTypeCode(elementType, false), GetIntegerTypeCode((CiIntegerType) expr.Type, true)))
-			WriteStaticCast(elementType, expr);
-		else
-			expr.Accept(this, CiPriority.Statement);
+		Include("java.util.Arrays");
+		Write("Arrays.");
+		Write(method);
+		Write('(');
+		obj.Accept(this, CiPriority.Statement);
+		Write(", ");
+		if (args.Length == 3) {
+			WriteStartEnd(args[1], args[2]);
+			Write(", ");
+		}
+		WriteNotPromoted(((CiArrayType) obj.Type).ElementType, args[0]);
+		Write(')');
 	}
 
 	void WriteConsoleWrite(CiExpr obj, CiMethod method, CiExpr[] args, bool newLine)
@@ -510,6 +517,8 @@ public class GenJava : GenTyped
 			}
 			Write(')');
 		}
+		else if (obj.Type is CiArrayType && method.Name == "BinarySearch")
+			WriteArrayBinarySearchFill(obj, "binarySearch", args);
 		else if (obj.Type is CiArrayType && !(obj.Type is CiListType) && method.Name == "CopyTo") {
 			Write("System.arraycopy(");
 			obj.Accept(this, CiPriority.Statement);
@@ -517,18 +526,8 @@ public class GenJava : GenTyped
 			WriteArgs(method, args);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayType array && method.Name == "Fill") {
-			Include("java.util.Arrays");
-			Write("Arrays.fill(");
-			obj.Accept(this, CiPriority.Statement);
-			Write(", ");
-			if (args.Length == 3) {
-				WriteStartEnd(args[1], args[2]);
-				Write(", ");
-			}
-			WriteNotPromoted(array.ElementType, args[0]);
-			Write(')');
-		}
+		else if (obj.Type is CiArrayType && method.Name == "Fill")
+			WriteArrayBinarySearchFill(obj, "fill", args);
 		else if (method == CiSystem.CollectionSortAll) {
 			if (obj.Type is CiArrayStorageType) {
 				Include("java.util.Arrays");

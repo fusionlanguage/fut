@@ -569,6 +569,14 @@ public class GenPy : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			WriteSlice(args[0], args[1]);
 		}
+		else if (obj.Type is CiArrayType && method.Name == "BinarySearch") {
+			Include("bisect");
+			Write("bisect.bisect_left(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", ");
+			WriteArgs(method, args);
+			Write(")");
+		}
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			args[1].Accept(this, CiPriority.Primary);
 			WriteSlice(args[2], args[3]);

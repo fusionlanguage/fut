@@ -1,6 +1,6 @@
 // GenTyped.cs - C/C++/C#/Java code generator
 //
-// Copyright (C) 2011-2020  Piotr Fusik
+// Copyright (C) 2011-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -198,6 +198,15 @@ public abstract class GenTyped : GenBase
 		Write(type, false);
 		Write(") ");
 		GetStaticCastInner(type, expr).Accept(this, CiPriority.Primary);
+	}
+
+	protected override void WriteNotPromoted(CiType type, CiExpr expr)
+	{
+		if (type is CiIntegerType elementType
+		 && IsNarrower(GetIntegerTypeCode(elementType, false), GetIntegerTypeCode((CiIntegerType) expr.Type, true)))
+			WriteStaticCast(elementType, expr);
+		else
+			expr.Accept(this, CiPriority.Statement);
 	}
 
 	protected override void WriteAssignRight(CiBinaryExpr expr)

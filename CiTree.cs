@@ -1032,10 +1032,14 @@ public abstract class CiArrayType : CiType
 		return null;
 	}
 	public override CiType BaseType => this.ElementType.BaseType;
-	protected CiMethod Fill => new CiMethod(CiCallType.Normal, null, "Fill",
+	protected CiMethod BinarySearch => new CiMethod(CiCallType.Normal, CiSystem.IntType, "BinarySearch",
 		new CiVar(this.ElementType, "value"),
 		new CiVar(CiSystem.IntType, "startIndex"),
 		new CiVar(CiSystem.IntType, "count"));
+	protected CiMethod Fill => new CiMethod(CiCallType.Normal, null, "Fill",
+		new CiVar(this.ElementType, "value"),
+		new CiVar(CiSystem.IntType, "startIndex"),
+		new CiVar(CiSystem.IntType, "count")) { IsMutator = true };
 }
 
 public class CiArrayPtrType : CiArrayType
@@ -1084,6 +1088,8 @@ public class CiArrayPtrType : CiArrayType
 	{
 		if (this.Modifier != CiToken.EndOfFile) {
 			switch (name) {
+			case "BinarySearch":
+				return this.ElementType is CiNumericType ? this.BinarySearch : null;
 			case "Fill":
 				return this.Fill;
 			case "Sort":
@@ -1115,9 +1121,15 @@ public class CiArrayStorageType : CiArrayType
 	public override CiSymbol TryLookup(string name)
 	{
 		switch (name) {
+		case "BinarySearch":
+			return this.ElementType is CiNumericType
+				? new CiMethodGroup(
+					new CiMethod(CiCallType.Normal, CiSystem.IntType, "BinarySearch", new CiVar(this.ElementType, "value")),
+					this.BinarySearch)
+				: null;
 		case "Fill":
 			return new CiMethodGroup(
-				new CiMethod(CiCallType.Normal, null, "Fill", new CiVar(this.ElementType, "value")),
+				new CiMethod(CiCallType.Normal, null, "Fill", new CiVar(this.ElementType, "value")) { IsMutator = true },
 				this.Fill);
 		case "Sort":
 			return this.ElementType is CiNumericType ? CiSystem.CollectionSort : null;
