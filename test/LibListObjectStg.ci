@@ -4,8 +4,8 @@ public class Test
 
 	public static bool Run()
 	{
-		List<Test()>() list; //FAIL: c cl
-		list.Add();
+		List<Test()>() list; //FAIL: cl
+		list.Add(); //FAIL: c TODO memleak
 		list[0].Foo = 0;
 		list.Clear();
 		list.Add();
@@ -13,9 +13,6 @@ public class Test
 		list.Add();
 		list.Insert(0);
 		list[0].Foo = 1;
-		Test()[2] a;
-		list.CopyTo(0, a, 0, 2); //FAIL: java TODO
-		return list.Count == 3 && list[0].Foo == 1 && list[1].Foo == 2 && list[2].Foo == 42
-			&& a[0].Foo == 1 && a[1].Foo == 2;
+		return list.Count == 3 && list[0].Foo == 1 && list[1].Foo == 2 && list[2].Foo == 42;
 	}
 }

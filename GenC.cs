@@ -698,18 +698,32 @@ public class GenC : GenCCpp
 		Write(')');
 	}
 
-	void WriteListAddInsert(CiExpr obj, string method, CiExpr[] args)
+	void WriteListAddInsert(CiExpr obj, bool insert, string method, CiExpr[] args)
 	{
 		// TODO: don't emit temporary variable if already a var/field of matching type - beware of integer promotions!
 		OpenBlock();
-		WriteDefinition(((CiListType) obj.Type).ElementType, () => Write("cival"), false, true);
-		Write(" = ");
-		args[args.Length - 1].Accept(this, CiPriority.Statement);
+		CiType elementType = ((CiListType) obj.Type).ElementType;
+		WriteDefinition(elementType, () => Write("cival"), false, true);
+		switch (elementType) {
+		case CiClass klass:
+			if (NeedsConstructor(klass)) {
+				WriteLine(';');
+				WriteName(klass);
+				Write("_Construct(&cival)");
+			}
+			break;
+		case CiArrayStorageType _:
+			break;
+		default:
+			Write(" = ");
+			args[args.Length - 1].Accept(this, CiPriority.Statement);
+			break;
+		}
 		WriteLine(';');
 		Write(method);
 		Write('(');
 		obj.Accept(this, CiPriority.Statement);
-		if (args.Length == 2) {
+		if (insert) {
 			Write(", ");
 			args[0].Accept(this, CiPriority.Statement);
 		}
@@ -954,14 +968,14 @@ public class GenC : GenCCpp
 			this.Compares.Add(typeCode);
 		}
 		else if (obj.Type is CiListType && method.Name == "Add")
-			WriteListAddInsert(obj, "g_array_append_val", args);
+			WriteListAddInsert(obj, false, "g_array_append_val", args);
 		else if (method == CiSystem.CollectionClear) {
 			Write("g_array_set_size(");
 			obj.Accept(this, CiPriority.Statement);
 			Write(", 0)");
 		}
 		else if (obj.Type is CiListType && method.Name == "Insert")
-			WriteListAddInsert(obj, "g_array_insert_val", args);
+			WriteListAddInsert(obj, true, "g_array_insert_val", args);
 		else if (method == CiSystem.ListRemoveAt) {
 			Write("g_array_remove_index(");
 			obj.Accept(this, CiPriority.Statement);
