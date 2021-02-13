@@ -1087,7 +1087,7 @@ public class CiArrayPtrType : CiArrayType
 			case "Fill":
 				return this.Fill;
 			case "Sort":
-				return this.ElementType is CiIntegerType ? CiSystem.CollectionSortPart : null;
+				return this.ElementType is CiNumericType ? CiSystem.CollectionSortPart : null;
 			default:
 				break;
 			}
@@ -1120,7 +1120,7 @@ public class CiArrayStorageType : CiArrayType
 				new CiMethod(CiCallType.Normal, null, "Fill", new CiVar(this.ElementType, "value")),
 				this.Fill);
 		case "Sort":
-			return this.ElementType is CiIntegerType ? CiSystem.CollectionSort : null;
+			return this.ElementType is CiNumericType ? CiSystem.CollectionSort : null;
 		case "Length":
 			return CiSystem.ArrayLength;
 		default:
@@ -1166,7 +1166,7 @@ public class CiListType : CiArrayType
 		case "RemoveRange":
 			return CiSystem.ListRemoveRange;
 		case "Sort":
-			return this.ElementType is CiIntegerType ? CiSystem.CollectionSort : null;
+			return this.ElementType is CiNumericType ? CiSystem.CollectionSort : null;
 		default:
 			return base.TryLookup(name);
 		}

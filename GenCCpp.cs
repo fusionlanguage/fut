@@ -65,6 +65,12 @@ public abstract class GenCCpp : GenTyped
 			IncludeStdInt();
 			Write("int64_t");
 			break;
+		case TypeCode.Single:
+			Write("float");
+			break;
+		case TypeCode.Double:
+			Write("double");
+			break;
 		default:
 			throw new NotImplementedException(typeCode.ToString());
 		}

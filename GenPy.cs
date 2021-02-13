@@ -490,7 +490,7 @@ public class GenPy : GenPySwift
 	void WriteAssignSorted(CiExpr obj, string byteArray)
 	{
 		Write(" = ");
-		char c = GetArrayCode((CiIntegerType) ((CiArrayType) obj.Type).ElementType);
+		char c = GetArrayCode((CiNumericType) ((CiArrayType) obj.Type).ElementType);
 		if (c == 'B') {
 			Write(byteArray);
 			Write('(');

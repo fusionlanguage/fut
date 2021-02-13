@@ -921,7 +921,7 @@ public class GenC : GenCCpp
 			Write(')');
 		}
 		else if (method == CiSystem.CollectionSortAll) {
-			TypeCode typeCode = GetIntegerTypeCode((CiIntegerType) ((CiArrayType) obj.Type).ElementType, false);
+			TypeCode typeCode = GetTypeCode(((CiArrayType) obj.Type).ElementType, false);
 			if (obj.Type is CiArrayStorageType arrayStorage) {
 				Write("qsort(");
 				WriteArrayPtr(obj, CiPriority.Statement);
@@ -946,7 +946,7 @@ public class GenC : GenCCpp
 			Write(", ");
 			args[1].Accept(this, CiPriority.Primary);
 			Write(", sizeof(");
-			TypeCode typeCode = GetIntegerTypeCode((CiIntegerType) ((CiArrayType) obj.Type).ElementType, false);
+			TypeCode typeCode = GetTypeCode(((CiArrayType) obj.Type).ElementType, false);
 			Write(typeCode);
 			Write("), CiCompare_");
 			Write(typeCode);
@@ -2117,9 +2117,18 @@ public class GenC : GenCCpp
 			Write(" b = *(const ");
 			Write(typeCode);
 			WriteLine(" *) pb;");
-			WriteLine(typeCode == TypeCode.Int32 || typeCode == TypeCode.Int64
-				? "return (a > b) - (a < b);"
-				: "return a - b;");
+			switch (typeCode) {
+			case TypeCode.Byte:
+			case TypeCode.SByte:
+			case TypeCode.Int16:
+			case TypeCode.UInt16:
+				// subtraction can't overflow int
+				WriteLine("return a - b;");
+				break;
+			default:
+				WriteLine("return (a > b) - (a < b);");
+				break;
+			}
 			CloseBlock();
 		}
 	}
