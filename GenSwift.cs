@@ -455,6 +455,17 @@ public class GenSwift : GenPySwift
 			WriteRange(args[0], args[3]);
 			Write(']');
 		}
+		else if (obj.Type is CiArrayStorageType arrayStorage && method == CiSystem.CollectionSortAll) {
+			obj.Accept(this, CiPriority.Primary);
+			Write("[0..<");
+			Write(arrayStorage.Length);
+			Write("].sort()");
+		}
+		else if (method == CiSystem.CollectionSortPart) {
+			OpenIndexing(obj);
+			WriteRange(args[0], args[1]);
+			Write("].sort()");
+		}
 		else if (obj.Type is CiListType list && method.Name == "Add") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".append(");

@@ -2,13 +2,13 @@ public static class Test
 {
 	public static bool Run()
 	{
-		List<int>() list;
+		List<int>() list; //FAIL: cl
 		list.Add(8);
 		list.Add(3);
 		list.Add(27);
 		list.Add(7);
 		list.Add(5);
-		list.Sort(1, 3); //FAIL: swift TODO; cl
+		list.Sort(1, 3);
 		List<byte>() list2;
 		list2.Add(11);
 		list2.Add(5);
