@@ -4,10 +4,10 @@ public class Test
 
 	public static bool Run()
 	{
-		Dictionary<int, Test()>() dict; //FAIL: c cl
+		Dictionary<int, Test()>() dict; //FAIL: cl
 		dict.Add(1);
 		dict.Clear();
-		Test! p = dict.Add(1); //FAIL: cs java swift
+		Test! p = dict.Add(1); //FAIL: c cs java swift
 		p = dict.Add(2);
 		p.Foo = 20;
 		dict.Add(3).Foo = 30; //FAIL: py

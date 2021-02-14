@@ -238,6 +238,14 @@ public class GenC : GenCCpp
 		Write(')');
 	}
 
+	static bool IsDictionaryClassStgIndexing(CiExpr expr)
+	{
+		return expr is CiBinaryExpr indexing
+			&& indexing.Op == CiToken.LeftBracket
+			&& indexing.Left.Type is CiDictionaryType dict
+			&& dict.ValueType is CiClass;
+	}
+
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Left == null || expr.Symbol is CiConst)
@@ -263,6 +271,11 @@ public class GenC : GenCCpp
 			Write("g_match_info_fetch(");
 			expr.Left.Accept(this, CiPriority.Statement);
 			Write(", 0)");
+		}
+		else if (IsDictionaryClassStgIndexing(expr.Left)) {
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write("->");
+			WriteName(expr.Symbol);
 		}
 		else
 			return base.Visit(expr, parent);
@@ -505,7 +518,11 @@ public class GenC : GenCCpp
 
 	static string GetDictionaryDestroy(CiType type)
 	{
-		return type == CiSystem.StringStorageType ? "free" : "NULL";
+		if (type == CiSystem.StringStorageType || type is CiArrayStorageType)
+			return "free";
+		if (type is CiClass klass)
+			return NeedsDestructor(klass) ? "(GDestroyNotify) " + klass.Name + "_Delete" /* TODO: emit */ : "free";
+		return "NULL";
 	}
 
 	void WriteDictionaryHashEqual(CiDictionaryType dict)
@@ -595,12 +612,12 @@ public class GenC : GenCCpp
 		 && indexing.Op == CiToken.LeftBracket
 		 && indexing.Left.Type is CiDictionaryType) {
 			Write("g_hash_table_insert(");
-			 indexing.Left.Accept(this, CiPriority.Statement);
-			 Write(", ");
-			 WriteGPointerCast(indexing.Right);
-			 Write(", ");
-			 WriteGPointerCast(expr.Right);
-			 Write(')');
+			indexing.Left.Accept(this, CiPriority.Statement);
+			Write(", ");
+			WriteGPointerCast(indexing.Right);
+			Write(", ");
+			WriteGPointerCast(expr.Right);
+			Write(')');
 		}
 		else
 			base.WriteAssign(expr, parent);
@@ -685,7 +702,7 @@ public class GenC : GenCCpp
 
 	void WriteClassPtr(CiClass resultClass, CiExpr expr, CiPriority parent)
 	{
-		if (expr.Type is CiClass klass && klass != CiSystem.MatchClass) {
+		if (expr.Type is CiClass klass && klass != CiSystem.MatchClass && !IsDictionaryClassStgIndexing(expr)) {
 			Write('&');
 			expr.Accept(this, CiPriority.Primary);
 		}
@@ -1133,6 +1150,23 @@ public class GenC : GenCCpp
 			WriteArgs(method, args);
 			Write(')');
 		}
+		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
+			Write("g_hash_table_insert(");
+			obj.Accept(this, CiPriority.Statement);
+			Write(", ");
+			WriteGPointerCast(args[0]);
+			Write(", ");
+			if (dict.ValueType is CiClass klass && klass.IsPublic && klass.Constructor != null && klass.Constructor.Visibility == CiVisibility.Public) {
+				WriteName(klass);
+				Write("_New()");
+			}
+			else {
+				Write("malloc(sizeof(");
+				Write(dict.ValueType, false);
+				Write("))");
+			}
+			Write(')');
+		}
 		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey")
 			WriteDictionaryLookup(obj, "contains", args[0]);
 		else if (obj.Type is CiDictionaryType && method.Name == "Remove")
@@ -1243,10 +1277,18 @@ public class GenC : GenCCpp
 				Write(')');
 			}
 			else {
-				Write('(');
-				Write(dict.ValueType, false);
-				Write(") ");
+				if (parent > CiPriority.Mul)
+					Write('(');
+				if (dict.ValueType is CiClass || dict.ValueType is CiArrayStorageType)
+					WriteDynamicArrayCast(dict.ValueType);
+				else {
+					Write('(');
+					Write(dict.ValueType, false);
+					Write(") ");
+				}
 				WriteDictionaryLookup(expr.Left, "lookup", expr.Right);
+				if (parent > CiPriority.Mul)
+					Write(')');
 			}
 			break;
 		default:
