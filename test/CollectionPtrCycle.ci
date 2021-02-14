@@ -3,7 +3,7 @@ public class Test
 	Test[2] ArrayStg;
 	Test[] ArrayPtr;
 	List<Test>() ListStg; //FAIL: cl
-	Dictionary<int, Test>() DictStg; //FAIL: c
+	Dictionary<int, Test>() DictStg;
 
 	public static bool Run()
 	{
