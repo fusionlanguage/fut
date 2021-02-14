@@ -7,7 +7,7 @@ public static class Test
 		list.Add(5);
 		list.Add(10);
 		int sum = 0;
-		foreach (int i in list) //FAIL: c TODO
+		foreach (int i in list)
 			sum += i;
 		return sum == 30;
 	}

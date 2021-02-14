@@ -202,19 +202,23 @@ public class GenC : GenCCpp
 	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
 		if (symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiArrayType array) {
-			if (array.ElementType is CiClass klass) {
+			if (array is CiListType) {
+				Write('*');
+				WriteCamelCaseNotKeyword(symbol.Name);
+			}
+			else if (array.ElementType is CiClass klass) {
 				if (parent > CiPriority.Add)
 					Write('(');
 				forEach.Collection.Accept(this, CiPriority.Primary);
 				Write(" + ");
-				Write(symbol.Name);
+				WriteCamelCaseNotKeyword(symbol.Name);
 				if (parent > CiPriority.Add)
 					Write(')');
 			}
 			else {
 				forEach.Collection.Accept(this, CiPriority.Primary);
 				Write('[');
-				Write(symbol.Name);
+				WriteCamelCaseNotKeyword(symbol.Name);
 				Write(']');
 			}
 			return;
@@ -1552,7 +1556,41 @@ public class GenC : GenCCpp
 
 	public override void Visit(CiForeach statement)
 	{
-		if (statement.Collection.Type is CiDictionaryType dict) {
+		string element = statement.Element.Name;
+		switch (statement.Collection.Type) {
+		case CiArrayStorageType array:
+			Write("for (int ");
+			WriteCamelCaseNotKeyword(element);
+			Write(" = 0; ");
+			WriteCamelCaseNotKeyword(element);
+			Write(" < ");
+			Write(array.Length);
+			Write("; ");
+			WriteCamelCaseNotKeyword(element);
+			Write("++)");
+			WriteChild(statement.Body);
+			break;
+		case CiListType list:
+			Write("for (const ");
+			Write(list.ElementType, false);
+			Write(" *");
+			WriteCamelCaseNotKeyword(element);
+			Write(" = (const ");
+			Write(list.ElementType, false);
+			Write(" *) ");
+			statement.Collection.Accept(this, CiPriority.Primary);
+			Write("->data, *ciend = ");
+			WriteCamelCaseNotKeyword(element);
+			Write(" + ");
+			statement.Collection.Accept(this, CiPriority.Primary); // TODO: side effect
+			Write("->len; ");
+			WriteCamelCaseNotKeyword(element);
+			Write(" < ciend; ");
+			WriteCamelCaseNotKeyword(element);
+			Write("++)");
+			WriteChild(statement.Body);
+			break;
+		case CiDictionaryType dict:
 			OpenBlock();
 			WriteLine("GHashTableIter cidictit;");
 			Write("g_hash_table_iter_init(&cidictit, ");
@@ -1569,19 +1607,9 @@ public class GenC : GenCCpp
 				statement.Body.Accept(this);
 			CloseBlock();
 			CloseBlock();
-		}
-		else {
-			string element = statement.Element.Name;
-			Write("for (int ");
-			Write(element);
-			Write(" = 0; ");
-			Write(element);
-			Write(" < ");
-			Write(((CiArrayStorageType) statement.Collection.Type).Length);
-			Write("; ");
-			Write(element);
-			Write("++)");
-			WriteChild(statement.Body);
+			break;
+		default:
+			throw new NotImplementedException(statement.Collection.Type.ToString());
 		}
 	}
 
