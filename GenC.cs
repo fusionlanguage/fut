@@ -516,10 +516,25 @@ public class GenC : GenCCpp
 		Write("))");
 	}
 
+	static string GetListDestroy(CiType type)
+	{
+		if (type is CiListType list) {
+			if (list.ElementType == CiSystem.StringStorageType)
+				return "free";
+			if (list.ElementType.IsDynamicPtr)
+				return "CiShared_Release";
+			if (list.ElementType is CiClass klass && NeedsDestructor(klass))
+				return "(GDestroyNotify) " + klass.Name + "_Destruct";
+		}
+		return null;
+	}
+
 	static string GetDictionaryDestroy(CiType type)
 	{
 		if (type == CiSystem.StringStorageType || type is CiArrayStorageType)
 			return "free";
+		if (type.IsDynamicPtr)
+			return "CiShared_Release";
 		if (type is CiClass klass)
 			return NeedsDestructor(klass) ? "(GDestroyNotify) " + klass.Name + "_Delete" /* TODO: emit */ : "free";
 		return "NULL";
@@ -627,7 +642,8 @@ public class GenC : GenCCpp
 	{
 		return (def is CiField && (def.Value != null || def.Type.StorageType == CiSystem.StringStorageType || def.Type.IsDynamicPtr || def.Type is CiListType || def.Type is CiDictionaryType))
 			|| GetThrowingMethod(def.Value) != null
-			|| (def.Type.StorageType is CiClass klass && NeedsConstructor(klass));
+			|| (def.Type.StorageType is CiClass klass && NeedsConstructor(klass))
+			|| GetListDestroy(def.Type) != null;
 	}
 
 	protected override void WriteInitCode(CiNamedValue def)
@@ -665,6 +681,13 @@ public class GenC : GenCCpp
 			CiMethod throwingMethod = GetThrowingMethod(def.Value);
 			if (throwingMethod != null)
 				WriteForwardThrow(parent => WriteArrayElement(def, nesting), throwingMethod);
+		}
+		if (GetListDestroy(type) is string destroy) {
+			Write("g_array_set_clear_func(");
+			WriteArrayElement(def, nesting);
+			Write(", ");
+			Write(destroy);
+			WriteLine(");");
 		}
 		while (--nesting >= 0)
 			CloseBlock();
