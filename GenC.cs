@@ -1209,13 +1209,23 @@ public class GenC : GenCCpp
 	{
 		switch (expr.Left.Type) {
 		case CiListType list:
-			Write("g_array_index(");
-			expr.Left.Accept(this, CiPriority.Statement);
-			Write(", ");
-			Write(list.ElementType, false);
-			Write(", ");
-			expr.Right.Accept(this, CiPriority.Statement);
-			Write(')');
+			if (list.ElementType is CiArrayStorageType) {
+				Write('(');
+				WriteDynamicArrayCast(list.ElementType);
+				expr.Left.Accept(this, CiPriority.Primary);
+				Write("->data)[");
+				expr.Right.Accept(this, CiPriority.Statement);
+				Write(']');
+			}
+			else {
+				Write("g_array_index(");
+				expr.Left.Accept(this, CiPriority.Statement);
+				Write(", ");
+				Write(list.ElementType, false);
+				Write(", ");
+				expr.Right.Accept(this, CiPriority.Statement);
+				Write(')');
+			}
 			break;
 		case CiDictionaryType dict:
 			if (dict.ValueType is CiIntegerType && dict.ValueType != CiSystem.LongType) {
