@@ -333,7 +333,7 @@ public class GenCpp : GenCCpp
 	{
 	}
 
-	protected override void WriteDictionaryStorageInit(CiDictionaryType list)
+	protected override void WriteDictionaryStorageInit(CiDictionaryType dict)
 	{
 	}
 

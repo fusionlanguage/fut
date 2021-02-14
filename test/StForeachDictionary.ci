@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		Dictionary<int, int>() dict; //FAIL: c cl
+		Dictionary<int, int>() dict; //FAIL: cl
 		dict[3] = 15;
 		dict[1] = 5;
 		dict[2] = 10;

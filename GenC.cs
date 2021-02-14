@@ -201,8 +201,8 @@ public class GenC : GenCCpp
 
 	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
-		if (symbol.Parent is CiForeach forEach) {
-			if (((CiArrayType) forEach.Collection.Type).ElementType is CiClass klass) {
+		if (symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiArrayType array) {
+			if (array.ElementType is CiClass klass) {
 				if (parent > CiPriority.Add)
 					Write('(');
 				forEach.Collection.Accept(this, CiPriority.Primary);
@@ -239,8 +239,15 @@ public class GenC : GenCCpp
 		if (expr.Left == null || expr.Symbol is CiConst)
 			WriteLocalName(expr.Symbol, parent);
 		else if (expr.Symbol == CiSystem.CollectionCount) {
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write("->len");
+			if (expr.Left.Type is CiListType) {
+				expr.Left.Accept(this, CiPriority.Primary);
+				Write("->len");
+			}
+			else {
+				Write("g_hash_table_size(");
+				expr.Left.Accept(this, CiPriority.Statement);
+				Write(')');
+			}
 		}
 		else if (expr.Symbol == CiSystem.MatchStart)
 			WriteMatchProperty(expr, 0);
@@ -325,6 +332,10 @@ public class GenC : GenCCpp
 			else
 				WriteName(classPtr.Class);
 			Write(" *");
+			break;
+		case CiDictionaryType _:
+			Include("glib.h");
+			Write("GHashTable *");
 			break;
 		case CiContainerType _:
 			if (baseType == CiSystem.BoolType) {
@@ -488,9 +499,34 @@ public class GenC : GenCCpp
 		Write("))");
 	}
 
-	protected override void WriteDictionaryStorageInit(CiDictionaryType list)
+	static string GetDictionaryDestroy(CiType type)
 	{
-		Write(" TODO");
+		return type == CiSystem.StringStorageType ? "free" : "NULL";
+	}
+
+	void WriteDictionaryHashEqual(CiDictionaryType dict)
+	{
+		Write(dict.KeyType is CiStringType ? "g_str_hash, g_str_equal" : "NULL, NULL");
+	}
+
+	protected override void WriteDictionaryStorageInit(CiDictionaryType dict)
+	{
+		Write(" = g_hash_table_new");
+		string keyDestroy = GetDictionaryDestroy(dict.KeyType);
+		string valueDestroy = GetDictionaryDestroy(dict.ValueType);
+		if (keyDestroy == "NULL" && valueDestroy == "NULL") {
+			Write('(');
+			WriteDictionaryHashEqual(dict);
+		}
+		else {
+			Write("_full(");
+			WriteDictionaryHashEqual(dict);
+			Write(", ");
+			Write(keyDestroy);
+			Write(", ");
+			Write(valueDestroy);
+		}
+		Write(')');
 	}
 
 	protected override void WriteVarInit(CiNamedValue def)
@@ -509,6 +545,7 @@ public class GenC : GenCCpp
 		return type == CiSystem.StringStorageType
 			|| type.IsDynamicPtr
 			|| type is CiListType
+			|| type is CiDictionaryType
 			|| (type is CiClass klass && (klass == CiSystem.MatchClass || NeedsDestructor(klass)));
 	}
 
@@ -519,9 +556,55 @@ public class GenC : GenCCpp
 			this.VarsToDestruct.Add((CiVar) def);
 	}
 
+	void WriteGPointerCast(CiExpr expr)
+	{
+		if (expr.Type == CiSystem.StringStorageType || expr.Type.IsDynamicPtr)
+			expr.Accept(this, CiPriority.Statement);
+		else if (expr.Type is CiClass) {
+			Write('&');
+			expr.Accept(this, CiPriority.Primary);
+		}
+		else {
+			Write("(gpointer) ");
+			expr.Accept(this, CiPriority.Primary);
+		}
+	}
+
+	void WriteGConstPointerCast(CiExpr expr)
+	{
+		switch (expr.Type) {
+		case CiStringType _:
+		case CiClassPtrType _:
+		case CiArrayPtrType _:
+			expr.Accept(this, CiPriority.Statement);
+			break;
+		default:
+			Write("(gconstpointer) ");
+			expr.Accept(this, CiPriority.Primary);
+			break;
+		}
+	}
+
+	protected override void WriteAssign(CiBinaryExpr expr, CiPriority parent)
+	{
+		if (expr.Left is CiBinaryExpr indexing
+		 && indexing.Op == CiToken.LeftBracket
+		 && indexing.Left.Type is CiDictionaryType) {
+			Write("g_hash_table_insert(");
+			 indexing.Left.Accept(this, CiPriority.Statement);
+			 Write(", ");
+			 WriteGPointerCast(indexing.Right);
+			 Write(", ");
+			 WriteGPointerCast(expr.Right);
+			 Write(')');
+		}
+		else
+			base.WriteAssign(expr, parent);
+	}
+
 	protected override bool HasInitCode(CiNamedValue def)
 	{
-		return (def is CiField && (def.Value != null || def.Type.StorageType == CiSystem.StringStorageType || def.Type.IsDynamicPtr))
+		return (def is CiField && (def.Value != null || def.Type.StorageType == CiSystem.StringStorageType || def.Type.IsDynamicPtr || def.Type is CiListType || def.Type is CiDictionaryType))
 			|| GetThrowingMethod(def.Value) != null
 			|| (def.Type.StorageType is CiClass klass && NeedsConstructor(klass));
 	}
@@ -716,7 +799,7 @@ public class GenC : GenCCpp
 			break;
 		default:
 			Write(" = ");
-			args[args.Length - 1].Accept(this, CiPriority.Statement);
+			WriteCoerced(elementType, args[args.Length - 1], CiPriority.Statement);
 			break;
 		}
 		WriteLine(';');
@@ -729,6 +812,17 @@ public class GenC : GenCCpp
 		}
 		WriteLine(", cival);");
 		CloseBlock();
+	}
+
+	void WriteDictionaryLookup(CiExpr obj, string method, CiExpr key)
+	{
+		Write("g_hash_table_");
+		Write(method);
+		Write('(');
+		obj.Accept(this, CiPriority.Statement);
+		Write(", ");
+		WriteGConstPointerCast(key);
+		Write(')');
 	}
 
 	void WriteArgsAndRightParenthesis(CiMethod method, CiExpr[] args)
@@ -999,9 +1093,16 @@ public class GenC : GenCCpp
 		else if (obj.Type is CiListType && method.Name == "Add")
 			WriteListAddInsert(obj, false, "g_array_append_val", args);
 		else if (method == CiSystem.CollectionClear) {
-			Write("g_array_set_size(");
-			obj.Accept(this, CiPriority.Statement);
-			Write(", 0)");
+			if (obj.Type is CiListType) {
+				Write("g_array_set_size(");
+				obj.Accept(this, CiPriority.Statement);
+				Write(", 0)");
+			}
+			else {
+				Write("g_hash_table_remove_all(");
+				obj.Accept(this, CiPriority.Statement);
+				Write(')');
+			}
 		}
 		else if (obj.Type is CiListType && method.Name == "Insert")
 			WriteListAddInsert(obj, true, "g_array_insert_val", args);
@@ -1019,6 +1120,10 @@ public class GenC : GenCCpp
 			WriteArgs(method, args);
 			Write(')');
 		}
+		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey")
+			WriteDictionaryLookup(obj, "contains", args[0]);
+		else if (obj.Type is CiDictionaryType && method.Name == "Remove")
+			WriteDictionaryLookup(obj, "remove", args[0]);
 		else if (method == CiSystem.RegexCompile) {
 			Include("glib.h");
 			Write("g_regex_new(");
@@ -1098,7 +1203,8 @@ public class GenC : GenCCpp
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Left.Type is CiListType list) {
+		switch (expr.Left.Type) {
+		case CiListType list:
 			Write("g_array_index(");
 			expr.Left.Accept(this, CiPriority.Statement);
 			Write(", ");
@@ -1106,9 +1212,24 @@ public class GenC : GenCCpp
 			Write(", ");
 			expr.Right.Accept(this, CiPriority.Statement);
 			Write(')');
-		}
-		else
+			break;
+		case CiDictionaryType dict:
+			if (dict.ValueType is CiIntegerType && dict.ValueType != CiSystem.LongType) {
+				Write("GPOINTER_TO_INT(");
+				WriteDictionaryLookup(expr.Left, "lookup", expr.Right);
+				Write(')');
+			}
+			else {
+				Write('(');
+				Write(dict.ValueType, false);
+				Write(") ");
+				WriteDictionaryLookup(expr.Left, "lookup", expr.Right);
+			}
+			break;
+		default:
 			base.WriteIndexing(expr, parent);
+			break;
+		}
 	}
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
@@ -1293,6 +1414,8 @@ public class GenC : GenCCpp
 		}
 		else if (type is CiListType)
 			Write("g_array_free(");
+		else if (type is CiDictionaryType)
+			Write("g_hash_table_unref(");
 		else
 			Write("free(");
 		WriteLocalName(symbol, CiPriority.Primary);
@@ -1409,19 +1532,57 @@ public class GenC : GenCCpp
 			base.Visit(statement);
 	}
 
+	void WriteDictIterVar(CiNamedValue iter, string value)
+	{
+		WriteTypeAndName(iter);
+		Write(" = ");
+		if (iter.Type is CiIntegerType && iter.Type != CiSystem.LongType) {
+			Write("GPOINTER_TO_INT(");
+			Write(value);
+			Write(')');
+		}
+		else {
+			Write('(');
+			Write(iter.Type, false);
+			Write(") ");
+			Write(value);
+		}
+		WriteLine(';');
+	}
+
 	public override void Visit(CiForeach statement)
 	{
-		string element = statement.Element.Name;
-		Write("for (int ");
-		Write(element);
-		Write(" = 0; ");
-		Write(element);
-		Write(" < ");
-		Write(((CiArrayStorageType) statement.Collection.Type).Length);
-		Write("; ");
-		Write(element);
-		Write("++)");
-		WriteChild(statement.Body);
+		if (statement.Collection.Type is CiDictionaryType dict) {
+			OpenBlock();
+			WriteLine("GHashTableIter cidictit;");
+			Write("g_hash_table_iter_init(&cidictit, ");
+			statement.Collection.Accept(this, CiPriority.Statement);
+			WriteLine(");");
+			WriteLine("gpointer cikey, civalue;");
+			Write("while (g_hash_table_iter_next(&cidictit, &cikey, &civalue)) ");
+			OpenBlock();
+			WriteDictIterVar(statement.Element, "cikey");
+			WriteDictIterVar(statement.ValueVar, "civalue");
+			if (statement.Body is CiBlock block)
+				Write(block.Statements);
+			else
+				statement.Body.Accept(this);
+			CloseBlock();
+			CloseBlock();
+		}
+		else {
+			string element = statement.Element.Name;
+			Write("for (int ");
+			Write(element);
+			Write(" = 0; ");
+			Write(element);
+			Write(" < ");
+			Write(((CiArrayStorageType) statement.Collection.Type).Length);
+			Write("; ");
+			Write(element);
+			Write("++)");
+			WriteChild(statement.Body);
+		}
 	}
 
 	public override void Visit(CiReturn statement)
