@@ -1094,8 +1094,17 @@ public class GenC : GenCCpp
 			Write(')');
 			this.Compares.Add(typeCode);
 		}
-		else if (obj.Type is CiListType && method.Name == "Add")
-			WriteListAddInsert(obj, false, "g_array_append_val", args);
+		else if (obj.Type is CiListType list && method.Name == "Add") {
+			if (list.ElementType is CiArrayStorageType || (list.ElementType is CiClass klass && !NeedsConstructor(klass))) {
+				Write("g_array_set_size(");
+				obj.Accept(this, CiPriority.Statement);
+				Write(", ");
+				obj.Accept(this, CiPriority.Primary); // TODO: side effect
+				Write("->len + 1)");
+			}
+			else
+				WriteListAddInsert(obj, false, "g_array_append_val", args);
+		}
 		else if (method == CiSystem.CollectionClear) {
 			if (obj.Type is CiListType) {
 				Write("g_array_set_size(");
