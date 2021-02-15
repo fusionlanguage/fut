@@ -1336,10 +1336,8 @@ public class GenC : GenCCpp
 			if (expr.Left.Type == CiSystem.StringStorageType) {
 				if (parent == CiPriority.Statement
 				 && IsTrimSubstring(expr) is CiExpr length) {
-					expr.Left.Accept(this, CiPriority.Primary);
-					Write('[');
-					length.Accept(this, CiPriority.Statement);
-					Write("] = '\\0'");
+					WriteIndexing(expr.Left, length);
+					Write(" = '\\0'");
 					return expr;
 				}
 				this.StringAssign = true;

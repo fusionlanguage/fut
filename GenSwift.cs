@@ -498,20 +498,14 @@ public class GenSwift : GenPySwift
 			WriteRange(args[0], args[1]);
 			Write(')');
 		}
-		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
-			obj.Accept(this, CiPriority.Primary);
-			Write('[');
-			args[0].Accept(this, CiPriority.Statement);
-			Write("] = ");
-			WriteNewStorage(dict.ValueType);
+		else if (WriteDictionaryAdd(obj, method, args)) {
+			// done
 		}
 		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey") {
 			if (parent > CiPriority.Equality)
 				Write('(');
-			obj.Accept(this, CiPriority.Primary);
-			Write('[');
-			args[0].Accept(this, CiPriority.Statement);
-			Write("] != nil");
+			WriteIndexing(obj, args[0]);
+			Write(" != nil");
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}

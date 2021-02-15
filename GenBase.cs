@@ -950,6 +950,17 @@ public abstract class GenBase : CiVisitor
 		return false;
 	}
 
+	protected bool WriteDictionaryAdd(CiExpr obj, CiMethod method, CiExpr[] args)
+	{
+		if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
+			WriteIndexing(obj, args[0]);
+			Write(" = ");
+			WriteNewStorage(dict.ValueType);
+			return true;
+		}
+		return false;
+	}
+
 	static RegexOptions GetRegexOptions(CiExpr expr)
 	{
 		switch (expr) {
@@ -995,12 +1006,17 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent);
 
+	protected void WriteIndexing(CiExpr collection, CiExpr index)
+	{
+		collection.Accept(this, CiPriority.Primary);
+		Write('[');
+		index.Accept(this, CiPriority.Statement);
+		Write(']');
+	}
+
 	protected virtual void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
-		expr.Left.Accept(this, CiPriority.Primary);
-		Write('[');
-		expr.Right.Accept(this, CiPriority.Statement);
-		Write(']');
+		WriteIndexing(expr.Left, expr.Right);
 	}
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)

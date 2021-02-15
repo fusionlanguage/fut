@@ -557,12 +557,10 @@ public class GenPy : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			Write("[:]");
 		}
-		else if (method == CiSystem.ListRemoveAt) {
+		else if (method == CiSystem.ListRemoveAt
+				|| (obj.Type is CiDictionaryType && method.Name == "Remove")) {
 			Write("del ");
-			obj.Accept(this, CiPriority.Primary);
-			Write('[');
-			args[0].Accept(this, CiPriority.Statement);
-			Write(']');
+			WriteIndexing(obj, args[0]);
 		}
 		else if (method == CiSystem.ListRemoveRange) {
 			Write("del ");
@@ -610,27 +608,14 @@ public class GenPy : GenPySwift
 			WriteSlice(args[0], args[1]);
 			Write("))");
 		}
-		else if (WriteListAddInsert(obj, method, args, "append", "insert", ", ")) {
+		else if (WriteListAddInsert(obj, method, args, "append", "insert", ", ")
+			|| WriteDictionaryAdd(obj, method, args)) {
 			// done
-		}
-		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
-			obj.Accept(this, CiPriority.Primary);
-			Write('[');
-			args[0].Accept(this, CiPriority.Statement);
-			Write("] = ");
-			WriteNewStorage(dict.ValueType);
 		}
 		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey") {
 			args[0].Accept(this, CiPriority.Primary);
 			Write(" in ");
 			obj.Accept(this, CiPriority.Primary);
-		}
-		else if (obj.Type is CiDictionaryType && method.Name == "Remove") {
-			Write("del ");
-			obj.Accept(this, CiPriority.Primary);
-			Write('[');
-			args[0].Accept(this, CiPriority.Statement);
-			Write(']');
 		}
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(obj, args, false);

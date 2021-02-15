@@ -464,7 +464,8 @@ public class GenJs : GenBase
 				Write(".length = 0");
 			}
 		}
-		else if (WriteListAddInsert(obj, method, args, "push", "splice", ", 0, ")) {
+		else if (WriteListAddInsert(obj, method, args, "push", "splice", ", 0, ")
+			|| WriteDictionaryAdd(obj, method, args)) {
 			// done
 		}
 		else if (method == CiSystem.ListRemoveAt) {
@@ -481,23 +482,9 @@ public class GenJs : GenBase
 			args[1].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
-		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
-			if (parent > CiPriority.Assign)
-				Write('(');
-			obj.Accept(this, CiPriority.Primary);
-			Write('[');
-			args[0].Accept(this, CiPriority.Statement);
-			Write("] = ");
-			WriteNewStorage(dict.ValueType);
-			if (parent > CiPriority.Assign)
-				Write(')');
-		}
 		else if (obj.Type is CiDictionaryType && method.Name == "Remove") {
 			Write("delete ");
-			obj.Accept(this, CiPriority.Primary);
-			Write('[');
-			args[0].Accept(this, CiPriority.Statement);
-			Write(']');
+			WriteIndexing(obj, args[0]);
 		}
 		else if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine) {
 			// XXX: Console.Write same as Console.WriteLine
@@ -564,12 +551,8 @@ public class GenJs : GenBase
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}
-		else if (method == CiSystem.MatchGetCapture) {
-			obj.Accept(this, CiPriority.Primary);
-			Write('[');
-			args[0].Accept(this, CiPriority.Statement);
-			Write(']');
-		}
+		else if (method == CiSystem.MatchGetCapture)
+			WriteIndexing(obj, args[0]);
 		else if (method == CiSystem.MathFusedMultiplyAdd) {
 			if (parent > CiPriority.Add)
 				Write('(');

@@ -672,18 +672,8 @@ public class GenCpp : GenCCpp
 			args[1].Accept(this, CiPriority.Add);
 			Write(')');
 		}
-		else if (obj.Type is CiDictionaryType && method.Name == "Add") {
-			if (parent == CiPriority.Primary)
-				Write('(');
-			if (!this.AtLineStart)
-				Write('&');
-			obj.Accept(this, CiPriority.Primary);
-			Write('[');
-			args[0].Accept(this, CiPriority.Statement);
-			Write(']');
-			if (parent == CiPriority.Primary)
-				Write(')');
-		}
+		else if (obj.Type is CiDictionaryType && method.Name == "Add")
+			WriteIndexing(obj, args[0]);
 		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey") {
 			if (parent > CiPriority.Equality)
 				Write('(');
