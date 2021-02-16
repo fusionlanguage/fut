@@ -403,10 +403,8 @@ public class GenCs : GenTyped
 			Write('(');
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = ");
-			args[1].Accept(this, CiPriority.Primary);
-			Write(".Match(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(")).Success");
+			WriteCall(args[1], "Match", args[0]);
+			Write(").Success");
 		}
 		else if (method == CiSystem.MatchGetCapture) {
 			obj.Accept(this, CiPriority.Primary);
@@ -456,9 +454,7 @@ public class GenCs : GenTyped
 		}
 		else if (obj.Type is CiArrayStorageType && method == CiSystem.CollectionSortAll) {
 			Include("System");
-			Write("Array.Sort(");
-			obj.Accept(this, CiPriority.Statement);
-			Write(')');
+			WriteCall("Array.Sort", obj);
 		}
 		else if (method == CiSystem.CollectionSortPart) {
 			if (obj.Type is CiListType) {
@@ -469,11 +465,7 @@ public class GenCs : GenTyped
 			}
 			else {
 				Include("System");
-				Write("Array.Sort(");
-				obj.Accept(this, CiPriority.Statement);
-				Write(", ");
-				WriteArgs(method, args);
-				Write(')');
+				WriteCall("Array.Sort", obj, args[0], args[1]);
 			}
 		}
 		else if (WriteListAddInsert(obj, method, args, "Add", "Insert", ", ")) {

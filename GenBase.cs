@@ -655,6 +655,62 @@ public abstract class GenBase : CiVisitor
 		Write(')');
 	}
 
+	protected void WriteCall(string function, CiExpr arg0)
+	{
+		Write(function);
+		Write('(');
+		arg0.Accept(this, CiPriority.Statement);
+		Write(')');
+	}
+
+	protected void WriteCall(string function, CiExpr arg0, CiExpr arg1)
+	{
+		Write(function);
+		Write('(');
+		arg0.Accept(this, CiPriority.Statement);
+		Write(", ");
+		arg1.Accept(this, CiPriority.Statement);
+		Write(')');
+	}
+
+	protected void WriteCall(string function, CiExpr arg0, CiExpr arg1, CiExpr arg2)
+	{
+		Write(function);
+		Write('(');
+		arg0.Accept(this, CiPriority.Statement);
+		Write(", ");
+		arg1.Accept(this, CiPriority.Statement);
+		Write(", ");
+		arg2.Accept(this, CiPriority.Statement);
+		Write(')');
+	}
+
+	protected void WriteCall(string function, CiExpr arg0, CiExpr[] args)
+	{
+		Write(function);
+		Write('(');
+		arg0.Accept(this, CiPriority.Statement);
+		foreach (CiExpr arg in args) {
+			Write(", ");
+			arg.Accept(this, CiPriority.Statement);
+		}
+		Write(')');
+	}
+
+	protected void WriteCall(CiExpr obj, string method, CiExpr arg0)
+	{
+		obj.Accept(this, CiPriority.Primary);
+		Write('.');
+		WriteCall(method, arg0);
+	}
+
+	protected void WriteCall(CiExpr obj, string method, CiExpr arg0, CiExpr arg1)
+	{
+		obj.Accept(this, CiPriority.Primary);
+		Write('.');
+		WriteCall(method, arg0, arg1);
+	}
+
 	protected virtual void WriteNew(CiClass klass, CiPriority parent)
 	{
 		Write("new ");

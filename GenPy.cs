@@ -244,9 +244,7 @@ public class GenPy : GenPySwift
 
 	protected override void WriteStringLength(CiExpr expr)
 	{
-		Write("len(");
-		expr.Accept(this, CiPriority.Statement);
-		Write(')');
+		WriteCall("len", expr);
 	}
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
@@ -402,11 +400,8 @@ public class GenPy : GenPySwift
 			break;
 		case CiNumericType number:
 			char c = GetArrayCode(number);
-			if (c == 'B' && (value == null || (value is CiLiteral literal && (long) literal.Value == 0))) {
-				Write("bytearray(");
-				lengthExpr.Accept(this, CiPriority.Statement);
-				Write(')');
-			}
+			if (c == 'B' && (value == null || (value is CiLiteral literal && (long) literal.Value == 0)))
+				WriteCall("bytearray", lengthExpr);
 			else {
 				Include("array");
 				Write("array.array(\"");
@@ -569,11 +564,7 @@ public class GenPy : GenPySwift
 		}
 		else if (obj.Type is CiArrayType && method.Name == "BinarySearch") {
 			Include("bisect");
-			Write("bisect.bisect_left(");
-			obj.Accept(this, CiPriority.Statement);
-			Write(", ");
-			WriteArgs(method, args);
-			Write(")");
+			WriteCall("bisect.bisect_left", obj, args);
 		}
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			args[1].Accept(this, CiPriority.Primary);
@@ -643,10 +634,8 @@ public class GenPy : GenPySwift
 		else if (method == CiSystem.RegexIsMatchRegex) {
 			if (parent > CiPriority.Equality)
 				Write('(');
-			obj.Accept(this, CiPriority.Primary);
-			Write(".search(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(") is not None");
+			WriteCall(obj, "search", args[0]);
+			Write(" is not None");
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}
@@ -658,12 +647,8 @@ public class GenPy : GenPySwift
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}
-		else if (method == CiSystem.MatchGetCapture) {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".group(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(')');
-		}
+		else if (method == CiSystem.MatchGetCapture)
+			WriteCall(obj, "group", args[0]);
 		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
 			if (method == CiSystem.MathFusedMultiplyAdd) {
 				Include("pyfma");
@@ -736,10 +721,8 @@ public class GenPy : GenPySwift
 		if (call.Method.Symbol == CiSystem.MatchFindRegex) {
 			call.Method.Left.Accept(this, CiPriority.Assign);
 			Write(" = ");
-			call.Arguments[1].Accept(this, CiPriority.Primary);
-			Write(".search(");
-			call.Arguments[0].Accept(this, CiPriority.Statement);
-			WriteLine(')');
+			WriteCall(call.Arguments[1], "search", call.Arguments[0]);
+			WriteLine();
 			return true;
 		}
 		return false;

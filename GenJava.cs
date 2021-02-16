@@ -68,9 +68,7 @@ public class GenJava : GenTyped
 			}
 			else
 				Write("Integer");
-			Write(".toString(");
-			arg.Accept(this, CiPriority.Statement);
-			Write(')');
+			WriteCall(".toString", arg);
 		}
 		else {
 			Write("String.format(");
@@ -355,12 +353,8 @@ public class GenJava : GenTyped
 
 	void WriteIndexingInternal(CiBinaryExpr expr)
 	{
-		if (IsCollection(expr.Left.Type)) {
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".get(");
-			expr.Right.Accept(this, CiPriority.Statement);
-			Write(')');
-		}
+		if (IsCollection(expr.Left.Type))
+			WriteCall(expr.Left, "get", expr.Right);
 		else
 			base.WriteIndexing(expr, CiPriority.And /* don't care */);
 	}
@@ -371,10 +365,7 @@ public class GenJava : GenTyped
 		 || (expr.Right.Type is CiStringType && expr.Left.Type != CiSystem.NullType)) {
 			 if (not)
 				 Write('!');
-			 expr.Left.Accept(this, CiPriority.Primary);
-			 Write(".equals(");
-			 expr.Right.Accept(this, CiPriority.Statement);
-			 Write(')');
+			 WriteCall(expr.Left, "equals", expr.Right);
 		}
 		else if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)
 			&& expr.Right is CiLiteral rightLiteral && rightLiteral.Value is long l && l >= 0 && l <= byte.MaxValue) {
@@ -427,10 +418,7 @@ public class GenJava : GenTyped
 
 	protected override void WriteCharAt(CiBinaryExpr expr)
 	{
-		expr.Left.Accept(this, CiPriority.Primary);
-		Write(".charAt(");
-		expr.Right.Accept(this, CiPriority.Statement);
-		Write(')');
+		WriteCall(expr.Left, "charAt", expr.Right);
 	}
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
@@ -494,13 +482,6 @@ public class GenJava : GenTyped
 		}
 	}
 
-	void WriteRegexMatcher(CiExpr[] args)
-	{
-		Write(".matcher(");
-		args[0].Accept(this, CiPriority.Statement);
-		Write(')');
-	}
-
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (obj == null) {
@@ -531,9 +512,7 @@ public class GenJava : GenTyped
 		else if (method == CiSystem.CollectionSortAll) {
 			if (obj.Type is CiArrayStorageType) {
 				Include("java.util.Arrays");
-				Write("Arrays.sort(");
-				obj.Accept(this, CiPriority.Statement);
-				Write(')');
+				WriteCall("Arrays.sort", obj);
 			}
 			else {
 				obj.Accept(this, CiPriority.Primary);
@@ -587,18 +566,15 @@ public class GenJava : GenTyped
 			WriteRegex(args, 0);
 		else if (method == CiSystem.RegexEscape) {
 			Include("java.util.regex.Pattern");
-			Write("Pattern.quote(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(')');
+			WriteCall("Pattern.quote", args[0]);
 		}
 		else if (method == CiSystem.RegexIsMatchStr) {
 			WriteRegex(args, 1);
-			WriteRegexMatcher(args);
+			WriteCall(".matcher", args[0]);
 			Write(".find()");
 		}
 		else if (method == CiSystem.RegexIsMatchRegex) {
-			obj.Accept(this, CiPriority.Primary);
-			WriteRegexMatcher(args);
+			WriteCall(obj, "matcher", args[0]);
 			Write(".find()");
 		}
 		else if (method == CiSystem.MatchFindStr || method == CiSystem.MatchFindRegex) {
@@ -606,15 +582,11 @@ public class GenJava : GenTyped
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = ");
 			WriteRegex(args, 1);
-			WriteRegexMatcher(args);
+			WriteCall(".matcher", args[0]);
 			Write(").find()");
 		}
-		else if (method == CiSystem.MatchGetCapture) {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".group(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(')');
-		}
+		else if (method == CiSystem.MatchGetCapture)
+			WriteCall(obj, "group", args[0]);
 		else if (method == CiSystem.MathIsFinite || method == CiSystem.MathIsInfinity || method == CiSystem.MathIsNaN) {
 			Write("Double.is");
 			Write(method == CiSystem.MathIsFinite ? "Finite"
@@ -626,9 +598,8 @@ public class GenJava : GenTyped
 		else if (method == CiSystem.MathLog2) {
 			if (parent > CiPriority.Mul)
 				Write('(');
-			Write("Math.log(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(") * 1.4426950408889635");
+			WriteCall("Math.log", args[0]);
+			Write(" * 1.4426950408889635");
 			if (parent > CiPriority.Mul)
 				Write(')');
 		}

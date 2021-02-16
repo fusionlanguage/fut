@@ -223,9 +223,7 @@ public class GenJs : GenBase
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		if (!(elementType is CiNumericType)) {
-			Write("new Array(");
-			lengthExpr.Accept(this, CiPriority.Statement);
-			Write(')');
+			WriteCall("new Array", lengthExpr);
 			return;
 		}
 
@@ -259,9 +257,7 @@ public class GenJs : GenBase
 
 		Write("new ");
 		Write(name);
-		Write("Array(");
-		lengthExpr.Accept(this, CiPriority.Statement);
-		Write(')');
+		WriteCall("Array", lengthExpr);
 	}
 
 	bool HasInitCode(CiNamedValue def)
@@ -306,9 +302,8 @@ public class GenJs : GenBase
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Symbol == CiSystem.CollectionCount && expr.Left.Type is CiDictionaryType) {
-			Write("Object.keys(");
-			expr.Left.Accept(this, CiPriority.Statement);
-			Write(").length");
+			WriteCall("Object.keys", expr.Left);
+			Write(".length");
 		}
 		else if (expr.Symbol == CiSystem.MatchStart) {
 			expr.Left.Accept(this, CiPriority.Primary);
@@ -351,10 +346,7 @@ public class GenJs : GenBase
 
 	protected override void WriteCharAt(CiBinaryExpr expr)
 	{
-		expr.Left.Accept(this, CiPriority.Primary);
-		Write(".charCodeAt(");
-		expr.Right.Accept(this, CiPriority.Statement);
-		Write(')');
+		WriteCall(expr.Left, "charCodeAt", expr.Right);
 	}
 
 	void AddLibrary(GenJsMethod id, params string[] method)
@@ -437,11 +429,7 @@ public class GenJs : GenBase
 					"const sorted = a.slice(offset, offset + length).sort((a, b) => a - b);",
 					"for (let i = 0; i < length; i++)",
 					"\ta[offset + i] = sorted[i];");
-				Write("Ci.sortListPart(");
-				obj.Accept(this, CiPriority.Statement);
-				Write(", ");
-				WriteArgs(method, args);
-				Write(')');
+				WriteCall("Ci.sortListPart", obj, args[0], args[1]);
 			}
 			else {
 				obj.Accept(this, CiPriority.Primary);
@@ -474,14 +462,8 @@ public class GenJs : GenBase
 			args[0].Accept(this, CiPriority.Statement);
 			Write(", 1)");
 		}
-		else if (method == CiSystem.ListRemoveRange) {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".splice(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(", ");
-			args[1].Accept(this, CiPriority.Statement);
-			Write(')');
-		}
+		else if (method == CiSystem.ListRemoveRange)
+			WriteCall(obj, "splice", args[0], args[1]);
 		else if (obj.Type is CiDictionaryType && method.Name == "Remove") {
 			Write("delete ");
 			WriteIndexing(obj, args[0]);
@@ -528,16 +510,10 @@ public class GenJs : GenBase
 		}
 		else if (method == CiSystem.RegexIsMatchStr) {
 			WriteRegex(args, 1);
-			Write(".test(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(')');
+			WriteCall(".test", args[0]);
 		}
-		else if (method == CiSystem.RegexIsMatchRegex) {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".test(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(')');
-		}
+		else if (method == CiSystem.RegexIsMatchRegex)
+			WriteCall(obj, "test", args[0]);
 		else if (method == CiSystem.MatchFindStr || method == CiSystem.MatchFindRegex) {
 			if (parent > CiPriority.Equality)
 				Write('(');
@@ -545,9 +521,8 @@ public class GenJs : GenBase
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = ");
 			WriteRegex(args, 1);
-			Write(".exec(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(")) != null");
+			WriteCall(".exec", args[0]);
+			Write(") != null");
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}
@@ -571,9 +546,8 @@ public class GenJs : GenBase
 		else if (method == CiSystem.MathIsInfinity) {
 			if (parent > CiPriority.Equality)
 				Write('(');
-			Write("Math.abs(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(") == Infinity");
+			WriteCall("Math.abs", args[0]);
+			Write(" == Infinity");
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}
@@ -658,9 +632,7 @@ public class GenJs : GenBase
 			WriteName(statement.Element);
 			Write(", ");
 			WriteName(statement.ValueVar);
-			Write("] of Object.entries(");
-			statement.Collection.Accept(this, CiPriority.Statement);
-			Write(')');
+			WriteCall("] of Object.entries", statement.Collection);
 			switch (statement.Element.Type) {
 			case CiStringType _:
 				if (statement.Collection.Type is CiSortedDictionaryType)

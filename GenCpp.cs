@@ -718,9 +718,7 @@ public class GenCpp : GenCCpp
 		else if (method == CiSystem.MatchGetCapture) {
 			obj.Accept(this, CiPriority.Primary);
 			WriteMemberOp(obj, null);
-			Write("str(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(')');
+			WriteCall("str", args[0]);
 		}
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(obj, args, false);
@@ -864,10 +862,7 @@ public class GenCpp : GenCCpp
 			}
 			break;
 		case CiToken.Assign when expr.Left.Type == CiSystem.StringStorageType && parent == CiPriority.Statement && IsTrimSubstring(expr) is CiExpr length:
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".resize(");
-			length.Accept(this, CiPriority.Statement);
-			Write(')');
+			WriteCall(expr.Left, "resize", length);
 			return expr;
 		default:
 			break;

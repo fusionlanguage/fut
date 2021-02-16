@@ -293,11 +293,8 @@ public class GenSwift : GenPySwift
 			expr.Accept(this, CiPriority.Primary);
 			Write('!');
 		}
-		else if (!substringOk && expr is CiCallExpr call && call.Method.IsReferenceTo(CiSystem.StringSubstring)) {
-			Write("String(");
-			expr.Accept(this, CiPriority.Statement);
-			Write(')');
-		}
+		else if (!substringOk && expr is CiCallExpr call && call.Method.IsReferenceTo(CiSystem.StringSubstring))
+			WriteCall("String", expr);
 		else
 			expr.Accept(this, parent);
 	}
@@ -441,11 +438,8 @@ public class GenSwift : GenPySwift
 				args[0].Accept(this, CiPriority.Statement);
 				Write(')');
 			}
-			if (args.Length == 2) {
-				Write(".prefix(");
-				args[1].Accept(this, CiPriority.Statement);
-				Write(')');
-			}
+			if (args.Length == 2)
+				WriteCall(".prefix", args[1]);
 		}
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			OpenIndexing(args[1]);

@@ -255,11 +255,8 @@ public class GenC : GenCCpp
 				expr.Left.Accept(this, CiPriority.Primary);
 				Write("->len");
 			}
-			else {
-				Write("g_hash_table_size(");
-				expr.Left.Accept(this, CiPriority.Statement);
-				Write(')');
-			}
+			else
+				WriteCall("g_hash_table_size", expr.Left);
 		}
 		else if (expr.Symbol == CiSystem.MatchStart)
 			WriteMatchProperty(expr, 0);
@@ -486,9 +483,7 @@ public class GenC : GenCCpp
 			expr.Accept(this, CiPriority.Statement);
 		else {
 			Include("string.h");
-			Write("strdup(");
-			expr.Accept(this, CiPriority.Statement);
-			Write(')');
+			WriteCall("strdup", expr);
 		}
 	}
 
@@ -752,9 +747,7 @@ public class GenC : GenCCpp
 				this.SharedAddRef = true;
 				Write('(');
 				WriteName(resultPtr.Class);
-				Write(" *) CiShared_AddRef(");
-				expr.Accept(this, CiPriority.Statement);
-				Write(')');
+				WriteCall(" *) CiShared_AddRef", expr);
 			}
 			else
 				WriteClassPtr(resultPtr.Class, expr, parent);
@@ -762,9 +755,7 @@ public class GenC : GenCCpp
 		else if (type is CiArrayPtrType arrayPtr && arrayPtr.Modifier == CiToken.Hash && expr is CiSymbolReference && parent != CiPriority.Equality) {
 			this.SharedAddRef = true;
 			WriteDynamicArrayCast(arrayPtr.ElementType);
-			Write("CiShared_AddRef(");
-			expr.Accept(this, CiPriority.Statement);
-			Write(')');
+			WriteCall("CiShared_AddRef", expr);
 		}
 		else
 			base.WriteCoercedInternal(type, expr, parent);
@@ -788,14 +779,11 @@ public class GenC : GenCCpp
 				expr.Right.Accept(this, CiPriority.Statement);
 				Write(", ");
 				Write(length);
+				Write(')');
 			}
-			else {
-				Write("strcmp(");
-				expr.Left.Accept(this, CiPriority.Statement);
-				Write(", ");
-				expr.Right.Accept(this, CiPriority.Statement);
-			}
-			Write(") ");
+			else
+				WriteCall("strcmp", expr.Left, expr.Right);
+			Write(' ');
 			Write(not ? '!' : '=');
 			Write("= 0");
 			if (parent > CiPriority.Equality)
@@ -808,21 +796,14 @@ public class GenC : GenCCpp
 	protected override void WriteStringLength(CiExpr expr)
 	{
 		Include("string.h");
-		Write("(int) strlen(");
-		expr.Accept(this, CiPriority.Statement);
-		Write(')');
+		WriteCall("(int) strlen", expr);
 	}
 
 	void WriteStringMethod(string name, CiExpr obj, CiExpr[] args)
 	{
 		Include("string.h");
 		Write("CiString_");
-		Write(name);
-		Write('(');
-		obj.Accept(this, CiPriority.Statement);
-		Write(", ");
-		args[0].Accept(this, CiPriority.Statement);
-		Write(')');
+		WriteCall(name, obj, args[0]);
 	}
 
 	void WriteListAddInsert(CiExpr obj, bool insert, string method, CiExpr[] args)
@@ -909,11 +890,8 @@ public class GenC : GenCCpp
 			args[0].Accept(this, CiPriority.Statement);
 			Write(')');
 		}
-		else if (newLine && !error) {
-			Write("puts(");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(')');
-		}
+		else if (newLine && !error)
+			WriteCall("puts", args[0]);
 		else {
 			Write("fputs(");
 			args[0].Accept(this, CiPriority.Statement);
@@ -985,14 +963,11 @@ public class GenC : GenCCpp
 				obj.Accept(this, CiPriority.Statement);
 				Write(", ");
 				WriteCharLiteral(c);
+				Write(')');
 			}
-			else {
-				Write("strstr(");
-				obj.Accept(this, CiPriority.Statement);
-				Write(", ");
-				args[0].Accept(this, CiPriority.Statement);
-			}
-			Write(") != NULL");
+			else
+				WriteCall("strstr", obj, args[0]);
+			Write(" != NULL");
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}
@@ -1151,28 +1126,15 @@ public class GenC : GenCCpp
 				obj.Accept(this, CiPriority.Statement);
 				Write(", 0)");
 			}
-			else {
-				Write("g_hash_table_remove_all(");
-				obj.Accept(this, CiPriority.Statement);
-				Write(')');
-			}
+			else
+				WriteCall("g_hash_table_remove_all", obj);
 		}
 		else if (obj.Type is CiListType && method.Name == "Insert")
 			WriteListAddInsert(obj, true, "g_array_insert_val", args);
-		else if (method == CiSystem.ListRemoveAt) {
-			Write("g_array_remove_index(");
-			obj.Accept(this, CiPriority.Statement);
-			Write(", ");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(')');
-		}
-		else if (method == CiSystem.ListRemoveRange) {
-			Write("g_array_remove_range(");
-			obj.Accept(this, CiPriority.Statement);
-			Write(", ");
-			WriteArgs(method, args);
-			Write(')');
-		}
+		else if (method == CiSystem.ListRemoveAt)
+			WriteCall("g_array_remove_index", obj, args[0]);
+		else if (method == CiSystem.ListRemoveRange)
+			WriteCall("g_array_remove_range", obj, args[0], args[1]);
 		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
 			Write("g_hash_table_insert(");
 			obj.Accept(this, CiPriority.Statement);
@@ -1246,13 +1208,8 @@ public class GenC : GenCCpp
 			obj.Accept(this, CiPriority.Primary);
 			Write(')');
 		}
-		else if (method == CiSystem.MatchGetCapture) {
-			Write("g_match_info_fetch(");
-			obj.Accept(this, CiPriority.Statement);
-			Write(", ");
-			args[0].Accept(this, CiPriority.Statement);
-			Write(')');
-		}
+		else if (method == CiSystem.MatchGetCapture)
+			WriteCall("g_match_info_fetch", obj, args[0]);
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(obj, args, false);
 		else if (method == CiSystem.ConsoleWriteLine)
