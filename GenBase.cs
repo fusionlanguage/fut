@@ -932,9 +932,11 @@ public abstract class GenBase : CiVisitor
 		Write(expr, parent, child, op);
 	}
 
+	protected static string GetEqOp(bool not) => not ? " != " : " == ";
+
 	protected virtual void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
-		WriteComparison(expr, parent, CiPriority.Equality, not ? " != " : " == ");
+		WriteComparison(expr, parent, CiPriority.Equality, GetEqOp(not));
 	}
 
 	protected virtual void WriteAnd(CiBinaryExpr expr, CiPriority parent)

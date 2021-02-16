@@ -783,9 +783,8 @@ public class GenC : GenCCpp
 			}
 			else
 				WriteCall("strcmp", expr.Left, expr.Right);
-			Write(' ');
-			Write(not ? '!' : '=');
-			Write("= 0");
+			Write(GetEqOp(not));
+			Write('0');
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}

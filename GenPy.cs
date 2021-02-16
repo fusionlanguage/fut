@@ -231,7 +231,7 @@ public class GenPy : GenPySwift
 	{
 		string op = IsPtr(expr.Left) || IsPtr(expr.Right)
 			? not ? " is not " : " is "
-			: not ? " != " : " == ";
+			: GetEqOp(not);
 		WriteComparison(expr, parent, CiPriority.Equality, op);
 	}
 

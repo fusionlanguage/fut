@@ -372,7 +372,7 @@ public class GenJava : GenTyped
 			if (parent > CiPriority.Equality)
 				Write('(');
 			WriteIndexingInternal(leftBinary); // omit "& 0xff"
-			Write(not ? " != " : " == ");
+			Write(GetEqOp(not));
 			Write((sbyte) l);
 			if (parent > CiPriority.Equality)
 				Write(')');

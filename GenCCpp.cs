@@ -116,7 +116,7 @@ public abstract class GenCCpp : GenTyped
 		if (parent > CiPriority.Equality)
 			Write('(');
 		WriteCoerced(coercedType, expr.Left, CiPriority.Equality);
-		Write(not ? " != " : " == ");
+		Write(GetEqOp(not));
 		WriteCoerced(coercedType, expr.Right, CiPriority.Equality);
 		if (parent > CiPriority.Equality)
 			Write(')');

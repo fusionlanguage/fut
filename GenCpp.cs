@@ -370,14 +370,13 @@ public class GenCpp : GenCCpp
 	{
 		if (expr.Left.Type == CiSystem.StringPtrType && expr.Right.Type == CiSystem.NullType) {
 			WriteCoerced(CiSystem.StringPtrType, expr.Left, CiPriority.Primary);
-			Write(".data() ");
-			Write(not ? '!' : '=');
-			Write("= nullptr");
+			Write(".data()");
+			Write(GetEqOp(not));
+			Write("nullptr");
 		}
 		else if (expr.Left.Type == CiSystem.NullType && expr.Right.Type == CiSystem.StringPtrType) {
-			Write("nullptr ");
-			Write(not ? '!' : '=');
-			Write("= ");
+			Write("nullptr");
+			Write(GetEqOp(not));
 			WriteCoerced(CiSystem.StringPtrType, expr.Right, CiPriority.Primary);
 			Write(".data() ");
 		}
