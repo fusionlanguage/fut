@@ -369,9 +369,12 @@ public class CiResolver : CiVisitor
 
 		CiExpr resolved = Lookup(expr, this.CurrentScope);
 		if (resolved is CiSymbolReference symbol
-		 && symbol.Symbol is CiVar v
-		 && this.CurrentPureArguments.TryGetValue(v, out CiExpr arg))
-			return arg;
+		 && symbol.Symbol is CiVar v) {
+			if (v.Parent is CiFor loop)
+				loop.IsIteratorUsed = true;
+			else if (this.CurrentPureArguments.TryGetValue(v, out CiExpr arg))
+				return arg;
+		}
 		return resolved;
 	}
 
@@ -1008,6 +1011,7 @@ public class CiResolver : CiVisitor
 			default:
 				break;
 			}
+			statement.IsIteratorUsed = false;
 		}
 		statement.Body.Accept(this);
 		CloseScope();

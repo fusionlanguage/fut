@@ -266,7 +266,10 @@ public abstract class GenPySwift : GenBase
 		if (statement.IsRange) {
 			CiVar iter = (CiVar) statement.Init;
 			Write("for ");
-			WriteName(iter);
+			if (statement.IsIteratorUsed)
+				WriteName(iter);
+			else
+				Write('_');
 			Write(" in ");
 			WriteForRange(iter, (CiBinaryExpr) statement.Cond, statement.RangeStep);
 			WriteChild(statement.Body);
