@@ -31,6 +31,7 @@ public class GenSwift : GenPySwift
 	bool StringCharAt;
 	bool StringIndexOf;
 	bool StringSubstring;
+	readonly List<HashSet<string>> VarsAtIndent = new List<HashSet<string>>();
 
 	protected override void StartDocLine()
 	{
@@ -795,10 +796,18 @@ public class GenSwift : GenPySwift
 		base.Visit(statement);
 	}
 
+	void InitVarsAtIndent()
+	{
+		while (this.VarsAtIndent.Count <= this.Indent)
+			this.VarsAtIndent.Add(new HashSet<string>());
+		this.VarsAtIndent[this.Indent].Clear();
+	}
+
 	protected override void OpenChild()
 	{
 		Write(' ');
 		OpenBlock();
+		InitVarsAtIndent();
 	}
 
 	protected override void CloseChild()
@@ -808,8 +817,14 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteVar(CiNamedValue def)
 	{
-		Write(def.Type is CiClass || def.Type is CiArrayStorageType || (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType) && !(def.Type is CiDictionaryType)) ? "let " : "var ");
-		base.WriteVar(def);
+		if (def is CiField || this.VarsAtIndent[this.Indent].Add(def.Name)) {
+			Write(def.Type is CiClass || def.Type is CiArrayStorageType || (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType) && !(def.Type is CiDictionaryType)) ? "let " : "var ");
+			base.WriteVar(def);
+		}
+		else {
+			WriteName(def);
+			WriteVarInit(def);
+		}
 	}
 
 	public override void Visit(CiAssert statement)
@@ -921,6 +936,14 @@ public class GenSwift : GenPySwift
 		Write(this.CurrentMethod.Type);
 	}
 
+	void WriteSwiftCaseBody(CiStatement[] statements)
+	{
+		this.Indent++;
+		InitVarsAtIndent();
+		WriteCaseBody(statements);
+		this.Indent--;
+	}
+
 	public override void Visit(CiSwitch statement)
 	{
 		Write("switch ");
@@ -933,15 +956,11 @@ public class GenSwift : GenPySwift
 				WriteCoerced(statement.Value.Type, kase.Values[i], CiPriority.Statement);
 			}
 			WriteLine(':');
-			this.Indent++;
-			WriteCaseBody(kase.Body);
-			this.Indent--;
+			WriteSwiftCaseBody(kase.Body);
 		}
 		if (statement.DefaultBody != null) {
 			WriteLine("default:");
-			this.Indent++;
-			WriteCaseBody(statement.DefaultBody);
-			this.Indent--;
+			WriteSwiftCaseBody(statement.DefaultBody);
 		}
 		WriteLine('}');
 	}
@@ -1069,6 +1088,7 @@ public class GenSwift : GenPySwift
 					WriteLine();
 				}
 			}
+			InitVarsAtIndent();
 			this.CurrentMethod = method;
 			method.Body.Accept(this);
 			this.CurrentMethod = null;
@@ -1113,6 +1133,7 @@ public class GenSwift : GenPySwift
 				Write("override ");
 			WriteLine("init()");
 			OpenBlock();
+			InitVarsAtIndent();
 			WriteConstructorBody(klass);
 			CloseBlock();
 		}

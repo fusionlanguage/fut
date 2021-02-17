@@ -10,6 +10,14 @@ public static class Test
 		for (int i = 0; i <= 5; i++)
 			t += i;
 
-		return s == 10 && t == 15;
+		int u = 0;
+		for (int i = 0; i < 5; )
+			u += i++;
+
+		int v = 0;
+		for (int i = 0; i <= 5; )
+			v += i++;
+
+		return s == 10 && t == 15 && u == 10 && v == 15;
 	}
 }
