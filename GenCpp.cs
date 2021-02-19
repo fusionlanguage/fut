@@ -366,15 +366,24 @@ public class GenCpp : GenCCpp
 	{
 	}
 
+	static bool NeedStringPtrData(CiExpr expr)
+	{
+		if (expr.Type != CiSystem.StringPtrType)
+			return false;
+		if (expr is CiCallExpr call && call.Method.Symbol == CiSystem.EnvironmentGetEnvironmentVariable)
+			return false;
+		return true;
+	}
+
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
-		if (expr.Left.Type == CiSystem.StringPtrType && expr.Right.Type == CiSystem.NullType) {
+		if (NeedStringPtrData(expr.Left) && expr.Right.Type == CiSystem.NullType) {
 			WriteCoerced(CiSystem.StringPtrType, expr.Left, CiPriority.Primary);
 			Write(".data()");
 			Write(GetEqOp(not));
 			Write("nullptr");
 		}
-		else if (expr.Left.Type == CiSystem.NullType && expr.Right.Type == CiSystem.StringPtrType) {
+		else if (expr.Left.Type == CiSystem.NullType && NeedStringPtrData(expr.Right)) {
 			Write("nullptr");
 			Write(GetEqOp(not));
 			WriteCoerced(CiSystem.StringPtrType, expr.Right, CiPriority.Primary);
@@ -730,6 +739,10 @@ public class GenCpp : GenCCpp
 			Write("), ");
 			args[2].Accept(this, CiPriority.Statement);
 			Write(')');
+		}
+		else if (method == CiSystem.EnvironmentGetEnvironmentVariable) {
+			Include("cstdlib");
+			WriteCall("std::getenv", args[0]);
 		}
 		else {
 			if (obj.IsReferenceTo(CiSystem.BasePtr)) {

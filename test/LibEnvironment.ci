@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		string homeDir = Environment.GetEnvironmentVariable("HOME"); //FAIL: ts TODO
+		return homeDir != null
+			&& Environment.GetEnvironmentVariable("NOT_EXISTING_ENV_VAR") == null;
+	}
+}

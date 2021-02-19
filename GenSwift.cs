@@ -527,6 +527,12 @@ public class GenSwift : GenPySwift
 			WriteRange(args[1], args[2]);
 			Write("], as: UTF8.self)");
 		}
+		else if (method == CiSystem.EnvironmentGetEnvironmentVariable) {
+			Include("Foundation");
+			Write("ProcessInfo.processInfo.environment[");
+			args[0].Accept(this, CiPriority.Statement);
+			Write(']');
+		}
 		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
 			if (method == CiSystem.MathIsFinite) {
 				args[0].Accept(this, CiPriority.Primary);

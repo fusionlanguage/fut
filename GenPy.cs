@@ -617,6 +617,10 @@ public class GenPy : GenPySwift
 			WriteSlice(args[1], args[2]);
 			Write(".decode(\"utf-8\")");
 		}
+		else if (method == CiSystem.EnvironmentGetEnvironmentVariable) {
+			Include("os");
+			WriteCall("os.getenv", args[0]);
+		}
 		else if (method == CiSystem.RegexCompile) {
 			Write("re.compile(");
 			args[0].Accept(this, CiPriority.Statement);

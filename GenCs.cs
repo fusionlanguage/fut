@@ -483,7 +483,8 @@ public class GenCs : GenTyped
 			if (method == CiSystem.MathIsFinite || method == CiSystem.MathIsInfinity || method == CiSystem.MathIsNaN)
 				Write("double");
 			else {
-				if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine || obj.IsReferenceTo(CiSystem.MathClass))
+				if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine
+				 || method == CiSystem.EnvironmentGetEnvironmentVariable || obj.IsReferenceTo(CiSystem.MathClass))
 					Include("System");
 				else if (method == CiSystem.RegexEscape || method == CiSystem.RegexIsMatchStr || method == CiSystem.RegexIsMatchRegex)
 					Include("System.Text.RegularExpressions");

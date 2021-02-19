@@ -1270,6 +1270,8 @@ public class CiSystem : CiScope
 	public static readonly CiMethod UTF8GetString = new CiMethod(CiCallType.Normal, StringStorageType, "GetString", new CiVar(ByteArrayPtrType, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length")); // TODO: UIntType
 	public static readonly CiClass UTF8EncodingClass = new CiClass(CiCallType.Normal, "UTF8Encoding", UTF8GetString);
 	public static readonly CiClass EncodingClass = new CiClass(CiCallType.Static, "Encoding");
+	public static readonly CiMethod EnvironmentGetEnvironmentVariable = new CiMethod(CiCallType.Static, StringPtrType, "GetEnvironmentVariable", new CiVar(StringPtrType, "name"));
+	public static readonly CiClass EnvironmentClass = new CiClass(CiCallType.Static, "Environment", EnvironmentGetEnvironmentVariable);
 	public static readonly CiConst RegexOptionsNone = new CiConst("None", 0L);
 	public static readonly CiConst RegexOptionsIgnoreCase = new CiConst("IgnoreCase", 1L);
 	public static readonly CiConst RegexOptionsMultiline = new CiConst("Multiline", 2L);
@@ -1354,6 +1356,7 @@ public class CiSystem : CiScope
 		ConsoleClass.Parent = ConsoleBase;
 		EncodingClass.Add(new CiMember { Name = "UTF8", Type = UTF8EncodingClass });
 		Add(EncodingClass);
+		Add(EnvironmentClass);
 		AddEnumValue(RegexOptionsEnum, RegexOptionsNone);
 		AddEnumValue(RegexOptionsEnum, RegexOptionsIgnoreCase);
 		AddEnumValue(RegexOptionsEnum, RegexOptionsMultiline);

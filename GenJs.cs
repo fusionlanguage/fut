@@ -355,6 +355,13 @@ public class GenJs : GenBase
 			this.Library[(int) id] = method;
 	}
 
+	static bool IsIdentifier(string s)
+	{
+		return s.Length > 0
+			&& s[0] >= 'A'
+			&& s.All(c => CiLexer.IsLetterOrDigit(c));
+	}
+
 	void WriteRegex(CiExpr[] args, int argIndex)
 	{
 		CiExpr pattern = args[argIndex];
@@ -498,6 +505,17 @@ public class GenJs : GenBase
 				"return s;");
 			Write("Ci.utf8GetString");
 			WriteArgsInParentheses(method, args);
+		}
+		else if (method == CiSystem.EnvironmentGetEnvironmentVariable) {
+			if (args[0] is CiLiteral literal && literal.Value is string name && IsIdentifier(name)) {
+				Write("process.env.");
+				Write(name);
+			}
+			else {
+				Write("process.env[");
+				args[0].Accept(this, CiPriority.Statement);
+				Write(']');
+			}
 		}
 		else if (method == CiSystem.RegexCompile)
 			WriteRegex(args, 0);

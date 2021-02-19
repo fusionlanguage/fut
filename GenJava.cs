@@ -562,6 +562,8 @@ public class GenJava : GenTyped
 			WriteArgs(method, args);
 			Write(", StandardCharsets.UTF_8)");
 		}
+		else if (method == CiSystem.EnvironmentGetEnvironmentVariable)
+			WriteCall("System.getenv", args[0]);
 		else if (method == CiSystem.RegexCompile)
 			WriteRegex(args, 0);
 		else if (method == CiSystem.RegexEscape) {

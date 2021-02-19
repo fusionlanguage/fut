@@ -1213,6 +1213,8 @@ public class GenC : GenCCpp
 			WriteConsoleWrite(obj, args, false);
 		else if (method == CiSystem.ConsoleWriteLine)
 			WriteConsoleWrite(obj, args, true);
+		else if (method == CiSystem.EnvironmentGetEnvironmentVariable)
+			WriteCall("getenv", args[0]);
 		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
 			Include("math.h");
 			WriteMathCall(method, args);
