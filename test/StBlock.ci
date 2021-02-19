@@ -2,12 +2,19 @@ public static class Test
 {
 	public static bool Run()
 	{
+		int s = 0;
 		{
 			{
 				{
+					int i = 2;
+					s += i;
+				}
+				{
+					int i = 3; //FAIL: swift TODO
+					s += i;
 				}
 			}
-			return true;
+			return s == 5;
 		}
 	}
 }
