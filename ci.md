@@ -23,10 +23,16 @@ and you are probably familiar with this paradigm. This can be seen as
 an improvement over C, nevertheless the object-oriented C output is rather
 straightforward to use for C programmers.
 
-There is no runtime library dependency. The C output is a self-contained pair
-of `.c/.h` files containing portable, human-readable C99 code.
+Runtime library dependencies are minimal. The C output is often a self-contained
+pair of `.c/.h` files containing portable, human-readable C99 code.
 Similarly, the outputs in other languages do _not_ rely on anything except
-the standard language.
+the standard language. There are two exceptions:
+
+1. If the Ć code uses regular expressions, `List`, `Dictionary`
+   or `SortedDictionary`, the C output relies
+   on [GLib](https://wiki.gnome.org/Projects/GLib) implementations of these.
+2. `Math.FusedMultiplyAdd` is implemented in Python
+   with [pyfma](https://pypi.org/project/pyfma/).
 
 Memory management is native to the target language.
 A garbage collector will be used if available in the target language.
@@ -441,6 +447,24 @@ arrayStorage.Fill(0);
 
 Array slices can be copied to other arrays and within the same array with
 `sourceArray.CopyTo(sourceIndex, destinationArray, destinationIndex, count)`.
+
+Arrays and lists of numbers can be sorted:
+
+```csharp
+arrayStorage.Sort();
+list.Sort();
+arrayRef.Sort(startIndex, count);
+```
+
+To retrieve index of a number in a sorted array, use `BinarySearch`:
+
+```csharp
+int index = sortedArray.BinarySearch(value, startIndex, count);
+if (index >= startIndex && index < startIndex + count && sortedArray[index] == value)
+    Console.WriteLine("found");
+else    
+    Console.WriteLine("not found");
+```
 
 All reference types (including the dynamic reference) can have the value `null`.
 References might be compared -- this compares the identity of the arrays,
@@ -1019,6 +1043,20 @@ Console.WriteLine($"Yes, {40 + 2}");
 
 Use `Console.Error.Write` and `Console.Error.WriteLine` to target
 the standard error stream.
+
+### Environment variables
+
+Environment variables can be retrieved
+with `Environment.GetEnvironmentVariable`.
+`null` is returned if variable is not defined.
+
+```csharp
+string homeDir = Environment.GetEnvironmentVariable("HOME");
+if (homeDir == null)
+    Console.WriteLine("Homeless user");
+```
+
+For JavaScript, this is only available in Node.js, not the web browsers.
 
 ### Native blocks
 
