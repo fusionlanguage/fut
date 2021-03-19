@@ -393,14 +393,23 @@ public class GenCpp : GenCCpp
 			base.WriteEqual(expr, parent, not);
 	}
 
-	static bool IsForeachVar(CiExpr expr)
-		=> expr is CiSymbolReference symbol && symbol.Symbol.Parent is CiForeach;
+	static bool IsCppPtr(CiExpr expr)
+	{
+		if (!(expr.Type is CiClassPtrType))
+			return false;
+		if (expr is CiSymbolReference symbol
+		 && symbol.Symbol.Parent is CiForeach loop
+		 && loop.Collection.Type is CiArrayType array
+		 && array.ElementType is CiClass)
+			return false; // C++ reference
+		return true; // C++ pointer
+	}
 
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
 		if (symbol != null && symbol.Symbol is CiConst) // FIXME
 			Write("::");
-		else if (left.Type is CiClassPtrType && !IsForeachVar(left))
+		else if (IsCppPtr(left))
 			Write("->");
 		else
 			Write('.');
@@ -753,7 +762,7 @@ public class GenCpp : GenCCpp
 				obj.Accept(this, CiPriority.Primary);
 				if (method.CallType == CiCallType.Static)
 					Write("::");
-				else if (obj.Type is CiClassPtrType && !IsForeachVar(obj))
+				else if (IsCppPtr(obj))
 					Write("->");
 				else
 					Write('.');
@@ -798,7 +807,7 @@ public class GenCpp : GenCCpp
 		case CiClassPtrType leftClass when leftClass.Modifier != CiToken.Hash:
 			switch (expr.Type) {
 			case CiClass _:
-			case CiClassPtrType _ when IsForeachVar(expr):
+			case CiClassPtrType _ when !IsCppPtr(expr):
 				Write('&');
 				expr.Accept(this, CiPriority.Primary);
 				return;

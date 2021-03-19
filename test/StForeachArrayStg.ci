@@ -18,6 +18,12 @@ public class Test
 			sum += t.Foo + p.Foo;
 		}
 
-		return sum == 34;
+		Test[2] pa;
+		pa[0] = oa[0];
+		pa[1] = oa[1];
+		foreach (Test t in pa)
+			sum += t.Foo;
+
+		return sum == 30 + 4 + 2;
 	}
 }
