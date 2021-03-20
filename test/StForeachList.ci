@@ -9,6 +9,19 @@ public static class Test
 		int sum = 0;
 		foreach (int i in list)
 			sum += i;
-		return sum == 30;
+
+		List<string>() spl;
+		spl.Add("foo");
+		spl.Add("s");
+		foreach (string s in spl)
+			sum += s.Length;
+
+		List<string()>() ssl;
+		ssl.Add("bar");
+		ssl.Add("ek");
+		foreach (string s in ssl)
+			sum += s.Length;
+
+		return sum == 30 + 4 + 5;
 	}
 }

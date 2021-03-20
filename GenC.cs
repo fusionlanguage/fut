@@ -38,9 +38,11 @@ public class GenC : GenCCpp
 	bool MatchFind;
 	bool MatchPos;
 	bool PtrConstruct;
+	bool PtrFree;
 	bool SharedMake;
 	bool SharedAddRef;
 	bool SharedRelease;
+	bool SharedReleaseIndirect;
 	bool SharedAssign;
 	readonly SortedSet<TypeCode> Compares = new SortedSet<TypeCode>();
 	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
@@ -515,25 +517,31 @@ public class GenC : GenCCpp
 		Write("))");
 	}
 
-	static string GetListDestroy(CiType type)
+	string GetListDestroy(CiType type)
 	{
 		if (type is CiListType list) {
-			if (list.ElementType == CiSystem.StringStorageType)
-				return "free";
-			if (list.ElementType.IsDynamicPtr)
-				return "CiShared_Release";
+			if (list.ElementType == CiSystem.StringStorageType) {
+				this.PtrFree = true;
+				return "CiPtr_Free";
+			}
+			if (list.ElementType.IsDynamicPtr) {
+				this.SharedReleaseIndirect = true;
+				return "CiShared_ReleaseIndirect";
+			}
 			if (list.ElementType is CiClass klass && NeedsDestructor(klass))
 				return "(GDestroyNotify) " + klass.Name + "_Destruct";
 		}
 		return null;
 	}
 
-	static string GetDictionaryDestroy(CiType type)
+	string GetDictionaryDestroy(CiType type)
 	{
 		if (type == CiSystem.StringStorageType || type is CiArrayStorageType)
 			return "free";
-		if (type.IsDynamicPtr)
+		if (type.IsDynamicPtr) {
+			this.SharedRelease = true;
 			return "CiShared_Release";
+		}
 		if (type is CiClass klass)
 			return NeedsDestructor(klass) ? "(GDestroyNotify) " + klass.Name + "_Delete" /* TODO: emit */ : "free";
 		return "NULL";
@@ -2322,6 +2330,13 @@ public class GenC : GenCCpp
 			WriteLine("*ptr = NULL;");
 			CloseBlock();
 		}
+		if (this.PtrFree) {
+			WriteLine();
+			WriteLine("static void CiPtr_Free(void *ptr)");
+			OpenBlock();
+			WriteLine("free(*(void **) ptr);");
+			CloseBlock();
+		}
 		if (this.SharedMake || this.SharedAddRef || this.SharedRelease) {
 			WriteLine();
 			WriteLine("typedef void (*CiMethodPtr)(void *);");
@@ -2360,7 +2375,7 @@ public class GenC : GenCCpp
 			WriteLine("return ptr;");
 			CloseBlock();
 		}
-		if (this.SharedRelease || this.SharedAssign) {
+		if (this.SharedRelease || this.SharedReleaseIndirect || this.SharedAssign) {
 			WriteLine();
 			WriteLine("static void CiShared_Release(void *ptr)");
 			OpenBlock();
@@ -2375,6 +2390,13 @@ public class GenC : GenCCpp
 			WriteLine("\tself->destructor((char *) ptr + --i * self->unitSize);");
 			CloseBlock();
 			WriteLine("free(self);");
+			CloseBlock();
+		}
+		if (this.SharedReleaseIndirect) {
+			WriteLine();
+			WriteLine("static void CiShared_ReleaseIndirect(void *ptr)");
+			OpenBlock();
+			WriteLine("CiShared_Release(*(void **) ptr);");
 			CloseBlock();
 		}
 		if (this.SharedAssign) {
@@ -2471,9 +2493,11 @@ public class GenC : GenCCpp
 		this.MatchFind = false;
 		this.MatchPos = false;
 		this.PtrConstruct = false;
+		this.PtrFree = false;
 		this.SharedMake = false;
 		this.SharedAddRef = false;
 		this.SharedRelease = false;
+		this.SharedReleaseIndirect = false;
 		this.SharedAssign = false;
 		this.Compares.Clear();
 		OpenStringWriter();
