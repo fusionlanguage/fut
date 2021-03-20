@@ -203,8 +203,12 @@ public class GenC : GenCCpp
 	{
 		if (symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiArrayType array) {
 			if (array is CiListType) {
+				if (parent == CiPriority.Primary)
+					Write('(');
 				Write('*');
 				WriteCamelCaseNotKeyword(symbol.Name);
+				if (parent == CiPriority.Primary)
+					Write(')');
 			}
 			else if (array.ElementType is CiClass klass) {
 				if (parent > CiPriority.Add)
@@ -1612,14 +1616,20 @@ public class GenC : GenCCpp
 			break;
 		case CiListType list:
 			Write("for (const ");
-			Write(list.ElementType, false);
+			CiType elementType = list.ElementType;
+			Write(elementType, false);
 			Write(" *");
 			WriteCamelCaseNotKeyword(element);
 			Write(" = (const ");
 			Write(list.ElementType, false);
 			Write(" *) ");
 			statement.Collection.Accept(this, CiPriority.Primary);
-			Write("->data, *ciend = ");
+			Write("->data, ");
+			for (; elementType is CiArrayType array; elementType = array.ElementType)
+				Write('*');
+			if (elementType is CiStringType || elementType is CiClassPtrType)
+				Write('*');
+			Write("*ciend = ");
 			WriteCamelCaseNotKeyword(element);
 			Write(" + ");
 			statement.Collection.Accept(this, CiPriority.Primary); // TODO: side effect
