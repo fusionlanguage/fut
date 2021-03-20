@@ -506,7 +506,7 @@ public class GenC : GenCCpp
 
 	protected override void WriteListStorageInit(CiListType list)
 	{
-		Write(" = g_array_new(false, false, sizeof(");
+		Write(" = g_array_new(FALSE, FALSE, sizeof(");
 		Write(list.ElementType, false);
 		Write("))");
 	}
@@ -1469,7 +1469,7 @@ public class GenC : GenCCpp
 			Write(']');
 		}
 		if (type is CiListType)
-			Write(", true");
+			Write(", TRUE");
 		WriteLine(");");
 		this.Indent -= nesting;
 	}
