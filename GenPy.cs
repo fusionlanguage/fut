@@ -460,14 +460,6 @@ public class GenPy : GenPySwift
 		Write(" = {}");
 	}
 
-	protected override void WriteVarInit(CiNamedValue def)
-	{
-		if (def.Value == null && def.Type.IsDynamicPtr)
-			Write(" = None");
-		else
-			base.WriteVarInit(def);
-	}
-
 	protected override void WriteInitCode(CiNamedValue def)
 	{
 	}
@@ -733,7 +725,7 @@ public class GenPy : GenPySwift
 	}
 
 	static bool NeedsInit(CiNamedValue def)
-		=> def.Value != null || def.Type.IsFinal || def.Type.IsDynamicPtr;
+		=> def.Value != null || def.Type.IsFinal;
 
 	public override void Visit(CiExpr statement)
 	{

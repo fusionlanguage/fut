@@ -16,6 +16,10 @@ public class Test
 
 	static bool DiscardShort(Test# p) => true;
 
+	static void Two(Test# p, int i)
+	{
+	}
+
 	int[]# Array;
 
 	void SetArray!(int[]# a)
@@ -42,6 +46,7 @@ public class Test
 		Identity(p);
 		Discard(p);
 		DiscardShort(p);
+		Two(p, 5);
 
 		o.SetArray(new int[2]);
 		int[]# a = new int[3]; //FAIL: cpp - not supported by Xcode

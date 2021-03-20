@@ -5,7 +5,7 @@ class Data
 public class Test
 {
 	Data() Storage;
-	Data# Dynamic; //FAIL: cl
+	Data# Dynamic = null; //FAIL: cl
 
 	Data ReturnStorage() => Storage;
 
@@ -14,7 +14,7 @@ public class Test
 	Data ReturnConditional(bool dyn) => dyn ? Dynamic : Storage;
 
 	int[2] ArrayStorage;
-	int[]# ArrayDynamic;
+	int[]# ArrayDynamic = null;
 
 	int[] ReturnArrayStorage() => ArrayStorage;
 
