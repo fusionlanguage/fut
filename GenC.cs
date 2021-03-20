@@ -1615,20 +1615,20 @@ public class GenC : GenCCpp
 			WriteChild(statement.Body);
 			break;
 		case CiListType list:
-			Write("for (const ");
+			Write("for (");
 			CiType elementType = list.ElementType;
 			Write(elementType, false);
-			Write(" *");
+			Write(" const *");
 			WriteCamelCaseNotKeyword(element);
-			Write(" = (const ");
-			Write(list.ElementType, false);
-			Write(" *) ");
+			Write(" = (");
+			Write(elementType, false);
+			Write(" const *) ");
 			statement.Collection.Accept(this, CiPriority.Primary);
 			Write("->data, ");
 			for (; elementType is CiArrayType array; elementType = array.ElementType)
 				Write('*');
 			if (elementType is CiStringType || elementType is CiClassPtrType)
-				Write('*');
+				Write("* const ");
 			Write("*ciend = ");
 			WriteCamelCaseNotKeyword(element);
 			Write(" + ");
