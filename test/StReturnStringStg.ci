@@ -7,10 +7,21 @@ public static class Test
 		return stg;
 	}
 
+	static string() Times(string s, int count)
+	{
+		string() stg = s;
+		stg += s;
+		if (count == 2)
+			return stg;
+		stg += s;
+		return stg;
+	}
+
 	public static bool Run()
 	{
 		string() stg = Twice("foo");
 		Twice("bar"); // don't leak
+		Times("x", 3); // don't leak
 		return stg == "foofoo";
 	}
 }

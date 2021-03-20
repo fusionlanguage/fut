@@ -1486,10 +1486,13 @@ public class GenC : GenCCpp
 		this.Indent -= nesting;
 	}
 
-	void WriteDestructAll()
+	void WriteDestructAll(CiSymbol exceptSymbol = null)
 	{
-		for (int i = this.VarsToDestruct.Count; --i >= 0; )
-			WriteDestruct(this.VarsToDestruct[i]);
+		for (int i = this.VarsToDestruct.Count; --i >= 0; ) {
+			CiSymbol symbol = this.VarsToDestruct[i];
+			if (symbol != exceptSymbol)
+				WriteDestruct(symbol);
+		}
 	}
 
 	void WriteDestructLoopOrSwitch(CiCondCompletionStatement loopOrSwitch)
@@ -1682,18 +1685,16 @@ public class GenC : GenCCpp
 			base.Visit(statement);
 		}
 		else {
-			if (this.CurrentMethod.Type == CiSystem.StringStorageType) {
-				for (int i = 0; i < this.VarsToDestruct.Count; i++) {
-					if (statement.Value.IsReferenceTo(this.VarsToDestruct[i])) {
-						// Optimization: avoid copy
-						this.VarsToDestruct.RemoveAt(i);
-						WriteDestructAll();
-						Write("return ");
-						statement.Value.Accept(this, CiPriority.Statement);
-						WriteLine(';');
-						return;
-					}
-				}
+			if (statement.Value is CiSymbolReference symbol && this.VarsToDestruct.Contains(symbol.Symbol)) {
+				// Optimization: avoid copy
+				WriteDestructAll(symbol.Symbol);
+				Write("return ");
+				if (this.CurrentMethod.Type is CiClassPtrType resultPtr)
+					WriteClassPtr(resultPtr.Class, symbol, CiPriority.Statement); // upcast, but don't AddRef
+				else
+					symbol.Accept(this, CiPriority.Statement);
+				WriteLine(';');
+				return;
 			}
 			WriteDefinition(this.CurrentMethod.Type, () => Write("returnValue"), true, true);
 			Write(" = ");
