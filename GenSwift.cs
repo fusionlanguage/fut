@@ -288,9 +288,17 @@ public class GenSwift : GenPySwift
 			WriteEscapedChar(c);
 	}
 
+	static bool IsForeachStringStg(CiExpr expr)
+	{
+		return expr is CiSymbolReference symbol
+			&& symbol.Symbol.Parent is CiForeach loop
+			&& loop.Collection.Type is CiArrayType array
+			&& array.ElementType == CiSystem.StringStorageType;
+	}
+
 	void WriteUnwrappedString(CiExpr expr, CiPriority parent, bool substringOk)
 	{
-		if (!(expr is CiLiteral) && expr.Type == CiSystem.StringPtrType) {
+		if (!(expr is CiLiteral) && expr.Type == CiSystem.StringPtrType && !IsForeachStringStg(expr)) {
 			expr.Accept(this, CiPriority.Primary);
 			Write('!');
 		}
