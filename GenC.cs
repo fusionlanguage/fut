@@ -1685,16 +1685,24 @@ public class GenC : GenCCpp
 			base.Visit(statement);
 		}
 		else {
-			if (statement.Value is CiSymbolReference symbol && this.VarsToDestruct.Contains(symbol.Symbol)) {
-				// Optimization: avoid copy
-				WriteDestructAll(symbol.Symbol);
-				Write("return ");
-				if (this.CurrentMethod.Type is CiClassPtrType resultPtr)
-					WriteClassPtr(resultPtr.Class, symbol, CiPriority.Statement); // upcast, but don't AddRef
-				else
-					symbol.Accept(this, CiPriority.Statement);
-				WriteLine(';');
-				return;
+			if (statement.Value is CiSymbolReference symbol) {
+				if (this.VarsToDestruct.Contains(symbol.Symbol)) {
+					// Optimization: avoid copy
+					WriteDestructAll(symbol.Symbol);
+					Write("return ");
+					if (this.CurrentMethod.Type is CiClassPtrType resultPtr)
+						WriteClassPtr(resultPtr.Class, symbol, CiPriority.Statement); // upcast, but don't AddRef
+					else
+						symbol.Accept(this, CiPriority.Statement);
+					WriteLine(';');
+					return;
+				}
+				if (symbol.Left == null) {
+					// Local variable value doesn't depend on destructed variables
+					WriteDestructAll();
+					base.Visit(statement);
+					return;
+				}
 			}
 			WriteDefinition(this.CurrentMethod.Type, () => Write("returnValue"), true, true);
 			Write(" = ");
