@@ -640,6 +640,8 @@ public class GenJava : GenTyped
 			WriteIndexingInternal(expr);
 	}
 
+	protected override bool IsNotPromotedIndexing(CiBinaryExpr expr) => expr.Op == CiToken.LeftBracket && !IsUnsignedByte(expr.Type);
+
 	protected override void WriteAssignRight(CiBinaryExpr expr)
 	{
 		if ((!expr.Left.IsIndexing || !IsUnsignedByte(expr.Left.Type))

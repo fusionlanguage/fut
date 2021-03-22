@@ -209,6 +209,8 @@ public abstract class GenTyped : GenBase
 			expr.Accept(this, CiPriority.Statement);
 	}
 
+	protected virtual bool IsNotPromotedIndexing(CiBinaryExpr expr) => expr.Op == CiToken.LeftBracket;
+
 	protected override void WriteAssignRight(CiBinaryExpr expr)
 	{
 		if (expr.Left.IsIndexing) {
@@ -216,7 +218,7 @@ public abstract class GenTyped : GenBase
 			bool promote;
 			switch (expr.Right) {
 			case CiLiteral _:
-			case CiBinaryExpr rightBinary when rightBinary.Op == CiToken.LeftBracket || rightBinary.IsAssign:
+			case CiBinaryExpr rightBinary when IsNotPromotedIndexing(rightBinary) || rightBinary.IsAssign:
 				promote = false;
 				break;
 			default:
