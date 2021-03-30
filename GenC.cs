@@ -2489,8 +2489,8 @@ public class GenC : GenCCpp
 			WriteLine();
 			Write("static int CiTree_CompareInteger(gconstpointer pa, gconstpointer pb, gpointer user_data)");
 			OpenBlock();
-			WriteLine("intptr_t a = (intptr_t) pa;");
-			WriteLine("intptr_t b = (intptr_t) pb;");
+			WriteLine("gintptr a = (gintptr) pa;");
+			WriteLine("gintptr b = (gintptr) pb;");
 			WriteLine("return (a > b) - (a < b);");
 			CloseBlock();
 		}
