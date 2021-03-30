@@ -1712,7 +1712,6 @@ public class GenC : GenCCpp
 			WriteChild(statement.Body);
 			break;
 		case CiSortedDictionaryType dict:
-			OpenBlock();
 			Write("for (GTreeNode *cidictit = g_tree_node_first(");
 			statement.Collection.Accept(this, CiPriority.Statement);
 			Write("); cidictit != NULL; cidictit = g_tree_node_next(cidictit)) ");
@@ -1720,7 +1719,6 @@ public class GenC : GenCCpp
 			WriteDictIterVar(statement.Element, "g_tree_node_key(cidictit)");
 			WriteDictIterVar(statement.ValueVar, "g_tree_node_value(cidictit)");
 			FlattenBlock(statement.Body);
-			CloseBlock();
 			CloseBlock();
 			break;
 		case CiDictionaryType dict:
