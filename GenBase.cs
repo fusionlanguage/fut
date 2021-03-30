@@ -1356,6 +1356,14 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
+	protected void FlattenBlock(CiStatement statement)
+	{
+		if (statement is CiBlock block)
+			Write(block.Statements);
+		else
+			statement.Accept(this);
+	}
+
 	protected void WriteBody(CiMethod method)
 	{
 		if (method.CallType == CiCallType.Abstract)
@@ -1364,10 +1372,7 @@ public abstract class GenBase : CiVisitor
 			WriteLine();
 			this.CurrentMethod = method;
 			OpenBlock();
-			if (method.Body is CiBlock block)
-				Write(block.Statements);
-			else
-				method.Body.Accept(this);
+			FlattenBlock(method.Body);
 			CloseBlock();
 			this.CurrentMethod = null;
 		}
