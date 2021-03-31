@@ -809,7 +809,17 @@ public class GenCpp : GenCCpp
 			case CiClass _:
 			case CiClassPtrType _ when !IsCppPtr(expr):
 				Write('&');
-				expr.Accept(this, CiPriority.Primary);
+				if (expr is CiCallExpr) {
+					Write("static_cast<");
+					if (leftClass.Modifier == CiToken.EndOfFile)
+						Write("const ");
+					WriteName(leftClass.Class);
+					Write(" &>(");
+					expr.Accept(this, CiPriority.Statement);
+					Write(')');
+				}
+				else
+					expr.Accept(this, CiPriority.Primary);
 				return;
 			case CiClassPtrType rightPtr when rightPtr.Modifier == CiToken.Hash:
 				expr.Accept(this, CiPriority.Primary);

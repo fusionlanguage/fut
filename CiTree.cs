@@ -791,7 +791,6 @@ public class CiClass : CiContainerType
 	public readonly List<CiConst> ConstArrays = new List<CiConst>();
 	public CiVisitStatus VisitStatus;
 	public override string ToString() => this.Name + "()";
-	public override bool IsAssignableFrom(CiType right) => false;
 	public override CiType PtrOrSelf => new CiClassPtrType { Class = this, Modifier = CiToken.ExclamationMark };
 	public override bool IsFinal => this != CiSystem.MatchClass;
 	public override bool IsClass(CiClass klass) => this == klass;

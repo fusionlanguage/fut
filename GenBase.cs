@@ -739,6 +739,8 @@ public abstract class GenBase : CiVisitor
 			WriteNewArray(array);
 	}
 
+	protected virtual bool HasClassStorageInit(CiClass klass) => klass.IsFinal;
+
 	protected abstract void WriteListStorageInit(CiListType list);
 
 	protected abstract void WriteDictionaryStorageInit(CiDictionaryType dict);
@@ -750,22 +752,22 @@ public abstract class GenBase : CiVisitor
 
 	protected virtual void WriteVarInit(CiNamedValue def)
 	{
-		if (def.Type is CiClass klass) {
-			if (klass.IsFinal) {
-				Write(" = ");
-				WriteNew(klass, CiPriority.Statement);
-			}
-		}
-		else if (def.Type is CiArrayStorageType array && !(def.Value is CiCollection))
+		if (def.Type is CiArrayStorageType array && !(def.Value is CiCollection))
 			WriteArrayStorageInit(array, def.Value);
-		else if (def.Type is CiListType list)
-			WriteListStorageInit(list);
-		else if (def.Type is CiDictionaryType dict)
-			WriteDictionaryStorageInit(dict);
 		else if (def.Value != null) {
 			Write(" = ");
 			WriteCoercedExpr(def.Type, def.Value);
 		}
+		else if (def.Type is CiClass klass) {
+			if (HasClassStorageInit(klass)) {
+				Write(" = ");
+				WriteNew(klass, CiPriority.Statement);
+			}
+		}
+		else if (def.Type is CiListType list)
+			WriteListStorageInit(list);
+		else if (def.Type is CiDictionaryType dict)
+			WriteDictionaryStorageInit(dict);
 	}
 
 	protected virtual void WriteVar(CiNamedValue def)
