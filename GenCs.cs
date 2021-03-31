@@ -97,6 +97,22 @@ public class GenCs : GenTyped
 		}
 	}
 
+	new void WriteDoc(CiMethod method)
+	{
+		if (method.Documentation == null)
+			return;
+		Write(method.Documentation);
+		foreach (CiVar param in method.Parameters) {
+			if (param.Documentation != null) {
+				Write("/// <param name=\"");
+				Write(param.Name);
+				Write("\">");
+				Write(param.Documentation.Summary, false);
+				WriteLine("</param>");
+			}
+		}
+	}
+
 	protected override void WriteName(CiSymbol symbol)
 	{
 		if (symbol is CiConst konst && konst.InMethod != null)
