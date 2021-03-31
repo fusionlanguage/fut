@@ -1052,7 +1052,7 @@ public class GenSwift : GenPySwift
 		foreach (CiVar param in method.Parameters) {
 			if (param.Documentation != null) {
 				Write("/// - parameter ");
-				Write(param.Name);
+				WriteName(param);
 				Write(' ');
 				Write(param.Documentation.Summary, false);
 				WriteLine();

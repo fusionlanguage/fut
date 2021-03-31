@@ -271,7 +271,7 @@ public abstract class GenBase : CiVisitor
 		foreach (CiVar param in method.Parameters) {
 			if (param.Documentation != null) {
 				Write(" * @param ");
-				Write(param.Name);
+				WriteName(param);
 				Write(' ');
 				Write(param.Documentation.Summary, false);
 				WriteLine();
