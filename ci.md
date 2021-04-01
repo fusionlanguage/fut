@@ -13,7 +13,7 @@ in the mentioned languages, so programmers of these languages can use your code.
 Ć is a language for programmers with vast experience in several languages.
 Ć follows the [Principle of least astonishment (POLA)](https://en.wikipedia.org/wiki/Principle_of_least_astonishment).
 The syntax is akin to C#.
-In fact, C# syntax highlighting works quite well for Ć (not perfectly, though).
+In fact, C# syntax highlighting works quite well for Ć.
 However, Ć is not a C# clone or a subset of it.
 The differences stem from the need to have _completely automated_ translation
 to _efficient_ C and JavaScript code in particular.
@@ -24,7 +24,7 @@ an improvement over C, nevertheless the object-oriented C output is rather
 straightforward to use for C programmers.
 
 Runtime library dependencies are minimal. The C output is often a self-contained
-pair of `.c/.h` files containing portable, human-readable C99 code.
+pair of `.c`/`.h` files containing portable, human-readable C99 code.
 Similarly, the outputs in other languages do _not_ rely on anything except
 the standard language. There are two exceptions:
 
@@ -71,9 +71,10 @@ and the ternary operator `x ? y : z` (if `x` then `y` else `z`).
 Most of the time you will use the 32-bit integer type `int`.
 For larger numbers, use the 64-bit `long`.
 However, JavaScript doesn't support 64-bit integers,
+but only 64-bit floating-point numbers,
 so operations on `long` are subject to precision loss when using JavaScript.
 
-These two types should be sufficient for scalar variables. For arrays,
+`int` and `long` are often sufficient for scalar variables. For arrays,
 you want to conserve the storage space and use smaller types where possible.
 Not only reduces it memory footprint, but it is cache-friendly
 at the same time, which is essential for good performance.
@@ -101,9 +102,9 @@ There are aliases for the commonly used ranges:
 * `uint` is `0 .. 2147483647`.
 
 Note that `uint` is _not_ 32-bit unsigned integer, but a 31-bit one.
-As such, it doesn't provide an extended range over `int`.
-It only serves as a documentation that a negative number is not allowed.
-`byte` corresponds to `byte` in Java, even though it is _signed_ in Java.
+As such, it doesn't provide extended range over `int`.
+It serves as a documentation that a negative number is not allowed.
+`byte` corresponds to `byte` in Java, even though the Java type is _signed_.
 This is accomplished by `cito` injecting `& 0xff` in every retrieval
 of a `byte` value.
 
@@ -130,16 +131,17 @@ Operations on integers are conducted with the usual binary operators
 incrementations and decrementations (`x++ ++x x-- --x`), negation (`-`),
 bitwise complement (`~`) and comparisons (`== != < <= > >=`).
 
-Incrementations and decrementations cannot be conditional in an expression.
+Incrementations and decrementations cannot be _conditional_ in an expression.
 That is, they cannot be used on the right side of `&&`, `||`
-or the ternary operator. This is because such expressions don't easily
-translate to Python or Swift, which lack incrementation and decrementation
-operators.
+or the ternary operator. This is because such expressions wouldn't easily
+translate to Python or Swift, where incrementations and decrementations
+are implemented as `+=` and `-=` statements.
 
 ### Floating-point numbers
 
 There are two floating-point types: `float` and `double`.
 Use the aforementioned operators, except for bitwise operations.
+
 There's a built-in `Math` class with the following constants:
 
 * `Math.PI`
@@ -176,7 +178,7 @@ and static methods:
 * `Math.Truncate(double a)`
 
 Conversion from floating-point type to integer must be explicit,
-by using one of the above methods that return an integer.
+by using one of the above methods that return an integer:
 
 ```csharp
 double d = 10.5;
@@ -232,8 +234,6 @@ enum* Seasons
 
 ### Strings
 
-For text processing please choose Perl and not Ć. Really.
-
 In Ć there are two string data types:
 
 * String storage, written as `string()`.
@@ -242,7 +242,7 @@ In Ć there are two string data types:
 This distinction enables straightforward translation to C and C++,
 which have no garbage collector.
 In C++, string storage is represented by `std::string`,
-while string reference is `std::string_view`.
+while string reference is C++17 `std::string_view`.
 In C, string storage is a `char *` pointing to a `malloc`'ed string
 and string reference is `const char *`.
 In the other languages, `String` is used for both string storage and reference.
@@ -256,12 +256,11 @@ A string reference can:
   meaning "nothing is referenced".
 
 String literals are written in double quotes: `"Hello world"`.
-You may use `\n` and the other escape sequences as in character literals.
+You may use `\n` and the other escape sequences allowed in character literals.
 
 Possible string operations are:
 
-* Assignment with `=`. For string storage in C and C++,
-  a copy is made and the previous value gets invalid.
+* Assignment with `=`. For string storage in C and C++, a copy is made.
 * Concatenation with `+` and `+=`.
 * Comparison with `==` and `!=`. `cito` translates this to `strcmp` in C
   and `str1.equals(str2)` in Java. The two comparison operators can also
@@ -276,7 +275,7 @@ Possible string operations are:
 * `str.Substring(offset, length)` evaluates to the selected part of the string.
 * `str.Substring(offset)` returns the part of the string
   from the specified position until the end of the string.
-* `Encoding.UTF8.GetString(bytes, offset, length)`
+* `Encoding.UTF8.GetString(byteArray, offset, length)`
   creates a string from the specified part of a `byte` array.
 
 Different target languages have different character encodings.
@@ -291,7 +290,7 @@ However, Ć doesn't enforce any encoding.
 #### Interpolated strings
 
 An interpolated string starts with `$"` and contains expressions in braces.
-The expressions are replaced with their string values.
+The expressions are replaced with their textual representations.
 Example:
 
 ```csharp
@@ -312,8 +311,8 @@ string() s = $"{name, 5} {i:X2} {d,5:F2}"; // " John 0F  1.50"
 ```
 
 If field width is specified, the formatted expression is padded with spaces.
-The expression is right-aligned if width is positive
-and left-aligned if width is negative.
+The expression is right-aligned if the width is positive
+and left-aligned if the width is negative.
 
 The following format strings are supported:
 
@@ -322,16 +321,16 @@ The following format strings are supported:
 * `X` or `x` format an integer in hexadecimal.
   `X` uses uppercase digits, `x` uses lowercase digits.
   The optional number specifies padding with leading zeros.
-* `F<n>` or `f<n>` format a `float` or `double` with `n` digits
+* `F<n>` or `f<n>` format a `float` or a `double` with `n` digits
   after the decimal point.
-* `E<n>` or `e<n>` format a `float` or `double` in exponential notation
+* `E<n>` or `e<n>` format a `float` or a `double` in exponential notation
   with `n` digits after the decimal point. The exponent symbol `E` or `e`
   matches the format string.
 
 #### Regular expressions
 
 Strings can be tested against
-a [regular expression](https://en.wikipedia.org/wiki/Regular_expression):
+[regular expressions](https://en.wikipedia.org/wiki/Regular_expression):
 
 ```csharp
 string s = "456";
@@ -341,9 +340,9 @@ bool isInteger = Regex.IsMatch(s, "^\\d+$");
 `Regex.IsMatch` accepts an additional argument of type `RegexOptions`:
 
 * `RegexOptions.IgnoreCase` matches both upper- and lower-case letters.
-* `RegexOptions.Multiline` changes the behavior of `^` and `$`
-  to match at the beginning and end of a line instead of just the beginning
-  and end of the string. Lines are separated by the newline (`'\n'`) characters.
+* `RegexOptions.Multiline` changes the behavior of `^` and `$` to match at
+  the beginning and the end of a line instead of just the beginning and the end
+  of the string. Lines are separated by the newline (`'\n'`) characters.
 * `RegexOptions.Singleline` changes the behavior of the dot (`.`)
   so that it matches every character.
   Normally it doesn't match the newline (`'\n'`).
@@ -411,12 +410,12 @@ int[]# dynamicArray = new int[1000];
 ```
 
 Dynamic array references can be assigned to other dynamic array references.
-The dynamic array is valid as long as there's at least one dynamic
+The dynamic array is alive as long as there's at least one dynamic
 array reference to it.
 In C++, dynamic array references are implemented as `std::shared_ptr`.
 
-Read-only and read-write array reference can point to array storage
-and dynamic arrays.
+Read-only and read-write array reference can point to either array storage
+or dynamic arrays.
 It is not possible to modify the array via a read-only reference:
 
 ```csharp
@@ -425,7 +424,8 @@ int[] readOnlyArrayRef = arrayStorage;
 readOnlyArrayRef[0] = 42; // cito error
 ```
 
-Array size is only available for array storage, via `array.Length`.
+Array size is only available for array storage, via `arrayStorage.Length`.
+
 The initial content of arrays (either storage or dynamic) is undefined,
 unless explicitly specified:
 
@@ -448,7 +448,7 @@ arrayStorage.Fill(0);
 Array slices can be copied to other arrays and within the same array with
 `sourceArray.CopyTo(sourceIndex, destinationArray, destinationIndex, count)`.
 
-Arrays and lists of numbers can be sorted:
+Arrays and lists of _numbers_ can be sorted:
 
 ```csharp
 arrayStorage.Sort();
@@ -499,7 +499,7 @@ class Animal
 }
 ```
 
-Note to C++ programmers: do not place a semicolon after the closing brace.
+Note to C++ programmers: do _not_ place a semicolon after the closing brace.
 
 Ć supports single inheritance. Put _base class_ name after a colon:
 
@@ -525,13 +525,13 @@ Class members can be:
 
 * _fields_ -- the data contained in every _object_
 * _methods_ -- class-specific code
-* _constructor_ -- code to be executed on _object_ creation
+* _constructor_ -- code to be executed on _object creation_
 * _constants_ -- named compile-time values
 
-Every member has _visibility_:
+Every member has a _visibility_:
 
-* _private_ is the default visibility. There is _no_ `private` keyword.
-  This means the member is only visible to other members of the class.
+* _private_ is the default visibility, meaning the member is only visible
+  to other members of the class. There is _no_ `private` keyword.
 * `protected` means the member is visible to this class and its subclasses.
 * `internal` means the member is visible to the Ć code compiled with it.
 * `public` means the visibility is unrestricted.
@@ -544,8 +544,8 @@ and optionally the initial value:
 ```csharp
 class Car
 {
-    int Year;
     internal string() Model;
+    int Year;
     int Seats = 5;
 }
 ```
@@ -557,7 +557,7 @@ public class Image
 {
     int Width;
     public int GetWidth() { return Width; }
-    public int SetWidth(int value) { With = value; }
+    public int SetWidth(int value) { Width = value; }
 
     int Height;
     public int GetHeight() => Height; // syntax sugar
@@ -575,10 +575,10 @@ constants. Constants are implicitly `static`.
 ```csharp
 public class RECOIL
 {
-    public const int VersionMajor = 5;
-    public const int VersionMinor = 0;
+    public const int VersionMajor = 6;
+    public const int VersionMinor = 1;
     public const int VersionMicro = 0;
-    public const string Version = VersionMajor + "." + VersionMinor + "." + VersionMicro;
+    public const string Version = $"{VersionMajor}.{VersionMinor}.{VersionMicro}";
 }
 ```
 
@@ -610,7 +610,7 @@ public class Foo
 
 A public constructor is also required to enable object creation outside Ć.
 
-Constructors in Ć _do not_ take arguments. This promotes reuse of existing
+Constructors in Ć _never_ take arguments. This promotes reuse of existing
 objects instead of creating a bunch of single-use objects.
 If you need to initialize the object with some outside data,
 create a method such as `Init`.
@@ -622,7 +622,7 @@ Methods are defined by specifying in order:
 * visibility (`public`, `internal`, `protected` or the default private)
 * _call type_ (`static`, `abstract`, `virtual`, `override`, `sealed`
   or the default normal)
-* return type (can be `void` if no return value)
+* return type (or `void` if no return value)
 * method name
 * an exclamation mark (`!`) if the method is a _mutator_ (see below)
 * comma-separated parameter list in parentheses
@@ -639,17 +639,17 @@ this method via `base.MethodName(arguments)`.
 
 Method name must identify the method within the class.
 Ć does _not_ support overloading.
-It does support default argument values, though:
+It does support _default argument values_, though:
 
 ```csharp
-int ParseInt(string s, int base = 10) {
+int ParseInt(string s, int radix = 10) {
     ...
 }
 ```
 
-A method body is usually a _block_ (list of instructions in curly braces).
-If the method body is very short and consists entirely of the `return`
-statements, there's an alternative syntax:
+A method body is usually a _block_ (sequence of instructions in curly braces).
+If the method body consists entirely of the `return` statement,
+there's an alternative syntax:
 
 ```csharp
 public int GetWidth() => Width;
@@ -657,8 +657,7 @@ public int GetWidth() => Width;
 
 A method is called _pure_ if its only effect is the return value
 (that is, no state is modified).
-`cito` can evaluate such method compile-time and they can be used
-in expressions that must evaluate to compile-time constants:
+`cito` can evaluate such methods compile-time:
 
 ```csharp
 static int Square(int x) => x * x;
@@ -806,13 +805,13 @@ copies elements from a list to an array.
 #### Dictionary
 
 `Dictionary` provides fast access to a given _value_ associated
-with a _key_. Key must be a number or a string. Value can be of any type.
+with a _key_. The key must be a number or a string. Value can be of any type.
 
 ```csharp
 Dictionary<string(), int> dict;
 ```
 
-Index the dictionary with a key to insert/overwrite and retrieve elements.
+Index the dictionary with a key to insert/overwrite and retrieve elements:
 
 ```csharp
 dict["foo"] = 42;
@@ -826,12 +825,12 @@ Use `ContainsKey` to check for existence -- it returns a `bool`.
 If the value is object or array _storage_,
 create it in the dictionary with `Add(key)`.
 
-`Count` return the number of key-value pairs.
+`Count` returns the number of key-value pairs.
 `Remove(key)` removes one mapping. `Clear()` removes all.
 
 #### SortedDictionary
 
-`SortedDictionary` is same as `Dictionary`, but ensures that `foreach`
+`SortedDictionary` is same as `Dictionary`, except that `foreach`
 iterates in the key order.
 
 ## Statements
@@ -883,7 +882,7 @@ x = 4;
 x += 5; // increment by 5
 ```
 
-Assignments are statements, but not expressions.
+Assignments are statements, but not expressions:
 
 ```csharp
 int c;
@@ -919,7 +918,7 @@ i++;
 i + 2; // ERROR: useless computation
 ```
 
-There is no comma operator in Ć.
+There is no _comma operator_ in Ć.
 
 ### Returning method result
 
@@ -956,6 +955,7 @@ array[1] = 10;
 array[2] = 15;
 foreach (int i in array)
     Console.WriteLine(i);
+
 SortedDictionary<string(), int> dict;
 dict["foo"] = 1;
 dict["bar"] = 2;
@@ -971,7 +971,7 @@ Inside loops you may use:
 ### Switch statement
 
 The `switch` statement accepts an expression and transfers control
-to the corresponding `case` label.
+to the corresponding `case` label. It supports integers and enumerations.
 
 `case` clauses must be correctly terminated, consider:
 
@@ -1079,7 +1079,7 @@ Native blocks are allowed as statements in method bodies and at the top level
 Conditional compilation in Ć is modeled after C#.
 Conditional compilation symbols can only be given on the `cito` command line.
 Conditional compilation symbols have no assigned value,
-they are only present or not.
+they are either present or not.
 
 Example:
 
