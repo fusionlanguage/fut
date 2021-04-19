@@ -1,6 +1,6 @@
 // CiResolver.cs - Ci symbol resolver
 //
-// Copyright (C) 2011-2020  Piotr Fusik
+// Copyright (C) 2011-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -680,10 +680,8 @@ public class CiResolver : CiVisitor
 				if (leftRange.Max < rightRange.Min || leftRange.Min > rightRange.Max)
 					return CiLiteral.False;
 			}
-			else if (left.Type is CiStringType && right.Type is CiStringType) {
-				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
-					return expr.ToLiteral((string) leftLiteral.Value == (string) rightLiteral.Value);
-			}
+			else if (left.Type == right.Type && left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
+				return expr.ToLiteral(object.Equals(leftLiteral.Value, rightLiteral.Value));
 			// TODO: type check
 			type = CiSystem.BoolType;
 			break;
@@ -694,10 +692,8 @@ public class CiResolver : CiVisitor
 				if (leftRange.Min == leftRange.Max && leftRange.Min == rightRange.Min && leftRange.Min == rightRange.Max)
 					return CiLiteral.False;
 			}
-			else if (left.Type is CiStringType && right.Type is CiStringType) {
-				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
-					return expr.ToLiteral((string) leftLiteral.Value != (string) rightLiteral.Value);
-			}
+			else if (left.Type == right.Type && left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
+				return expr.ToLiteral(!object.Equals(leftLiteral.Value, rightLiteral.Value));
 			// TODO: type check
 			type = CiSystem.BoolType;
 			break;
