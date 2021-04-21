@@ -1,6 +1,6 @@
 // GenCl.cs - OpenCL C code generator
 //
-// Copyright (C) 2020  Piotr Fusik
+// Copyright (C) 2020-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Linq;
 
 namespace Foxoft.Ci
 {
@@ -146,6 +147,18 @@ public class GenCl : GenC
 			WriteConsoleWrite(args, true);
 		else
 			WriteCCall(obj, method, args);
+	}
+
+	public override void Visit(CiAssert statement)
+	{
+	}
+
+	protected override void WriteCaseBody(CiStatement[] statements)
+	{
+		if (statements.All(statement => statement is CiAssert))
+			WriteLine(';');
+		else
+			base.WriteCaseBody(statements);
 	}
 
 	void WriteLibrary()
