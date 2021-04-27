@@ -8,7 +8,6 @@ jobs:
   - name: c, js, ts
     script: make -j2 test-c test-js test-ts
   - name: cpp, py, error
-    install: sudo apt install libstdc++-9-dev
     script: make -j2 test-cpp test-py test-error
   - name: cs, java
     dist: bionic
