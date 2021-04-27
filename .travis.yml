@@ -1,4 +1,5 @@
 language: csharp
+dist: focal
 mono: none
 dotnet: 5.0.202
 env:
@@ -11,13 +12,13 @@ jobs:
       - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
       - sudo add-apt-repository -y ppa:deadsnakes/ppa
       - sudo apt update
-      - sudo apt install libstdc++-9-dev python3.9
+      - sudo apt install libstdc++-10-dev python3.9
     script: make -j2 test-cpp test-py test-error PYTHON=python3.9
   - name: cs, java
     mono: latest
     script: make -j2 test-cs test-java
   - name: swift, cl
     install:
-      - wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu1604/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu16.04.tar.gz
-      - tar xf swift-$SWIFT_VERSION-RELEASE-ubuntu16.04.tar.gz -C ..
-    script: make -j2 test-swift test-cl SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu16.04/usr/bin/swiftc
+      - wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2004/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz
+      - tar xf swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz -C ..
+    script: make -j2 test-swift test-cl SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu20.04/usr/bin/swiftc
