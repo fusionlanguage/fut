@@ -8,12 +8,8 @@ jobs:
   - name: c, js, ts
     script: make -j2 test-c test-js test-ts
   - name: cpp, py, error
-    install:
-      - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-      - sudo add-apt-repository -y ppa:deadsnakes/ppa
-      - sudo apt update
-      - sudo apt install libstdc++-10-dev python3.9
-    script: make -j2 test-cpp test-py test-error PYTHON=python3.9
+    install: sudo apt install libstdc++-9-dev
+    script: make -j2 test-cpp test-py test-error
   - name: cs, java
     dist: bionic
     mono: latest
