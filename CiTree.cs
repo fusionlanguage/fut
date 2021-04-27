@@ -48,6 +48,7 @@ public enum CiCallType
 public enum CiPriority
 {
 	Statement,
+	Argument,
 	Assign,
 	Select,
 	CondOr,

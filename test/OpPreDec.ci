@@ -3,7 +3,10 @@ public static class Test
 	public static bool Run()
 	{
 		int a = 42;
-		int b =--a;
-		return a == 41 && b == 41;
+		int b = --a;
+		byte[1] ba;
+		ba[0] = 200;
+		--ba[0];
+		return a == 41 && b == 41 && ba[0] == 199;
 	}
 }

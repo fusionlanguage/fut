@@ -320,7 +320,7 @@ public class GenSwift : GenPySwift
 			foreach (CiInterpolatedPart part in expr.Parts) {
 				WriteInterpolatedLiteral(part.Prefix);
 				Write("\\(");
-				WriteUnwrappedString(part.Argument, CiPriority.Statement, true);
+				WriteUnwrappedString(part.Argument, CiPriority.Argument, true);
 				Write(')');
 			}
 			WriteInterpolatedLiteral(expr.Suffix);
@@ -336,9 +336,9 @@ public class GenSwift : GenPySwift
 			Write(type);
 			Write('(');
 			if (type is CiIntegerType && expr is CiCallExpr call && call.Method.IsReferenceTo(CiSystem.MathTruncate))
-				call.Arguments[0].Accept(this, CiPriority.Statement);
+				call.Arguments[0].Accept(this, CiPriority.Argument);
 			else
-				expr.Accept(this, CiPriority.Statement);
+				expr.Accept(this, CiPriority.Argument);
 			Write(')');
 		}
 		else if (type == CiSystem.StringStorageType)
@@ -357,9 +357,9 @@ public class GenSwift : GenPySwift
 	{
 		this.StringCharAt = true;
 		Write("ciStringCharAt(");
-		WriteUnwrappedString(expr.Left, CiPriority.Statement, false);
+		WriteUnwrappedString(expr.Left, CiPriority.Argument, false);
 		Write(", ");
-		expr.Right.Accept(this, CiPriority.Statement);
+		expr.Right.Accept(this, CiPriority.Argument);
 		Write(')');
 	}
 
@@ -387,11 +387,11 @@ public class GenSwift : GenPySwift
 
 	void WriteStringContains(CiExpr obj, string name, CiExpr[] args)
 	{
-		WriteUnwrappedString(obj, CiPriority.Statement, true);
+		WriteUnwrappedString(obj, CiPriority.Primary, true);
 		Write('.');
 		Write(name);
 		Write('(');
-		WriteUnwrappedString(args[0], CiPriority.Statement, true);
+		WriteUnwrappedString(args[0], CiPriority.Argument, true);
 		Write(')');
 	}
 
@@ -422,18 +422,18 @@ public class GenSwift : GenPySwift
 			Include("Foundation");
 			this.StringIndexOf = true;
 			Write("ciStringIndexOf(");
-			WriteUnwrappedString(obj, CiPriority.Statement, true);
+			WriteUnwrappedString(obj, CiPriority.Argument, true);
 			Write(", ");
-			WriteUnwrappedString(args[0], CiPriority.Statement, true);
+			WriteUnwrappedString(args[0], CiPriority.Argument, true);
 			Write(')');
 		}
 		else if (method == CiSystem.StringLastIndexOf) {
 			Include("Foundation");
 			this.StringIndexOf = true;
 			Write("ciStringIndexOf(");
-			WriteUnwrappedString(obj, CiPriority.Statement, true);
+			WriteUnwrappedString(obj, CiPriority.Argument, true);
 			Write(", ");
-			WriteUnwrappedString(args[0], CiPriority.Statement, true);
+			WriteUnwrappedString(args[0], CiPriority.Argument, true);
 			Write(", .backwards)");
 		}
 		else if (method == CiSystem.StringSubstring) {
@@ -442,9 +442,9 @@ public class GenSwift : GenPySwift
 			else {
 				this.StringSubstring = true;
 				Write("ciStringSubstring(");
-				WriteUnwrappedString(obj, CiPriority.Statement, false);
+				WriteUnwrappedString(obj, CiPriority.Argument, false);
 				Write(", ");
-				args[0].Accept(this, CiPriority.Statement);
+				args[0].Accept(this, CiPriority.Argument);
 				Write(')');
 			}
 			if (args.Length == 2)
@@ -475,7 +475,7 @@ public class GenSwift : GenPySwift
 			if (method.Parameters.Count == 0)
 				WriteNewStorage(list.ElementType);
 			else
-				args[0].Accept(this, CiPriority.Statement);
+				args[0].Accept(this, CiPriority.Argument);
 			Write(')');
 		}
 		else if (obj.Type is CiListType list2 && method.Name == "Insert") {
@@ -484,15 +484,15 @@ public class GenSwift : GenPySwift
 			if (method.Parameters.Count == 1)
 				WriteNewStorage(list2.ElementType);
 			else
-				args[1].Accept(this, CiPriority.Statement);
+				args[1].Accept(this, CiPriority.Argument);
 			Write(", at: ");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(')');
 		}
 		else if (method == CiSystem.ListRemoveAt) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".remove(at: ");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(')');
 		}
 		else if (method == CiSystem.ListRemoveRange) {
@@ -515,13 +515,13 @@ public class GenSwift : GenPySwift
 		else if (obj.Type is CiDictionaryType && method.Name == "Remove") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeValue(forKey: ");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(')');
 		}
 		else if (method == CiSystem.ConsoleWrite) {
 			// TODO: stderr
 			Write("print(");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(", terminator: \"\")");
 		}
 		else if (method == CiSystem.ConsoleWriteLine) {
@@ -538,7 +538,7 @@ public class GenSwift : GenPySwift
 		else if (method == CiSystem.EnvironmentGetEnvironmentVariable) {
 			Include("Foundation");
 			Write("ProcessInfo.processInfo.environment[");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(']');
 		}
 		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
@@ -639,14 +639,14 @@ public class GenSwift : GenPySwift
 			WriteDefaultValue(elementType);
 		}
 		Write(", count: ");
-		lengthExpr.Accept(this, CiPriority.Statement);
+		lengthExpr.Accept(this, CiPriority.Argument);
 		Write(')');
 	}
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
 		OpenIndexing(expr.Left);
-		WriteCoerced(CiSystem.IntType, expr.Right, CiPriority.Statement);
+		WriteCoerced(CiSystem.IntType, expr.Right, CiPriority.Argument);
 		Write(']');
 		if (parent != CiPriority.Assign && expr.Left.Type is CiDictionaryType)
 			Write('!');
@@ -739,7 +739,7 @@ public class GenSwift : GenPySwift
 				Write(".none");
 			}
 			else
-				WriteCoerced(expr.Type, right, CiPriority.Statement);
+				WriteCoerced(expr.Type, right, CiPriority.Argument);
 			return expr;
 		default:
 			return base.Visit(expr, parent);
@@ -844,10 +844,10 @@ public class GenSwift : GenPySwift
 	public override void Visit(CiAssert statement)
 	{
 		Write("assert(");
-		WriteExpr(statement.Cond, CiPriority.Statement);
+		WriteExpr(statement.Cond, CiPriority.Argument);
 		if (statement.Message != null) {
 			Write(", ");
-			WriteExpr(statement.Message, CiPriority.Statement);
+			WriteExpr(statement.Message, CiPriority.Argument);
 		}
 		WriteLine(')');
 	}
@@ -871,7 +871,7 @@ public class GenSwift : GenPySwift
 		VisitXcrement<CiPrefixExpr>(statement.Cond, true);
 		CloseChild();
 		Write("while ");
-		WriteExpr(statement.Cond, CiPriority.Statement);
+		WriteExpr(statement.Cond, CiPriority.Argument);
 		WriteLine();
 		if (VisitXcrement<CiPostfixExpr>(statement.Cond, true) && statement.HasBreak)
 			throw new NotImplementedException("do-while with a post-in/decrement and a break");
@@ -901,17 +901,17 @@ public class GenSwift : GenPySwift
 		}
 		else {
 			Write("stride(from: ");
-			WriteExpr(iter.Value, CiPriority.Statement);
+			WriteExpr(iter.Value, CiPriority.Argument);
 			switch (cond.Op) {
 			case CiToken.Less:
 			case CiToken.Greater:
 				Write(", to: ");
-				WriteExpr(cond.Right, CiPriority.Statement);
+				WriteExpr(cond.Right, CiPriority.Argument);
 				break;
 			case CiToken.LessOrEqual:
 			case CiToken.GreaterOrEqual:
 				Write(", through: ");
-				WriteExpr(cond.Right, CiPriority.Statement);
+				WriteExpr(cond.Right, CiPriority.Argument);
 				break;
 			default:
 				throw new NotImplementedException(cond.Op.ToString());
@@ -940,7 +940,7 @@ public class GenSwift : GenPySwift
 			Write(".sorted(by: { $0.key < $1.key })");
 		}
 		else
-			WriteExpr(statement.Collection, CiPriority.Statement);
+			WriteExpr(statement.Collection, CiPriority.Argument);
 		WriteChild(statement.Body);
 	}
 
@@ -961,13 +961,13 @@ public class GenSwift : GenPySwift
 	public override void Visit(CiSwitch statement)
 	{
 		Write("switch ");
-		WriteExpr(statement.Value, CiPriority.Statement);
+		WriteExpr(statement.Value, CiPriority.Argument);
 		WriteLine(" {");
 		foreach (CiCase kase in statement.Cases) {
 			Write("case ");
 			for (int i = 0; i < kase.Values.Length; i++) {
 				WriteComma(i);
-				WriteCoerced(statement.Value.Type, kase.Values[i], CiPriority.Statement);
+				WriteCoerced(statement.Value.Type, kase.Values[i], CiPriority.Argument);
 			}
 			WriteLine(':');
 			WriteSwiftCaseBody(kase.Body);
@@ -984,7 +984,7 @@ public class GenSwift : GenPySwift
 		this.Throw = true;
 		VisitXcrement<CiPrefixExpr>(statement.Message, true);
 		Write("throw CiError.error(");
-		WriteExpr(statement.Message, CiPriority.Statement);
+		WriteExpr(statement.Message, CiPriority.Argument);
 		WriteLine(')');
 	}
 
@@ -1022,7 +1022,7 @@ public class GenSwift : GenPySwift
 			WriteName(konst);
 			if (konst.Value != null) {
 				Write(" = ");
-				konst.Value.Accept(this, CiPriority.Statement);
+				konst.Value.Accept(this, CiPriority.Argument);
 			}
 			WriteLine();
 		}
@@ -1120,11 +1120,11 @@ public class GenSwift : GenPySwift
 			WriteName(konst);
 			Write(" = ");
 			if (konst.Type == CiSystem.IntType || konst.Type is CiEnum || konst.Type == CiSystem.StringPtrType)
-				konst.Value.Accept(this, CiPriority.Statement);
+				konst.Value.Accept(this, CiPriority.Argument);
 			else {
 				Write(konst.Type);
 				Write('(');
-				konst.Value.Accept(this, CiPriority.Statement);
+				konst.Value.Accept(this, CiPriority.Argument);
 				Write(')');
 			}
 			WriteLine();

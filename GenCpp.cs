@@ -312,7 +312,7 @@ public class GenCpp : GenCCpp
 		Write("std::make_shared<");
 		Write(elementType, false);
 		Write("[]>(");
-		lengthExpr.Accept(this, CiPriority.Statement);
+		lengthExpr.Accept(this, CiPriority.Argument);
 		Write(')');
 	}
 
@@ -341,7 +341,7 @@ public class GenCpp : GenCCpp
 	{
 		if (def.Value != null && def.Type == CiSystem.StringStorageType) {
 			Write('{');
-			def.Value.Accept(this, CiPriority.Statement);
+			def.Value.Accept(this, CiPriority.Argument);
 			Write('}');
 		}
 		else
@@ -353,7 +353,7 @@ public class GenCpp : GenCCpp
 		Write("static_cast<");
 		Write(type, false);
 		Write(">(");
-		GetStaticCastInner(type, expr).Accept(this, CiPriority.Statement);
+		GetStaticCastInner(type, expr).Accept(this, CiPriority.Argument);
 		Write(')');
 	}
 
@@ -437,7 +437,7 @@ public class GenCpp : GenCCpp
 	{
 		Include("regex");
 		Write("std::regex(");
-		args[argIndex].Accept(this, CiPriority.Statement);
+		args[argIndex].Accept(this, CiPriority.Argument);
 		WriteRegexOptions(args, ", std::regex::ECMAScript | ", " | ", "", "std::regex::icase", "std::regex::multiline", "std::regex::NOT_SUPPORTED_singleline");
 		Write(')');
 	}
@@ -606,7 +606,7 @@ public class GenCpp : GenCCpp
 				args[2].Accept(this, CiPriority.Add);
 			}
 			Write(", ");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(") - ");
 			WriteArrayPtr(obj, CiPriority.Mul);
 			if (parent > CiPriority.Add)
@@ -617,7 +617,7 @@ public class GenCpp : GenCCpp
 			Write("std::copy_n(");
 			WriteArrayPtrAdd(obj, args[0]);
 			Write(", ");
-			args[3].Accept(this, CiPriority.Statement);
+			args[3].Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(')');
@@ -627,9 +627,9 @@ public class GenCpp : GenCCpp
 			Write("std::fill_n(");
 			WriteArrayPtrAdd(obj, args[1]);
 			Write(", ");
-			args[2].Accept(this, CiPriority.Statement);
+			args[2].Accept(this, CiPriority.Argument);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(')');
 		}
 		else if (method == CiSystem.CollectionSortAll) {
@@ -669,7 +669,7 @@ public class GenCpp : GenCCpp
 				Write(".insert(");
 				WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
 				Write(", ");
-				WriteCoerced(list2.ElementType, args[1], CiPriority.Statement);
+				WriteCoerced(list2.ElementType, args[1], CiPriority.Argument);
 			}
 			Write(')');
 		}
@@ -718,16 +718,16 @@ public class GenCpp : GenCCpp
 				Write(".end()");
 			}
 			else
-				args[0].Accept(this, CiPriority.Statement);
+				args[0].Accept(this, CiPriority.Argument);
 			if (method == CiSystem.MatchFindStr || method == CiSystem.MatchFindRegex) {
 				Write(", ");
-				obj.Accept(this, CiPriority.Statement);
+				obj.Accept(this, CiPriority.Argument);
 			}
 			Write(", ");
 			if (method == CiSystem.RegexIsMatchRegex)
-				obj.Accept(this, CiPriority.Statement);
+				obj.Accept(this, CiPriority.Argument);
 			else if (method == CiSystem.MatchFindRegex)
-				args[1].Accept(this, CiPriority.Statement);
+				args[1].Accept(this, CiPriority.Argument);
 			else
 				WriteRegex(args, 1);
 			Write(')');
@@ -746,7 +746,7 @@ public class GenCpp : GenCCpp
 			Write("std::string_view(reinterpret_cast<const char *>(");
 			WriteArrayPtrAdd(args[0], args[1]);
 			Write("), ");
-			args[2].Accept(this, CiPriority.Statement);
+			args[2].Accept(this, CiPriority.Argument);
 			Write(')');
 		}
 		else if (method == CiSystem.EnvironmentGetEnvironmentVariable) {
@@ -815,7 +815,7 @@ public class GenCpp : GenCCpp
 						Write("const ");
 					WriteName(leftClass.Class);
 					Write(" &>(");
-					expr.Accept(this, CiPriority.Statement);
+					expr.Accept(this, CiPriority.Argument);
 					Write(')');
 				}
 				else
@@ -830,7 +830,7 @@ public class GenCpp : GenCCpp
 			}
 			break;
 		case CiArrayPtrType leftArray when leftArray.Modifier != CiToken.Hash:
-			WriteArrayPtr(expr, CiPriority.Statement);
+			WriteArrayPtr(expr, CiPriority.Argument);
 			return;
 		case CiStringPtrType _ when expr.Type == CiSystem.NullType:
 			Include("string_view");
@@ -906,7 +906,7 @@ public class GenCpp : GenCCpp
 		Write("static constexpr ");
 		WriteTypeAndName(konst);
 		Write(" = ");
-		konst.Value.Accept(this, CiPriority.Statement);
+		konst.Value.Accept(this, CiPriority.Argument);
 		WriteLine(';');
 	}
 
@@ -932,7 +932,7 @@ public class GenCpp : GenCCpp
 		else
 			WriteTypeAndName(element);
 		Write(" : ");
-		statement.Collection.Accept(this, CiPriority.Statement);
+		statement.Collection.Accept(this, CiPriority.Argument);
 		Write(')');
 		WriteChild(statement.Body);
 	}
@@ -955,7 +955,7 @@ public class GenCpp : GenCCpp
 	{
 		Include("exception");
 		WriteLine("throw std::exception();");
-		// TODO: statement.Message.Accept(this, CiPriority.Statement);
+		// TODO: statement.Message.Accept(this, CiPriority.Argument);
 	}
 
 	void OpenNamespace()
@@ -990,7 +990,7 @@ public class GenCpp : GenCCpp
 			WriteCamelCase(konst.Name);
 			if (konst.Value != null) {
 				Write(" = ");
-				konst.Value.Accept(this, CiPriority.Statement);
+				konst.Value.Accept(this, CiPriority.Argument);
 			}
 		}
 		WriteLine();

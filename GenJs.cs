@@ -194,7 +194,7 @@ public class GenJs : GenBase
 				}
 			}
 			else
-				part.Argument.Accept(this, CiPriority.Statement);
+				part.Argument.Accept(this, CiPriority.Argument);
 			Write('}');
 		}
 		WriteInterpolatedLiteral(expr.Suffix);
@@ -276,7 +276,7 @@ public class GenJs : GenBase
 			OpenLoop("let", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");
-			WriteNewArray(innerArray.ElementType, innerArray.LengthExpr, CiPriority.Statement);
+			WriteNewArray(innerArray.ElementType, innerArray.LengthExpr, CiPriority.Argument);
 			WriteLine(';');
 			array = innerArray;
 		}
@@ -284,7 +284,7 @@ public class GenJs : GenBase
 			OpenLoop("let", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");
-			WriteNew(klass, CiPriority.Statement);
+			WriteNew(klass, CiPriority.Argument);
 			WriteLine(';');
 		}
 		while (--nesting >= 0)
@@ -379,7 +379,7 @@ public class GenJs : GenBase
 		}
 		else {
 			Write("new RegExp(");
-			pattern.Accept(this, CiPriority.Statement);
+			pattern.Accept(this, CiPriority.Argument);
 			WriteRegexOptions(args, ", \"", "", "\"", "i", "m", "s");
 			Write(')');
 		}
@@ -394,7 +394,7 @@ public class GenJs : GenBase
 		else if (method == CiSystem.StringSubstring) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".substring(");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			if (args.Length == 2) {
 				Write(", ");
 				WriteAdd(args[0], args[1]); // TODO: side effect
@@ -410,7 +410,7 @@ public class GenJs : GenBase
 				"\tfor (let i = 0; i < length; i++)",
 				"\t\tda[doffset + i] = sa[soffset + i];");
 			Write("Ci.copyArray(");
-			obj.Accept(this, CiPriority.Statement);
+			obj.Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteArgs(method, args);
 			Write(')');
@@ -418,7 +418,7 @@ public class GenJs : GenBase
 		else if (obj.Type is CiArrayType array && method.Name == "Fill") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".fill(");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			if (args.Length == 3) {
 				Write(", ");
 				WriteStartEnd(args[1], args[2]);
@@ -448,7 +448,7 @@ public class GenJs : GenBase
 		else if (method == CiSystem.CollectionClear) {
 			if (obj.Type is CiDictionaryType) {
 				Write("for (const key in ");
-				obj.Accept(this, CiPriority.Statement);
+				obj.Accept(this, CiPriority.Argument);
 				WriteLine(')');
 				Write("\tdelete ");
 				obj.Accept(this, CiPriority.Primary); // FIXME: side effect
@@ -466,7 +466,7 @@ public class GenJs : GenBase
 		else if (method == CiSystem.ListRemoveAt) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".splice(");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(", 1)");
 		}
 		else if (method == CiSystem.ListRemoveRange)
@@ -513,7 +513,7 @@ public class GenJs : GenBase
 			}
 			else {
 				Write("process.env[");
-				args[0].Accept(this, CiPriority.Statement);
+				args[0].Accept(this, CiPriority.Argument);
 				Write(']');
 			}
 		}
@@ -634,10 +634,10 @@ public class GenJs : GenBase
 	public override void Visit(CiAssert statement)
 	{
 		Write("console.assert(");
-		statement.Cond.Accept(this, CiPriority.Statement);
+		statement.Cond.Accept(this, CiPriority.Argument);
 		if (statement.Message != null) {
 			Write(", ");
-			statement.Message.Accept(this, CiPriority.Statement);
+			statement.Message.Accept(this, CiPriority.Argument);
 		}
 		WriteLine(");");
 	}
@@ -668,7 +668,7 @@ public class GenJs : GenBase
 		else {
 			WriteName(statement.Element);
 			Write(" of ");
-			statement.Collection.Accept(this, CiPriority.Statement);
+			statement.Collection.Accept(this, CiPriority.Argument);
 		}
 		Write(')');
 		WriteChild(statement.Body);
@@ -677,7 +677,7 @@ public class GenJs : GenBase
 	public override void Visit(CiThrow statement)
 	{
 		Write("throw ");
-		statement.Message.Accept(this, CiPriority.Statement);
+		statement.Message.Accept(this, CiPriority.Argument);
 		WriteLine(';');
 	}
 
@@ -697,7 +697,7 @@ public class GenJs : GenBase
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" : ");
 			if (konst.Value != null)
-				konst.Value.Accept(this, CiPriority.Statement);
+				konst.Value.Accept(this, CiPriority.Argument);
 			else
 				Write(i);
 			i++;

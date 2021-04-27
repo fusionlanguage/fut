@@ -351,6 +351,42 @@ public class GenJava : GenTyped
 		Write(')');
 	}
 
+	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
+	{
+		if ((expr.Op == CiToken.Increment || expr.Op == CiToken.Decrement)
+		 && expr.Inner is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)) {
+			if (parent > CiPriority.And)
+				Write('(');
+			Write(expr.Op == CiToken.Increment ? "++" : "--");
+			WriteIndexingInternal(leftBinary);
+			if (parent != CiPriority.Statement)
+				Write(" & 0xff");
+			if (parent > CiPriority.And)
+				Write(')');
+			return expr;
+		}
+		else
+			return base.Visit(expr, parent);
+	}
+
+	public override CiExpr Visit(CiPostfixExpr expr, CiPriority parent)
+	{
+		if ((expr.Op == CiToken.Increment || expr.Op == CiToken.Decrement)
+		 && expr.Inner is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)) {
+			if (parent > CiPriority.And)
+				Write('(');
+			WriteIndexingInternal(leftBinary);
+			Write(expr.Op == CiToken.Increment ? "++" : "--");
+			if (parent != CiPriority.Statement)
+				Write(" & 0xff");
+			if (parent > CiPriority.And)
+				Write(')');
+			return expr;
+		}
+		else
+			return base.Visit(expr, parent);
+	}
+
 	void WriteIndexingInternal(CiBinaryExpr expr)
 	{
 		if (IsCollection(expr.Left.Type))
@@ -443,7 +479,7 @@ public class GenJava : GenTyped
 		Write("Arrays.");
 		Write(method);
 		Write('(');
-		obj.Accept(this, CiPriority.Statement);
+		obj.Accept(this, CiPriority.Argument);
 		Write(", ");
 		if (args.Length == 3) {
 			WriteStartEnd(args[1], args[2]);
@@ -476,7 +512,7 @@ public class GenJava : GenTyped
 		else {
 			Include("java.util.regex.Pattern");
 			Write("Pattern.compile(");
-			pattern.Accept(this, CiPriority.Statement);
+			pattern.Accept(this, CiPriority.Argument);
 			WriteRegexOptions(args, ", ", " | ", "", "Pattern.CASE_INSENSITIVE", "Pattern.MULTILINE", "Pattern.DOTALL");
 			Write(')');
 		}
@@ -491,7 +527,7 @@ public class GenJava : GenTyped
 		else if (method == CiSystem.StringSubstring) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".substring(");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			if (args.Length == 2) {
 				Write(", ");
 				WriteAdd(args[0], args[1]); // TODO: side effect
@@ -502,7 +538,7 @@ public class GenJava : GenTyped
 			WriteArrayBinarySearchFill(obj, "binarySearch", args);
 		else if (obj.Type is CiArrayType && !(obj.Type is CiListType) && method.Name == "CopyTo") {
 			Write("System.arraycopy(");
-			obj.Accept(this, CiPriority.Statement);
+			obj.Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteArgs(method, args);
 			Write(')');
@@ -529,7 +565,7 @@ public class GenJava : GenTyped
 			else {
 				Include("java.util.Arrays");
 				Write("Arrays.sort(");
-				obj.Accept(this, CiPriority.Statement);
+				obj.Accept(this, CiPriority.Argument);
 				Write(", ");
 				WriteStartEnd(args[0], args[1]);
 				Write(')');
@@ -547,7 +583,7 @@ public class GenJava : GenTyped
 		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".put(");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteNewStorage(dict.ValueType);
 			Write(')');
@@ -661,7 +697,7 @@ public class GenJava : GenTyped
 		 && IsCollection(indexing.Left.Type)) {
 			 indexing.Left.Accept(this, CiPriority.Primary);
 			 Write(indexing.Left.Type is CiDictionaryType ? ".put(" : ".set(");
-			 indexing.Right.Accept(this, CiPriority.Statement);
+			 indexing.Right.Accept(this, CiPriority.Argument);
 			 Write(", ");
 			 WriteAssignRight(expr);
 			 Write(')');
@@ -688,7 +724,7 @@ public class GenJava : GenTyped
 		OpenLoop("int", nesting++, array.Length);
 		WriteArrayElement(def, nesting);
 		Write(" = ");
-		WriteNew((CiClass) array.ElementType, CiPriority.Statement);
+		WriteNew((CiClass) array.ElementType, CiPriority.Argument);
 		WriteLine(';');
 		while (--nesting >= 0)
 			CloseBlock();
@@ -697,10 +733,10 @@ public class GenJava : GenTyped
 	public override void Visit(CiAssert statement)
 	{
 		Write("assert ");
-		statement.Cond.Accept(this, CiPriority.Statement);
+		statement.Cond.Accept(this, CiPriority.Argument);
 		if (statement.Message != null) {
 			Write(" : ");
-			statement.Message.Accept(this, CiPriority.Statement);
+			statement.Message.Accept(this, CiPriority.Argument);
 		}
 		WriteLine(';');
 	}
@@ -720,7 +756,7 @@ public class GenJava : GenTyped
 		else {
 			WriteTypeAndName(statement.Element);
 			Write(" : ");
-			statement.Collection.Accept(this, CiPriority.Statement);
+			statement.Collection.Accept(this, CiPriority.Argument);
 		}
 		Write(')');
 		WriteChild(statement.Body);
@@ -729,7 +765,7 @@ public class GenJava : GenTyped
 	public override void Visit(CiThrow statement)
 	{
 		Write("throw new Exception(");
-		statement.Message.Accept(this, CiPriority.Statement);
+		statement.Message.Accept(this, CiPriority.Argument);
 		WriteLine(");");
 	}
 
@@ -759,7 +795,7 @@ public class GenJava : GenTyped
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" = ");
 			if (konst.Value != null)
-				konst.Value.Accept(this, CiPriority.Statement);
+				konst.Value.Accept(this, CiPriority.Argument);
 			else
 				Write(i);
 			WriteLine(';');
@@ -828,7 +864,7 @@ public class GenJava : GenTyped
 			if (i > 0)
 				Write(", ");
 			if (i >= paramCount) {
-				param.Value.Accept(this, CiPriority.Statement);
+				param.Value.Accept(this, CiPriority.Argument);
 				break;
 			}
 			WriteName(param);
@@ -849,7 +885,7 @@ public class GenJava : GenTyped
 				Write("final ");
 			WriteTypeAndName(konst);
 			Write(" = ");
-			konst.Value.Accept(this, CiPriority.Statement);
+			konst.Value.Accept(this, CiPriority.Argument);
 			WriteLine(';');
 		}
 	}

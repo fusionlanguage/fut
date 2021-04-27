@@ -187,7 +187,7 @@ public class GenPy : GenPySwift
 		foreach (CiInterpolatedPart part in expr.Parts) {
 			WriteEscapingBrace(part.Prefix);
 			Write('{');
-			part.Argument.Accept(this, CiPriority.Statement);
+			part.Argument.Accept(this, CiPriority.Argument);
 			if (part.WidthExpr != null || part.Precision >= 0 || (part.Format != ' ' && part.Format != 'D'))
 				Write(':');
 			if (part.WidthExpr != null) {
@@ -238,7 +238,7 @@ public class GenPy : GenPySwift
 	protected override void WriteCharAt(CiBinaryExpr expr)
 	{
 		Write("ord(");
-		WriteIndexing(expr, CiPriority.Statement);
+		WriteIndexing(expr, CiPriority.Argument);
 		Write(')');
 	}
 
@@ -329,7 +329,7 @@ public class GenPy : GenPySwift
 					Write('/');
 				Write(expr.OpString);
 				Write(' ');
-				right.Accept(this, CiPriority.Statement);
+				right.Accept(this, CiPriority.Argument);
 			}
 			return expr;
 		default:
@@ -395,7 +395,7 @@ public class GenPy : GenPySwift
 			Write("[ ");
 			WriteNewStorage(elementType);
 			Write(" for _ in range(");
-			lengthExpr.Accept(this, CiPriority.Statement);
+			lengthExpr.Accept(this, CiPriority.Argument);
 			Write(") ]");
 			break;
 		case CiNumericType number:
@@ -410,7 +410,7 @@ public class GenPy : GenPySwift
 				if (value == null)
 					Write('0');
 				else
-					value.Accept(this, CiPriority.Statement);
+					value.Accept(this, CiPriority.Argument);
 				Write(" ]) * ");
 				lengthExpr.Accept(this, CiPriority.Mul);
 			}
@@ -420,7 +420,7 @@ public class GenPy : GenPySwift
 			if (value == null)
 				WriteDefaultValue(elementType);
 			else
-				value.Accept(this, CiPriority.Statement);
+				value.Accept(this, CiPriority.Argument);
 			Write(" ] * ");
 			lengthExpr.Accept(this, CiPriority.Mul);
 			break;
@@ -467,7 +467,7 @@ public class GenPy : GenPySwift
 	void WriteSlice(CiExpr startIndex, CiExpr length)
 	{
 		Write('[');
-		startIndex.Accept(this, CiPriority.Statement);
+		startIndex.Accept(this, CiPriority.Argument);
 		Write(':');
 		if (length != null)
 			WriteAdd(startIndex, length); // TODO: side effect
@@ -495,7 +495,7 @@ public class GenPy : GenPySwift
 	{
 		Write("print(");
 		if (args.Length == 1) {
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			if (!newLine)
 				Write(", end=\"\"");
 		}
@@ -517,9 +517,9 @@ public class GenPy : GenPySwift
 	void WriteRegexSearch(CiExpr[] args)
 	{
 		Write("re.search(");
-		args[1].Accept(this, CiPriority.Statement);
+		args[1].Accept(this, CiPriority.Argument);
 		Write(", ");
-		args[0].Accept(this, CiPriority.Statement);
+		args[0].Accept(this, CiPriority.Argument);
 		WriteRegexOptions(args);
 		Write(')');
 	}
@@ -580,7 +580,7 @@ public class GenPy : GenPySwift
 		else if (method == CiSystem.CollectionSortAll) {
 			obj.Accept(this, CiPriority.Assign);
 			WriteAssignSorted(obj, "bytearray");
-			obj.Accept(this, CiPriority.Statement);
+			obj.Accept(this, CiPriority.Argument);
 			Write("))");
 		}
 		else if (method == CiSystem.CollectionSortPart) {
@@ -615,7 +615,7 @@ public class GenPy : GenPySwift
 		}
 		else if (method == CiSystem.RegexCompile) {
 			Write("re.compile(");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			WriteRegexOptions(args);
 			Write(')');
 		}
@@ -756,10 +756,10 @@ public class GenPy : GenPySwift
 	public override void Visit(CiAssert statement)
 	{
 		Write("assert ");
-		statement.Cond.Accept(this, CiPriority.Statement);
+		statement.Cond.Accept(this, CiPriority.Argument);
 		if (statement.Message != null) {
 			Write(", ");
-			statement.Message.Accept(this, CiPriority.Statement);
+			statement.Message.Accept(this, CiPriority.Argument);
 		}
 		WriteLine();
 	}
@@ -771,7 +771,7 @@ public class GenPy : GenPySwift
 
 	protected override void WriteContinueDoWhile(CiExpr cond)
 	{
-		OpenCond("if ", cond, CiPriority.Statement);
+		OpenCond("if ", cond, CiPriority.Argument);
 		WriteLine("continue");
 		CloseChild();
 		VisitXcrement<CiPostfixExpr>(cond, true);
@@ -804,13 +804,13 @@ public class GenPy : GenPySwift
 	{
 		Write("range(");
 		if (rangeStep != 1 || !(iter.Value is CiLiteral start) || (long) start.Value != 0) {
-			iter.Value.Accept(this, CiPriority.Statement);
+			iter.Value.Accept(this, CiPriority.Argument);
 			Write(", ");
 		}
 		switch (cond.Op) {
 		case CiToken.Less:
 		case CiToken.Greater:
-			cond.Right.Accept(this, CiPriority.Statement);
+			cond.Right.Accept(this, CiPriority.Argument);
 			break;
 		case CiToken.LessOrEqual:
 			WriteInclusiveLimit(cond.Right, 1, " + 1");
@@ -848,7 +848,7 @@ public class GenPy : GenPySwift
 		}
 		else {
 			Write(" in ");
-			statement.Collection.Accept(this, CiPriority.Statement);
+			statement.Collection.Accept(this, CiPriority.Argument);
 		}
 		WriteChild(statement.Body);
 	}
@@ -923,7 +923,7 @@ public class GenPy : GenPySwift
 			break;
 		default:
 			Write("ci_switch_tmp = ");
-			value.Accept(this, CiPriority.Statement);
+			value.Accept(this, CiPriority.Argument);
 			WriteLine();
 			VisitXcrement<CiPostfixExpr>(value, true);
 			value = null;
@@ -962,7 +962,7 @@ public class GenPy : GenPySwift
 	{
 		VisitXcrement<CiPrefixExpr>(statement.Message, true);
 		Write("raise Exception(");
-		statement.Message.Accept(this, CiPriority.Statement);
+		statement.Message.Accept(this, CiPriority.Argument);
 		WriteLine(')');
 		// FIXME: WriteXcrement<CiPostfixExpr>(statement.Message);
 	}
@@ -981,7 +981,7 @@ public class GenPy : GenPySwift
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" = ");
 			if (konst.Value != null)
-				konst.Value.Accept(this, CiPriority.Statement);
+				konst.Value.Accept(this, CiPriority.Argument);
 			else
 				Write(i);
 			WriteLine();

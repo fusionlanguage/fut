@@ -240,7 +240,7 @@ public class GenC : GenCCpp
 	{
 		this.MatchPos = true;
 		Write("CiMatch_GetPos(");
-		expr.Left.Accept(this, CiPriority.Statement);
+		expr.Left.Accept(this, CiPriority.Argument);
 		Write(", ");
 		Write(which);
 		Write(')');
@@ -282,7 +282,7 @@ public class GenC : GenCCpp
 			WriteMatchProperty(expr, 2);
 		else if (expr.Symbol == CiSystem.MatchValue) {
 			Write("g_match_info_fetch(");
-			expr.Left.Accept(this, CiPriority.Statement);
+			expr.Left.Accept(this, CiPriority.Argument);
 			Write(", 0)");
 		}
 		else if (IsDictionaryClassStgIndexing(expr.Left)) {
@@ -453,7 +453,7 @@ public class GenC : GenCCpp
 		WriteDynamicArrayCast(elementType);
 		Write("CiShared_Make(");
 		if (lengthExpr != null)
-			lengthExpr.Accept(this, CiPriority.Statement);
+			lengthExpr.Accept(this, CiPriority.Argument);
 		else
 			Write('1');
 		Write(", sizeof(");
@@ -495,12 +495,12 @@ public class GenC : GenCCpp
 				Write("(const char *) ");
 			WriteArrayPtrAdd(ptr, offset);
 			Write(", ");
-			length.Accept(this, CiPriority.Statement);
+			length.Accept(this, CiPriority.Argument);
 			Write(')');
 		}
 		else if (expr is CiInterpolatedString
 				|| (expr is CiCallExpr call && expr.Type == CiSystem.StringStorageType && !call.Method.IsReferenceTo(CiSystem.StringSubstring)))
-			expr.Accept(this, CiPriority.Statement);
+			expr.Accept(this, CiPriority.Argument);
 		else {
 			Include("string.h");
 			WriteCall("strdup", expr);
@@ -641,7 +641,7 @@ public class GenC : GenCCpp
 	void WriteGPointerCast(CiExpr expr)
 	{
 		if (expr.Type == CiSystem.StringStorageType || expr.Type.IsDynamicPtr)
-			expr.Accept(this, CiPriority.Statement);
+			expr.Accept(this, CiPriority.Argument);
 		else if (expr.Type is CiClass) {
 			Write('&');
 			expr.Accept(this, CiPriority.Primary);
@@ -658,7 +658,7 @@ public class GenC : GenCCpp
 		case CiStringType _:
 		case CiClassPtrType _:
 		case CiArrayPtrType _:
-			expr.Accept(this, CiPriority.Statement);
+			expr.Accept(this, CiPriority.Argument);
 			break;
 		default:
 			Write("(gconstpointer) ");
@@ -670,7 +670,7 @@ public class GenC : GenCCpp
 	void StartDictionaryInsert(CiExpr dict, CiExpr key)
 	{
 		Write(dict.Type is CiSortedDictionaryType ? "g_tree_insert(" : "g_hash_table_insert(");
-		dict.Accept(this, CiPriority.Statement);
+		dict.Accept(this, CiPriority.Argument);
 		Write(", ");
 		WriteGPointerCast(key);
 		Write(", ");
@@ -723,7 +723,7 @@ public class GenC : GenCCpp
 					if (type == CiSystem.StringStorageType || type.IsDynamicPtr)
 						Write("NULL");
 					else
-						def.Value.Accept(this, CiPriority.Statement);
+						def.Value.Accept(this, CiPriority.Argument);
 				}
 				else
 					WriteVarInit(def);
@@ -832,7 +832,7 @@ public class GenC : GenCCpp
 				Write("memcmp(");
 				WriteArrayPtrAdd(ptr, offset);
 				Write(", ");
-				expr.Right.Accept(this, CiPriority.Statement);
+				expr.Right.Accept(this, CiPriority.Argument);
 				Write(", ");
 				Write(length);
 				Write(')');
@@ -879,16 +879,16 @@ public class GenC : GenCCpp
 			break;
 		default:
 			Write(" = ");
-			WriteCoerced(elementType, args[args.Length - 1], CiPriority.Statement);
+			WriteCoerced(elementType, args[args.Length - 1], CiPriority.Argument);
 			break;
 		}
 		WriteLine(';');
 		Write(function);
 		Write('(');
-		obj.Accept(this, CiPriority.Statement);
+		obj.Accept(this, CiPriority.Argument);
 		if (insert) {
 			Write(", ");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 		}
 		WriteLine(", cival);");
 		CloseBlock();
@@ -898,7 +898,7 @@ public class GenC : GenCCpp
 	{
 		Write(function);
 		Write('(');
-		obj.Accept(this, CiPriority.Statement);
+		obj.Accept(this, CiPriority.Argument);
 		Write(", ");
 		WriteGConstPointerCast(key);
 		Write(')');
@@ -911,9 +911,9 @@ public class GenC : GenCCpp
 			if (i > 0 || method.CallType != CiCallType.Static)
 				Write(", ");
 			if (i >= args.Length)
-				param.Value.Accept(this, CiPriority.Statement);
+				param.Value.Accept(this, CiPriority.Argument);
 			else
-				WriteCoerced(param.Type, args[i], CiPriority.Statement);
+				WriteCoerced(param.Type, args[i], CiPriority.Argument);
 			i++;
 		}
 		Write(')');
@@ -941,14 +941,14 @@ public class GenC : GenCCpp
 			if (newLine)
 				Write("\\n");
 			Write("\", ");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(')');
 		}
 		else if (newLine && !error)
 			WriteCall("puts", args[0]);
 		else {
 			Write("fputs(");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(error ? ", stderr)" : ", stdout)");
 		}
 	}
@@ -992,7 +992,7 @@ public class GenC : GenCCpp
 		Write('(');
 		if (method.CallType != CiCallType.Static) {
 			if (obj != null)
-				WriteClassPtr(declaringClass, obj, CiPriority.Statement);
+				WriteClassPtr(declaringClass, obj, CiPriority.Argument);
 			else if (klass == declaringClass)
 				Write("self");
 			else {
@@ -1014,7 +1014,7 @@ public class GenC : GenCCpp
 				Write('(');
 			if (IsOneAsciiString(args[0], out char c)) {
 				Write("strchr(");
-				obj.Accept(this, CiPriority.Statement);
+				obj.Accept(this, CiPriority.Argument);
 				Write(", ");
 				WriteCharLiteral(c);
 				Write(')');
@@ -1067,10 +1067,10 @@ public class GenC : GenCCpp
 			Write("(const ");
 			Write(array.ElementType, false);
 			Write(" *) bsearch(&");
-			args[0].Accept(this, CiPriority.Statement); // TODO: not lvalue, promoted
+			args[0].Accept(this, CiPriority.Argument); // TODO: not lvalue, promoted
 			Write(", ");
 			if (args.Length == 1)
-				WriteArrayPtr(obj, CiPriority.Statement);
+				WriteArrayPtr(obj, CiPriority.Argument);
 			else
 				WriteArrayPtrAdd(obj, args[1]);
 			Write(", ");
@@ -1100,7 +1100,7 @@ public class GenC : GenCCpp
 			if (array2.ElementType is CiRangeType range
 			 && ((range.Min >= 0 && range.Max <= byte.MaxValue)
 				|| (range.Min >= sbyte.MinValue && range.Max <= sbyte.MaxValue)))
-				args[3].Accept(this, CiPriority.Statement);
+				args[3].Accept(this, CiPriority.Argument);
 			else {
 				args[3].Accept(this, CiPriority.Mul);
 				Write(" * sizeof(");
@@ -1115,9 +1115,9 @@ public class GenC : GenCCpp
 			Include("string.h");
 			Write("memset(");
 			if (args.Length == 1) {
-				obj.Accept(this, CiPriority.Statement);
+				obj.Accept(this, CiPriority.Argument);
 				Write(", 0, sizeof(");
-				obj.Accept(this, CiPriority.Statement);
+				obj.Accept(this, CiPriority.Argument);
 				Write(')');
 			}
 			else {
@@ -1134,7 +1134,7 @@ public class GenC : GenCCpp
 			TypeCode typeCode = GetTypeCode(((CiArrayType) obj.Type).ElementType, false);
 			if (obj.Type is CiArrayStorageType arrayStorage) {
 				Write("qsort(");
-				WriteArrayPtr(obj, CiPriority.Statement);
+				WriteArrayPtr(obj, CiPriority.Argument);
 				Write(", ");
 				Write(arrayStorage.Length);
 				Write(", sizeof(");
@@ -1143,7 +1143,7 @@ public class GenC : GenCCpp
 			}
 			else {
 				Write("g_array_sort(");
-				obj.Accept(this, CiPriority.Statement);
+				obj.Accept(this, CiPriority.Argument);
 			}
 			Write(", CiCompare_");
 			Write(typeCode);
@@ -1166,7 +1166,7 @@ public class GenC : GenCCpp
 		else if (obj.Type is CiListType list && method.Name == "Add") {
 			if (list.ElementType is CiArrayStorageType || (list.ElementType is CiClass klass && !NeedsConstructor(klass))) {
 				Write("g_array_set_size(");
-				obj.Accept(this, CiPriority.Statement);
+				obj.Accept(this, CiPriority.Argument);
 				Write(", ");
 				obj.Accept(this, CiPriority.Primary); // TODO: side effect
 				Write("->len + 1)");
@@ -1178,13 +1178,13 @@ public class GenC : GenCCpp
 			switch (obj.Type) {
 			case CiListType _:
 				Write("g_array_set_size(");
-				obj.Accept(this, CiPriority.Statement);
+				obj.Accept(this, CiPriority.Argument);
 				Write(", 0)");
 				break;
 			case CiSortedDictionaryType _:
 				// TODO: since glib-2.70: WriteCall("g_tree_remove_all", obj);
 				Write("g_tree_destroy(g_tree_ref(");
-				obj.Accept(this, CiPriority.Statement);
+				obj.Accept(this, CiPriority.Argument);
 				Write("))");
 				break;
 			case CiDictionaryType _:
@@ -1216,7 +1216,7 @@ public class GenC : GenCCpp
 		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey") {
 			if (obj.Type is CiSortedDictionaryType) {
 				Write("g_tree_lookup_extended(");
-				obj.Accept(this, CiPriority.Statement);
+				obj.Accept(this, CiPriority.Argument);
 				Write(", ");
 				WriteGConstPointerCast(args[0]);
 				Write(", NULL, NULL)");
@@ -1229,7 +1229,7 @@ public class GenC : GenCCpp
 		else if (method == CiSystem.RegexCompile) {
 			Include("glib.h");
 			Write("g_regex_new(");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteRegexOptions(args);
 			Write(", 0, NULL)");
@@ -1237,24 +1237,24 @@ public class GenC : GenCCpp
 		else if (method == CiSystem.RegexEscape) {
 			Include("glib.h");
 			Write("g_regex_escape_string(");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(", -1)");
 		}
 		else if (method == CiSystem.RegexIsMatchStr) {
 			Include("glib.h");
 			Write("g_regex_match_simple(");
-			args[1].Accept(this, CiPriority.Statement);
+			args[1].Accept(this, CiPriority.Argument);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteRegexOptions(args);
 			Write(", 0)");
 		}
 		else if (method == CiSystem.RegexIsMatchRegex) {
 			Write("g_regex_match(");
-			obj.Accept(this, CiPriority.Statement);
+			obj.Accept(this, CiPriority.Argument);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(", 0, NULL)");
 		}
 		else if (method == CiSystem.MatchFindStr) {
@@ -1262,18 +1262,18 @@ public class GenC : GenCCpp
 			Write("CiMatch_Find(&");
 			obj.Accept(this, CiPriority.Primary);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
-			args[1].Accept(this, CiPriority.Statement);
+			args[1].Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteRegexOptions(args);
 			Write(')');
 		}
 		else if (method == CiSystem.MatchFindRegex) {
 			Write("g_regex_match(");
-			args[1].Accept(this, CiPriority.Statement);
+			args[1].Accept(this, CiPriority.Argument);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(", 0, &");
 			obj.Accept(this, CiPriority.Primary);
 			Write(')');
@@ -1309,16 +1309,16 @@ public class GenC : GenCCpp
 				WriteDynamicArrayCast(list.ElementType);
 				expr.Left.Accept(this, CiPriority.Primary);
 				Write("->data)[");
-				expr.Right.Accept(this, CiPriority.Statement);
+				expr.Right.Accept(this, CiPriority.Argument);
 				Write(']');
 			}
 			else {
 				Write("g_array_index(");
-				expr.Left.Accept(this, CiPriority.Statement);
+				expr.Left.Accept(this, CiPriority.Argument);
 				Write(", ");
 				Write(list.ElementType, false);
 				Write(", ");
-				expr.Right.Accept(this, CiPriority.Statement);
+				expr.Right.Accept(this, CiPriority.Argument);
 				Write(')');
 			}
 			break;
@@ -1382,7 +1382,7 @@ public class GenC : GenCCpp
 				if (expr.Left.Type.IsClass(CiSystem.RegexClass)) {
 					// TODO: only if previously assigned non-null
 					// Write("g_regex_unref(");
-					// expr.Left.Accept(this, CiPriority.Statement);
+					// expr.Left.Accept(this, CiPriority.Argument);
 					// WriteLine(");");
 				}
 				else {
@@ -1393,11 +1393,11 @@ public class GenC : GenCCpp
 					if (expr.Right is CiSymbolReference) {
 						this.SharedAddRef = true;
 						Write("CiShared_AddRef(");
-						expr.Right.Accept(this, CiPriority.Statement);
+						expr.Right.Accept(this, CiPriority.Argument);
 						Write(')');
 					}
 					else
-						expr.Right.Accept(this, CiPriority.Statement);
+						expr.Right.Accept(this, CiPriority.Argument);
 					Write(')');
 					return expr;
 				}
@@ -1413,7 +1413,7 @@ public class GenC : GenCCpp
 					CiInterpolatedPart[] parts = new CiInterpolatedPart[1 + rightInterpolated.Parts.Length];
 					parts[0] = new CiInterpolatedPart("", expr.Left); // TODO: side effect
 					rightInterpolated.Parts.CopyTo(parts, 1);
-					Visit(new CiInterpolatedString(parts, rightInterpolated.Suffix), CiPriority.Statement);
+					Visit(new CiInterpolatedString(parts, rightInterpolated.Suffix), CiPriority.Argument);
 				}
 				else {
 					Include("string.h");
@@ -1421,7 +1421,7 @@ public class GenC : GenCCpp
 					Write("CiString_Append(&");
 					expr.Left.Accept(this, CiPriority.Primary);
 					Write(", ");
-					expr.Right.Accept(this, CiPriority.Statement);
+					expr.Right.Accept(this, CiPriority.Argument);
 				}
 				Write(')');
 				return expr;
@@ -1469,7 +1469,7 @@ public class GenC : GenCCpp
 		case CiNumericType _:
 			IncludeMath();
 			Write("isnan(");
-			source(CiPriority.Statement);
+			source(CiPriority.Argument);
 			Write(')');
 			break;
 		default:
@@ -1638,13 +1638,13 @@ public class GenC : GenCCpp
 			WriteForwardThrow(parent => statement.Accept(this, parent), throwingMethod);
 		else if (statement is CiCallExpr && statement.Type == CiSystem.StringStorageType) {
 			Write("free(");
-			statement.Accept(this, CiPriority.Statement);
+			statement.Accept(this, CiPriority.Argument);
 			WriteLine(");");
 		}
 		else if (statement is CiCallExpr && statement.Type != null && statement.Type.IsDynamicPtr) {
 			this.SharedRelease = true;
 			Write("CiShared_Release(");
-			statement.Accept(this, CiPriority.Statement);
+			statement.Accept(this, CiPriority.Argument);
 			WriteLine(");");
 		}
 		else
@@ -1713,7 +1713,7 @@ public class GenC : GenCCpp
 			break;
 		case CiSortedDictionaryType dict:
 			Write("for (GTreeNode *cidictit = g_tree_node_first(");
-			statement.Collection.Accept(this, CiPriority.Statement);
+			statement.Collection.Accept(this, CiPriority.Argument);
 			Write("); cidictit != NULL; cidictit = g_tree_node_next(cidictit)) ");
 			OpenBlock();
 			WriteDictIterVar(statement.Element, "g_tree_node_key(cidictit)");
@@ -1725,7 +1725,7 @@ public class GenC : GenCCpp
 			OpenBlock();
 			WriteLine("GHashTableIter cidictit;");
 			Write("g_hash_table_iter_init(&cidictit, ");
-			statement.Collection.Accept(this, CiPriority.Statement);
+			statement.Collection.Accept(this, CiPriority.Argument);
 			WriteLine(");");
 			WriteLine("gpointer cikey, civalue;");
 			Write("while (g_hash_table_iter_next(&cidictit, &cikey, &civalue)) ");
@@ -1758,9 +1758,9 @@ public class GenC : GenCCpp
 					WriteDestructAll(symbol.Symbol);
 					Write("return ");
 					if (this.CurrentMethod.Type is CiClassPtrType resultPtr)
-						WriteClassPtr(resultPtr.Class, symbol, CiPriority.Statement); // upcast, but don't AddRef
+						WriteClassPtr(resultPtr.Class, symbol, CiPriority.Argument); // upcast, but don't AddRef
 					else
-						symbol.Accept(this, CiPriority.Statement);
+						symbol.Accept(this, CiPriority.Argument);
 					WriteLine(';');
 					return;
 				}
@@ -1773,7 +1773,7 @@ public class GenC : GenCCpp
 			}
 			WriteDefinition(this.CurrentMethod.Type, () => Write("returnValue"), true, true);
 			Write(" = ");
-			WriteCoerced(this.CurrentMethod.Type, statement.Value, CiPriority.Statement);
+			WriteCoerced(this.CurrentMethod.Type, statement.Value, CiPriority.Argument);
 			WriteLine(';');
 			WriteDestructAll();
 			WriteLine("return returnValue;");
@@ -1838,7 +1838,7 @@ public class GenC : GenCCpp
 		case CiNumericType _:
 			IncludeMath();
 			Write("!isnan(");
-			call.Accept(this, CiPriority.Statement);
+			call.Accept(this, CiPriority.Argument);
 			Write(')');
 			break;
 		default:
@@ -1881,7 +1881,7 @@ public class GenC : GenCCpp
 			WriteUppercaseWithUnderscores(konst.Name);
 			if (konst.Value != null) {
 				Write(" = ");
-				konst.Value.Accept(this, CiPriority.Statement);
+				konst.Value.Accept(this, CiPriority.Argument);
 			}
 		}
 		WriteLine();
@@ -1999,14 +1999,14 @@ public class GenC : GenCCpp
 			Write("static const ");
 			WriteTypeAndName(konst);
 			Write(" = ");
-			konst.Value.Accept(this, CiPriority.Statement);
+			konst.Value.Accept(this, CiPriority.Argument);
 			WriteLine(';');
 		}
 		else if (konst.Visibility == CiVisibility.Public) {
 			Write("#define ");
 			WriteName(konst);
 			Write(' ');
-			konst.Value.Accept(this, CiPriority.Statement);
+			konst.Value.Accept(this, CiPriority.Argument);
 			WriteLine();
 		}
 	}

@@ -148,7 +148,7 @@ public abstract class GenCCpp : GenTyped
 	protected void WriteArrayPtrAdd(CiExpr array, CiExpr index)
 	{
 		if (index is CiLiteral literal && (long) literal.Value == 0)
-			WriteArrayPtr(array, CiPriority.Statement);
+			WriteArrayPtr(array, CiPriority.Argument);
 		else {
 			WriteArrayPtr(array, CiPriority.Add);
 			Write(" + ");
@@ -207,7 +207,7 @@ public abstract class GenCCpp : GenTyped
 		IncludeAssert();
 		Write("assert(");
 		if (statement.Message == null)
-			statement.Cond.Accept(this, CiPriority.Statement);
+			statement.Cond.Accept(this, CiPriority.Argument);
 		else if (statement.Cond is CiLiteral literal && !(bool) literal.Value) {
 			Write('!');
 			statement.Message.Accept(this, CiPriority.Primary);
@@ -215,7 +215,7 @@ public abstract class GenCCpp : GenTyped
 		else {
 			statement.Cond.Accept(this, CiPriority.CondAnd);
 			Write(" && ");
-			statement.Message.Accept(this, CiPriority.Statement);
+			statement.Message.Accept(this, CiPriority.Argument);
 		}
 		WriteLine(");");
 	}

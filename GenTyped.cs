@@ -51,12 +51,12 @@ public abstract class GenTyped : GenBase
 		Write("new ");
 		Write(elementType.BaseType, false);
 		Write('[');
-		lengthExpr.Accept(this, CiPriority.Statement);
+		lengthExpr.Accept(this, CiPriority.Argument);
 		Write(']');
 		while (elementType is CiArrayType array) {
 			Write('[');
 			if (array is CiArrayStorageType arrayStorage)
-				arrayStorage.LengthExpr.Accept(this, CiPriority.Statement);
+				arrayStorage.LengthExpr.Accept(this, CiPriority.Argument);
 			Write(']');
 			elementType = array.ElementType;
 		}
@@ -206,7 +206,7 @@ public abstract class GenTyped : GenBase
 		 && IsNarrower(GetIntegerTypeCode(elementType, false), GetIntegerTypeCode((CiIntegerType) expr.Type, true)))
 			WriteStaticCast(elementType, expr);
 		else
-			expr.Accept(this, CiPriority.Statement);
+			expr.Accept(this, CiPriority.Argument);
 	}
 
 	protected virtual bool IsNotPromotedIndexing(CiBinaryExpr expr) => expr.Op == CiToken.LeftBracket;
@@ -235,7 +235,7 @@ public abstract class GenTyped : GenBase
 				return;
 			}
 		}
-		WriteCoerced(expr.Left.Type, expr.Right, CiPriority.Statement);
+		WriteCoerced(expr.Left.Type, expr.Right, CiPriority.Argument);
 	}
 
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
@@ -244,7 +244,7 @@ public abstract class GenTyped : GenBase
 			WriteStaticCast(type, expr);
 		else if (type == CiSystem.FloatType && expr.Type == CiSystem.DoubleType) {
 			if (expr is CiLiteral) {
-				expr.Accept(this, CiPriority.Statement);
+				expr.Accept(this, CiPriority.Argument);
 				Write('f');
 			}
 			else
@@ -262,7 +262,7 @@ public abstract class GenTyped : GenBase
 
 	protected override void WriteCharAt(CiBinaryExpr expr)
 	{
-		WriteIndexing(expr, CiPriority.Statement);
+		WriteIndexing(expr, CiPriority.Argument);
 	}
 
 	protected abstract bool HasInitCode(CiNamedValue def);

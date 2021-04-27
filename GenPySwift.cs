@@ -1,6 +1,6 @@
 // GenPySwift.cs - Python/Swift code generator
 //
-// Copyright (C) 2020  Piotr Fusik
+// Copyright (C) 2020-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -278,7 +278,7 @@ public abstract class GenPySwift : GenBase
 			if (statement.Init != null)
 				statement.Init.Accept(this);
 			if (statement.Cond != null)
-				OpenCond("while ", statement.Cond, CiPriority.Statement);
+				OpenCond("while ", statement.Cond, CiPriority.Argument);
 			else {
 				Write("while ");
 				WriteLiteral(true);
@@ -294,7 +294,7 @@ public abstract class GenPySwift : GenBase
 
 	public override void Visit(CiIf statement)
 	{
-		bool condPostXcrement = OpenCond("if ", statement.Cond, CiPriority.Statement);
+		bool condPostXcrement = OpenCond("if ", statement.Cond, CiPriority.Argument);
 		statement.OnTrue.Accept(this);
 		CloseChild();
 		if (statement.OnFalse == null && condPostXcrement && !statement.OnTrue.CompletesNormally)
@@ -341,7 +341,7 @@ public abstract class GenPySwift : GenBase
 
 	public override void Visit(CiWhile statement)
 	{
-		OpenCond("while ", statement.Cond, CiPriority.Statement);
+		OpenCond("while ", statement.Cond, CiPriority.Argument);
 		statement.Body.Accept(this);
 		VisitXcrement<CiPrefixExpr>(statement.Cond, true);
 		CloseWhile(statement);

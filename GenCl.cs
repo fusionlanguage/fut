@@ -100,9 +100,9 @@ public class GenCl : GenC
 			if (not)
 				Write('!');
 			Write("streq(");
-			expr.Left.Accept(this, CiPriority.Statement);
+			expr.Left.Accept(this, CiPriority.Argument);
 			Write(", ");
-			expr.Right.Accept(this, CiPriority.Statement);
+			expr.Right.Accept(this, CiPriority.Argument);
 			Write(')');
 		}
 		else
@@ -113,7 +113,7 @@ public class GenCl : GenC
 	{
 		this.StringLength = true;
 		Write("strlen(");
-		expr.Accept(this, CiPriority.Statement);
+		expr.Accept(this, CiPriority.Argument);
 		Write(')');
 	}
 
@@ -130,7 +130,7 @@ public class GenCl : GenC
 			if (newLine)
 				Write("\\n");
 			Write("\", ");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(')');
 		}
 	}

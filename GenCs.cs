@@ -265,7 +265,7 @@ public class GenCs : GenTyped
 		foreach (CiInterpolatedPart part in expr.Parts) {
 			WriteEscapingBrace(part.Prefix);
 			Write('{');
-			part.Argument.Accept(this, CiPriority.Statement);
+			part.Argument.Accept(this, CiPriority.Argument);
 			if (part.WidthExpr != null) {
 				Write(',');
 				Write(part.Width);
@@ -288,7 +288,7 @@ public class GenCs : GenTyped
 		Write("new ");
 		Write(elementType.BaseType, false);
 		Write('[');
-		lengthExpr.Accept(this, CiPriority.Statement);
+		lengthExpr.Accept(this, CiPriority.Argument);
 		Write(']');
 		while (elementType is CiArrayType array) {
 			Write("[]");
@@ -312,7 +312,7 @@ public class GenCs : GenTyped
 			OpenLoop("int", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");
-			WriteNewArray(innerArray.ElementType, innerArray.LengthExpr, CiPriority.Statement);
+			WriteNewArray(innerArray.ElementType, innerArray.LengthExpr, CiPriority.Argument);
 			WriteLine(';');
 			array = innerArray;
 		}
@@ -320,7 +320,7 @@ public class GenCs : GenTyped
 			OpenLoop("int", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");
-			WriteNew(klass, CiPriority.Statement);
+			WriteNew(klass, CiPriority.Argument);
 			WriteLine(';');
 		}
 		while (--nesting >= 0)
@@ -409,18 +409,18 @@ public class GenCs : GenTyped
 		else if (method == CiSystem.MatchGetCapture) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".Groups[");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write("].Value");
 		}
 		else if (obj.Type is CiArrayType array && method.Name == "BinarySearch") {
 			Include("System");
 			Write("Array.BinarySearch(");
-			obj.Accept(this, CiPriority.Statement);
+			obj.Accept(this, CiPriority.Argument);
 			Write(", ");
 			if (args.Length == 3) {
-				args[1].Accept(this, CiPriority.Statement);
+				args[1].Accept(this, CiPriority.Argument);
 				Write(", ");
-				args[2].Accept(this, CiPriority.Statement);
+				args[2].Accept(this, CiPriority.Argument);
 				Write(", ");
 			}
 			WriteNotPromoted(array.ElementType, args[0]);
@@ -429,7 +429,7 @@ public class GenCs : GenTyped
 		else if (obj.Type is CiArrayType && !(obj.Type is CiListType) && method.Name == "CopyTo") {
 			Include("System");
 			Write("Array.Copy(");
-			obj.Accept(this, CiPriority.Statement);
+			obj.Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteArgs(method, args);
 			Write(')');
@@ -439,16 +439,16 @@ public class GenCs : GenTyped
 				throw new NotImplementedException("Only null, zero and false supported");
 			Include("System");
 			Write("Array.Clear(");
-			obj.Accept(this, CiPriority.Statement);
+			obj.Accept(this, CiPriority.Argument);
 			Write(", ");
 			if (args.Length == 1) {
 				Write("0, ");
 				Write(((CiArrayStorageType) obj.Type).Length);
 			}
 			else {
-				args[1].Accept(this, CiPriority.Statement);
+				args[1].Accept(this, CiPriority.Argument);
 				Write(", ");
-				args[2].Accept(this, CiPriority.Statement);
+				args[2].Accept(this, CiPriority.Argument);
 			}
 			Write(')');
 		}
@@ -474,7 +474,7 @@ public class GenCs : GenTyped
 		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".Add(");
-			args[0].Accept(this, CiPriority.Statement);
+			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteNewStorage(dict.ValueType);
 			Write(')');
@@ -522,10 +522,10 @@ public class GenCs : GenTyped
 		if (statement.CompletesNormally) {
 			Include("System.Diagnostics");
 			Write("Debug.Assert(");
-			statement.Cond.Accept(this, CiPriority.Statement);
+			statement.Cond.Accept(this, CiPriority.Argument);
 			if (statement.Message != null) {
 				Write(", ");
-				statement.Message.Accept(this, CiPriority.Statement);
+				statement.Message.Accept(this, CiPriority.Argument);
 			}
 		}
 		else {
@@ -533,7 +533,7 @@ public class GenCs : GenTyped
 			Include("System");
 			Write("throw new NotImplementedException(");
 			if (statement.Message != null)
-				statement.Message.Accept(this, CiPriority.Statement);
+				statement.Message.Accept(this, CiPriority.Argument);
 		}
 		WriteLine(");");
 	}
@@ -551,7 +551,7 @@ public class GenCs : GenTyped
 		else
 			WriteTypeAndName(statement.Element);
 		Write(" in ");
-		statement.Collection.Accept(this, CiPriority.Statement);
+		statement.Collection.Accept(this, CiPriority.Argument);
 		Write(')');
 		WriteChild(statement.Body);
 	}
@@ -560,7 +560,7 @@ public class GenCs : GenTyped
 	{
 		Include("System");
 		Write("throw new Exception(");
-		statement.Message.Accept(this, CiPriority.Statement);
+		statement.Message.Accept(this, CiPriority.Argument);
 		WriteLine(");");
 	}
 
@@ -585,7 +585,7 @@ public class GenCs : GenTyped
 			Write(konst.Name);
 			if (konst.Value != null) {
 				Write(" = ");
-				konst.Value.Accept(this, CiPriority.Statement);
+				konst.Value.Accept(this, CiPriority.Argument);
 			}
 		}
 		WriteLine();
@@ -604,7 +604,7 @@ public class GenCs : GenTyped
 				Write("const ");
 			WriteTypeAndName(konst);
 			Write(" = ");
-			konst.Value.Accept(this, CiPriority.Statement);
+			konst.Value.Accept(this, CiPriority.Argument);
 			WriteLine(';');
 		}
 	}

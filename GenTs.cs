@@ -55,7 +55,7 @@ public class GenTs : GenJs
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" = ");
 			if (konst.Value != null)
-				konst.Value.Accept(this, CiPriority.Statement);
+				konst.Value.Accept(this, CiPriority.Argument);
 			else
 				Write(i);
 			WriteLine(',');
