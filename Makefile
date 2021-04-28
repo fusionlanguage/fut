@@ -96,8 +96,8 @@ test/bin/%/py.txt: test/Runner.py test/bin/%/Test.py
 test/bin/%/swift.txt: test/bin/%/swift.exe
 	$(DO)./$< >$@ || grep '//FAIL:.*\<swift\>' test/$*.ci
 
-test/bin/%/cl.txt: test/bin/%/Test.cl
-	$(DO)clang -x cl -cl-std=CL2.0 -include opencl-c.h -fsyntax-only $< && echo PASSED >$@ || (grep '//FAIL:.*\<cl\>' test/$*.ci && touch $@)
+test/bin/%/cl.txt: test/bin/%/cl.exe
+	$(DO)./$< >$@ || grep '//FAIL:.*\<cl\>' test/$*.ci
 
 test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
 	$(DO)$(CC) -o $@ $(CFLAGS) -Wno-unused-function -I $(<D) $^ `pkg-config --cflags --libs glib-2.0` -lm || grep '//FAIL:.*\<c\>' test/$*.ci
@@ -116,6 +116,12 @@ test/bin/%/Run.js: test/bin/%/Test.js
 
 test/bin/%/swift.exe: test/bin/%/Test.swift test/main.swift
 	$(DO)$(SWIFTC) -o $@ $^ || grep '//FAIL:.*\<swift\>' test/$*.ci
+
+test/bin/%/cl.exe: test/bin/%/cl.o test/Runner-cl.cpp
+	$(DO)clang++ -o $@ $^ || grep '//FAIL:.*\<cl\>' test/$*.ci
+
+test/bin/%/cl.o: test/bin/%/Test.cl
+	$(DO)clang -c -o $@ $(CFLAGS) -Wno-constant-logical-operand -cl-std=CL2.0 -include opencl-c.h $< || grep '//FAIL:.*\<cl\>' test/$*.ci
 
 test/bin/%/Test.c: test/%.ci cito.exe
 	$(DO_CITO)
