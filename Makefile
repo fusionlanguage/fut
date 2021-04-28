@@ -118,7 +118,7 @@ test/bin/%/swift.exe: test/bin/%/Test.swift test/main.swift
 	$(DO)$(SWIFTC) -o $@ $^ || grep '//FAIL:.*\<swift\>' test/$*.ci
 
 test/bin/%/cl.exe: test/bin/%/cl.o test/Runner-cl.cpp
-	$(DO)clang++ -o $@ $^ || grep '//FAIL:.*\<cl\>' test/$*.ci
+	$(DO)clang++ -o $@ $(CFLAGS) $^ || grep '//FAIL:.*\<cl\>' test/$*.ci
 
 test/bin/%/cl.o: test/bin/%/Test.cl
 	$(DO)clang -c -o $@ $(CFLAGS) -Wno-constant-logical-operand -cl-std=CL2.0 -include opencl-c.h $< || grep '//FAIL:.*\<cl\>' test/$*.ci
