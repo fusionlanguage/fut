@@ -285,7 +285,8 @@ public abstract class GenPySwift : GenBase
 				OpenChild();
 			}
 			statement.Body.Accept(this);
-			EndBody(statement);
+			if (statement.Body.CompletesNormally)
+				EndBody(statement);
 			CloseWhile(statement);
 		}
 	}

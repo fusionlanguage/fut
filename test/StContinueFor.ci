@@ -1,5 +1,15 @@
 public static class Test
 {
+	static int BodyReturns(int n)
+	{
+		for (int i = 0; i < n; i++) {
+			if (i < n - 1)
+				continue;
+			return ++i;
+		}
+		return -1;
+	}
+
 	public static bool Run()
 	{
 		int s = 0;
@@ -15,6 +25,6 @@ public static class Test
 				continue;
 			r += i;
 		}
-		return s == 20 && r == 20;
+		return s == 20 && r == 20 && BodyReturns(5) == 5;
 	}
 }
