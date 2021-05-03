@@ -8,7 +8,7 @@ DO_BUILD = $(CSC) -out:$@ $^
 CITO = ./cito.exe
 MONO =
 JAVACPSEP = ;
-SWIFTC += -no-color-diagnostics -sdk $(SDKROOT)
+SWIFTC += -no-color-diagnostics -sdk '$(SDKROOT)'
 else
 CSC = mcs
 DO_BUILD = dotnet build
