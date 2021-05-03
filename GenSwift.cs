@@ -868,7 +868,8 @@ public class GenSwift : GenPySwift
 		Write("repeat");
 		OpenChild();
 		statement.Body.Accept(this);
-		VisitXcrement<CiPrefixExpr>(statement.Cond, true);
+		if (statement.Body.CompletesNormally)
+			VisitXcrement<CiPrefixExpr>(statement.Cond, true);
 		CloseChild();
 		Write("while ");
 		WriteExpr(statement.Cond, CiPriority.Argument);

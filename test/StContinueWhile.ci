@@ -9,6 +9,15 @@ public static class Test
 				continue;
 			s += i;
 		}
-		return s == 13;
+		int r = 0;
+		i = 0;
+		while (++i < 10) {
+			if (i != 3) {
+				r += i;
+				continue;
+			}
+			break;
+		}
+		return s == 13 && r == 3;
 	}
 }

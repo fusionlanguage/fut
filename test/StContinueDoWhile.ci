@@ -10,6 +10,15 @@ public static class Test
 				continue;
 			s += i;
 		} while (i > 0 && i < 5);
-		return s == 8;
+		int r = 0;
+		i = 0;
+		do {
+			if (i != 3) {
+				r += i;
+				continue;
+			}
+			break;
+		} while (++i < 5);
+		return s == 8 && r == 3;
 	}
 }

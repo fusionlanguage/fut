@@ -344,7 +344,8 @@ public abstract class GenPySwift : GenBase
 	{
 		OpenCond("while ", statement.Cond, CiPriority.Argument);
 		statement.Body.Accept(this);
-		VisitXcrement<CiPrefixExpr>(statement.Cond, true);
+		if (statement.Body.CompletesNormally)
+			VisitXcrement<CiPrefixExpr>(statement.Cond, true);
 		CloseWhile(statement);
 	}
 }
