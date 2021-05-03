@@ -783,10 +783,12 @@ public class GenPy : GenPySwift
 		Write("while True");
 		OpenChild();
 		statement.Body.Accept(this);
-		OpenCond("if not ", statement.Cond, CiPriority.Primary);
-		WriteLine("break");
-		CloseChild();
-		VisitXcrement<CiPostfixExpr>(statement.Cond, true);
+		if (statement.Body.CompletesNormally) {
+			OpenCond("if not ", statement.Cond, CiPriority.Primary);
+			WriteLine("break");
+			CloseChild();
+			VisitXcrement<CiPostfixExpr>(statement.Cond, true);
+		}
 		this.Indent--;
 	}
 
