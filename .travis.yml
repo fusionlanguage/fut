@@ -3,7 +3,7 @@ dist: focal
 mono: none
 dotnet: 5.0.300
 env:
-  - SWIFT_VERSION=5.4
+  - SWIFT_VERSION=5.4.1
 jobs:
   - name: c, js, ts
     script: make -j2 test-c test-js test-ts
