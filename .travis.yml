@@ -1,7 +1,7 @@
 language: csharp
 dist: focal
 mono: none
-dotnet: 5.0.300
+dotnet: 5.0.301
 env:
   - SWIFT_VERSION=5.4.1
 jobs:
