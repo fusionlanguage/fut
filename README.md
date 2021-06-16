@@ -1,4 +1,4 @@
-﻿[![Build Status](https://travis-ci.org/pfusik/cito.svg?branch=master)](https://travis-ci.org/pfusik/cito)
+﻿[![Build Status](https://travis-ci.com/pfusik/cito.svg?branch=master)](https://travis-ci.com/github/pfusik/cito)
 
 Ć Programming Language
 ======================
