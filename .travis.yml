@@ -7,16 +7,28 @@ env:
 vm:
   size: x-large
 jobs:
-  - name: c, js, ts
-    script: make -j8 test-c test-js test-ts
-  - name: cpp, py, error
-    script: make -j8 test-cpp test-py test-error
-  - name: cs, java
+  - name: c
+    script: make -j8 test-c
+  - name: cpp
+    script: make -j8 test-cpp
+  - name: cs
     dist: bionic
     mono: latest
-    script: make -j8 test-cs test-java
-  - name: swift, cl
+    script: make -j8 test-cs
+  - name: java
+    script: make -j8 test-java
+  - name: js
+    script: make -j8 test-js
+  - name: ts
+    script: make -j8 test-ts
+  - name: py
+    script: make -j8 test-py
+  - name: swift
     install:
       - wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2004/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz
       - tar xf swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz -C ..
-    script: make -j8 test-swift test-cl SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu20.04/usr/bin/swiftc
+    script: make -j8 test-swift SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu20.04/usr/bin/swiftc
+  - name: cl
+    script: make -j8 test-cl
+  - name: error
+    script: make -j8 test-error
