@@ -12,6 +12,7 @@ jobs:
   - name: cpp, ts
     script: make -j4 test-cpp test-ts
   - name: cs
+    dist: bionic
     mono: latest
     script: make -j4 test-cs
   - name: java, js
