@@ -7,18 +7,15 @@ env:
 vm:
   size: large
 jobs:
-  - name: c, cl
-    script: make -j4 test-c test-cl
-  - name: cpp, error
-    script: make -j4 test-cpp test-error
+  - name: c, cl, error
+    script: make -j4 test-c test-cl test-error
+  - name: cpp, ts
+    script: make -j4 test-cpp test-ts
   - name: cs
-    dist: bionic
     mono: latest
     script: make -j4 test-cs
-  - name: java
-    script: make -j4 test-java
-  - name: js, ts
-    script: make -j4 test-js test-ts
+  - name: java, js
+    script: make -j4 test-java test-js
   - name: py, swift
     install:
       - wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2004/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz
