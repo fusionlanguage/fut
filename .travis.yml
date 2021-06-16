@@ -4,17 +4,19 @@ mono: none
 dotnet: 5.0.301
 env:
   - SWIFT_VERSION=5.4.1
+vm:
+  size: x-large
 jobs:
   - name: c, js, ts
-    script: make -j2 test-c test-js test-ts
+    script: make -j8 test-c test-js test-ts
   - name: cpp, py, error
-    script: make -j2 test-cpp test-py test-error
+    script: make -j8 test-cpp test-py test-error
   - name: cs, java
     dist: bionic
     mono: latest
-    script: make -j2 test-cs test-java
+    script: make -j8 test-cs test-java
   - name: swift, cl
     install:
       - wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2004/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz
       - tar xf swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz -C ..
-    script: make -j2 test-swift test-cl SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu20.04/usr/bin/swiftc
+    script: make -j8 test-swift test-cl SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu20.04/usr/bin/swiftc
