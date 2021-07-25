@@ -72,6 +72,7 @@ public class GenCpp : GenCCpp
 		WriteCamelCase(name);
 		switch (name) {
 		case "And":
+		case "Asm":
 		case "Auto":
 		case "Bool":
 		case "Break":
@@ -129,6 +130,7 @@ public class GenCpp : GenCCpp
 		case "Volatile":
 		case "While":
 		case "and":
+		case "asm":
 		case "auto":
 		case "catch":
 		case "char":

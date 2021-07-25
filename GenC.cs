@@ -103,6 +103,7 @@ public class GenC : GenCCpp
 		case "this":
 			Write("self");
 			break;
+		case "Asm":
 		case "Assert":
 		case "Auto":
 		case "Bool":
@@ -145,6 +146,7 @@ public class GenC : GenCCpp
 		case "Void":
 		case "Volatile":
 		case "While":
+		case "asm":
 		case "auto":
 		case "char":
 		case "extern":

@@ -91,7 +91,7 @@ public class GenCl : GenC
 			break;
 		}
 	}
-		
+
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
 		if ((expr.Left.Type is CiStringType && expr.Right.Type != CiSystem.NullType)

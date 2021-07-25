@@ -3,6 +3,7 @@ public class Test
 	bool Abstract = true;
 	bool And = true;
 	bool As = true;
+	bool Asm = true;
 	bool Associatedtype = true;
 	bool Assert = true;
 	bool Async = true;
@@ -152,6 +153,7 @@ public class Test
 		string s = "foo";
 		bool and = true;
 		bool as = true;
+		bool asm = true;
 		bool associatedtype = true;
 		bool async = true;
 		bool auto = true;
@@ -255,6 +257,7 @@ public class Test
 		return o.Abstract
 			&& o.And
 			&& o.As
+			&& o.Asm
 			&& o.Assert
 			&& o.Associatedtype
 			&& o.Async
@@ -399,6 +402,7 @@ public class Test
 			&& o.Yield
 			&& and
 			&& as
+			&& asm
 			&& associatedtype
 			&& async
 			&& auto
