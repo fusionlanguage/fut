@@ -1,5 +1,12 @@
 public static class Test
 {
+	static int GetXPixelsPerMeter()
+	{
+		return 11811;
+	}
+
+	public static float GetXPixelsPerInch(int pixelsPerMeter) => GetXPixelsPerMeter() * 0.0254;
+
 	public static bool Run()
 	{
 		int a = 2;
@@ -7,6 +14,8 @@ public static class Test
 		double c = 10.5;
 		double d = 4;
 		return a * b == 6
-			&& c * d == 42;
+			&& c * d == 42
+			&& a * c == 21
+			&& c * b == 31.5;
 	}
 }
