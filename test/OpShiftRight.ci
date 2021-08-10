@@ -1,5 +1,7 @@
 public static class Test
 {
+	public static int Half(byte[] a, bool zero) => (zero ? 0 : a[0]) >> 1;
+
 	public static bool Run()
 	{
 		int a = 5;
