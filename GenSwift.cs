@@ -646,7 +646,10 @@ public class GenSwift : GenPySwift
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
 		OpenIndexing(expr.Left);
-		WriteCoerced(CiSystem.IntType, expr.Right, CiPriority.Argument);
+		if (expr.Right.Type is CiEnum)
+			expr.Right.Accept(this, CiPriority.Argument);
+		else
+			WriteCoerced(CiSystem.IntType, expr.Right, CiPriority.Argument);
 		Write(']');
 		if (parent != CiPriority.Assign && expr.Left.Type is CiDictionaryType)
 			Write('!');
