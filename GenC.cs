@@ -641,18 +641,14 @@ public class GenC : GenCCpp
 			this.VarsToDestruct.Add((CiVar) def);
 	}
 
-	void WriteGPointerCast(CiExpr expr)
+	void WriteGPointerCast(CiType type, CiExpr expr)
 	{
-		if (expr.Type == CiSystem.StringStorageType || expr.Type.IsDynamicPtr)
-			expr.Accept(this, CiPriority.Argument);
-		else if (expr.Type is CiClass) {
-			Write('&');
-			expr.Accept(this, CiPriority.Primary);
-		}
-		else {
+		if (type is CiNumericType || type is CiEnum || (type == CiSystem.StringPtrType && expr.Type == CiSystem.StringPtrType)) {
 			Write("(gpointer) ");
 			expr.Accept(this, CiPriority.Primary);
 		}
+		else
+			WriteCoerced(type, expr, CiPriority.Argument);
 	}
 
 	void WriteGConstPointerCast(CiExpr expr)
@@ -675,7 +671,7 @@ public class GenC : GenCCpp
 		Write(dict.Type is CiSortedDictionaryType ? "g_tree_insert(" : "g_hash_table_insert(");
 		dict.Accept(this, CiPriority.Argument);
 		Write(", ");
-		WriteGPointerCast(key);
+		WriteGPointerCast(((CiDictionaryType) dict.Type).KeyType, key);
 		Write(", ");
 	}
 
@@ -683,10 +679,49 @@ public class GenC : GenCCpp
 	{
 		if (expr.Left is CiBinaryExpr indexing
 		 && indexing.Op == CiToken.LeftBracket
-		 && indexing.Left.Type is CiDictionaryType) {
+		 && indexing.Left.Type is CiDictionaryType dict) {
 			StartDictionaryInsert(indexing.Left, indexing.Right);
-			WriteGPointerCast(expr.Right);
+			WriteGPointerCast(dict.ValueType, expr.Right);
 			Write(')');
+		}
+		else if (expr.Left.Type == CiSystem.StringStorageType) {
+			if (parent == CiPriority.Statement
+			 && IsTrimSubstring(expr) is CiExpr length) {
+				WriteIndexing(expr.Left, length);
+				Write(" = '\\0'");
+			}
+			else {
+				this.StringAssign = true;
+				Write("CiString_Assign(&");
+				expr.Left.Accept(this, CiPriority.Primary);
+				Write(", ");
+				WriteStringStorageValue(expr.Right);
+				Write(')');
+			}
+		}
+		else if (expr.Left.Type.IsDynamicPtr) {
+			if (expr.Left.Type.IsClass(CiSystem.RegexClass)) {
+				// TODO: only if previously assigned non-null
+				// Write("g_regex_unref(");
+				// expr.Left.Accept(this, CiPriority.Argument);
+				// WriteLine(");");
+				base.WriteAssign(expr, parent);
+			}
+			else {
+				this.SharedAssign = true;
+				Write("CiShared_Assign((void **) &");
+				expr.Left.Accept(this, CiPriority.Primary);
+				Write(", ");
+				if (expr.Right is CiSymbolReference) {
+					this.SharedAddRef = true;
+					Write("CiShared_AddRef(");
+					expr.Right.Accept(this, CiPriority.Argument);
+					Write(')');
+				}
+				else
+					expr.Right.Accept(this, CiPriority.Argument);
+				Write(')');
+			}
 		}
 		else
 			base.WriteAssign(expr, parent);
@@ -1367,47 +1402,6 @@ public class GenC : GenCCpp
 				str.Accept(this, CiPriority.Primary);
 				Write(expr.Op == CiToken.Equal ? "[0] == '\\0'" : "[0] != '\\0'");
 				return expr;
-			}
-			break;
-		case CiToken.Assign:
-			if (expr.Left.Type == CiSystem.StringStorageType) {
-				if (parent == CiPriority.Statement
-				 && IsTrimSubstring(expr) is CiExpr length) {
-					WriteIndexing(expr.Left, length);
-					Write(" = '\\0'");
-					return expr;
-				}
-				this.StringAssign = true;
-				Write("CiString_Assign(&");
-				expr.Left.Accept(this, CiPriority.Primary);
-				Write(", ");
-				WriteStringStorageValue(expr.Right);
-				Write(')');
-				return expr;
-			}
-			else if (expr.Left.Type.IsDynamicPtr) {
-				if (expr.Left.Type.IsClass(CiSystem.RegexClass)) {
-					// TODO: only if previously assigned non-null
-					// Write("g_regex_unref(");
-					// expr.Left.Accept(this, CiPriority.Argument);
-					// WriteLine(");");
-				}
-				else {
-					this.SharedAssign = true;
-					Write("CiShared_Assign((void **) &");
-					expr.Left.Accept(this, CiPriority.Primary);
-					Write(", ");
-					if (expr.Right is CiSymbolReference) {
-						this.SharedAddRef = true;
-						Write("CiShared_AddRef(");
-						expr.Right.Accept(this, CiPriority.Argument);
-						Write(')');
-					}
-					else
-						expr.Right.Accept(this, CiPriority.Argument);
-					Write(')');
-					return expr;
-				}
 			}
 			break;
 		case CiToken.AddAssign:

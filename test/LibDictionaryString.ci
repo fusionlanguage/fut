@@ -1,0 +1,42 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		Dictionary<string, string>() dict; //FAIL: cl
+		dict["only"] = "test";
+		dict.Clear();
+		dict["one"] = "jeden";
+		dict["two"] = "dwa";
+		dict["three"] = "trzy";
+		dict.Remove("three");
+
+		Dictionary<string(), string>() dict2;
+		dict2["only"] = "test";
+		dict2.Clear();
+		dict2["one"] = "jeden";
+		dict2["two"] = "dwa";
+		dict2["three"] = "trzy";
+		dict2.Remove("three");
+
+		Dictionary<string, string()>() dict3;
+		dict3["only"] = "test";
+		dict3.Clear();
+		dict3["one"] = "jeden";
+		dict3["two"] = "dwa";
+		dict3["three"] = "trzy";
+		dict3.Remove("three");
+
+		Dictionary<string(), string()>() dict4;
+		dict4["only"] = "test";
+		dict4.Clear();
+		dict4["one"] = "jeden";
+		dict4["two"] = "dwa";
+		dict4["three"] = "trzy";
+		dict4.Remove("three");
+
+		return dict.Count == 2 && dict["one"] == "jeden" && dict["two"] == "dwa" && dict.ContainsKey("two")
+			&& dict2.Count == 2 && dict2["one"] == "jeden" && dict2["two"] == "dwa" && dict2.ContainsKey("two")
+			&& dict3.Count == 2 && dict3["one"] == "jeden" && dict3["two"] == "dwa" && dict3.ContainsKey("two")
+			&& dict4.Count == 2 && dict4["one"] == "jeden" && dict4["two"] == "dwa" && dict4.ContainsKey("two");
+	}
+}
