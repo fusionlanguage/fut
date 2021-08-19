@@ -1,0 +1,42 @@
+enum Season
+{
+	Spring,
+	Summer,
+	Fall,
+	Winter
+}
+
+enum Month
+{
+	January,
+	February,
+	March,
+	April,
+	May,
+	June,
+	July,
+	August,
+	September,
+	October,
+	November,
+	December
+}
+
+public static class Test
+{
+	public static bool Run()
+	{
+		Dictionary<Season, Month>() season2FirstMonth; // FAIL: cl
+		season2FirstMonth[Season.Spring] = Month.April;
+		season2FirstMonth.Clear();
+		season2FirstMonth[Season.Fall] = Month.September;
+		season2FirstMonth[Season.Spring] = Month.March;
+		season2FirstMonth[Season.Winter] = Month.December;
+		season2FirstMonth[Season.Summer] = Month.June;
+		season2FirstMonth.Remove(Season.Winter);
+		return season2FirstMonth.Count == 3
+			&& season2FirstMonth[Season.Spring] == Month.March
+			&& season2FirstMonth[Season.Fall] == Month.September
+			&& season2FirstMonth.ContainsKey(Season.Summer);
+	}
+}

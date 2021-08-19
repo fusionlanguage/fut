@@ -805,7 +805,8 @@ copies elements from a list to an array.
 #### Dictionary
 
 `Dictionary` provides fast access to a given _value_ associated
-with a _key_. The key must be a number or a string. Value can be of any type.
+with a _key_. The key must be a number, a string or an enumeration.
+Value can be of any type.
 
 ```csharp
 Dictionary<string(), int> dict;

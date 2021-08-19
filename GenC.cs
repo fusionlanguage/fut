@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -1340,9 +1341,13 @@ public class GenC : GenCCpp
 					Write('(');
 					Write(dict.ValueType, false);
 					Write(") ");
+					if (dict.ValueType is CiEnum) {
+						Trace.Assert(parent <= CiPriority.Mul, "Should close two parens");
+						Write("GPOINTER_TO_INT(");
+					}
 				}
 				WriteDictionaryLookup(expr.Left, function, expr.Right);
-				if (parent > CiPriority.Mul)
+				if (parent > CiPriority.Mul || dict.ValueType is CiEnum)
 					Write(')');
 			}
 			break;
