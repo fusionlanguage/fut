@@ -2495,7 +2495,7 @@ public class GenC : GenCCpp
 		}
 		if (this.TreeCompareString) {
 			WriteLine();
-			Write("static int CiTree_CompareInteger(gconstpointer a, gconstpointer b, gpointer user_data)");
+			Write("static int CiTree_CompareString(gconstpointer a, gconstpointer b, gpointer user_data)");
 			OpenBlock();
 			WriteLine("return strcmp((const char *) a, (const char *) b);");
 			CloseBlock();

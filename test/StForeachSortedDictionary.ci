@@ -16,6 +16,29 @@ public static class Test
 			keySum += key;
 			valueSum += value;
 		}
+
+		SortedDictionary<string, int>() dict2;
+		dict2["I"] = 1;
+		dict2[""] = 0;
+		dict2["II"] = 2;
+		int i = 0;
+		foreach ((string key, int value) in dict2) {
+			if (key.Length != i || value != i)
+				return false;
+			i++;
+		}
+
+		SortedDictionary<string(), int>() dict3;
+		dict3["I"] = 1;
+		dict3[""] = 0;
+		dict3["II"] = 2;
+		i = 0;
+		foreach ((string key, int value) in dict3) {
+			if (key.Length != i || value != i)
+				return false;
+			i++;
+		}
+
 		return keySum == 6 && valueSum == 30;
 	}
 }
