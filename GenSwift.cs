@@ -290,10 +290,16 @@ public class GenSwift : GenPySwift
 
 	static bool IsForeachStringStg(CiExpr expr)
 	{
-		return expr is CiSymbolReference symbol
-			&& symbol.Symbol.Parent is CiForeach loop
-			&& loop.Collection.Type is CiArrayType array
-			&& array.ElementType == CiSystem.StringStorageType;
+		if (!(expr is CiSymbolReference symbol) || !(symbol.Symbol.Parent is CiForeach loop))
+			return false;
+		switch (loop.Collection.Type) {
+		case CiArrayType array:
+			return array.ElementType == CiSystem.StringStorageType;
+		case CiDictionaryType dict:
+			return (symbol.Symbol == loop.Element ? dict.KeyType : dict.ValueType) == CiSystem.StringStorageType;
+		default:
+			throw new NotImplementedException();
+		}
 	}
 
 	void WriteUnwrappedString(CiExpr expr, CiPriority parent, bool substringOk)
@@ -939,9 +945,11 @@ public class GenSwift : GenPySwift
 		else
 			WriteName(statement.Element);
 		Write(" in ");
-		if (statement.Collection.Type is CiSortedDictionaryType) {
+		if (statement.Collection.Type is CiSortedDictionaryType dict) {
 			statement.Collection.Accept(this, CiPriority.Primary);
-			Write(".sorted(by: { $0.key < $1.key })");
+			Write(dict.KeyType == CiSystem.StringPtrType
+				? ".sorted(by: { $0.key! < $1.key! })"
+				: ".sorted(by: { $0.key < $1.key })");
 		}
 		else
 			WriteExpr(statement.Collection, CiPriority.Argument);
