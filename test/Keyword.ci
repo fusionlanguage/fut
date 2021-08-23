@@ -71,6 +71,7 @@ public class Test
 	bool Interface = true;
 	bool Internal = true;
 	bool Is = true;
+	bool Kernel = true;
 	bool Lambda = true;
 	bool Len = true;
 	bool Let = true;
@@ -200,6 +201,7 @@ public class Test
 		bool instanceof = true;
 		bool interface = true;
 		bool is = true;
+		bool kernel = true;
 		bool lambda = true;
 		bool len = s.Length == 3;
 		bool let = true;
@@ -325,6 +327,7 @@ public class Test
 			&& o.Interface
 			&& o.Internal
 			&& o.Is
+			&& o.Kernel
 			&& o.Lambda
 			&& o.Len
 			&& o.Let
@@ -449,6 +452,7 @@ public class Test
 			&& instanceof
 			&& interface
 			&& is
+			&& kernel
 			&& lambda
 			&& len
 			&& let

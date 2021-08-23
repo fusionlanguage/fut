@@ -77,10 +77,12 @@ public class GenCl : GenC
 		switch (name) {
 		case "Constant":
 		case "Global":
+		case "Kernel":
 		case "Local":
 		case "Private":
 		case "constant":
 		case "global":
+		case "kernel":
 		case "local":
 		case "private":
 			WriteCamelCase(name);
