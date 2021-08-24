@@ -643,7 +643,12 @@ public class GenC : GenCCpp
 
 	void WriteGPointerCast(CiType type, CiExpr expr)
 	{
-		if (type is CiNumericType || type is CiEnum || (type == CiSystem.StringPtrType && expr.Type == CiSystem.StringPtrType)) {
+		if (type is CiNumericType || type is CiEnum) {
+			Write("GINT_TO_POINTER(");
+			expr.Accept(this, CiPriority.Argument);
+			Write(')');
+		}
+		else if (type == CiSystem.StringPtrType && expr.Type == CiSystem.StringPtrType) {
 			Write("(gpointer) ");
 			expr.Accept(this, CiPriority.Primary);
 		}
