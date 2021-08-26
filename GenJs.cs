@@ -28,7 +28,6 @@ enum GenJsMethod
 {
 	CopyArray,
 	SortListPart,
-	UTF8GetString,
 	RegexEscape,
 	Count,
 }
@@ -484,27 +483,13 @@ public class GenJs : GenBase
 				WriteArgsInParentheses(method, args);
 		}
 		else if (method == CiSystem.UTF8GetString) {
-			AddLibrary(GenJsMethod.UTF8GetString,
-				"utf8GetString : function(a, i, length)",
-				"length += i;",
-				"let s = \"\";",
-				"while (i < length) {",
-				"\tlet c = a[i];",
-				"\tif (c < 0x80)",
-				"\t\ti++;",
-				"\telse if ((c & 0xe0) == 0xc0) {",
-				"\t\tc = (c & 0x1f) << 6 | (a[i + 1] & 0x3f);",
-				"\t\ti += 2;",
-				"\t}",
-				"\telse if ((c & 0xf0) == 0xe0) {",
-				"\t\tc = (c & 0xf) << 12 | (a[i + 1] & 0x3f) << 6 | (a[i + 2] & 0x3f);",
-				"\t\ti += 3;",
-				"\t}",
-				"\ts += String.fromCharCode(c);",
-				"}",
-				"return s;");
-			Write("Ci.utf8GetString");
-			WriteArgsInParentheses(method, args);
+			Write("new TextDecoder().decode(");
+			args[0].Accept(this, CiPriority.Primary);
+			Write(".subarray(");
+			args[1].Accept(this, CiPriority.Argument);
+			Write(", ");
+			WriteAdd(args[1], args[2]); // FIXME: side effect
+			Write("))");
 		}
 		else if (method == CiSystem.EnvironmentGetEnvironmentVariable) {
 			if (args[0] is CiLiteral literal && literal.Value is string name && IsIdentifier(name)) {
