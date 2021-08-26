@@ -604,10 +604,15 @@ public class GenPy : GenPySwift
 			WriteConsoleWrite(obj, args, false);
 		else if (method == CiSystem.ConsoleWriteLine)
 			WriteConsoleWrite(obj, args, true);
+		else if (method == CiSystem.UTF8GetByteCount) {
+			Write("len(");
+			args[0].Accept(this, CiPriority.Primary);
+			Write(".encode(\"utf8\"))");
+		}
 		else if (method == CiSystem.UTF8GetString) {
 			args[0].Accept(this, CiPriority.Primary);
 			WriteSlice(args[1], args[2]);
-			Write(".decode(\"utf-8\")");
+			Write(".decode(\"utf8\")");
 		}
 		else if (method == CiSystem.EnvironmentGetEnvironmentVariable) {
 			Include("os");
