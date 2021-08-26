@@ -1270,9 +1270,13 @@ public class CiSystem : CiScope
 	public static readonly CiMember ConsoleError = new CiMember { Name = "Error", Type = ConsoleBase };
 	public static readonly CiClass ConsoleClass = new CiClass(CiCallType.Static, "Console");
 	public static readonly CiArrayPtrType ByteArrayPtrType = new CiArrayPtrType { ElementType = ByteType, Modifier = CiToken.EndOfFile };
+	public static readonly CiMethod UTF8GetByteCount = new CiMethod(CiCallType.Normal, null, "GetByteCount", new CiVar(StringPtrType, "str"));
 	public static readonly CiMethod UTF8GetBytes = new CiMethod(CiCallType.Normal, null, "GetBytes", new CiVar(StringPtrType, "str"), new CiVar(ByteArrayPtrType, "bytes"), new CiVar(IntType, "byteIndex"));
 	public static readonly CiMethod UTF8GetString = new CiMethod(CiCallType.Normal, StringStorageType, "GetString", new CiVar(ByteArrayPtrType, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length")); // TODO: UIntType
-	public static readonly CiClass UTF8EncodingClass = new CiClass(CiCallType.Sealed, "UTF8Encoding", UTF8GetBytes, UTF8GetString);
+	public static readonly CiClass UTF8EncodingClass = new CiClass(CiCallType.Sealed, "UTF8Encoding",
+		UTF8GetByteCount,
+		UTF8GetBytes,
+		UTF8GetString);
 	public static readonly CiClass EncodingClass = new CiClass(CiCallType.Static, "Encoding");
 	public static readonly CiMethod EnvironmentGetEnvironmentVariable = new CiMethod(CiCallType.Static, StringPtrType, "GetEnvironmentVariable", new CiVar(StringPtrType, "name"));
 	public static readonly CiClass EnvironmentClass = new CiClass(CiCallType.Static, "Environment", EnvironmentGetEnvironmentVariable);

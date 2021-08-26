@@ -380,6 +380,12 @@ public class GenCs : GenTyped
 			WriteCharLiteral(c);
 			Write(')');
 		}
+		else if (method == CiSystem.UTF8GetByteCount) {
+			Include("System.Text");
+			Write("Encoding.UTF8.GetByteCount(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(')');
+		}
 		else if (method == CiSystem.UTF8GetBytes) {
 			Include("System.Text");
 			Write("Encoding.UTF8.GetBytes(");

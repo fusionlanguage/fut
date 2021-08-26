@@ -592,6 +592,11 @@ public class GenJava : GenTyped
 			WriteConsoleWrite(obj, method, args, false);
 		else if (method == CiSystem.ConsoleWriteLine)
 			WriteConsoleWrite(obj, method, args, true);
+		else if (method == CiSystem.UTF8GetByteCount) {
+			Include("java.nio.charset.StandardCharsets");
+			args[0].Accept(this, CiPriority.Primary);
+			Write(".getBytes(StandardCharsets.UTF_8).length"); // FIXME: quick&dirty!
+		}
 		else if (method == CiSystem.UTF8GetBytes) {
 			Include("java.nio.ByteBuffer");
 			Include("java.nio.CharBuffer");

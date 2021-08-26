@@ -1281,6 +1281,8 @@ public class GenC : GenCCpp
 		}
 		else if (obj.Type is CiDictionaryType && method.Name == "Remove")
 			WriteDictionaryLookup(obj, obj.Type is CiSortedDictionaryType ? "g_tree_remove" : "g_hash_table_remove", args[0]);
+		else if (method == CiSystem.UTF8GetByteCount)
+			WriteStringLength(args[0]);
 		else if (method == CiSystem.UTF8GetBytes) {
 			Include("string.h");
 			Write("memcpy("); // NOT strcpy because without the NUL terminator

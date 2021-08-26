@@ -535,6 +535,10 @@ public class GenSwift : GenPySwift
 			Write("print");
 			WriteArgsInParentheses(method, args);
 		}
+		else if (method == CiSystem.UTF8GetByteCount) {
+			WriteUnwrappedString(args[0], CiPriority.Primary, true);
+			Write(".utf8.count");
+		}
 		else if (method == CiSystem.UTF8GetString) {
 			Write("String(decoding: ");
 			OpenIndexing(args[0]);

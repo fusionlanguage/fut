@@ -700,12 +700,25 @@ public class GenCpp : GenCCpp
 			Write(".erase");
 			WriteArgsInParentheses(method, args);
 		}
+		else if (method == CiSystem.UTF8GetByteCount) {
+			if (args[0] is CiLiteral) {
+				if (parent > CiPriority.Add)
+					Write('(');
+				Write("sizeof(");
+				args[0].Accept(this, CiPriority.Argument);
+				Write(") - 1");
+				if (parent > CiPriority.Add)
+					Write(')');
+			}
+			else
+				WriteStringLength(args[0]);
+		}
 		else if (method == CiSystem.UTF8GetBytes) {
 			if (args[0] is CiLiteral) {
 				Include("algorithm");
 				Write("std::copy_n(");
 				args[0].Accept(this, CiPriority.Argument);
-				Write(", sizeof("); // not literal.Value.Length because of UTF-8
+				Write(", sizeof(");
 				args[0].Accept(this, CiPriority.Argument);
 				Write(") - 1, ");
 				WriteArrayPtrAdd(args[1], args[2]);
