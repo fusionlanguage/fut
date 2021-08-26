@@ -444,14 +444,6 @@ public class GenCpp : GenCCpp
 		Write(')');
 	}
 
-	void WriteStringLiteralWithNewLine(string s)
-	{
-		Write('"');
-		foreach (char c in s)
-			WriteEscapedChar(c);
-		Write("\\n\"");
-	}
-
 	void WriteConsoleWrite(CiExpr obj, CiExpr[] args, bool newLine)
 	{
 		Include("iostream");

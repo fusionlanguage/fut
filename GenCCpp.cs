@@ -194,6 +194,14 @@ public abstract class GenCCpp : GenTyped
 		return null;
 	}
 
+	protected void WriteStringLiteralWithNewLine(string s)
+	{
+		Write('"');
+		foreach (char c in s)
+			WriteEscapedChar(c);
+		Write("\\n\"");
+	}
+
 	protected abstract void WriteConst(CiConst konst);
 
 	public override void Visit(CiConst konst)

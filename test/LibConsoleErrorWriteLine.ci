@@ -3,6 +3,8 @@ public static class Test
 	public static bool Run()
 	{
 		Console.Error.WriteLine("Hello");
+		string s = "World";
+		Console.Error.WriteLine(s);
 		Console.Error.WriteLine();
 		int i = 42;
 		Console.Error.WriteLine($"i={i:X}");

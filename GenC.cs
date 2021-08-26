@@ -987,13 +987,25 @@ public class GenC : GenCCpp
 			args[0].Accept(this, CiPriority.Argument);
 			Write(')');
 		}
-		else if (newLine && !error)
-			WriteCall("puts", args[0]);
-		else {
+		else if (!newLine) {
 			Write("fputs(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(error ? ", stderr)" : ", stdout)");
 		}
+		else if (error) {
+			if (args[0] is CiLiteral literal) {
+				Write("fputs(");
+				WriteStringLiteralWithNewLine((string) literal.Value);
+				Write(", stderr)");
+			}
+			else {
+				Write("fprintf(stderr, \"%s\\n\", ");
+				args[0].Accept(this, CiPriority.Argument);
+				Write(')');
+			}
+		}
+		else
+			WriteCall("puts", args[0]);
 	}
 
 	protected void WriteCCall(CiExpr obj, CiMethod method, CiExpr[] args)
