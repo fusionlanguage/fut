@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		string s = "quux";
-		return Encoding.UTF8.GetByteCount("foo") == 3 //FAIL: js py ts TODO; cl
+		return Encoding.UTF8.GetByteCount("foo") == 3 //FAIL: py TODO; cl
 			&& Encoding.UTF8.GetByteCount(s) == 4;
 	}
 }

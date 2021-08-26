@@ -482,6 +482,25 @@ public class GenJs : GenBase
 			else
 				WriteArgsInParentheses(method, args);
 		}
+		else if (method == CiSystem.UTF8GetByteCount) {
+			Write("new TextEncoder().encode(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(").length");
+		}
+		else if (method == CiSystem.UTF8GetBytes) {
+			Write("new TextEncoder().encodeInto(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(", ");
+			if (args[2].IsLiteralZero)
+				args[1].Accept(this, CiPriority.Argument);
+			else {
+				args[1].Accept(this, CiPriority.Primary);
+				Write(".subarray(");
+				args[2].Accept(this, CiPriority.Argument);
+				Write(')');
+			}
+			Write(')');
+		}
 		else if (method == CiSystem.UTF8GetString) {
 			Write("new TextDecoder().decode(");
 			args[0].Accept(this, CiPriority.Primary);
