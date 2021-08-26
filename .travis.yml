@@ -2,21 +2,21 @@ language: csharp
 dist: focal
 mono: none
 dotnet: 5.0.400
-node_js: node
 env: SWIFT_VERSION=5.4.2
 vm:
   size: large
 jobs:
   - name: c, cl, error
     script: make -j4 test-c test-cl test-error
-  - name: cpp, ts
-    script: make -j4 test-cpp test-ts
+  - name: cpp, java
+    script: make -j4 test-cpp test-java
   - name: cs
     dist: bionic
     mono: latest
     script: make -j4 test-cs
-  - name: java, js
-    script: make -j4 test-java test-js
+  - name: js, ts
+    install: nvm install node
+    script: make -j4 test-js test-ts
   - name: py, swift
     install:
       - wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2004/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz
