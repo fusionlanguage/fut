@@ -275,6 +275,10 @@ Possible string operations are:
 * `str.Substring(offset, length)` evaluates to the selected part of the string.
 * `str.Substring(offset)` returns the part of the string
   from the specified position until the end of the string.
+* `Encoding.UTF8.GetByteCount(str)` calculates the number of bytes needed
+  for UTF-8 encoding of the string.
+* `Encoding.UTF8.GetBytes(str, byteArray, byteArrayIndex)` writes UTF-8
+  to the specified `byte` array starting from the given index.
 * `Encoding.UTF8.GetString(byteArray, offset, length)`
   creates a string from the specified part of a `byte` array.
 
