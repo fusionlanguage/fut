@@ -592,6 +592,25 @@ public class GenJava : GenTyped
 			WriteConsoleWrite(obj, method, args, false);
 		else if (method == CiSystem.ConsoleWriteLine)
 			WriteConsoleWrite(obj, method, args, true);
+		else if (method == CiSystem.UTF8GetBytes) {
+			Include("java.nio.ByteBuffer");
+			Include("java.nio.CharBuffer");
+			Include("java.nio.charset.StandardCharsets");
+			Write("StandardCharsets.UTF_8.newEncoder().encode(CharBuffer.wrap(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write("), ByteBuffer.wrap(");
+			args[1].Accept(this, CiPriority.Argument);
+			Write(", ");
+			args[2].Accept(this, CiPriority.Argument);
+			Write(", ");
+			args[1].Accept(this, CiPriority.Primary); // FIXME: side effect
+			Write(".length");
+			if (!args[2].IsLiteralZero) {
+				Write(" - ");
+				args[2].Accept(this, CiPriority.Mul); // FIXME: side effect
+			}
+			Write("), true)");
+		}
 		else if (method == CiSystem.UTF8GetString) {
 			Include("java.nio.charset.StandardCharsets");
 			Write("new String(");

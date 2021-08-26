@@ -400,7 +400,7 @@ public class GenPy : GenPySwift
 			break;
 		case CiNumericType number:
 			char c = GetArrayCode(number);
-			if (c == 'B' && (value == null || (value is CiLiteral literal && (long) literal.Value == 0)))
+			if (c == 'B' && (value == null || value.IsLiteralZero))
 				WriteCall("bytearray", lengthExpr);
 			else {
 				Include("array");

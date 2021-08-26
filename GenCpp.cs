@@ -700,6 +700,26 @@ public class GenCpp : GenCCpp
 			Write(".erase");
 			WriteArgsInParentheses(method, args);
 		}
+		else if (method == CiSystem.UTF8GetBytes) {
+			if (args[0] is CiLiteral) {
+				Include("algorithm");
+				Write("std::copy_n(");
+				args[0].Accept(this, CiPriority.Argument);
+				Write(", sizeof("); // not literal.Value.Length because of UTF-8
+				args[0].Accept(this, CiPriority.Argument);
+				Write(") - 1, ");
+				WriteArrayPtrAdd(args[1], args[2]);
+				Write(')');
+			}
+			else {
+				args[0].Accept(this, CiPriority.Primary);
+				Write(".copy(reinterpret_cast<char *>("); // cast pointer signedness
+				WriteArrayPtrAdd(args[1], args[2]);
+				Write("), ");
+				args[0].Accept(this, CiPriority.Primary); // FIXME: side effect
+				Write(".size())");
+			}
+		}
 		else if (method == CiSystem.RegexCompile)
 			WriteRegex(args, 0);
 		else if (method == CiSystem.RegexIsMatchStr || method == CiSystem.RegexIsMatchRegex

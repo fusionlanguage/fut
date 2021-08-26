@@ -108,6 +108,7 @@ public abstract class CiExpr : CiStatement
 	public CiType Type;
 	public override bool CompletesNormally => true;
 	public virtual bool IsIndexing => false;
+	public virtual bool IsLiteralZero => false;
 	public virtual CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		throw new NotImplementedException(GetType().Name);
@@ -326,6 +327,8 @@ public class CiLiteral : CiExpr
 		}
 		this.Value = value;
 	}
+
+	public override bool IsLiteralZero => (long) this.Value == 0;
 
 	public bool IsDefaultValue
 	{
@@ -1267,8 +1270,9 @@ public class CiSystem : CiScope
 	public static readonly CiMember ConsoleError = new CiMember { Name = "Error", Type = ConsoleBase };
 	public static readonly CiClass ConsoleClass = new CiClass(CiCallType.Static, "Console");
 	public static readonly CiArrayPtrType ByteArrayPtrType = new CiArrayPtrType { ElementType = ByteType, Modifier = CiToken.EndOfFile };
+	public static readonly CiMethod UTF8GetBytes = new CiMethod(CiCallType.Normal, null, "GetBytes", new CiVar(StringPtrType, "str"), new CiVar(ByteArrayPtrType, "bytes"), new CiVar(IntType, "byteIndex"));
 	public static readonly CiMethod UTF8GetString = new CiMethod(CiCallType.Normal, StringStorageType, "GetString", new CiVar(ByteArrayPtrType, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length")); // TODO: UIntType
-	public static readonly CiClass UTF8EncodingClass = new CiClass(CiCallType.Normal, "UTF8Encoding", UTF8GetString);
+	public static readonly CiClass UTF8EncodingClass = new CiClass(CiCallType.Sealed, "UTF8Encoding", UTF8GetBytes, UTF8GetString);
 	public static readonly CiClass EncodingClass = new CiClass(CiCallType.Static, "Encoding");
 	public static readonly CiMethod EnvironmentGetEnvironmentVariable = new CiMethod(CiCallType.Static, StringPtrType, "GetEnvironmentVariable", new CiVar(StringPtrType, "name"));
 	public static readonly CiClass EnvironmentClass = new CiClass(CiCallType.Static, "Environment", EnvironmentGetEnvironmentVariable);

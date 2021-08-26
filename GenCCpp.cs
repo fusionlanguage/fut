@@ -120,7 +120,7 @@ public abstract class GenCCpp : GenTyped
 	protected static bool IsStringEmpty(CiBinaryExpr expr, out CiExpr str)
 	{
 		if (expr.Left is CiSymbolReference symbol && symbol.Symbol == CiSystem.StringLength
-			&& expr.Right is CiLiteral literal && (long) literal.Value == 0) {
+			&& expr.Right.IsLiteralZero) {
 			str = symbol.Left;
 			return true;
 		}
@@ -147,7 +147,7 @@ public abstract class GenCCpp : GenTyped
 
 	protected void WriteArrayPtrAdd(CiExpr array, CiExpr index)
 	{
-		if (index is CiLiteral literal && (long) literal.Value == 0)
+		if (index.IsLiteralZero)
 			WriteArrayPtr(array, CiPriority.Argument);
 		else {
 			WriteArrayPtr(array, CiPriority.Add);

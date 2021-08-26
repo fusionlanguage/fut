@@ -380,6 +380,18 @@ public class GenCs : GenTyped
 			WriteCharLiteral(c);
 			Write(')');
 		}
+		else if (method == CiSystem.UTF8GetBytes) {
+			Include("System.Text");
+			Write("Encoding.UTF8.GetBytes(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(", 0, ");
+			args[0].Accept(this, CiPriority.Primary); // FIXME: side effect
+			Write(".Length, ");
+			args[1].Accept(this, CiPriority.Argument);
+			Write(", ");
+			args[2].Accept(this, CiPriority.Argument);
+			Write(')');
+		}
 		else if (method == CiSystem.UTF8GetString) {
 			Include("System.Text");
 			Write("Encoding.UTF8.GetString");
