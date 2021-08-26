@@ -141,6 +141,8 @@ public class GenCl : GenC
 	{
 		if (obj == null)
 			WriteCCall(null, method, args);
+		else if (method == CiSystem.UTF8GetByteCount)
+			WriteStringLength(args[0]);
 		else if (obj.IsReferenceTo(CiSystem.MathClass))
 			WriteMathCall(method, args);
 		else if (method == CiSystem.ConsoleWrite)

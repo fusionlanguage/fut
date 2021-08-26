@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		string s = "quux";
-		return Encoding.UTF8.GetByteCount("foo") == 3 //FAIL: cl
+		return Encoding.UTF8.GetByteCount("foo") == 3
 			&& Encoding.UTF8.GetByteCount(s) == 4;
 	}
 }
