@@ -896,7 +896,7 @@ public abstract class GenBase : CiVisitor
 				return;
 			}
 		}
-		else if (right is CiLiteral rightLiteral2 && (long) rightLiteral2.Value == 0) {
+		else if (right.IsLiteralZero) {
 			left.Accept(this, CiPriority.Argument);
 			return;
 		}

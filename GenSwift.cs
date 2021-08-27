@@ -443,7 +443,7 @@ public class GenSwift : GenPySwift
 			Write(", .backwards)");
 		}
 		else if (method == CiSystem.StringSubstring) {
-			if (args[0] is CiLiteral literalOffset && (long) literalOffset.Value == 0)
+			if (args[0].IsLiteralZero)
 				WriteUnwrappedString(obj, CiPriority.Primary, true);
 			else {
 				this.StringSubstring = true;
