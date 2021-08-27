@@ -5,7 +5,7 @@ public static class Test
 		string s = "barek";
 		string() s1 = $"^{s.Substring(1, 3)}$"; //FAIL: cpp - should work with C++20; cl
 		const byte[4] b = { 'f', 'o', 'o', 'b' };
-		string() s2 = $"^{Encoding.UTF8.GetString(b, 1, 2), 3}$";
+		string() s2 = $"^{Encoding.UTF8.GetString(b, 1, 2), 3}$"; //FAIL: py swift TODO
 		return s1 == "^are$" && s2 == "^ oo$";
 	}
 }
