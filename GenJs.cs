@@ -101,11 +101,45 @@ public class GenJs : GenBase
 		WriteName(value);
 	}
 
+	static string GetArrayElementType(CiNumericType type)
+	{
+		if (type == CiSystem.IntType)
+			return "Int32";
+		if (type == CiSystem.DoubleType)
+			return "Float64";
+		if (type == CiSystem.FloatType)
+			return "Float32";
+		if (type == CiSystem.LongType)
+			// TODO: UInt32 if possible?
+			return "Float64"; // no 64-bit integers in JavaScript
+		CiRangeType range = (CiRangeType) type;
+		if (range.Min < 0) {
+			if (range.Min < short.MinValue || range.Max > short.MaxValue)
+				return "Int32";
+			if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
+				return "Int16";
+			return "Int8";
+		}
+		if (range.Max > ushort.MaxValue)
+			return "Int32";
+		if (range.Max > byte.MaxValue)
+			return "Uint16";
+		return "Uint8";
+	}
+
 	public override CiExpr Visit(CiCollection expr, CiPriority parent)
 	{
+		CiNumericType numeric = ((CiArrayType) expr.Type).ElementType as CiNumericType;
+		if (numeric != null) {
+			Write("new ");
+			Write(GetArrayElementType(numeric));
+			Write("Array(");
+		}
 		Write("[ ");
 		WriteCoercedLiterals(null, expr.Items);
 		Write(" ]");
+		if (numeric != null)
+			Write(')');
 		return expr;
 	}
 
@@ -221,41 +255,9 @@ public class GenJs : GenBase
 
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
-		if (!(elementType is CiNumericType)) {
-			WriteCall("new Array", lengthExpr);
-			return;
-		}
-
-		string name;
-		if (elementType == CiSystem.IntType)
-			name = "Int32";
-		else if (elementType == CiSystem.DoubleType)
-			name = "Float64";
-		else if (elementType == CiSystem.FloatType)
-			name = "Float32";
-		else if (elementType == CiSystem.LongType)
-			// TODO: UInt32 if possible?
-			name = "Float64"; // no 64-bit integers in JavaScript
-		else {
-			CiRangeType range = (CiRangeType) elementType;
-			if (range.Min < 0) {
-				if (range.Min < short.MinValue || range.Max > short.MaxValue)
-					name = "Int32";
-				else if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
-					name = "Int16";
-				else
-					name = "Int8";
-			}
-			else if (range.Max > ushort.MaxValue)
-				name = "Int32";
-			else if (range.Max > byte.MaxValue)
-				name = "Uint16";
-			else
-				name = "Uint8";
-		}
-
 		Write("new ");
-		Write(name);
+		if (elementType is CiNumericType numeric)
+			Write(GetArrayElementType(numeric));
 		WriteCall("Array", lengthExpr);
 	}
 
@@ -795,10 +797,10 @@ public class GenJs : GenBase
 				WriteLine(',');
 			first = false;
 			WriteResource(name, -1);
-			WriteLine(" : [");
+			WriteLine(" : new Uint8Array([");
 			Write('\t');
 			Write(resources[name]);
-			Write(" ]");
+			Write(" ])");
 		}
 		WriteLine();
 		CloseBlock();
