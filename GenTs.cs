@@ -106,7 +106,7 @@ public class GenTs : GenJs
 			break;
 		case CiArrayType array:
 			CiType elementType = array.ElementType;
-			if (!forConst && elementType is CiNumericType) {
+			if (elementType is CiNumericType number) {
 				if (!(array is CiArrayStorageType)) {
 					if (array.IsReadonlyPtr)
 						Write("readonly ");
@@ -114,31 +114,7 @@ public class GenTs : GenJs
 				}
 				if (array.IsReadonlyPtr)
 					Write("Readonly<");
-				if (elementType == CiSystem.IntType)
-					Write("Int32");
-				else if (elementType == CiSystem.DoubleType)
-					Write("Float64");
-				else if (elementType == CiSystem.FloatType)
-					Write("Float32");
-				else if (elementType == CiSystem.LongType)
-					Write("Float64");
-				else {
-					CiRangeType range = (CiRangeType) elementType;
-					if (range.Min < 0) {
-						if (range.Min < short.MinValue || range.Max > short.MaxValue)
-							Write("Int32");
-						else if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
-							Write("Int16");
-						else
-							Write("Int8");
-					}
-					else if (range.Max > ushort.MaxValue)
-						Write("Int32");
-					else if (range.Max > byte.MaxValue)
-						Write("Uint16");
-					else
-						Write("Uint8");
-				}
+				Write(GetArrayElementType(number));
 				Write("Array");
 				if (array.IsReadonlyPtr)
 					Write('>');

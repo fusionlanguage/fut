@@ -101,7 +101,7 @@ public class GenJs : GenBase
 		WriteName(value);
 	}
 
-	static string GetArrayElementType(CiNumericType type)
+	protected static string GetArrayElementType(CiNumericType type)
 	{
 		if (type == CiSystem.IntType)
 			return "Int32";
