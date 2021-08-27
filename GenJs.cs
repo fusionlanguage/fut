@@ -129,16 +129,16 @@ public class GenJs : GenBase
 
 	public override CiExpr Visit(CiCollection expr, CiPriority parent)
 	{
-		CiNumericType numeric = ((CiArrayType) expr.Type).ElementType as CiNumericType;
-		if (numeric != null) {
+		CiNumericType number = ((CiArrayStorageType) expr.Type).ElementType as CiNumericType;
+		if (number != null) {
 			Write("new ");
-			Write(GetArrayElementType(numeric));
+			Write(GetArrayElementType(number));
 			Write("Array(");
 		}
 		Write("[ ");
 		WriteCoercedLiterals(null, expr.Items);
 		Write(" ]");
-		if (numeric != null)
+		if (number != null)
 			Write(')');
 		return expr;
 	}

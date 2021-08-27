@@ -181,6 +181,25 @@ public class GenPy : GenPySwift
 		WriteName(value);
 	}
 
+	public override CiExpr Visit(CiCollection expr, CiPriority parent)
+	{
+		if (((CiArrayStorageType) expr.Type).ElementType is CiNumericType number) {
+			char c = GetArrayCode(number);
+			if (c == 'B')
+				Write("bytes(");
+			else {
+				Include("array");
+				Write("array.array(\"");
+				Write(c);
+				Write("\", ");
+			}
+			base.Visit(expr, parent);
+			Write(')');
+			return expr;
+		}
+		return base.Visit(expr, parent);
+	}
+
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
 		Write("f\"");
