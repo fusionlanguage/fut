@@ -527,11 +527,16 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
+	protected virtual void WriteInterpolatedStringArg(CiExpr expr)
+	{
+		expr.Accept(this, CiPriority.Argument);
+	}
+
 	protected void WriteArgs(CiInterpolatedString expr)
 	{
 		foreach (CiInterpolatedPart part in expr.Parts) {
 			Write(", ");
-			part.Argument.Accept(this, CiPriority.Argument);
+			WriteInterpolatedStringArg(part.Argument);
 		}
 	}
 

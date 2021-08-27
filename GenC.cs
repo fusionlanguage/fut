@@ -88,6 +88,28 @@ public class GenC : GenCCpp
 			base.WriteLiteral(value);
 	}
 
+	protected override void WritePrintfWidth(CiInterpolatedPart part)
+	{
+		base.WritePrintfWidth(part);
+		if (IsStringSubstring(part.Argument, out bool _, out CiExpr _, out CiExpr _, out CiExpr _)) {
+			Trace.Assert(part.Precision < 0);
+			Write(".*");
+		}
+	}
+
+	protected override void WriteInterpolatedStringArg(CiExpr expr)
+	{
+		if (IsStringSubstring(expr, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)) {
+			length.Accept(this, CiPriority.Argument);
+			Write(", ");
+			if (cast)
+				Write("(const char *) ");
+			WriteArrayPtrAdd(ptr, offset);
+		}
+		else
+			base.WriteInterpolatedStringArg(expr);
+	}
+
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
 		Include("stdarg.h");
