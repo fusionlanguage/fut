@@ -1244,8 +1244,7 @@ public abstract class GenBase : CiVisitor
 	public override void Visit(CiFor statement)
 	{
 		Write("for (");
-		if (statement.Init != null)
-			statement.Init.Accept(this, CiPriority.Statement);
+		statement.Init?.Accept(this, CiPriority.Statement);
 		Write(';');
 		if (statement.Cond != null) {
 			Write(' ');

@@ -178,8 +178,7 @@ public class CiLexer
 	public int ReadChar()
 	{
 		int c = this.Reader.Read();
-		if (this.CopyTo != null)
-			this.CopyTo.Append((char) c);
+		this.CopyTo?.Append((char) c);
 		switch (c) {
 		case '\t':
 		case ' ':

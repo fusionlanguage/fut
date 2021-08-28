@@ -213,8 +213,7 @@ public abstract class GenPySwift : GenBase
 
 	protected void EndBody(CiFor statement)
 	{
-		if (statement.Advance != null)
-			statement.Advance.Accept(this);
+		statement.Advance?.Accept(this);
 		if (NeedCondXcrement(statement))
 			VisitXcrement<CiPrefixExpr>(statement.Cond, true);
 	}
@@ -282,8 +281,7 @@ public abstract class GenPySwift : GenBase
 			WriteChild(statement.Body);
 		}
 		else {
-			if (statement.Init != null)
-				statement.Init.Accept(this);
+			statement.Init?.Accept(this);
 			if (statement.Cond != null)
 				OpenWhile(statement);
 			else {
@@ -316,8 +314,7 @@ public abstract class GenPySwift : GenBase
 				Write("else");
 				OpenChild();
 				VisitXcrement<CiPostfixExpr>(statement.Cond, true);
-				if (statement.OnFalse != null)
-					statement.OnFalse.Accept(this);
+				statement.OnFalse?.Accept(this);
 				CloseChild();
 			}
 		}

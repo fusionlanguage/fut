@@ -550,8 +550,7 @@ public class GenCs : GenTyped
 			// assert false;
 			Include("System");
 			Write("throw new NotImplementedException(");
-			if (statement.Message != null)
-				statement.Message.Accept(this, CiPriority.Argument);
+			statement.Message?.Accept(this, CiPriority.Argument);
 		}
 		WriteLine(");");
 	}

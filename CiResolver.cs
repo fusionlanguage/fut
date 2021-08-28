@@ -956,11 +956,9 @@ public class CiResolver : CiVisitor
 	public override void Visit(CiFor statement)
 	{
 		OpenScope(statement);
-		if (statement.Init != null)
-			statement.Init.Accept(this);
+		statement.Init?.Accept(this);
 		ResolveLoopCond(statement);
-		if (statement.Advance != null)
-			statement.Advance.Accept(this);
+		statement.Advance?.Accept(this);
 		if (statement.Init is CiVar iter
 			&& iter.Type is CiIntegerType
 			&& iter.Value != null
