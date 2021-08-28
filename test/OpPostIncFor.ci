@@ -11,7 +11,7 @@ public static class Test
 		int j = 0;
 		for (; j++ < 3; k++) {
 			if (j == 2)
-				break; //FAIL: swift TODO
+				break;
 			s += j;
 		}
 		return i == 4 && j == 2 && s == 7 && k == 4;

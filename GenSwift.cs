@@ -870,6 +870,9 @@ public class GenSwift : GenPySwift
 		WriteLine("break");
 	}
 
+	protected override bool NeedCondXcrement(CiLoop loop)
+		=> loop.Cond != null && (!loop.HasBreak || !VisitXcrement<CiPostfixExpr>(loop.Cond, false));
+
 	protected override void WriteContinueDoWhile(CiExpr cond)
 	{
 		VisitXcrement<CiPrefixExpr>(cond, true);
@@ -894,6 +897,25 @@ public class GenSwift : GenPySwift
 	protected override void WriteElseIf()
 	{
 		Write("else ");
+	}
+
+	protected override void OpenWhile(CiLoop loop)
+	{
+		if (NeedCondXcrement(loop))
+			base.OpenWhile(loop);
+		else {
+			Write("while true");
+			OpenChild();
+			VisitXcrement<CiPrefixExpr>(loop.Cond, true);
+			Write("let ciDoLoop = ");
+			loop.Cond.Accept(this, CiPriority.Argument);
+			WriteLine();
+			VisitXcrement<CiPostfixExpr>(loop.Cond, true);
+			Write("if !ciDoLoop");
+			OpenChild();
+			WriteLine("break");
+			CloseChild();
+		}
 	}
 
 	protected override void WriteForRange(CiVar iter, CiBinaryExpr cond, long rangeStep)

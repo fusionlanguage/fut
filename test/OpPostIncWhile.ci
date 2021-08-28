@@ -10,7 +10,7 @@ public static class Test
 		int j = 0;
 		while (j++ < 3) {
 			if (j == 2)
-				break; //FAIL: swift TODO
+				break;
 			s += j;
 		}
 		return i == 4 && j == 2 && s == 7;

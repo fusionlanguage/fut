@@ -207,13 +207,15 @@ public abstract class GenPySwift : GenBase
 		Write(statement.Statements);
 	}
 
+	protected virtual bool NeedCondXcrement(CiLoop loop) => loop.Cond != null;
+
 	protected abstract void WriteContinueDoWhile(CiExpr cond);
 
 	protected void EndBody(CiFor statement)
 	{
 		if (statement.Advance != null)
 			statement.Advance.Accept(this);
-		if (statement.Cond != null)
+		if (NeedCondXcrement(statement))
 			VisitXcrement<CiPrefixExpr>(statement.Cond, true);
 	}
 
@@ -226,7 +228,7 @@ public abstract class GenPySwift : GenBase
 		case CiFor forLoop when !forLoop.IsRange:
 			EndBody(forLoop);
 			break;
-		case CiWhile whileLoop:
+		case CiWhile whileLoop when NeedCondXcrement(statement.Loop):
 			VisitXcrement<CiPrefixExpr>(whileLoop.Cond, true);
 			break;
 		default:
@@ -244,11 +246,16 @@ public abstract class GenPySwift : GenBase
 		return VisitXcrement<CiPostfixExpr>(cond, true);
 	}
 
+	protected virtual void OpenWhile(CiLoop loop)
+	{
+		OpenCond("while ", loop.Cond, CiPriority.Argument);
+	}
+
 	void CloseWhile(CiLoop loop)
 	{
 		CloseChild();
-		if (loop.Cond != null && VisitXcrement<CiPostfixExpr>(loop.Cond, false)) {
-			if (loop.HasBreak) {
+		if (NeedCondXcrement(loop)) {
+			if (loop.HasBreak && VisitXcrement<CiPostfixExpr>(loop.Cond, false)) {
 				Write("else");
 				OpenChild();
 				VisitXcrement<CiPostfixExpr>(loop.Cond, true);
@@ -278,7 +285,7 @@ public abstract class GenPySwift : GenBase
 			if (statement.Init != null)
 				statement.Init.Accept(this);
 			if (statement.Cond != null)
-				OpenCond("while ", statement.Cond, CiPriority.Argument);
+				OpenWhile(statement);
 			else {
 				Write("while ");
 				WriteLiteral(true);
@@ -342,7 +349,7 @@ public abstract class GenPySwift : GenBase
 
 	public override void Visit(CiWhile statement)
 	{
-		OpenCond("while ", statement.Cond, CiPriority.Argument);
+		OpenWhile(statement);
 		statement.Body.Accept(this);
 		if (statement.Body.CompletesNormally)
 			VisitXcrement<CiPrefixExpr>(statement.Cond, true);
