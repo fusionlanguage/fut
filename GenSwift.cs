@@ -890,8 +890,8 @@ public class GenSwift : GenPySwift
 		Write("while ");
 		WriteExpr(statement.Cond, CiPriority.Argument);
 		WriteLine();
-		if (VisitXcrement<CiPostfixExpr>(statement.Cond, true) && statement.HasBreak)
-			throw new NotImplementedException("do-while with a post-in/decrement and a break");
+		if (VisitXcrement<CiPostfixExpr>(statement.Cond, false))
+			throw new NotImplementedException("do-while with a post-in/decrement");
 	}
 
 	protected override void WriteElseIf()

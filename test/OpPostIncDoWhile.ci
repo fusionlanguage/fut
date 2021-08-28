@@ -1,0 +1,12 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int s = 0;
+		int i = 1;
+		do
+			s += i;
+		while (i++ < 4); //FAIL: swift TODO
+		return i == 5 && s == 10;
+	}
+}
