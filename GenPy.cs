@@ -793,28 +793,7 @@ public class GenPy : GenPySwift
 		WriteLine(statement.LoopOrSwitch is CiSwitch ? "raise _CiBreak()" : "break");
 	}
 
-	protected override void WriteContinueDoWhile(CiExpr cond)
-	{
-		OpenCond("if ", cond, CiPriority.Argument);
-		WriteLine("continue");
-		CloseChild();
-		VisitXcrement<CiPostfixExpr>(cond, true);
-		WriteLine("break");
-	}
-
-	public override void Visit(CiDoWhile statement)
-	{
-		Write("while True");
-		OpenChild();
-		statement.Body.Accept(this);
-		if (statement.Body.CompletesNormally) {
-			OpenCond("if not ", statement.Cond, CiPriority.Primary);
-			WriteLine("break");
-			CloseChild();
-			VisitXcrement<CiPostfixExpr>(statement.Cond, true);
-		}
-		this.Indent--;
-	}
+	protected override string GetIfNot() => "if not ";
 
 	void WriteInclusiveLimit(CiExpr limit, int increment, string incrementString)
 	{

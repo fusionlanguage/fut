@@ -873,6 +873,8 @@ public class GenSwift : GenPySwift
 	protected override bool NeedCondXcrement(CiLoop loop)
 		=> loop.Cond != null && (!loop.HasBreak || !VisitXcrement<CiPostfixExpr>(loop.Cond, false));
 
+	protected override string GetIfNot() => "if !";
+
 	protected override void WriteContinueDoWhile(CiExpr cond)
 	{
 		VisitXcrement<CiPrefixExpr>(cond, true);
@@ -881,17 +883,19 @@ public class GenSwift : GenPySwift
 
 	public override void Visit(CiDoWhile statement)
 	{
-		Write("repeat");
-		OpenChild();
-		statement.Body.Accept(this);
-		if (statement.Body.CompletesNormally)
-			VisitXcrement<CiPrefixExpr>(statement.Cond, true);
-		CloseChild();
-		Write("while ");
-		WriteExpr(statement.Cond, CiPriority.Argument);
-		WriteLine();
 		if (VisitXcrement<CiPostfixExpr>(statement.Cond, false))
-			throw new NotImplementedException("do-while with a post-in/decrement");
+			base.Visit(statement);
+		else {
+			Write("repeat");
+			OpenChild();
+			statement.Body.Accept(this);
+			if (statement.Body.CompletesNormally)
+				VisitXcrement<CiPrefixExpr>(statement.Cond, true);
+			CloseChild();
+			Write("while ");
+			WriteExpr(statement.Cond, CiPriority.Argument);
+			WriteLine();
+		}
 	}
 
 	protected override void WriteElseIf()

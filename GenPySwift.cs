@@ -207,9 +207,25 @@ public abstract class GenPySwift : GenBase
 		Write(statement.Statements);
 	}
 
-	protected virtual bool NeedCondXcrement(CiLoop loop) => loop.Cond != null;
+	bool OpenCond(string statement, CiExpr cond, CiPriority parent)
+	{
+		VisitXcrement<CiPrefixExpr>(cond, true);
+		Write(statement);
+		WriteExpr(cond, parent);
+		OpenChild();
+		return VisitXcrement<CiPostfixExpr>(cond, true);
+	}
 
-	protected abstract void WriteContinueDoWhile(CiExpr cond);
+	protected virtual void WriteContinueDoWhile(CiExpr cond)
+	{
+		OpenCond("if ", cond, CiPriority.Argument);
+		WriteLine("continue");
+		CloseChild();
+		VisitXcrement<CiPostfixExpr>(cond, true);
+		WriteLine("break");
+	}
+
+	protected virtual bool NeedCondXcrement(CiLoop loop) => loop.Cond != null;
 
 	void EndBody(CiLoop loop)
 	{
@@ -232,13 +248,26 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
-	protected bool OpenCond(string statement, CiExpr cond, CiPriority parent)
+	void OpenWhileTrue()
 	{
-		VisitXcrement<CiPrefixExpr>(cond, true);
-		Write(statement);
-		WriteExpr(cond, parent);
+		Write("while ");
+		WriteLiteral(true);
 		OpenChild();
-		return VisitXcrement<CiPostfixExpr>(cond, true);
+	}
+
+	protected abstract string GetIfNot();
+
+	public override void Visit(CiDoWhile statement)
+	{
+		OpenWhileTrue();
+		statement.Body.Accept(this);
+		if (statement.Body.CompletesNormally) {
+			OpenCond(GetIfNot(), statement.Cond, CiPriority.Primary);
+			WriteLine("break");
+			CloseChild();
+			VisitXcrement<CiPostfixExpr>(statement.Cond, true);
+		}
+		CloseChild();
 	}
 
 	protected virtual void OpenWhile(CiLoop loop)
@@ -283,11 +312,8 @@ public abstract class GenPySwift : GenBase
 			statement.Init?.Accept(this);
 			if (statement.Cond != null)
 				OpenWhile(statement);
-			else {
-				Write("while ");
-				WriteLiteral(true);
-				OpenChild();
-			}
+			else
+				OpenWhileTrue();
 			CloseWhile(statement);
 		}
 	}

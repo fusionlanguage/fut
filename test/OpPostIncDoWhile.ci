@@ -6,7 +6,7 @@ public static class Test
 		int i = 1;
 		do
 			s += i;
-		while (i++ < 4); //FAIL: swift TODO
+		while (i++ < 4);
 		return i == 5 && s == 10;
 	}
 }
