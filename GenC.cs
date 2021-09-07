@@ -48,6 +48,7 @@ public class GenC : GenCCpp
 	bool TreeCompareInteger;
 	bool TreeCompareString;
 	readonly SortedSet<TypeCode> Compares = new SortedSet<TypeCode>();
+	readonly SortedSet<TypeCode> Contains = new SortedSet<TypeCode>();
 	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
 	protected CiClass CurrentClass;
 
@@ -930,15 +931,9 @@ public class GenC : GenCCpp
 	{
 		Write(", sizeof(");
 		TypeCode typeCode = GetTypeCode(array.ElementType, false);
-		if (typeCode == TypeCode.String) {
-			Include("string.h");
-			Write("const char *), CiCompare_String");
-		}
-		else {
-			Write(typeCode);
-			Write("), CiCompare_");
-			Write(typeCode);
-		}
+		Write(typeCode);
+		Write("), CiCompare_");
+		Write(typeCode);
 		Write(')');
 		this.Compares.Add(typeCode);
 	}
@@ -1257,20 +1252,25 @@ public class GenC : GenCCpp
 				WriteListAddInsert(obj, false, "g_array_append_val", args);
 		}
 		else if (obj.Type is CiListType list2 && method.Name == "Contains") {
-			Include("search.h");
-			if (parent > CiPriority.Equality)
-				Write('(');
-			Write("lfind(&");
-			args[0].Accept(this, CiPriority.Primary); // TODO: not lvalue, promoted
-			Write(", ");
+			Write("CiArray_Contains_");
+			TypeCode typeCode = GetTypeCode(list2.ElementType, false);
+			if (typeCode == TypeCode.String) {
+				Include("string.h");
+				Write("string((const char * const");
+			}
+			else {
+				Write(typeCode);
+				Write("((const ");
+				Write(typeCode);
+			}
+			Write(" *) ");
 			obj.Accept(this, CiPriority.Primary);
-			Write("->data, &");
+			Write("->data, ");
 			obj.Accept(this, CiPriority.Primary); // TODO: side effect
-			Write("->len");
-			WriteSizeofCompare(list2);
-			Write(" != NULL");
-			if (parent > CiPriority.Equality)
-				Write(')');
+			Write("->len, ");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(')');
+			this.Contains.Add(typeCode);
 		}
 		else if (method == CiSystem.CollectionClear) {
 			switch (obj.Type) {
@@ -2575,38 +2575,52 @@ public class GenC : GenCCpp
 		foreach (TypeCode typeCode in this.Compares) {
 			WriteLine();
 			Write("static int CiCompare_");
-			if (typeCode == TypeCode.String) {
-				WriteLine("String(const void *pa, const void *pb)");
-				OpenBlock();
-				WriteLine("const char *a = *(const char * const *) pa;");
-				WriteLine("const char *b = *(const char * const *) pb;");
-				WriteLine("return strcmp(a, b);");
+			Write(typeCode);
+			WriteLine("(const void *pa, const void *pb)");
+			OpenBlock();
+			Write(typeCode);
+			Write(" a = *(const ");
+			Write(typeCode);
+			WriteLine(" *) pa;");
+			Write(typeCode);
+			Write(" b = *(const ");
+			Write(typeCode);
+			WriteLine(" *) pb;");
+			switch (typeCode) {
+			case TypeCode.Byte:
+			case TypeCode.SByte:
+			case TypeCode.Int16:
+			case TypeCode.UInt16:
+				// subtraction can't overflow int
+				WriteLine("return a - b;");
+				break;
+			default:
+				WriteLine("return (a > b) - (a < b);");
+				break;
 			}
+			CloseBlock();
+		}
+		foreach (TypeCode typeCode in this.Contains) {
+			WriteLine();
+			Write("static bool CiArray_Contains_");
+			if (typeCode == TypeCode.String)
+				Write("string(const char * const *a, size_t len, const char *");
 			else {
 				Write(typeCode);
-				WriteLine("(const void *pa, const void *pb)");
-				OpenBlock();
+				Write("(const ");
 				Write(typeCode);
-				Write(" a = *(const ");
+				Write(" *a, size_t len, ");
 				Write(typeCode);
-				WriteLine(" *) pa;");
-				Write(typeCode);
-				Write(" b = *(const ");
-				Write(typeCode);
-				WriteLine(" *) pb;");
-				switch (typeCode) {
-				case TypeCode.Byte:
-				case TypeCode.SByte:
-				case TypeCode.Int16:
-				case TypeCode.UInt16:
-					// subtraction can't overflow int
-					WriteLine("return a - b;");
-					break;
-				default:
-					WriteLine("return (a > b) - (a < b);");
-					break;
-				}
 			}
+			WriteLine(" value)");
+			OpenBlock();
+			WriteLine("for (size_t i = 0; i < len; i++)");
+			if (typeCode == TypeCode.String)
+				WriteLine("\tif (strcmp(a[i], value) == 0)");
+			else
+				WriteLine("\tif (a[i] == value)");
+			WriteLine("\t\treturn true;");
+			WriteLine("return false;");
 			CloseBlock();
 		}
 	}
