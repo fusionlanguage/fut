@@ -203,7 +203,7 @@ public class GenTs : GenJs
 		if (this.GenFullCode)
 			WriteBody(method);
 		else
-			WriteLine(";");
+			WriteLine(';');
 	}
 
 	void WriteConsts(IEnumerable<CiConst> consts)
