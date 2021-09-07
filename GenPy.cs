@@ -483,6 +483,13 @@ public class GenPy : GenPySwift
 	{
 	}
 
+	void WriteContains(CiExpr haystack, CiExpr needle)
+	{
+		needle.Accept(this, CiPriority.Primary);
+		Write(" in ");
+		haystack.Accept(this, CiPriority.Primary);
+	}
+
 	void WriteSlice(CiExpr startIndex, CiExpr length)
 	{
 		Write('[');
@@ -549,11 +556,8 @@ public class GenPy : GenPySwift
 			WriteLocalName(method, CiPriority.Primary);
 			WriteArgsInParentheses(method, args);
 		}
-		else if (method == CiSystem.StringContains) {
-			args[0].Accept(this, CiPriority.Primary);
-			Write(" in ");
-			obj.Accept(this, CiPriority.Primary);
-		}
+		else if (method == CiSystem.StringContains)
+			WriteContains(obj, args[0]);
 		else if (method == CiSystem.StringSubstring) {
 			obj.Accept(this, CiPriority.Primary);
 			WriteSlice(args[0], args.Length == 2 ? args[1] : null);
@@ -614,11 +618,10 @@ public class GenPy : GenPySwift
 			|| WriteDictionaryAdd(obj, method, args)) {
 			// done
 		}
-		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey") {
-			args[0].Accept(this, CiPriority.Primary);
-			Write(" in ");
-			obj.Accept(this, CiPriority.Primary);
-		}
+		else if (obj.Type is CiListType && method.Name == "Contains")
+			WriteContains(obj, args[0]);
+		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey")
+			WriteContains(obj, args[0]);
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(obj, args, false);
 		else if (method == CiSystem.ConsoleWriteLine)

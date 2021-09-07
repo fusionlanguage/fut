@@ -926,6 +926,23 @@ public class GenC : GenCCpp
 		WriteCall(name, obj, args[0]);
 	}
 
+	void WriteSizeofCompare(CiArrayType array)
+	{
+		Write(", sizeof(");
+		TypeCode typeCode = GetTypeCode(array.ElementType, false);
+		if (typeCode == TypeCode.String) {
+			Include("string.h");
+			Write("const char *), CiCompare_String");
+		}
+		else {
+			Write(typeCode);
+			Write("), CiCompare_");
+			Write(typeCode);
+		}
+		Write(')');
+		this.Compares.Add(typeCode);
+	}
+
 	void WriteListAddInsert(CiExpr obj, bool insert, string function, CiExpr[] args)
 	{
 		// TODO: don't emit temporary variable if already a var/field of matching type - beware of integer promotions!
@@ -1144,7 +1161,7 @@ public class GenC : GenCCpp
 			Write("(const ");
 			Write(array.ElementType, false);
 			Write(" *) bsearch(&");
-			args[0].Accept(this, CiPriority.Argument); // TODO: not lvalue, promoted
+			args[0].Accept(this, CiPriority.Primary); // TODO: not lvalue, promoted
 			Write(", ");
 			if (args.Length == 1)
 				WriteArrayPtr(obj, CiPriority.Argument);
@@ -1155,13 +1172,7 @@ public class GenC : GenCCpp
 				Write(((CiArrayStorageType) array).Length);
 			else
 				args[2].Accept(this, CiPriority.Primary);
-			Write(", sizeof(");
-			TypeCode typeCode = GetTypeCode(array.ElementType, false);
-			Write(typeCode);
-			Write("), CiCompare_");
-			Write(typeCode);
-			Write(')');
-			this.Compares.Add(typeCode);
+			WriteSizeofCompare(array);
 			Write(" - ");
 			WriteArrayPtr(obj, CiPriority.Mul);
 			if (parent > CiPriority.Add)
@@ -1232,13 +1243,7 @@ public class GenC : GenCCpp
 			WriteArrayPtrAdd(obj, args[0]);
 			Write(", ");
 			args[1].Accept(this, CiPriority.Primary);
-			Write(", sizeof(");
-			TypeCode typeCode = GetTypeCode(((CiArrayType) obj.Type).ElementType, false);
-			Write(typeCode);
-			Write("), CiCompare_");
-			Write(typeCode);
-			Write(')');
-			this.Compares.Add(typeCode);
+			WriteSizeofCompare((CiArrayType) obj.Type);
 		}
 		else if (obj.Type is CiListType list && method.Name == "Add") {
 			if (list.ElementType is CiArrayStorageType || (list.ElementType is CiClass klass && !NeedsConstructor(klass))) {
@@ -1250,6 +1255,22 @@ public class GenC : GenCCpp
 			}
 			else
 				WriteListAddInsert(obj, false, "g_array_append_val", args);
+		}
+		else if (obj.Type is CiListType list2 && method.Name == "Contains") {
+			Include("search.h");
+			if (parent > CiPriority.Equality)
+				Write('(');
+			Write("lfind(&");
+			args[0].Accept(this, CiPriority.Primary); // TODO: not lvalue, promoted
+			Write(", ");
+			obj.Accept(this, CiPriority.Primary);
+			Write("->data, &");
+			obj.Accept(this, CiPriority.Primary); // TODO: side effect
+			Write("->len");
+			WriteSizeofCompare(list2);
+			Write(" != NULL");
+			if (parent > CiPriority.Equality)
+				Write(')');
 		}
 		else if (method == CiSystem.CollectionClear) {
 			switch (obj.Type) {
@@ -2554,28 +2575,37 @@ public class GenC : GenCCpp
 		foreach (TypeCode typeCode in this.Compares) {
 			WriteLine();
 			Write("static int CiCompare_");
-			Write(typeCode);
-			WriteLine("(const void *pa, const void *pb)");
-			OpenBlock();
-			Write(typeCode);
-			Write(" a = *(const ");
-			Write(typeCode);
-			WriteLine(" *) pa;");
-			Write(typeCode);
-			Write(" b = *(const ");
-			Write(typeCode);
-			WriteLine(" *) pb;");
-			switch (typeCode) {
-			case TypeCode.Byte:
-			case TypeCode.SByte:
-			case TypeCode.Int16:
-			case TypeCode.UInt16:
-				// subtraction can't overflow int
-				WriteLine("return a - b;");
-				break;
-			default:
-				WriteLine("return (a > b) - (a < b);");
-				break;
+			if (typeCode == TypeCode.String) {
+				WriteLine("String(const void *pa, const void *pb)");
+				OpenBlock();
+				WriteLine("const char *a = *(const char * const *) pa;");
+				WriteLine("const char *b = *(const char * const *) pb;");
+				WriteLine("return strcmp(a, b);");
+			}
+			else {
+				Write(typeCode);
+				WriteLine("(const void *pa, const void *pb)");
+				OpenBlock();
+				Write(typeCode);
+				Write(" a = *(const ");
+				Write(typeCode);
+				WriteLine(" *) pa;");
+				Write(typeCode);
+				Write(" b = *(const ");
+				Write(typeCode);
+				WriteLine(" *) pb;");
+				switch (typeCode) {
+				case TypeCode.Byte:
+				case TypeCode.SByte:
+				case TypeCode.Int16:
+				case TypeCode.UInt16:
+					// subtraction can't overflow int
+					WriteLine("return a - b;");
+					break;
+				default:
+					WriteLine("return (a > b) - (a < b);");
+					break;
+				}
 			}
 			CloseBlock();
 		}

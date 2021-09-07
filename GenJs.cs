@@ -594,7 +594,7 @@ public class GenJs : GenBase
 				Write("ceil");
 			else if (method == CiSystem.MathTruncate)
 				Write("trunc");
-			else if (method == CiSystem.StringContains)
+			else if (method == CiSystem.StringContains || (obj.Type is CiListType && method.Name == "Contains"))
 				Write("includes");
 			else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey")
 				Write("hasOwnProperty");

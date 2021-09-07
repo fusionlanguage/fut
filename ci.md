@@ -803,6 +803,8 @@ You can remove:
 * One element with `RemoveAt(index)`.
 * A continuous sequence of elements with `RemoveRange(index, count)`.
 
+`list.Contains(value)` returns `true` if the list contains the specified item.
+
 `list.CopyTo(sourceIndex, destinationArray, destinationIndex, count)`
 copies elements from a list to an array.
 

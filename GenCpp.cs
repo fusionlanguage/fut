@@ -644,7 +644,7 @@ public class GenCpp : GenCCpp
 			args[1].Accept(this, CiPriority.Add);
 			Write(')');
 		}
-		else if (obj.Type is CiListType list && method.Name == "Add") {
+		else if (obj.Type is CiListType && method.Name == "Add") {
 			obj.Accept(this, CiPriority.Primary);
 			if (method.Parameters.Count == 0)
 				Write(".emplace_back()");
@@ -653,7 +653,23 @@ public class GenCpp : GenCCpp
 				WriteArgsInParentheses(method, args);
 			}
 		}
-		else if (obj.Type is CiListType list2 && method.Name == "Insert") {
+		else if (obj.Type is CiListType && method.Name == "Contains") {
+			Include("algorithm");
+			if (parent > CiPriority.Equality)
+				Write('(');
+			Write("std::find(");
+			obj.Accept(this, CiPriority.Primary);
+			Write(".begin(), ");
+			obj.Accept(this, CiPriority.Primary); // FIXME: side effect
+			Write(".end(), ");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(") != ");
+			obj.Accept(this, CiPriority.Primary); // FIXME: side effect
+			Write(".end()");
+			if (parent > CiPriority.Equality)
+				Write(')');
+		}
+		else if (obj.Type is CiListType list && method.Name == "Insert") {
 			obj.Accept(this, CiPriority.Primary);
 			if (method.Parameters.Count == 1) {
 				Write(".emplace(");
@@ -663,7 +679,7 @@ public class GenCpp : GenCCpp
 				Write(".insert(");
 				WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
 				Write(", ");
-				WriteCoerced(list2.ElementType, args[1], CiPriority.Argument);
+				WriteCoerced(list.ElementType, args[1], CiPriority.Argument);
 			}
 			Write(')');
 		}

@@ -1,0 +1,15 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		List<int>() li; //FAIL: cl
+		li.Add(42);
+		li.Add(15);
+		li.Add(15);
+		List<string>() ls;
+		ls.Add("foo");
+		ls.Add("bar");
+		return li.Contains(15) && !li.Contains(1) //FAIL: c
+			&& ls.Contains("bar") && !ls.Contains("quux");
+	}
+}

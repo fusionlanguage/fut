@@ -1171,6 +1171,8 @@ public class CiListType : CiArrayType
 			return new CiMethod(CiCallType.Normal, null, "Add", new CiVar(this.ElementType, "value")) { IsMutator = true };
 		case "Clear":
 			return CiSystem.CollectionClear;
+		case "Contains":
+			return new CiMethod(CiCallType.Normal, CiSystem.BoolType, "Contains", new CiVar(this.ElementType, "value"));
 		case "Count":
 			return CiSystem.CollectionCount;
 		case "Insert":
