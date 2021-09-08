@@ -6,10 +6,16 @@ public static class Test
 		li.Add(42);
 		li.Add(15);
 		li.Add(15);
-		List<string>() ls;
-		ls.Add("foo");
-		ls.Add("bar");
+
+		List<string>() lsp;
+		lsp.Add("foo");
+		lsp.Add("bar");
+
+		List<string()>() lss;
+		lss.Add("foo");
+		lss.Add("bar");
 		return li.Contains(15) && !li.Contains(1)
-			&& ls.Contains("bar") && !ls.Contains("quux");
+			&& lsp.Contains("bar") && !lsp.Contains("quux")
+			&& lss.Contains("bar") && !lss.Contains("quux");
 	}
 }
