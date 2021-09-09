@@ -49,6 +49,7 @@ public class GenC : GenCCpp
 	bool TreeCompareString;
 	readonly SortedSet<TypeCode> Compares = new SortedSet<TypeCode>();
 	readonly SortedSet<TypeCode> Contains = new SortedSet<TypeCode>();
+	readonly List<object> CurrentTemporaries = new List<object>(); // CiCallExpr or CiClass
 	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
 	protected CiClass CurrentClass;
 
@@ -645,6 +646,121 @@ public class GenC : GenCCpp
 			base.WriteVarInit(def);
 	}
 
+	void WriteTemporary(CiExpr expr)
+	{
+		if (!(expr is CiCallExpr)
+		 || !(expr.Type is CiClass storage))
+			return;
+		int id = this.CurrentTemporaries.IndexOf(storage);
+		if (id >= 0)
+			this.CurrentTemporaries[id] = expr;
+		else {
+			id = this.CurrentTemporaries.Count;
+			this.CurrentTemporaries.Add(expr);
+			Write(storage.Name);
+			Write(' ');
+		}
+		Write("citemp");
+		Write(id);
+		Write(" = ");
+		expr.Accept(this, CiPriority.Argument);
+		WriteLine(';');
+	}
+
+	void WriteTemporaries(CiExpr expr)
+	{
+		switch (expr) {
+		case CiVar def:
+			if (def.Value != null)
+				WriteTemporaries(def.Value);
+			break;
+		case CiLiteral _:
+			break;
+		case CiInterpolatedString interp:
+			foreach (CiInterpolatedPart part in interp.Parts)
+				WriteTemporaries(part.Argument);
+			break;
+		case CiSymbolReference symbol:
+			if (symbol.Left != null)
+				WriteTemporaries(symbol.Left);
+			break;
+		case CiUnaryExpr unary:
+			if (unary.Inner != null) // new C()
+				WriteTemporaries(unary.Inner);
+			break;
+		case CiBinaryExpr binary:
+			WriteTemporaries(binary.Left);
+			WriteTemporaries(binary.Right);
+			break;
+		case CiSelectExpr select:
+			WriteTemporaries(select.Cond);
+			break;
+		case CiCallExpr call:
+			if (call.Method.Left != null) {
+				WriteTemporaries(call.Method.Left);
+				WriteTemporary(call.Method.Left);
+			}
+			int i = 0;
+			foreach (CiVar param in ((CiMethod) call.Method.Symbol).Parameters) {
+				if (i >= call.Arguments.Length)
+					break;
+				CiExpr arg = call.Arguments[i++];
+				WriteTemporaries(arg);
+				if (param.Type is CiClassPtrType)
+					WriteTemporary(arg);
+			}
+			break;
+		default:
+			throw new NotImplementedException(expr.GetType().Name);
+		}
+	}
+
+	static bool IsTemporary(CiExpr expr) => expr is CiCallExpr && expr.Type is CiClass;
+
+	static bool HasTemporaries(CiExpr expr)
+	{
+		switch (expr) {
+		case CiLiteral _:
+		case CiSymbol _:
+			return false;
+		case CiInterpolatedString interp:
+			foreach (CiInterpolatedPart part in interp.Parts)
+				if (HasTemporaries(part.Argument))
+					return true;
+			return false;
+		case CiSymbolReference symbol:
+			return symbol.Left != null && HasTemporaries(symbol.Left);
+		case CiUnaryExpr unary:
+			return unary.Inner != null && HasTemporaries(unary.Inner);
+		case CiBinaryExpr binary:
+			return HasTemporaries(binary.Left) || HasTemporaries(binary.Right);
+		case CiSelectExpr select:
+			return HasTemporaries(select.Cond);
+		case CiCallExpr call:
+			if (call.Method.Left != null && (IsTemporary(call.Method.Left) || HasTemporaries(call.Method.Left)))
+				return true;
+			int i = 0;
+			foreach (CiVar param in ((CiMethod) call.Method.Symbol).Parameters) {
+				if (i >= call.Arguments.Length)
+					break;
+				CiExpr arg = call.Arguments[i++];
+				if (HasTemporaries(arg) || (param.Type is CiClassPtrType && IsTemporary(arg)))
+					return true;
+			}
+			return false;
+		default:
+			throw new NotImplementedException(expr.GetType().Name);
+		}
+	}
+
+	void CleanupTemporaries()
+	{
+		for (int i = 0; i < this.CurrentTemporaries.Count; i++) {
+			if (this.CurrentTemporaries[i] is CiExpr expr)
+				this.CurrentTemporaries[i] = expr.Type;
+		}
+	}
+
 	static bool NeedToDestruct(CiSymbol symbol)
 	{
 		CiType type = symbol.Type;
@@ -844,7 +960,13 @@ public class GenC : GenCCpp
 	{
 		if (expr.Type is CiClass klass && klass != CiSystem.MatchClass && !IsDictionaryClassStgIndexing(expr)) {
 			Write('&');
-			expr.Accept(this, CiPriority.Primary);
+			int tempId = this.CurrentTemporaries.IndexOf(expr);
+			if (tempId >= 0) {
+				Write("citemp");
+				Write(tempId);
+			}
+			else
+				expr.Accept(this, CiPriority.Primary);
 		}
 		else if (expr.Type is CiClassPtrType klassPtr && klassPtr.Class != resultClass) {
 			Write('&');
@@ -1514,9 +1636,9 @@ public class GenC : GenCCpp
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
-	static CiMethod GetThrowingMethod(CiStatement statement)
+	static CiMethod GetThrowingMethod(CiExpr expr)
 	{
-		switch (statement) {
+		switch (expr) {
 		case CiBinaryExpr binary when binary.Op == CiToken.Assign:
 			return GetThrowingMethod(binary.Right);
 		case CiCallExpr call:
@@ -1646,6 +1768,7 @@ public class GenC : GenCCpp
 	public override void Visit(CiBlock statement)
 	{
 		OpenBlock();
+		int temporariesCount = this.CurrentTemporaries.Count;
 		Write(statement.Statements);
 		int i = this.VarsToDestruct.Count;
 		for (; i > 0; i--) {
@@ -1656,6 +1779,7 @@ public class GenC : GenCCpp
 				WriteDestruct(def);
 		}
 		TrimVarsToDestruct(i);
+		this.CurrentTemporaries.RemoveRange(temporariesCount, this.CurrentTemporaries.Count - temporariesCount);
 		CloseBlock();
 	}
 
@@ -1668,15 +1792,18 @@ public class GenC : GenCCpp
 	bool NeedsBlock(CiStatement statement)
 	{
 		switch (statement) {
+		case CiExpr expr:
+			return HasTemporaries(expr) || GetThrowingMethod(expr) != null;
 		case CiBreak brk:
 			return BreakOrContinueNeedsBlock(brk.LoopOrSwitch);
 		case CiContinue cont:
 			return BreakOrContinueNeedsBlock(cont.Loop);
-		case CiReturn _:
+		case CiReturn ret:
+			return this.VarsToDestruct.Count > 0 || (ret.Value != null && HasTemporaries(ret.Value));
 		case CiThrow _:
 			return this.VarsToDestruct.Count > 0;
 		default:
-			return GetThrowingMethod(statement) != null;
+			return false;
 		}
 	}
 
@@ -1706,6 +1833,7 @@ public class GenC : GenCCpp
 
 	public override void Visit(CiExpr statement)
 	{
+		WriteTemporaries(statement);
 		CiMethod throwingMethod = GetThrowingMethod(statement);
 		if (throwingMethod != null)
 			WriteForwardThrow(parent => statement.Accept(this, parent), throwingMethod);
@@ -1722,6 +1850,7 @@ public class GenC : GenCCpp
 		}
 		else
 			base.Visit(statement);
+		CleanupTemporaries();
 	}
 
 	void WriteDictIterVar(CiNamedValue iter, string value)
@@ -1822,6 +1951,7 @@ public class GenC : GenCCpp
 		}
 		else if (this.VarsToDestruct.Count == 0 || statement.Value is CiLiteral) {
 			WriteDestructAll();
+			WriteTemporaries(statement.Value);
 			base.Visit(statement);
 		}
 		else {
@@ -1844,6 +1974,7 @@ public class GenC : GenCCpp
 					return;
 				}
 			}
+			WriteTemporaries(statement.Value);
 			WriteDefinition(this.CurrentMethod.Type, () => Write("returnValue"), true, true);
 			Write(" = ");
 			WriteCoerced(this.CurrentMethod.Type, statement.Value, CiPriority.Argument);
@@ -2352,6 +2483,7 @@ public class GenC : GenCCpp
 		}
 		else
 			method.Body.Accept(this);
+		this.CurrentTemporaries.Clear();
 		this.VarsToDestruct.Clear();
 		CloseBlock();
 		this.CurrentMethod = null;

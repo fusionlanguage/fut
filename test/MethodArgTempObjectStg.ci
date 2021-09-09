@@ -1,0 +1,24 @@
+class Data
+{
+	internal int X;
+}
+
+public static class Test
+{
+	static Data() ReturnStorage()
+	{
+		Data() o;
+		o.X = 42;
+		return o;
+	}
+
+	static int AcceptPtr(Data d)
+	{
+		return d.X;
+	}
+
+	public static bool Run()
+	{
+		return AcceptPtr(ReturnStorage()) == 42;
+	}
+}
