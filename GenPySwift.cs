@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Diagnostics;
 
 namespace Foxoft.Ci
 {
@@ -160,14 +161,15 @@ public abstract class GenPySwift : GenBase
 			return seen;
 		case CiBinaryExpr binary:
 			seen = VisitXcrement<T>(binary.Left, write);
-			// XXX: assert not seen on the right side of CondAnd, CondOr
-			seen |= VisitXcrement<T>(binary.Right, write);
+			if (binary.Op == CiToken.CondAnd || binary.Op == CiToken.CondOr)
+				Trace.Assert(!VisitXcrement<T>(binary.Right, false));
+			else
+				seen |= VisitXcrement<T>(binary.Right, write);
 			return seen;
 		case CiSelectExpr select:
 			seen = VisitXcrement<T>(select.Cond, write);
-			// XXX: assert not seen in OnTrue and OnFalse
-			// seen |= VisitXcrement<T>(select.OnTrue, write);
-			// seen |= VisitXcrement<T>(select.OnFalse, write);
+			Trace.Assert(!VisitXcrement<T>(select.OnTrue, false));
+			Trace.Assert(!VisitXcrement<T>(select.OnFalse, false));
 			return seen;
 		case CiCallExpr call:
 			seen = VisitXcrement<T>(call.Method, write);
