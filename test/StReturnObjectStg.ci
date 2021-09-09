@@ -1,0 +1,21 @@
+class Data
+{
+	internal int X;
+}
+
+public class Test
+{
+	internal Data() ReturnStorage()
+	{
+		Data() d;
+		d.X = 42;
+		return d;
+	}
+
+	public static bool Run()
+	{
+		Test() o;
+		Data() d = o.ReturnStorage();
+		return d.X == 42;
+	}
+}

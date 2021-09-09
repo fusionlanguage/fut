@@ -282,23 +282,19 @@ public class GenJava : GenTyped
 			break;
 		case CiListType list:
 			Include("java.util.ArrayList");
-			Write("final ArrayList<");
+			Write("ArrayList<");
 			Write(list.ElementType, false, true);
 			Write('>');
 			break;
 		case CiSortedDictionaryType dict:
 			Include("java.util.TreeMap");
-			Write("final ");
 			Write("TreeMap", dict);
 			break;
 		case CiDictionaryType dict:
 			Include("java.util.HashMap");
-			Write("final ");
 			Write("HashMap", dict);
 			break;
 		case CiArrayType array:
-			if (promote && array is CiArrayStorageType)
-				Write("final ");
 			Write(array.ElementType, false);
 			Write("[]");
 			break;
@@ -311,11 +307,8 @@ public class GenJava : GenTyped
 				Include("java.util.regex.Matcher");
 				Write("Matcher");
 			}
-			else {
-				if (promote && type is CiClass)
-					Write("final ");
+			else
 				Write(type.Name);
-			}
 			break;
 		}
 	}
@@ -730,6 +723,13 @@ public class GenJava : GenTyped
 			base.WriteAssign(expr, parent);
 	}
 
+	protected override void WriteVar(CiNamedValue def)
+	{
+		if (def.Type.IsFinal)
+			Write("final ");
+		base.WriteVar(def);
+	}
+
 	protected override bool HasInitCode(CiNamedValue def)
 	{
 		return def.Type is CiArrayStorageType && def.Type.StorageType is CiClass;
@@ -904,9 +904,7 @@ public class GenJava : GenTyped
 			WriteLine();
 			Write(konst.Documentation);
 			Write(konst.Visibility);
-			Write("static ");
-			if (!(konst.Type is CiArrayStorageType)) // for array storage WriteTypeAndName will write "final"
-				Write("final ");
+			Write("static final ");
 			WriteTypeAndName(konst);
 			Write(" = ");
 			konst.Value.Accept(this, CiPriority.Argument);
