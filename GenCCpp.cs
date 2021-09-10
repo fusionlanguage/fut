@@ -90,7 +90,11 @@ public abstract class GenCCpp : GenTyped
 		return expr;
 	}
 
-	protected override bool HasClassStorageInit(CiNamedValue def) => false;
+	protected override void WriteVarInit(CiNamedValue def)
+	{
+		if (!(def.Type is CiClass) || def.Value != null)
+			base.WriteVarInit(def);
+	}
 
 	static bool IsPtrTo(CiExpr ptr, CiExpr other)
 	{
