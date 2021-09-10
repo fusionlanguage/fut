@@ -4,7 +4,7 @@ public static class Test
 	{
 		byte[6] a;
 		string s = "foo";
-		Encoding.UTF8.GetBytes("bar", a, 3); //FAIL: swift TODO; cl
+		Encoding.UTF8.GetBytes("bar", a, 3); //FAIL: cl
 		Encoding.UTF8.GetBytes(s, a, 0);
 		return a[0] == 'f' && a[1] == 'o' && a[2] == 'o'
 			&& a[3] == 'b' && a[4] == 'a' && a[5] == 'r';

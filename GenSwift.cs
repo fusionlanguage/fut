@@ -539,6 +539,24 @@ public class GenSwift : GenPySwift
 			WriteUnwrappedString(args[0], CiPriority.Primary, true);
 			Write(".utf8.count");
 		}
+		else if (method == CiSystem.UTF8GetBytes) {
+			if (AddVar("cibytes"))
+				Write("var ");
+			Write("cibytes = [UInt8](");
+			WriteUnwrappedString(args[0], CiPriority.Primary, true);
+			WriteLine(".utf8)");
+			args[1].Accept(this, CiPriority.Primary);
+			Write('[');
+			args[2].Accept(this, CiPriority.Argument);
+			if (args[2].IsLiteralZero)
+				Write("..<");
+			else {
+				Write(" ..< ");
+				args[2].Accept(this, CiPriority.Add); // TODO: side effect
+				Write(" + ");
+			}
+			WriteLine("cibytes.count] = cibytes[...]");
+		}
 		else if (method == CiSystem.UTF8GetString) {
 			Write("String(decoding: ");
 			OpenIndexing(args[0]);
@@ -830,6 +848,8 @@ public class GenSwift : GenPySwift
 		this.VarsAtIndent[this.Indent].Clear();
 	}
 
+	bool AddVar(string name) => this.VarsAtIndent[this.Indent].Add(name);
+
 	protected override void OpenChild()
 	{
 		Write(' ');
@@ -844,7 +864,7 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteVar(CiNamedValue def)
 	{
-		if (def is CiField || this.VarsAtIndent[this.Indent].Add(def.Name)) {
+		if (def is CiField || AddVar(def.Name)) {
 			Write(def.Type is CiClass || def.Type is CiArrayStorageType || (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType) && !(def.Type is CiDictionaryType)) ? "let " : "var ");
 			base.WriteVar(def);
 		}
