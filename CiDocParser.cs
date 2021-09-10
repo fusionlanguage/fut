@@ -1,6 +1,6 @@
 // CiDocParser.cs - Ci documentation parser
 //
-// Copyright (C) 2011-2019  Piotr Fusik
+// Copyright (C) 2011-2020  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //

@@ -1,6 +1,7 @@
 // GenTs.cs - TypeScript code generator
 //
-// Copyright (C) 2020 Andy Edwards
+// Copyright (C) 2020       Andy Edwards
+// Copyright (C) 2020-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //

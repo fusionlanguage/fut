@@ -1,6 +1,6 @@
 // CiLexer.cs - Ci lexer
 //
-// Copyright (C) 2011-2020  Piotr Fusik
+// Copyright (C) 2011-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
