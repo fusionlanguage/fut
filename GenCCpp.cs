@@ -90,7 +90,7 @@ public abstract class GenCCpp : GenTyped
 		return expr;
 	}
 
-	protected override bool HasClassStorageInit(CiClass klass) => false;
+	protected override bool HasClassStorageInit(CiNamedValue def) => false;
 
 	static bool IsPtrTo(CiExpr ptr, CiExpr other)
 	{

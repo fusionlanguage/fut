@@ -744,7 +744,7 @@ public abstract class GenBase : CiVisitor
 			WriteNewArray(array);
 	}
 
-	protected virtual bool HasClassStorageInit(CiClass klass) => klass.IsFinal;
+	protected virtual bool HasClassStorageInit(CiNamedValue def) => !(def.Parent is CiParameters) && def.Type.IsFinal;
 
 	protected abstract void WriteListStorageInit(CiListType list);
 
@@ -764,7 +764,7 @@ public abstract class GenBase : CiVisitor
 			WriteCoercedExpr(def.Type, def.Value);
 		}
 		else if (def.Type is CiClass klass) {
-			if (HasClassStorageInit(klass)) {
+			if (HasClassStorageInit(def)) {
 				Write(" = ");
 				WriteNew(klass, CiPriority.Argument);
 			}

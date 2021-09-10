@@ -165,7 +165,7 @@ public class CiSymbol : CiExpr
 	public override string ToString() => this.Name;
 }
 
-public class CiScope : CiSymbol, IEnumerable<CiSymbol>
+public abstract class CiScope : CiSymbol, IEnumerable<CiSymbol>
 {
 	protected readonly OrderedDictionary Dict = new OrderedDictionary();
 
@@ -712,11 +712,15 @@ public class CiMethodBase : CiMember
 	public readonly HashSet<CiMethod> Calls = new HashSet<CiMethod>();
 }
 
+public class CiParameters : CiScope
+{
+}
+
 public class CiMethod : CiMethodBase
 {
 	public CiCallType CallType;
 	public bool IsMutator;
-	public readonly CiScope Parameters = new CiScope();
+	public readonly CiParameters Parameters = new CiParameters();
 	public CiMethod()
 	{
 	}
