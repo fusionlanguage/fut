@@ -1,0 +1,11 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		string s = "barek";
+		Console.WriteLine($"^{s.Substring(1, 3)}$");
+		const byte[4] b = { 'f', 'o', 'o', 'b' };
+		Console.WriteLine($"^{Encoding.UTF8.GetString(b, 1, 2), 3}$"); //FAIL: py swift TODO
+		return true;
+	}
+}
