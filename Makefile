@@ -43,35 +43,42 @@ test: test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-
 node_modules/.bin/ts-node:
 	npm i ts-node typescript
 
-test-c: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
+test-c test-GenC.cs: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-cpp: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci))
+test-cpp test-GenCpp.cs: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-cs: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci))
+test-cs test-GenCs.cs: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-java: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci))
+test-java test-GenJava.cs: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-js: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
+test-js test-GenJs.cs: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-ts: $(patsubst test/%.ci, test/bin/%/ts.txt, $(wildcard test/*.ci))
+test-ts test-GenTs.cs: $(patsubst test/%.ci, test/bin/%/ts.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-py: $(patsubst test/%.ci, test/bin/%/py.txt, $(wildcard test/*.ci))
+test-py test-GenPy.cs: $(patsubst test/%.ci, test/bin/%/py.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-swift: $(patsubst test/%.ci, test/bin/%/swift.txt, $(wildcard test/*.ci))
+test-swift test-GenSwift.cs: $(patsubst test/%.ci, test/bin/%/swift.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-cl: $(patsubst test/%.ci, test/bin/%/cl.txt, $(wildcard test/*.ci))
+test-cl test-GenCl.cs: $(patsubst test/%.ci, test/bin/%/cl.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
+
+test-GenCCpp.cs: test-c test-cpp
+
+test-GenPySwift.cs: test-py test-swift
 
 test-error: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
 	$(DO_SUMMARY)
+
+test-%.ci: $(addsuffix .txt, $(addprefix test/bin/%/, c cpp cs java js ts py swift cl))
+	#
 
 test/bin/%/c.txt: test/bin/%/c.exe
 	$(DO)./$< >$@ || grep '//FAIL:.*\<c\>' test/$*.ci
