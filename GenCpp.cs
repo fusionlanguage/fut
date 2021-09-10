@@ -1068,7 +1068,7 @@ public class GenCpp : GenCCpp
 	void WriteDeclarations(CiClass klass, CiVisibility visibility, string visibilityKeyword)
 	{
 		bool constructor = GetConstructorVisibility(klass) == visibility;
-		bool destructor = visibility == CiVisibility.Public && klass.AddsVirtualMethods();
+		bool destructor = visibility == CiVisibility.Public && klass.AddsVirtualMethods;
 		IEnumerable<CiConst> consts = klass.Consts.Where(c => c.Visibility == visibility);
 		IEnumerable<CiField> fields = klass.Fields.Where(f => f.Visibility == visibility);
 		IEnumerable<CiMethod> methods = klass.Methods.Where(m => m.Visibility == visibility);

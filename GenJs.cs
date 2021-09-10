@@ -238,7 +238,7 @@ public class GenJs : GenBase
 	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
 		if (symbol is CiMember member) {
-			if (!member.IsStatic())
+			if (!member.IsStatic)
 				Write("this");
 			else if (this.CurrentMethod != null)
 				Write(this.CurrentMethod.Parent.Name);

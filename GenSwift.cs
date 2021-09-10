@@ -411,7 +411,7 @@ public class GenSwift : GenPySwift
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (obj == null) {
-			if (method.IsStatic()) {
+			if (method.IsStatic) {
 				WriteName(this.CurrentMethod.Parent);
 				Write('.');
 			}

@@ -263,7 +263,7 @@ public abstract class CiNamedValue : CiSymbol
 public class CiMember : CiNamedValue
 {
 	public CiVisibility Visibility;
-	public virtual bool IsStatic() { throw new NotImplementedException(this.GetType().Name); }
+	public virtual bool IsStatic => throw new NotImplementedException(this.GetType().Name);
 }
 
 public class CiVar : CiNamedValue
@@ -295,7 +295,7 @@ public class CiConst : CiMember
 		this.VisitStatus = CiVisitStatus.Done;
 	}
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
-	public override bool IsStatic() => true;
+	public override bool IsStatic => true;
 }
 
 public class CiLiteral : CiExpr
@@ -702,7 +702,7 @@ public class CiWhile : CiLoop
 
 public class CiField : CiMember
 {
-	public override bool IsStatic() => false;
+	public override bool IsStatic => false;
 }
 
 public class CiMethodBase : CiMember
@@ -733,8 +733,8 @@ public class CiMethod : CiMethodBase
 		this.Name = name;
 		this.Parameters.AddRange(parameters);
 	}
-	public override bool IsStatic() => this.CallType == CiCallType.Static;
-	public bool IsAbstractOrVirtual() => this.CallType == CiCallType.Abstract || this.CallType == CiCallType.Virtual;
+	public override bool IsStatic => this.CallType == CiCallType.Static;
+	public bool IsAbstractOrVirtual => this.CallType == CiCallType.Abstract || this.CallType == CiCallType.Virtual;
 	public CiMethod DeclaringMethod
 	{
 		get
@@ -803,7 +803,7 @@ public class CiClass : CiContainerType
 	public override CiType PtrOrSelf => new CiClassPtrType { Class = this, Modifier = CiToken.ExclamationMark };
 	public override bool IsFinal => this != CiSystem.MatchClass;
 	public override bool IsClass(CiClass klass) => this == klass;
-	public bool AddsVirtualMethods() => this.Methods.Any(method => method.IsAbstractOrVirtual());
+	public bool AddsVirtualMethods => this.Methods.Any(method => method.IsAbstractOrVirtual);
 	public CiClass()
 	{
 		this.Dict.Add("this", new CiVar(this.PtrOrSelf, "this")); // shadows "this" in base class

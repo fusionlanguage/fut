@@ -2153,7 +2153,7 @@ public class GenC : GenCCpp
 
 	static CiClass GetVtblStructClass(CiClass klass)
 	{
-		while (!klass.AddsVirtualMethods())
+		while (!klass.AddsVirtualMethods)
 			klass = (CiClass) klass.Parent;
 		return klass;
 	}
@@ -2161,7 +2161,7 @@ public class GenC : GenCCpp
 	static CiClass GetVtblPtrClass(CiClass klass)
 	{
 		for (CiClass result = null;;) {
-			if (klass.AddsVirtualMethods())
+			if (klass.AddsVirtualMethods)
 				result = klass;
 			if (!(klass.Parent is CiClass baseClass))
 				return result;
@@ -2174,7 +2174,7 @@ public class GenC : GenCCpp
 		if (klass.Parent is CiClass baseClass)
 			WriteVtblFields(baseClass);
 		foreach (CiMethod method in klass.Methods) {
-			if (method.IsAbstractOrVirtual()) {
+			if (method.IsAbstractOrVirtual) {
 				WriteSignature(method, () => {
 					Write("(*");
 					WriteCamelCase(method.Name);
@@ -2287,7 +2287,7 @@ public class GenC : GenCCpp
 			this.WrittenClasses[klass] = true;
 
 			WriteLine();
-			if (klass.AddsVirtualMethods())
+			if (klass.AddsVirtualMethods)
 				WriteVtblStruct(klass);
 			Write(klass.Documentation);
 			Write("struct ");
@@ -2326,7 +2326,7 @@ public class GenC : GenCCpp
 		if (declaringClass.Parent is CiClass baseClass)
 			WriteVtbl(definingClass, baseClass);
 		foreach (CiMethod declaredMethod in declaringClass.Methods) {
-			if (declaredMethod.IsAbstractOrVirtual()) {
+			if (declaredMethod.IsAbstractOrVirtual) {
 				CiSymbol definedMethod = definingClass.TryLookup(declaredMethod.Name);
 				if (declaredMethod != definedMethod) {
 					Write('(');

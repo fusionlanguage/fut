@@ -77,7 +77,7 @@ public abstract class GenPySwift : GenBase
 	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
 		if (symbol is CiMember member && this.CurrentMethod != null) {
-			if (member.IsStatic())
+			if (member.IsStatic)
 				WriteName(this.CurrentMethod.Parent);
 			else
 				Write("self");
