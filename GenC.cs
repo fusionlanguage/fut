@@ -746,10 +746,12 @@ public class GenC : GenCCpp
 		case CiSelectExpr select:
 			return HasTemporaries(select.Cond);
 		case CiCallExpr call:
-			if (call.Method.Left.Type is CiListType && (call.Method.Name == "Add" || call.Method.Name == "Insert"))
-				return true;
-			if (call.Method.Left != null && (IsTemporary(call.Method.Left) || HasTemporaries(call.Method.Left)))
-				return true;
+			if (call.Method.Left != null) {
+				if (call.Method.Left.Type is CiListType && (call.Method.Name == "Add" || call.Method.Name == "Insert"))
+					return true;
+				if (IsTemporary(call.Method.Left) || HasTemporaries(call.Method.Left))
+					return true;
+			}
 			int i = 0;
 			foreach (CiVar param in ((CiMethod) call.Method.Symbol).Parameters) {
 				if (i >= call.Arguments.Length)

@@ -1,0 +1,17 @@
+public static class Test
+{
+	static void Foo()
+	{
+	}
+
+	public static bool Run()
+	{
+		int a = 1;
+		int b = 2;
+		if (a == 5)
+			b--;
+		else
+			Foo();
+		return b == 2;
+	}
+}
