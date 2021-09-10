@@ -244,7 +244,7 @@ public class GenC : GenCCpp
 			else if (array.ElementType is CiClass klass) {
 				if (parent > CiPriority.Add)
 					Write('(');
-				forEach.Collection.Accept(this, CiPriority.Primary);
+				forEach.Collection.Accept(this, CiPriority.Add);
 				Write(" + ");
 				WriteCamelCaseNotKeyword(symbol.Name);
 				if (parent > CiPriority.Add)
