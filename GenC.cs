@@ -49,7 +49,7 @@ public class GenC : GenCCpp
 	bool TreeCompareString;
 	readonly SortedSet<TypeCode> Compares = new SortedSet<TypeCode>();
 	readonly SortedSet<TypeCode> Contains = new SortedSet<TypeCode>();
-	readonly List<object> CurrentTemporaries = new List<object>(); // CiCallExpr or CiClass
+	readonly List<CiExpr> CurrentTemporaries = new List<CiExpr>(); // CiExpr or CiType
 	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
 	protected CiClass CurrentClass;
 
@@ -646,25 +646,34 @@ public class GenC : GenCCpp
 			base.WriteVarInit(def);
 	}
 
-	void WriteTemporary(CiExpr expr)
+	int WriteTemporary(CiType type, CiExpr expr)
 	{
-		if (!(expr is CiCallExpr)
-		 || !(expr.Type is CiClass storage))
-			return;
-		int id = this.CurrentTemporaries.IndexOf(storage);
-		if (id >= 0)
-			this.CurrentTemporaries[id] = expr;
-		else {
+		int id = this.CurrentTemporaries.IndexOf(type);
+		if (id < 0) {
 			id = this.CurrentTemporaries.Count;
+			WriteDefinition(type, () => { Write("citemp"); Write(id); }, false, true);
+			if (expr != null) {
+				Write(" = ");
+				WriteCoerced(type, expr, CiPriority.Argument);
+			}
+			WriteLine(';');
 			this.CurrentTemporaries.Add(expr);
-			Write(storage.Name);
-			Write(' ');
 		}
-		Write("citemp");
-		Write(id);
-		Write(" = ");
-		expr.Accept(this, CiPriority.Argument);
-		WriteLine(';');
+		else if (expr != null) {
+			Write("citemp");
+			Write(id);
+			Write(" = ");
+			WriteCoerced(type, expr, CiPriority.Argument);
+			WriteLine(';');
+			this.CurrentTemporaries[id] = expr;
+		}
+		return id;
+	}
+
+	void WriteStorageTemporary(CiExpr expr)
+	{
+		if (expr is CiCallExpr && expr.Type is CiClass)
+			WriteTemporary(expr.Type, expr);
 	}
 
 	void WriteTemporaries(CiExpr expr)
@@ -698,7 +707,7 @@ public class GenC : GenCCpp
 		case CiCallExpr call:
 			if (call.Method.Left != null) {
 				WriteTemporaries(call.Method.Left);
-				WriteTemporary(call.Method.Left);
+				WriteStorageTemporary(call.Method.Left);
 			}
 			int i = 0;
 			foreach (CiVar param in ((CiMethod) call.Method.Symbol).Parameters) {
@@ -707,7 +716,7 @@ public class GenC : GenCCpp
 				CiExpr arg = call.Arguments[i++];
 				WriteTemporaries(arg);
 				if (param.Type is CiClassPtrType)
-					WriteTemporary(arg);
+					WriteStorageTemporary(arg);
 			}
 			break;
 		default:
@@ -737,6 +746,8 @@ public class GenC : GenCCpp
 		case CiSelectExpr select:
 			return HasTemporaries(select.Cond);
 		case CiCallExpr call:
+			if (call.Method.Left.Type is CiListType && (call.Method.Name == "Add" || call.Method.Name == "Insert"))
+				return true;
 			if (call.Method.Left != null && (IsTemporary(call.Method.Left) || HasTemporaries(call.Method.Left)))
 				return true;
 			int i = 0;
@@ -756,8 +767,8 @@ public class GenC : GenCCpp
 	void CleanupTemporaries()
 	{
 		for (int i = 0; i < this.CurrentTemporaries.Count; i++) {
-			if (this.CurrentTemporaries[i] is CiExpr expr)
-				this.CurrentTemporaries[i] = expr.Type;
+			if (!(this.CurrentTemporaries[i] is CiType))
+				this.CurrentTemporaries[i] = this.CurrentTemporaries[i].Type;
 		}
 	}
 
@@ -1063,25 +1074,14 @@ public class GenC : GenCCpp
 	void WriteListAddInsert(CiExpr obj, bool insert, string function, CiExpr[] args)
 	{
 		// TODO: don't emit temporary variable if already a var/field of matching type - beware of integer promotions!
-		OpenBlock();
 		CiType elementType = ((CiListType) obj.Type).ElementType;
-		WriteDefinition(elementType, () => Write("cival"), false, true);
-		switch (elementType) {
-		case CiClass klass:
-			if (NeedsConstructor(klass)) {
-				WriteLine(';');
-				WriteName(klass);
-				Write("_Construct(&cival)");
-			}
-			break;
-		case CiArrayStorageType _:
-			break;
-		default:
-			Write(" = ");
-			WriteCoerced(elementType, args[args.Length - 1], CiPriority.Argument);
-			break;
+		int id = WriteTemporary(elementType, elementType is CiClass || elementType is CiArrayStorageType ? null : args[args.Length - 1]);
+		if (elementType is CiClass klass && NeedsConstructor(klass)) {
+			WriteName(klass);
+			Write("_Construct(&citemp");
+			Write(id);
+			WriteLine(");");
 		}
-		WriteLine(';');
 		Write(function);
 		Write('(');
 		obj.Accept(this, CiPriority.Argument);
@@ -1089,8 +1089,10 @@ public class GenC : GenCCpp
 			Write(", ");
 			args[0].Accept(this, CiPriority.Argument);
 		}
-		WriteLine(", cival);");
-		CloseBlock();
+		Write(", citemp");
+		Write(id);
+		Write(')');
+		this.CurrentTemporaries[id] = elementType;
 	}
 
 	void WriteDictionaryLookup(CiExpr obj, string function, CiExpr key)
