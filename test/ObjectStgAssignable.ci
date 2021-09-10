@@ -5,7 +5,7 @@ class Data
 
 public class Test
 {
-	Data() Foo = null; //FAIL: swift TODO
+	Data() Foo = null;
 
 	public static bool Run()
 	{

@@ -1229,6 +1229,11 @@ public class GenSwift : GenPySwift
 				Write(" = ");
 				WriteDefaultValue(field.Type);
 			}
+			else if (field.IsAssignableStorage) {
+				Write(" = ");
+				WriteName(field.Type);
+				Write("()");
+			}
 			WriteLine();
 		}
 
