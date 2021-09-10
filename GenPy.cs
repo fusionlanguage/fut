@@ -631,6 +631,20 @@ public class GenPy : GenPySwift
 			args[0].Accept(this, CiPriority.Primary);
 			Write(".encode(\"utf8\"))");
 		}
+		else if (method == CiSystem.UTF8GetBytes) {
+			Write("cibytes = ");
+			args[0].Accept(this, CiPriority.Primary);
+			WriteLine(".encode(\"utf8\")");
+			args[1].Accept(this, CiPriority.Primary);
+			Write('[');
+			args[2].Accept(this, CiPriority.Argument);
+			Write(':');
+			if (!args[2].IsLiteralZero) {
+				args[2].Accept(this, CiPriority.Add); // TODO: side effect
+				Write(" + ");
+			}
+			WriteLine("len(cibytes)] = cibytes");
+		}
 		else if (method == CiSystem.UTF8GetString) {
 			args[0].Accept(this, CiPriority.Primary);
 			WriteSlice(args[1], args[2]);
