@@ -265,9 +265,11 @@ public class CiResolver : CiVisitor
 		CiType type = ResolveType(expr);
 		if (expr.Value != null) {
 			expr.Value = Resolve(expr.Value);
-			if (type is CiArrayStorageType array)
-				type = array.ElementType;
-			Coerce(expr.Value, type);
+			if (!expr.IsAssignableStorage) {
+				if (type is CiArrayStorageType array)
+					type = array.ElementType;
+				Coerce(expr.Value, type);
+			}
 		}
 		this.CurrentScope.Add(expr);
 		return expr;

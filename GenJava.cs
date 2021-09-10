@@ -725,7 +725,7 @@ public class GenJava : GenTyped
 
 	protected override void WriteVar(CiNamedValue def)
 	{
-		if (def.Type.IsFinal)
+		if (def.Type.IsFinal && !def.IsAssignableStorage)
 			Write("final ");
 		base.WriteVar(def);
 	}

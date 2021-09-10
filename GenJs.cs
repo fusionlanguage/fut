@@ -155,7 +155,7 @@ public class GenJs : GenBase
 
 	protected override void WriteVar(CiNamedValue def)
 	{
-		Write(def.Type.IsFinal ? "const " : "let ");
+		Write(def.Type.IsFinal && !def.IsAssignableStorage ? "const " : "let ");
 		base.WriteVar(def);
 	}
 
@@ -751,7 +751,7 @@ public class GenJs : GenBase
 		WriteLine("()");
 		OpenBlock();
 		foreach (CiField field in klass.Fields) {
-			if (field.Value != null || field.Type.IsFinal) {
+			if ((field.Value != null || field.Type.IsFinal) && !field.IsAssignableStorage) {
 				Write("this.");
 				base.WriteVar(field);
 				WriteLine(';');

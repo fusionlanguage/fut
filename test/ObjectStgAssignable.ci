@@ -1,0 +1,24 @@
+class Data
+{
+	internal int X;
+}
+
+public class Test
+{
+	Data() Foo = null; //FAIL: swift TODO
+
+	public static bool Run()
+	{
+		Data() o;
+		o.X = 5;
+		Data() a = null;
+		a = o;
+
+		Data() o2;
+		o2.X = 10;
+		Test() t;
+		t.Foo = o2;
+		return a.X == 5
+			&& t.Foo.X == 10;
+	}
+}

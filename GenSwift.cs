@@ -268,7 +268,7 @@ public class GenSwift : GenPySwift
 	protected override void WriteTypeAndName(CiNamedValue value)
 	{
 		WriteName(value);
-		if (!value.Type.IsFinal) {
+		if (!value.Type.IsFinal || value.IsAssignableStorage) {
 			Write(" : ");
 			Write(value.Type);
 		}
@@ -865,7 +865,9 @@ public class GenSwift : GenPySwift
 	protected override void WriteVar(CiNamedValue def)
 	{
 		if (def is CiField || AddVar(def.Name)) {
-			Write(def.Type is CiClass || def.Type is CiArrayStorageType || (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType) && !(def.Type is CiDictionaryType)) ? "let " : "var ");
+			Write((def.Type is CiClass && !def.IsAssignableStorage)
+				|| def.Type is CiArrayStorageType
+				|| (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType) && !(def.Type is CiDictionaryType)) ? "let " : "var ");
 			base.WriteVar(def);
 		}
 		else {

@@ -257,6 +257,7 @@ public abstract class CiNamedValue : CiSymbol
 {
 	public CiExpr TypeExpr;
 	public CiExpr Value;
+	public bool IsAssignableStorage => this.Type is CiClass && this.Value is CiLiteral literal && literal.Value == null;
 }
 
 public class CiMember : CiNamedValue

@@ -656,7 +656,7 @@ public class GenCs : GenTyped
 			WriteLine();
 			Write(field.Documentation);
 			Write(field.Visibility);
-			if (field.Type.IsFinal)
+			if (field.Type.IsFinal && !field.IsAssignableStorage)
 				Write("readonly ");
 			WriteVar(field);
 			WriteLine(';');

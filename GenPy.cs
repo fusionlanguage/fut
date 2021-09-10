@@ -766,7 +766,7 @@ public class GenPy : GenPySwift
 	}
 
 	static bool NeedsInit(CiNamedValue def)
-		=> def.Value != null || def.Type.IsFinal;
+		=> (def.Value != null || def.Type.IsFinal) && !def.IsAssignableStorage;
 
 	public override void Visit(CiExpr statement)
 	{
