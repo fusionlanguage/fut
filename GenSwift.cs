@@ -545,8 +545,7 @@ public class GenSwift : GenPySwift
 			Write("cibytes = [UInt8](");
 			WriteUnwrappedString(args[0], CiPriority.Primary, true);
 			WriteLine(".utf8)");
-			args[1].Accept(this, CiPriority.Primary);
-			Write('[');
+			OpenIndexing(args[1]);
 			args[2].Accept(this, CiPriority.Argument);
 			if (args[2].IsLiteralZero)
 				Write("..<");
