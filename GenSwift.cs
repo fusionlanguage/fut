@@ -32,7 +32,7 @@ public class GenSwift : GenPySwift
 	bool StringIndexOf;
 	bool StringSubstring;
 	readonly List<HashSet<string>> VarsAtIndent = new List<HashSet<string>>();
-	bool ManyUTF8GetBytes = false;
+	readonly List<bool> VarBytesAtIndent = new List<bool>();
 
 	protected override void StartDocLine()
 	{
@@ -542,7 +542,7 @@ public class GenSwift : GenPySwift
 		}
 		else if (method == CiSystem.UTF8GetBytes) {
 			if (AddVar("cibytes"))
-				Write(this.ManyUTF8GetBytes ? "var " : "let ");
+				Write(this.VarBytesAtIndent[this.Indent] ? "var " : "let ");
 			Write("cibytes = [UInt8](");
 			WriteUnwrappedString(args[0], CiPriority.Primary, true);
 			WriteLine(".utf8)");
@@ -843,9 +843,12 @@ public class GenSwift : GenPySwift
 
 	void InitVarsAtIndent()
 	{
-		while (this.VarsAtIndent.Count <= this.Indent)
+		while (this.VarsAtIndent.Count <= this.Indent) {
 			this.VarsAtIndent.Add(new HashSet<string>());
+			this.VarBytesAtIndent.Add(false);
+		}
 		this.VarsAtIndent[this.Indent].Clear();
+		this.VarBytesAtIndent[this.Indent] = false;
 	}
 
 	bool AddVar(string name) => this.VarsAtIndent[this.Indent].Add(name);
@@ -878,11 +881,9 @@ public class GenSwift : GenPySwift
 
 	protected override void Write(CiStatement[] statements)
 	{
-		bool parentManyUTF8GetBytes = this.ManyUTF8GetBytes;
 		// Encoding.UTF8.GetBytes returns void, so it can only be called as a statement
-		this.ManyUTF8GetBytes = statements.Count(s => s is CiCallExpr call && call.Method.Symbol == CiSystem.UTF8GetBytes) > 1;
+		this.VarBytesAtIndent[this.Indent] = statements.Count(s => s is CiCallExpr call && call.Method.Symbol == CiSystem.UTF8GetBytes) > 1;
 		base.Write(statements);
-		this.ManyUTF8GetBytes = parentManyUTF8GetBytes;
 	}
 
 	public override void Visit(CiAssert statement)
