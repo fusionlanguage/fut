@@ -417,7 +417,7 @@ public class GenCpp : GenCCpp
 			Write('.');
 	}
 
-	void WriteStringMethod(CiExpr obj, string name, CiMethod method, CiExpr[] args)
+	void StartStringMethod(CiExpr obj)
 	{
 		obj.Accept(this, CiPriority.Primary);
 		if (obj is CiLiteral) {
@@ -425,6 +425,11 @@ public class GenCpp : GenCCpp
 			Write("sv");
 		}
 		Write('.');
+	}
+
+	void WriteStringMethod(CiExpr obj, string name, CiMethod method, CiExpr[] args)
+	{
+		StartStringMethod(obj);
 		Write(name);
 		if (IsOneAsciiString(args[0], out char c)) {
 			Write('(');
@@ -887,8 +892,8 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteStringLength(CiExpr expr)
 	{
-		expr.Accept(this, CiPriority.Primary);
-		Write(".length()");
+		StartStringMethod(expr);
+		Write("length()");
 	}
 
 	void WriteMatchProperty(CiSymbolReference expr, string name)

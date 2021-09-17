@@ -1,4 +1,4 @@
-public class Test
+﻿public class Test
 {
 	public static bool Run()
 	{
@@ -6,6 +6,7 @@ public class Test
 		string p = "foobar";
 		string() es = "";
 		string ep = "";
+		string u = "🦊";
 #if TS
   native {
     // @ts-ignore
@@ -22,6 +23,7 @@ public class Test
 			&& "foobar".Length != 0
 			&& es.Length == 0
 			&& ep.Length == 0
-			&& "".Length == 0;
+			&& "".Length == 0
+			&& "🦊".Length == u.Length;
 	}
 }

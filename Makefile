@@ -117,7 +117,7 @@ test/bin/%/cs.exe: test/bin/%/Test.cs test/Runner.cs
 	$(DO)$(CSC) -out:$@ $^ || grep '//FAIL:.*\<cs\>' test/$*.ci
 
 test/bin/%/Test.class: test/bin/%/Test.java
-	$(DO)javac -d $(@D) $(<D)/*.java || grep '//FAIL:.*\<java\>' test/$*.ci
+	$(DO)javac -d $(@D) -encoding utf8 $(<D)/*.java || grep '//FAIL:.*\<java\>' test/$*.ci
 
 test/bin/%/Run.js: test/bin/%/Test.js
 	$(DO)cat $< test/Runner.js >$@ || grep '//FAIL:.*\<js\>' test/$*.ci
