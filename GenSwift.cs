@@ -1018,6 +1018,11 @@ public class GenSwift : GenPySwift
 		WriteChild(statement.Body);
 	}
 
+	public override void Visit(CiLock statement)
+	{
+		throw new NotImplementedException(); // TODO
+	}
+
 	protected override void WriteResultVar()
 	{
 		Write("let result : ");

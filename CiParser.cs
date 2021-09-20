@@ -540,6 +540,15 @@ public class CiParser : CiLexer
 		return result;
 	}
 
+	CiLock ParseLock()
+	{
+		CiLock result = new CiLock { Line = this.Line };
+		Expect(CiToken.Lock);
+		result.Lock = ParseParenthesized();
+		result.Body = ParseStatement();
+		return result;
+	}
+
 	CiNative ParseNative()
 	{
 		int line = this.Line;
@@ -673,6 +682,8 @@ public class CiParser : CiLexer
 			return ParseForeach();
 		case CiToken.If:
 			return ParseIf();
+		case CiToken.Lock:
+			return ParseLock();
 		case CiToken.Native:
 			return ParseNative();
 		case CiToken.Return:

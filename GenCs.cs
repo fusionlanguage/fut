@@ -211,6 +211,17 @@ public class GenCs : GenTyped
 		Write('>');
 	}
 
+	protected override void WriteClassName(CiClass klass)
+	{
+		if (klass == CiSystem.LockClass)
+			Write("object");
+		else {
+			if (klass == CiSystem.RegexClass || klass == CiSystem.MatchClass)
+				Include("System.Text.RegularExpressions");
+			Write(klass.Name);
+		}
+	}
+
 	protected override void Write(CiType type, bool promote)
 	{
 		switch (type) {
@@ -236,9 +247,13 @@ public class GenCs : GenTyped
 			Write(array.ElementType, false);
 			Write("[]");
 			break;
+		case CiClass klass:
+			WriteClassName(klass);
+			break;
+		case CiClassPtrType classPtr:
+			WriteClassName(classPtr.Class);
+			break;
 		default:
-			if (type.IsClass(CiSystem.RegexClass) || type.IsClass(CiSystem.MatchClass))
-				Include("System.Text.RegularExpressions");
 			Write(type.Name);
 			break;
 		}
@@ -569,6 +584,14 @@ public class GenCs : GenTyped
 			WriteTypeAndName(statement.Element);
 		Write(" in ");
 		statement.Collection.Accept(this, CiPriority.Argument);
+		Write(')');
+		WriteChild(statement.Body);
+	}
+
+	public override void Visit(CiLock statement)
+	{
+		Write("lock (");
+		statement.Lock.Accept(this, CiPriority.Argument);
 		Write(')');
 		WriteChild(statement.Body);
 	}

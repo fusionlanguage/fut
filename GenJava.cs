@@ -236,14 +236,14 @@ public class GenJava : GenTyped
 		return TypeCode.SByte; // store unsigned bytes in Java signed bytes
 	}
 
-	void Write(TypeCode typeCode, bool klass)
+	void Write(TypeCode typeCode, bool needClass)
 	{
 		switch (typeCode) {
 		case TypeCode.Byte:
-		case TypeCode.SByte: Write(klass ? "Byte" : "byte"); break;
-		case TypeCode.Int16: Write(klass ? "Short" : "short"); break;
-		case TypeCode.Int32: Write(klass ? "Integer" : "int"); break;
-		case TypeCode.Int64: Write(klass ? "Long" : "long"); break;
+		case TypeCode.SByte: Write(needClass ? "Byte" : "byte"); break;
+		case TypeCode.Int16: Write(needClass ? "Short" : "short"); break;
+		case TypeCode.Int32: Write(needClass ? "Integer" : "int"); break;
+		case TypeCode.Int64: Write(needClass ? "Long" : "long"); break;
 		default: throw new NotImplementedException(typeCode.ToString());
 		}
 	}
@@ -263,22 +263,38 @@ public class GenJava : GenTyped
 		Write('>');
 	}
 
-	void Write(CiType type, bool promote, bool klass)
+	protected override void WriteClassName(CiClass klass)
+	{
+		if (klass == CiSystem.RegexClass) {
+			Include("java.util.regex.Pattern");
+			Write("Pattern");
+		}
+		else if (klass == CiSystem.MatchClass) {
+			Include("java.util.regex.Matcher");
+			Write("Matcher");
+		}
+		else if (klass == CiSystem.LockClass)
+			Write("Object");
+		else
+			Write(klass.Name);
+	}
+
+	void Write(CiType type, bool promote, bool needClass)
 	{
 		switch (type) {
 		case null:
 			Write("void");
 			break;
 		case CiIntegerType integer:
-			Write(GetIntegerTypeCode(integer, promote), klass);
+			Write(GetIntegerTypeCode(integer, promote), needClass);
 			break;
 		case CiStringType _:
 			Write("String");
 			break;
 		case CiEnum enu:
 			Write(enu == CiSystem.BoolType
-				? klass ? "Boolean" : "boolean"
-				: klass ? "Integer" : "int");
+				? needClass ? "Boolean" : "boolean"
+				: needClass ? "Integer" : "int");
 			break;
 		case CiListType list:
 			Include("java.util.ArrayList");
@@ -298,17 +314,14 @@ public class GenJava : GenTyped
 			Write(array.ElementType, false);
 			Write("[]");
 			break;
+		case CiClass klass:
+			WriteClassName(klass);
+			break;
+		case CiClassPtrType classPtr:
+			WriteClassName(classPtr.Class);
+			break;
 		default:
-			if (type.IsClass(CiSystem.RegexClass)) {
-				Include("java.util.regex.Pattern");
-				Write("Pattern");
-			}
-			else if (type.IsClass(CiSystem.MatchClass)) {
-				Include("java.util.regex.Matcher");
-				Write("Matcher");
-			}
-			else
-				Write(type.Name);
+			Write(type.Name);
 			break;
 		}
 	}
@@ -782,6 +795,14 @@ public class GenJava : GenTyped
 			Write(" : ");
 			statement.Collection.Accept(this, CiPriority.Argument);
 		}
+		Write(')');
+		WriteChild(statement.Body);
+	}
+
+	public override void Visit(CiLock statement)
+	{
+		Write("synchronized (");
+		statement.Lock.Accept(this, CiPriority.Argument);
 		Write(')');
 		WriteChild(statement.Body);
 	}

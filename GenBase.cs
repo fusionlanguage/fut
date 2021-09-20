@@ -474,6 +474,11 @@ public abstract class GenBase : CiVisitor
 		return TypeCode.Object;
 	}
 
+	protected virtual void WriteClassName(CiClass klass)
+	{
+		WriteName(klass);
+	}
+
 	protected abstract void WriteTypeAndName(CiNamedValue value);
 
 	protected virtual void WriteLocalName(CiSymbol symbol, CiPriority parent)
@@ -719,7 +724,7 @@ public abstract class GenBase : CiVisitor
 	protected virtual void WriteNew(CiClass klass, CiPriority parent)
 	{
 		Write("new ");
-		Write(klass.Name);
+		WriteClassName(klass);
 		Write("()");
 	}
 

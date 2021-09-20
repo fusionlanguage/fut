@@ -680,6 +680,11 @@ public class GenJs : GenBase
 		WriteChild(statement.Body);
 	}
 
+	public override void Visit(CiLock statement)
+	{
+		throw new NotImplementedException();
+	}
+
 	public override void Visit(CiThrow statement)
 	{
 		Write("throw ");

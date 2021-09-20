@@ -176,6 +176,16 @@ public class GenPy : GenPySwift
 		}
 	}
 
+	protected override void WriteClassName(CiClass klass)
+	{
+		if (klass == CiSystem.LockClass) {
+			Include("threading");
+			Write("threading.RLock");
+		}
+		else
+			base.WriteClassName(klass);
+	}
+
 	protected override void WriteTypeAndName(CiNamedValue value)
 	{
 		WriteName(value);
@@ -878,6 +888,17 @@ public class GenPy : GenPySwift
 	protected override void WriteElseIf()
 	{
 		Write("el");
+	}
+
+	public override void Visit(CiLock statement)
+	{
+		VisitXcrement<CiPrefixExpr>(statement.Lock, true);
+		Write("with ");
+		statement.Lock.Accept(this, CiPriority.Argument);
+		OpenChild();
+		VisitXcrement<CiPostfixExpr>(statement.Lock, true);
+		statement.Body.Accept(this);
+		CloseChild();
 	}
 
 	protected override void WriteResultVar()

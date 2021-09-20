@@ -97,7 +97,7 @@ public abstract class GenPySwift : GenBase
 
 	protected override void WriteNew(CiClass klass, CiPriority parent)
 	{
-		WriteName(klass);
+		WriteClassName(klass);
 		Write("()");
 	}
 

@@ -1,0 +1,10 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		Lock() mutex; //FAIL: c swift TODO; js ts cl
+		lock (mutex) {
+			return true;
+		}
+	}
+}

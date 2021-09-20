@@ -1947,6 +1947,11 @@ public class GenC : GenCCpp
 		}
 	}
 
+	public override void Visit(CiLock statement)
+	{
+		throw new NotImplementedException(); // TODO
+	}
+
 	public override void Visit(CiReturn statement)
 	{
 		if (statement.Value == null) {

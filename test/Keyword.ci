@@ -76,7 +76,6 @@ public class Test
 	bool Len = true;
 	bool Let = true;
 	bool Local = true;
-	bool Lock = true;
 	bool Long = true;
 	bool Module = true;
 	bool Namespace = true;
@@ -206,7 +205,6 @@ public class Test
 		bool len = s.Length == 3;
 		bool let = true;
 		bool local = true;
-		bool lock = true;
 		bool module = true;
 		bool namespace = true;
 		bool nil = true;
@@ -332,7 +330,6 @@ public class Test
 			&& o.Len
 			&& o.Let
 			&& o.Local
-			&& o.Lock
 			&& o.Long
 			&& o.Module
 			&& o.Namespace
@@ -457,7 +454,6 @@ public class Test
 			&& len
 			&& let
 			&& local
-			&& lock
 			&& module
 			&& namespace
 			&& nil

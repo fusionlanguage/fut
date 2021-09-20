@@ -196,6 +196,10 @@ public class GenCpp : GenCCpp
 			Include("regex");
 			Write("std::cmatch");
 		}
+		else if (type == CiSystem.LockClass) {
+			Include("mutex");
+			Write("std::recursive_mutex");
+		}
 		else
 			Write(type.Name);
 	}
@@ -983,6 +987,16 @@ public class GenCpp : GenCCpp
 		statement.Collection.Accept(this, CiPriority.Argument);
 		Write(')');
 		WriteChild(statement.Body);
+	}
+
+	public override void Visit(CiLock statement)
+	{
+		OpenBlock();
+		Write("const std::lock_guard<std::recursive_mutex> lock(");
+		statement.Lock.Accept(this, CiPriority.Argument);
+		WriteLine(");");
+		FlattenBlock(statement.Body);
+		CloseBlock();
 	}
 
 	protected override void WriteCaseBody(CiStatement[] statements)

@@ -1061,6 +1061,13 @@ public class CiResolver : CiVisitor
 			statement.SetCompletesNormally(true);
 	}
 
+	public override void Visit(CiLock statement)
+	{
+		statement.Lock = Resolve(statement.Lock);
+		Coerce(statement.Lock, CiSystem.LockClass);
+		statement.Body.Accept(this);
+	}
+
 	public override void Visit(CiNative statement)
 	{
 	}

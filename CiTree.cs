@@ -86,6 +86,7 @@ public abstract class CiVisitor
 	public abstract void Visit(CiFor statement);
 	public abstract void Visit(CiForeach statement);
 	public abstract void Visit(CiIf statement);
+	public abstract void Visit(CiLock statement);
 	public abstract void Visit(CiNative statement);
 	public abstract void Visit(CiReturn statement);
 	public abstract void Visit(CiSwitch statement);
@@ -657,6 +658,14 @@ public class CiIf : CiCondCompletionStatement
 	public CiExpr Cond;
 	public CiStatement OnTrue;
 	public CiStatement OnFalse;
+	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
+}
+
+public class CiLock : CiStatement
+{
+	public CiExpr Lock;
+	public CiStatement Body;
+	public override bool CompletesNormally => this.Body.CompletesNormally;
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }
 
@@ -1348,6 +1357,7 @@ public class CiSystem : CiScope
 	public static readonly CiSymbol ListClass = new CiSymbol();
 	public static readonly CiSymbol DictionaryClass = new CiSymbol();
 	public static readonly CiSymbol SortedDictionaryClass = new CiSymbol();
+	public static readonly CiClass LockClass = new CiClass(CiCallType.Sealed, "Lock");
 
 	static void AddEnumValue(CiEnum enu, CiConst value)
 	{
@@ -1393,6 +1403,7 @@ public class CiSystem : CiScope
 		MathClass.Add(MathNegativeInfinity);
 		MathClass.Add(MathPositiveInfinity);
 		Add(MathClass);
+		Add(LockClass);
 		Add(BasePtr);
 	}
 
