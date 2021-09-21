@@ -55,6 +55,7 @@ public class GenSwift : GenPySwift
 			break;
 		case "As":
 		case "Associatedtype":
+		case "Await":
 		case "Break":
 		case "Case":
 		case "Catch":
@@ -108,6 +109,7 @@ public class GenSwift : GenPySwift
 		case "While":
 		case "as":
 		case "associatedtype":
+		case "await":
 		case "catch":
 		case "defer":
 		case "deinit":
