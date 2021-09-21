@@ -893,7 +893,14 @@ public class CiRangeType : CiIntegerType
 
 	public override bool IsAssignableFrom(CiType right)
 	{
-		return right is CiRangeType range && this.Min <= range.Min && this.Max >= range.Max;
+		switch (right) {
+		case CiRangeType range:
+			return this.Min <= range.Max && this.Max >= range.Min;
+		case CiIntegerType _:
+			return true;
+		default:
+			return right == CiSystem.FloatIntType;
+		}
 	}
 
 	public static int GetMask(int v)
