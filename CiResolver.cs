@@ -784,7 +784,7 @@ public class CiResolver : CiVisitor
 		case CiToken.ShiftLeftAssign:
 		case CiToken.ShiftRightAssign:
 			CheckLValue(left);
-			// TODO Coerce(right, left.Type);
+			Coerce(right, left.Type);
 			expr.Left = left;
 			expr.Right = right;
 			expr.Type = left.Type;
