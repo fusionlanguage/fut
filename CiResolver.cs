@@ -1234,7 +1234,7 @@ public class CiResolver : CiVisitor
 						NotSupported(expr, "Match", "cl");
 					else if (klass == CiSystem.LockClass) {
 						NotSupported(call, "Lock", "js", "ts", "cl");
-						NotYet(call, "Lock", "c", "swift");
+						NotYet(call, "Lock", "c");
 					}
 					return klass;
 				}

@@ -197,6 +197,16 @@ public class GenSwift : GenPySwift
 		Write('[');
 	}
 
+	protected override void WriteClassName(CiClass klass)
+	{
+		if (klass == CiSystem.LockClass) {
+			Include("Foundation");
+			Write("NSRecursiveLock");
+		}
+		else
+			base.WriteClassName(klass);
+	}
+
 	void Write(CiType type)
 	{
 		switch (type) {
@@ -1022,7 +1032,15 @@ public class GenSwift : GenPySwift
 
 	public override void Visit(CiLock statement)
 	{
-		throw new NotImplementedException(); // TODO
+		statement.Lock.Accept(this, CiPriority.Primary);
+		WriteLine(".lock()");
+		Write("do");
+		OpenChild();
+		Write("defer { ");
+		statement.Lock.Accept(this, CiPriority.Primary);
+		WriteLine(".unlock() }");
+		statement.Body.Accept(this);
+		CloseChild();
 	}
 
 	protected override void WriteResultVar()
