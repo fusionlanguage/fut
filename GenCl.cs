@@ -180,6 +180,21 @@ public class GenCl : GenC
 		}
 		else if (method == CiSystem.UTF8GetByteCount)
 			WriteStringLength(args[0]);
+		else if (method == CiSystem.UTF8GetBytes) {
+			Write("for (size_t _i = 0; ");
+			args[0].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+			WriteLine("[_i] != '\\0'; _i++)");
+			Write('\t');
+			args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+			Write('[');
+			if (!args[2].IsLiteralZero) {
+				args[2].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
+				Write(" + ");
+			}
+			Write("_i] = ");
+			args[0].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+			Write("[_i]");
+		}
 		else if (obj.IsReferenceTo(CiSystem.MathClass))
 			WriteMathCall(method, args);
 		else if (method == CiSystem.ConsoleWrite)

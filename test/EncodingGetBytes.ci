@@ -4,7 +4,7 @@ public static class Test
 	{
 		byte[8] a;
 		string s = "foo";
-		Encoding.UTF8.GetBytes("bar", a, 3); //FAIL: cl
+		Encoding.UTF8.GetBytes("bar", a, 3);
 		byte[]! p = a;
 		Encoding.UTF8.GetBytes(s, p, 0);
 		if (a[0] == 'f')
