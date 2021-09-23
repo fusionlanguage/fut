@@ -141,6 +141,26 @@ public class GenCl : GenC
 	{
 		if (obj == null)
 			WriteCCall(null, method, args);
+		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+			Write("for (size_t _i = 0; _i < ");
+			args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
+			WriteLine("; _i++)");
+			Write('\t');
+			args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+			Write('[');
+			if (!args[2].IsLiteralZero) {
+				args[2].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
+				Write(" + ");
+			}
+			Write("_i] = ");
+			obj.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+			Write('[');
+			if (!args[0].IsLiteralZero) {
+				args[0].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
+				Write(" + ");
+			}
+			Write("_i]");
+		}
 		else if (obj.Type is CiArrayType && method.Name == "Fill") {
 			Write("for (size_t _i = 0; _i < ");
 			if (args.Length == 1)
