@@ -31,6 +31,7 @@ public class CiResolver : CiVisitor
 {
 	readonly CiProgram Program;
 	readonly IEnumerable<string> SearchDirs;
+	readonly string Lang;
 	CiScope CurrentScope;
 	CiMethodBase CurrentMethod;
 	readonly HashSet<CiMethod> CurrentPureMethods = new HashSet<CiMethod>();
@@ -44,6 +45,18 @@ public class CiResolver : CiVisitor
 	CiException StatementException(CiStatement statement, string format, params object[] args)
 	{
 		return StatementException(statement, string.Format(format, args));
+	}
+
+	void NotSupported(CiStatement statement, string feature, params string[] langs)
+	{
+		if (langs.Contains(this.Lang))
+			throw StatementException(statement, "{0} not supported when targeting {1}", feature, this.Lang);
+	}
+
+	void NotYet(CiStatement statement, string feature, params string[] langs)
+	{
+		if (langs.Contains(this.Lang))
+			throw StatementException(statement, "{0} not supported yet when targeting {1}", feature, this.Lang);
 	}
 
 	string FindFile(string name, CiStatement statement)
@@ -332,6 +345,8 @@ public class CiResolver : CiVisitor
 			expr.Symbol = scope.TryLookup(expr.Name);
 			if (expr.Symbol == null)
 				throw StatementException(expr, "{0} not found", expr.Name);
+			if (expr.Symbol == CiSystem.RegexClass)
+				NotSupported(expr, "Regex", "cl");
 			expr.Type = expr.Symbol.Type;
 		}
 		if (!(scope is CiEnum) && expr.Symbol is CiConst konst) {
@@ -1121,12 +1136,15 @@ public class CiResolver : CiVisitor
 		CloseScope();
 	}
 
-	static CiToken GetPtrModifier(ref CiExpr expr)
+	CiToken GetPtrModifier(ref CiExpr expr)
 	{
 		if (expr is CiPostfixExpr postfix) {
 			switch (postfix.Op) {
 			case CiToken.ExclamationMark:
+				expr = postfix.Inner;
+				return postfix.Op;
 			case CiToken.Hash:
+				NotSupported(expr, "Dynamic reference", "cl");
 				expr = postfix.Inner;
 				return postfix.Op;
 			default:
@@ -1167,8 +1185,11 @@ public class CiResolver : CiVisitor
 			// built-in, MyEnum, MyClass, MyClass!
 			if (this.Program.TryLookup(symbol.Name) is CiType type) {
 				if (type is CiClass klass) {
-					if (type == CiSystem.MatchClass && ptrModifier != CiToken.EndOfFile)
-						throw StatementException(expr, "Read-write references to the built-in class Match are not supported");
+					if (klass == CiSystem.MatchClass) {
+						if (ptrModifier != CiToken.EndOfFile)
+							throw StatementException(expr, "Read-write references to the built-in class Match are not supported");
+						NotSupported(expr, "Match", "cl");
+					}
 					return new CiClassPtrType { Name = klass.Name, Class = klass, Modifier = ptrModifier };
 				}
 				ExpectNoPtrModifier(expr, ptrModifier);
@@ -1189,21 +1210,34 @@ public class CiResolver : CiVisitor
 			ExpectNoPtrModifier(expr, ptrModifier);
 			if (call.Arguments.Length != 0)
 				throw StatementException(call, "Expected empty parentheses for storage type");
-			if (call.Method.Symbol == CiSystem.ListClass)
+			if (call.Method.Symbol == CiSystem.ListClass) {
+				NotSupported(call, "List", "cl");
 				return new CiListType { ElementType = ToType(call.Method.Left, false) };
+			}
 			if (call.Method.Symbol == CiSystem.DictionaryClass) {
+				NotSupported(call, "Dictionary", "cl");
 				CiExpr[] items = ((CiCollection) call.Method.Left).Items;
 				return new CiDictionaryType { KeyType = ToType(items[0], false), ValueType = ToType(items[1], false) };
 			}
 			if (call.Method.Symbol == CiSystem.SortedDictionaryClass) {
+				NotSupported(call, "SortedDictionary", "cl");
 				CiExpr[] items = ((CiCollection) call.Method.Left).Items;
 				return new CiSortedDictionaryType { KeyType = ToType(items[0], false), ValueType = ToType(items[1], false) };
 			}
-			if (call.Method.Name == "string")
+			if (call.Method.Name == "string") {
+				NotSupported(call, "string()", "cl");
 				return CiSystem.StringStorageType;
+			}
 			{
-				if (this.Program.TryLookup(call.Method.Name) is CiClass klass)
+				if (this.Program.TryLookup(call.Method.Name) is CiClass klass) {
+					if (klass == CiSystem.MatchClass)
+						NotSupported(expr, "Match", "cl");
+					else if (klass == CiSystem.LockClass) {
+						NotSupported(call, "Lock", "js", "ts", "cl");
+						NotYet(call, "Lock", "c", "swift");
+					}
 					return klass;
+				}
 			}
 			throw StatementException(expr, "Class {0} not found", call.Method.Name);
 
@@ -1360,10 +1394,11 @@ public class CiResolver : CiVisitor
 			SetLive(klass.Constructor);
 	}
 
-	public CiResolver(CiProgram program, IEnumerable<string> searchDirs)
+	public CiResolver(CiProgram program, IEnumerable<string> searchDirs, string lang)
 	{
 		this.Program = program;
 		this.SearchDirs = searchDirs;
+		this.Lang = lang;
 		foreach (CiClass klass in program.OfType<CiClass>())
 			ResolveBase(klass);
 		foreach (CiContainerType container in program.Cast<CiContainerType>())

@@ -53,12 +53,12 @@ public static class CiTo
 		Console.WriteLine("--version  Display version information");
 	}
 
-	static CiProgram ParseAndResolve(CiParser parser, CiScope parent, List<string> files, List<string> searchDirs)
+	static CiProgram ParseAndResolve(CiParser parser, CiScope parent, List<string> files, List<string> searchDirs, string lang)
 	{
 		parser.Program = new CiProgram { Parent = parent };
 		foreach (string file in files)
 			parser.Parse(file, File.OpenText(file));
-		new CiResolver(parser.Program, searchDirs);
+		new CiResolver(parser.Program, searchDirs, lang);
 		return parser.Program;
 	}
 
@@ -144,8 +144,8 @@ public static class CiTo
 		try {
 			CiScope parent = CiSystem.Value;
 			if (referencedFiles.Count > 0)
-				parent = ParseAndResolve(parser, parent, referencedFiles, searchDirs);
-			program = ParseAndResolve(parser, parent, inputFiles, searchDirs);
+				parent = ParseAndResolve(parser, parent, referencedFiles, searchDirs, lang);
+			program = ParseAndResolve(parser, parent, inputFiles, searchDirs, lang);
 		} catch (CiException ex) {
 			Console.Error.WriteLine("{0}({1}): ERROR: {2}", ex.Filename, ex.Line, ex.Message);
 			return 1;
