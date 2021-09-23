@@ -20,7 +20,7 @@ SWIFTC += -sanitize=address
 endif
 CC = clang
 CXX = clang++ -std=c++2a
-PYTHON = python3
+PYTHON = python3 -B
 
 VERSION := 1.0.0
 MAKEFLAGS = -r
