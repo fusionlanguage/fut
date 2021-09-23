@@ -408,6 +408,10 @@ public class GenC : GenCCpp
 				Write("GMatchInfo *");
 				space = false;
 			}
+			else if (baseType == CiSystem.LockClass) {
+				Include("threads.h");
+				Write("mtx_t");
+			}
 			else
 				WriteName(baseType);
 			if (space)
@@ -783,7 +787,7 @@ public class GenC : GenCCpp
 			|| type.IsDynamicPtr
 			|| type is CiListType
 			|| type is CiDictionaryType
-			|| (type is CiClass klass && (klass == CiSystem.MatchClass || NeedsDestructor(klass)));
+			|| (type is CiClass klass && (klass == CiSystem.MatchClass || klass == CiSystem.LockClass || NeedsDestructor(klass)));
 	}
 
 	protected override void WriteVar(CiNamedValue def)
@@ -888,7 +892,7 @@ public class GenC : GenCCpp
 	{
 		return (def is CiField && (def.Value != null || def.Type.StorageType == CiSystem.StringStorageType || def.Type.IsDynamicPtr || def.Type is CiListType || def.Type is CiDictionaryType))
 			|| GetThrowingMethod(def.Value) != null
-			|| (def.Type.StorageType is CiClass klass && NeedsConstructor(klass))
+			|| (def.Type.StorageType is CiClass klass && (klass == CiSystem.LockClass || NeedsConstructor(klass)))
 			|| GetListDestroy(def.Type) != null;
 	}
 
@@ -903,7 +907,12 @@ public class GenC : GenCCpp
 			type = array.ElementType;
 		}
 		if (type is CiClass klass) {
-			if (NeedsConstructor(klass)) {
+			if (klass == CiSystem.LockClass) {
+				Write("mtx_init(&");
+				WriteArrayElement(def, nesting);
+				WriteLine(", mtx_plain | mtx_recursive);");
+			}
+			else if (NeedsConstructor(klass)) {
 				WriteName(klass);
 				Write("_Construct(&");
 				WriteArrayElement(def, nesting);
@@ -1714,6 +1723,8 @@ public class GenC : GenCCpp
 		if (type is CiClass klass) {
 			if (klass == CiSystem.MatchClass)
 				Write("g_match_info_free(");
+			else if (klass == CiSystem.LockClass)
+				Write("mtx_destroy(&");
 			else {
 				WriteName(klass);
 				Write("_Destruct(&");
@@ -1949,7 +1960,14 @@ public class GenC : GenCCpp
 
 	public override void Visit(CiLock statement)
 	{
-		throw new NotImplementedException(); // TODO
+		Write("mtx_lock(&");
+		statement.Lock.Accept(this, CiPriority.Primary);
+		WriteLine(");");
+		// TODO
+		statement.Body.Accept(this);
+		Write("mtx_unlock(&");
+		statement.Lock.Accept(this, CiPriority.Primary);
+		WriteLine(");");
 	}
 
 	public override void Visit(CiReturn statement)
