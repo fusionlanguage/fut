@@ -1170,50 +1170,56 @@ public class GenC : GenCCpp
 
 	protected void WriteCCall(CiExpr obj, CiMethod method, CiExpr[] args)
 	{
-		CiClass klass = this.CurrentClass;
-		CiClass definingClass = (CiClass) method.Parent;
-		CiClass declaringClass = definingClass;
-		switch (method.CallType) {
-		case CiCallType.Override:
-			declaringClass = (CiClass) method.DeclaringMethod.Parent;
-			goto case CiCallType.Abstract;
-		case CiCallType.Abstract:
-		case CiCallType.Virtual:
-			if (obj != null)
-				klass = obj.Type as CiClass ?? ((CiClassPtrType) obj.Type).Class;
-			CiClass ptrClass = GetVtblPtrClass(klass);
-			CiClass structClass = GetVtblStructClass(definingClass);
-			if (structClass != ptrClass) {
-				Write("((const ");
-				WriteName(structClass);
-				Write("Vtbl *) ");
-			}
-			if (obj != null) {
-				obj.Accept(this, CiPriority.Primary);
-				WriteMemberAccess(obj, ptrClass);
-			}
-			else
-				WriteSelfForField(ptrClass);
-			Write("vtbl");
-			if (structClass != ptrClass)
-				Write(')');
-			Write("->");
-			WriteCamelCase(method.Name);
-			break;
-		default:
+		if (obj != null && obj.IsReferenceTo(CiSystem.BasePtr)) {
 			WriteName(method);
-			break;
+			Write("(&self->base");
 		}
-		Write('(');
-		if (method.CallType != CiCallType.Static) {
-			if (obj != null)
-				WriteClassPtr(declaringClass, obj, CiPriority.Argument);
-			else if (klass == declaringClass)
-				Write("self");
-			else {
-				Write("&self->base");
-				for (klass = (CiClass) klass.Parent; klass != declaringClass; klass = (CiClass) klass.Parent)
-					Write(".base");
+		else {
+			CiClass klass = this.CurrentClass;
+			CiClass definingClass = (CiClass) method.Parent;
+			CiClass declaringClass = definingClass;
+			switch (method.CallType) {
+			case CiCallType.Override:
+				declaringClass = (CiClass) method.DeclaringMethod.Parent;
+				goto case CiCallType.Abstract;
+			case CiCallType.Abstract:
+			case CiCallType.Virtual:
+				if (obj != null)
+					klass = obj.Type as CiClass ?? ((CiClassPtrType) obj.Type).Class;
+				CiClass ptrClass = GetVtblPtrClass(klass);
+				CiClass structClass = GetVtblStructClass(definingClass);
+				if (structClass != ptrClass) {
+					Write("((const ");
+					WriteName(structClass);
+					Write("Vtbl *) ");
+				}
+				if (obj != null) {
+					obj.Accept(this, CiPriority.Primary);
+					WriteMemberAccess(obj, ptrClass);
+				}
+				else
+					WriteSelfForField(ptrClass);
+				Write("vtbl");
+				if (structClass != ptrClass)
+					Write(')');
+				Write("->");
+				WriteCamelCase(method.Name);
+				break;
+			default:
+				WriteName(method);
+				break;
+			}
+			Write('(');
+			if (method.CallType != CiCallType.Static) {
+				if (obj != null)
+					WriteClassPtr(declaringClass, obj, CiPriority.Argument);
+				else if (klass == declaringClass)
+					Write("self");
+				else {
+					Write("&self->base");
+					for (klass = (CiClass) klass.Parent; klass != declaringClass; klass = (CiClass) klass.Parent)
+						Write(".base");
+				}
 			}
 		}
 		WriteArgsAndRightParenthesis(method, args);
@@ -1525,12 +1531,6 @@ public class GenC : GenCCpp
 		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
 			Include("math.h");
 			WriteMathCall(method, args);
-		}
-		// TODO
-		else if (obj.IsReferenceTo(CiSystem.BasePtr)) {
-			WriteName(method);
-			Write("(&self->base");
-			WriteArgsAndRightParenthesis(method, args);
 		}
 		else
 			WriteCCall(obj, method, args);
