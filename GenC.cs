@@ -555,13 +555,6 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected override void WriteListStorageInit(CiListType list)
-	{
-		Write(" = g_array_new(FALSE, FALSE, sizeof(");
-		Write(list.ElementType, false);
-		Write("))");
-	}
-
 	string GetListDestroy(CiType type)
 	{
 		if (type is CiListType list) {
@@ -597,49 +590,58 @@ public class GenC : GenCCpp
 		Write(dict.KeyType is CiStringType ? "g_str_hash, g_str_equal" : "NULL, NULL");
 	}
 
-	protected override void WriteDictionaryStorageInit(CiDictionaryType dict)
+	protected override void WriteNewStorage(CiType type)
 	{
-		string keyDestroy = GetDictionaryDestroy(dict.KeyType);
-		string valueDestroy = GetDictionaryDestroy(dict.ValueType);
-		if (dict is CiSortedDictionaryType) {
-			if (dict.KeyType == CiSystem.StringPtrType && valueDestroy == "NULL")
-				Write(" = g_tree_new((GCompareFunc) strcmp");
-			else {
-				Write(" = g_tree_new_full(CiTree_Compare");
-				switch (dict.KeyType) {
-				case CiIntegerType _:
-					this.TreeCompareInteger = true;
-					Write("Integer");
-					break;
-				case CiStringType _:
-					this.TreeCompareString = true;
-					Write("String");
-					break;
-				default:
-					throw new NotImplementedException(dict.KeyType.ToString());
+		if (type is CiListType list) {
+			Write("g_array_new(FALSE, FALSE, sizeof(");
+			Write(list.ElementType, false);
+			Write("))");
+		}
+		else if (type is CiDictionaryType dict) {
+			string keyDestroy = GetDictionaryDestroy(dict.KeyType);
+			string valueDestroy = GetDictionaryDestroy(dict.ValueType);
+			if (dict is CiSortedDictionaryType) {
+				if (dict.KeyType == CiSystem.StringPtrType && valueDestroy == "NULL")
+					Write("g_tree_new((GCompareFunc) strcmp");
+				else {
+					Write("g_tree_new_full(CiTree_Compare");
+					switch (dict.KeyType) {
+					case CiIntegerType _:
+						this.TreeCompareInteger = true;
+						Write("Integer");
+						break;
+					case CiStringType _:
+						this.TreeCompareString = true;
+						Write("String");
+						break;
+					default:
+						throw new NotImplementedException(dict.KeyType.ToString());
+					}
+					Write(", NULL, ");
+					Write(keyDestroy);
+					Write(", ");
+					Write(valueDestroy);
 				}
-				Write(", NULL, ");
-				Write(keyDestroy);
-				Write(", ");
-				Write(valueDestroy);
-			}
-		}
-		else {
-			Write(" = g_hash_table_new");
-			if (keyDestroy == "NULL" && valueDestroy == "NULL") {
-				Write('(');
-				WriteDictionaryHashEqual(dict);
 			}
 			else {
-				Write("_full(");
-				WriteDictionaryHashEqual(dict);
-				Write(", ");
-				Write(keyDestroy);
-				Write(", ");
-				Write(valueDestroy);
+				Write("g_hash_table_new");
+				if (keyDestroy == "NULL" && valueDestroy == "NULL") {
+					Write('(');
+					WriteDictionaryHashEqual(dict);
+				}
+				else {
+					Write("_full(");
+					WriteDictionaryHashEqual(dict);
+					Write(", ");
+					Write(keyDestroy);
+					Write(", ");
+					Write(valueDestroy);
+				}
 			}
+			Write(')');
 		}
-		Write(')');
+		else
+			base.WriteNewStorage(type);
 	}
 
 	protected override void WriteVarInit(CiNamedValue def)
@@ -1086,7 +1088,7 @@ public class GenC : GenCCpp
 	{
 		// TODO: don't emit temporary variable if already a var/field of matching type - beware of integer promotions!
 		CiType elementType = ((CiListType) obj.Type).ElementType;
-		int id = WriteTemporary(elementType, elementType is CiClass || elementType is CiArrayStorageType ? null : args[args.Length - 1]);
+		int id = WriteTemporary(elementType, elementType.IsFinal ? null : args[args.Length - 1]);
 		if (elementType is CiClass klass && NeedsConstructor(klass)) {
 			WriteName(klass);
 			Write("_Construct(&citemp");

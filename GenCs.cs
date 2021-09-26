@@ -259,21 +259,6 @@ public class GenCs : GenTyped
 		}
 	}
 
-	protected override void WriteListStorageInit(CiListType list)
-	{
-		Include("System.Collections.Generic");
-		Write(" = new List<");
-		Write(list.ElementType, false);
-		Write(">()");
-	}
-
-	protected override void WriteDictionaryStorageInit(CiDictionaryType dict)
-	{
-		Write(" = new ");
-		Write(dict);
-		Write("()");
-	}
-
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
 		Write("$\"");
@@ -309,6 +294,23 @@ public class GenCs : GenTyped
 			Write("[]");
 			elementType = array.ElementType;
 		}
+	}
+
+	protected override void WriteNewStorage(CiType type)
+	{
+		if (type is CiListType list) {
+			Include("System.Collections.Generic");
+			Write("new List<");
+			Write(list.ElementType, false);
+			Write(">()");
+		}
+		else if (type is CiDictionaryType dict) {
+			Write("new ");
+			Write(dict);
+			Write("()");
+		}
+		else
+			base.WriteNewStorage(type);
 	}
 
 	protected override bool HasInitCode(CiNamedValue def)

@@ -1,0 +1,16 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		List<List<int>()>() lol; //FAIL: c TODO; cl
+		lol.Add();
+		lol[0].Add(11);
+		lol[0].Add(12);
+		lol.Add();
+		lol[1].Add(21);
+		lol[1].Add(22);
+		return lol.Count == 2 && lol[0].Count == 2 && lol[1].Count == 2
+			&& lol[0][0] == 11 && lol[0][1] == 12
+			&& lol[1][0] == 21 && lol[1][1] == 22;
+	}
+}

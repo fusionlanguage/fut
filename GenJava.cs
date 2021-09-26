@@ -331,21 +331,23 @@ public class GenJava : GenTyped
 		Write(type, promote, false);
 	}
 
-	protected override void WriteListStorageInit(CiListType list)
+	protected override void WriteNewStorage(CiType type)
 	{
-		Include("java.util.ArrayList");
-		Write(" = new ArrayList<");
-		Write(list.ElementType, false, true);
-		Write(">()");
-	}
-
-	protected override void WriteDictionaryStorageInit(CiDictionaryType dict)
-	{
-		string javaType = dict is CiSortedDictionaryType ? "TreeMap" : "HashMap";
-		Include("java.util." + javaType);
-		Write(" = new ");
-		Write(javaType, dict);
-		Write("()");
+		if (type is CiListType list) {
+			Include("java.util.ArrayList");
+			Write("new ArrayList<");
+			Write(list.ElementType, false, true);
+			Write(">()");
+		}
+		else if (type is CiDictionaryType dict) {
+			string javaType = dict is CiSortedDictionaryType ? "TreeMap" : "HashMap";
+			Include("java.util." + javaType);
+			Write("new ");
+			Write(javaType, dict);
+			Write("()");
+		}
+		else
+			base.WriteNewStorage(type);
 	}
 
 	protected override void WriteResource(string name, int length)
@@ -689,8 +691,7 @@ public class GenJava : GenTyped
 		}
 	}
 
-	static bool IsCollection(CiType type)
-		=> type is CiListType || type is CiDictionaryType;
+	static bool IsCollection(CiType type) => type is CiListType || type is CiDictionaryType;
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{

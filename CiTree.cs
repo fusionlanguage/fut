@@ -1187,7 +1187,7 @@ public class CiListType : CiArrayType
 	{
 		switch (name) {
 		case "Add":
-			if (this.ElementType is CiClass || this.ElementType is CiArrayStorageType)
+			if (this.ElementType.IsFinal)
 				return new CiMethod(CiCallType.Normal, null, "Add") { IsMutator = true };
 			return new CiMethod(CiCallType.Normal, null, "Add", new CiVar(this.ElementType, "value")) { IsMutator = true };
 		case "Clear":
@@ -1197,7 +1197,7 @@ public class CiListType : CiArrayType
 		case "Count":
 			return CiSystem.CollectionCount;
 		case "Insert":
-			if (this.ElementType is CiClass || this.ElementType is CiArrayStorageType)
+			if (this.ElementType.IsFinal)
 				return new CiMethod(CiCallType.Normal, null, "Insert", new CiVar(CiSystem.UIntType, "index")) { IsMutator = true };
 			return new CiMethod(CiCallType.Normal, null, "Insert", new CiVar(CiSystem.UIntType, "index"), new CiVar(this.ElementType, "value")) { IsMutator = true };
 		case "RemoveAt":
@@ -1224,7 +1224,7 @@ public class CiDictionaryType : CiType
 	{
 		switch (name) {
 		case "Add":
-			if (this.ValueType is CiClass || this.ValueType is CiArrayStorageType)
+			if (this.ValueType.IsFinal)
 				return new CiMethod(CiCallType.Normal, null, "Add", new CiVar(this.KeyType, "key")) { IsMutator = true };
 			return null;
 		case "Clear":

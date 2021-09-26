@@ -467,26 +467,27 @@ public class GenPy : GenPySwift
 		WriteNewArray(array.ElementType, null, array.LengthExpr);
 	}
 
-	protected override void WriteListStorageInit(CiListType list)
+	protected override void WriteNewStorage(CiType type)
 	{
-		if (list.ElementType is CiNumericType number) {
-			char c = GetArrayCode(number);
-			if (c == 'B')
-				Write(" = bytearray()");
-			else {
-				Include("array");
-				Write(" = array.array(\"");
-				Write(c);
-				Write("\")");
+		if (type is CiListType list) {
+			if (list.ElementType is CiNumericType number) {
+				char c = GetArrayCode(number);
+				if (c == 'B')
+					Write("bytearray()");
+				else {
+					Include("array");
+					Write("array.array(\"");
+					Write(c);
+					Write("\")");
+				}
 			}
+			else
+				Write("[]");
 		}
+		else if (type is CiDictionaryType)
+			Write("{}");
 		else
-			Write(" = []");
-	}
-
-	protected override void WriteDictionaryStorageInit(CiDictionaryType dict)
-	{
-		Write(" = {}");
+			base.WriteNewStorage(type);
 	}
 
 	protected override void WriteInitCode(CiNamedValue def)

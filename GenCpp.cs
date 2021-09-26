@@ -335,20 +335,14 @@ public class GenCpp : GenCCpp
 		}
 	}
 
-	protected override void WriteListStorageInit(CiListType list)
-	{
-	}
-
-	protected override void WriteDictionaryStorageInit(CiDictionaryType dict)
-	{
-	}
-
 	protected override void WriteVarInit(CiNamedValue def)
 	{
 		if (def.Value != null && def.Type == CiSystem.StringStorageType) {
 			Write('{');
 			def.Value.Accept(this, CiPriority.Argument);
 			Write('}');
+		}
+		else if (def.Type is CiListType || def.Type is CiDictionaryType) {
 		}
 		else
 			base.WriteVarInit(def);

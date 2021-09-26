@@ -621,20 +621,22 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	protected override void WriteListStorageInit(CiListType list)
+	protected override void WriteNewStorage(CiType type)
 	{
-		Write(" = [");
-		Write(list.ElementType);
-		Write("]()");
-	}
-
-	protected override void WriteDictionaryStorageInit(CiDictionaryType dict)
-	{
-		Write(" = [");
-		Write(dict.KeyType);
-		Write(": ");
-		Write(dict.ValueType);
-		Write("]()");
+		if (type is CiListType list) {
+			Write('[');
+			Write(list.ElementType);
+			Write("]()");
+		}
+		else if (type is CiDictionaryType dict) {
+			Write('[');
+			Write(dict.KeyType);
+			Write(": ");
+			Write(dict.ValueType);
+			Write("]()");
+		}
+		else
+			base.WriteNewStorage(type);
 	}
 
 	void WriteDefaultValue(CiType type)

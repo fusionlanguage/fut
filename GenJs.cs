@@ -143,14 +143,14 @@ public class GenJs : GenBase
 		return expr;
 	}
 
-	protected override void WriteListStorageInit(CiListType list)
+	protected override void WriteNewStorage(CiType type)
 	{
-		Write(" = []");
-	}
-
-	protected override void WriteDictionaryStorageInit(CiDictionaryType dict)
-	{
-		Write(" = {}");
+		if (type is CiListType)
+			Write("[]");
+		else if (type is CiDictionaryType)
+			Write("{}");
+		else
+			base.WriteNewStorage(type);
 	}
 
 	protected override void WriteVar(CiNamedValue def)
