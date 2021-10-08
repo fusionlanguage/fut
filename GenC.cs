@@ -593,6 +593,10 @@ public class GenC : GenCCpp
 		}
 		if (type is CiClass klass)
 			return NeedsDestructor(klass) ? "(GDestroyNotify) " + klass.Name + "_Delete" /* TODO: emit */ : "free";
+		if (type is CiListType)
+			return "(GDestroyNotify) g_array_unref";
+		if (type is CiDictionaryType)
+			return type is CiSortedDictionaryType ? "(GDestroyNotify) g_tree_unref" : "(GDestroyNotify) g_hash_table_unref";
 		return "NULL";
 	}
 
@@ -1461,14 +1465,20 @@ public class GenC : GenCCpp
 			WriteCall("g_array_remove_range", obj, args[0], args[1]);
 		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
 			StartDictionaryInsert(obj, args[0]);
-			if (dict.ValueType is CiClass klass && klass.IsPublic && klass.Constructor != null && klass.Constructor.Visibility == CiVisibility.Public) {
+			switch (dict.ValueType) {
+			case CiListType _:
+			case CiDictionaryType _:
+				WriteNewStorage(dict.ValueType);
+				break;
+			case CiClass klass when klass.IsPublic && klass.Constructor != null && klass.Constructor.Visibility == CiVisibility.Public:
 				WriteName(klass);
 				Write("_New()");
-			}
-			else {
+				break;
+			default:
 				Write("malloc(sizeof(");
 				Write(dict.ValueType, false);
 				Write("))");
+				break;
 			}
 			Write(')');
 		}

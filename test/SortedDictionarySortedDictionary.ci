@@ -1,0 +1,16 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		SortedDictionary<string, SortedDictionary<int, string>()>() dict; //FAIL: cl
+		dict.Add("en");
+		dict["en"][2] = "two";
+		dict["en"][4] = "four";
+		dict.Add("pl");
+		dict["pl"][2] = "dwa";
+		dict["pl"][4] = "cztery";
+		return dict.Count == 2
+			&& dict["en"][2] == "two" && dict["en"][4] == "four"
+			&& dict["pl"][2] == "dwa" && dict["pl"][4] == "cztery";
+	}
+}
