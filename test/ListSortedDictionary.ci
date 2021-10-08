@@ -1,0 +1,16 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		List<SortedDictionary<int, int>()>() lod; //FAIL: cl
+		lod.Add();
+		lod[0][5] = 11;
+		lod[0][10] = 12;
+		lod.Add();
+		lod[1][4] = 21;
+		lod[1][8] = 22;
+		return lod.Count == 2 && lod[0].Count == 2 && lod[1].Count == 2
+			&& lod[0][5] == 11 && lod[0][10] == 12
+			&& lod[1][4] == 21 && lod[1][8] == 22;
+	}
+}

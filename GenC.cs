@@ -39,12 +39,11 @@ public class GenC : GenCCpp
 	bool MatchFind;
 	bool MatchPos;
 	bool PtrConstruct;
-	bool PtrFree;
 	bool SharedMake;
 	bool SharedAddRef;
 	bool SharedRelease;
-	bool SharedReleaseIndirect;
 	bool SharedAssign;
+	readonly SortedDictionary<string, string> ListFrees = new SortedDictionary<string, string>();
 	bool TreeCompareInteger;
 	bool TreeCompareString;
 	readonly SortedSet<TypeCode> Compares = new SortedSet<TypeCode>();
@@ -559,15 +558,27 @@ public class GenC : GenCCpp
 	{
 		if (type is CiListType list) {
 			if (list.ElementType == CiSystem.StringStorageType) {
-				this.PtrFree = true;
-				return "CiPtr_Free";
+				this.ListFrees["String"] = "free(*(void **) ptr)";
+				return "CiList_FreeString";
 			}
 			if (list.ElementType.IsDynamicPtr) {
-				this.SharedReleaseIndirect = true;
-				return "CiShared_ReleaseIndirect";
+				this.ListFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
+				return "CiList_FreeShared";
 			}
 			if (list.ElementType is CiClass klass && NeedsDestructor(klass))
 				return "(GDestroyNotify) " + klass.Name + "_Destruct";
+			if (list.ElementType is CiListType) {
+				this.ListFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
+				return "CiList_FreeList";
+			}
+			if (list.ElementType is CiDictionaryType) {
+				if (list.ElementType is CiSortedDictionaryType) {
+					this.ListFrees["SortedDictionary"] = "g_tree_unref(*(GTree **) ptr)";
+					return "CiList_FreeSortedDictionary";
+				}
+				this.ListFrees["Dictionary"] = "g_hash_table_unref(*(GHashTable **) ptr)";
+				return "CiList_FreeDictionary";
+			}
 		}
 		return null;
 	}
@@ -654,22 +665,29 @@ public class GenC : GenCCpp
 
 	int WriteTemporary(CiType type, CiExpr expr)
 	{
+		bool assign = expr != null || type is CiListType || type is CiDictionaryType;
 		int id = this.CurrentTemporaries.IndexOf(type);
 		if (id < 0) {
 			id = this.CurrentTemporaries.Count;
 			WriteDefinition(type, () => { Write("citemp"); Write(id); }, false, true);
-			if (expr != null) {
+			if (assign) {
 				Write(" = ");
-				WriteCoerced(type, expr, CiPriority.Argument);
+				if (expr != null)
+					WriteCoerced(type, expr, CiPriority.Argument);
+				else
+					WriteNewStorage(type);
 			}
 			WriteLine(';');
 			this.CurrentTemporaries.Add(expr);
 		}
-		else if (expr != null) {
+		else if (assign) {
 			Write("citemp");
 			Write(id);
 			Write(" = ");
-			WriteCoerced(type, expr, CiPriority.Argument);
+			if (expr != null)
+				WriteCoerced(type, expr, CiPriority.Argument);
+			else
+				WriteNewStorage(type);
 			WriteLine(';');
 			this.CurrentTemporaries[id] = expr;
 		}
@@ -2640,13 +2658,6 @@ public class GenC : GenCCpp
 			WriteLine("*ptr = NULL;");
 			CloseBlock();
 		}
-		if (this.PtrFree) {
-			WriteLine();
-			WriteLine("static void CiPtr_Free(void *ptr)");
-			OpenBlock();
-			WriteLine("free(*(void **) ptr);");
-			CloseBlock();
-		}
 		if (this.SharedMake || this.SharedAddRef || this.SharedRelease) {
 			WriteLine();
 			WriteLine("typedef void (*CiMethodPtr)(void *);");
@@ -2685,7 +2696,7 @@ public class GenC : GenCCpp
 			WriteLine("return ptr;");
 			CloseBlock();
 		}
-		if (this.SharedRelease || this.SharedReleaseIndirect || this.SharedAssign) {
+		if (this.SharedRelease || this.SharedAssign || this.ListFrees.ContainsKey("Shared")) {
 			WriteLine();
 			WriteLine("static void CiShared_Release(void *ptr)");
 			OpenBlock();
@@ -2702,19 +2713,22 @@ public class GenC : GenCCpp
 			WriteLine("free(self);");
 			CloseBlock();
 		}
-		if (this.SharedReleaseIndirect) {
-			WriteLine();
-			WriteLine("static void CiShared_ReleaseIndirect(void *ptr)");
-			OpenBlock();
-			WriteLine("CiShared_Release(*(void **) ptr);");
-			CloseBlock();
-		}
 		if (this.SharedAssign) {
 			WriteLine();
 			WriteLine("static void CiShared_Assign(void **ptr, void *value)");
 			OpenBlock();
 			WriteLine("CiShared_Release(*ptr);");
 			WriteLine("*ptr = value;");
+			CloseBlock();
+		}
+		foreach (KeyValuePair<string, string> nameContent in this.ListFrees) {
+			WriteLine();
+			Write("static void CiList_Free");
+			Write(nameContent.Key);
+			WriteLine("(void *ptr)");
+			OpenBlock();
+			Write(nameContent.Value);
+			WriteLine(';');
 			CloseBlock();
 		}
 		if (this.TreeCompareInteger) {
@@ -2842,15 +2856,15 @@ public class GenC : GenCCpp
 		this.MatchFind = false;
 		this.MatchPos = false;
 		this.PtrConstruct = false;
-		this.PtrFree = false;
 		this.SharedMake = false;
 		this.SharedAddRef = false;
 		this.SharedRelease = false;
-		this.SharedReleaseIndirect = false;
 		this.SharedAssign = false;
+		this.ListFrees.Clear();
 		this.TreeCompareInteger = false;
 		this.TreeCompareString = false;
 		this.Compares.Clear();
+		this.Contains.Clear();
 		OpenStringWriter();
 		foreach (CiClass klass in program.Classes)
 			WriteStruct(klass);
