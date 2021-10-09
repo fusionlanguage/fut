@@ -1350,8 +1350,8 @@ public class CiResolver : CiVisitor
 			ResolveType(method);
 			foreach (CiVar param in method.Parameters) {
 				ResolveType(param);
-				if (param.Value != null && !(param.Value is CiLiteral))
-					throw StatementException(param.Value, "Default argument value not constant");
+				if (param.Value != null)
+					param.Value = FoldConst(param.Value);
 			}
 		}
 	}

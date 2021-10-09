@@ -1,6 +1,6 @@
 public static class Test
 {
-	public static void Run(int[]# arr = new int[10]) //ERROR: Default argument value not constant
+	public static void Run(int[]# arr = new int[10]) //ERROR: Expected constant value
 	{
 	}
 }

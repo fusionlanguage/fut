@@ -5,8 +5,14 @@ public static class Test
 		return i == 42 && b;
 	}
 
+	const int DefaultX = 5;
+
+	public static bool Bar(int x = DefaultX) => x == DefaultX;
+
+	public static bool Quux(int x = DefaultX + 1) => x == DefaultX + 1;
+
 	public static bool Run()
 	{
-		return Foo();
+		return Foo() && Bar() && Quux();
 	}
 }
