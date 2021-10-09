@@ -1,0 +1,6 @@
+public static class Test
+{
+	public static void Run(int x = 5.0) //ERROR: Cannot coerce double to int
+	{
+	}
+}

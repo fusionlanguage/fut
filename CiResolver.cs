@@ -1350,8 +1350,10 @@ public class CiResolver : CiVisitor
 			ResolveType(method);
 			foreach (CiVar param in method.Parameters) {
 				ResolveType(param);
-				if (param.Value != null)
+				if (param.Value != null) {
 					param.Value = FoldConst(param.Value);
+					Coerce(param.Value, param.Type);
+				}
 			}
 		}
 	}
