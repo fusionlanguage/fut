@@ -4,6 +4,6 @@ public static class Test
 
 	public static bool Run()
 	{
-		return Accept($"{40 + 2}"); // FAIL: c TODO memleak; cl
+		return Accept($"{40 + 2}"); //FAIL: c TODO memleak; cpp - should work with C++20; cl
 	}
 }
