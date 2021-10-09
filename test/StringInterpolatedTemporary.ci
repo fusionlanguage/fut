@@ -1,0 +1,9 @@
+public static class Test
+{
+	static bool Accept(string s) => s == "42";
+
+	public static bool Run()
+	{
+		return Accept($"{40 + 2}"); // FAIL: c TODO memleak; cl
+	}
+}
