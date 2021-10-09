@@ -47,8 +47,7 @@ Therefore Ć source files have the `.ci` filename extension instead of `.ć`.
 
 > In Polish, "ci" is pronounced identically to "ć".
 
-Source file contents must be UTF-8 encoded
-with an optional (but recommended) BOM.
+Source file contents must be UTF-8 encoded with an optional BOM.
 
 Most of the time whitespace is insignificant in Ć source code.
 Let's continue indentation style flame wars!
