@@ -872,7 +872,7 @@ public class CiResolver : CiVisitor
 		 && this.CurrentPureMethods.Add(method)) {
 			i = 0;
 			foreach (CiVar param in method.Parameters)
-				this.CurrentPureArguments.Add(param, arguments[i++]);
+				this.CurrentPureArguments.Add(param, i < arguments.Length ? arguments[i++] : param.Value);
 			CiLiteral literal = Resolve(ret.Value) as CiLiteral;
 			foreach (CiVar param in method.Parameters)
 				this.CurrentPureArguments.Remove(param);
