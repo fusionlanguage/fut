@@ -455,6 +455,8 @@ public class CiResolver : CiVisitor
 			range = inner.Type as CiRangeType;
 			if (range != null)
 				type = range = new CiRangeType(SaturatedNeg(range.Max), SaturatedNeg(range.Min));
+			else if (inner is CiLiteral literal)
+				return expr.ToLiteral(literal.Value is double d ? -d : -(long) literal.Value);
 			else
 				type = inner.Type;
 			break;
@@ -494,10 +496,10 @@ public class CiResolver : CiVisitor
 				throw StatementException(expr, "Invalid argument to new");
 			}
 		case CiToken.Resource:
-			CiLiteral literal = FoldConst(expr.Inner);
-			if (!(literal.Value is string name))
+			CiLiteral resourceName = FoldConst(expr.Inner);
+			if (!(resourceName.Value is string name))
 				throw StatementException(expr, "Resource name must be string");
-			inner = literal;
+			inner = resourceName;
 			if (!this.Program.Resources.TryGetValue(name, out byte[] content)) {
 				content = File.ReadAllBytes(FindFile(name, expr));
 				this.Program.Resources.Add(name, content);

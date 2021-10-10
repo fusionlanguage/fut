@@ -2,10 +2,10 @@ public static class Test
 {
 	public const int Foo = 42;
 
-	const int Bar = 5;
+	const int Bar = -5;
 
 	public static bool Run()
 	{
-		return Foo == 42 && Bar == 5;
+		return Foo == 42 && Bar == -5;
 	}
 }

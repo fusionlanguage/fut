@@ -1,0 +1,10 @@
+public static class Test
+{
+	public const float Foo = -10.5; //FAIL: cs java TODO
+	public const float[] Array = { -1.0, -2 };
+
+	public static bool Run()
+	{
+		return Foo == -10.5 && Array[1] == -2;
+	}
+}
