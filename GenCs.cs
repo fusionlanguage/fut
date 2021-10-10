@@ -259,6 +259,13 @@ public class GenCs : GenTyped
 		}
 	}
 
+	protected override void WriteCoercedLiteral(CiType type, object value)
+	{
+		WriteLiteral(value);
+		if (type == CiSystem.FloatType)
+			Write('f');
+	}
+
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
 		Write("$\"");

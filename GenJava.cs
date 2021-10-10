@@ -434,8 +434,11 @@ public class GenJava : GenTyped
 	{
 		if (IsUnsignedByte(type))
 			Write((sbyte) (long) value);
-		else
+		else {
 			WriteLiteral(value);
+			if (type == CiSystem.FloatType)
+				Write('f');
+		}
 	}
 
 	protected override void WriteAnd(CiBinaryExpr expr, CiPriority parent)
