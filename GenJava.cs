@@ -929,7 +929,7 @@ public class GenJava : GenTyped
 			Write("static final ");
 			WriteTypeAndName(konst);
 			Write(" = ");
-			konst.Value.Accept(this, CiPriority.Argument);
+			WriteCoercedExpr(konst.Type, konst.Value);
 			WriteLine(';');
 		}
 	}

@@ -646,7 +646,7 @@ public class GenCs : GenTyped
 				Write("const ");
 			WriteTypeAndName(konst);
 			Write(" = ");
-			konst.Value.Accept(this, CiPriority.Argument);
+			WriteCoercedExpr(konst.Type, konst.Value);
 			WriteLine(';');
 		}
 	}
