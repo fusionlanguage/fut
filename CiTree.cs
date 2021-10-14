@@ -1141,6 +1141,7 @@ public class CiArrayStorageType : CiArrayType
 {
 	public CiExpr LengthExpr;
 	public int Length;
+	public bool PtrTaken = false;
 
 	public override string ArrayString => "[" + this.Length + "]";
 	public override CiSymbol TryLookup(string name)

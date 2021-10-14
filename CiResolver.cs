@@ -104,6 +104,8 @@ public class CiResolver : CiVisitor
 			throw StatementException(expr, "Cannot coerce {0} to {1}", expr.Type, type);
 		if (expr is CiPrefixExpr prefix && prefix.Op == CiToken.New && !type.IsDynamicPtr)
 			throw StatementException(expr, "Dynamically allocated {0} must be assigned to a {1} reference", expr.Type is CiArrayType ? "array" : "object", expr.Type);
+		if (type is CiArrayPtrType && expr.Type is CiArrayStorageType arrayStg)
+			arrayStg.PtrTaken = true;
 	}
 
 	CiType GetCommonType(CiExpr left, CiExpr right)
@@ -111,15 +113,11 @@ public class CiResolver : CiVisitor
 		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange)
 			return leftRange.Union(rightRange);
 		CiType ptr = left.Type.PtrOrSelf;
-		if (ptr.IsAssignableFrom(right.Type)) {
-			Coerce(right, ptr);
+		if (ptr.IsAssignableFrom(right.Type))
 			return ptr;
-		}
 		ptr = right.Type.PtrOrSelf;
-		if (ptr.IsAssignableFrom(left.Type)) {
-			Coerce(left, ptr);
+		if (ptr.IsAssignableFrom(left.Type))
 			return ptr;
-		}
 		throw StatementException(left, "Incompatible types: {0} and {1}", left.Type, right.Type);
 	}
 
@@ -826,6 +824,8 @@ public class CiResolver : CiVisitor
 		CiExpr onTrue = Resolve(expr.OnTrue);
 		CiExpr onFalse = Resolve(expr.OnFalse);
 		CiType type = GetCommonType(onTrue, onFalse);
+		Coerce(onTrue, type);
+		Coerce(onFalse, type);
 		if (cond is CiLiteral literalCond)
 			return (bool) literalCond.Value ? onTrue : onFalse;
 		return new CiSelectExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };

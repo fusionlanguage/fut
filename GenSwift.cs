@@ -421,6 +421,8 @@ public class GenSwift : GenPySwift
 		WriteAdd(startIndex, length); // TODO: side effect
 	}
 
+	static bool IsArrayRef(CiArrayStorageType array) => array.PtrTaken || array.ElementType is CiArrayStorageType || array.ElementType is CiClass;
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
 		if (obj == null) {
@@ -476,6 +478,21 @@ public class GenSwift : GenPySwift
 			OpenIndexing(obj);
 			WriteRange(args[0], args[3]);
 			Write(']');
+		}
+		else if (obj.Type is CiArrayStorageType array && !IsArrayRef(array) && method.Name == "Fill") {
+			if (args.Length == 1) {
+				obj.Accept(this, CiPriority.Assign);
+				WriteArrayStorageInit(array, args[0]);
+			}
+			else {
+				OpenIndexing(obj);
+				WriteRange(args[1], args[2]);
+				Write("] = ArraySlice(repeating: ");
+				args[0].Accept(this, CiPriority.Argument);
+				Write(", count: ");
+				args[2].Accept(this, CiPriority.Argument); // FIXME: side effect
+				Write(')');
+			}
 		}
 		else if (obj.Type is CiArrayStorageType arrayStorage && method == CiSystem.CollectionSortAll) {
 			obj.Accept(this, CiPriority.Primary);
@@ -685,6 +702,21 @@ public class GenSwift : GenPySwift
 		Write(')');
 	}
 
+	protected override void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
+	{
+		if (IsArrayRef(array))
+			base.WriteArrayStorageInit(array, value);
+		else {
+			Write(" = [");
+			Write(array.ElementType);
+			Write("](repeating: ");
+			WriteDefaultValue(array.ElementType);
+			Write(", count: ");
+			Write(array.Length);
+			Write(')');
+		}
+	}
+
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
 		OpenIndexing(expr.Left);
@@ -882,9 +914,9 @@ public class GenSwift : GenPySwift
 	protected override void WriteVar(CiNamedValue def)
 	{
 		if (def is CiField || AddVar(def.Name)) {
-			Write((def.Type is CiClass && !def.IsAssignableStorage)
-				|| def.Type is CiArrayStorageType
-				|| (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType) && !(def.Type is CiDictionaryType)) ? "let " : "var ");
+			Write((def.Type is CiClass ? !def.IsAssignableStorage
+				: def.Type is CiArrayStorageType array ? IsArrayRef(array)
+				: (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType) && !(def.Type is CiDictionaryType))) ? "let " : "var ");
 			base.WriteVar(def);
 		}
 		else {
