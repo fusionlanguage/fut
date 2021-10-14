@@ -207,6 +207,8 @@ public class GenSwift : GenPySwift
 			base.WriteClassName(klass);
 	}
 
+	static bool IsArrayRef(CiArrayStorageType array) => array.PtrTaken || array.ElementType is CiArrayStorageType || array.ElementType is CiClass;
+
 	void Write(CiType type)
 	{
 		switch (type) {
@@ -264,13 +266,24 @@ public class GenSwift : GenPySwift
 			Write(dict.ValueType);
 			Write(']');
 			break;
-		case CiArrayType array:
+		case CiArrayStorageType arrayStg:
+			if (IsArrayRef(arrayStg)) {
+				this.ArrayRef = true;
+				Write("ArrayRef<");
+				Write(arrayStg.ElementType);
+				Write('>');
+			}
+			else {
+				Write('[');
+				Write(arrayStg.ElementType);
+				Write(']');
+			}
+			break;
+		case CiArrayPtrType arrayPtr:
 			this.ArrayRef = true;
 			Write("ArrayRef<");
-			Write(array.ElementType);
-			Write('>');
-			if (array is CiArrayPtrType)
-				Write('?');
+			Write(arrayPtr.ElementType);
+			Write(">?");
 			break;
 		default:
 			Write(type.Name);
@@ -420,8 +433,6 @@ public class GenSwift : GenPySwift
 		Write("..<");
 		WriteAdd(startIndex, length); // TODO: side effect
 	}
-
-	static bool IsArrayRef(CiArrayStorageType array) => array.PtrTaken || array.ElementType is CiArrayStorageType || array.ElementType is CiClass;
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
 	{
@@ -702,12 +713,12 @@ public class GenSwift : GenPySwift
 		Write(')');
 	}
 
-	protected override void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
+	protected override void WriteNewArray(CiArrayStorageType array)
 	{
 		if (IsArrayRef(array))
-			base.WriteArrayStorageInit(array, value);
+			base.WriteNewArray(array);
 		else {
-			Write(" = [");
+			Write('[');
 			Write(array.ElementType);
 			Write("](repeating: ");
 			WriteDefaultValue(array.ElementType);

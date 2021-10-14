@@ -98,14 +98,20 @@ public class CiResolver : CiVisitor
 		klass.AddRange(klass.Methods);
 	}
 
+	static void TakePtr(CiExpr expr)
+	{
+		if (expr.Type is CiArrayStorageType arrayStg)
+			arrayStg.PtrTaken = true;
+	}
+
 	void Coerce(CiExpr expr, CiType type)
 	{
 		if (!type.IsAssignableFrom(expr.Type))
 			throw StatementException(expr, "Cannot coerce {0} to {1}", expr.Type, type);
 		if (expr is CiPrefixExpr prefix && prefix.Op == CiToken.New && !type.IsDynamicPtr)
 			throw StatementException(expr, "Dynamically allocated {0} must be assigned to a {1} reference", expr.Type is CiArrayType ? "array" : "object", expr.Type);
-		if (type is CiArrayPtrType && expr.Type is CiArrayStorageType arrayStg)
-			arrayStg.PtrTaken = true;
+		if (type is CiArrayPtrType)
+			TakePtr(expr);
 	}
 
 	CiType GetCommonType(CiExpr left, CiExpr right)
@@ -711,6 +717,8 @@ public class CiResolver : CiVisitor
 			else if (left.Type == right.Type && left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
 				return expr.ToLiteral(object.Equals(leftLiteral.Value, rightLiteral.Value));
 			// TODO: type check
+			TakePtr(left);
+			TakePtr(right);
 			type = CiSystem.BoolType;
 			break;
 		case CiToken.NotEqual:
@@ -723,6 +731,8 @@ public class CiResolver : CiVisitor
 			else if (left.Type == right.Type && left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
 				return expr.ToLiteral(!object.Equals(leftLiteral.Value, rightLiteral.Value));
 			// TODO: type check
+			TakePtr(left);
+			TakePtr(right);
 			type = CiSystem.BoolType;
 			break;
 		case CiToken.Less:

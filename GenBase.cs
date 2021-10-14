@@ -730,7 +730,7 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent);
 
-	protected void WriteNewArray(CiArrayStorageType array)
+	protected virtual void WriteNewArray(CiArrayStorageType array)
 	{
 		WriteNewArray(array.ElementType, array.LengthExpr, CiPriority.Argument);
 	}
