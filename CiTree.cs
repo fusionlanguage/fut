@@ -767,7 +767,7 @@ public class CiMethodGroup : CiMember
 	}
 }
 
-public abstract class CiType : CiScope
+public class CiType : CiScope
 {
 	public virtual string ArrayString => "";
 	public virtual bool IsAssignableFrom(CiType right) => this == right;
@@ -939,11 +939,6 @@ public class CiFloatingType : CiNumericType
 	{
 		return right is CiNumericType;
 	}
-}
-
-public class CiNullType : CiType
-{
-	public override string ToString() => "null";
 }
 
 public abstract class CiStringType : CiType
@@ -1260,7 +1255,7 @@ public class CiPrintableType : CiType
 
 public class CiSystem : CiScope
 {
-	public static readonly CiNullType NullType = new CiNullType();
+	public static readonly CiType NullType = new CiType { Name = "null" };
 	public static readonly CiIntegerType IntType = new CiIntegerType { Name = "int" };
 	public static readonly CiRangeType UIntType = new CiRangeType(0, int.MaxValue) { Name = "uint" };
 	public static readonly CiIntegerType LongType = new CiIntegerType { Name = "long" };
