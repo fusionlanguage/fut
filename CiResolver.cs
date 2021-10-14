@@ -565,6 +565,22 @@ public class CiResolver : CiVisitor
 		return new CiInterpolatedString(parts, right.Suffix);
 	}
 
+	CiExpr ResolveEquality(CiBinaryExpr expr, CiExpr left, CiExpr right)
+	{
+		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {
+			if (leftRange.Min == leftRange.Max && leftRange.Min == rightRange.Min && leftRange.Min == rightRange.Max)
+				return expr.ToLiteral(expr.Op == CiToken.Equal);
+			if (leftRange.Max < rightRange.Min || leftRange.Min > rightRange.Max)
+				return expr.ToLiteral(expr.Op == CiToken.NotEqual);;
+		}
+		else if (left.Type == right.Type && left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
+			return expr.ToLiteral((expr.Op == CiToken.NotEqual) ^ object.Equals(leftLiteral.Value, rightLiteral.Value));
+		// TODO: type check
+		TakePtr(left);
+		TakePtr(right);
+		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = CiSystem.BoolType };
+	}
+
 	void CheckComparison(CiExpr left, CiExpr right)
 	{
 		if (!(left.Type is CiNumericType) || !(right.Type is CiNumericType))
@@ -708,33 +724,8 @@ public class CiResolver : CiVisitor
 			break;
 
 		case CiToken.Equal:
-			if (leftRange != null && rightRange != null) {
-				if (leftRange.Min == leftRange.Max && leftRange.Min == rightRange.Min && leftRange.Min == rightRange.Max)
-					return CiLiteral.True;
-				if (leftRange.Max < rightRange.Min || leftRange.Min > rightRange.Max)
-					return CiLiteral.False;
-			}
-			else if (left.Type == right.Type && left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
-				return expr.ToLiteral(object.Equals(leftLiteral.Value, rightLiteral.Value));
-			// TODO: type check
-			TakePtr(left);
-			TakePtr(right);
-			type = CiSystem.BoolType;
-			break;
 		case CiToken.NotEqual:
-			if (leftRange != null && rightRange != null) {
-				if (leftRange.Max < rightRange.Min || leftRange.Min > rightRange.Max)
-					return CiLiteral.True;
-				if (leftRange.Min == leftRange.Max && leftRange.Min == rightRange.Min && leftRange.Min == rightRange.Max)
-					return CiLiteral.False;
-			}
-			else if (left.Type == right.Type && left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
-				return expr.ToLiteral(!object.Equals(leftLiteral.Value, rightLiteral.Value));
-			// TODO: type check
-			TakePtr(left);
-			TakePtr(right);
-			type = CiSystem.BoolType;
-			break;
+			return ResolveEquality(expr, left, right);
 		case CiToken.Less:
 			if (leftRange != null && rightRange != null) {
 				if (leftRange.Max < rightRange.Min)
