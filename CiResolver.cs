@@ -575,7 +575,8 @@ public class CiResolver : CiVisitor
 		}
 		else if (left.Type == right.Type && left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
 			return expr.ToLiteral((expr.Op == CiToken.NotEqual) ^ object.Equals(leftLiteral.Value, rightLiteral.Value));
-		// TODO: type check
+		if (!left.Type.IsAssignableFrom(right.Type) && !right.Type.IsAssignableFrom(left.Type))
+			throw StatementException(expr, "Cannot compare {0} with {1}", left.Type, right.Type);
 		TakePtr(left);
 		TakePtr(right);
 		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = CiSystem.BoolType };
