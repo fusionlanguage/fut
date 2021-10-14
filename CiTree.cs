@@ -1281,7 +1281,7 @@ public class CiSystem : CiScope
 	public static readonly CiMember CollectionCount = new CiMember { Name = "Count", Type = UIntType };
 	public static readonly CiMethod CollectionClear = new CiMethod(CiCallType.Normal, null, "Clear") { IsMutator = true };
 	public static readonly CiMethod CollectionSortAll = new CiMethod(CiCallType.Normal, null, "Sort") { IsMutator = true };
-	public static readonly CiMethod CollectionSortPart = new CiMethod(CiCallType.Normal, null, "Sort", new CiVar(CiSystem.IntType, "startIndex"), new CiVar(CiSystem.IntType, "count")) { IsMutator = true };
+	public static readonly CiMethod CollectionSortPart = new CiMethod(CiCallType.Normal, null, "Sort", new CiVar(CiSystem.IntType, "startIndex"), new CiVar(IntType, "count")) { IsMutator = true };
 	public static readonly CiMethodGroup CollectionSort = new CiMethodGroup(CollectionSortAll, CollectionSortPart);
 	public static readonly CiMethod ListRemoveAt = new CiMethod(CiCallType.Normal, null, "RemoveAt", new CiVar(IntType, "index")) { IsMutator = true };
 	public static readonly CiMethod ListRemoveRange = new CiMethod(CiCallType.Normal, null, "RemoveRange", new CiVar(IntType, "index"), new CiVar(IntType, "count")) { IsMutator = true };
@@ -1295,7 +1295,7 @@ public class CiSystem : CiScope
 	public static readonly CiClass ConsoleClass = new CiClass(CiCallType.Static, "Console");
 	public static readonly CiArrayPtrType ReadOnlyByteArrayPtrType = new CiArrayPtrType { ElementType = ByteType, Modifier = CiToken.EndOfFile };
 	public static readonly CiArrayPtrType ReadWriteByteArrayPtrType = new CiArrayPtrType { ElementType = ByteType, Modifier = CiToken.ExclamationMark };
-	public static readonly CiMethod UTF8GetByteCount = new CiMethod(CiCallType.Normal, null, "GetByteCount", new CiVar(StringPtrType, "str"));
+	public static readonly CiMethod UTF8GetByteCount = new CiMethod(CiCallType.Normal, IntType, "GetByteCount", new CiVar(StringPtrType, "str"));
 	public static readonly CiMethod UTF8GetBytes = new CiMethod(CiCallType.Normal, null, "GetBytes", new CiVar(StringPtrType, "str"), new CiVar(ReadWriteByteArrayPtrType, "bytes"), new CiVar(IntType, "byteIndex"));
 	public static readonly CiMethod UTF8GetString = new CiMethod(CiCallType.Normal, StringStorageType, "GetString", new CiVar(ReadOnlyByteArrayPtrType, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length")); // TODO: UIntType
 	public static readonly CiClass UTF8EncodingClass = new CiClass(CiCallType.Sealed, "UTF8Encoding",
