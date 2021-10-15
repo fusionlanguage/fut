@@ -248,6 +248,16 @@ public class CiResolver : CiVisitor
 
 	delegate CiRangeType UnsignedOp(CiRangeType left, CiRangeType right);
 
+	bool IsEnumFlags(CiExpr left, CiExpr right)
+	{
+		if (!(left.Type is CiEnum enu))
+			return false;
+		if (!enu.IsFlags)
+			throw StatementException(left, "Define flags enumeration as: enum* {0}", enu);
+		Coerce(right, enu);
+		return true;
+	}
+
 	CiType BitwiseOp(CiExpr left, CiExpr right, UnsignedOp op)
 	{
 		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {
@@ -268,8 +278,8 @@ public class CiResolver : CiVisitor
 			}
 			return range;
 		}
-		if (left.Type is CiEnum enu && enu.IsFlags && right.Type == left.Type)
-			return enu;
+		if (IsEnumFlags(left, right))
+			return left.Type;
 		return GetIntegerType(left, right);
 	}
 
@@ -824,14 +834,24 @@ public class CiResolver : CiVisitor
 			return expr;
 
 		case CiToken.ModAssign:
-		case CiToken.AndAssign:
-		case CiToken.OrAssign:
-		case CiToken.XorAssign:
 		case CiToken.ShiftLeftAssign:
 		case CiToken.ShiftRightAssign:
 			CheckLValue(left);
 			Coerce(left, CiSystem.IntType);
 			Coerce(right, CiSystem.IntType);
+			expr.Left = left;
+			expr.Right = right;
+			expr.Type = left.Type;
+			return expr;
+
+		case CiToken.AndAssign:
+		case CiToken.OrAssign:
+		case CiToken.XorAssign:
+			CheckLValue(left);
+			if (!IsEnumFlags(left, right)) {
+				Coerce(left, CiSystem.IntType);
+				Coerce(right, CiSystem.IntType);
+			}
 			expr.Left = left;
 			expr.Right = right;
 			expr.Type = left.Type;
