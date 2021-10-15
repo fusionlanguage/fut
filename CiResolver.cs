@@ -638,6 +638,7 @@ public class CiResolver : CiVisitor
 						+ Convert.ToString(rightLiteral.Value, CultureInfo.InvariantCulture));
 				if (left is CiInterpolatedString || right is CiInterpolatedString)
 					return Concatenate(ToInterpolatedString(left), ToInterpolatedString(right));
+				NotSupported(expr, "String concatenation", "c", "cl");
 				type = CiSystem.StringPtrType;
 			}
 			else
