@@ -82,9 +82,6 @@ public class GenTs : GenJs
 	void Write(CiType type, bool forConst = false)
 	{
 		switch (type) {
-		case null:
-			Write("void");
-			break;
 		case CiNumericType _:
 			Write("number");
 			break;

@@ -1144,7 +1144,7 @@ public class CiResolver : CiVisitor
 
 	public override void Visit(CiReturn statement)
 	{
-		if (this.CurrentMethod.Type == null) {
+		if (this.CurrentMethod.Type == CiSystem.VoidType) {
 			if (statement.Value != null)
 				throw StatementException(statement, "Void method cannot return a value");
 		}
@@ -1303,8 +1303,6 @@ public class CiResolver : CiVisitor
 
 	CiType ToType(CiExpr expr, bool dynamic)
 	{
-		if (expr == null)
-			return null; // void
 		CiToken ptrModifier = GetPtrModifier(ref expr);
 		CiArrayType outerArray = null; // left-most in source
 		CiArrayType innerArray = null; // right-most in source
@@ -1402,7 +1400,10 @@ public class CiResolver : CiVisitor
 		foreach (CiField field in klass.Fields)
 			ResolveType(field);
 		foreach (CiMethod method in klass.Methods) {
-			ResolveType(method);
+			if (method.TypeExpr == CiSystem.VoidType)
+				method.Type = CiSystem.VoidType;
+			else
+				ResolveType(method);
 			foreach (CiVar param in method.Parameters) {
 				ResolveType(param);
 				if (param.Value != null) {
@@ -1426,7 +1427,7 @@ public class CiResolver : CiVisitor
 				this.CurrentScope = method.Parameters;
 				this.CurrentMethod = method;
 				method.Body.Accept(this);
-				if (method.Type != null && method.Body.CompletesNormally)
+				if (method.Type != CiSystem.VoidType && method.Body.CompletesNormally)
 					throw StatementException(method.Body, "Method can complete without a return value");
 				this.CurrentMethod = null;
 			}

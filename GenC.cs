@@ -350,11 +350,6 @@ public class GenC : GenCCpp
 
 	void WriteDefinition(CiType type, Action symbol, bool promote, bool space)
 	{
-		if (type == null) {
-			Write("void ");
-			symbol();
-			return;
-		}
 		if (type is CiListType) {
 			Include("glib.h");
 			Write("GArray *");
@@ -438,7 +433,7 @@ public class GenC : GenCCpp
 
 	void WriteSignature(CiMethod method, Action symbol)
 	{
-		if (method.Type == null) {
+		if (method.Type == CiSystem.VoidType) {
 			Write(method.Throws ? "bool " : "void ");
 			symbol();
 		}
@@ -1695,25 +1690,25 @@ public class GenC : GenCCpp
 	void WriteForwardThrow(Action<CiPriority> source, CiMethod throwingMethod)
 	{
 		Write("if (");
-		switch (throwingMethod.Type) {
-		case null:
+		if (throwingMethod.Type is CiNumericType) {
+			if (throwingMethod.Type is CiIntegerType) {
+				source(CiPriority.Equality);
+				Write(" == -1");
+			}
+			else {
+				IncludeMath();
+				Write("isnan(");
+				source(CiPriority.Argument);
+				Write(')');
+			}
+		}
+		else if (throwingMethod.Type == CiSystem.VoidType) {
 			Write('!');
 			source(CiPriority.Primary);
-			break;
-		case CiIntegerType _:
-			source(CiPriority.Equality);
-			Write(" == -1");
-			break;
-		case CiNumericType _:
-			IncludeMath();
-			Write("isnan(");
-			source(CiPriority.Argument);
-			Write(')');
-			break;
-		default:
+		}
+		else {
 			source(CiPriority.Equality);
 			Write(" == NULL");
-			break;
 		}
 		Write(')');
 		if (this.VarsToDestruct.Count > 0) {
@@ -1887,7 +1882,7 @@ public class GenC : GenCCpp
 			statement.Accept(this, CiPriority.Argument);
 			WriteLine(");");
 		}
-		else if (statement is CiCallExpr && statement.Type != null && statement.Type.IsDynamicPtr) {
+		else if (statement is CiCallExpr && statement.Type != CiSystem.VoidType && statement.Type.IsDynamicPtr) {
 			this.SharedRelease = true;
 			Write("CiShared_Release(");
 			statement.Accept(this, CiPriority.Argument);
@@ -2053,21 +2048,18 @@ public class GenC : GenCCpp
 
 	void WriteThrowReturnValue()
 	{
-		switch (this.CurrentMethod.Type) {
-		case null:
-			Write("false");
-			break;
-		case CiIntegerType _:
-			Write("-1");
-			break;
-		case CiNumericType _:
-			IncludeMath();
-			Write("NAN");
-			break;
-		default:
-			Write("NULL");
-			break;
+		if (this.CurrentMethod.Type is CiNumericType) {
+			if (this.CurrentMethod.Type is CiIntegerType)
+				Write("-1");
+			else {
+				IncludeMath();
+				Write("NAN");
+			}
 		}
+		else if (this.CurrentMethod.Type == CiSystem.VoidType)
+			Write("false");
+		else
+			Write("NULL");
 	}
 
 	public override void Visit(CiThrow statement)
@@ -2088,24 +2080,23 @@ public class GenC : GenCCpp
 			return false;
 		Write(statements, lastCallIndex);
 		Write("return ");
-		switch (throwingMethod.Type) {
-		case null:
+		if (throwingMethod.Type is CiNumericType) {
+			if (throwingMethod.Type is CiIntegerType) {
+				call.Accept(this, CiPriority.Equality);
+				Write(" != -1");
+			}
+			else {
+				IncludeMath();
+				Write("!isnan(");
+				call.Accept(this, CiPriority.Argument);
+				Write(')');
+			}
+		}
+		else if (throwingMethod.Type == CiSystem.VoidType)
 			call.Accept(this, CiPriority.Select);
-			break;
-		case CiIntegerType _:
-			call.Accept(this, CiPriority.Equality);
-			Write(" != -1");
-			break;
-		case CiNumericType _:
-			IncludeMath();
-			Write("!isnan(");
-			call.Accept(this, CiPriority.Argument);
-			Write(')');
-			break;
-		default:
+		else {
 			call.Accept(this, CiPriority.Equality);
 			Write(" != NULL");
-			break;
 		}
 		if (returnValue != null) {
 			Write(" ? ");
@@ -2526,7 +2517,7 @@ public class GenC : GenCCpp
 			CiStatement[] statements = block.Statements;
 			if (!block.CompletesNormally)
 				Write(statements);
-			else if (method.Throws && method.Type == null) {
+			else if (method.Throws && method.Type == CiSystem.VoidType) {
 				if (statements.Length == 0 || !TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
 					Write(statements);
 					WriteDestructAll();

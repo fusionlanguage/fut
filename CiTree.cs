@@ -1047,7 +1047,7 @@ public abstract class CiArrayType : CiType
 	public override CiSymbol TryLookup(string name)
 	{
 		if (name == "CopyTo") {
-			return new CiMethod(CiCallType.Normal, null, "CopyTo" ,
+			return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "CopyTo" ,
 				new CiVar(CiSystem.IntType, "sourceIndex"),
 				new CiVar(this.PtrOrSelf , "destinationArray"),
 				new CiVar(CiSystem.IntType, "destinationIndex"),
@@ -1060,7 +1060,7 @@ public abstract class CiArrayType : CiType
 		new CiVar(this.ElementType, "value"),
 		new CiVar(CiSystem.IntType, "startIndex"),
 		new CiVar(CiSystem.IntType, "count"));
-	protected CiMethod Fill => new CiMethod(CiCallType.Normal, null, "Fill",
+	protected CiMethod Fill => new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Fill",
 		new CiVar(this.ElementType, "value"),
 		new CiVar(CiSystem.IntType, "startIndex"),
 		new CiVar(CiSystem.IntType, "count")) { IsMutator = true };
@@ -1154,7 +1154,7 @@ public class CiArrayStorageType : CiArrayType
 				: null;
 		case "Fill":
 			return new CiMethodGroup(
-				new CiMethod(CiCallType.Normal, null, "Fill", new CiVar(this.ElementType, "value")) { IsMutator = true },
+				new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Fill", new CiVar(this.ElementType, "value")) { IsMutator = true },
 				this.Fill);
 		case "Sort":
 			return this.ElementType is CiNumericType ? CiSystem.CollectionSort : null;
@@ -1188,8 +1188,8 @@ public class CiListType : CiArrayType
 		switch (name) {
 		case "Add":
 			if (this.ElementType.IsFinal)
-				return new CiMethod(CiCallType.Normal, null, "Add") { IsMutator = true };
-			return new CiMethod(CiCallType.Normal, null, "Add", new CiVar(this.ElementType, "value")) { IsMutator = true };
+				return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Add") { IsMutator = true };
+			return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Add", new CiVar(this.ElementType, "value")) { IsMutator = true };
 		case "Clear":
 			return CiSystem.CollectionClear;
 		case "Contains":
@@ -1198,8 +1198,8 @@ public class CiListType : CiArrayType
 			return CiSystem.CollectionCount;
 		case "Insert":
 			if (this.ElementType.IsFinal)
-				return new CiMethod(CiCallType.Normal, null, "Insert", new CiVar(CiSystem.UIntType, "index")) { IsMutator = true };
-			return new CiMethod(CiCallType.Normal, null, "Insert", new CiVar(CiSystem.UIntType, "index"), new CiVar(this.ElementType, "value")) { IsMutator = true };
+				return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Insert", new CiVar(CiSystem.UIntType, "index")) { IsMutator = true };
+			return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Insert", new CiVar(CiSystem.UIntType, "index"), new CiVar(this.ElementType, "value")) { IsMutator = true };
 		case "RemoveAt":
 			return CiSystem.ListRemoveAt;
 		case "RemoveRange":
@@ -1225,7 +1225,7 @@ public class CiDictionaryType : CiType
 		switch (name) {
 		case "Add":
 			if (this.ValueType.IsFinal)
-				return new CiMethod(CiCallType.Normal, null, "Add", new CiVar(this.KeyType, "key")) { IsMutator = true };
+				return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Add", new CiVar(this.KeyType, "key")) { IsMutator = true };
 			return null;
 		case "Clear":
 			return CiSystem.CollectionClear;
@@ -1234,7 +1234,7 @@ public class CiDictionaryType : CiType
 		case "Count":
 			return CiSystem.CollectionCount;
 		case "Remove":
-			return new CiMethod(CiCallType.Normal, null, "Remove", new CiVar(this.KeyType, "key")) { IsMutator = true };
+			return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Remove", new CiVar(this.KeyType, "key")) { IsMutator = true };
 		default:
 			return null;
 		}
@@ -1254,6 +1254,7 @@ public class CiPrintableType : CiType
 
 public class CiSystem : CiScope
 {
+	public static readonly CiType VoidType = new CiType { Name = "void" };
 	public static readonly CiType NullType = new CiType { Name = "null" };
 	public static readonly CiIntegerType IntType = new CiIntegerType { Name = "int" };
 	public static readonly CiRangeType UIntType = new CiRangeType(0, int.MaxValue) { Name = "uint" };
@@ -1278,15 +1279,15 @@ public class CiSystem : CiScope
 	public static readonly CiMethod StringSubstring = new CiMethod(CiCallType.Normal, StringStorageType, "Substring", new CiVar(IntType, "offset"), new CiVar(IntType, "length") { Value = new CiLiteral(-1L) } ); // TODO: UIntType
 	public static readonly CiMember ArrayLength = new CiMember { Name = "Length", Type = UIntType };
 	public static readonly CiMember CollectionCount = new CiMember { Name = "Count", Type = UIntType };
-	public static readonly CiMethod CollectionClear = new CiMethod(CiCallType.Normal, null, "Clear") { IsMutator = true };
-	public static readonly CiMethod CollectionSortAll = new CiMethod(CiCallType.Normal, null, "Sort") { IsMutator = true };
-	public static readonly CiMethod CollectionSortPart = new CiMethod(CiCallType.Normal, null, "Sort", new CiVar(CiSystem.IntType, "startIndex"), new CiVar(IntType, "count")) { IsMutator = true };
+	public static readonly CiMethod CollectionClear = new CiMethod(CiCallType.Normal, VoidType, "Clear") { IsMutator = true };
+	public static readonly CiMethod CollectionSortAll = new CiMethod(CiCallType.Normal, VoidType, "Sort") { IsMutator = true };
+	public static readonly CiMethod CollectionSortPart = new CiMethod(CiCallType.Normal, VoidType, "Sort", new CiVar(CiSystem.IntType, "startIndex"), new CiVar(IntType, "count")) { IsMutator = true };
 	public static readonly CiMethodGroup CollectionSort = new CiMethodGroup(CollectionSortAll, CollectionSortPart);
-	public static readonly CiMethod ListRemoveAt = new CiMethod(CiCallType.Normal, null, "RemoveAt", new CiVar(IntType, "index")) { IsMutator = true };
-	public static readonly CiMethod ListRemoveRange = new CiMethod(CiCallType.Normal, null, "RemoveRange", new CiVar(IntType, "index"), new CiVar(IntType, "count")) { IsMutator = true };
+	public static readonly CiMethod ListRemoveAt = new CiMethod(CiCallType.Normal, VoidType, "RemoveAt", new CiVar(IntType, "index")) { IsMutator = true };
+	public static readonly CiMethod ListRemoveRange = new CiMethod(CiCallType.Normal, VoidType, "RemoveRange", new CiVar(IntType, "index"), new CiVar(IntType, "count")) { IsMutator = true };
 	public static readonly CiType PrintableType = new CiPrintableType { Name = "printable" };
-	public static readonly CiMethod ConsoleWrite = new CiMethod(CiCallType.Static, null, "Write", new CiVar(PrintableType, "value"));
-	public static readonly CiMethod ConsoleWriteLine = new CiMethod(CiCallType.Static, null, "WriteLine", new CiVar(PrintableType, "value") { Value = new CiLiteral("") });
+	public static readonly CiMethod ConsoleWrite = new CiMethod(CiCallType.Static, VoidType, "Write", new CiVar(PrintableType, "value"));
+	public static readonly CiMethod ConsoleWriteLine = new CiMethod(CiCallType.Static, VoidType, "WriteLine", new CiVar(PrintableType, "value") { Value = new CiLiteral("") });
 	public static readonly CiClass ConsoleBase = new CiClass(CiCallType.Static, "ConsoleBase",
 		ConsoleWrite,
 		ConsoleWriteLine);
@@ -1295,7 +1296,7 @@ public class CiSystem : CiScope
 	public static readonly CiArrayPtrType ReadOnlyByteArrayPtrType = new CiArrayPtrType { ElementType = ByteType, Modifier = CiToken.EndOfFile };
 	public static readonly CiArrayPtrType ReadWriteByteArrayPtrType = new CiArrayPtrType { ElementType = ByteType, Modifier = CiToken.ExclamationMark };
 	public static readonly CiMethod UTF8GetByteCount = new CiMethod(CiCallType.Normal, IntType, "GetByteCount", new CiVar(StringPtrType, "str"));
-	public static readonly CiMethod UTF8GetBytes = new CiMethod(CiCallType.Normal, null, "GetBytes", new CiVar(StringPtrType, "str"), new CiVar(ReadWriteByteArrayPtrType, "bytes"), new CiVar(IntType, "byteIndex"));
+	public static readonly CiMethod UTF8GetBytes = new CiMethod(CiCallType.Normal, VoidType, "GetBytes", new CiVar(StringPtrType, "str"), new CiVar(ReadWriteByteArrayPtrType, "bytes"), new CiVar(IntType, "byteIndex"));
 	public static readonly CiMethod UTF8GetString = new CiMethod(CiCallType.Normal, StringStorageType, "GetString", new CiVar(ReadOnlyByteArrayPtrType, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length")); // TODO: UIntType
 	public static readonly CiClass UTF8EncodingClass = new CiClass(CiCallType.Sealed, "UTF8Encoding",
 		UTF8GetByteCount,

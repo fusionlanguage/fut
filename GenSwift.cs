@@ -893,7 +893,8 @@ public class GenSwift : GenPySwift
 
 	public override void Visit(CiExpr statement)
 	{
-		if (statement is CiCallExpr call && statement.Type != null && !(call.Method.Left != null && call.Method.Left.Type is CiDictionaryType && call.Method.Name == "Add"))
+		if (statement is CiCallExpr call && statement.Type != CiSystem.VoidType
+			&& !(call.Method.Left != null && call.Method.Left.Type is CiDictionaryType && call.Method.Name == "Add"))
 			Write("_ = ");
 		base.Visit(statement);
 	}
@@ -1228,7 +1229,7 @@ public class GenSwift : GenPySwift
 		WriteParameters(method, true);
 		if (method.Throws)
 			Write(" throws");
-		if (method.Type != null) {
+		if (method.Type != CiSystem.VoidType) {
 			Write(" -> ");
 			Write(method.Type);
 		}

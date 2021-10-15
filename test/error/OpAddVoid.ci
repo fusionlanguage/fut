@@ -1,0 +1,12 @@
+public static class Test
+{
+	static void Foo()
+	{
+	}
+
+	public static bool Run()
+	{
+		int i = 5 + Foo(); //ERROR: Cannot coerce void to int
+		return true;
+	}
+}

@@ -225,9 +225,6 @@ public class GenCs : GenTyped
 	protected override void Write(CiType type, bool promote)
 	{
 		switch (type) {
-		case null:
-			Write("void");
-			break;
 		case CiIntegerType integer:
 			Write(GetIntegerTypeCode(integer, promote));
 			break;

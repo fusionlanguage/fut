@@ -282,9 +282,6 @@ public class GenJava : GenTyped
 	void Write(CiType type, bool promote, bool needClass)
 	{
 		switch (type) {
-		case null:
-			Write("void");
-			break;
 		case CiIntegerType integer:
 			Write(GetIntegerTypeCode(integer, promote), needClass);
 			break;
@@ -904,7 +901,7 @@ public class GenJava : GenTyped
 		WriteSignature(method, paramCount);
 		WriteLine();
 		OpenBlock();
-		if (method.Type != null)
+		if (method.Type != CiSystem.VoidType)
 			Write("return ");
 		WriteName(method);
 		Write('(');

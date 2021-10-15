@@ -811,7 +811,7 @@ public class CiParser : CiLexer
 			if (visibility == CiVisibility.Private && callType != CiCallType.Static && callType != CiCallType.Normal)
 				throw ParseException("{0} method cannot be private", callType);
 
-			CiExpr type = Eat(CiToken.Void) ? null : ParseType();
+			CiExpr type = Eat(CiToken.Void) ? CiSystem.VoidType : ParseType();
 			if (See(CiToken.LeftBrace) && type is CiCallExpr call) {
 				// constructor
 				if (call.Method.Name != klass.Name)
@@ -824,7 +824,7 @@ public class CiParser : CiLexer
 					throw ParseException("Duplicate constructor, already defined in line {0}", klass.Constructor.Line);
 				if (visibility == CiVisibility.Private)
 					visibility = CiVisibility.Internal; // TODO
-				klass.Constructor = new CiMethodBase { Line = call.Line, Documentation = doc, Visibility = visibility, Parent = klass, Name = klass.Name, Body = ParseBlock() };
+				klass.Constructor = new CiMethodBase { Line = call.Line, Documentation = doc, Visibility = visibility, Parent = klass, Type = CiSystem.VoidType, Name = klass.Name, Body = ParseBlock() };
 				continue;
 			}
 
@@ -844,7 +844,7 @@ public class CiParser : CiLexer
 				throw ParseException("Field cannot be public");
 			if (callType != CiCallType.Normal)
 				throw ParseException("Field cannot be {0}", callType);
-			if (type == null)
+			if (type == CiSystem.VoidType)
 				throw ParseException("Field cannot be void");
 			CiField field = new CiField { Line = line, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name };
 			if (Eat(CiToken.Assign))
