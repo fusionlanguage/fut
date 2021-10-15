@@ -444,8 +444,7 @@ public class CiResolver : CiVisitor
 		case CiToken.Decrement:
 			inner = Resolve(expr.Inner);
 			CheckLValue(inner);
-			if (!(inner.Type is CiNumericType))
-				throw StatementException(expr, "Argument of ++/-- must be numeric");
+			Coerce(inner, CiSystem.DoubleType);
 			range = inner.Type as CiRangeType;
 			if (range != null) {
 				int delta = expr.Op == CiToken.Increment ? 1 : -1;
@@ -458,8 +457,7 @@ public class CiResolver : CiVisitor
 			return expr;
 		case CiToken.Minus:
 			inner = Resolve(expr.Inner);
-			if (!(inner.Type is CiNumericType))
-				throw StatementException(expr, "Argument of unary minus must be numeric");
+			Coerce(inner, CiSystem.DoubleType);
 			range = inner.Type as CiRangeType;
 			if (range != null)
 				type = range = new CiRangeType(SaturatedNeg(range.Max), SaturatedNeg(range.Min));
@@ -475,8 +473,7 @@ public class CiResolver : CiVisitor
 				range = null;
 			}
 			else {
-				if (!(inner.Type is CiIntegerType))
-					throw StatementException(expr, "Argument of bitwise complement must be integer");
+				Coerce(inner, CiSystem.IntType);
 				range = inner.Type as CiRangeType;
 				if (range != null)
 					type = range = new CiRangeType(~range.Max, ~range.Min);
@@ -530,8 +527,7 @@ public class CiResolver : CiVisitor
 		case CiToken.Increment:
 		case CiToken.Decrement:
 			CheckLValue(expr.Inner);
-			if (!(expr.Inner.Type is CiNumericType))
-				throw StatementException(expr, "Argument of ++/-- must be numeric");
+			Coerce(expr.Inner, CiSystem.DoubleType);
 			expr.Type = expr.Inner.Type;
 			return expr;
 		case CiToken.ExclamationMark:
@@ -584,8 +580,8 @@ public class CiResolver : CiVisitor
 
 	void CheckComparison(CiExpr left, CiExpr right)
 	{
-		if (!(left.Type is CiNumericType) || !(right.Type is CiNumericType))
-			throw StatementException(left, "Arguments of comparison must be numeric");
+		Coerce(left, CiSystem.DoubleType);
+		Coerce(right, CiSystem.DoubleType);
 	}
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
@@ -796,9 +792,24 @@ public class CiResolver : CiVisitor
 
 		case CiToken.Assign:
 		case CiToken.AddAssign:
+			CheckLValue(left);
+			Coerce(right, left.Type);
+			expr.Left = left;
+			expr.Right = right;
+			expr.Type = left.Type;
+			return expr;
+
 		case CiToken.SubAssign:
 		case CiToken.MulAssign:
 		case CiToken.DivAssign:
+			CheckLValue(left);
+			Coerce(left, CiSystem.DoubleType);
+			Coerce(right, left.Type);
+			expr.Left = left;
+			expr.Right = right;
+			expr.Type = left.Type;
+			return expr;
+
 		case CiToken.ModAssign:
 		case CiToken.AndAssign:
 		case CiToken.OrAssign:
@@ -806,11 +817,13 @@ public class CiResolver : CiVisitor
 		case CiToken.ShiftLeftAssign:
 		case CiToken.ShiftRightAssign:
 			CheckLValue(left);
-			Coerce(right, left.Type);
+			Coerce(left, CiSystem.IntType);
+			Coerce(right, CiSystem.IntType);
 			expr.Left = left;
 			expr.Right = right;
 			expr.Type = left.Type;
 			return expr;
+
 		case CiToken.Range:
 			throw StatementException(expr, "Range within an expression");
 		default:

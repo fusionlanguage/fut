@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		float f = 5;
+		f &= 1; //ERROR: Cannot coerce float to int
+		return true;
+	}
+}
