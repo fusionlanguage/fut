@@ -1285,7 +1285,7 @@ public class CiSystem : CiScope
 	public static readonly CiMethodGroup CollectionSort = new CiMethodGroup(CollectionSortAll, CollectionSortPart);
 	public static readonly CiMethod ListRemoveAt = new CiMethod(CiCallType.Normal, null, "RemoveAt", new CiVar(IntType, "index")) { IsMutator = true };
 	public static readonly CiMethod ListRemoveRange = new CiMethod(CiCallType.Normal, null, "RemoveRange", new CiVar(IntType, "index"), new CiVar(IntType, "count")) { IsMutator = true };
-	public static readonly CiType PrintableType = new CiPrintableType();
+	public static readonly CiType PrintableType = new CiPrintableType { Name = "printable" };
 	public static readonly CiMethod ConsoleWrite = new CiMethod(CiCallType.Static, null, "Write", new CiVar(PrintableType, "value"));
 	public static readonly CiMethod ConsoleWriteLine = new CiMethod(CiCallType.Static, null, "WriteLine", new CiVar(PrintableType, "value") { Value = new CiLiteral("") });
 	public static readonly CiClass ConsoleBase = new CiClass(CiCallType.Static, "ConsoleBase",

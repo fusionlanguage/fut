@@ -1,0 +1,10 @@
+public class Test
+{
+	public static bool Run()
+	{
+		Test() o;
+		Test p = o;
+		Console.WriteLine(p); //ERROR: Cannot coerce Test to printable
+		return true;
+	}
+}
