@@ -976,7 +976,6 @@ public class CiStringPtrType : CiStringType
 
 public class CiStringStorageType : CiStringType
 {
-	public override string ToString() => "string()";
 	public override CiType PtrOrSelf => CiSystem.StringPtrType;
 	public override bool IsAssignableFrom(CiType right)
 	{
@@ -1269,7 +1268,7 @@ public class CiSystem : CiScope
 	public static readonly CiRangeType CharType = new CiRangeType(-0x80, 0xffff);
 	public static readonly CiEnum BoolType = new CiEnum { Name = "bool" };
 	public static readonly CiStringType StringPtrType = new CiStringPtrType { Name = "string" };
-	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType();
+	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType { Name = "string()" };
 	public static readonly CiMember StringLength = new CiMember { Name = "Length", Type = UIntType };
 	public static readonly CiMethod StringContains = new CiMethod(CiCallType.Normal, BoolType, "Contains", new CiVar(StringPtrType, "value"));
 	public static readonly CiMethod StringEndsWith = new CiMethod(CiCallType.Normal, BoolType, "EndsWith", new CiVar(StringPtrType, "value"));

@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		bool b = true;
+		string() s = "b=" + b; //ERROR: Cannot coerce bool to printable
+		return b;
+	}
+}

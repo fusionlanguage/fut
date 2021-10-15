@@ -628,7 +628,8 @@ public class CiResolver : CiVisitor
 					SaturatedAdd(leftRange.Max, rightRange.Max));
 			}
 			else if (left.Type is CiStringType || right.Type is CiStringType) {
-				// TODO: type check
+				Coerce(left, CiSystem.PrintableType);
+				Coerce(right, CiSystem.PrintableType);
 				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
 					return expr.ToLiteral(Convert.ToString(leftLiteral.Value, CultureInfo.InvariantCulture)
 						+ Convert.ToString(rightLiteral.Value, CultureInfo.InvariantCulture));
@@ -791,9 +792,21 @@ public class CiResolver : CiVisitor
 		}
 
 		case CiToken.Assign:
-		case CiToken.AddAssign:
 			CheckLValue(left);
 			Coerce(right, left.Type);
+			expr.Left = left;
+			expr.Right = right;
+			expr.Type = left.Type;
+			return expr;
+
+		case CiToken.AddAssign:
+			CheckLValue(left);
+			if (left.Type == CiSystem.StringStorageType)
+				Coerce(right, CiSystem.PrintableType);
+			else {
+				Coerce(left, CiSystem.DoubleType);
+				Coerce(right, left.Type);
+			}
 			expr.Left = left;
 			expr.Right = right;
 			expr.Type = left.Type;
