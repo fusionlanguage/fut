@@ -433,8 +433,9 @@ public class GenC : GenCCpp
 
 	void WriteSignature(CiMethod method, Action symbol)
 	{
-		if (method.Type == CiSystem.VoidType) {
-			Write(method.Throws ? "bool " : "void ");
+		if (method.Type == CiSystem.VoidType && method.Throws) {
+			IncludeStdBool();
+			Write("bool ");
 			symbol();
 		}
 		else
