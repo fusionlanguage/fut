@@ -2,6 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		throw new Test(); //ERROR: The argument of 'throw' must be a string
+		string(5) s = "foo"; //ERROR: Expected empty parentheses for storage type
+		return true;
 	}
 }

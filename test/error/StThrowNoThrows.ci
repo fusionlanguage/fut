@@ -1,0 +1,12 @@
+public static class Test
+{
+	static void Foo()
+	{
+		throw "Exception"; //ERROR: 'throw' in a method not marked 'throws'
+	}
+
+	public static bool Run()
+	{
+		return true;
+	}
+}

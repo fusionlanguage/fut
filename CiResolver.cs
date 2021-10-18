@@ -1178,6 +1178,8 @@ public class CiResolver : CiVisitor
 
 	public override void Visit(CiThrow statement)
 	{
+		if (!this.CurrentMethod.Throws)
+			throw StatementException(statement, "'throw' in a method not marked 'throws'");
 		statement.Message = Resolve(statement.Message);
 		if (!(statement.Message.Type is CiStringType))
 			throw StatementException(statement, "The argument of 'throw' must be a string");
