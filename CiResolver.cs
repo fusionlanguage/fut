@@ -1399,8 +1399,17 @@ public class CiResolver : CiVisitor
 	void ResolveTypes(CiClass klass)
 	{
 		this.CurrentScope = klass;
-		foreach (CiField field in klass.Fields)
-			ResolveType(field);
+		foreach (CiField field in klass.Fields) {
+			CiType type = ResolveType(field);
+			if (field.Value != null) {
+				field.Value = FoldConst(field.Value);
+				if (!field.IsAssignableStorage) {
+					if (type is CiArrayStorageType array)
+						type = array.ElementType;
+					Coerce(field.Value, type);
+				}
+			}
+		}
 		foreach (CiMethod method in klass.Methods) {
 			if (method.TypeExpr == CiSystem.VoidType)
 				method.Type = CiSystem.VoidType;
