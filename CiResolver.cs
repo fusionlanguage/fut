@@ -919,6 +919,13 @@ public class CiResolver : CiVisitor
 		if (i < arguments.Length)
 			throw StatementException(arguments[i], "Too many arguments");
 
+		if (method.Throws) {
+			if (this.CurrentMethod == null)
+				throw StatementException(expr, "Cannot call method {0} here because it is marked 'throws'", method.Name);
+			if (!this.CurrentMethod.Throws)
+				throw StatementException(expr, "Method marked 'throws' called from a method not marked 'throws'");
+		}
+
 		symbol.Symbol = method;
 
 		if (method.CallType == CiCallType.Static

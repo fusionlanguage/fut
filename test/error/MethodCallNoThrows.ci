@@ -1,0 +1,17 @@
+public static class Test
+{
+	static void Foo()
+	{
+		Bar(); //ERROR: Method marked 'throws' called from a method not marked 'throws'
+	}
+
+	static void Bar() throws
+	{
+		throw "Exception";
+	}
+
+	public static bool Run()
+	{
+		return true;
+	}
+}
