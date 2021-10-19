@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		string homeDir = Environment.GetEnvironmentVariable("HOME"); //FAIL: ts TODO; cl
+		string homeDir = Environment.GetEnvironmentVariable("HOME"); //TODO: cl
 		return homeDir != null
 			&& Environment.GetEnvironmentVariable("NOT_EXISTING_ENV_VAR") == null;
 	}
