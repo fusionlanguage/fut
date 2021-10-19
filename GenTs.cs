@@ -92,11 +92,11 @@ public class GenTs : GenJs
 			Write(enu == CiSystem.BoolType ? "boolean" : enu.Name);
 			break;
 		case CiDictionaryType dict:
-			Write("Record<");
+			Write("Partial<Record<");
 			Write(dict.KeyType, forConst);
 			Write(", ");
 			Write(dict.ValueType, forConst);
-			Write('>');
+			Write(">>");
 			break;
 		case CiListType list:
 			Write(list.ElementType, forConst);
