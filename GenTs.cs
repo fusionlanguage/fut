@@ -1,6 +1,6 @@
 // GenTs.cs - TypeScript code generator
 //
-// Copyright (C) 2020       Andy Edwards
+// Copyright (C) 2020-2021  Andy Edwards
 // Copyright (C) 2020-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
@@ -27,7 +27,7 @@ namespace Foxoft.Ci
 
 public class GenTs : GenJs
 {
-	protected readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
+	readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
 
 	// GenFullCode = false: only generate TypeScript declarations (.d.ts files)
 	// GenFullCode = true: generate full TypeScript code
@@ -72,7 +72,7 @@ public class GenTs : GenJs
 		Write(value.Type);
 	}
 
-	protected void WriteTypeAndName(CiConst konst)
+	void WriteTypeAndName(CiConst konst)
 	{
 		WriteName(konst);
 		Write(": ");
@@ -80,13 +80,6 @@ public class GenTs : GenJs
 	}
 
 	void Write(CiType type, bool forConst = false)
-	{
-		Write0(type, forConst);
-		if (type.IsPointer)
-			Write(" | null");
-	}
-
-	void Write0(CiType type, bool forConst)
 	{
 		switch (type) {
 		case CiNumericType _:
@@ -116,7 +109,7 @@ public class GenTs : GenJs
 		case CiArrayType array:
 			CiType elementType = array.ElementType;
 			if (elementType is CiNumericType number) {
-				if (!(array is CiArrayStorageType)) {
+				if (array is CiArrayPtrType) {
 					if (array.IsReadonlyPtr)
 						Write("readonly ");
 					Write("number[] | ");
@@ -149,6 +142,8 @@ public class GenTs : GenJs
 				Write(type.Name);
 			break;
 		}
+		if (type.IsPointer)
+			Write(" | null");
 	}
 
 	void Write(CiVisibility visibility)
@@ -263,11 +258,8 @@ public class GenTs : GenJs
 		OpenClass(klass, "", " extends ");
 
 		CiMethodBase constructor = klass.Constructor;
-		if (klass.CallType == CiCallType.Static) {
-			if (constructor == null)
-				constructor = new CiMethodBase();
-			constructor.Visibility = CiVisibility.Private;
-		}
+		if (klass.CallType == CiCallType.Static)
+			constructor = new CiMethodBase { Visibility = CiVisibility.Private };
 
 		if (constructor != null) {
 			Write(constructor.Documentation);
