@@ -771,7 +771,7 @@ public class CiType : CiScope
 {
 	public virtual string ArrayString => "";
 	public virtual bool IsAssignableFrom(CiType right) => this == right;
-	public virtual bool isPointer => false;
+	public virtual bool IsPointer => false;
 	public virtual CiType BaseType => this;
 	public virtual CiType StorageType => this;
 	public virtual CiType PtrOrSelf => this;
@@ -969,7 +969,7 @@ public abstract class CiStringType : CiType
 
 public class CiStringPtrType : CiStringType
 {
-	public override bool isPointer => true;
+	public override bool IsPointer => true;
 	public override bool IsAssignableFrom(CiType right)
 	{
 		return right == CiSystem.NullType || right is CiStringType;
@@ -987,7 +987,7 @@ public class CiStringStorageType : CiStringType
 
 public class CiClassPtrType : CiType
 {
-	public override bool isPointer => true;
+	public override bool IsPointer => true;
 	public CiClass Class;
 	public CiToken Modifier;
 	public override string ToString()
@@ -1071,7 +1071,7 @@ public abstract class CiArrayType : CiType
 
 public class CiArrayPtrType : CiArrayType
 {
-	public override bool isPointer => true;
+	public override bool IsPointer => true;
 	public CiToken Modifier;
 
 	public override string ArrayString
