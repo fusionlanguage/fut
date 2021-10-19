@@ -5,7 +5,7 @@
   "repository": "https://github.com/pfusik/cito.git",
   "author": "Piotr Fusik",
   "dependencies": {
-    "ts-node": "^9.1.1",
-    "typescript": "^4.3.5"
+    "ts-node": "^10.3.0",
+    "typescript": "^4.4.4"
   }
 }

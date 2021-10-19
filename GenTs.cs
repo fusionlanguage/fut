@@ -81,6 +81,14 @@ public class GenTs : GenJs
 
 	void Write(CiType type, bool forConst = false)
 	{
+		Write0(type, forConst);
+		if (type != null && type.isPointer) {
+			Write(" | null");
+		}
+	}
+
+	void Write0(CiType type, bool forConst)
+	{
 		switch (type) {
 		case CiNumericType _:
 			Write("number");
@@ -99,7 +107,11 @@ public class GenTs : GenJs
 			Write(">>");
 			break;
 		case CiListType list:
+			if (list.ElementType.isPointer)
+				Write("(");
 			Write(list.ElementType, forConst);
+			if (list.ElementType.isPointer)
+				Write(")");
 			Write("[]");
 			break;
 		case CiArrayType array:
@@ -120,10 +132,10 @@ public class GenTs : GenJs
 			else {
 				if (forConst || array.IsReadonlyPtr)
 					Write("readonly ");
-				if (elementType is CiArrayType)
+				if (elementType.isPointer)
 					Write('(');
 				Write(elementType, forConst);
-				if (elementType is CiArrayType)
+				if (elementType.isPointer)
 					Write(')');
 				Write("[]");
 			}
