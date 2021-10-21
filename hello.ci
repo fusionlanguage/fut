@@ -45,7 +45,7 @@ public static class HelloCi
 	}
 
 	/// Converts an unsigned integer from its decimal representation.
-	public static int ParseUnsignedInt(string s)
+	public static int ParseUnsignedInt(string s) throws
 	{
 		if (s == null || s.Length == 0)
 			throw "null or empty argument";
