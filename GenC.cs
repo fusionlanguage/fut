@@ -2807,9 +2807,10 @@ public class GenC : GenCCpp
 		if (resources.Count == 0)
 			return;
 		WriteLine();
-		IncludeStdInt();
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
-			Write("static const uint8_t ");
+			Write("static const ");
+			Write(TypeCode.Byte);
+			Write(' ');
 			WriteResource(name, -1);
 			Write('[');
 			Write(resources[name].Length);
