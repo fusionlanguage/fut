@@ -2807,7 +2807,7 @@ public class GenC : GenCCpp
 		if (resources.Count == 0)
 			return;
 		WriteLine();
-		Include("stdint.h");
+		IncludeStdInt();
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
 			Write("static const uint8_t ");
 			WriteResource(name, -1);

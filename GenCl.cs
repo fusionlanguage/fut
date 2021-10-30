@@ -28,6 +28,10 @@ public class GenCl : GenC
 	bool StringEquals;
 	bool StringLength;
 
+	protected override void IncludeStdInt()
+	{
+	}
+
 	protected override void IncludeStdBool()
 	{
 	}
