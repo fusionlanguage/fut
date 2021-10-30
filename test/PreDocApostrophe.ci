@@ -1,0 +1,21 @@
+public static class Test
+{
+	public static bool Run()
+	{
+#if false
+		/// let's try this
+		return false;
+#endif
+#if true
+		return true;
+#elif true
+		/// don't do this
+#else
+		/// don't do this
+#endif
+#if true
+#else
+		/// don't do this
+#endif
+	}
+}

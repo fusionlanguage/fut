@@ -140,6 +140,7 @@ public class CiLexer
 	public readonly HashSet<string> PreSymbols = new HashSet<string>();
 	bool AtLineStart = true;
 	bool LineMode = false;
+	bool EnableDocComments = true;
 	protected bool ParsingTypeArg = false;
 	readonly Stack<PreDirectiveClass> PreStack = new Stack<PreDirectiveClass>();
 	static readonly object BoxedFalse = false;
@@ -437,7 +438,7 @@ public class CiLexer
 			case '/':
 				if (EatChar('/')) {
 					c = ReadChar();
-					if (c == '/') {
+					if (c == '/' && this.EnableDocComments) {
 						while (EatChar(' '));
 						return CiToken.DocComment;
 					}
@@ -667,6 +668,7 @@ public class CiLexer
 
 	void SkipUntilPreMet()
 	{
+		this.EnableDocComments = false;
 		for (;;) {
 			// we are in a conditional that wasn't met yet
 			switch (ReadPreToken()) {
@@ -726,6 +728,7 @@ public class CiLexer
 	{
 		for (;;) {
 			// we are in no conditionals or in all met
+			this.EnableDocComments = true;
 			CiToken token = ReadPreToken();
 			switch (token) {
 			case CiToken.EndOfFile:
@@ -733,21 +736,21 @@ public class CiLexer
 					throw ParseException("Expected #endif, got end of file");
 				return CiToken.EndOfFile;
 			case CiToken.PreIf:
-				if (ParsePreExpr()) {
+				if (ParsePreExpr())
 					this.PreStack.Push(PreDirectiveClass.IfOrElIf);
-					break;
-				}
 				else
 					SkipUntilPreMet();
 				break;
 			case CiToken.PreElIf:
 				PopPreStack("#elif");
 				ParsePreExpr();
+				this.EnableDocComments = false;
 				SkipUntilPreEndIf(false);
 				break;
 			case CiToken.PreElse:
 				PopPreStack("#else");
 				ExpectEndOfLine("#else");
+				this.EnableDocComments = false;
 				SkipUntilPreEndIf(true);
 				break;
 			case CiToken.PreEndIf:
