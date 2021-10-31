@@ -249,24 +249,16 @@ public abstract class GenCCpp : GenTyped
 
 	public override void Visit(CiSwitch statement)
 	{
-		CiExpr value = statement.Value;
-		if (!(value.Type is CiStringType)) {
+		if (!(statement.Value.Type is CiStringType)) {
 			base.Visit(statement);
 			return;
-		}
-
-		if (value is CiSymbolReference symbol && symbol.Left == null) {
-			// local variable
-		}
-		else {
-			throw new NotImplementedException(); // TODO
 		}
 
 		string op = "if (";
 		foreach (CiCase kase in statement.Cases) {
 			foreach (CiExpr caseValue in kase.Values) {
 				Write(op);
-				WriteEqualString(value, caseValue, CiPriority.CondOr, false);
+				WriteEqualString(statement.Value, caseValue, CiPriority.CondOr, false); // FIXME: side effect
 				op = " || ";
 			}
 			Write(')');

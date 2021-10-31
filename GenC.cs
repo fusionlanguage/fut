@@ -1050,28 +1050,50 @@ public class GenC : GenCCpp
 	protected override void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not)
 	{
 		Include("string.h");
-		if (parent > CiPriority.Equality)
-			Write('(');
+		CiPriority child = CiPriority.Equality;
 		if (IsStringSubstring(left, out bool _, out CiExpr ptr, out CiExpr offset, out CiExpr lengthExpr)
-		 && lengthExpr is CiLiteral literalLength
 		 && right is CiLiteral literal) {
-			long length = (long) literalLength.Value;
 			string rightValue = (string) literal.Value;
-			if (length != rightValue.Length)
-				throw new NotImplementedException(); // TODO: evaluate compile-time
+			if (lengthExpr is CiLiteral leftLength) {
+				if ((long) leftLength.Value != rightValue.Length)
+					throw new NotImplementedException(); // TODO: evaluate compile-time
+				if (parent > CiPriority.Equality)
+					Write('(');
+			}
+			else if (not) {
+				child = CiPriority.CondOr;
+				if (parent > CiPriority.CondOr)
+					Write('(');
+				lengthExpr.Accept(this, CiPriority.Equality);
+				Write(" != ");
+				Write(rightValue.Length);
+				Write(" || ");
+			}
+			else {
+				child = CiPriority.CondAnd;
+				if (parent > CiPriority.CondAnd)
+					Write('(');
+				lengthExpr.Accept(this, CiPriority.Equality);
+				Write(" == ");
+				Write(rightValue.Length);
+				Write(" && ");
+			}
 			Write("memcmp(");
 			WriteArrayPtrAdd(ptr, offset);
 			Write(", ");
-			right.Accept(this, CiPriority.Argument);
+			WriteLiteral(rightValue);
 			Write(", ");
-			Write(length);
+			Write(rightValue.Length);
 			Write(')');
 		}
-		else
+		else {
+			if (parent > CiPriority.Equality)
+				Write('(');
 			WriteCall("strcmp", left, right);
+		}
 		Write(GetEqOp(not));
 		Write('0');
-		if (parent > CiPriority.Equality)
+		if (parent > child)
 			Write(')');
 	}
 
