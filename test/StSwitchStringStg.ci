@@ -1,0 +1,16 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		string() s = "bar"; //FAIL: cl
+		switch (s) {
+		case "foo":
+		case "quux":
+			return false;
+		case "bar":
+			return true;
+		default:
+			return false;
+		}
+	}
+}

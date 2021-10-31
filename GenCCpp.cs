@@ -96,6 +96,8 @@ public abstract class GenCCpp : GenTyped
 			base.WriteVarInit(def);
 	}
 
+	protected abstract void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not);
+
 	static bool IsPtrTo(CiExpr ptr, CiExpr other)
 	{
 		return (ptr.Type is CiClassPtrType || ptr.Type is CiArrayPtrType) && ptr.Type.IsAssignableFrom(other.Type);
@@ -230,6 +232,56 @@ public abstract class GenCCpp : GenTyped
 			statement.Message.Accept(this, CiPriority.Argument);
 		}
 		WriteLine(");");
+	}
+
+	void WriteIfCaseBody(CiStatement[] body)
+	{
+		int length = CiSwitch.LengthWithoutTrailingBreak(body);
+		/* TODO: VarsToDestruct
+		if (length == 1) {
+			WriteLine();
+			this.Indent++;
+			body[0].Accept(this);
+			this.Indent--;
+		}
+		else */ {
+			Write(' ');
+			OpenBlock();
+			Write(body, length);
+			CloseBlock();
+		}
+	}
+
+	public override void Visit(CiSwitch statement)
+	{
+		CiExpr value = statement.Value;
+		if (!(value.Type is CiStringType)) {
+			base.Visit(statement);
+			return;
+		}
+
+		if (value is CiSymbolReference symbol && symbol.Left == null) {
+			// local variable
+		}
+		else {
+			throw new NotImplementedException(); // TODO
+		}
+
+		string op = "if (";
+		foreach (CiCase kase in statement.Cases) {
+			foreach (CiExpr caseValue in kase.Values) {
+				Write(op);
+				WriteEqualString(value, caseValue, CiPriority.CondOr, false);
+				op = " || ";
+			}
+			Write(')');
+			WriteIfCaseBody(kase.Body);
+			op = "else if (";
+		}
+		if (statement.HasDefault) {
+			Write("else");
+			WriteIfCaseBody(statement.DefaultBody);
+		}
 	}
 }
 

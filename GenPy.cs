@@ -909,14 +909,6 @@ public class GenPy : GenPySwift
 
 	static bool IsVarReference(CiExpr expr) => expr is CiSymbolReference symbol && symbol.Symbol is CiVar;
 
-	static int LengthWithoutTrailingBreak(CiStatement[] body)
-	{
-		int length = body.Length;
-		if (length > 0 && body[length - 1] is CiBreak)
-			length--;
-		return length;
-	}
-
 	static bool HasBreak(CiStatement statement)
 	{
 		switch (statement) {
@@ -933,7 +925,7 @@ public class GenPy : GenPySwift
 
 	static bool HasEarlyBreak(CiStatement[] body)
 	{
-		int length = LengthWithoutTrailingBreak(body);
+		int length = CiSwitch.LengthWithoutTrailingBreak(body);
 		for (int i = 0; i < length; i++) {
 			if (HasBreak(body[i]))
 				return true;
@@ -944,7 +936,7 @@ public class GenPy : GenPySwift
 	void WritePyCaseBody(CiStatement[] body)
 	{
 		OpenChild();
-		Write(body, LengthWithoutTrailingBreak(body));
+		Write(body, CiSwitch.LengthWithoutTrailingBreak(body));
 		CloseChild();
 	}
 
@@ -989,7 +981,7 @@ public class GenPy : GenPySwift
 			WritePyCaseBody(kase.Body);
 			op = "elif ";
 		}
-		if (statement.DefaultBody != null && LengthWithoutTrailingBreak(statement.DefaultBody) > 0) {
+		if (statement.HasDefault) {
 			Write("else");
 			WritePyCaseBody(statement.DefaultBody);
 		}

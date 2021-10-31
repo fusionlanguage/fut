@@ -885,6 +885,13 @@ public class GenCpp : GenCCpp
 		base.WriteCoercedInternal(type, expr, parent);
 	}
 
+	protected override void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not)
+	{
+		left.Accept(this, CiPriority.Equality);
+		Write(GetEqOp(not));
+		right.Accept(this, CiPriority.Equality);
+	}
+
 	protected override void WriteStringLength(CiExpr expr)
 	{
 		StartStringMethod(expr);

@@ -1047,33 +1047,38 @@ public class GenC : GenCCpp
 			base.WriteCoercedInternal(type, expr, parent);
 	}
 
+	protected override void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not)
+	{
+		Include("string.h");
+		if (parent > CiPriority.Equality)
+			Write('(');
+		if (IsStringSubstring(left, out bool _, out CiExpr ptr, out CiExpr offset, out CiExpr lengthExpr)
+		 && lengthExpr is CiLiteral literalLength
+		 && right is CiLiteral literal) {
+			long length = (long) literalLength.Value;
+			string rightValue = (string) literal.Value;
+			if (length != rightValue.Length)
+				throw new NotImplementedException(); // TODO: evaluate compile-time
+			Write("memcmp(");
+			WriteArrayPtrAdd(ptr, offset);
+			Write(", ");
+			right.Accept(this, CiPriority.Argument);
+			Write(", ");
+			Write(length);
+			Write(')');
+		}
+		else
+			WriteCall("strcmp", left, right);
+		Write(GetEqOp(not));
+		Write('0');
+		if (parent > CiPriority.Equality)
+			Write(')');
+	}
+
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
-		if ((expr.Left.Type is CiStringType && expr.Right.Type != CiSystem.NullType)
-		 || (expr.Right.Type is CiStringType && expr.Left.Type != CiSystem.NullType)) {
-			Include("string.h");
-			if (parent > CiPriority.Equality)
-				Write('(');
-			if (IsStringSubstring(expr.Left, out bool _, out CiExpr ptr, out CiExpr offset, out CiExpr lengthExpr) && lengthExpr is CiLiteral literalLength && expr.Right is CiLiteral literal) {
-				long length = (long) literalLength.Value;
-				string right = (string) literal.Value;
-				if (length != right.Length)
-					throw new NotImplementedException(); // TODO: evaluate compile-time
-				Write("memcmp(");
-				WriteArrayPtrAdd(ptr, offset);
-				Write(", ");
-				expr.Right.Accept(this, CiPriority.Argument);
-				Write(", ");
-				Write(length);
-				Write(')');
-			}
-			else
-				WriteCall("strcmp", expr.Left, expr.Right);
-			Write(GetEqOp(not));
-			Write('0');
-			if (parent > CiPriority.Equality)
-				Write(')');
-		}
+		if (expr.Left.Type is CiStringType && expr.Right.Type is CiStringType)
+			WriteEqualString(expr.Left, expr.Right, parent, not);
 		else
 			base.WriteEqual(expr, parent, not);
 	}

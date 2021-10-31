@@ -94,21 +94,16 @@ public class GenCl : GenC
 		}
 	}
 
-	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+	protected override void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not)
 	{
-		if ((expr.Left.Type is CiStringType && expr.Right.Type != CiSystem.NullType)
-		 || (expr.Right.Type is CiStringType && expr.Left.Type != CiSystem.NullType)) {
-			this.StringEquals = true;
-			if (not)
-				Write('!');
-			Write("streq(");
-			expr.Left.Accept(this, CiPriority.Argument);
-			Write(", ");
-			expr.Right.Accept(this, CiPriority.Argument);
-			Write(')');
-		}
-		else
-			base.WriteEqual(expr, parent, not);
+		this.StringEquals = true;
+		if (not)
+			Write('!');
+		Write("streq(");
+		left.Accept(this, CiPriority.Argument);
+		Write(", ");
+		right.Accept(this, CiPriority.Argument);
+		Write(')');
 	}
 
 	protected override void WriteStringLength(CiExpr expr)
