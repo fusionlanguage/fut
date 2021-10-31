@@ -237,14 +237,9 @@ public abstract class GenCCpp : GenTyped
 	void WriteIfCaseBody(CiStatement[] body)
 	{
 		int length = CiSwitch.LengthWithoutTrailingBreak(body);
-		/* TODO: VarsToDestruct
-		if (length == 1) {
-			WriteLine();
-			this.Indent++;
-			body[0].Accept(this);
-			this.Indent--;
-		}
-		else */ {
+		if (length == 1)
+			WriteChild(body[0]);
+		else {
 			Write(' ');
 			OpenBlock();
 			Write(body, length);
