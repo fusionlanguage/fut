@@ -49,9 +49,9 @@ public class Test
 		Two(p, 5);
 
 		o.SetArray(new int[2]);
-		int[]# a = new int[3]; //FAIL: cpp - not supported by Xcode
+		int[]# a = new int[3]; //FAIL: cpp - should work with C++20
 		o.SetArray(a);
-		o.Array[2] = 15; //FAIL: cpp - AddressSanitizer: heap-buffer-overflow; buggy implementation of C++20?
+		o.Array[2] = 15;
 		o.SetArray(ArrayIdentity(a));
 		ArrayIdentity(a);
 		DiscardArray(a);

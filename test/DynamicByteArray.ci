@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		byte[]# a = new byte[3]; //FAIL: cl; cpp - not supported by Xcode
+		byte[]# a = new byte[3]; //FAIL: cpp - should work with C++20; cl
 		a[0] = 5;
 		a[1] = 10;
 		a[2] = 15;

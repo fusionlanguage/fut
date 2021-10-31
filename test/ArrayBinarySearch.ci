@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		int[4] a;
-		byte[]# d = new byte[4]; //FAIL: cl
+		byte[]# d = new byte[4]; //FAIL: cpp - should work with C++20; cl
 		d[0] = a[0] = 2;
 		d[1] = a[1] = 3;
 		d[2] = a[2] = 5;

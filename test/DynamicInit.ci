@@ -7,7 +7,7 @@ public class Test
 		Test# p = new Test(); //FAIL: cl
 		Test# q = p;
 
-		int[]# a = new int[2]; //FAIL: cpp - not supported by Xcode
+		int[]# a = new int[2]; //FAIL: cpp - should work with C++20
 		a[1] = 10;
 		a[0] = 5;
 		int[]# b = a;
