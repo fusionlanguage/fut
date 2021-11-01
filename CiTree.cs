@@ -695,6 +695,7 @@ public class CiSwitch : CiCondCompletionStatement
 	public CiCase[] Cases;
 	public CiStatement[] DefaultBody;
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
+
 	public static int LengthWithoutTrailingBreak(CiStatement[] body)
 	{
 		int length = body.Length;
@@ -703,6 +704,30 @@ public class CiSwitch : CiCondCompletionStatement
 		return length;
 	}
 	public bool HasDefault => this.DefaultBody != null && LengthWithoutTrailingBreak(this.DefaultBody) > 0;
+
+	static bool HasBreak(CiStatement statement)
+	{
+		switch (statement) {
+		case CiBreak _:
+			return true;
+		case CiIf ifStatement:
+			return HasBreak(ifStatement.OnTrue) || (ifStatement.OnFalse != null && HasBreak(ifStatement.OnFalse));
+		case CiBlock block:
+			return block.Statements.Any(HasBreak);
+		default:
+			return false;
+		}
+	}
+
+	public static bool HasEarlyBreak(CiStatement[] body)
+	{
+		int length = LengthWithoutTrailingBreak(body);
+		for (int i = 0; i < length; i++) {
+			if (HasBreak(body[i]))
+				return true;
+		}
+		return false;
+	}
 }
 
 public class CiThrow : CiStatement

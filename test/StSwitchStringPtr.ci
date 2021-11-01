@@ -8,9 +8,12 @@ public static class Test
 		case "quux":
 			return false;
 		case "bar":
+			if (s[0] == 'X')
+				break;
 			return true;
 		default:
 			return false;
 		}
+		return false;
 	}
 }
