@@ -315,10 +315,12 @@ public class GenPy : GenPySwift
 			if (!floorDiv || parent > CiPriority.Or)
 				Write(')');
 			return expr;
+
 		case CiToken.CondAnd:
 			return Write(expr, parent > CiPriority.CondAnd || parent == CiPriority.CondOr, CiPriority.CondAnd, " and ", CiPriority.CondAnd);
 		case CiToken.CondOr:
 			return Write(expr, parent, CiPriority.CondOr, " or ");
+
 		case CiToken.Assign:
 			if (this.AtLineStart) {
 				for (CiExpr right = expr.Right; right is CiBinaryExpr rightBinary && rightBinary.IsAssign; right = rightBinary.Right) {
@@ -361,6 +363,15 @@ public class GenPy : GenPySwift
 				right.Accept(this, CiPriority.Argument);
 			}
 			return expr;
+
+		case CiToken.Is:
+			Write("isinstance(");
+			expr.Left.Accept(this, CiPriority.Argument);
+			Write(", ");
+			WriteName((CiClass) expr.Right);
+			Write(')');
+			return expr;
+
 		default:
 			return base.Visit(expr, parent);
 		}

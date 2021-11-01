@@ -1,6 +1,6 @@
 // CiParser.cs - Ci parser
 //
-// Copyright (C) 2011-2020  Piotr Fusik
+// Copyright (C) 2011-2021  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -287,6 +287,8 @@ public class CiParser : CiLexer
 			case CiToken.GreaterOrEqual:
 				left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseShiftExpr() };
 				break;
+			case CiToken.Is:
+				return new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseSymbolReference(null) };
 			default:
 				return left;
 			}

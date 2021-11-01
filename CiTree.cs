@@ -868,10 +868,12 @@ public class CiClass : CiContainerType
 	public override bool IsFinal => this != CiSystem.MatchClass;
 	public override bool IsClass(CiClass klass) => this == klass;
 	public bool AddsVirtualMethods => this.Methods.Any(method => method.IsAbstractOrVirtual);
+
 	public CiClass()
 	{
 		this.Dict.Add("this", new CiVar(this.PtrOrSelf, "this")); // shadows "this" in base class
 	}
+
 	public CiClass(CiCallType callType, string name, params CiMethod[] methods)
 	{
 		this.CallType = callType;
@@ -879,7 +881,18 @@ public class CiClass : CiContainerType
 		this.Methods = methods;
 		AddRange(methods);
 	}
+
 	public CiSymbol TryShallowLookup(string name) => (CiSymbol) this.Dict[name];
+
+	public bool IsSameOrBaseOf(CiClass derived)
+	{
+		while (derived != this) {
+			derived = derived.Parent as CiClass;
+			if (derived == null)
+				return false;
+		}
+		return true;
+	}
 }
 
 public abstract class CiNumericType : CiType
@@ -1073,11 +1086,8 @@ public class CiClassPtrType : CiType
 				return false;
 			klass = ptr.Class;
 		}
-		while (klass != Class) {
-			klass = klass.Parent as CiClass;
-			if (klass == null)
-				return false;
-		}
+		if (!Class.IsSameOrBaseOf(klass))
+			return false;
 		// TODO: modifiers
 		return true;
 	}

@@ -1079,6 +1079,8 @@ public abstract class GenBase : CiVisitor
 		WriteIndexing(expr.Left, expr.Right);
 	}
 
+	protected virtual string IsOperator => " is ";
+
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
@@ -1154,6 +1156,16 @@ public abstract class GenBase : CiVisitor
 				WriteCharAt(expr);
 			else
 				WriteIndexing(expr, parent);
+			return expr;
+
+		case CiToken.Is:
+			if (parent > CiPriority.Rel)
+				Write('(');
+			expr.Left.Accept(this, CiPriority.Rel);
+			Write(IsOperator);
+			WriteName((CiClass) expr.Right);
+			if (parent > CiPriority.Rel)
+				Write(')');
 			return expr;
 
 		default:

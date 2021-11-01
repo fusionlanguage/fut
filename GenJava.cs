@@ -737,6 +737,8 @@ public class GenJava : GenTyped
 			base.WriteAssign(expr, parent);
 	}
 
+	protected override string IsOperator => " instanceof ";
+
 	protected override void WriteVar(CiNamedValue def)
 	{
 		if (def.Type.IsFinal && !def.IsAssignableStorage)

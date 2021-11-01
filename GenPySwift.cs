@@ -161,6 +161,8 @@ public abstract class GenPySwift : GenBase
 			return seen;
 		case CiBinaryExpr binary:
 			seen = VisitXcrement<T>(binary.Left, write);
+			if (binary.Op == CiToken.Is)
+				return seen;
 			if (binary.Op == CiToken.CondAnd || binary.Op == CiToken.CondOr)
 				Trace.Assert(!VisitXcrement<T>(binary.Right, false));
 			else

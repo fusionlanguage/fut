@@ -98,6 +98,7 @@ public enum CiToken
 	If,
 	In,
 	Internal,
+	Is,
 	List,
 	Lock,
 	Native,
@@ -551,6 +552,7 @@ public class CiLexer
 				case "if": return CiToken.If;
 				case "in": return CiToken.In;
 				case "internal": return CiToken.Internal;
+				case "is": return CiToken.Is;
 				case "List": return CiToken.List;
 				case "lock": return CiToken.Lock;
 				case "native": return CiToken.Native;

@@ -857,6 +857,21 @@ public class CiResolver : CiVisitor
 			expr.Type = left.Type;
 			return expr;
 
+		case CiToken.Is:
+			if (!(left.Type is CiClassPtrType ptr))
+				throw StatementException(expr, "Left hand side of the 'is' operator must be an object reference");
+			if (!(right is CiSymbolReference symbol) || !(symbol.Symbol is CiClass klass))
+				throw StatementException(expr, "Right hand side of the 'is' operator must be a class name");
+			if (ptr.Class == klass)
+				throw StatementException(expr, "{0} is {1}, the 'is' operator would always return 'true'", left, ptr);
+			if (!ptr.Class.IsSameOrBaseOf(klass))
+				throw StatementException(expr, "{0} is not base class of {1}, the 'is' operator would always return 'false'", ptr, klass.Name);
+			NotSupported(expr, "'is' operator", "c", "cl");
+			expr.Left = left;
+			expr.Right = klass;
+			expr.Type = CiSystem.BoolType;
+			return expr;
+
 		case CiToken.Range:
 			throw StatementException(expr, "Range within an expression");
 		default:

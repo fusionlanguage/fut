@@ -945,6 +945,13 @@ public class GenCpp : GenCCpp
 		case CiToken.Assign when expr.Left.Type == CiSystem.StringStorageType && parent == CiPriority.Statement && IsTrimSubstring(expr) is CiExpr length:
 			WriteCall(expr.Left, "resize", length);
 			return expr;
+		case CiToken.Is:
+			Write("dynamic_cast<const ");
+			Write(((CiClass) expr.Right).Name);
+			Write(" *>(");
+			expr.Left.Accept(this, CiPriority.Argument);
+			Write(')');
+			return expr;
 		default:
 			break;
 		}

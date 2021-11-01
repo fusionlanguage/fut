@@ -199,7 +199,6 @@ public class Test
 		bool inout = true;
 		bool instanceof = true;
 		bool interface = true;
-		bool is = true;
 		bool kernel = true;
 		bool lambda = true;
 		bool len = s.Length == 3;
@@ -448,7 +447,6 @@ public class Test
 			&& inout
 			&& instanceof
 			&& interface
-			&& is
 			&& kernel
 			&& lambda
 			&& len

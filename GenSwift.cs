@@ -863,7 +863,7 @@ public class GenSwift : GenPySwift
 		case CiUnaryExpr unary:
 			return unary.Inner != null /* new C() */ && Throws(unary.Inner);
 		case CiBinaryExpr binary:
-			return Throws(binary.Left) || Throws(binary.Right);
+			return Throws(binary.Left) || (binary.Op != CiToken.Is && Throws(binary.Right));
 		case CiSelectExpr select:
 			return Throws(select.Cond) || Throws(select.OnTrue) || Throws(select.OnFalse);
 		case CiCallExpr call:

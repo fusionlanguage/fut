@@ -604,6 +604,8 @@ public class GenJs : GenBase
 		}
 	}
 
+	protected override string IsOperator => " instanceof ";
+
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Type is CiIntegerType) {
