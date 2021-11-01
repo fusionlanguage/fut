@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Foxoft.Ci
 {
@@ -27,6 +28,7 @@ namespace Foxoft.Ci
 public abstract class GenCCpp : GenTyped
 {
 	protected readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
+	protected readonly List<CiSwitch> StringSwitchesWithGoto = new List<CiSwitch>();
 
 	protected abstract void IncludeStdInt();
 
@@ -234,15 +236,32 @@ public abstract class GenCCpp : GenTyped
 		WriteLine(");");
 	}
 
-	void WriteIfCaseBody(CiStatement[] body)
+	public override void Visit(CiBreak statement)
+	{
+		if (statement.LoopOrSwitch is CiSwitch switchStatement) {
+			int gotoId = this.StringSwitchesWithGoto.IndexOf(switchStatement);
+			if (gotoId >= 0) {
+				Write("goto ciafterswitch");
+				Write(gotoId);
+				WriteLine(';');
+				return;
+			}
+		}
+		WriteLine("break;");
+	}
+
+	void WriteIfCaseBody(CiStatement[] body, bool doWhile)
 	{
 		int length = CiSwitch.LengthWithoutTrailingBreak(body);
-		if (CiSwitch.HasEarlyBreak(body)) {
+		if (doWhile && CiSwitch.HasEarlyBreak(body)) {
+			this.Indent++;
+			WriteLine();
 			Write("do ");
 			OpenBlock();
 			Write(body, length);
 			CloseBlock();
 			WriteLine("while (0);");
+			this.Indent--;
 		}
 		else if (length == 1)
 			WriteChild(body[0]);
@@ -261,6 +280,13 @@ public abstract class GenCCpp : GenTyped
 			return;
 		}
 
+		int gotoId = -1;
+		if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreakAndContinue(kase.Body))
+		 || (statement.DefaultBody != null && CiSwitch.HasEarlyBreakAndContinue(statement.DefaultBody))) {
+			gotoId = this.StringSwitchesWithGoto.Count;
+			this.StringSwitchesWithGoto.Add(statement);
+		}
+
 		string op = "if (";
 		foreach (CiCase kase in statement.Cases) {
 			foreach (CiExpr caseValue in kase.Values) {
@@ -269,12 +295,17 @@ public abstract class GenCCpp : GenTyped
 				op = " || ";
 			}
 			Write(')');
-			WriteIfCaseBody(kase.Body);
+			WriteIfCaseBody(kase.Body, gotoId < 0);
 			op = "else if (";
 		}
 		if (statement.HasDefault) {
 			Write("else");
-			WriteIfCaseBody(statement.DefaultBody);
+			WriteIfCaseBody(statement.DefaultBody, gotoId < 0);
+		}
+		if (gotoId >= 0) {
+			Write("ciafterswitch");
+			Write(gotoId);
+			WriteLine(": ;");
 		}
 	}
 }

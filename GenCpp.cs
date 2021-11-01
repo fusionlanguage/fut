@@ -1190,6 +1190,7 @@ public class GenCpp : GenCCpp
 	{
 		if (klass.Constructor == null)
 			return;
+		this.StringSwitchesWithGoto.Clear();
 		Write(klass.Name);
 		Write("::");
 		Write(klass.Name);
@@ -1203,6 +1204,7 @@ public class GenCpp : GenCCpp
 	{
 		if (method.CallType == CiCallType.Abstract)
 			return;
+		this.StringSwitchesWithGoto.Clear();
 		WriteLine();
 		Write(method.Type, true);
 		Write(' ');

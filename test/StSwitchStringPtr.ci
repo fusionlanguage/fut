@@ -8,12 +8,26 @@ public static class Test
 		case "quux":
 			return false;
 		case "bar":
-			if (s[0] == 'X')
+			if (s[0] == 'b')
 				break;
-			return true;
+			return false;
 		default:
 			return false;
 		}
-		return false;
+
+		int i;
+		for (i = 0; i < 3; i++) {
+			switch (s) {
+			case "bar":
+				if (s[0] == 'X')
+					break;
+				continue;
+			default:
+				return false;
+			}
+			return false;
+		}
+
+		return i == 3;
 	}
 }

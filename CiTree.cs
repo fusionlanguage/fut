@@ -703,6 +703,7 @@ public class CiSwitch : CiCondCompletionStatement
 			length--;
 		return length;
 	}
+
 	public bool HasDefault => this.DefaultBody != null && LengthWithoutTrailingBreak(this.DefaultBody) > 0;
 
 	static bool HasBreak(CiStatement statement)
@@ -728,6 +729,26 @@ public class CiSwitch : CiCondCompletionStatement
 		}
 		return false;
 	}
+
+	static bool HasContinue(CiStatement[] statements) => statements.Any(HasContinue);
+
+	static bool HasContinue(CiStatement statement)
+	{
+		switch (statement) {
+		case CiContinue _:
+			return true;
+		case CiIf ifStatement:
+			return HasContinue(ifStatement.OnTrue) || (ifStatement.OnFalse != null && HasContinue(ifStatement.OnFalse));
+		case CiSwitch switchStatement:
+			return switchStatement.Cases.Any(kase => HasContinue(kase.Body)) || (switchStatement.DefaultBody != null && HasContinue(switchStatement.DefaultBody));
+		case CiBlock block:
+			return HasContinue(block.Statements);
+		default:
+			return false;
+		}
+	}
+
+	public static bool HasEarlyBreakAndContinue(CiStatement[] body) => HasEarlyBreak(body) && HasContinue(body);
 }
 
 public class CiThrow : CiStatement
