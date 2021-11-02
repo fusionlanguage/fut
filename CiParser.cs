@@ -288,7 +288,10 @@ public class CiParser : CiLexer
 				left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseShiftExpr() };
 				break;
 			case CiToken.Is:
-				return new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseSymbolReference(null) };
+				CiBinaryExpr isExpr = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr() };
+				if (See(CiToken.Id))
+					isExpr.Right = new CiVar { Line = this.Line, TypeExpr = isExpr.Right, Name = ParseId() };
+				return isExpr;
 			default:
 				return left;
 			}

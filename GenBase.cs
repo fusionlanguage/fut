@@ -1163,7 +1163,16 @@ public abstract class GenBase : CiVisitor
 				Write('(');
 			expr.Left.Accept(this, CiPriority.Rel);
 			Write(IsOperator);
-			WriteName((CiClass) expr.Right);
+			switch (expr.Right) {
+			case CiClass klass:
+				WriteName(klass);
+				break;
+			case CiVar def:
+				WriteTypeAndName(def);
+				break;
+			default:
+				throw new NotImplementedException(expr.Right.ToString());
+			}
 			if (parent > CiPriority.Rel)
 				Write(')');
 			return expr;

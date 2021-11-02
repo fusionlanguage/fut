@@ -1,0 +1,19 @@
+class Base
+{
+	protected virtual void Foo() { }
+}
+
+class Derived : Base
+{
+}
+
+public static class Test
+{
+	public static bool Run()
+	{
+		Derived() d;
+		Base! b = d;
+		return b is Derived ro && ro == d //FAIL: c cpp js py swift ts cl TODO; java 17
+			&& b is Derived! rw && rw == d;
+	}
+}

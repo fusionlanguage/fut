@@ -858,17 +858,31 @@ public class CiResolver : CiVisitor
 			return expr;
 
 		case CiToken.Is:
-			if (!(left.Type is CiClassPtrType ptr))
+			if (!(left.Type is CiClassPtrType leftPtr))
 				throw StatementException(expr, "Left hand side of the 'is' operator must be an object reference");
-			if (!(right is CiSymbolReference symbol) || !(symbol.Symbol is CiClass klass))
+			CiClass klass;
+			switch (right) {
+			case CiSymbolReference symbol:
+				klass = symbol.Symbol as CiClass ?? throw StatementException(expr, "Right hand side of the 'is' operator must be a class name");
+				NotSupported(expr, "'is' operator", "c", "cl");
+				expr.Right = klass;
+				break;
+			case CiVar def:
+				if (!(def.Type is CiClassPtrType rightPtr))
+					throw StatementException(expr, "Right hand side of the 'is' operator must be an object reference definition");
+				if (!rightPtr.IsModifierAssignableFrom(leftPtr))
+					throw StatementException(expr, "{0} cannot be casted to {1}", leftPtr, rightPtr);
+				NotSupported(expr, "'is' operator", "c", "cpp", "js", "py", "swift", "ts", "cl");
+				klass = rightPtr.Class;
+				break;
+			default:
 				throw StatementException(expr, "Right hand side of the 'is' operator must be a class name");
-			if (ptr.Class == klass)
-				throw StatementException(expr, "{0} is {1}, the 'is' operator would always return 'true'", left, ptr);
-			if (!ptr.Class.IsSameOrBaseOf(klass))
-				throw StatementException(expr, "{0} is not base class of {1}, the 'is' operator would always return 'false'", ptr, klass.Name);
-			NotSupported(expr, "'is' operator", "c", "cl");
+			}
+			if (leftPtr.Class == klass)
+				throw StatementException(expr, "{0} is {1}, the 'is' operator would always return 'true'", left, leftPtr);
+			if (!leftPtr.Class.IsSameOrBaseOf(klass))
+				throw StatementException(expr, "{0} is not base class of {1}, the 'is' operator would always return 'false'", leftPtr, klass.Name);
 			expr.Left = left;
-			expr.Right = klass;
 			expr.Type = CiSystem.BoolType;
 			return expr;
 
