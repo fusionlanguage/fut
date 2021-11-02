@@ -1076,20 +1076,33 @@ public class CiClassPtrType : CiType
 		return this.Class.TryLookup(name);
 	}
 
+	public bool IsModifierAssignableFrom(CiClassPtrType right)
+	{
+		switch (this.Modifier) {
+		case CiToken.EndOfFile:
+			return true;
+		case CiToken.ExclamationMark:
+			return right.Modifier != CiToken.EndOfFile;
+		case CiToken.Hash:
+			return right.Modifier == CiToken.Hash;
+		default:
+			throw new NotImplementedException(this.Modifier.ToString());
+		}
+	}
+
 	public override bool IsAssignableFrom(CiType right)
 	{
 		if (right == CiSystem.NullType)
 			return true;
-		CiClass klass = right as CiClass;
-		if (klass == null) {
-			if (!(right is CiClassPtrType ptr))
+		if (right is CiClass klass) {
+			if (this.Modifier == CiToken.Hash)
 				return false;
-			klass = ptr.Class;
 		}
-		if (!Class.IsSameOrBaseOf(klass))
+		else if (right is CiClassPtrType rightPtr && IsModifierAssignableFrom(rightPtr))
+			klass = rightPtr.Class;
+		else
 			return false;
-		// TODO: modifiers
-		return true;
+		return this.Class.IsSameOrBaseOf(klass);
 	}
 
 	public override CiType PtrOrSelf => this.Modifier == CiToken.Hash ? this.Class.PtrOrSelf : this;
