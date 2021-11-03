@@ -150,6 +150,21 @@ public class GenCl : GenC
 	{
 		if (obj == null)
 			WriteCCall(null, method, args);
+		else if (method == CiSystem.StringStartsWith) {
+			if (IsOneAsciiString(args[0], out char c)) {
+				if (parent > CiPriority.Equality)
+					Write('(');
+				obj.Accept(this, CiPriority.Primary);
+				Write("[0] == ");
+				WriteCharLiteral(c);
+				if (parent > CiPriority.Equality)
+					Write(')');
+			}
+			else {
+				this.StringStartsWith = true;
+				WriteCall("CiString_StartsWith", obj, args[0]);
+			}
+		}
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			Write("for (size_t _i = 0; _i < ");
 			args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
