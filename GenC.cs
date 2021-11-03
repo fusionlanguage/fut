@@ -1047,54 +1047,71 @@ public class GenC : GenCCpp
 			base.WriteCoercedInternal(type, expr, parent);
 	}
 
+	protected virtual void WriteMemEqualString(CiExpr ptr, CiExpr offset, string literal, CiPriority parent, bool not)
+	{
+		if (parent > CiPriority.Equality)
+			Write('(');
+		Include("string.h");
+		Write("memcmp(");
+		WriteArrayPtrAdd(ptr, offset);
+		Write(", ");
+		WriteLiteral(literal);
+		Write(", ");
+		Write(literal.Length);
+		Write(')');
+		Write(GetEqOp(not));
+		Write('0');
+		if (parent > CiPriority.Equality)
+			Write(')');
+	}
+
+	protected virtual void WriteEqualStringInternal(CiExpr left, CiExpr right, CiPriority parent, bool not)
+	{
+		if (parent > CiPriority.Equality)
+			Write('(');
+		Include("string.h");
+		WriteCall("strcmp", left, right);
+		Write(GetEqOp(not));
+		Write('0');
+		if (parent > CiPriority.Equality)
+			Write(')');
+	}
+
 	protected override void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not)
 	{
-		Include("string.h");
-		CiPriority child = CiPriority.Equality;
 		if (IsStringSubstring(left, out bool _, out CiExpr ptr, out CiExpr offset, out CiExpr lengthExpr)
 		 && right is CiLiteral literal) {
 			string rightValue = (string) literal.Value;
 			if (lengthExpr is CiLiteral leftLength) {
 				if ((long) leftLength.Value != rightValue.Length)
 					throw new NotImplementedException(); // TODO: evaluate compile-time
-				if (parent > CiPriority.Equality)
-					Write('(');
+				WriteMemEqualString(ptr, offset, rightValue, parent, not);
 			}
 			else if (not) {
-				child = CiPriority.CondOr;
 				if (parent > CiPriority.CondOr)
 					Write('(');
 				lengthExpr.Accept(this, CiPriority.Equality);
 				Write(" != ");
 				Write(rightValue.Length);
 				Write(" || ");
+				WriteMemEqualString(ptr, offset, rightValue, CiPriority.CondOr, true);
+				if (parent > CiPriority.CondOr)
+					Write(')');
 			}
 			else {
-				child = CiPriority.CondAnd;
-				if (parent > CiPriority.CondAnd)
+				if (parent > CiPriority.CondAnd || parent == CiPriority.CondOr)
 					Write('(');
 				lengthExpr.Accept(this, CiPriority.Equality);
 				Write(" == ");
 				Write(rightValue.Length);
 				Write(" && ");
+				WriteMemEqualString(ptr, offset, rightValue, CiPriority.CondAnd, false);
+				if (parent > CiPriority.CondAnd || parent == CiPriority.CondOr)
+					Write(')');
 			}
-			Write("memcmp(");
-			WriteArrayPtrAdd(ptr, offset);
-			Write(", ");
-			WriteLiteral(rightValue);
-			Write(", ");
-			Write(rightValue.Length);
-			Write(')');
 		}
-		else {
-			if (parent > CiPriority.Equality)
-				Write('(');
-			WriteCall("strcmp", left, right);
-		}
-		Write(GetEqOp(not));
-		Write('0');
-		if (parent > child)
-			Write(')');
+		else
+			WriteEqualStringInternal(left, right, parent, not);
 	}
 
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)

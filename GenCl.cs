@@ -27,6 +27,7 @@ public class GenCl : GenC
 {
 	bool StringEquals;
 	bool StringLength;
+	bool MemEqualsString;
 
 	protected override void IncludeStdBool()
 	{
@@ -94,7 +95,19 @@ public class GenCl : GenC
 		}
 	}
 
-	protected override void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not)
+	protected override void WriteMemEqualString(CiExpr ptr, CiExpr offset, string literal, CiPriority parent, bool not)
+	{
+		if (not)
+			Write('!');
+		this.MemEqualsString = true;
+		Write("memeqstr(");
+		WriteArrayPtrAdd(ptr, offset);
+		Write(", ");
+		WriteLiteral(literal);
+		Write(')');
+	}
+
+	protected override void WriteEqualStringInternal(CiExpr left, CiExpr right, CiPriority parent, bool not)
 	{
 		this.StringEquals = true;
 		if (not)
@@ -235,6 +248,17 @@ public class GenCl : GenC
 			WriteLine("return len;");
 			CloseBlock();
 		}
+		if (this.MemEqualsString) {
+			WriteLine();
+			WriteLine("static bool memeqstr(const uchar *mem, constant char *str)");
+			OpenBlock();
+			WriteLine("for (int i = 0; str[i] != '\\0'; i++) {");
+			WriteLine("\tif (mem[i] != str[i])");
+			WriteLine("\t\treturn false;");
+			WriteLine('}');
+			WriteLine("return true;");
+			CloseBlock();
+		}
 	}
 
 	public override void Write(CiProgram program)
@@ -242,6 +266,7 @@ public class GenCl : GenC
 		this.WrittenClasses.Clear();
 		this.StringEquals = false;
 		this.StringLength = false;
+		this.MemEqualsString = false;
 		OpenStringWriter();
 		foreach (CiClass klass in program.Classes) {
 			this.CurrentClass = klass;
