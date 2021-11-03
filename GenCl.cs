@@ -25,9 +25,10 @@ namespace Foxoft.Ci
 
 public class GenCl : GenC
 {
-	bool StringEquals;
 	bool StringLength;
-	bool MemEqualsString;
+	bool StringEquals;
+	bool StringStartsWith;
+	bool BytesEqualsString;
 
 	protected override void IncludeStdBool()
 	{
@@ -95,12 +96,18 @@ public class GenCl : GenC
 		}
 	}
 
-	protected override void WriteMemEqualString(CiExpr ptr, CiExpr offset, string literal, CiPriority parent, bool not)
+	protected override void WriteSubstringEqual(bool cast, CiExpr ptr, CiExpr offset, string literal, CiPriority parent, bool not)
 	{
 		if (not)
 			Write('!');
-		this.MemEqualsString = true;
-		Write("memeqstr(");
+		if (cast) {
+			this.BytesEqualsString = true;
+			Write("CiBytes_Equals(");
+		}
+		else {
+			this.StringStartsWith = true;
+			Write("CiString_StartsWith(");
+		}
 		WriteArrayPtrAdd(ptr, offset);
 		Write(", ");
 		WriteLiteral(literal);
@@ -112,19 +119,13 @@ public class GenCl : GenC
 		this.StringEquals = true;
 		if (not)
 			Write('!');
-		Write("streq(");
-		left.Accept(this, CiPriority.Argument);
-		Write(", ");
-		right.Accept(this, CiPriority.Argument);
-		Write(')');
+		WriteCall("CiString_Equals", left, right);
 	}
 
 	protected override void WriteStringLength(CiExpr expr)
 	{
 		this.StringLength = true;
-		Write("strlen(");
-		expr.Accept(this, CiPriority.Argument);
-		Write(')');
+		WriteCall("strlen", expr);
 	}
 
 	void WriteConsoleWrite(CiExpr[] args, bool newLine)
@@ -227,17 +228,6 @@ public class GenCl : GenC
 
 	void WriteLibrary()
 	{
-		if (this.StringEquals) {
-			WriteLine();
-			WriteLine("static bool streq(constant char *str1, constant char *str2)");
-			OpenBlock();
-			WriteLine("for (size_t i = 0; str1[i] == str2[i]; i++) {");
-			WriteLine("\tif (str1[i] == '\\0')");
-			WriteLine("\t\treturn true;");
-			WriteLine('}');
-			WriteLine("return false;");
-			CloseBlock();
-		}
 		if (this.StringLength) {
 			WriteLine();
 			WriteLine("static int strlen(constant char *str)");
@@ -248,9 +238,31 @@ public class GenCl : GenC
 			WriteLine("return len;");
 			CloseBlock();
 		}
-		if (this.MemEqualsString) {
+		if (this.StringEquals) {
 			WriteLine();
-			WriteLine("static bool memeqstr(const uchar *mem, constant char *str)");
+			WriteLine("static bool CiString_Equals(constant char *str1, constant char *str2)");
+			OpenBlock();
+			WriteLine("for (size_t i = 0; str1[i] == str2[i]; i++) {");
+			WriteLine("\tif (str1[i] == '\\0')");
+			WriteLine("\t\treturn true;");
+			WriteLine('}');
+			WriteLine("return false;");
+			CloseBlock();
+		}
+		if (this.StringStartsWith) {
+			WriteLine();
+			WriteLine("static bool CiString_StartsWith(constant char *str1, constant char *str2)");
+			OpenBlock();
+			WriteLine("for (int i = 0; str2[i] != '\\0'; i++) {");
+			WriteLine("\tif (str1[i] != str2[i])");
+			WriteLine("\t\treturn false;");
+			WriteLine('}');
+			WriteLine("return true;");
+			CloseBlock();
+		}
+		if (this.BytesEqualsString) {
+			WriteLine();
+			WriteLine("static bool CiBytes_Equals(const uchar *mem, constant char *str)");
 			OpenBlock();
 			WriteLine("for (int i = 0; str[i] != '\\0'; i++) {");
 			WriteLine("\tif (mem[i] != str[i])");
@@ -264,9 +276,10 @@ public class GenCl : GenC
 	public override void Write(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
-		this.StringEquals = false;
 		this.StringLength = false;
-		this.MemEqualsString = false;
+		this.StringEquals = false;
+		this.StringStartsWith = false;
+		this.BytesEqualsString = false;
 		OpenStringWriter();
 		foreach (CiClass klass in program.Classes) {
 			this.CurrentClass = klass;

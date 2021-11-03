@@ -1046,7 +1046,7 @@ public class GenC : GenCCpp
 			base.WriteCoercedInternal(type, expr, parent);
 	}
 
-	protected virtual void WriteMemEqualString(CiExpr ptr, CiExpr offset, string literal, CiPriority parent, bool not)
+	protected virtual void WriteSubstringEqual(bool cast, CiExpr ptr, CiExpr offset, string literal, CiPriority parent, bool not)
 	{
 		if (parent > CiPriority.Equality)
 			Write('(');
@@ -1078,13 +1078,13 @@ public class GenC : GenCCpp
 
 	protected override void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not)
 	{
-		if (IsStringSubstring(left, out bool _, out CiExpr ptr, out CiExpr offset, out CiExpr lengthExpr)
+		if (IsStringSubstring(left, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr lengthExpr)
 		 && right is CiLiteral literal) {
 			string rightValue = (string) literal.Value;
 			if (lengthExpr is CiLiteral leftLength) {
 				if ((long) leftLength.Value != rightValue.Length)
 					throw new NotImplementedException(); // TODO: evaluate compile-time
-				WriteMemEqualString(ptr, offset, rightValue, parent, not);
+				WriteSubstringEqual(cast, ptr, offset, rightValue, parent, not);
 			}
 			else if (not) {
 				if (parent > CiPriority.CondOr)
@@ -1093,7 +1093,7 @@ public class GenC : GenCCpp
 				Write(" != ");
 				Write(rightValue.Length);
 				Write(" || ");
-				WriteMemEqualString(ptr, offset, rightValue, CiPriority.CondOr, true);
+				WriteSubstringEqual(cast, ptr, offset, rightValue, CiPriority.CondOr, true);
 				if (parent > CiPriority.CondOr)
 					Write(')');
 			}
@@ -1104,7 +1104,7 @@ public class GenC : GenCCpp
 				Write(" == ");
 				Write(rightValue.Length);
 				Write(" && ");
-				WriteMemEqualString(ptr, offset, rightValue, CiPriority.CondAnd, false);
+				WriteSubstringEqual(cast, ptr, offset, rightValue, CiPriority.CondAnd, false);
 				if (parent > CiPriority.CondAnd || parent == CiPriority.CondOr)
 					Write(')');
 			}

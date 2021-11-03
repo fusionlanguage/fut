@@ -1,0 +1,18 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		string s = "foobar";
+		int len = 3;
+		switch (s.Substring(1, len)) {
+		case "":
+		case "foobar":
+			return false;
+		case "ba":
+		case "oob":
+			return true;
+		default:
+			return false;
+		}
+	}
+}
