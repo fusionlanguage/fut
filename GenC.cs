@@ -33,7 +33,6 @@ public class GenC : GenCCpp
 	bool StringAppend;
 	bool StringIndexOf;
 	bool StringLastIndexOf;
-	bool StringStartsWith;
 	bool StringEndsWith;
 	bool StringFormat;
 	bool MatchFind;
@@ -1328,19 +1327,25 @@ public class GenC : GenCCpp
 			WriteStringMethod("LastIndexOf", obj, args);
 		}
 		else if (method == CiSystem.StringStartsWith) {
+			if (parent > CiPriority.Equality)
+				Write('(');
 			if (IsOneAsciiString(args[0], out char c)) {
-				if (parent > CiPriority.Equality)
-					Write('(');
 				obj.Accept(this, CiPriority.Primary);
 				Write("[0] == ");
 				WriteCharLiteral(c);
-				if (parent > CiPriority.Equality)
-					Write(')');
 			}
 			else {
-				this.StringStartsWith = true;
-				WriteStringMethod("StartsWith", obj, args);
+				Include("string.h");
+				Write("strncmp(");
+				obj.Accept(this, CiPriority.Argument);
+				Write(", ");
+				args[0].Accept(this, CiPriority.Argument);
+				Write(", strlen(");
+				args[0].Accept(this, CiPriority.Argument); // TODO: side effect
+				Write(")) == 0");
 			}
+			if (parent > CiPriority.Equality)
+				Write(')');
 		}
 		else if (method == CiSystem.StringEndsWith) {
 			this.StringEndsWith = true;
@@ -2640,13 +2645,6 @@ public class GenC : GenCCpp
 			WriteLine("return result;");
 			CloseBlock();
 		}
-		if (this.StringStartsWith) {
-			WriteLine();
-			WriteLine("static bool CiString_StartsWith(const char *str, const char *prefix)");
-			OpenBlock();
-			WriteLine("return memcmp(str, prefix, strlen(prefix)) == 0;");
-			CloseBlock();
-		}
 		if (this.StringEndsWith) {
 			WriteLine();
 			WriteLine("static bool CiString_EndsWith(const char *str, const char *suffix)");
@@ -2899,7 +2897,6 @@ public class GenC : GenCCpp
 		this.StringAppend = false;
 		this.StringIndexOf = false;
 		this.StringLastIndexOf = false;
-		this.StringStartsWith = false;
 		this.StringEndsWith = false;
 		this.StringFormat = false;
 		this.MatchFind = false;
