@@ -418,7 +418,10 @@ array reference to it.
 In C++, dynamic array references are implemented as `std::shared_ptr`.
 
 Read-only and read-write array reference can point to either array storage
-or dynamic arrays.
+or dynamic arrays. Read-only and read-write references must be used with care,
+because if the storage or dynamic array gets destroyed, the read-only/read-write
+reference becomes a dangling reference and must not be dereferenced.
+
 It is not possible to modify the array via a read-only reference:
 
 ```csharp
@@ -745,6 +748,9 @@ if (nerd)
 else
     animal = std::make_shared<Dog>();
 ```
+
+Read-only and read-write references translate to raw pointers in C and C++
+and therefore become dangling once the pointed object becomes destroyed.
 
 Read-only references cannot be used to modify the object,
 that is, modify its fields or call a mutator method.
