@@ -977,7 +977,8 @@ Inside loops you may use:
 ### Switch statement
 
 The `switch` statement accepts an expression and transfers control
-to the corresponding `case` label. It supports integers and enumerations.
+to the corresponding `case` label. It supports integers, enumerations
+and strings.
 
 `case` clauses must be correctly terminated, consider:
 
@@ -996,6 +997,11 @@ Correct termination means a statement that doesn't fall
 to the next statement: `break`, `continue`, `return` or `throw`.
 
 The `default` clause, if present, must be specified last.
+
+Python has no equivalent of the `switch` statement,
+so it is emulated with a series of `if`/`elif`.
+C, C++ and OpenCL do not support `switch` on strings,
+so `if`/`else if` with string comparisons are generated.
 
 ### Assert statement
 
