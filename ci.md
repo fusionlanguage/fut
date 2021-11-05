@@ -1115,6 +1115,25 @@ if (homeDir == null)
 
 For JavaScript, this is only available in Node.js, not the web browsers.
 
+### Locks
+
+Currently there is a very limited support for multi-threading. It consists
+of the `lock` statement, which is translated to `synchronized` in Java.
+Unlike in C# and Java, not every object can be used for mutual exclusion.
+Instead, locks must be explicitly defined as storage of class `Lock`.
+
+```csharp
+Lock() mutex; // typically a class field
+...
+lock (mutex) {
+    // code executed by only one thread per this instance of mutex at a time
+    ...
+}
+```
+
+Locks are re-entrant, meaning nested `lock` statements (normally hidden
+in called methods) do not cause deadlocks.
+
 ### Native blocks
 
 Code which cannot be expressed in Ć can be written in the target language
