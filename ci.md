@@ -553,6 +553,18 @@ class Car
 }
 ```
 
+Languages such as Java and C# initialize every field even if you don't provide
+the initial value. In Ć you need to initialize fields explicitly:
+
+```csharp
+class Point
+{
+    int X = 0;
+    int Y = 0;
+    ...
+}
+```
+
 Fields _cannot be_ public. Instead, define _getter/setter_ methods:
 
 ```csharp
