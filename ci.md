@@ -749,6 +749,51 @@ In a non-mutator method, `this` is of type `C` (a read-only reference).
 Static methods do not have `this`, so the mutator/non-mutator
 classification doesn't apply.
 
+To test the runtime type of an object reference, use the `is` operator.
+It corresponds to `instanceof` in Java and JavaScript
+and `dynamic_cast` in C++.
+The following forms are supported:
+
+```csharp
+// 1.
+bool isDerivedClass = baseReference is Derived;
+
+// 2.
+if (baseReference is Derived derivedReadOnlyRef) {
+    // use derivedReadOnlyRef here
+}
+
+// 3.
+if (baseReadWriteOrDynamicReference is Derived! derivedReadWriteRef) {
+    // use derivedReadWriteRef here
+}
+
+// 4.
+if (baseDynamicReference is Derived# derivedDynamicRef) {
+    // use derivedDynamicRef here
+}
+```
+
+The `is` operator can be used in any boolean expressions, but the introduced
+derived reference variable can only be used when the `is` operator returns `true`.
+That is, the following code is invalid:
+
+```csharp
+if (animal is Cat cat) {
+}
+else {
+    cat.Miaow(); // ERROR
+}
+```
+
+The `is` operator cannot be used for:
+
+* same type on both sides of the operator (would always return `true`)
+* checking if a derived reference is of base type (would always return `true`)
+* unrelated types (would always return `false`)
+* checking the type of object storage (pointless, `C()` is always an instance
+  of class `C`, never a subclass of it)
+
 ### Collections
 
 In addition to arrays, Ć has three built-in collection types:
