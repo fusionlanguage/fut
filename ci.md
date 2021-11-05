@@ -931,6 +931,13 @@ int x = 5;
 int[4] array = 0; // initialized with zeros
 ```
 
+Variable without an initial value is considered uninitialized and must be
+assigned before it is read. This also applies to string storage.
+For array storage, the array is created,
+but its elements are not default-initialized.
+For object storage, the fields with initializers are assigned
+and the constructor is called if provided.
+
 Variables have the scope of the enclosing _block_.
 It is an error to use a reference pointing
 at an array or object outside of its scope.
