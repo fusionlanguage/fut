@@ -3,12 +3,12 @@
 
 cito is currently written in C#.
 
-You can build it with .NET 5.0 on Windows/macOS/Linux
+You can build it with .NET 6.0 on Windows/macOS/Linux
 or .NET Framework on Windows only.
 The Mono compiler doesn't work (reports a NotImplementedException).
 
-On Windows install Visual Studio 2019.
-On other platforms install .NET 5.0 SDK (https://dotnet.microsoft.com/)
+On Windows install Visual Studio 2022.
+On other platforms install .NET 6.0 SDK (https://dotnet.microsoft.com/)
 
 Build cito with the following command line:
 
@@ -28,8 +28,8 @@ To run cito tests, you will need:
 * perl
 * GNU diff
 * Clang C and C++ compilers
-* Visual Studio 2019 or Mono
-* Java compiler (https://www.oracle.com/java/technologies/javase-jdk15-downloads.html)
+* Visual Studio 2022 or Mono
+* Java compiler (https://www.oracle.com/java/technologies/downloads/)
 * Node.js (https://nodejs.org/)
 * Python
 * Swift (https://swift.org/)

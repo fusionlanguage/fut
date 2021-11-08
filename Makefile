@@ -3,7 +3,7 @@ srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
 CFLAGS = -Wall -Wno-tautological-compare -Werror
 SWIFTC = swiftc
 ifeq ($(OS),Windows_NT)
-CSC = "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/Roslyn/csc.exe" -nologo
+CSC = "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/Roslyn/csc.exe" -nologo
 DO_BUILD = $(CSC) -out:$@ $^
 CITO = ./cito.exe
 MONO =
