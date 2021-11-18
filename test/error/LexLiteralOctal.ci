@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		int a = 011; //ERROR: Octal numbers not supported
+		int a = 011; //ERROR: Leading zeros are not permitted, octal numbers not supported
 		return true;
 	}
 }

@@ -318,7 +318,7 @@ public class CiLexer
 				return CiToken.Literal;
 			}
 			if (i == 0)
-				throw ParseException("Octal numbers not supported");
+				throw ParseException("Leading zeros are not permitted, octal numbers not supported");
 			if (i > 922337203685477580)
 				throw ParseException("Integer too big");
 			i = 10 * i + d;
