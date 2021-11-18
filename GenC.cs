@@ -2295,10 +2295,13 @@ public class GenC : GenCCpp
 		WriteLine("Vtbl;");
 	}
 
+	protected virtual string GetConst(CiArrayStorageType array) => "const ";
+
 	protected override void WriteConst(CiConst konst)
 	{
-		if (konst.Type is CiArrayType) {
-			Write("static const ");
+		if (konst.Type is CiArrayStorageType array) {
+			Write("static ");
+			Write(GetConst(array));
 			WriteTypeAndName(konst);
 			Write(" = ");
 			konst.Value.Accept(this, CiPriority.Argument);

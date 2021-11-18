@@ -96,6 +96,8 @@ public class GenCl : GenC
 		}
 	}
 
+	protected override string GetConst(CiArrayStorageType array) => array.PtrTaken ? "const " : "constant ";
+
 	protected override void WriteSubstringEqual(bool cast, CiExpr ptr, CiExpr offset, string literal, CiPriority parent, bool not)
 	{
 		if (not)
