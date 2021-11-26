@@ -1145,6 +1145,25 @@ public class GenC : GenCCpp
 		this.Compares.Add(typeCode);
 	}
 
+	protected void WriteArrayFill(CiExpr obj, CiExpr[] args)
+	{
+		Write("for (size_t _i = 0; _i < ");
+		if (args.Length == 1)
+			Write(((CiArrayStorageType) obj.Type).Length);
+		else
+			args[2].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
+		WriteLine("; _i++)");
+		Write('\t');
+		obj.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+		Write('[');
+		if (args.Length > 1 && !args[1].IsLiteralZero) {
+			args[1].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
+			Write(" + ");
+		}
+		Write("_i] = ");
+		args[0].Accept(this, CiPriority.Argument); // FIXME: side effect in every iteration
+	}
+
 	void WriteListAddInsert(CiExpr obj, bool insert, string function, CiExpr[] args)
 	{
 		// TODO: don't emit temporary variable if already a var/field of matching type - beware of integer promotions!
@@ -1403,25 +1422,27 @@ public class GenC : GenCCpp
 			Write(')');
 		}
 		else if (obj.Type is CiArrayType array3 && method.Name == "Fill") {
-			if (!(args[0] is CiLiteral literal) || !literal.IsDefaultValue)
-				throw new NotImplementedException("Only null, zero and false supported");
-			Include("string.h");
-			Write("memset(");
-			if (args.Length == 1) {
-				obj.Accept(this, CiPriority.Argument);
-				Write(", 0, sizeof(");
-				obj.Accept(this, CiPriority.Argument);
+			if (args[0] is CiLiteral literal && literal.IsDefaultValue) {
+				Include("string.h");
+				Write("memset(");
+				if (args.Length == 1) {
+					obj.Accept(this, CiPriority.Argument);
+					Write(", 0, sizeof(");
+					obj.Accept(this, CiPriority.Argument);
+					Write(')');
+				}
+				else {
+					WriteArrayPtrAdd(obj, args[1]);
+					Write(", 0, ");
+					args[2].Accept(this, CiPriority.Mul);
+					Write(" * sizeof(");
+					Write(array3.ElementType, false);
+					Write(')');
+				}
 				Write(')');
 			}
-			else {
-				WriteArrayPtrAdd(obj, args[1]);
-				Write(", 0, ");
-				args[2].Accept(this, CiPriority.Mul);
-				Write(" * sizeof(");
-				Write(array3.ElementType, false);
-				Write(')');
-			}
-			Write(')');
+			else
+				WriteArrayFill(obj, args);
 		}
 		else if (method == CiSystem.CollectionSortAll) {
 			TypeCode typeCode = GetTypeCode(((CiArrayType) obj.Type).ElementType, false);

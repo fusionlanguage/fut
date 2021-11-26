@@ -8,10 +8,10 @@ public static class Test
 			d[i] = a[i] = (i + 1) * 5;
 		a.Fill(0, 1, 2);
 		int[]! p = a;
-		p.Fill(0, 4, 2);
+		p.Fill(10, 4, 2); //FAIL: cs - .NET Core but not .NET Framework 4.8
 		d.Fill(0, 2, 3);
 		return a[0] == 5 && a[1] == 0 && a[2] == 0 && a[3] == 20
-			&& a[4] == 0 && a[5] == 0 && a[6] == 35
+			&& a[4] == 10 && a[5] == 10 && a[6] == 35
 			&& d[0] == 5 && d[1] == 10 && d[2] == 0 && d[3] == 0 && d[4] == 0 && d[5] == 30 && d[6] == 35;
 	}
 }
