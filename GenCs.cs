@@ -474,20 +474,26 @@ public class GenCs : GenTyped
 			Write(')');
 		}
 		else if (obj.Type is CiArrayType && method.Name == "Fill") {
-			if (!(args[0] is CiLiteral literal) || !literal.IsDefaultValue)
-				throw new NotImplementedException("Only null, zero and false supported");
 			Include("System");
-			Write("Array.Clear(");
-			obj.Accept(this, CiPriority.Argument);
-			Write(", ");
-			if (args.Length == 1) {
-				Write("0, ");
-				Write(((CiArrayStorageType) obj.Type).Length);
+			if (args[0] is CiLiteral literal && literal.IsDefaultValue) {
+				Write("Array.Clear(");
+				obj.Accept(this, CiPriority.Argument);
+				Write(", ");
+				if (args.Length == 1) {
+					Write("0, ");
+					Write(((CiArrayStorageType) obj.Type).Length);
+				}
+				else {
+					args[1].Accept(this, CiPriority.Argument);
+					Write(", ");
+					args[2].Accept(this, CiPriority.Argument);
+				}
 			}
 			else {
-				args[1].Accept(this, CiPriority.Argument);
+				Write("Array.Fill(");
+				obj.Accept(this, CiPriority.Argument);
 				Write(", ");
-				args[2].Accept(this, CiPriority.Argument);
+				WriteArgs(method, args);
 			}
 			Write(')');
 		}
