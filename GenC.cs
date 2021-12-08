@@ -1147,7 +1147,7 @@ public class GenC : GenCCpp
 
 	protected void WriteArrayFill(CiExpr obj, CiExpr[] args)
 	{
-		Write("for (size_t _i = 0; _i < ");
+		Write("for (int _i = 0; _i < ");
 		if (args.Length == 1)
 			Write(((CiArrayStorageType) obj.Type).Length);
 		else
