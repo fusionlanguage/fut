@@ -8,6 +8,12 @@ public class Test
 		return s.Substring(0, 1);
 	}
 
+	static string() GetInitial2(string s)
+	{
+		string() s2 = s;
+		return s2.Substring(0, 1);
+	}
+
 	public static bool Run()
 	{
 		Test() o;
@@ -22,12 +28,13 @@ public class Test
 		string() localAssign1;
 		localAssign1 = ptr.Substring(1);
 		string() initial = GetInitial("Adam");
+		string() initial2 = GetInitial2("Eve");
 		int three = 3;
 		return objInit == "ooba" && localInit == "arek" && localAssign == "are"
 			&& o.Ptr.Substring(1, 4) == "ooba" && ptr.Substring(1, 4) == "arek"
 			&& objInit1 == "oobar" && localInit1 == "arek" && localAssign1 == "arek"
 			&& o.Ptr.Substring(1) == "oobar" && ptr.Substring(1) == "arek"
 			&& ptr.Substring(1, three) == "are"
-			&& initial == "A";
+			&& initial == "A" && initial2 == "E";
 	}
 }

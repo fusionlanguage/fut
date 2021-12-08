@@ -1007,12 +1007,16 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteReturnValue(CiExpr value)
 	{
-		if (this.CurrentMethod.Type == CiSystem.StringStorageType && value.Type == CiSystem.StringPtrType && !(value is CiLiteral)) {
+		if (this.CurrentMethod.Type == CiSystem.StringStorageType
+		 && value.Type == CiSystem.StringPtrType
+		 && !(value is CiLiteral)) {
 			Write("std::string(");
 			base.WriteReturnValue(value);
 			Write(')');
 		}
-		else if (this.CurrentMethod.Type == CiSystem.StringStorageType && IsStringSubstring(value, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)) {
+		else if (this.CurrentMethod.Type == CiSystem.StringStorageType
+			&& IsStringSubstring(value, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)
+			&& ptr.Type != CiSystem.StringStorageType) {
 			Write("std::string(");
 			if (cast)
 				Write("reinterpret_cast<const char *>(");
