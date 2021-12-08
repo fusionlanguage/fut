@@ -1297,13 +1297,15 @@ public abstract class GenBase : CiVisitor
 		Write(statement.Content);
 	}
 
+	protected virtual void WriteReturnValue(CiExpr value) => WriteCoerced(this.CurrentMethod.Type, value, CiPriority.Argument);
+
 	public override void Visit(CiReturn statement)
 	{
 		if (statement.Value == null)
 			WriteLine("return;");
 		else {
 			Write("return ");
-			WriteCoerced(this.CurrentMethod.Type, statement.Value, CiPriority.Argument);
+			WriteReturnValue(statement.Value);
 			WriteLine(';');
 		}
 	}

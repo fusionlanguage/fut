@@ -1,5 +1,7 @@
 public static class Test
 {
+	static string() GetInitial(byte[] a) => Encoding.UTF8.GetString(a, 0, 1); //FAIL: ts TODO
+
 	public static bool Run()
 	{
 		byte[6] a;
@@ -10,6 +12,7 @@ public static class Test
 		a[4] = 'b';
 		a[5] = 'a';
 		string() s = Encoding.UTF8.GetString(a, 1, 3); //FAIL: cl
-		return s == "foo";
+		string() s2 = GetInitial(a);
+		return s == "foo" && s2 == "x";
 	}
 }

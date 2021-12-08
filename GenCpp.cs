@@ -827,6 +827,7 @@ public class GenCpp : GenCCpp
 	{
 		switch (expr.Type) {
 		case CiArrayStorageType _:
+		case CiStringPtrType _:
 			expr.Accept(this, CiPriority.Primary);
 			Write(".data()");
 			break;
@@ -1002,6 +1003,28 @@ public class GenCpp : GenCCpp
 		WriteLine(");");
 		FlattenBlock(statement.Body);
 		CloseBlock();
+	}
+
+	protected override void WriteReturnValue(CiExpr value)
+	{
+		if (this.CurrentMethod.Type == CiSystem.StringStorageType && value.Type == CiSystem.StringPtrType && !(value is CiLiteral)) {
+			Write("std::string(");
+			base.WriteReturnValue(value);
+			Write(')');
+		}
+		else if (this.CurrentMethod.Type == CiSystem.StringStorageType && IsStringSubstring(value, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)) {
+			Write("std::string(");
+			if (cast)
+				Write("reinterpret_cast<const char *>(");
+			WriteArrayPtrAdd(ptr, offset);
+			if (cast)
+				Write(')');
+			Write(", ");
+			length.Accept(this, CiPriority.Argument);
+			Write(')');
+		}
+		else
+			base.WriteReturnValue(value);
 	}
 
 	protected override void WriteCaseBody(CiStatement[] statements)
