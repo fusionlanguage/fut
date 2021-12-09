@@ -924,10 +924,10 @@ public class CiResolver : CiVisitor
 	public override CiExpr Visit(CiCallExpr expr, CiPriority parent)
 	{
 		CiSymbolReference symbol = (CiSymbolReference) Resolve(expr.Method);
-		CiExpr[] arguments = expr.Arguments;
+		CiExpr[] arguments = this.CurrentPureArguments.Count == 0 ? expr.Arguments : new CiExpr[expr.Arguments.Length];
 		int i;
 		for (i = 0; i < arguments.Length; i++)
-			arguments[i] = Resolve(arguments[i]);
+			arguments[i] = Resolve(expr.Arguments[i]);
 		CiMethod method = symbol.Symbol switch {
 			CiMethod m => m,
 			CiMethodGroup group => group.Methods.FirstOrDefault(m => CanCall(m, arguments))
@@ -973,8 +973,10 @@ public class CiResolver : CiVisitor
 		}
 
 		this.CurrentMethod.Calls.Add(method);
-		expr.Method = symbol;
-		expr.Type = method.Type;
+		if (this.CurrentPureArguments.Count == 0) {
+			expr.Method = symbol;
+			expr.Type = method.Type;
+		}
 		return expr;
 	}
 

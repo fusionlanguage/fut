@@ -3,10 +3,7 @@ public class Test
 	string() Foo = "foobar"; //FAIL: cl
 	string Ptr = "foobar";
 
-	static string() GetInitial(string s)
-	{
-		return s.Substring(0, 1);
-	}
+	static string() CharAt(string s, int i) => s.Substring(i, 1);
 
 	static string() GetInitial2(string s)
 	{
@@ -27,14 +24,15 @@ public class Test
 		string() localInit1 = foo.Substring(1);
 		string() localAssign1;
 		localAssign1 = ptr.Substring(1);
-		string() initial = GetInitial("Adam");
+		string() initial = CharAt("Adam", 0);
 		string() initial2 = GetInitial2("Eve");
+		string() initial3 = CharAt("Larry", 0);
 		int three = 3;
 		return objInit == "ooba" && localInit == "arek" && localAssign == "are"
 			&& o.Ptr.Substring(1, 4) == "ooba" && ptr.Substring(1, 4) == "arek"
 			&& objInit1 == "oobar" && localInit1 == "arek" && localAssign1 == "arek"
 			&& o.Ptr.Substring(1) == "oobar" && ptr.Substring(1) == "arek"
 			&& ptr.Substring(1, three) == "are"
-			&& initial == "A" && initial2 == "E";
+			&& initial == "A" && initial2 == "E" && initial3 == "L";
 	}
 }
