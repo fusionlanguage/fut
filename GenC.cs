@@ -1983,6 +1983,15 @@ public class GenC : GenCCpp
 		CleanupTemporaries();
 	}
 
+	void StartForeachHashTable(CiForeach statement)
+	{
+		OpenBlock();
+		WriteLine("GHashTableIter cidictit;");
+		Write("g_hash_table_iter_init(&cidictit, ");
+		statement.Collection.Accept(this, CiPriority.Argument);
+		WriteLine(");");
+	}
+
 	void WriteDictIterVar(CiNamedValue iter, string value)
 	{
 		WriteTypeAndName(iter);
@@ -2043,6 +2052,16 @@ public class GenC : GenCCpp
 			Write("++)");
 			WriteChild(statement.Body);
 			break;
+		case CiHashSetType set:
+			StartForeachHashTable(statement);
+			WriteLine("gpointer cikey;");
+			Write("while (g_hash_table_iter_next(&cidictit, &cikey, NULL)) ");
+			OpenBlock();
+			WriteDictIterVar(statement.Element, "cikey");
+			FlattenBlock(statement.Body);
+			CloseBlock();
+			CloseBlock();
+			break;
 		case CiSortedDictionaryType dict:
 			Write("for (GTreeNode *cidictit = g_tree_node_first(");
 			statement.Collection.Accept(this, CiPriority.Argument);
@@ -2054,11 +2073,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 			break;
 		case CiDictionaryType dict:
-			OpenBlock();
-			WriteLine("GHashTableIter cidictit;");
-			Write("g_hash_table_iter_init(&cidictit, ");
-			statement.Collection.Accept(this, CiPriority.Argument);
-			WriteLine(");");
+			StartForeachHashTable(statement);
 			WriteLine("gpointer cikey, civalue;");
 			Write("while (g_hash_table_iter_next(&cidictit, &cikey, &civalue)) ");
 			OpenBlock();

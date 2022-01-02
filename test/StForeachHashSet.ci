@@ -1,0 +1,14 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		HashSet<int>() s; //FAIL: cl
+		s.Add(15);
+		s.Add(5);
+		s.Add(10);
+		int sum = 0;
+		foreach (int value in s)
+			sum += value;
+		return sum == 30;
+	}
+}

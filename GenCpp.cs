@@ -994,7 +994,8 @@ public class GenCpp : GenCCpp
 			Write(statement.ValueVar.Name);
 			Write(']');
 		}
-		else if (((CiArrayType) statement.Collection.Type).ElementType is CiClass klass
+		else if (statement.Collection.Type is CiArrayType array
+		 && array.ElementType is CiClass klass
 		 && element.Type is CiClassPtrType ptr) {
 			if (ptr.Modifier == CiToken.EndOfFile)
 				Write("const ");

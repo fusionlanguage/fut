@@ -1145,12 +1145,24 @@ public class CiResolver : CiVisitor
 				throw StatementException(statement, "Cannot coerce {0} to {1}", dict.ValueType, value.Type);
 		}
 		else {
-			if (!(statement.Collection.Type is CiArrayType array) || array is CiArrayPtrType)
+			CiType elementType;
+			switch (statement.Collection.Type) {
+			case CiArrayStorageType array:
+				elementType = array.ElementType;
+				break;
+			case CiListType list:
+				elementType = list.ElementType;
+				break;
+			case CiHashSetType set:
+				elementType = set.ElementType;
+				break;
+			default:
 				throw StatementException(statement.Collection, "Expected a collection");
+			}
 			if (statement.Count != 1)
 				throw StatementException(statement, "Expected one iterator variable");
-			if (!element.Type.IsAssignableFrom(array.ElementType))
-				throw StatementException(statement, "Cannot coerce {0} to {1}", array.ElementType, element.Type);
+			if (!element.Type.IsAssignableFrom(elementType))
+				throw StatementException(statement, "Cannot coerce {0} to {1}", elementType, element.Type);
 		}
 		statement.SetCompletesNormally(true);
 		statement.Body.Accept(this);
