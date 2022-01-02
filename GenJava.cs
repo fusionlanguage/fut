@@ -1,6 +1,6 @@
 // GenJava.cs - Java code generator
 //
-// Copyright (C) 2011-2021  Piotr Fusik
+// Copyright (C) 2011-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -253,8 +253,18 @@ public class GenJava : GenTyped
 		Write(typeCode, false);
 	}
 
+	void WriteCollectionType(string name, CiType elementType)
+	{
+		Include("java.util." + name);
+		Write(name);
+		Write('<');
+		Write(elementType, false, true);
+		Write('>');
+	}
+
 	void Write(string name, CiDictionaryType dict)
 	{
+		Include("java.util." + name);
 		Write(name);
 		Write('<');
 		Write(dict.KeyType, false, true);
@@ -294,17 +304,15 @@ public class GenJava : GenTyped
 				: needClass ? "Integer" : "int");
 			break;
 		case CiListType list:
-			Include("java.util.ArrayList");
-			Write("ArrayList<");
-			Write(list.ElementType, false, true);
-			Write('>');
+			WriteCollectionType("ArrayList", list.ElementType);
+			break;
+		case CiHashSetType set:
+			WriteCollectionType("HashSet", set.ElementType);
 			break;
 		case CiSortedDictionaryType dict:
-			Include("java.util.TreeMap");
 			Write("TreeMap", dict);
 			break;
 		case CiDictionaryType dict:
-			Include("java.util.HashMap");
 			Write("HashMap", dict);
 			break;
 		case CiArrayType array:
@@ -330,21 +338,26 @@ public class GenJava : GenTyped
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		if (type is CiListType list) {
-			Include("java.util.ArrayList");
-			Write("new ArrayList<");
-			Write(list.ElementType, false, true);
-			Write(">()");
-		}
-		else if (type is CiDictionaryType dict) {
-			string javaType = dict is CiSortedDictionaryType ? "TreeMap" : "HashMap";
-			Include("java.util." + javaType);
+		switch (type) {
+		case CiListType list:
 			Write("new ");
-			Write(javaType, dict);
+			WriteCollectionType("ArrayList", list.ElementType);
 			Write("()");
-		}
-		else
+			break;
+		case CiHashSetType set:
+			Write("new ");
+			WriteCollectionType("HashSet", set.ElementType);
+			Write("()");
+			break;
+		case CiDictionaryType dict:
+			Write("new ");
+			Write(dict is CiSortedDictionaryType ? "TreeMap" : "HashMap", dict);
+			Write("()");
+			break;
+		default:
 			base.WriteNewStorage(type);
+			break;
+		}
 	}
 
 	protected override void WriteResource(string name, int length)

@@ -1,6 +1,6 @@
 // GenPy.cs - Python code generator
 //
-// Copyright (C) 2020-2021  Piotr Fusik
+// Copyright (C) 2020-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -495,6 +495,8 @@ public class GenPy : GenPySwift
 			else
 				Write("[]");
 		}
+		else if (type is CiHashSetType)
+			Write("set()");
 		else if (type is CiDictionaryType)
 			Write("{}");
 		else
@@ -640,7 +642,7 @@ public class GenPy : GenPySwift
 			|| WriteDictionaryAdd(obj, method, args)) {
 			// done
 		}
-		else if (obj.Type is CiListType && method.Name == "Contains")
+		else if ((obj.Type is CiListType || obj.Type is CiHashSetType) && method.Name == "Contains")
 			WriteContains(obj, args[0]);
 		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey")
 			WriteContains(obj, args[0]);

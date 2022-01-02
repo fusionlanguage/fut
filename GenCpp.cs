@@ -1,6 +1,6 @@
 // GenCpp.cs - C++ code generator
 //
-// Copyright (C) 2011-2021  Piotr Fusik
+// Copyright (C) 2011-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -190,6 +190,16 @@ public class GenCpp : GenCCpp
 		WriteName(symbol);
 	}
 
+	void WriteCollectionType(string name, CiType elementType)
+	{
+		Include(name);
+		Write("std::");
+		Write(name);
+		Write('<');
+		Write(elementType, false);
+		Write('>');
+	}
+
 	void WriteBaseType(CiType type)
 	{
 		if (type == CiSystem.MatchClass) {
@@ -247,10 +257,10 @@ public class GenCpp : GenCCpp
 			Write('>');
 			break;
 		case CiListType list:
-			Include("vector");
-			Write("std::vector<");
-			Write(list.ElementType, false);
-			Write('>');
+			WriteCollectionType("vector", list.ElementType);
+			break;
+		case CiHashSetType set:
+			WriteCollectionType("unordered_set", set.ElementType);
 			break;
 		case CiDictionaryType dict:
 			string cppType = dict is CiSortedDictionaryType ? "map" : "unordered_map";
@@ -339,7 +349,7 @@ public class GenCpp : GenCCpp
 			def.Value.Accept(this, CiPriority.Argument);
 			Write('}');
 		}
-		else if (def.Type is CiListType || def.Type is CiDictionaryType) {
+		else if (def.Type is CiListType || def.Type is CiHashSetType || def.Type is CiDictionaryType) {
 		}
 		else
 			base.WriteVarInit(def);
@@ -699,6 +709,16 @@ public class GenCpp : GenCCpp
 			args[1].Accept(this, CiPriority.Add);
 			Write(')');
 		}
+		else if (obj.Type is CiHashSetType && method.Name == "Add") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".insert");
+			WriteArgsInParentheses(method, args);
+		}
+		else if ((obj.Type is CiHashSetType || obj.Type is CiDictionaryType) && method.Name == "Remove") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".erase");
+			WriteArgsInParentheses(method, args);
+		}
 		else if (obj.Type is CiDictionaryType && method.Name == "Add")
 			WriteIndexing(obj, args[0]);
 		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey") {
@@ -710,11 +730,6 @@ public class GenCpp : GenCCpp
 			Write(" != 0");
 			if (parent > CiPriority.Equality)
 				Write(')');
-		}
-		else if (obj.Type is CiDictionaryType && method.Name == "Remove") {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".erase");
-			WriteArgsInParentheses(method, args);
 		}
 		else if (method == CiSystem.UTF8GetByteCount) {
 			if (args[0] is CiLiteral) {

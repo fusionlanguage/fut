@@ -1,7 +1,7 @@
 // GenTs.cs - TypeScript code generator
 //
 // Copyright (C) 2020-2021  Andy Edwards
-// Copyright (C) 2020-2021  Piotr Fusik
+// Copyright (C) 2020-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -91,13 +91,6 @@ public class GenTs : GenJs
 		case CiEnum enu:
 			Write(enu == CiSystem.BoolType ? "boolean" : enu.Name);
 			break;
-		case CiDictionaryType dict:
-			Write("Partial<Record<");
-			Write(dict.KeyType, forConst);
-			Write(", ");
-			Write(dict.ValueType, forConst);
-			Write(">>");
-			break;
 		case CiListType list:
 			if (list.ElementType.IsPointer)
 				Write('(');
@@ -131,6 +124,18 @@ public class GenTs : GenJs
 					Write(')');
 				Write("[]");
 			}
+			break;
+		case CiHashSetType set:
+			Write("Set<");
+			Write(set.ElementType, false);
+			Write('>');
+			break;
+		case CiDictionaryType dict:
+			Write("Partial<Record<");
+			Write(dict.KeyType, forConst);
+			Write(", ");
+			Write(dict.ValueType, forConst);
+			Write(">>");
 			break;
 		default:
 			CiType baseType = type is CiClassPtrType classPtr ? classPtr.Class : type;

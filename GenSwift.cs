@@ -1,6 +1,6 @@
 // GenSwift.cs - Swift code generator
 //
-// Copyright (C) 2020-2021  Piotr Fusik
+// Copyright (C) 2020-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -258,6 +258,11 @@ public class GenSwift : GenPySwift
 			Write('[');
 			Write(list.ElementType);
 			Write(']');
+			break;
+		case CiHashSetType set:
+			Write("Set<");
+			Write(set.ElementType);
+			Write('>');
 			break;
 		case CiDictionaryType dict:
 			Write('[');
@@ -643,6 +648,8 @@ public class GenSwift : GenPySwift
 			WriteMemberOp(obj, null);
 			if (method == CiSystem.CollectionClear)
 				Write("removeAll");
+			else if (obj.Type is CiHashSetType && method.Name == "Add")
+				Write("insert");
 			else
 				WriteName(method);
 			WriteArgsInParentheses(method, args);
@@ -651,20 +658,28 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		if (type is CiListType list) {
+		switch (type) {
+		case CiListType list:
 			Write('[');
 			Write(list.ElementType);
 			Write("]()");
-		}
-		else if (type is CiDictionaryType dict) {
+			break;
+		case CiHashSetType set:
+			Write("Set<");
+			Write(set.ElementType);
+			Write(">()");
+			break;
+		case CiDictionaryType dict:
 			Write('[');
 			Write(dict.KeyType);
 			Write(": ");
 			Write(dict.ValueType);
 			Write("]()");
-		}
-		else
+			break;
+		default:
 			base.WriteNewStorage(type);
+			break;
+		}
 	}
 
 	void WriteDefaultValue(CiType type)
@@ -928,7 +943,7 @@ public class GenSwift : GenPySwift
 		if (def is CiField || AddVar(def.Name)) {
 			Write((def.Type is CiClass ? !def.IsAssignableStorage
 				: def.Type is CiArrayStorageType array ? IsArrayRef(array)
-				: (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType) && !(def.Type is CiDictionaryType))) ? "let " : "var ");
+				: (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType || def.Type is CiHashSetType || def.Type is CiDictionaryType))) ? "let " : "var ");
 			base.WriteVar(def);
 		}
 		else {

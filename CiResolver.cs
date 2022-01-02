@@ -1309,6 +1309,10 @@ public class CiResolver : CiVisitor
 				NotSupported(call, "List", "cl");
 				return new CiListType { ElementType = ToType(call.Method.Left, false) };
 			}
+			if (call.Method.Symbol == CiSystem.HashSetClass) {
+				NotSupported(call, "HashSet", "cl");
+				return new CiHashSetType { ElementType = ToType(call.Method.Left, false) };
+			}
 			if (call.Method.Symbol == CiSystem.DictionaryClass) {
 				NotSupported(call, "Dictionary", "cl");
 				CiExpr[] items = ((CiCollection) call.Method.Left).Items;

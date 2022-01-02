@@ -1295,6 +1295,30 @@ public class CiListType : CiArrayType
 	public override bool IsFinal => true;
 }
 
+public class CiHashSetType : CiType
+{
+	public CiType ElementType;
+	public override string ToString() => $"HashSet<{this.ElementType}>";
+	public override CiSymbol TryLookup(string name)
+	{
+		switch (name) {
+		case "Add":
+			return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Add", new CiVar(this.ElementType, "value")) { IsMutator = true };
+		case "Clear":
+			return CiSystem.CollectionClear;
+		case "Contains":
+			return new CiMethod(CiCallType.Normal, CiSystem.BoolType, "Contains", new CiVar(this.ElementType, "value"));
+		case "Count":
+			return CiSystem.CollectionCount;
+		case "Remove":
+			return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Remove", new CiVar(this.ElementType, "value")) { IsMutator = true };
+		default:
+			return base.TryLookup(name);
+		}
+	}
+	public override bool IsFinal => true;
+}
+
 public class CiDictionaryType : CiType
 {
 	public CiType KeyType;
@@ -1444,6 +1468,7 @@ public class CiSystem : CiScope
 		MathTruncate);
 	public static readonly CiSymbol BasePtr = new CiSymbol { Name = "base" };
 	public static readonly CiSymbol ListClass = new CiSymbol();
+	public static readonly CiSymbol HashSetClass = new CiSymbol();
 	public static readonly CiSymbol DictionaryClass = new CiSymbol();
 	public static readonly CiSymbol SortedDictionaryClass = new CiSymbol();
 	public static readonly CiClass LockClass = new CiClass(CiCallType.Sealed, "Lock");

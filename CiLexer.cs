@@ -1,6 +1,6 @@
 // CiLexer.cs - Ci lexer
 //
-// Copyright (C) 2011-2021  Piotr Fusik
+// Copyright (C) 2011-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -95,6 +95,7 @@ public enum CiToken
 	Enum,
 	For,
 	Foreach,
+	HashSet,
 	If,
 	In,
 	Internal,
@@ -549,6 +550,7 @@ public class CiLexer
 				case "enum": return CiToken.Enum;
 				case "for": return CiToken.For;
 				case "foreach": return CiToken.Foreach;
+				case "HashSet": return CiToken.HashSet;
 				case "if": return CiToken.If;
 				case "in": return CiToken.In;
 				case "internal": return CiToken.Internal;

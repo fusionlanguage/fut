@@ -1,6 +1,6 @@
 // GenJs.cs - JavaScript code generator
 //
-// Copyright (C) 2011-2021  Piotr Fusik
+// Copyright (C) 2011-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -83,13 +83,8 @@ public class GenJs : GenBase
 			WriteUppercaseWithUnderscores(symbol.Name);
 			break;
 		case CiVar _:
-			WriteCamelCaseNotKeyword(symbol.Name);
-			break;
 		case CiMember _:
-			if (symbol == CiSystem.CollectionCount)
-				Write("length");
-			else
-				WriteCamelCaseNotKeyword(symbol.Name);
+			WriteCamelCaseNotKeyword(symbol.Name);
 			break;
 		default:
 			throw new NotImplementedException(symbol.GetType().Name);
@@ -147,6 +142,8 @@ public class GenJs : GenBase
 	{
 		if (type is CiListType)
 			Write("[]");
+		else if (type is CiHashSetType)
+			Write("new Set()");
 		else if (type is CiDictionaryType)
 			Write("{}");
 		else
@@ -302,9 +299,23 @@ public class GenJs : GenBase
 
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Symbol == CiSystem.CollectionCount && expr.Left.Type is CiDictionaryType) {
-			WriteCall("Object.keys", expr.Left);
-			Write(".length");
+		if (expr.Symbol == CiSystem.CollectionCount) {
+			switch (expr.Left.Type) {
+			case CiListType _:
+				expr.Left.Accept(this, CiPriority.Primary);
+				Write(".length");
+				break;
+			case CiHashSetType _:
+				expr.Left.Accept(this, CiPriority.Primary);
+				Write(".size");
+				break;
+			case CiDictionaryType _:
+				WriteCall("Object.keys", expr.Left);
+				Write(".length");
+				break;
+			default:
+				throw new NotImplementedException(expr.Left.Type.ToString());
+			}
 		}
 		else if (expr.Symbol == CiSystem.MatchStart) {
 			expr.Left.Accept(this, CiPriority.Primary);
@@ -426,6 +437,10 @@ public class GenJs : GenBase
 			}
 			Write(')');
 		}
+		else if (obj.Type is CiListType && method == CiSystem.CollectionClear) {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".length = 0");
+		}
 		else if (obj.Type is CiListType && method == CiSystem.CollectionSortAll) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".sort((a, b) => a - b)");
@@ -446,20 +461,6 @@ public class GenJs : GenBase
 				Write(").sort()");
 			}
 		}
-		else if (method == CiSystem.CollectionClear) {
-			if (obj.Type is CiDictionaryType) {
-				Write("for (const key in ");
-				obj.Accept(this, CiPriority.Argument);
-				WriteLine(')');
-				Write("\tdelete ");
-				obj.Accept(this, CiPriority.Primary); // FIXME: side effect
-				Write("[key];");
-			}
-			else {
-				obj.Accept(this, CiPriority.Primary);
-				Write(".length = 0");
-			}
-		}
 		else if (WriteListAddInsert(obj, method, args, "push", "splice", ", 0, ")
 			|| WriteDictionaryAdd(obj, method, args)) {
 			// done
@@ -475,6 +476,14 @@ public class GenJs : GenBase
 		else if (obj.Type is CiDictionaryType && method.Name == "Remove") {
 			Write("delete ");
 			WriteIndexing(obj, args[0]);
+		}
+		else if (obj.Type is CiDictionaryType && method == CiSystem.CollectionClear) {
+			Write("for (const key in ");
+			obj.Accept(this, CiPriority.Argument);
+			WriteLine(')');
+			Write("\tdelete ");
+			obj.Accept(this, CiPriority.Primary); // FIXME: side effect
+			Write("[key];");
 		}
 		else if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine) {
 			// XXX: Console.Write same as Console.WriteLine
@@ -596,6 +605,10 @@ public class GenJs : GenBase
 				Write("trunc");
 			else if (method == CiSystem.StringContains || (obj.Type is CiListType && method.Name == "Contains"))
 				Write("includes");
+			else if (obj.Type is CiHashSetType && method.Name == "Contains")
+				Write("has");
+			else if (obj.Type is CiHashSetType && method.Name == "Remove")
+				Write("delete");
 			else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey")
 				Write("hasOwnProperty");
 			else

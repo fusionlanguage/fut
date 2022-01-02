@@ -62,17 +62,17 @@ public class CiParser : CiLexer
 		return new CiSymbolReference { Line = this.Line, Left = left, Name = ParseId() };
 	}
 
-	CiExpr ParseListType()
+	CiExpr ParseCollectionType(CiSymbol klass)
 	{
 		int line = this.Line;
-		Expect(CiToken.List);
+		NextToken();
 		Expect(CiToken.Less);
 		bool saveTypeArg = this.ParsingTypeArg;
 		this.ParsingTypeArg = true;
 		CiExpr elementType = ParseType();
 		this.ParsingTypeArg = saveTypeArg;
 		Expect(CiToken.RightAngle);
-		return new CiSymbolReference { Line = line, Left = elementType, Symbol = CiSystem.ListClass };
+		return new CiSymbolReference { Line = line, Left = elementType, Symbol = klass };
 	}
 
 	CiExpr ParseDictionaryType(CiSymbol type)
@@ -193,7 +193,10 @@ public class CiParser : CiLexer
 			result = ParseSymbolReference(null);
 			break;
 		case CiToken.List:
-			result = ParseListType();
+			result = ParseCollectionType(CiSystem.ListClass);
+			break;
+		case CiToken.HashSet:
+			result = ParseCollectionType(CiSystem.HashSetClass);
 			break;
 		case CiToken.Dictionary:
 			result = ParseDictionaryType(CiSystem.DictionaryClass);

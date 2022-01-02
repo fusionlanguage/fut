@@ -1,6 +1,6 @@
 // GenCs.cs - C# code generator
 //
-// Copyright (C) 2011-2021  Piotr Fusik
+// Copyright (C) 2011-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -199,6 +199,14 @@ public class GenCs : GenTyped
 		}
 	}
 
+	void WriteElementType(CiType elementType)
+	{
+		Include("System.Collections.Generic");
+		Write('<');
+		Write(elementType, false);
+		Write('>');
+	}
+
 	void Write(CiDictionaryType dict)
 	{
 		Include("System.Collections.Generic");
@@ -232,10 +240,12 @@ public class GenCs : GenTyped
 			Write("string");
 			break;
 		case CiListType list:
-			Include("System.Collections.Generic");
-			Write("List<");
-			Write(list.ElementType, false);
-			Write('>');
+			Write("List");
+			WriteElementType(list.ElementType);
+			break;
+		case CiHashSetType set:
+			Write("HashSet");
+			WriteElementType(set.ElementType);
 			break;
 		case CiDictionaryType dict:
 			Write(dict);
@@ -302,19 +312,26 @@ public class GenCs : GenTyped
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		if (type is CiListType list) {
-			Include("System.Collections.Generic");
-			Write("new List<");
-			Write(list.ElementType, false);
-			Write(">()");
-		}
-		else if (type is CiDictionaryType dict) {
+		switch (type) {
+		case CiListType list:
+			Write("new List");
+			WriteElementType(list.ElementType);
+			Write("()");
+			break;
+		case CiHashSetType set:
+			Write("new HashSet");
+			WriteElementType(set.ElementType);
+			Write("()");
+			break;
+		case CiDictionaryType dict:
 			Write("new ");
 			Write(dict);
 			Write("()");
-		}
-		else
+			break;
+		default:
 			base.WriteNewStorage(type);
+			break;
+		}
 	}
 
 	protected override bool HasInitCode(CiNamedValue def)
