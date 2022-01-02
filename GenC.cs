@@ -1,6 +1,6 @@
 // GenC.cs - C code generator
 //
-// Copyright (C) 2011-2021  Piotr Fusik
+// Copyright (C) 2011-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -561,7 +561,7 @@ public class GenC : GenCCpp
 				return "CiList_FreeShared";
 			}
 			if (list.ElementType is CiClass klass && NeedsDestructor(klass))
-				return "(GDestroyNotify) " + klass.Name + "_Destruct";
+				return $"(GDestroyNotify) {klass.Name}_Destruct";
 			if (list.ElementType is CiListType) {
 				this.ListFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
 				return "CiList_FreeList";
@@ -587,7 +587,7 @@ public class GenC : GenCCpp
 			return "CiShared_Release";
 		}
 		if (type is CiClass klass)
-			return NeedsDestructor(klass) ? "(GDestroyNotify) " + klass.Name + "_Delete" /* TODO: emit */ : "free";
+			return NeedsDestructor(klass) ? $"(GDestroyNotify) {klass.Name}_Delete" /* TODO: emit */ : "free";
 		if (type is CiListType)
 			return "(GDestroyNotify) g_array_unref";
 		if (type is CiDictionaryType)

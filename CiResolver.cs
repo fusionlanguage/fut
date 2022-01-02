@@ -1,6 +1,6 @@
 // CiResolver.cs - Ci symbol resolver
 //
-// Copyright (C) 2011-2021  Piotr Fusik
+// Copyright (C) 2011-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -1252,7 +1252,7 @@ public class CiResolver : CiVisitor
 	void ExpectNoPtrModifier(CiExpr expr, CiToken ptrModifier)
 	{
 		if (ptrModifier != CiToken.EndOfFile)
-			throw StatementException(expr, "Unexpected " + ptrModifier + " on a non-reference type");
+			throw StatementException(expr, $"Unexpected {ptrModifier} on a non-reference type");
 	}
 
 	CiLiteral FoldConst(CiExpr expr)

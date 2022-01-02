@@ -1,6 +1,6 @@
 // CiTree.cs - Ci object model
 //
-// Copyright (C) 2011-2021  Piotr Fusik
+// Copyright (C) 2011-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -421,7 +421,7 @@ public class CiSymbolReference : CiExpr
 	public CiSymbol Symbol;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
 	public override bool IsReferenceTo(CiSymbol symbol) => this.Symbol == symbol;
-	public override string ToString() => this.Left != null ? this.Left + "." + this.Name : this.Name;
+	public override string ToString() => this.Left != null ? $"{this.Left}.{this.Name}" : this.Name;
 }
 
 public abstract class CiUnaryExpr : CiExpr
@@ -563,9 +563,9 @@ public class CiBinaryExpr : CiExpr
 	{
 		switch (this.Op) {
 		case CiToken.LeftBracket:
-			return this.Left + "[" + this.Right + "]";
+			return $"{this.Left}[{this.Right}]";
 		default:
-			return "(" + this.Left + " " + this.OpString + " " + this.Right + ")";
+			return $"({this.Left} {this.OpString} {this.Right})";
 		}
 	}
 }
@@ -576,7 +576,7 @@ public class CiSelectExpr : CiExpr
 	public CiExpr OnTrue;
 	public CiExpr OnFalse;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
-	public override string ToString() => "(" + this.Cond + " ? " + this.OnTrue + " : " + this.OnFalse + ")";
+	public override string ToString() => $"({this.Cond} ? {this.OnTrue} : {this.OnFalse})";
 }
 
 public class CiCallExpr : CiExpr
@@ -933,7 +933,7 @@ public class CiRangeType : CiIntegerType
 		this.Max = b >= d ? b : d;
 	}
 
-	public override string ToString() => this.Min == this.Max ? this.Min.ToString() : "(" + this.Min + " .. " + this.Max + ")";
+	public override string ToString() => this.Min == this.Max ? this.Min.ToString() : $"({this.Min} .. {this.Max})";
 
 	public override bool Equals(object obj)
 	{
@@ -1223,7 +1223,7 @@ public class CiArrayStorageType : CiArrayType
 	public int Length;
 	public bool PtrTaken = false;
 
-	public override string ArrayString => "[" + this.Length + "]";
+	public override string ArrayString => $"[{this.Length}]";
 	public override CiSymbol TryLookup(string name)
 	{
 		switch (name) {
@@ -1263,7 +1263,7 @@ public class CiArrayStorageType : CiArrayType
 
 public class CiListType : CiArrayType
 {
-	public override string ToString() => "List<" + this.ElementType + ">";
+	public override string ToString() => $"List<{this.ElementType}>";
 	public override CiSymbol TryLookup(string name)
 	{
 		switch (name) {
@@ -1300,7 +1300,7 @@ public class CiDictionaryType : CiType
 	public CiType KeyType;
 	public CiType ValueType;
 
-	public override string ToString() => "Dictionary<" + this.KeyType + ", " + this.ValueType + ">";
+	public override string ToString() => $"Dictionary<{this.KeyType}, {this.ValueType}>";
 	public override CiSymbol TryLookup(string name)
 	{
 		switch (name) {
@@ -1325,7 +1325,7 @@ public class CiDictionaryType : CiType
 
 public class CiSortedDictionaryType : CiDictionaryType
 {
-	public override string ToString() => "SortedDictionary<" + this.KeyType + ", " + this.ValueType + ">";
+	public override string ToString() => $"SortedDictionary<{this.KeyType}, {this.ValueType}>";
 }
 
 public class CiPrintableType : CiType

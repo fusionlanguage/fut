@@ -1,6 +1,6 @@
 // CiParser.cs - Ci parser
 //
-// Copyright (C) 2011-2021  Piotr Fusik
+// Copyright (C) 2011-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -113,7 +113,7 @@ public class CiParser : CiLexer
 	{
 		if (this.XcrementParent != null) {
 			string op = this.CurrentToken == CiToken.Increment ? "++" : "--";
-			throw ParseException(op + " not allowed on the right side of " + this.XcrementParent);
+			throw ParseException($"{op} not allowed on the right side of {this.XcrementParent}");
 		}
 	}
 
