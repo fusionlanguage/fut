@@ -111,6 +111,7 @@ public enum CiToken
 	Return,
 	Sealed,
 	SortedDictionary,
+	Stack,
 	Static,
 	Switch,
 	Throw,
@@ -566,6 +567,7 @@ public class CiLexer
 				case "return": return CiToken.Return;
 				case "sealed": return CiToken.Sealed;
 				case "SortedDictionary": return CiToken.SortedDictionary;
+				case "Stack": return CiToken.Stack;
 				case "static": return CiToken.Static;
 				case "switch": return CiToken.Switch;
 				case "throw": return CiToken.Throw;

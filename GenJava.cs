@@ -306,6 +306,9 @@ public class GenJava : GenTyped
 		case CiListType list:
 			WriteCollectionType("ArrayList", list.ElementType);
 			break;
+		case CiStackType stack:
+			WriteCollectionType("Stack", stack.ElementType);
+			break;
 		case CiHashSetType set:
 			WriteCollectionType("HashSet", set.ElementType);
 			break;
@@ -342,6 +345,11 @@ public class GenJava : GenTyped
 		case CiListType list:
 			Write("new ");
 			WriteCollectionType("ArrayList", list.ElementType);
+			Write("()");
+			break;
+		case CiStackType stack:
+			Write("new ");
+			WriteCollectionType("Stack", stack.ElementType);
 			Write("()");
 			break;
 		case CiHashSetType set:

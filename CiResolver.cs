@@ -1321,6 +1321,10 @@ public class CiResolver : CiVisitor
 				NotSupported(call, "List", "cl");
 				return new CiListType { ElementType = ToType(call.Method.Left, false) };
 			}
+			if (call.Method.Symbol == CiSystem.StackClass) {
+				NotSupported(call, "Stack", "cl");
+				return new CiStackType { ElementType = ToType(call.Method.Left, false) };
+			}
 			if (call.Method.Symbol == CiSystem.HashSetClass) {
 				NotSupported(call, "HashSet", "cl");
 				return new CiHashSetType { ElementType = ToType(call.Method.Left, false) };

@@ -140,7 +140,7 @@ public class GenJs : GenBase
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		if (type is CiListType)
+		if (type is CiListType || type is CiStackType)
 			Write("[]");
 		else if (type is CiHashSetType)
 			Write("new Set()");
@@ -302,6 +302,7 @@ public class GenJs : GenBase
 		if (expr.Symbol == CiSystem.CollectionCount) {
 			switch (expr.Left.Type) {
 			case CiListType _:
+			case CiStackType _:
 				expr.Left.Accept(this, CiPriority.Primary);
 				Write(".length");
 				break;
@@ -437,7 +438,7 @@ public class GenJs : GenBase
 			}
 			Write(')');
 		}
-		else if (obj.Type is CiListType && method == CiSystem.CollectionClear) {
+		else if ((obj.Type is CiListType || obj.Type is CiStackType) && method == CiSystem.CollectionClear) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".length = 0");
 		}
@@ -476,6 +477,10 @@ public class GenJs : GenBase
 		else if (obj.Type is CiDictionaryType && method.Name == "Remove") {
 			Write("delete ");
 			WriteIndexing(obj, args[0]);
+		}
+		else if (obj.Type is CiStackType && method.Name == "Peek") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".at(-1)");
 		}
 		else if (obj.Type is CiDictionaryType && method == CiSystem.CollectionClear) {
 			Write("for (const key in ");

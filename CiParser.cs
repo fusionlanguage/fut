@@ -195,6 +195,9 @@ public class CiParser : CiLexer
 		case CiToken.List:
 			result = ParseCollectionType(CiSystem.ListClass);
 			break;
+		case CiToken.Stack:
+			result = ParseCollectionType(CiSystem.StackClass);
+			break;
 		case CiToken.HashSet:
 			result = ParseCollectionType(CiSystem.HashSetClass);
 			break;

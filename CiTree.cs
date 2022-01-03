@@ -1295,6 +1295,30 @@ public class CiListType : CiArrayType
 	public override bool IsFinal => true;
 }
 
+public class CiStackType : CiType
+{
+	public CiType ElementType;
+	public override string ToString() => $"Stack<{this.ElementType}>";
+	public override CiSymbol TryLookup(string name)
+	{
+		switch (name) {
+		case "Clear":
+			return CiSystem.CollectionClear;
+		case "Count":
+			return CiSystem.CollectionCount;
+		case "Peek":
+			return new CiMethod(CiCallType.Normal, this.ElementType, "Peek");
+		case "Push":
+			return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Push", new CiVar(this.ElementType, "value")) { IsMutator = true };
+		case "Pop":
+			return new CiMethod(CiCallType.Normal, this.ElementType, "Pop") { IsMutator = true };
+		default:
+			return base.TryLookup(name);
+		}
+	}
+	public override bool IsFinal => true;
+}
+
 public class CiHashSetType : CiType
 {
 	public CiType ElementType;
@@ -1468,6 +1492,7 @@ public class CiSystem : CiScope
 		MathTruncate);
 	public static readonly CiSymbol BasePtr = new CiSymbol { Name = "base" };
 	public static readonly CiSymbol ListClass = new CiSymbol();
+	public static readonly CiSymbol StackClass = new CiSymbol();
 	public static readonly CiSymbol HashSetClass = new CiSymbol();
 	public static readonly CiSymbol DictionaryClass = new CiSymbol();
 	public static readonly CiSymbol SortedDictionaryClass = new CiSymbol();

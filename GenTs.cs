@@ -79,6 +79,16 @@ public class GenTs : GenJs
 		Write(konst.Type, true);
 	}
 
+	void WriteListType(CiType elementType)
+	{
+		if (elementType.IsPointer)
+			Write('(');
+		Write(elementType, false);
+		if (elementType.IsPointer)
+			Write(')');
+		Write("[]");
+	}
+
 	void Write(CiType type, bool forConst = false)
 	{
 		switch (type) {
@@ -92,12 +102,10 @@ public class GenTs : GenJs
 			Write(enu == CiSystem.BoolType ? "boolean" : enu.Name);
 			break;
 		case CiListType list:
-			if (list.ElementType.IsPointer)
-				Write('(');
-			Write(list.ElementType, forConst);
-			if (list.ElementType.IsPointer)
-				Write(')');
-			Write("[]");
+			WriteListType(list.ElementType);
+			break;
+		case CiStackType stack:
+			WriteListType(stack.ElementType);
 			break;
 		case CiArrayType array:
 			CiType elementType = array.ElementType;

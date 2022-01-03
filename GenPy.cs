@@ -478,23 +478,29 @@ public class GenPy : GenPySwift
 		WriteNewArray(array.ElementType, null, array.LengthExpr);
 	}
 
+	void WriteNewList(CiType elementType)
+	{
+		if (elementType is CiNumericType number) {
+			char c = GetArrayCode(number);
+			if (c == 'B')
+				Write("bytearray()");
+			else {
+				Include("array");
+				Write("array.array(\"");
+				Write(c);
+				Write("\")");
+			}
+		}
+		else
+			Write("[]");
+	}
+
 	protected override void WriteNewStorage(CiType type)
 	{
-		if (type is CiListType list) {
-			if (list.ElementType is CiNumericType number) {
-				char c = GetArrayCode(number);
-				if (c == 'B')
-					Write("bytearray()");
-				else {
-					Include("array");
-					Write("array.array(\"");
-					Write(c);
-					Write("\")");
-				}
-			}
-			else
-				Write("[]");
-		}
+		if (type is CiListType list)
+			WriteNewList(list.ElementType);
+		else if (type is CiStackType stack)
+			WriteNewList(stack.ElementType);
 		else if (type is CiHashSetType)
 			Write("set()");
 		else if (type is CiDictionaryType)
@@ -512,6 +518,18 @@ public class GenPy : GenPySwift
 		needle.Accept(this, CiPriority.Primary);
 		Write(" in ");
 		haystack.Accept(this, CiPriority.Primary);
+	}
+
+	static bool IsNumberList(CiType type)
+	{
+		CiType elementType;
+		if (type is CiListType list)
+			elementType = list.ElementType;
+		else if (type is CiStackType stack)
+			elementType = stack.ElementType;
+		else
+			return false;
+		return elementType is CiNumericType number && GetArrayCode(number) != 'B';
 	}
 
 	void WriteSlice(CiExpr startIndex, CiExpr length)
@@ -586,7 +604,7 @@ public class GenPy : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			WriteSlice(args[0], args.Length == 2 ? args[1] : null);
 		}
-		else if (obj.Type is CiListType list && method == CiSystem.CollectionClear && list.ElementType is CiNumericType number && GetArrayCode(number) != 'B') {
+		else if (method == CiSystem.CollectionClear && IsNumberList(obj.Type)) {
 			Write("del ");
 			obj.Accept(this, CiPriority.Primary);
 			Write("[:]");
@@ -644,6 +662,12 @@ public class GenPy : GenPySwift
 		}
 		else if ((obj.Type is CiListType || obj.Type is CiHashSetType) && method.Name == "Contains")
 			WriteContains(obj, args[0]);
+		else if (obj.Type is CiStackType && method.Name == "Peek") {
+			obj.Accept(this, CiPriority.Primary);
+			Write("[-1]");
+		}
+		else if (obj.Type is CiStackType stack && method.Name == "Push")
+			WriteListAppend(obj, stack.ElementType, args);
 		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey")
 			WriteContains(obj, args[0]);
 		else if (method == CiSystem.ConsoleWrite)

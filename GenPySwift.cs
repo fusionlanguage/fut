@@ -1,6 +1,6 @@
 // GenPySwift.cs - Python/Swift code generator
 //
-// Copyright (C) 2020-2021  Piotr Fusik
+// Copyright (C) 2020-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -128,6 +128,17 @@ public abstract class GenPySwift : GenBase
 	protected virtual void WriteExpr(CiExpr expr, CiPriority parent)
 	{
 		expr.Accept(this, parent);
+	}
+
+	protected void WriteListAppend(CiExpr obj, CiType elementType, CiExpr[] args)
+	{
+		obj.Accept(this, CiPriority.Primary);
+		Write(".append(");
+		if (args.Length == 0)
+			WriteNewStorage(elementType);
+		else
+			args[0].Accept(this, CiPriority.Argument);
+		Write(')');
 	}
 
 	protected virtual bool VisitPreCall(CiCallExpr call) => false;

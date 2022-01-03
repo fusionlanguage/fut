@@ -259,6 +259,9 @@ public class GenCpp : GenCCpp
 		case CiListType list:
 			WriteCollectionType("vector", list.ElementType);
 			break;
+		case CiStackType stack:
+			WriteCollectionType("stack", stack.ElementType);
+			break;
 		case CiHashSetType set:
 			WriteCollectionType("unordered_set", set.ElementType);
 			break;
@@ -349,7 +352,7 @@ public class GenCpp : GenCCpp
 			def.Value.Accept(this, CiPriority.Argument);
 			Write('}');
 		}
-		else if (def.Type is CiListType || def.Type is CiHashSetType || def.Type is CiDictionaryType) {
+		else if (def.Type is CiListType || def.Type is CiStackType || def.Type is CiHashSetType || def.Type is CiDictionaryType) {
 		}
 		else
 			base.WriteVarInit(def);
@@ -693,6 +696,24 @@ public class GenCpp : GenCCpp
 			}
 			Write(')');
 		}
+		else if (obj.Type is CiStackType && method == CiSystem.CollectionClear) {
+			obj.Accept(this, CiPriority.Assign);
+			Write(" = {}");
+		}
+		else if (obj.Type is CiStackType && method.Name == "Peek") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".top()");
+		}
+		else if (obj.Type is CiStackType stack && method.Name == "Pop" && parent != CiPriority.Statement) {
+			// :-)
+			Write("[](");
+			WriteCollectionType("stack", stack.ElementType);
+			Write(" &s) { ");
+			Write(stack.ElementType, false);
+			Write(" top = s.top(); s.pop(); return top; }(");
+			obj.Accept(this, CiPriority.Argument);
+			Write(')');
+		}
 		else if (method == CiSystem.ListRemoveAt) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".erase(");
@@ -709,16 +730,10 @@ public class GenCpp : GenCCpp
 			args[1].Accept(this, CiPriority.Add);
 			Write(')');
 		}
-		else if (obj.Type is CiHashSetType && method.Name == "Add") {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".insert");
-			WriteArgsInParentheses(method, args);
-		}
-		else if ((obj.Type is CiHashSetType || obj.Type is CiDictionaryType) && method.Name == "Remove") {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".erase");
-			WriteArgsInParentheses(method, args);
-		}
+		else if (obj.Type is CiHashSetType && method.Name == "Add")
+			WriteCall(obj, "insert", args[0]);
+		else if ((obj.Type is CiHashSetType || obj.Type is CiDictionaryType) && method.Name == "Remove")
+			WriteCall(obj, "erase", args[0]);
 		else if (obj.Type is CiDictionaryType && method.Name == "Add")
 			WriteIndexing(obj, args[0]);
 		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey") {

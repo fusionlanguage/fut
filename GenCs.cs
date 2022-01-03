@@ -243,6 +243,10 @@ public class GenCs : GenTyped
 			Write("List");
 			WriteElementType(list.ElementType);
 			break;
+		case CiStackType stack:
+			Write("Stack");
+			WriteElementType(stack.ElementType);
+			break;
 		case CiHashSetType set:
 			Write("HashSet");
 			WriteElementType(set.ElementType);
@@ -316,6 +320,11 @@ public class GenCs : GenTyped
 		case CiListType list:
 			Write("new List");
 			WriteElementType(list.ElementType);
+			Write("()");
+			break;
+		case CiStackType stack:
+			Write("new Stack");
+			WriteElementType(stack.ElementType);
 			Write("()");
 			break;
 		case CiHashSetType set:

@@ -1,0 +1,14 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		Stack<int>() s; //FAIL: cl
+		s.Push(42);
+		s.Clear();
+		s.Push(5);
+		s.Push(10);
+		s.Push(15);
+		s.Pop();
+		return s.Count == 2 && s.Pop() == 10 && s.Peek() == 5;
+	}
+}
