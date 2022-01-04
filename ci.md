@@ -28,8 +28,8 @@ pair of `.c`/`.h` files containing portable, human-readable C99 code.
 Similarly, the outputs in other languages do _not_ rely on anything except
 the standard language. There are two exceptions:
 
-1. If the Ć code uses regular expressions, `List`, `Dictionary`
-   or `SortedDictionary`, the C output relies
+1. If the Ć code uses regular expressions, `List`, `Stack`, `HashSet`,
+   `Dictionary` or `SortedDictionary`, the C output relies
    on [GLib](https://wiki.gnome.org/Projects/GLib) implementations of these.
 2. `Math.FusedMultiplyAdd` is implemented in Python
    with [pyfma](https://pypi.org/project/pyfma/).
@@ -814,9 +814,11 @@ The `is` operator cannot be used for:
 
 ### Collections
 
-In addition to arrays, Ć has three built-in collection types:
+In addition to arrays, Ć has five built-in collection types:
 
 * `List<T>` is a resizeable array (`std::vector` in C++, `ArrayList` in Java)
+* `Stack<T>` is a LIFO (last in, first out) collection
+* `HashSet<T>` is a collection of unique values
 * `Dictionary<TKey, TValue>` is a dictionary
   (`std::unordered_map` in C++, `HashMap` in Java)
 * `SortedDictionary<TKey, TValue>` is a dictionary sorted by key
@@ -869,6 +871,36 @@ You can remove:
 
 `list.CopyTo(sourceIndex, destinationArray, destinationIndex, count)`
 copies elements from a list to an array.
+
+#### Stack
+
+A stack is similar to a list. In fact, many target languages don't have
+a dedicated stack type and the same type is used as for a list.
+Stack provides four access methods:
+
+* `Push(item)` adds an element on top of the stack.
+* `Pop()` removes an element on top of the stack and returns it.
+  This operation is only valid if the stack is not empty.
+* `Peek()` returns the top element, but doesn't modify the stack.
+  Also valid only if the stack is not empty.
+* `Clear()` discards all the stack contents.
+
+The `Count` property returns the number of elements on the stack.
+
+#### HashSet
+
+A `HashSet` is a collection of unique values: numbers, strings or enumerations.
+
+* `Add(item)` adds `item` to the collection. It has no effect if the collection
+  already contained the item.
+* `Remove(item)` removes `item` from the collection.
+* `Contains(item)` returns `true` if the collection contains the specified
+  element.
+* `Clear()` empties the `HashSet`.
+
+The `Count` property returns the number of elements in a `HashSet`.
+You can iterate over elements of a `HashSet` with `foreach`, but the iteration
+order is not specified.
 
 #### Dictionary
 
