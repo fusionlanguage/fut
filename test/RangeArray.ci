@@ -1,0 +1,11 @@
+public class Test
+{
+	public static bool Run()
+	{
+		0 .. 9 [3] digits;
+		digits[0] = 1;
+		digits[1] = 3;
+		digits[2] = 7;
+		return digits[0] == 1 && digits[1] == 3 && digits[2] == 7;
+	}
+}

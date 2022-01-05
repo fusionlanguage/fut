@@ -82,7 +82,7 @@ the lower and upper bounds, both of which are inclusive.
 For example:
 
 ```csharp
-(0 .. 100)[1000] arrayOfSmallIntegers;
+0 .. 100 [1000] arrayOfSmallIntegers;
 ```
 
 is a definition of an array of a thousand integers between zero

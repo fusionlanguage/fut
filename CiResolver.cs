@@ -1289,7 +1289,7 @@ public class CiResolver : CiVisitor
 	{
 		switch (expr) {
 		case CiSymbolReference symbol:
-			// built-in, MyEnum, MyClass, MyClass!
+			// built-in, MyEnum, MyClass, MyClass!, MyClass#
 			if (this.Program.TryLookup(symbol.Name) is CiType type) {
 				if (type is CiClass klass) {
 					if (klass == CiSystem.MatchClass) {
@@ -1303,14 +1303,6 @@ public class CiResolver : CiVisitor
 				return type;
 			}
 			throw StatementException(expr, "Type {0} not found", symbol.Name);
-
-		case CiBinaryExpr binary when binary.Op == CiToken.Range:
-			ExpectNoPtrModifier(expr, ptrModifier);
-			int min = FoldConstInt(binary.Left);
-			int max = FoldConstInt(binary.Right);
-			if (min > max)
-				throw StatementException(expr, "Range min greater than max");
-			return new CiRangeType(min, max);
 
 		case CiCallExpr call:
 			// string(), MyClass()
@@ -1363,9 +1355,15 @@ public class CiResolver : CiVisitor
 
 	CiType ToType(CiExpr expr, bool dynamic)
 	{
+		CiExpr minExpr = null;
+		if (expr is CiBinaryExpr range && range.Op == CiToken.Range) {
+			minExpr = range.Left;
+			expr = range.Right;
+		}
+
 		CiToken ptrModifier = GetPtrModifier(ref expr);
-		CiArrayType outerArray = null; // left-most in source
-		CiArrayType innerArray = null; // right-most in source
+		CiArrayType outerArray = null; // leftmost in source
+		CiArrayType innerArray = null; // rightmost in source
 		while (expr is CiBinaryExpr binary && binary.Op == CiToken.LeftBracket) {
 			if (binary.Right != null) {
 				ExpectNoPtrModifier(expr, ptrModifier);
@@ -1386,13 +1384,23 @@ public class CiResolver : CiVisitor
 			}
 			else
 				outerArray = new CiArrayPtrType { Modifier = ptrModifier, ElementType = outerArray };
-			if (innerArray == null)
-				innerArray = outerArray;
+			innerArray ??= outerArray;
 			expr = binary.Left;
 			ptrModifier = GetPtrModifier(ref expr);
 		}
 
-		CiType baseType = ToBaseType(expr, ptrModifier);
+		CiType baseType;
+		if (minExpr != null) {
+			ExpectNoPtrModifier(expr, ptrModifier);
+			int min = FoldConstInt(minExpr);
+			int max = FoldConstInt(expr);
+			if (min > max)
+				throw StatementException(expr, "Range min greater than max");
+			baseType = new CiRangeType(min, max);
+		}
+		else
+			baseType = ToBaseType(expr, ptrModifier);
+
 		if (outerArray == null)
 			return baseType;
 		innerArray.ElementType = baseType;

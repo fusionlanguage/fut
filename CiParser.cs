@@ -75,7 +75,7 @@ public class CiParser : CiLexer
 		return new CiSymbolReference { Line = line, Left = elementType, Symbol = klass };
 	}
 
-	CiExpr ParseDictionaryType(CiSymbol type)
+	CiExpr ParseDictionaryType(CiSymbol klass)
 	{
 		int line = this.Line;
 		NextToken();
@@ -87,7 +87,7 @@ public class CiParser : CiLexer
 		CiExpr valueType = ParseType();
 		this.ParsingTypeArg = saveTypeArg;
 		Expect(CiToken.RightAngle);
-		return new CiSymbolReference { Line = line, Left = new CiCollection { Items = new CiExpr[] { keyType, valueType } }, Symbol = type };
+		return new CiSymbolReference { Line = line, Left = new CiCollection { Items = new CiExpr[] { keyType, valueType } }, Symbol = klass };
 	}
 
 	CiExpr ParseConstInitializer()
@@ -175,8 +175,9 @@ public class CiParser : CiLexer
 		case CiToken.Minus:
 		case CiToken.Tilde:
 		case CiToken.ExclamationMark:
-		case CiToken.New:
 			return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParsePrimaryExpr() };
+		case CiToken.New:
+			return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParseType() };
 		case CiToken.Literal:
 			result = new CiLiteral(this.CurrentValue) { Line = this.Line };
 			NextToken();
@@ -185,9 +186,7 @@ public class CiParser : CiLexer
 			result = ParseInterpolatedString();
 			break;
 		case CiToken.LeftParenthesis:
-			Expect(CiToken.LeftParenthesis);
-			result = ParseType();
-			Expect(CiToken.RightParenthesis);
+			result = ParseParenthesized();
 			break;
 		case CiToken.Id:
 			result = ParseSymbolReference(null);
@@ -379,15 +378,15 @@ public class CiParser : CiLexer
 
 	CiExpr ParseType()
 	{
-		CiExpr left = ParseExpr();
+		CiExpr left = ParsePrimaryExpr();
 		if (Eat(CiToken.Range))
-			return new CiBinaryExpr { Line = this.Line, Left = left, Op = CiToken.Range, Right = ParseExpr() };
+			return new CiBinaryExpr { Line = this.Line, Left = left, Op = CiToken.Range, Right = ParsePrimaryExpr() };
 		return left;
 	}
 
 	CiExpr ParseAssign(bool allowVar)
 	{
-		CiExpr left = ParseType();
+		CiExpr left = allowVar ? ParseType() : ParseExpr();
 		switch (this.CurrentToken) {
 		case CiToken.Assign:
 		case CiToken.AddAssign:
