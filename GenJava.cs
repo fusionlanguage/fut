@@ -253,12 +253,12 @@ public class GenJava : GenTyped
 		Write(typeCode, false);
 	}
 
-	void WriteCollectionType(string name, CiType elementType)
+	void WriteCollectionType(string name, CiCollectionType type)
 	{
 		Include("java.util." + name);
 		Write(name);
 		Write('<');
-		Write(elementType, false, true);
+		Write(type.ElementType, false, true);
 		Write('>');
 	}
 
@@ -304,13 +304,13 @@ public class GenJava : GenTyped
 				: needClass ? "Integer" : "int");
 			break;
 		case CiListType list:
-			WriteCollectionType("ArrayList", list.ElementType);
+			WriteCollectionType("ArrayList", list);
 			break;
 		case CiStackType stack:
-			WriteCollectionType("Stack", stack.ElementType);
+			WriteCollectionType("Stack", stack);
 			break;
 		case CiHashSetType set:
-			WriteCollectionType("HashSet", set.ElementType);
+			WriteCollectionType("HashSet", set);
 			break;
 		case CiSortedDictionaryType dict:
 			Write("TreeMap", dict);
@@ -344,17 +344,17 @@ public class GenJava : GenTyped
 		switch (type) {
 		case CiListType list:
 			Write("new ");
-			WriteCollectionType("ArrayList", list.ElementType);
+			WriteCollectionType("ArrayList", list);
 			Write("()");
 			break;
 		case CiStackType stack:
 			Write("new ");
-			WriteCollectionType("Stack", stack.ElementType);
+			WriteCollectionType("Stack", stack);
 			Write("()");
 			break;
 		case CiHashSetType set:
 			Write("new ");
-			WriteCollectionType("HashSet", set.ElementType);
+			WriteCollectionType("HashSet", set);
 			Write("()");
 			break;
 		case CiDictionaryType dict:

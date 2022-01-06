@@ -190,13 +190,13 @@ public class GenCpp : GenCCpp
 		WriteName(symbol);
 	}
 
-	void WriteCollectionType(string name, CiType elementType)
+	void WriteCollectionType(string name, CiCollectionType type)
 	{
 		Include(name);
 		Write("std::");
 		Write(name);
 		Write('<');
-		Write(elementType, false);
+		Write(type.ElementType, false);
 		Write('>');
 	}
 
@@ -257,13 +257,13 @@ public class GenCpp : GenCCpp
 			Write('>');
 			break;
 		case CiListType list:
-			WriteCollectionType("vector", list.ElementType);
+			WriteCollectionType("vector", list);
 			break;
 		case CiStackType stack:
-			WriteCollectionType("stack", stack.ElementType);
+			WriteCollectionType("stack", stack);
 			break;
 		case CiHashSetType set:
-			WriteCollectionType("unordered_set", set.ElementType);
+			WriteCollectionType("unordered_set", set);
 			break;
 		case CiDictionaryType dict:
 			string cppType = dict is CiSortedDictionaryType ? "map" : "unordered_map";
@@ -707,7 +707,7 @@ public class GenCpp : GenCCpp
 		else if (obj.Type is CiStackType stack && method.Name == "Pop" && parent != CiPriority.Statement) {
 			// :-)
 			Write("[](");
-			WriteCollectionType("stack", stack.ElementType);
+			WriteCollectionType("stack", stack);
 			Write(" &s) { ");
 			Write(stack.ElementType, false);
 			Write(" top = s.top(); s.pop(); return top; }(");

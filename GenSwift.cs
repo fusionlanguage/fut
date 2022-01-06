@@ -526,13 +526,13 @@ public class GenSwift : GenPySwift
 			WriteRange(args[0], args[1]);
 			Write("].sort()");
 		}
-		else if (obj.Type is CiListType list && method.Name == "Add")
-			WriteListAppend(obj, list.ElementType, args);
-		else if (obj.Type is CiListType list2 && method.Name == "Insert") {
+		else if (obj.Type is CiListType && method.Name == "Add")
+			WriteListAppend(obj, args);
+		else if (obj.Type is CiListType list && method.Name == "Insert") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".insert(");
 			if (method.Parameters.Count == 1)
-				WriteNewStorage(list2.ElementType);
+				WriteNewStorage(list.ElementType);
 			else
 				args[1].Accept(this, CiPriority.Argument);
 			Write(", at: ");
@@ -559,8 +559,8 @@ public class GenSwift : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeLast()");
 		}
-		else if (obj.Type is CiStackType stack && method.Name == "Push")
-			WriteListAppend(obj, stack.ElementType, args);
+		else if (obj.Type is CiStackType && method.Name == "Push")
+			WriteListAppend(obj, args);
 		else if (WriteDictionaryAdd(obj, method, args)) {
 			// done
 		}

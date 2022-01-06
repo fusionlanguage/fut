@@ -1118,9 +1118,13 @@ public class CiClassPtrType : CiType
 	public override int GetHashCode() => this.Class.GetHashCode() ^ this.Modifier.GetHashCode();
 }
 
-public abstract class CiArrayType : CiType
+public abstract class CiCollectionType : CiType
 {
 	public CiType ElementType;
+}
+
+public abstract class CiArrayType : CiCollectionType
+{
 	public override string ToString() {
 		return this.BaseType + this.ArrayString + this.ElementType.ArrayString;
 	}
@@ -1295,9 +1299,8 @@ public class CiListType : CiArrayType
 	public override bool IsFinal => true;
 }
 
-public class CiStackType : CiType
+public class CiStackType : CiCollectionType
 {
-	public CiType ElementType;
 	public override string ToString() => $"Stack<{this.ElementType}>";
 	public override CiSymbol TryLookup(string name)
 	{
@@ -1319,9 +1322,8 @@ public class CiStackType : CiType
 	public override bool IsFinal => true;
 }
 
-public class CiHashSetType : CiType
+public class CiHashSetType : CiCollectionType
 {
-	public CiType ElementType;
 	public override string ToString() => $"HashSet<{this.ElementType}>";
 	public override CiSymbol TryLookup(string name)
 	{

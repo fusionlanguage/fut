@@ -199,11 +199,11 @@ public class GenCs : GenTyped
 		}
 	}
 
-	void WriteElementType(CiType elementType)
+	void WriteElementType(CiCollectionType type)
 	{
 		Include("System.Collections.Generic");
 		Write('<');
-		Write(elementType, false);
+		Write(type.ElementType, false);
 		Write('>');
 	}
 
@@ -241,15 +241,15 @@ public class GenCs : GenTyped
 			break;
 		case CiListType list:
 			Write("List");
-			WriteElementType(list.ElementType);
+			WriteElementType(list);
 			break;
 		case CiStackType stack:
 			Write("Stack");
-			WriteElementType(stack.ElementType);
+			WriteElementType(stack);
 			break;
 		case CiHashSetType set:
 			Write("HashSet");
-			WriteElementType(set.ElementType);
+			WriteElementType(set);
 			break;
 		case CiDictionaryType dict:
 			Write(dict);
@@ -319,17 +319,17 @@ public class GenCs : GenTyped
 		switch (type) {
 		case CiListType list:
 			Write("new List");
-			WriteElementType(list.ElementType);
+			WriteElementType(list);
 			Write("()");
 			break;
 		case CiStackType stack:
 			Write("new Stack");
-			WriteElementType(stack.ElementType);
+			WriteElementType(stack);
 			Write("()");
 			break;
 		case CiHashSetType set:
 			Write("new HashSet");
-			WriteElementType(set.ElementType);
+			WriteElementType(set);
 			Write("()");
 			break;
 		case CiDictionaryType dict:
