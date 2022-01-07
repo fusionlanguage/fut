@@ -89,18 +89,15 @@ public enum CiToken
 	Const,
 	Continue,
 	Default,
-	Dictionary,
 	Do,
 	Else,
 	Enum,
 	For,
 	Foreach,
-	HashSet,
 	If,
 	In,
 	Internal,
 	Is,
-	List,
 	Lock,
 	Native,
 	New,
@@ -110,8 +107,6 @@ public enum CiToken
 	Resource,
 	Return,
 	Sealed,
-	SortedDictionary,
-	Stack,
 	Static,
 	Switch,
 	Throw,
@@ -545,18 +540,15 @@ public class CiLexer
 				case "const": return CiToken.Const;
 				case "continue": return CiToken.Continue;
 				case "default": return CiToken.Default;
-				case "Dictionary": return CiToken.Dictionary;
 				case "do": return CiToken.Do;
 				case "else": return CiToken.Else;
 				case "enum": return CiToken.Enum;
 				case "for": return CiToken.For;
 				case "foreach": return CiToken.Foreach;
-				case "HashSet": return CiToken.HashSet;
 				case "if": return CiToken.If;
 				case "in": return CiToken.In;
 				case "internal": return CiToken.Internal;
 				case "is": return CiToken.Is;
-				case "List": return CiToken.List;
 				case "lock": return CiToken.Lock;
 				case "native": return CiToken.Native;
 				case "new": return CiToken.New;
@@ -566,8 +558,6 @@ public class CiLexer
 				case "resource": return CiToken.Resource;
 				case "return": return CiToken.Return;
 				case "sealed": return CiToken.Sealed;
-				case "SortedDictionary": return CiToken.SortedDictionary;
-				case "Stack": return CiToken.Stack;
 				case "static": return CiToken.Static;
 				case "switch": return CiToken.Switch;
 				case "throw": return CiToken.Throw;

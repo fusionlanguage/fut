@@ -62,34 +62,6 @@ public class CiParser : CiLexer
 		return new CiSymbolReference { Line = this.Line, Left = left, Name = ParseId() };
 	}
 
-	CiExpr ParseCollectionType(CiSymbol klass)
-	{
-		int line = this.Line;
-		NextToken();
-		Expect(CiToken.Less);
-		bool saveTypeArg = this.ParsingTypeArg;
-		this.ParsingTypeArg = true;
-		CiExpr elementType = ParseType();
-		this.ParsingTypeArg = saveTypeArg;
-		Expect(CiToken.RightAngle);
-		return new CiSymbolReference { Line = line, Left = elementType, Symbol = klass };
-	}
-
-	CiExpr ParseDictionaryType(CiSymbol klass)
-	{
-		int line = this.Line;
-		NextToken();
-		Expect(CiToken.Less);
-		bool saveTypeArg = this.ParsingTypeArg;
-		this.ParsingTypeArg = true;
-		CiExpr keyType = ParseType();
-		Expect(CiToken.Comma);
-		CiExpr valueType = ParseType();
-		this.ParsingTypeArg = saveTypeArg;
-		Expect(CiToken.RightAngle);
-		return new CiSymbolReference { Line = line, Left = new CiCollection { Items = new CiExpr[] { keyType, valueType } }, Symbol = klass };
-	}
-
 	CiExpr ParseConstInitializer()
 	{
 		if (Eat(CiToken.LeftBrace))
@@ -190,21 +162,6 @@ public class CiParser : CiLexer
 			break;
 		case CiToken.Id:
 			result = ParseSymbolReference(null);
-			break;
-		case CiToken.List:
-			result = ParseCollectionType(CiSystem.ListClass);
-			break;
-		case CiToken.Stack:
-			result = ParseCollectionType(CiSystem.StackClass);
-			break;
-		case CiToken.HashSet:
-			result = ParseCollectionType(CiSystem.HashSetClass);
-			break;
-		case CiToken.Dictionary:
-			result = ParseDictionaryType(CiSystem.DictionaryClass);
-			break;
-		case CiToken.SortedDictionary:
-			result = ParseDictionaryType(CiSystem.SortedDictionaryClass);
 			break;
 		case CiToken.Resource:
 			NextToken();
@@ -381,6 +338,31 @@ public class CiParser : CiLexer
 		CiExpr left = ParsePrimaryExpr();
 		if (Eat(CiToken.Range))
 			return new CiBinaryExpr { Line = this.Line, Left = left, Op = CiToken.Range, Right = ParsePrimaryExpr() };
+		if (left is CiSymbolReference symbol && Eat(CiToken.Less)) {
+			CiSymbol klass = CiSystem.Value.TryLookup(symbol.Name);
+			if (klass == null)
+				throw StatementException(symbol, "{0} not found", symbol.Name);
+			int line = this.Line;
+			bool saveTypeArg = this.ParsingTypeArg;
+			this.ParsingTypeArg = true;
+			CiExpr typeArg = ParseType();
+			if (Eat(CiToken.Comma)) {
+				CiExpr valueType = ParseType();
+				if (klass != CiSystem.DictionaryClass && klass != CiSystem.SortedDictionaryClass)
+					throw StatementException(symbol, "{0} is not a generic class with two type parameters", symbol.Name);
+				left = new CiSymbolReference { Line = line, Left = new CiCollection { Items = new CiExpr[] { typeArg, valueType } }, Symbol = klass };
+			}
+			else if (klass != CiSystem.ListClass && klass != CiSystem.StackClass && klass != CiSystem.HashSetClass)
+				throw StatementException(symbol, "{0} is not a generic class with one type parameter", symbol.Name);
+			else
+				left = new CiSymbolReference { Line = line, Left = typeArg, Symbol = klass };
+			Expect(CiToken.RightAngle);
+			this.ParsingTypeArg = saveTypeArg;
+			if (Eat(CiToken.LeftParenthesis)) {
+				Expect(CiToken.RightParenthesis);
+				left = new CiCallExpr { Line = this.Line, Method = (CiSymbolReference) left, Arguments = Array.Empty<CiExpr>() };
+			}
+		}
 		return left;
 	}
 

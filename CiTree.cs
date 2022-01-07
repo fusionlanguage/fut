@@ -1492,13 +1492,13 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, FloatType, "Tan", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, "Tanh", new CiVar(DoubleType, "a")),
 		MathTruncate);
-	public static readonly CiSymbol BasePtr = new CiSymbol { Name = "base" };
-	public static readonly CiSymbol ListClass = new CiSymbol();
-	public static readonly CiSymbol StackClass = new CiSymbol();
-	public static readonly CiSymbol HashSetClass = new CiSymbol();
-	public static readonly CiSymbol DictionaryClass = new CiSymbol();
-	public static readonly CiSymbol SortedDictionaryClass = new CiSymbol();
+	public static readonly CiSymbol ListClass = new CiSymbol { Name = "List" };
+	public static readonly CiSymbol StackClass = new CiSymbol { Name = "Stack" };
+	public static readonly CiSymbol HashSetClass = new CiSymbol { Name = "HashSet" };
+	public static readonly CiSymbol DictionaryClass = new CiSymbol { Name = "Dictionary" };
+	public static readonly CiSymbol SortedDictionaryClass = new CiSymbol { Name = "SortedDictionary" };
 	public static readonly CiClass LockClass = new CiClass(CiCallType.Sealed, "Lock");
+	public static readonly CiSymbol BasePtr = new CiSymbol { Name = "base" };
 
 	static void AddEnumValue(CiEnum enu, CiConst value)
 	{
@@ -1544,6 +1544,11 @@ public class CiSystem : CiScope
 		MathClass.Add(MathNegativeInfinity);
 		MathClass.Add(MathPositiveInfinity);
 		Add(MathClass);
+		Add(ListClass);
+		Add(StackClass);
+		Add(HashSetClass);
+		Add(DictionaryClass);
+		Add(SortedDictionaryClass);
 		Add(LockClass);
 		Add(BasePtr);
 	}
