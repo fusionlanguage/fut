@@ -2,6 +2,6 @@ public static class Test
 {
 	public static bool Run()
 	{
-		int i = List<int>(); //ERROR: Expected a method
+		int i = List<int>(); //ERROR: Invalid expression
 	}
 }
