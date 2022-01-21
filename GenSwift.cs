@@ -1189,13 +1189,24 @@ public class GenSwift : GenPySwift
 			Write(" : Int");
 		WriteLine();
 		OpenBlock();
+		Dictionary<int, CiConst> valueToConst = new Dictionary<int, CiConst>();
 		foreach (CiConst konst in enu) {
 			Write(konst.Documentation);
-			Write("case ");
-			WriteName(konst);
-			if (konst.Value != null) {
+			int i = konst.Value.IntValue;
+			if (valueToConst.TryGetValue(i, out CiConst duplicate)) {
+				Write("static let ");
+				WriteName(konst);
 				Write(" = ");
-				Write(konst.Value.IntValue);
+				WriteName(duplicate);
+			}
+			else {
+				Write("case ");
+				WriteName(konst);
+				if (!(konst.Value is CiImplicitEnumValue)) {
+					Write(" = ");
+					Write(i);
+				}
+				valueToConst.Add(i, konst);
 			}
 			WriteLine();
 		}

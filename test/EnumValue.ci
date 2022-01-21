@@ -4,7 +4,7 @@ enum Season
 	Summer = 2,
 	Autumn = 3,
 	Winter = 4,
-	Fall = 3, //FAIL: swift TODO
+	Fall = 3,
 	Last
 }
 
