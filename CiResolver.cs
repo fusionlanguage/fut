@@ -1204,6 +1204,15 @@ public class CiResolver : CiVisitor
 	{
 		OpenScope(statement);
 		statement.Value = Resolve(statement.Value);
+		switch (statement.Value.Type) {
+		case CiRangeType _:
+		case CiIntegerType i when i == CiSystem.IntType:
+		case CiEnum _:
+		case CiStringType _:
+			break;
+		default:
+			throw StatementException(statement.Value, "Switch on type {0} - expected int, enum or string", statement.Value.Type);
+		}
 		statement.SetCompletesNormally(false);
 		foreach (CiCase kase in statement.Cases) {
 			for (int i = 0; i < kase.Values.Length; i++) {
