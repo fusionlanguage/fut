@@ -1,0 +1,13 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int x = 42;
+		switch (x) {
+		case 1.5: //ERROR: Cannot coerce double to int
+			return false;
+		default:
+			return false;
+		}
+	}
+}

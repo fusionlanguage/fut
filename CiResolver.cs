@@ -1206,8 +1206,10 @@ public class CiResolver : CiVisitor
 		statement.Value = Resolve(statement.Value);
 		statement.SetCompletesNormally(false);
 		foreach (CiCase kase in statement.Cases) {
-			for (int i = 0; i < kase.Values.Length; i++)
+			for (int i = 0; i < kase.Values.Length; i++) {
 				kase.Values[i] = FoldConst(kase.Values[i]);
+				Coerce(kase.Values[i], statement.Value.Type);
+			}
 			if (Resolve(kase.Body))
 				throw StatementException(kase.Body.Last(), "Case must end with break, continue, return or throw");
 		}
