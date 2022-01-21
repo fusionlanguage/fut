@@ -661,10 +661,7 @@ public class GenCs : GenTyped
 			first = false;
 			Write(konst.Documentation);
 			Write(konst.Name);
-			if (konst.Value != null) {
-				Write(" = ");
-				konst.Value.Accept(this, CiPriority.Argument);
-			}
+			WriteExplicitEnumValue(konst);
 		}
 		WriteLine();
 		CloseBlock();

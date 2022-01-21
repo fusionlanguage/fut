@@ -2269,10 +2269,7 @@ public class GenC : GenCCpp
 			WriteName(enu);
 			Write('_');
 			WriteUppercaseWithUnderscores(konst.Name);
-			if (konst.Value != null) {
-				Write(" = ");
-				konst.Value.Accept(this, CiPriority.Argument);
-			}
+			WriteExplicitEnumValue(konst);
 		}
 		WriteLine();
 		this.Indent--;

@@ -1195,7 +1195,7 @@ public class GenSwift : GenPySwift
 			WriteName(konst);
 			if (konst.Value != null) {
 				Write(" = ");
-				konst.Value.Accept(this, CiPriority.Argument);
+				Write(konst.Value.IntValue);
 			}
 			WriteLine();
 		}

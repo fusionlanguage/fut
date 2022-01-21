@@ -857,18 +857,16 @@ public class GenJava : GenTyped
 		Write("interface ");
 		WriteLine(enu.Name);
 		OpenBlock();
-		int i = 0;
 		foreach (CiConst konst in enu) {
 			Write(konst.Documentation);
 			Write("int ");
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" = ");
-			if (konst.Value != null)
-				konst.Value.Accept(this, CiPriority.Argument);
+			if (konst.Value is CiImplicitEnumValue imp)
+				Write(imp.Value);
 			else
-				Write(i);
+				konst.Value.Accept(this, CiPriority.Argument);
 			WriteLine(';');
-			i++;
 		}
 		CloseBlock();
 		CloseFile();

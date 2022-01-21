@@ -720,18 +720,15 @@ public class GenJs : GenBase
 		Write(enu.Name);
 		Write(" = ");
 		OpenBlock();
-		int i = 0;
+		bool first = true;
 		foreach (CiConst konst in enu) {
-			if (i > 0)
+			if (!first)
 				WriteLine(',');
+			first = false;
 			Write(konst.Documentation);
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" : ");
-			if (konst.Value != null)
-				konst.Value.Accept(this, CiPriority.Argument);
-			else
-				Write(i);
-			i++;
+			Write(konst.Value.IntValue);
 		}
 		WriteLine();
 		CloseBlock();

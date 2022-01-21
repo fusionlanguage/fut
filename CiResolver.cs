@@ -1454,14 +1454,24 @@ public class CiResolver : CiVisitor
 
 	void ResolveConsts(CiContainerType container)
 	{
-		IEnumerable<CiConst> konsts = container switch {
-			CiClass klass => klass.Consts,
-			CiEnum enu => enu.Cast<CiConst>().Where(konst => konst.Value != null),
-			_ => throw new NotImplementedException(container.ToString())
-		};
-		foreach (CiConst konst in konsts) {
-			this.CurrentScope = container;
-			ResolveConst(konst);
+		this.CurrentScope = container;
+		switch (container) {
+		case CiClass klass:
+			foreach (CiConst konst in klass.Consts)
+				ResolveConst(konst);
+			break;
+		case CiEnum enu:
+			CiExpr lastValue = null;
+			foreach (CiConst konst in enu) {
+				if (konst.Value != null)
+					ResolveConst(konst);
+				else
+					konst.Value = new CiImplicitEnumValue(lastValue == null ? 0 : lastValue.IntValue + 1);
+				lastValue = konst.Value;
+			}
+			break;
+		default:
+			throw new NotImplementedException(container.ToString());
 		}
 	}
 

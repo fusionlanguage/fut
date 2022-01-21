@@ -1,6 +1,6 @@
 // GenBase.cs - base class for code generators
 //
-// Copyright (C) 2011-2021  Piotr Fusik
+// Copyright (C) 2011-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -1406,6 +1406,14 @@ public abstract class GenBase : CiVisitor
 	{
 		if (container.IsPublic)
 			Write("public ");
+	}
+
+	protected void WriteExplicitEnumValue(CiConst konst)
+	{
+		if (!(konst.Value is CiImplicitEnumValue)) {
+			Write(" = ");
+			konst.Value.Accept(this, CiPriority.Argument);
+		}
 	}
 
 	protected void OpenClass(CiClass klass, string suffix, string extendsClause)

@@ -1113,10 +1113,7 @@ public class GenCpp : GenCCpp
 			first = false;
 			Write(konst.Documentation);
 			WriteCamelCase(konst.Name);
-			if (konst.Value != null) {
-				Write(" = ");
-				konst.Value.Accept(this, CiPriority.Argument);
-			}
+			WriteExplicitEnumValue(konst);
 		}
 		WriteLine();
 		this.Indent--;

@@ -1014,17 +1014,12 @@ public class GenPy : GenPySwift
 		Write(enu.IsFlags ? "(enum.Flag)" : "(enum.Enum)");
 		OpenChild();
 		Write(enu.Documentation);
-		int i = 1;
 		foreach (CiConst konst in enu) {
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" = ");
-			if (konst.Value != null)
-				konst.Value.Accept(this, CiPriority.Argument);
-			else
-				Write(i);
+			Write(konst.Value.IntValue);
 			WriteLine();
 			Write(konst.Documentation);
-			i++;
 		}
 		CloseChild();
 	}

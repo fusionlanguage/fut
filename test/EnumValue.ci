@@ -4,7 +4,8 @@ enum Season
 	Summer = 2,
 	Autumn = 3,
 	Winter = 4,
-	Fall = 3 //FAIL: swift TODO
+	Fall = 3, //FAIL: swift TODO
+	Last
 }
 
 public class Test
@@ -12,6 +13,6 @@ public class Test
 	public static bool Run()
 	{
 		Season s = Season.Fall;
-		return s == Season.Autumn;
+		return s == Season.Autumn && Season.Last == Season.Winter;
 	}
 }

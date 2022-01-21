@@ -21,6 +21,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -98,10 +99,7 @@ public abstract class CiStatement
 {
 	public int Line;
 	public abstract bool CompletesNormally { get; }
-	public virtual void Accept(CiVisitor visitor)
-	{
-		throw new NotImplementedException(GetType().Name);
-	}
+	public virtual void Accept(CiVisitor visitor) => throw new NotImplementedException(GetType().Name);
 }
 
 public abstract class CiExpr : CiStatement
@@ -111,10 +109,8 @@ public abstract class CiExpr : CiStatement
 	public virtual bool IsIndexing => false;
 	public virtual bool IsLiteralZero => false;
 	public virtual bool IsConstEnum => false;
-	public virtual CiExpr Accept(CiVisitor visitor, CiPriority parent)
-	{
-		throw new NotImplementedException(GetType().Name);
-	}
+	public virtual int IntValue => throw new NotImplementedException(GetType().Name);
+	public virtual CiExpr Accept(CiVisitor visitor, CiPriority parent) => throw new NotImplementedException(GetType().Name);
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 	public CiLiteral ToLiteral(object value) => new CiLiteral(value) { Line = this.Line };
 	public virtual bool IsReferenceTo(CiSymbol symbol) => false;
@@ -332,6 +328,7 @@ public class CiLiteral : CiExpr
 	}
 
 	public override bool IsLiteralZero => (long) this.Value == 0;
+	public override int IntValue => (int) (long) this.Value;
 
 	public bool IsDefaultValue
 	{
@@ -358,6 +355,16 @@ public class CiLiteral : CiExpr
 	public static readonly CiLiteral True = new CiLiteral(true);
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
 	public override string ToString() => this.Value == null ? "null" : this.Value.ToString();
+}
+
+public class CiImplicitEnumValue : CiExpr
+{
+	public readonly int Value;
+	public CiImplicitEnumValue(int value)
+	{
+		this.Value = value;
+	}
+	public override int IntValue => this.Value;
 }
 
 public class CiInterpolatedPart
@@ -421,6 +428,7 @@ public class CiSymbolReference : CiExpr
 	public string Name;
 	public CiSymbol Symbol;
 	public override bool IsConstEnum => this.Symbol.Parent is CiEnum;
+	public override int IntValue => ((CiConst) this.Symbol).Value.IntValue;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
 	public override bool IsReferenceTo(CiSymbol symbol) => this.Symbol == symbol;
 	public override string ToString() => this.Left != null ? $"{this.Left}.{this.Name}" : this.Name;
@@ -435,6 +443,14 @@ public abstract class CiUnaryExpr : CiExpr
 public class CiPrefixExpr : CiUnaryExpr
 {
 	public override bool IsConstEnum => this.Type is CiEnum && this.Inner.IsConstEnum; // && this.Op == CiToken.Tilde && enu.IsFlags
+	public override int IntValue
+	{
+		get
+		{
+			Trace.Assert(this.Op == CiToken.Tilde);
+			return ~this.Inner.IntValue;
+		}
+	}
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
 }
 
@@ -461,6 +477,18 @@ public class CiBinaryExpr : CiExpr
 			default:
 				return false;
 			}
+		}
+	}
+	public override int IntValue
+	{
+		get
+		{
+			return this.Op switch {
+					CiToken.And => this.Left.IntValue & this.Right.IntValue,
+					CiToken.Or => this.Left.IntValue | this.Right.IntValue,
+					CiToken.Xor => this.Left.IntValue ^ this.Right.IntValue,
+					_ => base.IntValue
+				};
 		}
 	}
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
