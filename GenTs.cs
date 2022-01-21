@@ -50,17 +50,14 @@ public class GenTs : GenJs
 		Write(enu.Name);
 		Write(' ');
 		OpenBlock();
-		int i = 0;
 		foreach (CiConst konst in enu) {
 			Write(konst.Documentation);
 			WriteUppercaseWithUnderscores(konst.Name);
-			Write(" = ");
-			if (konst.Value != null)
+			if (konst.Value != null) {
+				Write(" = ");
 				konst.Value.Accept(this, CiPriority.Argument);
-			else
-				Write(i);
+			}
 			WriteLine(',');
-			i++;
 		}
 		CloseBlock();
 	}
