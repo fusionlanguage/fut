@@ -819,6 +819,30 @@ public class GenSwift : GenPySwift
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
+		if (expr.Type is CiEnum && expr.Type != CiSystem.BoolType) {
+			switch (expr.Op) {
+			case CiToken.And:
+				WriteCall(expr.Left, "intersection", expr.Right);
+				return expr;
+			case CiToken.Or:
+				WriteCall(expr.Left, "union", expr.Right);
+				return expr;
+			case CiToken.Xor:
+				WriteCall(expr.Left, "symmetricDifference", expr.Right);
+				return expr;
+			case CiToken.AndAssign:
+				WriteCall(expr.Left, "formIntersection", expr.Right);
+				return expr;
+			case CiToken.OrAssign:
+				WriteCall(expr.Left, "formUnion", expr.Right);
+				return expr;
+			case CiToken.XorAssign:
+				WriteCall(expr.Left, "formSymmetricDifference", expr.Right);
+				return expr;
+			default:
+				break;
+			}
+		}
 		switch (expr.Op) {
 		case CiToken.ShiftLeft:
 			return Write(expr, parent > CiPriority.Mul, CiPriority.Primary, " << ", CiPriority.Primary);
@@ -1183,32 +1207,57 @@ public class GenSwift : GenPySwift
 		WriteLine();
 		Write(enu.Documentation);
 		WritePublic(enu);
-		Write("enum ");
-		Write(enu.Name);
-		if (enu.Any(symbol => ((CiConst) symbol).Value != null))
-			Write(" : Int");
-		WriteLine();
-		OpenBlock();
-		Dictionary<int, CiConst> valueToConst = new Dictionary<int, CiConst>();
-		foreach (CiConst konst in enu) {
-			Write(konst.Documentation);
-			int i = konst.Value.IntValue;
-			if (valueToConst.TryGetValue(i, out CiConst duplicate)) {
+		if (enu.IsFlags) {
+			Write("struct ");
+			Write(enu.Name);
+			WriteLine(" : OptionSet");
+			OpenBlock();
+			WriteLine("let rawValue : Int");
+			foreach (CiConst konst in enu) {
+				Write(konst.Documentation);
 				Write("static let ");
 				WriteName(konst);
 				Write(" = ");
-				WriteName(duplicate);
-			}
-			else {
-				Write("case ");
-				WriteName(konst);
-				if (!(konst.Value is CiImplicitEnumValue)) {
-					Write(" = ");
+				Write(enu.Name);
+				Write('(');
+				int i = konst.Value.IntValue;
+				if (i == 0)
+					Write("[]");
+				else {
+					Write("rawValue: ");
 					Write(i);
 				}
-				valueToConst.Add(i, konst);
+				WriteLine(')');
 			}
+		}
+		else {
+			Write("enum ");
+			Write(enu.Name);
+			if (enu.Any(symbol => !(((CiConst) symbol).Value is CiImplicitEnumValue)))
+				Write(" : Int");
 			WriteLine();
+			OpenBlock();
+			Dictionary<int, CiConst> valueToConst = new Dictionary<int, CiConst>();
+			foreach (CiConst konst in enu) {
+				Write(konst.Documentation);
+				int i = konst.Value.IntValue;
+				if (valueToConst.TryGetValue(i, out CiConst duplicate)) {
+					Write("static let ");
+					WriteName(konst);
+					Write(" = ");
+					WriteName(duplicate);
+				}
+				else {
+					Write("case ");
+					WriteName(konst);
+					if (!(konst.Value is CiImplicitEnumValue)) {
+						Write(" = ");
+						Write(i);
+					}
+					valueToConst.Add(i, konst);
+				}
+				WriteLine();
+			}
 		}
 		CloseBlock();
 	}
