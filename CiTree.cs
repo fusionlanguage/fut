@@ -110,6 +110,7 @@ public abstract class CiExpr : CiStatement
 	public override bool CompletesNormally => true;
 	public virtual bool IsIndexing => false;
 	public virtual bool IsLiteralZero => false;
+	public virtual bool IsConstEnum => false;
 	public virtual CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		throw new NotImplementedException(GetType().Name);
@@ -419,6 +420,7 @@ public class CiSymbolReference : CiExpr
 	public CiExpr Left;
 	public string Name;
 	public CiSymbol Symbol;
+	public override bool IsConstEnum => this.Symbol.Parent is CiEnum;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
 	public override bool IsReferenceTo(CiSymbol symbol) => this.Symbol == symbol;
 	public override string ToString() => this.Left != null ? $"{this.Left}.{this.Name}" : this.Name;
@@ -432,6 +434,7 @@ public abstract class CiUnaryExpr : CiExpr
 
 public class CiPrefixExpr : CiUnaryExpr
 {
+	public override bool IsConstEnum => this.Type is CiEnum && this.Inner.IsConstEnum; // && this.Op == CiToken.Tilde && enu.IsFlags
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
 }
 
@@ -446,6 +449,20 @@ public class CiBinaryExpr : CiExpr
 	public CiToken Op;
 	public CiExpr Right;
 	public override bool IsIndexing => this.Op == CiToken.LeftBracket;
+	public override bool IsConstEnum
+	{
+		get
+		{
+			switch (this.Op) {
+			case CiToken.And:
+			case CiToken.Or:
+			case CiToken.Xor:
+				return this.Type is CiEnum && this.Left.IsConstEnum && this.Right.IsConstEnum;
+			default:
+				return false;
+			}
+		}
+	}
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
 	public bool IsAssign
 	{

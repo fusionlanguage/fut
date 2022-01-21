@@ -1,0 +1,13 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int x = 42;
+		switch (x) {
+		case x: //ERROR: Expected constant value
+			return false;
+		default:
+			return false;
+		}
+	}
+}

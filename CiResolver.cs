@@ -511,8 +511,7 @@ public class CiResolver : CiVisitor
 				throw StatementException(expr, "Invalid argument to new");
 			}
 		case CiToken.Resource:
-			CiLiteral resourceName = FoldConst(expr.Inner);
-			if (!(resourceName.Value is string name))
+			if (!(FoldConst(expr.Inner) is CiLiteral resourceName) || !(resourceName.Value is string name))
 				throw StatementException(expr, "Resource name must be string");
 			inner = resourceName;
 			if (!this.Program.Resources.TryGetValue(name, out byte[] content)) {
@@ -1208,8 +1207,7 @@ public class CiResolver : CiVisitor
 		statement.SetCompletesNormally(false);
 		foreach (CiCase kase in statement.Cases) {
 			for (int i = 0; i < kase.Values.Length; i++)
-				// TODO: enum kase.Values[i] = FoldConst(kase.Values[i]);
-				kase.Values[i] = Resolve(kase.Values[i]);
+				kase.Values[i] = FoldConst(kase.Values[i]);
 			if (Resolve(kase.Body))
 				throw StatementException(kase.Body.Last(), "Case must end with break, continue, return or throw");
 		}
@@ -1262,17 +1260,17 @@ public class CiResolver : CiVisitor
 			throw StatementException(expr, $"Unexpected {ptrModifier} on a non-reference type");
 	}
 
-	CiLiteral FoldConst(CiExpr expr)
+	CiExpr FoldConst(CiExpr expr)
 	{
-		if (Resolve(expr) is CiLiteral literal)
-			return literal;
+		expr = Resolve(expr);
+		if (expr is CiLiteral || expr.IsConstEnum)
+			return expr;
 		throw StatementException(expr, "Expected constant value");
 	}
 
 	int FoldConstInt(CiExpr expr)
 	{
-		CiLiteral literal = FoldConst(expr);
-		if (literal.Value is long l) {
+		if (FoldConst(expr) is CiLiteral literal && literal.Value is long l) {
 			if (l < int.MinValue || l > int.MaxValue)
 				throw StatementException(expr, "Only 32-bit ranges supported");
 			return (int) l;
