@@ -1442,13 +1442,12 @@ public class CiResolver : CiVisitor
 				throw StatementException(konst, "Declared {0} elements, initialized {1}", storageType.Length, coll.Items.Length);
 			coll.Type = storageType;
 		}
-		else if (this.CurrentScope is CiEnum && konst.Value.Type is CiRangeType) {
-			// TODO: check if constant
+		else if (this.CurrentScope is CiEnum && konst.Value.Type is CiRangeType && konst.Value is CiLiteral) {
 		}
-		else if (!(konst.Value is CiLiteral) && !(konst.Type is CiEnum)) // TODO: check if enum is constant
-			throw StatementException(konst.Value, "Value for constant {0} is not constant", konst.Name);
-		else
+		else if (konst.Value is CiLiteral || konst.Value.IsConstEnum)
 			Coerce(konst.Value, konst.Type);
+		else
+			throw StatementException(konst.Value, "Value for constant {0} is not constant", konst.Name);
 		konst.InMethod = this.CurrentMethod;
 		konst.VisitStatus = CiVisitStatus.Done;
 	}

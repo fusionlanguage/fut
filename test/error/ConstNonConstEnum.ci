@@ -1,0 +1,15 @@
+enum Foo
+{
+	Bar,
+	Quux
+}
+
+public static class Test
+{
+	public static bool Run()
+	{
+		Foo x = Foo.Bar;
+		const Foo y = x; //ERROR: Value for constant y is not constant
+		return true;
+	}
+}
