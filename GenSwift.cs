@@ -817,12 +817,20 @@ public class GenSwift : GenPySwift
 		Write(expr, parent > CiPriority.Mul, CiPriority.Mul, " & ", CiPriority.Primary);
 	}
 
+	void WriteEnumFlagsAnd(CiBinaryExpr expr, string method, string notMethod)
+	{
+		if (expr.Right is CiPrefixExpr negation && negation.Op == CiToken.Tilde)
+			WriteCall(expr.Left, notMethod, negation.Inner);
+		else
+			WriteCall(expr.Left, method, expr.Right);
+	}
+
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Type is CiEnum && expr.Type != CiSystem.BoolType) {
 			switch (expr.Op) {
 			case CiToken.And:
-				WriteCall(expr.Left, "intersection", expr.Right);
+				WriteEnumFlagsAnd(expr, "intersection", "subtracting");
 				return expr;
 			case CiToken.Or:
 				WriteCall(expr.Left, "union", expr.Right);
@@ -831,7 +839,7 @@ public class GenSwift : GenPySwift
 				WriteCall(expr.Left, "symmetricDifference", expr.Right);
 				return expr;
 			case CiToken.AndAssign:
-				WriteCall(expr.Left, "formIntersection", expr.Right);
+				WriteEnumFlagsAnd(expr, "formIntersection", "subtract");
 				return expr;
 			case CiToken.OrAssign:
 				WriteCall(expr.Left, "formUnion", expr.Right);
