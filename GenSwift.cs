@@ -756,6 +756,18 @@ public class GenSwift : GenPySwift
 		}
 	}
 
+	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
+	{
+		if (expr.Op == CiToken.Tilde && expr.Type is CiEnum) {
+			Write(expr.Type.Name);
+			Write("(rawValue: ~");
+			expr.Inner.Accept(this, CiPriority.Primary);
+			Write(".rawValue)");
+			return expr;
+		}
+		return base.Visit(expr, parent);
+	}
+
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
 		OpenIndexing(expr.Left);
