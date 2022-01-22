@@ -473,7 +473,7 @@ public class CiBinaryExpr : CiExpr
 			case CiToken.And:
 			case CiToken.Or:
 			case CiToken.Xor:
-				return this.Type is CiEnum && this.Left.IsConstEnum && this.Right.IsConstEnum;
+				return this.Type is CiEnumFlags && this.Left.IsConstEnum && this.Right.IsConstEnum;
 			default:
 				return false;
 			}
@@ -487,7 +487,7 @@ public class CiBinaryExpr : CiExpr
 					CiToken.And => this.Left.IntValue & this.Right.IntValue,
 					CiToken.Or => this.Left.IntValue | this.Right.IntValue,
 					CiToken.Xor => this.Left.IntValue ^ this.Right.IntValue,
-					_ => base.IntValue
+					_ => base.IntValue // throw
 				};
 		}
 	}

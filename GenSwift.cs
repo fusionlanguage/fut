@@ -758,7 +758,7 @@ public class GenSwift : GenPySwift
 
 	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
 	{
-		if (expr.Op == CiToken.Tilde && expr.Type is CiEnum) {
+		if (expr.Op == CiToken.Tilde && expr.Type is CiEnumFlags) {
 			Write(expr.Type.Name);
 			Write("(rawValue: ~");
 			expr.Inner.Accept(this, CiPriority.Primary);
@@ -839,7 +839,7 @@ public class GenSwift : GenPySwift
 
 	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Type is CiEnum && expr.Type != CiSystem.BoolType) {
+		if (expr.Type is CiEnumFlags) {
 			switch (expr.Op) {
 			case CiToken.And:
 				WriteEnumFlagsAnd(expr, "intersection", "subtracting");
