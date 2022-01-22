@@ -1011,7 +1011,7 @@ public class GenPy : GenPySwift
 		WriteLine();
 		Write("class ");
 		WriteName(enu);
-		Write(enu.IsFlags ? "(enum.Flag)" : "(enum.Enum)");
+		Write(enu is CiEnumFlags ? "(enum.Flag)" : "(enum.Enum)");
 		OpenChild();
 		Write(enu.Documentation);
 		foreach (CiConst konst in enu) {

@@ -1227,7 +1227,7 @@ public class GenSwift : GenPySwift
 		WriteLine();
 		Write(enu.Documentation);
 		WritePublic(enu);
-		if (enu.IsFlags) {
+		if (enu is CiEnumFlags) {
 			Write("struct ");
 			Write(enu.Name);
 			WriteLine(" : OptionSet");

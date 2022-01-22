@@ -250,12 +250,13 @@ public class CiResolver : CiVisitor
 
 	bool IsEnumFlags(CiExpr left, CiExpr right)
 	{
-		if (!(left.Type is CiEnum enu))
-			return false;
-		if (!enu.IsFlags)
-			throw StatementException(left, "Define flags enumeration as: enum* {0}", enu);
-		Coerce(right, enu);
-		return true;
+		if (left.Type is CiEnumFlags) {
+			Coerce(right, left.Type);
+			return true;
+		}
+		if (left.Type is CiEnum)
+			throw StatementException(left, "Define flags enumeration as: enum* {0}", left.Type);
+		return false;
 	}
 
 	CiType BitwiseOp(CiExpr left, CiExpr right, UnsignedOp op)
@@ -478,7 +479,7 @@ public class CiResolver : CiVisitor
 			break;
 		case CiToken.Tilde:
 			inner = Resolve(expr.Inner);
-			if (inner.Type is CiEnum enu && enu.IsFlags) {
+			if (inner.Type is CiEnumFlags) {
 				type = inner.Type;
 				range = null;
 			}

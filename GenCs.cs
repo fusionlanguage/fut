@@ -646,7 +646,7 @@ public class GenCs : GenTyped
 	{
 		WriteLine();
 		Write(enu.Documentation);
-		if (enu.IsFlags) {
+		if (enu is CiEnumFlags) {
 			Include("System");
 			WriteLine("[Flags]");
 		}

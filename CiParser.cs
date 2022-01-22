@@ -854,13 +854,18 @@ public class CiParser : CiLexer
 	public CiEnum ParseEnum()
 	{
 		Expect(CiToken.Enum);
-		CiEnum enu = new CiEnum { Parent = this.Program, Filename = this.Filename, IsFlags = Eat(CiToken.Asterisk), Line = this.Line, Name = ParseId() };
+		bool flags = Eat(CiToken.Asterisk);
+		CiEnum enu = flags ? new CiEnumFlags() : new CiEnum();
+		enu.Parent = this.Program;
+		enu.Filename = this.Filename;
+		enu.Line = this.Line;
+		enu.Name = ParseId();
 		Expect(CiToken.LeftBrace);
 		do {
 			CiConst konst = new CiConst { Visibility = CiVisibility.Public, Documentation = ParseDoc(), Line = this.Line, Name = ParseId(), Type = enu };
 			if (Eat(CiToken.Assign))
 				konst.Value = ParseExpr();
-			else if (enu.IsFlags)
+			else if (flags)
 				throw ParseException("enum* symbol must be assigned a value");
 			enu.Add(konst);
 		} while (Eat(CiToken.Comma));

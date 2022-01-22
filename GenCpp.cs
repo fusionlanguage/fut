@@ -1118,7 +1118,7 @@ public class GenCpp : GenCCpp
 		WriteLine();
 		this.Indent--;
 		WriteLine("};");
-		if (enu.IsFlags) {
+		if (enu is CiEnumFlags) {
 			Write("CI_ENUM_FLAG_OPERATORS(");
 			Write(enu.Name);
 			WriteLine(')');
@@ -1314,7 +1314,7 @@ public class GenCpp : GenCCpp
 		SortedSet<string> headerIncludes = new SortedSet<string>();
 		this.Includes = headerIncludes;
 		OpenStringWriter();
-		if (program.OfType<CiEnum>().Any(enu => enu.IsFlags)) {
+		if (program.Any(c => c is CiEnumFlags)) {
 			Include("type_traits");
 			WriteLine("#define CI_ENUM_FLAG_OPERATORS(T) \\");
 			WriteLine("\tinline constexpr T operator~(T a) { return static_cast<T>(~static_cast<std::underlying_type_t<T>>(a)); } \\");

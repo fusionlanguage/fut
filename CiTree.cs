@@ -442,7 +442,7 @@ public abstract class CiUnaryExpr : CiExpr
 
 public class CiPrefixExpr : CiUnaryExpr
 {
-	public override bool IsConstEnum => this.Type is CiEnum && this.Inner.IsConstEnum; // && this.Op == CiToken.Tilde && enu.IsFlags
+	public override bool IsConstEnum => this.Type is CiEnumFlags && this.Inner.IsConstEnum; // && this.Op == CiToken.Tilde
 	public override int IntValue
 	{
 		get
@@ -888,7 +888,10 @@ public abstract class CiContainerType : CiType
 
 public class CiEnum : CiContainerType
 {
-	public bool IsFlags;
+}
+
+public class CiEnumFlags : CiEnum
+{
 }
 
 public enum CiVisitStatus
@@ -1485,7 +1488,7 @@ public class CiSystem : CiScope
 	public static readonly CiConst RegexOptionsIgnoreCase = new CiConst("IgnoreCase", 1L);
 	public static readonly CiConst RegexOptionsMultiline = new CiConst("Multiline", 2L);
 	public static readonly CiConst RegexOptionsSingleline = new CiConst("Singleline", 16L);
-	public static readonly CiEnum RegexOptionsEnum = new CiEnum { Name = "RegexOptions", IsFlags = true };
+	public static readonly CiEnum RegexOptionsEnum = new CiEnumFlags { Name = "RegexOptions" };
 	public static readonly CiMethod RegexCompile = new CiMethod(CiCallType.Static, null /* filled later to avoid cyclic reference */, "Compile", new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone });
 	public static readonly CiMethod RegexEscape = new CiMethod(CiCallType.Static, StringStorageType, "Escape", new CiVar(StringPtrType, "str"));
 	public static readonly CiMethod RegexIsMatchStr = new CiMethod(CiCallType.Static, BoolType, "IsMatch", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone });
