@@ -2,7 +2,17 @@ public static class Test
 {
 	public static bool Run()
 	{
+		int i = 5;
 		bool a = false;
-		return !a;
+		bool t = true;
+		return !a
+			&& !(a && a)
+			&& !(a && !a) //FAIL: python TODO
+			&& !(a & a) //FAIL: swift ts TODO
+			&& !(a & !a)
+			&& !(!t & a)
+			&& (!a | !a)
+			&& !(i == 0)
+			&& !(i != 5);
 	}
 }

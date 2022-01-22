@@ -248,9 +248,9 @@ public class CiResolver : CiVisitor
 
 	delegate CiRangeType UnsignedOp(CiRangeType left, CiRangeType right);
 
-	bool IsEnumFlags(CiExpr left, CiExpr right)
+	bool IsEnumOp(CiExpr left, CiExpr right)
 	{
-		if (left.Type is CiEnumFlags) {
+		if (left.Type is CiEnumFlags || left.Type == CiSystem.BoolType) {
 			Coerce(right, left.Type);
 			return true;
 		}
@@ -279,7 +279,7 @@ public class CiResolver : CiVisitor
 			}
 			return range;
 		}
-		if (IsEnumFlags(left, right))
+		if (IsEnumOp(left, right))
 			return left.Type;
 		return GetIntegerType(left, right);
 	}
@@ -848,7 +848,7 @@ public class CiResolver : CiVisitor
 		case CiToken.OrAssign:
 		case CiToken.XorAssign:
 			CheckLValue(left);
-			if (!IsEnumFlags(left, right)) {
+			if (!IsEnumOp(left, right)) {
 				Coerce(left, CiSystem.IntType);
 				Coerce(right, CiSystem.IntType);
 			}

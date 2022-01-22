@@ -1,0 +1,11 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		bool t = true;
+		bool f = false;
+		return (t & !f) //FAIL: python swift ts TODO
+			&& (t | f)
+			&& (t ^ f);
+	}
+}
