@@ -4,7 +4,7 @@ public static class Test
 	{
 		bool t = true;
 		bool f = false;
-		return (t & !f) //FAIL: python swift ts TODO
+		return (t & !f) //FAIL: swift ts TODO
 			&& (t | f)
 			&& (t ^ f);
 	}

@@ -7,7 +7,7 @@ public static class Test
 		bool t = true;
 		return !a
 			&& !(a && a)
-			&& !(a && !a) //FAIL: python TODO
+			&& !(a && !a)
 			&& !(a & a) //FAIL: swift ts TODO
 			&& !(a & !a)
 			&& !(!t & a)

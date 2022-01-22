@@ -246,12 +246,15 @@ public class GenPy : GenPySwift
 	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
 	{
 		if (expr.Op == CiToken.ExclamationMark) {
+			if (parent > CiPriority.CondAnd)
+				Write('(');
 			Write("not ");
-			expr.Inner.Accept(this, CiPriority.Primary);
+			expr.Inner.Accept(this, CiPriority.Or);
+			if (parent > CiPriority.CondAnd)
+				Write(')');
 			return expr;
 		}
-		else
-			return base.Visit(expr, parent);
+		return base.Visit(expr, parent);
 	}
 
 	static bool IsPtr(CiExpr expr) => expr.Type is CiClassPtrType || expr.Type is CiArrayPtrType;
