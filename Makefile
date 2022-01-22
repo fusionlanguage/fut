@@ -1,6 +1,6 @@
 prefix := /usr/local
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
-CFLAGS = -Wall -Wno-tautological-compare -Werror
+CFLAGS = -Wall -Werror
 SWIFTC = swiftc
 ifeq ($(OS),Windows_NT)
 CSC = "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/Roslyn/csc.exe" -nologo

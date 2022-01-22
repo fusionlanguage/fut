@@ -579,8 +579,12 @@ public class CiResolver : CiVisitor
 			if (leftRange.Max < rightRange.Min || leftRange.Min > rightRange.Max)
 				return expr.ToLiteral(expr.Op == CiToken.NotEqual);;
 		}
-		else if (left.Type == right.Type && left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
-			return expr.ToLiteral((expr.Op == CiToken.NotEqual) ^ object.Equals(leftLiteral.Value, rightLiteral.Value));
+		else if (left.Type == right.Type) {
+			if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
+				return expr.ToLiteral((expr.Op == CiToken.NotEqual) ^ object.Equals(leftLiteral.Value, rightLiteral.Value));
+			if (left.IsConstEnum && right.IsConstEnum)
+				return expr.ToLiteral((expr.Op == CiToken.NotEqual) ^ (left.IntValue == right.IntValue));
+		}
 		if (!left.Type.IsAssignableFrom(right.Type) && !right.Type.IsAssignableFrom(left.Type))
 			throw StatementException(expr, "Cannot compare {0} with {1}", left.Type, right.Type);
 		TakePtr(left);
