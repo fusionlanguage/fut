@@ -45,9 +45,9 @@ public class CiParser : CiLexer
 
 	string ParseId()
 	{
-		object id = this.CurrentValue;
+		string id = this.StringValue;
 		Expect(CiToken.Id);
-		return (string) id;
+		return id;
 	}
 
 	CiCodeDoc ParseDoc()
@@ -100,7 +100,7 @@ public class CiParser : CiLexer
 		int line = this.Line;
 		List<CiInterpolatedPart> parts = new List<CiInterpolatedPart>();
 		do {
-			string prefix = (string) this.CurrentValue;
+			string prefix = this.StringValue;
 			NextToken();
 			CiExpr arg = ParseExpr();
 			CiExpr width = null;
@@ -123,7 +123,7 @@ public class CiParser : CiLexer
 			parts.Add(new CiInterpolatedPart(prefix, arg) { WidthExpr = width, Format = format, Precision = precision });
 			Check(CiToken.RightBrace);
 		} while (ReadInterpolatedString() == CiToken.InterpolatedString);
-		string suffix = (string) this.CurrentValue;
+		string suffix = this.StringValue;
 		NextToken();
 		return new CiInterpolatedString(parts.ToArray(), suffix) { Line = line };
 	}
@@ -150,8 +150,28 @@ public class CiParser : CiLexer
 			return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParsePrimaryExpr() };
 		case CiToken.New:
 			return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParseType() };
-		case CiToken.Literal:
-			result = new CiLiteral(this.CurrentValue) { Line = this.Line };
+		case CiToken.LiteralLong:
+			result = new CiLiteral(this.LongValue) { Line = this.Line };
+			NextToken();
+			break;
+		case CiToken.LiteralDouble:
+			result = new CiLiteral(this.DoubleValue) { Line = this.Line };
+			NextToken();
+			break;
+		case CiToken.LiteralString:
+			result = new CiLiteral(this.StringValue) { Line = this.Line };
+			NextToken();
+			break;
+		case CiToken.False:
+			result = new CiLiteral(false) { Line = this.Line };
+			NextToken();
+			break;
+		case CiToken.True:
+			result = new CiLiteral(true) { Line = this.Line };
+			NextToken();
+			break;
+		case CiToken.Null:
+			result = new CiLiteral(null) { Line = this.Line };
 			NextToken();
 			break;
 		case CiToken.InterpolatedString:

@@ -30,7 +30,9 @@ public enum CiToken
 {
 	EndOfFile,
 	Id,
-	Literal,
+	LiteralLong,
+	LiteralDouble,
+	LiteralString,
 	InterpolatedString,
 	Semicolon,
 	Dot,
@@ -92,6 +94,7 @@ public enum CiToken
 	Do,
 	Else,
 	Enum,
+	False,
 	For,
 	Foreach,
 	If,
@@ -101,6 +104,7 @@ public enum CiToken
 	Lock,
 	Native,
 	New,
+	Null,
 	Override,
 	Protected,
 	Public,
@@ -111,6 +115,7 @@ public enum CiToken
 	Switch,
 	Throw,
 	Throws,
+	True,
 	Virtual,
 	Void,
 	While,
@@ -133,7 +138,9 @@ public class CiLexer
 	protected string Filename;
 	public int Line;
 	protected CiToken CurrentToken;
-	protected object CurrentValue; // string for CiToken.Id; null/bool/long/double/string for CiToken.Literal; not modified otherwise
+	protected long LongValue; // for CiToken.LiteralLong
+	protected double DoubleValue; // for CiToken.LiteralDouble
+	protected string StringValue; // for CiToken.LiteralString, CiToken.InterpolatedString and CiToken.Id
 	protected StringBuilder CopyTo = null;
 	public readonly HashSet<string> PreSymbols = new HashSet<string>();
 	bool AtLineStart = true;
@@ -141,8 +148,6 @@ public class CiLexer
 	bool EnableDocComments = true;
 	protected bool ParsingTypeArg = false;
 	readonly Stack<PreDirectiveClass> PreStack = new Stack<PreDirectiveClass>();
-	static readonly object BoxedFalse = false;
-	static readonly object BoxedTrue = true;
 
 	protected void Open(string filename, TextReader reader)
 	{
@@ -242,8 +247,8 @@ public class CiLexer
 			ReadChar();
 			int d = PeekHexDigit();
 			if (d < 0) {
-				this.CurrentValue = i;
-				return CiToken.Literal;
+				this.LongValue = i;
+				return CiToken.LiteralLong;
 			}
 			if (i > 0xfffffffffffffff)
 				throw ParseException("Hex number too big");
@@ -285,8 +290,8 @@ public class CiLexer
 					NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign,
 					CultureInfo.InvariantCulture, out double result))
 					throw ParseException("Invalid floating-point number");
-				this.CurrentValue = result;
-				return CiToken.Literal;
+				this.DoubleValue = result;
+				return CiToken.LiteralDouble;
 			}
 		}
 	}
@@ -311,8 +316,8 @@ public class CiLexer
 			case 'E':
 				return ReadFloatLiteral(i);
 			default:
-				this.CurrentValue = i;
-				return CiToken.Literal;
+				this.LongValue = i;
+				return CiToken.LiteralLong;
 			}
 			if (i == 0)
 				throw ParseException("Leading zeros are not permitted, octal numbers not supported");
@@ -354,13 +359,13 @@ public class CiLexer
 			int c = PeekChar();
 			if (c == '"') {
 				ReadChar();
-				this.CurrentValue = sb.ToString();
-				return CiToken.Literal;
+				this.StringValue = sb.ToString();
+				return CiToken.LiteralString;
 			}
 			if (c == '{') {
 				ReadChar();
 				if (PeekChar() != '{') {
-					this.CurrentValue = sb.ToString();
+					this.StringValue = sb.ToString();
 					return CiToken.InterpolatedString;
 				}
 			}
@@ -496,17 +501,17 @@ public class CiLexer
 			case '\'':
 				if (PeekChar() == '\'')
 					throw ParseException("Empty character literal");
-				this.CurrentValue = (long) ReadCharLiteral();
+				this.LongValue = ReadCharLiteral();
 				if (ReadChar() != '\'')
 					throw ParseException("Unterminated character literal");
-				return CiToken.Literal;
+				return CiToken.LiteralLong;
 			case '"': {
 				StringBuilder sb = new StringBuilder();
 				while (PeekChar() != '"')
 					sb.Append(ReadCharLiteral());
 				ReadChar();
-				this.CurrentValue = sb.ToString();
-				return CiToken.Literal;
+				this.StringValue = sb.ToString();
+				return CiToken.LiteralString;
 			}
 			case '$':
 				if (ReadChar() != '"')
@@ -543,6 +548,7 @@ public class CiLexer
 				case "do": return CiToken.Do;
 				case "else": return CiToken.Else;
 				case "enum": return CiToken.Enum;
+				case "false": return CiToken.False;
 				case "for": return CiToken.For;
 				case "foreach": return CiToken.Foreach;
 				case "if": return CiToken.If;
@@ -552,6 +558,7 @@ public class CiLexer
 				case "lock": return CiToken.Lock;
 				case "native": return CiToken.Native;
 				case "new": return CiToken.New;
+				case "null": return CiToken.Null;
 				case "override": return CiToken.Override;
 				case "protected": return CiToken.Protected;
 				case "public": return CiToken.Public;
@@ -562,20 +569,12 @@ public class CiLexer
 				case "switch": return CiToken.Switch;
 				case "throw": return CiToken.Throw;
 				case "throws": return CiToken.Throws;
+				case "true": return CiToken.True;
 				case "virtual": return CiToken.Virtual;
 				case "void": return CiToken.Void;
 				case "while": return CiToken.While;
-				case "false":
-					this.CurrentValue = BoxedFalse;
-					return CiToken.Literal;
-				case "true":
-					this.CurrentValue = BoxedTrue;
-					return CiToken.Literal;
-				case "null":
-					this.CurrentValue = null;
-					return CiToken.Literal;
 				default:
-					this.CurrentValue = s;
+					this.StringValue = s;
 					return CiToken.Id;
 				}
 			}
@@ -607,14 +606,14 @@ public class CiLexer
 			return result;
 		}
 		if (See(CiToken.Id)) {
-			bool result = this.PreSymbols.Contains((string) this.CurrentValue);
+			bool result = this.PreSymbols.Contains(this.StringValue);
 			NextPreToken();
 			return result;
 		}
-		if (See(CiToken.Literal) && this.CurrentValue is bool value) {
-			NextPreToken();
-			return value;
-		}
+		if (EatPre(CiToken.False))
+			return false;
+		if (EatPre(CiToken.True))
+			return true;
 		throw ParseException("Invalid preprocessor expression");
 	}
 
