@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -357,9 +356,9 @@ public class CiResolver : CiVisitor
 			int width = 0;
 			if (part.WidthExpr != null)
 				width = FoldConstInt(part.WidthExpr);
-			if (arg is CiLiteral literalArg && !(arg.Type is CiFloatingType)) { // float formatting is runtime-locale-specific
-				string stringArg = part.Format == ' ' ? literalArg.Value.ToString()
-					: ((long) literalArg.Value).ToString(part.Format + (part.Precision < 0 ? "" : part.Precision.ToString()));
+			if (arg is CiLiteral && !(arg.Type is CiFloatingType)) { // float formatting is runtime-locale-specific
+				string stringArg = part.Format == ' ' ? arg.ToString()
+					: ((CiLiteralLong) arg).Value.ToString(part.Format + (part.Precision < 0 ? "" : part.Precision.ToString()));
 				if (part.WidthExpr != null)
 					stringArg = width >= 0 ? stringArg.PadLeft(width) : stringArg.PadRight(-width);
 				sb.Append(stringArg);
@@ -418,8 +417,8 @@ public class CiResolver : CiVisitor
 						return expr.ToLiteralLong(array.Length);
 					throw new NotImplementedException(scope.GetType().Name);
 				}
-				if (expr.Symbol == CiSystem.StringLength && left is CiLiteral leftLiteral) {
-					string s = (string) leftLiteral.Value;
+				if (expr.Symbol == CiSystem.StringLength && left is CiLiteralString leftLiteral) {
+					string s = leftLiteral.Value;
 					if (IsAscii(s))
 						return expr.ToLiteralLong(s.Length);
 				}
@@ -491,8 +490,10 @@ public class CiResolver : CiVisitor
 			range = inner.Type as CiRangeType;
 			if (range != null)
 				type = range = new CiRangeType(SaturatedNeg(range.Max), SaturatedNeg(range.Min));
-			else if (inner is CiLiteral literal)
-				return literal.Value is double d ? expr.ToLiteralDouble(-d) : expr.ToLiteralLong(-(long) literal.Value);
+			else if (inner is CiLiteralDouble d)
+				return expr.ToLiteralDouble(-d.Value);
+			else if (inner is CiLiteralLong l)
+				return expr.ToLiteralLong(-l.Value);
 			else
 				type = inner.Type;
 			break;
@@ -531,9 +532,10 @@ public class CiResolver : CiVisitor
 				throw StatementException(expr, "Invalid argument to new");
 			}
 		case CiToken.Resource:
-			if (!(FoldConst(expr.Inner) is CiLiteral resourceName) || !(resourceName.Value is string name))
+			if (!(FoldConst(expr.Inner) is CiLiteralString resourceName))
 				throw StatementException(expr, "Resource name must be string");
 			inner = resourceName;
+			string name = resourceName.Value;
 			if (!this.Program.Resources.TryGetValue(name, out byte[] content)) {
 				content = File.ReadAllBytes(FindFile(name, expr));
 				this.Program.Resources.Add(name, content);
@@ -572,9 +574,8 @@ public class CiResolver : CiVisitor
 	{
 		if (expr is CiInterpolatedString interpolated)
 			return interpolated;
-		if (expr is CiLiteral literal)
-			return new CiInterpolatedString(new CiInterpolatedPart[0],
-				Convert.ToString(literal.Value, CultureInfo.InvariantCulture));
+		if (expr is CiLiteral)
+			return new CiInterpolatedString(new CiInterpolatedPart[0], expr.ToString());
 		return new CiInterpolatedString(new CiInterpolatedPart[1] { new CiInterpolatedPart("", expr) }, "");
 	}
 
@@ -599,8 +600,22 @@ public class CiResolver : CiVisitor
 				return expr.ToLiteralBool(expr.Op == CiToken.NotEqual);
 		}
 		else if (left.Type == right.Type) {
-			if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
-				return expr.ToLiteralBool((expr.Op == CiToken.NotEqual) ^ object.Equals(leftLiteral.Value, rightLiteral.Value));
+			switch (left) {
+			case CiLiteralLong leftLong when right is CiLiteralLong rightLong:
+				return expr.ToLiteralBool((expr.Op == CiToken.NotEqual) ^ (leftLong.Value == rightLong.Value));
+			case CiLiteralDouble leftDouble when right is CiLiteralDouble rightDouble:
+				return expr.ToLiteralBool((expr.Op == CiToken.NotEqual) ^ (leftDouble.Value == rightDouble.Value));
+			case CiLiteralString leftString when right is CiLiteralString rightString:
+				return expr.ToLiteralBool((expr.Op == CiToken.NotEqual) ^ (leftString.Value == rightString.Value));
+			case CiLiteralNull _:
+				return expr.ToLiteralBool(expr.Op == CiToken.Equal);
+			case CiLiteralFalse _:
+				return expr.ToLiteralBool((expr.Op == CiToken.NotEqual) ^ (right is CiLiteralFalse));
+			case CiLiteralTrue _:
+				return expr.ToLiteralBool((expr.Op == CiToken.NotEqual) ^ (right is CiLiteralTrue));
+			default:
+				break;
+			}
 			if (left.IsConstEnum && right.IsConstEnum)
 				return expr.ToLiteralBool((expr.Op == CiToken.NotEqual) ^ (left.IntValue == right.IntValue));
 		}
@@ -639,10 +654,10 @@ public class CiResolver : CiVisitor
 					break;
 				case CiStringType _:
 					type = CiSystem.CharType;
-					if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral) {
-						string s = (string) leftLiteral.Value;
+					if (left is CiLiteralString stringLiteral && right is CiLiteralLong indexLiteral) {
+						string s = stringLiteral.Value;
 						if (IsAscii(s)) {
-							long i = (long) rightLiteral.Value;
+							long i = indexLiteral.Value;
 							if (i >= 0 && i < s.Length)
 								return expr.ToLiteralLong(s[(int) i]);
 						}
@@ -663,9 +678,8 @@ public class CiResolver : CiVisitor
 			else if (left.Type is CiStringType || right.Type is CiStringType) {
 				Coerce(left, CiSystem.PrintableType);
 				Coerce(right, CiSystem.PrintableType);
-				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
-					return expr.ToLiteralString(Convert.ToString(leftLiteral.Value, CultureInfo.InvariantCulture)
-						+ Convert.ToString(rightLiteral.Value, CultureInfo.InvariantCulture));
+				if (left is CiLiteral && right is CiLiteral)
+					return expr.ToLiteralString(left.ToString() + right.ToString());
 				if (left is CiInterpolatedString || right is CiInterpolatedString)
 					return Concatenate(ToInterpolatedString(left), ToInterpolatedString(right));
 				NotSupported(expr, "String concatenation", "c", "cl");
@@ -1121,13 +1135,13 @@ public class CiResolver : CiVisitor
 					break;
 				}
 				break;
-			case CiBinaryExpr binary when binary.Left.IsReferenceTo(iter) && binary.Right is CiLiteral literalStep:
+			case CiBinaryExpr binary when binary.Left.IsReferenceTo(iter) && binary.Right is CiLiteralLong literalStep:
 				switch (binary.Op) {
 				case CiToken.AddAssign:
-					step = (long) literalStep.Value;
+					step = literalStep.Value;
 					break;
 				case CiToken.SubAssign:
-					step = -(long) literalStep.Value;
+					step = -literalStep.Value;
 					break;
 				default:
 					break;
@@ -1307,7 +1321,8 @@ public class CiResolver : CiVisitor
 
 	int FoldConstInt(CiExpr expr)
 	{
-		if (FoldConst(expr) is CiLiteral literal && literal.Value is long l) {
+		if (FoldConst(expr) is CiLiteralLong literal) {
+			long l = literal.Value;
 			if (l < int.MinValue || l > int.MaxValue)
 				throw StatementException(expr, "Only 32-bit ranges supported");
 			return (int) l;
@@ -1401,9 +1416,9 @@ public class CiResolver : CiVisitor
 				Coerce(lengthExpr, CiSystem.IntType);
 				CiArrayStorageType arrayStorage = new CiArrayStorageType { LengthExpr = lengthExpr, ElementType = outerArray };
 				if (!dynamic || (binary.Left.IsIndexing)) {
-					if (!(lengthExpr is CiLiteral literal))
+					if (!(lengthExpr is CiLiteralLong literal))
 						throw StatementException(lengthExpr, "Expected constant value");
-					long length = (long) literal.Value;
+					long length = literal.Value;
 					if (length < 0)
 						throw StatementException(expr, "Expected non-negative integer");
 					if (length > int.MaxValue)

@@ -270,9 +270,9 @@ public class GenCs : GenTyped
 		}
 	}
 
-	protected override void WriteCoercedLiteral(CiType type, CiLiteral literal)
+	protected override void WriteCoercedLiteral(CiType type, CiExpr literal)
 	{
-		WriteLiteral(literal.Value);
+		literal.Accept(this, CiPriority.Argument);
 		if (type == CiSystem.FloatType)
 			Write('f');
 	}

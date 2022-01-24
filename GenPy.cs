@@ -854,8 +854,8 @@ public class GenPy : GenPySwift
 
 	void WriteInclusiveLimit(CiExpr limit, int increment, string incrementString)
 	{
-		if (limit is CiLiteral literal)
-			VisitLiteralLong((long) literal.Value + increment);
+		if (limit is CiLiteralLong literal)
+			VisitLiteralLong(literal.Value + increment);
 		else {
 			limit.Accept(this, CiPriority.Add);
 			Write(incrementString);
@@ -865,7 +865,7 @@ public class GenPy : GenPySwift
 	protected override void WriteForRange(CiVar iter, CiBinaryExpr cond, long rangeStep)
 	{
 		Write("range(");
-		if (rangeStep != 1 || !(iter.Value is CiLiteral start) || (long) start.Value != 0) {
+		if (rangeStep != 1 || !iter.Value.IsLiteralZero) {
 			iter.Value.Accept(this, CiPriority.Argument);
 			Write(", ");
 		}

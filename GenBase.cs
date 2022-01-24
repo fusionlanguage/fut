@@ -427,32 +427,6 @@ public abstract class GenBase : CiVisitor
 		Write('"');
 	}
 
-	protected void WriteLiteral(object value)
-	{
-		switch (value) {
-		case null:
-			VisitLiteralNull();
-			break;
-		case long l:
-			VisitLiteralLong(l);
-			break;
-		case bool b:
-			if (b)
-				VisitLiteralTrue();
-			else
-				VisitLiteralFalse();
-			break;
-		case string s:
-			VisitLiteralString(s);
-			break;
-		case double d:
-			VisitLiteralDouble(d);
-			break;
-		default:
-			throw new NotImplementedException(value.GetType().Name);
-		}
-	}
-
 	protected abstract void WriteName(CiSymbol symbol);
 
 	protected virtual TypeCode GetIntegerTypeCode(CiIntegerType integer, bool promote)
@@ -655,16 +629,16 @@ public abstract class GenBase : CiVisitor
 			WriteCoercedInternal(type, expr, parent);
 	}
 
-	protected virtual void WriteCoercedLiteral(CiType type, CiLiteral literal)
+	protected virtual void WriteCoercedLiteral(CiType type, CiExpr literal)
 	{
-		WriteLiteral(literal.Value);
+		literal.Accept(this, CiPriority.Argument);
 	}
 
 	protected void WriteCoercedLiterals(CiType type, CiExpr[] exprs)
 	{
 		for (int i = 0; i < exprs.Length; i++) {
 			WriteComma(i);
-			WriteCoercedLiteral(type, (CiLiteral) exprs[i]);
+			WriteCoercedLiteral(type, exprs[i]);
 		}
 	}
 
@@ -862,7 +836,7 @@ public abstract class GenBase : CiVisitor
 				WriteNewArray(((CiArrayType) expr.Type).ElementType, expr.Inner, parent);
 			return expr;
 		case CiToken.Resource:
-			WriteResource((string) ((CiLiteral) expr.Inner).Value, ((CiArrayStorageType) expr.Type).Length);
+			WriteResource(((CiLiteralString) expr.Inner).Value, ((CiArrayStorageType) expr.Type).Length);
 			return expr;
 		default:
 			throw new ArgumentException(expr.Op.ToString());
@@ -902,14 +876,14 @@ public abstract class GenBase : CiVisitor
 
 	protected void WriteAdd(CiExpr left, CiExpr right)
 	{
-		if (left is CiLiteral leftLiteral) {
-			long leftValue = (long) leftLiteral.Value;
+		if (left is CiLiteralLong leftLiteral) {
+			long leftValue = leftLiteral.Value;
 			if (leftValue == 0) {
 				right.Accept(this, CiPriority.Argument);
 				return;
 			}
-			if (right is CiLiteral rightLiteral) {
-				VisitLiteralLong(leftValue + (long) rightLiteral.Value);
+			if (right is CiLiteralLong rightLiteral) {
+				VisitLiteralLong(leftValue + rightLiteral.Value);
 				return;
 			}
 		}
@@ -1043,30 +1017,12 @@ public abstract class GenBase : CiVisitor
 		return false;
 	}
 
-	static RegexOptions GetRegexOptions(CiExpr expr)
-	{
-		switch (expr) {
-		case CiSymbolReference symbol:
-			return (RegexOptions) (long) ((CiLiteral) ((CiConst) symbol.Symbol).Value).Value;
-		case CiPrefixExpr unary when unary.Op == CiToken.Tilde:
-			return ~GetRegexOptions(unary.Inner);
-		case CiBinaryExpr binary when binary.Op == CiToken.And:
-			return GetRegexOptions(binary.Left) & GetRegexOptions(binary.Right);
-		case CiBinaryExpr binary when binary.Op == CiToken.Or:
-			return GetRegexOptions(binary.Left) | GetRegexOptions(binary.Right);
-		case CiBinaryExpr binary when binary.Op == CiToken.Xor:
-			return GetRegexOptions(binary.Left) ^ GetRegexOptions(binary.Right);
-		default:
-			throw new NotImplementedException(expr.ToString());
-		}
-	}
-
 	protected bool WriteRegexOptions(CiExpr[] args, string prefix, string separator, string suffix, string i, string m, string s)
 	{
 		CiExpr expr = args[args.Length - 1];
 		if (expr.Type != CiSystem.RegexOptionsEnum)
 			return false;
-		RegexOptions options = GetRegexOptions(expr);
+		RegexOptions options = (RegexOptions) expr.IntValue;
 		if (options == RegexOptions.None)
 			return false;
 		Write(prefix);

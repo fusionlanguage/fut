@@ -430,12 +430,12 @@ public class GenJava : GenTyped
 			 WriteCall(expr.Left, "equals", expr.Right);
 		}
 		else if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)
-			&& expr.Right is CiLiteral rightLiteral && rightLiteral.Value is long l && l >= 0 && l <= byte.MaxValue) {
+			&& expr.Right is CiLiteralLong rightLiteral && rightLiteral.Value >= 0 && rightLiteral.Value <= byte.MaxValue) {
 			if (parent > CiPriority.Equality)
 				Write('(');
 			WriteIndexingInternal(leftBinary); // omit "& 0xff"
 			Write(GetEqOp(not));
-			VisitLiteralLong((sbyte) l);
+			VisitLiteralLong((sbyte) rightLiteral.Value);
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}
@@ -448,12 +448,12 @@ public class GenJava : GenTyped
 		return type is CiRangeType range && range.Min >= 0 && range.Max > sbyte.MaxValue && range.Max <= byte.MaxValue;
 	}
 
-	protected override void WriteCoercedLiteral(CiType type, CiLiteral literal)
+	protected override void WriteCoercedLiteral(CiType type, CiExpr literal)
 	{
 		if (IsUnsignedByte(type))
-			VisitLiteralLong((sbyte) (long) literal.Value);
+			VisitLiteralLong((sbyte) ((CiLiteralLong) literal).Value);
 		else {
-			WriteLiteral(literal.Value);
+			literal.Accept(this, CiPriority.Argument);
 			if (type == CiSystem.FloatType)
 				Write('f');
 		}
@@ -462,12 +462,12 @@ public class GenJava : GenTyped
 	protected override void WriteAnd(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)
-		 && expr.Right is CiLiteral rightLiteral) {
+		 && expr.Right is CiLiteralLong rightLiteral) {
 			if (parent > CiPriority.CondAnd && parent != CiPriority.And)
 				Write('(');
 			base.WriteIndexing(leftBinary, CiPriority.And);
 			Write(" & ");
-			VisitLiteralLong(0xff & (long) rightLiteral.Value);
+			VisitLiteralLong(0xff & rightLiteral.Value);
 			if (parent > CiPriority.CondAnd && parent != CiPriority.And)
 				Write(')');
 		}

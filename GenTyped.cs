@@ -82,8 +82,8 @@ public abstract class GenTyped : GenBase
 
 	protected bool IsOneAsciiString(CiExpr expr, out char c)
 	{
-		if (expr is CiLiteral literal && literal.Value is string s && s.Length == 1 && IsAscii(s[0])) {
-			c = s[0];
+		if (expr is CiLiteralString literal && literal.Value.Length == 1 && IsAscii(literal.Value[0])) {
+			c = literal.Value[0];
 			return true;
 		}
 		c = '\0';
@@ -102,12 +102,12 @@ public abstract class GenTyped : GenBase
 	protected override void WriteComparison(CiBinaryExpr expr, CiPriority parent, CiPriority child, string op)
 	{
 		if (expr.Left.IsIndexing && expr.Left is CiBinaryExpr indexing && indexing.Left.Type is CiStringType
-		 && expr.Right is CiLiteral literal && literal.Value is long c && IsAscii(c)) {
+		 && expr.Right is CiLiteralLong literal && IsAscii(literal.Value)) {
 			if (parent > child)
 				Write('(');
 			expr.Left.Accept(this, child);
 			Write(op);
-			WriteCharLiteral((char) c);
+			WriteCharLiteral((char) literal.Value);
 			if (parent > child)
 				Write(')');
 		}
@@ -167,7 +167,7 @@ public abstract class GenTyped : GenBase
 
 	protected CiExpr GetStaticCastInner(CiType type, CiExpr expr)
 	{
-		if (expr is CiBinaryExpr binary && binary.Op == CiToken.And && binary.Right is CiLiteral rightMask
+		if (expr is CiBinaryExpr binary && binary.Op == CiToken.And && binary.Right is CiLiteralLong rightMask
 		 && type is CiIntegerType integer) {
 			long mask;
 			switch (GetIntegerTypeCode(integer, false)) {
@@ -186,7 +186,7 @@ public abstract class GenTyped : GenBase
 			default:
 				return expr;
 			}
-			if (((long) rightMask.Value & mask) == mask)
+			if ((rightMask.Value & mask) == mask)
 				return binary.Left;
 		}
 		return expr;

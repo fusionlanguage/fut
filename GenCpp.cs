@@ -545,8 +545,8 @@ public class GenCpp : GenCCpp
 			}
 			else {
 				Write(" << ");
-				if (newLine && args[0] is CiLiteral literal) {
-					WriteStringLiteralWithNewLine((string) literal.Value);
+				if (newLine && args[0] is CiLiteralString literal) {
+					WriteStringLiteralWithNewLine(literal.Value);
 					return;
 				}
 				args[0].Accept(this, CiPriority.Mul);

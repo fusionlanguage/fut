@@ -22,6 +22,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -313,105 +314,74 @@ public class CiConst : CiMember
 
 public abstract class CiLiteral : CiExpr
 {
-	public readonly object Value;
-
-	protected CiLiteral(object value)
-	{
-		switch (value) {
-		case null:
-			this.Type = CiSystem.NullType;
-			break;
-		case long l:
-			if (l >= int.MinValue && l <= int.MaxValue)
-				this.Type = new CiRangeType((int) l, (int) l);
-			else
-				this.Type = CiSystem.LongType;
-			break;
-		case bool _:
-			this.Type = CiSystem.BoolType;
-			break;
-		case double _:
-			this.Type = CiSystem.DoubleType;
-			break;
-		case string _:
-			this.Type = CiSystem.StringPtrType;
-			break;
-		default:
-			throw new NotImplementedException(value.GetType().Name);
-		}
-		this.Value = value;
-	}
-
-	public bool IsDefaultValue
-	{
-		get
-		{
-			switch (this.Value) {
-			case null:
-				return true;
-			case long l:
-				return l == 0;
-			case bool b:
-				return b == false;
-			case double d:
-				return BitConverter.DoubleToInt64Bits(d) == 0; // rule out -0.0
-			case string _:
-				return false;
-			default:
-				throw new NotImplementedException(this.Value.GetType().Name);
-			}
-		}
-	}
-
+	public abstract bool IsDefaultValue { get; }
 	public static readonly CiLiteralFalse False = new CiLiteralFalse();
 	public static readonly CiLiteralTrue True = new CiLiteralTrue();
-	public override string ToString() => this.Value.ToString();
 }
 
 public class CiLiteralLong : CiLiteral
 {
-	public override bool IsLiteralZero => (long) this.Value == 0;
-	public override int IntValue => (int) (long) this.Value;
-
-	public CiLiteralLong(long value) : base(value)
+	public readonly long Value;
+	public CiLiteralLong(long value)
 	{
+		this.Value = value;
+		if (value >= int.MinValue && value <= int.MaxValue)
+			this.Type = new CiRangeType((int) value, (int) value);
+		else
+			this.Type = CiSystem.LongType;
 	}
+	public override bool IsLiteralZero => this.Value == 0;
+	public override int IntValue => (int) this.Value;
+	public override bool IsDefaultValue => this.Value == 0;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
-		visitor.VisitLiteralLong((long) this.Value);
+		visitor.VisitLiteralLong(this.Value);
 		return this;
 	}
+	public override string ToString() => this.Value.ToString();
 }
 
 public class CiLiteralDouble : CiLiteral
 {
-	public CiLiteralDouble(double value) : base(value)
+	public readonly double Value;
+	public CiLiteralDouble(double value)
 	{
+		this.Value = value;
+		this.Type = CiSystem.DoubleType;
 	}
+	public override bool IsDefaultValue => BitConverter.DoubleToInt64Bits(this.Value) == 0; // rule out -0.0
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
-		visitor.VisitLiteralDouble((double) this.Value);
+		visitor.VisitLiteralDouble(this.Value);
 		return this;
 	}
+	public override string ToString() => this.Value.ToString(CultureInfo.InvariantCulture);
 }
 
 public class CiLiteralString : CiLiteral
 {
-	public CiLiteralString(string value) : base(value)
+	public readonly string Value;
+	public CiLiteralString(string value)
 	{
+		this.Value = value;
+		this.Type = CiSystem.StringPtrType;
 	}
+	public override bool IsDefaultValue => false;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
-		visitor.VisitLiteralString((string) this.Value);
+		visitor.VisitLiteralString(this.Value);
 		return this;
 	}
+	public override string ToString() => this.Value;
 }
 
 public class CiLiteralNull : CiLiteral
 {
-	public CiLiteralNull() : base(null)
+	public CiLiteralNull()
 	{
+		this.Type = CiSystem.NullType;
 	}
+	public override bool IsDefaultValue => true;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		visitor.VisitLiteralNull();
@@ -422,33 +392,32 @@ public class CiLiteralNull : CiLiteral
 
 public abstract class CiLiteralBool : CiLiteral
 {
-	protected CiLiteralBool(bool value) : base(value)
+	protected CiLiteralBool()
 	{
+		this.Type = CiSystem.BoolType;
 	}
 }
 
 public class CiLiteralFalse : CiLiteralBool
 {
-	public CiLiteralFalse() : base(false)
-	{
-	}
+	public override bool IsDefaultValue => true;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		visitor.VisitLiteralFalse();
 		return this;
 	}
+	public override string ToString() => "false";
 }
 
 public class CiLiteralTrue : CiLiteralBool
 {
-	public CiLiteralTrue() : base(true)
-	{
-	}
+	public override bool IsDefaultValue => false;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		visitor.VisitLiteralTrue();
 		return this;
 	}
+	public override string ToString() => "true";
 }
 
 public class CiImplicitEnumValue : CiExpr

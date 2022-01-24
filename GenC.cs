@@ -544,7 +544,7 @@ public class GenC : GenCCpp
 			break;
 		case CiLiteral literal when literal.IsDefaultValue:
 			Write(" = { ");
-			WriteLiteral(literal.Value);
+			literal.Accept(this, CiPriority.Argument);
 			Write(" }");
 			break;
 		default:
@@ -1096,10 +1096,10 @@ public class GenC : GenCCpp
 	protected override void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not)
 	{
 		if (IsStringSubstring(left, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr lengthExpr)
-		 && right is CiLiteral literal) {
-			string rightValue = (string) literal.Value;
-			if (lengthExpr is CiLiteral leftLength) {
-				if ((long) leftLength.Value != rightValue.Length)
+		 && right is CiLiteralString literal) {
+			string rightValue = literal.Value;
+			if (lengthExpr is CiLiteralLong leftLength) {
+				if (leftLength.Value != rightValue.Length)
 					throw new NotImplementedException(); // TODO: evaluate compile-time
 				WriteSubstringEqual(cast, ptr, offset, rightValue, parent, not);
 			}
@@ -1261,9 +1261,9 @@ public class GenC : GenCCpp
 			Write(error ? ", stderr)" : ", stdout)");
 		}
 		else if (error) {
-			if (args[0] is CiLiteral literal) {
+			if (args[0] is CiLiteralString literal) {
 				Write("fputs(");
-				WriteStringLiteralWithNewLine((string) literal.Value);
+				WriteStringLiteralWithNewLine(literal.Value);
 				Write(", stderr)");
 			}
 			else {

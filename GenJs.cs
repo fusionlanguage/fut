@@ -380,9 +380,9 @@ public class GenJs : GenBase
 		CiExpr pattern = args[argIndex];
 		if (pattern.Type.IsClass(CiSystem.RegexClass))
 			pattern.Accept(this, CiPriority.Primary);
-		else if (pattern is CiLiteral literal) {
+		else if (pattern is CiLiteralString literal) {
 			Write('/');
-			foreach (char c in (string) literal.Value) {
+			foreach (char c in literal.Value) {
 				if (c == '/')
 					Write('\\');
 				WriteEscapedChar(c, false);
@@ -527,9 +527,9 @@ public class GenJs : GenBase
 			Write("))");
 		}
 		else if (method == CiSystem.EnvironmentGetEnvironmentVariable) {
-			if (args[0] is CiLiteral literal && literal.Value is string name && IsIdentifier(name)) {
+			if (args[0] is CiLiteralString literal && IsIdentifier(literal.Value)) {
 				Write("process.env.");
-				Write(name);
+				Write(literal.Value);
 			}
 			else {
 				Write("process.env[");

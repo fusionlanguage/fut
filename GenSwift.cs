@@ -890,7 +890,7 @@ public class GenSwift : GenPySwift
 			Write(' ');
 			Write(expr.OpString);
 			Write(' ');
-			if (right is CiLiteral literal && literal.Value == null
+			if (right is CiLiteralNull
 			 && expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && leftBinary.Left.Type is CiDictionaryType dict) {
 				Write(dict.ValueType);
 				Write(".none");
