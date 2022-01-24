@@ -112,7 +112,10 @@ public abstract class CiExpr : CiStatement
 	public virtual int IntValue => throw new NotImplementedException(GetType().Name);
 	public virtual CiExpr Accept(CiVisitor visitor, CiPriority parent) => throw new NotImplementedException(GetType().Name);
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
-	public CiLiteral ToLiteral(object value) => new CiLiteral(value) { Line = this.Line };
+	public CiLiteral ToLiteralBool(bool value) => value ? new CiLiteralTrue { Line = this.Line } : new CiLiteralFalse { Line = this.Line };
+	public CiLiteral ToLiteralLong(long value) => new CiLiteralLong(value) { Line = this.Line };
+	public CiLiteral ToLiteralDouble(double value) => new CiLiteralDouble(value) { Line = this.Line };
+	public CiLiteral ToLiteralString(string value) => new CiLiteralString(value) { Line = this.Line };
 	public virtual bool IsReferenceTo(CiSymbol symbol) => false;
 }
 
@@ -255,7 +258,7 @@ public abstract class CiNamedValue : CiSymbol
 {
 	public CiExpr TypeExpr;
 	public CiExpr Value;
-	public bool IsAssignableStorage => this.Type is CiClass && this.Value is CiLiteral literal && literal.Value == null;
+	public bool IsAssignableStorage => this.Type is CiClass && this.Value is CiLiteralNull;
 }
 
 public class CiMember : CiNamedValue
@@ -285,22 +288,29 @@ public class CiConst : CiMember
 	public CiConst()
 	{
 	}
-	public CiConst(string name, object value)
+	public CiConst(string name, int value)
 	{
 		this.Name = name;
-		this.Value = new CiLiteral(value);
+		this.Value = new CiLiteralLong(value);
 		this.Type = this.Value.Type;
+		this.VisitStatus = CiVisitStatus.Done;
+	}
+	public CiConst(string name, double value)
+	{
+		this.Name = name;
+		this.Value = new CiLiteralDouble(value);
+		this.Type = CiSystem.DoubleType;
 		this.VisitStatus = CiVisitStatus.Done;
 	}
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 	public override bool IsStatic => true;
 }
 
-public class CiLiteral : CiExpr
+public abstract class CiLiteral : CiExpr
 {
 	public readonly object Value;
 
-	public CiLiteral(object value)
+	protected CiLiteral(object value)
 	{
 		switch (value) {
 		case null:
@@ -327,9 +337,6 @@ public class CiLiteral : CiExpr
 		this.Value = value;
 	}
 
-	public override bool IsLiteralZero => (long) this.Value == 0;
-	public override int IntValue => (int) (long) this.Value;
-
 	public bool IsDefaultValue
 	{
 		get
@@ -351,10 +358,63 @@ public class CiLiteral : CiExpr
 		}
 	}
 
-	public static readonly CiLiteral False = new CiLiteral(false);
-	public static readonly CiLiteral True = new CiLiteral(true);
+	public static readonly CiLiteralFalse False = new CiLiteralFalse();
+	public static readonly CiLiteralTrue True = new CiLiteralTrue();
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
-	public override string ToString() => this.Value == null ? "null" : this.Value.ToString();
+	public override string ToString() => this.Value.ToString();
+}
+
+public class CiLiteralLong : CiLiteral
+{
+	public override bool IsLiteralZero => (long) this.Value == 0;
+	public override int IntValue => (int) (long) this.Value;
+
+	public CiLiteralLong(long value) : base(value)
+	{
+	}
+}
+
+public class CiLiteralDouble : CiLiteral
+{
+	public CiLiteralDouble(double value) : base(value)
+	{
+	}
+}
+
+public class CiLiteralString : CiLiteral
+{
+	public CiLiteralString(string value) : base(value)
+	{
+	}
+}
+
+public class CiLiteralNull : CiLiteral
+{
+	public CiLiteralNull() : base(null)
+	{
+	}
+	public override string ToString() => "null";
+}
+
+public abstract class CiLiteralBool : CiLiteral
+{
+	protected CiLiteralBool(bool value) : base(value)
+	{
+	}
+}
+
+public class CiLiteralFalse : CiLiteralBool
+{
+	public CiLiteralFalse() : base(false)
+	{
+	}
+}
+
+public class CiLiteralTrue : CiLiteralBool
+{
+	public CiLiteralTrue() : base(true)
+	{
+	}
 }
 
 public class CiImplicitEnumValue : CiExpr
@@ -1455,7 +1515,7 @@ public class CiSystem : CiScope
 	public static readonly CiMethod StringIndexOf = new CiMethod(CiCallType.Normal, Minus1Type, "IndexOf", new CiVar(StringPtrType, "value"));
 	public static readonly CiMethod StringLastIndexOf = new CiMethod(CiCallType.Normal, Minus1Type, "LastIndexOf", new CiVar(StringPtrType, "value"));
 	public static readonly CiMethod StringStartsWith = new CiMethod(CiCallType.Normal, BoolType, "StartsWith", new CiVar(StringPtrType, "value"));
-	public static readonly CiMethod StringSubstring = new CiMethod(CiCallType.Normal, StringStorageType, "Substring", new CiVar(IntType, "offset"), new CiVar(IntType, "length") { Value = new CiLiteral(-1L) } ); // TODO: UIntType
+	public static readonly CiMethod StringSubstring = new CiMethod(CiCallType.Normal, StringStorageType, "Substring", new CiVar(IntType, "offset"), new CiVar(IntType, "length") { Value = new CiLiteralLong(-1L) } ); // TODO: UIntType
 	public static readonly CiMember ArrayLength = new CiMember { Name = "Length", Type = UIntType };
 	public static readonly CiMember CollectionCount = new CiMember { Name = "Count", Type = UIntType };
 	public static readonly CiMethod CollectionClear = new CiMethod(CiCallType.Normal, VoidType, "Clear") { IsMutator = true };
@@ -1466,7 +1526,7 @@ public class CiSystem : CiScope
 	public static readonly CiMethod ListRemoveRange = new CiMethod(CiCallType.Normal, VoidType, "RemoveRange", new CiVar(IntType, "index"), new CiVar(IntType, "count")) { IsMutator = true };
 	public static readonly CiType PrintableType = new CiPrintableType { Name = "printable" };
 	public static readonly CiMethod ConsoleWrite = new CiMethod(CiCallType.Static, VoidType, "Write", new CiVar(PrintableType, "value"));
-	public static readonly CiMethod ConsoleWriteLine = new CiMethod(CiCallType.Static, VoidType, "WriteLine", new CiVar(PrintableType, "value") { Value = new CiLiteral("") });
+	public static readonly CiMethod ConsoleWriteLine = new CiMethod(CiCallType.Static, VoidType, "WriteLine", new CiVar(PrintableType, "value") { Value = new CiLiteralString("") });
 	public static readonly CiClass ConsoleBase = new CiClass(CiCallType.Static, "ConsoleBase",
 		ConsoleWrite,
 		ConsoleWriteLine);
@@ -1484,10 +1544,10 @@ public class CiSystem : CiScope
 	public static readonly CiClass EncodingClass = new CiClass(CiCallType.Static, "Encoding");
 	public static readonly CiMethod EnvironmentGetEnvironmentVariable = new CiMethod(CiCallType.Static, StringPtrType, "GetEnvironmentVariable", new CiVar(StringPtrType, "name"));
 	public static readonly CiClass EnvironmentClass = new CiClass(CiCallType.Static, "Environment", EnvironmentGetEnvironmentVariable);
-	public static readonly CiConst RegexOptionsNone = new CiConst("None", 0L);
-	public static readonly CiConst RegexOptionsIgnoreCase = new CiConst("IgnoreCase", 1L);
-	public static readonly CiConst RegexOptionsMultiline = new CiConst("Multiline", 2L);
-	public static readonly CiConst RegexOptionsSingleline = new CiConst("Singleline", 16L);
+	public static readonly CiConst RegexOptionsNone = new CiConst("None", 0);
+	public static readonly CiConst RegexOptionsIgnoreCase = new CiConst("IgnoreCase", 1);
+	public static readonly CiConst RegexOptionsMultiline = new CiConst("Multiline", 2);
+	public static readonly CiConst RegexOptionsSingleline = new CiConst("Singleline", 16);
 	public static readonly CiEnum RegexOptionsEnum = new CiEnumFlags { Name = "RegexOptions" };
 	public static readonly CiMethod RegexCompile = new CiMethod(CiCallType.Static, null /* filled later to avoid cyclic reference */, "Compile", new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone });
 	public static readonly CiMethod RegexEscape = new CiMethod(CiCallType.Static, StringStorageType, "Escape", new CiVar(StringPtrType, "str"));

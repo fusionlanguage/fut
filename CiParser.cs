@@ -151,27 +151,27 @@ public class CiParser : CiLexer
 		case CiToken.New:
 			return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParseType() };
 		case CiToken.LiteralLong:
-			result = new CiLiteral(this.LongValue) { Line = this.Line };
+			result = new CiLiteralLong(this.LongValue) { Line = this.Line };
 			NextToken();
 			break;
 		case CiToken.LiteralDouble:
-			result = new CiLiteral(this.DoubleValue) { Line = this.Line };
+			result = new CiLiteralDouble(this.DoubleValue) { Line = this.Line };
 			NextToken();
 			break;
 		case CiToken.LiteralString:
-			result = new CiLiteral(this.StringValue) { Line = this.Line };
+			result = new CiLiteralString(this.StringValue) { Line = this.Line };
 			NextToken();
 			break;
 		case CiToken.False:
-			result = new CiLiteral(false) { Line = this.Line };
+			result = new CiLiteralFalse { Line = this.Line };
 			NextToken();
 			break;
 		case CiToken.True:
-			result = new CiLiteral(true) { Line = this.Line };
+			result = new CiLiteralTrue { Line = this.Line };
 			NextToken();
 			break;
 		case CiToken.Null:
-			result = new CiLiteral(null) { Line = this.Line };
+			result = new CiLiteralNull { Line = this.Line };
 			NextToken();
 			break;
 		case CiToken.InterpolatedString:

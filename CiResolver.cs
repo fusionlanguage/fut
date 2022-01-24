@@ -352,7 +352,7 @@ public class CiResolver : CiVisitor
 		}
 		sb.Append(expr.Suffix);
 		if (parts.Count == 0)
-			return expr.ToLiteral(sb.ToString());
+			return expr.ToLiteralString(sb.ToString());
 		expr.Parts = parts.ToArray();
 		expr.Suffix = sb.ToString();
 		return expr;
@@ -396,13 +396,13 @@ public class CiResolver : CiVisitor
 					return result;
 				if (expr.Symbol == CiSystem.ArrayLength) {
 					if (scope is CiArrayStorageType array)
-						return expr.ToLiteral((long) array.Length);
+						return expr.ToLiteralLong(array.Length);
 					throw new NotImplementedException(scope.GetType().Name);
 				}
 				if (expr.Symbol == CiSystem.StringLength && left is CiLiteral leftLiteral) {
 					string s = (string) leftLiteral.Value;
 					if (IsAscii(s))
-						return expr.ToLiteral((long) s.Length);
+						return expr.ToLiteralLong(s.Length);
 				}
 			}
 			return new CiSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
@@ -473,7 +473,7 @@ public class CiResolver : CiVisitor
 			if (range != null)
 				type = range = new CiRangeType(SaturatedNeg(range.Max), SaturatedNeg(range.Min));
 			else if (inner is CiLiteral literal)
-				return expr.ToLiteral(literal.Value is double d ? -d : -(long) literal.Value);
+				return literal.Value is double d ? expr.ToLiteralDouble(-d) : expr.ToLiteralLong(-(long) literal.Value);
 			else
 				type = inner.Type;
 			break;
@@ -526,7 +526,7 @@ public class CiResolver : CiVisitor
 			throw new NotImplementedException(expr.Op.ToString());
 		}
 		if (range != null && range.Min == range.Max)
-			return expr.ToLiteral((long) range.Min);
+			return expr.ToLiteralLong(range.Min);
 		return new CiPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
 	}
 
@@ -575,15 +575,15 @@ public class CiResolver : CiVisitor
 	{
 		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {
 			if (leftRange.Min == leftRange.Max && leftRange.Min == rightRange.Min && leftRange.Min == rightRange.Max)
-				return expr.ToLiteral(expr.Op == CiToken.Equal);
+				return expr.ToLiteralBool(expr.Op == CiToken.Equal);
 			if (leftRange.Max < rightRange.Min || leftRange.Min > rightRange.Max)
-				return expr.ToLiteral(expr.Op == CiToken.NotEqual);;
+				return expr.ToLiteralBool(expr.Op == CiToken.NotEqual);
 		}
 		else if (left.Type == right.Type) {
 			if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
-				return expr.ToLiteral((expr.Op == CiToken.NotEqual) ^ object.Equals(leftLiteral.Value, rightLiteral.Value));
+				return expr.ToLiteralBool((expr.Op == CiToken.NotEqual) ^ object.Equals(leftLiteral.Value, rightLiteral.Value));
 			if (left.IsConstEnum && right.IsConstEnum)
-				return expr.ToLiteral((expr.Op == CiToken.NotEqual) ^ (left.IntValue == right.IntValue));
+				return expr.ToLiteralBool((expr.Op == CiToken.NotEqual) ^ (left.IntValue == right.IntValue));
 		}
 		if (!left.Type.IsAssignableFrom(right.Type) && !right.Type.IsAssignableFrom(left.Type))
 			throw StatementException(expr, "Cannot compare {0} with {1}", left.Type, right.Type);
@@ -625,7 +625,7 @@ public class CiResolver : CiVisitor
 						if (IsAscii(s)) {
 							long i = (long) rightLiteral.Value;
 							if (i >= 0 && i < s.Length)
-								return expr.ToLiteral((long) s[(int) i]);
+								return expr.ToLiteralLong(s[(int) i]);
 						}
 					}
 					break;
@@ -645,7 +645,7 @@ public class CiResolver : CiVisitor
 				Coerce(left, CiSystem.PrintableType);
 				Coerce(right, CiSystem.PrintableType);
 				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
-					return expr.ToLiteral(Convert.ToString(leftLiteral.Value, CultureInfo.InvariantCulture)
+					return expr.ToLiteralString(Convert.ToString(leftLiteral.Value, CultureInfo.InvariantCulture)
 						+ Convert.ToString(rightLiteral.Value, CultureInfo.InvariantCulture));
 				if (left is CiInterpolatedString || right is CiInterpolatedString)
 					return Concatenate(ToInterpolatedString(left), ToInterpolatedString(right));
@@ -896,7 +896,7 @@ public class CiResolver : CiVisitor
 			throw new NotImplementedException(expr.Op.ToString());
 		}
 		if (type is CiRangeType range && range.Min == range.Max)
-			return expr.ToLiteral((long) range.Min);
+			return expr.ToLiteralLong(range.Min);
 		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = type };
 	}
 
