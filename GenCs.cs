@@ -270,9 +270,9 @@ public class GenCs : GenTyped
 		}
 	}
 
-	protected override void WriteCoercedLiteral(CiType type, object value)
+	protected override void WriteCoercedLiteral(CiType type, CiLiteral literal)
 	{
-		WriteLiteral(value);
+		WriteLiteral(literal.Value);
 		if (type == CiSystem.FloatType)
 			Write('f');
 	}
@@ -286,13 +286,13 @@ public class GenCs : GenTyped
 			part.Argument.Accept(this, CiPriority.Argument);
 			if (part.WidthExpr != null) {
 				Write(',');
-				Write(part.Width);
+				VisitLiteralLong(part.Width);
 			}
 			if (part.Format != ' ') {
 				Write(':');
 				Write(part.Format);
 				if (part.Precision >= 0)
-					Write(part.Precision);
+					VisitLiteralLong(part.Precision);
 			}
 			Write('}');
 		}
@@ -507,7 +507,7 @@ public class GenCs : GenTyped
 				Write(", ");
 				if (args.Length == 1) {
 					Write("0, ");
-					Write(((CiArrayStorageType) obj.Type).Length);
+					VisitLiteralLong(((CiArrayStorageType) obj.Type).Length);
 				}
 				else {
 					args[1].Accept(this, CiPriority.Argument);

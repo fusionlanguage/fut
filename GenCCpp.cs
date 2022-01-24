@@ -1,6 +1,6 @@
 // GenCCpp.cs - C/C++ code generator
 //
-// Copyright (C) 2011-2021  Piotr Fusik
+// Copyright (C) 2011-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -242,7 +242,7 @@ public abstract class GenCCpp : GenTyped
 			int gotoId = this.StringSwitchesWithGoto.IndexOf(switchStatement);
 			if (gotoId >= 0) {
 				Write("goto ciafterswitch");
-				Write(gotoId);
+				VisitLiteralLong(gotoId);
 				WriteLine(';');
 				return;
 			}
@@ -304,7 +304,7 @@ public abstract class GenCCpp : GenTyped
 		}
 		if (gotoId >= 0) {
 			Write("ciafterswitch");
-			Write(gotoId);
+			VisitLiteralLong(gotoId);
 			WriteLine(": ;");
 		}
 	}

@@ -84,19 +84,19 @@ public class GenPy : GenPySwift
 		WriteLine("\"\"\"");
 	}
 
-	protected override void WriteLiteral(object value)
+	public override void VisitLiteralNull()
 	{
-		switch (value) {
-		case null:
-			Write("None");
-			break;
-		case bool b:
-			Write(b ? "True" : "False");
-			break;
-		default:
-			base.WriteLiteral(value);
-			break;
-		}
+		Write("None");
+	}
+
+	public override void VisitLiteralFalse()
+	{
+		Write("False");
+	}
+
+	public override void VisitLiteralTrue()
+	{
+		Write("True");
 	}
 
 	void WriteNameNotKeyword(string name)
@@ -223,16 +223,16 @@ public class GenPy : GenPySwift
 				if (part.Width >= 0) {
 					if (!(part.Argument.Type is CiNumericType))
 						Write('>');
-					Write(part.Width);
+					VisitLiteralLong(part.Width);
 				}
 				else {
 					Write('<');
-					Write(-part.Width);
+					VisitLiteralLong(-part.Width);
 				}
 			}
 			if (part.Precision >= 0) {
 				Write(part.Argument.Type is CiIntegerType ? '0' : '.');
-				Write(part.Precision);
+				VisitLiteralLong(part.Precision);
 			}
 			if (part.Format != ' ' && part.Format != 'D')
 				Write(part.Format);
@@ -855,7 +855,7 @@ public class GenPy : GenPySwift
 	void WriteInclusiveLimit(CiExpr limit, int increment, string incrementString)
 	{
 		if (limit is CiLiteral literal)
-			Write((long) literal.Value + increment);
+			VisitLiteralLong((long) literal.Value + increment);
 		else {
 			limit.Accept(this, CiPriority.Add);
 			Write(incrementString);
@@ -885,7 +885,7 @@ public class GenPy : GenPySwift
 		}
 		if (rangeStep != 1) {
 			Write(", ");
-			Write(rangeStep);
+			VisitLiteralLong(rangeStep);
 		}
 		Write(')');
 	}
@@ -1020,7 +1020,7 @@ public class GenPy : GenPySwift
 		foreach (CiConst konst in enu) {
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" = ");
-			Write(konst.Value.IntValue);
+			VisitLiteralLong(konst.Value.IntValue);
 			WriteLine();
 			Write(konst.Documentation);
 		}

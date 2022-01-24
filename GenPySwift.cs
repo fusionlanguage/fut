@@ -266,7 +266,7 @@ public abstract class GenPySwift : GenBase
 	void OpenWhileTrue()
 	{
 		Write("while ");
-		WriteLiteral(true);
+		VisitLiteralTrue();
 		OpenChild();
 	}
 

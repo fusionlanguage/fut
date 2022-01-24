@@ -310,12 +310,9 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	protected override void WriteLiteral(object value)
+	public override void VisitLiteralNull()
 	{
-		if (value == null)
-			Write("nil");
-		else
-			base.WriteLiteral(value);
+		Write("nil");
 	}
 
 	void WriteInterpolatedLiteral(string s)
@@ -518,7 +515,7 @@ public class GenSwift : GenPySwift
 		else if (obj.Type is CiArrayStorageType arrayStorage && method == CiSystem.CollectionSortAll) {
 			obj.Accept(this, CiPriority.Primary);
 			Write("[0..<");
-			Write(arrayStorage.Length);
+			VisitLiteralLong(arrayStorage.Length);
 			Write("].sort()");
 		}
 		else if (method == CiSystem.CollectionSortPart) {
@@ -751,7 +748,7 @@ public class GenSwift : GenPySwift
 			Write("](repeating: ");
 			WriteDefaultValue(array.ElementType);
 			Write(", count: ");
-			Write(array.Length);
+			VisitLiteralLong(array.Length);
 			Write(')');
 		}
 	}
@@ -1119,7 +1116,7 @@ public class GenSwift : GenPySwift
 				throw new NotImplementedException(cond.Op.ToString());
 			}
 			Write(", by: ");
-			Write(rangeStep);
+			VisitLiteralLong(rangeStep);
 			Write(')');
 		}
 	}
@@ -1245,7 +1242,7 @@ public class GenSwift : GenPySwift
 					Write("[]");
 				else {
 					Write("rawValue: ");
-					Write(i);
+					VisitLiteralLong(i);
 				}
 				WriteLine(')');
 			}
@@ -1272,7 +1269,7 @@ public class GenSwift : GenPySwift
 					WriteName(konst);
 					if (!(konst.Value is CiImplicitEnumValue)) {
 						Write(" = ");
-						Write(i);
+						VisitLiteralLong(i);
 					}
 					valueToConst.Add(i, konst);
 				}

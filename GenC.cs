@@ -80,12 +80,9 @@ public class GenC : GenCCpp
 		Include("stdbool.h");
 	}
 
-	protected override void WriteLiteral(object value)
+	public override void VisitLiteralNull()
 	{
-		if (value == null)
-			Write("NULL");
-		else
-			base.WriteLiteral(value);
+		Write("NULL");
 	}
 
 	protected override void WritePrintfWidth(CiInterpolatedPart part)
@@ -267,7 +264,7 @@ public class GenC : GenCCpp
 		Write("CiMatch_GetPos(");
 		expr.Left.Accept(this, CiPriority.Argument);
 		Write(", ");
-		Write(which);
+		VisitLiteralLong(which);
 		Write(')');
 	}
 
@@ -427,7 +424,7 @@ public class GenC : GenCCpp
 		while (type is CiArrayType array) {
 			if (type is CiArrayStorageType arrayStorage) {
 				Write('[');
-				Write(arrayStorage.Length);
+				VisitLiteralLong(arrayStorage.Length);
 				Write(']');
 			}
 			else if (array.ElementType is CiArrayStorageType)
@@ -686,7 +683,7 @@ public class GenC : GenCCpp
 		int id = this.CurrentTemporaries.IndexOf(type);
 		if (id < 0) {
 			id = this.CurrentTemporaries.Count;
-			WriteDefinition(type, () => { Write("citemp"); Write(id); }, false, true);
+			WriteDefinition(type, () => { Write("citemp"); VisitLiteralLong(id); }, false, true);
 			if (assign) {
 				Write(" = ");
 				if (expr != null)
@@ -699,7 +696,7 @@ public class GenC : GenCCpp
 		}
 		else if (assign) {
 			Write("citemp");
-			Write(id);
+			VisitLiteralLong(id);
 			Write(" = ");
 			if (expr != null)
 				WriteCoerced(type, expr, CiPriority.Argument);
@@ -1024,7 +1021,7 @@ public class GenC : GenCCpp
 			int tempId = this.CurrentTemporaries.IndexOf(expr);
 			if (tempId >= 0) {
 				Write("citemp");
-				Write(tempId);
+				VisitLiteralLong(tempId);
 			}
 			else
 				expr.Accept(this, CiPriority.Primary);
@@ -1074,9 +1071,9 @@ public class GenC : GenCCpp
 		Write("memcmp(");
 		WriteArrayPtrAdd(ptr, offset);
 		Write(", ");
-		WriteLiteral(literal);
+		VisitLiteralString(literal);
 		Write(", ");
-		Write(literal.Length);
+		VisitLiteralLong(literal.Length);
 		Write(')');
 		Write(GetEqOp(not));
 		Write('0');
@@ -1111,7 +1108,7 @@ public class GenC : GenCCpp
 					Write('(');
 				lengthExpr.Accept(this, CiPriority.Equality);
 				Write(" != ");
-				Write(rightValue.Length);
+				VisitLiteralLong(rightValue.Length);
 				Write(" || ");
 				WriteSubstringEqual(cast, ptr, offset, rightValue, CiPriority.CondOr, true);
 				if (parent > CiPriority.CondOr)
@@ -1122,7 +1119,7 @@ public class GenC : GenCCpp
 					Write('(');
 				lengthExpr.Accept(this, CiPriority.Equality);
 				Write(" == ");
-				Write(rightValue.Length);
+				VisitLiteralLong(rightValue.Length);
 				Write(" && ");
 				WriteSubstringEqual(cast, ptr, offset, rightValue, CiPriority.CondAnd, false);
 				if (parent > CiPriority.CondAnd || parent == CiPriority.CondOr)
@@ -1169,7 +1166,7 @@ public class GenC : GenCCpp
 	{
 		Write("for (int _i = 0; _i < ");
 		if (args.Length == 1)
-			Write(((CiArrayStorageType) obj.Type).Length);
+			VisitLiteralLong(((CiArrayStorageType) obj.Type).Length);
 		else
 			args[2].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
 		WriteLine("; _i++)");
@@ -1192,7 +1189,7 @@ public class GenC : GenCCpp
 		if (elementType is CiClass klass && NeedsConstructor(klass)) {
 			WriteName(klass);
 			Write("_Construct(&citemp");
-			Write(id);
+			VisitLiteralLong(id);
 			WriteLine(");");
 		}
 		Write(function);
@@ -1203,7 +1200,7 @@ public class GenC : GenCCpp
 			args[0].Accept(this, CiPriority.Argument);
 		}
 		Write(", citemp");
-		Write(id);
+		VisitLiteralLong(id);
 		Write(')');
 		this.CurrentTemporaries[id] = elementType;
 	}
@@ -1427,7 +1424,7 @@ public class GenC : GenCCpp
 				WriteArrayPtrAdd(obj, args[1]);
 			Write(", ");
 			if (args.Length == 1)
-				Write(((CiArrayStorageType) array).Length);
+				VisitLiteralLong(((CiArrayStorageType) array).Length);
 			else
 				args[2].Accept(this, CiPriority.Primary);
 			WriteSizeofCompare(array);
@@ -1484,7 +1481,7 @@ public class GenC : GenCCpp
 				Write("qsort(");
 				WriteArrayPtr(obj, CiPriority.Argument);
 				Write(", ");
-				Write(arrayStorage.Length);
+				VisitLiteralLong(arrayStorage.Length);
 				Write(", sizeof(");
 				Write(typeCode);
 				Write(')');
@@ -1856,13 +1853,13 @@ public class GenC : GenCCpp
 		int nesting = 0;
 		while (type is CiArrayStorageType array) {
 			Write("for (int _i");
-			Write(nesting);
+			VisitLiteralLong(nesting);
 			Write(" = ");
-			Write(array.Length - 1);
+			VisitLiteralLong(array.Length - 1);
 			Write("; _i");
-			Write(nesting);
+			VisitLiteralLong(nesting);
 			Write(" >= 0; _i");
-			Write(nesting);
+			VisitLiteralLong(nesting);
 			WriteLine("--)");
 			this.Indent++;
 			nesting++;
@@ -1895,7 +1892,7 @@ public class GenC : GenCCpp
 		WriteLocalName(symbol, CiPriority.Primary);
 		for (int i = 0; i < nesting; i++) {
 			Write("[_i");
-			Write(i);
+			VisitLiteralLong(i);
 			Write(']');
 		}
 		if (type is CiListType)
@@ -2053,7 +2050,7 @@ public class GenC : GenCCpp
 			Write(" = 0; ");
 			WriteCamelCaseNotKeyword(element);
 			Write(" < ");
-			Write(array.Length);
+			VisitLiteralLong(array.Length);
 			Write("; ");
 			WriteCamelCaseNotKeyword(element);
 			Write("++)");
@@ -2945,7 +2942,7 @@ public class GenC : GenCCpp
 			Write(' ');
 			WriteResource(name, -1);
 			Write('[');
-			Write(resources[name].Length);
+			VisitLiteralLong(resources[name].Length);
 			WriteLine("] = {");
 			Write('\t');
 			Write(resources[name]);

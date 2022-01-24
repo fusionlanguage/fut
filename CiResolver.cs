@@ -307,9 +307,28 @@ public class CiResolver : CiVisitor
 		return expr;
 	}
 
-	public override CiExpr Visit(CiLiteral expr, CiPriority parent)
+	public override void VisitLiteralLong(long value)
 	{
-		return expr;
+	}
+
+	public override void VisitLiteralDouble(double value)
+	{
+	}
+
+	public override void VisitLiteralString(string value)
+	{
+	}
+
+	public override void VisitLiteralNull()
+	{
+	}
+
+	public override void VisitLiteralFalse()
+	{
+	}
+
+	public override void VisitLiteralTrue()
+	{
 	}
 
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)

@@ -180,20 +180,20 @@ public class GenJs : GenBase
 					case 'E':
 						Write(".toExponential(");
 						if (part.Precision >= 0)
-							Write(part.Precision);
+							VisitLiteralLong(part.Precision);
 						Write(").toUpperCase()");
 						break;
 					case 'e':
 						Write(".toExponential(");
 						if (part.Precision >= 0)
-							Write(part.Precision);
+							VisitLiteralLong(part.Precision);
 						Write(')');
 						break;
 					case 'F':
 					case 'f':
 						Write(".toFixed(");
 						if (part.Precision >= 0)
-							Write(part.Precision);
+							VisitLiteralLong(part.Precision);
 						Write(')');
 						break;
 					case 'X':
@@ -208,18 +208,18 @@ public class GenJs : GenBase
 					}
 					if (part.Precision >= 0 && "DdXx".IndexOf(part.Format) >= 0) {
 						Write(".padStart(");
-						Write(part.Precision);
+						VisitLiteralLong(part.Precision);
 						Write(", \"0\")");
 					}
 				}
 				if (part.Width > 0) {
 					Write(".padStart(");
-					Write(part.Width);
+					VisitLiteralLong(part.Width);
 					Write(')');
 				}
 				else if (part.Width < 0) {
 					Write(".padEnd(");
-					Write(-part.Width);
+					VisitLiteralLong(-part.Width);
 					Write(')');
 				}
 			}
@@ -728,7 +728,7 @@ public class GenJs : GenBase
 			Write(konst.Documentation);
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" : ");
-			Write(konst.Value.IntValue);
+			VisitLiteralLong(konst.Value.IntValue);
 		}
 		WriteLine();
 		CloseBlock();

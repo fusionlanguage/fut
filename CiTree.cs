@@ -69,7 +69,12 @@ public abstract class CiVisitor
 {
 	public abstract CiExpr Visit(CiCollection expr, CiPriority parent);
 	public abstract CiExpr Visit(CiVar expr, CiPriority parent);
-	public abstract CiExpr Visit(CiLiteral expr, CiPriority parent);
+	public abstract void VisitLiteralLong(long value);
+	public abstract void VisitLiteralDouble(double value);
+	public abstract void VisitLiteralString(string value);
+	public abstract void VisitLiteralNull();
+	public abstract void VisitLiteralFalse();
+	public abstract void VisitLiteralTrue();
 	public abstract CiExpr Visit(CiInterpolatedString expr, CiPriority parent);
 	public abstract CiExpr Visit(CiSymbolReference expr, CiPriority parent);
 	public abstract CiExpr Visit(CiPrefixExpr expr, CiPriority parent);
@@ -360,7 +365,6 @@ public abstract class CiLiteral : CiExpr
 
 	public static readonly CiLiteralFalse False = new CiLiteralFalse();
 	public static readonly CiLiteralTrue True = new CiLiteralTrue();
-	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
 	public override string ToString() => this.Value.ToString();
 }
 
@@ -372,12 +376,22 @@ public class CiLiteralLong : CiLiteral
 	public CiLiteralLong(long value) : base(value)
 	{
 	}
+	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+	{
+		visitor.VisitLiteralLong((long) this.Value);
+		return this;
+	}
 }
 
 public class CiLiteralDouble : CiLiteral
 {
 	public CiLiteralDouble(double value) : base(value)
 	{
+	}
+	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+	{
+		visitor.VisitLiteralDouble((double) this.Value);
+		return this;
 	}
 }
 
@@ -386,12 +400,22 @@ public class CiLiteralString : CiLiteral
 	public CiLiteralString(string value) : base(value)
 	{
 	}
+	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+	{
+		visitor.VisitLiteralString((string) this.Value);
+		return this;
+	}
 }
 
 public class CiLiteralNull : CiLiteral
 {
 	public CiLiteralNull() : base(null)
 	{
+	}
+	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+	{
+		visitor.VisitLiteralNull();
+		return this;
 	}
 	public override string ToString() => "null";
 }
@@ -408,12 +432,22 @@ public class CiLiteralFalse : CiLiteralBool
 	public CiLiteralFalse() : base(false)
 	{
 	}
+	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+	{
+		visitor.VisitLiteralFalse();
+		return this;
+	}
 }
 
 public class CiLiteralTrue : CiLiteralBool
 {
 	public CiLiteralTrue() : base(true)
 	{
+	}
+	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+	{
+		visitor.VisitLiteralTrue();
+		return this;
 	}
 }
 

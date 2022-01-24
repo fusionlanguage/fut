@@ -44,12 +44,9 @@ public class GenCpp : GenCCpp
 		Include("cmath");
 	}
 
-	protected override void WriteLiteral(object value)
+	public override void VisitLiteralNull()
 	{
-		if (value == null)
-			Write("nullptr");
-		else
-			base.WriteLiteral(value);
+		Write("nullptr");
 	}
 
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
@@ -253,7 +250,7 @@ public class GenCpp : GenCCpp
 			Write("std::array<");
 			Write(arrayStorage.ElementType, false);
 			Write(", ");
-			Write(arrayStorage.Length);
+			VisitLiteralLong(arrayStorage.Length);
 			Write('>');
 			break;
 		case CiListType list:
@@ -524,7 +521,7 @@ public class GenCpp : GenCCpp
 
 					if (part.Prefix.Length > 0) {
 						Write(" << ");
-						WriteLiteral(part.Prefix);
+						VisitLiteralString(part.Prefix);
 					}
 
 					Write(" << ");
@@ -543,7 +540,7 @@ public class GenCpp : GenCCpp
 						WriteStringLiteralWithNewLine(interpolated.Suffix);
 						return;
 					}
-					WriteLiteral(interpolated.Suffix);
+					VisitLiteralString(interpolated.Suffix);
 				}
 			}
 			else {
@@ -1292,7 +1289,7 @@ public class GenCpp : GenCCpp
 			Include("array");
 			Include("cstdint");
 			Write("const std::array<uint8_t, ");
-			Write(resources[name].Length);
+			VisitLiteralLong(resources[name].Length);
 			Write("> ");
 			WriteResource(name, -1);
 			if (define) {

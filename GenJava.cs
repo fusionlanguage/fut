@@ -29,10 +29,10 @@ public class GenJava : GenTyped
 {
 	string OutputDirectory;
 
-	protected override void WriteLiteral(object value)
+	public override void VisitLiteralLong(long value)
 	{
-		base.WriteLiteral(value);
-		if (value is long l && l != (int) l)
+		base.VisitLiteralLong(value);
+		if (value != (int) value)
 			Write('L');
 	}
 
@@ -42,7 +42,7 @@ public class GenJava : GenTyped
 			if (part.WidthExpr != null)
 				throw new NotImplementedException("Cannot format integer with both width and precision");
 			Write('0');
-			Write(part.Precision);
+			VisitLiteralLong(part.Precision);
 		}
 		else
 			base.WritePrintfWidth(part);
@@ -371,9 +371,9 @@ public class GenJava : GenTyped
 	protected override void WriteResource(string name, int length)
 	{
 		Write("CiResource.getByteArray(");
-		WriteLiteral(name);
+		VisitLiteralString(name);
 		Write(", ");
-		Write(length);
+		VisitLiteralLong(length);
 		Write(')');
 	}
 
@@ -435,7 +435,7 @@ public class GenJava : GenTyped
 				Write('(');
 			WriteIndexingInternal(leftBinary); // omit "& 0xff"
 			Write(GetEqOp(not));
-			Write((sbyte) l);
+			VisitLiteralLong((sbyte) l);
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}
@@ -448,12 +448,12 @@ public class GenJava : GenTyped
 		return type is CiRangeType range && range.Min >= 0 && range.Max > sbyte.MaxValue && range.Max <= byte.MaxValue;
 	}
 
-	protected override void WriteCoercedLiteral(CiType type, object value)
+	protected override void WriteCoercedLiteral(CiType type, CiLiteral literal)
 	{
 		if (IsUnsignedByte(type))
-			Write((sbyte) (long) value);
+			VisitLiteralLong((sbyte) (long) literal.Value);
 		else {
-			WriteLiteral(value);
+			WriteLiteral(literal.Value);
 			if (type == CiSystem.FloatType)
 				Write('f');
 		}
@@ -467,7 +467,7 @@ public class GenJava : GenTyped
 				Write('(');
 			base.WriteIndexing(leftBinary, CiPriority.And);
 			Write(" & ");
-			Write(0xff & (long) rightLiteral.Value);
+			VisitLiteralLong(0xff & (long) rightLiteral.Value);
 			if (parent > CiPriority.CondAnd && parent != CiPriority.And)
 				Write(')');
 		}
@@ -863,7 +863,7 @@ public class GenJava : GenTyped
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" = ");
 			if (konst.Value is CiImplicitEnumValue imp)
-				Write(imp.Value);
+				VisitLiteralLong(imp.Value);
 			else
 				konst.Value.Accept(this, CiPriority.Argument);
 			WriteLine(';');

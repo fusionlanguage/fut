@@ -68,7 +68,7 @@ public abstract class GenBase : CiVisitor
 		this.Writer.Write(s);
 	}
 
-	protected void Write(long i)
+	public override void VisitLiteralLong(long i)
 	{
 		this.Writer.Write(i);
 	}
@@ -359,8 +359,48 @@ public abstract class GenBase : CiVisitor
 	{
 		for (int i = 0; i < array.Length; i++) {
 			WriteComma(i);
-			Write(array[i]);
+			VisitLiteralLong(array[i]);
 		}
+	}
+
+	public override void VisitLiteralDouble(double value)
+	{
+		string s = value.ToString("R", CultureInfo.InvariantCulture);
+		Write(s);
+		foreach (char c in s) {
+			switch (c) {
+			case '-':
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				break;
+			default:
+				return;
+			}
+		}
+		Write(".0"); // it looked like an integer
+	}
+
+	public override void VisitLiteralNull()
+	{
+		Write("null");
+	}
+
+	public override void VisitLiteralFalse()
+	{
+		Write("false");
+	}
+
+	public override void VisitLiteralTrue()
+	{
+		Write("true");
 	}
 
 	protected void WriteEscapedChar(char c, bool quoted = true)
@@ -379,56 +419,38 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected virtual void WriteLiteral(object value)
+	public override void VisitLiteralString(string value)
+	{
+		Write('"');
+		foreach (char c in value)
+			WriteEscapedChar(c);
+		Write('"');
+	}
+
+	protected void WriteLiteral(object value)
 	{
 		switch (value) {
 		case null:
-			Write("null");
+			VisitLiteralNull();
 			break;
 		case long l:
-			Write(l);
+			VisitLiteralLong(l);
 			break;
 		case bool b:
-			Write(b ? "true" : "false");
+			if (b)
+				VisitLiteralTrue();
+			else
+				VisitLiteralFalse();
 			break;
 		case string s:
-			Write('"');
-			foreach (char c in s)
-				WriteEscapedChar(c);
-			Write('"');
+			VisitLiteralString(s);
 			break;
 		case double d:
-			string s2 = d.ToString("R", CultureInfo.InvariantCulture);
-			Write(s2);
-			foreach (char c in s2) {
-				switch (c) {
-				case '-':
-				case '0':
-				case '1':
-				case '2':
-				case '3':
-				case '4':
-				case '5':
-				case '6':
-				case '7':
-				case '8':
-				case '9':
-					break;
-				default:
-					return;
-				}
-			}
-			Write(".0"); // it looked like an integer
+			VisitLiteralDouble(d);
 			break;
 		default:
 			throw new NotImplementedException(value.GetType().Name);
 		}
-	}
-
-	public override CiExpr Visit(CiLiteral expr, CiPriority parent)
-	{
-		WriteLiteral(expr.Value);
-		return expr;
 	}
 
 	protected abstract void WriteName(CiSymbol symbol);
@@ -511,10 +533,10 @@ public abstract class GenBase : CiVisitor
 	protected virtual void WritePrintfWidth(CiInterpolatedPart part)
 	{
 		if (part.WidthExpr != null)
-			Write(part.Width);
+			VisitLiteralLong(part.Width);
 		if (part.Precision >= 0) {
 			Write('.');
-			Write(part.Precision);
+			VisitLiteralLong(part.Precision);
 		}
 	}
 
@@ -633,16 +655,16 @@ public abstract class GenBase : CiVisitor
 			WriteCoercedInternal(type, expr, parent);
 	}
 
-	protected virtual void WriteCoercedLiteral(CiType type, object value)
+	protected virtual void WriteCoercedLiteral(CiType type, CiLiteral literal)
 	{
-		WriteLiteral(value);
+		WriteLiteral(literal.Value);
 	}
 
 	protected void WriteCoercedLiterals(CiType type, CiExpr[] exprs)
 	{
 		for (int i = 0; i < exprs.Length; i++) {
 			WriteComma(i);
-			WriteCoercedLiteral(type, ((CiLiteral) exprs[i]).Value);
+			WriteCoercedLiteral(type, (CiLiteral) exprs[i]);
 		}
 	}
 
@@ -787,13 +809,13 @@ public abstract class GenBase : CiVisitor
 		Write("for (");
 		Write(intString);
 		Write(" _i");
-		Write(nesting);
+		VisitLiteralLong(nesting);
 		Write(" = 0; _i");
-		Write(nesting);
+		VisitLiteralLong(nesting);
 		Write(" < ");
-		Write(count);
+		VisitLiteralLong(count);
 		Write("; _i");
-		Write(nesting);
+		VisitLiteralLong(nesting);
 		Write("++) ");
 		OpenBlock();
 	}
@@ -803,7 +825,7 @@ public abstract class GenBase : CiVisitor
 		WriteLocalName(def, CiPriority.Primary);
 		for (int i = 0; i < nesting; i++) {
 			Write("[_i");
-			Write(i);
+			VisitLiteralLong(i);
 			Write(']');
 		}
 	}
@@ -887,7 +909,7 @@ public abstract class GenBase : CiVisitor
 				return;
 			}
 			if (right is CiLiteral rightLiteral) {
-				Write(leftValue + (long) rightLiteral.Value);
+				VisitLiteralLong(leftValue + (long) rightLiteral.Value);
 				return;
 			}
 		}

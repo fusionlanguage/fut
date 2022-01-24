@@ -112,7 +112,7 @@ public class GenCl : GenC
 		}
 		WriteArrayPtrAdd(ptr, offset);
 		Write(", ");
-		WriteLiteral(literal);
+		VisitLiteralString(literal);
 		Write(')');
 	}
 
