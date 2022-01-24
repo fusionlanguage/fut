@@ -145,13 +145,6 @@ public abstract class GenBase : CiVisitor
 		this.AtLineStart = true;
 	}
 
-	protected void WriteLine(string format, params object[] args)
-	{
-		StartLine();
-		this.Writer.WriteLine(format, args);
-		this.AtLineStart = true;
-	}
-
 	#region JavaDoc
 
 	protected virtual void StartDocLine()
