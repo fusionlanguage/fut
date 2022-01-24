@@ -715,7 +715,7 @@ public class CiAssert : CiStatement
 {
 	public CiExpr Cond;
 	public CiExpr Message = null;
-	public override bool CompletesNormally => !(this.Cond is CiLiteral literal) || (bool) literal.Value;
+	public override bool CompletesNormally => !(this.Cond is CiLiteralFalse);
 	public override void Accept(CiVisitor visitor) { visitor.Visit(this); }
 }
 

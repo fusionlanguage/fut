@@ -787,9 +787,9 @@ public class CiResolver : CiVisitor
 		case CiToken.CondAnd: {
 			Coerce(left, CiSystem.BoolType);
 			Coerce(right, CiSystem.BoolType);
-			if (left is CiLiteral leftLiteral)
-				return (bool) leftLiteral.Value ? right : CiLiteral.False;
-			if (right is CiLiteral rightLiteral && (bool) rightLiteral.Value)
+			if (left is CiLiteralTrue)
+				return right;
+			if (left is CiLiteralFalse || right is CiLiteralTrue)
 				return left;
 			type = CiSystem.BoolType;
 			break;
@@ -797,10 +797,10 @@ public class CiResolver : CiVisitor
 		case CiToken.CondOr: {
 			Coerce(left, CiSystem.BoolType);
 			Coerce(right, CiSystem.BoolType);
-			if (left is CiLiteral leftLiteral)
-				return (bool) leftLiteral.Value ? CiLiteral.True : right;
-			if (right is CiLiteral rightLiteral && !(bool) rightLiteral.Value)
+			if (left is CiLiteralTrue || right is CiLiteralFalse)
 				return left;
+			if (left is CiLiteralFalse)
+				return right;
 			type = CiSystem.BoolType;
 			break;
 		}
@@ -908,8 +908,10 @@ public class CiResolver : CiVisitor
 		CiType type = GetCommonType(onTrue, onFalse);
 		Coerce(onTrue, type);
 		Coerce(onFalse, type);
-		if (cond is CiLiteral literalCond)
-			return (bool) literalCond.Value ? onTrue : onFalse;
+		if (cond is CiLiteralTrue)
+			return onTrue;
+		if (cond is CiLiteralFalse)
+			return onFalse;
 		return new CiSelectExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
 	}
 
@@ -1060,7 +1062,7 @@ public class CiResolver : CiVisitor
 	{
 		if (statement.Cond != null) {
 			statement.Cond = ResolveBool(statement.Cond);
-			statement.SetCompletesNormally(!(statement.Cond is CiLiteral literal) || !(bool) literal.Value);
+			statement.SetCompletesNormally(!(statement.Cond is CiLiteralTrue));
 		}
 		else
 			statement.SetCompletesNormally(false);
