@@ -272,7 +272,7 @@ public class GenCs : GenTyped
 
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 	{
-		if (expr is CiAggregateInitializer init) {
+		if (type is CiClass && expr is CiAggregateInitializer init) {
 			Write("new ");
 			Write(type.Name);
 			string prefix = " { ";
