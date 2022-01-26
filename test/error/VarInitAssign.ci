@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int x = 1;
+		int y = x += 4; //ERROR: Expected Semicolon, got AddAssign
+		return x == 5 && y == 5;
+	}
+}

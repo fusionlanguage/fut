@@ -415,7 +415,7 @@ public class CiParser : CiLexer
 	{
 		CiVar def = new CiVar { Line = this.Line, TypeExpr = type, Name = ParseId() };
 		if (Eat(CiToken.Assign))
-			def.Value = ParseAssign(false);
+			def.Value = ParseExpr();
 		return def;
 	}
 
