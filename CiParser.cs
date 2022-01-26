@@ -50,17 +50,9 @@ public class CiParser : CiLexer
 		return id;
 	}
 
-	CiCodeDoc ParseDoc()
-	{
-		if (See(CiToken.DocComment))
-			return new CiDocParser(this).ParseCodeDoc();
-		return null;
-	}
+	CiCodeDoc ParseDoc() => See(CiToken.DocComment) ? new CiDocParser(this).ParseCodeDoc() : null;
 
-	CiExpr ParseSymbolReference(CiExpr left)
-	{
-		return new CiSymbolReference { Line = this.Line, Left = left, Name = ParseId() };
-	}
+	CiExpr ParseSymbolReference(CiExpr left) => new CiSymbolReference { Line = this.Line, Left = left, Name = ParseId() };
 
 	CiExpr ParseConstInitializer()
 	{
@@ -411,18 +403,11 @@ public class CiParser : CiLexer
 		}
 	}
 
-	CiVar ParseVar(CiExpr type)
-	{
-		CiVar def = new CiVar { Line = this.Line, TypeExpr = type, Name = ParseId() };
-		if (Eat(CiToken.Assign))
-			def.Value = ParseExpr();
-		return def;
-	}
+	CiExpr ParseInitializer() => Eat(CiToken.Assign) ? ParseExpr() : null;
 
-	CiVar ParseVar()
-	{
-		return ParseVar(ParseType());
-	}
+	CiVar ParseVar(CiExpr type) => new CiVar { Line = this.Line, TypeExpr = type, Name = ParseId(), Value = ParseInitializer() };
+
+	CiVar ParseVar() => ParseVar(ParseType());
 
 	CiConst ParseConst()
 	{
@@ -858,9 +843,7 @@ public class CiParser : CiLexer
 				throw ParseException("Field cannot be {0}", callType);
 			if (type == CiSystem.VoidType)
 				throw ParseException("Field cannot be void");
-			CiField field = new CiField { Line = line, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name };
-			if (Eat(CiToken.Assign))
-				field.Value = ParseExpr();
+			CiField field = new CiField { Line = line, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };
 			Expect(CiToken.Semicolon);
 			fields.Add(field);
 		}
