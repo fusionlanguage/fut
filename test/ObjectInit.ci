@@ -1,0 +1,14 @@
+public class Point
+{
+	internal int X;
+	internal int Y;
+}
+
+public class Test
+{
+	public static bool Run()
+	{
+		Point() bar = { X = 3, Y = 6 }; //FAIL: c cpp java js py swift ts cl TODO
+		return bar.X == 3 && bar.Y == 6;
+	}
+}

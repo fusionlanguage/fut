@@ -270,6 +270,25 @@ public class GenCs : GenTyped
 		}
 	}
 
+	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
+	{
+		if (expr is CiAggregateInitializer init) {
+			Write("new ");
+			Write(type.Name);
+			string prefix = " { ";
+			foreach (CiBinaryExpr field in init.Items) {
+				Write(prefix);
+				WriteName(((CiSymbolReference) field.Left).Symbol);
+				Write(" = ");
+				WriteCoerced(field.Left.Type, field.Right, CiPriority.Argument);
+				prefix = ", ";
+			}
+			Write(" }");
+		}
+		else
+			base.WriteCoercedInternal(type, expr, parent);
+	}
+
 	protected override void WriteCoercedLiteral(CiType type, CiExpr literal)
 	{
 		literal.Accept(this, CiPriority.Argument);

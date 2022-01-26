@@ -54,13 +54,6 @@ public class CiParser : CiLexer
 
 	CiExpr ParseSymbolReference(CiExpr left) => new CiSymbolReference { Line = this.Line, Left = left, Name = ParseId() };
 
-	CiExpr ParseConstInitializer()
-	{
-		if (Eat(CiToken.LeftBrace))
-			return new CiAggregateInitializer { Line = this.Line, Items = ParseCollection(CiToken.RightBrace) };
-		return ParseExpr();
-	}
-
 	CiExpr[] ParseCollection(CiToken closing)
 	{
 		List<CiExpr> items = new List<CiExpr>();
@@ -71,6 +64,13 @@ public class CiParser : CiLexer
 		}
 		Expect(closing);
 		return items.ToArray();
+	}
+
+	CiExpr ParseConstInitializer()
+	{
+		if (Eat(CiToken.LeftBrace))
+			return new CiAggregateInitializer { Line = this.Line, Items = ParseCollection(CiToken.RightBrace) };
+		return ParseExpr();
 	}
 
 	void CheckXcrementParent()
@@ -403,7 +403,24 @@ public class CiParser : CiLexer
 		}
 	}
 
-	CiExpr ParseInitializer() => Eat(CiToken.Assign) ? ParseExpr() : null;
+	CiExpr ParseInitializer()
+	{
+		if (!Eat(CiToken.Assign))
+			return null;
+		if (Eat(CiToken.LeftBrace)) {
+			int startLine = this.Line;
+			List<CiExpr> fields = new List<CiExpr>();
+			do {
+				int line = this.Line;
+				CiExpr field = ParseSymbolReference(null);
+				Expect(CiToken.Assign);
+				fields.Add(new CiBinaryExpr { Line = line, Left = field, Op = CiToken.Assign, Right = ParseExpr() });
+			} while (Eat(CiToken.Comma));
+			Expect(CiToken.RightBrace);
+			return new CiAggregateInitializer { Line = startLine, Items = fields.ToArray() };
+		}
+		return ParseExpr();
+	}
 
 	CiVar ParseVar(CiExpr type) => new CiVar { Line = this.Line, TypeExpr = type, Name = ParseId(), Value = ParseInitializer() };
 

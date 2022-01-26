@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -295,11 +296,24 @@ public class CiResolver : CiVisitor
 	{
 		CiType type = ResolveType(expr);
 		if (expr.Value != null) {
-			expr.Value = Resolve(expr.Value);
-			if (!expr.IsAssignableStorage) {
-				if (type is CiArrayStorageType array)
-					type = array.ElementType;
-				Coerce(expr.Value, type);
+			if (type is CiClass && expr.Value is CiAggregateInitializer init) {
+				foreach (CiBinaryExpr field in init.Items) {
+					Trace.Assert(field.Op == CiToken.Assign);
+					CiSymbolReference symbol = (CiSymbolReference) field.Left;
+					Lookup(symbol, type);
+					if (!(symbol.Symbol is CiField))
+						throw StatementException(field, "Expected a field");
+					field.Right = Resolve(field.Right);
+					Coerce(field.Right, symbol.Type);
+				}
+			}
+			else {
+				expr.Value = Resolve(expr.Value);
+				if (!expr.IsAssignableStorage) {
+					if (type is CiArrayStorageType array)
+						type = array.ElementType;
+					Coerce(expr.Value, type);
+				}
 			}
 		}
 		this.CurrentScope.Add(expr);
