@@ -191,7 +191,7 @@ public class GenPy : GenPySwift
 		WriteName(value);
 	}
 
-	public override CiExpr Visit(CiCollection expr, CiPriority parent)
+	public override CiExpr Visit(CiAggregateInitializer expr, CiPriority parent)
 	{
 		if (((CiArrayStorageType) expr.Type).ElementType is CiNumericType number) {
 			char c = GetArrayCode(number);

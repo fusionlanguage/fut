@@ -65,7 +65,7 @@ public class CiParser : CiLexer
 	CiExpr ParseConstInitializer()
 	{
 		if (Eat(CiToken.LeftBrace))
-			return new CiCollection { Line = this.Line, Items = ParseCollection(CiToken.RightBrace) };
+			return new CiAggregateInitializer { Line = this.Line, Items = ParseCollection(CiToken.RightBrace) };
 		return ParseExpr();
 	}
 
@@ -370,7 +370,7 @@ public class CiParser : CiLexer
 				CiExpr valueType = ParseType();
 				if (klass != CiSystem.DictionaryClass && klass != CiSystem.SortedDictionaryClass)
 					throw StatementException(symbol, "{0} is not a generic class with two type parameters", symbol.Name);
-				left = new CiSymbolReference { Line = line, Left = new CiCollection { Items = new CiExpr[] { typeArg, valueType } }, Symbol = klass };
+				left = new CiSymbolReference { Line = line, Left = new CiAggregateInitializer { Items = new CiExpr[] { typeArg, valueType } }, Symbol = klass };
 			}
 			else if (klass != CiSystem.ListClass && klass != CiSystem.StackClass && klass != CiSystem.HashSetClass)
 				throw StatementException(symbol, "{0} is not a generic class with one type parameter", symbol.Name);

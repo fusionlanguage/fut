@@ -283,7 +283,7 @@ public class CiResolver : CiVisitor
 		return GetIntegerType(left, right);
 	}
 
-	public override CiExpr Visit(CiCollection expr, CiPriority parent)
+	public override CiExpr Visit(CiAggregateInitializer expr, CiPriority parent)
 	{
 		CiExpr[] items = expr.Items;
 		for (int i = 0; i < items.Length; i++)
@@ -1368,12 +1368,12 @@ public class CiResolver : CiVisitor
 			}
 			if (call.Method.Symbol == CiSystem.DictionaryClass) {
 				NotSupported(call, "Dictionary", "cl");
-				CiExpr[] items = ((CiCollection) call.Method.Left).Items;
+				CiExpr[] items = ((CiAggregateInitializer) call.Method.Left).Items;
 				return new CiDictionaryType { KeyType = ToType(items[0], false), ValueType = ToType(items[1], false) };
 			}
 			if (call.Method.Symbol == CiSystem.SortedDictionaryClass) {
 				NotSupported(call, "SortedDictionary", "cl");
-				CiExpr[] items = ((CiCollection) call.Method.Left).Items;
+				CiExpr[] items = ((CiAggregateInitializer) call.Method.Left).Items;
 				return new CiSortedDictionaryType { KeyType = ToType(items[0], false), ValueType = ToType(items[1], false) };
 			}
 			if (call.Method.Name == "string") {
@@ -1472,7 +1472,7 @@ public class CiResolver : CiVisitor
 		if (!(this.CurrentScope is CiEnum))
 			ResolveType(konst);
 		konst.Value = Resolve(konst.Value);
-		if (konst.Value is CiCollection coll) {
+		if (konst.Value is CiAggregateInitializer coll) {
 			if (!(konst.Type is CiArrayType arrayType))
 				throw StatementException(konst, "Array initializer for scalar constant {0}", konst.Name);
 			foreach (CiExpr item in coll.Items)

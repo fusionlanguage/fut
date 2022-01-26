@@ -68,7 +68,7 @@ public enum CiPriority
 
 public abstract class CiVisitor
 {
-	public abstract CiExpr Visit(CiCollection expr, CiPriority parent);
+	public abstract CiExpr Visit(CiAggregateInitializer expr, CiPriority parent);
 	public abstract CiExpr Visit(CiVar expr, CiPriority parent);
 	public abstract void VisitLiteralLong(long value);
 	public abstract void VisitLiteralDouble(double value);
@@ -125,7 +125,7 @@ public abstract class CiExpr : CiStatement
 	public virtual bool IsReferenceTo(CiSymbol symbol) => false;
 }
 
-public class CiCollection : CiExpr
+public class CiAggregateInitializer : CiExpr
 {
 	public CiExpr[] Items;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);

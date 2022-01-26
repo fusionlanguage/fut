@@ -86,7 +86,7 @@ public abstract class GenPySwift : GenBase
 		WriteName(symbol);
 	}
 
-	public override CiExpr Visit(CiCollection expr, CiPriority parent)
+	public override CiExpr Visit(CiAggregateInitializer expr, CiPriority parent)
 	{
 		CiType type = ((CiArrayStorageType) expr.Type).ElementType;
 		Write("[ ");

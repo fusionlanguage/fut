@@ -1,6 +1,6 @@
 // GenTyped.cs - C/C++/C#/Java code generator
 //
-// Copyright (C) 2011-2021  Piotr Fusik
+// Copyright (C) 2011-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -37,7 +37,7 @@ public abstract class GenTyped : GenBase
 		WriteName(value);
 	}
 
-	public override CiExpr Visit(CiCollection expr, CiPriority parent)
+	public override CiExpr Visit(CiAggregateInitializer expr, CiPriority parent)
 	{
 		CiType type = ((CiArrayStorageType) expr.Type).ElementType;
 		Write("{ ");

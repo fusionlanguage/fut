@@ -122,7 +122,7 @@ public class GenJs : GenBase
 		return "Uint8";
 	}
 
-	public override CiExpr Visit(CiCollection expr, CiPriority parent)
+	public override CiExpr Visit(CiAggregateInitializer expr, CiPriority parent)
 	{
 		CiNumericType number = ((CiArrayStorageType) expr.Type).ElementType as CiNumericType;
 		if (number != null) {
