@@ -1251,6 +1251,11 @@ public class CiResolver : CiVisitor
 				throw StatementException(statement, "Missing return value");
 			statement.Value = Resolve(statement.Value);
 			Coerce(statement.Value, this.CurrentMethod.Type);
+			if (statement.Value is CiSymbolReference symbol
+			 && symbol.Symbol is CiVar local
+			 && (local.Type.IsFinal || local.Type == CiSystem.StringStorageType)
+			 && this.CurrentMethod.Type.IsPointer)
+				throw StatementException(statement, "Returning dangling reference to local storage");
 		}
 	}
 

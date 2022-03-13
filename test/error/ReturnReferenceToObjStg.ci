@@ -1,0 +1,14 @@
+public class Test
+{
+	public static Test Bad()
+	{
+		Test() o;
+		return o; //ERROR: Returning dangling reference to local storage
+	}
+
+	public static bool Run()
+	{
+		Bad();
+		return true;
+	}
+}

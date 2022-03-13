@@ -1,0 +1,14 @@
+public static class Test
+{
+	public static int[] Bad()
+	{
+		int[2] a;
+		return a; //ERROR: Returning dangling reference to local storage
+	}
+
+	public static bool Run()
+	{
+		Bad();
+		return true;
+	}
+}
