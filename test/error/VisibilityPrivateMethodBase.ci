@@ -1,0 +1,15 @@
+public class Base
+{
+	bool Priv() => true;
+}
+
+public class Test : Base
+{
+	bool Bar() => base.Priv(); //ERROR: Cannot access private method Priv
+
+	public static bool Run()
+	{
+		Test() o;
+		return o.Bar();
+	}
+}

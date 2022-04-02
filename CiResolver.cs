@@ -416,16 +416,39 @@ public class CiResolver : CiVisitor
 			CiExpr left = Resolve(expr.Left);
 			CiSymbolReference leftSymbol = left as CiSymbolReference;
 			if (leftSymbol != null && leftSymbol.Symbol == CiSystem.BasePtr) {
-				// TODO: error handling
-				CiClass baseClass = (CiClass) this.CurrentMethod.Parent.Parent;
-				expr.Symbol = (CiMethod) baseClass.TryShallowLookup(expr.Name);
+				if (this.CurrentMethod == null || !(this.CurrentMethod.Parent.Parent is CiClass baseClass))
+					throw StatementException(expr, "No base class");
+				if (!(baseClass.TryShallowLookup(expr.Name) is CiMethod baseMethod))
+					throw StatementException(expr, "base.{0} is not a method", expr.Name);
+				if (baseMethod.Visibility == CiVisibility.Private)
+					throw StatementException(expr, "Cannot access private method {0}", expr.Name);
+				// TODO: static?
+				expr.Symbol = baseMethod;
 			}
 			else {
-				if (leftSymbol == null || !(leftSymbol.Symbol is CiScope scope))
+				if (leftSymbol == null || !(leftSymbol.Symbol is CiScope scope)) {
 					scope = left.Type;
+					if (scope is CiClassPtrType ptr)
+						scope = ptr.Class;
+				}
 				CiExpr result = Lookup(expr, scope);
 				if (result != expr)
 					return result;
+				if (expr.Symbol is CiMember member) {
+					switch (member.Visibility) {
+					case CiVisibility.Private:
+						if (member.Parent != this.CurrentMethod.Parent
+						 || this.CurrentMethod.Parent != scope /* enforced by Java, but not C++/C#/TS */)
+							throw StatementException(expr, "Cannot access private member {0}", expr.Name);
+						break;
+					case CiVisibility.Protected:
+						if (!((CiClass) this.CurrentMethod.Parent).IsSameOrBaseOf((CiClass) scope) /* enforced by C++/C#/TS but not Java */)
+							throw StatementException(expr, "Cannot access protected member {0}", expr.Name);
+						break;
+					default:
+						break;
+					}
+				}
 				if (expr.Symbol == CiSystem.ArrayLength) {
 					if (scope is CiArrayStorageType array)
 						return expr.ToLiteralLong(array.Length);
@@ -441,6 +464,11 @@ public class CiResolver : CiVisitor
 		}
 
 		CiExpr resolved = Lookup(expr, this.CurrentScope);
+		if (expr.Symbol is CiMember nearMember
+		 && nearMember.Visibility == CiVisibility.Private
+		 && nearMember.Parent is CiClass memberClass // not local const
+		 && memberClass != (this.CurrentScope as CiClass ?? this.CurrentMethod.Parent))
+			throw StatementException(expr, "Cannot access private member {0}", expr.Name);
 		if (resolved is CiSymbolReference symbol
 		 && symbol.Symbol is CiVar v) {
 			if (v.Parent is CiFor loop)

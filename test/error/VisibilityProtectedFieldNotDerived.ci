@@ -1,0 +1,14 @@
+public class Base
+{
+	protected bool Prot = true;
+}
+
+public static class Test
+{
+	static bool Foo(Base b) => b.Prot; //ERROR: Cannot access protected member Prot
+
+	public static bool Run()
+	{
+		return true;
+	}
+}
