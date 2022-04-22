@@ -1394,6 +1394,10 @@ public class CiResolver : CiVisitor
 				ExpectNoPtrModifier(expr, ptrModifier);
 				return type;
 			}
+			
+			if (symbol.Name == null && symbol.Symbol != null)
+				throw StatementException(expr, "Type {0} is not available here", symbol.Symbol.Name);
+			
 			throw StatementException(expr, "Type {0} not found", symbol.Name);
 
 		case CiCallExpr call:
