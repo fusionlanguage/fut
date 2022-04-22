@@ -202,9 +202,6 @@ public abstract class CiScope : CiSymbol, IEnumerable<CiSymbol>
 
 	public virtual CiSymbol TryLookup(string name)
 	{
-		if (name == null)
-			return null;
-
 		for (CiScope scope = this; scope != null; scope = scope.Parent) {
 			object result = scope.Dict[name];
 			if (result != null)
