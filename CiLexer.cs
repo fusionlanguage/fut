@@ -238,6 +238,32 @@ public class CiLexer
 		}
 	}
 
+	int PeekBinaryDigit()
+	{
+		switch (PeekChar()) {
+			case '0': return 0;
+			case '1': return 1;
+			default:
+				return -1;
+		}
+	}
+
+	int PeekOctalDigit()
+	{
+		switch (PeekChar()) {
+		case '0': return 0;
+		case '1': return 1;
+		case '2': return 2;
+		case '3': return 3;
+		case '4': return 4;
+		case '5': return 5;
+		case '6': return 6;
+		case '7': return 7;
+		default:
+			return -1;
+		}
+	}
+
 	CiToken ReadHexLiteral()
 	{
 		long i = PeekHexDigit();
@@ -253,6 +279,42 @@ public class CiLexer
 			if (i > 0xfffffffffffffff)
 				throw ParseException("Hex number too big");
 			i = (i << 4) + d;
+		}
+	}
+
+	CiToken ReadBinaryLiteral()
+	{
+		long i = PeekBinaryDigit();
+		if (i < 0)
+			throw ParseException("Invalid binary number");
+		for (; ; ) {
+			ReadChar();
+			int d = PeekBinaryDigit();
+			if (d < 0) {
+				this.LongValue = i;
+				return CiToken.LiteralLong;
+			}
+			if (i > 0xfffffffffffffff)
+				throw ParseException("Binary number too big");
+			i = (i << 1) + d;
+		}
+	}
+
+	CiToken ReadOctalLiteral()
+	{
+		long i = PeekOctalDigit();
+		if (i < 0)
+			throw ParseException("Invalid octal number");
+		for (; ; ) {
+			ReadChar();
+			int d = PeekOctalDigit();
+			if (d < 0) {
+				this.LongValue = i;
+				return CiToken.LiteralLong;
+			}
+			if (i > 0xfffffffffffffff)
+				throw ParseException("Octal number too big");
+			i = (i << 3) + d;
 		}
 	}
 
@@ -519,9 +581,16 @@ public class CiLexer
 				return ReadInterpolatedString();
 			case '0':
 				c = PeekChar();
-				if (c == 'x' ||  c == 'X') {
+				if (c == 'x' || c == 'X') {
 					ReadChar();
 					return ReadHexLiteral();
+				} else if (c == 'b' || c == 'B') {
+					ReadChar();
+					return ReadBinaryLiteral();
+				}
+				else if (c == 'o' || c == 'O') {
+					ReadChar();
+					return ReadOctalLiteral();
 				}
 				return ReadNumberLiteral(0);
 			case '1':
