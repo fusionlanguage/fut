@@ -107,8 +107,12 @@ It serves as a documentation that a negative number is not allowed.
 This is accomplished by `cito` injecting `& 0xff` in every retrieval
 of a `byte` value.
 
-Integer literals may be written in decimal or hexadecimal (`0x12ab`) form.
-There are no octal nor binary literals in Ć.
+Integer literals may be written as:
+
+* decimal (`1234`)
+* hexadecimal (`0x12ab`)
+* binary (`0b101`)
+* octal (`0o777`)
 
 Character literals (such as `'x'`) represent the Unicode codepoint
 of the character, as an `int` (not `char` because there's no such type in Ć).
