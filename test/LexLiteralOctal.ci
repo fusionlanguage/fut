@@ -1,0 +1,7 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		return 0o370132 == 127066;
+	}
+}
