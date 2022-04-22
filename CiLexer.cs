@@ -238,8 +238,9 @@ public class CiLexer
 		}
 	}
 
-	CiToken ReadIntegerLiteral(int b)
+	CiToken ReadIntegerLiteral(int bits)
 	{
+		int b = 1 << bits;
 		long i = PeekHexDigit();
 		if (i < 0 || i >= b)
 			throw ParseException("Invalid integer");
@@ -250,9 +251,9 @@ public class CiLexer
 				this.LongValue = i;
 				return CiToken.LiteralLong;
 			}
-			if (i > (long) (0xffffffffffffffff / (uint) b))
+			if (i > (long) (0xffffffffffffffff >> bits))
 				throw ParseException("Integer too big");
-			i = i * b + d;
+			i = (i << bits) + d;
 		}
 	}
 
@@ -522,15 +523,15 @@ public class CiLexer
 				case 'B':
 				case 'b':
 					ReadChar();
-					return ReadIntegerLiteral(2);
+					return ReadIntegerLiteral(1);
 				case 'O':
 				case 'o':
 					ReadChar();
-					return ReadIntegerLiteral(8);
+					return ReadIntegerLiteral(3);
 				case 'X':
 				case 'x':
 					ReadChar();
-					return ReadIntegerLiteral(16);
+					return ReadIntegerLiteral(4);
 				default:
 					return ReadNumberLiteral(0);
 				}
