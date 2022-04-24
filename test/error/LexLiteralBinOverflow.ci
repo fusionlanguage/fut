@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		long a = 0b11111111111111111111111111111111111111111111111111111111111111111; //ERROR: Integer too big
+		return true;
+	}
+}

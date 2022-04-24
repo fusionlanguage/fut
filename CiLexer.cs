@@ -251,7 +251,7 @@ public class CiLexer
 				this.LongValue = i;
 				return CiToken.LiteralLong;
 			}
-			if (i > (long) (0xffffffffffffffff >> bits))
+			if (i >> (64 - bits) != 0)
 				throw ParseException("Integer too big");
 			i = (i << bits) + d;
 		}
