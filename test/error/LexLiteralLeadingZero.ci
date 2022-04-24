@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int a = 011; //ERROR: Leading zeros are not permitted, octal numbers must begin with 0o
+		return true;
+	}
+}

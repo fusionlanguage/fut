@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		long a = 0x123456789012345678901234567890; //ERROR: Hex number too big
+		long a = 0x123456789012345678901234567890; //ERROR: Integer too big
 		return true;
 	}
 }
