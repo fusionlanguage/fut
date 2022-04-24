@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		return 0b00101011010 == 346
-			&& 0b_1_0101_1010 == 346;
+		0 .. 0xfoo; //ERROR: Invalid integer
+		return true;
 	}
 }

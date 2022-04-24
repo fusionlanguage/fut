@@ -208,52 +208,33 @@ public class CiLexer
 		return false;
 	}
 
-	int PeekHexDigit()
-	{
-		switch (PeekChar()) {
-		case '0': return 0;
-		case '1': return 1;
-		case '2': return 2;
-		case '3': return 3;
-		case '4': return 4;
-		case '5': return 5;
-		case '6': return 6;
-		case '7': return 7;
-		case '8': return 8;
-		case '9': return 9;
-		case 'A':
-		case 'a': return 10;
-		case 'B':
-		case 'b': return 11;
-		case 'C':
-		case 'c': return 12;
-		case 'D':
-		case 'd': return 13;
-		case 'E':
-		case 'e': return 14;
-		case 'F':
-		case 'f': return 15;
-		default:
-			return -1;
-		}
-	}
-
 	CiToken ReadIntegerLiteral(int bits)
 	{
-		int b = 1 << bits;
-		long i = PeekHexDigit();
-		if (i < 0 || i >= b)
-			throw ParseException("Invalid integer");
-		for (;;) {
-			ReadChar();
-			int d = PeekHexDigit();
-			if (d < 0 || d >= b) {
+		bool needDigit = true;
+		for (long i = 0;; ReadChar()) {
+			int c = PeekChar();
+			if (c >= '0' && c <= '9')
+				c -= '0';
+			else if (c >= 'A' && c <= 'Z')
+				c -= 'A' - 10;
+			else if (c >= 'a' && c <= 'z')
+				c -= 'a' - 10;
+			else if (c == '_') {
+				needDigit = true;
+				continue;
+			}
+			else if (needDigit)
+				throw ParseException("Invalid integer");
+			else {
 				this.LongValue = i;
 				return CiToken.LiteralLong;
 			}
+			if (c >= 1 << bits)
+				throw ParseException("Invalid integer");
 			if (i >> (64 - bits) != 0)
 				throw ParseException("Integer too big");
-			i = (i << bits) + d;
+			i = (i << bits) + c;
+			needDigit = false;
 		}
 	}
 
