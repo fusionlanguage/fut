@@ -1,0 +1,7 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		return 1_000_000 == 1000000;
+	}
+}

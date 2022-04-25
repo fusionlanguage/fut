@@ -242,6 +242,7 @@ public class CiLexer
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.Append(i);
+		bool needDigit = false;
 		for (;;) {
 			int c = PeekChar();
 			switch (c) {
@@ -257,18 +258,27 @@ public class CiLexer
 			case '9':
 			case '.':
 				sb.Append((char) ReadChar());
+				needDigit = false;
 				break;
 			case 'E':
 			case 'e':
+				if (needDigit)
+					throw ParseException("Invalid floating-point number");
 				sb.Append((char) ReadChar());
 				c = PeekChar();
-				if (c == '+' || c == '-') {
-					ReadChar();
-					sb.Append((char) c);
-				}
+				if (c == '+' || c == '-')
+					sb.Append((char) ReadChar());
+				needDigit = true;
 				break;
+			case '_':
+				ReadChar();
+				needDigit = true;
+				continue;
 			default:
-				if (!double.TryParse(sb.ToString(),
+				if (needDigit
+				 || (c >= 'A' && c <= 'Z')
+				 || (c >= 'a' && c <= 'z')
+				 || !double.TryParse(sb.ToString(),
 					NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign,
 					CultureInfo.InvariantCulture, out double result))
 					throw ParseException("Invalid floating-point number");
@@ -280,24 +290,36 @@ public class CiLexer
 
 	CiToken ReadNumberLiteral(long i)
 	{
-		for (;;) {
-			int d;
-			switch (PeekChar()) {
-			case '0': d = 0; break;
-			case '1': d = 1; break;
-			case '2': d = 2; break;
-			case '3': d = 3; break;
-			case '4': d = 4; break;
-			case '5': d = 5; break;
-			case '6': d = 6; break;
-			case '7': d = 7; break;
-			case '8': d = 8; break;
-			case '9': d = 9; break;
+		bool needDigit = false;
+		for (;; ReadChar()) {
+			int c = PeekChar();
+			switch (c) {
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				c -= '0';
+				break;
 			case '.':
 			case 'e':
 			case 'E':
+				if (needDigit)
+					throw ParseException("Invalid integer");
 				return ReadFloatLiteral(i);
+			case '_':
+				needDigit = true;
+				continue;
 			default:
+				if (needDigit
+				 || (c >= 'A' && c <= 'Z')
+				 || (c >= 'a' && c <= 'z'))
+					throw ParseException("Invalid integer");
 				this.LongValue = i;
 				return CiToken.LiteralLong;
 			}
@@ -305,10 +327,10 @@ public class CiLexer
 				throw ParseException("Leading zeros are not permitted, octal numbers must begin with 0o");
 			if (i > 922337203685477580)
 				throw ParseException("Integer too big");
-			i = 10 * i + d;
+			i = 10 * i + c;
 			if (i < 0)
 				throw ParseException("Integer too big");
-			ReadChar();
+			needDigit = false;
 		}
 	}
 
