@@ -3,6 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		return 1.235e2 == 123.5
-			&& 2e-3 == 0.002;
+			&& 2e-6 == 0.000_002
+			&& 1e+2 == 100;
 	}
 }

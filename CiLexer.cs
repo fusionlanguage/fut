@@ -310,7 +310,7 @@ public class CiLexer
 			case 'e':
 			case 'E':
 				if (needDigit)
-					throw ParseException("Invalid integer");
+					throw ParseException("Invalid floating-point number");
 				return ReadFloatLiteral(i);
 			case '_':
 				needDigit = true;

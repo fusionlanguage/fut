@@ -1,0 +1,7 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		return 0x0_ == 0; //ERROR: Invalid integer
+	}
+}

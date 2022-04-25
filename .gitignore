@@ -1,5 +1,6 @@
 /.vs
 /bin
+/coverage
 /obj
 /Properties
 /tags

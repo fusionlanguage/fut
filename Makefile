@@ -35,7 +35,7 @@ DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .
 all: cito.exe
 
 cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs GenPySwift.cs GenPy.cs GenSwift.cs GenTs.cs GenCl.cs CiTo.cs)
-	$(DO_BUILD)
+	$(DO_BUILD) $(CSCFLAGS)
 
 test: test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-cl test-error
 	perl test/summary.pl test/bin/*/*.txt
@@ -166,6 +166,13 @@ test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 test/bin/%/error.txt: test/error/%.ci cito.exe
 	$(DO)mkdir -p $(@D) && ! $(CITO) -o $(@:%.txt=%.cs) $< 2>$@ && perl -ne 'print "$$ARGV($$.): $$1" if m!//(ERROR: .+)!s' $< | diff -uZ - $@ && echo PASSED >$@
 
+test-transpile: $(foreach t, $(patsubst test/%.ci, test/bin/%/Test., $(wildcard test/*.ci)), $tc $tcpp $tcs $tjava $tjs $tts $tpy $tswift $tcl)
+
+coverage:
+	$(MAKE) clean cito.exe CSCFLAGS=-debug+
+	dotnet-coverage collect -f xml -o coverage/output.xml 'make -j7 test-transpile test-error'
+	reportgenerator -reports:coverage/output.xml -targetdir:coverage
+
 install: install-cito
 
 install-cito: cito.exe
@@ -182,6 +189,6 @@ clean:
 	$(RM) cito.exe
 	$(RM) -r test/bin
 
-.PHONY: all test test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-cl test-error install install-cito uninstall clean
+.PHONY: all test test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage install install-cito uninstall clean
 
 .DELETE_ON_ERROR:

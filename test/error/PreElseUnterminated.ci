@@ -1,0 +1,10 @@
+public static class Test
+{
+	public static bool Run()
+	{
+#if true
+		return true;
+	}
+}
+#else
+//ERROR: Expected #endif, got end of file
