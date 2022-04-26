@@ -7,8 +7,18 @@
 /// * item2
 ///
 /// One more paragraph.
-public static class Test
+/// 2 * 3 = 6.
+public class Test
 {
+	/// Constructs a test.
+	public Test()
+	{
+	}
+
+	/// Returns `true`.
+	public bool IsOk() => true;
+
+	/// Returns `true`.
 	public static bool Run()
 	{
 		return true;

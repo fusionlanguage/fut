@@ -1,5 +1,7 @@
 public class Test
 {
+	int X;
+
 	public static bool Run()
 	{
 		Test() o1;
@@ -7,6 +9,12 @@ public class Test
 		Test[]# a = new Test[2]; //FAIL: cpp - should work with C++20; cl
 		a[0] = o1;
 		a[1] = o2;
+
+		Test#[]# d = new Test#[2];
+		d[0] = new Test();
+		d[0].X = 5;
+		d[1] = new Test();
+		d[1].X = 10;
 
 		int[2] a1;
 		a1[0] = 3;
@@ -17,7 +25,9 @@ public class Test
 		int[]#[] aa = new int[2][];
 		aa[0] = a1;
 		aa[1] = a2;
+
 		return a[0] == o1 && a[1] == o2
+			&& d[0].X == 5 && d[1].X == 10
 			&& aa[0][0] == 3 && aa[0][1] == 6
 			&& aa[1][0] == 4 && aa[1][1] == 8
 			&& aa[0] == a1 && aa[1] == a2;

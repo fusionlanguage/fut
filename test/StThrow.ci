@@ -1,8 +1,25 @@
 public static class Test
 {
-	static void TestThrow() throws
+	static int IntThrow() throws
 	{
 		throw "Foo";
+	}
+
+	static void VoidThrow() throws
+	{
+		IntThrow();
+	}
+
+	static float FloatThrow() throws
+	{
+		throw "Foo";
+	}
+
+	public static void Outer() throws
+	{
+		VoidThrow();
+		IntThrow();
+		FloatThrow();
 	}
 
 	public static bool Run()
