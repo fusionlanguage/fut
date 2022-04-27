@@ -194,6 +194,6 @@ clean:
 	$(RM) cito.exe
 	$(RM) -r test/bin
 
-.PHONY: all test test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage install install-cito uninstall clean
+.PHONY: all test test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov install install-cito uninstall clean
 
 .DELETE_ON_ERROR:

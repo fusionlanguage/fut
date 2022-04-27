@@ -12,3 +12,19 @@ jobs:
       - curl -Os https://uploader.codecov.io/latest/linux/codecov
       - chmod +x codecov
     script: PATH+=:$HOME/.dotnet/tools make codecov
+  - name: c, cl, error
+    script: make -j4 test-c test-cl test-error
+  - name: cpp, java
+    script: make -j4 test-cpp test-java
+  - name: cs
+    dist: bionic
+    mono: latest
+    script: make -j4 test-cs
+  - name: js, ts
+    install: nvm install node
+    script: make -j4 test-js test-ts
+  - name: py, swift
+    install:
+      - wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2004/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz
+      - tar xf swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz -C ..
+    script: make -j4 test-py test-swift SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu20.04/usr/bin/swiftc

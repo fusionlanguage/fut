@@ -1,4 +1,5 @@
 ﻿[![Build Status](https://travis-ci.com/pfusik/cito.svg?branch=master)](https://travis-ci.com/github/pfusik/cito)
+[![codecov](https://codecov.io/gh/pfusik/cito/branch/master/graph/badge.svg?token=M7UX4WJKI3)](https://codecov.io/gh/pfusik/cito)
 
 Ć Programming Language
 ======================
