@@ -8,6 +8,8 @@ vm:
 jobs:
   - name: coverage
     install:
+      - dotnet tool install -g dotnet-coverage
+      - dotnet tool install -g dotnet-reportgenerator-globaltool
       - curl -Os https://uploader.codecov.io/latest/linux/codecov
       - chmod +x codecov
     script: make coverage
