@@ -21,6 +21,7 @@ public class Test
 	/// Returns `true`.
 	public static bool Run()
 	{
+		Test() o;
 		return true;
 	}
 }
