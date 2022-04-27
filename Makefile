@@ -168,12 +168,15 @@ test/bin/%/error.txt: test/error/%.ci cito.exe
 
 test-transpile: $(foreach t, $(patsubst test/%.ci, test/bin/%/Test., $(wildcard test/*.ci)), $tc $tcpp $tcs $tjava $tjs $tts $tpy $tswift $tcl)
 
-coverage:
+coverage/output.xml:
 	$(MAKE) clean cito.exe CSCFLAGS=-debug+
-	dotnet-coverage collect -f xml -o coverage/output.xml 'make `nproc` test-transpile test-error'
-	reportgenerator -reports:coverage/output.xml -targetdir:coverage
-	-which codecov
-	./codecov -f coverage/output.xml
+	dotnet-coverage collect -f xml -o $@ "make -j`nproc` test-transpile test-error"
+
+coverage: coverage/output.xml
+	reportgenerator -reports:$< -targetdir:coverage
+
+codecov: coverage/output.xml
+	./codecov -f $<
 
 install: install-cito
 
@@ -191,6 +194,6 @@ clean:
 	$(RM) cito.exe
 	$(RM) -r test/bin
 
-.PHONY: all test test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage install install-cito uninstall clean
+.PHONY: all test test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage install install-cito uninstall clean
 
 .DELETE_ON_ERROR:
