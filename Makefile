@@ -170,8 +170,10 @@ test-transpile: $(foreach t, $(patsubst test/%.ci, test/bin/%/Test., $(wildcard 
 
 coverage:
 	$(MAKE) clean cito.exe CSCFLAGS=-debug+
-	dotnet-coverage collect -f xml -o coverage/output.xml 'make -j7 test-transpile test-error'
+	dotnet-coverage collect -f xml -o coverage/output.xml 'make `nproc` test-transpile test-error'
 	reportgenerator -reports:coverage/output.xml -targetdir:coverage
+	-which codecov
+	./codecov -f coverage/output.xml
 
 install: install-cito
 
