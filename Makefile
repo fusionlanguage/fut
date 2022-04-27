@@ -4,7 +4,7 @@ CFLAGS = -Wall -Werror
 SWIFTC = swiftc
 ifeq ($(OS),Windows_NT)
 CSC = "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/Roslyn/csc.exe" -nologo
-DO_BUILD = $(CSC) -out:$@ $^
+DO_BUILD = $(CSC) -out:$@ $(CSCFLAGS) $^
 CITO = ./cito.exe
 MONO =
 JAVACPSEP = ;
@@ -35,7 +35,7 @@ DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .
 all: cito.exe
 
 cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs CiException.cs CiTree.cs CiLexer.cs CiDocLexer.cs CiDocParser.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs GenPySwift.cs GenPy.cs GenSwift.cs GenTs.cs GenCl.cs CiTo.cs)
-	$(DO_BUILD) $(CSCFLAGS)
+	$(DO_BUILD)
 
 test: test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-cl test-error
 	perl test/summary.pl test/bin/*/*.txt
