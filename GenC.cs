@@ -489,12 +489,14 @@ public class GenC : GenCCpp
 		Write("), ");
 		if (elementType == CiSystem.StringStorageType) {
 			this.PtrConstruct = true;
-			Write("(CiMethodPtr) CiPtr_Construct, free");
+			this.ListFrees["String"] = "free(*(void **) ptr)";
+			Write("(CiMethodPtr) CiPtr_Construct, CiList_FreeString");
 		}
 		else if (elementType.IsDynamicPtr) {
 			this.PtrConstruct = true;
 			this.SharedRelease = true;
-			Write("(CiMethodPtr) CiPtr_Construct, CiShared_Release");
+			this.ListFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
+			Write("(CiMethodPtr) CiPtr_Construct, CiList_FreeShared");
 		}
 		else if (elementType is CiClass klass) {
 			WriteXstructorPtr(NeedsConstructor(klass), klass, "Construct");
