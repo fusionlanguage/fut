@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int x;
+		x = foo bar; //ERROR: Expected Semicolon, got Id
+		return true;
+	}
+}

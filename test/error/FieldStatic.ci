@@ -1,0 +1,4 @@
+public class Test
+{
+	static int Foo; //ERROR: Field cannot be Static
+}
