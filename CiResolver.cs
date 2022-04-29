@@ -297,6 +297,7 @@ public class CiResolver : CiVisitor
 		CiType type = ResolveType(expr);
 		if (expr.Value != null) {
 			if (type is CiClass && expr.Value is CiAggregateInitializer init) {
+				NotYet(init, "Aggregate initializer", "c", "cpp", "java", "js", "py", "swift", "ts", "cl");
 				foreach (CiBinaryExpr field in init.Items) {
 					Trace.Assert(field.Op == CiToken.Assign);
 					CiSymbolReference symbol = (CiSymbolReference) field.Left;
