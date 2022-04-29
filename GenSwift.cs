@@ -500,7 +500,13 @@ public class GenSwift : GenPySwift
 		else if (obj.Type is CiArrayStorageType array && !IsArrayRef(array) && method.Name == "Fill") {
 			if (args.Length == 1) {
 				obj.Accept(this, CiPriority.Assign);
-				WriteArrayStorageInit(array, args[0]);
+				Write(" = [");
+				Write(array.ElementType);
+				Write("](repeating: ");
+				args[0].Accept(this, CiPriority.Argument);
+				Write(", count: ");
+				VisitLiteralLong(array.Length);
+				Write(')');
 			}
 			else {
 				OpenIndexing(obj);
