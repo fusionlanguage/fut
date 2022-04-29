@@ -158,6 +158,9 @@ test/bin/%/Test.swift: test/%.ci cito.exe
 test/bin/%/Test.cl: test/%.ci cito.exe
 	$(DO_CITO)
 
+$(addprefix test/bin/Resource/Test., c cpp cs java js ts py swift cl): test/Resource.ci cito.exe
+	$(DO)mkdir -p $(@D) && ($(CITO) -o $@ -I $(<D) $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
+
 .PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.ts test/bin/%/Test.d.ts test/bin/%/Test.py test/bin/%/Test.swift test/bin/%/Test.cl
 
 test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class

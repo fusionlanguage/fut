@@ -1,0 +1,10 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		if (resource<byte[]>("hi.txt").Length != 2) //FAIL: java
+			return false;
+		byte[] r = resource<byte[]>("hi.txt");
+		return r[0] == 'h' && r[1] == 'i';
+	}
+}
