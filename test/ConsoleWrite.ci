@@ -5,7 +5,8 @@ public static class Test
 		Console.Write("Hello");
 		int i = 42;
 		Console.Write(i);
-		Console.Write($"i={i:X}");
+		float f = 10.5;
+		Console.Write($"i={i:X} f={f:e}={f:F}");
 		return true;
 	}
 }

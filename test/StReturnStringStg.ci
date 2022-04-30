@@ -17,11 +17,14 @@ public static class Test
 		return stg;
 	}
 
+	static string() Identity(string s) => s;
+
 	public static bool Run()
 	{
 		string() stg = Twice("foo");
 		Twice("bar"); // don't leak
 		Times("x", 3); // don't leak
-		return stg == "foofoo";
+		string() stg2 = Identity("bar");
+		return stg == "foofoo" && stg2 == "bar";
 	}
 }

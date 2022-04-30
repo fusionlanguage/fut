@@ -5,8 +5,8 @@ public class Test
 		Test o = null;
 		int[] a = null;
 		string s = null;
-		return o == null
-			&& a == null
-			&& s == null;
+		return o == null && null == o
+			&& a == null && null == a
+			&& s == null && null == s;
 	}
 }
