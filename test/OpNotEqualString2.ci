@@ -1,0 +1,10 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		string p = "bar";
+		string p2 = "foo";
+		return p != p2
+			&& p != "foo";
+	}
+}

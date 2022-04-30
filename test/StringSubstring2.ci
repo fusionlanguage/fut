@@ -1,0 +1,9 @@
+public class Test
+{
+	public static bool Run()
+	{
+		string ptr = "barek";
+		int one = 1;
+		return ptr.Substring(one, 3) != "ARE";
+	}
+}

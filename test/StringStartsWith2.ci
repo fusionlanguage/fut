@@ -1,0 +1,9 @@
+public class Test
+{
+	public static bool Run()
+	{
+		string p = "foobar";
+		return p.StartsWith("f")
+			&& p.StartsWith("foo");
+	}
+}
