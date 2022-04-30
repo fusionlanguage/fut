@@ -9,7 +9,17 @@ public static class Test
 			int b = 5;
 			return b != 5;
 		case 40 + 2:
-			return true;
+			switch (++a) {
+			case 43:
+				switch (a++) {
+				case 43:
+					return a == 44;
+				default:
+					return false;
+				}
+			default:
+				return false;
+			}
 		default:
 			int c = 7;
 			return c != 7;

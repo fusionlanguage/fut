@@ -1170,16 +1170,18 @@ public class GenSwift : GenPySwift
 		Write(this.CurrentMethod.Type);
 	}
 
-	void WriteSwiftCaseBody(CiStatement[] statements)
+	void WriteSwiftCaseBody(CiSwitch statement, CiStatement[] body)
 	{
 		this.Indent++;
+		VisitXcrement<CiPostfixExpr>(statement.Value, true);
 		InitVarsAtIndent();
-		WriteCaseBody(statements);
+		WriteCaseBody(body);
 		this.Indent--;
 	}
 
 	public override void Visit(CiSwitch statement)
 	{
+		VisitXcrement<CiPrefixExpr>(statement.Value, true);
 		Write("switch ");
 		WriteExpr(statement.Value, CiPriority.Argument);
 		WriteLine(" {");
@@ -1190,11 +1192,11 @@ public class GenSwift : GenPySwift
 				WriteCoerced(statement.Value.Type, kase.Values[i], CiPriority.Argument);
 			}
 			WriteLine(':');
-			WriteSwiftCaseBody(kase.Body);
+			WriteSwiftCaseBody(statement, kase.Body);
 		}
 		if (statement.DefaultBody != null) {
 			WriteLine("default:");
-			WriteSwiftCaseBody(statement.DefaultBody);
+			WriteSwiftCaseBody(statement, statement.DefaultBody);
 		}
 		WriteLine('}');
 	}
