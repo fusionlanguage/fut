@@ -10,6 +10,11 @@ public static class Test
 		for (int i = 3; i >= 1; i--)
 			t += i;
 
-		return s == 5 && t == 6;
+		int one = 1;
+		int u = 0;
+		for (int i = 3; i >= one; i--)
+			u += i;
+
+		return s == 5 && t == 6 && u == 6;
 	}
 }

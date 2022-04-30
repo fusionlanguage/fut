@@ -13,10 +13,16 @@ public static class Test
 		ia[0] = a[1];
 		short[1] sa;
 		sa[0] = a[1];
+		long[1] la;
+		la[0] = a[1];
+		double[1] da;
+		da[0] = a[1];
 		return a[1] == 200
 			&& (a[1] & 254) == 200
 			&& ia[0] == 200
 			&& Get(a, 1) == 200
-			&& sa[0] == 200;
+			&& sa[0] == 200
+			&& la[0] == 200
+			&& da[0] == 200;
 	}
 }

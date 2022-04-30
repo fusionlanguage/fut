@@ -4,13 +4,15 @@ abstract class Base
 	{
 		return 5;
 	}
+
+	protected virtual int Quux(int i) => i;
 }
 
 class Derived : Base
 {
 	internal override int Foo()
 	{
-		return base.Foo() + 10;
+		return base.Foo() + base.Quux(10); //FAIL: ts TODO
 	}
 
 	internal int Bar()

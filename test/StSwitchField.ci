@@ -1,0 +1,20 @@
+public class Test
+{
+	int Foo = 42;
+
+	public static bool Run()
+	{
+		Test() o;
+		switch (o.Foo) {
+		case 4:
+		case 7:
+			int b = 5;
+			return b != 5;
+		case 40 + 2:
+			return true;
+		default:
+			int c = 7;
+			return c != 7;
+		}
+	}
+}

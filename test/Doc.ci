@@ -15,8 +15,11 @@ public class Test
 	{
 	}
 
-	/// Returns `true`.
-	public bool IsOk() => true;
+	/// Returns `true` if the passed integer is even.
+	public bool IsEven(
+		/// The integer to check.
+		int x)
+		=> x % 2 == 0;
 
 	/// Returns `true`.
 	public static bool Run()
