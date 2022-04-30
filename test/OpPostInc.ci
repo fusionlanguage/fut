@@ -4,6 +4,10 @@ public static class Test
 	{
 		int a = 42;
 		int b = a++;
-		return a == 43 && b == 42;
+		byte[2] ba;
+		ba[0] = 200;
+		if (ba[0]++ != 200)
+			return false;
+		return a == 43 && b == 42 && ba[0] == 201;
 	}
 }

@@ -7,8 +7,19 @@ public static class Test
 		string() s1 = $"{s} == {one + 2}"; //FAIL: cpp - should work with C++20; cl
 		string() s2 = $"\"`{{${one}";
 		string() s3 = $"{one}";
+		string() s4 = $"{s3}";
+		long l = 42;
+		string() s5 = $"{l}";
+		float f = 10.5;
+		string() s6 = $"{f}";
+		double d = f;
+		string() s7 = $"{d}";
 		return  s1 == "1 + 2 == 3"
 			&& s2 == "\"`{$1"
-			&& s3 == "1";
+			&& s3 == "1"
+			&& s4 == "1"
+			&& s5 == "42"
+			&& s6 == "10.5"
+			&& s7 == "10.5";
 	}
 }
