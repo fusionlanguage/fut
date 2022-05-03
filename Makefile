@@ -158,6 +158,9 @@ test/bin/%/Test.swift: test/%.ci cito.exe
 test/bin/%/Test.cl: test/%.ci cito.exe
 	$(DO_CITO)
 
+test/bin/Resource/java.txt: test/bin/Resource/Test.class test/bin/Runner.class
+	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)$(JAVACPSEP)test" Runner >$@
+
 $(addprefix test/bin/Resource/Test., c cpp cs java js ts py swift cl): test/Resource.ci cito.exe
 	$(DO)mkdir -p $(@D) && ($(CITO) -o $@ -I $(<D) $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 
