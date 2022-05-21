@@ -1,0 +1,11 @@
+public class Base
+{
+}
+
+public class Test : Base
+{
+	public static bool Run()
+	{
+		return base.Foo(); //ERROR: base.Foo is not a method
+	}
+}
