@@ -1,0 +1,8 @@
+public class Test
+{
+	public static bool Run()
+	{
+		int! p; //ERROR: Unexpected ExclamationMark on a non-reference type
+		return true;
+	}
+}

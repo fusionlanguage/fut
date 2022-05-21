@@ -1,0 +1,8 @@
+public class Test
+{
+	public static bool Run()
+	{
+		Test++ p; //ERROR: Invalid type
+		return true;
+	}
+}

@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		-5000000000 .. 100 i; //ERROR: Only 32-bit ranges supported
+		return true;
+	}
+}
