@@ -1,0 +1,11 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		Dictionary<int, float>() dict;
+		dict[3] = 15;
+		foreach ((int key, int value) in dict) { //ERROR: Cannot coerce float to int
+		}
+		return true;
+	}
+}
