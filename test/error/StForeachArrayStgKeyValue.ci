@@ -1,0 +1,10 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int[3] a;
+		foreach ((int i, int value) in a) { //ERROR: Expected one iterator variable
+		}
+		return true;
+	}
+}

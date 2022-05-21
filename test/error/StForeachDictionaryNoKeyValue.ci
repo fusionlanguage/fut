@@ -1,0 +1,11 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		Dictionary<int, int>() dict;
+		dict[3] = 15;
+		foreach (int i in dict) { //ERROR: Expected (TKey key, TValue value) iterator
+		}
+		return true;
+	}
+}
