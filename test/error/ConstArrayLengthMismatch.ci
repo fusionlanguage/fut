@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		const int[3] c = { 5, 10 }; //ERROR: Declared 3 elements, initialized 2
+		return true;
+	}
+}
