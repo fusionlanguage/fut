@@ -1,0 +1,13 @@
+public class Base
+{
+	bool Priv() => true;
+}
+
+public class Test : Base
+{
+	public static bool Run()
+	{
+		Base() o;
+		return o.Priv(); //ERROR: Cannot access private member Priv
+	}
+}
