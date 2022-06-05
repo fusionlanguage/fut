@@ -12,7 +12,7 @@ SWIFTC += -no-color-diagnostics -sdk '$(SDKROOT)' -Xlinker -noexp -Xlinker -noim
 else
 CSC = mcs
 DO_BUILD = dotnet build
-CITO = dotnet run --
+CITO = dotnet run --no-build --
 MONO = mono
 JAVACPSEP = :
 CFLAGS += -fsanitize=address -g
