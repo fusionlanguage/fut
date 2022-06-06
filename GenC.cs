@@ -1555,12 +1555,12 @@ public class GenC : GenCCpp
 			WriteCall("g_array_remove_index", obj, args[0]);
 		else if (method == CiSystem.ListRemoveRange)
 			WriteCall("g_array_remove_range", obj, args[0], args[1]);
-		else if (obj.Type is CiStackType && method.Name == "Peek") { 
+		else if (obj.Type is CiStackType && method.Name == "Peek") {
 			StartArrayIndexing(obj);
 			obj.Accept(this, CiPriority.Primary); // TODO: side effect
 			Write("->len - 1)");
 		}
-		else if (obj.Type is CiStackType && method.Name == "Pop") { 
+		else if (obj.Type is CiStackType && method.Name == "Pop") {
 			// FIXME: destroy
 			StartArrayIndexing(obj);
 			Write("--");

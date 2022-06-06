@@ -1567,7 +1567,7 @@ public class CiSystem : CiScope
 		RegexCompile,
 		RegexEscape);
 	public static readonly CiMethod MatchFindStr = new CiMethod(CiCallType.Normal, BoolType, "Find", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone }) { IsMutator = true };
-	public static readonly CiMethod MatchFindRegex = new CiMethod(CiCallType.Normal, BoolType, "Find", new CiVar(StringPtrType, "input"), new CiVar(new CiClassPtrType { Class = RegexClass, Modifier = CiToken.EndOfFile } , "pattern")) { IsMutator = true };
+	public static readonly CiMethod MatchFindRegex = new CiMethod(CiCallType.Normal, BoolType, "Find", new CiVar(StringPtrType, "input"), new CiVar(new CiClassPtrType { Class = RegexClass, Modifier = CiToken.EndOfFile }, "pattern")) { IsMutator = true };
 	public static readonly CiMember MatchStart = new CiMember(IntType, "Start");
 	public static readonly CiMember MatchEnd = new CiMember(IntType, "End");
 	public static readonly CiMember MatchLength = new CiMember(UIntType, "Length");

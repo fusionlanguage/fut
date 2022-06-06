@@ -337,7 +337,7 @@ public class GenPy : GenPySwift
 			expr.Left.Accept(this, CiPriority.Assign);
 			Write(" = ");
 			{
-				(expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign && rightBinary.Op != CiToken.Assign? rightBinary.Left /* TODO: side effect*/ : expr.Right).Accept(this, CiPriority.Assign);
+				(expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign && rightBinary.Op != CiToken.Assign ? rightBinary.Left /* TODO: side effect*/ : expr.Right).Accept(this, CiPriority.Assign);
 			}
 			return expr;
 		case CiToken.AddAssign:

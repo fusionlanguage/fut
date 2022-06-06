@@ -187,7 +187,7 @@ public abstract class GenBase : CiVisitor
 			case CiDocText text:
 				WriteXmlDoc(text.Text);
 				break;
-			case CiDocCode code:;
+			case CiDocCode code:
 				Write("<code>");
 				WriteXmlDoc(code.Text);
 				Write("</code>");

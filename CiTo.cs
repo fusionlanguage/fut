@@ -1,6 +1,6 @@
 // CiTo.cs - Ci translator
 //
-// Copyright (C) 2011-2020  Piotr Fusik
+// Copyright (C) 2011-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -146,7 +146,8 @@ public static class CiTo
 			if (referencedFiles.Count > 0)
 				parent = ParseAndResolve(parser, parent, referencedFiles, searchDirs, lang);
 			program = ParseAndResolve(parser, parent, inputFiles, searchDirs, lang);
-		} catch (CiException ex) {
+		}
+		catch (CiException ex) {
 			Console.Error.WriteLine("{0}({1}): ERROR: {2}", ex.Filename, ex.Line, ex.Message);
 			return 1;
 //			throw;
