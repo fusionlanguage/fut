@@ -17,8 +17,6 @@ jobs:
   - name: cpp, java
     script: make -j4 test-cpp test-java
   - name: cs
-    dist: bionic
-    mono: latest
     script: make -j4 test-cs
   - name: js, ts
     install: nvm install node

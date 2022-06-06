@@ -8,7 +8,7 @@ public static class Test
 		dict[2] = 10;
 		int keySum = 0;
 		int valueSum = 0;
-		foreach ((int key, int value) in dict) { //FAIL: cs - .NET Core but not .NET Framework 4.8
+		foreach ((int key, int value) in dict) {
 			keySum += key;
 			valueSum += value;
 		}

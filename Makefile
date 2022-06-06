@@ -1,19 +1,18 @@
 prefix := /usr/local
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
+DOTNET_BASE_DIR := $(shell dotnet --info | sed -n 's/ Base Path:   //p')
+DOTNET_REF_DIR := $(DOTNET_BASE_DIR)../../packs/Microsoft.NETCore.App.Ref/6.0.5/ref/net6.0
+CSC := dotnet '$(DOTNET_BASE_DIR)Roslyn/bincore/csc.dll' -nologo
 CFLAGS = -Wall -Werror
 SWIFTC = swiftc
 ifeq ($(OS),Windows_NT)
-CSC = "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/Roslyn/csc.exe" -nologo
-DO_BUILD = $(CSC) -out:$@ $(CSCFLAGS) $^
+DO_BUILD = "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/Roslyn/csc.exe" -nologo -out:$@ $(CSCFLAGS) $^
 CITO = ./cito.exe
-MONO =
 JAVACPSEP = ;
 SWIFTC += -no-color-diagnostics -sdk '$(SDKROOT)' -Xlinker -noexp -Xlinker -noimplib
 else
-CSC = mcs
 DO_BUILD = dotnet build
 CITO = dotnet run --no-build --
-MONO = mono
 JAVACPSEP = :
 CFLAGS += -fsanitize=address -g
 SWIFTC += -sanitize=address
@@ -86,8 +85,8 @@ test/bin/%/c.txt: test/bin/%/c.exe
 test/bin/%/cpp.txt: test/bin/%/cpp.exe
 	$(DO)./$< >$@ || grep '//FAIL:.*\<cpp\>' test/$*.ci
 
-test/bin/%/cs.txt: test/bin/%/cs.exe
-	$(DO)$(MONO) $< >$@ || grep '//FAIL:.*\<cs\>' test/$*.ci
+test/bin/%/cs.txt: test/bin/%/cs.dll test/cs.runtimeconfig.json
+	$(DO)dotnet exec --runtimeconfig test/cs.runtimeconfig.json $< >$@ || grep '//FAIL:.*\<cs\>' test/$*.ci
 
 test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
 	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)" Runner >$@ || grep '//FAIL:.*\<java\>' test/$*.ci
@@ -113,8 +112,8 @@ test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
 test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
 	$(DO)$(CXX) -o $@ $(CFLAGS) -I $(<D) $^ || grep '//FAIL:.*\<cpp\>' test/$*.ci
 
-test/bin/%/cs.exe: test/bin/%/Test.cs test/Runner.cs
-	$(DO)$(CSC) -out:$@ $^ || grep '//FAIL:.*\<cs\>' test/$*.ci
+test/bin/%/cs.dll: test/bin/%/Test.cs test/Runner.cs
+	$(DO)$(CSC) '-r:$(DOTNET_REF_DIR)/System.Runtime.dll' '-r:$(DOTNET_REF_DIR)/System.Collections.dll' '-r:$(DOTNET_REF_DIR)/System.Console.dll' '-r:$(DOTNET_REF_DIR)/System.Threading.dll' '-r:$(DOTNET_REF_DIR)/System.Text.RegularExpressions.dll' -out:$@ $^ || grep '//FAIL:.*\<cs\>' test/$*.ci
 
 test/bin/%/Test.class: test/bin/%/Test.java
 	$(DO)javac -d $(@D) -encoding utf8 $(<D)/*.java || grep '//FAIL:.*\<java\>' test/$*.ci

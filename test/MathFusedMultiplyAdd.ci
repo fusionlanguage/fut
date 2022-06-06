@@ -5,6 +5,6 @@ public static class Test
 		double x = 2;
 		double y = 3;
 		double z = 1;
-		return Math.FusedMultiplyAdd(x, y, z) == 7; //FAIL: cs - .NET Core but not .NET Framework 4.8; py - install pyfma on Travis
+		return Math.FusedMultiplyAdd(x, y, z) == 7; //FAIL: py - install pyfma on Travis
 	}
 }

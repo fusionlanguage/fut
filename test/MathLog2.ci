@@ -3,6 +3,6 @@ public static class Test
 	public static bool Run()
 	{
 		double a = 8;
-		return Math.Log2(a) == 3; //FAIL: cs - .NET Core but not .NET Framework 4.8
+		return Math.Log2(a) == 3;
 	}
 }
