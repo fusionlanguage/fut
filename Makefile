@@ -2,7 +2,7 @@ prefix := /usr/local
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
 DOTNET_BASE_DIR := $(shell dotnet --info | sed -n 's/ Base Path:   //p')
 DOTNET_REF_DIR := $(DOTNET_BASE_DIR)../../packs/Microsoft.NETCore.App.Ref/6.0.5/ref/net6.0
-CSC := dotnet '$(DOTNET_BASE_DIR)Roslyn/bincore/csc.dll' -nologo
+CSC := dotnet '$(DOTNET_BASE_DIR)Roslyn/bincore/csc.dll' -nologo $(patsubst %,'-r:$(DOTNET_REF_DIR)/System.%.dll', Collections Console Runtime Text.RegularExpressions Threading)
 CFLAGS = -Wall -Werror
 SWIFTC = swiftc
 ifeq ($(OS),Windows_NT)
@@ -113,7 +113,7 @@ test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
 	$(DO)$(CXX) -o $@ $(CFLAGS) -I $(<D) $^ || grep '//FAIL:.*\<cpp\>' test/$*.ci
 
 test/bin/%/cs.dll: test/bin/%/Test.cs test/Runner.cs
-	$(DO)$(CSC) '-r:$(DOTNET_REF_DIR)/System.Runtime.dll' '-r:$(DOTNET_REF_DIR)/System.Collections.dll' '-r:$(DOTNET_REF_DIR)/System.Console.dll' '-r:$(DOTNET_REF_DIR)/System.Threading.dll' '-r:$(DOTNET_REF_DIR)/System.Text.RegularExpressions.dll' -out:$@ $^ || grep '//FAIL:.*\<cs\>' test/$*.ci
+	$(DO)$(CSC) -out:$@ $^ || grep '//FAIL:.*\<cs\>' test/$*.ci
 
 test/bin/%/Test.class: test/bin/%/Test.java
 	$(DO)javac -d $(@D) -encoding utf8 $(<D)/*.java || grep '//FAIL:.*\<java\>' test/$*.ci
