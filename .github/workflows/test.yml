@@ -3,16 +3,19 @@ env:
   SWIFT_VERSION: 5.6.1
 jobs:
   j2:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/setup-dotnet@main
       - uses: actions/checkout@main
       - run: make -j2 test-c test-cl test-error
   j3:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/setup-dotnet@main
       - uses: actions/checkout@main
       - run: make -j3 test-c test-cl test-error
   j4:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/setup-dotnet@main
       - uses: actions/checkout@main
