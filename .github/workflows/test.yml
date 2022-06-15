@@ -1,31 +1,35 @@
 on: push
-runs-on: ubuntu-22.04
-env:
-  SWIFT_VERSION: 5.6.1
 jobs:
   c, cl, error:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/setup-dotnet@main
       - uses: actions/checkout@main
       - run: make -j3 test-c test-cl test-error
   cpp, java:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/setup-dotnet@main
       - uses: actions/setup-java@main
       - uses: actions/checkout@main
       - run: make -j3 test-cpp test-java
   cs:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/setup-dotnet@main
       - uses: actions/checkout@main
       - run: make -j3 test-cs
   js, ts:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/setup-dotnet@main
       - uses: actions/setup-node@main
       - uses: actions/checkout@main
       - run: make -j3 test-js test-ts
   py, swift:
+    runs-on: ubuntu-22.04
+    env:
+      SWIFT_VERSION: 5.6.1
     steps:
       - uses: actions/setup-dotnet@main
       - run: wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2004/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz
