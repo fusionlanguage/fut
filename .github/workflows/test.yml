@@ -4,16 +4,16 @@ env:
 jobs:
   j2:
     steps:
-      - uses: actions/setup-dotnet
-      - uses: actions/checkout
+      - uses: actions/setup-dotnet@main
+      - uses: actions/checkout@main
       - run: make -j2 test-c test-cl test-error
   j3:
     steps:
-      - uses: actions/setup-dotnet
-      - uses: actions/checkout
+      - uses: actions/setup-dotnet@main
+      - uses: actions/checkout@main
       - run: make -j3 test-c test-cl test-error
   j4:
     steps:
-      - uses: actions/setup-dotnet
-      - uses: actions/checkout
+      - uses: actions/setup-dotnet@main
+      - uses: actions/checkout@main
       - run: make -j4 test-c test-cl test-error
