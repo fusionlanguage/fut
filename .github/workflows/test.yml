@@ -1,0 +1,19 @@
+on: push
+env:
+  SWIFT_VERSION: 5.6.1
+jobs:
+  j2:
+    steps:
+      - uses: actions/setup-dotnet
+      - uses: actions/checkout
+      - run: make -j2 test-c test-cl test-error
+  j3:
+    steps:
+      - uses: actions/setup-dotnet
+      - uses: actions/checkout
+      - run: make -j3 test-c test-cl test-error
+  j4:
+    steps:
+      - uses: actions/setup-dotnet
+      - uses: actions/checkout
+      - run: make -j4 test-c test-cl test-error
