@@ -1,22 +1,34 @@
 on: push
+runs-on: ubuntu-22.04
 env:
   SWIFT_VERSION: 5.6.1
 jobs:
-  j2:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/setup-dotnet@main
-      - uses: actions/checkout@main
-      - run: make -j2 test-c test-cl test-error
-  j3:
-    runs-on: ubuntu-22.04
+  c, cl, error:
     steps:
       - uses: actions/setup-dotnet@main
       - uses: actions/checkout@main
       - run: make -j3 test-c test-cl test-error
-  j4:
-    runs-on: ubuntu-22.04
+  cpp, java:
+    steps:
+      - uses: actions/setup-dotnet@main
+      - uses: actions/setup-java@main
+      - uses: actions/checkout@main
+      - run: make -j3 test-cpp test-java
+  cs:
     steps:
       - uses: actions/setup-dotnet@main
       - uses: actions/checkout@main
-      - run: make -j4 test-c test-cl test-error
+      - run: make -j3 test-cs
+  js, ts:
+    steps:
+      - uses: actions/setup-dotnet@main
+      - uses: actions/setup-node@main
+      - uses: actions/checkout@main
+      - run: make -j3 test-js test-ts
+  py, swift:
+    steps:
+      - uses: actions/setup-dotnet@main
+      - run: wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2004/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz
+      - run: tar xf swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz -C ..
+      - uses: actions/checkout@main
+      - run: make -j3 test-py test-swift SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu20.04/usr/bin/swiftc
