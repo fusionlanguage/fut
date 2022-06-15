@@ -1,12 +1,12 @@
 on: push
 jobs:
-  c, cl, error:
+  c-cl-error:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/setup-dotnet@main
       - uses: actions/checkout@main
       - run: make -j3 test-c test-cl test-error
-  cpp, java:
+  cpp-java:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/setup-dotnet@main
@@ -19,14 +19,14 @@ jobs:
       - uses: actions/setup-dotnet@main
       - uses: actions/checkout@main
       - run: make -j3 test-cs
-  js, ts:
+  js-ts:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/setup-dotnet@main
       - uses: actions/setup-node@main
       - uses: actions/checkout@main
       - run: make -j3 test-js test-ts
-  py, swift:
+  py-swift:
     runs-on: ubuntu-22.04
     env:
       SWIFT_VERSION: 5.6.1
