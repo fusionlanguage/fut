@@ -436,7 +436,7 @@ public class GenSwift : GenPySwift
 
 	void WriteRange(CiExpr startIndex, CiExpr length)
 	{
-		startIndex.Accept(this, CiPriority.Shift);
+		WriteCoerced(CiSystem.IntType, startIndex, CiPriority.Shift);
 		Write("..<");
 		WriteAdd(startIndex, length); // TODO: side effect
 	}
@@ -483,11 +483,14 @@ public class GenSwift : GenPySwift
 				Write("ciStringSubstring(");
 				WriteUnwrappedString(obj, CiPriority.Argument, false);
 				Write(", ");
-				args[0].Accept(this, CiPriority.Argument);
+				WriteCoerced(CiSystem.IntType, args[0], CiPriority.Argument);
 				Write(')');
 			}
-			if (args.Length == 2)
-				WriteCall(".prefix", args[1]);
+			if (args.Length == 2) {
+				Write(".prefix(");
+				WriteCoerced(CiSystem.IntType, args[1], CiPriority.Argument);
+				Write(')');
+			}
 		}
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			OpenIndexing(args[1]);
@@ -503,7 +506,7 @@ public class GenSwift : GenPySwift
 				Write(" = [");
 				Write(array.ElementType);
 				Write("](repeating: ");
-				args[0].Accept(this, CiPriority.Argument);
+				WriteCoerced(array.ElementType, args[0], CiPriority.Argument);
 				Write(", count: ");
 				VisitLiteralLong(array.Length);
 				Write(')');
@@ -512,9 +515,9 @@ public class GenSwift : GenPySwift
 				OpenIndexing(obj);
 				WriteRange(args[1], args[2]);
 				Write("] = ArraySlice(repeating: ");
-				args[0].Accept(this, CiPriority.Argument);
+				WriteCoerced(array.ElementType, args[0], CiPriority.Argument);
 				Write(", count: ");
-				args[2].Accept(this, CiPriority.Argument); // FIXME: side effect
+				WriteCoerced(CiSystem.IntType, args[2], CiPriority.Argument); // FIXME: side effect
 				Write(')');
 			}
 		}
@@ -537,15 +540,15 @@ public class GenSwift : GenPySwift
 			if (method.Parameters.Count == 1)
 				WriteNewStorage(list.ElementType);
 			else
-				args[1].Accept(this, CiPriority.Argument);
+				WriteCoerced(list.ElementType, args[1], CiPriority.Argument);
 			Write(", at: ");
-			args[0].Accept(this, CiPriority.Argument);
+			WriteCoerced(CiSystem.IntType, args[0], CiPriority.Argument);
 			Write(')');
 		}
 		else if (method == CiSystem.ListRemoveAt) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".remove(at: ");
-			args[0].Accept(this, CiPriority.Argument);
+			WriteCoerced(CiSystem.IntType, args[0], CiPriority.Argument);
 			Write(')');
 		}
 		else if (method == CiSystem.ListRemoveRange) {
@@ -603,12 +606,12 @@ public class GenSwift : GenPySwift
 			WriteUnwrappedString(args[0], CiPriority.Primary, true);
 			WriteLine(".utf8)");
 			OpenIndexing(args[1]);
-			args[2].Accept(this, CiPriority.Argument);
+			WriteCoerced(CiSystem.IntType, args[2], CiPriority.Shift);
 			if (args[2].IsLiteralZero)
 				Write("..<");
 			else {
 				Write(" ..< ");
-				args[2].Accept(this, CiPriority.Add); // TODO: side effect
+				WriteCoerced(CiSystem.IntType, args[2], CiPriority.Add); // TODO: side effect
 				Write(" + ");
 			}
 			WriteLine("cibytes.count] = cibytes[...]");
