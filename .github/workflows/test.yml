@@ -1,3 +1,4 @@
+name: tests
 on: push
 jobs:
   c-cl-error:
@@ -12,8 +13,8 @@ jobs:
       - uses: actions/setup-dotnet@main
       - uses: actions/setup-java@main
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: 17
       - uses: actions/checkout@main
       - run: make -j3 test-cpp test-java
   cs:
@@ -33,11 +34,8 @@ jobs:
       - run: make -j3 test-js test-ts
   py-swift:
     runs-on: ubuntu-22.04
-    env:
-      SWIFT_VERSION: 5.6.1
     steps:
       - uses: actions/setup-dotnet@main
-      - run: wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2004/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz
-      - run: tar xf swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz -C ..
+      - uses: swift-actions/setup-swift@main
       - uses: actions/checkout@main
-      - run: make -j3 test-py test-swift SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu20.04/usr/bin/swiftc
+      - run: make -j3 test-py test-swift
