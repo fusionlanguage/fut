@@ -15,8 +15,9 @@ jobs:
   - name: c, cl, error
     script: make -j5 test-c test-cl test-error
   - name: travis
-    script: echo '#include <regex>' >hello.cpp
-    script: clang++ -std=c++2a -c -Wall -Werror hello.cpp
+    script:
+      - echo '#include <regex>' >hello.cpp
+      - clang++ -std=c++2a -c -Wall -Werror hello.cpp
   - name: cs
     script: make -j5 test-cs
   - name: js, ts
