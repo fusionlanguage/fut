@@ -751,7 +751,7 @@ public class GenJava : GenTyped
 			 Write(indexing.Left.Type is CiDictionaryType ? ".put(" : ".set(");
 			 indexing.Right.Accept(this, CiPriority.Argument);
 			 Write(", ");
-			 WriteAssignRight(expr);
+			 WriteNotPromoted(expr.Type, expr.Right);
 			 Write(')');
 		}
 		else
