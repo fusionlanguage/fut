@@ -14,8 +14,9 @@ jobs:
     script: PATH+=:$HOME/.dotnet/tools make codecov
   - name: c, cl, error
     script: make -j5 test-c test-cl test-error
-  - name: cpp, java
-    script: make -j5 test-cpp test-java
+  - name: travis
+    script: echo '#include <regex>' >hello.cpp
+    script: clang++ -std=c++2a -c -Wall -Werror hello.cpp
   - name: cs
     script: make -j5 test-cs
   - name: js, ts
