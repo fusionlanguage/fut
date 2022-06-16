@@ -1,10 +1,29 @@
 language: csharp
 dist: focal
 mono: none
-dotnet: 6.0.300
+dotnet: 6.0.301
+env: SWIFT_VERSION=5.6.1
+vm:
+  size: large
 jobs:
-  - name: clang-regex
+  - name: coverage
+    install:
+      - dotnet tool install -g dotnet-coverage
+      - curl -Os https://uploader.codecov.io/latest/linux/codecov
+      - chmod +x codecov
+    script: PATH+=:$HOME/.dotnet/tools make codecov
+  - name: c, cl, error
+    script: make -j5 test-c test-cl test-error
+  - name: cpp, java
     install: sudo apt install clang-12
-    script:
-      - echo '#include <regex>' >hello.cpp
-      - clang++-12 -std=c++20 -c -Wall -Werror hello.cpp
+    script: make -j5 test-cpp test-java CXX='clang++-12 -std=c++20'
+  - name: cs
+    script: make -j5 test-cs
+  - name: js, ts
+    install: nvm install node
+    script: make -j5 test-js test-ts
+  - name: py, swift
+    install:
+      - wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2004/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz
+      - tar xf swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz -C ..
+    script: make -j5 test-py test-swift SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu20.04/usr/bin/swiftc
