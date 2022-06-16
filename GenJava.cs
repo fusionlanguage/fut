@@ -565,12 +565,34 @@ public class GenJava : GenTyped
 		}
 		else if (obj.Type is CiArrayType && method.Name == "BinarySearch")
 			WriteArrayBinarySearchFill(obj, "binarySearch", args);
-		else if (obj.Type is CiArrayType && !(obj.Type is CiListType) && method.Name == "CopyTo") {
-			Write("System.arraycopy(");
-			obj.Accept(this, CiPriority.Argument);
-			Write(", ");
-			WriteArgs(method, args);
-			Write(')');
+		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+			if (obj.Type is CiListType) {
+				Write("for (int _i = 0; _i < ");
+				args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
+				WriteLine("; _i++)");
+				Write("\t");
+				args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+				Write('[');
+				if (!args[2].IsLiteralZero) {
+					args[2].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
+					Write(" + ");
+				}
+				Write("_i] = ");
+				obj.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+				Write(".get(");
+				if (!args[0].IsLiteralZero) {
+					args[0].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
+					Write(" + ");
+				}
+				Write("_i)");
+			}
+			else {
+				Write("System.arraycopy(");
+				obj.Accept(this, CiPriority.Argument);
+				Write(", ");
+				WriteArgs(method, args);
+				Write(')');
+			}
 		}
 		else if (obj.Type is CiArrayType && method.Name == "Fill")
 			WriteArrayBinarySearchFill(obj, "fill", args);

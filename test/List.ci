@@ -12,7 +12,7 @@ public static class Test
 		list.Insert(1, 2);
 		list[0] = 5;
 		int[2] a;
-		list.CopyTo(1, a, 0, 2); //FAIL: java TODO
+		list.CopyTo(1, a, 0, 2);
 		byte[1] b;
 		b[0] = 200;
 		list.Add(b[0]);
