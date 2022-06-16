@@ -1,5 +1,5 @@
 ﻿[![Travis CI](https://travis-ci.com/pfusik/cito.svg?branch=master)](https://travis-ci.com/github/pfusik/cito)
-![GitHub Actions](https://github.com/pfusik/cito/actions/workflows/test.yml/badge.svg)
+[![GitHub Actions](https://github.com/pfusik/cito/actions/workflows/test.yml/badge.svg)](https://github.com/pfusik/cito/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/pfusik/cito/branch/master/graph/badge.svg?token=M7UX4WJKI3)](https://codecov.io/gh/pfusik/cito)
 
 Ć Programming Language
