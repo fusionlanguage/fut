@@ -13,11 +13,13 @@ public static class Test
 		list[0] = 5;
 		int[2] a;
 		list.CopyTo(1, a, 0, 2); //FAIL: java TODO
-		list.Add(1);
+		byte[1] b;
+		b[0] = 200;
+		list.Add(b[0]);
 		list.RemoveRange(1, 1);
 		if (list.Count == 100)
 			list.Add(100);
-		return list.Count == 3 && list[0] == 5 && list[1] == 3 && list[2] == 1
+		return list.Count == 3 && list[0] == 5 && list[1] == 3 && list[2] == 200
 			&& a[0] == 2 && a[1] == 3;
 	}
 }

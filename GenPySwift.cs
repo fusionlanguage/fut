@@ -134,10 +134,11 @@ public abstract class GenPySwift : GenBase
 	{
 		obj.Accept(this, CiPriority.Primary);
 		Write(".append(");
+		CiType type = ((CiCollectionType) obj.Type).ElementType;
 		if (args.Length == 0)
-			WriteNewStorage(((CiCollectionType) obj.Type).ElementType);
+			WriteNewStorage(type);
 		else
-			args[0].Accept(this, CiPriority.Argument);
+			WriteCoerced(type, args[0], CiPriority.Argument);
 		Write(')');
 	}
 
