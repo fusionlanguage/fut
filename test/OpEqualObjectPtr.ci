@@ -17,7 +17,7 @@ public class Test
 	int[]# ArrayDynamic = null;
 
 	bool IsArrayNull(bool dyn)
-		=> (dyn ? ArrayDynamic : ArrayStorage) == null; //FAIL: cpp - not supported by Xcode
+		=> (dyn ? ArrayDynamic : ArrayStorage) == null;
 
 	public static bool Run()
 	{

@@ -20,7 +20,7 @@ public class Test
 
 	int[] ReturnArrayDynamic() => ArrayDynamic;
 
-	int[] ReturnArrayConditional(bool dyn) => dyn ? ArrayDynamic : ArrayStorage; //FAIL: cpp - not supported by Xcode
+	int[] ReturnArrayConditional(bool dyn) => dyn ? ArrayDynamic : ArrayStorage;
 
 	public static bool Run()
 	{
