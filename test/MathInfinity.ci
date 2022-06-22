@@ -4,7 +4,7 @@ public static class Test
 	{
 		float inf = Math.PositiveInfinity;
 		float minusInf = Math.NegativeInfinity;
-		return inf > 1e300 && minusInf < -1e300
+		return inf > 1e300 && minusInf < -1e300 //FAIL: cl TODO if no double support
 			&& Math.IsInfinity(inf) && Math.IsInfinity(minusInf)
 			&& !Math.IsFinite(inf) && !Math.IsFinite(minusInf);
 	}
