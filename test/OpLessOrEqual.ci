@@ -4,7 +4,7 @@ public static class Test
 	{
 		int a = 1;
 		int b = 2;
-		double c = 3;
+		double c = 3; //FAIL: cl if no double support
 		double d = 3.5;
 		return a <= b && a + 1 <= b
 			&& c <= d && c + 0.5 <= d

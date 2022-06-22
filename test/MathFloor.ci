@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		double a = 1.75;
+		double a = 1.75; //FAIL: cl if no double support
 		return Math.Floor(a) == 1;
 	}
 }

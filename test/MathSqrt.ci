@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		double a = 4;
+		double a = 4; //FAIL: cl if no double support
 		return Math.Sqrt(a) == 2;
 	}
 }

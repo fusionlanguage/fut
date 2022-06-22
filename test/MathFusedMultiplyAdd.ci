@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		double x = 2;
+		double x = 2; //FAIL: cl if no double support
 		double y = 3;
 		double z = 1;
 		return Math.FusedMultiplyAdd(x, y, z) == 7; //FAIL: py - install pyfma on Travis

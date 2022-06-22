@@ -4,7 +4,7 @@ public static class Test
 	{
 		float zero = 0.0;
 		float f = zero / zero; //FAIL: py
-		double d = zero / zero;
+		double d = zero / zero; //FAIL: cl if no double support
 		return Math.IsNaN(f) && Math.IsNaN(d);
 	}
 }

@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		double y = 0;
+		double y = 0; //FAIL: cl if no double support
 		double x = 1;
 		return Math.Atan2(y, x) == 0;
 	}

@@ -11,7 +11,7 @@ public static class Test
 	{
 		int a = 2;
 		int b = 3;
-		double c = 10.5;
+		double c = 10.5; //FAIL: cl if no double support
 		double d = 4;
 		return a * b == 6
 			&& c * d == 42

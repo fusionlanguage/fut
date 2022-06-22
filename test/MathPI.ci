@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		double pi = Math.PI;
+		double pi = Math.PI; //FAIL: cl if no double support
 		return pi > 3.14 && pi < 3.15;
 	}
 }

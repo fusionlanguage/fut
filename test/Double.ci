@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		double d = Math.PI; //FAIL: cl if no double support
+		float f = d;
+		return f > 3.14 && f < 3.15;
+	}
+}

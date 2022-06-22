@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		int a = 42;
-		double c = 10.5;
+		double c = 10.5; //FAIL: cl if no double support
 		return -a == -42
 			&& -c == -10.5;
 	}

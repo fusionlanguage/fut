@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		double a = 1;
+		double a = 1; //FAIL: cl if no double support
 		return Math.Acos(a) == 0;
 	}
 }
