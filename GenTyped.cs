@@ -258,10 +258,14 @@ public abstract class GenTyped : GenBase
 				WriteStaticCast(type, expr);
 		}
 		else if (type is CiIntegerType && expr.Type == CiSystem.FloatIntType) {
-			if (expr is CiCallExpr call && call.Method.IsReferenceTo(CiSystem.MathTruncate))
-				WriteStaticCast(type, call.Arguments[0]);
-			else
-				WriteStaticCast(type, expr);
+			if (expr is CiCallExpr call && call.Method.IsReferenceTo(CiSystem.MathTruncate)) {
+				expr = call.Arguments[0];
+				if (expr is CiLiteralDouble literal) {
+					VisitLiteralLong((long) literal.Value); // TODO: range check
+					return;
+				}
+			}
+			WriteStaticCast(type, expr);
 		}
 		else
 			base.WriteCoercedInternal(type, expr, parent);
