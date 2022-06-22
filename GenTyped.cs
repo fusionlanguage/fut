@@ -37,6 +37,13 @@ public abstract class GenTyped : GenBase
 		WriteName(value);
 	}
 
+	public override void VisitLiteralDouble(double value)
+	{
+		base.VisitLiteralDouble(value);
+		if ((float) value == value)
+			Write('f');
+	}
+
 	public override CiExpr Visit(CiAggregateInitializer expr, CiPriority parent)
 	{
 		CiType type = ((CiArrayStorageType) expr.Type).ElementType;
@@ -243,8 +250,8 @@ public abstract class GenTyped : GenBase
 		if (type is CiIntegerType && type != CiSystem.LongType && expr.Type == CiSystem.LongType)
 			WriteStaticCast(type, expr);
 		else if (type == CiSystem.FloatType && expr.Type == CiSystem.DoubleType) {
-			if (expr is CiLiteral) {
-				expr.Accept(this, CiPriority.Argument);
+			if (expr is CiLiteralDouble literal) {
+				base.VisitLiteralDouble(literal.Value);
 				Write('f');
 			}
 			else

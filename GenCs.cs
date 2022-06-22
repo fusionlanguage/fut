@@ -289,13 +289,6 @@ public class GenCs : GenTyped
 			base.WriteCoercedInternal(type, expr, parent);
 	}
 
-	protected override void WriteCoercedLiteral(CiType type, CiExpr literal)
-	{
-		literal.Accept(this, CiPriority.Argument);
-		if (type == CiSystem.FloatType)
-			Write('f');
-	}
-
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
 		Write("$\"");
