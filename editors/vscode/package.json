@@ -1,0 +1,38 @@
+{
+  "name": "ci",
+  "version": "0.1.0",
+  "publisher": "pfusik",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pfusik/cito.git"
+  },
+  "engines": {
+    "vscode": "0.10.x"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "ci",
+        "extensions": [
+          ".ci"
+        ],
+        "icon": {
+          "light": "./ci-file.svg",
+          "dark": "./ci-file.svg"
+        },
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "ci",
+        "scopeName": "source.ci",
+        "path": "./syntaxes/ci.tmLanguage.json"
+      }
+    ]
+  }
+}

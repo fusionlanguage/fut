@@ -1,0 +1,1322 @@
+{
+	"scopeName": "source.ci",
+	"patterns": [
+		{
+			"include": "#preprocessor"
+		},
+		{
+			"include": "#comment"
+		},
+		{
+			"name": "storage.modifier.ci",
+			"match": "\\bpublic\\b"
+		},
+		{
+			"include": "#enum-declaration"
+		},
+		{
+			"include": "#class-declaration"
+		},
+		{
+			"include": "#native-statement"
+		}
+	],
+	"repository": {
+		"enum-declaration": {
+			"begin": "(?=\\benum\\b)",
+			"end": "(?<=\\})",
+			"patterns": [
+				{
+					"begin": "(?=enum)",
+					"end": "(?=\\{)",
+					"patterns": [
+						{
+							"include": "#preprocessor"
+						},
+						{
+							"include": "#comment"
+						},
+						{
+							"match": "(enum)\\s+([A-Z][0-9A-Za-z_]*)",
+							"captures": {
+								"1": {
+									"name": "keyword.other.enum.ci"
+								},
+								"2": {
+									"name": "entity.name.type.enum.ci"
+								}
+							}
+						}
+					]
+				},
+				{
+					"begin": "\\{",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.curlybrace.open.ci"
+						}
+					},
+					"end": "\\}",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.curlybrace.close.ci"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#preprocessor"
+						},
+						{
+							"include": "#comment"
+						},
+						{
+							"include": "#punctuation-comma"
+						},
+						{
+							"begin": "[A-Z][0-9A-Za-z_]*",
+							"beginCaptures": {
+								"0": {
+									"name": "entity.name.variable.enum-member.ci"
+								}
+							},
+							"end": "(?=(,|\\}))",
+							"patterns": [
+								{
+									"include": "#preprocessor"
+								},
+								{
+									"include": "#comment"
+								},
+								{
+									"include": "#initializer"
+								}
+							]
+						}
+					]
+				},
+				{
+					"include": "#preprocessor"
+				},
+				{
+					"include": "#comment"
+				}
+			]
+		},
+		"class-declaration": {
+			"begin": "(?=\\b(?:static|abstract|sealed|class)\\b)",
+			"end": "(?<=\\})",
+			"patterns": [
+				{
+					"begin": "\\b(?:(static|abstract|sealed)\\s+)?(class)\\s+([A-Z][0-9A-Za-z_]*)\\s*(?:(:)\\s*[A-Z][0-9A-Za-z_]*)?",
+					"beginCaptures": {
+						"1": {
+							"name": "storage.modifier.ci"
+						},
+						"2": {
+							"name": "keyword.other.class.ci"
+						},
+						"3": {
+							"name": "entity.name.type.class.ci"
+						},
+						"4": {
+							"name": "punctuation.separator.colon.ci"
+						}
+					},
+					"end": "(?=\\{)",
+					"patterns": [
+						{
+							"include": "#preprocessor"
+						},
+						{
+							"include": "#comment"
+						}
+					]
+				},
+				{
+					"begin": "\\{",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.curlybrace.open.ci"
+						}
+					},
+					"end": "\\}",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.curlybrace.close.ci"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#preprocessor"
+						},
+						{
+							"include": "#comment"
+						},
+						{
+							"include": "#storage-modifier"
+						},
+						{
+							"include": "#type"
+						},
+						{
+							"include": "#field"
+						},
+						{
+							"include": "#initializer"
+						},
+						{
+							"include": "#method-declaration"
+						}
+					]
+				},
+				{
+					"include": "#preprocessor"
+				},
+				{
+					"include": "#comment"
+				}
+			]
+		},
+		"storage-modifier": {
+			"name": "storage.modifier.ci",
+			"match": "\\b(internal|protected|public|static|abstract|virtual|override|sealed|const)\\b"
+		},
+		"field": {
+			"match": "([A-Z][0-9A-Za-z_]*)(?=\\s*[=;])",
+			"captures": {
+				"0": {
+					"name": "entity.name.variable.field.ci"
+				}
+			}
+		},
+		"method-declaration": {
+			"begin": "([A-Z][0-9A-Za-z_]*)!?(?=\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "entity.name.function.ci"
+				}
+			},
+			"end": "(?<=\\})|;",
+			"patterns": [
+				{
+					"include": "#preprocessor"
+				},
+				{
+					"include": "#comment"
+				},
+				{
+					"begin": "\\(",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.parenthesis.open.ci"
+						}
+					},
+					"end": "\\)",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.parenthesis.close.ci"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#preprocessor"
+						},
+						{
+							"include": "#comment"
+						},
+						{
+							"include": "#type"
+						},
+						{
+							"include": "#parameter"
+						},
+						{
+							"include": "#initializer"
+						},
+						{
+							"include": "#punctuation-comma"
+						}
+					]
+				},
+				{
+					"include": "#expression-body"
+				},
+				{
+					"include": "#block"
+				}
+			]
+		},
+		"parameter": {
+			"match": "([a-z][0-9A-Za-z_]*)(?=\\s*[=,)])",
+			"captures": {
+				"0": {
+					"name": "entity.name.variable.parameter.ci"
+				}
+			}
+		},
+		"statement": {
+			"patterns": [
+				{
+					"include": "#assert-statement"
+				},
+				{
+					"include": "#break-statement"
+				},
+				{
+					"include": "#continue-statement"
+				},
+				{
+					"include": "#do-statement"
+				},
+				{
+					"include": "#for-statement"
+				},
+				{
+					"include": "#foreach-statement"
+				},
+				{
+					"include": "#if-statement"
+				},
+				{
+					"include": "#else-statement"
+				},
+				{
+					"include": "#lock-statement"
+				},
+				{
+					"include": "#native-statement"
+				},
+				{
+					"include": "#return-statement"
+				},
+				{
+					"include": "#switch-statement"
+				},
+				{
+					"include": "#throw-statement"
+				},
+				{
+					"include": "#while-statement"
+				},
+				{
+					"include": "#block"
+				},
+				{
+					"include": "#local-constant-declaration"
+				},
+				{
+					"include": "#type"
+				},
+				{
+					"include": "#initializer"
+				},
+				{
+					"include": "#expression"
+				},
+				{
+					"include": "#punctuation-semicolon"
+				}
+			]
+		},
+		"assert-statement": {
+			"begin": "\\bassert\\b",
+			"beginCaptures": {
+				"0": {
+					"name": "keyword.control.assert.ci"
+				}
+			},
+			"end": "(?=;)",
+			"patterns": [
+				{
+					"include": "#expression"
+				},
+				{
+					"include": "#punctuation-comma"
+				}
+			]
+		},
+		"break-statement": {
+			"match": "\\bbreak\\b",
+			"captures": {
+				"0": {
+					"name": "keyword.control.flow.break.ci"
+				}
+			}
+		},
+		"continue-statement": {
+			"match": "\\bcontinue\\b",
+			"captures": {
+				"0": {
+					"name": "keyword.control.flow.continue.ci"
+				}
+			}
+		},
+		"do-statement": {
+			"begin": "\\bdo\\b",
+			"beginCaptures": {
+				"0": {
+					"name": "keyword.control.loop.do.ci"
+				}
+			},
+			"end": "(?=;|})",
+			"patterns": [
+				{
+					"include": "#statement"
+				}
+			]
+		},
+		"for-statement": {
+			"begin": "\\b(for)\\s*(?=\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "keyword.control.loop.for.ci"
+				}
+			},
+			"end": "(?<=\\})|(?=;)",
+			"patterns": [
+				{
+					"begin": "\\(",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.parenthesis.open.ci"
+						}
+					},
+					"end": "\\)",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.parenthesis.close.ci"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#expression"
+						},
+						{
+							"include": "#type"
+						},
+						{
+							"include": "#punctuation-semicolon"
+						}
+					]
+				},
+				{
+					"include": "#statement"
+				}
+			]
+		},
+		"foreach-statement": {
+			"begin": "\\b(foreach)\\s*(?=\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "keyword.control.loop.foreach.ci"
+				}
+			},
+			"end": "(?<=\\})|(?=;)",
+			"patterns": [
+				{
+					"begin": "\\(",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.parenthesis.open.ci"
+						}
+					},
+					"end": "\\)",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.parenthesis.close.ci"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#type"
+						},
+						{
+							"name": "keyword.control.loop.in.ci",
+							"match": "\\bin\\b"
+						},
+						{
+							"include": "#expression"
+						}
+					]
+				},
+				{
+					"include": "#statement"
+				}
+			]
+		},
+		"if-statement": {
+			"begin": "\\b(if)\\s*(?=\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "keyword.control.conditional.if.ci"
+				}
+			},
+			"end": "(?<=\\})|(?=;)",
+			"patterns": [
+				{
+					"begin": "\\(",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.parenthesis.open.ci"
+						}
+					},
+					"end": "\\)",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.parenthesis.close.ci"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#expression"
+						}
+					]
+				},
+				{
+					"include": "#statement"
+				}
+			]
+		},
+		"else-statement": {
+			"begin": "\\belse\\b",
+			"beginCaptures": {
+				"0": {
+					"name": "keyword.control.conditional.else.ci"
+				}
+			},
+			"end": "(?<=\\})|(?=;)",
+			"patterns": [
+				{
+					"include": "#statement"
+				}
+			]
+		},
+		"lock-statement": {
+			"begin": "\\b(lock)\\s*(?=\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "keyword.other.lock.ci"
+				}
+			},
+			"end": "(?<=\\})|(?=;)",
+			"patterns": [
+				{
+					"begin": "\\(",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.parenthesis.open.ci"
+						}
+					},
+					"end": "\\)",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.parenthesis.close.ci"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#expression"
+						}
+					]
+				},
+				{
+					"include": "#statement"
+				}
+			]
+		},
+		"native-statement": {
+			"begin": "\\bnative\\b",
+			"beginCaptures": {
+				"0": {
+					"name": "keyword.other.native.ci"
+				}
+			},
+			"end": "(?<=\\})",
+			"patterns": [
+				{
+					"include": "#preprocessor"
+				},
+				{
+					"include": "#comment"
+				},
+				{
+					"include": "#native-block"
+				}
+			]
+		},
+		"native-block": {
+			"begin": "\\{",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.curlybrace.open.ci"
+				}
+			},
+			"end": "\\}",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.curlybrace.close.ci"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#preprocessor"
+				},
+				{
+					"include": "#comment"
+				},
+				{
+					"include": "#literal"
+				},
+				{
+					"include": "#native-block"
+				}
+			]
+		},
+		"return-statement": {
+			"begin": "\\breturn\\b",
+			"beginCaptures": {
+				"0": {
+					"name": "keyword.control.flow.return.ci"
+				}
+			},
+			"end": "(?=;)",
+			"patterns": [
+				{
+					"include": "#expression"
+				}
+			]
+		},
+		"switch-statement": {
+			"begin": "\\b(switch)\\s*(?=\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "keyword.control.switch.ci"
+				}
+			},
+			"end": "(?<=\\})",
+			"patterns": [
+				{
+					"begin": "\\(",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.parenthesis.open.ci"
+						}
+					},
+					"end": "\\)",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.parenthesis.close.ci"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#expression"
+						}
+					]
+				},
+				{
+					"begin": "\\{",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.curlybrace.open.ci"
+						}
+					},
+					"end": "\\}",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.curlybrace.close.ci"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#switch-label"
+						},
+						{
+							"include": "#statement"
+						}
+					]
+				}
+			]
+		},
+		"switch-label": {
+			"patterns": [
+				{
+					"begin": "\\b(case)\\s+",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.case.ci"
+						}
+					},
+					"end": ":",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.separator.colon.ci"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#expression"
+						}
+					]
+				},
+				{
+					"match": "\\b(default)\\s*(:)",
+					"captures": {
+						"1": {
+							"name": "keyword.control.default.ci"
+						},
+						"2": {
+							"name": "punctuation.separator.colon.ci"
+						}
+					}
+				}
+			]
+		},
+		"throw-statement": {
+			"begin": "\\bthrow\\b",
+			"beginCaptures": {
+				"0": {
+					"name": "keyword.control.flow.throw.ci"
+				}
+			},
+			"end": "(?=;)",
+			"patterns": [
+				{
+					"include": "#expression"
+				}
+			]
+		},
+		"while-statement": {
+			"begin": "\\b(while)\\s*(?=\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "keyword.control.loop.while.ci"
+				}
+			},
+			"end": "(?<=\\})|(?=;)",
+			"patterns": [
+				{
+					"begin": "\\(",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.parenthesis.open.ci"
+						}
+					},
+					"end": "\\)",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.parenthesis.close.ci"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#expression"
+						}
+					]
+				},
+				{
+					"include": "#statement"
+				}
+			]
+		},
+		"block": {
+			"begin": "\\{",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.curlybrace.open.ci"
+				}
+			},
+			"end": "\\}",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.curlybrace.close.ci"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#statement"
+				}
+			]
+		},
+		"local-constant-declaration": {
+			"begin": "\\bconst\\b",
+			"beginCaptures": {
+				"0": {
+					"name": "storage.modifier.ci"
+				}
+			},
+			"end": "(?=;)",
+			"patterns": [
+				{
+					"name": "entity.name.variable.local.ci",
+					"match": "@?[_[:alpha:]][_[:alnum:]]*"
+				},
+				{
+					"include": "#preprocessor"
+				},
+				{
+					"include": "#comment"
+				},
+				{
+					"include": "#type"
+				},
+				{
+					"include": "#initializer"
+				}
+			]
+		},
+		"initializer": {
+			"begin": "(?<!=|!)=(?!=|>)",
+			"beginCaptures": {
+				"0": {
+					"name": "keyword.operator.assignment.ci"
+				}
+			},
+			"end": "(?=[,);}])",
+			"patterns": [
+				{
+					"include": "#expression"
+				},
+				{
+					"include": "#aggregate-initializer"
+				}
+			]
+		},
+		"aggregate-initializer": {
+			"begin": "\\{",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.curlybrace.open.ci"
+				}
+			},
+			"end": "\\}",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.curlybrace.close.ci"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#expression"
+				},
+				{
+					"include": "#punctuation-comma"
+				}
+			]
+		},
+		"expression-body": {
+			"begin": "=>",
+			"beginCaptures": {
+				"0": {
+					"name": "keyword.operator.arrow.ci"
+				}
+			},
+			"end": "(?=;)",
+			"patterns": [
+				{
+					"include": "#expression"
+				}
+			]
+		},
+		"type": {
+			"name": "meta.type.ci",
+			"patterns": [
+				{
+					"include": "#preprocessor"
+				},
+				{
+					"include": "#comment"
+				},
+				{
+					"include": "#type-builtin"
+				},
+				{
+					"include": "#class-builtin"
+				},
+				{
+					"include": "#type-storage-suffix"
+				},
+				{
+					"include": "#type-array-suffix"
+				}
+			]
+		},
+		"type-builtin": {
+			"match": "\\b(bool|byte|double|float|int|long|sbyte|short|string|uint|ulong|ushort|void)\\b",
+			"captures": {
+				"1": {
+					"name": "keyword.type.ci"
+				}
+			}
+		},
+		"class-builtin": {
+			"match": "\\b(Console|Dictionary|Encoding|Environment|HashSet|List|Lock|Match|Math|Regex|RegexOptions|SortedDictionary|Stack)\\b",
+			"captures": {
+				"1": {
+					"name": "support.class.ci"
+				}
+			}
+		},
+		"type-arguments": {
+			"begin": "<",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.typeparameters.begin.ci"
+				}
+			},
+			"end": ">",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.typeparameters.end.ci"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#preprocessor"
+				},
+				{
+					"include": "#comment"
+				},
+				{
+					"include": "#type"
+				},
+				{
+					"include": "#punctuation-comma"
+				}
+			]
+		},
+		"type-storage-suffix": {
+			"begin": "\\(",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.parenthesis.open.ci"
+				}
+			},
+			"end": "\\)",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.parenthesis.close.ci"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#preprocessor"
+				},
+				{
+					"include": "#comment"
+				}
+			]
+		},
+		"type-array-suffix": {
+			"begin": "\\[",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.squarebracket.open.ci"
+				}
+			},
+			"end": "(\\])\\s*([!#])?",
+			"endCaptures": {
+				"1": {
+					"name": "punctuation.squarebracket.close.ci"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#expression"
+				}
+			]
+		},
+		"expression": {
+			"patterns": [
+				{
+					"include": "#preprocessor"
+				},
+				{
+					"include": "#comment"
+				},
+				{
+					"include": "#new-expression"
+				},
+				{
+					"include": "#resource-expression"
+				},
+				{
+					"include": "#expression-operators"
+				},
+				{
+					"include": "#base-expression"
+				},
+				{
+					"include": "#this-expression"
+				},
+				{
+					"include": "#literal"
+				}
+			]
+		},
+		"new-expression": {
+			"begin": "\\bnew\\b",
+			"beginCaptures": {
+				"0": {
+					"name": "keyword.other.new.ci"
+				}
+			},
+			"end": "(?=[;,])",
+			"patterns": [
+				{
+					"include": "#preprocessor"
+				},
+				{
+					"include": "#comment"
+				},
+				{
+					"include": "#type"
+				}
+			]
+		},
+		"resource-expression": {
+			"begin": "\\b(resource)\\s*(<)\\s*(byte)\\s*([)\\s*(])\\s*(>)\\s*(\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "keyword.other.resource.ci"
+				},
+				"2": {
+					"name": "punctuation.definition.typeparameters.begin.ci"
+				},
+				"3": {
+					"name": "keyword.type.ci"
+				},
+				"4": {
+					"name": "punctuation.squarebracket.open.ci"
+				},
+				"5": {
+					"name": "punctuation.squarebracket.close.ci"
+				},
+				"6": {
+					"name": "punctuation.definition.typeparameters.end.ci"
+				},
+				"7": {
+					"name": "punctuation.parenthesis.open.ci"
+				}
+			},
+			"end": "\\)",
+			"endCaptures": {
+				"name": "punctuation.parenthesis.close.ci"
+			},
+			"patterns": [
+				{
+					"include": "#expression"
+				}
+			]
+		},
+		"expression-operators": {
+			"patterns": [
+				{
+					"name": "keyword.operator.assignment.compound.ci",
+					"match": "[-+*/%]="
+				},
+				{
+					"name": "keyword.operator.assignment.compound.bitwise.ci",
+					"match": "[&|^]=|<<=|>>="
+				},
+				{
+					"name": "keyword.operator.bitwise.shift.ci",
+					"match": "<<|>>"
+				},
+				{
+					"name": "keyword.operator.comparison.ci",
+					"match": "==|!="
+				},
+				{
+					"name": "keyword.operator.relational.ci",
+					"match": "<=|>=|<|>"
+				},
+				{
+					"name": "keyword.operator.logical.ci",
+					"match": "\\!|&&|\\|\\|"
+				},
+				{
+					"name": "keyword.operator.bitwise.ci",
+					"match": "~|\\&|\\||\\^"
+				},
+				{
+					"name": "keyword.operator.assignment.ci",
+					"match": "\\="
+				},
+				{
+					"name": "keyword.operator.decrement.ci",
+					"match": "--"
+				},
+				{
+					"name": "keyword.operator.increment.ci",
+					"match": "\\+\\+"
+				},
+				{
+					"name": "keyword.operator.arithmetic.ci",
+					"match": "[-+*/%]"
+				}
+			]
+		},
+		"base-expression": {
+			"match": "\\bbase\\b",
+			"captures": {
+				"0": {
+					"name": "keyword.other.base.ci"
+				}
+			}
+		},
+		"this-expression": {
+			"match": "\\bthis\\b",
+			"captures": {
+				"0": {
+					"name": "keyword.other.this.ci"
+				}
+			}
+		},
+		"literal": {
+			"patterns": [
+				{
+					"include": "#boolean-literal"
+				},
+				{
+					"include": "#null-literal"
+				},
+				{
+					"include": "#char-literal"
+				},
+				{
+					"include": "#string-literal"
+				}
+			]
+		},
+		"boolean-literal": {
+			"patterns": [
+				{
+					"name": "constant.language.boolean.true.ci",
+					"match": "\\btrue\\b"
+				},
+				{
+					"name": "constant.language.boolean.false.ci",
+					"match": "\\bfalse\\b"
+				}
+			]
+		},
+		"null-literal": {
+			"name": "constant.language.null.ci",
+			"match": "\\bnull\\b"
+		},
+		"char-literal": {
+			"name": "string.quoted.single.ci",
+			"begin": "'",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.char.begin.ci"
+				}
+			},
+			"end": "(')|((?:[^\\\\\\n])$)",
+			"endCaptures": {
+				"1": {
+					"name": "punctuation.definition.char.end.ci"
+				},
+				"2": {
+					"name": "invalid.illegal.newline.ci"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#char-character-escape"
+				}
+			]
+		},
+		"string-literal": {
+			"name": "string.quoted.double.ci",
+			"begin": "\"",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.begin.ci"
+				}
+			},
+			"end": "(\")|((?:[^\\\\\\n])$)",
+			"endCaptures": {
+				"1": {
+					"name": "punctuation.definition.string.end.ci"
+				},
+				"2": {
+					"name": "invalid.illegal.newline.ci"
+				}
+			},
+			"patterns": [
+				{
+					"include": "#char-character-escape"
+				}
+			]
+		},
+		"char-character-escape": {
+			"name": "constant.character.escape.ci",
+			"match": "\\\\(['\"\\\\0abfnrtv])"
+		},
+		"punctuation-comma": {
+			"name": "punctuation.separator.comma.ci",
+			"match": ","
+		},
+		"punctuation-semicolon": {
+			"name": "punctuation.terminator.statement.ci",
+			"match": ";"
+		},
+		"preprocessor": {
+			"name": "meta.preprocessor.ci",
+			"begin": "^\\s*(#)\\s*",
+			"beginCaptures": {
+				"1": {
+					"name": "punctuation.separator.hash.ci"
+				}
+			},
+			"end": "(?<=$)",
+			"patterns": [
+				{
+					"include": "#comment"
+				},
+				{
+					"include": "#preprocessor-if-or-elif"
+				},
+				{
+					"include": "#preprocessor-else"
+				},
+				{
+					"include": "#preprocessor-endif"
+				}
+			]
+		},
+		"preprocessor-if-or-elif": {
+			"begin": "\\b(?:(if)|(elif))\\b",
+			"beginCaptures": {
+				"1": {
+					"name": "keyword.preprocessor.if.ci"
+				},
+				"2": {
+					"name": "keyword.preprocessor.elif.ci"
+				}
+			},
+			"end": "(?=$)",
+			"patterns": [
+				{
+					"include": "#comment"
+				},
+				{
+					"include": "#preprocessor-expression"
+				}
+			]
+		},
+		"preprocessor-else": {
+			"match": "\\belse\\b",
+			"captures": {
+				"0": {
+					"name": "keyword.preprocessor.else.ci"
+				}
+			}
+		},
+		"preprocessor-endif": {
+			"match": "\\bendif\\b",
+			"captures": {
+				"0": {
+					"name": "keyword.preprocessor.endif.ci"
+				}
+			}
+		},
+		"preprocessor-expression": {
+			"patterns": [
+				{
+					"begin": "\\(",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.parenthesis.open.ci"
+						}
+					},
+					"end": "\\)",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.parenthesis.close.ci"
+						}
+					},
+					"patterns": [
+						{
+							"include": "#preprocessor-expression"
+						}
+					]
+				},
+				{
+					"match": "\\b(?:(true)|(false)|([A-Za-z_][0-9A-Za-z_]*))\\b",
+					"captures": {
+						"1": {
+							"name": "constant.language.boolean.true.ci"
+						},
+						"2": {
+							"name": "constant.language.boolean.false.ci"
+						},
+						"3": {
+							"name": "entity.name.variable.preprocessor.symbol.ci"
+						}
+					}
+				},
+				{
+					"match": "!|&&|\\|\\|",
+					"captures": {
+						"0": {
+							"name": "keyword.operator.logical.ci"
+						}
+					}
+				}
+			]
+		},
+		"comment": {
+			"patterns": [
+				{
+					"name": "comment.block.ci",
+					"begin": "/\\*",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.definition.comment.ci"
+						}
+					},
+					"end": "\\*/",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.definition.comment.ci"
+						}
+					}
+				},
+				{
+					"begin": "(^\\s+)?(?=//)",
+					"beginCaptures": {
+						"1": {
+							"name": "punctuation.whitespace.comment.leading.ci"
+						}
+					},
+					"end": "(?=$)",
+					"patterns": [
+						{
+							"name": "comment.block.documentation.ci",
+							"begin": "(?<!/)///(?!/)",
+							"beginCaptures": {
+								"0": {
+									"name": "punctuation.definition.comment.ci"
+								}
+							},
+							"end": "(?=$)"
+						},
+						{
+							"name": "comment.line.double-slash.ci",
+							"begin": "(?<!/)//(?:(?!/)|(?=//))",
+							"beginCaptures": {
+								"0": {
+									"name": "punctuation.definition.comment.ci"
+								}
+							},
+							"end": "(?=$)"
+						}
+					]
+				}
+			]
+		}
+	}
+}
