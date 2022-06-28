@@ -126,6 +126,16 @@ public enum CiToken
 	PreEndIf
 }
 
+public enum CiDocToken
+{
+	EndOfFile,
+	Char,
+	CodeDelimiter,
+	Bullet,
+	Para,
+	Period
+}
+
 public class CiLexer
 {
 	enum PreDirectiveClass
@@ -803,6 +813,80 @@ public class CiLexer
 	{
 		Check(expected);
 		NextToken();
+	}
+
+	public bool DocCheckPeriod;
+	public CiDocToken DocCurrentToken;
+	public int DocCurrentChar;
+
+	int DocReadChar()
+	{
+		int c = ReadChar();
+		if (c == '\n') {
+			NextToken();
+			if (!See(CiToken.DocComment))
+				return -1;
+		}
+		return c;
+	}
+
+	CiDocToken DocReadToken()
+	{
+		int lastChar = this.DocCurrentChar;
+		for (;;) {
+			int c = DocReadChar();
+			this.DocCurrentChar = c;
+			switch (c) {
+			case -1:
+				return CiDocToken.EndOfFile;
+			case '`':
+				return CiDocToken.CodeDelimiter;
+			case '*':
+				if (lastChar == '\n' && PeekChar() == ' ') {
+					DocReadChar();
+					return CiDocToken.Bullet;
+				}
+				return CiDocToken.Char;
+			case '\r':
+				continue;
+			case '\n':
+				if (this.DocCheckPeriod && lastChar == '.') {
+					this.DocCheckPeriod = false;
+					return CiDocToken.Period;
+				}
+				if (lastChar == '\n')
+					return CiDocToken.Para;
+				return CiDocToken.Char;
+			default:
+				return CiDocToken.Char;
+			}
+		}
+	}
+
+	public void DocNextToken()
+	{
+		this.DocCurrentToken = DocReadToken();
+	}
+
+	public bool DocSee(CiDocToken token)
+	{
+		return this.DocCurrentToken == token;
+	}
+
+	public bool DocEat(CiDocToken token)
+	{
+		if (DocSee(token)) {
+			DocNextToken();
+			return true;
+		}
+		return false;
+	}
+
+	public void DocExpect(CiDocToken expected)
+	{
+		if (!DocSee(expected))
+			throw ParseException("Expected {0}, got {1}", expected, this.DocCurrentToken);
+		DocNextToken();
 	}
 }
 

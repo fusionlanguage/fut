@@ -1,6 +1,6 @@
 // CiDocParser.cs - Ci documentation parser
 //
-// Copyright (C) 2011-2020  Piotr Fusik
+// Copyright (C) 2011-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -23,18 +23,21 @@ using System.Text;
 namespace Foxoft.Ci
 {
 
-public class CiDocParser : CiDocLexer
+public class CiDocParser
 {
-	public CiDocParser(CiLexer ciLexer) : base(ciLexer)
+	readonly CiLexer Lexer;
+
+	public CiDocParser(CiLexer lexer)
 	{
+		this.Lexer = lexer;
 	}
 
 	string ParseText()
 	{
 		StringBuilder sb = new StringBuilder();
-		while (See(CiDocToken.Char)) {
-			sb.Append((char) this.CurrentChar);
-			NextToken();
+		while (this.Lexer.DocSee(CiDocToken.Char)) {
+			sb.Append((char) this.Lexer.DocCurrentChar);
+			this.Lexer.DocNextToken();
 		}
 		if (sb.Length > 0 && sb[sb.Length - 1] == '\n')
 			sb.Length--;
@@ -45,32 +48,32 @@ public class CiDocParser : CiDocLexer
 	{
 		List<CiDocInline> children = new List<CiDocInline>();
 		for (;;) {
-			if (See(CiDocToken.Char)) {
+			if (this.Lexer.DocSee(CiDocToken.Char)) {
 				children.Add(new CiDocText {
 					Text = ParseText()
 				});
 			}
-			else if (Eat(CiDocToken.CodeDelimiter)) {
+			else if (this.Lexer.DocEat(CiDocToken.CodeDelimiter)) {
 				children.Add(new CiDocCode {
 					Text = ParseText()
 				});
-				Expect(CiDocToken.CodeDelimiter);
+				this.Lexer.DocExpect(CiDocToken.CodeDelimiter);
 			}
 			else
 				break;
 		}
-		Eat(CiDocToken.Para);
+		this.Lexer.DocEat(CiDocToken.Para);
 		return new CiDocPara { Children = children.ToArray() };
 	}
 
 	CiDocBlock ParseBlock()
 	{
-		if (Eat(CiDocToken.Bullet)) {
+		if (this.Lexer.DocEat(CiDocToken.Bullet)) {
 			List<CiDocPara> items = new List<CiDocPara>();
 			do
 				items.Add(ParsePara());
-			while (Eat(CiDocToken.Bullet));
-			Eat(CiDocToken.Para);
+			while (this.Lexer.DocEat(CiDocToken.Bullet));
+			this.Lexer.DocEat(CiDocToken.Para);
 			return new CiDocList { Items = items.ToArray() };
 		}
 		return ParsePara();
@@ -78,11 +81,15 @@ public class CiDocParser : CiDocLexer
 
 	public CiCodeDoc ParseCodeDoc()
 	{
+		this.Lexer.DocCheckPeriod = true;
+		this.Lexer.DocCurrentChar = '\n';
+		this.Lexer.DocNextToken();
+
 		CiDocPara summary = ParsePara();
 		List<CiDocBlock> details = new List<CiDocBlock>();
-		if (Eat(CiDocToken.Period)) {
-			Eat(CiDocToken.Para);
-			while (!See(CiDocToken.EndOfFile))
+		if (this.Lexer.DocEat(CiDocToken.Period)) {
+			this.Lexer.DocEat(CiDocToken.Para);
+			while (!this.Lexer.DocSee(CiDocToken.EndOfFile))
 				details.Add(ParseBlock());
 		}
 		return new CiCodeDoc { Summary = summary, Details = details.ToArray() };
