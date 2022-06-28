@@ -239,6 +239,10 @@
 					]
 				},
 				{
+					"name": "keyword.other.throws.ci",
+					"match": "\\bthrows\\b"
+				},
+				{
 					"include": "#expression-body"
 				},
 				{
