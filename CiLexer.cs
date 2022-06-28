@@ -815,9 +815,9 @@ public class CiLexer
 		NextToken();
 	}
 
-	public bool DocCheckPeriod;
-	public CiDocToken DocCurrentToken;
-	public int DocCurrentChar;
+	protected bool DocCheckPeriod;
+	protected int DocCurrentChar;
+	CiDocToken DocCurrentToken;
 
 	int DocReadChar()
 	{
@@ -863,17 +863,17 @@ public class CiLexer
 		}
 	}
 
-	public void DocNextToken()
+	protected void DocNextToken()
 	{
 		this.DocCurrentToken = DocReadToken();
 	}
 
-	public bool DocSee(CiDocToken token)
+	protected bool DocSee(CiDocToken token)
 	{
 		return this.DocCurrentToken == token;
 	}
 
-	public bool DocEat(CiDocToken token)
+	protected bool DocEat(CiDocToken token)
 	{
 		if (DocSee(token)) {
 			DocNextToken();
@@ -882,7 +882,7 @@ public class CiLexer
 		return false;
 	}
 
-	public void DocExpect(CiDocToken expected)
+	protected void DocExpect(CiDocToken expected)
 	{
 		if (!DocSee(expected))
 			throw ParseException("Expected {0}, got {1}", expected, this.DocCurrentToken);

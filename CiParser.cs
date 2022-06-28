@@ -50,7 +50,65 @@ public class CiParser : CiLexer
 		return id;
 	}
 
-	CiCodeDoc ParseDoc() => See(CiToken.DocComment) ? new CiDocParser(this).ParseCodeDoc() : null;
+	string DocParseText()
+	{
+		StringBuilder sb = new StringBuilder();
+		while (DocSee(CiDocToken.Char)) {
+			sb.Append((char) this.DocCurrentChar);
+			DocNextToken();
+		}
+		if (sb.Length > 0 && sb[sb.Length - 1] == '\n')
+			sb.Length--;
+		return sb.ToString();
+	}
+
+	CiDocPara DocParsePara()
+	{
+		List<CiDocInline> children = new List<CiDocInline>();
+		for (;;) {
+			if (DocSee(CiDocToken.Char))
+				children.Add(new CiDocText { Text = DocParseText() });
+			else if (DocEat(CiDocToken.CodeDelimiter)) {
+				children.Add(new CiDocCode { Text = DocParseText() });
+				DocExpect(CiDocToken.CodeDelimiter);
+			}
+			else
+				break;
+		}
+		DocEat(CiDocToken.Para);
+		return new CiDocPara { Children = children.ToArray() };
+	}
+
+	CiDocBlock DocParseBlock()
+	{
+		if (DocEat(CiDocToken.Bullet)) {
+			List<CiDocPara> items = new List<CiDocPara>();
+			do
+				items.Add(DocParsePara());
+			while (DocEat(CiDocToken.Bullet));
+			DocEat(CiDocToken.Para);
+			return new CiDocList { Items = items.ToArray() };
+		}
+		return DocParsePara();
+	}
+
+	CiCodeDoc ParseCodeDoc()
+	{
+		this.DocCheckPeriod = true;
+		this.DocCurrentChar = '\n';
+		this.DocNextToken();
+
+		CiDocPara summary = DocParsePara();
+		List<CiDocBlock> details = new List<CiDocBlock>();
+		if (DocEat(CiDocToken.Period)) {
+			DocEat(CiDocToken.Para);
+			while (!DocSee(CiDocToken.EndOfFile))
+				details.Add(DocParseBlock());
+		}
+		return new CiCodeDoc { Summary = summary, Details = details.ToArray() };
+	}
+
+	CiCodeDoc ParseDoc() => See(CiToken.DocComment) ? ParseCodeDoc() : null;
 
 	CiExpr ParseSymbolReference(CiExpr left) => new CiSymbolReference { Line = this.Line, Left = left, Name = ParseId() };
 
