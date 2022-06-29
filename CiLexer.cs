@@ -167,17 +167,17 @@ public class CiLexer
 		NextToken();
 	}
 
-	public CiException ParseException(string message)
+	protected CiException ParseException(string message)
 	{
 		return new CiException(this.Filename, this.Line, message);
 	}
 
-	public CiException ParseException(string format, params object[] args)
+	protected CiException ParseException(string format, params object[] args)
 	{
 		return ParseException(string.Format(format, args));
 	}
 
-	public int PeekChar()
+	protected int PeekChar()
 	{
 		return this.Reader.Peek();
 	}
@@ -190,7 +190,7 @@ public class CiLexer
 		return c == '_';
 	}
 
-	public int ReadChar()
+	protected int ReadChar()
 	{
 		int c = this.Reader.Read();
 		this.CopyTo?.Append((char) c);
@@ -782,14 +782,14 @@ public class CiLexer
 		}
 	}
 
-	public CiToken NextToken()
+	protected CiToken NextToken()
 	{
 		CiToken token = this.CurrentToken;
 		this.CurrentToken = ReadToken();
 		return token;
 	}
 
-	public bool See(CiToken token)
+	protected bool See(CiToken token)
 	{
 		return this.CurrentToken == token;
 	}
