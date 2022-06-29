@@ -1,0 +1,12 @@
+public static class Test
+{
+	public static bool Run()
+	{
+#if true != true
+		return false;
+#endif
+#if true != false
+		return true;
+#endif
+	}
+}

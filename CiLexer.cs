@@ -641,11 +641,24 @@ public class CiLexer
 		throw ParseException("Invalid preprocessor expression");
 	}
 
-	bool ParsePreAnd()
+	bool ParsePreEquality()
 	{
 		bool result = ParsePrePrimary();
+		for (;;) {
+			if (EatPre(CiToken.Equal))
+				result = result == ParsePrePrimary();
+			else if (EatPre(CiToken.NotEqual))
+				result ^= ParsePrePrimary();
+			else
+				return result;
+		}
+	}
+
+	bool ParsePreAnd()
+	{
+		bool result = ParsePreEquality();
 		while (EatPre(CiToken.CondAnd))
-			result &= ParsePrePrimary();
+			result &= ParsePreEquality();
 		return result;
 	}
 

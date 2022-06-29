@@ -1266,6 +1266,14 @@
 							"name": "keyword.operator.logical.ci"
 						}
 					}
+				},
+				{
+					"match": "[=!]=",
+					"captures": {
+						"0": {
+							"name": "keyword.operator.comparison.ci"
+						}
+					}
 				}
 			]
 		},

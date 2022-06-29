@@ -1238,7 +1238,7 @@ A more complicated one:
 #endif
 ```
 
-The operators allowed in `#if` and `#elif` are `!`, `&&` and `||`.
+The operators allowed in `#if` and `#elif` are `!`, `&&`, `||`, `==` and `!=`.
 You may reference `true`, which is a symbol that is always defined.
 `false` should be never defined.
 
