@@ -68,7 +68,7 @@ public static class CiTo
 		List<string> inputFiles = new List<string>();
 		List<string> referencedFiles = new List<string>();
 		List<string> searchDirs = new List<string>();
-		string lang = null;
+		List<string> langs =  new List<string>();
 		string outputFile = null;
 		string namespace_ = null;
 		for (int i = 0; i < args.Length; i++) {
@@ -82,7 +82,10 @@ public static class CiTo
 					Console.WriteLine("cito 1.0.0");
 					return 0;
 				case "-l":
-					lang = args[++i];
+					while (!args[i + 1].StartsWith('-')){
+						var lang = args[++i];
+						langs.Add(lang);
+					};
 					break;
 				case "-o":
 					outputFile = args[++i];
@@ -110,50 +113,52 @@ public static class CiTo
 				inputFiles.Add(arg);
 			}
 		}
-		if (lang == null && outputFile != null) {
+		if (langs.Count==0 && outputFile != null) {
 			if (outputFile.EndsWith(".d.ts"))
-				lang = "d.ts";
+				langs.Add( "d.ts");
 			else {
 				string ext = Path.GetExtension(outputFile);
 				if (ext.Length >= 2) // have an extension?
-					lang = ext.Substring(1); // skip the dot
+					langs.Add(  ext.Substring(1)); // skip the dot
 			}
 		}
-		if (lang == null || outputFile == null || inputFiles.Count == 0) {
+		if (langs.Count==0 || outputFile == null || inputFiles.Count == 0) {
 			Usage();
 			return 1;
 		}
-		GenBase gen;
-		switch (lang) {
-		case "c": gen = new GenC(); break;
-		case "cpp": gen = new GenCpp(); break;
-		case "cs": gen = new GenCs(); break;
-		case "java": gen = new GenJava(); break;
-		case "js": gen = new GenJs(); break;
-		case "py": gen = new GenPy(); break;
-		case "swift": gen = new GenSwift(); break;
-		case "ts": gen = new GenTs().WithGenFullCode(); break;
-		case "d.ts": gen = new GenTs(); break;
-		case "cl": gen = new GenCl(); break;
-		default: throw new ArgumentException("Unknown language: " + lang);
-		}
-		gen.Namespace = namespace_;
-		gen.OutputFile = outputFile;
-
-		CiProgram program;
 		try {
-			CiScope parent = CiSystem.Value;
-			if (referencedFiles.Count > 0)
-				parent = ParseAndResolve(parser, parent, referencedFiles, searchDirs, lang);
-			program = ParseAndResolve(parser, parent, inputFiles, searchDirs, lang);
+			foreach (var lang in langs) {
+				GenBase gen;
+				switch (lang) {
+				case "c": gen = new GenC(); break;
+				case "cpp": gen = new GenCpp(); break;
+				case "cs": gen = new GenCs(); break;
+				case "java": gen = new GenJava(); break;
+				case "js": gen = new GenJs(); break;
+				case "py": gen = new GenPy(); break;
+				case "swift": gen = new GenSwift(); break;
+				case "ts": gen = new GenTs().WithGenFullCode(); break;
+				case "d.ts": gen = new GenTs(); break;
+				case "cl": gen = new GenCl(); break;
+				default: throw new ArgumentException("Unknown language: " + lang);
+				}
+				gen.Namespace = namespace_;
+				gen.OutputFile = Path.ChangeExtension(outputFile,lang);
+
+				CiScope parent = CiSystem.Value;
+					if (referencedFiles.Count > 0)
+						parent = ParseAndResolve(parser, parent, referencedFiles, searchDirs, lang);
+					CiProgram	program = ParseAndResolve(parser, parent, inputFiles, searchDirs, lang);
+			
+
+				gen.Write(program);
+			}
 		}
 		catch (CiException ex) {
 			Console.Error.WriteLine("{0}({1}): ERROR: {2}", ex.Filename, ex.Line, ex.Message);
 			return 1;
 //			throw;
 		}
-
-		gen.Write(program);
 		return 0;
 	}
 }
