@@ -32,6 +32,7 @@ public enum CiToken
 	Id,
 	LiteralLong,
 	LiteralDouble,
+	LiteralChar,
 	LiteralString,
 	InterpolatedString,
 	Semicolon,
@@ -148,7 +149,7 @@ public class CiLexer
 	protected string Filename;
 	public int Line;
 	protected CiToken CurrentToken;
-	protected long LongValue; // for CiToken.LiteralLong
+	protected long LongValue; // for CiToken.LiteralLong, CiToken.LiteralChar
 	protected double DoubleValue; // for CiToken.LiteralDouble
 	protected string StringValue; // for CiToken.LiteralString, CiToken.InterpolatedString and CiToken.Id
 	protected StringBuilder CopyTo = null;
@@ -518,7 +519,7 @@ public class CiLexer
 				this.LongValue = ReadCharLiteral();
 				if (ReadChar() != '\'')
 					throw ParseException("Unterminated character literal");
-				return CiToken.LiteralLong;
+				return CiToken.LiteralChar;
 			case '"': {
 				StringBuilder sb = new StringBuilder();
 				while (PeekChar() != '"')

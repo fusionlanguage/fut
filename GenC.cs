@@ -1361,7 +1361,7 @@ public class GenC : GenCCpp
 				Write("strchr(");
 				obj.Accept(this, CiPriority.Argument);
 				Write(", ");
-				WriteCharLiteral(c);
+				VisitLiteralChar(c);
 				Write(')');
 			}
 			else
@@ -1384,7 +1384,7 @@ public class GenC : GenCCpp
 			if (IsOneAsciiString(args[0], out char c)) {
 				obj.Accept(this, CiPriority.Primary);
 				Write("[0] == ");
-				WriteCharLiteral(c);
+				VisitLiteralChar(c);
 			}
 			else {
 				Include("string.h");

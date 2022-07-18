@@ -270,6 +270,14 @@ public class GenCs : GenTyped
 		}
 	}
 
+	protected override void WriteCoercedLiteral(CiType type, CiExpr literal)
+	{
+		if (literal is CiLiteralChar && type is CiRangeType range && range.Max <= 0xff)
+			WriteStaticCast(type, literal);
+		else
+			literal.Accept(this, CiPriority.Argument);
+	}
+
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 	{
 		if (type is CiClass && expr is CiAggregateInitializer init) {
@@ -288,6 +296,8 @@ public class GenCs : GenTyped
 		else
 			base.WriteCoercedInternal(type, expr, parent);
 	}
+
+	protected override TypeCode GetTypeCode(CiExpr expr) => expr is CiLiteralChar ? TypeCode.UInt16 : base.GetTypeCode(expr);
 
 	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
 	{
@@ -436,7 +446,7 @@ public class GenCs : GenTyped
 			Write('.');
 			Write(method.Name);
 			Write('(');
-			WriteCharLiteral(c);
+			VisitLiteralChar(c);
 			Write(')');
 		}
 		else if (method == CiSystem.UTF8GetByteCount) {

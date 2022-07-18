@@ -264,7 +264,7 @@ public class GenPy : GenPySwift
 		string op = IsPtr(expr.Left) || IsPtr(expr.Right)
 			? not ? " is not " : " is "
 			: GetEqOp(not);
-		WriteComparison(expr, parent, CiPriority.Equality, op);
+		Write(expr, parent, CiPriority.Equality, op);
 	}
 
 	protected override void WriteCharAt(CiBinaryExpr expr)

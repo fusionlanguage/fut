@@ -73,6 +73,11 @@ public abstract class GenBase : CiVisitor
 		this.Writer.Write(i);
 	}
 
+	public override void VisitLiteralChar(char c)
+	{
+		this.Writer.Write((int) c);
+	}
+
 	protected void WriteLowercase(string s)
 	{
 		StartLine();
@@ -918,16 +923,11 @@ public abstract class GenBase : CiVisitor
 		return Write(expr, parent > child, child, op, child);
 	}
 
-	protected virtual void WriteComparison(CiBinaryExpr expr, CiPriority parent, CiPriority child, string op)
-	{
-		Write(expr, parent, child, op);
-	}
-
 	protected static string GetEqOp(bool not) => not ? " != " : " == ";
 
 	protected virtual void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
-		WriteComparison(expr, parent, CiPriority.Equality, GetEqOp(not));
+		Write(expr, parent, CiPriority.Equality, GetEqOp(not));
 	}
 
 	protected virtual void WriteAnd(CiBinaryExpr expr, CiPriority parent)
@@ -1070,17 +1070,13 @@ public abstract class GenBase : CiVisitor
 		case CiToken.ShiftRight:
 			return Write(expr, parent > CiPriority.Shift, CiPriority.Shift, " >> ", CiPriority.Mul);
 		case CiToken.Less:
-			WriteComparison(expr, parent, CiPriority.Rel, " < ");
-			return expr;
+			return Write(expr, parent, CiPriority.Rel, " < ");
 		case CiToken.LessOrEqual:
-			WriteComparison(expr, parent, CiPriority.Rel, " <= ");
-			return expr;
+			return Write(expr, parent, CiPriority.Rel, " <= ");
 		case CiToken.Greater:
-			WriteComparison(expr, parent, CiPriority.Rel, " > ");
-			return expr;
+			return Write(expr, parent, CiPriority.Rel, " > ");
 		case CiToken.GreaterOrEqual:
-			WriteComparison(expr, parent, CiPriority.Rel, " >= ");
-			return expr;
+			return Write(expr, parent, CiPriority.Rel, " >= ");
 		case CiToken.Equal:
 			WriteEqual(expr, parent, false);
 			return expr;

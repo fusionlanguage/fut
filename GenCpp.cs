@@ -438,7 +438,7 @@ public class GenCpp : GenCCpp
 		Write(name);
 		if (IsOneAsciiString(args[0], out char c)) {
 			Write('(');
-			WriteCharLiteral(c);
+			VisitLiteralChar(c);
 			Write(')');
 		}
 		else

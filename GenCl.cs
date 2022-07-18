@@ -1,6 +1,6 @@
 // GenCl.cs - OpenCL C code generator
 //
-// Copyright (C) 2020-2021  Piotr Fusik
+// Copyright (C) 2020-2022  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -158,7 +158,7 @@ public class GenCl : GenC
 					Write('(');
 				obj.Accept(this, CiPriority.Primary);
 				Write("[0] == ");
-				WriteCharLiteral(c);
+				VisitLiteralChar(c);
 				if (parent > CiPriority.Equality)
 					Write(')');
 			}

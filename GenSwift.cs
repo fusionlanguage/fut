@@ -419,7 +419,7 @@ public class GenSwift : GenPySwift
 	{
 		if (expr.Left.Type is CiClassPtrType || expr.Right.Type is CiClassPtrType
 		 || expr.Left.Type is CiArrayPtrType || expr.Right.Type is CiArrayPtrType)
-			WriteComparison(expr, parent, CiPriority.Equality, not ? " !== " : " === ");
+			Write(expr, parent, CiPriority.Equality, not ? " !== " : " === ");
 		else
 			base.WriteEqual(expr, parent, not);
 	}

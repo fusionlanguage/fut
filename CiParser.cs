@@ -208,6 +208,10 @@ public class CiParser : CiLexer
 			result = new CiLiteralDouble(this.DoubleValue) { Line = this.Line };
 			NextToken();
 			break;
+		case CiToken.LiteralChar:
+			result = new CiLiteralChar((char) this.LongValue) { Line = this.Line };
+			NextToken();
+			break;
 		case CiToken.LiteralString:
 			result = new CiLiteralString(this.StringValue) { Line = this.Line };
 			NextToken();

@@ -325,6 +325,10 @@ public class CiResolver : CiVisitor
 	{
 	}
 
+	public override void VisitLiteralChar(char value)
+	{
+	}
+
 	public override void VisitLiteralDouble(double value)
 	{
 	}
@@ -702,7 +706,7 @@ public class CiResolver : CiVisitor
 						if (IsAscii(s)) {
 							long i = indexLiteral.Value;
 							if (i >= 0 && i < s.Length)
-								return expr.ToLiteralLong(s[(int) i]);
+								return new CiLiteralChar(s[(int) i]) { Line = expr.Line };
 						}
 					}
 					break;

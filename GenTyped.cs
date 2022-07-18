@@ -37,6 +37,15 @@ public abstract class GenTyped : GenBase
 		WriteName(value);
 	}
 
+	public override void VisitLiteralChar(char c)
+	{
+		Write('\'');
+		if (c == '\'')
+			Write('\\');
+		WriteEscapedChar(c);
+		Write('\'');
+	}
+
 	public override void VisitLiteralDouble(double value)
 	{
 		base.VisitLiteralDouble(value);
@@ -95,31 +104,6 @@ public abstract class GenTyped : GenBase
 		}
 		c = '\0';
 		return false;
-	}
-
-	protected void WriteCharLiteral(char c)
-	{
-		Write('\'');
-		if (c == '\'')
-			Write('\\');
-		WriteEscapedChar(c);
-		Write('\'');
-	}
-
-	protected override void WriteComparison(CiBinaryExpr expr, CiPriority parent, CiPriority child, string op)
-	{
-		if (expr.Left.IsIndexing && expr.Left is CiBinaryExpr indexing && indexing.Left.Type is CiStringType
-		 && expr.Right is CiLiteralLong literal && IsAscii(literal.Value)) {
-			if (parent > child)
-				Write('(');
-			expr.Left.Accept(this, child);
-			Write(op);
-			WriteCharLiteral((char) literal.Value);
-			if (parent > child)
-				Write(')');
-		}
-		else
-			base.WriteComparison(expr, parent, child, op);
 	}
 
 	protected static bool IsNarrower(TypeCode left, TypeCode right)
@@ -218,21 +202,22 @@ public abstract class GenTyped : GenBase
 
 	protected virtual bool IsNotPromotedIndexing(CiBinaryExpr expr) => expr.Op == CiToken.LeftBracket;
 
+	protected virtual TypeCode GetTypeCode(CiExpr expr)
+	{
+		switch (expr) {
+		case CiLiteral _:
+		case CiBinaryExpr binary when IsNotPromotedIndexing(binary) || binary.IsAssign:
+			return GetTypeCode(expr.Type, false);
+		default:
+			return GetTypeCode(expr.Type, true);
+		}
+	}
+
 	protected override void WriteAssignRight(CiBinaryExpr expr)
 	{
 		if (expr.Left.IsIndexing) {
 			TypeCode leftTypeCode = GetTypeCode(expr.Left.Type, false);
-			bool promote;
-			switch (expr.Right) {
-			case CiLiteral _:
-			case CiBinaryExpr rightBinary when IsNotPromotedIndexing(rightBinary) || rightBinary.IsAssign:
-				promote = false;
-				break;
-			default:
-				promote = true;
-				break;
-			}
-			TypeCode rightTypeCode = GetTypeCode(expr.Right.Type, promote);
+			TypeCode rightTypeCode = GetTypeCode(expr.Right);
 			if (leftTypeCode == TypeCode.SByte && rightTypeCode == TypeCode.SByte) {
 				expr.Right.Accept(this, CiPriority.Assign); // omit Java "& 0xff"
 				return;
