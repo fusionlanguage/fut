@@ -1290,7 +1290,7 @@ public abstract class GenBase : CiVisitor
 		foreach (CiCase kase in statement.Cases) {
 			foreach (CiExpr value in kase.Values) {
 				Write("case ");
-				WriteCoerced(statement.Value.Type, value, CiPriority.Argument);
+				WriteCoercedLiteral(statement.Value.Type, value);
 				WriteLine(':');
 			}
 			this.Indent++;

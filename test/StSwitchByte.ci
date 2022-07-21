@@ -1,0 +1,15 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		byte[2] a;
+		a[0] = 'N';
+		a[1] = 'G';
+		switch (a[1]) {
+		case 'G':
+			return true;
+		default:
+			return false;
+		}
+	}
+}
