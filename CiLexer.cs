@@ -336,11 +336,9 @@ public class CiLexer
 			}
 			if (i == 0)
 				throw ParseException("Leading zeros are not permitted, octal numbers must begin with 0o");
-			if (i > 922337203685477580)
+			if (i > (c < 8 ? 922337203685477580 : 922337203685477579))
 				throw ParseException("Integer too big");
 			i = 10 * i + c;
-			if (i < 0)
-				throw ParseException("Integer too big");
 			needDigit = false;
 		}
 	}
