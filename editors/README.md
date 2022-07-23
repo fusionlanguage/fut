@@ -22,3 +22,7 @@ Copy `ci.properties` to the installation directory.
 
     sudo apt install scite
     sudo cp editors/scite/ci.properties /usr/share/scite/
+
+## Notepad++
+
+    copy editors\notepad-plus-plus\ci.udl.xml %AppData%\"Notepad++"\userDefineLangs\
