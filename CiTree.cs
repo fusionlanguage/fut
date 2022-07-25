@@ -355,7 +355,7 @@ public class CiLiteralLong : CiLiteral
 
 public class CiLiteralChar : CiLiteralLong
 {
-	public CiLiteralChar(char value) : base(value)
+	public CiLiteralChar(int value) : base(value)
 	{
 	}
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)

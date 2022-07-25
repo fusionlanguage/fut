@@ -209,7 +209,7 @@ public class CiParser : CiLexer
 			NextToken();
 			break;
 		case CiToken.LiteralChar:
-			result = new CiLiteralChar((char) this.LongValue) { Line = this.Line };
+			result = new CiLiteralChar((int) this.LongValue) { Line = this.Line };
 			NextToken();
 			break;
 		case CiToken.LiteralString:

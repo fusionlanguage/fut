@@ -514,7 +514,15 @@ public class CiLexer
 			case '\'':
 				if (PeekChar() == '\'')
 					throw ParseException("Empty character literal");
-				this.LongValue = ReadCharLiteral();
+				c = ReadCharLiteral();
+				if (c >= 0xd800 && c <= 0xdbff) {
+					int lo = PeekChar();
+					if (lo >= 0xdc00 && lo <= 0xdfff) {
+						ReadChar();
+						c = 0x10000 + (c - 0xd800 << 10) + (lo - 0xdc00);
+					}
+				}
+				this.LongValue = c;
 				if (ReadChar() != '\'')
 					throw ParseException("Unterminated character literal");
 				return CiToken.LiteralChar;

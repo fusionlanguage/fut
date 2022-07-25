@@ -3,6 +3,8 @@ public static class Test
 	public static bool Run()
 	{
 		int ci = 'Ć';
-		return ci == 0x106;
+		int beer = '🍺';
+		return ci == 0x106
+			&& beer == 0x1f37a;
 	}
 }
