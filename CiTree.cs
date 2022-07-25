@@ -71,7 +71,7 @@ public abstract class CiVisitor
 	public abstract CiExpr Visit(CiAggregateInitializer expr, CiPriority parent);
 	public abstract CiExpr Visit(CiVar expr, CiPriority parent);
 	public abstract void VisitLiteralLong(long value);
-	public abstract void VisitLiteralChar(char value);
+	public abstract void VisitLiteralChar(int value);
 	public abstract void VisitLiteralDouble(double value);
 	public abstract void VisitLiteralString(string value);
 	public abstract void VisitLiteralNull();
@@ -360,7 +360,7 @@ public class CiLiteralChar : CiLiteralLong
 	}
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
-		visitor.VisitLiteralChar((char) this.Value);
+		visitor.VisitLiteralChar((int) this.Value);
 		return this;
 	}
 	public override string ToString()

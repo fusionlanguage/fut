@@ -41,6 +41,8 @@ public abstract class GenCCpp : GenTyped
 		WriteIncludes("#include <", ">");
 	}
 
+	protected override int GetLiteralChars() => 127;
+
 	protected override void Write(TypeCode typeCode)
 	{
 		switch (typeCode) {

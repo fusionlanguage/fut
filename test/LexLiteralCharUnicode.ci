@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int ci = 'Ć';
+		return ci == 0x106;
+	}
+}

@@ -325,7 +325,7 @@ public class CiResolver : CiVisitor
 	{
 	}
 
-	public override void VisitLiteralChar(char value)
+	public override void VisitLiteralChar(int value)
 	{
 	}
 

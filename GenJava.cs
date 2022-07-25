@@ -36,6 +36,8 @@ public class GenJava : GenTyped
 			Write('L');
 	}
 
+	protected override int GetLiteralChars() => 0x10000;
+
 	protected override void WritePrintfWidth(CiInterpolatedPart part)
 	{
 		if (part.Precision >= 0 && part.Argument.Type is CiIntegerType) {

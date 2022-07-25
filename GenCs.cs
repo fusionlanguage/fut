@@ -146,6 +146,8 @@ public class GenCs : GenTyped
 		}
 	}
 
+	protected override int GetLiteralChars() => 0x10000;
+
 	protected override void Write(TypeCode typeCode)
 	{
 		switch (typeCode) {

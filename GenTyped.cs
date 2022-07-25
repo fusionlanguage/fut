@@ -37,15 +37,6 @@ public abstract class GenTyped : GenBase
 		WriteName(value);
 	}
 
-	public override void VisitLiteralChar(char c)
-	{
-		Write('\'');
-		if (c == '\'')
-			Write('\\');
-		WriteEscapedChar(c);
-		Write('\'');
-	}
-
 	public override void VisitLiteralDouble(double value)
 	{
 		base.VisitLiteralDouble(value);

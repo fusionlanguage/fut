@@ -73,9 +73,19 @@ public abstract class GenBase : CiVisitor
 		this.Writer.Write(i);
 	}
 
-	public override void VisitLiteralChar(char c)
+	protected virtual int GetLiteralChars() => 0;
+
+	public override void VisitLiteralChar(int c)
 	{
-		this.Writer.Write((int) c);
+		if (c < GetLiteralChars()) {
+			Write('\'');
+			if (c == '\'')
+				Write('\\');
+			WriteEscapedChar((char) c);
+			Write('\'');
+		}
+		else
+			this.Writer.Write(c);
 	}
 
 	protected void WriteLowercase(string s)
