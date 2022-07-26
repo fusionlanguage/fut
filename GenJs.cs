@@ -364,8 +364,7 @@ public class GenJs : GenBase
 
 	void AddLibrary(GenJsMethod id, params string[] method)
 	{
-		if (this.Library[(int) id] == null)
-			this.Library[(int) id] = method;
+		this.Library[(int) id] ??= method;
 	}
 
 	static bool IsIdentifier(string s)
