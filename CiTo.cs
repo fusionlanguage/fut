@@ -57,7 +57,7 @@ public static class CiTo
 	{
 		parser.Program = new CiProgram { Parent = parent };
 		foreach (string file in files)
-			parser.Parse(file, File.OpenText(file));
+			parser.Parse(file, File.OpenRead(file));
 		new CiResolver(parser.Program, searchDirs, lang);
 		return parser.Program;
 	}

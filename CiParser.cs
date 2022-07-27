@@ -955,9 +955,9 @@ public class CiParser : CiLexer
 		return enu;
 	}
 
-	public void Parse(string filename, TextReader reader)
+	public void Parse(string filename, Stream input)
 	{
-		Open(filename, reader);
+		Open(filename, input);
 		while (!See(CiToken.EndOfFile)) {
 			CiCodeDoc doc = ParseDoc();
 			CiContainerType type;

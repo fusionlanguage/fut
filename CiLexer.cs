@@ -145,7 +145,7 @@ public class CiLexer
 		Else
 	}
 
-	TextReader Reader;
+	Stream Input;
 	int NextChar;
 	protected string Filename;
 	public int Line;
@@ -161,18 +161,49 @@ public class CiLexer
 	protected bool ParsingTypeArg = false;
 	readonly Stack<PreDirectiveClass> PreStack = new Stack<PreDirectiveClass>();
 
-	protected void Open(string filename, TextReader reader)
+	protected void Open(string filename, Stream input)
 	{
 		this.Filename = filename;
-		this.Reader = reader;
+		this.Input = input;
 		this.Line = 1;
-		this.NextChar = reader.Read();
+		FillNextChar();
+		if (this.NextChar == 0xfeff) // BOM
+			FillNextChar();
 		NextToken();
 	}
 
 	protected CiException ParseException(string message) => new CiException(this.Filename, this.Line, message);
 
 	protected CiException ParseException(string format, params object[] args) => ParseException(string.Format(format, args));
+
+	int ReadContinuationByte()
+	{
+		int b = this.Input.ReadByte();
+		if (b < 0x80 || b > 0xbf)
+			throw ParseException("Invalid UTF-8 encoding");
+		return b - 0x80;
+	}
+
+	void FillNextChar()
+	{
+		int b = this.Input.ReadByte();
+		if (b >= 0x80) {
+			if (b < 0xc2 || b > 0xf4)
+				throw ParseException("Invalid UTF-8 encoding");
+			if (b < 0xe0)
+				b = (b - 0xc0 << 6) + ReadContinuationByte();
+			else if (b < 0xf0) {
+				b = (b - 0xe0 << 6) + ReadContinuationByte();
+				b = (b << 6) + ReadContinuationByte();
+			}
+			else {
+				b = (b - 0xf0 << 6) + ReadContinuationByte();
+				b = (b << 6) + ReadContinuationByte();
+				b = (b << 6) + ReadContinuationByte();
+			}
+		}
+		this.NextChar = b;
+	}
 
 	protected int PeekChar() => this.NextChar;
 
@@ -184,10 +215,20 @@ public class CiLexer
 		return c == '_';
 	}
 
+	static void AppendUtf16(StringBuilder sb, int c)
+	{
+		if (c >= 0x10000) {
+			sb.Append((char) (0xd800 + (c >> 10 & 0x3ff)));
+			c = 0xdc00 + (c & 0x3ff);
+		}
+		sb.Append((char) c);
+	}
+
 	protected int ReadChar()
 	{
 		int c = this.NextChar;
-		this.CopyTo?.Append((char) c);
+		if (this.CopyTo != null)
+			AppendUtf16(this.CopyTo, c);
 		switch (c) {
 		case '\t':
 		case ' ':
@@ -200,7 +241,7 @@ public class CiLexer
 			this.AtLineStart = false;
 			break;
 		}
-		this.NextChar = this.Reader.Read();
+		FillNextChar();
 		return c;
 	}
 
@@ -337,13 +378,13 @@ public class CiLexer
 		}
 	}
 
-	char ReadCharLiteral()
+	int ReadCharLiteral()
 	{
 		int c = ReadChar();
 		if (c < 32)
 			throw ParseException("Invalid character in literal");
 		if (c != '\\')
-			return (char) c;
+			return c;
 		switch (ReadChar()) {
 		case '\'': return '\'';
 		case '"': return '"';
@@ -376,7 +417,7 @@ public class CiLexer
 					return CiToken.InterpolatedString;
 				}
 			}
-			sb.Append(ReadCharLiteral());
+			AppendUtf16(sb, ReadCharLiteral());
 		}
 	}
 
@@ -508,22 +549,14 @@ public class CiLexer
 			case '\'':
 				if (PeekChar() == '\'')
 					throw ParseException("Empty character literal");
-				c = ReadCharLiteral();
-				if (c >= 0xd800 && c <= 0xdbff) {
-					int lo = PeekChar();
-					if (lo >= 0xdc00 && lo <= 0xdfff) {
-						ReadChar();
-						c = 0x10000 + (c - 0xd800 << 10) + (lo - 0xdc00);
-					}
-				}
-				this.LongValue = c;
+				this.LongValue = ReadCharLiteral();
 				if (ReadChar() != '\'')
 					throw ParseException("Unterminated character literal");
 				return CiToken.LiteralChar;
 			case '"': {
 				StringBuilder sb = new StringBuilder();
 				while (PeekChar() != '"')
-					sb.Append(ReadCharLiteral());
+					AppendUtf16(sb, ReadCharLiteral());
 				ReadChar();
 				this.StringValue = sb.ToString();
 				return CiToken.LiteralString;
