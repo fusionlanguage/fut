@@ -628,28 +628,22 @@ public class CiParser : CiLexer
 	{
 		int line = this.Line;
 		Expect(CiToken.Native);
-		StringBuilder sb = new StringBuilder();
-		this.CopyTo = sb;
-		try {
-			Expect(CiToken.LeftBrace);
-			int nesting = 1;
-			for (;;) {
-				if (See(CiToken.EndOfFile))
-					throw ParseException("Native block not terminated");
-				if (See(CiToken.LeftBrace))
-					nesting++;
-				else if (See(CiToken.RightBrace) && --nesting == 0)
-					break;
-				NextToken();
-			}
+		int offset = this.CharOffset;
+		Expect(CiToken.LeftBrace);
+		int nesting = 1;
+		for (;;) {
+			if (See(CiToken.EndOfFile))
+				throw ParseException("Native block not terminated");
+			if (See(CiToken.LeftBrace))
+				nesting++;
+			else if (See(CiToken.RightBrace) && --nesting == 0)
+				break;
+			NextToken();
 		}
-		finally {
-			this.CopyTo = null;
-		}
+		Trace.Assert(this.Input[this.CharOffset - 1] == '}');
+		string content = Encoding.UTF8.GetString(this.Input, offset, this.CharOffset - 1 - offset);
 		NextToken();
-		Trace.Assert(sb[sb.Length - 1] == '}');
-		sb.Length--;
-		return new CiNative { Line = line, Content = sb.ToString() };
+		return new CiNative { Line = line, Content = content };
 	}
 
 	CiReturn ParseReturn()

@@ -144,9 +144,9 @@ public class CiLexer
 		Else
 	}
 
-	byte[] Input;
+	protected byte[] Input;
 	int NextOffset;
-	int CharOffset;
+	protected int CharOffset;
 	int NextChar;
 	protected string Filename;
 	public int Line;
@@ -154,7 +154,6 @@ public class CiLexer
 	protected long LongValue; // for CiToken.LiteralLong, CiToken.LiteralChar
 	protected double DoubleValue; // for CiToken.LiteralDouble
 	protected string StringValue; // for CiToken.LiteralString, CiToken.InterpolatedString and CiToken.Id
-	protected StringBuilder CopyTo = null;
 	public readonly HashSet<string> PreSymbols = new HashSet<string>();
 	bool AtLineStart = true;
 	bool LineMode = false;
@@ -232,8 +231,6 @@ public class CiLexer
 	protected int ReadChar()
 	{
 		int c = this.NextChar;
-		if (this.CopyTo != null)
-			AppendUtf16(this.CopyTo, c);
 		switch (c) {
 		case '\t':
 		case ' ':
