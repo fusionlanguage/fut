@@ -218,7 +218,7 @@ public class CiLexer
 	static void AppendUtf16(StringBuilder sb, int c)
 	{
 		if (c >= 0x10000) {
-			sb.Append((char) (0xd800 + (c >> 10 & 0x3ff)));
+			sb.Append((char) (0xd800 + (c - 0x10000 >> 10 & 0x3ff)));
 			c = 0xdc00 + (c & 0x3ff);
 		}
 		sb.Append((char) c);
