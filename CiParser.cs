@@ -54,7 +54,7 @@ public class CiParser : CiLexer
 	{
 		StringBuilder sb = new StringBuilder();
 		while (DocSee(CiDocToken.Char)) {
-			sb.Append((char) this.DocCurrentChar);
+			AppendUtf16(sb, this.DocCurrentChar);
 			DocNextToken();
 		}
 		if (sb.Length > 0 && sb[sb.Length - 1] == '\n')
