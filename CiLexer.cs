@@ -168,20 +168,11 @@ public class CiLexer
 		NextToken();
 	}
 
-	protected CiException ParseException(string message)
-	{
-		return new CiException(this.Filename, this.Line, message);
-	}
+	protected CiException ParseException(string message) => new CiException(this.Filename, this.Line, message);
 
-	protected CiException ParseException(string format, params object[] args)
-	{
-		return ParseException(string.Format(format, args));
-	}
+	protected CiException ParseException(string format, params object[] args) => ParseException(string.Format(format, args));
 
-	protected int PeekChar()
-	{
-		return this.Reader.Peek();
-	}
+	protected int PeekChar() => this.Reader.Peek();
 
 	public static bool IsLetterOrDigit(int c)
 	{
@@ -809,10 +800,7 @@ public class CiLexer
 		return token;
 	}
 
-	protected bool See(CiToken token)
-	{
-		return this.CurrentToken == token;
-	}
+	protected bool See(CiToken token) => this.CurrentToken == token;
 
 	protected bool Eat(CiToken token)
 	{
@@ -888,10 +876,7 @@ public class CiLexer
 		this.DocCurrentToken = DocReadToken();
 	}
 
-	protected bool DocSee(CiDocToken token)
-	{
-		return this.DocCurrentToken == token;
-	}
+	protected bool DocSee(CiDocToken token) => this.DocCurrentToken == token;
 
 	protected bool DocEat(CiDocToken token)
 	{
