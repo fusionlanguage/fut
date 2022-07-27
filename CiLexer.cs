@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Text;
 
 namespace Foxoft.Ci
@@ -152,8 +151,7 @@ public class CiLexer
 	public int Line;
 	protected CiToken CurrentToken;
 	protected long LongValue; // for CiToken.LiteralLong, CiToken.LiteralChar
-	protected double DoubleValue; // for CiToken.LiteralDouble
-	protected string StringValue; // for CiToken.LiteralString, CiToken.InterpolatedString and CiToken.Id
+	protected string StringValue; // for CiToken.LiteralString, CiToken.InterpolatedString, CiToken.Id, CiToken.LiteralDouble
 	public readonly HashSet<string> PreSymbols = new HashSet<string>();
 	bool AtLineStart = true;
 	bool LineMode = false;
@@ -325,12 +323,9 @@ public class CiLexer
 			default:
 				if (needDigit
 				 || (c >= 'A' && c <= 'Z')
-				 || (c >= 'a' && c <= 'z')
-				 || !double.TryParse(sb.ToString(),
-					NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign,
-					CultureInfo.InvariantCulture, out double result))
+				 || (c >= 'a' && c <= 'z'))
 					throw ParseException("Invalid floating-point number");
-				this.DoubleValue = result;
+				this.StringValue = sb.ToString();
 				return CiToken.LiteralDouble;
 			}
 		}

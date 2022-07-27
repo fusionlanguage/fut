@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 
 namespace Foxoft.Ci
@@ -204,7 +205,10 @@ public class CiParser : CiLexer
 			NextToken();
 			break;
 		case CiToken.LiteralDouble:
-			result = new CiLiteralDouble(this.DoubleValue) { Line = this.Line };
+			if (!double.TryParse(this.StringValue, NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign,
+				CultureInfo.InvariantCulture, out double d))
+				throw ParseException("Invalid floating-point number");
+			result = new CiLiteralDouble(d) { Line = this.Line };
 			NextToken();
 			break;
 		case CiToken.LiteralChar:
