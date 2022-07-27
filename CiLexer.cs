@@ -146,6 +146,7 @@ public class CiLexer
 
 	byte[] Input;
 	int NextOffset;
+	int CharOffset;
 	int NextChar;
 	protected string Filename;
 	public int Line;
@@ -189,6 +190,7 @@ public class CiLexer
 
 	void FillNextChar()
 	{
+		this.CharOffset = NextOffset;
 		int b = ReadByte();
 		if (b >= 0x80) {
 			if (b < 0xc2 || b > 0xf4)
@@ -424,24 +426,20 @@ public class CiLexer
 		}
 	}
 
-	string ReadId(int c)
+	string ReadId(int offset, int c)
 	{
 		if (!IsLetterOrDigit(c))
 			throw ParseException("Invalid character");
-		StringBuilder sb = new StringBuilder();
-		for (;;) {
-			sb.Append((char) c);
-			if (!IsLetterOrDigit(PeekChar()))
-				break;
-			c = ReadChar();
-		}
-		return sb.ToString();
+		while (IsLetterOrDigit(PeekChar()))
+			ReadChar();
+		return Encoding.UTF8.GetString(this.Input, offset, this.CharOffset - offset);
 	}
 
 	CiToken ReadPreToken()
 	{
 		for (;;) {
 			bool atLineStart = this.AtLineStart;
+			int offset = this.CharOffset;
 			int c = ReadChar();
 			switch (c) {
 			case -1:
@@ -457,7 +455,8 @@ public class CiLexer
 			case '#':
 				if (!atLineStart)
 					return CiToken.Hash;
-				switch (ReadId(ReadChar())) {
+				offset = this.CharOffset;
+				switch (ReadId(offset, ReadChar())) {
 				case "if": return CiToken.PreIf;
 				case "elif": return CiToken.PreElIf;
 				case "else": return CiToken.PreElse;
@@ -596,7 +595,7 @@ public class CiLexer
 			case '9':
 				return ReadNumberLiteral(c - '0');
 			default:
-				string s = ReadId(c);
+				string s = ReadId(offset, c);
 				switch (s) {
 				case "abstract": return CiToken.Abstract;
 				case "assert": return CiToken.Assert;
