@@ -146,6 +146,7 @@ public class CiLexer
 	}
 
 	TextReader Reader;
+	int NextChar;
 	protected string Filename;
 	public int Line;
 	protected CiToken CurrentToken;
@@ -165,6 +166,7 @@ public class CiLexer
 		this.Filename = filename;
 		this.Reader = reader;
 		this.Line = 1;
+		this.NextChar = reader.Read();
 		NextToken();
 	}
 
@@ -172,7 +174,7 @@ public class CiLexer
 
 	protected CiException ParseException(string format, params object[] args) => ParseException(string.Format(format, args));
 
-	protected int PeekChar() => this.Reader.Peek();
+	protected int PeekChar() => this.NextChar;
 
 	public static bool IsLetterOrDigit(int c)
 	{
@@ -184,7 +186,7 @@ public class CiLexer
 
 	protected int ReadChar()
 	{
-		int c = this.Reader.Read();
+		int c = this.NextChar;
 		this.CopyTo?.Append((char) c);
 		switch (c) {
 		case '\t':
@@ -198,6 +200,7 @@ public class CiLexer
 			this.AtLineStart = false;
 			break;
 		}
+		this.NextChar = this.Reader.Read();
 		return c;
 	}
 
