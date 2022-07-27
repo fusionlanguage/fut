@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Text;
 
 namespace Foxoft.Ci
@@ -955,7 +954,7 @@ public class CiParser : CiLexer
 		return enu;
 	}
 
-	public void Parse(string filename, Stream input)
+	public void Parse(string filename, byte[] input)
 	{
 		Open(filename, input);
 		while (!See(CiToken.EndOfFile)) {

@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Text;
 
 namespace Foxoft.Ci
@@ -145,7 +144,8 @@ public class CiLexer
 		Else
 	}
 
-	Stream Input;
+	byte[] Input;
+	int NextOffset;
 	int NextChar;
 	protected string Filename;
 	public int Line;
@@ -161,10 +161,11 @@ public class CiLexer
 	protected bool ParsingTypeArg = false;
 	readonly Stack<PreDirectiveClass> PreStack = new Stack<PreDirectiveClass>();
 
-	protected void Open(string filename, Stream input)
+	protected void Open(string filename, byte[] input)
 	{
 		this.Filename = filename;
 		this.Input = input;
+		this.NextOffset = 0;
 		this.Line = 1;
 		FillNextChar();
 		if (this.NextChar == 0xfeff) // BOM
@@ -176,9 +177,11 @@ public class CiLexer
 
 	protected CiException ParseException(string format, params object[] args) => ParseException(string.Format(format, args));
 
+	int ReadByte() => this.NextOffset >= this.Input.Length ? -1 : this.Input[this.NextOffset++];
+
 	int ReadContinuationByte()
 	{
-		int b = this.Input.ReadByte();
+		int b = ReadByte();
 		if (b < 0x80 || b > 0xbf)
 			throw ParseException("Invalid UTF-8 encoding");
 		return b - 0x80;
@@ -186,7 +189,7 @@ public class CiLexer
 
 	void FillNextChar()
 	{
-		int b = this.Input.ReadByte();
+		int b = ReadByte();
 		if (b >= 0x80) {
 			if (b < 0xc2 || b > 0xf4)
 				throw ParseException("Invalid UTF-8 encoding");
