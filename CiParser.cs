@@ -205,7 +205,7 @@ public class CiParser : CiLexer
 			NextToken();
 			break;
 		case CiToken.LiteralDouble:
-			if (!double.TryParse(this.StringValue, NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign,
+			if (!double.TryParse(this.StringValue.Replace("_", ""), NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign,
 				CultureInfo.InvariantCulture, out double d))
 				throw ParseException("Invalid floating-point number");
 			result = new CiLiteralDouble(d) { Line = this.Line };

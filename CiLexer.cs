@@ -284,10 +284,8 @@ public class CiLexer
 		}
 	}
 
-	CiToken ReadFloatLiteral(long i)
+	CiToken ReadFloatLiteral(int offset)
 	{
-		StringBuilder sb = new StringBuilder();
-		sb.Append(i);
 		bool needDigit = false;
 		for (;;) {
 			int c = PeekChar();
@@ -303,17 +301,17 @@ public class CiLexer
 			case '8':
 			case '9':
 			case '.':
-				sb.Append((char) ReadChar());
+				ReadChar();
 				needDigit = false;
 				break;
 			case 'E':
 			case 'e':
 				if (needDigit)
 					throw ParseException("Invalid floating-point number");
-				sb.Append((char) ReadChar());
+				ReadChar();
 				c = PeekChar();
 				if (c == '+' || c == '-')
-					sb.Append((char) ReadChar());
+					ReadChar();
 				needDigit = true;
 				break;
 			case '_':
@@ -325,13 +323,13 @@ public class CiLexer
 				 || (c >= 'A' && c <= 'Z')
 				 || (c >= 'a' && c <= 'z'))
 					throw ParseException("Invalid floating-point number");
-				this.StringValue = sb.ToString();
+				this.StringValue = Encoding.UTF8.GetString(this.Input, offset, this.CharOffset - offset);
 				return CiToken.LiteralDouble;
 			}
 		}
 	}
 
-	CiToken ReadNumberLiteral(long i)
+	CiToken ReadNumberLiteral(int offset, long i)
 	{
 		bool needDigit = false;
 		for (;; ReadChar()) {
@@ -354,7 +352,7 @@ public class CiLexer
 			case 'E':
 				if (needDigit)
 					throw ParseException("Invalid floating-point number");
-				return ReadFloatLiteral(i);
+				return ReadFloatLiteral(offset);
 			case '_':
 				needDigit = true;
 				continue;
@@ -574,7 +572,7 @@ public class CiLexer
 					ReadChar();
 					return ReadIntegerLiteral(4);
 				default:
-					return ReadNumberLiteral(0);
+					return ReadNumberLiteral(offset, 0);
 				}
 			case '1':
 			case '2':
@@ -585,7 +583,7 @@ public class CiLexer
 			case '7':
 			case '8':
 			case '9':
-				return ReadNumberLiteral(c - '0');
+				return ReadNumberLiteral(offset, c - '0');
 			default:
 				string s = ReadId(offset, c);
 				switch (s) {
