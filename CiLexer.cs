@@ -278,8 +278,7 @@ public class CiLexer
 
 	CiToken ReadFloatLiteral()
 	{
-		bool needDigit = false;
-		for (;;) {
+		for (bool needDigit = false; ; ) {
 			int c = PeekChar();
 			switch (c) {
 			case '0':
@@ -309,7 +308,7 @@ public class CiLexer
 			case '_':
 				ReadChar();
 				needDigit = true;
-				continue;
+				break;
 			default:
 				if (needDigit
 				 || (c >= 'A' && c <= 'Z')
@@ -322,8 +321,7 @@ public class CiLexer
 
 	CiToken ReadNumberLiteral(long i)
 	{
-		bool needDigit = false;
-		for (;; ReadChar()) {
+		for (bool needDigit = false; ; ReadChar()) {
 			int c = PeekChar();
 			switch (c) {
 			case '0':
