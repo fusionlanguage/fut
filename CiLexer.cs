@@ -149,9 +149,10 @@ public class CiLexer
 	int NextChar;
 	protected string Filename;
 	public int Line;
+	int LexemeOffset;
 	protected CiToken CurrentToken;
 	protected long LongValue; // for CiToken.LiteralLong, CiToken.LiteralChar
-	protected string StringValue; // for CiToken.LiteralString, CiToken.InterpolatedString, CiToken.Id, CiToken.LiteralDouble
+	protected string StringValue; // for CiToken.LiteralString, CiToken.InterpolatedString, CiToken.Id
 	public readonly HashSet<string> PreSymbols = new HashSet<string>();
 	bool AtLineStart = true;
 	bool LineMode = false;
@@ -284,7 +285,7 @@ public class CiLexer
 		}
 	}
 
-	CiToken ReadFloatLiteral(int offset)
+	CiToken ReadFloatLiteral()
 	{
 		bool needDigit = false;
 		for (;;) {
@@ -323,13 +324,12 @@ public class CiLexer
 				 || (c >= 'A' && c <= 'Z')
 				 || (c >= 'a' && c <= 'z'))
 					throw ParseException("Invalid floating-point number");
-				this.StringValue = Encoding.UTF8.GetString(this.Input, offset, this.CharOffset - offset);
 				return CiToken.LiteralDouble;
 			}
 		}
 	}
 
-	CiToken ReadNumberLiteral(int offset, long i)
+	CiToken ReadNumberLiteral(long i)
 	{
 		bool needDigit = false;
 		for (;; ReadChar()) {
@@ -352,7 +352,7 @@ public class CiLexer
 			case 'E':
 				if (needDigit)
 					throw ParseException("Invalid floating-point number");
-				return ReadFloatLiteral(offset);
+				return ReadFloatLiteral();
 			case '_':
 				needDigit = true;
 				continue;
@@ -416,20 +416,22 @@ public class CiLexer
 		}
 	}
 
-	string ReadId(int offset, int c)
+	protected string GetLexeme() => Encoding.UTF8.GetString(this.Input, this.LexemeOffset, this.CharOffset - this.LexemeOffset);
+
+	string ReadId(int c)
 	{
 		if (!IsLetterOrDigit(c))
 			throw ParseException("Invalid character");
 		while (IsLetterOrDigit(PeekChar()))
 			ReadChar();
-		return Encoding.UTF8.GetString(this.Input, offset, this.CharOffset - offset);
+		return GetLexeme();
 	}
 
 	CiToken ReadPreToken()
 	{
 		for (;;) {
 			bool atLineStart = this.AtLineStart;
-			int offset = this.CharOffset;
+			this.LexemeOffset = this.CharOffset;
 			int c = ReadChar();
 			switch (c) {
 			case -1:
@@ -445,8 +447,8 @@ public class CiLexer
 			case '#':
 				if (!atLineStart)
 					return CiToken.Hash;
-				offset = this.CharOffset;
-				switch (ReadId(offset, ReadChar())) {
+				this.LexemeOffset = this.CharOffset;
+				switch (ReadId(ReadChar())) {
 				case "if": return CiToken.PreIf;
 				case "elif": return CiToken.PreElIf;
 				case "else": return CiToken.PreElse;
@@ -566,7 +568,7 @@ public class CiLexer
 					ReadChar();
 					return ReadIntegerLiteral(4);
 				default:
-					return ReadNumberLiteral(offset, 0);
+					return ReadNumberLiteral(0);
 				}
 			case '1':
 			case '2':
@@ -577,9 +579,9 @@ public class CiLexer
 			case '7':
 			case '8':
 			case '9':
-				return ReadNumberLiteral(offset, c - '0');
+				return ReadNumberLiteral(c - '0');
 			default:
-				string s = ReadId(offset, c);
+				string s = ReadId(c);
 				switch (s) {
 				case "abstract": return CiToken.Abstract;
 				case "assert": return CiToken.Assert;
