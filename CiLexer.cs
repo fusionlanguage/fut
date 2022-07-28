@@ -402,15 +402,13 @@ public class CiLexer
 				int endOffset = this.CharOffset;
 				ReadChar();
 				this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
-				if (interpolated)
-					this.StringValue = this.StringValue.Replace("{{", "{");
 				return CiToken.LiteralString;
 			}
 			if (interpolated && c == '{') {
 				int endOffset = this.CharOffset;
 				ReadChar();
 				if (PeekChar() != '{') {
-					this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset).Replace("{{", "{");
+					this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
 					return CiToken.InterpolatedString;
 				}
 			}

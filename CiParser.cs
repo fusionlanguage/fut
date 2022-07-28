@@ -159,7 +159,7 @@ public class CiParser : CiLexer
 		int line = this.Line;
 		List<CiInterpolatedPart> parts = new List<CiInterpolatedPart>();
 		do {
-			string prefix = this.StringValue;
+			string prefix = this.StringValue.Replace("{{", "{");
 			NextToken();
 			CiExpr arg = ParseExpr();
 			CiExpr width = null;
@@ -182,7 +182,7 @@ public class CiParser : CiLexer
 			parts.Add(new CiInterpolatedPart(prefix, arg) { WidthExpr = width, Format = format, Precision = precision });
 			Check(CiToken.RightBrace);
 		} while (ReadString(true) == CiToken.InterpolatedString);
-		string suffix = this.StringValue;
+		string suffix = this.StringValue.Replace("{{", "{");
 		NextToken();
 		return new CiInterpolatedString(parts.ToArray(), suffix) { Line = line };
 	}
