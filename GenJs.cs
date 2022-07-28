@@ -163,7 +163,7 @@ public class GenJs : GenBase
 			if (c == '`'
 			 || (c == '$' && i + 1 < s.Length && s[i + 1] == '{'))
 				Write('\\');
-			WriteEscapedChar(c);
+			Write(c);
 		}
 	}
 
@@ -381,10 +381,31 @@ public class GenJs : GenBase
 			pattern.Accept(this, CiPriority.Primary);
 		else if (pattern is CiLiteralString literal) {
 			Write('/');
+			bool escaped = false;
 			foreach (char c in literal.Value) {
-				if (c == '/')
+				switch (c) {
+				case '\\':
+					if (!escaped) {
+						escaped = true;
+						continue;
+					}
+					escaped = false;
+					break;
+				case '"':
+				case '\'':
+					escaped = false;
+					break;
+				case '/':
+					escaped = true;
+					break;
+				default:
+					break;
+				}
+				if (escaped) {
 					Write('\\');
-				WriteEscapedChar(c, false);
+					escaped = false;
+				}
+				Write(c);
 			}
 			Write('/');
 			WriteRegexOptions(args, "", "", "", "i", "m", "s");

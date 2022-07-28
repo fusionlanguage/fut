@@ -207,8 +207,7 @@ public abstract class GenCCpp : GenTyped
 	protected void WriteStringLiteralWithNewLine(string s)
 	{
 		Write('"');
-		foreach (char c in s)
-			WriteEscapedChar(c);
+		Write(s);
 		Write("\\n\"");
 	}
 

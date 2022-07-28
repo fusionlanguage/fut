@@ -413,8 +413,6 @@ public class CiResolver : CiVisitor
 		return expr;
 	}
 
-	static bool IsAscii(string s) => s.All(c => c <= 127);
-
 	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Left != null) {
@@ -460,9 +458,9 @@ public class CiResolver : CiVisitor
 					throw new NotImplementedException(scope.GetType().Name);
 				}
 				if (expr.Symbol == CiSystem.StringLength && left is CiLiteralString leftLiteral) {
-					string s = leftLiteral.Value;
-					if (IsAscii(s))
-						return expr.ToLiteralLong(s.Length);
+					int length = leftLiteral.GetAsciiLength();
+					if (length >= 0)
+						return expr.ToLiteralLong(length);
 				}
 			}
 			return new CiSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
@@ -702,11 +700,11 @@ public class CiResolver : CiVisitor
 				case CiStringType _:
 					type = CiSystem.CharType;
 					if (left is CiLiteralString stringLiteral && right is CiLiteralLong indexLiteral) {
-						string s = stringLiteral.Value;
-						if (IsAscii(s)) {
-							long i = indexLiteral.Value;
-							if (i >= 0 && i < s.Length)
-								return new CiLiteralChar(s[(int) i]) { Line = expr.Line };
+						long i = indexLiteral.Value;
+						if (i >= 0 && i <= int.MaxValue) {
+							int c = stringLiteral.GetAsciiAt((int) i);
+							if (c >= 0)
+								return new CiLiteralChar(c) { Line = expr.Line };
 						}
 					}
 					break;

@@ -79,9 +79,18 @@ public abstract class GenBase : CiVisitor
 	{
 		if (c < GetLiteralChars()) {
 			Write('\'');
-			if (c == '\'')
-				Write('\\');
-			WriteEscapedChar((char) c);
+			switch (c) {
+			case '\a': Write("\\a"); break;
+			case '\b': Write("\\b"); break;
+			case '\f': Write("\\f"); break;
+			case '\n': Write("\\n"); break;
+			case '\r': Write("\\r"); break;
+			case '\t': Write("\\t"); break;
+			case '\v': Write("\\v"); break;
+			case '\'': Write("\\'"); break;
+			case '\\': Write("\\\\"); break;
+			default: Write((char) c); break;
+			}
 			Write('\'');
 		}
 		else
@@ -411,27 +420,10 @@ public abstract class GenBase : CiVisitor
 		Write("true");
 	}
 
-	protected void WriteEscapedChar(char c, bool quoted = true)
-	{
-		switch (c) {
-		case '\a': Write("\\a"); break;
-		case '\b': Write("\\b"); break;
-		case '\f': Write("\\f"); break;
-		case '\n': Write("\\n"); break;
-		case '\r': Write("\\r"); break;
-		case '\t': Write("\\t"); break;
-		case '\v': Write("\\v"); break;
-		case '\\' when quoted: Write("\\\\"); break;
-		case '\"' when quoted: Write("\\\""); break;
-		default: Write(c); break;
-		}
-	}
-
 	public override void VisitLiteralString(string value)
 	{
 		Write('"');
-		foreach (char c in value)
-			WriteEscapedChar(c);
+		Write(value);
 		Write('"');
 	}
 
@@ -492,23 +484,12 @@ public abstract class GenBase : CiVisitor
 		WriteName(symbol);
 	}
 
-	protected void WriteEscapingBrace(string s)
+	protected void WriteDoubling(string s, char doubled)
 	{
 		foreach (char c in s) {
-			if (c == '{')
-				Write("{{");
-			else
-				WriteEscapedChar(c);
-		}
-	}
-
-	void WritePrintfLiteral(string s)
-	{
-		foreach (char c in s) {
-			if (c == '%')
-				Write("%%");
-			else
-				WriteEscapedChar(c);
+			if (c == doubled)
+				Write(c);
+			Write(c);
 		}
 	}
 
@@ -553,12 +534,12 @@ public abstract class GenBase : CiVisitor
 	{
 		Write('"');
 		foreach (CiInterpolatedPart part in expr.Parts) {
-			WritePrintfLiteral(part.Prefix);
+			WriteDoubling(part.Prefix, '%');
 			Write('%');
 			WritePrintfWidth(part);
 			Write(GetPrintfFormat(part.Argument.Type, part.Format));
 		}
-		WritePrintfLiteral(expr.Suffix);
+		WriteDoubling(expr.Suffix, '%');
 		if (newLine)
 			Write("\\n");
 		Write('"');

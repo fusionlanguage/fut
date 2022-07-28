@@ -412,6 +412,51 @@ public class CiLiteralString : CiLiteral
 		return this;
 	}
 	public override string ToString() => this.Value;
+	public int GetAsciiLength()
+	{
+		int length = 0;
+		bool escaped = false;
+		foreach (char c in this.Value) {
+			if (c > 127)
+				return -1;
+			if (!escaped && c == '\\')
+				escaped = true;
+			else {
+				length++;
+				escaped = false;
+			}
+		}
+		return length;
+	}
+	public int GetAsciiAt(int i)
+	{
+		bool escaped = false;
+		foreach (char c in this.Value) {
+			if (c > 127)
+				return -1;
+			if (!escaped && c == '\\')
+				escaped = true;
+			else if (i == 0)
+				return escaped ? CiLexer.GetEscapedChar(c) : c;
+			else {
+				i--;
+				escaped = false;
+			}
+		}
+		return -1;
+	}
+	public int GetOneAscii()
+	{
+		switch (this.Value.Length) {
+		case 1:
+			int c = this.Value[0];
+			return c > 127 ? -1 : c;
+		case 2:
+			return this.Value[0] != '\\' ? -1 : CiLexer.GetEscapedChar(this.Value[1]);
+		default:
+			return -1;
+		}
+	}
 }
 
 public class CiLiteralNull : CiLiteral

@@ -214,7 +214,7 @@ public class GenPy : GenPySwift
 	{
 		Write("f\"");
 		foreach (CiInterpolatedPart part in expr.Parts) {
-			WriteEscapingBrace(part.Prefix);
+			WriteDoubling(part.Prefix, '{');
 			Write('{');
 			part.Argument.Accept(this, CiPriority.Argument);
 			if (part.WidthExpr != null || part.Precision >= 0 || (part.Format != ' ' && part.Format != 'D'))
@@ -238,7 +238,7 @@ public class GenPy : GenPySwift
 				Write(part.Format);
 			Write('}');
 		}
-		WriteEscapingBrace(expr.Suffix);
+		WriteDoubling(expr.Suffix, '{');
 		Write('"');
 		return expr;
 	}

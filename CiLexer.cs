@@ -218,15 +218,6 @@ public class CiLexer
 		return c == '_';
 	}
 
-	protected static void AppendUtf16(StringBuilder sb, int c)
-	{
-		if (c >= 0x10000) {
-			sb.Append((char) (0xd800 + (c - 0x10000 >> 10 & 0x3ff)));
-			c = 0xdc00 + (c & 0x3ff);
-		}
-		sb.Append((char) c);
-	}
-
 	protected int ReadChar()
 	{
 		int c = this.NextChar;
@@ -373,16 +364,11 @@ public class CiLexer
 		}
 	}
 
-	int ReadCharLiteral()
+	public static int GetEscapedChar(int c)
 	{
-		int c = ReadChar();
-		if (c < 32)
-			throw ParseException("Invalid character in literal");
-		if (c != '\\')
-			return c;
-		switch (ReadChar()) {
-		case '\'': return '\'';
+		switch (c) {
 		case '"': return '"';
+		case '\'': return '\'';
 		case '\\': return '\\';
 		case 'a': return '\a';
 		case 'b': return '\b';
@@ -391,28 +377,44 @@ public class CiLexer
 		case 'r': return '\r';
 		case 't': return '\t';
 		case 'v': return '\v';
-		default: throw ParseException("Unknown escape sequence");
+		default: return -1;
 		}
+	}
+
+	int ReadCharLiteral()
+	{
+		int c = ReadChar();
+		if (c < 32)
+			throw ParseException("Invalid character in literal");
+		if (c != '\\')
+			return c;
+		c = GetEscapedChar(ReadChar());
+		if (c < 0)
+			throw ParseException("Unknown escape sequence");
+		return c;
 	}
 
 	protected CiToken ReadString(bool interpolated)
 	{
-		StringBuilder sb = new StringBuilder();
-		for (;;) {
+		for (int offset = this.CharOffset; ; ) {
 			int c = PeekChar();
 			if (c == '"') {
+				int endOffset = this.CharOffset;
 				ReadChar();
-				this.StringValue = sb.ToString();
+				this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
+				if (interpolated)
+					this.StringValue = this.StringValue.Replace("{{", "{");
 				return CiToken.LiteralString;
 			}
 			if (interpolated && c == '{') {
+				int endOffset = this.CharOffset;
 				ReadChar();
 				if (PeekChar() != '{') {
-					this.StringValue = sb.ToString();
+					this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset).Replace("{{", "{");
 					return CiToken.InterpolatedString;
 				}
 			}
-			AppendUtf16(sb, ReadCharLiteral());
+			ReadCharLiteral();
 		}
 	}
 

@@ -69,29 +69,14 @@ public abstract class GenTyped : GenBase
 		}
 	}
 
-	static bool IsAscii(long c)
-	{
-		if (c >= ' ' && c <= 0x7e)
-			return true;
-		switch (c) {
-		case '\a':
-		case '\b':
-		case '\f':
-		case '\n':
-		case '\r':
-		case '\t':
-		case '\v':
-			return true;
-		default:
-			return false;
-		}
-	}
-
 	protected bool IsOneAsciiString(CiExpr expr, out char c)
 	{
-		if (expr is CiLiteralString literal && literal.Value.Length == 1 && IsAscii(literal.Value[0])) {
-			c = literal.Value[0];
-			return true;
+		if (expr is CiLiteralString literal) {
+			int i = literal.GetOneAscii();
+			if (i >= 0) {
+				c = (char) i;
+				return true;
+			}
 		}
 		c = '\0';
 		return false;

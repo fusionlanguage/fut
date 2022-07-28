@@ -54,10 +54,10 @@ public class GenCpp : GenCCpp
 		Include("format");
 		Write("std::format(\"");
 		foreach (CiInterpolatedPart part in expr.Parts) {
-			WriteEscapingBrace(part.Prefix);
+			WriteDoubling(part.Prefix, '{');
 			Write("{}");
 		}
-		WriteEscapingBrace(expr.Suffix);
+		WriteDoubling(expr.Suffix, '{');
 		Write('"');
 		WriteArgs(expr);
 		Write(')');

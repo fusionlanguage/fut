@@ -315,12 +315,6 @@ public class GenSwift : GenPySwift
 		Write("nil");
 	}
 
-	void WriteInterpolatedLiteral(string s)
-	{
-		foreach (char c in s)
-			WriteEscapedChar(c);
-	}
-
 	static bool IsForeachStringStg(CiExpr expr)
 	{
 		if (!(expr is CiSymbolReference symbol) || !(symbol.Symbol.Parent is CiForeach loop))
@@ -357,12 +351,12 @@ public class GenSwift : GenPySwift
 		else {
 			Write('"');
 			foreach (CiInterpolatedPart part in expr.Parts) {
-				WriteInterpolatedLiteral(part.Prefix);
+				Write(part.Prefix);
 				Write("\\(");
 				WriteUnwrappedString(part.Argument, CiPriority.Argument, true);
 				Write(')');
 			}
-			WriteInterpolatedLiteral(expr.Suffix);
+			Write(expr.Suffix);
 			Write('"');
 		}
 		return expr;

@@ -305,7 +305,7 @@ public class GenCs : GenTyped
 	{
 		Write("$\"");
 		foreach (CiInterpolatedPart part in expr.Parts) {
-			WriteEscapingBrace(part.Prefix);
+			WriteDoubling(part.Prefix, '{');
 			Write('{');
 			part.Argument.Accept(this, CiPriority.Argument);
 			if (part.WidthExpr != null) {
@@ -320,7 +320,7 @@ public class GenCs : GenTyped
 			}
 			Write('}');
 		}
-		WriteEscapingBrace(expr.Suffix);
+		WriteDoubling(expr.Suffix, '{');
 		Write('"');
 		return expr;
 	}
