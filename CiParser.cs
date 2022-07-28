@@ -172,7 +172,7 @@ public class CiParser : CiLexer
 			}
 			parts.Add(new CiInterpolatedPart(prefix, arg) { WidthExpr = width, Format = format, Precision = precision });
 			Check(CiToken.RightBrace);
-		} while (ReadInterpolatedString() == CiToken.InterpolatedString);
+		} while (ReadString(true) == CiToken.InterpolatedString);
 		string suffix = this.StringValue;
 		NextToken();
 		return new CiInterpolatedString(parts.ToArray(), suffix) { Line = line };

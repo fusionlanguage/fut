@@ -395,7 +395,7 @@ public class CiLexer
 		}
 	}
 
-	protected CiToken ReadInterpolatedString()
+	protected CiToken ReadString(bool interpolated)
 	{
 		StringBuilder sb = new StringBuilder();
 		for (;;) {
@@ -405,7 +405,7 @@ public class CiLexer
 				this.StringValue = sb.ToString();
 				return CiToken.LiteralString;
 			}
-			if (c == '{') {
+			if (interpolated && c == '{') {
 				ReadChar();
 				if (PeekChar() != '{') {
 					this.StringValue = sb.ToString();
@@ -545,18 +545,12 @@ public class CiLexer
 				if (ReadChar() != '\'')
 					throw ParseException("Unterminated character literal");
 				return CiToken.LiteralChar;
-			case '"': {
-				StringBuilder sb = new StringBuilder();
-				while (PeekChar() != '"')
-					AppendUtf16(sb, ReadCharLiteral());
-				ReadChar();
-				this.StringValue = sb.ToString();
-				return CiToken.LiteralString;
-			}
+			case '"':
+				return ReadString(false);
 			case '$':
 				if (ReadChar() != '"')
 					throw ParseException("Expected interpolated string");
-				return ReadInterpolatedString();
+				return ReadString(true);
 			case '0':
 				switch (PeekChar()) {
 				case 'B':
