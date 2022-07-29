@@ -167,6 +167,13 @@ public class GenCl : GenC
 				WriteCall("CiString_StartsWith", obj, args[0]);
 			}
 		}
+		else if (method == CiSystem.StringSubstring && args.Length == 1) {
+			if (parent > CiPriority.Add)
+				Write('(');
+			WriteAdd(obj, args[0]);
+			if (parent > CiPriority.Add)
+				Write(')');
+		}
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			Write("for (size_t _i = 0; _i < ");
 			args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration

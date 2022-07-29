@@ -1409,9 +1409,7 @@ public class GenC : GenCCpp
 		else if (method == CiSystem.StringSubstring && args.Length == 1) {
 			if (parent > CiPriority.Add)
 				Write('(');
-			obj.Accept(this, CiPriority.Add);
-			Write(" + ");
-			args[0].Accept(this, CiPriority.Add);
+			WriteAdd(obj, args[0]);
 			if (parent > CiPriority.Add)
 				Write(')');
 		}

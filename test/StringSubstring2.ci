@@ -4,6 +4,9 @@ public class Test
 	{
 		string ptr = "barek";
 		int one = 1;
-		return ptr.Substring(one, 3) != "ARE";
+		string escaped = "hello\n";
+		return ptr.Substring(one, 3) != "ARE"
+			&& escaped.Substring(3, 3) == "lo\n"
+			&& escaped.Substring(3) == "lo\n";
 	}
 }
