@@ -146,20 +146,33 @@ public static class CiTo
 				inputFiles.Add(arg);
 			}
 		}
-		if (lang == null && outputFile != null) {
-			if (outputFile.EndsWith(".d.ts"))
-				lang = "d.ts";
-			else {
-				string ext = Path.GetExtension(outputFile);
-				if (ext.Length >= 2) // have an extension?
-					lang = ext.Substring(1); // skip the dot
-			}
-		}
-		if (lang == null || outputFile == null || inputFiles.Count == 0) {
+		if (outputFile == null || inputFiles.Count == 0) {
 			Usage();
 			return 1;
 		}
-		return Process(parser, inputFiles, referencedFiles, searchDirs, lang, namespace_, outputFile) ? 0 : 1;
+		if (lang != null)
+			return Process(parser, inputFiles, referencedFiles, searchDirs, lang, namespace_, outputFile) ? 0 : 1;
+		for (int i = outputFile.Length; --i >= 0; ) {
+			char c = outputFile[i];
+			if (c == '.') {
+				if (i >= 2
+				 && (outputFile[i - 2] == '.' || outputFile[i - 2] == ',')
+				 && string.CompareOrdinal(outputFile, i - 1, "d.ts", 0, 4) == 0
+				 && (i + 3 == outputFile.Length || outputFile[i + 3] == ','))
+					continue;
+				string outputBase = outputFile.Substring(0, i + 1);
+				foreach (string outputExt in outputFile.Substring(i + 1).Split(',')) {
+					if (!Process(parser, inputFiles, referencedFiles, searchDirs, outputExt, namespace_, outputBase + outputExt))
+						return 1;
+				}
+				return 0;
+			}
+			if (c == Path.DirectorySeparatorChar
+			 || c == Path.AltDirectorySeparatorChar
+			 || c == Path.VolumeSeparatorChar)
+				break;
+		}
+		throw new ArgumentException("Don't know what language to translate to: no extension in '{0}' and no '-l' option");
 	}
 }
 
