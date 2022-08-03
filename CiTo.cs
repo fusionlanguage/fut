@@ -62,6 +62,42 @@ public static class CiTo
 		return parser.Program;
 	}
 
+	static bool Process(CiParser parser, List<string> inputFiles, List<string> referencedFiles, List<string> searchDirs, string lang, string namespace_, string outputFile)
+	{
+		GenBase gen;
+		switch (lang) {
+		case "c": gen = new GenC(); break;
+		case "cpp": gen = new GenCpp(); break;
+		case "cs": gen = new GenCs(); break;
+		case "java": gen = new GenJava(); break;
+		case "js": gen = new GenJs(); break;
+		case "py": gen = new GenPy(); break;
+		case "swift": gen = new GenSwift(); break;
+		case "ts": gen = new GenTs().WithGenFullCode(); break;
+		case "d.ts": gen = new GenTs(); break;
+		case "cl": gen = new GenCl(); break;
+		default: throw new ArgumentException("Unknown language: " + lang);
+		}
+		gen.Namespace = namespace_;
+		gen.OutputFile = outputFile;
+
+		CiProgram program;
+		try {
+			CiScope parent = CiSystem.Value;
+			if (referencedFiles.Count > 0)
+				parent = ParseAndResolve(parser, parent, referencedFiles, searchDirs, lang);
+			program = ParseAndResolve(parser, parent, inputFiles, searchDirs, lang);
+		}
+		catch (CiException ex) {
+			Console.Error.WriteLine("{0}({1}): ERROR: {2}", ex.Filename, ex.Line, ex.Message);
+			return false;
+//			throw;
+		}
+
+		gen.Write(program);
+		return true;
+	}
+
 	public static int Main(string[] args)
 	{
 		CiParser parser = new CiParser();
@@ -123,38 +159,7 @@ public static class CiTo
 			Usage();
 			return 1;
 		}
-		GenBase gen;
-		switch (lang) {
-		case "c": gen = new GenC(); break;
-		case "cpp": gen = new GenCpp(); break;
-		case "cs": gen = new GenCs(); break;
-		case "java": gen = new GenJava(); break;
-		case "js": gen = new GenJs(); break;
-		case "py": gen = new GenPy(); break;
-		case "swift": gen = new GenSwift(); break;
-		case "ts": gen = new GenTs().WithGenFullCode(); break;
-		case "d.ts": gen = new GenTs(); break;
-		case "cl": gen = new GenCl(); break;
-		default: throw new ArgumentException("Unknown language: " + lang);
-		}
-		gen.Namespace = namespace_;
-		gen.OutputFile = outputFile;
-
-		CiProgram program;
-		try {
-			CiScope parent = CiSystem.Value;
-			if (referencedFiles.Count > 0)
-				parent = ParseAndResolve(parser, parent, referencedFiles, searchDirs, lang);
-			program = ParseAndResolve(parser, parent, inputFiles, searchDirs, lang);
-		}
-		catch (CiException ex) {
-			Console.Error.WriteLine("{0}({1}): ERROR: {2}", ex.Filename, ex.Line, ex.Message);
-			return 1;
-//			throw;
-		}
-
-		gen.Write(program);
-		return 0;
+		return Process(parser, inputFiles, referencedFiles, searchDirs, lang, namespace_, outputFile) ? 0 : 1;
 	}
 }
 
