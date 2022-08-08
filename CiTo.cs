@@ -58,6 +58,8 @@ public static class CiTo
 		parser.Program = new CiProgram { Parent = parent };
 		foreach (string file in files)
 			parser.Parse(file, File.ReadAllBytes(file));
+		if (parser.HasErrors)
+			return null;
 		new CiResolver(parser.Program, searchDirs, lang);
 		return parser.Program;
 	}
@@ -84,9 +86,14 @@ public static class CiTo
 		CiProgram program;
 		try {
 			CiScope parent = CiSystem.Value;
-			if (referencedFiles.Count > 0)
+			if (referencedFiles.Count > 0) {
 				parent = ParseAndResolve(parser, parent, referencedFiles, searchDirs, lang);
+				if (parent == null)
+					return false;
+			}
 			program = ParseAndResolve(parser, parent, inputFiles, searchDirs, lang);
+			if (program == null)
+				return false;
 		}
 		catch (CiException ex) {
 			Console.Error.WriteLine("{0}({1}): ERROR: {2}", ex.Filename, ex.Line, ex.Message);

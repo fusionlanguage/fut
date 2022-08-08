@@ -144,6 +144,7 @@ public class CiLexer
 	}
 
 	protected byte[] Input;
+	internal bool HasErrors = false;
 	int NextOffset;
 	protected int CharOffset;
 	int NextChar;
@@ -170,6 +171,12 @@ public class CiLexer
 		if (this.NextChar == 0xfeff) // BOM
 			FillNextChar();
 		NextToken();
+	}
+
+	void ReportError(string message)
+	{
+		Console.Error.WriteLine("{0}({1}): ERROR: {2}", this.Filename, this.Line, message);
+		HasErrors = true;
 	}
 
 	protected CiException ParseException(string message) => new CiException(this.Filename, this.Line, message);
@@ -248,6 +255,7 @@ public class CiLexer
 
 	CiToken ReadIntegerLiteral(int bits)
 	{
+		bool tooBig = false;
 		bool needDigit = true;
 		for (long i = 0;; ReadChar()) {
 			int c = PeekChar();
@@ -265,13 +273,16 @@ public class CiLexer
 				throw ParseException("Invalid integer");
 			else {
 				this.LongValue = i;
+				if (tooBig)
+					ReportError("Integer too big");
 				return CiToken.LiteralLong;
 			}
 			if (c >= 1 << bits)
 				throw ParseException("Invalid integer");
 			if (i >> (64 - bits) != 0)
-				throw ParseException("Integer too big");
-			i = (i << bits) + c;
+				tooBig = true;
+			else
+				i = (i << bits) + c;
 			needDigit = false;
 		}
 	}
@@ -321,6 +332,7 @@ public class CiLexer
 
 	CiToken ReadNumberLiteral(long i)
 	{
+		bool tooBig = false;
 		for (bool needDigit = false; ; ReadChar()) {
 			int c = PeekChar();
 			switch (c) {
@@ -351,13 +363,16 @@ public class CiLexer
 				 || (c >= 'a' && c <= 'z'))
 					throw ParseException("Invalid integer");
 				this.LongValue = i;
+				if (tooBig)
+					ReportError("Integer too big");
 				return CiToken.LiteralLong;
 			}
 			if (i == 0)
 				throw ParseException("Leading zeros are not permitted, octal numbers must begin with 0o");
 			if (i > (c < 8 ? 922337203685477580 : 922337203685477579))
-				throw ParseException("Integer too big");
-			i = 10 * i + c;
+				tooBig = true;
+			else
+				i = 10 * i + c;
 			needDigit = false;
 		}
 	}
