@@ -255,6 +255,7 @@ public class CiLexer
 
 	CiToken ReadIntegerLiteral(int bits)
 	{
+		bool invalidDigit = false;
 		bool tooBig = false;
 		bool needDigit = true;
 		for (long i = 0;; ReadChar()) {
@@ -269,17 +270,17 @@ public class CiLexer
 				needDigit = true;
 				continue;
 			}
-			else if (needDigit)
-				throw ParseException("Invalid integer");
 			else {
 				this.LongValue = i;
-				if (tooBig)
+				if (invalidDigit || needDigit)
+					ReportError("Invalid integer");
+				else if (tooBig)
 					ReportError("Integer too big");
 				return CiToken.LiteralLong;
 			}
 			if (c >= 1 << bits)
-				throw ParseException("Invalid integer");
-			if (i >> (64 - bits) != 0)
+				invalidDigit = true;
+			else if (i >> (64 - bits) != 0)
 				tooBig = true;
 			else
 				i = (i << bits) + c;
@@ -287,9 +288,10 @@ public class CiLexer
 		}
 	}
 
-	CiToken ReadFloatLiteral()
+	CiToken ReadFloatLiteral(bool needDigit)
 	{
-		for (bool needDigit = false; ; ) {
+		bool underscoreE = false;
+		for (;;) {
 			int c = PeekChar();
 			switch (c) {
 			case '0':
@@ -309,7 +311,7 @@ public class CiLexer
 			case 'E':
 			case 'e':
 				if (needDigit)
-					throw ParseException("Invalid floating-point number");
+					underscoreE = true;
 				ReadChar();
 				c = PeekChar();
 				if (c == '+' || c == '-')
@@ -321,7 +323,8 @@ public class CiLexer
 				needDigit = true;
 				break;
 			default:
-				if (needDigit
+				if (underscoreE
+				 || needDigit
 				 || (c >= 'A' && c <= 'Z')
 				 || (c >= 'a' && c <= 'z'))
 					throw ParseException("Invalid floating-point number");
@@ -332,6 +335,7 @@ public class CiLexer
 
 	CiToken ReadNumberLiteral(long i)
 	{
+		bool leadingZero = false;
 		bool tooBig = false;
 		for (bool needDigit = false; ; ReadChar()) {
 			int c = PeekChar();
@@ -351,24 +355,24 @@ public class CiLexer
 			case '.':
 			case 'e':
 			case 'E':
-				if (needDigit)
-					throw ParseException("Invalid floating-point number");
-				return ReadFloatLiteral();
+				return ReadFloatLiteral(needDigit);
 			case '_':
 				needDigit = true;
 				continue;
 			default:
+				this.LongValue = i;
+				if (leadingZero)
+					ReportError("Leading zeros are not permitted, octal numbers must begin with 0o");
 				if (needDigit
 				 || (c >= 'A' && c <= 'Z')
 				 || (c >= 'a' && c <= 'z'))
-					throw ParseException("Invalid integer");
-				this.LongValue = i;
-				if (tooBig)
+					ReportError("Invalid integer");
+				else if (tooBig)
 					ReportError("Integer too big");
 				return CiToken.LiteralLong;
 			}
 			if (i == 0)
-				throw ParseException("Leading zeros are not permitted, octal numbers must begin with 0o");
+				leadingZero = true;
 			if (i > (c < 8 ? 922337203685477580 : 922337203685477579))
 				tooBig = true;
 			else
