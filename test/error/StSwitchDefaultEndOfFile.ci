@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int x = 42;
+		switch (x) {
+		case 5:
+			break;
+		default: //ERROR: Expected RightBrace, got EndOfFile //ERROR: Expected RightBrace, got EndOfFile //ERROR: Expected RightBrace, got EndOfFile

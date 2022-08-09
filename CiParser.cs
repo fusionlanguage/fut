@@ -724,9 +724,11 @@ public class CiParser : CiLexer
 		if (Eat(CiToken.Default)) {
 			Expect(CiToken.Colon);
 			List<CiStatement> statements = new List<CiStatement>();
-			do
+			do {
+				if (See(CiToken.EndOfFile))
+					break;
 				statements.Add(ParseStatement());
-			while (!See(CiToken.RightBrace));
+			} while (!See(CiToken.RightBrace));
 			result.DefaultBody = statements.ToArray();
 		}
 
