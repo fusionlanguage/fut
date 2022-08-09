@@ -169,7 +169,7 @@ test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 	$(DO)javac -d $(@D) -cp test/bin/Basic $<
 
 test/bin/%/error.txt: test/error/%.ci cito.exe
-	$(DO)mkdir -p $(@D) && ! $(CITO) -o $(@:%.txt=%.cs) $< 2>$@ && perl -ne 'print "$$ARGV($$.): $$1\n" if m!//(ERROR: .+)!' $< | diff -u --strip-trailing-cr - $@ && echo PASSED >$@
+	$(DO)mkdir -p $(@D) && ! $(CITO) -o $(@:%.txt=%.cs) $< 2>$@ && perl -ne 'print "$$ARGV($$.): $$1\n" while m!//(ERROR: .+?)(?=$$| //)!g' $< | diff -u --strip-trailing-cr - $@ && echo PASSED >$@
 
 test-transpile: $(foreach t, $(patsubst test/%.ci, test/bin/%/Test., $(wildcard test/*.ci)), $tc $tcpp $tcs $tjava $tjs $tts $tpy $tswift $tcl)
 

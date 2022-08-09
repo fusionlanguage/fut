@@ -1,5 +1,5 @@
 public class Test
 {
-	public Test(int foo) { //ERROR: Expected RightParenthesis, got Id
+	public Test(int foo) { //ERROR: Expected RightParenthesis, got Id //ERROR: Constructor parameters not supported
 	}
 }

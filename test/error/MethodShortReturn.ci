@@ -1,4 +1,4 @@
 public static class Test
 {
-	public static bool Run() return true; //ERROR: Expected LeftBrace, got Return
+	public static bool Run() return true; //ERROR: Expected LeftBrace, got Return //ERROR: Invalid expression //ERROR: Expected Id, got Return //ERROR: Expected Semicolon, got True //ERROR: Semicolon in class definition
 }

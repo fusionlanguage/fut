@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		int x;
-		x = foo bar; //ERROR: Expected Semicolon, got Id
+		x = foo bar; //ERROR: Expected Semicolon, got Id //ERROR: Invalid expression
 		return true;
 	}
 }

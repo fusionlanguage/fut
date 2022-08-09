@@ -1,5 +1,0 @@
-public class Test
-{
-	public Tester() { //ERROR: Constructor name doesn't match class name
-	}
-}

@@ -1,1 +1,1 @@
-int x; //ERROR: Expected class or enum
+int x; //ERROR: Expected class or enum //ERROR: Expected class or enum //ERROR: Expected class or enum

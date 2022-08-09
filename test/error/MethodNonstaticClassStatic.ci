@@ -1,0 +1,7 @@
+public static class Test
+{
+	public bool Run() //ERROR: Only static methods allowed in a static class
+	{
+		return true;
+	}
+}

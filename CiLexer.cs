@@ -173,15 +173,13 @@ public class CiLexer
 		NextToken();
 	}
 
-	void ReportError(string message)
+	protected void ReportError(string message)
 	{
-		Console.Error.WriteLine("{0}({1}): ERROR: {2}", this.Filename, this.Line, message);
+		Console.Error.WriteLine($"{this.Filename}({this.Line}): ERROR: {message}");
 		HasErrors = true;
 	}
 
-	protected CiException ParseException(string message) => new CiException(this.Filename, this.Line, message);
-
-	protected CiException ParseException(string format, params object[] args) => ParseException(string.Format(format, args));
+	CiException ParseException(string message) => new CiException(this.Filename, this.Line, message);
 
 	int ReadByte() => this.NextOffset >= this.Input.Length ? -1 : this.Input[this.NextOffset++];
 
@@ -514,7 +512,7 @@ public class CiLexer
 					do {
 						c = ReadChar();
 						if (c < 0)
-							throw ParseException("Unterminated multi-line comment, started in line {0}", startLine);
+							throw ParseException($"Unterminated multi-line comment, started in line {startLine}");
 					} while (c != '*' || PeekChar() != '/');
 					ReadChar();
 					continue;
@@ -724,17 +722,17 @@ public class CiLexer
 		this.LineMode = true;
 		CiToken token = ReadPreToken();
 		if (token != CiToken.EndOfLine && token != CiToken.EndOfFile)
-			throw ParseException("Unexpected characters after {0}", directive);
+			throw ParseException($"Unexpected characters after {directive}");
 		this.LineMode = false;
 	}
 
 	void PopPreStack(string directive)
 	{
 		if (this.PreStack.Count == 0)
-			throw ParseException("{0} with no matching #if", directive);
+			throw ParseException($"{directive} with no matching #if");
 		PreDirectiveClass pdc = this.PreStack.Pop();
 		if (directive != "#endif" && pdc == PreDirectiveClass.Else)
-			throw ParseException("{0} after #else", directive);
+			throw ParseException($"{directive} after #else");
 	}
 
 	void SkipUntilPreMet()
@@ -852,16 +850,29 @@ public class CiLexer
 		return false;
 	}
 
-	protected void Check(CiToken expected)
+	protected bool Check(CiToken expected)
 	{
-		if (!See(expected))
-			throw ParseException("Expected {0}, got {1}", expected, this.CurrentToken);
+		if (See(expected))
+			return true;
+		ReportError($"Expected {expected}, got {this.CurrentToken}");
+		return false;
 	}
 
 	protected void Expect(CiToken expected)
 	{
 		Check(expected);
 		NextToken();
+	}
+
+	protected void ExpectOrSkip(CiToken expected)
+	{
+		if (Check(expected))
+			NextToken();
+		else {
+			do
+				NextToken();
+			while (!See(CiToken.EndOfFile) && !Eat(expected));
+		}
 	}
 
 	protected bool DocCheckPeriod;
@@ -931,7 +942,7 @@ public class CiLexer
 	protected void DocExpect(CiDocToken expected)
 	{
 		if (!DocSee(expected))
-			throw ParseException("Expected {0}, got {1}", expected, this.DocCurrentToken);
+			ReportError($"Expected {expected}, got {this.DocCurrentToken}");
 		DocNextToken();
 	}
 }
