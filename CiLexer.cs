@@ -179,19 +179,19 @@ public class CiLexer
 		HasErrors = true;
 	}
 
-	CiException ParseException(string message) => new CiException(this.Filename, this.Line, message);
-
 	int ReadByte() => this.NextOffset >= this.Input.Length ? -1 : this.Input[this.NextOffset++];
+
+	const int ReplacementChar = 0xfffd;
 
 	int ReadContinuationByte(int hi)
 	{
 		int b = ReadByte();
-		if (hi != 0xfffd) {
+		if (hi != ReplacementChar) {
 			if (b >= 0x80 && b <= 0xbf)
 				return (hi << 6) + b - 0x80;
 			ReportError("Invalid UTF-8");
 		}
-		return 0xfffd;
+		return ReplacementChar;
 	}
 
 	void FillNextChar()
@@ -201,7 +201,7 @@ public class CiLexer
 		if (b >= 0x80) {
 			if (b < 0xc2 || b > 0xf4) {
 				ReportError("Invalid UTF-8");
-				b = 0xfffd;
+				b = ReplacementChar;
 			}
 			else if (b < 0xe0)
 				b = ReadContinuationByte(b - 0xc0);
@@ -404,13 +404,17 @@ public class CiLexer
 	int ReadCharLiteral()
 	{
 		int c = ReadChar();
-		if (c < 32)
-			throw ParseException("Invalid character in literal");
+		if (c < 32) {
+			ReportError("Invalid character in literal");
+			return ReplacementChar;
+		}
 		if (c != '\\')
 			return c;
 		c = GetEscapedChar(ReadChar());
-		if (c < 0)
-			throw ParseException("Unknown escape sequence");
+		if (c < 0) {
+			ReportError("Unknown escape sequence");
+			return ReplacementChar;
+		}
 		return c;
 	}
 
@@ -440,8 +444,10 @@ public class CiLexer
 
 	string ReadId(int c)
 	{
-		if (!IsLetterOrDigit(c))
-			throw ParseException("Invalid character");
+		if (!IsLetterOrDigit(c)) {
+			ReportError("Invalid character");
+			return "";
+		}
 		while (IsLetterOrDigit(PeekChar()))
 			ReadChar();
 		return GetLexeme();
@@ -459,11 +465,11 @@ public class CiLexer
 			case '\t':
 			case '\r':
 			case ' ':
-				continue;
+				break;
 			case '\n':
 				if (this.LineMode)
 					return CiToken.EndOfLine;
-				continue;
+				break;
 			case '#':
 				if (!atLineStart)
 					return CiToken.Hash;
@@ -473,7 +479,9 @@ public class CiLexer
 				case "elif": return CiToken.PreElIf;
 				case "else": return CiToken.PreElse;
 				case "endif": return CiToken.PreEndIf;
-				default: throw ParseException("Unknown preprocessor directive");
+				default:
+					ReportError("Unknown preprocessor directive");
+					continue;
 				}
 			case ';': return CiToken.Semicolon;
 			case '.':
@@ -510,7 +518,7 @@ public class CiLexer
 					while (c != '\n' && c >= 0)
 						c = ReadChar();
 					if (c == '\n' && this.LineMode) return CiToken.EndOfLine;
-					continue;
+					break;
 				}
 				if (EatChar('*')) {
 					int startLine = this.Line;
@@ -522,7 +530,7 @@ public class CiLexer
 						}
 					} while (c != '*' || PeekChar() != '/');
 					ReadChar();
-					continue;
+					break;
 				}
 				if (EatChar('=')) return CiToken.DivAssign;
 				return CiToken.Slash;
@@ -564,10 +572,11 @@ public class CiLexer
 				return CiToken.Greater;
 			case '\'':
 				if (PeekChar() == '\'')
-					throw ParseException("Empty character literal");
-				this.LongValue = ReadCharLiteral();
-				if (ReadChar() != '\'')
-					throw ParseException("Unterminated character literal");
+					ReportError("Empty character literal");
+				else
+					this.LongValue = ReadCharLiteral();
+				if (!EatChar('\''))
+					ReportError("Unterminated character literal");
 				return CiToken.LiteralChar;
 			case '"':
 				return ReadString(false);
@@ -575,7 +584,7 @@ public class CiLexer
 				if (EatChar('"'))
 					return ReadString(true);
 				ReportError("Expected interpolated string");
-				continue;
+				break;
 			case '0':
 				switch (PeekChar()) {
 				case 'B':
@@ -606,6 +615,7 @@ public class CiLexer
 			default:
 				string s = ReadId(c);
 				switch (s) {
+				case "": continue; // invalid character
 				case "abstract": return CiToken.Abstract;
 				case "assert": return CiToken.Assert;
 				case "break": return CiToken.Break;
