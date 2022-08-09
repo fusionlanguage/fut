@@ -516,8 +516,10 @@ public class CiLexer
 					int startLine = this.Line;
 					do {
 						c = ReadChar();
-						if (c < 0)
-							throw ParseException($"Unterminated multi-line comment, started in line {startLine}");
+						if (c < 0) {
+							ReportError($"Unterminated multi-line comment, started in line {startLine}");
+							return CiToken.EndOfFile;
+						}
 					} while (c != '*' || PeekChar() != '/');
 					ReadChar();
 					continue;
@@ -681,7 +683,8 @@ public class CiLexer
 			return false;
 		if (EatPre(CiToken.True))
 			return true;
-		throw ParseException("Invalid preprocessor expression");
+		ReportError("Invalid preprocessor expression");
+		return false;
 	}
 
 	bool ParsePreEquality()
@@ -728,17 +731,20 @@ public class CiLexer
 		this.LineMode = true;
 		CiToken token = ReadPreToken();
 		if (token != CiToken.EndOfLine && token != CiToken.EndOfFile)
-			throw ParseException($"Unexpected characters after {directive}");
+			ReportError($"Unexpected characters after {directive}");
 		this.LineMode = false;
 	}
 
-	void PopPreStack(string directive)
+	bool PopPreStack(string directive)
 	{
-		if (this.PreStack.Count == 0)
-			throw ParseException($"{directive} with no matching #if");
+		if (this.PreStack.Count == 0) {
+			ReportError($"{directive} with no matching #if");
+			return false;
+		}
 		PreDirectiveClass pdc = this.PreStack.Pop();
 		if (directive != "#endif" && pdc == PreDirectiveClass.Else)
-			throw ParseException($"{directive} after #else");
+			ReportError($"{directive} after #else");
+		return true;
 	}
 
 	void SkipUntilPreMet()
@@ -748,7 +754,8 @@ public class CiLexer
 			// we are in a conditional that wasn't met yet
 			switch (ReadPreToken()) {
 			case CiToken.EndOfFile:
-				throw ParseException("Expected #endif, got end of file");
+				ReportError("Expected #endif, got end of file");
+				return;
 			case CiToken.PreIf:
 				ParsePreExpr();
 				SkipUntilPreEndIf(false);
@@ -776,19 +783,20 @@ public class CiLexer
 			// we are in a conditional that was met before
 			switch (ReadPreToken()) {
 			case CiToken.EndOfFile:
-				throw ParseException("Expected #endif, got end of file");
+				ReportError("Expected #endif, got end of file");
+				return;
 			case CiToken.PreIf:
 				ParsePreExpr();
 				SkipUntilPreEndIf(false);
 				break;
 			case CiToken.PreElIf:
 				if (wasElse)
-					throw ParseException("#elif after #else");
+					ReportError("#elif after #else");
 				ParsePreExpr();
 				break;
 			case CiToken.PreElse:
 				if (wasElse)
-					throw ParseException("#else after #else");
+					ReportError("#else after #else");
 				ExpectEndOfLine("#else");
 				wasElse = true;
 				break;
@@ -805,10 +813,11 @@ public class CiLexer
 			// we are in no conditionals or in all met
 			this.EnableDocComments = true;
 			CiToken token = ReadPreToken();
+			bool matched;
 			switch (token) {
 			case CiToken.EndOfFile:
 				if (this.PreStack.Count != 0)
-					throw ParseException("Expected #endif, got end of file");
+					ReportError("Expected #endif, got end of file");
 				return CiToken.EndOfFile;
 			case CiToken.PreIf:
 				if (ParsePreExpr())
@@ -817,16 +826,20 @@ public class CiLexer
 					SkipUntilPreMet();
 				break;
 			case CiToken.PreElIf:
-				PopPreStack("#elif");
+				matched = PopPreStack("#elif");
 				ParsePreExpr();
-				this.EnableDocComments = false;
-				SkipUntilPreEndIf(false);
+				if (matched) {
+					this.EnableDocComments = false;
+					SkipUntilPreEndIf(false);
+				}
 				break;
 			case CiToken.PreElse:
-				PopPreStack("#else");
+				matched = PopPreStack("#else");
 				ExpectEndOfLine("#else");
-				this.EnableDocComments = false;
-				SkipUntilPreEndIf(true);
+				if (matched) {
+					this.EnableDocComments = false;
+					SkipUntilPreEndIf(true);
+				}
 				break;
 			case CiToken.PreEndIf:
 				PopPreStack("#endif");
