@@ -137,7 +137,7 @@ public static class CiTo
 					string symbol = args[++i];
 					if (symbol == "true" || symbol == "false")
 						throw new ArgumentException(symbol + " is reserved");
-					parser.PreSymbols.Add(symbol);
+					parser.AddPreSymbol(symbol);
 					break;
 				case "-r":
 					referencedFiles.Add(args[++i]);

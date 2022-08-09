@@ -149,17 +149,22 @@ public class CiLexer
 	protected int CharOffset;
 	int NextChar;
 	protected string Filename;
-	public int Line;
+	protected int Line;
 	int LexemeOffset;
 	protected CiToken CurrentToken;
 	protected long LongValue; // for CiToken.LiteralLong, CiToken.LiteralChar
 	protected string StringValue; // for CiToken.LiteralString, CiToken.InterpolatedString, CiToken.Id
-	public readonly HashSet<string> PreSymbols = new HashSet<string>();
+	readonly HashSet<string> PreSymbols = new HashSet<string>();
 	bool AtLineStart = true;
 	bool LineMode = false;
 	bool EnableDocComments = true;
 	protected bool ParsingTypeArg = false;
 	readonly Stack<PreDirectiveClass> PreStack = new Stack<PreDirectiveClass>();
+
+	public void AddPreSymbol(string symbol)
+	{
+		this.PreSymbols.Add(symbol);
+	}
 
 	protected void Open(string filename, byte[] input)
 	{
