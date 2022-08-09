@@ -183,12 +183,15 @@ public class CiLexer
 
 	int ReadByte() => this.NextOffset >= this.Input.Length ? -1 : this.Input[this.NextOffset++];
 
-	int ReadContinuationByte()
+	int ReadContinuationByte(int hi)
 	{
 		int b = ReadByte();
-		if (b < 0x80 || b > 0xbf)
-			throw ParseException("Invalid UTF-8 encoding");
-		return b - 0x80;
+		if (hi != 0xfffd) {
+			if (b >= 0x80 && b <= 0xbf)
+				return (hi << 6) + b - 0x80;
+			ReportError("Invalid UTF-8");
+		}
+		return 0xfffd;
 	}
 
 	void FillNextChar()
@@ -196,18 +199,20 @@ public class CiLexer
 		this.CharOffset = NextOffset;
 		int b = ReadByte();
 		if (b >= 0x80) {
-			if (b < 0xc2 || b > 0xf4)
-				throw ParseException("Invalid UTF-8 encoding");
-			if (b < 0xe0)
-				b = (b - 0xc0 << 6) + ReadContinuationByte();
+			if (b < 0xc2 || b > 0xf4) {
+				ReportError("Invalid UTF-8");
+				b = 0xfffd;
+			}
+			else if (b < 0xe0)
+				b = ReadContinuationByte(b - 0xc0);
 			else if (b < 0xf0) {
-				b = (b - 0xe0 << 6) + ReadContinuationByte();
-				b = (b << 6) + ReadContinuationByte();
+				b = ReadContinuationByte(b - 0xe0);
+				b = ReadContinuationByte(b);
 			}
 			else {
-				b = (b - 0xf0 << 6) + ReadContinuationByte();
-				b = (b << 6) + ReadContinuationByte();
-				b = (b << 6) + ReadContinuationByte();
+				b = ReadContinuationByte(b - 0xf0);
+				b = ReadContinuationByte(b);
+				b = ReadContinuationByte(b);
 			}
 		}
 		this.NextChar = b;
