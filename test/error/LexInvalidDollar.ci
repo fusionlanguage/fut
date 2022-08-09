@@ -1,1 +1,7 @@
-$foo //ERROR: Expected interpolated string
+$public static class Test //ERROR: Expected interpolated string
+{
+	public static bool Run()
+	{
+		return true;
+	}
+}

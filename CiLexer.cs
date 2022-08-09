@@ -570,9 +570,10 @@ public class CiLexer
 			case '"':
 				return ReadString(false);
 			case '$':
-				if (ReadChar() != '"')
-					throw ParseException("Expected interpolated string");
-				return ReadString(true);
+				if (EatChar('"'))
+					return ReadString(true);
+				ReportError("Expected interpolated string");
+				continue;
 			case '0':
 				switch (PeekChar()) {
 				case 'B':
