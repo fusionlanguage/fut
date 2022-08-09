@@ -702,7 +702,7 @@ public class CiParser : CiLexer
 			CiCase kase = new CiCase { Values = values.ToArray() };
 
 			List<CiStatement> statements = new List<CiStatement>();
-			for (;;) {
+			while (!See(CiToken.EndOfFile)) {
 				statements.Add(ParseStatement());
 				switch (this.CurrentToken) {
 				case CiToken.Case:
