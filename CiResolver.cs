@@ -42,21 +42,16 @@ public class CiResolver : CiVisitor
 		return new CiException(this.CurrentScope.Container.Filename, statement.Line, message);
 	}
 
-	CiException StatementException(CiStatement statement, string format, params object[] args)
-	{
-		return StatementException(statement, string.Format(format, args));
-	}
-
 	void NotSupported(CiStatement statement, string feature, params string[] langs)
 	{
 		if (langs.Contains(this.Lang))
-			throw StatementException(statement, "{0} not supported when targeting {1}", feature, this.Lang);
+			throw StatementException(statement, $"{feature} not supported when targeting {this.Lang}");
 	}
 
 	void NotYet(CiStatement statement, string feature, params string[] langs)
 	{
 		if (langs.Contains(this.Lang))
-			throw StatementException(statement, "{0} not supported yet when targeting {1}", feature, this.Lang);
+			throw StatementException(statement, $"{feature} not supported yet when targeting {this.Lang}");
 	}
 
 	string FindFile(string name, CiStatement statement)
@@ -68,7 +63,7 @@ public class CiResolver : CiVisitor
 		}
 		if (File.Exists(name))
 			return name;
-		throw StatementException(statement, "File {0} not found", name);
+		throw StatementException(statement, $"File {name} not found");
 	}
 
 	void ResolveBase(CiClass klass)
@@ -77,13 +72,13 @@ public class CiResolver : CiVisitor
 		case CiVisitStatus.NotYet:
 			break;
 		case CiVisitStatus.InProgress:
-			throw new CiException(klass, "Circular inheritance for class {0}", klass.Name);
+			throw new CiException(klass, $"Circular inheritance for class {klass.Name}");
 		case CiVisitStatus.Done:
 			return;
 		}
 		if (klass.BaseClassName != null) {
 			if (!(Program.TryLookup(klass.BaseClassName) is CiClass baseClass))
-				throw new CiException(klass, "Base class {0} not found", klass.BaseClassName);
+				throw new CiException(klass, $"Base class {klass.BaseClassName} not found");
 			if (klass.IsPublic && !baseClass.IsPublic)
 				throw new CiException(klass, "Public class cannot derive from an internal class");
 			klass.Parent = baseClass;
@@ -107,9 +102,11 @@ public class CiResolver : CiVisitor
 	void Coerce(CiExpr expr, CiType type)
 	{
 		if (!type.IsAssignableFrom(expr.Type))
-			throw StatementException(expr, "Cannot coerce {0} to {1}", expr.Type, type);
-		if (expr is CiPrefixExpr prefix && prefix.Op == CiToken.New && !type.IsDynamicPtr)
-			throw StatementException(expr, "Dynamically allocated {0} must be assigned to a {1} reference", expr.Type is CiArrayType ? "array" : "object", expr.Type);
+			throw StatementException(expr, $"Cannot coerce {expr.Type} to {type}");
+		if (expr is CiPrefixExpr prefix && prefix.Op == CiToken.New && !type.IsDynamicPtr) {
+			string kind = expr.Type is CiArrayType ? "array" : "object";
+			throw StatementException(expr, $"Dynamically allocated {kind} must be assigned to a {expr.Type} reference");
+		}
 		if (type is CiArrayPtrType)
 			TakePtr(expr);
 	}
@@ -124,7 +121,7 @@ public class CiResolver : CiVisitor
 		ptr = right.Type.PtrOrSelf;
 		if (ptr.IsAssignableFrom(left.Type))
 			return ptr;
-		throw StatementException(left, "Incompatible types: {0} and {1}", left.Type, right.Type);
+		throw StatementException(left, $"Incompatible types: {left.Type} and {right.Type}");
 	}
 
 	CiType GetIntegerType(CiExpr left, CiExpr right)
@@ -255,7 +252,7 @@ public class CiResolver : CiVisitor
 			return true;
 		}
 		if (left.Type is CiEnum)
-			throw StatementException(left, "Define flags enumeration as: enum* {0}", left.Type);
+			throw StatementException(left, $"Define flags enumeration as: enum* {left.Type}");
 		return false;
 	}
 
@@ -400,7 +397,7 @@ public class CiResolver : CiVisitor
 		if (expr.Symbol == null) {
 			expr.Symbol = scope.TryLookup(expr.Name);
 			if (expr.Symbol == null)
-				throw StatementException(expr, "{0} not found", expr.Name);
+				throw StatementException(expr, $"{expr.Name} not found");
 			if (expr.Symbol == CiSystem.RegexClass)
 				NotSupported(expr, "Regex", "cl");
 			expr.Type = expr.Symbol.Type;
@@ -422,9 +419,9 @@ public class CiResolver : CiVisitor
 				if (this.CurrentMethod == null || !(this.CurrentMethod.Parent.Parent is CiClass baseClass))
 					throw StatementException(expr, "No base class");
 				if (!(baseClass.TryShallowLookup(expr.Name) is CiMethod baseMethod))
-					throw StatementException(expr, "base.{0} is not a method", expr.Name);
+					throw StatementException(expr, $"base.{expr.Name} is not a method");
 				if (baseMethod.Visibility == CiVisibility.Private)
-					throw StatementException(expr, "Cannot access private method {0}", expr.Name);
+					throw StatementException(expr, $"Cannot access private method {expr.Name}");
 				// TODO: static?
 				expr.Symbol = baseMethod;
 			}
@@ -442,11 +439,11 @@ public class CiResolver : CiVisitor
 					case CiVisibility.Private:
 						if (member.Parent != this.CurrentMethod.Parent
 						 || this.CurrentMethod.Parent != scope /* enforced by Java, but not C++/C#/TS */)
-							throw StatementException(expr, "Cannot access private member {0}", expr.Name);
+							throw StatementException(expr, $"Cannot access private member {expr.Name}");
 						break;
 					case CiVisibility.Protected:
 						if (!((CiClass) this.CurrentMethod.Parent).IsSameOrBaseOf((CiClass) scope) /* enforced by C++/C#/TS but not Java */)
-							throw StatementException(expr, "Cannot access protected member {0}", expr.Name);
+							throw StatementException(expr, $"Cannot access protected member {expr.Name}");
 						break;
 					default:
 						break;
@@ -471,7 +468,7 @@ public class CiResolver : CiVisitor
 		 && nearMember.Visibility == CiVisibility.Private
 		 && nearMember.Parent is CiClass memberClass // not local const
 		 && memberClass != (this.CurrentScope as CiClass ?? this.CurrentMethod.Parent))
-			throw StatementException(expr, "Cannot access private member {0}", expr.Name);
+			throw StatementException(expr, $"Cannot access private member {expr.Name}");
 		if (resolved is CiSymbolReference symbol
 		 && symbol.Symbol is CiVar v) {
 			if (v.Parent is CiFor loop)
@@ -665,7 +662,7 @@ public class CiResolver : CiVisitor
 				return expr.ToLiteralBool((expr.Op == CiToken.NotEqual) ^ (left.IntValue == right.IntValue));
 		}
 		if (!left.Type.IsAssignableFrom(right.Type) && !right.Type.IsAssignableFrom(left.Type))
-			throw StatementException(expr, "Cannot compare {0} with {1}", left.Type, right.Type);
+			throw StatementException(expr, $"Cannot compare {left.Type} with {right.Type}");
 		TakePtr(left);
 		TakePtr(right);
 		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = CiSystem.BoolType };
@@ -953,7 +950,7 @@ public class CiResolver : CiVisitor
 				if (!(def.Type is CiClassPtrType rightPtr))
 					throw StatementException(expr, "Right hand side of the 'is' operator must be an object reference definition");
 				if (!rightPtr.IsModifierAssignableFrom(leftPtr))
-					throw StatementException(expr, "{0} cannot be casted to {1}", leftPtr, rightPtr);
+					throw StatementException(expr, $"{leftPtr} cannot be casted to {rightPtr}");
 				NotSupported(expr, "'is' operator", "c", "cpp", "js", "py", "swift", "ts", "cl");
 				klass = rightPtr.Class;
 				break;
@@ -961,9 +958,9 @@ public class CiResolver : CiVisitor
 				throw StatementException(expr, "Right hand side of the 'is' operator must be a class name");
 			}
 			if (leftPtr.Class == klass)
-				throw StatementException(expr, "{0} is {1}, the 'is' operator would always return 'true'", left, leftPtr);
+				throw StatementException(expr, $"{left} is {leftPtr}, the 'is' operator would always return 'true'");
 			if (!leftPtr.Class.IsSameOrBaseOf(klass))
-				throw StatementException(expr, "{0} is not base class of {1}, the 'is' operator would always return 'false'", leftPtr, klass.Name);
+				throw StatementException(expr, $"{leftPtr} is not base class of {klass.Name}, the 'is' operator would always return 'false'");
 			expr.Left = left;
 			expr.Type = CiSystem.BoolType;
 			return expr;
@@ -1034,7 +1031,7 @@ public class CiResolver : CiVisitor
 
 		if (method.Throws) {
 			if (this.CurrentMethod == null)
-				throw StatementException(expr, "Cannot call method {0} here because it is marked 'throws'", method.Name);
+				throw StatementException(expr, $"Cannot call method {method.Name} here because it is marked 'throws'");
 			if (!this.CurrentMethod.Throws)
 				throw StatementException(expr, "Method marked 'throws' called from a method not marked 'throws'");
 		}
@@ -1224,9 +1221,9 @@ public class CiResolver : CiVisitor
 			CiVar value = statement.ValueVar;
 			ResolveType(value);
 			if (!element.Type.IsAssignableFrom(dict.KeyType))
-				throw StatementException(statement, "Cannot coerce {0} to {1}", dict.KeyType, element.Type);
+				throw StatementException(statement, $"Cannot coerce {dict.KeyType} to {element.Type}");
 			if (!value.Type.IsAssignableFrom(dict.ValueType))
-				throw StatementException(statement, "Cannot coerce {0} to {1}", dict.ValueType, value.Type);
+				throw StatementException(statement, $"Cannot coerce {dict.ValueType} to {value.Type}");
 		}
 		else {
 			switch (statement.Collection.Type) {
@@ -1241,7 +1238,7 @@ public class CiResolver : CiVisitor
 				throw StatementException(statement, "Expected one iterator variable");
 			CiType elementType = ((CiCollectionType) statement.Collection.Type).ElementType;
 			if (!element.Type.IsAssignableFrom(elementType))
-				throw StatementException(statement, "Cannot coerce {0} to {1}", elementType, element.Type);
+				throw StatementException(statement, $"Cannot coerce {elementType} to {element.Type}");
 		}
 		statement.SetCompletesNormally(true);
 		statement.Body.Accept(this);
@@ -1301,7 +1298,7 @@ public class CiResolver : CiVisitor
 		case CiStringType _:
 			break;
 		default:
-			throw StatementException(statement.Value, "Switch on type {0} - expected int, enum or string", statement.Value.Type);
+			throw StatementException(statement.Value, $"Switch on type {statement.Value.Type} - expected int, enum or string");
 		}
 		statement.SetCompletesNormally(false);
 		foreach (CiCase kase in statement.Cases) {
@@ -1385,7 +1382,7 @@ public class CiResolver : CiVisitor
 		switch (expr) {
 		case CiSymbolReference symbol:
 			if (symbol.Name == null)
-				throw StatementException(expr, "{0} reference not implemented yet", symbol.Symbol.Name);
+				throw StatementException(expr, $"{symbol.Symbol.Name} reference not implemented yet");
 			// built-in, MyEnum, MyClass, MyClass!, MyClass#
 			if (this.Program.TryLookup(symbol.Name) is CiType type) {
 				if (type is CiClass klass) {
@@ -1399,7 +1396,7 @@ public class CiResolver : CiVisitor
 				ExpectNoPtrModifier(expr, ptrModifier);
 				return type;
 			}
-			throw StatementException(expr, "Type {0} not found", symbol.Name);
+			throw StatementException(expr, $"Type {symbol.Name} not found");
 
 		case CiCallExpr call:
 			// string(), MyClass()
@@ -1443,7 +1440,7 @@ public class CiResolver : CiVisitor
 					return klass;
 				}
 			}
-			throw StatementException(expr, "Class {0} not found", call.Method.Name);
+			throw StatementException(expr, $"Class {call.Method.Name} not found");
 
 		default:
 			throw StatementException(expr, "Invalid type");
@@ -1516,7 +1513,7 @@ public class CiResolver : CiVisitor
 		case CiVisitStatus.NotYet:
 			break;
 		case CiVisitStatus.InProgress:
-			throw StatementException(konst, "Circular dependency in value of constant {0}", konst.Name);
+			throw StatementException(konst, $"Circular dependency in value of constant {konst.Name}");
 		case CiVisitStatus.Done:
 			return;
 		}
@@ -1526,13 +1523,13 @@ public class CiResolver : CiVisitor
 		konst.Value = Resolve(konst.Value);
 		if (konst.Value is CiAggregateInitializer coll) {
 			if (!(konst.Type is CiArrayType arrayType))
-				throw StatementException(konst, "Array initializer for scalar constant {0}", konst.Name);
+				throw StatementException(konst, $"Array initializer for scalar constant {konst.Name}");
 			foreach (CiExpr item in coll.Items)
 				Coerce(item, arrayType.ElementType);
 			if (!(arrayType is CiArrayStorageType storageType))
 				konst.Type = storageType = new CiArrayStorageType { ElementType = arrayType.ElementType, Length = coll.Items.Length };
 			else if (storageType.Length != coll.Items.Length)
-				throw StatementException(konst, "Declared {0} elements, initialized {1}", storageType.Length, coll.Items.Length);
+				throw StatementException(konst, $"Declared {storageType.Length} elements, initialized {coll.Items.Length}");
 			coll.Type = storageType;
 		}
 		else if (this.CurrentScope is CiEnum && konst.Value.Type is CiRangeType && konst.Value is CiLiteral) {
@@ -1540,7 +1537,7 @@ public class CiResolver : CiVisitor
 		else if (konst.Value is CiLiteral || konst.Value.IsConstEnum)
 			Coerce(konst.Value, konst.Type);
 		else
-			throw StatementException(konst.Value, "Value for constant {0} is not constant", konst.Name);
+			throw StatementException(konst.Value, $"Value for constant {konst.Name} is not constant");
 		konst.InMethod = this.CurrentMethod;
 		konst.VisitStatus = CiVisitStatus.Done;
 	}

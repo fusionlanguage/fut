@@ -1226,7 +1226,7 @@ public class GenCpp : GenCCpp
 		if (this.WrittenClasses.TryGetValue(klass, out bool done)) {
 			if (done)
 				return;
-			throw new CiException(klass, "Circular dependency for class {0}", klass.Name);
+			throw new CiException(klass, $"Circular dependency for class {klass.Name}");
 		}
 		this.WrittenClasses.Add(klass, false);
 		Write(klass.Parent as CiClass);
