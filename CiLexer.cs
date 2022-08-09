@@ -330,7 +330,7 @@ public class CiLexer
 				 || needDigit
 				 || (c >= 'A' && c <= 'Z')
 				 || (c >= 'a' && c <= 'z'))
-					throw ParseException("Invalid floating-point number");
+					ReportError("Invalid floating-point number");
 				return CiToken.LiteralDouble;
 			}
 		}

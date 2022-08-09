@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		float f = 0.0f; //ERROR: Invalid floating-point number
+		float f = 0.0f; //ERROR: Invalid floating-point number //ERROR: Expected Semicolon, got Id //ERROR: Invalid expression
 		return true;
 	}
 }
