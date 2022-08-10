@@ -135,6 +135,13 @@ public enum CiDocToken
 	Period
 }
 
+enum CiPreState
+{
+	NotYet,
+	Already,
+	AlreadyElse
+}
+
 public class CiLexer
 {
 	protected byte[] Input;
@@ -755,62 +762,43 @@ public class CiLexer
 		return true;
 	}
 
-	void SkipUntilPreMet()
+	void SkipUnmet(CiPreState state)
 	{
 		this.EnableDocComments = false;
 		for (;;) {
-			// we are in a conditional that wasn't met yet
+			// state == CiPreState.NotYet: we are in a conditional that wasn't met yet
+			// else: we are in a conditional that was met before
 			switch (ReadPreToken()) {
 			case CiToken.EndOfFile:
 				ReportError("Expected #endif, got end of file");
 				return;
 			case CiToken.PreIf:
 				ParsePreExpr();
-				SkipUntilPreEndIf(false);
+				SkipUnmet(CiPreState.Already);
 				break;
 			case CiToken.PreElIf:
-				if (ParsePreExpr()) {
+				if (state == CiPreState.AlreadyElse)
+					ReportError("#elif after #else");
+				if (ParsePreExpr() && state == CiPreState.NotYet) {
 					this.PreElseStack.Push(false);
 					return;
 				}
 				break;
 			case CiToken.PreElse:
-				ExpectEndOfLine("#else");
-				this.PreElseStack.Push(true);
-				return;
-			case CiToken.PreEndIf:
-				ExpectEndOfLine("#endif");
-				return;
-			}
-		}
-	}
-
-	void SkipUntilPreEndIf(bool wasElse)
-	{
-		for (;;) {
-			// we are in a conditional that was met before
-			switch (ReadPreToken()) {
-			case CiToken.EndOfFile:
-				ReportError("Expected #endif, got end of file");
-				return;
-			case CiToken.PreIf:
-				ParsePreExpr();
-				SkipUntilPreEndIf(false);
-				break;
-			case CiToken.PreElIf:
-				if (wasElse)
-					ReportError("#elif after #else");
-				ParsePreExpr();
-				break;
-			case CiToken.PreElse:
-				if (wasElse)
+				if (state == CiPreState.AlreadyElse)
 					ReportError("#else after #else");
 				ExpectEndOfLine("#else");
-				wasElse = true;
+				if (state == CiPreState.NotYet) {
+					this.PreElseStack.Push(true);
+					return;
+				}
+				state = CiPreState.AlreadyElse;
 				break;
 			case CiToken.PreEndIf:
 				ExpectEndOfLine("#endif");
 				return;
+			default:
+				break;
 			}
 		}
 	}
@@ -831,23 +819,19 @@ public class CiLexer
 				if (ParsePreExpr())
 					this.PreElseStack.Push(false);
 				else
-					SkipUntilPreMet();
+					SkipUnmet(CiPreState.NotYet);
 				break;
 			case CiToken.PreElIf:
 				matched = PopPreElse("#elif");
 				ParsePreExpr();
-				if (matched) {
-					this.EnableDocComments = false;
-					SkipUntilPreEndIf(false);
-				}
+				if (matched)
+					SkipUnmet(CiPreState.Already);
 				break;
 			case CiToken.PreElse:
 				matched = PopPreElse("#else");
 				ExpectEndOfLine("#else");
-				if (matched) {
-					this.EnableDocComments = false;
-					SkipUntilPreEndIf(true);
-				}
+				if (matched)
+					SkipUnmet(CiPreState.AlreadyElse);
 				break;
 			case CiToken.PreEndIf:
 				PopPreElse("#endif");
