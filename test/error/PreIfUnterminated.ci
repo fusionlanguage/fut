@@ -5,4 +5,4 @@ public static class Test
 #if true
 		return true;
 	}
-} //ERROR: Expected #endif, got end of file
+} //ERROR: Expected '#endif', got end-of-file

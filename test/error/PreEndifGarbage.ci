@@ -5,6 +5,6 @@ public static class Test
 #if false
 #else
 		return true;
-#endif foo //ERROR: Unexpected characters after #endif
+#endif foo //ERROR: Unexpected characters after '#endif'
 	}
 }

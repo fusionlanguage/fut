@@ -5,7 +5,7 @@ public static class Test
 #if true
 		return true;
 #else
-#elif true //ERROR: #elif after #else
+#elif true //ERROR: '#elif' after '#else'
 #endif
 	}
 }

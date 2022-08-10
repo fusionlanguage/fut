@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-#endif //ERROR: #endif with no matching #if
+#endif //ERROR: '#endif' with no matching '#if'
 		return true;
 	}
 }

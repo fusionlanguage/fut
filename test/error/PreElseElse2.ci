@@ -5,7 +5,7 @@ public static class Test
 #if true
 		return true;
 #else
-#else //ERROR: #else after #else
+#else //ERROR: '#else' after '#else'
 #endif
 	}
 }

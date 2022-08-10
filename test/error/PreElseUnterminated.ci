@@ -7,4 +7,4 @@ public static class Test
 	}
 }
 #else
-//ERROR: Expected #endif, got end of file
+//ERROR: Expected '#endif', got end-of-file

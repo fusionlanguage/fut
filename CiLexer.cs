@@ -747,18 +747,18 @@ public class CiLexer
 		this.LineMode = true;
 		CiToken token = ReadPreToken();
 		if (token != CiToken.EndOfLine && token != CiToken.EndOfFile)
-			ReportError($"Unexpected characters after {directive}");
+			ReportError($"Unexpected characters after '{directive}'");
 		this.LineMode = false;
 	}
 
 	bool PopPreElse(string directive)
 	{
 		if (this.PreElseStack.Count == 0) {
-			ReportError($"{directive} with no matching #if");
+			ReportError($"'{directive}' with no matching '#if'");
 			return false;
 		}
 		if (this.PreElseStack.Pop() && directive != "#endif")
-			ReportError($"{directive} after #else");
+			ReportError($"'{directive}' after '#else'");
 		return true;
 	}
 
@@ -770,7 +770,7 @@ public class CiLexer
 			// else: we are in a conditional that was met before
 			switch (ReadPreToken()) {
 			case CiToken.EndOfFile:
-				ReportError("Expected #endif, got end of file");
+				ReportError("Expected '#endif', got end-of-file");
 				return;
 			case CiToken.PreIf:
 				ParsePreExpr();
@@ -778,7 +778,7 @@ public class CiLexer
 				break;
 			case CiToken.PreElIf:
 				if (state == CiPreState.AlreadyElse)
-					ReportError("#elif after #else");
+					ReportError("'#elif' after '#else'");
 				if (ParsePreExpr() && state == CiPreState.NotYet) {
 					this.PreElseStack.Push(false);
 					return;
@@ -786,7 +786,7 @@ public class CiLexer
 				break;
 			case CiToken.PreElse:
 				if (state == CiPreState.AlreadyElse)
-					ReportError("#else after #else");
+					ReportError("'#else' after '#else'");
 				ExpectEndOfLine("#else");
 				if (state == CiPreState.NotYet) {
 					this.PreElseStack.Push(true);
@@ -813,7 +813,7 @@ public class CiLexer
 			switch (token) {
 			case CiToken.EndOfFile:
 				if (this.PreElseStack.Count != 0)
-					ReportError("Expected #endif, got end of file");
+					ReportError("Expected '#endif', got end-of-file");
 				return CiToken.EndOfFile;
 			case CiToken.PreIf:
 				if (ParsePreExpr())
