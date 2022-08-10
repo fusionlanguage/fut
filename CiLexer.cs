@@ -909,26 +909,19 @@ public class CiLexer
 		}
 	}
 
-	protected bool DocCheckPeriod;
+	bool DocCheckPeriod;
 	protected int DocCurrentChar;
 	CiDocToken DocCurrentToken;
 
-	int DocReadChar()
-	{
-		int c = ReadChar();
-		if (c == '\n') {
-			NextToken();
-			if (!See(CiToken.DocComment))
-				return -1;
-		}
-		return c;
-	}
-
 	CiDocToken DocReadToken()
 	{
-		int lastChar = this.DocCurrentChar;
-		for (;;) {
-			int c = DocReadChar();
+		for (int lastChar = this.DocCurrentChar; ;) {
+			int c = ReadChar();
+			if (c == '\n') {
+				NextToken();
+				if (!See(CiToken.DocComment))
+					return CiDocToken.EndOfFile;
+			}
 			this.DocCurrentChar = c;
 			switch (c) {
 			case -1:
@@ -937,7 +930,7 @@ public class CiLexer
 				return CiDocToken.CodeDelimiter;
 			case '*':
 				if (lastChar == '\n' && PeekChar() == ' ') {
-					DocReadChar();
+					ReadChar();
 					return CiDocToken.Bullet;
 				}
 				return CiDocToken.Char;
@@ -962,6 +955,13 @@ public class CiLexer
 		this.DocCurrentToken = DocReadToken();
 	}
 
+	protected void DocStartLexing()
+	{
+		this.DocCheckPeriod = true;
+		this.DocCurrentChar = '\n';
+		DocNextToken();
+	}
+
 	protected bool DocSee(CiDocToken token) => this.DocCurrentToken == token;
 
 	protected bool DocEat(CiDocToken token)
@@ -971,13 +971,6 @@ public class CiLexer
 			return true;
 		}
 		return false;
-	}
-
-	protected void DocExpect(CiDocToken expected)
-	{
-		if (!DocSee(expected))
-			ReportError($"Expected {expected}, got {this.DocCurrentToken}");
-		DocNextToken();
 	}
 }
 

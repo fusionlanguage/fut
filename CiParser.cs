@@ -79,7 +79,8 @@ public class CiParser : CiLexer
 				children.Add(new CiDocText { Text = DocParseText() });
 			else if (DocEat(CiDocToken.CodeDelimiter)) {
 				children.Add(new CiDocCode { Text = DocParseText() });
-				DocExpect(CiDocToken.CodeDelimiter);
+				if (!DocEat(CiDocToken.CodeDelimiter))
+					ReportError("Unterminated code in documentation comment");
 			}
 			else
 				break;
@@ -103,10 +104,7 @@ public class CiParser : CiLexer
 
 	CiCodeDoc ParseCodeDoc()
 	{
-		this.DocCheckPeriod = true;
-		this.DocCurrentChar = '\n';
-		this.DocNextToken();
-
+		DocStartLexing();
 		CiDocPara summary = DocParsePara();
 		List<CiDocBlock> details = new List<CiDocBlock>();
 		if (DocEat(CiDocToken.Period)) {
