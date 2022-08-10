@@ -1,5 +1,5 @@
 public class Test
 {
-	public static Test() { //ERROR: Constructor cannot be Static
+	public static Test() { //ERROR: Constructor cannot be static
 	}
 }

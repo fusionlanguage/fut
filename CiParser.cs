@@ -840,6 +840,17 @@ public class CiParser : CiLexer
 			method.Body = ParseBlock();
 	}
 
+	static readonly string[] CallTypeStrings = {
+		"static",
+		"normal",
+		"abstract",
+		"virtual",
+		"override",
+		"sealed"
+	};
+
+	static string ToString(CiCallType callType) => CallTypeStrings[(int) callType];
+
 	public CiClass ParseClass(CiCallType callType)
 	{
 		Expect(CiToken.Class);
@@ -897,7 +908,7 @@ public class CiParser : CiLexer
 					if (klass.CallType == CiCallType.Static)
 						ReportError("Constructor in a static class");
 					if (callType != CiCallType.Normal)
-						ReportError($"Constructor cannot be {callType}");
+						ReportError($"Constructor cannot be {ToString(callType)}");
 					if (call.Arguments.Length != 0)
 						ReportError("Constructor parameters not supported");
 					if (klass.Constructor != null)
@@ -946,7 +957,7 @@ public class CiParser : CiLexer
 			if (visibility == CiVisibility.Public)
 				ReportError("Field cannot be public");
 			if (callType != CiCallType.Normal)
-				ReportError($"Field cannot be {callType}");
+				ReportError($"Field cannot be {ToString(callType)}");
 			if (type == CiSystem.VoidType)
 				ReportError("Field cannot be void");
 			CiField field = new CiField { Line = line, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };

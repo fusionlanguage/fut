@@ -1,4 +1,4 @@
 public class Test
 {
-	static int Foo; //ERROR: Field cannot be Static
+	static int Foo; //ERROR: Field cannot be static
 }

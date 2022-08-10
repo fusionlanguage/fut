@@ -1,5 +1,5 @@
 public class Test
 {
-	public sealed Test() { //ERROR: Constructor cannot be Sealed
+	public sealed Test() { //ERROR: Constructor cannot be sealed
 	}
 }

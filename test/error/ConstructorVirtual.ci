@@ -1,5 +1,5 @@
 public class Test
 {
-	public virtual Test() { //ERROR: Constructor cannot be Virtual
+	public virtual Test() { //ERROR: Constructor cannot be virtual
 	}
 }
