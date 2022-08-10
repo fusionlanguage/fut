@@ -6,4 +6,4 @@ public static class Test
 		switch (x) {
 		case 5:
 			break;
-		default: //ERROR: Expected RightBrace, got EndOfFile //ERROR: Expected RightBrace, got EndOfFile //ERROR: Expected RightBrace, got EndOfFile
+		default: //ERROR: Expected '}', got end-of-file //ERROR: Expected '}', got end-of-file //ERROR: Expected '}', got end-of-file

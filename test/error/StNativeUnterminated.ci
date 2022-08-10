@@ -2,4 +2,4 @@ public static class Test
 {
 	public static bool Run()
 	{
-		native { //ERROR: Expected RightBrace, got EndOfFile //ERROR: Expected RightBrace, got EndOfFile //ERROR: Expected RightBrace, got EndOfFile
+		native { //ERROR: Expected '}', got end-of-file //ERROR: Expected '}', got end-of-file //ERROR: Expected '}', got end-of-file

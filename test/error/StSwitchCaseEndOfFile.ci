@@ -4,4 +4,4 @@ public static class Test
 	{
 		int x = 42;
 		switch (x) {
-		case 5: //ERROR: Expected RightBrace, got EndOfFile //ERROR: Expected RightBrace, got EndOfFile //ERROR: Expected RightBrace, got EndOfFile
+		case 5: //ERROR: Expected '}', got end-of-file //ERROR: Expected '}', got end-of-file //ERROR: Expected '}', got end-of-file

@@ -249,7 +249,7 @@ public class CiParser : CiLexer
 			 && Eat(CiToken.Greater))
 				result = new CiPrefixExpr { Line = this.Line, Op = CiToken.Resource, Inner = ParseParenthesized() };
 			else {
-				ReportError("Expected resource<byte[]>");
+				ReportError("Expected 'resource<byte[]>'");
 				result = null;
 			}
 			break;
