@@ -137,12 +137,6 @@ public enum CiDocToken
 
 public class CiLexer
 {
-	enum PreDirectiveClass
-	{
-		IfOrElIf,
-		Else
-	}
-
 	protected byte[] Input;
 	internal bool HasErrors = false;
 	int NextOffset;
@@ -159,7 +153,7 @@ public class CiLexer
 	bool LineMode = false;
 	bool EnableDocComments = true;
 	protected bool ParsingTypeArg = false;
-	readonly Stack<PreDirectiveClass> PreStack = new Stack<PreDirectiveClass>();
+	readonly Stack<bool> PreElseStack = new Stack<bool>();
 
 	public void AddPreSymbol(string symbol)
 	{
@@ -750,14 +744,13 @@ public class CiLexer
 		this.LineMode = false;
 	}
 
-	bool PopPreStack(string directive)
+	bool PopPreElse(string directive)
 	{
-		if (this.PreStack.Count == 0) {
+		if (this.PreElseStack.Count == 0) {
 			ReportError($"{directive} with no matching #if");
 			return false;
 		}
-		PreDirectiveClass pdc = this.PreStack.Pop();
-		if (directive != "#endif" && pdc == PreDirectiveClass.Else)
+		if (this.PreElseStack.Pop() && directive != "#endif")
 			ReportError($"{directive} after #else");
 		return true;
 	}
@@ -777,13 +770,13 @@ public class CiLexer
 				break;
 			case CiToken.PreElIf:
 				if (ParsePreExpr()) {
-					this.PreStack.Push(PreDirectiveClass.IfOrElIf);
+					this.PreElseStack.Push(false);
 					return;
 				}
 				break;
 			case CiToken.PreElse:
 				ExpectEndOfLine("#else");
-				this.PreStack.Push(PreDirectiveClass.Else);
+				this.PreElseStack.Push(true);
 				return;
 			case CiToken.PreEndIf:
 				ExpectEndOfLine("#endif");
@@ -831,17 +824,17 @@ public class CiLexer
 			bool matched;
 			switch (token) {
 			case CiToken.EndOfFile:
-				if (this.PreStack.Count != 0)
+				if (this.PreElseStack.Count != 0)
 					ReportError("Expected #endif, got end of file");
 				return CiToken.EndOfFile;
 			case CiToken.PreIf:
 				if (ParsePreExpr())
-					this.PreStack.Push(PreDirectiveClass.IfOrElIf);
+					this.PreElseStack.Push(false);
 				else
 					SkipUntilPreMet();
 				break;
 			case CiToken.PreElIf:
-				matched = PopPreStack("#elif");
+				matched = PopPreElse("#elif");
 				ParsePreExpr();
 				if (matched) {
 					this.EnableDocComments = false;
@@ -849,7 +842,7 @@ public class CiLexer
 				}
 				break;
 			case CiToken.PreElse:
-				matched = PopPreStack("#else");
+				matched = PopPreElse("#else");
 				ExpectEndOfLine("#else");
 				if (matched) {
 					this.EnableDocComments = false;
@@ -857,7 +850,7 @@ public class CiLexer
 				}
 				break;
 			case CiToken.PreEndIf:
-				PopPreStack("#endif");
+				PopPreElse("#endif");
 				ExpectEndOfLine("#endif");
 				break;
 			default:
