@@ -33,15 +33,7 @@ public class CiParser : CiLexer
 	CiCondCompletionStatement CurrentLoopOrSwitch;
 	string XcrementParent = null;
 
-	CiException StatementException(CiStatement statement, string message)
-	{
-		return new CiException(this.Filename, statement.Line, message);
-	}
-
-	CiException StatementException(CiStatement statement, string format, params object[] args)
-	{
-		return StatementException(statement, string.Format(format, args));
-	}
+	CiException StatementException(CiStatement statement, string message) => new CiException(this.Filename, statement.Line, message);
 
 	string ParseId()
 	{
@@ -432,7 +424,7 @@ public class CiParser : CiLexer
 		if (left is CiSymbolReference symbol && Eat(CiToken.Less)) {
 			CiSymbol klass = CiSystem.Value.TryLookup(symbol.Name);
 			if (klass == null)
-				throw StatementException(symbol, "{0} not found", symbol.Name);
+				throw StatementException(symbol, $"{symbol.Name} not found");
 			int line = this.Line;
 			bool saveTypeArg = this.ParsingTypeArg;
 			this.ParsingTypeArg = true;
@@ -440,11 +432,11 @@ public class CiParser : CiLexer
 			if (Eat(CiToken.Comma)) {
 				CiExpr valueType = ParseType();
 				if (klass != CiSystem.DictionaryClass && klass != CiSystem.SortedDictionaryClass)
-					throw StatementException(symbol, "{0} is not a generic class with two type parameters", symbol.Name);
+					throw StatementException(symbol, $"{symbol.Name} is not a generic class with two type parameters");
 				left = new CiSymbolReference { Line = line, Left = new CiAggregateInitializer { Items = new CiExpr[] { typeArg, valueType } }, Symbol = klass };
 			}
 			else if (klass != CiSystem.ListClass && klass != CiSystem.StackClass && klass != CiSystem.HashSetClass)
-				throw StatementException(symbol, "{0} is not a generic class with one type parameter", symbol.Name);
+				throw StatementException(symbol, $"{symbol.Name} is not a generic class with one type parameter");
 			else
 				left = new CiSymbolReference { Line = line, Left = typeArg, Symbol = klass };
 			Expect(CiToken.RightAngle);

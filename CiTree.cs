@@ -238,7 +238,7 @@ public abstract class CiScope : CiSymbol, IEnumerable<CiSymbol>
 				CiScope symbolScope = symbol as CiScope ?? this;
 				CiScope duplicateScope = duplicate as CiScope ?? scope;
 				throw new CiException(symbolScope.Container.Filename, symbol.Line,
-					string.Format("Duplicate symbol {0}, already defined in {1} line {2}", name, duplicateScope.Container.Filename, duplicate.Line));
+					$"Duplicate symbol {name}, already defined in {duplicateScope.Container.Filename} line {duplicate.Line}");
 			}
 		}
 		symbol.Parent = this;
