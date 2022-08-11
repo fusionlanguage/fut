@@ -133,7 +133,7 @@ public class CiParser : CiLexer
 	void CheckXcrementParent()
 	{
 		if (this.XcrementParent != null) {
-			string op = this.CurrentToken == CiToken.Increment ? "++" : "--";
+			string op = See(CiToken.Increment) ? "++" : "--";
 			ReportError($"{op} not allowed on the right side of {this.XcrementParent}");
 		}
 	}
@@ -629,7 +629,7 @@ public class CiParser : CiLexer
 	CiLock ParseLock()
 	{
 		CiLock result = new CiLock { Line = this.Line };
-		Expect(CiToken.Lock);
+		Expect(CiToken.Lock_);
 		result.Lock = ParseParenthesized();
 		result.Body = ParseStatement();
 		return result;
@@ -766,7 +766,7 @@ public class CiParser : CiLexer
 			return ParseForeach();
 		case CiToken.If:
 			return ParseIf();
-		case CiToken.Lock:
+		case CiToken.Lock_:
 			return ParseLock();
 		case CiToken.Native:
 			return ParseNative();
@@ -986,7 +986,7 @@ public class CiParser : CiLexer
 
 	public void Parse(string filename, byte[] input)
 	{
-		Open(filename, input);
+		Open(filename, input, input.Length);
 		while (!See(CiToken.EndOfFile)) {
 			CiCodeDoc doc = ParseDoc();
 			CiContainerType type;

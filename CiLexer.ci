@@ -1,4 +1,4 @@
-// CiLexer.cs - Ci lexer
+// CiLexer.ci - Ci lexer
 //
 // Copyright (C) 2011-2022  Piotr Fusik
 //
@@ -16,13 +16,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
-
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Foxoft.Ci
-{
 
 public enum CiToken
 {
@@ -100,7 +93,7 @@ public enum CiToken
 	In,
 	Internal,
 	Is,
-	Lock,
+	Lock_,
 	Native,
 	New,
 	Null,
@@ -145,32 +138,34 @@ enum CiPreState
 public class CiLexer
 {
 	protected byte[] Input;
+	int InputLength;
 	internal bool HasErrors = false;
 	int NextOffset;
 	protected int CharOffset;
 	int NextChar;
-	protected string Filename;
+	protected string() Filename;
 	protected int Line;
 	int LexemeOffset;
 	protected CiToken CurrentToken;
 	protected long LongValue; // for CiToken.LiteralLong, CiToken.LiteralChar
-	protected string StringValue; // for CiToken.LiteralString, CiToken.InterpolatedString, CiToken.Id
-	readonly HashSet<string> PreSymbols = new HashSet<string>();
+	protected string() StringValue; // for CiToken.LiteralString, CiToken.InterpolatedString, CiToken.Id
+	HashSet<string()>() PreSymbols;
 	bool AtLineStart = true;
 	bool LineMode = false;
 	bool EnableDocComments = true;
 	protected bool ParsingTypeArg = false;
-	readonly Stack<bool> PreElseStack = new Stack<bool>();
+	Stack<bool>() PreElseStack;
 
 	public void AddPreSymbol(string symbol)
 	{
 		this.PreSymbols.Add(symbol);
 	}
 
-	protected void Open(string filename, byte[] input)
+	protected void Open!(string filename, byte[] input, int inputLength)
 	{
 		this.Filename = filename;
 		this.Input = input;
+		this.InputLength = inputLength;
 		this.NextOffset = 0;
 		this.Line = 1;
 		FillNextChar();
@@ -179,17 +174,22 @@ public class CiLexer
 		NextToken();
 	}
 
-	protected void ReportError(string message)
+	protected void ReportError!(string message)
 	{
 		Console.Error.WriteLine($"{this.Filename}({this.Line}): ERROR: {message}");
-		HasErrors = true;
+		this.HasErrors = true;
 	}
 
-	int ReadByte() => this.NextOffset >= this.Input.Length ? -1 : this.Input[this.NextOffset++];
+	int ReadByte!()
+	{
+		if (this.NextOffset >= this.InputLength)
+			return -1;
+		return this.Input[this.NextOffset++];
+	}
 
 	const int ReplacementChar = 0xfffd;
 
-	int ReadContinuationByte(int hi)
+	int ReadContinuationByte!(int hi)
 	{
 		int b = ReadByte();
 		if (hi != ReplacementChar) {
@@ -200,7 +200,7 @@ public class CiLexer
 		return ReplacementChar;
 	}
 
-	void FillNextChar()
+	void FillNextChar!()
 	{
 		this.CharOffset = NextOffset;
 		int b = ReadByte();
@@ -234,7 +234,7 @@ public class CiLexer
 		return c == '_';
 	}
 
-	protected int ReadChar()
+	protected int ReadChar!()
 	{
 		int c = this.NextChar;
 		switch (c) {
@@ -253,7 +253,7 @@ public class CiLexer
 		return c;
 	}
 
-	bool EatChar(char c)
+	bool EatChar!(int c)
 	{
 		if (PeekChar() == c) {
 			ReadChar();
@@ -262,7 +262,7 @@ public class CiLexer
 		return false;
 	}
 
-	CiToken ReadIntegerLiteral(int bits)
+	CiToken ReadIntegerLiteral!(int bits)
 	{
 		bool invalidDigit = false;
 		bool tooBig = false;
@@ -297,7 +297,7 @@ public class CiLexer
 		}
 	}
 
-	CiToken ReadFloatLiteral(bool needDigit)
+	CiToken ReadFloatLiteral!(bool needDigit)
 	{
 		bool underscoreE = false;
 		for (;;) {
@@ -342,7 +342,7 @@ public class CiLexer
 		}
 	}
 
-	CiToken ReadNumberLiteral(long i)
+	CiToken ReadNumberLiteral!(long i)
 	{
 		bool leadingZero = false;
 		bool tooBig = false;
@@ -407,7 +407,7 @@ public class CiLexer
 		}
 	}
 
-	int ReadCharLiteral()
+	int ReadCharLiteral!()
 	{
 		int c = ReadChar();
 		if (c < 32) {
@@ -424,7 +424,7 @@ public class CiLexer
 		return c;
 	}
 
-	protected CiToken ReadString(bool interpolated)
+	protected CiToken ReadString!(bool interpolated)
 	{
 		for (int offset = this.CharOffset; ; ) {
 			int c = PeekChar();
@@ -446,20 +446,22 @@ public class CiLexer
 		}
 	}
 
-	protected string GetLexeme() => Encoding.UTF8.GetString(this.Input, this.LexemeOffset, this.CharOffset - this.LexemeOffset);
+	protected string() GetLexeme() => Encoding.UTF8.GetString(this.Input, this.LexemeOffset, this.CharOffset - this.LexemeOffset);
 
-	string ReadId(int c)
+	void ReadId!(int c)
 	{
-		if (!IsLetterOrDigit(c)) {
-			ReportError("Invalid character");
-			return "";
+		if (IsLetterOrDigit(c)) {
+			while (IsLetterOrDigit(PeekChar()))
+				ReadChar();
+			this.StringValue = GetLexeme();
 		}
-		while (IsLetterOrDigit(PeekChar()))
-			ReadChar();
-		return GetLexeme();
+		else {
+			ReportError("Invalid character");
+			this.StringValue = "";
+		}
 	}
 
-	CiToken ReadPreToken()
+	CiToken ReadPreToken!()
 	{
 		for (;;) {
 			bool atLineStart = this.AtLineStart;
@@ -480,7 +482,8 @@ public class CiLexer
 				if (!atLineStart)
 					return CiToken.Hash;
 				this.LexemeOffset = this.CharOffset;
-				switch (ReadId(ReadChar())) {
+				ReadId(ReadChar());
+				switch (this.StringValue) {
 				case "if": return CiToken.PreIf;
 				case "elif": return CiToken.PreElIf;
 				case "else": return CiToken.PreElse;
@@ -518,7 +521,8 @@ public class CiLexer
 				if (EatChar('/')) {
 					c = ReadChar();
 					if (c == '/' && this.EnableDocComments) {
-						while (EatChar(' '));
+						while (EatChar(' ')) {
+						}
 						return CiToken.DocComment;
 					}
 					while (c != '\n' && c >= 0)
@@ -619,8 +623,8 @@ public class CiLexer
 			case '9':
 				return ReadNumberLiteral(c - '0');
 			default:
-				string s = ReadId(c);
-				switch (s) {
+				ReadId(c);
+				switch (this.StringValue) {
 				case "": continue; // invalid character
 				case "abstract": return CiToken.Abstract;
 				case "assert": return CiToken.Assert;
@@ -640,7 +644,7 @@ public class CiLexer
 				case "in": return CiToken.In;
 				case "internal": return CiToken.Internal;
 				case "is": return CiToken.Is;
-				case "lock": return CiToken.Lock;
+				case "lock": return CiToken.Lock_;
 				case "native": return CiToken.Native;
 				case "new": return CiToken.New;
 				case "null": return CiToken.Null;
@@ -658,20 +662,132 @@ public class CiLexer
 				case "virtual": return CiToken.Virtual;
 				case "void": return CiToken.Void;
 				case "while": return CiToken.While;
-				default:
-					this.StringValue = s;
-					return CiToken.Id;
+				default: return CiToken.Id;
 				}
 			}
 		}
 	}
 
-	void NextPreToken()
+	void NextPreToken!()
 	{
 		this.CurrentToken = ReadPreToken();
 	}
 
-	bool EatPre(CiToken token)
+	protected bool See(CiToken token) => this.CurrentToken == token;
+
+	static string TokenToString(CiToken token)
+	{
+		switch (token) {
+		case CiToken.EndOfFile: return "end-of-file";
+		case CiToken.Id: return "identifier";
+		case CiToken.LiteralLong: return "integer constant";
+		case CiToken.LiteralDouble: return "floating-point constant";
+		case CiToken.LiteralChar: return "character constant";
+		case CiToken.LiteralString: return "string constant";
+		case CiToken.InterpolatedString: return "interpolated string";
+		case CiToken.Semicolon: return "';'";
+		case CiToken.Dot: return "'.'";
+		case CiToken.Comma: return "','";
+		case CiToken.LeftParenthesis: return "'('";
+		case CiToken.RightParenthesis: return "')'";
+		case CiToken.LeftBracket: return "'['";
+		case CiToken.RightBracket: return "']'";
+		case CiToken.LeftBrace: return "'{'";
+		case CiToken.RightBrace: return "'}'";
+		case CiToken.Plus: return "'+'";
+		case CiToken.Minus: return "'-'";
+		case CiToken.Asterisk: return "'*'";
+		case CiToken.Slash: return "'/'";
+		case CiToken.Mod: return "'%'";
+		case CiToken.And: return "'&'";
+		case CiToken.Or: return "'|'";
+		case CiToken.Xor: return "'^'";
+		case CiToken.Tilde: return "'~'";
+		case CiToken.ShiftLeft: return "'<<'";
+		case CiToken.ShiftRight: return "'>>'";
+		case CiToken.Equal: return "'=='";
+		case CiToken.NotEqual: return "'!='";
+		case CiToken.Less: return "'<'";
+		case CiToken.LessOrEqual: return "'<='";
+		case CiToken.Greater: return "'>'";
+		case CiToken.GreaterOrEqual: return "'>='";
+		case CiToken.RightAngle: return "'>'";
+		case CiToken.CondAnd: return "'&&'";
+		case CiToken.CondOr: return "'||'";
+		case CiToken.ExclamationMark: return "'!'";
+		case CiToken.Hash: return "'#'";
+		case CiToken.Assign: return "'='";
+		case CiToken.AddAssign: return "'+='";
+		case CiToken.SubAssign: return "'-='";
+		case CiToken.MulAssign: return "'*='";
+		case CiToken.DivAssign: return "'/='";
+		case CiToken.ModAssign: return "'%='";
+		case CiToken.AndAssign: return "'&='";
+		case CiToken.OrAssign: return "'|='";
+		case CiToken.XorAssign: return "'^='";
+		case CiToken.ShiftLeftAssign: return "'<<='";
+		case CiToken.ShiftRightAssign: return "'>>='";
+		case CiToken.Increment: return "'++'";
+		case CiToken.Decrement: return "'--'";
+		case CiToken.QuestionMark: return "'?'";
+		case CiToken.Colon: return "':'";
+		case CiToken.FatArrow: return "'=>'";
+		case CiToken.Range: return "'..'";
+		case CiToken.DocComment: return "'///'";
+		case CiToken.Abstract: return "'abstract'";
+		case CiToken.Assert: return "'assert'";
+		case CiToken.Break: return "'break'";
+		case CiToken.Case: return "'case'";
+		case CiToken.Class: return "'class'";
+		case CiToken.Const: return "'const'";
+		case CiToken.Continue: return "'continue'";
+		case CiToken.Default: return "'default'";
+		case CiToken.Do: return "'do'";
+		case CiToken.Else: return "'else'";
+		case CiToken.Enum: return "'enum'";
+		case CiToken.False: return "'false'";
+		case CiToken.For: return "'for'";
+		case CiToken.Foreach: return "'foreach'";
+		case CiToken.If: return "'if'";
+		case CiToken.In: return "'in'";
+		case CiToken.Internal: return "'internal'";
+		case CiToken.Is: return "'is'";
+		case CiToken.Lock_: return "'lock'";
+		case CiToken.Native: return "'native'";
+		case CiToken.New: return "'new'";
+		case CiToken.Null: return "'null'";
+		case CiToken.Override: return "'override'";
+		case CiToken.Protected: return "'protected'";
+		case CiToken.Public: return "'public'";
+		case CiToken.Resource: return "'resource'";
+		case CiToken.Return: return "'return'";
+		case CiToken.Sealed: return "'sealed'";
+		case CiToken.Static: return "'static'";
+		case CiToken.Switch: return "'switch'";
+		case CiToken.Throw: return "'throw'";
+		case CiToken.Throws: return "'throws'";
+		case CiToken.True: return "'true'";
+		case CiToken.Virtual: return "'virtual'";
+		case CiToken.Void: return "'void'";
+		case CiToken.While: return "'while'";
+		case CiToken.EndOfLine: return "end-of-line";
+		case CiToken.PreIf: return "'#if'";
+		case CiToken.PreElIf: return "'#elif'";
+		case CiToken.PreElse: return "'#else'";
+		case CiToken.PreEndIf: return "'#endif'";
+		default: assert false;
+		}
+	}
+
+	protected bool Check!(CiToken expected)
+	{
+		if (See(expected))
+			return true;
+		ReportError($"Expected {TokenToString(expected)}, got {TokenToString(this.CurrentToken)}");
+		return false;
+	}
+
+	bool EatPre!(CiToken token)
 	{
 		if (See(token)) {
 			NextPreToken();
@@ -680,7 +796,7 @@ public class CiLexer
 		return false;
 	}
 
-	bool ParsePrePrimary()
+	bool ParsePrePrimary!()
 	{
 		if (EatPre(CiToken.ExclamationMark))
 			return !ParsePrePrimary();
@@ -703,7 +819,7 @@ public class CiLexer
 		return false;
 	}
 
-	bool ParsePreEquality()
+	bool ParsePreEquality!()
 	{
 		bool result = ParsePrePrimary();
 		for (;;) {
@@ -716,7 +832,7 @@ public class CiLexer
 		}
 	}
 
-	bool ParsePreAnd()
+	bool ParsePreAnd!()
 	{
 		bool result = ParsePreEquality();
 		while (EatPre(CiToken.CondAnd))
@@ -724,7 +840,7 @@ public class CiLexer
 		return result;
 	}
 
-	bool ParsePreOr()
+	bool ParsePreOr!()
 	{
 		bool result = ParsePreAnd();
 		while (EatPre(CiToken.CondOr))
@@ -732,7 +848,7 @@ public class CiLexer
 		return result;
 	}
 
-	bool ParsePreExpr()
+	bool ParsePreExpr!()
 	{
 		this.LineMode = true;
 		NextPreToken();
@@ -742,7 +858,7 @@ public class CiLexer
 		return result;
 	}
 
-	void ExpectEndOfLine(string directive)
+	void ExpectEndOfLine!(string directive)
 	{
 		this.LineMode = true;
 		CiToken token = ReadPreToken();
@@ -751,7 +867,7 @@ public class CiLexer
 		this.LineMode = false;
 	}
 
-	bool PopPreElse(string directive)
+	bool PopPreElse!(string directive)
 	{
 		if (this.PreElseStack.Count == 0) {
 			ReportError($"'{directive}' with no matching '#if'");
@@ -762,7 +878,7 @@ public class CiLexer
 		return true;
 	}
 
-	void SkipUnmet(CiPreState state)
+	void SkipUnmet!(CiPreState state)
 	{
 		this.EnableDocComments = false;
 		for (;;) {
@@ -803,7 +919,7 @@ public class CiLexer
 		}
 	}
 
-	CiToken ReadToken()
+	CiToken ReadToken!()
 	{
 		for (;;) {
 			// we are in no conditionals or in all met
@@ -843,16 +959,14 @@ public class CiLexer
 		}
 	}
 
-	protected CiToken NextToken()
+	protected CiToken NextToken!()
 	{
 		CiToken token = this.CurrentToken;
 		this.CurrentToken = ReadToken();
 		return token;
 	}
 
-	protected bool See(CiToken token) => this.CurrentToken == token;
-
-	protected bool Eat(CiToken token)
+	protected bool Eat!(CiToken token)
 	{
 		if (See(token)) {
 			NextToken();
@@ -861,123 +975,13 @@ public class CiLexer
 		return false;
 	}
 
-	static readonly string[] TokenStrings = {
-		"end-of-file",
-		"identifier",
-		"integer constant",
-		"floating-point constant",
-		"character constant",
-		"string constant",
-		"interpolated string",
-		"';'",
-		"'.'",
-		"','",
-		"'('",
-		"')'",
-		"'['",
-		"']'",
-		"'{'",
-		"'}'",
-		"'+'",
-		"'-'",
-		"'*'",
-		"'/'",
-		"'%'",
-		"'&'",
-		"'|'",
-		"'^'",
-		"'~'",
-		"'<<'",
-		"'>>'",
-		"'=='",
-		"'!='",
-		"'<'",
-		"'<='",
-		"'>'",
-		"'>='",
-		"'>'",
-		"'&&'",
-		"'||'",
-		"'!'",
-		"'#'",
-		"'='",
-		"'+='",
-		"'-='",
-		"'*='",
-		"'/='",
-		"'%='",
-		"'&='",
-		"'|='",
-		"'^='",
-		"'<<='",
-		"'>>='",
-		"'++'",
-		"'--'",
-		"'?'",
-		"':'",
-		"'=>'",
-		"'..'",
-		"'///'",
-		"'abstract'",
-		"'assert'",
-		"'break'",
-		"'case'",
-		"'class'",
-		"'const'",
-		"'continue'",
-		"'default'",
-		"'do'",
-		"'else'",
-		"'enum'",
-		"'false'",
-		"'for'",
-		"'foreach'",
-		"'if'",
-		"'in'",
-		"'internal'",
-		"'is'",
-		"'lock'",
-		"'native'",
-		"'new'",
-		"'null'",
-		"'override'",
-		"'protected'",
-		"'public'",
-		"'resource'",
-		"'return'",
-		"'sealed'",
-		"'static'",
-		"'switch'",
-		"'throw'",
-		"'throws'",
-		"'true'",
-		"'virtual'",
-		"'void'",
-		"'while'",
-		"end-of-line",
-		"'#if'",
-		"'#elif'",
-		"'#else'",
-		"'#endif'"
-	};
-
-	static string ToString(CiToken token) => TokenStrings[(int) token];
-
-	protected bool Check(CiToken expected)
-	{
-		if (See(expected))
-			return true;
-		ReportError($"Expected {ToString(expected)}, got {ToString(this.CurrentToken)}");
-		return false;
-	}
-
-	protected void Expect(CiToken expected)
+	protected void Expect!(CiToken expected)
 	{
 		Check(expected);
 		NextToken();
 	}
 
-	protected void ExpectOrSkip(CiToken expected)
+	protected void ExpectOrSkip!(CiToken expected)
 	{
 		if (Check(expected))
 			NextToken();
@@ -992,7 +996,7 @@ public class CiLexer
 	protected int DocCurrentChar;
 	CiDocToken DocCurrentToken;
 
-	CiDocToken DocReadToken()
+	CiDocToken DocReadToken!()
 	{
 		for (int lastChar = this.DocCurrentChar; ;) {
 			int c = ReadChar();
@@ -1029,12 +1033,12 @@ public class CiLexer
 		}
 	}
 
-	protected void DocNextToken()
+	protected void DocNextToken!()
 	{
 		this.DocCurrentToken = DocReadToken();
 	}
 
-	protected void DocStartLexing()
+	protected void DocStartLexing!()
 	{
 		this.DocCheckPeriod = true;
 		this.DocCurrentChar = '\n';
@@ -1043,7 +1047,7 @@ public class CiLexer
 
 	protected bool DocSee(CiDocToken token) => this.DocCurrentToken == token;
 
-	protected bool DocEat(CiDocToken token)
+	protected bool DocEat!(CiDocToken token)
 	{
 		if (DocSee(token)) {
 			DocNextToken();
@@ -1051,6 +1055,4 @@ public class CiLexer
 		}
 		return false;
 	}
-}
-
 }
