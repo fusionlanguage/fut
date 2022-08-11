@@ -63,14 +63,13 @@ public class CiParser : CiLexer
 		return sb.ToString();
 	}
 
-	CiDocPara DocParsePara()
+	void DocParsePara(CiDocPara para)
 	{
-		List<CiDocInline> children = new List<CiDocInline>();
 		for (;;) {
 			if (DocSee(CiDocToken.Char))
-				children.Add(new CiDocText { Text = DocParseText() });
+				para.Children.Add(new CiDocText { Text = DocParseText() });
 			else if (DocEat(CiDocToken.CodeDelimiter)) {
-				children.Add(new CiDocCode { Text = DocParseText() });
+				para.Children.Add(new CiDocCode { Text = DocParseText() });
 				if (!DocEat(CiDocToken.CodeDelimiter))
 					ReportError("Unterminated code in documentation comment");
 			}
@@ -78,33 +77,36 @@ public class CiParser : CiLexer
 				break;
 		}
 		DocEat(CiDocToken.Para);
-		return new CiDocPara { Children = children.ToArray() };
 	}
 
 	CiDocBlock DocParseBlock()
 	{
 		if (DocEat(CiDocToken.Bullet)) {
-			List<CiDocPara> items = new List<CiDocPara>();
-			do
-				items.Add(DocParsePara());
-			while (DocEat(CiDocToken.Bullet));
+			CiDocList list = new CiDocList();
+			do {
+				CiDocPara item = new CiDocPara();
+				DocParsePara(item);
+				list.Items.Add(item);
+			} while (DocEat(CiDocToken.Bullet));
 			DocEat(CiDocToken.Para);
-			return new CiDocList { Items = items.ToArray() };
+			return list;
 		}
-		return DocParsePara();
+		CiDocPara para = new CiDocPara();
+		DocParsePara(para);
+		return para;
 	}
 
 	CiCodeDoc ParseCodeDoc()
 	{
 		DocStartLexing();
-		CiDocPara summary = DocParsePara();
-		List<CiDocBlock> details = new List<CiDocBlock>();
+		CiCodeDoc doc = new CiCodeDoc();
+		DocParsePara(doc.Summary);
 		if (DocEat(CiDocToken.Period)) {
 			DocEat(CiDocToken.Para);
 			while (!DocSee(CiDocToken.EndOfFile))
-				details.Add(DocParseBlock());
+				doc.Details.Add(DocParseBlock());
 		}
-		return new CiCodeDoc { Summary = summary, Details = details.ToArray() };
+		return doc;
 	}
 
 	CiCodeDoc ParseDoc() => See(CiToken.DocComment) ? ParseCodeDoc() : null;

@@ -85,9 +85,9 @@ public class GenCs : GenTyped
 		Write("/// <summary>");
 		Write(doc.Summary, false);
 		WriteLine("</summary>");
-		if (doc.Details.Length > 0) {
+		if (doc.Details.Count > 0) {
 			Write("/// <remarks>");
-			if (doc.Details.Length == 1)
+			if (doc.Details.Count == 1)
 				Write(doc.Details[0], false);
 			else {
 				foreach (CiDocBlock block in doc.Details)

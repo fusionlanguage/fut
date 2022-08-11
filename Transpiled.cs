@@ -123,6 +123,43 @@ namespace Foxoft.Ci
 		AlreadyElse
 	}
 
+	public enum CiVisibility
+	{
+		Private,
+		Internal,
+		Protected,
+		Public
+	}
+
+	public enum CiCallType
+	{
+		Static,
+		Normal,
+		Abstract,
+		Virtual,
+		Override,
+		Sealed
+	}
+
+	public enum CiPriority
+	{
+		Statement,
+		Argument,
+		Assign,
+		Select,
+		CondOr,
+		CondAnd,
+		Or,
+		Xor,
+		And,
+		Equality,
+		Rel,
+		Shift,
+		Add,
+		Mul,
+		Primary
+	}
+
 	public class CiLexer
 	{
 
@@ -1255,5 +1292,43 @@ namespace Foxoft.Ci
 			}
 			return false;
 		}
+	}
+
+	abstract class CiDocInline
+	{
+
+		internal string Text;
+	}
+
+	class CiDocText : CiDocInline
+	{
+	}
+
+	class CiDocCode : CiDocInline
+	{
+	}
+
+	public abstract class CiDocBlock
+	{
+	}
+
+	public class CiDocPara : CiDocBlock
+	{
+
+		internal readonly List<CiDocInline> Children = new List<CiDocInline>();
+	}
+
+	public class CiDocList : CiDocBlock
+	{
+
+		internal readonly List<CiDocPara> Items = new List<CiDocPara>();
+	}
+
+	public class CiCodeDoc
+	{
+
+		internal readonly CiDocPara Summary = new CiDocPara();
+
+		internal readonly List<CiDocBlock> Details = new List<CiDocBlock>();
 	}
 }

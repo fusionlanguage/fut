@@ -35,7 +35,7 @@ all: cito.exe
 cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs CiException.cs CiTree.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs GenPySwift.cs GenPy.cs GenSwift.cs GenTs.cs GenCl.cs CiTo.cs)
 	$(DO_BUILD)
 
-Transpiled.cs: CiLexer.ci
+Transpiled.cs: CiLexer.ci AST.ci
 	cito -o $@ -n Foxoft.Ci $^
 
 test: test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-cl test-error
@@ -75,7 +75,7 @@ test-GenCCpp.cs: test-c test-cpp
 
 test-GenPySwift.cs: test-py test-swift
 
-test-error test-CiLexer.cs test-CiParser.cs test-CiResolver.cs: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
+test-error test-CiLexer.ci test-CiParser.cs test-CiResolver.cs: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
 	$(DO_SUMMARY)
 
 test-%.ci: $(addsuffix .txt, $(addprefix test/bin/%/, c cpp cs java js ts py swift cl))

@@ -44,7 +44,7 @@ public class GenPy : GenPySwift
 	{
 		Write("\"\"\"");
 		Write(doc.Summary, false);
-		if (doc.Details.Length > 0) {
+		if (doc.Details.Count > 0) {
 			WriteLine();
 			foreach (CiDocBlock block in doc.Details) {
 				WriteLine();

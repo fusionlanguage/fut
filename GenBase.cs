@@ -253,9 +253,9 @@ public abstract class GenBase : CiVisitor
 		StartDocLine();
 		Write(doc.Summary, false);
 		WriteLine();
-		if (doc.Details.Length > 0) {
+		if (doc.Details.Count > 0) {
 			StartDocLine();
-			if (doc.Details.Length == 1)
+			if (doc.Details.Count == 1)
 				Write(doc.Details[0], false);
 			else {
 				foreach (CiDocBlock block in doc.Details)

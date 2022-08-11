@@ -1,4 +1,4 @@
-// CiTree.cs - Ci object model
+// CiTree.cs - Ci abstract syntax tree
 //
 // Copyright (C) 2011-2022  Piotr Fusik
 //
@@ -28,43 +28,6 @@ using System.Text;
 
 namespace Foxoft.Ci
 {
-
-public enum CiVisibility
-{
-	Private,
-	Internal,
-	Protected,
-	Public
-}
-
-public enum CiCallType
-{
-	Static,
-	Normal,
-	Abstract,
-	Virtual,
-	Override,
-	Sealed
-}
-
-public enum CiPriority
-{
-	Statement,
-	Argument,
-	Assign,
-	Select,
-	CondOr,
-	CondAnd,
-	Or,
-	Xor,
-	And,
-	Equality,
-	Rel,
-	Shift,
-	Add,
-	Mul,
-	Primary
-}
 
 public abstract class CiVisitor
 {
@@ -130,39 +93,6 @@ public class CiAggregateInitializer : CiExpr
 {
 	public CiExpr[] Items;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.Visit(this, parent);
-}
-
-public abstract class CiDocInline
-{
-	public string Text;
-}
-
-public class CiDocText : CiDocInline
-{
-}
-
-public class CiDocCode : CiDocInline
-{
-}
-
-public abstract class CiDocBlock
-{
-}
-
-public class CiDocPara : CiDocBlock
-{
-	public CiDocInline[] Children;
-}
-
-public class CiDocList : CiDocBlock
-{
-	public CiDocPara[] Items;
-}
-
-public class CiCodeDoc
-{
-	public CiDocPara Summary;
-	public CiDocBlock[] Details;
 }
 
 public class CiSymbol : CiExpr

@@ -1,0 +1,88 @@
+// AST.cs - Ci abstract syntax tree
+//
+// Copyright (C) 2011-2022  Piotr Fusik
+//
+// This file is part of CiTo, see https://github.com/pfusik/cito
+//
+// CiTo is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// CiTo is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with CiTo.  If not, see http://www.gnu.org/licenses/
+
+public enum CiVisibility
+{
+	Private,
+	Internal,
+	Protected,
+	Public
+}
+
+public enum CiCallType
+{
+	Static,
+	Normal,
+	Abstract,
+	Virtual,
+	Override,
+	Sealed
+}
+
+public enum CiPriority
+{
+	Statement,
+	Argument,
+	Assign,
+	Select,
+	CondOr,
+	CondAnd,
+	Or,
+	Xor,
+	And,
+	Equality,
+	Rel,
+	Shift,
+	Add,
+	Mul,
+	Primary
+}
+
+abstract class CiDocInline
+{
+	internal string() Text;
+}
+
+class CiDocText : CiDocInline
+{
+}
+
+class CiDocCode : CiDocInline
+{
+}
+
+public abstract class CiDocBlock
+{
+}
+
+public class CiDocPara : CiDocBlock
+{
+	internal List<CiDocInline#>() Children;
+}
+
+public class CiDocList : CiDocBlock
+{
+	internal List<CiDocPara()>() Items;
+}
+
+public class CiCodeDoc
+{
+	internal CiDocPara() Summary;
+	internal List<CiDocBlock#>() Details;
+}
