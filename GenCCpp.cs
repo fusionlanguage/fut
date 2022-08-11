@@ -80,7 +80,7 @@ public abstract class GenCCpp : GenTyped
 		}
 	}
 
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Left != null && expr.Left.IsReferenceTo(CiSystem.MathClass)) {
 			IncludeMath();
@@ -88,10 +88,9 @@ public abstract class GenCCpp : GenTyped
 				: expr.Symbol == CiSystem.MathNegativeInfinity ? "-INFINITY"
 				: expr.Symbol == CiSystem.MathPositiveInfinity ? "INFINITY"
 				: throw new NotImplementedException(expr.ToString()));
+			return expr;
 		}
-		else
-			return base.Visit(expr, parent);
-		return expr;
+		return base.VisitSymbolReference(expr, parent);
 	}
 
 	protected override void WriteVarInit(CiNamedValue def)
@@ -213,13 +212,13 @@ public abstract class GenCCpp : GenTyped
 
 	protected abstract void WriteConst(CiConst konst);
 
-	public override void Visit(CiConst konst)
+	public override void VisitConst(CiConst konst)
 	{
 		if (konst.Type is CiArrayType)
 			WriteConst(konst);
 	}
 
-	public override void Visit(CiAssert statement)
+	public override void VisitAssert(CiAssert statement)
 	{
 		IncludeAssert();
 		Write("assert(");
@@ -237,7 +236,7 @@ public abstract class GenCCpp : GenTyped
 		WriteLine(");");
 	}
 
-	public override void Visit(CiBreak statement)
+	public override void VisitBreak(CiBreak statement)
 	{
 		if (statement.LoopOrSwitch is CiSwitch switchStatement) {
 			int gotoId = this.StringSwitchesWithGoto.IndexOf(switchStatement);
@@ -248,7 +247,7 @@ public abstract class GenCCpp : GenTyped
 				return;
 			}
 		}
-		WriteLine("break;");
+		base.VisitBreak(statement);
 	}
 
 	void WriteIfCaseBody(CiStatement[] body, bool doWhile)
@@ -274,10 +273,10 @@ public abstract class GenCCpp : GenTyped
 		}
 	}
 
-	public override void Visit(CiSwitch statement)
+	public override void VisitSwitch(CiSwitch statement)
 	{
 		if (!(statement.Value.Type is CiStringType)) {
-			base.Visit(statement);
+			base.VisitSwitch(statement);
 			return;
 		}
 

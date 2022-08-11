@@ -341,7 +341,7 @@ public class GenSwift : GenPySwift
 			expr.Accept(this, parent);
 	}
 
-	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
+	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		if (expr.Parts.Any(part => part.WidthExpr != null || part.Format != ' ' || part.Precision >= 0)) {
 			Include("Foundation");
@@ -396,17 +396,16 @@ public class GenSwift : GenPySwift
 		Write(')');
 	}
 
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Left != null && expr.Left.IsReferenceTo(CiSystem.MathClass)) {
 			Write(expr.Symbol == CiSystem.MathNaN ? "Float.nan"
 				: expr.Symbol == CiSystem.MathNegativeInfinity ? "-Float.infinity"
 				: expr.Symbol == CiSystem.MathPositiveInfinity ? "Float.infinity"
 				: throw new NotImplementedException(expr.ToString()));
+			return expr;
 		}
-		else
-			return base.Visit(expr, parent);
-		return expr;
+		return base.VisitSymbolReference(expr, parent);
 	}
 
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
@@ -756,7 +755,7 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
+	public override CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
 	{
 		if (expr.Op == CiToken.Tilde && expr.Type is CiEnumFlags) {
 			Write(expr.Type.Name);
@@ -765,7 +764,7 @@ public class GenSwift : GenPySwift
 			Write(".rawValue)");
 			return expr;
 		}
-		return base.Visit(expr, parent);
+		return base.VisitPrefixExpr(expr, parent);
 	}
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
@@ -837,7 +836,7 @@ public class GenSwift : GenPySwift
 			WriteCall(expr.Left, method, expr.Right);
 	}
 
-	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
+	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Type is CiEnumFlags) {
 			switch (expr.Op) {
@@ -885,7 +884,7 @@ public class GenSwift : GenPySwift
 		case CiToken.XorAssign:
 			CiExpr right = expr.Right;
 			if (right is CiBinaryExpr rightBinary && rightBinary.IsAssign) {
-				Visit(rightBinary, CiPriority.Statement);
+				VisitBinaryExpr(rightBinary, CiPriority.Statement);
 				WriteLine();
 				right = rightBinary.Left; // TODO: side effect
 			}
@@ -902,7 +901,7 @@ public class GenSwift : GenPySwift
 				WriteCoerced(expr.Type, right, CiPriority.Argument);
 			return expr;
 		default:
-			return base.Visit(expr, parent);
+			return base.VisitBinaryExpr(expr, parent);
 		}
 	}
 
@@ -963,12 +962,12 @@ public class GenSwift : GenPySwift
 		base.WriteCoercedExpr(type, expr);
 	}
 
-	public override void Visit(CiExpr statement)
+	public override void VisitExpr(CiExpr statement)
 	{
 		if (statement is CiCallExpr call && statement.Type != CiSystem.VoidType
 			&& !(call.Method.Left != null && call.Method.Left.Type is CiDictionaryType && call.Method.Name == "Add"))
 			Write("_ = ");
-		base.Visit(statement);
+		base.VisitExpr(statement);
 	}
 
 	void InitVarsAtIndent()
@@ -1016,7 +1015,7 @@ public class GenSwift : GenPySwift
 		base.Write(statements);
 	}
 
-	public override void Visit(CiAssert statement)
+	public override void VisitAssert(CiAssert statement)
 	{
 		Write("assert(");
 		WriteExpr(statement.Cond, CiPriority.Argument);
@@ -1027,7 +1026,7 @@ public class GenSwift : GenPySwift
 		WriteLine(')');
 	}
 
-	public override void Visit(CiBreak statement)
+	public override void VisitBreak(CiBreak statement)
 	{
 		WriteLine("break");
 	}
@@ -1043,10 +1042,10 @@ public class GenSwift : GenPySwift
 		WriteLine("continue");
 	}
 
-	public override void Visit(CiDoWhile statement)
+	public override void VisitDoWhile(CiDoWhile statement)
 	{
 		if (VisitXcrement<CiPostfixExpr>(statement.Cond, false))
-			base.Visit(statement);
+			base.VisitDoWhile(statement);
 		else {
 			Write("repeat");
 			OpenChild();
@@ -1124,7 +1123,7 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	public override void Visit(CiForeach statement)
+	public override void VisitForeach(CiForeach statement)
 	{
 		Write("for ");
 		if (statement.Count == 2) {
@@ -1148,7 +1147,7 @@ public class GenSwift : GenPySwift
 		WriteChild(statement.Body);
 	}
 
-	public override void Visit(CiLock statement)
+	public override void VisitLock(CiLock statement)
 	{
 		statement.Lock.Accept(this, CiPriority.Primary);
 		WriteLine(".lock()");
@@ -1176,7 +1175,7 @@ public class GenSwift : GenPySwift
 		this.Indent--;
 	}
 
-	public override void Visit(CiSwitch statement)
+	public override void VisitSwitch(CiSwitch statement)
 	{
 		VisitXcrement<CiPrefixExpr>(statement.Value, true);
 		Write("switch ");
@@ -1198,7 +1197,7 @@ public class GenSwift : GenPySwift
 		WriteLine('}');
 	}
 
-	public override void Visit(CiThrow statement)
+	public override void VisitThrow(CiThrow statement)
 	{
 		this.Throw = true;
 		VisitXcrement<CiPrefixExpr>(statement.Message, true);

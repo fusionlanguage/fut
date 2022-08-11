@@ -122,7 +122,7 @@ public class GenJs : GenBase
 		return "Uint8";
 	}
 
-	public override CiExpr Visit(CiAggregateInitializer expr, CiPriority parent)
+	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
 	{
 		CiNumericType number = ((CiArrayStorageType) expr.Type).ElementType as CiNumericType;
 		if (number != null) {
@@ -135,7 +135,6 @@ public class GenJs : GenBase
 		Write(" ]");
 		if (number != null)
 			Write(')');
-		return expr;
 	}
 
 	protected override void WriteNewStorage(CiType type)
@@ -167,7 +166,7 @@ public class GenJs : GenBase
 		}
 	}
 
-	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
+	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		Write('`');
 		foreach (CiInterpolatedPart part in expr.Parts) {
@@ -297,7 +296,7 @@ public class GenJs : GenBase
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Symbol == CiSystem.CollectionCount) {
 			switch (expr.Left.Type) {
@@ -347,7 +346,7 @@ public class GenJs : GenBase
 				: throw new NotImplementedException(expr.ToString()));
 		}
 		else
-			return base.Visit(expr, parent);
+			return base.VisitSymbolReference(expr, parent);
 		return expr;
 	}
 
@@ -644,7 +643,7 @@ public class GenJs : GenBase
 
 	protected override string IsOperator => " instanceof ";
 
-	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
+	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Type is CiIntegerType) {
 			switch (expr.Op) {
@@ -674,10 +673,10 @@ public class GenJs : GenBase
 				break;
 			}
 		}
-		return base.Visit(expr, parent);
+		return base.VisitBinaryExpr(expr, parent);
 	}
 
-	public override void Visit(CiAssert statement)
+	public override void VisitAssert(CiAssert statement)
 	{
 		Write("console.assert(");
 		statement.Cond.Accept(this, CiPriority.Argument);
@@ -688,7 +687,7 @@ public class GenJs : GenBase
 		WriteLine(");");
 	}
 
-	public override void Visit(CiForeach statement)
+	public override void VisitForeach(CiForeach statement)
 	{
 		Write("for (const ");
 		if (statement.Count == 2) {
@@ -720,12 +719,12 @@ public class GenJs : GenBase
 		WriteChild(statement.Body);
 	}
 
-	public override void Visit(CiLock statement)
+	public override void VisitLock(CiLock statement)
 	{
 		throw new NotImplementedException();
 	}
 
-	public override void Visit(CiThrow statement)
+	public override void VisitThrow(CiThrow statement)
 	{
 		Write("throw ");
 		statement.Message.Accept(this, CiPriority.Argument);

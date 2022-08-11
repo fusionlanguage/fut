@@ -86,13 +86,12 @@ public abstract class GenPySwift : GenBase
 		WriteName(symbol);
 	}
 
-	public override CiExpr Visit(CiAggregateInitializer expr, CiPriority parent)
+	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
 	{
 		CiType type = ((CiArrayStorageType) expr.Type).ElementType;
 		Write("[ ");
 		WriteCoercedLiterals(type, expr.Items);
 		Write(" ]");
-		return expr;
 	}
 
 	protected override void WriteNew(CiClass klass, CiPriority parent)
@@ -101,7 +100,7 @@ public abstract class GenPySwift : GenBase
 		Write("()");
 	}
 
-	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
+	public override CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
 		case CiToken.Increment:
@@ -109,11 +108,11 @@ public abstract class GenPySwift : GenBase
 			expr.Inner.Accept(this, parent);
 			return expr;
 		default:
-			return base.Visit(expr, parent);
+			return base.VisitPrefixExpr(expr, parent);
 		}
 	}
 
-	public override CiExpr Visit(CiPostfixExpr expr, CiPriority parent)
+	public override CiExpr VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
 		case CiToken.Increment:
@@ -121,7 +120,7 @@ public abstract class GenPySwift : GenBase
 			expr.Inner.Accept(this, parent);
 			return expr;
 		default:
-			return base.Visit(expr, parent);
+			return base.VisitPostfixExpr(expr, parent);
 		}
 	}
 
@@ -197,7 +196,7 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
-	public override void Visit(CiExpr statement)
+	public override void VisitExpr(CiExpr statement)
 	{
 		VisitXcrement<CiPrefixExpr>(statement, true);
 		if (!(statement is CiUnaryExpr unary) || (unary.Op != CiToken.Increment && unary.Op != CiToken.Decrement)) {
@@ -218,7 +217,7 @@ public abstract class GenPySwift : GenBase
 		CloseChild();
 	}
 
-	public override void Visit(CiBlock statement)
+	public override void VisitBlock(CiBlock statement)
 	{
 		Write(statement.Statements);
 	}
@@ -254,7 +253,7 @@ public abstract class GenPySwift : GenBase
 			VisitXcrement<CiPrefixExpr>(loop.Cond, true);
 	}
 
-	public override void Visit(CiContinue statement)
+	public override void VisitContinue(CiContinue statement)
 	{
 		if (statement.Loop is CiDoWhile doWhile)
 			WriteContinueDoWhile(doWhile.Cond);
@@ -273,7 +272,7 @@ public abstract class GenPySwift : GenBase
 
 	protected abstract string GetIfNot();
 
-	public override void Visit(CiDoWhile statement)
+	public override void VisitDoWhile(CiDoWhile statement)
 	{
 		OpenWhileTrue();
 		statement.Body.Accept(this);
@@ -311,7 +310,7 @@ public abstract class GenPySwift : GenBase
 
 	protected abstract void WriteForRange(CiVar iter, CiBinaryExpr cond, long rangeStep);
 
-	public override void Visit(CiFor statement)
+	public override void VisitFor(CiFor statement)
 	{
 		if (statement.IsRange) {
 			CiVar iter = (CiVar) statement.Init;
@@ -336,7 +335,7 @@ public abstract class GenPySwift : GenBase
 
 	protected abstract void WriteElseIf();
 
-	public override void Visit(CiIf statement)
+	public override void VisitIf(CiIf statement)
 	{
 		bool condPostXcrement = OpenCond("if ", statement.Cond, CiPriority.Argument);
 		statement.OnTrue.Accept(this);
@@ -346,7 +345,7 @@ public abstract class GenPySwift : GenBase
 		else if (statement.OnFalse != null || condPostXcrement) {
 			if (!condPostXcrement && statement.OnFalse is CiIf childIf && !VisitXcrement<CiPrefixExpr>(childIf.Cond, false)) {
 				WriteElseIf();
-				Visit(childIf);
+				VisitIf(childIf);
 			}
 			else {
 				Write("else");
@@ -360,7 +359,7 @@ public abstract class GenPySwift : GenBase
 
 	protected abstract void WriteResultVar();
 
-	public override void Visit(CiReturn statement)
+	public override void VisitReturn(CiReturn statement)
 	{
 		if (statement.Value == null)
 			WriteLine("return");
@@ -382,7 +381,7 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
-	public override void Visit(CiWhile statement)
+	public override void VisitWhile(CiWhile statement)
 	{
 		OpenWhile(statement);
 		CloseWhile(statement);

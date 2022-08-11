@@ -107,7 +107,7 @@ public class GenC : GenCCpp
 			base.WriteInterpolatedStringArg(expr);
 	}
 
-	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
+	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		Include("stdarg.h");
 		Include("stdio.h");
@@ -276,7 +276,7 @@ public class GenC : GenCCpp
 			&& dict.ValueType is CiClass;
 	}
 
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Left == null || expr.Symbol is CiConst)
 			WriteLocalName(expr.Symbol, parent);
@@ -315,7 +315,7 @@ public class GenC : GenCCpp
 			WriteName(expr.Symbol);
 		}
 		else
-			return base.Visit(expr, parent);
+			return base.VisitSymbolReference(expr, parent);
 		return expr;
 	}
 
@@ -1747,7 +1747,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
+	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
 		case CiToken.Equal:
@@ -1769,7 +1769,7 @@ public class GenC : GenCCpp
 					CiInterpolatedPart[] parts = new CiInterpolatedPart[1 + rightInterpolated.Parts.Length];
 					parts[0] = new CiInterpolatedPart("", expr.Left); // TODO: side effect
 					rightInterpolated.Parts.CopyTo(parts, 1);
-					Visit(new CiInterpolatedString(parts, rightInterpolated.Suffix), CiPriority.Argument);
+					VisitInterpolatedString(new CiInterpolatedString(parts, rightInterpolated.Suffix), CiPriority.Argument);
 				}
 				else {
 					Include("string.h");
@@ -1786,8 +1786,7 @@ public class GenC : GenCCpp
 		default:
 			break;
 		}
-
-		return base.Visit(expr, parent);
+		return base.VisitBinaryExpr(expr, parent);
 	}
 
 	protected override void WriteResource(string name, int length)
@@ -1837,13 +1836,13 @@ public class GenC : GenCCpp
 		if (this.VarsToDestruct.Count > 0) {
 			Write(' ');
 			OpenBlock();
-			Visit((CiThrow) null);
+			VisitThrow(null);
 			CloseBlock();
 		}
 		else {
 			WriteLine();
 			this.Indent++;
-			Visit((CiThrow) null);
+			VisitThrow(null);
 			this.Indent--;
 		}
 	}
@@ -1928,7 +1927,7 @@ public class GenC : GenCCpp
 		this.VarsToDestruct.RemoveRange(i, this.VarsToDestruct.Count - i);
 	}
 
-	public override void Visit(CiBlock statement)
+	public override void VisitBlock(CiBlock statement)
 	{
 		OpenBlock();
 		int temporariesCount = this.CurrentTemporaries.Count;
@@ -1982,19 +1981,19 @@ public class GenC : GenCCpp
 			base.WriteChild(statement);
 	}
 
-	public override void Visit(CiBreak statement)
+	public override void VisitBreak(CiBreak statement)
 	{
 		WriteDestructLoopOrSwitch(statement.LoopOrSwitch);
-		base.Visit(statement);
+		base.VisitBreak(statement);
 	}
 
-	public override void Visit(CiContinue statement)
+	public override void VisitContinue(CiContinue statement)
 	{
 		WriteDestructLoopOrSwitch(statement.Loop);
-		base.Visit(statement);
+		base.VisitContinue(statement);
 	}
 
-	public override void Visit(CiExpr statement)
+	public override void VisitExpr(CiExpr statement)
 	{
 		WriteTemporaries(statement);
 		CiMethod throwingMethod = GetThrowingMethod(statement);
@@ -2012,7 +2011,7 @@ public class GenC : GenCCpp
 			WriteLine(");");
 		}
 		else
-			base.Visit(statement);
+			base.VisitExpr(statement);
 		CleanupTemporaries();
 	}
 
@@ -2043,7 +2042,7 @@ public class GenC : GenCCpp
 		WriteLine(';');
 	}
 
-	public override void Visit(CiForeach statement)
+	public override void VisitForeach(CiForeach statement)
 	{
 		string element = statement.Element.Name;
 		switch (statement.Collection.Type) {
@@ -2121,7 +2120,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	public override void Visit(CiLock statement)
+	public override void VisitLock(CiLock statement)
 	{
 		Write("mtx_lock(&");
 		statement.Lock.Accept(this, CiPriority.Primary);
@@ -2133,7 +2132,7 @@ public class GenC : GenCCpp
 		WriteLine(");");
 	}
 
-	public override void Visit(CiReturn statement)
+	public override void VisitReturn(CiReturn statement)
 	{
 		if (statement.Value == null) {
 			WriteDestructAll();
@@ -2142,7 +2141,7 @@ public class GenC : GenCCpp
 		else if (this.VarsToDestruct.Count == 0 || statement.Value is CiLiteral) {
 			WriteDestructAll();
 			WriteTemporaries(statement.Value);
-			base.Visit(statement);
+			base.VisitReturn(statement);
 		}
 		else {
 			if (statement.Value is CiSymbolReference symbol) {
@@ -2160,7 +2159,7 @@ public class GenC : GenCCpp
 				if (symbol.Left == null) {
 					// Local variable value doesn't depend on destructed variables
 					WriteDestructAll();
-					base.Visit(statement);
+					base.VisitReturn(statement);
 					return;
 				}
 			}
@@ -2200,7 +2199,7 @@ public class GenC : GenCCpp
 			Write("NULL");
 	}
 
-	public override void Visit(CiThrow statement)
+	public override void VisitThrow(CiThrow statement)
 	{
 		WriteDestructAll();
 		Write("return ");

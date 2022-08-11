@@ -191,7 +191,7 @@ public class GenPy : GenPySwift
 		WriteName(value);
 	}
 
-	public override CiExpr Visit(CiAggregateInitializer expr, CiPriority parent)
+	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
 	{
 		if (((CiArrayStorageType) expr.Type).ElementType is CiNumericType number) {
 			char c = GetArrayCode(number);
@@ -203,14 +203,14 @@ public class GenPy : GenPySwift
 				Write(c);
 				Write("\", ");
 			}
-			base.Visit(expr, parent);
+			base.VisitAggregateInitializer(expr);
 			Write(')');
-			return expr;
 		}
-		return base.Visit(expr, parent);
+		else
+			base.VisitAggregateInitializer(expr);
 	}
 
-	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
+	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		Write("f\"");
 		foreach (CiInterpolatedPart part in expr.Parts) {
@@ -243,7 +243,7 @@ public class GenPy : GenPySwift
 		return expr;
 	}
 
-	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
+	public override CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
 	{
 		if (expr.Op == CiToken.ExclamationMark) {
 			if (parent > CiPriority.CondAnd)
@@ -254,7 +254,7 @@ public class GenPy : GenPySwift
 				Write(')');
 			return expr;
 		}
-		return base.Visit(expr, parent);
+		return base.VisitPrefixExpr(expr, parent);
 	}
 
 	static bool IsPtr(CiExpr expr) => expr.Type is CiClassPtrType || expr.Type is CiArrayPtrType;
@@ -279,7 +279,7 @@ public class GenPy : GenPySwift
 		WriteCall("len", expr);
 	}
 
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Symbol == CiSystem.CollectionCount)
 			WriteStringLength(expr.Left);
@@ -293,11 +293,11 @@ public class GenPy : GenPySwift
 				: throw new NotImplementedException(expr.ToString()));
 		}
 		else
-			return base.Visit(expr, parent);
+			return base.VisitSymbolReference(expr, parent);
 		return expr;
 	}
 
-	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
+	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
 		case CiToken.Slash when expr.Type is CiIntegerType:
@@ -328,7 +328,7 @@ public class GenPy : GenPySwift
 			if (this.AtLineStart) {
 				for (CiExpr right = expr.Right; right is CiBinaryExpr rightBinary && rightBinary.IsAssign; right = rightBinary.Right) {
 					if (rightBinary.Op != CiToken.Assign) {
-						Visit(rightBinary, CiPriority.Statement);
+						VisitBinaryExpr(rightBinary, CiPriority.Statement);
 						WriteLine();
 						break;
 					}
@@ -353,7 +353,7 @@ public class GenPy : GenPySwift
 			{
 				CiExpr right = expr.Right;
 				if (right is CiBinaryExpr rightBinary && rightBinary.IsAssign) {
-					Visit(rightBinary, CiPriority.Statement);
+					VisitBinaryExpr(rightBinary, CiPriority.Statement);
 					WriteLine();
 					right = rightBinary.Left; // TODO: side effect
 				}
@@ -376,7 +376,7 @@ public class GenPy : GenPySwift
 			return expr;
 
 		default:
-			return base.Visit(expr, parent);
+			return base.VisitBinaryExpr(expr, parent);
 		}
 	}
 
@@ -808,10 +808,10 @@ public class GenPy : GenPySwift
 	static bool NeedsInit(CiNamedValue def)
 		=> (def.Value != null || def.Type.IsFinal) && !def.IsAssignableStorage;
 
-	public override void Visit(CiExpr statement)
+	public override void VisitExpr(CiExpr statement)
 	{
 		if (!(statement is CiVar def) || NeedsInit(def))
-			base.Visit(statement);
+			base.VisitExpr(statement);
 	}
 
 	protected override void StartLine()
@@ -834,7 +834,7 @@ public class GenPy : GenPySwift
 		this.Indent--;
 	}
 
-	public override void Visit(CiAssert statement)
+	public override void VisitAssert(CiAssert statement)
 	{
 		Write("assert ");
 		statement.Cond.Accept(this, CiPriority.Argument);
@@ -845,7 +845,7 @@ public class GenPy : GenPySwift
 		WriteLine();
 	}
 
-	public override void Visit(CiBreak statement)
+	public override void VisitBreak(CiBreak statement)
 	{
 		WriteLine(statement.LoopOrSwitch is CiSwitch ? "raise _CiBreak()" : "break");
 	}
@@ -890,7 +890,7 @@ public class GenPy : GenPySwift
 		Write(')');
 	}
 
-	public override void Visit(CiForeach statement)
+	public override void VisitForeach(CiForeach statement)
 	{
 		Write("for ");
 		WriteName(statement.Element);
@@ -920,7 +920,7 @@ public class GenPy : GenPySwift
 		Write("el");
 	}
 
-	public override void Visit(CiLock statement)
+	public override void VisitLock(CiLock statement)
 	{
 		VisitXcrement<CiPrefixExpr>(statement.Lock, true);
 		Write("with ");
@@ -945,7 +945,7 @@ public class GenPy : GenPySwift
 		CloseChild();
 	}
 
-	public override void Visit(CiSwitch statement)
+	public override void VisitSwitch(CiSwitch statement)
 	{
 		bool earlyBreak = statement.Cases.Any(kase => CiSwitch.HasEarlyBreak(kase.Body))
 			|| (statement.DefaultBody != null && CiSwitch.HasEarlyBreak(statement.DefaultBody));
@@ -999,7 +999,7 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	public override void Visit(CiThrow statement)
+	public override void VisitThrow(CiThrow statement)
 	{
 		VisitXcrement<CiPrefixExpr>(statement.Message, true);
 		Write("raise Exception(");

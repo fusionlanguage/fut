@@ -69,7 +69,7 @@ public class GenCl : GenC
 		Write("constant char *");
 	}
 
-	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
+	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		throw new NotImplementedException("Interpolated strings not supported in OpenCL C");
 	}
@@ -223,7 +223,7 @@ public class GenCl : GenC
 			WriteCCall(obj, method, args);
 	}
 
-	public override void Visit(CiAssert statement)
+	public override void VisitAssert(CiAssert statement)
 	{
 	}
 

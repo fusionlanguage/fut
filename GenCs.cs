@@ -301,7 +301,7 @@ public class GenCs : GenTyped
 
 	protected override TypeCode GetTypeCode(CiExpr expr) => expr is CiLiteralChar ? TypeCode.UInt16 : base.GetTypeCode(expr);
 
-	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
+	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		Write("$\"");
 		foreach (CiInterpolatedPart part in expr.Parts) {
@@ -412,7 +412,7 @@ public class GenCs : GenTyped
 		Write(".Length");
 	}
 
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Symbol == CiSystem.MatchStart) {
 			expr.Left.Accept(this, CiPriority.Primary);
@@ -432,7 +432,7 @@ public class GenCs : GenTyped
 			Write(expr.Symbol.Name);
 		}
 		else
-			return base.Visit(expr, parent);
+			return base.VisitSymbolReference(expr, parent);
 		return expr;
 	}
 
@@ -592,7 +592,7 @@ public class GenCs : GenTyped
 		}
 	}
 
-	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
+	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
 		case CiToken.AndAssign:
@@ -609,11 +609,11 @@ public class GenCs : GenTyped
 				Write(')');
 			return expr;
 		default:
-			return base.Visit(expr, parent);
+			return base.VisitBinaryExpr(expr, parent);
 		}
 	}
 
-	public override void Visit(CiAssert statement)
+	public override void VisitAssert(CiAssert statement)
 	{
 		if (statement.CompletesNormally) {
 			Include("System.Diagnostics");
@@ -633,7 +633,7 @@ public class GenCs : GenTyped
 		WriteLine(");");
 	}
 
-	public override void Visit(CiForeach statement)
+	public override void VisitForeach(CiForeach statement)
 	{
 		Write("foreach (");
 		if (statement.Count == 2) {
@@ -651,7 +651,7 @@ public class GenCs : GenTyped
 		WriteChild(statement.Body);
 	}
 
-	public override void Visit(CiLock statement)
+	public override void VisitLock(CiLock statement)
 	{
 		Write("lock (");
 		statement.Lock.Accept(this, CiPriority.Argument);
@@ -659,7 +659,7 @@ public class GenCs : GenTyped
 		WriteChild(statement.Body);
 	}
 
-	public override void Visit(CiThrow statement)
+	public override void VisitThrow(CiThrow statement)
 	{
 		Include("System");
 		Write("throw new Exception(");

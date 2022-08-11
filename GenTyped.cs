@@ -44,13 +44,12 @@ public abstract class GenTyped : GenBase
 			Write('f');
 	}
 
-	public override CiExpr Visit(CiAggregateInitializer expr, CiPriority parent)
+	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
 	{
 		CiType type = ((CiArrayStorageType) expr.Type).ElementType;
 		Write("{ ");
 		WriteCoercedLiterals(type, expr.Items);
 		Write(" }");
-		return expr;
 	}
 
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)

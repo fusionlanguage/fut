@@ -50,7 +50,7 @@ public class GenJava : GenTyped
 			base.WritePrintfWidth(part);
 	}
 
-	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
+	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		if (expr.Suffix.Length == 0
 		 && expr.Parts.Length == 1
@@ -379,7 +379,7 @@ public class GenJava : GenTyped
 		Write(')');
 	}
 
-	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
+	public override CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
 	{
 		if ((expr.Op == CiToken.Increment || expr.Op == CiToken.Decrement)
 		 && expr.Inner is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)) {
@@ -393,11 +393,10 @@ public class GenJava : GenTyped
 				Write(')');
 			return expr;
 		}
-		else
-			return base.Visit(expr, parent);
+		return base.VisitPrefixExpr(expr, parent);
 	}
 
-	public override CiExpr Visit(CiPostfixExpr expr, CiPriority parent)
+	public override CiExpr VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
 	{
 		if ((expr.Op == CiToken.Increment || expr.Op == CiToken.Decrement)
 		 && expr.Inner is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)) {
@@ -411,8 +410,7 @@ public class GenJava : GenTyped
 				Write(')');
 			return expr;
 		}
-		else
-			return base.Visit(expr, parent);
+		return base.VisitPostfixExpr(expr, parent);
 	}
 
 	void WriteIndexingInternal(CiBinaryExpr expr)
@@ -485,7 +483,7 @@ public class GenJava : GenTyped
 		WriteCall(expr.Left, "charAt", expr.Right);
 	}
 
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Left != null && expr.Left.IsReferenceTo(CiSystem.MathClass)) {
 			Write("Float.");
@@ -497,7 +495,7 @@ public class GenJava : GenTyped
 		else if (WriteJavaMatchProperty(expr, parent))
 			return expr;
 		else
-			return base.Visit(expr, parent);
+			return base.VisitSymbolReference(expr, parent);
 		return expr;
 	}
 
@@ -812,7 +810,7 @@ public class GenJava : GenTyped
 			CloseBlock();
 	}
 
-	public override void Visit(CiAssert statement)
+	public override void VisitAssert(CiAssert statement)
 	{
 		Write("assert ");
 		statement.Cond.Accept(this, CiPriority.Argument);
@@ -823,7 +821,7 @@ public class GenJava : GenTyped
 		WriteLine(';');
 	}
 
-	public override void Visit(CiForeach statement)
+	public override void VisitForeach(CiForeach statement)
 	{
 		Write("for (");
 		if (statement.Collection.Type is CiDictionaryType dict) {
@@ -844,7 +842,7 @@ public class GenJava : GenTyped
 		WriteChild(statement.Body);
 	}
 
-	public override void Visit(CiLock statement)
+	public override void VisitLock(CiLock statement)
 	{
 		Write("synchronized (");
 		statement.Lock.Accept(this, CiPriority.Argument);
@@ -852,7 +850,7 @@ public class GenJava : GenTyped
 		WriteChild(statement.Body);
 	}
 
-	public override void Visit(CiThrow statement)
+	public override void VisitThrow(CiThrow statement)
 	{
 		Write("throw new Exception(");
 		statement.Message.Accept(this, CiPriority.Argument);

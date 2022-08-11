@@ -578,7 +578,7 @@ public abstract class GenBase : CiVisitor
 		return false;
 	}
 
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Left == null)
 			WriteLocalName(expr.Symbol, parent);
@@ -761,11 +761,7 @@ public abstract class GenBase : CiVisitor
 		WriteVarInit(def);
 	}
 
-	public override CiExpr Visit(CiVar expr, CiPriority parent)
-	{
-		WriteVar(expr);
-		return expr;
-	}
+	public override void VisitVar(CiVar expr) => WriteVar(expr);
 
 	protected void OpenLoop(string intString, int nesting, int count)
 	{
@@ -797,7 +793,7 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteResource(string name, int length);
 
-	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
+	public override CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
 		case CiToken.Increment:
@@ -834,7 +830,7 @@ public abstract class GenBase : CiVisitor
 		return expr;
 	}
 
-	public override CiExpr Visit(CiPostfixExpr expr, CiPriority parent)
+	public override CiExpr VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
 	{
 		expr.Inner.Accept(this, CiPriority.Primary);
 		switch (expr.Op) {
@@ -1043,7 +1039,7 @@ public abstract class GenBase : CiVisitor
 
 	protected virtual string IsOperator => " is ";
 
-	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
+	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
 		case CiToken.Plus:
@@ -1140,19 +1136,19 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	public override CiExpr Visit(CiSelectExpr expr, CiPriority parent)
+	public override CiExpr VisitSelectExpr(CiSelectExpr expr, CiPriority parent)
 	{
 		WriteCoerced(expr.Type, expr, parent);
 		return expr;
 	}
 
-	public override CiExpr Visit(CiCallExpr expr, CiPriority parent)
+	public override CiExpr VisitCallExpr(CiCallExpr expr, CiPriority parent)
 	{
 		WriteCall(expr.Method.Left, (CiMethod) expr.Method.Symbol, expr.Arguments, parent);
 		return expr;
 	}
 
-	public override void Visit(CiExpr statement)
+	public override void VisitExpr(CiExpr statement)
 	{
 		statement.Accept(this, CiPriority.Statement);
 		WriteLine(';');
@@ -1160,7 +1156,7 @@ public abstract class GenBase : CiVisitor
 			WriteInitCode(def);
 	}
 
-	public override void Visit(CiConst statement)
+	public override void VisitConst(CiConst statement)
 	{
 	}
 
@@ -1175,7 +1171,7 @@ public abstract class GenBase : CiVisitor
 		Write(statements, statements.Length);
 	}
 
-	public override void Visit(CiBlock statement)
+	public override void VisitBlock(CiBlock statement)
 	{
 		OpenBlock();
 		Write(statement.Statements);
@@ -1186,7 +1182,7 @@ public abstract class GenBase : CiVisitor
 	{
 		if (statement is CiBlock block) {
 			Write(' ');
-			Visit(block);
+			VisitBlock(block);
 		}
 		else {
 			WriteLine();
@@ -1196,17 +1192,17 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	public override void Visit(CiBreak statement)
+	public override void VisitBreak(CiBreak statement)
 	{
 		WriteLine("break;");
 	}
 
-	public override void Visit(CiContinue statement)
+	public override void VisitContinue(CiContinue statement)
 	{
 		WriteLine("continue;");
 	}
 
-	public override void Visit(CiDoWhile statement)
+	public override void VisitDoWhile(CiDoWhile statement)
 	{
 		Write("do");
 		WriteChild(statement.Body);
@@ -1215,7 +1211,7 @@ public abstract class GenBase : CiVisitor
 		WriteLine(");");
 	}
 
-	public override void Visit(CiFor statement)
+	public override void VisitFor(CiFor statement)
 	{
 		Write("for (");
 		statement.Init?.Accept(this, CiPriority.Statement);
@@ -1233,7 +1229,7 @@ public abstract class GenBase : CiVisitor
 		WriteChild(statement.Body);
 	}
 
-	public override void Visit(CiIf statement)
+	public override void VisitIf(CiIf statement)
 	{
 		Write("if (");
 		statement.Cond.Accept(this, CiPriority.Argument);
@@ -1250,14 +1246,14 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	public override void Visit(CiNative statement)
+	public override void VisitNative(CiNative statement)
 	{
 		Write(statement.Content);
 	}
 
 	protected virtual void WriteReturnValue(CiExpr value) => WriteCoerced(this.CurrentMethod.Type, value, CiPriority.Argument);
 
-	public override void Visit(CiReturn statement)
+	public override void VisitReturn(CiReturn statement)
 	{
 		if (statement.Value == null)
 			WriteLine("return;");
@@ -1273,7 +1269,7 @@ public abstract class GenBase : CiVisitor
 		Write(statements);
 	}
 
-	public override void Visit(CiSwitch statement)
+	public override void VisitSwitch(CiSwitch statement)
 	{
 		Write("switch (");
 		statement.Value.Accept(this, CiPriority.Argument);
@@ -1297,7 +1293,7 @@ public abstract class GenBase : CiVisitor
 		WriteLine('}');
 	}
 
-	public override void Visit(CiWhile statement)
+	public override void VisitWhile(CiWhile statement)
 	{
 		Write("while (");
 		statement.Cond.Accept(this, CiPriority.Argument);

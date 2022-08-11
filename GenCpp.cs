@@ -49,7 +49,7 @@ public class GenCpp : GenCCpp
 		Write("nullptr");
 	}
 
-	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
+	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		Include("format");
 		Write("std::format(\"");
@@ -934,7 +934,7 @@ public class GenCpp : GenCCpp
 		Write("()");
 	}
 
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Symbol == CiSystem.MatchStart)
 			WriteMatchProperty(expr, "position");
@@ -952,11 +952,11 @@ public class GenCpp : GenCCpp
 		else if (expr.Symbol == CiSystem.MatchValue)
 			WriteMatchProperty(expr, "str");
 		else
-			return base.Visit(expr, parent);
+			return base.VisitSymbolReference(expr, parent);
 		return expr;
 	}
 
-	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
+	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
 		case CiToken.Equal:
@@ -983,7 +983,7 @@ public class GenCpp : GenCCpp
 		default:
 			break;
 		}
-		return base.Visit(expr, parent);
+		return base.VisitBinaryExpr(expr, parent);
 	}
 
 	protected override void WriteConst(CiConst konst)
@@ -995,7 +995,7 @@ public class GenCpp : GenCCpp
 		WriteLine(';');
 	}
 
-	public override void Visit(CiForeach statement)
+	public override void VisitForeach(CiForeach statement)
 	{
 		CiVar element = statement.Element;
 		Write("for (");
@@ -1023,7 +1023,7 @@ public class GenCpp : GenCCpp
 		WriteChild(statement.Body);
 	}
 
-	public override void Visit(CiLock statement)
+	public override void VisitLock(CiLock statement)
 	{
 		OpenBlock();
 		Write("const std::lock_guard<std::recursive_mutex> lock(");
@@ -1073,7 +1073,7 @@ public class GenCpp : GenCCpp
 			CloseBlock();
 	}
 
-	public override void Visit(CiThrow statement)
+	public override void VisitThrow(CiThrow statement)
 	{
 		Include("exception");
 		WriteLine("throw std::exception();");

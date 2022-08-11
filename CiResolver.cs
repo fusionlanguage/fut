@@ -281,15 +281,14 @@ public class CiResolver : CiVisitor
 		return GetIntegerType(left, right);
 	}
 
-	public override CiExpr Visit(CiAggregateInitializer expr, CiPriority parent)
+	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
 	{
 		CiExpr[] items = expr.Items;
 		for (int i = 0; i < items.Length; i++)
 			items[i] = Resolve(items[i]);
-		return expr;
 	}
 
-	public override CiExpr Visit(CiVar expr, CiPriority parent)
+	public override void VisitVar(CiVar expr)
 	{
 		CiType type = ResolveType(expr);
 		if (expr.Value != null) {
@@ -315,7 +314,6 @@ public class CiResolver : CiVisitor
 			}
 		}
 		this.CurrentScope.Add(expr);
-		return expr;
 	}
 
 	public override void VisitLiteralLong(long value)
@@ -346,7 +344,7 @@ public class CiResolver : CiVisitor
 	{
 	}
 
-	public override CiExpr Visit(CiInterpolatedString expr, CiPriority parent)
+	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		List<CiInterpolatedPart> parts = new List<CiInterpolatedPart>();
 		StringBuilder sb = new StringBuilder();
@@ -410,7 +408,7 @@ public class CiResolver : CiVisitor
 		return expr;
 	}
 
-	public override CiExpr Visit(CiSymbolReference expr, CiPriority parent)
+	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Left != null) {
 			CiExpr left = Resolve(expr.Left);
@@ -505,7 +503,7 @@ public class CiResolver : CiVisitor
 		}
 	}
 
-	public override CiExpr Visit(CiPrefixExpr expr, CiPriority parent)
+	public override CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
 	{
 		CiExpr inner;
 		CiType type;
@@ -593,7 +591,7 @@ public class CiResolver : CiVisitor
 		return new CiPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
 	}
 
-	public override CiExpr Visit(CiPostfixExpr expr, CiPriority parent)
+	public override CiExpr VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
 	{
 		expr.Inner = Resolve(expr.Inner);
 		switch (expr.Op) {
@@ -674,7 +672,7 @@ public class CiResolver : CiVisitor
 		Coerce(right, CiSystem.DoubleType);
 	}
 
-	public override CiExpr Visit(CiBinaryExpr expr, CiPriority parent)
+	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		CiExpr left = Resolve(expr.Left);
 		CiExpr right = Resolve(expr.Right);
@@ -975,7 +973,7 @@ public class CiResolver : CiVisitor
 		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = type };
 	}
 
-	public override CiExpr Visit(CiSelectExpr expr, CiPriority parent)
+	public override CiExpr VisitSelectExpr(CiSelectExpr expr, CiPriority parent)
 	{
 		CiExpr cond = ResolveBool(expr.Cond);
 		CiExpr onTrue = Resolve(expr.OnTrue);
@@ -1002,7 +1000,7 @@ public class CiResolver : CiVisitor
 		return i == arguments.Length;
 	}
 
-	public override CiExpr Visit(CiCallExpr expr, CiPriority parent)
+	public override CiExpr VisitCallExpr(CiCallExpr expr, CiPriority parent)
 	{
 		CiSymbolReference symbol = (CiSymbolReference) Resolve(expr.Method);
 		CiExpr[] arguments = this.CurrentPureArguments.Count == 0 ? expr.Arguments : new CiExpr[expr.Arguments.Length];
@@ -1061,7 +1059,7 @@ public class CiResolver : CiVisitor
 		return expr;
 	}
 
-	public override void Visit(CiConst statement)
+	public override void VisitConst(CiConst statement)
 	{
 		ResolveConst(statement);
 		this.CurrentScope.Add(statement);
@@ -1072,7 +1070,7 @@ public class CiResolver : CiVisitor
 	CiExpr Resolve(CiExpr expr)
 		=> expr.Accept(this, CiPriority.Statement);
 
-	public override void Visit(CiExpr statement)
+	public override void VisitExpr(CiExpr statement)
 	{
 		Resolve(statement);
 	}
@@ -1107,14 +1105,14 @@ public class CiResolver : CiVisitor
 		this.CurrentScope = this.CurrentScope.Parent;
 	}
 
-	public override void Visit(CiBlock statement)
+	public override void VisitBlock(CiBlock statement)
 	{
 		OpenScope(statement);
 		statement.SetCompletesNormally(Resolve(statement.Statements));
 		CloseScope();
 	}
 
-	public override void Visit(CiAssert statement)
+	public override void VisitAssert(CiAssert statement)
 	{
 		statement.Cond = ResolveBool(statement.Cond);
 		if (statement.Message != null) {
@@ -1124,12 +1122,12 @@ public class CiResolver : CiVisitor
 		}
 	}
 
-	public override void Visit(CiBreak statement)
+	public override void VisitBreak(CiBreak statement)
 	{
 		statement.LoopOrSwitch.SetCompletesNormally(true);
 	}
 
-	public override void Visit(CiContinue statement)
+	public override void VisitContinue(CiContinue statement)
 	{
 	}
 
@@ -1143,7 +1141,7 @@ public class CiResolver : CiVisitor
 			statement.SetCompletesNormally(false);
 	}
 
-	public override void Visit(CiDoWhile statement)
+	public override void VisitDoWhile(CiDoWhile statement)
 	{
 		OpenScope(statement);
 		ResolveLoopCond(statement);
@@ -1151,7 +1149,7 @@ public class CiResolver : CiVisitor
 		CloseScope();
 	}
 
-	public override void Visit(CiFor statement)
+	public override void VisitFor(CiFor statement)
 	{
 		OpenScope(statement);
 		statement.Init?.Accept(this);
@@ -1209,7 +1207,7 @@ public class CiResolver : CiVisitor
 		CloseScope();
 	}
 
-	public override void Visit(CiForeach statement)
+	public override void VisitForeach(CiForeach statement)
 	{
 		OpenScope(statement);
 		CiVar element = statement.Element;
@@ -1245,7 +1243,7 @@ public class CiResolver : CiVisitor
 		CloseScope();
 	}
 
-	public override void Visit(CiIf statement)
+	public override void VisitIf(CiIf statement)
 	{
 		statement.Cond = ResolveBool(statement.Cond);
 		statement.OnTrue.Accept(this);
@@ -1257,18 +1255,18 @@ public class CiResolver : CiVisitor
 			statement.SetCompletesNormally(true);
 	}
 
-	public override void Visit(CiLock statement)
+	public override void VisitLock(CiLock statement)
 	{
 		statement.Lock = Resolve(statement.Lock);
 		Coerce(statement.Lock, CiSystem.LockClass);
 		statement.Body.Accept(this);
 	}
 
-	public override void Visit(CiNative statement)
+	public override void VisitNative(CiNative statement)
 	{
 	}
 
-	public override void Visit(CiReturn statement)
+	public override void VisitReturn(CiReturn statement)
 	{
 		if (this.CurrentMethod.Type == CiSystem.VoidType) {
 			if (statement.Value != null)
@@ -1287,7 +1285,7 @@ public class CiResolver : CiVisitor
 		}
 	}
 
-	public override void Visit(CiSwitch statement)
+	public override void VisitSwitch(CiSwitch statement)
 	{
 		OpenScope(statement);
 		statement.Value = Resolve(statement.Value);
@@ -1317,7 +1315,7 @@ public class CiResolver : CiVisitor
 		CloseScope();
 	}
 
-	public override void Visit(CiThrow statement)
+	public override void VisitThrow(CiThrow statement)
 	{
 		if (!this.CurrentMethod.Throws)
 			throw StatementException(statement, "'throw' in a method not marked 'throws'");
@@ -1326,7 +1324,7 @@ public class CiResolver : CiVisitor
 			throw StatementException(statement, "The argument of 'throw' must be a string");
 	}
 
-	public override void Visit(CiWhile statement)
+	public override void VisitWhile(CiWhile statement)
 	{
 		OpenScope(statement);
 		ResolveLoopCond(statement);
