@@ -1728,9 +1728,7 @@ public class GenC : GenCCpp
 				if (dict.ValueType is CiClass || dict.ValueType is CiArrayStorageType)
 					WriteDynamicArrayCast(dict.ValueType);
 				else {
-					Write('(');
-					Write(dict.ValueType, false);
-					Write(") ");
+					WriteStaticCastType(dict.ValueType);
 					if (dict.ValueType is CiEnum) {
 						Trace.Assert(parent <= CiPriority.Mul, "Should close two parens");
 						Write("GPOINTER_TO_INT(");
@@ -2034,9 +2032,7 @@ public class GenC : GenCCpp
 			Write(')');
 		}
 		else {
-			Write('(');
-			Write(iter.Type, false);
-			Write(") ");
+			WriteStaticCastType(iter.Type);
 			Write(value);
 		}
 		WriteLine(';');

@@ -7,7 +7,7 @@ public static class Test
 		dict[1] = 10;
 		dict[2] = 15;
 		int expected = 5;
-		foreach ((int key, int value) in dict) { //FAIL: cs TODO
+		foreach ((int key, int value) in dict) {
 			if (value != expected)
 				return false;
 			expected += 5;

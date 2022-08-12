@@ -437,6 +437,23 @@ public class GenCs : GenTyped
 			Write("float.");
 			Write(expr.Symbol.Name);
 		}
+		else if (expr.Symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiOrderedDictionaryType dict) {
+			if (parent == CiPriority.Primary)
+				Write('(');
+			CiVar element = forEach.Element;
+			if (expr.Symbol == element) {
+				WriteStaticCastType(dict.KeyType);
+				WriteName(element);
+				Write(".Key");
+			}
+			else {
+				WriteStaticCastType(dict.ValueType);
+				WriteName(element);
+				Write(".Value");
+			}
+			if (parent == CiPriority.Primary)
+				Write(')');
+		}
 		else
 			return base.VisitSymbolReference(expr, parent);
 		return expr;
@@ -615,9 +632,8 @@ public class GenCs : GenTyped
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Left.Type is CiOrderedDictionaryType) {
-			Write('(');
-			Write(expr.Type, false);
-			Write(") ");
+			// TODO: outer parentheses?
+			WriteStaticCastType(expr.Type);
 			WriteOrderedDictionaryIndexing(expr);
 		}
 		else
@@ -682,11 +698,18 @@ public class GenCs : GenTyped
 	{
 		Write("foreach (");
 		if (statement.Count == 2) {
-			Write('(');
-			WriteTypeAndName(statement.Element);
-			Write(", ");
-			WriteTypeAndName(statement.ValueVar);
-			Write(')');
+			if (statement.Collection.Type is CiOrderedDictionaryType) {
+				Include("System.Collections");
+				Write("DictionaryEntry ");
+				WriteName(statement.Element);
+			}
+			else {
+				Write('(');
+				WriteTypeAndName(statement.Element);
+				Write(", ");
+				WriteTypeAndName(statement.ValueVar);
+				Write(')');
+			}
 		}
 		else
 			WriteTypeAndName(statement.Element);

@@ -158,11 +158,16 @@ public abstract class GenTyped : GenBase
 		return expr;
 	}
 
-	protected virtual void WriteStaticCast(CiType type, CiExpr expr)
+	protected void WriteStaticCastType(CiType type)
 	{
 		Write('(');
 		Write(type, false);
 		Write(") ");
+	}
+
+	protected virtual void WriteStaticCast(CiType type, CiExpr expr)
+	{
+		WriteStaticCastType(type);
 		GetStaticCastInner(type, expr).Accept(this, CiPriority.Primary);
 	}
 
