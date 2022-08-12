@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		OrderedDictionary<int, int>() dict; //FAIL: c cpp swift ts TODO; cl
+		OrderedDictionary<int, int>() dict; //FAIL: c cpp swift ts cl
 		dict[3] = 5;
 		dict[1] = 10;
 		dict[2] = 15;

@@ -1424,8 +1424,7 @@ public class CiResolver : CiVisitor
 				return new CiSortedDictionaryType { KeyType = ToType(items[0], false), ValueType = ToType(items[1], false) };
 			}
 			if (call.Method.Symbol == CiSystem.OrderedDictionaryClass) {
-				NotSupported(call, "OrderedDictionary", "cl");
-				NotYet(call, "OrderedDictionary", "c", "cpp", "swift", "ts");
+				NotSupported(call, "OrderedDictionary", "c", "cpp", "swift", "ts", "cl");
 				CiExpr[] items = ((CiAggregateInitializer) call.Method.Left).Items;
 				return new CiOrderedDictionaryType { KeyType = ToType(items[0], false), ValueType = ToType(items[1], false) };
 			}
