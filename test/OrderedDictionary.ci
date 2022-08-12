@@ -12,6 +12,6 @@ public static class Test
 		OrderedDictionary<int, string>() dict2;
 		dict2[42] = "answer";
 		return dict.Count == 2 && dict["foo"] == 12 && dict["quux"] == 30 && dict.ContainsKey("foo")
-			&& dict2[42] == "answer";
+			&& dict2[42] == "answer" && dict2[42].Length == 6;
 	}
 }

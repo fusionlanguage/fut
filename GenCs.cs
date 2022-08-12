@@ -632,9 +632,12 @@ public class GenCs : GenTyped
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Left.Type is CiOrderedDictionaryType) {
-			// TODO: outer parentheses?
+			if (parent == CiPriority.Primary)
+				Write('(');
 			WriteStaticCastType(expr.Type);
 			WriteOrderedDictionaryIndexing(expr);
+			if (parent == CiPriority.Primary)
+				Write(')');
 		}
 		else
 			base.WriteIndexing(expr, parent);
