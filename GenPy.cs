@@ -483,7 +483,9 @@ public class GenPy : GenPySwift
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		if (type is CiListType || type is CiStackType) {
+		switch (type) {
+		case CiListType _:
+		case CiStackType _:
 			if (((CiCollectionType) type).ElementType is CiNumericType number) {
 				char c = GetArrayCode(number);
 				if (c == 'B')
@@ -497,13 +499,21 @@ public class GenPy : GenPySwift
 			}
 			else
 				Write("[]");
-		}
-		else if (type is CiHashSetType)
+			break;
+		case CiHashSetType _:
 			Write("set()");
-		else if (type is CiDictionaryType)
+			break;
+		case CiOrderedDictionaryType _:
+			Include("collections");
+			Write("collections.OrderedDict()");
+			break;
+		case CiDictionaryType _:
 			Write("{}");
-		else
+			break;
+		default:
 			base.WriteNewStorage(type);
+			break;
+		}
 	}
 
 	protected override void WriteInitCode(CiNamedValue def)

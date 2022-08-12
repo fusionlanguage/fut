@@ -1,0 +1,17 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		OrderedDictionary<string, int>() dict; //FAIL: c cpp swift ts TODO; cl
+		dict["foo"] = 10;
+		dict.Clear();
+		dict["foo"] = 12;
+		dict["bar"] = 20;
+		dict["quux"] = 30;
+		dict.Remove("bar");
+		OrderedDictionary<int, string>() dict2;
+		dict2[42] = "answer";
+		return dict.Count == 2 && dict["foo"] == 12 && dict["quux"] == 30 && dict.ContainsKey("foo")
+			&& dict2[42] == "answer";
+	}
+}

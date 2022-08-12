@@ -211,14 +211,20 @@ public class GenCs : GenTyped
 
 	void Write(CiDictionaryType dict)
 	{
-		Include("System.Collections.Generic");
-		if (dict is CiSortedDictionaryType)
-			Write("Sorted");
-		Write("Dictionary<");
-		Write(dict.KeyType, false);
-		Write(", ");
-		Write(dict.ValueType, false);
-		Write('>');
+		if (dict is CiOrderedDictionaryType) {
+			Include("System.Collections.Specialized");
+			Write("OrderedDictionary");
+		}
+		else {
+			Include("System.Collections.Generic");
+			if (dict is CiSortedDictionaryType)
+				Write("Sorted");
+			Write("Dictionary<");
+			Write(dict.KeyType, false);
+			Write(", ");
+			Write(dict.ValueType, false);
+			Write('>');
+		}
 	}
 
 	protected override void WriteClassName(CiClass klass)
@@ -575,6 +581,8 @@ public class GenCs : GenTyped
 			WriteNewStorage(dict.ValueType);
 			Write(')');
 		}
+		else if (obj.Type is CiOrderedDictionaryType && method.Name == "ContainsKey")
+			WriteCall(obj, "Contains", args[0]);
 		else {
 			if (method == CiSystem.MathIsFinite || method == CiSystem.MathIsInfinity || method == CiSystem.MathIsNaN)
 				Write("double");
@@ -590,6 +598,43 @@ public class GenCs : GenTyped
 			WriteName(method);
 			WriteArgsInParentheses(method, args);
 		}
+	}
+
+	void WriteOrderedDictionaryIndexing(CiBinaryExpr expr)
+	{
+		if (expr.Right.Type == CiSystem.IntType || expr.Right.Type is CiRangeType) {
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write("[(object) ");
+			expr.Right.Accept(this, CiPriority.Primary);
+			Write(']');
+		}
+		else
+			base.WriteIndexing(expr, CiPriority.And /* don't care */);
+	}
+
+	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
+	{
+		if (expr.Left.Type is CiOrderedDictionaryType) {
+			Write('(');
+			Write(expr.Type, false);
+			Write(") ");
+			WriteOrderedDictionaryIndexing(expr);
+		}
+		else
+			base.WriteIndexing(expr, parent);
+	}
+
+	protected override void WriteAssign(CiBinaryExpr expr, CiPriority parent)
+	{
+		if (expr.Left is CiBinaryExpr indexing
+		 && indexing.Op == CiToken.LeftBracket
+		 && indexing.Left.Type is CiOrderedDictionaryType) {
+			WriteOrderedDictionaryIndexing(indexing);
+			Write(" = ");
+			WriteAssignRight(expr);
+		}
+		else
+			base.WriteAssign(expr, parent);
 	}
 
 	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)

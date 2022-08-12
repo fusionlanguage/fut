@@ -1,0 +1,29 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		OrderedDictionary<int, int>() dict; //FAIL: c cpp swift ts TODO; cl
+		dict[3] = 5;
+		dict[1] = 10;
+		dict[2] = 15;
+		int expected = 5;
+		foreach ((int key, int value) in dict) { //FAIL: cs TODO
+			if (value != expected)
+				return false;
+			expected += 5;
+		}
+
+		OrderedDictionary<string, int>() dict2;
+		dict2["I"] = 1;
+		dict2[""] = 0;
+		dict2["II"] = 2;
+		expected = 1;
+		foreach ((string key, int value) in dict2) {
+			if (value != expected || key.Length != expected)
+				return false;
+			if (--expected == -1)
+				expected = 2;
+		}
+		return true;
+	}
+}

@@ -1507,6 +1507,11 @@ public class CiSortedDictionaryType : CiDictionaryType
 	public override string ToString() => $"SortedDictionary<{this.KeyType}, {this.ValueType}>";
 }
 
+public class CiOrderedDictionaryType : CiDictionaryType
+{
+	public override string ToString() => $"OrderedDictionary<{this.KeyType}, {this.ValueType}>";
+}
+
 public class CiPrintableType : CiType
 {
 	public override bool IsAssignableFrom(CiType right) => right is CiStringType || right is CiNumericType;
@@ -1626,6 +1631,7 @@ public class CiSystem : CiScope
 	public static readonly CiSymbol HashSetClass = new CiSymbol { Name = "HashSet" };
 	public static readonly CiSymbol DictionaryClass = new CiSymbol { Name = "Dictionary" };
 	public static readonly CiSymbol SortedDictionaryClass = new CiSymbol { Name = "SortedDictionary" };
+	public static readonly CiSymbol OrderedDictionaryClass = new CiSymbol { Name = "OrderedDictionary" };
 	public static readonly CiClass LockClass = new CiClass(CiCallType.Sealed, "Lock");
 	public static readonly CiSymbol BasePtr = new CiSymbol { Name = "base" };
 
@@ -1678,6 +1684,7 @@ public class CiSystem : CiScope
 		Add(HashSetClass);
 		Add(DictionaryClass);
 		Add(SortedDictionaryClass);
+		Add(OrderedDictionaryClass);
 		Add(LockClass);
 		Add(BasePtr);
 	}

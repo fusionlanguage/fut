@@ -433,7 +433,7 @@ public class CiParser : CiLexer
 			CiExpr typeArg = ParseType();
 			if (Eat(CiToken.Comma)) {
 				CiExpr valueType = ParseType();
-				if (klass != CiSystem.DictionaryClass && klass != CiSystem.SortedDictionaryClass)
+				if (klass != CiSystem.DictionaryClass && klass != CiSystem.SortedDictionaryClass && klass != CiSystem.OrderedDictionaryClass)
 					throw StatementException(symbol, $"{symbol.Name} is not a generic class with two type parameters");
 				left = new CiSymbolReference { Line = line, Left = new CiAggregateInitializer { Items = new CiExpr[] { typeArg, valueType } }, Symbol = klass };
 			}

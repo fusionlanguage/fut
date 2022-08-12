@@ -139,14 +139,24 @@ public class GenJs : GenBase
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		if (type is CiListType || type is CiStackType)
+		switch (type) {
+		case CiListType _:
+		case CiStackType _:
 			Write("[]");
-		else if (type is CiHashSetType)
+			break;
+		case CiHashSetType _:
 			Write("new Set()");
-		else if (type is CiDictionaryType)
+			break;
+		case CiOrderedDictionaryType _:
+			Write("new Map()");
+			break;
+		case CiDictionaryType _:
 			Write("{}");
-		else
+			break;
+		default:
 			base.WriteNewStorage(type);
+			break;
+		}
 	}
 
 	protected override void WriteVar(CiNamedValue def)
@@ -306,6 +316,7 @@ public class GenJs : GenBase
 				Write(".length");
 				break;
 			case CiHashSetType _:
+			case CiOrderedDictionaryType _:
 				expr.Left.Accept(this, CiPriority.Primary);
 				Write(".size");
 				break;
@@ -494,14 +505,18 @@ public class GenJs : GenBase
 		else if (method == CiSystem.ListRemoveRange)
 			WriteCall(obj, "splice", args[0], args[1]);
 		else if (obj.Type is CiDictionaryType && method.Name == "Remove") {
-			Write("delete ");
-			WriteIndexing(obj, args[0]);
+			if (obj.Type is CiOrderedDictionaryType)
+				WriteCall(obj, "delete", args[0]);
+			else {
+				Write("delete ");
+				WriteIndexing(obj, args[0]);
+			}
 		}
 		else if (obj.Type is CiStackType && method.Name == "Peek") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".at(-1)");
 		}
-		else if (obj.Type is CiDictionaryType && method == CiSystem.CollectionClear) {
+		else if (obj.Type is CiDictionaryType && !(obj.Type is CiOrderedDictionaryType) && method == CiSystem.CollectionClear) {
 			Write("for (const key in ");
 			obj.Accept(this, CiPriority.Argument);
 			WriteLine(')');
@@ -634,11 +649,29 @@ public class GenJs : GenBase
 			else if (obj.Type is CiHashSetType && method.Name == "Remove")
 				Write("delete");
 			else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey")
-				Write("hasOwnProperty");
+				Write(obj.Type is CiOrderedDictionaryType ? "has" : "hasOwnProperty");
 			else
 				WriteName(method);
 			WriteArgsInParentheses(method, args);
 		}
+	}
+
+	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
+	{
+		if (expr.Left.Type is CiOrderedDictionaryType)
+			WriteCall(expr.Left, "get", expr.Right);
+		else
+			base.WriteIndexing(expr, parent);
+	}
+
+	protected override void WriteAssign(CiBinaryExpr expr, CiPriority parent)
+	{
+		if (expr.Left is CiBinaryExpr indexing
+		 && indexing.Op == CiToken.LeftBracket
+		 && indexing.Left.Type is CiOrderedDictionaryType)
+			WriteCall(indexing.Left, "set", indexing.Right, expr.Right);
+		else
+			base.WriteAssign(expr, parent);
 	}
 
 	protected override string IsOperator => " instanceof ";
@@ -695,19 +728,24 @@ public class GenJs : GenBase
 			WriteName(statement.Element);
 			Write(", ");
 			WriteName(statement.ValueVar);
-			WriteCall("] of Object.entries", statement.Collection);
-			switch (statement.Element.Type) {
-			case CiStringType _:
-				if (statement.Collection.Type is CiSortedDictionaryType)
-					Write(".sort((a, b) => a[0].localeCompare(b[0]))");
-				break;
-			case CiNumericType _:
-				Write(".map(e => [+e[0], e[1]])");
-				if (statement.Collection.Type is CiSortedDictionaryType)
-					Write(".sort((a, b) => a[0] - b[0])");
-				break;
-			default:
-				throw new NotImplementedException(statement.Element.Type.ToString());
+			Write("] of ");
+			if (statement.Collection.Type is CiOrderedDictionaryType)
+				statement.Collection.Accept(this, CiPriority.Argument);
+			else {
+				WriteCall("Object.entries", statement.Collection);
+				switch (statement.Element.Type) {
+				case CiStringType _:
+					if (statement.Collection.Type is CiSortedDictionaryType)
+						Write(".sort((a, b) => a[0].localeCompare(b[0]))");
+					break;
+				case CiNumericType _:
+					Write(".map(e => [+e[0], e[1]])");
+					if (statement.Collection.Type is CiSortedDictionaryType)
+						Write(".sort((a, b) => a[0] - b[0])");
+					break;
+				default:
+					throw new NotImplementedException(statement.Element.Type.ToString());
+				}
 			}
 		}
 		else {

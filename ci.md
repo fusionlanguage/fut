@@ -818,7 +818,7 @@ The `is` operator cannot be used for:
 
 ### Collections
 
-In addition to arrays, Ć has five built-in collection types:
+In addition to arrays, Ć has six built-in collection types:
 
 * `List<T>` is a resizeable array (`std::vector` in C++, `ArrayList` in Java)
 * `Stack<T>` is a LIFO (last in, first out) collection
@@ -827,6 +827,8 @@ In addition to arrays, Ć has five built-in collection types:
   (`std::unordered_map` in C++, `HashMap` in Java)
 * `SortedDictionary<TKey, TValue>` is a dictionary sorted by key
   (`std::map` in C++, `TreeMap` in Java)
+* `OrderedDictionary<TKey, TValue>` is a dictionary that can be iterated
+  in insertion order (`LinkedHashMap` in Java)
 
 #### List
 
@@ -937,6 +939,11 @@ create it in the dictionary with `Add(key)`.
 
 `SortedDictionary` is same as `Dictionary`, except that `foreach`
 iterates in the key order.
+
+#### OrderedDictionary
+
+`OrderedDictionary` is same as `Dictionary`, except that `foreach`
+iterates in the insertion order.
 
 ## Statements
 
@@ -1058,7 +1065,7 @@ There are four kinds of loops:
 * `for` -- which contains an initial statement, the condition
   and a statement executed after each run.
 * `foreach` -- to iterate over array storage, `List`
-  `Dictionary` or `SortedDictionary`.
+  `Dictionary`, `SortedDictionary` or `OrderedDictionary`.
 
 ```csharp
 int[3] array;

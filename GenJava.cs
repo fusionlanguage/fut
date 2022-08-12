@@ -266,13 +266,21 @@ public class GenJava : GenTyped
 
 	void Write(string name, CiDictionaryType dict)
 	{
-		Include("java.util." + name);
 		Write(name);
 		Write('<');
 		Write(dict.KeyType, false, true);
 		Write(", ");
 		Write(dict.ValueType, false, true);
 		Write('>');
+	}
+
+	void WriteDictionary(CiDictionaryType dict)
+	{
+		string name = dict is CiSortedDictionaryType ? "TreeMap" :
+			dict is CiOrderedDictionaryType ? "LinkedHashMap" :
+			"HashMap";
+		Include("java.util." + name);
+		Write(name, dict);
 	}
 
 	protected override void WriteClassName(CiClass klass)
@@ -314,11 +322,8 @@ public class GenJava : GenTyped
 		case CiHashSetType set:
 			WriteCollectionType("HashSet", set);
 			break;
-		case CiSortedDictionaryType dict:
-			Write("TreeMap", dict);
-			break;
 		case CiDictionaryType dict:
-			Write("HashMap", dict);
+			WriteDictionary(dict);
 			break;
 		case CiArrayType array:
 			Write(array.ElementType, false);
@@ -361,7 +366,7 @@ public class GenJava : GenTyped
 			break;
 		case CiDictionaryType dict:
 			Write("new ");
-			Write(dict is CiSortedDictionaryType ? "TreeMap" : "HashMap", dict);
+			WriteDictionary(dict);
 			Write("()");
 			break;
 		default:
