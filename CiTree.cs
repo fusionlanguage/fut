@@ -145,22 +145,22 @@ public abstract class CiScope : CiSymbol, IEnumerable<CiSymbol>
 		return null;
 	}
 
-	static bool IsPrivate(CiMember member)
+	static bool IsPrivate(CiSymbol symbol)
 	{
-		return member != null && member.Visibility == CiVisibility.Private;
+		return symbol is CiMember member && member.Visibility == CiVisibility.Private;
 	}
 
-	static bool IsOverrideOf(CiMethod derived, CiMethod baseMethod)
+	static bool IsOverrideOf(CiSymbol derivedSymbol, CiSymbol baseSymbol)
 	{
-		if (derived == null || baseMethod == null)
-			return false;
-		if (derived.CallType != CiCallType.Override && derived.CallType != CiCallType.Sealed)
-			return false;
-		if (baseMethod.CallType == CiCallType.Static || baseMethod.CallType == CiCallType.Normal)
-			return false;
-		// TODO: check parameter and return type
-		baseMethod.Calls.Add(derived);
-		return true;
+		if (derivedSymbol is CiMethod derived
+		 && (derived.CallType == CiCallType.Override || derived.CallType == CiCallType.Sealed)
+		 && baseSymbol is CiMethod baseMethod
+		 && baseMethod.CallType != CiCallType.Static && baseMethod.CallType != CiCallType.Normal) {
+			// TODO: check parameter and return type
+			baseMethod.Calls.Add(derived);
+			return true;
+		}
+		return false;
 	}
 
 	public void Add(CiSymbol symbol)
@@ -168,7 +168,7 @@ public abstract class CiScope : CiSymbol, IEnumerable<CiSymbol>
 		string name = symbol.Name;
 		for (CiScope scope = this; scope != null; scope = scope.Parent) {
 			if (scope.Dict[name] is CiSymbol duplicate
-			 && (scope == this || (!IsPrivate(duplicate as CiMember) && !IsOverrideOf(symbol as CiMethod, duplicate as CiMethod)))) {
+			 && (scope == this || (!IsPrivate(duplicate) && !IsOverrideOf(symbol, duplicate)))) {
 				CiScope symbolScope = symbol as CiScope ?? this;
 				CiScope duplicateScope = duplicate as CiScope ?? scope;
 				throw new CiException(symbolScope.Container.Filename, symbol.Line,
