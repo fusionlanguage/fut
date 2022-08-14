@@ -738,7 +738,7 @@ public class GenCs : GenTyped
 		WriteLine(");");
 	}
 
-	void Write(CiEnum enu)
+	void WriteEnum(CiEnum enu)
 	{
 		WriteLine();
 		Write(enu.Documentation);
@@ -809,7 +809,7 @@ public class GenCs : GenTyped
 		WriteBody(method);
 	}
 
-	void Write(CiClass klass)
+	void WriteClass(CiClass klass)
 	{
 		WriteLine();
 		Write(klass.Documentation);
@@ -882,10 +882,18 @@ public class GenCs : GenTyped
 			OpenBlock();
 		}
 		WriteTopLevelNatives(program);
-		foreach (CiEnum enu in program.OfType<CiEnum>())
-			Write(enu);
-		foreach (CiClass klass in program.Classes)
-			Write(klass);
+		foreach (CiContainerType type in program) {
+			switch (type) {
+			case CiEnum enu:
+				WriteEnum(enu);
+				break;
+			case CiClass klass:
+				WriteClass(klass);
+				break;
+			default:
+				throw new NotImplementedException(type.Type.ToString());
+			}
+		}
 		if (program.Resources.Count > 0)
 			WriteResources(program.Resources);
 		if (this.Namespace != null)

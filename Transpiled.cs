@@ -123,43 +123,6 @@ namespace Foxoft.Ci
 		AlreadyElse
 	}
 
-	public enum CiVisibility
-	{
-		Private,
-		Internal,
-		Protected,
-		Public
-	}
-
-	public enum CiCallType
-	{
-		Static,
-		Normal,
-		Abstract,
-		Virtual,
-		Override,
-		Sealed
-	}
-
-	public enum CiPriority
-	{
-		Statement,
-		Argument,
-		Assign,
-		Select,
-		CondOr,
-		CondAnd,
-		Or,
-		Xor,
-		And,
-		Equality,
-		Rel,
-		Shift,
-		Add,
-		Mul,
-		Primary
-	}
-
 	public class CiLexer
 	{
 
@@ -1284,6 +1247,43 @@ namespace Foxoft.Ci
 			}
 			return false;
 		}
+	}
+
+	public enum CiVisibility
+	{
+		Private,
+		Internal,
+		Protected,
+		Public
+	}
+
+	public enum CiCallType
+	{
+		Static,
+		Normal,
+		Abstract,
+		Virtual,
+		Override,
+		Sealed
+	}
+
+	public enum CiPriority
+	{
+		Statement,
+		Argument,
+		Assign,
+		Select,
+		CondOr,
+		CondAnd,
+		Or,
+		Xor,
+		And,
+		Equality,
+		Rel,
+		Shift,
+		Add,
+		Mul,
+		Primary
 	}
 
 	abstract class CiDocInline
