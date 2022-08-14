@@ -420,10 +420,26 @@ public abstract class GenBase : CiVisitor
 		Write("true");
 	}
 
+	protected virtual void WriteStringEscape(char c)
+	{
+		Write(c);
+	}
+
 	public override void VisitLiteralString(string value)
 	{
 		Write('"');
-		Write(value);
+		bool escape = false;
+		foreach (char c in value) {
+			if (escape) {
+				Write('\\');
+				WriteStringEscape(c);
+				escape = false;
+			}
+			else if (c == '\\')
+				escape = true;
+			else
+				Write(c);
+		}
 		Write('"');
 	}
 
