@@ -38,6 +38,24 @@ public class GenJava : GenTyped
 
 	protected override int GetLiteralChars() => 0x10000;
 
+	public override void VisitLiteralChar(int c)
+	{
+		if (c == '\a' || c == '\v')
+			base.VisitLiteralLong(c);
+		else
+			base.VisitLiteralChar(c);
+	}
+
+	protected override void WriteStringEscape(char c)
+	{
+		if (c == 'a')
+			Write("007");
+		else if (c == 'v')
+			Write("013");
+		else
+			Write(c);
+	}
+
 	protected override void WritePrintfWidth(CiInterpolatedPart part)
 	{
 		if (part.Precision >= 0 && part.Argument.Type is CiIntegerType) {
