@@ -1223,7 +1223,7 @@ public class GenSwift : GenPySwift
 		Write(param.Type);
 	}
 
-	void Write(CiEnum enu)
+	void WriteEnum(CiEnum enu)
 	{
 		WriteLine();
 		Write(enu.Documentation);
@@ -1299,7 +1299,46 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	void Write(CiMethod method)
+	void WriteConst(CiConst konst)
+	{
+		WriteLine();
+		Write(konst.Documentation);
+		Write(konst.Visibility);
+		Write("static let ");
+		WriteName(konst);
+		Write(" = ");
+		if (konst.Type == CiSystem.IntType || konst.Type is CiEnum || konst.Type == CiSystem.StringPtrType)
+			konst.Value.Accept(this, CiPriority.Argument);
+		else {
+			Write(konst.Type);
+			Write('(');
+			konst.Value.Accept(this, CiPriority.Argument);
+			Write(')');
+		}
+		WriteLine();
+	}
+
+	void WriteField(CiField field)
+	{
+		WriteLine();
+		Write(field.Documentation);
+		Write(field.Visibility);
+		if ((field.Type is CiClassPtrType || field.Type is CiArrayPtrType) && !field.Type.IsDynamicPtr)
+			Write("unowned ");
+		WriteVar(field);
+		if (field.Value == null && (field.Type is CiNumericType || field.Type is CiEnum || field.Type == CiSystem.StringStorageType)) {
+			Write(" = ");
+			WriteDefaultValue(field.Type);
+		}
+		else if (field.IsAssignableStorage) {
+			Write(" = ");
+			WriteName(field.Type);
+			Write("()");
+		}
+		WriteLine();
+	}
+
+	void WriteMethod(CiMethod method)
 	{
 		WriteLine();
 		Write(method.Documentation);
@@ -1364,28 +1403,7 @@ public class GenSwift : GenPySwift
 		CloseBlock();
 	}
 
-	void WriteConsts(IEnumerable<CiConst> consts)
-	{
-		foreach (CiConst konst in consts) {
-			WriteLine();
-			Write(konst.Documentation);
-			Write(konst.Visibility);
-			Write("static let ");
-			WriteName(konst);
-			Write(" = ");
-			if (konst.Type == CiSystem.IntType || konst.Type is CiEnum || konst.Type == CiSystem.StringPtrType)
-				konst.Value.Accept(this, CiPriority.Argument);
-			else {
-				Write(konst.Type);
-				Write('(');
-				konst.Value.Accept(this, CiPriority.Argument);
-				Write(')');
-			}
-			WriteLine();
-		}
-	}
-
-	void Write(CiClass klass)
+	void WriteClass(CiClass klass)
 	{
 		WriteLine();
 		Write(klass.Documentation);
@@ -1406,31 +1424,25 @@ public class GenSwift : GenPySwift
 			CloseBlock();
 		}
 
-		WriteConsts(klass.Consts);
-
-		foreach (CiField field in klass.Fields) {
-			WriteLine();
-			Write(field.Documentation);
-			Write(field.Visibility);
-			if ((field.Type is CiClassPtrType || field.Type is CiArrayPtrType) && !field.Type.IsDynamicPtr)
-				Write("unowned ");
-			WriteVar(field);
-			if (field.Value == null && (field.Type is CiNumericType || field.Type is CiEnum || field.Type == CiSystem.StringStorageType)) {
-				Write(" = ");
-				WriteDefaultValue(field.Type);
+		foreach (CiSymbol member in klass) {
+			switch (member) {
+			case CiConst konst:
+				WriteConst(konst);
+				break;
+			case CiField field:
+				WriteField(field);
+				break;
+			case CiMethod method:
+				WriteMethod(method);
+				break;
+			case CiVar _: // "this"
+				break;
+			default:
+				throw new NotImplementedException(member.Type.ToString());
 			}
-			else if (field.IsAssignableStorage) {
-				Write(" = ");
-				WriteName(field.Type);
-				Write("()");
-			}
-			WriteLine();
 		}
-
-		foreach (CiMethod method in klass.Methods)
-			Write(method);
-
-		WriteConsts(klass.ConstArrays);
+		foreach (CiConst konst in klass.ConstArrays)
+			WriteConst(konst);
 
 		CloseBlock();
 	}
@@ -1556,10 +1568,18 @@ public class GenSwift : GenPySwift
 		this.StringIndexOf = false;
 		this.StringSubstring = false;
 		OpenStringWriter();
-		foreach (CiEnum enu in program.OfType<CiEnum>())
-			Write(enu);
-		foreach (CiClass klass in program.Classes)
-			Write(klass);
+		foreach (CiContainerType type in program) {
+			switch (type) {
+			case CiEnum enu:
+				WriteEnum(enu);
+				break;
+			case CiClass klass:
+				WriteClass(klass);
+				break;
+			default:
+				throw new NotImplementedException(type.Type.ToString());
+			}
+		}
 
 		CreateFile(this.OutputFile);
 		WriteIncludes("import ", "");
