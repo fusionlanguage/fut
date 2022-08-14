@@ -965,17 +965,36 @@ public class GenJava : GenTyped
 		CloseBlock();
 	}
 
-	void WriteConsts(IEnumerable<CiConst> consts)
+	void WriteConst(CiConst konst)
 	{
-		foreach (CiConst konst in consts) {
-			WriteLine();
-			Write(konst.Documentation);
-			Write(konst.Visibility);
-			Write("static final ");
-			WriteTypeAndName(konst);
-			Write(" = ");
-			WriteCoercedExpr(konst.Type, konst.Value);
-			WriteLine(';');
+		WriteLine();
+		Write(konst.Documentation);
+		Write(konst.Visibility);
+		Write("static final ");
+		WriteTypeAndName(konst);
+		Write(" = ");
+		WriteCoercedExpr(konst.Type, konst.Value);
+		WriteLine(';');
+	}
+
+	void WriteField(CiField field)
+	{
+		Write(field.Visibility);
+		WriteVar(field);
+		WriteLine(';');
+	}
+
+	void WriteMethod(CiMethod method)
+	{
+		WriteSignature(method, method.Parameters.Count);
+		WriteBody(method);
+		int i = 0;
+		foreach (CiVar param in method.Parameters) {
+			if (param.Value != null) {
+				WriteOverloads(method, i);
+				break;
+			}
+			i++;
 		}
 	}
 
@@ -1022,28 +1041,26 @@ public class GenJava : GenTyped
 			CloseBlock();
 		}
 
-		WriteConsts(klass.Consts);
-
-		foreach (CiField field in klass.Fields) {
-			Write(field.Visibility);
-			WriteVar(field);
-			WriteLine(';');
-		}
-
-		foreach (CiMethod method in klass.Methods) {
-			WriteSignature(method, method.Parameters.Count);
-			WriteBody(method);
-			int i = 0;
-			foreach (CiVar param in method.Parameters) {
-				if (param.Value != null) {
-					WriteOverloads(method, i);
-					break;
-				}
-				i++;
+		foreach (CiSymbol member in klass) {
+			switch (member) {
+			case CiConst konst:
+				WriteConst(konst);
+				break;
+			case CiField field:
+				WriteField(field);
+				break;
+			case CiMethod method:
+				WriteMethod(method);
+				break;
+			case CiVar _: // "this"
+				break;
+			default:
+				throw new NotImplementedException(member.Type.ToString());
 			}
 		}
+		foreach (CiConst konst in klass.ConstArrays)
+			WriteConst(konst);
 
-		WriteConsts(klass.ConstArrays);
 		CloseBlock();
 
 		CreateJavaFile(klass.Name);
