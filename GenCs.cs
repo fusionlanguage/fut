@@ -763,21 +763,50 @@ public class GenCs : GenTyped
 		CloseBlock();
 	}
 
-	void WriteConsts(IEnumerable<CiConst> consts)
+	void WriteConst(CiConst konst)
 	{
-		foreach (CiConst konst in consts) {
-			WriteLine();
-			Write(konst.Documentation);
-			Write(konst.Visibility);
-			if (konst.Type is CiArrayStorageType)
-				Write("static readonly ");
-			else
-				Write("const ");
-			WriteTypeAndName(konst);
-			Write(" = ");
-			WriteCoercedExpr(konst.Type, konst.Value);
-			WriteLine(';');
+		WriteLine();
+		Write(konst.Documentation);
+		Write(konst.Visibility);
+		if (konst.Type is CiArrayStorageType)
+			Write("static readonly ");
+		else
+			Write("const ");
+		WriteTypeAndName(konst);
+		Write(" = ");
+		WriteCoercedExpr(konst.Type, konst.Value);
+		WriteLine(';');
+	}
+
+	void WriteField(CiField field)
+	{
+		WriteLine();
+		Write(field.Documentation);
+		Write(field.Visibility);
+		if (field.Type.IsFinal && !field.IsAssignableStorage)
+			Write("readonly ");
+		WriteVar(field);
+		WriteLine(';');
+	}
+
+	void WriteMethod(CiMethod method)
+	{
+		WriteLine();
+		Write(method.Documentation);
+		foreach (CiVar param in method.Parameters) {
+			if (param.Documentation != null) {
+				Write("/// <param name=\"");
+				WriteName(param);
+				Write("\">");
+				Write(param.Documentation.Summary, false);
+				WriteLine("</param>");
+			}
 		}
+		Write(method.Visibility);
+		Write(method.CallType, "sealed override ");
+		WriteTypeAndName(method);
+		WriteParameters(method, true);
+		WriteBody(method);
 	}
 
 	void Write(CiClass klass)
@@ -804,38 +833,25 @@ public class GenCs : GenTyped
 			CloseBlock();
 		}
 
-		WriteConsts(klass.Consts);
-
-		foreach (CiField field in klass.Fields) {
-			WriteLine();
-			Write(field.Documentation);
-			Write(field.Visibility);
-			if (field.Type.IsFinal && !field.IsAssignableStorage)
-				Write("readonly ");
-			WriteVar(field);
-			WriteLine(';');
-		}
-
-		foreach (CiMethod method in klass.Methods) {
-			WriteLine();
-			Write(method.Documentation);
-			foreach (CiVar param in method.Parameters) {
-				if (param.Documentation != null) {
-					Write("/// <param name=\"");
-					WriteName(param);
-					Write("\">");
-					Write(param.Documentation.Summary, false);
-					WriteLine("</param>");
-				}
+		foreach (CiSymbol member in klass) {
+			switch (member) {
+			case CiConst konst:
+				WriteConst(konst);
+				break;
+			case CiField field:
+				WriteField(field);
+				break;
+			case CiMethod method:
+				WriteMethod(method);
+				break;
+			case CiVar _: // "this"
+				break;
+			default:
+				throw new NotImplementedException(member.Type.ToString());
 			}
-			Write(method.Visibility);
-			Write(method.CallType, "sealed override ");
-			WriteTypeAndName(method);
-			WriteParameters(method, true);
-			WriteBody(method);
 		}
-
-		WriteConsts(klass.ConstArrays);
+		foreach (CiConst konst in klass.ConstArrays)
+			WriteConst(konst);
 
 		CloseBlock();
 	}
