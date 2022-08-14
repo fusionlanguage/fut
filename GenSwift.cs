@@ -315,27 +315,6 @@ public class GenSwift : GenPySwift
 		Write("nil");
 	}
 
-	protected override void WriteStringEscape(char c)
-	{
-		switch (c) {
-		case 'a':
-			Write("u{7}");
-			break;
-		case 'b':
-			Write("u{8}");
-			break;
-		case 'f':
-			Write("u{c}");
-			break;
-		case 'v':
-			Write("u{b}");
-			break;
-		default:
-			Write(c);
-			break;
-		}
-	}
-
 	static bool IsForeachStringStg(CiExpr expr)
 	{
 		if (!(expr is CiSymbolReference symbol) || !(symbol.Symbol.Parent is CiForeach loop))

@@ -2,17 +2,11 @@ public static class Test
 {
 	public static bool Run()
 	{
-		string s = "\"\a0\b\f\n\r\t\v1";
-		return s.Length == 10
+		string s = "\"\n\r\t";
+		return s.Length == 4
 			&& s[0] == '\"'
-			&& s[1] == '\a'
-			&& s[2] == '0'
-			&& s[3] == '\b'
-			&& s[4] == '\f'
-			&& s[5] == '\n'
-			&& s[6] == '\r'
-			&& s[7] == '\t'
-			&& s[8] == '\v'
-			&& s[9] == '1';
+			&& s[1] == '\n'
+			&& s[2] == '\r'
+			&& s[3] == '\t';
 	}
 }

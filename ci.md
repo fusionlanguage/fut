@@ -123,10 +123,6 @@ You may also use the following escape sequences:
 * `'\t'` -- horizontal tab
 * `'\r'` -- CR
 * `'\n'` -- LF
-* `'\a'` -- bell
-* `'\b'` -- backspace
-* `'\f'` -- form feed
-* `'\v'` -- vertical tab
 * `'\\'` -- backslash
 
 Operations on integers are conducted with the usual binary operators

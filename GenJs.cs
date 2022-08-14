@@ -165,14 +165,6 @@ public class GenJs : GenBase
 		base.WriteVar(def);
 	}
 
-	protected override void WriteStringEscape(char c)
-	{
-		if (c == 'a')
-			Write("x07");
-		else
-			Write(c);
-	}
-
 	void WriteInterpolatedLiteral(string s)
 	{
 		for (int i = 0; i < s.Length; i++) {

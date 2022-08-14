@@ -80,13 +80,9 @@ public abstract class GenBase : CiVisitor
 		if (c < GetLiteralChars()) {
 			Write('\'');
 			switch (c) {
-			case '\a': Write("\\a"); break;
-			case '\b': Write("\\b"); break;
-			case '\f': Write("\\f"); break;
 			case '\n': Write("\\n"); break;
 			case '\r': Write("\\r"); break;
 			case '\t': Write("\\t"); break;
-			case '\v': Write("\\v"); break;
 			case '\'': Write("\\'"); break;
 			case '\\': Write("\\\\"); break;
 			default: Write((char) c); break;
@@ -420,26 +416,10 @@ public abstract class GenBase : CiVisitor
 		Write("true");
 	}
 
-	protected virtual void WriteStringEscape(char c)
-	{
-		Write(c);
-	}
-
 	public override void VisitLiteralString(string value)
 	{
 		Write('"');
-		bool escape = false;
-		foreach (char c in value) {
-			if (escape) {
-				Write('\\');
-				WriteStringEscape(c);
-				escape = false;
-			}
-			else if (c == '\\')
-				escape = true;
-			else
-				Write(c);
-		}
+		Write(value);
 		Write('"');
 	}
 
