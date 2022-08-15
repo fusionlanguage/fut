@@ -33,8 +33,6 @@ public class CiParser : CiLexer
 	CiCondCompletionStatement CurrentLoopOrSwitch;
 	string XcrementParent = null;
 
-	CiException StatementException(CiStatement statement, string message) => new CiException(this.Filename, statement.Line, message);
-
 	string ParseId()
 	{
 		string id = this.StringValue;
@@ -425,20 +423,26 @@ public class CiParser : CiLexer
 			return new CiBinaryExpr { Line = this.Line, Left = left, Op = CiToken.Range, Right = ParsePrimaryExpr() };
 		if (left is CiSymbolReference symbol && Eat(CiToken.Less)) {
 			CiSymbol klass = CiSystem.Value.TryLookup(symbol.Name);
-			if (klass == null)
-				throw StatementException(symbol, $"{symbol.Name} not found");
+			if (klass == null) {
+				ReportError($"{symbol.Name} not found");
+				return null;
+			}
 			int line = this.Line;
 			bool saveTypeArg = this.ParsingTypeArg;
 			this.ParsingTypeArg = true;
 			CiExpr typeArg = ParseType();
 			if (Eat(CiToken.Comma)) {
 				CiExpr valueType = ParseType();
-				if (klass != CiSystem.DictionaryClass && klass != CiSystem.SortedDictionaryClass && klass != CiSystem.OrderedDictionaryClass)
-					throw StatementException(symbol, $"{symbol.Name} is not a generic class with two type parameters");
+				if (klass != CiSystem.DictionaryClass && klass != CiSystem.SortedDictionaryClass && klass != CiSystem.OrderedDictionaryClass) {
+					ReportError($"{symbol.Name} is not a generic class with two type parameters");
+					return null;
+				}
 				left = new CiSymbolReference { Line = line, Left = new CiAggregateInitializer { Items = new CiExpr[] { typeArg, valueType } }, Symbol = klass };
 			}
-			else if (klass != CiSystem.ListClass && klass != CiSystem.StackClass && klass != CiSystem.HashSetClass)
-				throw StatementException(symbol, $"{symbol.Name} is not a generic class with one type parameter");
+			else if (klass != CiSystem.ListClass && klass != CiSystem.StackClass && klass != CiSystem.HashSetClass) {
+				ReportError($"{symbol.Name} is not a generic class with one type parameter");
+				return null;
+			}
 			else
 				left = new CiSymbolReference { Line = line, Left = typeArg, Symbol = klass };
 			Expect(CiToken.RightAngle);
