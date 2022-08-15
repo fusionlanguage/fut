@@ -1413,20 +1413,15 @@ public class CiResolver : CiVisitor
 				NotSupported(call, "HashSet", "cl");
 				return new CiHashSetType { ElementType = ToType(call.Method.Left, false) };
 			}
-			if (call.Method.Symbol == CiSystem.DictionaryClass) {
-				NotSupported(call, "Dictionary", "cl");
+			if (call.Method.Symbol == CiSystem.DictionaryClass || call.Method.Symbol == CiSystem.SortedDictionaryClass) {
+				NotSupported(call, call.Method.Symbol.Name, "cl");
 				CiExpr[] items = ((CiAggregateInitializer) call.Method.Left).Items;
-				return new CiDictionaryType { KeyType = ToType(items[0], false), ValueType = ToType(items[1], false) };
-			}
-			if (call.Method.Symbol == CiSystem.SortedDictionaryClass) {
-				NotSupported(call, "SortedDictionary", "cl");
-				CiExpr[] items = ((CiAggregateInitializer) call.Method.Left).Items;
-				return new CiSortedDictionaryType { KeyType = ToType(items[0], false), ValueType = ToType(items[1], false) };
+				return new CiDictionaryType { Class = call.Method.Symbol, KeyType = ToType(items[0], false), ValueType = ToType(items[1], false) };
 			}
 			if (call.Method.Symbol == CiSystem.OrderedDictionaryClass) {
 				NotSupported(call, "OrderedDictionary", "c", "cpp", "swift", "ts", "cl");
 				CiExpr[] items = ((CiAggregateInitializer) call.Method.Left).Items;
-				return new CiOrderedDictionaryType { KeyType = ToType(items[0], false), ValueType = ToType(items[1], false) };
+				return new CiDictionaryType { Class = call.Method.Symbol, KeyType = ToType(items[0], false), ValueType = ToType(items[1], false) };
 			}
 			if (call.Method.Name == "string") {
 				NotSupported(call, "string()", "cl");

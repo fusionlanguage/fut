@@ -503,12 +503,13 @@ public class GenPy : GenPySwift
 		case CiHashSetType _:
 			Write("set()");
 			break;
-		case CiOrderedDictionaryType _:
-			Include("collections");
-			Write("collections.OrderedDict()");
-			break;
-		case CiDictionaryType _:
-			Write("{}");
+		case CiDictionaryType dict:
+			if (dict.Class == CiSystem.OrderedDictionaryClass) {
+				Include("collections");
+				Write("collections.OrderedDict()");
+			}
+			else
+				Write("{}");
 			break;
 		default:
 			base.WriteNewStorage(type);
@@ -904,11 +905,11 @@ public class GenPy : GenPySwift
 	{
 		Write("for ");
 		WriteName(statement.Element);
-		if (statement.Count == 2) {
+		if (statement.Collection.Type is CiDictionaryType dict) {
 			Write(", ");
 			WriteName(statement.ValueVar);
 			Write(" in ");
-			if (statement.Collection.Type is CiSortedDictionaryType) {
+			if (dict.Class == CiSystem.SortedDictionaryClass) {
 				Write("sorted(");
 				statement.Collection.Accept(this, CiPriority.Primary);
 				Write(".items())");

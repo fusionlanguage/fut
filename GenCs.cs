@@ -211,15 +211,14 @@ public class GenCs : GenTyped
 
 	void Write(CiDictionaryType dict)
 	{
-		if (dict is CiOrderedDictionaryType) {
+		if (dict.Class == CiSystem.OrderedDictionaryClass) {
 			Include("System.Collections.Specialized");
 			Write("OrderedDictionary");
 		}
 		else {
 			Include("System.Collections.Generic");
-			if (dict is CiSortedDictionaryType)
-				Write("Sorted");
-			Write("Dictionary<");
+			Write(dict.Class.Name);
+			Write('<');
 			Write(dict.KeyType, false);
 			Write(", ");
 			Write(dict.ValueType, false);
@@ -437,7 +436,9 @@ public class GenCs : GenTyped
 			Write("float.");
 			Write(expr.Symbol.Name);
 		}
-		else if (expr.Symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiOrderedDictionaryType dict) {
+		else if (expr.Symbol.Parent is CiForeach forEach
+			&& forEach.Collection.Type is CiDictionaryType dict
+			&& dict.Class == CiSystem.OrderedDictionaryClass) {
 			if (parent == CiPriority.Primary)
 				Write('(');
 			CiVar element = forEach.Element;
@@ -598,7 +599,7 @@ public class GenCs : GenTyped
 			WriteNewStorage(dict.ValueType);
 			Write(')');
 		}
-		else if (obj.Type is CiOrderedDictionaryType && method.Name == "ContainsKey")
+		else if (obj.Type is CiDictionaryType dict2 && dict2.Class == CiSystem.OrderedDictionaryClass && method.Name == "ContainsKey")
 			WriteCall(obj, "Contains", args[0]);
 		else {
 			if (method == CiSystem.MathIsFinite || method == CiSystem.MathIsInfinity || method == CiSystem.MathIsNaN)
@@ -631,7 +632,7 @@ public class GenCs : GenTyped
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Left.Type is CiOrderedDictionaryType) {
+		if (expr.Left.Type is CiDictionaryType dict && dict.Class == CiSystem.OrderedDictionaryClass) {
 			if (parent == CiPriority.Primary)
 				Write('(');
 			WriteStaticCastType(expr.Type);
@@ -647,7 +648,8 @@ public class GenCs : GenTyped
 	{
 		if (expr.Left is CiBinaryExpr indexing
 		 && indexing.Op == CiToken.LeftBracket
-		 && indexing.Left.Type is CiOrderedDictionaryType) {
+		 && indexing.Left.Type is CiDictionaryType dict
+		 && dict.Class == CiSystem.OrderedDictionaryClass) {
 			WriteOrderedDictionaryIndexing(indexing);
 			Write(" = ");
 			WriteAssignRight(expr);
@@ -700,8 +702,8 @@ public class GenCs : GenTyped
 	public override void VisitForeach(CiForeach statement)
 	{
 		Write("foreach (");
-		if (statement.Count == 2) {
-			if (statement.Collection.Type is CiOrderedDictionaryType) {
+		if (statement.Collection.Type is CiDictionaryType dict) {
+			if (dict.Class == CiSystem.OrderedDictionaryClass) {
 				Include("System.Collections");
 				Write("DictionaryEntry ");
 				WriteName(statement.Element);

@@ -1136,7 +1136,7 @@ public class GenSwift : GenPySwift
 		else
 			WriteName(statement.Element);
 		Write(" in ");
-		if (statement.Collection.Type is CiSortedDictionaryType dict) {
+		if (statement.Collection.Type is CiDictionaryType dict && dict.Class == CiSystem.SortedDictionaryClass) {
 			statement.Collection.Accept(this, CiPriority.Primary);
 			Write(dict.KeyType == CiSystem.StringPtrType
 				? ".sorted(by: { $0.key! < $1.key! })"

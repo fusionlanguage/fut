@@ -1476,10 +1476,11 @@ public class CiHashSetType : CiCollectionType
 
 public class CiDictionaryType : CiType
 {
+	public CiSymbol Class;
 	public CiType KeyType;
 	public CiType ValueType;
 
-	public override string ToString() => $"Dictionary<{this.KeyType}, {this.ValueType}>";
+	public override string ToString() => $"{this.Class.Name}<{this.KeyType}, {this.ValueType}>";
 	public override CiSymbol TryLookup(string name)
 	{
 		switch (name) {
@@ -1500,16 +1501,6 @@ public class CiDictionaryType : CiType
 		}
 	}
 	public override bool IsFinal => true;
-}
-
-public class CiSortedDictionaryType : CiDictionaryType
-{
-	public override string ToString() => $"SortedDictionary<{this.KeyType}, {this.ValueType}>";
-}
-
-public class CiOrderedDictionaryType : CiDictionaryType
-{
-	public override string ToString() => $"OrderedDictionary<{this.KeyType}, {this.ValueType}>";
 }
 
 public class CiPrintableType : CiType

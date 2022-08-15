@@ -276,8 +276,8 @@ public class GenJava : GenTyped
 
 	void WriteDictionary(CiDictionaryType dict)
 	{
-		string name = dict is CiSortedDictionaryType ? "TreeMap" :
-			dict is CiOrderedDictionaryType ? "LinkedHashMap" :
+		string name = dict.Class == CiSystem.SortedDictionaryClass ? "TreeMap" :
+			dict.Class == CiSystem.OrderedDictionaryClass ? "LinkedHashMap" :
 			"HashMap";
 		Include("java.util." + name);
 		Write(name, dict);

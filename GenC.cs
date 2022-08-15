@@ -287,12 +287,11 @@ public class GenC : GenCCpp
 				expr.Left.Accept(this, CiPriority.Primary);
 				Write("->len");
 				break;
-			case CiSortedDictionaryType _:
-				WriteCall("g_tree_nnodes", expr.Left);
-				break;
 			case CiHashSetType _:
-			case CiDictionaryType _:
 				WriteCall("g_hash_table_size", expr.Left);
+				break;
+			case CiDictionaryType dict:
+				WriteCall(dict.Class == CiSystem.SortedDictionaryClass ? "g_tree_nnodes" : "g_hash_table_size", expr.Left);
 				break;
 			default:
 				throw new NotImplementedException(expr.Left.Type.ToString());
@@ -389,11 +388,8 @@ public class GenC : GenCCpp
 		case CiHashSetType _:
 			WriteGlib("GHashTable *");
 			break;
-		case CiSortedDictionaryType _:
-			WriteGlib("GTree *");
-			break;
-		case CiDictionaryType _:
-			WriteGlib("GHashTable *");
+		case CiDictionaryType dict:
+			WriteGlib(dict.Class == CiSystem.SortedDictionaryClass ? "GTree *" : "GHashTable *");
 			break;
 		case CiContainerType _:
 			if (baseType == CiSystem.BoolType) {
@@ -573,8 +569,8 @@ public class GenC : GenCCpp
 			this.ListFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
 			return "CiList_FreeList";
 		}
-		if (elementType is CiDictionaryType) {
-			if (elementType is CiSortedDictionaryType) {
+		if (elementType is CiDictionaryType dict) {
+			if (dict.Class == CiSystem.SortedDictionaryClass) {
 				this.ListFrees["SortedDictionary"] = "g_tree_unref(*(GTree **) ptr)";
 				return "CiList_FreeSortedDictionary";
 			}
@@ -596,8 +592,8 @@ public class GenC : GenCCpp
 			return NeedsDestructor(klass) ? $"(GDestroyNotify) {klass.Name}_Delete" /* TODO: emit */ : "free";
 		if (type is CiListType)
 			return "(GDestroyNotify) g_array_unref";
-		if (type is CiDictionaryType)
-			return type is CiSortedDictionaryType ? "(GDestroyNotify) g_tree_unref" : "(GDestroyNotify) g_hash_table_unref";
+		if (type is CiDictionaryType dict)
+			return dict.Class == CiSystem.SortedDictionaryClass ? "(GDestroyNotify) g_tree_unref" : "(GDestroyNotify) g_hash_table_unref";
 		return "NULL";
 	}
 
@@ -637,33 +633,34 @@ public class GenC : GenCCpp
 		case CiHashSetType set:
 			WriteNewHashTable(set.ElementType, "NULL");
 			break;
-		case CiSortedDictionaryType dict:
-			string valueDestroy = GetDictionaryDestroy(dict.ValueType);
-			if (dict.KeyType == CiSystem.StringPtrType && valueDestroy == "NULL")
-				Write("g_tree_new((GCompareFunc) strcmp");
-			else {
-				Write("g_tree_new_full(CiTree_Compare");
-				switch (dict.KeyType) {
-				case CiIntegerType _:
-					this.TreeCompareInteger = true;
-					Write("Integer");
-					break;
-				case CiStringType _:
-					this.TreeCompareString = true;
-					Write("String");
-					break;
-				default:
-					throw new NotImplementedException(dict.KeyType.ToString());
-				}
-				Write(", NULL, ");
-				Write(GetDictionaryDestroy(dict.KeyType));
-				Write(", ");
-				Write(valueDestroy);
-			}
-			Write(')');
-			break;
 		case CiDictionaryType dict:
-			WriteNewHashTable(dict.KeyType, GetDictionaryDestroy(dict.ValueType));
+			if (dict.Class == CiSystem.SortedDictionaryClass) {
+				string valueDestroy = GetDictionaryDestroy(dict.ValueType);
+				if (dict.KeyType == CiSystem.StringPtrType && valueDestroy == "NULL")
+					Write("g_tree_new((GCompareFunc) strcmp");
+				else {
+					Write("g_tree_new_full(CiTree_Compare");
+					switch (dict.KeyType) {
+					case CiIntegerType _:
+						this.TreeCompareInteger = true;
+						Write("Integer");
+						break;
+					case CiStringType _:
+						this.TreeCompareString = true;
+						Write("String");
+						break;
+					default:
+						throw new NotImplementedException(dict.KeyType.ToString());
+					}
+					Write(", NULL, ");
+					Write(GetDictionaryDestroy(dict.KeyType));
+					Write(", ");
+					Write(valueDestroy);
+				}
+				Write(')');
+			}
+			else
+				WriteNewHashTable(dict.KeyType, GetDictionaryDestroy(dict.ValueType));
 			break;
 		default:
 			base.WriteNewStorage(type);
@@ -867,10 +864,11 @@ public class GenC : GenCCpp
 
 	void StartDictionaryInsert(CiExpr dict, CiExpr key)
 	{
-		Write(dict.Type is CiSortedDictionaryType ? "g_tree_insert(" : "g_hash_table_insert(");
+		CiDictionaryType type = (CiDictionaryType) dict.Type;
+		Write(type.Class == CiSystem.SortedDictionaryClass ? "g_tree_insert(" : "g_hash_table_insert(");
 		dict.Accept(this, CiPriority.Argument);
 		Write(", ");
-		WriteGPointerCast(((CiDictionaryType) dict.Type).KeyType, key);
+		WriteGPointerCast(type.KeyType, key);
 		Write(", ");
 	}
 
@@ -1536,15 +1534,18 @@ public class GenC : GenCCpp
 				obj.Accept(this, CiPriority.Argument);
 				Write(", 0)");
 				break;
-			case CiSortedDictionaryType _:
-				// TODO: since glib-2.70: WriteCall("g_tree_remove_all", obj);
-				Write("g_tree_destroy(g_tree_ref(");
-				obj.Accept(this, CiPriority.Argument);
-				Write("))");
-				break;
 			case CiHashSetType _:
-			case CiDictionaryType _:
 				WriteCall("g_hash_table_remove_all", obj);
+				break;
+			case CiDictionaryType dict:
+				if (dict.Class == CiSystem.SortedDictionaryClass) {
+					// TODO: since glib-2.70: WriteCall("g_tree_remove_all", obj);
+					Write("g_tree_destroy(g_tree_ref(");
+					obj.Accept(this, CiPriority.Argument);
+					Write("))");
+				}
+				else
+					WriteCall("g_hash_table_remove_all", obj);
 				break;
 			default:
 				throw new NotImplementedException(obj.Type.ToString());
@@ -1579,8 +1580,8 @@ public class GenC : GenCCpp
 		}
 		else if (obj.Type is CiHashSetType && method.Name == "Contains")
 			WriteDictionaryLookup(obj, "g_hash_table_contains", args[0]);
-		else if ((obj.Type is CiHashSetType || obj.Type is CiDictionaryType) && method.Name == "Remove")
-			WriteDictionaryLookup(obj, obj.Type is CiSortedDictionaryType ? "g_tree_remove" : "g_hash_table_remove", args[0]);
+		else if (obj.Type is CiHashSetType && method.Name == "Remove")
+			WriteDictionaryLookup(obj, "g_hash_table_remove", args[0]);
 		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
 			StartDictionaryInsert(obj, args[0]);
 			switch (dict.ValueType) {
@@ -1600,8 +1601,8 @@ public class GenC : GenCCpp
 			}
 			Write(')');
 		}
-		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey") {
-			if (obj.Type is CiSortedDictionaryType) {
+		else if (obj.Type is CiDictionaryType dict2 && method.Name == "ContainsKey") {
+			if (dict2.Class == CiSystem.SortedDictionaryClass) {
 				Write("g_tree_lookup_extended(");
 				obj.Accept(this, CiPriority.Argument);
 				Write(", ");
@@ -1611,6 +1612,8 @@ public class GenC : GenCCpp
 			else
 				WriteDictionaryLookup(obj, "g_hash_table_contains", args[0]);
 		}
+		else if (obj.Type is CiDictionaryType dict3 && method.Name == "Remove")
+			WriteDictionaryLookup(obj, dict3.Class == CiSystem.SortedDictionaryClass ? "g_tree_remove" : "g_hash_table_remove", args[0]);
 		else if (method == CiSystem.UTF8GetByteCount)
 			WriteStringLength(args[0]);
 		else if (method == CiSystem.UTF8GetBytes) {
@@ -1716,7 +1719,7 @@ public class GenC : GenCCpp
 			}
 			break;
 		case CiDictionaryType dict:
-			string function = dict is CiSortedDictionaryType ? "g_tree_lookup" : "g_hash_table_lookup";
+			string function = dict.Class == CiSystem.SortedDictionaryClass ? "g_tree_lookup" : "g_hash_table_lookup";
 			if (dict.ValueType is CiIntegerType && dict.ValueType != CiSystem.LongType) {
 				Write("GPOINTER_TO_INT(");
 				WriteDictionaryLookup(expr.Left, function, expr.Right);
@@ -1885,8 +1888,8 @@ public class GenC : GenCCpp
 		}
 		else if (type is CiListType)
 			Write("g_array_free(");
-		else if (type is CiDictionaryType)
-			Write(type is CiSortedDictionaryType ? "g_tree_unref(" : "g_hash_table_unref(");
+		else if (type is CiDictionaryType dict)
+			Write(dict.Class == CiSystem.SortedDictionaryClass ? "g_tree_unref(" : "g_hash_table_unref(");
 		else
 			Write("free(");
 		WriteLocalName(symbol, CiPriority.Primary);
@@ -2090,26 +2093,28 @@ public class GenC : GenCCpp
 			CloseBlock();
 			CloseBlock();
 			break;
-		case CiSortedDictionaryType dict:
-			Write("for (GTreeNode *cidictit = g_tree_node_first(");
-			statement.Collection.Accept(this, CiPriority.Argument);
-			Write("); cidictit != NULL; cidictit = g_tree_node_next(cidictit)) ");
-			OpenBlock();
-			WriteDictIterVar(statement.Element, "g_tree_node_key(cidictit)");
-			WriteDictIterVar(statement.ValueVar, "g_tree_node_value(cidictit)");
-			FlattenBlock(statement.Body);
-			CloseBlock();
-			break;
 		case CiDictionaryType dict:
-			StartForeachHashTable(statement);
-			WriteLine("gpointer cikey, civalue;");
-			Write("while (g_hash_table_iter_next(&cidictit, &cikey, &civalue)) ");
-			OpenBlock();
-			WriteDictIterVar(statement.Element, "cikey");
-			WriteDictIterVar(statement.ValueVar, "civalue");
-			FlattenBlock(statement.Body);
-			CloseBlock();
-			CloseBlock();
+			if (dict.Class == CiSystem.SortedDictionaryClass) {
+				Write("for (GTreeNode *cidictit = g_tree_node_first(");
+				statement.Collection.Accept(this, CiPriority.Argument);
+				Write("); cidictit != NULL; cidictit = g_tree_node_next(cidictit)) ");
+				OpenBlock();
+				WriteDictIterVar(statement.Element, "g_tree_node_key(cidictit)");
+				WriteDictIterVar(statement.ValueVar, "g_tree_node_value(cidictit)");
+				FlattenBlock(statement.Body);
+				CloseBlock();
+			}
+			else {
+				StartForeachHashTable(statement);
+				WriteLine("gpointer cikey, civalue;");
+				Write("while (g_hash_table_iter_next(&cidictit, &cikey, &civalue)) ");
+				OpenBlock();
+				WriteDictIterVar(statement.Element, "cikey");
+				WriteDictIterVar(statement.ValueVar, "civalue");
+				FlattenBlock(statement.Body);
+				CloseBlock();
+				CloseBlock();
+			}
 			break;
 		default:
 			throw new NotImplementedException(statement.Collection.Type.ToString());

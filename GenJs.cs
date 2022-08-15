@@ -147,11 +147,8 @@ public class GenJs : GenBase
 		case CiHashSetType _:
 			Write("new Set()");
 			break;
-		case CiOrderedDictionaryType _:
-			Write("new Map()");
-			break;
-		case CiDictionaryType _:
-			Write("{}");
+		case CiDictionaryType dict:
+			Write(dict.Class == CiSystem.OrderedDictionaryClass ? "new Map()" : "{}");
 			break;
 		default:
 			base.WriteNewStorage(type);
@@ -316,13 +313,18 @@ public class GenJs : GenBase
 				Write(".length");
 				break;
 			case CiHashSetType _:
-			case CiOrderedDictionaryType _:
 				expr.Left.Accept(this, CiPriority.Primary);
 				Write(".size");
 				break;
-			case CiDictionaryType _:
-				WriteCall("Object.keys", expr.Left);
-				Write(".length");
+			case CiDictionaryType dict:
+				if (dict.Class == CiSystem.OrderedDictionaryClass) {
+					expr.Left.Accept(this, CiPriority.Primary);
+					Write(".size");
+				}
+				else {
+					WriteCall("Object.keys", expr.Left);
+					Write(".length");
+				}
 				break;
 			default:
 				throw new NotImplementedException(expr.Left.Type.ToString());
@@ -504,19 +506,19 @@ public class GenJs : GenBase
 		}
 		else if (method == CiSystem.ListRemoveRange)
 			WriteCall(obj, "splice", args[0], args[1]);
-		else if (obj.Type is CiDictionaryType && method.Name == "Remove") {
-			if (obj.Type is CiOrderedDictionaryType)
+		else if (obj.Type is CiStackType && method.Name == "Peek") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".at(-1)");
+		}
+		else if (obj.Type is CiDictionaryType dict && method.Name == "Remove") {
+			if (dict.Class == CiSystem.OrderedDictionaryClass)
 				WriteCall(obj, "delete", args[0]);
 			else {
 				Write("delete ");
 				WriteIndexing(obj, args[0]);
 			}
 		}
-		else if (obj.Type is CiStackType && method.Name == "Peek") {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".at(-1)");
-		}
-		else if (obj.Type is CiDictionaryType && !(obj.Type is CiOrderedDictionaryType) && method == CiSystem.CollectionClear) {
+		else if (obj.Type is CiDictionaryType dict2 && dict2.Class != CiSystem.OrderedDictionaryClass && method == CiSystem.CollectionClear) {
 			Write("for (const key in ");
 			obj.Accept(this, CiPriority.Argument);
 			WriteLine(')');
@@ -648,8 +650,8 @@ public class GenJs : GenBase
 				Write("has");
 			else if (obj.Type is CiHashSetType && method.Name == "Remove")
 				Write("delete");
-			else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey")
-				Write(obj.Type is CiOrderedDictionaryType ? "has" : "hasOwnProperty");
+			else if (obj.Type is CiDictionaryType dict3 && method.Name == "ContainsKey")
+				Write(dict3.Class == CiSystem.OrderedDictionaryClass ? "has" : "hasOwnProperty");
 			else
 				WriteName(method);
 			WriteArgsInParentheses(method, args);
@@ -658,7 +660,7 @@ public class GenJs : GenBase
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Left.Type is CiOrderedDictionaryType)
+		if (expr.Left.Type is CiDictionaryType dict && dict.Class == CiSystem.OrderedDictionaryClass)
 			WriteCall(expr.Left, "get", expr.Right);
 		else
 			base.WriteIndexing(expr, parent);
@@ -668,7 +670,8 @@ public class GenJs : GenBase
 	{
 		if (expr.Left is CiBinaryExpr indexing
 		 && indexing.Op == CiToken.LeftBracket
-		 && indexing.Left.Type is CiOrderedDictionaryType)
+		 && indexing.Left.Type is CiDictionaryType dict
+		 && dict.Class == CiSystem.OrderedDictionaryClass)
 			WriteCall(indexing.Left, "set", indexing.Right, expr.Right);
 		else
 			base.WriteAssign(expr, parent);
@@ -723,24 +726,24 @@ public class GenJs : GenBase
 	public override void VisitForeach(CiForeach statement)
 	{
 		Write("for (const ");
-		if (statement.Count == 2) {
+		if (statement.Collection.Type is CiDictionaryType dict) {
 			Write('[');
 			WriteName(statement.Element);
 			Write(", ");
 			WriteName(statement.ValueVar);
 			Write("] of ");
-			if (statement.Collection.Type is CiOrderedDictionaryType)
+			if (dict.Class == CiSystem.OrderedDictionaryClass)
 				statement.Collection.Accept(this, CiPriority.Argument);
 			else {
 				WriteCall("Object.entries", statement.Collection);
 				switch (statement.Element.Type) {
 				case CiStringType _:
-					if (statement.Collection.Type is CiSortedDictionaryType)
+					if (dict.Class == CiSystem.SortedDictionaryClass)
 						Write(".sort((a, b) => a[0].localeCompare(b[0]))");
 					break;
 				case CiNumericType _:
 					Write(".map(e => [+e[0], e[1]])");
-					if (statement.Collection.Type is CiSortedDictionaryType)
+					if (dict.Class == CiSystem.SortedDictionaryClass)
 						Write(".sort((a, b) => a[0] - b[0])");
 					break;
 				default:

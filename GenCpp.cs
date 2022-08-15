@@ -263,7 +263,7 @@ public class GenCpp : GenCCpp
 			WriteCollectionType("unordered_set", set);
 			break;
 		case CiDictionaryType dict:
-			string cppType = dict is CiSortedDictionaryType ? "map" : "unordered_map";
+			string cppType = dict.Class == CiSystem.SortedDictionaryClass ? "map" : "unordered_map";
 			Include(cppType);
 			Write("std::");
 			Write(cppType);
