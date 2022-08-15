@@ -246,7 +246,7 @@ public abstract class GenTyped : GenBase
 	protected virtual bool NeedsConstructor(CiClass klass)
 	{
 		return klass.Constructor != null
-			|| klass.Fields.Any(field => HasInitCode(field));
+			|| klass.OfType<CiField>().Any(field => HasInitCode(field));
 	}
 
 }

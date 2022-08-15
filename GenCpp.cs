@@ -1243,7 +1243,7 @@ public class GenCpp : GenCCpp
 		}
 		this.WrittenClasses.Add(klass, false);
 		Write(klass.Parent as CiClass);
-		foreach (CiField field in klass.Fields)
+		foreach (CiField field in klass.OfType<CiField>())
 			Write(field.Type.BaseType as CiClass);
 		this.WrittenClasses[klass] = true;
 

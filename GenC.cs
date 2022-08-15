@@ -2422,7 +2422,7 @@ public class GenC : GenCCpp
 
 	static bool NeedsDestructor(CiClass klass)
 	{
-		return klass.Fields.Any(field => NeedToDestruct(field))
+		return klass.OfType<CiField>().Any(field => NeedToDestruct(field))
 			|| (klass.Parent is CiClass baseClass && NeedsDestructor(baseClass));
 	}
 
@@ -2472,7 +2472,7 @@ public class GenC : GenCCpp
 			this.WrittenClasses.Add(klass, false);
 			if (klass.Parent is CiClass baseClass)
 				WriteStruct(baseClass);
-			foreach (CiField field in klass.Fields)
+			foreach (CiField field in klass.OfType<CiField>())
 				if (field.Type.BaseType is CiClass fieldClass)
 					WriteStruct(fieldClass);
 			this.WrittenClasses[klass] = true;
@@ -2494,7 +2494,7 @@ public class GenC : GenCCpp
 				WriteName(klass.Parent);
 				WriteLine(" base;");
 			}
-			foreach (CiField field in klass.Fields) {
+			foreach (CiField field in klass.OfType<CiField>()) {
 				WriteTypeAndName(field);
 				WriteLine(';');
 			}
@@ -2565,7 +2565,7 @@ public class GenC : GenCCpp
 			}
 			WriteLine("&vtbl;");
 		}
-		foreach (CiField field in klass.Fields)
+		foreach (CiField field in klass.OfType<CiField>())
 			WriteInitCode(field);
 		WriteConstructorBody(klass);
 		CloseBlock();
@@ -2579,7 +2579,7 @@ public class GenC : GenCCpp
 		WriteXstructorSignature("Destruct", klass);
 		WriteLine();
 		OpenBlock();
-		foreach (CiField field in klass.Fields.Reverse())
+		foreach (CiField field in klass.OfType<CiField>().Reverse())
 			WriteDestruct(field);
 		if (klass.Parent is CiClass baseClass && NeedsDestructor(baseClass)) {
 			WriteName(baseClass);

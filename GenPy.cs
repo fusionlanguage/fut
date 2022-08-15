@@ -1074,7 +1074,7 @@ public class GenPy : GenPySwift
 	}
 
 	static bool NeedsConstructor(CiClass klass)
-		=> klass.Constructor != null || klass.Fields.Any(NeedsInit);
+		=> klass.Constructor != null || klass.OfType<CiField>().Any(NeedsInit);
 
 	static bool InheritsConstructor(CiClass klass)
 	{
@@ -1108,7 +1108,7 @@ public class GenPy : GenPySwift
 				WriteName(klass.Parent);
 				WriteLine(".__init__(self)");
 			}
-			foreach (CiField field in klass.Fields) {
+			foreach (CiField field in klass.OfType<CiField>()) {
 				if (NeedsInit(field)) {
 					Write("self.");
 					WriteVar(field);

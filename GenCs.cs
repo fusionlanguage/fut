@@ -837,7 +837,7 @@ public class GenCs : GenTyped
 			Write(klass.Name);
 			WriteLine("()");
 			OpenBlock();
-			foreach (CiField field in klass.Fields)
+			foreach (CiField field in klass.OfType<CiField>())
 				WriteInitCode(field);
 			WriteConstructorBody(klass);
 			CloseBlock();

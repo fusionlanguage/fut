@@ -834,7 +834,7 @@ public class GenJs : GenBase
 		Write(klass.Name);
 		WriteLine("()");
 		OpenBlock();
-		foreach (CiField field in klass.Fields) {
+		foreach (CiField field in klass.OfType<CiField>()) {
 			if ((field.Value != null || field.Type.IsFinal) && !field.IsAssignableStorage) {
 				Write("this.");
 				base.WriteVar(field);
