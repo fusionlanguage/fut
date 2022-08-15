@@ -1379,6 +1379,37 @@ public abstract class GenBase : CiVisitor
 		OpenBlock();
 	}
 
+	protected abstract void WriteConst(CiConst konst);
+
+	protected abstract void WriteField(CiField field);
+
+	protected abstract void WriteMethod(CiMethod method);
+
+	protected void WriteMembers(CiClass klass, bool constArrays)
+	{
+		foreach (CiSymbol member in klass) {
+			switch (member) {
+			case CiConst konst:
+				WriteConst(konst);
+				break;
+			case CiField field:
+				WriteField(field);
+				break;
+			case CiMethod method:
+				WriteMethod(method);
+				break;
+			case CiVar _: // "this"
+				break;
+			default:
+				throw new NotImplementedException(member.Type.ToString());
+			}
+		}
+		if (constArrays) {
+			foreach (CiConst konst in klass.ConstArrays)
+				WriteConst(konst);
+		}
+	}
+
 	public abstract void Write(CiProgram program);
 }
 

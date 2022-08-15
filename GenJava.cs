@@ -965,7 +965,7 @@ public class GenJava : GenTyped
 		CloseBlock();
 	}
 
-	void WriteConst(CiConst konst)
+	protected override void WriteConst(CiConst konst)
 	{
 		WriteLine();
 		Write(konst.Documentation);
@@ -977,14 +977,14 @@ public class GenJava : GenTyped
 		WriteLine(';');
 	}
 
-	void WriteField(CiField field)
+	protected override void WriteField(CiField field)
 	{
 		Write(field.Visibility);
 		WriteVar(field);
 		WriteLine(';');
 	}
 
-	void WriteMethod(CiMethod method)
+	protected override void WriteMethod(CiMethod method)
 	{
 		WriteSignature(method, method.Parameters.Count);
 		WriteBody(method);
@@ -1041,25 +1041,7 @@ public class GenJava : GenTyped
 			CloseBlock();
 		}
 
-		foreach (CiSymbol member in klass) {
-			switch (member) {
-			case CiConst konst:
-				WriteConst(konst);
-				break;
-			case CiField field:
-				WriteField(field);
-				break;
-			case CiMethod method:
-				WriteMethod(method);
-				break;
-			case CiVar _: // "this"
-				break;
-			default:
-				throw new NotImplementedException(member.Type.ToString());
-			}
-		}
-		foreach (CiConst konst in klass.ConstArrays)
-			WriteConst(konst);
+		WriteMembers(klass, true);
 
 		CloseBlock();
 

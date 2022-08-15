@@ -170,7 +170,28 @@ public class GenTs : GenJs
 		}
 	}
 
-	void Write(CiClass klass, CiMethod method)
+	protected override void WriteConst(CiConst konst)
+	{
+		WriteLine();
+		Write(konst.Documentation);
+		Write(konst.Visibility);
+		Write("static readonly ");
+		WriteTypeAndName(konst);
+		if (this.GenFullCode)
+			WriteVarInit(konst);
+		WriteLine(';');
+	}
+
+	protected override void WriteField(CiField field)
+	{
+		Write(field.Visibility);
+		WriteTypeAndName(field);
+		if (this.GenFullCode)
+			WriteVarInit(field);
+		WriteLine(';');
+	}
+
+	protected override void WriteMethod(CiMethod method)
 	{
 		WriteDoc(method);
 		Write(method.Visibility);
@@ -215,20 +236,6 @@ public class GenTs : GenJs
 			WriteBody(method);
 		else
 			WriteLine(';');
-	}
-
-	void WriteConsts(IEnumerable<CiConst> consts)
-	{
-		foreach (CiConst konst in consts) {
-			WriteLine();
-			Write(konst.Documentation);
-			Write(konst.Visibility);
-			Write("static readonly ");
-			WriteTypeAndName(konst);
-			if (this.GenFullCode)
-				WriteVarInit(konst);
-			WriteLine(';');
-		}
 	}
 
 	void Write(CiClass klass)
@@ -283,21 +290,8 @@ public class GenTs : GenJs
 				WriteLine(';');
 		}
 
-		WriteConsts(klass.Consts);
+		WriteMembers(klass, this.GenFullCode);
 
-		foreach (CiField field in klass.Fields) {
-			Write(field.Visibility);
-			WriteTypeAndName(field);
-			if (this.GenFullCode)
-				WriteVarInit(field);
-			WriteLine(';');
-		}
-
-		foreach (CiMethod method in klass.Methods)
-			Write(klass, method);
-
-		if (this.GenFullCode)
-			WriteConsts(klass.ConstArrays);
 		CloseBlock();
 		WriteLine();
 	}

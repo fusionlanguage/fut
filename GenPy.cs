@@ -1038,32 +1038,21 @@ public class GenPy : GenPySwift
 		CloseChild();
 	}
 
-	void WriteConsts(IEnumerable<CiConst> consts)
+	protected override void WriteConst(CiConst konst)
 	{
-		foreach (CiConst konst in consts) {
-			if (konst.Visibility != CiVisibility.Private || konst.Type is CiArrayStorageType) {
-				WriteLine();
-				base.WriteVar(konst);
-				WriteLine();
-				Write(konst.Documentation);
-			}
+		if (konst.Visibility != CiVisibility.Private || konst.Type is CiArrayStorageType) {
+			WriteLine();
+			base.WriteVar(konst);
+			WriteLine();
+			Write(konst.Documentation);
 		}
 	}
 
-	static bool NeedsConstructor(CiClass klass)
-		=> klass.Constructor != null || klass.Fields.Any(NeedsInit);
-
-	static bool InheritsConstructor(CiClass klass)
+	protected override void WriteField(CiField field)
 	{
-		while (klass.Parent is CiClass baseClass) {
-			if (NeedsConstructor(baseClass))
-				return true;
-			klass = baseClass;
-		}
-		return false;
 	}
 
-	void Write(CiMethod method)
+	protected override void WriteMethod(CiMethod method)
 	{
 		if (method.CallType == CiCallType.Abstract)
 			return;
@@ -1084,6 +1073,19 @@ public class GenPy : GenPySwift
 		this.CurrentMethod = null;
 	}
 
+	static bool NeedsConstructor(CiClass klass)
+		=> klass.Constructor != null || klass.Fields.Any(NeedsInit);
+
+	static bool InheritsConstructor(CiClass klass)
+	{
+		while (klass.Parent is CiClass baseClass) {
+			if (NeedsConstructor(baseClass))
+				return true;
+			klass = baseClass;
+		}
+		return false;
+	}
+
 	void Write(CiClass klass)
 	{
 		WriteLine();
@@ -1096,7 +1098,6 @@ public class GenPy : GenPySwift
 		}
 		OpenChild();
 		Write(klass.Documentation);
-		WriteConsts(klass.Consts);
 		if (NeedsConstructor(klass)) {
 			WriteLine();
 			Write("def __init__(self)");
@@ -1117,9 +1118,7 @@ public class GenPy : GenPySwift
 			WriteConstructorBody(klass);
 			CloseChild();
 		}
-		foreach (CiMethod method in klass.Methods)
-			Write(method);
-		WriteConsts(klass.ConstArrays);
+		WriteMembers(klass, true);
 		CloseChild();
 	}
 

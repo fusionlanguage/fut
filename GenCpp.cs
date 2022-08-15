@@ -1134,6 +1134,18 @@ public class GenCpp : GenCCpp
 		}
 	}
 
+	static bool HasMembersOfVisibility(CiClass klass, CiVisibility visibility)
+	{
+		return klass.OfType<CiMember>().Any(m => m.Visibility == visibility);
+	}
+
+	protected override void WriteField(CiField field)
+	{
+		Write(field.Documentation);
+		WriteVar(field);
+		WriteLine(';');
+	}
+
 	void WriteParametersAndConst(CiMethod method, bool defaultArguments)
 	{
 		WriteParameters(method, defaultArguments);
@@ -1145,10 +1157,7 @@ public class GenCpp : GenCCpp
 	{
 		bool constructor = GetConstructorVisibility(klass) == visibility;
 		bool destructor = visibility == CiVisibility.Public && klass.AddsVirtualMethods;
-		IEnumerable<CiConst> consts = klass.Consts.Where(c => c.Visibility == visibility);
-		IEnumerable<CiField> fields = klass.Fields.Where(f => f.Visibility == visibility);
-		IEnumerable<CiMethod> methods = klass.Methods.Where(m => m.Visibility == visibility);
-		if (!constructor && !destructor && !consts.Any() && !fields.Any() && !methods.Any())
+		if (!constructor && !destructor && !HasMembersOfVisibility(klass, visibility))
 			return;
 
 		Write(visibilityKeyword);
@@ -1173,46 +1182,50 @@ public class GenCpp : GenCCpp
 			WriteLine("() = default;");
 		}
 
-		foreach (CiConst konst in consts) {
-			Write(konst.Documentation);
-			WriteConst(konst);
-		}
-
-		foreach (CiField field in fields) {
-			Write(field.Documentation);
-			WriteVar(field);
-			WriteLine(';');
-		}
-
-		foreach (CiMethod method in methods) {
-			WriteDoc(method);
-			switch (method.CallType) {
-			case CiCallType.Static:
-				Write("static ");
+		foreach (CiMember member in klass.OfType<CiMember>()) {
+			if (member.Visibility != visibility)
+				continue;
+			switch (member) {
+			case CiConst konst:
+				Write(konst.Documentation);
+				WriteConst(konst);
 				break;
-			case CiCallType.Abstract:
-			case CiCallType.Virtual:
-				Write("virtual ");
+			case CiField field:
+				WriteField(field);
+				break;
+			case CiMethod method:
+				WriteDoc(method);
+				switch (method.CallType) {
+				case CiCallType.Static:
+					Write("static ");
+					break;
+				case CiCallType.Abstract:
+				case CiCallType.Virtual:
+					Write("virtual ");
+					break;
+				default:
+					break;
+				}
+				WriteTypeAndName(method);
+				WriteParametersAndConst(method, true);
+				switch (method.CallType) {
+				case CiCallType.Abstract:
+					Write(" = 0");
+					break;
+				case CiCallType.Override:
+					Write(" override");
+					break;
+				case CiCallType.Sealed:
+					Write(" final");
+					break;
+				default:
+					break;
+				}
+				WriteLine(';');
 				break;
 			default:
-				break;
+				throw new NotImplementedException(member.Type.ToString());
 			}
-			WriteTypeAndName(method);
-			WriteParametersAndConst(method, true);
-			switch (method.CallType) {
-			case CiCallType.Abstract:
-				Write(" = 0");
-				break;
-			case CiCallType.Override:
-				Write(" override");
-				break;
-			case CiCallType.Sealed:
-				Write(" final");
-				break;
-			default:
-				break;
-			}
-			WriteLine(';');
 		}
 
 		this.Indent--;
@@ -1259,7 +1272,7 @@ public class GenCpp : GenCCpp
 		CloseBlock();
 	}
 
-	void WriteMethod(CiClass klass, CiMethod method)
+	protected override void WriteMethod(CiMethod method)
 	{
 		if (method.CallType == CiCallType.Abstract)
 			return;
@@ -1267,7 +1280,7 @@ public class GenCpp : GenCCpp
 		WriteLine();
 		Write(method.Type, true);
 		Write(' ');
-		Write(klass.Name);
+		Write(method.Parent.Name);
 		Write("::");
 		WriteCamelCase(method.Name);
 		WriteParametersAndConst(method, false);
@@ -1346,8 +1359,7 @@ public class GenCpp : GenCCpp
 		OpenNamespace();
 		foreach (CiClass klass in program.Classes) {
 			WriteConstructor(klass);
-			foreach (CiMethod method in klass.Methods)
-				WriteMethod(klass, method);
+			WriteMethods(klass);
 		}
 		WriteResources(program.Resources, true);
 		CloseNamespace();

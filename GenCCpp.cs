@@ -210,8 +210,6 @@ public abstract class GenCCpp : GenTyped
 		Write("\\n\"");
 	}
 
-	protected abstract void WriteConst(CiConst konst);
-
 	public override void VisitConst(CiConst konst)
 	{
 		if (konst.Type is CiArrayType)
@@ -307,6 +305,12 @@ public abstract class GenCCpp : GenTyped
 			VisitLiteralLong(gotoId);
 			WriteLine(": ;");
 		}
+	}
+
+	protected void WriteMethods(CiClass klass)
+	{
+		foreach (CiMethod method in klass.OfType<CiMethod>())
+			WriteMethod(method);
 	}
 }
 

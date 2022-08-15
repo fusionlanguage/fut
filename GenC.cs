@@ -2317,8 +2317,9 @@ public class GenC : GenCCpp
 		WriteParameters(method, false, false);
 	}
 
-	void WriteSignature(CiClass klass, CiMethod method)
+	void WriteSignature(CiMethod method)
 	{
+		CiClass klass = (CiClass) method.Parent;
 		if (!klass.IsPublic || method.Visibility != CiVisibility.Public)
 			Write("static ");
 		WriteSignature(method, () => {
@@ -2356,7 +2357,7 @@ public class GenC : GenCCpp
 	{
 		if (klass.Parent is CiClass baseClass)
 			WriteVtblFields(baseClass);
-		foreach (CiMethod method in klass.Methods) {
+		foreach (CiMethod method in klass.OfType<CiMethod>()) {
 			if (method.IsAbstractOrVirtual) {
 				WriteSignature(method, () => {
 					Write("(*");
@@ -2401,6 +2402,8 @@ public class GenC : GenCCpp
 		}
 	}
 
+	protected override void WriteField(CiField field) => throw new NotImplementedException();
+
 	static bool HasVtblValue(CiClass klass)
 	{
 		if (klass.CallType == CiCallType.Static || klass.CallType == CiCallType.Abstract)
@@ -2436,21 +2439,23 @@ public class GenC : GenCCpp
 
 	protected void WriteSignatures(CiClass klass, bool pub)
 	{
-		foreach (CiConst konst in klass.Consts) {
-			if ((konst.Visibility == CiVisibility.Public) == pub) {
+		foreach (CiSymbol member in klass) {
+			switch (member) {
+			case CiConst konst when (konst.Visibility == CiVisibility.Public) == pub:
 				if (pub) {
 					WriteLine();
 					Write(konst.Documentation);
 				}
 				WriteConst(konst);
-			}
-		}
-		foreach (CiMethod method in klass.Methods) {
-			if (method.IsLive && (method.Visibility == CiVisibility.Public) == pub && method.CallType != CiCallType.Abstract) {
+				break;
+			case CiMethod method when method.IsLive && (method.Visibility == CiVisibility.Public) == pub && method.CallType != CiCallType.Abstract:
 				WriteLine();
 				WriteDoc(method);
-				WriteSignature(klass, method);
+				WriteSignature(method);
 				WriteLine(';');
+				break;
+			default:
+				break;
 			}
 		}
 	}
@@ -2639,13 +2644,13 @@ public class GenC : GenCCpp
 			WriteLine(';');
 	}
 
-	protected void Write(CiClass klass, CiMethod method)
+	protected override void WriteMethod(CiMethod method)
 	{
 		if (!method.IsLive || method.CallType == CiCallType.Abstract)
 			return;
 		this.StringSwitchesWithGoto.Clear();
 		WriteLine();
-		WriteSignature(klass, method);
+		WriteSignature(method);
 		foreach (CiVar param in method.Parameters) {
 			if (NeedToDestruct(param))
 				this.VarsToDestruct.Add(param);
@@ -3008,8 +3013,7 @@ public class GenC : GenCCpp
 			WriteConstructor(klass);
 			WriteDestructor(klass);
 			WriteNewDelete(klass, true);
-			foreach (CiMethod method in klass.Methods)
-				Write(klass, method);
+			WriteMethods(klass);
 		}
 
 		CreateFile(this.OutputFile);

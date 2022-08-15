@@ -1299,7 +1299,7 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	void WriteConst(CiConst konst)
+	protected override void WriteConst(CiConst konst)
 	{
 		WriteLine();
 		Write(konst.Documentation);
@@ -1318,7 +1318,7 @@ public class GenSwift : GenPySwift
 		WriteLine();
 	}
 
-	void WriteField(CiField field)
+	protected override void WriteField(CiField field)
 	{
 		WriteLine();
 		Write(field.Documentation);
@@ -1338,7 +1338,7 @@ public class GenSwift : GenPySwift
 		WriteLine();
 	}
 
-	void WriteMethod(CiMethod method)
+	protected override void WriteMethod(CiMethod method)
 	{
 		WriteLine();
 		Write(method.Documentation);
@@ -1424,25 +1424,7 @@ public class GenSwift : GenPySwift
 			CloseBlock();
 		}
 
-		foreach (CiSymbol member in klass) {
-			switch (member) {
-			case CiConst konst:
-				WriteConst(konst);
-				break;
-			case CiField field:
-				WriteField(field);
-				break;
-			case CiMethod method:
-				WriteMethod(method);
-				break;
-			case CiVar _: // "this"
-				break;
-			default:
-				throw new NotImplementedException(member.Type.ToString());
-			}
-		}
-		foreach (CiConst konst in klass.ConstArrays)
-			WriteConst(konst);
+		WriteMembers(klass, true);
 
 		CloseBlock();
 	}

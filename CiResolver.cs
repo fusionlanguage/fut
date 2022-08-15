@@ -1542,7 +1542,7 @@ public class CiResolver : CiVisitor
 		this.CurrentScope = container;
 		switch (container) {
 		case CiClass klass:
-			foreach (CiConst konst in klass.Consts)
+			foreach (CiConst konst in klass.OfType<CiConst>())
 				ResolveConst(konst);
 			break;
 		case CiEnum enu:
@@ -1563,28 +1563,34 @@ public class CiResolver : CiVisitor
 	void ResolveTypes(CiClass klass)
 	{
 		this.CurrentScope = klass;
-		foreach (CiField field in klass.Fields) {
-			CiType type = ResolveType(field);
-			if (field.Value != null) {
-				field.Value = FoldConst(field.Value);
-				if (!field.IsAssignableStorage) {
-					if (type is CiArrayStorageType array)
-						type = array.ElementType;
-					Coerce(field.Value, type);
+		foreach (CiSymbol member in klass) {
+			switch (member) {
+			case CiField field:
+				CiType type = ResolveType(field);
+				if (field.Value != null) {
+					field.Value = FoldConst(field.Value);
+					if (!field.IsAssignableStorage) {
+						if (type is CiArrayStorageType array)
+							type = array.ElementType;
+						Coerce(field.Value, type);
+					}
 				}
-			}
-		}
-		foreach (CiMethod method in klass.Methods) {
-			if (method.TypeExpr == CiSystem.VoidType)
-				method.Type = CiSystem.VoidType;
-			else
-				ResolveType(method);
-			foreach (CiVar param in method.Parameters) {
-				ResolveType(param);
-				if (param.Value != null) {
-					param.Value = FoldConst(param.Value);
-					Coerce(param.Value, param.Type);
+				break;
+			case CiMethod method:
+				if (method.TypeExpr == CiSystem.VoidType)
+					method.Type = CiSystem.VoidType;
+				else
+					ResolveType(method);
+				foreach (CiVar param in method.Parameters) {
+					ResolveType(param);
+					if (param.Value != null) {
+						param.Value = FoldConst(param.Value);
+						Coerce(param.Value, param.Type);
+					}
 				}
+				break;
+			default:
+				break;
 			}
 		}
 	}
@@ -1597,7 +1603,7 @@ public class CiResolver : CiVisitor
 			klass.Constructor.Body.Accept(this);
 			this.CurrentMethod = null;
 		}
-		foreach (CiMethod method in klass.Methods) {
+		foreach (CiMethod method in klass.OfType<CiMethod>()) {
 			if (method.Body != null) {
 				this.CurrentScope = method.Parameters;
 				this.CurrentMethod = method;

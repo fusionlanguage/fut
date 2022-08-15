@@ -794,13 +794,29 @@ public class GenJs : GenBase
 		CloseBlock();
 	}
 
-	void Write(CiClass klass, CiMethod method)
+	protected override void WriteConst(CiConst konst)
+	{
+		if (konst.Visibility != CiVisibility.Private || konst.Type is CiArrayStorageType) {
+			WriteLine();
+			Write(konst.Documentation);
+			Write(konst.Parent.Container.Name);
+			Write('.');
+			base.WriteVar(konst);
+			WriteLine(';');
+		}
+	}
+
+	protected override void WriteField(CiField field)
+	{
+	}
+
+	protected override void WriteMethod(CiMethod method)
 	{
 		if (method.CallType == CiCallType.Abstract)
 			return;
 		WriteLine();
 		WriteDoc(method);
-		Write(klass.Name);
+		Write(method.Parent.Name);
 		Write('.');
 		if (method.CallType != CiCallType.Static)
 			Write("prototype.");
@@ -808,20 +824,6 @@ public class GenJs : GenBase
 		Write(" = function(");
 		WriteParameters(method, true, true);
 		WriteBody(method);
-	}
-
-	void WriteConsts(CiClass klass, IEnumerable<CiConst> consts)
-	{
-		foreach (CiConst konst in consts) {
-			if (konst.Visibility != CiVisibility.Private || konst.Type is CiArrayStorageType) {
-				WriteLine();
-				Write(konst.Documentation);
-				Write(klass.Name);
-				Write('.');
-				base.WriteVar(konst);
-				WriteLine(';');
-			}
-		}
 	}
 
 	void Write(CiClass klass)
@@ -848,10 +850,7 @@ public class GenJs : GenBase
 			Write(klass.BaseClassName);
 			WriteLine("();");
 		}
-		WriteConsts(klass, klass.Consts);
-		foreach (CiMethod method in klass.Methods)
-			Write(klass, method);
-		WriteConsts(klass, klass.ConstArrays);
+		WriteMembers(klass, true);
 	}
 
 	protected void WriteLib(Dictionary<string, byte[]> resources)

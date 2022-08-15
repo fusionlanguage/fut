@@ -294,8 +294,7 @@ public class GenCl : GenC
 			this.CurrentClass = klass;
 			WriteConstructor(klass);
 			WriteDestructor(klass);
-			foreach (CiMethod method in klass.Methods)
-				Write(klass, method);
+			WriteMethods(klass);
 		}
 
 		CreateFile(this.OutputFile);
