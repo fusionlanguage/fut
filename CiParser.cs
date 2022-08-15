@@ -422,9 +422,8 @@ public class CiParser : CiLexer
 		if (Eat(CiToken.Range))
 			return new CiBinaryExpr { Line = this.Line, Left = left, Op = CiToken.Range, Right = ParsePrimaryExpr() };
 		if (left is CiSymbolReference symbol && Eat(CiToken.Less)) {
-			CiSymbol klass = CiSystem.Value.TryLookup(symbol.Name);
-			if (klass == null) {
-				ReportError($"{symbol.Name} not found");
+			if (!(CiSystem.Value.TryLookup(symbol.Name) is CiGenericTypeDefinition generic)) {
+				ReportError($"{symbol.Name} is not a generic class");
 				return null;
 			}
 			int line = this.Line;
@@ -433,18 +432,18 @@ public class CiParser : CiLexer
 			CiExpr typeArg = ParseType();
 			if (Eat(CiToken.Comma)) {
 				CiExpr valueType = ParseType();
-				if (klass != CiSystem.DictionaryClass && klass != CiSystem.SortedDictionaryClass && klass != CiSystem.OrderedDictionaryClass) {
+				if (generic.TypeParameterCount != 2) {
 					ReportError($"{symbol.Name} is not a generic class with two type parameters");
 					return null;
 				}
-				left = new CiSymbolReference { Line = line, Left = new CiAggregateInitializer { Items = new CiExpr[] { typeArg, valueType } }, Symbol = klass };
+				left = new CiSymbolReference { Line = line, Left = new CiAggregateInitializer { Items = new CiExpr[] { typeArg, valueType } }, Symbol = generic };
 			}
-			else if (klass != CiSystem.ListClass && klass != CiSystem.StackClass && klass != CiSystem.HashSetClass) {
+			else if (generic.TypeParameterCount != 1) {
 				ReportError($"{symbol.Name} is not a generic class with one type parameter");
 				return null;
 			}
 			else
-				left = new CiSymbolReference { Line = line, Left = typeArg, Symbol = klass };
+				left = new CiSymbolReference { Line = line, Left = typeArg, Symbol = generic };
 			Expect(CiToken.RightAngle);
 			this.ParsingTypeArg = saveTypeArg;
 			if (Eat(CiToken.LeftParenthesis)) {

@@ -1503,6 +1503,11 @@ public class CiDictionaryType : CiType
 	public override bool IsFinal => true;
 }
 
+public class CiGenericTypeDefinition : CiSymbol
+{
+	public int TypeParameterCount;
+}
+
 public class CiPrintableType : CiType
 {
 	public override bool IsAssignableFrom(CiType right) => right is CiStringType || right is CiNumericType;
@@ -1617,12 +1622,12 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, FloatType, "Tan", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, "Tanh", new CiVar(DoubleType, "a")),
 		MathTruncate);
-	public static readonly CiSymbol ListClass = new CiSymbol { Name = "List" };
-	public static readonly CiSymbol StackClass = new CiSymbol { Name = "Stack" };
-	public static readonly CiSymbol HashSetClass = new CiSymbol { Name = "HashSet" };
-	public static readonly CiSymbol DictionaryClass = new CiSymbol { Name = "Dictionary" };
-	public static readonly CiSymbol SortedDictionaryClass = new CiSymbol { Name = "SortedDictionary" };
-	public static readonly CiSymbol OrderedDictionaryClass = new CiSymbol { Name = "OrderedDictionary" };
+	public static readonly CiGenericTypeDefinition ListClass = new CiGenericTypeDefinition { Name = "List", TypeParameterCount = 1 };
+	public static readonly CiGenericTypeDefinition StackClass = new CiGenericTypeDefinition { Name = "Stack", TypeParameterCount = 1 };
+	public static readonly CiGenericTypeDefinition HashSetClass = new CiGenericTypeDefinition { Name = "HashSet", TypeParameterCount = 1 };
+	public static readonly CiGenericTypeDefinition DictionaryClass = new CiGenericTypeDefinition { Name = "Dictionary", TypeParameterCount = 2 };
+	public static readonly CiGenericTypeDefinition SortedDictionaryClass = new CiGenericTypeDefinition { Name = "SortedDictionary", TypeParameterCount = 2 };
+	public static readonly CiGenericTypeDefinition OrderedDictionaryClass = new CiGenericTypeDefinition { Name = "OrderedDictionary", TypeParameterCount = 2 };
 	public static readonly CiClass LockClass = new CiClass(CiCallType.Sealed, "Lock");
 	public static readonly CiSymbol BasePtr = new CiSymbol { Name = "base" };
 
