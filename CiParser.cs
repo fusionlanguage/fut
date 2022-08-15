@@ -439,16 +439,7 @@ public class CiParser : CiLexer
 				ReportError($"Expected {generic.TypeParameterCount} type arguments for {symbol.Name}, got {typeArgs.Count}");
 				return null;
 			}
-			switch (typeArgs.Count) {
-			case 1:
-				left = new CiSymbolReference { Line = line, Left = typeArgs[0], Symbol = generic };
-				break;
-			case 2:
-				left = new CiSymbolReference { Line = line, Left = new CiAggregateInitializer { Items = typeArgs.ToArray() }, Symbol = generic };
-				break;
-			default:
-				throw new NotImplementedException();
-			}
+			left = new CiSymbolReference { Line = line, Left = new CiAggregateInitializer { Items = typeArgs.ToArray() }, Symbol = generic };
 			if (Eat(CiToken.LeftParenthesis)) {
 				Expect(CiToken.RightParenthesis);
 				left = new CiCallExpr { Line = this.Line, Method = (CiSymbolReference) left, Arguments = Array.Empty<CiExpr>() };

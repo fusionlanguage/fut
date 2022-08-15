@@ -1401,27 +1401,30 @@ public class CiResolver : CiVisitor
 			ExpectNoPtrModifier(expr, ptrModifier);
 			if (call.Arguments.Length != 0)
 				throw StatementException(call, "Expected empty parentheses for storage type");
-			if (call.Method.Symbol == CiSystem.ListClass) {
-				NotSupported(call, "List", "cl");
-				return new CiListType { ElementType = ToType(call.Method.Left, false) };
-			}
-			if (call.Method.Symbol == CiSystem.StackClass) {
-				NotSupported(call, "Stack", "cl");
-				return new CiStackType { ElementType = ToType(call.Method.Left, false) };
-			}
-			if (call.Method.Symbol == CiSystem.HashSetClass) {
-				NotSupported(call, "HashSet", "cl");
-				return new CiHashSetType { ElementType = ToType(call.Method.Left, false) };
-			}
-			if (call.Method.Symbol == CiSystem.DictionaryClass || call.Method.Symbol == CiSystem.SortedDictionaryClass) {
-				NotSupported(call, call.Method.Symbol.Name, "cl");
-				CiExpr[] items = ((CiAggregateInitializer) call.Method.Left).Items;
-				return new CiDictionaryType { Class = call.Method.Symbol, KeyType = ToType(items[0], false), ValueType = ToType(items[1], false) };
-			}
-			if (call.Method.Symbol == CiSystem.OrderedDictionaryClass) {
-				NotSupported(call, "OrderedDictionary", "c", "cpp", "swift", "ts", "cl");
-				CiExpr[] items = ((CiAggregateInitializer) call.Method.Left).Items;
-				return new CiDictionaryType { Class = call.Method.Symbol, KeyType = ToType(items[0], false), ValueType = ToType(items[1], false) };
+			if (call.Method.Left is CiAggregateInitializer typeArgumentExprs) {
+				List<CiType> typeArguments = new List<CiType>();
+				foreach (CiExpr typeArgumentExpr in typeArgumentExprs.Items)
+					typeArguments.Add(ToType(typeArgumentExpr, false));
+				if (call.Method.Symbol == CiSystem.ListClass) {
+					NotSupported(call, "List", "cl");
+					return new CiListType { ElementType = typeArguments[0] };
+				}
+				if (call.Method.Symbol == CiSystem.StackClass) {
+					NotSupported(call, "Stack", "cl");
+					return new CiStackType { ElementType = typeArguments[0] };
+				}
+				if (call.Method.Symbol == CiSystem.HashSetClass) {
+					NotSupported(call, "HashSet", "cl");
+					return new CiHashSetType { ElementType = typeArguments[0] };
+				}
+				if (call.Method.Symbol == CiSystem.DictionaryClass || call.Method.Symbol == CiSystem.SortedDictionaryClass) {
+					NotSupported(call, call.Method.Symbol.Name, "cl");
+					return new CiDictionaryType { Class = call.Method.Symbol, KeyType = typeArguments[0], ValueType = typeArguments[1] };
+				}
+				if (call.Method.Symbol == CiSystem.OrderedDictionaryClass) {
+					NotSupported(call, "OrderedDictionary", "c", "cpp", "swift", "ts", "cl");
+					return new CiDictionaryType { Class = call.Method.Symbol, KeyType = typeArguments[0], ValueType = typeArguments[1] };
+				}
 			}
 			if (call.Method.Name == "string") {
 				NotSupported(call, "string()", "cl");
