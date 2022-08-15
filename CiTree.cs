@@ -1001,7 +1001,7 @@ public class CiClass : CiContainerType
 	public override CiType PtrOrSelf => new CiClassPtrType { Class = this, Modifier = CiToken.ExclamationMark };
 	public override bool IsFinal => this != CiSystem.MatchClass;
 	public override bool IsClass(CiClass klass) => this == klass;
-	public bool AddsVirtualMethods => this.Methods.Any(method => method.IsAbstractOrVirtual);
+	public bool AddsVirtualMethods => this.OfType<CiMethod>().Any(method => method.IsAbstractOrVirtual);
 
 	public CiClass()
 	{

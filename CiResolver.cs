@@ -1628,7 +1628,7 @@ public class CiResolver : CiVisitor
 	{
 		if (!klass.IsPublic)
 			return;
-		foreach (CiMethod method in klass.Methods) {
+		foreach (CiMethod method in klass.OfType<CiMethod>()) {
 			if (method.Visibility == CiVisibility.Public || method.Visibility == CiVisibility.Protected)
 				SetLive(method);
 		}

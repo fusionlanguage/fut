@@ -2390,7 +2390,7 @@ public class GenC : GenCCpp
 	{
 		if (klass.CallType == CiCallType.Static || klass.CallType == CiCallType.Abstract)
 			return false;
-		return klass.Methods.Any(method => method.CallType == CiCallType.Virtual || method.CallType == CiCallType.Override || method.CallType == CiCallType.Sealed);
+		return klass.OfType<CiMethod>().Any(method => method.CallType == CiCallType.Virtual || method.CallType == CiCallType.Override || method.CallType == CiCallType.Sealed);
 	}
 
 	protected override bool NeedsConstructor(CiClass klass)
@@ -2498,7 +2498,7 @@ public class GenC : GenCCpp
 	{
 		if (declaringClass.Parent is CiClass baseClass)
 			WriteVtbl(definingClass, baseClass);
-		foreach (CiMethod declaredMethod in declaringClass.Methods) {
+		foreach (CiMethod declaredMethod in declaringClass.OfType<CiMethod>()) {
 			if (declaredMethod.IsAbstractOrVirtual) {
 				CiSymbol definedMethod = definingClass.TryLookup(declaredMethod.Name);
 				if (declaredMethod != definedMethod) {
