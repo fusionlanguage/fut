@@ -310,10 +310,7 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	public override void VisitLiteralNull()
-	{
-		Write("nil");
-	}
+	public override void VisitLiteralNull() => Write("nil");
 
 	static bool IsForeachStringStg(CiExpr expr)
 	{
@@ -989,10 +986,7 @@ public class GenSwift : GenPySwift
 		InitVarsAtIndent();
 	}
 
-	protected override void CloseChild()
-	{
-		CloseBlock();
-	}
+	protected override void CloseChild() => CloseBlock();
 
 	protected override void WriteVar(CiNamedValue def)
 	{
@@ -1026,10 +1020,7 @@ public class GenSwift : GenPySwift
 		WriteLine(')');
 	}
 
-	public override void VisitBreak(CiBreak statement)
-	{
-		WriteLine("break");
-	}
+	public override void VisitBreak(CiBreak statement) => WriteLine("break");
 
 	protected override bool NeedCondXcrement(CiLoop loop)
 		=> loop.Cond != null && (!loop.HasBreak || !VisitXcrement<CiPostfixExpr>(loop.Cond, false));
@@ -1059,10 +1050,7 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	protected override void WriteElseIf()
-	{
-		Write("else ");
-	}
+	protected override void WriteElseIf() => Write("else ");
 
 	protected override void OpenWhile(CiLoop loop)
 	{

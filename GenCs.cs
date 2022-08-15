@@ -26,10 +26,7 @@ namespace Foxoft.Ci
 
 public class GenCs : GenTyped
 {
-	protected override void StartDocLine()
-	{
-		Write("/// ");
-	}
+	protected override void StartDocLine() => Write("/// ");
 
 	protected override void Write(CiDocPara para, bool many)
 	{
@@ -770,10 +767,7 @@ public class GenCs : GenTyped
 		WriteLine();
 		Write(konst.Documentation);
 		Write(konst.Visibility);
-		if (konst.Type is CiArrayStorageType)
-			Write("static readonly ");
-		else
-			Write("const ");
+		Write(konst.Type is CiArrayStorageType ? "static readonly " : "const ");
 		WriteTypeAndName(konst);
 		Write(" = ");
 		WriteCoercedExpr(konst.Type, konst.Value);

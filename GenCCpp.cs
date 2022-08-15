@@ -36,10 +36,7 @@ public abstract class GenCCpp : GenTyped
 
 	protected abstract void IncludeMath();
 
-	protected void WriteIncludes()
-	{
-		WriteIncludes("#include <", ">");
-	}
+	protected void WriteIncludes() => WriteIncludes("#include <", ">");
 
 	protected override int GetLiteralChars() => 127;
 

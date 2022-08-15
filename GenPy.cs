@@ -29,10 +29,7 @@ public class GenPy : GenPySwift
 	bool ChildPass;
 	bool SwitchBreak;
 
-	protected override void WriteBanner()
-	{
-		WriteLine("# Generated automatically with \"cito\". Do not edit.");
-	}
+	protected override void WriteBanner() => WriteLine("# Generated automatically with \"cito\". Do not edit.");
 
 	protected override void StartDocLine()
 	{
@@ -84,20 +81,11 @@ public class GenPy : GenPySwift
 		WriteLine("\"\"\"");
 	}
 
-	public override void VisitLiteralNull()
-	{
-		Write("None");
-	}
+	public override void VisitLiteralNull() => Write("None");
 
-	public override void VisitLiteralFalse()
-	{
-		Write("False");
-	}
+	public override void VisitLiteralFalse() => Write("False");
 
-	public override void VisitLiteralTrue()
-	{
-		Write("True");
-	}
+	public override void VisitLiteralTrue() => Write("True");
 
 	void WriteNameNotKeyword(string name)
 	{
@@ -186,10 +174,7 @@ public class GenPy : GenPySwift
 			base.WriteClassName(klass);
 	}
 
-	protected override void WriteTypeAndName(CiNamedValue value)
-	{
-		WriteName(value);
-	}
+	protected override void WriteTypeAndName(CiNamedValue value) => WriteName(value);
 
 	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
 	{
@@ -274,10 +259,7 @@ public class GenPy : GenPySwift
 		Write(')');
 	}
 
-	protected override void WriteStringLength(CiExpr expr)
-	{
-		WriteCall("len", expr);
-	}
+	protected override void WriteStringLength(CiExpr expr) => WriteCall("len", expr);
 
 	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
@@ -926,10 +908,7 @@ public class GenPy : GenPySwift
 		WriteChild(statement.Body);
 	}
 
-	protected override void WriteElseIf()
-	{
-		Write("el");
-	}
+	protected override void WriteElseIf() => Write("el");
 
 	public override void VisitLock(CiLock statement)
 	{
@@ -942,10 +921,7 @@ public class GenPy : GenPySwift
 		CloseChild();
 	}
 
-	protected override void WriteResultVar()
-	{
-		Write("result");
-	}
+	protected override void WriteResultVar() => Write("result");
 
 	static bool IsVarReference(CiExpr expr) => expr is CiSymbolReference symbol && symbol.Symbol is CiVar;
 

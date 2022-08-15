@@ -29,25 +29,13 @@ public class GenCpp : GenCCpp
 {
 	bool UsingStringViewLiterals;
 
-	protected override void IncludeStdInt()
-	{
-		Include("cstdint");
-	}
+	protected override void IncludeStdInt() => Include("cstdint");
 
-	protected override void IncludeAssert()
-	{
-		Include("cassert");
-	}
+	protected override void IncludeAssert() => Include("cassert");
 
-	protected override void IncludeMath()
-	{
-		Include("cmath");
-	}
+	protected override void IncludeMath() => Include("cmath");
 
-	public override void VisitLiteralNull()
-	{
-		Write("nullptr");
-	}
+	public override void VisitLiteralNull() => Write("nullptr");
 
 	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
@@ -364,10 +352,7 @@ public class GenCpp : GenCCpp
 		Write(')');
 	}
 
-	protected override bool HasInitCode(CiNamedValue def)
-	{
-		return false;
-	}
+	protected override bool HasInitCode(CiNamedValue def) => false;
 
 	protected override void WriteInitCode(CiNamedValue def)
 	{

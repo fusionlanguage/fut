@@ -68,10 +68,7 @@ public abstract class GenBase : CiVisitor
 		this.Writer.Write(s);
 	}
 
-	public override void VisitLiteralLong(long i)
-	{
-		this.Writer.Write(i);
-	}
+	public override void VisitLiteralLong(long i) => this.Writer.Write(i);
 
 	protected virtual int GetLiteralChars() => 0;
 
@@ -167,10 +164,7 @@ public abstract class GenBase : CiVisitor
 
 	#region JavaDoc
 
-	protected virtual void StartDocLine()
-	{
-		Write(" * ");
-	}
+	protected virtual void StartDocLine() => Write(" * ");
 
 	protected void WriteXmlDoc(string text)
 	{
@@ -295,10 +289,7 @@ public abstract class GenBase : CiVisitor
 
 	#endregion JavaDoc
 
-	protected virtual void WriteBanner()
-	{
-		WriteLine("// Generated automatically with \"cito\". Do not edit.");
-	}
+	protected virtual void WriteBanner() => WriteLine("// Generated automatically with \"cito\". Do not edit.");
 
 	protected void CreateFile(string filename)
 	{
@@ -306,10 +297,7 @@ public abstract class GenBase : CiVisitor
 		WriteBanner();
 	}
 
-	protected void CloseFile()
-	{
-		this.Writer.Close();
-	}
+	protected void CloseFile() => this.Writer.Close();
 
 	protected void OpenStringWriter()
 	{
@@ -324,10 +312,7 @@ public abstract class GenBase : CiVisitor
 		this.StringWriter = null;
 	}
 
-	protected void Include(string name)
-	{
-		this.Includes.Add(name);
-	}
+	protected void Include(string name) => this.Includes.Add(name);
 
 	protected void WriteIncludes(string prefix, string suffix)
 	{
@@ -401,20 +386,11 @@ public abstract class GenBase : CiVisitor
 		Write(".0"); // it looked like an integer
 	}
 
-	public override void VisitLiteralNull()
-	{
-		Write("null");
-	}
+	public override void VisitLiteralNull() => Write("null");
 
-	public override void VisitLiteralFalse()
-	{
-		Write("false");
-	}
+	public override void VisitLiteralFalse() => Write("false");
 
-	public override void VisitLiteralTrue()
-	{
-		Write("true");
-	}
+	public override void VisitLiteralTrue() => Write("true");
 
 	public override void VisitLiteralString(string value)
 	{
@@ -466,10 +442,7 @@ public abstract class GenBase : CiVisitor
 		return TypeCode.Object;
 	}
 
-	protected virtual void WriteClassName(CiClass klass)
-	{
-		WriteName(klass);
-	}
+	protected virtual void WriteClassName(CiClass klass) => WriteName(klass);
 
 	protected abstract void WriteTypeAndName(CiNamedValue value);
 
@@ -513,10 +486,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected virtual void WriteInterpolatedStringArg(CiExpr expr)
-	{
-		expr.Accept(this, CiPriority.Argument);
-	}
+	protected virtual void WriteInterpolatedStringArg(CiExpr expr) => expr.Accept(this, CiPriority.Argument);
 
 	protected void WriteArgs(CiInterpolatedString expr)
 	{
@@ -1188,15 +1158,9 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	public override void VisitBreak(CiBreak statement)
-	{
-		WriteLine("break;");
-	}
+	public override void VisitBreak(CiBreak statement) => WriteLine("break;");
 
-	public override void VisitContinue(CiContinue statement)
-	{
-		WriteLine("continue;");
-	}
+	public override void VisitContinue(CiContinue statement) => WriteLine("continue;");
 
 	public override void VisitDoWhile(CiDoWhile statement)
 	{
@@ -1242,10 +1206,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	public override void VisitNative(CiNative statement)
-	{
-		Write(statement.Content);
-	}
+	public override void VisitNative(CiNative statement) => Write(statement.Content);
 
 	protected virtual void WriteReturnValue(CiExpr value) => WriteCoerced(this.CurrentMethod.Type, value, CiPriority.Argument);
 
@@ -1260,10 +1221,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected virtual void WriteCaseBody(CiStatement[] statements)
-	{
-		Write(statements);
-	}
+	protected virtual void WriteCaseBody(CiStatement[] statements) => Write(statements);
 
 	public override void VisitSwitch(CiSwitch statement)
 	{
@@ -1297,10 +1255,7 @@ public abstract class GenBase : CiVisitor
 		WriteChild(statement.Body);
 	}
 
-	protected virtual void WriteParameter(CiVar param)
-	{
-		WriteTypeAndName(param);
-	}
+	protected virtual void WriteParameter(CiVar param) => WriteTypeAndName(param);
 
 	protected void WriteParameters(CiMethod method, bool first, bool defaultArguments)
 	{

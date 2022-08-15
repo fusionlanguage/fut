@@ -60,30 +60,15 @@ public class GenC : GenCCpp
 		WriteLine("</code>.");
 	}
 
-	protected override void IncludeStdInt()
-	{
-		Include("stdint.h");
-	}
+	protected override void IncludeStdInt() => Include("stdint.h");
 
-	protected override void IncludeAssert()
-	{
-		Include("assert.h");
-	}
+	protected override void IncludeAssert() => Include("assert.h");
 
-	protected override void IncludeMath()
-	{
-		Include("math.h");
-	}
+	protected override void IncludeMath() => Include("math.h");
 
-	protected virtual void IncludeStdBool()
-	{
-		Include("stdbool.h");
-	}
+	protected virtual void IncludeStdBool() => Include("stdbool.h");
 
-	public override void VisitLiteralNull()
-	{
-		Write("NULL");
-	}
+	public override void VisitLiteralNull() => Write("NULL");
 
 	protected override void WritePrintfWidth(CiInterpolatedPart part)
 	{
@@ -324,10 +309,7 @@ public class GenC : GenCCpp
 		Write(s);
 	}
 
-	protected virtual void WriteStringPtrType()
-	{
-		Write("const char *");
-	}
+	protected virtual void WriteStringPtrType() => Write("const char *");
 
 	void WriteArrayPrefix(CiType type)
 	{

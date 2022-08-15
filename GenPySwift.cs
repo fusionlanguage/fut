@@ -124,10 +124,7 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
-	protected virtual void WriteExpr(CiExpr expr, CiPriority parent)
-	{
-		expr.Accept(this, parent);
-	}
+	protected virtual void WriteExpr(CiExpr expr, CiPriority parent) => expr.Accept(this, parent);
 
 	protected void WriteListAppend(CiExpr obj, CiExpr[] args)
 	{

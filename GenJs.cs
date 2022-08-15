@@ -91,10 +91,7 @@ public class GenJs : GenBase
 		}
 	}
 
-	protected override void WriteTypeAndName(CiNamedValue value)
-	{
-		WriteName(value);
-	}
+	protected override void WriteTypeAndName(CiNamedValue value) => WriteName(value);
 
 	protected static string GetArrayElementType(CiNumericType type)
 	{

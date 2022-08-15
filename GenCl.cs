@@ -64,10 +64,7 @@ public class GenCl : GenC
 		}
 	}
 
-	protected override void WriteStringPtrType()
-	{
-		Write("constant char *");
-	}
+	protected override void WriteStringPtrType() => Write("constant char *");
 
 	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
