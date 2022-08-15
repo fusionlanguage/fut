@@ -427,25 +427,28 @@ public class CiParser : CiLexer
 				return null;
 			}
 			int line = this.Line;
+			List<CiExpr> typeArgs = new List<CiExpr>();
 			bool saveTypeArg = this.ParsingTypeArg;
 			this.ParsingTypeArg = true;
-			CiExpr typeArg = ParseType();
-			if (Eat(CiToken.Comma)) {
-				CiExpr valueType = ParseType();
-				if (generic.TypeParameterCount != 2) {
-					ReportError($"{symbol.Name} is not a generic class with two type parameters");
-					return null;
-				}
-				left = new CiSymbolReference { Line = line, Left = new CiAggregateInitializer { Items = new CiExpr[] { typeArg, valueType } }, Symbol = generic };
-			}
-			else if (generic.TypeParameterCount != 1) {
-				ReportError($"{symbol.Name} is not a generic class with one type parameter");
-				return null;
-			}
-			else
-				left = new CiSymbolReference { Line = line, Left = typeArg, Symbol = generic };
+			do
+				typeArgs.Add(ParseType());
+			while (Eat(CiToken.Comma));
 			Expect(CiToken.RightAngle);
 			this.ParsingTypeArg = saveTypeArg;
+			if (typeArgs.Count != generic.TypeParameterCount) {
+				ReportError($"Expected {generic.TypeParameterCount} type arguments for {symbol.Name}, got {typeArgs.Count}");
+				return null;
+			}
+			switch (typeArgs.Count) {
+			case 1:
+				left = new CiSymbolReference { Line = line, Left = typeArgs[0], Symbol = generic };
+				break;
+			case 2:
+				left = new CiSymbolReference { Line = line, Left = new CiAggregateInitializer { Items = typeArgs.ToArray() }, Symbol = generic };
+				break;
+			default:
+				throw new NotImplementedException();
+			}
 			if (Eat(CiToken.LeftParenthesis)) {
 				Expect(CiToken.RightParenthesis);
 				left = new CiCallExpr { Line = this.Line, Method = (CiSymbolReference) left, Arguments = Array.Empty<CiExpr>() };
