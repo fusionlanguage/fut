@@ -1402,34 +1402,23 @@ public class CiResolver : CiVisitor
 			if (call.Arguments.Length != 0)
 				throw StatementException(call, "Expected empty parentheses for storage type");
 			if (call.Method.Left is CiAggregateInitializer typeArgExprs) {
-				if (!(CiSystem.Value.TryLookup(call.Method.Name) is CiGenericTypeDefinition generic))
+				if (!(this.Program.TryLookup(call.Method.Name) is CiGenericTypeDefinition generic))
 					throw StatementException(call, $"{call.Method.Name} is not a generic class");
 				List<CiType> typeArgs = new List<CiType>();
 				foreach (CiExpr typeArgExpr in typeArgExprs.Items)
 					typeArgs.Add(ToType(typeArgExpr, false));
 				if (typeArgs.Count != generic.TypeParameterCount)
 					throw StatementException(call, $"Expected {generic.TypeParameterCount} type arguments for {generic.Name}, got {typeArgs.Count}");
-				if (generic == CiSystem.ListClass) {
-					NotSupported(call, "List", "cl");
+				NotSupported(call, generic.Name, "cl");
+				if (generic == CiSystem.OrderedDictionaryClass)
+					NotSupported(call, "OrderedDictionary", "c", "cpp", "swift", "ts");
+				if (generic == CiSystem.ListClass)
 					return new CiListType { ElementType = typeArgs[0] };
-				}
-				if (generic == CiSystem.StackClass) {
-					NotSupported(call, "Stack", "cl");
+				if (generic == CiSystem.StackClass)
 					return new CiStackType { ElementType = typeArgs[0] };
-				}
-				if (generic == CiSystem.HashSetClass) {
-					NotSupported(call, "HashSet", "cl");
+				if (generic == CiSystem.HashSetClass)
 					return new CiHashSetType { ElementType = typeArgs[0] };
-				}
-				if (generic == CiSystem.DictionaryClass || generic == CiSystem.SortedDictionaryClass) {
-					NotSupported(call, generic.Name, "cl");
-					return new CiDictionaryType { Class = generic, KeyType = typeArgs[0], ValueType = typeArgs[1] };
-				}
-				if (generic == CiSystem.OrderedDictionaryClass) {
-					NotSupported(call, "OrderedDictionary", "c", "cpp", "swift", "ts", "cl");
-					return new CiDictionaryType { Class = generic, KeyType = typeArgs[0], ValueType = typeArgs[1] };
-				}
-				throw new NotImplementedException(generic.Name);
+				return new CiDictionaryType { Class = generic, KeyType = typeArgs[0], ValueType = typeArgs[1] };
 			}
 			if (call.Method.Name == "string") {
 				NotSupported(call, "string()", "cl");
