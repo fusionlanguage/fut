@@ -808,7 +808,15 @@ public class GenCs : GenTyped
 		Write(method.CallType, "sealed override ");
 		WriteTypeAndName(method);
 		WriteParameters(method, true);
-		WriteBody(method);
+		if (method.Body is CiReturn ret) {
+			Write(" => ");
+			this.CurrentMethod = method;
+			WriteReturnValue(ret.Value);
+			this.CurrentMethod = null;
+			WriteLine(';');
+		}
+		else
+			WriteBody(method);
 	}
 
 	void WriteClass(CiClass klass)

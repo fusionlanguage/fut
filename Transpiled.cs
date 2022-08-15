@@ -236,10 +236,7 @@ namespace Foxoft.Ci
 			this.NextChar = b;
 		}
 
-		protected int PeekChar()
-		{
-			return this.NextChar;
-		}
+		protected int PeekChar() => this.NextChar;
 
 		public static bool IsLetterOrDigit(int c)
 		{
@@ -462,10 +459,7 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected string GetLexeme()
-		{
-			return Encoding.UTF8.GetString(this.Input, this.LexemeOffset, this.CharOffset - this.LexemeOffset);
-		}
+		protected string GetLexeme() => Encoding.UTF8.GetString(this.Input, this.LexemeOffset, this.CharOffset - this.LexemeOffset);
 
 		void ReadId(int c)
 		{
@@ -768,10 +762,7 @@ namespace Foxoft.Ci
 			this.CurrentToken = ReadPreToken();
 		}
 
-		protected bool See(CiToken token)
-		{
-			return this.CurrentToken == token;
-		}
+		protected bool See(CiToken token) => this.CurrentToken == token;
 
 		static string TokenToString(CiToken token)
 		{
@@ -1234,10 +1225,7 @@ namespace Foxoft.Ci
 			DocNextToken();
 		}
 
-		protected bool DocSee(CiDocToken token)
-		{
-			return this.DocCurrentToken == token;
-		}
+		protected bool DocSee(CiDocToken token) => this.DocCurrentToken == token;
 
 		protected bool DocEat(CiDocToken token)
 		{
