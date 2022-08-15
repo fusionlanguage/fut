@@ -6,8 +6,8 @@ public static class Test
 		switch (x) {
 		case 42:
 			return true;
-		case 5: //ERROR: Please remove case before default
-		default:
+		case 5:
+		default: //ERROR: Please remove 'case' before 'default'
 			return false;
 		}
 	}

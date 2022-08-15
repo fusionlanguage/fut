@@ -689,8 +689,10 @@ public class CiParser : CiLexer
 				values.Add(value);
 				Expect(CiToken.Colon);
 			} while (Eat(CiToken.Case));
-			if (See(CiToken.Default))
-				throw StatementException(value, "Please remove case before default");
+			if (See(CiToken.Default)) {
+				ReportError("Please remove 'case' before 'default'");
+				break;
+			}
 			CiCase kase = new CiCase { Values = values.ToArray() };
 
 			List<CiStatement> statements = new List<CiStatement>();
