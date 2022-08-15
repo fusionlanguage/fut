@@ -1379,8 +1379,6 @@ public class CiResolver : CiVisitor
 	{
 		switch (expr) {
 		case CiSymbolReference symbol:
-			if (symbol.Name == null)
-				throw StatementException(expr, $"{symbol.Symbol.Name} reference not implemented yet");
 			// built-in, MyEnum, MyClass, MyClass!, MyClass#
 			if (this.Program.TryLookup(symbol.Name) is CiType type) {
 				if (type is CiClass klass) {
@@ -1394,6 +1392,8 @@ public class CiResolver : CiVisitor
 				ExpectNoPtrModifier(expr, ptrModifier);
 				return type;
 			}
+			if (symbol.Left is CiAggregateInitializer)
+				throw StatementException(expr, $"{symbol.Name} reference not implemented yet");
 			throw StatementException(expr, $"Type {symbol.Name} not found");
 
 		case CiCallExpr call:
@@ -1401,30 +1401,35 @@ public class CiResolver : CiVisitor
 			ExpectNoPtrModifier(expr, ptrModifier);
 			if (call.Arguments.Length != 0)
 				throw StatementException(call, "Expected empty parentheses for storage type");
-			if (call.Method.Left is CiAggregateInitializer typeArgumentExprs) {
-				List<CiType> typeArguments = new List<CiType>();
-				foreach (CiExpr typeArgumentExpr in typeArgumentExprs.Items)
-					typeArguments.Add(ToType(typeArgumentExpr, false));
-				if (call.Method.Symbol == CiSystem.ListClass) {
+			if (call.Method.Left is CiAggregateInitializer typeArgExprs) {
+				if (!(CiSystem.Value.TryLookup(call.Method.Name) is CiGenericTypeDefinition generic))
+					throw StatementException(call, $"{call.Method.Name} is not a generic class");
+				List<CiType> typeArgs = new List<CiType>();
+				foreach (CiExpr typeArgExpr in typeArgExprs.Items)
+					typeArgs.Add(ToType(typeArgExpr, false));
+				if (typeArgs.Count != generic.TypeParameterCount)
+					throw StatementException(call, $"Expected {generic.TypeParameterCount} type arguments for {generic.Name}, got {typeArgs.Count}");
+				if (generic == CiSystem.ListClass) {
 					NotSupported(call, "List", "cl");
-					return new CiListType { ElementType = typeArguments[0] };
+					return new CiListType { ElementType = typeArgs[0] };
 				}
-				if (call.Method.Symbol == CiSystem.StackClass) {
+				if (generic == CiSystem.StackClass) {
 					NotSupported(call, "Stack", "cl");
-					return new CiStackType { ElementType = typeArguments[0] };
+					return new CiStackType { ElementType = typeArgs[0] };
 				}
-				if (call.Method.Symbol == CiSystem.HashSetClass) {
+				if (generic == CiSystem.HashSetClass) {
 					NotSupported(call, "HashSet", "cl");
-					return new CiHashSetType { ElementType = typeArguments[0] };
+					return new CiHashSetType { ElementType = typeArgs[0] };
 				}
-				if (call.Method.Symbol == CiSystem.DictionaryClass || call.Method.Symbol == CiSystem.SortedDictionaryClass) {
-					NotSupported(call, call.Method.Symbol.Name, "cl");
-					return new CiDictionaryType { Class = call.Method.Symbol, KeyType = typeArguments[0], ValueType = typeArguments[1] };
+				if (generic == CiSystem.DictionaryClass || generic == CiSystem.SortedDictionaryClass) {
+					NotSupported(call, generic.Name, "cl");
+					return new CiDictionaryType { Class = generic, KeyType = typeArgs[0], ValueType = typeArgs[1] };
 				}
-				if (call.Method.Symbol == CiSystem.OrderedDictionaryClass) {
+				if (generic == CiSystem.OrderedDictionaryClass) {
 					NotSupported(call, "OrderedDictionary", "c", "cpp", "swift", "ts", "cl");
-					return new CiDictionaryType { Class = call.Method.Symbol, KeyType = typeArguments[0], ValueType = typeArguments[1] };
+					return new CiDictionaryType { Class = generic, KeyType = typeArgs[0], ValueType = typeArgs[1] };
 				}
+				throw new NotImplementedException(generic.Name);
 			}
 			if (call.Method.Name == "string") {
 				NotSupported(call, "string()", "cl");

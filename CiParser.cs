@@ -422,10 +422,6 @@ public class CiParser : CiLexer
 		if (Eat(CiToken.Range))
 			return new CiBinaryExpr { Line = this.Line, Left = left, Op = CiToken.Range, Right = ParsePrimaryExpr() };
 		if (left is CiSymbolReference symbol && Eat(CiToken.Less)) {
-			if (!(CiSystem.Value.TryLookup(symbol.Name) is CiGenericTypeDefinition generic)) {
-				ReportError($"{symbol.Name} is not a generic class");
-				return null;
-			}
 			int line = this.Line;
 			List<CiExpr> typeArgs = new List<CiExpr>();
 			bool saveTypeArg = this.ParsingTypeArg;
@@ -435,11 +431,7 @@ public class CiParser : CiLexer
 			while (Eat(CiToken.Comma));
 			Expect(CiToken.RightAngle);
 			this.ParsingTypeArg = saveTypeArg;
-			if (typeArgs.Count != generic.TypeParameterCount) {
-				ReportError($"Expected {generic.TypeParameterCount} type arguments for {symbol.Name}, got {typeArgs.Count}");
-				return null;
-			}
-			left = new CiSymbolReference { Line = line, Left = new CiAggregateInitializer { Items = typeArgs.ToArray() }, Symbol = generic };
+			left = new CiSymbolReference { Line = line, Left = new CiAggregateInitializer { Items = typeArgs.ToArray() }, Name = symbol.Name };
 			if (Eat(CiToken.LeftParenthesis)) {
 				Expect(CiToken.RightParenthesis);
 				left = new CiCallExpr { Line = this.Line, Method = (CiSymbolReference) left, Arguments = Array.Empty<CiExpr>() };
