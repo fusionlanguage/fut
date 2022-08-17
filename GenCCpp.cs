@@ -286,7 +286,7 @@ public abstract class GenCCpp : GenTyped
 		foreach (CiCase kase in statement.Cases) {
 			foreach (CiExpr caseValue in kase.Values) {
 				Write(op);
-				WriteEqualString(statement.Value, caseValue, kase.Values.Length == 1 ? CiPriority.Argument : CiPriority.CondOr, false); // FIXME: side effect
+				WriteEqualString(statement.Value, caseValue, kase.Values.Count == 1 ? CiPriority.Argument : CiPriority.CondOr, false); // FIXME: side effect
 				op = " || ";
 			}
 			Write(')');

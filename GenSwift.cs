@@ -1171,7 +1171,7 @@ public class GenSwift : GenPySwift
 		WriteLine(" {");
 		foreach (CiCase kase in statement.Cases) {
 			Write("case ");
-			for (int i = 0; i < kase.Values.Length; i++) {
+			for (int i = 0; i < kase.Values.Count; i++) {
 				WriteComma(i);
 				WriteCoerced(statement.Value.Type, kase.Values[i], CiPriority.Argument);
 			}

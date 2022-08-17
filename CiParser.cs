@@ -669,20 +669,16 @@ public class CiParser : CiLexer
 
 		CiCondCompletionStatement outerLoopOrSwitch = this.CurrentLoopOrSwitch;
 		this.CurrentLoopOrSwitch = result;
-		List<CiCase> cases = new List<CiCase>();
 		while (Eat(CiToken.Case)) {
-			List<CiExpr> values = new List<CiExpr>();
-			CiExpr value;
+			CiCase kase = new CiCase();
 			do {
-				value = ParseExpr();
-				values.Add(value);
+				kase.Values.Add(ParseExpr());
 				Expect(CiToken.Colon);
 			} while (Eat(CiToken.Case));
 			if (See(CiToken.Default)) {
 				ReportError("Please remove 'case' before 'default'");
 				break;
 			}
-			CiCase kase = new CiCase { Values = values.ToArray() };
 
 			List<CiStatement> statements = new List<CiStatement>();
 			while (!See(CiToken.EndOfFile)) {
@@ -698,11 +694,10 @@ public class CiParser : CiLexer
 				break;
 			}
 			kase.Body = statements.ToArray();
-			cases.Add(kase);
+			result.Cases.Add(kase);
 		}
-		if (cases.Count == 0)
+		if (result.Cases.Count == 0)
 			ReportError("Switch with no cases");
-		result.Cases = cases.ToArray();
 
 		if (Eat(CiToken.Default)) {
 			Expect(CiToken.Colon);

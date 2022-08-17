@@ -1300,7 +1300,7 @@ public class CiResolver : CiVisitor
 		}
 		statement.SetCompletesNormally(false);
 		foreach (CiCase kase in statement.Cases) {
-			for (int i = 0; i < kase.Values.Length; i++) {
+			for (int i = 0; i < kase.Values.Count; i++) {
 				kase.Values[i] = FoldConst(kase.Values[i]);
 				Coerce(kase.Values[i], statement.Value.Type);
 			}
@@ -1643,7 +1643,7 @@ public class CiResolver : CiVisitor
 		this.Lang = lang;
 		foreach (CiClass klass in program.OfType<CiClass>())
 			ResolveBase(klass);
-		foreach (CiContainerType container in program.Cast<CiContainerType>())
+		foreach (CiContainerType container in program)
 			ResolveConsts(container);
 		foreach (CiClass klass in program.Classes)
 			ResolveTypes(klass);

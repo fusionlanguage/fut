@@ -815,14 +815,14 @@ public class CiReturn : CiStatement
 
 public class CiCase
 {
-	public CiExpr[] Values;
+	public readonly List<CiExpr> Values = new List<CiExpr>();
 	public CiStatement[] Body;
 }
 
 public class CiSwitch : CiCondCompletionStatement
 {
 	public CiExpr Value;
-	public CiCase[] Cases;
+	public readonly List<CiCase> Cases = new List<CiCase>();
 	public CiStatement[] DefaultBody;
 	public override void Accept(CiVisitor visitor) { visitor.VisitSwitch(this); }
 
