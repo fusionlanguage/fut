@@ -730,7 +730,7 @@ public class GenC : GenCCpp
 			}
 			int i = 0;
 			foreach (CiVar param in ((CiMethod) call.Method.Symbol).Parameters) {
-				if (i >= call.Arguments.Length)
+				if (i >= call.Arguments.Count)
 					break;
 				CiExpr arg = call.Arguments[i++];
 				WriteTemporaries(arg);
@@ -775,7 +775,7 @@ public class GenC : GenCCpp
 			}
 			int i = 0;
 			foreach (CiVar param in ((CiMethod) call.Method.Symbol).Parameters) {
-				if (i >= call.Arguments.Length)
+				if (i >= call.Arguments.Count)
 					break;
 				CiExpr arg = call.Arguments[i++];
 				if (HasTemporaries(arg) || (param.Type is CiClassPtrType && IsTemporary(arg)))
@@ -1129,7 +1129,7 @@ public class GenC : GenCCpp
 		WriteCall("(int) strlen", expr);
 	}
 
-	void WriteStringMethod(string name, CiExpr obj, CiExpr[] args)
+	void WriteStringMethod(string name, CiExpr obj, List<CiExpr> args)
 	{
 		Include("string.h");
 		Write("CiString_");
@@ -1147,10 +1147,10 @@ public class GenC : GenCCpp
 		this.Compares.Add(typeCode);
 	}
 
-	protected void WriteArrayFill(CiExpr obj, CiExpr[] args)
+	protected void WriteArrayFill(CiExpr obj, List<CiExpr> args)
 	{
 		Write("for (int _i = 0; _i < ");
-		if (args.Length == 1)
+		if (args.Count == 1)
 			VisitLiteralLong(((CiArrayStorageType) obj.Type).Length);
 		else
 			args[2].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
@@ -1158,7 +1158,7 @@ public class GenC : GenCCpp
 		Write('\t');
 		obj.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
 		Write('[');
-		if (args.Length > 1 && !args[1].IsLiteralZero) {
+		if (args.Count > 1 && !args[1].IsLiteralZero) {
 			args[1].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
 			Write(" + ");
 		}
@@ -1166,11 +1166,11 @@ public class GenC : GenCCpp
 		args[0].Accept(this, CiPriority.Argument); // FIXME: side effect in every iteration
 	}
 
-	void WriteListAddInsert(CiExpr obj, bool insert, string function, CiExpr[] args)
+	void WriteListAddInsert(CiExpr obj, bool insert, string function, List<CiExpr> args)
 	{
 		CiType elementType = ((CiCollectionType) obj.Type).ElementType;
 		// TODO: don't emit temporary variable if already a var/field of matching type - beware of integer promotions!
-		int id = WriteTemporary(elementType, elementType.IsFinal ? null : args[args.Length - 1]);
+		int id = WriteTemporary(elementType, elementType.IsFinal ? null : args[args.Count - 1]);
 		if (elementType is CiClass klass && NeedsConstructor(klass)) {
 			WriteName(klass);
 			Write("_Construct(&citemp");
@@ -1200,13 +1200,13 @@ public class GenC : GenCCpp
 		Write(')');
 	}
 
-	void WriteArgsAndRightParenthesis(CiMethod method, CiExpr[] args)
+	void WriteArgsAndRightParenthesis(CiMethod method, List<CiExpr> args)
 	{
 		int i = 0;
 		foreach (CiVar param in method.Parameters) {
 			if (i > 0 || method.CallType != CiCallType.Static)
 				Write(", ");
-			if (i >= args.Length)
+			if (i >= args.Count)
 				param.Value.Accept(this, CiPriority.Argument);
 			else
 				WriteCoerced(param.Type, args[i], CiPriority.Argument);
@@ -1215,17 +1215,17 @@ public class GenC : GenCCpp
 		Write(')');
 	}
 
-	void WriteRegexOptions(CiExpr[] args)
+	void WriteRegexOptions(List<CiExpr> args)
 	{
 		if (!WriteRegexOptions(args, "", " | ", "", "G_REGEX_CASELESS", "G_REGEX_MULTILINE", "G_REGEX_DOTALL"))
 			Write('0');
 	}
 
-	void WriteConsoleWrite(CiExpr obj, CiExpr[] args, bool newLine)
+	void WriteConsoleWrite(CiExpr obj, List<CiExpr> args, bool newLine)
 	{
 		bool error = obj.IsReferenceTo(CiSystem.ConsoleError);
 		Include("stdio.h");
-		if (args.Length == 0)
+		if (args.Count == 0)
 			Write(error ? "putc('\\n', stderr)" : "putchar('\\n')");
 		else if (args[0] is CiInterpolatedString interpolated) {
 			Write(error ? "fprintf(stderr, " : "printf(");
@@ -1261,7 +1261,7 @@ public class GenC : GenCCpp
 			WriteCall("puts", args[0]);
 	}
 
-	protected void WriteCCall(CiExpr obj, CiMethod method, CiExpr[] args)
+	protected void WriteCCall(CiExpr obj, CiMethod method, List<CiExpr> args)
 	{
 		if (obj != null && obj.IsReferenceTo(CiSystem.BasePtr)) {
 			WriteName(method);
@@ -1318,7 +1318,7 @@ public class GenC : GenCCpp
 		WriteArgsAndRightParenthesis(method, args);
 	}
 
-	void WriteListAdd(CiExpr obj, CiExpr[] args)
+	void WriteListAdd(CiExpr obj, List<CiExpr> args)
 	{
 		CiType elementType = ((CiCollectionType) obj.Type).ElementType;
 		if (elementType is CiArrayStorageType || (elementType is CiClass klass && !NeedsConstructor(klass))) {
@@ -1332,7 +1332,7 @@ public class GenC : GenCCpp
 			WriteListAddInsert(obj, false, "g_array_append_val", args);
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
+	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		if (obj == null)
 			WriteCCall(null, method, args);
@@ -1386,7 +1386,7 @@ public class GenC : GenCCpp
 			this.StringEndsWith = true;
 			WriteStringMethod("EndsWith", obj, args);
 		}
-		else if (method == CiSystem.StringSubstring && args.Length == 1) {
+		else if (method == CiSystem.StringSubstring && args.Count == 1) {
 			if (parent > CiPriority.Add)
 				Write('(');
 			WriteAdd(obj, args[0]);
@@ -1401,12 +1401,12 @@ public class GenC : GenCCpp
 			Write(" *) bsearch(&");
 			args[0].Accept(this, CiPriority.Primary); // TODO: not lvalue, promoted
 			Write(", ");
-			if (args.Length == 1)
+			if (args.Count == 1)
 				WriteArrayPtr(obj, CiPriority.Argument);
 			else
 				WriteArrayPtrAdd(obj, args[1]);
 			Write(", ");
-			if (args.Length == 1)
+			if (args.Count == 1)
 				VisitLiteralLong(((CiArrayStorageType) array).Length);
 			else
 				args[2].Accept(this, CiPriority.Primary);
@@ -1439,7 +1439,7 @@ public class GenC : GenCCpp
 			if (args[0] is CiLiteral literal && literal.IsDefaultValue) {
 				Include("string.h");
 				Write("memset(");
-				if (args.Length == 1) {
+				if (args.Count == 1) {
 					obj.Accept(this, CiPriority.Argument);
 					Write(", 0, sizeof(");
 					obj.Accept(this, CiPriority.Argument);

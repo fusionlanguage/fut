@@ -504,7 +504,7 @@ public class GenJava : GenTyped
 		return expr;
 	}
 
-	void WriteArrayBinarySearchFill(CiExpr obj, string method, CiExpr[] args)
+	void WriteArrayBinarySearchFill(CiExpr obj, string method, List<CiExpr> args)
 	{
 		Include("java.util.Arrays");
 		Write("Arrays.");
@@ -512,7 +512,7 @@ public class GenJava : GenTyped
 		Write('(');
 		obj.Accept(this, CiPriority.Argument);
 		Write(", ");
-		if (args.Length == 3) {
+		if (args.Count == 3) {
 			WriteStartEnd(args[1], args[2]);
 			Write(", ");
 		}
@@ -520,10 +520,10 @@ public class GenJava : GenTyped
 		Write(')');
 	}
 
-	void WriteConsoleWrite(CiExpr obj, CiMethod method, CiExpr[] args, bool newLine)
+	void WriteConsoleWrite(CiExpr obj, CiMethod method, List<CiExpr> args, bool newLine)
 	{
 		Write(obj.IsReferenceTo(CiSystem.ConsoleError) ? "System.err" : "System.out");
-		if (args.Length == 1 && args[0] is CiInterpolatedString interpolated) {
+		if (args.Count == 1 && args[0] is CiInterpolatedString interpolated) {
 			Write(".format(");
 			WritePrintf(interpolated, newLine);
 		}
@@ -535,7 +535,7 @@ public class GenJava : GenTyped
 		}
 	}
 
-	void WriteRegex(CiExpr[] args, int argIndex)
+	void WriteRegex(List<CiExpr> args, int argIndex)
 	{
 		CiExpr pattern = args[argIndex];
 		if (pattern.Type.IsClass(CiSystem.RegexClass))
@@ -549,7 +549,7 @@ public class GenJava : GenTyped
 		}
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
+	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		if (obj == null) {
 			WriteName(method);
@@ -559,7 +559,7 @@ public class GenJava : GenTyped
 			obj.Accept(this, CiPriority.Primary);
 			Write(".substring(");
 			args[0].Accept(this, CiPriority.Argument);
-			if (args.Length == 2) {
+			if (args.Count == 2) {
 				Write(", ");
 				WriteAdd(args[0], args[1]); // TODO: side effect
 			}

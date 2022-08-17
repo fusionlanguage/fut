@@ -589,19 +589,19 @@ public abstract class GenBase : CiVisitor
 		literal.Accept(this, CiPriority.Argument);
 	}
 
-	protected void WriteCoercedLiterals(CiType type, CiExpr[] exprs)
+	protected void WriteCoercedLiterals(CiType type, List<CiExpr> exprs)
 	{
-		for (int i = 0; i < exprs.Length; i++) {
+		for (int i = 0; i < exprs.Count; i++) {
 			WriteComma(i);
 			WriteCoercedLiteral(type, exprs[i]);
 		}
 	}
 
-	protected void WriteArgs(CiMethod method, CiExpr[] args)
+	protected void WriteArgs(CiMethod method, List<CiExpr> args)
 	{
 		int i = 0;
 		foreach (CiVar param in method.Parameters) {
-			if (i >= args.Length)
+			if (i >= args.Count)
 				break;
 			if (i > 0)
 				Write(", ");
@@ -609,7 +609,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WriteArgsInParentheses(CiMethod method, CiExpr[] args)
+	protected void WriteArgsInParentheses(CiMethod method, List<CiExpr> args)
 	{
 		Write('(');
 		WriteArgs(method, args);
@@ -646,7 +646,7 @@ public abstract class GenBase : CiVisitor
 		Write(')');
 	}
 
-	protected void WriteCall(string function, CiExpr arg0, CiExpr[] args)
+	protected void WriteCall(string function, CiExpr arg0, List<CiExpr> args)
 	{
 		Write(function);
 		Write('(');
@@ -918,7 +918,7 @@ public abstract class GenBase : CiVisitor
 		expr.Accept(this, CiPriority.Argument);
 	}
 
-	protected bool WriteListAddInsert(CiExpr obj, CiMethod method, CiExpr[] args, string add, string insert, string insertSeparator)
+	protected bool WriteListAddInsert(CiExpr obj, CiMethod method, List<CiExpr> args, string add, string insert, string insertSeparator)
 	{
 		if (obj.Type is CiListType list) {
 			int i;
@@ -952,7 +952,7 @@ public abstract class GenBase : CiVisitor
 		return false;
 	}
 
-	protected bool WriteDictionaryAdd(CiExpr obj, CiMethod method, CiExpr[] args)
+	protected bool WriteDictionaryAdd(CiExpr obj, CiMethod method, List<CiExpr> args)
 	{
 		if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
 			WriteIndexing(obj, args[0]);
@@ -963,9 +963,9 @@ public abstract class GenBase : CiVisitor
 		return false;
 	}
 
-	protected bool WriteRegexOptions(CiExpr[] args, string prefix, string separator, string suffix, string i, string m, string s)
+	protected bool WriteRegexOptions(List<CiExpr> args, string prefix, string separator, string suffix, string i, string m, string s)
 	{
-		CiExpr expr = args[args.Length - 1];
+		CiExpr expr = args[args.Count - 1];
 		if (expr.Type != CiSystem.RegexOptionsEnum)
 			return false;
 		RegexOptions options = (RegexOptions) expr.IntValue;
@@ -988,7 +988,7 @@ public abstract class GenBase : CiVisitor
 		return true;
 	}
 
-	protected abstract void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent);
+	protected abstract void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent);
 
 	protected void WriteIndexing(CiExpr collection, CiExpr index)
 	{

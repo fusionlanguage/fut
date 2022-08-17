@@ -414,7 +414,7 @@ public class GenSwift : GenPySwift
 			base.WriteEqual(expr, parent, not);
 	}
 
-	void WriteStringContains(CiExpr obj, string name, CiExpr[] args)
+	void WriteStringContains(CiExpr obj, string name, List<CiExpr> args)
 	{
 		WriteUnwrappedString(obj, CiPriority.Primary, true);
 		Write('.');
@@ -431,7 +431,7 @@ public class GenSwift : GenPySwift
 		WriteAdd(startIndex, length); // TODO: side effect
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
+	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		if (obj == null) {
 			if (method.IsStatic) {
@@ -476,7 +476,7 @@ public class GenSwift : GenPySwift
 				WriteCoerced(CiSystem.IntType, args[0], CiPriority.Argument);
 				Write(')');
 			}
-			if (args.Length == 2) {
+			if (args.Count == 2) {
 				Write(".prefix(");
 				WriteCoerced(CiSystem.IntType, args[1], CiPriority.Argument);
 				Write(')');
@@ -491,7 +491,7 @@ public class GenSwift : GenPySwift
 			Write(']');
 		}
 		else if (obj.Type is CiArrayStorageType array && !IsArrayRef(array) && method.Name == "Fill") {
-			if (args.Length == 1) {
+			if (args.Count == 1) {
 				obj.Accept(this, CiPriority.Assign);
 				Write(" = [");
 				Write(array.ElementType);

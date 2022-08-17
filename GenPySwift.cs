@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Foxoft.Ci
@@ -126,12 +127,12 @@ public abstract class GenPySwift : GenBase
 
 	protected virtual void WriteExpr(CiExpr expr, CiPriority parent) => expr.Accept(this, parent);
 
-	protected void WriteListAppend(CiExpr obj, CiExpr[] args)
+	protected void WriteListAppend(CiExpr obj, List<CiExpr> args)
 	{
 		obj.Accept(this, CiPriority.Primary);
 		Write(".append(");
 		CiType type = ((CiCollectionType) obj.Type).ElementType;
-		if (args.Length == 0)
+		if (args.Count == 0)
 			WriteNewStorage(type);
 		else
 			WriteCoerced(type, args[0], CiPriority.Argument);

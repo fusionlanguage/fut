@@ -417,7 +417,7 @@ public class GenCpp : GenCCpp
 		Write('.');
 	}
 
-	void WriteStringMethod(CiExpr obj, string name, CiMethod method, CiExpr[] args)
+	void WriteStringMethod(CiExpr obj, string name, CiMethod method, List<CiExpr> args)
 	{
 		StartStringMethod(obj);
 		Write(name);
@@ -430,7 +430,7 @@ public class GenCpp : GenCCpp
 			WriteArgsInParentheses(method, args);
 	}
 
-	void WriteRegex(CiExpr[] args, int argIndex)
+	void WriteRegex(List<CiExpr> args, int argIndex)
 	{
 		Include("regex");
 		Write("std::regex(");
@@ -439,11 +439,11 @@ public class GenCpp : GenCCpp
 		Write(')');
 	}
 
-	void WriteConsoleWrite(CiExpr obj, CiExpr[] args, bool newLine)
+	void WriteConsoleWrite(CiExpr obj, List<CiExpr> args, bool newLine)
 	{
 		Include("iostream");
 		Write(obj.IsReferenceTo(CiSystem.ConsoleError) ? "std::cerr" : "std::cout");
-		if (args.Length == 1) {
+		if (args.Count == 1) {
 			if (args[0] is CiInterpolatedString interpolated) {
 				bool uppercase = false;
 				bool hex = false;
@@ -541,7 +541,7 @@ public class GenCpp : GenCCpp
 			Write(" << '\\n'");
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
+	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		if (obj == null) {
 			WriteName(method);
@@ -581,7 +581,7 @@ public class GenCpp : GenCCpp
 			if (parent > CiPriority.Add)
 				Write('(');
 			Write("std::lower_bound(");
-			if (args.Length == 1) {
+			if (args.Count == 1) {
 				obj.Accept(this, CiPriority.Primary);
 				Write(".begin(), ");
 				obj.Accept(this, CiPriority.Primary); // FIXME: side effect
@@ -611,7 +611,7 @@ public class GenCpp : GenCCpp
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayType && method.Name == "Fill" && args.Length == 3) {
+		else if (obj.Type is CiArrayType && method.Name == "Fill" && args.Count == 3) {
 			Include("algorithm");
 			Write("std::fill_n(");
 			WriteArrayPtrAdd(obj, args[1]);

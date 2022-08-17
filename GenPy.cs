@@ -544,16 +544,16 @@ public class GenPy : GenPySwift
 		Write("sorted(");
 	}
 
-	void WriteConsoleWrite(CiExpr obj, CiExpr[] args, bool newLine)
+	void WriteConsoleWrite(CiExpr obj, List<CiExpr> args, bool newLine)
 	{
 		Write("print(");
-		if (args.Length == 1) {
+		if (args.Count == 1) {
 			args[0].Accept(this, CiPriority.Argument);
 			if (!newLine)
 				Write(", end=\"\"");
 		}
 		if (obj.IsReferenceTo(CiSystem.ConsoleError)) {
-			if (args.Length == 1)
+			if (args.Count == 1)
 				Write(", ");
 			Include("sys");
 			Write("file=sys.stderr");
@@ -561,13 +561,13 @@ public class GenPy : GenPySwift
 		Write(')');
 	}
 
-	void WriteRegexOptions(CiExpr[] args)
+	void WriteRegexOptions(List<CiExpr> args)
 	{
 		Include("re");
 		WriteRegexOptions(args, ", ", " | ", "", "re.I", "re.M", "re.S");
 	}
 
-	void WriteRegexSearch(CiExpr[] args)
+	void WriteRegexSearch(List<CiExpr> args)
 	{
 		Write("re.search(");
 		args[1].Accept(this, CiPriority.Argument);
@@ -577,7 +577,7 @@ public class GenPy : GenPySwift
 		Write(')');
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
+	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		if (obj == null) {
 			WriteLocalName(method, CiPriority.Primary);
@@ -587,7 +587,7 @@ public class GenPy : GenPySwift
 			WriteContains(obj, args[0]);
 		else if (method == CiSystem.StringSubstring) {
 			obj.Accept(this, CiPriority.Primary);
-			WriteSlice(args[0], args.Length == 2 ? args[1] : null);
+			WriteSlice(args[0], args.Count == 2 ? args[1] : null);
 		}
 		else if (method == CiSystem.CollectionClear && IsNumberList(obj.Type)) {
 			Write("del ");
@@ -617,7 +617,7 @@ public class GenPy : GenPySwift
 		}
 		else if (obj.Type is CiArrayType array && method.Name == "Fill") {
 			obj.Accept(this, CiPriority.Primary);
-			if (args.Length == 1) {
+			if (args.Count == 1) {
 				Write("[:] = ");
 				WriteNewArray(array.ElementType, args[0], ((CiArrayStorageType) array).LengthExpr);
 			}
@@ -743,7 +743,7 @@ public class GenPy : GenPySwift
 			Write('.');
 			WriteName(method);
 			Write("(self");
-			if (args.Length > 0) {
+			if (args.Count > 0) {
 				Write(", ");
 				WriteArgs(method, args);
 			}

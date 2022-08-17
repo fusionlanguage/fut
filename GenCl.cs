@@ -18,6 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Foxoft.Ci
@@ -127,10 +128,10 @@ public class GenCl : GenC
 		WriteCall("strlen", expr);
 	}
 
-	void WriteConsoleWrite(CiExpr[] args, bool newLine)
+	void WriteConsoleWrite(List<CiExpr> args, bool newLine)
 	{
 		Write("printf(");
-		if (args.Length == 0)
+		if (args.Count == 0)
 			Write("\"\\n\")");
 		else if (args[0] is CiInterpolatedString interpolated)
 			WritePrintf(interpolated, newLine);
@@ -145,7 +146,7 @@ public class GenCl : GenC
 		}
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
+	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		if (obj == null)
 			WriteCCall(null, method, args);
@@ -164,7 +165,7 @@ public class GenCl : GenC
 				WriteCall("CiString_StartsWith", obj, args[0]);
 			}
 		}
-		else if (method == CiSystem.StringSubstring && args.Length == 1) {
+		else if (method == CiSystem.StringSubstring && args.Count == 1) {
 			if (parent > CiPriority.Add)
 				Write('(');
 			WriteAdd(obj, args[0]);

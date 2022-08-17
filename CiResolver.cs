@@ -283,8 +283,8 @@ public class CiResolver : CiVisitor
 
 	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
 	{
-		CiExpr[] items = expr.Items;
-		for (int i = 0; i < items.Length; i++)
+		List<CiExpr> items = expr.Items;
+		for (int i = 0; i < items.Count; i++)
 			items[i] = Resolve(items[i]);
 	}
 
@@ -988,25 +988,33 @@ public class CiResolver : CiVisitor
 		return new CiSelectExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
 	}
 
-	static bool CanCall(CiMethod method, CiExpr[] arguments)
+	static bool CanCall(CiMethod method, List<CiExpr> arguments)
 	{
 		int i = 0;
 		foreach (CiVar param in method.Parameters) {
-			if (i >= arguments.Length)
+			if (i >= arguments.Count)
 				return param.Value != null;
 			if (!param.Type.IsAssignableFrom(arguments[i++].Type))
 				return false;
 		}
-		return i == arguments.Length;
+		return i == arguments.Count;
 	}
 
 	public override CiExpr VisitCallExpr(CiCallExpr expr, CiPriority parent)
 	{
 		CiSymbolReference symbol = (CiSymbolReference) Resolve(expr.Method);
-		CiExpr[] arguments = this.CurrentPureArguments.Count == 0 ? expr.Arguments : new CiExpr[expr.Arguments.Length];
+		List<CiExpr> arguments;
 		int i;
-		for (i = 0; i < arguments.Length; i++)
-			arguments[i] = Resolve(expr.Arguments[i]);
+		if (this.CurrentPureArguments.Count == 0) {
+			arguments = expr.Arguments;
+			for (i = 0; i < arguments.Count; i++)
+				arguments[i] = Resolve(arguments[i]);
+		}
+		else {
+			arguments = new List<CiExpr>(expr.Arguments.Count);
+			foreach (CiExpr arg in expr.Arguments)
+				arguments.Add(Resolve(arg));
+		}
 		CiMethod method = symbol.Symbol switch {
 			CiMethod m => m,
 			CiMethodGroup group => group.Methods.FirstOrDefault(m => CanCall(m, arguments))
@@ -1017,19 +1025,19 @@ public class CiResolver : CiVisitor
 		// TODO: check static
 		i = 0;
 		foreach (CiVar param in method.Parameters) {
-			if (i >= arguments.Length) {
+			if (i >= arguments.Count) {
 				if (param.Value != null)
 					break;
-				throw StatementException(expr, "Too few arguments");
+				throw StatementException(expr, $"Too few arguments for '{method.Name}'");
 			}
 			Coerce(arguments[i++], param.Type);
 		}
-		if (i < arguments.Length)
+		if (i < arguments.Count)
 			throw StatementException(arguments[i], "Too many arguments");
 
 		if (method.Throws) {
 			if (this.CurrentMethod == null)
-				throw StatementException(expr, $"Cannot call method {method.Name} here because it is marked 'throws'");
+				throw StatementException(expr, $"Cannot call method '{method.Name}' here because it is marked 'throws'");
 			if (!this.CurrentMethod.Throws)
 				throw StatementException(expr, "Method marked 'throws' called from a method not marked 'throws'");
 		}
@@ -1042,7 +1050,7 @@ public class CiResolver : CiVisitor
 		 && this.CurrentPureMethods.Add(method)) {
 			i = 0;
 			foreach (CiVar param in method.Parameters)
-				this.CurrentPureArguments.Add(param, i < arguments.Length ? arguments[i++] : param.Value);
+				this.CurrentPureArguments.Add(param, i < arguments.Count ? arguments[i++] : param.Value);
 			CiLiteral literal = Resolve(ret.Value) as CiLiteral;
 			foreach (CiVar param in method.Parameters)
 				this.CurrentPureArguments.Remove(param);
@@ -1399,7 +1407,7 @@ public class CiResolver : CiVisitor
 		case CiCallExpr call:
 			// string(), MyClass()
 			ExpectNoPtrModifier(expr, ptrModifier);
-			if (call.Arguments.Length != 0)
+			if (call.Arguments.Count != 0)
 				throw StatementException(call, "Expected empty parentheses for storage type");
 			if (call.Method.Left is CiAggregateInitializer typeArgExprs) {
 				if (!(this.Program.TryLookup(call.Method.Name) is CiGenericTypeDefinition generic))
@@ -1522,9 +1530,9 @@ public class CiResolver : CiVisitor
 			foreach (CiExpr item in coll.Items)
 				Coerce(item, arrayType.ElementType);
 			if (!(arrayType is CiArrayStorageType storageType))
-				konst.Type = storageType = new CiArrayStorageType { ElementType = arrayType.ElementType, Length = coll.Items.Length };
-			else if (storageType.Length != coll.Items.Length)
-				throw StatementException(konst, $"Declared {storageType.Length} elements, initialized {coll.Items.Length}");
+				konst.Type = storageType = new CiArrayStorageType { ElementType = arrayType.ElementType, Length = coll.Items.Count };
+			else if (storageType.Length != coll.Items.Count)
+				throw StatementException(konst, $"Declared {storageType.Length} elements, initialized {coll.Items.Count}");
 			coll.Type = storageType;
 		}
 		else if (this.CurrentScope is CiEnum && konst.Value.Type is CiRangeType && konst.Value is CiLiteral) {

@@ -457,7 +457,7 @@ public class GenCs : GenTyped
 		return expr;
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
+	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		if (obj == null) {
 			WriteName(method);
@@ -527,7 +527,7 @@ public class GenCs : GenTyped
 			Write("Array.BinarySearch(");
 			obj.Accept(this, CiPriority.Argument);
 			Write(", ");
-			if (args.Length == 3) {
+			if (args.Count == 3) {
 				args[1].Accept(this, CiPriority.Argument);
 				Write(", ");
 				args[2].Accept(this, CiPriority.Argument);
@@ -549,7 +549,7 @@ public class GenCs : GenTyped
 			if (args[0] is CiLiteral literal && literal.IsDefaultValue) {
 				Write("Array.Clear(");
 				obj.Accept(this, CiPriority.Argument);
-				if (args.Length == 1) {
+				if (args.Count == 1) {
 					// .NET Framework compatibility
 					Write(", 0, ");
 					VisitLiteralLong(((CiArrayStorageType) array2).Length);
@@ -561,7 +561,7 @@ public class GenCs : GenTyped
 				Write(", ");
 				WriteNotPromoted(array2.ElementType, args[0]);
 			}
-			if (args.Length == 3) {
+			if (args.Count == 3) {
 				Write(", ");
 				args[1].Accept(this, CiPriority.Argument);
 				Write(", ");

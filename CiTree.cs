@@ -91,7 +91,7 @@ public abstract class CiExpr : CiStatement
 
 public class CiAggregateInitializer : CiExpr
 {
-	public CiExpr[] Items;
+	public readonly List<CiExpr> Items = new List<CiExpr>();
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		visitor.VisitAggregateInitializer(this);
@@ -712,7 +712,7 @@ public class CiSelectExpr : CiExpr
 public class CiCallExpr : CiExpr
 {
 	public CiSymbolReference Method;
-	public CiExpr[] Arguments;
+	public readonly List<CiExpr> Arguments = new List<CiExpr>();
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitCallExpr(this, parent);
 }
 

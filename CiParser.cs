@@ -111,22 +111,23 @@ public class CiParser : CiLexer
 
 	CiExpr ParseSymbolReference(CiExpr left) => new CiSymbolReference { Line = this.Line, Left = left, Name = ParseId() };
 
-	CiExpr[] ParseCollection(CiToken closing)
+	void ParseCollection(List<CiExpr> result, CiToken closing)
 	{
-		List<CiExpr> items = new List<CiExpr>();
 		if (!See(closing)) {
 			do
-				items.Add(ParseExpr());
+				result.Add(ParseExpr());
 			while (Eat(CiToken.Comma));
 		}
 		ExpectOrSkip(closing);
-		return items.ToArray();
 	}
 
 	CiExpr ParseConstInitializer()
 	{
-		if (Eat(CiToken.LeftBrace))
-			return new CiAggregateInitializer { Line = this.Line, Items = ParseCollection(CiToken.RightBrace) };
+		if (Eat(CiToken.LeftBrace)) {
+			CiAggregateInitializer result = new CiAggregateInitializer { Line = this.Line };
+			ParseCollection(result.Items, CiToken.RightBrace);
+			return result;
+		}
 		return ParseExpr();
 	}
 
@@ -269,7 +270,9 @@ public class CiParser : CiLexer
 				if (symbol == null)
 					ReportError("Expected a method");
 				NextToken();
-				result = new CiCallExpr { Line = this.Line, Method = symbol, Arguments = ParseCollection(CiToken.RightParenthesis) };
+				CiCallExpr call = new CiCallExpr { Line = this.Line, Method = symbol };
+				ParseCollection(call.Arguments, CiToken.RightParenthesis);
+				result = call;
 				break;
 			case CiToken.LeftBracket:
 				result = new CiBinaryExpr { Line = this.Line, Left = result, Op = NextToken(), Right = See(CiToken.RightBracket) ? null : ParseExpr() };
@@ -422,19 +425,18 @@ public class CiParser : CiLexer
 		if (Eat(CiToken.Range))
 			return new CiBinaryExpr { Line = this.Line, Left = left, Op = CiToken.Range, Right = ParsePrimaryExpr() };
 		if (left is CiSymbolReference symbol && Eat(CiToken.Less)) {
-			int line = this.Line;
-			List<CiExpr> typeArgs = new List<CiExpr>();
+			CiAggregateInitializer typeArgs = new CiAggregateInitializer();
+			left = new CiSymbolReference { Line = this.Line, Left = typeArgs, Name = symbol.Name };
 			bool saveTypeArg = this.ParsingTypeArg;
 			this.ParsingTypeArg = true;
 			do
-				typeArgs.Add(ParseType());
+				typeArgs.Items.Add(ParseType());
 			while (Eat(CiToken.Comma));
 			Expect(CiToken.RightAngle);
 			this.ParsingTypeArg = saveTypeArg;
-			left = new CiSymbolReference { Line = line, Left = new CiAggregateInitializer { Items = typeArgs.ToArray() }, Name = symbol.Name };
 			if (Eat(CiToken.LeftParenthesis)) {
 				Expect(CiToken.RightParenthesis);
-				left = new CiCallExpr { Line = this.Line, Method = (CiSymbolReference) left, Arguments = Array.Empty<CiExpr>() };
+				left = new CiCallExpr { Line = this.Line, Method = (CiSymbolReference) left };
 			}
 		}
 		return left;
@@ -470,16 +472,15 @@ public class CiParser : CiLexer
 		if (!Eat(CiToken.Assign))
 			return null;
 		if (Eat(CiToken.LeftBrace)) {
-			int startLine = this.Line;
-			List<CiExpr> fields = new List<CiExpr>();
+			CiAggregateInitializer result = new CiAggregateInitializer { Line = this.Line };
 			do {
 				int line = this.Line;
 				CiExpr field = ParseSymbolReference(null);
 				Expect(CiToken.Assign);
-				fields.Add(new CiBinaryExpr { Line = line, Left = field, Op = CiToken.Assign, Right = ParseExpr() });
+				result.Items.Add(new CiBinaryExpr { Line = line, Left = field, Op = CiToken.Assign, Right = ParseExpr() });
 			} while (Eat(CiToken.Comma));
 			Expect(CiToken.RightBrace);
-			return new CiAggregateInitializer { Line = startLine, Items = fields.ToArray() };
+			return result;
 		}
 		return ParseExpr();
 	}
@@ -887,7 +888,7 @@ public class CiParser : CiLexer
 						ReportError("Constructor in a static class");
 					if (callType != CiCallType.Normal)
 						ReportError($"Constructor cannot be {ToString(callType)}");
-					if (call.Arguments.Length != 0)
+					if (call.Arguments.Count != 0)
 						ReportError("Constructor parameters not supported");
 					if (klass.Constructor != null)
 						ReportError($"Duplicate constructor, already defined in line {klass.Constructor.Line}");

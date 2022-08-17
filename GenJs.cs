@@ -383,7 +383,7 @@ public class GenJs : GenBase
 			&& s.All(c => CiLexer.IsLetterOrDigit(c));
 	}
 
-	void WriteRegex(CiExpr[] args, int argIndex)
+	void WriteRegex(List<CiExpr> args, int argIndex)
 	{
 		CiExpr pattern = args[argIndex];
 		if (pattern.Type.IsClass(CiSystem.RegexClass))
@@ -427,7 +427,7 @@ public class GenJs : GenBase
 		}
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, CiExpr[] args, CiPriority parent)
+	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		if (obj == null) {
 			WriteLocalName(method, CiPriority.Primary);
@@ -437,7 +437,7 @@ public class GenJs : GenBase
 			obj.Accept(this, CiPriority.Primary);
 			Write(".substring(");
 			args[0].Accept(this, CiPriority.Argument);
-			if (args.Length == 2) {
+			if (args.Count == 2) {
 				Write(", ");
 				WriteAdd(args[0], args[1]); // TODO: side effect
 			}
@@ -461,7 +461,7 @@ public class GenJs : GenBase
 			obj.Accept(this, CiPriority.Primary);
 			Write(".fill(");
 			args[0].Accept(this, CiPriority.Argument);
-			if (args.Length == 3) {
+			if (args.Count == 3) {
 				Write(", ");
 				WriteStartEnd(args[1], args[2]);
 			}
@@ -526,7 +526,7 @@ public class GenJs : GenBase
 		else if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine) {
 			// XXX: Console.Write same as Console.WriteLine
 			Write(obj.IsReferenceTo(CiSystem.ConsoleError) ? "console.error" : "console.log");
-			if (args.Length == 0)
+			if (args.Count == 0)
 				Write("(\"\")");
 			else
 				WriteArgsInParentheses(method, args);
@@ -628,7 +628,7 @@ public class GenJs : GenBase
 			Write(".prototype.");
 			WriteName(method);
 			Write(".call(this");
-			if (args.Length > 0) {
+			if (args.Count > 0) {
 				Write(", ");
 				WriteArgs(method, args);
 			}

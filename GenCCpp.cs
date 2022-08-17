@@ -134,7 +134,7 @@ public abstract class GenCCpp : GenTyped
 		return false;
 	}
 
-	protected void WriteMathCall(CiMethod method, CiExpr[] args)
+	protected void WriteMathCall(CiMethod method, List<CiExpr> args)
 	{
 		if (method == CiSystem.MathCeiling)
 			Write("ceil");
@@ -166,8 +166,8 @@ public abstract class GenCCpp : GenTyped
 	{
 		if (expr is CiCallExpr call) {
 			CiMethod method = (CiMethod) call.Method.Symbol;
-			CiExpr[] args = call.Arguments;
-			if (method == CiSystem.StringSubstring && args.Length == 2) {
+			List<CiExpr> args = call.Arguments;
+			if (method == CiSystem.StringSubstring && args.Count == 2) {
 				cast = false;
 				ptr = call.Method.Left;
 				offset = args[0];
