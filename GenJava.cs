@@ -274,15 +274,6 @@ public class GenJava : GenTyped
 		Write('>');
 	}
 
-	void WriteDictionary(CiDictionaryType dict)
-	{
-		string name = dict.Class == CiSystem.SortedDictionaryClass ? "TreeMap" :
-			dict.Class == CiSystem.OrderedDictionaryClass ? "LinkedHashMap" :
-			"HashMap";
-		Include("java.util." + name);
-		Write(name, dict);
-	}
-
 	protected override void WriteClassName(CiClass klass)
 	{
 		if (klass == CiSystem.RegexClass) {
@@ -316,6 +307,9 @@ public class GenJava : GenTyped
 		case CiListType list:
 			WriteCollectionType("ArrayList", list);
 			break;
+		case CiQueueType queue:
+			WriteCollectionType("ArrayDeque", queue);
+			break;
 		case CiStackType stack:
 			WriteCollectionType("Stack", stack);
 			break;
@@ -323,7 +317,11 @@ public class GenJava : GenTyped
 			WriteCollectionType("HashSet", set);
 			break;
 		case CiDictionaryType dict:
-			WriteDictionary(dict);
+			string name = dict.Class == CiSystem.SortedDictionaryClass ? "TreeMap" :
+				dict.Class == CiSystem.OrderedDictionaryClass ? "LinkedHashMap" :
+				"HashMap";
+			Include("java.util." + name);
+			Write(name, dict);
 			break;
 		case CiArrayType array:
 			Write(array.ElementType, false);
@@ -349,24 +347,13 @@ public class GenJava : GenTyped
 	protected override void WriteNewStorage(CiType type)
 	{
 		switch (type) {
-		case CiListType list:
+		case CiListType _:
+		case CiQueueType _:
+		case CiStackType _:
+		case CiHashSetType _:
+		case CiDictionaryType _:
 			Write("new ");
-			WriteCollectionType("ArrayList", list);
-			Write("()");
-			break;
-		case CiStackType stack:
-			Write("new ");
-			WriteCollectionType("Stack", stack);
-			Write("()");
-			break;
-		case CiHashSetType set:
-			Write("new ");
-			WriteCollectionType("HashSet", set);
-			Write("()");
-			break;
-		case CiDictionaryType dict:
-			Write("new ");
-			WriteDictionary(dict);
+			Write(type, false, false);
 			Write("()");
 			break;
 		default:
@@ -726,6 +713,12 @@ public class GenJava : GenTyped
 			Write('.');
 			if (method == CiSystem.ListRemoveAt)
 				Write("remove");
+			else if (obj.Type is CiQueueType && method.Name == "Dequeue")
+				Write("remove");
+			else if (obj.Type is CiQueueType && method.Name == "Enqueue")
+				Write("add");
+			else if (obj.Type is CiQueueType && method.Name == "Peek")
+				Write("element");
 			else if (method == CiSystem.MathCeiling)
 				Write("ceil");
 			else if (method == CiSystem.MathFusedMultiplyAdd)

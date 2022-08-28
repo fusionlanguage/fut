@@ -98,6 +98,9 @@ public class GenTs : GenJs
 		case CiListType list:
 			WriteListType(list.ElementType);
 			break;
+		case CiQueueType queue:
+			WriteListType(queue.ElementType);
+			break;
 		case CiStackType stack:
 			WriteListType(stack.ElementType);
 			break;

@@ -1428,6 +1428,29 @@ public class CiListType : CiArrayType
 	public override bool IsFinal => true;
 }
 
+public class CiQueueType : CiCollectionType
+{
+	public override string ToString() => $"Queue<{this.ElementType}>";
+	public override CiSymbol TryLookup(string name)
+	{
+		switch (name) {
+		case "Clear":
+			return CiSystem.CollectionClear;
+		case "Count":
+			return CiSystem.CollectionCount;
+		case "Dequeue":
+			return new CiMethod(CiCallType.Normal, this.ElementType, "Dequeue") { IsMutator = true };
+		case "Enqueue":
+			return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Enqueue", new CiVar(this.ElementType, "value")) { IsMutator = true };
+		case "Peek":
+			return new CiMethod(CiCallType.Normal, this.ElementType, "Peek");
+		default:
+			return base.TryLookup(name);
+		}
+	}
+	public override bool IsFinal => true;
+}
+
 public class CiStackType : CiCollectionType
 {
 	public override string ToString() => $"Stack<{this.ElementType}>";
@@ -1623,6 +1646,7 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, FloatType, "Tanh", new CiVar(DoubleType, "a")),
 		MathTruncate);
 	public static readonly CiGenericTypeDefinition ListClass = new CiGenericTypeDefinition { Name = "List", TypeParameterCount = 1 };
+	public static readonly CiGenericTypeDefinition QueueClass = new CiGenericTypeDefinition { Name = "Queue", TypeParameterCount = 1 };
 	public static readonly CiGenericTypeDefinition StackClass = new CiGenericTypeDefinition { Name = "Stack", TypeParameterCount = 1 };
 	public static readonly CiGenericTypeDefinition HashSetClass = new CiGenericTypeDefinition { Name = "HashSet", TypeParameterCount = 1 };
 	public static readonly CiGenericTypeDefinition DictionaryClass = new CiGenericTypeDefinition { Name = "Dictionary", TypeParameterCount = 2 };
@@ -1676,6 +1700,7 @@ public class CiSystem : CiScope
 		MathClass.Add(MathPositiveInfinity);
 		Add(MathClass);
 		Add(ListClass);
+		Add(QueueClass);
 		Add(StackClass);
 		Add(HashSetClass);
 		Add(DictionaryClass);

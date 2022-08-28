@@ -244,6 +244,9 @@ public class GenCpp : GenCCpp
 		case CiListType list:
 			WriteCollectionType("vector", list);
 			break;
+		case CiQueueType queue:
+			WriteCollectionType("queue", queue);
+			break;
 		case CiStackType stack:
 			WriteCollectionType("stack", stack);
 			break;
@@ -337,7 +340,7 @@ public class GenCpp : GenCCpp
 			def.Value.Accept(this, CiPriority.Argument);
 			Write('}');
 		}
-		else if (def.Type is CiListType || def.Type is CiStackType || def.Type is CiHashSetType || def.Type is CiDictionaryType) {
+		else if (def.Type is CiListType || def.Type is CiQueueType || def.Type is CiStackType || def.Type is CiHashSetType || def.Type is CiDictionaryType) {
 		}
 		else
 			base.WriteVarInit(def);
@@ -678,24 +681,6 @@ public class GenCpp : GenCCpp
 			}
 			Write(')');
 		}
-		else if (obj.Type is CiStackType && method == CiSystem.CollectionClear) {
-			obj.Accept(this, CiPriority.Assign);
-			Write(" = {}");
-		}
-		else if (obj.Type is CiStackType && method.Name == "Peek") {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".top()");
-		}
-		else if (obj.Type is CiStackType stack && method.Name == "Pop" && parent != CiPriority.Statement) {
-			// :-)
-			Write("[](");
-			WriteCollectionType("stack", stack);
-			Write(" &s) { ");
-			Write(stack.ElementType, false);
-			Write(" top = s.top(); s.pop(); return top; }(");
-			obj.Accept(this, CiPriority.Argument);
-			Write(')');
-		}
 		else if (method == CiSystem.ListRemoveAt) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".erase(");
@@ -710,6 +695,40 @@ public class GenCpp : GenCCpp
 			WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
 			Write(" + ");
 			args[1].Accept(this, CiPriority.Add);
+			Write(')');
+		}
+		else if ((obj.Type is CiQueueType || obj.Type is CiStackType) && method == CiSystem.CollectionClear) {
+			obj.Accept(this, CiPriority.Assign);
+			Write(" = {}");
+		}
+		else if (obj.Type is CiQueueType queue && method.Name == "Dequeue") {
+			// :-)
+			Write("[](");
+			WriteCollectionType("queue", queue);
+			Write(" &q) { ");
+			Write(queue.ElementType, false);
+			Write(" front = q.front(); q.pop(); return front; }(");
+			obj.Accept(this, CiPriority.Argument);
+			Write(')');
+		}
+		else if (obj.Type is CiQueueType && method.Name == "Enqueue")
+			WriteCall(obj, "push", args[0]);
+		else if (obj.Type is CiQueueType && method.Name == "Peek") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".front()");
+		}
+		else if (obj.Type is CiStackType && method.Name == "Peek") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".top()");
+		}
+		else if (obj.Type is CiStackType stack && method.Name == "Pop" && parent != CiPriority.Statement) {
+			// :-)
+			Write("[](");
+			WriteCollectionType("stack", stack);
+			Write(" &s) { ");
+			Write(stack.ElementType, false);
+			Write(" top = s.top(); s.pop(); return top; }(");
+			obj.Accept(this, CiPriority.Argument);
 			Write(')');
 		}
 		else if (obj.Type is CiHashSetType && method.Name == "Add")

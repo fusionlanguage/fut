@@ -259,6 +259,11 @@ public class GenSwift : GenPySwift
 			Write(list.ElementType);
 			Write(']');
 			break;
+		case CiQueueType queue:
+			Write('[');
+			Write(queue.ElementType);
+			Write(']');
+			break;
 		case CiStackType stack:
 			Write('[');
 			Write(stack.ElementType);
@@ -547,6 +552,16 @@ public class GenSwift : GenPySwift
 			WriteRange(args[0], args[1]);
 			Write(')');
 		}
+		else if (obj.Type is CiQueueType && method.Name == "Dequeue") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".removeFirst()");
+		}
+		else if (obj.Type is CiQueueType && method.Name == "Enqueue")
+			WriteListAppend(obj, args);
+		else if (obj.Type is CiQueueType && method.Name == "Peek") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".first");
+		}
 		else if (obj.Type is CiStackType && method.Name == "Peek") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".last");
@@ -663,27 +678,13 @@ public class GenSwift : GenPySwift
 	protected override void WriteNewStorage(CiType type)
 	{
 		switch (type) {
-		case CiListType list:
-			Write('[');
-			Write(list.ElementType);
-			Write("]()");
-			break;
-		case CiStackType stack:
-			Write('[');
-			Write(stack.ElementType);
-			Write("]()");
-			break;
-		case CiHashSetType set:
-			Write("Set<");
-			Write(set.ElementType);
-			Write(">()");
-			break;
-		case CiDictionaryType dict:
-			Write('[');
-			Write(dict.KeyType);
-			Write(": ");
-			Write(dict.ValueType);
-			Write("]()");
+		case CiListType _:
+		case CiQueueType _:
+		case CiStackType _:
+		case CiHashSetType _:
+		case CiDictionaryType _:
+			Write(type);
+			Write("()");
 			break;
 		default:
 			base.WriteNewStorage(type);
@@ -993,7 +994,7 @@ public class GenSwift : GenPySwift
 		if (def is CiField || AddVar(def.Name)) {
 			Write((def.Type is CiClass ? !def.IsAssignableStorage
 				: def.Type is CiArrayStorageType array ? IsArrayRef(array)
-				: (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType || def.Type is CiStackType || def.Type is CiHashSetType || def.Type is CiDictionaryType))) ? "let " : "var ");
+				: (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType || def.Type is CiQueueType || def.Type is CiStackType || def.Type is CiHashSetType || def.Type is CiDictionaryType))) ? "let " : "var ");
 			base.WriteVar(def);
 		}
 		else {

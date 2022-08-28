@@ -206,23 +206,6 @@ public class GenCs : GenTyped
 		Write('>');
 	}
 
-	void Write(CiDictionaryType dict)
-	{
-		if (dict.Class == CiSystem.OrderedDictionaryClass) {
-			Include("System.Collections.Specialized");
-			Write("OrderedDictionary");
-		}
-		else {
-			Include("System.Collections.Generic");
-			Write(dict.Class.Name);
-			Write('<');
-			Write(dict.KeyType, false);
-			Write(", ");
-			Write(dict.ValueType, false);
-			Write('>');
-		}
-	}
-
 	protected override void WriteClassName(CiClass klass)
 	{
 		if (klass == CiSystem.LockClass)
@@ -247,6 +230,10 @@ public class GenCs : GenTyped
 			Write("List");
 			WriteElementType(list);
 			break;
+		case CiQueueType queue:
+			Write("Queue");
+			WriteElementType(queue);
+			break;
 		case CiStackType stack:
 			Write("Stack");
 			WriteElementType(stack);
@@ -256,7 +243,19 @@ public class GenCs : GenTyped
 			WriteElementType(set);
 			break;
 		case CiDictionaryType dict:
-			Write(dict);
+			if (dict.Class == CiSystem.OrderedDictionaryClass) {
+				Include("System.Collections.Specialized");
+				Write("OrderedDictionary");
+			}
+			else {
+				Include("System.Collections.Generic");
+				Write(dict.Class.Name);
+				Write('<');
+				Write(dict.KeyType, false);
+				Write(", ");
+				Write(dict.ValueType, false);
+				Write('>');
+			}
 			break;
 		case CiArrayType array:
 			Write(array.ElementType, false);
@@ -343,24 +342,13 @@ public class GenCs : GenTyped
 	protected override void WriteNewStorage(CiType type)
 	{
 		switch (type) {
-		case CiListType list:
-			Write("new List");
-			WriteElementType(list);
-			Write("()");
-			break;
-		case CiStackType stack:
-			Write("new Stack");
-			WriteElementType(stack);
-			Write("()");
-			break;
-		case CiHashSetType set:
-			Write("new HashSet");
-			WriteElementType(set);
-			Write("()");
-			break;
-		case CiDictionaryType dict:
+		case CiListType _:
+		case CiQueueType _:
+		case CiStackType _:
+		case CiHashSetType _:
+		case CiDictionaryType _:
 			Write("new ");
-			Write(dict);
+			Write(type, false);
 			Write("()");
 			break;
 		default:

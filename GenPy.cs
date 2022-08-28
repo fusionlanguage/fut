@@ -482,6 +482,10 @@ public class GenPy : GenPySwift
 			else
 				Write("[]");
 			break;
+		case CiQueueType _:
+			Include("collections");
+			Write("collections.deque()");
+			break;
 		case CiHashSetType _:
 			Write("set()");
 			break;
@@ -647,6 +651,16 @@ public class GenPy : GenPySwift
 		}
 		else if ((obj.Type is CiListType || obj.Type is CiHashSetType) && method.Name == "Contains")
 			WriteContains(obj, args[0]);
+		else if (obj.Type is CiQueueType && method.Name == "Dequeue") {
+			obj.Accept(this, CiPriority.Primary);
+			Write(".popleft()");
+		}
+		else if (obj.Type is CiQueueType && method.Name == "Enqueue")
+			WriteListAppend(obj, args);
+		else if (obj.Type is CiQueueType && method.Name == "Peek") {
+			obj.Accept(this, CiPriority.Primary);
+			Write("[0]");
+		}
 		else if (obj.Type is CiStackType && method.Name == "Peek") {
 			obj.Accept(this, CiPriority.Primary);
 			Write("[-1]");
