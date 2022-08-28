@@ -274,7 +274,7 @@ public class GenC : GenCCpp
 				break;
 			case CiQueueType _:
 				expr.Left.Accept(this, CiPriority.Primary);
-				Write("->length");
+				Write(".length");
 				break;
 			case CiHashSetType _:
 				WriteCall("g_hash_table_size", expr.Left);
@@ -369,7 +369,7 @@ public class GenC : GenCCpp
 			Write(" *");
 			break;
 		case CiQueueType _:
-			WriteGlib("GQueue *");
+			WriteGlib("GQueue ");
 			break;
 		case CiStackType _:
 			WriteGlib("GArray *");
@@ -620,7 +620,7 @@ public class GenC : GenCCpp
 			Write("))");
 			break;
 		case CiQueueType _:
-			Write("g_queue_new()");
+			Write("G_QUEUE_INIT");
 			break;
 		case CiHashSetType set:
 			WriteNewHashTable(set.ElementType, "NULL");
@@ -854,28 +854,26 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteQueueGet(string function, CiExpr obj)
+	void WriteQueueGet(string function, CiExpr obj, CiPriority parent)
 	{
 		CiType elementType = ((CiCollectionType) obj.Type).ElementType;
+		bool parenthesis;
 		if (elementType is CiIntegerType && elementType != CiSystem.LongType) {
 			Write("GPOINTER_TO_INT(");
-			WriteCall(function, obj);
-			Write(')');
+			parenthesis = true;
 		}
 		else {
-			// TODO: cast
-			WriteCall(function, obj);
+			parenthesis = parent > CiPriority.Mul;
+			if (parenthesis)
+				Write('(');
+			WriteStaticCastType(elementType);
 		}
-	}
-
-	void WriteCollectionAdd(string function, CiExpr obj, List<CiExpr> args)
-	{
 		Write(function);
-		Write('(');
-		obj.Accept(this, CiPriority.Argument);
-		Write(", ");
-		WriteGPointerCast(((CiCollectionType) obj.Type).ElementType, args[0]);
+		Write("(&");
+		obj.Accept(this, CiPriority.Primary);
 		Write(')');
+		if (parenthesis)
+			Write(')');
 	}
 
 	void StartDictionaryInsert(CiExpr dict, CiExpr key)
@@ -1551,7 +1549,9 @@ public class GenC : GenCCpp
 				Write(", 0)");
 				break;
 			case CiQueueType _:
-				WriteCall("g_queue_clear", obj); // TODO: g_queue_clear_full
+				Write("g_queue_clear(&"); // TODO: g_queue_clear_full
+				obj.Accept(this, CiPriority.Primary);
+				Write(')');
 				break;
 			case CiHashSetType _:
 				WriteCall("g_hash_table_remove_all", obj);
@@ -1577,11 +1577,16 @@ public class GenC : GenCCpp
 		else if (method == CiSystem.ListRemoveRange)
 			WriteCall("g_array_remove_range", obj, args[0], args[1]);
 		else if (obj.Type is CiQueueType && method.Name == "Dequeue")
-			WriteQueueGet("g_queue_pop_head", obj);
-		else if (obj.Type is CiQueueType && method.Name == "Enqueue")
-			WriteCollectionAdd("g_queue_push_tail", obj, args);
+			WriteQueueGet("g_queue_pop_head", obj, parent);
+		else if (obj.Type is CiQueueType queue && method.Name == "Enqueue") {
+			Write("g_queue_push_tail(&");
+			obj.Accept(this, CiPriority.Primary);
+			Write(", ");
+			WriteGPointerCast(queue.ElementType, args[0]);
+			Write(')');
+		}
 		else if (obj.Type is CiQueueType && method.Name == "Peek")
-			WriteQueueGet("g_queue_peek_head", obj);
+			WriteQueueGet("g_queue_peek_head", obj, parent);
 		else if (obj.Type is CiStackType && method.Name == "Peek") {
 			StartArrayIndexing(obj);
 			obj.Accept(this, CiPriority.Primary); // TODO: side effect
@@ -1596,8 +1601,13 @@ public class GenC : GenCCpp
 		}
 		else if (obj.Type is CiStackType && method.Name == "Push")
 			WriteListAdd(obj, args);
-		else if (obj.Type is CiHashSetType && method.Name == "Add")
-			WriteCollectionAdd("g_hash_table_add", obj, args);
+		else if (obj.Type is CiHashSetType set && method.Name == "Add") {
+			Write("g_hash_table_add(");
+			obj.Accept(this, CiPriority.Argument);
+			Write(", ");
+			WriteGPointerCast(set.ElementType, args[0]);
+			Write(')');
+		}
 		else if (obj.Type is CiHashSetType && method.Name == "Contains")
 			WriteDictionaryLookup(obj, "g_hash_table_contains", args[0]);
 		else if (obj.Type is CiHashSetType && method.Name == "Remove")
