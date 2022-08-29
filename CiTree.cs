@@ -1067,15 +1067,9 @@ public class CiRangeType : CiIntegerType
 
 	public override string ToString() => this.Min == this.Max ? this.Min.ToString() : $"({this.Min} .. {this.Max})";
 
-	public override bool Equals(object obj)
-	{
-		return obj is CiRangeType that && this.Min == that.Min && this.Max == that.Max;
-	}
+	public override bool Equals(object obj) => obj is CiRangeType that && this.Min == that.Min && this.Max == that.Max;
 
-	public override int GetHashCode()
-	{
-		return this.Min.GetHashCode() ^ this.Max.GetHashCode();
-	}
+	public override int GetHashCode() => this.Min.GetHashCode() ^ this.Max.GetHashCode();
 
 	public CiRangeType Union(CiRangeType that)
 	{
@@ -1135,10 +1129,7 @@ public class CiRangeType : CiIntegerType
 
 public class CiFloatingType : CiNumericType
 {
-	public override bool IsAssignableFrom(CiType right)
-	{
-		return right is CiNumericType;
-	}
+	public override bool IsAssignableFrom(CiType right) => right is CiNumericType;
 }
 
 public abstract class CiStringType : CiType
@@ -1169,19 +1160,13 @@ public abstract class CiStringType : CiType
 public class CiStringPtrType : CiStringType
 {
 	public override bool IsPointer => true;
-	public override bool IsAssignableFrom(CiType right)
-	{
-		return right == CiSystem.NullType || right is CiStringType;
-	}
+	public override bool IsAssignableFrom(CiType right) => right == CiSystem.NullType || right is CiStringType;
 }
 
 public class CiStringStorageType : CiStringType
 {
 	public override CiType PtrOrSelf => CiSystem.StringPtrType;
-	public override bool IsAssignableFrom(CiType right)
-	{
-		return right is CiStringType;
-	}
+	public override bool IsAssignableFrom(CiType right) => right is CiStringType;
 }
 
 public class CiClassPtrType : CiType
@@ -1252,9 +1237,7 @@ public abstract class CiCollectionType : CiType
 
 public abstract class CiArrayType : CiCollectionType
 {
-	public override string ToString() {
-		return this.BaseType + this.ArrayString + this.ElementType.ArrayString;
-	}
+	public override string ToString() => this.BaseType + this.ArrayString + this.ElementType.ArrayString;
 	public override CiSymbol TryLookup(string name)
 	{
 		if (name == "CopyTo") {
@@ -1337,15 +1320,9 @@ public class CiArrayPtrType : CiArrayType
 		return base.TryLookup(name);
 	}
 
-	public override bool Equals(object obj)
-	{
-		return obj is CiArrayPtrType that && this.ElementType.Equals(that.ElementType) && this.Modifier == that.Modifier;
-	}
+	public override bool Equals(object obj) => obj is CiArrayPtrType that && this.ElementType.Equals(that.ElementType) && this.Modifier == that.Modifier;
 
-	public override int GetHashCode()
-	{
-		return this.ElementType.GetHashCode() ^ this.Modifier.GetHashCode();
-	}
+	public override int GetHashCode() => this.ElementType.GetHashCode() ^ this.Modifier.GetHashCode();
 }
 
 public class CiArrayStorageType : CiArrayType
@@ -1381,15 +1358,9 @@ public class CiArrayStorageType : CiArrayType
 	public override CiType PtrOrSelf => new CiArrayPtrType { ElementType = this.ElementType, Modifier = CiToken.ExclamationMark };
 	public override bool IsFinal => true;
 
-	public override bool Equals(object obj)
-	{
-		return obj is CiArrayStorageType that && this.ElementType == that.ElementType && this.Length == that.Length;
-	}
+	public override bool Equals(object obj) => obj is CiArrayStorageType that && this.ElementType == that.ElementType && this.Length == that.Length;
 
-	public override int GetHashCode()
-	{
-		return this.ElementType.GetHashCode() ^ this.Length.GetHashCode();
-	}
+	public override int GetHashCode() => this.ElementType.GetHashCode() ^ this.Length.GetHashCode();
 }
 
 public class CiListType : CiArrayType
