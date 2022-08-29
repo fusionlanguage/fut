@@ -225,7 +225,7 @@ public class GenCl : GenC
 	{
 	}
 
-	protected override void WriteCaseBody(CiStatement[] statements)
+	protected override void WriteCaseBody(List<CiStatement> statements)
 	{
 		if (statements.All(statement => statement is CiAssert))
 			WriteLine(';');

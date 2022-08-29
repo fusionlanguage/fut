@@ -245,7 +245,7 @@ public abstract class GenCCpp : GenTyped
 		base.VisitBreak(statement);
 	}
 
-	void WriteIfCaseBody(CiStatement[] body, bool doWhile)
+	void WriteIfCaseBody(List<CiStatement> body, bool doWhile)
 	{
 		int length = CiSwitch.LengthWithoutTrailingBreak(body);
 		if (doWhile && CiSwitch.HasEarlyBreak(body)) {
@@ -277,7 +277,7 @@ public abstract class GenCCpp : GenTyped
 
 		int gotoId = -1;
 		if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreakAndContinue(kase.Body))
-		 || (statement.DefaultBody != null && CiSwitch.HasEarlyBreakAndContinue(statement.DefaultBody))) {
+		 || CiSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
 			gotoId = this.StringSwitchesWithGoto.Count;
 			this.StringSwitchesWithGoto.Add(statement);
 		}

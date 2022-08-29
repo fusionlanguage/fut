@@ -1099,7 +1099,7 @@ public class CiResolver : CiVisitor
 		return expr;
 	}
 
-	bool Resolve(CiStatement[] statements)
+	bool Resolve(List<CiStatement> statements)
 	{
 		bool reachable = true;
 		foreach (CiStatement statement in statements) {
@@ -1324,7 +1324,7 @@ public class CiResolver : CiVisitor
 			if (Resolve(kase.Body))
 				throw StatementException(kase.Body.Last(), "Case must end with break, continue, return or throw");
 		}
-		if (statement.DefaultBody != null) {
+		if (statement.DefaultBody.Count > 0) {
 			bool reachable = Resolve(statement.DefaultBody);
 			if (reachable)
 				throw StatementException(statement.DefaultBody.Last(), "Default must end with break, continue, return or throw");

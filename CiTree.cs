@@ -730,7 +730,7 @@ public abstract class CiLoop : CiCondCompletionStatement
 
 public class CiBlock : CiCondCompletionStatement
 {
-	public CiStatement[] Statements;
+	public readonly List<CiStatement> Statements = new List<CiStatement>();
 	public override void Accept(CiVisitor visitor) { visitor.VisitBlock(this); }
 }
 
@@ -814,25 +814,25 @@ public class CiReturn : CiStatement
 public class CiCase
 {
 	public readonly List<CiExpr> Values = new List<CiExpr>();
-	public CiStatement[] Body;
+	public readonly List<CiStatement> Body = new List<CiStatement>();
 }
 
 public class CiSwitch : CiCondCompletionStatement
 {
 	public CiExpr Value;
 	public readonly List<CiCase> Cases = new List<CiCase>();
-	public CiStatement[] DefaultBody;
+	public readonly List<CiStatement> DefaultBody = new List<CiStatement>();
 	public override void Accept(CiVisitor visitor) { visitor.VisitSwitch(this); }
 
-	public static int LengthWithoutTrailingBreak(CiStatement[] body)
+	public static int LengthWithoutTrailingBreak(List<CiStatement> body)
 	{
-		int length = body.Length;
+		int length = body.Count;
 		if (length > 0 && body[length - 1] is CiBreak)
 			length--;
 		return length;
 	}
 
-	public bool HasDefault => this.DefaultBody != null && LengthWithoutTrailingBreak(this.DefaultBody) > 0;
+	public bool HasDefault => LengthWithoutTrailingBreak(this.DefaultBody) > 0;
 
 	static bool HasBreak(CiStatement statement)
 	{
@@ -848,7 +848,7 @@ public class CiSwitch : CiCondCompletionStatement
 		}
 	}
 
-	public static bool HasEarlyBreak(CiStatement[] body)
+	public static bool HasEarlyBreak(List<CiStatement> body)
 	{
 		int length = LengthWithoutTrailingBreak(body);
 		for (int i = 0; i < length; i++) {
@@ -858,7 +858,7 @@ public class CiSwitch : CiCondCompletionStatement
 		return false;
 	}
 
-	static bool HasContinue(CiStatement[] statements) => statements.Any(HasContinue);
+	static bool HasContinue(List<CiStatement> statements) => statements.Any(HasContinue);
 
 	static bool HasContinue(CiStatement statement)
 	{
@@ -868,7 +868,7 @@ public class CiSwitch : CiCondCompletionStatement
 		case CiIf ifStatement:
 			return HasContinue(ifStatement.OnTrue) || (ifStatement.OnFalse != null && HasContinue(ifStatement.OnFalse));
 		case CiSwitch switchStatement:
-			return switchStatement.Cases.Any(kase => HasContinue(kase.Body)) || (switchStatement.DefaultBody != null && HasContinue(switchStatement.DefaultBody));
+			return switchStatement.Cases.Any(kase => HasContinue(kase.Body)) || HasContinue(switchStatement.DefaultBody);
 		case CiBlock block:
 			return HasContinue(block.Statements);
 		default:
@@ -876,7 +876,7 @@ public class CiSwitch : CiCondCompletionStatement
 		}
 	}
 
-	public static bool HasEarlyBreakAndContinue(CiStatement[] body) => HasEarlyBreak(body) && HasContinue(body);
+	public static bool HasEarlyBreakAndContinue(List<CiStatement> body) => HasEarlyBreak(body) && HasContinue(body);
 }
 
 public class CiThrow : CiStatement

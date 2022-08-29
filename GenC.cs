@@ -2204,7 +2204,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected override void WriteCaseBody(CiStatement[] statements)
+	protected override void WriteCaseBody(List<CiStatement> statements)
 	{
 		if (statements[0] is CiVar
 		 || (statements[0] is CiConst konst && konst.Type is CiArrayType))
@@ -2238,7 +2238,7 @@ public class GenC : GenCCpp
 		WriteLine(';');
 	}
 
-	bool TryWriteCallAndReturn(CiStatement[] statements, int lastCallIndex, CiExpr returnValue)
+	bool TryWriteCallAndReturn(List<CiStatement> statements, int lastCallIndex, CiExpr returnValue)
 	{
 		if (this.VarsToDestruct.Count > 0)
 			return false;
@@ -2276,9 +2276,9 @@ public class GenC : GenCCpp
 		return true;
 	}
 
-	protected override void Write(CiStatement[] statements)
+	protected override void Write(List<CiStatement> statements)
 	{
-		int i = statements.Length - 2;
+		int i = statements.Count - 2;
 		if (i >= 0 && statements[i + 1] is CiReturn ret && TryWriteCallAndReturn(statements, i, ret.Value))
 			return;
 		base.Write(statements);
@@ -2689,11 +2689,11 @@ public class GenC : GenCCpp
 		this.CurrentMethod = method;
 		OpenBlock();
 		if (method.Body is CiBlock block) {
-			CiStatement[] statements = block.Statements;
+			List<CiStatement> statements = block.Statements;
 			if (!block.CompletesNormally)
 				Write(statements);
 			else if (method.Throws && method.Type == CiSystem.VoidType) {
-				if (statements.Length == 0 || !TryWriteCallAndReturn(statements, statements.Length - 1, null)) {
+				if (statements.Count == 0 || !TryWriteCallAndReturn(statements, statements.Count - 1, null)) {
 					Write(statements);
 					WriteDestructAll();
 					WriteLine("return true;");

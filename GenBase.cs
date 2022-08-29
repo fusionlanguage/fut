@@ -1126,15 +1126,15 @@ public abstract class GenBase : CiVisitor
 	{
 	}
 
-	protected void Write(CiStatement[] statements, int length)
+	protected void Write(List<CiStatement> statements, int length)
 	{
 		for (int i = 0; i < length; i++)
 			statements[i].Accept(this);
 	}
 
-	protected virtual void Write(CiStatement[] statements)
+	protected virtual void Write(List<CiStatement> statements)
 	{
-		Write(statements, statements.Length);
+		Write(statements, statements.Count);
 	}
 
 	public override void VisitBlock(CiBlock statement)
@@ -1221,7 +1221,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected virtual void WriteCaseBody(CiStatement[] statements) => Write(statements);
+	protected virtual void WriteCaseBody(List<CiStatement> statements) => Write(statements);
 
 	public override void VisitSwitch(CiSwitch statement)
 	{
@@ -1238,7 +1238,7 @@ public abstract class GenBase : CiVisitor
 			WriteCaseBody(kase.Body);
 			this.Indent--;
 		}
-		if (statement.DefaultBody != null) {
+		if (statement.DefaultBody.Count > 0) {
 			WriteLine("default:");
 			this.Indent++;
 			WriteCaseBody(statement.DefaultBody);

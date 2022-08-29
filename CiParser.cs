@@ -500,13 +500,12 @@ public class CiParser : CiLexer
 
 	CiBlock ParseBlock()
 	{
-		int line = this.Line;
+		CiBlock result = new CiBlock { Line = this.Line };
 		Expect(CiToken.LeftBrace);
-		List<CiStatement> statements = new List<CiStatement>();
 		while (!See(CiToken.RightBrace) && !See(CiToken.EndOfFile))
-			statements.Add(ParseStatement());
+			result.Statements.Add(ParseStatement());
 		Expect(CiToken.RightBrace);
-		return new CiBlock { Line = line, Statements = statements.ToArray() };
+		return result;
 	}
 
 	CiAssert ParseAssert()
@@ -680,9 +679,8 @@ public class CiParser : CiLexer
 				break;
 			}
 
-			List<CiStatement> statements = new List<CiStatement>();
 			while (!See(CiToken.EndOfFile)) {
-				statements.Add(ParseStatement());
+				kase.Body.Add(ParseStatement());
 				switch (this.CurrentToken) {
 				case CiToken.Case:
 				case CiToken.Default:
@@ -693,7 +691,6 @@ public class CiParser : CiLexer
 				}
 				break;
 			}
-			kase.Body = statements.ToArray();
 			result.Cases.Add(kase);
 		}
 		if (result.Cases.Count == 0)
@@ -701,13 +698,11 @@ public class CiParser : CiLexer
 
 		if (Eat(CiToken.Default)) {
 			Expect(CiToken.Colon);
-			List<CiStatement> statements = new List<CiStatement>();
 			do {
 				if (See(CiToken.EndOfFile))
 					break;
-				statements.Add(ParseStatement());
+				result.DefaultBody.Add(ParseStatement());
 			} while (!See(CiToken.RightBrace));
-			result.DefaultBody = statements.ToArray();
 		}
 
 		Expect(CiToken.RightBrace);

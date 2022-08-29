@@ -939,7 +939,7 @@ public class GenPy : GenPySwift
 
 	static bool IsVarReference(CiExpr expr) => expr is CiSymbolReference symbol && symbol.Symbol is CiVar;
 
-	void WritePyCaseBody(CiStatement[] body)
+	void WritePyCaseBody(List<CiStatement> body)
 	{
 		OpenChild();
 		Write(body, CiSwitch.LengthWithoutTrailingBreak(body));
@@ -949,7 +949,7 @@ public class GenPy : GenPySwift
 	public override void VisitSwitch(CiSwitch statement)
 	{
 		bool earlyBreak = statement.Cases.Any(kase => CiSwitch.HasEarlyBreak(kase.Body))
-			|| (statement.DefaultBody != null && CiSwitch.HasEarlyBreak(statement.DefaultBody));
+			|| CiSwitch.HasEarlyBreak(statement.DefaultBody);
 		if (earlyBreak) {
 			this.SwitchBreak = true;
 			Write("try");

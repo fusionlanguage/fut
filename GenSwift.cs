@@ -1003,7 +1003,7 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	protected override void Write(CiStatement[] statements)
+	protected override void Write(List<CiStatement> statements)
 	{
 		// Encoding.UTF8.GetBytes returns void, so it can only be called as a statement
 		this.VarBytesAtIndent[this.Indent] = statements.Count(s => s is CiCallExpr call && call.Method.Symbol == CiSystem.UTF8GetBytes) > 1;
@@ -1155,7 +1155,7 @@ public class GenSwift : GenPySwift
 		Write(this.CurrentMethod.Type);
 	}
 
-	void WriteSwiftCaseBody(CiSwitch statement, CiStatement[] body)
+	void WriteSwiftCaseBody(CiSwitch statement, List<CiStatement> body)
 	{
 		this.Indent++;
 		VisitXcrement<CiPostfixExpr>(statement.Value, true);
@@ -1179,7 +1179,7 @@ public class GenSwift : GenPySwift
 			WriteLine(':');
 			WriteSwiftCaseBody(statement, kase.Body);
 		}
-		if (statement.DefaultBody != null) {
+		if (statement.DefaultBody.Count > 0) {
 			WriteLine("default:");
 			WriteSwiftCaseBody(statement, statement.DefaultBody);
 		}

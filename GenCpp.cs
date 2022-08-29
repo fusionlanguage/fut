@@ -1063,7 +1063,7 @@ public class GenCpp : GenCCpp
 			base.WriteReturnValue(value);
 	}
 
-	protected override void WriteCaseBody(CiStatement[] statements)
+	protected override void WriteCaseBody(List<CiStatement> statements)
 	{
 		bool block = false;
 		foreach (CiStatement statement in statements) {
