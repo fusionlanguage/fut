@@ -472,13 +472,11 @@ public class CiInterpolatedPart
 
 public class CiInterpolatedString : CiExpr
 {
-	public List<CiInterpolatedPart> Parts;
+	public readonly List<CiInterpolatedPart> Parts = new List<CiInterpolatedPart>();
 	public string Suffix;
-	public CiInterpolatedString(List<CiInterpolatedPart> parts, string suffix)
+	public CiInterpolatedString()
 	{
 		this.Type = CiSystem.StringStorageType;
-		this.Parts = parts;
-		this.Suffix = suffix;
 	}
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitInterpolatedString(this, parent);
 	public override string ToString()

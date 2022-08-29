@@ -1797,10 +1797,10 @@ public class GenC : GenCCpp
 					Write("CiString_Assign(&");
 					expr.Left.Accept(this, CiPriority.Primary);
 					Write(", ");
-					List<CiInterpolatedPart> parts = new List<CiInterpolatedPart>();
-					parts.Add(new CiInterpolatedPart("", expr.Left)); // TODO: side effect
-					parts.AddRange(rightInterpolated.Parts);
-					VisitInterpolatedString(new CiInterpolatedString(parts, rightInterpolated.Suffix), CiPriority.Argument);
+					CiInterpolatedString interpolated = new CiInterpolatedString { Suffix = rightInterpolated.Suffix };
+					interpolated.Parts.Add(new CiInterpolatedPart("", expr.Left)); // TODO: side effect
+					interpolated.Parts.AddRange(rightInterpolated.Parts);
+					VisitInterpolatedString(interpolated, CiPriority.Argument);
 				}
 				else {
 					Include("string.h");
