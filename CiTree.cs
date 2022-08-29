@@ -472,9 +472,9 @@ public class CiInterpolatedPart
 
 public class CiInterpolatedString : CiExpr
 {
-	public CiInterpolatedPart[] Parts;
+	public List<CiInterpolatedPart> Parts;
 	public string Suffix;
-	public CiInterpolatedString(CiInterpolatedPart[] parts, string suffix)
+	public CiInterpolatedString(List<CiInterpolatedPart> parts, string suffix)
 	{
 		this.Type = CiSystem.StringStorageType;
 		this.Parts = parts;

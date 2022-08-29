@@ -53,7 +53,7 @@ public class GenJava : GenTyped
 	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		if (expr.Suffix.Length == 0
-		 && expr.Parts.Length == 1
+		 && expr.Parts.Count == 1
 		 && expr.Parts[0].Prefix.Length == 0
 		 && expr.Parts[0].WidthExpr == null
 		 && expr.Parts[0].Format == ' ') {

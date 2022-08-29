@@ -385,7 +385,7 @@ public class CiResolver : CiVisitor
 		sb.Append(expr.Suffix);
 		if (parts.Count == 0)
 			return expr.ToLiteralString(sb.ToString());
-		expr.Parts = parts.ToArray();
+		expr.Parts = parts;
 		expr.Suffix = sb.ToString();
 		return expr;
 	}
@@ -615,19 +615,18 @@ public class CiResolver : CiVisitor
 		if (expr is CiInterpolatedString interpolated)
 			return interpolated;
 		if (expr is CiLiteral)
-			return new CiInterpolatedString(new CiInterpolatedPart[0], expr.ToString());
-		return new CiInterpolatedString(new CiInterpolatedPart[1] { new CiInterpolatedPart("", expr) }, "");
+			return new CiInterpolatedString(new List<CiInterpolatedPart>(), expr.ToString());
+		return new CiInterpolatedString(new List<CiInterpolatedPart> { new CiInterpolatedPart("", expr) }, "");
 	}
 
 	static CiInterpolatedString Concatenate(CiInterpolatedString left, CiInterpolatedString right)
 	{
-		if (right.Parts.Length == 0)
+		if (right.Parts.Count == 0)
 			return new CiInterpolatedString(left.Parts, left.Suffix + right.Suffix);
-		int i = left.Parts.Length;
-		CiInterpolatedPart[] parts = new CiInterpolatedPart[i + right.Parts.Length];
-		left.Parts.CopyTo(parts, 0);
-		right.Parts.CopyTo(parts, i);
-		parts[i].Prefix = left.Suffix + right.Parts[0].Prefix;
+		List<CiInterpolatedPart> parts = new List<CiInterpolatedPart>(left.Parts);
+		int i = parts.Count;
+		parts.AddRange(right.Parts);
+		parts[i].Prefix = left.Suffix + parts[i].Prefix;
 		return new CiInterpolatedString(parts, right.Suffix);
 	}
 

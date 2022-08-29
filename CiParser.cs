@@ -175,7 +175,7 @@ public class CiParser : CiLexer
 		} while (ReadString(true) == CiToken.InterpolatedString);
 		string suffix = this.StringValue.Replace("{{", "{");
 		NextToken();
-		return new CiInterpolatedString(parts.ToArray(), suffix) { Line = line };
+		return new CiInterpolatedString(parts, suffix) { Line = line };
 	}
 
 	CiExpr ParseParenthesized()

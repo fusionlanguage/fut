@@ -1797,9 +1797,9 @@ public class GenC : GenCCpp
 					Write("CiString_Assign(&");
 					expr.Left.Accept(this, CiPriority.Primary);
 					Write(", ");
-					CiInterpolatedPart[] parts = new CiInterpolatedPart[1 + rightInterpolated.Parts.Length];
-					parts[0] = new CiInterpolatedPart("", expr.Left); // TODO: side effect
-					rightInterpolated.Parts.CopyTo(parts, 1);
+					List<CiInterpolatedPart> parts = new List<CiInterpolatedPart>();
+					parts.Add(new CiInterpolatedPart("", expr.Left)); // TODO: side effect
+					parts.AddRange(rightInterpolated.Parts);
 					VisitInterpolatedString(new CiInterpolatedString(parts, rightInterpolated.Suffix), CiPriority.Argument);
 				}
 				else {
