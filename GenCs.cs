@@ -242,7 +242,7 @@ public class GenCs : GenTyped
 			Write("HashSet");
 			WriteElementType(set);
 			break;
-		case CiDictionaryType dict:
+		case CiClassType dict when dict.Class.TypeParameterCount == 2:
 			if (dict.Class == CiSystem.OrderedDictionaryClass) {
 				Include("System.Collections.Specialized");
 				Write("OrderedDictionary");
@@ -346,7 +346,7 @@ public class GenCs : GenTyped
 		case CiQueueType _:
 		case CiStackType _:
 		case CiHashSetType _:
-		case CiDictionaryType _:
+		case CiClassType _:
 			Write("new ");
 			Write(type, false);
 			Write("()");
@@ -422,7 +422,7 @@ public class GenCs : GenTyped
 			Write(expr.Symbol.Name);
 		}
 		else if (expr.Symbol.Parent is CiForeach forEach
-			&& forEach.Collection.Type is CiDictionaryType dict
+			&& forEach.Collection.Type is CiClassType dict
 			&& dict.Class == CiSystem.OrderedDictionaryClass) {
 			if (parent == CiPriority.Primary)
 				Write('(');
@@ -617,7 +617,7 @@ public class GenCs : GenTyped
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Left.Type is CiDictionaryType dict && dict.Class == CiSystem.OrderedDictionaryClass) {
+		if (expr.Left.Type is CiClassType dict && dict.Class == CiSystem.OrderedDictionaryClass) {
 			if (parent == CiPriority.Primary)
 				Write('(');
 			WriteStaticCastType(expr.Type);
@@ -633,7 +633,7 @@ public class GenCs : GenTyped
 	{
 		if (expr.Left is CiBinaryExpr indexing
 		 && indexing.Op == CiToken.LeftBracket
-		 && indexing.Left.Type is CiDictionaryType dict
+		 && indexing.Left.Type is CiClassType dict
 		 && dict.Class == CiSystem.OrderedDictionaryClass) {
 			WriteOrderedDictionaryIndexing(indexing);
 			Write(" = ");
@@ -687,7 +687,7 @@ public class GenCs : GenTyped
 	public override void VisitForeach(CiForeach statement)
 	{
 		Write("foreach (");
-		if (statement.Collection.Type is CiDictionaryType dict) {
+		if (statement.Collection.Type is CiClassType dict && dict.Class.TypeParameterCount == 2) {
 			if (dict.Class == CiSystem.OrderedDictionaryClass) {
 				Include("System.Collections");
 				Write("DictionaryEntry ");

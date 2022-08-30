@@ -257,7 +257,8 @@ public class GenC : GenCCpp
 	{
 		return expr is CiBinaryExpr indexing
 			&& indexing.Op == CiToken.LeftBracket
-			&& indexing.Left.Type is CiDictionaryType dict
+			&& indexing.Left.Type is CiClassType dict
+			&& dict.Class.TypeParameterCount == 2
 			&& dict.ValueType is CiClass;
 	}
 
@@ -279,7 +280,7 @@ public class GenC : GenCCpp
 			case CiHashSetType _:
 				WriteCall("g_hash_table_size", expr.Left);
 				break;
-			case CiDictionaryType dict:
+			case CiClassType dict when dict.Class.TypeParameterCount == 2:
 				WriteCall(dict.Class == CiSystem.SortedDictionaryClass ? "g_tree_nnodes" : "g_hash_table_size", expr.Left);
 				break;
 			default:
@@ -377,7 +378,7 @@ public class GenC : GenCCpp
 		case CiHashSetType _:
 			WriteGlib("GHashTable *");
 			break;
-		case CiDictionaryType dict:
+		case CiClassType dict when dict.Class.TypeParameterCount == 2:
 			WriteGlib(dict.Class == CiSystem.SortedDictionaryClass ? "GTree *" : "GHashTable *");
 			break;
 		case CiContainerType _:
@@ -558,7 +559,7 @@ public class GenC : GenCCpp
 			this.ListFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
 			return "CiList_FreeList";
 		}
-		if (elementType is CiDictionaryType dict) {
+		if (elementType is CiClassType dict && dict.Class.TypeParameterCount == 2) {
 			if (dict.Class == CiSystem.SortedDictionaryClass) {
 				this.ListFrees["SortedDictionary"] = "g_tree_unref(*(GTree **) ptr)";
 				return "CiList_FreeSortedDictionary";
@@ -581,7 +582,7 @@ public class GenC : GenCCpp
 			return NeedsDestructor(klass) ? $"(GDestroyNotify) {klass.Name}_Delete" /* TODO: emit */ : "free";
 		if (type is CiListType)
 			return "(GDestroyNotify) g_array_unref";
-		if (type is CiDictionaryType dict)
+		if (type is CiClassType dict && dict.Class.TypeParameterCount == 2)
 			return dict.Class == CiSystem.SortedDictionaryClass ? "(GDestroyNotify) g_tree_unref" : "(GDestroyNotify) g_hash_table_unref";
 		return "NULL";
 	}
@@ -625,7 +626,7 @@ public class GenC : GenCCpp
 		case CiHashSetType set:
 			WriteNewHashTable(set.ElementType, "NULL");
 			break;
-		case CiDictionaryType dict:
+		case CiClassType dict when dict.Class.TypeParameterCount == 2:
 			if (dict.Class == CiSystem.SortedDictionaryClass) {
 				string valueDestroy = GetDictionaryDestroy(dict.ValueType);
 				if (dict.KeyType == CiSystem.StringPtrType && valueDestroy == "NULL")
@@ -670,7 +671,7 @@ public class GenC : GenCCpp
 
 	int WriteTemporary(CiType type, CiExpr expr)
 	{
-		bool assign = expr != null || type is CiListType || type is CiDictionaryType;
+		bool assign = expr != null || type is CiListType || (type is CiClassType dict && dict.Class.TypeParameterCount == 2);
 		int id = this.CurrentTemporaries.IndexOf(type);
 		if (id < 0) {
 			id = this.CurrentTemporaries.Count;
@@ -813,7 +814,7 @@ public class GenC : GenCCpp
 		return type == CiSystem.StringStorageType
 			|| type.IsDynamicPtr
 			|| type is CiListType
-			|| type is CiDictionaryType
+			|| (type is CiClassType dict && dict.Class.TypeParameterCount == 2)
 			|| (type is CiClass klass && (klass == CiSystem.MatchClass || klass == CiSystem.LockClass || NeedsDestructor(klass)));
 	}
 
@@ -878,7 +879,7 @@ public class GenC : GenCCpp
 
 	void StartDictionaryInsert(CiExpr dict, CiExpr key)
 	{
-		CiDictionaryType type = (CiDictionaryType) dict.Type;
+		CiClassType type = (CiClassType) dict.Type;
 		Write(type.Class == CiSystem.SortedDictionaryClass ? "g_tree_insert(" : "g_hash_table_insert(");
 		dict.Accept(this, CiPriority.Argument);
 		Write(", ");
@@ -890,7 +891,8 @@ public class GenC : GenCCpp
 	{
 		if (expr.Left is CiBinaryExpr indexing
 		 && indexing.Op == CiToken.LeftBracket
-		 && indexing.Left.Type is CiDictionaryType dict) {
+		 && indexing.Left.Type is CiClassType dict
+		 && dict.Class.TypeParameterCount == 2) {
 			StartDictionaryInsert(indexing.Left, indexing.Right);
 			WriteGPointerCast(dict.ValueType, expr.Right);
 			Write(')');
@@ -940,7 +942,7 @@ public class GenC : GenCCpp
 
 	protected override bool HasInitCode(CiNamedValue def)
 	{
-		return (def is CiField && (def.Value != null || def.Type.StorageType == CiSystem.StringStorageType || def.Type.IsDynamicPtr || def.Type is CiListType || def.Type is CiDictionaryType))
+		return (def is CiField && (def.Value != null || def.Type.StorageType == CiSystem.StringStorageType || def.Type.IsDynamicPtr || def.Type is CiListType || (def.Type is CiClassType dict && dict.Class.TypeParameterCount == 2)))
 			|| GetThrowingMethod(def.Value) != null
 			|| (def.Type.StorageType is CiClass klass && (klass == CiSystem.LockClass || NeedsConstructor(klass)))
 			|| GetListDestroy(def.Type) != null;
@@ -1556,7 +1558,7 @@ public class GenC : GenCCpp
 			case CiHashSetType _:
 				WriteCall("g_hash_table_remove_all", obj);
 				break;
-			case CiDictionaryType dict:
+			case CiClassType dict when dict.Class.TypeParameterCount == 2:
 				if (dict.Class == CiSystem.SortedDictionaryClass) {
 					// TODO: since glib-2.70: WriteCall("g_tree_remove_all", obj);
 					Write("g_tree_destroy(g_tree_ref(");
@@ -1617,7 +1619,7 @@ public class GenC : GenCCpp
 			CiType valueType = ((CiClassType) obj.Type).ValueType;
 			switch (valueType) {
 			case CiListType _:
-			case CiDictionaryType _:
+			case CiClassType dict when dict.Class.TypeParameterCount == 2:
 				WriteNewStorage(valueType);
 				break;
 			case CiClass klass when klass.IsPublic && klass.Constructor != null && klass.Constructor.Visibility == CiVisibility.Public:
@@ -1749,7 +1751,7 @@ public class GenC : GenCCpp
 				Write(')');
 			}
 			break;
-		case CiDictionaryType dict:
+		case CiClassType dict when dict.Class.TypeParameterCount == 2:
 			string function = dict.Class == CiSystem.SortedDictionaryClass ? "g_tree_lookup" : "g_hash_table_lookup";
 			if (dict.ValueType is CiIntegerType && dict.ValueType != CiSystem.LongType) {
 				Write("GPOINTER_TO_INT(");
@@ -1919,7 +1921,7 @@ public class GenC : GenCCpp
 		}
 		else if (type is CiListType)
 			Write("g_array_free(");
-		else if (type is CiDictionaryType dict)
+		else if (type is CiClassType dict && dict.Class.TypeParameterCount == 2)
 			Write(dict.Class == CiSystem.SortedDictionaryClass ? "g_tree_unref(" : "g_hash_table_unref(");
 		else
 			Write("free(");
@@ -2124,7 +2126,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 			CloseBlock();
 			break;
-		case CiDictionaryType dict:
+		case CiClassType dict when dict.Class.TypeParameterCount == 2:
 			if (dict.Class == CiSystem.SortedDictionaryClass) {
 				Write("for (GTreeNode *cidictit = g_tree_node_first(");
 				statement.Collection.Accept(this, CiPriority.Argument);

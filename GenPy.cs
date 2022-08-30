@@ -489,7 +489,7 @@ public class GenPy : GenPySwift
 		case CiHashSetType _:
 			Write("set()");
 			break;
-		case CiDictionaryType dict:
+		case CiClassType dict when dict.Class.TypeParameterCount == 2:
 			if (dict.Class == CiSystem.OrderedDictionaryClass) {
 				Include("collections");
 				Write("collections.OrderedDict()");
@@ -900,7 +900,7 @@ public class GenPy : GenPySwift
 	{
 		Write("for ");
 		WriteName(statement.Element);
-		if (statement.Collection.Type is CiDictionaryType dict) {
+		if (statement.Collection.Type is CiClassType dict && dict.Class.TypeParameterCount == 2) {
 			Write(", ");
 			WriteName(statement.ValueVar);
 			Write(" in ");

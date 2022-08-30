@@ -274,7 +274,7 @@ public class GenSwift : GenPySwift
 			Write(set.ElementType);
 			Write('>');
 			break;
-		case CiDictionaryType dict:
+		case CiClassType dict when dict.Class.TypeParameterCount == 2:
 			Write('[');
 			Write(dict.KeyType);
 			Write(": ");
@@ -324,7 +324,7 @@ public class GenSwift : GenPySwift
 		switch (loop.Collection.Type) {
 		case CiArrayType array:
 			return array.ElementType == CiSystem.StringStorageType;
-		case CiDictionaryType dict:
+		case CiClassType dict when dict.Class.TypeParameterCount == 2:
 			return (symbol.Symbol == loop.Element ? dict.KeyType : dict.ValueType) == CiSystem.StringStorageType;
 		default:
 			throw new NotImplementedException();
@@ -682,7 +682,7 @@ public class GenSwift : GenPySwift
 		case CiQueueType _:
 		case CiStackType _:
 		case CiHashSetType _:
-		case CiDictionaryType _:
+		case CiClassType _:
 			Write(type);
 			Write("()");
 			break;
@@ -773,7 +773,7 @@ public class GenSwift : GenPySwift
 		else
 			WriteCoerced(CiSystem.IntType, expr.Right, CiPriority.Argument);
 		Write(']');
-		if (parent != CiPriority.Assign && expr.Left.Type is CiDictionaryType)
+		if (parent != CiPriority.Assign && expr.Left.Type is CiClassType dict && dict.Class.TypeParameterCount == 2)
 			Write('!');
 	}
 
@@ -891,7 +891,10 @@ public class GenSwift : GenPySwift
 			Write(expr.OpString);
 			Write(' ');
 			if (right is CiLiteralNull
-			 && expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && leftBinary.Left.Type is CiDictionaryType dict) {
+			 && expr.Left is CiBinaryExpr leftBinary
+			 && leftBinary.Op == CiToken.LeftBracket
+			 && leftBinary.Left.Type is CiClassType dict
+			 && dict.Class.TypeParameterCount == 2) {
 				Write(dict.ValueType);
 				Write(".none");
 			}
@@ -993,7 +996,7 @@ public class GenSwift : GenPySwift
 		if (def is CiField || AddVar(def.Name)) {
 			Write((def.Type is CiClass ? !def.IsAssignableStorage
 				: def.Type is CiArrayStorageType array ? IsArrayRef(array)
-				: (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType || def.Type is CiQueueType || def.Type is CiStackType || def.Type is CiHashSetType || def.Type is CiDictionaryType))) ? "let " : "var ");
+				: (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType || def.Type is CiQueueType || def.Type is CiStackType || def.Type is CiHashSetType || (def.Type is CiClassType dict && dict.Class.TypeParameterCount == 2)))) ? "let " : "var ");
 			base.WriteVar(def);
 		}
 		else {
@@ -1124,7 +1127,7 @@ public class GenSwift : GenPySwift
 		else
 			WriteName(statement.Element);
 		Write(" in ");
-		if (statement.Collection.Type is CiDictionaryType dict && dict.Class == CiSystem.SortedDictionaryClass) {
+		if (statement.Collection.Type is CiClassType dict && dict.Class == CiSystem.SortedDictionaryClass) {
 			statement.Collection.Accept(this, CiPriority.Primary);
 			Write(dict.KeyType == CiSystem.StringPtrType
 				? ".sorted(by: { $0.key! < $1.key! })"

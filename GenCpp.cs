@@ -253,7 +253,7 @@ public class GenCpp : GenCCpp
 		case CiHashSetType set:
 			WriteCollectionType("unordered_set", set);
 			break;
-		case CiDictionaryType dict:
+		case CiClassType dict when dict.Class.TypeParameterCount == 2:
 			string cppType = dict.Class == CiSystem.SortedDictionaryClass ? "map" : "unordered_map";
 			Include(cppType);
 			Write("std::");
@@ -340,7 +340,7 @@ public class GenCpp : GenCCpp
 			def.Value.Accept(this, CiPriority.Argument);
 			Write('}');
 		}
-		else if (def.Type is CiListType || def.Type is CiQueueType || def.Type is CiStackType || def.Type is CiHashSetType || def.Type is CiDictionaryType) {
+		else if (def.Type is CiListType || def.Type is CiQueueType || def.Type is CiStackType || def.Type is CiHashSetType || (def.Type is CiClassType dict && dict.Class.TypeParameterCount == 2)) {
 		}
 		else
 			base.WriteVarInit(def);

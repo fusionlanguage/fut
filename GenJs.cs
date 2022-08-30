@@ -145,7 +145,7 @@ public class GenJs : GenBase
 		case CiHashSetType _:
 			Write("new Set()");
 			break;
-		case CiDictionaryType dict:
+		case CiClassType dict when dict.Class.TypeParameterCount == 2:
 			Write(dict.Class == CiSystem.OrderedDictionaryClass ? "new Map()" : "{}");
 			break;
 		default:
@@ -315,7 +315,7 @@ public class GenJs : GenBase
 				expr.Left.Accept(this, CiPriority.Primary);
 				Write(".size");
 				break;
-			case CiDictionaryType dict:
+			case CiClassType dict when dict.Class.TypeParameterCount == 2:
 				if (dict.Class == CiSystem.OrderedDictionaryClass) {
 					expr.Left.Accept(this, CiPriority.Primary);
 					Write(".size");
@@ -527,7 +527,7 @@ public class GenJs : GenBase
 				WriteIndexing(obj, args[0]);
 			}
 		}
-		else if (obj.Type is CiDictionaryType dict && dict.Class != CiSystem.OrderedDictionaryClass && method == CiSystem.CollectionClear) {
+		else if (obj.Type is CiClassType dict && (dict.Class == CiSystem.DictionaryClass || dict.Class == CiSystem.SortedDictionaryClass) && method == CiSystem.CollectionClear) {
 			Write("for (const key in ");
 			obj.Accept(this, CiPriority.Argument);
 			WriteLine(')');
@@ -669,7 +669,7 @@ public class GenJs : GenBase
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Left.Type is CiDictionaryType dict && dict.Class == CiSystem.OrderedDictionaryClass)
+		if (expr.Left.Type is CiClassType dict && dict.Class == CiSystem.OrderedDictionaryClass)
 			WriteCall(expr.Left, "get", expr.Right);
 		else
 			base.WriteIndexing(expr, parent);
@@ -679,7 +679,7 @@ public class GenJs : GenBase
 	{
 		if (expr.Left is CiBinaryExpr indexing
 		 && indexing.Op == CiToken.LeftBracket
-		 && indexing.Left.Type is CiDictionaryType dict
+		 && indexing.Left.Type is CiClassType dict
 		 && dict.Class == CiSystem.OrderedDictionaryClass)
 			WriteCall(indexing.Left, "set", indexing.Right, expr.Right);
 		else
@@ -735,7 +735,7 @@ public class GenJs : GenBase
 	public override void VisitForeach(CiForeach statement)
 	{
 		Write("for (const ");
-		if (statement.Collection.Type is CiDictionaryType dict) {
+		if (statement.Collection.Type is CiClassType dict && dict.Class.TypeParameterCount == 2) {
 			Write('[');
 			WriteName(statement.Element);
 			Write(", ");

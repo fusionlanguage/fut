@@ -264,7 +264,7 @@ public class GenJava : GenTyped
 		Write('>');
 	}
 
-	void Write(string name, CiDictionaryType dict)
+	void Write(string name, CiClassType dict)
 	{
 		Write(name);
 		Write('<');
@@ -316,7 +316,7 @@ public class GenJava : GenTyped
 		case CiHashSetType set:
 			WriteCollectionType("HashSet", set);
 			break;
-		case CiDictionaryType dict:
+		case CiClassType dict when dict.Class.TypeParameterCount == 2:
 			string name = dict.Class == CiSystem.SortedDictionaryClass ? "TreeMap" :
 				dict.Class == CiSystem.OrderedDictionaryClass ? "LinkedHashMap" :
 				"HashMap";
@@ -351,7 +351,7 @@ public class GenJava : GenTyped
 		case CiQueueType _:
 		case CiStackType _:
 		case CiHashSetType _:
-		case CiDictionaryType _:
+		case CiClassType _:
 			Write("new ");
 			Write(type, false, false);
 			Write("()");
@@ -729,7 +729,7 @@ public class GenJava : GenTyped
 		}
 	}
 
-	static bool IsCollection(CiType type) => type is CiListType || type is CiDictionaryType;
+	static bool IsCollection(CiType type) => type is CiListType || (type is CiClassType dict && dict.Class.TypeParameterCount == 2);
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
@@ -765,7 +765,7 @@ public class GenJava : GenTyped
 		 && indexing.Op == CiToken.LeftBracket
 		 && IsCollection(indexing.Left.Type)) {
 			 indexing.Left.Accept(this, CiPriority.Primary);
-			 Write(indexing.Left.Type is CiDictionaryType ? ".put(" : ".set(");
+			 Write(indexing.Left.Type is CiClassType dict && dict.Class.TypeParameterCount == 2 ? ".put(" : ".set(");
 			 indexing.Right.Accept(this, CiPriority.Argument);
 			 Write(", ");
 			 WriteNotPromoted(expr.Type, expr.Right);
@@ -822,7 +822,7 @@ public class GenJava : GenTyped
 	public override void VisitForeach(CiForeach statement)
 	{
 		Write("for (");
-		if (statement.Collection.Type is CiDictionaryType dict) {
+		if (statement.Collection.Type is CiClassType dict && dict.Class.TypeParameterCount == 2) {
 			Include("java.util.Map");
 			Write("Map.Entry", dict);
 			Write(' ');

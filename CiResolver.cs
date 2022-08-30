@@ -688,7 +688,7 @@ public class CiResolver : CiVisitor
 
 		switch (expr.Op) {
 		case CiToken.LeftBracket:
-			if (left.Type is CiDictionaryType dict) {
+			if (left.Type is CiClassType dict && dict.Class.TypeParameterCount == 2) {
 				Coerce(right, dict.KeyType);
 				type = dict.ValueType;
 			}
@@ -1223,7 +1223,7 @@ public class CiResolver : CiVisitor
 		CiVar element = statement.Element;
 		ResolveType(element);
 		statement.Collection.Accept(this);
-		if (statement.Collection.Type is CiDictionaryType dict) {
+		if (statement.Collection.Type is CiClassType dict && dict.Class.TypeParameterCount == 2) {
 			if (statement.Count != 2)
 				throw StatementException(statement, "Expected (TKey key, TValue value) iterator");
 			CiVar value = statement.ValueVar;

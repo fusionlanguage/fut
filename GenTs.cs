@@ -135,7 +135,7 @@ public class GenTs : GenJs
 			Write(set.ElementType, false);
 			Write('>');
 			break;
-		case CiDictionaryType dict:
+		case CiClassType dict when dict.Class.TypeParameterCount == 2:
 			Write("Partial<Record<");
 			Write(dict.KeyType, forConst);
 			Write(", ");
