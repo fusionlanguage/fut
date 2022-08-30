@@ -1444,12 +1444,7 @@ public class CiStackType : CiCollectionType
 	public override bool IsFinal => true;
 }
 
-public class CiTypeParameter : CiType
-{
-	public int Index;
-}
-
-public class CiClassType : CiType
+public abstract class CiClassType : CiType
 {
 	public CiClass Class;
 	public CiType TypeArg0;
@@ -1487,7 +1482,7 @@ public class CiSystem : CiScope
 {
 	public static readonly CiType VoidType = new CiType { Name = "void" };
 	public static readonly CiType NullType = new CiType { Name = "null" };
-	public static readonly CiTypeParameter TypeParam0 = new CiTypeParameter { Name = "TKey", Index = 0 };
+	public static readonly CiType TypeParam0 = new CiType { Name = "T" };
 	public static readonly CiIntegerType IntType = new CiIntegerType { Name = "int" };
 	public static readonly CiRangeType UIntType = new CiRangeType(0, int.MaxValue) { Name = "uint" };
 	public static readonly CiIntegerType LongType = new CiIntegerType { Name = "long" };
