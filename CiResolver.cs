@@ -441,6 +441,10 @@ public class CiResolver : CiVisitor
 						if (!((CiClass) this.CurrentMethod.Parent).IsSameOrBaseOf((CiClass) scope) /* enforced by C++/C#/TS but not Java */)
 							throw StatementException(expr, $"Cannot access protected member {expr.Name}");
 						break;
+					case CiVisibility.FinalValueType: // DictionaryAdd
+						if (!((CiClassType) left.Type).ValueType.IsFinal)
+							throw StatementException(expr, "'Add' method restricted to dictionaries with storage values");
+						break;
 					default:
 						break;
 					}
@@ -1392,6 +1396,8 @@ public class CiResolver : CiVisitor
 			// built-in, MyEnum, MyClass, MyClass!, MyClass#
 			if (this.Program.TryLookup(symbol.Name) is CiType type) {
 				if (type is CiClass klass) {
+					if (symbol.Left is CiAggregateInitializer)
+						throw StatementException(expr, $"{symbol.Name} reference not implemented yet");
 					if (klass == CiSystem.MatchClass) {
 						if (ptrModifier != CiToken.EndOfFile)
 							throw StatementException(expr, "Read-write references to the built-in class Match are not supported");
@@ -1402,8 +1408,6 @@ public class CiResolver : CiVisitor
 				ExpectNoPtrModifier(expr, ptrModifier);
 				return type;
 			}
-			if (symbol.Left is CiAggregateInitializer)
-				throw StatementException(expr, $"{symbol.Name} reference not implemented yet");
 			throw StatementException(expr, $"Type {symbol.Name} not found");
 
 		case CiCallExpr call:
@@ -1412,8 +1416,8 @@ public class CiResolver : CiVisitor
 			if (call.Arguments.Count != 0)
 				throw StatementException(call, "Expected empty parentheses for storage type");
 			if (call.Method.Left is CiAggregateInitializer typeArgExprs) {
-				if (!(this.Program.TryLookup(call.Method.Name) is CiGenericTypeDefinition generic))
-					throw StatementException(call, $"{call.Method.Name} is not a generic class");
+				if (!(this.Program.TryLookup(call.Method.Name) is CiClass generic))
+					throw StatementException(call, $"{call.Method.Name} is not a class");
 				List<CiType> typeArgs = new List<CiType>();
 				foreach (CiExpr typeArgExpr in typeArgExprs.Items)
 					typeArgs.Add(ToType(typeArgExpr, false));
@@ -1430,7 +1434,7 @@ public class CiResolver : CiVisitor
 					return new CiStackType { ElementType = typeArgs[0] };
 				if (generic == CiSystem.HashSetClass)
 					return new CiHashSetType { ElementType = typeArgs[0] };
-				return new CiDictionaryType { Class = generic, TypeArg0 = typeArgs[0], TypeArg1 = typeArgs[1] };
+				return new CiStorageType { Class = generic, TypeArg0 = typeArgs[0], TypeArg1 = typeArgs[1] };
 			}
 			if (call.Method.Name == "string") {
 				NotSupported(call, "string()", "cl");

@@ -988,6 +988,7 @@ public enum CiVisitStatus
 public class CiClass : CiContainerType
 {
 	public CiCallType CallType;
+	public int TypeParameterCount = 0;
 	public string BaseClassName;
 	public CiMethodBase Constructor;
 	public CiConst[] Consts;
@@ -1471,20 +1472,17 @@ public class CiTypeParameter : CiType
 	public int Index;
 }
 
-public class CiGenericTypeDefinition : CiSymbol
-{
-	public int TypeParameterCount;
-}
-
 public class CiClassType : CiType
 {
-	public CiGenericTypeDefinition Class;
+	public CiClass Class;
 	public CiType TypeArg0;
 	public CiType TypeArg1;
 	public CiType KeyType => this.TypeArg0;
 	public CiType ValueType => this.TypeArg1;
 
 	public CiType EvalType(CiType type) => type == CiSystem.TypeParam0 ? this.TypeArg0 : type;
+
+	public override CiSymbol TryLookup(string name) => this.Class.TryLookup(name);
 
 	public override string ToString()
 	{
@@ -1497,27 +1495,8 @@ public class CiClassType : CiType
 	}
 }
 
-public class CiDictionaryType : CiClassType
+public class CiStorageType : CiClassType
 {
-	public override CiSymbol TryLookup(string name)
-	{
-		switch (name) {
-		case "Add":
-			if (this.ValueType.IsFinal)
-				return CiSystem.DictionaryAdd;
-			return null;
-		case "Clear":
-			return CiSystem.CollectionClear;
-		case "ContainsKey":
-			return CiSystem.DictionaryContainsKey;
-		case "Count":
-			return CiSystem.CollectionCount;
-		case "Remove":
-			return CiSystem.DictionaryRemove;
-		default:
-			return null;
-		}
-	}
 	public override bool IsFinal => true;
 }
 
@@ -1636,16 +1615,20 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, FloatType, "Tan", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, "Tanh", new CiVar(DoubleType, "a")),
 		MathTruncate);
-	public static readonly CiGenericTypeDefinition ListClass = new CiGenericTypeDefinition { Name = "List", TypeParameterCount = 1 };
-	public static readonly CiGenericTypeDefinition QueueClass = new CiGenericTypeDefinition { Name = "Queue", TypeParameterCount = 1 };
-	public static readonly CiGenericTypeDefinition StackClass = new CiGenericTypeDefinition { Name = "Stack", TypeParameterCount = 1 };
-	public static readonly CiGenericTypeDefinition HashSetClass = new CiGenericTypeDefinition { Name = "HashSet", TypeParameterCount = 1 };
-	public static readonly CiGenericTypeDefinition DictionaryClass = new CiGenericTypeDefinition { Name = "Dictionary", TypeParameterCount = 2 };
-	public static readonly CiMethod DictionaryAdd = new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Add", new CiVar(TypeParam0, "key")) { IsMutator = true };
+	public static readonly CiClass ListClass = new CiClass { Name = "List", TypeParameterCount = 1 };
+	public static readonly CiClass QueueClass = new CiClass { Name = "Queue", TypeParameterCount = 1 };
+	public static readonly CiClass StackClass = new CiClass { Name = "Stack", TypeParameterCount = 1 };
+	public static readonly CiClass HashSetClass = new CiClass { Name = "HashSet", TypeParameterCount = 1 };
+	public static readonly CiMethod DictionaryAdd = new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Add", new CiVar(TypeParam0, "key")) { Visibility = CiVisibility.FinalValueType, IsMutator = true };
 	public static readonly CiMethod DictionaryContainsKey = new CiMethod(CiCallType.Normal, CiSystem.BoolType, "ContainsKey", new CiVar(TypeParam0, "key"));
 	public static readonly CiMethod DictionaryRemove = new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Remove", new CiVar(TypeParam0, "key")) { IsMutator = true };
-	public static readonly CiGenericTypeDefinition SortedDictionaryClass = new CiGenericTypeDefinition { Name = "SortedDictionary", TypeParameterCount = 2 };
-	public static readonly CiGenericTypeDefinition OrderedDictionaryClass = new CiGenericTypeDefinition { Name = "OrderedDictionary", TypeParameterCount = 2 };
+	public static readonly CiClass DictionaryClass = new CiClass(CiCallType.Normal, "Dictionary",
+		DictionaryAdd,
+		CollectionClear,
+		DictionaryContainsKey,
+		DictionaryRemove) { TypeParameterCount = 2 };
+	public static readonly CiClass SortedDictionaryClass = new CiClass { Name = "SortedDictionary", TypeParameterCount = 2 };
+	public static readonly CiClass OrderedDictionaryClass = new CiClass { Name = "OrderedDictionary", TypeParameterCount = 2 };
 	public static readonly CiClass LockClass = new CiClass(CiCallType.Sealed, "Lock");
 	public static readonly CiSymbol BasePtr = new CiSymbol { Name = "base" };
 
@@ -1697,9 +1680,12 @@ public class CiSystem : CiScope
 		Add(QueueClass);
 		Add(StackClass);
 		Add(HashSetClass);
+		DictionaryClass.Add(CollectionCount);
 		Add(DictionaryClass);
 		Add(SortedDictionaryClass);
+		SortedDictionaryClass.Parent = DictionaryClass;
 		Add(OrderedDictionaryClass);
+		OrderedDictionaryClass.Parent = DictionaryClass;
 		Add(LockClass);
 		Add(BasePtr);
 	}

@@ -1242,7 +1242,8 @@ namespace Foxoft.Ci
 		Private,
 		Internal,
 		Protected,
-		Public
+		Public,
+		FinalValueType
 	}
 
 	public enum CiCallType
