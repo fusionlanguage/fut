@@ -1307,8 +1307,6 @@ public class CiArrayPtrType : CiArrayType
 	{
 		if (this.Modifier != CiToken.EndOfFile) {
 			switch (name) {
-			case "BinarySearch":
-				return this.ElementType is CiNumericType ? this.BinarySearch : null;
 			case "Fill":
 				return this.Fill;
 			case "Sort":
@@ -1317,6 +1315,8 @@ public class CiArrayPtrType : CiArrayType
 				break;
 			}
 		}
+		if (name == "BinarySearch" && this.ElementType is CiNumericType)
+			return this.BinarySearch;
 		return base.TryLookup(name);
 	}
 

@@ -8,8 +8,11 @@ public static class Test
 		d[1] = a[1] = 3;
 		d[2] = a[2] = 5;
 		d[3] = a[3] = 11;
+		int[] p = a;
 		int three = 3;
 		byte five = 5;
-		return a.BinarySearch(three) == 1 && d.BinarySearch(five, 1, 2) == 2; //FAIL: js swift ts TODO; c TODO bigendian
+		return a.BinarySearch(three) == 1 //FAIL: js swift ts TODO; c TODO bigendian
+			&& d.BinarySearch(five, 1, 2) == 2
+			&& p.BinarySearch(five, 1, 3) == 2;
 	}
 }
