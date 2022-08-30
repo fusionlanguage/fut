@@ -486,16 +486,17 @@ public class GenPy : GenPySwift
 			Include("collections");
 			Write("collections.deque()");
 			break;
-		case CiHashSetType _:
-			Write("set()");
-			break;
-		case CiClassType dict when dict.Class.TypeParameterCount == 2:
-			if (dict.Class == CiSystem.OrderedDictionaryClass) {
+		case CiClassType klass:
+			if (klass.Class == CiSystem.HashSetClass)
+				Write("set()");
+			else if (klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass)
+				Write("{}");
+			else if (klass.Class == CiSystem.OrderedDictionaryClass) {
 				Include("collections");
 				Write("collections.OrderedDict()");
 			}
 			else
-				Write("{}");
+				throw new NotImplementedException();
 			break;
 		default:
 			base.WriteNewStorage(type);
@@ -648,7 +649,7 @@ public class GenPy : GenPySwift
 			|| WriteDictionaryAdd(obj, method, args)) {
 			// done
 		}
-		else if ((obj.Type is CiListType || obj.Type is CiHashSetType) && method.Name == "Contains")
+		else if ((obj.Type is CiListType && method.Name == "Contains") || method == CiSystem.HashSetContains)
 			WriteContains(obj, args[0]);
 		else if (obj.Type is CiQueueType && method.Name == "Dequeue") {
 			obj.Accept(this, CiPriority.Primary);

@@ -175,13 +175,13 @@ public class GenCpp : GenCCpp
 		WriteName(symbol);
 	}
 
-	void WriteCollectionType(string name, CiCollectionType type)
+	void WriteCollectionType(string name, CiType elementType)
 	{
 		Include(name);
 		Write("std::");
 		Write(name);
 		Write('<');
-		Write(type.ElementType, false);
+		Write(elementType, false);
 		Write('>');
 	}
 
@@ -242,26 +242,33 @@ public class GenCpp : GenCCpp
 			Write('>');
 			break;
 		case CiListType list:
-			WriteCollectionType("vector", list);
+			WriteCollectionType("vector", list.ElementType);
 			break;
 		case CiQueueType queue:
-			WriteCollectionType("queue", queue);
+			WriteCollectionType("queue", queue.ElementType);
 			break;
 		case CiStackType stack:
-			WriteCollectionType("stack", stack);
+			WriteCollectionType("stack", stack.ElementType);
 			break;
-		case CiHashSetType set:
-			WriteCollectionType("unordered_set", set);
-			break;
-		case CiClassType dict when dict.Class.TypeParameterCount == 2:
-			string cppType = dict.Class == CiSystem.SortedDictionaryClass ? "map" : "unordered_map";
+		case CiClassType klass:
+			string cppType;
+			if (klass.Class == CiSystem.HashSetClass)
+				cppType = "unordered_set";
+			else if (klass.Class == CiSystem.DictionaryClass)
+				cppType = "unordered_map";
+			else if (klass.Class == CiSystem.SortedDictionaryClass)
+				cppType = "map";
+			else
+				throw new NotImplementedException();
 			Include(cppType);
 			Write("std::");
 			Write(cppType);
 			Write('<');
-			Write(dict.KeyType, false);
-			Write(", ");
-			Write(dict.ValueType, false);
+			Write(klass.TypeArg0, false);
+			if (klass.Class.TypeParameterCount == 2) {
+				Write(", ");
+				Write(klass.ValueType, false);
+			}
 			Write('>');
 			break;
 		case CiClassPtrType classPtr:
@@ -340,7 +347,7 @@ public class GenCpp : GenCCpp
 			def.Value.Accept(this, CiPriority.Argument);
 			Write('}');
 		}
-		else if (def.Type is CiListType || def.Type is CiQueueType || def.Type is CiStackType || def.Type is CiHashSetType || (def.Type is CiClassType dict && dict.Class.TypeParameterCount == 2)) {
+		else if (def.Type is CiListType || def.Type is CiQueueType || def.Type is CiStackType || def.Type is CiStorageType) {
 		}
 		else
 			base.WriteVarInit(def);
@@ -704,7 +711,7 @@ public class GenCpp : GenCCpp
 		else if (obj.Type is CiQueueType queue && method.Name == "Dequeue") {
 			// :-)
 			Write("[](");
-			WriteCollectionType("queue", queue);
+			WriteCollectionType("queue", queue.ElementType);
 			Write(" &q) { ");
 			Write(queue.ElementType, false);
 			Write(" front = q.front(); q.pop(); return front; }(");
@@ -724,16 +731,16 @@ public class GenCpp : GenCCpp
 		else if (obj.Type is CiStackType stack && method.Name == "Pop" && parent != CiPriority.Statement) {
 			// :-)
 			Write("[](");
-			WriteCollectionType("stack", stack);
+			WriteCollectionType("stack", stack.ElementType);
 			Write(" &s) { ");
 			Write(stack.ElementType, false);
 			Write(" top = s.top(); s.pop(); return top; }(");
 			obj.Accept(this, CiPriority.Argument);
 			Write(')');
 		}
-		else if (obj.Type is CiHashSetType && method.Name == "Add")
+		else if (method == CiSystem.HashSetAdd)
 			WriteCall(obj, "insert", args[0]);
-		else if ((obj.Type is CiHashSetType && method.Name == "Remove") || method == CiSystem.DictionaryRemove)
+		else if (method == CiSystem.HashSetRemove || method == CiSystem.DictionaryRemove)
 			WriteCall(obj, "erase", args[0]);
 		else if (method == CiSystem.DictionaryAdd)
 			WriteIndexing(obj, args[0]);

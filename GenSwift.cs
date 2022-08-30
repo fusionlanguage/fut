@@ -269,17 +269,21 @@ public class GenSwift : GenPySwift
 			Write(stack.ElementType);
 			Write(']');
 			break;
-		case CiHashSetType set:
-			Write("Set<");
-			Write(set.ElementType);
-			Write('>');
-			break;
-		case CiClassType dict when dict.Class.TypeParameterCount == 2:
-			Write('[');
-			Write(dict.KeyType);
-			Write(": ");
-			Write(dict.ValueType);
-			Write(']');
+		case CiClassType klass:
+			if (klass.Class == CiSystem.HashSetClass) {
+				Write("Set<");
+				Write(klass.ElementType);
+				Write('>');
+			}
+			else if (klass.Class.TypeParameterCount == 2) {
+				Write('[');
+				Write(klass.KeyType);
+				Write(": ");
+				Write(klass.ValueType);
+				Write(']');
+			}
+			else
+				throw new NotImplementedException();
 			break;
 		case CiArrayStorageType arrayStg:
 			if (IsArrayRef(arrayStg)) {
@@ -667,7 +671,7 @@ public class GenSwift : GenPySwift
 			WriteMemberOp(obj, null);
 			if (method == CiSystem.CollectionClear)
 				Write("removeAll");
-			else if (obj.Type is CiHashSetType && method.Name == "Add")
+			else if (method == CiSystem.HashSetAdd)
 				Write("insert");
 			else
 				WriteName(method);
@@ -681,7 +685,6 @@ public class GenSwift : GenPySwift
 		case CiListType _:
 		case CiQueueType _:
 		case CiStackType _:
-		case CiHashSetType _:
 		case CiClassType _:
 			Write(type);
 			Write("()");
@@ -996,7 +999,7 @@ public class GenSwift : GenPySwift
 		if (def is CiField || AddVar(def.Name)) {
 			Write((def.Type is CiClass ? !def.IsAssignableStorage
 				: def.Type is CiArrayStorageType array ? IsArrayRef(array)
-				: (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType || def.Type is CiQueueType || def.Type is CiStackType || def.Type is CiHashSetType || (def.Type is CiClassType dict && dict.Class.TypeParameterCount == 2)))) ? "let " : "var ");
+				: (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType || def.Type is CiQueueType || def.Type is CiStackType || def.Type is CiStorageType))) ? "let " : "var ");
 			base.WriteVar(def);
 		}
 		else {

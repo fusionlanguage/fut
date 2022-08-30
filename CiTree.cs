@@ -1444,29 +1444,6 @@ public class CiStackType : CiCollectionType
 	public override bool IsFinal => true;
 }
 
-public class CiHashSetType : CiCollectionType
-{
-	public override string ToString() => $"HashSet<{this.ElementType}>";
-	public override CiSymbol TryLookup(string name)
-	{
-		switch (name) {
-		case "Add":
-			return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Add", new CiVar(this.ElementType, "value")) { IsMutator = true };
-		case "Clear":
-			return CiSystem.CollectionClear;
-		case "Contains":
-			return new CiMethod(CiCallType.Normal, CiSystem.BoolType, "Contains", new CiVar(this.ElementType, "value"));
-		case "Count":
-			return CiSystem.CollectionCount;
-		case "Remove":
-			return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Remove", new CiVar(this.ElementType, "value")) { IsMutator = true };
-		default:
-			return base.TryLookup(name);
-		}
-	}
-	public override bool IsFinal => true;
-}
-
 public class CiTypeParameter : CiType
 {
 	public int Index;
@@ -1477,6 +1454,7 @@ public class CiClassType : CiType
 	public CiClass Class;
 	public CiType TypeArg0;
 	public CiType TypeArg1;
+	public CiType ElementType => this.TypeArg0;
 	public CiType KeyType => this.TypeArg0;
 	public CiType ValueType => this.TypeArg1;
 
@@ -1618,7 +1596,14 @@ public class CiSystem : CiScope
 	public static readonly CiClass ListClass = new CiClass { Name = "List", TypeParameterCount = 1 };
 	public static readonly CiClass QueueClass = new CiClass { Name = "Queue", TypeParameterCount = 1 };
 	public static readonly CiClass StackClass = new CiClass { Name = "Stack", TypeParameterCount = 1 };
-	public static readonly CiClass HashSetClass = new CiClass { Name = "HashSet", TypeParameterCount = 1 };
+	public static readonly CiMethod HashSetAdd = new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Add", new CiVar(TypeParam0, "value")) { IsMutator = true };
+	public static readonly CiMethod HashSetContains = new CiMethod(CiCallType.Normal, CiSystem.BoolType, "Contains", new CiVar(TypeParam0, "value"));
+	public static readonly CiMethod HashSetRemove = new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Remove", new CiVar(TypeParam0, "value")) { IsMutator = true };
+	public static readonly CiClass HashSetClass = new CiClass(CiCallType.Normal, "HashSet",
+		HashSetAdd,
+		CollectionClear,
+		HashSetContains,
+		HashSetRemove) { TypeParameterCount = 1 };
 	public static readonly CiMethod DictionaryAdd = new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Add", new CiVar(TypeParam0, "key")) { Visibility = CiVisibility.FinalValueType, IsMutator = true };
 	public static readonly CiMethod DictionaryContainsKey = new CiMethod(CiCallType.Normal, CiSystem.BoolType, "ContainsKey", new CiVar(TypeParam0, "key"));
 	public static readonly CiMethod DictionaryRemove = new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Remove", new CiVar(TypeParam0, "key")) { IsMutator = true };
@@ -1679,6 +1664,7 @@ public class CiSystem : CiScope
 		Add(ListClass);
 		Add(QueueClass);
 		Add(StackClass);
+		HashSetClass.Add(CollectionCount);
 		Add(HashSetClass);
 		DictionaryClass.Add(CollectionCount);
 		Add(DictionaryClass);

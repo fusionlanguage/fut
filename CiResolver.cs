@@ -1238,17 +1238,20 @@ public class CiResolver : CiVisitor
 				throw StatementException(statement, $"Cannot coerce {dict.ValueType} to {value.Type}");
 		}
 		else {
+			CiType elementType;
 			switch (statement.Collection.Type) {
 			case CiArrayStorageType _:
 			case CiListType _:
-			case CiHashSetType _:
+				elementType = ((CiCollectionType) statement.Collection.Type).ElementType;
+				break;
+			case CiClassType set when set.Class == CiSystem.HashSetClass:
+				elementType = set.ElementType;
 				break;
 			default:
 				throw StatementException(statement.Collection, "Expected a collection");
 			}
 			if (statement.Count != 1)
 				throw StatementException(statement, "Expected one iterator variable");
-			CiType elementType = ((CiCollectionType) statement.Collection.Type).ElementType;
 			if (!element.Type.IsAssignableFrom(elementType))
 				throw StatementException(statement, $"Cannot coerce {elementType} to {element.Type}");
 		}
@@ -1433,7 +1436,7 @@ public class CiResolver : CiVisitor
 				if (generic == CiSystem.StackClass)
 					return new CiStackType { ElementType = typeArgs[0] };
 				if (generic == CiSystem.HashSetClass)
-					return new CiHashSetType { ElementType = typeArgs[0] };
+					return new CiStorageType { Class = generic, TypeArg0 = typeArgs[0] };
 				return new CiStorageType { Class = generic, TypeArg0 = typeArgs[0], TypeArg1 = typeArgs[1] };
 			}
 			if (call.Method.Name == "string") {

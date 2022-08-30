@@ -142,11 +142,15 @@ public class GenJs : GenBase
 		case CiStackType _:
 			Write("[]");
 			break;
-		case CiHashSetType _:
-			Write("new Set()");
-			break;
-		case CiClassType dict when dict.Class.TypeParameterCount == 2:
-			Write(dict.Class == CiSystem.OrderedDictionaryClass ? "new Map()" : "{}");
+		case CiClassType klass:
+			if (klass.Class == CiSystem.HashSetClass)
+				Write("new Set()");
+			else if (klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass)
+				Write("{}");
+			else if (klass.Class == CiSystem.OrderedDictionaryClass)
+				Write("new Map()");
+			else
+				throw new NotImplementedException();
 			break;
 		default:
 			base.WriteNewStorage(type);
@@ -311,19 +315,17 @@ public class GenJs : GenBase
 				expr.Left.Accept(this, CiPriority.Primary);
 				Write(".length");
 				break;
-			case CiHashSetType _:
-				expr.Left.Accept(this, CiPriority.Primary);
-				Write(".size");
-				break;
-			case CiClassType dict when dict.Class.TypeParameterCount == 2:
-				if (dict.Class == CiSystem.OrderedDictionaryClass) {
+			case CiClassType klass:
+				if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.OrderedDictionaryClass) {
 					expr.Left.Accept(this, CiPriority.Primary);
 					Write(".size");
 				}
-				else {
+				else if (klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass) {
 					WriteCall("Object.keys", expr.Left);
 					Write(".length");
 				}
+				else
+					throw new NotImplementedException();
 				break;
 			default:
 				throw new NotImplementedException(expr.Left.Type.ToString());
@@ -655,9 +657,9 @@ public class GenJs : GenBase
 				Write("trunc");
 			else if (method == CiSystem.StringContains || (obj.Type is CiListType && method.Name == "Contains"))
 				Write("includes");
-			else if (obj.Type is CiHashSetType && method.Name == "Contains")
+			else if (method == CiSystem.HashSetContains)
 				Write("has");
-			else if (obj.Type is CiHashSetType && method.Name == "Remove")
+			else if (method == CiSystem.HashSetRemove)
 				Write("delete");
 			else if (method == CiSystem.DictionaryContainsKey)
 				Write(((CiClassType) obj.Type).Class == CiSystem.OrderedDictionaryClass ? "has" : "hasOwnProperty");

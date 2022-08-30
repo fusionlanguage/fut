@@ -130,17 +130,21 @@ public class GenTs : GenJs
 				Write("[]");
 			}
 			break;
-		case CiHashSetType set:
-			Write("Set<");
-			Write(set.ElementType, false);
-			Write('>');
-			break;
-		case CiClassType dict when dict.Class.TypeParameterCount == 2:
-			Write("Partial<Record<");
-			Write(dict.KeyType, forConst);
-			Write(", ");
-			Write(dict.ValueType, forConst);
-			Write(">>");
+		case CiClassType klass:
+			if (klass.Class == CiSystem.HashSetClass) {
+				Write("Set<");
+				Write(klass.ElementType, false);
+				Write('>');
+			}
+			else if (klass.Class.TypeParameterCount == 2) {
+				Write("Partial<Record<");
+				Write(klass.KeyType, forConst);
+				Write(", ");
+				Write(klass.ValueType, forConst);
+				Write(">>");
+			}
+			else
+				throw new NotImplementedException();
 			break;
 		default:
 			CiType baseType = type is CiClassPtrType classPtr ? classPtr.Class : type;

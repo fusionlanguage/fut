@@ -198,11 +198,11 @@ public class GenCs : GenTyped
 		}
 	}
 
-	void WriteElementType(CiCollectionType type)
+	void WriteElementType(CiType elementType)
 	{
 		Include("System.Collections.Generic");
 		Write('<');
-		Write(type.ElementType, false);
+		Write(elementType, false);
 		Write('>');
 	}
 
@@ -228,34 +228,36 @@ public class GenCs : GenTyped
 			break;
 		case CiListType list:
 			Write("List");
-			WriteElementType(list);
+			WriteElementType(list.ElementType);
 			break;
 		case CiQueueType queue:
 			Write("Queue");
-			WriteElementType(queue);
+			WriteElementType(queue.ElementType);
 			break;
 		case CiStackType stack:
 			Write("Stack");
-			WriteElementType(stack);
+			WriteElementType(stack.ElementType);
 			break;
-		case CiHashSetType set:
-			Write("HashSet");
-			WriteElementType(set);
-			break;
-		case CiClassType dict when dict.Class.TypeParameterCount == 2:
-			if (dict.Class == CiSystem.OrderedDictionaryClass) {
+		case CiClassType klass:
+			if (klass.Class == CiSystem.HashSetClass) {
+				Write("HashSet");
+				WriteElementType(klass.ElementType);
+			}
+			else if (klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass) {
+				Include("System.Collections.Generic");
+				Write(klass.Class.Name);
+				Write('<');
+				Write(klass.KeyType, false);
+				Write(", ");
+				Write(klass.ValueType, false);
+				Write('>');
+			}
+			else if (klass.Class == CiSystem.OrderedDictionaryClass) {
 				Include("System.Collections.Specialized");
 				Write("OrderedDictionary");
 			}
-			else {
-				Include("System.Collections.Generic");
-				Write(dict.Class.Name);
-				Write('<');
-				Write(dict.KeyType, false);
-				Write(", ");
-				Write(dict.ValueType, false);
-				Write('>');
-			}
+			else
+				throw new NotImplementedException();
 			break;
 		case CiArrayType array:
 			Write(array.ElementType, false);
@@ -345,7 +347,6 @@ public class GenCs : GenTyped
 		case CiListType _:
 		case CiQueueType _:
 		case CiStackType _:
-		case CiHashSetType _:
 		case CiClassType _:
 			Write("new ");
 			Write(type, false);

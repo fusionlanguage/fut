@@ -255,12 +255,12 @@ public class GenJava : GenTyped
 		Write(typeCode, false);
 	}
 
-	void WriteCollectionType(string name, CiCollectionType type)
+	void WriteCollectionType(string name, CiType elementType)
 	{
 		Include("java.util." + name);
 		Write(name);
 		Write('<');
-		Write(type.ElementType, false, true);
+		Write(elementType, false, true);
 		Write('>');
 	}
 
@@ -305,23 +305,24 @@ public class GenJava : GenTyped
 				: needClass ? "Integer" : "int");
 			break;
 		case CiListType list:
-			WriteCollectionType("ArrayList", list);
+			WriteCollectionType("ArrayList", list.ElementType);
 			break;
 		case CiQueueType queue:
-			WriteCollectionType("ArrayDeque", queue);
+			WriteCollectionType("ArrayDeque", queue.ElementType);
 			break;
 		case CiStackType stack:
-			WriteCollectionType("Stack", stack);
+			WriteCollectionType("Stack", stack.ElementType);
 			break;
-		case CiHashSetType set:
-			WriteCollectionType("HashSet", set);
-			break;
-		case CiClassType dict when dict.Class.TypeParameterCount == 2:
-			string name = dict.Class == CiSystem.SortedDictionaryClass ? "TreeMap" :
-				dict.Class == CiSystem.OrderedDictionaryClass ? "LinkedHashMap" :
-				"HashMap";
-			Include("java.util." + name);
-			Write(name, dict);
+		case CiClassType klass:
+			if (klass.Class == CiSystem.HashSetClass)
+				WriteCollectionType("HashSet", klass.ElementType);
+			else {
+				string name = klass.Class == CiSystem.SortedDictionaryClass ? "TreeMap" :
+					klass.Class == CiSystem.OrderedDictionaryClass ? "LinkedHashMap" :
+					"HashMap";
+				Include("java.util." + name);
+				Write(name, klass);
+			}
 			break;
 		case CiArrayType array:
 			Write(array.ElementType, false);
@@ -350,7 +351,6 @@ public class GenJava : GenTyped
 		case CiListType _:
 		case CiQueueType _:
 		case CiStackType _:
-		case CiHashSetType _:
 		case CiClassType _:
 			Write("new ");
 			Write(type, false, false);
