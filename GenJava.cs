@@ -620,12 +620,12 @@ public class GenJava : GenTyped
 			WriteStartEnd(args[0], args[1]);
 			Write(").clear()");
 		}
-		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
+		else if (method == CiSystem.DictionaryAdd) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".put(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
-			WriteNewStorage(dict.ValueType);
+			WriteNewStorage(((CiClassType) obj.Type).ValueType);
 			Write(')');
 		}
 		else if (method == CiSystem.ConsoleWrite)

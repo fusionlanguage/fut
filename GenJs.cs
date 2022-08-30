@@ -519,15 +519,15 @@ public class GenJs : GenBase
 			obj.Accept(this, CiPriority.Primary);
 			Write(".at(-1)");
 		}
-		else if (obj.Type is CiDictionaryType dict && method.Name == "Remove") {
-			if (dict.Class == CiSystem.OrderedDictionaryClass)
+		else if (method == CiSystem.DictionaryRemove) {
+			if (((CiClassType) obj.Type).Class == CiSystem.OrderedDictionaryClass)
 				WriteCall(obj, "delete", args[0]);
 			else {
 				Write("delete ");
 				WriteIndexing(obj, args[0]);
 			}
 		}
-		else if (obj.Type is CiDictionaryType dict2 && dict2.Class != CiSystem.OrderedDictionaryClass && method == CiSystem.CollectionClear) {
+		else if (obj.Type is CiDictionaryType dict && dict.Class != CiSystem.OrderedDictionaryClass && method == CiSystem.CollectionClear) {
 			Write("for (const key in ");
 			obj.Accept(this, CiPriority.Argument);
 			WriteLine(')');
@@ -659,8 +659,8 @@ public class GenJs : GenBase
 				Write("has");
 			else if (obj.Type is CiHashSetType && method.Name == "Remove")
 				Write("delete");
-			else if (obj.Type is CiDictionaryType dict3 && method.Name == "ContainsKey")
-				Write(dict3.Class == CiSystem.OrderedDictionaryClass ? "has" : "hasOwnProperty");
+			else if (method == CiSystem.DictionaryContainsKey)
+				Write(((CiClassType) obj.Type).Class == CiSystem.OrderedDictionaryClass ? "has" : "hasOwnProperty");
 			else
 				WriteName(method);
 			WriteArgsInParentheses(method, args);

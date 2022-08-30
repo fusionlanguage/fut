@@ -195,10 +195,7 @@ public class CiResolver : CiVisitor
 		return a / b;
 	}
 
-	static int SaturatedShiftRight(int a, int b)
-	{
-		return a >> (b >= 31 || b < 0 ? 31 : b);
-	}
+	static int SaturatedShiftRight(int a, int b) => a >> (b >= 31 || b < 0 ? 31 : b);
 
 	static CiRangeType UnsignedAnd(CiRangeType left, CiRangeType right)
 	{
@@ -1039,7 +1036,10 @@ public class CiResolver : CiVisitor
 					break;
 				throw StatementException(expr, $"Too few arguments for '{method.Name}'");
 			}
-			Coerce(arguments[i++], param.Type);
+			CiType type = param.Type;
+			if (expr.Method.Left != null && expr.Method.Left.Type is CiClassType generic)
+				type = generic.EvalType(type);
+			Coerce(arguments[i++], type);
 		}
 		if (i < arguments.Count)
 			throw StatementException(arguments[i], "Too many arguments");
@@ -1084,13 +1084,9 @@ public class CiResolver : CiVisitor
 			((CiClass) this.CurrentScope.Container).ConstArrays.Add(statement);
 	}
 
-	CiExpr Resolve(CiExpr expr)
-		=> expr.Accept(this, CiPriority.Statement);
+	CiExpr Resolve(CiExpr expr) => expr.Accept(this, CiPriority.Statement);
 
-	public override void VisitExpr(CiExpr statement)
-	{
-		Resolve(statement);
-	}
+	public override void VisitExpr(CiExpr statement) => Resolve(statement);
 
 	CiExpr ResolveBool(CiExpr expr)
 	{
@@ -1139,10 +1135,7 @@ public class CiResolver : CiVisitor
 		}
 	}
 
-	public override void VisitBreak(CiBreak statement)
-	{
-		statement.LoopOrSwitch.SetCompletesNormally(true);
-	}
+	public override void VisitBreak(CiBreak statement) => statement.LoopOrSwitch.SetCompletesNormally(true);
 
 	public override void VisitContinue(CiContinue statement)
 	{
@@ -1437,7 +1430,7 @@ public class CiResolver : CiVisitor
 					return new CiStackType { ElementType = typeArgs[0] };
 				if (generic == CiSystem.HashSetClass)
 					return new CiHashSetType { ElementType = typeArgs[0] };
-				return new CiDictionaryType { Class = generic, KeyType = typeArgs[0], ValueType = typeArgs[1] };
+				return new CiDictionaryType { Class = generic, TypeArg0 = typeArgs[0], TypeArg1 = typeArgs[1] };
 			}
 			if (call.Method.Name == "string") {
 				NotSupported(call, "string()", "cl");

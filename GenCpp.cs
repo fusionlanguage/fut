@@ -733,11 +733,11 @@ public class GenCpp : GenCCpp
 		}
 		else if (obj.Type is CiHashSetType && method.Name == "Add")
 			WriteCall(obj, "insert", args[0]);
-		else if ((obj.Type is CiHashSetType || obj.Type is CiDictionaryType) && method.Name == "Remove")
+		else if ((obj.Type is CiHashSetType && method.Name == "Remove") || method == CiSystem.DictionaryRemove)
 			WriteCall(obj, "erase", args[0]);
-		else if (obj.Type is CiDictionaryType && method.Name == "Add")
+		else if (method == CiSystem.DictionaryAdd)
 			WriteIndexing(obj, args[0]);
-		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey") {
+		else if (method == CiSystem.DictionaryContainsKey) {
 			if (parent > CiPriority.Equality)
 				Write('(');
 			obj.Accept(this, CiPriority.Primary);

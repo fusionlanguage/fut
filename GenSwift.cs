@@ -575,7 +575,7 @@ public class GenSwift : GenPySwift
 		else if (WriteDictionaryAdd(obj, method, args)) {
 			// done
 		}
-		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey") {
+		else if (method == CiSystem.DictionaryContainsKey) {
 			if (parent > CiPriority.Equality)
 				Write('(');
 			WriteIndexing(obj, args[0]);
@@ -583,7 +583,7 @@ public class GenSwift : GenPySwift
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}
-		else if (obj.Type is CiDictionaryType && method.Name == "Remove") {
+		else if (method == CiSystem.DictionaryRemove) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeValue(forKey: ");
 			args[0].Accept(this, CiPriority.Argument);
@@ -962,8 +962,7 @@ public class GenSwift : GenPySwift
 
 	public override void VisitExpr(CiExpr statement)
 	{
-		if (statement is CiCallExpr call && statement.Type != CiSystem.VoidType
-			&& !(call.Method.Left != null && call.Method.Left.Type is CiDictionaryType && call.Method.Name == "Add"))
+		if (statement is CiCallExpr call && statement.Type != CiSystem.VoidType)
 			Write("_ = ");
 		base.VisitExpr(statement);
 	}

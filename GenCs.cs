@@ -576,15 +576,15 @@ public class GenCs : GenTyped
 		else if (WriteListAddInsert(obj, method, args, "Add", "Insert", ", ")) {
 			// done
 		}
-		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
+		else if (method == CiSystem.DictionaryAdd) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".Add(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
-			WriteNewStorage(dict.ValueType);
+			WriteNewStorage(((CiClassType) obj.Type).ValueType);
 			Write(')');
 		}
-		else if (obj.Type is CiDictionaryType dict2 && dict2.Class == CiSystem.OrderedDictionaryClass && method.Name == "ContainsKey")
+		else if (obj.Type is CiClassType dict && dict.Class == CiSystem.OrderedDictionaryClass && method == CiSystem.DictionaryContainsKey)
 			WriteCall(obj, "Contains", args[0]);
 		else {
 			if (method == CiSystem.MathIsFinite || method == CiSystem.MathIsInfinity || method == CiSystem.MathIsNaN)

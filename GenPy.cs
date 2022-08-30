@@ -598,8 +598,7 @@ public class GenPy : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			Write("[:]");
 		}
-		else if (method == CiSystem.ListRemoveAt
-				|| (obj.Type is CiDictionaryType && method.Name == "Remove")) {
+		else if (method == CiSystem.ListRemoveAt || method == CiSystem.DictionaryRemove) {
 			Write("del ");
 			WriteIndexing(obj, args[0]);
 		}
@@ -667,7 +666,7 @@ public class GenPy : GenPySwift
 		}
 		else if (obj.Type is CiStackType && method.Name == "Push")
 			WriteListAppend(obj, args);
-		else if (obj.Type is CiDictionaryType && method.Name == "ContainsKey")
+		else if (method == CiSystem.DictionaryContainsKey)
 			WriteContains(obj, args[0]);
 		else if (method == CiSystem.ConsoleWrite)
 			WriteConsoleWrite(obj, args, false);

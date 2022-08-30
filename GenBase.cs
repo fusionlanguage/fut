@@ -954,10 +954,10 @@ public abstract class GenBase : CiVisitor
 
 	protected bool WriteDictionaryAdd(CiExpr obj, CiMethod method, List<CiExpr> args)
 	{
-		if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
+		if (method == CiSystem.DictionaryAdd) {
 			WriteIndexing(obj, args[0]);
 			Write(" = ");
-			WriteNewStorage(dict.ValueType);
+			WriteNewStorage(((CiClassType) obj.Type).ValueType);
 			return true;
 		}
 		return false;

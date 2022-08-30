@@ -1466,38 +1466,59 @@ public class CiHashSetType : CiCollectionType
 	public override bool IsFinal => true;
 }
 
-public class CiDictionaryType : CiType
+public class CiTypeParameter : CiType
 {
-	public CiSymbol Class;
-	public CiType KeyType;
-	public CiType ValueType;
-
-	public override string ToString() => $"{this.Class.Name}<{this.KeyType}, {this.ValueType}>";
-	public override CiSymbol TryLookup(string name)
-	{
-		switch (name) {
-		case "Add":
-			if (this.ValueType.IsFinal)
-				return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Add", new CiVar(this.KeyType, "key")) { IsMutator = true };
-			return null;
-		case "Clear":
-			return CiSystem.CollectionClear;
-		case "ContainsKey":
-			return new CiMethod(CiCallType.Normal, CiSystem.BoolType, "ContainsKey", new CiVar(this.KeyType, "key"));
-		case "Count":
-			return CiSystem.CollectionCount;
-		case "Remove":
-			return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Remove", new CiVar(this.KeyType, "key")) { IsMutator = true };
-		default:
-			return null;
-		}
-	}
-	public override bool IsFinal => true;
+	public int Index;
 }
 
 public class CiGenericTypeDefinition : CiSymbol
 {
 	public int TypeParameterCount;
+}
+
+public class CiClassType : CiType
+{
+	public CiGenericTypeDefinition Class;
+	public CiType TypeArg0;
+	public CiType TypeArg1;
+	public CiType KeyType => this.TypeArg0;
+	public CiType ValueType => this.TypeArg1;
+
+	public CiType EvalType(CiType type) => type == CiSystem.TypeParam0 ? this.TypeArg0 : type;
+
+	public override string ToString()
+	{
+		switch (this.Class.TypeParameterCount) {
+		case 0: return this.Class.Name;
+		case 1: return $"{this.Class.Name}<{this.TypeArg0}>";
+		case 2: return $"{this.Class.Name}<{this.TypeArg0}, {this.TypeArg1}>";
+		default: throw new NotImplementedException();
+		}
+	}
+}
+
+public class CiDictionaryType : CiClassType
+{
+	public override CiSymbol TryLookup(string name)
+	{
+		switch (name) {
+		case "Add":
+			if (this.ValueType.IsFinal)
+				return CiSystem.DictionaryAdd;
+			return null;
+		case "Clear":
+			return CiSystem.CollectionClear;
+		case "ContainsKey":
+			return CiSystem.DictionaryContainsKey;
+		case "Count":
+			return CiSystem.CollectionCount;
+		case "Remove":
+			return CiSystem.DictionaryRemove;
+		default:
+			return null;
+		}
+	}
+	public override bool IsFinal => true;
 }
 
 public class CiPrintableType : CiType
@@ -1509,6 +1530,7 @@ public class CiSystem : CiScope
 {
 	public static readonly CiType VoidType = new CiType { Name = "void" };
 	public static readonly CiType NullType = new CiType { Name = "null" };
+	public static readonly CiTypeParameter TypeParam0 = new CiTypeParameter { Name = "TKey", Index = 0 };
 	public static readonly CiIntegerType IntType = new CiIntegerType { Name = "int" };
 	public static readonly CiRangeType UIntType = new CiRangeType(0, int.MaxValue) { Name = "uint" };
 	public static readonly CiIntegerType LongType = new CiIntegerType { Name = "long" };
@@ -1619,6 +1641,9 @@ public class CiSystem : CiScope
 	public static readonly CiGenericTypeDefinition StackClass = new CiGenericTypeDefinition { Name = "Stack", TypeParameterCount = 1 };
 	public static readonly CiGenericTypeDefinition HashSetClass = new CiGenericTypeDefinition { Name = "HashSet", TypeParameterCount = 1 };
 	public static readonly CiGenericTypeDefinition DictionaryClass = new CiGenericTypeDefinition { Name = "Dictionary", TypeParameterCount = 2 };
+	public static readonly CiMethod DictionaryAdd = new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Add", new CiVar(TypeParam0, "key")) { IsMutator = true };
+	public static readonly CiMethod DictionaryContainsKey = new CiMethod(CiCallType.Normal, CiSystem.BoolType, "ContainsKey", new CiVar(TypeParam0, "key"));
+	public static readonly CiMethod DictionaryRemove = new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Remove", new CiVar(TypeParam0, "key")) { IsMutator = true };
 	public static readonly CiGenericTypeDefinition SortedDictionaryClass = new CiGenericTypeDefinition { Name = "SortedDictionary", TypeParameterCount = 2 };
 	public static readonly CiGenericTypeDefinition OrderedDictionaryClass = new CiGenericTypeDefinition { Name = "OrderedDictionary", TypeParameterCount = 2 };
 	public static readonly CiClass LockClass = new CiClass(CiCallType.Sealed, "Lock");

@@ -1612,12 +1612,13 @@ public class GenC : GenCCpp
 			WriteDictionaryLookup(obj, "g_hash_table_contains", args[0]);
 		else if (obj.Type is CiHashSetType && method.Name == "Remove")
 			WriteDictionaryLookup(obj, "g_hash_table_remove", args[0]);
-		else if (obj.Type is CiDictionaryType dict && method.Name == "Add") {
+		else if (method == CiSystem.DictionaryAdd) {
 			StartDictionaryInsert(obj, args[0]);
-			switch (dict.ValueType) {
+			CiType valueType = ((CiClassType) obj.Type).ValueType;
+			switch (valueType) {
 			case CiListType _:
 			case CiDictionaryType _:
-				WriteNewStorage(dict.ValueType);
+				WriteNewStorage(valueType);
 				break;
 			case CiClass klass when klass.IsPublic && klass.Constructor != null && klass.Constructor.Visibility == CiVisibility.Public:
 				WriteName(klass);
@@ -1625,14 +1626,14 @@ public class GenC : GenCCpp
 				break;
 			default:
 				Write("malloc(sizeof(");
-				Write(dict.ValueType, false);
+				Write(valueType, false);
 				Write("))");
 				break;
 			}
 			Write(')');
 		}
-		else if (obj.Type is CiDictionaryType dict2 && method.Name == "ContainsKey") {
-			if (dict2.Class == CiSystem.SortedDictionaryClass) {
+		else if (method == CiSystem.DictionaryContainsKey) {
+			if (((CiClassType) obj.Type).Class == CiSystem.SortedDictionaryClass) {
 				Write("g_tree_lookup_extended(");
 				obj.Accept(this, CiPriority.Argument);
 				Write(", ");
@@ -1642,8 +1643,8 @@ public class GenC : GenCCpp
 			else
 				WriteDictionaryLookup(obj, "g_hash_table_contains", args[0]);
 		}
-		else if (obj.Type is CiDictionaryType dict3 && method.Name == "Remove")
-			WriteDictionaryLookup(obj, dict3.Class == CiSystem.SortedDictionaryClass ? "g_tree_remove" : "g_hash_table_remove", args[0]);
+		else if (method == CiSystem.DictionaryRemove)
+			WriteDictionaryLookup(obj, ((CiClassType) obj.Type).Class == CiSystem.SortedDictionaryClass ? "g_tree_remove" : "g_hash_table_remove", args[0]);
 		else if (method == CiSystem.UTF8GetByteCount)
 			WriteStringLength(args[0]);
 		else if (method == CiSystem.UTF8GetBytes) {
