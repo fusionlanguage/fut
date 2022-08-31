@@ -307,12 +307,11 @@ public class GenJava : GenTyped
 		case CiListType list:
 			WriteCollectionType("ArrayList", list.ElementType);
 			break;
-		case CiStackType stack:
-			WriteCollectionType("Stack", stack.ElementType);
-			break;
 		case CiClassType klass:
 			if (klass.Class == CiSystem.QueueClass)
 				WriteCollectionType("ArrayDeque", klass.ElementType);
+			else if (klass.Class == CiSystem.StackClass)
+				WriteCollectionType("Stack", klass.ElementType);
 			else if (klass.Class == CiSystem.HashSetClass)
 				WriteCollectionType("HashSet", klass.ElementType);
 			else {
@@ -348,7 +347,6 @@ public class GenJava : GenTyped
 	{
 		switch (type) {
 		case CiListType _:
-		case CiStackType _:
 		case CiClassType _:
 			Write("new ");
 			Write(type, false, false);

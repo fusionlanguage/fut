@@ -138,11 +138,10 @@ public class GenJs : GenBase
 	{
 		switch (type) {
 		case CiListType _:
-		case CiStackType _:
 			Write("[]");
 			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.QueueClass)
+			if (klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass)
 				Write("[]");
 			else if (klass.Class == CiSystem.HashSetClass)
 				Write("new Set()");
@@ -311,12 +310,11 @@ public class GenJs : GenBase
 		if (expr.Symbol == CiSystem.CollectionCount) {
 			switch (expr.Left.Type) {
 			case CiListType _:
-			case CiStackType _:
 				expr.Left.Accept(this, CiPriority.Primary);
 				Write(".length");
 				break;
 			case CiClassType klass:
-				if (klass.Class == CiSystem.QueueClass) {
+				if (klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass) {
 					expr.Left.Accept(this, CiPriority.Primary);
 					Write(".length");
 				}
@@ -475,7 +473,7 @@ public class GenJs : GenBase
 			}
 			Write(')');
 		}
-		else if ((obj.Type is CiListType || (obj.Type is CiClassType klass && klass.Class == CiSystem.QueueClass) || obj.Type is CiStackType) && method == CiSystem.CollectionClear) {
+		else if ((obj.Type is CiListType || (obj.Type is CiClassType klass && (klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass))) && method == CiSystem.CollectionClear) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".length = 0");
 		}
@@ -521,7 +519,7 @@ public class GenJs : GenBase
 			obj.Accept(this, CiPriority.Primary);
 			Write("[0]");
 		}
-		else if (obj.Type is CiStackType && method.Name == "Peek") {
+		else if (method == CiSystem.StackPeek) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".at(-1)");
 		}

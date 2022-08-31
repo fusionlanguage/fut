@@ -244,13 +244,12 @@ public class GenCpp : GenCCpp
 		case CiListType list:
 			WriteCollectionType("vector", list.ElementType);
 			break;
-		case CiStackType stack:
-			WriteCollectionType("stack", stack.ElementType);
-			break;
 		case CiClassType klass:
 			string cppType;
 			if (klass.Class == CiSystem.QueueClass)
 				cppType = "queue";
+			else if (klass.Class == CiSystem.StackClass)
+				cppType = "stack";
 			else if (klass.Class == CiSystem.HashSetClass)
 				cppType = "unordered_set";
 			else if (klass.Class == CiSystem.DictionaryClass)
@@ -346,7 +345,7 @@ public class GenCpp : GenCCpp
 			def.Value.Accept(this, CiPriority.Argument);
 			Write('}');
 		}
-		else if (def.Type is CiListType || def.Type is CiStackType || def.Type is CiStorageType) {
+		else if (def.Type is CiListType || def.Type is CiStorageType) {
 		}
 		else
 			base.WriteVarInit(def);
@@ -703,20 +702,26 @@ public class GenCpp : GenCCpp
 			args[1].Accept(this, CiPriority.Add);
 			Write(')');
 		}
-		else if (((obj.Type is CiClassType klass && klass.Class == CiSystem.QueueClass) || obj.Type is CiStackType) && method == CiSystem.CollectionClear) {
+		else if (obj.Type is CiClassType klass && (klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass) && method == CiSystem.CollectionClear) {
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = {}");
 		}
 		else if (method == CiSystem.QueueDequeue) {
-			// :-)
-			CiType elementType = ((CiClassType) obj.Type).ElementType;
-			Write("[](");
-			WriteCollectionType("queue", elementType);
-			Write(" &q) { ");
-			Write(elementType, false);
-			Write(" front = q.front(); q.pop(); return front; }(");
-			obj.Accept(this, CiPriority.Argument);
-			Write(')');
+			if (parent == CiPriority.Statement) {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".pop()");
+			}
+			else {
+				// :-)
+				CiType elementType = ((CiClassType) obj.Type).ElementType;
+				Write("[](");
+				WriteCollectionType("queue", elementType);
+				Write(" &q) { ");
+				Write(elementType, false);
+				Write(" front = q.front(); q.pop(); return front; }(");
+				obj.Accept(this, CiPriority.Argument);
+				Write(')');
+			}
 		}
 		else if (method == CiSystem.QueueEnqueue)
 			WriteCall(obj, "push", args[0]);
@@ -724,16 +729,17 @@ public class GenCpp : GenCCpp
 			obj.Accept(this, CiPriority.Primary);
 			Write(".front()");
 		}
-		else if (obj.Type is CiStackType && method.Name == "Peek") {
+		else if (method == CiSystem.StackPeek) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".top()");
 		}
-		else if (obj.Type is CiStackType stack && method.Name == "Pop" && parent != CiPriority.Statement) {
+		else if (method == CiSystem.StackPop && parent != CiPriority.Statement) {
 			// :-)
+			CiType elementType = ((CiClassType) obj.Type).ElementType;
 			Write("[](");
-			WriteCollectionType("stack", stack.ElementType);
+			WriteCollectionType("stack", elementType);
 			Write(" &s) { ");
-			Write(stack.ElementType, false);
+			Write(elementType, false);
 			Write(" top = s.top(); s.pop(); return top; }(");
 			obj.Accept(this, CiPriority.Argument);
 			Write(')');

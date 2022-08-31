@@ -259,13 +259,8 @@ public class GenSwift : GenPySwift
 			Write(list.ElementType);
 			Write(']');
 			break;
-		case CiStackType stack:
-			Write('[');
-			Write(stack.ElementType);
-			Write(']');
-			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.QueueClass) {
+			if (klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass) {
 				Write('[');
 				Write(klass.ElementType);
 				Write(']');
@@ -566,16 +561,16 @@ public class GenSwift : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			Write(".first");
 		}
-		else if (obj.Type is CiStackType && method.Name == "Peek") {
+		else if (method == CiSystem.StackPeek) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".last");
 		}
-		else if (obj.Type is CiStackType && method.Name == "Pop") {
+		else if (method == CiSystem.StackPop) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeLast()");
 		}
-		else if (obj.Type is CiStackType stack && method.Name == "Push")
-			WriteListAppend(obj, stack.ElementType, args);
+		else if (method == CiSystem.StackPush)
+			WriteListAppend(obj, ((CiClassType) obj.Type).ElementType, args);
 		else if (WriteDictionaryAdd(obj, method, args)) {
 			// done
 		}
@@ -683,7 +678,6 @@ public class GenSwift : GenPySwift
 	{
 		switch (type) {
 		case CiListType _:
-		case CiStackType _:
 		case CiClassType _:
 			Write(type);
 			Write("()");
@@ -998,7 +992,7 @@ public class GenSwift : GenPySwift
 		if (def is CiField || AddVar(def.Name)) {
 			Write((def.Type is CiClass ? !def.IsAssignableStorage
 				: def.Type is CiArrayStorageType array ? IsArrayRef(array)
-				: (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType || def.Type is CiStackType || def.Type is CiStorageType))) ? "let " : "var ");
+				: (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType || def.Type is CiStorageType))) ? "let " : "var ");
 			base.WriteVar(def);
 		}
 		else {

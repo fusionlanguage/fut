@@ -1434,8 +1434,6 @@ public class CiResolver : CiVisitor
 					NotSupported(call, "OrderedDictionary", "c", "cpp", "swift", "ts");
 				if (generic == CiSystem.ListClass)
 					return new CiListType { ElementType = typeArgs[0] };
-				if (generic == CiSystem.StackClass)
-					return new CiStackType { ElementType = typeArgs[0] };
 				CiStorageType storage = new CiStorageType { Class = generic, TypeArg0 = typeArgs[0] };
 				if (typeArgs.Count == 2)
 					storage.TypeArg1 = typeArgs[1];

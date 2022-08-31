@@ -463,30 +463,36 @@ public class GenPy : GenPySwift
 		WriteNewArray(array.ElementType, null, array.LengthExpr);
 	}
 
+	void WriteNewArrayOrList(CiType elementType)
+	{
+		if (elementType is CiNumericType number) {
+			char c = GetArrayCode(number);
+			if (c == 'B')
+				Write("bytearray()");
+			else {
+				Include("array");
+				Write("array.array(\"");
+				Write(c);
+				Write("\")");
+			}
+		}
+		else
+			Write("[]");
+	}
+
 	protected override void WriteNewStorage(CiType type)
 	{
 		switch (type) {
-		case CiListType _:
-		case CiStackType _:
-			if (((CiCollectionType) type).ElementType is CiNumericType number) {
-				char c = GetArrayCode(number);
-				if (c == 'B')
-					Write("bytearray()");
-				else {
-					Include("array");
-					Write("array.array(\"");
-					Write(c);
-					Write("\")");
-				}
-			}
-			else
-				Write("[]");
+		case CiListType list:
+			WriteNewArrayOrList(list.ElementType);
 			break;
 		case CiClassType klass:
 			if (klass.Class == CiSystem.QueueClass) {
 				Include("collections");
 				Write("collections.deque()");
 			}
+			else if (klass.Class == CiSystem.StackClass)
+				WriteNewArrayOrList(klass.ElementType);
 			else if (klass.Class == CiSystem.HashSetClass)
 				Write("set()");
 			else if (klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass)
@@ -517,8 +523,14 @@ public class GenPy : GenPySwift
 
 	static bool IsNumberList(CiType type)
 	{
-		return (type is CiListType || type is CiStackType)
-			&& ((CiCollectionType) type).ElementType is CiNumericType number
+		CiType elementType;
+		if (type is CiListType list)
+			elementType = list.ElementType;
+		else if (type is CiClassType stack && stack.Class == CiSystem.StackClass)
+			elementType = stack.ElementType;
+		else
+			return false;
+		return elementType is CiNumericType number
 			&& GetArrayCode(number) != 'B';
 	}
 
@@ -661,12 +673,12 @@ public class GenPy : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			Write("[0]");
 		}
-		else if (obj.Type is CiStackType && method.Name == "Peek") {
+		else if (method == CiSystem.StackPeek) {
 			obj.Accept(this, CiPriority.Primary);
 			Write("[-1]");
 		}
-		else if (obj.Type is CiStackType stack && method.Name == "Push")
-			WriteListAppend(obj, stack.ElementType, args);
+		else if (method == CiSystem.StackPush)
+			WriteListAppend(obj, ((CiClassType) obj.Type).ElementType, args);
 		else if (method == CiSystem.DictionaryContainsKey)
 			WriteContains(obj, args[0]);
 		else if (method == CiSystem.ConsoleWrite)

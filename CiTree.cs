@@ -1398,29 +1398,6 @@ public class CiListType : CiArrayType
 	public override bool IsFinal => true;
 }
 
-public class CiStackType : CiCollectionType
-{
-	public override string ToString() => $"Stack<{this.ElementType}>";
-	public override CiSymbol TryLookup(string name)
-	{
-		switch (name) {
-		case "Clear":
-			return CiSystem.CollectionClear;
-		case "Count":
-			return CiSystem.CollectionCount;
-		case "Peek":
-			return new CiMethod(CiCallType.Normal, this.ElementType, "Peek");
-		case "Push":
-			return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Push", new CiVar(this.ElementType, "value")) { IsMutator = true };
-		case "Pop":
-			return new CiMethod(CiCallType.Normal, this.ElementType, "Pop") { IsMutator = true };
-		default:
-			return base.TryLookup(name);
-		}
-	}
-	public override bool IsFinal => true;
-}
-
 public abstract class CiClassType : CiType
 {
 	public CiClass Class;
@@ -1575,7 +1552,14 @@ public class CiSystem : CiScope
 		QueueDequeue,
 		QueueEnqueue,
 		QueuePeek) { TypeParameterCount = 1 };
-	public static readonly CiClass StackClass = new CiClass { Name = "Stack", TypeParameterCount = 1 };
+	public static readonly CiMethod StackPeek = new CiMethod(CiCallType.Normal, TypeParam0, "Peek");
+	public static readonly CiMethod StackPush = new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Push", new CiVar(TypeParam0, "value")) { IsMutator = true };
+	public static readonly CiMethod StackPop = new CiMethod(CiCallType.Normal, TypeParam0, "Pop") { IsMutator = true };
+	public static readonly CiClass StackClass = new CiClass(CiCallType.Normal, "Stack",
+		CollectionClear,
+		StackPeek,
+		StackPush,
+		StackPop) { TypeParameterCount = 1 };
 	public static readonly CiMethod HashSetAdd = new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Add", new CiVar(TypeParam0, "value")) { IsMutator = true };
 	public static readonly CiMethod HashSetContains = new CiMethod(CiCallType.Normal, CiSystem.BoolType, "Contains", new CiVar(TypeParam0, "value"));
 	public static readonly CiMethod HashSetRemove = new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Remove", new CiVar(TypeParam0, "value")) { IsMutator = true };
@@ -1644,6 +1628,7 @@ public class CiSystem : CiScope
 		Add(ListClass);
 		QueueClass.Add(CollectionCount);
 		Add(QueueClass);
+		StackClass.Add(CollectionCount);
 		Add(StackClass);
 		HashSetClass.Add(CollectionCount);
 		Add(HashSetClass);

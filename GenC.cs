@@ -269,7 +269,6 @@ public class GenC : GenCCpp
 		else if (expr.Symbol == CiSystem.CollectionCount) {
 			switch (expr.Left.Type) {
 			case CiListType _:
-			case CiStackType _:
 				expr.Left.Accept(this, CiPriority.Primary);
 				Write("->len");
 				break;
@@ -277,6 +276,10 @@ public class GenC : GenCCpp
 				if (klass.Class == CiSystem.QueueClass) {
 					expr.Left.Accept(this, CiPriority.Primary);
 					Write(".length");
+				}
+				else if (klass.Class == CiSystem.StackClass) {
+					expr.Left.Accept(this, CiPriority.Primary);
+					Write("->len");
 				}
 				else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
 					WriteCall("g_hash_table_size", expr.Left);
@@ -371,12 +374,11 @@ public class GenC : GenCCpp
 				WriteName(classPtr.Class);
 			Write(" *");
 			break;
-		case CiStackType _:
-			WriteGlib("GArray *");
-			break;
 		case CiClassType klass:
 			if (klass.Class == CiSystem.QueueClass)
 				WriteGlib("GQueue ");
+			else if (klass.Class == CiSystem.StackClass)
+				WriteGlib("GArray *");
 			else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
 				WriteGlib("GHashTable *");
 			else if (klass.Class == CiSystem.SortedDictionaryClass)
@@ -545,9 +547,13 @@ public class GenC : GenCCpp
 
 	string GetListDestroy(CiType type)
 	{
-		if (!(type is CiListType || type is CiStackType))
+		CiType elementType;
+		if (type is CiListType list)
+			elementType = list.ElementType;
+		else if (type is CiClassType stack && stack.Class == CiSystem.StackClass)
+			elementType = stack.ElementType;
+		else
 			return null;
-		CiType elementType = ((CiCollectionType) type).ElementType;
 		if (elementType == CiSystem.StringStorageType) {
 			this.ListFrees["String"] = "free(*(void **) ptr)";
 			return "CiList_FreeString";
@@ -558,7 +564,7 @@ public class GenC : GenCCpp
 		}
 		if (elementType is CiClass klass && NeedsDestructor(klass))
 			return $"(GDestroyNotify) {klass.Name}_Destruct";
-		if (elementType is CiListType || elementType is CiStackType) {
+		if (elementType is CiListType || (elementType is CiClassType klass2 && klass2.Class == CiSystem.StackClass)) {
 			this.ListFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
 			return "CiList_FreeList";
 		}
@@ -617,15 +623,19 @@ public class GenC : GenCCpp
 	protected override void WriteNewStorage(CiType type)
 	{
 		switch (type) {
-		case CiListType _:
-		case CiStackType _:
+		case CiListType list:
 			Write("g_array_new(FALSE, FALSE, sizeof(");
-			Write(((CiCollectionType) type).ElementType, false);
+			Write(list.ElementType, false);
 			Write("))");
 			break;
 		case CiClassType klass:
 			if (klass.Class == CiSystem.QueueClass)
 				Write("G_QUEUE_INIT");
+			else if (klass.Class == CiSystem.StackClass) {
+				Write("g_array_new(FALSE, FALSE, sizeof(");
+				Write(klass.ElementType, false);
+				Write("))");
+			}
 			else if (klass.Class == CiSystem.HashSetClass)
 				WriteNewHashTable(klass.ElementType, "NULL");
 			else if (klass.Class == CiSystem.DictionaryClass)
@@ -782,7 +792,7 @@ public class GenC : GenCCpp
 			if (call.Method.Left != null) {
 				if (call.Method.Left.Type is CiListType && (call.Method.Name == "Add" || call.Method.Name == "Insert"))
 					return true;
-				if (call.Method.Left.Type is CiStackType && call.Method.Name == "Push")
+				if (call.Method.Symbol == CiSystem.StackPush)
 					return true;
 				if (IsTemporary(call.Method.Left) || HasTemporaries(call.Method.Left))
 					return true;
@@ -1203,9 +1213,8 @@ public class GenC : GenCCpp
 		args[0].Accept(this, CiPriority.Argument); // FIXME: side effect in every iteration
 	}
 
-	void WriteListAddInsert(CiExpr obj, bool insert, string function, List<CiExpr> args)
+	void WriteListAddInsert(CiExpr obj, CiType elementType, bool insert, string function, List<CiExpr> args)
 	{
-		CiType elementType = ((CiCollectionType) obj.Type).ElementType;
 		// TODO: don't emit temporary variable if already a var/field of matching type - beware of integer promotions!
 		int id = WriteTemporary(elementType, elementType.IsFinal ? null : args[args.Count - 1]);
 		if (elementType is CiClass klass && NeedsConstructor(klass)) {
@@ -1355,9 +1364,8 @@ public class GenC : GenCCpp
 		WriteArgsAndRightParenthesis(method, args);
 	}
 
-	void WriteListAdd(CiExpr obj, List<CiExpr> args)
+	void WriteListAdd(CiExpr obj, CiType elementType, List<CiExpr> args)
 	{
-		CiType elementType = ((CiCollectionType) obj.Type).ElementType;
 		if (elementType is CiArrayStorageType || (elementType is CiClass klass && !NeedsConstructor(klass))) {
 			Write("g_array_set_size(");
 			obj.Accept(this, CiPriority.Argument);
@@ -1366,7 +1374,7 @@ public class GenC : GenCCpp
 			Write("->len + 1)");
 		}
 		else
-			WriteListAddInsert(obj, false, "g_array_append_val", args);
+			WriteListAddInsert(obj, elementType, false, "g_array_append_val", args);
 	}
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
@@ -1522,11 +1530,11 @@ public class GenC : GenCCpp
 			args[1].Accept(this, CiPriority.Primary);
 			WriteSizeofCompare((CiArrayType) obj.Type);
 		}
-		else if (obj.Type is CiListType && method.Name == "Add")
-			WriteListAdd(obj, args);
-		else if (obj.Type is CiListType list && method.Name == "Contains") {
+		else if (obj.Type is CiListType list && method.Name == "Add")
+			WriteListAdd(obj, list.ElementType, args);
+		else if (obj.Type is CiListType list2 && method.Name == "Contains") {
 			Write("CiArray_Contains_");
-			TypeCode typeCode = GetTypeCode(list.ElementType, false);
+			TypeCode typeCode = GetTypeCode(list2.ElementType, false);
 			if (typeCode == TypeCode.String) {
 				Include("string.h");
 				Write("string((const char * const");
@@ -1548,7 +1556,6 @@ public class GenC : GenCCpp
 		else if (method == CiSystem.CollectionClear) {
 			switch (obj.Type) {
 			case CiListType _:
-			case CiStackType _:
 				Write("g_array_set_size(");
 				obj.Accept(this, CiPriority.Argument);
 				Write(", 0)");
@@ -1558,6 +1565,11 @@ public class GenC : GenCCpp
 					Write("g_queue_clear(&"); // TODO: g_queue_clear_full
 					obj.Accept(this, CiPriority.Primary);
 					Write(')');
+				}
+				else if (klass.Class == CiSystem.StackClass) {
+					Write("g_array_set_size(");
+					obj.Accept(this, CiPriority.Argument);
+					Write(", 0)");
 				}
 				else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
 					WriteCall("g_hash_table_remove_all", obj);
@@ -1574,8 +1586,8 @@ public class GenC : GenCCpp
 				throw new NotImplementedException(obj.Type.ToString());
 			}
 		}
-		else if (obj.Type is CiListType && method.Name == "Insert")
-			WriteListAddInsert(obj, true, "g_array_insert_val", args);
+		else if (obj.Type is CiListType list3 && method.Name == "Insert")
+			WriteListAddInsert(obj, list3.ElementType, true, "g_array_insert_val", args);
 		else if (method == CiSystem.ListRemoveAt)
 			WriteCall("g_array_remove_index", obj, args[0]);
 		else if (method == CiSystem.ListRemoveRange)
@@ -1591,20 +1603,20 @@ public class GenC : GenCCpp
 		}
 		else if (method == CiSystem.QueuePeek)
 			WriteQueueGet("g_queue_peek_head", obj, parent);
-		else if (obj.Type is CiStackType && method.Name == "Peek") {
-			StartArrayIndexing(obj);
+		else if (method == CiSystem.StackPeek) {
+			StartArrayIndexing(obj, ((CiClassType) obj.Type).ElementType);
 			obj.Accept(this, CiPriority.Primary); // TODO: side effect
 			Write("->len - 1)");
 		}
-		else if (obj.Type is CiStackType && method.Name == "Pop") {
+		else if (method == CiSystem.StackPop) {
 			// FIXME: destroy
-			StartArrayIndexing(obj);
+			StartArrayIndexing(obj, ((CiClassType) obj.Type).ElementType);
 			Write("--");
 			obj.Accept(this, CiPriority.Primary); // TODO: side effect
 			Write("->len)");
 		}
-		else if (obj.Type is CiStackType && method.Name == "Push")
-			WriteListAdd(obj, args);
+		else if (method == CiSystem.StackPush)
+			WriteListAdd(obj, ((CiClassType) obj.Type).ElementType, args);
 		else if (method == CiSystem.HashSetAdd) {
 			Write("g_hash_table_add(");
 			obj.Accept(this, CiPriority.Argument);
@@ -1726,12 +1738,12 @@ public class GenC : GenCCpp
 			WriteCCall(obj, method, args);
 	}
 
-	void StartArrayIndexing(CiExpr obj)
+	void StartArrayIndexing(CiExpr obj, CiType elementType)
 	{
 		Write("g_array_index(");
 		obj.Accept(this, CiPriority.Argument);
 		Write(", ");
-		Write(((CiCollectionType) obj.Type).ElementType, false);
+		Write(elementType, false);
 		Write(", ");
 	}
 
@@ -1748,7 +1760,7 @@ public class GenC : GenCCpp
 				Write(']');
 			}
 			else {
-				StartArrayIndexing(expr.Left);
+				StartArrayIndexing(expr.Left, list.ElementType);
 				expr.Right.Accept(this, CiPriority.Argument);
 				Write(')');
 			}
