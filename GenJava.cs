@@ -307,14 +307,13 @@ public class GenJava : GenTyped
 		case CiListType list:
 			WriteCollectionType("ArrayList", list.ElementType);
 			break;
-		case CiQueueType queue:
-			WriteCollectionType("ArrayDeque", queue.ElementType);
-			break;
 		case CiStackType stack:
 			WriteCollectionType("Stack", stack.ElementType);
 			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.HashSetClass)
+			if (klass.Class == CiSystem.QueueClass)
+				WriteCollectionType("ArrayDeque", klass.ElementType);
+			else if (klass.Class == CiSystem.HashSetClass)
 				WriteCollectionType("HashSet", klass.ElementType);
 			else {
 				string name = klass.Class == CiSystem.SortedDictionaryClass ? "TreeMap" :
@@ -349,7 +348,6 @@ public class GenJava : GenTyped
 	{
 		switch (type) {
 		case CiListType _:
-		case CiQueueType _:
 		case CiStackType _:
 		case CiClassType _:
 			Write("new ");
@@ -711,13 +709,11 @@ public class GenJava : GenTyped
 			else
 				obj.Accept(this, CiPriority.Primary);
 			Write('.');
-			if (method == CiSystem.ListRemoveAt)
+			if (method == CiSystem.ListRemoveAt || method == CiSystem.QueueDequeue)
 				Write("remove");
-			else if (obj.Type is CiQueueType && method.Name == "Dequeue")
-				Write("remove");
-			else if (obj.Type is CiQueueType && method.Name == "Enqueue")
+			else if (method == CiSystem.QueueEnqueue)
 				Write("add");
-			else if (obj.Type is CiQueueType && method.Name == "Peek")
+			else if (method == CiSystem.QueuePeek)
 				Write("element");
 			else if (method == CiSystem.MathCeiling)
 				Write("ceil");

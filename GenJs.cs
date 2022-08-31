@@ -138,12 +138,13 @@ public class GenJs : GenBase
 	{
 		switch (type) {
 		case CiListType _:
-		case CiQueueType _:
 		case CiStackType _:
 			Write("[]");
 			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.HashSetClass)
+			if (klass.Class == CiSystem.QueueClass)
+				Write("[]");
+			else if (klass.Class == CiSystem.HashSetClass)
 				Write("new Set()");
 			else if (klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass)
 				Write("{}");
@@ -310,13 +311,16 @@ public class GenJs : GenBase
 		if (expr.Symbol == CiSystem.CollectionCount) {
 			switch (expr.Left.Type) {
 			case CiListType _:
-			case CiQueueType _:
 			case CiStackType _:
 				expr.Left.Accept(this, CiPriority.Primary);
 				Write(".length");
 				break;
 			case CiClassType klass:
-				if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.OrderedDictionaryClass) {
+				if (klass.Class == CiSystem.QueueClass) {
+					expr.Left.Accept(this, CiPriority.Primary);
+					Write(".length");
+				}
+				else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.OrderedDictionaryClass) {
 					expr.Left.Accept(this, CiPriority.Primary);
 					Write(".size");
 				}
@@ -471,7 +475,7 @@ public class GenJs : GenBase
 			}
 			Write(')');
 		}
-		else if ((obj.Type is CiListType || obj.Type is CiQueueType || obj.Type is CiStackType) && method == CiSystem.CollectionClear) {
+		else if ((obj.Type is CiListType || (obj.Type is CiClassType klass && klass.Class == CiSystem.QueueClass) || obj.Type is CiStackType) && method == CiSystem.CollectionClear) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".length = 0");
 		}
@@ -507,13 +511,13 @@ public class GenJs : GenBase
 		}
 		else if (method == CiSystem.ListRemoveRange)
 			WriteCall(obj, "splice", args[0], args[1]);
-		else if (obj.Type is CiQueueType && method.Name == "Dequeue") {
+		else if (method == CiSystem.QueueDequeue) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".shift()");
 		}
-		else if (obj.Type is CiQueueType && method.Name == "Enqueue")
+		else if (method == CiSystem.QueueEnqueue)
 			WriteCall(obj, "push", args[0]);
-		else if (obj.Type is CiQueueType && method.Name == "Peek") {
+		else if (method == CiSystem.QueuePeek) {
 			obj.Accept(this, CiPriority.Primary);
 			Write("[0]");
 		}

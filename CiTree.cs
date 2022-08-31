@@ -1398,29 +1398,6 @@ public class CiListType : CiArrayType
 	public override bool IsFinal => true;
 }
 
-public class CiQueueType : CiCollectionType
-{
-	public override string ToString() => $"Queue<{this.ElementType}>";
-	public override CiSymbol TryLookup(string name)
-	{
-		switch (name) {
-		case "Clear":
-			return CiSystem.CollectionClear;
-		case "Count":
-			return CiSystem.CollectionCount;
-		case "Dequeue":
-			return new CiMethod(CiCallType.Normal, this.ElementType, "Dequeue") { IsMutator = true };
-		case "Enqueue":
-			return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Enqueue", new CiVar(this.ElementType, "value")) { IsMutator = true };
-		case "Peek":
-			return new CiMethod(CiCallType.Normal, this.ElementType, "Peek");
-		default:
-			return base.TryLookup(name);
-		}
-	}
-	public override bool IsFinal => true;
-}
-
 public class CiStackType : CiCollectionType
 {
 	public override string ToString() => $"Stack<{this.ElementType}>";
@@ -1471,6 +1448,7 @@ public abstract class CiClassType : CiType
 public class CiStorageType : CiClassType
 {
 	public override bool IsFinal => true;
+	public override string ToString() => base.ToString() + "()";
 }
 
 public class CiPrintableType : CiType
@@ -1589,7 +1567,14 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, FloatType, "Tanh", new CiVar(DoubleType, "a")),
 		MathTruncate);
 	public static readonly CiClass ListClass = new CiClass { Name = "List", TypeParameterCount = 1 };
-	public static readonly CiClass QueueClass = new CiClass { Name = "Queue", TypeParameterCount = 1 };
+	public static readonly CiMethod QueueDequeue = new CiMethod(CiCallType.Normal, TypeParam0, "Dequeue") { IsMutator = true };
+	public static readonly CiMethod QueueEnqueue = new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Enqueue", new CiVar(TypeParam0, "value")) { IsMutator = true };
+	public static readonly CiMethod QueuePeek = new CiMethod(CiCallType.Normal, TypeParam0, "Peek");
+	public static readonly CiClass QueueClass = new CiClass(CiCallType.Normal, "Queue",
+		CollectionClear,
+		QueueDequeue,
+		QueueEnqueue,
+		QueuePeek) { TypeParameterCount = 1 };
 	public static readonly CiClass StackClass = new CiClass { Name = "Stack", TypeParameterCount = 1 };
 	public static readonly CiMethod HashSetAdd = new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Add", new CiVar(TypeParam0, "value")) { IsMutator = true };
 	public static readonly CiMethod HashSetContains = new CiMethod(CiCallType.Normal, CiSystem.BoolType, "Contains", new CiVar(TypeParam0, "value"));
@@ -1657,6 +1642,7 @@ public class CiSystem : CiScope
 		MathClass.Add(MathPositiveInfinity);
 		Add(MathClass);
 		Add(ListClass);
+		QueueClass.Add(CollectionCount);
 		Add(QueueClass);
 		Add(StackClass);
 		HashSetClass.Add(CollectionCount);

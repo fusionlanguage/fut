@@ -273,12 +273,12 @@ public class GenC : GenCCpp
 				expr.Left.Accept(this, CiPriority.Primary);
 				Write("->len");
 				break;
-			case CiQueueType _:
-				expr.Left.Accept(this, CiPriority.Primary);
-				Write(".length");
-				break;
 			case CiClassType klass:
-				if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
+				if (klass.Class == CiSystem.QueueClass) {
+					expr.Left.Accept(this, CiPriority.Primary);
+					Write(".length");
+				}
+				else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
 					WriteCall("g_hash_table_size", expr.Left);
 				else if (klass.Class == CiSystem.SortedDictionaryClass)
 					WriteCall("g_tree_nnodes", expr.Left);
@@ -371,14 +371,13 @@ public class GenC : GenCCpp
 				WriteName(classPtr.Class);
 			Write(" *");
 			break;
-		case CiQueueType _:
-			WriteGlib("GQueue ");
-			break;
 		case CiStackType _:
 			WriteGlib("GArray *");
 			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
+			if (klass.Class == CiSystem.QueueClass)
+				WriteGlib("GQueue ");
+			else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
 				WriteGlib("GHashTable *");
 			else if (klass.Class == CiSystem.SortedDictionaryClass)
 				WriteGlib("GTree *");
@@ -624,11 +623,10 @@ public class GenC : GenCCpp
 			Write(((CiCollectionType) type).ElementType, false);
 			Write("))");
 			break;
-		case CiQueueType _:
-			Write("G_QUEUE_INIT");
-			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.HashSetClass)
+			if (klass.Class == CiSystem.QueueClass)
+				Write("G_QUEUE_INIT");
+			else if (klass.Class == CiSystem.HashSetClass)
 				WriteNewHashTable(klass.ElementType, "NULL");
 			else if (klass.Class == CiSystem.DictionaryClass)
 				WriteNewHashTable(klass.KeyType, GetDictionaryDestroy(klass.ValueType));
@@ -862,7 +860,7 @@ public class GenC : GenCCpp
 
 	void WriteQueueGet(string function, CiExpr obj, CiPriority parent)
 	{
-		CiType elementType = ((CiCollectionType) obj.Type).ElementType;
+		CiType elementType = ((CiClassType) obj.Type).ElementType;
 		bool parenthesis;
 		if (elementType is CiIntegerType && elementType != CiSystem.LongType) {
 			Write("GPOINTER_TO_INT(");
@@ -1555,13 +1553,13 @@ public class GenC : GenCCpp
 				obj.Accept(this, CiPriority.Argument);
 				Write(", 0)");
 				break;
-			case CiQueueType _:
-				Write("g_queue_clear(&"); // TODO: g_queue_clear_full
-				obj.Accept(this, CiPriority.Primary);
-				Write(')');
-				break;
 			case CiClassType klass:
-				if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
+				if (klass.Class == CiSystem.QueueClass) {
+					Write("g_queue_clear(&"); // TODO: g_queue_clear_full
+					obj.Accept(this, CiPriority.Primary);
+					Write(')');
+				}
+				else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
 					WriteCall("g_hash_table_remove_all", obj);
 				else if (klass.Class == CiSystem.SortedDictionaryClass) {
 					// TODO: since glib-2.70: WriteCall("g_tree_remove_all", obj);
@@ -1582,16 +1580,16 @@ public class GenC : GenCCpp
 			WriteCall("g_array_remove_index", obj, args[0]);
 		else if (method == CiSystem.ListRemoveRange)
 			WriteCall("g_array_remove_range", obj, args[0], args[1]);
-		else if (obj.Type is CiQueueType && method.Name == "Dequeue")
+		else if (method == CiSystem.QueueDequeue)
 			WriteQueueGet("g_queue_pop_head", obj, parent);
-		else if (obj.Type is CiQueueType queue && method.Name == "Enqueue") {
+		else if (method == CiSystem.QueueEnqueue) {
 			Write("g_queue_push_tail(&");
 			obj.Accept(this, CiPriority.Primary);
 			Write(", ");
-			WriteGPointerCast(queue.ElementType, args[0]);
+			WriteGPointerCast(((CiClassType) obj.Type).ElementType, args[0]);
 			Write(')');
 		}
-		else if (obj.Type is CiQueueType && method.Name == "Peek")
+		else if (method == CiSystem.QueuePeek)
 			WriteQueueGet("g_queue_peek_head", obj, parent);
 		else if (obj.Type is CiStackType && method.Name == "Peek") {
 			StartArrayIndexing(obj);

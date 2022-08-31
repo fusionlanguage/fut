@@ -1041,7 +1041,7 @@ public class CiResolver : CiVisitor
 				throw StatementException(expr, $"Too few arguments for '{method.Name}'");
 			}
 			CiType type = param.Type;
-			if (expr.Method.Left != null && expr.Method.Left.Type is CiClassType generic)
+			if (symbol.Left != null && symbol.Left.Type is CiClassType generic)
 				type = generic.EvalType(type);
 			Coerce(arguments[i++], type);
 		}
@@ -1075,7 +1075,10 @@ public class CiResolver : CiVisitor
 		this.CurrentMethod.Calls.Add(method);
 		if (this.CurrentPureArguments.Count == 0) {
 			expr.Method = symbol;
-			expr.Type = method.Type;
+			CiType type = method.Type;
+			if (symbol.Left != null && symbol.Left.Type is CiClassType generic)
+				type = generic.EvalType(type);
+			expr.Type = type;
 		}
 		return expr;
 	}
@@ -1431,13 +1434,12 @@ public class CiResolver : CiVisitor
 					NotSupported(call, "OrderedDictionary", "c", "cpp", "swift", "ts");
 				if (generic == CiSystem.ListClass)
 					return new CiListType { ElementType = typeArgs[0] };
-				if (generic == CiSystem.QueueClass)
-					return new CiQueueType { ElementType = typeArgs[0] };
 				if (generic == CiSystem.StackClass)
 					return new CiStackType { ElementType = typeArgs[0] };
-				if (generic == CiSystem.HashSetClass)
-					return new CiStorageType { Class = generic, TypeArg0 = typeArgs[0] };
-				return new CiStorageType { Class = generic, TypeArg0 = typeArgs[0], TypeArg1 = typeArgs[1] };
+				CiStorageType storage = new CiStorageType { Class = generic, TypeArg0 = typeArgs[0] };
+				if (typeArgs.Count == 2)
+					storage.TypeArg1 = typeArgs[1];
+				return storage;
 			}
 			if (call.Method.Name == "string") {
 				NotSupported(call, "string()", "cl");

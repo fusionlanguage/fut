@@ -98,9 +98,6 @@ public class GenTs : GenJs
 		case CiListType list:
 			WriteListType(list.ElementType);
 			break;
-		case CiQueueType queue:
-			WriteListType(queue.ElementType);
-			break;
 		case CiStackType stack:
 			WriteListType(stack.ElementType);
 			break;
@@ -131,7 +128,9 @@ public class GenTs : GenJs
 			}
 			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.HashSetClass) {
+			if (klass.Class == CiSystem.QueueClass)
+				WriteListType(klass.ElementType);
+			else if (klass.Class == CiSystem.HashSetClass) {
 				Write("Set<");
 				Write(klass.ElementType, false);
 				Write('>');

@@ -259,18 +259,18 @@ public class GenSwift : GenPySwift
 			Write(list.ElementType);
 			Write(']');
 			break;
-		case CiQueueType queue:
-			Write('[');
-			Write(queue.ElementType);
-			Write(']');
-			break;
 		case CiStackType stack:
 			Write('[');
 			Write(stack.ElementType);
 			Write(']');
 			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.HashSetClass) {
+			if (klass.Class == CiSystem.QueueClass) {
+				Write('[');
+				Write(klass.ElementType);
+				Write(']');
+			}
+			else if (klass.Class == CiSystem.HashSetClass) {
 				Write("Set<");
 				Write(klass.ElementType);
 				Write('>');
@@ -531,15 +531,15 @@ public class GenSwift : GenPySwift
 			WriteRange(args[0], args[1]);
 			Write("].sort()");
 		}
-		else if (obj.Type is CiListType && method.Name == "Add")
-			WriteListAppend(obj, args);
-		else if (obj.Type is CiListType list && method.Name == "Insert") {
+		else if (obj.Type is CiListType list && method.Name == "Add")
+			WriteListAppend(obj, list.ElementType, args);
+		else if (obj.Type is CiListType list2 && method.Name == "Insert") {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".insert(");
 			if (method.Parameters.Count == 1)
-				WriteNewStorage(list.ElementType);
+				WriteNewStorage(list2.ElementType);
 			else
-				WriteCoerced(list.ElementType, args[1], CiPriority.Argument);
+				WriteCoerced(list2.ElementType, args[1], CiPriority.Argument);
 			Write(", at: ");
 			WriteCoerced(CiSystem.IntType, args[0], CiPriority.Argument);
 			Write(')');
@@ -556,13 +556,13 @@ public class GenSwift : GenPySwift
 			WriteRange(args[0], args[1]);
 			Write(')');
 		}
-		else if (obj.Type is CiQueueType && method.Name == "Dequeue") {
+		else if (method == CiSystem.QueueDequeue) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeFirst()");
 		}
-		else if (obj.Type is CiQueueType && method.Name == "Enqueue")
-			WriteListAppend(obj, args);
-		else if (obj.Type is CiQueueType && method.Name == "Peek") {
+		else if (method == CiSystem.QueueEnqueue)
+			WriteListAppend(obj, ((CiClassType) obj.Type).ElementType, args);
+		else if (method == CiSystem.QueuePeek) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".first");
 		}
@@ -574,8 +574,8 @@ public class GenSwift : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeLast()");
 		}
-		else if (obj.Type is CiStackType && method.Name == "Push")
-			WriteListAppend(obj, args);
+		else if (obj.Type is CiStackType stack && method.Name == "Push")
+			WriteListAppend(obj, stack.ElementType, args);
 		else if (WriteDictionaryAdd(obj, method, args)) {
 			// done
 		}
@@ -683,7 +683,6 @@ public class GenSwift : GenPySwift
 	{
 		switch (type) {
 		case CiListType _:
-		case CiQueueType _:
 		case CiStackType _:
 		case CiClassType _:
 			Write(type);
@@ -999,7 +998,7 @@ public class GenSwift : GenPySwift
 		if (def is CiField || AddVar(def.Name)) {
 			Write((def.Type is CiClass ? !def.IsAssignableStorage
 				: def.Type is CiArrayStorageType array ? IsArrayRef(array)
-				: (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType || def.Type is CiQueueType || def.Type is CiStackType || def.Type is CiStorageType))) ? "let " : "var ");
+				: (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType || def.Type is CiStackType || def.Type is CiStorageType))) ? "let " : "var ");
 			base.WriteVar(def);
 		}
 		else {

@@ -482,12 +482,12 @@ public class GenPy : GenPySwift
 			else
 				Write("[]");
 			break;
-		case CiQueueType _:
-			Include("collections");
-			Write("collections.deque()");
-			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.HashSetClass)
+			if (klass.Class == CiSystem.QueueClass) {
+				Include("collections");
+				Write("collections.deque()");
+			}
+			else if (klass.Class == CiSystem.HashSetClass)
 				Write("set()");
 			else if (klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass)
 				Write("{}");
@@ -651,13 +651,13 @@ public class GenPy : GenPySwift
 		}
 		else if ((obj.Type is CiListType && method.Name == "Contains") || method == CiSystem.HashSetContains)
 			WriteContains(obj, args[0]);
-		else if (obj.Type is CiQueueType && method.Name == "Dequeue") {
+		else if (method == CiSystem.QueueDequeue) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".popleft()");
 		}
-		else if (obj.Type is CiQueueType && method.Name == "Enqueue")
-			WriteListAppend(obj, args);
-		else if (obj.Type is CiQueueType && method.Name == "Peek") {
+		else if (method == CiSystem.QueueEnqueue)
+			WriteListAppend(obj, ((CiClassType) obj.Type).ElementType, args);
+		else if (method == CiSystem.QueuePeek) {
 			obj.Accept(this, CiPriority.Primary);
 			Write("[0]");
 		}
@@ -665,8 +665,8 @@ public class GenPy : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			Write("[-1]");
 		}
-		else if (obj.Type is CiStackType && method.Name == "Push")
-			WriteListAppend(obj, args);
+		else if (obj.Type is CiStackType stack && method.Name == "Push")
+			WriteListAppend(obj, stack.ElementType, args);
 		else if (method == CiSystem.DictionaryContainsKey)
 			WriteContains(obj, args[0]);
 		else if (method == CiSystem.ConsoleWrite)

@@ -230,17 +230,13 @@ public class GenCs : GenTyped
 			Write("List");
 			WriteElementType(list.ElementType);
 			break;
-		case CiQueueType queue:
-			Write("Queue");
-			WriteElementType(queue.ElementType);
-			break;
 		case CiStackType stack:
 			Write("Stack");
 			WriteElementType(stack.ElementType);
 			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.HashSetClass) {
-				Write("HashSet");
+			if (klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.HashSetClass) {
+				Write(klass.Class.Name);
 				WriteElementType(klass.ElementType);
 			}
 			else if (klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass) {
@@ -345,7 +341,6 @@ public class GenCs : GenTyped
 	{
 		switch (type) {
 		case CiListType _:
-		case CiQueueType _:
 		case CiStackType _:
 		case CiClassType _:
 			Write("new ");
