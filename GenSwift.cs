@@ -254,13 +254,8 @@ public class GenSwift : GenPySwift
 			Write(classPtr.Class.Name);
 			Write('?');
 			break;
-		case CiListType list:
-			Write('[');
-			Write(list.ElementType);
-			Write(']');
-			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass) {
+			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass) {
 				Write('[');
 				Write(klass.ElementType);
 				Write(']');
@@ -323,8 +318,12 @@ public class GenSwift : GenPySwift
 		switch (loop.Collection.Type) {
 		case CiArrayType array:
 			return array.ElementType == CiSystem.StringStorageType;
-		case CiClassType dict when dict.Class.TypeParameterCount == 2:
-			return (symbol.Symbol == loop.Element ? dict.KeyType : dict.ValueType) == CiSystem.StringStorageType;
+		case CiClassType klass:
+			if (klass.Class == CiSystem.ListClass)
+				return klass.ElementType == CiSystem.StringStorageType;
+			if (klass.Class.TypeParameterCount == 2)
+				return (symbol.Symbol == loop.Element ? klass.KeyType : klass.ValueType) == CiSystem.StringStorageType;
+			throw new NotImplementedException();
 		default:
 			throw new NotImplementedException();
 		}
@@ -486,7 +485,7 @@ public class GenSwift : GenPySwift
 				Write(')');
 			}
 		}
-		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+		else if ((obj.Type is CiArrayType && method.Name == "CopyTo") || method == CiSystem.ListCopyTo) {
 			OpenIndexing(args[1]);
 			WriteRange(args[2], args[3]);
 			Write("] = ");
@@ -526,15 +525,16 @@ public class GenSwift : GenPySwift
 			WriteRange(args[0], args[1]);
 			Write("].sort()");
 		}
-		else if (obj.Type is CiListType list && method.Name == "Add")
-			WriteListAppend(obj, list.ElementType, args);
-		else if (obj.Type is CiListType list2 && method.Name == "Insert") {
+		else if (method == CiSystem.ListAdd || method == CiSystem.QueueEnqueue || method == CiSystem.StackPush)
+			WriteListAppend(obj, args);
+		else if (method == CiSystem.ListInsert) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".insert(");
-			if (method.Parameters.Count == 1)
-				WriteNewStorage(list2.ElementType);
+			CiType elementType = ((CiClassType) obj.Type).ElementType;
+			if (args.Count == 1)
+				WriteNewStorage(elementType);
 			else
-				WriteCoerced(list2.ElementType, args[1], CiPriority.Argument);
+				WriteCoerced(elementType, args[1], CiPriority.Argument);
 			Write(", at: ");
 			WriteCoerced(CiSystem.IntType, args[0], CiPriority.Argument);
 			Write(')');
@@ -555,8 +555,6 @@ public class GenSwift : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeFirst()");
 		}
-		else if (method == CiSystem.QueueEnqueue)
-			WriteListAppend(obj, ((CiClassType) obj.Type).ElementType, args);
 		else if (method == CiSystem.QueuePeek) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".first");
@@ -569,8 +567,6 @@ public class GenSwift : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeLast()");
 		}
-		else if (method == CiSystem.StackPush)
-			WriteListAppend(obj, ((CiClassType) obj.Type).ElementType, args);
 		else if (WriteDictionaryAdd(obj, method, args)) {
 			// done
 		}
@@ -676,16 +672,12 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		switch (type) {
-		case CiListType _:
-		case CiClassType _:
+		if (type is CiClassType) {
 			Write(type);
 			Write("()");
-			break;
-		default:
-			base.WriteNewStorage(type);
-			break;
 		}
+		else
+			base.WriteNewStorage(type);
 	}
 
 	void WriteDefaultValue(CiType type)
@@ -992,7 +984,7 @@ public class GenSwift : GenPySwift
 		if (def is CiField || AddVar(def.Name)) {
 			Write((def.Type is CiClass ? !def.IsAssignableStorage
 				: def.Type is CiArrayStorageType array ? IsArrayRef(array)
-				: (def is CiVar local && !local.IsAssigned && !(def.Type is CiListType || def.Type is CiStorageType))) ? "let " : "var ");
+				: (def is CiVar local && !local.IsAssigned && !(def.Type is CiStorageType))) ? "let " : "var ");
 			base.WriteVar(def);
 		}
 		else {

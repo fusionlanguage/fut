@@ -920,36 +920,32 @@ public abstract class GenBase : CiVisitor
 
 	protected bool WriteListAddInsert(CiExpr obj, CiMethod method, List<CiExpr> args, string add, string insert, string insertSeparator)
 	{
-		if (obj.Type is CiListType list) {
-			int i;
-			switch (method.Name) {
-			case "Add":
-				obj.Accept(this, CiPriority.Primary);
-				Write('.');
-				Write(add);
-				Write('(');
-				i = 0;
-				break;
-			case "Insert":
-				obj.Accept(this, CiPriority.Primary);
-				Write('.');
-				Write(insert);
-				Write('(');
-				args[0].Accept(this, CiPriority.Argument);
-				Write(insertSeparator);
-				i = 1;
-				break;
-			default:
-				return false;
-			}
-			if (method.Parameters.Count == i)
-				WriteNewStorage(list.ElementType);
-			else
-				WriteNotPromoted(list.ElementType, args[i]);
-			Write(')');
-			return true;
+		int i;
+		if (method == CiSystem.ListAdd) {
+			obj.Accept(this, CiPriority.Primary);
+			Write('.');
+			Write(add);
+			Write('(');
+			i = 0;
 		}
-		return false;
+		else if (method == CiSystem.ListInsert) {
+			obj.Accept(this, CiPriority.Primary);
+			Write('.');
+			Write(insert);
+			Write('(');
+			args[0].Accept(this, CiPriority.Argument);
+			Write(insertSeparator);
+			i = 1;
+		}
+		else
+			return false;
+		CiType elementType = ((CiClassType) obj.Type).ElementType;
+		if (args.Count == i)
+			WriteNewStorage(elementType);
+		else
+			WriteNotPromoted(elementType, args[i]);
+		Write(')');
+		return true;
 	}
 
 	protected bool WriteDictionaryAdd(CiExpr obj, CiMethod method, List<CiExpr> args)

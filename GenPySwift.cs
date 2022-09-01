@@ -127,10 +127,11 @@ public abstract class GenPySwift : GenBase
 
 	protected virtual void WriteExpr(CiExpr expr, CiPriority parent) => expr.Accept(this, parent);
 
-	protected void WriteListAppend(CiExpr obj, CiType elementType, List<CiExpr> args)
+	protected void WriteListAppend(CiExpr obj, List<CiExpr> args)
 	{
 		obj.Accept(this, CiPriority.Primary);
 		Write(".append(");
+		CiType elementType = ((CiClassType) obj.Type).ElementType;
 		if (args.Count == 0)
 			WriteNewStorage(elementType);
 		else

@@ -1243,6 +1243,7 @@ namespace Foxoft.Ci
 		Internal,
 		Protected,
 		Public,
+		NumericElementType,
 		FinalValueType
 	}
 

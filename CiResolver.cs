@@ -441,9 +441,13 @@ public class CiResolver : CiVisitor
 						if (!((CiClass) this.CurrentMethod.Parent).IsSameOrBaseOf((CiClass) scope) /* enforced by C++/C#/TS but not Java */)
 							throw StatementException(expr, $"Cannot access protected member {expr.Name}");
 						break;
+					case CiVisibility.NumericElementType when left.Type is CiClassType klass:
+						if (!(klass.ElementType is CiNumericType))
+							throw StatementException(expr, "Method restricted to collections of numbers");
+						break;
 					case CiVisibility.FinalValueType: // DictionaryAdd
 						if (!((CiClassType) left.Type).ValueType.IsFinal)
-							throw StatementException(expr, "'Add' method restricted to dictionaries with storage values");
+							throw StatementException(expr, "Method restricted to dictionaries with storage values");
 						break;
 					default:
 						break;
@@ -692,30 +696,37 @@ public class CiResolver : CiVisitor
 
 		switch (expr.Op) {
 		case CiToken.LeftBracket:
-			if (left.Type is CiClassType dict && dict.Class.TypeParameterCount == 2) {
-				Coerce(right, dict.KeyType);
-				type = dict.ValueType;
-			}
-			else {
+			switch (left.Type) {
+			case CiStringType _:
 				Coerce(right, CiSystem.IntType);
-				switch (left.Type) {
-				case CiArrayType array:
-					type = array.ElementType;
-					break;
-				case CiStringType _:
-					type = CiSystem.CharType;
-					if (left is CiLiteralString stringLiteral && right is CiLiteralLong indexLiteral) {
-						long i = indexLiteral.Value;
-						if (i >= 0 && i <= int.MaxValue) {
-							int c = stringLiteral.GetAsciiAt((int) i);
-							if (c >= 0)
-								return new CiLiteralChar(c) { Line = expr.Line };
-						}
+				if (left is CiLiteralString stringLiteral && right is CiLiteralLong indexLiteral) {
+					long i = indexLiteral.Value;
+					if (i >= 0 && i <= int.MaxValue) {
+						int c = stringLiteral.GetAsciiAt((int) i);
+						if (c >= 0)
+							return new CiLiteralChar(c) { Line = expr.Line };
 					}
-					break;
-				default:
-					throw StatementException(expr.Left, "Indexed object is neither array or string");
 				}
+				type = CiSystem.CharType;
+				break;
+			case CiArrayType array:
+				Coerce(right, CiSystem.IntType);
+				type = array.ElementType;
+				break;
+			case CiClassType klass:
+				if (klass.Class == CiSystem.ListClass) {
+					Coerce(right, CiSystem.IntType);
+					type = klass.ElementType;
+				}
+				else if (klass.Class.TypeParameterCount == 2) {
+					Coerce(right, klass.KeyType);
+					type = klass.ValueType;
+				}
+				else
+					throw StatementException(expr, "Cannot index this object");
+				break;
+			default:
+				throw StatementException(expr, "Cannot index this object");
 			}
 			break;
 
@@ -947,28 +958,30 @@ public class CiResolver : CiVisitor
 		case CiToken.Is:
 			if (!(left.Type is CiClassPtrType leftPtr))
 				throw StatementException(expr, "Left hand side of the 'is' operator must be an object reference");
-			CiClass klass;
-			switch (right) {
-			case CiSymbolReference symbol:
-				klass = symbol.Symbol as CiClass ?? throw StatementException(expr, "Right hand side of the 'is' operator must be a class name");
-				NotSupported(expr, "'is' operator", "c", "cl");
-				expr.Right = klass;
-				break;
-			case CiVar def:
-				if (!(def.Type is CiClassPtrType rightPtr))
-					throw StatementException(expr, "Right hand side of the 'is' operator must be an object reference definition");
-				if (!rightPtr.IsModifierAssignableFrom(leftPtr))
-					throw StatementException(expr, $"{leftPtr} cannot be casted to {rightPtr}");
-				NotSupported(expr, "'is' operator", "c", "cpp", "js", "py", "swift", "ts", "cl");
-				klass = rightPtr.Class;
-				break;
-			default:
-				throw StatementException(expr, "Right hand side of the 'is' operator must be a class name");
+			{
+				CiClass klass;
+				switch (right) {
+				case CiSymbolReference symbol:
+					klass = symbol.Symbol as CiClass ?? throw StatementException(expr, "Right hand side of the 'is' operator must be a class name");
+					NotSupported(expr, "'is' operator", "c", "cl");
+					expr.Right = klass;
+					break;
+				case CiVar def:
+					if (!(def.Type is CiClassPtrType rightPtr))
+						throw StatementException(expr, "Right hand side of the 'is' operator must be an object reference definition");
+					if (!rightPtr.IsModifierAssignableFrom(leftPtr))
+						throw StatementException(expr, $"{leftPtr} cannot be casted to {rightPtr}");
+					NotSupported(expr, "'is' operator", "c", "cpp", "js", "py", "swift", "ts", "cl");
+					klass = rightPtr.Class;
+					break;
+				default:
+					throw StatementException(expr, "Right hand side of the 'is' operator must be a class name");
+				}
+				if (leftPtr.Class == klass)
+					throw StatementException(expr, $"{left} is {leftPtr}, the 'is' operator would always return 'true'");
+				if (!leftPtr.Class.IsSameOrBaseOf(klass))
+					throw StatementException(expr, $"{leftPtr} is not base class of {klass.Name}, the 'is' operator would always return 'false'");
 			}
-			if (leftPtr.Class == klass)
-				throw StatementException(expr, $"{left} is {leftPtr}, the 'is' operator would always return 'true'");
-			if (!leftPtr.Class.IsSameOrBaseOf(klass))
-				throw StatementException(expr, $"{leftPtr} is not base class of {klass.Name}, the 'is' operator would always return 'false'");
 			expr.Left = left;
 			expr.Type = CiSystem.BoolType;
 			return expr;
@@ -1035,14 +1048,17 @@ public class CiResolver : CiVisitor
 		// TODO: check static
 		i = 0;
 		foreach (CiVar param in method.Parameters) {
+			CiType type = param.Type;
+			if (symbol.Left != null && symbol.Left.Type is CiClassType generic) {
+				type = generic.EvalType(type);
+				if (type == null)
+					continue;
+			}
 			if (i >= arguments.Count) {
 				if (param.Value != null)
 					break;
 				throw StatementException(expr, $"Too few arguments for '{method.Name}'");
 			}
-			CiType type = param.Type;
-			if (symbol.Left != null && symbol.Left.Type is CiClassType generic)
-				type = generic.EvalType(type);
 			Coerce(arguments[i++], type);
 		}
 		if (i < arguments.Count)
@@ -1243,12 +1259,11 @@ public class CiResolver : CiVisitor
 		else {
 			CiType elementType;
 			switch (statement.Collection.Type) {
-			case CiArrayStorageType _:
-			case CiListType _:
-				elementType = ((CiCollectionType) statement.Collection.Type).ElementType;
+			case CiArrayStorageType array:
+				elementType = array.ElementType;
 				break;
-			case CiClassType set when set.Class == CiSystem.HashSetClass:
-				elementType = set.ElementType;
+			case CiClassType klass when klass.Class == CiSystem.ListClass || klass.Class == CiSystem.HashSetClass:
+				elementType = klass.ElementType;
 				break;
 			default:
 				throw StatementException(statement.Collection, "Expected a collection");
@@ -1432,8 +1447,6 @@ public class CiResolver : CiVisitor
 				NotSupported(call, generic.Name, "cl");
 				if (generic == CiSystem.OrderedDictionaryClass)
 					NotSupported(call, "OrderedDictionary", "c", "cpp", "swift", "ts");
-				if (generic == CiSystem.ListClass)
-					return new CiListType { ElementType = typeArgs[0] };
 				CiStorageType storage = new CiStorageType { Class = generic, TypeArg0 = typeArgs[0] };
 				if (typeArgs.Count == 2)
 					storage.TypeArg1 = typeArgs[1];

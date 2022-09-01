@@ -136,12 +136,8 @@ public class GenJs : GenBase
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		switch (type) {
-		case CiListType _:
-			Write("[]");
-			break;
-		case CiClassType klass:
-			if (klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass)
+		if (type is CiClassType klass) {
+			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass)
 				Write("[]");
 			else if (klass.Class == CiSystem.HashSetClass)
 				Write("new Set()");
@@ -151,11 +147,9 @@ public class GenJs : GenBase
 				Write("new Map()");
 			else
 				throw new NotImplementedException();
-			break;
-		default:
-			base.WriteNewStorage(type);
-			break;
 		}
+		else
+			base.WriteNewStorage(type);
 	}
 
 	protected override void WriteVar(CiNamedValue def)
@@ -308,30 +302,21 @@ public class GenJs : GenBase
 	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Symbol == CiSystem.CollectionCount) {
-			switch (expr.Left.Type) {
-			case CiListType _:
+			CiClassType klass = (CiClassType) expr.Left.Type;
+			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass) {
 				expr.Left.Accept(this, CiPriority.Primary);
 				Write(".length");
-				break;
-			case CiClassType klass:
-				if (klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass) {
-					expr.Left.Accept(this, CiPriority.Primary);
-					Write(".length");
-				}
-				else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.OrderedDictionaryClass) {
-					expr.Left.Accept(this, CiPriority.Primary);
-					Write(".size");
-				}
-				else if (klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass) {
-					WriteCall("Object.keys", expr.Left);
-					Write(".length");
-				}
-				else
-					throw new NotImplementedException();
-				break;
-			default:
-				throw new NotImplementedException(expr.Left.Type.ToString());
 			}
+			else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.OrderedDictionaryClass) {
+				expr.Left.Accept(this, CiPriority.Primary);
+				Write(".size");
+			}
+			else if (klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass) {
+				WriteCall("Object.keys", expr.Left);
+				Write(".length");
+			}
+			else
+				throw new NotImplementedException(klass.ToString());
 		}
 		else if (expr.Symbol == CiSystem.MatchStart) {
 			expr.Left.Accept(this, CiPriority.Primary);
@@ -449,7 +434,7 @@ public class GenJs : GenBase
 			}
 			Write(')');
 		}
-		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+		else if ((obj.Type is CiArrayType && method.Name == "CopyTo") || method == CiSystem.ListCopyTo) {
 			AddLibrary(GenJsMethod.CopyArray,
 				"copyArray : function(sa, soffset, da, doffset, length)",
 				"if (typeof(sa.subarray) == \"function\" && typeof(da.set) == \"function\")",
@@ -473,28 +458,28 @@ public class GenJs : GenBase
 			}
 			Write(')');
 		}
-		else if ((obj.Type is CiListType || (obj.Type is CiClassType klass && (klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass))) && method == CiSystem.CollectionClear) {
+		else if ((obj.Type is CiClassType klass && (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass)) && method == CiSystem.CollectionClear) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".length = 0");
 		}
-		else if (obj.Type is CiListType && method == CiSystem.CollectionSortAll) {
+		else if (obj.Type is CiClassType klass2 && klass2.Class == CiSystem.ListClass && method == CiSystem.CollectionSortAll) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".sort((a, b) => a - b)");
 		}
 		else if (method == CiSystem.CollectionSortPart) {
-			if (obj.Type is CiListType) {
+			if (obj.Type is CiArrayType) {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".subarray(");
+				WriteStartEnd(args[0], args[1]);
+				Write(").sort()");
+			}
+			else {
 				AddLibrary(GenJsMethod.SortListPart,
 					"sortListPart: function(a, offset, length)",
 					"const sorted = a.slice(offset, offset + length).sort((a, b) => a - b);",
 					"for (let i = 0; i < length; i++)",
 					"\ta[offset + i] = sorted[i];");
 				WriteCall("Ci.sortListPart", obj, args[0], args[1]);
-			}
-			else {
-				obj.Accept(this, CiPriority.Primary);
-				Write(".subarray(");
-				WriteStartEnd(args[0], args[1]);
-				Write(").sort()");
 			}
 		}
 		else if (WriteListAddInsert(obj, method, args, "push", "splice", ", 0, ")
@@ -657,7 +642,7 @@ public class GenJs : GenBase
 				Write("ceil");
 			else if (method == CiSystem.MathTruncate)
 				Write("trunc");
-			else if (method == CiSystem.StringContains || (obj.Type is CiListType && method.Name == "Contains"))
+			else if (method == CiSystem.StringContains || method == CiSystem.ListContains)
 				Write("includes");
 			else if (method == CiSystem.HashSetContains)
 				Write("has");

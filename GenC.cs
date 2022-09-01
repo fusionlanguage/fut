@@ -212,31 +212,36 @@ public class GenC : GenCCpp
 
 	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
-		if (symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiArrayType array) {
-			if (array is CiListType) {
+		if (symbol.Parent is CiForeach forEach) {
+			switch (forEach.Collection.Type) {
+			case CiArrayStorageType array:
+				if (array.ElementType is CiClass klass) {
+					if (parent > CiPriority.Add)
+						Write('(');
+					forEach.Collection.Accept(this, CiPriority.Add);
+					Write(" + ");
+					WriteCamelCaseNotKeyword(symbol.Name);
+					if (parent > CiPriority.Add)
+						Write(')');
+				}
+				else {
+					forEach.Collection.Accept(this, CiPriority.Primary);
+					Write('[');
+					WriteCamelCaseNotKeyword(symbol.Name);
+					Write(']');
+				}
+				return;
+			case CiClassType klass2 when klass2.Class == CiSystem.ListClass:
 				if (parent == CiPriority.Primary)
 					Write('(');
 				Write('*');
 				WriteCamelCaseNotKeyword(symbol.Name);
 				if (parent == CiPriority.Primary)
 					Write(')');
+				return;
+			default:
+				break;
 			}
-			else if (array.ElementType is CiClass klass) {
-				if (parent > CiPriority.Add)
-					Write('(');
-				forEach.Collection.Accept(this, CiPriority.Add);
-				Write(" + ");
-				WriteCamelCaseNotKeyword(symbol.Name);
-				if (parent > CiPriority.Add)
-					Write(')');
-			}
-			else {
-				forEach.Collection.Accept(this, CiPriority.Primary);
-				Write('[');
-				WriteCamelCaseNotKeyword(symbol.Name);
-				Write(']');
-			}
-			return;
 		}
 		if (symbol is CiField)
 			WriteSelfForField((CiClass) symbol.Parent);
@@ -267,30 +272,21 @@ public class GenC : GenCCpp
 		if (expr.Left == null || expr.Symbol is CiConst)
 			WriteLocalName(expr.Symbol, parent);
 		else if (expr.Symbol == CiSystem.CollectionCount) {
-			switch (expr.Left.Type) {
-			case CiListType _:
+			CiClassType klass = (CiClassType) expr.Left.Type;
+			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass) {
 				expr.Left.Accept(this, CiPriority.Primary);
 				Write("->len");
-				break;
-			case CiClassType klass:
-				if (klass.Class == CiSystem.QueueClass) {
-					expr.Left.Accept(this, CiPriority.Primary);
-					Write(".length");
-				}
-				else if (klass.Class == CiSystem.StackClass) {
-					expr.Left.Accept(this, CiPriority.Primary);
-					Write("->len");
-				}
-				else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
-					WriteCall("g_hash_table_size", expr.Left);
-				else if (klass.Class == CiSystem.SortedDictionaryClass)
-					WriteCall("g_tree_nnodes", expr.Left);
-				else
-					throw new NotImplementedException(expr.Left.Type.ToString());
-				break;
-			default:
-				throw new NotImplementedException(expr.Left.Type.ToString());
 			}
+			else if (klass.Class == CiSystem.QueueClass) {
+				expr.Left.Accept(this, CiPriority.Primary);
+				Write(".length");
+			}
+			else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
+				WriteCall("g_hash_table_size", expr.Left);
+			else if (klass.Class == CiSystem.SortedDictionaryClass)
+				WriteCall("g_tree_nnodes", expr.Left);
+			else
+				throw new NotImplementedException(klass.ToString());
 		}
 		else if (expr.Symbol == CiSystem.MatchStart)
 			WriteMatchProperty(expr, 0);
@@ -345,11 +341,6 @@ public class GenC : GenCCpp
 
 	void WriteDefinition(CiType type, Action symbol, bool promote, bool space)
 	{
-		if (type is CiListType) {
-			WriteGlib("GArray *");
-			symbol();
-			return;
-		}
 		CiType baseType = type.BaseType;
 		switch (baseType) {
 		case CiIntegerType integer:
@@ -375,10 +366,10 @@ public class GenC : GenCCpp
 			Write(" *");
 			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.QueueClass)
-				WriteGlib("GQueue ");
-			else if (klass.Class == CiSystem.StackClass)
+			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass)
 				WriteGlib("GArray *");
+			else if (klass.Class == CiSystem.QueueClass)
+				WriteGlib("GQueue ");
 			else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
 				WriteGlib("GHashTable *");
 			else if (klass.Class == CiSystem.SortedDictionaryClass)
@@ -547,34 +538,33 @@ public class GenC : GenCCpp
 
 	string GetListDestroy(CiType type)
 	{
-		CiType elementType;
-		if (type is CiListType list)
-			elementType = list.ElementType;
-		else if (type is CiClassType stack && stack.Class == CiSystem.StackClass)
-			elementType = stack.ElementType;
-		else
-			return null;
-		if (elementType == CiSystem.StringStorageType) {
-			this.ListFrees["String"] = "free(*(void **) ptr)";
-			return "CiList_FreeString";
-		}
-		if (elementType.IsDynamicPtr) {
-			this.ListFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
-			return "CiList_FreeShared";
-		}
-		if (elementType is CiClass klass && NeedsDestructor(klass))
-			return $"(GDestroyNotify) {klass.Name}_Destruct";
-		if (elementType is CiListType || (elementType is CiClassType klass2 && klass2.Class == CiSystem.StackClass)) {
-			this.ListFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
-			return "CiList_FreeList";
-		}
-		if (elementType is CiClassType dict && dict.Class.TypeParameterCount == 2) {
-			if (dict.Class == CiSystem.SortedDictionaryClass) {
-				this.ListFrees["SortedDictionary"] = "g_tree_unref(*(GTree **) ptr)";
-				return "CiList_FreeSortedDictionary";
+		if (type is CiClassType klass
+		 && (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass)) {
+			CiType elementType = klass.ElementType;
+			if (elementType == CiSystem.StringStorageType) {
+				this.ListFrees["String"] = "free(*(void **) ptr)";
+				return "CiList_FreeString";
 			}
-			this.ListFrees["Dictionary"] = "g_hash_table_unref(*(GHashTable **) ptr)";
-			return "CiList_FreeDictionary";
+			if (elementType.IsDynamicPtr) {
+				this.ListFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
+				return "CiList_FreeShared";
+			}
+			if (elementType is CiClass klass2 && NeedsDestructor(klass2))
+				return $"(GDestroyNotify) {klass2.Name}_Destruct";
+			if (elementType is CiClassType klass3) {
+				if (klass3.Class == CiSystem.ListClass || klass3.Class == CiSystem.StackClass) {
+					this.ListFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
+					return "CiList_FreeList";
+				}
+				if (klass3.Class == CiSystem.HashSetClass || klass3.Class == CiSystem.DictionaryClass) {
+					this.ListFrees["Dictionary"] = "g_hash_table_unref(*(GHashTable **) ptr)";
+					return "CiList_FreeDictionary";
+				}
+				if (klass3.Class == CiSystem.SortedDictionaryClass) {
+					this.ListFrees["SortedDictionary"] = "g_tree_unref(*(GTree **) ptr)";
+					return "CiList_FreeSortedDictionary";
+				}
+			}
 		}
 		return null;
 	}
@@ -589,10 +579,14 @@ public class GenC : GenCCpp
 		}
 		if (type is CiClass klass)
 			return NeedsDestructor(klass) ? $"(GDestroyNotify) {klass.Name}_Delete" /* TODO: emit */ : "free";
-		if (type is CiListType)
-			return "(GDestroyNotify) g_array_unref";
-		if (type is CiClassType dict && dict.Class.TypeParameterCount == 2)
-			return dict.Class == CiSystem.SortedDictionaryClass ? "(GDestroyNotify) g_tree_unref" : "(GDestroyNotify) g_hash_table_unref";
+		if (type is CiClassType klass2) {
+			if (klass2.Class == CiSystem.ListClass || klass2.Class == CiSystem.StackClass)
+				return "(GDestroyNotify) g_array_unref";
+			if (klass2.Class == CiSystem.HashSetClass || klass2.Class == CiSystem.DictionaryClass)
+				return "(GDestroyNotify) g_hash_table_unref";
+			if (klass2.Class == CiSystem.SortedDictionaryClass)
+				return "(GDestroyNotify) g_tree_unref";
+		}
 		return "NULL";
 	}
 
@@ -622,20 +616,14 @@ public class GenC : GenCCpp
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		switch (type) {
-		case CiListType list:
-			Write("g_array_new(FALSE, FALSE, sizeof(");
-			Write(list.ElementType, false);
-			Write("))");
-			break;
-		case CiClassType klass:
-			if (klass.Class == CiSystem.QueueClass)
-				Write("G_QUEUE_INIT");
-			else if (klass.Class == CiSystem.StackClass) {
+		if (type is CiClassType klass) {
+			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass) {
 				Write("g_array_new(FALSE, FALSE, sizeof(");
 				Write(klass.ElementType, false);
 				Write("))");
 			}
+			else if (klass.Class == CiSystem.QueueClass)
+				Write("G_QUEUE_INIT");
 			else if (klass.Class == CiSystem.HashSetClass)
 				WriteNewHashTable(klass.ElementType, "NULL");
 			else if (klass.Class == CiSystem.DictionaryClass)
@@ -667,11 +655,9 @@ public class GenC : GenCCpp
 			}
 			else
 				throw new NotImplementedException();
-			break;
-		default:
-			base.WriteNewStorage(type);
-			break;
 		}
+		else
+			base.WriteNewStorage(type);
 	}
 
 	protected override void WriteVarInit(CiNamedValue def)
@@ -684,7 +670,7 @@ public class GenC : GenCCpp
 
 	int WriteTemporary(CiType type, CiExpr expr)
 	{
-		bool assign = expr != null || type is CiListType || (type is CiClassType dict && dict.Class.TypeParameterCount == 2);
+		bool assign = expr != null || (type is CiClassType klass && (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass));
 		int id = this.CurrentTemporaries.IndexOf(type);
 		if (id < 0) {
 			id = this.CurrentTemporaries.Count;
@@ -790,9 +776,7 @@ public class GenC : GenCCpp
 			return HasTemporaries(select.Cond);
 		case CiCallExpr call:
 			if (call.Method.Left != null) {
-				if (call.Method.Left.Type is CiListType && (call.Method.Name == "Add" || call.Method.Name == "Insert"))
-					return true;
-				if (call.Method.Symbol == CiSystem.StackPush)
+				if (call.Method.Symbol == CiSystem.ListAdd || call.Method.Symbol == CiSystem.ListInsert || call.Method.Symbol == CiSystem.QueueEnqueue || call.Method.Symbol == CiSystem.StackPush)
 					return true;
 				if (IsTemporary(call.Method.Left) || HasTemporaries(call.Method.Left))
 					return true;
@@ -824,11 +808,13 @@ public class GenC : GenCCpp
 		CiType type = symbol.Type;
 		while (type is CiArrayStorageType array)
 			type = array.ElementType;
-		return type == CiSystem.StringStorageType
-			|| type.IsDynamicPtr
-			|| type is CiListType
-			|| (type is CiClassType dict && dict.Class.TypeParameterCount == 2)
-			|| (type is CiClass klass && (klass == CiSystem.MatchClass || klass == CiSystem.LockClass || NeedsDestructor(klass)));
+		if (type == CiSystem.StringStorageType || type.IsDynamicPtr)
+			return true;
+		if (type is CiClass klass)
+			return klass == CiSystem.MatchClass || klass == CiSystem.LockClass || NeedsDestructor(klass);
+		if (type is CiClassType klass2)
+			return klass2.Class.TypeParameterCount > 0; // built-in collections
+		return false;
 	}
 
 	protected override void WriteVar(CiNamedValue def)
@@ -955,9 +941,9 @@ public class GenC : GenCCpp
 
 	protected override bool HasInitCode(CiNamedValue def)
 	{
-		return (def is CiField && (def.Value != null || def.Type.StorageType == CiSystem.StringStorageType || def.Type.IsDynamicPtr || def.Type is CiListType || (def.Type is CiClassType dict && dict.Class.TypeParameterCount == 2)))
+		return (def is CiField && (def.Value != null || def.Type.StorageType == CiSystem.StringStorageType || def.Type.IsDynamicPtr || (def.Type is CiClassType klass && (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass))))
 			|| GetThrowingMethod(def.Value) != null
-			|| (def.Type.StorageType is CiClass klass && (klass == CiSystem.LockClass || NeedsConstructor(klass)))
+			|| (def.Type.StorageType is CiClass klass2 && (klass2 == CiSystem.LockClass || NeedsConstructor(klass2)))
 			|| GetListDestroy(def.Type) != null;
 	}
 
@@ -1032,7 +1018,7 @@ public class GenC : GenCCpp
 
 	protected override void WriteArrayPtr(CiExpr expr, CiPriority parent)
 	{
-		if (expr.Type is CiListType list) {
+		if (expr.Type is CiClassType list && list.Class == CiSystem.ListClass) {
 			Write('(');
 			Write(list.ElementType, false);
 			Write(" *) ");
@@ -1183,10 +1169,10 @@ public class GenC : GenCCpp
 		WriteCall(name, obj, args[0]);
 	}
 
-	void WriteSizeofCompare(CiArrayType array)
+	void WriteSizeofCompare(CiType elementType)
 	{
 		Write(", sizeof(");
-		TypeCode typeCode = GetTypeCode(array.ElementType, false);
+		TypeCode typeCode = GetTypeCode(elementType, false);
 		Write(typeCode);
 		Write("), CiCompare_");
 		Write(typeCode);
@@ -1213,8 +1199,9 @@ public class GenC : GenCCpp
 		args[0].Accept(this, CiPriority.Argument); // FIXME: side effect in every iteration
 	}
 
-	void WriteListAddInsert(CiExpr obj, CiType elementType, bool insert, string function, List<CiExpr> args)
+	void WriteListAddInsert(CiExpr obj, bool insert, string function, List<CiExpr> args)
 	{
+		CiType elementType = ((CiClassType) obj.Type).ElementType;
 		// TODO: don't emit temporary variable if already a var/field of matching type - beware of integer promotions!
 		int id = WriteTemporary(elementType, elementType.IsFinal ? null : args[args.Count - 1]);
 		if (elementType is CiClass klass && NeedsConstructor(klass)) {
@@ -1364,17 +1351,25 @@ public class GenC : GenCCpp
 		WriteArgsAndRightParenthesis(method, args);
 	}
 
-	void WriteListAdd(CiExpr obj, CiType elementType, List<CiExpr> args)
+	void WriteCopyTo(CiExpr obj, CiType elementType, List<CiExpr> args)
 	{
-		if (elementType is CiArrayStorageType || (elementType is CiClass klass && !NeedsConstructor(klass))) {
-			Write("g_array_set_size(");
-			obj.Accept(this, CiPriority.Argument);
-			Write(", ");
-			obj.Accept(this, CiPriority.Primary); // TODO: side effect
-			Write("->len + 1)");
+		Include("string.h");
+		Write("memcpy(");
+		WriteArrayPtrAdd(args[1], args[2]);
+		Write(", ");
+		WriteArrayPtrAdd(obj, args[0]);
+		Write(", ");
+		if (elementType is CiRangeType range
+		 && ((range.Min >= 0 && range.Max <= byte.MaxValue)
+			|| (range.Min >= sbyte.MinValue && range.Max <= sbyte.MaxValue)))
+			args[3].Accept(this, CiPriority.Argument);
+		else {
+			args[3].Accept(this, CiPriority.Mul);
+			Write(" * sizeof(");
+			Write(elementType, false);
+			Write(')');
 		}
-		else
-			WriteListAddInsert(obj, elementType, false, "g_array_append_val", args);
+		Write(')');
 	}
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
@@ -1455,31 +1450,14 @@ public class GenC : GenCCpp
 				VisitLiteralLong(((CiArrayStorageType) array).Length);
 			else
 				args[2].Accept(this, CiPriority.Primary);
-			WriteSizeofCompare(array);
+			WriteSizeofCompare(array.ElementType);
 			Write(" - ");
 			WriteArrayPtr(obj, CiPriority.Mul);
 			if (parent > CiPriority.Add)
 				Write(')');
 		}
-		else if (obj.Type is CiArrayType array2 && method.Name == "CopyTo") {
-			Include("string.h");
-			Write("memcpy(");
-			WriteArrayPtrAdd(args[1], args[2]);
-			Write(", ");
-			WriteArrayPtrAdd(obj, args[0]);
-			Write(", ");
-			if (array2.ElementType is CiRangeType range
-			 && ((range.Min >= 0 && range.Max <= byte.MaxValue)
-				|| (range.Min >= sbyte.MinValue && range.Max <= sbyte.MaxValue)))
-				args[3].Accept(this, CiPriority.Argument);
-			else {
-				args[3].Accept(this, CiPriority.Mul);
-				Write(" * sizeof(");
-				Write(array2.ElementType, false);
-				Write(')');
-			}
-			Write(')');
-		}
+		else if (obj.Type is CiArrayType array2 && method.Name == "CopyTo")
+			WriteCopyTo(obj, array2.ElementType, args);
 		else if (obj.Type is CiArrayType array3 && method.Name == "Fill") {
 			if (args[0] is CiLiteral literal && literal.IsDefaultValue) {
 				Include("string.h");
@@ -1504,37 +1482,58 @@ public class GenC : GenCCpp
 				WriteArrayFill(obj, args);
 		}
 		else if (method == CiSystem.CollectionSortAll) {
-			TypeCode typeCode = GetTypeCode(((CiArrayType) obj.Type).ElementType, false);
-			if (obj.Type is CiArrayStorageType arrayStorage) {
+			switch (obj.Type) {
+			case CiArrayStorageType arrayStorage:
 				Write("qsort(");
 				WriteArrayPtr(obj, CiPriority.Argument);
 				Write(", ");
 				VisitLiteralLong(arrayStorage.Length);
-				Write(", sizeof(");
-				Write(typeCode);
-				Write(')');
-			}
-			else {
+				WriteSizeofCompare(arrayStorage.ElementType);
+				break;
+			case CiClassType list:
 				Write("g_array_sort(");
 				obj.Accept(this, CiPriority.Argument);
+				TypeCode typeCode = GetTypeCode(list.ElementType, false);
+				Write(", CiCompare_");
+				Write(typeCode);
+				Write(')');
+				this.Compares.Add(typeCode);
+				break;
+			default:
+				throw new NotImplementedException();
 			}
-			Write(", CiCompare_");
-			Write(typeCode);
-			Write(')');
-			this.Compares.Add(typeCode);
 		}
 		else if (method == CiSystem.CollectionSortPart) {
 			Write("qsort(");
 			WriteArrayPtrAdd(obj, args[0]);
 			Write(", ");
 			args[1].Accept(this, CiPriority.Primary);
-			WriteSizeofCompare((CiArrayType) obj.Type);
+			switch (obj.Type) {
+			case CiArrayType array4:
+				WriteSizeofCompare(array4.ElementType);
+				break;
+			case CiClassType list:
+				WriteSizeofCompare(list.ElementType);
+				break;
+			default:
+				throw new NotImplementedException();
+			}
 		}
-		else if (obj.Type is CiListType list && method.Name == "Add")
-			WriteListAdd(obj, list.ElementType, args);
-		else if (obj.Type is CiListType list2 && method.Name == "Contains") {
+		else if (method == CiSystem.ListAdd || method == CiSystem.StackPush) {
+			CiType elementType = ((CiClassType) obj.Type).ElementType;
+			if (elementType is CiArrayStorageType || (elementType is CiClass klass && !NeedsConstructor(klass))) {
+				Write("g_array_set_size(");
+				obj.Accept(this, CiPriority.Argument);
+				Write(", ");
+				obj.Accept(this, CiPriority.Primary); // TODO: side effect
+				Write("->len + 1)");
+			}
+			else
+				WriteListAddInsert(obj, false, "g_array_append_val", args);
+		}
+		else if (method == CiSystem.ListContains) {
 			Write("CiArray_Contains_");
-			TypeCode typeCode = GetTypeCode(list2.ElementType, false);
+			TypeCode typeCode = GetTypeCode(((CiClassType) obj.Type).ElementType, false);
 			if (typeCode == TypeCode.String) {
 				Include("string.h");
 				Write("string((const char * const");
@@ -1553,41 +1552,33 @@ public class GenC : GenCCpp
 			Write(')');
 			this.Contains.Add(typeCode);
 		}
+		else if (method == CiSystem.ListCopyTo)
+			WriteCopyTo(obj, ((CiClassType) obj.Type).ElementType, args);
 		else if (method == CiSystem.CollectionClear) {
-			switch (obj.Type) {
-			case CiListType _:
+			CiClassType klass = (CiClassType) obj.Type;
+			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass) {
 				Write("g_array_set_size(");
 				obj.Accept(this, CiPriority.Argument);
 				Write(", 0)");
-				break;
-			case CiClassType klass:
-				if (klass.Class == CiSystem.QueueClass) {
-					Write("g_queue_clear(&"); // TODO: g_queue_clear_full
-					obj.Accept(this, CiPriority.Primary);
-					Write(')');
-				}
-				else if (klass.Class == CiSystem.StackClass) {
-					Write("g_array_set_size(");
-					obj.Accept(this, CiPriority.Argument);
-					Write(", 0)");
-				}
-				else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
-					WriteCall("g_hash_table_remove_all", obj);
-				else if (klass.Class == CiSystem.SortedDictionaryClass) {
-					// TODO: since glib-2.70: WriteCall("g_tree_remove_all", obj);
-					Write("g_tree_destroy(g_tree_ref(");
-					obj.Accept(this, CiPriority.Argument);
-					Write("))");
-				}
-				else
-					throw new NotImplementedException();
-				break;
-			default:
-				throw new NotImplementedException(obj.Type.ToString());
 			}
+			else if (klass.Class == CiSystem.QueueClass) {
+				Write("g_queue_clear(&"); // TODO: g_queue_clear_full
+				obj.Accept(this, CiPriority.Primary);
+				Write(')');
+			}
+			else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
+				WriteCall("g_hash_table_remove_all", obj);
+			else if (klass.Class == CiSystem.SortedDictionaryClass) {
+				// TODO: since glib-2.70: WriteCall("g_tree_remove_all", obj);
+				Write("g_tree_destroy(g_tree_ref(");
+				obj.Accept(this, CiPriority.Argument);
+				Write("))");
+			}
+			else
+				throw new NotImplementedException();
 		}
-		else if (obj.Type is CiListType list3 && method.Name == "Insert")
-			WriteListAddInsert(obj, list3.ElementType, true, "g_array_insert_val", args);
+		else if (method == CiSystem.ListInsert)
+			WriteListAddInsert(obj, true, "g_array_insert_val", args);
 		else if (method == CiSystem.ListRemoveAt)
 			WriteCall("g_array_remove_index", obj, args[0]);
 		else if (method == CiSystem.ListRemoveRange)
@@ -1615,8 +1606,6 @@ public class GenC : GenCCpp
 			obj.Accept(this, CiPriority.Primary); // TODO: side effect
 			Write("->len)");
 		}
-		else if (method == CiSystem.StackPush)
-			WriteListAdd(obj, ((CiClassType) obj.Type).ElementType, args);
 		else if (method == CiSystem.HashSetAdd) {
 			Write("g_hash_table_add(");
 			obj.Accept(this, CiPriority.Argument);
@@ -1632,8 +1621,7 @@ public class GenC : GenCCpp
 			StartDictionaryInsert(obj, args[0]);
 			CiType valueType = ((CiClassType) obj.Type).ValueType;
 			switch (valueType) {
-			case CiListType _:
-			case CiClassType dict when dict.Class.TypeParameterCount == 2:
+			case CiClassType klass when klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass || klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass:
 				WriteNewStorage(valueType);
 				break;
 			case CiClass klass when klass.IsPublic && klass.Constructor != null && klass.Constructor.Visibility == CiVisibility.Public:
@@ -1749,50 +1737,49 @@ public class GenC : GenCCpp
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
-		switch (expr.Left.Type) {
-		case CiListType list:
-			if (list.ElementType is CiArrayStorageType) {
-				Write('(');
-				WriteDynamicArrayCast(list.ElementType);
-				expr.Left.Accept(this, CiPriority.Primary);
-				Write("->data)[");
-				expr.Right.Accept(this, CiPriority.Argument);
-				Write(']');
-			}
-			else {
-				StartArrayIndexing(expr.Left, list.ElementType);
-				expr.Right.Accept(this, CiPriority.Argument);
-				Write(')');
-			}
-			break;
-		case CiClassType dict when dict.Class.TypeParameterCount == 2:
-			string function = dict.Class == CiSystem.SortedDictionaryClass ? "g_tree_lookup" : "g_hash_table_lookup";
-			if (dict.ValueType is CiIntegerType && dict.ValueType != CiSystem.LongType) {
-				Write("GPOINTER_TO_INT(");
-				WriteDictionaryLookup(expr.Left, function, expr.Right);
-				Write(')');
-			}
-			else {
-				if (parent > CiPriority.Mul)
+		if (expr.Left.Type is CiClassType klass) {
+			if (klass.Class == CiSystem.ListClass) {
+				if (klass.ElementType is CiArrayStorageType) {
 					Write('(');
-				if (dict.ValueType is CiClass || dict.ValueType is CiArrayStorageType)
-					WriteDynamicArrayCast(dict.ValueType);
-				else {
-					WriteStaticCastType(dict.ValueType);
-					if (dict.ValueType is CiEnum) {
-						Trace.Assert(parent <= CiPriority.Mul, "Should close two parens");
-						Write("GPOINTER_TO_INT(");
-					}
+					WriteDynamicArrayCast(klass.ElementType);
+					expr.Left.Accept(this, CiPriority.Primary);
+					Write("->data)[");
+					expr.Right.Accept(this, CiPriority.Argument);
+					Write(']');
 				}
-				WriteDictionaryLookup(expr.Left, function, expr.Right);
-				if (parent > CiPriority.Mul || dict.ValueType is CiEnum)
+				else {
+					StartArrayIndexing(expr.Left, klass.ElementType);
+					expr.Right.Accept(this, CiPriority.Argument);
 					Write(')');
+				}
 			}
-			break;
-		default:
-			base.WriteIndexing(expr, parent);
-			break;
+			else {
+				string function = klass.Class == CiSystem.SortedDictionaryClass ? "g_tree_lookup" : "g_hash_table_lookup";
+				if (klass.ValueType is CiIntegerType && klass.ValueType != CiSystem.LongType) {
+					Write("GPOINTER_TO_INT(");
+					WriteDictionaryLookup(expr.Left, function, expr.Right);
+					Write(')');
+				}
+				else {
+					if (parent > CiPriority.Mul)
+						Write('(');
+					if (klass.ValueType is CiClass || klass.ValueType is CiArrayStorageType)
+						WriteDynamicArrayCast(klass.ValueType);
+					else {
+						WriteStaticCastType(klass.ValueType);
+						if (klass.ValueType is CiEnum) {
+							Trace.Assert(parent <= CiPriority.Mul, "Should close two parens");
+							Write("GPOINTER_TO_INT(");
+						}
+					}
+					WriteDictionaryLookup(expr.Left, function, expr.Right);
+					if (parent > CiPriority.Mul || klass.ValueType is CiEnum)
+						Write(')');
+				}
+			}
 		}
+		else
+			base.WriteIndexing(expr, parent);
 	}
 
 	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
@@ -1915,6 +1902,7 @@ public class GenC : GenCCpp
 			nesting++;
 			type = array.ElementType;
 		}
+		bool arrayFree = false;
 		if (type is CiClass klass) {
 			if (klass == CiSystem.MatchClass)
 				Write("g_match_info_free(");
@@ -1933,10 +1921,20 @@ public class GenC : GenCCpp
 				Write("CiShared_Release(");
 			}
 		}
-		else if (type is CiListType)
-			Write("g_array_free(");
-		else if (type is CiClassType dict && dict.Class.TypeParameterCount == 2)
-			Write(dict.Class == CiSystem.SortedDictionaryClass ? "g_tree_unref(" : "g_hash_table_unref(");
+		else if (type is CiClassType klass2) {
+			if (klass2.Class == CiSystem.ListClass || klass2.Class == CiSystem.StackClass) {
+				Write("g_array_free(");
+				arrayFree = true;
+			}
+			else if (klass2.Class == CiSystem.QueueClass)
+				Write("g_queue_clear(&");
+			else if (klass2.Class == CiSystem.HashSetClass || klass2.Class == CiSystem.DictionaryClass)
+				Write("g_hash_table_unref(");
+			else if (klass2.Class == CiSystem.SortedDictionaryClass)
+				Write("g_tree_unref(");
+			else
+				throw new NotImplementedException(klass2.ToString());
+		}
 		else
 			Write("free(");
 		WriteLocalName(symbol, CiPriority.Primary);
@@ -1945,7 +1943,7 @@ public class GenC : GenCCpp
 			VisitLiteralLong(i);
 			Write(']');
 		}
-		if (type is CiListType)
+		if (arrayFree)
 			Write(", TRUE");
 		WriteLine(");");
 		this.Indent -= nesting;
@@ -2104,34 +2102,34 @@ public class GenC : GenCCpp
 			Write("++)");
 			WriteChild(statement.Body);
 			break;
-		case CiListType list:
-			Write("for (");
-			CiType elementType = list.ElementType;
-			Write(elementType, false);
-			Write(" const *");
-			WriteCamelCaseNotKeyword(element);
-			Write(" = (");
-			Write(elementType, false);
-			Write(" const *) ");
-			statement.Collection.Accept(this, CiPriority.Primary);
-			Write("->data, ");
-			for (; elementType is CiArrayType array; elementType = array.ElementType)
-				Write('*');
-			if (elementType is CiStringType || elementType is CiClassPtrType)
-				Write("* const ");
-			Write("*ciend = ");
-			WriteCamelCaseNotKeyword(element);
-			Write(" + ");
-			statement.Collection.Accept(this, CiPriority.Primary); // TODO: side effect
-			Write("->len; ");
-			WriteCamelCaseNotKeyword(element);
-			Write(" < ciend; ");
-			WriteCamelCaseNotKeyword(element);
-			Write("++)");
-			WriteChild(statement.Body);
-			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.HashSetClass) {
+			if (klass.Class == CiSystem.ListClass) {
+				Write("for (");
+				CiType elementType = klass.ElementType;
+				Write(elementType, false);
+				Write(" const *");
+				WriteCamelCaseNotKeyword(element);
+				Write(" = (");
+				Write(elementType, false);
+				Write(" const *) ");
+				statement.Collection.Accept(this, CiPriority.Primary);
+				Write("->data, ");
+				for (; elementType is CiArrayType array; elementType = array.ElementType)
+					Write('*');
+				if (elementType is CiStringType || elementType is CiClassPtrType)
+					Write("* const ");
+				Write("*ciend = ");
+				WriteCamelCaseNotKeyword(element);
+				Write(" + ");
+				statement.Collection.Accept(this, CiPriority.Primary); // TODO: side effect
+				Write("->len; ");
+				WriteCamelCaseNotKeyword(element);
+				Write(" < ciend; ");
+				WriteCamelCaseNotKeyword(element);
+				Write("++)");
+				WriteChild(statement.Body);
+			}
+			else if (klass.Class == CiSystem.HashSetClass) {
 				StartForeachHashTable(statement);
 				WriteLine("gpointer cikey;");
 				Write("while (g_hash_table_iter_next(&cidictit, &cikey, NULL)) ");

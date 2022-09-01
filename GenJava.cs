@@ -304,11 +304,10 @@ public class GenJava : GenTyped
 				? needClass ? "Boolean" : "boolean"
 				: needClass ? "Integer" : "int");
 			break;
-		case CiListType list:
-			WriteCollectionType("ArrayList", list.ElementType);
-			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.QueueClass)
+			if (klass.Class == CiSystem.ListClass)
+				WriteCollectionType("ArrayList", klass.ElementType);
+			else if (klass.Class == CiSystem.QueueClass)
 				WriteCollectionType("ArrayDeque", klass.ElementType);
 			else if (klass.Class == CiSystem.StackClass)
 				WriteCollectionType("Stack", klass.ElementType);
@@ -345,17 +344,13 @@ public class GenJava : GenTyped
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		switch (type) {
-		case CiListType _:
-		case CiClassType _:
+		if (type is CiClassType) {
 			Write("new ");
 			Write(type, false, false);
 			Write("()");
-			break;
-		default:
-			base.WriteNewStorage(type);
-			break;
 		}
+		else
+			base.WriteNewStorage(type);
 	}
 
 	protected override void WriteResource(string name, int length)
@@ -403,10 +398,10 @@ public class GenJava : GenTyped
 
 	void WriteIndexingInternal(CiBinaryExpr expr)
 	{
-		if (IsCollection(expr.Left.Type))
-			WriteCall(expr.Left, "get", expr.Right);
-		else
+		if (expr.Left.Type is CiArrayType)
 			base.WriteIndexing(expr, CiPriority.And /* don't care */);
+		else
+			WriteCall(expr.Left, "get", expr.Right);
 	}
 
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
@@ -551,33 +546,11 @@ public class GenJava : GenTyped
 		else if (obj.Type is CiArrayType && method.Name == "BinarySearch")
 			WriteArrayBinarySearchFill(obj, "binarySearch", args);
 		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
-			if (obj.Type is CiListType) {
-				Write("for (int _i = 0; _i < ");
-				args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
-				WriteLine("; _i++)");
-				Write("\t");
-				args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
-				Write('[');
-				if (!args[2].IsLiteralZero) {
-					args[2].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
-					Write(" + ");
-				}
-				Write("_i] = ");
-				obj.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
-				Write(".get(");
-				if (!args[0].IsLiteralZero) {
-					args[0].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
-					Write(" + ");
-				}
-				Write("_i)");
-			}
-			else {
-				Write("System.arraycopy(");
-				obj.Accept(this, CiPriority.Argument);
-				Write(", ");
-				WriteArgs(method, args);
-				Write(')');
-			}
+			Write("System.arraycopy(");
+			obj.Accept(this, CiPriority.Argument);
+			Write(", ");
+			WriteArgs(method, args);
+			Write(')');
 		}
 		else if (obj.Type is CiArrayType && method.Name == "Fill")
 			WriteArrayBinarySearchFill(obj, "fill", args);
@@ -592,13 +565,7 @@ public class GenJava : GenTyped
 			}
 		}
 		else if (method == CiSystem.CollectionSortPart) {
-			if (obj.Type is CiListType) {
-				obj.Accept(this, CiPriority.Primary);
-				Write(".subList(");
-				WriteStartEnd(args[0], args[1]);
-				Write(").sort(null)");
-			}
-			else {
+			if (obj.Type is CiArrayType) {
 				Include("java.util.Arrays");
 				Write("Arrays.sort(");
 				obj.Accept(this, CiPriority.Argument);
@@ -606,9 +573,35 @@ public class GenJava : GenTyped
 				WriteStartEnd(args[0], args[1]);
 				Write(')');
 			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".subList(");
+				WriteStartEnd(args[0], args[1]);
+				Write(").sort(null)");
+			}
 		}
 		else if (WriteListAddInsert(obj, method, args, "add", "add", ", ")) {
 			// done
+		}
+		else if (method == CiSystem.ListCopyTo) {
+			Write("for (int _i = 0; _i < ");
+			args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
+			WriteLine("; _i++)");
+			Write("\t");
+			args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+			Write('[');
+			if (!args[2].IsLiteralZero) {
+				args[2].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
+				Write(" + ");
+			}
+			Write("_i] = ");
+			obj.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+			Write(".get(");
+			if (!args[0].IsLiteralZero) {
+				args[0].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
+				Write(" + ");
+			}
+			Write("_i)");
 		}
 		else if (method == CiSystem.ListRemoveRange) {
 			obj.Accept(this, CiPriority.Primary);
@@ -723,8 +716,6 @@ public class GenJava : GenTyped
 		}
 	}
 
-	static bool IsCollection(CiType type) => type is CiListType || (type is CiClassType dict && dict.Class.TypeParameterCount == 2);
-
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (parent != CiPriority.Assign && IsUnsignedByte(expr.Type)) {
@@ -757,9 +748,9 @@ public class GenJava : GenTyped
 	{
 		if (expr.Left is CiBinaryExpr indexing
 		 && indexing.Op == CiToken.LeftBracket
-		 && IsCollection(indexing.Left.Type)) {
+		 && indexing.Left.Type is CiClassType klass) {
 			 indexing.Left.Accept(this, CiPriority.Primary);
-			 Write(indexing.Left.Type is CiClassType dict && dict.Class.TypeParameterCount == 2 ? ".put(" : ".set(");
+			 Write(klass.Class == CiSystem.ListClass ? ".set(" : ".put(");
 			 indexing.Right.Accept(this, CiPriority.Argument);
 			 Write(", ");
 			 WriteNotPromoted(expr.Type, expr.Right);

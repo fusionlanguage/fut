@@ -95,9 +95,6 @@ public class GenTs : GenJs
 		case CiEnum enu:
 			Write(enu == CiSystem.BoolType ? "boolean" : enu.Name);
 			break;
-		case CiListType list:
-			WriteListType(list.ElementType);
-			break;
 		case CiArrayType array:
 			CiType elementType = array.ElementType;
 			if (elementType is CiNumericType number) {
@@ -125,7 +122,7 @@ public class GenTs : GenJs
 			}
 			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass)
+			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass)
 				WriteListType(klass.ElementType);
 			else if (klass.Class == CiSystem.HashSetClass) {
 				Write("Set<");

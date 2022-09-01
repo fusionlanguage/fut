@@ -463,36 +463,28 @@ public class GenPy : GenPySwift
 		WriteNewArray(array.ElementType, null, array.LengthExpr);
 	}
 
-	void WriteNewArrayOrList(CiType elementType)
-	{
-		if (elementType is CiNumericType number) {
-			char c = GetArrayCode(number);
-			if (c == 'B')
-				Write("bytearray()");
-			else {
-				Include("array");
-				Write("array.array(\"");
-				Write(c);
-				Write("\")");
-			}
-		}
-		else
-			Write("[]");
-	}
-
 	protected override void WriteNewStorage(CiType type)
 	{
-		switch (type) {
-		case CiListType list:
-			WriteNewArrayOrList(list.ElementType);
-			break;
-		case CiClassType klass:
-			if (klass.Class == CiSystem.QueueClass) {
+		if (type is CiClassType klass) {
+			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass) {
+				if (klass.ElementType is CiNumericType number) {
+					char c = GetArrayCode(number);
+					if (c == 'B')
+						Write("bytearray()");
+					else {
+						Include("array");
+						Write("array.array(\"");
+						Write(c);
+						Write("\")");
+					}
+				}
+				else
+					Write("[]");
+			}
+			else if (klass.Class == CiSystem.QueueClass) {
 				Include("collections");
 				Write("collections.deque()");
 			}
-			else if (klass.Class == CiSystem.StackClass)
-				WriteNewArrayOrList(klass.ElementType);
 			else if (klass.Class == CiSystem.HashSetClass)
 				Write("set()");
 			else if (klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass)
@@ -503,11 +495,9 @@ public class GenPy : GenPySwift
 			}
 			else
 				throw new NotImplementedException();
-			break;
-		default:
-			base.WriteNewStorage(type);
-			break;
 		}
+		else
+			base.WriteNewStorage(type);
 	}
 
 	protected override void WriteInitCode(CiNamedValue def)
@@ -523,14 +513,9 @@ public class GenPy : GenPySwift
 
 	static bool IsNumberList(CiType type)
 	{
-		CiType elementType;
-		if (type is CiListType list)
-			elementType = list.ElementType;
-		else if (type is CiClassType stack && stack.Class == CiSystem.StackClass)
-			elementType = stack.ElementType;
-		else
-			return false;
-		return elementType is CiNumericType number
+		return type is CiClassType klass
+			&& (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass)
+			&& klass.ElementType is CiNumericType number
 			&& GetArrayCode(number) != 'B';
 	}
 
@@ -547,7 +532,14 @@ public class GenPy : GenPySwift
 	void WriteAssignSorted(CiExpr obj, string byteArray)
 	{
 		Write(" = ");
-		char c = GetArrayCode((CiNumericType) ((CiArrayType) obj.Type).ElementType);
+		CiType elementType;
+		if (obj.Type is CiArrayType array)
+			elementType = array.ElementType;
+		else if (obj.Type is CiClassType list)
+			elementType = list.ElementType;
+		else
+			throw new NotImplementedException();
+		char c = GetArrayCode((CiNumericType) elementType);
 		if (c == 'B') {
 			Write(byteArray);
 			Write('(');
@@ -624,7 +616,7 @@ public class GenPy : GenPySwift
 			Include("bisect");
 			WriteCall("bisect.bisect_left", obj, args);
 		}
-		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+		else if ((obj.Type is CiArrayType && method.Name == "CopyTo") || method == CiSystem.ListCopyTo) {
 			args[1].Accept(this, CiPriority.Primary);
 			WriteSlice(args[2], args[3]);
 			Write(" = ");
@@ -661,14 +653,14 @@ public class GenPy : GenPySwift
 			|| WriteDictionaryAdd(obj, method, args)) {
 			// done
 		}
-		else if ((obj.Type is CiListType && method.Name == "Contains") || method == CiSystem.HashSetContains)
+		else if (method == CiSystem.ListContains || method == CiSystem.HashSetContains)
 			WriteContains(obj, args[0]);
 		else if (method == CiSystem.QueueDequeue) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".popleft()");
 		}
-		else if (method == CiSystem.QueueEnqueue)
-			WriteListAppend(obj, ((CiClassType) obj.Type).ElementType, args);
+		else if (method == CiSystem.QueueEnqueue || method == CiSystem.StackPush)
+			WriteListAppend(obj, args);
 		else if (method == CiSystem.QueuePeek) {
 			obj.Accept(this, CiPriority.Primary);
 			Write("[0]");
@@ -677,8 +669,6 @@ public class GenPy : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			Write("[-1]");
 		}
-		else if (method == CiSystem.StackPush)
-			WriteListAppend(obj, ((CiClassType) obj.Type).ElementType, args);
 		else if (method == CiSystem.DictionaryContainsKey)
 			WriteContains(obj, args[0]);
 		else if (method == CiSystem.ConsoleWrite)

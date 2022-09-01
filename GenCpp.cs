@@ -241,12 +241,11 @@ public class GenCpp : GenCCpp
 			VisitLiteralLong(arrayStorage.Length);
 			Write('>');
 			break;
-		case CiListType list:
-			WriteCollectionType("vector", list.ElementType);
-			break;
 		case CiClassType klass:
 			string cppType;
-			if (klass.Class == CiSystem.QueueClass)
+			if (klass.Class == CiSystem.ListClass)
+				cppType = "vector";
+			else if (klass.Class == CiSystem.QueueClass)
 				cppType = "queue";
 			else if (klass.Class == CiSystem.StackClass)
 				cppType = "stack";
@@ -345,7 +344,7 @@ public class GenCpp : GenCCpp
 			def.Value.Accept(this, CiPriority.Argument);
 			Write('}');
 		}
-		else if (def.Type is CiListType || def.Type is CiStorageType) {
+		else if (def.Type is CiStorageType) {
 		}
 		else
 			base.WriteVarInit(def);
@@ -609,7 +608,7 @@ public class GenCpp : GenCCpp
 			if (parent > CiPriority.Add)
 				Write(')');
 		}
-		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+		else if ((obj.Type is CiArrayType && method.Name == "CopyTo") || method == CiSystem.ListCopyTo) {
 			Include("algorithm");
 			Write("std::copy_n(");
 			WriteArrayPtrAdd(obj, args[0]);
@@ -647,16 +646,17 @@ public class GenCpp : GenCCpp
 			args[1].Accept(this, CiPriority.Add);
 			Write(')');
 		}
-		else if (obj.Type is CiListType && method.Name == "Add") {
+		else if (method == CiSystem.ListAdd) {
 			obj.Accept(this, CiPriority.Primary);
-			if (method.Parameters.Count == 0)
+			if (args.Count == 0)
 				Write(".emplace_back()");
 			else {
-				Write(".push_back");
-				WriteArgsInParentheses(method, args);
+				Write(".push_back(");
+				WriteCoerced(((CiClassType) obj.Type).ElementType, args[0], CiPriority.Argument);
+				Write(')');
 			}
 		}
-		else if (obj.Type is CiListType && method.Name == "Contains") {
+		else if (method == CiSystem.ListContains) {
 			Include("algorithm");
 			if (parent > CiPriority.Equality)
 				Write('(');
@@ -672,9 +672,9 @@ public class GenCpp : GenCCpp
 			if (parent > CiPriority.Equality)
 				Write(')');
 		}
-		else if (obj.Type is CiListType list && method.Name == "Insert") {
+		else if (method == CiSystem.ListInsert) {
 			obj.Accept(this, CiPriority.Primary);
-			if (method.Parameters.Count == 1) {
+			if (args.Count == 1) {
 				Write(".emplace(");
 				WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
 			}
@@ -682,7 +682,7 @@ public class GenCpp : GenCCpp
 				Write(".insert(");
 				WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
 				Write(", ");
-				WriteCoerced(list.ElementType, args[1], CiPriority.Argument);
+				WriteCoerced(((CiClassType) obj.Type).ElementType, args[1], CiPriority.Argument);
 			}
 			Write(')');
 		}
@@ -879,7 +879,7 @@ public class GenCpp : GenCCpp
 			expr.Accept(this, CiPriority.Primary);
 			Write(".get()");
 			break;
-		case CiListType _:
+		case CiClassType klass when klass.Class == CiSystem.ListClass:
 			expr.Accept(this, CiPriority.Primary);
 			Write(".begin()");
 			break;

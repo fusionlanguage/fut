@@ -226,12 +226,8 @@ public class GenCs : GenTyped
 		case CiStringType _:
 			Write("string");
 			break;
-		case CiListType list:
-			Write("List");
-			WriteElementType(list.ElementType);
-			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass || klass.Class == CiSystem.HashSetClass) {
+			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass || klass.Class == CiSystem.HashSetClass) {
 				Write(klass.Class.Name);
 				WriteElementType(klass.ElementType);
 			}
@@ -249,7 +245,7 @@ public class GenCs : GenTyped
 				Write("OrderedDictionary");
 			}
 			else
-				throw new NotImplementedException();
+				throw new NotImplementedException(klass.ToString());
 			break;
 		case CiArrayType array:
 			Write(array.ElementType, false);
@@ -335,17 +331,13 @@ public class GenCs : GenTyped
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		switch (type) {
-		case CiListType _:
-		case CiClassType _:
+		if (type is CiClassType) {
 			Write("new ");
 			Write(type, false);
 			Write("()");
-			break;
-		default:
-			base.WriteNewStorage(type);
-			break;
 		}
+		else
+			base.WriteNewStorage(type);
 	}
 
 	protected override bool HasInitCode(CiNamedValue def)
@@ -515,7 +507,7 @@ public class GenCs : GenTyped
 			WriteNotPromoted(array.ElementType, args[0]);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayType && !(obj.Type is CiListType) && method.Name == "CopyTo") {
+		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
 			Include("System");
 			Write("Array.Copy(");
 			obj.Accept(this, CiPriority.Argument);
@@ -553,15 +545,15 @@ public class GenCs : GenTyped
 			WriteCall("Array.Sort", obj);
 		}
 		else if (method == CiSystem.CollectionSortPart) {
-			if (obj.Type is CiListType) {
+			if (obj.Type is CiArrayType) {
+				Include("System");
+				WriteCall("Array.Sort", obj, args[0], args[1]);
+			}
+			else {
 				obj.Accept(this, CiPriority.Primary);
 				Write(".Sort(");
 				WriteArgs(method, args);
 				Write(", null)");
-			}
-			else {
-				Include("System");
-				WriteCall("Array.Sort", obj, args[0], args[1]);
 			}
 		}
 		else if (WriteListAddInsert(obj, method, args, "Add", "Insert", ", ")) {
