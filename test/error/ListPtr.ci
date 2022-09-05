@@ -1,7 +1,0 @@
-public static class Test
-{
-	public static void DoSomething(List<int> values) { //ERROR: List reference not implemented yet
-	}
-
-	public static bool Run() => true;
-}

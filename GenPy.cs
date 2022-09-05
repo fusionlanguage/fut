@@ -465,9 +465,9 @@ public class GenPy : GenPySwift
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		if (type is CiClassType klass) {
-			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass) {
-				if (klass.ElementType is CiNumericType number) {
+		if (type is CiStorageType storage) {
+			if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.StackClass) {
+				if (storage.ElementType is CiNumericType number) {
 					char c = GetArrayCode(number);
 					if (c == 'B')
 						Write("bytearray()");
@@ -481,15 +481,15 @@ public class GenPy : GenPySwift
 				else
 					Write("[]");
 			}
-			else if (klass.Class == CiSystem.QueueClass) {
+			else if (storage.Class == CiSystem.QueueClass) {
 				Include("collections");
 				Write("collections.deque()");
 			}
-			else if (klass.Class == CiSystem.HashSetClass)
+			else if (storage.Class == CiSystem.HashSetClass)
 				Write("set()");
-			else if (klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass)
+			else if (storage.Class == CiSystem.DictionaryClass || storage.Class == CiSystem.SortedDictionaryClass)
 				Write("{}");
-			else if (klass.Class == CiSystem.OrderedDictionaryClass) {
+			else if (storage.Class == CiSystem.OrderedDictionaryClass) {
 				Include("collections");
 				Write("collections.OrderedDict()");
 			}

@@ -344,7 +344,7 @@ public class GenJava : GenTyped
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		if (type is CiClassType) {
+		if (type is CiStorageType) {
 			Write("new ");
 			Write(type, false, false);
 			Write("()");

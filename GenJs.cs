@@ -136,14 +136,14 @@ public class GenJs : GenBase
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		if (type is CiClassType klass) {
-			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass)
+		if (type is CiStorageType storage) {
+			if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.QueueClass || storage.Class == CiSystem.StackClass)
 				Write("[]");
-			else if (klass.Class == CiSystem.HashSetClass)
+			else if (storage.Class == CiSystem.HashSetClass)
 				Write("new Set()");
-			else if (klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass)
+			else if (storage.Class == CiSystem.DictionaryClass || storage.Class == CiSystem.SortedDictionaryClass)
 				Write("{}");
-			else if (klass.Class == CiSystem.OrderedDictionaryClass)
+			else if (storage.Class == CiSystem.OrderedDictionaryClass)
 				Write("new Map()");
 			else
 				throw new NotImplementedException();

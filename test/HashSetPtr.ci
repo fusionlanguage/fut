@@ -1,0 +1,17 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		HashSet<int>() s; //FAIL: cl
+		HashSet<int>! p; //FAIL: swift TODO
+		p = s;
+		p.Add(42);
+		p.Clear();
+		p.Add(1);
+		s.Add(3);
+		p.Add(2);
+		p.Add(1);
+		p.Remove(2);
+		return p.Count == 2 && p.Contains(1) && p.Contains(3) && !p.Contains(2);
+	}
+}

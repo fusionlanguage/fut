@@ -433,7 +433,9 @@ public class CiParser : CiLexer
 			while (Eat(CiToken.Comma));
 			Expect(CiToken.RightAngle);
 			this.ParsingTypeArg = saveTypeArg;
-			if (Eat(CiToken.LeftParenthesis)) {
+			if (Eat(CiToken.ExclamationMark))
+				left = new CiPostfixExpr { Line = this.Line, Inner = left, Op = CiToken.ExclamationMark };
+			else if (Eat(CiToken.LeftParenthesis)) {
 				Expect(CiToken.RightParenthesis);
 				left = new CiCallExpr { Line = this.Line, Method = (CiSymbolReference) left };
 			}

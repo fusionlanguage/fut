@@ -661,14 +661,14 @@ public abstract class GenBase : CiVisitor
 	protected void WriteCall(CiExpr obj, string method, CiExpr arg0)
 	{
 		obj.Accept(this, CiPriority.Primary);
-		Write('.');
+		WriteMemberOp(obj, null);
 		WriteCall(method, arg0);
 	}
 
 	protected void WriteCall(CiExpr obj, string method, CiExpr arg0, CiExpr arg1)
 	{
 		obj.Accept(this, CiPriority.Primary);
-		Write('.');
+		WriteMemberOp(obj, null);
 		WriteCall(method, arg0, arg1);
 	}
 

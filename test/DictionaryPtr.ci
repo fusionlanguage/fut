@@ -1,23 +1,16 @@
-public class Test
+public static class Test
 {
 	public static bool Run()
 	{
-		Dictionary<int, string>() sd; //FAIL: cl
-		sd[1] = "foo";
-		sd[2] = null;
-
-		int[2] a;
-		Dictionary<int, int[]>() ad;
-		ad[1] = a;
-		ad[2] = null;
-
-		Test() o;
-		Dictionary<int, Test>() od;
-		od[1] = o;
-		od[2] = null;
-
-		return sd.Count == 2 && sd[1] == "foo" && sd.ContainsKey(2) && sd[2] == null
-			&& ad.Count == 2 && ad[1] == a && ad.ContainsKey(2) && ad[2] == null
-			&& od.Count == 2 && od[1] == o && od.ContainsKey(2) && od[2] == null;
+		Dictionary<int, int>() dict; //FAIL: swift TODO; cl
+		Dictionary<int, int>! p;
+		p = dict;
+		p[1] = 10;
+		p.Clear();
+		p[2] = 12;
+		p[2] = 20;
+		p[3] = 30;
+		p.Remove(1); //FAIL: py
+		return p.Count == 2 && p[2] == 20 && p[3] == 30 && p.ContainsKey(2);
 	}
 }

@@ -331,7 +331,7 @@ public class GenCs : GenTyped
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		if (type is CiClassType) {
+		if (type is CiStorageType) {
 			Write("new ");
 			Write(type, false);
 			Write("()");

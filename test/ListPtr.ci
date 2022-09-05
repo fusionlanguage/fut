@@ -1,14 +1,26 @@
-public class Test
+public static class Test
 {
-	int X;
+	static int GetCount(List<int> l) => l.Count; //FAIL: swift TODO; cl
+
+	static void Add(List<int>! l)
+	{
+		l.Add(42);
+	}
 
 	public static bool Run()
 	{
-		List<Test#>() list; //FAIL: cl
-		list.Add(new Test());
-		list[0].X = 5;
-		list.Add(new Test());
-		list[1].X = 10;
-		return list[0].X == 5 && list[1].X == 10;
+		List<int>() l;
+		l.Add(5);
+		List<int>! p;
+		p = l;
+		p.RemoveAt(0);
+		p.Clear();
+		l.Add(5);
+		Add(l);
+		p.Insert(0, 10);
+		int[3] a;
+		p.CopyTo(0, a, 0, 3);
+		return GetCount(l) == 3 && GetCount(p) == 3 && p.Contains(42)
+			&& a[0] == 10 && a[1] == 5 && a[2] == 42;
 	}
 }

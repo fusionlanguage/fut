@@ -1360,7 +1360,7 @@ public class CiArrayStorageType : CiArrayType
 	public override int GetHashCode() => this.ElementType.GetHashCode() ^ this.Length.GetHashCode();
 }
 
-public abstract class CiClassType : CiType
+public class CiClassType : CiType
 {
 	public CiClass Class;
 	public CiType TypeArg0;
@@ -1368,6 +1368,7 @@ public abstract class CiClassType : CiType
 	public CiType ElementType => this.TypeArg0;
 	public CiType KeyType => this.TypeArg0;
 	public CiType ValueType => this.TypeArg1;
+	public override bool IsPointer => true;
 
 	public CiType EvalType(CiType type)
 	{
@@ -1382,7 +1383,25 @@ public abstract class CiClassType : CiType
 
 	public override CiSymbol TryLookup(string name) => this.Class.TryLookup(name);
 
-	public override string ToString()
+	protected bool IsAssignableFromClass(CiClassType right)
+	{
+		if (!this.Class.IsSameOrBaseOf(right.Class))
+			return false;
+		switch (this.Class.TypeParameterCount) {
+		case 0: return true;
+		case 1: return this.TypeArg0.Equals(right.TypeArg0);
+		case 2: return this.TypeArg0.Equals(right.TypeArg0) && this.TypeArg1.Equals(right.TypeArg1);
+		default: throw new NotImplementedException();
+		}
+	}
+
+	public override bool IsAssignableFrom(CiType right)
+	{
+		return right == CiSystem.NullType
+			|| (right is CiClassType rightClass && IsAssignableFromClass(rightClass));
+	}
+
+	protected string GetClassString()
 	{
 		switch (this.Class.TypeParameterCount) {
 		case 0: return this.Class.Name;
@@ -1391,12 +1410,27 @@ public abstract class CiClassType : CiType
 		default: throw new NotImplementedException();
 		}
 	}
+
+	public override string ToString() => GetClassString();
 }
 
-public class CiStorageType : CiClassType
+public class CiReadWriteClassType : CiClassType
+{
+	public override bool IsAssignableFrom(CiType right)
+	{
+		return right == CiSystem.NullType
+			|| (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
+	}
+
+	public override string ToString() => GetClassString() + '!';
+}
+
+public class CiStorageType : CiReadWriteClassType
 {
 	public override bool IsFinal => true;
-	public override string ToString() => base.ToString() + "()";
+	public override bool IsPointer => false;
+	public override bool IsAssignableFrom(CiType right) => false;
+	public override string ToString() => GetClassString() + "()";
 }
 
 public class CiPrintableType : CiType

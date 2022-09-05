@@ -551,16 +551,16 @@ public class GenC : GenCCpp
 			}
 			if (elementType is CiClass klass2 && NeedsDestructor(klass2))
 				return $"(GDestroyNotify) {klass2.Name}_Destruct";
-			if (elementType is CiClassType klass3) {
-				if (klass3.Class == CiSystem.ListClass || klass3.Class == CiSystem.StackClass) {
+			if (elementType is CiStorageType storage) {
+				if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.StackClass) {
 					this.ListFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
 					return "CiList_FreeList";
 				}
-				if (klass3.Class == CiSystem.HashSetClass || klass3.Class == CiSystem.DictionaryClass) {
+				if (storage.Class == CiSystem.HashSetClass || storage.Class == CiSystem.DictionaryClass) {
 					this.ListFrees["Dictionary"] = "g_hash_table_unref(*(GHashTable **) ptr)";
 					return "CiList_FreeDictionary";
 				}
-				if (klass3.Class == CiSystem.SortedDictionaryClass) {
+				if (storage.Class == CiSystem.SortedDictionaryClass) {
 					this.ListFrees["SortedDictionary"] = "g_tree_unref(*(GTree **) ptr)";
 					return "CiList_FreeSortedDictionary";
 				}
@@ -579,12 +579,12 @@ public class GenC : GenCCpp
 		}
 		if (type is CiClass klass)
 			return NeedsDestructor(klass) ? $"(GDestroyNotify) {klass.Name}_Delete" /* TODO: emit */ : "free";
-		if (type is CiClassType klass2) {
-			if (klass2.Class == CiSystem.ListClass || klass2.Class == CiSystem.StackClass)
+		if (type is CiStorageType storage) {
+			if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.StackClass)
 				return "(GDestroyNotify) g_array_unref";
-			if (klass2.Class == CiSystem.HashSetClass || klass2.Class == CiSystem.DictionaryClass)
+			if (storage.Class == CiSystem.HashSetClass || storage.Class == CiSystem.DictionaryClass)
 				return "(GDestroyNotify) g_hash_table_unref";
-			if (klass2.Class == CiSystem.SortedDictionaryClass)
+			if (storage.Class == CiSystem.SortedDictionaryClass)
 				return "(GDestroyNotify) g_tree_unref";
 		}
 		return "NULL";
@@ -616,25 +616,25 @@ public class GenC : GenCCpp
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		if (type is CiClassType klass) {
-			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass) {
+		if (type is CiStorageType storage) {
+			if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.StackClass) {
 				Write("g_array_new(FALSE, FALSE, sizeof(");
-				Write(klass.ElementType, false);
+				Write(storage.ElementType, false);
 				Write("))");
 			}
-			else if (klass.Class == CiSystem.QueueClass)
+			else if (storage.Class == CiSystem.QueueClass)
 				Write("G_QUEUE_INIT");
-			else if (klass.Class == CiSystem.HashSetClass)
-				WriteNewHashTable(klass.ElementType, "NULL");
-			else if (klass.Class == CiSystem.DictionaryClass)
-				WriteNewHashTable(klass.KeyType, GetDictionaryDestroy(klass.ValueType));
-			else if (klass.Class == CiSystem.SortedDictionaryClass) {
-				string valueDestroy = GetDictionaryDestroy(klass.ValueType);
-				if (klass.KeyType == CiSystem.StringPtrType && valueDestroy == "NULL")
+			else if (storage.Class == CiSystem.HashSetClass)
+				WriteNewHashTable(storage.ElementType, "NULL");
+			else if (storage.Class == CiSystem.DictionaryClass)
+				WriteNewHashTable(storage.KeyType, GetDictionaryDestroy(storage.ValueType));
+			else if (storage.Class == CiSystem.SortedDictionaryClass) {
+				string valueDestroy = GetDictionaryDestroy(storage.ValueType);
+				if (storage.KeyType == CiSystem.StringPtrType && valueDestroy == "NULL")
 					Write("g_tree_new((GCompareFunc) strcmp");
 				else {
 					Write("g_tree_new_full(CiTree_Compare");
-					switch (klass.KeyType) {
+					switch (storage.KeyType) {
 					case CiIntegerType _:
 						this.TreeCompareInteger = true;
 						Write("Integer");
@@ -644,10 +644,10 @@ public class GenC : GenCCpp
 						Write("String");
 						break;
 					default:
-						throw new NotImplementedException(klass.KeyType.ToString());
+						throw new NotImplementedException(storage.KeyType.ToString());
 					}
 					Write(", NULL, ");
-					Write(GetDictionaryDestroy(klass.KeyType));
+					Write(GetDictionaryDestroy(storage.KeyType));
 					Write(", ");
 					Write(valueDestroy);
 				}
@@ -812,8 +812,8 @@ public class GenC : GenCCpp
 			return true;
 		if (type is CiClass klass)
 			return klass == CiSystem.MatchClass || klass == CiSystem.LockClass || NeedsDestructor(klass);
-		if (type is CiClassType klass2)
-			return klass2.Class.TypeParameterCount > 0; // built-in collections
+		if (type is CiStorageType storage)
+			return storage.Class.TypeParameterCount > 0; // built-in collections
 		return false;
 	}
 
@@ -1921,19 +1921,19 @@ public class GenC : GenCCpp
 				Write("CiShared_Release(");
 			}
 		}
-		else if (type is CiClassType klass2) {
-			if (klass2.Class == CiSystem.ListClass || klass2.Class == CiSystem.StackClass) {
+		else if (type is CiStorageType storage) {
+			if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.StackClass) {
 				Write("g_array_free(");
 				arrayFree = true;
 			}
-			else if (klass2.Class == CiSystem.QueueClass)
+			else if (storage.Class == CiSystem.QueueClass)
 				Write("g_queue_clear(&");
-			else if (klass2.Class == CiSystem.HashSetClass || klass2.Class == CiSystem.DictionaryClass)
+			else if (storage.Class == CiSystem.HashSetClass || storage.Class == CiSystem.DictionaryClass)
 				Write("g_hash_table_unref(");
-			else if (klass2.Class == CiSystem.SortedDictionaryClass)
+			else if (storage.Class == CiSystem.SortedDictionaryClass)
 				Write("g_tree_unref(");
 			else
-				throw new NotImplementedException(klass2.ToString());
+				throw new NotImplementedException(storage.ToString());
 		}
 		else
 			Write("free(");

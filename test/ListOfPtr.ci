@@ -1,0 +1,14 @@
+public class Test
+{
+	int X;
+
+	public static bool Run()
+	{
+		List<Test#>() list; //FAIL: cl
+		list.Add(new Test());
+		list[0].X = 5;
+		list.Add(new Test());
+		list[1].X = 10;
+		return list[0].X == 5 && list[1].X == 10;
+	}
+}

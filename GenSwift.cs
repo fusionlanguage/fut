@@ -672,7 +672,7 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteNewStorage(CiType type)
 	{
-		if (type is CiClassType) {
+		if (type is CiStorageType) {
 			Write(type);
 			Write("()");
 		}

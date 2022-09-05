@@ -1410,6 +1410,24 @@ public class CiResolver : CiVisitor
 		throw StatementException(expr, "Expected integer");
 	}
 
+	void FillGenericClass(CiClassType result, CiSymbol klass, CiAggregateInitializer typeArgExprs)
+	{
+		if (!(klass is CiClass generic))
+			throw StatementException(typeArgExprs, $"{klass.Name} is not a class");
+		List<CiType> typeArgs = new List<CiType>();
+		foreach (CiExpr typeArgExpr in typeArgExprs.Items)
+			typeArgs.Add(ToType(typeArgExpr, false));
+		if (typeArgs.Count != generic.TypeParameterCount)
+			throw StatementException(typeArgExprs, $"Expected {generic.TypeParameterCount} type arguments for {generic.Name}, got {typeArgs.Count}");
+		NotSupported(typeArgExprs, generic.Name, "cl");
+		if (generic == CiSystem.OrderedDictionaryClass)
+			NotSupported(typeArgExprs, "OrderedDictionary", "c", "cpp", "swift", "ts");
+		result.Class = generic;
+		result.TypeArg0 = typeArgs[0];
+		if (typeArgs.Count == 2)
+			result.TypeArg1 = typeArgs[1];
+	}
+
 	CiType ToBaseType(CiExpr expr, CiToken ptrModifier)
 	{
 		switch (expr) {
@@ -1417,8 +1435,21 @@ public class CiResolver : CiVisitor
 			// built-in, MyEnum, MyClass, MyClass!, MyClass#
 			if (this.Program.TryLookup(symbol.Name) is CiType type) {
 				if (type is CiClass klass) {
-					if (symbol.Left is CiAggregateInitializer)
-						throw StatementException(expr, $"{symbol.Name} reference not implemented yet");
+					if (symbol.Left is CiAggregateInitializer typeArgExprs) {
+						CiClassType classType;
+						switch (ptrModifier) {
+						case CiToken.EndOfFile:
+							classType = new CiClassType();
+							break;
+						case CiToken.ExclamationMark:
+							classType = new CiReadWriteClassType();
+							break;
+						default:
+							throw new NotImplementedException();
+						}
+						FillGenericClass(classType, klass, typeArgExprs);
+						return classType;
+					}
 					if (klass == CiSystem.MatchClass) {
 						if (ptrModifier != CiToken.EndOfFile)
 							throw StatementException(expr, "Read-write references to the built-in class Match are not supported");
@@ -1436,21 +1467,12 @@ public class CiResolver : CiVisitor
 			ExpectNoPtrModifier(expr, ptrModifier);
 			if (call.Arguments.Count != 0)
 				throw StatementException(call, "Expected empty parentheses for storage type");
-			if (call.Method.Left is CiAggregateInitializer typeArgExprs) {
-				if (!(this.Program.TryLookup(call.Method.Name) is CiClass generic))
-					throw StatementException(call, $"{call.Method.Name} is not a class");
-				List<CiType> typeArgs = new List<CiType>();
-				foreach (CiExpr typeArgExpr in typeArgExprs.Items)
-					typeArgs.Add(ToType(typeArgExpr, false));
-				if (typeArgs.Count != generic.TypeParameterCount)
-					throw StatementException(call, $"Expected {generic.TypeParameterCount} type arguments for {generic.Name}, got {typeArgs.Count}");
-				NotSupported(call, generic.Name, "cl");
-				if (generic == CiSystem.OrderedDictionaryClass)
-					NotSupported(call, "OrderedDictionary", "c", "cpp", "swift", "ts");
-				CiStorageType storage = new CiStorageType { Class = generic, TypeArg0 = typeArgs[0] };
-				if (typeArgs.Count == 2)
-					storage.TypeArg1 = typeArgs[1];
-				return storage;
+			{
+				if (call.Method.Left is CiAggregateInitializer typeArgExprs) {
+					CiStorageType storage = new CiStorageType ();
+					FillGenericClass(storage, this.Program.TryLookup(call.Method.Name), typeArgExprs);
+					return storage;
+				}
 			}
 			if (call.Method.Name == "string") {
 				NotSupported(call, "string()", "cl");
