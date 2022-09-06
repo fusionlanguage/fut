@@ -1,0 +1,15 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		Queue<int>() q; //FAIL: cl
+		Queue<int>! p = q; //FAIL: swift
+		p.Enqueue(42);
+		p.Clear();
+		q.Enqueue(5);
+		p.Enqueue(10);
+		p.Enqueue(15);
+		p.Dequeue();
+		return p.Count == 2 && p.Dequeue() == 10 && p.Peek() == 15;
+	}
+}

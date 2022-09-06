@@ -439,6 +439,16 @@ public class GenCpp : GenCCpp
 		WriteMemberOp(obj, null);
 	}
 
+	void WriteCollectionObject(CiExpr obj, CiPriority priority)
+	{
+		if (obj.Type is CiStorageType)
+			obj.Accept(this, priority);
+		else {
+			Write('*');
+			obj.Accept(this, CiPriority.Primary);
+		}
+	}
+
 	void StartStringMethod(CiExpr obj)
 	{
 		obj.Accept(this, CiPriority.Primary);
@@ -728,7 +738,7 @@ public class GenCpp : GenCCpp
 			Write(')');
 		}
 		else if (obj.Type is CiClassType klass && (klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass) && method == CiSystem.CollectionClear) {
-			obj.Accept(this, CiPriority.Assign);
+			WriteCollectionObject(obj, CiPriority.Assign);
 			Write(" = {}");
 		}
 		else if (method == CiSystem.QueueDequeue) {
@@ -744,7 +754,7 @@ public class GenCpp : GenCCpp
 				Write(" &q) { ");
 				Write(elementType, false);
 				Write(" front = q.front(); q.pop(); return front; }(");
-				obj.Accept(this, CiPriority.Argument);
+				WriteCollectionObject(obj, CiPriority.Argument);
 				Write(')');
 			}
 		}

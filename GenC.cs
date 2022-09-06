@@ -279,7 +279,11 @@ public class GenC : GenCCpp
 			}
 			else if (klass.Class == CiSystem.QueueClass) {
 				expr.Left.Accept(this, CiPriority.Primary);
-				Write(".length");
+				if (expr.Left.Type is CiStorageType)
+					Write('.');
+				else
+					Write("->");
+				Write("length");
 			}
 			else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
 				WriteCall("g_hash_table_size", expr.Left);
@@ -368,8 +372,11 @@ public class GenC : GenCCpp
 		case CiClassType klass:
 			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass)
 				WriteGlib("GArray *");
-			else if (klass.Class == CiSystem.QueueClass)
+			else if (klass.Class == CiSystem.QueueClass) {
 				WriteGlib("GQueue ");
+				if (!(klass is CiStorageType))
+					Write('*');
+			}
 			else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
 				WriteGlib("GHashTable *");
 			else if (klass.Class == CiSystem.SortedDictionaryClass)
@@ -854,6 +861,16 @@ public class GenC : GenCCpp
 		}
 	}
 
+	void WriteQueueObject(CiExpr obj)
+	{
+		if (obj.Type is CiStorageType) {
+			Write('&');
+			obj.Accept(this, CiPriority.Primary);
+		}
+		else
+			obj.Accept(this, CiPriority.Argument);
+	}
+
 	void WriteQueueGet(string function, CiExpr obj, CiPriority parent)
 	{
 		CiType elementType = ((CiClassType) obj.Type).ElementType;
@@ -869,8 +886,8 @@ public class GenC : GenCCpp
 			WriteStaticCastType(elementType);
 		}
 		Write(function);
-		Write("(&");
-		obj.Accept(this, CiPriority.Primary);
+		Write('(');
+		WriteQueueObject(obj);
 		Write(')');
 		if (parenthesis)
 			Write(')');
@@ -1073,6 +1090,10 @@ public class GenC : GenCCpp
 			this.SharedAddRef = true;
 			WriteDynamicArrayCast(arrayPtr.ElementType);
 			WriteCall("CiShared_AddRef", expr);
+		}
+		else if (type is CiClassType klass && klass.Class == CiSystem.QueueClass && expr.Type is CiStorageType) {
+			Write('&');
+			expr.Accept(this, CiPriority.Primary);
 		}
 		else
 			base.WriteCoercedInternal(type, expr, parent);
@@ -1562,8 +1583,8 @@ public class GenC : GenCCpp
 				Write(", 0)");
 			}
 			else if (klass.Class == CiSystem.QueueClass) {
-				Write("g_queue_clear(&"); // TODO: g_queue_clear_full
-				obj.Accept(this, CiPriority.Primary);
+				Write("g_queue_clear("); // TODO: g_queue_clear_full
+				WriteQueueObject(obj);
 				Write(')');
 			}
 			else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
@@ -1586,8 +1607,8 @@ public class GenC : GenCCpp
 		else if (method == CiSystem.QueueDequeue)
 			WriteQueueGet("g_queue_pop_head", obj, parent);
 		else if (method == CiSystem.QueueEnqueue) {
-			Write("g_queue_push_tail(&");
-			obj.Accept(this, CiPriority.Primary);
+			Write("g_queue_push_tail(");
+			WriteQueueObject(obj);
 			Write(", ");
 			WriteGPointerCast(((CiClassType) obj.Type).ElementType, args[0]);
 			Write(')');
@@ -1926,8 +1947,11 @@ public class GenC : GenCCpp
 				Write("g_array_free(");
 				arrayFree = true;
 			}
-			else if (storage.Class == CiSystem.QueueClass)
-				Write("g_queue_clear(&");
+			else if (storage.Class == CiSystem.QueueClass) {
+				Write("g_queue_clear(");
+				if (storage is CiStorageType)
+					Write('&');
+			}
 			else if (storage.Class == CiSystem.HashSetClass || storage.Class == CiSystem.DictionaryClass)
 				Write("g_hash_table_unref(");
 			else if (storage.Class == CiSystem.SortedDictionaryClass)
