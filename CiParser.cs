@@ -486,9 +486,15 @@ public class CiParser : CiLexer
 		return ParseExpr();
 	}
 
-	CiVar ParseVar(CiExpr type) => new CiVar { Line = this.Line, TypeExpr = type, Name = ParseId(), Value = ParseInitializer() };
+	void AddSymbol(CiScope scope, CiSymbol symbol)
+	{
+		if (scope.Contains(symbol))
+			ReportError("Duplicate symbol");
+		else
+			scope.Add(symbol);
+	}
 
-	CiVar ParseVar() => ParseVar(ParseType());
+	CiVar ParseVar(CiExpr type) => new CiVar { Line = this.Line, TypeExpr = type, Name = ParseId(), Value = ParseInitializer() };
 
 	CiConst ParseConst()
 	{
@@ -584,7 +590,7 @@ public class CiParser : CiLexer
 
 	void ParseForeachIterator(CiForeach result)
 	{
-		result.Add(new CiVar { Line = this.Line, TypeExpr = ParseType(), Name = ParseId() });
+		AddSymbol(result, new CiVar { Line = this.Line, TypeExpr = ParseType(), Name = ParseId() });
 	}
 
 	CiForeach ParseForeach()
@@ -800,9 +806,9 @@ public class CiParser : CiLexer
 		if (!See(CiToken.RightParenthesis)) {
 			do {
 				CiCodeDoc doc = ParseDoc();
-				CiVar param = ParseVar();
+				CiVar param = ParseVar(ParseType());
 				param.Documentation = doc;
-				method.Parameters.Add(param);
+				AddSymbol(method.Parameters, param);
 			} while (Eat(CiToken.Comma));
 		}
 		Expect(CiToken.RightParenthesis);
@@ -834,9 +840,6 @@ public class CiParser : CiLexer
 			klass.BaseClassName = ParseId();
 		Expect(CiToken.LeftBrace);
 
-		List<CiConst> consts = new List<CiConst>();
-		List<CiField> fields = new List<CiField>();
-		List<CiMethod> methods = new List<CiMethod>();
 		while (!See(CiToken.RightBrace) && !See(CiToken.EndOfFile)) {
 			CiCodeDoc doc = ParseDoc();
 
@@ -869,7 +872,7 @@ public class CiParser : CiLexer
 				CiConst konst = ParseConst();
 				konst.Documentation = doc;
 				konst.Visibility = visibility;
-				consts.Add(konst);
+				AddSymbol(klass, konst);
 				continue;
 			}
 
@@ -924,7 +927,7 @@ public class CiParser : CiLexer
 				CiMethod method = new CiMethod { Line = line, Documentation = doc, Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
 				method.Parameters.Parent = klass;
 				ParseMethod(method);
-				methods.Add(method);
+				AddSymbol(klass, method);
 				continue;
 			}
 
@@ -937,13 +940,9 @@ public class CiParser : CiLexer
 				ReportError("Field cannot be void");
 			CiField field = new CiField { Line = line, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };
 			Expect(CiToken.Semicolon);
-			fields.Add(field);
+			AddSymbol(klass, field);
 		}
 		Expect(CiToken.RightBrace);
-
-		klass.Consts = consts.ToArray();
-		klass.Fields = fields.ToArray();
-		klass.Methods = methods.ToArray();
 		return klass;
 	}
 
@@ -963,7 +962,7 @@ public class CiParser : CiLexer
 				konst.Value = ParseExpr();
 			else if (flags)
 				ReportError("enum* symbol must be assigned a value");
-			enu.Add(konst);
+			AddSymbol(enu, konst);
 		} while (Eat(CiToken.Comma));
 		Expect(CiToken.RightBrace);
 		return enu;
@@ -1004,7 +1003,7 @@ public class CiParser : CiLexer
 			}
 			type.Documentation = doc;
 			type.IsPublic = isPublic;
-			this.Program.Add(type);
+			AddSymbol(this.Program, type);
 		}
 	}
 }

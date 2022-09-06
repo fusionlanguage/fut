@@ -87,10 +87,6 @@ public class CiResolver : CiVisitor
 		}
 		this.Program.Classes.Add(klass);
 		klass.VisitStatus = CiVisitStatus.Done;
-
-		klass.AddRange(klass.Consts);
-		klass.AddRange(klass.Fields);
-		klass.AddRange(klass.Methods);
 	}
 
 	static void TakePtr(CiExpr expr)
@@ -1641,6 +1637,23 @@ public class CiResolver : CiVisitor
 						param.Value = FoldConst(param.Value);
 						Coerce(param.Value, param.Type);
 					}
+				}
+				if (method.CallType == CiCallType.Override || method.CallType == CiCallType.Sealed) {
+					if (klass.Parent.TryLookup(method.Name) is CiMethod baseMethod) {
+						// TODO: check private
+						switch (baseMethod.CallType) {
+						case CiCallType.Abstract:
+						case CiCallType.Virtual:
+						case CiCallType.Override:
+							break;
+						default:
+							throw StatementException(method, "Base method is not abstract or virtual");
+						}
+						// TODO: check parameter and return type
+						baseMethod.Calls.Add(method);
+					}
+					else
+						throw StatementException(method, "No method to override");
 				}
 				break;
 			default:

@@ -145,38 +145,12 @@ public abstract class CiScope : CiSymbol, IEnumerable<CiSymbol>
 		return null;
 	}
 
-	static bool IsPrivate(CiSymbol symbol)
-	{
-		return symbol is CiMember member && member.Visibility == CiVisibility.Private;
-	}
-
-	static bool IsOverrideOf(CiSymbol derivedSymbol, CiSymbol baseSymbol)
-	{
-		if (derivedSymbol is CiMethod derived
-		 && (derived.CallType == CiCallType.Override || derived.CallType == CiCallType.Sealed)
-		 && baseSymbol is CiMethod baseMethod
-		 && baseMethod.CallType != CiCallType.Static && baseMethod.CallType != CiCallType.Normal) {
-			// TODO: check parameter and return type
-			baseMethod.Calls.Add(derived);
-			return true;
-		}
-		return false;
-	}
+	public bool Contains(CiSymbol symbol) => this.Dict.Contains(symbol);
 
 	public void Add(CiSymbol symbol)
 	{
-		string name = symbol.Name;
-		for (CiScope scope = this; scope != null; scope = scope.Parent) {
-			if (scope.Dict[name] is CiSymbol duplicate
-			 && (scope == this || (!IsPrivate(duplicate) && !IsOverrideOf(symbol, duplicate)))) {
-				CiScope symbolScope = symbol as CiScope ?? this;
-				CiScope duplicateScope = duplicate as CiScope ?? scope;
-				throw new CiException(symbolScope.Container.Filename, symbol.Line,
-					$"Duplicate symbol {name}, already defined in {duplicateScope.Container.Filename} line {duplicate.Line}");
-			}
-		}
 		symbol.Parent = this;
-		this.Dict.Add(name, symbol);
+		this.Dict.Add(symbol.Name, symbol);
 	}
 
 	public void AddRange(IEnumerable<CiSymbol> symbols)
@@ -989,9 +963,6 @@ public class CiClass : CiContainerType
 	public int TypeParameterCount = 0;
 	public string BaseClassName;
 	public CiMethodBase Constructor;
-	public CiConst[] Consts;
-	public CiField[] Fields;
-	public CiMethod[] Methods;
 	public readonly List<CiConst> ConstArrays = new List<CiConst>();
 	public CiVisitStatus VisitStatus;
 	public override string ToString() => this.Name + "()";
@@ -1009,7 +980,6 @@ public class CiClass : CiContainerType
 	{
 		this.CallType = callType;
 		this.Name = name;
-		this.Methods = methods;
 		AddRange(methods);
 	}
 
