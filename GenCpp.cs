@@ -776,7 +776,7 @@ public class GenCpp : GenCCpp
 			Write(" &s) { ");
 			Write(elementType, false);
 			Write(" top = s.top(); s.pop(); return top; }(");
-			obj.Accept(this, CiPriority.Argument);
+			WriteCollectionObject(obj, CiPriority.Argument);
 			Write(')');
 		}
 		else if (method == CiSystem.HashSetAdd)

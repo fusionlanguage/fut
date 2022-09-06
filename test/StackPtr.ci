@@ -1,0 +1,15 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		Stack<int>() s; //FAIL: cl
+		Stack<int>! p = s; //FAIL: swift
+		p.Push(42);
+		p.Clear();
+		p.Push(5);
+		s.Push(10);
+		p.Push(15);
+		p.Pop();
+		return p.Count == 2 && p.Pop() == 10 && p.Peek() == 5;
+	}
+}
