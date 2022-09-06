@@ -959,7 +959,6 @@ public class CiType : CiScope
 	public virtual CiType PtrOrSelf => this;
 	public virtual bool IsFinal => false;
 	public virtual bool IsClass(CiClass klass) => false;
-	public virtual bool IsReadonlyPtr => false;
 	public virtual bool IsDynamicPtr => false;
 }
 
@@ -1219,7 +1218,6 @@ public class CiClassPtrType : CiType
 
 	public override CiType PtrOrSelf => this.Modifier == CiToken.Hash ? this.Class.PtrOrSelf : this;
 	public override bool IsClass(CiClass klass) => this.Class == klass;
-	public override bool IsReadonlyPtr => this.Modifier == CiToken.EndOfFile;
 	public override bool IsDynamicPtr => this.Modifier == CiToken.Hash;
 
 	public override bool Equals(object obj)
@@ -1296,7 +1294,6 @@ public class CiArrayPtrType : CiArrayType
 		}
 	}
 
-	public override bool IsReadonlyPtr => this.Modifier == CiToken.EndOfFile;
 	public override bool IsDynamicPtr => this.Modifier == CiToken.Hash;
 
 	public override CiSymbol TryLookup(string name)

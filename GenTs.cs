@@ -97,21 +97,22 @@ public class GenTs : GenJs
 			break;
 		case CiArrayType array:
 			CiType elementType = array.ElementType;
+			bool isReadonlyPtr = array is CiArrayPtrType arrayPtr && arrayPtr.Modifier == CiToken.EndOfFile;
 			if (elementType is CiNumericType number) {
 				if (array is CiArrayPtrType) {
-					if (array.IsReadonlyPtr)
+					if (isReadonlyPtr)
 						Write("readonly ");
 					Write("number[] | ");
 				}
-				if (array.IsReadonlyPtr)
+				if (isReadonlyPtr)
 					Write("Readonly<");
 				Write(GetArrayElementType(number));
 				Write("Array");
-				if (array.IsReadonlyPtr)
+				if (isReadonlyPtr)
 					Write('>');
 			}
 			else {
-				if (forConst || array.IsReadonlyPtr)
+				if (forConst || isReadonlyPtr)
 					Write("readonly ");
 				if (elementType.IsPointer)
 					Write('(');
