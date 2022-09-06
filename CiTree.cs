@@ -1317,7 +1317,6 @@ public class CiArrayPtrType : CiArrayType
 	}
 
 	public override bool Equals(object obj) => obj is CiArrayPtrType that && this.ElementType.Equals(that.ElementType) && this.Modifier == that.Modifier;
-
 	public override int GetHashCode() => this.ElementType.GetHashCode() ^ this.Modifier.GetHashCode();
 }
 
@@ -1355,7 +1354,6 @@ public class CiArrayStorageType : CiArrayType
 	public override bool IsFinal => true;
 
 	public override bool Equals(object obj) => obj is CiArrayStorageType that && this.ElementType == that.ElementType && this.Length == that.Length;
-
 	public override int GetHashCode() => this.ElementType.GetHashCode() ^ this.Length.GetHashCode();
 }
 
@@ -1429,6 +1427,7 @@ public class CiStorageType : CiReadWriteClassType
 	public override bool IsFinal => true;
 	public override bool IsPointer => false;
 	public override bool IsAssignableFrom(CiType right) => false;
+	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this.Class, TypeArg0 = this.TypeArg0, TypeArg1 = this.TypeArg1 };
 	public override string ToString() => GetClassString() + "()";
 }
 
