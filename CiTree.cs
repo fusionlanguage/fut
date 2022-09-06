@@ -1256,8 +1256,10 @@ public abstract class CiArrayType : CiType
 
 public class CiArrayPtrType : CiArrayType
 {
-	public override bool IsPointer => true;
 	public CiToken Modifier;
+
+	public override bool IsPointer => true;
+	public override bool IsDynamicPtr => this.Modifier == CiToken.Hash;
 
 	public override string ArrayString
 	{
@@ -1293,8 +1295,6 @@ public class CiArrayPtrType : CiArrayType
 			throw new NotImplementedException(this.Modifier.ToString());
 		}
 	}
-
-	public override bool IsDynamicPtr => this.Modifier == CiToken.Hash;
 
 	public override CiSymbol TryLookup(string name)
 	{

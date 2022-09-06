@@ -254,6 +254,25 @@ public class GenSwift : GenPySwift
 			Write(classPtr.Class.Name);
 			Write('?');
 			break;
+		case CiArrayPtrType arrayPtr:
+			this.ArrayRef = true;
+			Write("ArrayRef<");
+			Write(arrayPtr.ElementType);
+			Write(">?");
+			break;
+		case CiArrayStorageType arrayStg:
+			if (IsArrayRef(arrayStg)) {
+				this.ArrayRef = true;
+				Write("ArrayRef<");
+				Write(arrayStg.ElementType);
+				Write('>');
+			}
+			else {
+				Write('[');
+				Write(arrayStg.ElementType);
+				Write(']');
+			}
+			break;
 		case CiClassType klass:
 			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass) {
 				Write('[');
@@ -274,25 +293,6 @@ public class GenSwift : GenPySwift
 			}
 			else
 				throw new NotImplementedException();
-			break;
-		case CiArrayStorageType arrayStg:
-			if (IsArrayRef(arrayStg)) {
-				this.ArrayRef = true;
-				Write("ArrayRef<");
-				Write(arrayStg.ElementType);
-				Write('>');
-			}
-			else {
-				Write('[');
-				Write(arrayStg.ElementType);
-				Write(']');
-			}
-			break;
-		case CiArrayPtrType arrayPtr:
-			this.ArrayRef = true;
-			Write("ArrayRef<");
-			Write(arrayPtr.ElementType);
-			Write(">?");
 			break;
 		default:
 			Write(type.Name);

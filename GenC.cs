@@ -2571,14 +2571,14 @@ public class GenC : GenCCpp
 			}
 			this.Indent--;
 			WriteLine("};");
-		}
-		if (NeedsConstructor(klass)) {
-			WriteXstructorSignature("Construct", klass);
-			WriteLine(';');
-		}
-		if (NeedsDestructor(klass)) {
-			WriteXstructorSignature("Destruct", klass);
-			WriteLine(';');
+			if (NeedsConstructor(klass)) {
+				WriteXstructorSignature("Construct", klass);
+				WriteLine(';');
+			}
+			if (NeedsDestructor(klass)) {
+				WriteXstructorSignature("Destruct", klass);
+				WriteLine(';');
+			}
 		}
 		WriteSignatures(klass, false);
 	}
