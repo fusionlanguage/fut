@@ -100,7 +100,8 @@ public abstract class GenCCpp : GenTyped
 
 	static bool IsPtrTo(CiExpr ptr, CiExpr other)
 	{
-		return (ptr.Type is CiClassPtrType || ptr.Type is CiArrayPtrType) && ptr.Type.IsAssignableFrom(other.Type);
+		return (ptr.Type is CiClassPtrType || ptr.Type is CiArrayPtrType || ptr.Type is CiClassType)
+			&& ptr.Type.IsAssignableFrom(other.Type);
 	}
 
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
