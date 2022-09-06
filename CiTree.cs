@@ -931,9 +931,8 @@ public class CiMethod : CiMethodBase
 		get
 		{
 			CiMethod method = this;
-			while (method.CallType == CiCallType.Override) {
+			while (method.CallType == CiCallType.Override)
 				method = (CiMethod) method.Parent.Parent.TryLookup(method.Name);
-			}
 			return method;
 		}
 	}
