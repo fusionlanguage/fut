@@ -1433,11 +1433,12 @@ public class GenC : GenCCpp
 			if (parent > CiPriority.Add)
 				Write(')');
 		}
-		else if (obj.Type is CiArrayType array && method.Name == "BinarySearch") {
+		else if (method == CiSystem.ArrayBinarySearchAll || method == CiSystem.ArrayBinarySearchPart) {
 			if (parent > CiPriority.Add)
 				Write('(');
 			Write("(const ");
-			Write(array.ElementType, false);
+			CiType elementType = ((CiClassType) obj.Type).ElementType;
+			Write(elementType, false);
 			Write(" *) bsearch(&");
 			args[0].Accept(this, CiPriority.Primary); // TODO: not lvalue, promoted
 			Write(", ");
@@ -1447,16 +1448,16 @@ public class GenC : GenCCpp
 				WriteArrayPtrAdd(obj, args[1]);
 			Write(", ");
 			if (args.Count == 1)
-				VisitLiteralLong(((CiArrayStorageType) array).Length);
+				VisitLiteralLong(((CiArrayStorageType) obj.Type).Length);
 			else
 				args[2].Accept(this, CiPriority.Primary);
-			WriteSizeofCompare(array.ElementType);
+			WriteSizeofCompare(elementType);
 			Write(" - ");
 			WriteArrayPtr(obj, CiPriority.Mul);
 			if (parent > CiPriority.Add)
 				Write(')');
 		}
-		else if (obj.Type is CiArrayType array3 && method.Name == "Fill") {
+		else if (method == CiSystem.ArrayFillAll || method == CiSystem.ArrayFillPart) {
 			if (args[0] is CiLiteral literal && literal.IsDefaultValue) {
 				Include("string.h");
 				Write("memset(");
@@ -1471,7 +1472,8 @@ public class GenC : GenCCpp
 					Write(", 0, ");
 					args[2].Accept(this, CiPriority.Mul);
 					Write(" * sizeof(");
-					Write(array3.ElementType, false);
+					CiType elementType = ((CiClassType) obj.Type).ElementType;
+					Write(elementType, false);
 					Write(')');
 				}
 				Write(')');

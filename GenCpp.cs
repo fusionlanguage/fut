@@ -618,7 +618,7 @@ public class GenCpp : GenCCpp
 			WriteStringMethod(obj, "ends_with", method, args);
 		else if (method == CiSystem.StringSubstring)
 			WriteStringMethod(obj, "substr", method, args);
-		else if (obj.Type is CiArrayType array && method.Name == "BinarySearch") {
+		else if (method == CiSystem.ArrayBinarySearchAll || method == CiSystem.ArrayBinarySearchPart) {
 			Include("algorithm");
 			if (parent > CiPriority.Add)
 				Write('(');

@@ -612,7 +612,7 @@ public class GenPy : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			WriteSlice(args[0], args[1]);
 		}
-		else if (obj.Type is CiArrayType && method.Name == "BinarySearch") {
+		else if (method == CiSystem.ArrayBinarySearchAll || method == CiSystem.ArrayBinarySearchPart) {
 			Include("bisect");
 			WriteCall("bisect.bisect_left", obj, args);
 		}
@@ -623,16 +623,18 @@ public class GenPy : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			WriteSlice(args[0], args[3]);
 		}
-		else if (obj.Type is CiArrayType array && method.Name == "Fill") {
+		else if (method == CiSystem.ArrayFillAll || method == CiSystem.ArrayFillPart) {
 			obj.Accept(this, CiPriority.Primary);
 			if (args.Count == 1) {
 				Write("[:] = ");
-				WriteNewArray(array.ElementType, args[0], ((CiArrayStorageType) array).LengthExpr);
+				CiArrayStorageType array = (CiArrayStorageType) obj.Type;
+				WriteNewArray(array.ElementType, args[0], array.LengthExpr);
 			}
 			else {
 				WriteSlice(args[1], args[2]);
 				Write(" = ");
-				WriteNewArray(array.ElementType, args[0], args[2]); // TODO: side effect
+				CiClassType klass = (CiClassType) obj.Type;
+				WriteNewArray(klass.ElementType, args[0], args[2]); // TODO: side effect
 			}
 		}
 		else if (method == CiSystem.CollectionSortAll) {

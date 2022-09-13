@@ -192,7 +192,7 @@ public class GenCl : GenC
 			}
 			Write("_i]");
 		}
-		else if (obj.Type is CiArrayType && method.Name == "Fill")
+		else if (method == CiSystem.ArrayFillAll || method == CiSystem.ArrayFillPart)
 			WriteArrayFill(obj, args);
 		else if (method == CiSystem.UTF8GetByteCount)
 			WriteStringLength(args[0]);

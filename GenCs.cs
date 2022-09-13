@@ -493,7 +493,7 @@ public class GenCs : GenTyped
 			args[0].Accept(this, CiPriority.Argument);
 			Write("].Value");
 		}
-		else if (obj.Type is CiArrayType array && method.Name == "BinarySearch") {
+		else if (method == CiSystem.ArrayBinarySearchAll || method == CiSystem.ArrayBinarySearchPart) {
 			Include("System");
 			Write("Array.BinarySearch(");
 			obj.Accept(this, CiPriority.Argument);
@@ -504,7 +504,7 @@ public class GenCs : GenTyped
 				args[2].Accept(this, CiPriority.Argument);
 				Write(", ");
 			}
-			WriteNotPromoted(array.ElementType, args[0]);
+			WriteNotPromoted(((CiClassType) obj.Type).ElementType, args[0]);
 			Write(')');
 		}
 		else if (obj.Type is CiArrayType && method == CiSystem.CollectionCopyTo) {
@@ -515,7 +515,7 @@ public class GenCs : GenTyped
 			WriteArgs(method, args);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayType array2 && method.Name == "Fill") {
+		else if (method == CiSystem.ArrayFillAll || method == CiSystem.ArrayFillPart) {
 			Include("System");
 			if (args[0] is CiLiteral literal && literal.IsDefaultValue) {
 				Write("Array.Clear(");
@@ -523,14 +523,14 @@ public class GenCs : GenTyped
 				if (args.Count == 1) {
 					// .NET Framework compatibility
 					Write(", 0, ");
-					VisitLiteralLong(((CiArrayStorageType) array2).Length);
+					VisitLiteralLong(((CiArrayStorageType) obj.Type).Length);
 				}
 			}
 			else {
 				Write("Array.Fill(");
 				obj.Accept(this, CiPriority.Argument);
 				Write(", ");
-				WriteNotPromoted(array2.ElementType, args[0]);
+				WriteNotPromoted(((CiClassType) obj.Type).ElementType, args[0]);
 			}
 			if (args.Count == 3) {
 				Write(", ");

@@ -448,7 +448,7 @@ public class GenJs : GenBase
 			WriteArgs(method, args);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayType array && method.Name == "Fill") {
+		else if (method == CiSystem.ArrayFillAll || method == CiSystem.ArrayFillPart) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".fill(");
 			args[0].Accept(this, CiPriority.Argument);

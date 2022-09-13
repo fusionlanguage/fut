@@ -543,9 +543,9 @@ public class GenJava : GenTyped
 			}
 			Write(')');
 		}
-		else if (obj.Type is CiArrayType && method.Name == "BinarySearch")
+		else if (method == CiSystem.ArrayBinarySearchAll || method == CiSystem.ArrayBinarySearchPart)
 			WriteArrayBinarySearchFill(obj, "binarySearch", args);
-		else if (obj.Type is CiArrayType && method.Name == "Fill")
+		else if (method == CiSystem.ArrayFillAll || method == CiSystem.ArrayFillPart)
 			WriteArrayBinarySearchFill(obj, "fill", args);
 		else if (method == CiSystem.CollectionSortAll) {
 			if (obj.Type is CiArrayStorageType) {

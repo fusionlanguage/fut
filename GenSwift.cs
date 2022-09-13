@@ -493,26 +493,24 @@ public class GenSwift : GenPySwift
 			WriteRange(args[0], args[3]);
 			Write(']');
 		}
-		else if (obj.Type is CiArrayStorageType array && !IsArrayRef(array) && method.Name == "Fill") {
-			if (args.Count == 1) {
-				obj.Accept(this, CiPriority.Assign);
-				Write(" = [");
-				Write(array.ElementType);
-				Write("](repeating: ");
-				WriteCoerced(array.ElementType, args[0], CiPriority.Argument);
-				Write(", count: ");
-				VisitLiteralLong(array.Length);
-				Write(')');
-			}
-			else {
-				OpenIndexing(obj);
-				WriteRange(args[1], args[2]);
-				Write("] = ArraySlice(repeating: ");
-				WriteCoerced(array.ElementType, args[0], CiPriority.Argument);
-				Write(", count: ");
-				WriteCoerced(CiSystem.IntType, args[2], CiPriority.Argument); // FIXME: side effect
-				Write(')');
-			}
+		else if (obj.Type is CiArrayStorageType array && !IsArrayRef(array) && method == CiSystem.ArrayFillAll) {
+			obj.Accept(this, CiPriority.Assign);
+			Write(" = [");
+			Write(array.ElementType);
+			Write("](repeating: ");
+			WriteCoerced(array.ElementType, args[0], CiPriority.Argument);
+			Write(", count: ");
+			VisitLiteralLong(array.Length);
+			Write(')');
+		}
+		else if (obj.Type is CiArrayStorageType array2 && !IsArrayRef(array2) && method == CiSystem.ArrayFillPart) {
+			OpenIndexing(obj);
+			WriteRange(args[1], args[2]);
+			Write("] = ArraySlice(repeating: ");
+			WriteCoerced(array2.ElementType, args[0], CiPriority.Argument);
+			Write(", count: ");
+			WriteCoerced(CiSystem.IntType, args[2], CiPriority.Argument); // FIXME: side effect
+			Write(')');
 		}
 		else if (obj.Type is CiArrayStorageType arrayStorage && method == CiSystem.CollectionSortAll) {
 			obj.Accept(this, CiPriority.Primary);
