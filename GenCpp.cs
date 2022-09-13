@@ -653,7 +653,13 @@ public class GenCpp : GenCCpp
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayType && method.Name == "Fill" && args.Count == 3) {
+		else if (method == CiSystem.ArrayFillAll) {
+			StartMethodCall(obj);
+			Write("fill(");
+			WriteCoerced(((CiClassType) obj.Type).ElementType, args[0], CiPriority.Argument);
+			Write(')');
+		}
+		else if (method == CiSystem.ArrayFillPart) {
 			Include("algorithm");
 			Write("std::fill_n(");
 			WriteArrayPtrAdd(obj, args[1]);

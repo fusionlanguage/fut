@@ -1007,13 +1007,16 @@ public class CiResolver : CiVisitor
 		return new CiSelectExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
 	}
 
-	static bool CanCall(CiMethod method, List<CiExpr> arguments)
+	static bool CanCall(CiExpr obj, CiMethod method, List<CiExpr> arguments)
 	{
 		int i = 0;
 		foreach (CiVar param in method.Parameters) {
 			if (i >= arguments.Count)
 				return param.Value != null;
-			if (!param.Type.IsAssignableFrom(arguments[i++].Type))
+			CiType type = param.Type;
+			if (obj != null && obj.Type is CiClassType generic)
+				type = generic.EvalType(type);
+			if (!type.IsAssignableFrom(arguments[i++].Type))
 				return false;
 		}
 		return i == arguments.Count;
@@ -1036,7 +1039,7 @@ public class CiResolver : CiVisitor
 		}
 		CiMethod method = symbol.Symbol switch {
 			CiMethod m => m,
-			CiMethodGroup group => group.Methods.FirstOrDefault(m => CanCall(m, arguments))
+			CiMethodGroup group => group.Methods.FirstOrDefault(m => CanCall(symbol.Left, m, arguments))
 				?? /* pick first for the error message */ group.Methods[0],
 			_ => throw StatementException(symbol, "Expected a method")
 		};
