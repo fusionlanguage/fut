@@ -532,14 +532,7 @@ public class GenPy : GenPySwift
 	void WriteAssignSorted(CiExpr obj, string byteArray)
 	{
 		Write(" = ");
-		CiType elementType;
-		if (obj.Type is CiArrayType array)
-			elementType = array.ElementType;
-		else if (obj.Type is CiClassType list)
-			elementType = list.ElementType;
-		else
-			throw new NotImplementedException();
-		char c = GetArrayCode((CiNumericType) elementType);
+		char c = GetArrayCode((CiNumericType) ((CiClassType) obj.Type).ElementType);
 		if (c == 'B') {
 			Write(byteArray);
 			Write('(');

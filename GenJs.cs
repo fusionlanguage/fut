@@ -467,7 +467,7 @@ public class GenJs : GenBase
 			Write(".sort((a, b) => a - b)");
 		}
 		else if (method == CiSystem.CollectionSortPart) {
-			if (obj.Type is CiArrayType) {
+			if (obj.Type.IsArray) {
 				obj.Accept(this, CiPriority.Primary);
 				Write(".subarray(");
 				WriteStartEnd(args[0], args[1]);

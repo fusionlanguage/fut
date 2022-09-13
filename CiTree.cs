@@ -936,6 +936,7 @@ public class CiType : CiScope
 	public virtual bool IsFinal => false;
 	public virtual bool IsClass(CiClass klass) => false;
 	public virtual bool IsDynamicPtr => false;
+	public virtual bool IsArray => false;
 }
 
 public abstract class CiContainerType : CiType
@@ -1284,13 +1285,7 @@ public class CiDynamicPtrType : CiReadWriteClassType
 	public override string ToString() => GetClassString() + '#';
 }
 
-public abstract class CiArrayType : CiClassType
-{
-	public override string ToString() => this.BaseType + this.ArrayString + this.ElementType.ArrayString;
-	public override CiType BaseType => this.ElementType.BaseType;
-}
-
-public class CiArrayPtrType : CiArrayType
+public class CiArrayPtrType : CiClassType
 {
 	public CiToken Modifier;
 
@@ -1301,6 +1296,9 @@ public class CiArrayPtrType : CiArrayType
 
 	public override bool IsPointer => true;
 	public override bool IsDynamicPtr => this.Modifier == CiToken.Hash;
+	public override string ToString() => this.BaseType + this.ArrayString + this.ElementType.ArrayString;
+	public override CiType BaseType => this.ElementType.BaseType;
+	public override bool IsArray => true;
 
 	public override string ArrayString
 	{
@@ -1323,13 +1321,13 @@ public class CiArrayPtrType : CiArrayType
 	{
 		if (right == CiSystem.NullType)
 			return true;
-		if (!(right is CiArrayType array) || !array.ElementType.Equals(this.ElementType))
+		if (!(right is CiClassType array) || !array.ElementType.Equals(this.ElementType))
 			return false;
 		switch (this.Modifier) {
 		case CiToken.EndOfFile:
-			return true;
+			return array.IsArray;
 		case CiToken.ExclamationMark:
-			return !(array is CiArrayPtrType ptr) || ptr.Modifier != CiToken.EndOfFile;
+			return (array is CiArrayPtrType ptr && ptr.Modifier != CiToken.EndOfFile) || array.Class == CiSystem.ArrayStorageClass;
 		case CiToken.Hash:
 			return array is CiArrayPtrType dynamicPtr && dynamicPtr.Modifier == CiToken.Hash;
 		default:
@@ -1341,7 +1339,7 @@ public class CiArrayPtrType : CiArrayType
 	public override int GetHashCode() => this.ElementType.GetHashCode() ^ this.Modifier.GetHashCode();
 }
 
-public class CiArrayStorageType : CiArrayType
+public class CiArrayStorageType : CiClassType
 {
 	public CiExpr LengthExpr;
 	public int Length;
@@ -1352,6 +1350,10 @@ public class CiArrayStorageType : CiArrayType
 		this.Class = CiSystem.ArrayStorageClass;
 	}
 
+	public override string ToString() => this.BaseType + this.ArrayString + this.ElementType.ArrayString;
+	public override CiType BaseType => this.ElementType.BaseType;
+	public override bool IsPointer => false;
+	public override bool IsArray => true;
 	public override string ArrayString => $"[{this.Length}]";
 	public override bool IsAssignableFrom(CiType right) => false;
 	public override CiType StorageType => this.ElementType.StorageType;

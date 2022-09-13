@@ -210,7 +210,7 @@ public abstract class GenCCpp : GenTyped
 
 	public override void VisitConst(CiConst konst)
 	{
-		if (konst.Type is CiArrayType)
+		if (konst.Type is CiArrayStorageType)
 			WriteConst(konst);
 	}
 

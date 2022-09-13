@@ -176,7 +176,7 @@ public class GenSwift : GenPySwift
 		if (symbol.Name == "this")
 			return false;
 		if (symbol.Symbol.Parent is CiForeach forEach
-		 && forEach.Collection.Type is CiArrayType array
+		 && forEach.Collection.Type is CiArrayStorageType array
 		 && array.ElementType is CiClass)
 			return false;
 		return true;
@@ -315,18 +315,12 @@ public class GenSwift : GenPySwift
 	{
 		if (!(expr is CiSymbolReference symbol) || !(symbol.Symbol.Parent is CiForeach loop))
 			return false;
-		switch (loop.Collection.Type) {
-		case CiArrayType array:
-			return array.ElementType == CiSystem.StringStorageType;
-		case CiClassType klass:
-			if (klass.Class == CiSystem.ListClass)
-				return klass.ElementType == CiSystem.StringStorageType;
-			if (klass.Class.TypeParameterCount == 2)
-				return (symbol.Symbol == loop.Element ? klass.KeyType : klass.ValueType) == CiSystem.StringStorageType;
-			throw new NotImplementedException();
-		default:
-			throw new NotImplementedException();
-		}
+		CiClassType klass = (CiClassType) loop.Collection.Type;
+		if (klass.Class == CiSystem.ArrayStorageClass || klass.Class == CiSystem.ListClass)
+			return klass.ElementType == CiSystem.StringStorageType;
+		if (klass.Class.TypeParameterCount == 2)
+			return (symbol.Symbol == loop.Element ? klass.KeyType : klass.ValueType) == CiSystem.StringStorageType;
+		throw new NotImplementedException();
 	}
 
 	void WriteUnwrappedString(CiExpr expr, CiPriority parent, bool substringOk)

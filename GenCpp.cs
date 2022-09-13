@@ -399,10 +399,10 @@ public class GenCpp : GenCCpp
 	static bool IsCppPtr(CiExpr expr)
 	{
 		if (expr.Type is CiClassPtrType
-		 || (expr.Type is CiClassType && !(expr.Type is CiStorageType) && !(expr.Type is CiArrayType))) {
+		 || (expr.Type is CiClassType ptr && ptr.IsPointer && ptr.Class != CiSystem.ArrayPtrClass)) {
 			if (expr is CiSymbolReference symbol
 			 && symbol.Symbol.Parent is CiForeach loop
-			 && loop.Collection.Type is CiArrayType array
+			 && loop.Collection.Type is CiArrayStorageType array
 			 && array.ElementType is CiClass)
 				return false; // C++ reference
 			return true; // C++ pointer
@@ -412,7 +412,7 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Left.Type is CiClassType ptr && !(ptr is CiStorageType) && !(ptr is CiArrayType)) {
+		if (expr.Left.Type is CiClassType ptr && ptr.IsPointer && ptr.Class != CiSystem.ArrayPtrClass) {
 			Write("(*");
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(")[");
@@ -1066,7 +1066,7 @@ public class GenCpp : GenCCpp
 			Write(statement.ValueVar.Name);
 			Write(']');
 		}
-		else if (statement.Collection.Type is CiArrayType array
+		else if (statement.Collection.Type is CiArrayStorageType array
 		 && array.ElementType is CiClass klass
 		 && element.Type is CiClassPtrType ptr) {
 			if (ptr.Modifier == CiToken.EndOfFile)

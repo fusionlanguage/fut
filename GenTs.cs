@@ -95,35 +95,34 @@ public class GenTs : GenJs
 		case CiEnum enu:
 			Write(enu == CiSystem.BoolType ? "boolean" : enu.Name);
 			break;
-		case CiArrayType array:
-			CiType elementType = array.ElementType;
-			bool isReadonlyPtr = array is CiArrayPtrType arrayPtr && arrayPtr.Modifier == CiToken.EndOfFile;
-			if (elementType is CiNumericType number) {
-				if (array is CiArrayPtrType) {
-					if (isReadonlyPtr)
-						Write("readonly ");
-					Write("number[] | ");
-				}
-				if (isReadonlyPtr)
-					Write("Readonly<");
-				Write(GetArrayElementType(number));
-				Write("Array");
-				if (isReadonlyPtr)
-					Write('>');
-			}
-			else {
-				if (forConst || isReadonlyPtr)
-					Write("readonly ");
-				if (elementType.IsPointer)
-					Write('(');
-				Write(elementType, forConst);
-				if (elementType.IsPointer)
-					Write(')');
-				Write("[]");
-			}
-			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass)
+			if (klass.Class == CiSystem.ArrayPtrClass || klass.Class == CiSystem.ArrayStorageClass) {
+				bool isReadonlyPtr = klass is CiArrayPtrType arrayPtr && arrayPtr.Modifier == CiToken.EndOfFile;
+				if (klass.ElementType is CiNumericType number) {
+					if (klass.Class == CiSystem.ArrayPtrClass) {
+						if (isReadonlyPtr)
+							Write("readonly ");
+						Write("number[] | ");
+					}
+					if (isReadonlyPtr)
+						Write("Readonly<");
+					Write(GetArrayElementType(number));
+					Write("Array");
+					if (isReadonlyPtr)
+						Write('>');
+				}
+				else {
+					if (forConst || isReadonlyPtr)
+						Write("readonly ");
+					if (klass.ElementType.IsPointer)
+						Write('(');
+					Write(klass.ElementType, forConst);
+					if (klass.ElementType.IsPointer)
+						Write(')');
+					Write("[]");
+				}
+			}
+			else if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass)
 				WriteListType(klass.ElementType);
 			else if (klass.Class == CiSystem.HashSetClass) {
 				Write("Set<");

@@ -784,7 +784,7 @@ public abstract class GenBase : CiVisitor
 			if (expr.Type is CiClassPtrType klass)
 				WriteNew(klass.Class, parent);
 			else
-				WriteNewArray(((CiArrayType) expr.Type).ElementType, expr.Inner, parent);
+				WriteNewArray(((CiClassType) expr.Type).ElementType, expr.Inner, parent);
 			return expr;
 		case CiToken.Resource:
 			WriteResource(((CiLiteralString) expr.Inner).Value, ((CiArrayStorageType) expr.Type).Length);

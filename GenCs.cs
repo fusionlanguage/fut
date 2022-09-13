@@ -226,12 +226,12 @@ public class GenCs : GenTyped
 		case CiStringType _:
 			Write("string");
 			break;
-		case CiArrayType array:
-			Write(array.ElementType, false);
-			Write("[]");
-			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass || klass.Class == CiSystem.HashSetClass) {
+			if (klass.Class == CiSystem.ArrayPtrClass || klass.Class == CiSystem.ArrayStorageClass) {
+				Write(klass.ElementType, false);
+				Write("[]");
+			}
+			else if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass || klass.Class == CiSystem.HashSetClass) {
 				Write(klass.Class.Name);
 				WriteElementType(klass.ElementType);
 			}
@@ -323,7 +323,7 @@ public class GenCs : GenTyped
 		Write('[');
 		lengthExpr.Accept(this, CiPriority.Argument);
 		Write(']');
-		while (elementType is CiArrayType array) {
+		while (elementType is CiClassType array && (array.Class == CiSystem.ArrayPtrClass || array.Class == CiSystem.ArrayStorageClass)) {
 			Write("[]");
 			elementType = array.ElementType;
 		}
@@ -507,7 +507,7 @@ public class GenCs : GenTyped
 			WriteNotPromoted(((CiClassType) obj.Type).ElementType, args[0]);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayType && method == CiSystem.CollectionCopyTo) {
+		else if (method == CiSystem.CollectionCopyTo && obj.Type.IsArray) {
 			Include("System");
 			Write("Array.Copy(");
 			obj.Accept(this, CiPriority.Argument);
@@ -545,7 +545,7 @@ public class GenCs : GenTyped
 			WriteCall("Array.Sort", obj);
 		}
 		else if (method == CiSystem.CollectionSortPart) {
-			if (obj.Type is CiArrayType) {
+			if (obj.Type.IsArray) {
 				Include("System");
 				WriteCall("Array.Sort", obj, args[0], args[1]);
 			}

@@ -100,7 +100,7 @@ public class CiResolver : CiVisitor
 		if (!type.IsAssignableFrom(expr.Type))
 			throw StatementException(expr, $"Cannot coerce {expr.Type} to {type}");
 		if (expr is CiPrefixExpr prefix && prefix.Op == CiToken.New && !type.IsDynamicPtr) {
-			string kind = expr.Type is CiArrayType ? "array" : "object";
+			string kind = prefix.Inner != null ? "array" : "object";
 			throw StatementException(expr, $"Dynamically allocated {kind} must be assigned to a {expr.Type} reference");
 		}
 		if (type is CiArrayPtrType)
@@ -705,12 +705,8 @@ public class CiResolver : CiVisitor
 				}
 				type = CiSystem.CharType;
 				break;
-			case CiArrayType array:
-				Coerce(right, CiSystem.IntType);
-				type = array.ElementType;
-				break;
 			case CiClassType klass:
-				if (klass.Class == CiSystem.ListClass) {
+				if (klass.Class == CiSystem.ArrayPtrClass || klass.Class == CiSystem.ArrayStorageClass || klass.Class == CiSystem.ListClass) {
 					Coerce(right, CiSystem.IntType);
 					type = klass.ElementType;
 				}
@@ -1102,7 +1098,7 @@ public class CiResolver : CiVisitor
 	{
 		ResolveConst(statement);
 		this.CurrentScope.Add(statement);
-		if (statement.Type is CiArrayType)
+		if (statement.Type is CiArrayStorageType)
 			((CiClass) this.CurrentScope.Container).ConstArrays.Add(statement);
 	}
 
@@ -1504,8 +1500,8 @@ public class CiResolver : CiVisitor
 		}
 
 		CiToken ptrModifier = GetPtrModifier(ref expr);
-		CiArrayType outerArray = null; // leftmost in source
-		CiArrayType innerArray = null; // rightmost in source
+		CiClassType outerArray = null; // leftmost in source
+		CiClassType innerArray = null; // rightmost in source
 		while (expr is CiBinaryExpr binary && binary.Op == CiToken.LeftBracket) {
 			if (binary.Right != null) {
 				ExpectNoPtrModifier(expr, ptrModifier);
@@ -1570,15 +1566,23 @@ public class CiResolver : CiVisitor
 			ResolveType(konst);
 		konst.Value = Resolve(konst.Value);
 		if (konst.Value is CiAggregateInitializer coll) {
-			if (!(konst.Type is CiArrayType arrayType))
+			CiType elementType;
+			switch (konst.Type) {
+			case CiArrayPtrType arrayPtr:
+				elementType = arrayPtr.ElementType;
+				konst.Type = new CiArrayStorageType { TypeArg0 = elementType, Length = coll.Items.Count };
+				break;
+			case CiArrayStorageType arrayStg:
+				if (arrayStg.Length != coll.Items.Count)
+					throw StatementException(konst, $"Declared {arrayStg.Length} elements, initialized {coll.Items.Count}");
+				elementType = arrayStg.ElementType;
+				break;
+			default:
 				throw StatementException(konst, $"Array initializer for scalar constant {konst.Name}");
+			}
 			foreach (CiExpr item in coll.Items)
-				Coerce(item, arrayType.ElementType);
-			if (!(arrayType is CiArrayStorageType storageType))
-				konst.Type = storageType = new CiArrayStorageType { TypeArg0 = arrayType.ElementType, Length = coll.Items.Count };
-			else if (storageType.Length != coll.Items.Count)
-				throw StatementException(konst, $"Declared {storageType.Length} elements, initialized {coll.Items.Count}");
-			coll.Type = storageType;
+				Coerce(item, elementType);
+			coll.Type = konst.Type;
 		}
 		else if (this.CurrentScope is CiEnum && konst.Value.Type is CiRangeType && konst.Value is CiLiteral) {
 		}

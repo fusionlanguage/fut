@@ -304,12 +304,12 @@ public class GenJava : GenTyped
 				? needClass ? "Boolean" : "boolean"
 				: needClass ? "Integer" : "int");
 			break;
-		case CiArrayType array:
-			Write(array.ElementType, false);
-			Write("[]");
-			break;
  		case CiClassType klass:
-			if (klass.Class == CiSystem.ListClass)
+			if (klass.Class == CiSystem.ArrayPtrClass || klass.Class == CiSystem.ArrayStorageClass) {
+				Write(klass.ElementType, false);
+				Write("[]");
+			}
+			else if (klass.Class == CiSystem.ListClass)
 				WriteCollectionType("ArrayList", klass.ElementType);
 			else if (klass.Class == CiSystem.QueueClass)
 				WriteCollectionType("ArrayDeque", klass.ElementType);
@@ -398,7 +398,7 @@ public class GenJava : GenTyped
 
 	void WriteIndexingInternal(CiBinaryExpr expr)
 	{
-		if (expr.Left.Type is CiArrayType)
+		if (expr.Left.Type.IsArray)
 			base.WriteIndexing(expr, CiPriority.And /* don't care */);
 		else
 			WriteCall(expr.Left, "get", expr.Right);
@@ -494,7 +494,7 @@ public class GenJava : GenTyped
 			WriteStartEnd(args[1], args[2]);
 			Write(", ");
 		}
-		WriteNotPromoted(((CiArrayType) obj.Type).ElementType, args[0]);
+		WriteNotPromoted(((CiClassType) obj.Type).ElementType, args[0]);
 		Write(')');
 	}
 
@@ -751,7 +751,7 @@ public class GenJava : GenTyped
 		if (expr.Left is CiBinaryExpr indexing
 		 && indexing.Op == CiToken.LeftBracket
 		 && indexing.Left.Type is CiClassType klass
-		 && !(klass is CiArrayType)) {
+		 && !klass.IsArray) {
 			 indexing.Left.Accept(this, CiPriority.Primary);
 			 Write(klass.Class == CiSystem.ListClass ? ".set(" : ".put(");
 			 indexing.Right.Accept(this, CiPriority.Argument);

@@ -59,12 +59,12 @@ public abstract class GenTyped : GenBase
 		Write('[');
 		lengthExpr.Accept(this, CiPriority.Argument);
 		Write(']');
-		while (elementType is CiArrayType array) {
+		while (elementType.IsArray) {
 			Write('[');
-			if (array is CiArrayStorageType arrayStorage)
+			if (elementType is CiArrayStorageType arrayStorage)
 				arrayStorage.LengthExpr.Accept(this, CiPriority.Argument);
 			Write(']');
-			elementType = array.ElementType;
+			elementType = ((CiClassType) elementType).ElementType;
 		}
 	}
 

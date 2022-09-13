@@ -323,7 +323,7 @@ public class GenC : GenCCpp
 
 	void WriteArrayPrefix(CiType type)
 	{
-		if (type is CiArrayType array) {
+		if (type is CiClassType array && array.IsArray) {
 			WriteArrayPrefix(array.ElementType);
 			if (type is CiArrayPtrType arrayPtr) {
 				if (array.ElementType is CiArrayStorageType)
@@ -410,15 +410,20 @@ public class GenC : GenCCpp
 		}
 		WriteArrayPrefix(type);
 		symbol();
-		while (type is CiArrayType array) {
+		for (;;) {
 			if (type is CiArrayStorageType arrayStorage) {
 				Write('[');
 				VisitLiteralLong(arrayStorage.Length);
 				Write(']');
+				type = arrayStorage.ElementType;
 			}
-			else if (array.ElementType is CiArrayStorageType)
-				Write(')');
-			type = array.ElementType;
+			else if (type is CiArrayPtrType arrayPtr) {
+				type = arrayPtr.ElementType;
+				if (type is CiArrayStorageType)
+					Write(')');
+			}
+			else
+				break;
 		}
 	}
 
@@ -458,7 +463,7 @@ public class GenC : GenCCpp
 	void WriteDynamicArrayCast(CiType elementType)
 	{
 		Write('(');
-		WriteDefinition(elementType, () => Write(elementType is CiArrayType ? "(*)" : "*"), false, true);
+		WriteDefinition(elementType, () => Write(elementType.IsArray ? "(*)" : "*"), false, true);
 		Write(") ");
 	}
 
@@ -1508,16 +1513,7 @@ public class GenC : GenCCpp
 			WriteArrayPtrAdd(obj, args[0]);
 			Write(", ");
 			args[1].Accept(this, CiPriority.Primary);
-			switch (obj.Type) {
-			case CiArrayType array4:
-				WriteSizeofCompare(array4.ElementType);
-				break;
-			case CiClassType list:
-				WriteSizeofCompare(list.ElementType);
-				break;
-			default:
-				throw new NotImplementedException();
-			}
+			WriteSizeofCompare(((CiClassType) obj.Type).ElementType);
 		}
 		else if (method == CiSystem.ListAdd || method == CiSystem.StackPush) {
 			CiType elementType = ((CiClassType) obj.Type).ElementType;
@@ -2145,7 +2141,7 @@ public class GenC : GenCCpp
 				Write(" const *) ");
 				statement.Collection.Accept(this, CiPriority.Primary);
 				Write("->data, ");
-				for (; elementType is CiArrayType array; elementType = array.ElementType)
+				for (; elementType.IsArray; elementType = ((CiClassType) elementType).ElementType)
 					Write('*');
 				if (elementType is CiStringType || elementType is CiClassPtrType)
 					Write("* const ");
@@ -2255,7 +2251,7 @@ public class GenC : GenCCpp
 	protected override void WriteCaseBody(List<CiStatement> statements)
 	{
 		if (statements[0] is CiVar
-		 || (statements[0] is CiConst konst && konst.Type is CiArrayType))
+		 || (statements[0] is CiConst konst && konst.Type is CiArrayStorageType))
 			WriteLine(';');
 		int varsToDestructCount = this.VarsToDestruct.Count;
 		Write(statements);
