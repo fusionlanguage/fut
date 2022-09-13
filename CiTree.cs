@@ -109,7 +109,7 @@ public class CiSymbol : CiExpr
 
 public abstract class CiScope : CiSymbol, IEnumerable<CiSymbol>
 {
-	protected readonly OrderedDictionary Dict = new OrderedDictionary();
+	readonly OrderedDictionary Dict = new OrderedDictionary();
 
 	IEnumerator IEnumerable.GetEnumerator()
 	{
@@ -134,6 +134,8 @@ public abstract class CiScope : CiSymbol, IEnumerable<CiSymbol>
 			throw new InvalidOperationException();
 		}
 	}
+
+	public CiSymbol TryShallowLookup(string name) => (CiSymbol) this.Dict[name];
 
 	public virtual CiSymbol TryLookup(string name)
 	{
@@ -973,7 +975,7 @@ public class CiClass : CiContainerType
 
 	public CiClass()
 	{
-		this.Dict.Add("this", new CiVar(this.PtrOrSelf, "this")); // shadows "this" in base class
+		Add(new CiVar(this.PtrOrSelf, "this")); // shadows "this" in base class
 	}
 
 	public CiClass(CiCallType callType, string name, params CiMethod[] methods)
@@ -982,8 +984,6 @@ public class CiClass : CiContainerType
 		this.Name = name;
 		AddRange(methods);
 	}
-
-	public CiSymbol TryShallowLookup(string name) => (CiSymbol) this.Dict[name];
 
 	public bool IsSameOrBaseOf(CiClass derived)
 	{
@@ -1198,9 +1198,94 @@ public class CiClassPtrType : CiType
 	public override int GetHashCode() => this.Class.GetHashCode() ^ this.Modifier.GetHashCode();
 }
 
-public abstract class CiArrayType : CiType
+public class CiClassType : CiType
 {
-	public CiType ElementType;
+	public CiClass Class;
+	public CiType TypeArg0;
+	public CiType TypeArg1;
+	public CiType ElementType => this.TypeArg0;
+	public CiType KeyType => this.TypeArg0;
+	public CiType ValueType => this.TypeArg1;
+	public override bool IsPointer => true;
+
+	public CiType EvalType(CiType type)
+	{
+		if (type == CiSystem.TypeParam0)
+			return this.TypeArg0;
+		if (type == CiSystem.TypeParam0NotFinal)
+			return this.TypeArg0.IsFinal ? null : this.TypeArg0;
+		if (type is CiArrayPtrType ptr && ptr.ElementType == CiSystem.TypeParam0)
+			return new CiArrayPtrType { TypeArg0 = this.TypeArg0, Modifier = ptr.Modifier };
+		return type;
+	}
+
+	public override CiSymbol TryLookup(string name) => this.Class.TryLookup(name);
+
+	protected bool IsAssignableFromClass(CiClassType right)
+	{
+		if (!this.Class.IsSameOrBaseOf(right.Class))
+			return false;
+		switch (this.Class.TypeParameterCount) {
+		case 0: return true;
+		case 1: return this.TypeArg0.Equals(right.TypeArg0);
+		case 2: return this.TypeArg0.Equals(right.TypeArg0) && this.TypeArg1.Equals(right.TypeArg1);
+		default: throw new NotImplementedException();
+		}
+	}
+
+	public override bool IsAssignableFrom(CiType right)
+	{
+		return right == CiSystem.NullType
+			|| (right is CiClassType rightClass && IsAssignableFromClass(rightClass));
+	}
+
+	protected string GetClassString()
+	{
+		switch (this.Class.TypeParameterCount) {
+		case 0: return this.Class.Name;
+		case 1: return $"{this.Class.Name}<{this.TypeArg0}>";
+		case 2: return $"{this.Class.Name}<{this.TypeArg0}, {this.TypeArg1}>";
+		default: throw new NotImplementedException();
+		}
+	}
+
+	public override string ToString() => GetClassString();
+}
+
+public class CiReadWriteClassType : CiClassType
+{
+	public override bool IsAssignableFrom(CiType right)
+	{
+		return right == CiSystem.NullType
+			|| (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
+	}
+
+	public override string ToString() => GetClassString() + '!';
+}
+
+public class CiStorageType : CiReadWriteClassType
+{
+	public override bool IsFinal => true;
+	public override bool IsPointer => false;
+	public override bool IsAssignableFrom(CiType right) => false;
+	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this.Class, TypeArg0 = this.TypeArg0, TypeArg1 = this.TypeArg1 };
+	public override string ToString() => GetClassString() + "()";
+}
+
+public class CiDynamicPtrType : CiReadWriteClassType
+{
+	public override bool IsDynamicPtr => true;
+	public override bool IsAssignableFrom(CiType right)
+	{
+		return right == CiSystem.NullType
+			|| (right is CiDynamicPtrType rightClass && IsAssignableFromClass(rightClass));
+	}
+
+	public override string ToString() => GetClassString() + '#';
+}
+
+public abstract class CiArrayType : CiClassType
+{
 	public override string ToString() => this.BaseType + this.ArrayString + this.ElementType.ArrayString;
 	public override CiSymbol TryLookup(string name)
 	{
@@ -1227,6 +1312,11 @@ public abstract class CiArrayType : CiType
 public class CiArrayPtrType : CiArrayType
 {
 	public CiToken Modifier;
+
+	public CiArrayPtrType()
+	{
+		this.Class = CiSystem.ArrayPtrClass;
+	}
 
 	public override bool IsPointer => true;
 	public override bool IsDynamicPtr => this.Modifier == CiToken.Hash;
@@ -1293,6 +1383,11 @@ public class CiArrayStorageType : CiArrayType
 	public int Length;
 	public bool PtrTaken = false;
 
+	public CiArrayStorageType()
+	{
+		this.Class = CiSystem.ArrayStorageClass;
+	}
+
 	public override string ArrayString => $"[{this.Length}]";
 	public override CiSymbol TryLookup(string name)
 	{
@@ -1317,85 +1412,11 @@ public class CiArrayStorageType : CiArrayType
 	}
 	public override bool IsAssignableFrom(CiType right) => false;
 	public override CiType StorageType => this.ElementType.StorageType;
-	public override CiType PtrOrSelf => new CiArrayPtrType { ElementType = this.ElementType, Modifier = CiToken.ExclamationMark };
+	public override CiType PtrOrSelf => new CiArrayPtrType { TypeArg0 = this.ElementType, Modifier = CiToken.ExclamationMark };
 	public override bool IsFinal => true;
 
 	public override bool Equals(object obj) => obj is CiArrayStorageType that && this.ElementType == that.ElementType && this.Length == that.Length;
 	public override int GetHashCode() => this.ElementType.GetHashCode() ^ this.Length.GetHashCode();
-}
-
-public class CiClassType : CiType
-{
-	public CiClass Class;
-	public CiType TypeArg0;
-	public CiType TypeArg1;
-	public CiType ElementType => this.TypeArg0;
-	public CiType KeyType => this.TypeArg0;
-	public CiType ValueType => this.TypeArg1;
-	public override bool IsPointer => true;
-
-	public CiType EvalType(CiType type)
-	{
-		if (type == CiSystem.TypeParam0)
-			return this.TypeArg0;
-		if (type == CiSystem.TypeParam0NotFinal)
-			return this.TypeArg0.IsFinal ? null : this.TypeArg0;
-		if (type is CiArrayPtrType ptr && ptr.ElementType == CiSystem.TypeParam0)
-			return new CiArrayPtrType { ElementType = this.TypeArg0, Modifier = ptr.Modifier };
-		return type;
-	}
-
-	public override CiSymbol TryLookup(string name) => this.Class.TryLookup(name);
-
-	protected bool IsAssignableFromClass(CiClassType right)
-	{
-		if (!this.Class.IsSameOrBaseOf(right.Class))
-			return false;
-		switch (this.Class.TypeParameterCount) {
-		case 0: return true;
-		case 1: return this.TypeArg0.Equals(right.TypeArg0);
-		case 2: return this.TypeArg0.Equals(right.TypeArg0) && this.TypeArg1.Equals(right.TypeArg1);
-		default: throw new NotImplementedException();
-		}
-	}
-
-	public override bool IsAssignableFrom(CiType right)
-	{
-		return right == CiSystem.NullType
-			|| (right is CiClassType rightClass && IsAssignableFromClass(rightClass));
-	}
-
-	protected string GetClassString()
-	{
-		switch (this.Class.TypeParameterCount) {
-		case 0: return this.Class.Name;
-		case 1: return $"{this.Class.Name}<{this.TypeArg0}>";
-		case 2: return $"{this.Class.Name}<{this.TypeArg0}, {this.TypeArg1}>";
-		default: throw new NotImplementedException();
-		}
-	}
-
-	public override string ToString() => GetClassString();
-}
-
-public class CiReadWriteClassType : CiClassType
-{
-	public override bool IsAssignableFrom(CiType right)
-	{
-		return right == CiSystem.NullType
-			|| (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
-	}
-
-	public override string ToString() => GetClassString() + '!';
-}
-
-public class CiStorageType : CiReadWriteClassType
-{
-	public override bool IsFinal => true;
-	public override bool IsPointer => false;
-	public override bool IsAssignableFrom(CiType right) => false;
-	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this.Class, TypeArg0 = this.TypeArg0, TypeArg1 = this.TypeArg1 };
-	public override string ToString() => GetClassString() + "()";
 }
 
 public class CiPrintableType : CiType
@@ -1439,8 +1460,8 @@ public class CiSystem : CiScope
 		ConsoleWriteLine);
 	public static readonly CiMember ConsoleError = new CiMember(ConsoleBase, "Error");
 	public static readonly CiClass ConsoleClass = new CiClass(CiCallType.Static, "Console");
-	public static readonly CiArrayPtrType ReadOnlyByteArrayPtrType = new CiArrayPtrType { ElementType = ByteType, Modifier = CiToken.EndOfFile };
-	public static readonly CiArrayPtrType ReadWriteByteArrayPtrType = new CiArrayPtrType { ElementType = ByteType, Modifier = CiToken.ExclamationMark };
+	public static readonly CiArrayPtrType ReadOnlyByteArrayPtrType = new CiArrayPtrType { TypeArg0 = ByteType, Modifier = CiToken.EndOfFile };
+	public static readonly CiArrayPtrType ReadWriteByteArrayPtrType = new CiArrayPtrType { TypeArg0 = ByteType, Modifier = CiToken.ExclamationMark };
 	public static readonly CiMethod UTF8GetByteCount = new CiMethod(CiCallType.Normal, IntType, "GetByteCount", new CiVar(StringPtrType, "str"));
 	public static readonly CiMethod UTF8GetBytes = new CiMethod(CiCallType.Normal, VoidType, "GetBytes", new CiVar(StringPtrType, "str"), new CiVar(ReadWriteByteArrayPtrType, "bytes"), new CiVar(IntType, "byteIndex"));
 	public static readonly CiMethod UTF8GetString = new CiMethod(CiCallType.Normal, StringStorageType, "GetString", new CiVar(ReadOnlyByteArrayPtrType, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length")); // TODO: UIntType
@@ -1507,6 +1528,8 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, FloatType, "Tan", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, "Tanh", new CiVar(DoubleType, "a")),
 		MathTruncate);
+	public static readonly CiClass ArrayPtrClass = new CiClass(CiCallType.Normal, "ArrayPtr");
+	public static readonly CiClass ArrayStorageClass = new CiClass(CiCallType.Normal, "ArrayStorage");
 	public static readonly CiMember CollectionCount = new CiMember(UIntType, "Count");
 	public static readonly CiMethod CollectionClear = new CiMethod(CiCallType.Normal, VoidType, "Clear") { IsMutator = true };
 	public static readonly CiMethod CollectionSortAll = new CiMethod(CiCallType.Normal, VoidType, "Sort") { IsMutator = true };
@@ -1516,7 +1539,7 @@ public class CiSystem : CiScope
 	public static readonly CiMethod ListContains = new CiMethod(CiCallType.Normal, BoolType, "Contains", new CiVar(TypeParam0, "value"));
 	public static readonly CiMethod ListCopyTo = new CiMethod(CiCallType.Normal, VoidType, "CopyTo",
 		new CiVar(IntType, "sourceIndex"),
-		new CiVar(new CiArrayPtrType { ElementType = TypeParam0, Modifier = CiToken.ExclamationMark }, "destinationArray"),
+		new CiVar(new CiArrayPtrType { TypeArg0 = TypeParam0, Modifier = CiToken.ExclamationMark }, "destinationArray"),
 		new CiVar(IntType, "destinationIndex"),
 		new CiVar(IntType, "count"));
 	public static readonly CiMethod ListInsert = new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Insert", new CiVar(UIntType, "index"), new CiVar(TypeParam0NotFinal, "value")) { IsMutator = true };

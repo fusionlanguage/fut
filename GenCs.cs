@@ -226,6 +226,10 @@ public class GenCs : GenTyped
 		case CiStringType _:
 			Write("string");
 			break;
+		case CiArrayType array:
+			Write(array.ElementType, false);
+			Write("[]");
+			break;
 		case CiClassType klass:
 			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass || klass.Class == CiSystem.HashSetClass) {
 				Write(klass.Class.Name);
@@ -246,10 +250,6 @@ public class GenCs : GenTyped
 			}
 			else
 				throw new NotImplementedException(klass.ToString());
-			break;
-		case CiArrayType array:
-			Write(array.ElementType, false);
-			Write("[]");
 			break;
 		case CiClass klass:
 			WriteClassName(klass);

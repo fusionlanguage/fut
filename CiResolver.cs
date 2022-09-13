@@ -567,7 +567,7 @@ public class CiResolver : CiVisitor
 				expr.Inner = null;
 				return expr;
 			case CiArrayStorageType array:
-				expr.Type = new CiArrayPtrType { ElementType = array.ElementType, Modifier = CiToken.Hash };
+				expr.Type = new CiArrayPtrType { TypeArg0 = array.ElementType, Modifier = CiToken.Hash };
 				expr.Inner = array.LengthExpr;
 				return expr;
 			default:
@@ -582,7 +582,7 @@ public class CiResolver : CiVisitor
 				content = File.ReadAllBytes(FindFile(name, expr));
 				this.Program.Resources.Add(name, content);
 			}
-			type = new CiArrayStorageType { ElementType = CiSystem.ByteType, Length = content.Length };
+			type = new CiArrayStorageType { TypeArg0 = CiSystem.ByteType, Length = content.Length };
 			range = null;
 			break;
 		default:
@@ -1508,7 +1508,7 @@ public class CiResolver : CiVisitor
 				ExpectNoPtrModifier(expr, ptrModifier);
 				CiExpr lengthExpr = Resolve(binary.Right);
 				Coerce(lengthExpr, CiSystem.IntType);
-				CiArrayStorageType arrayStorage = new CiArrayStorageType { LengthExpr = lengthExpr, ElementType = outerArray };
+				CiArrayStorageType arrayStorage = new CiArrayStorageType { TypeArg0 = outerArray, LengthExpr = lengthExpr };
 				if (!dynamic || (binary.Left.IsIndexing)) {
 					if (!(lengthExpr is CiLiteralLong literal))
 						throw StatementException(lengthExpr, "Expected constant value");
@@ -1522,7 +1522,7 @@ public class CiResolver : CiVisitor
 				outerArray = arrayStorage;
 			}
 			else
-				outerArray = new CiArrayPtrType { Modifier = ptrModifier, ElementType = outerArray };
+				outerArray = new CiArrayPtrType { TypeArg0 = outerArray, Modifier = ptrModifier };
 			innerArray ??= outerArray;
 			expr = binary.Left;
 			ptrModifier = GetPtrModifier(ref expr);
@@ -1542,7 +1542,7 @@ public class CiResolver : CiVisitor
 
 		if (outerArray == null)
 			return baseType;
-		innerArray.ElementType = baseType;
+		innerArray.TypeArg0 = baseType;
 		return outerArray;
 	}
 
@@ -1572,7 +1572,7 @@ public class CiResolver : CiVisitor
 			foreach (CiExpr item in coll.Items)
 				Coerce(item, arrayType.ElementType);
 			if (!(arrayType is CiArrayStorageType storageType))
-				konst.Type = storageType = new CiArrayStorageType { ElementType = arrayType.ElementType, Length = coll.Items.Count };
+				konst.Type = storageType = new CiArrayStorageType { TypeArg0 = arrayType.ElementType, Length = coll.Items.Count };
 			else if (storageType.Length != coll.Items.Count)
 				throw StatementException(konst, $"Declared {storageType.Length} elements, initialized {coll.Items.Count}");
 			coll.Type = storageType;

@@ -304,7 +304,11 @@ public class GenJava : GenTyped
 				? needClass ? "Boolean" : "boolean"
 				: needClass ? "Integer" : "int");
 			break;
-		case CiClassType klass:
+		case CiArrayType array:
+			Write(array.ElementType, false);
+			Write("[]");
+			break;
+ 		case CiClassType klass:
 			if (klass.Class == CiSystem.ListClass)
 				WriteCollectionType("ArrayList", klass.ElementType);
 			else if (klass.Class == CiSystem.QueueClass)
@@ -320,10 +324,6 @@ public class GenJava : GenTyped
 				Include("java.util." + name);
 				Write(name, klass);
 			}
-			break;
-		case CiArrayType array:
-			Write(array.ElementType, false);
-			Write("[]");
 			break;
 		case CiClass klass:
 			WriteClassName(klass);
@@ -748,7 +748,8 @@ public class GenJava : GenTyped
 	{
 		if (expr.Left is CiBinaryExpr indexing
 		 && indexing.Op == CiToken.LeftBracket
-		 && indexing.Left.Type is CiClassType klass) {
+		 && indexing.Left.Type is CiClassType klass
+		 && !(klass is CiArrayType)) {
 			 indexing.Left.Accept(this, CiPriority.Primary);
 			 Write(klass.Class == CiSystem.ListClass ? ".set(" : ".put(");
 			 indexing.Right.Accept(this, CiPriority.Argument);

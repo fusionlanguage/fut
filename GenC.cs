@@ -1756,6 +1756,32 @@ public class GenC : GenCCpp
 		Write(", ");
 	}
 
+	void WriteDictionaryIndexing(string function, CiBinaryExpr expr, CiPriority parent)
+	{
+		CiClassType klass = (CiClassType) expr.Left.Type;
+		if (klass.ValueType is CiIntegerType && klass.ValueType != CiSystem.LongType) {
+			Write("GPOINTER_TO_INT(");
+			WriteDictionaryLookup(expr.Left, function, expr.Right);
+			Write(')');
+		}
+		else {
+			if (parent > CiPriority.Mul)
+				Write('(');
+			if (klass.ValueType is CiClass || klass.ValueType is CiArrayStorageType)
+				WriteDynamicArrayCast(klass.ValueType);
+			else {
+				WriteStaticCastType(klass.ValueType);
+				if (klass.ValueType is CiEnum) {
+					Trace.Assert(parent <= CiPriority.Mul, "Should close two parens");
+					Write("GPOINTER_TO_INT(");
+				}
+			}
+			WriteDictionaryLookup(expr.Left, function, expr.Right);
+			if (parent > CiPriority.Mul || klass.ValueType is CiEnum)
+				Write(')');
+		}
+	}
+
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Left.Type is CiClassType klass) {
@@ -1773,34 +1799,18 @@ public class GenC : GenCCpp
 					expr.Right.Accept(this, CiPriority.Argument);
 					Write(')');
 				}
+				return;
 			}
-			else {
-				string function = klass.Class == CiSystem.SortedDictionaryClass ? "g_tree_lookup" : "g_hash_table_lookup";
-				if (klass.ValueType is CiIntegerType && klass.ValueType != CiSystem.LongType) {
-					Write("GPOINTER_TO_INT(");
-					WriteDictionaryLookup(expr.Left, function, expr.Right);
-					Write(')');
-				}
-				else {
-					if (parent > CiPriority.Mul)
-						Write('(');
-					if (klass.ValueType is CiClass || klass.ValueType is CiArrayStorageType)
-						WriteDynamicArrayCast(klass.ValueType);
-					else {
-						WriteStaticCastType(klass.ValueType);
-						if (klass.ValueType is CiEnum) {
-							Trace.Assert(parent <= CiPriority.Mul, "Should close two parens");
-							Write("GPOINTER_TO_INT(");
-						}
-					}
-					WriteDictionaryLookup(expr.Left, function, expr.Right);
-					if (parent > CiPriority.Mul || klass.ValueType is CiEnum)
-						Write(')');
-				}
+			if (klass.Class == CiSystem.DictionaryClass) {
+				WriteDictionaryIndexing("g_hash_table_lookup", expr, parent);
+				return;
+			}
+			if (klass.Class == CiSystem.SortedDictionaryClass) {
+				WriteDictionaryIndexing("g_tree_lookup", expr, parent);
+				return;
 			}
 		}
-		else
-			base.WriteIndexing(expr, parent);
+		base.WriteIndexing(expr, parent);
 	}
 
 	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
