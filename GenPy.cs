@@ -616,7 +616,7 @@ public class GenPy : GenPySwift
 			Include("bisect");
 			WriteCall("bisect.bisect_left", obj, args);
 		}
-		else if ((obj.Type is CiArrayType && method.Name == "CopyTo") || method == CiSystem.ListCopyTo) {
+		else if (method == CiSystem.CollectionCopyTo) {
 			args[1].Accept(this, CiPriority.Primary);
 			WriteSlice(args[2], args[3]);
 			Write(" = ");

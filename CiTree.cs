@@ -1289,13 +1289,8 @@ public abstract class CiArrayType : CiClassType
 	public override string ToString() => this.BaseType + this.ArrayString + this.ElementType.ArrayString;
 	public override CiSymbol TryLookup(string name)
 	{
-		if (name == "CopyTo") {
-			return new CiMethod(CiCallType.Normal, CiSystem.VoidType, "CopyTo",
-				new CiVar(CiSystem.IntType, "sourceIndex"),
-				new CiVar(this.PtrOrSelf, "destinationArray"),
-				new CiVar(CiSystem.IntType, "destinationIndex"),
-				new CiVar(CiSystem.IntType, "count"));
-		}
+		if (name == "CopyTo")
+			return CiSystem.CollectionCopyTo;
 		return null;
 	}
 	public override CiType BaseType => this.ElementType.BaseType;
@@ -1530,6 +1525,11 @@ public class CiSystem : CiScope
 		MathTruncate);
 	public static readonly CiClass ArrayPtrClass = new CiClass(CiCallType.Normal, "ArrayPtr");
 	public static readonly CiClass ArrayStorageClass = new CiClass(CiCallType.Normal, "ArrayStorage");
+	public static readonly CiMethod CollectionCopyTo = new CiMethod(CiCallType.Normal, VoidType, "CopyTo",
+		new CiVar(IntType, "sourceIndex"),
+		new CiVar(new CiArrayPtrType { TypeArg0 = TypeParam0, Modifier = CiToken.ExclamationMark }, "destinationArray"),
+		new CiVar(IntType, "destinationIndex"),
+		new CiVar(IntType, "count"));
 	public static readonly CiMember CollectionCount = new CiMember(UIntType, "Count");
 	public static readonly CiMethod CollectionClear = new CiMethod(CiCallType.Normal, VoidType, "Clear") { IsMutator = true };
 	public static readonly CiMethod CollectionSortAll = new CiMethod(CiCallType.Normal, VoidType, "Sort") { IsMutator = true };
@@ -1537,11 +1537,6 @@ public class CiSystem : CiScope
 	public static readonly CiMethodGroup CollectionSort = new CiMethodGroup(CollectionSortAll, CollectionSortPart) { Visibility = CiVisibility.NumericElementType };
 	public static readonly CiMethod ListAdd = new CiMethod(CiCallType.Normal, VoidType, "Add", new CiVar(TypeParam0NotFinal, "value")) { IsMutator = true };
 	public static readonly CiMethod ListContains = new CiMethod(CiCallType.Normal, BoolType, "Contains", new CiVar(TypeParam0, "value"));
-	public static readonly CiMethod ListCopyTo = new CiMethod(CiCallType.Normal, VoidType, "CopyTo",
-		new CiVar(IntType, "sourceIndex"),
-		new CiVar(new CiArrayPtrType { TypeArg0 = TypeParam0, Modifier = CiToken.ExclamationMark }, "destinationArray"),
-		new CiVar(IntType, "destinationIndex"),
-		new CiVar(IntType, "count"));
 	public static readonly CiMethod ListInsert = new CiMethod(CiCallType.Normal, CiSystem.VoidType, "Insert", new CiVar(UIntType, "index"), new CiVar(TypeParam0NotFinal, "value")) { IsMutator = true };
 	public static readonly CiMethod ListRemoveAt = new CiMethod(CiCallType.Normal, VoidType, "RemoveAt", new CiVar(IntType, "index")) { IsMutator = true };
 	public static readonly CiMethod ListRemoveRange = new CiMethod(CiCallType.Normal, VoidType, "RemoveRange", new CiVar(IntType, "index"), new CiVar(IntType, "count")) { IsMutator = true };
@@ -1549,7 +1544,7 @@ public class CiSystem : CiScope
 		ListAdd,
 		CollectionClear,
 		ListContains,
-		ListCopyTo,
+		CollectionCopyTo,
 		ListInsert,
 		ListRemoveAt,
 		ListRemoveRange) { TypeParameterCount = 1 };

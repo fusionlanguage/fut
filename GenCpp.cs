@@ -643,7 +643,7 @@ public class GenCpp : GenCCpp
 			if (parent > CiPriority.Add)
 				Write(')');
 		}
-		else if ((obj.Type is CiArrayType && method.Name == "CopyTo") || method == CiSystem.ListCopyTo) {
+		else if (method == CiSystem.CollectionCopyTo) {
 			Include("algorithm");
 			Write("std::copy_n(");
 			WriteArrayPtrAdd(obj, args[0]);

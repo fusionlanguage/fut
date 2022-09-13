@@ -485,7 +485,7 @@ public class GenSwift : GenPySwift
 				Write(')');
 			}
 		}
-		else if ((obj.Type is CiArrayType && method.Name == "CopyTo") || method == CiSystem.ListCopyTo) {
+		else if (method == CiSystem.CollectionCopyTo) {
 			OpenIndexing(args[1]);
 			WriteRange(args[2], args[3]);
 			Write("] = ");

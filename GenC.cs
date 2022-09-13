@@ -1372,27 +1372,6 @@ public class GenC : GenCCpp
 		WriteArgsAndRightParenthesis(method, args);
 	}
 
-	void WriteCopyTo(CiExpr obj, CiType elementType, List<CiExpr> args)
-	{
-		Include("string.h");
-		Write("memcpy(");
-		WriteArrayPtrAdd(args[1], args[2]);
-		Write(", ");
-		WriteArrayPtrAdd(obj, args[0]);
-		Write(", ");
-		if (elementType is CiRangeType range
-		 && ((range.Min >= 0 && range.Max <= byte.MaxValue)
-			|| (range.Min >= sbyte.MinValue && range.Max <= sbyte.MaxValue)))
-			args[3].Accept(this, CiPriority.Argument);
-		else {
-			args[3].Accept(this, CiPriority.Mul);
-			Write(" * sizeof(");
-			Write(elementType, false);
-			Write(')');
-		}
-		Write(')');
-	}
-
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		if (obj == null)
@@ -1477,8 +1456,6 @@ public class GenC : GenCCpp
 			if (parent > CiPriority.Add)
 				Write(')');
 		}
-		else if (obj.Type is CiArrayType array2 && method.Name == "CopyTo")
-			WriteCopyTo(obj, array2.ElementType, args);
 		else if (obj.Type is CiArrayType array3 && method.Name == "Fill") {
 			if (args[0] is CiLiteral literal && literal.IsDefaultValue) {
 				Include("string.h");
@@ -1573,8 +1550,26 @@ public class GenC : GenCCpp
 			Write(')');
 			this.Contains.Add(typeCode);
 		}
-		else if (method == CiSystem.ListCopyTo)
-			WriteCopyTo(obj, ((CiClassType) obj.Type).ElementType, args);
+		else if (method == CiSystem.CollectionCopyTo) {
+			Include("string.h");
+			Write("memcpy(");
+			WriteArrayPtrAdd(args[1], args[2]);
+			Write(", ");
+			WriteArrayPtrAdd(obj, args[0]);
+			Write(", ");
+			CiType elementType = ((CiClassType) obj.Type).ElementType;
+			if (elementType is CiRangeType range
+			 && ((range.Min >= 0 && range.Max <= byte.MaxValue)
+				|| (range.Min >= sbyte.MinValue && range.Max <= sbyte.MaxValue)))
+				args[3].Accept(this, CiPriority.Argument);
+			else {
+				args[3].Accept(this, CiPriority.Mul);
+				Write(" * sizeof(");
+				Write(elementType, false);
+				Write(')');
+			}
+			Write(')');
+		}
 		else if (method == CiSystem.CollectionClear) {
 			CiClassType klass = (CiClassType) obj.Type;
 			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass) {

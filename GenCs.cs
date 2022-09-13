@@ -507,7 +507,7 @@ public class GenCs : GenTyped
 			WriteNotPromoted(array.ElementType, args[0]);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
+		else if (obj.Type is CiArrayType && method == CiSystem.CollectionCopyTo) {
 			Include("System");
 			Write("Array.Copy(");
 			obj.Accept(this, CiPriority.Argument);

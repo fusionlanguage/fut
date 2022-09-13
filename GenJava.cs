@@ -545,13 +545,6 @@ public class GenJava : GenTyped
 		}
 		else if (obj.Type is CiArrayType && method.Name == "BinarySearch")
 			WriteArrayBinarySearchFill(obj, "binarySearch", args);
-		else if (obj.Type is CiArrayType && method.Name == "CopyTo") {
-			Write("System.arraycopy(");
-			obj.Accept(this, CiPriority.Argument);
-			Write(", ");
-			WriteArgs(method, args);
-			Write(')');
-		}
 		else if (obj.Type is CiArrayType && method.Name == "Fill")
 			WriteArrayBinarySearchFill(obj, "fill", args);
 		else if (method == CiSystem.CollectionSortAll) {
@@ -565,7 +558,13 @@ public class GenJava : GenTyped
 			}
 		}
 		else if (method == CiSystem.CollectionSortPart) {
-			if (obj.Type is CiArrayType) {
+			if (((CiClassType) obj.Type).Class == CiSystem.ListClass) {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".subList(");
+				WriteStartEnd(args[0], args[1]);
+				Write(").sort(null)");
+			}
+			else {
 				Include("java.util.Arrays");
 				Write("Arrays.sort(");
 				obj.Accept(this, CiPriority.Argument);
@@ -573,35 +572,38 @@ public class GenJava : GenTyped
 				WriteStartEnd(args[0], args[1]);
 				Write(')');
 			}
-			else {
-				obj.Accept(this, CiPriority.Primary);
-				Write(".subList(");
-				WriteStartEnd(args[0], args[1]);
-				Write(").sort(null)");
-			}
 		}
 		else if (WriteListAddInsert(obj, method, args, "add", "add", ", ")) {
 			// done
 		}
-		else if (method == CiSystem.ListCopyTo) {
-			Write("for (int _i = 0; _i < ");
-			args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
-			WriteLine("; _i++)");
-			Write("\t");
-			args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
-			Write('[');
-			if (!args[2].IsLiteralZero) {
-				args[2].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
-				Write(" + ");
+		else if (method == CiSystem.CollectionCopyTo) {
+			if (((CiClassType) obj.Type).Class == CiSystem.ListClass) {
+				Write("for (int _i = 0; _i < ");
+				args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
+				WriteLine("; _i++)");
+				Write("\t");
+				args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+				Write('[');
+				if (!args[2].IsLiteralZero) {
+					args[2].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
+					Write(" + ");
+				}
+				Write("_i] = ");
+				obj.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+				Write(".get(");
+				if (!args[0].IsLiteralZero) {
+					args[0].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
+					Write(" + ");
+				}
+				Write("_i)");
 			}
-			Write("_i] = ");
-			obj.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
-			Write(".get(");
-			if (!args[0].IsLiteralZero) {
-				args[0].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
-				Write(" + ");
+			else {
+				Write("System.arraycopy(");
+				obj.Accept(this, CiPriority.Argument);
+				Write(", ");
+				WriteArgs(method, args);
+				Write(')');
 			}
-			Write("_i)");
 		}
 		else if (method == CiSystem.ListRemoveRange) {
 			obj.Accept(this, CiPriority.Primary);
