@@ -242,15 +242,7 @@ public class GenPy : GenPySwift
 		return base.VisitPrefixExpr(expr, parent);
 	}
 
-	static bool IsPtr(CiExpr expr) => expr.Type.IsPointer && expr.Type != CiSystem.StringPtrType;
-
-	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
-	{
-		string op = IsPtr(expr.Left) || IsPtr(expr.Right)
-			? not ? " is not " : " is "
-			: GetEqOp(not);
-		Write(expr, parent, CiPriority.Equality, op);
-	}
+	protected override string GetReferenceEqOp(bool not) => not ? " is not " : " is ";
 
 	protected override void WriteCharAt(CiBinaryExpr expr)
 	{

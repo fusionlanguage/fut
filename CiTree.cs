@@ -1226,7 +1226,9 @@ public class CiClassType : CiType
 			|| (right is CiClassType rightClass && IsAssignableFromClass(rightClass));
 	}
 
-	public override bool EqualsType(CiType right) => right is CiClassType that && this.Class == that.Class && EqualTypeArguments(that);
+	public override bool EqualsType(CiType right)
+		=> right is CiClassType that // TODO: exact match
+			&& this.Class == that.Class && EqualTypeArguments(that);
 
 	protected string GetClassString()
 	{

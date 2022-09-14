@@ -125,6 +125,18 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
+	static bool IsPtr(CiExpr expr) => expr.Type.IsPointer && expr.Type != CiSystem.StringPtrType;
+
+	protected abstract string GetReferenceEqOp(bool not);
+
+	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+	{
+		if (IsPtr(expr.Left) || IsPtr(expr.Right))
+			Write(expr, parent, CiPriority.Equality, GetReferenceEqOp(not));
+		else
+			base.WriteEqual(expr, parent, not);
+	}
+
 	protected virtual void WriteExpr(CiExpr expr, CiPriority parent) => expr.Accept(this, parent);
 
 	protected void WriteListAppend(CiExpr obj, List<CiExpr> args)

@@ -400,14 +400,7 @@ public class GenSwift : GenPySwift
 		return base.VisitSymbolReference(expr, parent);
 	}
 
-	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
-	{
-		if (expr.Left.Type is CiClassPtrType || expr.Right.Type is CiClassPtrType
-		 || expr.Left.Type is CiArrayPtrType || expr.Right.Type is CiArrayPtrType)
-			Write(expr, parent, CiPriority.Equality, not ? " !== " : " === ");
-		else
-			base.WriteEqual(expr, parent, not);
-	}
+	protected override string GetReferenceEqOp(bool not) => not ? " !== " : " === ";
 
 	void WriteStringContains(CiExpr obj, string name, List<CiExpr> args)
 	{
