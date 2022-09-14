@@ -20,8 +20,12 @@ public static class Test
 		p.Insert(0, 10);
 		int[3] a;
 		p.CopyTo(0, a, 0, 3);
+		List<string()>() e1;
+		List<string()>() e2;
+		List<string()> pe1 = e1;
 		return p == l && p != null && (a[0] == 10 ? l : l).Count == 3
 			&& GetCount(l) == 3 && GetCount(p) == 3 && p.Contains(42)
-			&& a[0] == 10 && a[1] == 5 && a[2] == 42;
+			&& a[0] == 10 && a[1] == 5 && a[2] == 42
+			&& pe1 != e2;
 	}
 }

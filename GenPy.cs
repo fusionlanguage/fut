@@ -242,7 +242,7 @@ public class GenPy : GenPySwift
 		return base.VisitPrefixExpr(expr, parent);
 	}
 
-	static bool IsPtr(CiExpr expr) => expr.Type is CiClassPtrType || expr.Type is CiArrayPtrType;
+	static bool IsPtr(CiExpr expr) => expr.Type.IsPointer && expr.Type != CiSystem.StringPtrType;
 
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
@@ -1056,8 +1056,7 @@ public class GenPy : GenPySwift
 		this.CurrentMethod = null;
 	}
 
-	static bool NeedsConstructor(CiClass klass)
-		=> klass.Constructor != null || klass.OfType<CiField>().Any(NeedsInit);
+	static bool NeedsConstructor(CiClass klass) => klass.Constructor != null || klass.OfType<CiField>().Any(NeedsInit);
 
 	static bool InheritsConstructor(CiClass klass)
 	{
