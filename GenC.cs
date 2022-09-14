@@ -626,50 +626,46 @@ public class GenC : GenCCpp
 		Write(')');
 	}
 
-	protected override void WriteNewStorage(CiType type)
+	protected override void WriteNewStorage(CiStorageType storage)
 	{
-		if (type is CiStorageType storage) {
-			if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.StackClass) {
-				Write("g_array_new(FALSE, FALSE, sizeof(");
-				Write(storage.ElementType, false);
-				Write("))");
-			}
-			else if (storage.Class == CiSystem.QueueClass)
-				Write("G_QUEUE_INIT");
-			else if (storage.Class == CiSystem.HashSetClass)
-				WriteNewHashTable(storage.ElementType, "NULL");
-			else if (storage.Class == CiSystem.DictionaryClass)
-				WriteNewHashTable(storage.KeyType, GetDictionaryDestroy(storage.ValueType));
-			else if (storage.Class == CiSystem.SortedDictionaryClass) {
-				string valueDestroy = GetDictionaryDestroy(storage.ValueType);
-				if (storage.KeyType == CiSystem.StringPtrType && valueDestroy == "NULL")
-					Write("g_tree_new((GCompareFunc) strcmp");
-				else {
-					Write("g_tree_new_full(CiTree_Compare");
-					switch (storage.KeyType) {
-					case CiIntegerType _:
-						this.TreeCompareInteger = true;
-						Write("Integer");
-						break;
-					case CiStringType _:
-						this.TreeCompareString = true;
-						Write("String");
-						break;
-					default:
-						throw new NotImplementedException(storage.KeyType.ToString());
-					}
-					Write(", NULL, ");
-					Write(GetDictionaryDestroy(storage.KeyType));
-					Write(", ");
-					Write(valueDestroy);
+		if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.StackClass) {
+			Write("g_array_new(FALSE, FALSE, sizeof(");
+			Write(storage.ElementType, false);
+			Write("))");
+		}
+		else if (storage.Class == CiSystem.QueueClass)
+			Write("G_QUEUE_INIT");
+		else if (storage.Class == CiSystem.HashSetClass)
+			WriteNewHashTable(storage.ElementType, "NULL");
+		else if (storage.Class == CiSystem.DictionaryClass)
+			WriteNewHashTable(storage.KeyType, GetDictionaryDestroy(storage.ValueType));
+		else if (storage.Class == CiSystem.SortedDictionaryClass) {
+			string valueDestroy = GetDictionaryDestroy(storage.ValueType);
+			if (storage.KeyType == CiSystem.StringPtrType && valueDestroy == "NULL")
+				Write("g_tree_new((GCompareFunc) strcmp");
+			else {
+				Write("g_tree_new_full(CiTree_Compare");
+				switch (storage.KeyType) {
+				case CiIntegerType _:
+					this.TreeCompareInteger = true;
+					Write("Integer");
+					break;
+				case CiStringType _:
+					this.TreeCompareString = true;
+					Write("String");
+					break;
+				default:
+					throw new NotImplementedException(storage.KeyType.ToString());
 				}
-				Write(')');
+				Write(", NULL, ");
+				Write(GetDictionaryDestroy(storage.KeyType));
+				Write(", ");
+				Write(valueDestroy);
 			}
-			else
-				throw new NotImplementedException();
+			Write(')');
 		}
 		else
-			base.WriteNewStorage(type);
+			throw new NotImplementedException();
 	}
 
 	protected override void WriteVarInit(CiNamedValue def)

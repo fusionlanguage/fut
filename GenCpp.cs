@@ -328,6 +328,8 @@ public class GenCpp : GenCCpp
 		Write(')');
 	}
 
+	protected override void WriteNewStorage(CiStorageType storage) => throw new NotImplementedException();
+
 	protected override void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
 	{
 		switch (value) {

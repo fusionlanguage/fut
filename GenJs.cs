@@ -134,22 +134,18 @@ public class GenJs : GenBase
 			Write(')');
 	}
 
-	protected override void WriteNewStorage(CiType type)
+	protected override void WriteNewStorage(CiStorageType storage)
 	{
-		if (type is CiStorageType storage) {
-			if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.QueueClass || storage.Class == CiSystem.StackClass)
-				Write("[]");
-			else if (storage.Class == CiSystem.HashSetClass)
-				Write("new Set()");
-			else if (storage.Class == CiSystem.DictionaryClass || storage.Class == CiSystem.SortedDictionaryClass)
-				Write("{}");
-			else if (storage.Class == CiSystem.OrderedDictionaryClass)
-				Write("new Map()");
-			else
-				throw new NotImplementedException();
-		}
+		if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.QueueClass || storage.Class == CiSystem.StackClass)
+			Write("[]");
+		else if (storage.Class == CiSystem.HashSetClass)
+			Write("new Set()");
+		else if (storage.Class == CiSystem.DictionaryClass || storage.Class == CiSystem.SortedDictionaryClass)
+			Write("{}");
+		else if (storage.Class == CiSystem.OrderedDictionaryClass)
+			Write("new Map()");
 		else
-			base.WriteNewStorage(type);
+			throw new NotImplementedException();
 	}
 
 	protected override void WriteVar(CiNamedValue def)

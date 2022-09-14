@@ -681,18 +681,34 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent);
 
-	protected virtual void WriteNewStorage(CiType type)
+	protected virtual void WriteNewArray(CiArrayStorageType array)
 	{
-		if (type is CiClass klass)
+		WriteNewArray(array.ElementType, array.LengthExpr, CiPriority.Argument);
+	}
+
+	protected abstract void WriteNewStorage(CiStorageType storage);
+
+	protected void WriteNewStorage(CiType type)
+	{
+		switch (type) {
+		case CiClass klass:
 			WriteNew(klass, CiPriority.Argument);
-		else if (type is CiArrayStorageType array)
-			WriteNewArray(array.ElementType, array.LengthExpr, CiPriority.Argument);
+			break;
+		case CiArrayStorageType array:
+			WriteNewArray(array);
+			break;
+		case CiStorageType storage:
+			WriteNewStorage(storage);
+			break;
+		default:
+			throw new NotImplementedException();
+		}
 	}
 
 	protected virtual void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
 	{
 		Write(" = ");
-		WriteNewStorage(array);
+		WriteNewArray(array);
 	}
 
 	protected virtual void WriteCoercedExpr(CiType type, CiExpr expr)

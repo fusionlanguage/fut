@@ -342,15 +342,11 @@ public class GenJava : GenTyped
 		Write(type, promote, false);
 	}
 
-	protected override void WriteNewStorage(CiType type)
+	protected override void WriteNewStorage(CiStorageType storage)
 	{
-		if (type is CiStorageType) {
-			Write("new ");
-			Write(type, false, false);
-			Write("()");
-		}
-		else
-			base.WriteNewStorage(type);
+		Write("new ");
+		Write(storage, false, false);
+		Write("()");
 	}
 
 	protected override void WriteResource(string name, int length)

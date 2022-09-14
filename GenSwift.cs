@@ -662,9 +662,11 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	protected override void WriteNewStorage(CiType type)
+	protected override void WriteNewArray(CiArrayStorageType array)
 	{
-		if (type is CiArrayStorageType array && !IsArrayRef(array)) {
+		if (IsArrayRef(array))
+			base.WriteNewArray(array);
+		else {
 			Write('[');
 			Write(array.ElementType);
 			Write("](repeating: ");
@@ -673,12 +675,12 @@ public class GenSwift : GenPySwift
 			VisitLiteralLong(array.Length);
 			Write(')');
 		}
-		else if (type is CiStorageType) {
-			Write(type);
-			Write("()");
-		}
-		else
-			base.WriteNewStorage(type);
+	}
+
+	protected override void WriteNewStorage(CiStorageType storage)
+	{
+		Write(storage);
+		Write("()");
 	}
 
 	void WriteDefaultValue(CiType type)
@@ -697,7 +699,7 @@ public class GenSwift : GenPySwift
 		else if (type == CiSystem.StringStorageType)
 			Write("\"\"");
 		else if (type is CiArrayStorageType array)
-			WriteNewStorage(array);
+			WriteNewArray(array);
 		else
 			Write("nil");
 	}

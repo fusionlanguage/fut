@@ -463,41 +463,37 @@ public class GenPy : GenPySwift
 		WriteNewArray(array.ElementType, null, array.LengthExpr);
 	}
 
-	protected override void WriteNewStorage(CiType type)
+	protected override void WriteNewStorage(CiStorageType storage)
 	{
-		if (type is CiStorageType storage) {
-			if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.StackClass) {
-				if (storage.ElementType is CiNumericType number) {
-					char c = GetArrayCode(number);
-					if (c == 'B')
-						Write("bytearray()");
-					else {
-						Include("array");
-						Write("array.array(\"");
-						Write(c);
-						Write("\")");
-					}
+		if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.StackClass) {
+			if (storage.ElementType is CiNumericType number) {
+				char c = GetArrayCode(number);
+				if (c == 'B')
+					Write("bytearray()");
+				else {
+					Include("array");
+					Write("array.array(\"");
+					Write(c);
+					Write("\")");
 				}
-				else
-					Write("[]");
-			}
-			else if (storage.Class == CiSystem.QueueClass) {
-				Include("collections");
-				Write("collections.deque()");
-			}
-			else if (storage.Class == CiSystem.HashSetClass)
-				Write("set()");
-			else if (storage.Class == CiSystem.DictionaryClass || storage.Class == CiSystem.SortedDictionaryClass)
-				Write("{}");
-			else if (storage.Class == CiSystem.OrderedDictionaryClass) {
-				Include("collections");
-				Write("collections.OrderedDict()");
 			}
 			else
-				throw new NotImplementedException();
+				Write("[]");
+		}
+		else if (storage.Class == CiSystem.QueueClass) {
+			Include("collections");
+			Write("collections.deque()");
+		}
+		else if (storage.Class == CiSystem.HashSetClass)
+			Write("set()");
+		else if (storage.Class == CiSystem.DictionaryClass || storage.Class == CiSystem.SortedDictionaryClass)
+			Write("{}");
+		else if (storage.Class == CiSystem.OrderedDictionaryClass) {
+			Include("collections");
+			Write("collections.OrderedDict()");
 		}
 		else
-			base.WriteNewStorage(type);
+			throw new NotImplementedException();
 	}
 
 	protected override void WriteInitCode(CiNamedValue def)

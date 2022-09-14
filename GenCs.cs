@@ -329,15 +329,11 @@ public class GenCs : GenTyped
 		}
 	}
 
-	protected override void WriteNewStorage(CiType type)
+	protected override void WriteNewStorage(CiStorageType storage)
 	{
-		if (type is CiStorageType) {
-			Write("new ");
-			Write(type, false);
-			Write("()");
-		}
-		else
-			base.WriteNewStorage(type);
+		Write("new ");
+		Write(storage, false);
+		Write("()");
 	}
 
 	protected override bool HasInitCode(CiNamedValue def)
