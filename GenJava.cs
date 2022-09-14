@@ -558,13 +558,7 @@ public class GenJava : GenTyped
 			}
 		}
 		else if (method == CiSystem.CollectionSortPart) {
-			if (((CiClassType) obj.Type).Class == CiSystem.ListClass) {
-				obj.Accept(this, CiPriority.Primary);
-				Write(".subList(");
-				WriteStartEnd(args[0], args[1]);
-				Write(").sort(null)");
-			}
-			else {
+			if (obj.Type.IsArray) {
 				Include("java.util.Arrays");
 				Write("Arrays.sort(");
 				obj.Accept(this, CiPriority.Argument);
@@ -572,12 +566,25 @@ public class GenJava : GenTyped
 				WriteStartEnd(args[0], args[1]);
 				Write(')');
 			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".subList(");
+				WriteStartEnd(args[0], args[1]);
+				Write(").sort(null)");
+			}
 		}
 		else if (WriteListAddInsert(obj, method, args, "add", "add", ", ")) {
 			// done
 		}
 		else if (method == CiSystem.CollectionCopyTo) {
-			if (((CiClassType) obj.Type).Class == CiSystem.ListClass) {
+			if (obj.Type.IsArray) {
+				Write("System.arraycopy(");
+				obj.Accept(this, CiPriority.Argument);
+				Write(", ");
+				WriteArgs(method, args);
+				Write(')');
+			}
+			else {
 				Write("for (int _i = 0; _i < ");
 				args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
 				WriteLine("; _i++)");
@@ -596,13 +603,6 @@ public class GenJava : GenTyped
 					Write(" + ");
 				}
 				Write("_i)");
-			}
-			else {
-				Write("System.arraycopy(");
-				obj.Accept(this, CiPriority.Argument);
-				Write(", ");
-				WriteArgs(method, args);
-				Write(')');
 			}
 		}
 		else if (method == CiSystem.ListRemoveRange) {

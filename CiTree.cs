@@ -980,11 +980,11 @@ public class CiClass : CiContainerType
 		Add(new CiVar(this.PtrOrSelf, "this")); // shadows "this" in base class
 	}
 
-	public CiClass(CiCallType callType, string name, params CiMethod[] methods)
+	public CiClass(CiCallType callType, string name, params CiMember[] members)
 	{
 		this.CallType = callType;
 		this.Name = name;
-		AddRange(methods);
+		AddRange(members);
 	}
 
 	public bool IsSameOrBaseOf(CiClass derived)
@@ -1411,7 +1411,11 @@ public class CiSystem : CiScope
 		ArrayFillPart,
 		CollectionSortPart) { TypeParameterCount = 1 };
 	public static readonly CiClass ArrayStorageClass = new CiClass(CiCallType.Normal, "ArrayStorage",
-		CollectionCopyTo) { TypeParameterCount = 1 };
+		new CiMethodGroup(ArrayBinarySearchAll, ArrayBinarySearchPart) { Visibility = CiVisibility.NumericElementType },
+		CollectionCopyTo,
+		new CiMethodGroup(ArrayFillAll, ArrayFillPart),
+		ArrayLength,
+		CollectionSort) { TypeParameterCount = 1 };
 	public static readonly CiArrayPtrType ReadOnlyByteArrayPtrType = new CiArrayPtrType { TypeArg0 = ByteType, Modifier = CiToken.EndOfFile };
 	public static readonly CiArrayPtrType ReadWriteByteArrayPtrType = new CiArrayPtrType { TypeArg0 = ByteType, Modifier = CiToken.ExclamationMark };
 	public static readonly CiMember CollectionCount = new CiMember(UIntType, "Count");
@@ -1425,15 +1429,18 @@ public class CiSystem : CiScope
 		ListAdd,
 		CollectionClear,
 		ListContains,
+		CollectionCount,
 		CollectionCopyTo,
 		ListInsert,
 		ListRemoveAt,
-		ListRemoveRange) { TypeParameterCount = 1 };
+		ListRemoveRange,
+		CollectionSort) { TypeParameterCount = 1 };
 	public static readonly CiMethod QueueDequeue = new CiMethod(CiCallType.Normal, TypeParam0, "Dequeue") { IsMutator = true };
 	public static readonly CiMethod QueueEnqueue = new CiMethod(CiCallType.Normal, VoidType, "Enqueue", new CiVar(TypeParam0, "value")) { IsMutator = true };
 	public static readonly CiMethod QueuePeek = new CiMethod(CiCallType.Normal, TypeParam0, "Peek");
 	public static readonly CiClass QueueClass = new CiClass(CiCallType.Normal, "Queue",
 		CollectionClear,
+		CollectionCount,
 		QueueDequeue,
 		QueueEnqueue,
 		QueuePeek) { TypeParameterCount = 1 };
@@ -1442,6 +1449,7 @@ public class CiSystem : CiScope
 	public static readonly CiMethod StackPop = new CiMethod(CiCallType.Normal, TypeParam0, "Pop") { IsMutator = true };
 	public static readonly CiClass StackClass = new CiClass(CiCallType.Normal, "Stack",
 		CollectionClear,
+		CollectionCount,
 		StackPeek,
 		StackPush,
 		StackPop) { TypeParameterCount = 1 };
@@ -1451,6 +1459,7 @@ public class CiSystem : CiScope
 	public static readonly CiClass HashSetClass = new CiClass(CiCallType.Normal, "HashSet",
 		HashSetAdd,
 		CollectionClear,
+		CollectionCount,
 		HashSetContains,
 		HashSetRemove) { TypeParameterCount = 1 };
 	public static readonly CiMethod DictionaryAdd = new CiMethod(CiCallType.Normal, VoidType, "Add", new CiVar(TypeParam0, "key")) { Visibility = CiVisibility.FinalValueType, IsMutator = true };
@@ -1459,6 +1468,7 @@ public class CiSystem : CiScope
 	public static readonly CiClass DictionaryClass = new CiClass(CiCallType.Normal, "Dictionary",
 		DictionaryAdd,
 		CollectionClear,
+		CollectionCount,
 		DictionaryContainsKey,
 		DictionaryRemove) { TypeParameterCount = 2 };
 	public static readonly CiClass SortedDictionaryClass = new CiClass { Name = "SortedDictionary", TypeParameterCount = 2 };
@@ -1469,7 +1479,8 @@ public class CiSystem : CiScope
 		ConsoleWrite,
 		ConsoleWriteLine);
 	public static readonly CiMember ConsoleError = new CiMember(ConsoleBase, "Error");
-	public static readonly CiClass ConsoleClass = new CiClass(CiCallType.Static, "Console");
+	public static readonly CiClass ConsoleClass = new CiClass(CiCallType.Static, "Console",
+		ConsoleError);
 	public static readonly CiMethod UTF8GetByteCount = new CiMethod(CiCallType.Normal, IntType, "GetByteCount", new CiVar(StringPtrType, "str"));
 	public static readonly CiMethod UTF8GetBytes = new CiMethod(CiCallType.Normal, VoidType, "GetBytes", new CiVar(StringPtrType, "str"), new CiVar(ReadWriteByteArrayPtrType, "bytes"), new CiVar(IntType, "byteIndex"));
 	public static readonly CiMethod UTF8GetString = new CiMethod(CiCallType.Normal, StringStorageType, "GetString", new CiVar(ReadOnlyByteArrayPtrType, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length")); // TODO: UIntType
@@ -1481,9 +1492,6 @@ public class CiSystem : CiScope
 	public static readonly CiMethod EnvironmentGetEnvironmentVariable = new CiMethod(CiCallType.Static, StringPtrType, "GetEnvironmentVariable", new CiVar(StringPtrType, "name"));
 	public static readonly CiClass EnvironmentClass = new CiClass(CiCallType.Static, "Environment", EnvironmentGetEnvironmentVariable);
 	public static readonly CiConst RegexOptionsNone = new CiConst("None", 0);
-	public static readonly CiConst RegexOptionsIgnoreCase = new CiConst("IgnoreCase", 1);
-	public static readonly CiConst RegexOptionsMultiline = new CiConst("Multiline", 2);
-	public static readonly CiConst RegexOptionsSingleline = new CiConst("Singleline", 16);
 	public static readonly CiEnum RegexOptionsEnum = new CiEnumFlags { Name = "RegexOptions" };
 	public static readonly CiMethod RegexCompile = new CiMethod(CiCallType.Static, null /* filled later to avoid cyclic reference */, "Compile", new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone });
 	public static readonly CiMethod RegexEscape = new CiMethod(CiCallType.Static, StringStorageType, "Escape", new CiVar(StringPtrType, "str"));
@@ -1491,7 +1499,8 @@ public class CiSystem : CiScope
 	public static readonly CiMethod RegexIsMatchRegex = new CiMethod(CiCallType.Normal, BoolType, "IsMatch", new CiVar(StringPtrType, "input"));
 	public static readonly CiClass RegexClass = new CiClass(CiCallType.Sealed, "Regex",
 		RegexCompile,
-		RegexEscape);
+		RegexEscape,
+		new CiMethodGroup(RegexIsMatchStr, RegexIsMatchRegex));
 	public static readonly CiMethod MatchFindStr = new CiMethod(CiCallType.Normal, BoolType, "Find", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone }) { IsMutator = true };
 	public static readonly CiMethod MatchFindRegex = new CiMethod(CiCallType.Normal, BoolType, "Find", new CiVar(StringPtrType, "input"), new CiVar(new CiClassPtrType { Class = RegexClass, Modifier = CiToken.EndOfFile }, "pattern")) { IsMutator = true };
 	public static readonly CiMember MatchStart = new CiMember(IntType, "Start");
@@ -1500,7 +1509,12 @@ public class CiSystem : CiScope
 	public static readonly CiMember MatchValue = new CiMember(StringPtrType, "Value");
 	public static readonly CiMethod MatchGetCapture = new CiMethod(CiCallType.Normal, StringPtrType, "GetCapture", new CiVar(UIntType, "group"));
 	public static readonly CiClass MatchClass = new CiClass(CiCallType.Sealed, "Match",
-		MatchGetCapture);
+		new CiMethodGroup(MatchFindStr, MatchFindRegex),
+		MatchStart,
+		MatchEnd,
+		MatchGetCapture,
+		MatchLength,
+		MatchValue);
 	public static readonly CiMember MathNaN = new CiMember(FloatType, "NaN");
 	public static readonly CiMember MathNegativeInfinity = new CiMember(FloatType, "NegativeInfinity");
 	public static readonly CiMember MathPositiveInfinity = new CiMember(FloatType, "PositiveInfinity");
@@ -1520,6 +1534,7 @@ public class CiSystem : CiScope
 		MathCeiling,
 		new CiMethod(CiCallType.Static, FloatType, "Cos", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, "Cosh", new CiVar(DoubleType, "a")),
+		new CiConst("E", Math.E),
 		new CiMethod(CiCallType.Static, FloatType, "Exp", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatIntType, "Floor", new CiVar(DoubleType, "a")),
 		MathFusedMultiplyAdd,
@@ -1529,6 +1544,10 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, FloatType, "Log", new CiVar(DoubleType, "a")),
 		MathLog2,
 		new CiMethod(CiCallType.Static, FloatType, "Log10", new CiVar(DoubleType, "a")),
+		MathNaN,
+		MathNegativeInfinity,
+		new CiConst("PI", Math.PI),
+		MathPositiveInfinity,
 		new CiMethod(CiCallType.Static, FloatType, "Pow", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y")),
 		new CiMethod(CiCallType.Static, FloatType, "Sin", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, "Sinh", new CiVar(DoubleType, "a")),
@@ -1557,50 +1576,28 @@ public class CiSystem : CiScope
 		Add(DoubleType);
 		Add(BoolType);
 		Add(StringPtrType);
-		ArrayStorageClass.Add(new CiMethodGroup(ArrayBinarySearchAll, ArrayBinarySearchPart) { Visibility = CiVisibility.NumericElementType });
-		ArrayStorageClass.Add(new CiMethodGroup(ArrayFillAll, ArrayFillPart));
-		ArrayStorageClass.Add(ArrayLength);
-		ArrayStorageClass.Add(CollectionSort);
-		ListClass.Add(CollectionCount);
-		ListClass.Add(CollectionSort);
 		Add(ListClass);
-		QueueClass.Add(CollectionCount);
 		Add(QueueClass);
-		StackClass.Add(CollectionCount);
 		Add(StackClass);
-		HashSetClass.Add(CollectionCount);
 		Add(HashSetClass);
-		DictionaryClass.Add(CollectionCount);
 		Add(DictionaryClass);
 		Add(SortedDictionaryClass);
 		SortedDictionaryClass.Parent = DictionaryClass;
 		Add(OrderedDictionaryClass);
 		OrderedDictionaryClass.Parent = DictionaryClass;
-		ConsoleClass.Add(ConsoleError);
 		Add(ConsoleClass);
 		ConsoleClass.Parent = ConsoleBase;
 		EncodingClass.Add(new CiMember(UTF8EncodingClass, "UTF8"));
 		Add(EncodingClass);
 		Add(EnvironmentClass);
 		AddEnumValue(RegexOptionsEnum, RegexOptionsNone);
-		AddEnumValue(RegexOptionsEnum, RegexOptionsIgnoreCase);
-		AddEnumValue(RegexOptionsEnum, RegexOptionsMultiline);
-		AddEnumValue(RegexOptionsEnum, RegexOptionsSingleline);
+		AddEnumValue(RegexOptionsEnum, new CiConst("IgnoreCase", 1));
+		AddEnumValue(RegexOptionsEnum, new CiConst("Multiline", 2));
+		AddEnumValue(RegexOptionsEnum, new CiConst("Singleline", 16));
 		Add(RegexOptionsEnum);
 		RegexCompile.Type = new CiClassPtrType { Class = RegexClass, Modifier = CiToken.Hash };
-		RegexClass.Add(new CiMethodGroup(RegexIsMatchStr, RegexIsMatchRegex));
 		Add(RegexClass);
-		MatchClass.Add(new CiMethodGroup(MatchFindStr, MatchFindRegex));
-		MatchClass.Add(MatchStart);
-		MatchClass.Add(MatchEnd);
-		MatchClass.Add(MatchLength);
-		MatchClass.Add(MatchValue);
 		Add(MatchClass);
-		MathClass.Add(new CiConst("E", Math.E));
-		MathClass.Add(new CiConst("PI", Math.PI));
-		MathClass.Add(MathNaN);
-		MathClass.Add(MathNegativeInfinity);
-		MathClass.Add(MathPositiveInfinity);
 		Add(MathClass);
 		Add(LockClass);
 		Add(BasePtr);

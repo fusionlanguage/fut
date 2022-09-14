@@ -567,7 +567,7 @@ public class GenCs : GenTyped
 			WriteNewStorage(((CiClassType) obj.Type).ValueType);
 			Write(')');
 		}
-		else if (obj.Type is CiClassType dict && dict.Class == CiSystem.OrderedDictionaryClass && method == CiSystem.DictionaryContainsKey)
+		else if (method == CiSystem.DictionaryContainsKey && ((CiClassType) obj.Type).Class == CiSystem.OrderedDictionaryClass)
 			WriteCall(obj, "Contains", args[0]);
 		else {
 			if (method == CiSystem.MathIsFinite || method == CiSystem.MathIsInfinity || method == CiSystem.MathIsNaN)

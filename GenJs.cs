@@ -516,7 +516,7 @@ public class GenJs : GenBase
 				WriteIndexing(obj, args[0]);
 			}
 		}
-		else if (obj.Type is CiClassType dict && (dict.Class == CiSystem.DictionaryClass || dict.Class == CiSystem.SortedDictionaryClass) && method == CiSystem.CollectionClear) {
+		else if (method == CiSystem.CollectionClear && obj.Type is CiClassType dict && (dict.Class == CiSystem.DictionaryClass || dict.Class == CiSystem.SortedDictionaryClass)) {
 			Write("for (const key in ");
 			obj.Accept(this, CiPriority.Argument);
 			WriteLine(')');
