@@ -1208,10 +1208,8 @@ public class CiClassType : CiType
 
 	public override CiSymbol TryLookup(string name) => this.Class.TryLookup(name);
 
-	protected bool IsAssignableFromClass(CiClassType right)
+	bool EqualTypeArguments(CiClassType right)
 	{
-		if (!this.Class.IsSameOrBaseOf(right.Class))
-			return false;
 		switch (this.Class.TypeParameterCount) {
 		case 0: return true;
 		case 1: return this.TypeArg0.EqualsType(right.TypeArg0);
@@ -1220,11 +1218,15 @@ public class CiClassType : CiType
 		}
 	}
 
+	protected bool IsAssignableFromClass(CiClassType right) => this.Class.IsSameOrBaseOf(right.Class) && EqualTypeArguments(right);
+
 	public override bool IsAssignableFrom(CiType right)
 	{
 		return right == CiSystem.NullType
 			|| (right is CiClassType rightClass && IsAssignableFromClass(rightClass));
 	}
+
+	public override bool EqualsType(CiType right) => right is CiClassType that && this.Class == that.Class && EqualTypeArguments(that);
 
 	protected string GetClassString()
 	{
