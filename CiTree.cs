@@ -241,6 +241,7 @@ public class CiConst : CiMember
 public abstract class CiLiteral : CiExpr
 {
 	public abstract bool IsDefaultValue { get; }
+	public virtual string GetLiteralString() => throw new NotImplementedException();
 	public static readonly CiLiteralFalse False = new CiLiteralFalse();
 	public static readonly CiLiteralTrue True = new CiLiteralTrue();
 }
@@ -264,6 +265,7 @@ public class CiLiteralLong : CiLiteral
 		visitor.VisitLiteralLong(this.Value);
 		return this;
 	}
+	public override string GetLiteralString() => this.Value.ToString();
 	public override string ToString() => this.Value.ToString();
 }
 
@@ -308,7 +310,8 @@ public class CiLiteralDouble : CiLiteral
 		visitor.VisitLiteralDouble(this.Value);
 		return this;
 	}
-	public override string ToString() => this.Value.ToString(CultureInfo.InvariantCulture);
+	public override string GetLiteralString() => this.Value.ToString(CultureInfo.InvariantCulture);
+	public override string ToString() => GetLiteralString();
 }
 
 public class CiLiteralString : CiLiteral
@@ -325,7 +328,8 @@ public class CiLiteralString : CiLiteral
 		visitor.VisitLiteralString(this.Value);
 		return this;
 	}
-	public override string ToString() => this.Value;
+	public override string GetLiteralString() => this.Value;
+	public override string ToString() => '"' + this.Value + '"';
 	public int GetAsciiLength()
 	{
 		int length = 0;
@@ -658,20 +662,9 @@ public class CiBinaryExpr : CiExpr
 		return null;
 	}
 
-	public static CiType PromoteNumericTypes(CiType left, CiType right)
-	{
-		return PromoteFloatingTypes(left, right) ?? PromoteIntegerTypes(left, right);
-	}
+	public static CiType PromoteNumericTypes(CiType left, CiType right) => PromoteFloatingTypes(left, right) ?? PromoteIntegerTypes(left, right);
 
-	public override string ToString()
-	{
-		switch (this.Op) {
-		case CiToken.LeftBracket:
-			return $"{this.Left}[{this.Right}]";
-		default:
-			return $"({this.Left} {this.OpString} {this.Right})";
-		}
-	}
+	public override string ToString() => this.Op == CiToken.LeftBracket ? $"{this.Left}[{this.Right}]" : $"({this.Left} {this.OpString} {this.Right})";
 }
 
 public class CiSelectExpr : CiExpr

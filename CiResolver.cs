@@ -363,8 +363,8 @@ public class CiResolver : CiVisitor
 			int width = 0;
 			if (part.WidthExpr != null)
 				width = FoldConstInt(part.WidthExpr);
-			if (arg is CiLiteral && !(arg.Type is CiFloatingType)) { // float formatting is runtime-locale-specific
-				string stringArg = part.Format == ' ' ? arg.ToString()
+			if (arg is CiLiteral literal && !(arg.Type is CiFloatingType)) { // float formatting is runtime-locale-specific
+				string stringArg = part.Format == ' ' ? literal.GetLiteralString()
 					: ((CiLiteralLong) arg).Value.ToString(part.Format + (part.Precision < 0 ? "" : part.Precision.ToString()));
 				if (part.WidthExpr != null)
 					stringArg = width >= 0 ? stringArg.PadLeft(width) : stringArg.PadRight(-width);
@@ -617,8 +617,8 @@ public class CiResolver : CiVisitor
 		if (expr is CiInterpolatedString interpolated)
 			return interpolated;
 		CiInterpolatedString result = new CiInterpolatedString();
-		if (expr is CiLiteral)
-			result.Suffix = expr.ToString();
+		if (expr is CiLiteral literal)
+			result.Suffix = literal.GetLiteralString();
 		else {
 			result.Parts.Add(new CiInterpolatedPart("", expr));
 			result.Suffix = "";
@@ -731,8 +731,8 @@ public class CiResolver : CiVisitor
 			else if (left.Type is CiStringType || right.Type is CiStringType) {
 				Coerce(left, CiSystem.PrintableType);
 				Coerce(right, CiSystem.PrintableType);
-				if (left is CiLiteral && right is CiLiteral)
-					return expr.ToLiteralString(left.ToString() + right.ToString());
+				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
+					return expr.ToLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString());
 				if (left is CiInterpolatedString || right is CiInterpolatedString)
 					return Concatenate(ToInterpolatedString(left), ToInterpolatedString(right));
 				NotSupported(expr, "String concatenation", "c", "cl");
