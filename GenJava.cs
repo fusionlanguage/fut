@@ -305,7 +305,7 @@ public class GenJava : GenTyped
 				: needClass ? "Integer" : "int");
 			break;
  		case CiClassType klass:
-			if (klass.Class == CiSystem.ArrayPtrClass || klass.Class == CiSystem.ArrayStorageClass) {
+			if (klass.IsArray) {
 				Write(klass.ElementType, false);
 				Write("[]");
 			}

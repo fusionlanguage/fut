@@ -100,7 +100,7 @@ public abstract class GenCCpp : GenTyped
 
 	static bool IsPtrTo(CiExpr ptr, CiExpr other)
 	{
-		return (ptr.Type is CiClassPtrType || ptr.Type is CiArrayPtrType || ptr.Type is CiClassType)
+		return (ptr.Type is CiClassPtrType || ptr.Type is CiClassType)
 			&& ptr.Type.IsAssignableFrom(other.Type);
 	}
 

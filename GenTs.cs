@@ -96,7 +96,7 @@ public class GenTs : GenJs
 			Write(enu == CiSystem.BoolType ? "boolean" : enu.Name);
 			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.ArrayPtrClass || klass.Class == CiSystem.ArrayStorageClass) {
+			if (klass.IsArray) {
 				bool isReadonlyPtr = klass is CiArrayPtrType arrayPtr && arrayPtr.Modifier == CiToken.EndOfFile;
 				if (klass.ElementType is CiNumericType number) {
 					if (klass.Class == CiSystem.ArrayPtrClass) {

@@ -167,19 +167,17 @@ public class GenSwift : GenPySwift
 
 	static bool NeedsUnwrap(CiExpr expr)
 	{
-		if (expr.Type is CiArrayPtrType)
-			return true;
-		if (!(expr.Type is CiClassPtrType))
+		if (expr.Type == null)
 			return false;
-		if (!(expr is CiSymbolReference symbol))
-			return true;
-		if (symbol.Name == "this")
-			return false;
-		if (symbol.Symbol.Parent is CiForeach forEach
-		 && forEach.Collection.Type is CiArrayStorageType array
-		 && array.ElementType is CiClass)
-			return false;
-		return true;
+		if (expr is CiSymbolReference symbol && expr.Type is CiClassPtrType) {
+			if (symbol.Name == "this")
+				return false;
+			if (symbol.Symbol.Parent is CiForeach forEach
+			 && forEach.Collection.Type is CiArrayStorageType array
+			 && array.ElementType is CiClass)
+				return false;
+		}
+		return expr.Type.IsPointer;
 	}
 
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
@@ -189,10 +187,10 @@ public class GenSwift : GenPySwift
 		Write('.');
 	}
 
-	void OpenIndexing(CiExpr array)
+	void OpenIndexing(CiExpr collection)
 	{
-		array.Accept(this, CiPriority.Primary);
-		if (array.Type is CiArrayPtrType)
+		collection.Accept(this, CiPriority.Primary);
+		if (!(collection.Type is CiStorageType))
 			Write('!');
 		Write('[');
 	}
@@ -254,12 +252,6 @@ public class GenSwift : GenPySwift
 			Write(classPtr.Class.Name);
 			Write('?');
 			break;
-		case CiArrayPtrType arrayPtr:
-			this.ArrayRef = true;
-			Write("ArrayRef<");
-			Write(arrayPtr.ElementType);
-			Write(">?");
-			break;
 		case CiArrayStorageType arrayStg:
 			if (IsArrayRef(arrayStg)) {
 				this.ArrayRef = true;
@@ -274,7 +266,13 @@ public class GenSwift : GenPySwift
 			}
 			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass) {
+			if (klass.Class == CiSystem.ArrayPtrClass) {
+				this.ArrayRef = true;
+				Write("ArrayRef<");
+				Write(klass.ElementType);
+				Write(">?");
+			}
+			else if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass) {
 				Write('[');
 				Write(klass.ElementType);
 				Write(']');
@@ -487,7 +485,7 @@ public class GenSwift : GenPySwift
 			WriteRange(args[0], args[3]);
 			Write(']');
 		}
-		else if (obj.Type is CiArrayStorageType array && !IsArrayRef(array) && method == CiSystem.ArrayFillAll) {
+		else if (method == CiSystem.ArrayFillAll && obj.Type is CiArrayStorageType array && !IsArrayRef(array)) {
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = [");
 			Write(array.ElementType);
@@ -497,7 +495,7 @@ public class GenSwift : GenPySwift
 			VisitLiteralLong(array.Length);
 			Write(')');
 		}
-		else if (obj.Type is CiArrayStorageType array2 && !IsArrayRef(array2) && method == CiSystem.ArrayFillPart) {
+		else if (method == CiSystem.ArrayFillPart && obj.Type is CiArrayStorageType array2 && !IsArrayRef(array2)) {
 			OpenIndexing(obj);
 			WriteRange(args[1], args[2]);
 			Write("] = ArraySlice(repeating: ");
@@ -506,10 +504,10 @@ public class GenSwift : GenPySwift
 			WriteCoerced(CiSystem.IntType, args[2], CiPriority.Argument); // FIXME: side effect
 			Write(')');
 		}
-		else if (obj.Type is CiArrayStorageType arrayStorage && method == CiSystem.CollectionSortAll) {
+		else if (method == CiSystem.CollectionSortAll && obj.Type is CiArrayStorageType array3) {
 			obj.Accept(this, CiPriority.Primary);
 			Write("[0..<");
-			VisitLiteralLong(arrayStorage.Length);
+			VisitLiteralLong(array3.Length);
 			Write("].sort()");
 		}
 		else if (method == CiSystem.CollectionSortPart) {

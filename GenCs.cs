@@ -227,7 +227,7 @@ public class GenCs : GenTyped
 			Write("string");
 			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.ArrayPtrClass || klass.Class == CiSystem.ArrayStorageClass) {
+			if (klass.IsArray) {
 				Write(klass.ElementType, false);
 				Write("[]");
 			}

@@ -103,8 +103,7 @@ public class CiResolver : CiVisitor
 			string kind = prefix.Inner != null ? "array" : "object";
 			throw StatementException(expr, $"Dynamically allocated {kind} must be assigned to a {expr.Type} reference");
 		}
-		if (type is CiArrayPtrType)
-			TakePtr(expr);
+		TakePtr(expr);
 	}
 
 	CiType GetCommonType(CiExpr left, CiExpr right)
