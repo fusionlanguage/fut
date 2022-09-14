@@ -330,25 +330,23 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteNewStorage(CiStorageType storage) => throw new NotImplementedException();
 
-	protected override void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
-	{
-		switch (value) {
-		case null:
-			break;
-		case CiLiteral literal when literal.IsDefaultValue:
-			Write(" {}");
-			break;
-		default:
-			throw new NotImplementedException("Only null, zero and false supported");
-		}
-	}
-
 	protected override void WriteVarInit(CiNamedValue def)
 	{
 		if (def.Value != null && def.Type == CiSystem.StringStorageType) {
 			Write('{');
 			def.Value.Accept(this, CiPriority.Argument);
 			Write('}');
+		}
+		else if (def.Type is CiArrayStorageType) {
+			switch (def.Value) {
+			case null:
+				break;
+			case CiLiteral literal when literal.IsDefaultValue:
+				Write(" {}");
+				break;
+			default:
+				throw new NotImplementedException("Only null, zero and false supported");
+			}
 		}
 		else if (def.Type is CiStorageType) {
 		}
@@ -959,12 +957,12 @@ public class GenCpp : GenCCpp
 				break;
 			}
 			break;
+		case CiArrayPtrType leftArray when leftArray.Modifier != CiToken.Hash:
+			WriteArrayPtr(expr, CiPriority.Argument);
+			return;
 		case CiClassType _ when expr.Type is CiStorageType:
 			Write('&');
 			expr.Accept(this, CiPriority.Primary);
-			return;
-		case CiArrayPtrType leftArray when leftArray.Modifier != CiToken.Hash:
-			WriteArrayPtr(expr, CiPriority.Argument);
 			return;
 		case CiStringPtrType _ when expr.Type == CiSystem.NullType:
 			Include("string_view");

@@ -1330,7 +1330,7 @@ public class CiArrayPtrType : CiClassType
 	public override bool EqualsType(CiType right) => right is CiArrayPtrType that && this.ElementType.EqualsType(that.ElementType) && this.Modifier == that.Modifier;
 }
 
-public class CiArrayStorageType : CiClassType
+public class CiArrayStorageType : CiStorageType
 {
 	public CiExpr LengthExpr;
 	public int Length;
@@ -1343,14 +1343,11 @@ public class CiArrayStorageType : CiClassType
 
 	public override string ToString() => this.BaseType + this.ArrayString + this.ElementType.ArrayString;
 	public override CiType BaseType => this.ElementType.BaseType;
-	public override bool IsPointer => false;
 	public override bool IsArray => true;
 	public override string ArrayString => $"[{this.Length}]";
-	public override bool IsAssignableFrom(CiType right) => false;
 	public override bool EqualsType(CiType right) => right is CiArrayStorageType that && this.ElementType.EqualsType(that.ElementType) && this.Length == that.Length;
 	public override CiType StorageType => this.ElementType.StorageType;
 	public override CiType PtrOrSelf => new CiArrayPtrType { TypeArg0 = this.ElementType, Modifier = CiToken.ExclamationMark };
-	public override bool IsFinal => true;
 }
 
 public class CiPrintableType : CiType
