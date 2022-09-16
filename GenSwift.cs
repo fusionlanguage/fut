@@ -169,7 +169,7 @@ public class GenSwift : GenPySwift
 	{
 		if (expr.Type == null)
 			return false;
-		if (expr is CiSymbolReference symbol && expr.Type is CiClassPtrType) {
+		if (expr is CiSymbolReference symbol && expr.Type is CiClassType) {
 			if (symbol.Name == "this")
 				return false;
 			if (symbol.Symbol.Parent is CiForeach forEach
@@ -248,10 +248,6 @@ public class GenSwift : GenPySwift
 		case CiEnum _:
 			Write(type == CiSystem.BoolType ? "Bool" : type.Name);
 			break;
-		case CiClassPtrType classPtr:
-			Write(classPtr.Class.Name);
-			Write('?');
-			break;
 		case CiArrayStorageType arrayStg:
 			if (IsArrayRef(arrayStg)) {
 				this.ArrayRef = true;
@@ -266,7 +262,11 @@ public class GenSwift : GenPySwift
 			}
 			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.ArrayPtrClass) {
+			if (klass.Class.TypeParameterCount == 0) {
+				Write(klass.Class.Name);
+				Write('?');
+			}
+			else if (klass.Class == CiSystem.ArrayPtrClass) {
 				this.ArrayRef = true;
 				Write("ArrayRef<");
 				Write(klass.ElementType);

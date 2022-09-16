@@ -227,7 +227,9 @@ public class GenCs : GenTyped
 			Write("string");
 			break;
 		case CiClassType klass:
-			if (klass.IsArray) {
+			if (klass.Class.TypeParameterCount == 0)
+				WriteClassName(klass.Class);
+			else if (klass.IsArray) {
 				Write(klass.ElementType, false);
 				Write("[]");
 			}
@@ -253,9 +255,6 @@ public class GenCs : GenTyped
 			break;
 		case CiClass klass:
 			WriteClassName(klass);
-			break;
-		case CiClassPtrType classPtr:
-			WriteClassName(classPtr.Class);
 			break;
 		default:
 			Write(type.Name);

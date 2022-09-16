@@ -792,10 +792,11 @@ public abstract class GenBase : CiVisitor
 			Write('!');
 			break;
 		case CiToken.New:
-			if (expr.Type is CiClassPtrType klass)
-				WriteNew(klass.Class, parent);
+			CiClassType klass = (CiClassType) expr.Type;
+			if (klass.Class == CiSystem.ArrayPtrClass)
+				WriteNewArray(klass.ElementType, expr.Inner, parent);
 			else
-				WriteNewArray(((CiClassType) expr.Type).ElementType, expr.Inner, parent);
+				WriteNew(klass.Class, parent);
 			return expr;
 		case CiToken.Resource:
 			WriteResource(((CiLiteralString) expr.Inner).Value, ((CiArrayStorageType) expr.Type).Length);

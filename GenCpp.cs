@@ -213,13 +213,36 @@ public class GenCpp : GenCCpp
 			Include("string");
 			Write("std::string");
 			break;
-		case CiDynamicPtrType dynamic when dynamic.Class == CiSystem.ArrayPtrClass:
-			Include("memory");
-			Write("std::shared_ptr<");
-			Write(dynamic.ElementType, false);
-			Write("[]>");
+		case CiDynamicPtrType dynamic:
+			if (dynamic.Class == CiSystem.RegexClass) {
+				Include("regex");
+				Write("std::regex");
+			}
+			else {
+				Include("memory");
+				Write("std::shared_ptr<");
+				if (dynamic.Class == CiSystem.ArrayPtrClass) {
+					Write(dynamic.ElementType, false);
+					Write("[]");
+				}
+				else
+					Write(dynamic.Class.Name);
+				Write('>');
+			}
 			break;
 		case CiClassType klass:
+			if (klass.Class.TypeParameterCount == 0) {
+				if (!(klass is CiReadWriteClassType))
+					Write("const ");
+				if (klass.Class == CiSystem.RegexClass) {
+					Include("regex");
+					Write("std::regex");
+				}
+				else
+					WriteBaseType(klass.Class);
+				Write(" *");
+				break;
+			}
 			if (klass.Class == CiSystem.ArrayPtrClass) {
 				Write(klass.ElementType, false);
 				if (!(klass is CiReadWriteClassType))
@@ -262,38 +285,6 @@ public class GenCpp : GenCCpp
 			Write('>');
 			if (!(klass is CiStorageType))
 				Write(" *");
-			break;
-		case CiClassPtrType classPtr:
-			switch (classPtr.Modifier) {
-			case CiToken.EndOfFile:
-				Write("const ");
-				if (classPtr.Class == CiSystem.RegexClass) {
-					Include("regex");
-					Write("std::regex");
-				}
-				else
-					WriteBaseType(classPtr.Class);
-				Write(" *");
-				break;
-			case CiToken.ExclamationMark:
-				Write(classPtr.Class.Name);
-				Write(" *");
-				break;
-			case CiToken.Hash:
-				if (classPtr.Class == CiSystem.RegexClass) {
-					Include("regex");
-					Write("std::regex");
-				}
-				else {
-					Include("memory");
-					Write("std::shared_ptr<");
-					Write(classPtr.Class.Name);
-					Write('>');
-				}
-				break;
-			default:
-				throw new NotImplementedException(classPtr.Modifier.ToString());
-			}
 			break;
 		default:
 			WriteBaseType(type);
@@ -389,8 +380,7 @@ public class GenCpp : GenCCpp
 
 	static bool IsCppPtr(CiExpr expr)
 	{
-		if (expr.Type is CiClassPtrType
-		 || (expr.Type is CiClassType ptr && ptr.IsPointer && ptr.Class != CiSystem.ArrayPtrClass)) {
+		if (expr.Type is CiClassType ptr && ptr.IsPointer && ptr.Class != CiSystem.ArrayPtrClass) {
 			if (expr is CiSymbolReference symbol
 			 && symbol.Symbol.Parent is CiForeach loop
 			 && loop.Collection.Type is CiArrayStorageType array
@@ -923,16 +913,28 @@ public class GenCpp : GenCCpp
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 	{
 		switch (type) {
-		case CiClassPtrType leftClass when leftClass.Modifier != CiToken.Hash:
+		case CiClassType klass when !(klass is CiDynamicPtrType):
+			if (klass.Class == CiSystem.ArrayPtrClass) {
+				WriteArrayPtr(expr, parent);
+				return;
+			}
 			switch (expr.Type) {
+			case CiDynamicPtrType _:
+				expr.Accept(this, CiPriority.Primary);
+				Write(".get()");
+				return;
+			case CiStorageType _:
+				Write('&');
+				expr.Accept(this, CiPriority.Primary);
+				return;
 			case CiClass _:
-			case CiClassPtrType _ when !IsCppPtr(expr):
+			case CiClassType _ when !IsCppPtr(expr):
 				Write('&');
 				if (expr is CiCallExpr) {
 					Write("static_cast<");
-					if (leftClass.Modifier == CiToken.EndOfFile)
+					if (!(klass is CiReadWriteClassType))
 						Write("const ");
-					WriteName(leftClass.Class);
+					WriteName(klass.Class);
 					Write(" &>(");
 					expr.Accept(this, CiPriority.Argument);
 					Write(')');
@@ -940,23 +942,8 @@ public class GenCpp : GenCCpp
 				else
 					expr.Accept(this, CiPriority.Primary);
 				return;
-			case CiClassPtrType rightPtr when rightPtr.Modifier == CiToken.Hash:
-				expr.Accept(this, CiPriority.Primary);
-				Write(".get()");
-				return;
 			default:
 				break;
-			}
-			break;
-		case CiClassType klass:
-			if (klass.Class == CiSystem.ArrayPtrClass && !(klass is CiDynamicPtrType)) {
-				WriteArrayPtr(expr, parent);
-				return;
-			}
-			if (expr.Type is CiStorageType) {
-				Write('&');
-				expr.Accept(this, CiPriority.Primary);
-				return;
 			}
 			break;
 		case CiStringPtrType _ when expr.Type == CiSystem.NullType:
@@ -1063,8 +1050,8 @@ public class GenCpp : GenCCpp
 		}
 		else if (statement.Collection.Type is CiArrayStorageType array
 		 && array.ElementType is CiClass klass
-		 && element.Type is CiClassPtrType ptr) {
-			if (ptr.Modifier == CiToken.EndOfFile)
+		 && element.Type is CiClassType ptr) {
+			if (!(ptr is CiReadWriteClassType))
 				Write("const ");
 			Write(klass.Name);
 			Write(" &");

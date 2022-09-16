@@ -73,6 +73,16 @@ public class GenTs : GenJs
 		Write(konst.Type, true);
 	}
 
+	void WriteBaseType(CiType type)
+	{
+		if (type == CiSystem.RegexClass)
+			Write("RegExp");
+		else if (type == CiSystem.MatchClass)
+			Write("RegExpMatchArray");
+		else
+			Write(type.Name);
+	}
+
 	void Write(CiType type, bool forConst = false)
 	{
 		switch (type) {
@@ -86,7 +96,9 @@ public class GenTs : GenJs
 			Write(enu == CiSystem.BoolType ? "boolean" : enu.Name);
 			break;
 		case CiClassType klass:
-			if (klass.IsArray) {
+			if (klass.Class.TypeParameterCount == 0)
+				WriteBaseType(klass.Class);
+			else if (klass.IsArray) {
 				bool isReadonlyPtr = !(klass is CiReadWriteClassType);
 				if (klass.ElementType is CiNumericType number) {
 					if (klass.Class == CiSystem.ArrayPtrClass) {
@@ -136,13 +148,7 @@ public class GenTs : GenJs
 				throw new NotImplementedException();
 			break;
 		default:
-			CiType baseType = type is CiClassPtrType classPtr ? classPtr.Class : type;
-			if (baseType == CiSystem.RegexClass)
-				Write("RegExp");
-			else if (baseType == CiSystem.MatchClass)
-				Write("RegExpMatchArray");
-			else
-				Write(type.Name);
+			WriteBaseType(type);
 			break;
 		}
 		if (type.IsPointer)

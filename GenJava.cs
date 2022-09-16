@@ -305,7 +305,9 @@ public class GenJava : GenTyped
 				: needClass ? "Integer" : "int");
 			break;
  		case CiClassType klass:
-			if (klass.IsArray) {
+			if (klass.Class.TypeParameterCount == 0)
+				WriteClassName(klass.Class);
+			else if (klass.IsArray) {
 				Write(klass.ElementType, false);
 				Write("[]");
 			}
@@ -327,9 +329,6 @@ public class GenJava : GenTyped
 			break;
 		case CiClass klass:
 			WriteClassName(klass);
-			break;
-		case CiClassPtrType classPtr:
-			WriteClassName(classPtr.Class);
 			break;
 		default:
 			Write(type.Name);

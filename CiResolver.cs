@@ -419,8 +419,8 @@ public class CiResolver : CiVisitor
 			else {
 				if (leftSymbol == null || !(leftSymbol.Symbol is CiScope scope)) {
 					scope = left.Type;
-					if (scope is CiClassPtrType ptr)
-						scope = ptr.Class;
+					// if (scope is CiClassType ptr)
+					//	scope = ptr.Class;
 				}
 				CiExpr result = Lookup(expr, scope);
 				if (result != expr)
@@ -429,11 +429,11 @@ public class CiResolver : CiVisitor
 					switch (member.Visibility) {
 					case CiVisibility.Private:
 						if (member.Parent != this.CurrentMethod.Parent
-						 || this.CurrentMethod.Parent != scope /* enforced by Java, but not C++/C#/TS */)
+						 || this.CurrentMethod.Parent != (scope as CiClass ?? ((CiClassType) scope).Class) /* enforced by Java, but not C++/C#/TS */)
 							throw StatementException(expr, $"Cannot access private member {expr.Name}");
 						break;
 					case CiVisibility.Protected:
-						if (!((CiClass) this.CurrentMethod.Parent).IsSameOrBaseOf((CiClass) scope) /* enforced by C++/C#/TS but not Java */)
+						if (!((CiClass) this.CurrentMethod.Parent).IsSameOrBaseOf(scope as CiClass ?? ((CiClassType) scope).Class) /* enforced by C++/C#/TS but not Java */)
 							throw StatementException(expr, $"Cannot access protected member {expr.Name}");
 						break;
 					case CiVisibility.NumericElementType when left.Type is CiClassType klass:
@@ -562,7 +562,7 @@ public class CiResolver : CiVisitor
 			type = ToType(expr.Inner, true);
 			switch (type) {
 			case CiClass klass:
-				expr.Type = new CiClassPtrType { Class = klass, Modifier = CiToken.Hash };
+				expr.Type = new CiDynamicPtrType { Class = klass };
 				expr.Inner = null;
 				return expr;
 			case CiArrayStorageType array:
@@ -947,7 +947,7 @@ public class CiResolver : CiVisitor
 			return expr;
 
 		case CiToken.Is:
-			if (!(left.Type is CiClassPtrType leftPtr))
+			if (!(left.Type is CiClassType leftPtr) || left.Type is CiStorageType)
 				throw StatementException(expr, "Left hand side of the 'is' operator must be an object reference");
 			{
 				CiClass klass;
@@ -958,9 +958,11 @@ public class CiResolver : CiVisitor
 					expr.Right = klass;
 					break;
 				case CiVar def:
-					if (!(def.Type is CiClassPtrType rightPtr))
+					if (!(def.Type is CiClassType rightPtr))
 						throw StatementException(expr, "Right hand side of the 'is' operator must be an object reference definition");
-					if (!rightPtr.IsModifierAssignableFrom(leftPtr))
+					if (rightPtr is CiReadWriteClassType
+					 && !(leftPtr is CiDynamicPtrType)
+					 && (rightPtr is CiDynamicPtrType || !(leftPtr is CiReadWriteClassType)))
 						throw StatementException(expr, $"{leftPtr} cannot be casted to {rightPtr}");
 					NotSupported(expr, "'is' operator", "c", "cpp", "js", "py", "swift", "ts", "cl");
 					klass = rightPtr.Class;
@@ -1404,6 +1406,18 @@ public class CiResolver : CiVisitor
 		throw StatementException(expr, "Expected integer");
 	}
 
+	static CiClassType CreateClassPtr(CiClass klass, CiToken ptrModifier)
+	{
+		CiClassType ptr = ptrModifier switch {
+				CiToken.EndOfFile => new CiClassType(),
+				CiToken.ExclamationMark => new CiReadWriteClassType(),
+				CiToken.Hash => new CiDynamicPtrType(),
+				_ => throw new NotImplementedException()
+			};
+		ptr.Class = klass;
+		return ptr;
+	}
+
 	void FillGenericClass(CiClassType result, CiSymbol klass, CiAggregateInitializer typeArgExprs)
 	{
 		if (!(klass is CiClass generic))
@@ -1449,7 +1463,9 @@ public class CiResolver : CiVisitor
 							throw StatementException(expr, "Read-write references to the built-in class Match are not supported");
 						NotSupported(expr, "Match", "cl");
 					}
-					return new CiClassPtrType { Name = klass.Name, Class = klass, Modifier = ptrModifier };
+					CiClassType ptr = CreateClassPtr(klass, ptrModifier);
+					ptr.Name = klass.Name;
+					return ptr;
 				}
 				ExpectNoPtrModifier(expr, ptrModifier);
 				return type;
@@ -1521,13 +1537,7 @@ public class CiResolver : CiVisitor
 			}
 			else {
 				CiType elementType = outerArray;
-				outerArray = ptrModifier switch {
-					CiToken.EndOfFile => new CiClassType(),
-					CiToken.ExclamationMark => new CiReadWriteClassType(),
-					CiToken.Hash => new CiDynamicPtrType(),
-					_ => throw new NotImplementedException()
-				};
-				outerArray.Class = CiSystem.ArrayPtrClass;
+				outerArray = CreateClassPtr(CiSystem.ArrayPtrClass, ptrModifier);
 				outerArray.TypeArg0 = elementType;
 			}
 			innerArray ??= outerArray;

@@ -963,7 +963,7 @@ public class CiClass : CiContainerType
 	public readonly List<CiConst> ConstArrays = new List<CiConst>();
 	public CiVisitStatus VisitStatus;
 	public override string ToString() => this.Name + "()";
-	public override CiType PtrOrSelf => new CiClassPtrType { Class = this, Modifier = CiToken.ExclamationMark };
+	public override CiType PtrOrSelf => new CiClassType { Class = this };
 	public override bool IsFinal => this != CiSystem.MatchClass;
 	public override bool IsClass(CiClass klass) => this == klass;
 	public bool AddsVirtualMethods => this.OfType<CiMethod>().Any(method => method.IsAbstractOrVirtual);
@@ -1131,60 +1131,6 @@ public class CiStringStorageType : CiStringType
 	public override bool IsAssignableFrom(CiType right) => right is CiStringType;
 }
 
-public class CiClassPtrType : CiType
-{
-	public override bool IsPointer => true;
-	public CiClass Class;
-	public CiToken Modifier;
-	public override string ToString()
-	{
-		switch (this.Modifier) {
-		case CiToken.EndOfFile:
-			return this.Class.Name;
-		case CiToken.ExclamationMark:
-			return this.Class.Name + '!';
-		case CiToken.Hash:
-			return this.Class.Name + '#';
-		default:
-			throw new NotImplementedException(this.Modifier.ToString());
-		}
-	}
-
-	public bool IsModifierAssignableFrom(CiClassPtrType right)
-	{
-		switch (this.Modifier) {
-		case CiToken.EndOfFile:
-			return true;
-		case CiToken.ExclamationMark:
-			return right.Modifier != CiToken.EndOfFile;
-		case CiToken.Hash:
-			return right.Modifier == CiToken.Hash;
-		default:
-			throw new NotImplementedException(this.Modifier.ToString());
-		}
-	}
-
-	public override bool IsAssignableFrom(CiType right)
-	{
-		if (right == CiSystem.NullType)
-			return true;
-		if (right is CiClass klass) {
-			if (this.Modifier == CiToken.Hash)
-				return false;
-		}
-		else if (right is CiClassPtrType rightPtr && IsModifierAssignableFrom(rightPtr))
-			klass = rightPtr.Class;
-		else
-			return false;
-		return this.Class.IsSameOrBaseOf(klass);
-	}
-
-	public override bool EqualsType(CiType right) => right is CiClassPtrType that && this.Class == that.Class && this.Modifier == that.Modifier;
-	public override CiType PtrOrSelf => this.Modifier == CiToken.Hash ? this.Class.PtrOrSelf : this;
-	public override bool IsClass(CiClass klass) => this.Class == klass;
-	public override bool IsDynamicPtr => this.Modifier == CiToken.Hash;
-}
-
 public class CiClassType : CiType
 {
 	public CiClass Class;
@@ -1196,6 +1142,7 @@ public class CiClassType : CiType
 	public override bool IsPointer => true;
 	public override bool IsArray => this.Class == CiSystem.ArrayPtrClass;
 	public override CiType BaseType => this.IsArray ? this.ElementType.BaseType : this;
+	public override bool IsClass(CiClass klass) => this.Class == klass;
 
 	public CiType EvalType(CiType type)
 	{
@@ -1225,7 +1172,8 @@ public class CiClassType : CiType
 	public override bool IsAssignableFrom(CiType right)
 	{
 		return right == CiSystem.NullType
-			|| (right is CiClassType rightClass && IsAssignableFromClass(rightClass));
+			|| (right is CiClassType rightClass && IsAssignableFromClass(rightClass))
+			|| (right is CiClass rightClassStorage && this.Class.IsSameOrBaseOf(rightClassStorage));
 	}
 
 	public override bool EqualsType(CiType right)
@@ -1253,7 +1201,8 @@ public class CiReadWriteClassType : CiClassType
 	public override bool IsAssignableFrom(CiType right)
 	{
 		return right == CiSystem.NullType
-			|| (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
+			|| (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass))
+			|| (right is CiClass rightClassStorage && this.Class.IsSameOrBaseOf(rightClassStorage));
 	}
 
 	public override string ArraySuffix => this.IsArray ? "[]!" : "";
@@ -1277,6 +1226,7 @@ public class CiDynamicPtrType : CiReadWriteClassType
 		return right == CiSystem.NullType
 			|| (right is CiDynamicPtrType rightClass && IsAssignableFromClass(rightClass));
 	}
+	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this.Class, TypeArg0 = this.TypeArg0 };
 
 	public override string ArraySuffix => this.IsArray ? "[]#" : "";
 	public override string ClassSuffix => "#";
@@ -1449,7 +1399,7 @@ public class CiSystem : CiScope
 		RegexEscape,
 		new CiMethodGroup(RegexIsMatchStr, RegexIsMatchRegex));
 	public static readonly CiMethod MatchFindStr = new CiMethod(CiCallType.Normal, BoolType, "Find", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone }) { IsMutator = true };
-	public static readonly CiMethod MatchFindRegex = new CiMethod(CiCallType.Normal, BoolType, "Find", new CiVar(StringPtrType, "input"), new CiVar(new CiClassPtrType { Class = RegexClass, Modifier = CiToken.EndOfFile }, "pattern")) { IsMutator = true };
+	public static readonly CiMethod MatchFindRegex = new CiMethod(CiCallType.Normal, BoolType, "Find", new CiVar(StringPtrType, "input"), new CiVar(new CiClassType { Class = RegexClass }, "pattern")) { IsMutator = true };
 	public static readonly CiMember MatchStart = new CiMember(IntType, "Start");
 	public static readonly CiMember MatchEnd = new CiMember(IntType, "End");
 	public static readonly CiMember MatchLength = new CiMember(UIntType, "Length");
@@ -1543,7 +1493,7 @@ public class CiSystem : CiScope
 		AddEnumValue(RegexOptionsEnum, new CiConst("Multiline", 2));
 		AddEnumValue(RegexOptionsEnum, new CiConst("Singleline", 16));
 		Add(RegexOptionsEnum);
-		RegexCompile.Type = new CiClassPtrType { Class = RegexClass, Modifier = CiToken.Hash };
+		RegexCompile.Type = new CiDynamicPtrType { Class = RegexClass };
 		Add(RegexClass);
 		Add(MatchClass);
 		Add(MathClass);
