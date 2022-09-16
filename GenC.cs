@@ -839,7 +839,7 @@ public class GenC : GenCCpp
 
 	void WriteGConstPointerCast(CiExpr expr)
 	{
-		if (expr.Type.IsPointer || expr.Type == CiSystem.StringStorageType)
+		if (expr.Type.IsNullable || expr.Type == CiSystem.StringStorageType)
 			expr.Accept(this, CiPriority.Argument);
 		else {
 			Write("(gconstpointer) ");

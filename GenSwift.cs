@@ -177,7 +177,7 @@ public class GenSwift : GenPySwift
 			 && array.ElementType is CiClass)
 				return false;
 		}
-		return expr.Type.IsPointer;
+		return expr.Type.IsNullable;
 	}
 
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
@@ -1281,7 +1281,7 @@ public class GenSwift : GenPySwift
 		WriteLine();
 		Write(field.Documentation);
 		Write(field.Visibility);
-		if (field.Type.IsPointer && field.Type != CiSystem.StringPtrType && !(field.Type is CiDynamicPtrType))
+		if (field.Type is CiClassType && !(field.Type is CiDynamicPtrType) && !(field.Type is CiStorageType))
 			Write("unowned ");
 		WriteVar(field);
 		if (field.Value == null && (field.Type is CiNumericType || field.Type is CiEnum || field.Type == CiSystem.StringStorageType)) {

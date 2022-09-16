@@ -454,7 +454,7 @@ public class GenJs : GenBase
 			}
 			Write(')');
 		}
-		else if ((obj.Type is CiClassType klass && (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass)) && method == CiSystem.CollectionClear) {
+		else if (method == CiSystem.CollectionClear && obj.Type is CiClassType klass && (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass)) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".length = 0");
 		}

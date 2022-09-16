@@ -378,9 +378,11 @@ public class GenCpp : GenCCpp
 			base.WriteEqual(expr, parent, not);
 	}
 
+	static bool IsClassPtr(CiType type) => type is CiClassType ptr && !(type is CiStorageType) && ptr.Class != CiSystem.ArrayPtrClass;
+
 	static bool IsCppPtr(CiExpr expr)
 	{
-		if (expr.Type is CiClassType ptr && ptr.IsPointer && ptr.Class != CiSystem.ArrayPtrClass) {
+		if (IsClassPtr(expr.Type)) {
 			if (expr is CiSymbolReference symbol
 			 && symbol.Symbol.Parent is CiForeach loop
 			 && loop.Collection.Type is CiArrayStorageType array
@@ -393,7 +395,7 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Left.Type is CiClassType ptr && ptr.IsPointer && ptr.Class != CiSystem.ArrayPtrClass) {
+		if (IsClassPtr(expr.Left.Type)) {
 			Write("(*");
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(")[");
@@ -404,20 +406,26 @@ public class GenCpp : GenCCpp
 			base.WriteIndexing(expr, parent);
 	}
 
-	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
+	void WriteMemberOp(CiExpr left)
 	{
-		if (symbol != null && symbol.Symbol is CiConst) // FIXME
-			Write("::");
-		else if (IsCppPtr(left))
+		if (IsCppPtr(left))
 			Write("->");
 		else
 			Write('.');
 	}
 
+	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
+	{
+		if (symbol != null && symbol.Symbol is CiConst) // FIXME
+			Write("::");
+		else
+			WriteMemberOp(left);
+	}
+
 	void StartMethodCall(CiExpr obj)
 	{
 		obj.Accept(this, CiPriority.Primary);
-		WriteMemberOp(obj, null);
+		WriteMemberOp(obj);
 	}
 
 	void WriteCollectionObject(CiExpr obj, CiPriority priority)
@@ -870,10 +878,8 @@ public class GenCpp : GenCCpp
 				obj.Accept(this, CiPriority.Primary);
 				if (method.CallType == CiCallType.Static)
 					Write("::");
-				else if (IsCppPtr(obj))
-					Write("->");
 				else
-					Write('.');
+					WriteMemberOp(obj);
 			}
 			WriteName(method);
 			WriteArgsInParentheses(method, args);

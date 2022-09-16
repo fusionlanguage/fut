@@ -923,7 +923,7 @@ public class CiType : CiScope
 	public virtual string ArraySuffix => "";
 	public virtual bool IsAssignableFrom(CiType right) => this == right;
 	public virtual bool EqualsType(CiType right) => this == right;
-	public virtual bool IsPointer => false;
+	public virtual bool IsNullable => false;
 	public virtual CiType BaseType => this;
 	public virtual CiType StorageType => this;
 	public virtual CiType PtrOrSelf => this;
@@ -1120,7 +1120,7 @@ public abstract class CiStringType : CiType
 
 public class CiStringPtrType : CiStringType
 {
-	public override bool IsPointer => true;
+	public override bool IsNullable => true;
 	public override bool IsAssignableFrom(CiType right) => right == CiSystem.NullType || right is CiStringType;
 }
 
@@ -1138,7 +1138,7 @@ public class CiClassType : CiType
 	public CiType ElementType => this.TypeArg0;
 	public CiType KeyType => this.TypeArg0;
 	public CiType ValueType => this.TypeArg1;
-	public override bool IsPointer => true;
+	public override bool IsNullable => true;
 	public override bool IsArray => this.Class == CiSystem.ArrayPtrClass;
 	public override CiType BaseType => this.IsArray ? this.ElementType.BaseType : this;
 	public override bool IsClass(CiClass klass) => this.Class == klass;
@@ -1211,7 +1211,7 @@ public class CiReadWriteClassType : CiClassType
 public class CiStorageType : CiReadWriteClassType
 {
 	public override bool IsFinal => true;
-	public override bool IsPointer => false;
+	public override bool IsNullable => false;
 	public override bool IsAssignableFrom(CiType right) => false;
 	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this.Class, TypeArg0 = this.TypeArg0, TypeArg1 = this.TypeArg1 };
 	public override string ClassSuffix => "()";

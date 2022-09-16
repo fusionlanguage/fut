@@ -83,6 +83,16 @@ public class GenTs : GenJs
 			Write(type.Name);
 	}
 
+	void WriteArrayType(CiType elementType, bool forConst)
+	{
+		if (elementType.IsNullable)
+			Write('(');
+		Write(elementType, forConst);
+		if (elementType.IsNullable)
+			Write(')');
+		Write("[]");
+	}
+
 	void Write(CiType type, bool forConst = false)
 	{
 		switch (type) {
@@ -116,22 +126,11 @@ public class GenTs : GenJs
 				else {
 					if (forConst || isReadonlyPtr)
 						Write("readonly ");
-					if (klass.ElementType.IsPointer)
-						Write('(');
-					Write(klass.ElementType, forConst);
-					if (klass.ElementType.IsPointer)
-						Write(')');
-					Write("[]");
+					WriteArrayType(klass.ElementType, forConst);
 				}
 			}
-			else if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass) {
-				if (klass.ElementType.IsPointer)
-					Write('(');
-				Write(klass.ElementType, false);
-				if (klass.ElementType.IsPointer)
-					Write(')');
-				Write("[]");
-			}
+			else if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass)
+				WriteArrayType(klass.ElementType, false);
 			else if (klass.Class == CiSystem.HashSetClass) {
 				Write("Set<");
 				Write(klass.ElementType, false);
@@ -151,7 +150,7 @@ public class GenTs : GenJs
 			WriteBaseType(type);
 			break;
 		}
-		if (type.IsPointer)
+		if (type.IsNullable)
 			Write(" | null");
 	}
 

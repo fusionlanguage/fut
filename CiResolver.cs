@@ -1301,7 +1301,7 @@ public class CiResolver : CiVisitor
 			if (statement.Value is CiSymbolReference symbol
 			 && symbol.Symbol is CiVar local
 			 && (local.Type.IsFinal || local.Type == CiSystem.StringStorageType)
-			 && this.CurrentMethod.Type.IsPointer)
+			 && this.CurrentMethod.Type.IsNullable)
 				throw StatementException(statement, "Returning dangling reference to local storage");
 		}
 	}
@@ -1433,22 +1433,16 @@ public class CiResolver : CiVisitor
 			// built-in, MyEnum, MyClass, MyClass!, MyClass#
 			if (this.Program.TryLookup(symbol.Name) is CiType type) {
 				if (type is CiClass klass) {
-					if (symbol.Left is CiAggregateInitializer typeArgExprs) {
-						CiClassType classType = ptrModifier switch {
-								CiToken.EndOfFile => new CiClassType(),
-								CiToken.ExclamationMark => new CiReadWriteClassType(),
-								_ => throw new NotImplementedException()
-							};
-						FillGenericClass(classType, klass, typeArgExprs);
-						return classType;
-					}
 					if (klass == CiSystem.MatchClass) {
 						if (ptrModifier != CiToken.EndOfFile)
 							throw StatementException(expr, "Read-write references to the built-in class Match are not supported");
 						NotSupported(expr, "Match", "cl");
 					}
 					CiClassType ptr = CreateClassPtr(klass, ptrModifier);
-					ptr.Name = klass.Name;
+					if (symbol.Left is CiAggregateInitializer typeArgExprs)
+						FillGenericClass(ptr, klass, typeArgExprs);
+					else
+						ptr.Name = klass.Name; // TODO: needed?
 					return ptr;
 				}
 				ExpectNoPtrModifier(expr, ptrModifier);
@@ -1507,7 +1501,7 @@ public class CiResolver : CiVisitor
 				CiExpr lengthExpr = Resolve(binary.Right);
 				Coerce(lengthExpr, CiSystem.IntType);
 				CiArrayStorageType arrayStorage = new CiArrayStorageType { TypeArg0 = outerArray, LengthExpr = lengthExpr };
-				if (!dynamic || (binary.Left.IsIndexing)) {
+				if (!dynamic || binary.Left.IsIndexing) {
 					if (!(lengthExpr is CiLiteralLong literal))
 						throw StatementException(lengthExpr, "Expected constant value");
 					long length = literal.Value;
