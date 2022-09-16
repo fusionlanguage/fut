@@ -213,37 +213,24 @@ public class GenCpp : GenCCpp
 			Include("string");
 			Write("std::string");
 			break;
-		case CiArrayPtrType arrayPtr:
-			switch (arrayPtr.Modifier) {
-			case CiToken.EndOfFile:
-				Write(arrayPtr.ElementType, false);
-				Write(" const *");
-				break;
-			case CiToken.ExclamationMark:
-				Write(arrayPtr.ElementType, false);
-				Write(" *");
-				break;
-			case CiToken.Hash:
-				Include("memory");
-				Write("std::shared_ptr<");
-				Write(arrayPtr.ElementType, false);
-				Write("[]>");
-				break;
-			default:
-				throw new NotImplementedException(arrayPtr.Modifier.ToString());
-			}
-			break;
-		case CiArrayStorageType arrayStorage:
-			Include("array");
-			Write("std::array<");
-			Write(arrayStorage.ElementType, false);
-			Write(", ");
-			VisitLiteralLong(arrayStorage.Length);
-			Write('>');
+		case CiDynamicPtrType dynamic when dynamic.Class == CiSystem.ArrayPtrClass:
+			Include("memory");
+			Write("std::shared_ptr<");
+			Write(dynamic.ElementType, false);
+			Write("[]>");
 			break;
 		case CiClassType klass:
 			string cppType;
-			if (klass.Class == CiSystem.ListClass)
+			if (klass.Class == CiSystem.ArrayPtrClass) {
+				Write(klass.ElementType, false);
+				if (!(klass is CiReadWriteClassType))
+					Write(" const");
+				Write(" *");
+				break;
+			}
+			else if (klass.Class == CiSystem.ArrayStorageClass)
+				cppType = "array";
+			else if (klass.Class == CiSystem.ListClass)
 				cppType = "vector";
 			else if (klass.Class == CiSystem.QueueClass)
 				cppType = "queue";
@@ -264,7 +251,11 @@ public class GenCpp : GenCCpp
 			Write(cppType);
 			Write('<');
 			Write(klass.TypeArg0, false);
-			if (klass.Class.TypeParameterCount == 2) {
+			if (klass is CiArrayStorageType arrayStorage) {
+				Write(", ");
+				VisitLiteralLong(arrayStorage.Length);
+			}
+			else if (klass.Class.TypeParameterCount == 2) {
 				Write(", ");
 				Write(klass.ValueType, false);
 			}
@@ -915,7 +906,7 @@ public class GenCpp : GenCCpp
 			expr.Accept(this, CiPriority.Primary);
 			Write(".data()");
 			break;
-		case CiArrayPtrType arrayPtr when arrayPtr.Modifier == CiToken.Hash:
+		case CiDynamicPtrType _:
 			expr.Accept(this, CiPriority.Primary);
 			Write(".get()");
 			break;
@@ -957,13 +948,17 @@ public class GenCpp : GenCCpp
 				break;
 			}
 			break;
-		case CiArrayPtrType leftArray when leftArray.Modifier != CiToken.Hash:
-			WriteArrayPtr(expr, CiPriority.Argument);
-			return;
-		case CiClassType _ when expr.Type is CiStorageType:
-			Write('&');
-			expr.Accept(this, CiPriority.Primary);
-			return;
+		case CiClassType klass:
+			if (klass.Class == CiSystem.ArrayPtrClass && !(klass is CiDynamicPtrType)) {
+				WriteArrayPtr(expr, CiPriority.Argument);
+				return;
+			}
+			if (expr.Type is CiStorageType) {
+				Write('&');
+				expr.Accept(this, CiPriority.Primary);
+				return;
+			}
+			break;
 		case CiStringPtrType _ when expr.Type == CiSystem.NullType:
 			Include("string_view");
 			Write("std::string_view(nullptr, 0)");

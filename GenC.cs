@@ -325,20 +325,12 @@ public class GenC : GenCCpp
 	{
 		if (type is CiClassType array && array.IsArray) {
 			WriteArrayPrefix(array.ElementType);
-			if (type is CiArrayPtrType arrayPtr) {
+			if (!(type is CiArrayStorageType)) {
 				if (array.ElementType is CiArrayStorageType)
 					Write('(');
-				switch (arrayPtr.Modifier) {
-				case CiToken.EndOfFile:
-					Write("const *");
-					break;
-				case CiToken.ExclamationMark:
-				case CiToken.Hash:
-					Write('*');
-					break;
-				default:
-					throw new NotImplementedException(arrayPtr.Modifier.ToString());
-				}
+				if (!(type is CiReadWriteClassType))
+					Write("const ");
+				Write('*');
 			}
 		}
 	}
@@ -410,20 +402,16 @@ public class GenC : GenCCpp
 		}
 		WriteArrayPrefix(type);
 		symbol();
-		for (;;) {
+		while (type.IsArray) {
+			CiClassType array = (CiClassType) type;
 			if (type is CiArrayStorageType arrayStorage) {
 				Write('[');
 				VisitLiteralLong(arrayStorage.Length);
 				Write(']');
-				type = arrayStorage.ElementType;
 			}
-			else if (type is CiArrayPtrType arrayPtr) {
-				type = arrayPtr.ElementType;
-				if (type is CiArrayStorageType)
-					Write(')');
-			}
-			else
-				break;
+			else if (array.ElementType is CiArrayStorageType)
+				Write(')');
+			type = array.ElementType;
 		}
 	}
 
@@ -440,7 +428,7 @@ public class GenC : GenCCpp
 
 	protected override void Write(CiType type, bool promote)
 	{
-		WriteDefinition(type, () => {}, promote, type is CiArrayPtrType);
+		WriteDefinition(type, () => {}, promote, type is CiClassType arrayPtr && arrayPtr.Class == CiSystem.ArrayPtrClass);
 	}
 
 	protected override void WriteTypeAndName(CiNamedValue value)
@@ -852,7 +840,7 @@ public class GenC : GenCCpp
 		switch (expr.Type) {
 		case CiStringType _:
 		case CiClassPtrType _:
-		case CiArrayPtrType _:
+		case CiClassType klass when klass.IsPointer:
 			expr.Accept(this, CiPriority.Argument);
 			break;
 		default:
@@ -1087,9 +1075,9 @@ public class GenC : GenCCpp
 			else
 				WriteClassPtr(resultPtr.Class, expr, parent);
 		}
-		else if (type is CiArrayPtrType arrayPtr && arrayPtr.Modifier == CiToken.Hash && expr is CiSymbolReference && parent != CiPriority.Equality) {
+		else if (type is CiDynamicPtrType dynamicArray && dynamicArray.Class == CiSystem.ArrayPtrClass && expr is CiSymbolReference && parent != CiPriority.Equality) {
 			this.SharedAddRef = true;
-			WriteDynamicArrayCast(arrayPtr.ElementType);
+			WriteDynamicArrayCast(dynamicArray.ElementType);
 			WriteCall("CiShared_AddRef", expr);
 		}
 		else if (type is CiClassType klass && klass.Class == CiSystem.QueueClass && expr.Type is CiStorageType) {

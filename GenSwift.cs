@@ -1281,7 +1281,7 @@ public class GenSwift : GenPySwift
 		WriteLine();
 		Write(field.Documentation);
 		Write(field.Visibility);
-		if ((field.Type is CiClassPtrType || field.Type is CiArrayPtrType) && !field.Type.IsDynamicPtr)
+		if (field.Type.IsPointer && field.Type != CiSystem.StringPtrType && !field.Type.IsDynamicPtr)
 			Write("unowned ");
 		WriteVar(field);
 		if (field.Value == null && (field.Type is CiNumericType || field.Type is CiEnum || field.Type == CiSystem.StringStorageType)) {

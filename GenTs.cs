@@ -73,16 +73,6 @@ public class GenTs : GenJs
 		Write(konst.Type, true);
 	}
 
-	void WriteListType(CiType elementType)
-	{
-		if (elementType.IsPointer)
-			Write('(');
-		Write(elementType, false);
-		if (elementType.IsPointer)
-			Write(')');
-		Write("[]");
-	}
-
 	void Write(CiType type, bool forConst = false)
 	{
 		switch (type) {
@@ -97,7 +87,7 @@ public class GenTs : GenJs
 			break;
 		case CiClassType klass:
 			if (klass.IsArray) {
-				bool isReadonlyPtr = klass is CiArrayPtrType arrayPtr && arrayPtr.Modifier == CiToken.EndOfFile;
+				bool isReadonlyPtr = !(klass is CiReadWriteClassType);
 				if (klass.ElementType is CiNumericType number) {
 					if (klass.Class == CiSystem.ArrayPtrClass) {
 						if (isReadonlyPtr)
@@ -122,8 +112,14 @@ public class GenTs : GenJs
 					Write("[]");
 				}
 			}
-			else if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass)
-				WriteListType(klass.ElementType);
+			else if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass) {
+				if (klass.ElementType.IsPointer)
+					Write('(');
+				Write(klass.ElementType, false);
+				if (klass.ElementType.IsPointer)
+					Write(')');
+				Write("[]");
+			}
 			else if (klass.Class == CiSystem.HashSetClass) {
 				Write("Set<");
 				Write(klass.ElementType, false);

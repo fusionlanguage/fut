@@ -566,7 +566,7 @@ public class CiResolver : CiVisitor
 				expr.Inner = null;
 				return expr;
 			case CiArrayStorageType array:
-				expr.Type = new CiArrayPtrType { TypeArg0 = array.ElementType, Modifier = CiToken.Hash };
+				expr.Type = new CiDynamicPtrType { Class = CiSystem.ArrayPtrClass, TypeArg0 = array.ElementType };
 				expr.Inner = array.LengthExpr;
 				return expr;
 			default:
@@ -1519,8 +1519,17 @@ public class CiResolver : CiVisitor
 				}
 				outerArray = arrayStorage;
 			}
-			else
-				outerArray = new CiArrayPtrType { TypeArg0 = outerArray, Modifier = ptrModifier };
+			else {
+				CiType elementType = outerArray;
+				outerArray = ptrModifier switch {
+					CiToken.EndOfFile => new CiClassType(),
+					CiToken.ExclamationMark => new CiReadWriteClassType(),
+					CiToken.Hash => new CiDynamicPtrType(),
+					_ => throw new NotImplementedException()
+				};
+				outerArray.Class = CiSystem.ArrayPtrClass;
+				outerArray.TypeArg0 = elementType;
+			}
 			innerArray ??= outerArray;
 			expr = binary.Left;
 			ptrModifier = GetPtrModifier(ref expr);
@@ -1565,20 +1574,17 @@ public class CiResolver : CiVisitor
 			ResolveType(konst);
 		konst.Value = Resolve(konst.Value);
 		if (konst.Value is CiAggregateInitializer coll) {
-			CiType elementType;
-			switch (konst.Type) {
-			case CiArrayPtrType arrayPtr:
-				elementType = arrayPtr.ElementType;
-				konst.Type = new CiArrayStorageType { TypeArg0 = elementType, Length = coll.Items.Count };
-				break;
-			case CiArrayStorageType arrayStg:
+			if (!(konst.Type is CiClassType array))
+				throw StatementException(konst, $"Array initializer for scalar constant {konst.Name}");
+			CiType elementType = array.ElementType;
+			if (array is CiArrayStorageType arrayStg) {
 				if (arrayStg.Length != coll.Items.Count)
 					throw StatementException(konst, $"Declared {arrayStg.Length} elements, initialized {coll.Items.Count}");
-				elementType = arrayStg.ElementType;
-				break;
-			default:
-				throw StatementException(konst, $"Array initializer for scalar constant {konst.Name}");
 			}
+			else if (array is CiReadWriteClassType)
+				throw StatementException(konst, "Invalid constant type");
+			else
+				konst.Type = new CiArrayStorageType { TypeArg0 = elementType, Length = coll.Items.Count };
 			foreach (CiExpr item in coll.Items)
 				Coerce(item, elementType);
 			coll.Type = konst.Type;

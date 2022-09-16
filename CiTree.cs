@@ -920,7 +920,7 @@ public class CiMethodGroup : CiMember
 
 public class CiType : CiScope
 {
-	public virtual string ArrayString => "";
+	public virtual string ArraySuffix => "";
 	public virtual bool IsAssignableFrom(CiType right) => this == right;
 	public virtual bool EqualsType(CiType right) => this == right;
 	public virtual bool IsPointer => false;
@@ -1194,6 +1194,8 @@ public class CiClassType : CiType
 	public CiType KeyType => this.TypeArg0;
 	public CiType ValueType => this.TypeArg1;
 	public override bool IsPointer => true;
+	public override bool IsArray => this.Class == CiSystem.ArrayPtrClass;
+	public override CiType BaseType => this.IsArray ? this.ElementType.BaseType : this;
 
 	public CiType EvalType(CiType type)
 	{
@@ -1201,8 +1203,8 @@ public class CiClassType : CiType
 			return this.TypeArg0;
 		if (type == CiSystem.TypeParam0NotFinal)
 			return this.TypeArg0.IsFinal ? null : this.TypeArg0;
-		if (type is CiArrayPtrType ptr && ptr.ElementType == CiSystem.TypeParam0)
-			return new CiArrayPtrType { TypeArg0 = this.TypeArg0, Modifier = ptr.Modifier };
+		if (type is CiReadWriteClassType array && array.IsArray && array.ElementType == CiSystem.TypeParam0)
+			return new CiReadWriteClassType { Class = CiSystem.ArrayPtrClass, TypeArg0 = this.TypeArg0 };
 		return type;
 	}
 
@@ -1230,17 +1232,20 @@ public class CiClassType : CiType
 		=> right is CiClassType that // TODO: exact match
 			&& this.Class == that.Class && EqualTypeArguments(that);
 
-	protected string GetClassString()
+	public override string ArraySuffix => this.IsArray ? "[]" : "";
+	public virtual string ClassSuffix => "";
+
+	public override string ToString()
 	{
+		if (this.IsArray)
+			return this.ElementType.BaseType + this.ArraySuffix + this.ElementType.ArraySuffix;
 		switch (this.Class.TypeParameterCount) {
-		case 0: return this.Class.Name;
-		case 1: return $"{this.Class.Name}<{this.TypeArg0}>";
-		case 2: return $"{this.Class.Name}<{this.TypeArg0}, {this.TypeArg1}>";
+		case 0: return this.Class.Name + this.ClassSuffix;
+		case 1: return $"{this.Class.Name}<{this.TypeArg0}>{this.ClassSuffix}";
+		case 2: return $"{this.Class.Name}<{this.TypeArg0}, {this.TypeArg1}>{this.ClassSuffix}";
 		default: throw new NotImplementedException();
 		}
 	}
-
-	public override string ToString() => GetClassString();
 }
 
 public class CiReadWriteClassType : CiClassType
@@ -1251,7 +1256,8 @@ public class CiReadWriteClassType : CiClassType
 			|| (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
 	}
 
-	public override string ToString() => GetClassString() + '!';
+	public override string ArraySuffix => this.IsArray ? "[]!" : "";
+	public override string ClassSuffix => "!";
 }
 
 public class CiStorageType : CiReadWriteClassType
@@ -1260,7 +1266,7 @@ public class CiStorageType : CiReadWriteClassType
 	public override bool IsPointer => false;
 	public override bool IsAssignableFrom(CiType right) => false;
 	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this.Class, TypeArg0 = this.TypeArg0, TypeArg1 = this.TypeArg1 };
-	public override string ToString() => GetClassString() + "()";
+	public override string ClassSuffix => "()";
 }
 
 public class CiDynamicPtrType : CiReadWriteClassType
@@ -1272,59 +1278,8 @@ public class CiDynamicPtrType : CiReadWriteClassType
 			|| (right is CiDynamicPtrType rightClass && IsAssignableFromClass(rightClass));
 	}
 
-	public override string ToString() => GetClassString() + '#';
-}
-
-public class CiArrayPtrType : CiClassType
-{
-	public CiToken Modifier;
-
-	public CiArrayPtrType()
-	{
-		this.Class = CiSystem.ArrayPtrClass;
-	}
-
-	public override bool IsDynamicPtr => this.Modifier == CiToken.Hash;
-	public override string ToString() => this.BaseType + this.ArrayString + this.ElementType.ArrayString;
-	public override CiType BaseType => this.ElementType.BaseType;
-	public override bool IsArray => true;
-
-	public override string ArrayString
-	{
-		get
-		{
-			switch (this.Modifier) {
-			case CiToken.EndOfFile:
-				return "[]";
-			case CiToken.ExclamationMark:
-				return "[]!";
-			case CiToken.Hash:
-				return "[]#";
-			default:
-				throw new NotImplementedException(this.Modifier.ToString());
-			}
-		}
-	}
-
-	public override bool IsAssignableFrom(CiType right)
-	{
-		if (right == CiSystem.NullType)
-			return true;
-		if (!(right is CiClassType array) || !array.ElementType.EqualsType(this.ElementType))
-			return false;
-		switch (this.Modifier) {
-		case CiToken.EndOfFile:
-			return array.IsArray;
-		case CiToken.ExclamationMark:
-			return (array is CiArrayPtrType ptr && ptr.Modifier != CiToken.EndOfFile) || array.Class == CiSystem.ArrayStorageClass;
-		case CiToken.Hash:
-			return array is CiArrayPtrType dynamicPtr && dynamicPtr.Modifier == CiToken.Hash;
-		default:
-			throw new NotImplementedException(this.Modifier.ToString());
-		}
-	}
-
-	public override bool EqualsType(CiType right) => right is CiArrayPtrType that && this.ElementType.EqualsType(that.ElementType) && this.Modifier == that.Modifier;
+	public override string ArraySuffix => this.IsArray ? "[]#" : "";
+	public override string ClassSuffix => "#";
 }
 
 public class CiArrayStorageType : CiStorageType
@@ -1338,13 +1293,13 @@ public class CiArrayStorageType : CiStorageType
 		this.Class = CiSystem.ArrayStorageClass;
 	}
 
-	public override string ToString() => this.BaseType + this.ArrayString + this.ElementType.ArrayString;
+	public override string ToString() => this.BaseType + this.ArraySuffix + this.ElementType.ArraySuffix;
 	public override CiType BaseType => this.ElementType.BaseType;
 	public override bool IsArray => true;
-	public override string ArrayString => $"[{this.Length}]";
+	public override string ArraySuffix => $"[{this.Length}]";
 	public override bool EqualsType(CiType right) => right is CiArrayStorageType that && this.ElementType.EqualsType(that.ElementType) && this.Length == that.Length;
 	public override CiType StorageType => this.ElementType.StorageType;
-	public override CiType PtrOrSelf => new CiArrayPtrType { TypeArg0 = this.ElementType, Modifier = CiToken.ExclamationMark };
+	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = CiSystem.ArrayPtrClass, TypeArg0 = this.ElementType };
 }
 
 public class CiPrintableType : CiType
@@ -1386,11 +1341,6 @@ public class CiSystem : CiScope
 		new CiVar(IntType, "startIndex"),
 		new CiVar(IntType, "count")) { Visibility = CiVisibility.NumericElementType };
 	public static readonly CiMethod ArrayBinarySearchAll = new CiMethod(CiCallType.Normal, IntType, "BinarySearch", new CiVar(TypeParam0, "value")) { Visibility = CiVisibility.NumericElementType };
-	public static readonly CiMethod CollectionCopyTo = new CiMethod(CiCallType.Normal, VoidType, "CopyTo",
-		new CiVar(IntType, "sourceIndex"),
-		new CiVar(new CiArrayPtrType { TypeArg0 = TypeParam0, Modifier = CiToken.ExclamationMark }, "destinationArray"),
-		new CiVar(IntType, "destinationIndex"),
-		new CiVar(IntType, "count"));
 	public static readonly CiMethod ArrayFillAll = new CiMethod(CiCallType.Normal, VoidType, "Fill", new CiVar(TypeParam0, "value")) { IsMutator = true };
 	public static readonly CiMethod ArrayFillPart = new CiMethod(CiCallType.Normal, VoidType, "Fill",
 		new CiVar(TypeParam0, "value"),
@@ -1401,17 +1351,20 @@ public class CiSystem : CiScope
 	public static readonly CiMethodGroup CollectionSort = new CiMethodGroup(CollectionSortAll, CollectionSortPart) { Visibility = CiVisibility.NumericElementType };
 	public static readonly CiClass ArrayPtrClass = new CiClass(CiCallType.Normal, "ArrayPtr",
 		ArrayBinarySearchPart,
-		CollectionCopyTo,
 		ArrayFillPart,
 		CollectionSortPart) { TypeParameterCount = 1 };
+	public static readonly CiMethod CollectionCopyTo = new CiMethod(CiCallType.Normal, VoidType, "CopyTo",
+		new CiVar(IntType, "sourceIndex"),
+		new CiVar(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"),
+		new CiVar(IntType, "destinationIndex"),
+		new CiVar(IntType, "count"));
 	public static readonly CiClass ArrayStorageClass = new CiClass(CiCallType.Normal, "ArrayStorage",
 		new CiMethodGroup(ArrayBinarySearchAll, ArrayBinarySearchPart) { Visibility = CiVisibility.NumericElementType },
-		CollectionCopyTo,
 		new CiMethodGroup(ArrayFillAll, ArrayFillPart),
 		ArrayLength,
-		CollectionSort) { TypeParameterCount = 1 };
-	public static readonly CiArrayPtrType ReadOnlyByteArrayPtrType = new CiArrayPtrType { TypeArg0 = ByteType, Modifier = CiToken.EndOfFile };
-	public static readonly CiArrayPtrType ReadWriteByteArrayPtrType = new CiArrayPtrType { TypeArg0 = ByteType, Modifier = CiToken.ExclamationMark };
+		CollectionSort) { Parent = ArrayPtrClass, TypeParameterCount = 1 };
+	public static readonly CiClassType ReadOnlyByteArrayPtrType = new CiClassType { Class = ArrayPtrClass, TypeArg0 = ByteType };
+	public static readonly CiClassType ReadWriteByteArrayPtrType = new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = ByteType };
 	public static readonly CiMember CollectionCount = new CiMember(UIntType, "Count");
 	public static readonly CiMethod CollectionClear = new CiMethod(CiCallType.Normal, VoidType, "Clear") { IsMutator = true };
 	public static readonly CiMethod ListAdd = new CiMethod(CiCallType.Normal, VoidType, "Add", new CiVar(TypeParam0NotFinal, "value")) { IsMutator = true };
@@ -1570,6 +1523,7 @@ public class CiSystem : CiScope
 		Add(DoubleType);
 		Add(BoolType);
 		Add(StringPtrType);
+		ArrayPtrClass.Add(CollectionCopyTo); // cyclic reference
 		Add(ListClass);
 		Add(QueueClass);
 		Add(StackClass);
