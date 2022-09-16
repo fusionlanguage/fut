@@ -99,7 +99,7 @@ public class CiResolver : CiVisitor
 	{
 		if (!type.IsAssignableFrom(expr.Type))
 			throw StatementException(expr, $"Cannot coerce {expr.Type} to {type}");
-		if (expr is CiPrefixExpr prefix && prefix.Op == CiToken.New && !type.IsDynamicPtr) {
+		if (expr is CiPrefixExpr prefix && prefix.Op == CiToken.New && !(type is CiDynamicPtrType)) {
 			string kind = prefix.Inner != null ? "array" : "object";
 			throw StatementException(expr, $"Dynamically allocated {kind} must be assigned to a {expr.Type} reference");
 		}
@@ -869,7 +869,7 @@ public class CiResolver : CiVisitor
 			type = CiSystem.BoolType;
 			break;
 
-		case CiToken.CondAnd: {
+		case CiToken.CondAnd:
 			Coerce(left, CiSystem.BoolType);
 			Coerce(right, CiSystem.BoolType);
 			if (left is CiLiteralTrue)
@@ -878,8 +878,7 @@ public class CiResolver : CiVisitor
 				return left;
 			type = CiSystem.BoolType;
 			break;
-		}
-		case CiToken.CondOr: {
+		case CiToken.CondOr:
 			Coerce(left, CiSystem.BoolType);
 			Coerce(right, CiSystem.BoolType);
 			if (left is CiLiteralTrue || right is CiLiteralFalse)
@@ -888,7 +887,6 @@ public class CiResolver : CiVisitor
 				return right;
 			type = CiSystem.BoolType;
 			break;
-		}
 
 		case CiToken.Assign:
 			CheckLValue(left);
@@ -1252,23 +1250,15 @@ public class CiResolver : CiVisitor
 			if (!value.Type.IsAssignableFrom(dict.ValueType))
 				throw StatementException(statement, $"Cannot coerce {dict.ValueType} to {value.Type}");
 		}
-		else {
-			CiType elementType;
-			switch (statement.Collection.Type) {
-			case CiArrayStorageType array:
-				elementType = array.ElementType;
-				break;
-			case CiClassType klass when klass.Class == CiSystem.ListClass || klass.Class == CiSystem.HashSetClass:
-				elementType = klass.ElementType;
-				break;
-			default:
-				throw StatementException(statement.Collection, "Expected a collection");
-			}
+		else if (statement.Collection.Type is CiClassType klass
+			&& (klass.Class == CiSystem.ArrayStorageClass || klass.Class == CiSystem.ListClass || klass.Class == CiSystem.HashSetClass)) {
 			if (statement.Count != 1)
 				throw StatementException(statement, "Expected one iterator variable");
-			if (!element.Type.IsAssignableFrom(elementType))
-				throw StatementException(statement, $"Cannot coerce {elementType} to {element.Type}");
+			if (!element.Type.IsAssignableFrom(klass.ElementType))
+				throw StatementException(statement, $"Cannot coerce {klass.ElementType} to {element.Type}");
 		}
+		else
+			throw StatementException(statement.Collection, "Expected a collection");
 		statement.SetCompletesNormally(true);
 		statement.Body.Accept(this);
 		CloseScope();
@@ -1444,17 +1434,11 @@ public class CiResolver : CiVisitor
 			if (this.Program.TryLookup(symbol.Name) is CiType type) {
 				if (type is CiClass klass) {
 					if (symbol.Left is CiAggregateInitializer typeArgExprs) {
-						CiClassType classType;
-						switch (ptrModifier) {
-						case CiToken.EndOfFile:
-							classType = new CiClassType();
-							break;
-						case CiToken.ExclamationMark:
-							classType = new CiReadWriteClassType();
-							break;
-						default:
-							throw new NotImplementedException();
-						}
+						CiClassType classType = ptrModifier switch {
+								CiToken.EndOfFile => new CiClassType(),
+								CiToken.ExclamationMark => new CiReadWriteClassType(),
+								_ => throw new NotImplementedException()
+							};
 						FillGenericClass(classType, klass, typeArgExprs);
 						return classType;
 					}
@@ -1479,7 +1463,7 @@ public class CiResolver : CiVisitor
 				throw StatementException(call, "Expected empty parentheses for storage type");
 			{
 				if (call.Method.Left is CiAggregateInitializer typeArgExprs) {
-					CiStorageType storage = new CiStorageType ();
+					CiStorageType storage = new CiStorageType();
 					FillGenericClass(storage, this.Program.TryLookup(call.Method.Name), typeArgExprs);
 					return storage;
 				}

@@ -250,10 +250,7 @@ public class GenJava : GenTyped
 		}
 	}
 
-	protected override void Write(TypeCode typeCode)
-	{
-		Write(typeCode, false);
-	}
+	protected override void Write(TypeCode typeCode) => Write(typeCode, false);
 
 	void WriteCollectionType(string name, CiType elementType)
 	{
@@ -336,10 +333,7 @@ public class GenJava : GenTyped
 		}
 	}
 
-	protected override void Write(CiType type, bool promote)
-	{
-		Write(type, promote, false);
-	}
+	protected override void Write(CiType type, bool promote) => Write(type, promote, false);
 
 	protected override void WriteNewStorage(CiStorageType storage)
 	{
@@ -767,10 +761,7 @@ public class GenJava : GenTyped
 		base.WriteVar(def);
 	}
 
-	protected override bool HasInitCode(CiNamedValue def)
-	{
-		return def.Type is CiArrayStorageType && def.Type.StorageType is CiClass;
-	}
+	protected override bool HasInitCode(CiNamedValue def) => def.Type is CiArrayStorageType && def.Type.StorageType is CiClass;
 
 	protected override void WriteInitCode(CiNamedValue def)
 	{

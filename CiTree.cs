@@ -929,7 +929,6 @@ public class CiType : CiScope
 	public virtual CiType PtrOrSelf => this;
 	public virtual bool IsFinal => false;
 	public virtual bool IsClass(CiClass klass) => false;
-	public virtual bool IsDynamicPtr => false;
 	public virtual bool IsArray => false;
 }
 
@@ -963,7 +962,7 @@ public class CiClass : CiContainerType
 	public readonly List<CiConst> ConstArrays = new List<CiConst>();
 	public CiVisitStatus VisitStatus;
 	public override string ToString() => this.Name + "()";
-	public override CiType PtrOrSelf => new CiClassType { Class = this };
+	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this };
 	public override bool IsFinal => this != CiSystem.MatchClass;
 	public override bool IsClass(CiClass klass) => this == klass;
 	public bool AddsVirtualMethods => this.OfType<CiMethod>().Any(method => method.IsAbstractOrVirtual);
@@ -1220,7 +1219,6 @@ public class CiStorageType : CiReadWriteClassType
 
 public class CiDynamicPtrType : CiReadWriteClassType
 {
-	public override bool IsDynamicPtr => true;
 	public override bool IsAssignableFrom(CiType right)
 	{
 		return right == CiSystem.NullType

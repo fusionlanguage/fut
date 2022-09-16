@@ -916,10 +916,7 @@ public abstract class GenBase : CiVisitor
 			Write(')');
 	}
 
-	protected virtual void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
-	{
-		Write('.');
-	}
+	protected virtual void WriteMemberOp(CiExpr left, CiSymbolReference symbol) => Write('.');
 
 	protected abstract void WriteStringLength(CiExpr expr);
 

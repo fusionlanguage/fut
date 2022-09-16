@@ -474,7 +474,7 @@ public class GenC : GenCCpp
 			this.ListFrees["String"] = "free(*(void **) ptr)";
 			Write("(CiMethodPtr) CiPtr_Construct, CiList_FreeString");
 		}
-		else if (elementType.IsDynamicPtr) {
+		else if (elementType is CiDynamicPtrType) {
 			this.PtrConstruct = true;
 			this.SharedRelease = true;
 			this.ListFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
@@ -519,11 +519,13 @@ public class GenC : GenCCpp
 		}
 	}
 
+	static bool IsHeapAllocated(CiType type) => type == CiSystem.StringStorageType || type is CiDynamicPtrType;
+
 	protected override void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
 	{
 		switch (value) {
 		case null:
-			if (array.StorageType == CiSystem.StringStorageType || array.StorageType.IsDynamicPtr)
+			if (IsHeapAllocated(array.StorageType))
 				Write(" = { NULL }");
 			break;
 		case CiLiteral literal when literal.IsDefaultValue:
@@ -545,7 +547,7 @@ public class GenC : GenCCpp
 				this.ListFrees["String"] = "free(*(void **) ptr)";
 				return "CiList_FreeString";
 			}
-			if (elementType.IsDynamicPtr) {
+			if (elementType is CiDynamicPtrType) {
 				this.ListFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
 				return "CiList_FreeShared";
 			}
@@ -573,7 +575,7 @@ public class GenC : GenCCpp
 	{
 		if (type == CiSystem.StringStorageType || type is CiArrayStorageType)
 			return "free";
-		if (type.IsDynamicPtr) {
+		if (type is CiDynamicPtrType) {
 			this.SharedRelease = true;
 			return "CiShared_Release";
 		}
@@ -658,7 +660,7 @@ public class GenC : GenCCpp
 
 	protected override void WriteVarInit(CiNamedValue def)
 	{
-		if (def.Value == null && (def.Type == CiSystem.StringStorageType || def.Type.IsDynamicPtr))
+		if (def.Value == null && IsHeapAllocated(def.Type))
 			Write(" = NULL");
 		else
 			base.WriteVarInit(def);
@@ -804,7 +806,7 @@ public class GenC : GenCCpp
 		CiType type = symbol.Type;
 		while (type is CiArrayStorageType array)
 			type = array.ElementType;
-		if (type == CiSystem.StringStorageType || type.IsDynamicPtr)
+		if (IsHeapAllocated(type))
 			return true;
 		if (type is CiClass klass)
 			return klass == CiSystem.MatchClass || klass == CiSystem.LockClass || NeedsDestructor(klass);
@@ -912,7 +914,7 @@ public class GenC : GenCCpp
 				Write(')');
 			}
 		}
-		else if (expr.Left.Type.IsDynamicPtr) {
+		else if (expr.Left.Type is CiDynamicPtrType) {
 			if (expr.Left.Type.IsClass(CiSystem.RegexClass)) {
 				// TODO: only if previously assigned non-null
 				// Write("g_regex_unref(");
@@ -942,7 +944,7 @@ public class GenC : GenCCpp
 
 	protected override bool HasInitCode(CiNamedValue def)
 	{
-		return (def is CiField && (def.Value != null || def.Type.StorageType == CiSystem.StringStorageType || def.Type.IsDynamicPtr || (def.Type is CiClassType klass && (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass))))
+		return (def is CiField && (def.Value != null || IsHeapAllocated(def.Type.StorageType) || (def.Type is CiClassType klass && (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass))))
 			|| GetThrowingMethod(def.Value) != null
 			|| (def.Type.StorageType is CiClass klass2 && (klass2 == CiSystem.LockClass || NeedsConstructor(klass2)))
 			|| GetListDestroy(def.Type) != null;
@@ -976,7 +978,7 @@ public class GenC : GenCCpp
 				WriteArrayElement(def, nesting);
 				if (nesting > 0) {
 					Write(" = ");
-					if (type == CiSystem.StringStorageType || type.IsDynamicPtr)
+					if (IsHeapAllocated(type))
 						Write("NULL");
 					else
 						def.Value.Accept(this, CiPriority.Argument);
@@ -1920,7 +1922,7 @@ public class GenC : GenCCpp
 				Write("_Destruct(&");
 			}
 		}
-		else if (type.IsDynamicPtr) {
+		else if (type is CiDynamicPtrType) {
 			if (type.IsClass(CiSystem.RegexClass))
 				Write("g_regex_unref(");
 			else {
@@ -2060,7 +2062,7 @@ public class GenC : GenCCpp
 			statement.Accept(this, CiPriority.Argument);
 			WriteLine(");");
 		}
-		else if (statement is CiCallExpr && statement.Type != CiSystem.VoidType && statement.Type.IsDynamicPtr) {
+		else if (statement is CiCallExpr && statement.Type != CiSystem.VoidType && statement.Type is CiDynamicPtrType) {
 			this.SharedRelease = true;
 			Write("CiShared_Release(");
 			statement.Accept(this, CiPriority.Argument);
