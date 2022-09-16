@@ -403,15 +403,15 @@ public class GenC : GenCCpp
 		WriteArrayPrefix(type);
 		symbol();
 		while (type.IsArray) {
-			CiClassType array = (CiClassType) type;
+			CiType elementType = ((CiClassType) type).ElementType;
 			if (type is CiArrayStorageType arrayStorage) {
 				Write('[');
 				VisitLiteralLong(arrayStorage.Length);
 				Write(']');
 			}
-			else if (array.ElementType is CiArrayStorageType)
+			else if (elementType is CiArrayStorageType)
 				Write(')');
-			type = array.ElementType;
+			type = elementType;
 		}
 	}
 
@@ -837,16 +837,11 @@ public class GenC : GenCCpp
 
 	void WriteGConstPointerCast(CiExpr expr)
 	{
-		switch (expr.Type) {
-		case CiStringType _:
-		case CiClassPtrType _:
-		case CiClassType klass when klass.IsPointer:
+		if (expr.Type.IsPointer || expr.Type == CiSystem.StringStorageType)
 			expr.Accept(this, CiPriority.Argument);
-			break;
-		default:
+		else {
 			Write("(gconstpointer) ");
 			expr.Accept(this, CiPriority.Primary);
-			break;
 		}
 	}
 

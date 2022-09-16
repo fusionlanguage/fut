@@ -220,7 +220,6 @@ public class GenCpp : GenCCpp
 			Write("[]>");
 			break;
 		case CiClassType klass:
-			string cppType;
 			if (klass.Class == CiSystem.ArrayPtrClass) {
 				Write(klass.ElementType, false);
 				if (!(klass is CiReadWriteClassType))
@@ -228,7 +227,8 @@ public class GenCpp : GenCCpp
 				Write(" *");
 				break;
 			}
-			else if (klass.Class == CiSystem.ArrayStorageClass)
+			string cppType;
+			if (klass.Class == CiSystem.ArrayStorageClass)
 				cppType = "array";
 			else if (klass.Class == CiSystem.ListClass)
 				cppType = "vector";
@@ -950,7 +950,7 @@ public class GenCpp : GenCCpp
 			break;
 		case CiClassType klass:
 			if (klass.Class == CiSystem.ArrayPtrClass && !(klass is CiDynamicPtrType)) {
-				WriteArrayPtr(expr, CiPriority.Argument);
+				WriteArrayPtr(expr, parent);
 				return;
 			}
 			if (expr.Type is CiStorageType) {
