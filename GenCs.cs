@@ -551,9 +551,10 @@ public class GenCs : GenTyped
 				Write(", null)");
 			}
 		}
-		else if (WriteListAddInsert(obj, method, args, "Add", "Insert", ", ")) {
-			// done
-		}
+		else if (method == CiSystem.ListAdd)
+			WriteListAdd(obj, "Add", args);
+		else if (method == CiSystem.ListInsert)
+			WriteListInsert(obj, "Insert", args);
 		else if (method == CiSystem.DictionaryAdd) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".Add(");

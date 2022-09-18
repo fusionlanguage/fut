@@ -927,45 +927,41 @@ public abstract class GenBase : CiVisitor
 		expr.Accept(this, CiPriority.Argument);
 	}
 
-	protected bool WriteListAddInsert(CiExpr obj, CiMethod method, List<CiExpr> args, string add, string insert, string insertSeparator)
+	protected void WriteListAdd(CiExpr obj, string method, List<CiExpr> args)
 	{
-		int i;
-		if (method == CiSystem.ListAdd) {
-			obj.Accept(this, CiPriority.Primary);
-			Write('.');
-			Write(add);
-			Write('(');
-			i = 0;
-		}
-		else if (method == CiSystem.ListInsert) {
-			obj.Accept(this, CiPriority.Primary);
-			Write('.');
-			Write(insert);
-			Write('(');
-			args[0].Accept(this, CiPriority.Argument);
-			Write(insertSeparator);
-			i = 1;
-		}
-		else
-			return false;
+		obj.Accept(this, CiPriority.Primary);
+		Write('.');
+		Write(method);
+		Write('(');
 		CiType elementType = ((CiClassType) obj.Type).ElementType;
-		if (args.Count == i)
+		if (args.Count == 0)
 			WriteNewStorage(elementType);
 		else
-			WriteNotPromoted(elementType, args[i]);
+			WriteNotPromoted(elementType, args[0]);
 		Write(')');
-		return true;
 	}
 
-	protected bool WriteDictionaryAdd(CiExpr obj, CiMethod method, List<CiExpr> args)
+	protected void WriteListInsert(CiExpr obj, string method, List<CiExpr> args, string separator = ", ")
 	{
-		if (method == CiSystem.DictionaryAdd) {
-			WriteIndexing(obj, args[0]);
-			Write(" = ");
-			WriteNewStorage(((CiClassType) obj.Type).ValueType);
-			return true;
-		}
-		return false;
+		obj.Accept(this, CiPriority.Primary);
+		Write('.');
+		Write(method);
+		Write('(');
+		args[0].Accept(this, CiPriority.Argument);
+		Write(separator);
+		CiType elementType = ((CiClassType) obj.Type).ElementType;
+		if (args.Count == 1)
+			WriteNewStorage(elementType);
+		else
+			WriteNotPromoted(elementType, args[1]);
+		Write(')');
+	}
+
+	protected void WriteDictionaryAdd(CiExpr obj, List<CiExpr> args)
+	{
+		WriteIndexing(obj, args[0]);
+		Write(" = ");
+		WriteNewStorage(((CiClassType) obj.Type).ValueType);
 	}
 
 	protected bool WriteRegexOptions(List<CiExpr> args, string prefix, string separator, string suffix, string i, string m, string s)

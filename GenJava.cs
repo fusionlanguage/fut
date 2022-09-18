@@ -562,9 +562,10 @@ public class GenJava : GenTyped
 				Write(").sort(null)");
 			}
 		}
-		else if (WriteListAddInsert(obj, method, args, "add", "add", ", ")) {
-			// done
-		}
+		else if (method == CiSystem.ListAdd)
+			WriteListAdd(obj, "add", args);
+		else if (method == CiSystem.ListInsert)
+			WriteListInsert(obj, "add", args);
 		else if (method == CiSystem.CollectionCopyTo) {
 			if (obj.Type.IsArray) {
 				Write("System.arraycopy(");

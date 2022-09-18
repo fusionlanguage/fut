@@ -478,10 +478,10 @@ public class GenJs : GenBase
 				WriteCall("Ci.sortListPart", obj, args[0], args[1]);
 			}
 		}
-		else if (WriteListAddInsert(obj, method, args, "push", "splice", ", 0, ")
-			|| WriteDictionaryAdd(obj, method, args)) {
-			// done
-		}
+		else if (method == CiSystem.ListAdd)
+			WriteListAdd(obj, "push", args);
+		else if (method == CiSystem.ListInsert)
+			WriteListInsert(obj, "splice", args, ", 0, ");
 		else if (method == CiSystem.ListRemoveAt) {
 			obj.Accept(this, CiPriority.Primary);
 			Write(".splice(");
@@ -504,6 +504,8 @@ public class GenJs : GenBase
 			obj.Accept(this, CiPriority.Primary);
 			Write(".at(-1)");
 		}
+		else if (method == CiSystem.DictionaryAdd)
+			WriteDictionaryAdd(obj, args);
 		else if (method == CiSystem.DictionaryRemove) {
 			if (((CiClassType) obj.Type).Class == CiSystem.OrderedDictionaryClass)
 				WriteCall(obj, "delete", args[0]);

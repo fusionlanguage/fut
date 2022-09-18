@@ -550,9 +550,8 @@ public class GenSwift : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeLast()");
 		}
-		else if (WriteDictionaryAdd(obj, method, args)) {
-			// done
-		}
+		else if (method == CiSystem.DictionaryAdd)
+			WriteDictionaryAdd(obj, args);
 		else if (method == CiSystem.DictionaryContainsKey) {
 			if (parent > CiPriority.Equality)
 				Write('(');

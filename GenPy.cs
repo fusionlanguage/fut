@@ -632,10 +632,10 @@ public class GenPy : GenPySwift
 			WriteSlice(args[0], args[1]);
 			Write("))");
 		}
-		else if (WriteListAddInsert(obj, method, args, "append", "insert", ", ")
-			|| WriteDictionaryAdd(obj, method, args)) {
-			// done
-		}
+		else if (method == CiSystem.ListAdd)
+			WriteListAdd(obj, "append", args);
+		else if (method == CiSystem.ListInsert)
+			WriteListInsert(obj, "insert", args);
 		else if (method == CiSystem.ListContains || method == CiSystem.HashSetContains)
 			WriteContains(obj, args[0]);
 		else if (method == CiSystem.QueueDequeue) {
@@ -652,6 +652,8 @@ public class GenPy : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			Write("[-1]");
 		}
+		else if (method == CiSystem.DictionaryAdd)
+			WriteDictionaryAdd(obj, args);
 		else if (method == CiSystem.DictionaryContainsKey)
 			WriteContains(obj, args[0]);
 		else if (method == CiSystem.ConsoleWrite)
