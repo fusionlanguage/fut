@@ -421,21 +421,14 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
-		if (obj == null) {
-			if (method.IsStatic) {
-				WriteName(this.CurrentMethod.Parent);
-				Write('.');
-			}
-			WriteName(method);
-			WriteArgsInParentheses(method, args);
-		}
-		else if (method == CiSystem.StringContains)
+		switch (method.Id) {
+		case CiId.StringContains:
 			WriteStringContains(obj, "contains", args);
-		else if (method == CiSystem.StringStartsWith)
-			WriteStringContains(obj, "hasPrefix", args);
-		else if (method == CiSystem.StringEndsWith)
+			break;
+		case CiId.StringEndsWith:
 			WriteStringContains(obj, "hasSuffix", args);
-		else if (method == CiSystem.StringIndexOf) {
+			break;
+		case CiId.StringIndexOf:
 			Include("Foundation");
 			this.StringIndexOf = true;
 			Write("ciStringIndexOf(");
@@ -443,8 +436,8 @@ public class GenSwift : GenPySwift
 			Write(", ");
 			WriteUnwrappedString(args[0], CiPriority.Argument, true);
 			Write(')');
-		}
-		else if (method == CiSystem.StringLastIndexOf) {
+			break;
+		case CiId.StringLastIndexOf:
 			Include("Foundation");
 			this.StringIndexOf = true;
 			Write("ciStringIndexOf(");
@@ -452,8 +445,11 @@ public class GenSwift : GenPySwift
 			Write(", ");
 			WriteUnwrappedString(args[0], CiPriority.Argument, true);
 			Write(", .backwards)");
-		}
-		else if (method == CiSystem.StringSubstring) {
+			break;
+		case CiId.StringStartsWith:
+			WriteStringContains(obj, "hasPrefix", args);
+			break;
+		case CiId.StringSubstring:
 			if (args[0].IsLiteralZero)
 				WriteUnwrappedString(obj, CiPriority.Primary, true);
 			else {
@@ -469,16 +465,31 @@ public class GenSwift : GenPySwift
 				WriteCoerced(CiSystem.IntType, args[1], CiPriority.Argument);
 				Write(')');
 			}
-		}
-		else if (method == CiSystem.CollectionCopyTo) {
+			break;
+		case CiId.CollectionClear:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".removeAll()");
+			break;
+		case CiId.CollectionCopyTo:
 			OpenIndexing(args[1]);
 			WriteRange(args[2], args[3]);
 			Write("] = ");
 			OpenIndexing(obj);
 			WriteRange(args[0], args[3]);
 			Write(']');
-		}
-		else if (method == CiSystem.ArrayFillAll && obj.Type is CiArrayStorageType array && !IsArrayRef(array)) {
+			break;
+		case CiId.CollectionSortAll when obj.Type is CiArrayStorageType array:
+			obj.Accept(this, CiPriority.Primary);
+			Write("[0..<");
+			VisitLiteralLong(array.Length);
+			Write("].sort()");
+			break;
+		case CiId.CollectionSortPart:
+			OpenIndexing(obj);
+			WriteRange(args[0], args[1]);
+			Write("].sort()");
+			break;
+		case CiId.ArrayFillAll when obj.Type is CiArrayStorageType array && !IsArrayRef(array):
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = [");
 			Write(array.ElementType);
@@ -487,30 +498,22 @@ public class GenSwift : GenPySwift
 			Write(", count: ");
 			VisitLiteralLong(array.Length);
 			Write(')');
-		}
-		else if (method == CiSystem.ArrayFillPart && obj.Type is CiArrayStorageType array2 && !IsArrayRef(array2)) {
+			break;
+		case CiId.ArrayFillPart when obj.Type is CiArrayStorageType array && !IsArrayRef(array):
 			OpenIndexing(obj);
 			WriteRange(args[1], args[2]);
 			Write("] = ArraySlice(repeating: ");
-			WriteCoerced(array2.ElementType, args[0], CiPriority.Argument);
+			WriteCoerced(array.ElementType, args[0], CiPriority.Argument);
 			Write(", count: ");
 			WriteCoerced(CiSystem.IntType, args[2], CiPriority.Argument); // FIXME: side effect
 			Write(')');
-		}
-		else if (method == CiSystem.CollectionSortAll && obj.Type is CiArrayStorageType array3) {
-			obj.Accept(this, CiPriority.Primary);
-			Write("[0..<");
-			VisitLiteralLong(array3.Length);
-			Write("].sort()");
-		}
-		else if (method == CiSystem.CollectionSortPart) {
-			OpenIndexing(obj);
-			WriteRange(args[0], args[1]);
-			Write("].sort()");
-		}
-		else if (method == CiSystem.ListAdd || method == CiSystem.QueueEnqueue || method == CiSystem.StackPush)
+			break;
+		case CiId.ListAdd:
+		case CiId.QueueEnqueue:
+		case CiId.StackPush:
 			WriteListAppend(obj, args);
-		else if (method == CiSystem.ListInsert) {
+			break;
+		case CiId.ListInsert:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".insert(");
 			CiType elementType = ((CiClassType) obj.Type).ElementType;
@@ -521,67 +524,71 @@ public class GenSwift : GenPySwift
 			Write(", at: ");
 			WriteCoerced(CiSystem.IntType, args[0], CiPriority.Argument);
 			Write(')');
-		}
-		else if (method == CiSystem.ListRemoveAt) {
+			break;
+		case CiId.ListRemoveAt:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".remove(at: ");
 			WriteCoerced(CiSystem.IntType, args[0], CiPriority.Argument);
 			Write(')');
-		}
-		else if (method == CiSystem.ListRemoveRange) {
+			break;
+		case CiId.ListRemoveRange:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeSubrange(");
 			WriteRange(args[0], args[1]);
 			Write(')');
-		}
-		else if (method == CiSystem.QueueDequeue) {
+			break;
+		case CiId.QueueDequeue:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeFirst()");
-		}
-		else if (method == CiSystem.QueuePeek) {
+			break;
+		case CiId.QueuePeek:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".first");
-		}
-		else if (method == CiSystem.StackPeek) {
+			break;
+		case CiId.StackPeek:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".last");
-		}
-		else if (method == CiSystem.StackPop) {
+			break;
+		case CiId.StackPop:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeLast()");
-		}
-		else if (method == CiSystem.DictionaryAdd)
+			break;
+		case CiId.HashSetAdd:
+			WriteCall(obj, "insert", args[0]);
+			break;
+		case CiId.DictionaryAdd:
 			WriteDictionaryAdd(obj, args);
-		else if (method == CiSystem.DictionaryContainsKey) {
+			break;
+		case CiId.DictionaryContainsKey:
 			if (parent > CiPriority.Equality)
 				Write('(');
 			WriteIndexing(obj, args[0]);
 			Write(" != nil");
 			if (parent > CiPriority.Equality)
 				Write(')');
-		}
-		else if (method == CiSystem.DictionaryRemove) {
+			break;
+		case CiId.DictionaryRemove:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeValue(forKey: ");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(')');
-		}
-		else if (method == CiSystem.ConsoleWrite) {
+			break;
+		case CiId.ConsoleWrite:
 			// TODO: stderr
 			Write("print(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", terminator: \"\")");
-		}
-		else if (method == CiSystem.ConsoleWriteLine) {
+			break;
+		case CiId.ConsoleWriteLine:
 			// TODO: stderr
 			Write("print");
 			WriteArgsInParentheses(method, args);
-		}
-		else if (method == CiSystem.UTF8GetByteCount) {
+			break;
+		case CiId.UTF8GetByteCount:
 			WriteUnwrappedString(args[0], CiPriority.Primary, true);
 			Write(".utf8.count");
-		}
-		else if (method == CiSystem.UTF8GetBytes) {
+			break;
+		case CiId.UTF8GetBytes:
 			if (AddVar("cibytes"))
 				Write(this.VarBytesAtIndent[this.Indent] ? "var " : "let ");
 			Write("cibytes = [UInt8](");
@@ -597,58 +604,65 @@ public class GenSwift : GenPySwift
 				Write(" + ");
 			}
 			WriteLine("cibytes.count] = cibytes[...]");
-		}
-		else if (method == CiSystem.UTF8GetString) {
+			break;
+		case CiId.UTF8GetString:
 			Write("String(decoding: ");
 			OpenIndexing(args[0]);
 			WriteRange(args[1], args[2]);
 			Write("], as: UTF8.self)");
-		}
-		else if (method == CiSystem.EnvironmentGetEnvironmentVariable) {
+			break;
+		case CiId.EnvironmentGetEnvironmentVariable:
 			Include("Foundation");
 			Write("ProcessInfo.processInfo.environment[");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(']');
-		}
-		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
-			if (method == CiSystem.MathIsFinite) {
-				args[0].Accept(this, CiPriority.Primary);
-				Write(".isFinite");
-			}
-			else if (method == CiSystem.MathIsInfinity) {
-				args[0].Accept(this, CiPriority.Primary);
-				Write(".isInfinite");
-			}
-			else if (method == CiSystem.MathIsNaN) {
-				args[0].Accept(this, CiPriority.Primary);
-				Write(".isNaN");
-			}
-			else {
-				Include("Foundation");
-				if (method == CiSystem.MathCeiling)
-					Write("ceil");
-				else if (method == CiSystem.MathFusedMultiplyAdd)
-					Write("fma");
-				else if (method == CiSystem.MathTruncate)
-					Write("trunc");
-				else
-					WriteName(method);
-				WriteArgsInParentheses(method, args);
-			}
-		}
-		else {
-			if (obj.IsReferenceTo(CiSystem.BasePtr))
-				Write("super");
-			else
-				obj.Accept(this, CiPriority.Primary);
-			WriteMemberOp(obj, null);
-			if (method == CiSystem.CollectionClear)
-				Write("removeAll");
-			else if (method == CiSystem.HashSetAdd)
-				Write("insert");
-			else
-				WriteName(method);
+			break;
+		case CiId.MathMethod:
+		case CiId.MathLog2:
+			Include("Foundation");
+			WriteCamelCase(method.Name);
 			WriteArgsInParentheses(method, args);
+			break;
+		case CiId.MathCeiling:
+			Include("Foundation");
+			WriteCall("ceil", args[0]);
+			break;
+		case CiId.MathFusedMultiplyAdd:
+			Include("Foundation");
+			WriteCall("fma", args[0], args[1], args[2]);
+			break;
+		case CiId.MathIsFinite:
+			args[0].Accept(this, CiPriority.Primary);
+			Write(".isFinite");
+			break;
+		case CiId.MathIsInfinity:
+			args[0].Accept(this, CiPriority.Primary);
+			Write(".isInfinite");
+			break;
+		case CiId.MathIsNaN:
+			args[0].Accept(this, CiPriority.Primary);
+			Write(".isNaN");
+			break;
+		case CiId.MathTruncate:
+			Include("Foundation");
+			WriteCall("trunc", args[0]);
+			break;
+		default:
+			if (obj == null) {
+				if (method.IsStatic) {
+					WriteName(this.CurrentMethod.Parent);
+					Write('.');
+				}
+			}
+			else if (obj.IsReferenceTo(CiSystem.BasePtr))
+				Write("super.");
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				WriteMemberOp(obj, null);
+			}
+			WriteName(method);
+			WriteArgsInParentheses(method, args);
+			break;
 		}
 	}
 
