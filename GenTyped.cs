@@ -223,7 +223,7 @@ public abstract class GenTyped : GenBase
 				WriteStaticCast(type, expr);
 		}
 		else if (type is CiIntegerType && expr.Type == CiSystem.FloatIntType) {
-			if (expr is CiCallExpr call && call.Method.IsReferenceTo(CiSystem.MathTruncate)) {
+			if (expr is CiCallExpr call && call.Method.Symbol.Id == CiId.MathTruncate) {
 				expr = call.Arguments[0];
 				if (expr is CiLiteralDouble literal) {
 					VisitLiteralLong((long) literal.Value); // TODO: range check

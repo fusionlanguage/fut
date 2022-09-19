@@ -774,8 +774,15 @@ public class GenC : GenCCpp
 			return HasTemporaries(select.Cond);
 		case CiCallExpr call:
 			if (call.Method.Left != null) {
-				if (call.Method.Symbol == CiSystem.ListAdd || call.Method.Symbol == CiSystem.ListInsert || call.Method.Symbol == CiSystem.QueueEnqueue || call.Method.Symbol == CiSystem.StackPush)
+				switch (call.Method.Symbol.Id) {
+				case CiId.ListAdd:
+				case CiId.ListInsert:
+				case CiId.QueueEnqueue:
+				case CiId.StackPush:
 					return true;
+				default:
+					break;
+				}
 				if (IsTemporary(call.Method.Left) || HasTemporaries(call.Method.Left))
 					return true;
 			}

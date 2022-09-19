@@ -149,14 +149,14 @@ public abstract class GenCCpp : GenTyped
 		if (expr is CiCallExpr call) {
 			CiMethod method = (CiMethod) call.Method.Symbol;
 			List<CiExpr> args = call.Arguments;
-			if (method == CiSystem.StringSubstring && args.Count == 2) {
+			if (method.Id == CiId.StringSubstring && args.Count == 2) {
 				cast = false;
 				ptr = call.Method.Left;
 				offset = args[0];
 				length = args[1];
 				return true;
 			}
-			if (method == CiSystem.UTF8GetString) {
+			if (method.Id == CiId.UTF8GetString) {
 				cast = true;
 				ptr = args[0];
 				offset = args[1];

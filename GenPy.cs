@@ -800,21 +800,22 @@ public class GenPy : GenPySwift
 
 	protected override bool VisitPreCall(CiCallExpr call)
 	{
-		if (call.Method.Symbol == CiSystem.MatchFindStr) {
+		switch (call.Method.Symbol.Id) {
+		case CiId.MatchFindStr:
 			call.Method.Left.Accept(this, CiPriority.Assign);
 			Write(" = ");
 			WriteRegexSearch(call.Arguments);
 			WriteLine();
 			return true;
-		}
-		if (call.Method.Symbol == CiSystem.MatchFindRegex) {
+		case CiId.MatchFindRegex:
 			call.Method.Left.Accept(this, CiPriority.Assign);
 			Write(" = ");
 			WriteCall(call.Arguments[1], "search", call.Arguments[0]);
 			WriteLine();
 			return true;
+		default:
+			return false;
 		}
-		return false;
 	}
 
 	static bool NeedsInit(CiNamedValue def)

@@ -355,7 +355,7 @@ public class GenCpp : GenCCpp
 	{
 		if (expr.Type != CiSystem.StringPtrType)
 			return false;
-		if (expr is CiCallExpr call && call.Method.Symbol == CiSystem.EnvironmentGetEnvironmentVariable)
+		if (expr is CiCallExpr call && call.Method.Symbol.Id == CiId.EnvironmentGetEnvironmentVariable)
 			return false;
 		return true;
 	}
@@ -602,15 +602,9 @@ public class GenCpp : GenCCpp
 		case CiId.StringSubstring:
 			WriteStringMethod(obj, "substr", method, args);
 			break;
-		case CiId.CollectionClear:
-			if (obj.Type is CiClassType klass && (klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass)) {
-				WriteCollectionObject(obj, CiPriority.Assign);
-				Write(" = {}");
-			}
-			else {
-				StartMethodCall(obj);
-				Write("clear()");
-			}
+		case CiId.CollectionClear when obj.Type is CiClassType klass && (klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass):
+			WriteCollectionObject(obj, CiPriority.Assign);
+			Write(" = {}");
 			break;
 		case CiId.CollectionCopyTo:
 			Include("algorithm");
@@ -870,14 +864,14 @@ public class GenCpp : GenCCpp
 			}
 			else
 				args[0].Accept(this, CiPriority.Argument);
-			if (method == CiSystem.MatchFindStr || method == CiSystem.MatchFindRegex) {
+			if (method.Id == CiId.MatchFindStr || method.Id == CiId.MatchFindRegex) {
 				Write(", ");
 				obj.Accept(this, CiPriority.Argument);
 			}
 			Write(", ");
-			if (method == CiSystem.RegexIsMatchRegex)
+			if (method.Id == CiId.RegexIsMatchRegex)
 				obj.Accept(this, CiPriority.Argument);
-			else if (method == CiSystem.MatchFindRegex)
+			else if (method.Id == CiId.MatchFindRegex)
 				args[1].Accept(this, CiPriority.Argument);
 			else
 				WriteRegex(args, 1);

@@ -360,7 +360,7 @@ public class GenSwift : GenPySwift
 		 && GetTypeCode(type, false) != GetTypeCode(expr.Type, expr is CiBinaryExpr binary && binary.Op != CiToken.LeftBracket)) {
 			Write(type);
 			Write('(');
-			if (type is CiIntegerType && expr is CiCallExpr call && call.Method.IsReferenceTo(CiSystem.MathTruncate))
+			if (type is CiIntegerType && expr is CiCallExpr call && call.Method.Symbol.Id == CiId.MathTruncate)
 				call.Arguments[0].Accept(this, CiPriority.Argument);
 			else
 				expr.Accept(this, CiPriority.Argument);
@@ -988,7 +988,7 @@ public class GenSwift : GenPySwift
 	protected override void Write(List<CiStatement> statements)
 	{
 		// Encoding.UTF8.GetBytes returns void, so it can only be called as a statement
-		this.VarBytesAtIndent[this.Indent] = statements.Count(s => s is CiCallExpr call && call.Method.Symbol == CiSystem.UTF8GetBytes) > 1;
+		this.VarBytesAtIndent[this.Indent] = statements.Count(s => s is CiCallExpr call && call.Method.Symbol.Id == CiId.UTF8GetBytes) > 1;
 		base.Write(statements);
 	}
 
