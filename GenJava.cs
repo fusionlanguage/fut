@@ -694,24 +694,19 @@ public class GenJava : GenTyped
 			WriteCall(obj, "group", args[0]);
 			break;
 		case CiId.MathCeiling:
-			Write("Math.ceil");
-			WriteArgsInParentheses(method, args);
+			WriteCall("Math.ceil", args[0]);
 			break;
 		case CiId.MathFusedMultiplyAdd:
-			Write("Math.fma");
-			WriteArgsInParentheses(method, args);
+			WriteCall("Math.fma", args[0], args[1], args[2]);
 			break;
 		case CiId.MathIsFinite:
-			Write("Double.isFinite");
-			WriteArgsInParentheses(method, args);
+			WriteCall("Double.isFinite", args[0]);
 			break;
 		case CiId.MathIsInfinity:
-			Write("Double.isInfinite");
-			WriteArgsInParentheses(method, args);
+			WriteCall("Double.isInfinite", args[0]);
 			break;
 		case CiId.MathIsNaN:
-			Write("Double.isNaN");
-			WriteArgsInParentheses(method, args);
+			WriteCall("Double.isNaN", args[0]);
 			break;
 		case CiId.MathLog2:
 			if (parent > CiPriority.Mul)

@@ -1736,32 +1736,29 @@ public class GenC : GenCCpp
 		case CiId.MatchGetCapture:
 			WriteCall("g_match_info_fetch", obj, args[0]);
 			break;
-		case CiId.MathAcos:
-		case CiId.MathAsin:
-		case CiId.MathAtan:
-		case CiId.MathAtan2:
-		case CiId.MathCbrt:
-		case CiId.MathCeiling:
-		case CiId.MathCos:
-		case CiId.MathCosh:
-		case CiId.MathExp:
-		case CiId.MathFloor:
-		case CiId.MathFusedMultiplyAdd:
+		case CiId.MathMethod:
 		case CiId.MathIsFinite:
-		case CiId.MathIsInfinity:
 		case CiId.MathIsNaN:
-		case CiId.MathLog:
 		case CiId.MathLog2:
-		case CiId.MathLog10:
-		case CiId.MathPow:
-		case CiId.MathSin:
-		case CiId.MathSinh:
-		case CiId.MathSqrt:
-		case CiId.MathTan:
-		case CiId.MathTanh:
+			Include("math.h");
+			WriteLowercase(method.Name);
+			WriteArgsInParentheses(method, args);
+			break;
+		case CiId.MathCeiling:
+			Include("math.h");
+			WriteCall("ceil", args[0]);
+			break;
+		case CiId.MathFusedMultiplyAdd:
+			Include("math.h");
+			WriteCall("fma", args[0], args[1], args[2]);
+			break;
+		case CiId.MathIsInfinity:
+			Include("math.h");
+			WriteCall("isinf", args[0]);
+			break;
 		case CiId.MathTruncate:
 			Include("math.h");
-			WriteMathCall(method, args);
+			WriteCall("trunc", args[0]);
 			break;
 		default:
 			WriteCCall(obj, method, args);

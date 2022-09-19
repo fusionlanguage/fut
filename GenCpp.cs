@@ -887,33 +887,30 @@ public class GenCpp : GenCCpp
 			StartMethodCall(obj);
 			WriteCall("str", args[0]);
 			break;
-		case CiId.MathAcos:
-		case CiId.MathAsin:
-		case CiId.MathAtan:
-		case CiId.MathAtan2:
-		case CiId.MathCbrt:
-		case CiId.MathCeiling:
-		case CiId.MathCos:
-		case CiId.MathCosh:
-		case CiId.MathExp:
-		case CiId.MathFloor:
-		case CiId.MathFusedMultiplyAdd:
+		case CiId.MathMethod:
 		case CiId.MathIsFinite:
-		case CiId.MathIsInfinity:
 		case CiId.MathIsNaN:
-		case CiId.MathLog:
 		case CiId.MathLog2:
-		case CiId.MathLog10:
-		case CiId.MathPow:
-		case CiId.MathSin:
-		case CiId.MathSinh:
-		case CiId.MathSqrt:
-		case CiId.MathTan:
-		case CiId.MathTanh:
-		case CiId.MathTruncate:
 			Include("cmath");
 			Write("std::");
-			WriteMathCall(method, args);
+			WriteLowercase(method.Name);
+			WriteArgsInParentheses(method, args);
+			break;
+		case CiId.MathCeiling:
+			Include("cmath");
+			WriteCall("std::ceil", args[0]);
+			break;
+		case CiId.MathFusedMultiplyAdd:
+			Include("cmath");
+			WriteCall("std::fma", args[0], args[1], args[2]);
+			break;
+		case CiId.MathIsInfinity:
+			Include("cmath");
+			WriteCall("std::isinf", args[0]);
+			break;
+		case CiId.MathTruncate:
+			Include("cmath");
+			WriteCall("std::trunc", args[0]);
 			break;
 		default:
 			if (obj != null) {

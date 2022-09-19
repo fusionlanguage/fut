@@ -587,26 +587,10 @@ public class GenCs : GenTyped
 			args[0].Accept(this, CiPriority.Argument);
 			Write("].Value");
 			break;
-		case CiId.MathAcos:
-		case CiId.MathAsin:
-		case CiId.MathAtan:
-		case CiId.MathAtan2:
-		case CiId.MathCbrt:
+		case CiId.MathMethod:
 		case CiId.MathCeiling:
-		case CiId.MathCos:
-		case CiId.MathCosh:
-		case CiId.MathExp:
-		case CiId.MathFloor:
 		case CiId.MathFusedMultiplyAdd:
-		case CiId.MathLog:
 		case CiId.MathLog2:
-		case CiId.MathLog10:
-		case CiId.MathPow:
-		case CiId.MathSin:
-		case CiId.MathSinh:
-		case CiId.MathSqrt:
-		case CiId.MathTan:
-		case CiId.MathTanh:
 		case CiId.MathTruncate:
 			Include("System");
 			Write("Math.");
@@ -617,8 +601,7 @@ public class GenCs : GenTyped
 		case CiId.MathIsInfinity:
 		case CiId.MathIsNaN:
 			Write("double.");
-			Write(method.Name);
-			WriteArgsInParentheses(method, args);
+			WriteCall(method.Name, args[0]);
 			break;
 		default:
 			if (obj != null) {

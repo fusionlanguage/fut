@@ -131,21 +131,6 @@ public abstract class GenCCpp : GenTyped
 		return false;
 	}
 
-	protected void WriteMathCall(CiMethod method, List<CiExpr> args)
-	{
-		if (method == CiSystem.MathCeiling)
-			Write("ceil");
-		else if (method == CiSystem.MathFusedMultiplyAdd)
-			Write("fma");
-		else if (method == CiSystem.MathIsInfinity)
-			Write("isinf");
-		else if (method == CiSystem.MathTruncate)
-			Write("trunc");
-		else
-			WriteLowercase(method.Name);
-		WriteArgsInParentheses(method, args);
-	}
-
 	protected abstract void WriteArrayPtr(CiExpr expr, CiPriority parent);
 
 	protected void WriteArrayPtrAdd(CiExpr array, CiExpr index)
