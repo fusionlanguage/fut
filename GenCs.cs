@@ -561,7 +561,8 @@ public class GenCs : GenTyped
 		case CiId.RegexIsMatchStr:
 		case CiId.RegexIsMatchRegex:
 			Include("System.Text.RegularExpressions");
-			Write("Regex.");
+			obj.Accept(this, CiPriority.Primary);
+			Write('.');
 			Write(method.Name);
 			WriteArgsInParentheses(method, args);
 			break;
