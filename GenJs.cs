@@ -416,11 +416,12 @@ public class GenJs : GenBase
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
-		if (obj == null) {
-			WriteLocalName(method, CiPriority.Primary);
-			WriteArgsInParentheses(method, args);
-		}
-		else if (method == CiSystem.StringSubstring) {
+		switch (method.Id) {
+		case CiId.StringContains:
+		case CiId.ListContains:
+			WriteCall(obj, "includes", args[0]);
+			break;
+		case CiId.StringSubstring:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".substring(");
 			args[0].Accept(this, CiPriority.Argument);
@@ -429,8 +430,12 @@ public class GenJs : GenBase
 				WriteAdd(args[0], args[1]); // TODO: side effect
 			}
 			Write(')');
-		}
-		else if (method == CiSystem.CollectionCopyTo) {
+			break;
+		case CiId.CollectionClear when obj.Type is CiClassType klass && (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass):
+			obj.Accept(this, CiPriority.Primary);
+			Write(".length = 0");
+			break;
+		case CiId.CollectionCopyTo:
 			AddLibrary(GenJsMethod.CopyArray,
 				"copyArray : function(sa, soffset, da, doffset, length)",
 				"if (typeof(sa.subarray) == \"function\" && typeof(da.set) == \"function\")",
@@ -443,26 +448,8 @@ public class GenJs : GenBase
 			Write(", ");
 			WriteArgs(method, args);
 			Write(')');
-		}
-		else if (method == CiSystem.ArrayFillAll || method == CiSystem.ArrayFillPart) {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".fill(");
-			args[0].Accept(this, CiPriority.Argument);
-			if (args.Count == 3) {
-				Write(", ");
-				WriteStartEnd(args[1], args[2]);
-			}
-			Write(')');
-		}
-		else if (method == CiSystem.CollectionClear && obj.Type is CiClassType klass && (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass)) {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".length = 0");
-		}
-		else if (obj.Type is CiClassType klass2 && klass2.Class == CiSystem.ListClass && method == CiSystem.CollectionSortAll) {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".sort((a, b) => a - b)");
-		}
-		else if (method == CiSystem.CollectionSortPart) {
+			break;
+		case CiId.CollectionSortPart:
 			if (obj.Type.IsArray) {
 				obj.Accept(this, CiPriority.Primary);
 				Write(".subarray(");
@@ -477,65 +464,94 @@ public class GenJs : GenBase
 					"\ta[offset + i] = sorted[i];");
 				WriteCall("Ci.sortListPart", obj, args[0], args[1]);
 			}
-		}
-		else if (method == CiSystem.ListAdd)
+			break;
+		case CiId.ArrayFillAll:
+		case CiId.ArrayFillPart:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".fill(");
+			args[0].Accept(this, CiPriority.Argument);
+			if (args.Count == 3) {
+				Write(", ");
+				WriteStartEnd(args[1], args[2]);
+			}
+			Write(')');
+			break;
+		case CiId.CollectionSortAll when obj.Type is CiClassType klass && klass.Class == CiSystem.ListClass:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".sort((a, b) => a - b)");
+			break;
+		case CiId.ListAdd:
 			WriteListAdd(obj, "push", args);
-		else if (method == CiSystem.ListInsert)
+			break;
+		case CiId.ListInsert:
 			WriteListInsert(obj, "splice", args, ", 0, ");
-		else if (method == CiSystem.ListRemoveAt) {
+			break;
+		case CiId.ListRemoveAt:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".splice(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", 1)");
-		}
-		else if (method == CiSystem.ListRemoveRange)
+			break;
+		case CiId.ListRemoveRange:
 			WriteCall(obj, "splice", args[0], args[1]);
-		else if (method == CiSystem.QueueDequeue) {
+			break;
+		case CiId.QueueDequeue:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".shift()");
-		}
-		else if (method == CiSystem.QueueEnqueue)
+			break;
+		case CiId.QueueEnqueue:
 			WriteCall(obj, "push", args[0]);
-		else if (method == CiSystem.QueuePeek) {
+			break;
+		case CiId.QueuePeek:
 			obj.Accept(this, CiPriority.Primary);
 			Write("[0]");
-		}
-		else if (method == CiSystem.StackPeek) {
+			break;
+		case CiId.StackPeek:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".at(-1)");
-		}
-		else if (method == CiSystem.DictionaryAdd)
+			break;
+		case CiId.HashSetContains:
+			WriteCall(obj, "has", args[0]);
+			break;
+		case CiId.HashSetRemove:
+			WriteCall(obj, "delete", args[0]);
+			break;
+		case CiId.DictionaryAdd:
 			WriteDictionaryAdd(obj, args);
-		else if (method == CiSystem.DictionaryRemove) {
+			break;
+		case CiId.DictionaryContainsKey:
+			WriteCall(obj, ((CiClassType) obj.Type).Class == CiSystem.OrderedDictionaryClass ? "has" : "hasOwnProperty", args[0]);
+			break;
+		case CiId.DictionaryRemove:
 			if (((CiClassType) obj.Type).Class == CiSystem.OrderedDictionaryClass)
 				WriteCall(obj, "delete", args[0]);
 			else {
 				Write("delete ");
 				WriteIndexing(obj, args[0]);
 			}
-		}
-		else if (method == CiSystem.CollectionClear && obj.Type is CiClassType dict && (dict.Class == CiSystem.DictionaryClass || dict.Class == CiSystem.SortedDictionaryClass)) {
+			break;
+		case CiId.CollectionClear when obj.Type is CiClassType dict && (dict.Class == CiSystem.DictionaryClass || dict.Class == CiSystem.SortedDictionaryClass):
 			Write("for (const key in ");
 			obj.Accept(this, CiPriority.Argument);
 			WriteLine(')');
 			Write("\tdelete ");
 			obj.Accept(this, CiPriority.Primary); // FIXME: side effect
 			Write("[key];");
-		}
-		else if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine) {
-			// XXX: Console.Write same as Console.WriteLine
+			break;
+		case CiId.ConsoleWrite: // FIXME: Console.Write same as Console.WriteLine
+		case CiId.ConsoleWriteLine:
 			Write(obj.IsReferenceTo(CiSystem.ConsoleError) ? "console.error" : "console.log");
 			if (args.Count == 0)
 				Write("(\"\")");
 			else
 				WriteArgsInParentheses(method, args);
-		}
-		else if (method == CiSystem.UTF8GetByteCount) {
+			break;
+		case CiId.UTF8GetByteCount:
 			Write("new TextEncoder().encode(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(").length");
-		}
-		else if (method == CiSystem.UTF8GetBytes) {
+			break;
+		case CiId.UTF8GetBytes:
 			Write("new TextEncoder().encodeInto(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
@@ -548,8 +564,8 @@ public class GenJs : GenBase
 				Write(')');
 			}
 			Write(')');
-		}
-		else if (method == CiSystem.UTF8GetString) {
+			break;
+		case CiId.UTF8GetString:
 			Write("new TextDecoder().decode(");
 			args[0].Accept(this, CiPriority.Primary);
 			Write(".subarray(");
@@ -557,8 +573,8 @@ public class GenJs : GenBase
 			Write(", ");
 			WriteAdd(args[1], args[2]); // FIXME: side effect
 			Write("))");
-		}
-		else if (method == CiSystem.EnvironmentGetEnvironmentVariable) {
+			break;
+		case CiId.EnvironmentGetEnvironmentVariable:
 			if (args[0] is CiLiteralString literal && IsIdentifier(literal.Value)) {
 				Write("process.env.");
 				Write(literal.Value);
@@ -568,23 +584,26 @@ public class GenJs : GenBase
 				args[0].Accept(this, CiPriority.Argument);
 				Write(']');
 			}
-		}
-		else if (method == CiSystem.RegexCompile)
+			break;
+		case CiId.RegexCompile:
 			WriteRegex(args, 0);
-		else if (method == CiSystem.RegexEscape) {
+			break;
+		case CiId.RegexEscape:
 			AddLibrary(GenJsMethod.RegexEscape,
 				"regexEscape : function(s)",
 				"return s.replace(/[-\\/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&');");
 			Write("Ci.regexEscape");
 			WriteArgsInParentheses(method, args);
-		}
-		else if (method == CiSystem.RegexIsMatchStr) {
+			break;
+		case CiId.RegexIsMatchStr:
 			WriteRegex(args, 1);
 			WriteCall(".test", args[0]);
-		}
-		else if (method == CiSystem.RegexIsMatchRegex)
+			break;
+		case CiId.RegexIsMatchRegex:
 			WriteCall(obj, "test", args[0]);
-		else if (method == CiSystem.MatchFindStr || method == CiSystem.MatchFindRegex) {
+			break;
+		case CiId.MatchFindStr:
+		case CiId.MatchFindRegex:
 			if (parent > CiPriority.Equality)
 				Write('(');
 			Write('(');
@@ -595,10 +614,14 @@ public class GenJs : GenBase
 			Write(") != null");
 			if (parent > CiPriority.Equality)
 				Write(')');
-		}
-		else if (method == CiSystem.MatchGetCapture)
+			break;
+		case CiId.MatchGetCapture:
 			WriteIndexing(obj, args[0]);
-		else if (method == CiSystem.MathFusedMultiplyAdd) {
+			break;
+		case CiId.MathCeiling:
+			WriteCall("Math.ceil", args[0]);
+			break;
+		case CiId.MathFusedMultiplyAdd:
 			if (parent > CiPriority.Add)
 				Write('(');
 			args[0].Accept(this, CiPriority.Mul);
@@ -608,49 +631,46 @@ public class GenJs : GenBase
 			args[2].Accept(this, CiPriority.Add);
 			if (parent > CiPriority.Add)
 				Write(')');
-		}
-		else if (method == CiSystem.MathIsFinite || method == CiSystem.MathIsNaN) {
+			break;
+		case CiId.MathIsFinite:
+		case CiId.MathIsNaN:
 			WriteCamelCase(method.Name);
 			WriteArgsInParentheses(method, args);
-		}
-		else if (method == CiSystem.MathIsInfinity) {
+			break;
+		case CiId.MathIsInfinity:
 			if (parent > CiPriority.Equality)
 				Write('(');
 			WriteCall("Math.abs", args[0]);
 			Write(" == Infinity");
 			if (parent > CiPriority.Equality)
 				Write(')');
-		}
-		else if (obj.IsReferenceTo(CiSystem.BasePtr)) {
-			//TODO: with "class" syntax: Write("super");
-			WriteName(method.Parent);
-			Write(".prototype.");
-			WriteName(method);
-			Write(".call(this");
-			if (args.Count > 0) {
-				Write(", ");
-				WriteArgs(method, args);
-			}
-			Write(')');
-		}
-		else {
-			obj.Accept(this, CiPriority.Primary);
-			Write('.');
-			if (method == CiSystem.MathCeiling)
-				Write("ceil");
-			else if (method == CiSystem.MathTruncate)
-				Write("trunc");
-			else if (method == CiSystem.StringContains || method == CiSystem.ListContains)
-				Write("includes");
-			else if (method == CiSystem.HashSetContains)
-				Write("has");
-			else if (method == CiSystem.HashSetRemove)
-				Write("delete");
-			else if (method == CiSystem.DictionaryContainsKey)
-				Write(((CiClassType) obj.Type).Class == CiSystem.OrderedDictionaryClass ? "has" : "hasOwnProperty");
-			else
+			break;
+		case CiId.MathTruncate:
+			WriteCall("Math.trunc", args[0]);
+			break;
+		default:
+			if (obj == null)
+				WriteLocalName(method, CiPriority.Primary);
+			else if (obj.IsReferenceTo(CiSystem.BasePtr)) {
+				//TODO: with "class" syntax: Write("super");
+				WriteName(method.Parent);
+				Write(".prototype.");
 				WriteName(method);
+				Write(".call(this");
+				if (args.Count > 0) {
+					Write(", ");
+					WriteArgs(method, args);
+				}
+				Write(')');
+				break;
+			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				Write('.');
+				WriteName(method);
+			}
 			WriteArgsInParentheses(method, args);
+			break;
 		}
 	}
 
