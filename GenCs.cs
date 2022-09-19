@@ -425,70 +425,45 @@ public class GenCs : GenTyped
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
-		if (obj == null) {
-			WriteName(method);
-			WriteArgsInParentheses(method, args);
-		}
-		else if ((method == CiSystem.StringIndexOf || method == CiSystem.StringLastIndexOf)
-			&& IsOneAsciiString(args[0], out char c)) {
+		switch (method.Id) {
+		case CiId.StringIndexOf:
+		case CiId.StringLastIndexOf:
 			obj.Accept(this, CiPriority.Primary);
 			Write('.');
 			Write(method.Name);
 			Write('(');
-			VisitLiteralChar(c);
+			if (IsOneAsciiString(args[0], out char c))
+				VisitLiteralChar(c);
+			else
+				args[0].Accept(this, CiPriority.Argument);
 			Write(')');
-		}
-		else if (method == CiSystem.UTF8GetByteCount) {
-			Include("System.Text");
-			Write("Encoding.UTF8.GetByteCount(");
-			args[0].Accept(this, CiPriority.Argument);
-			Write(')');
-		}
-		else if (method == CiSystem.UTF8GetBytes) {
-			Include("System.Text");
-			Write("Encoding.UTF8.GetBytes(");
-			args[0].Accept(this, CiPriority.Argument);
-			Write(", 0, ");
-			args[0].Accept(this, CiPriority.Primary); // FIXME: side effect
-			Write(".Length, ");
-			args[1].Accept(this, CiPriority.Argument);
+			break;
+		case CiId.CollectionCopyTo when obj.Type.IsArray:
+			Include("System");
+			Write("Array.Copy(");
+			obj.Accept(this, CiPriority.Argument);
 			Write(", ");
-			args[2].Accept(this, CiPriority.Argument);
+			WriteArgs(method, args);
 			Write(')');
-		}
-		else if (method == CiSystem.UTF8GetString) {
-			Include("System.Text");
-			Write("Encoding.UTF8.GetString");
-			WriteArgsInParentheses(method, args);
-		}
-		else if (method == CiSystem.RegexCompile) {
-			Include("System.Text.RegularExpressions");
-			Write("new Regex");
-			WriteArgsInParentheses(method, args);
-		}
-		else if (method == CiSystem.MatchFindStr) {
-			Include("System.Text.RegularExpressions");
-			Write('(');
-			obj.Accept(this, CiPriority.Assign);
-			Write(" = Regex.Match");
-			WriteArgsInParentheses(method, args);
-			Write(").Success");
-		}
-		else if (method == CiSystem.MatchFindRegex) {
-			Include("System.Text.RegularExpressions");
-			Write('(');
-			obj.Accept(this, CiPriority.Assign);
-			Write(" = ");
-			WriteCall(args[1], "Match", args[0]);
-			Write(").Success");
-		}
-		else if (method == CiSystem.MatchGetCapture) {
-			obj.Accept(this, CiPriority.Primary);
-			Write(".Groups[");
-			args[0].Accept(this, CiPriority.Argument);
-			Write("].Value");
-		}
-		else if (method == CiSystem.ArrayBinarySearchAll || method == CiSystem.ArrayBinarySearchPart) {
+			break;
+		case CiId.CollectionSortAll when obj.Type is CiArrayStorageType:
+			Include("System");
+			WriteCall("Array.Sort", obj);
+			break;
+		case CiId.CollectionSortPart:
+			if (obj.Type.IsArray) {
+				Include("System");
+				WriteCall("Array.Sort", obj, args[0], args[1]);
+			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".Sort(");
+				WriteArgs(method, args);
+				Write(", null)");
+			}
+			break;
+		case CiId.ArrayBinarySearchAll:
+		case CiId.ArrayBinarySearchPart:
 			Include("System");
 			Write("Array.BinarySearch(");
 			obj.Accept(this, CiPriority.Argument);
@@ -501,16 +476,9 @@ public class GenCs : GenTyped
 			}
 			WriteNotPromoted(((CiClassType) obj.Type).ElementType, args[0]);
 			Write(')');
-		}
-		else if (method == CiSystem.CollectionCopyTo && obj.Type.IsArray) {
-			Include("System");
-			Write("Array.Copy(");
-			obj.Accept(this, CiPriority.Argument);
-			Write(", ");
-			WriteArgs(method, args);
-			Write(')');
-		}
-		else if (method == CiSystem.ArrayFillAll || method == CiSystem.ArrayFillPart) {
+			break;
+		case CiId.ArrayFillAll:
+		case CiId.ArrayFillPart:
 			Include("System");
 			if (args[0] is CiLiteral literal && literal.IsDefaultValue) {
 				Write("Array.Clear(");
@@ -534,51 +502,132 @@ public class GenCs : GenTyped
 				args[2].Accept(this, CiPriority.Argument);
 			}
 			Write(')');
-		}
-		else if (obj.Type is CiArrayStorageType && method == CiSystem.CollectionSortAll) {
-			Include("System");
-			WriteCall("Array.Sort", obj);
-		}
-		else if (method == CiSystem.CollectionSortPart) {
-			if (obj.Type.IsArray) {
-				Include("System");
-				WriteCall("Array.Sort", obj, args[0], args[1]);
-			}
-			else {
-				obj.Accept(this, CiPriority.Primary);
-				Write(".Sort(");
-				WriteArgs(method, args);
-				Write(", null)");
-			}
-		}
-		else if (method == CiSystem.ListAdd)
+			break;
+		case CiId.ListAdd:
 			WriteListAdd(obj, "Add", args);
-		else if (method == CiSystem.ListInsert)
+			break;
+		case CiId.ListInsert:
 			WriteListInsert(obj, "Insert", args);
-		else if (method == CiSystem.DictionaryAdd) {
+			break;
+		case CiId.DictionaryAdd:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".Add(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteNewStorage(((CiClassType) obj.Type).ValueType);
 			Write(')');
-		}
-		else if (method == CiSystem.DictionaryContainsKey && ((CiClassType) obj.Type).Class == CiSystem.OrderedDictionaryClass)
+			break;
+		case CiId.DictionaryContainsKey when ((CiClassType) obj.Type).Class == CiSystem.OrderedDictionaryClass:
 			WriteCall(obj, "Contains", args[0]);
-		else {
-			if (method == CiSystem.MathIsFinite || method == CiSystem.MathIsInfinity || method == CiSystem.MathIsNaN)
-				Write("double");
-			else {
-				if (method == CiSystem.ConsoleWrite || method == CiSystem.ConsoleWriteLine
-				 || method == CiSystem.EnvironmentGetEnvironmentVariable || obj.IsReferenceTo(CiSystem.MathClass))
-					Include("System");
-				else if (method == CiSystem.RegexEscape || method == CiSystem.RegexIsMatchStr || method == CiSystem.RegexIsMatchRegex)
-					Include("System.Text.RegularExpressions");
-				obj.Accept(this, CiPriority.Primary);
-			}
+			break;
+		case CiId.ConsoleWrite:
+		case CiId.ConsoleWriteLine:
+		case CiId.EnvironmentGetEnvironmentVariable:
+			Include("System");
+			obj.Accept(this, CiPriority.Primary);
 			Write('.');
+			Write(method.Name);
+			WriteArgsInParentheses(method, args);
+			break;
+		case CiId.UTF8GetByteCount:
+			Include("System.Text");
+			Write("Encoding.UTF8.GetByteCount(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(')');
+			break;
+		case CiId.UTF8GetBytes:
+			Include("System.Text");
+			Write("Encoding.UTF8.GetBytes(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(", 0, ");
+			args[0].Accept(this, CiPriority.Primary); // FIXME: side effect
+			Write(".Length, ");
+			args[1].Accept(this, CiPriority.Argument);
+			Write(", ");
+			args[2].Accept(this, CiPriority.Argument);
+			Write(')');
+			break;
+		case CiId.UTF8GetString:
+			Include("System.Text");
+			Write("Encoding.UTF8.GetString");
+			WriteArgsInParentheses(method, args);
+			break;
+		case CiId.RegexCompile:
+			Include("System.Text.RegularExpressions");
+			Write("new Regex");
+			WriteArgsInParentheses(method, args);
+			break;
+		case CiId.RegexEscape:
+		case CiId.RegexIsMatchStr:
+		case CiId.RegexIsMatchRegex:
+			Include("System.Text.RegularExpressions");
+			Write("Regex.");
+			Write(method.Name);
+			WriteArgsInParentheses(method, args);
+			break;
+		case CiId.MatchFindStr:
+			Include("System.Text.RegularExpressions");
+			Write('(');
+			obj.Accept(this, CiPriority.Assign);
+			Write(" = Regex.Match");
+			WriteArgsInParentheses(method, args);
+			Write(").Success");
+			break;
+		case CiId.MatchFindRegex:
+			Include("System.Text.RegularExpressions");
+			Write('(');
+			obj.Accept(this, CiPriority.Assign);
+			Write(" = ");
+			WriteCall(args[1], "Match", args[0]);
+			Write(").Success");
+			break;
+		case CiId.MatchGetCapture:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".Groups[");
+			args[0].Accept(this, CiPriority.Argument);
+			Write("].Value");
+			break;
+		case CiId.MathAcos:
+		case CiId.MathAsin:
+		case CiId.MathAtan:
+		case CiId.MathAtan2:
+		case CiId.MathCbrt:
+		case CiId.MathCeiling:
+		case CiId.MathCos:
+		case CiId.MathCosh:
+		case CiId.MathExp:
+		case CiId.MathFloor:
+		case CiId.MathFusedMultiplyAdd:
+		case CiId.MathLog:
+		case CiId.MathLog2:
+		case CiId.MathLog10:
+		case CiId.MathPow:
+		case CiId.MathSin:
+		case CiId.MathSinh:
+		case CiId.MathSqrt:
+		case CiId.MathTan:
+		case CiId.MathTanh:
+		case CiId.MathTruncate:
+			Include("System");
+			Write("Math.");
+			Write(method.Name);
+			WriteArgsInParentheses(method, args);
+			break;
+		case CiId.MathIsFinite:
+		case CiId.MathIsInfinity:
+		case CiId.MathIsNaN:
+			Write("double.");
+			Write(method.Name);
+			WriteArgsInParentheses(method, args);
+			break;
+		default:
+			if (obj != null) {
+				obj.Accept(this, CiPriority.Primary);
+				Write('.');
+			}
 			WriteName(method);
 			WriteArgsInParentheses(method, args);
+			break;
 		}
 	}
 
