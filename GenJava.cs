@@ -518,11 +518,8 @@ public class GenJava : GenTyped
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
-		if (obj == null) {
-			WriteName(method);
-			WriteArgsInParentheses(method, args);
-		}
-		else if (method == CiSystem.StringSubstring) {
+		switch (method.Id) {
+		case CiId.StringSubstring:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".substring(");
 			args[0].Accept(this, CiPriority.Argument);
@@ -531,42 +528,8 @@ public class GenJava : GenTyped
 				WriteAdd(args[0], args[1]); // TODO: side effect
 			}
 			Write(')');
-		}
-		else if (method == CiSystem.ArrayBinarySearchAll || method == CiSystem.ArrayBinarySearchPart)
-			WriteArrayBinarySearchFill(obj, "binarySearch", args);
-		else if (method == CiSystem.ArrayFillAll || method == CiSystem.ArrayFillPart)
-			WriteArrayBinarySearchFill(obj, "fill", args);
-		else if (method == CiSystem.CollectionSortAll) {
-			if (obj.Type is CiArrayStorageType) {
-				Include("java.util.Arrays");
-				WriteCall("Arrays.sort", obj);
-			}
-			else {
-				obj.Accept(this, CiPriority.Primary);
-				Write(".sort(null)");
-			}
-		}
-		else if (method == CiSystem.CollectionSortPart) {
-			if (obj.Type.IsArray) {
-				Include("java.util.Arrays");
-				Write("Arrays.sort(");
-				obj.Accept(this, CiPriority.Argument);
-				Write(", ");
-				WriteStartEnd(args[0], args[1]);
-				Write(')');
-			}
-			else {
-				obj.Accept(this, CiPriority.Primary);
-				Write(".subList(");
-				WriteStartEnd(args[0], args[1]);
-				Write(").sort(null)");
-			}
-		}
-		else if (method == CiSystem.ListAdd)
-			WriteListAdd(obj, "add", args);
-		else if (method == CiSystem.ListInsert)
-			WriteListInsert(obj, "add", args);
-		else if (method == CiSystem.CollectionCopyTo) {
+			break;
+		case CiId.CollectionCopyTo:
 			if (obj.Type.IsArray) {
 				Write("System.arraycopy(");
 				obj.Accept(this, CiPriority.Argument);
@@ -594,31 +557,87 @@ public class GenJava : GenTyped
 				}
 				Write("_i)");
 			}
-		}
-		else if (method == CiSystem.ListRemoveRange) {
+			break;
+		case CiId.CollectionSortAll:
+			if (obj.Type is CiArrayStorageType) {
+				Include("java.util.Arrays");
+				WriteCall("Arrays.sort", obj);
+			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".sort(null)");
+			}
+			break;
+		case CiId.CollectionSortPart:
+			if (obj.Type.IsArray) {
+				Include("java.util.Arrays");
+				Write("Arrays.sort(");
+				obj.Accept(this, CiPriority.Argument);
+				Write(", ");
+				WriteStartEnd(args[0], args[1]);
+				Write(')');
+			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".subList(");
+				WriteStartEnd(args[0], args[1]);
+				Write(").sort(null)");
+			}
+			break;
+		case CiId.ArrayBinarySearchAll:
+		case CiId.ArrayBinarySearchPart:
+			WriteArrayBinarySearchFill(obj, "binarySearch", args);
+			break;
+		case CiId.ArrayFillAll:
+		case CiId.ArrayFillPart:
+			WriteArrayBinarySearchFill(obj, "fill", args);
+			break;
+		case CiId.ListAdd:
+			WriteListAdd(obj, "add", args);
+			break;
+		case CiId.ListInsert:
+			WriteListInsert(obj, "add", args);
+			break;
+		case CiId.ListRemoveAt:
+			WriteCall(obj, "remove", args[0]);
+			break;
+		case CiId.ListRemoveRange:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".subList(");
 			WriteStartEnd(args[0], args[1]);
 			Write(").clear()");
-		}
-		else if (method == CiSystem.DictionaryAdd) {
+			break;
+		case CiId.QueueDequeue:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".remove()");
+			break;
+		case CiId.QueueEnqueue:
+			WriteCall(obj, "add", args[0]);
+			break;
+		case CiId.QueuePeek:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".element()");
+			break;
+		case CiId.DictionaryAdd:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".put(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteNewStorage(((CiClassType) obj.Type).ValueType);
 			Write(')');
-		}
-		else if (method == CiSystem.ConsoleWrite)
+			break;
+		case CiId.ConsoleWrite:
 			WriteConsoleWrite(obj, method, args, false);
-		else if (method == CiSystem.ConsoleWriteLine)
+			break;
+		case CiId.ConsoleWriteLine:
 			WriteConsoleWrite(obj, method, args, true);
-		else if (method == CiSystem.UTF8GetByteCount) {
+			break;
+		case CiId.UTF8GetByteCount:
 			Include("java.nio.charset.StandardCharsets");
 			args[0].Accept(this, CiPriority.Primary);
 			Write(".getBytes(StandardCharsets.UTF_8).length"); // FIXME: quick&dirty!
-		}
-		else if (method == CiSystem.UTF8GetBytes) {
+			break;
+		case CiId.UTF8GetBytes:
 			Include("java.nio.ByteBuffer");
 			Include("java.nio.CharBuffer");
 			Include("java.nio.charset.StandardCharsets");
@@ -636,75 +655,83 @@ public class GenJava : GenTyped
 				args[2].Accept(this, CiPriority.Mul); // FIXME: side effect
 			}
 			Write("), true)");
-		}
-		else if (method == CiSystem.UTF8GetString) {
+			break;
+		case CiId.UTF8GetString:
 			Include("java.nio.charset.StandardCharsets");
 			Write("new String(");
 			WriteArgs(method, args);
 			Write(", StandardCharsets.UTF_8)");
-		}
-		else if (method == CiSystem.EnvironmentGetEnvironmentVariable)
+			break;
+		case CiId.EnvironmentGetEnvironmentVariable:
 			WriteCall("System.getenv", args[0]);
-		else if (method == CiSystem.RegexCompile)
+			break;
+		case CiId.RegexCompile:
 			WriteRegex(args, 0);
-		else if (method == CiSystem.RegexEscape) {
+			break;
+		case CiId.RegexEscape:
 			Include("java.util.regex.Pattern");
 			WriteCall("Pattern.quote", args[0]);
-		}
-		else if (method == CiSystem.RegexIsMatchStr) {
+			break;
+		case CiId.RegexIsMatchStr:
 			WriteRegex(args, 1);
 			WriteCall(".matcher", args[0]);
 			Write(".find()");
-		}
-		else if (method == CiSystem.RegexIsMatchRegex) {
+			break;
+		case CiId.RegexIsMatchRegex:
 			WriteCall(obj, "matcher", args[0]);
 			Write(".find()");
-		}
-		else if (method == CiSystem.MatchFindStr || method == CiSystem.MatchFindRegex) {
+			break;
+		case CiId.MatchFindStr:
+		case CiId.MatchFindRegex:
 			Write('(');
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = ");
 			WriteRegex(args, 1);
 			WriteCall(".matcher", args[0]);
 			Write(").find()");
-		}
-		else if (method == CiSystem.MatchGetCapture)
+			break;
+		case CiId.MatchGetCapture:
 			WriteCall(obj, "group", args[0]);
-		else if (method == CiSystem.MathIsFinite || method == CiSystem.MathIsInfinity || method == CiSystem.MathIsNaN) {
-			Write("Double.is");
-			Write(method == CiSystem.MathIsFinite ? "Finite"
-				: method == CiSystem.MathIsInfinity ? "Infinite"
-				: method == CiSystem.MathIsNaN ? "NaN"
-				: throw new NotImplementedException(method.Name));
+			break;
+		case CiId.MathCeiling:
+			Write("Math.ceil");
 			WriteArgsInParentheses(method, args);
-		}
-		else if (method == CiSystem.MathLog2) {
+			break;
+		case CiId.MathFusedMultiplyAdd:
+			Write("Math.fma");
+			WriteArgsInParentheses(method, args);
+			break;
+		case CiId.MathIsFinite:
+			Write("Double.isFinite");
+			WriteArgsInParentheses(method, args);
+			break;
+		case CiId.MathIsInfinity:
+			Write("Double.isInfinite");
+			WriteArgsInParentheses(method, args);
+			break;
+		case CiId.MathIsNaN:
+			Write("Double.isNaN");
+			WriteArgsInParentheses(method, args);
+			break;
+		case CiId.MathLog2:
 			if (parent > CiPriority.Mul)
 				Write('(');
 			WriteCall("Math.log", args[0]);
 			Write(" * 1.4426950408889635");
 			if (parent > CiPriority.Mul)
 				Write(')');
-		}
-		else {
-			if (obj.IsReferenceTo(CiSystem.BasePtr))
-				Write("super");
-			else
-				obj.Accept(this, CiPriority.Primary);
-			Write('.');
-			if (method == CiSystem.ListRemoveAt || method == CiSystem.QueueDequeue)
-				Write("remove");
-			else if (method == CiSystem.QueueEnqueue)
-				Write("add");
-			else if (method == CiSystem.QueuePeek)
-				Write("element");
-			else if (method == CiSystem.MathCeiling)
-				Write("ceil");
-			else if (method == CiSystem.MathFusedMultiplyAdd)
-				Write("fma");
-			else
-				WriteName(method);
+			break;
+		default:
+			if (obj != null) {
+				if (obj.IsReferenceTo(CiSystem.BasePtr))
+					Write("super");
+				else
+					obj.Accept(this, CiPriority.Primary);
+				Write('.');
+			}
+			WriteName(method);
 			WriteArgsInParentheses(method, args);
+			break;
 		}
 	}
 

@@ -1420,7 +1420,6 @@ public class CiSystem : CiScope
 	public static readonly CiMethod MathIsFinite = new CiMethod(CiCallType.Static, BoolType, CiId.MathIsFinite, "IsFinite", new CiVar(DoubleType, "a"));
 	public static readonly CiMethod MathIsInfinity = new CiMethod(CiCallType.Static, BoolType, CiId.MathIsInfinity, "IsInfinity", new CiVar(DoubleType, "a"));
 	public static readonly CiMethod MathIsNaN = new CiMethod(CiCallType.Static, BoolType, CiId.MathIsNaN, "IsNaN", new CiVar(DoubleType, "a"));
-	public static readonly CiMethod MathLog2 = new CiMethod(CiCallType.Static, FloatType, CiId.MathLog2, "Log2", new CiVar(DoubleType, "a"));
 	public static readonly CiMethod MathTruncate = new CiMethod(CiCallType.Static, FloatIntType, CiId.MathTruncate, "Truncate", new CiVar(DoubleType, "a"));
 	public static readonly CiClass MathClass = new CiClass(CiCallType.Static, "Math",
 		new CiMethod(CiCallType.Static, FloatType, CiId.MathAcos, "Acos", new CiVar(DoubleType, "a")),
@@ -1439,7 +1438,7 @@ public class CiSystem : CiScope
 		MathIsInfinity,
 		MathIsNaN,
 		new CiMethod(CiCallType.Static, FloatType, CiId.MathLog, "Log", new CiVar(DoubleType, "a")),
-		MathLog2,
+		new CiMethod(CiCallType.Static, FloatType, CiId.MathLog2, "Log2", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, CiId.MathLog10, "Log10", new CiVar(DoubleType, "a")),
 		MathNaN,
 		MathNegativeInfinity,
