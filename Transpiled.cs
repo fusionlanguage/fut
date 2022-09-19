@@ -126,8 +126,6 @@ namespace Foxoft.Ci
 	public class CiLexer
 	{
 
-		const int ReplacementChar = 65533;
-
 		protected byte[] Input;
 
 		int InputLength;
@@ -164,12 +162,6 @@ namespace Foxoft.Ci
 
 		readonly Stack<bool> PreElseStack = new Stack<bool>();
 
-		bool DocCheckPeriod;
-
-		protected int DocCurrentChar;
-
-		CiDocToken DocCurrentToken;
-
 		public void AddPreSymbol(string symbol)
 		{
 			this.PreSymbols.Add(symbol);
@@ -200,6 +192,8 @@ namespace Foxoft.Ci
 				return -1;
 			return this.Input[this.NextOffset++];
 		}
+
+		const int ReplacementChar = 65533;
 
 		int ReadContinuationByte(int hi)
 		{
@@ -1176,6 +1170,12 @@ namespace Foxoft.Ci
 			}
 		}
 
+		bool DocCheckPeriod;
+
+		protected int DocCurrentChar;
+
+		CiDocToken DocCurrentToken;
+
 		CiDocToken DocReadToken()
 		{
 			for (int lastChar = this.DocCurrentChar;;) {
@@ -1274,6 +1274,79 @@ namespace Foxoft.Ci
 		Add,
 		Mul,
 		Primary
+	}
+
+	public enum CiId
+	{
+		None,
+		StringContains,
+		StringEndsWith,
+		StringIndexOf,
+		StringLastIndexOf,
+		StringStartsWith,
+		StringSubstring,
+		CollectionClear,
+		CollectionCopyTo,
+		CollectionSortAll,
+		CollectionSortPart,
+		ArrayBinarySearchAll,
+		ArrayBinarySearchPart,
+		ArrayFillAll,
+		ArrayFillPart,
+		ListAdd,
+		ListContains,
+		ListInsert,
+		ListRemoveAt,
+		ListRemoveRange,
+		QueueDequeue,
+		QueueEnqueue,
+		QueuePeek,
+		StackPeek,
+		StackPush,
+		StackPop,
+		HashSetAdd,
+		HashSetContains,
+		HashSetRemove,
+		DictionaryAdd,
+		DictionaryContainsKey,
+		DictionaryRemove,
+		ConsoleWrite,
+		ConsoleWriteLine,
+		UTF8GetByteCount,
+		UTF8GetBytes,
+		UTF8GetString,
+		EnvironmentGetEnvironmentVariable,
+		RegexCompile,
+		RegexEscape,
+		RegexIsMatchStr,
+		RegexIsMatchRegex,
+		MatchFindStr,
+		MatchFindRegex,
+		MatchGetCapture,
+		MathAcos,
+		MathAsin,
+		MathAtan,
+		MathAtan2,
+		MathCbrt,
+		MathCeiling,
+		MathCos,
+		MathCosh,
+		MathExp,
+		MathFloor,
+		MathFusedMultiplyAdd,
+		MathIsFinite,
+		MathIsInfinity,
+		MathIsNaN,
+		MathLog,
+		MathLog2,
+		MathLog10,
+		MathPow,
+		MathSin,
+		MathSinh,
+		MathSqrt,
+		MathTan,
+		MathTanh,
+		MathTruncate
 	}
 
 	abstract class CiDocInline
