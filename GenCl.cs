@@ -148,9 +148,8 @@ public class GenCl : GenC
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
-		if (obj == null)
-			WriteCCall(null, method, args);
-		else if (method == CiSystem.StringStartsWith) {
+		switch (method.Id) {
+		case CiId.StringStartsWith:
 			if (IsOneAsciiString(args[0], out char c)) {
 				if (parent > CiPriority.Equality)
 					Write('(');
@@ -164,15 +163,17 @@ public class GenCl : GenC
 				this.StringStartsWith = true;
 				WriteCall("CiString_StartsWith", obj, args[0]);
 			}
-		}
-		else if (method == CiSystem.StringSubstring && args.Count == 1) {
+			break;
+		case CiId.StringSubstring:
+			if (args.Count != 1)
+				throw new NotImplementedException("Substring");
 			if (parent > CiPriority.Add)
 				Write('(');
 			WriteAdd(obj, args[0]);
 			if (parent > CiPriority.Add)
 				Write(')');
-		}
-		else if (method == CiSystem.CollectionCopyTo) {
+			break;
+		case CiId.CollectionCopyTo:
 			Write("for (size_t _i = 0; _i < ");
 			args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
 			WriteLine("; _i++)");
@@ -191,12 +192,21 @@ public class GenCl : GenC
 				Write(" + ");
 			}
 			Write("_i]");
-		}
-		else if (method == CiSystem.ArrayFillAll || method == CiSystem.ArrayFillPart)
+			break;
+		case CiId.ArrayFillAll:
+		case CiId.ArrayFillPart:
 			WriteArrayFill(obj, args);
-		else if (method == CiSystem.UTF8GetByteCount)
+			break;
+		case CiId.ConsoleWrite:
+			WriteConsoleWrite(args, false);
+			break;
+		case CiId.ConsoleWriteLine:
+			WriteConsoleWrite(args, true);
+			break;
+		case CiId.UTF8GetByteCount:
 			WriteStringLength(args[0]);
-		else if (method == CiSystem.UTF8GetBytes) {
+			break;
+		case CiId.UTF8GetBytes:
 			Write("for (size_t _i = 0; ");
 			args[0].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
 			WriteLine("[_i] != '\\0'; _i++)");
@@ -210,15 +220,37 @@ public class GenCl : GenC
 			Write("_i] = ");
 			args[0].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
 			Write("[_i]");
-		}
-		else if (obj.IsReferenceTo(CiSystem.MathClass))
+			break;
+		case CiId.MathAcos:
+		case CiId.MathAsin:
+		case CiId.MathAtan:
+		case CiId.MathAtan2:
+		case CiId.MathCbrt:
+		case CiId.MathCeiling:
+		case CiId.MathCos:
+		case CiId.MathCosh:
+		case CiId.MathExp:
+		case CiId.MathFloor:
+		case CiId.MathFusedMultiplyAdd:
+		case CiId.MathIsFinite:
+		case CiId.MathIsInfinity:
+		case CiId.MathIsNaN:
+		case CiId.MathLog:
+		case CiId.MathLog2:
+		case CiId.MathLog10:
+		case CiId.MathPow:
+		case CiId.MathSin:
+		case CiId.MathSinh:
+		case CiId.MathSqrt:
+		case CiId.MathTan:
+		case CiId.MathTanh:
+		case CiId.MathTruncate:
 			WriteMathCall(method, args);
-		else if (method == CiSystem.ConsoleWrite)
-			WriteConsoleWrite(args, false);
-		else if (method == CiSystem.ConsoleWriteLine)
-			WriteConsoleWrite(args, true);
-		else
+			break;
+		default:
 			WriteCCall(obj, method, args);
+			break;
+		}
 	}
 
 	public override void VisitAssert(CiAssert statement)
