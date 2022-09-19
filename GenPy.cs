@@ -492,13 +492,6 @@ public class GenPy : GenPySwift
 	{
 	}
 
-	void WriteContains(CiExpr haystack, CiExpr needle)
-	{
-		needle.Accept(this, CiPriority.Primary);
-		Write(" in ");
-		haystack.Accept(this, CiPriority.Primary);
-	}
-
 	static bool IsNumberList(CiType type)
 	{
 		return type is CiClassType klass
@@ -569,42 +562,64 @@ public class GenPy : GenPySwift
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
-		if (obj == null) {
-			WriteLocalName(method, CiPriority.Primary);
-			WriteArgsInParentheses(method, args);
-		}
-		else if (method == CiSystem.StringContains)
-			WriteContains(obj, args[0]);
-		else if (method == CiSystem.StringSubstring) {
+		switch (method.Id) {
+		case CiId.StringContains:
+		case CiId.ListContains:
+		case CiId.HashSetContains:
+		case CiId.DictionaryContainsKey:
+			args[0].Accept(this, CiPriority.Primary);
+			Write(" in ");
+			obj.Accept(this, CiPriority.Primary);
+			break;
+		case CiId.StringEndsWith:
+			WriteCall(obj, "endswith", args[0]);
+			break;
+		case CiId.StringIndexOf:
+			WriteCall(obj, "find", args[0]);
+			break;
+		case CiId.StringLastIndexOf:
+			WriteCall(obj, "rfind", args[0]);
+			break;
+		case CiId.StringStartsWith:
+			WriteCall(obj, "startswith", args[0]);
+			break;
+		case CiId.StringSubstring:
 			obj.Accept(this, CiPriority.Primary);
 			WriteSlice(args[0], args.Count == 2 ? args[1] : null);
-		}
-		else if (method == CiSystem.CollectionClear && IsNumberList(obj.Type)) {
+			break;
+		case CiId.CollectionClear when IsNumberList(obj.Type):
 			Write("del ");
 			obj.Accept(this, CiPriority.Primary);
 			Write("[:]");
-		}
-		else if (method == CiSystem.ListRemoveAt || method == CiSystem.DictionaryRemove) {
-			Write("del ");
-			WriteIndexing(obj, args[0]);
-		}
-		else if (method == CiSystem.ListRemoveRange) {
-			Write("del ");
-			obj.Accept(this, CiPriority.Primary);
-			WriteSlice(args[0], args[1]);
-		}
-		else if (method == CiSystem.ArrayBinarySearchAll || method == CiSystem.ArrayBinarySearchPart) {
-			Include("bisect");
-			WriteCall("bisect.bisect_left", obj, args);
-		}
-		else if (method == CiSystem.CollectionCopyTo) {
+			break;
+		case CiId.CollectionCopyTo:
 			args[1].Accept(this, CiPriority.Primary);
 			WriteSlice(args[2], args[3]);
 			Write(" = ");
 			obj.Accept(this, CiPriority.Primary);
 			WriteSlice(args[0], args[3]);
-		}
-		else if (method == CiSystem.ArrayFillAll || method == CiSystem.ArrayFillPart) {
+			break;
+		case CiId.CollectionSortAll:
+			obj.Accept(this, CiPriority.Assign);
+			WriteAssignSorted(obj, "bytearray");
+			obj.Accept(this, CiPriority.Argument);
+			Write("))");
+			break;
+		case CiId.CollectionSortPart:
+			obj.Accept(this, CiPriority.Primary);
+			WriteSlice(args[0], args[1]);
+			WriteAssignSorted(obj, "bytes");
+			obj.Accept(this, CiPriority.Primary);
+			WriteSlice(args[0], args[1]);
+			Write("))");
+			break;
+		case CiId.ArrayBinarySearchAll:
+		case CiId.ArrayBinarySearchPart:
+			Include("bisect");
+			WriteCall("bisect.bisect_left", obj, args);
+			break;
+		case CiId.ArrayFillAll:
+		case CiId.ArrayFillPart:
 			obj.Accept(this, CiPriority.Primary);
 			if (args.Count == 1) {
 				Write("[:] = ");
@@ -617,55 +632,54 @@ public class GenPy : GenPySwift
 				CiClassType klass = (CiClassType) obj.Type;
 				WriteNewArray(klass.ElementType, args[0], args[2]); // TODO: side effect
 			}
-		}
-		else if (method == CiSystem.CollectionSortAll) {
-			obj.Accept(this, CiPriority.Assign);
-			WriteAssignSorted(obj, "bytearray");
-			obj.Accept(this, CiPriority.Argument);
-			Write("))");
-		}
-		else if (method == CiSystem.CollectionSortPart) {
-			obj.Accept(this, CiPriority.Primary);
-			WriteSlice(args[0], args[1]);
-			WriteAssignSorted(obj, "bytes");
-			obj.Accept(this, CiPriority.Primary);
-			WriteSlice(args[0], args[1]);
-			Write("))");
-		}
-		else if (method == CiSystem.ListAdd)
+			break;
+		case CiId.ListAdd:
 			WriteListAdd(obj, "append", args);
-		else if (method == CiSystem.ListInsert)
+			break;
+		case CiId.ListInsert:
 			WriteListInsert(obj, "insert", args);
-		else if (method == CiSystem.ListContains || method == CiSystem.HashSetContains)
-			WriteContains(obj, args[0]);
-		else if (method == CiSystem.QueueDequeue) {
+			break;
+		case CiId.ListRemoveAt:
+		case CiId.DictionaryRemove:
+			Write("del ");
+			WriteIndexing(obj, args[0]);
+			break;
+		case CiId.ListRemoveRange:
+			Write("del ");
+			obj.Accept(this, CiPriority.Primary);
+			WriteSlice(args[0], args[1]);
+			break;
+		case CiId.QueueDequeue:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".popleft()");
-		}
-		else if (method == CiSystem.QueueEnqueue || method == CiSystem.StackPush)
+			break;
+		case CiId.QueueEnqueue:
+		case CiId.StackPush:
 			WriteListAppend(obj, args);
-		else if (method == CiSystem.QueuePeek) {
+			break;
+		case CiId.QueuePeek:
 			obj.Accept(this, CiPriority.Primary);
 			Write("[0]");
-		}
-		else if (method == CiSystem.StackPeek) {
+			break;
+		case CiId.StackPeek:
 			obj.Accept(this, CiPriority.Primary);
 			Write("[-1]");
-		}
-		else if (method == CiSystem.DictionaryAdd)
+			break;
+		case CiId.DictionaryAdd:
 			WriteDictionaryAdd(obj, args);
-		else if (method == CiSystem.DictionaryContainsKey)
-			WriteContains(obj, args[0]);
-		else if (method == CiSystem.ConsoleWrite)
+			break;
+		case CiId.ConsoleWrite:
 			WriteConsoleWrite(obj, args, false);
-		else if (method == CiSystem.ConsoleWriteLine)
+			break;
+		case CiId.ConsoleWriteLine:
 			WriteConsoleWrite(obj, args, true);
-		else if (method == CiSystem.UTF8GetByteCount) {
+			break;
+		case CiId.UTF8GetByteCount:
 			Write("len(");
 			args[0].Accept(this, CiPriority.Primary);
 			Write(".encode(\"utf8\"))");
-		}
-		else if (method == CiSystem.UTF8GetBytes) {
+			break;
+		case CiId.UTF8GetBytes:
 			Write("cibytes = ");
 			args[0].Accept(this, CiPriority.Primary);
 			WriteLine(".encode(\"utf8\")");
@@ -678,97 +692,101 @@ public class GenPy : GenPySwift
 				Write(" + ");
 			}
 			WriteLine("len(cibytes)] = cibytes");
-		}
-		else if (method == CiSystem.UTF8GetString) {
+			break;
+		case CiId.UTF8GetString:
 			args[0].Accept(this, CiPriority.Primary);
 			WriteSlice(args[1], args[2]);
 			Write(".decode(\"utf8\")");
-		}
-		else if (method == CiSystem.EnvironmentGetEnvironmentVariable) {
+			break;
+		case CiId.EnvironmentGetEnvironmentVariable:
 			Include("os");
 			WriteCall("os.getenv", args[0]);
-		}
-		else if (method == CiSystem.RegexCompile) {
+			break;
+		case CiId.RegexCompile:
 			Write("re.compile(");
 			args[0].Accept(this, CiPriority.Argument);
 			WriteRegexOptions(args);
 			Write(')');
-		}
-		else if (method == CiSystem.RegexIsMatchStr) {
+			break;
+		case CiId.RegexEscape:
+			Include("re");
+			WriteCall("re.escape", args[0]);
+			break;
+		case CiId.RegexIsMatchStr:
 			if (parent > CiPriority.Equality)
 				Write('(');
 			WriteRegexSearch(args);
 			Write(" is not None");
 			if (parent > CiPriority.Equality)
 				Write(')');
-		}
-		else if (method == CiSystem.RegexIsMatchRegex) {
+			break;
+		case CiId.RegexIsMatchRegex:
 			if (parent > CiPriority.Equality)
 				Write('(');
 			WriteCall(obj, "search", args[0]);
 			Write(" is not None");
 			if (parent > CiPriority.Equality)
 				Write(')');
-		}
-		else if (method == CiSystem.MatchFindStr || method == CiSystem.MatchFindRegex) {
+			break;
+		case CiId.MatchFindStr:
+		case CiId.MatchFindRegex:
 			if (parent > CiPriority.Equality)
 				Write('(');
 			obj.Accept(this, CiPriority.Equality);
 			Write(" is not None");
 			if (parent > CiPriority.Equality)
 				Write(')');
-		}
-		else if (method == CiSystem.MatchGetCapture)
+			break;
+		case CiId.MatchGetCapture:
 			WriteCall(obj, "group", args[0]);
-		else if (obj.IsReferenceTo(CiSystem.MathClass)) {
-			if (method == CiSystem.MathFusedMultiplyAdd) {
-				Include("pyfma");
-				Write("pyfma.fma");
+			break;
+		case CiId.MathMethod:
+		case CiId.MathIsFinite:
+		case CiId.MathIsNaN:
+		case CiId.MathLog2:
+			Include("math");
+			Write("math.");
+			WriteLowercase(method.Name);
+			WriteArgsInParentheses(method, args);
+			break;
+		case CiId.MathCeiling:
+			Include("math");
+			WriteCall("math.ceil", args[0]);
+			break;
+		case CiId.MathFusedMultiplyAdd:
+			Include("pyfma");
+			WriteCall("pyfma.fma", args[0], args[1], args[2]);
+			break;
+		case CiId.MathIsInfinity:
+			Include("math");
+			WriteCall("math.isinf", args[0]);
+			break;
+		case CiId.MathTruncate:
+			Include("math");
+			WriteCall("math.trunc", args[0]);
+			break;
+		default:
+			if (obj == null)
+				WriteLocalName(method, CiPriority.Primary);
+			else if (obj.IsReferenceTo(CiSystem.BasePtr)) {
+				WriteName(method.Parent);
+				Write('.');
+				WriteName(method);
+				Write("(self");
+				if (args.Count > 0) {
+					Write(", ");
+					WriteArgs(method, args);
+				}
+				Write(')');
+				break;
 			}
 			else {
-				Include("math");
-				Write("math.");
-				if (method == CiSystem.MathCeiling)
-					Write("ceil");
-				else if (method == CiSystem.MathIsInfinity)
-					Write("isinf");
-				else if (method == CiSystem.MathTruncate)
-					Write("trunc");
-				else
-					WriteLowercase(method.Name);
-			}
-			WriteArgsInParentheses(method, args);
-		}
-		else if (obj.IsReferenceTo(CiSystem.BasePtr)) {
-			WriteName(method.Parent);
-			Write('.');
-			WriteName(method);
-			Write("(self");
-			if (args.Count > 0) {
-				Write(", ");
-				WriteArgs(method, args);
-			}
-			Write(')');
-		}
-		else {
-			if (method == CiSystem.RegexEscape) {
-				Include("re");
-				Write("re");
-			}
-			else
 				obj.Accept(this, CiPriority.Primary);
-			Write('.');
-			if (method == CiSystem.StringIndexOf)
-				Write("find");
-			else if (method == CiSystem.StringLastIndexOf)
-				Write("rfind");
-			else if (method == CiSystem.StringStartsWith)
-				Write("startswith");
-			else if (method == CiSystem.StringEndsWith)
-				Write("endswith");
-			else
+				Write('.');
 				WriteName(method);
+			}
 			WriteArgsInParentheses(method, args);
+			break;
 		}
 	}
 
