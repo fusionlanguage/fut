@@ -606,16 +606,6 @@ public class GenCpp : GenCCpp
 			WriteCollectionObject(obj, CiPriority.Assign);
 			Write(" = {}");
 			break;
-		case CiId.CollectionCopyTo:
-			Include("algorithm");
-			Write("std::copy_n(");
-			WriteArrayPtrAdd(obj, args[0]);
-			Write(", ");
-			args[3].Accept(this, CiPriority.Argument);
-			Write(", ");
-			WriteArrayPtrAdd(args[1], args[2]);
-			Write(')');
-			break;
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:
 			Include("algorithm");
@@ -641,6 +631,17 @@ public class GenCpp : GenCCpp
 			WriteArrayPtr(obj, CiPriority.Mul);
 			if (parent > CiPriority.Add)
 				Write(')');
+			break;
+		case CiId.ArrayCopyTo:
+		case CiId.ListCopyTo:
+			Include("algorithm");
+			Write("std::copy_n(");
+			WriteArrayPtrAdd(obj, args[0]);
+			Write(", ");
+			args[3].Accept(this, CiPriority.Argument);
+			Write(", ");
+			WriteArrayPtrAdd(args[1], args[2]);
+			Write(')');
 			break;
 		case CiId.ArrayFillAll:
 			StartMethodCall(obj);

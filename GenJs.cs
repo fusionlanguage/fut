@@ -435,7 +435,19 @@ public class GenJs : GenBase
 			obj.Accept(this, CiPriority.Primary);
 			Write(".length = 0");
 			break;
-		case CiId.CollectionCopyTo:
+		case CiId.ArrayFillAll:
+		case CiId.ArrayFillPart:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".fill(");
+			args[0].Accept(this, CiPriority.Argument);
+			if (args.Count == 3) {
+				Write(", ");
+				WriteStartEnd(args[1], args[2]);
+			}
+			Write(')');
+			break;
+		case CiId.ArrayCopyTo:
+		case CiId.ListCopyTo:
 			AddLibrary(GenJsMethod.CopyArray,
 				"copyArray : function(sa, soffset, da, doffset, length)",
 				"if (typeof(sa.subarray) == \"function\" && typeof(da.set) == \"function\")",
@@ -447,17 +459,6 @@ public class GenJs : GenBase
 			obj.Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteArgs(method, args);
-			Write(')');
-			break;
-		case CiId.ArrayFillAll:
-		case CiId.ArrayFillPart:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".fill(");
-			args[0].Accept(this, CiPriority.Argument);
-			if (args.Count == 3) {
-				Write(", ");
-				WriteStartEnd(args[1], args[2]);
-			}
 			Write(')');
 			break;
 		case CiId.ArraySortPart:

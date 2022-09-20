@@ -529,38 +529,16 @@ public class GenJava : GenTyped
 			}
 			Write(')');
 			break;
-		case CiId.CollectionCopyTo:
-			if (obj.Type.IsArray) {
-				Write("System.arraycopy(");
-				obj.Accept(this, CiPriority.Argument);
-				Write(", ");
-				WriteArgs(method, args);
-				Write(')');
-			}
-			else {
-				Write("for (int _i = 0; _i < ");
-				args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
-				WriteLine("; _i++)");
-				Write("\t");
-				args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
-				Write('[');
-				if (!args[2].IsLiteralZero) {
-					args[2].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
-					Write(" + ");
-				}
-				Write("_i] = ");
-				obj.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
-				Write(".get(");
-				if (!args[0].IsLiteralZero) {
-					args[0].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
-					Write(" + ");
-				}
-				Write("_i)");
-			}
-			break;
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:
 			WriteArrayBinarySearchFill(obj, "binarySearch", args);
+			break;
+		case CiId.ArrayCopyTo:
+			Write("System.arraycopy(");
+			obj.Accept(this, CiPriority.Argument);
+			Write(", ");
+			WriteArgs(method, args);
+			Write(')');
 			break;
 		case CiId.ArrayFillAll:
 		case CiId.ArrayFillPart:
@@ -580,6 +558,26 @@ public class GenJava : GenTyped
 			break;
 		case CiId.ListAdd:
 			WriteListAdd(obj, "add", args);
+			break;
+		case CiId.ListCopyTo:
+			Write("for (int _i = 0; _i < ");
+			args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
+			WriteLine("; _i++)");
+			Write("\t");
+			args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+			Write('[');
+			if (!args[2].IsLiteralZero) {
+				args[2].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
+				Write(" + ");
+			}
+			Write("_i] = ");
+			obj.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+			Write(".get(");
+			if (!args[0].IsLiteralZero) {
+				args[0].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
+				Write(" + ");
+			}
+			Write("_i)");
 			break;
 		case CiId.ListInsert:
 			WriteListInsert(obj, "add", args);

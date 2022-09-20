@@ -1299,11 +1299,6 @@ public class CiSystem : CiScope
 		ArrayBinarySearchPart,
 		ArrayFillPart,
 		ArraySortPart) { TypeParameterCount = 1 };
-	public static readonly CiMethod CollectionCopyTo = new CiMethod(CiCallType.Normal, VoidType, CiId.CollectionCopyTo, "CopyTo",
-		new CiVar(IntType, "sourceIndex"),
-		new CiVar(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"),
-		new CiVar(IntType, "destinationIndex"),
-		new CiVar(IntType, "count"));
 	public static readonly CiClass ArrayStorageClass = new CiClass(CiCallType.Normal, "ArrayStorage",
 		new CiMethodGroup(new CiMethod(CiCallType.Normal, IntType, CiId.ArrayBinarySearchAll, "BinarySearch", new CiVar(TypeParam0, "value")) { Visibility = CiVisibility.NumericElementType },
 			ArrayBinarySearchPart) { Visibility = CiVisibility.NumericElementType },
@@ -1320,7 +1315,11 @@ public class CiSystem : CiScope
 		CollectionClear,
 		new CiMethod(CiCallType.Normal, BoolType, CiId.ListContains, "Contains", new CiVar(TypeParam0, "value")),
 		CollectionCount,
-		CollectionCopyTo,
+		new CiMethod(CiCallType.Normal, VoidType, CiId.ListCopyTo, "CopyTo",
+			new CiVar(IntType, "sourceIndex"),
+			new CiVar(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"),
+			new CiVar(IntType, "destinationIndex"),
+			new CiVar(IntType, "count")),
 		new CiMethod(CiCallType.Normal, VoidType, CiId.ListInsert, "Insert", new CiVar(UIntType, "index"), new CiVar(TypeParam0NotFinal, "value")) { IsMutator = true },
 		new CiMethod(CiCallType.Normal, VoidType, CiId.ListRemoveAt, "RemoveAt", new CiVar(IntType, "index")) { IsMutator = true },
 		new CiMethod(CiCallType.Normal, VoidType, CiId.ListRemoveRange, "RemoveRange", new CiVar(IntType, "index"), new CiVar(IntType, "count")) { IsMutator = true },
@@ -1435,7 +1434,11 @@ public class CiSystem : CiScope
 		Add(DoubleType);
 		Add(BoolType);
 		Add(StringPtrType);
-		ArrayPtrClass.Add(CollectionCopyTo); // cyclic reference
+		ArrayPtrClass.Add(new CiMethod(CiCallType.Normal, VoidType, CiId.ArrayCopyTo, "CopyTo",
+			new CiVar(IntType, "sourceIndex"),
+			new CiVar(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"), // cyclic reference
+			new CiVar(IntType, "destinationIndex"),
+			new CiVar(IntType, "count")));
 		Add(ListClass);
 		Add(QueueClass);
 		Add(StackClass);

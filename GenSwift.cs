@@ -470,7 +470,8 @@ public class GenSwift : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeAll()");
 			break;
-		case CiId.CollectionCopyTo:
+		case CiId.ArrayCopyTo:
+		case CiId.ListCopyTo:
 			OpenIndexing(args[1]);
 			WriteRange(args[2], args[3]);
 			Write("] = ");

@@ -592,17 +592,18 @@ public class GenPy : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			Write("[:]");
 			break;
-		case CiId.CollectionCopyTo:
+		case CiId.ArrayBinarySearchAll:
+		case CiId.ArrayBinarySearchPart:
+			Include("bisect");
+			WriteCall("bisect.bisect_left", obj, args);
+			break;
+		case CiId.ArrayCopyTo:
+		case CiId.ListCopyTo:
 			args[1].Accept(this, CiPriority.Primary);
 			WriteSlice(args[2], args[3]);
 			Write(" = ");
 			obj.Accept(this, CiPriority.Primary);
 			WriteSlice(args[0], args[3]);
-			break;
-		case CiId.ArrayBinarySearchAll:
-		case CiId.ArrayBinarySearchPart:
-			Include("bisect");
-			WriteCall("bisect.bisect_left", obj, args);
 			break;
 		case CiId.ArrayFillAll:
 		case CiId.ArrayFillPart:

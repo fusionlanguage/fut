@@ -173,7 +173,7 @@ public class GenCl : GenC
 			if (parent > CiPriority.Add)
 				Write(')');
 			break;
-		case CiId.CollectionCopyTo:
+		case CiId.ArrayCopyTo:
 			Write("for (size_t _i = 0; _i < ");
 			args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
 			WriteLine("; _i++)");

@@ -1454,26 +1454,6 @@ public class GenC : GenCCpp
 			else
 				throw new NotImplementedException();
 			break;
-		case CiId.CollectionCopyTo:
-			Include("string.h");
-			Write("memcpy(");
-			WriteArrayPtrAdd(args[1], args[2]);
-			Write(", ");
-			WriteArrayPtrAdd(obj, args[0]);
-			Write(", ");
-			CiType elementType = ((CiClassType) obj.Type).ElementType;
-			if (elementType is CiRangeType range
-			 && ((range.Min >= 0 && range.Max <= byte.MaxValue)
-				|| (range.Min >= sbyte.MinValue && range.Max <= sbyte.MaxValue)))
-				args[3].Accept(this, CiPriority.Argument);
-			else {
-				args[3].Accept(this, CiPriority.Mul);
-				Write(" * sizeof(");
-				Write(elementType, false);
-				Write(')');
-			}
-			Write(')');
-			break;
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:
 			if (parent > CiPriority.Add)
@@ -1498,6 +1478,27 @@ public class GenC : GenCCpp
 			WriteArrayPtr(obj, CiPriority.Mul);
 			if (parent > CiPriority.Add)
 				Write(')');
+			break;
+		case CiId.ArrayCopyTo:
+		case CiId.ListCopyTo:
+			Include("string.h");
+			Write("memcpy(");
+			WriteArrayPtrAdd(args[1], args[2]);
+			Write(", ");
+			WriteArrayPtrAdd(obj, args[0]);
+			Write(", ");
+			CiType elementType = ((CiClassType) obj.Type).ElementType;
+			if (elementType is CiRangeType range
+			 && ((range.Min >= 0 && range.Max <= byte.MaxValue)
+				|| (range.Min >= sbyte.MinValue && range.Max <= sbyte.MaxValue)))
+				args[3].Accept(this, CiPriority.Argument);
+			else {
+				args[3].Accept(this, CiPriority.Mul);
+				Write(" * sizeof(");
+				Write(elementType, false);
+				Write(')');
+			}
+			Write(')');
 			break;
 		case CiId.ArrayFillAll:
 		case CiId.ArrayFillPart:

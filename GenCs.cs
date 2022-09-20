@@ -438,14 +438,6 @@ public class GenCs : GenTyped
 				args[0].Accept(this, CiPriority.Argument);
 			Write(')');
 			break;
-		case CiId.CollectionCopyTo when obj.Type.IsArray:
-			Include("System");
-			Write("Array.Copy(");
-			obj.Accept(this, CiPriority.Argument);
-			Write(", ");
-			WriteArgs(method, args);
-			Write(')');
-			break;
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:
 			Include("System");
@@ -459,6 +451,14 @@ public class GenCs : GenTyped
 				Write(", ");
 			}
 			WriteNotPromoted(((CiClassType) obj.Type).ElementType, args[0]);
+			Write(')');
+			break;
+		case CiId.ArrayCopyTo:
+			Include("System");
+			Write("Array.Copy(");
+			obj.Accept(this, CiPriority.Argument);
+			Write(", ");
+			WriteArgs(method, args);
 			Write(')');
 			break;
 		case CiId.ArrayFillAll:
