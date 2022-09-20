@@ -298,22 +298,21 @@ public class GenJs : GenBase
 	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
-		case CiId.CollectionCount:
-			CiClassType klass = (CiClassType) expr.Left.Type;
-			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass) {
-				expr.Left.Accept(this, CiPriority.Primary);
-				Write(".length");
-			}
-			else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.OrderedDictionaryClass) {
-				expr.Left.Accept(this, CiPriority.Primary);
-				Write(".size");
-			}
-			else if (klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass) {
-				WriteCall("Object.keys", expr.Left);
-				Write(".length");
-			}
-			else
-				throw new NotImplementedException(klass.ToString());
+		case CiId.ListCount:
+		case CiId.QueueCount:
+		case CiId.StackCount:
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(".length");
+			return expr;
+		case CiId.HashSetCount:
+		case CiId.OrderedDictionaryCount:
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write(".size");
+			return expr;
+		case CiId.DictionaryCount:
+		case CiId.SortedDictionaryCount:
+			WriteCall("Object.keys", expr.Left);
+			Write(".length");
 			return expr;
 		case CiId.MatchStart:
 			expr.Left.Accept(this, CiPriority.Primary);

@@ -256,7 +256,13 @@ public class GenPy : GenPySwift
 	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
-		case CiId.CollectionCount:
+		case CiId.ListCount:
+		case CiId.QueueCount:
+		case CiId.StackCount:
+		case CiId.HashSetCount:
+		case CiId.DictionaryCount:
+		case CiId.SortedDictionaryCount:
+		case CiId.OrderedDictionaryCount:
 			WriteStringLength(expr.Left);
 			return expr;
 		case CiId.MathNaN:

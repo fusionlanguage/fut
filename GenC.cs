@@ -270,26 +270,25 @@ public class GenC : GenCCpp
 	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
-		case CiId.CollectionCount:
-			CiClassType klass = (CiClassType) expr.Left.Type;
-			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass) {
-				expr.Left.Accept(this, CiPriority.Primary);
-				Write("->len");
-			}
-			else if (klass.Class == CiSystem.QueueClass) {
-				expr.Left.Accept(this, CiPriority.Primary);
-				if (expr.Left.Type is CiStorageType)
-					Write('.');
-				else
-					Write("->");
-				Write("length");
-			}
-			else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
-				WriteCall("g_hash_table_size", expr.Left);
-			else if (klass.Class == CiSystem.SortedDictionaryClass)
-				WriteCall("g_tree_nnodes", expr.Left);
+		case CiId.ListCount:
+		case CiId.StackCount:
+			expr.Left.Accept(this, CiPriority.Primary);
+			Write("->len");
+			return expr;
+		case CiId.QueueCount:
+			expr.Left.Accept(this, CiPriority.Primary);
+			if (expr.Left.Type is CiStorageType)
+				Write('.');
 			else
-				throw new NotImplementedException(klass.ToString());
+				Write("->");
+			Write("length");
+			return expr;
+		case CiId.HashSetCount:
+		case CiId.DictionaryCount:
+			WriteCall("g_hash_table_size", expr.Left);
+			return expr;
+		case CiId.SortedDictionaryCount:
+			WriteCall("g_tree_nnodes", expr.Left);
 			return expr;
 		case CiId.MatchStart:
 			WriteMatchProperty(expr, 0);
