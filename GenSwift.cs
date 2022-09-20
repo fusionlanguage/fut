@@ -390,14 +390,19 @@ public class GenSwift : GenPySwift
 
 	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Left != null && expr.Left.IsReferenceTo(CiSystem.MathClass)) {
-			Write(expr.Symbol == CiSystem.MathNaN ? "Float.nan"
-				: expr.Symbol == CiSystem.MathNegativeInfinity ? "-Float.infinity"
-				: expr.Symbol == CiSystem.MathPositiveInfinity ? "Float.infinity"
-				: throw new NotImplementedException(expr.ToString()));
+		switch (expr.Symbol.Id) {
+		case CiId.MathNaN:
+			Write("Float.nan");
 			return expr;
+		case CiId.MathNegativeInfinity:
+			Write("-Float.infinity");
+			return expr;
+		case CiId.MathPositiveInfinity:
+			Write("Float.infinity");
+			return expr;
+		default:
+			return base.VisitSymbolReference(expr, parent);
 		}
-		return base.VisitSymbolReference(expr, parent);
 	}
 
 	protected override string GetReferenceEqOp(bool not) => not ? " !== " : " === ";

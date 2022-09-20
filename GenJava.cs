@@ -457,18 +457,21 @@ public class GenJava : GenTyped
 
 	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Left != null && expr.Left.IsReferenceTo(CiSystem.MathClass)) {
-			Write("Float.");
-			Write(expr.Symbol == CiSystem.MathNaN ? "NaN"
-				: expr.Symbol == CiSystem.MathNegativeInfinity ? "NEGATIVE_INFINITY"
-				: expr.Symbol == CiSystem.MathPositiveInfinity ? "POSITIVE_INFINITY"
-				: throw new NotImplementedException(expr.ToString()));
-		}
-		else if (WriteJavaMatchProperty(expr, parent))
+		switch (expr.Symbol.Id) {
+		case CiId.MathNaN:
+			Write("Float.NaN");
 			return expr;
-		else
+		case CiId.MathNegativeInfinity:
+			Write("Float.NEGATIVE_INFINITY");
+			return expr;
+		case CiId.MathPositiveInfinity:
+			Write("Float.POSITIVE_INFINITY");
+			return expr;
+		default:
+			if (WriteJavaMatchProperty(expr, parent))
+				return expr;
 			return base.VisitSymbolReference(expr, parent);
-		return expr;
+		}
 	}
 
 	void WriteArrayBinarySearchFill(CiExpr obj, string method, List<CiExpr> args)

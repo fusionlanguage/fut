@@ -185,10 +185,11 @@ public class CiMember : CiNamedValue
 	public CiMember()
 	{
 	}
-	public CiMember(CiType type, string name)
+	public CiMember(CiType type, CiId id, string name)
 	{
 		this.Visibility = CiVisibility.Public;
 		this.Type = type;
+		this.Id = id;
 		this.Name = name;
 	}
 	public virtual bool IsStatic => throw new NotImplementedException(this.GetType().Name);
@@ -1277,7 +1278,7 @@ public class CiSystem : CiScope
 	public static readonly CiEnum BoolType = new CiEnum { Name = "bool" };
 	public static readonly CiStringType StringPtrType = new CiStringPtrType { Name = "string" };
 	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType { Name = "string()" };
-	public static readonly CiMember StringLength = new CiMember(UIntType, "Length");
+	public static readonly CiMember StringLength = new CiMember(UIntType, CiId.StringLength, "Length");
 	public static readonly CiMethod StringContains = new CiMethod(CiCallType.Normal, BoolType, CiId.StringContains, "Contains", new CiVar(StringPtrType, "value"));
 	public static readonly CiMethod StringEndsWith = new CiMethod(CiCallType.Normal, BoolType, CiId.StringEndsWith, "EndsWith", new CiVar(StringPtrType, "value"));
 	public static readonly CiMethod StringIndexOf = new CiMethod(CiCallType.Normal, Minus1Type, CiId.StringIndexOf, "IndexOf", new CiVar(StringPtrType, "value"));
@@ -1285,7 +1286,7 @@ public class CiSystem : CiScope
 	public static readonly CiMethod StringStartsWith = new CiMethod(CiCallType.Normal, BoolType, CiId.StringStartsWith, "StartsWith", new CiVar(StringPtrType, "value"));
 	public static readonly CiMethod StringSubstring = new CiMethod(CiCallType.Normal, StringStorageType, CiId.StringSubstring, "Substring", new CiVar(IntType, "offset"), new CiVar(IntType, "length") { Value = new CiLiteralLong(-1L) } ); // TODO: UIntType
 	public static readonly CiType PrintableType = new CiPrintableType { Name = "printable" };
-	public static readonly CiMember ArrayLength = new CiMember(UIntType, "Length");
+	public static readonly CiMember ArrayLength = new CiMember(UIntType, CiId.ArrayLength, "Length");
 	public static readonly CiMethod ArrayBinarySearchPart = new CiMethod(CiCallType.Normal, IntType, CiId.ArrayBinarySearchPart, "BinarySearch",
 		new CiVar(TypeParam0, "value"),
 		new CiVar(IntType, "startIndex"),
@@ -1308,7 +1309,7 @@ public class CiSystem : CiScope
 		new CiMethodGroup(
 			new CiMethod(CiCallType.Normal, VoidType, CiId.ArraySortAll, "Sort") { Visibility = CiVisibility.NumericElementType, IsMutator = true },
 			ArraySortPart) { Visibility = CiVisibility.NumericElementType }) { Parent = ArrayPtrClass, TypeParameterCount = 1 };
-	public static readonly CiMember CollectionCount = new CiMember(UIntType, "Count");
+	public static readonly CiMember CollectionCount = new CiMember(UIntType, CiId.CollectionCount, "Count");
 	public static readonly CiClass ListClass = new CiClass(CiCallType.Normal, "List",
 		new CiMethod(CiCallType.Normal, VoidType, CiId.ListAdd, "Add", new CiVar(TypeParam0NotFinal, "value")) { IsMutator = true },
 		new CiMethod(CiCallType.Normal, VoidType, CiId.ListClear, "Clear") { IsMutator = true },
@@ -1364,7 +1365,7 @@ public class CiSystem : CiScope
 	public static readonly CiClass ConsoleBase = new CiClass(CiCallType.Static, "ConsoleBase",
 		new CiMethod(CiCallType.Static, VoidType, CiId.ConsoleWrite, "Write", new CiVar(PrintableType, "value")),
 		new CiMethod(CiCallType.Static, VoidType, CiId.ConsoleWriteLine, "WriteLine", new CiVar(PrintableType, "value") { Value = new CiLiteralString("") }));
-	public static readonly CiMember ConsoleError = new CiMember(ConsoleBase, "Error");
+	public static readonly CiMember ConsoleError = new CiMember(ConsoleBase, CiId.ConsoleError, "Error");
 	public static readonly CiClass ConsoleClass = new CiClass(CiCallType.Static, "Console",
 		ConsoleError);
 	public static readonly CiConst RegexOptionsNone = new CiConst("None", 0);
@@ -1376,10 +1377,10 @@ public class CiSystem : CiScope
 		new CiMethodGroup(
 			new CiMethod(CiCallType.Static, BoolType, CiId.RegexIsMatchStr, "IsMatch", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone }),
 			new CiMethod(CiCallType.Normal, BoolType, CiId.RegexIsMatchRegex, "IsMatch", new CiVar(StringPtrType, "input"))));
-	public static readonly CiMember MatchStart = new CiMember(IntType, "Start");
-	public static readonly CiMember MatchEnd = new CiMember(IntType, "End");
-	public static readonly CiMember MatchLength = new CiMember(UIntType, "Length");
-	public static readonly CiMember MatchValue = new CiMember(StringPtrType, "Value");
+	public static readonly CiMember MatchStart = new CiMember(IntType, CiId.MatchStart, "Start");
+	public static readonly CiMember MatchEnd = new CiMember(IntType, CiId.MatchEnd, "End");
+	public static readonly CiMember MatchLength = new CiMember(UIntType, CiId.MatchLength, "Length");
+	public static readonly CiMember MatchValue = new CiMember(StringPtrType, CiId.MatchValue, "Value");
 	public static readonly CiClass MatchClass = new CiClass(CiCallType.Sealed, "Match",
 		new CiMethodGroup(
 			new CiMethod(CiCallType.Normal, BoolType, CiId.MatchFindStr, "Find", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone }) { IsMutator = true },
@@ -1389,9 +1390,6 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Normal, StringPtrType, CiId.MatchGetCapture, "GetCapture", new CiVar(UIntType, "group")),
 		MatchLength,
 		MatchValue);
-	public static readonly CiMember MathNaN = new CiMember(FloatType, "NaN");
-	public static readonly CiMember MathNegativeInfinity = new CiMember(FloatType, "NegativeInfinity");
-	public static readonly CiMember MathPositiveInfinity = new CiMember(FloatType, "PositiveInfinity");
 	public static readonly CiClass MathClass = new CiClass(CiCallType.Static, "Math",
 		new CiMethod(CiCallType.Static, FloatType, CiId.MathMethod, "Acos", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, CiId.MathMethod, "Asin", new CiVar(DoubleType, "a")),
@@ -1411,10 +1409,10 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, FloatType, CiId.MathMethod, "Log", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, CiId.MathLog2, "Log2", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, CiId.MathMethod, "Log10", new CiVar(DoubleType, "a")),
-		MathNaN,
-		MathNegativeInfinity,
+		new CiMember(FloatType, CiId.MathNaN, "NaN"),
+		new CiMember(FloatType, CiId.MathNegativeInfinity, "NegativeInfinity"),
 		new CiConst("PI", Math.PI),
-		MathPositiveInfinity,
+		new CiMember(FloatType, CiId.MathPositiveInfinity, "PositiveInfinity"),
 		new CiMethod(CiCallType.Static, FloatType, CiId.MathMethod, "Pow", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y")),
 		new CiMethod(CiCallType.Static, FloatType, CiId.MathMethod, "Sin", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, CiId.MathMethod, "Sinh", new CiVar(DoubleType, "a")),
@@ -1463,7 +1461,7 @@ public class CiSystem : CiScope
 			new CiMethod(CiCallType.Normal, VoidType, CiId.UTF8GetBytes, "GetBytes", new CiVar(StringPtrType, "str"), new CiVar(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), new CiVar(IntType, "byteIndex")),
 			new CiMethod(CiCallType.Normal, StringStorageType, CiId.UTF8GetString, "GetString", new CiVar(new CiClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length"))); // TODO: UIntType
 		CiClass encodingClass = new CiClass(CiCallType.Static, "Encoding");
-		encodingClass.Add(new CiMember(utf8EncodingClass,  "UTF8"));
+		encodingClass.Add(new CiMember(utf8EncodingClass, CiId.UTF8EncodingClass, "UTF8"));
 		Add(encodingClass);
 
 		CiClass environmentClass = new CiClass(CiCallType.Static, "Environment");

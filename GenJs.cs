@@ -297,7 +297,8 @@ public class GenJs : GenBase
 
 	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Symbol == CiSystem.CollectionCount) {
+		switch (expr.Symbol.Id) {
+		case CiId.CollectionCount:
 			CiClassType klass = (CiClassType) expr.Left.Type;
 			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass) {
 				expr.Left.Accept(this, CiPriority.Primary);
@@ -313,12 +314,12 @@ public class GenJs : GenBase
 			}
 			else
 				throw new NotImplementedException(klass.ToString());
-		}
-		else if (expr.Symbol == CiSystem.MatchStart) {
+			return expr;
+		case CiId.MatchStart:
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".index");
-		}
-		else if (expr.Symbol == CiSystem.MatchEnd) {
+			return expr;
+		case CiId.MatchEnd:
 			if (parent > CiPriority.Add)
 				Write('(');
 			expr.Left.Accept(this, CiPriority.Primary);
@@ -327,24 +328,27 @@ public class GenJs : GenBase
 			Write("[0].length");
 			if (parent > CiPriority.Add)
 				Write(')');
-		}
-		else if (expr.Symbol == CiSystem.MatchLength) {
+			return expr;
+		case CiId.MatchLength:
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write("[0].length");
-		}
-		else if (expr.Symbol == CiSystem.MatchValue) {
+			return expr;
+		case CiId.MatchValue:
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write("[0]");
-		}
-		else if (expr.Left != null && expr.Left.IsReferenceTo(CiSystem.MathClass)) {
-			Write(expr.Symbol == CiSystem.MathNaN ? "NaN"
-				: expr.Symbol == CiSystem.MathNegativeInfinity ? "-Infinity"
-				: expr.Symbol == CiSystem.MathPositiveInfinity ? "Infinity"
-				: throw new NotImplementedException(expr.ToString()));
-		}
-		else
+			return expr;
+		case CiId.MathNaN:
+			Write("NaN");
+			return expr;
+		case CiId.MathNegativeInfinity:
+			Write("-Infinity");
+			return expr;
+		case CiId.MathPositiveInfinity:
+			Write("Infinity");
+			return expr;
+		default:
 			return base.VisitSymbolReference(expr, parent);
-		return expr;
+		}
 	}
 
 	protected override void WriteStringLength(CiExpr expr)

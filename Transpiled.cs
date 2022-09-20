@@ -1279,6 +1279,18 @@ namespace Foxoft.Ci
 	public enum CiId
 	{
 		None,
+		UTF8EncodingClass,
+		StringLength,
+		ArrayLength,
+		CollectionCount,
+		ConsoleError,
+		MatchStart,
+		MatchEnd,
+		MatchLength,
+		MatchValue,
+		MathNaN,
+		MathNegativeInfinity,
+		MathPositiveInfinity,
 		StringContains,
 		StringEndsWith,
 		StringIndexOf,

@@ -255,20 +255,27 @@ public class GenPy : GenPySwift
 
 	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Symbol == CiSystem.CollectionCount)
+		switch (expr.Symbol.Id) {
+		case CiId.CollectionCount:
 			WriteStringLength(expr.Left);
-		else if (WriteJavaMatchProperty(expr, parent))
 			return expr;
-		else if (expr.Left != null && expr.Left.IsReferenceTo(CiSystem.MathClass)) {
+		case CiId.MathNaN:
 			Include("math");
-			Write(expr.Symbol == CiSystem.MathNaN ? "math.nan"
-				: expr.Symbol == CiSystem.MathNegativeInfinity ? "-math.inf"
-				: expr.Symbol == CiSystem.MathPositiveInfinity ? "math.inf"
-				: throw new NotImplementedException(expr.ToString()));
-		}
-		else
+			Write("math.nan");
+			return expr;
+		case CiId.MathNegativeInfinity:
+			Include("math");
+			Write("-math.inf");
+			return expr;
+		case CiId.MathPositiveInfinity:
+			Include("math");
+			Write("math.inf");
+			return expr;
+		default:
+			if (WriteJavaMatchProperty(expr, parent))
+				return expr;
 			return base.VisitSymbolReference(expr, parent);
-		return expr;
+		}
 	}
 
 	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)

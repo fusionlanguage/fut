@@ -79,15 +79,22 @@ public abstract class GenCCpp : GenTyped
 
 	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Left != null && expr.Left.IsReferenceTo(CiSystem.MathClass)) {
+		switch (expr.Symbol.Id) {
+		case CiId.MathNaN:
 			IncludeMath();
-			Write(expr.Symbol == CiSystem.MathNaN ? "NAN"
-				: expr.Symbol == CiSystem.MathNegativeInfinity ? "-INFINITY"
-				: expr.Symbol == CiSystem.MathPositiveInfinity ? "INFINITY"
-				: throw new NotImplementedException(expr.ToString()));
+			Write("NAN");
 			return expr;
+		case CiId.MathNegativeInfinity:
+			IncludeMath();
+			Write("-INFINITY");
+			return expr;
+		case CiId.MathPositiveInfinity:
+			IncludeMath();
+			Write("INFINITY");
+			return expr;
+		default:
+			return base.VisitSymbolReference(expr, parent);
 		}
-		return base.VisitSymbolReference(expr, parent);
 	}
 
 	protected override void WriteVarInit(CiNamedValue def)
