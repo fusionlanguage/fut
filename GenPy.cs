@@ -567,6 +567,8 @@ public class GenPy : GenPySwift
 		case CiId.ListContains:
 		case CiId.HashSetContains:
 		case CiId.DictionaryContainsKey:
+		case CiId.SortedDictionaryContainsKey:
+		case CiId.OrderedDictionaryContainsKey:
 			args[0].Accept(this, CiPriority.Primary);
 			Write(" in ");
 			obj.Accept(this, CiPriority.Primary);
@@ -644,6 +646,8 @@ public class GenPy : GenPySwift
 			break;
 		case CiId.ListRemoveAt:
 		case CiId.DictionaryRemove:
+		case CiId.SortedDictionaryRemove:
+		case CiId.OrderedDictionaryRemove:
 			Write("del ");
 			WriteIndexing(obj, args[0]);
 			break;

@@ -1346,12 +1346,22 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Normal, VoidType, CiId.HashSetRemove, "Remove", new CiVar(TypeParam0, "value")) { IsMutator = true }) { TypeParameterCount = 1 };
 	public static readonly CiClass DictionaryClass = new CiClass(CiCallType.Normal, "Dictionary",
 		new CiMethod(CiCallType.Normal, VoidType, CiId.DictionaryAdd, "Add", new CiVar(TypeParam0, "key")) { Visibility = CiVisibility.FinalValueType, IsMutator = true },
-		CollectionClear,
+		new CiMethod(CiCallType.Normal, VoidType, CiId.DictionaryClear, "Clear") { IsMutator = true },
 		CollectionCount,
 		new CiMethod(CiCallType.Normal, BoolType, CiId.DictionaryContainsKey, "ContainsKey", new CiVar(TypeParam0, "key")),
 		new CiMethod(CiCallType.Normal, VoidType, CiId.DictionaryRemove, "Remove", new CiVar(TypeParam0, "key")) { IsMutator = true }) { TypeParameterCount = 2 };
-	public static readonly CiClass SortedDictionaryClass = new CiClass { Name = "SortedDictionary", TypeParameterCount = 2 };
-	public static readonly CiClass OrderedDictionaryClass = new CiClass { Name = "OrderedDictionary", TypeParameterCount = 2 };
+	public static readonly CiClass SortedDictionaryClass = new CiClass(CiCallType.Normal, "SortedDictionary",
+		new CiMethod(CiCallType.Normal, VoidType, CiId.DictionaryAdd, "Add", new CiVar(TypeParam0, "key")) { Visibility = CiVisibility.FinalValueType, IsMutator = true },
+		new CiMethod(CiCallType.Normal, VoidType, CiId.SortedDictionaryClear, "Clear") { IsMutator = true },
+		CollectionCount,
+		new CiMethod(CiCallType.Normal, BoolType, CiId.SortedDictionaryContainsKey, "ContainsKey", new CiVar(TypeParam0, "key")),
+		new CiMethod(CiCallType.Normal, VoidType, CiId.SortedDictionaryRemove, "Remove", new CiVar(TypeParam0, "key")) { IsMutator = true }) { TypeParameterCount = 2 };
+	public static readonly CiClass OrderedDictionaryClass = new CiClass(CiCallType.Normal, "OrderedDictionary",
+		new CiMethod(CiCallType.Normal, VoidType, CiId.DictionaryAdd, "Add", new CiVar(TypeParam0, "key")) { Visibility = CiVisibility.FinalValueType, IsMutator = true },
+		new CiMethod(CiCallType.Normal, VoidType, CiId.OrderedDictionaryClear, "Clear") { IsMutator = true },
+		CollectionCount,
+		new CiMethod(CiCallType.Normal, BoolType, CiId.OrderedDictionaryContainsKey, "ContainsKey", new CiVar(TypeParam0, "key")),
+		new CiMethod(CiCallType.Normal, VoidType, CiId.OrderedDictionaryRemove, "Remove", new CiVar(TypeParam0, "key")) { IsMutator = true }) { TypeParameterCount = 2 };
 	public static readonly CiClass ConsoleBase = new CiClass(CiCallType.Static, "ConsoleBase",
 		new CiMethod(CiCallType.Static, VoidType, CiId.ConsoleWrite, "Write", new CiVar(PrintableType, "value")),
 		new CiMethod(CiCallType.Static, VoidType, CiId.ConsoleWriteLine, "WriteLine", new CiVar(PrintableType, "value") { Value = new CiLiteralString("") }));
@@ -1445,9 +1455,7 @@ public class CiSystem : CiScope
 		Add(HashSetClass);
 		Add(DictionaryClass);
 		Add(SortedDictionaryClass);
-		SortedDictionaryClass.Parent = DictionaryClass;
 		Add(OrderedDictionaryClass);
-		OrderedDictionaryClass.Parent = DictionaryClass;
 		Add(ConsoleClass);
 		ConsoleClass.Parent = ConsoleBase;
 

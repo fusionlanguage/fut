@@ -518,24 +518,29 @@ public class GenJs : GenBase
 		case CiId.DictionaryAdd:
 			WriteDictionaryAdd(obj, args);
 			break;
-		case CiId.DictionaryContainsKey:
-			WriteCall(obj, ((CiClassType) obj.Type).Class == CiSystem.OrderedDictionaryClass ? "has" : "hasOwnProperty", args[0]);
-			break;
-		case CiId.DictionaryRemove:
-			if (((CiClassType) obj.Type).Class == CiSystem.OrderedDictionaryClass)
-				WriteCall(obj, "delete", args[0]);
-			else {
-				Write("delete ");
-				WriteIndexing(obj, args[0]);
-			}
-			break;
-		case CiId.CollectionClear when obj.Type is CiClassType dict && (dict.Class == CiSystem.DictionaryClass || dict.Class == CiSystem.SortedDictionaryClass):
+		case CiId.DictionaryClear:
+		case CiId.SortedDictionaryClear:
 			Write("for (const key in ");
 			obj.Accept(this, CiPriority.Argument);
 			WriteLine(')');
 			Write("\tdelete ");
 			obj.Accept(this, CiPriority.Primary); // FIXME: side effect
 			Write("[key];");
+			break;
+		case CiId.DictionaryContainsKey:
+		case CiId.SortedDictionaryContainsKey:
+			WriteCall(obj, "hasOwnProperty", args[0]);
+			break;
+		case CiId.DictionaryRemove:
+		case CiId.SortedDictionaryRemove:
+			Write("delete ");
+			WriteIndexing(obj, args[0]);
+			break;
+		case CiId.OrderedDictionaryContainsKey:
+			WriteCall(obj, "has", args[0]);
+			break;
+		case CiId.OrderedDictionaryRemove:
+			WriteCall(obj, "delete", args[0]);
 			break;
 		case CiId.ConsoleWrite: // FIXME: Console.Write same as Console.WriteLine
 		case CiId.ConsoleWriteLine:

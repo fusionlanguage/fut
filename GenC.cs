@@ -1443,14 +1443,8 @@ public class GenC : GenCCpp
 				WriteQueueObject(obj);
 				Write(')');
 			}
-			else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
+			else if (klass.Class == CiSystem.HashSetClass)
 				WriteCall("g_hash_table_remove_all", obj);
-			else if (klass.Class == CiSystem.SortedDictionaryClass) {
-				// TODO: since glib-2.70: WriteCall("g_tree_remove_all", obj);
-				Write("g_tree_destroy(g_tree_ref(");
-				obj.Accept(this, CiPriority.Argument);
-				Write("))");
-			}
 			else
 				throw new NotImplementedException();
 			break;
@@ -1652,19 +1646,30 @@ public class GenC : GenCCpp
 			}
 			Write(')');
 			break;
+		case CiId.DictionaryClear:
+			WriteCall("g_hash_table_remove_all", obj);
+			break;
 		case CiId.DictionaryContainsKey:
-			if (((CiClassType) obj.Type).Class == CiSystem.SortedDictionaryClass) {
-				Write("g_tree_lookup_extended(");
-				obj.Accept(this, CiPriority.Argument);
-				Write(", ");
-				WriteGConstPointerCast(args[0]);
-				Write(", NULL, NULL)");
-			}
-			else
-				WriteDictionaryLookup(obj, "g_hash_table_contains", args[0]);
+			WriteDictionaryLookup(obj, "g_hash_table_contains", args[0]);
 			break;
 		case CiId.DictionaryRemove:
-			WriteDictionaryLookup(obj, ((CiClassType) obj.Type).Class == CiSystem.SortedDictionaryClass ? "g_tree_remove" : "g_hash_table_remove", args[0]);
+			WriteDictionaryLookup(obj, "g_hash_table_remove", args[0]);
+			break;
+		case CiId.SortedDictionaryClear:
+			// TODO: since glib-2.70: WriteCall("g_tree_remove_all", obj);
+			Write("g_tree_destroy(g_tree_ref(");
+			obj.Accept(this, CiPriority.Argument);
+			Write("))");
+			break;
+		case CiId.SortedDictionaryContainsKey:
+			Write("g_tree_lookup_extended(");
+			obj.Accept(this, CiPriority.Argument);
+			Write(", ");
+			WriteGConstPointerCast(args[0]);
+			Write(", NULL, NULL)");
+			break;
+		case CiId.SortedDictionaryRemove:
+			WriteDictionaryLookup(obj, "g_tree_remove", args[0]);
 			break;
 		case CiId.ConsoleWrite:
 			WriteConsoleWrite(obj, args, false);

@@ -785,12 +785,14 @@ public class GenCpp : GenCCpp
 			break;
 		case CiId.HashSetRemove:
 		case CiId.DictionaryRemove:
+		case CiId.SortedDictionaryRemove:
 			WriteCall(obj, "erase", args[0]);
 			break;
 		case CiId.DictionaryAdd:
 			WriteIndexing(obj, args[0]);
 			break;
 		case CiId.DictionaryContainsKey:
+		case CiId.SortedDictionaryContainsKey:
 			if (parent > CiPriority.Equality)
 				Write('(');
 			StartMethodCall(obj);

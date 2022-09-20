@@ -515,7 +515,7 @@ public class GenCs : GenTyped
 			WriteNewStorage(((CiClassType) obj.Type).ValueType);
 			Write(')');
 			break;
-		case CiId.DictionaryContainsKey when ((CiClassType) obj.Type).Class == CiSystem.OrderedDictionaryClass:
+		case CiId.OrderedDictionaryContainsKey:
 			WriteCall(obj, "Contains", args[0]);
 			break;
 		case CiId.ConsoleWrite:

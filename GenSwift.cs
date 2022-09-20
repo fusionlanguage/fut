@@ -467,6 +467,8 @@ public class GenSwift : GenPySwift
 			}
 			break;
 		case CiId.CollectionClear:
+		case CiId.DictionaryClear:
+		case CiId.SortedDictionaryClear:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeAll()");
 			break;
@@ -562,6 +564,7 @@ public class GenSwift : GenPySwift
 			WriteDictionaryAdd(obj, args);
 			break;
 		case CiId.DictionaryContainsKey:
+		case CiId.SortedDictionaryContainsKey:
 			if (parent > CiPriority.Equality)
 				Write('(');
 			WriteIndexing(obj, args[0]);
@@ -570,6 +573,7 @@ public class GenSwift : GenPySwift
 				Write(')');
 			break;
 		case CiId.DictionaryRemove:
+		case CiId.SortedDictionaryRemove:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".removeValue(forKey: ");
 			args[0].Accept(this, CiPriority.Argument);
