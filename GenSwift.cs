@@ -478,17 +478,6 @@ public class GenSwift : GenPySwift
 			WriteRange(args[0], args[3]);
 			Write(']');
 			break;
-		case CiId.CollectionSortAll when obj.Type is CiArrayStorageType array:
-			obj.Accept(this, CiPriority.Primary);
-			Write("[0..<");
-			VisitLiteralLong(array.Length);
-			Write("].sort()");
-			break;
-		case CiId.CollectionSortPart:
-			OpenIndexing(obj);
-			WriteRange(args[0], args[1]);
-			Write("].sort()");
-			break;
 		case CiId.ArrayFillAll when obj.Type is CiArrayStorageType array && !IsArrayRef(array):
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = [");
@@ -507,6 +496,18 @@ public class GenSwift : GenPySwift
 			Write(", count: ");
 			WriteCoerced(CiSystem.IntType, args[2], CiPriority.Argument); // FIXME: side effect
 			Write(')');
+			break;
+		case CiId.ArraySortAll:
+			obj.Accept(this, CiPriority.Primary);
+			Write("[0..<");
+			VisitLiteralLong(((CiArrayStorageType) obj.Type).Length);
+			Write("].sort()");
+			break;
+		case CiId.ArraySortPart:
+		case CiId.ListSortPart:
+			OpenIndexing(obj);
+			WriteRange(args[0], args[1]);
+			Write("].sort()");
 			break;
 		case CiId.ListAdd:
 		case CiId.QueueEnqueue:

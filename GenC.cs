@@ -1474,35 +1474,6 @@ public class GenC : GenCCpp
 			}
 			Write(')');
 			break;
-		case CiId.CollectionSortAll:
-			switch (obj.Type) {
-			case CiArrayStorageType arrayStorage:
-				Write("qsort(");
-				WriteArrayPtr(obj, CiPriority.Argument);
-				Write(", ");
-				VisitLiteralLong(arrayStorage.Length);
-				WriteSizeofCompare(arrayStorage.ElementType);
-				break;
-			case CiClassType list:
-				Write("g_array_sort(");
-				obj.Accept(this, CiPriority.Argument);
-				TypeCode typeCode2 = GetTypeCode(list.ElementType, false);
-				Write(", CiCompare_");
-				Write(typeCode2);
-				Write(')');
-				this.Compares.Add(typeCode2);
-				break;
-			default:
-				throw new NotImplementedException();
-			}
-			break;
-		case CiId.CollectionSortPart:
-			Write("qsort(");
-			WriteArrayPtrAdd(obj, args[0]);
-			Write(", ");
-			args[1].Accept(this, CiPriority.Primary);
-			WriteSizeofCompare(((CiClassType) obj.Type).ElementType);
-			break;
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:
 			if (parent > CiPriority.Add)
@@ -1552,6 +1523,22 @@ public class GenC : GenCCpp
 			else
 				WriteArrayFill(obj, args);
 			break;
+		case CiId.ArraySortAll:
+			Write("qsort(");
+			WriteArrayPtr(obj, CiPriority.Argument);
+			Write(", ");
+			CiArrayStorageType arrayStorage = (CiArrayStorageType) obj.Type;
+			VisitLiteralLong(arrayStorage.Length);
+			WriteSizeofCompare(arrayStorage.ElementType);
+			break;
+		case CiId.ArraySortPart:
+		case CiId.ListSortPart:
+			Write("qsort(");
+			WriteArrayPtrAdd(obj, args[0]);
+			Write(", ");
+			args[1].Accept(this, CiPriority.Primary);
+			WriteSizeofCompare(((CiClassType) obj.Type).ElementType);
+			break;
 		case CiId.ListAdd:
 		case CiId.StackPush:
 			switch (((CiClassType) obj.Type).ElementType) {
@@ -1597,6 +1584,15 @@ public class GenC : GenCCpp
 			break;
 		case CiId.ListRemoveRange:
 			WriteCall("g_array_remove_range", obj, args[0], args[1]);
+			break;
+		case CiId.ListSortAll:
+			Write("g_array_sort(");
+			obj.Accept(this, CiPriority.Argument);
+			TypeCode typeCode2 = GetTypeCode(((CiClassType) obj.Type).ElementType, false);
+			Write(", CiCompare_");
+			Write(typeCode2);
+			Write(')');
+			this.Compares.Add(typeCode2);
 			break;
 		case CiId.QueueDequeue:
 			WriteQueueGet("g_queue_pop_head", obj, parent);

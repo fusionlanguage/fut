@@ -446,22 +446,6 @@ public class GenCs : GenTyped
 			WriteArgs(method, args);
 			Write(')');
 			break;
-		case CiId.CollectionSortAll when obj.Type is CiArrayStorageType:
-			Include("System");
-			WriteCall("Array.Sort", obj);
-			break;
-		case CiId.CollectionSortPart:
-			if (obj.Type.IsArray) {
-				Include("System");
-				WriteCall("Array.Sort", obj, args[0], args[1]);
-			}
-			else {
-				obj.Accept(this, CiPriority.Primary);
-				Write(".Sort(");
-				WriteArgs(method, args);
-				Write(", null)");
-			}
-			break;
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:
 			Include("System");
@@ -503,11 +487,25 @@ public class GenCs : GenTyped
 			}
 			Write(')');
 			break;
+		case CiId.ArraySortAll:
+			Include("System");
+			WriteCall("Array.Sort", obj);
+			break;
+		case CiId.ArraySortPart:
+			Include("System");
+			WriteCall("Array.Sort", obj, args[0], args[1]);
+			break;
 		case CiId.ListAdd:
 			WriteListAdd(obj, "Add", args);
 			break;
 		case CiId.ListInsert:
 			WriteListInsert(obj, "Insert", args);
+			break;
+		case CiId.ListSortPart:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".Sort(");
+			WriteArgs(method, args);
+			Write(", null)");
 			break;
 		case CiId.DictionaryAdd:
 			obj.Accept(this, CiPriority.Primary);

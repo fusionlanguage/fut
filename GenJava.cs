@@ -558,32 +558,6 @@ public class GenJava : GenTyped
 				Write("_i)");
 			}
 			break;
-		case CiId.CollectionSortAll:
-			if (obj.Type is CiArrayStorageType) {
-				Include("java.util.Arrays");
-				WriteCall("Arrays.sort", obj);
-			}
-			else {
-				obj.Accept(this, CiPriority.Primary);
-				Write(".sort(null)");
-			}
-			break;
-		case CiId.CollectionSortPart:
-			if (obj.Type.IsArray) {
-				Include("java.util.Arrays");
-				Write("Arrays.sort(");
-				obj.Accept(this, CiPriority.Argument);
-				Write(", ");
-				WriteStartEnd(args[0], args[1]);
-				Write(')');
-			}
-			else {
-				obj.Accept(this, CiPriority.Primary);
-				Write(".subList(");
-				WriteStartEnd(args[0], args[1]);
-				Write(").sort(null)");
-			}
-			break;
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:
 			WriteArrayBinarySearchFill(obj, "binarySearch", args);
@@ -591,6 +565,18 @@ public class GenJava : GenTyped
 		case CiId.ArrayFillAll:
 		case CiId.ArrayFillPart:
 			WriteArrayBinarySearchFill(obj, "fill", args);
+			break;
+		case CiId.ArraySortAll:
+			Include("java.util.Arrays");
+			WriteCall("Arrays.sort", obj);
+			break;
+		case CiId.ArraySortPart:
+			Include("java.util.Arrays");
+			Write("Arrays.sort(");
+			obj.Accept(this, CiPriority.Argument);
+			Write(", ");
+			WriteStartEnd(args[0], args[1]);
+			Write(')');
 			break;
 		case CiId.ListAdd:
 			WriteListAdd(obj, "add", args);
@@ -606,6 +592,16 @@ public class GenJava : GenTyped
 			Write(".subList(");
 			WriteStartEnd(args[0], args[1]);
 			Write(").clear()");
+			break;
+		case CiId.ListSortAll:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".sort(null)");
+			break;
+		case CiId.ListSortPart:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".subList(");
+			WriteStartEnd(args[0], args[1]);
+			Write(").sort(null)");
 			break;
 		case CiId.QueueDequeue:
 			obj.Accept(this, CiPriority.Primary);

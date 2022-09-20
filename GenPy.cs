@@ -599,20 +599,6 @@ public class GenPy : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			WriteSlice(args[0], args[3]);
 			break;
-		case CiId.CollectionSortAll:
-			obj.Accept(this, CiPriority.Assign);
-			WriteAssignSorted(obj, "bytearray");
-			obj.Accept(this, CiPriority.Argument);
-			Write("))");
-			break;
-		case CiId.CollectionSortPart:
-			obj.Accept(this, CiPriority.Primary);
-			WriteSlice(args[0], args[1]);
-			WriteAssignSorted(obj, "bytes");
-			obj.Accept(this, CiPriority.Primary);
-			WriteSlice(args[0], args[1]);
-			Write("))");
-			break;
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:
 			Include("bisect");
@@ -632,6 +618,22 @@ public class GenPy : GenPySwift
 				CiClassType klass = (CiClassType) obj.Type;
 				WriteNewArray(klass.ElementType, args[0], args[2]); // TODO: side effect
 			}
+			break;
+		case CiId.ArraySortAll:
+		case CiId.ListSortAll:
+			obj.Accept(this, CiPriority.Assign);
+			WriteAssignSorted(obj, "bytearray");
+			obj.Accept(this, CiPriority.Argument);
+			Write("))");
+			break;
+		case CiId.ArraySortPart:
+		case CiId.ListSortPart:
+			obj.Accept(this, CiPriority.Primary);
+			WriteSlice(args[0], args[1]);
+			WriteAssignSorted(obj, "bytes");
+			obj.Accept(this, CiPriority.Primary);
+			WriteSlice(args[0], args[1]);
+			Write("))");
 			break;
 		case CiId.ListAdd:
 			WriteListAdd(obj, "append", args);

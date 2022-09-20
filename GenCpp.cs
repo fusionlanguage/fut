@@ -616,24 +616,6 @@ public class GenCpp : GenCCpp
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(')');
 			break;
-		case CiId.CollectionSortAll:
-			Include("algorithm");
-			Write("std::sort(");
-			StartMethodCall(obj);
-			Write("begin(), ");
-			StartMethodCall(obj); // FIXME: side effect
-			Write("end())");
-			break;
-		case CiId.CollectionSortPart:
-			Include("algorithm");
-			Write("std::sort(");
-			WriteArrayPtrAdd(obj, args[0]);
-			Write(", ");
-			WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
-			Write(" + ");
-			args[1].Accept(this, CiPriority.Add);
-			Write(')');
-			break;
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:
 			Include("algorithm");
@@ -674,6 +656,26 @@ public class GenCpp : GenCCpp
 			args[2].Accept(this, CiPriority.Argument);
 			Write(", ");
 			args[0].Accept(this, CiPriority.Argument);
+			Write(')');
+			break;
+		case CiId.ArraySortAll:
+		case CiId.ListSortAll:
+			Include("algorithm");
+			Write("std::sort(");
+			StartMethodCall(obj);
+			Write("begin(), ");
+			StartMethodCall(obj); // FIXME: side effect
+			Write("end())");
+			break;
+		case CiId.ArraySortPart:
+		case CiId.ListSortPart:
+			Include("algorithm");
+			Write("std::sort(");
+			WriteArrayPtrAdd(obj, args[0]);
+			Write(", ");
+			WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
+			Write(" + ");
+			args[1].Accept(this, CiPriority.Add);
 			Write(')');
 			break;
 		case CiId.ListAdd:

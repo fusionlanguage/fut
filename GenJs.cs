@@ -449,22 +449,6 @@ public class GenJs : GenBase
 			WriteArgs(method, args);
 			Write(')');
 			break;
-		case CiId.CollectionSortPart:
-			if (obj.Type.IsArray) {
-				obj.Accept(this, CiPriority.Primary);
-				Write(".subarray(");
-				WriteStartEnd(args[0], args[1]);
-				Write(").sort()");
-			}
-			else {
-				AddLibrary(GenJsMethod.SortListPart,
-					"sortListPart: function(a, offset, length)",
-					"const sorted = a.slice(offset, offset + length).sort((a, b) => a - b);",
-					"for (let i = 0; i < length; i++)",
-					"\ta[offset + i] = sorted[i];");
-				WriteCall("Ci.sortListPart", obj, args[0], args[1]);
-			}
-			break;
 		case CiId.ArrayFillAll:
 		case CiId.ArrayFillPart:
 			obj.Accept(this, CiPriority.Primary);
@@ -476,9 +460,11 @@ public class GenJs : GenBase
 			}
 			Write(')');
 			break;
-		case CiId.CollectionSortAll when obj.Type is CiClassType klass && klass.Class == CiSystem.ListClass:
+		case CiId.ArraySortPart:
 			obj.Accept(this, CiPriority.Primary);
-			Write(".sort((a, b) => a - b)");
+			Write(".subarray(");
+			WriteStartEnd(args[0], args[1]);
+			Write(").sort()");
 			break;
 		case CiId.ListAdd:
 			WriteListAdd(obj, "push", args);
@@ -494,6 +480,18 @@ public class GenJs : GenBase
 			break;
 		case CiId.ListRemoveRange:
 			WriteCall(obj, "splice", args[0], args[1]);
+			break;
+		case CiId.ListSortAll:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".sort((a, b) => a - b)");
+			break;
+		case CiId.ListSortPart:
+			AddLibrary(GenJsMethod.SortListPart,
+				"sortListPart: function(a, offset, length)",
+				"const sorted = a.slice(offset, offset + length).sort((a, b) => a - b);",
+				"for (let i = 0; i < length; i++)",
+				"\ta[offset + i] = sorted[i];");
+			WriteCall("Ci.sortListPart", obj, args[0], args[1]);
 			break;
 		case CiId.QueueDequeue:
 			obj.Accept(this, CiPriority.Primary);

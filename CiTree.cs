@@ -1294,14 +1294,11 @@ public class CiSystem : CiScope
 		new CiVar(TypeParam0, "value"),
 		new CiVar(IntType, "startIndex"),
 		new CiVar(IntType, "count")) { IsMutator = true };
-	public static readonly CiMethod CollectionSortPart = new CiMethod(CiCallType.Normal, VoidType, CiId.CollectionSortPart, "Sort", new CiVar(IntType, "startIndex"), new CiVar(IntType, "count")) { Visibility = CiVisibility.NumericElementType, IsMutator = true };
-	public static readonly CiMethodGroup CollectionSort = new CiMethodGroup(
-		new CiMethod(CiCallType.Normal, VoidType, CiId.CollectionSortAll, "Sort") { Visibility = CiVisibility.NumericElementType, IsMutator = true },
-		CollectionSortPart) { Visibility = CiVisibility.NumericElementType };
+	public static readonly CiMethod ArraySortPart = new CiMethod(CiCallType.Normal, VoidType, CiId.ArraySortPart, "Sort", new CiVar(IntType, "startIndex"), new CiVar(IntType, "count")) { Visibility = CiVisibility.NumericElementType, IsMutator = true };
 	public static readonly CiClass ArrayPtrClass = new CiClass(CiCallType.Normal, "ArrayPtr",
 		ArrayBinarySearchPart,
 		ArrayFillPart,
-		CollectionSortPart) { TypeParameterCount = 1 };
+		ArraySortPart) { TypeParameterCount = 1 };
 	public static readonly CiMethod CollectionCopyTo = new CiMethod(CiCallType.Normal, VoidType, CiId.CollectionCopyTo, "CopyTo",
 		new CiVar(IntType, "sourceIndex"),
 		new CiVar(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"),
@@ -1313,9 +1310,9 @@ public class CiSystem : CiScope
 		new CiMethodGroup(new CiMethod(CiCallType.Normal, VoidType, CiId.ArrayFillAll, "Fill", new CiVar(TypeParam0, "value")) { IsMutator = true },
 			ArrayFillPart),
 		ArrayLength,
-		CollectionSort) { Parent = ArrayPtrClass, TypeParameterCount = 1 };
-	public static readonly CiClassType ReadOnlyByteArrayPtrType = new CiClassType { Class = ArrayPtrClass, TypeArg0 = ByteType };
-	public static readonly CiClassType ReadWriteByteArrayPtrType = new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = ByteType };
+		new CiMethodGroup(
+			new CiMethod(CiCallType.Normal, VoidType, CiId.ArraySortAll, "Sort") { Visibility = CiVisibility.NumericElementType, IsMutator = true },
+			ArraySortPart) { Visibility = CiVisibility.NumericElementType }) { Parent = ArrayPtrClass, TypeParameterCount = 1 };
 	public static readonly CiMember CollectionCount = new CiMember(UIntType, "Count");
 	public static readonly CiMethod CollectionClear = new CiMethod(CiCallType.Normal, VoidType, CiId.CollectionClear, "Clear") { IsMutator = true };
 	public static readonly CiClass ListClass = new CiClass(CiCallType.Normal, "List",
@@ -1327,7 +1324,9 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Normal, VoidType, CiId.ListInsert, "Insert", new CiVar(UIntType, "index"), new CiVar(TypeParam0NotFinal, "value")) { IsMutator = true },
 		new CiMethod(CiCallType.Normal, VoidType, CiId.ListRemoveAt, "RemoveAt", new CiVar(IntType, "index")) { IsMutator = true },
 		new CiMethod(CiCallType.Normal, VoidType, CiId.ListRemoveRange, "RemoveRange", new CiVar(IntType, "index"), new CiVar(IntType, "count")) { IsMutator = true },
-		CollectionSort) { TypeParameterCount = 1 };
+		new CiMethodGroup(
+			new CiMethod(CiCallType.Normal, VoidType, CiId.ListSortAll, "Sort") { Visibility = CiVisibility.NumericElementType, IsMutator = true },
+			new CiMethod(CiCallType.Normal, VoidType, CiId.ListSortPart, "Sort", new CiVar(IntType, "startIndex"), new CiVar(IntType, "count")) { Visibility = CiVisibility.NumericElementType, IsMutator = true })) { TypeParameterCount = 1 };
 	public static readonly CiClass QueueClass = new CiClass(CiCallType.Normal, "Queue",
 		CollectionClear,
 		CollectionCount,
@@ -1360,7 +1359,6 @@ public class CiSystem : CiScope
 	public static readonly CiMember ConsoleError = new CiMember(ConsoleBase, "Error");
 	public static readonly CiClass ConsoleClass = new CiClass(CiCallType.Static, "Console",
 		ConsoleError);
-	public static readonly CiClass EncodingClass = new CiClass(CiCallType.Static, "Encoding");
 	public static readonly CiConst RegexOptionsNone = new CiConst("None", 0);
 	public static readonly CiEnum RegexOptionsEnum = new CiEnumFlags { Name = "RegexOptions" };
 	public static readonly CiMethod RegexCompile = new CiMethod(CiCallType.Static, null /* filled later to avoid cyclic reference */, CiId.RegexCompile, "Compile", new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone });
@@ -1449,14 +1447,19 @@ public class CiSystem : CiScope
 		OrderedDictionaryClass.Parent = DictionaryClass;
 		Add(ConsoleClass);
 		ConsoleClass.Parent = ConsoleBase;
-		EncodingClass.Add(new CiMember(new CiClass(CiCallType.Sealed, "UTF8Encoding",
+
+		CiClass utf8EncodingClass = new CiClass(CiCallType.Sealed, "UTF8Encoding",
 			new CiMethod(CiCallType.Normal, IntType, CiId.UTF8GetByteCount, "GetByteCount", new CiVar(StringPtrType, "str")),
-			new CiMethod(CiCallType.Normal, VoidType, CiId.UTF8GetBytes, "GetBytes", new CiVar(StringPtrType, "str"), new CiVar(ReadWriteByteArrayPtrType, "bytes"), new CiVar(IntType, "byteIndex")),
-			new CiMethod(CiCallType.Normal, StringStorageType, CiId.UTF8GetString, "GetString", new CiVar(ReadOnlyByteArrayPtrType, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length"))), // TODO: UIntType
-			"UTF8"));
-		Add(EncodingClass);
-		Add(new CiClass(CiCallType.Static, "Environment",
-			new CiMethod(CiCallType.Static, StringPtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", new CiVar(StringPtrType, "name"))));
+			new CiMethod(CiCallType.Normal, VoidType, CiId.UTF8GetBytes, "GetBytes", new CiVar(StringPtrType, "str"), new CiVar(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), new CiVar(IntType, "byteIndex")),
+			new CiMethod(CiCallType.Normal, StringStorageType, CiId.UTF8GetString, "GetString", new CiVar(new CiClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length"))); // TODO: UIntType
+		CiClass encodingClass = new CiClass(CiCallType.Static, "Encoding");
+		encodingClass.Add(new CiMember(utf8EncodingClass,  "UTF8"));
+		Add(encodingClass);
+
+		CiClass environmentClass = new CiClass(CiCallType.Static, "Environment");
+		environmentClass.Add(new CiMethod(CiCallType.Static, StringPtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", new CiVar(StringPtrType, "name")));
+		Add(environmentClass);
+
 		AddEnumValue(RegexOptionsEnum, RegexOptionsNone);
 		AddEnumValue(RegexOptionsEnum, new CiConst("IgnoreCase", 1));
 		AddEnumValue(RegexOptionsEnum, new CiConst("Multiline", 2));
