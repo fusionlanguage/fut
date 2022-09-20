@@ -269,9 +269,8 @@ public class GenC : GenCCpp
 
 	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Left == null || expr.Symbol is CiConst)
-			WriteLocalName(expr.Symbol, parent);
-		else if (expr.Symbol == CiSystem.CollectionCount) {
+		switch (expr.Symbol.Id) {
+		case CiId.CollectionCount:
 			CiClassType klass = (CiClassType) expr.Left.Type;
 			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass) {
 				expr.Left.Accept(this, CiPriority.Primary);
@@ -291,26 +290,34 @@ public class GenC : GenCCpp
 				WriteCall("g_tree_nnodes", expr.Left);
 			else
 				throw new NotImplementedException(klass.ToString());
-		}
-		else if (expr.Symbol == CiSystem.MatchStart)
+			return expr;
+		case CiId.MatchStart:
 			WriteMatchProperty(expr, 0);
-		else if (expr.Symbol == CiSystem.MatchEnd)
+			return expr;
+		case CiId.MatchEnd:
 			WriteMatchProperty(expr, 1);
-		else if (expr.Symbol == CiSystem.MatchLength)
+			return expr;
+		case CiId.MatchLength:
 			WriteMatchProperty(expr, 2);
-		else if (expr.Symbol == CiSystem.MatchValue) {
+			return expr;
+		case CiId.MatchValue:
 			Write("g_match_info_fetch(");
 			expr.Left.Accept(this, CiPriority.Argument);
 			Write(", 0)");
-		}
-		else if (IsDictionaryClassStgIndexing(expr.Left)) {
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write("->");
-			WriteName(expr.Symbol);
-		}
-		else
+			return expr;
+		default:
+			if (expr.Left == null || expr.Symbol is CiConst) {
+				WriteLocalName(expr.Symbol, parent);
+				return expr;
+			}
+			if (IsDictionaryClassStgIndexing(expr.Left)) {
+				expr.Left.Accept(this, CiPriority.Primary);
+				Write("->");
+				WriteName(expr.Symbol);
+				return expr;
+			}
 			return base.VisitSymbolReference(expr, parent);
-		return expr;
+		}
 	}
 
 	void WriteGlib(string s)

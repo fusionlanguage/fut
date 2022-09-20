@@ -1286,7 +1286,6 @@ public class CiSystem : CiScope
 	public static readonly CiMethod StringStartsWith = new CiMethod(CiCallType.Normal, BoolType, CiId.StringStartsWith, "StartsWith", new CiVar(StringPtrType, "value"));
 	public static readonly CiMethod StringSubstring = new CiMethod(CiCallType.Normal, StringStorageType, CiId.StringSubstring, "Substring", new CiVar(IntType, "offset"), new CiVar(IntType, "length") { Value = new CiLiteralLong(-1L) } ); // TODO: UIntType
 	public static readonly CiType PrintableType = new CiPrintableType { Name = "printable" };
-	public static readonly CiMember ArrayLength = new CiMember(UIntType, CiId.ArrayLength, "Length");
 	public static readonly CiMethod ArrayBinarySearchPart = new CiMethod(CiCallType.Normal, IntType, CiId.ArrayBinarySearchPart, "BinarySearch",
 		new CiVar(TypeParam0, "value"),
 		new CiVar(IntType, "startIndex"),
@@ -1305,7 +1304,7 @@ public class CiSystem : CiScope
 			ArrayBinarySearchPart) { Visibility = CiVisibility.NumericElementType },
 		new CiMethodGroup(new CiMethod(CiCallType.Normal, VoidType, CiId.ArrayFillAll, "Fill", new CiVar(TypeParam0, "value")) { IsMutator = true },
 			ArrayFillPart),
-		ArrayLength,
+		new CiMember(UIntType, CiId.ArrayLength, "Length"),
 		new CiMethodGroup(
 			new CiMethod(CiCallType.Normal, VoidType, CiId.ArraySortAll, "Sort") { Visibility = CiVisibility.NumericElementType, IsMutator = true },
 			ArraySortPart) { Visibility = CiVisibility.NumericElementType }) { Parent = ArrayPtrClass, TypeParameterCount = 1 };
@@ -1377,19 +1376,15 @@ public class CiSystem : CiScope
 		new CiMethodGroup(
 			new CiMethod(CiCallType.Static, BoolType, CiId.RegexIsMatchStr, "IsMatch", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone }),
 			new CiMethod(CiCallType.Normal, BoolType, CiId.RegexIsMatchRegex, "IsMatch", new CiVar(StringPtrType, "input"))));
-	public static readonly CiMember MatchStart = new CiMember(IntType, CiId.MatchStart, "Start");
-	public static readonly CiMember MatchEnd = new CiMember(IntType, CiId.MatchEnd, "End");
-	public static readonly CiMember MatchLength = new CiMember(UIntType, CiId.MatchLength, "Length");
-	public static readonly CiMember MatchValue = new CiMember(StringPtrType, CiId.MatchValue, "Value");
 	public static readonly CiClass MatchClass = new CiClass(CiCallType.Sealed, "Match",
 		new CiMethodGroup(
 			new CiMethod(CiCallType.Normal, BoolType, CiId.MatchFindStr, "Find", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone }) { IsMutator = true },
 			new CiMethod(CiCallType.Normal, BoolType, CiId.MatchFindRegex, "Find", new CiVar(StringPtrType, "input"), new CiVar(new CiClassType { Class = RegexClass }, "pattern")) { IsMutator = true }),
-		MatchStart,
-		MatchEnd,
+		new CiMember(IntType, CiId.MatchStart, "Start"),
+		new CiMember(IntType, CiId.MatchEnd, "End"),
 		new CiMethod(CiCallType.Normal, StringPtrType, CiId.MatchGetCapture, "GetCapture", new CiVar(UIntType, "group")),
-		MatchLength,
-		MatchValue);
+		new CiMember(UIntType, CiId.MatchLength, "Length"),
+		new CiMember(StringPtrType, CiId.MatchValue, "Value"));
 	public static readonly CiClass MathClass = new CiClass(CiCallType.Static, "Math",
 		new CiMethod(CiCallType.Static, FloatType, CiId.MathMethod, "Acos", new CiVar(DoubleType, "a")),
 		new CiMethod(CiCallType.Static, FloatType, CiId.MathMethod, "Asin", new CiVar(DoubleType, "a")),

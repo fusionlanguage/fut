@@ -155,13 +155,8 @@ public class GenCpp : GenCCpp
 			Write(symbol.Name);
 			break;
 		case CiVar _:
-			WriteCamelCaseNotKeyword(symbol.Name);
-			break;
 		case CiMember _:
-			if (symbol == CiSystem.CollectionCount)
-				Write("size()");
-			else
-				WriteCamelCaseNotKeyword(symbol.Name);
+			WriteCamelCaseNotKeyword(symbol.Name);
 			break;
 		default:
 			throw new NotImplementedException(symbol.GetType().Name);
@@ -1030,9 +1025,16 @@ public class GenCpp : GenCCpp
 
 	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Symbol == CiSystem.MatchStart)
+		switch (expr.Symbol.Id) {
+		case CiId.CollectionCount:
+			expr.Left.Accept(this, CiPriority.Primary);
+			WriteMemberOp(expr.Left, expr);
+			Write("size()");
+			return expr;
+		case CiId.MatchStart:
 			WriteMatchProperty(expr, "position");
-		else if (expr.Symbol == CiSystem.MatchEnd) {
+			return expr;
+		case CiId.MatchEnd:
 			if (parent > CiPriority.Add)
 				Write('(');
 			WriteMatchProperty(expr, "position");
@@ -1040,14 +1042,16 @@ public class GenCpp : GenCCpp
 			WriteMatchProperty(expr, "length"); // FIXME: side effect
 			if (parent > CiPriority.Add)
 				Write(')');
-		}
-		else if (expr.Symbol == CiSystem.MatchLength)
+			return expr;
+		case CiId.MatchLength:
 			WriteMatchProperty(expr, "length");
-		else if (expr.Symbol == CiSystem.MatchValue)
+			return expr;
+		case CiId.MatchValue:
 			WriteMatchProperty(expr, "str");
-		else
+			return expr;
+		default:
 			return base.VisitSymbolReference(expr, parent);
-		return expr;
+		}
 	}
 
 	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)

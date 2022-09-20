@@ -382,11 +382,12 @@ public class GenCs : GenTyped
 
 	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Symbol == CiSystem.MatchStart) {
+		switch (expr.Symbol.Id) {
+		case CiId.MatchStart:
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".Index");
-		}
-		else if (expr.Symbol == CiSystem.MatchEnd) {
+			return expr;
+		case CiId.MatchEnd:
 			if (parent > CiPriority.Add)
 				Write('(');
 			expr.Left.Accept(this, CiPriority.Primary);
@@ -394,33 +395,36 @@ public class GenCs : GenTyped
 			WriteStringLength(expr.Left); // FIXME: side effect
 			if (parent > CiPriority.Add)
 				Write(')');
-		}
-		else if (expr.Left != null && expr.Left.IsReferenceTo(CiSystem.MathClass)) { // NaN, NegativeInfinity, PositiveInfinity
+			return expr;
+		case CiId.MathNaN:
+		case CiId.MathNegativeInfinity:
+		case CiId.MathPositiveInfinity:
 			Write("float.");
 			Write(expr.Symbol.Name);
-		}
-		else if (expr.Symbol.Parent is CiForeach forEach
+			return expr;
+		default:
+			if (expr.Symbol.Parent is CiForeach forEach
 			&& forEach.Collection.Type is CiClassType dict
 			&& dict.Class == CiSystem.OrderedDictionaryClass) {
-			if (parent == CiPriority.Primary)
-				Write('(');
-			CiVar element = forEach.Element;
-			if (expr.Symbol == element) {
-				WriteStaticCastType(dict.KeyType);
-				WriteName(element);
-				Write(".Key");
+				if (parent == CiPriority.Primary)
+					Write('(');
+				CiVar element = forEach.Element;
+				if (expr.Symbol == element) {
+					WriteStaticCastType(dict.KeyType);
+					WriteName(element);
+					Write(".Key");
+				}
+				else {
+					WriteStaticCastType(dict.ValueType);
+					WriteName(element);
+					Write(".Value");
+				}
+				if (parent == CiPriority.Primary)
+					Write(')');
+				return expr;
 			}
-			else {
-				WriteStaticCastType(dict.ValueType);
-				WriteName(element);
-				Write(".Value");
-			}
-			if (parent == CiPriority.Primary)
-				Write(')');
-		}
-		else
 			return base.VisitSymbolReference(expr, parent);
-		return expr;
+		}
 	}
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)

@@ -129,7 +129,7 @@ public abstract class GenCCpp : GenTyped
 
 	protected static bool IsStringEmpty(CiBinaryExpr expr, out CiExpr str)
 	{
-		if (expr.Left is CiSymbolReference symbol && symbol.Symbol == CiSystem.StringLength
+		if (expr.Left is CiSymbolReference symbol && symbol.Symbol.Id == CiId.StringLength
 			&& expr.Right.IsLiteralZero) {
 			str = symbol.Left;
 			return true;

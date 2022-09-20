@@ -515,17 +515,16 @@ public abstract class GenBase : CiVisitor
 
 	protected bool WriteJavaMatchProperty(CiSymbolReference expr, CiPriority parent)
 	{
-		if (expr.Symbol == CiSystem.MatchStart) {
+		switch (expr.Symbol.Id) {
+		case CiId.MatchStart:
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".start()");
 			return true;
-		}
-		if (expr.Symbol == CiSystem.MatchEnd) {
+		case CiId.MatchEnd:
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".end()");
 			return true;
-		}
-		if (expr.Symbol == CiSystem.MatchLength) {
+		case CiId.MatchLength:
 			if (parent > CiPriority.Add)
 				Write('(');
 			expr.Left.Accept(this, CiPriority.Primary);
@@ -535,20 +534,20 @@ public abstract class GenBase : CiVisitor
 			if (parent > CiPriority.Add)
 				Write(')');
 			return true;
-		}
-		if (expr.Symbol == CiSystem.MatchValue) {
+		case CiId.MatchValue:
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".group()");
 			return true;
+		default:
+			return false;
 		}
-		return false;
 	}
 
 	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Left == null)
 			WriteLocalName(expr.Symbol, parent);
-		else if (expr.Symbol == CiSystem.StringLength)
+		else if (expr.Symbol.Id == CiId.StringLength)
 			WriteStringLength(expr.Left);
 		else {
 			expr.Left.Accept(this, CiPriority.Primary);

@@ -188,10 +188,7 @@ public class GenJava : GenTyped
 				WriteCamelCaseNotKeyword(symbol.Name);
 			break;
 		case CiMember _:
-			if (symbol == CiSystem.CollectionCount)
-				Write("size()");
-			else
-				WriteCamelCaseNotKeyword(symbol.Name);
+			WriteCamelCaseNotKeyword(symbol.Name);
 			break;
 		default:
 			throw new NotImplementedException(symbol.GetType().Name);
@@ -458,6 +455,11 @@ public class GenJava : GenTyped
 	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
+		case CiId.CollectionCount:
+			expr.Left.Accept(this, CiPriority.Primary);
+			WriteMemberOp(expr.Left, expr);
+			Write("size()");
+			return expr;
 		case CiId.MathNaN:
 			Write("Float.NaN");
 			return expr;

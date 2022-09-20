@@ -448,15 +448,16 @@ public class CiResolver : CiVisitor
 						break;
 					}
 				}
-				if (expr.Symbol == CiSystem.ArrayLength) {
-					if (scope is CiArrayStorageType array)
-						return expr.ToLiteralLong(array.Length);
-					throw new NotImplementedException(scope.GetType().Name);
-				}
-				if (expr.Symbol == CiSystem.StringLength && left is CiLiteralString leftLiteral) {
+				switch (expr.Symbol.Id) {
+				case CiId.ArrayLength:
+					return expr.ToLiteralLong(((CiArrayStorageType) scope).Length);
+				case CiId.StringLength when left is CiLiteralString leftLiteral:
 					int length = leftLiteral.GetAsciiLength();
 					if (length >= 0)
 						return expr.ToLiteralLong(length);
+					break;
+				default:
+					break;
 				}
 			}
 			return new CiSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
