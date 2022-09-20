@@ -431,10 +431,6 @@ public class GenJs : GenBase
 			}
 			Write(')');
 			break;
-		case CiId.CollectionClear when obj.Type is CiClassType klass && (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass):
-			obj.Accept(this, CiPriority.Primary);
-			Write(".length = 0");
-			break;
 		case CiId.ArrayFillAll:
 		case CiId.ArrayFillPart:
 			obj.Accept(this, CiPriority.Primary);
@@ -469,6 +465,12 @@ public class GenJs : GenBase
 			break;
 		case CiId.ListAdd:
 			WriteListAdd(obj, "push", args);
+			break;
+		case CiId.ListClear:
+		case CiId.QueueClear:
+		case CiId.StackClear:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".length = 0");
 			break;
 		case CiId.ListInsert:
 			WriteListInsert(obj, "splice", args, ", 0, ");

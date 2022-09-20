@@ -492,14 +492,6 @@ public class GenPy : GenPySwift
 	{
 	}
 
-	static bool IsNumberList(CiType type)
-	{
-		return type is CiClassType klass
-			&& (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass)
-			&& klass.ElementType is CiNumericType number
-			&& GetArrayCode(number) != 'B';
-	}
-
 	void WriteSlice(CiExpr startIndex, CiExpr length)
 	{
 		Write('[');
@@ -589,11 +581,6 @@ public class GenPy : GenPySwift
 			obj.Accept(this, CiPriority.Primary);
 			WriteSlice(args[0], args.Count == 2 ? args[1] : null);
 			break;
-		case CiId.CollectionClear when IsNumberList(obj.Type):
-			Write("del ");
-			obj.Accept(this, CiPriority.Primary);
-			Write("[:]");
-			break;
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:
 			Include("bisect");
@@ -640,6 +627,18 @@ public class GenPy : GenPySwift
 			break;
 		case CiId.ListAdd:
 			WriteListAdd(obj, "append", args);
+			break;
+		case CiId.ListClear:
+		case CiId.StackClear:
+			if (((CiClassType) obj.Type).ElementType is CiNumericType number && GetArrayCode(number) != 'B') {
+				Write("del ");
+				obj.Accept(this, CiPriority.Primary);
+				Write("[:]");
+			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".clear()");
+			}
 			break;
 		case CiId.ListInsert:
 			WriteListInsert(obj, "insert", args);

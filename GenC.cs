@@ -1431,23 +1431,6 @@ public class GenC : GenCCpp
 			if (parent > CiPriority.Add)
 				Write(')');
 			break;
-		case CiId.CollectionClear:
-			CiClassType klass = (CiClassType) obj.Type;
-			if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass) {
-				Write("g_array_set_size(");
-				obj.Accept(this, CiPriority.Argument);
-				Write(", 0)");
-			}
-			else if (klass.Class == CiSystem.QueueClass) {
-				Write("g_queue_clear("); // TODO: g_queue_clear_full
-				WriteQueueObject(obj);
-				Write(')');
-			}
-			else if (klass.Class == CiSystem.HashSetClass)
-				WriteCall("g_hash_table_remove_all", obj);
-			else
-				throw new NotImplementedException();
-			break;
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:
 			if (parent > CiPriority.Add)
@@ -1550,6 +1533,12 @@ public class GenC : GenCCpp
 				break;
 			}
 			break;
+		case CiId.ListClear:
+		case CiId.StackClear:
+			Write("g_array_set_size(");
+			obj.Accept(this, CiPriority.Argument);
+			Write(", 0)");
+			break;
 		case CiId.ListContains:
 			Write("CiArray_Contains_");
 			TypeCode typeCode = GetTypeCode(((CiClassType) obj.Type).ElementType, false);
@@ -1589,6 +1578,11 @@ public class GenC : GenCCpp
 			Write(')');
 			this.Compares.Add(typeCode2);
 			break;
+		case CiId.QueueClear:
+			Write("g_queue_clear("); // TODO: g_queue_clear_full
+			WriteQueueObject(obj);
+			Write(')');
+			break;
 		case CiId.QueueDequeue:
 			WriteQueueGet("g_queue_pop_head", obj, parent);
 			break;
@@ -1620,6 +1614,9 @@ public class GenC : GenCCpp
 			Write(", ");
 			WriteGPointerCast(((CiClassType) obj.Type).ElementType, args[0]);
 			Write(')');
+			break;
+		case CiId.HashSetClear:
+			WriteCall("g_hash_table_remove_all", obj);
 			break;
 		case CiId.HashSetContains:
 			WriteDictionaryLookup(obj, "g_hash_table_contains", args[0]);

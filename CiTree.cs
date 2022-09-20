@@ -1309,10 +1309,9 @@ public class CiSystem : CiScope
 			new CiMethod(CiCallType.Normal, VoidType, CiId.ArraySortAll, "Sort") { Visibility = CiVisibility.NumericElementType, IsMutator = true },
 			ArraySortPart) { Visibility = CiVisibility.NumericElementType }) { Parent = ArrayPtrClass, TypeParameterCount = 1 };
 	public static readonly CiMember CollectionCount = new CiMember(UIntType, "Count");
-	public static readonly CiMethod CollectionClear = new CiMethod(CiCallType.Normal, VoidType, CiId.CollectionClear, "Clear") { IsMutator = true };
 	public static readonly CiClass ListClass = new CiClass(CiCallType.Normal, "List",
 		new CiMethod(CiCallType.Normal, VoidType, CiId.ListAdd, "Add", new CiVar(TypeParam0NotFinal, "value")) { IsMutator = true },
-		CollectionClear,
+		new CiMethod(CiCallType.Normal, VoidType, CiId.ListClear, "Clear") { IsMutator = true },
 		new CiMethod(CiCallType.Normal, BoolType, CiId.ListContains, "Contains", new CiVar(TypeParam0, "value")),
 		CollectionCount,
 		new CiMethod(CiCallType.Normal, VoidType, CiId.ListCopyTo, "CopyTo",
@@ -1327,20 +1326,20 @@ public class CiSystem : CiScope
 			new CiMethod(CiCallType.Normal, VoidType, CiId.ListSortAll, "Sort") { Visibility = CiVisibility.NumericElementType, IsMutator = true },
 			new CiMethod(CiCallType.Normal, VoidType, CiId.ListSortPart, "Sort", new CiVar(IntType, "startIndex"), new CiVar(IntType, "count")) { Visibility = CiVisibility.NumericElementType, IsMutator = true })) { TypeParameterCount = 1 };
 	public static readonly CiClass QueueClass = new CiClass(CiCallType.Normal, "Queue",
-		CollectionClear,
+		new CiMethod(CiCallType.Normal, VoidType, CiId.QueueClear, "Clear") { IsMutator = true },
 		CollectionCount,
 		new CiMethod(CiCallType.Normal, TypeParam0, CiId.QueueDequeue, "Dequeue") { IsMutator = true },
 		new CiMethod(CiCallType.Normal, VoidType, CiId.QueueEnqueue, "Enqueue", new CiVar(TypeParam0, "value")) { IsMutator = true },
 		new CiMethod(CiCallType.Normal, TypeParam0, CiId.QueuePeek, "Peek")) { TypeParameterCount = 1 };
 	public static readonly CiClass StackClass = new CiClass(CiCallType.Normal, "Stack",
-		CollectionClear,
+		new CiMethod(CiCallType.Normal, VoidType, CiId.StackClear, "Clear") { IsMutator = true },
 		CollectionCount,
 		new CiMethod(CiCallType.Normal, TypeParam0, CiId.StackPeek, "Peek"),
 		new CiMethod(CiCallType.Normal, VoidType, CiId.StackPush, "Push", new CiVar(TypeParam0, "value")) { IsMutator = true },
 		new CiMethod(CiCallType.Normal, TypeParam0, CiId.StackPop, "Pop") { IsMutator = true }) { TypeParameterCount = 1 };
 	public static readonly CiClass HashSetClass = new CiClass(CiCallType.Normal, "HashSet",
 		new CiMethod(CiCallType.Normal, VoidType, CiId.HashSetAdd, "Add", new CiVar(TypeParam0, "value")) { IsMutator = true },
-		CollectionClear,
+		new CiMethod(CiCallType.Normal, VoidType, CiId.HashSetClear, "Clear") { IsMutator = true },
 		CollectionCount,
 		new CiMethod(CiCallType.Normal, BoolType, CiId.HashSetContains, "Contains", new CiVar(TypeParam0, "value")),
 		new CiMethod(CiCallType.Normal, VoidType, CiId.HashSetRemove, "Remove", new CiVar(TypeParam0, "value")) { IsMutator = true }) { TypeParameterCount = 1 };

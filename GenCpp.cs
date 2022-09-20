@@ -602,10 +602,6 @@ public class GenCpp : GenCCpp
 		case CiId.StringSubstring:
 			WriteStringMethod(obj, "substr", method, args);
 			break;
-		case CiId.CollectionClear when obj.Type is CiClassType klass && (klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass):
-			WriteCollectionObject(obj, CiPriority.Assign);
-			Write(" = {}");
-			break;
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:
 			Include("algorithm");
@@ -734,6 +730,11 @@ public class GenCpp : GenCCpp
 			Write(" + ");
 			args[1].Accept(this, CiPriority.Add);
 			Write(')');
+			break;
+		case CiId.QueueClear:
+		case CiId.StackClear:
+			WriteCollectionObject(obj, CiPriority.Assign);
+			Write(" = {}");
 			break;
 		case CiId.QueueDequeue:
 			if (parent == CiPriority.Statement) {

@@ -466,7 +466,10 @@ public class GenSwift : GenPySwift
 				Write(')');
 			}
 			break;
-		case CiId.CollectionClear:
+		case CiId.ListClear:
+		case CiId.QueueClear:
+		case CiId.StackClear:
+		case CiId.HashSetClear:
 		case CiId.DictionaryClear:
 		case CiId.SortedDictionaryClear:
 			obj.Accept(this, CiPriority.Primary);
