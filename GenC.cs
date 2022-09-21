@@ -213,9 +213,10 @@ public class GenC : GenCCpp
 	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
 		if (symbol.Parent is CiForeach forEach) {
-			switch (forEach.Collection.Type) {
-			case CiArrayStorageType array:
-				if (array.ElementType is CiClass klass) {
+			CiClassType klass = (CiClassType) forEach.Collection.Type;
+			switch (klass.Class.Id) {
+			case CiId.ArrayStorageClass:
+				if (klass.ElementType is CiClass) {
 					if (parent > CiPriority.Add)
 						Write('(');
 					forEach.Collection.Accept(this, CiPriority.Add);
@@ -231,7 +232,7 @@ public class GenC : GenCCpp
 					Write(']');
 				}
 				return;
-			case CiClassType klass2 when klass2.Class == CiSystem.ListClass:
+			case CiId.ListClass:
 				if (parent == CiPriority.Primary)
 					Write('(');
 				Write('*');
@@ -357,41 +358,51 @@ public class GenC : GenCCpp
 			Write("char *");
 			break;
 		case CiClassType klass:
-			if (klass.Class.TypeParameterCount == 0) {
-				if (!(klass is CiReadWriteClassType))
-					Write("const ");
-				if (klass.Class == CiSystem.RegexClass)
-					WriteGlib("GRegex");
-				else if (klass.Class == CiSystem.MatchClass)
-					WriteGlib("GMatchInfo");
-				else
-					WriteName(klass.Class);
-				Write(" *");
-			}
-			else if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass)
+			switch (klass.Class.Id) {
+			case CiId.ListClass:
+			case CiId.StackClass:
 				WriteGlib("GArray *");
-			else if (klass.Class == CiSystem.QueueClass) {
+				break;
+			case CiId.QueueClass:
 				WriteGlib("GQueue ");
 				if (!(klass is CiStorageType))
 					Write('*');
-			}
-			else if (klass.Class == CiSystem.HashSetClass || klass.Class == CiSystem.DictionaryClass)
+				break;
+			case CiId.HashSetClass:
+			case CiId.DictionaryClass:
 				WriteGlib("GHashTable *");
-			else if (klass.Class == CiSystem.SortedDictionaryClass)
+				break;
+			case CiId.SortedDictionaryClass:
 				WriteGlib("GTree *");
-			else
-				throw new NotImplementedException();
+				break;
+			case CiId.RegexClass:
+				if (!(klass is CiReadWriteClassType))
+					Write("const ");
+				WriteGlib("GRegex *");
+				break;
+			case CiId.MatchClass:
+				if (!(klass is CiReadWriteClassType))
+					Write("const ");
+				WriteGlib("GMatchInfo *");
+				break;
+			default:
+				if (!(klass is CiReadWriteClassType))
+					Write("const ");
+				WriteName(klass.Class);
+				Write(" *");
+				break;
+			}
 			break;
 		case CiContainerType _:
 			if (baseType == CiSystem.BoolType) {
 				IncludeStdBool();
 				Write("bool");
 			}
-			else if (baseType == CiSystem.MatchClass) {
+			else if (baseType.Id == CiId.MatchClass) {
 				WriteGlib("GMatchInfo *");
 				space = false;
 			}
-			else if (baseType == CiSystem.LockClass) {
+			else if (baseType.Id == CiId.LockClass) {
 				Include("threads.h");
 				Write("mtx_t");
 			}
@@ -434,7 +445,7 @@ public class GenC : GenCCpp
 
 	protected override void Write(CiType type, bool promote)
 	{
-		WriteDefinition(type, () => {}, promote, type is CiClassType arrayPtr && arrayPtr.Class == CiSystem.ArrayPtrClass);
+		WriteDefinition(type, () => {}, promote, type is CiClassType arrayPtr && arrayPtr.Class.Id == CiId.ArrayPtrClass);
 	}
 
 	protected override void WriteTypeAndName(CiNamedValue value)
@@ -547,7 +558,7 @@ public class GenC : GenCCpp
 	string GetListDestroy(CiType type)
 	{
 		if (type is CiClassType klass
-		 && (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.StackClass)) {
+		 && (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.StackClass)) {
 			CiType elementType = klass.ElementType;
 			if (elementType == CiSystem.StringStorageType) {
 				this.ListFrees["String"] = "free(*(void **) ptr)";
@@ -560,17 +571,20 @@ public class GenC : GenCCpp
 			if (elementType is CiClass klass2 && NeedsDestructor(klass2))
 				return $"(GDestroyNotify) {klass2.Name}_Destruct";
 			if (elementType is CiStorageType storage) {
-				if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.StackClass) {
+				switch (storage.Class.Id) {
+				case CiId.ListClass:
+				case CiId.StackClass:
 					this.ListFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
 					return "CiList_FreeList";
-				}
-				if (storage.Class == CiSystem.HashSetClass || storage.Class == CiSystem.DictionaryClass) {
+				case CiId.HashSetClass:
+				case CiId.DictionaryClass:
 					this.ListFrees["Dictionary"] = "g_hash_table_unref(*(GHashTable **) ptr)";
 					return "CiList_FreeDictionary";
-				}
-				if (storage.Class == CiSystem.SortedDictionaryClass) {
+				case CiId.SortedDictionaryClass:
 					this.ListFrees["SortedDictionary"] = "g_tree_unref(*(GTree **) ptr)";
 					return "CiList_FreeSortedDictionary";
+				default:
+					break;
 				}
 			}
 		}
@@ -588,12 +602,18 @@ public class GenC : GenCCpp
 		if (type is CiClass klass)
 			return NeedsDestructor(klass) ? $"(GDestroyNotify) {klass.Name}_Delete" /* TODO: emit */ : "free";
 		if (type is CiStorageType storage) {
-			if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.StackClass)
+			switch (storage.Class.Id) {
+			case CiId.ListClass:
+			case CiId.StackClass:
 				return "(GDestroyNotify) g_array_unref";
-			if (storage.Class == CiSystem.HashSetClass || storage.Class == CiSystem.DictionaryClass)
+			case CiId.HashSetClass:
+			case CiId.DictionaryClass:
 				return "(GDestroyNotify) g_hash_table_unref";
-			if (storage.Class == CiSystem.SortedDictionaryClass)
+			case CiId.SortedDictionaryClass:
 				return "(GDestroyNotify) g_tree_unref";
+			default:
+				break;
+			}
 		}
 		return "NULL";
 	}
@@ -624,18 +644,23 @@ public class GenC : GenCCpp
 
 	protected override void WriteNewStorage(CiStorageType storage)
 	{
-		if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.StackClass) {
+		switch (storage.Class.Id) {
+		case CiId.ListClass:
+		case CiId.StackClass:
 			Write("g_array_new(FALSE, FALSE, sizeof(");
 			Write(storage.ElementType, false);
 			Write("))");
-		}
-		else if (storage.Class == CiSystem.QueueClass)
+			break;
+		case CiId.QueueClass:
 			Write("G_QUEUE_INIT");
-		else if (storage.Class == CiSystem.HashSetClass)
+			break;
+		case CiId.HashSetClass:
 			WriteNewHashTable(storage.ElementType, "NULL");
-		else if (storage.Class == CiSystem.DictionaryClass)
+			break;
+		case CiId.DictionaryClass:
 			WriteNewHashTable(storage.KeyType, GetDictionaryDestroy(storage.ValueType));
-		else if (storage.Class == CiSystem.SortedDictionaryClass) {
+			break;
+		case CiId.SortedDictionaryClass:
 			string valueDestroy = GetDictionaryDestroy(storage.ValueType);
 			if (storage.KeyType == CiSystem.StringPtrType && valueDestroy == "NULL")
 				Write("g_tree_new((GCompareFunc) strcmp");
@@ -659,9 +684,10 @@ public class GenC : GenCCpp
 				Write(valueDestroy);
 			}
 			Write(')');
+			break;
+		default:
+			throw new NotImplementedException(storage.Class.Name);
 		}
-		else
-			throw new NotImplementedException();
 	}
 
 	protected override void WriteVarInit(CiNamedValue def)
@@ -674,7 +700,7 @@ public class GenC : GenCCpp
 
 	int WriteTemporary(CiType type, CiExpr expr)
 	{
-		bool assign = expr != null || (type is CiClassType klass && (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass));
+		bool assign = expr != null || (type is CiClassType klass && (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.DictionaryClass || klass.Class.Id == CiId.SortedDictionaryClass));
 		int id = this.CurrentTemporaries.IndexOf(type);
 		if (id < 0) {
 			id = this.CurrentTemporaries.Count;
@@ -895,7 +921,7 @@ public class GenC : GenCCpp
 	void StartDictionaryInsert(CiExpr dict, CiExpr key)
 	{
 		CiClassType type = (CiClassType) dict.Type;
-		Write(type.Class == CiSystem.SortedDictionaryClass ? "g_tree_insert(" : "g_hash_table_insert(");
+		Write(type.Class.Id == CiId.SortedDictionaryClass ? "g_tree_insert(" : "g_hash_table_insert(");
 		dict.Accept(this, CiPriority.Argument);
 		Write(", ");
 		WriteGPointerCast(type.KeyType, key);
@@ -957,7 +983,7 @@ public class GenC : GenCCpp
 
 	protected override bool HasInitCode(CiNamedValue def)
 	{
-		return (def is CiField && (def.Value != null || IsHeapAllocated(def.Type.StorageType) || (def.Type is CiClassType klass && (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass))))
+		return (def is CiField && (def.Value != null || IsHeapAllocated(def.Type.StorageType) || (def.Type is CiClassType klass && (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.DictionaryClass || klass.Class.Id == CiId.SortedDictionaryClass))))
 			|| GetThrowingMethod(def.Value) != null
 			|| (def.Type.StorageType is CiClass klass2 && (klass2 == CiSystem.LockClass || NeedsConstructor(klass2)))
 			|| GetListDestroy(def.Type) != null;
@@ -1034,7 +1060,7 @@ public class GenC : GenCCpp
 
 	protected override void WriteArrayPtr(CiExpr expr, CiPriority parent)
 	{
-		if (expr.Type is CiClassType list && list.Class == CiSystem.ListClass) {
+		if (expr.Type is CiClassType list && list.Class.Id == CiId.ListClass) {
 			Write('(');
 			Write(list.ElementType, false);
 			Write(" *) ");
@@ -1076,7 +1102,7 @@ public class GenC : GenCCpp
 		switch (type) {
 		case CiDynamicPtrType dynamic when expr is CiSymbolReference && parent != CiPriority.Equality:
 			this.SharedAddRef = true;
-			if (dynamic.Class == CiSystem.ArrayPtrClass)
+			if (dynamic.Class.Id == CiId.ArrayPtrClass)
 				WriteDynamicArrayCast(dynamic.ElementType);
 			else {
 				Write('(');
@@ -1085,8 +1111,8 @@ public class GenC : GenCCpp
 			}
 			WriteCall("CiShared_AddRef", expr);
 			break;
-		case CiClassType klass when klass.Class != CiSystem.ArrayPtrClass:
-			if (klass.Class == CiSystem.QueueClass && expr.Type is CiStorageType) {
+		case CiClassType klass when klass.Class.Id != CiId.ArrayPtrClass:
+			if (klass.Class.Id == CiId.QueueClass && expr.Type is CiStorageType) {
 				Write('&');
 				expr.Accept(this, CiPriority.Primary);
 			}
@@ -1634,7 +1660,7 @@ public class GenC : GenCCpp
 			StartDictionaryInsert(obj, args[0]);
 			CiType valueType = ((CiClassType) obj.Type).ValueType;
 			switch (valueType) {
-			case CiClassType klass3 when klass3.Class == CiSystem.ListClass || klass3.Class == CiSystem.StackClass || klass3.Class == CiSystem.DictionaryClass || klass3.Class == CiSystem.SortedDictionaryClass:
+			case CiClassType klass3 when klass3.Class.Id == CiId.ListClass || klass3.Class.Id == CiId.StackClass || klass3.Class.Id == CiId.DictionaryClass || klass3.Class.Id == CiId.SortedDictionaryClass:
 				WriteNewStorage(valueType);
 				break;
 			case CiClass klass3 when klass3.IsPublic && klass3.Constructor != null && klass3.Constructor.Visibility == CiVisibility.Public:
@@ -1816,7 +1842,8 @@ public class GenC : GenCCpp
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Left.Type is CiClassType klass) {
-			if (klass.Class == CiSystem.ListClass) {
+			switch (klass.Class.Id) {
+			case CiId.ListClass:
 				if (klass.ElementType is CiArrayStorageType) {
 					Write('(');
 					WriteDynamicArrayCast(klass.ElementType);
@@ -1831,14 +1858,14 @@ public class GenC : GenCCpp
 					Write(')');
 				}
 				return;
-			}
-			if (klass.Class == CiSystem.DictionaryClass) {
+			case CiId.DictionaryClass:
 				WriteDictionaryIndexing("g_hash_table_lookup", expr, parent);
 				return;
-			}
-			if (klass.Class == CiSystem.SortedDictionaryClass) {
+			case CiId.SortedDictionaryClass:
 				WriteDictionaryIndexing("g_tree_lookup", expr, parent);
 				return;
+			default:
+				break;
 			}
 		}
 		base.WriteIndexing(expr, parent);
@@ -1965,43 +1992,50 @@ public class GenC : GenCCpp
 			type = array.ElementType;
 		}
 		bool arrayFree = false;
-		if (type is CiClass klass) {
-			if (klass == CiSystem.MatchClass)
+		switch (type) {
+		case CiClass klass:
+			if (klass.Id == CiId.MatchClass)
 				Write("g_match_info_free(");
-			else if (klass == CiSystem.LockClass)
+			else if (klass.Id == CiId.LockClass)
 				Write("mtx_destroy(&");
 			else {
 				WriteName(klass);
 				Write("_Destruct(&");
 			}
-		}
-		else if (type is CiDynamicPtrType) {
-			if (type.IsClass(CiSystem.RegexClass))
+			break;
+		case CiDynamicPtrType dynamic:
+			if (dynamic.Class.Id == CiId.RegexClass)
 				Write("g_regex_unref(");
 			else {
 				this.SharedRelease = true;
 				Write("CiShared_Release(");
 			}
-		}
-		else if (type is CiStorageType storage) {
-			if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.StackClass) {
+			break;
+		case CiStorageType storage:
+			switch (storage.Class.Id) {
+			case CiId.ListClass:
+			case CiId.StackClass:
 				Write("g_array_free(");
 				arrayFree = true;
-			}
-			else if (storage.Class == CiSystem.QueueClass) {
-				Write("g_queue_clear(");
-				if (storage is CiStorageType)
-					Write('&');
-			}
-			else if (storage.Class == CiSystem.HashSetClass || storage.Class == CiSystem.DictionaryClass)
+				break;
+			case CiId.QueueClass:
+				Write("g_queue_clear(&");
+				break;
+			case CiId.HashSetClass:
+			case CiId.DictionaryClass:
 				Write("g_hash_table_unref(");
-			else if (storage.Class == CiSystem.SortedDictionaryClass)
+				break;
+			case CiId.SortedDictionaryClass:
 				Write("g_tree_unref(");
-			else
-				throw new NotImplementedException(storage.ToString());
-		}
-		else
+				break;
+			default:
+				throw new NotImplementedException(storage.Class.Name);
+			}
+			break;
+		default:
 			Write("free(");
+			break;
+		}
 		WriteLocalName(symbol, CiPriority.Primary);
 		for (int i = 0; i < nesting; i++) {
 			Write("[_i");
@@ -2168,7 +2202,8 @@ public class GenC : GenCCpp
 			WriteChild(statement.Body);
 			break;
 		case CiClassType klass:
-			if (klass.Class == CiSystem.ListClass) {
+			switch (klass.Class.Id) {
+			case CiId.ListClass:
 				Write("for (");
 				CiType elementType = klass.ElementType;
 				Write(elementType, false);
@@ -2193,8 +2228,8 @@ public class GenC : GenCCpp
 				WriteCamelCaseNotKeyword(element);
 				Write("++)");
 				WriteChild(statement.Body);
-			}
-			else if (klass.Class == CiSystem.HashSetClass) {
+				break;
+			case CiId.HashSetClass:
 				StartForeachHashTable(statement);
 				WriteLine("gpointer cikey;");
 				Write("while (g_hash_table_iter_next(&cidictit, &cikey, NULL)) ");
@@ -2203,8 +2238,8 @@ public class GenC : GenCCpp
 				FlattenBlock(statement.Body);
 				CloseBlock();
 				CloseBlock();
-			}
-			else if (klass.Class == CiSystem.DictionaryClass) {
+				break;
+			case CiId.DictionaryClass:
 				StartForeachHashTable(statement);
 				WriteLine("gpointer cikey, civalue;");
 				Write("while (g_hash_table_iter_next(&cidictit, &cikey, &civalue)) ");
@@ -2214,8 +2249,8 @@ public class GenC : GenCCpp
 				FlattenBlock(statement.Body);
 				CloseBlock();
 				CloseBlock();
-			}
-			else if (klass.Class == CiSystem.SortedDictionaryClass) {
+				break;
+			case CiId.SortedDictionaryClass:
 				Write("for (GTreeNode *cidictit = g_tree_node_first(");
 				statement.Collection.Accept(this, CiPriority.Argument);
 				Write("); cidictit != NULL; cidictit = g_tree_node_next(cidictit)) ");
@@ -2224,9 +2259,10 @@ public class GenC : GenCCpp
 				WriteDictIterVar(statement.ValueVar, "g_tree_node_value(cidictit)");
 				FlattenBlock(statement.Body);
 				CloseBlock();
+				break;
+			default:
+				throw new NotImplementedException(klass.Class.Name);
 			}
-			else
-				throw new NotImplementedException();
 			break;
 		default:
 			throw new NotImplementedException(statement.Collection.Type.ToString());

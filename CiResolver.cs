@@ -706,16 +706,22 @@ public class CiResolver : CiVisitor
 				type = CiSystem.CharType;
 				break;
 			case CiClassType klass:
-				if (klass.Class == CiSystem.ArrayPtrClass || klass.Class == CiSystem.ArrayStorageClass || klass.Class == CiSystem.ListClass) {
+				switch (klass.Class.Id) {
+				case CiId.ArrayPtrClass:
+				case CiId.ArrayStorageClass:
+				case CiId.ListClass:
 					Coerce(right, CiSystem.IntType);
 					type = klass.ElementType;
-				}
-				else if (klass.Class.TypeParameterCount == 2) {
+					break;
+				case CiId.DictionaryClass:
+				case CiId.SortedDictionaryClass:
+				case CiId.OrderedDictionaryClass:
 					Coerce(right, klass.KeyType);
 					type = klass.ValueType;
-				}
-				else
+					break;
+				default:
 					throw StatementException(expr, "Cannot index this object");
+				}
 				break;
 			default:
 				throw StatementException(expr, "Cannot index this object");
@@ -1241,25 +1247,32 @@ public class CiResolver : CiVisitor
 		CiVar element = statement.Element;
 		ResolveType(element);
 		statement.Collection.Accept(this);
-		if (statement.Collection.Type is CiClassType dict && dict.Class.TypeParameterCount == 2) {
-			if (statement.Count != 2)
-				throw StatementException(statement, "Expected (TKey key, TValue value) iterator");
-			CiVar value = statement.ValueVar;
-			ResolveType(value);
-			if (!element.Type.IsAssignableFrom(dict.KeyType))
-				throw StatementException(statement, $"Cannot coerce {dict.KeyType} to {element.Type}");
-			if (!value.Type.IsAssignableFrom(dict.ValueType))
-				throw StatementException(statement, $"Cannot coerce {dict.ValueType} to {value.Type}");
-		}
-		else if (statement.Collection.Type is CiClassType klass
-			&& (klass.Class == CiSystem.ArrayStorageClass || klass.Class == CiSystem.ListClass || klass.Class == CiSystem.HashSetClass)) {
+		if (!(statement.Collection.Type is CiClassType klass))
+			throw StatementException(statement.Collection, "Expected a collection");
+		switch (klass.Class.Id) {
+		case CiId.ArrayStorageClass:
+		case CiId.ListClass:
+		case CiId.HashSetClass:
 			if (statement.Count != 1)
 				throw StatementException(statement, "Expected one iterator variable");
 			if (!element.Type.IsAssignableFrom(klass.ElementType))
 				throw StatementException(statement, $"Cannot coerce {klass.ElementType} to {element.Type}");
+			break;
+		case CiId.DictionaryClass:
+		case CiId.SortedDictionaryClass:
+		case CiId.OrderedDictionaryClass:
+			if (statement.Count != 2)
+				throw StatementException(statement, "Expected (TKey key, TValue value) iterator");
+			CiVar value = statement.ValueVar;
+			ResolveType(value);
+			if (!element.Type.IsAssignableFrom(klass.KeyType))
+				throw StatementException(statement, $"Cannot coerce {klass.KeyType} to {element.Type}");
+			if (!value.Type.IsAssignableFrom(klass.ValueType))
+				throw StatementException(statement, $"Cannot coerce {klass.ValueType} to {value.Type}");
+			break;
+		default:
+			throw StatementException(statement, "foreach invalid on {klass}");
 		}
-		else
-			throw StatementException(statement.Collection, "Expected a collection");
 		statement.SetCompletesNormally(true);
 		statement.Body.Accept(this);
 		CloseScope();
@@ -1419,7 +1432,7 @@ public class CiResolver : CiVisitor
 		if (typeArgs.Count != generic.TypeParameterCount)
 			throw StatementException(typeArgExprs, $"Expected {generic.TypeParameterCount} type arguments for {generic.Name}, got {typeArgs.Count}");
 		NotSupported(typeArgExprs, generic.Name, "cl");
-		if (generic == CiSystem.OrderedDictionaryClass)
+		if (generic.Id == CiId.OrderedDictionaryClass)
 			NotSupported(typeArgExprs, "OrderedDictionary", "c", "cpp", "swift", "ts");
 		result.Class = generic;
 		result.TypeArg0 = typeArgs[0];
@@ -1434,7 +1447,7 @@ public class CiResolver : CiVisitor
 			// built-in, MyEnum, MyClass, MyClass!, MyClass#
 			if (this.Program.TryLookup(symbol.Name) is CiType type) {
 				if (type is CiClass klass) {
-					if (klass == CiSystem.MatchClass) {
+					if (klass.Id == CiId.MatchClass) {
 						if (ptrModifier != CiToken.EndOfFile)
 							throw StatementException(expr, "Read-write references to the built-in class Match are not supported");
 						NotSupported(expr, "Match", "cl");
@@ -1469,9 +1482,9 @@ public class CiResolver : CiVisitor
 			}
 			{
 				if (this.Program.TryLookup(call.Method.Name) is CiClass klass) {
-					if (klass == CiSystem.MatchClass)
+					if (klass.Id == CiId.MatchClass)
 						NotSupported(expr, "Match", "cl");
-					else if (klass == CiSystem.LockClass) {
+					else if (klass.Id == CiId.LockClass) {
 						NotSupported(call, "Lock", "js", "ts", "cl");
 						NotYet(call, "Lock", "c");
 					}

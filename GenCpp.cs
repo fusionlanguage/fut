@@ -216,7 +216,7 @@ public class GenCpp : GenCCpp
 			else {
 				Include("memory");
 				Write("std::shared_ptr<");
-				if (dynamic.Class == CiSystem.ArrayPtrClass) {
+				if (dynamic.Class.Id == CiId.ArrayPtrClass) {
 					Write(dynamic.ElementType, false);
 					Write("[]");
 				}
@@ -229,7 +229,7 @@ public class GenCpp : GenCCpp
 			if (klass.Class.TypeParameterCount == 0) {
 				if (!(klass is CiReadWriteClassType))
 					Write("const ");
-				if (klass.Class == CiSystem.RegexClass) {
+				if (klass.Class.Id == CiId.RegexClass) {
 					Include("regex");
 					Write("std::regex");
 				}
@@ -238,30 +238,23 @@ public class GenCpp : GenCCpp
 				Write(" *");
 				break;
 			}
-			if (klass.Class == CiSystem.ArrayPtrClass) {
+			if (klass.Class.Id == CiId.ArrayPtrClass) {
 				Write(klass.ElementType, false);
 				if (!(klass is CiReadWriteClassType))
 					Write(" const");
 				Write(" *");
 				break;
 			}
-			string cppType;
-			if (klass.Class == CiSystem.ArrayStorageClass)
-				cppType = "array";
-			else if (klass.Class == CiSystem.ListClass)
-				cppType = "vector";
-			else if (klass.Class == CiSystem.QueueClass)
-				cppType = "queue";
-			else if (klass.Class == CiSystem.StackClass)
-				cppType = "stack";
-			else if (klass.Class == CiSystem.HashSetClass)
-				cppType = "unordered_set";
-			else if (klass.Class == CiSystem.DictionaryClass)
-				cppType = "unordered_map";
-			else if (klass.Class == CiSystem.SortedDictionaryClass)
-				cppType = "map";
-			else
-				throw new NotImplementedException();
+			string cppType = klass.Class.Id switch {
+				CiId.ArrayStorageClass => "array",
+				CiId.ListClass => "vector",
+				CiId.QueueClass => "queue",
+				CiId.StackClass => "stack",
+				CiId.HashSetClass => "unordered_set",
+				CiId.DictionaryClass => "unordered_map",
+				CiId.SortedDictionaryClass => "map",
+				_ => throw new NotImplementedException()
+			};
 			Include(cppType);
 			if (!(klass is CiReadWriteClassType))
 				Write("const ");
@@ -373,7 +366,7 @@ public class GenCpp : GenCCpp
 			base.WriteEqual(expr, parent, not);
 	}
 
-	static bool IsClassPtr(CiType type) => type is CiClassType ptr && !(type is CiStorageType) && ptr.Class != CiSystem.ArrayPtrClass;
+	static bool IsClassPtr(CiType type) => type is CiClassType ptr && !(type is CiStorageType) && ptr.Class.Id != CiId.ArrayPtrClass;
 
 	static bool IsCppPtr(CiExpr expr)
 	{
@@ -947,7 +940,7 @@ public class GenCpp : GenCCpp
 			expr.Accept(this, CiPriority.Primary);
 			Write(".get()");
 			break;
-		case CiClassType klass when klass.Class == CiSystem.ListClass:
+		case CiClassType klass when klass.Class.Id == CiId.ListClass:
 			StartMethodCall(expr);
 			Write("begin()");
 			break;
@@ -961,7 +954,7 @@ public class GenCpp : GenCCpp
 	{
 		switch (type) {
 		case CiClassType klass when !(klass is CiDynamicPtrType):
-			if (klass.Class == CiSystem.ArrayPtrClass) {
+			if (klass.Class.Id == CiId.ArrayPtrClass) {
 				WriteArrayPtr(expr, parent);
 				return;
 			}

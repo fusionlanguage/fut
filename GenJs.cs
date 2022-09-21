@@ -136,16 +136,25 @@ public class GenJs : GenBase
 
 	protected override void WriteNewStorage(CiStorageType storage)
 	{
-		if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.QueueClass || storage.Class == CiSystem.StackClass)
+		switch (storage.Class.Id) {
+		case CiId.ListClass:
+		case CiId.QueueClass:
+		case CiId.StackClass:
 			Write("[]");
-		else if (storage.Class == CiSystem.HashSetClass)
+			break;
+		case CiId.HashSetClass:
 			Write("new Set()");
-		else if (storage.Class == CiSystem.DictionaryClass || storage.Class == CiSystem.SortedDictionaryClass)
+			break;
+		case CiId.DictionaryClass:
+		case CiId.SortedDictionaryClass:
 			Write("{}");
-		else if (storage.Class == CiSystem.OrderedDictionaryClass)
+			break;
+		case CiId.OrderedDictionaryClass:
 			Write("new Map()");
-		else
-			throw new NotImplementedException();
+			break;
+		default:
+			throw new NotImplementedException(storage.Class.Name);
+		}
 	}
 
 	protected override void WriteVar(CiNamedValue def)
@@ -685,7 +694,7 @@ public class GenJs : GenBase
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Left.Type is CiClassType dict && dict.Class == CiSystem.OrderedDictionaryClass)
+		if (expr.Left.Type is CiClassType dict && dict.Class.Id == CiId.OrderedDictionaryClass)
 			WriteCall(expr.Left, "get", expr.Right);
 		else
 			base.WriteIndexing(expr, parent);
@@ -696,7 +705,7 @@ public class GenJs : GenBase
 		if (expr.Left is CiBinaryExpr indexing
 		 && indexing.Op == CiToken.LeftBracket
 		 && indexing.Left.Type is CiClassType dict
-		 && dict.Class == CiSystem.OrderedDictionaryClass)
+		 && dict.Class.Id == CiId.OrderedDictionaryClass)
 			WriteCall(indexing.Left, "set", indexing.Right, expr.Right);
 		else
 			base.WriteAssign(expr, parent);
@@ -751,35 +760,44 @@ public class GenJs : GenBase
 	public override void VisitForeach(CiForeach statement)
 	{
 		Write("for (const ");
-		if (statement.Collection.Type is CiClassType dict && dict.Class.TypeParameterCount == 2) {
+		CiClassType klass = (CiClassType) statement.Collection.Type;
+		switch (klass.Class.Id) {
+		case CiId.ArrayStorageClass:
+		case CiId.ListClass:
+		case CiId.HashSetClass:
+			WriteName(statement.Element);
+			Write(" of ");
+			statement.Collection.Accept(this, CiPriority.Argument);
+			break;
+		case CiId.DictionaryClass:
+		case CiId.SortedDictionaryClass:
+		case CiId.OrderedDictionaryClass:
 			Write('[');
 			WriteName(statement.Element);
 			Write(", ");
 			WriteName(statement.ValueVar);
 			Write("] of ");
-			if (dict.Class == CiSystem.OrderedDictionaryClass)
+			if (klass.Class.Id == CiId.OrderedDictionaryClass)
 				statement.Collection.Accept(this, CiPriority.Argument);
 			else {
 				WriteCall("Object.entries", statement.Collection);
 				switch (statement.Element.Type) {
 				case CiStringType _:
-					if (dict.Class == CiSystem.SortedDictionaryClass)
+					if (klass.Class.Id == CiId.SortedDictionaryClass)
 						Write(".sort((a, b) => a[0].localeCompare(b[0]))");
 					break;
 				case CiNumericType _:
 					Write(".map(e => [+e[0], e[1]])");
-					if (dict.Class == CiSystem.SortedDictionaryClass)
+					if (klass.Class.Id == CiId.SortedDictionaryClass)
 						Write(".sort((a, b) => a[0] - b[0])");
 					break;
 				default:
 					throw new NotImplementedException(statement.Element.Type.ToString());
 				}
 			}
-		}
-		else {
-			WriteName(statement.Element);
-			Write(" of ");
-			statement.Collection.Accept(this, CiPriority.Argument);
+			break;
+		default:
+			throw new NotImplementedException(klass.Class.Name);
 		}
 		Write(')');
 		WriteChild(statement.Body);

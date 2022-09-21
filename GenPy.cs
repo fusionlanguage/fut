@@ -470,7 +470,9 @@ public class GenPy : GenPySwift
 
 	protected override void WriteNewStorage(CiStorageType storage)
 	{
-		if (storage.Class == CiSystem.ListClass || storage.Class == CiSystem.StackClass) {
+		switch (storage.Class.Id) {
+		case CiId.ListClass:
+		case CiId.StackClass:
 			if (storage.ElementType is CiNumericType number) {
 				char c = GetArrayCode(number);
 				if (c == 'B')
@@ -484,21 +486,25 @@ public class GenPy : GenPySwift
 			}
 			else
 				Write("[]");
-		}
-		else if (storage.Class == CiSystem.QueueClass) {
+			break;
+		case CiId.QueueClass:
 			Include("collections");
 			Write("collections.deque()");
-		}
-		else if (storage.Class == CiSystem.HashSetClass)
+			break;
+		case CiId.HashSetClass:
 			Write("set()");
-		else if (storage.Class == CiSystem.DictionaryClass || storage.Class == CiSystem.SortedDictionaryClass)
+			break;
+		case CiId.DictionaryClass:
+		case CiId.SortedDictionaryClass:
 			Write("{}");
-		else if (storage.Class == CiSystem.OrderedDictionaryClass) {
+			break;
+		case CiId.OrderedDictionaryClass:
 			Include("collections");
 			Write("collections.OrderedDict()");
+			break;
+		default:
+			throw new NotImplementedException(storage.Class.Name);
 		}
-		else
-			throw new NotImplementedException();
 	}
 
 	protected override void WriteInitCode(CiNamedValue def)
@@ -930,7 +936,7 @@ public class GenPy : GenPySwift
 			Write(", ");
 			WriteName(statement.ValueVar);
 			Write(" in ");
-			if (dict.Class == CiSystem.SortedDictionaryClass) {
+			if (dict.Class.Id == CiId.SortedDictionaryClass) {
 				Write("sorted(");
 				statement.Collection.Accept(this, CiPriority.Primary);
 				Write(".items())");

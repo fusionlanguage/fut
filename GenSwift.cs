@@ -262,35 +262,38 @@ public class GenSwift : GenPySwift
 			}
 			break;
 		case CiClassType klass:
-			if (klass.Class.TypeParameterCount == 0) {
-				Write(klass.Class.Name);
-				Write('?');
-			}
-			else if (klass.Class == CiSystem.ArrayPtrClass) {
+			switch (klass.Class.Id) {
+			case CiId.ArrayPtrClass:
 				this.ArrayRef = true;
 				Write("ArrayRef<");
 				Write(klass.ElementType);
 				Write(">?");
-			}
-			else if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass) {
+				break;
+			case CiId.ListClass:
+			case CiId.QueueClass:
+			case CiId.StackClass:
 				Write('[');
 				Write(klass.ElementType);
 				Write(']');
-			}
-			else if (klass.Class == CiSystem.HashSetClass) {
+				break;
+			case CiId.HashSetClass:
 				Write("Set<");
 				Write(klass.ElementType);
 				Write('>');
-			}
-			else if (klass.Class.TypeParameterCount == 2) {
+				break;
+			case CiId.DictionaryClass:
+			case CiId.SortedDictionaryClass:
 				Write('[');
 				Write(klass.KeyType);
 				Write(": ");
 				Write(klass.ValueType);
 				Write(']');
+				break;
+			default:
+				Write(klass.Class.Name);
+				Write('?');
+				break;
 			}
-			else
-				throw new NotImplementedException();
 			break;
 		default:
 			Write(type.Name);
@@ -314,11 +317,17 @@ public class GenSwift : GenPySwift
 		if (!(expr is CiSymbolReference symbol) || !(symbol.Symbol.Parent is CiForeach loop))
 			return false;
 		CiClassType klass = (CiClassType) loop.Collection.Type;
-		if (klass.Class == CiSystem.ArrayStorageClass || klass.Class == CiSystem.ListClass)
+		switch (klass.Class.Id) {
+		case CiId.ArrayStorageClass:
+		case CiId.ListClass:
+		case CiId.HashSetClass:
 			return klass.ElementType == CiSystem.StringStorageType;
-		if (klass.Class.TypeParameterCount == 2)
+		case CiId.DictionaryClass:
+		case CiId.SortedDictionaryClass:
 			return (symbol.Symbol == loop.Element ? klass.KeyType : klass.ValueType) == CiSystem.StringStorageType;
-		throw new NotImplementedException();
+		default:
+			throw new NotImplementedException(klass.Class.Name);
+		}
 	}
 
 	void WriteUnwrappedString(CiExpr expr, CiPriority parent, bool substringOk)
@@ -1121,7 +1130,7 @@ public class GenSwift : GenPySwift
 		else
 			WriteName(statement.Element);
 		Write(" in ");
-		if (statement.Collection.Type is CiClassType dict && dict.Class == CiSystem.SortedDictionaryClass) {
+		if (statement.Collection.Type is CiClassType dict && dict.Class.Id == CiId.SortedDictionaryClass) {
 			statement.Collection.Accept(this, CiPriority.Primary);
 			Write(dict.KeyType == CiSystem.StringPtrType
 				? ".sorted(by: { $0.key! < $1.key! })"

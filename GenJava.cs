@@ -299,26 +299,39 @@ public class GenJava : GenTyped
 				: needClass ? "Integer" : "int");
 			break;
  		case CiClassType klass:
-			if (klass.Class.TypeParameterCount == 0)
-				WriteClassName(klass.Class);
-			else if (klass.IsArray) {
+			switch (klass.Class.Id) {
+			case CiId.ArrayPtrClass:
+			case CiId.ArrayStorageClass:
 				Write(klass.ElementType, false);
 				Write("[]");
-			}
-			else if (klass.Class == CiSystem.ListClass)
+				break;
+			case CiId.ListClass:
 				WriteCollectionType("ArrayList", klass.ElementType);
-			else if (klass.Class == CiSystem.QueueClass)
+				break;
+			case CiId.QueueClass:
 				WriteCollectionType("ArrayDeque", klass.ElementType);
-			else if (klass.Class == CiSystem.StackClass)
+				break;
+			case CiId.StackClass:
 				WriteCollectionType("Stack", klass.ElementType);
-			else if (klass.Class == CiSystem.HashSetClass)
+				break;
+			case CiId.HashSetClass:
 				WriteCollectionType("HashSet", klass.ElementType);
-			else {
-				string name = klass.Class == CiSystem.SortedDictionaryClass ? "TreeMap" :
-					klass.Class == CiSystem.OrderedDictionaryClass ? "LinkedHashMap" :
-					"HashMap";
-				Include("java.util." + name);
-				Write(name, klass);
+				break;
+			case CiId.DictionaryClass:
+				Include("java.util.HashMap");
+				Write("HashMap", klass);
+				break;
+			case CiId.SortedDictionaryClass:
+				Include("java.util.TreeMap");
+				Write("TreeMap", klass);
+				break;
+			case CiId.OrderedDictionaryClass:
+				Include("java.util.LinkedHashMap");
+				Write("LinkedHashMap", klass);
+				break;
+			default:
+				WriteClassName(klass.Class);
+				break;
 			}
 			break;
 		case CiClass klass:
@@ -394,9 +407,9 @@ public class GenJava : GenTyped
 	{
 		if ((expr.Left.Type is CiStringType && expr.Right.Type != CiSystem.NullType)
 		 || (expr.Right.Type is CiStringType && expr.Left.Type != CiSystem.NullType)) {
-			 if (not)
-				 Write('!');
-			 WriteCall(expr.Left, "equals", expr.Right);
+			if (not)
+				Write('!');
+			WriteCall(expr.Left, "equals", expr.Right);
 		}
 		else if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)
 			&& expr.Right is CiLiteralLong rightLiteral && rightLiteral.Value >= 0 && rightLiteral.Value <= byte.MaxValue) {
@@ -769,12 +782,12 @@ public class GenJava : GenTyped
 		 && indexing.Op == CiToken.LeftBracket
 		 && indexing.Left.Type is CiClassType klass
 		 && !klass.IsArray) {
-			 indexing.Left.Accept(this, CiPriority.Primary);
-			 Write(klass.Class == CiSystem.ListClass ? ".set(" : ".put(");
-			 indexing.Right.Accept(this, CiPriority.Argument);
-			 Write(", ");
-			 WriteNotPromoted(expr.Type, expr.Right);
-			 Write(')');
+			indexing.Left.Accept(this, CiPriority.Primary);
+			Write(klass.Class.Id == CiId.ListClass ? ".set(" : ".put(");
+			indexing.Right.Accept(this, CiPriority.Argument);
+			Write(", ");
+			WriteNotPromoted(expr.Type, expr.Right);
+			Write(')');
 		}
 		else
 			base.WriteAssign(expr, parent);

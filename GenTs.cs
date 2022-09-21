@@ -106,12 +106,12 @@ public class GenTs : GenJs
 			Write(enu == CiSystem.BoolType ? "boolean" : enu.Name);
 			break;
 		case CiClassType klass:
-			if (klass.Class.TypeParameterCount == 0)
-				WriteBaseType(klass.Class);
-			else if (klass.IsArray) {
+			switch (klass.Class.Id) {
+			case CiId.ArrayPtrClass:
+			case CiId.ArrayStorageClass:
 				bool isReadonlyPtr = !(klass is CiReadWriteClassType);
 				if (klass.ElementType is CiNumericType number) {
-					if (klass.Class == CiSystem.ArrayPtrClass) {
+					if (klass.Class.Id == CiId.ArrayPtrClass) {
 						if (isReadonlyPtr)
 							Write("readonly ");
 						Write("number[] | ");
@@ -128,23 +128,30 @@ public class GenTs : GenJs
 						Write("readonly ");
 					WriteArrayType(klass.ElementType, forConst);
 				}
-			}
-			else if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass)
+				break;
+			case CiId.ListClass:
+			case CiId.QueueClass:
+			case CiId.StackClass:
 				WriteArrayType(klass.ElementType, false);
-			else if (klass.Class == CiSystem.HashSetClass) {
+				break;
+			case CiId.HashSetClass:
 				Write("Set<");
 				Write(klass.ElementType, false);
 				Write('>');
-			}
-			else if (klass.Class.TypeParameterCount == 2) {
+				break;
+			case CiId.DictionaryClass:
+			case CiId.SortedDictionaryClass:
+			case CiId.OrderedDictionaryClass:
 				Write("Partial<Record<");
 				Write(klass.KeyType, forConst);
 				Write(", ");
 				Write(klass.ValueType, forConst);
 				Write(">>");
+				break;
+			default:
+				WriteBaseType(klass.Class);
+				break;
 			}
-			else
-				throw new NotImplementedException();
 			break;
 		default:
 			WriteBaseType(type);

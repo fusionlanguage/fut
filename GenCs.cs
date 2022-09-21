@@ -227,17 +227,21 @@ public class GenCs : GenTyped
 			Write("string");
 			break;
 		case CiClassType klass:
-			if (klass.Class.TypeParameterCount == 0)
-				WriteClassName(klass.Class);
-			else if (klass.IsArray) {
+			switch (klass.Class.Id) {
+			case CiId.ArrayPtrClass:
+			case CiId.ArrayStorageClass:
 				Write(klass.ElementType, false);
 				Write("[]");
-			}
-			else if (klass.Class == CiSystem.ListClass || klass.Class == CiSystem.QueueClass || klass.Class == CiSystem.StackClass || klass.Class == CiSystem.HashSetClass) {
+				break;
+			case CiId.ListClass:
+			case CiId.QueueClass:
+			case CiId.StackClass:
+			case CiId.HashSetClass:
 				Write(klass.Class.Name);
 				WriteElementType(klass.ElementType);
-			}
-			else if (klass.Class == CiSystem.DictionaryClass || klass.Class == CiSystem.SortedDictionaryClass) {
+				break;
+			case CiId.DictionaryClass:
+			case CiId.SortedDictionaryClass:
 				Include("System.Collections.Generic");
 				Write(klass.Class.Name);
 				Write('<');
@@ -245,13 +249,15 @@ public class GenCs : GenTyped
 				Write(", ");
 				Write(klass.ValueType, false);
 				Write('>');
-			}
-			else if (klass.Class == CiSystem.OrderedDictionaryClass) {
+				break;
+			case CiId.OrderedDictionaryClass:
 				Include("System.Collections.Specialized");
 				Write("OrderedDictionary");
+				break;
+			default:
+				WriteClassName(klass.Class);
+				break;
 			}
-			else
-				throw new NotImplementedException(klass.ToString());
 			break;
 		case CiClass klass:
 			WriteClassName(klass);
@@ -322,7 +328,7 @@ public class GenCs : GenTyped
 		Write('[');
 		lengthExpr.Accept(this, CiPriority.Argument);
 		Write(']');
-		while (elementType is CiClassType array && (array.Class == CiSystem.ArrayPtrClass || array.Class == CiSystem.ArrayStorageClass)) {
+		while (elementType is CiClassType array && array.IsArray) {
 			Write("[]");
 			elementType = array.ElementType;
 		}
@@ -405,7 +411,7 @@ public class GenCs : GenTyped
 		default:
 			if (expr.Symbol.Parent is CiForeach forEach
 			&& forEach.Collection.Type is CiClassType dict
-			&& dict.Class == CiSystem.OrderedDictionaryClass) {
+			&& dict.Class.Id == CiId.OrderedDictionaryClass) {
 				if (parent == CiPriority.Primary)
 					Write('(');
 				CiVar element = forEach.Element;
@@ -631,7 +637,7 @@ public class GenCs : GenTyped
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Left.Type is CiClassType dict && dict.Class == CiSystem.OrderedDictionaryClass) {
+		if (expr.Left.Type is CiClassType dict && dict.Class.Id == CiId.OrderedDictionaryClass) {
 			if (parent == CiPriority.Primary)
 				Write('(');
 			WriteStaticCastType(expr.Type);
@@ -648,7 +654,7 @@ public class GenCs : GenTyped
 		if (expr.Left is CiBinaryExpr indexing
 		 && indexing.Op == CiToken.LeftBracket
 		 && indexing.Left.Type is CiClassType dict
-		 && dict.Class == CiSystem.OrderedDictionaryClass) {
+		 && dict.Class.Id == CiId.OrderedDictionaryClass) {
 			WriteOrderedDictionaryIndexing(indexing);
 			Write(" = ");
 			WriteAssignRight(expr);
@@ -702,7 +708,7 @@ public class GenCs : GenTyped
 	{
 		Write("foreach (");
 		if (statement.Collection.Type is CiClassType dict && dict.Class.TypeParameterCount == 2) {
-			if (dict.Class == CiSystem.OrderedDictionaryClass) {
+			if (dict.Class.Id == CiId.OrderedDictionaryClass) {
 				Include("System.Collections");
 				Write("DictionaryEntry ");
 				WriteName(statement.Element);

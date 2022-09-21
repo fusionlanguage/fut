@@ -792,7 +792,7 @@ public abstract class GenBase : CiVisitor
 			break;
 		case CiToken.New:
 			CiClassType klass = (CiClassType) expr.Type;
-			if (klass.Class == CiSystem.ArrayPtrClass)
+			if (klass.Class.Id == CiId.ArrayPtrClass)
 				WriteNewArray(klass.ElementType, expr.Inner, parent);
 			else
 				WriteNew(klass.Class, parent);
