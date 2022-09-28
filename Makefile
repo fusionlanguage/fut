@@ -93,7 +93,7 @@ test/bin/%/cs.txt: test/bin/%/cs.dll test/cs.runtimeconfig.json
 test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
 	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)" Runner >$@ || grep '//FAIL:.*\<java\>' test/$*.ci
 
-test/bin/%/js.txt: test/bin/%/Run.js
+test/bin/%/js.txt: test/bin/%/Test.js
 	$(DO)node $< >$@ || grep '//FAIL:.*\<js\>' test/$*.ci
 
 test/bin/%/ts.txt: test/bin/%/Test.ts node_modules
@@ -120,9 +120,6 @@ test/bin/%/cs.dll: test/bin/%/Test.cs test/Runner.cs
 test/bin/%/Test.class: test/bin/%/Test.java
 	$(DO)javac -d $(@D) -encoding utf8 $(<D)/*.java || grep '//FAIL:.*\<java\>' test/$*.ci
 
-test/bin/%/Run.js: test/bin/%/Test.js
-	$(DO)cat $< test/Runner.js >$@ || grep '//FAIL:.*\<js\>' test/$*.ci
-
 test/bin/%/swift.exe: test/bin/%/Test.swift test/main.swift
 	$(DO)$(SWIFTC) -o $@ $^ || grep '//FAIL:.*\<swift\>' test/$*.ci
 
@@ -145,10 +142,10 @@ test/bin/%/Test.java: test/%.ci cito.exe
 	$(DO_CITO)
 
 test/bin/%/Test.js: test/%.ci cito.exe
-	$(DO_CITO)
+	$(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< && cat test/Runner.js >>$@ || grep '//FAIL:.*\<js\>' $<)
 
 test/bin/%/Test.ts: test/%.ci cito.exe
-	$(DO)mkdir -p $(@D) && ($(CITO) -D TS -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
+	$(DO)mkdir -p $(@D) && ($(CITO) -D TS -o $@ $< && cat test/Runner.js >>$@ || grep '//FAIL:.*\<ts\>' $<)
 
 test/bin/%/Test.py: test/%.ci cito.exe
 	$(DO_CITO)
