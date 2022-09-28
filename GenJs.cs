@@ -671,21 +671,11 @@ public class GenJs : GenBase
 		default:
 			if (obj == null)
 				WriteLocalName(method, CiPriority.Primary);
-			else if (obj.IsReferenceTo(CiSystem.BasePtr)) {
-				//TODO: with "class" syntax: Write("super");
-				WriteName(method.Parent);
-				Write(".prototype.");
-				WriteName(method);
-				Write(".call(this");
-				if (args.Count > 0) {
-					Write(", ");
-					WriteArgs(method, args);
-				}
-				Write(')');
-				break;
-			}
 			else {
-				obj.Accept(this, CiPriority.Primary);
+				if (obj.IsReferenceTo(CiSystem.BasePtr))
+					Write("super");
+				else
+					obj.Accept(this, CiPriority.Primary);
 				Write('.');
 				WriteName(method);
 			}
