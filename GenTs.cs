@@ -159,7 +159,7 @@ public class GenTs : GenJs
 			Write(" | null");
 	}
 
-	void Write(CiVisibility visibility)
+	void WriteVisibility(CiVisibility visibility)
 	{
 		switch (visibility) {
 		case CiVisibility.Private:
@@ -180,7 +180,7 @@ public class GenTs : GenJs
 	{
 		WriteLine();
 		Write(konst.Documentation);
-		Write(konst.Visibility);
+		WriteVisibility(konst.Visibility);
 		Write("static readonly ");
 		WriteTypeAndName(konst);
 		if (this.GenFullCode)
@@ -190,7 +190,7 @@ public class GenTs : GenJs
 
 	protected override void WriteField(CiField field)
 	{
-		Write(field.Visibility);
+		WriteVisibility(field.Visibility);
 		WriteTypeAndName(field);
 		if (this.GenFullCode)
 			WriteVarInit(field);
@@ -200,7 +200,7 @@ public class GenTs : GenJs
 	protected override void WriteMethod(CiMethod method)
 	{
 		WriteDoc(method);
-		Write(method.Visibility);
+		WriteVisibility(method.Visibility);
 		switch (method.CallType) {
 		case CiCallType.Static:
 			Write("static ");
@@ -246,6 +246,7 @@ public class GenTs : GenJs
 
 	protected override void WriteClass(CiClass klass)
 	{
+		WriteLine();
 		Write(klass.Documentation);
 		Write("export ");
 		switch (klass.CallType) {
@@ -263,29 +264,21 @@ public class GenTs : GenJs
 		}
 		OpenClass(klass, "", " extends ");
 
-		CiMethodBase constructor = klass.Constructor;
-		if (klass.CallType == CiCallType.Static)
-			constructor = new CiMethodBase { Visibility = CiVisibility.Private };
-
-		if (constructor != null) {
-			Write(constructor.Documentation);
-			Write(constructor.Visibility);
-			Write("constructor()");
-			if (this.GenFullCode) {
-				OpenBlock();
-				if (klass.BaseClassName != null)
-					WriteLine("super();");
-				WriteConstructorBody(klass);
-				CloseBlock();
+		if (HasConstructor(klass) || klass.CallType == CiCallType.Static) {
+			if (klass.Constructor != null) {
+				Write(klass.Constructor.Documentation);
+				WriteVisibility(klass.Constructor.Visibility);
 			}
 			else
-				WriteLine(';');
+				Write("private ");
+			if (this.GenFullCode)
+				WriteConstructor(klass);
+			else
+				WriteLine("constructor();");
 		}
 
 		WriteMembers(klass, this.GenFullCode);
-
 		CloseBlock();
-		WriteLine();
 	}
 
 	public override void Write(CiProgram program)

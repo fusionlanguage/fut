@@ -872,6 +872,18 @@ public class GenJs : GenBase
 
 	protected static bool HasConstructor(CiClass klass) => klass.Constructor != null || klass.OfType<CiField>().Any(HasInitCode);
 
+	protected void WriteConstructor(CiClass klass)
+	{
+		WriteLine("constructor()");
+		OpenBlock();
+		if (klass.Parent is CiClass)
+			WriteLine("super();");
+		foreach (CiField field in klass.OfType<CiField>())
+			WriteInitCode(field);
+		WriteConstructorBody(klass);
+		CloseBlock();
+	}
+
 	protected virtual void WriteClass(CiClass klass)
 	{
 		WriteLine();
@@ -881,14 +893,7 @@ public class GenJs : GenBase
 		if (HasConstructor(klass)) {
 			if (klass.Constructor != null)
 				Write(klass.Constructor.Documentation);
-			WriteLine("constructor()");
-			OpenBlock();
-			if (klass.Parent is CiClass)
-				WriteLine("super();");
-			foreach (CiField field in klass.OfType<CiField>())
-				WriteInitCode(field);
-			WriteConstructorBody(klass);
-			CloseBlock();
+			WriteConstructor(klass);
 		}
 
 		WriteMembers(klass, true);
