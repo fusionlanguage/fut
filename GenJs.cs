@@ -844,8 +844,7 @@ public class GenJs : GenBase
 		if (konst.Visibility != CiVisibility.Private || konst.Type is CiArrayStorageType) {
 			WriteLine();
 			Write(konst.Documentation);
-			Write(konst.Parent.Container.Name);
-			Write('.');
+			Write("static ");
 			base.WriteVar(konst);
 			WriteLine(';');
 		}
@@ -861,13 +860,10 @@ public class GenJs : GenBase
 			return;
 		WriteLine();
 		WriteDoc(method);
-		Write(method.Parent.Name);
-		Write('.');
-		if (method.CallType != CiCallType.Static)
-			Write("prototype.");
+		if (method.CallType == CiCallType.Static)
+			Write("static ");
 		WriteCamelCase(method.Name);
-		Write(" = function(");
-		WriteParameters(method, true, true);
+		WriteParameters(method, true);
 		WriteBody(method);
 	}
 
@@ -890,8 +886,8 @@ public class GenJs : GenBase
 		}
 		WriteConstructorBody(klass);
 		CloseBlock();
-		CloseBlock();
 		WriteMembers(klass, true);
+		CloseBlock();
 	}
 
 	void WriteSortedClass(CiClass klass)
