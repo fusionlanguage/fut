@@ -278,7 +278,7 @@ public class GenJs : GenBase
 		WriteCall("Array", lengthExpr);
 	}
 
-	bool HasInitCode(CiNamedValue def)
+	static bool HasInitCode(CiNamedValue def)
 	{
 		return def.Type is CiArrayStorageType array
 			&& (array.ElementType is CiClass || array.ElementType is CiArrayStorageType);
@@ -870,13 +870,17 @@ public class GenJs : GenBase
 		WriteBody(method);
 	}
 
+	protected static bool HasConstructor(CiClass klass) => klass.Constructor != null || klass.OfType<CiField>().Any(HasInitCode);
+
 	protected virtual void WriteClass(CiClass klass)
 	{
 		WriteLine();
 		Write(klass.Documentation);
 		OpenClass(klass, "", " extends ");
 
-		if (klass.Constructor != null || klass.OfType<CiField>().Any(HasInitCode)) {
+		if (HasConstructor(klass)) {
+			if (klass.Constructor != null)
+				Write(klass.Constructor.Documentation);
 			WriteLine("constructor()");
 			OpenBlock();
 			if (klass.Parent is CiClass)
