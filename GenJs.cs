@@ -457,7 +457,7 @@ public class GenJs : GenBase
 		case CiId.ArrayCopyTo:
 		case CiId.ListCopyTo:
 			AddLibrary(GenJsMethod.CopyArray,
-				"copyArray : function(sa, soffset, da, doffset, length)",
+				"copyArray(sa, soffset, da, doffset, length)",
 				"if (typeof(sa.subarray) == \"function\" && typeof(da.set) == \"function\")",
 				"\tda.set(sa.subarray(soffset, soffset + length), doffset);",
 				"else",
@@ -502,7 +502,7 @@ public class GenJs : GenBase
 			break;
 		case CiId.ListSortPart:
 			AddLibrary(GenJsMethod.SortListPart,
-				"sortListPart: function(a, offset, length)",
+				"sortListPart(a, offset, length)",
 				"const sorted = a.slice(offset, offset + length).sort((a, b) => a - b);",
 				"for (let i = 0; i < length; i++)",
 				"\ta[offset + i] = sorted[i];");
@@ -608,7 +608,7 @@ public class GenJs : GenBase
 			break;
 		case CiId.RegexEscape:
 			AddLibrary(GenJsMethod.RegexEscape,
-				"regexEscape : function(s)",
+				"regexEscape(s)",
 				"return s.replace(/[-\\/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&');");
 			Write("Ci.regexEscape");
 			WriteArgsInParentheses(method, args);
@@ -898,15 +898,15 @@ public class GenJs : GenBase
 
 	protected void WriteLib(Dictionary<string, byte[]> resources)
 	{
+		if (this.Library.All(method => method == null) && resources.Count == 0)
+			return;
+
 		WriteLine();
-		Write("const Ci = ");
+		WriteLine("class Ci");
 		OpenBlock();
-		bool first = true;
 		foreach (string[] method in this.Library) {
 			if (method != null) {
-				if (!first)
-					WriteLine(',');
-				first = false;
+				Write("static ");
 				WriteLine(method[0]);
 				OpenBlock();
 				for (int i = 1; i < method.Length; i++)
@@ -917,14 +917,12 @@ public class GenJs : GenBase
 		}
 
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
-			if (!first)
-				WriteLine(',');
-			first = false;
+			Write("static ");
 			WriteResource(name, -1);
-			WriteLine(" : new Uint8Array([");
+			WriteLine(" = new Uint8Array([");
 			Write('\t');
 			Write(resources[name]);
-			Write(" ])");
+			WriteLine(" ]);");
 		}
 		WriteLine();
 		CloseBlock();
@@ -940,8 +938,7 @@ public class GenJs : GenBase
 			Write(enu);
 		foreach (CiClass klass in program.OfType<CiClass>()) // TODO: topological sort of class hierarchy
 			Write(klass);
-		if (program.Resources.Count > 0 || this.Library.Any(l => l != null))
-			WriteLib(program.Resources);
+		WriteLib(program.Resources);
 		CloseFile();
 	}
 }

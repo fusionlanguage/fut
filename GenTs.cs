@@ -313,7 +313,7 @@ public class GenTs : GenJs
 			Write(enu);
 		foreach (CiClass klass in program.OfType<CiClass>()) // TODO: topological sort of class hierarchy
 			Write(klass);
-		if (this.GenFullCode && (program.Resources.Count > 0 || this.Library.Any(l => l != null)))
+		if (this.GenFullCode)
 			WriteLib(program.Resources);
 		CloseFile();
 	}
