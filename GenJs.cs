@@ -875,16 +875,18 @@ public class GenJs : GenBase
 		WriteLine();
 		Write(klass.Documentation);
 		OpenClass(klass, "", " extends ");
-		WriteLine("constructor()");
-		OpenBlock();
-		if (klass.Parent is CiClass)
-			WriteLine("super();");
-		foreach (CiField field in klass.OfType<CiField>()) {
-			if (!field.IsAssignableStorage)
+
+		if (klass.Constructor != null || klass.OfType<CiField>().Any(HasInitCode)) {
+			WriteLine("constructor()");
+			OpenBlock();
+			if (klass.Parent is CiClass)
+				WriteLine("super();");
+			foreach (CiField field in klass.OfType<CiField>())
 				WriteInitCode(field);
+			WriteConstructorBody(klass);
+			CloseBlock();
 		}
-		WriteConstructorBody(klass);
-		CloseBlock();
+
 		WriteMembers(klass, true);
 		CloseBlock();
 	}
