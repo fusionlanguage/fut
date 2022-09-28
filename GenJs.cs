@@ -842,6 +842,8 @@ public class GenJs : GenBase
 
 	protected override void WriteField(CiField field)
 	{
+		base.WriteVar(field);
+		WriteLine(';');
 	}
 
 	protected override void WriteMethod(CiMethod method)
@@ -862,10 +864,6 @@ public class GenJs : GenBase
 		WriteLine();
 		Write(klass.Documentation);
 		OpenClass(klass, "", " extends ");
-		foreach (CiField field in klass.OfType<CiField>()) {
-			base.WriteVar(field);
-			WriteLine(';');
-		}
 		WriteLine("constructor()");
 		OpenBlock();
 		if (klass.Parent is CiClass)
