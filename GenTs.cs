@@ -19,16 +19,12 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Foxoft.Ci
 {
 
 public class GenTs : GenJs
 {
-	readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
-
 	// GenFullCode = false: only generate TypeScript declarations (.d.ts files)
 	// GenFullCode = true: generate full TypeScript code
 	bool GenFullCode = false;
@@ -39,7 +35,7 @@ public class GenTs : GenJs
 		return this;
 	}
 
-	void Write(CiEnum enu)
+	protected override void WriteEnum(CiEnum enu)
 	{
 		// WARNING: TypeScript enums allow reverse lookup that the Js generator currently
 		// doesn't implement
@@ -246,22 +242,8 @@ public class GenTs : GenJs
 			WriteLine(';');
 	}
 
-	void Write(CiClass klass)
+	protected override void WriteClass(CiClass klass)
 	{
-		// topological sorting of class hierarchy and class storage fields
-		if (klass == null)
-			return;
-		if (this.WrittenClasses.TryGetValue(klass, out bool done)) {
-			if (done)
-				return;
-			throw new CiException(klass, $"Circular dependency for class {klass.Name}");
-		}
-		this.WrittenClasses.Add(klass, false);
-		Write(klass.Parent as CiClass);
-		foreach (CiField field in klass.OfType<CiField>())
-			Write(field.Type.BaseType as CiClass);
-		this.WrittenClasses[klass] = true;
-
 		Write(klass.Documentation);
 		Write("export ");
 		switch (klass.CallType) {
@@ -309,10 +291,7 @@ public class GenTs : GenJs
 		CreateFile(this.OutputFile);
 		if (this.GenFullCode)
 			WriteTopLevelNatives(program);
-		foreach (CiEnum enu in program.OfType<CiEnum>())
-			Write(enu);
-		foreach (CiClass klass in program.OfType<CiClass>()) // TODO: topological sort of class hierarchy
-			Write(klass);
+		WriteTypes(program);
 		if (this.GenFullCode)
 			WriteLib(program.Resources);
 		CloseFile();

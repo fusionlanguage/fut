@@ -34,6 +34,8 @@ enum GenJsMethod
 
 public class GenJs : GenBase
 {
+	readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
+
 	// TODO: Namespace
 	protected readonly string[][] Library = new string[(int) GenJsMethod.Count][];
 
@@ -815,7 +817,7 @@ public class GenJs : GenBase
 		WriteLine(';');
 	}
 
-	void Write(CiEnum enu)
+	protected virtual void WriteEnum(CiEnum enu)
 	{
 		WriteLine();
 		Write(enu.Documentation);
@@ -869,14 +871,15 @@ public class GenJs : GenBase
 		WriteBody(method);
 	}
 
-	void Write(CiClass klass)
+	protected virtual void WriteClass(CiClass klass)
 	{
 		WriteLine();
 		Write(klass.Documentation);
-		Write("function ");
-		Write(klass.Name);
-		WriteLine("()");
+		OpenClass(klass, "", " extends ");
+		WriteLine("constructor()");
 		OpenBlock();
+		if (klass.Parent is CiClass)
+			WriteLine("super();");
 		foreach (CiField field in klass.OfType<CiField>()) {
 			if ((field.Value != null || field.Type.IsFinal) && !field.IsAssignableStorage) {
 				Write("this.");
@@ -887,13 +890,39 @@ public class GenJs : GenBase
 		}
 		WriteConstructorBody(klass);
 		CloseBlock();
-		if (klass.BaseClassName != null) {
-			Write(klass.Name);
-			Write(".prototype = new ");
-			Write(klass.BaseClassName);
-			WriteLine("();");
-		}
+		CloseBlock();
 		WriteMembers(klass, true);
+	}
+
+	void WriteSortedClass(CiClass klass)
+	{
+		// topological sorting of class hierarchy
+		if (this.WrittenClasses.TryGetValue(klass, out bool done)) {
+			if (done)
+				return;
+			throw new CiException(klass, $"Circular dependency for class {klass.Name}");
+		}
+		this.WrittenClasses.Add(klass, false);
+		if (klass.Parent is CiClass baseClass)
+			WriteSortedClass(baseClass);
+		this.WrittenClasses[klass] = true;
+		WriteClass(klass);
+	}
+
+	protected void WriteTypes(CiProgram program)
+	{
+		foreach (CiContainerType type in program) {
+			switch (type) {
+			case CiEnum enu:
+				WriteEnum(enu);
+				break;
+			case CiClass klass:
+				WriteSortedClass(klass);
+				break;
+			default:
+				throw new NotImplementedException(type.Type.ToString());
+			}
+		}
 	}
 
 	protected void WriteLib(Dictionary<string, byte[]> resources)
@@ -934,10 +963,7 @@ public class GenJs : GenBase
 		WriteLine();
 		WriteLine("\"use strict\";");
 		WriteTopLevelNatives(program);
-		foreach (CiEnum enu in program.OfType<CiEnum>())
-			Write(enu);
-		foreach (CiClass klass in program.OfType<CiClass>()) // TODO: topological sort of class hierarchy
-			Write(klass);
+		WriteTypes(program);
 		WriteLib(program.Resources);
 		CloseFile();
 	}
