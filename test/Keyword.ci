@@ -20,6 +20,7 @@ public class Test
 	bool Class = true;
 	bool Const = true;
 	bool Constant = true;
+	bool Constructor = true;
 	bool Continue = true;
 	bool Debugger = true;
 	bool Decimal = true;
@@ -163,6 +164,7 @@ public class Test
 		bool char = true;
 		bool checked = true;
 		bool constant = true;
+		bool constructor = true;
 		bool debugger = true;
 		bool decimal = true;
 		bool def = true;
@@ -273,6 +275,7 @@ public class Test
 			&& o.Class
 			&& o.Const
 			&& o.Constant
+			&& o.Constructor
 			&& o.Continue
 			&& o.Decimal
 			&& o.Debugger
@@ -411,6 +414,7 @@ public class Test
 			&& char
 			&& checked
 			&& constant
+			&& constructor
 			&& decimal
 			&& debugger
 			&& def

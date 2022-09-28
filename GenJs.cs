@@ -41,7 +41,9 @@ public class GenJs : GenBase
 
 	void WriteCamelCaseNotKeyword(string name)
 	{
+		WriteCamelCase(name);
 		switch (name) {
+		case "Constructor":
 		case "catch":
 		case "debugger":
 		case "delete":
@@ -62,11 +64,9 @@ public class GenJs : GenBase
 		case "var":
 		case "with":
 		case "yield":
-			Write(name);
 			Write('_');
 			break;
 		default:
-			WriteCamelCase(name);
 			break;
 		}
 	}
@@ -93,6 +93,8 @@ public class GenJs : GenBase
 			if (IsJsPrivate(member)) {
 				Write('#');
 				WriteCamelCase(symbol.Name);
+				if (symbol.Name == "Constructor")
+					Write('_');
 			}
 			else
 				WriteCamelCaseNotKeyword(symbol.Name);
