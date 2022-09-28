@@ -269,7 +269,7 @@ public class GenTs : GenJs
 				Write(klass.Constructor.Documentation);
 				WriteVisibility(klass.Constructor.Visibility);
 			}
-			else
+			else if (klass.CallType == CiCallType.Static)
 				Write("private ");
 			if (this.GenFullCode)
 				WriteConstructor(klass);

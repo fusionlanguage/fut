@@ -6,6 +6,11 @@ class Inner
 	{
 		Foo = 42;
 	}
+
+	internal void Bar()
+	{
+		Test() o;
+	}
 }
 
 public class Test
