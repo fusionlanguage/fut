@@ -71,6 +71,8 @@ public class GenJs : GenBase
 		}
 	}
 
+	protected virtual bool IsJsPrivate(CiMember member) => member.Visibility == CiVisibility.Private;
+
 	protected override void WriteName(CiSymbol symbol)
 	{
 		switch (symbol) {
@@ -85,8 +87,15 @@ public class GenJs : GenBase
 			WriteUppercaseWithUnderscores(symbol.Name);
 			break;
 		case CiVar _:
-		case CiMember _:
 			WriteCamelCaseNotKeyword(symbol.Name);
+			break;
+		case CiMember member:
+			if (IsJsPrivate(member)) {
+				Write('#');
+				WriteCamelCase(symbol.Name);
+			}
+			else
+				WriteCamelCaseNotKeyword(symbol.Name);
 			break;
 		default:
 			throw new NotImplementedException(symbol.GetType().Name);
@@ -854,7 +863,7 @@ public class GenJs : GenBase
 		WriteDoc(method);
 		if (method.CallType == CiCallType.Static)
 			Write("static ");
-		WriteCamelCase(method.Name);
+		WriteName(method);
 		WriteParameters(method, true);
 		WriteBody(method);
 	}

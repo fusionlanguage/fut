@@ -35,6 +35,8 @@ public class GenTs : GenJs
 		return this;
 	}
 
+	protected override bool IsJsPrivate(CiMember member) => false;
+
 	protected override void WriteEnum(CiEnum enu)
 	{
 		// WARNING: TypeScript enums allow reverse lookup that the Js generator currently
