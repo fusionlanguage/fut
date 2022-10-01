@@ -193,6 +193,8 @@ public class GenTs : GenJs
 	{
 		Write(field.Documentation);
 		WriteVisibility(field.Visibility);
+		if (field.Type.IsFinal && !field.IsAssignableStorage)
+			Write("readonly ");
 		WriteTypeAndName(field);
 		if (this.GenFullCode)
 			WriteVarInit(field);
