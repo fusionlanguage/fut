@@ -119,11 +119,15 @@ public class GenTs : GenJs
 					break;
 				case CiId.DictionaryClass:
 				case CiId.SortedDictionaryClass:
-					Write("Partial<Record<");
+					if (klass.KeyType is CiEnum)
+						Write("Partial<");
+					Write("Record<");
 					Write(klass.KeyType);
 					Write(", ");
 					Write(klass.ValueType);
-					Write(">>");
+					Write('>');
+					if (klass.KeyType is CiEnum)
+						Write('>');
 					break;
 				case CiId.OrderedDictionaryClass:
 					Write("Map<");
