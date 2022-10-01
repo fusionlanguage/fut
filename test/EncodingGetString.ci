@@ -1,6 +1,6 @@
 public static class Test
 {
-	static string() GetInitial(byte[] a) => Encoding.UTF8.GetString(a, 0, 1); //FAIL: ts TODO
+	static string() GetInitial(byte[] a) => Encoding.UTF8.GetString(a, 0, 1);
 
 	public static bool Run()
 	{
