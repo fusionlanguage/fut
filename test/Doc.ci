@@ -15,6 +15,9 @@ public class Test
 	{
 	}
 
+	/// An integer.
+	internal int X;
+
 	/// Returns `true` if the passed integer is even.
 	public bool IsEven(
 		/// The integer to check.

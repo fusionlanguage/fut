@@ -2643,6 +2643,7 @@ public class GenC : GenCCpp
 				WriteLine(" base;");
 			}
 			foreach (CiField field in klass.OfType<CiField>()) {
+				Write(field.Documentation);
 				WriteTypeAndName(field);
 				WriteLine(';');
 			}

@@ -987,6 +987,7 @@ public class GenJava : GenTyped
 
 	protected override void WriteField(CiField field)
 	{
+		Write(field.Documentation);
 		Write(field.Visibility);
 		WriteVar(field);
 		WriteLine(';');

@@ -859,6 +859,7 @@ public class GenJs : GenBase
 
 	protected override void WriteField(CiField field)
 	{
+		Write(field.Documentation);
 		base.WriteVar(field);
 		WriteLine(';');
 	}

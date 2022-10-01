@@ -191,6 +191,7 @@ public class GenTs : GenJs
 
 	protected override void WriteField(CiField field)
 	{
+		Write(field.Documentation);
 		WriteVisibility(field.Visibility);
 		WriteTypeAndName(field);
 		if (this.GenFullCode)
@@ -200,6 +201,7 @@ public class GenTs : GenJs
 
 	protected override void WriteMethod(CiMethod method)
 	{
+		WriteLine();
 		WriteDoc(method);
 		WriteVisibility(method.Visibility);
 		switch (method.CallType) {
