@@ -64,13 +64,6 @@ public class GenTs : GenJs
 		Write(value.Type);
 	}
 
-	void WriteTypeAndName(CiConst konst)
-	{
-		WriteName(konst);
-		Write(": ");
-		Write(konst.Type, true);
-	}
-
 	void WriteBaseType(CiType type)
 	{
 		if (type == CiSystem.RegexClass)
@@ -81,17 +74,19 @@ public class GenTs : GenJs
 			Write(type.Name);
 	}
 
-	void WriteArrayType(CiType elementType, bool forConst)
+	void WriteArrayType(CiType elementType, bool readonlyArray)
 	{
+		if (readonlyArray)
+			Write("readonly ");
 		if (elementType.IsNullable)
 			Write('(');
-		Write(elementType, forConst);
+		Write(elementType);
 		if (elementType.IsNullable)
 			Write(')');
 		Write("[]");
 	}
 
-	void Write(CiType type, bool forConst = false)
+	void Write(CiType type, bool readonlyArray = false)
 	{
 		switch (type) {
 		case CiNumericType _:
@@ -107,20 +102,17 @@ public class GenTs : GenJs
 			switch (klass.Class.Id) {
 			case CiId.ArrayPtrClass:
 			case CiId.ArrayStorageClass:
-				bool isReadonlyPtr = !(klass is CiReadWriteClassType);
+				readonlyArray |= !(klass is CiReadWriteClassType);
 				if (klass.ElementType is CiNumericType number) {
-					if (isReadonlyPtr)
+					if (readonlyArray)
 						Write("Readonly<");
 					Write(GetArrayElementType(number));
 					Write("Array");
-					if (isReadonlyPtr)
+					if (readonlyArray)
 						Write('>');
 				}
-				else {
-					if (forConst || isReadonlyPtr)
-						Write("readonly ");
-					WriteArrayType(klass.ElementType, forConst);
-				}
+				else
+					WriteArrayType(klass.ElementType, readonlyArray);
 				break;
 			case CiId.ListClass:
 			case CiId.QueueClass:
@@ -135,16 +127,16 @@ public class GenTs : GenJs
 			case CiId.DictionaryClass:
 			case CiId.SortedDictionaryClass:
 				Write("Partial<Record<");
-				Write(klass.KeyType, forConst);
+				Write(klass.KeyType);
 				Write(", ");
-				Write(klass.ValueType, forConst);
+				Write(klass.ValueType);
 				Write(">>");
 				break;
 			case CiId.OrderedDictionaryClass:
 				Write("Map<");
-				Write(klass.KeyType, forConst);
+				Write(klass.KeyType);
 				Write(", ");
-				Write(klass.ValueType, forConst);
+				Write(klass.ValueType);
 				Write('>');
 				break;
 			default:
@@ -183,7 +175,9 @@ public class GenTs : GenJs
 		Write(konst.Documentation);
 		WriteVisibility(konst.Visibility);
 		Write("static readonly ");
-		WriteTypeAndName(konst);
+		WriteName(konst);
+		Write(": ");
+		Write(konst.Type, true);
 		if (this.GenFullCode)
 			WriteVarInit(konst);
 		WriteLine(';');
