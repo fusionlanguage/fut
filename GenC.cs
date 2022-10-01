@@ -1666,7 +1666,7 @@ public class GenC : GenCCpp
 			case CiClassType klass3 when klass3.Class.Id == CiId.ListClass || klass3.Class.Id == CiId.StackClass || klass3.Class.Id == CiId.DictionaryClass || klass3.Class.Id == CiId.SortedDictionaryClass:
 				WriteNewStorage(valueType);
 				break;
-			case CiClass klass3 when klass3.IsPublic && klass3.Constructor != null && klass3.Constructor.Visibility == CiVisibility.Public:
+			case CiClass klass3 when klass3.IsPublic && klass3.Constructor != null && klass3.Constructor.Visibility == CiVisibility.Public: // FIXME: construct fields if no public constructor
 				WriteName(klass3);
 				Write("_New()");
 				break;
@@ -2363,10 +2363,15 @@ public class GenC : GenCCpp
 	{
 		if (this.VarsToDestruct.Count > 0)
 			return false;
+		for (int i = 0; i < lastCallIndex; i++) {
+			if (statements[i] is CiVar def && NeedToDestruct(def))
+				return false;
+		}
 		CiExpr call = statements[lastCallIndex] as CiExpr;
 		CiMethod throwingMethod = GetThrowingMethod(call);
 		if (throwingMethod == null)
 			return false;
+
 		Write(statements, lastCallIndex);
 		Write("return ");
 		if (throwingMethod.Type is CiNumericType) {
