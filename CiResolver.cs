@@ -1433,7 +1433,7 @@ public class CiResolver : CiVisitor
 			throw StatementException(typeArgExprs, $"Expected {generic.TypeParameterCount} type arguments for {generic.Name}, got {typeArgs.Count}");
 		NotSupported(typeArgExprs, generic.Name, "cl");
 		if (generic.Id == CiId.OrderedDictionaryClass)
-			NotSupported(typeArgExprs, "OrderedDictionary", "c", "cpp", "swift", "ts");
+			NotSupported(typeArgExprs, "OrderedDictionary", "c", "cpp", "swift");
 		result.Class = generic;
 		result.TypeArg0 = typeArgs[0];
 		if (typeArgs.Count == 2)

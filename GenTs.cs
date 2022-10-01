@@ -134,12 +134,18 @@ public class GenTs : GenJs
 				break;
 			case CiId.DictionaryClass:
 			case CiId.SortedDictionaryClass:
-			case CiId.OrderedDictionaryClass:
 				Write("Partial<Record<");
 				Write(klass.KeyType, forConst);
 				Write(", ");
 				Write(klass.ValueType, forConst);
 				Write(">>");
+				break;
+			case CiId.OrderedDictionaryClass:
+				Write("Map<");
+				Write(klass.KeyType, forConst);
+				Write(", ");
+				Write(klass.ValueType, forConst);
+				Write('>');
 				break;
 			default:
 				WriteBaseType(klass.Class);
