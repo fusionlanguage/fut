@@ -840,7 +840,14 @@ public class GenCpp : GenCCpp
 			break;
 		case CiId.EnvironmentGetEnvironmentVariable:
 			Include("cstdlib");
-			WriteCall("std::getenv", args[0]);
+			Write("std::getenv(");
+			if (args[0] is CiLiteralString)
+				args[0].Accept(this, CiPriority.Argument);
+			else {
+				args[0].Accept(this, CiPriority.Primary);
+				Write(".data()");
+			}
+			Write(')');
 			break;
 		case CiId.RegexCompile:
 			WriteRegex(args, 0);
