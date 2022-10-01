@@ -637,7 +637,7 @@ public class GenSwift : GenPySwift
 		case CiId.EnvironmentGetEnvironmentVariable:
 			Include("Foundation");
 			Write("ProcessInfo.processInfo.environment[");
-			args[0].Accept(this, CiPriority.Argument);
+			WriteUnwrappedString(args[0], CiPriority.Argument, false);
 			Write(']');
 			break;
 		case CiId.MathMethod:
