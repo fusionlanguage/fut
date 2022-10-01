@@ -23,7 +23,10 @@ public class Test
 		a[0].Foo = 40;
 		Test() t;
 		t.Field[0].Foo = 41;
+		Inner()[2][3] m;
+		m[0][1].Foo++;
 		return a[0].Foo == 40 && a[1].Foo == 42
-			&& t.Field[0].Foo == 41 && t.Field[1].Foo == 42;
+			&& t.Field[0].Foo == 41 && t.Field[1].Foo == 42
+			&& m[0][1].Foo == 43;
 	}
 }
