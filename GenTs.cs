@@ -109,11 +109,6 @@ public class GenTs : GenJs
 			case CiId.ArrayStorageClass:
 				bool isReadonlyPtr = !(klass is CiReadWriteClassType);
 				if (klass.ElementType is CiNumericType number) {
-					if (klass.Class.Id == CiId.ArrayPtrClass) {
-						if (isReadonlyPtr)
-							Write("readonly ");
-						Write("number[] | ");
-					}
 					if (isReadonlyPtr)
 						Write("Readonly<");
 					Write(GetArrayElementType(number));
