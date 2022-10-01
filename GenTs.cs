@@ -117,7 +117,7 @@ public class GenTs : GenJs
 			case CiId.ListClass:
 			case CiId.QueueClass:
 			case CiId.StackClass:
-				WriteArrayType(klass.ElementType, false);
+				WriteArrayType(klass.ElementType, !(klass is CiReadWriteClassType));
 				break;
 			case CiId.HashSetClass:
 				Write("Set<");
