@@ -599,13 +599,15 @@ public class GenSwift : GenPySwift
 		case CiId.ConsoleWrite:
 			// TODO: stderr
 			Write("print(");
-			args[0].Accept(this, CiPriority.Argument);
+			WriteUnwrappedString(args[0], CiPriority.Argument, true);
 			Write(", terminator: \"\")");
 			break;
 		case CiId.ConsoleWriteLine:
 			// TODO: stderr
-			Write("print");
-			WriteArgsInParentheses(method, args);
+			Write("print(");
+			if (args.Count == 1)
+				WriteUnwrappedString(args[0], CiPriority.Argument, true);
+			Write(')');
 			break;
 		case CiId.UTF8GetByteCount:
 			WriteUnwrappedString(args[0], CiPriority.Primary, true);
