@@ -1491,12 +1491,14 @@ public class GenC : GenCCpp
 		case CiId.ArrayCopyTo:
 		case CiId.ListCopyTo:
 			Include("string.h");
+			CiType elementType = ((CiClassType) obj.Type).ElementType;
+			if (IsHeapAllocated(elementType))
+				throw new NotImplementedException(); // TODO
 			Write("memcpy(");
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(", ");
 			WriteArrayPtrAdd(obj, args[0]);
 			Write(", ");
-			CiType elementType = ((CiClassType) obj.Type).ElementType;
 			if (elementType is CiRangeType range
 			 && ((range.Min >= 0 && range.Max <= byte.MaxValue)
 				|| (range.Min >= sbyte.MinValue && range.Max <= sbyte.MaxValue)))
@@ -1511,6 +1513,7 @@ public class GenC : GenCCpp
 			break;
 		case CiId.ArrayFillAll:
 		case CiId.ArrayFillPart:
+			// TODO: IsHeapAllocated
 			if (args[0] is CiLiteral literal && literal.IsDefaultValue) {
 				Include("string.h");
 				Write("memset(");
