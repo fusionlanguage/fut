@@ -6,7 +6,7 @@ public static class Test
 		int i = 42;
 		Console.Write(i);
 		float f = 10.5;
-		Console.Write($"i={i:X} f={f:e}={f:F}"); //FAIL: cl if no double support
+		Console.Write($"i={i:X} f={f:e}={f:F}$"); //FAIL: cl if no double support
 		return true;
 	}
 }

@@ -9,6 +9,7 @@ public static class Test
 		int i = 42;
 		Console.WriteLine(i);
 		Console.WriteLine($"i={i:X}");
+		Console.WriteLine($"i={i:X}={i}");
 		return true;
 	}
 }
