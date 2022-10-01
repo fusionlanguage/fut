@@ -20,6 +20,7 @@ public static class Test
 		d &= ~DaysOfWeek.Friday;
 		DaysOfWeek notFriday = ~DaysOfWeek.Friday;
 		d &= notFriday;
+		d ^= DaysOfWeek.Wednesday ^ DaysOfWeek.Thursday;
 		return (d & DaysOfWeek.Sunday) != DaysOfWeek.None;
 	}
 }
