@@ -1,0 +1,14 @@
+public class Test
+{
+	internal int X = 42;
+
+	public static bool Run()
+	{
+		Dictionary<string(), Test#>() dict; //FAIL: cl
+		dict["foo"] = new Test();
+		dict.Clear();
+		dict["bar"] = new Test();
+		dict["bar"].X++;
+		return dict.Count == 1 && dict["bar"].X == 43 && dict.ContainsKey("bar");
+	}
+}

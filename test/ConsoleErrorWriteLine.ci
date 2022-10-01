@@ -7,6 +7,7 @@ public static class Test
 		Console.Error.WriteLine(s);
 		Console.Error.WriteLine();
 		int i = 42;
+		Console.Error.WriteLine(i);
 		Console.Error.WriteLine($"i={i:X}");
 		return true;
 	}

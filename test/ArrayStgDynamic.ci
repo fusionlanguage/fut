@@ -1,0 +1,20 @@
+public class Test
+{
+	int Id;
+	Test#[2] F;
+
+	public static bool Run()
+	{
+		Test#[2] a; //FAIL: cl
+		a[0] = new Test();
+		a[0].Id = 5;
+		a[1] = new Test();
+		a[1].Id = 10;
+		Test() o;
+		o.F[0] = new Test();
+		o.F[0].Id = 15;
+		o.F[1] = new Test();
+		o.F[1].Id = 20;
+		return a[0].Id == 5 && a[1].Id == 10&& o.F[0].Id == 15 && o.F[1].Id == 20;
+	}
+}

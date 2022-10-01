@@ -1,10 +1,15 @@
-public static class Test
+public class Test
 {
+	string()[2] F;
+
 	public static bool Run()
 	{
 		string()[2] a; //FAIL: cl
 		a[0] = "foo";
 		a[1] = "bar";
-		return a[0] == "foo" && a[1] == "bar";
+		Test() o;
+		o.F[0] = "quux";
+		o.F[1] = "baz";
+		return a[0] == "foo" && a[1] == "bar" && o.F[0] == "quux" && o.F[1] == "baz";
 	}
 }
