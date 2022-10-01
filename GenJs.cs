@@ -26,7 +26,6 @@ namespace Foxoft.Ci
 
 enum GenJsMethod
 {
-	SortListPart,
 	RegexEscape,
 	Count,
 }
@@ -532,12 +531,16 @@ public class GenJs : GenBase
 			Write(".sort((a, b) => a - b)");
 			break;
 		case CiId.ListSortPart:
-			AddLibrary(GenJsMethod.SortListPart,
-				"sortListPart(a, offset, length)",
-				"const sorted = a.slice(offset, offset + length).sort((a, b) => a - b);",
-				"for (let i = 0; i < length; i++)",
-				"\ta[offset + i] = sorted[i];");
-			WriteCall("Ci.sortListPart", obj, args[0], args[1]);
+			obj.Accept(this, CiPriority.Primary);
+			Write(".splice(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(", ");
+			args[1].Accept(this, CiPriority.Argument);
+			Write(", ...");
+			obj.Accept(this, CiPriority.Primary); // TODO: side effect
+			Write(".slice(");
+			WriteStartEnd(args[0], args[1]); // TODO: side effect
+			Write(").sort((a, b) => a - b))");
 			break;
 		case CiId.QueueDequeue:
 			obj.Accept(this, CiPriority.Primary);
