@@ -12,7 +12,7 @@ class Derived : Base
 {
 	internal override int Foo()
 	{
-		return base.Foo() + base.Quux(10); //FAIL: ts TODO
+		return base.Foo() + base.Quux(10);
 	}
 
 	internal int Bar()
