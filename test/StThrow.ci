@@ -17,7 +17,6 @@ public class Test
 
 	static string StringPtrThrow() throws
 	{
-		string() s = "foo";
 		FloatThrow();
 		return "bar";
 	}
