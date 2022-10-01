@@ -17,9 +17,20 @@ public static class Test
 		int[]! p2 = a;
 		b.CopyTo(1, p2, 0, 1);
 
+		int[5] c;
+		b.CopyTo(0, c, 1, 4);
+
+		string[2] ss;
+		ss[0] = "foo";
+		ss[1] = "bar";
+		string[3] sd;
+		ss.CopyTo(0, sd, 1, 1);
+
 		return b[1] == 5 && b[2] == 10 && b[3] == 15
 			&& b[0] == 10
 			&& a[5] == 10 && a[6] == 15
-			&& a[0] == 5;
+			&& a[0] == 5
+			&& c[1] == 10 && c[2] == 5 && c[3] == 10 && c[4] == 15
+			&& sd[1] == "foo";
 	}
 }

@@ -5,7 +5,7 @@ public static class Test
 		int one = 1;
 		string s = "1 + 2";
 		string() s1 = $"{s} == {one + 2}"; //FAIL: cpp - should work with C++20; cl
-		string() s2 = $"\"`{{${one}";
+		string() s2 = $"\"`{{${one}$";
 		string() s3 = $"{one}";
 		string() s4 = $"{s3}";
 		long l = 42;
@@ -15,7 +15,7 @@ public static class Test
 		double d = f;
 		string() s7 = $"{d}";
 		return  s1 == "1 + 2 == 3"
-			&& s2 == "\"`{$1"
+			&& s2 == "\"`{$1$"
 			&& s3 == "1"
 			&& s4 == "1"
 			&& s5 == "42"

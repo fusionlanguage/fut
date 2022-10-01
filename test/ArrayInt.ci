@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		0 .. 200000[3] a;
+		a[1] = 100_000;
+		return a[1] == 100_000;
+	}
+}
