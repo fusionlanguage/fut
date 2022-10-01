@@ -26,7 +26,6 @@ namespace Foxoft.Ci
 
 enum GenJsMethod
 {
-	CopyArray,
 	SortListPart,
 	RegexEscape,
 	Count,
@@ -469,17 +468,36 @@ public class GenJs : GenBase
 			break;
 		case CiId.ArrayCopyTo:
 		case CiId.ListCopyTo:
-			AddLibrary(GenJsMethod.CopyArray,
-				"copyArray(sa, soffset, da, doffset, length)",
-				"if (typeof(sa.subarray) == \"function\" && typeof(da.set) == \"function\")",
-				"\tda.set(sa.subarray(soffset, soffset + length), doffset);",
-				"else",
-				"\tfor (let i = 0; i < length; i++)",
-				"\t\tda[doffset + i] = sa[soffset + i];");
-			Write("Ci.copyArray(");
-			obj.Accept(this, CiPriority.Argument);
-			Write(", ");
-			WriteArgs(method, args);
+			args[1].Accept(this, CiPriority.Primary);
+			bool wholeSource = obj.Type is CiArrayStorageType sourceStorage && args[0].IsLiteralZero && args[3] is CiLiteralLong literalLength && literalLength.Value == sourceStorage.Length;
+			if (((CiClassType) obj.Type).ElementType is CiNumericType) {
+				Write(".set(");
+				if (wholeSource)
+					obj.Accept(this, CiPriority.Argument);
+				else {
+					obj.Accept(this, CiPriority.Primary);
+					Write(method.Id == CiId.ArrayCopyTo ? ".subarray(" : ".slice(");
+					WriteStartEnd(args[0], args[3]);
+					Write(')');
+				}
+				if (!args[2].IsLiteralZero) {
+					Write(", ");
+					args[2].Accept(this, CiPriority.Argument);
+				}
+			}
+			else {
+				Write(".splice(");
+				args[2].Accept(this, CiPriority.Argument);
+				Write(", ");
+				args[3].Accept(this, CiPriority.Argument);
+				Write(", ...");
+				obj.Accept(this, CiPriority.Primary);
+				if (!wholeSource) {
+					Write(".slice(");
+					WriteStartEnd(args[0], args[3]);
+					Write(')');
+				}
+			}
 			Write(')');
 			break;
 		case CiId.ArraySortPart:
