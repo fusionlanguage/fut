@@ -74,19 +74,7 @@ public class GenTs : GenJs
 			Write(type.Name);
 	}
 
-	void WriteArrayType(CiType elementType, bool readonlyArray)
-	{
-		if (readonlyArray)
-			Write("readonly ");
-		if (elementType.IsNullable)
-			Write('(');
-		Write(elementType);
-		if (elementType.IsNullable)
-			Write(')');
-		Write("[]");
-	}
-
-	void Write(CiType type, bool readonlyArray = false)
+	void Write(CiType type, bool readOnly = false)
 	{
 		switch (type) {
 		case CiNumericType _:
@@ -99,48 +87,57 @@ public class GenTs : GenJs
 			Write(enu == CiSystem.BoolType ? "boolean" : enu.Name);
 			break;
 		case CiClassType klass:
+			readOnly |= !(klass is CiReadWriteClassType);
 			switch (klass.Class.Id) {
-			case CiId.ArrayPtrClass:
-			case CiId.ArrayStorageClass:
-				readonlyArray |= !(klass is CiReadWriteClassType);
-				if (klass.ElementType is CiNumericType number) {
-					if (readonlyArray)
-						Write("Readonly<");
-					Write(GetArrayElementType(number));
-					Write("Array");
-					if (readonlyArray)
-						Write('>');
-				}
-				else
-					WriteArrayType(klass.ElementType, readonlyArray);
-				break;
+			case CiId.ArrayPtrClass when !(klass.ElementType is CiNumericType):
+			case CiId.ArrayStorageClass when !(klass.ElementType is CiNumericType):
 			case CiId.ListClass:
 			case CiId.QueueClass:
 			case CiId.StackClass:
-				WriteArrayType(klass.ElementType, !(klass is CiReadWriteClassType));
-				break;
-			case CiId.HashSetClass:
-				Write("Set<");
-				Write(klass.ElementType, false);
-				Write('>');
-				break;
-			case CiId.DictionaryClass:
-			case CiId.SortedDictionaryClass:
-				Write("Partial<Record<");
-				Write(klass.KeyType);
-				Write(", ");
-				Write(klass.ValueType);
-				Write(">>");
-				break;
-			case CiId.OrderedDictionaryClass:
-				Write("Map<");
-				Write(klass.KeyType);
-				Write(", ");
-				Write(klass.ValueType);
-				Write('>');
+				if (readOnly)
+					Write("readonly ");
+				if (klass.ElementType.IsNullable)
+					Write('(');
+				Write(klass.ElementType);
+				if (klass.ElementType.IsNullable)
+					Write(')');
+				Write("[]");
 				break;
 			default:
-				WriteBaseType(klass.Class);
+				if (readOnly && klass.Class.TypeParameterCount > 0)
+					Write("Readonly<");
+				switch (klass.Class.Id) {
+				case CiId.ArrayPtrClass:
+				case CiId.ArrayStorageClass:
+					Write(GetArrayElementType((CiNumericType) klass.ElementType));
+					Write("Array");
+					break;
+				case CiId.HashSetClass:
+					Write("Set<");
+					Write(klass.ElementType, false);
+					Write('>');
+					break;
+				case CiId.DictionaryClass:
+				case CiId.SortedDictionaryClass:
+					Write("Partial<Record<");
+					Write(klass.KeyType);
+					Write(", ");
+					Write(klass.ValueType);
+					Write(">>");
+					break;
+				case CiId.OrderedDictionaryClass:
+					Write("Map<");
+					Write(klass.KeyType);
+					Write(", ");
+					Write(klass.ValueType);
+					Write('>');
+					break;
+				default:
+					WriteBaseType(klass.Class);
+					break;
+				}
+				if (readOnly && klass.Class.TypeParameterCount > 0)
+					Write('>');
 				break;
 			}
 			break;
