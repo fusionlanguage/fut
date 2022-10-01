@@ -1,4 +1,4 @@
-public static class Test
+public class Test
 {
 	static int IntThrow() throws
 	{
@@ -15,11 +15,24 @@ public static class Test
 		throw "Foo";
 	}
 
+	static string StringPtrThrow() throws
+	{
+		FloatThrow();
+		return "bar";
+	}
+
+	static Test! ObjectPtrThrow() throws
+	{
+		throw "Foo";
+	}
+
 	public static void Outer() throws
 	{
 		VoidThrow();
 		IntThrow();
 		FloatThrow();
+		StringPtrThrow();
+		ObjectPtrThrow();
 	}
 
 	public static bool Run()
