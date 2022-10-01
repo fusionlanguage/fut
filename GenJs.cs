@@ -24,18 +24,11 @@ using System.Linq;
 namespace Foxoft.Ci
 {
 
-enum GenJsMethod
-{
-	RegexEscape,
-	Count,
-}
-
 public class GenJs : GenBase
 {
 	readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
 
 	// TODO: Namespace
-	protected readonly string[][] Library = new string[(int) GenJsMethod.Count][];
 
 	void WriteCamelCaseNotKeyword(string name)
 	{
@@ -381,11 +374,6 @@ public class GenJs : GenBase
 		WriteCall(expr.Left, "charCodeAt", expr.Right);
 	}
 
-	void AddLibrary(GenJsMethod id, params string[] method)
-	{
-		this.Library[(int) id] ??= method;
-	}
-
 	static bool IsIdentifier(string s)
 	{
 		return s.Length > 0
@@ -641,11 +629,8 @@ public class GenJs : GenBase
 			WriteRegex(args, 0);
 			break;
 		case CiId.RegexEscape:
-			AddLibrary(GenJsMethod.RegexEscape,
-				"regexEscape(s)",
-				"return s.replace(/[-\\/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&');");
-			Write("Ci.regexEscape");
-			WriteArgsInParentheses(method, args);
+			args[0].Accept(this, CiPriority.Primary);
+			Write(".replace(/[-\\/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&')");
 			break;
 		case CiId.RegexIsMatchStr:
 			WriteRegex(args, 1);
@@ -954,24 +939,12 @@ public class GenJs : GenBase
 
 	protected void WriteLib(Dictionary<string, byte[]> resources)
 	{
-		if (this.Library.All(method => method == null) && resources.Count == 0)
+		if (resources.Count == 0)
 			return;
 
 		WriteLine();
 		WriteLine("class Ci");
 		OpenBlock();
-		foreach (string[] method in this.Library) {
-			if (method != null) {
-				Write("static ");
-				WriteLine(method[0]);
-				OpenBlock();
-				for (int i = 1; i < method.Length; i++)
-					WriteLine(method[i]);
-				this.Indent--;
-				Write('}');
-			}
-		}
-
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
 			Write("static ");
 			WriteResource(name, -1);
