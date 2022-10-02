@@ -182,16 +182,19 @@ public class GenCpp : GenCCpp
 
 	void WriteBaseType(CiType type)
 	{
-		if (type == CiSystem.MatchClass) {
+		switch (type.Id) {
+		case CiId.MatchClass:
 			Include("regex");
 			Write("std::cmatch");
-		}
-		else if (type == CiSystem.LockClass) {
+			break;
+		case CiId.LockClass:
 			Include("mutex");
 			Write("std::recursive_mutex");
-		}
-		else
+			break;
+		default:
 			Write(type.Name);
+			break;
+		}
 	}
 
 	protected override void Write(CiType type, bool promote)
@@ -209,20 +212,23 @@ public class GenCpp : GenCCpp
 			Write("std::string");
 			break;
 		case CiDynamicPtrType dynamic:
-			if (dynamic.Class == CiSystem.RegexClass) {
+			switch (dynamic.Class.Id) {
+			case CiId.RegexClass:
 				Include("regex");
 				Write("std::regex");
-			}
-			else {
+				break;
+			case CiId.ArrayPtrClass:
 				Include("memory");
 				Write("std::shared_ptr<");
-				if (dynamic.Class.Id == CiId.ArrayPtrClass) {
-					Write(dynamic.ElementType, false);
-					Write("[]");
-				}
-				else
-					Write(dynamic.Class.Name);
+				Write(dynamic.ElementType, false);
+				Write("[]>");
+				break;
+			default:
+				Include("memory");
+				Write("std::shared_ptr<");
+				Write(dynamic.Class.Name);
 				Write('>');
+				break;
 			}
 			break;
 		case CiClassType klass:

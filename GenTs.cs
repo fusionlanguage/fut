@@ -66,12 +66,17 @@ public class GenTs : GenJs
 
 	void WriteBaseType(CiType type)
 	{
-		if (type == CiSystem.RegexClass)
+		switch (type.Id) {
+		case CiId.RegexClass:
 			Write("RegExp");
-		else if (type == CiSystem.MatchClass)
+			break;
+		case CiId.MatchClass:
 			Write("RegExpMatchArray");
-		else
+			break;
+		default:
 			Write(type.Name);
+			break;
+		}
 	}
 
 	void Write(CiType type, bool readOnly = false)

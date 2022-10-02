@@ -270,18 +270,22 @@ public class GenJava : GenTyped
 
 	protected override void WriteClassName(CiClass klass)
 	{
-		if (klass == CiSystem.RegexClass) {
+		switch (klass.Id) {
+		case CiId.RegexClass:
 			Include("java.util.regex.Pattern");
 			Write("Pattern");
-		}
-		else if (klass == CiSystem.MatchClass) {
+			break;
+		case CiId.MatchClass:
 			Include("java.util.regex.Matcher");
 			Write("Matcher");
-		}
-		else if (klass == CiSystem.LockClass)
+			break;
+		case CiId.LockClass:
 			Write("Object");
-		else
+			break;
+		default:
 			Write(klass.Name);
+			break;
+		}
 	}
 
 	void Write(CiType type, bool promote, bool needClass)
@@ -529,7 +533,7 @@ public class GenJava : GenTyped
 	void WriteRegex(List<CiExpr> args, int argIndex)
 	{
 		CiExpr pattern = args[argIndex];
-		if (pattern.Type.IsClass(CiSystem.RegexClass))
+		if (pattern.Type.IsRegexClass)
 			pattern.Accept(this, CiPriority.Primary);
 		else {
 			Include("java.util.regex.Pattern");

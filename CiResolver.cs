@@ -389,7 +389,7 @@ public class CiResolver : CiVisitor
 			expr.Symbol = scope.TryLookup(expr.Name);
 			if (expr.Symbol == null)
 				throw StatementException(expr, $"{expr.Name} not found");
-			if (expr.Symbol == CiSystem.RegexClass)
+			if (expr.Symbol.Id == CiId.RegexClass)
 				NotSupported(expr, "Regex", "cl");
 			expr.Type = expr.Symbol.Type;
 		}

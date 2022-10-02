@@ -208,12 +208,18 @@ public class GenCs : GenTyped
 
 	protected override void WriteClassName(CiClass klass)
 	{
-		if (klass == CiSystem.LockClass)
-			Write("object");
-		else {
-			if (klass == CiSystem.RegexClass || klass == CiSystem.MatchClass)
-				Include("System.Text.RegularExpressions");
+		switch (klass.Id) {
+		case CiId.RegexClass:
+		case CiId.MatchClass:
+			Include("System.Text.RegularExpressions");
 			Write(klass.Name);
+			break;
+		case CiId.LockClass:
+			Write("object");
+			break;
+		default:
+			Write(klass.Name);
+			break;
 		}
 	}
 

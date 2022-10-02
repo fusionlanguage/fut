@@ -848,7 +848,7 @@ public class GenC : GenCCpp
 		if (IsHeapAllocated(type))
 			return true;
 		if (type is CiClass klass)
-			return klass == CiSystem.MatchClass || klass == CiSystem.LockClass || NeedsDestructor(klass);
+			return klass.Id == CiId.MatchClass || klass.Id == CiId.LockClass || NeedsDestructor(klass);
 		if (type is CiStorageType storage)
 			return storage.Class.TypeParameterCount > 0; // built-in collections
 		return false;
@@ -954,7 +954,7 @@ public class GenC : GenCCpp
 			}
 		}
 		else if (expr.Left.Type is CiDynamicPtrType) {
-			if (expr.Left.Type.IsClass(CiSystem.RegexClass)) {
+			if (expr.Left.Type.IsRegexClass) {
 				// TODO: only if previously assigned non-null
 				// Write("g_regex_unref(");
 				// expr.Left.Accept(this, CiPriority.Argument);
@@ -1073,7 +1073,7 @@ public class GenC : GenCCpp
 
 	void WriteClassPtr(CiClass resultClass, CiExpr expr, CiPriority parent)
 	{
-		if (expr.Type is CiClass klass && klass != CiSystem.MatchClass && !IsDictionaryClassStgIndexing(expr)) {
+		if (expr.Type is CiClass klass && klass.Id != CiId.MatchClass && !IsDictionaryClassStgIndexing(expr)) {
 			Write('&');
 			int tempId = this.CurrentTemporaries.IndexOf(expr);
 			if (tempId >= 0) {
@@ -2569,7 +2569,7 @@ public class GenC : GenCCpp
 
 	protected override bool NeedsConstructor(CiClass klass)
 	{
-		if (klass == CiSystem.MatchClass)
+		if (klass.Id == CiId.MatchClass)
 			return false;
 		return base.NeedsConstructor(klass)
 			|| HasVtblValue(klass)

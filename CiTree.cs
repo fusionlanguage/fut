@@ -69,7 +69,7 @@ public abstract class CiStatement
 {
 	public int Line;
 	public abstract bool CompletesNormally { get; }
-	public virtual void Accept(CiVisitor visitor) => throw new NotImplementedException(GetType().Name);
+	public abstract void Accept(CiVisitor visitor);
 }
 
 public abstract class CiExpr : CiStatement
@@ -99,7 +99,7 @@ public class CiAggregateInitializer : CiExpr
 	}
 }
 
-public class CiSymbol : CiExpr
+public abstract class CiSymbol : CiExpr
 {
 	public CiId Id = CiId.None;
 	public string Name;
@@ -931,7 +931,7 @@ public class CiType : CiScope
 	public virtual CiType StorageType => this;
 	public virtual CiType PtrOrSelf => this;
 	public virtual bool IsFinal => false;
-	public virtual bool IsClass(CiClass klass) => false;
+	public virtual bool IsRegexClass => false;
 	public virtual bool IsArray => false;
 }
 
@@ -966,8 +966,8 @@ public class CiClass : CiContainerType
 	public CiVisitStatus VisitStatus;
 	public override string ToString() => this.Name + "()";
 	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this };
-	public override bool IsFinal => this != CiSystem.MatchClass;
-	public override bool IsClass(CiClass klass) => this == klass;
+	public override bool IsFinal => this.Id != CiId.MatchClass;
+	public override bool IsRegexClass => this.Id == CiId.RegexClass;
 	public bool AddsVirtualMethods => this.OfType<CiMethod>().Any(method => method.IsAbstractOrVirtual);
 
 	public CiClass()
@@ -1145,7 +1145,7 @@ public class CiClassType : CiType
 	public override bool IsNullable => true;
 	public override bool IsArray => this.Class.Id == CiId.ArrayPtrClass;
 	public override CiType BaseType => this.IsArray ? this.ElementType.BaseType : this;
-	public override bool IsClass(CiClass klass) => this.Class == klass;
+	public override bool IsRegexClass => this.Class.Id == CiId.RegexClass;
 
 	public CiType EvalType(CiType type)
 	{
@@ -1313,26 +1313,9 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, VoidType, CiId.ConsoleWrite, "Write", new CiVar(PrintableType, "value")),
 		new CiMethod(CiCallType.Static, VoidType, CiId.ConsoleWriteLine, "WriteLine", new CiVar(PrintableType, "value") { Value = new CiLiteralString("") }));
 	public static readonly CiMember ConsoleError = new CiMember(ConsoleBase, CiId.ConsoleError, "Error");
-	public static readonly CiConst RegexOptionsNone = new CiConst("None", 0);
 	public static readonly CiEnum RegexOptionsEnum = new CiEnumFlags { Name = "RegexOptions" };
-	public static readonly CiMethod RegexCompile = new CiMethod(CiCallType.Static, null /* filled later to avoid cyclic reference */, CiId.RegexCompile, "Compile", new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone });
-	public static readonly CiClass RegexClass = new CiClass(CiCallType.Sealed, CiId.RegexClass, "Regex",
-		RegexCompile,
-		new CiMethod(CiCallType.Static, StringStorageType, CiId.RegexEscape, "Escape", new CiVar(StringPtrType, "str")),
-		new CiMethodGroup(
-			new CiMethod(CiCallType.Static, BoolType, CiId.RegexIsMatchStr, "IsMatch", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone }),
-			new CiMethod(CiCallType.Normal, BoolType, CiId.RegexIsMatchRegex, "IsMatch", new CiVar(StringPtrType, "input"))));
-	public static readonly CiClass MatchClass = new CiClass(CiCallType.Sealed, CiId.MatchClass, "Match",
-		new CiMethodGroup(
-			new CiMethod(CiCallType.Normal, BoolType, CiId.MatchFindStr, "Find", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = RegexOptionsNone }) { IsMutator = true },
-			new CiMethod(CiCallType.Normal, BoolType, CiId.MatchFindRegex, "Find", new CiVar(StringPtrType, "input"), new CiVar(new CiClassType { Class = RegexClass }, "pattern")) { IsMutator = true }),
-		new CiMember(IntType, CiId.MatchStart, "Start"),
-		new CiMember(IntType, CiId.MatchEnd, "End"),
-		new CiMethod(CiCallType.Normal, StringPtrType, CiId.MatchGetCapture, "GetCapture", new CiVar(UIntType, "group")),
-		new CiMember(UIntType, CiId.MatchLength, "Length"),
-		new CiMember(StringPtrType, CiId.MatchValue, "Value"));
 	public static readonly CiClass LockClass = new CiClass(CiCallType.Sealed, CiId.LockClass, "Lock");
-	public static readonly CiSymbol BasePtr = new CiSymbol { Name = "base" };
+	public static readonly CiSymbol BasePtr = new CiVar { Name = "base" };
 
 	static void AddEnumValue(CiEnum enu, CiConst value)
 	{
@@ -1432,14 +1415,29 @@ public class CiSystem : CiScope
 		CiClass environmentClass = new CiClass(CiCallType.Static, CiId.None, "Environment");
 		environmentClass.Add(new CiMethod(CiCallType.Static, StringPtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", new CiVar(StringPtrType, "name")));
 		Add(environmentClass);
-		AddEnumValue(RegexOptionsEnum, RegexOptionsNone);
+		CiConst regexOptionsNone = new CiConst("None", 0);
+		AddEnumValue(RegexOptionsEnum, regexOptionsNone);
 		AddEnumValue(RegexOptionsEnum, new CiConst("IgnoreCase", 1));
 		AddEnumValue(RegexOptionsEnum, new CiConst("Multiline", 2));
 		AddEnumValue(RegexOptionsEnum, new CiConst("Singleline", 16));
 		Add(RegexOptionsEnum);
-		RegexCompile.Type = new CiDynamicPtrType { Class = RegexClass };
-		Add(RegexClass);
-		Add(MatchClass);
+		CiClass regexClass = new CiClass(CiCallType.Sealed, CiId.RegexClass, "Regex",
+			new CiMethod(CiCallType.Static, StringStorageType, CiId.RegexEscape, "Escape", new CiVar(StringPtrType, "str")),
+			new CiMethodGroup(
+				new CiMethod(CiCallType.Static, BoolType, CiId.RegexIsMatchStr, "IsMatch", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = regexOptionsNone }),
+				new CiMethod(CiCallType.Normal, BoolType, CiId.RegexIsMatchRegex, "IsMatch", new CiVar(StringPtrType, "input"))));
+		regexClass.Add(new CiMethod(CiCallType.Static, new CiDynamicPtrType { Class = regexClass }, CiId.RegexCompile, "Compile", new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = regexOptionsNone }));
+		Add(regexClass);
+		CiClass matchClass = new CiClass(CiCallType.Sealed, CiId.MatchClass, "Match",
+			new CiMethodGroup(
+				new CiMethod(CiCallType.Normal, BoolType, CiId.MatchFindStr, "Find", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = regexOptionsNone }) { IsMutator = true },
+				new CiMethod(CiCallType.Normal, BoolType, CiId.MatchFindRegex, "Find", new CiVar(StringPtrType, "input"), new CiVar(new CiClassType { Class = regexClass }, "pattern")) { IsMutator = true }),
+			new CiMember(IntType, CiId.MatchStart, "Start"),
+			new CiMember(IntType, CiId.MatchEnd, "End"),
+			new CiMethod(CiCallType.Normal, StringPtrType, CiId.MatchGetCapture, "GetCapture", new CiVar(UIntType, "group")),
+			new CiMember(UIntType, CiId.MatchLength, "Length"),
+			new CiMember(StringPtrType, CiId.MatchValue, "Value"));
+		Add(matchClass);
 
 		CiClass mathClass = new CiClass(CiCallType.Static, CiId.None, "Math",
 			new CiMethod(CiCallType.Static, FloatType, CiId.MathMethod, "Acos", new CiVar(DoubleType, "a")),

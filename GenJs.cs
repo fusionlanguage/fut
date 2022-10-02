@@ -384,7 +384,7 @@ public class GenJs : GenBase
 	void WriteRegex(List<CiExpr> args, int argIndex)
 	{
 		CiExpr pattern = args[argIndex];
-		if (pattern.Type.IsClass(CiSystem.RegexClass))
+		if (pattern.Type.IsRegexClass)
 			pattern.Accept(this, CiPriority.Primary);
 		else if (pattern is CiLiteralString literal) {
 			Write('/');
