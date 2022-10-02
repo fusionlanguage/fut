@@ -829,11 +829,19 @@ public class GenJava : GenTyped
 
 	public override void VisitAssert(CiAssert statement)
 	{
-		Write("assert ");
-		statement.Cond.Accept(this, CiPriority.Argument);
-		if (statement.Message != null) {
-			Write(" : ");
-			statement.Message.Accept(this, CiPriority.Argument);
+		if (statement.CompletesNormally) {
+			Write("assert ");
+			statement.Cond.Accept(this, CiPriority.Argument);
+			if (statement.Message != null) {
+				Write(" : ");
+				statement.Message.Accept(this, CiPriority.Argument);
+			}
+		}
+		else {
+			// assert false;
+			Write("throw new AssertionError(");
+			statement.Message?.Accept(this, CiPriority.Argument);
+			Write(')');
 		}
 		WriteLine(';');
 	}
