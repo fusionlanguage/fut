@@ -953,8 +953,8 @@ public class GenC : GenCCpp
 				Write(')');
 			}
 		}
-		else if (expr.Left.Type is CiDynamicPtrType) {
-			if (expr.Left.Type.IsRegexClass) {
+		else if (expr.Left.Type is CiDynamicPtrType dynamic) {
+			if (dynamic.Class.Id == CiId.RegexClass) {
 				// TODO: only if previously assigned non-null
 				// Write("g_regex_unref(");
 				// expr.Left.Accept(this, CiPriority.Argument);

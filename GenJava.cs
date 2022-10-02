@@ -533,7 +533,7 @@ public class GenJava : GenTyped
 	void WriteRegex(List<CiExpr> args, int argIndex)
 	{
 		CiExpr pattern = args[argIndex];
-		if (pattern.Type.IsRegexClass)
+		if (pattern.Type is CiClassType)
 			pattern.Accept(this, CiPriority.Primary);
 		else {
 			Include("java.util.regex.Pattern");

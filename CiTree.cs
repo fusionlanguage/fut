@@ -931,7 +931,6 @@ public class CiType : CiScope
 	public virtual CiType StorageType => this;
 	public virtual CiType PtrOrSelf => this;
 	public virtual bool IsFinal => false;
-	public virtual bool IsRegexClass => false;
 	public virtual bool IsArray => false;
 }
 
@@ -967,7 +966,6 @@ public class CiClass : CiContainerType
 	public override string ToString() => this.Name + "()";
 	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this };
 	public override bool IsFinal => this.Id != CiId.MatchClass;
-	public override bool IsRegexClass => this.Id == CiId.RegexClass;
 	public bool AddsVirtualMethods => this.OfType<CiMethod>().Any(method => method.IsAbstractOrVirtual);
 
 	public CiClass()
@@ -1145,7 +1143,6 @@ public class CiClassType : CiType
 	public override bool IsNullable => true;
 	public override bool IsArray => this.Class.Id == CiId.ArrayPtrClass;
 	public override CiType BaseType => this.IsArray ? this.ElementType.BaseType : this;
-	public override bool IsRegexClass => this.Class.Id == CiId.RegexClass;
 
 	public CiType EvalType(CiType type)
 	{
