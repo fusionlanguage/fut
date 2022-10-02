@@ -575,7 +575,10 @@ public class GenSwift : GenPySwift
 			Write(".removeLast()");
 			break;
 		case CiId.HashSetAdd:
-			WriteCall(obj, "insert", args[0]);
+			obj.Accept(this, CiPriority.Primary);
+			Write(".insert(");
+			WriteCoerced(((CiClassType) obj.Type).ElementType, args[0], CiPriority.Argument);
+			Write(')');
 			break;
 		case CiId.DictionaryAdd:
 			WriteDictionaryAdd(obj, args);
