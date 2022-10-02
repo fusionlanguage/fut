@@ -197,7 +197,7 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteClassName(CiClass klass)
 	{
-		if (klass == CiSystem.LockClass) {
+		if (klass.Id == CiId.LockClass) {
 			Include("Foundation");
 			Write("NSRecursiveLock");
 		}

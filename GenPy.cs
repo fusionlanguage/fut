@@ -166,7 +166,7 @@ public class GenPy : GenPySwift
 
 	protected override void WriteClassName(CiClass klass)
 	{
-		if (klass == CiSystem.LockClass) {
+		if (klass.Id == CiId.LockClass) {
 			Include("threading");
 			Write("threading.RLock");
 		}

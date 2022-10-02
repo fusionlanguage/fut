@@ -985,7 +985,7 @@ public class GenC : GenCCpp
 	{
 		return (def is CiField && (def.Value != null || IsHeapAllocated(def.Type.StorageType) || (def.Type is CiClassType klass && (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.DictionaryClass || klass.Class.Id == CiId.SortedDictionaryClass))))
 			|| GetThrowingMethod(def.Value) != null
-			|| (def.Type.StorageType is CiClass klass2 && (klass2 == CiSystem.LockClass || NeedsConstructor(klass2)))
+			|| (def.Type.StorageType is CiClass klass2 && (klass2.Id == CiId.LockClass || NeedsConstructor(klass2)))
 			|| GetListDestroy(def.Type) != null;
 	}
 
@@ -1000,7 +1000,7 @@ public class GenC : GenCCpp
 			type = array.ElementType;
 		}
 		if (type is CiClass klass) {
-			if (klass == CiSystem.LockClass) {
+			if (klass.Id == CiId.LockClass) {
 				Write("mtx_init(&");
 				WriteArrayElement(def, nesting);
 				WriteLine(", mtx_plain | mtx_recursive);");
