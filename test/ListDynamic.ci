@@ -1,0 +1,8 @@
+public class Test
+{
+	public static bool Run()
+	{
+		List<Test#>() list; //FAIL: cl
+		return list.Count == 0;
+	}
+}

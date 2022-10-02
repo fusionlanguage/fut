@@ -565,6 +565,7 @@ public class GenC : GenCCpp
 				return "CiList_FreeString";
 			}
 			if (elementType is CiDynamicPtrType) {
+				this.SharedRelease = true;
 				this.ListFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
 				return "CiList_FreeShared";
 			}
@@ -2992,7 +2993,7 @@ public class GenC : GenCCpp
 			WriteLine("return ptr;");
 			CloseBlock();
 		}
-		if (this.SharedRelease || this.SharedAssign || this.ListFrees.ContainsKey("Shared")) {
+		if (this.SharedRelease || this.SharedAssign) {
 			WriteLine();
 			WriteLine("static void CiShared_Release(void *ptr)");
 			OpenBlock();
