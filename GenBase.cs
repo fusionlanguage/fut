@@ -966,7 +966,7 @@ public abstract class GenBase : CiVisitor
 	protected bool WriteRegexOptions(List<CiExpr> args, string prefix, string separator, string suffix, string i, string m, string s)
 	{
 		CiExpr expr = args[args.Count - 1];
-		if (expr.Type != CiSystem.RegexOptionsEnum)
+		if (!(expr.Type is CiEnum))
 			return false;
 		RegexOptions options = (RegexOptions) expr.IntValue;
 		if (options == RegexOptions.None)

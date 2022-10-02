@@ -1310,7 +1310,6 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, VoidType, CiId.ConsoleWrite, "Write", new CiVar(PrintableType, "value")),
 		new CiMethod(CiCallType.Static, VoidType, CiId.ConsoleWriteLine, "WriteLine", new CiVar(PrintableType, "value") { Value = new CiLiteralString("") }));
 	public static readonly CiMember ConsoleError = new CiMember(ConsoleBase, CiId.ConsoleError, "Error");
-	public static readonly CiEnum RegexOptionsEnum = new CiEnumFlags { Name = "RegexOptions" };
 	public static readonly CiClass LockClass = new CiClass(CiCallType.Sealed, CiId.LockClass, "Lock");
 	public static readonly CiSymbol BasePtr = new CiVar { Name = "base" };
 
@@ -1412,22 +1411,23 @@ public class CiSystem : CiScope
 		CiClass environmentClass = new CiClass(CiCallType.Static, CiId.None, "Environment");
 		environmentClass.Add(new CiMethod(CiCallType.Static, StringPtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", new CiVar(StringPtrType, "name")));
 		Add(environmentClass);
+		CiEnum regexOptionsEnum = new CiEnumFlags { Name = "RegexOptions" };
 		CiConst regexOptionsNone = new CiConst("None", 0);
-		AddEnumValue(RegexOptionsEnum, regexOptionsNone);
-		AddEnumValue(RegexOptionsEnum, new CiConst("IgnoreCase", 1));
-		AddEnumValue(RegexOptionsEnum, new CiConst("Multiline", 2));
-		AddEnumValue(RegexOptionsEnum, new CiConst("Singleline", 16));
-		Add(RegexOptionsEnum);
+		AddEnumValue(regexOptionsEnum, regexOptionsNone);
+		AddEnumValue(regexOptionsEnum, new CiConst("IgnoreCase", 1));
+		AddEnumValue(regexOptionsEnum, new CiConst("Multiline", 2));
+		AddEnumValue(regexOptionsEnum, new CiConst("Singleline", 16));
+		Add(regexOptionsEnum);
 		CiClass regexClass = new CiClass(CiCallType.Sealed, CiId.RegexClass, "Regex",
 			new CiMethod(CiCallType.Static, StringStorageType, CiId.RegexEscape, "Escape", new CiVar(StringPtrType, "str")),
 			new CiMethodGroup(
-				new CiMethod(CiCallType.Static, BoolType, CiId.RegexIsMatchStr, "IsMatch", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = regexOptionsNone }),
+				new CiMethod(CiCallType.Static, BoolType, CiId.RegexIsMatchStr, "IsMatch", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(regexOptionsEnum, "options") { Value = regexOptionsNone }),
 				new CiMethod(CiCallType.Normal, BoolType, CiId.RegexIsMatchRegex, "IsMatch", new CiVar(StringPtrType, "input"))));
-		regexClass.Add(new CiMethod(CiCallType.Static, new CiDynamicPtrType { Class = regexClass }, CiId.RegexCompile, "Compile", new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = regexOptionsNone }));
+		regexClass.Add(new CiMethod(CiCallType.Static, new CiDynamicPtrType { Class = regexClass }, CiId.RegexCompile, "Compile", new CiVar(StringPtrType, "pattern"), new CiVar(regexOptionsEnum, "options") { Value = regexOptionsNone }));
 		Add(regexClass);
 		CiClass matchClass = new CiClass(CiCallType.Sealed, CiId.MatchClass, "Match",
 			new CiMethodGroup(
-				new CiMethod(CiCallType.Normal, BoolType, CiId.MatchFindStr, "Find", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(RegexOptionsEnum, "options") { Value = regexOptionsNone }) { IsMutator = true },
+				new CiMethod(CiCallType.Normal, BoolType, CiId.MatchFindStr, "Find", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(regexOptionsEnum, "options") { Value = regexOptionsNone }) { IsMutator = true },
 				new CiMethod(CiCallType.Normal, BoolType, CiId.MatchFindRegex, "Find", new CiVar(StringPtrType, "input"), new CiVar(new CiClassType { Class = regexClass }, "pattern")) { IsMutator = true }),
 			new CiMember(IntType, CiId.MatchStart, "Start"),
 			new CiMember(IntType, CiId.MatchEnd, "End"),
