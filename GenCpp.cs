@@ -776,7 +776,7 @@ public class GenCpp : GenCCpp
 			}
 			break;
 		case CiId.HashSetAdd:
-			WriteCall(obj, "insert", args[0]);
+			WriteCall(obj, ((CiClassType) obj.Type).ElementType == CiSystem.StringStorageType && args[0].Type == CiSystem.StringPtrType ? "emplace" : "insert", args[0]);
 			break;
 		case CiId.HashSetRemove:
 		case CiId.DictionaryRemove:
