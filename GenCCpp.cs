@@ -97,12 +97,6 @@ public abstract class GenCCpp : GenTyped
 		}
 	}
 
-	protected override void WriteVarInit(CiNamedValue def)
-	{
-		if (!(def.Type is CiClass) || def.Value != null)
-			base.WriteVarInit(def);
-	}
-
 	protected abstract void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not);
 
 	static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType && ptr.Type.IsAssignableFrom(other.Type);

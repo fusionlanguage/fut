@@ -442,8 +442,6 @@ public abstract class GenBase : CiVisitor
 		return TypeCode.Object;
 	}
 
-	protected virtual void WriteClassName(CiClass klass) => WriteName(klass);
-
 	protected abstract void WriteTypeAndName(CiNamedValue value);
 
 	protected virtual void WriteLocalName(CiSymbol symbol, CiPriority parent)
@@ -671,13 +669,6 @@ public abstract class GenBase : CiVisitor
 		WriteCall(method, arg0, arg1);
 	}
 
-	protected virtual void WriteNew(CiClass klass, CiPriority parent)
-	{
-		Write("new ");
-		WriteClassName(klass);
-		Write("()");
-	}
-
 	protected abstract void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent);
 
 	protected virtual void WriteNewArray(CiArrayStorageType array)
@@ -685,19 +676,16 @@ public abstract class GenBase : CiVisitor
 		WriteNewArray(array.ElementType, array.LengthExpr, CiPriority.Argument);
 	}
 
-	protected abstract void WriteNewStorage(CiStorageType storage);
+	protected abstract void WriteNew(CiReadWriteClassType klass, CiPriority parent);
 
 	protected void WriteNewStorage(CiType type)
 	{
 		switch (type) {
-		case CiClass klass:
-			WriteNew(klass, CiPriority.Argument);
-			break;
 		case CiArrayStorageType array:
 			WriteNewArray(array);
 			break;
 		case CiStorageType storage:
-			WriteNewStorage(storage);
+			WriteNew(storage, CiPriority.Argument);
 			break;
 		default:
 			throw new NotImplementedException();
@@ -791,11 +779,11 @@ public abstract class GenBase : CiVisitor
 			Write('!');
 			break;
 		case CiToken.New:
-			CiClassType klass = (CiClassType) expr.Type;
-			if (klass.Class.Id == CiId.ArrayPtrClass)
-				WriteNewArray(klass.ElementType, expr.Inner, parent);
+			CiDynamicPtrType dynamic = (CiDynamicPtrType) expr.Type;
+			if (dynamic.Class.Id == CiId.ArrayPtrClass)
+				WriteNewArray(dynamic.ElementType, expr.Inner, parent);
 			else
-				WriteNew(klass.Class, parent);
+				WriteNew(dynamic, parent);
 			return expr;
 		case CiToken.Resource:
 			WriteResource(((CiLiteralString) expr.Inner).Value, ((CiArrayStorageType) expr.Type).Length);

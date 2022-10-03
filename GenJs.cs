@@ -138,9 +138,9 @@ public class GenJs : GenBase
 			Write(')');
 	}
 
-	protected override void WriteNewStorage(CiStorageType storage)
+	protected override void WriteNew(CiReadWriteClassType klass, CiPriority parent)
 	{
-		switch (storage.Class.Id) {
+		switch (klass.Class.Id) {
 		case CiId.ListClass:
 		case CiId.QueueClass:
 		case CiId.StackClass:
@@ -157,7 +157,10 @@ public class GenJs : GenBase
 			Write("new Map()");
 			break;
 		default:
-			throw new NotImplementedException(storage.Class.Name);
+			Write("new ");
+			Write(klass.Class.Name);
+			Write("()");
+			break;
 		}
 	}
 
@@ -269,11 +272,7 @@ public class GenJs : GenBase
 		WriteCall("Array", lengthExpr);
 	}
 
-	static bool HasInitCode(CiNamedValue def)
-	{
-		return def.Type is CiArrayStorageType array
-			&& (array.ElementType is CiClass || array.ElementType is CiArrayStorageType);
-	}
+	static bool HasInitCode(CiNamedValue def) => def.Type is CiArrayStorageType array && array.ElementType is CiStorageType;
 
 	protected override void WriteInitCode(CiNamedValue def)
 	{
@@ -289,7 +288,7 @@ public class GenJs : GenBase
 			WriteLine(';');
 			array = innerArray;
 		}
-		if (array.ElementType is CiClass klass) {
+		if (array.ElementType is CiStorageType klass) {
 			OpenLoop("let", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");

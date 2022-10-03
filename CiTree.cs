@@ -176,7 +176,7 @@ public abstract class CiNamedValue : CiSymbol
 {
 	public CiExpr TypeExpr;
 	public CiExpr Value;
-	public bool IsAssignableStorage => this.Type is CiClass && this.Value is CiLiteralNull;
+	public bool IsAssignableStorage => this.Type is CiStorageType && !(this.Type is CiArrayStorageType) && this.Value is CiLiteralNull;
 }
 
 public class CiMember : CiNamedValue
@@ -965,7 +965,6 @@ public class CiClass : CiContainerType
 	public CiVisitStatus VisitStatus;
 	public override string ToString() => this.Name + "()";
 	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this };
-	public override bool IsFinal => this.Id != CiId.MatchClass;
 	public bool AddsVirtualMethods => this.OfType<CiMethod>().Any(method => method.IsAbstractOrVirtual);
 
 	public CiClass()
@@ -1157,7 +1156,7 @@ public class CiClassType : CiType
 
 	public override CiSymbol TryLookup(string name) => this.Class.TryLookup(name);
 
-	bool EqualTypeArguments(CiClassType right)
+	protected bool EqualTypeArguments(CiClassType right)
 	{
 		switch (this.Class.TypeParameterCount) {
 		case 0: return true;
@@ -1172,8 +1171,7 @@ public class CiClassType : CiType
 	public override bool IsAssignableFrom(CiType right)
 	{
 		return right == CiSystem.NullType
-			|| (right is CiClassType rightClass && IsAssignableFromClass(rightClass))
-			|| (right is CiClass rightClassStorage && this.Class.IsSameOrBaseOf(rightClassStorage));
+			|| (right is CiClassType rightClass && IsAssignableFromClass(rightClass));
 	}
 
 	public override bool EqualsType(CiType right)
@@ -1201,8 +1199,7 @@ public class CiReadWriteClassType : CiClassType
 	public override bool IsAssignableFrom(CiType right)
 	{
 		return right == CiSystem.NullType
-			|| (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass))
-			|| (right is CiClass rightClassStorage && this.Class.IsSameOrBaseOf(rightClassStorage));
+			|| (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
 	}
 
 	public override string ArraySuffix => this.IsArray ? "[]!" : "";
@@ -1211,9 +1208,9 @@ public class CiReadWriteClassType : CiClassType
 
 public class CiStorageType : CiReadWriteClassType
 {
-	public override bool IsFinal => true;
+	public override bool IsFinal => this.Class.Id != CiId.MatchClass;
 	public override bool IsNullable => false;
-	public override bool IsAssignableFrom(CiType right) => false;
+	public override bool IsAssignableFrom(CiType right) => right is CiStorageType rightClass && this.Class == rightClass.Class && EqualTypeArguments(rightClass);
 	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this.Class, TypeArg0 = this.TypeArg0, TypeArg1 = this.TypeArg1 };
 	public override string ClassSuffix => "()";
 }
@@ -1310,7 +1307,8 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, VoidType, CiId.ConsoleWrite, "Write", new CiVar(PrintableType, "value")),
 		new CiMethod(CiCallType.Static, VoidType, CiId.ConsoleWriteLine, "WriteLine", new CiVar(PrintableType, "value") { Value = new CiLiteralString("") }));
 	public static readonly CiMember ConsoleError = new CiMember(ConsoleBase, CiId.ConsoleError, "Error");
-	public static readonly CiClass LockClass = new CiClass(CiCallType.Sealed, CiId.LockClass, "Lock");
+	static readonly CiClass LockClass = new CiClass(CiCallType.Sealed, CiId.LockClass, "Lock");
+	public static readonly CiReadWriteClassType LockPtr = new CiReadWriteClassType { Class = LockClass };
 	public static readonly CiSymbol BasePtr = new CiVar { Name = "base" };
 
 	static void AddEnumValue(CiEnum enu, CiConst value)

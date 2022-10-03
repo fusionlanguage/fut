@@ -174,7 +174,7 @@ public class GenSwift : GenPySwift
 				return false;
 			if (symbol.Symbol.Parent is CiForeach forEach
 			 && forEach.Collection.Type is CiArrayStorageType array
-			 && array.ElementType is CiClass)
+			 && array.ElementType is CiStorageType)
 				return false;
 		}
 		return expr.Type.IsNullable;
@@ -195,17 +195,46 @@ public class GenSwift : GenPySwift
 		Write('[');
 	}
 
-	protected override void WriteClassName(CiClass klass)
+	static bool IsArrayRef(CiArrayStorageType array) => array.PtrTaken || array.ElementType is CiStorageType;
+
+	void WriteClassName(CiClassType klass)
 	{
-		if (klass.Id == CiId.LockClass) {
+		switch (klass.Class.Id) {
+		case CiId.ArrayPtrClass:
+			this.ArrayRef = true;
+			Write("ArrayRef<");
+			Write(klass.ElementType);
+			Write('>');
+			break;
+		case CiId.ListClass:
+		case CiId.QueueClass:
+		case CiId.StackClass:
+			Write('[');
+			Write(klass.ElementType);
+			Write(']');
+			break;
+		case CiId.HashSetClass:
+			Write("Set<");
+			Write(klass.ElementType);
+			Write('>');
+			break;
+		case CiId.DictionaryClass:
+		case CiId.SortedDictionaryClass:
+			Write('[');
+			Write(klass.KeyType);
+			Write(": ");
+			Write(klass.ValueType);
+			Write(']');
+			break;
+		case CiId.LockClass:
 			Include("Foundation");
 			Write("NSRecursiveLock");
+			break;
+		default:
+			Write(klass.Class.Name);
+			break;
 		}
-		else
-			base.WriteClassName(klass);
 	}
-
-	static bool IsArrayRef(CiArrayStorageType array) => array.PtrTaken || array.ElementType is CiArrayStorageType || array.ElementType is CiClass;
 
 	void Write(CiType type)
 	{
@@ -261,39 +290,12 @@ public class GenSwift : GenPySwift
 				Write(']');
 			}
 			break;
+		case CiStorageType storage:
+			WriteClassName(storage);
+			break;
 		case CiClassType klass:
-			switch (klass.Class.Id) {
-			case CiId.ArrayPtrClass:
-				this.ArrayRef = true;
-				Write("ArrayRef<");
-				Write(klass.ElementType);
-				Write(">?");
-				break;
-			case CiId.ListClass:
-			case CiId.QueueClass:
-			case CiId.StackClass:
-				Write('[');
-				Write(klass.ElementType);
-				Write(']');
-				break;
-			case CiId.HashSetClass:
-				Write("Set<");
-				Write(klass.ElementType);
-				Write('>');
-				break;
-			case CiId.DictionaryClass:
-			case CiId.SortedDictionaryClass:
-				Write('[');
-				Write(klass.KeyType);
-				Write(": ");
-				Write(klass.ValueType);
-				Write(']');
-				break;
-			default:
-				Write(klass.Class.Name);
-				Write('?');
-				break;
-			}
+			WriteClassName(klass);
+			Write('?');
 			break;
 		default:
 			Write(type.Name);
@@ -709,9 +711,9 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	protected override void WriteNewStorage(CiStorageType storage)
+	protected override void WriteNew(CiReadWriteClassType klass, CiPriority parent)
 	{
-		Write(storage);
+		WriteClassName(klass);
 		Write("()");
 	}
 
@@ -742,19 +744,21 @@ public class GenSwift : GenPySwift
 		Write("ArrayRef<");
 		Write(elementType);
 		Write(">(");
-		if (elementType is CiArrayStorageType) {
+		switch (elementType) {
+		case CiArrayStorageType _:
 			Write("factory: { ");
 			WriteNewStorage(elementType);
 			Write(" }");
-		}
-		else if (elementType is CiClass) {
+			break;
+		case CiStorageType klass:
 			Write("factory: ");
-			WriteName(elementType);
+			WriteName(klass.Class);
 			Write(".init");
-		}
-		else {
+			break;
+		default:
 			Write("repeating: ");
 			WriteDefaultValue(elementType);
+			break;
 		}
 		Write(", count: ");
 		lengthExpr.Accept(this, CiPriority.Argument);
@@ -1331,7 +1335,7 @@ public class GenSwift : GenPySwift
 		}
 		else if (field.IsAssignableStorage) {
 			Write(" = ");
-			WriteName(field.Type);
+			WriteName(((CiStorageType) field.Type).Class);
 			Write("()");
 		}
 		WriteLine();

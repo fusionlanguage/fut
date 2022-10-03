@@ -268,26 +268,6 @@ public class GenJava : GenTyped
 		Write('>');
 	}
 
-	protected override void WriteClassName(CiClass klass)
-	{
-		switch (klass.Id) {
-		case CiId.RegexClass:
-			Include("java.util.regex.Pattern");
-			Write("Pattern");
-			break;
-		case CiId.MatchClass:
-			Include("java.util.regex.Matcher");
-			Write("Matcher");
-			break;
-		case CiId.LockClass:
-			Write("Object");
-			break;
-		default:
-			Write(klass.Name);
-			break;
-		}
-	}
-
 	void Write(CiType type, bool promote, bool needClass)
 	{
 		switch (type) {
@@ -333,13 +313,21 @@ public class GenJava : GenTyped
 				Include("java.util.LinkedHashMap");
 				Write("LinkedHashMap", klass);
 				break;
+			case CiId.RegexClass:
+				Include("java.util.regex.Pattern");
+				Write("Pattern");
+				break;
+			case CiId.MatchClass:
+				Include("java.util.regex.Matcher");
+				Write("Matcher");
+				break;
+			case CiId.LockClass:
+				Write("Object");
+				break;
 			default:
-				WriteClassName(klass.Class);
+				Write(klass.Class.Name);
 				break;
 			}
-			break;
-		case CiClass klass:
-			WriteClassName(klass);
 			break;
 		default:
 			Write(type.Name);
@@ -349,10 +337,10 @@ public class GenJava : GenTyped
 
 	protected override void Write(CiType type, bool promote) => Write(type, promote, false);
 
-	protected override void WriteNewStorage(CiStorageType storage)
+	protected override void WriteNew(CiReadWriteClassType klass, CiPriority parent)
 	{
 		Write("new ");
-		Write(storage, false, false);
+		Write(klass, false, false);
 		Write("()");
 	}
 
@@ -806,7 +794,7 @@ public class GenJava : GenTyped
 		base.WriteVar(def);
 	}
 
-	protected override bool HasInitCode(CiNamedValue def) => def.Type is CiArrayStorageType && def.Type.StorageType is CiClass;
+	protected override bool HasInitCode(CiNamedValue def) => def.Type is CiArrayStorageType && def.Type.StorageType is CiStorageType;
 
 	protected override void WriteInitCode(CiNamedValue def)
 	{
@@ -821,7 +809,7 @@ public class GenJava : GenTyped
 		OpenLoop("int", nesting++, array.Length);
 		WriteArrayElement(def, nesting);
 		Write(" = ");
-		WriteNew((CiClass) array.ElementType, CiPriority.Argument);
+		WriteNew((CiStorageType) array.ElementType, CiPriority.Argument);
 		WriteLine(';');
 		while (--nesting >= 0)
 			CloseBlock();

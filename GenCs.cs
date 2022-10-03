@@ -206,23 +206,6 @@ public class GenCs : GenTyped
 		Write('>');
 	}
 
-	protected override void WriteClassName(CiClass klass)
-	{
-		switch (klass.Id) {
-		case CiId.RegexClass:
-		case CiId.MatchClass:
-			Include("System.Text.RegularExpressions");
-			Write(klass.Name);
-			break;
-		case CiId.LockClass:
-			Write("object");
-			break;
-		default:
-			Write(klass.Name);
-			break;
-		}
-	}
-
 	protected override void Write(CiType type, bool promote)
 	{
 		switch (type) {
@@ -260,13 +243,18 @@ public class GenCs : GenTyped
 				Include("System.Collections.Specialized");
 				Write("OrderedDictionary");
 				break;
+			case CiId.RegexClass:
+			case CiId.MatchClass:
+				Include("System.Text.RegularExpressions");
+				Write(klass.Class.Name);
+				break;
+			case CiId.LockClass:
+				Write("object");
+				break;
 			default:
-				WriteClassName(klass.Class);
+				Write(klass.Class.Name);
 				break;
 			}
-			break;
-		case CiClass klass:
-			WriteClassName(klass);
 			break;
 		default:
 			Write(type.Name);
@@ -284,9 +272,9 @@ public class GenCs : GenTyped
 
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 	{
-		if (type is CiClass && expr is CiAggregateInitializer init) {
+		if (type is CiStorageType && !(type is CiArrayStorageType) && expr is CiAggregateInitializer init) {
 			Write("new ");
-			Write(type.Name);
+			Write(type, false);
 			string prefix = " { ";
 			foreach (CiBinaryExpr field in init.Items) {
 				Write(prefix);
@@ -340,18 +328,14 @@ public class GenCs : GenTyped
 		}
 	}
 
-	protected override void WriteNewStorage(CiStorageType storage)
+	protected override void WriteNew(CiReadWriteClassType klass, CiPriority parent)
 	{
 		Write("new ");
-		Write(storage, false);
+		Write(klass, false);
 		Write("()");
 	}
 
-	protected override bool HasInitCode(CiNamedValue def)
-	{
-		return def.Type is CiArrayStorageType array
-			&& (array.ElementType is CiClass || array.ElementType is CiArrayStorageType);
-	}
+	protected override bool HasInitCode(CiNamedValue def) => def.Type is CiArrayStorageType array && array.ElementType is CiStorageType;
 
 	protected override void WriteInitCode(CiNamedValue def)
 	{
@@ -367,7 +351,7 @@ public class GenCs : GenTyped
 			WriteLine(';');
 			array = innerArray;
 		}
-		if (array.ElementType is CiClass klass) {
+		if (array.ElementType is CiStorageType klass) {
 			OpenLoop("int", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");

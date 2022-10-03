@@ -64,21 +64,6 @@ public class GenTs : GenJs
 		Write(value.Type);
 	}
 
-	void WriteBaseType(CiType type)
-	{
-		switch (type.Id) {
-		case CiId.RegexClass:
-			Write("RegExp");
-			break;
-		case CiId.MatchClass:
-			Write("RegExpMatchArray");
-			break;
-		default:
-			Write(type.Name);
-			break;
-		}
-	}
-
 	void Write(CiType type, bool readOnly = false)
 	{
 		switch (type) {
@@ -141,8 +126,14 @@ public class GenTs : GenJs
 					Write(klass.ValueType);
 					Write('>');
 					break;
+				case CiId.RegexClass:
+					Write("RegExp");
+					break;
+				case CiId.MatchClass:
+					Write("RegExpMatchArray");
+					break;
 				default:
-					WriteBaseType(klass.Class);
+					Write(klass.Class.Name);
 					break;
 				}
 				if (readOnly && klass.Class.TypeParameterCount > 0)
@@ -151,7 +142,7 @@ public class GenTs : GenJs
 			}
 			break;
 		default:
-			WriteBaseType(type);
+			Write(type.Name);
 			break;
 		}
 		if (type.IsNullable)

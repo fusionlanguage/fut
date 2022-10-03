@@ -180,23 +180,6 @@ public class GenCpp : GenCCpp
 		Write('>');
 	}
 
-	void WriteBaseType(CiType type)
-	{
-		switch (type.Id) {
-		case CiId.MatchClass:
-			Include("regex");
-			Write("std::cmatch");
-			break;
-		case CiId.LockClass:
-			Include("mutex");
-			Write("std::recursive_mutex");
-			break;
-		default:
-			Write(type.Name);
-			break;
-		}
-	}
-
 	protected override void Write(CiType type, bool promote)
 	{
 		switch (type) {
@@ -235,63 +218,64 @@ public class GenCpp : GenCCpp
 			if (klass.Class.TypeParameterCount == 0) {
 				if (!(klass is CiReadWriteClassType))
 					Write("const ");
-				if (klass.Class.Id == CiId.RegexClass) {
+				switch (klass.Class.Id) {
+				case CiId.RegexClass:
 					Include("regex");
 					Write("std::regex");
+					break;
+				case CiId.MatchClass:
+					Include("regex");
+					Write("std::cmatch");
+					break;
+				case CiId.LockClass:
+					Include("mutex");
+					Write("std::recursive_mutex");
+					break;
+				default:
+					Write(klass.Class.Name);
+					break;
 				}
-				else
-					WriteBaseType(klass.Class);
-				Write(" *");
-				break;
 			}
-			if (klass.Class.Id == CiId.ArrayPtrClass) {
+			else if (klass.Class.Id == CiId.ArrayPtrClass) {
 				Write(klass.ElementType, false);
 				if (!(klass is CiReadWriteClassType))
 					Write(" const");
-				Write(" *");
-				break;
 			}
-			string cppType = klass.Class.Id switch {
-				CiId.ArrayStorageClass => "array",
-				CiId.ListClass => "vector",
-				CiId.QueueClass => "queue",
-				CiId.StackClass => "stack",
-				CiId.HashSetClass => "unordered_set",
-				CiId.DictionaryClass => "unordered_map",
-				CiId.SortedDictionaryClass => "map",
-				_ => throw new NotImplementedException()
-			};
-			Include(cppType);
-			if (!(klass is CiReadWriteClassType))
-				Write("const ");
-			Write("std::");
-			Write(cppType);
-			Write('<');
-			Write(klass.TypeArg0, false);
-			if (klass is CiArrayStorageType arrayStorage) {
-				Write(", ");
-				VisitLiteralLong(arrayStorage.Length);
+			else {
+				string cppType = klass.Class.Id switch {
+					CiId.ArrayStorageClass => "array",
+					CiId.ListClass => "vector",
+					CiId.QueueClass => "queue",
+					CiId.StackClass => "stack",
+					CiId.HashSetClass => "unordered_set",
+					CiId.DictionaryClass => "unordered_map",
+					CiId.SortedDictionaryClass => "map",
+					_ => throw new NotImplementedException()
+				};
+				Include(cppType);
+				if (!(klass is CiReadWriteClassType))
+					Write("const ");
+				Write("std::");
+				Write(cppType);
+				Write('<');
+				Write(klass.TypeArg0, false);
+				if (klass is CiArrayStorageType arrayStorage) {
+					Write(", ");
+					VisitLiteralLong(arrayStorage.Length);
+				}
+				else if (klass.Class.TypeParameterCount == 2) {
+					Write(", ");
+					Write(klass.ValueType, false);
+				}
+				Write('>');
 			}
-			else if (klass.Class.TypeParameterCount == 2) {
-				Write(", ");
-				Write(klass.ValueType, false);
-			}
-			Write('>');
 			if (!(klass is CiStorageType))
 				Write(" *");
 			break;
 		default:
-			WriteBaseType(type);
+			Write(type.Name);
 			break;
 		}
-	}
-
-	protected override void WriteNew(CiClass klass, CiPriority parent)
-	{
-		Include("memory");
-		Write("std::make_shared<");
-		Write(klass.Name);
-		Write(">()");
 	}
 
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
@@ -304,7 +288,13 @@ public class GenCpp : GenCCpp
 		Write(')');
 	}
 
-	protected override void WriteNewStorage(CiStorageType storage) => throw new NotImplementedException();
+	protected override void WriteNew(CiReadWriteClassType klass, CiPriority parent)
+	{
+		Include("memory");
+		Write("std::make_shared<");
+		Write(klass.Class.Name);
+		Write(">()");
+	}
 
 	protected override void WriteVarInit(CiNamedValue def)
 	{
@@ -324,7 +314,7 @@ public class GenCpp : GenCCpp
 				throw new NotImplementedException("Only null, zero and false supported");
 			}
 		}
-		else if (def.Type is CiStorageType) {
+		else if (def.Value == null && def.Type is CiStorageType) {
 		}
 		else
 			base.WriteVarInit(def);
@@ -380,7 +370,7 @@ public class GenCpp : GenCCpp
 			if (expr is CiSymbolReference symbol
 			 && symbol.Symbol.Parent is CiForeach loop
 			 && loop.Collection.Type is CiArrayStorageType array
-			 && array.ElementType is CiClass)
+			 && array.ElementType is CiStorageType)
 				return false; // C++ reference
 			return true; // C++ pointer
 		}
@@ -966,7 +956,7 @@ public class GenCpp : GenCCpp
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 	{
 		switch (type) {
-		case CiClassType klass when !(klass is CiDynamicPtrType):
+		case CiClassType klass when !(klass is CiDynamicPtrType) && !(klass is CiStorageType):
 			if (klass.Class.Id == CiId.ArrayPtrClass) {
 				WriteArrayPtr(expr, parent);
 				return;
@@ -976,11 +966,6 @@ public class GenCpp : GenCCpp
 				expr.Accept(this, CiPriority.Primary);
 				Write(".get()");
 				return;
-			case CiStorageType _:
-				Write('&');
-				expr.Accept(this, CiPriority.Primary);
-				return;
-			case CiClass _:
 			case CiClassType _ when !IsCppPtr(expr):
 				Write('&');
 				if (expr is CiCallExpr) {
@@ -1117,11 +1102,11 @@ public class GenCpp : GenCCpp
 			Write(']');
 		}
 		else if (statement.Collection.Type is CiArrayStorageType array
-		 && array.ElementType is CiClass klass
+		 && array.ElementType is CiStorageType storage
 		 && element.Type is CiClassType ptr) {
 			if (!(ptr is CiReadWriteClassType))
 				Write("const ");
-			Write(klass.Name);
+			Write(storage.Class.Name);
 			Write(" &");
 			Write(element.Name);
 		}
@@ -1344,17 +1329,17 @@ public class GenCpp : GenCCpp
 	void Write(CiClass klass)
 	{
 		// topological sorting of class hierarchy and class storage fields
-		if (klass == null)
-			return;
 		if (this.WrittenClasses.TryGetValue(klass, out bool done)) {
 			if (done)
 				return;
 			throw new CiException(klass, $"Circular dependency for class {klass.Name}");
 		}
 		this.WrittenClasses.Add(klass, false);
-		Write(klass.Parent as CiClass);
+		if (klass.Parent is CiClass baseClass)
+			Write(baseClass);
 		foreach (CiField field in klass.OfType<CiField>())
-			Write(field.Type.BaseType as CiClass);
+			if (field.Type.BaseType is CiStorageType storage && storage.Class.Id == CiId.None)
+				Write(storage.Class);
 		this.WrittenClasses[klass] = true;
 
 		WriteLine();

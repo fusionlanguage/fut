@@ -284,7 +284,7 @@ public class CiResolver : CiVisitor
 	{
 		CiType type = ResolveType(expr);
 		if (expr.Value != null) {
-			if (type is CiClass && expr.Value is CiAggregateInitializer init) {
+			if (type is CiStorageType && expr.Value is CiAggregateInitializer init) {
 				NotYet(init, "Aggregate initializer", "c", "cpp", "java", "js", "py", "swift", "ts", "cl");
 				foreach (CiBinaryExpr field in init.Items) {
 					Trace.Assert(field.Op == CiToken.Assign);
@@ -562,13 +562,13 @@ public class CiResolver : CiVisitor
 				return expr;
 			type = ToType(expr.Inner, true);
 			switch (type) {
-			case CiClass klass:
-				expr.Type = new CiDynamicPtrType { Class = klass };
-				expr.Inner = null;
-				return expr;
 			case CiArrayStorageType array:
 				expr.Type = new CiDynamicPtrType { Class = CiSystem.ArrayPtrClass, TypeArg0 = array.ElementType };
 				expr.Inner = array.LengthExpr;
+				return expr;
+			case CiStorageType klass:
+				expr.Type = new CiDynamicPtrType { Class = klass.Class };
+				expr.Inner = null;
 				return expr;
 			default:
 				throw StatementException(expr, "Invalid argument to new");
@@ -1293,7 +1293,7 @@ public class CiResolver : CiVisitor
 	public override void VisitLock(CiLock statement)
 	{
 		statement.Lock = Resolve(statement.Lock);
-		Coerce(statement.Lock, CiSystem.LockClass);
+		Coerce(statement.Lock, CiSystem.LockPtr);
 		statement.Body.Accept(this);
 	}
 
@@ -1488,7 +1488,7 @@ public class CiResolver : CiVisitor
 						NotSupported(call, "Lock", "js", "ts", "cl");
 						NotYet(call, "Lock", "c");
 					}
-					return klass;
+					return new CiStorageType { Class = klass };
 				}
 			}
 			throw StatementException(expr, $"Class {call.Method.Name} not found");

@@ -95,12 +95,6 @@ public abstract class GenPySwift : GenBase
 		Write(" ]");
 	}
 
-	protected override void WriteNew(CiClass klass, CiPriority parent)
-	{
-		WriteClassName(klass);
-		Write("()");
-	}
-
 	public override CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {

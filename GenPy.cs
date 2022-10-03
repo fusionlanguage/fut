@@ -164,16 +164,6 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	protected override void WriteClassName(CiClass klass)
-	{
-		if (klass.Id == CiId.LockClass) {
-			Include("threading");
-			Write("threading.RLock");
-		}
-		else
-			base.WriteClassName(klass);
-	}
-
 	protected override void WriteTypeAndName(CiNamedValue value) => WriteName(value);
 
 	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
@@ -420,8 +410,7 @@ public class GenPy : GenPySwift
 	void WriteNewArray(CiType elementType, CiExpr value, CiExpr lengthExpr)
 	{
 		switch (elementType) {
-		case CiClass _:
-		case CiArrayStorageType _:
+		case CiStorageType _:
 			Write("[ ");
 			WriteNewStorage(elementType);
 			Write(" for _ in range(");
@@ -468,12 +457,12 @@ public class GenPy : GenPySwift
 		WriteNewArray(array.ElementType, null, array.LengthExpr);
 	}
 
-	protected override void WriteNewStorage(CiStorageType storage)
+	protected override void WriteNew(CiReadWriteClassType klass, CiPriority parent)
 	{
-		switch (storage.Class.Id) {
+		switch (klass.Class.Id) {
 		case CiId.ListClass:
 		case CiId.StackClass:
-			if (storage.ElementType is CiNumericType number) {
+			if (klass.ElementType is CiNumericType number) {
 				char c = GetArrayCode(number);
 				if (c == 'B')
 					Write("bytearray()");
@@ -502,8 +491,14 @@ public class GenPy : GenPySwift
 			Include("collections");
 			Write("collections.OrderedDict()");
 			break;
+		case CiId.LockClass:
+			Include("threading");
+			Write("threading.RLock()");
+			break;
 		default:
-			throw new NotImplementedException(storage.Class.Name);
+			WriteName(klass.Class);
+			Write("()");
+			break;
 		}
 	}
 
