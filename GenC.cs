@@ -452,6 +452,13 @@ public class GenC : GenCCpp
 		WriteDefinition(value.Type, () => WriteName(value), true, true);
 	}
 
+	void WriteDynamicArrayCast(CiType elementType)
+	{
+		Write('(');
+		WriteDefinition(elementType, () => Write(elementType.IsArray ? "(*)" : "*"), false, true);
+		Write(") ");
+	}
+
 	void WriteXstructorPtr(bool need, CiClass klass, string name)
 	{
 		if (need) {
@@ -464,11 +471,11 @@ public class GenC : GenCCpp
 			Write("NULL");
 	}
 
-	void WriteDynamicArrayCast(CiType elementType)
+	void WriteXstructorPtrs(CiClass klass)
 	{
-		Write('(');
-		WriteDefinition(elementType, () => Write(elementType.IsArray ? "(*)" : "*"), false, true);
-		Write(") ");
+		WriteXstructorPtr(NeedsConstructor(klass), klass, "Construct");
+		Write(", ");
+		WriteXstructorPtr(NeedsDestructor(klass), klass, "Destruct");
 	}
 
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
@@ -493,12 +500,8 @@ public class GenC : GenCCpp
 			this.ListFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
 			Write("(CiMethodPtr) CiPtr_Construct, CiList_FreeShared");
 		}
-		else if (elementType is CiStorageType storage) {
-			CiClass klass = storage.Class;
-			WriteXstructorPtr(NeedsConstructor(klass), klass, "Construct");
-			Write(", ");
-			WriteXstructorPtr(NeedsDestructor(klass), klass, "Destruct");
-		}
+		else if (elementType is CiStorageType storage)
+			WriteXstructorPtrs(storage.Class);
 		else
 			Write("NULL, NULL");
 		Write(')');
@@ -684,9 +687,7 @@ public class GenC : GenCCpp
 			Write("CiShared_Make(1, sizeof(");
 			WriteName(klass.Class);
 			Write("), ");
-			WriteXstructorPtr(NeedsConstructor(klass.Class), klass.Class, "Construct");
-			Write(", ");
-			WriteXstructorPtr(NeedsDestructor(klass.Class), klass.Class, "Destruct");
+			WriteXstructorPtrs(klass.Class);
 			Write(')');
 			if (parent > CiPriority.Mul)
 				Write(')');
