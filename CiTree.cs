@@ -1263,8 +1263,6 @@ public class CiSystem : CiScope
 	public static readonly CiRangeType UIntType = new CiRangeType(0, int.MaxValue) { Name = "uint" };
 	public static readonly CiIntegerType LongType = new CiIntegerType { Name = "long" };
 	public static readonly CiRangeType ByteType = new CiRangeType(0, 0xff) { Name = "byte" };
-	public static readonly CiRangeType ShortType = new CiRangeType(-0x8000, 0x7fff) { Name = "short" };
-	public static readonly CiRangeType UShortType = new CiRangeType(0, 0xffff) { Name = "ushort" };
 	public static readonly CiRangeType Minus1Type = new CiRangeType(-1, int.MaxValue);
 	public static readonly CiFloatingType FloatType = new CiFloatingType { Name = "float" };
 	public static readonly CiFloatingType DoubleType = new CiFloatingType { Name = "double" };
@@ -1308,7 +1306,7 @@ public class CiSystem : CiScope
 		new CiMethod(CiCallType.Static, VoidType, CiId.ConsoleWriteLine, "WriteLine", new CiVar(PrintableType, "value") { Value = new CiLiteralString("") }));
 	public static readonly CiMember ConsoleError = new CiMember(ConsoleBase, CiId.ConsoleError, "Error");
 	static readonly CiClass LockClass = new CiClass(CiCallType.Sealed, CiId.LockClass, "Lock");
-	public static readonly CiReadWriteClassType LockPtr = new CiReadWriteClassType { Class = LockClass };
+	public static readonly CiReadWriteClassType LockPtrType = new CiReadWriteClassType { Class = LockClass };
 	public static readonly CiSymbol BasePtr = new CiVar { Name = "base" };
 
 	static void AddEnumValue(CiEnum enu, CiConst value)
@@ -1323,8 +1321,8 @@ public class CiSystem : CiScope
 		Add(UIntType);
 		Add(LongType);
 		Add(ByteType);
-		Add(ShortType);
-		Add(UShortType);
+		Add(new CiRangeType(-0x8000, 0x7fff) { Name = "short" });
+		Add(new CiRangeType(0, 0xffff) { Name = "ushort" });
 		Add(FloatType);
 		Add(DoubleType);
 		Add(BoolType);

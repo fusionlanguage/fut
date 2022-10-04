@@ -1293,7 +1293,7 @@ public class CiResolver : CiVisitor
 	public override void VisitLock(CiLock statement)
 	{
 		statement.Lock = Resolve(statement.Lock);
-		Coerce(statement.Lock, CiSystem.LockPtr);
+		Coerce(statement.Lock, CiSystem.LockPtrType);
 		statement.Body.Accept(this);
 	}
 
