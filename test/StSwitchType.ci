@@ -19,7 +19,7 @@ public static class Test
 {
 	static bool IsCat(Animal a)
 	{
-		switch (a) { //FAIL: c cpp js py swift ts cl; java 17 --enable-preview
+		switch (a) { //FAIL: c cpp js py ts cl; java 17 --enable-preview
 		case Dog d:
 			return false;
 		case Cat c:

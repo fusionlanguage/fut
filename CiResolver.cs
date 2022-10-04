@@ -1331,7 +1331,7 @@ public class CiResolver : CiVisitor
 		case CiStringType _:
 			break;
 		case CiClassType klass when !(klass is CiStorageType):
-			NotSupported(statement, "Type-matching 'switch'", "c", "cpp", "js", "py", "swift", "ts", "cl");
+			NotSupported(statement, "Type-matching 'switch'", "c", "cpp", "js", "py", "ts", "cl");
 			break;
 		default:
 			throw StatementException(statement.Value, $"Switch on type {statement.Value.Type} - expected int, enum, string or object reference");

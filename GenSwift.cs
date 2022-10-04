@@ -1188,7 +1188,14 @@ public class GenSwift : GenPySwift
 			Write("case ");
 			for (int i = 0; i < kase.Values.Count; i++) {
 				WriteComma(i);
-				WriteCoerced(statement.Value.Type, kase.Values[i], CiPriority.Argument);
+				if (kase.Values[i] is CiVar def) {
+					Write("let ");
+					WriteCamelCaseNotKeyword(def.Name);
+					Write(" as ");
+					Write(def.Type);
+				}
+				else
+					WriteCoerced(statement.Value.Type, kase.Values[i], CiPriority.Argument);
 			}
 			WriteLine(':');
 			WriteSwiftCaseBody(statement, kase.Body);
