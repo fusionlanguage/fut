@@ -1094,7 +1094,7 @@ public class CiFloatingType : CiNumericType
 	public override bool IsAssignableFrom(CiType right) => right is CiNumericType;
 }
 
-public abstract class CiStringType : CiType
+public class CiStringType : CiType
 {
 	public override CiSymbol TryLookup(string name)
 	{
@@ -1117,16 +1117,13 @@ public abstract class CiStringType : CiType
 			return null;
 		}
 	}
-}
-
-public class CiStringPtrType : CiStringType
-{
 	public override bool IsNullable => true;
 	public override bool IsAssignableFrom(CiType right) => right == CiSystem.NullType || right is CiStringType;
 }
 
 public class CiStringStorageType : CiStringType
 {
+	public override bool IsNullable => false;
 	public override CiType PtrOrSelf => CiSystem.StringPtrType;
 	public override bool IsAssignableFrom(CiType right) => right is CiStringType;
 }
@@ -1269,7 +1266,7 @@ public class CiSystem : CiScope
 	public static readonly CiFloatingType FloatIntType = new CiFloatingType { Name = "float" };
 	public static readonly CiRangeType CharType = new CiRangeType(-0x80, 0xffff);
 	public static readonly CiEnum BoolType = new CiEnum { Name = "bool" };
-	public static readonly CiStringType StringPtrType = new CiStringPtrType { Name = "string" };
+	public static readonly CiStringType StringPtrType = new CiStringType { Name = "string" };
 	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType { Name = "string()" };
 	public static readonly CiMember StringLength = new CiMember(UIntType, CiId.StringLength, "Length");
 	public static readonly CiMethod StringContains = new CiMethod(CiCallType.Normal, BoolType, CiId.StringContains, "Contains", new CiVar(StringPtrType, "value"));

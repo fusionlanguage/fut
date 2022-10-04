@@ -351,11 +351,11 @@ public class GenC : GenCCpp
 			if (space)
 				Write(' ');
 			break;
-		case CiStringPtrType _:
-			WriteStringPtrType();
-			break;
 		case CiStringStorageType _:
 			Write("char *");
+			break;
+		case CiStringType _:
+			WriteStringPtrType();
 			break;
 		case CiEnum _:
 			if (baseType == CiSystem.BoolType) {

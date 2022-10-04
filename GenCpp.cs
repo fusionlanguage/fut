@@ -186,13 +186,13 @@ public class GenCpp : GenCCpp
 		case CiIntegerType integer:
 			Write(GetIntegerTypeCode(integer, promote));
 			break;
-		case CiStringPtrType _:
-			Include("string_view");
-			Write("std::string_view");
-			break;
 		case CiStringStorageType _:
 			Include("string");
 			Write("std::string");
+			break;
+		case CiStringType _:
+			Include("string_view");
+			Write("std::string_view");
 			break;
 		case CiDynamicPtrType dynamic:
 			switch (dynamic.Class.Id) {
@@ -935,7 +935,7 @@ public class GenCpp : GenCCpp
 	{
 		switch (expr.Type) {
 		case CiArrayStorageType _:
-		case CiStringPtrType _:
+		case CiStringType _:
 			expr.Accept(this, CiPriority.Primary);
 			Write(".data()");
 			break;
@@ -984,7 +984,7 @@ public class GenCpp : GenCCpp
 				break;
 			}
 			break;
-		case CiStringPtrType _ when expr.Type == CiSystem.NullType:
+		case CiStringType _ when expr.Type == CiSystem.NullType:
 			Include("string_view");
 			Write("std::string_view(nullptr, 0)");
 			return;

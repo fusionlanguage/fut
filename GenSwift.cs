@@ -271,7 +271,7 @@ public class GenSwift : GenPySwift
 			break;
 		case CiStringType _:
 			Write("String");
-			if (type is CiStringPtrType)
+			if (!(type is CiStringStorageType))
 				Write('?');
 			break;
 		case CiEnum _:
