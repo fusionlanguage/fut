@@ -1,0 +1,38 @@
+abstract class Animal
+{
+	internal string Name;
+}
+
+class Cat : Animal
+{
+}
+
+class Lion : Cat
+{
+}
+
+class Dog : Animal
+{
+}
+
+public static class Test
+{
+	static bool IsCat(Animal a)
+	{
+		switch (a) { //FAIL: c cpp js py swift ts cl; java 17 --enable-preview
+		case Dog d:
+			return false;
+		case Cat c:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	public static bool Run()
+	{
+		Lion() l;
+		l.Name = "Simba";
+		return IsCat(l);
+	}
+}

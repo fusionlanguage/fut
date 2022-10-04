@@ -1330,14 +1330,33 @@ public class CiResolver : CiVisitor
 		case CiEnum _:
 		case CiStringType _:
 			break;
+		case CiClassType klass when !(klass is CiStorageType):
+			NotSupported(statement, "Type-matching 'switch'", "c", "cpp", "js", "py", "swift", "ts", "cl");
+			break;
 		default:
-			throw StatementException(statement.Value, $"Switch on type {statement.Value.Type} - expected int, enum or string");
+			throw StatementException(statement.Value, $"Switch on type {statement.Value.Type} - expected int, enum, string or object reference");
 		}
 		statement.SetCompletesNormally(false);
 		foreach (CiCase kase in statement.Cases) {
 			for (int i = 0; i < kase.Values.Count; i++) {
-				kase.Values[i] = FoldConst(kase.Values[i]);
-				Coerce(kase.Values[i], statement.Value.Type);
+				if (statement.Value.Type is CiClassType switchPtr) {
+					if (!(kase.Values[i] is CiVar def) || def.Value != null)
+						throw StatementException(kase.Values[i], "Expected 'case Type name'");
+					if (!(ResolveType(def) is CiClassType casePtr) || casePtr is CiStorageType)
+						throw StatementException(def, "'case' with non-reference type");
+					if (casePtr is CiReadWriteClassType
+					 && !(switchPtr is CiDynamicPtrType)
+					 && (casePtr is CiDynamicPtrType || !(switchPtr is CiReadWriteClassType)))
+						throw StatementException(def, $"{switchPtr} cannot be casted to {casePtr}");
+					if (switchPtr.Class == casePtr.Class)
+						throw StatementException(def, $"{statement.Value} is {switchPtr}, 'case {casePtr}' would always match");
+					if (!switchPtr.Class.IsSameOrBaseOf(casePtr.Class))
+						throw StatementException(def, $"{switchPtr} is not base class of {casePtr.Class.Name}, 'case {casePtr}' would never match");
+				}
+				else {
+					kase.Values[i] = FoldConst(kase.Values[i]);
+					Coerce(kase.Values[i], statement.Value.Type);
+				}
 			}
 			if (Resolve(kase.Body))
 				throw StatementException(kase.Body.Last(), "Case must end with break, continue, return or throw");
