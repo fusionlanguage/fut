@@ -679,7 +679,10 @@ public class CiParser : CiLexer
 		while (Eat(CiToken.Case)) {
 			CiCase kase = new CiCase();
 			do {
-				kase.Values.Add(ParseAssign(true));
+				CiExpr expr = ParseExpr();
+				if (See(CiToken.Id))
+					expr = ParseVar(expr);
+				kase.Values.Add(expr);
 				Expect(CiToken.Colon);
 			} while (Eat(CiToken.Case));
 			if (See(CiToken.Default)) {
