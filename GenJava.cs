@@ -863,6 +863,14 @@ public class GenJava : GenTyped
 		WriteChild(statement.Body);
 	}
 
+	protected override void WriteSwitchValue(CiExpr expr)
+	{
+		if (expr is CiBinaryExpr indexing && indexing.Op == CiToken.LeftBracket && IsUnsignedByte(indexing.Type))
+			WriteIndexingInternal(indexing); // omit "& 0xff"
+		else
+			base.WriteSwitchValue(expr);
+	}
+
 	public override void VisitThrow(CiThrow statement)
 	{
 		Write("throw new Exception(");

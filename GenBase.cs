@@ -1209,12 +1209,14 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
+	protected virtual void WriteSwitchValue(CiExpr expr) => expr.Accept(this, CiPriority.Argument);
+
 	protected virtual void WriteCaseBody(List<CiStatement> statements) => Write(statements);
 
 	public override void VisitSwitch(CiSwitch statement)
 	{
 		Write("switch (");
-		statement.Value.Accept(this, CiPriority.Argument);
+		WriteSwitchValue(statement.Value);
 		WriteLine(") {");
 		foreach (CiCase kase in statement.Cases) {
 			foreach (CiExpr value in kase.Values) {
