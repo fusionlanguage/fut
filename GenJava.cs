@@ -436,7 +436,7 @@ public class GenJava : GenTyped
 		 && expr.Right is CiLiteralLong rightLiteral) {
 			if (parent > CiPriority.CondAnd && parent != CiPriority.And)
 				Write('(');
-			base.WriteIndexing(leftBinary, CiPriority.And);
+			WriteIndexingInternal(leftBinary);
 			Write(" & ");
 			VisitLiteralLong(0xff & rightLiteral.Value);
 			if (parent > CiPriority.CondAnd && parent != CiPriority.And)
