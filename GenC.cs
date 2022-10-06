@@ -1932,6 +1932,8 @@ public class GenC : GenCCpp
 			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
+	public override void VisitLambdaExpr(CiLambdaExpr expr) => throw new NotImplementedException();
+
 	static CiMethod GetThrowingMethod(CiExpr expr)
 	{
 		switch (expr) {

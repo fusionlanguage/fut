@@ -422,6 +422,14 @@ public class GenCpp : GenCCpp
 		}
 	}
 
+	void WriteBeginEnd(CiExpr obj)
+	{
+		StartMethodCall(obj);
+		Write("begin(), ");
+		StartMethodCall(obj); // FIXME: side effect
+		Write("end()");
+	}
+
 	void StartStringMethod(CiExpr obj)
 	{
 		obj.Accept(this, CiPriority.Primary);
@@ -592,12 +600,8 @@ public class GenCpp : GenCCpp
 			if (parent > CiPriority.Add)
 				Write('(');
 			Write("std::lower_bound(");
-			if (args.Count == 1) {
-				StartMethodCall(obj);
-				Write("begin(), ");
-				StartMethodCall(obj); // FIXME: side effect
-				Write("end()");
-			}
+			if (args.Count == 1)
+				WriteBeginEnd(obj);
 			else {
 				WriteArrayPtrAdd(obj, args[1]);
 				Write(", ");
@@ -643,10 +647,8 @@ public class GenCpp : GenCCpp
 		case CiId.ListSortAll:
 			Include("algorithm");
 			Write("std::sort(");
-			StartMethodCall(obj);
-			Write("begin(), ");
-			StartMethodCall(obj); // FIXME: side effect
-			Write("end())");
+			WriteBeginEnd(obj);
+			Write(')');
 			break;
 		case CiId.ArraySortPart:
 		case CiId.ListSortPart:
@@ -669,15 +671,21 @@ public class GenCpp : GenCCpp
 				Write(')');
 			}
 			break;
+		case CiId.ListAny:
+			Include("algorithm");
+			Write("std::any_of(");
+			WriteBeginEnd(obj);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(')');
+			break;
 		case CiId.ListContains:
 			Include("algorithm");
 			if (parent > CiPriority.Equality)
 				Write('(');
 			Write("std::find(");
-			StartMethodCall(obj);
-			Write("begin(), ");
-			StartMethodCall(obj); // FIXME: side effect
-			Write("end(), ");
+			WriteBeginEnd(obj);
+			Write(", ");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(") != ");
 			StartMethodCall(obj); // FIXME: side effect
@@ -853,12 +861,8 @@ public class GenCpp : GenCCpp
 		case CiId.MatchFindStr:
 		case CiId.MatchFindRegex:
 			Write("std::regex_search(");
-			if (args[0].Type == CiSystem.StringPtrType && !(args[0] is CiLiteral)) {
-				args[0].Accept(this, CiPriority.Primary);
-				Write(".begin(), ");
-				args[0].Accept(this, CiPriority.Primary); // FIXME: side effect
-				Write(".end()");
-			}
+			if (args[0].Type == CiSystem.StringPtrType && !(args[0] is CiLiteral))
+				WriteBeginEnd(args[0]);
 			else
 				args[0].Accept(this, CiPriority.Argument);
 			if (method.Id == CiId.MatchFindStr || method.Id == CiId.MatchFindRegex) {
@@ -1079,6 +1083,18 @@ public class GenCpp : GenCCpp
 			break;
 		}
 		return base.VisitBinaryExpr(expr, parent);
+	}
+
+	public override void VisitLambdaExpr(CiLambdaExpr expr)
+	{
+		Write("[](const ");
+		CiVar param = (CiVar) expr.First();
+		Write(param.Type, false);
+		Write(" &");
+		WriteName(param);
+		Write(") { return ");
+		expr.Body.Accept(this, CiPriority.Argument);
+		Write("; }");
 	}
 
 	protected override void WriteConst(CiConst konst)

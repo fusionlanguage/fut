@@ -482,15 +482,6 @@ public class GenSwift : GenPySwift
 				Write(')');
 			}
 			break;
-		case CiId.ListClear:
-		case CiId.QueueClear:
-		case CiId.StackClear:
-		case CiId.HashSetClear:
-		case CiId.DictionaryClear:
-		case CiId.SortedDictionaryClear:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".removeAll()");
-			break;
 		case CiId.ArrayCopyTo:
 		case CiId.ListCopyTo:
 			OpenIndexing(args[1]);
@@ -535,6 +526,18 @@ public class GenSwift : GenPySwift
 		case CiId.QueueEnqueue:
 		case CiId.StackPush:
 			WriteListAppend(obj, args);
+			break;
+		case CiId.ListAny:
+			WriteCall(obj, "contains", args[0]);
+			break;
+		case CiId.ListClear:
+		case CiId.QueueClear:
+		case CiId.StackClear:
+		case CiId.HashSetClear:
+		case CiId.DictionaryClear:
+		case CiId.SortedDictionaryClear:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".removeAll()");
 			break;
 		case CiId.ListInsert:
 			obj.Accept(this, CiPriority.Primary);
@@ -935,6 +938,7 @@ public class GenSwift : GenPySwift
 		switch (expr) {
 		case CiVar _:
 		case CiLiteral _:
+		case CiLambdaExpr _:
 			return false;
 		case CiInterpolatedString interp:
 			foreach (CiInterpolatedPart part in interp.Parts) {
@@ -1022,6 +1026,13 @@ public class GenSwift : GenPySwift
 		// Encoding.UTF8.GetBytes returns void, so it can only be called as a statement
 		this.VarBytesAtIndent[this.Indent] = statements.Count(s => s is CiCallExpr call && call.Method.Symbol.Id == CiId.UTF8GetBytes) > 1;
 		base.Write(statements);
+	}
+
+	public override void VisitLambdaExpr(CiLambdaExpr expr)
+	{
+		WriteName(expr.First());
+		Write(" in ");
+		expr.Body.Accept(this, CiPriority.Statement);
 	}
 
 	public override void VisitAssert(CiAssert statement)

@@ -642,6 +642,16 @@ public class GenPy : GenPySwift
 		case CiId.ListAdd:
 			WriteListAdd(obj, "append", args);
 			break;
+		case CiId.ListAny:
+			Write("any(");
+			CiLambdaExpr lambda = (CiLambdaExpr) args[0];
+			lambda.Body.Accept(this, CiPriority.Argument);
+			Write(" for ");
+			WriteName(lambda.First());
+			Write(" in ");
+			obj.Accept(this, CiPriority.Argument);
+			Write(')');
+			break;
 		case CiId.ListClear:
 		case CiId.StackClear:
 			if (((CiClassType) obj.Type).ElementType is CiNumericType number && GetArrayCode(number) != 'B') {
@@ -866,6 +876,8 @@ public class GenPy : GenPySwift
 			WriteLine("pass");
 		this.Indent--;
 	}
+
+	public override void VisitLambdaExpr(CiLambdaExpr expr) => throw new NotImplementedException();
 
 	public override void VisitAssert(CiAssert statement)
 	{

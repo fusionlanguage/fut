@@ -47,6 +47,7 @@ public abstract class CiVisitor
 	public abstract CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent);
 	public abstract CiExpr VisitSelectExpr(CiSelectExpr expr, CiPriority parent);
 	public abstract CiExpr VisitCallExpr(CiCallExpr expr, CiPriority parent);
+	public abstract void VisitLambdaExpr(CiLambdaExpr expr);
 	public abstract void VisitConst(CiConst statement);
 	public abstract void VisitExpr(CiExpr statement);
 	public abstract void VisitBlock(CiBlock statement);
@@ -685,6 +686,16 @@ public class CiCallExpr : CiExpr
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitCallExpr(this, parent);
 }
 
+public class CiLambdaExpr : CiScope
+{
+	public CiExpr Body;
+	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+	{
+		visitor.VisitLambdaExpr(this);
+		return this;
+	}
+}
+
 public abstract class CiCondCompletionStatement : CiScope
 {
 	bool CompletesNormallyValue;
@@ -1256,6 +1267,7 @@ public class CiSystem : CiScope
 	public static readonly CiType NullType = new CiType { Name = "null" };
 	public static readonly CiType TypeParam0 = new CiType { Name = "T" };
 	public static readonly CiType TypeParam0NotFinal = new CiType { Name = "T" };
+	public static readonly CiType TypeParam0Predicate = new CiType { Name = "Predicate<T>" };
 	public static readonly CiIntegerType IntType = new CiIntegerType { Name = "int" };
 	public static readonly CiRangeType UIntType = new CiRangeType(0, int.MaxValue) { Name = "uint" };
 	public static readonly CiIntegerType LongType = new CiIntegerType { Name = "long" };
@@ -1332,6 +1344,7 @@ public class CiSystem : CiScope
 
 		CiClass listClass = new CiClass(CiCallType.Normal, CiId.ListClass, "List",
 			new CiMethod(CiCallType.Normal, VoidType, CiId.ListAdd, "Add", new CiVar(TypeParam0NotFinal, "value")) { IsMutator = true },
+			new CiMethod(CiCallType.Normal, BoolType, CiId.ListAny, "Any", new CiVar(TypeParam0Predicate, "predicate")),
 			new CiMethod(CiCallType.Normal, VoidType, CiId.ListClear, "Clear") { IsMutator = true },
 			new CiMethod(CiCallType.Normal, BoolType, CiId.ListContains, "Contains", new CiVar(TypeParam0, "value")),
 			new CiMember(UIntType, CiId.ListCount, "Count"),

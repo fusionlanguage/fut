@@ -575,6 +575,9 @@ public class GenJava : GenTyped
 		case CiId.ListAdd:
 			WriteListAdd(obj, "add", args);
 			break;
+		case CiId.ListAny:
+			WriteCall(obj, "stream().anyMatch", args[0]);
+			break;
 		case CiId.ListCopyTo:
 			Write("for (int _i = 0; _i < ");
 			args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
@@ -813,6 +816,13 @@ public class GenJava : GenTyped
 		WriteLine(';');
 		while (--nesting >= 0)
 			CloseBlock();
+	}
+
+	public override void VisitLambdaExpr(CiLambdaExpr expr)
+	{
+		WriteName(expr.First());
+		Write(" -> ");
+		expr.Body.Accept(this, CiPriority.Statement);
 	}
 
 	public override void VisitAssert(CiAssert statement)

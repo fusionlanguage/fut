@@ -195,6 +195,8 @@ public abstract class GenPySwift : GenBase
 			if (typeof(T) == typeof(CiPrefixExpr))
 				seen |= VisitPreCall(call);
 			return seen;
+		case CiLambdaExpr lambda:
+			return false;
 		default:
 			throw new NotImplementedException(expr.GetType().Name);
 		}

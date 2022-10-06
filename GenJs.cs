@@ -495,6 +495,9 @@ public class GenJs : GenBase
 		case CiId.ListAdd:
 			WriteListAdd(obj, "push", args);
 			break;
+		case CiId.ListAny:
+			WriteCall(obj, "some", args[0]);
+			break;
 		case CiId.ListClear:
 		case CiId.QueueClear:
 		case CiId.StackClear:
@@ -752,6 +755,13 @@ public class GenJs : GenBase
 			}
 		}
 		return base.VisitBinaryExpr(expr, parent);
+	}
+
+	public override void VisitLambdaExpr(CiLambdaExpr expr)
+	{
+		WriteName(expr.First());
+		Write(" => ");
+		expr.Body.Accept(this, CiPriority.Statement);
 	}
 
 	public override void VisitAssert(CiAssert statement)

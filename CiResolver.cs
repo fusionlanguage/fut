@@ -1031,8 +1031,10 @@ public class CiResolver : CiVisitor
 		int i;
 		if (this.CurrentPureArguments.Count == 0) {
 			arguments = expr.Arguments;
-			for (i = 0; i < arguments.Count; i++)
-				arguments[i] = Resolve(arguments[i]);
+			for (i = 0; i < arguments.Count; i++) {
+				if (!(arguments[i] is CiLambdaExpr))
+					arguments[i] = Resolve(arguments[i]);
+			}
 		}
 		else {
 			arguments = new List<CiExpr>(expr.Arguments.Count);
@@ -1060,7 +1062,16 @@ public class CiResolver : CiVisitor
 					break;
 				throw StatementException(expr, $"Too few arguments for '{method.Name}'");
 			}
-			Coerce(arguments[i++], type);
+			CiExpr arg = arguments[i++];
+			if (type == CiSystem.TypeParam0Predicate && arg is CiLambdaExpr lambda) {
+				lambda.First().Type = ((CiClassType) symbol.Left.Type).TypeArg0;
+				OpenScope(lambda);
+				lambda.Body = Resolve(lambda.Body);
+				CloseScope();
+				Coerce(lambda.Body, CiSystem.BoolType);
+			}
+			else
+				Coerce(arg, type);
 		}
 		if (i < arguments.Count)
 			throw StatementException(arguments[i], "Too many arguments");
@@ -1099,6 +1110,8 @@ public class CiResolver : CiVisitor
 		}
 		return expr;
 	}
+
+	public override void VisitLambdaExpr(CiLambdaExpr expr) => throw new NotImplementedException(); // TODO: error message
 
 	public override void VisitConst(CiConst statement)
 	{

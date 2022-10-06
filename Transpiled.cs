@@ -1315,6 +1315,7 @@ namespace Foxoft.Ci
 		ArraySortAll,
 		ArraySortPart,
 		ListAdd,
+		ListAny,
 		ListClear,
 		ListContains,
 		ListCopyTo,

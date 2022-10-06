@@ -498,6 +498,10 @@ public class GenCs : GenTyped
 		case CiId.ListAdd:
 			WriteListAdd(obj, "Add", args);
 			break;
+		case CiId.ListAny:
+			Include("System.Linq");
+			WriteCall(obj, "Any", args[0]);
+			break;
 		case CiId.ListInsert:
 			WriteListInsert(obj, "Insert", args);
 			break;
@@ -672,6 +676,13 @@ public class GenCs : GenTyped
 		default:
 			return base.VisitBinaryExpr(expr, parent);
 		}
+	}
+
+	public override void VisitLambdaExpr(CiLambdaExpr expr)
+	{
+		WriteName(expr.First());
+		Write(" => ");
+		expr.Body.Accept(this, CiPriority.Statement);
 	}
 
 	public override void VisitAssert(CiAssert statement)
