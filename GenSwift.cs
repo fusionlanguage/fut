@@ -528,7 +528,9 @@ public class GenSwift : GenPySwift
 			WriteListAppend(obj, args);
 			break;
 		case CiId.ListAny:
-			WriteCall(obj, "contains", args[0]);
+			obj.Accept(this, CiPriority.Primary);
+			Write(".contains ");
+			args[0].Accept(this, CiPriority.Argument);
 			break;
 		case CiId.ListClear:
 		case CiId.QueueClear:
@@ -1030,9 +1032,11 @@ public class GenSwift : GenPySwift
 
 	public override void VisitLambdaExpr(CiLambdaExpr expr)
 	{
+		Write("{ ");
 		WriteName(expr.First());
 		Write(" in ");
 		expr.Body.Accept(this, CiPriority.Statement);
+		Write('}');
 	}
 
 	public override void VisitAssert(CiAssert statement)
