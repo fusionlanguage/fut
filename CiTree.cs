@@ -20,7 +20,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -104,6 +103,7 @@ public abstract class CiSymbol : CiExpr
 {
 	public CiId Id = CiId.None;
 	public string Name;
+	public CiSymbol Next;
 	public CiScope Parent;
 	public CiCodeDoc Documentation = null;
 	public override string ToString() => this.Name;
@@ -111,16 +111,19 @@ public abstract class CiSymbol : CiExpr
 
 public abstract class CiScope : CiSymbol, IEnumerable<CiSymbol>
 {
-	readonly OrderedDictionary Dict = new OrderedDictionary();
+	readonly Dictionary<string, CiSymbol> Dict = new Dictionary<string, CiSymbol>();
+	CiSymbol First = null;
+	CiSymbol Last;
+
+	public IEnumerator<CiSymbol> GetEnumerator()
+	{
+		for (CiSymbol symbol = this.First; symbol != null; symbol = symbol.Next)
+			yield return symbol;
+	}
 
 	IEnumerator IEnumerable.GetEnumerator()
 	{
-		return this.Dict.Values.GetEnumerator();
-	}
-
-	IEnumerator<CiSymbol> IEnumerable<CiSymbol>.GetEnumerator()
-	{
-		return this.Dict.Values.Cast<CiSymbol>().GetEnumerator();
+		return GetEnumerator();
 	}
 
 	public int Count => this.Dict.Count;
@@ -137,24 +140,33 @@ public abstract class CiScope : CiSymbol, IEnumerable<CiSymbol>
 		}
 	}
 
-	public CiSymbol TryShallowLookup(string name) => (CiSymbol) this.Dict[name];
+	public CiSymbol TryShallowLookup(string name)
+	{
+		this.Dict.TryGetValue(name, out CiSymbol result);
+		return result;
+	}
 
 	public virtual CiSymbol TryLookup(string name)
 	{
 		for (CiScope scope = this; scope != null; scope = scope.Parent) {
-			object result = scope.Dict[name];
-			if (result != null)
-				return (CiSymbol) result;
+			if (scope.Dict.TryGetValue(name, out CiSymbol result))
+				return result;
 		}
 		return null;
 	}
 
-	public bool Contains(CiSymbol symbol) => this.Dict.Contains(symbol);
+	public bool Contains(CiSymbol symbol) => this.Dict.ContainsKey(symbol.Name);
 
 	public void Add(CiSymbol symbol)
 	{
-		symbol.Parent = this;
 		this.Dict.Add(symbol.Name, symbol);
+		symbol.Next = null;
+		symbol.Parent = this;
+		if (this.First == null)
+			this.First = symbol;
+		else
+			this.Last.Next = symbol;
+		this.Last = symbol;
 	}
 
 	public void AddRange(IEnumerable<CiSymbol> symbols)
