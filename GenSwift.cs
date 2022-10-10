@@ -1266,7 +1266,7 @@ public class GenSwift : GenPySwift
 		WriteLine(')');
 	}
 
-	void WriteEnum(CiEnum enu)
+	protected override void WriteEnum(CiEnum enu)
 	{
 		WriteLine();
 		Write(enu.Documentation);
@@ -1434,7 +1434,7 @@ public class GenSwift : GenPySwift
 		CloseBlock();
 	}
 
-	void WriteClass(CiClass klass)
+	protected override void WriteClass(CiClass klass, CiProgram program)
 	{
 		WriteLine();
 		Write(klass.Documentation);
@@ -1581,18 +1581,7 @@ public class GenSwift : GenPySwift
 		this.StringIndexOf = false;
 		this.StringSubstring = false;
 		OpenStringWriter();
-		foreach (CiContainerType type in program) {
-			switch (type) {
-			case CiEnum enu:
-				WriteEnum(enu);
-				break;
-			case CiClass klass:
-				WriteClass(klass);
-				break;
-			default:
-				throw new NotImplementedException(type.Type.ToString());
-			}
-		}
+		WriteTypes(program);
 
 		CreateFile(this.OutputFile);
 		WriteIncludes("import ", "");

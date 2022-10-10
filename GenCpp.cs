@@ -1206,7 +1206,7 @@ public class GenCpp : GenCCpp
 			WriteLine('}');
 	}
 
-	void Write(CiEnum enu)
+	protected override void WriteEnum(CiEnum enu)
 	{
 		WriteLine();
 		Write(enu.Documentation);
@@ -1333,7 +1333,7 @@ public class GenCpp : GenCCpp
 		this.Indent--;
 	}
 
-	void Write(CiClass klass)
+	protected override void WriteClass(CiClass klass, CiProgram program)
 	{
 		// topological sorting of class hierarchy and class storage fields
 		if (this.WrittenClasses.TryGetValue(klass, out bool done)) {
@@ -1343,10 +1343,10 @@ public class GenCpp : GenCCpp
 		}
 		this.WrittenClasses.Add(klass, false);
 		if (klass.Parent is CiClass baseClass)
-			Write(baseClass);
+			WriteClass(baseClass, program);
 		for (CiField field = klass.FirstField(); field != null; field = field.NextField()) {
 			if (field.Type.BaseType is CiStorageType storage && storage.Class.Id == CiId.None)
-				Write(storage.Class);
+				WriteClass(storage.Class, program);
 		}
 		this.WrittenClasses[klass] = true;
 
@@ -1440,14 +1440,14 @@ public class GenCpp : GenCCpp
 		}
 		OpenNamespace();
 		foreach (CiEnum enu in program.OfType<CiEnum>())
-			Write(enu);
+			WriteEnum(enu);
 		foreach (CiClass klass in program.Classes) {
 			Write("class ");
 			Write(klass.Name);
 			WriteLine(';');
 		}
 		foreach (CiClass klass in program.Classes)
-			Write(klass);
+			WriteClass(klass, program);
 		CloseNamespace();
 
 		CreateFile(headerFile);

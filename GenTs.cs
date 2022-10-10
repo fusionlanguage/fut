@@ -242,7 +242,7 @@ public class GenTs : GenJs
 			WriteLine(';');
 	}
 
-	protected override void WriteClass(CiClass klass)
+	protected override void WriteClass(CiClass klass, CiProgram program)
 	{
 		WriteLine();
 		Write(klass.Documentation);

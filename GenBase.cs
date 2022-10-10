@@ -1349,6 +1349,8 @@ public abstract class GenBase : CiVisitor
 		WriteEnumValue(konst);
 	}
 
+	protected abstract void WriteEnum(CiEnum enu);
+
 	protected void OpenClass(CiClass klass, string suffix, string extendsClause)
 	{
 		Write("class ");
@@ -1390,6 +1392,18 @@ public abstract class GenBase : CiVisitor
 		if (constArrays) {
 			foreach (CiConst konst in klass.ConstArrays)
 				WriteConst(konst);
+		}
+	}
+
+	protected abstract void WriteClass(CiClass klass, CiProgram program);
+
+	protected void WriteTypes(CiProgram program)
+	{
+		foreach (CiContainerType type in program) {
+			if (type is CiClass klass)
+				WriteClass(klass, program);
+			else
+				WriteEnum((CiEnum) type);
 		}
 	}
 

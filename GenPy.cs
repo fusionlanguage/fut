@@ -1054,7 +1054,7 @@ public class GenPy : GenPySwift
 		Write(konst.Documentation);
 	}
 
-	void Write(CiEnum enu)
+	protected override void WriteEnum(CiEnum enu)
 	{
 		Include("enum");
 		WriteLine();
@@ -1121,7 +1121,7 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	void Write(CiClass klass)
+	protected override void WriteClass(CiClass klass, CiProgram program)
 	{
 		WriteLine();
 		Write("class ");
@@ -1183,9 +1183,9 @@ public class GenPy : GenPySwift
 		this.SwitchBreak = false;
 		OpenStringWriter();
 		foreach (CiEnum enu in program.OfType<CiEnum>())
-			Write(enu);
+			WriteEnum(enu);
 		foreach (CiClass klass in program.Classes)
-			Write(klass);
+			WriteClass(klass, program);
 		CreateFile(this.OutputFile);
 		WriteIncludes("import ", "");
 		if (this.SwitchBreak) {

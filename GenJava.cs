@@ -911,7 +911,7 @@ public class GenJava : GenTyped
 		WriteLine(';');
 	}
 
-	void Write(CiEnum enu)
+	protected override void WriteEnum(CiEnum enu)
 	{
 		CreateJavaFile(enu.Name);
 		WriteLine();
@@ -1022,7 +1022,7 @@ public class GenJava : GenTyped
 		}
 	}
 
-	void Write(CiClass klass, CiProgram program)
+	protected override void WriteClass(CiClass klass, CiProgram program)
 	{
 		this.Includes = new SortedSet<string>();
 		OpenStringWriter();
@@ -1116,12 +1116,7 @@ public class GenJava : GenTyped
 			this.OutputDirectory = this.OutputFile;
 		else
 			this.OutputDirectory = Path.GetDirectoryName(this.OutputFile);
-		foreach (CiContainerType type in program) {
-			if (type is CiClass klass)
-				Write(klass, program);
-			else
-				Write((CiEnum) type);
-		}
+		WriteTypes(program);
 		if (program.Resources.Count > 0)
 			WriteResources();
 	}

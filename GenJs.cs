@@ -843,7 +843,7 @@ public class GenJs : GenBase
 		VisitLiteralLong(konst.Value.IntValue);
 	}
 
-	protected virtual void WriteEnum(CiEnum enu)
+	protected override void WriteEnum(CiEnum enu)
 	{
 		WriteLine();
 		Write(enu.Documentation);
@@ -913,7 +913,7 @@ public class GenJs : GenBase
 		CloseBlock();
 	}
 
-	void WriteSortedClass(CiClass klass)
+	protected override void WriteClass(CiClass klass, CiProgram program)
 	{
 		// topological sorting of class hierarchy
 		if (this.WrittenClasses.TryGetValue(klass, out bool done)) {
@@ -923,25 +923,9 @@ public class GenJs : GenBase
 		}
 		this.WrittenClasses.Add(klass, false);
 		if (klass.Parent is CiClass baseClass)
-			WriteSortedClass(baseClass);
+			WriteClass(baseClass, program);
 		this.WrittenClasses[klass] = true;
 		WriteClass(klass);
-	}
-
-	protected void WriteTypes(CiProgram program)
-	{
-		foreach (CiContainerType type in program) {
-			switch (type) {
-			case CiEnum enu:
-				WriteEnum(enu);
-				break;
-			case CiClass klass:
-				WriteSortedClass(klass);
-				break;
-			default:
-				throw new NotImplementedException(type.Type.ToString());
-			}
-		}
 	}
 
 	protected void WriteLib(Dictionary<string, byte[]> resources)

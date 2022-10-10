@@ -2415,7 +2415,7 @@ public class GenC : GenCCpp
 		base.Write(statements);
 	}
 
-	void Write(CiEnum enu)
+	protected override void WriteEnum(CiEnum enu)
 	{
 		WriteLine();
 		Write(enu.Documentation);
@@ -2428,6 +2428,8 @@ public class GenC : GenCCpp
 		WriteName(enu);
 		WriteLine(';');
 	}
+
+	protected override void WriteClass(CiClass klass, CiProgram program) => throw new NotImplementedException();
 
 	void WriteTypedef(CiClass klass)
 	{
@@ -2444,16 +2446,10 @@ public class GenC : GenCCpp
 	{
 		foreach (CiContainerType type in program) {
 			if (type.IsPublic == pub) {
-				switch (type) {
-				case CiEnum enu:
-					Write(enu);
-					break;
-				case CiClass klass:
+				if (type is CiClass klass)
 					WriteTypedef(klass);
-					break;
-				default:
-					throw new NotImplementedException(type.ToString());
-				}
+				else
+					WriteEnum((CiEnum) type);
 			}
 		}
 	}
