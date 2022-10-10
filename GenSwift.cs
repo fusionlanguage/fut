@@ -1033,7 +1033,7 @@ public class GenSwift : GenPySwift
 	public override void VisitLambdaExpr(CiLambdaExpr expr)
 	{
 		Write("{ ");
-		WriteName(expr.First());
+		WriteName(expr.First);
 		Write(" in ");
 		expr.Body.Accept(this, CiPriority.Statement);
 		Write(" }");

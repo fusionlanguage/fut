@@ -982,7 +982,7 @@ public class CiEnum : CiContainerType
 	public void AcceptValues(CiVisitor visitor)
 	{
 		CiConst previous = null;
-		foreach (CiConst konst in this) {
+		for (CiConst konst = (CiConst) this.First; konst != null; konst = (CiConst) konst.Next) {
 			visitor.VisitEnumValue(konst, previous);
 			previous = konst;
 		}
@@ -1011,7 +1011,16 @@ public class CiClass : CiContainerType
 	public override string ToString() => this.Name + "()";
 	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this };
 	public CiField FirstField() => CiField.SkipToField(this.First);
-	public bool AddsVirtualMethods => this.OfType<CiMethod>().Any(method => method.IsAbstractOrVirtual);
+	public bool AddsVirtualMethods
+	{
+		get {
+			for (CiSymbol symbol = this.First; symbol != null; symbol = symbol.Next) {
+				if (symbol is CiMethod method && method.IsAbstractOrVirtual)
+					return true;
+			}
+			return false;
+		}
+	}
 
 	public CiClass()
 	{

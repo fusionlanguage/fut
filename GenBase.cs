@@ -1373,7 +1373,7 @@ public abstract class GenBase : CiVisitor
 
 	protected void WriteMembers(CiClass klass, bool constArrays)
 	{
-		foreach (CiSymbol member in klass) {
+		for (CiSymbol member = klass.First; member != null; member = member.Next) {
 			switch (member) {
 			case CiConst konst:
 				WriteConst(konst);
@@ -1410,7 +1410,7 @@ public abstract class GenBase : CiVisitor
 
 	protected void WriteTypes(CiProgram program)
 	{
-		foreach (CiContainerType type in program) {
+		for (CiSymbol type = program.First; type != null; type = type.Next) {
 			if (type is CiClass klass)
 				WriteClass(klass, program);
 			else

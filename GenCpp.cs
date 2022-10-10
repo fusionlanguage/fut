@@ -1238,7 +1238,11 @@ public class GenCpp : GenCCpp
 
 	static bool HasMembersOfVisibility(CiClass klass, CiVisibility visibility)
 	{
-		return klass.OfType<CiMember>().Any(m => m.Visibility == visibility);
+		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is CiMember member && member.Visibility == visibility)
+				return true;
+		}
+		return false;
 	}
 
 	protected override void WriteField(CiField field)
@@ -1284,8 +1288,8 @@ public class GenCpp : GenCCpp
 			WriteLine("() = default;");
 		}
 
-		foreach (CiMember member in klass.OfType<CiMember>()) {
-			if (member.Visibility != visibility)
+		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (!(symbol is CiMember member) || member.Visibility != visibility)
 				continue;
 			switch (member) {
 			case CiConst konst:

@@ -2502,8 +2502,8 @@ public class GenC : GenCCpp
 	{
 		if (klass.Parent is CiClass baseClass)
 			WriteVtblFields(baseClass);
-		foreach (CiMethod method in klass.OfType<CiMethod>()) {
-			if (method.IsAbstractOrVirtual) {
+		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is CiMethod method && method.IsAbstractOrVirtual) {
 				WriteSignature(method, () => {
 					Write("(*");
 					WriteCamelCase(method.Name);
@@ -2553,7 +2553,19 @@ public class GenC : GenCCpp
 	{
 		if (klass.CallType == CiCallType.Static || klass.CallType == CiCallType.Abstract)
 			return false;
-		return klass.OfType<CiMethod>().Any(method => method.CallType == CiCallType.Virtual || method.CallType == CiCallType.Override || method.CallType == CiCallType.Sealed);
+		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is CiMethod method) {
+				switch (method.CallType) {
+				case CiCallType.Virtual:
+				case CiCallType.Override:
+				case CiCallType.Sealed:
+					return true;
+				default:
+					break;
+				}
+			}
+		}
+		return false;
 	}
 
 	protected override bool NeedsConstructor(CiClass klass)
@@ -2651,8 +2663,8 @@ public class GenC : GenCCpp
 	{
 		if (declaringClass.Parent is CiClass baseClass)
 			WriteVtbl(definingClass, baseClass);
-		foreach (CiMethod declaredMethod in declaringClass.OfType<CiMethod>()) {
-			if (declaredMethod.IsAbstractOrVirtual) {
+		for (CiSymbol symbol = declaringClass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is CiMethod declaredMethod && declaredMethod.IsAbstractOrVirtual) {
 				CiSymbol definedMethod = definingClass.TryLookup(declaredMethod.Name);
 				if (declaredMethod != definedMethod) {
 					Write('(');

@@ -288,8 +288,10 @@ public abstract class GenCCpp : GenTyped
 
 	protected void WriteMethods(CiClass klass)
 	{
-		foreach (CiMethod method in klass.OfType<CiMethod>())
-			WriteMethod(method);
+		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is CiMethod method)
+				WriteMethod(method);
+		}
 	}
 
 	protected abstract void WriteClass(CiClass klass);

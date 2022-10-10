@@ -1718,8 +1718,8 @@ public class CiResolver : CiVisitor
 			klass.Constructor.Body.Accept(this);
 			this.CurrentMethod = null;
 		}
-		foreach (CiMethod method in klass.OfType<CiMethod>()) {
-			if (method.Body != null) {
+		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is CiMethod method && method.Body != null) {
 				this.CurrentScope = method.Parameters;
 				this.CurrentMethod = method;
 				method.Body.Accept(this);
@@ -1743,8 +1743,9 @@ public class CiResolver : CiVisitor
 	{
 		if (!klass.IsPublic)
 			return;
-		foreach (CiMethod method in klass.OfType<CiMethod>()) {
-			if (method.Visibility == CiVisibility.Public || method.Visibility == CiVisibility.Protected)
+		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is CiMethod method
+			 && (method.Visibility == CiVisibility.Public || method.Visibility == CiVisibility.Protected))
 				SetLive(method);
 		}
 		if (klass.Constructor != null)
