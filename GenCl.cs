@@ -327,7 +327,7 @@ public class GenCl : GenC
 			WriteSignatures(klass, true);
 		WriteTypedefs(program, false);
 		foreach (CiClass klass in program.Classes)
-			WriteStruct(klass);
+			WriteClass(klass, program);
 		WriteResources(program.Resources);
 		WriteLibrary();
 		CloseStringWriter();

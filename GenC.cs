@@ -2429,8 +2429,6 @@ public class GenC : GenCCpp
 		WriteLine(';');
 	}
 
-	protected override void WriteClass(CiClass klass, CiProgram program) => throw new NotImplementedException();
-
 	void WriteTypedef(CiClass klass)
 	{
 		if (klass.CallType == CiCallType.Static)
@@ -2610,24 +2608,9 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected void WriteStruct(CiClass klass)
+	protected override void WriteClass(CiClass klass)
 	{
 		if (klass.CallType != CiCallType.Static) {
-			// topological sorting of class hierarchy and class storage fields
-			if (this.WrittenClasses.TryGetValue(klass, out bool done)) {
-				if (done)
-					return;
-				throw new CiException(klass, $"Circular dependency for class {klass.Name}");
-			}
-			this.WrittenClasses.Add(klass, false);
-			if (klass.Parent is CiClass baseClass)
-				WriteStruct(baseClass);
-			for (CiField field = klass.FirstField(); field != null; field = field.NextField()) {
-				if (field.Type.BaseType is CiStorageType storage && storage.Class.Id == CiId.None)
-					WriteStruct(storage.Class);
-			}
-			this.WrittenClasses[klass] = true;
-
 			WriteLine();
 			if (klass.AddsVirtualMethods)
 				WriteVtblStruct(klass);
@@ -3163,7 +3146,7 @@ public class GenC : GenCCpp
 		this.Contains.Clear();
 		OpenStringWriter();
 		foreach (CiClass klass in program.Classes)
-			WriteStruct(klass);
+			WriteClass(klass, program);
 		WriteResources(program.Resources);
 		foreach (CiClass klass in program.Classes) {
 			this.CurrentClass = klass;

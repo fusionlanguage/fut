@@ -1333,23 +1333,8 @@ public class GenCpp : GenCCpp
 		this.Indent--;
 	}
 
-	protected override void WriteClass(CiClass klass, CiProgram program)
+	protected override void WriteClass(CiClass klass)
 	{
-		// topological sorting of class hierarchy and class storage fields
-		if (this.WrittenClasses.TryGetValue(klass, out bool done)) {
-			if (done)
-				return;
-			throw new CiException(klass, $"Circular dependency for class {klass.Name}");
-		}
-		this.WrittenClasses.Add(klass, false);
-		if (klass.Parent is CiClass baseClass)
-			WriteClass(baseClass, program);
-		for (CiField field = klass.FirstField(); field != null; field = field.NextField()) {
-			if (field.Type.BaseType is CiStorageType storage && storage.Class.Id == CiId.None)
-				WriteClass(storage.Class, program);
-		}
-		this.WrittenClasses[klass] = true;
-
 		WriteLine();
 		Write(klass.Documentation);
 		OpenClass(klass, klass.CallType == CiCallType.Sealed ? " final" : "", " : public ");
@@ -1439,12 +1424,14 @@ public class GenCpp : GenCCpp
 			WriteLine("\tinline constexpr T &operator^=(T &a, T b) { return (a = a ^ b); }");
 		}
 		OpenNamespace();
-		foreach (CiEnum enu in program.OfType<CiEnum>())
-			WriteEnum(enu);
-		foreach (CiClass klass in program.Classes) {
-			Write("class ");
-			Write(klass.Name);
-			WriteLine(';');
+		foreach (CiContainerType type in program) {
+			if (type is CiEnum enu)
+				WriteEnum(enu);
+			else {
+				Write("class ");
+				Write(type.Name);
+				WriteLine(';');
+			}
 		}
 		foreach (CiClass klass in program.Classes)
 			WriteClass(klass, program);

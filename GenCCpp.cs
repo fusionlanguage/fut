@@ -27,7 +27,6 @@ namespace Foxoft.Ci
 
 public abstract class GenCCpp : GenTyped
 {
-	protected readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
 	protected readonly List<CiSwitch> StringSwitchesWithGoto = new List<CiSwitch>();
 
 	protected abstract void IncludeStdInt();
@@ -291,6 +290,20 @@ public abstract class GenCCpp : GenTyped
 	{
 		foreach (CiMethod method in klass.OfType<CiMethod>())
 			WriteMethod(method);
+	}
+
+	protected abstract void WriteClass(CiClass klass);
+
+	protected override void WriteClass(CiClass klass, CiProgram program)
+	{
+		// topological sorting of class hierarchy and class storage fields
+		if (!WriteBaseClass(klass, program))
+			return;
+		for (CiField field = klass.FirstField(); field != null; field = field.NextField()) {
+			if (field.Type.BaseType is CiStorageType storage && storage.Class.Id == CiId.None)
+				WriteClass(storage.Class, program);
+		}
+		WriteClass(klass);
 	}
 }
 

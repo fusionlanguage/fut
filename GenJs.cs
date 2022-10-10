@@ -26,8 +26,6 @@ namespace Foxoft.Ci
 
 public class GenJs : GenBase
 {
-	readonly Dictionary<CiClass, bool> WrittenClasses = new Dictionary<CiClass, bool>();
-
 	// TODO: Namespace
 
 	void WriteCamelCaseNotKeyword(string name)
@@ -897,35 +895,21 @@ public class GenJs : GenBase
 		CloseBlock();
 	}
 
-	protected virtual void WriteClass(CiClass klass)
+	protected override void WriteClass(CiClass klass, CiProgram program)
 	{
+		if (!WriteBaseClass(klass, program))
+			return;
+
 		WriteLine();
 		Write(klass.Documentation);
 		OpenClass(klass, "", " extends ");
-
 		if (NeedsConstructor(klass)) {
 			if (klass.Constructor != null)
 				Write(klass.Constructor.Documentation);
 			WriteConstructor(klass);
 		}
-
 		WriteMembers(klass, true);
 		CloseBlock();
-	}
-
-	protected override void WriteClass(CiClass klass, CiProgram program)
-	{
-		// topological sorting of class hierarchy
-		if (this.WrittenClasses.TryGetValue(klass, out bool done)) {
-			if (done)
-				return;
-			throw new CiException(klass, $"Circular dependency for class {klass.Name}");
-		}
-		this.WrittenClasses.Add(klass, false);
-		if (klass.Parent is CiClass baseClass)
-			WriteClass(baseClass, program);
-		this.WrittenClasses[klass] = true;
-		WriteClass(klass);
 	}
 
 	protected void WriteLib(Dictionary<string, byte[]> resources)

@@ -40,6 +40,7 @@ public abstract class GenBase : CiVisitor
 	protected bool AtLineStart = true;
 	protected SortedSet<string> Includes;
 	protected CiMethodBase CurrentMethod = null;
+	protected readonly HashSet<CiClass> WrittenClasses = new HashSet<CiClass>();
 
 	static TextWriter CreateFileWriter(string filename)
 	{
@@ -1393,6 +1394,16 @@ public abstract class GenBase : CiVisitor
 			foreach (CiConst konst in klass.ConstArrays)
 				WriteConst(konst);
 		}
+	}
+
+	protected bool WriteBaseClass(CiClass klass, CiProgram program)
+	{
+		// topological sorting of class hierarchy
+		if (!this.WrittenClasses.Add(klass))
+			return false;
+		if (klass.Parent is CiClass baseClass)
+			WriteClass(baseClass, program);
+		return true;
 	}
 
 	protected abstract void WriteClass(CiClass klass, CiProgram program);

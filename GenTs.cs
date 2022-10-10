@@ -244,6 +244,9 @@ public class GenTs : GenJs
 
 	protected override void WriteClass(CiClass klass, CiProgram program)
 	{
+		if (!WriteBaseClass(klass, program))
+			return;
+
 		WriteLine();
 		Write(klass.Documentation);
 		Write("export ");
