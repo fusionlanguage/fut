@@ -1123,6 +1123,9 @@ public class GenPy : GenPySwift
 
 	protected override void WriteClass(CiClass klass, CiProgram program)
 	{
+		if (!WriteBaseClass(klass, program))
+			return;
+
 		WriteLine();
 		Write("class ");
 		WriteName(klass);
@@ -1182,10 +1185,7 @@ public class GenPy : GenPySwift
 		this.Includes = new SortedSet<string>();
 		this.SwitchBreak = false;
 		OpenStringWriter();
-		foreach (CiEnum enu in program.OfType<CiEnum>())
-			WriteEnum(enu);
-		foreach (CiClass klass in program.Classes)
-			WriteClass(klass, program);
+		WriteTypes(program);
 		CreateFile(this.OutputFile);
 		WriteIncludes("import ", "");
 		if (this.SwitchBreak) {
