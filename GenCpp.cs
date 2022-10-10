@@ -1345,9 +1345,10 @@ public class GenCpp : GenCCpp
 		this.WrittenClasses.Add(klass, false);
 		if (klass.Parent is CiClass baseClass)
 			Write(baseClass);
-		foreach (CiField field in klass.OfType<CiField>())
+		for (CiField field = klass.FirstField(); field != null; field = field.NextField()) {
 			if (field.Type.BaseType is CiStorageType storage && storage.Class.Id == CiId.None)
 				Write(storage.Class);
+		}
 		this.WrittenClasses[klass] = true;
 
 		WriteLine();

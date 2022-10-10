@@ -1267,8 +1267,23 @@ public abstract class GenBase : CiVisitor
 		WriteParameters(method, true, defaultArguments);
 	}
 
+	protected abstract bool HasInitCode(CiNamedValue def);
+
+	protected virtual bool NeedsConstructor(CiClass klass)
+	{
+		for (CiField field = klass.FirstField(); field != null; field = field.NextField()) {
+			if (HasInitCode(field))
+				return true;
+		}
+		return klass.Constructor != null;
+	}
+
+	protected virtual void WriteInitField(CiField field) => WriteInitCode(field);
+
 	protected void WriteConstructorBody(CiClass klass)
 	{
+		for (CiField field = klass.FirstField(); field != null; field = field.NextField())
+			WriteInitField(field);
 		if (klass.Constructor != null) {
 			this.CurrentMethod = klass.Constructor;
 			Write(((CiBlock) klass.Constructor.Body).Statements);
@@ -1333,10 +1348,6 @@ public abstract class GenBase : CiVisitor
 		WriteLine();
 		OpenBlock();
 	}
-
-	protected abstract bool HasInitCode(CiNamedValue def);
-
-	protected virtual bool NeedsConstructor(CiClass klass) => klass.Constructor != null || klass.OfType<CiField>().Any(HasInitCode);
 
 	protected abstract void WriteConst(CiConst konst);
 

@@ -893,8 +893,6 @@ public class GenJs : GenBase
 		OpenBlock();
 		if (klass.Parent is CiClass)
 			WriteLine("super();");
-		foreach (CiField field in klass.OfType<CiField>())
-			WriteInitCode(field);
 		WriteConstructorBody(klass);
 		CloseBlock();
 	}

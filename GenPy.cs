@@ -1072,7 +1072,7 @@ public class GenPy : GenPySwift
 	{
 		if (konst.Visibility != CiVisibility.Private || konst.Type is CiArrayStorageType) {
 			WriteLine();
-			base.WriteVar(konst);
+			WriteVar(konst);
 			WriteLine();
 			Write(konst.Documentation);
 		}
@@ -1113,6 +1113,15 @@ public class GenPy : GenPySwift
 		return false;
 	}
 
+	protected override void WriteInitField(CiField field)
+	{
+		if (HasInitCode(field)) {
+			Write("self.");
+			WriteVar(field);
+			WriteLine();
+		}
+	}
+
 	void Write(CiClass klass)
 	{
 		WriteLine();
@@ -1134,13 +1143,6 @@ public class GenPy : GenPySwift
 			if (InheritsConstructor(klass)) {
 				WriteName(klass.Parent);
 				WriteLine(".__init__(self)");
-			}
-			foreach (CiField field in klass.OfType<CiField>()) {
-				if (HasInitCode(field)) {
-					Write("self.");
-					WriteVar(field);
-					WriteLine();
-				}
 			}
 			WriteConstructorBody(klass);
 			CloseChild();

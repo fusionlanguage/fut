@@ -108,6 +108,14 @@ public abstract class CiSymbol : CiExpr
 	public CiScope Parent;
 	public CiCodeDoc Documentation = null;
 	public override string ToString() => this.Name;
+	internal CiField SkipToField()
+	{
+		for (CiSymbol symbol = this; symbol != null; symbol = symbol.Next) {
+			if (symbol is CiField field)
+				return field;
+		}
+		return null;
+	}
 }
 
 public abstract class CiScope : CiSymbol, IEnumerable<CiSymbol>
@@ -128,6 +136,8 @@ public abstract class CiScope : CiSymbol, IEnumerable<CiSymbol>
 	}
 
 	public int Count => this.Dict.Count;
+
+	public CiField FirstField() => this.First.SkipToField();
 
 	public CiContainerType Container
 	{
@@ -889,6 +899,7 @@ public class CiWhile : CiLoop
 public class CiField : CiMember
 {
 	public override bool IsStatic => false;
+	public CiField NextField() => this.Next.SkipToField();
 }
 
 public class CiMethodBase : CiMember

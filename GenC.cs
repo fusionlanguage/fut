@@ -2577,8 +2577,11 @@ public class GenC : GenCCpp
 
 	static bool NeedsDestructor(CiClass klass)
 	{
-		return klass.OfType<CiField>().Any(field => NeedToDestruct(field))
-			|| (klass.Parent is CiClass baseClass && NeedsDestructor(baseClass));
+		for (CiField field = klass.FirstField(); field != null; field = field.NextField()) {
+			if (NeedToDestruct(field))
+				return true;
+		}
+		return klass.Parent is CiClass baseClass && NeedsDestructor(baseClass);
 	}
 
 	void WriteXstructorSignature(string name, CiClass klass)
@@ -2627,9 +2630,10 @@ public class GenC : GenCCpp
 			this.WrittenClasses.Add(klass, false);
 			if (klass.Parent is CiClass baseClass)
 				WriteStruct(baseClass);
-			foreach (CiField field in klass.OfType<CiField>())
+			for (CiField field = klass.FirstField(); field != null; field = field.NextField()) {
 				if (field.Type.BaseType is CiStorageType storage && storage.Class.Id == CiId.None)
 					WriteStruct(storage.Class);
+			}
 			this.WrittenClasses[klass] = true;
 
 			WriteLine();
@@ -2649,7 +2653,7 @@ public class GenC : GenCCpp
 				WriteName(klass.Parent);
 				WriteLine(" base;");
 			}
-			foreach (CiField field in klass.OfType<CiField>()) {
+			for (CiField field = klass.FirstField(); field != null; field = field.NextField()) {
 				Write(field.Documentation);
 				WriteTypeAndName(field);
 				WriteLine(';');
@@ -2721,10 +2725,16 @@ public class GenC : GenCCpp
 			}
 			WriteLine("&vtbl;");
 		}
-		foreach (CiField field in klass.OfType<CiField>())
-			WriteInitCode(field);
 		WriteConstructorBody(klass);
 		CloseBlock();
+	}
+
+	void WriteDestructFields(CiField field)
+	{
+		if (field != null) {
+			WriteDestructFields(field.NextField());
+			WriteDestruct(field);
+		}
 	}
 
 	protected void WriteDestructor(CiClass klass)
@@ -2735,8 +2745,7 @@ public class GenC : GenCCpp
 		WriteXstructorSignature("Destruct", klass);
 		WriteLine();
 		OpenBlock();
-		foreach (CiField field in klass.OfType<CiField>().Reverse())
-			WriteDestruct(field);
+		WriteDestructFields(klass.FirstField());
 		if (klass.Parent is CiClass baseClass && NeedsDestructor(baseClass)) {
 			WriteName(baseClass);
 			WriteLine("_Destruct(&self->base);");
