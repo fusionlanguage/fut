@@ -1285,8 +1285,8 @@ public abstract class GenBase : CiVisitor
 
 	protected virtual bool NeedsConstructor(CiClass klass)
 	{
-		for (CiField field = klass.FirstField(); field != null; field = field.NextField()) {
-			if (HasInitCode(field))
+		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is CiField field && HasInitCode(field))
 				return true;
 		}
 		return klass.Constructor != null;
@@ -1296,8 +1296,10 @@ public abstract class GenBase : CiVisitor
 
 	protected void WriteConstructorBody(CiClass klass)
 	{
-		for (CiField field = klass.FirstField(); field != null; field = field.NextField())
-			WriteInitField(field);
+		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is CiField field)
+				WriteInitField(field);
+		}
 		if (klass.Constructor != null) {
 			this.CurrentMethod = klass.Constructor;
 			Write(((CiBlock) klass.Constructor.Body).Statements);

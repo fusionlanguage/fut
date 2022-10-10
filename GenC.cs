@@ -2579,8 +2579,8 @@ public class GenC : GenCCpp
 
 	static bool NeedsDestructor(CiClass klass)
 	{
-		for (CiField field = klass.FirstField(); field != null; field = field.NextField()) {
-			if (NeedToDestruct(field))
+		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is CiField field && NeedToDestruct(field))
 				return true;
 		}
 		return klass.Parent is CiClass baseClass && NeedsDestructor(baseClass);
@@ -2640,10 +2640,12 @@ public class GenC : GenCCpp
 				WriteName(klass.Parent);
 				WriteLine(" base;");
 			}
-			for (CiField field = klass.FirstField(); field != null; field = field.NextField()) {
-				Write(field.Documentation);
-				WriteTypeAndName(field);
-				WriteLine(';');
+			for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+				if (symbol is CiField field) {
+					Write(field.Documentation);
+					WriteTypeAndName(field);
+					WriteLine(';');
+				}
 			}
 			this.Indent--;
 			WriteLine("};");
@@ -2716,11 +2718,12 @@ public class GenC : GenCCpp
 		CloseBlock();
 	}
 
-	void WriteDestructFields(CiField field)
+	void WriteDestructFields(CiSymbol symbol)
 	{
-		if (field != null) {
-			WriteDestructFields(field.NextField());
-			WriteDestruct(field);
+		if (symbol != null) {
+			WriteDestructFields(symbol.Next);
+			if (symbol is CiField field)
+				WriteDestruct(field);
 		}
 	}
 
@@ -2732,7 +2735,7 @@ public class GenC : GenCCpp
 		WriteXstructorSignature("Destruct", klass);
 		WriteLine();
 		OpenBlock();
-		WriteDestructFields(klass.FirstField());
+		WriteDestructFields(klass.First);
 		if (klass.Parent is CiClass baseClass && NeedsDestructor(baseClass)) {
 			WriteName(baseClass);
 			WriteLine("_Destruct(&self->base);");

@@ -301,8 +301,8 @@ public abstract class GenCCpp : GenTyped
 		// topological sorting of class hierarchy and class storage fields
 		if (!WriteBaseClass(klass, program))
 			return;
-		for (CiField field = klass.FirstField(); field != null; field = field.NextField()) {
-			if (field.Type.BaseType is CiStorageType storage && storage.Class.Id == CiId.None)
+		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is CiField field && field.Type.BaseType is CiStorageType storage && storage.Class.Id == CiId.None)
 				WriteClass(storage.Class, program);
 		}
 		WriteClass(klass);

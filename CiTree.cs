@@ -113,7 +113,7 @@ public abstract class CiSymbol : CiExpr
 public abstract class CiScope : CiSymbol, IEnumerable<CiSymbol>
 {
 	readonly Dictionary<string, CiSymbol> Dict = new Dictionary<string, CiSymbol>();
-	internal CiSymbol First = null;
+	public CiSymbol First = null;
 	CiSymbol Last;
 
 	public IEnumerator<CiSymbol> GetEnumerator()
@@ -892,16 +892,6 @@ public class CiWhile : CiLoop
 public class CiField : CiMember
 {
 	public override bool IsStatic => false;
-	internal static CiField SkipToField(CiSymbol symbol)
-	{
-		while (symbol != null) {
-			if (symbol is CiField field)
-				return field;
-			symbol = symbol.Next;
-		}
-		return null;
-	}
-	public CiField NextField() => SkipToField(this.Next);
 }
 
 public class CiMethodBase : CiMember
@@ -1010,7 +1000,6 @@ public class CiClass : CiContainerType
 	public CiVisitStatus VisitStatus;
 	public override string ToString() => this.Name + "()";
 	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this };
-	public CiField FirstField() => CiField.SkipToField(this.First);
 	public bool AddsVirtualMethods
 	{
 		get {
