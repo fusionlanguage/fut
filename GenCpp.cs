@@ -28,6 +28,7 @@ namespace Foxoft.Ci
 public class GenCpp : GenCCpp
 {
 	bool UsingStringViewLiterals;
+	bool HasEnumFlags;
 
 	protected override void IncludeStdInt() => Include("cstdint");
 
@@ -1218,6 +1219,8 @@ public class GenCpp : GenCCpp
 		this.Indent--;
 		WriteLine("};");
 		if (enu is CiEnumFlags) {
+			Include("type_traits");
+			this.HasEnumFlags = true;
 			Write("CI_ENUM_FLAG_OPERATORS(");
 			Write(enu.Name);
 			WriteLine(')');
@@ -1415,20 +1418,11 @@ public class GenCpp : GenCCpp
 		string headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
 		SortedSet<string> headerIncludes = new SortedSet<string>();
 		this.Includes = headerIncludes;
+		this.UsingStringViewLiterals = false;
+		this.HasEnumFlags = false;
 		OpenStringWriter();
-		if (program.Any(c => c is CiEnumFlags)) {
-			Include("type_traits");
-			WriteLine("#define CI_ENUM_FLAG_OPERATORS(T) \\");
-			WriteLine("\tinline constexpr T operator~(T a) { return static_cast<T>(~static_cast<std::underlying_type_t<T>>(a)); } \\");
-			WriteLine("\tinline constexpr T operator&(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) & static_cast<std::underlying_type_t<T>>(b)); } \\");
-			WriteLine("\tinline constexpr T operator|(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) | static_cast<std::underlying_type_t<T>>(b)); } \\");
-			WriteLine("\tinline constexpr T operator^(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) ^ static_cast<std::underlying_type_t<T>>(b)); } \\");
-			WriteLine("\tinline constexpr T &operator&=(T &a, T b) { return (a = a & b); } \\");
-			WriteLine("\tinline constexpr T &operator|=(T &a, T b) { return (a = a | b); } \\");
-			WriteLine("\tinline constexpr T &operator^=(T &a, T b) { return (a = a ^ b); }");
-		}
 		OpenNamespace();
-		foreach (CiContainerType type in program) {
+		for (CiSymbol type = program.First; type != null; type = type.Next) {
 			if (type is CiEnum enu)
 				WriteEnum(enu);
 			else {
@@ -1444,6 +1438,16 @@ public class GenCpp : GenCCpp
 		CreateFile(headerFile);
 		WriteLine("#pragma once");
 		WriteIncludes();
+		if (this.HasEnumFlags) {
+			WriteLine("#define CI_ENUM_FLAG_OPERATORS(T) \\");
+			WriteLine("\tinline constexpr T operator~(T a) { return static_cast<T>(~static_cast<std::underlying_type_t<T>>(a)); } \\");
+			WriteLine("\tinline constexpr T operator&(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) & static_cast<std::underlying_type_t<T>>(b)); } \\");
+			WriteLine("\tinline constexpr T operator|(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) | static_cast<std::underlying_type_t<T>>(b)); } \\");
+			WriteLine("\tinline constexpr T operator^(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) ^ static_cast<std::underlying_type_t<T>>(b)); } \\");
+			WriteLine("\tinline constexpr T &operator&=(T &a, T b) { return (a = a & b); } \\");
+			WriteLine("\tinline constexpr T &operator|=(T &a, T b) { return (a = a | b); } \\");
+			WriteLine("\tinline constexpr T &operator^=(T &a, T b) { return (a = a ^ b); }");
+		}
 		CloseStringWriter();
 		CloseFile();
 

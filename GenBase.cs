@@ -21,7 +21,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Foxoft.Ci
@@ -1375,8 +1374,8 @@ public abstract class GenBase : CiVisitor
 
 	protected void WriteMembers(CiClass klass, bool constArrays)
 	{
-		for (CiSymbol member = klass.First; member != null; member = member.Next) {
-			switch (member) {
+		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			switch (symbol) {
 			case CiConst konst:
 				WriteConst(konst);
 				break;
@@ -1389,7 +1388,7 @@ public abstract class GenBase : CiVisitor
 			case CiVar _: // "this"
 				break;
 			default:
-				throw new NotImplementedException(member.Type.ToString());
+				throw new NotImplementedException(symbol.Type.ToString());
 			}
 		}
 		if (constArrays) {

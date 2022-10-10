@@ -1636,8 +1636,10 @@ public class CiResolver : CiVisitor
 
 	public override void VisitEnumValue(CiConst konst, CiConst previous)
 	{
-		if (konst.Value != null)
+		if (konst.Value != null) {
 			ResolveConst(konst);
+			((CiEnum) konst.Parent).HasExplicitValue = true;
+		}
 		else
 			konst.Value = new CiImplicitEnumValue(previous == null ? 0 : previous.Value.IntValue + 1);
 	}
@@ -1647,8 +1649,10 @@ public class CiResolver : CiVisitor
 		this.CurrentScope = container;
 		switch (container) {
 		case CiClass klass:
-			foreach (CiConst konst in klass.OfType<CiConst>())
-				ResolveConst(konst);
+			for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+				if (symbol is CiConst konst)
+					ResolveConst(konst);
+			}
 			break;
 		case CiEnum enu:
 			enu.AcceptValues(this);
@@ -1661,8 +1665,8 @@ public class CiResolver : CiVisitor
 	void ResolveTypes(CiClass klass)
 	{
 		this.CurrentScope = klass;
-		foreach (CiSymbol member in klass) {
-			switch (member) {
+		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			switch (symbol) {
 			case CiField field:
 				CiType type = ResolveType(field);
 				if (field.Value != null) {
@@ -1757,10 +1761,12 @@ public class CiResolver : CiVisitor
 		this.Program = program;
 		this.SearchDirs = searchDirs;
 		this.Lang = lang;
-		foreach (CiClass klass in program.OfType<CiClass>())
-			ResolveBase(klass);
-		foreach (CiContainerType container in program)
-			ResolveConsts(container);
+		for (CiSymbol type = program.First; type != null; type = type.Next) {
+			if (type is CiClass klass)
+				ResolveBase(klass);
+		}
+		for (CiSymbol type = program.First; type != null; type = type.Next)
+			ResolveConsts((CiContainerType) type);
 		foreach (CiClass klass in program.Classes)
 			ResolveTypes(klass);
 		foreach (CiClass klass in program.Classes)

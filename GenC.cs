@@ -2442,8 +2442,8 @@ public class GenC : GenCCpp
 
 	protected void WriteTypedefs(CiProgram program, bool pub)
 	{
-		foreach (CiContainerType type in program) {
-			if (type.IsPublic == pub) {
+		for (CiSymbol type = program.First; type != null; type = type.Next) {
+			if (((CiContainerType) type).IsPublic == pub) {
 				if (type is CiClass klass)
 					WriteTypedef(klass);
 				else
@@ -2599,8 +2599,8 @@ public class GenC : GenCCpp
 
 	protected void WriteSignatures(CiClass klass, bool pub)
 	{
-		foreach (CiSymbol member in klass) {
-			switch (member) {
+		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			switch (symbol) {
 			case CiConst konst when (konst.Visibility == CiVisibility.Public) == pub:
 				if (pub) {
 					WriteLine();

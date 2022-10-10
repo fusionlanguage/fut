@@ -110,22 +110,11 @@ public abstract class CiSymbol : CiExpr
 	public override string ToString() => this.Name;
 }
 
-public abstract class CiScope : CiSymbol, IEnumerable<CiSymbol>
+public abstract class CiScope : CiSymbol
 {
 	readonly Dictionary<string, CiSymbol> Dict = new Dictionary<string, CiSymbol>();
 	public CiSymbol First = null;
 	CiSymbol Last;
-
-	public IEnumerator<CiSymbol> GetEnumerator()
-	{
-		for (CiSymbol symbol = this.First; symbol != null; symbol = symbol.Next)
-			yield return symbol;
-	}
-
-	IEnumerator IEnumerable.GetEnumerator()
-	{
-		return GetEnumerator();
-	}
 
 	public int Count => this.Dict.Count;
 
@@ -969,6 +958,7 @@ public abstract class CiContainerType : CiType
 
 public class CiEnum : CiContainerType
 {
+	public bool HasExplicitValue = false;
 	public void AcceptValues(CiVisitor visitor)
 	{
 		CiConst previous = null;

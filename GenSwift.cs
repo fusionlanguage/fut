@@ -1282,12 +1282,12 @@ public class GenSwift : GenPySwift
 		else {
 			Write("enum ");
 			Write(enu.Name);
-			if (enu.Any(symbol => !(((CiConst) symbol).Value is CiImplicitEnumValue)))
+			if (enu.HasExplicitValue)
 				Write(" : Int");
 			WriteLine();
 			OpenBlock();
 			Dictionary<int, CiConst> valueToConst = new Dictionary<int, CiConst>();
-			foreach (CiConst konst in enu) {
+			for (CiConst konst = (CiConst) enu.First; konst != null; konst = (CiConst) konst.Next) {
 				Write(konst.Documentation);
 				int i = konst.Value.IntValue;
 				if (valueToConst.TryGetValue(i, out CiConst duplicate)) {
