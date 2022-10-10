@@ -37,6 +37,12 @@ public class GenTs : GenJs
 
 	protected override bool IsJsPrivate(CiMember member) => false;
 
+	public override void VisitEnumValue(CiConst konst, CiConst previous)
+	{
+		WriteEnumValue(konst);
+		WriteLine(',');
+	}
+
 	protected override void WriteEnum(CiEnum enu)
 	{
 		// WARNING: TypeScript enums allow reverse lookup that the Js generator currently
@@ -48,12 +54,8 @@ public class GenTs : GenJs
 		Write(enu.Name);
 		Write(' ');
 		OpenBlock();
-		foreach (CiConst konst in enu) {
-			Write(konst.Documentation);
-			WriteUppercaseWithUnderscores(konst.Name);
-			WriteExplicitEnumValue(konst);
-			WriteLine(',');
-		}
+		enu.AcceptValues(this);
+		WriteLine();
 		CloseBlock();
 	}
 

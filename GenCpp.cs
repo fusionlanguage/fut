@@ -1214,15 +1214,7 @@ public class GenCpp : GenCCpp
 		Write("enum class ");
 		WriteLine(enu.Name);
 		OpenBlock();
-		bool first = true;
-		foreach (CiConst konst in enu) {
-			if (!first)
-				WriteLine(',');
-			first = false;
-			Write(konst.Documentation);
-			WriteCamelCase(konst.Name);
-			WriteExplicitEnumValue(konst);
-		}
+		enu.AcceptValues(this);
 		WriteLine();
 		this.Indent--;
 		WriteLine("};");

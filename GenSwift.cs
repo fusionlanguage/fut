@@ -1248,6 +1248,24 @@ public class GenSwift : GenPySwift
 		Write(param.Type);
 	}
 
+	public override void VisitEnumValue(CiConst konst, CiConst previous)
+	{
+		Write(konst.Documentation);
+		Write("static let ");
+		WriteName(konst);
+		Write(" = ");
+		Write(konst.Parent.Name);
+		Write('(');
+		int i = konst.Value.IntValue;
+		if (i == 0)
+			Write("[]");
+		else {
+			Write("rawValue: ");
+			VisitLiteralLong(i);
+		}
+		WriteLine(')');
+	}
+
 	void WriteEnum(CiEnum enu)
 	{
 		WriteLine();
@@ -1259,22 +1277,7 @@ public class GenSwift : GenPySwift
 			WriteLine(" : OptionSet");
 			OpenBlock();
 			WriteLine("let rawValue : Int");
-			foreach (CiConst konst in enu) {
-				Write(konst.Documentation);
-				Write("static let ");
-				WriteName(konst);
-				Write(" = ");
-				Write(enu.Name);
-				Write('(');
-				int i = konst.Value.IntValue;
-				if (i == 0)
-					Write("[]");
-				else {
-					Write("rawValue: ");
-					VisitLiteralLong(i);
-				}
-				WriteLine(')');
-			}
+			enu.AcceptValues(this);
 		}
 		else {
 			Write("enum ");

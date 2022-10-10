@@ -1047,6 +1047,15 @@ public class GenPy : GenPySwift
 		// FIXME: WriteXcrement<CiPostfixExpr>(statement.Message);
 	}
 
+	public override void VisitEnumValue(CiConst konst, CiConst previous)
+	{
+		WriteUppercaseWithUnderscores(konst.Name);
+		Write(" = ");
+		VisitLiteralLong(konst.Value.IntValue);
+		WriteLine();
+		Write(konst.Documentation);
+	}
+
 	void Write(CiEnum enu)
 	{
 		Include("enum");
@@ -1056,13 +1065,7 @@ public class GenPy : GenPySwift
 		Write(enu is CiEnumFlags ? "(enum.Flag)" : "(enum.Enum)");
 		OpenChild();
 		Write(enu.Documentation);
-		foreach (CiConst konst in enu) {
-			WriteUppercaseWithUnderscores(konst.Name);
-			Write(" = ");
-			VisitLiteralLong(konst.Value.IntValue);
-			WriteLine();
-			Write(konst.Documentation);
-		}
+		enu.AcceptValues(this);
 		CloseChild();
 	}
 

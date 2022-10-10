@@ -898,6 +898,19 @@ public class GenJava : GenTyped
 		}
 	}
 
+	public override void VisitEnumValue(CiConst konst, CiConst previous)
+	{
+		Write(konst.Documentation);
+		Write("int ");
+		WriteUppercaseWithUnderscores(konst.Name);
+		Write(" = ");
+		if (konst.Value is CiImplicitEnumValue imp)
+			VisitLiteralLong(imp.Value);
+		else
+			konst.Value.Accept(this, CiPriority.Argument);
+		WriteLine(';');
+	}
+
 	void Write(CiEnum enu)
 	{
 		CreateJavaFile(enu.Name);
@@ -907,17 +920,7 @@ public class GenJava : GenTyped
 		Write("interface ");
 		WriteLine(enu.Name);
 		OpenBlock();
-		foreach (CiConst konst in enu) {
-			Write(konst.Documentation);
-			Write("int ");
-			WriteUppercaseWithUnderscores(konst.Name);
-			Write(" = ");
-			if (konst.Value is CiImplicitEnumValue imp)
-				VisitLiteralLong(imp.Value);
-			else
-				konst.Value.Accept(this, CiPriority.Argument);
-			WriteLine(';');
-		}
+		enu.AcceptValues(this);
 		CloseBlock();
 		CloseFile();
 	}

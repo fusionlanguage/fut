@@ -1303,12 +1303,21 @@ public abstract class GenBase : CiVisitor
 			Write("public ");
 	}
 
-	protected void WriteExplicitEnumValue(CiConst konst)
+	protected void WriteEnumValue(CiConst konst)
 	{
+		Write(konst.Documentation);
+		WriteName(konst);
 		if (!(konst.Value is CiImplicitEnumValue)) {
 			Write(" = ");
 			konst.Value.Accept(this, CiPriority.Argument);
 		}
+	}
+
+	public override void VisitEnumValue(CiConst konst, CiConst previous)
+	{
+		if (previous != null)
+			WriteLine(',');
+		WriteEnumValue(konst);
 	}
 
 	protected void OpenClass(CiClass klass, string suffix, string extendsClause)

@@ -1633,6 +1633,14 @@ public class CiResolver : CiVisitor
 		konst.VisitStatus = CiVisitStatus.Done;
 	}
 
+	public override void VisitEnumValue(CiConst konst, CiConst previous)
+	{
+		if (konst.Value != null)
+			ResolveConst(konst);
+		else
+			konst.Value = new CiImplicitEnumValue(previous == null ? 0 : previous.Value.IntValue + 1);
+	}
+
 	void ResolveConsts(CiContainerType container)
 	{
 		this.CurrentScope = container;
@@ -1642,14 +1650,7 @@ public class CiResolver : CiVisitor
 				ResolveConst(konst);
 			break;
 		case CiEnum enu:
-			CiExpr lastValue = null;
-			foreach (CiConst konst in enu) {
-				if (konst.Value != null)
-					ResolveConst(konst);
-				else
-					konst.Value = new CiImplicitEnumValue(lastValue == null ? 0 : lastValue.IntValue + 1);
-				lastValue = konst.Value;
-			}
+			enu.AcceptValues(this);
 			break;
 		default:
 			throw new NotImplementedException(container.ToString());

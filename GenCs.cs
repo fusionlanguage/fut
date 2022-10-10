@@ -758,15 +758,7 @@ public class GenCs : GenTyped
 		Write("enum ");
 		WriteLine(enu.Name);
 		OpenBlock();
-		bool first = true;
-		foreach (CiConst konst in enu) {
-			if (!first)
-				WriteLine(',');
-			first = false;
-			Write(konst.Documentation);
-			Write(konst.Name);
-			WriteExplicitEnumValue(konst);
-		}
+		enu.AcceptValues(this);
 		WriteLine();
 		CloseBlock();
 	}

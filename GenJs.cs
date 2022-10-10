@@ -833,6 +833,16 @@ public class GenJs : GenBase
 		WriteLine(';');
 	}
 
+	public override void VisitEnumValue(CiConst konst, CiConst previous)
+	{
+		if (previous != null)
+			WriteLine(',');
+		Write(konst.Documentation);
+		WriteUppercaseWithUnderscores(konst.Name);
+		Write(" : ");
+		VisitLiteralLong(konst.Value.IntValue);
+	}
+
 	protected virtual void WriteEnum(CiEnum enu)
 	{
 		WriteLine();
@@ -841,16 +851,7 @@ public class GenJs : GenBase
 		Write(enu.Name);
 		Write(" = ");
 		OpenBlock();
-		bool first = true;
-		foreach (CiConst konst in enu) {
-			if (!first)
-				WriteLine(',');
-			first = false;
-			Write(konst.Documentation);
-			WriteUppercaseWithUnderscores(konst.Name);
-			Write(" : ");
-			VisitLiteralLong(konst.Value.IntValue);
-		}
+		enu.AcceptValues(this);
 		WriteLine();
 		CloseBlock();
 	}

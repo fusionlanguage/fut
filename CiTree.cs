@@ -63,6 +63,7 @@ public abstract class CiVisitor
 	public abstract void VisitSwitch(CiSwitch statement);
 	public abstract void VisitThrow(CiThrow statement);
 	public abstract void VisitWhile(CiWhile statement);
+	public abstract void VisitEnumValue(CiConst konst, CiConst previous);
 }
 
 public abstract class CiStatement
@@ -965,6 +966,14 @@ public abstract class CiContainerType : CiType
 
 public class CiEnum : CiContainerType
 {
+	public void AcceptValues(CiVisitor visitor)
+	{
+		CiConst previous = null;
+		foreach (CiConst konst in this) {
+			visitor.VisitEnumValue(konst, previous);
+			previous = konst;
+		}
+	}
 }
 
 public class CiEnumFlags : CiEnum

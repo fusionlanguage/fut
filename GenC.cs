@@ -2425,17 +2425,7 @@ public class GenC : GenCCpp
 		Write(enu.Documentation);
 		Write("typedef enum ");
 		OpenBlock();
-		bool first = true;
-		foreach (CiConst konst in enu) {
-			if (!first)
-				WriteLine(',');
-			first = false;
-			Write(konst.Documentation);
-			WriteName(enu);
-			Write('_');
-			WriteUppercaseWithUnderscores(konst.Name);
-			WriteExplicitEnumValue(konst);
-		}
+		enu.AcceptValues(this);
 		WriteLine();
 		this.Indent--;
 		Write("} ");
