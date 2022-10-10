@@ -1036,7 +1036,7 @@ public class GenSwift : GenPySwift
 		WriteName(expr.First());
 		Write(" in ");
 		expr.Body.Accept(this, CiPriority.Statement);
-		Write('}');
+		Write(" }");
 	}
 
 	public override void VisitAssert(CiAssert statement)
