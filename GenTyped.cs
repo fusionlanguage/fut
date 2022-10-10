@@ -19,7 +19,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Foxoft.Ci
 {
@@ -236,19 +235,7 @@ public abstract class GenTyped : GenBase
 			base.WriteCoercedInternal(type, expr, parent);
 	}
 
-	protected override void WriteCharAt(CiBinaryExpr expr)
-	{
-		WriteIndexing(expr, CiPriority.Argument);
-	}
-
-	protected abstract bool HasInitCode(CiNamedValue def);
-
-	protected virtual bool NeedsConstructor(CiClass klass)
-	{
-		return klass.Constructor != null
-			|| klass.OfType<CiField>().Any(field => HasInitCode(field));
-	}
-
+	protected override void WriteCharAt(CiBinaryExpr expr) => WriteIndexing(expr, CiPriority.Argument);
 }
 
 }

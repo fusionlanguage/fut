@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Foxoft.Ci
@@ -1332,6 +1333,10 @@ public abstract class GenBase : CiVisitor
 		WriteLine();
 		OpenBlock();
 	}
+
+	protected abstract bool HasInitCode(CiNamedValue def);
+
+	protected virtual bool NeedsConstructor(CiClass klass) => klass.Constructor != null || klass.OfType<CiField>().Any(HasInitCode);
 
 	protected abstract void WriteConst(CiConst konst);
 

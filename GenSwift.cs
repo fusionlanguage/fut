@@ -1327,6 +1327,8 @@ public class GenSwift : GenPySwift
 		}
 	}
 
+	protected override bool HasInitCode(CiNamedValue def) => throw new NotImplementedException();
+
 	protected override void WriteConst(CiConst konst)
 	{
 		WriteLine();

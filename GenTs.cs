@@ -262,7 +262,7 @@ public class GenTs : GenJs
 		}
 		OpenClass(klass, "", " extends ");
 
-		if (HasConstructor(klass) || klass.CallType == CiCallType.Static) {
+		if (NeedsConstructor(klass) || klass.CallType == CiCallType.Static) {
 			if (klass.Constructor != null) {
 				Write(klass.Constructor.Documentation);
 				WriteVisibility(klass.Constructor.Visibility);

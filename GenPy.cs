@@ -848,12 +848,11 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	static bool NeedsInit(CiNamedValue def)
-		=> (def.Value != null || def.Type.IsFinal) && !def.IsAssignableStorage;
+	protected override bool HasInitCode(CiNamedValue def) => (def.Value != null || def.Type.IsFinal) && !def.IsAssignableStorage;
 
 	public override void VisitExpr(CiExpr statement)
 	{
-		if (!(statement is CiVar def) || NeedsInit(def))
+		if (!(statement is CiVar def) || HasInitCode(def))
 			base.VisitExpr(statement);
 	}
 
@@ -1104,9 +1103,7 @@ public class GenPy : GenPySwift
 		this.CurrentMethod = null;
 	}
 
-	static bool NeedsConstructor(CiClass klass) => klass.Constructor != null || klass.OfType<CiField>().Any(NeedsInit);
-
-	static bool InheritsConstructor(CiClass klass)
+	bool InheritsConstructor(CiClass klass)
 	{
 		while (klass.Parent is CiClass baseClass) {
 			if (NeedsConstructor(baseClass))
@@ -1139,7 +1136,7 @@ public class GenPy : GenPySwift
 				WriteLine(".__init__(self)");
 			}
 			foreach (CiField field in klass.OfType<CiField>()) {
-				if (NeedsInit(field)) {
+				if (HasInitCode(field)) {
 					Write("self.");
 					WriteVar(field);
 					WriteLine();
