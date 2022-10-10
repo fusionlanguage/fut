@@ -732,7 +732,7 @@ public class GenSwift : GenPySwift
 			else {
 				WriteName(type);
 				Write('.');
-				WriteName(type.First());
+				WriteName(type.First);
 			}
 		}
 		else if (type == CiSystem.StringStorageType)
@@ -1368,19 +1368,20 @@ public class GenSwift : GenPySwift
 		WriteLine();
 	}
 
+	protected override void WriteParameterDoc(CiVar param, bool first)
+	{
+		Write("/// - parameter ");
+		WriteName(param);
+		Write(' ');
+		Write(param.Documentation.Summary, false);
+		WriteLine();
+	}
+
 	protected override void WriteMethod(CiMethod method)
 	{
 		WriteLine();
 		Write(method.Documentation);
-		foreach (CiVar param in method.Parameters) {
-			if (param.Documentation != null) {
-				Write("/// - parameter ");
-				WriteName(param);
-				Write(' ');
-				Write(param.Documentation.Summary, false);
-				WriteLine();
-			}
-		}
+		WriteParametersDoc(method);
 		switch (method.CallType) {
 		case CiCallType.Static:
 			Write(method.Visibility);
@@ -1416,7 +1417,7 @@ public class GenSwift : GenPySwift
 		if (method.CallType == CiCallType.Abstract)
 			WriteLine("preconditionFailure(\"Abstract method called\")");
 		else {
-			foreach (CiVar param in method.Parameters) {
+			for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 				if (param.IsAssigned) {
 					Write("var ");
 					WriteTypeAndName(param);

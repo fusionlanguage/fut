@@ -1011,17 +1011,18 @@ public class CiResolver : CiVisitor
 
 	static bool CanCall(CiExpr obj, CiMethod method, List<CiExpr> arguments)
 	{
-		int i = 0;
-		foreach (CiVar param in method.Parameters) {
-			if (i >= arguments.Count)
-				return param.Value != null;
+		CiVar param = method.Parameters.FirstParameter();
+		foreach (CiExpr arg in arguments) {
+			if (param == null)
+				return false;
 			CiType type = param.Type;
 			if (obj != null && obj.Type is CiClassType generic)
 				type = generic.EvalType(type);
-			if (!type.IsAssignableFrom(arguments[i++].Type))
+			if (!type.IsAssignableFrom(arg.Type))
 				return false;
+			param = param.NextParameter();
 		}
-		return i == arguments.Count;
+		return param == null || param.Value != null;
 	}
 
 	public override CiExpr VisitCallExpr(CiCallExpr expr, CiPriority parent)
@@ -1050,7 +1051,7 @@ public class CiResolver : CiVisitor
 
 		// TODO: check static
 		i = 0;
-		foreach (CiVar param in method.Parameters) {
+		for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 			CiType type = param.Type;
 			if (symbol.Left != null && symbol.Left.Type is CiClassType generic) {
 				type = generic.EvalType(type);
@@ -1064,7 +1065,7 @@ public class CiResolver : CiVisitor
 			}
 			CiExpr arg = arguments[i++];
 			if (type == CiSystem.TypeParam0Predicate && arg is CiLambdaExpr lambda) {
-				lambda.First().Type = ((CiClassType) symbol.Left.Type).TypeArg0;
+				lambda.First.Type = ((CiClassType) symbol.Left.Type).TypeArg0;
 				OpenScope(lambda);
 				lambda.Body = Resolve(lambda.Body);
 				CloseScope();
@@ -1090,10 +1091,10 @@ public class CiResolver : CiVisitor
 		 && arguments.All(arg => arg is CiLiteral)
 		 && this.CurrentPureMethods.Add(method)) {
 			i = 0;
-			foreach (CiVar param in method.Parameters)
+			for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter())
 				this.CurrentPureArguments.Add(param, i < arguments.Count ? arguments[i++] : param.Value);
 			CiLiteral literal = Resolve(ret.Value) as CiLiteral;
-			foreach (CiVar param in method.Parameters)
+			for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter())
 				this.CurrentPureArguments.Remove(param);
 			this.CurrentPureMethods.Remove(method);
 			if (literal != null)
@@ -1678,7 +1679,7 @@ public class CiResolver : CiVisitor
 					method.Type = CiSystem.VoidType;
 				else
 					ResolveType(method);
-				foreach (CiVar param in method.Parameters) {
+				for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 					ResolveType(param);
 					if (param.Value != null) {
 						param.Value = FoldConst(param.Value);

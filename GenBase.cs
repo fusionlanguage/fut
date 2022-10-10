@@ -269,6 +269,26 @@ public abstract class GenBase : CiVisitor
 	{
 	}
 
+	protected virtual void WriteParameterDoc(CiVar param, bool first)
+	{
+		Write(" * @param ");
+		WriteName(param);
+		Write(' ');
+		Write(param.Documentation.Summary, false);
+		WriteLine();
+	}
+
+	protected void WriteParametersDoc(CiMethod method)
+	{
+		bool first = true;
+		for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+			if (param.Documentation != null) {
+				WriteParameterDoc(param, first);
+				first = false;
+			}
+		}
+	}
+
 	protected void WriteDoc(CiMethod method)
 	{
 		if (method.Documentation == null)
@@ -276,15 +296,7 @@ public abstract class GenBase : CiVisitor
 		WriteLine("/**");
 		WriteContent(method.Documentation);
 		WriteSelfDoc(method);
-		foreach (CiVar param in method.Parameters) {
-			if (param.Documentation != null) {
-				Write(" * @param ");
-				WriteName(param);
-				Write(' ');
-				Write(param.Documentation.Summary, false);
-				WriteLine();
-			}
-		}
+		WriteParametersDoc(method);
 		WriteLine(" */");
 	}
 
@@ -597,13 +609,14 @@ public abstract class GenBase : CiVisitor
 
 	protected void WriteArgs(CiMethod method, List<CiExpr> args)
 	{
-		int i = 0;
-		foreach (CiVar param in method.Parameters) {
-			if (i >= args.Count)
-				break;
-			if (i > 0)
+		CiVar param = method.Parameters.FirstParameter();
+		bool first = true;
+		foreach (CiExpr arg in args) {
+			if (!first)
 				Write(", ");
-			WriteCoerced(param.Type, args[i++], CiPriority.Argument);
+			first = false;
+			WriteCoerced(param.Type, arg, CiPriority.Argument);
+			param = param.NextParameter();
 		}
 	}
 
@@ -1250,7 +1263,7 @@ public abstract class GenBase : CiVisitor
 
 	protected void WriteParameters(CiMethod method, bool first, bool defaultArguments)
 	{
-		foreach (CiVar param in method.Parameters) {
+		for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 			if (!first)
 				Write(", ");
 			first = false;

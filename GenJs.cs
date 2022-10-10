@@ -759,7 +759,7 @@ public class GenJs : GenBase
 
 	public override void VisitLambdaExpr(CiLambdaExpr expr)
 	{
-		WriteName(expr.First());
+		WriteName(expr.First);
 		Write(" => ");
 		expr.Body.Accept(this, CiPriority.Statement);
 	}

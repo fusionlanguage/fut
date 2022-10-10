@@ -108,20 +108,12 @@ public abstract class CiSymbol : CiExpr
 	public CiScope Parent;
 	public CiCodeDoc Documentation = null;
 	public override string ToString() => this.Name;
-	internal CiField SkipToField()
-	{
-		for (CiSymbol symbol = this; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiField field)
-				return field;
-		}
-		return null;
-	}
 }
 
 public abstract class CiScope : CiSymbol, IEnumerable<CiSymbol>
 {
 	readonly Dictionary<string, CiSymbol> Dict = new Dictionary<string, CiSymbol>();
-	CiSymbol First = null;
+	internal CiSymbol First = null;
 	CiSymbol Last;
 
 	public IEnumerator<CiSymbol> GetEnumerator()
@@ -137,7 +129,7 @@ public abstract class CiScope : CiSymbol, IEnumerable<CiSymbol>
 
 	public int Count => this.Dict.Count;
 
-	public CiField FirstField() => this.First.SkipToField();
+	public CiVar FirstParameter() => (CiVar) this.First;
 
 	public CiContainerType Container
 	{
@@ -235,6 +227,7 @@ public class CiVar : CiNamedValue
 		visitor.VisitVar(this);
 		return this;
 	}
+	public CiVar NextParameter() => (CiVar) this.Next;
 }
 
 public class CiConst : CiMember
@@ -782,8 +775,8 @@ public class CiForeach : CiLoop
 {
 	public CiExpr Collection;
 	public override void Accept(CiVisitor visitor) { visitor.VisitForeach(this); }
-	public CiVar Element => (CiVar) this.First();
-	public CiVar ValueVar => (CiVar) this.ElementAt(1);
+	public CiVar Element => this.FirstParameter();
+	public CiVar ValueVar => this.FirstParameter().NextParameter();
 }
 
 public class CiIf : CiCondCompletionStatement
@@ -899,7 +892,16 @@ public class CiWhile : CiLoop
 public class CiField : CiMember
 {
 	public override bool IsStatic => false;
-	public CiField NextField() => this.Next.SkipToField();
+	internal static CiField SkipToField(CiSymbol symbol)
+	{
+		while (symbol != null) {
+			if (symbol is CiField field)
+				return field;
+			symbol = symbol.Next;
+		}
+		return null;
+	}
+	public CiField NextField() => SkipToField(this.Next);
 }
 
 public class CiMethodBase : CiMember
@@ -1008,6 +1010,7 @@ public class CiClass : CiContainerType
 	public CiVisitStatus VisitStatus;
 	public override string ToString() => this.Name + "()";
 	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this };
+	public CiField FirstField() => CiField.SkipToField(this.First);
 	public bool AddsVirtualMethods => this.OfType<CiMethod>().Any(method => method.IsAbstractOrVirtual);
 
 	public CiClass()

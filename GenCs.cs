@@ -680,7 +680,7 @@ public class GenCs : GenTyped
 
 	public override void VisitLambdaExpr(CiLambdaExpr expr)
 	{
-		WriteName(expr.First());
+		WriteName(expr.First);
 		Write(" => ");
 		expr.Body.Accept(this, CiPriority.Statement);
 	}
@@ -786,19 +786,20 @@ public class GenCs : GenTyped
 		WriteLine(';');
 	}
 
+	protected override void WriteParameterDoc(CiVar param, bool first)
+	{
+		Write("/// <param name=\"");
+		WriteName(param);
+		Write("\">");
+		Write(param.Documentation.Summary, false);
+		WriteLine("</param>");
+	}
+
 	protected override void WriteMethod(CiMethod method)
 	{
 		WriteLine();
 		Write(method.Documentation);
-		foreach (CiVar param in method.Parameters) {
-			if (param.Documentation != null) {
-				Write("/// <param name=\"");
-				WriteName(param);
-				Write("\">");
-				Write(param.Documentation.Summary, false);
-				WriteLine("</param>");
-			}
-		}
+		WriteParametersDoc(method);
 		Write(method.Visibility);
 		Write(method.CallType, "sealed override ");
 		WriteTypeAndName(method);

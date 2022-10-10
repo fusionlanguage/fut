@@ -773,14 +773,12 @@ public class GenC : GenCCpp
 				WriteTemporaries(call.Method.Left);
 				WriteStorageTemporary(call.Method.Left);
 			}
-			int i = 0;
-			foreach (CiVar param in ((CiMethod) call.Method.Symbol).Parameters) {
-				if (i >= call.Arguments.Count)
-					break;
-				CiExpr arg = call.Arguments[i++];
+			CiVar param = ((CiMethod) call.Method.Symbol).Parameters.FirstParameter();
+			foreach (CiExpr arg in call.Arguments) {
 				WriteTemporaries(arg);
 				if (!(param.Type is CiStorageType))
 					WriteStorageTemporary(arg);
+				param = param.NextParameter();
 			}
 			break;
 		default:
@@ -823,13 +821,11 @@ public class GenC : GenCCpp
 				if (IsTemporary(call.Method.Left) || HasTemporaries(call.Method.Left))
 					return true;
 			}
-			int i = 0;
-			foreach (CiVar param in ((CiMethod) call.Method.Symbol).Parameters) {
-				if (i >= call.Arguments.Count)
-					break;
-				CiExpr arg = call.Arguments[i++];
+			CiVar param = ((CiMethod) call.Method.Symbol).Parameters.FirstParameter();
+			foreach (CiExpr arg in call.Arguments) {
 				if (HasTemporaries(arg) || (param.Type is CiClassType && IsTemporary(arg)))
 					return true;
+				param = param.NextParameter();
 			}
 			return false;
 		default:
@@ -1290,7 +1286,7 @@ public class GenC : GenCCpp
 	void WriteArgsAndRightParenthesis(CiMethod method, List<CiExpr> args)
 	{
 		int i = 0;
-		foreach (CiVar param in method.Parameters) {
+		for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 			if (i > 0 || method.CallType != CiCallType.Static)
 				Write(", ");
 			if (i >= args.Count)
@@ -2816,7 +2812,7 @@ public class GenC : GenCCpp
 		this.StringSwitchesWithGoto.Clear();
 		WriteLine();
 		WriteSignature(method);
-		foreach (CiVar param in method.Parameters) {
+		for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 			if (NeedToDestruct(param))
 				this.VarsToDestruct.Add(param);
 		}

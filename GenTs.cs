@@ -222,7 +222,7 @@ public class GenTs : GenJs
 		WriteName(method);
 		Write('(');
 		int i = 0;
-		foreach (CiVar param in method.Parameters) {
+		for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 			if (i > 0)
 				Write(", ");
 			WriteName(param);

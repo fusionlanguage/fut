@@ -820,7 +820,7 @@ public class GenJava : GenTyped
 
 	public override void VisitLambdaExpr(CiLambdaExpr expr)
 	{
-		WriteName(expr.First());
+		WriteName(expr.First);
 		Write(" -> ");
 		expr.Body.Accept(this, CiPriority.Statement);
 	}
@@ -954,14 +954,12 @@ public class GenJava : GenTyped
 		}
 		WriteTypeAndName(method);
 		Write('(');
-		int i = 0;
-		foreach (CiVar param in method.Parameters) {
-			if (i >= paramCount)
-				break;
+		CiVar param = method.Parameters.FirstParameter();
+		for (int i = 0; i < paramCount; i++) {
 			if (i > 0)
 				Write(", ");
 			WriteTypeAndName(param);
-			i++;
+			param = param.NextParameter();
 		}
 		Write(')');
 		if (method.Throws)
@@ -979,17 +977,13 @@ public class GenJava : GenTyped
 			Write("return ");
 		WriteName(method);
 		Write('(');
-		int i = 0;
-		foreach (CiVar param in method.Parameters) {
-			if (i > 0)
-				Write(", ");
-			if (i >= paramCount) {
-				param.Value.Accept(this, CiPriority.Argument);
-				break;
-			}
+		CiVar param = method.Parameters.FirstParameter();
+		for (int i = 0; i < paramCount; i++) {
 			WriteName(param);
-			i++;
+			Write(", ");
+			param = param.NextParameter();
 		}
+		param.Value.Accept(this, CiPriority.Argument);
 		WriteLine(");");
 		CloseBlock();
 	}
@@ -1019,7 +1013,7 @@ public class GenJava : GenTyped
 		WriteSignature(method, method.Parameters.Count);
 		WriteBody(method);
 		int i = 0;
-		foreach (CiVar param in method.Parameters) {
+		for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 			if (param.Value != null) {
 				WriteOverloads(method, i);
 				break;

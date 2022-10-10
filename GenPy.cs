@@ -58,26 +58,25 @@ public class GenPy : GenPySwift
 		}
 	}
 
+	protected override void WriteParameterDoc(CiVar param, bool first)
+	{
+		if (first) {
+			WriteLine();
+			WriteLine();
+		}
+		Write(":param ");
+		WriteName(param);
+		Write(": ");
+		Write(param.Documentation.Summary, false);
+		WriteLine();
+	}
+
 	void WritePyDoc(CiMethod method)
 	{
 		if (method.Documentation == null)
 			return;
 		StartDoc(method.Documentation);
-		bool first = true;
-		foreach (CiVar param in method.Parameters) {
-			if (param.Documentation != null) {
-				if (first) {
-					WriteLine();
-					WriteLine();
-					first = false;
-				}
-				Write(":param ");
-				WriteName(param);
-				Write(": ");
-				Write(param.Documentation.Summary, false);
-				WriteLine();
-			}
-		}
+		WriteParametersDoc(method);
 		WriteLine("\"\"\"");
 	}
 
@@ -647,7 +646,7 @@ public class GenPy : GenPySwift
 			CiLambdaExpr lambda = (CiLambdaExpr) args[0];
 			lambda.Body.Accept(this, CiPriority.Argument);
 			Write(" for ");
-			WriteName(lambda.First());
+			WriteName(lambda.First);
 			Write(" in ");
 			obj.Accept(this, CiPriority.Argument);
 			Write(')');

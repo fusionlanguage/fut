@@ -1088,10 +1088,9 @@ public class GenCpp : GenCCpp
 	public override void VisitLambdaExpr(CiLambdaExpr expr)
 	{
 		Write("[](const ");
-		CiVar param = (CiVar) expr.First();
-		Write(param.Type, false);
+		Write(expr.First.Type, false);
 		Write(" &");
-		WriteName(param);
+		WriteName(expr.First);
 		Write(") { return ");
 		expr.Body.Accept(this, CiPriority.Argument);
 		Write("; }");
