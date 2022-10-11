@@ -1,7 +1,7 @@
 prefix := /usr/local
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
 DOTNET_BASE_DIR := $(shell dotnet --info | sed -n 's/ Base Path:   //p')
-DOTNET_REF_DIR := $(DOTNET_BASE_DIR)../../packs/Microsoft.NETCore.App.Ref/6.0.9/ref/net6.0
+DOTNET_REF_DIR := $(DOTNET_BASE_DIR)../../packs/Microsoft.NETCore.App.Ref/6.0.10/ref/net6.0
 CSC := dotnet '$(DOTNET_BASE_DIR)Roslyn/bincore/csc.dll' -nologo $(patsubst %,'-r:$(DOTNET_REF_DIR)/System.%.dll', Collections Collections.Specialized Console Linq Runtime Text.RegularExpressions Threading)
 CFLAGS = -Wall -Werror
 SWIFTC = swiftc
