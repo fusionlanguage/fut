@@ -27,6 +27,7 @@ public abstract class CiExpr // : CiStatement
 
 public abstract class CiScope // : CiSymbol
 {
+	public abstract bool CompletesNormally();
 }
 
 public abstract class CiCondCompletionStatement : CiScope

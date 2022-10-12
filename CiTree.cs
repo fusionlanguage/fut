@@ -68,7 +68,7 @@ public abstract class CiVisitor
 
 public abstract class CiExpr : CiStatement
 {
-	public CiType Type;
+	internal CiType Type;
 	public override bool CompletesNormally() => true;
 	public virtual bool IsIndexing() => false;
 	public virtual bool IsLiteralZero() => false;
@@ -85,7 +85,7 @@ public abstract class CiExpr : CiStatement
 
 public class CiAggregateInitializer : CiExpr
 {
-	public readonly List<CiExpr> Items = new List<CiExpr>();
+	internal readonly List<CiExpr> Items = new List<CiExpr>();
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		visitor.VisitAggregateInitializer(this);
@@ -95,18 +95,18 @@ public class CiAggregateInitializer : CiExpr
 
 public abstract class CiSymbol : CiExpr
 {
-	public CiId Id = CiId.None;
-	public string Name;
-	public CiSymbol Next;
-	public CiScope Parent;
-	public CiCodeDoc Documentation = null;
+	internal CiId Id = CiId.None;
+	internal string Name;
+	internal CiSymbol Next;
+	internal CiScope Parent;
+	internal CiCodeDoc Documentation = null;
 	public override string ToString() => this.Name;
 }
 
 public abstract class CiScope : CiSymbol
 {
 	readonly Dictionary<string, CiSymbol> Dict = new Dictionary<string, CiSymbol>();
-	public CiSymbol First = null;
+	internal CiSymbol First = null;
 	CiSymbol Last;
 
 	public int Count() => this.Dict.Count;
@@ -163,14 +163,14 @@ public abstract class CiScope : CiSymbol
 
 public abstract class CiNamedValue : CiSymbol
 {
-	public CiExpr TypeExpr;
-	public CiExpr Value;
+	internal CiExpr TypeExpr;
+	internal CiExpr Value;
 	public bool IsAssignableStorage() => this.Type is CiStorageType && !(this.Type is CiArrayStorageType) && this.Value is CiLiteralNull;
 }
 
 public class CiMember : CiNamedValue
 {
-	public CiVisibility Visibility;
+	internal CiVisibility Visibility;
 	public CiMember()
 	{
 	}
@@ -186,7 +186,7 @@ public class CiMember : CiNamedValue
 
 public class CiVar : CiNamedValue
 {
-	public bool IsAssigned = false;
+	internal bool IsAssigned = false;
 	public CiVar()
 	{
 	}
@@ -241,7 +241,7 @@ public abstract class CiLiteral : CiExpr
 
 public class CiLiteralLong : CiLiteral
 {
-	public readonly long Value;
+	internal readonly long Value;
 	public CiLiteralLong(long value)
 	{
 		this.Value = value;
@@ -291,7 +291,7 @@ public class CiLiteralChar : CiLiteralLong
 
 public class CiLiteralDouble : CiLiteral
 {
-	public readonly double Value;
+	internal readonly double Value;
 	public CiLiteralDouble(double value)
 	{
 		this.Value = value;
@@ -309,7 +309,7 @@ public class CiLiteralDouble : CiLiteral
 
 public class CiLiteralString : CiLiteral
 {
-	public readonly string Value;
+	internal readonly string Value;
 	public CiLiteralString(string value)
 	{
 		this.Value = value;
@@ -427,19 +427,16 @@ public class CiImplicitEnumValue : CiExpr
 
 public class CiInterpolatedPart
 {
-	public string Prefix;
-	public CiExpr Argument;
-	public CiExpr WidthExpr;
-	public int Width;
-	public char Format;
-	public int Precision;
+	internal string Prefix;
+	internal CiExpr Argument;
+	internal CiExpr WidthExpr = null;
+	internal int Width;
+	internal char Format = ' ';
+	internal int Precision = -1;
 	public CiInterpolatedPart(string prefix, CiExpr arg)
 	{
 		this.Prefix = prefix;
 		this.Argument = arg;
-		this.WidthExpr = null;
-		this.Format = ' ';
-		this.Precision = -1;
 	}
 }
 
@@ -663,13 +660,6 @@ public class CiLambdaExpr : CiScope
 		visitor.VisitLambdaExpr(this);
 		return this;
 	}
-}
-
-public abstract class CiCondCompletionStatement : CiScope
-{
-	bool CompletesNormallyValue;
-	public override bool CompletesNormally() => this.CompletesNormallyValue;
-	public void SetCompletesNormally(bool value) { this.CompletesNormallyValue = value; }
 }
 
 public class CiBlock : CiCondCompletionStatement

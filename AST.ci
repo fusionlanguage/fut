@@ -193,13 +193,30 @@ public abstract class CiStatement
 {
 	internal int Line;
 	public abstract bool CompletesNormally();
-	public abstract void Accept(CiVisitor visitor);
+	public abstract void Accept(CiVisitor! visitor);
 }
+
+//public abstract class CiSymbol : CiExpr
+//{
+//	internal CiId Id = CiId.None;
+//	internal string() Name;
+//	internal CiSymbol Next;
+//	internal CiScope Parent;
+//	internal CiCodeDoc# Documentation = null;
+//	//public override string ToString() => this.Name;
+//}
 
 public abstract class CiUnaryExpr : CiExpr
 {
 	internal CiToken Op;
 	internal CiExpr# Inner;
+}
+
+public abstract class CiCondCompletionStatement : CiScope
+{
+	bool CompletesNormallyValue;
+	public override bool CompletesNormally() => this.CompletesNormallyValue;
+	public void SetCompletesNormally(bool value) { this.CompletesNormallyValue = value; }
 }
 
 public abstract class CiLoop : CiCondCompletionStatement
@@ -224,17 +241,22 @@ public class CiType : CiScope
 	public virtual string() GetArraySuffix() => "";
 	public virtual bool IsAssignableFrom(CiType right) => this == right;
 	public virtual bool EqualsType(CiType right) => this == right;
+	public virtual bool IsArray() => false;
+	public virtual bool IsFinal() => false;
 	public virtual bool IsNullable() => false;
 	public virtual CiType GetBaseType() => this;
 	public virtual CiType GetStorageType() => this;
 	public virtual CiType GetPtrOrSelf() => this;
-	public virtual bool IsFinal() => false;
-	public virtual bool IsArray() => false;
 }
 
 public abstract class CiNumericType : CiType
 {
 }
+
+//public class CiFloatingType : CiNumericType
+//{
+//	public override bool IsAssignableFrom(CiType right) => right is CiNumericType;
+//}
 
 public abstract class CiContainerType : CiType
 {

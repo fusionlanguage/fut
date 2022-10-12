@@ -1432,6 +1432,19 @@ namespace Foxoft.Ci
 		internal CiExpr Inner;
 	}
 
+	public abstract class CiCondCompletionStatement : CiScope
+	{
+
+		bool CompletesNormallyValue;
+
+		public override bool CompletesNormally() => this.CompletesNormallyValue;
+
+		public void SetCompletesNormally(bool value)
+		{
+			this.CompletesNormallyValue = value;
+		}
+	}
+
 	public abstract class CiLoop : CiCondCompletionStatement
 	{
 
@@ -1463,6 +1476,10 @@ namespace Foxoft.Ci
 
 		public virtual bool EqualsType(CiType right) => this == right;
 
+		public virtual bool IsArray() => false;
+
+		public virtual bool IsFinal() => false;
+
 		public virtual bool IsNullable() => false;
 
 		public virtual CiType GetBaseType() => this;
@@ -1470,10 +1487,6 @@ namespace Foxoft.Ci
 		public virtual CiType GetStorageType() => this;
 
 		public virtual CiType GetPtrOrSelf() => this;
-
-		public virtual bool IsFinal() => false;
-
-		public virtual bool IsArray() => false;
 	}
 
 	public abstract class CiNumericType : CiType
