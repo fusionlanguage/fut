@@ -187,15 +187,7 @@ public class CiMember : CiNamedValue
 public class CiVar : CiNamedValue
 {
 	internal bool IsAssigned = false;
-	public CiVar()
-	{
-	}
-	public CiVar(CiType type, string name, CiExpr defaultValue = null)
-	{
-		this.Type = type;
-		this.Name = name;
-		this.Value = defaultValue;
-	}
+	public static CiVar New(CiType type, string name, CiExpr defaultValue = null) => new CiVar { Type = type, Name = name, Value = defaultValue };
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		visitor.VisitVar(this);
@@ -208,25 +200,6 @@ public class CiConst : CiMember
 {
 	public CiMethodBase InMethod;
 	public CiVisitStatus VisitStatus;
-	public CiConst()
-	{
-	}
-	public CiConst(string name, int value)
-	{
-		this.Visibility = CiVisibility.Public;
-		this.Name = name;
-		this.Value = new CiLiteralLong(value);
-		this.Type = this.Value.Type;
-		this.VisitStatus = CiVisitStatus.Done;
-	}
-	public CiConst(string name, double value)
-	{
-		this.Visibility = CiVisibility.Public;
-		this.Name = name;
-		this.Value = new CiLiteralDouble(value);
-		this.Type = CiSystem.DoubleType;
-		this.VisitStatus = CiVisitStatus.Done;
-	}
 	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitConst(this); }
 	public override bool IsStatic() => true;
 }
@@ -890,12 +863,15 @@ public class CiMethod : CiMethodBase
 public class CiMethodGroup : CiMember
 {
 	public readonly CiMethod[] Methods = new CiMethod[2];
-	public CiMethodGroup(CiMethod method0, CiMethod method1)
+	CiMethodGroup()
 	{
-		this.Visibility = CiVisibility.Public;
-		this.Name = method0.Name;
-		this.Methods[0] = method0;
-		this.Methods[1] = method1;
+	}
+	public static CiMethodGroup New(CiMethod method0, CiMethod method1)
+	{
+		CiMethodGroup result = new CiMethodGroup { Visibility = method0.Visibility, Name = method0.Name };
+		result.Methods[0] = method0;
+		result.Methods[1] = method1;
+		return result;
 	}
 }
 
@@ -937,15 +913,11 @@ public class CiClass : CiContainerType
 
 	public CiClass()
 	{
-		Add(new CiVar(GetPtrOrSelf(), "this")); // shadows "this" in base class
+		Add(CiVar.New(GetPtrOrSelf(), "this")); // shadows "this" in base class
 	}
 
-	public CiClass(CiCallType callType, CiId id, string name)
-	{
-		this.CallType = callType;
-		this.Id = id;
-		this.Name = name;
-	}
+	public static CiClass New(CiCallType callType, CiId id, string name, int typeParameterCount = 0)
+		=> new CiClass { CallType = callType, Id = id, Name = name, TypeParameterCount = typeParameterCount };
 
 	public bool IsSameOrBaseOf(CiClass derived)
 	{
@@ -1233,24 +1205,24 @@ public class CiSystem : CiScope
 	public static readonly CiStringType StringPtrType = new CiStringType { Name = "string" };
 	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType { Name = "string()" };
 	public static readonly CiMember StringLength = new CiMember(UIntType, CiId.StringLength, "Length");
-	public static readonly CiMethod StringContains = CiMethod.CreateNormal(CiVisibility.Public, BoolType, CiId.StringContains, "Contains", new CiVar(StringPtrType, "value"));
-	public static readonly CiMethod StringEndsWith = CiMethod.CreateNormal(CiVisibility.Public, BoolType, CiId.StringEndsWith, "EndsWith", new CiVar(StringPtrType, "value"));
-	public static readonly CiMethod StringIndexOf = CiMethod.CreateNormal(CiVisibility.Public, Minus1Type, CiId.StringIndexOf, "IndexOf", new CiVar(StringPtrType, "value"));
-	public static readonly CiMethod StringLastIndexOf = CiMethod.CreateNormal(CiVisibility.Public, Minus1Type, CiId.StringLastIndexOf, "LastIndexOf", new CiVar(StringPtrType, "value"));
-	public static readonly CiMethod StringStartsWith = CiMethod.CreateNormal(CiVisibility.Public, BoolType, CiId.StringStartsWith, "StartsWith", new CiVar(StringPtrType, "value"));
-	public static readonly CiMethod StringSubstring = CiMethod.CreateNormal(CiVisibility.Public, StringStorageType, CiId.StringSubstring, "Substring", new CiVar(IntType, "offset"), new CiVar(IntType, "length", new CiLiteralLong(-1L))); // TODO: UIntType
+	public static readonly CiMethod StringContains = CiMethod.CreateNormal(CiVisibility.Public, BoolType, CiId.StringContains, "Contains", CiVar.New(StringPtrType, "value"));
+	public static readonly CiMethod StringEndsWith = CiMethod.CreateNormal(CiVisibility.Public, BoolType, CiId.StringEndsWith, "EndsWith", CiVar.New(StringPtrType, "value"));
+	public static readonly CiMethod StringIndexOf = CiMethod.CreateNormal(CiVisibility.Public, Minus1Type, CiId.StringIndexOf, "IndexOf", CiVar.New(StringPtrType, "value"));
+	public static readonly CiMethod StringLastIndexOf = CiMethod.CreateNormal(CiVisibility.Public, Minus1Type, CiId.StringLastIndexOf, "LastIndexOf", CiVar.New(StringPtrType, "value"));
+	public static readonly CiMethod StringStartsWith = CiMethod.CreateNormal(CiVisibility.Public, BoolType, CiId.StringStartsWith, "StartsWith", CiVar.New(StringPtrType, "value"));
+	public static readonly CiMethod StringSubstring = CiMethod.CreateNormal(CiVisibility.Public, StringStorageType, CiId.StringSubstring, "Substring", CiVar.New(IntType, "offset"), CiVar.New(IntType, "length", new CiLiteralLong(-1L))); // TODO: UIntType
 	public static readonly CiType PrintableType = new CiPrintableType { Name = "printable" };
-	public static readonly CiClass ArrayPtrClass = new CiClass(CiCallType.Normal, CiId.ArrayPtrClass, "ArrayPtr") { TypeParameterCount = 1 };
-	public static readonly CiClass ArrayStorageClass = new CiClass(CiCallType.Normal, CiId.ArrayStorageClass, "ArrayStorage") { Parent = ArrayPtrClass, TypeParameterCount = 1 };
-	public static readonly CiClass ConsoleBase = new CiClass(CiCallType.Static, CiId.None, "ConsoleBase");
+	public static readonly CiClass ArrayPtrClass = CiClass.New(CiCallType.Normal, CiId.ArrayPtrClass, "ArrayPtr", 1);
+	public static readonly CiClass ArrayStorageClass = CiClass.New(CiCallType.Normal, CiId.ArrayStorageClass, "ArrayStorage", 1);
+	public static readonly CiClass ConsoleBase = CiClass.New(CiCallType.Static, CiId.None, "ConsoleBase");
 	public static readonly CiMember ConsoleError = new CiMember(ConsoleBase, CiId.ConsoleError, "Error");
-	static readonly CiClass LockClass = new CiClass(CiCallType.Sealed, CiId.LockClass, "Lock");
+	static readonly CiClass LockClass = CiClass.New(CiCallType.Sealed, CiId.LockClass, "Lock");
 	public static readonly CiReadWriteClassType LockPtrType = new CiReadWriteClassType { Class = LockClass };
-	public static readonly CiSymbol BasePtr = new CiVar { Name = "base" };
+	public static readonly CiSymbol BasePtr = CiVar.New(null, "base");
 
 	CiClass AddCollection(CiId id, string name, int typeParameterCount, CiId clearId, CiId countId)
 	{
-		CiClass result = new CiClass(CiCallType.Normal, id, name) { TypeParameterCount = typeParameterCount };
+		CiClass result = CiClass.New(CiCallType.Normal, id, name, typeParameterCount);
 		result.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, clearId, "Clear"));
 		result.Add(new CiMember(UIntType, countId, "Count"));
 		Add(result);
@@ -1260,9 +1232,9 @@ public class CiSystem : CiScope
 	void AddDictionary(CiId id, string name, CiId clearId, CiId containsKeyId, CiId countId, CiId removeId)
 	{
 		CiClass dict = AddCollection(id, name, 2, clearId, countId);
-		dict.Add(CiMethod.CreateMutator(CiVisibility.FinalValueType, VoidType, CiId.DictionaryAdd, "Add", new CiVar(TypeParam0, "key")));
-		dict.Add(CiMethod.CreateNormal(CiVisibility.Public, BoolType, containsKeyId, "ContainsKey", new CiVar(TypeParam0, "key")));
-		dict.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, removeId, "Remove", new CiVar(TypeParam0, "key")));
+		dict.Add(CiMethod.CreateMutator(CiVisibility.FinalValueType, VoidType, CiId.DictionaryAdd, "Add", CiVar.New(TypeParam0, "key")));
+		dict.Add(CiMethod.CreateNormal(CiVisibility.Public, BoolType, containsKeyId, "ContainsKey", CiVar.New(TypeParam0, "key")));
+		dict.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, removeId, "Remove", CiVar.New(TypeParam0, "key")));
 	}
 
 	static void AddEnumValue(CiEnum enu, CiConst value)
@@ -1270,6 +1242,16 @@ public class CiSystem : CiScope
 		value.Type = enu;
 		enu.Add(value);
 	}
+
+	static CiConst NewConstInt(string name, int value)
+	{
+		CiConst result = new CiConst { Visibility = CiVisibility.Public, Name = name, Value = new CiLiteralLong(value), VisitStatus = CiVisitStatus.Done };
+		result.Type = result.Value.Type;
+		return result;
+	}
+
+	static CiConst NewConstDouble(string name, double value)
+		=> new CiConst { Visibility = CiVisibility.Public, Name = name, Value = new CiLiteralDouble(value), Type = DoubleType, VisitStatus = CiVisitStatus.Done };
 
 	CiSystem()
 	{
@@ -1284,125 +1266,126 @@ public class CiSystem : CiScope
 		Add(BoolType);
 		Add(StringPtrType);
 		CiMethod arrayBinarySearchPart = CiMethod.CreateNormal(CiVisibility.NumericElementType, IntType, CiId.ArrayBinarySearchPart, "BinarySearch",
-			new CiVar(TypeParam0, "value"), new CiVar(IntType, "startIndex"), new CiVar(IntType, "count"));
+			CiVar.New(TypeParam0, "value"), CiVar.New(IntType, "startIndex"), CiVar.New(IntType, "count"));
 		ArrayPtrClass.Add(arrayBinarySearchPart);
-		ArrayPtrClass.Add(CiMethod.CreateNormal(CiVisibility.Public, VoidType, CiId.ArrayCopyTo, "CopyTo", new CiVar(IntType, "sourceIndex"),
-			new CiVar(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"), new CiVar(IntType, "destinationIndex"), new CiVar(IntType, "count")));
+		ArrayPtrClass.Add(CiMethod.CreateNormal(CiVisibility.Public, VoidType, CiId.ArrayCopyTo, "CopyTo", CiVar.New(IntType, "sourceIndex"),
+			CiVar.New(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"), CiVar.New(IntType, "destinationIndex"), CiVar.New(IntType, "count")));
 		CiMethod arrayFillPart = CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.ArrayFillPart, "Fill",
-			new CiVar(TypeParam0, "value"), new CiVar(IntType, "startIndex"), new CiVar(IntType, "count"));
+			CiVar.New(TypeParam0, "value"), CiVar.New(IntType, "startIndex"), CiVar.New(IntType, "count"));
 		ArrayPtrClass.Add(arrayFillPart);
-		CiMethod arraySortPart = CiMethod.CreateMutator(CiVisibility.NumericElementType, VoidType, CiId.ArraySortPart, "Sort", new CiVar(IntType, "startIndex"), new CiVar(IntType, "count"));
+		CiMethod arraySortPart = CiMethod.CreateMutator(CiVisibility.NumericElementType, VoidType, CiId.ArraySortPart, "Sort", CiVar.New(IntType, "startIndex"), CiVar.New(IntType, "count"));
 		ArrayPtrClass.Add(arraySortPart);
-		ArrayStorageClass.Add(new CiMethodGroup(CiMethod.CreateNormal(CiVisibility.NumericElementType, IntType, CiId.ArrayBinarySearchAll, "BinarySearch", new CiVar(TypeParam0, "value")),
-			arrayBinarySearchPart) { Visibility = CiVisibility.NumericElementType });
-		ArrayStorageClass.Add(new CiMethodGroup(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.ArrayFillAll, "Fill", new CiVar(TypeParam0, "value")),
+		ArrayStorageClass.Parent = ArrayPtrClass;
+		ArrayStorageClass.Add(CiMethodGroup.New(CiMethod.CreateNormal(CiVisibility.NumericElementType, IntType, CiId.ArrayBinarySearchAll, "BinarySearch", CiVar.New(TypeParam0, "value")),
+			arrayBinarySearchPart));
+		ArrayStorageClass.Add(CiMethodGroup.New(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.ArrayFillAll, "Fill", CiVar.New(TypeParam0, "value")),
 			arrayFillPart));
 		ArrayStorageClass.Add(new CiMember(UIntType, CiId.ArrayLength, "Length"));
-		ArrayStorageClass.Add(new CiMethodGroup(
+		ArrayStorageClass.Add(CiMethodGroup.New(
 			CiMethod.CreateMutator(CiVisibility.NumericElementType, VoidType, CiId.ArraySortAll, "Sort"),
-			arraySortPart) { Visibility = CiVisibility.NumericElementType });
+			arraySortPart));
 
 		CiClass listClass = AddCollection(CiId.ListClass, "List", 1, CiId.ListClear, CiId.ListCount);
-		listClass.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.ListAdd, "Add", new CiVar(TypeParam0NotFinal, "value")));
-		listClass.Add(CiMethod.CreateNormal(CiVisibility.Public, BoolType, CiId.ListAny, "Any", new CiVar(TypeParam0Predicate, "predicate")));
-		listClass.Add(CiMethod.CreateNormal(CiVisibility.Public, BoolType, CiId.ListContains, "Contains", new CiVar(TypeParam0, "value")));
-		listClass.Add(CiMethod.CreateNormal(CiVisibility.Public, VoidType, CiId.ListCopyTo, "CopyTo", new CiVar(IntType, "sourceIndex"),
-			new CiVar(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"), new CiVar(IntType, "destinationIndex"), new CiVar(IntType, "count")));
-		listClass.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.ListInsert, "Insert", new CiVar(UIntType, "index"), new CiVar(TypeParam0NotFinal, "value")));
-		listClass.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.ListRemoveAt, "RemoveAt", new CiVar(IntType, "index")));
-		listClass.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.ListRemoveRange, "RemoveRange", new CiVar(IntType, "index"), new CiVar(IntType, "count")));
-		listClass.Add(new CiMethodGroup(
+		listClass.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.ListAdd, "Add", CiVar.New(TypeParam0NotFinal, "value")));
+		listClass.Add(CiMethod.CreateNormal(CiVisibility.Public, BoolType, CiId.ListAny, "Any", CiVar.New(TypeParam0Predicate, "predicate")));
+		listClass.Add(CiMethod.CreateNormal(CiVisibility.Public, BoolType, CiId.ListContains, "Contains", CiVar.New(TypeParam0, "value")));
+		listClass.Add(CiMethod.CreateNormal(CiVisibility.Public, VoidType, CiId.ListCopyTo, "CopyTo", CiVar.New(IntType, "sourceIndex"),
+			CiVar.New(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"), CiVar.New(IntType, "destinationIndex"), CiVar.New(IntType, "count")));
+		listClass.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.ListInsert, "Insert", CiVar.New(UIntType, "index"), CiVar.New(TypeParam0NotFinal, "value")));
+		listClass.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.ListRemoveAt, "RemoveAt", CiVar.New(IntType, "index")));
+		listClass.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.ListRemoveRange, "RemoveRange", CiVar.New(IntType, "index"), CiVar.New(IntType, "count")));
+		listClass.Add(CiMethodGroup.New(
 			CiMethod.CreateMutator(CiVisibility.NumericElementType, VoidType, CiId.ListSortAll, "Sort"),
-			CiMethod.CreateMutator(CiVisibility.NumericElementType, VoidType, CiId.ListSortPart, "Sort", new CiVar(IntType, "startIndex"), new CiVar(IntType, "count"))));
+			CiMethod.CreateMutator(CiVisibility.NumericElementType, VoidType, CiId.ListSortPart, "Sort", CiVar.New(IntType, "startIndex"), CiVar.New(IntType, "count"))));
 		CiClass queueClass = AddCollection(CiId.QueueClass, "Queue", 1, CiId.QueueClear, CiId.QueueCount);
 		queueClass.Add(CiMethod.CreateMutator(CiVisibility.Public, TypeParam0, CiId.QueueDequeue, "Dequeue"));
-		queueClass.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.QueueEnqueue, "Enqueue", new CiVar(TypeParam0, "value")));
+		queueClass.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.QueueEnqueue, "Enqueue", CiVar.New(TypeParam0, "value")));
 		queueClass.Add(CiMethod.CreateNormal(CiVisibility.Public, TypeParam0, CiId.QueuePeek, "Peek"));
 		CiClass stackClass = AddCollection(CiId.StackClass, "Stack", 1, CiId.StackClear, CiId.StackCount);
 		stackClass.Add(CiMethod.CreateNormal(CiVisibility.Public, TypeParam0, CiId.StackPeek, "Peek"));
-		stackClass.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.StackPush, "Push", new CiVar(TypeParam0, "value")));
+		stackClass.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.StackPush, "Push", CiVar.New(TypeParam0, "value")));
 		stackClass.Add(CiMethod.CreateMutator(CiVisibility.Public, TypeParam0, CiId.StackPop, "Pop"));
 		CiClass hashSetClass = AddCollection(CiId.HashSetClass, "HashSet", 1, CiId.HashSetClear, CiId.HashSetCount);
-		hashSetClass.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.HashSetAdd, "Add", new CiVar(TypeParam0, "value")));
-		hashSetClass.Add(CiMethod.CreateNormal(CiVisibility.Public, BoolType, CiId.HashSetContains, "Contains", new CiVar(TypeParam0, "value")));
-		hashSetClass.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.HashSetRemove, "Remove", new CiVar(TypeParam0, "value")));
+		hashSetClass.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.HashSetAdd, "Add", CiVar.New(TypeParam0, "value")));
+		hashSetClass.Add(CiMethod.CreateNormal(CiVisibility.Public, BoolType, CiId.HashSetContains, "Contains", CiVar.New(TypeParam0, "value")));
+		hashSetClass.Add(CiMethod.CreateMutator(CiVisibility.Public, VoidType, CiId.HashSetRemove, "Remove", CiVar.New(TypeParam0, "value")));
 		AddDictionary(CiId.DictionaryClass, "Dictionary", CiId.DictionaryClear, CiId.DictionaryContainsKey, CiId.DictionaryCount, CiId.DictionaryRemove);
 		AddDictionary(CiId.SortedDictionaryClass, "SortedDictionary", CiId.SortedDictionaryClear, CiId.SortedDictionaryContainsKey, CiId.SortedDictionaryCount, CiId.SortedDictionaryRemove);
 		AddDictionary(CiId.OrderedDictionaryClass, "OrderedDictionary", CiId.OrderedDictionaryClear, CiId.OrderedDictionaryContainsKey, CiId.OrderedDictionaryCount, CiId.OrderedDictionaryRemove);
 
-		ConsoleBase.Add(CiMethod.CreateStatic(VoidType, CiId.ConsoleWrite, "Write", new CiVar(PrintableType, "value")));
-		ConsoleBase.Add(CiMethod.CreateStatic(VoidType, CiId.ConsoleWriteLine, "WriteLine", new CiVar(PrintableType, "value", new CiLiteralString(""))));
-		CiClass consoleClass = new CiClass(CiCallType.Static, CiId.None, "Console");
+		ConsoleBase.Add(CiMethod.CreateStatic(VoidType, CiId.ConsoleWrite, "Write", CiVar.New(PrintableType, "value")));
+		ConsoleBase.Add(CiMethod.CreateStatic(VoidType, CiId.ConsoleWriteLine, "WriteLine", CiVar.New(PrintableType, "value", new CiLiteralString(""))));
+		CiClass consoleClass = CiClass.New(CiCallType.Static, CiId.None, "Console");
 		consoleClass.Add(ConsoleError);
 		Add(consoleClass);
 		consoleClass.Parent = ConsoleBase;
-		CiClass utf8EncodingClass = new CiClass(CiCallType.Sealed, CiId.None, "UTF8Encoding");
-		utf8EncodingClass.Add(CiMethod.CreateNormal(CiVisibility.Public, IntType, CiId.UTF8GetByteCount, "GetByteCount", new CiVar(StringPtrType, "str")));
+		CiClass utf8EncodingClass = CiClass.New(CiCallType.Sealed, CiId.None, "UTF8Encoding");
+		utf8EncodingClass.Add(CiMethod.CreateNormal(CiVisibility.Public, IntType, CiId.UTF8GetByteCount, "GetByteCount", CiVar.New(StringPtrType, "str")));
 		utf8EncodingClass.Add(CiMethod.CreateNormal(CiVisibility.Public, VoidType, CiId.UTF8GetBytes, "GetBytes",
-			new CiVar(StringPtrType, "str"), new CiVar(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), new CiVar(IntType, "byteIndex")));
+			CiVar.New(StringPtrType, "str"), CiVar.New(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), CiVar.New(IntType, "byteIndex")));
 		utf8EncodingClass.Add(CiMethod.CreateNormal(CiVisibility.Public, StringStorageType, CiId.UTF8GetString, "GetString",
-			new CiVar(new CiClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), new CiVar(IntType, "offset"), new CiVar(IntType, "length"))); // TODO: UIntType
-		CiClass encodingClass = new CiClass(CiCallType.Static, CiId.None, "Encoding");
+			CiVar.New(new CiClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), CiVar.New(IntType, "offset"), CiVar.New(IntType, "length"))); // TODO: UIntType
+		CiClass encodingClass = CiClass.New(CiCallType.Static, CiId.None, "Encoding");
 		encodingClass.Add(new CiMember(utf8EncodingClass, CiId.None, "UTF8"));
 		Add(encodingClass);
-		CiClass environmentClass = new CiClass(CiCallType.Static, CiId.None, "Environment");
-		environmentClass.Add(CiMethod.CreateStatic(StringPtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", new CiVar(StringPtrType, "name")));
+		CiClass environmentClass = CiClass.New(CiCallType.Static, CiId.None, "Environment");
+		environmentClass.Add(CiMethod.CreateStatic(StringPtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", CiVar.New(StringPtrType, "name")));
 		Add(environmentClass);
 		CiEnum regexOptionsEnum = new CiEnumFlags { Name = "RegexOptions" };
-		CiConst regexOptionsNone = new CiConst("None", 0);
+		CiConst regexOptionsNone = NewConstInt("None", 0);
 		AddEnumValue(regexOptionsEnum, regexOptionsNone);
-		AddEnumValue(regexOptionsEnum, new CiConst("IgnoreCase", 1));
-		AddEnumValue(regexOptionsEnum, new CiConst("Multiline", 2));
-		AddEnumValue(regexOptionsEnum, new CiConst("Singleline", 16));
+		AddEnumValue(regexOptionsEnum, NewConstInt("IgnoreCase", 1));
+		AddEnumValue(regexOptionsEnum, NewConstInt("Multiline", 2));
+		AddEnumValue(regexOptionsEnum, NewConstInt("Singleline", 16));
 		Add(regexOptionsEnum);
-		CiClass regexClass = new CiClass(CiCallType.Sealed, CiId.RegexClass, "Regex");
-		regexClass.Add(CiMethod.CreateStatic(StringStorageType, CiId.RegexEscape, "Escape", new CiVar(StringPtrType, "str")));
-		regexClass.Add(new CiMethodGroup(
-				CiMethod.CreateStatic(BoolType, CiId.RegexIsMatchStr, "IsMatch", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(regexOptionsEnum, "options", regexOptionsNone)),
-				CiMethod.CreateNormal(CiVisibility.Public, BoolType, CiId.RegexIsMatchRegex, "IsMatch", new CiVar(StringPtrType, "input"))));
-		regexClass.Add(CiMethod.CreateStatic(new CiDynamicPtrType { Class = regexClass }, CiId.RegexCompile, "Compile", new CiVar(StringPtrType, "pattern"), new CiVar(regexOptionsEnum, "options", regexOptionsNone)));
+		CiClass regexClass = CiClass.New(CiCallType.Sealed, CiId.RegexClass, "Regex");
+		regexClass.Add(CiMethod.CreateStatic(StringStorageType, CiId.RegexEscape, "Escape", CiVar.New(StringPtrType, "str")));
+		regexClass.Add(CiMethodGroup.New(
+				CiMethod.CreateStatic(BoolType, CiId.RegexIsMatchStr, "IsMatch", CiVar.New(StringPtrType, "input"), CiVar.New(StringPtrType, "pattern"), CiVar.New(regexOptionsEnum, "options", regexOptionsNone)),
+				CiMethod.CreateNormal(CiVisibility.Public, BoolType, CiId.RegexIsMatchRegex, "IsMatch", CiVar.New(StringPtrType, "input"))));
+		regexClass.Add(CiMethod.CreateStatic(new CiDynamicPtrType { Class = regexClass }, CiId.RegexCompile, "Compile", CiVar.New(StringPtrType, "pattern"), CiVar.New(regexOptionsEnum, "options", regexOptionsNone)));
 		Add(regexClass);
-		CiClass matchClass = new CiClass(CiCallType.Sealed, CiId.MatchClass, "Match");
-		matchClass.Add(new CiMethodGroup(
-				CiMethod.CreateMutator(CiVisibility.Public, BoolType, CiId.MatchFindStr, "Find", new CiVar(StringPtrType, "input"), new CiVar(StringPtrType, "pattern"), new CiVar(regexOptionsEnum, "options", regexOptionsNone)),
-				CiMethod.CreateMutator(CiVisibility.Public, BoolType, CiId.MatchFindRegex, "Find", new CiVar(StringPtrType, "input"), new CiVar(new CiClassType { Class = regexClass }, "pattern"))));
+		CiClass matchClass = CiClass.New(CiCallType.Sealed, CiId.MatchClass, "Match");
+		matchClass.Add(CiMethodGroup.New(
+				CiMethod.CreateMutator(CiVisibility.Public, BoolType, CiId.MatchFindStr, "Find", CiVar.New(StringPtrType, "input"), CiVar.New(StringPtrType, "pattern"), CiVar.New(regexOptionsEnum, "options", regexOptionsNone)),
+				CiMethod.CreateMutator(CiVisibility.Public, BoolType, CiId.MatchFindRegex, "Find", CiVar.New(StringPtrType, "input"), CiVar.New(new CiClassType { Class = regexClass }, "pattern"))));
 		matchClass.Add(new CiMember(IntType, CiId.MatchStart, "Start"));
 		matchClass.Add(new CiMember(IntType, CiId.MatchEnd, "End"));
-		matchClass.Add(CiMethod.CreateNormal(CiVisibility.Public, StringPtrType, CiId.MatchGetCapture, "GetCapture", new CiVar(UIntType, "group")));
+		matchClass.Add(CiMethod.CreateNormal(CiVisibility.Public, StringPtrType, CiId.MatchGetCapture, "GetCapture", CiVar.New(UIntType, "group")));
 		matchClass.Add(new CiMember(UIntType, CiId.MatchLength, "Length"));
 		matchClass.Add(new CiMember(StringPtrType, CiId.MatchValue, "Value"));
 		Add(matchClass);
 
-		CiClass mathClass = new CiClass(CiCallType.Static, CiId.None, "Math");
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Acos", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Asin", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Atan", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Atan2", new CiVar(DoubleType, "y"), new CiVar(DoubleType, "x")));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Cbrt", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(FloatIntType, CiId.MathCeiling, "Ceiling", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Cos", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Cosh", new CiVar(DoubleType, "a")));
-		mathClass.Add(new CiConst("E", Math.E));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Exp", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(FloatIntType, CiId.MathMethod, "Floor", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathFusedMultiplyAdd, "FusedMultiplyAdd", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y"), new CiVar(DoubleType, "z")));
-		mathClass.Add(CiMethod.CreateStatic(BoolType, CiId.MathIsFinite, "IsFinite", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(BoolType, CiId.MathIsInfinity, "IsInfinity", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(BoolType, CiId.MathIsNaN, "IsNaN", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Log", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathLog2, "Log2", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Log10", new CiVar(DoubleType, "a")));
+		CiClass mathClass = CiClass.New(CiCallType.Static, CiId.None, "Math");
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Acos", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Asin", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Atan", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Atan2", CiVar.New(DoubleType, "y"), CiVar.New(DoubleType, "x")));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Cbrt", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatIntType, CiId.MathCeiling, "Ceiling", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Cos", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Cosh", CiVar.New(DoubleType, "a")));
+		mathClass.Add(NewConstDouble("E", Math.E));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Exp", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatIntType, CiId.MathMethod, "Floor", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathFusedMultiplyAdd, "FusedMultiplyAdd", CiVar.New(DoubleType, "x"), CiVar.New(DoubleType, "y"), CiVar.New(DoubleType, "z")));
+		mathClass.Add(CiMethod.CreateStatic(BoolType, CiId.MathIsFinite, "IsFinite", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(BoolType, CiId.MathIsInfinity, "IsInfinity", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(BoolType, CiId.MathIsNaN, "IsNaN", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Log", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathLog2, "Log2", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Log10", CiVar.New(DoubleType, "a")));
 		mathClass.Add(new CiMember(FloatType, CiId.MathNaN, "NaN"));
 		mathClass.Add(new CiMember(FloatType, CiId.MathNegativeInfinity, "NegativeInfinity"));
-		mathClass.Add(new CiConst("PI", Math.PI));
+		mathClass.Add(NewConstDouble("PI", Math.PI));
 		mathClass.Add(new CiMember(FloatType, CiId.MathPositiveInfinity, "PositiveInfinity"));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Pow", new CiVar(DoubleType, "x"), new CiVar(DoubleType, "y")));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Sin", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Sinh", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Sqrt", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Tan", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Tanh", new CiVar(DoubleType, "a")));
-		mathClass.Add(CiMethod.CreateStatic(FloatIntType, CiId.MathTruncate, "Truncate", new CiVar(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Pow", CiVar.New(DoubleType, "x"), CiVar.New(DoubleType, "y")));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Sin", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Sinh", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Sqrt", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Tan", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatType, CiId.MathMethod, "Tanh", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethod.CreateStatic(FloatIntType, CiId.MathTruncate, "Truncate", CiVar.New(DoubleType, "a")));
 		Add(mathClass);
 
 		Add(LockClass);

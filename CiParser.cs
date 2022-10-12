@@ -241,7 +241,7 @@ public class CiParser : CiLexer
 			result = ParseSymbolReference(null);
 			if (Eat(CiToken.FatArrow)) {
 				CiLambdaExpr lambda = new CiLambdaExpr { Line = result.Line };
-				lambda.Add(new CiVar(null, ((CiSymbolReference) result).Name));
+				lambda.Add(CiVar.New(null, ((CiSymbolReference) result).Name));
 				lambda.Body = ParseExpr();
 				return lambda;
 			}
