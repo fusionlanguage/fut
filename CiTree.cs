@@ -27,44 +27,6 @@ using System.Text;
 namespace Foxoft.Ci
 {
 
-public abstract class CiVisitor
-{
-	public abstract void VisitAggregateInitializer(CiAggregateInitializer expr);
-	public abstract void VisitVar(CiVar expr);
-	public abstract void VisitLiteralLong(long value);
-	public abstract void VisitLiteralChar(int value);
-	public abstract void VisitLiteralDouble(double value);
-	public abstract void VisitLiteralString(string value);
-	public abstract void VisitLiteralNull();
-	public abstract void VisitLiteralFalse();
-	public abstract void VisitLiteralTrue();
-	public abstract CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent);
-	public abstract CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent);
-	public abstract CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent);
-	public abstract CiExpr VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent);
-	public abstract CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent);
-	public abstract CiExpr VisitSelectExpr(CiSelectExpr expr, CiPriority parent);
-	public abstract CiExpr VisitCallExpr(CiCallExpr expr, CiPriority parent);
-	public abstract void VisitLambdaExpr(CiLambdaExpr expr);
-	public abstract void VisitConst(CiConst statement);
-	public abstract void VisitExpr(CiExpr statement);
-	public abstract void VisitBlock(CiBlock statement);
-	public abstract void VisitAssert(CiAssert statement);
-	public abstract void VisitBreak(CiBreak statement);
-	public abstract void VisitContinue(CiContinue statement);
-	public abstract void VisitDoWhile(CiDoWhile statement);
-	public abstract void VisitFor(CiFor statement);
-	public abstract void VisitForeach(CiForeach statement);
-	public abstract void VisitIf(CiIf statement);
-	public abstract void VisitLock(CiLock statement);
-	public abstract void VisitNative(CiNative statement);
-	public abstract void VisitReturn(CiReturn statement);
-	public abstract void VisitSwitch(CiSwitch statement);
-	public abstract void VisitThrow(CiThrow statement);
-	public abstract void VisitWhile(CiWhile statement);
-	public abstract void VisitEnumValue(CiConst konst, CiConst previous);
-}
-
 public abstract class CiExpr : CiStatement
 {
 	internal CiType Type;
@@ -80,16 +42,6 @@ public abstract class CiExpr : CiStatement
 	public CiLiteral ToLiteralDouble(double value) => new CiLiteralDouble(value) { Line = this.Line };
 	public CiLiteral ToLiteralString(string value) => new CiLiteralString(value) { Line = this.Line };
 	public virtual bool IsReferenceTo(CiSymbol symbol) => false;
-}
-
-public class CiAggregateInitializer : CiExpr
-{
-	internal readonly List<CiExpr> Items = new List<CiExpr>();
-	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
-	{
-		visitor.VisitAggregateInitializer(this);
-		return this;
-	}
 }
 
 public abstract class CiSymbol : CiExpr
@@ -365,28 +317,6 @@ public abstract class CiLiteralBool : CiLiteral
 	}
 }
 
-public class CiLiteralFalse : CiLiteralBool
-{
-	public override bool IsDefaultValue() => true;
-	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
-	{
-		visitor.VisitLiteralFalse();
-		return this;
-	}
-	public override string ToString() => "false";
-}
-
-public class CiLiteralTrue : CiLiteralBool
-{
-	public override bool IsDefaultValue() => false;
-	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
-	{
-		visitor.VisitLiteralTrue();
-		return this;
-	}
-	public override string ToString() => "true";
-}
-
 public class CiImplicitEnumValue : CiExpr
 {
 	internal readonly int Value;
@@ -468,11 +398,6 @@ public class CiPrefixExpr : CiUnaryExpr
 		return ~this.Inner.IntValue();
 	}
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitPrefixExpr(this, parent);
-}
-
-public class CiPostfixExpr : CiUnaryExpr
-{
-	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitPostfixExpr(this, parent);
 }
 
 public class CiBinaryExpr : CiExpr
@@ -608,46 +533,6 @@ public class CiBinaryExpr : CiExpr
 	public override string ToString() => this.Op == CiToken.LeftBracket ? $"{this.Left}[{this.Right}]" : $"({this.Left} {GetOpString()} {this.Right})";
 }
 
-public class CiSelectExpr : CiExpr
-{
-	internal CiExpr Cond;
-	internal CiExpr OnTrue;
-	internal CiExpr OnFalse;
-	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitSelectExpr(this, parent);
-	public override string ToString() => $"({this.Cond} ? {this.OnTrue} : {this.OnFalse})";
-}
-
-public class CiCallExpr : CiExpr
-{
-	internal CiSymbolReference Method;
-	internal readonly List<CiExpr> Arguments = new List<CiExpr>();
-	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitCallExpr(this, parent);
-}
-
-public class CiLambdaExpr : CiScope
-{
-	internal CiExpr Body;
-	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
-	{
-		visitor.VisitLambdaExpr(this);
-		return this;
-	}
-}
-
-public class CiBlock : CiCondCompletionStatement
-{
-	internal readonly List<CiStatement> Statements = new List<CiStatement>();
-	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitBlock(this); }
-}
-
-public class CiAssert : CiStatement
-{
-	internal CiExpr Cond;
-	internal CiExpr Message = null;
-	public override bool CompletesNormally() => !(this.Cond is CiLiteralFalse);
-	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitAssert(this); }
-}
-
 public class CiBreak : CiStatement
 {
 	internal readonly CiCondCompletionStatement LoopOrSwitch;
@@ -664,57 +549,12 @@ public class CiContinue : CiStatement
 	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitContinue(this); }
 }
 
-public class CiDoWhile : CiLoop
-{
-	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitDoWhile(this); }
-}
-
-public class CiFor : CiLoop
-{
-	internal CiExpr Init;
-	internal CiExpr Advance;
-	internal bool IsRange = false;
-	internal bool IsIteratorUsed;
-	internal long RangeStep;
-	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitFor(this); }
-}
-
 public class CiForeach : CiLoop
 {
 	internal CiExpr Collection;
 	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitForeach(this); }
 	public CiVar GetVar() => this.FirstParameter();
 	public CiVar GetValueVar() => this.FirstParameter().NextParameter();
-}
-
-public class CiIf : CiCondCompletionStatement
-{
-	internal CiExpr Cond;
-	internal CiStatement OnTrue;
-	internal CiStatement OnFalse;
-	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitIf(this); }
-}
-
-public class CiLock : CiStatement
-{
-	internal CiExpr Lock;
-	internal CiStatement Body;
-	public override bool CompletesNormally() => this.Body.CompletesNormally();
-	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitLock(this); }
-}
-
-public class CiNative : CiStatement
-{
-	internal string Content;
-	public override bool CompletesNormally() => true;
-	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitNative(this); }
-}
-
-public class CiReturn : CiStatement
-{
-	internal CiExpr Value;
-	public override bool CompletesNormally() => false;
-	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitReturn(this); }
 }
 
 public class CiSwitch : CiCondCompletionStatement
@@ -777,18 +617,6 @@ public class CiSwitch : CiCondCompletionStatement
 	}
 
 	public static bool HasEarlyBreakAndContinue(List<CiStatement> body) => HasEarlyBreak(body) && HasContinue(body);
-}
-
-public class CiThrow : CiStatement
-{
-	internal CiExpr Message;
-	public override bool CompletesNormally() => false;
-	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitThrow(this); }
-}
-
-public class CiWhile : CiLoop
-{
-	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitWhile(this); }
 }
 
 public class CiField : CiMember

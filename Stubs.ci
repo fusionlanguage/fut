@@ -17,19 +17,31 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-public abstract class CiVisitor
-{
-}
+public enum CiPriority { Xxx }
+public abstract class CiVisitor {}
+public abstract class CiVar {}
+public abstract class CiInterpolatedString {}
+public abstract class CiSymbolReference {}
+public abstract class CiPrefixExpr {}
+public abstract class CiBinaryExpr {}
+public abstract class CiConst {}
+public abstract class CiBreak {}
+public abstract class CiContinue {}
+public abstract class CiForeach {}
+public abstract class CiSwitch {}
 
 public abstract class CiExpr // : CiStatement
 {
-}
-
-public abstract class CiScope // : CiSymbol
-{
 	public abstract bool CompletesNormally();
+	public abstract void AcceptStatement(CiVisitor! visitor);
+	public virtual CiExpr Accept(CiVisitor! visitor, CiPriority parent) => this;
 }
 
-public abstract class CiCondCompletionStatement : CiScope
+public abstract class CiScope : CiExpr // : CiSymbol
 {
+}
+
+public abstract class CiLiteralBool : CiExpr
+{
+	public abstract bool IsDefaultValue();
 }
