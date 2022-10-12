@@ -39,7 +39,7 @@ public class CiResolver : CiVisitor
 
 	CiException StatementException(CiStatement statement, string message)
 	{
-		return new CiException(this.CurrentScope.Container.Filename, statement.Line, message);
+		return new CiException(this.CurrentScope.GetContainer().Filename, statement.Line, message);
 	}
 
 	void NotSupported(CiStatement statement, string feature, params string[] langs)
@@ -110,10 +110,10 @@ public class CiResolver : CiVisitor
 	{
 		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange)
 			return leftRange.Union(rightRange);
-		CiType ptr = left.Type.PtrOrSelf;
+		CiType ptr = left.Type.GetPtrOrSelf();
 		if (ptr.IsAssignableFrom(right.Type))
 			return ptr;
-		ptr = right.Type.PtrOrSelf;
+		ptr = right.Type.GetPtrOrSelf();
 		if (ptr.IsAssignableFrom(left.Type))
 			return ptr;
 		throw StatementException(left, $"Incompatible types: {left.Type} and {right.Type}");
@@ -194,8 +194,8 @@ public class CiResolver : CiVisitor
 
 	static CiRangeType UnsignedAnd(CiRangeType left, CiRangeType right)
 	{
-		int leftVariableBits = left.VariableBits;
-		int rightVariableBits = right.VariableBits;
+		int leftVariableBits = left.GetVariableBits();
+		int rightVariableBits = right.GetVariableBits();
 		int min = left.Min & right.Min & ~CiRangeType.GetMask(~left.Min & ~right.Min & (leftVariableBits | rightVariableBits));
 		// Calculate upper bound with variable bits set
 		int max = (left.Max | leftVariableBits) & (right.Max | rightVariableBits);
@@ -211,8 +211,8 @@ public class CiResolver : CiVisitor
 
 	static CiRangeType UnsignedOr(CiRangeType left, CiRangeType right)
 	{
-		int leftVariableBits = left.VariableBits;
-		int rightVariableBits = right.VariableBits;
+		int leftVariableBits = left.GetVariableBits();
+		int rightVariableBits = right.GetVariableBits();
 		int min = (left.Min & ~leftVariableBits) | (right.Min & ~rightVariableBits);
 		int max = left.Max | right.Max | CiRangeType.GetMask(left.Max & right.Max & CiRangeType.GetMask(leftVariableBits | rightVariableBits));
 		// The lower bound will never be less than the input
@@ -227,7 +227,7 @@ public class CiResolver : CiVisitor
 
 	static CiRangeType UnsignedXor(CiRangeType left, CiRangeType right)
 	{
-		int variableBits = left.VariableBits | right.VariableBits;
+		int variableBits = left.GetVariableBits() | right.GetVariableBits();
 		int min = (left.Min ^ right.Min) & ~variableBits;
 		int max = (left.Max ^ right.Max) | variableBits;
 		if (min > max)
@@ -298,9 +298,9 @@ public class CiResolver : CiVisitor
 			}
 			else {
 				expr.Value = Resolve(expr.Value);
-				if (!expr.IsAssignableStorage) {
+				if (!expr.IsAssignableStorage()) {
 					if (type is CiArrayStorageType array)
-						type = array.ElementType;
+						type = array.GetElementType();
 					Coerce(expr.Value, type);
 				}
 			}
@@ -437,11 +437,11 @@ public class CiResolver : CiVisitor
 							throw StatementException(expr, $"Cannot access protected member {expr.Name}");
 						break;
 					case CiVisibility.NumericElementType when left.Type is CiClassType klass:
-						if (!(klass.ElementType is CiNumericType))
+						if (!(klass.GetElementType() is CiNumericType))
 							throw StatementException(expr, "Method restricted to collections of numbers");
 						break;
 					case CiVisibility.FinalValueType: // DictionaryAdd
-						if (!((CiClassType) left.Type).ValueType.IsFinal)
+						if (!((CiClassType) left.Type).GetValueType().IsFinal())
 							throw StatementException(expr, "Method restricted to dictionaries with storage values");
 						break;
 					default:
@@ -563,7 +563,7 @@ public class CiResolver : CiVisitor
 			type = ToType(expr.Inner, true);
 			switch (type) {
 			case CiArrayStorageType array:
-				expr.Type = new CiDynamicPtrType { Class = CiSystem.ArrayPtrClass, TypeArg0 = array.ElementType };
+				expr.Type = new CiDynamicPtrType { Class = CiSystem.ArrayPtrClass, TypeArg0 = array.GetElementType() };
 				expr.Inner = array.LengthExpr;
 				return expr;
 			case CiStorageType klass:
@@ -666,8 +666,8 @@ public class CiResolver : CiVisitor
 			default:
 				break;
 			}
-			if (left.IsConstEnum && right.IsConstEnum)
-				return expr.ToLiteralBool((expr.Op == CiToken.NotEqual) ^ (left.IntValue == right.IntValue));
+			if (left.IsConstEnum() && right.IsConstEnum())
+				return expr.ToLiteralBool((expr.Op == CiToken.NotEqual) ^ (left.IntValue() == right.IntValue()));
 		}
 		if (!left.Type.IsAssignableFrom(right.Type) && !right.Type.IsAssignableFrom(left.Type))
 			throw StatementException(expr, $"Cannot compare {left.Type} with {right.Type}");
@@ -711,13 +711,13 @@ public class CiResolver : CiVisitor
 				case CiId.ArrayStorageClass:
 				case CiId.ListClass:
 					Coerce(right, CiSystem.IntType);
-					type = klass.ElementType;
+					type = klass.GetElementType();
 					break;
 				case CiId.DictionaryClass:
 				case CiId.SortedDictionaryClass:
 				case CiId.OrderedDictionaryClass:
-					Coerce(right, klass.KeyType);
-					type = klass.ValueType;
+					Coerce(right, klass.GetKeyType());
+					type = klass.GetValueType();
 					break;
 				default:
 					throw StatementException(expr, "Cannot index this object");
@@ -1119,7 +1119,7 @@ public class CiResolver : CiVisitor
 		ResolveConst(statement);
 		this.CurrentScope.Add(statement);
 		if (statement.Type is CiArrayStorageType)
-			((CiClass) this.CurrentScope.Container).ConstArrays.Add(statement);
+			((CiClass) this.CurrentScope.GetContainer()).ConstArrays.Add(statement);
 	}
 
 	CiExpr Resolve(CiExpr expr) => expr.Accept(this, CiPriority.Statement);
@@ -1140,7 +1140,7 @@ public class CiResolver : CiVisitor
 			statement.Accept(this);
 			if (!reachable)
 				throw StatementException(statement, "Unreachable statement");
-			reachable = statement.CompletesNormally;
+			reachable = statement.CompletesNormally();
 		}
 		return reachable;
 	}
@@ -1258,7 +1258,7 @@ public class CiResolver : CiVisitor
 	public override void VisitForeach(CiForeach statement)
 	{
 		OpenScope(statement);
-		CiVar element = statement.Element;
+		CiVar element = statement.GetVar();
 		ResolveType(element);
 		statement.Collection.Accept(this);
 		if (!(statement.Collection.Type is CiClassType klass))
@@ -1267,22 +1267,22 @@ public class CiResolver : CiVisitor
 		case CiId.ArrayStorageClass:
 		case CiId.ListClass:
 		case CiId.HashSetClass:
-			if (statement.Count != 1)
+			if (statement.Count() != 1)
 				throw StatementException(statement, "Expected one iterator variable");
-			if (!element.Type.IsAssignableFrom(klass.ElementType))
-				throw StatementException(statement, $"Cannot coerce {klass.ElementType} to {element.Type}");
+			if (!element.Type.IsAssignableFrom(klass.GetElementType()))
+				throw StatementException(statement, $"Cannot coerce {klass.GetElementType()} to {element.Type}");
 			break;
 		case CiId.DictionaryClass:
 		case CiId.SortedDictionaryClass:
 		case CiId.OrderedDictionaryClass:
-			if (statement.Count != 2)
+			if (statement.Count() != 2)
 				throw StatementException(statement, "Expected (TKey key, TValue value) iterator");
-			CiVar value = statement.ValueVar;
+			CiVar value = statement.GetValueVar();
 			ResolveType(value);
-			if (!element.Type.IsAssignableFrom(klass.KeyType))
-				throw StatementException(statement, $"Cannot coerce {klass.KeyType} to {element.Type}");
-			if (!value.Type.IsAssignableFrom(klass.ValueType))
-				throw StatementException(statement, $"Cannot coerce {klass.ValueType} to {value.Type}");
+			if (!element.Type.IsAssignableFrom(klass.GetKeyType()))
+				throw StatementException(statement, $"Cannot coerce {klass.GetKeyType()} to {element.Type}");
+			if (!value.Type.IsAssignableFrom(klass.GetValueType()))
+				throw StatementException(statement, $"Cannot coerce {klass.GetValueType()} to {value.Type}");
 			break;
 		default:
 			throw StatementException(statement, "foreach invalid on {klass}");
@@ -1298,7 +1298,7 @@ public class CiResolver : CiVisitor
 		statement.OnTrue.Accept(this);
 		if (statement.OnFalse != null) {
 			statement.OnFalse.Accept(this);
-			statement.SetCompletesNormally(statement.OnTrue.CompletesNormally || statement.OnFalse.CompletesNormally);
+			statement.SetCompletesNormally(statement.OnTrue.CompletesNormally() || statement.OnFalse.CompletesNormally());
 		}
 		else
 			statement.SetCompletesNormally(true);
@@ -1328,8 +1328,8 @@ public class CiResolver : CiVisitor
 			Coerce(statement.Value, this.CurrentMethod.Type);
 			if (statement.Value is CiSymbolReference symbol
 			 && symbol.Symbol is CiVar local
-			 && (local.Type.IsFinal || local.Type == CiSystem.StringStorageType)
-			 && this.CurrentMethod.Type.IsNullable)
+			 && (local.Type.IsFinal() || local.Type == CiSystem.StringStorageType)
+			 && this.CurrentMethod.Type.IsNullable())
 				throw StatementException(statement, "Returning dangling reference to local storage");
 		}
 	}
@@ -1427,7 +1427,7 @@ public class CiResolver : CiVisitor
 	CiExpr FoldConst(CiExpr expr)
 	{
 		expr = Resolve(expr);
-		if (expr is CiLiteral || expr.IsConstEnum)
+		if (expr is CiLiteral || expr.IsConstEnum())
 			return expr;
 		throw StatementException(expr, "Expected constant value");
 	}
@@ -1548,7 +1548,7 @@ public class CiResolver : CiVisitor
 				CiExpr lengthExpr = Resolve(binary.Right);
 				Coerce(lengthExpr, CiSystem.IntType);
 				CiArrayStorageType arrayStorage = new CiArrayStorageType { TypeArg0 = outerArray, LengthExpr = lengthExpr };
-				if (!dynamic || binary.Left.IsIndexing) {
+				if (!dynamic || binary.Left.IsIndexing()) {
 					if (!(lengthExpr is CiLiteralLong literal))
 						throw StatementException(lengthExpr, "Expected constant value");
 					long length = literal.Value;
@@ -1611,7 +1611,7 @@ public class CiResolver : CiVisitor
 		if (konst.Value is CiAggregateInitializer coll) {
 			if (!(konst.Type is CiClassType array))
 				throw StatementException(konst, $"Array initializer for scalar constant {konst.Name}");
-			CiType elementType = array.ElementType;
+			CiType elementType = array.GetElementType();
 			if (array is CiArrayStorageType arrayStg) {
 				if (arrayStg.Length != coll.Items.Count)
 					throw StatementException(konst, $"Declared {arrayStg.Length} elements, initialized {coll.Items.Count}");
@@ -1626,7 +1626,7 @@ public class CiResolver : CiVisitor
 		}
 		else if (this.CurrentScope is CiEnum && konst.Value.Type is CiRangeType && konst.Value is CiLiteral) {
 		}
-		else if (konst.Value is CiLiteral || konst.Value.IsConstEnum)
+		else if (konst.Value is CiLiteral || konst.Value.IsConstEnum())
 			Coerce(konst.Value, konst.Type);
 		else
 			throw StatementException(konst.Value, $"Value for constant {konst.Name} is not constant");
@@ -1641,7 +1641,7 @@ public class CiResolver : CiVisitor
 			((CiEnum) konst.Parent).HasExplicitValue = true;
 		}
 		else
-			konst.Value = new CiImplicitEnumValue(previous == null ? 0 : previous.Value.IntValue + 1);
+			konst.Value = new CiImplicitEnumValue(previous == null ? 0 : previous.Value.IntValue() + 1);
 	}
 
 	void ResolveConsts(CiContainerType container)
@@ -1671,9 +1671,9 @@ public class CiResolver : CiVisitor
 				CiType type = ResolveType(field);
 				if (field.Value != null) {
 					field.Value = FoldConst(field.Value);
-					if (!field.IsAssignableStorage) {
+					if (!field.IsAssignableStorage()) {
 						if (type is CiArrayStorageType array)
-							type = array.ElementType;
+							type = array.GetElementType();
 						Coerce(field.Value, type);
 					}
 				}
@@ -1727,7 +1727,7 @@ public class CiResolver : CiVisitor
 				this.CurrentScope = method.Parameters;
 				this.CurrentMethod = method;
 				method.Body.Accept(this);
-				if (method.Type != CiSystem.VoidType && method.Body.CompletesNormally)
+				if (method.Type != CiSystem.VoidType && method.Body.CompletesNormally())
 					throw StatementException(method.Body, "Method can complete without a return value");
 				this.CurrentMethod = null;
 			}

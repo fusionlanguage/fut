@@ -81,17 +81,17 @@ public class GenTs : GenJs
 		case CiClassType klass:
 			readOnly |= !(klass is CiReadWriteClassType);
 			switch (klass.Class.Id) {
-			case CiId.ArrayPtrClass when !(klass.ElementType is CiNumericType):
-			case CiId.ArrayStorageClass when !(klass.ElementType is CiNumericType):
+			case CiId.ArrayPtrClass when !(klass.GetElementType() is CiNumericType):
+			case CiId.ArrayStorageClass when !(klass.GetElementType() is CiNumericType):
 			case CiId.ListClass:
 			case CiId.QueueClass:
 			case CiId.StackClass:
 				if (readOnly)
 					Write("readonly ");
-				if (klass.ElementType.IsNullable)
+				if (klass.GetElementType().IsNullable())
 					Write('(');
-				Write(klass.ElementType);
-				if (klass.ElementType.IsNullable)
+				Write(klass.GetElementType());
+				if (klass.GetElementType().IsNullable())
 					Write(')');
 				Write("[]");
 				break;
@@ -101,31 +101,31 @@ public class GenTs : GenJs
 				switch (klass.Class.Id) {
 				case CiId.ArrayPtrClass:
 				case CiId.ArrayStorageClass:
-					Write(GetArrayElementType((CiNumericType) klass.ElementType));
+					Write(GetArrayElementType((CiNumericType) klass.GetElementType()));
 					Write("Array");
 					break;
 				case CiId.HashSetClass:
 					Write("Set<");
-					Write(klass.ElementType, false);
+					Write(klass.GetElementType(), false);
 					Write('>');
 					break;
 				case CiId.DictionaryClass:
 				case CiId.SortedDictionaryClass:
-					if (klass.KeyType is CiEnum)
+					if (klass.GetKeyType() is CiEnum)
 						Write("Partial<");
 					Write("Record<");
-					Write(klass.KeyType);
+					Write(klass.GetKeyType());
 					Write(", ");
-					Write(klass.ValueType);
+					Write(klass.GetValueType());
 					Write('>');
-					if (klass.KeyType is CiEnum)
+					if (klass.GetKeyType() is CiEnum)
 						Write('>');
 					break;
 				case CiId.OrderedDictionaryClass:
 					Write("Map<");
-					Write(klass.KeyType);
+					Write(klass.GetKeyType());
 					Write(", ");
-					Write(klass.ValueType);
+					Write(klass.GetValueType());
 					Write('>');
 					break;
 				case CiId.RegexClass:
@@ -147,7 +147,7 @@ public class GenTs : GenJs
 			Write(type.Name);
 			break;
 		}
-		if (type.IsNullable)
+		if (type.IsNullable())
 			Write(" | null");
 	}
 
@@ -186,7 +186,7 @@ public class GenTs : GenJs
 	{
 		Write(field.Documentation);
 		WriteVisibility(field.Visibility);
-		if (field.Type.IsFinal && !field.IsAssignableStorage)
+		if (field.Type.IsFinal() && !field.IsAssignableStorage())
 			Write("readonly ");
 		WriteTypeAndName(field);
 		if (this.GenFullCode)

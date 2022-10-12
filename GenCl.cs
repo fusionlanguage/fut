@@ -180,17 +180,11 @@ public class GenCl : GenC
 			Write('\t');
 			args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
 			Write('[');
-			if (!args[2].IsLiteralZero) {
-				args[2].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
-				Write(" + ");
-			}
+			StartAdd(args[2]); // FIXME: side effect in every iteration
 			Write("_i] = ");
 			obj.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
 			Write('[');
-			if (!args[0].IsLiteralZero) {
-				args[0].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
-				Write(" + ");
-			}
+			StartAdd(args[0]); // FIXME: side effect in every iteration
 			Write("_i]");
 			break;
 		case CiId.ArrayFillAll:
@@ -213,10 +207,7 @@ public class GenCl : GenC
 			Write('\t');
 			args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
 			Write('[');
-			if (!args[2].IsLiteralZero) {
-				args[2].Accept(this, CiPriority.Add); // FIXME: side effect in every iteration
-				Write(" + ");
-			}
+			StartAdd(args[2]); // FIXME: side effect in every iteration
 			Write("_i] = ");
 			args[0].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
 			Write("[_i]");

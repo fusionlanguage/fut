@@ -204,7 +204,7 @@ public class GenCpp : GenCCpp
 			case CiId.ArrayPtrClass:
 				Include("memory");
 				Write("std::shared_ptr<");
-				Write(dynamic.ElementType, false);
+				Write(dynamic.GetElementType(), false);
 				Write("[]>");
 				break;
 			default:
@@ -238,7 +238,7 @@ public class GenCpp : GenCCpp
 				}
 			}
 			else if (klass.Class.Id == CiId.ArrayPtrClass) {
-				Write(klass.ElementType, false);
+				Write(klass.GetElementType(), false);
 				if (!(klass is CiReadWriteClassType))
 					Write(" const");
 			}
@@ -266,7 +266,7 @@ public class GenCpp : GenCCpp
 				}
 				else if (klass.Class.TypeParameterCount == 2) {
 					Write(", ");
-					Write(klass.ValueType, false);
+					Write(klass.GetValueType(), false);
 				}
 				Write('>');
 			}
@@ -308,7 +308,7 @@ public class GenCpp : GenCCpp
 			switch (def.Value) {
 			case null:
 				break;
-			case CiLiteral literal when literal.IsDefaultValue:
+			case CiLiteral literal when literal.IsDefaultValue():
 				Write(" {}");
 				break;
 			default:
@@ -371,7 +371,7 @@ public class GenCpp : GenCCpp
 			if (expr is CiSymbolReference symbol
 			 && symbol.Symbol.Parent is CiForeach loop
 			 && loop.Collection.Type is CiArrayStorageType array
-			 && array.ElementType is CiStorageType)
+			 && array.GetElementType() is CiStorageType)
 				return false; // C++ reference
 			return true; // C++ pointer
 		}
@@ -631,7 +631,7 @@ public class GenCpp : GenCCpp
 		case CiId.ArrayFillAll:
 			StartMethodCall(obj);
 			Write("fill(");
-			WriteCoerced(((CiClassType) obj.Type).ElementType, args[0], CiPriority.Argument);
+			WriteCoerced(((CiClassType) obj.Type).GetElementType(), args[0], CiPriority.Argument);
 			Write(')');
 			break;
 		case CiId.ArrayFillPart:
@@ -668,7 +668,7 @@ public class GenCpp : GenCCpp
 				Write("emplace_back()");
 			else {
 				Write("push_back(");
-				WriteCoerced(((CiClassType) obj.Type).ElementType, args[0], CiPriority.Argument);
+				WriteCoerced(((CiClassType) obj.Type).GetElementType(), args[0], CiPriority.Argument);
 				Write(')');
 			}
 			break;
@@ -704,7 +704,7 @@ public class GenCpp : GenCCpp
 				Write("insert(");
 				WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
 				Write(", ");
-				WriteCoerced(((CiClassType) obj.Type).ElementType, args[1], CiPriority.Argument);
+				WriteCoerced(((CiClassType) obj.Type).GetElementType(), args[1], CiPriority.Argument);
 			}
 			Write(')');
 			break;
@@ -736,7 +736,7 @@ public class GenCpp : GenCCpp
 			}
 			else {
 				// :-)
-				CiType elementType = ((CiClassType) obj.Type).ElementType;
+				CiType elementType = ((CiClassType) obj.Type).GetElementType();
 				Write("[](");
 				WriteCollectionType("queue", elementType);
 				Write(" &q) { ");
@@ -764,7 +764,7 @@ public class GenCpp : GenCCpp
 			}
 			else {
 				// :-)
-				CiType elementType = ((CiClassType) obj.Type).ElementType;
+				CiType elementType = ((CiClassType) obj.Type).GetElementType();
 				Write("[](");
 				WriteCollectionType("stack", elementType);
 				Write(" &s) { ");
@@ -775,7 +775,7 @@ public class GenCpp : GenCCpp
 			}
 			break;
 		case CiId.HashSetAdd:
-			WriteCall(obj, ((CiClassType) obj.Type).ElementType == CiSystem.StringStorageType && args[0].Type == CiSystem.StringPtrType ? "emplace" : "insert", args[0]);
+			WriteCall(obj, ((CiClassType) obj.Type).GetElementType() == CiSystem.StringStorageType && args[0].Type == CiSystem.StringPtrType ? "emplace" : "insert", args[0]);
 			break;
 		case CiId.HashSetRemove:
 		case CiId.DictionaryRemove:
@@ -1108,17 +1108,17 @@ public class GenCpp : GenCCpp
 
 	public override void VisitForeach(CiForeach statement)
 	{
-		CiVar element = statement.Element;
+		CiVar element = statement.GetVar();
 		Write("for (");
-		if (statement.Count == 2) {
+		if (statement.Count() == 2) {
 			Write("const auto &[");
 			Write(element.Name);
 			Write(", ");
-			Write(statement.ValueVar.Name);
+			Write(statement.GetValueVar().Name);
 			Write(']');
 		}
 		else if (statement.Collection.Type is CiArrayStorageType array
-		 && array.ElementType is CiStorageType storage
+		 && array.GetElementType() is CiStorageType storage
 		 && element.Type is CiClassType ptr) {
 			if (!(ptr is CiReadWriteClassType))
 				Write("const ");
@@ -1265,7 +1265,7 @@ public class GenCpp : GenCCpp
 	void WriteDeclarations(CiClass klass, CiVisibility visibility, string visibilityKeyword)
 	{
 		bool constructor = GetConstructorVisibility(klass) == visibility;
-		bool destructor = visibility == CiVisibility.Public && klass.AddsVirtualMethods;
+		bool destructor = visibility == CiVisibility.Public && klass.AddsVirtualMethods();
 		if (!constructor && !destructor && !HasMembersOfVisibility(klass, visibility))
 			return;
 

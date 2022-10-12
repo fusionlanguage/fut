@@ -687,7 +687,7 @@ public abstract class GenBase : CiVisitor
 
 	protected virtual void WriteNewArray(CiArrayStorageType array)
 	{
-		WriteNewArray(array.ElementType, array.LengthExpr, CiPriority.Argument);
+		WriteNewArray(array.GetElementType(), array.LengthExpr, CiPriority.Argument);
 	}
 
 	protected abstract void WriteNew(CiReadWriteClassType klass, CiPriority parent);
@@ -719,7 +719,7 @@ public abstract class GenBase : CiVisitor
 
 	protected virtual void WriteVarInit(CiNamedValue def)
 	{
-		if (def.IsAssignableStorage) {
+		if (def.IsAssignableStorage()) {
 		}
 		else if (def.Type is CiArrayStorageType array && !(def.Value is CiAggregateInitializer))
 			WriteArrayStorageInit(array, def.Value);
@@ -727,7 +727,7 @@ public abstract class GenBase : CiVisitor
 			Write(" = ");
 			WriteCoercedExpr(def.Type, def.Value);
 		}
-		else if (def.Type.IsFinal && !(def.Parent is CiParameters)) {
+		else if (def.Type.IsFinal() && !(def.Parent is CiParameters)) {
 			Write(" = ");
 			WriteNewStorage(def.Type);
 		}
@@ -795,7 +795,7 @@ public abstract class GenBase : CiVisitor
 		case CiToken.New:
 			CiDynamicPtrType dynamic = (CiDynamicPtrType) expr.Type;
 			if (dynamic.Class.Id == CiId.ArrayPtrClass)
-				WriteNewArray(dynamic.ElementType, expr.Inner, parent);
+				WriteNewArray(dynamic.GetElementType(), expr.Inner, parent);
 			else
 				WriteNew(dynamic, parent);
 			return expr;
@@ -838,6 +838,14 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
+	protected void StartAdd(CiExpr expr)
+	{
+		if (!expr.IsLiteralZero()) {
+			expr.Accept(this, CiPriority.Add);
+			Write(" + ");
+		}
+	}
+
 	protected void WriteAdd(CiExpr left, CiExpr right)
 	{
 		if (left is CiLiteralLong leftLiteral) {
@@ -851,7 +859,7 @@ public abstract class GenBase : CiVisitor
 				return;
 			}
 		}
-		else if (right.IsLiteralZero) {
+		else if (right.IsLiteralZero()) {
 			left.Accept(this, CiPriority.Argument);
 			return;
 		}
@@ -934,7 +942,7 @@ public abstract class GenBase : CiVisitor
 		Write('.');
 		Write(method);
 		Write('(');
-		CiType elementType = ((CiClassType) obj.Type).ElementType;
+		CiType elementType = ((CiClassType) obj.Type).GetElementType();
 		if (args.Count == 0)
 			WriteNewStorage(elementType);
 		else
@@ -950,7 +958,7 @@ public abstract class GenBase : CiVisitor
 		Write('(');
 		args[0].Accept(this, CiPriority.Argument);
 		Write(separator);
-		CiType elementType = ((CiClassType) obj.Type).ElementType;
+		CiType elementType = ((CiClassType) obj.Type).GetElementType();
 		if (args.Count == 1)
 			WriteNewStorage(elementType);
 		else
@@ -962,7 +970,7 @@ public abstract class GenBase : CiVisitor
 	{
 		WriteIndexing(obj, args[0]);
 		Write(" = ");
-		WriteNewStorage(((CiClassType) obj.Type).ValueType);
+		WriteNewStorage(((CiClassType) obj.Type).GetValueType());
 	}
 
 	protected bool WriteRegexOptions(List<CiExpr> args, string prefix, string separator, string suffix, string i, string m, string s)
@@ -970,7 +978,7 @@ public abstract class GenBase : CiVisitor
 		CiExpr expr = args[args.Count - 1];
 		if (!(expr.Type is CiEnum))
 			return false;
-		RegexOptions options = (RegexOptions) expr.IntValue;
+		RegexOptions options = (RegexOptions) expr.IntValue();
 		if (options == RegexOptions.None)
 			return false;
 		Write(prefix);
@@ -1005,7 +1013,7 @@ public abstract class GenBase : CiVisitor
 		WriteIndexing(expr.Left, expr.Right);
 	}
 
-	protected virtual string IsOperator => " is ";
+	protected virtual string GetIsOperator() => " is ";
 
 	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
@@ -1066,7 +1074,7 @@ public abstract class GenBase : CiVisitor
 				Write('(');
 			expr.Left.Accept(this, CiPriority.Assign);
 			Write(' ');
-			Write(expr.OpString);
+			Write(expr.GetOpString());
 			Write(' ');
 			expr.Right.Accept(this, CiPriority.Argument);
 			if (parent > CiPriority.Assign)
@@ -1084,7 +1092,7 @@ public abstract class GenBase : CiVisitor
 			if (parent > CiPriority.Rel)
 				Write('(');
 			expr.Left.Accept(this, CiPriority.Rel);
-			Write(IsOperator);
+			Write(GetIsOperator());
 			switch (expr.Right) {
 			case CiClass klass:
 				WriteName(klass);

@@ -62,13 +62,13 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
-	protected abstract string DocBullet { get; }
+	protected abstract string GetDocBullet();
 
 	protected override void Write(CiDocList list)
 	{
 		WriteLine();
 		foreach (CiDocPara item in list.Items) {
-			Write(this.DocBullet);
+			Write(GetDocBullet());
 			Write(item, false);
 			WriteLine();
 		}
@@ -78,7 +78,7 @@ public abstract class GenPySwift : GenBase
 	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
 		if (symbol is CiMember member && this.CurrentMethod != null) {
-			if (member.IsStatic)
+			if (member.IsStatic())
 				WriteName(this.CurrentMethod.Parent);
 			else
 				Write("self");
@@ -89,7 +89,7 @@ public abstract class GenPySwift : GenBase
 
 	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
 	{
-		CiType type = ((CiArrayStorageType) expr.Type).ElementType;
+		CiType type = ((CiArrayStorageType) expr.Type).GetElementType();
 		Write("[ ");
 		WriteCoercedLiterals(type, expr.Items);
 		Write(" ]");
@@ -137,7 +137,7 @@ public abstract class GenPySwift : GenBase
 	{
 		obj.Accept(this, CiPriority.Primary);
 		Write(".append(");
-		CiType elementType = ((CiClassType) obj.Type).ElementType;
+		CiType elementType = ((CiClassType) obj.Type).GetElementType();
 		if (args.Count == 0)
 			WriteNewStorage(elementType);
 		else
@@ -282,7 +282,7 @@ public abstract class GenPySwift : GenBase
 	{
 		OpenWhileTrue();
 		statement.Body.Accept(this);
-		if (statement.Body.CompletesNormally) {
+		if (statement.Body.CompletesNormally()) {
 			OpenCond(GetIfNot(), statement.Cond, CiPriority.Primary);
 			WriteLine("break");
 			CloseChild();
@@ -299,7 +299,7 @@ public abstract class GenPySwift : GenBase
 	void CloseWhile(CiLoop loop)
 	{
 		loop.Body.Accept(this);
-		if (loop.Body.CompletesNormally)
+		if (loop.Body.CompletesNormally())
 			EndBody(loop);
 		CloseChild();
 		if (NeedCondXcrement(loop)) {
@@ -346,7 +346,7 @@ public abstract class GenPySwift : GenBase
 		bool condPostXcrement = OpenCond("if ", statement.Cond, CiPriority.Argument);
 		statement.OnTrue.Accept(this);
 		CloseChild();
-		if (statement.OnFalse == null && condPostXcrement && !statement.OnTrue.CompletesNormally)
+		if (statement.OnFalse == null && condPostXcrement && !statement.OnTrue.CompletesNormally())
 			VisitXcrement<CiPostfixExpr>(statement.Cond, true);
 		else if (statement.OnFalse != null || condPostXcrement) {
 			if (!condPostXcrement && statement.OnFalse is CiIf childIf && !VisitXcrement<CiPrefixExpr>(childIf.Cond, false)) {

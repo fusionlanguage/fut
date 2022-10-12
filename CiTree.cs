@@ -69,18 +69,18 @@ public abstract class CiVisitor
 public abstract class CiStatement
 {
 	public int Line;
-	public abstract bool CompletesNormally { get; }
+	public abstract bool CompletesNormally();
 	public abstract void Accept(CiVisitor visitor);
 }
 
 public abstract class CiExpr : CiStatement
 {
 	public CiType Type;
-	public override bool CompletesNormally => true;
-	public virtual bool IsIndexing => false;
-	public virtual bool IsLiteralZero => false;
-	public virtual bool IsConstEnum => false;
-	public virtual int IntValue => throw new NotImplementedException(GetType().Name);
+	public override bool CompletesNormally() => true;
+	public virtual bool IsIndexing() => false;
+	public virtual bool IsLiteralZero() => false;
+	public virtual bool IsConstEnum() => false;
+	public virtual int IntValue() => throw new NotImplementedException(GetType().Name);
 	public virtual CiExpr Accept(CiVisitor visitor, CiPriority parent) => throw new NotImplementedException(GetType().Name);
 	public override void Accept(CiVisitor visitor) { visitor.VisitExpr(this); }
 	public CiLiteral ToLiteralBool(bool value) => value ? new CiLiteralTrue { Line = this.Line } : new CiLiteralFalse { Line = this.Line };
@@ -116,20 +116,17 @@ public abstract class CiScope : CiSymbol
 	public CiSymbol First = null;
 	CiSymbol Last;
 
-	public int Count => this.Dict.Count;
+	public int Count() => this.Dict.Count;
 
 	public CiVar FirstParameter() => (CiVar) this.First;
 
-	public CiContainerType Container
+	public CiContainerType GetContainer()
 	{
-		get
-		{
-			for (CiScope scope = this; scope != null; scope = scope.Parent) {
-				if (scope is CiContainerType container)
-					return container;
-			}
-			throw new InvalidOperationException();
+		for (CiScope scope = this; scope != null; scope = scope.Parent) {
+			if (scope is CiContainerType container)
+				return container;
 		}
+		throw new InvalidOperationException();
 	}
 
 	public CiSymbol TryShallowLookup(string name)
@@ -175,7 +172,7 @@ public abstract class CiNamedValue : CiSymbol
 {
 	public CiExpr TypeExpr;
 	public CiExpr Value;
-	public bool IsAssignableStorage => this.Type is CiStorageType && !(this.Type is CiArrayStorageType) && this.Value is CiLiteralNull;
+	public bool IsAssignableStorage() => this.Type is CiStorageType && !(this.Type is CiArrayStorageType) && this.Value is CiLiteralNull;
 }
 
 public class CiMember : CiNamedValue
@@ -191,7 +188,7 @@ public class CiMember : CiNamedValue
 		this.Id = id;
 		this.Name = name;
 	}
-	public virtual bool IsStatic => throw new NotImplementedException(this.GetType().Name);
+	public virtual bool IsStatic() => throw new NotImplementedException(GetType().Name);
 }
 
 public class CiVar : CiNamedValue
@@ -238,12 +235,12 @@ public class CiConst : CiMember
 		this.VisitStatus = CiVisitStatus.Done;
 	}
 	public override void Accept(CiVisitor visitor) { visitor.VisitConst(this); }
-	public override bool IsStatic => true;
+	public override bool IsStatic() => true;
 }
 
 public abstract class CiLiteral : CiExpr
 {
-	public abstract bool IsDefaultValue { get; }
+	public abstract bool IsDefaultValue();
 	public virtual string GetLiteralString() => throw new NotImplementedException();
 	public static readonly CiLiteralFalse False = new CiLiteralFalse();
 	public static readonly CiLiteralTrue True = new CiLiteralTrue();
@@ -260,9 +257,9 @@ public class CiLiteralLong : CiLiteral
 		else
 			this.Type = CiSystem.LongType;
 	}
-	public override bool IsLiteralZero => this.Value == 0;
-	public override int IntValue => (int) this.Value;
-	public override bool IsDefaultValue => this.Value == 0;
+	public override bool IsLiteralZero() => this.Value == 0;
+	public override int IntValue() => (int) this.Value;
+	public override bool IsDefaultValue() => this.Value == 0;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		visitor.VisitLiteralLong(this.Value);
@@ -307,7 +304,7 @@ public class CiLiteralDouble : CiLiteral
 		this.Value = value;
 		this.Type = CiSystem.DoubleType;
 	}
-	public override bool IsDefaultValue => BitConverter.DoubleToInt64Bits(this.Value) == 0; // rule out -0.0
+	public override bool IsDefaultValue() => BitConverter.DoubleToInt64Bits(this.Value) == 0; // rule out -0.0
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		visitor.VisitLiteralDouble(this.Value);
@@ -325,7 +322,7 @@ public class CiLiteralString : CiLiteral
 		this.Value = value;
 		this.Type = CiSystem.StringPtrType;
 	}
-	public override bool IsDefaultValue => false;
+	public override bool IsDefaultValue() => false;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		visitor.VisitLiteralString(this.Value);
@@ -386,7 +383,7 @@ public class CiLiteralNull : CiLiteral
 	{
 		this.Type = CiSystem.NullType;
 	}
-	public override bool IsDefaultValue => true;
+	public override bool IsDefaultValue() => true;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		visitor.VisitLiteralNull();
@@ -405,7 +402,7 @@ public abstract class CiLiteralBool : CiLiteral
 
 public class CiLiteralFalse : CiLiteralBool
 {
-	public override bool IsDefaultValue => true;
+	public override bool IsDefaultValue() => true;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		visitor.VisitLiteralFalse();
@@ -416,7 +413,7 @@ public class CiLiteralFalse : CiLiteralBool
 
 public class CiLiteralTrue : CiLiteralBool
 {
-	public override bool IsDefaultValue => false;
+	public override bool IsDefaultValue() => false;
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		visitor.VisitLiteralTrue();
@@ -432,7 +429,7 @@ public class CiImplicitEnumValue : CiExpr
 	{
 		this.Value = value;
 	}
-	public override int IntValue => this.Value;
+	public override int IntValue() => this.Value;
 }
 
 public class CiInterpolatedPart
@@ -493,8 +490,8 @@ public class CiSymbolReference : CiExpr
 	public CiExpr Left;
 	public string Name;
 	public CiSymbol Symbol;
-	public override bool IsConstEnum => this.Symbol.Parent is CiEnum;
-	public override int IntValue => ((CiConst) this.Symbol).Value.IntValue;
+	public override bool IsConstEnum() => this.Symbol.Parent is CiEnum;
+	public override int IntValue() => ((CiConst) this.Symbol).Value.IntValue();
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitSymbolReference(this, parent);
 	public override bool IsReferenceTo(CiSymbol symbol) => this.Symbol == symbol;
 	public override string ToString() => this.Left != null ? $"{this.Left}.{this.Name}" : this.Name;
@@ -508,14 +505,11 @@ public abstract class CiUnaryExpr : CiExpr
 
 public class CiPrefixExpr : CiUnaryExpr
 {
-	public override bool IsConstEnum => this.Type is CiEnumFlags && this.Inner.IsConstEnum; // && this.Op == CiToken.Tilde
-	public override int IntValue
+	public override bool IsConstEnum() => this.Type is CiEnumFlags && this.Inner.IsConstEnum(); // && this.Op == CiToken.Tilde
+	public override int IntValue()
 	{
-		get
-		{
-			Trace.Assert(this.Op == CiToken.Tilde);
-			return ~this.Inner.IntValue;
-		}
+		Trace.Assert(this.Op == CiToken.Tilde);
+		return ~this.Inner.IntValue();
 	}
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitPrefixExpr(this, parent);
 }
@@ -530,123 +524,111 @@ public class CiBinaryExpr : CiExpr
 	public CiExpr Left;
 	public CiToken Op;
 	public CiExpr Right;
-	public override bool IsIndexing => this.Op == CiToken.LeftBracket;
-	public override bool IsConstEnum
+	public override bool IsIndexing() => this.Op == CiToken.LeftBracket;
+	public override bool IsConstEnum()
 	{
-		get
-		{
-			switch (this.Op) {
-			case CiToken.And:
-			case CiToken.Or:
-			case CiToken.Xor:
-				return this.Type is CiEnumFlags && this.Left.IsConstEnum && this.Right.IsConstEnum;
-			default:
-				return false;
-			}
+		switch (this.Op) {
+		case CiToken.And:
+		case CiToken.Or:
+		case CiToken.Xor:
+			return this.Type is CiEnumFlags && this.Left.IsConstEnum() && this.Right.IsConstEnum();
+		default:
+			return false;
 		}
 	}
-	public override int IntValue
+	public override int IntValue()
 	{
-		get
-		{
-			return this.Op switch {
-					CiToken.And => this.Left.IntValue & this.Right.IntValue,
-					CiToken.Or => this.Left.IntValue | this.Right.IntValue,
-					CiToken.Xor => this.Left.IntValue ^ this.Right.IntValue,
-					_ => base.IntValue // throw
-				};
-		}
+		return this.Op switch {
+				CiToken.And => this.Left.IntValue() & this.Right.IntValue(),
+				CiToken.Or => this.Left.IntValue() | this.Right.IntValue(),
+				CiToken.Xor => this.Left.IntValue() ^ this.Right.IntValue(),
+				_ => base.IntValue() // throw
+			};
 	}
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitBinaryExpr(this, parent);
-	public bool IsAssign
+	public bool IsAssign()
 	{
-		get
-		{
-			switch (this.Op) {
-			case CiToken.Assign:
-			case CiToken.AddAssign:
-			case CiToken.SubAssign:
-			case CiToken.MulAssign:
-			case CiToken.DivAssign:
-			case CiToken.ModAssign:
-			case CiToken.ShiftLeftAssign:
-			case CiToken.ShiftRightAssign:
-			case CiToken.AndAssign:
-			case CiToken.OrAssign:
-			case CiToken.XorAssign:
-				return true;
-			default:
-				return false;
-			}
+		switch (this.Op) {
+		case CiToken.Assign:
+		case CiToken.AddAssign:
+		case CiToken.SubAssign:
+		case CiToken.MulAssign:
+		case CiToken.DivAssign:
+		case CiToken.ModAssign:
+		case CiToken.ShiftLeftAssign:
+		case CiToken.ShiftRightAssign:
+		case CiToken.AndAssign:
+		case CiToken.OrAssign:
+		case CiToken.XorAssign:
+			return true;
+		default:
+			return false;
 		}
 	}
 
-	public string OpString
+	public string GetOpString()
 	{
-		get
-		{
-			switch (this.Op) {
-			case CiToken.Plus:
-				return "+";
-			case CiToken.Minus:
-				return "-";
-			case CiToken.Asterisk:
-				return "*";
-			case CiToken.Slash:
-				return "/";
-			case CiToken.Mod:
-				return "%";
-			case CiToken.ShiftLeft:
-				return "<<";
-			case CiToken.ShiftRight:
-				return ">>";
-			case CiToken.Less:
-				return "<";
-			case CiToken.LessOrEqual:
-				return "<=";
-			case CiToken.Greater:
-				return ">";
-			case CiToken.GreaterOrEqual:
-				return ">=";
-			case CiToken.Equal:
-				return "==";
-			case CiToken.NotEqual:
-				return "!=";
-			case CiToken.And:
-				return "&";
-			case CiToken.Or:
-				return "|";
-			case CiToken.Xor:
-				return "^";
-			case CiToken.CondAnd:
-				return "&&";
-			case CiToken.CondOr:
-				return "||";
-			case CiToken.Assign:
-				return "=";
-			case CiToken.AddAssign:
-				return "+=";
-			case CiToken.SubAssign:
-				return "-=";
-			case CiToken.MulAssign:
-				return "*=";
-			case CiToken.DivAssign:
-				return "/=";
-			case CiToken.ModAssign:
-				return "%=";
-			case CiToken.ShiftLeftAssign:
-				return "<<=";
-			case CiToken.ShiftRightAssign:
-				return ">>=";
-			case CiToken.AndAssign:
-				return "&=";
-			case CiToken.OrAssign:
-				return "|=";
-			case CiToken.XorAssign:
-				return "^=";
-			default:
-				throw new ArgumentException(this.Op.ToString());
-			}
+		switch (this.Op) {
+		case CiToken.Plus:
+			return "+";
+		case CiToken.Minus:
+			return "-";
+		case CiToken.Asterisk:
+			return "*";
+		case CiToken.Slash:
+			return "/";
+		case CiToken.Mod:
+			return "%";
+		case CiToken.ShiftLeft:
+			return "<<";
+		case CiToken.ShiftRight:
+			return ">>";
+		case CiToken.Less:
+			return "<";
+		case CiToken.LessOrEqual:
+			return "<=";
+		case CiToken.Greater:
+			return ">";
+		case CiToken.GreaterOrEqual:
+			return ">=";
+		case CiToken.Equal:
+			return "==";
+		case CiToken.NotEqual:
+			return "!=";
+		case CiToken.And:
+			return "&";
+		case CiToken.Or:
+			return "|";
+		case CiToken.Xor:
+			return "^";
+		case CiToken.CondAnd:
+			return "&&";
+		case CiToken.CondOr:
+			return "||";
+		case CiToken.Assign:
+			return "=";
+		case CiToken.AddAssign:
+			return "+=";
+		case CiToken.SubAssign:
+			return "-=";
+		case CiToken.MulAssign:
+			return "*=";
+		case CiToken.DivAssign:
+			return "/=";
+		case CiToken.ModAssign:
+			return "%=";
+		case CiToken.ShiftLeftAssign:
+			return "<<=";
+		case CiToken.ShiftRightAssign:
+			return ">>=";
+		case CiToken.AndAssign:
+			return "&=";
+		case CiToken.OrAssign:
+			return "|=";
+		case CiToken.XorAssign:
+			return "^=";
+		default:
+			throw new ArgumentException(this.Op.ToString());
 		}
 	}
 
@@ -667,7 +649,7 @@ public class CiBinaryExpr : CiExpr
 
 	public static CiType PromoteNumericTypes(CiType left, CiType right) => PromoteFloatingTypes(left, right) ?? PromoteIntegerTypes(left, right);
 
-	public override string ToString() => this.Op == CiToken.LeftBracket ? $"{this.Left}[{this.Right}]" : $"({this.Left} {this.OpString} {this.Right})";
+	public override string ToString() => this.Op == CiToken.LeftBracket ? $"{this.Left}[{this.Right}]" : $"({this.Left} {GetOpString()} {this.Right})";
 }
 
 public class CiSelectExpr : CiExpr
@@ -699,7 +681,7 @@ public class CiLambdaExpr : CiScope
 public abstract class CiCondCompletionStatement : CiScope
 {
 	bool CompletesNormallyValue;
-	public override bool CompletesNormally => this.CompletesNormallyValue;
+	public override bool CompletesNormally() => this.CompletesNormallyValue;
 	public void SetCompletesNormally(bool value) { this.CompletesNormallyValue = value; }
 }
 
@@ -720,7 +702,7 @@ public class CiAssert : CiStatement
 {
 	public CiExpr Cond;
 	public CiExpr Message = null;
-	public override bool CompletesNormally => !(this.Cond is CiLiteralFalse);
+	public override bool CompletesNormally() => !(this.Cond is CiLiteralFalse);
 	public override void Accept(CiVisitor visitor) { visitor.VisitAssert(this); }
 }
 
@@ -728,7 +710,7 @@ public class CiBreak : CiStatement
 {
 	public readonly CiCondCompletionStatement LoopOrSwitch;
 	public CiBreak(CiCondCompletionStatement loopOrSwitch) { this.LoopOrSwitch = loopOrSwitch; }
-	public override bool CompletesNormally => false;
+	public override bool CompletesNormally() => false;
 	public override void Accept(CiVisitor visitor) { visitor.VisitBreak(this); }
 }
 
@@ -736,7 +718,7 @@ public class CiContinue : CiStatement
 {
 	public readonly CiLoop Loop;
 	public CiContinue(CiLoop loop) { this.Loop = loop; }
-	public override bool CompletesNormally => false;
+	public override bool CompletesNormally() => false;
 	public override void Accept(CiVisitor visitor) { visitor.VisitContinue(this); }
 }
 
@@ -759,8 +741,8 @@ public class CiForeach : CiLoop
 {
 	public CiExpr Collection;
 	public override void Accept(CiVisitor visitor) { visitor.VisitForeach(this); }
-	public CiVar Element => this.FirstParameter();
-	public CiVar ValueVar => this.FirstParameter().NextParameter();
+	public CiVar GetVar() => this.FirstParameter();
+	public CiVar GetValueVar() => this.FirstParameter().NextParameter();
 }
 
 public class CiIf : CiCondCompletionStatement
@@ -775,21 +757,21 @@ public class CiLock : CiStatement
 {
 	public CiExpr Lock;
 	public CiStatement Body;
-	public override bool CompletesNormally => this.Body.CompletesNormally;
+	public override bool CompletesNormally() => this.Body.CompletesNormally();
 	public override void Accept(CiVisitor visitor) { visitor.VisitLock(this); }
 }
 
 public class CiNative : CiStatement
 {
 	public string Content;
-	public override bool CompletesNormally => true;
+	public override bool CompletesNormally() => true;
 	public override void Accept(CiVisitor visitor) { visitor.VisitNative(this); }
 }
 
 public class CiReturn : CiStatement
 {
 	public CiExpr Value;
-	public override bool CompletesNormally => false;
+	public override bool CompletesNormally() => false;
 	public override void Accept(CiVisitor visitor) { visitor.VisitReturn(this); }
 }
 
@@ -814,7 +796,7 @@ public class CiSwitch : CiCondCompletionStatement
 		return length;
 	}
 
-	public bool HasDefault => LengthWithoutTrailingBreak(this.DefaultBody) > 0;
+	public bool HasDefault() => LengthWithoutTrailingBreak(this.DefaultBody) > 0;
 
 	static bool HasBreak(CiStatement statement)
 	{
@@ -864,7 +846,7 @@ public class CiSwitch : CiCondCompletionStatement
 public class CiThrow : CiStatement
 {
 	public CiExpr Message;
-	public override bool CompletesNormally => false;
+	public override bool CompletesNormally() => false;
 	public override void Accept(CiVisitor visitor) { visitor.VisitThrow(this); }
 }
 
@@ -875,7 +857,7 @@ public class CiWhile : CiLoop
 
 public class CiField : CiMember
 {
-	public override bool IsStatic => false;
+	public override bool IsStatic() => false;
 }
 
 public class CiMethodBase : CiMember
@@ -934,17 +916,14 @@ public class CiMethod : CiMethodBase
 		result.IsMutator = true;
 		return result;
 	}
-	public override bool IsStatic => this.CallType == CiCallType.Static;
-	public bool IsAbstractOrVirtual => this.CallType == CiCallType.Abstract || this.CallType == CiCallType.Virtual;
-	public CiMethod DeclaringMethod
+	public override bool IsStatic() => this.CallType == CiCallType.Static;
+	public bool IsAbstractOrVirtual() => this.CallType == CiCallType.Abstract || this.CallType == CiCallType.Virtual;
+	public CiMethod GetDeclaringMethod()
 	{
-		get
-		{
-			CiMethod method = this;
-			while (method.CallType == CiCallType.Override)
-				method = (CiMethod) method.Parent.Parent.TryLookup(method.Name);
-			return method;
-		}
+		CiMethod method = this;
+		while (method.CallType == CiCallType.Override)
+			method = (CiMethod) method.Parent.Parent.TryLookup(method.Name);
+		return method;
 	}
 }
 
@@ -962,15 +941,15 @@ public class CiMethodGroup : CiMember
 
 public class CiType : CiScope
 {
-	public virtual string ArraySuffix => "";
+	public virtual string GetArraySuffix() => "";
 	public virtual bool IsAssignableFrom(CiType right) => this == right;
 	public virtual bool EqualsType(CiType right) => this == right;
-	public virtual bool IsNullable => false;
-	public virtual CiType BaseType => this;
-	public virtual CiType StorageType => this;
-	public virtual CiType PtrOrSelf => this;
-	public virtual bool IsFinal => false;
-	public virtual bool IsArray => false;
+	public virtual bool IsNullable() => false;
+	public virtual CiType GetBaseType() => this;
+	public virtual CiType GetStorageType() => this;
+	public virtual CiType GetPtrOrSelf() => this;
+	public virtual bool IsFinal() => false;
+	public virtual bool IsArray() => false;
 }
 
 public abstract class CiContainerType : CiType
@@ -1012,21 +991,19 @@ public class CiClass : CiContainerType
 	public readonly List<CiConst> ConstArrays = new List<CiConst>();
 	public CiVisitStatus VisitStatus;
 	public override string ToString() => this.Name + "()";
-	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this };
-	public bool AddsVirtualMethods
+	public override CiType GetPtrOrSelf() => new CiReadWriteClassType { Class = this };
+	public bool AddsVirtualMethods()
 	{
-		get {
-			for (CiSymbol symbol = this.First; symbol != null; symbol = symbol.Next) {
-				if (symbol is CiMethod method && method.IsAbstractOrVirtual)
-					return true;
-			}
-			return false;
+		for (CiSymbol symbol = this.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is CiMethod method && method.IsAbstractOrVirtual())
+				return true;
 		}
+		return false;
 	}
 
 	public CiClass()
 	{
-		Add(new CiVar(this.PtrOrSelf, "this")); // shadows "this" in base class
+		Add(new CiVar(GetPtrOrSelf(), "this")); // shadows "this" in base class
 	}
 
 	public CiClass(CiCallType callType, CiId id, string name)
@@ -1126,7 +1103,7 @@ public class CiRangeType : CiIntegerType
 		return v;
 	}
 
-	public int VariableBits => GetMask(this.Min ^ this.Max);
+	public int GetVariableBits() => GetMask(this.Min ^ this.Max);
 
 	public void SplitBySign(out CiRangeType negative, out CiRangeType positive)
 	{
@@ -1173,14 +1150,14 @@ public class CiStringType : CiType
 			return null;
 		}
 	}
-	public override bool IsNullable => true;
+	public override bool IsNullable() => true;
 	public override bool IsAssignableFrom(CiType right) => right == CiSystem.NullType || right is CiStringType;
 }
 
 public class CiStringStorageType : CiStringType
 {
-	public override bool IsNullable => false;
-	public override CiType PtrOrSelf => CiSystem.StringPtrType;
+	public override bool IsNullable() => false;
+	public override CiType GetPtrOrSelf() => CiSystem.StringPtrType;
 	public override bool IsAssignableFrom(CiType right) => right is CiStringType;
 }
 
@@ -1189,20 +1166,20 @@ public class CiClassType : CiType
 	public CiClass Class;
 	public CiType TypeArg0;
 	public CiType TypeArg1;
-	public CiType ElementType => this.TypeArg0;
-	public CiType KeyType => this.TypeArg0;
-	public CiType ValueType => this.TypeArg1;
-	public override bool IsNullable => true;
-	public override bool IsArray => this.Class.Id == CiId.ArrayPtrClass;
-	public override CiType BaseType => this.IsArray ? this.ElementType.BaseType : this;
+	public CiType GetElementType() => this.TypeArg0;
+	public CiType GetKeyType() => this.TypeArg0;
+	public CiType GetValueType() => this.TypeArg1;
+	public override bool IsNullable() => true;
+	public override bool IsArray() => this.Class.Id == CiId.ArrayPtrClass;
+	public override CiType GetBaseType() => IsArray() ? GetElementType().GetBaseType() : this;
 
 	public CiType EvalType(CiType type)
 	{
 		if (type == CiSystem.TypeParam0)
 			return this.TypeArg0;
 		if (type == CiSystem.TypeParam0NotFinal)
-			return this.TypeArg0.IsFinal ? null : this.TypeArg0;
-		if (type is CiReadWriteClassType array && array.IsArray && array.ElementType == CiSystem.TypeParam0)
+			return this.TypeArg0.IsFinal() ? null : this.TypeArg0;
+		if (type is CiReadWriteClassType array && array.IsArray() && array.GetElementType() == CiSystem.TypeParam0)
 			return new CiReadWriteClassType { Class = CiSystem.ArrayPtrClass, TypeArg0 = this.TypeArg0 };
 		return type;
 	}
@@ -1231,17 +1208,17 @@ public class CiClassType : CiType
 		=> right is CiClassType that // TODO: exact match
 			&& this.Class == that.Class && EqualTypeArguments(that);
 
-	public override string ArraySuffix => this.IsArray ? "[]" : "";
-	public virtual string ClassSuffix => "";
+	public override string GetArraySuffix() => IsArray() ? "[]" : "";
+	public virtual string GetClassSuffix() => "";
 
 	public override string ToString()
 	{
-		if (this.IsArray)
-			return this.ElementType.BaseType + this.ArraySuffix + this.ElementType.ArraySuffix;
+		if (IsArray())
+			return GetElementType().GetBaseType() + GetArraySuffix() + GetElementType().GetArraySuffix();
 		switch (this.Class.TypeParameterCount) {
-		case 0: return this.Class.Name + this.ClassSuffix;
-		case 1: return $"{this.Class.Name}<{this.TypeArg0}>{this.ClassSuffix}";
-		case 2: return $"{this.Class.Name}<{this.TypeArg0}, {this.TypeArg1}>{this.ClassSuffix}";
+		case 0: return this.Class.Name + GetClassSuffix();
+		case 1: return $"{this.Class.Name}<{this.TypeArg0}>{GetClassSuffix()}";
+		case 2: return $"{this.Class.Name}<{this.TypeArg0}, {this.TypeArg1}>{GetClassSuffix()}";
 		default: throw new NotImplementedException();
 		}
 	}
@@ -1255,17 +1232,17 @@ public class CiReadWriteClassType : CiClassType
 			|| (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
 	}
 
-	public override string ArraySuffix => this.IsArray ? "[]!" : "";
-	public override string ClassSuffix => "!";
+	public override string GetArraySuffix() => IsArray() ? "[]!" : "";
+	public override string GetClassSuffix() => "!";
 }
 
 public class CiStorageType : CiReadWriteClassType
 {
-	public override bool IsFinal => this.Class.Id != CiId.MatchClass;
-	public override bool IsNullable => false;
+	public override bool IsFinal() => this.Class.Id != CiId.MatchClass;
+	public override bool IsNullable() => false;
 	public override bool IsAssignableFrom(CiType right) => right is CiStorageType rightClass && this.Class == rightClass.Class && EqualTypeArguments(rightClass);
-	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this.Class, TypeArg0 = this.TypeArg0, TypeArg1 = this.TypeArg1 };
-	public override string ClassSuffix => "()";
+	public override CiType GetPtrOrSelf() => new CiReadWriteClassType { Class = this.Class, TypeArg0 = this.TypeArg0, TypeArg1 = this.TypeArg1 };
+	public override string GetClassSuffix() => "()";
 }
 
 public class CiDynamicPtrType : CiReadWriteClassType
@@ -1275,10 +1252,10 @@ public class CiDynamicPtrType : CiReadWriteClassType
 		return right == CiSystem.NullType
 			|| (right is CiDynamicPtrType rightClass && IsAssignableFromClass(rightClass));
 	}
-	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = this.Class, TypeArg0 = this.TypeArg0 };
+	public override CiType GetPtrOrSelf() => new CiReadWriteClassType { Class = this.Class, TypeArg0 = this.TypeArg0 };
 
-	public override string ArraySuffix => this.IsArray ? "[]#" : "";
-	public override string ClassSuffix => "#";
+	public override string GetArraySuffix() => IsArray() ? "[]#" : "";
+	public override string GetClassSuffix() => "#";
 }
 
 public class CiArrayStorageType : CiStorageType
@@ -1292,13 +1269,13 @@ public class CiArrayStorageType : CiStorageType
 		this.Class = CiSystem.ArrayStorageClass;
 	}
 
-	public override string ToString() => this.BaseType + this.ArraySuffix + this.ElementType.ArraySuffix;
-	public override CiType BaseType => this.ElementType.BaseType;
-	public override bool IsArray => true;
-	public override string ArraySuffix => $"[{this.Length}]";
-	public override bool EqualsType(CiType right) => right is CiArrayStorageType that && this.ElementType.EqualsType(that.ElementType) && this.Length == that.Length;
-	public override CiType StorageType => this.ElementType.StorageType;
-	public override CiType PtrOrSelf => new CiReadWriteClassType { Class = CiSystem.ArrayPtrClass, TypeArg0 = this.ElementType };
+	public override string ToString() => GetBaseType() + GetArraySuffix() + GetElementType().GetArraySuffix();
+	public override CiType GetBaseType() => GetElementType().GetBaseType();
+	public override bool IsArray() => true;
+	public override string GetArraySuffix() => $"[{this.Length}]";
+	public override bool EqualsType(CiType right) => right is CiArrayStorageType that && GetElementType().EqualsType(that.GetElementType()) && this.Length == that.Length;
+	public override CiType GetStorageType() => GetElementType().GetStorageType();
+	public override CiType GetPtrOrSelf() => new CiReadWriteClassType { Class = CiSystem.ArrayPtrClass, TypeArg0 = GetElementType() };
 }
 
 public class CiPrintableType : CiType

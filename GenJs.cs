@@ -123,7 +123,7 @@ public class GenJs : GenBase
 
 	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
 	{
-		CiNumericType number = ((CiArrayStorageType) expr.Type).ElementType as CiNumericType;
+		CiNumericType number = ((CiArrayStorageType) expr.Type).GetElementType() as CiNumericType;
 		if (number != null) {
 			Write("new ");
 			Write(GetArrayElementType(number));
@@ -164,7 +164,7 @@ public class GenJs : GenBase
 
 	protected override void WriteVar(CiNamedValue def)
 	{
-		Write(def.Type.IsFinal && !def.IsAssignableStorage ? "const " : "let ");
+		Write(def.Type.IsFinal() && !def.IsAssignableStorage() ? "const " : "let ");
 		base.WriteVar(def);
 	}
 
@@ -247,7 +247,7 @@ public class GenJs : GenBase
 	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
 		if (symbol is CiMember member) {
-			if (!member.IsStatic)
+			if (!member.IsStatic())
 				Write("this");
 			else if (this.CurrentMethod != null)
 				Write(this.CurrentMethod.Parent.Name);
@@ -270,7 +270,7 @@ public class GenJs : GenBase
 		WriteCall("Array", lengthExpr);
 	}
 
-	protected override bool HasInitCode(CiNamedValue def) => def.Type is CiArrayStorageType array && array.ElementType is CiStorageType;
+	protected override bool HasInitCode(CiNamedValue def) => def.Type is CiArrayStorageType array && array.GetElementType() is CiStorageType;
 
 	protected override void WriteInitCode(CiNamedValue def)
 	{
@@ -278,15 +278,15 @@ public class GenJs : GenBase
 			return;
 		CiArrayStorageType array = (CiArrayStorageType) def.Type;
 		int nesting = 0;
-		while (array.ElementType is CiArrayStorageType innerArray) {
+		while (array.GetElementType() is CiArrayStorageType innerArray) {
 			OpenLoop("let", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");
-			WriteNewArray(innerArray.ElementType, innerArray.LengthExpr, CiPriority.Argument);
+			WriteNewArray(innerArray.GetElementType(), innerArray.LengthExpr, CiPriority.Argument);
 			WriteLine(';');
 			array = innerArray;
 		}
-		if (array.ElementType is CiStorageType klass) {
+		if (array.GetElementType() is CiStorageType klass) {
 			OpenLoop("let", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");
@@ -453,8 +453,9 @@ public class GenJs : GenBase
 		case CiId.ArrayCopyTo:
 		case CiId.ListCopyTo:
 			args[1].Accept(this, CiPriority.Primary);
-			bool wholeSource = obj.Type is CiArrayStorageType sourceStorage && args[0].IsLiteralZero && args[3] is CiLiteralLong literalLength && literalLength.Value == sourceStorage.Length;
-			if (((CiClassType) obj.Type).ElementType is CiNumericType) {
+			bool wholeSource = obj.Type is CiArrayStorageType sourceStorage && args[0].IsLiteralZero()
+				&& args[3] is CiLiteralLong literalLength && literalLength.Value == sourceStorage.Length;
+			if (((CiClassType) obj.Type).GetElementType() is CiNumericType) {
 				Write(".set(");
 				if (wholeSource)
 					obj.Accept(this, CiPriority.Argument);
@@ -464,7 +465,7 @@ public class GenJs : GenBase
 					WriteStartEnd(args[0], args[3]);
 					Write(')');
 				}
-				if (!args[2].IsLiteralZero) {
+				if (!args[2].IsLiteralZero()) {
 					Write(", ");
 					args[2].Accept(this, CiPriority.Argument);
 				}
@@ -595,7 +596,7 @@ public class GenJs : GenBase
 			Write("new TextEncoder().encodeInto(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
-			if (args[2].IsLiteralZero)
+			if (args[2].IsLiteralZero())
 				args[1].Accept(this, CiPriority.Argument);
 			else {
 				args[1].Accept(this, CiPriority.Primary);
@@ -720,7 +721,7 @@ public class GenJs : GenBase
 			base.WriteAssign(expr, parent);
 	}
 
-	protected override string IsOperator => " instanceof ";
+	protected override string GetIsOperator() => " instanceof ";
 
 	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
@@ -781,7 +782,7 @@ public class GenJs : GenBase
 		case CiId.ArrayStorageClass:
 		case CiId.ListClass:
 		case CiId.HashSetClass:
-			WriteName(statement.Element);
+			WriteName(statement.GetVar());
 			Write(" of ");
 			statement.Collection.Accept(this, CiPriority.Argument);
 			break;
@@ -789,15 +790,15 @@ public class GenJs : GenBase
 		case CiId.SortedDictionaryClass:
 		case CiId.OrderedDictionaryClass:
 			Write('[');
-			WriteName(statement.Element);
+			WriteName(statement.GetVar());
 			Write(", ");
-			WriteName(statement.ValueVar);
+			WriteName(statement.GetValueVar());
 			Write("] of ");
 			if (klass.Class.Id == CiId.OrderedDictionaryClass)
 				statement.Collection.Accept(this, CiPriority.Argument);
 			else {
 				WriteCall("Object.entries", statement.Collection);
-				switch (statement.Element.Type) {
+				switch (statement.GetVar().Type) {
 				case CiStringType _:
 					if (klass.Class.Id == CiId.SortedDictionaryClass)
 						Write(".sort((a, b) => a[0].localeCompare(b[0]))");
@@ -808,7 +809,7 @@ public class GenJs : GenBase
 						Write(".sort((a, b) => a[0] - b[0])");
 					break;
 				default:
-					throw new NotImplementedException(statement.Element.Type.ToString());
+					throw new NotImplementedException(statement.GetVar().Type.ToString());
 				}
 			}
 			break;
@@ -838,7 +839,7 @@ public class GenJs : GenBase
 		Write(konst.Documentation);
 		WriteUppercaseWithUnderscores(konst.Name);
 		Write(" : ");
-		VisitLiteralLong(konst.Value.IntValue);
+		VisitLiteralLong(konst.Value.IntValue());
 	}
 
 	protected override void WriteEnum(CiEnum enu)

@@ -45,7 +45,7 @@ public abstract class GenTyped : GenBase
 
 	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
 	{
-		CiType type = ((CiArrayStorageType) expr.Type).ElementType;
+		CiType type = ((CiArrayStorageType) expr.Type).GetElementType();
 		Write("{ ");
 		WriteCoercedLiterals(type, expr.Items);
 		Write(" }");
@@ -54,16 +54,16 @@ public abstract class GenTyped : GenBase
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		Write("new ");
-		Write(elementType.BaseType, false);
+		Write(elementType.GetBaseType(), false);
 		Write('[');
 		lengthExpr.Accept(this, CiPriority.Argument);
 		Write(']');
-		while (elementType.IsArray) {
+		while (elementType.IsArray()) {
 			Write('[');
 			if (elementType is CiArrayStorageType arrayStorage)
 				arrayStorage.LengthExpr.Accept(this, CiPriority.Argument);
 			Write(']');
-			elementType = ((CiClassType) elementType).ElementType;
+			elementType = ((CiClassType) elementType).GetElementType();
 		}
 	}
 
@@ -185,7 +185,7 @@ public abstract class GenTyped : GenBase
 	{
 		switch (expr) {
 		case CiLiteral _:
-		case CiBinaryExpr binary when IsNotPromotedIndexing(binary) || binary.IsAssign:
+		case CiBinaryExpr binary when IsNotPromotedIndexing(binary) || binary.IsAssign():
 			return GetTypeCode(expr.Type, false);
 		default:
 			return GetTypeCode(expr.Type, true);
@@ -194,7 +194,7 @@ public abstract class GenTyped : GenBase
 
 	protected override void WriteAssignRight(CiBinaryExpr expr)
 	{
-		if (expr.Left.IsIndexing) {
+		if (expr.Left.IsIndexing()) {
 			TypeCode leftTypeCode = GetTypeCode(expr.Left.Type, false);
 			TypeCode rightTypeCode = GetTypeCode(expr.Right);
 			if (leftTypeCode == TypeCode.SByte && rightTypeCode == TypeCode.SByte) {

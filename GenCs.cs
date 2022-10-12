@@ -219,7 +219,7 @@ public class GenCs : GenTyped
 			switch (klass.Class.Id) {
 			case CiId.ArrayPtrClass:
 			case CiId.ArrayStorageClass:
-				Write(klass.ElementType, false);
+				Write(klass.GetElementType(), false);
 				Write("[]");
 				break;
 			case CiId.ListClass:
@@ -227,16 +227,16 @@ public class GenCs : GenTyped
 			case CiId.StackClass:
 			case CiId.HashSetClass:
 				Write(klass.Class.Name);
-				WriteElementType(klass.ElementType);
+				WriteElementType(klass.GetElementType());
 				break;
 			case CiId.DictionaryClass:
 			case CiId.SortedDictionaryClass:
 				Include("System.Collections.Generic");
 				Write(klass.Class.Name);
 				Write('<');
-				Write(klass.KeyType, false);
+				Write(klass.GetKeyType(), false);
 				Write(", ");
-				Write(klass.ValueType, false);
+				Write(klass.GetValueType(), false);
 				Write('>');
 				break;
 			case CiId.OrderedDictionaryClass:
@@ -318,13 +318,13 @@ public class GenCs : GenTyped
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		Write("new ");
-		Write(elementType.BaseType, false);
+		Write(elementType.GetBaseType(), false);
 		Write('[');
 		lengthExpr.Accept(this, CiPriority.Argument);
 		Write(']');
-		while (elementType is CiClassType array && array.IsArray) {
+		while (elementType is CiClassType array && array.IsArray()) {
 			Write("[]");
-			elementType = array.ElementType;
+			elementType = array.GetElementType();
 		}
 	}
 
@@ -335,7 +335,7 @@ public class GenCs : GenTyped
 		Write("()");
 	}
 
-	protected override bool HasInitCode(CiNamedValue def) => def.Type is CiArrayStorageType array && array.ElementType is CiStorageType;
+	protected override bool HasInitCode(CiNamedValue def) => def.Type is CiArrayStorageType array && array.GetElementType() is CiStorageType;
 
 	protected override void WriteInitCode(CiNamedValue def)
 	{
@@ -343,15 +343,15 @@ public class GenCs : GenTyped
 			return;
 		CiArrayStorageType array = (CiArrayStorageType) def.Type;
 		int nesting = 0;
-		while (array.ElementType is CiArrayStorageType innerArray) {
+		while (array.GetElementType() is CiArrayStorageType innerArray) {
 			OpenLoop("int", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");
-			WriteNewArray(innerArray.ElementType, innerArray.LengthExpr, CiPriority.Argument);
+			WriteNewArray(innerArray.GetElementType(), innerArray.LengthExpr, CiPriority.Argument);
 			WriteLine(';');
 			array = innerArray;
 		}
-		if (array.ElementType is CiStorageType klass) {
+		if (array.GetElementType() is CiStorageType klass) {
 			OpenLoop("int", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");
@@ -404,14 +404,14 @@ public class GenCs : GenTyped
 			&& dict.Class.Id == CiId.OrderedDictionaryClass) {
 				if (parent == CiPriority.Primary)
 					Write('(');
-				CiVar element = forEach.Element;
+				CiVar element = forEach.GetVar();
 				if (expr.Symbol == element) {
-					WriteStaticCastType(dict.KeyType);
+					WriteStaticCastType(dict.GetKeyType());
 					WriteName(element);
 					Write(".Key");
 				}
 				else {
-					WriteStaticCastType(dict.ValueType);
+					WriteStaticCastType(dict.GetValueType());
 					WriteName(element);
 					Write(".Value");
 				}
@@ -450,7 +450,7 @@ public class GenCs : GenTyped
 				args[2].Accept(this, CiPriority.Argument);
 				Write(", ");
 			}
-			WriteNotPromoted(((CiClassType) obj.Type).ElementType, args[0]);
+			WriteNotPromoted(((CiClassType) obj.Type).GetElementType(), args[0]);
 			Write(')');
 			break;
 		case CiId.ArrayCopyTo:
@@ -464,7 +464,7 @@ public class GenCs : GenTyped
 		case CiId.ArrayFillAll:
 		case CiId.ArrayFillPart:
 			Include("System");
-			if (args[0] is CiLiteral literal && literal.IsDefaultValue) {
+			if (args[0] is CiLiteral literal && literal.IsDefaultValue()) {
 				Write("Array.Clear(");
 				obj.Accept(this, CiPriority.Argument);
 				if (args.Count == 1) {
@@ -477,7 +477,7 @@ public class GenCs : GenTyped
 				Write("Array.Fill(");
 				obj.Accept(this, CiPriority.Argument);
 				Write(", ");
-				WriteNotPromoted(((CiClassType) obj.Type).ElementType, args[0]);
+				WriteNotPromoted(((CiClassType) obj.Type).GetElementType(), args[0]);
 			}
 			if (args.Count == 3) {
 				Write(", ");
@@ -516,7 +516,7 @@ public class GenCs : GenTyped
 			Write(".Add(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
-			WriteNewStorage(((CiClassType) obj.Type).ValueType);
+			WriteNewStorage(((CiClassType) obj.Type).GetValueType());
 			Write(')');
 			break;
 		case CiId.OrderedDictionaryContainsKey:
@@ -667,7 +667,7 @@ public class GenCs : GenTyped
 				Write('(');
 			expr.Left.Accept(this, CiPriority.Assign);
 			Write(' ');
-			Write(expr.OpString);
+			Write(expr.GetOpString());
 			Write(' ');
 			WriteAssignRight(expr);
 			if (parent > CiPriority.Assign)
@@ -687,7 +687,7 @@ public class GenCs : GenTyped
 
 	public override void VisitAssert(CiAssert statement)
 	{
-		if (statement.CompletesNormally) {
+		if (statement.CompletesNormally()) {
 			Include("System.Diagnostics");
 			Write("Debug.Assert(");
 			statement.Cond.Accept(this, CiPriority.Argument);
@@ -712,18 +712,18 @@ public class GenCs : GenTyped
 			if (dict.Class.Id == CiId.OrderedDictionaryClass) {
 				Include("System.Collections");
 				Write("DictionaryEntry ");
-				WriteName(statement.Element);
+				WriteName(statement.GetVar());
 			}
 			else {
 				Write('(');
-				WriteTypeAndName(statement.Element);
+				WriteTypeAndName(statement.GetVar());
 				Write(", ");
-				WriteTypeAndName(statement.ValueVar);
+				WriteTypeAndName(statement.GetValueVar());
 				Write(')');
 			}
 		}
 		else
-			WriteTypeAndName(statement.Element);
+			WriteTypeAndName(statement.GetVar());
 		Write(" in ");
 		statement.Collection.Accept(this, CiPriority.Argument);
 		Write(')');
@@ -780,7 +780,7 @@ public class GenCs : GenTyped
 		WriteLine();
 		Write(field.Documentation);
 		Write(field.Visibility);
-		if (field.Type.IsFinal && !field.IsAssignableStorage)
+		if (field.Type.IsFinal() && !field.IsAssignableStorage())
 			Write("readonly ");
 		WriteVar(field);
 		WriteLine(';');

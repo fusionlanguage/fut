@@ -34,7 +34,7 @@ public class CiException : Exception
 		this.Line = line;
 	}
 
-	public CiException(CiScope scope, string message) : this(scope.Container.Filename, scope.Line, message)
+	public CiException(CiScope scope, string message) : this(scope.GetContainer().Filename, scope.Line, message)
 	{
 	}
 }

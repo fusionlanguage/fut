@@ -123,7 +123,7 @@ public abstract class GenCCpp : GenTyped
 	protected static bool IsStringEmpty(CiBinaryExpr expr, out CiExpr str)
 	{
 		if (expr.Left is CiSymbolReference symbol && symbol.Symbol.Id == CiId.StringLength
-			&& expr.Right.IsLiteralZero) {
+			&& expr.Right.IsLiteralZero()) {
 			str = symbol.Left;
 			return true;
 		}
@@ -135,7 +135,7 @@ public abstract class GenCCpp : GenTyped
 
 	protected void WriteArrayPtrAdd(CiExpr array, CiExpr index)
 	{
-		if (index.IsLiteralZero)
+		if (index.IsLiteralZero())
 			WriteArrayPtr(array, CiPriority.Argument);
 		else {
 			WriteArrayPtr(array, CiPriority.Add);
@@ -176,9 +176,8 @@ public abstract class GenCCpp : GenTyped
 		if (IsStringSubstring(expr.Right, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)
 		 && !cast
 		 && expr.Left is CiSymbolReference leftSymbol && ptr.IsReferenceTo(leftSymbol.Symbol) // TODO: more complex expr
-		 && offset.IsLiteralZero) {
+		 && offset.IsLiteralZero())
 			return length;
-		}
 		return null;
 	}
 
@@ -275,7 +274,7 @@ public abstract class GenCCpp : GenTyped
 			WriteIfCaseBody(kase.Body, gotoId < 0);
 			op = "else if (";
 		}
-		if (statement.HasDefault) {
+		if (statement.HasDefault()) {
 			Write("else");
 			WriteIfCaseBody(statement.DefaultBody, gotoId < 0);
 		}
@@ -302,7 +301,7 @@ public abstract class GenCCpp : GenTyped
 		if (!WriteBaseClass(klass, program))
 			return;
 		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiField field && field.Type.BaseType is CiStorageType storage && storage.Class.Id == CiId.None)
+			if (symbol is CiField field && field.Type.GetBaseType() is CiStorageType storage && storage.Class.Id == CiId.None)
 				WriteClass(storage.Class, program);
 		}
 		WriteClass(klass);

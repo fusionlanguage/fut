@@ -35,7 +35,7 @@ public class GenPy : GenPySwift
 	{
 	}
 
-	protected override string DocBullet => " * ";
+	protected override string GetDocBullet() => " * ";
 
 	void StartDoc(CiCodeDoc doc)
 	{
@@ -167,7 +167,7 @@ public class GenPy : GenPySwift
 
 	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
 	{
-		if (((CiArrayStorageType) expr.Type).ElementType is CiNumericType number) {
+		if (((CiArrayStorageType) expr.Type).GetElementType() is CiNumericType number) {
 			char c = GetArrayCode(number);
 			if (c == 'B')
 				Write("bytes(");
@@ -302,7 +302,7 @@ public class GenPy : GenPySwift
 
 		case CiToken.Assign:
 			if (this.AtLineStart) {
-				for (CiExpr right = expr.Right; right is CiBinaryExpr rightBinary && rightBinary.IsAssign; right = rightBinary.Right) {
+				for (CiExpr right = expr.Right; right is CiBinaryExpr rightBinary && rightBinary.IsAssign(); right = rightBinary.Right) {
 					if (rightBinary.Op != CiToken.Assign) {
 						VisitBinaryExpr(rightBinary, CiPriority.Statement);
 						WriteLine();
@@ -313,7 +313,7 @@ public class GenPy : GenPySwift
 			expr.Left.Accept(this, CiPriority.Assign);
 			Write(" = ");
 			{
-				(expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign && rightBinary.Op != CiToken.Assign ? rightBinary.Left /* TODO: side effect*/ : expr.Right).Accept(this, CiPriority.Assign);
+				(expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign() && rightBinary.Op != CiToken.Assign ? rightBinary.Left /* TODO: side effect*/ : expr.Right).Accept(this, CiPriority.Assign);
 			}
 			return expr;
 		case CiToken.AddAssign:
@@ -328,7 +328,7 @@ public class GenPy : GenPySwift
 		case CiToken.XorAssign:
 			{
 				CiExpr right = expr.Right;
-				if (right is CiBinaryExpr rightBinary && rightBinary.IsAssign) {
+				if (right is CiBinaryExpr rightBinary && rightBinary.IsAssign()) {
 					VisitBinaryExpr(rightBinary, CiPriority.Statement);
 					WriteLine();
 					right = rightBinary.Left; // TODO: side effect
@@ -337,7 +337,7 @@ public class GenPy : GenPySwift
 				Write(' ');
 				if (expr.Op == CiToken.DivAssign && expr.Type is CiIntegerType)
 					Write('/');
-				Write(expr.OpString);
+				Write(expr.GetOpString());
 				Write(' ');
 				right.Accept(this, CiPriority.Argument);
 			}
@@ -418,7 +418,7 @@ public class GenPy : GenPySwift
 			break;
 		case CiNumericType number:
 			char c = GetArrayCode(number);
-			if (c == 'B' && (value == null || value.IsLiteralZero))
+			if (c == 'B' && (value == null || value.IsLiteralZero()))
 				WriteCall("bytearray", lengthExpr);
 			else {
 				Include("array");
@@ -453,7 +453,7 @@ public class GenPy : GenPySwift
 	protected override void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
 	{
 		Write(" = ");
-		WriteNewArray(array.ElementType, null, array.LengthExpr);
+		WriteNewArray(array.GetElementType(), null, array.LengthExpr);
 	}
 
 	protected override void WriteNew(CiReadWriteClassType klass, CiPriority parent)
@@ -461,7 +461,7 @@ public class GenPy : GenPySwift
 		switch (klass.Class.Id) {
 		case CiId.ListClass:
 		case CiId.StackClass:
-			if (klass.ElementType is CiNumericType number) {
+			if (klass.GetElementType() is CiNumericType number) {
 				char c = GetArrayCode(number);
 				if (c == 'B')
 					Write("bytearray()");
@@ -518,7 +518,7 @@ public class GenPy : GenPySwift
 	void WriteAssignSorted(CiExpr obj, string byteArray)
 	{
 		Write(" = ");
-		char c = GetArrayCode((CiNumericType) ((CiClassType) obj.Type).ElementType);
+		char c = GetArrayCode((CiNumericType) ((CiClassType) obj.Type).GetElementType());
 		if (c == 'B') {
 			Write(byteArray);
 			Write('(');
@@ -613,13 +613,13 @@ public class GenPy : GenPySwift
 			if (args.Count == 1) {
 				Write("[:] = ");
 				CiArrayStorageType array = (CiArrayStorageType) obj.Type;
-				WriteNewArray(array.ElementType, args[0], array.LengthExpr);
+				WriteNewArray(array.GetElementType(), args[0], array.LengthExpr);
 			}
 			else {
 				WriteSlice(args[1], args[2]);
 				Write(" = ");
 				CiClassType klass = (CiClassType) obj.Type;
-				WriteNewArray(klass.ElementType, args[0], args[2]); // TODO: side effect
+				WriteNewArray(klass.GetElementType(), args[0], args[2]); // TODO: side effect
 			}
 			break;
 		case CiId.ArraySortAll:
@@ -653,7 +653,7 @@ public class GenPy : GenPySwift
 			break;
 		case CiId.ListClear:
 		case CiId.StackClear:
-			if (((CiClassType) obj.Type).ElementType is CiNumericType number && GetArrayCode(number) != 'B') {
+			if (((CiClassType) obj.Type).GetElementType() is CiNumericType number && GetArrayCode(number) != 'B') {
 				Write("del ");
 				obj.Accept(this, CiPriority.Primary);
 				Write("[:]");
@@ -716,10 +716,7 @@ public class GenPy : GenPySwift
 			Write('[');
 			args[2].Accept(this, CiPriority.Argument);
 			Write(':');
-			if (!args[2].IsLiteralZero) {
-				args[2].Accept(this, CiPriority.Add); // TODO: side effect
-				Write(" + ");
-			}
+			StartAdd(args[2]); // TODO: side effect
 			WriteLine("len(cibytes)] = cibytes");
 			break;
 		case CiId.UTF8GetString:
@@ -847,7 +844,7 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	protected override bool HasInitCode(CiNamedValue def) => (def.Value != null || def.Type.IsFinal) && !def.IsAssignableStorage;
+	protected override bool HasInitCode(CiNamedValue def) => (def.Value != null || def.Type.IsFinal()) && !def.IsAssignableStorage();
 
 	public override void VisitExpr(CiExpr statement)
 	{
@@ -908,7 +905,7 @@ public class GenPy : GenPySwift
 	protected override void WriteForRange(CiVar iter, CiBinaryExpr cond, long rangeStep)
 	{
 		Write("range(");
-		if (rangeStep != 1 || !iter.Value.IsLiteralZero) {
+		if (rangeStep != 1 || !iter.Value.IsLiteralZero()) {
 			iter.Value.Accept(this, CiPriority.Argument);
 			Write(", ");
 		}
@@ -936,10 +933,10 @@ public class GenPy : GenPySwift
 	public override void VisitForeach(CiForeach statement)
 	{
 		Write("for ");
-		WriteName(statement.Element);
+		WriteName(statement.GetVar());
 		if (statement.Collection.Type is CiClassType dict && dict.Class.TypeParameterCount == 2) {
 			Write(", ");
-			WriteName(statement.ValueVar);
+			WriteName(statement.GetValueVar());
 			Write(" in ");
 			if (dict.Class.Id == CiId.SortedDictionaryClass) {
 				Write("sorted(");
@@ -1023,7 +1020,7 @@ public class GenPy : GenPySwift
 			WritePyCaseBody(kase.Body);
 			op = "elif ";
 		}
-		if (statement.HasDefault) {
+		if (statement.HasDefault()) {
 			Write("else");
 			WritePyCaseBody(statement.DefaultBody);
 		}
@@ -1049,7 +1046,7 @@ public class GenPy : GenPySwift
 	{
 		WriteUppercaseWithUnderscores(konst.Name);
 		Write(" = ");
-		VisitLiteralLong(konst.Value.IntValue);
+		VisitLiteralLong(konst.Value.IntValue());
 		WriteLine();
 		Write(konst.Documentation);
 	}
