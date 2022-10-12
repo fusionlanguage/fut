@@ -1070,7 +1070,7 @@ public class GenSwift : GenPySwift
 		else {
 			Write("repeat");
 			OpenChild();
-			statement.Body.Accept(this);
+			statement.Body.AcceptStatement(this);
 			if (statement.Body.CompletesNormally())
 				VisitXcrement<CiPrefixExpr>(statement.Cond, true);
 			CloseChild();
@@ -1174,7 +1174,7 @@ public class GenSwift : GenPySwift
 		Write("defer { ");
 		statement.Lock.Accept(this, CiPriority.Primary);
 		WriteLine(".unlock() }");
-		statement.Body.Accept(this);
+		statement.Body.AcceptStatement(this);
 		CloseChild();
 	}
 
@@ -1428,7 +1428,7 @@ public class GenSwift : GenPySwift
 			}
 			InitVarsAtIndent();
 			this.CurrentMethod = method;
-			method.Body.Accept(this);
+			method.Body.AcceptStatement(this);
 			this.CurrentMethod = null;
 		}
 		CloseBlock();

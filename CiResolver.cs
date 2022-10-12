@@ -1137,7 +1137,7 @@ public class CiResolver : CiVisitor
 	{
 		bool reachable = true;
 		foreach (CiStatement statement in statements) {
-			statement.Accept(this);
+			statement.AcceptStatement(this);
 			if (!reachable)
 				throw StatementException(statement, "Unreachable statement");
 			reachable = statement.CompletesNormally();
@@ -1193,16 +1193,16 @@ public class CiResolver : CiVisitor
 	{
 		OpenScope(statement);
 		ResolveLoopCond(statement);
-		statement.Body.Accept(this);
+		statement.Body.AcceptStatement(this);
 		CloseScope();
 	}
 
 	public override void VisitFor(CiFor statement)
 	{
 		OpenScope(statement);
-		statement.Init?.Accept(this);
+		statement.Init?.AcceptStatement(this);
 		ResolveLoopCond(statement);
-		statement.Advance?.Accept(this);
+		statement.Advance?.AcceptStatement(this);
 		if (statement.Init is CiVar iter
 			&& iter.Type is CiIntegerType
 			&& iter.Value != null
@@ -1251,7 +1251,7 @@ public class CiResolver : CiVisitor
 			}
 			statement.IsIteratorUsed = false;
 		}
-		statement.Body.Accept(this);
+		statement.Body.AcceptStatement(this);
 		CloseScope();
 	}
 
@@ -1260,7 +1260,7 @@ public class CiResolver : CiVisitor
 		OpenScope(statement);
 		CiVar element = statement.GetVar();
 		ResolveType(element);
-		statement.Collection.Accept(this);
+		Resolve(statement.Collection);
 		if (!(statement.Collection.Type is CiClassType klass))
 			throw StatementException(statement.Collection, "Expected a collection");
 		switch (klass.Class.Id) {
@@ -1288,16 +1288,16 @@ public class CiResolver : CiVisitor
 			throw StatementException(statement, "foreach invalid on {klass}");
 		}
 		statement.SetCompletesNormally(true);
-		statement.Body.Accept(this);
+		statement.Body.AcceptStatement(this);
 		CloseScope();
 	}
 
 	public override void VisitIf(CiIf statement)
 	{
 		statement.Cond = ResolveBool(statement.Cond);
-		statement.OnTrue.Accept(this);
+		statement.OnTrue.AcceptStatement(this);
 		if (statement.OnFalse != null) {
-			statement.OnFalse.Accept(this);
+			statement.OnFalse.AcceptStatement(this);
 			statement.SetCompletesNormally(statement.OnTrue.CompletesNormally() || statement.OnFalse.CompletesNormally());
 		}
 		else
@@ -1308,7 +1308,7 @@ public class CiResolver : CiVisitor
 	{
 		statement.Lock = Resolve(statement.Lock);
 		Coerce(statement.Lock, CiSystem.LockPtrType);
-		statement.Body.Accept(this);
+		statement.Body.AcceptStatement(this);
 	}
 
 	public override void VisitNative(CiNative statement)
@@ -1396,7 +1396,7 @@ public class CiResolver : CiVisitor
 	{
 		OpenScope(statement);
 		ResolveLoopCond(statement);
-		statement.Body.Accept(this);
+		statement.Body.AcceptStatement(this);
 		CloseScope();
 	}
 
@@ -1719,14 +1719,14 @@ public class CiResolver : CiVisitor
 		if (klass.Constructor != null) {
 			this.CurrentScope = klass;
 			this.CurrentMethod = klass.Constructor;
-			klass.Constructor.Body.Accept(this);
+			klass.Constructor.Body.AcceptStatement(this);
 			this.CurrentMethod = null;
 		}
 		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
 			if (symbol is CiMethod method && method.Body != null) {
 				this.CurrentScope = method.Parameters;
 				this.CurrentMethod = method;
-				method.Body.Accept(this);
+				method.Body.AcceptStatement(this);
 				if (method.Type != CiSystem.VoidType && method.Body.CompletesNormally())
 					throw StatementException(method.Body, "Method can complete without a return value");
 				this.CurrentMethod = null;

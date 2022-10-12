@@ -1421,7 +1421,7 @@ namespace Foxoft.Ci
 
 		public abstract bool CompletesNormally();
 
-		public abstract void Accept(CiVisitor visitor);
+		public abstract void AcceptStatement(CiVisitor visitor);
 	}
 
 	public abstract class CiUnaryExpr : CiExpr

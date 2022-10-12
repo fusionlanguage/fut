@@ -1139,7 +1139,7 @@ public abstract class GenBase : CiVisitor
 	protected void Write(List<CiStatement> statements, int length)
 	{
 		for (int i = 0; i < length; i++)
-			statements[i].Accept(this);
+			statements[i].AcceptStatement(this);
 	}
 
 	protected virtual void Write(List<CiStatement> statements)
@@ -1163,7 +1163,7 @@ public abstract class GenBase : CiVisitor
 		else {
 			WriteLine();
 			this.Indent++;
-			statement.Accept(this);
+			statement.AcceptStatement(this);
 			this.Indent--;
 		}
 	}
@@ -1209,7 +1209,7 @@ public abstract class GenBase : CiVisitor
 			Write("else");
 			if (statement.OnFalse is CiIf) {
 				Write(' ');
-				statement.OnFalse.Accept(this);
+				statement.OnFalse.AcceptStatement(this);
 			}
 			else
 				WriteChild(statement.OnFalse);
@@ -1319,7 +1319,7 @@ public abstract class GenBase : CiVisitor
 		if (statement is CiBlock block)
 			Write(block.Statements);
 		else
-			statement.Accept(this);
+			statement.AcceptStatement(this);
 	}
 
 	protected void WriteBody(CiMethod method)

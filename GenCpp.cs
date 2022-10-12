@@ -1178,7 +1178,7 @@ public class GenCpp : GenCCpp
 				OpenBlock();
 				block = true;
 			}
-			statement.Accept(this);
+			statement.AcceptStatement(this);
 		}
 		if (block)
 			CloseBlock();

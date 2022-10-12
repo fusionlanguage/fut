@@ -219,7 +219,7 @@ public abstract class GenPySwift : GenBase
 	protected override void WriteChild(CiStatement statement)
 	{
 		OpenChild();
-		statement.Accept(this);
+		statement.AcceptStatement(this);
 		CloseChild();
 	}
 
@@ -253,7 +253,7 @@ public abstract class GenPySwift : GenBase
 		if (loop is CiFor forLoop) {
 			if (forLoop.IsRange)
 				return;
-			forLoop.Advance?.Accept(this);
+			forLoop.Advance?.AcceptStatement(this);
 		}
 		if (NeedCondXcrement(loop))
 			VisitXcrement<CiPrefixExpr>(loop.Cond, true);
@@ -281,7 +281,7 @@ public abstract class GenPySwift : GenBase
 	public override void VisitDoWhile(CiDoWhile statement)
 	{
 		OpenWhileTrue();
-		statement.Body.Accept(this);
+		statement.Body.AcceptStatement(this);
 		if (statement.Body.CompletesNormally()) {
 			OpenCond(GetIfNot(), statement.Cond, CiPriority.Primary);
 			WriteLine("break");
@@ -298,7 +298,7 @@ public abstract class GenPySwift : GenBase
 
 	void CloseWhile(CiLoop loop)
 	{
-		loop.Body.Accept(this);
+		loop.Body.AcceptStatement(this);
 		if (loop.Body.CompletesNormally())
 			EndBody(loop);
 		CloseChild();
@@ -330,7 +330,7 @@ public abstract class GenPySwift : GenBase
 			WriteChild(statement.Body);
 		}
 		else {
-			statement.Init?.Accept(this);
+			statement.Init?.AcceptStatement(this);
 			if (statement.Cond != null)
 				OpenWhile(statement);
 			else
@@ -344,7 +344,7 @@ public abstract class GenPySwift : GenBase
 	public override void VisitIf(CiIf statement)
 	{
 		bool condPostXcrement = OpenCond("if ", statement.Cond, CiPriority.Argument);
-		statement.OnTrue.Accept(this);
+		statement.OnTrue.AcceptStatement(this);
 		CloseChild();
 		if (statement.OnFalse == null && condPostXcrement && !statement.OnTrue.CompletesNormally())
 			VisitXcrement<CiPostfixExpr>(statement.Cond, true);
@@ -357,7 +357,7 @@ public abstract class GenPySwift : GenBase
 				Write("else");
 				OpenChild();
 				VisitXcrement<CiPostfixExpr>(statement.Cond, true);
-				statement.OnFalse?.Accept(this);
+				statement.OnFalse?.AcceptStatement(this);
 				CloseChild();
 			}
 		}

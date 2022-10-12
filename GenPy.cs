@@ -964,7 +964,7 @@ public class GenPy : GenPySwift
 		statement.Lock.Accept(this, CiPriority.Argument);
 		OpenChild();
 		VisitXcrement<CiPostfixExpr>(statement.Lock, true);
-		statement.Body.Accept(this);
+		statement.Body.AcceptStatement(this);
 		CloseChild();
 	}
 
@@ -1094,7 +1094,7 @@ public class GenPy : GenPySwift
 		this.CurrentMethod = method;
 		OpenChild();
 		WritePyDoc(method);
-		method.Body.Accept(this);
+		method.Body.AcceptStatement(this);
 		CloseChild();
 		this.CurrentMethod = null;
 	}

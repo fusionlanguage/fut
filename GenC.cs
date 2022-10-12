@@ -2125,7 +2125,7 @@ public class GenC : GenCCpp
 		if (NeedsBlock(statement)) {
 			Write(' ');
 			OpenBlock();
-			statement.Accept(this);
+			statement.AcceptStatement(this);
 			CloseBlock();
 		}
 		else
@@ -2281,7 +2281,7 @@ public class GenC : GenCCpp
 		statement.Lock.Accept(this, CiPriority.Primary);
 		WriteLine(");");
 		// TODO
-		statement.Body.Accept(this);
+		statement.Body.AcceptStatement(this);
 		Write("mtx_unlock(&");
 		statement.Lock.Accept(this, CiPriority.Primary);
 		WriteLine(");");
@@ -2828,7 +2828,7 @@ public class GenC : GenCCpp
 			}
 		}
 		else
-			method.Body.Accept(this);
+			method.Body.AcceptStatement(this);
 		this.CurrentTemporaries.Clear();
 		this.VarsToDestruct.Clear();
 		CloseBlock();
