@@ -39,8 +39,6 @@ public abstract class CiExpr : CiStatement
 	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitExpr(this); }
 	public CiLiteral ToLiteralBool(bool value) => value ? new CiLiteralTrue { Line = this.Line } : new CiLiteralFalse { Line = this.Line };
 	public CiLiteral ToLiteralLong(long value) => new CiLiteralLong(value) { Line = this.Line };
-	public CiLiteral ToLiteralDouble(double value) => new CiLiteralDouble(value) { Line = this.Line };
-	public CiLiteral ToLiteralString(string value) => new CiLiteralString(value) { Line = this.Line };
 	public virtual bool IsReferenceTo(CiSymbol symbol) => false;
 }
 
@@ -533,22 +531,6 @@ public class CiBinaryExpr : CiExpr
 	public override string ToString() => this.Op == CiToken.LeftBracket ? $"{this.Left}[{this.Right}]" : $"({this.Left} {GetOpString()} {this.Right})";
 }
 
-public class CiBreak : CiStatement
-{
-	internal readonly CiCondCompletionStatement LoopOrSwitch;
-	public CiBreak(CiCondCompletionStatement loopOrSwitch) { this.LoopOrSwitch = loopOrSwitch; }
-	public override bool CompletesNormally() => false;
-	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitBreak(this); }
-}
-
-public class CiContinue : CiStatement
-{
-	internal readonly CiLoop Loop;
-	public CiContinue(CiLoop loop) { this.Loop = loop; }
-	public override bool CompletesNormally() => false;
-	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitContinue(this); }
-}
-
 public class CiForeach : CiLoop
 {
 	internal CiExpr Collection;
@@ -637,20 +619,9 @@ public class CiMethod : CiMethodBase
 	internal CiCallType CallType;
 	internal bool IsMutator;
 	internal readonly CiParameters Parameters = new CiParameters();
-	public CiMethod()
-	{
-	}
-	CiMethod(CiVisibility visibility, CiCallType callType, CiType type, CiId id, string name)
-	{
-		this.Visibility = visibility;
-		this.CallType = callType;
-		this.Type = type;
-		this.Id = id;
-		this.Name = name;
-	}
 	public static CiMethod CreateNormal(CiVisibility visibility, CiType type, CiId id, string name, CiVar param0 = null, CiVar param1 = null, CiVar param2 = null, CiVar param3 = null)
 	{
-		CiMethod result = new CiMethod(visibility, CiCallType.Normal, type, id, name);
+		CiMethod result = new CiMethod { Visibility = visibility, CallType = CiCallType.Normal, Type = type, Id = id, Name = name };
 		if (param0 != null) {
 			result.Parameters.Add(param0);
 			if (param1 != null) {
@@ -1037,7 +1008,7 @@ public class CiSystem : CiScope
 	public static readonly CiMethod StringIndexOf = CiMethod.CreateNormal(CiVisibility.Public, Minus1Type, CiId.StringIndexOf, "IndexOf", CiVar.New(StringPtrType, "value"));
 	public static readonly CiMethod StringLastIndexOf = CiMethod.CreateNormal(CiVisibility.Public, Minus1Type, CiId.StringLastIndexOf, "LastIndexOf", CiVar.New(StringPtrType, "value"));
 	public static readonly CiMethod StringStartsWith = CiMethod.CreateNormal(CiVisibility.Public, BoolType, CiId.StringStartsWith, "StartsWith", CiVar.New(StringPtrType, "value"));
-	public static readonly CiMethod StringSubstring = CiMethod.CreateNormal(CiVisibility.Public, StringStorageType, CiId.StringSubstring, "Substring", CiVar.New(IntType, "offset"), CiVar.New(IntType, "length", new CiLiteralLong(-1L))); // TODO: UIntType
+	public static readonly CiMethod StringSubstring = CiMethod.CreateNormal(CiVisibility.Public, StringStorageType, CiId.StringSubstring, "Substring", CiVar.New(IntType, "offset"), CiVar.New(IntType, "length", new CiLiteralLong(-1))); // TODO: UIntType
 	public static readonly CiType PrintableType = new CiPrintableType { Name = "printable" };
 	public static readonly CiClass ArrayPtrClass = CiClass.New(CiCallType.Normal, CiId.ArrayPtrClass, "ArrayPtr", 1);
 	public static readonly CiClass ArrayStorageClass = CiClass.New(CiCallType.Normal, CiId.ArrayStorageClass, "ArrayStorage", 1);

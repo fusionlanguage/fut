@@ -537,7 +537,7 @@ public class CiParser : CiLexer
 	{
 		if (this.CurrentLoopOrSwitch == null)
 			ReportError("break outside loop or switch");
-		CiBreak result = new CiBreak(this.CurrentLoopOrSwitch) { Line = this.Line };
+		CiBreak result = new CiBreak { Line = this.Line, LoopOrSwitch = this.CurrentLoopOrSwitch };
 		Expect(CiToken.Break);
 		Expect(CiToken.Semicolon);
 		if (this.CurrentLoopOrSwitch is CiLoop loop)
@@ -549,7 +549,7 @@ public class CiParser : CiLexer
 	{
 		if (this.CurrentLoop == null)
 			ReportError("continue outside loop");
-		CiContinue result = new CiContinue(this.CurrentLoop) { Line = this.Line };
+		CiContinue result = new CiContinue { Line = this.Line, Loop = this.CurrentLoop };
 		Expect(CiToken.Continue);
 		Expect(CiToken.Semicolon);
 		return result;

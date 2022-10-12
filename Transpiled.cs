@@ -1629,6 +1629,32 @@ namespace Foxoft.Ci
 		internal bool HasBreak = false;
 	}
 
+	public class CiBreak : CiStatement
+	{
+
+		internal CiCondCompletionStatement LoopOrSwitch;
+
+		public override bool CompletesNormally() => false;
+
+		public override void AcceptStatement(CiVisitor visitor)
+		{
+			visitor.VisitBreak(this);
+		}
+	}
+
+	public class CiContinue : CiStatement
+	{
+
+		internal CiLoop Loop;
+
+		public override bool CompletesNormally() => false;
+
+		public override void AcceptStatement(CiVisitor visitor)
+		{
+			visitor.VisitContinue(this);
+		}
+	}
+
 	public class CiDoWhile : CiLoop
 	{
 

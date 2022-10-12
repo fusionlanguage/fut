@@ -376,7 +376,7 @@ public class CiResolver : CiVisitor
 		}
 		sb.Append(expr.Suffix);
 		if (parts.Count == 0)
-			return expr.ToLiteralString(sb.ToString());
+			return new CiLiteralString(sb.ToString()) { Line = expr.Line };
 		expr.Parts.Clear();
 		expr.Parts.AddRange(parts);
 		expr.Suffix = sb.ToString();
@@ -533,7 +533,7 @@ public class CiResolver : CiVisitor
 			if (range != null)
 				type = range = new CiRangeType(SaturatedNeg(range.Max), SaturatedNeg(range.Min));
 			else if (inner is CiLiteralDouble d)
-				return expr.ToLiteralDouble(-d.Value);
+				return new CiLiteralDouble(-d.Value) { Line = expr.Line };
 			else if (inner is CiLiteralLong l)
 				return expr.ToLiteralLong(-l.Value);
 			else
@@ -738,7 +738,7 @@ public class CiResolver : CiVisitor
 				Coerce(left, CiSystem.PrintableType);
 				Coerce(right, CiSystem.PrintableType);
 				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
-					return expr.ToLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString());
+					return new CiLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString()) { Line = expr.Line };
 				if (left is CiInterpolatedString || right is CiInterpolatedString)
 					return Concatenate(ToInterpolatedString(left), ToInterpolatedString(right));
 				NotSupported(expr, "String concatenation", "c", "cl");
