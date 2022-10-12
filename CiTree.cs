@@ -66,13 +66,6 @@ public abstract class CiVisitor
 	public abstract void VisitEnumValue(CiConst konst, CiConst previous);
 }
 
-public abstract class CiStatement
-{
-	public int Line;
-	public abstract bool CompletesNormally();
-	public abstract void Accept(CiVisitor visitor);
-}
-
 public abstract class CiExpr : CiStatement
 {
 	public CiType Type;
@@ -497,12 +490,6 @@ public class CiSymbolReference : CiExpr
 	public override string ToString() => this.Left != null ? $"{this.Left}.{this.Name}" : this.Name;
 }
 
-public abstract class CiUnaryExpr : CiExpr
-{
-	public CiToken Op;
-	public CiExpr Inner;
-}
-
 public class CiPrefixExpr : CiUnaryExpr
 {
 	public override bool IsConstEnum() => this.Type is CiEnumFlags && this.Inner.IsConstEnum(); // && this.Op == CiToken.Tilde
@@ -685,13 +672,6 @@ public abstract class CiCondCompletionStatement : CiScope
 	public void SetCompletesNormally(bool value) { this.CompletesNormallyValue = value; }
 }
 
-public abstract class CiLoop : CiCondCompletionStatement
-{
-	public CiExpr Cond;
-	public CiStatement Body;
-	public bool HasBreak = false;
-}
-
 public class CiBlock : CiCondCompletionStatement
 {
 	public readonly List<CiStatement> Statements = new List<CiStatement>();
@@ -773,12 +753,6 @@ public class CiReturn : CiStatement
 	public CiExpr Value;
 	public override bool CompletesNormally() => false;
 	public override void Accept(CiVisitor visitor) { visitor.VisitReturn(this); }
-}
-
-public class CiCase
-{
-	public readonly List<CiExpr> Values = new List<CiExpr>();
-	public readonly List<CiStatement> Body = new List<CiStatement>();
 }
 
 public class CiSwitch : CiCondCompletionStatement
@@ -868,10 +842,6 @@ public class CiMethodBase : CiMember
 	public readonly HashSet<CiMethod> Calls = new HashSet<CiMethod>();
 }
 
-public class CiParameters : CiScope
-{
-}
-
 public class CiMethod : CiMethodBase
 {
 	public CiCallType CallType;
@@ -939,25 +909,6 @@ public class CiMethodGroup : CiMember
 	}
 }
 
-public class CiType : CiScope
-{
-	public virtual string GetArraySuffix() => "";
-	public virtual bool IsAssignableFrom(CiType right) => this == right;
-	public virtual bool EqualsType(CiType right) => this == right;
-	public virtual bool IsNullable() => false;
-	public virtual CiType GetBaseType() => this;
-	public virtual CiType GetStorageType() => this;
-	public virtual CiType GetPtrOrSelf() => this;
-	public virtual bool IsFinal() => false;
-	public virtual bool IsArray() => false;
-}
-
-public abstract class CiContainerType : CiType
-{
-	public bool IsPublic;
-	public string Filename;
-}
-
 public class CiEnum : CiContainerType
 {
 	public bool HasExplicitValue = false;
@@ -973,13 +924,6 @@ public class CiEnum : CiContainerType
 
 public class CiEnumFlags : CiEnum
 {
-}
-
-public enum CiVisitStatus
-{
-	NotYet,
-	InProgress,
-	Done
 }
 
 public class CiClass : CiContainerType
@@ -1022,10 +966,6 @@ public class CiClass : CiContainerType
 		}
 		return true;
 	}
-}
-
-public abstract class CiNumericType : CiType
-{
 }
 
 public class CiIntegerType : CiNumericType

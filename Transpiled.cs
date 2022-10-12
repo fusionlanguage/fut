@@ -1413,4 +1413,85 @@ namespace Foxoft.Ci
 
 		internal readonly List<CiDocBlock> Details = new List<CiDocBlock>();
 	}
+
+	public abstract class CiStatement
+	{
+
+		internal int Line;
+
+		public abstract bool CompletesNormally();
+
+		public abstract void Accept(CiVisitor visitor);
+	}
+
+	public abstract class CiUnaryExpr : CiExpr
+	{
+
+		internal CiToken Op;
+
+		internal CiExpr Inner;
+	}
+
+	public abstract class CiLoop : CiCondCompletionStatement
+	{
+
+		internal CiExpr Cond;
+
+		internal CiStatement Body;
+
+		internal bool HasBreak = false;
+	}
+
+	public class CiCase
+	{
+
+		internal readonly List<CiExpr> Values = new List<CiExpr>();
+
+		internal readonly List<CiStatement> Body = new List<CiStatement>();
+	}
+
+	public class CiParameters : CiScope
+	{
+	}
+
+	public class CiType : CiScope
+	{
+
+		public virtual string GetArraySuffix() => "";
+
+		public virtual bool IsAssignableFrom(CiType right) => this == right;
+
+		public virtual bool EqualsType(CiType right) => this == right;
+
+		public virtual bool IsNullable() => false;
+
+		public virtual CiType GetBaseType() => this;
+
+		public virtual CiType GetStorageType() => this;
+
+		public virtual CiType GetPtrOrSelf() => this;
+
+		public virtual bool IsFinal() => false;
+
+		public virtual bool IsArray() => false;
+	}
+
+	public abstract class CiNumericType : CiType
+	{
+	}
+
+	public abstract class CiContainerType : CiType
+	{
+
+		internal bool IsPublic;
+
+		internal string Filename;
+	}
+
+	public enum CiVisitStatus
+	{
+		NotYet,
+		InProgress,
+		Done
+	}
 }
