@@ -338,7 +338,7 @@ public class GenSwift : GenPySwift
 			expr.Accept(this, CiPriority.Primary);
 			Write('!');
 		}
-		else if (!substringOk && expr is CiCallExpr call && call.Method.IsReferenceTo(CiSystem.StringSubstring))
+		else if (!substringOk && expr is CiCallExpr call && call.Method.Symbol.Id == CiId.StringSubstring)
 			WriteCall("String", expr);
 		else
 			expr.Accept(this, parent);
@@ -1353,7 +1353,7 @@ public class GenSwift : GenPySwift
 		WriteLine();
 		Write(field.Documentation);
 		Write(field.Visibility);
-		if (field.Type is CiClassType && !(field.Type is CiDynamicPtrType) && !(field.Type is CiStorageType))
+		if (field.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && !(klass is CiDynamicPtrType) && !(klass is CiStorageType))
 			Write("unowned ");
 		WriteVar(field);
 		if (field.Value == null && (field.Type is CiNumericType || field.Type is CiEnum || field.Type == CiSystem.StringStorageType)) {

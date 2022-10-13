@@ -517,18 +517,13 @@ public class GenJava : GenTyped
 		}
 	}
 
-	void WriteRegex(List<CiExpr> args, int argIndex)
+	void WriteCompileRegex(List<CiExpr> args, int argIndex)
 	{
-		CiExpr pattern = args[argIndex];
-		if (pattern.Type is CiClassType)
-			pattern.Accept(this, CiPriority.Primary);
-		else {
-			Include("java.util.regex.Pattern");
-			Write("Pattern.compile(");
-			pattern.Accept(this, CiPriority.Argument);
-			WriteRegexOptions(args, ", ", " | ", "", "Pattern.CASE_INSENSITIVE", "Pattern.MULTILINE", "Pattern.DOTALL");
-			Write(')');
-		}
+		Include("java.util.regex.Pattern");
+		Write("Pattern.compile(");
+		args[argIndex].Accept(this, CiPriority.Argument);
+		WriteRegexOptions(args, ", ", " | ", "", "Pattern.CASE_INSENSITIVE", "Pattern.MULTILINE", "Pattern.DOTALL");
+		Write(')');
 	}
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
@@ -672,14 +667,14 @@ public class GenJava : GenTyped
 			WriteCall("System.getenv", args[0]);
 			break;
 		case CiId.RegexCompile:
-			WriteRegex(args, 0);
+			WriteCompileRegex(args, 0);
 			break;
 		case CiId.RegexEscape:
 			Include("java.util.regex.Pattern");
 			WriteCall("Pattern.quote", args[0]);
 			break;
 		case CiId.RegexIsMatchStr:
-			WriteRegex(args, 1);
+			WriteCompileRegex(args, 1);
 			WriteCall(".matcher", args[0]);
 			Write(".find()");
 			break;
@@ -692,7 +687,10 @@ public class GenJava : GenTyped
 			Write('(');
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = ");
-			WriteRegex(args, 1);
+			if (method.Id == CiId.MatchFindStr)
+				WriteCompileRegex(args, 1);
+			else
+				args[1].Accept(this, CiPriority.Primary);
 			WriteCall(".matcher", args[0]);
 			Write(").find()");
 			break;

@@ -378,12 +378,10 @@ public class GenJs : GenBase
 			&& s.All(c => CiLexer.IsLetterOrDigit(c));
 	}
 
-	void WriteRegex(List<CiExpr> args, int argIndex)
+	void WriteNewRegex(List<CiExpr> args, int argIndex)
 	{
 		CiExpr pattern = args[argIndex];
-		if (pattern.Type is CiClassType)
-			pattern.Accept(this, CiPriority.Primary);
-		else if (pattern is CiLiteralString literal) {
+		if (pattern is CiLiteralString literal) {
 			Write('/');
 			bool escaped = false;
 			foreach (char c in literal.Value) {
@@ -627,14 +625,14 @@ public class GenJs : GenBase
 			}
 			break;
 		case CiId.RegexCompile:
-			WriteRegex(args, 0);
+			WriteNewRegex(args, 0);
 			break;
 		case CiId.RegexEscape:
 			args[0].Accept(this, CiPriority.Primary);
 			Write(".replace(/[-\\/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&')");
 			break;
 		case CiId.RegexIsMatchStr:
-			WriteRegex(args, 1);
+			WriteNewRegex(args, 1);
 			WriteCall(".test", args[0]);
 			break;
 		case CiId.RegexIsMatchRegex:
@@ -647,7 +645,10 @@ public class GenJs : GenBase
 			Write('(');
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = ");
-			WriteRegex(args, 1);
+			if (method.Id == CiId.MatchFindStr)
+				WriteNewRegex(args, 1);
+			else
+				args[1].Accept(this, CiPriority.Primary);
 			WriteCall(".exec", args[0]);
 			Write(") != null");
 			if (parent > CiPriority.Equality)

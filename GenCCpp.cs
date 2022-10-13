@@ -98,7 +98,7 @@ public abstract class GenCCpp : GenTyped
 
 	protected abstract void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not);
 
-	static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType && ptr.Type.IsAssignableFrom(other.Type);
+	static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
 
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{

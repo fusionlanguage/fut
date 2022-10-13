@@ -119,7 +119,7 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
-	static bool IsPtr(CiExpr expr) => expr.Type is CiClassType && !(expr.Type is CiStorageType);
+	static bool IsPtr(CiExpr expr) => expr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && !(klass is CiStorageType);
 
 	protected abstract string GetReferenceEqOp(bool not);
 

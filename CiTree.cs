@@ -723,40 +723,6 @@ public class CiFloatingType : CiNumericType
 	public override bool IsAssignableFrom(CiType right) => right is CiNumericType;
 }
 
-public class CiStringType : CiType
-{
-	public override CiSymbol TryLookup(string name)
-	{
-		switch (name) {
-		case "Contains":
-			return CiSystem.StringContains;
-		case "EndsWith":
-			return CiSystem.StringEndsWith;
-		case "IndexOf":
-			return CiSystem.StringIndexOf;
-		case "LastIndexOf":
-			return CiSystem.StringLastIndexOf;
-		case "Length":
-			return CiSystem.StringLength;
-		case "StartsWith":
-			return CiSystem.StringStartsWith;
-		case "Substring":
-			return CiSystem.StringSubstring;
-		default:
-			return null;
-		}
-	}
-	public override bool IsNullable() => true;
-	public override bool IsAssignableFrom(CiType right) => right == CiSystem.NullType || right is CiStringType;
-}
-
-public class CiStringStorageType : CiStringType
-{
-	public override bool IsNullable() => false;
-	public override CiType GetPtrOrSelf() => CiSystem.StringPtrType;
-	public override bool IsAssignableFrom(CiType right) => right is CiStringType;
-}
-
 public class CiClassType : CiType
 {
 	internal CiClass Class;
@@ -874,6 +840,22 @@ public class CiArrayStorageType : CiStorageType
 	public override CiType GetPtrOrSelf() => new CiReadWriteClassType { Class = CiSystem.ArrayPtrClass, TypeArg0 = GetElementType() };
 }
 
+public class CiStringType : CiClassType
+{
+	public CiStringType()
+	{
+		this.Class = CiSystem.StringClass;
+	}
+}
+
+public class CiStringStorageType : CiStringType
+{
+	public override bool IsNullable() => false;
+	public override CiType GetPtrOrSelf() => CiSystem.StringPtrType;
+	public override bool IsAssignableFrom(CiType right) => right is CiStringType;
+	public override string GetClassSuffix() => "()";
+}
+
 public class CiPrintableType : CiType
 {
 	public override bool IsAssignableFrom(CiType right) => right is CiStringType || right is CiNumericType;
@@ -896,15 +878,9 @@ public class CiSystem : CiScope
 	public static readonly CiFloatingType FloatIntType = new CiFloatingType { Name = "float" };
 	public static readonly CiRangeType CharType = new CiRangeType(-0x80, 0xffff);
 	public static readonly CiEnum BoolType = new CiEnum { Name = "bool" };
+	public static readonly CiClass StringClass = CiClass.New(CiCallType.Normal, CiId.StringClass, "string");
 	public static readonly CiStringType StringPtrType = new CiStringType { Name = "string" };
 	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType { Name = "string()" };
-	public static readonly CiMember StringLength = CiMember.New(UIntType, CiId.StringLength, "Length");
-	public static readonly CiMethod StringContains = CiMethod.New(CiVisibility.Public, BoolType, CiId.StringContains, "Contains", CiVar.New(StringPtrType, "value"));
-	public static readonly CiMethod StringEndsWith = CiMethod.New(CiVisibility.Public, BoolType, CiId.StringEndsWith, "EndsWith", CiVar.New(StringPtrType, "value"));
-	public static readonly CiMethod StringIndexOf = CiMethod.New(CiVisibility.Public, Minus1Type, CiId.StringIndexOf, "IndexOf", CiVar.New(StringPtrType, "value"));
-	public static readonly CiMethod StringLastIndexOf = CiMethod.New(CiVisibility.Public, Minus1Type, CiId.StringLastIndexOf, "LastIndexOf", CiVar.New(StringPtrType, "value"));
-	public static readonly CiMethod StringStartsWith = CiMethod.New(CiVisibility.Public, BoolType, CiId.StringStartsWith, "StartsWith", CiVar.New(StringPtrType, "value"));
-	public static readonly CiMethod StringSubstring = CiMethod.New(CiVisibility.Public, StringStorageType, CiId.StringSubstring, "Substring", CiVar.New(IntType, "offset"), CiVar.New(IntType, "length", NewLiteralLong(-1))); // TODO: UIntType
 	public static readonly CiType PrintableType = new CiPrintableType { Name = "printable" };
 	public static readonly CiClass ArrayPtrClass = CiClass.New(CiCallType.Normal, CiId.ArrayPtrClass, "ArrayPtr", 1);
 	public static readonly CiClass ArrayStorageClass = CiClass.New(CiCallType.Normal, CiId.ArrayStorageClass, "ArrayStorage", 1);
@@ -966,6 +942,13 @@ public class CiSystem : CiScope
 		Add(FloatType);
 		Add(DoubleType);
 		Add(BoolType);
+		StringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringContains, "Contains", CiVar.New(StringPtrType, "value")));
+		StringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringEndsWith, "EndsWith", CiVar.New(StringPtrType, "value")));
+		StringClass.Add(CiMethod.New(CiVisibility.Public, Minus1Type, CiId.StringIndexOf, "IndexOf", CiVar.New(StringPtrType, "value")));
+		StringClass.Add(CiMethod.New(CiVisibility.Public, Minus1Type, CiId.StringLastIndexOf, "LastIndexOf", CiVar.New(StringPtrType, "value")));
+		StringClass.Add(CiMember.New(UIntType, CiId.StringLength, "Length"));
+		StringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringStartsWith, "StartsWith", CiVar.New(StringPtrType, "value")));
+		StringClass.Add(CiMethod.New(CiVisibility.Public, StringStorageType, CiId.StringSubstring, "Substring", CiVar.New(IntType, "offset"), CiVar.New(IntType, "length", NewLiteralLong(-1)))); // TODO: UIntType
 		Add(StringPtrType);
 		CiMethod arrayBinarySearchPart = CiMethod.New(CiVisibility.NumericElementType, IntType, CiId.ArrayBinarySearchPart, "BinarySearch",
 			CiVar.New(TypeParam0, "value"), CiVar.New(IntType, "startIndex"), CiVar.New(IntType, "count"));

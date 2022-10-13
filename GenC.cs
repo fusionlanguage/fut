@@ -523,7 +523,7 @@ public class GenC : GenCCpp
 			Write(')');
 		}
 		else if (expr is CiInterpolatedString
-				|| (expr is CiCallExpr call && expr.Type == CiSystem.StringStorageType && !call.Method.IsReferenceTo(CiSystem.StringSubstring)))
+				|| (expr is CiCallExpr call && expr.Type == CiSystem.StringStorageType && call.Method.Symbol.Id != CiId.StringSubstring))
 			expr.Accept(this, CiPriority.Argument);
 		else {
 			Include("string.h");
@@ -1111,7 +1111,7 @@ public class GenC : GenCCpp
 			}
 			WriteCall("CiShared_AddRef", expr);
 			break;
-		case CiClassType klass when klass.Class.Id != CiId.ArrayPtrClass && !(klass is CiStorageType):
+		case CiClassType klass when klass.Class.Id != CiId.StringClass && klass.Class.Id != CiId.ArrayPtrClass && !(klass is CiStorageType):
 			if (klass.Class.Id == CiId.QueueClass && expr.Type is CiStorageType) {
 				Write('&');
 				expr.Accept(this, CiPriority.Primary);

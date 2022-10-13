@@ -363,7 +363,7 @@ public class GenCpp : GenCCpp
 			base.WriteEqual(expr, parent, not);
 	}
 
-	static bool IsClassPtr(CiType type) => type is CiClassType ptr && !(type is CiStorageType) && ptr.Class.Id != CiId.ArrayPtrClass;
+	static bool IsClassPtr(CiType type) => type is CiClassType ptr && !(type is CiStorageType) && ptr.Class.Id != CiId.StringClass && ptr.Class.Id != CiId.ArrayPtrClass;
 
 	static bool IsCppPtr(CiExpr expr)
 	{
@@ -960,8 +960,16 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 	{
-		switch (type) {
-		case CiClassType klass when !(klass is CiDynamicPtrType) && !(klass is CiStorageType):
+		if (type is CiClassType klass && !(klass is CiDynamicPtrType) && !(klass is CiStorageType)) {
+			if (klass.Class.Id == CiId.StringClass) {
+				if (expr.Type == CiSystem.NullType) {
+					Include("string_view");
+					Write("std::string_view(nullptr, 0)");
+				}
+				else
+					expr.Accept(this, parent);
+				return;
+			}
 			if (klass.Class.Id == CiId.ArrayPtrClass) {
 				WriteArrayPtr(expr, parent);
 				return;
@@ -988,13 +996,6 @@ public class GenCpp : GenCCpp
 			default:
 				break;
 			}
-			break;
-		case CiStringType _ when expr.Type == CiSystem.NullType:
-			Include("string_view");
-			Write("std::string_view(nullptr, 0)");
-			return;
-		default:
-			break;
 		}
 		base.WriteCoercedInternal(type, expr, parent);
 	}

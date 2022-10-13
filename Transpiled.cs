@@ -1279,6 +1279,7 @@ namespace Foxoft.Ci
 	public enum CiId
 	{
 		None,
+		StringClass,
 		ArrayPtrClass,
 		ArrayStorageClass,
 		ListClass,

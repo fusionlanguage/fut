@@ -1365,7 +1365,7 @@ public class CiResolver : CiVisitor
 		statement.SetCompletesNormally(false);
 		foreach (CiCase kase in statement.Cases) {
 			for (int i = 0; i < kase.Values.Count; i++) {
-				if (statement.Value.Type is CiClassType switchPtr) {
+				if (statement.Value.Type is CiClassType switchPtr && switchPtr.Class.Id != CiId.StringClass) {
 					if (!(kase.Values[i] is CiVar def) || def.Value != null)
 						throw StatementException(kase.Values[i], "Expected 'case Type name'");
 					if (!(ResolveType(def) is CiClassType casePtr) || casePtr is CiStorageType)

@@ -59,6 +59,7 @@ public enum CiPriority
 public enum CiId
 {
 	None,
+	StringClass,
 	ArrayPtrClass,
 	ArrayStorageClass,
 	ListClass,
