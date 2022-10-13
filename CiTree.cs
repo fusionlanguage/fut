@@ -852,7 +852,7 @@ public class CiStringStorageType : CiStringType
 {
 	public override bool IsNullable() => false;
 	public override CiType GetPtrOrSelf() => CiSystem.StringPtrType;
-	public override bool IsAssignableFrom(CiType right) => right is CiStringType;
+	public override bool IsAssignableFrom(CiType right) => right is CiClassType rightClass && rightClass.Class.Id == CiId.StringClass;
 	public override string GetClassSuffix() => "()";
 }
 
@@ -880,7 +880,7 @@ public class CiSystem : CiScope
 	public static readonly CiEnum BoolType = new CiEnum { Name = "bool" };
 	public static readonly CiClass StringClass = CiClass.New(CiCallType.Normal, CiId.StringClass, "string");
 	public static readonly CiStringType StringPtrType = new CiStringType { Name = "string" };
-	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType { Name = "string()" };
+	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType();
 	public static readonly CiType PrintableType = new CiPrintableType { Name = "printable" };
 	public static readonly CiClass ArrayPtrClass = CiClass.New(CiCallType.Normal, CiId.ArrayPtrClass, "ArrayPtr", 1);
 	public static readonly CiClass ArrayStorageClass = CiClass.New(CiCallType.Normal, CiId.ArrayStorageClass, "ArrayStorage", 1);

@@ -351,12 +351,6 @@ public class GenC : GenCCpp
 			if (space)
 				Write(' ');
 			break;
-		case CiStringStorageType _:
-			Write("char *");
-			break;
-		case CiStringType _:
-			WriteStringPtrType();
-			break;
 		case CiEnum _:
 			if (baseType == CiSystem.BoolType) {
 				IncludeStdBool();
@@ -369,6 +363,12 @@ public class GenC : GenCCpp
 			break;
 		case CiClassType klass:
 			switch (klass.Class.Id) {
+			case CiId.StringClass:
+				if (klass.IsNullable())
+					WriteStringPtrType();
+				else
+					Write("char *");
+				break;
 			case CiId.ListClass:
 			case CiId.StackClass:
 				WriteGlib("GArray *");
@@ -2222,7 +2222,7 @@ public class GenC : GenCCpp
 				Write("->data, ");
 				for (; elementType.IsArray(); elementType = ((CiClassType) elementType).GetElementType())
 					Write('*');
-				if (elementType is CiStringType || elementType is CiClassType)
+				if (elementType is CiClassType)
 					Write("* const ");
 				Write("*ciend = ");
 				WriteCamelCaseNotKeyword(element);

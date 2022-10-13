@@ -187,14 +187,6 @@ public class GenCpp : GenCCpp
 		case CiIntegerType integer:
 			Write(GetIntegerTypeCode(integer, promote));
 			break;
-		case CiStringStorageType _:
-			Include("string");
-			Write("std::string");
-			break;
-		case CiStringType _:
-			Include("string_view");
-			Write("std::string_view");
-			break;
 		case CiDynamicPtrType dynamic:
 			switch (dynamic.Class.Id) {
 			case CiId.RegexClass:
@@ -217,6 +209,13 @@ public class GenCpp : GenCCpp
 			break;
 		case CiClassType klass:
 			if (klass.Class.TypeParameterCount == 0) {
+				if (klass.Class.Id == CiId.StringClass) {
+					string cppType = klass.IsNullable() ? "string_view" : "string";
+					Include(cppType);
+					Write("std::");
+					Write(cppType);
+					break;
+				}
 				if (!(klass is CiReadWriteClassType))
 					Write("const ");
 				switch (klass.Class.Id) {
@@ -940,7 +939,7 @@ public class GenCpp : GenCCpp
 	{
 		switch (expr.Type) {
 		case CiArrayStorageType _:
-		case CiStringType _:
+		case CiClassType klass when klass.Class.Id == CiId.StringClass:
 			expr.Accept(this, CiPriority.Primary);
 			Write(".data()");
 			break;

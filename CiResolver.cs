@@ -704,8 +704,10 @@ public class CiResolver : CiVisitor
 
 		switch (expr.Op) {
 		case CiToken.LeftBracket:
-			switch (left.Type) {
-			case CiStringType _:
+			if (!(left.Type is CiClassType klass))
+				throw StatementException(expr, "Cannot index this object");
+			switch (klass.Class.Id) {
+			case CiId.StringClass:
 				Coerce(right, CiSystem.IntType);
 				if (left is CiLiteralString stringLiteral && right is CiLiteralLong indexLiteral) {
 					long i = indexLiteral.Value;
@@ -717,23 +719,17 @@ public class CiResolver : CiVisitor
 				}
 				type = CiSystem.CharType;
 				break;
-			case CiClassType klass:
-				switch (klass.Class.Id) {
-				case CiId.ArrayPtrClass:
-				case CiId.ArrayStorageClass:
-				case CiId.ListClass:
-					Coerce(right, CiSystem.IntType);
-					type = klass.GetElementType();
-					break;
-				case CiId.DictionaryClass:
-				case CiId.SortedDictionaryClass:
-				case CiId.OrderedDictionaryClass:
-					Coerce(right, klass.GetKeyType());
-					type = klass.GetValueType();
-					break;
-				default:
-					throw StatementException(expr, "Cannot index this object");
-				}
+			case CiId.ArrayPtrClass:
+			case CiId.ArrayStorageClass:
+			case CiId.ListClass:
+				Coerce(right, CiSystem.IntType);
+				type = klass.GetElementType();
+				break;
+			case CiId.DictionaryClass:
+			case CiId.SortedDictionaryClass:
+			case CiId.OrderedDictionaryClass:
+				Coerce(right, klass.GetKeyType());
+				type = klass.GetValueType();
 				break;
 			default:
 				throw StatementException(expr, "Cannot index this object");
@@ -966,32 +962,30 @@ public class CiResolver : CiVisitor
 		case CiToken.Is:
 			if (!(left.Type is CiClassType leftPtr) || left.Type is CiStorageType)
 				throw StatementException(expr, "Left hand side of the 'is' operator must be an object reference");
-			{
-				CiClass klass;
-				switch (right) {
-				case CiSymbolReference symbol:
-					klass = symbol.Symbol as CiClass ?? throw StatementException(expr, "Right hand side of the 'is' operator must be a class name");
-					NotSupported(expr, "'is' operator", "c", "cl");
-					expr.Right = klass;
-					break;
-				case CiVar def:
-					if (!(def.Type is CiClassType rightPtr))
-						throw StatementException(expr, "Right hand side of the 'is' operator must be an object reference definition");
-					if (rightPtr is CiReadWriteClassType
-					 && !(leftPtr is CiDynamicPtrType)
-					 && (rightPtr is CiDynamicPtrType || !(leftPtr is CiReadWriteClassType)))
-						throw StatementException(expr, $"{leftPtr} cannot be casted to {rightPtr}");
-					NotSupported(expr, "'is' operator", "c", "cpp", "js", "py", "swift", "ts", "cl");
-					klass = rightPtr.Class;
-					break;
-				default:
-					throw StatementException(expr, "Right hand side of the 'is' operator must be a class name");
-				}
-				if (leftPtr.Class == klass)
-					throw StatementException(expr, $"{left} is {leftPtr}, the 'is' operator would always return 'true'");
-				if (!leftPtr.Class.IsSameOrBaseOf(klass))
-					throw StatementException(expr, $"{leftPtr} is not base class of {klass.Name}, the 'is' operator would always return 'false'");
+			CiClass klass2;
+			switch (right) {
+			case CiSymbolReference symbol:
+				klass2 = symbol.Symbol as CiClass ?? throw StatementException(expr, "Right hand side of the 'is' operator must be a class name");
+				NotSupported(expr, "'is' operator", "c", "cl");
+				expr.Right = klass2;
+				break;
+			case CiVar def:
+				if (!(def.Type is CiClassType rightPtr))
+					throw StatementException(expr, "Right hand side of the 'is' operator must be an object reference definition");
+				if (rightPtr is CiReadWriteClassType
+				 && !(leftPtr is CiDynamicPtrType)
+				 && (rightPtr is CiDynamicPtrType || !(leftPtr is CiReadWriteClassType)))
+					throw StatementException(expr, $"{leftPtr} cannot be casted to {rightPtr}");
+				NotSupported(expr, "'is' operator", "c", "cpp", "js", "py", "swift", "ts", "cl");
+				klass2 = rightPtr.Class;
+				break;
+			default:
+				throw StatementException(expr, "Right hand side of the 'is' operator must be a class name");
 			}
+			if (leftPtr.Class == klass2)
+				throw StatementException(expr, $"{left} is {leftPtr}, the 'is' operator would always return 'true'");
+			if (!leftPtr.Class.IsSameOrBaseOf(klass2))
+				throw StatementException(expr, $"{leftPtr} is not base class of {klass2.Name}, the 'is' operator would always return 'false'");
 			expr.Left = left;
 			expr.Type = CiSystem.BoolType;
 			return expr;

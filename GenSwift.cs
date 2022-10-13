@@ -200,6 +200,9 @@ public class GenSwift : GenPySwift
 	void WriteClassName(CiClassType klass)
 	{
 		switch (klass.Class.Id) {
+		case CiId.StringClass:
+			Write("String");
+			break;
 		case CiId.ArrayPtrClass:
 			this.ArrayRef = true;
 			Write("ArrayRef<");
@@ -269,11 +272,6 @@ public class GenSwift : GenPySwift
 		case CiFloatingType _:
 			Write(type == CiSystem.DoubleType ? "Double" : "Float");
 			break;
-		case CiStringType _:
-			Write("String");
-			if (!(type is CiStringStorageType))
-				Write('?');
-			break;
 		case CiEnum _:
 			Write(type == CiSystem.BoolType ? "Bool" : type.Name);
 			break;
@@ -290,12 +288,10 @@ public class GenSwift : GenPySwift
 				Write(']');
 			}
 			break;
-		case CiStorageType storage:
-			WriteClassName(storage);
-			break;
 		case CiClassType klass:
 			WriteClassName(klass);
-			Write('?');
+			if (klass.IsNullable())
+				Write('?');
 			break;
 		default:
 			Write(type.Name);

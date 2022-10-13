@@ -212,11 +212,11 @@ public class GenCs : GenTyped
 		case CiIntegerType integer:
 			Write(GetIntegerTypeCode(integer, promote));
 			break;
-		case CiStringType _:
-			Write("string");
-			break;
 		case CiClassType klass:
 			switch (klass.Class.Id) {
+			case CiId.StringClass:
+				Write("string");
+				break;
 			case CiId.ArrayPtrClass:
 			case CiId.ArrayStorageClass:
 				Write(klass.GetElementType(), false);

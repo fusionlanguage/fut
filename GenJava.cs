@@ -273,9 +273,6 @@ public class GenJava : GenTyped
 		case CiIntegerType integer:
 			Write(GetIntegerTypeCode(integer, promote), needClass);
 			break;
-		case CiStringType _:
-			Write("String");
-			break;
 		case CiEnum enu:
 			Write(enu == CiSystem.BoolType
 				? needClass ? "Boolean" : "boolean"
@@ -283,6 +280,9 @@ public class GenJava : GenTyped
 			break;
  		case CiClassType klass:
 			switch (klass.Class.Id) {
+			case CiId.StringClass:
+				Write("String");
+				break;
 			case CiId.ArrayPtrClass:
 			case CiId.ArrayStorageClass:
 				Write(klass.GetElementType(), false);

@@ -72,15 +72,15 @@ public class GenTs : GenJs
 		case CiNumericType _:
 			Write("number");
 			break;
-		case CiStringType _:
-			Write("string");
-			break;
 		case CiEnum enu:
 			Write(enu == CiSystem.BoolType ? "boolean" : enu.Name);
 			break;
 		case CiClassType klass:
 			readOnly |= !(klass is CiReadWriteClassType);
 			switch (klass.Class.Id) {
+			case CiId.StringClass:
+				Write("string");
+				break;
 			case CiId.ArrayPtrClass when !(klass.GetElementType() is CiNumericType):
 			case CiId.ArrayStorageClass when !(klass.GetElementType() is CiNumericType):
 			case CiId.ListClass:
@@ -142,13 +142,13 @@ public class GenTs : GenJs
 					Write('>');
 				break;
 			}
+			if (type.IsNullable())
+				Write(" | null");
 			break;
 		default:
 			Write(type.Name);
 			break;
 		}
-		if (type.IsNullable())
-			Write(" | null");
 	}
 
 	void WriteVisibility(CiVisibility visibility)
