@@ -344,7 +344,9 @@ public class CiResolver : CiVisitor
 		return result;
 	}
 
-	static CiLiteralLong ToLiteralLong(CiExpr expr, long value) => new CiLiteralLong(value) { Line = expr.Line };
+	static CiLiteralLong ToLiteralLong(CiExpr expr, long value) => CiSystem.NewLiteralLong(value, expr.Line);
+
+	static CiLiteralDouble ToLiteralDouble(CiExpr expr, double value) => new CiLiteralDouble { Line = expr.Line, Type = CiSystem.DoubleType, Value = value };
 
 	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
@@ -386,7 +388,7 @@ public class CiResolver : CiVisitor
 		}
 		sb.Append(expr.Suffix);
 		if (parts.Count == 0)
-			return new CiLiteralString(sb.ToString()) { Line = expr.Line };
+			return CiSystem.NewLiteralString(sb.ToString(), expr.Line);
 		expr.Parts.Clear();
 		expr.Parts.AddRange(parts);
 		expr.Suffix = sb.ToString();
@@ -543,7 +545,7 @@ public class CiResolver : CiVisitor
 			if (range != null)
 				type = range = new CiRangeType(SaturatedNeg(range.Max), SaturatedNeg(range.Min));
 			else if (inner is CiLiteralDouble d)
-				return new CiLiteralDouble(-d.Value) { Line = expr.Line };
+				return ToLiteralDouble(expr, -d.Value);
 			else if (inner is CiLiteralLong l)
 				return ToLiteralLong(expr, -l.Value);
 			else
@@ -710,7 +712,7 @@ public class CiResolver : CiVisitor
 					if (i >= 0 && i <= int.MaxValue) {
 						int c = stringLiteral.GetAsciiAt((int) i);
 						if (c >= 0)
-							return new CiLiteralChar(c) { Line = expr.Line };
+							return CiLiteralChar.New(c, expr.Line);
 					}
 				}
 				type = CiSystem.CharType;
@@ -748,7 +750,7 @@ public class CiResolver : CiVisitor
 				Coerce(left, CiSystem.PrintableType);
 				Coerce(right, CiSystem.PrintableType);
 				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
-					return new CiLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString()) { Line = expr.Line };
+					return CiSystem.NewLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString(), expr.Line);
 				if (left is CiInterpolatedString || right is CiInterpolatedString)
 					return Concatenate(ToInterpolatedString(left), ToInterpolatedString(right));
 				NotSupported(expr, "String concatenation", "c", "cl");

@@ -1608,6 +1608,28 @@ namespace Foxoft.Ci
 		public override string ToString() => "null";
 	}
 
+	public class CiLiteralLong : CiLiteral
+	{
+
+		internal long Value;
+
+		public override bool IsLiteralZero() => this.Value == 0;
+
+		public override int IntValue() => (int) this.Value;
+
+		public override bool IsDefaultValue() => this.Value == 0;
+
+		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		{
+			visitor.VisitLiteralLong(this.Value);
+			return this;
+		}
+
+		public override string GetLiteralString() => $"{this.Value}";
+
+		public override string ToString() => $"{this.Value}";
+	}
+
 	public class CiImplicitEnumValue : CiExpr
 	{
 

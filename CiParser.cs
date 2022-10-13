@@ -200,7 +200,7 @@ public class CiParser : CiLexer
 		case CiToken.New:
 			return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParseType() };
 		case CiToken.LiteralLong:
-			result = new CiLiteralLong(this.LongValue) { Line = this.Line };
+			result = CiSystem.NewLiteralLong(this.LongValue, this.Line);
 			NextToken();
 			break;
 		case CiToken.LiteralDouble:
@@ -208,15 +208,15 @@ public class CiParser : CiLexer
 				NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign,
 				CultureInfo.InvariantCulture, out double d))
 				ReportError("Invalid floating-point number");
-			result = new CiLiteralDouble(d) { Line = this.Line };
+			result = new CiLiteralDouble { Line = this.Line, Type = CiSystem.DoubleType, Value = d };
 			NextToken();
 			break;
 		case CiToken.LiteralChar:
-			result = new CiLiteralChar((int) this.LongValue) { Line = this.Line };
+			result = CiLiteralChar.New((int) this.LongValue, this.Line);
 			NextToken();
 			break;
 		case CiToken.LiteralString:
-			result = new CiLiteralString(this.StringValue) { Line = this.Line };
+			result = CiSystem.NewLiteralString(this.StringValue, this.Line);
 			NextToken();
 			break;
 		case CiToken.False:
