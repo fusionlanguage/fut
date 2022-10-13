@@ -220,15 +220,15 @@ public class CiParser : CiLexer
 			NextToken();
 			break;
 		case CiToken.False:
-			result = new CiLiteralFalse { Line = this.Line };
+			result = new CiLiteralFalse { Line = this.Line, Type = CiSystem.BoolType };
 			NextToken();
 			break;
 		case CiToken.True:
-			result = new CiLiteralTrue { Line = this.Line };
+			result = new CiLiteralTrue { Line = this.Line, Type = CiSystem.BoolType };
 			NextToken();
 			break;
 		case CiToken.Null:
-			result = new CiLiteralNull { Line = this.Line };
+			result = new CiLiteralNull { Line = this.Line, Type = CiSystem.NullType };
 			NextToken();
 			break;
 		case CiToken.InterpolatedString:

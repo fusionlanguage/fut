@@ -38,8 +38,3 @@ public abstract class CiExpr // : CiStatement
 public abstract class CiScope : CiExpr // : CiSymbol
 {
 }
-
-public abstract class CiLiteralBool : CiExpr
-{
-	public abstract bool IsDefaultValue();
-}

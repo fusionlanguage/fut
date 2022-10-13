@@ -1496,6 +1496,53 @@ namespace Foxoft.Ci
 		public abstract void AcceptStatement(CiVisitor visitor);
 	}
 
+	public abstract class CiExpr : CiStatement
+	{
+
+		internal CiType Type;
+
+		public override bool CompletesNormally() => true;
+
+		public virtual bool IsIndexing() => false;
+
+		public virtual bool IsLiteralZero() => false;
+
+		public virtual bool IsConstEnum() => false;
+
+		public virtual int IntValue()
+		{
+			throw new NotImplementedException();
+		}
+
+		public virtual CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override void AcceptStatement(CiVisitor visitor)
+		{
+			visitor.VisitExpr(this);
+		}
+
+		public virtual bool IsReferenceTo(CiSymbol symbol) => false;
+	}
+
+	public abstract class CiSymbol : CiExpr
+	{
+
+		internal CiId Id = CiId.None;
+
+		internal string Name;
+
+		internal CiSymbol Next;
+
+		internal CiScope Parent;
+
+		internal CiCodeDoc Documentation = null;
+
+		public override string ToString() => this.Name;
+	}
+
 	public class CiAggregateInitializer : CiExpr
 	{
 
@@ -1508,7 +1555,18 @@ namespace Foxoft.Ci
 		}
 	}
 
-	public class CiLiteralFalse : CiLiteralBool
+	public abstract class CiLiteral : CiExpr
+	{
+
+		public abstract bool IsDefaultValue();
+
+		public virtual string GetLiteralString()
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	public class CiLiteralFalse : CiLiteral
 	{
 
 		public override bool IsDefaultValue() => true;
@@ -1518,9 +1576,11 @@ namespace Foxoft.Ci
 			visitor.VisitLiteralFalse();
 			return this;
 		}
+
+		public override string ToString() => "false";
 	}
 
-	public class CiLiteralTrue : CiLiteralBool
+	public class CiLiteralTrue : CiLiteral
 	{
 
 		public override bool IsDefaultValue() => false;
@@ -1530,6 +1590,30 @@ namespace Foxoft.Ci
 			visitor.VisitLiteralTrue();
 			return this;
 		}
+
+		public override string ToString() => "true";
+	}
+
+	public class CiLiteralNull : CiLiteral
+	{
+
+		public override bool IsDefaultValue() => true;
+
+		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		{
+			visitor.VisitLiteralNull();
+			return this;
+		}
+
+		public override string ToString() => "null";
+	}
+
+	public class CiImplicitEnumValue : CiExpr
+	{
+
+		internal int Value;
+
+		public override int IntValue() => this.Value;
 	}
 
 	public abstract class CiUnaryExpr : CiExpr
@@ -1576,7 +1660,7 @@ namespace Foxoft.Ci
 		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLambdaExpr(this);
-			return this;
+			return null;
 		}
 	}
 

@@ -27,31 +27,6 @@ using System.Text;
 namespace Foxoft.Ci
 {
 
-public abstract class CiExpr : CiStatement
-{
-	internal CiType Type;
-	public override bool CompletesNormally() => true;
-	public virtual bool IsIndexing() => false;
-	public virtual bool IsLiteralZero() => false;
-	public virtual bool IsConstEnum() => false;
-	public virtual int IntValue() => throw new NotImplementedException(GetType().Name);
-	public virtual CiExpr Accept(CiVisitor visitor, CiPriority parent) => throw new NotImplementedException(GetType().Name);
-	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitExpr(this); }
-	public CiLiteral ToLiteralBool(bool value) => value ? new CiLiteralTrue { Line = this.Line } : new CiLiteralFalse { Line = this.Line };
-	public CiLiteral ToLiteralLong(long value) => new CiLiteralLong(value) { Line = this.Line };
-	public virtual bool IsReferenceTo(CiSymbol symbol) => false;
-}
-
-public abstract class CiSymbol : CiExpr
-{
-	internal CiId Id = CiId.None;
-	internal string Name;
-	internal CiSymbol Next;
-	internal CiScope Parent;
-	internal CiCodeDoc Documentation = null;
-	public override string ToString() => this.Name;
-}
-
 public abstract class CiScope : CiSymbol
 {
 	readonly Dictionary<string, CiSymbol> Dict = new Dictionary<string, CiSymbol>();
@@ -151,14 +126,6 @@ public class CiConst : CiMember
 	internal CiVisitStatus VisitStatus;
 	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitConst(this); }
 	public override bool IsStatic() => true;
-}
-
-public abstract class CiLiteral : CiExpr
-{
-	public abstract bool IsDefaultValue();
-	public virtual string GetLiteralString() => throw new NotImplementedException();
-	public static readonly CiLiteralFalse False = new CiLiteralFalse();
-	public static readonly CiLiteralTrue True = new CiLiteralTrue();
 }
 
 public class CiLiteralLong : CiLiteral
@@ -290,39 +257,6 @@ public class CiLiteralString : CiLiteral
 			return -1;
 		}
 	}
-}
-
-public class CiLiteralNull : CiLiteral
-{
-	public CiLiteralNull()
-	{
-		this.Type = CiSystem.NullType;
-	}
-	public override bool IsDefaultValue() => true;
-	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
-	{
-		visitor.VisitLiteralNull();
-		return this;
-	}
-	public override string ToString() => "null";
-}
-
-public abstract class CiLiteralBool : CiLiteral
-{
-	protected CiLiteralBool()
-	{
-		this.Type = CiSystem.BoolType;
-	}
-}
-
-public class CiImplicitEnumValue : CiExpr
-{
-	internal readonly int Value;
-	public CiImplicitEnumValue(int value)
-	{
-		this.Value = value;
-	}
-	public override int IntValue() => this.Value;
 }
 
 public class CiInterpolatedPart
