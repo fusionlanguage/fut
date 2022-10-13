@@ -917,7 +917,7 @@ public class CiSystem : CiScope
 	public static CiLiteralLong NewLiteralLong(long value, int line = 0)
 	{
 		CiType type = value >= int.MinValue && value <= int.MaxValue ? new CiRangeType((int) value, (int) value) : LongType;
-		return new CiLiteralLong { Type = type, Value = value };
+		return new CiLiteralLong { Line = line, Type = type, Value = value };
 	}
 
 	public static CiLiteralString NewLiteralString(string value, int line = 0) => new CiLiteralString { Line = line, Type = StringPtrType, Value = value };
