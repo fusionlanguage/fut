@@ -430,19 +430,20 @@ public class GenCpp : GenCCpp
 		Write("end()");
 	}
 
-	void StartStringMethod(CiExpr obj)
+	void WriteNotRawStringLiteral(CiExpr obj, CiPriority priority)
 	{
-		obj.Accept(this, CiPriority.Primary);
-		if (obj is CiLiteral) {
+		obj.Accept(this, priority);
+		if (obj is CiLiteralString) {
+			Include("string_view");
 			this.UsingStringViewLiterals = true;
 			Write("sv");
 		}
-		Write('.');
 	}
 
 	void WriteStringMethod(CiExpr obj, string name, CiMethod method, List<CiExpr> args)
 	{
-		StartStringMethod(obj);
+		WriteNotRawStringLiteral(obj, CiPriority.Primary);
+		Write('.');
 		Write(name);
 		if (IsOneAsciiString(args[0], out char c)) {
 			Write('(');
@@ -1008,8 +1009,8 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteStringLength(CiExpr expr)
 	{
-		StartStringMethod(expr);
-		Write("length()");
+		WriteNotRawStringLiteral(expr, CiPriority.Primary);
+		Write(".length()");
 	}
 
 	void WriteMatchProperty(CiSymbolReference expr, string name)
@@ -1129,7 +1130,7 @@ public class GenCpp : GenCCpp
 		else
 			WriteTypeAndName(element);
 		Write(" : ");
-		statement.Collection.Accept(this, CiPriority.Argument);
+		WriteNotRawStringLiteral(statement.Collection, CiPriority.Argument);
 		Write(')');
 		WriteChild(statement.Body);
 	}
