@@ -838,19 +838,36 @@ public class GenJava : GenTyped
 	public override void VisitForeach(CiForeach statement)
 	{
 		Write("for (");
-		if (statement.Collection.Type is CiClassType dict && dict.Class.TypeParameterCount == 2) {
+		CiClassType klass = (CiClassType) statement.Collection.Type;
+		switch (klass.Class.Id) {
+		case CiId.StringClass:
+			Write("int _i = 0; _i < ");
+			WriteStringLength(statement.Collection); // FIXME: side effect in every iteration
+			Write("; _i++) ");
+			OpenBlock();
+			WriteTypeAndName(statement.GetVar());
+			Write(" = ");
+			statement.Collection.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+			WriteLine(".charAt(_i);");
+			FlattenBlock(statement.Body);
+			CloseBlock();
+			return;
+		case CiId.DictionaryClass:
+		case CiId.SortedDictionaryClass:
+		case CiId.OrderedDictionaryClass:
 			Include("java.util.Map");
-			Write("Map.Entry", dict);
+			Write("Map.Entry", klass);
 			Write(' ');
 			Write(statement.GetVar().Name);
 			Write(" : ");
 			statement.Collection.Accept(this, CiPriority.Primary);
 			Write(".entrySet()");
-		}
-		else {
+			break;
+		default:
 			WriteTypeAndName(statement.GetVar());
 			Write(" : ");
 			statement.Collection.Accept(this, CiPriority.Argument);
+			break;
 		}
 		Write(')');
 		WriteChild(statement.Body);
