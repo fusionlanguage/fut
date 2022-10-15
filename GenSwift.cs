@@ -168,8 +168,9 @@ public class GenSwift : GenPySwift
 	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
 		if (symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiStringType) {
+			Write("Int(");
 			WriteCamelCaseNotKeyword(symbol.Name);
-			Write(".value");
+			Write(".value)");
 		}
 		else
 			base.WriteLocalName(symbol, parent);
