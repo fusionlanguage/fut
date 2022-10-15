@@ -165,6 +165,16 @@ public class GenSwift : GenPySwift
 		}
 	}
 
+	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
+	{
+		if (symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiStringType) {
+			WriteCamelCaseNotKeyword(symbol.Name);
+			Write(".value");
+		}
+		else
+			base.WriteLocalName(symbol, parent);
+	}
+
 	static bool NeedsUnwrap(CiExpr expr)
 	{
 		if (expr.Type == null)
@@ -1150,14 +1160,22 @@ public class GenSwift : GenPySwift
 		else
 			WriteName(statement.GetVar());
 		Write(" in ");
-		if (statement.Collection.Type is CiClassType dict && dict.Class.Id == CiId.SortedDictionaryClass) {
+		CiClassType klass = (CiClassType) statement.Collection.Type;
+		switch (klass.Class.Id) {
+		case CiId.StringClass:
 			statement.Collection.Accept(this, CiPriority.Primary);
-			Write(dict.GetKeyType() == CiSystem.StringPtrType
+			Write(".unicodeScalars");
+			break;
+		case CiId.SortedDictionaryClass:
+			statement.Collection.Accept(this, CiPriority.Primary);
+			Write(klass.GetKeyType() == CiSystem.StringPtrType
 				? ".sorted(by: { $0.key! < $1.key! })"
 				: ".sorted(by: { $0.key < $1.key })");
-		}
-		else
+			break;
+		default:
 			WriteExpr(statement.Collection, CiPriority.Argument);
+			break;
+		}
 		WriteChild(statement.Body);
 	}
 

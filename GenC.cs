@@ -215,6 +215,15 @@ public class GenC : GenCCpp
 		if (symbol.Parent is CiForeach forEach) {
 			CiClassType klass = (CiClassType) forEach.Collection.Type;
 			switch (klass.Class.Id) {
+			case CiId.StringClass:
+			case CiId.ListClass:
+				if (parent == CiPriority.Primary)
+					Write('(');
+				Write('*');
+				WriteCamelCaseNotKeyword(symbol.Name);
+				if (parent == CiPriority.Primary)
+					Write(')');
+				return;
 			case CiId.ArrayStorageClass:
 				if (klass.GetElementType() is CiStorageType) {
 					if (parent > CiPriority.Add)
@@ -231,14 +240,6 @@ public class GenC : GenCCpp
 					WriteCamelCaseNotKeyword(symbol.Name);
 					Write(']');
 				}
-				return;
-			case CiId.ListClass:
-				if (parent == CiPriority.Primary)
-					Write('(');
-				Write('*');
-				WriteCamelCaseNotKeyword(symbol.Name);
-				if (parent == CiPriority.Primary)
-					Write(')');
 				return;
 			default:
 				break;
@@ -2209,6 +2210,19 @@ public class GenC : GenCCpp
 			break;
 		case CiClassType klass:
 			switch (klass.Class.Id) {
+			case CiId.StringClass:
+				Write("for (");
+				WriteStringPtrType();
+				WriteCamelCaseNotKeyword(element);
+				Write(" = ");
+				statement.Collection.Accept(this, CiPriority.Argument);
+				Write("; *");
+				WriteCamelCaseNotKeyword(element);
+				Write(" != '\\0'; ");
+				WriteCamelCaseNotKeyword(element);
+				Write("++)");
+				WriteChild(statement.Body);
+				break;
 			case CiId.ListClass:
 				Write("for (");
 				CiType elementType = klass.GetElementType();

@@ -1270,6 +1270,10 @@ public class CiResolver : CiVisitor
 		if (!(statement.Collection.Type is CiClassType klass))
 			throw StatementException(statement.Collection, "Expected a collection");
 		switch (klass.Class.Id) {
+		case CiId.StringClass:
+			if (statement.Count() != 1 || !element.Type.IsAssignableFrom(CiSystem.IntType))
+				throw StatementException(statement, "Expected int iterator variable");
+			break;
 		case CiId.ArrayStorageClass:
 		case CiId.ListClass:
 		case CiId.HashSetClass:

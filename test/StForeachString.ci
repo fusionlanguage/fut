@@ -1,0 +1,10 @@
+public class Test
+{
+	public static bool Run()
+	{
+		int sum = 0;
+		foreach (int c in "foo") //FAIL: cpp java swift TODO
+			sum += 1 + c;
+		return sum == 3 + 'f' + 'o' + 'o';
+	}
+}

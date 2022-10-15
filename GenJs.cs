@@ -260,6 +260,8 @@ public class GenJs : GenBase
 			Write('.');
 		}
 		WriteName(symbol);
+		if (symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiStringType)
+			Write(".codePointAt(0)");
 	}
 
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
@@ -780,6 +782,7 @@ public class GenJs : GenBase
 		Write("for (const ");
 		CiClassType klass = (CiClassType) statement.Collection.Type;
 		switch (klass.Class.Id) {
+		case CiId.StringClass:
 		case CiId.ArrayStorageClass:
 		case CiId.ListClass:
 		case CiId.HashSetClass:

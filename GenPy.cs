@@ -165,6 +165,17 @@ public class GenPy : GenPySwift
 
 	protected override void WriteTypeAndName(CiNamedValue value) => WriteName(value);
 
+	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
+	{
+		if (symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiStringType) {
+			Write("ord(");
+			WriteNameNotKeyword(symbol.Name);
+			Write(')');
+		}
+		else
+			base.WriteLocalName(symbol, parent);
+	}
+
 	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
 	{
 		if (((CiArrayStorageType) expr.Type).GetElementType() is CiNumericType number) {

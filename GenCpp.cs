@@ -939,7 +939,7 @@ public class GenCpp : GenCCpp
 	{
 		switch (expr.Type) {
 		case CiArrayStorageType _:
-		case CiClassType klass when klass.Class.Id == CiId.StringClass:
+		case CiStringType _:
 			expr.Accept(this, CiPriority.Primary);
 			Write(".data()");
 			break;
