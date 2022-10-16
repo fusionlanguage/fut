@@ -322,8 +322,14 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteStaticCast(CiType type, CiExpr expr)
 	{
-		Write("static_cast<");
-		Write(type, false);
+		if (type is CiDynamicPtrType dynamic) {
+			Write("std::static_pointer_cast<");
+			Write(dynamic.Class.Name);
+		}
+		else {
+			Write("static_cast<");
+			Write(type, false);
+		}
 		Write(">(");
 		GetStaticCastInner(type, expr).Accept(this, CiPriority.Argument);
 		Write(')');

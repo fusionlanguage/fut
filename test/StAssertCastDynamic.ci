@@ -1,0 +1,21 @@
+class Animal
+{
+	internal string Name;
+}
+
+class Cat : Animal
+{
+	internal string Food;
+}
+
+public static class Test
+{
+	public static bool Run()
+	{
+		Cat# alik = new Cat(); //FAIL: cl
+		alik.Food = "mice";
+		Animal# a = alik;
+		assert a is Cat# c; //FAIL: ts TODO
+		return c.Food == "mice";
+	}
+}
