@@ -766,12 +766,18 @@ public class GenJs : GenBase
 		expr.Body.Accept(this, CiPriority.Statement);
 	}
 
+	protected virtual void WriteAssertCastType(CiVar def)
+	{
+	}
+
 	protected override void WriteAssertCast(CiBinaryExpr expr)
 	{
 		Write("const ");
-		Write(((CiVar) expr.Right).Name);
+		CiVar def = (CiVar) expr.Right;
+		Write(def.Name);
 		Write(" = ");
 		expr.Left.Accept(this, CiPriority.Argument);
+		WriteAssertCastType(def);
 		WriteLine();
 	}
 

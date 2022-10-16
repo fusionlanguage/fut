@@ -15,7 +15,7 @@ public static class Test
 		Cat# alik = new Cat(); //FAIL: cl
 		alik.Food = "mice";
 		Animal# a = alik;
-		assert a is Cat# c; //FAIL: ts TODO
+		assert a is Cat# c;
 		return c.Food == "mice";
 	}
 }

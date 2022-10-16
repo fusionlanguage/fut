@@ -151,6 +151,12 @@ public class GenTs : GenJs
 		}
 	}
 
+	protected override void WriteAssertCastType(CiVar def)
+	{
+		Write(" as ");
+		Write(def.Type.Name);
+	}
+
 	void WriteVisibility(CiVisibility visibility)
 	{
 		switch (visibility) {
