@@ -236,6 +236,15 @@ public abstract class GenTyped : GenBase
 	}
 
 	protected override void WriteCharAt(CiBinaryExpr expr) => WriteIndexing(expr, CiPriority.Argument);
+
+	protected override void WriteAssertCast(CiBinaryExpr expr)
+	{
+		CiVar def = (CiVar) expr.Right;
+		WriteTypeAndName(def);
+		Write(" = ");
+		WriteStaticCast(def.Type, expr.Left);
+		WriteLine(';');
+	}
 }
 
 }

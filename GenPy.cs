@@ -885,7 +885,15 @@ public class GenPy : GenPySwift
 
 	public override void VisitLambdaExpr(CiLambdaExpr expr) => throw new NotImplementedException();
 
-	public override void VisitAssert(CiAssert statement)
+	protected override void WriteAssertCast(CiBinaryExpr expr)
+	{
+		Write(((CiVar) expr.Right).Name);
+		Write(" = ");
+		expr.Left.Accept(this, CiPriority.Argument);
+		WriteLine();
+	}
+
+	protected override void WriteAssert(CiAssert statement)
 	{
 		Write("assert ");
 		statement.Cond.Accept(this, CiPriority.Argument);

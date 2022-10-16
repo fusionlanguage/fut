@@ -1046,7 +1046,19 @@ public class GenSwift : GenPySwift
 		Write(" }");
 	}
 
-	public override void VisitAssert(CiAssert statement)
+	protected override void WriteAssertCast(CiBinaryExpr expr)
+	{
+		Write("let ");
+		CiVar def = (CiVar) expr.Right;
+		WriteCamelCaseNotKeyword(def.Name);
+		Write(" = ");
+		expr.Left.Accept(this, CiPriority.Equality /* TODO? */);
+		Write(" as! ");
+		Write(def.Type.Name);
+		WriteLine('?');
+	}
+
+	protected override void WriteAssert(CiAssert statement)
 	{
 		Write("assert(");
 		WriteExpr(statement.Cond, CiPriority.Argument);

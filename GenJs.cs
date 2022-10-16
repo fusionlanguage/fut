@@ -766,7 +766,16 @@ public class GenJs : GenBase
 		expr.Body.Accept(this, CiPriority.Statement);
 	}
 
-	public override void VisitAssert(CiAssert statement)
+	protected override void WriteAssertCast(CiBinaryExpr expr)
+	{
+		Write("const ");
+		Write(((CiVar) expr.Right).Name);
+		Write(" = ");
+		expr.Left.Accept(this, CiPriority.Argument);
+		WriteLine();
+	}
+
+	protected override void WriteAssert(CiAssert statement)
 	{
 		Write("console.assert(");
 		statement.Cond.Accept(this, CiPriority.Argument);

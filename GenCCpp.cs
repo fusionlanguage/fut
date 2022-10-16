@@ -194,7 +194,7 @@ public abstract class GenCCpp : GenTyped
 			WriteConst(konst);
 	}
 
-	public override void VisitAssert(CiAssert statement)
+	protected override void WriteAssert(CiAssert statement)
 	{
 		IncludeAssert();
 		Write("assert(");

@@ -816,7 +816,7 @@ public class GenJava : GenTyped
 		expr.Body.Accept(this, CiPriority.Statement);
 	}
 
-	public override void VisitAssert(CiAssert statement)
+	protected override void WriteAssert(CiAssert statement)
 	{
 		if (statement.CompletesNormally()) {
 			Write("assert ");

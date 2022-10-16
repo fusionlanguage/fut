@@ -1136,6 +1136,18 @@ public abstract class GenBase : CiVisitor
 	{
 	}
 
+	protected abstract void WriteAssertCast(CiBinaryExpr expr);
+
+	protected abstract void WriteAssert(CiAssert statement);
+
+	public override void VisitAssert(CiAssert statement)
+	{
+		if (statement.Cond is CiBinaryExpr binary && binary.Op == CiToken.Is && binary.Right is CiVar)
+			WriteAssertCast(binary);
+		else
+			WriteAssert(statement);
+	}
+
 	protected void Write(List<CiStatement> statements, int length)
 	{
 		for (int i = 0; i < length; i++)

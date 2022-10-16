@@ -237,7 +237,7 @@ public class GenCl : GenC
 		}
 	}
 
-	public override void VisitAssert(CiAssert statement)
+	protected override void WriteAssert(CiAssert statement)
 	{
 	}
 

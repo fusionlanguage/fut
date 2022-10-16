@@ -976,7 +976,7 @@ public class CiResolver : CiVisitor
 				 && !(leftPtr is CiDynamicPtrType)
 				 && (rightPtr is CiDynamicPtrType || !(leftPtr is CiReadWriteClassType)))
 					throw StatementException(expr, $"{leftPtr} cannot be casted to {rightPtr}");
-				NotSupported(expr, "'is' operator", "c", "cpp", "js", "py", "swift", "ts", "cl");
+				// TODO: outside assert NotSupported(expr, "'is' operator", "c", "cpp", "js", "py", "swift", "ts", "cl");
 				klass2 = rightPtr.Class;
 				break;
 			default:
