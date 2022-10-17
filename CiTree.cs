@@ -27,64 +27,6 @@ using System.Text;
 namespace Foxoft.Ci
 {
 
-public abstract class CiScope : CiSymbol
-{
-	readonly Dictionary<string, CiSymbol> Dict = new Dictionary<string, CiSymbol>();
-	internal CiSymbol First = null;
-	CiSymbol Last;
-
-	public int Count() => this.Dict.Count;
-
-	public CiVar FirstParameter() => (CiVar) this.First;
-
-	public CiContainerType GetContainer()
-	{
-		for (CiScope scope = this; scope != null; scope = scope.Parent) {
-			if (scope is CiContainerType container)
-				return container;
-		}
-		throw new InvalidOperationException();
-	}
-
-	public CiSymbol TryShallowLookup(string name)
-	{
-		this.Dict.TryGetValue(name, out CiSymbol result);
-		return result;
-	}
-
-	public virtual CiSymbol TryLookup(string name)
-	{
-		for (CiScope scope = this; scope != null; scope = scope.Parent) {
-			if (scope.Dict.TryGetValue(name, out CiSymbol result))
-				return result;
-		}
-		return null;
-	}
-
-	public bool Contains(CiSymbol symbol) => this.Dict.ContainsKey(symbol.Name);
-
-	public void Add(CiSymbol symbol)
-	{
-		this.Dict.Add(symbol.Name, symbol);
-		symbol.Next = null;
-		symbol.Parent = this;
-		if (this.First == null)
-			this.First = symbol;
-		else
-			this.Last.Next = symbol;
-		this.Last = symbol;
-	}
-
-	public bool Encloses(CiSymbol symbol)
-	{
-		for (CiScope scope = symbol.Parent; scope != null; scope = scope.Parent) {
-			if (scope == this)
-				return true;
-		}
-		return false;
-	}
-}
-
 public abstract class CiNamedValue : CiSymbol
 {
 	internal CiExpr TypeExpr;
@@ -658,11 +600,6 @@ public class CiRangeType : CiIntegerType
 			positive = new CiRangeType(0, this.Max);
 		}
 	}
-}
-
-public class CiFloatingType : CiNumericType
-{
-	public override bool IsAssignableFrom(CiType right) => right is CiNumericType;
 }
 
 public class CiClassType : CiType

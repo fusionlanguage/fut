@@ -1544,6 +1544,67 @@ namespace Foxoft.Ci
 		public override string ToString() => this.Name;
 	}
 
+	public abstract class CiScope : CiSymbol
+	{
+
+		readonly Dictionary<string, CiSymbol> Dict = new Dictionary<string, CiSymbol>();
+
+		internal CiSymbol First = null;
+
+		CiSymbol Last;
+
+		public int Count() => this.Dict.Count;
+
+		public CiVar FirstParameter()
+		{
+			CiVar result = (CiVar) this.First;
+			return result;
+		}
+
+		public CiContainerType GetContainer()
+		{
+			for (CiScope scope = this; scope != null; scope = scope.Parent) {
+				if (scope is CiContainerType container)
+					return container;
+			}
+			throw new NotImplementedException();
+		}
+
+		public bool Contains(CiSymbol symbol) => this.Dict.ContainsKey(symbol.Name);
+
+		public CiSymbol TryShallowLookup(string name) => this.Dict.ContainsKey(name) ? this.Dict[name] : null;
+
+		public virtual CiSymbol TryLookup(string name)
+		{
+			for (CiScope scope = this; scope != null; scope = scope.Parent) {
+				if (scope.Dict.ContainsKey(name))
+					return scope.Dict[name];
+			}
+			return null;
+		}
+
+		public void Add(CiSymbol symbol)
+		{
+			this.Dict[symbol.Name] = symbol;
+			symbol.Next = null;
+			symbol.Parent = this;
+			if (this.First == null)
+				this.First = symbol;
+			else
+				this.Last.Next = symbol;
+			this.Last = symbol;
+		}
+
+		public bool Encloses(CiSymbol symbol)
+		{
+			for (CiScope scope = symbol.Parent; scope != null; scope = scope.Parent) {
+				if (scope == this)
+					return true;
+			}
+			return false;
+		}
+	}
+
 	public class CiAggregateInitializer : CiExpr
 	{
 
@@ -1749,7 +1810,7 @@ namespace Foxoft.Ci
 		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLambdaExpr(this);
-			return null;
+			return this;
 		}
 	}
 
@@ -1970,6 +2031,12 @@ namespace Foxoft.Ci
 
 	public abstract class CiNumericType : CiType
 	{
+	}
+
+	public class CiFloatingType : CiNumericType
+	{
+
+		public override bool IsAssignableFrom(CiType right) => right is CiNumericType;
 	}
 
 	public abstract class CiContainerType : CiType

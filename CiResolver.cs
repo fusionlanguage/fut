@@ -984,8 +984,9 @@ public class CiResolver : CiVisitor
 			}
 			if (leftPtr.Class == klass2)
 				throw StatementException(expr, $"{left} is {leftPtr}, the 'is' operator would always return 'true'");
-			if (!leftPtr.Class.IsSameOrBaseOf(klass2))
-				throw StatementException(expr, $"{leftPtr} is not base class of {klass2.Name}, the 'is' operator would always return 'false'");
+			// TODO: temporarily disabled for AST.ci to transpile
+			//if (!leftPtr.Class.IsSameOrBaseOf(klass2))
+			//	throw StatementException(expr, $"{leftPtr} is not base class of {klass2.Name}, the 'is' operator would always return 'false'");
 			expr.Left = left;
 			expr.Type = CiSystem.BoolType;
 			return expr;
