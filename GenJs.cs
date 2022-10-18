@@ -165,7 +165,16 @@ public class GenJs : GenBase
 	protected override void WriteVar(CiNamedValue def)
 	{
 		Write(def.Type.IsFinal() && !def.IsAssignableStorage() ? "const " : "let ");
-		base.WriteVar(def);
+		WriteTypeAndName(def);
+		if (def.Value is CiAggregateInitializer init) {
+			Write(" = Object.assign(");
+			WriteNewStorage(def.Type);
+			Write(',');
+			WriteObjectLiteral(init, ": ");
+			Write(')');
+		}
+		else
+			WriteVarInit(def);
 	}
 
 	void WriteInterpolatedLiteral(string s)

@@ -275,15 +275,7 @@ public class GenCs : GenTyped
 		if (type is CiStorageType && !(type is CiArrayStorageType) && expr is CiAggregateInitializer init) {
 			Write("new ");
 			Write(type, false);
-			string prefix = " { ";
-			foreach (CiBinaryExpr field in init.Items) {
-				Write(prefix);
-				WriteName(((CiSymbolReference) field.Left).Symbol);
-				Write(" = ");
-				WriteCoerced(field.Left.Type, field.Right, CiPriority.Argument);
-				prefix = ", ";
-			}
-			Write(" }");
+			WriteObjectLiteral(init, " = ");
 		}
 		else
 			base.WriteCoercedInternal(type, expr, parent);

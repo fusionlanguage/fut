@@ -712,6 +712,19 @@ public abstract class GenBase : CiVisitor
 		WriteNewArray(array);
 	}
 
+	protected void WriteObjectLiteral(CiAggregateInitializer init, string separator)
+	{
+		string prefix = " { ";
+		foreach (CiBinaryExpr field in init.Items) {
+			Write(prefix);
+			WriteName(((CiSymbolReference) field.Left).Symbol);
+			Write(separator);
+			WriteCoerced(field.Left.Type, field.Right, CiPriority.Argument);
+			prefix = ", ";
+		}
+		Write(" }");
+	}
+
 	protected virtual void WriteCoercedExpr(CiType type, CiExpr expr)
 	{
 		WriteCoerced(type, expr, CiPriority.Argument);
