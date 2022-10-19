@@ -1,6 +1,7 @@
 // Generated automatically with "cito". Do not edit.
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 namespace Foxoft.Ci
@@ -1767,12 +1768,48 @@ namespace Foxoft.Ci
 		public override int IntValue() => this.Value;
 	}
 
+	public class CiSymbolReference : CiExpr
+	{
+
+		internal CiExpr Left;
+
+		internal string Name;
+
+		internal CiSymbol Symbol;
+
+		public override bool IsConstEnum() => this.Symbol.Parent is CiEnum;
+
+		public override int IntValue()
+		{
+			CiConst konst = (CiConst) this.Symbol;
+			return konst.Value.IntValue();
+		}
+
+		public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitSymbolReference(this, parent);
+
+		public override bool IsReferenceTo(CiSymbol symbol) => this.Symbol == symbol;
+	}
+
 	public abstract class CiUnaryExpr : CiExpr
 	{
 
 		internal CiToken Op;
 
 		internal CiExpr Inner;
+	}
+
+	public class CiPrefixExpr : CiUnaryExpr
+	{
+
+		public override bool IsConstEnum() => this.Type is CiEnumFlags && this.Inner.IsConstEnum();
+
+		public override int IntValue()
+		{
+			Debug.Assert(this.Op == CiToken.Tilde);
+			return ~this.Inner.IntValue();
+		}
+
+		public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitPrefixExpr(this, parent);
 	}
 
 	public class CiPostfixExpr : CiUnaryExpr
@@ -2124,6 +2161,92 @@ namespace Foxoft.Ci
 		public override bool IsAssignableFrom(CiType right) => right is CiNumericType;
 	}
 
+	public abstract class CiNamedValue : CiSymbol
+	{
+
+		internal CiExpr TypeExpr;
+
+		internal CiExpr Value;
+
+		public bool IsAssignableStorage() => this.Type is CiStorageType && !(this.Type is CiArrayStorageType) && this.Value is CiLiteralNull;
+	}
+
+	public class CiMember : CiNamedValue
+	{
+		protected CiMember()
+		{
+		}
+
+		internal CiVisibility Visibility;
+
+		public static CiMember New(CiType type, CiId id, string name) => new CiMember { Visibility = CiVisibility.Public, Type = type, Id = id, Name = name };
+
+		public virtual bool IsStatic()
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	public class CiVar : CiNamedValue
+	{
+
+		internal bool IsAssigned = false;
+
+		public static CiVar New(CiType type, string name, CiExpr defaultValue = null) => new CiVar { Type = type, Name = name, Value = defaultValue };
+
+		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		{
+			visitor.VisitVar(this);
+			return this;
+		}
+
+		public CiVar NextParameter()
+		{
+			CiVar def = (CiVar) this.Next;
+			return def;
+		}
+	}
+
+	public enum CiVisitStatus
+	{
+		NotYet,
+		InProgress,
+		Done
+	}
+
+	public class CiConst : CiMember
+	{
+
+		internal CiMethodBase InMethod;
+
+		internal CiVisitStatus VisitStatus;
+
+		public override void AcceptStatement(CiVisitor visitor)
+		{
+			visitor.VisitConst(this);
+		}
+
+		public override bool IsStatic() => true;
+	}
+
+	public class CiField : CiMember
+	{
+
+		public override bool IsStatic() => false;
+	}
+
+	public class CiMethodBase : CiMember
+	{
+
+		internal bool Throws;
+
+		internal CiStatement Body;
+
+		internal bool IsLive = false;
+
+		internal readonly HashSet<CiMethod> Calls = new HashSet<CiMethod>();
+	}
+
 	public abstract class CiContainerType : CiType
 	{
 
@@ -2132,10 +2255,23 @@ namespace Foxoft.Ci
 		internal string Filename;
 	}
 
-	public enum CiVisitStatus
+	public class CiEnum : CiContainerType
 	{
-		NotYet,
-		InProgress,
-		Done
+
+		internal bool HasExplicitValue = false;
+
+		public void AcceptValues(CiVisitor visitor)
+		{
+			CiConst previous = null;
+			for (CiSymbol symbol = this.First; symbol != null; symbol = symbol.Next) {
+				CiConst konst = (CiConst) symbol;
+				visitor.VisitEnumValue(konst, previous);
+				previous = konst;
+			}
+		}
+	}
+
+	public class CiEnumFlags : CiEnum
+	{
 	}
 }

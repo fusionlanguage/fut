@@ -262,23 +262,19 @@ public class GenCs : GenTyped
 		}
 	}
 
+	protected override void WriteNewWithFields(CiType type, CiAggregateInitializer init)
+	{
+		Write("new ");
+		Write(type, false);
+		WriteObjectLiteral(init, " = ");
+	}
+
 	protected override void WriteCoercedLiteral(CiType type, CiExpr literal)
 	{
 		if (literal is CiLiteralChar && type is CiRangeType range && range.Max <= 0xff)
 			WriteStaticCast(type, literal);
 		else
 			literal.Accept(this, CiPriority.Argument);
-	}
-
-	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
-	{
-		if (type is CiStorageType && !(type is CiArrayStorageType) && expr is CiAggregateInitializer init) {
-			Write("new ");
-			Write(type, false);
-			WriteObjectLiteral(init, " = ");
-		}
-		else
-			base.WriteCoercedInternal(type, expr, parent);
 	}
 
 	protected override TypeCode GetTypeCode(CiExpr expr) => expr is CiLiteralChar ? TypeCode.UInt16 : base.GetTypeCode(expr);

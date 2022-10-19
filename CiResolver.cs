@@ -280,22 +280,26 @@ public class CiResolver : CiVisitor
 			items[i] = Resolve(items[i]);
 	}
 
+	void ResolveObjectLiteral(CiClassType klass, CiAggregateInitializer init)
+	{
+		NotYet(init, "Aggregate initializer", "c", "cpp", "java", "py", "swift", "cl");
+		foreach (CiBinaryExpr field in init.Items) {
+			Trace.Assert(field.Op == CiToken.Assign);
+			CiSymbolReference symbol = (CiSymbolReference) field.Left;
+			Lookup(symbol, klass);
+			if (!(symbol.Symbol is CiField))
+				throw StatementException(field, "Expected a field");
+			field.Right = Resolve(field.Right);
+			Coerce(field.Right, symbol.Type);
+		}
+	}
+
 	public override void VisitVar(CiVar expr)
 	{
 		CiType type = ResolveType(expr);
 		if (expr.Value != null) {
-			if (type is CiStorageType && expr.Value is CiAggregateInitializer init) {
-				NotYet(init, "Aggregate initializer", "c", "cpp", "java", "py", "swift", "cl");
-				foreach (CiBinaryExpr field in init.Items) {
-					Trace.Assert(field.Op == CiToken.Assign);
-					CiSymbolReference symbol = (CiSymbolReference) field.Left;
-					Lookup(symbol, type);
-					if (!(symbol.Symbol is CiField))
-						throw StatementException(field, "Expected a field");
-					field.Right = Resolve(field.Right);
-					Coerce(field.Right, symbol.Type);
-				}
-			}
+			if (type is CiStorageType storage && expr.Value is CiAggregateInitializer init)
+				ResolveObjectLiteral(storage, init);
 			else {
 				expr.Value = Resolve(expr.Value);
 				if (!expr.IsAssignableStorage()) {
@@ -572,6 +576,15 @@ public class CiResolver : CiVisitor
 		case CiToken.New:
 			if (expr.Type != null)
 				return expr;
+			if (expr.Inner is CiBinaryExpr binaryNew && binaryNew.Op == CiToken.LeftBrace) {
+				if (!(ToType(binaryNew.Left, true) is CiClassType klass) || klass is CiReadWriteClassType)
+					throw StatementException(expr, "Invalid argument to new");
+				CiAggregateInitializer init = (CiAggregateInitializer) binaryNew.Right;
+				ResolveObjectLiteral(klass, init);
+				expr.Type = new CiDynamicPtrType { Class = klass.Class };
+				expr.Inner = init;
+				return expr;
+			}
 			type = ToType(expr.Inner, true);
 			switch (type) {
 			case CiArrayStorageType array:
@@ -1682,7 +1695,7 @@ public class CiResolver : CiVisitor
 			case CiField field:
 				CiType type = ResolveType(field);
 				if (field.Value != null) {
-					field.Value = FoldConst(field.Value);
+					field.Value = Resolve(field.Value);
 					if (!field.IsAssignableStorage()) {
 						if (type is CiArrayStorageType array)
 							type = array.GetElementType();

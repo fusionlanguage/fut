@@ -139,6 +139,19 @@ public class CiParser : CiLexer
 		}
 	}
 
+	CiAggregateInitializer ParseObjectLiteral()
+	{
+		CiAggregateInitializer result = new CiAggregateInitializer { Line = this.Line };
+		do {
+			int line = this.Line;
+			CiExpr field = ParseSymbolReference(null);
+			Expect(CiToken.Assign);
+			result.Items.Add(new CiBinaryExpr { Line = line, Left = field, Op = CiToken.Assign, Right = ParseExpr() });
+		} while (Eat(CiToken.Comma));
+		Expect(CiToken.RightBrace);
+		return result;
+	}
+
 	bool SeeDigit()
 	{
 		int c = PeekChar();
@@ -198,7 +211,12 @@ public class CiParser : CiLexer
 		case CiToken.ExclamationMark:
 			return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParsePrimaryExpr() };
 		case CiToken.New:
-			return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParseType() };
+			CiPrefixExpr newResult = new CiPrefixExpr { Line = this.Line, Op = NextToken() };
+			result = ParseType();
+			if (Eat(CiToken.LeftBrace))
+				result = new CiBinaryExpr { Line = this.Line, Left = result, Op = CiToken.LeftBrace, Right = ParseObjectLiteral() };
+			newResult.Inner = result;
+			return newResult;
 		case CiToken.LiteralLong:
 			result = CiSystem.NewLiteralLong(this.LongValue, this.Line);
 			NextToken();
@@ -478,17 +496,8 @@ public class CiParser : CiLexer
 	{
 		if (!Eat(CiToken.Assign))
 			return null;
-		if (Eat(CiToken.LeftBrace)) {
-			CiAggregateInitializer result = new CiAggregateInitializer { Line = this.Line };
-			do {
-				int line = this.Line;
-				CiExpr field = ParseSymbolReference(null);
-				Expect(CiToken.Assign);
-				result.Items.Add(new CiBinaryExpr { Line = line, Left = field, Op = CiToken.Assign, Right = ParseExpr() });
-			} while (Eat(CiToken.Comma));
-			Expect(CiToken.RightBrace);
-			return result;
-		}
+		if (Eat(CiToken.LeftBrace))
+			return ParseObjectLiteral();
 		return ParseExpr();
 	}
 

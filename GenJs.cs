@@ -162,19 +162,19 @@ public class GenJs : GenBase
 		}
 	}
 
+	protected override void WriteNewWithFields(CiType type, CiAggregateInitializer init)
+	{
+		Write("Object.assign(");
+		WriteNew((CiReadWriteClassType) type, CiPriority.Argument);
+		Write(',');
+		WriteObjectLiteral(init, ": ");
+		Write(')');
+	}
+
 	protected override void WriteVar(CiNamedValue def)
 	{
 		Write(def.Type.IsFinal() && !def.IsAssignableStorage() ? "const " : "let ");
-		WriteTypeAndName(def);
-		if (def.Value is CiAggregateInitializer init) {
-			Write(" = Object.assign(");
-			WriteNewStorage(def.Type);
-			Write(',');
-			WriteObjectLiteral(init, ": ");
-			Write(')');
-		}
-		else
-			WriteVarInit(def);
+		base.WriteVar(def);
 	}
 
 	void WriteInterpolatedLiteral(string s)

@@ -725,6 +725,8 @@ public abstract class GenBase : CiVisitor
 		Write(" }");
 	}
 
+	protected virtual void WriteNewWithFields(CiType type, CiAggregateInitializer init) => throw new NotImplementedException();
+
 	protected virtual void WriteCoercedExpr(CiType type, CiExpr expr)
 	{
 		WriteCoerced(type, expr, CiPriority.Argument);
@@ -734,7 +736,14 @@ public abstract class GenBase : CiVisitor
 	{
 		if (def.IsAssignableStorage()) {
 		}
-		else if (def.Type is CiArrayStorageType array && !(def.Value is CiAggregateInitializer))
+		else if (def.Value is CiAggregateInitializer init) {
+			Write(" = ");
+			if (def.Type is CiArrayStorageType)
+				WriteCoercedExpr(def.Type, def.Value);
+			else
+				WriteNewWithFields(def.Type, init);
+		}
+		else if (def.Type is CiArrayStorageType array)
 			WriteArrayStorageInit(array, def.Value);
 		else if (def.Value != null) {
 			Write(" = ");
@@ -809,6 +818,8 @@ public abstract class GenBase : CiVisitor
 			CiDynamicPtrType dynamic = (CiDynamicPtrType) expr.Type;
 			if (dynamic.Class.Id == CiId.ArrayPtrClass)
 				WriteNewArray(dynamic.GetElementType(), expr.Inner, parent);
+			else if (expr.Inner is CiAggregateInitializer init)
+				WriteNewWithFields(dynamic, init);
 			else
 				WriteNew(dynamic, parent);
 			return expr;

@@ -1,0 +1,16 @@
+class Inner
+{
+	internal int X;
+}
+
+public class Test
+{
+	Inner# F = new Inner { X = 42 }; //FAIL: c cpp java py swift cl
+
+	public static bool Run()
+	{
+		Inner# p = new Inner { X = 5 };
+		Test() o;
+		return p.X == 5 && o.F.X == 42;
+	}
+}

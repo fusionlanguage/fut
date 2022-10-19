@@ -27,43 +27,6 @@ using System.Text;
 namespace Foxoft.Ci
 {
 
-public abstract class CiNamedValue : CiSymbol
-{
-	internal CiExpr TypeExpr;
-	internal CiExpr Value;
-	public bool IsAssignableStorage() => this.Type is CiStorageType && !(this.Type is CiArrayStorageType) && this.Value is CiLiteralNull;
-}
-
-public class CiMember : CiNamedValue
-{
-	internal CiVisibility Visibility;
-	protected CiMember()
-	{
-	}
-	public static CiMember New(CiType type, CiId id, string name) => new CiMember { Visibility = CiVisibility.Public, Type = type, Id = id, Name = name };
-	public virtual bool IsStatic() => throw new NotImplementedException(GetType().Name);
-}
-
-public class CiVar : CiNamedValue
-{
-	internal bool IsAssigned = false;
-	public static CiVar New(CiType type, string name, CiExpr defaultValue = null) => new CiVar { Type = type, Name = name, Value = defaultValue };
-	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
-	{
-		visitor.VisitVar(this);
-		return this;
-	}
-	public CiVar NextParameter() => (CiVar) this.Next;
-}
-
-public class CiConst : CiMember
-{
-	internal CiMethodBase InMethod;
-	internal CiVisitStatus VisitStatus;
-	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitConst(this); }
-	public override bool IsStatic() => true;
-}
-
 public class CiLiteralChar : CiLiteralLong
 {
 	CiLiteralChar()
@@ -153,29 +116,6 @@ public class CiInterpolatedString : CiExpr
 		sb.Append('"');
 		return sb.ToString();
 	}
-}
-
-public class CiSymbolReference : CiExpr
-{
-	internal CiExpr Left;
-	internal string Name;
-	internal CiSymbol Symbol;
-	public override bool IsConstEnum() => this.Symbol.Parent is CiEnum;
-	public override int IntValue() => ((CiConst) this.Symbol).Value.IntValue();
-	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitSymbolReference(this, parent);
-	public override bool IsReferenceTo(CiSymbol symbol) => this.Symbol == symbol;
-	public override string ToString() => this.Left != null ? $"{this.Left}.{this.Name}" : this.Name;
-}
-
-public class CiPrefixExpr : CiUnaryExpr
-{
-	public override bool IsConstEnum() => this.Type is CiEnumFlags && this.Inner.IsConstEnum(); // && this.Op == CiToken.Tilde
-	public override int IntValue()
-	{
-		Trace.Assert(this.Op == CiToken.Tilde);
-		return ~this.Inner.IntValue();
-	}
-	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitPrefixExpr(this, parent);
 }
 
 public class CiBinaryExpr : CiExpr
@@ -311,19 +251,6 @@ public class CiBinaryExpr : CiExpr
 	public override string ToString() => this.Op == CiToken.LeftBracket ? $"{this.Left}[{this.Right}]" : $"({this.Left} {GetOpString()} {this.Right})";
 }
 
-public class CiField : CiMember
-{
-	public override bool IsStatic() => false;
-}
-
-public class CiMethodBase : CiMember
-{
-	internal bool Throws;
-	internal CiStatement Body;
-	internal bool IsLive = false;
-	public readonly HashSet<CiMethod> Calls = new HashSet<CiMethod>();
-}
-
 public class CiMethod : CiMethodBase
 {
 	internal CiCallType CallType;
@@ -381,23 +308,6 @@ public class CiMethodGroup : CiMember
 		result.Methods[1] = method1;
 		return result;
 	}
-}
-
-public class CiEnum : CiContainerType
-{
-	internal bool HasExplicitValue = false;
-	public void AcceptValues(CiVisitor visitor)
-	{
-		CiConst previous = null;
-		for (CiConst konst = (CiConst) this.First; konst != null; konst = (CiConst) konst.Next) {
-			visitor.VisitEnumValue(konst, previous);
-			previous = konst;
-		}
-	}
-}
-
-public class CiEnumFlags : CiEnum
-{
 }
 
 public class CiClass : CiContainerType
