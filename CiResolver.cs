@@ -1377,6 +1377,7 @@ public class CiResolver : CiVisitor
 						throw StatementException(def, $"{statement.Value} is {switchPtr}, 'case {casePtr}' would always match");
 					if (!switchPtr.Class.IsSameOrBaseOf(casePtr.Class))
 						throw StatementException(def, $"{switchPtr} is not base class of {casePtr.Class.Name}, 'case {casePtr}' would never match");
+					statement.Add(def);
 				}
 				else {
 					kase.Values[i] = FoldConst(kase.Values[i]);

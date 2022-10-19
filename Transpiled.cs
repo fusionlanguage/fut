@@ -1,6 +1,7 @@
 // Generated automatically with "cito". Do not edit.
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 namespace Foxoft.Ci
 {
@@ -1917,6 +1918,21 @@ namespace Foxoft.Ci
 		}
 	}
 
+	public class CiForeach : CiLoop
+	{
+
+		internal CiExpr Collection;
+
+		public override void AcceptStatement(CiVisitor visitor)
+		{
+			visitor.VisitForeach(this);
+		}
+
+		public CiVar GetVar() => this.FirstParameter();
+
+		public CiVar GetValueVar() => this.FirstParameter().NextParameter();
+	}
+
 	public class CiIf : CiCondCompletionStatement
 	{
 
@@ -1979,6 +1995,75 @@ namespace Foxoft.Ci
 		internal readonly List<CiExpr> Values = new List<CiExpr>();
 
 		internal readonly List<CiStatement> Body = new List<CiStatement>();
+	}
+
+	public class CiSwitch : CiCondCompletionStatement
+	{
+
+		internal CiExpr Value;
+
+		internal readonly List<CiCase> Cases = new List<CiCase>();
+
+		internal readonly List<CiStatement> DefaultBody = new List<CiStatement>();
+
+		public override void AcceptStatement(CiVisitor visitor)
+		{
+			visitor.VisitSwitch(this);
+		}
+
+		public static int LengthWithoutTrailingBreak(List<CiStatement> body)
+		{
+			int length = body.Count;
+			if (length > 0 && body[length - 1] is CiBreak)
+				length--;
+			return length;
+		}
+
+		public bool HasDefault() => LengthWithoutTrailingBreak(this.DefaultBody) > 0;
+
+		static bool HasBreak(CiStatement statement)
+		{
+			switch (statement) {
+			case CiBreak _:
+				return true;
+			case CiIf ifStatement:
+				return HasBreak(ifStatement.OnTrue) || (ifStatement.OnFalse != null && HasBreak(ifStatement.OnFalse));
+			case CiBlock block:
+				return block.Statements.Any(statement => HasBreak(statement));
+			default:
+				return false;
+			}
+		}
+
+		public static bool HasEarlyBreak(List<CiStatement> body)
+		{
+			int length = LengthWithoutTrailingBreak(body);
+			for (int i = 0; i < length; i++) {
+				if (HasBreak(body[i]))
+					return true;
+			}
+			return false;
+		}
+
+		static bool ListHasContinue(List<CiStatement> statements) => statements.Any(statement => HasContinue(statement));
+
+		static bool HasContinue(CiStatement statement)
+		{
+			switch (statement) {
+			case CiContinue _:
+				return true;
+			case CiIf ifStatement:
+				return HasContinue(ifStatement.OnTrue) || (ifStatement.OnFalse != null && HasContinue(ifStatement.OnFalse));
+			case CiSwitch switchStatement:
+				return switchStatement.Cases.Any(kase => ListHasContinue(kase.Body)) || ListHasContinue(switchStatement.DefaultBody);
+			case CiBlock block:
+				return ListHasContinue(block.Statements);
+			default:
+				return false;
+			}
+		}
+
+		public static bool HasEarlyBreakAndContinue(List<CiStatement> body) => HasEarlyBreak(body) && ListHasContinue(body);
 	}
 
 	public class CiThrow : CiStatement
