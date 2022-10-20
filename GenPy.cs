@@ -40,17 +40,17 @@ public class GenPy : GenPySwift
 	void StartDoc(CiCodeDoc doc)
 	{
 		Write("\"\"\"");
-		Write(doc.Summary, false);
+		WriteDocPara(doc.Summary, false);
 		if (doc.Details.Count > 0) {
 			WriteLine();
 			foreach (CiDocBlock block in doc.Details) {
 				WriteLine();
-				Write(block, false);
+				WriteDocBlock(block, false);
 			}
 		}
 	}
 
-	protected override void Write(CiCodeDoc doc)
+	protected override void WriteDoc(CiCodeDoc doc)
 	{
 		if (doc != null) {
 			StartDoc(doc);
@@ -67,7 +67,7 @@ public class GenPy : GenPySwift
 		Write(":param ");
 		WriteName(param);
 		Write(": ");
-		Write(param.Documentation.Summary, false);
+		WriteDocPara(param.Documentation.Summary, false);
 		WriteLine();
 	}
 
@@ -1067,7 +1067,7 @@ public class GenPy : GenPySwift
 		Write(" = ");
 		VisitLiteralLong(konst.Value.IntValue());
 		WriteLine();
-		Write(konst.Documentation);
+		WriteDoc(konst.Documentation);
 	}
 
 	protected override void WriteEnum(CiEnum enu)
@@ -1078,7 +1078,7 @@ public class GenPy : GenPySwift
 		WriteName(enu);
 		Write(enu is CiEnumFlags ? "(enum.Flag)" : "(enum.Enum)");
 		OpenChild();
-		Write(enu.Documentation);
+		WriteDoc(enu.Documentation);
 		enu.AcceptValues(this);
 		CloseChild();
 	}
@@ -1089,7 +1089,7 @@ public class GenPy : GenPySwift
 			WriteLine();
 			WriteVar(konst);
 			WriteLine();
-			Write(konst.Documentation);
+			WriteDoc(konst.Documentation);
 		}
 	}
 
@@ -1151,13 +1151,13 @@ public class GenPy : GenPySwift
 			WriteChar(')');
 		}
 		OpenChild();
-		Write(klass.Documentation);
+		WriteDoc(klass.Documentation);
 		if (NeedsConstructor(klass)) {
 			WriteLine();
 			Write("def __init__(self)");
 			OpenChild();
 			if (klass.Constructor != null)
-				Write(klass.Constructor.Documentation);
+				WriteDoc(klass.Constructor.Documentation);
 			if (InheritsConstructor(klass)) {
 				WriteName(klass.Parent);
 				WriteLine(".__init__(self)");

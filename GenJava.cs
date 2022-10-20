@@ -194,7 +194,7 @@ public class GenJava : GenTyped
 		}
 	}
 
-	void Write(CiVisibility visibility)
+	void WriteVisibility(CiVisibility visibility)
 	{
 		switch (visibility) {
 		case CiVisibility.Private:
@@ -908,7 +908,7 @@ public class GenJava : GenTyped
 
 	public override void VisitEnumValue(CiConst konst, CiConst previous)
 	{
-		Write(konst.Documentation);
+		WriteDoc(konst.Documentation);
 		Write("int ");
 		WriteUppercaseWithUnderscores(konst.Name);
 		Write(" = ");
@@ -923,7 +923,7 @@ public class GenJava : GenTyped
 	{
 		CreateJavaFile(enu.Name);
 		WriteLine();
-		Write(enu.Documentation);
+		WriteDoc(enu.Documentation);
 		WritePublic(enu);
 		Write("interface ");
 		WriteLine(enu.Name);
@@ -936,8 +936,8 @@ public class GenJava : GenTyped
 	void WriteSignature(CiMethod method, int paramCount)
 	{
 		WriteLine();
-		WriteDoc(method);
-		Write(method.Visibility);
+		WriteMethodDoc(method);
+		WriteVisibility(method.Visibility);
 		switch (method.CallType) {
 		case CiCallType.Static:
 			Write("static ");
@@ -999,8 +999,8 @@ public class GenJava : GenTyped
 	protected override void WriteConst(CiConst konst)
 	{
 		WriteLine();
-		Write(konst.Documentation);
-		Write(konst.Visibility);
+		WriteDoc(konst.Documentation);
+		WriteVisibility(konst.Visibility);
 		Write("static final ");
 		WriteTypeAndName(konst);
 		Write(" = ");
@@ -1010,8 +1010,8 @@ public class GenJava : GenTyped
 
 	protected override void WriteField(CiField field)
 	{
-		Write(field.Documentation);
-		Write(field.Visibility);
+		WriteDoc(field.Documentation);
+		WriteVisibility(field.Visibility);
 		WriteVar(field);
 		WriteLine(';');
 	}
@@ -1035,7 +1035,7 @@ public class GenJava : GenTyped
 		this.Includes = new SortedSet<string>();
 		OpenStringWriter();
 
-		Write(klass.Documentation);
+		WriteDoc(klass.Documentation);
 		WritePublic(klass);
 		switch (klass.CallType) {
 		case CiCallType.Normal:
@@ -1061,8 +1061,8 @@ public class GenJava : GenTyped
 		}
 		else if (NeedsConstructor(klass)) {
 			if (klass.Constructor != null) {
-				Write(klass.Constructor.Documentation);
-				Write(klass.Constructor.Visibility);
+				WriteDoc(klass.Constructor.Documentation);
+				WriteVisibility(klass.Constructor.Visibility);
 			}
 			Write(klass.Name);
 			WriteLine("()");

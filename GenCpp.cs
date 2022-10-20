@@ -1217,7 +1217,7 @@ public class GenCpp : GenCCpp
 	protected override void WriteEnum(CiEnum enu)
 	{
 		WriteLine();
-		Write(enu.Documentation);
+		WriteDoc(enu.Documentation);
 		Write("enum class ");
 		WriteLine(enu.Name);
 		OpenBlock();
@@ -1257,7 +1257,7 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteField(CiField field)
 	{
-		Write(field.Documentation);
+		WriteDoc(field.Documentation);
 		WriteVar(field);
 		WriteLine(';');
 	}
@@ -1282,7 +1282,7 @@ public class GenCpp : GenCCpp
 
 		if (constructor) {
 			if (klass.Constructor != null)
-				Write(klass.Constructor.Documentation);
+				WriteDoc(klass.Constructor.Documentation);
 			Write(klass.Name);
 			Write("()");
 			if (klass.CallType == CiCallType.Static)
@@ -1303,14 +1303,14 @@ public class GenCpp : GenCCpp
 				continue;
 			switch (member) {
 			case CiConst konst:
-				Write(konst.Documentation);
+				WriteDoc(konst.Documentation);
 				WriteConst(konst);
 				break;
 			case CiField field:
 				WriteField(field);
 				break;
 			case CiMethod method:
-				WriteDoc(method);
+				WriteMethodDoc(method);
 				switch (method.CallType) {
 				case CiCallType.Static:
 					Write("static ");
@@ -1350,7 +1350,7 @@ public class GenCpp : GenCCpp
 	protected override void WriteClass(CiClass klass)
 	{
 		WriteLine();
-		Write(klass.Documentation);
+		WriteDoc(klass.Documentation);
 		OpenClass(klass, klass.CallType == CiCallType.Sealed ? " final" : "", " : public ");
 		this.Indent--;
 		WriteDeclarations(klass, CiVisibility.Public, "public");

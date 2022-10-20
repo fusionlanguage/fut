@@ -864,7 +864,7 @@ public class GenJs : GenBase
 	{
 		if (previous != null)
 			WriteLine(',');
-		Write(konst.Documentation);
+		WriteDoc(konst.Documentation);
 		WriteUppercaseWithUnderscores(konst.Name);
 		Write(" : ");
 		VisitLiteralLong(konst.Value.IntValue());
@@ -873,7 +873,7 @@ public class GenJs : GenBase
 	protected override void WriteEnum(CiEnum enu)
 	{
 		WriteLine();
-		Write(enu.Documentation);
+		WriteDoc(enu.Documentation);
 		Write("const ");
 		Write(enu.Name);
 		Write(" = ");
@@ -887,7 +887,7 @@ public class GenJs : GenBase
 	{
 		if (konst.Visibility != CiVisibility.Private || konst.Type is CiArrayStorageType) {
 			WriteLine();
-			Write(konst.Documentation);
+			WriteDoc(konst.Documentation);
 			Write("static ");
 			base.WriteVar(konst);
 			WriteLine(';');
@@ -896,7 +896,7 @@ public class GenJs : GenBase
 
 	protected override void WriteField(CiField field)
 	{
-		Write(field.Documentation);
+		WriteDoc(field.Documentation);
 		base.WriteVar(field);
 		WriteLine(';');
 	}
@@ -906,7 +906,7 @@ public class GenJs : GenBase
 		if (method.CallType == CiCallType.Abstract)
 			return;
 		WriteLine();
-		WriteDoc(method);
+		WriteMethodDoc(method);
 		if (method.CallType == CiCallType.Static)
 			Write("static ");
 		WriteName(method);
@@ -930,11 +930,11 @@ public class GenJs : GenBase
 			return;
 
 		WriteLine();
-		Write(klass.Documentation);
+		WriteDoc(klass.Documentation);
 		OpenClass(klass, "", " extends ");
 		if (NeedsConstructor(klass)) {
 			if (klass.Constructor != null)
-				Write(klass.Constructor.Documentation);
+				WriteDoc(klass.Constructor.Documentation);
 			WriteConstructor(klass);
 		}
 		WriteMembers(klass, true);

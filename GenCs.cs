@@ -28,7 +28,7 @@ public class GenCs : GenTyped
 {
 	protected override void StartDocLine() => Write("/// ");
 
-	protected override void Write(CiDocPara para, bool many)
+	protected override void WriteDocPara(CiDocPara para, bool many)
 	{
 		if (many) {
 			WriteLine();
@@ -63,32 +63,32 @@ public class GenCs : GenTyped
 			Write("</para>");
 	}
 
-	protected override void Write(CiDocList list)
+	protected override void WriteDocList(CiDocList list)
 	{
 		WriteLine();
 		WriteLine("/// <list type=\"bullet\">");
 		foreach (CiDocPara item in list.Items) {
 			Write("/// <item>");
-			Write(item, false);
+			WriteDocPara(item, false);
 			WriteLine("</item>");
 		}
 		Write("/// </list>");
 	}
 
-	protected override void Write(CiCodeDoc doc)
+	protected override void WriteDoc(CiCodeDoc doc)
 	{
 		if (doc == null)
 			return;
 		Write("/// <summary>");
-		Write(doc.Summary, false);
+		WriteDocPara(doc.Summary, false);
 		WriteLine("</summary>");
 		if (doc.Details.Count > 0) {
 			Write("/// <remarks>");
 			if (doc.Details.Count == 1)
-				Write(doc.Details[0], false);
+				WriteDocBlock(doc.Details[0], false);
 			else {
 				foreach (CiDocBlock block in doc.Details)
-					Write(block, true);
+					WriteDocBlock(block, true);
 			}
 			WriteLine("</remarks>");
 		}
@@ -158,7 +158,7 @@ public class GenCs : GenTyped
 		}
 	}
 
-	void Write(CiVisibility visibility)
+	void WriteVisibility(CiVisibility visibility)
 	{
 		switch (visibility) {
 		case CiVisibility.Private:
@@ -737,7 +737,7 @@ public class GenCs : GenTyped
 	protected override void WriteEnum(CiEnum enu)
 	{
 		WriteLine();
-		Write(enu.Documentation);
+		WriteDoc(enu.Documentation);
 		if (enu is CiEnumFlags) {
 			Include("System");
 			WriteLine("[Flags]");
@@ -754,8 +754,8 @@ public class GenCs : GenTyped
 	protected override void WriteConst(CiConst konst)
 	{
 		WriteLine();
-		Write(konst.Documentation);
-		Write(konst.Visibility);
+		WriteDoc(konst.Documentation);
+		WriteVisibility(konst.Visibility);
 		Write(konst.Type is CiArrayStorageType ? "static readonly " : "const ");
 		WriteTypeAndName(konst);
 		Write(" = ");
@@ -766,8 +766,8 @@ public class GenCs : GenTyped
 	protected override void WriteField(CiField field)
 	{
 		WriteLine();
-		Write(field.Documentation);
-		Write(field.Visibility);
+		WriteDoc(field.Documentation);
+		WriteVisibility(field.Visibility);
 		if (field.Type.IsFinal() && !field.IsAssignableStorage())
 			Write("readonly ");
 		WriteVar(field);
@@ -779,16 +779,16 @@ public class GenCs : GenTyped
 		Write("/// <param name=\"");
 		WriteName(param);
 		Write("\">");
-		Write(param.Documentation.Summary, false);
+		WriteDocPara(param.Documentation.Summary, false);
 		WriteLine("</param>");
 	}
 
 	protected override void WriteMethod(CiMethod method)
 	{
 		WriteLine();
-		Write(method.Documentation);
+		WriteDoc(method.Documentation);
 		WriteParametersDoc(method);
-		Write(method.Visibility);
+		WriteVisibility(method.Visibility);
 		Write(method.CallType, "sealed override ");
 		WriteTypeAndName(method);
 		WriteParameters(method, true);
@@ -806,15 +806,15 @@ public class GenCs : GenTyped
 	protected override void WriteClass(CiClass klass, CiProgram program)
 	{
 		WriteLine();
-		Write(klass.Documentation);
+		WriteDoc(klass.Documentation);
 		WritePublic(klass);
 		Write(klass.CallType, "sealed ");
 		OpenClass(klass, "", " : ");
 
 		if (NeedsConstructor(klass)) {
 			if (klass.Constructor != null) {
-				Write(klass.Constructor.Documentation);
-				Write(klass.Constructor.Visibility);
+				WriteDoc(klass.Constructor.Documentation);
+				WriteVisibility(klass.Constructor.Visibility);
 			}
 			else
 				Write("internal ");

@@ -49,7 +49,7 @@ public class GenTs : GenJs
 		// doesn't implement
 		// https://www.typescriptlang.org/docs/handbook/enums.html#reverse-mappings
 		WriteLine();
-		Write(enu.Documentation);
+		WriteDoc(enu.Documentation);
 		Write("export enum ");
 		Write(enu.Name);
 		WriteChar(' ');
@@ -177,7 +177,7 @@ public class GenTs : GenJs
 	protected override void WriteConst(CiConst konst)
 	{
 		WriteLine();
-		Write(konst.Documentation);
+		WriteDoc(konst.Documentation);
 		WriteVisibility(konst.Visibility);
 		Write("static readonly ");
 		WriteName(konst);
@@ -190,7 +190,7 @@ public class GenTs : GenJs
 
 	protected override void WriteField(CiField field)
 	{
-		Write(field.Documentation);
+		WriteDoc(field.Documentation);
 		WriteVisibility(field.Visibility);
 		if (field.Type.IsFinal() && !field.IsAssignableStorage())
 			Write("readonly ");
@@ -203,7 +203,7 @@ public class GenTs : GenJs
 	protected override void WriteMethod(CiMethod method)
 	{
 		WriteLine();
-		WriteDoc(method);
+		WriteMethodDoc(method);
 		WriteVisibility(method.Visibility);
 		switch (method.CallType) {
 		case CiCallType.Static:
@@ -254,7 +254,7 @@ public class GenTs : GenJs
 			return;
 
 		WriteLine();
-		Write(klass.Documentation);
+		WriteDoc(klass.Documentation);
 		Write("export ");
 		switch (klass.CallType) {
 		case CiCallType.Normal:
@@ -273,7 +273,7 @@ public class GenTs : GenJs
 
 		if (NeedsConstructor(klass) || klass.CallType == CiCallType.Static) {
 			if (klass.Constructor != null) {
-				Write(klass.Constructor.Documentation);
+				WriteDoc(klass.Constructor.Documentation);
 				WriteVisibility(klass.Constructor.Visibility);
 			}
 			else if (klass.CallType == CiCallType.Static)

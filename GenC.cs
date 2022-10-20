@@ -2430,7 +2430,7 @@ public class GenC : GenCCpp
 	protected override void WriteEnum(CiEnum enu)
 	{
 		WriteLine();
-		Write(enu.Documentation);
+		WriteDoc(enu.Documentation);
 		Write("typedef enum ");
 		OpenBlock();
 		enu.AcceptValues(this);
@@ -2616,13 +2616,13 @@ public class GenC : GenCCpp
 			case CiConst konst when (konst.Visibility == CiVisibility.Public) == pub:
 				if (pub) {
 					WriteLine();
-					Write(konst.Documentation);
+					WriteDoc(konst.Documentation);
 				}
 				WriteConst(konst);
 				break;
 			case CiMethod method when method.IsLive && (method.Visibility == CiVisibility.Public) == pub && method.CallType != CiCallType.Abstract:
 				WriteLine();
-				WriteDoc(method);
+				WriteMethodDoc(method);
 				WriteSignature(method);
 				WriteLine(';');
 				break;
@@ -2638,7 +2638,7 @@ public class GenC : GenCCpp
 			WriteLine();
 			if (klass.AddsVirtualMethods())
 				WriteVtblStruct(klass);
-			Write(klass.Documentation);
+			WriteDoc(klass.Documentation);
 			Write("struct ");
 			WriteName(klass);
 			WriteChar(' ');
@@ -2654,7 +2654,7 @@ public class GenC : GenCCpp
 			}
 			for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
 				if (symbol is CiField field) {
-					Write(field.Documentation);
+					WriteDoc(field.Documentation);
 					WriteTypeAndName(field);
 					WriteLine(';');
 				}

@@ -41,7 +41,7 @@ public class GenSwift : GenPySwift
 
 	protected override string GetDocBullet() => "/// * ";
 
-	protected override void Write(CiCodeDoc doc)
+	protected override void WriteDoc(CiCodeDoc doc)
 	{
 		if (doc != null)
 			WriteContent(doc);
@@ -1277,7 +1277,7 @@ public class GenSwift : GenPySwift
 
 	public override void VisitEnumValue(CiConst konst, CiConst previous)
 	{
-		Write(konst.Documentation);
+		WriteDoc(konst.Documentation);
 		Write("static let ");
 		WriteName(konst);
 		Write(" = ");
@@ -1296,7 +1296,7 @@ public class GenSwift : GenPySwift
 	protected override void WriteEnum(CiEnum enu)
 	{
 		WriteLine();
-		Write(enu.Documentation);
+		WriteDoc(enu.Documentation);
 		WritePublic(enu);
 		if (enu is CiEnumFlags) {
 			Write("struct ");
@@ -1315,7 +1315,7 @@ public class GenSwift : GenPySwift
 			OpenBlock();
 			Dictionary<int, CiConst> valueToConst = new Dictionary<int, CiConst>();
 			for (CiConst konst = (CiConst) enu.First; konst != null; konst = (CiConst) konst.Next) {
-				Write(konst.Documentation);
+				WriteDoc(konst.Documentation);
 				int i = konst.Value.IntValue();
 				if (valueToConst.TryGetValue(i, out CiConst duplicate)) {
 					Write("static let ");
@@ -1338,7 +1338,7 @@ public class GenSwift : GenPySwift
 		CloseBlock();
 	}
 
-	void Write(CiVisibility visibility)
+	void WriteVisibility(CiVisibility visibility)
 	{
 		switch (visibility) {
 		case CiVisibility.Private:
@@ -1359,8 +1359,8 @@ public class GenSwift : GenPySwift
 	protected override void WriteConst(CiConst konst)
 	{
 		WriteLine();
-		Write(konst.Documentation);
-		Write(konst.Visibility);
+		WriteDoc(konst.Documentation);
+		WriteVisibility(konst.Visibility);
 		Write("static let ");
 		WriteName(konst);
 		Write(" = ");
@@ -1378,8 +1378,8 @@ public class GenSwift : GenPySwift
 	protected override void WriteField(CiField field)
 	{
 		WriteLine();
-		Write(field.Documentation);
-		Write(field.Visibility);
+		WriteDoc(field.Documentation);
+		WriteVisibility(field.Visibility);
 		if (field.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && !(klass is CiDynamicPtrType) && !(klass is CiStorageType))
 			Write("unowned ");
 		WriteVar(field);
@@ -1400,22 +1400,22 @@ public class GenSwift : GenPySwift
 		Write("/// - parameter ");
 		WriteName(param);
 		WriteChar(' ');
-		Write(param.Documentation.Summary, false);
+		WriteDocPara(param.Documentation.Summary, false);
 		WriteLine();
 	}
 
 	protected override void WriteMethod(CiMethod method)
 	{
 		WriteLine();
-		Write(method.Documentation);
+		WriteDoc(method.Documentation);
 		WriteParametersDoc(method);
 		switch (method.CallType) {
 		case CiCallType.Static:
-			Write(method.Visibility);
+			WriteVisibility(method.Visibility);
 			Write("static ");
 			break;
 		case CiCallType.Normal:
-			Write(method.Visibility);
+			WriteVisibility(method.Visibility);
 			break;
 		case CiCallType.Abstract:
 		case CiCallType.Virtual:
@@ -1426,7 +1426,7 @@ public class GenSwift : GenPySwift
 			Write("override ");
 			break;
 		case CiCallType.Sealed:
-			Write(method.Visibility);
+			WriteVisibility(method.Visibility);
 			Write("final override ");
 			break;
 		}
@@ -1464,15 +1464,15 @@ public class GenSwift : GenPySwift
 	protected override void WriteClass(CiClass klass, CiProgram program)
 	{
 		WriteLine();
-		Write(klass.Documentation);
+		WriteDoc(klass.Documentation);
 		WritePublic(klass);
 		if (klass.CallType == CiCallType.Sealed)
 			Write("final ");
 		OpenClass(klass, "", " : ");
 
 		if (klass.Constructor != null) {
-			Write(klass.Constructor.Documentation);
-			Write(klass.Constructor.Visibility);
+			WriteDoc(klass.Constructor.Documentation);
+			WriteVisibility(klass.Constructor.Visibility);
 			if (klass.BaseClassName != null)
 				Write("override ");
 			WriteLine("init()");

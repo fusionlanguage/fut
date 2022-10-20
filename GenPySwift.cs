@@ -38,7 +38,7 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
-	protected override void Write(CiDocPara para, bool many)
+	protected override void WriteDocPara(CiDocPara para, bool many)
 	{
 		if (many) {
 			WriteLine();
@@ -64,12 +64,12 @@ public abstract class GenPySwift : GenBase
 
 	protected abstract string GetDocBullet();
 
-	protected override void Write(CiDocList list)
+	protected override void WriteDocList(CiDocList list)
 	{
 		WriteLine();
 		foreach (CiDocPara item in list.Items) {
 			Write(GetDocBullet());
-			Write(item, false);
+			WriteDocPara(item, false);
 			WriteLine();
 		}
 		StartDocLine();

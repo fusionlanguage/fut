@@ -191,7 +191,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected virtual void Write(CiDocPara para, bool many)
+	protected virtual void WriteDocPara(CiDocPara para, bool many)
 	{
 		if (many) {
 			WriteLine();
@@ -213,26 +213,26 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected virtual void Write(CiDocList list)
+	protected virtual void WriteDocList(CiDocList list)
 	{
 		WriteLine();
 		WriteLine(" * <ul>");
 		foreach (CiDocPara item in list.Items) {
 			Write(" * <li>");
-			Write(item, false);
+			WriteDocPara(item, false);
 			WriteLine("</li>");
 		}
 		Write(" * </ul>");
 	}
 
-	protected void Write(CiDocBlock block, bool many)
+	protected void WriteDocBlock(CiDocBlock block, bool many)
 	{
 		switch (block) {
 		case CiDocPara para:
-			Write(para, many);
+			WriteDocPara(para, many);
 			break;
 		case CiDocList list:
-			Write(list);
+			WriteDocList(list);
 			break;
 		default:
 			throw new ArgumentException(block.GetType().Name);
@@ -242,21 +242,21 @@ public abstract class GenBase : CiVisitor
 	protected void WriteContent(CiCodeDoc doc)
 	{
 		StartDocLine();
-		Write(doc.Summary, false);
+		WriteDocPara(doc.Summary, false);
 		WriteLine();
 		if (doc.Details.Count > 0) {
 			StartDocLine();
 			if (doc.Details.Count == 1)
-				Write(doc.Details[0], false);
+				WriteDocBlock(doc.Details[0], false);
 			else {
 				foreach (CiDocBlock block in doc.Details)
-					Write(block, true);
+					WriteDocBlock(block, true);
 			}
 			WriteLine();
 		}
 	}
 
-	protected virtual void Write(CiCodeDoc doc)
+	protected virtual void WriteDoc(CiCodeDoc doc)
 	{
 		if (doc != null) {
 			WriteLine("/**");
@@ -274,7 +274,7 @@ public abstract class GenBase : CiVisitor
 		Write(" * @param ");
 		WriteName(param);
 		WriteChar(' ');
-		Write(param.Documentation.Summary, false);
+		WriteDocPara(param.Documentation.Summary, false);
 		WriteLine();
 	}
 
@@ -289,7 +289,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WriteDoc(CiMethod method)
+	protected void WriteMethodDoc(CiMethod method)
 	{
 		if (method.Documentation == null)
 			return;
@@ -1380,7 +1380,7 @@ public abstract class GenBase : CiVisitor
 
 	protected void WriteEnumValue(CiConst konst)
 	{
-		Write(konst.Documentation);
+		WriteDoc(konst.Documentation);
 		WriteName(konst);
 		if (!(konst.Value is CiImplicitEnumValue)) {
 			Write(" = ");
