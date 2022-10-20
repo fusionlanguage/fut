@@ -26,12 +26,9 @@ using System.Text;
 namespace Foxoft.Ci
 {
 
-public class CiParser : CiLexer
+public class CiParser : CiParserBase
 {
 	public CiProgram Program;
-	CiLoop CurrentLoop;
-	CiCondCompletionStatement CurrentLoopOrSwitch;
-	string XcrementParent = null;
 
 	string ParseId()
 	{
@@ -49,7 +46,7 @@ public class CiParser : CiLexer
 		sb.Append((char) c);
 	}
 
-	string DocParseText()
+	protected override string DocParseText()
 	{
 		StringBuilder sb = new StringBuilder();
 		while (DocSee(CiDocToken.Char)) {
@@ -61,102 +58,7 @@ public class CiParser : CiLexer
 		return sb.ToString();
 	}
 
-	void DocParsePara(CiDocPara para)
-	{
-		for (;;) {
-			if (DocSee(CiDocToken.Char))
-				para.Children.Add(new CiDocText { Text = DocParseText() });
-			else if (DocEat(CiDocToken.CodeDelimiter)) {
-				para.Children.Add(new CiDocCode { Text = DocParseText() });
-				if (!DocEat(CiDocToken.CodeDelimiter))
-					ReportError("Unterminated code in documentation comment");
-			}
-			else
-				break;
-		}
-		DocEat(CiDocToken.Para);
-	}
-
-	CiDocBlock DocParseBlock()
-	{
-		if (DocEat(CiDocToken.Bullet)) {
-			CiDocList list = new CiDocList();
-			do {
-				CiDocPara item = new CiDocPara();
-				DocParsePara(item);
-				list.Items.Add(item);
-			} while (DocEat(CiDocToken.Bullet));
-			DocEat(CiDocToken.Para);
-			return list;
-		}
-		CiDocPara para = new CiDocPara();
-		DocParsePara(para);
-		return para;
-	}
-
-	CiCodeDoc ParseCodeDoc()
-	{
-		DocStartLexing();
-		CiCodeDoc doc = new CiCodeDoc();
-		DocParsePara(doc.Summary);
-		if (DocEat(CiDocToken.Period)) {
-			DocEat(CiDocToken.Para);
-			while (!DocSee(CiDocToken.EndOfFile))
-				doc.Details.Add(DocParseBlock());
-		}
-		return doc;
-	}
-
 	CiCodeDoc ParseDoc() => See(CiToken.DocComment) ? ParseCodeDoc() : null;
-
-	CiExpr ParseSymbolReference(CiExpr left) => new CiSymbolReference { Line = this.Line, Left = left, Name = ParseId() };
-
-	void ParseCollection(List<CiExpr> result, CiToken closing)
-	{
-		if (!See(closing)) {
-			do
-				result.Add(ParseExpr());
-			while (Eat(CiToken.Comma));
-		}
-		ExpectOrSkip(closing);
-	}
-
-	CiExpr ParseConstInitializer()
-	{
-		if (Eat(CiToken.LeftBrace)) {
-			CiAggregateInitializer result = new CiAggregateInitializer { Line = this.Line };
-			ParseCollection(result.Items, CiToken.RightBrace);
-			return result;
-		}
-		return ParseExpr();
-	}
-
-	void CheckXcrementParent()
-	{
-		if (this.XcrementParent != null) {
-			string op = See(CiToken.Increment) ? "++" : "--";
-			ReportError($"{op} not allowed on the right side of {this.XcrementParent}");
-		}
-	}
-
-	CiAggregateInitializer ParseObjectLiteral()
-	{
-		CiAggregateInitializer result = new CiAggregateInitializer { Line = this.Line };
-		do {
-			int line = this.Line;
-			CiExpr field = ParseSymbolReference(null);
-			Expect(CiToken.Assign);
-			result.Items.Add(new CiBinaryExpr { Line = line, Left = field, Op = CiToken.Assign, Right = ParseExpr() });
-		} while (Eat(CiToken.Comma));
-		Expect(CiToken.RightBrace);
-		return result;
-	}
-
-	bool SeeDigit()
-	{
-		int c = PeekChar();
-		return c >= '0' && c <= '9';
-	}
 
 	CiInterpolatedString ParseInterpolatedString()
 	{
@@ -190,15 +92,7 @@ public class CiParser : CiLexer
 		return result;
 	}
 
-	CiExpr ParseParenthesized()
-	{
-		Expect(CiToken.LeftParenthesis);
-		CiExpr result = ParseExpr();
-		Expect(CiToken.RightParenthesis);
-		return result;
-	}
-
-	CiExpr ParsePrimaryExpr()
+	protected override CiExpr ParsePrimaryExpr()
 	{
 		CiExpr result;
 		switch (this.CurrentToken) {
@@ -315,158 +209,6 @@ public class CiParser : CiLexer
 		}
 	}
 
-	CiExpr ParseMulExpr()
-	{
-		CiExpr left = ParsePrimaryExpr();
-		for (;;) {
-			switch (this.CurrentToken) {
-			case CiToken.Asterisk:
-			case CiToken.Slash:
-			case CiToken.Mod:
-				left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr() };
-				break;
-			default:
-				return left;
-			}
-		}
-	}
-
-	CiExpr ParseAddExpr()
-	{
-		CiExpr left = ParseMulExpr();
-		while (See(CiToken.Plus) || See(CiToken.Minus))
-			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseMulExpr() };
-		return left;
-	}
-
-	CiExpr ParseShiftExpr()
-	{
-		CiExpr left = ParseAddExpr();
-		while (See(CiToken.ShiftLeft) || See(CiToken.ShiftRight))
-			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAddExpr() };
-		return left;
-	}
-
-	CiExpr ParseRelExpr()
-	{
-		CiExpr left = ParseShiftExpr();
-		for (;;) {
-			switch (this.CurrentToken) {
-			case CiToken.Less:
-			case CiToken.LessOrEqual:
-			case CiToken.Greater:
-			case CiToken.GreaterOrEqual:
-				left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseShiftExpr() };
-				break;
-			case CiToken.Is:
-				CiBinaryExpr isExpr = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr() };
-				if (See(CiToken.Id))
-					isExpr.Right = new CiVar { Line = this.Line, TypeExpr = isExpr.Right, Name = ParseId() };
-				return isExpr;
-			default:
-				return left;
-			}
-		}
-	}
-
-	CiExpr ParseEqualityExpr()
-	{
-		CiExpr left = ParseRelExpr();
-		while (See(CiToken.Equal) || See(CiToken.NotEqual))
-			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseRelExpr() };
-		return left;
-	}
-
-	CiExpr ParseAndExpr()
-	{
-		CiExpr left = ParseEqualityExpr();
-		while (See(CiToken.And))
-			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseEqualityExpr() };
-		return left;
-	}
-
-	CiExpr ParseXorExpr()
-	{
-		CiExpr left = ParseAndExpr();
-		while (See(CiToken.Xor))
-			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAndExpr() };
-		return left;
-	}
-
-	CiExpr ParseOrExpr()
-	{
-		CiExpr left = ParseXorExpr();
-		while (See(CiToken.Or))
-			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseXorExpr() };
-		return left;
-	}
-
-	CiExpr ParseCondAndExpr()
-	{
-		CiExpr left = ParseOrExpr();
-		while (See(CiToken.CondAnd)) {
-			string saveXcrementParent = this.XcrementParent;
-			this.XcrementParent = "&&";
-			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseOrExpr() };
-			this.XcrementParent = saveXcrementParent;
-		}
-		return left;
-	}
-
-	CiExpr ParseCondOrExpr()
-	{
-		CiExpr left = ParseCondAndExpr();
-		while (See(CiToken.CondOr)) {
-			string saveXcrementParent = this.XcrementParent;
-			this.XcrementParent = "||";
-			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseCondAndExpr() };
-			this.XcrementParent = saveXcrementParent;
-		}
-		return left;
-	}
-
-	CiExpr ParseExpr()
-	{
-		CiExpr left = ParseCondOrExpr();
-		if (See(CiToken.QuestionMark)) {
-			CiSelectExpr result = new CiSelectExpr { Line = this.Line, Cond = left };
-			NextToken();
-			string saveXcrementParent = this.XcrementParent;
-			this.XcrementParent = "?";
-			result.OnTrue = ParseExpr();
-			Expect(CiToken.Colon);
-			result.OnFalse = ParseExpr();
-			this.XcrementParent = saveXcrementParent;
-			return result;
-		}
-		return left;
-	}
-
-	CiExpr ParseType()
-	{
-		CiExpr left = ParsePrimaryExpr();
-		if (Eat(CiToken.Range))
-			return new CiBinaryExpr { Line = this.Line, Left = left, Op = CiToken.Range, Right = ParsePrimaryExpr() };
-		if (left is CiSymbolReference symbol && Eat(CiToken.Less)) {
-			CiAggregateInitializer typeArgs = new CiAggregateInitializer();
-			left = new CiSymbolReference { Line = this.Line, Left = typeArgs, Name = symbol.Name };
-			bool saveTypeArg = this.ParsingTypeArg;
-			this.ParsingTypeArg = true;
-			do
-				typeArgs.Items.Add(ParseType());
-			while (Eat(CiToken.Comma));
-			Expect(CiToken.RightAngle);
-			this.ParsingTypeArg = saveTypeArg;
-			if (Eat(CiToken.ExclamationMark))
-				left = new CiPostfixExpr { Line = this.Line, Inner = left, Op = CiToken.ExclamationMark };
-			else if (Eat(CiToken.LeftParenthesis)) {
-				Expect(CiToken.RightParenthesis);
-				left = new CiCallExpr { Line = this.Line, Method = (CiSymbolReference) left };
-			}
-		}
-		return left;
-	}
-
 	CiExpr ParseAssign(bool allowVar)
 	{
 		CiExpr left = allowVar ? ParseType() : ParseExpr();
@@ -492,99 +234,6 @@ public class CiParser : CiLexer
 		}
 	}
 
-	CiExpr ParseInitializer()
-	{
-		if (!Eat(CiToken.Assign))
-			return null;
-		if (Eat(CiToken.LeftBrace))
-			return ParseObjectLiteral();
-		return ParseExpr();
-	}
-
-	void AddSymbol(CiScope scope, CiSymbol symbol)
-	{
-		if (scope.Contains(symbol))
-			ReportError("Duplicate symbol");
-		else
-			scope.Add(symbol);
-	}
-
-	CiVar ParseVar(CiExpr type) => new CiVar { Line = this.Line, TypeExpr = type, Name = ParseId(), Value = ParseInitializer() };
-
-	CiConst ParseConst()
-	{
-		Expect(CiToken.Const);
-		CiConst konst = new CiConst { Line = this.Line, TypeExpr = ParseType(), Name = ParseId() };
-		Expect(CiToken.Assign);
-		konst.Value = ParseConstInitializer();
-		Expect(CiToken.Semicolon);
-		return konst;
-	}
-
-	CiBlock ParseBlock()
-	{
-		CiBlock result = new CiBlock { Line = this.Line };
-		Expect(CiToken.LeftBrace);
-		while (!See(CiToken.RightBrace) && !See(CiToken.EndOfFile))
-			result.Statements.Add(ParseStatement());
-		Expect(CiToken.RightBrace);
-		return result;
-	}
-
-	CiAssert ParseAssert()
-	{
-		CiAssert result = new CiAssert { Line = this.Line };
-		Expect(CiToken.Assert);
-		result.Cond = ParseExpr();
-		if (Eat(CiToken.Comma))
-			result.Message = ParseExpr();
-		Expect(CiToken.Semicolon);
-		return result;
-	}
-
-	CiBreak ParseBreak()
-	{
-		if (this.CurrentLoopOrSwitch == null)
-			ReportError("break outside loop or switch");
-		CiBreak result = new CiBreak { Line = this.Line, LoopOrSwitch = this.CurrentLoopOrSwitch };
-		Expect(CiToken.Break);
-		Expect(CiToken.Semicolon);
-		if (this.CurrentLoopOrSwitch is CiLoop loop)
-			loop.HasBreak = true;
-		return result;
-	}
-
-	CiContinue ParseContinue()
-	{
-		if (this.CurrentLoop == null)
-			ReportError("continue outside loop");
-		CiContinue result = new CiContinue { Line = this.Line, Loop = this.CurrentLoop };
-		Expect(CiToken.Continue);
-		Expect(CiToken.Semicolon);
-		return result;
-	}
-
-	void ParseLoopBody(CiLoop loop)
-	{
-		CiLoop outerLoop = this.CurrentLoop;
-		CiCondCompletionStatement outerLoopOrSwitch = this.CurrentLoopOrSwitch;
-		this.CurrentLoopOrSwitch = this.CurrentLoop = loop;
-		loop.Body = ParseStatement();
-		this.CurrentLoopOrSwitch = outerLoopOrSwitch;
-		this.CurrentLoop = outerLoop;
-	}
-
-	CiDoWhile ParseDoWhile()
-	{
-		CiDoWhile result = new CiDoWhile { Line = this.Line };
-		Expect(CiToken.Do);
-		ParseLoopBody(result);
-		Expect(CiToken.While);
-		result.Cond = ParseParenthesized();
-		Expect(CiToken.Semicolon);
-		return result;
-	}
-
 	CiFor ParseFor()
 	{
 		CiFor result = new CiFor { Line = this.Line };
@@ -600,51 +249,6 @@ public class CiParser : CiLexer
 			result.Advance = ParseAssign(false);
 		Expect(CiToken.RightParenthesis);
 		ParseLoopBody(result);
-		return result;
-	}
-
-	void ParseForeachIterator(CiForeach result)
-	{
-		AddSymbol(result, new CiVar { Line = this.Line, TypeExpr = ParseType(), Name = ParseId() });
-	}
-
-	CiForeach ParseForeach()
-	{
-		CiForeach result = new CiForeach { Line = this.Line };
-		Expect(CiToken.Foreach);
-		Expect(CiToken.LeftParenthesis);
-		if (Eat(CiToken.LeftParenthesis)) {
-			ParseForeachIterator(result);
-			Expect(CiToken.Comma);
-			ParseForeachIterator(result);
-			Expect(CiToken.RightParenthesis);
-		}
-		else
-			ParseForeachIterator(result);
-		Expect(CiToken.In);
-		result.Collection = ParseExpr();
-		Expect(CiToken.RightParenthesis);
-		ParseLoopBody(result);
-		return result;
-	}
-
-	CiIf ParseIf()
-	{
-		CiIf result = new CiIf { Line = this.Line };
-		Expect(CiToken.If);
-		result.Cond = ParseParenthesized();
-		result.OnTrue = ParseStatement();
-		if (Eat(CiToken.Else))
-			result.OnFalse = ParseStatement();
-		return result;
-	}
-
-	CiLock ParseLock()
-	{
-		CiLock result = new CiLock { Line = this.Line };
-		Expect(CiToken.Lock_);
-		result.Lock = ParseParenthesized();
-		result.Body = ParseStatement();
 		return result;
 	}
 
@@ -670,16 +274,6 @@ public class CiParser : CiLexer
 		string content = Encoding.UTF8.GetString(this.Input, offset, this.CharOffset - 1 - offset);
 		NextToken();
 		return new CiNative { Line = line, Content = content };
-	}
-
-	CiReturn ParseReturn()
-	{
-		CiReturn result = new CiReturn { Line = this.Line };
-		NextToken();
-		if (!See(CiToken.Semicolon))
-			result.Value = ParseExpr();
-		Expect(CiToken.Semicolon);
-		return result;
 	}
 
 	CiSwitch ParseSwitch()
@@ -736,25 +330,7 @@ public class CiParser : CiLexer
 		return result;
 	}
 
-	CiThrow ParseThrow()
-	{
-		CiThrow result = new CiThrow { Line = this.Line };
-		Expect(CiToken.Throw);
-		result.Message = ParseExpr();
-		Expect(CiToken.Semicolon);
-		return result;
-	}
-
-	CiWhile ParseWhile()
-	{
-		CiWhile result = new CiWhile { Line = this.Line };
-		Expect(CiToken.While);
-		result.Cond = ParseParenthesized();
-		ParseLoopBody(result);
-		return result;
-	}
-
-	CiStatement ParseStatement()
+	protected override CiStatement ParseStatement()
 	{
 		switch (this.CurrentToken) {
 		case CiToken.LeftBrace:
@@ -791,29 +367,6 @@ public class CiParser : CiLexer
 			CiExpr expr = ParseAssign(true);
 			Expect(CiToken.Semicolon);
 			return expr;
-		}
-	}
-
-	CiCallType ParseCallType()
-	{
-		switch (this.CurrentToken) {
-		case CiToken.Static:
-			NextToken();
-			return CiCallType.Static;
-		case CiToken.Abstract:
-			NextToken();
-			return CiCallType.Abstract;
-		case CiToken.Virtual:
-			NextToken();
-			return CiCallType.Virtual;
-		case CiToken.Override:
-			NextToken();
-			return CiCallType.Override;
-		case CiToken.Sealed:
-			NextToken();
-			return CiCallType.Sealed;
-		default:
-			return CiCallType.Normal;
 		}
 	}
 

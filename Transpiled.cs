@@ -2509,4 +2509,481 @@ namespace Foxoft.Ci
 	public class CiEnumFlags : CiEnum
 	{
 	}
+
+	public abstract class CiParserBase : CiLexer
+	{
+
+		string XcrementParent = null;
+
+		CiLoop CurrentLoop = null;
+
+		protected CiCondCompletionStatement CurrentLoopOrSwitch;
+
+		protected abstract string DocParseText();
+
+		void DocParsePara(CiDocPara para)
+		{
+			for (;;) {
+				if (DocSee(CiDocToken.Char))
+					para.Children.Add(new CiDocText { Text = DocParseText() });
+				else if (DocEat(CiDocToken.CodeDelimiter)) {
+					para.Children.Add(new CiDocCode { Text = DocParseText() });
+					if (!DocEat(CiDocToken.CodeDelimiter))
+						ReportError("Unterminated code in documentation comment");
+				}
+				else
+					break;
+			}
+			DocEat(CiDocToken.Para);
+		}
+
+		CiDocBlock DocParseBlock()
+		{
+			if (DocEat(CiDocToken.Bullet)) {
+				CiDocList list = new CiDocList();
+				do {
+					list.Items.Add(new CiDocPara());
+					DocParsePara(list.Items[list.Items.Count - 1]);
+				}
+				while (DocEat(CiDocToken.Bullet));
+				DocEat(CiDocToken.Para);
+				return list;
+			}
+			CiDocPara para = new CiDocPara();
+			DocParsePara(para);
+			return para;
+		}
+
+		protected CiCodeDoc ParseCodeDoc()
+		{
+			DocStartLexing();
+			CiCodeDoc doc = new CiCodeDoc();
+			DocParsePara(doc.Summary);
+			if (DocEat(CiDocToken.Period)) {
+				DocEat(CiDocToken.Para);
+				while (!DocSee(CiDocToken.EndOfFile))
+					doc.Details.Add(DocParseBlock());
+			}
+			return doc;
+		}
+
+		protected CiExpr ParseSymbolReference(CiExpr left)
+		{
+			CiExpr result = new CiSymbolReference { Line = this.Line, Left = left, Name = this.StringValue };
+			NextToken();
+			return result;
+		}
+
+		protected void CheckXcrementParent()
+		{
+			if (this.XcrementParent != null) {
+				string op = See(CiToken.Increment) ? "++" : "--";
+				ReportError($"{op} not allowed on the right side of {this.XcrementParent}");
+			}
+		}
+
+		protected CiExpr ParseParenthesized()
+		{
+			Expect(CiToken.LeftParenthesis);
+			CiExpr result = ParseExpr();
+			Expect(CiToken.RightParenthesis);
+			return result;
+		}
+
+		protected bool SeeDigit()
+		{
+			int c = PeekChar();
+			return c >= '0' && c <= '9';
+		}
+
+		protected abstract CiExpr ParsePrimaryExpr();
+
+		CiExpr ParseMulExpr()
+		{
+			CiExpr left = ParsePrimaryExpr();
+			for (;;) {
+				switch (this.CurrentToken) {
+				case CiToken.Asterisk:
+				case CiToken.Slash:
+				case CiToken.Mod:
+					left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr() };
+					break;
+				default:
+					return left;
+				}
+			}
+		}
+
+		CiExpr ParseAddExpr()
+		{
+			CiExpr left = ParseMulExpr();
+			while (See(CiToken.Plus) || See(CiToken.Minus))
+				left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseMulExpr() };
+			return left;
+		}
+
+		CiExpr ParseShiftExpr()
+		{
+			CiExpr left = ParseAddExpr();
+			while (See(CiToken.ShiftLeft) || See(CiToken.ShiftRight))
+				left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAddExpr() };
+			return left;
+		}
+
+		CiExpr ParseRelExpr()
+		{
+			CiExpr left = ParseShiftExpr();
+			for (;;) {
+				switch (this.CurrentToken) {
+				case CiToken.Less:
+				case CiToken.LessOrEqual:
+				case CiToken.Greater:
+				case CiToken.GreaterOrEqual:
+					left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseShiftExpr() };
+					break;
+				case CiToken.Is:
+					CiBinaryExpr isExpr = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr() };
+					if (See(CiToken.Id)) {
+						isExpr.Right = new CiVar { Line = this.Line, TypeExpr = isExpr.Right, Name = this.StringValue };
+						NextToken();
+					}
+					return isExpr;
+				default:
+					return left;
+				}
+			}
+		}
+
+		CiExpr ParseEqualityExpr()
+		{
+			CiExpr left = ParseRelExpr();
+			while (See(CiToken.Equal) || See(CiToken.NotEqual))
+				left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseRelExpr() };
+			return left;
+		}
+
+		CiExpr ParseAndExpr()
+		{
+			CiExpr left = ParseEqualityExpr();
+			while (See(CiToken.And))
+				left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseEqualityExpr() };
+			return left;
+		}
+
+		CiExpr ParseXorExpr()
+		{
+			CiExpr left = ParseAndExpr();
+			while (See(CiToken.Xor))
+				left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAndExpr() };
+			return left;
+		}
+
+		CiExpr ParseOrExpr()
+		{
+			CiExpr left = ParseXorExpr();
+			while (See(CiToken.Or))
+				left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseXorExpr() };
+			return left;
+		}
+
+		CiExpr ParseCondAndExpr()
+		{
+			CiExpr left = ParseOrExpr();
+			while (See(CiToken.CondAnd)) {
+				string saveXcrementParent = this.XcrementParent;
+				this.XcrementParent = "&&";
+				left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseOrExpr() };
+				this.XcrementParent = saveXcrementParent;
+			}
+			return left;
+		}
+
+		CiExpr ParseCondOrExpr()
+		{
+			CiExpr left = ParseCondAndExpr();
+			while (See(CiToken.CondOr)) {
+				string saveXcrementParent = this.XcrementParent;
+				this.XcrementParent = "||";
+				left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseCondAndExpr() };
+				this.XcrementParent = saveXcrementParent;
+			}
+			return left;
+		}
+
+		protected CiExpr ParseExpr()
+		{
+			CiExpr left = ParseCondOrExpr();
+			if (See(CiToken.QuestionMark)) {
+				CiSelectExpr result = new CiSelectExpr { Line = this.Line, Cond = left };
+				NextToken();
+				string saveXcrementParent = this.XcrementParent;
+				this.XcrementParent = "?";
+				result.OnTrue = ParseExpr();
+				Expect(CiToken.Colon);
+				result.OnFalse = ParseExpr();
+				this.XcrementParent = saveXcrementParent;
+				return result;
+			}
+			return left;
+		}
+
+		protected CiExpr ParseType()
+		{
+			CiExpr left = ParsePrimaryExpr();
+			if (Eat(CiToken.Range))
+				return new CiBinaryExpr { Line = this.Line, Left = left, Op = CiToken.Range, Right = ParsePrimaryExpr() };
+			if (left is CiSymbolReference symbol && Eat(CiToken.Less)) {
+				CiAggregateInitializer typeArgs = new CiAggregateInitializer();
+				left = new CiSymbolReference { Line = this.Line, Left = typeArgs, Name = symbol.Name };
+				bool saveTypeArg = this.ParsingTypeArg;
+				this.ParsingTypeArg = true;
+				do
+					typeArgs.Items.Add(ParseType());
+				while (Eat(CiToken.Comma));
+				Expect(CiToken.RightAngle);
+				this.ParsingTypeArg = saveTypeArg;
+				if (Eat(CiToken.ExclamationMark))
+					left = new CiPostfixExpr { Line = this.Line, Inner = left, Op = CiToken.ExclamationMark };
+				else if (Eat(CiToken.LeftParenthesis)) {
+					Expect(CiToken.RightParenthesis);
+					CiSymbolReference classType = (CiSymbolReference) left;
+					left = new CiCallExpr { Line = this.Line, Method = classType };
+				}
+			}
+			return left;
+		}
+
+		protected void ParseCollection(List<CiExpr> result, CiToken closing)
+		{
+			if (!See(closing)) {
+				do
+					result.Add(ParseExpr());
+				while (Eat(CiToken.Comma));
+			}
+			ExpectOrSkip(closing);
+		}
+
+		CiExpr ParseConstInitializer()
+		{
+			if (Eat(CiToken.LeftBrace)) {
+				CiAggregateInitializer result = new CiAggregateInitializer { Line = this.Line };
+				ParseCollection(result.Items, CiToken.RightBrace);
+				return result;
+			}
+			return ParseExpr();
+		}
+
+		protected CiAggregateInitializer ParseObjectLiteral()
+		{
+			CiAggregateInitializer result = new CiAggregateInitializer { Line = this.Line };
+			do {
+				int line = this.Line;
+				CiExpr field = ParseSymbolReference(null);
+				Expect(CiToken.Assign);
+				result.Items.Add(new CiBinaryExpr { Line = line, Left = field, Op = CiToken.Assign, Right = ParseExpr() });
+			}
+			while (Eat(CiToken.Comma));
+			Expect(CiToken.RightBrace);
+			return result;
+		}
+
+		protected CiExpr ParseInitializer()
+		{
+			if (!Eat(CiToken.Assign))
+				return null;
+			if (Eat(CiToken.LeftBrace))
+				return ParseObjectLiteral();
+			return ParseExpr();
+		}
+
+		protected void AddSymbol(CiScope scope, CiSymbol symbol)
+		{
+			if (scope.Contains(symbol))
+				ReportError("Duplicate symbol");
+			else
+				scope.Add(symbol);
+		}
+
+		protected CiVar ParseVar(CiExpr type)
+		{
+			CiVar result = new CiVar { Line = this.Line, TypeExpr = type, Name = this.StringValue };
+			NextToken();
+			result.Value = ParseInitializer();
+			return result;
+		}
+
+		protected CiConst ParseConst()
+		{
+			Expect(CiToken.Const);
+			CiConst konst = new CiConst { Line = this.Line, TypeExpr = ParseType(), Name = this.StringValue };
+			NextToken();
+			Expect(CiToken.Assign);
+			konst.Value = ParseConstInitializer();
+			Expect(CiToken.Semicolon);
+			return konst;
+		}
+
+		protected CiBlock ParseBlock()
+		{
+			CiBlock result = new CiBlock { Line = this.Line };
+			Expect(CiToken.LeftBrace);
+			while (!See(CiToken.RightBrace) && !See(CiToken.EndOfFile))
+				result.Statements.Add(ParseStatement());
+			Expect(CiToken.RightBrace);
+			return result;
+		}
+
+		protected CiAssert ParseAssert()
+		{
+			CiAssert result = new CiAssert { Line = this.Line };
+			Expect(CiToken.Assert);
+			result.Cond = ParseExpr();
+			if (Eat(CiToken.Comma))
+				result.Message = ParseExpr();
+			Expect(CiToken.Semicolon);
+			return result;
+		}
+
+		protected CiBreak ParseBreak()
+		{
+			if (this.CurrentLoopOrSwitch == null)
+				ReportError("break outside loop or switch");
+			CiBreak result = new CiBreak { Line = this.Line, LoopOrSwitch = this.CurrentLoopOrSwitch };
+			Expect(CiToken.Break);
+			Expect(CiToken.Semicolon);
+			if (this.CurrentLoopOrSwitch is CiLoop loop)
+				loop.HasBreak = true;
+			return result;
+		}
+
+		protected CiContinue ParseContinue()
+		{
+			if (this.CurrentLoop == null)
+				ReportError("continue outside loop");
+			CiContinue result = new CiContinue { Line = this.Line, Loop = this.CurrentLoop };
+			Expect(CiToken.Continue);
+			Expect(CiToken.Semicolon);
+			return result;
+		}
+
+		protected void ParseLoopBody(CiLoop loop)
+		{
+			CiLoop outerLoop = this.CurrentLoop;
+			CiCondCompletionStatement outerLoopOrSwitch = this.CurrentLoopOrSwitch;
+			this.CurrentLoopOrSwitch = this.CurrentLoop = loop;
+			loop.Body = ParseStatement();
+			this.CurrentLoopOrSwitch = outerLoopOrSwitch;
+			this.CurrentLoop = outerLoop;
+		}
+
+		protected CiDoWhile ParseDoWhile()
+		{
+			CiDoWhile result = new CiDoWhile { Line = this.Line };
+			Expect(CiToken.Do);
+			ParseLoopBody(result);
+			Expect(CiToken.While);
+			result.Cond = ParseParenthesized();
+			Expect(CiToken.Semicolon);
+			return result;
+		}
+
+		void ParseForeachIterator(CiForeach result)
+		{
+			AddSymbol(result, new CiVar { Line = this.Line, TypeExpr = ParseType(), Name = this.StringValue });
+			NextToken();
+		}
+
+		protected CiForeach ParseForeach()
+		{
+			CiForeach result = new CiForeach { Line = this.Line };
+			Expect(CiToken.Foreach);
+			Expect(CiToken.LeftParenthesis);
+			if (Eat(CiToken.LeftParenthesis)) {
+				ParseForeachIterator(result);
+				Expect(CiToken.Comma);
+				ParseForeachIterator(result);
+				Expect(CiToken.RightParenthesis);
+			}
+			else
+				ParseForeachIterator(result);
+			Expect(CiToken.In);
+			result.Collection = ParseExpr();
+			Expect(CiToken.RightParenthesis);
+			ParseLoopBody(result);
+			return result;
+		}
+
+		protected CiIf ParseIf()
+		{
+			CiIf result = new CiIf { Line = this.Line };
+			Expect(CiToken.If);
+			result.Cond = ParseParenthesized();
+			result.OnTrue = ParseStatement();
+			if (Eat(CiToken.Else))
+				result.OnFalse = ParseStatement();
+			return result;
+		}
+
+		protected CiLock ParseLock()
+		{
+			CiLock result = new CiLock { Line = this.Line };
+			Expect(CiToken.Lock_);
+			result.Lock = ParseParenthesized();
+			result.Body = ParseStatement();
+			return result;
+		}
+
+		protected CiReturn ParseReturn()
+		{
+			CiReturn result = new CiReturn { Line = this.Line };
+			NextToken();
+			if (!See(CiToken.Semicolon))
+				result.Value = ParseExpr();
+			Expect(CiToken.Semicolon);
+			return result;
+		}
+
+		protected CiThrow ParseThrow()
+		{
+			CiThrow result = new CiThrow { Line = this.Line };
+			Expect(CiToken.Throw);
+			result.Message = ParseExpr();
+			Expect(CiToken.Semicolon);
+			return result;
+		}
+
+		protected CiWhile ParseWhile()
+		{
+			CiWhile result = new CiWhile { Line = this.Line };
+			Expect(CiToken.While);
+			result.Cond = ParseParenthesized();
+			ParseLoopBody(result);
+			return result;
+		}
+
+		protected abstract CiStatement ParseStatement();
+
+		protected CiCallType ParseCallType()
+		{
+			switch (this.CurrentToken) {
+			case CiToken.Static:
+				NextToken();
+				return CiCallType.Static;
+			case CiToken.Abstract:
+				NextToken();
+				return CiCallType.Abstract;
+			case CiToken.Virtual:
+				NextToken();
+				return CiCallType.Virtual;
+			case CiToken.Override:
+				NextToken();
+				return CiCallType.Override;
+			case CiToken.Sealed:
+				NextToken();
+				return CiCallType.Sealed;
+			default:
+				return CiCallType.Normal;
+			}
+		}
+	}
 }
