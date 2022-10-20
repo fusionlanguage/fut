@@ -820,7 +820,7 @@ public class GenSwift : GenPySwift
 		case CiToken.ShiftLeft when expr == binary.Left:
 		case CiToken.ShiftRight when expr == binary.Left:
 			if (expr is CiSymbolReference || expr is CiSelectExpr || expr is CiCallExpr || expr.IsIndexing()) {
-				type = CiBinaryExpr.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
+				type = CiSystem.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
 				if (type != expr.Type) {
 					WriteCoerced(type, expr, parent);
 					return;
@@ -833,7 +833,7 @@ public class GenSwift : GenPySwift
 		case CiToken.GreaterOrEqual:
 		case CiToken.Equal:
 		case CiToken.NotEqual:
-			type = CiBinaryExpr.PromoteFloatingTypes(binary.Left.Type, binary.Right.Type);
+			type = CiSystem.PromoteFloatingTypes(binary.Left.Type, binary.Right.Type);
 			if (type != null && type != expr.Type) {
 				WriteCoerced(type, expr, parent);
 				return;

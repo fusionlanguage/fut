@@ -121,7 +121,7 @@ public class CiResolver : CiVisitor
 
 	CiType GetIntegerType(CiExpr left, CiExpr right)
 	{
-		CiType type = CiBinaryExpr.PromoteIntegerTypes(left.Type, right.Type);
+		CiType type = CiSystem.PromoteIntegerTypes(left.Type, right.Type);
 		Coerce(left, type);
 		Coerce(right, type);
 		return type;
@@ -138,7 +138,7 @@ public class CiResolver : CiVisitor
 
 	CiType GetNumericType(CiExpr left, CiExpr right)
 	{
-		CiType type = CiBinaryExpr.PromoteNumericTypes(left.Type, right.Type);
+		CiType type = CiSystem.PromoteNumericTypes(left.Type, right.Type);
 		Coerce(left, type);
 		Coerce(right, type);
 		return type;

@@ -114,139 +114,6 @@ public class CiInterpolatedString : CiExpr
 	}
 }
 
-public class CiBinaryExpr : CiExpr
-{
-	internal CiExpr Left;
-	internal CiToken Op;
-	internal CiExpr Right;
-	public override bool IsIndexing() => this.Op == CiToken.LeftBracket;
-	public override bool IsConstEnum()
-	{
-		switch (this.Op) {
-		case CiToken.And:
-		case CiToken.Or:
-		case CiToken.Xor:
-			return this.Type is CiEnumFlags && this.Left.IsConstEnum() && this.Right.IsConstEnum();
-		default:
-			return false;
-		}
-	}
-	public override int IntValue()
-	{
-		return this.Op switch {
-				CiToken.And => this.Left.IntValue() & this.Right.IntValue(),
-				CiToken.Or => this.Left.IntValue() | this.Right.IntValue(),
-				CiToken.Xor => this.Left.IntValue() ^ this.Right.IntValue(),
-				_ => base.IntValue() // throw
-			};
-	}
-	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitBinaryExpr(this, parent);
-	public bool IsAssign()
-	{
-		switch (this.Op) {
-		case CiToken.Assign:
-		case CiToken.AddAssign:
-		case CiToken.SubAssign:
-		case CiToken.MulAssign:
-		case CiToken.DivAssign:
-		case CiToken.ModAssign:
-		case CiToken.ShiftLeftAssign:
-		case CiToken.ShiftRightAssign:
-		case CiToken.AndAssign:
-		case CiToken.OrAssign:
-		case CiToken.XorAssign:
-			return true;
-		default:
-			return false;
-		}
-	}
-
-	public string GetOpString()
-	{
-		switch (this.Op) {
-		case CiToken.Plus:
-			return "+";
-		case CiToken.Minus:
-			return "-";
-		case CiToken.Asterisk:
-			return "*";
-		case CiToken.Slash:
-			return "/";
-		case CiToken.Mod:
-			return "%";
-		case CiToken.ShiftLeft:
-			return "<<";
-		case CiToken.ShiftRight:
-			return ">>";
-		case CiToken.Less:
-			return "<";
-		case CiToken.LessOrEqual:
-			return "<=";
-		case CiToken.Greater:
-			return ">";
-		case CiToken.GreaterOrEqual:
-			return ">=";
-		case CiToken.Equal:
-			return "==";
-		case CiToken.NotEqual:
-			return "!=";
-		case CiToken.And:
-			return "&";
-		case CiToken.Or:
-			return "|";
-		case CiToken.Xor:
-			return "^";
-		case CiToken.CondAnd:
-			return "&&";
-		case CiToken.CondOr:
-			return "||";
-		case CiToken.Assign:
-			return "=";
-		case CiToken.AddAssign:
-			return "+=";
-		case CiToken.SubAssign:
-			return "-=";
-		case CiToken.MulAssign:
-			return "*=";
-		case CiToken.DivAssign:
-			return "/=";
-		case CiToken.ModAssign:
-			return "%=";
-		case CiToken.ShiftLeftAssign:
-			return "<<=";
-		case CiToken.ShiftRightAssign:
-			return ">>=";
-		case CiToken.AndAssign:
-			return "&=";
-		case CiToken.OrAssign:
-			return "|=";
-		case CiToken.XorAssign:
-			return "^=";
-		default:
-			throw new ArgumentException(this.Op.ToString());
-		}
-	}
-
-	public static CiType PromoteIntegerTypes(CiType left, CiType right)
-	{
-		return left == CiSystem.LongType || right == CiSystem.LongType ? CiSystem.LongType : CiSystem.IntType;
-	}
-
-	public static CiType PromoteFloatingTypes(CiType left, CiType right)
-	{
-		if (left == CiSystem.DoubleType || right == CiSystem.DoubleType)
-			return CiSystem.DoubleType;
-		if (left == CiSystem.FloatType || right == CiSystem.FloatType
-		 || left == CiSystem.FloatIntType || right == CiSystem.FloatIntType)
-			return CiSystem.FloatType;
-		return null;
-	}
-
-	public static CiType PromoteNumericTypes(CiType left, CiType right) => PromoteFloatingTypes(left, right) ?? PromoteIntegerTypes(left, right);
-
-	public override string ToString() => this.Op == CiToken.LeftBracket ? $"{this.Left}[{this.Right}]" : $"({this.Left} {GetOpString()} {this.Right})";
-}
-
 public class CiClass : CiContainerType
 {
 	internal CiCallType CallType;
@@ -255,7 +122,6 @@ public class CiClass : CiContainerType
 	internal CiMethodBase Constructor;
 	internal readonly List<CiConst> ConstArrays = new List<CiConst>();
 	internal CiVisitStatus VisitStatus;
-	public override string ToString() => this.Name + "()";
 	public override CiType GetPtrOrSelf() => new CiReadWriteClassType { Class = this };
 	public bool AddsVirtualMethods()
 	{
@@ -553,6 +419,23 @@ public class CiSystem : CiScope
 	}
 
 	public static CiLiteralString NewLiteralString(string value, int line = 0) => new CiLiteralString { Line = line, Type = StringPtrType, Value = value };
+
+	public static CiType PromoteIntegerTypes(CiType left, CiType right)
+	{
+		return left == LongType || right == LongType ? LongType : IntType;
+	}
+
+	public static CiType PromoteFloatingTypes(CiType left, CiType right)
+	{
+		if (left == DoubleType || right == DoubleType)
+			return DoubleType;
+		if (left == FloatType || right == FloatType
+		 || left == FloatIntType || right == FloatIntType)
+			return FloatType;
+		return null;
+	}
+
+	public static CiType PromoteNumericTypes(CiType left, CiType right) => PromoteFloatingTypes(left, right) ?? PromoteIntegerTypes(left, right);
 
 	CiClass AddCollection(CiId id, string name, int typeParameterCount, CiId clearId, CiId countId)
 	{
