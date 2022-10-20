@@ -205,8 +205,8 @@ public class CiResolver : CiVisitor
 		if (max > right.Max)
 			max = right.Max;
 		if (min > max)
-			return new CiRangeType(max, min); // FIXME: this is wrong! e.g. min=0 max=0x8000000_00000000 then 5 should be in range
-		return new CiRangeType(min, max);
+			return CiRangeType.New(max, min); // FIXME: this is wrong! e.g. min=0 max=0x8000000_00000000 then 5 should be in range
+		return CiRangeType.New(min, max);
 	}
 
 	static CiRangeType UnsignedOr(CiRangeType left, CiRangeType right)
@@ -221,8 +221,8 @@ public class CiResolver : CiVisitor
 		if (min < right.Min)
 			min = right.Min;
 		if (min > max)
-			return new CiRangeType(max, min); // FIXME: this is wrong! e.g. min=0 max=0x8000000_00000000 then 5 should be in range
-		return new CiRangeType(min, max);
+			return CiRangeType.New(max, min); // FIXME: this is wrong! e.g. min=0 max=0x8000000_00000000 then 5 should be in range
+		return CiRangeType.New(min, max);
 	}
 
 	static CiRangeType UnsignedXor(CiRangeType left, CiRangeType right)
@@ -231,8 +231,8 @@ public class CiResolver : CiVisitor
 		int min = (left.Min ^ right.Min) & ~variableBits;
 		int max = (left.Max ^ right.Max) | variableBits;
 		if (min > max)
-			return new CiRangeType(max, min); // FIXME: this is wrong! e.g. min=0 max=0x8000000_00000000 then 5 should be in range
-		return new CiRangeType(min, max);
+			return CiRangeType.New(max, min); // FIXME: this is wrong! e.g. min=0 max=0x8000000_00000000 then 5 should be in range
+		return CiRangeType.New(min, max);
 	}
 
 	delegate CiRangeType UnsignedOp(CiRangeType left, CiRangeType right);
@@ -248,11 +248,27 @@ public class CiResolver : CiVisitor
 		return false;
 	}
 
+	static void SplitBySign(CiRangeType source, out CiRangeType negative, out CiRangeType positive)
+	{
+		if (source.Min >= 0) {
+			negative = null;
+			positive = source;
+		}
+		else if (source.Max < 0) {
+			negative = source;
+			positive = null;
+		}
+		else {
+			negative = CiRangeType.New(source.Min, -1);
+			positive = CiRangeType.New(0, source.Max);
+		}
+	}
+
 	CiType BitwiseOp(CiExpr left, CiExpr right, UnsignedOp op)
 	{
 		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {
-			leftRange.SplitBySign(out CiRangeType leftNegative, out CiRangeType leftPositive);
-			rightRange.SplitBySign(out CiRangeType rightNegative, out CiRangeType rightPositive);
+			SplitBySign(leftRange, out CiRangeType leftNegative, out CiRangeType leftPositive);
+			SplitBySign(rightRange, out CiRangeType rightNegative, out CiRangeType rightPositive);
 			CiRangeType range = null;
 			if (leftNegative != null) {
 				if (rightNegative != null)
@@ -541,7 +557,7 @@ public class CiResolver : CiVisitor
 			range = inner.Type as CiRangeType;
 			if (range != null) {
 				int delta = expr.Op == CiToken.Increment ? 1 : -1;
-				type = new CiRangeType(range.Min + delta, range.Max + delta);
+				type = CiRangeType.New(range.Min + delta, range.Max + delta);
 			}
 			else
 				type = inner.Type;
@@ -553,7 +569,7 @@ public class CiResolver : CiVisitor
 			Coerce(inner, CiSystem.DoubleType);
 			range = inner.Type as CiRangeType;
 			if (range != null)
-				type = range = new CiRangeType(SaturatedNeg(range.Max), SaturatedNeg(range.Min));
+				type = range = CiRangeType.New(SaturatedNeg(range.Max), SaturatedNeg(range.Min));
 			else if (inner is CiLiteralDouble d)
 				return ToLiteralDouble(expr, -d.Value);
 			else if (inner is CiLiteralLong l)
@@ -571,7 +587,7 @@ public class CiResolver : CiVisitor
 				Coerce(inner, CiSystem.IntType);
 				range = inner.Type as CiRangeType;
 				if (range != null)
-					type = range = new CiRangeType(~range.Max, ~range.Min);
+					type = range = CiRangeType.New(~range.Max, ~range.Min);
 				else
 					type = inner.Type;
 			}
@@ -672,6 +688,21 @@ public class CiResolver : CiVisitor
 		return result;
 	}
 
+	static CiRangeType NewRangeType(int a, int b, int c, int d)
+	{
+		if (a > b) {
+			int t = a;
+			a = b;
+			b = t;
+		}
+		if (c > d) {
+			int t = c;
+			c = d;
+			d = t;
+		}
+		return CiRangeType.New(a <= c ? a : c, b >= d ? b : d);
+	}
+
 	CiExpr ResolveEquality(CiBinaryExpr expr, CiExpr left, CiExpr right)
 	{
 		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {
@@ -757,7 +788,7 @@ public class CiResolver : CiVisitor
 
 		case CiToken.Plus:
 			if (leftRange != null && rightRange != null) {
-				type = new CiRangeType(
+				type = CiRangeType.New(
 					SaturatedAdd(leftRange.Min, rightRange.Min),
 					SaturatedAdd(leftRange.Max, rightRange.Max));
 			}
@@ -776,7 +807,7 @@ public class CiResolver : CiVisitor
 			break;
 		case CiToken.Minus:
 			if (leftRange != null && rightRange != null) {
-				type = new CiRangeType(
+				type = CiRangeType.New(
 					SaturatedSub(leftRange.Min, rightRange.Max),
 					SaturatedSub(leftRange.Max, rightRange.Min));
 			}
@@ -785,7 +816,7 @@ public class CiResolver : CiVisitor
 			break;
 		case CiToken.Asterisk:
 			if (leftRange != null && rightRange != null) {
-				type = new CiRangeType(
+				type = NewRangeType(
 					SaturatedMul(leftRange.Min, rightRange.Min),
 					SaturatedMul(leftRange.Min, rightRange.Max),
 					SaturatedMul(leftRange.Max, rightRange.Min),
@@ -802,7 +833,7 @@ public class CiResolver : CiVisitor
 				int denMax = rightRange.Max;
 				if (denMax == 0)
 					denMax = -1;
-				type = new CiRangeType(
+				type = NewRangeType(
 					SaturatedDiv(leftRange.Min, denMin),
 					SaturatedDiv(leftRange.Min, denMax),
 					SaturatedDiv(leftRange.Max, denMin),
@@ -816,7 +847,7 @@ public class CiResolver : CiVisitor
 				int den = ~Math.Min(rightRange.Min, -rightRange.Max); // max(abs(rightRange))-1
 				if (den < 0)
 					throw StatementException(expr, "Mod zero");
-				type = new CiRangeType(
+				type = CiRangeType.New(
 					leftRange.Min >= 0 ? 0 : Math.Max(leftRange.Min, -den),
 					leftRange.Max < 0 ? 0 : Math.Min(leftRange.Max, den));
 			}
@@ -838,7 +869,7 @@ public class CiResolver : CiVisitor
 			if (leftRange != null && rightRange != null && leftRange.Min == leftRange.Max && rightRange.Min == rightRange.Max) {
 				// TODO: improve
 				int result = leftRange.Min << rightRange.Min;
-				type = new CiRangeType(result, result);
+				type = CiRangeType.New(result, result);
 			}
 			else
 				type = GetShiftType(left, right);
@@ -846,8 +877,8 @@ public class CiResolver : CiVisitor
 		case CiToken.ShiftRight:
 			if (leftRange != null && rightRange != null) {
 				if (rightRange.Min < 0)
-					rightRange = new CiRangeType(0, 32);
-				type = new CiRangeType(
+					rightRange = CiRangeType.New(0, 32);
+				type = CiRangeType.New(
 					SaturatedShiftRight(leftRange.Min, leftRange.Min < 0 ? rightRange.Min : rightRange.Max),
 					SaturatedShiftRight(leftRange.Max, leftRange.Max < 0 ? rightRange.Max : rightRange.Min));
 			}
@@ -1608,7 +1639,7 @@ public class CiResolver : CiVisitor
 			int max = FoldConstInt(expr);
 			if (min > max)
 				throw StatementException(expr, "Range min greater than max");
-			baseType = new CiRangeType(min, max);
+			baseType = CiRangeType.New(min, max);
 		}
 		else
 			baseType = ToBaseType(expr, ptrModifier);

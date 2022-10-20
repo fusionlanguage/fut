@@ -32,7 +32,7 @@ public class CiLiteralChar : CiLiteralLong
 	CiLiteralChar()
 	{
 	}
-	public static CiLiteralChar New(int value, int line) => new CiLiteralChar { Line = line, Type = new CiRangeType(value, value), Value = value };
+	public static CiLiteralChar New(int value, int line) => new CiLiteralChar { Line = line, Type = CiRangeType.New(value, value), Value = value };
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
 	{
 		visitor.VisitLiteralChar((int) this.Value);
@@ -108,31 +108,18 @@ public class CiIntegerType : CiNumericType
 
 public class CiRangeType : CiIntegerType
 {
-	internal readonly int Min;
-	internal readonly int Max;
+	internal int Min;
+	internal int Max;
 
-	public CiRangeType(int min, int max)
+	CiRangeType()
+	{
+	}
+
+	public static CiRangeType New(int min, int max)
 	{
 		if (min > max)
 			throw new ArgumentOutOfRangeException();
-		this.Min = min;
-		this.Max = max;
-	}
-
-	public CiRangeType(int a, int b, int c, int d)
-	{
-		if (a > b) {
-			int t = a;
-			a = b;
-			b = t;
-		}
-		if (c > d) {
-			int t = c;
-			c = d;
-			d = t;
-		}
-		this.Min = a <= c ? a : c;
-		this.Max = b >= d ? b : d;
+		return new CiRangeType { Min = min, Max = max };
 	}
 
 	public override string ToString() => this.Min == this.Max ? this.Min.ToString() : $"({this.Min} .. {this.Max})";
@@ -144,10 +131,10 @@ public class CiRangeType : CiIntegerType
 		if (that.Min < this.Min) {
 			if (that.Max >= this.Max)
 				return that;
-			return new CiRangeType(that.Min, this.Max);
+			return CiRangeType.New(that.Min, this.Max);
 		}
 		if (that.Max > this.Max)
-			return new CiRangeType(this.Min, that.Max);
+			return CiRangeType.New(this.Min, that.Max);
 		return this;
 	}
 
@@ -177,22 +164,6 @@ public class CiRangeType : CiIntegerType
 	}
 
 	public int GetVariableBits() => GetMask(this.Min ^ this.Max);
-
-	public void SplitBySign(out CiRangeType negative, out CiRangeType positive)
-	{
-		if (this.Min >= 0) {
-			negative = null;
-			positive = this;
-		}
-		else if (this.Max < 0) {
-			negative = this;
-			positive = null;
-		}
-		else {
-			negative = new CiRangeType(this.Min, -1);
-			positive = new CiRangeType(0, this.Max);
-		}
-	}
 }
 
 public class CiClassType : CiType
@@ -341,14 +312,14 @@ public class CiSystem : CiScope
 	public static readonly CiType TypeParam0NotFinal = new CiType { Name = "T" };
 	public static readonly CiType TypeParam0Predicate = new CiType { Name = "Predicate<T>" };
 	public static readonly CiIntegerType IntType = new CiIntegerType { Name = "int" };
-	public static readonly CiRangeType UIntType = new CiRangeType(0, int.MaxValue) { Name = "uint" };
+	public static readonly CiRangeType UIntType = CiRangeType.New(0, int.MaxValue);
 	public static readonly CiIntegerType LongType = new CiIntegerType { Name = "long" };
-	public static readonly CiRangeType ByteType = new CiRangeType(0, 0xff) { Name = "byte" };
-	public static readonly CiRangeType Minus1Type = new CiRangeType(-1, int.MaxValue);
+	public static readonly CiRangeType ByteType = CiRangeType.New(0, 0xff);
+	public static readonly CiRangeType Minus1Type = CiRangeType.New(-1, int.MaxValue);
 	public static readonly CiFloatingType FloatType = new CiFloatingType { Name = "float" };
 	public static readonly CiFloatingType DoubleType = new CiFloatingType { Name = "double" };
 	public static readonly CiFloatingType FloatIntType = new CiFloatingType { Name = "float" };
-	public static readonly CiRangeType CharType = new CiRangeType(-0x80, 0xffff);
+	public static readonly CiRangeType CharType = CiRangeType.New(-0x80, 0xffff);
 	public static readonly CiEnum BoolType = new CiEnum { Name = "bool" };
 	public static readonly CiClass StringClass = CiClass.New(CiCallType.Normal, CiId.StringClass, "string");
 	public static readonly CiStringType StringPtrType = new CiStringType { Name = "string" };
@@ -364,7 +335,7 @@ public class CiSystem : CiScope
 
 	public static CiLiteralLong NewLiteralLong(long value, int line = 0)
 	{
-		CiType type = value >= int.MinValue && value <= int.MaxValue ? new CiRangeType((int) value, (int) value) : LongType;
+		CiType type = value >= int.MinValue && value <= int.MaxValue ? CiRangeType.New((int) value, (int) value) : LongType;
 		return new CiLiteralLong { Line = line, Type = type, Value = value };
 	}
 
@@ -423,11 +394,17 @@ public class CiSystem : CiScope
 	CiSystem()
 	{
 		Add(IntType);
+		UIntType.Name = "uint";
 		Add(UIntType);
 		Add(LongType);
+		ByteType.Name = "byte";
 		Add(ByteType);
-		Add(new CiRangeType(-0x8000, 0x7fff) { Name = "short" });
-		Add(new CiRangeType(0, 0xffff) { Name = "ushort" });
+		CiRangeType shortType = CiRangeType.New(-0x8000, 0x7fff);
+		shortType.Name = "short";
+		Add(shortType);
+		CiRangeType ushortType = CiRangeType.New(0, 0xffff);
+		ushortType.Name = "ushort";
+		Add(ushortType);
 		Add(FloatType);
 		Add(DoubleType);
 		Add(BoolType);
