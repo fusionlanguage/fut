@@ -64,55 +64,6 @@ public class CiLiteralDouble : CiLiteral
 	public override string ToString() => GetLiteralString();
 }
 
-public class CiInterpolatedPart
-{
-	internal string Prefix;
-	internal CiExpr Argument;
-	internal CiExpr WidthExpr;
-	internal int Width;
-	internal char Format;
-	internal int Precision;
-}
-
-public class CiInterpolatedString : CiExpr
-{
-	internal readonly List<CiInterpolatedPart> Parts = new List<CiInterpolatedPart>();
-	internal string Suffix;
-	public CiInterpolatedString()
-	{
-		this.Type = CiSystem.StringStorageType;
-	}
-	public void AddPart(string prefix, CiExpr arg, CiExpr widthExpr = null, char format = ' ', int precision = -1)
-	{
-		this.Parts.Add(new CiInterpolatedPart { Prefix = prefix, Argument = arg, WidthExpr = widthExpr, Format = format, Precision = precision });
-	}
-	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitInterpolatedString(this, parent);
-	public override string ToString()
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.Append("$\"");
-		foreach (CiInterpolatedPart part in this.Parts) {
-			sb.Append(part.Prefix.Replace("{", "{{"));
-			sb.Append('{');
-			sb.Append(part.Argument);
-			if (part.WidthExpr != null) {
-				sb.Append(',');
-				sb.Append(part.WidthExpr);
-			}
-			if (part.Format != ' ') {
-				sb.Append(':');
-				sb.Append(part.Format);
-				if (part.Precision >= 0)
-					sb.Append(part.Precision);
-			}
-			sb.Append('}');
-		}
-		sb.Append(this.Suffix.Replace("{", "{{"));
-		sb.Append('"');
-		return sb.ToString();
-	}
-}
-
 public class CiClass : CiContainerType
 {
 	internal CiCallType CallType;

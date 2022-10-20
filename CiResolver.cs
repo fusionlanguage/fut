@@ -362,11 +362,11 @@ public class CiResolver : CiVisitor
 			CiExpr arg = Resolve(part.Argument);
 			switch (arg.Type) {
 			case CiIntegerType _:
-				if (" DdXx".IndexOf(part.Format) < 0)
+				if (" DdXx".IndexOf((char) part.Format) < 0)
 					throw StatementException(arg, "Invalid integer format string");
 				break;
 			case CiFloatingType _:
-				if (" FfEe".IndexOf(part.Format) < 0)
+				if (" FfEe".IndexOf((char) part.Format) < 0)
 					throw StatementException(arg, "Invalid floating-point format string");
 				break;
 			case CiStringType _:
@@ -381,7 +381,7 @@ public class CiResolver : CiVisitor
 				width = FoldConstInt(part.WidthExpr);
 			if (arg is CiLiteral literal && !(arg.Type is CiFloatingType)) { // float formatting is runtime-locale-specific
 				string stringArg = part.Format == ' ' ? literal.GetLiteralString()
-					: ((CiLiteralLong) arg).Value.ToString(part.Format + (part.Precision < 0 ? "" : part.Precision.ToString()));
+					: ((CiLiteralLong) arg).Value.ToString((char) part.Format + (part.Precision < 0 ? "" : part.Precision.ToString()));
 				if (part.WidthExpr != null)
 					stringArg = width >= 0 ? stringArg.PadLeft(width) : stringArg.PadRight(-width);
 				sb.Append(stringArg);
@@ -647,7 +647,7 @@ public class CiResolver : CiVisitor
 	{
 		if (expr is CiInterpolatedString interpolated)
 			return interpolated;
-		CiInterpolatedString result = new CiInterpolatedString();
+		CiInterpolatedString result = new CiInterpolatedString { Type = CiSystem.StringStorageType };
 		if (expr is CiLiteral literal)
 			result.Suffix = literal.GetLiteralString();
 		else {
@@ -659,7 +659,7 @@ public class CiResolver : CiVisitor
 
 	static CiInterpolatedString Concatenate(CiInterpolatedString left, CiInterpolatedString right)
 	{
-		CiInterpolatedString result = new CiInterpolatedString();
+		CiInterpolatedString result = new CiInterpolatedString { Type = CiSystem.StringStorageType };
 		result.Parts.AddRange(left.Parts);
 		if (right.Parts.Count == 0)
 			result.Suffix = left.Suffix + right.Suffix;

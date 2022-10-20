@@ -160,7 +160,7 @@ public class CiParser : CiLexer
 
 	CiInterpolatedString ParseInterpolatedString()
 	{
-		CiInterpolatedString result = new CiInterpolatedString { Line = this.Line };
+		CiInterpolatedString result = new CiInterpolatedString { Line = this.Line, Type = CiSystem.StringStorageType };
 		do {
 			string prefix = this.StringValue.Replace("{{", "{");
 			NextToken();

@@ -1760,6 +1760,43 @@ namespace Foxoft.Ci
 		}
 	}
 
+	public class CiInterpolatedPart
+	{
+
+		internal string Prefix;
+
+		internal CiExpr Argument;
+
+		internal CiExpr WidthExpr;
+
+		internal int Width;
+
+		internal int Format;
+
+		internal int Precision;
+	}
+
+	public class CiInterpolatedString : CiExpr
+	{
+
+		internal readonly List<CiInterpolatedPart> Parts = new List<CiInterpolatedPart>();
+
+		internal string Suffix;
+
+		public void AddPart(string prefix, CiExpr arg, CiExpr widthExpr = null, int format = ' ', int precision = -1)
+		{
+			this.Parts.Add(new CiInterpolatedPart());
+			CiInterpolatedPart part = this.Parts[this.Parts.Count - 1];
+			part.Prefix = prefix;
+			part.Argument = arg;
+			part.WidthExpr = widthExpr;
+			part.Format = format;
+			part.Precision = precision;
+		}
+
+		public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitInterpolatedString(this, parent);
+	}
+
 	public class CiImplicitEnumValue : CiExpr
 	{
 

@@ -227,7 +227,7 @@ public class GenJs : GenBase
 						Write(".toString()");
 						break;
 					}
-					if (part.Precision >= 0 && "DdXx".IndexOf(part.Format) >= 0) {
+					if (part.Precision >= 0 && "DdXx".IndexOf((char) part.Format) >= 0) {
 						Write(".padStart(");
 						VisitLiteralLong(part.Precision);
 						Write(", \"0\")");

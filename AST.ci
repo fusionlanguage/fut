@@ -438,6 +438,57 @@ public class CiLiteralString : CiLiteral
 	}
 }
 
+public class CiInterpolatedPart
+{
+	internal string() Prefix;
+	internal CiExpr# Argument;
+	internal CiExpr# WidthExpr;
+	internal int Width;
+	internal int Format;
+	internal int Precision;
+}
+
+public class CiInterpolatedString : CiExpr
+{
+	internal List<CiInterpolatedPart()>() Parts;
+	internal string() Suffix;
+	public void AddPart(string prefix, CiExpr# arg, CiExpr# widthExpr = null, int format = ' ', int precision = -1)
+	{
+		this.Parts.Add();
+		CiInterpolatedPart! part = this.Parts[this.Parts.Count - 1];
+		part.Prefix = prefix;
+		part.Argument = arg;
+		part.WidthExpr = widthExpr;
+		part.Format = format;
+		part.Precision = precision;
+	}
+	public override CiExpr Accept(CiVisitor! visitor, CiPriority parent) => visitor.VisitInterpolatedString(this, parent);
+//	public override string() ToString()
+//	{
+//		StringBuilder sb = new StringBuilder();
+//		sb.Append("$\"");
+//		foreach (CiInterpolatedPart part in this.Parts) {
+//			sb.Append(part.Prefix.Replace("{", "{{"));
+//			sb.Append('{');
+//			sb.Append(part.Argument);
+//			if (part.WidthExpr != null) {
+//				sb.Append(',');
+//				sb.Append(part.WidthExpr);
+//			}
+//			if (part.Format != ' ') {
+//				sb.Append(':');
+//				sb.Append((char) part.Format);
+//				if (part.Precision >= 0)
+//					sb.Append(part.Precision);
+//			}
+//			sb.Append('}');
+//		}
+//		sb.Append(this.Suffix.Replace("{", "{{"));
+//		sb.Append('"');
+//		return sb.ToString();
+//	}
+}
+
 public class CiImplicitEnumValue : CiExpr
 {
 	internal int Value;

@@ -1897,7 +1897,7 @@ public class GenC : GenCCpp
 					Write("CiString_Assign(&");
 					expr.Left.Accept(this, CiPriority.Primary);
 					Write(", ");
-					CiInterpolatedString interpolated = new CiInterpolatedString { Suffix = rightInterpolated.Suffix };
+					CiInterpolatedString interpolated = new CiInterpolatedString { Type = CiSystem.StringStorageType, Suffix = rightInterpolated.Suffix };
 					interpolated.AddPart("", expr.Left); // TODO: side effect
 					interpolated.Parts.AddRange(rightInterpolated.Parts);
 					VisitInterpolatedString(interpolated, CiPriority.Argument);

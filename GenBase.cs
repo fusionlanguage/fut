@@ -57,10 +57,10 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WriteChar(char c)
+	protected void WriteChar(int c)
 	{
 		StartLine();
-		this.Writer.Write(c);
+		this.Writer.Write((char) c);
 	}
 
 	protected void Write(string s)
@@ -83,7 +83,7 @@ public abstract class GenBase : CiVisitor
 			case '\t': Write("\\t"); break;
 			case '\'': Write("\\'"); break;
 			case '\\': Write("\\\\"); break;
-			default: WriteChar((char) c); break;
+			default: WriteChar(c); break;
 			}
 			WriteChar('\'');
 		}
@@ -483,7 +483,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	static char GetPrintfFormat(CiType type, char format)
+	static int GetPrintfFormat(CiType type, int format)
 	{
 		switch (type) {
 		case CiStringType _:
@@ -491,7 +491,7 @@ public abstract class GenBase : CiVisitor
 		case CiIntegerType _:
 			return format == 'x' || format == 'X' ? format : 'd';
 		case CiNumericType _:
-			return "EefGg".IndexOf(format) >= 0 ? format : format == 'F' ? 'f' : 'g';
+			return "EefGg".IndexOf((char) format) >= 0 ? format : format == 'F' ? 'f' : 'g';
 		default:
 			throw new NotImplementedException(type.ToString());
 		}
