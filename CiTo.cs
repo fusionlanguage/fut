@@ -101,7 +101,7 @@ public static class CiTo
 //			throw;
 		}
 
-		gen.Write(program);
+		gen.WriteProgram(program);
 		return true;
 	}
 

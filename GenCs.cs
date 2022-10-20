@@ -145,7 +145,7 @@ public class GenCs : GenTyped
 
 	protected override int GetLiteralChars() => 0x10000;
 
-	protected override void Write(TypeCode typeCode)
+	protected override void WriteTypeCode(TypeCode typeCode)
 	{
 		switch (typeCode) {
 		case TypeCode.SByte: Write("sbyte"); break;
@@ -175,7 +175,7 @@ public class GenCs : GenTyped
 		}
 	}
 
-	void Write(CiCallType callType, string sealedString)
+	void WriteCallType(CiCallType callType, string sealedString)
 	{
 		switch (callType) {
 		case CiCallType.Static:
@@ -202,15 +202,15 @@ public class GenCs : GenTyped
 	{
 		Include("System.Collections.Generic");
 		WriteChar('<');
-		Write(elementType, false);
+		WriteType(elementType, false);
 		WriteChar('>');
 	}
 
-	protected override void Write(CiType type, bool promote)
+	protected override void WriteType(CiType type, bool promote)
 	{
 		switch (type) {
 		case CiIntegerType integer:
-			Write(GetIntegerTypeCode(integer, promote));
+			WriteTypeCode(GetIntegerTypeCode(integer, promote));
 			break;
 		case CiClassType klass:
 			switch (klass.Class.Id) {
@@ -219,7 +219,7 @@ public class GenCs : GenTyped
 				break;
 			case CiId.ArrayPtrClass:
 			case CiId.ArrayStorageClass:
-				Write(klass.GetElementType(), false);
+				WriteType(klass.GetElementType(), false);
 				Write("[]");
 				break;
 			case CiId.ListClass:
@@ -234,9 +234,9 @@ public class GenCs : GenTyped
 				Include("System.Collections.Generic");
 				Write(klass.Class.Name);
 				WriteChar('<');
-				Write(klass.GetKeyType(), false);
+				WriteType(klass.GetKeyType(), false);
 				Write(", ");
-				Write(klass.GetValueType(), false);
+				WriteType(klass.GetValueType(), false);
 				WriteChar('>');
 				break;
 			case CiId.OrderedDictionaryClass:
@@ -265,7 +265,7 @@ public class GenCs : GenTyped
 	protected override void WriteNewWithFields(CiType type, CiAggregateInitializer init)
 	{
 		Write("new ");
-		Write(type, false);
+		WriteType(type, false);
 		WriteObjectLiteral(init, " = ");
 	}
 
@@ -306,7 +306,7 @@ public class GenCs : GenTyped
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		Write("new ");
-		Write(elementType.GetBaseType(), false);
+		WriteType(elementType.GetBaseType(), false);
 		WriteChar('[');
 		lengthExpr.Accept(this, CiPriority.Argument);
 		WriteChar(']');
@@ -319,7 +319,7 @@ public class GenCs : GenTyped
 	protected override void WriteNew(CiReadWriteClassType klass, CiPriority parent)
 	{
 		Write("new ");
-		Write(klass, false);
+		WriteType(klass, false);
 		Write("()");
 	}
 
@@ -789,7 +789,7 @@ public class GenCs : GenTyped
 		WriteDoc(method.Documentation);
 		WriteParametersDoc(method);
 		WriteVisibility(method.Visibility);
-		Write(method.CallType, "sealed override ");
+		WriteCallType(method.CallType, "sealed override ");
 		WriteTypeAndName(method);
 		WriteParameters(method, true);
 		if (method.Body is CiReturn ret) {
@@ -808,7 +808,7 @@ public class GenCs : GenTyped
 		WriteLine();
 		WriteDoc(klass.Documentation);
 		WritePublic(klass);
-		Write(klass.CallType, "sealed ");
+		WriteCallType(klass.CallType, "sealed ");
 		OpenClass(klass, "", " : ");
 
 		if (NeedsConstructor(klass)) {
@@ -840,13 +840,13 @@ public class GenCs : GenTyped
 			WriteResource(name, -1);
 			WriteLine(" = {");
 			WriteChar('\t');
-			Write(resources[name]);
+			WriteBytes(resources[name]);
 			WriteLine(" };");
 		}
 		CloseBlock();
 	}
 
-	public override void Write(CiProgram program)
+	public override void WriteProgram(CiProgram program)
 	{
 		this.Includes = new SortedSet<string>();
 		OpenStringWriter();

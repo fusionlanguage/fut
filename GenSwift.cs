@@ -217,27 +217,27 @@ public class GenSwift : GenPySwift
 		case CiId.ArrayPtrClass:
 			this.ArrayRef = true;
 			Write("ArrayRef<");
-			Write(klass.GetElementType());
+			WriteType(klass.GetElementType());
 			WriteChar('>');
 			break;
 		case CiId.ListClass:
 		case CiId.QueueClass:
 		case CiId.StackClass:
 			WriteChar('[');
-			Write(klass.GetElementType());
+			WriteType(klass.GetElementType());
 			WriteChar(']');
 			break;
 		case CiId.HashSetClass:
 			Write("Set<");
-			Write(klass.GetElementType());
+			WriteType(klass.GetElementType());
 			WriteChar('>');
 			break;
 		case CiId.DictionaryClass:
 		case CiId.SortedDictionaryClass:
 			WriteChar('[');
-			Write(klass.GetKeyType());
+			WriteType(klass.GetKeyType());
 			Write(": ");
-			Write(klass.GetValueType());
+			WriteType(klass.GetValueType());
 			WriteChar(']');
 			break;
 		case CiId.LockClass:
@@ -250,7 +250,7 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	void Write(CiType type)
+	void WriteType(CiType type)
 	{
 		switch (type) {
 		case CiIntegerType integer:
@@ -290,12 +290,12 @@ public class GenSwift : GenPySwift
 			if (IsArrayRef(arrayStg)) {
 				this.ArrayRef = true;
 				Write("ArrayRef<");
-				Write(arrayStg.GetElementType());
+				WriteType(arrayStg.GetElementType());
 				WriteChar('>');
 			}
 			else {
 				WriteChar('[');
-				Write(arrayStg.GetElementType());
+				WriteType(arrayStg.GetElementType());
 				WriteChar(']');
 			}
 			break;
@@ -315,7 +315,7 @@ public class GenSwift : GenPySwift
 		WriteName(value);
 		if (!value.Type.IsFinal() || value.IsAssignableStorage()) {
 			Write(" : ");
-			Write(value.Type);
+			WriteType(value.Type);
 		}
 	}
 
@@ -376,7 +376,7 @@ public class GenSwift : GenPySwift
 	{
 		if (type is CiNumericType && !(expr is CiLiteral)
 		 && GetTypeCode(type, false) != GetTypeCode(expr.Type, expr is CiBinaryExpr binary && binary.Op != CiToken.LeftBracket)) {
-			Write(type);
+			WriteType(type);
 			WriteChar('(');
 			if (type is CiIntegerType && expr is CiCallExpr call && call.Method.Symbol.Id == CiId.MathTruncate)
 				call.Arguments[0].Accept(this, CiPriority.Argument);
@@ -501,7 +501,7 @@ public class GenSwift : GenPySwift
 		case CiId.ArrayFillAll when obj.Type is CiArrayStorageType array && !IsArrayRef(array):
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = [");
-			Write(array.GetElementType());
+			WriteType(array.GetElementType());
 			Write("](repeating: ");
 			WriteCoerced(array.GetElementType(), args[0], CiPriority.Argument);
 			Write(", count: ");
@@ -714,7 +714,7 @@ public class GenSwift : GenPySwift
 			base.WriteNewArray(array);
 		else {
 			WriteChar('[');
-			Write(array.GetElementType());
+			WriteType(array.GetElementType());
 			Write("](repeating: ");
 			WriteDefaultValue(array.GetElementType());
 			Write(", count: ");
@@ -754,7 +754,7 @@ public class GenSwift : GenPySwift
 	{
 		this.ArrayRef = true;
 		Write("ArrayRef<");
-		Write(elementType);
+		WriteType(elementType);
 		Write(">(");
 		switch (elementType) {
 		case CiArrayStorageType _:
@@ -801,7 +801,7 @@ public class GenSwift : GenPySwift
 			WriteChar('!');
 	}
 
-	protected override void Write(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
+	protected override void WriteBinaryOperand(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
 	{
 		if (binary.Op == CiToken.Plus && binary.Type == CiSystem.StringPtrType) {
 			WriteUnwrappedString(expr, parent, true);
@@ -847,7 +847,7 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteAnd(CiBinaryExpr expr, CiPriority parent)
 	{
-		Write(expr, parent > CiPriority.Mul, CiPriority.Mul, " & ", CiPriority.Primary);
+		WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " & ", CiPriority.Primary);
 	}
 
 	void WriteEnumFlagsAnd(CiBinaryExpr expr, string method, string notMethod)
@@ -886,13 +886,13 @@ public class GenSwift : GenPySwift
 		}
 		switch (expr.Op) {
 		case CiToken.ShiftLeft:
-			return Write(expr, parent > CiPriority.Mul, CiPriority.Primary, " << ", CiPriority.Primary);
+			return WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Primary, " << ", CiPriority.Primary);
 		case CiToken.ShiftRight:
-			return Write(expr, parent > CiPriority.Mul, CiPriority.Primary, " >> ", CiPriority.Primary);
+			return WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Primary, " >> ", CiPriority.Primary);
 		case CiToken.Or:
-			return Write(expr, parent > CiPriority.Add, CiPriority.Add, " | ", CiPriority.Mul);
+			return WriteBinaryExpr(expr, parent > CiPriority.Add, CiPriority.Add, " | ", CiPriority.Mul);
 		case CiToken.Xor:
-			return Write(expr, parent > CiPriority.Add, CiPriority.Add, " ^ ", CiPriority.Mul);
+			return WriteBinaryExpr(expr, parent > CiPriority.Add, CiPriority.Add, " ^ ", CiPriority.Mul);
 		case CiToken.Assign:
 		case CiToken.AddAssign:
 		case CiToken.SubAssign:
@@ -919,7 +919,7 @@ public class GenSwift : GenPySwift
 			 && leftBinary.Op == CiToken.LeftBracket
 			 && leftBinary.Left.Type is CiClassType dict
 			 && dict.Class.TypeParameterCount == 2) {
-				Write(dict.GetValueType());
+				WriteType(dict.GetValueType());
 				Write(".none");
 			}
 			else
@@ -1030,11 +1030,11 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	protected override void Write(List<CiStatement> statements)
+	protected override void WriteStatements(List<CiStatement> statements)
 	{
 		// Encoding.UTF8.GetBytes returns void, so it can only be called as a statement
 		this.VarBytesAtIndent[this.Indent] = statements.Count(s => s is CiCallExpr call && call.Method.Symbol.Id == CiId.UTF8GetBytes) > 1;
-		base.Write(statements);
+		base.WriteStatements(statements);
 	}
 
 	public override void VisitLambdaExpr(CiLambdaExpr expr)
@@ -1208,7 +1208,7 @@ public class GenSwift : GenPySwift
 	protected override void WriteResultVar()
 	{
 		Write("let result : ");
-		Write(this.CurrentMethod.Type);
+		WriteType(this.CurrentMethod.Type);
 	}
 
 	void WriteSwiftCaseBody(CiSwitch statement, List<CiStatement> body)
@@ -1234,7 +1234,7 @@ public class GenSwift : GenPySwift
 					Write("let ");
 					WriteCamelCaseNotKeyword(def.Name);
 					Write(" as ");
-					Write(def.Type);
+					WriteType(def.Type);
 				}
 				else
 					WriteCoerced(statement.Value.Type, kase.Values[i], CiPriority.Argument);
@@ -1272,7 +1272,7 @@ public class GenSwift : GenPySwift
 		else
 			WriteName(param);
 		Write(" : ");
-		Write(param.Type);
+		WriteType(param.Type);
 	}
 
 	public override void VisitEnumValue(CiConst konst, CiConst previous)
@@ -1367,7 +1367,7 @@ public class GenSwift : GenPySwift
 		if (konst.Type == CiSystem.IntType || konst.Type is CiEnum || konst.Type == CiSystem.StringPtrType)
 			konst.Value.Accept(this, CiPriority.Argument);
 		else {
-			Write(konst.Type);
+			WriteType(konst.Type);
 			WriteChar('(');
 			konst.Value.Accept(this, CiPriority.Argument);
 			WriteChar(')');
@@ -1437,7 +1437,7 @@ public class GenSwift : GenPySwift
 			Write(" throws");
 		if (method.Type != CiSystem.VoidType) {
 			Write(" -> ");
-			Write(method.Type);
+			WriteType(method.Type);
 		}
 		WriteLine();
 		OpenBlock();
@@ -1593,13 +1593,13 @@ public class GenSwift : GenPySwift
 			WriteResource(name, -1);
 			WriteLine(" = ArrayRef<UInt8>([");
 			WriteChar('\t');
-			Write(resources[name]);
+			WriteBytes(resources[name]);
 			WriteLine(" ])");
 		}
 		CloseBlock();
 	}
 
-	public override void Write(CiProgram program)
+	public override void WriteProgram(CiProgram program)
 	{
 		this.Includes = new SortedSet<string>();
 		this.Throw = false;

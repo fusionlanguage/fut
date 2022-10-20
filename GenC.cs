@@ -348,7 +348,7 @@ public class GenC : GenCCpp
 		CiType baseType = type.GetBaseType();
 		switch (baseType) {
 		case CiIntegerType integer:
-			Write(GetIntegerTypeCode(integer, promote && type == baseType));
+			WriteTypeCode(GetIntegerTypeCode(integer, promote && type == baseType));
 			if (space)
 				WriteChar(' ');
 			break;
@@ -443,7 +443,7 @@ public class GenC : GenCCpp
 			WriteDefinition(method.Type, symbol, true, true);
 	}
 
-	protected override void Write(CiType type, bool promote)
+	protected override void WriteType(CiType type, bool promote)
 	{
 		WriteDefinition(type, () => {}, promote, type is CiClassType arrayPtr && arrayPtr.Class.Id == CiId.ArrayPtrClass);
 	}
@@ -488,7 +488,7 @@ public class GenC : GenCCpp
 		Write("CiShared_Make(");
 		lengthExpr.Accept(this, CiPriority.Argument);
 		Write(", sizeof(");
-		Write(elementType, false);
+		WriteType(elementType, false);
 		Write("), ");
 		if (elementType == CiSystem.StringStorageType) {
 			this.PtrConstruct = true;
@@ -643,7 +643,7 @@ public class GenC : GenCCpp
 		case CiId.ListClass:
 		case CiId.StackClass:
 			Write("g_array_new(FALSE, FALSE, sizeof(");
-			Write(klass.GetElementType(), false);
+			WriteType(klass.GetElementType(), false);
 			Write("))");
 			break;
 		case CiId.QueueClass:
@@ -1060,7 +1060,7 @@ public class GenC : GenCCpp
 	{
 		if (expr.Type is CiClassType list && list.Class.Id == CiId.ListClass) {
 			WriteChar('(');
-			Write(list.GetElementType(), false);
+			WriteType(list.GetElementType(), false);
 			Write(" *) ");
 			expr.Accept(this, CiPriority.Primary);
 			Write("->data");
@@ -1224,9 +1224,9 @@ public class GenC : GenCCpp
 	{
 		Write(", sizeof(");
 		TypeCode typeCode = GetTypeCode(elementType, false);
-		Write(typeCode);
+		WriteTypeCode(typeCode);
 		Write("), CiCompare_");
-		Write(typeCode);
+		WriteTypeCode(typeCode);
 		WriteChar(')');
 		this.Compares.Add(typeCode);
 	}
@@ -1468,7 +1468,7 @@ public class GenC : GenCCpp
 				WriteChar('(');
 			Write("(const ");
 			CiType elementType2 = ((CiClassType) obj.Type).GetElementType();
-			Write(elementType2, false);
+			WriteType(elementType2, false);
 			Write(" *) bsearch(&");
 			args[0].Accept(this, CiPriority.Primary); // TODO: not lvalue, promoted
 			Write(", ");
@@ -1505,7 +1505,7 @@ public class GenC : GenCCpp
 			else {
 				args[3].Accept(this, CiPriority.Mul);
 				Write(" * sizeof(");
-				Write(elementType, false);
+				WriteType(elementType, false);
 				WriteChar(')');
 			}
 			WriteChar(')');
@@ -1527,7 +1527,7 @@ public class GenC : GenCCpp
 					Write(", 0, ");
 					args[2].Accept(this, CiPriority.Mul);
 					Write(" * sizeof(");
-					Write(((CiClassType) obj.Type).GetElementType(), false);
+					WriteType(((CiClassType) obj.Type).GetElementType(), false);
 					WriteChar(')');
 				}
 				WriteChar(')');
@@ -1581,9 +1581,9 @@ public class GenC : GenCCpp
 				Write("string((const char * const");
 			}
 			else {
-				Write(typeCode);
+				WriteTypeCode(typeCode);
 				Write("((const ");
-				Write(typeCode);
+				WriteTypeCode(typeCode);
 			}
 			Write(" *) ");
 			obj.Accept(this, CiPriority.Primary);
@@ -1608,7 +1608,7 @@ public class GenC : GenCCpp
 			obj.Accept(this, CiPriority.Argument);
 			TypeCode typeCode2 = GetTypeCode(((CiClassType) obj.Type).GetElementType(), false);
 			Write(", CiCompare_");
-			Write(typeCode2);
+			WriteTypeCode(typeCode2);
 			WriteChar(')');
 			this.Compares.Add(typeCode2);
 			break;
@@ -1675,7 +1675,7 @@ public class GenC : GenCCpp
 				}
 				else {
 					Write("malloc(sizeof(");
-					Write(valueType, false);
+					WriteType(valueType, false);
 					Write("))");
 				}
 				break;
@@ -1816,7 +1816,7 @@ public class GenC : GenCCpp
 		Write("g_array_index(");
 		obj.Accept(this, CiPriority.Argument);
 		Write(", ");
-		Write(elementType, false);
+		WriteType(elementType, false);
 		Write(", ");
 	}
 
@@ -2083,7 +2083,7 @@ public class GenC : GenCCpp
 	{
 		OpenBlock();
 		int temporariesCount = this.CurrentTemporaries.Count;
-		Write(statement.Statements);
+		WriteStatements(statement.Statements);
 		int i = this.VarsToDestruct.Count;
 		for (; i > 0; i--) {
 			CiVar def = this.VarsToDestruct[i - 1];
@@ -2226,11 +2226,11 @@ public class GenC : GenCCpp
 			case CiId.ListClass:
 				Write("for (");
 				CiType elementType = klass.GetElementType();
-				Write(elementType, false);
+				WriteType(elementType, false);
 				Write(" const *");
 				WriteCamelCaseNotKeyword(element);
 				Write(" = (");
-				Write(elementType, false);
+				WriteType(elementType, false);
 				Write(" const *) ");
 				statement.Collection.Accept(this, CiPriority.Primary);
 				Write("->data, ");
@@ -2348,7 +2348,7 @@ public class GenC : GenCCpp
 		 || (statements[0] is CiConst konst && konst.Type is CiArrayStorageType))
 			WriteLine(';');
 		int varsToDestructCount = this.VarsToDestruct.Count;
-		Write(statements);
+		WriteStatements(statements);
 		TrimVarsToDestruct(varsToDestructCount);
 	}
 
@@ -2389,7 +2389,7 @@ public class GenC : GenCCpp
 		if (throwingMethod == null)
 			return false;
 
-		Write(statements, lastCallIndex);
+		WriteFirstStatements(statements, lastCallIndex);
 		Write("return ");
 		if (throwingMethod.Type is CiNumericType) {
 			if (throwingMethod.Type is CiIntegerType) {
@@ -2419,12 +2419,12 @@ public class GenC : GenCCpp
 		return true;
 	}
 
-	protected override void Write(List<CiStatement> statements)
+	protected override void WriteStatements(List<CiStatement> statements)
 	{
 		int i = statements.Count - 2;
 		if (i >= 0 && statements[i + 1] is CiReturn ret && TryWriteCallAndReturn(statements, i, ret.Value))
 			return;
-		base.Write(statements);
+		base.WriteStatements(statements);
 	}
 
 	protected override void WriteEnum(CiEnum enu)
@@ -2828,16 +2828,16 @@ public class GenC : GenCCpp
 		if (method.Body is CiBlock block) {
 			List<CiStatement> statements = block.Statements;
 			if (!block.CompletesNormally())
-				Write(statements);
+				WriteStatements(statements);
 			else if (method.Throws && method.Type == CiSystem.VoidType) {
 				if (statements.Count == 0 || !TryWriteCallAndReturn(statements, statements.Count - 1, null)) {
-					Write(statements);
+					WriteStatements(statements);
 					WriteDestructAll();
 					WriteLine("return true;");
 				}
 			}
 			else {
-				Write(statements);
+				WriteStatements(statements);
 				WriteDestructAll();
 			}
 		}
@@ -3056,16 +3056,16 @@ public class GenC : GenCCpp
 		foreach (TypeCode typeCode in this.Compares) {
 			WriteLine();
 			Write("static int CiCompare_");
-			Write(typeCode);
+			WriteTypeCode(typeCode);
 			WriteLine("(const void *pa, const void *pb)");
 			OpenBlock();
-			Write(typeCode);
+			WriteTypeCode(typeCode);
 			Write(" a = *(const ");
-			Write(typeCode);
+			WriteTypeCode(typeCode);
 			WriteLine(" *) pa;");
-			Write(typeCode);
+			WriteTypeCode(typeCode);
 			Write(" b = *(const ");
-			Write(typeCode);
+			WriteTypeCode(typeCode);
 			WriteLine(" *) pb;");
 			switch (typeCode) {
 			case TypeCode.Byte:
@@ -3087,11 +3087,11 @@ public class GenC : GenCCpp
 			if (typeCode == TypeCode.String)
 				Write("string(const char * const *a, size_t len, const char *");
 			else {
-				Write(typeCode);
+				WriteTypeCode(typeCode);
 				Write("(const ");
-				Write(typeCode);
+				WriteTypeCode(typeCode);
 				Write(" *a, size_t len, ");
-				Write(typeCode);
+				WriteTypeCode(typeCode);
 			}
 			WriteLine(" value)");
 			OpenBlock();
@@ -3113,19 +3113,19 @@ public class GenC : GenCCpp
 		WriteLine();
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
 			Write("static const ");
-			Write(TypeCode.Byte);
+			WriteTypeCode(TypeCode.Byte);
 			WriteChar(' ');
 			WriteResource(name, -1);
 			WriteChar('[');
 			VisitLiteralLong(resources[name].Length);
 			WriteLine("] = {");
 			WriteChar('\t');
-			Write(resources[name]);
+			WriteBytes(resources[name]);
 			WriteLine(" };");
 		}
 	}
 
-	public override void Write(CiProgram program)
+	public override void WriteProgram(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
 		string headerFile = Path.ChangeExtension(this.OutputFile, "h");

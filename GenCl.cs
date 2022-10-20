@@ -39,7 +39,7 @@ public class GenCl : GenC
 	{
 	}
 
-	protected override void Write(TypeCode typeCode)
+	protected override void WriteTypeCode(TypeCode typeCode)
 	{
 		switch (typeCode) {
 		case TypeCode.SByte:
@@ -296,7 +296,7 @@ public class GenCl : GenC
 		}
 	}
 
-	public override void Write(CiProgram program)
+	public override void WriteProgram(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
 		this.StringLength = false;

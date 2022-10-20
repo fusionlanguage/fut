@@ -366,7 +366,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void Write(byte[] array)
+	protected void WriteBytes(byte[] array)
 	{
 		for (int i = 0; i < array.Length; i++) {
 			WriteComma(i);
@@ -899,38 +899,38 @@ public abstract class GenBase : CiVisitor
 		WriteAdd(startIndex, length); // TODO: side effect
 	}
 
-	protected virtual void Write(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
+	protected virtual void WriteBinaryOperand(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
 	{
 		expr.Accept(this, parent);
 	}
 
-	protected CiExpr Write(CiBinaryExpr expr, bool parentheses, CiPriority left, string op, CiPriority right)
+	protected CiExpr WriteBinaryExpr(CiBinaryExpr expr, bool parentheses, CiPriority left, string op, CiPriority right)
 	{
 		if (parentheses)
 			WriteChar('(');
-		Write(expr.Left, left, expr);
+		WriteBinaryOperand(expr.Left, left, expr);
 		Write(op);
-		Write(expr.Right, right, expr);
+		WriteBinaryOperand(expr.Right, right, expr);
 		if (parentheses)
 			WriteChar(')');
 		return expr;
 	}
 
-	protected CiExpr Write(CiBinaryExpr expr, CiPriority parent, CiPriority child, string op)
+	protected CiExpr WriteBinaryExpr2(CiBinaryExpr expr, CiPriority parent, CiPriority child, string op)
 	{
-		return Write(expr, parent > child, child, op, child);
+		return WriteBinaryExpr(expr, parent > child, child, op, child);
 	}
 
 	protected static string GetEqOp(bool not) => not ? " != " : " == ";
 
 	protected virtual void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
-		Write(expr, parent, CiPriority.Equality, GetEqOp(not));
+		WriteBinaryExpr2(expr, parent, CiPriority.Equality, GetEqOp(not));
 	}
 
 	protected virtual void WriteAnd(CiBinaryExpr expr, CiPriority parent)
 	{
-		Write(expr, parent > CiPriority.CondAnd && parent != CiPriority.And, CiPriority.And, " & ", CiPriority.And);
+		WriteBinaryExpr(expr, parent > CiPriority.CondAnd && parent != CiPriority.And, CiPriority.And, " & ", CiPriority.And);
 	}
 
 	protected virtual void WriteAssignRight(CiBinaryExpr expr)
@@ -1043,27 +1043,27 @@ public abstract class GenBase : CiVisitor
 	{
 		switch (expr.Op) {
 		case CiToken.Plus:
-			return Write(expr, parent > CiPriority.Add || IsBitOp(parent), CiPriority.Add, " + ", CiPriority.Add);
+			return WriteBinaryExpr(expr, parent > CiPriority.Add || IsBitOp(parent), CiPriority.Add, " + ", CiPriority.Add);
 		case CiToken.Minus:
-			return Write(expr, parent > CiPriority.Add || IsBitOp(parent), CiPriority.Add, " - ", CiPriority.Mul);
+			return WriteBinaryExpr(expr, parent > CiPriority.Add || IsBitOp(parent), CiPriority.Add, " - ", CiPriority.Mul);
 		case CiToken.Asterisk:
-			return Write(expr, parent, CiPriority.Mul, " * ");
+			return WriteBinaryExpr2(expr, parent, CiPriority.Mul, " * ");
 		case CiToken.Slash:
-			return Write(expr, parent > CiPriority.Mul, CiPriority.Mul, " / ", CiPriority.Primary);
+			return WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " / ", CiPriority.Primary);
 		case CiToken.Mod:
-			return Write(expr, parent > CiPriority.Mul, CiPriority.Mul, " % ", CiPriority.Primary);
+			return WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " % ", CiPriority.Primary);
 		case CiToken.ShiftLeft:
-			return Write(expr, parent > CiPriority.Shift, CiPriority.Shift, " << ", CiPriority.Mul);
+			return WriteBinaryExpr(expr, parent > CiPriority.Shift, CiPriority.Shift, " << ", CiPriority.Mul);
 		case CiToken.ShiftRight:
-			return Write(expr, parent > CiPriority.Shift, CiPriority.Shift, " >> ", CiPriority.Mul);
+			return WriteBinaryExpr(expr, parent > CiPriority.Shift, CiPriority.Shift, " >> ", CiPriority.Mul);
 		case CiToken.Less:
-			return Write(expr, parent, CiPriority.Rel, " < ");
+			return WriteBinaryExpr2(expr, parent, CiPriority.Rel, " < ");
 		case CiToken.LessOrEqual:
-			return Write(expr, parent, CiPriority.Rel, " <= ");
+			return WriteBinaryExpr2(expr, parent, CiPriority.Rel, " <= ");
 		case CiToken.Greater:
-			return Write(expr, parent, CiPriority.Rel, " > ");
+			return WriteBinaryExpr2(expr, parent, CiPriority.Rel, " > ");
 		case CiToken.GreaterOrEqual:
-			return Write(expr, parent, CiPriority.Rel, " >= ");
+			return WriteBinaryExpr2(expr, parent, CiPriority.Rel, " >= ");
 		case CiToken.Equal:
 			WriteEqual(expr, parent, false);
 			return expr;
@@ -1074,13 +1074,13 @@ public abstract class GenBase : CiVisitor
 			WriteAnd(expr, parent);
 			return expr;
 		case CiToken.Or:
-			return Write(expr, parent, CiPriority.Or, " | ");
+			return WriteBinaryExpr2(expr, parent, CiPriority.Or, " | ");
 		case CiToken.Xor:
-			return Write(expr, parent > CiPriority.Xor || parent == CiPriority.Or, CiPriority.Xor, " ^ ", CiPriority.Xor);
+			return WriteBinaryExpr(expr, parent > CiPriority.Xor || parent == CiPriority.Or, CiPriority.Xor, " ^ ", CiPriority.Xor);
 		case CiToken.CondAnd:
-			return Write(expr, parent > CiPriority.CondAnd || parent == CiPriority.CondOr, CiPriority.CondAnd, " && ", CiPriority.CondAnd);
+			return WriteBinaryExpr(expr, parent > CiPriority.CondAnd || parent == CiPriority.CondOr, CiPriority.CondAnd, " && ", CiPriority.CondAnd);
 		case CiToken.CondOr:
-			return Write(expr, parent, CiPriority.CondOr, " || ");
+			return WriteBinaryExpr2(expr, parent, CiPriority.CondOr, " || ");
 		case CiToken.Assign:
 			WriteAssign(expr, parent);
 			return expr;
@@ -1172,21 +1172,21 @@ public abstract class GenBase : CiVisitor
 			WriteAssert(statement);
 	}
 
-	protected void Write(List<CiStatement> statements, int length)
+	protected void WriteFirstStatements(List<CiStatement> statements, int count)
 	{
-		for (int i = 0; i < length; i++)
+		for (int i = 0; i < count; i++)
 			statements[i].AcceptStatement(this);
 	}
 
-	protected virtual void Write(List<CiStatement> statements)
+	protected virtual void WriteStatements(List<CiStatement> statements)
 	{
-		Write(statements, statements.Count);
+		WriteFirstStatements(statements, statements.Count);
 	}
 
 	public override void VisitBlock(CiBlock statement)
 	{
 		OpenBlock();
-		Write(statement.Statements);
+		WriteStatements(statement.Statements);
 		CloseBlock();
 	}
 
@@ -1269,7 +1269,7 @@ public abstract class GenBase : CiVisitor
 
 	protected virtual void WriteSwitchValue(CiExpr expr) => expr.Accept(this, CiPriority.Argument);
 
-	protected virtual void WriteCaseBody(List<CiStatement> statements) => Write(statements);
+	protected virtual void WriteCaseBody(List<CiStatement> statements) => WriteStatements(statements);
 
 	public override void VisitSwitch(CiSwitch statement)
 	{
@@ -1345,7 +1345,7 @@ public abstract class GenBase : CiVisitor
 		}
 		if (klass.Constructor != null) {
 			this.CurrentMethod = klass.Constructor;
-			Write(((CiBlock) klass.Constructor.Body).Statements);
+			WriteStatements(((CiBlock) klass.Constructor.Body).Statements);
 			this.CurrentMethod = null;
 		}
 	}
@@ -1353,7 +1353,7 @@ public abstract class GenBase : CiVisitor
 	protected void FlattenBlock(CiStatement statement)
 	{
 		if (statement is CiBlock block)
-			Write(block.Statements);
+			WriteStatements(block.Statements);
 		else
 			statement.AcceptStatement(this);
 	}
@@ -1463,7 +1463,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	public abstract void Write(CiProgram program);
+	public abstract void WriteProgram(CiProgram program);
 }
 
 }

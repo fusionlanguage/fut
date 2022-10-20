@@ -177,15 +177,15 @@ public class GenCpp : GenCCpp
 		Write("std::");
 		Write(name);
 		WriteChar('<');
-		Write(elementType, false);
+		WriteType(elementType, false);
 		WriteChar('>');
 	}
 
-	protected override void Write(CiType type, bool promote)
+	protected override void WriteType(CiType type, bool promote)
 	{
 		switch (type) {
 		case CiIntegerType integer:
-			Write(GetIntegerTypeCode(integer, promote));
+			WriteTypeCode(GetIntegerTypeCode(integer, promote));
 			break;
 		case CiDynamicPtrType dynamic:
 			switch (dynamic.Class.Id) {
@@ -196,7 +196,7 @@ public class GenCpp : GenCCpp
 			case CiId.ArrayPtrClass:
 				Include("memory");
 				Write("std::shared_ptr<");
-				Write(dynamic.GetElementType(), false);
+				WriteType(dynamic.GetElementType(), false);
 				Write("[]>");
 				break;
 			default:
@@ -237,7 +237,7 @@ public class GenCpp : GenCCpp
 				}
 			}
 			else if (klass.Class.Id == CiId.ArrayPtrClass) {
-				Write(klass.GetElementType(), false);
+				WriteType(klass.GetElementType(), false);
 				if (!(klass is CiReadWriteClassType))
 					Write(" const");
 			}
@@ -258,14 +258,14 @@ public class GenCpp : GenCCpp
 				Write("std::");
 				Write(cppType);
 				WriteChar('<');
-				Write(klass.TypeArg0, false);
+				WriteType(klass.TypeArg0, false);
 				if (klass is CiArrayStorageType arrayStorage) {
 					Write(", ");
 					VisitLiteralLong(arrayStorage.Length);
 				}
 				else if (klass.Class.TypeParameterCount == 2) {
 					Write(", ");
-					Write(klass.GetValueType(), false);
+					WriteType(klass.GetValueType(), false);
 				}
 				WriteChar('>');
 			}
@@ -282,7 +282,7 @@ public class GenCpp : GenCCpp
 	{
 		Include("memory");
 		Write("std::make_shared<");
-		Write(elementType, false);
+		WriteType(elementType, false);
 		Write("[]>(");
 		lengthExpr.Accept(this, CiPriority.Argument);
 		WriteChar(')');
@@ -328,7 +328,7 @@ public class GenCpp : GenCCpp
 		}
 		else {
 			Write("static_cast<");
-			Write(type, false);
+			WriteType(type, false);
 		}
 		Write(">(");
 		GetStaticCastInner(type, expr).Accept(this, CiPriority.Argument);
@@ -746,7 +746,7 @@ public class GenCpp : GenCCpp
 				Write("[](");
 				WriteCollectionType("queue", elementType);
 				Write(" &q) { ");
-				Write(elementType, false);
+				WriteType(elementType, false);
 				Write(" front = q.front(); q.pop(); return front; }(");
 				WriteCollectionObject(obj, CiPriority.Argument);
 				WriteChar(')');
@@ -774,7 +774,7 @@ public class GenCpp : GenCCpp
 				Write("[](");
 				WriteCollectionType("stack", elementType);
 				Write(" &s) { ");
-				Write(elementType, false);
+				WriteType(elementType, false);
 				Write(" top = s.top(); s.pop(); return top; }(");
 				WriteCollectionObject(obj, CiPriority.Argument);
 				WriteChar(')');
@@ -1096,7 +1096,7 @@ public class GenCpp : GenCCpp
 	public override void VisitLambdaExpr(CiLambdaExpr expr)
 	{
 		Write("[](const ");
-		Write(expr.First.Type, false);
+		WriteType(expr.First.Type, false);
 		Write(" &");
 		WriteName(expr.First);
 		Write(") { return ");
@@ -1380,7 +1380,7 @@ public class GenCpp : GenCCpp
 			return;
 		this.StringSwitchesWithGoto.Clear();
 		WriteLine();
-		Write(method.Type, true);
+		WriteType(method.Type, true);
 		WriteChar(' ');
 		Write(method.Parent.Name);
 		Write("::");
@@ -1410,7 +1410,7 @@ public class GenCpp : GenCCpp
 			if (define) {
 				WriteLine(" = {");
 				WriteChar('\t');
-				Write(resources[name]);
+				WriteBytes(resources[name]);
 				Write(" }");
 			}
 			WriteLine(';');
@@ -1419,7 +1419,7 @@ public class GenCpp : GenCCpp
 		CloseBlock();
 	}
 
-	public override void Write(CiProgram program)
+	public override void WriteProgram(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
 		string headerFile = Path.ChangeExtension(this.OutputFile, "hpp");

@@ -234,7 +234,7 @@ public class GenJava : GenTyped
 		return TypeCode.SByte; // store unsigned bytes in Java signed bytes
 	}
 
-	void Write(TypeCode typeCode, bool needClass)
+	void WriteTypeCode(TypeCode typeCode, bool needClass)
 	{
 		switch (typeCode) {
 		case TypeCode.Byte:
@@ -246,32 +246,32 @@ public class GenJava : GenTyped
 		}
 	}
 
-	protected override void Write(TypeCode typeCode) => Write(typeCode, false);
+	protected override void WriteTypeCode(TypeCode typeCode) => WriteTypeCode(typeCode, false);
 
 	void WriteCollectionType(string name, CiType elementType)
 	{
 		Include("java.util." + name);
 		Write(name);
 		WriteChar('<');
-		Write(elementType, false, true);
+		WriteType(elementType, false, true);
 		WriteChar('>');
 	}
 
-	void Write(string name, CiClassType dict)
+	void WriteDictType(string name, CiClassType dict)
 	{
 		Write(name);
 		WriteChar('<');
-		Write(dict.GetKeyType(), false, true);
+		WriteType(dict.GetKeyType(), false, true);
 		Write(", ");
-		Write(dict.GetValueType(), false, true);
+		WriteType(dict.GetValueType(), false, true);
 		WriteChar('>');
 	}
 
-	void Write(CiType type, bool promote, bool needClass)
+	void WriteType(CiType type, bool promote, bool needClass)
 	{
 		switch (type) {
 		case CiIntegerType integer:
-			Write(GetIntegerTypeCode(integer, promote), needClass);
+			WriteTypeCode(GetIntegerTypeCode(integer, promote), needClass);
 			break;
 		case CiEnum enu:
 			Write(enu == CiSystem.BoolType
@@ -285,7 +285,7 @@ public class GenJava : GenTyped
 				break;
 			case CiId.ArrayPtrClass:
 			case CiId.ArrayStorageClass:
-				Write(klass.GetElementType(), false);
+				WriteType(klass.GetElementType(), false);
 				Write("[]");
 				break;
 			case CiId.ListClass:
@@ -302,15 +302,15 @@ public class GenJava : GenTyped
 				break;
 			case CiId.DictionaryClass:
 				Include("java.util.HashMap");
-				Write("HashMap", klass);
+				WriteDictType("HashMap", klass);
 				break;
 			case CiId.SortedDictionaryClass:
 				Include("java.util.TreeMap");
-				Write("TreeMap", klass);
+				WriteDictType("TreeMap", klass);
 				break;
 			case CiId.OrderedDictionaryClass:
 				Include("java.util.LinkedHashMap");
-				Write("LinkedHashMap", klass);
+				WriteDictType("LinkedHashMap", klass);
 				break;
 			case CiId.RegexClass:
 				Include("java.util.regex.Pattern");
@@ -334,12 +334,12 @@ public class GenJava : GenTyped
 		}
 	}
 
-	protected override void Write(CiType type, bool promote) => Write(type, promote, false);
+	protected override void WriteType(CiType type, bool promote) => WriteType(type, promote, false);
 
 	protected override void WriteNew(CiReadWriteClassType klass, CiPriority parent)
 	{
 		Write("new ");
-		Write(klass, false, false);
+		WriteType(klass, false, false);
 		Write("()");
 	}
 
@@ -856,7 +856,7 @@ public class GenJava : GenTyped
 		case CiId.SortedDictionaryClass:
 		case CiId.OrderedDictionaryClass:
 			Include("java.util.Map");
-			Write("Map.Entry", klass);
+			WriteDictType("Map.Entry", klass);
 			WriteChar(' ');
 			Write(statement.GetVar().Name);
 			Write(" : ");
@@ -1118,7 +1118,7 @@ public class GenJava : GenTyped
 		CloseFile();
 	}
 
-	public override void Write(CiProgram program)
+	public override void WriteProgram(CiProgram program)
 	{
 		if (Directory.Exists(this.OutputFile))
 			this.OutputDirectory = this.OutputFile;

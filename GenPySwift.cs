@@ -126,7 +126,7 @@ public abstract class GenPySwift : GenBase
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
 		if (IsPtr(expr.Left) || IsPtr(expr.Right))
-			Write(expr, parent, CiPriority.Equality, GetReferenceEqOp(not));
+			WriteBinaryExpr2(expr, parent, CiPriority.Equality, GetReferenceEqOp(not));
 		else
 			base.WriteEqual(expr, parent, not);
 	}
@@ -223,10 +223,7 @@ public abstract class GenPySwift : GenBase
 		CloseChild();
 	}
 
-	public override void VisitBlock(CiBlock statement)
-	{
-		Write(statement.Statements);
-	}
+	public override void VisitBlock(CiBlock statement) => WriteStatements(statement.Statements);
 
 	bool OpenCond(string statement, CiExpr cond, CiPriority parent)
 	{

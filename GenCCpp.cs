@@ -39,7 +39,7 @@ public abstract class GenCCpp : GenTyped
 
 	protected override int GetLiteralChars() => 127;
 
-	protected override void Write(TypeCode typeCode)
+	protected override void WriteTypeCode(TypeCode typeCode)
 	{
 		switch (typeCode) {
 		case TypeCode.SByte:
@@ -234,7 +234,7 @@ public abstract class GenCCpp : GenTyped
 			WriteLine();
 			Write("do ");
 			OpenBlock();
-			Write(body, length);
+			WriteFirstStatements(body, length);
 			CloseBlock();
 			WriteLine("while (0);");
 			this.Indent--;
@@ -244,7 +244,7 @@ public abstract class GenCCpp : GenTyped
 		else {
 			WriteChar(' ');
 			OpenBlock();
-			Write(body, length);
+			WriteFirstStatements(body, length);
 			CloseBlock();
 		}
 	}

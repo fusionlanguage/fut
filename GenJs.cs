@@ -954,14 +954,14 @@ public class GenJs : GenBase
 			WriteResource(name, -1);
 			WriteLine(" = new Uint8Array([");
 			WriteChar('\t');
-			Write(resources[name]);
+			WriteBytes(resources[name]);
 			WriteLine(" ]);");
 		}
 		WriteLine();
 		CloseBlock();
 	}
 
-	public override void Write(CiProgram program)
+	public override void WriteProgram(CiProgram program)
 	{
 		CreateFile(this.OutputFile);
 		WriteLine();

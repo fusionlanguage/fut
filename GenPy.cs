@@ -307,9 +307,9 @@ public class GenPy : GenPySwift
 			return expr;
 
 		case CiToken.CondAnd:
-			return Write(expr, parent > CiPriority.CondAnd || parent == CiPriority.CondOr, CiPriority.CondAnd, " and ", CiPriority.CondAnd);
+			return WriteBinaryExpr(expr, parent > CiPriority.CondAnd || parent == CiPriority.CondOr, CiPriority.CondAnd, " and ", CiPriority.CondAnd);
 		case CiToken.CondOr:
-			return Write(expr, parent, CiPriority.CondOr, " or ");
+			return WriteBinaryExpr2(expr, parent, CiPriority.CondOr, " or ");
 
 		case CiToken.Assign:
 			if (this.AtLineStart) {
@@ -994,7 +994,7 @@ public class GenPy : GenPySwift
 	void WritePyCaseBody(List<CiStatement> body)
 	{
 		OpenChild();
-		Write(body, CiSwitch.LengthWithoutTrailingBreak(body));
+		WriteFirstStatements(body, CiSwitch.LengthWithoutTrailingBreak(body));
 		CloseChild();
 	}
 
@@ -1196,7 +1196,7 @@ public class GenPy : GenPySwift
 		CloseChild();
 	}
 
-	public override void Write(CiProgram program)
+	public override void WriteProgram(CiProgram program)
 	{
 		this.Includes = new SortedSet<string>();
 		this.SwitchBreak = false;

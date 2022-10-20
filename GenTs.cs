@@ -63,10 +63,10 @@ public class GenTs : GenJs
 	{
 		WriteName(value);
 		Write(": ");
-		Write(value.Type);
+		WriteType(value.Type);
 	}
 
-	void Write(CiType type, bool readOnly = false)
+	void WriteType(CiType type, bool readOnly = false)
 	{
 		switch (type) {
 		case CiNumericType _:
@@ -90,7 +90,7 @@ public class GenTs : GenJs
 					Write("readonly ");
 				if (klass.GetElementType().IsNullable())
 					WriteChar('(');
-				Write(klass.GetElementType());
+				WriteType(klass.GetElementType());
 				if (klass.GetElementType().IsNullable())
 					WriteChar(')');
 				Write("[]");
@@ -106,7 +106,7 @@ public class GenTs : GenJs
 					break;
 				case CiId.HashSetClass:
 					Write("Set<");
-					Write(klass.GetElementType(), false);
+					WriteType(klass.GetElementType(), false);
 					WriteChar('>');
 					break;
 				case CiId.DictionaryClass:
@@ -114,18 +114,18 @@ public class GenTs : GenJs
 					if (klass.GetKeyType() is CiEnum)
 						Write("Partial<");
 					Write("Record<");
-					Write(klass.GetKeyType());
+					WriteType(klass.GetKeyType());
 					Write(", ");
-					Write(klass.GetValueType());
+					WriteType(klass.GetValueType());
 					WriteChar('>');
 					if (klass.GetKeyType() is CiEnum)
 						WriteChar('>');
 					break;
 				case CiId.OrderedDictionaryClass:
 					Write("Map<");
-					Write(klass.GetKeyType());
+					WriteType(klass.GetKeyType());
 					Write(", ");
-					Write(klass.GetValueType());
+					WriteType(klass.GetValueType());
 					WriteChar('>');
 					break;
 				case CiId.RegexClass:
@@ -182,7 +182,7 @@ public class GenTs : GenJs
 		Write("static readonly ");
 		WriteName(konst);
 		Write(": ");
-		Write(konst.Type, true);
+		WriteType(konst.Type, true);
 		if (this.GenFullCode)
 			WriteVarInit(konst);
 		WriteLine(';');
@@ -235,13 +235,13 @@ public class GenTs : GenJs
 			if (param.Value != null && !this.GenFullCode)
 				WriteChar('?');
 			Write(": ");
-			Write(param.Type);
+			WriteType(param.Type);
 			if (param.Value != null && this.GenFullCode)
 				WriteVarInit(param);
 			i++;
 		}
 		Write("): ");
-		Write(method.Type);
+		WriteType(method.Type);
 		if (this.GenFullCode)
 			WriteBody(method);
 		else
@@ -288,7 +288,7 @@ public class GenTs : GenJs
 		CloseBlock();
 	}
 
-	public override void Write(CiProgram program)
+	public override void WriteProgram(CiProgram program)
 	{
 		CreateFile(this.OutputFile);
 		if (this.GenFullCode)

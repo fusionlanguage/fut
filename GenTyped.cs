@@ -25,13 +25,13 @@ namespace Foxoft.Ci
 
 public abstract class GenTyped : GenBase
 {
-	protected abstract void Write(TypeCode typeCode);
+	protected abstract void WriteTypeCode(TypeCode typeCode);
 
-	protected abstract void Write(CiType type, bool promote);
+	protected abstract void WriteType(CiType type, bool promote);
 
 	protected override void WriteTypeAndName(CiNamedValue value)
 	{
-		Write(value.Type, true);
+		WriteType(value.Type, true);
 		WriteChar(' ');
 		WriteName(value);
 	}
@@ -54,7 +54,7 @@ public abstract class GenTyped : GenBase
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		Write("new ");
-		Write(elementType.GetBaseType(), false);
+		WriteType(elementType.GetBaseType(), false);
 		WriteChar('[');
 		lengthExpr.Accept(this, CiPriority.Argument);
 		WriteChar(']');
@@ -160,7 +160,7 @@ public abstract class GenTyped : GenBase
 	protected void WriteStaticCastType(CiType type)
 	{
 		WriteChar('(');
-		Write(type, false);
+		WriteType(type, false);
 		Write(") ");
 	}
 
