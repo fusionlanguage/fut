@@ -32,7 +32,7 @@ public abstract class GenTyped : GenBase
 	protected override void WriteTypeAndName(CiNamedValue value)
 	{
 		Write(value.Type, true);
-		Write(' ');
+		WriteChar(' ');
 		WriteName(value);
 	}
 
@@ -40,7 +40,7 @@ public abstract class GenTyped : GenBase
 	{
 		base.VisitLiteralDouble(value);
 		if ((float) value == value)
-			Write('f');
+			WriteChar('f');
 	}
 
 	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
@@ -55,14 +55,14 @@ public abstract class GenTyped : GenBase
 	{
 		Write("new ");
 		Write(elementType.GetBaseType(), false);
-		Write('[');
+		WriteChar('[');
 		lengthExpr.Accept(this, CiPriority.Argument);
-		Write(']');
+		WriteChar(']');
 		while (elementType.IsArray()) {
-			Write('[');
+			WriteChar('[');
 			if (elementType is CiArrayStorageType arrayStorage)
 				arrayStorage.LengthExpr.Accept(this, CiPriority.Argument);
-			Write(']');
+			WriteChar(']');
 			elementType = ((CiClassType) elementType).GetElementType();
 		}
 	}
@@ -159,7 +159,7 @@ public abstract class GenTyped : GenBase
 
 	protected void WriteStaticCastType(CiType type)
 	{
-		Write('(');
+		WriteChar('(');
 		Write(type, false);
 		Write(") ");
 	}
@@ -216,7 +216,7 @@ public abstract class GenTyped : GenBase
 		else if (type == CiSystem.FloatType && expr.Type == CiSystem.DoubleType) {
 			if (expr is CiLiteralDouble literal) {
 				base.VisitLiteralDouble(literal.Value);
-				Write('f');
+				WriteChar('f');
 			}
 			else
 				WriteStaticCast(type, expr);

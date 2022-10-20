@@ -86,7 +86,7 @@ public class GenCl : GenC
 		case "local":
 		case "private":
 			WriteCamelCase(name);
-			Write('_');
+			WriteChar('_');
 			break;
 		default:
 			base.WriteCamelCaseNotKeyword(name);
@@ -99,7 +99,7 @@ public class GenCl : GenC
 	protected override void WriteSubstringEqual(bool cast, CiExpr ptr, CiExpr offset, string literal, CiPriority parent, bool not)
 	{
 		if (not)
-			Write('!');
+			WriteChar('!');
 		if (cast) {
 			this.BytesEqualsString = true;
 			Write("CiBytes_Equals(");
@@ -111,14 +111,14 @@ public class GenCl : GenC
 		WriteArrayPtrAdd(ptr, offset);
 		Write(", ");
 		VisitLiteralString(literal);
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected override void WriteEqualStringInternal(CiExpr left, CiExpr right, CiPriority parent, bool not)
 	{
 		this.StringEquals = true;
 		if (not)
-			Write('!');
+			WriteChar('!');
 		WriteCall("CiString_Equals", left, right);
 	}
 
@@ -137,12 +137,12 @@ public class GenCl : GenC
 			WritePrintf(interpolated, newLine);
 		else {
 			Write("\"%");
-			Write(args[0].Type is CiIntegerType ? 'd' : args[0].Type is CiFloatingType ? 'g' : 's');
+			WriteChar(args[0].Type is CiIntegerType ? 'd' : args[0].Type is CiFloatingType ? 'g' : 's');
 			if (newLine)
 				Write("\\n");
 			Write("\", ");
 			args[0].Accept(this, CiPriority.Argument);
-			Write(')');
+			WriteChar(')');
 		}
 	}
 
@@ -152,12 +152,12 @@ public class GenCl : GenC
 		case CiId.StringStartsWith:
 			if (IsOneAsciiString(args[0], out char c)) {
 				if (parent > CiPriority.Equality)
-					Write('(');
+					WriteChar('(');
 				obj.Accept(this, CiPriority.Primary);
 				Write("[0] == ");
 				VisitLiteralChar(c);
 				if (parent > CiPriority.Equality)
-					Write(')');
+					WriteChar(')');
 			}
 			else {
 				this.StringStartsWith = true;
@@ -168,22 +168,22 @@ public class GenCl : GenC
 			if (args.Count != 1)
 				throw new NotImplementedException("Substring");
 			if (parent > CiPriority.Add)
-				Write('(');
+				WriteChar('(');
 			WriteAdd(obj, args[0]);
 			if (parent > CiPriority.Add)
-				Write(')');
+				WriteChar(')');
 			break;
 		case CiId.ArrayCopyTo:
 			Write("for (size_t _i = 0; _i < ");
 			args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
 			WriteLine("; _i++)");
-			Write('\t');
+			WriteChar('\t');
 			args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
-			Write('[');
+			WriteChar('[');
 			StartAdd(args[2]); // FIXME: side effect in every iteration
 			Write("_i] = ");
 			obj.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
-			Write('[');
+			WriteChar('[');
 			StartAdd(args[0]); // FIXME: side effect in every iteration
 			Write("_i]");
 			break;
@@ -204,9 +204,9 @@ public class GenCl : GenC
 			Write("for (size_t _i = 0; ");
 			args[0].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
 			WriteLine("[_i] != '\\0'; _i++)");
-			Write('\t');
+			WriteChar('\t');
 			args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
-			Write('[');
+			WriteChar('[');
 			StartAdd(args[2]); // FIXME: side effect in every iteration
 			Write("_i] = ");
 			args[0].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration

@@ -52,7 +52,7 @@ public class GenTs : GenJs
 		Write(enu.Documentation);
 		Write("export enum ");
 		Write(enu.Name);
-		Write(' ');
+		WriteChar(' ');
 		OpenBlock();
 		enu.AcceptValues(this);
 		WriteLine();
@@ -89,10 +89,10 @@ public class GenTs : GenJs
 				if (readOnly)
 					Write("readonly ");
 				if (klass.GetElementType().IsNullable())
-					Write('(');
+					WriteChar('(');
 				Write(klass.GetElementType());
 				if (klass.GetElementType().IsNullable())
-					Write(')');
+					WriteChar(')');
 				Write("[]");
 				break;
 			default:
@@ -107,7 +107,7 @@ public class GenTs : GenJs
 				case CiId.HashSetClass:
 					Write("Set<");
 					Write(klass.GetElementType(), false);
-					Write('>');
+					WriteChar('>');
 					break;
 				case CiId.DictionaryClass:
 				case CiId.SortedDictionaryClass:
@@ -117,16 +117,16 @@ public class GenTs : GenJs
 					Write(klass.GetKeyType());
 					Write(", ");
 					Write(klass.GetValueType());
-					Write('>');
+					WriteChar('>');
 					if (klass.GetKeyType() is CiEnum)
-						Write('>');
+						WriteChar('>');
 					break;
 				case CiId.OrderedDictionaryClass:
 					Write("Map<");
 					Write(klass.GetKeyType());
 					Write(", ");
 					Write(klass.GetValueType());
-					Write('>');
+					WriteChar('>');
 					break;
 				case CiId.RegexClass:
 					Write("RegExp");
@@ -139,7 +139,7 @@ public class GenTs : GenJs
 					break;
 				}
 				if (readOnly && klass.Class.TypeParameterCount > 0)
-					Write('>');
+					WriteChar('>');
 				break;
 			}
 			if (type.IsNullable())
@@ -226,14 +226,14 @@ public class GenTs : GenJs
 			throw new NotImplementedException(method.CallType.ToString());
 		}
 		WriteName(method);
-		Write('(');
+		WriteChar('(');
 		int i = 0;
 		for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 			if (i > 0)
 				Write(", ");
 			WriteName(param);
 			if (param.Value != null && !this.GenFullCode)
-				Write('?');
+				WriteChar('?');
 			Write(": ");
 			Write(param.Type);
 			if (param.Value != null && this.GenFullCode)

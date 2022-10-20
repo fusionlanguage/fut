@@ -112,12 +112,12 @@ public abstract class GenCCpp : GenTyped
 			return;
 		}
 		if (parent > CiPriority.Equality)
-			Write('(');
+			WriteChar('(');
 		WriteCoerced(coercedType, expr.Left, CiPriority.Equality);
 		Write(GetEqOp(not));
 		WriteCoerced(coercedType, expr.Right, CiPriority.Equality);
 		if (parent > CiPriority.Equality)
-			Write(')');
+			WriteChar(')');
 	}
 
 	protected static bool IsStringEmpty(CiBinaryExpr expr, out CiExpr str)
@@ -183,7 +183,7 @@ public abstract class GenCCpp : GenTyped
 
 	protected void WriteStringLiteralWithNewLine(string s)
 	{
-		Write('"');
+		WriteChar('"');
 		Write(s);
 		Write("\\n\"");
 	}
@@ -201,7 +201,7 @@ public abstract class GenCCpp : GenTyped
 		if (statement.Message == null)
 			statement.Cond.Accept(this, CiPriority.Argument);
 		else if (statement.Cond is CiLiteralFalse) {
-			Write('!');
+			WriteChar('!');
 			statement.Message.Accept(this, CiPriority.Primary);
 		}
 		else {
@@ -242,7 +242,7 @@ public abstract class GenCCpp : GenTyped
 		else if (length == 1)
 			WriteChild(body[0]);
 		else {
-			Write(' ');
+			WriteChar(' ');
 			OpenBlock();
 			Write(body, length);
 			CloseBlock();
@@ -270,7 +270,7 @@ public abstract class GenCCpp : GenTyped
 				WriteEqualString(statement.Value, caseValue, kase.Values.Count == 1 ? CiPriority.Argument : CiPriority.CondOr, false); // FIXME: side effect
 				op = " || ";
 			}
-			Write(')');
+			WriteChar(')');
 			WriteIfCaseBody(kase.Body, gotoId < 0);
 			op = "else if (";
 		}

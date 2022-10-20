@@ -122,7 +122,7 @@ public class GenPy : GenPySwift
 		case "with":
 		case "yield":
 			Write(name);
-			Write('_');
+			WriteChar('_');
 			break;
 		default:
 			WriteLowercaseWithUnderscores(name);
@@ -135,15 +135,15 @@ public class GenPy : GenPySwift
 		switch (symbol) {
 		case CiContainerType container:
 			if (!container.IsPublic)
-				Write('_');
+				WriteChar('_');
 			Write(symbol.Name);
 			break;
 		case CiConst konst:
 			if (konst.Visibility != CiVisibility.Public)
-				Write('_');
+				WriteChar('_');
 			if (konst.InMethod != null) {
 				WriteUppercaseWithUnderscores(konst.InMethod.Name);
-				Write('_');
+				WriteChar('_');
 			}
 			WriteUppercaseWithUnderscores(symbol.Name);
 			break;
@@ -154,7 +154,7 @@ public class GenPy : GenPySwift
 			if (member.Visibility == CiVisibility.Public)
 				WriteNameNotKeyword(symbol.Name);
 			else {
-				Write('_');
+				WriteChar('_');
 				WriteLowercaseWithUnderscores(symbol.Name);
 			}
 			break;
@@ -170,7 +170,7 @@ public class GenPy : GenPySwift
 		if (symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiStringType) {
 			Write("ord(");
 			WriteNameNotKeyword(symbol.Name);
-			Write(')');
+			WriteChar(')');
 		}
 		else
 			base.WriteLocalName(symbol, parent);
@@ -185,11 +185,11 @@ public class GenPy : GenPySwift
 			else {
 				Include("array");
 				Write("array.array(\"");
-				Write(c);
+				WriteChar(c);
 				Write("\", ");
 			}
 			base.VisitAggregateInitializer(expr);
-			Write(')');
+			WriteChar(')');
 		}
 		else
 			base.VisitAggregateInitializer(expr);
@@ -200,31 +200,31 @@ public class GenPy : GenPySwift
 		Write("f\"");
 		foreach (CiInterpolatedPart part in expr.Parts) {
 			WriteDoubling(part.Prefix, '{');
-			Write('{');
+			WriteChar('{');
 			part.Argument.Accept(this, CiPriority.Argument);
 			if (part.WidthExpr != null || part.Precision >= 0 || (part.Format != ' ' && part.Format != 'D'))
-				Write(':');
+				WriteChar(':');
 			if (part.WidthExpr != null) {
 				if (part.Width >= 0) {
 					if (!(part.Argument.Type is CiNumericType))
-						Write('>');
+						WriteChar('>');
 					VisitLiteralLong(part.Width);
 				}
 				else {
-					Write('<');
+					WriteChar('<');
 					VisitLiteralLong(-part.Width);
 				}
 			}
 			if (part.Precision >= 0) {
-				Write(part.Argument.Type is CiIntegerType ? '0' : '.');
+				WriteChar(part.Argument.Type is CiIntegerType ? '0' : '.');
 				VisitLiteralLong(part.Precision);
 			}
 			if (part.Format != ' ' && part.Format != 'D')
-				Write(part.Format);
-			Write('}');
+				WriteChar(part.Format);
+			WriteChar('}');
 		}
 		WriteDoubling(expr.Suffix, '{');
-		Write('"');
+		WriteChar('"');
 		return expr;
 	}
 
@@ -232,11 +232,11 @@ public class GenPy : GenPySwift
 	{
 		if (expr.Op == CiToken.ExclamationMark) {
 			if (parent > CiPriority.CondAnd)
-				Write('(');
+				WriteChar('(');
 			Write("not ");
 			expr.Inner.Accept(this, CiPriority.Or);
 			if (parent > CiPriority.CondAnd)
-				Write(')');
+				WriteChar(')');
 			return expr;
 		}
 		return base.VisitPrefixExpr(expr, parent);
@@ -248,7 +248,7 @@ public class GenPy : GenPySwift
 	{
 		Write("ord(");
 		WriteIndexing(expr, CiPriority.Argument);
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected override void WriteStringLength(CiExpr expr) => WriteCall("len", expr);
@@ -292,7 +292,7 @@ public class GenPy : GenPySwift
 			if (expr.Left is CiRangeType leftRange && leftRange.Min >= 0
 			 && expr.Right is CiRangeType rightRange && rightRange.Min >= 0) {
 				if (parent > CiPriority.Or)
-					Write('(');
+					WriteChar('(');
 				floorDiv = true;
 			}
 			else {
@@ -303,7 +303,7 @@ public class GenPy : GenPySwift
 			Write(floorDiv ? " // " : " / ");
 			expr.Right.Accept(this, CiPriority.Primary);
 			if (!floorDiv || parent > CiPriority.Or)
-				Write(')');
+				WriteChar(')');
 			return expr;
 
 		case CiToken.CondAnd:
@@ -345,11 +345,11 @@ public class GenPy : GenPySwift
 					right = rightBinary.Left; // TODO: side effect
 				}
 				expr.Left.Accept(this, CiPriority.Assign);
-				Write(' ');
+				WriteChar(' ');
 				if (expr.Op == CiToken.DivAssign && expr.Type is CiIntegerType)
-					Write('/');
+					WriteChar('/');
 				Write(expr.GetOpString());
-				Write(' ');
+				WriteChar(' ');
 				right.Accept(this, CiPriority.Argument);
 			}
 			return expr;
@@ -359,7 +359,7 @@ public class GenPy : GenPySwift
 			expr.Left.Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteName((CiClass) expr.Right);
-			Write(')');
+			WriteChar(')');
 			return expr;
 
 		default:
@@ -370,14 +370,14 @@ public class GenPy : GenPySwift
 	protected override void WriteCoerced(CiType type, CiSelectExpr expr, CiPriority parent)
 	{
 		if (parent > CiPriority.Select)
-			Write('(');
+			WriteChar('(');
 		WriteCoerced(type, expr.OnTrue, CiPriority.Select);
 		Write(" if ");
 		expr.Cond.Accept(this, CiPriority.Select);
 		Write(" else ");
 		WriteCoerced(type, expr.OnFalse, CiPriority.Select);
 		if (parent > CiPriority.Select)
-			Write(')');
+			WriteChar(')');
 	}
 
 	static char GetArrayCode(CiNumericType type)
@@ -408,7 +408,7 @@ public class GenPy : GenPySwift
 	void WriteDefaultValue(CiType type)
 	{
 		if (type is CiNumericType)
-			Write('0');
+			WriteChar('0');
 		else if (type == CiSystem.BoolType)
 			Write("False");
 		else if (type == CiSystem.StringStorageType)
@@ -434,10 +434,10 @@ public class GenPy : GenPySwift
 			else {
 				Include("array");
 				Write("array.array(\"");
-				Write(c);
+				WriteChar(c);
 				Write("\", [ ");
 				if (value == null)
-					Write('0');
+					WriteChar('0');
 				else
 					value.Accept(this, CiPriority.Argument);
 				Write(" ]) * ");
@@ -479,7 +479,7 @@ public class GenPy : GenPySwift
 				else {
 					Include("array");
 					Write("array.array(\"");
-					Write(c);
+					WriteChar(c);
 					Write("\")");
 				}
 			}
@@ -518,12 +518,12 @@ public class GenPy : GenPySwift
 
 	void WriteSlice(CiExpr startIndex, CiExpr length)
 	{
-		Write('[');
+		WriteChar('[');
 		startIndex.Accept(this, CiPriority.Argument);
-		Write(':');
+		WriteChar(':');
 		if (length != null)
 			WriteAdd(startIndex, length); // TODO: side effect
-		Write(']');
+		WriteChar(']');
 	}
 
 	void WriteAssignSorted(CiExpr obj, string byteArray)
@@ -532,12 +532,12 @@ public class GenPy : GenPySwift
 		char c = GetArrayCode((CiNumericType) ((CiClassType) obj.Type).GetElementType());
 		if (c == 'B') {
 			Write(byteArray);
-			Write('(');
+			WriteChar('(');
 		}
 		else {
 			Include("array");
 			Write("array.array(\"");
-			Write(c);
+			WriteChar(c);
 			Write("\", ");
 		}
 		Write("sorted(");
@@ -557,7 +557,7 @@ public class GenPy : GenPySwift
 			Include("sys");
 			Write("file=sys.stderr");
 		}
-		Write(')');
+		WriteChar(')');
 	}
 
 	void WriteRegexOptions(List<CiExpr> args)
@@ -573,7 +573,7 @@ public class GenPy : GenPySwift
 		Write(", ");
 		args[0].Accept(this, CiPriority.Argument);
 		WriteRegexOptions(args);
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
@@ -660,7 +660,7 @@ public class GenPy : GenPySwift
 			WriteName(lambda.First);
 			Write(" in ");
 			obj.Accept(this, CiPriority.Argument);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ListClear:
 		case CiId.StackClear:
@@ -724,9 +724,9 @@ public class GenPy : GenPySwift
 			args[0].Accept(this, CiPriority.Primary);
 			WriteLine(".encode(\"utf8\")");
 			args[1].Accept(this, CiPriority.Primary);
-			Write('[');
+			WriteChar('[');
 			args[2].Accept(this, CiPriority.Argument);
-			Write(':');
+			WriteChar(':');
 			StartAdd(args[2]); // TODO: side effect
 			WriteLine("len(cibytes)] = cibytes");
 			break;
@@ -743,7 +743,7 @@ public class GenPy : GenPySwift
 			Write("re.compile(");
 			args[0].Accept(this, CiPriority.Argument);
 			WriteRegexOptions(args);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.RegexEscape:
 			Include("re");
@@ -751,28 +751,28 @@ public class GenPy : GenPySwift
 			break;
 		case CiId.RegexIsMatchStr:
 			if (parent > CiPriority.Equality)
-				Write('(');
+				WriteChar('(');
 			WriteRegexSearch(args);
 			Write(" is not None");
 			if (parent > CiPriority.Equality)
-				Write(')');
+				WriteChar(')');
 			break;
 		case CiId.RegexIsMatchRegex:
 			if (parent > CiPriority.Equality)
-				Write('(');
+				WriteChar('(');
 			WriteCall(obj, "search", args[0]);
 			Write(" is not None");
 			if (parent > CiPriority.Equality)
-				Write(')');
+				WriteChar(')');
 			break;
 		case CiId.MatchFindStr:
 		case CiId.MatchFindRegex:
 			if (parent > CiPriority.Equality)
-				Write('(');
+				WriteChar('(');
 			obj.Accept(this, CiPriority.Equality);
 			Write(" is not None");
 			if (parent > CiPriority.Equality)
-				Write(')');
+				WriteChar(')');
 			break;
 		case CiId.MatchGetCapture:
 			WriteCall(obj, "group", args[0]);
@@ -807,19 +807,19 @@ public class GenPy : GenPySwift
 				WriteLocalName(method, CiPriority.Primary);
 			else if (obj.IsReferenceTo(CiSystem.BasePtr)) {
 				WriteName(method.Parent);
-				Write('.');
+				WriteChar('.');
 				WriteName(method);
 				Write("(self");
 				if (args.Count > 0) {
 					Write(", ");
 					WriteArgs(method, args);
 				}
-				Write(')');
+				WriteChar(')');
 				break;
 			}
 			else {
 				obj.Accept(this, CiPriority.Primary);
-				Write('.');
+				WriteChar('.');
 				WriteName(method);
 			}
 			WriteArgsInParentheses(method, args);
@@ -832,7 +832,7 @@ public class GenPy : GenPySwift
 		if (length >= 0) // reference as opposed to definition
 			Write("_CiResource.");
 		foreach (char c in name)
-			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
+			WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
 	protected override bool VisitPreCall(CiCallExpr call)
@@ -946,7 +946,7 @@ public class GenPy : GenPySwift
 			Write(", ");
 			VisitLiteralLong(rangeStep);
 		}
-		Write(')');
+		WriteChar(')');
 	}
 
 	public override void VisitForeach(CiForeach statement)
@@ -1106,7 +1106,7 @@ public class GenPy : GenPySwift
 			WriteLine("@staticmethod");
 		Write("def ");
 		WriteName(method);
-		Write('(');
+		WriteChar('(');
 		if (method.CallType != CiCallType.Static)
 			Write("self");
 		WriteParameters(method, method.CallType == CiCallType.Static, true);
@@ -1146,9 +1146,9 @@ public class GenPy : GenPySwift
 		Write("class ");
 		WriteName(klass);
 		if (klass.Parent is CiClass baseClass) {
-			Write('(');
+			WriteChar('(');
 			WriteName(baseClass);
-			Write(')');
+			WriteChar(')');
 		}
 		OpenChild();
 		Write(klass.Documentation);

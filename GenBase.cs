@@ -57,7 +57,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void Write(char c)
+	protected void WriteChar(char c)
 	{
 		StartLine();
 		this.Writer.Write(c);
@@ -76,16 +76,16 @@ public abstract class GenBase : CiVisitor
 	public override void VisitLiteralChar(int c)
 	{
 		if (c < GetLiteralChars()) {
-			Write('\'');
+			WriteChar('\'');
 			switch (c) {
 			case '\n': Write("\\n"); break;
 			case '\r': Write("\\r"); break;
 			case '\t': Write("\\t"); break;
 			case '\'': Write("\\'"); break;
 			case '\\': Write("\\\\"); break;
-			default: Write((char) c); break;
+			default: WriteChar((char) c); break;
 			}
-			Write('\'');
+			WriteChar('\'');
 		}
 		else
 			this.Writer.Write(c);
@@ -185,7 +185,7 @@ public abstract class GenBase : CiVisitor
 				StartDocLine();
 				break;
 			default:
-				Write(c);
+				WriteChar(c);
 				break;
 			}
 		}
@@ -273,7 +273,7 @@ public abstract class GenBase : CiVisitor
 	{
 		Write(" * @param ");
 		WriteName(param);
-		Write(' ');
+		WriteChar(' ');
 		Write(param.Documentation.Summary, false);
 		WriteLine();
 	}
@@ -359,7 +359,7 @@ public abstract class GenBase : CiVisitor
 		if (i > 0) {
 			if ((i & 15) == 0) {
 				WriteLine(',');
-				Write('\t');
+				WriteChar('\t');
 			}
 			else
 				Write(", ");
@@ -407,9 +407,9 @@ public abstract class GenBase : CiVisitor
 
 	public override void VisitLiteralString(string value)
 	{
-		Write('"');
+		WriteChar('"');
 		Write(value);
-		Write('"');
+		WriteChar('"');
 	}
 
 	protected abstract void WriteName(CiSymbol symbol);
@@ -468,8 +468,8 @@ public abstract class GenBase : CiVisitor
 	{
 		foreach (char c in s) {
 			if (c == doubled)
-				Write(c);
-			Write(c);
+				WriteChar(c);
+			WriteChar(c);
 		}
 	}
 
@@ -478,7 +478,7 @@ public abstract class GenBase : CiVisitor
 		if (part.WidthExpr != null)
 			VisitLiteralLong(part.Width);
 		if (part.Precision >= 0) {
-			Write('.');
+			WriteChar('.');
 			VisitLiteralLong(part.Precision);
 		}
 	}
@@ -509,19 +509,19 @@ public abstract class GenBase : CiVisitor
 
 	protected void WritePrintf(CiInterpolatedString expr, bool newLine)
 	{
-		Write('"');
+		WriteChar('"');
 		foreach (CiInterpolatedPart part in expr.Parts) {
 			WriteDoubling(part.Prefix, '%');
-			Write('%');
+			WriteChar('%');
 			WritePrintfWidth(part);
-			Write(GetPrintfFormat(part.Argument.Type, part.Format));
+			WriteChar(GetPrintfFormat(part.Argument.Type, part.Format));
 		}
 		WriteDoubling(expr.Suffix, '%');
 		if (newLine)
 			Write("\\n");
-		Write('"');
+		WriteChar('"');
 		WriteArgs(expr);
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected bool WriteJavaMatchProperty(CiSymbolReference expr, CiPriority parent)
@@ -537,13 +537,13 @@ public abstract class GenBase : CiVisitor
 			return true;
 		case CiId.MatchLength:
 			if (parent > CiPriority.Add)
-				Write('(');
+				WriteChar('(');
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".end() - ");
 			expr.Left.Accept(this, CiPriority.Primary); // FIXME: side effect
 			Write(".start()");
 			if (parent > CiPriority.Add)
-				Write(')');
+				WriteChar(')');
 			return true;
 		case CiId.MatchValue:
 			expr.Left.Accept(this, CiPriority.Primary);
@@ -576,14 +576,14 @@ public abstract class GenBase : CiVisitor
 	protected virtual void WriteCoerced(CiType type, CiSelectExpr expr, CiPriority parent)
 	{
 		if (parent > CiPriority.Select)
-			Write('(');
+			WriteChar('(');
 		expr.Cond.Accept(this, CiPriority.Select);
 		Write(" ? ");
 		WriteCoerced(type, expr.OnTrue, CiPriority.Select);
 		Write(" : ");
 		WriteCoerced(type, expr.OnFalse, CiPriority.Select);
 		if (parent > CiPriority.Select)
-			Write(')');
+			WriteChar(')');
 	}
 
 	protected void WriteCoerced(CiType type, CiExpr expr, CiPriority parent)
@@ -622,51 +622,51 @@ public abstract class GenBase : CiVisitor
 
 	protected void WriteArgsInParentheses(CiMethod method, List<CiExpr> args)
 	{
-		Write('(');
+		WriteChar('(');
 		WriteArgs(method, args);
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected void WriteCall(string function, CiExpr arg0)
 	{
 		Write(function);
-		Write('(');
+		WriteChar('(');
 		arg0.Accept(this, CiPriority.Argument);
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected void WriteCall(string function, CiExpr arg0, CiExpr arg1)
 	{
 		Write(function);
-		Write('(');
+		WriteChar('(');
 		arg0.Accept(this, CiPriority.Argument);
 		Write(", ");
 		arg1.Accept(this, CiPriority.Argument);
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected void WriteCall(string function, CiExpr arg0, CiExpr arg1, CiExpr arg2)
 	{
 		Write(function);
-		Write('(');
+		WriteChar('(');
 		arg0.Accept(this, CiPriority.Argument);
 		Write(", ");
 		arg1.Accept(this, CiPriority.Argument);
 		Write(", ");
 		arg2.Accept(this, CiPriority.Argument);
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected void WriteCall(string function, CiExpr arg0, List<CiExpr> args)
 	{
 		Write(function);
-		Write('(');
+		WriteChar('(');
 		arg0.Accept(this, CiPriority.Argument);
 		foreach (CiExpr arg in args) {
 			Write(", ");
 			arg.Accept(this, CiPriority.Argument);
 		}
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected void WriteCall(CiExpr obj, string method, CiExpr arg0)
@@ -785,7 +785,7 @@ public abstract class GenBase : CiVisitor
 		for (int i = 0; i < nesting; i++) {
 			Write("[_i");
 			VisitLiteralLong(i);
-			Write(']');
+			WriteChar(']');
 		}
 	}
 
@@ -803,16 +803,16 @@ public abstract class GenBase : CiVisitor
 			Write("--");
 			break;
 		case CiToken.Minus:
-			Write('-');
+			WriteChar('-');
 			// FIXME: - --foo[bar]
 			if (expr.Inner is CiPrefixExpr inner && (inner.Op == CiToken.Minus || inner.Op == CiToken.Decrement))
-				Write(' ');
+				WriteChar(' ');
 			break;
 		case CiToken.Tilde:
-			Write('~');
+			WriteChar('~');
 			break;
 		case CiToken.ExclamationMark:
-			Write('!');
+			WriteChar('!');
 			break;
 		case CiToken.New:
 			CiDynamicPtrType dynamic = (CiDynamicPtrType) expr.Type;
@@ -907,12 +907,12 @@ public abstract class GenBase : CiVisitor
 	protected CiExpr Write(CiBinaryExpr expr, bool parentheses, CiPriority left, string op, CiPriority right)
 	{
 		if (parentheses)
-			Write('(');
+			WriteChar('(');
 		Write(expr.Left, left, expr);
 		Write(op);
 		Write(expr.Right, right, expr);
 		if (parentheses)
-			Write(')');
+			WriteChar(')');
 		return expr;
 	}
 
@@ -941,15 +941,15 @@ public abstract class GenBase : CiVisitor
 	protected virtual void WriteAssign(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (parent > CiPriority.Assign)
-			Write('(');
+			WriteChar('(');
 		expr.Left.Accept(this, CiPriority.Assign);
 		Write(" = ");
 		WriteAssignRight(expr);
 		if (parent > CiPriority.Assign)
-			Write(')');
+			WriteChar(')');
 	}
 
-	protected virtual void WriteMemberOp(CiExpr left, CiSymbolReference symbol) => Write('.');
+	protected virtual void WriteMemberOp(CiExpr left, CiSymbolReference symbol) => WriteChar('.');
 
 	protected abstract void WriteStringLength(CiExpr expr);
 
@@ -963,23 +963,23 @@ public abstract class GenBase : CiVisitor
 	protected void WriteListAdd(CiExpr obj, string method, List<CiExpr> args)
 	{
 		obj.Accept(this, CiPriority.Primary);
-		Write('.');
+		WriteChar('.');
 		Write(method);
-		Write('(');
+		WriteChar('(');
 		CiType elementType = ((CiClassType) obj.Type).GetElementType();
 		if (args.Count == 0)
 			WriteNewStorage(elementType);
 		else
 			WriteNotPromoted(elementType, args[0]);
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected void WriteListInsert(CiExpr obj, string method, List<CiExpr> args, string separator = ", ")
 	{
 		obj.Accept(this, CiPriority.Primary);
-		Write('.');
+		WriteChar('.');
 		Write(method);
-		Write('(');
+		WriteChar('(');
 		args[0].Accept(this, CiPriority.Argument);
 		Write(separator);
 		CiType elementType = ((CiClassType) obj.Type).GetElementType();
@@ -987,7 +987,7 @@ public abstract class GenBase : CiVisitor
 			WriteNewStorage(elementType);
 		else
 			WriteNotPromoted(elementType, args[1]);
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected void WriteDictionaryAdd(CiExpr obj, List<CiExpr> args)
@@ -1027,9 +1027,9 @@ public abstract class GenBase : CiVisitor
 	protected void WriteIndexing(CiExpr collection, CiExpr index)
 	{
 		collection.Accept(this, CiPriority.Primary);
-		Write('[');
+		WriteChar('[');
 		index.Accept(this, CiPriority.Argument);
-		Write(']');
+		WriteChar(']');
 	}
 
 	protected virtual void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
@@ -1095,14 +1095,14 @@ public abstract class GenBase : CiVisitor
 		case CiToken.OrAssign:
 		case CiToken.XorAssign:
 			if (parent > CiPriority.Assign)
-				Write('(');
+				WriteChar('(');
 			expr.Left.Accept(this, CiPriority.Assign);
-			Write(' ');
+			WriteChar(' ');
 			Write(expr.GetOpString());
-			Write(' ');
+			WriteChar(' ');
 			expr.Right.Accept(this, CiPriority.Argument);
 			if (parent > CiPriority.Assign)
-				Write(')');
+				WriteChar(')');
 			return expr;
 
 		case CiToken.LeftBracket:
@@ -1114,7 +1114,7 @@ public abstract class GenBase : CiVisitor
 
 		case CiToken.Is:
 			if (parent > CiPriority.Rel)
-				Write('(');
+				WriteChar('(');
 			expr.Left.Accept(this, CiPriority.Rel);
 			Write(GetIsOperator());
 			switch (expr.Right) {
@@ -1128,7 +1128,7 @@ public abstract class GenBase : CiVisitor
 				throw new NotImplementedException(expr.Right.ToString());
 			}
 			if (parent > CiPriority.Rel)
-				Write(')');
+				WriteChar(')');
 			return expr;
 
 		default:
@@ -1193,7 +1193,7 @@ public abstract class GenBase : CiVisitor
 	protected virtual void WriteChild(CiStatement statement)
 	{
 		if (statement is CiBlock block) {
-			Write(' ');
+			WriteChar(' ');
 			VisitBlock(block);
 		}
 		else {
@@ -1221,17 +1221,17 @@ public abstract class GenBase : CiVisitor
 	{
 		Write("for (");
 		statement.Init?.Accept(this, CiPriority.Statement);
-		Write(';');
+		WriteChar(';');
 		if (statement.Cond != null) {
-			Write(' ');
+			WriteChar(' ');
 			statement.Cond.Accept(this, CiPriority.Argument);
 		}
-		Write(';');
+		WriteChar(';');
 		if (statement.Advance != null) {
-			Write(' ');
+			WriteChar(' ');
 			statement.Advance.Accept(this, CiPriority.Statement);
 		}
-		Write(')');
+		WriteChar(')');
 		WriteChild(statement.Body);
 	}
 
@@ -1239,12 +1239,12 @@ public abstract class GenBase : CiVisitor
 	{
 		Write("if (");
 		statement.Cond.Accept(this, CiPriority.Argument);
-		Write(')');
+		WriteChar(')');
 		WriteChild(statement.OnTrue);
 		if (statement.OnFalse != null) {
 			Write("else");
 			if (statement.OnFalse is CiIf) {
-				Write(' ');
+				WriteChar(' ');
 				statement.OnFalse.AcceptStatement(this);
 			}
 			else
@@ -1299,7 +1299,7 @@ public abstract class GenBase : CiVisitor
 	{
 		Write("while (");
 		statement.Cond.Accept(this, CiPriority.Argument);
-		Write(')');
+		WriteChar(')');
 		WriteChild(statement.Body);
 	}
 
@@ -1315,12 +1315,12 @@ public abstract class GenBase : CiVisitor
 			if (defaultArguments)
 				WriteVarInit(param);
 		}
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected void WriteParameters(CiMethod method, bool defaultArguments)
 	{
-		Write('(');
+		WriteChar('(');
 		WriteParameters(method, true, defaultArguments);
 	}
 

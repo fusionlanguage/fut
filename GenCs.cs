@@ -136,7 +136,7 @@ public class GenCs : GenTyped
 		case "unsafe":
 		case "using":
 		case "volatile":
-			Write('_');
+			WriteChar('_');
 			break;
 		default:
 			break;
@@ -201,9 +201,9 @@ public class GenCs : GenTyped
 	void WriteElementType(CiType elementType)
 	{
 		Include("System.Collections.Generic");
-		Write('<');
+		WriteChar('<');
 		Write(elementType, false);
-		Write('>');
+		WriteChar('>');
 	}
 
 	protected override void Write(CiType type, bool promote)
@@ -233,11 +233,11 @@ public class GenCs : GenTyped
 			case CiId.SortedDictionaryClass:
 				Include("System.Collections.Generic");
 				Write(klass.Class.Name);
-				Write('<');
+				WriteChar('<');
 				Write(klass.GetKeyType(), false);
 				Write(", ");
 				Write(klass.GetValueType(), false);
-				Write('>');
+				WriteChar('>');
 				break;
 			case CiId.OrderedDictionaryClass:
 				Include("System.Collections.Specialized");
@@ -284,22 +284,22 @@ public class GenCs : GenTyped
 		Write("$\"");
 		foreach (CiInterpolatedPart part in expr.Parts) {
 			WriteDoubling(part.Prefix, '{');
-			Write('{');
+			WriteChar('{');
 			part.Argument.Accept(this, CiPriority.Argument);
 			if (part.WidthExpr != null) {
-				Write(',');
+				WriteChar(',');
 				VisitLiteralLong(part.Width);
 			}
 			if (part.Format != ' ') {
-				Write(':');
-				Write(part.Format);
+				WriteChar(':');
+				WriteChar(part.Format);
 				if (part.Precision >= 0)
 					VisitLiteralLong(part.Precision);
 			}
-			Write('}');
+			WriteChar('}');
 		}
 		WriteDoubling(expr.Suffix, '{');
-		Write('"');
+		WriteChar('"');
 		return expr;
 	}
 
@@ -307,9 +307,9 @@ public class GenCs : GenTyped
 	{
 		Write("new ");
 		Write(elementType.GetBaseType(), false);
-		Write('[');
+		WriteChar('[');
 		lengthExpr.Accept(this, CiPriority.Argument);
-		Write(']');
+		WriteChar(']');
 		while (elementType is CiClassType array && array.IsArray()) {
 			Write("[]");
 			elementType = array.GetElementType();
@@ -355,7 +355,7 @@ public class GenCs : GenTyped
 		if (length >= 0) // reference as opposed to definition
 			Write("CiResource.");
 		foreach (char c in name)
-			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
+			WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
 	protected override void WriteStringLength(CiExpr expr)
@@ -373,12 +373,12 @@ public class GenCs : GenTyped
 			return expr;
 		case CiId.MatchEnd:
 			if (parent > CiPriority.Add)
-				Write('(');
+				WriteChar('(');
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".Index + ");
 			WriteStringLength(expr.Left); // FIXME: side effect
 			if (parent > CiPriority.Add)
-				Write(')');
+				WriteChar(')');
 			return expr;
 		case CiId.MathNaN:
 		case CiId.MathNegativeInfinity:
@@ -391,7 +391,7 @@ public class GenCs : GenTyped
 			&& forEach.Collection.Type is CiClassType dict
 			&& dict.Class.Id == CiId.OrderedDictionaryClass) {
 				if (parent == CiPriority.Primary)
-					Write('(');
+					WriteChar('(');
 				CiVar element = forEach.GetVar();
 				if (expr.Symbol == element) {
 					WriteStaticCastType(dict.GetKeyType());
@@ -404,7 +404,7 @@ public class GenCs : GenTyped
 					Write(".Value");
 				}
 				if (parent == CiPriority.Primary)
-					Write(')');
+					WriteChar(')');
 				return expr;
 			}
 			return base.VisitSymbolReference(expr, parent);
@@ -417,14 +417,14 @@ public class GenCs : GenTyped
 		case CiId.StringIndexOf:
 		case CiId.StringLastIndexOf:
 			obj.Accept(this, CiPriority.Primary);
-			Write('.');
+			WriteChar('.');
 			Write(method.Name);
-			Write('(');
+			WriteChar('(');
 			if (IsOneAsciiString(args[0], out char c))
 				VisitLiteralChar(c);
 			else
 				args[0].Accept(this, CiPriority.Argument);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:
@@ -439,7 +439,7 @@ public class GenCs : GenTyped
 				Write(", ");
 			}
 			WriteNotPromoted(((CiClassType) obj.Type).GetElementType(), args[0]);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ArrayCopyTo:
 			Include("System");
@@ -447,7 +447,7 @@ public class GenCs : GenTyped
 			obj.Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteArgs(method, args);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ArrayFillAll:
 		case CiId.ArrayFillPart:
@@ -473,7 +473,7 @@ public class GenCs : GenTyped
 				Write(", ");
 				args[2].Accept(this, CiPriority.Argument);
 			}
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ArraySortAll:
 			Include("System");
@@ -505,7 +505,7 @@ public class GenCs : GenTyped
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteNewStorage(((CiClassType) obj.Type).GetValueType());
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.OrderedDictionaryContainsKey:
 			WriteCall(obj, "Contains", args[0]);
@@ -515,7 +515,7 @@ public class GenCs : GenTyped
 		case CiId.EnvironmentGetEnvironmentVariable:
 			Include("System");
 			obj.Accept(this, CiPriority.Primary);
-			Write('.');
+			WriteChar('.');
 			Write(method.Name);
 			WriteArgsInParentheses(method, args);
 			break;
@@ -523,7 +523,7 @@ public class GenCs : GenTyped
 			Include("System.Text");
 			Write("Encoding.UTF8.GetByteCount(");
 			args[0].Accept(this, CiPriority.Argument);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.UTF8GetBytes:
 			Include("System.Text");
@@ -535,7 +535,7 @@ public class GenCs : GenTyped
 			args[1].Accept(this, CiPriority.Argument);
 			Write(", ");
 			args[2].Accept(this, CiPriority.Argument);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.UTF8GetString:
 			Include("System.Text");
@@ -552,13 +552,13 @@ public class GenCs : GenTyped
 		case CiId.RegexIsMatchRegex:
 			Include("System.Text.RegularExpressions");
 			obj.Accept(this, CiPriority.Primary);
-			Write('.');
+			WriteChar('.');
 			Write(method.Name);
 			WriteArgsInParentheses(method, args);
 			break;
 		case CiId.MatchFindStr:
 			Include("System.Text.RegularExpressions");
-			Write('(');
+			WriteChar('(');
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = Regex.Match");
 			WriteArgsInParentheses(method, args);
@@ -566,7 +566,7 @@ public class GenCs : GenTyped
 			break;
 		case CiId.MatchFindRegex:
 			Include("System.Text.RegularExpressions");
-			Write('(');
+			WriteChar('(');
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = ");
 			WriteCall(args[1], "Match", args[0]);
@@ -597,7 +597,7 @@ public class GenCs : GenTyped
 		default:
 			if (obj != null) {
 				obj.Accept(this, CiPriority.Primary);
-				Write('.');
+				WriteChar('.');
 			}
 			WriteName(method);
 			WriteArgsInParentheses(method, args);
@@ -611,7 +611,7 @@ public class GenCs : GenTyped
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write("[(object) ");
 			expr.Right.Accept(this, CiPriority.Primary);
-			Write(']');
+			WriteChar(']');
 		}
 		else
 			base.WriteIndexing(expr, CiPriority.And /* don't care */);
@@ -621,11 +621,11 @@ public class GenCs : GenTyped
 	{
 		if (expr.Left.Type is CiClassType dict && dict.Class.Id == CiId.OrderedDictionaryClass) {
 			if (parent == CiPriority.Primary)
-				Write('(');
+				WriteChar('(');
 			WriteStaticCastType(expr.Type);
 			WriteOrderedDictionaryIndexing(expr);
 			if (parent == CiPriority.Primary)
-				Write(')');
+				WriteChar(')');
 		}
 		else
 			base.WriteIndexing(expr, parent);
@@ -652,14 +652,14 @@ public class GenCs : GenTyped
 		case CiToken.OrAssign:
 		case CiToken.XorAssign:
 			if (parent > CiPriority.Assign)
-				Write('(');
+				WriteChar('(');
 			expr.Left.Accept(this, CiPriority.Assign);
-			Write(' ');
+			WriteChar(' ');
 			Write(expr.GetOpString());
-			Write(' ');
+			WriteChar(' ');
 			WriteAssignRight(expr);
 			if (parent > CiPriority.Assign)
-				Write(')');
+				WriteChar(')');
 			return expr;
 		default:
 			return base.VisitBinaryExpr(expr, parent);
@@ -703,18 +703,18 @@ public class GenCs : GenTyped
 				WriteName(statement.GetVar());
 			}
 			else {
-				Write('(');
+				WriteChar('(');
 				WriteTypeAndName(statement.GetVar());
 				Write(", ");
 				WriteTypeAndName(statement.GetValueVar());
-				Write(')');
+				WriteChar(')');
 			}
 		}
 		else
 			WriteTypeAndName(statement.GetVar());
 		Write(" in ");
 		statement.Collection.Accept(this, CiPriority.Argument);
-		Write(')');
+		WriteChar(')');
 		WriteChild(statement.Body);
 	}
 
@@ -722,7 +722,7 @@ public class GenCs : GenTyped
 	{
 		Write("lock (");
 		statement.Lock.Accept(this, CiPriority.Argument);
-		Write(')');
+		WriteChar(')');
 		WriteChild(statement.Body);
 	}
 
@@ -839,7 +839,7 @@ public class GenCs : GenTyped
 			Write("internal static readonly byte[] ");
 			WriteResource(name, -1);
 			WriteLine(" = {");
-			Write('\t');
+			WriteChar('\t');
 			Write(resources[name]);
 			WriteLine(" };");
 		}

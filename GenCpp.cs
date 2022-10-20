@@ -47,9 +47,9 @@ public class GenCpp : GenCCpp
 			Write("{}");
 		}
 		WriteDoubling(expr.Suffix, '{');
-		Write('"');
+		WriteChar('"');
 		WriteArgs(expr);
-		Write(')');
+		WriteChar(')');
 		return expr;
 	}
 
@@ -142,7 +142,7 @@ public class GenCpp : GenCCpp
 		case "unsigned":
 		case "using":
 		case "volatile":
-			Write('_');
+			WriteChar('_');
 			break;
 		default:
 			break;
@@ -176,9 +176,9 @@ public class GenCpp : GenCCpp
 		Include(name);
 		Write("std::");
 		Write(name);
-		Write('<');
+		WriteChar('<');
 		Write(elementType, false);
-		Write('>');
+		WriteChar('>');
 	}
 
 	protected override void Write(CiType type, bool promote)
@@ -203,7 +203,7 @@ public class GenCpp : GenCCpp
 				Include("memory");
 				Write("std::shared_ptr<");
 				Write(dynamic.Class.Name);
-				Write('>');
+				WriteChar('>');
 				break;
 			}
 			break;
@@ -257,7 +257,7 @@ public class GenCpp : GenCCpp
 					Write("const ");
 				Write("std::");
 				Write(cppType);
-				Write('<');
+				WriteChar('<');
 				Write(klass.TypeArg0, false);
 				if (klass is CiArrayStorageType arrayStorage) {
 					Write(", ");
@@ -267,7 +267,7 @@ public class GenCpp : GenCCpp
 					Write(", ");
 					Write(klass.GetValueType(), false);
 				}
-				Write('>');
+				WriteChar('>');
 			}
 			if (!(klass is CiStorageType))
 				Write(" *");
@@ -285,7 +285,7 @@ public class GenCpp : GenCCpp
 		Write(elementType, false);
 		Write("[]>(");
 		lengthExpr.Accept(this, CiPriority.Argument);
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected override void WriteNew(CiReadWriteClassType klass, CiPriority parent)
@@ -299,9 +299,9 @@ public class GenCpp : GenCCpp
 	protected override void WriteVarInit(CiNamedValue def)
 	{
 		if (def.Value != null && def.Type == CiSystem.StringStorageType) {
-			Write('{');
+			WriteChar('{');
 			def.Value.Accept(this, CiPriority.Argument);
-			Write('}');
+			WriteChar('}');
 		}
 		else if (def.Type is CiArrayStorageType) {
 			switch (def.Value) {
@@ -332,7 +332,7 @@ public class GenCpp : GenCCpp
 		}
 		Write(">(");
 		GetStaticCastInner(type, expr).Accept(this, CiPriority.Argument);
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected override bool HasInitCode(CiNamedValue def) => false;
@@ -390,7 +390,7 @@ public class GenCpp : GenCCpp
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(")[");
 			expr.Right.Accept(this, CiPriority.Argument);
-			Write(']');
+			WriteChar(']');
 		}
 		else
 			base.WriteIndexing(expr, parent);
@@ -401,7 +401,7 @@ public class GenCpp : GenCCpp
 		if (IsCppPtr(left))
 			Write("->");
 		else
-			Write('.');
+			WriteChar('.');
 	}
 
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
@@ -423,7 +423,7 @@ public class GenCpp : GenCCpp
 		if (obj.Type is CiStorageType)
 			obj.Accept(this, priority);
 		else {
-			Write('*');
+			WriteChar('*');
 			obj.Accept(this, CiPriority.Primary);
 		}
 	}
@@ -449,12 +449,12 @@ public class GenCpp : GenCCpp
 	void WriteStringMethod(CiExpr obj, string name, CiMethod method, List<CiExpr> args)
 	{
 		WriteNotRawStringLiteral(obj, CiPriority.Primary);
-		Write('.');
+		WriteChar('.');
 		Write(name);
 		if (IsOneAsciiString(args[0], out char c)) {
-			Write('(');
+			WriteChar('(');
 			VisitLiteralChar(c);
-			Write(')');
+			WriteChar(')');
 		}
 		else
 			WriteArgsInParentheses(method, args);
@@ -466,7 +466,7 @@ public class GenCpp : GenCCpp
 		Write("std::regex(");
 		args[argIndex].Accept(this, CiPriority.Argument);
 		WriteRegexOptions(args, ", std::regex::ECMAScript | ", " | ", "", "std::regex::icase", "std::regex::multiline", "std::regex::NOT_SUPPORTED_singleline");
-		Write(')');
+		WriteChar(')');
 	}
 
 	void WriteConsoleWrite(CiExpr obj, List<CiExpr> args, bool newLine)
@@ -576,11 +576,11 @@ public class GenCpp : GenCCpp
 		switch (method.Id) {
 		case CiId.StringContains:
 			if (parent > CiPriority.Equality)
-				Write('(');
+				WriteChar('(');
 			WriteStringMethod(obj, "find", method, args);
 			Write(" != std::string::npos");
 			if (parent > CiPriority.Equality)
-				Write(')');
+				WriteChar(')');
 			break;
 		case CiId.StringEndsWith:
 			WriteStringMethod(obj, "ends_with", method, args);
@@ -588,12 +588,12 @@ public class GenCpp : GenCCpp
 		case CiId.StringIndexOf:
 			Write("static_cast<int>(");
 			WriteStringMethod(obj, "find", method, args);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.StringLastIndexOf:
 			Write("static_cast<int>(");
 			WriteStringMethod(obj, "rfind", method, args);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.StringStartsWith:
 			WriteStringMethod(obj, "starts_with", method, args);
@@ -605,7 +605,7 @@ public class GenCpp : GenCCpp
 		case CiId.ArrayBinarySearchPart:
 			Include("algorithm");
 			if (parent > CiPriority.Add)
-				Write('(');
+				WriteChar('(');
 			Write("std::lower_bound(");
 			if (args.Count == 1)
 				WriteBeginEnd(obj);
@@ -621,7 +621,7 @@ public class GenCpp : GenCCpp
 			Write(") - ");
 			WriteArrayPtr(obj, CiPriority.Mul);
 			if (parent > CiPriority.Add)
-				Write(')');
+				WriteChar(')');
 			break;
 		case CiId.ArrayCopyTo:
 		case CiId.ListCopyTo:
@@ -632,13 +632,13 @@ public class GenCpp : GenCCpp
 			args[3].Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteArrayPtrAdd(args[1], args[2]);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ArrayFillAll:
 			StartMethodCall(obj);
 			Write("fill(");
 			WriteCoerced(((CiClassType) obj.Type).GetElementType(), args[0], CiPriority.Argument);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ArrayFillPart:
 			Include("algorithm");
@@ -648,14 +648,14 @@ public class GenCpp : GenCCpp
 			args[2].Accept(this, CiPriority.Argument);
 			Write(", ");
 			args[0].Accept(this, CiPriority.Argument);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ArraySortAll:
 		case CiId.ListSortAll:
 			Include("algorithm");
 			Write("std::sort(");
 			WriteBeginEnd(obj);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ArraySortPart:
 		case CiId.ListSortPart:
@@ -666,7 +666,7 @@ public class GenCpp : GenCCpp
 			WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
 			Write(" + ");
 			args[1].Accept(this, CiPriority.Add);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ListAdd:
 			StartMethodCall(obj);
@@ -675,7 +675,7 @@ public class GenCpp : GenCCpp
 			else {
 				Write("push_back(");
 				WriteCoerced(((CiClassType) obj.Type).GetElementType(), args[0], CiPriority.Argument);
-				Write(')');
+				WriteChar(')');
 			}
 			break;
 		case CiId.ListAny:
@@ -684,12 +684,12 @@ public class GenCpp : GenCCpp
 			WriteBeginEnd(obj);
 			Write(", ");
 			args[0].Accept(this, CiPriority.Argument);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ListContains:
 			Include("algorithm");
 			if (parent > CiPriority.Equality)
-				Write('(');
+				WriteChar('(');
 			Write("std::find(");
 			WriteBeginEnd(obj);
 			Write(", ");
@@ -698,7 +698,7 @@ public class GenCpp : GenCCpp
 			StartMethodCall(obj); // FIXME: side effect
 			Write("end()");
 			if (parent > CiPriority.Equality)
-				Write(')');
+				WriteChar(')');
 			break;
 		case CiId.ListInsert:
 			StartMethodCall(obj);
@@ -712,13 +712,13 @@ public class GenCpp : GenCCpp
 				Write(", ");
 				WriteCoerced(((CiClassType) obj.Type).GetElementType(), args[1], CiPriority.Argument);
 			}
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ListRemoveAt:
 			StartMethodCall(obj);
 			Write("erase(");
 			WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ListRemoveRange:
 			StartMethodCall(obj);
@@ -728,7 +728,7 @@ public class GenCpp : GenCCpp
 			WriteArrayPtrAdd(obj, args[0]); // FIXME: side effect
 			Write(" + ");
 			args[1].Accept(this, CiPriority.Add);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.QueueClear:
 		case CiId.StackClear:
@@ -749,7 +749,7 @@ public class GenCpp : GenCCpp
 				Write(elementType, false);
 				Write(" front = q.front(); q.pop(); return front; }(");
 				WriteCollectionObject(obj, CiPriority.Argument);
-				Write(')');
+				WriteChar(')');
 			}
 			break;
 		case CiId.QueueEnqueue:
@@ -777,7 +777,7 @@ public class GenCpp : GenCCpp
 				Write(elementType, false);
 				Write(" top = s.top(); s.pop(); return top; }(");
 				WriteCollectionObject(obj, CiPriority.Argument);
-				Write(')');
+				WriteChar(')');
 			}
 			break;
 		case CiId.HashSetAdd:
@@ -794,13 +794,13 @@ public class GenCpp : GenCCpp
 		case CiId.DictionaryContainsKey:
 		case CiId.SortedDictionaryContainsKey:
 			if (parent > CiPriority.Equality)
-				Write('(');
+				WriteChar('(');
 			StartMethodCall(obj);
 			Write("count");
 			WriteArgsInParentheses(method, args);
 			Write(" != 0");
 			if (parent > CiPriority.Equality)
-				Write(')');
+				WriteChar(')');
 			break;
 		case CiId.ConsoleWrite:
 			WriteConsoleWrite(obj, args, false);
@@ -811,12 +811,12 @@ public class GenCpp : GenCCpp
 		case CiId.UTF8GetByteCount:
 			if (args[0] is CiLiteral) {
 				if (parent > CiPriority.Add)
-					Write('(');
+					WriteChar('(');
 				Write("sizeof(");
 				args[0].Accept(this, CiPriority.Argument);
 				Write(") - 1");
 				if (parent > CiPriority.Add)
-					Write(')');
+					WriteChar(')');
 			}
 			else
 				WriteStringLength(args[0]);
@@ -830,7 +830,7 @@ public class GenCpp : GenCCpp
 				args[0].Accept(this, CiPriority.Argument);
 				Write(") - 1, ");
 				WriteArrayPtrAdd(args[1], args[2]);
-				Write(')');
+				WriteChar(')');
 			}
 			else {
 				args[0].Accept(this, CiPriority.Primary);
@@ -847,7 +847,7 @@ public class GenCpp : GenCCpp
 			WriteArrayPtrAdd(args[0], args[1]);
 			Write("), ");
 			args[2].Accept(this, CiPriority.Argument);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.EnvironmentGetEnvironmentVariable:
 			Include("cstdlib");
@@ -858,7 +858,7 @@ public class GenCpp : GenCCpp
 				args[0].Accept(this, CiPriority.Primary);
 				Write(".data()");
 			}
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.RegexCompile:
 			WriteRegex(args, 0);
@@ -883,7 +883,7 @@ public class GenCpp : GenCCpp
 				args[1].Accept(this, CiPriority.Argument);
 			else
 				WriteRegex(args, 1);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.MatchGetCapture:
 			StartMethodCall(obj);
@@ -939,7 +939,7 @@ public class GenCpp : GenCCpp
 		if (length >= 0) // reference as opposed to definition
 			Write("CiResource::");
 		foreach (char c in name)
-			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
+			WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
 	protected override void WriteArrayPtr(CiExpr expr, CiPriority parent)
@@ -986,7 +986,7 @@ public class GenCpp : GenCCpp
 				Write(".get()");
 				return;
 			case CiClassType _ when !IsCppPtr(expr):
-				Write('&');
+				WriteChar('&');
 				if (expr is CiCallExpr) {
 					Write("static_cast<");
 					if (!(klass is CiReadWriteClassType))
@@ -994,7 +994,7 @@ public class GenCpp : GenCCpp
 					WriteName(klass.Class);
 					Write(" &>(");
 					expr.Accept(this, CiPriority.Argument);
-					Write(')');
+					WriteChar(')');
 				}
 				else
 					expr.Accept(this, CiPriority.Primary);
@@ -1045,12 +1045,12 @@ public class GenCpp : GenCCpp
 			return expr;
 		case CiId.MatchEnd:
 			if (parent > CiPriority.Add)
-				Write('(');
+				WriteChar('(');
 			WriteMatchProperty(expr, "position");
 			Write(" + ");
 			WriteMatchProperty(expr, "length"); // FIXME: side effect
 			if (parent > CiPriority.Add)
-				Write(')');
+				WriteChar(')');
 			return expr;
 		case CiId.MatchLength:
 			WriteMatchProperty(expr, "length");
@@ -1071,7 +1071,7 @@ public class GenCpp : GenCCpp
 		case CiToken.Greater:
 			if (IsStringEmpty(expr, out CiExpr str)) {
 				if (expr.Op != CiToken.Equal)
-					Write('!');
+					WriteChar('!');
 				str.Accept(this, CiPriority.Primary);
 				Write(".empty()");
 				return expr;
@@ -1085,7 +1085,7 @@ public class GenCpp : GenCCpp
 			Write(((CiClass) expr.Right).Name);
 			Write(" *>(");
 			expr.Left.Accept(this, CiPriority.Argument);
-			Write(')');
+			WriteChar(')');
 			return expr;
 		default:
 			break;
@@ -1122,7 +1122,7 @@ public class GenCpp : GenCCpp
 			Write(element.Name);
 			Write(", ");
 			Write(statement.GetValueVar().Name);
-			Write(']');
+			WriteChar(']');
 		}
 		else if (statement.Collection.Type is CiArrayStorageType array
 		 && array.GetElementType() is CiStorageType storage
@@ -1137,7 +1137,7 @@ public class GenCpp : GenCCpp
 			WriteTypeAndName(element);
 		Write(" : ");
 		WriteNotRawStringLiteral(statement.Collection, CiPriority.Argument);
-		Write(')');
+		WriteChar(')');
 		WriteChild(statement.Body);
 	}
 
@@ -1158,7 +1158,7 @@ public class GenCpp : GenCCpp
 		 && !(value is CiLiteral)) {
 			Write("std::string(");
 			base.WriteReturnValue(value);
-			Write(')');
+			WriteChar(')');
 		}
 		else if (this.CurrentMethod.Type == CiSystem.StringStorageType
 			&& IsStringSubstring(value, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)
@@ -1168,10 +1168,10 @@ public class GenCpp : GenCCpp
 				Write("reinterpret_cast<const char *>(");
 			WriteArrayPtrAdd(ptr, offset);
 			if (cast)
-				Write(')');
+				WriteChar(')');
 			Write(", ");
 			length.Accept(this, CiPriority.Argument);
-			Write(')');
+			WriteChar(')');
 		}
 		else
 			base.WriteReturnValue(value);
@@ -1381,7 +1381,7 @@ public class GenCpp : GenCCpp
 		this.StringSwitchesWithGoto.Clear();
 		WriteLine();
 		Write(method.Type, true);
-		Write(' ');
+		WriteChar(' ');
 		Write(method.Parent.Name);
 		Write("::");
 		WriteCamelCase(method.Name);
@@ -1409,7 +1409,7 @@ public class GenCpp : GenCCpp
 			WriteResource(name, -1);
 			if (define) {
 				WriteLine(" = {");
-				Write('\t');
+				WriteChar('\t');
 				Write(resources[name]);
 				Write(" }");
 			}

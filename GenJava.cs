@@ -32,7 +32,7 @@ public class GenJava : GenTyped
 	{
 		base.VisitLiteralLong(value);
 		if (value != (int) value)
-			Write('L');
+			WriteChar('L');
 	}
 
 	protected override int GetLiteralChars() => 0x10000;
@@ -42,7 +42,7 @@ public class GenJava : GenTyped
 		if (part.Precision >= 0 && part.Argument.Type is CiIntegerType) {
 			if (part.WidthExpr != null)
 				throw new NotImplementedException("Cannot format integer with both width and precision");
-			Write('0');
+			WriteChar('0');
 			VisitLiteralLong(part.Precision);
 		}
 		else
@@ -157,7 +157,7 @@ public class GenJava : GenTyped
 		case "try":
 		case "volatile":
 		case "yield":
-			Write('_');
+			WriteChar('_');
 			break;
 		default:
 			break;
@@ -173,7 +173,7 @@ public class GenJava : GenTyped
 		case CiConst konst:
 			if (konst.InMethod != null) {
 				WriteUppercaseWithUnderscores(konst.InMethod.Name);
-				Write('_');
+				WriteChar('_');
 			}
 			WriteUppercaseWithUnderscores(symbol.Name);
 			break;
@@ -252,19 +252,19 @@ public class GenJava : GenTyped
 	{
 		Include("java.util." + name);
 		Write(name);
-		Write('<');
+		WriteChar('<');
 		Write(elementType, false, true);
-		Write('>');
+		WriteChar('>');
 	}
 
 	void Write(string name, CiClassType dict)
 	{
 		Write(name);
-		Write('<');
+		WriteChar('<');
 		Write(dict.GetKeyType(), false, true);
 		Write(", ");
 		Write(dict.GetValueType(), false, true);
-		Write('>');
+		WriteChar('>');
 	}
 
 	void Write(CiType type, bool promote, bool needClass)
@@ -349,7 +349,7 @@ public class GenJava : GenTyped
 		VisitLiteralString(name);
 		Write(", ");
 		VisitLiteralLong(length);
-		Write(')');
+		WriteChar(')');
 	}
 
 	public override CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
@@ -357,13 +357,13 @@ public class GenJava : GenTyped
 		if ((expr.Op == CiToken.Increment || expr.Op == CiToken.Decrement)
 		 && expr.Inner is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)) {
 			if (parent > CiPriority.And)
-				Write('(');
+				WriteChar('(');
 			Write(expr.Op == CiToken.Increment ? "++" : "--");
 			WriteIndexingInternal(leftBinary);
 			if (parent != CiPriority.Statement)
 				Write(" & 0xff");
 			if (parent > CiPriority.And)
-				Write(')');
+				WriteChar(')');
 			return expr;
 		}
 		return base.VisitPrefixExpr(expr, parent);
@@ -374,13 +374,13 @@ public class GenJava : GenTyped
 		if ((expr.Op == CiToken.Increment || expr.Op == CiToken.Decrement)
 		 && expr.Inner is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)) {
 			if (parent > CiPriority.And)
-				Write('(');
+				WriteChar('(');
 			WriteIndexingInternal(leftBinary);
 			Write(expr.Op == CiToken.Increment ? "++" : "--");
 			if (parent != CiPriority.Statement)
 				Write(" & 0xff");
 			if (parent > CiPriority.And)
-				Write(')');
+				WriteChar(')');
 			return expr;
 		}
 		return base.VisitPostfixExpr(expr, parent);
@@ -399,18 +399,18 @@ public class GenJava : GenTyped
 		if ((expr.Left.Type is CiStringType && expr.Right.Type != CiSystem.NullType)
 		 || (expr.Right.Type is CiStringType && expr.Left.Type != CiSystem.NullType)) {
 			if (not)
-				Write('!');
+				WriteChar('!');
 			WriteCall(expr.Left, "equals", expr.Right);
 		}
 		else if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)
 			&& expr.Right is CiLiteralLong rightLiteral && rightLiteral.Value >= 0 && rightLiteral.Value <= byte.MaxValue) {
 			if (parent > CiPriority.Equality)
-				Write('(');
+				WriteChar('(');
 			WriteIndexingInternal(leftBinary); // omit "& 0xff"
 			Write(GetEqOp(not));
 			VisitLiteralLong((sbyte) rightLiteral.Value);
 			if (parent > CiPriority.Equality)
-				Write(')');
+				WriteChar(')');
 		}
 		else
 			base.WriteEqual(expr, parent, not);
@@ -434,12 +434,12 @@ public class GenJava : GenTyped
 		if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)
 		 && expr.Right is CiLiteralLong rightLiteral) {
 			if (parent > CiPriority.CondAnd && parent != CiPriority.And)
-				Write('(');
+				WriteChar('(');
 			WriteIndexingInternal(leftBinary);
 			Write(" & ");
 			VisitLiteralLong(0xff & rightLiteral.Value);
 			if (parent > CiPriority.CondAnd && parent != CiPriority.And)
-				Write(')');
+				WriteChar(')');
 		}
 		else
 			base.WriteAnd(expr, parent);
@@ -491,7 +491,7 @@ public class GenJava : GenTyped
 		Include("java.util.Arrays");
 		Write("Arrays.");
 		Write(method);
-		Write('(');
+		WriteChar('(');
 		obj.Accept(this, CiPriority.Argument);
 		Write(", ");
 		if (args.Count == 3) {
@@ -499,7 +499,7 @@ public class GenJava : GenTyped
 			Write(", ");
 		}
 		WriteNotPromoted(((CiClassType) obj.Type).GetElementType(), args[0]);
-		Write(')');
+		WriteChar(')');
 	}
 
 	void WriteConsoleWrite(CiExpr obj, CiMethod method, List<CiExpr> args, bool newLine)
@@ -523,7 +523,7 @@ public class GenJava : GenTyped
 		Write("Pattern.compile(");
 		args[argIndex].Accept(this, CiPriority.Argument);
 		WriteRegexOptions(args, ", ", " | ", "", "Pattern.CASE_INSENSITIVE", "Pattern.MULTILINE", "Pattern.DOTALL");
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
@@ -537,7 +537,7 @@ public class GenJava : GenTyped
 				Write(", ");
 				WriteAdd(args[0], args[1]); // TODO: side effect
 			}
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:
@@ -548,7 +548,7 @@ public class GenJava : GenTyped
 			obj.Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteArgs(method, args);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ArrayFillAll:
 		case CiId.ArrayFillPart:
@@ -564,7 +564,7 @@ public class GenJava : GenTyped
 			obj.Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteStartEnd(args[0], args[1]);
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ListAdd:
 			WriteListAdd(obj, "add", args);
@@ -578,7 +578,7 @@ public class GenJava : GenTyped
 			WriteLine("; _i++)");
 			Write("\t");
 			args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
-			Write('[');
+			WriteChar('[');
 			StartAdd(args[2]); // FIXME: side effect in every iteration
 			Write("_i] = ");
 			obj.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
@@ -625,7 +625,7 @@ public class GenJava : GenTyped
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteNewStorage(((CiClassType) obj.Type).GetValueType());
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ConsoleWrite:
 			WriteConsoleWrite(obj, method, args, false);
@@ -684,7 +684,7 @@ public class GenJava : GenTyped
 			break;
 		case CiId.MatchFindStr:
 		case CiId.MatchFindRegex:
-			Write('(');
+			WriteChar('(');
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = ");
 			if (method.Id == CiId.MatchFindStr)
@@ -714,11 +714,11 @@ public class GenJava : GenTyped
 			break;
 		case CiId.MathLog2:
 			if (parent > CiPriority.Mul)
-				Write('(');
+				WriteChar('(');
 			WriteCall("Math.log", args[0]);
 			Write(" * 1.4426950408889635");
 			if (parent > CiPriority.Mul)
-				Write(')');
+				WriteChar(')');
 			break;
 		default:
 			if (obj != null) {
@@ -726,7 +726,7 @@ public class GenJava : GenTyped
 					Write("super");
 				else
 					obj.Accept(this, CiPriority.Primary);
-				Write('.');
+				WriteChar('.');
 			}
 			WriteName(method);
 			WriteArgsInParentheses(method, args);
@@ -738,11 +738,11 @@ public class GenJava : GenTyped
 	{
 		if (parent != CiPriority.Assign && IsUnsignedByte(expr.Type)) {
 			if (parent > CiPriority.And)
-				Write('(');
+				WriteChar('(');
 			WriteIndexingInternal(expr);
 			Write(" & 0xff");
 			if (parent > CiPriority.And)
-				Write(')');
+				WriteChar(')');
 		}
 		else
 			WriteIndexingInternal(expr);
@@ -754,7 +754,7 @@ public class GenJava : GenTyped
 	{
 		if ((!expr.Left.IsIndexing() || !IsUnsignedByte(expr.Left.Type))
 		 && expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign() && IsUnsignedByte(expr.Right.Type)) {
-			Write('(');
+			WriteChar('(');
 			base.WriteAssignRight(expr);
 			Write(") & 0xff");
 		}
@@ -773,7 +773,7 @@ public class GenJava : GenTyped
 			indexing.Right.Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteNotPromoted(expr.Type, expr.Right);
-			Write(')');
+			WriteChar(')');
 		}
 		else
 			base.WriteAssign(expr, parent);
@@ -830,7 +830,7 @@ public class GenJava : GenTyped
 			// assert false;
 			Write("throw new AssertionError(");
 			statement.Message?.Accept(this, CiPriority.Argument);
-			Write(')');
+			WriteChar(')');
 		}
 		WriteLine(';');
 	}
@@ -857,7 +857,7 @@ public class GenJava : GenTyped
 		case CiId.OrderedDictionaryClass:
 			Include("java.util.Map");
 			Write("Map.Entry", klass);
-			Write(' ');
+			WriteChar(' ');
 			Write(statement.GetVar().Name);
 			Write(" : ");
 			statement.Collection.Accept(this, CiPriority.Primary);
@@ -869,7 +869,7 @@ public class GenJava : GenTyped
 			statement.Collection.Accept(this, CiPriority.Argument);
 			break;
 		}
-		Write(')');
+		WriteChar(')');
 		WriteChild(statement.Body);
 	}
 
@@ -877,7 +877,7 @@ public class GenJava : GenTyped
 	{
 		Write("synchronized (");
 		statement.Lock.Accept(this, CiPriority.Argument);
-		Write(')');
+		WriteChar(')');
 		WriteChild(statement.Body);
 	}
 
@@ -961,7 +961,7 @@ public class GenJava : GenTyped
 			throw new NotImplementedException(method.CallType.ToString());
 		}
 		WriteTypeAndName(method);
-		Write('(');
+		WriteChar('(');
 		CiVar param = method.Parameters.FirstParameter();
 		for (int i = 0; i < paramCount; i++) {
 			if (i > 0)
@@ -969,7 +969,7 @@ public class GenJava : GenTyped
 			WriteTypeAndName(param);
 			param = param.NextParameter();
 		}
-		Write(')');
+		WriteChar(')');
 		if (method.Throws)
 			Write(" throws Exception");
 	}
@@ -984,7 +984,7 @@ public class GenJava : GenTyped
 		if (method.Type != CiSystem.VoidType)
 			Write("return ");
 		WriteName(method);
-		Write('(');
+		WriteChar('(');
 		CiVar param = method.Parameters.FirstParameter();
 		for (int i = 0; i < paramCount; i++) {
 			WriteName(param);

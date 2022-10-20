@@ -34,7 +34,7 @@ public abstract class GenPySwift : GenBase
 				StartDocLine();
 			}
 			else
-				Write(c);
+				WriteChar(c);
 		}
 	}
 
@@ -52,9 +52,9 @@ public abstract class GenPySwift : GenBase
 				WriteDoc(text.Text);
 				break;
 			case CiDocCode code:
-				Write('`');
+				WriteChar('`');
 				WriteDoc(code.Text);
-				Write('`');
+				WriteChar('`');
 				break;
 			default:
 				throw new ArgumentException(inline.GetType().Name);
@@ -82,7 +82,7 @@ public abstract class GenPySwift : GenBase
 				WriteName(this.CurrentMethod.Parent);
 			else
 				Write("self");
-			Write('.');
+			WriteChar('.');
 		}
 		WriteName(symbol);
 	}
@@ -142,7 +142,7 @@ public abstract class GenPySwift : GenBase
 			WriteNewStorage(elementType);
 		else
 			WriteCoerced(elementType, args[0], CiPriority.Argument);
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected virtual bool VisitPreCall(CiCallExpr call) => false;
@@ -324,7 +324,7 @@ public abstract class GenPySwift : GenBase
 			if (statement.IsIteratorUsed)
 				WriteName(iter);
 			else
-				Write('_');
+				WriteChar('_');
 			Write(" in ");
 			WriteForRange(iter, (CiBinaryExpr) statement.Cond, statement.RangeStep);
 			WriteChild(statement.Body);

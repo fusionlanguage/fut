@@ -53,7 +53,7 @@ public class GenJs : GenBase
 		case "var":
 		case "with":
 		case "yield":
-			Write('_');
+			WriteChar('_');
 			break;
 		default:
 			break;
@@ -71,7 +71,7 @@ public class GenJs : GenBase
 		case CiConst konst:
 			if (konst.InMethod != null) {
 				WriteUppercaseWithUnderscores(konst.InMethod.Name);
-				Write('_');
+				WriteChar('_');
 			}
 			WriteUppercaseWithUnderscores(symbol.Name);
 			break;
@@ -80,10 +80,10 @@ public class GenJs : GenBase
 			break;
 		case CiMember member:
 			if (IsJsPrivate(member)) {
-				Write('#');
+				WriteChar('#');
 				WriteCamelCase(symbol.Name);
 				if (symbol.Name == "Constructor")
-					Write('_');
+					WriteChar('_');
 			}
 			else
 				WriteCamelCaseNotKeyword(symbol.Name);
@@ -133,7 +133,7 @@ public class GenJs : GenBase
 		WriteCoercedLiterals(null, expr.Items);
 		Write(" ]");
 		if (number != null)
-			Write(')');
+			WriteChar(')');
 	}
 
 	protected override void WriteNew(CiReadWriteClassType klass, CiPriority parent)
@@ -166,9 +166,9 @@ public class GenJs : GenBase
 	{
 		Write("Object.assign(");
 		WriteNew((CiReadWriteClassType) type, CiPriority.Argument);
-		Write(',');
+		WriteChar(',');
 		WriteObjectLiteral(init, ": ");
-		Write(')');
+		WriteChar(')');
 	}
 
 	protected override void WriteVar(CiNamedValue def)
@@ -183,14 +183,14 @@ public class GenJs : GenBase
 			char c = s[i];
 			if (c == '`'
 			 || (c == '$' && i + 1 < s.Length && s[i + 1] == '{'))
-				Write('\\');
-			Write(c);
+				WriteChar('\\');
+			WriteChar(c);
 		}
 	}
 
 	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
-		Write('`');
+		WriteChar('`');
 		foreach (CiInterpolatedPart part in expr.Parts) {
 			WriteInterpolatedLiteral(part.Prefix);
 			Write("${");
@@ -208,14 +208,14 @@ public class GenJs : GenBase
 						Write(".toExponential(");
 						if (part.Precision >= 0)
 							VisitLiteralLong(part.Precision);
-						Write(')');
+						WriteChar(')');
 						break;
 					case 'F':
 					case 'f':
 						Write(".toFixed(");
 						if (part.Precision >= 0)
 							VisitLiteralLong(part.Precision);
-						Write(')');
+						WriteChar(')');
 						break;
 					case 'X':
 						Write(".toString(16).toUpperCase()");
@@ -236,20 +236,20 @@ public class GenJs : GenBase
 				if (part.Width > 0) {
 					Write(".padStart(");
 					VisitLiteralLong(part.Width);
-					Write(')');
+					WriteChar(')');
 				}
 				else if (part.Width < 0) {
 					Write(".padEnd(");
 					VisitLiteralLong(-part.Width);
-					Write(')');
+					WriteChar(')');
 				}
 			}
 			else
 				part.Argument.Accept(this, CiPriority.Argument);
-			Write('}');
+			WriteChar('}');
 		}
 		WriteInterpolatedLiteral(expr.Suffix);
-		Write('`');
+		WriteChar('`');
 		return expr;
 	}
 
@@ -266,7 +266,7 @@ public class GenJs : GenBase
 			}
 			else
 				throw new NotImplementedException(symbol.ToString());
-			Write('.');
+			WriteChar('.');
 		}
 		WriteName(symbol);
 		if (symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiStringType)
@@ -313,7 +313,7 @@ public class GenJs : GenBase
 		if (length >= 0) // reference as opposed to definition
 			Write("Ci.");
 		foreach (char c in name)
-			Write(CiLexer.IsLetterOrDigit(c) ? c : '_');
+			WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
 	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
@@ -341,13 +341,13 @@ public class GenJs : GenBase
 			return expr;
 		case CiId.MatchEnd:
 			if (parent > CiPriority.Add)
-				Write('(');
+				WriteChar('(');
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".index + ");
 			expr.Left.Accept(this, CiPriority.Primary); // FIXME: side effect
 			Write("[0].length");
 			if (parent > CiPriority.Add)
-				Write(')');
+				WriteChar(')');
 			return expr;
 		case CiId.MatchLength:
 			expr.Left.Accept(this, CiPriority.Primary);
@@ -393,7 +393,7 @@ public class GenJs : GenBase
 	{
 		CiExpr pattern = args[argIndex];
 		if (pattern is CiLiteralString literal) {
-			Write('/');
+			WriteChar('/');
 			bool escaped = false;
 			foreach (char c in literal.Value) {
 				switch (c) {
@@ -415,19 +415,19 @@ public class GenJs : GenBase
 					break;
 				}
 				if (escaped) {
-					Write('\\');
+					WriteChar('\\');
 					escaped = false;
 				}
-				Write(c);
+				WriteChar(c);
 			}
-			Write('/');
+			WriteChar('/');
 			WriteRegexOptions(args, "", "", "", "i", "m", "s");
 		}
 		else {
 			Write("new RegExp(");
 			pattern.Accept(this, CiPriority.Argument);
 			WriteRegexOptions(args, ", \"", "", "\"", "i", "m", "s");
-			Write(')');
+			WriteChar(')');
 		}
 	}
 
@@ -446,7 +446,7 @@ public class GenJs : GenBase
 				Write(", ");
 				WriteAdd(args[0], args[1]); // TODO: side effect
 			}
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ArrayFillAll:
 		case CiId.ArrayFillPart:
@@ -457,7 +457,7 @@ public class GenJs : GenBase
 				Write(", ");
 				WriteStartEnd(args[1], args[2]);
 			}
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ArrayCopyTo:
 		case CiId.ListCopyTo:
@@ -472,7 +472,7 @@ public class GenJs : GenBase
 					obj.Accept(this, CiPriority.Primary);
 					Write(method.Id == CiId.ArrayCopyTo ? ".subarray(" : ".slice(");
 					WriteStartEnd(args[0], args[3]);
-					Write(')');
+					WriteChar(')');
 				}
 				if (!args[2].IsLiteralZero()) {
 					Write(", ");
@@ -489,10 +489,10 @@ public class GenJs : GenBase
 				if (!wholeSource) {
 					Write(".slice(");
 					WriteStartEnd(args[0], args[3]);
-					Write(')');
+					WriteChar(')');
 				}
 			}
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.ArraySortPart:
 			obj.Accept(this, CiPriority.Primary);
@@ -611,9 +611,9 @@ public class GenJs : GenBase
 				args[1].Accept(this, CiPriority.Primary);
 				Write(".subarray(");
 				args[2].Accept(this, CiPriority.Argument);
-				Write(')');
+				WriteChar(')');
 			}
-			Write(')');
+			WriteChar(')');
 			break;
 		case CiId.UTF8GetString:
 			Write("new TextDecoder().decode(");
@@ -632,7 +632,7 @@ public class GenJs : GenBase
 			else {
 				Write("process.env[");
 				args[0].Accept(this, CiPriority.Argument);
-				Write(']');
+				WriteChar(']');
 			}
 			break;
 		case CiId.RegexCompile:
@@ -652,8 +652,8 @@ public class GenJs : GenBase
 		case CiId.MatchFindStr:
 		case CiId.MatchFindRegex:
 			if (parent > CiPriority.Equality)
-				Write('(');
-			Write('(');
+				WriteChar('(');
+			WriteChar('(');
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = ");
 			if (method.Id == CiId.MatchFindStr)
@@ -663,7 +663,7 @@ public class GenJs : GenBase
 			WriteCall(".exec", args[0]);
 			Write(") != null");
 			if (parent > CiPriority.Equality)
-				Write(')');
+				WriteChar(')');
 			break;
 		case CiId.MatchGetCapture:
 			WriteIndexing(obj, args[0]);
@@ -673,14 +673,14 @@ public class GenJs : GenBase
 			break;
 		case CiId.MathFusedMultiplyAdd:
 			if (parent > CiPriority.Add)
-				Write('(');
+				WriteChar('(');
 			args[0].Accept(this, CiPriority.Mul);
 			Write(" * ");
 			args[1].Accept(this, CiPriority.Mul);
 			Write(" + ");
 			args[2].Accept(this, CiPriority.Add);
 			if (parent > CiPriority.Add)
-				Write(')');
+				WriteChar(')');
 			break;
 		case CiId.MathIsFinite:
 		case CiId.MathIsNaN:
@@ -689,11 +689,11 @@ public class GenJs : GenBase
 			break;
 		case CiId.MathIsInfinity:
 			if (parent > CiPriority.Equality)
-				Write('(');
+				WriteChar('(');
 			WriteCall("Math.abs", args[0]);
 			Write(" == Infinity");
 			if (parent > CiPriority.Equality)
-				Write(')');
+				WriteChar(')');
 			break;
 		case CiId.MathTruncate:
 			WriteCall("Math.trunc", args[0]);
@@ -706,7 +706,7 @@ public class GenJs : GenBase
 					Write("super");
 				else
 					obj.Accept(this, CiPriority.Primary);
-				Write('.');
+				WriteChar('.');
 				WriteName(method);
 			}
 			WriteArgsInParentheses(method, args);
@@ -741,17 +741,17 @@ public class GenJs : GenBase
 			switch (expr.Op) {
 			case CiToken.Slash:
 				if (parent > CiPriority.Or)
-					Write('(');
+					WriteChar('(');
 				expr.Left.Accept(this, CiPriority.Mul);
 				Write(" / ");
 				expr.Right.Accept(this, CiPriority.Primary);
 				Write(" | 0"); // FIXME: long: Math.trunc?
 				if (parent > CiPriority.Or)
-					Write(')');
+					WriteChar(')');
 				return expr;
 			case CiToken.DivAssign:
 				if (parent > CiPriority.Assign)
-					Write('(');
+					WriteChar('(');
 				expr.Left.Accept(this, CiPriority.Assign);
 				Write(" = ");
 				expr.Left.Accept(this, CiPriority.Mul); // TODO: side effect
@@ -759,7 +759,7 @@ public class GenJs : GenBase
 				expr.Right.Accept(this, CiPriority.Primary);
 				Write(" | 0");
 				if (parent > CiPriority.Assign)
-					Write(')');
+					WriteChar(')');
 				return expr;
 			default:
 				break;
@@ -817,7 +817,7 @@ public class GenJs : GenBase
 		case CiId.DictionaryClass:
 		case CiId.SortedDictionaryClass:
 		case CiId.OrderedDictionaryClass:
-			Write('[');
+			WriteChar('[');
 			WriteName(statement.GetVar());
 			Write(", ");
 			WriteName(statement.GetValueVar());
@@ -844,7 +844,7 @@ public class GenJs : GenBase
 		default:
 			throw new NotImplementedException(klass.Class.Name);
 		}
-		Write(')');
+		WriteChar(')');
 		WriteChild(statement.Body);
 	}
 
@@ -953,7 +953,7 @@ public class GenJs : GenBase
 			Write("static ");
 			WriteResource(name, -1);
 			WriteLine(" = new Uint8Array([");
-			Write('\t');
+			WriteChar('\t');
 			Write(resources[name]);
 			WriteLine(" ]);");
 		}
