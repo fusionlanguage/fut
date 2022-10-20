@@ -41,13 +41,9 @@ public class CiLiteralChar : CiLiteralLong
 	public override string ToString()
 	{
 		switch (this.Value) {
-		case '\a': return "'\\a'";
-		case '\b': return "'\\b'";
-		case '\f': return "'\\f'";
 		case '\n': return "'\\n'";
 		case '\r': return "'\\r'";
 		case '\t': return "'\\t'";
-		case '\v': return "'\\v'";
 		case '\\': return "'\\\\'";
 		case '\'': return "'\\''";
 		default: return $"'{(char) this.Value}'";
@@ -249,65 +245,6 @@ public class CiBinaryExpr : CiExpr
 	public static CiType PromoteNumericTypes(CiType left, CiType right) => PromoteFloatingTypes(left, right) ?? PromoteIntegerTypes(left, right);
 
 	public override string ToString() => this.Op == CiToken.LeftBracket ? $"{this.Left}[{this.Right}]" : $"({this.Left} {GetOpString()} {this.Right})";
-}
-
-public class CiMethod : CiMethodBase
-{
-	internal CiCallType CallType;
-	internal bool IsMutator;
-	internal readonly CiParameters Parameters = new CiParameters();
-	public static CiMethod New(CiVisibility visibility, CiType type, CiId id, string name, CiVar param0 = null, CiVar param1 = null, CiVar param2 = null, CiVar param3 = null)
-	{
-		CiMethod result = new CiMethod { Visibility = visibility, CallType = CiCallType.Normal, Type = type, Id = id, Name = name };
-		if (param0 != null) {
-			result.Parameters.Add(param0);
-			if (param1 != null) {
-				result.Parameters.Add(param1);
-				if (param2 != null) {
-					result.Parameters.Add(param2);
-					if (param3 != null)
-						result.Parameters.Add(param3);
-				}
-			}
-		}
-		return result;
-	}
-	public static CiMethod NewStatic(CiType type, CiId id, string name, CiVar param0, CiVar param1 = null, CiVar param2 = null)
-	{
-		CiMethod result = New(CiVisibility.Public, type, id, name, param0, param1, param2);
-		result.CallType = CiCallType.Static;
-		return result;
-	}
-	public static CiMethod NewMutator(CiVisibility visibility, CiType type, CiId id, string name, CiVar param0 = null, CiVar param1 = null, CiVar param2 = null)
-	{
-		CiMethod result = New(visibility, type, id, name, param0, param1, param2);
-		result.IsMutator = true;
-		return result;
-	}
-	public override bool IsStatic() => this.CallType == CiCallType.Static;
-	public bool IsAbstractOrVirtual() => this.CallType == CiCallType.Abstract || this.CallType == CiCallType.Virtual;
-	public CiMethod GetDeclaringMethod()
-	{
-		CiMethod method = this;
-		while (method.CallType == CiCallType.Override)
-			method = (CiMethod) method.Parent.Parent.TryLookup(method.Name);
-		return method;
-	}
-}
-
-public class CiMethodGroup : CiMember
-{
-	internal readonly CiMethod[] Methods = new CiMethod[2];
-	CiMethodGroup()
-	{
-	}
-	public static CiMethodGroup New(CiMethod method0, CiMethod method1)
-	{
-		CiMethodGroup result = new CiMethodGroup { Visibility = method0.Visibility, Name = method0.Name };
-		result.Methods[0] = method0;
-		result.Methods[1] = method1;
-		return result;
-	}
 }
 
 public class CiClass : CiContainerType

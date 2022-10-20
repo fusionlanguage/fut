@@ -772,20 +772,66 @@ public class CiMethodBase : CiMember
 	internal HashSet<CiMethod>() Calls;
 }
 
-//public class CiMethodGroup : CiMember
-//{
-//	internal CiMethod#[2] Methods;
-//	CiMethodGroup()
-//	{
-//	}
-//	public static CiMethodGroup# New(CiMethod# method0, CiMethod# method1)
-//	{
-//		CiMethodGroup# result = new CiMethodGroup { Visibility = method0.Visibility, Name = method0.Name };
-//		result.Methods[0] = method0;
-//		result.Methods[1] = method1;
-//		return result;
-//	}
-//}
+public class CiMethod : CiMethodBase
+{
+	internal CiCallType CallType;
+	internal bool IsMutator = false;
+	internal CiParameters() Parameters;
+	public static CiMethod# New(CiVisibility visibility, CiType# type, CiId id, string name, CiVar# param0 = null, CiVar# param1 = null, CiVar# param2 = null, CiVar# param3 = null)
+	{
+		CiMethod# result = new CiMethod { Visibility = visibility, CallType = CiCallType.Normal, Type = type, Id = id, Name = name };
+		if (param0 != null) {
+			result.Parameters.Add(param0);
+			if (param1 != null) {
+				result.Parameters.Add(param1);
+				if (param2 != null) {
+					result.Parameters.Add(param2);
+					if (param3 != null)
+						result.Parameters.Add(param3);
+				}
+			}
+		}
+		return result;
+	}
+	public static CiMethod# NewStatic(CiType# type, CiId id, string name, CiVar# param0, CiVar# param1 = null, CiVar# param2 = null)
+	{
+		CiMethod# result = New(CiVisibility.Public, type, id, name, param0, param1, param2);
+		result.CallType = CiCallType.Static;
+		return result;
+	}
+	public static CiMethod# NewMutator(CiVisibility visibility, CiType# type, CiId id, string name, CiVar# param0 = null, CiVar# param1 = null, CiVar# param2 = null)
+	{
+		CiMethod# result = New(visibility, type, id, name, param0, param1, param2);
+		result.IsMutator = true;
+		return result;
+	}
+	public override bool IsStatic() => this.CallType == CiCallType.Static;
+	public bool IsAbstractOrVirtual() => this.CallType == CiCallType.Abstract || this.CallType == CiCallType.Virtual;
+	public CiMethod GetDeclaringMethod()
+	{
+		CiMethod method = this;
+		while (method.CallType == CiCallType.Override) {
+			assert method.Parent.Parent.TryLookup(method.Name) is CiMethod baseMethod;
+			method = baseMethod;
+		}
+		return method;
+	}
+}
+
+public class CiMethodGroup : CiMember
+{
+	internal CiMethod#[2] Methods;
+	CiMethodGroup()
+	{
+	}
+	public static CiMethodGroup# New(CiMethod# method0, CiMethod# method1)
+	{
+		CiMethodGroup# result = new CiMethodGroup { Visibility = method0.Visibility, Name = method0.Name };
+		result.Methods[0] = method0;
+		result.Methods[1] = method1;
+		return result;
+	}
+}
 
 public abstract class CiContainerType : CiType
 {

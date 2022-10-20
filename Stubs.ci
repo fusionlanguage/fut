@@ -19,6 +19,5 @@
 
 public abstract class CiInterpolatedString {}
 public abstract class CiBinaryExpr {}
-public abstract class CiMethod {}
 public abstract class CiStorageType {}
 public abstract class CiArrayStorageType : CiStorageType {}
