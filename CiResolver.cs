@@ -354,9 +354,10 @@ public class CiResolver : CiVisitor
 
 	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
-		List<CiInterpolatedPart> parts = new List<CiInterpolatedPart>();
+		int partsCount = 0;
 		StringBuilder sb = new StringBuilder();
-		foreach (CiInterpolatedPart part in expr.Parts) {
+		for (int partsIndex = 0; partsIndex < expr.Parts.Count; partsIndex++) {
+			CiInterpolatedPart part = expr.Parts[partsIndex];
 			sb.Append(part.Prefix);
 			CiExpr arg = Resolve(part.Argument);
 			switch (arg.Type) {
@@ -386,15 +387,20 @@ public class CiResolver : CiVisitor
 				sb.Append(stringArg);
 			}
 			else {
-				parts.Add(new CiInterpolatedPart(sb.ToString(), arg) { WidthExpr = part.WidthExpr, Width = width, Format = part.Format, Precision = part.Precision });
+				CiInterpolatedPart targetPart = expr.Parts[partsCount++];
+				targetPart.Prefix = sb.ToString();
+				targetPart.Argument = arg;
+				targetPart.WidthExpr = part.WidthExpr;
+				targetPart.Width = width;
+				targetPart.Format = part.Format;
+				targetPart.Precision = part.Precision;
 				sb.Clear();
 			}
 		}
 		sb.Append(expr.Suffix);
-		if (parts.Count == 0)
+		if (partsCount == 0)
 			return CiSystem.NewLiteralString(sb.ToString(), expr.Line);
-		expr.Parts.Clear();
-		expr.Parts.AddRange(parts);
+		expr.Parts.RemoveRange(partsCount, expr.Parts.Count - partsCount);
 		expr.Suffix = sb.ToString();
 		return expr;
 	}
@@ -645,7 +651,7 @@ public class CiResolver : CiVisitor
 		if (expr is CiLiteral literal)
 			result.Suffix = literal.GetLiteralString();
 		else {
-			result.Parts.Add(new CiInterpolatedPart("", expr));
+			result.AddPart("", expr);
 			result.Suffix = "";
 		}
 		return result;

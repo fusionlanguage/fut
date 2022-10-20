@@ -68,15 +68,10 @@ public class CiInterpolatedPart
 {
 	internal string Prefix;
 	internal CiExpr Argument;
-	internal CiExpr WidthExpr = null;
+	internal CiExpr WidthExpr;
 	internal int Width;
-	internal char Format = ' ';
-	internal int Precision = -1;
-	public CiInterpolatedPart(string prefix, CiExpr arg)
-	{
-		this.Prefix = prefix;
-		this.Argument = arg;
-	}
+	internal char Format;
+	internal int Precision;
 }
 
 public class CiInterpolatedString : CiExpr
@@ -86,6 +81,10 @@ public class CiInterpolatedString : CiExpr
 	public CiInterpolatedString()
 	{
 		this.Type = CiSystem.StringStorageType;
+	}
+	public void AddPart(string prefix, CiExpr arg, CiExpr widthExpr = null, char format = ' ', int precision = -1)
+	{
+		this.Parts.Add(new CiInterpolatedPart { Prefix = prefix, Argument = arg, WidthExpr = widthExpr, Format = format, Precision = precision });
 	}
 	public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitInterpolatedString(this, parent);
 	public override string ToString()

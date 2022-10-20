@@ -182,7 +182,7 @@ public class CiParser : CiLexer
 				}
 				NextToken();
 			}
-			result.Parts.Add(new CiInterpolatedPart(prefix, arg) { WidthExpr = width, Format = format, Precision = precision });
+			result.AddPart(prefix, arg, width, format, precision);
 			Check(CiToken.RightBrace);
 		} while (ReadString(true) == CiToken.InterpolatedString);
 		result.Suffix = this.StringValue.Replace("{{", "{");
