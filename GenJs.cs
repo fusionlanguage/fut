@@ -438,6 +438,9 @@ public class GenJs : GenBase
 		case CiId.ListContains:
 			WriteCall(obj, "includes", args[0]);
 			break;
+		case CiId.StringReplace:
+			WriteCall(obj, "replaceAll", args[0], args[1]);
+			break;
 		case CiId.StringSubstring:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".substring(");

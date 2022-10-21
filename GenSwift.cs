@@ -469,6 +469,14 @@ public class GenSwift : GenPySwift
 			WriteUnwrappedString(args[0], CiPriority.Argument, true);
 			Write(", .backwards)");
 			break;
+		case CiId.StringReplace:
+			WriteUnwrappedString(obj, CiPriority.Primary, true);
+			Write(".replacingOccurrences(of: ");
+			WriteUnwrappedString(args[0], CiPriority.Argument, true);
+			Write(", with: ");
+			WriteUnwrappedString(args[1], CiPriority.Argument, true);
+			WriteChar(')');
+			break;
 		case CiId.StringStartsWith:
 			WriteStringContains(obj, "hasPrefix", args);
 			break;

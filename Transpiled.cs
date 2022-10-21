@@ -1308,6 +1308,7 @@ namespace Foxoft.Ci
 		StringEndsWith,
 		StringIndexOf,
 		StringLastIndexOf,
+		StringReplace,
 		StringStartsWith,
 		StringSubstring,
 		ArrayBinarySearchAll,

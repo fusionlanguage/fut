@@ -1,0 +1,9 @@
+public class Test
+{
+	public static bool Run()
+	{
+		string s = "foobar";
+		string() r = s.Replace("o", "uu"); //FAIL: c cpp ts TODO; cl
+		return r == "fuuuubar";
+	}
+}

@@ -274,6 +274,8 @@ Possible string operations are:
 * `str.Substring(offset, length)` evaluates to the selected part of the string.
 * `str.Substring(offset)` returns the part of the string
   from the specified position until the end of the string.
+* `str.Replace(old, new)` returns `str` with all occurrences of `old`
+  substituted with `new`.
 * `Encoding.UTF8.GetByteCount(str)` calculates the number of bytes needed
   for UTF-8 encoding of the string.
 * `Encoding.UTF8.GetBytes(str, byteArray, byteArrayIndex)` writes UTF-8
