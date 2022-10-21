@@ -55,38 +55,6 @@ public class CiParser : CiParserBase
 		return sb.ToString();
 	}
 
-	CiInterpolatedString ParseInterpolatedString()
-	{
-		CiInterpolatedString result = new CiInterpolatedString { Line = this.Line, Type = CiSystem.StringStorageType };
-		do {
-			string prefix = this.StringValue.Replace("{{", "{");
-			NextToken();
-			CiExpr arg = ParseExpr();
-			CiExpr width = null;
-			char format = ' ';
-			int precision = -1;
-			if (Eat(CiToken.Comma))
-				width = ParseExpr();
-			if (See(CiToken.Colon)) {
-				format = (char) ReadChar();
-				if ("DdEeFfGgXx".IndexOf(format) < 0)
-					ReportError("Invalid format specifier");
-
-				if (SeeDigit()) {
-					precision = ReadChar() - '0';
-					if (SeeDigit())
-						precision = precision * 10 + ReadChar() - '0';
-				}
-				NextToken();
-			}
-			result.AddPart(prefix, arg, width, format, precision);
-			Check(CiToken.RightBrace);
-		} while (ReadString(true) == CiToken.InterpolatedString);
-		result.Suffix = this.StringValue.Replace("{{", "{");
-		NextToken();
-		return result;
-	}
-
 	protected override CiExpr ParsePrimaryExpr()
 	{
 		CiExpr result;

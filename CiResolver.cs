@@ -416,6 +416,7 @@ public class CiResolver : CiVisitor
 		sb.Append(expr.Suffix);
 		if (partsCount == 0)
 			return CiSystem.NewLiteralString(sb.ToString(), expr.Line);
+		expr.Type = CiSystem.StringStorageType;
 		expr.Parts.RemoveRange(partsCount, expr.Parts.Count - partsCount);
 		expr.Suffix = sb.ToString();
 		return expr;
