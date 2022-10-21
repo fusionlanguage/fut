@@ -17,9 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 
@@ -57,8 +54,6 @@ public class CiParser : CiParserBase
 			sb.Length--;
 		return sb.ToString();
 	}
-
-	CiCodeDoc ParseDoc() => See(CiToken.DocComment) ? ParseCodeDoc() : null;
 
 	CiInterpolatedString ParseInterpolatedString()
 	{
@@ -209,200 +204,6 @@ public class CiParser : CiParserBase
 		}
 	}
 
-	CiExpr ParseAssign(bool allowVar)
-	{
-		CiExpr left = allowVar ? ParseType() : ParseExpr();
-		switch (this.CurrentToken) {
-		case CiToken.Assign:
-		case CiToken.AddAssign:
-		case CiToken.SubAssign:
-		case CiToken.MulAssign:
-		case CiToken.DivAssign:
-		case CiToken.ModAssign:
-		case CiToken.AndAssign:
-		case CiToken.OrAssign:
-		case CiToken.XorAssign:
-		case CiToken.ShiftLeftAssign:
-		case CiToken.ShiftRightAssign:
-			return new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAssign(false) };
-		case CiToken.Id:
-			if (allowVar)
-				return ParseVar(left);
-			return left;
-		default:
-			return left;
-		}
-	}
-
-	CiFor ParseFor()
-	{
-		CiFor result = new CiFor { Line = this.Line };
-		Expect(CiToken.For);
-		Expect(CiToken.LeftParenthesis);
-		if (!See(CiToken.Semicolon))
-			result.Init = ParseAssign(true);
-		Expect(CiToken.Semicolon);
-		if (!See(CiToken.Semicolon))
-			result.Cond = ParseExpr();
-		Expect(CiToken.Semicolon);
-		if (!See(CiToken.RightParenthesis))
-			result.Advance = ParseAssign(false);
-		Expect(CiToken.RightParenthesis);
-		ParseLoopBody(result);
-		return result;
-	}
-
-	CiNative ParseNative()
-	{
-		int line = this.Line;
-		Expect(CiToken.Native);
-		int offset = this.CharOffset;
-		Expect(CiToken.LeftBrace);
-		int nesting = 1;
-		for (;;) {
-			if (See(CiToken.EndOfFile)) {
-				Expect(CiToken.RightBrace);
-				return null;
-			}
-			if (See(CiToken.LeftBrace))
-				nesting++;
-			else if (See(CiToken.RightBrace) && --nesting == 0)
-				break;
-			NextToken();
-		}
-		Trace.Assert(this.Input[this.CharOffset - 1] == '}');
-		string content = Encoding.UTF8.GetString(this.Input, offset, this.CharOffset - 1 - offset);
-		NextToken();
-		return new CiNative { Line = line, Content = content };
-	}
-
-	CiSwitch ParseSwitch()
-	{
-		CiSwitch result = new CiSwitch { Line = this.Line };
-		Expect(CiToken.Switch);
-		result.Value = ParseParenthesized();
-		Expect(CiToken.LeftBrace);
-
-		CiCondCompletionStatement outerLoopOrSwitch = this.CurrentLoopOrSwitch;
-		this.CurrentLoopOrSwitch = result;
-		while (Eat(CiToken.Case)) {
-			CiCase kase = new CiCase();
-			do {
-				CiExpr expr = ParseExpr();
-				if (See(CiToken.Id))
-					expr = ParseVar(expr);
-				kase.Values.Add(expr);
-				Expect(CiToken.Colon);
-			} while (Eat(CiToken.Case));
-			if (See(CiToken.Default)) {
-				ReportError("Please remove 'case' before 'default'");
-				break;
-			}
-
-			while (!See(CiToken.EndOfFile)) {
-				kase.Body.Add(ParseStatement());
-				switch (this.CurrentToken) {
-				case CiToken.Case:
-				case CiToken.Default:
-				case CiToken.RightBrace:
-					break;
-				default:
-					continue;
-				}
-				break;
-			}
-			result.Cases.Add(kase);
-		}
-		if (result.Cases.Count == 0)
-			ReportError("Switch with no cases");
-
-		if (Eat(CiToken.Default)) {
-			Expect(CiToken.Colon);
-			do {
-				if (See(CiToken.EndOfFile))
-					break;
-				result.DefaultBody.Add(ParseStatement());
-			} while (!See(CiToken.RightBrace));
-		}
-
-		Expect(CiToken.RightBrace);
-		this.CurrentLoopOrSwitch = outerLoopOrSwitch;
-		return result;
-	}
-
-	protected override CiStatement ParseStatement()
-	{
-		switch (this.CurrentToken) {
-		case CiToken.LeftBrace:
-			return ParseBlock();
-		case CiToken.Assert:
-			return ParseAssert();
-		case CiToken.Break:
-			return ParseBreak();
-		case CiToken.Const:
-			return ParseConst();
-		case CiToken.Continue:
-			return ParseContinue();
-		case CiToken.Do:
-			return ParseDoWhile();
-		case CiToken.For:
-			return ParseFor();
-		case CiToken.Foreach:
-			return ParseForeach();
-		case CiToken.If:
-			return ParseIf();
-		case CiToken.Lock_:
-			return ParseLock();
-		case CiToken.Native:
-			return ParseNative();
-		case CiToken.Return:
-			return ParseReturn();
-		case CiToken.Switch:
-			return ParseSwitch();
-		case CiToken.Throw:
-			return ParseThrow();
-		case CiToken.While:
-			return ParseWhile();
-		default:
-			CiExpr expr = ParseAssign(true);
-			Expect(CiToken.Semicolon);
-			return expr;
-		}
-	}
-
-	void ParseMethod(CiMethod method)
-	{
-		method.IsMutator = Eat(CiToken.ExclamationMark);
-		Expect(CiToken.LeftParenthesis);
-		if (!See(CiToken.RightParenthesis)) {
-			do {
-				CiCodeDoc doc = ParseDoc();
-				CiVar param = ParseVar(ParseType());
-				param.Documentation = doc;
-				AddSymbol(method.Parameters, param);
-			} while (Eat(CiToken.Comma));
-		}
-		Expect(CiToken.RightParenthesis);
-		method.Throws = Eat(CiToken.Throws);
-		if (method.CallType == CiCallType.Abstract)
-			Expect(CiToken.Semicolon);
-		else if (See(CiToken.FatArrow))
-			method.Body = ParseReturn();
-		else if (Check(CiToken.LeftBrace))
-			method.Body = ParseBlock();
-	}
-
-	static readonly string[] CallTypeStrings = {
-		"static",
-		"normal",
-		"abstract",
-		"virtual",
-		"override",
-		"sealed"
-	};
-
-	static string ToString(CiCallType callType) => CallTypeStrings[(int) callType];
-
 	public CiClass ParseClass(CiCallType callType)
 	{
 		Expect(CiToken.Class);
@@ -457,7 +258,7 @@ public class CiParser : CiParserBase
 					if (klass.CallType == CiCallType.Static)
 						ReportError("Constructor in a static class");
 					if (callType != CiCallType.Normal)
-						ReportError($"Constructor cannot be {ToString(callType)}");
+						ReportError($"Constructor cannot be {CallTypeToString(callType)}");
 					if (call.Arguments.Count != 0)
 						ReportError("Constructor parameters not supported");
 					if (klass.Constructor != null)
@@ -506,7 +307,7 @@ public class CiParser : CiParserBase
 			if (visibility == CiVisibility.Public)
 				ReportError("Field cannot be public");
 			if (callType != CiCallType.Normal)
-				ReportError($"Field cannot be {ToString(callType)}");
+				ReportError($"Field cannot be {CallTypeToString(callType)}");
 			if (type == CiSystem.VoidType)
 				ReportError("Field cannot be void");
 			CiField field = new CiField { Line = line, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };

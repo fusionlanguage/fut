@@ -72,7 +72,6 @@ public class CiClass : CiContainerType
 	internal CiMethodBase Constructor;
 	internal readonly List<CiConst> ConstArrays = new List<CiConst>();
 	internal CiVisitStatus VisitStatus;
-	public override CiType GetPtrOrSelf() => new CiReadWriteClassType { Class = this };
 	public bool AddsVirtualMethods()
 	{
 		for (CiSymbol symbol = this.First; symbol != null; symbol = symbol.Next) {
@@ -84,7 +83,7 @@ public class CiClass : CiContainerType
 
 	public CiClass()
 	{
-		Add(CiVar.New(GetPtrOrSelf(), "this")); // shadows "this" in base class
+		Add(CiVar.New(new CiReadWriteClassType { Class = this }, "this")); // shadows "this" in base class
 	}
 
 	public static CiClass New(CiCallType callType, CiId id, string name, int typeParameterCount = 0)
@@ -257,7 +256,6 @@ public class CiDynamicPtrType : CiReadWriteClassType
 		return right == CiSystem.NullType
 			|| (right is CiDynamicPtrType rightClass && IsAssignableFromClass(rightClass));
 	}
-	public override CiType GetPtrOrSelf() => new CiReadWriteClassType { Class = this.Class, TypeArg0 = this.TypeArg0 };
 
 	public override string GetArraySuffix() => IsArray() ? "[]#" : "";
 	public override string GetClassSuffix() => "#";

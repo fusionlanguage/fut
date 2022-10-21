@@ -21,7 +21,7 @@ public abstract class CiParserBase : CiLexer
 {
 	string XcrementParent = null;
 	CiLoop CurrentLoop = null;
-	protected CiCondCompletionStatement CurrentLoopOrSwitch;
+	CiCondCompletionStatement CurrentLoopOrSwitch = null;
 
 	protected abstract string DocParseText();
 
@@ -57,7 +57,7 @@ public abstract class CiParserBase : CiLexer
 		return para;
 	}
 
-	protected CiCodeDoc# ParseCodeDoc!()
+	CiCodeDoc# ParseCodeDoc!()
 	{
 		DocStartLexing();
 		CiCodeDoc# doc = new CiCodeDoc();
@@ -69,6 +69,8 @@ public abstract class CiParserBase : CiLexer
 		}
 		return doc;
 	}
+
+	protected CiCodeDoc# ParseDoc() => See(CiToken.DocComment) ? ParseCodeDoc() : null;
 
 	protected CiExpr# ParseSymbolReference!(CiExpr# left)
 	{
@@ -306,7 +308,7 @@ public abstract class CiParserBase : CiLexer
 			scope.Add(symbol);
 	}
 
-	protected CiVar# ParseVar!(CiExpr# type)
+	CiVar# ParseVar!(CiExpr# type)
 	{
 		CiVar# result = new CiVar { Line = this.Line, TypeExpr = type, Name = this.StringValue };
 		NextToken();
@@ -325,6 +327,31 @@ public abstract class CiParserBase : CiLexer
 		return konst;
 	}
 
+	CiExpr# ParseAssign!(bool allowVar)
+	{
+		CiExpr# left = allowVar ? ParseType() : ParseExpr();
+		switch (this.CurrentToken) {
+		case CiToken.Assign:
+		case CiToken.AddAssign:
+		case CiToken.SubAssign:
+		case CiToken.MulAssign:
+		case CiToken.DivAssign:
+		case CiToken.ModAssign:
+		case CiToken.AndAssign:
+		case CiToken.OrAssign:
+		case CiToken.XorAssign:
+		case CiToken.ShiftLeftAssign:
+		case CiToken.ShiftRightAssign:
+			return new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAssign(false) };
+		case CiToken.Id:
+			if (allowVar)
+				return ParseVar(left);
+			return left;
+		default:
+			return left;
+		}
+	}
+
 	protected CiBlock# ParseBlock!()
 	{
 		CiBlock# result = new CiBlock { Line = this.Line };
@@ -335,7 +362,7 @@ public abstract class CiParserBase : CiLexer
 		return result;
 	}
 
-	protected CiAssert# ParseAssert!()
+	CiAssert# ParseAssert!()
 	{
 		CiAssert# result = new CiAssert { Line = this.Line };
 		Expect(CiToken.Assert);
@@ -346,7 +373,7 @@ public abstract class CiParserBase : CiLexer
 		return result;
 	}
 
-	protected CiBreak# ParseBreak!()
+	CiBreak# ParseBreak!()
 	{
 		if (this.CurrentLoopOrSwitch == null)
 			ReportError("break outside loop or switch");
@@ -358,7 +385,7 @@ public abstract class CiParserBase : CiLexer
 		return result;
 	}
 
-	protected CiContinue# ParseContinue!()
+	CiContinue# ParseContinue!()
 	{
 		if (this.CurrentLoop == null)
 			ReportError("continue outside loop");
@@ -368,7 +395,7 @@ public abstract class CiParserBase : CiLexer
 		return result;
 	}
 
-	protected void ParseLoopBody!(CiLoop! loop)
+	void ParseLoopBody!(CiLoop! loop)
 	{
 		CiLoop outerLoop = this.CurrentLoop;
 		CiCondCompletionStatement outerLoopOrSwitch = this.CurrentLoopOrSwitch;
@@ -378,7 +405,7 @@ public abstract class CiParserBase : CiLexer
 		this.CurrentLoop = outerLoop;
 	}
 
-	protected CiDoWhile# ParseDoWhile!()
+	CiDoWhile# ParseDoWhile!()
 	{
 		CiDoWhile# result = new CiDoWhile { Line = this.Line };
 		Expect(CiToken.Do);
@@ -389,13 +416,31 @@ public abstract class CiParserBase : CiLexer
 		return result;
 	}
 
+	CiFor# ParseFor!()
+	{
+		CiFor# result = new CiFor { Line = this.Line };
+		Expect(CiToken.For);
+		Expect(CiToken.LeftParenthesis);
+		if (!See(CiToken.Semicolon))
+			result.Init = ParseAssign(true);
+		Expect(CiToken.Semicolon);
+		if (!See(CiToken.Semicolon))
+			result.Cond = ParseExpr();
+		Expect(CiToken.Semicolon);
+		if (!See(CiToken.RightParenthesis))
+			result.Advance = ParseAssign(false);
+		Expect(CiToken.RightParenthesis);
+		ParseLoopBody(result);
+		return result;
+	}
+
 	void ParseForeachIterator!(CiForeach! result)
 	{
 		AddSymbol(result, new CiVar { Line = this.Line, TypeExpr = ParseType(), Name = this.StringValue });
 		NextToken();
 	}
 
-	protected CiForeach# ParseForeach!()
+	CiForeach# ParseForeach!()
 	{
 		CiForeach# result = new CiForeach { Line = this.Line };
 		Expect(CiToken.Foreach);
@@ -415,7 +460,7 @@ public abstract class CiParserBase : CiLexer
 		return result;
 	}
 
-	protected CiIf# ParseIf!()
+	CiIf# ParseIf!()
 	{
 		CiIf# result = new CiIf { Line = this.Line };
 		Expect(CiToken.If);
@@ -426,7 +471,7 @@ public abstract class CiParserBase : CiLexer
 		return result;
 	}
 
-	protected CiLock# ParseLock!()
+	CiLock# ParseLock!()
 	{
 		CiLock# result = new CiLock { Line = this.Line };
 		Expect(CiToken.Lock_);
@@ -435,7 +480,33 @@ public abstract class CiParserBase : CiLexer
 		return result;
 	}
 
-	protected CiReturn# ParseReturn!()
+	protected CiNative# ParseNative!()
+	{
+		int line = this.Line;
+		Expect(CiToken.Native);
+		int offset = this.CharOffset;
+		Expect(CiToken.LeftBrace);
+		int nesting = 1;
+		for (;;) {
+			if (See(CiToken.EndOfFile)) {
+				Expect(CiToken.RightBrace);
+				return null;
+			}
+			if (See(CiToken.LeftBrace))
+				nesting++;
+			else if (See(CiToken.RightBrace)) {
+				if (--nesting == 0)
+					break;
+			}
+			NextToken();
+		}
+		assert this.Input[this.CharOffset - 1] == '}';
+		CiNative# result = new CiNative { Line = line, Content = Encoding.UTF8.GetString(this.Input, offset, this.CharOffset - 1 - offset) };
+		NextToken();
+		return result;
+	}
+
+	CiReturn# ParseReturn!()
 	{
 		CiReturn# result = new CiReturn { Line = this.Line };
 		NextToken();
@@ -445,7 +516,61 @@ public abstract class CiParserBase : CiLexer
 		return result;
 	}
 
-	protected CiThrow# ParseThrow!()
+	CiSwitch# ParseSwitch!()
+	{
+		CiSwitch# result = new CiSwitch { Line = this.Line };
+		Expect(CiToken.Switch);
+		result.Value = ParseParenthesized();
+		Expect(CiToken.LeftBrace);
+
+		CiCondCompletionStatement outerLoopOrSwitch = this.CurrentLoopOrSwitch;
+		this.CurrentLoopOrSwitch = result;
+		while (Eat(CiToken.Case)) {
+			result.Cases.Add();
+			CiCase! kase = result.Cases[result.Cases.Count - 1];
+			do {
+				CiExpr# expr = ParseExpr();
+				if (See(CiToken.Id))
+					expr = ParseVar(expr);
+				kase.Values.Add(expr);
+				Expect(CiToken.Colon);
+			} while (Eat(CiToken.Case));
+			if (See(CiToken.Default)) {
+				ReportError("Please remove 'case' before 'default'");
+				break;
+			}
+
+			while (!See(CiToken.EndOfFile)) {
+				kase.Body.Add(ParseStatement());
+				switch (this.CurrentToken) {
+				case CiToken.Case:
+				case CiToken.Default:
+				case CiToken.RightBrace:
+					break;
+				default:
+					continue;
+				}
+				break;
+			}
+		}
+		if (result.Cases.Count == 0)
+			ReportError("Switch with no cases");
+
+		if (Eat(CiToken.Default)) {
+			Expect(CiToken.Colon);
+			do {
+				if (See(CiToken.EndOfFile))
+					break;
+				result.DefaultBody.Add(ParseStatement());
+			} while (!See(CiToken.RightBrace));
+		}
+
+		Expect(CiToken.RightBrace);
+		this.CurrentLoopOrSwitch = outerLoopOrSwitch;
+		return result;
+	}
+
+	CiThrow# ParseThrow!()
 	{
 		CiThrow# result = new CiThrow { Line = this.Line };
 		Expect(CiToken.Throw);
@@ -454,7 +579,7 @@ public abstract class CiParserBase : CiLexer
 		return result;
 	}
 
-	protected CiWhile# ParseWhile!()
+	CiWhile# ParseWhile!()
 	{
 		CiWhile# result = new CiWhile { Line = this.Line };
 		Expect(CiToken.While);
@@ -463,7 +588,45 @@ public abstract class CiParserBase : CiLexer
 		return result;
 	}
 
-	protected abstract CiStatement# ParseStatement!();
+	CiStatement# ParseStatement!()
+	{
+		switch (this.CurrentToken) {
+		case CiToken.LeftBrace:
+			return ParseBlock();
+		case CiToken.Assert:
+			return ParseAssert();
+		case CiToken.Break:
+			return ParseBreak();
+		case CiToken.Const:
+			return ParseConst();
+		case CiToken.Continue:
+			return ParseContinue();
+		case CiToken.Do:
+			return ParseDoWhile();
+		case CiToken.For:
+			return ParseFor();
+		case CiToken.Foreach:
+			return ParseForeach();
+		case CiToken.If:
+			return ParseIf();
+		case CiToken.Lock_:
+			return ParseLock();
+		case CiToken.Native:
+			return ParseNative();
+		case CiToken.Return:
+			return ParseReturn();
+		case CiToken.Switch:
+			return ParseSwitch();
+		case CiToken.Throw:
+			return ParseThrow();
+		case CiToken.While:
+			return ParseWhile();
+		default:
+			CiExpr# expr = ParseAssign(true);
+			Expect(CiToken.Semicolon);
+			return expr;
+		}
+	}
 
 	protected CiCallType ParseCallType!()
 	{
@@ -485,6 +648,41 @@ public abstract class CiParserBase : CiLexer
 			return CiCallType.Sealed;
 		default:
 			return CiCallType.Normal;
+		}
+	}
+
+	protected void ParseMethod!(CiMethod! method)
+	{
+		method.IsMutator = Eat(CiToken.ExclamationMark);
+		Expect(CiToken.LeftParenthesis);
+		if (!See(CiToken.RightParenthesis)) {
+			do {
+				CiCodeDoc# doc = ParseDoc();
+				CiVar# param = ParseVar(ParseType());
+				param.Documentation = doc;
+				AddSymbol(method.Parameters, param);
+			} while (Eat(CiToken.Comma));
+		}
+		Expect(CiToken.RightParenthesis);
+		method.Throws = Eat(CiToken.Throws);
+		if (method.CallType == CiCallType.Abstract)
+			Expect(CiToken.Semicolon);
+		else if (See(CiToken.FatArrow))
+			method.Body = ParseReturn();
+		else if (Check(CiToken.LeftBrace))
+			method.Body = ParseBlock();
+	}
+
+	protected static string CallTypeToString(CiCallType callType)
+	{
+		switch (callType) {
+		case CiCallType.Static: return "static";
+		case CiCallType.Normal: return "normal";
+		case CiCallType.Abstract: return "abstract";
+		case CiCallType.Virtual: return "virtual";
+		case CiCallType.Override: return "override";
+		case CiCallType.Sealed: return "sealed";
+		default: assert false;
 		}
 	}
 }
