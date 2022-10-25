@@ -391,7 +391,7 @@ public class CiLiteralString : CiLiteral
 		return this;
 	}
 	public override string() GetLiteralString() => this.Value;
-	public override string() ToString() => '"' + this.Value + '"';
+	public override string() ToString() => $"\"{this.Value}\"";
 	public int GetAsciiLength()
 	{
 		int length = 0;

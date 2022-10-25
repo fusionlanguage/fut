@@ -1710,7 +1710,7 @@ namespace Foxoft.Ci
 
 		public override string GetLiteralString() => this.Value;
 
-		public override string ToString() => '"' + this.Value + '"';
+		public override string ToString() => $"\"{this.Value}\"";
 
 		public int GetAsciiLength()
 		{
