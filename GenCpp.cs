@@ -1193,7 +1193,7 @@ public class GenCpp : GenCCpp
 
 	public override void VisitSwitch(CiSwitch statement)
 	{
-		if (statement.Value.Type is CiClassType klass && klass.Id != CiId.StringClass) {
+		if (statement.Value.Type is CiClassType klass && klass.Class.Id != CiId.StringClass) {
 			int gotoId = GetSwitchGoto(statement);
 			string op = "if (";
 			foreach (CiCase kase in statement.Cases) {
