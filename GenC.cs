@@ -2698,7 +2698,7 @@ public class GenC : GenCCpp
 	{
 		if (!NeedsConstructor(klass))
 			return;
-		this.StringSwitchesWithGoto.Clear();
+		this.SwitchesWithGoto.Clear();
 		WriteLine();
 		WriteXstructorSignature("Construct", klass);
 		WriteLine();
@@ -2815,7 +2815,7 @@ public class GenC : GenCCpp
 	{
 		if (!method.IsLive || method.CallType == CiCallType.Abstract)
 			return;
-		this.StringSwitchesWithGoto.Clear();
+		this.SwitchesWithGoto.Clear();
 		WriteLine();
 		WriteSignature(method);
 		for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {

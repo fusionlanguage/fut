@@ -1,6 +1,9 @@
 abstract class Animal
 {
 	internal string Name;
+	internal virtual void MakeSound()
+	{
+	}
 }
 
 class Cat : Animal
@@ -19,7 +22,7 @@ public static class Test
 {
 	static bool IsCat(Animal a)
 	{
-		switch (a) { //FAIL: c cpp js py ts cl; java 17 --enable-preview
+		switch (a) { //FAIL: c js py ts cl; java 17 --enable-preview
 		case Dog d:
 			return d == null;
 		case Cat c:

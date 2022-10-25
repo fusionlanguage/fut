@@ -1191,6 +1191,31 @@ public class GenCpp : GenCCpp
 			CloseBlock();
 	}
 
+	public override void VisitSwitch(CiSwitch statement)
+	{
+		if (statement.Value.Type is CiClassType klass && klass.Id != CiId.StringClass) {
+			int gotoId = GetSwitchGoto(statement);
+			string op = "if (";
+			foreach (CiCase kase in statement.Cases) {
+				if (kase.Values.Count != 1)
+					throw new NotImplementedException();
+				Write(op);
+				CiVar def = (CiVar) kase.Values[0];
+				WriteTypeAndName(def);
+				Write(" = dynamic_cast<");
+				WriteType(def.Type, false);
+				Write(">(");
+				statement.Value.Accept(this, CiPriority.Argument); // FIXME: side effect in every if
+				Write("))");
+				WriteIfCaseBody(kase.Body, gotoId < 0);
+				op = "else if (";
+			}
+			EndSwitchAsIfs(statement, gotoId);
+		}
+		else
+			base.VisitSwitch(statement);
+	}
+
 	public override void VisitThrow(CiThrow statement)
 	{
 		Include("exception");
@@ -1364,7 +1389,7 @@ public class GenCpp : GenCCpp
 	{
 		if (klass.Constructor == null)
 			return;
-		this.StringSwitchesWithGoto.Clear();
+		this.SwitchesWithGoto.Clear();
 		Write(klass.Name);
 		Write("::");
 		Write(klass.Name);
@@ -1378,7 +1403,7 @@ public class GenCpp : GenCCpp
 	{
 		if (method.CallType == CiCallType.Abstract)
 			return;
-		this.StringSwitchesWithGoto.Clear();
+		this.SwitchesWithGoto.Clear();
 		WriteLine();
 		WriteType(method.Type, true);
 		WriteChar(' ');

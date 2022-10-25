@@ -27,7 +27,7 @@ namespace Foxoft.Ci
 
 public abstract class GenCCpp : GenTyped
 {
-	protected readonly List<CiSwitch> StringSwitchesWithGoto = new List<CiSwitch>();
+	protected readonly List<CiSwitch> SwitchesWithGoto = new List<CiSwitch>();
 
 	protected abstract void IncludeStdInt();
 
@@ -215,7 +215,7 @@ public abstract class GenCCpp : GenTyped
 	public override void VisitBreak(CiBreak statement)
 	{
 		if (statement.LoopOrSwitch is CiSwitch switchStatement) {
-			int gotoId = this.StringSwitchesWithGoto.IndexOf(switchStatement);
+			int gotoId = this.SwitchesWithGoto.IndexOf(switchStatement);
 			if (gotoId >= 0) {
 				Write("goto ciafterswitch");
 				VisitLiteralLong(gotoId);
@@ -226,7 +226,17 @@ public abstract class GenCCpp : GenTyped
 		base.VisitBreak(statement);
 	}
 
-	void WriteIfCaseBody(List<CiStatement> body, bool doWhile)
+	protected int GetSwitchGoto(CiSwitch statement)
+	{
+		if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreakAndContinue(kase.Body))
+		 || CiSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
+			this.SwitchesWithGoto.Add(statement);
+			return this.SwitchesWithGoto.Count - 1;
+		}
+		return -1;
+	}
+
+	protected void WriteIfCaseBody(List<CiStatement> body, bool doWhile)
 	{
 		int length = CiSwitch.LengthWithoutTrailingBreak(body);
 		if (doWhile && CiSwitch.HasEarlyBreak(body)) {
@@ -249,6 +259,19 @@ public abstract class GenCCpp : GenTyped
 		}
 	}
 
+	protected void EndSwitchAsIfs(CiSwitch statement, int gotoId)
+	{
+		if (statement.HasDefault()) {
+			Write("else");
+			WriteIfCaseBody(statement.DefaultBody, gotoId < 0);
+		}
+		if (gotoId >= 0) {
+			Write("ciafterswitch");
+			VisitLiteralLong(gotoId);
+			WriteLine(": ;");
+		}
+	}
+
 	public override void VisitSwitch(CiSwitch statement)
 	{
 		if (!(statement.Value.Type is CiStringType)) {
@@ -256,13 +279,7 @@ public abstract class GenCCpp : GenTyped
 			return;
 		}
 
-		int gotoId = -1;
-		if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreakAndContinue(kase.Body))
-		 || CiSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
-			gotoId = this.StringSwitchesWithGoto.Count;
-			this.StringSwitchesWithGoto.Add(statement);
-		}
-
+		int gotoId = GetSwitchGoto(statement);
 		string op = "if (";
 		foreach (CiCase kase in statement.Cases) {
 			foreach (CiExpr caseValue in kase.Values) {
@@ -274,15 +291,7 @@ public abstract class GenCCpp : GenTyped
 			WriteIfCaseBody(kase.Body, gotoId < 0);
 			op = "else if (";
 		}
-		if (statement.HasDefault()) {
-			Write("else");
-			WriteIfCaseBody(statement.DefaultBody, gotoId < 0);
-		}
-		if (gotoId >= 0) {
-			Write("ciafterswitch");
-			VisitLiteralLong(gotoId);
-			WriteLine(": ;");
-		}
+		EndSwitchAsIfs(statement, gotoId);
 	}
 
 	protected void WriteMethods(CiClass klass)
