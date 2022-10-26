@@ -1123,10 +1123,10 @@ Inside loops you may use:
 ### Switch statement
 
 The `switch` statement accepts an expression and transfers control
-to the corresponding `case` label. It supports integers, enumerations
-and strings.
+to the corresponding `case` label. It supports integers, enumerations,
+strings and object references.
 
-`case` clauses must be correctly terminated, consider:
+`case` clauses must be correctly terminated.
 
 ```csharp
 switch (x) {
@@ -1144,10 +1144,31 @@ to the next statement: `break`, `continue`, `return` or `throw`.
 
 The `default` clause, if present, must be specified last.
 
+Object references are matched by their _runtime type_:
+
+```
+static double CalculateArea(Shape s)
+{
+    switch (s) {
+    case Square sqr:
+        return sqr.Size * sqr.Size;
+    case Rectangle rect:
+        return rect.Width * rect.Height;
+    case Circle c:
+        return Math.PI * c.Radius * c.Radius;
+    default:
+        assert false;
+    }
+}
+```
+
 Python has no equivalent of the `switch` statement,
 so it is emulated with a series of `if`/`elif`.
 C, C++ and OpenCL do not support `switch` on strings,
 so `if`/`else if` with string comparisons are generated.
+Object reference matching is currently implemented only for C++, C#, Java
+and Swift. As of Java 17, the transpiled code must be compiled
+with the `--enable-preview` option.
 
 ### Assert statement
 
