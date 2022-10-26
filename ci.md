@@ -577,7 +577,7 @@ public class Image
 {
     int Width;
     public int GetWidth() { return Width; }
-    public int SetWidth(int value) { Width = value; }
+    public int SetWidth!(int value) { Width = value; }
 
     int Height;
     public int GetHeight() => Height; // syntax sugar
@@ -586,6 +586,14 @@ public class Image
 
 Fields _cannot be_ static. Shared state poses problems with lifetime
 and multithreading.
+
+You can initialize selected fields when creating object storage
+or a dynamic object:
+
+```csharp
+Rectangle() storage = { Width = 4, Height = 3 };
+Shape# dynamic = new Rectangle { Width = 16, Height = 9 };
+```
 
 #### Constants
 
@@ -720,7 +728,7 @@ Cat alik; // C++
 Cat alik; // C, potentially followed by construction code
 ```
 
-Note that in C and C++ the objects are created on the _stack_
+Note that in C and C++ object storage is created on the _stack_
 for maximum performance.
 
 You can have array storage of object storage:
