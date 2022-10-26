@@ -4,8 +4,8 @@ Welcome to the description of yet another programming language.
 Unlike most languages that you learned before, Ć does _not_ claim
 to be the best universal programming language.
 Instead, it solves one specific problem: how to write code that can be
-_conveniently_ used from C, C++, C#, Java, JavaScript, Python, Swift and OpenCL
-_at the same time_.
+_conveniently_ used from C, C++, C#, Java, JavaScript, Python, Swift, TypeScript
+and OpenCL _at the same time_.
 For example, if you invented a new compression format, you can implement
 it in Ć and have the automatic translator `cito` generate the source code
 in the mentioned languages, so programmers of these languages can use your code.
@@ -1077,7 +1077,8 @@ There are four kinds of loops:
 * `for` -- which contains an initial statement, the condition
   and a statement executed after each run.
 * `foreach` -- to iterate over array storage, `List`
-  `Dictionary`, `SortedDictionary` or `OrderedDictionary`.
+  `Dictionary`, `SortedDictionary`, `OrderedDictionary`
+  or a string.
 
 ```csharp
 int[3] array;
@@ -1092,6 +1093,15 @@ dict["foo"] = 1;
 dict["bar"] = 2;
 foreach ((string k, int v) in dict)
     Console.WriteLine($"{k} => {v}");
+
+string() s = "42x";
+bool allDigits = true;
+foreach (int c in s) {
+    if (c < '0' || c > '9') {
+        allDigits = false;
+        break;
+    }
+}
 ```
 
 Inside loops you may use:
