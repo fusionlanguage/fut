@@ -814,6 +814,24 @@ else {
 }
 ```
 
+For downcasting that always succeeds, use `assert`:
+
+```csharp
+assert animal is Cat! cat;
+```
+
+This translates to:
+
+```csharp
+Cat cat = (Cat) animal; // C#, Java
+let cat = animal as! Cat; // Swift
+Cat *cat = (Cat *) animal; // C
+Cat *cat = static_cast<Cat *>(animal); // C++
+const cat = animal; // JavaScript
+const cat = animal as Cat; // TypeScript
+cat = animal; // Python
+```
+
 The `is` operator cannot be used for:
 
 * same type on both sides of the operator (would always return `true`)
