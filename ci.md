@@ -877,6 +877,17 @@ You can remove:
 `list.CopyTo(sourceIndex, destinationArray, destinationIndex, count)`
 copies elements from a list to an array.
 
+`list.Any(it => predicate)` returns `true` if at least one element satisfies
+the predicate.
+
+```csharp
+List<string()>() names;
+names.Add("Alice");
+names.Add("Bob");
+names.Add("Charlie");
+bool isB = names.Any(name => name.StartsWith("B"));
+```
+
 #### Queue
 
 A queue is similar to a list. In fact, many target languages don't have
