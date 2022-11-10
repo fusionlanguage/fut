@@ -1,8 +1,8 @@
 public static class HelloCi
 {
-	public const int VersionMajor = 0;
-	public const int VersionMinor = 3;
-	public const string Version = VersionMajor + "." + VersionMinor;
+	public const int VersionMajor = 2;
+	public const int VersionMinor = 0;
+	public const string Version = $"{VersionMajor}.{VersionMinor}";
 
 	/// Returns `true` if and only if `x` is a power of 2 (1, 2, 4, 8, 16, ...).
 	public static bool IsPowerOfTwo(int x)
@@ -48,14 +48,13 @@ public static class HelloCi
 	public static int ParseUnsignedInt(string s) throws
 	{
 		if (s == null || s.Length == 0)
-			throw "null or empty argument";
-		int n = s.Length;
+			throw "Null or empty argument";
 		int r = 0;
-		for (int i = 0; i < n; i++) {
-			int c = s[i];
+		foreach (int c in s) {
 			if (c < '0' || c > '9')
 				throw "Not a digit";
-			// TODO: detect overflow
+			if (r > 214748364 || (r == 214748364 && c >= '8'))
+				throw "Number too big";
 			r = r * 10 + c - '0';
 		}
 		return r;
