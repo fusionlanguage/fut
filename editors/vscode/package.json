@@ -1,8 +1,11 @@
 {
   "name": "ci",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "publisher": "pfusik",
   "license": "MIT",
+  "displayName": "Ć",
+  "description": "Ć language syntax highlighting",
+  "icon": "ci-logo.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/pfusik/cito.git"
@@ -12,6 +15,11 @@
   },
   "categories": [
     "Programming Languages"
+  ],
+  "keywords": [
+    "ci",
+    "cito",
+    "transpiler"
   ],
   "contributes": {
     "languages": [

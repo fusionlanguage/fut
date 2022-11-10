@@ -2,9 +2,7 @@
 
 ## Visual Studio Code
 
-Not published to the Marketplace yet. Enable with:
-
-    code --extensionDevelopmentPath=/full/path/to/editors/vscode
+Install the extension "Ć" from the VS Code Extension Marketplace.
 
 ## SciTE
 
