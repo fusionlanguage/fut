@@ -972,6 +972,9 @@
 				},
 				{
 					"include": "#type"
+				},
+				{
+					"include": "#aggregate-initializer"
 				}
 			]
 		},
