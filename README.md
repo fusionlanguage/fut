@@ -39,6 +39,5 @@ including naming conventions and documentation comments.
 
 Ć is _not_ a general-purpose programming language.
 Instead, it is meant for implementing portable reusable libraries.
-See the complete [language reference](ci.md).
 
-For build instructions, see the [INSTALL](INSTALL) file.
+See [Getting Started](doc/getting-started.md).
