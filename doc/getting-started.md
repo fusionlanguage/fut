@@ -270,7 +270,7 @@ and a [decoder of 500+ retro image formats](https://recoil.sourceforge.net):
 
 ![RECOIL architecture](https://recoil.sourceforge.net/recoil-internals.png)
 
-`cito` itself is also [being rewritten in Ć](#48).
+`cito` itself is also [being rewritten in Ć](https://github.com/pfusik/cito/issues/48).
 
 ## Community
 
