@@ -1081,11 +1081,17 @@ public class GenCpp : GenCCpp
 			WriteCall(expr.Left, "resize", length);
 			return expr;
 		case CiToken.Is:
-			Write("dynamic_cast<const ");
-			Write(((CiClass) expr.Right).Name);
-			Write(" *>(");
-			expr.Left.Accept(this, CiPriority.Argument);
-			WriteChar(')');
+			if (expr.Right is CiVar def) {
+				WriteTypeAndName(def);
+				Write(" = dynamic_cast<");
+				WriteType(def.Type, true);
+			}
+			else {
+				Write("dynamic_cast<const ");
+				Write(((CiClass) expr.Right).Name);
+				Write(" *");
+			}
+			WriteCall(">", expr.Left);
 			return expr;
 		default:
 			break;
