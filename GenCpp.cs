@@ -296,6 +296,10 @@ public class GenCpp : GenCCpp
 		Write(">()");
 	}
 
+	protected override void WriteStorageInit(CiStorageType type)
+	{
+	}
+
 	protected override void WriteVarInit(CiNamedValue def)
 	{
 		if (def.Value != null && def.Type == CiSystem.StringStorageType) {
@@ -313,8 +317,6 @@ public class GenCpp : GenCCpp
 			default:
 				throw new NotImplementedException("Only null, zero and false supported");
 			}
-		}
-		else if (def.Value == null && def.Type is CiStorageType) {
 		}
 		else
 			base.WriteVarInit(def);

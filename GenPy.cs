@@ -512,6 +512,14 @@ public class GenPy : GenPySwift
 		}
 	}
 
+	protected override void WritePtrVar(CiType type, CiVar def)
+	{
+		if (def == null)
+			Write("result");
+		else
+			WriteName(def);
+	}
+
 	protected override void WriteInitCode(CiNamedValue def)
 	{
 	}

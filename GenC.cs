@@ -696,11 +696,17 @@ public class GenC : GenCCpp
 		}
 	}
 
+	protected override void WriteStorageInit(CiStorageType storage)
+	{
+		if (storage.Class.TypeParameterCount > 0) // built-in collections
+			base.WriteStorageInit(storage);
+	}
+
 	protected override void WriteVarInit(CiNamedValue def)
 	{
 		if (def.Value == null && IsHeapAllocated(def.Type))
 			Write(" = NULL");
-		else if (def.Value != null || !(def.Type is CiStorageType storage) || storage.Class.TypeParameterCount > 0 /* built-in collections */)
+		else
 			base.WriteVarInit(def);
 	}
 
@@ -747,6 +753,10 @@ public class GenC : GenCCpp
 		case CiVar def:
 			if (def.Value != null)
 				WriteTemporaries(def.Value);
+			break;
+		case CiAggregateInitializer init:
+			foreach (CiBinaryExpr field in init.Items)
+				WriteTemporaries(field.Right);
 			break;
 		case CiLiteral _:
 			break;

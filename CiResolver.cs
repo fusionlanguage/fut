@@ -298,7 +298,6 @@ public class CiResolver : CiVisitor
 
 	void ResolveObjectLiteral(CiClassType klass, CiAggregateInitializer init)
 	{
-		NotYet(init, "Aggregate initializer", "c", "cpp", "java", "py", "swift", "cl");
 		foreach (CiBinaryExpr field in init.Items) {
 			Trace.Assert(field.Op == CiToken.Assign);
 			CiSymbolReference symbol = (CiSymbolReference) field.Left;

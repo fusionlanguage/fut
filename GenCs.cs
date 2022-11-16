@@ -323,6 +323,8 @@ public class GenCs : GenTyped
 		Write("()");
 	}
 
+	public override void VisitVar(CiVar expr) => WriteVar(expr);
+
 	protected override bool HasInitCode(CiNamedValue def) => def.Type is CiArrayStorageType array && array.GetElementType() is CiStorageType;
 
 	protected override void WriteInitCode(CiNamedValue def)

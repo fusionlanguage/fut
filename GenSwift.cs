@@ -1038,6 +1038,16 @@ public class GenSwift : GenPySwift
 		}
 	}
 
+	protected override void WritePtrVar(CiType type, CiVar def)
+	{
+		if (def == null)
+			Write("let result");
+		else {
+			Write(def.IsAssigned ? "var " : "let ");
+			WriteName(def);
+		}
+	}
+
 	protected override void WriteStatements(List<CiStatement> statements)
 	{
 		// Encoding.UTF8.GetBytes returns void, so it can only be called as a statement

@@ -8,7 +8,7 @@ public class Test
 {
 	public static bool Run()
 	{
-		Point() bar = { X = 3, Y = 6 }; //FAIL: c cpp java py swift cl TODO
+		Point() bar = { X = 3, Y = 6 }; //FAIL: swift TODO
 		return bar.X == 3 && bar.Y == 6;
 	}
 }

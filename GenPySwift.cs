@@ -153,7 +153,9 @@ public abstract class GenPySwift : GenBase
 		switch (expr) {
 		case CiVar def:
 			return def.Value != null && VisitXcrement<T>(def.Value, write);
-		case CiLiteral literal:
+		case CiAggregateInitializer _:
+		case CiLiteral _:
+		case CiLambdaExpr _:
 			return false;
 		case CiInterpolatedString interp:
 			seen = false;
@@ -195,8 +197,6 @@ public abstract class GenPySwift : GenBase
 			if (typeof(T) == typeof(CiPrefixExpr))
 				seen |= VisitPreCall(call);
 			return seen;
-		case CiLambdaExpr lambda:
-			return false;
 		default:
 			throw new NotImplementedException(expr.GetType().Name);
 		}
@@ -211,6 +211,8 @@ public abstract class GenPySwift : GenBase
 		}
 		VisitXcrement<CiPostfixExpr>(statement, true);
 	}
+
+	protected override void EndStatement() => WriteLine();
 
 	protected abstract void OpenChild();
 

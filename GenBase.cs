@@ -732,6 +732,12 @@ public abstract class GenBase : CiVisitor
 		WriteCoerced(type, expr, CiPriority.Argument);
 	}
 
+	protected virtual void WriteStorageInit(CiStorageType type)
+	{
+		Write(" = ");
+		WriteNewStorage(type);
+	}
+
 	protected virtual void WriteVarInit(CiNamedValue def)
 	{
 		if (def.IsAssignableStorage()) {
@@ -749,10 +755,8 @@ public abstract class GenBase : CiVisitor
 			Write(" = ");
 			WriteCoercedExpr(def.Type, def.Value);
 		}
-		else if (def.Type.IsFinal() && !(def.Parent is CiParameters)) {
-			Write(" = ");
-			WriteNewStorage(def.Type);
-		}
+		else if (def.Type.IsFinal() && !(def.Parent is CiParameters))
+			WriteStorageInit((CiStorageType) def.Type);
 	}
 
 	protected virtual void WriteVar(CiNamedValue def)
@@ -761,7 +765,47 @@ public abstract class GenBase : CiVisitor
 		WriteVarInit(def);
 	}
 
-	public override void VisitVar(CiVar expr) => WriteVar(expr);
+	protected virtual void EndStatement() => WriteLine(';');
+
+	void WriteObjectLiteralFields(CiVar def, CiAggregateInitializer init)
+	{
+		foreach (CiBinaryExpr field in init.Items) {
+			WriteLocalName(def, CiPriority.Primary);
+			CiSymbolReference fieldRef = (CiSymbolReference) field.Left;
+			WriteMemberOp(def, fieldRef);
+			WriteName(fieldRef.Symbol);
+			Write(" = ");
+			field.Right.Accept(this, CiPriority.Argument);
+			EndStatement();
+		}
+	}
+
+	protected abstract void WritePtrVar(CiType type, CiVar def);
+
+	protected virtual bool WriteLoweredNewObjectLiteral(CiVar def, CiExpr expr)
+	{
+		if (expr is CiPrefixExpr unary && unary.Inner is CiAggregateInitializer init2) {
+			WritePtrVar(expr.Type, def);
+			Write(" = ");
+			WriteNew((CiDynamicPtrType) expr.Type, CiPriority.Argument);
+			EndStatement();
+			WriteObjectLiteralFields(def, init2);
+			return true;
+		}
+		return false;
+	}
+
+	public override void VisitVar(CiVar expr)
+	{
+		if (expr.Type is CiStorageType storage && expr.Value is CiAggregateInitializer init) {
+			WriteTypeAndName(expr);
+			WriteStorageInit(storage);
+			EndStatement();
+			WriteObjectLiteralFields(expr, init);
+		}
+		else if (!WriteLoweredNewObjectLiteral(expr, expr.Value))
+			WriteVar(expr);
+	}
 
 	protected void OpenLoop(string intString, int nesting, int count)
 	{
@@ -1260,6 +1304,8 @@ public abstract class GenBase : CiVisitor
 	{
 		if (statement.Value == null)
 			WriteLine("return;");
+		else if (WriteLoweredNewObjectLiteral(null, statement.Value))
+			WriteLine("return result;");
 		else {
 			Write("return ");
 			WriteReturnValue(statement.Value);
