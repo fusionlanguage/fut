@@ -1063,6 +1063,14 @@ public class GenCpp : GenCCpp
 		}
 	}
 
+	void WriteIsVar(CiExpr expr, CiVar def)
+	{
+		WriteTypeAndName(def);
+		Write(" = dynamic_cast<");
+		WriteType(def.Type, true);
+		WriteCall(">", expr);
+	}
+
 	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
@@ -1081,17 +1089,13 @@ public class GenCpp : GenCCpp
 			WriteCall(expr.Left, "resize", length);
 			return expr;
 		case CiToken.Is:
-			if (expr.Right is CiVar def) {
-				WriteTypeAndName(def);
-				Write(" = dynamic_cast<");
-				WriteType(def.Type, true);
-			}
+			if (expr.Right is CiVar def)
+				WriteIsVar(expr.Left, def);
 			else {
 				Write("dynamic_cast<const ");
 				Write(((CiClass) expr.Right).Name);
-				Write(" *");
+				WriteCall(" *>", expr.Left);
 			}
-			WriteCall(">", expr.Left);
 			return expr;
 		default:
 			break;
@@ -1206,13 +1210,8 @@ public class GenCpp : GenCCpp
 				if (kase.Values.Count != 1)
 					throw new NotImplementedException();
 				Write(op);
-				CiVar def = (CiVar) kase.Values[0];
-				WriteTypeAndName(def);
-				Write(" = dynamic_cast<");
-				WriteType(def.Type, false);
-				Write(">(");
-				statement.Value.Accept(this, CiPriority.Argument); // FIXME: side effect in every if
-				Write("))");
+				WriteIsVar(statement.Value, (CiVar) kase.Values[0]); // FIXME: side effect in every if
+				WriteChar(')');
 				WriteIfCaseBody(kase.Body, gotoId < 0);
 				op = "else if (";
 			}
