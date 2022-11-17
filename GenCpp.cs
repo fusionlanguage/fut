@@ -296,7 +296,7 @@ public class GenCpp : GenCCpp
 		Write(">()");
 	}
 
-	protected override void WriteStorageInit(CiStorageType type)
+	protected override void WriteStorageInit(CiNamedValue def)
 	{
 	}
 
@@ -335,12 +335,6 @@ public class GenCpp : GenCCpp
 		Write(">(");
 		GetStaticCastInner(type, expr).Accept(this, CiPriority.Argument);
 		WriteChar(')');
-	}
-
-	protected override bool HasInitCode(CiNamedValue def) => false;
-
-	protected override void WriteInitCode(CiNamedValue def)
-	{
 	}
 
 	static bool NeedStringPtrData(CiExpr expr)
@@ -1319,7 +1313,7 @@ public class GenCpp : GenCCpp
 			Write("()");
 			if (klass.CallType == CiCallType.Static)
 				Write(" = delete");
-			else if (klass.Constructor == null)
+			else if (!NeedsConstructor(klass))
 				Write(" = default");
 			WriteLine(';');
 		}
@@ -1394,7 +1388,7 @@ public class GenCpp : GenCCpp
 
 	void WriteConstructor(CiClass klass)
 	{
-		if (klass.Constructor == null)
+		if (!NeedsConstructor(klass))
 			return;
 		this.SwitchesWithGoto.Clear();
 		Write(klass.Name);

@@ -77,7 +77,7 @@ public abstract class GenPySwift : GenBase
 
 	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
 	{
-		if (symbol is CiMember member && this.CurrentMethod != null) {
+		if (symbol is CiMember member) {
 			if (member.IsStatic())
 				WriteName(this.CurrentMethod.Parent);
 			else
@@ -208,6 +208,8 @@ public abstract class GenPySwift : GenBase
 		if (!(statement is CiUnaryExpr unary) || (unary.Op != CiToken.Increment && unary.Op != CiToken.Decrement)) {
 			WriteExpr(statement, CiPriority.Statement);
 			WriteLine();
+			if (statement is CiVar def)
+				WriteInitCode(def);
 		}
 		VisitXcrement<CiPostfixExpr>(statement, true);
 	}

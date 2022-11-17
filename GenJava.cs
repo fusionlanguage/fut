@@ -788,25 +788,28 @@ public class GenJava : GenTyped
 		base.WriteVar(def);
 	}
 
-	protected override bool HasInitCode(CiNamedValue def) => def.Type is CiArrayStorageType && def.Type.GetStorageType() is CiStorageType;
+	protected override bool HasInitCode(CiNamedValue def) => (def.Type is CiArrayStorageType && def.Type.GetStorageType() is CiStorageType) || base.HasInitCode(def);
 
 	protected override void WriteInitCode(CiNamedValue def)
 	{
 		if (!HasInitCode(def))
 			return;
-		CiArrayStorageType array = (CiArrayStorageType) def.Type;
-		int nesting = 0;
-		while (array.GetElementType() is CiArrayStorageType innerArray) {
+		if (def.Type is CiArrayStorageType array) {
+			int nesting = 0;
+			while (array.GetElementType() is CiArrayStorageType innerArray) {
+				OpenLoop("int", nesting++, array.Length);
+				array = innerArray;
+			}
 			OpenLoop("int", nesting++, array.Length);
-			array = innerArray;
+			WriteArrayElement(def, nesting);
+			Write(" = ");
+			WriteNew((CiStorageType) array.GetElementType(), CiPriority.Argument);
+			WriteLine(';');
+			while (--nesting >= 0)
+				CloseBlock();
 		}
-		OpenLoop("int", nesting++, array.Length);
-		WriteArrayElement(def, nesting);
-		Write(" = ");
-		WriteNew((CiStorageType) array.GetElementType(), CiPriority.Argument);
-		WriteLine(';');
-		while (--nesting >= 0)
-			CloseBlock();
+		else
+			base.WriteInitCode(def);
 	}
 
 	public override void VisitLambdaExpr(CiLambdaExpr expr)

@@ -725,38 +725,34 @@ public abstract class GenBase : CiVisitor
 		Write(" }");
 	}
 
-	protected virtual void WriteNewWithFields(CiType type, CiAggregateInitializer init) => throw new NotImplementedException();
+	protected virtual void WriteNewWithFields(CiType type, CiAggregateInitializer init) => WriteNew((CiReadWriteClassType) type, CiPriority.Argument);
 
 	protected virtual void WriteCoercedExpr(CiType type, CiExpr expr)
 	{
 		WriteCoerced(type, expr, CiPriority.Argument);
 	}
 
-	protected virtual void WriteStorageInit(CiStorageType type)
+	protected virtual void WriteStorageInit(CiNamedValue def)
 	{
 		Write(" = ");
-		WriteNewStorage(type);
+		if (def.Value is CiAggregateInitializer init)
+			WriteNewWithFields(def.Type, init);
+		else
+			WriteNewStorage(def.Type);
 	}
 
 	protected virtual void WriteVarInit(CiNamedValue def)
 	{
 		if (def.IsAssignableStorage()) {
 		}
-		else if (def.Value is CiAggregateInitializer init) {
-			Write(" = ");
-			if (def.Type is CiArrayStorageType)
-				WriteCoercedExpr(def.Type, def.Value);
-			else
-				WriteNewWithFields(def.Type, init);
-		}
 		else if (def.Type is CiArrayStorageType array)
 			WriteArrayStorageInit(array, def.Value);
-		else if (def.Value != null) {
+		else if (def.Value != null && !(def.Value is CiAggregateInitializer)) {
 			Write(" = ");
 			WriteCoercedExpr(def.Type, def.Value);
 		}
 		else if (def.Type.IsFinal() && !(def.Parent is CiParameters))
-			WriteStorageInit((CiStorageType) def.Type);
+			WriteStorageInit(def);
 	}
 
 	protected virtual void WriteVar(CiNamedValue def)
@@ -765,47 +761,7 @@ public abstract class GenBase : CiVisitor
 		WriteVarInit(def);
 	}
 
-	protected virtual void EndStatement() => WriteLine(';');
-
-	void WriteObjectLiteralFields(CiVar def, CiAggregateInitializer init)
-	{
-		foreach (CiBinaryExpr field in init.Items) {
-			WriteLocalName(def, CiPriority.Primary);
-			CiSymbolReference fieldRef = (CiSymbolReference) field.Left;
-			WriteMemberOp(def, fieldRef);
-			WriteName(fieldRef.Symbol);
-			Write(" = ");
-			field.Right.Accept(this, CiPriority.Argument);
-			EndStatement();
-		}
-	}
-
-	protected abstract void WritePtrVar(CiType type, CiVar def);
-
-	protected virtual bool WriteLoweredNewObjectLiteral(CiVar def, CiExpr expr)
-	{
-		if (expr is CiPrefixExpr unary && unary.Inner is CiAggregateInitializer init2) {
-			WritePtrVar(expr.Type, def);
-			Write(" = ");
-			WriteNew((CiDynamicPtrType) expr.Type, CiPriority.Argument);
-			EndStatement();
-			WriteObjectLiteralFields(def, init2);
-			return true;
-		}
-		return false;
-	}
-
-	public override void VisitVar(CiVar expr)
-	{
-		if (expr.Type is CiStorageType storage && expr.Value is CiAggregateInitializer init) {
-			WriteTypeAndName(expr);
-			WriteStorageInit(storage);
-			EndStatement();
-			WriteObjectLiteralFields(expr, init);
-		}
-		else if (!WriteLoweredNewObjectLiteral(expr, expr.Value))
-			WriteVar(expr);
-	}
+	public override void VisitVar(CiVar expr) => WriteVar(expr);
 
 	protected void OpenLoop(string intString, int nesting, int count)
 	{
@@ -833,7 +789,31 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected abstract void WriteInitCode(CiNamedValue def);
+	static CiAggregateInitializer GetAggregateInitializer(CiNamedValue def)
+	{
+		CiExpr expr = def.Value;
+		if (def.Value is CiPrefixExpr unary)
+			expr = unary.Inner;
+		return expr as CiAggregateInitializer;
+	}
+
+	protected virtual void EndStatement() => WriteLine(';');
+
+	protected virtual void WriteInitCode(CiNamedValue def)
+	{
+		CiAggregateInitializer init = GetAggregateInitializer(def);
+		if (init != null) {
+			foreach (CiBinaryExpr field in init.Items) {
+				WriteLocalName(def, CiPriority.Primary);
+				CiSymbolReference fieldRef = (CiSymbolReference) field.Left;
+				WriteMemberOp(def, fieldRef);
+				WriteName(fieldRef.Symbol);
+				Write(" = ");
+				field.Right.Accept(this, CiPriority.Argument);
+				EndStatement();
+			}
+		}
+	}
 
 	protected abstract void WriteResource(string name, int length);
 
@@ -1304,8 +1284,6 @@ public abstract class GenBase : CiVisitor
 	{
 		if (statement.Value == null)
 			WriteLine("return;");
-		else if (WriteLoweredNewObjectLiteral(null, statement.Value))
-			WriteLine("return result;");
 		else {
 			Write("return ");
 			WriteReturnValue(statement.Value);
@@ -1370,7 +1348,7 @@ public abstract class GenBase : CiVisitor
 		WriteParameters(method, true, defaultArguments);
 	}
 
-	protected abstract bool HasInitCode(CiNamedValue def);
+	protected virtual bool HasInitCode(CiNamedValue def) => GetAggregateInitializer(def) != null;
 
 	protected virtual bool NeedsConstructor(CiClass klass)
 	{

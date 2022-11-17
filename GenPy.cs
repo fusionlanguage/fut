@@ -512,18 +512,6 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	protected override void WritePtrVar(CiType type, CiVar def)
-	{
-		if (def == null)
-			Write("result");
-		else
-			WriteName(def);
-	}
-
-	protected override void WriteInitCode(CiNamedValue def)
-	{
-	}
-
 	void WriteSlice(CiExpr startIndex, CiExpr length)
 	{
 		WriteChar('[');
@@ -1095,7 +1083,9 @@ public class GenPy : GenPySwift
 	{
 		if (konst.Visibility != CiVisibility.Private || konst.Type is CiArrayStorageType) {
 			WriteLine();
-			WriteVar(konst);
+			WriteName(konst);
+			Write(" = ");
+			konst.Value.Accept(this, CiPriority.Argument);
 			WriteLine();
 			WriteDoc(konst.Documentation);
 		}
@@ -1142,6 +1132,7 @@ public class GenPy : GenPySwift
 			Write("self.");
 			WriteVar(field);
 			WriteLine();
+			WriteInitCode(field);
 		}
 	}
 

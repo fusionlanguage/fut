@@ -696,10 +696,10 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected override void WriteStorageInit(CiStorageType storage)
+	protected override void WriteStorageInit(CiNamedValue def)
 	{
-		if (storage.Class.TypeParameterCount > 0) // built-in collections
-			base.WriteStorageInit(storage);
+		if (((CiStorageType) def.Type).Class.TypeParameterCount > 0) // built-in collections
+			base.WriteStorageInit(def);
 	}
 
 	protected override void WriteVarInit(CiNamedValue def)
@@ -998,7 +998,8 @@ public class GenC : GenCCpp
 		return (def is CiField && (def.Value != null || IsHeapAllocated(def.Type.GetStorageType()) || (def.Type is CiClassType klass && (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.DictionaryClass || klass.Class.Id == CiId.SortedDictionaryClass))))
 			|| GetThrowingMethod(def.Value) != null
 			|| (def.Type.GetStorageType() is CiStorageType storage && (storage.Class.Id == CiId.LockClass || NeedsConstructor(storage.Class)))
-			|| GetListDestroy(def.Type) != null;
+			|| GetListDestroy(def.Type) != null
+			|| base.HasInitCode(def);
 	}
 
 	protected override void WriteInitCode(CiNamedValue def)
@@ -1049,6 +1050,7 @@ public class GenC : GenCCpp
 		}
 		while (--nesting >= 0)
 			CloseBlock();
+		base.WriteInitCode(def);
 	}
 
 	void WriteMemberAccess(CiExpr left, CiClass symbolClass)

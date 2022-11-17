@@ -938,10 +938,6 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	protected override void WriteInitCode(CiNamedValue def)
-	{
-	}
-
 	protected override void WriteResource(string name, int length)
 	{
 		if (length >= 0) // reference as opposed to definition
@@ -957,12 +953,10 @@ public class GenSwift : GenPySwift
 		case CiLiteral _:
 		case CiLambdaExpr _:
 			return false;
+		case CiAggregateInitializer init:
+			return init.Items.Any(field => Throws(field));
 		case CiInterpolatedString interp:
-			foreach (CiInterpolatedPart part in interp.Parts) {
-				if (Throws(part.Argument))
-					return true;
-			}
-			return false;
+			return interp.Parts.Any(part => Throws(part.Argument));
 		case CiSymbolReference symbol:
 			return symbol.Left != null && Throws(symbol.Left);
 		case CiUnaryExpr unary:
@@ -972,11 +966,9 @@ public class GenSwift : GenPySwift
 		case CiSelectExpr select:
 			return Throws(select.Cond) || Throws(select.OnTrue) || Throws(select.OnFalse);
 		case CiCallExpr call:
-			foreach (CiExpr arg in call.Arguments) {
-				if (Throws(arg))
-					return true;
-			}
-			return ((CiMethod) call.Method.Symbol).Throws || (call.Method.Left != null && Throws(call.Method.Left));
+			return (call.Method.Left != null && Throws(call.Method.Left))
+				|| call.Arguments.Any(arg => Throws(arg))
+				|| ((CiMethod) call.Method.Symbol).Throws;
 		default:
 			throw new NotImplementedException(expr.GetType().Name);
 		}
@@ -1035,16 +1027,6 @@ public class GenSwift : GenPySwift
 		else {
 			WriteName(def);
 			WriteVarInit(def);
-		}
-	}
-
-	protected override void WritePtrVar(CiType type, CiVar def)
-	{
-		if (def == null)
-			Write("let result");
-		else {
-			Write(def.IsAssigned ? "var " : "let ");
-			WriteName(def);
 		}
 	}
 
@@ -1372,8 +1354,6 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	protected override bool HasInitCode(CiNamedValue def) => throw new NotImplementedException();
-
 	protected override void WriteConst(CiConst konst)
 	{
 		WriteLine();
@@ -1488,9 +1468,13 @@ public class GenSwift : GenPySwift
 			Write("final ");
 		OpenClass(klass, "", " : ");
 
-		if (klass.Constructor != null) {
-			WriteDoc(klass.Constructor.Documentation);
-			WriteVisibility(klass.Constructor.Visibility);
+		if (NeedsConstructor(klass)) {
+			if (klass.Constructor != null) {
+				WriteDoc(klass.Constructor.Documentation);
+				WriteVisibility(klass.Constructor.Visibility);
+			}
+			else
+				Write("fileprivate ");
 			if (klass.BaseClassName != null)
 				Write("override ");
 			WriteLine("init()");

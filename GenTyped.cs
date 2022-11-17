@@ -235,16 +235,6 @@ public abstract class GenTyped : GenBase
 			base.WriteCoercedInternal(type, expr, parent);
 	}
 
-	protected override void WritePtrVar(CiType type, CiVar def)
-	{
-		WriteType(type, true);
-		WriteChar(' ');
-		if (def == null)
-			Write("result");
-		else
-			WriteName(def);
-	}
-
 	protected override void WriteCharAt(CiBinaryExpr expr) => WriteIndexing(expr, CiPriority.Argument);
 
 	protected override void WriteAssertCast(CiBinaryExpr expr)

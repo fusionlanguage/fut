@@ -177,10 +177,6 @@ public class GenJs : GenBase
 		base.WriteVar(def);
 	}
 
-	protected override void WritePtrVar(CiType type, CiVar def) => throw new NotImplementedException();
-
-	public override void VisitVar(CiVar expr) => WriteVar(expr);
-
 	void WriteInterpolatedLiteral(string s)
 	{
 		for (int i = 0; i < s.Length; i++) {
@@ -896,7 +892,9 @@ public class GenJs : GenBase
 			WriteLine();
 			WriteDoc(konst.Documentation);
 			Write("static ");
-			base.WriteVar(konst);
+			WriteName(konst);
+			Write(" = ");
+			konst.Value.Accept(this, CiPriority.Argument);
 			WriteLine(';');
 		}
 	}

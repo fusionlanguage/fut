@@ -183,8 +183,10 @@ public class GenTs : GenJs
 		WriteName(konst);
 		Write(": ");
 		WriteType(konst.Type, true);
-		if (this.GenFullCode)
-			WriteVarInit(konst);
+		if (this.GenFullCode) {
+			Write(" = ");
+			konst.Value.Accept(this, CiPriority.Argument);
+		}
 		WriteLine(';');
 	}
 

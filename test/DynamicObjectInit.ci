@@ -5,7 +5,7 @@ class Inner
 
 public class Test
 {
-	Inner# F = new Inner { X = 42 }; //FAIL: c cpp java py swift cl
+	Inner# F = new Inner { X = 42 }; //FAIL: cl
 
 	public static bool Run()
 	{
