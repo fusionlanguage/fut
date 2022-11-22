@@ -3,6 +3,7 @@ public class Test
 	public static bool Run()
 	{
 		string() pattern = Regex.Escape("b+c"); //FAIL: cpp swift TODO; cl
-		return Regex.IsMatch("a+b+c", pattern);
+		return Regex.IsMatch("a+b+c", Regex.Escape("b+c"))
+			&& Regex.IsMatch("a+b+c", pattern);
 	}
 }

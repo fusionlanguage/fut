@@ -1,0 +1,14 @@
+public static class Test
+{
+	static bool Accept(string s) => s == "oob";
+
+	public static bool Run()
+	{
+		string s = "foobar";
+		Accept(s.Substring(1, 3)); //FAIL: swift TODO; cl
+		bool b = Accept(s.Substring(1, 3));
+		if (!b)
+			return false;
+		return Accept(s.Substring(1, 3));
+	}
+}

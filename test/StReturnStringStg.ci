@@ -25,6 +25,6 @@ public static class Test
 		Twice("bar"); // don't leak
 		Times("x", 3); // don't leak
 		string() stg2 = Identity("bar");
-		return stg == "foofoo" && stg2 == "bar";
+		return Identity(stg) == "foofoo" && stg == "foofoo" && stg2 == "bar";
 	}
 }

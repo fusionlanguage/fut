@@ -510,6 +510,12 @@ public class GenC : GenCCpp
 			WriteChar(')');
 	}
 
+	static bool IsNewString(CiExpr expr)
+	{
+		return expr is CiInterpolatedString
+			|| (expr is CiCallExpr call && expr.Type == CiSystem.StringStorageType && (call.Method.Symbol.Id != CiId.StringSubstring || call.Arguments.Count == 2));
+	}
+
 	void WriteStringStorageValue(CiExpr expr)
 	{
 		if (IsStringSubstring(expr, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)) {
@@ -523,8 +529,7 @@ public class GenC : GenCCpp
 			length.Accept(this, CiPriority.Argument);
 			WriteChar(')');
 		}
-		else if (expr is CiInterpolatedString
-				|| (expr is CiCallExpr call && expr.Type == CiSystem.StringStorageType && call.Method.Symbol.Id != CiId.StringSubstring))
+		else if (IsNewString(expr))
 			expr.Accept(this, CiPriority.Argument);
 		else {
 			Include("string.h");
@@ -743,7 +748,7 @@ public class GenC : GenCCpp
 
 	void WriteStorageTemporary(CiExpr expr)
 	{
-		if (expr is CiInterpolatedString
+		if (IsNewString(expr)
 		 || (expr is CiCallExpr && expr.Type is CiStorageType))
 			WriteTemporary(expr.Type, expr);
 	}
@@ -775,7 +780,10 @@ public class GenC : GenCCpp
 			break;
 		case CiBinaryExpr binary:
 			WriteTemporaries(binary.Left);
+			if (!IsStringSubstring(binary.Left, out bool _, out CiExpr _, out CiExpr _, out CiExpr _))
+				WriteStorageTemporary(binary.Left);
 			WriteTemporaries(binary.Right);
+			WriteStorageTemporary(binary.Right);
 			break;
 		case CiSelectExpr select:
 			WriteTemporaries(select.Cond);
@@ -860,8 +868,8 @@ public class GenC : GenCCpp
 		case CiSelectExpr select:
 			return HasTemporariesToDestruct(select.Cond);
 		case CiCallExpr call:
-			return (call.Method.Left != null && (HasTemporariesToDestruct(call.Method.Left) || call.Method.Left is CiInterpolatedString))
-				|| call.Arguments.Any(arg => HasTemporariesToDestruct(arg) || arg is CiInterpolatedString);
+			return (call.Method.Left != null && (HasTemporariesToDestruct(call.Method.Left) || IsNewString(call.Method.Left)))
+				|| call.Arguments.Any(arg => HasTemporariesToDestruct(arg) || IsNewString(arg));
 		default:
 			throw new NotImplementedException(expr.GetType().Name);
 		}
@@ -1170,7 +1178,7 @@ public class GenC : GenCCpp
 		default:
 			if (type == CiSystem.StringStorageType)
 				WriteStringStorageValue(expr);
-			else if (expr is CiInterpolatedString)
+			else if (expr.Type == CiSystem.StringStorageType)
 				WriteTemporaryOrExpr(expr, parent);
 			else
 				base.WriteCoercedInternal(type, expr, parent);
@@ -1201,7 +1209,11 @@ public class GenC : GenCCpp
 		if (parent > CiPriority.Equality)
 			WriteChar('(');
 		Include("string.h");
-		WriteCall("strcmp", left, right);
+		Write("strcmp("); // TODO: WriteCall("strcmp", left, right);
+		WriteTemporaryOrExpr(left, CiPriority.Argument);
+		Write(", ");
+		WriteTemporaryOrExpr(right, CiPriority.Argument);
+		WriteChar(')');
 		Write(GetEqOp(not));
 		WriteChar('0');
 		if (parent > CiPriority.Equality)
@@ -1780,21 +1792,21 @@ public class GenC : GenCCpp
 			break;
 		case CiId.RegexCompile:
 			WriteGlib("g_regex_new(");
-			args[0].Accept(this, CiPriority.Argument);
+			WriteTemporaryOrExpr(args[0], CiPriority.Argument);
 			Write(", ");
 			WriteRegexOptions(args);
 			Write(", 0, NULL)");
 			break;
 		case CiId.RegexEscape:
 			WriteGlib("g_regex_escape_string(");
-			args[0].Accept(this, CiPriority.Argument);
+			WriteTemporaryOrExpr(args[0], CiPriority.Argument);
 			Write(", -1)");
 			break;
 		case CiId.RegexIsMatchStr:
 			WriteGlib("g_regex_match_simple(");
-			args[1].Accept(this, CiPriority.Argument);
+			WriteTemporaryOrExpr(args[1], CiPriority.Argument);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Argument);
+			WriteTemporaryOrExpr(args[0], CiPriority.Argument);
 			Write(", ");
 			WriteRegexOptions(args);
 			Write(", 0)");
@@ -1803,7 +1815,7 @@ public class GenC : GenCCpp
 			Write("g_regex_match(");
 			obj.Accept(this, CiPriority.Argument);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Argument);
+			WriteTemporaryOrExpr(args[0], CiPriority.Argument);
 			Write(", 0, NULL)");
 			break;
 		case CiId.MatchFindStr:
@@ -1811,9 +1823,9 @@ public class GenC : GenCCpp
 			Write("CiMatch_Find(&");
 			obj.Accept(this, CiPriority.Primary);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Argument);
+			WriteTemporaryOrExpr(args[0], CiPriority.Argument);
 			Write(", ");
-			args[1].Accept(this, CiPriority.Argument);
+			WriteTemporaryOrExpr(args[1], CiPriority.Argument);
 			Write(", ");
 			WriteRegexOptions(args);
 			WriteChar(')');
@@ -1822,7 +1834,7 @@ public class GenC : GenCCpp
 			Write("g_regex_match(");
 			args[1].Accept(this, CiPriority.Argument);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Argument);
+			WriteTemporaryOrExpr(args[0], CiPriority.Argument);
 			Write(", 0, &");
 			obj.Accept(this, CiPriority.Primary);
 			WriteChar(')');
