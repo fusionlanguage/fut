@@ -440,11 +440,15 @@ public abstract class GenBase : CiVisitor
 		if (type is CiNumericType) {
 			if (type is CiIntegerType integer)
 				return GetIntegerTypeCode(integer, promote);
-			if (type == CiSystem.DoubleType)
-				return TypeCode.Double;
-			if (type == CiSystem.FloatType || type == CiSystem.FloatIntType)
+			switch (type.Id) {
+			case CiId.FloatType:
+			case CiId.FloatIntType:
 				return TypeCode.Single;
-			throw new NotImplementedException(type.ToString());
+			case CiId.DoubleType:
+				return TypeCode.Double;
+			default:
+				throw new NotImplementedException(type.ToString());
+			}
 		}
 		else if (type == CiSystem.BoolType)
 			return TypeCode.Boolean;

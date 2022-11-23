@@ -100,11 +100,6 @@ public class CiClass : CiContainerType
 	}
 }
 
-public class CiIntegerType : CiNumericType
-{
-	public override bool IsAssignableFrom(CiType right) => right is CiIntegerType || right == CiSystem.FloatIntType;
-}
-
 public class CiRangeType : CiIntegerType
 {
 	internal int Min;
@@ -123,20 +118,6 @@ public class CiRangeType : CiIntegerType
 
 	public override string ToString() => this.Min == this.Max ? this.Min.ToString() : $"({this.Min} .. {this.Max})";
 
-	public CiRangeType Union(CiRangeType that)
-	{
-		if (that == null)
-			return this;
-		if (that.Min < this.Min) {
-			if (that.Max >= this.Max)
-				return that;
-			return CiRangeType.New(that.Min, this.Max);
-		}
-		if (that.Max > this.Max)
-			return CiRangeType.New(this.Min, that.Max);
-		return this;
-	}
-
 	public override bool IsAssignableFrom(CiType right)
 	{
 		switch (right) {
@@ -145,7 +126,7 @@ public class CiRangeType : CiIntegerType
 		case CiIntegerType _:
 			return true;
 		default:
-			return right == CiSystem.FloatIntType;
+			return right.Id == CiId.FloatIntType;
 		}
 	}
 
@@ -283,10 +264,6 @@ public class CiArrayStorageType : CiStorageType
 
 public class CiStringType : CiClassType
 {
-	public CiStringType()
-	{
-		this.Class = CiSystem.StringClass;
-	}
 }
 
 public class CiStringStorageType : CiStringType
@@ -309,19 +286,18 @@ public class CiSystem : CiScope
 	public static readonly CiType TypeParam0 = new CiType { Name = "T" };
 	public static readonly CiType TypeParam0NotFinal = new CiType { Name = "T" };
 	public static readonly CiType TypeParam0Predicate = new CiType { Name = "Predicate<T>" };
-	public static readonly CiIntegerType IntType = new CiIntegerType { Name = "int" };
+	public static readonly CiIntegerType IntType = new CiIntegerType { Id = CiId.IntType, Name = "int" };
 	public static readonly CiRangeType UIntType = CiRangeType.New(0, int.MaxValue);
-	public static readonly CiIntegerType LongType = new CiIntegerType { Name = "long" };
+	public static readonly CiIntegerType LongType = new CiIntegerType { Id = CiId.LongType, Name = "long" };
 	public static readonly CiRangeType ByteType = CiRangeType.New(0, 0xff);
-	public static readonly CiRangeType Minus1Type = CiRangeType.New(-1, int.MaxValue);
-	public static readonly CiFloatingType FloatType = new CiFloatingType { Name = "float" };
-	public static readonly CiFloatingType DoubleType = new CiFloatingType { Name = "double" };
-	public static readonly CiFloatingType FloatIntType = new CiFloatingType { Name = "float" };
+	static readonly CiFloatingType FloatType = new CiFloatingType { Id = CiId.FloatType, Name = "float" };
+	public static readonly CiFloatingType DoubleType = new CiFloatingType { Id = CiId.DoubleType, Name = "double" };
+	static readonly CiFloatingType FloatIntType = new CiFloatingType { Id = CiId.FloatIntType, Name = "float" };
 	public static readonly CiRangeType CharType = CiRangeType.New(-0x80, 0xffff);
 	public static readonly CiEnum BoolType = new CiEnum { Name = "bool" };
 	public static readonly CiClass StringClass = CiClass.New(CiCallType.Normal, CiId.StringClass, "string");
-	public static readonly CiStringType StringPtrType = new CiStringType { Name = "string" };
-	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType();
+	public static readonly CiStringType StringPtrType = new CiStringType { Name = "string", Class = StringClass };
+	public static readonly CiStringStorageType StringStorageType = new CiStringStorageType { Class = StringClass };
 	public static readonly CiType PrintableType = new CiPrintableType { Name = "printable" };
 	public static readonly CiClass ArrayPtrClass = CiClass.New(CiCallType.Normal, CiId.ArrayPtrClass, "ArrayPtr", 1);
 	public static readonly CiClass ArrayStorageClass = CiClass.New(CiCallType.Normal, CiId.ArrayStorageClass, "ArrayStorage", 1);
@@ -403,13 +379,14 @@ public class CiSystem : CiScope
 		CiRangeType ushortType = CiRangeType.New(0, 0xffff);
 		ushortType.Name = "ushort";
 		Add(ushortType);
+		CiRangeType minus1Type = CiRangeType.New(-1, int.MaxValue);
 		Add(FloatType);
 		Add(DoubleType);
 		Add(BoolType);
 		StringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringContains, "Contains", CiVar.New(StringPtrType, "value")));
 		StringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringEndsWith, "EndsWith", CiVar.New(StringPtrType, "value")));
-		StringClass.Add(CiMethod.New(CiVisibility.Public, Minus1Type, CiId.StringIndexOf, "IndexOf", CiVar.New(StringPtrType, "value")));
-		StringClass.Add(CiMethod.New(CiVisibility.Public, Minus1Type, CiId.StringLastIndexOf, "LastIndexOf", CiVar.New(StringPtrType, "value")));
+		StringClass.Add(CiMethod.New(CiVisibility.Public, minus1Type, CiId.StringIndexOf, "IndexOf", CiVar.New(StringPtrType, "value")));
+		StringClass.Add(CiMethod.New(CiVisibility.Public, minus1Type, CiId.StringLastIndexOf, "LastIndexOf", CiVar.New(StringPtrType, "value")));
 		StringClass.Add(CiMember.New(UIntType, CiId.StringLength, "Length"));
 		StringClass.Add(CiMethod.New(CiVisibility.Public, StringStorageType, CiId.StringReplace, "Replace", CiVar.New(StringPtrType, "oldValue"), CiVar.New(StringPtrType, "newValue")));
 		StringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringStartsWith, "StartsWith", CiVar.New(StringPtrType, "value")));

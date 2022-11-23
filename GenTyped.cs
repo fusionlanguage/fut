@@ -211,9 +211,9 @@ public abstract class GenTyped : GenBase
 
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 	{
-		if (type is CiIntegerType && type != CiSystem.LongType && expr.Type == CiSystem.LongType)
+		if (type is CiIntegerType && type.Id != CiId.LongType && expr.Type.Id == CiId.LongType)
 			WriteStaticCast(type, expr);
-		else if (type == CiSystem.FloatType && expr.Type == CiSystem.DoubleType) {
+		else if (type.Id == CiId.FloatType && expr.Type.Id == CiId.DoubleType) {
 			if (expr is CiLiteralDouble literal) {
 				base.VisitLiteralDouble(literal.Value);
 				WriteChar('f');
@@ -221,7 +221,7 @@ public abstract class GenTyped : GenBase
 			else
 				WriteStaticCast(type, expr);
 		}
-		else if (type is CiIntegerType && expr.Type == CiSystem.FloatIntType) {
+		else if (type is CiIntegerType && expr.Type.Id == CiId.FloatIntType) {
 			if (expr is CiCallExpr call && call.Method.Symbol.Id == CiId.MathTruncate) {
 				expr = call.Arguments[0];
 				if (expr is CiLiteralDouble literal) {

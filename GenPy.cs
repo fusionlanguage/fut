@@ -382,27 +382,30 @@ public class GenPy : GenPySwift
 
 	static char GetArrayCode(CiNumericType type)
 	{
-		if (type == CiSystem.IntType)
+		switch (type.Id) {
+		case CiId.IntType:
 			return 'i';
-		if (type == CiSystem.LongType)
+		case CiId.LongType:
 			return 'q';
-		if (type == CiSystem.FloatType)
+		case CiId.FloatType:
 			return 'f';
-		if (type == CiSystem.DoubleType)
+		case CiId.DoubleType:
 			return 'd';
-		CiRangeType range = (CiRangeType) type;
-		if (range.Min < 0) {
-			if (range.Min < short.MinValue || range.Max > short.MaxValue)
+		default:
+			CiRangeType range = (CiRangeType) type;
+			if (range.Min < 0) {
+				if (range.Min < short.MinValue || range.Max > short.MaxValue)
+					return 'i';
+				if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
+					return 'h';
+				return 'b';
+			}
+			if (range.Max > ushort.MaxValue)
 				return 'i';
-			if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
-				return 'h';
-			return 'b';
+			if (range.Max > byte.MaxValue)
+				return 'H';
+			return 'B';
 		}
-		if (range.Max > ushort.MaxValue)
-			return 'i';
-		if (range.Max > byte.MaxValue)
-			return 'H';
-		return 'B';
 	}
 
 	void WriteDefaultValue(CiType type)

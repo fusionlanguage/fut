@@ -106,10 +106,24 @@ public class CiResolver : CiVisitor
 		TakePtr(expr);
 	}
 
+	static CiRangeType Union(CiRangeType left, CiRangeType right)
+	{
+		if (right == null)
+			return left;
+		if (right.Min < left.Min) {
+			if (right.Max >= left.Max)
+				return right;
+			return CiRangeType.New(right.Min, left.Max);
+		}
+		if (right.Max > left.Max)
+			return CiRangeType.New(left.Min, right.Max);
+		return left;
+	}
+
 	CiType GetCommonType(CiExpr left, CiExpr right)
 	{
 		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange)
-			return leftRange.Union(rightRange);
+			return Union(leftRange, rightRange);
 		CiType ptr = left.Type.GetPtrOrSelf();
 		if (ptr.IsAssignableFrom(right.Type))
 			return ptr;
@@ -274,13 +288,13 @@ public class CiResolver : CiVisitor
 				if (rightNegative != null)
 					range = op(leftNegative, rightNegative);
 				if (rightPositive != null)
-					range = op(leftNegative, rightPositive).Union(range);
+					range = Union(op(leftNegative, rightPositive), range);
 			}
 			if (leftPositive != null) {
 				if (rightNegative != null)
-					range = op(leftPositive, rightNegative).Union(range);
+					range = Union(op(leftPositive, rightNegative), range);
 				if (rightPositive != null)
-					range = op(leftPositive, rightPositive).Union(range);
+					range = Union(op(leftPositive, rightPositive), range);
 			}
 			return range;
 		}

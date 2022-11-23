@@ -281,7 +281,7 @@ public class GenSwift : GenPySwift
 			}
 			break;
 		case CiFloatingType _:
-			Write(type == CiSystem.DoubleType ? "Double" : "Float");
+			Write(type.Id == CiId.DoubleType ? "Double" : "Float");
 			break;
 		case CiEnum _:
 			Write(type == CiSystem.BoolType ? "Bool" : type.Name);

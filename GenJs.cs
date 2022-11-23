@@ -97,28 +97,31 @@ public class GenJs : GenBase
 
 	protected static string GetArrayElementType(CiNumericType type)
 	{
-		if (type == CiSystem.IntType)
+		switch (type.Id) {
+		case CiId.IntType:
 			return "Int32";
-		if (type == CiSystem.DoubleType)
-			return "Float64";
-		if (type == CiSystem.FloatType)
-			return "Float32";
-		if (type == CiSystem.LongType)
+		case CiId.LongType:
 			// TODO: UInt32 if possible?
 			return "Float64"; // no 64-bit integers in JavaScript
-		CiRangeType range = (CiRangeType) type;
-		if (range.Min < 0) {
-			if (range.Min < short.MinValue || range.Max > short.MaxValue)
+		case CiId.FloatType:
+			return "Float32";
+		case CiId.DoubleType:
+			return "Float64";
+		default:
+			CiRangeType range = (CiRangeType) type;
+			if (range.Min < 0) {
+				if (range.Min < short.MinValue || range.Max > short.MaxValue)
+					return "Int32";
+				if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
+					return "Int16";
+				return "Int8";
+			}
+			if (range.Max > ushort.MaxValue)
 				return "Int32";
-			if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
-				return "Int16";
-			return "Int8";
+			if (range.Max > byte.MaxValue)
+				return "Uint16";
+			return "Uint8";
 		}
-		if (range.Max > ushort.MaxValue)
-			return "Int32";
-		if (range.Max > byte.MaxValue)
-			return "Uint16";
-		return "Uint8";
 	}
 
 	public override void VisitAggregateInitializer(CiAggregateInitializer expr)

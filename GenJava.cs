@@ -57,18 +57,25 @@ public class GenJava : GenTyped
 		 && expr.Parts[0].WidthExpr == null
 		 && expr.Parts[0].Format == ' ') {
 			CiExpr arg = expr.Parts[0].Argument;
-			if (arg.Type == CiSystem.LongType)
+			switch (arg.Type.Id) {
+			case CiId.LongType:
 				Write("Long");
-			else if (arg.Type == CiSystem.DoubleType || arg.Type == CiSystem.FloatIntType)
-				Write("Double");
-			else if (arg.Type == CiSystem.FloatType)
+				break;
+			case CiId.FloatType:
 				Write("Float");
-			else if (arg.Type is CiStringType) {
-				arg.Accept(this, parent);
-				return expr;
-			}
-			else
+				break;
+			case CiId.DoubleType:
+			case CiId.FloatIntType:
+				Write("Double");
+				break;
+			default:
+				if (arg.Type is CiStringType) {
+					arg.Accept(this, parent);
+					return expr;
+				}
 				Write("Integer");
+				break;
+			}
 			WriteCall(".toString", arg);
 		}
 		else {

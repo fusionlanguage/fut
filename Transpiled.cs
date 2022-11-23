@@ -1281,6 +1281,11 @@ namespace Foxoft.Ci
 	public enum CiId
 	{
 		None,
+		IntType,
+		LongType,
+		FloatType,
+		DoubleType,
+		FloatIntType,
 		StringClass,
 		ArrayPtrClass,
 		ArrayStorageClass,
@@ -2317,6 +2322,12 @@ namespace Foxoft.Ci
 
 	public abstract class CiNumericType : CiType
 	{
+	}
+
+	public class CiIntegerType : CiNumericType
+	{
+
+		public override bool IsAssignableFrom(CiType right) => right is CiIntegerType || right.Id == CiId.FloatIntType;
 	}
 
 	public class CiFloatingType : CiNumericType
