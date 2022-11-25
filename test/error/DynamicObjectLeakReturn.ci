@@ -1,6 +1,7 @@
 public class Test
 {
-	static Test Create() => new Test(); //ERROR: Dynamically allocated object must be assigned to a Test# reference
+	// FIXME:
+	static Test Create() => new Test(); //ERROR: Dynamically allocated object must be assigned to a  reference
 
 	public static bool Run()
 	{

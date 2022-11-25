@@ -1080,6 +1080,17 @@ public class CiResolver : CiVisitor
 		return new CiSelectExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
 	}
 
+	static CiType EvalType(CiClassType generic, CiType type)
+	{
+		if (type == CiSystem.TypeParam0)
+			return generic.TypeArg0;
+		if (type == CiSystem.TypeParam0NotFinal)
+			return generic.TypeArg0.IsFinal() ? null : generic.TypeArg0;
+		if (type is CiReadWriteClassType array && array.IsArray() && array.GetElementType() == CiSystem.TypeParam0)
+			return new CiReadWriteClassType { Class = CiSystem.ArrayPtrClass, TypeArg0 = generic.TypeArg0 };
+		return type;
+	}
+
 	static bool CanCall(CiExpr obj, CiMethod method, List<CiExpr> arguments)
 	{
 		CiVar param = method.Parameters.FirstParameter();
@@ -1088,7 +1099,7 @@ public class CiResolver : CiVisitor
 				return false;
 			CiType type = param.Type;
 			if (obj != null && obj.Type is CiClassType generic)
-				type = generic.EvalType(type);
+				type = EvalType(generic, type);
 			if (!type.IsAssignableFrom(arg.Type))
 				return false;
 			param = param.NextParameter();
@@ -1125,7 +1136,7 @@ public class CiResolver : CiVisitor
 		for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 			CiType type = param.Type;
 			if (symbol.Left != null && symbol.Left.Type is CiClassType generic) {
-				type = generic.EvalType(type);
+				type = EvalType(generic, type);
 				if (type == null)
 					continue;
 			}
@@ -1177,7 +1188,7 @@ public class CiResolver : CiVisitor
 			expr.Method = symbol;
 			CiType type = method.Type;
 			if (symbol.Left != null && symbol.Left.Type is CiClassType generic)
-				type = generic.EvalType(type);
+				type = EvalType(generic, type);
 			expr.Type = type;
 		}
 		return expr;

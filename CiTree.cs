@@ -64,117 +64,6 @@ public class CiLiteralDouble : CiLiteral
 	public override string ToString() => GetLiteralString();
 }
 
-public class CiClass : CiContainerType
-{
-	internal CiCallType CallType;
-	internal int TypeParameterCount = 0;
-	internal string BaseClassName;
-	internal CiMethodBase Constructor;
-	internal readonly List<CiConst> ConstArrays = new List<CiConst>();
-	internal CiVisitStatus VisitStatus;
-	public bool AddsVirtualMethods()
-	{
-		for (CiSymbol symbol = this.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiMethod method && method.IsAbstractOrVirtual())
-				return true;
-		}
-		return false;
-	}
-
-	public CiClass()
-	{
-		Add(CiVar.New(new CiReadWriteClassType { Class = this }, "this")); // shadows "this" in base class
-	}
-
-	public static CiClass New(CiCallType callType, CiId id, string name, int typeParameterCount = 0)
-		=> new CiClass { CallType = callType, Id = id, Name = name, TypeParameterCount = typeParameterCount };
-
-	public bool IsSameOrBaseOf(CiClass derived)
-	{
-		while (derived != this) {
-			derived = derived.Parent as CiClass;
-			if (derived == null)
-				return false;
-		}
-		return true;
-	}
-}
-
-public class CiClassType : CiType
-{
-	internal CiClass Class;
-	internal CiType TypeArg0;
-	internal CiType TypeArg1;
-	public CiType GetElementType() => this.TypeArg0;
-	public CiType GetKeyType() => this.TypeArg0;
-	public CiType GetValueType() => this.TypeArg1;
-	public override bool IsNullable() => true;
-	public override bool IsArray() => this.Class.Id == CiId.ArrayPtrClass;
-	public override CiType GetBaseType() => IsArray() ? GetElementType().GetBaseType() : this;
-
-	public CiType EvalType(CiType type)
-	{
-		if (type == CiSystem.TypeParam0)
-			return this.TypeArg0;
-		if (type == CiSystem.TypeParam0NotFinal)
-			return this.TypeArg0.IsFinal() ? null : this.TypeArg0;
-		if (type is CiReadWriteClassType array && array.IsArray() && array.GetElementType() == CiSystem.TypeParam0)
-			return new CiReadWriteClassType { Class = CiSystem.ArrayPtrClass, TypeArg0 = this.TypeArg0 };
-		return type;
-	}
-
-	public override CiSymbol TryLookup(string name) => this.Class.TryLookup(name);
-
-	protected bool EqualTypeArguments(CiClassType right)
-	{
-		switch (this.Class.TypeParameterCount) {
-		case 0: return true;
-		case 1: return this.TypeArg0.EqualsType(right.TypeArg0);
-		case 2: return this.TypeArg0.EqualsType(right.TypeArg0) && this.TypeArg1.EqualsType(right.TypeArg1);
-		default: throw new NotImplementedException();
-		}
-	}
-
-	protected bool IsAssignableFromClass(CiClassType right) => this.Class.IsSameOrBaseOf(right.Class) && EqualTypeArguments(right);
-
-	public override bool IsAssignableFrom(CiType right)
-	{
-		return right == CiSystem.NullType
-			|| (right is CiClassType rightClass && IsAssignableFromClass(rightClass));
-	}
-
-	public override bool EqualsType(CiType right)
-		=> right is CiClassType that // TODO: exact match
-			&& this.Class == that.Class && EqualTypeArguments(that);
-
-	public override string GetArraySuffix() => IsArray() ? "[]" : "";
-	public virtual string GetClassSuffix() => "";
-
-	public override string ToString()
-	{
-		if (IsArray())
-			return GetElementType().GetBaseType() + GetArraySuffix() + GetElementType().GetArraySuffix();
-		switch (this.Class.TypeParameterCount) {
-		case 0: return this.Class.Name + GetClassSuffix();
-		case 1: return $"{this.Class.Name}<{this.TypeArg0}>{GetClassSuffix()}";
-		case 2: return $"{this.Class.Name}<{this.TypeArg0}, {this.TypeArg1}>{GetClassSuffix()}";
-		default: throw new NotImplementedException();
-		}
-	}
-}
-
-public class CiReadWriteClassType : CiClassType
-{
-	public override bool IsAssignableFrom(CiType right)
-	{
-		return right == CiSystem.NullType
-			|| (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
-	}
-
-	public override string GetArraySuffix() => IsArray() ? "[]!" : "";
-	public override string GetClassSuffix() => "!";
-}
-
 public class CiStorageType : CiReadWriteClassType
 {
 	public override bool IsFinal() => this.Class.Id != CiId.MatchClass;
@@ -182,18 +71,6 @@ public class CiStorageType : CiReadWriteClassType
 	public override bool IsAssignableFrom(CiType right) => right is CiStorageType rightClass && this.Class == rightClass.Class && EqualTypeArguments(rightClass);
 	public override CiType GetPtrOrSelf() => new CiReadWriteClassType { Class = this.Class, TypeArg0 = this.TypeArg0, TypeArg1 = this.TypeArg1 };
 	public override string GetClassSuffix() => "()";
-}
-
-public class CiDynamicPtrType : CiReadWriteClassType
-{
-	public override bool IsAssignableFrom(CiType right)
-	{
-		return right == CiSystem.NullType
-			|| (right is CiDynamicPtrType rightClass && IsAssignableFromClass(rightClass));
-	}
-
-	public override string GetArraySuffix() => IsArray() ? "[]#" : "";
-	public override string GetClassSuffix() => "#";
 }
 
 public class CiArrayStorageType : CiStorageType
@@ -216,10 +93,6 @@ public class CiArrayStorageType : CiStorageType
 	public override CiType GetPtrOrSelf() => new CiReadWriteClassType { Class = CiSystem.ArrayPtrClass, TypeArg0 = GetElementType() };
 }
 
-public class CiStringType : CiClassType
-{
-}
-
 public class CiStringStorageType : CiStringType
 {
 	public override bool IsNullable() => false;
@@ -228,15 +101,10 @@ public class CiStringStorageType : CiStringType
 	public override string GetClassSuffix() => "()";
 }
 
-public class CiPrintableType : CiType
-{
-	public override bool IsAssignableFrom(CiType right) => right is CiStringType || right is CiNumericType;
-}
-
 public class CiSystem : CiScope
 {
 	public static readonly CiType VoidType = new CiType { Name = "void" };
-	public static readonly CiType NullType = new CiType { Name = "null" };
+	public static readonly CiType NullType = new CiType { Id = CiId.NullType, Name = "null" };
 	public static readonly CiType TypeParam0 = new CiType { Name = "T" };
 	public static readonly CiType TypeParam0NotFinal = new CiType { Name = "T" };
 	public static readonly CiType TypeParam0Predicate = new CiType { Name = "Predicate<T>" };
@@ -474,13 +342,6 @@ public class CiSystem : CiScope
 	}
 
 	public static readonly CiSystem Value = new CiSystem();
-}
-
-public class CiProgram : CiScope
-{
-	public readonly List<string> TopLevelNatives = new List<string>();
-	public readonly List<CiClass> Classes = new List<CiClass>();
-	public readonly Dictionary<string, byte[]> Resources = new Dictionary<string, byte[]>();
 }
 
 }

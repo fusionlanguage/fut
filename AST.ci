@@ -59,6 +59,7 @@ public enum CiPriority
 public enum CiId
 {
 	None,
+	NullType,
 	IntType,
 	LongType,
 	FloatType,
@@ -1078,4 +1079,133 @@ public class CiEnum : CiContainerType
 
 public class CiEnumFlags : CiEnum
 {
+}
+
+public class CiClass : CiContainerType
+{
+	internal CiCallType CallType;
+	internal int TypeParameterCount = 0;
+	internal string() BaseClassName;
+	internal CiMethodBase Constructor;
+	internal List<CiConst#>() ConstArrays;
+	internal CiVisitStatus VisitStatus;
+	public bool AddsVirtualMethods()
+	{
+		for (CiSymbol symbol = this.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is CiMethod method && method.IsAbstractOrVirtual())
+				return true;
+		}
+		return false;
+	}
+
+	public CiClass()
+	{
+		Add(CiVar.New(new CiReadWriteClassType { Class = this }, "this")); // shadows "this" in base class
+	}
+
+	public static CiClass# New(CiCallType callType, CiId id, string name, int typeParameterCount = 0)
+		=> new CiClass { CallType = callType, Id = id, Name = name, TypeParameterCount = typeParameterCount };
+
+	public bool IsSameOrBaseOf(CiClass derived)
+	{
+		while (derived != this) {
+			if (derived.Parent is CiClass parent)
+				derived = parent;
+			else
+				return false;
+		}
+		return true;
+	}
+}
+
+public class CiClassType : CiType
+{
+	internal CiClass Class;
+	internal CiType TypeArg0;
+	internal CiType TypeArg1;
+	public CiType GetElementType() => this.TypeArg0;
+	public CiType GetKeyType() => this.TypeArg0;
+	public CiType GetValueType() => this.TypeArg1;
+	public override bool IsNullable() => true;
+	public override bool IsArray() => this.Class.Id == CiId.ArrayPtrClass;
+	public override CiType GetBaseType() => IsArray() ? GetElementType().GetBaseType() : this;
+
+	public override CiSymbol TryLookup(string name) => this.Class.TryLookup(name);
+
+	protected bool EqualTypeArguments(CiClassType right)
+	{
+		switch (this.Class.TypeParameterCount) {
+		case 0: return true;
+		case 1: return this.TypeArg0.EqualsType(right.TypeArg0);
+		case 2: return this.TypeArg0.EqualsType(right.TypeArg0) && this.TypeArg1.EqualsType(right.TypeArg1);
+		default: assert false;
+		}
+	}
+
+	protected bool IsAssignableFromClass(CiClassType right) => this.Class.IsSameOrBaseOf(right.Class) && EqualTypeArguments(right);
+
+	public override bool IsAssignableFrom(CiType right)
+	{
+		return right.Id == CiId.NullType
+			|| (right is CiClassType rightClass && IsAssignableFromClass(rightClass));
+	}
+
+	public override bool EqualsType(CiType right)
+		=> right is CiClassType that // TODO: exact match
+			&& this.Class == that.Class && EqualTypeArguments(that);
+
+	public override string() GetArraySuffix() => IsArray() ? "[]" : "";
+	public virtual string GetClassSuffix() => "";
+
+//	public override string() ToString()
+//	{
+//		if (IsArray())
+//			return GetElementType().GetBaseType() + GetArraySuffix() + GetElementType().GetArraySuffix();
+//		switch (this.Class.TypeParameterCount) {
+//		case 0: return this.Class.Name + GetClassSuffix();
+//		case 1: return $"{this.Class.Name}<{this.TypeArg0}>{GetClassSuffix()}";
+//		case 2: return $"{this.Class.Name}<{this.TypeArg0}, {this.TypeArg1}>{GetClassSuffix()}";
+//		default: throw new NotImplementedException();
+//		}
+//	}
+}
+
+public class CiReadWriteClassType : CiClassType
+{
+	public override bool IsAssignableFrom(CiType right)
+	{
+		return right.Id == CiId.NullType
+			|| (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
+	}
+
+	public override string() GetArraySuffix() => IsArray() ? "[]!" : "";
+	public override string GetClassSuffix() => "!";
+}
+
+public class CiDynamicPtrType : CiReadWriteClassType
+{
+	public override bool IsAssignableFrom(CiType right)
+	{
+		return right.Id == CiId.NullType
+			|| (right is CiDynamicPtrType rightClass && IsAssignableFromClass(rightClass));
+	}
+
+	public override string() GetArraySuffix() => IsArray() ? "[]#" : "";
+	public override string GetClassSuffix() => "#";
+}
+
+public class CiStringType : CiClassType
+{
+}
+
+public class CiPrintableType : CiType
+{
+	public override bool IsAssignableFrom(CiType right) => right is CiStringType || right is CiNumericType;
+}
+
+public class CiProgram : CiScope
+{
+	internal List<string()>() TopLevelNatives;
+	internal List<CiClass>() Classes;
+	internal Dictionary<string(), byte[]#>() Resources;
 }

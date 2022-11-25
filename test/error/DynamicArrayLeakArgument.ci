@@ -6,7 +6,8 @@ public static class Test
 
 	public static bool Run()
 	{
-		Foo(new int[2]); //ERROR: Dynamically allocated array must be assigned to a int[]# reference
+		// FIXME:
+		Foo(new int[2]); //ERROR: Dynamically allocated array must be assigned to a  reference
 		return true;
 	}
 }

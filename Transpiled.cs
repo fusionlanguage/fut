@@ -1281,6 +1281,7 @@ namespace Foxoft.Ci
 	public enum CiId
 	{
 		None,
+		NullType,
 		IntType,
 		LongType,
 		FloatType,
@@ -2560,6 +2561,145 @@ namespace Foxoft.Ci
 
 	public class CiEnumFlags : CiEnum
 	{
+	}
+
+	public class CiClass : CiContainerType
+	{
+		public CiClass()
+		{
+			Add(CiVar.New(new CiReadWriteClassType { Class = this }, "this"));
+		}
+
+		internal CiCallType CallType;
+
+		internal int TypeParameterCount = 0;
+
+		internal string BaseClassName;
+
+		internal CiMethodBase Constructor;
+
+		internal readonly List<CiConst> ConstArrays = new List<CiConst>();
+
+		internal CiVisitStatus VisitStatus;
+
+		public bool AddsVirtualMethods()
+		{
+			for (CiSymbol symbol = this.First; symbol != null; symbol = symbol.Next) {
+				if (symbol is CiMethod method && method.IsAbstractOrVirtual())
+					return true;
+			}
+			return false;
+		}
+
+		public static CiClass New(CiCallType callType, CiId id, string name, int typeParameterCount = 0) => new CiClass { CallType = callType, Id = id, Name = name, TypeParameterCount = typeParameterCount };
+
+		public bool IsSameOrBaseOf(CiClass derived)
+		{
+			while (derived != this) {
+				if (derived.Parent is CiClass parent)
+					derived = parent;
+				else
+					return false;
+			}
+			return true;
+		}
+	}
+
+	public class CiClassType : CiType
+	{
+
+		internal CiClass Class;
+
+		internal CiType TypeArg0;
+
+		internal CiType TypeArg1;
+
+		public CiType GetElementType() => this.TypeArg0;
+
+		public CiType GetKeyType() => this.TypeArg0;
+
+		public CiType GetValueType() => this.TypeArg1;
+
+		public override bool IsNullable() => true;
+
+		public override bool IsArray() => this.Class.Id == CiId.ArrayPtrClass;
+
+		public override CiType GetBaseType() => IsArray() ? GetElementType().GetBaseType() : this;
+
+		public override CiSymbol TryLookup(string name) => this.Class.TryLookup(name);
+
+		protected bool EqualTypeArguments(CiClassType right)
+		{
+			switch (this.Class.TypeParameterCount) {
+			case 0:
+				return true;
+			case 1:
+				return this.TypeArg0.EqualsType(right.TypeArg0);
+			case 2:
+				return this.TypeArg0.EqualsType(right.TypeArg0) && this.TypeArg1.EqualsType(right.TypeArg1);
+			default:
+				throw new NotImplementedException();
+			}
+		}
+
+		protected bool IsAssignableFromClass(CiClassType right) => this.Class.IsSameOrBaseOf(right.Class) && EqualTypeArguments(right);
+
+		public override bool IsAssignableFrom(CiType right)
+		{
+			return right.Id == CiId.NullType || (right is CiClassType rightClass && IsAssignableFromClass(rightClass));
+		}
+
+		public override bool EqualsType(CiType right) => right is CiClassType that && this.Class == that.Class && EqualTypeArguments(that);
+
+		public override string GetArraySuffix() => IsArray() ? "[]" : "";
+
+		public virtual string GetClassSuffix() => "";
+	}
+
+	public class CiReadWriteClassType : CiClassType
+	{
+
+		public override bool IsAssignableFrom(CiType right)
+		{
+			return right.Id == CiId.NullType || (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
+		}
+
+		public override string GetArraySuffix() => IsArray() ? "[]!" : "";
+
+		public override string GetClassSuffix() => "!";
+	}
+
+	public class CiDynamicPtrType : CiReadWriteClassType
+	{
+
+		public override bool IsAssignableFrom(CiType right)
+		{
+			return right.Id == CiId.NullType || (right is CiDynamicPtrType rightClass && IsAssignableFromClass(rightClass));
+		}
+
+		public override string GetArraySuffix() => IsArray() ? "[]#" : "";
+
+		public override string GetClassSuffix() => "#";
+	}
+
+	public class CiStringType : CiClassType
+	{
+	}
+
+	public class CiPrintableType : CiType
+	{
+
+		public override bool IsAssignableFrom(CiType right) => right is CiStringType || right is CiNumericType;
+	}
+
+	public class CiProgram : CiScope
+	{
+
+		internal readonly List<string> TopLevelNatives = new List<string>();
+
+		internal readonly List<CiClass> Classes = new List<CiClass>();
+
+		internal readonly Dictionary<string, byte[]> Resources = new Dictionary<string, byte[]>();
 	}
 
 	public abstract class CiParserBase : CiLexer

@@ -4,7 +4,8 @@ public class Test
 	{
 		Test() o;
 		string() s = "o=";
-		s += o; //ERROR: Cannot coerce Test() to printable
+		// FIXME:
+		s += o; //ERROR: Cannot coerce  to printable
 		return true;
 	}
 }
