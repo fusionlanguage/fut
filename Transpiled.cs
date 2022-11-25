@@ -2745,6 +2745,8 @@ namespace Foxoft.Ci
 	public abstract class CiParserBase : CiLexer
 	{
 
+		internal CiProgram Program;
+
 		string XcrementParent = null;
 
 		CiLoop CurrentLoop = null;
@@ -3238,7 +3240,7 @@ namespace Foxoft.Ci
 			return result;
 		}
 
-		protected CiNative ParseNative()
+		CiNative ParseNative()
 		{
 			int line = this.Line;
 			Expect(CiToken.Native);
@@ -3447,6 +3449,66 @@ namespace Foxoft.Ci
 				return "sealed";
 			default:
 				throw new NotImplementedException();
+			}
+		}
+
+		protected abstract CiClass ParseClass(CiCallType callType);
+
+		CiEnum ParseEnum()
+		{
+			Expect(CiToken.Enum);
+			bool flags = Eat(CiToken.Asterisk);
+			CiEnum enu = flags ? new CiEnumFlags() : new CiEnum();
+			enu.Parent = this.Program;
+			enu.Filename = this.Filename;
+			enu.Line = this.Line;
+			enu.Name = this.StringValue;
+			Expect(CiToken.Id);
+			Expect(CiToken.LeftBrace);
+			do {
+				CiConst konst = new CiConst { Visibility = CiVisibility.Public, Documentation = ParseDoc(), Line = this.Line, Name = this.StringValue, Type = enu };
+				Expect(CiToken.Id);
+				if (Eat(CiToken.Assign))
+					konst.Value = ParseExpr();
+				else if (flags)
+					ReportError("enum* symbol must be assigned a value");
+				AddSymbol(enu, konst);
+			}
+			while (Eat(CiToken.Comma));
+			Expect(CiToken.RightBrace);
+			return enu;
+		}
+
+		public void Parse(string filename, byte[] input, int inputLength)
+		{
+			Open(filename, input, inputLength);
+			while (!See(CiToken.EndOfFile)) {
+				CiCodeDoc doc = ParseDoc();
+				CiContainerType type;
+				bool isPublic = Eat(CiToken.Public);
+				switch (this.CurrentToken) {
+				case CiToken.Class:
+					type = ParseClass(CiCallType.Normal);
+					break;
+				case CiToken.Static:
+				case CiToken.Abstract:
+				case CiToken.Sealed:
+					type = ParseClass(ParseCallType());
+					break;
+				case CiToken.Enum:
+					type = ParseEnum();
+					break;
+				case CiToken.Native:
+					this.Program.TopLevelNatives.Add(ParseNative().Content);
+					continue;
+				default:
+					ReportError("Expected class or enum");
+					NextToken();
+					continue;
+				}
+				type.Documentation = doc;
+				type.IsPublic = isPublic;
+				AddSymbol(this.Program, type);
 			}
 		}
 	}

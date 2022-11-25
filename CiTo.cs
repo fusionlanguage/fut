@@ -56,8 +56,10 @@ public static class CiTo
 	static CiProgram ParseAndResolve(CiParser parser, CiScope parent, List<string> files, List<string> searchDirs, string lang)
 	{
 		parser.Program = new CiProgram { Parent = parent };
-		foreach (string file in files)
-			parser.Parse(file, File.ReadAllBytes(file));
+		foreach (string file in files) {
+			byte[] input = File.ReadAllBytes(file);
+			parser.Parse(file, input, input.Length);
+		}
 		if (parser.HasErrors)
 			return null;
 		new CiResolver(parser.Program, searchDirs, lang);
