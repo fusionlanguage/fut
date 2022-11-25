@@ -3086,7 +3086,7 @@ namespace Foxoft.Ci
 			return doc;
 		}
 
-		protected CiCodeDoc ParseDoc() => See(CiToken.DocComment) ? ParseCodeDoc() : null;
+		CiCodeDoc ParseDoc() => See(CiToken.DocComment) ? ParseCodeDoc() : null;
 
 		protected CiExpr ParseSymbolReference(CiExpr left)
 		{
@@ -3345,7 +3345,7 @@ namespace Foxoft.Ci
 			return ParseExpr();
 		}
 
-		protected void AddSymbol(CiScope scope, CiSymbol symbol)
+		void AddSymbol(CiScope scope, CiSymbol symbol)
 		{
 			if (scope.Contains(symbol))
 				ReportError("Duplicate symbol");
@@ -3361,7 +3361,7 @@ namespace Foxoft.Ci
 			return result;
 		}
 
-		protected CiConst ParseConst()
+		CiConst ParseConst()
 		{
 			Expect(CiToken.Const);
 			CiConst konst = new CiConst { Line = this.Line, TypeExpr = ParseType(), Name = this.StringValue };
@@ -3397,7 +3397,7 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected CiBlock ParseBlock()
+		CiBlock ParseBlock()
 		{
 			CiBlock result = new CiBlock { Line = this.Line };
 			Expect(CiToken.LeftBrace);
@@ -3671,7 +3671,7 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected CiCallType ParseCallType()
+		CiCallType ParseCallType()
 		{
 			switch (this.CurrentToken) {
 			case CiToken.Static:
@@ -3694,7 +3694,7 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected void ParseMethod(CiMethod method)
+		void ParseMethod(CiMethod method)
 		{
 			method.IsMutator = Eat(CiToken.ExclamationMark);
 			Expect(CiToken.LeftParenthesis);
@@ -3717,7 +3717,7 @@ namespace Foxoft.Ci
 				method.Body = ParseBlock();
 		}
 
-		protected static string CallTypeToString(CiCallType callType)
+		static string CallTypeToString(CiCallType callType)
 		{
 			switch (callType) {
 			case CiCallType.Static:
@@ -3737,7 +3737,100 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected abstract CiClass ParseClass(CiCallType callType);
+		CiClass ParseClass(CiCallType callType)
+		{
+			Expect(CiToken.Class);
+			CiClass klass = new CiClass { Parent = this.Program, Filename = this.Filename, Line = this.Line, CallType = callType, Name = this.StringValue };
+			Expect(CiToken.Id);
+			if (Eat(CiToken.Colon)) {
+				klass.BaseClassName = this.StringValue;
+				Expect(CiToken.Id);
+			}
+			Expect(CiToken.LeftBrace);
+			while (!See(CiToken.RightBrace) && !See(CiToken.EndOfFile)) {
+				CiCodeDoc doc = ParseDoc();
+				CiVisibility visibility;
+				switch (this.CurrentToken) {
+				case CiToken.Internal:
+					visibility = CiVisibility.Internal;
+					NextToken();
+					break;
+				case CiToken.Protected:
+					visibility = CiVisibility.Protected;
+					NextToken();
+					break;
+				case CiToken.Public:
+					visibility = CiVisibility.Public;
+					NextToken();
+					break;
+				case CiToken.Semicolon:
+					ReportError("Semicolon in class definition");
+					NextToken();
+					continue;
+				default:
+					visibility = CiVisibility.Private;
+					break;
+				}
+				if (See(CiToken.Const)) {
+					CiConst konst = ParseConst();
+					konst.Documentation = doc;
+					konst.Visibility = visibility;
+					AddSymbol(klass, konst);
+					continue;
+				}
+				callType = ParseCallType();
+				CiExpr type = Eat(CiToken.Void) ? this.Program.System.VoidType : ParseType();
+				if (See(CiToken.LeftBrace) && type is CiCallExpr call) {
+					if (call.Method.Name != klass.Name)
+						ReportError("Method with no return type");
+					else {
+						if (klass.CallType == CiCallType.Static)
+							ReportError("Constructor in a static class");
+						if (callType != CiCallType.Normal)
+							ReportError($"Constructor cannot be {CallTypeToString(callType)}");
+						if (call.Arguments.Count != 0)
+							ReportError("Constructor parameters not supported");
+						if (klass.Constructor != null)
+							ReportError($"Duplicate constructor, already defined in line {klass.Constructor.Line}");
+					}
+					if (visibility == CiVisibility.Private)
+						visibility = CiVisibility.Internal;
+					klass.Constructor = new CiMethodBase { Line = call.Line, Documentation = doc, Visibility = visibility, Parent = klass, Type = this.Program.System.VoidType, Name = klass.Name, Body = ParseBlock() };
+					continue;
+				}
+				int line = this.Line;
+				string name = this.StringValue;
+				Expect(CiToken.Id);
+				if (See(CiToken.LeftParenthesis) || See(CiToken.ExclamationMark)) {
+					if (callType == CiCallType.Static || klass.CallType == CiCallType.Abstract) {
+					}
+					else if (klass.CallType == CiCallType.Static)
+						ReportError("Only static methods allowed in a static class");
+					else if (callType == CiCallType.Abstract)
+						ReportError("Abstract methods allowed only in an abstract class");
+					else if (klass.CallType == CiCallType.Sealed && callType == CiCallType.Virtual)
+						ReportError("Virtual methods disallowed in a sealed class");
+					if (visibility == CiVisibility.Private && callType != CiCallType.Static && callType != CiCallType.Normal)
+						ReportError($"{CallTypeToString(callType)} method cannot be private");
+					CiMethod method = new CiMethod { Line = line, Documentation = doc, Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
+					method.Parameters.Parent = klass;
+					ParseMethod(method);
+					AddSymbol(klass, method);
+					continue;
+				}
+				if (visibility == CiVisibility.Public)
+					ReportError("Field cannot be public");
+				if (callType != CiCallType.Normal)
+					ReportError($"Field cannot be {CallTypeToString(callType)}");
+				if (type == this.Program.System.VoidType)
+					ReportError("Field cannot be void");
+				CiField field = new CiField { Line = line, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };
+				Expect(CiToken.Semicolon);
+				AddSymbol(klass, field);
+			}
+			Expect(CiToken.RightBrace);
+			return klass;
+		}
 
 		CiEnum ParseEnum()
 		{

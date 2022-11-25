@@ -1127,7 +1127,7 @@ public class CiClass : CiContainerType
 	internal CiCallType CallType;
 	internal int TypeParameterCount = 0;
 	internal string() BaseClassName;
-	internal CiMethodBase Constructor;
+	internal CiMethodBase# Constructor;
 	internal List<CiConst#>() ConstArrays;
 	internal CiVisitStatus VisitStatus;
 	public bool AddsVirtualMethods()
