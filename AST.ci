@@ -264,7 +264,7 @@ public abstract class CiSymbol : CiExpr
 	public override string() ToString() => this.Name;
 }
 
-public abstract class CiScope : CiSymbol
+public class CiScope : CiSymbol
 {
 	Dictionary<string, CiSymbol#>() Dict;
 	internal CiSymbol First = null;

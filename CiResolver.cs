@@ -1803,6 +1803,8 @@ public class CiResolver : CiVisitor
 			if (symbol is CiMethod method && method.Body != null) {
 				this.CurrentScope = method.Parameters;
 				this.CurrentMethod = method;
+				if (!(method.Body is CiScope))
+					OpenScope(new CiScope()); // don't add "is Derived d" to parameters
 				method.Body.AcceptStatement(this);
 				if (method.Type != CiSystem.VoidType && method.Body.CompletesNormally())
 					throw StatementException(method.Body, "Method can complete without a return value");

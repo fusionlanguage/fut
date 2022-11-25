@@ -1552,7 +1552,7 @@ namespace Foxoft.Ci
 		public override string ToString() => this.Name;
 	}
 
-	public abstract class CiScope : CiSymbol
+	public class CiScope : CiSymbol
 	{
 
 		readonly Dictionary<string, CiSymbol> Dict = new Dictionary<string, CiSymbol>();
