@@ -26,6 +26,7 @@ namespace Foxoft.Ci
 
 public class GenSwift : GenPySwift
 {
+	CiSystem System;
 	bool Throw;
 	bool ArrayRef;
 	bool StringCharAt;
@@ -437,7 +438,7 @@ public class GenSwift : GenPySwift
 
 	void WriteRange(CiExpr startIndex, CiExpr length)
 	{
-		WriteCoerced(CiSystem.IntType, startIndex, CiPriority.Shift);
+		WriteCoerced(this.System.IntType, startIndex, CiPriority.Shift);
 		Write("..<");
 		WriteAdd(startIndex, length); // TODO: side effect
 	}
@@ -488,12 +489,12 @@ public class GenSwift : GenPySwift
 				Write("ciStringSubstring(");
 				WriteUnwrappedString(obj, CiPriority.Argument, false);
 				Write(", ");
-				WriteCoerced(CiSystem.IntType, args[0], CiPriority.Argument);
+				WriteCoerced(this.System.IntType, args[0], CiPriority.Argument);
 				WriteChar(')');
 			}
 			if (args.Count == 2) {
 				Write(".prefix(");
-				WriteCoerced(CiSystem.IntType, args[1], CiPriority.Argument);
+				WriteCoerced(this.System.IntType, args[1], CiPriority.Argument);
 				WriteChar(')');
 			}
 			break;
@@ -522,7 +523,7 @@ public class GenSwift : GenPySwift
 			Write("] = ArraySlice(repeating: ");
 			WriteCoerced(array.GetElementType(), args[0], CiPriority.Argument);
 			Write(", count: ");
-			WriteCoerced(CiSystem.IntType, args[2], CiPriority.Argument); // FIXME: side effect
+			WriteCoerced(this.System.IntType, args[2], CiPriority.Argument); // FIXME: side effect
 			WriteChar(')');
 			break;
 		case CiId.ArraySortAll:
@@ -565,13 +566,13 @@ public class GenSwift : GenPySwift
 			else
 				WriteCoerced(elementType, args[1], CiPriority.Argument);
 			Write(", at: ");
-			WriteCoerced(CiSystem.IntType, args[0], CiPriority.Argument);
+			WriteCoerced(this.System.IntType, args[0], CiPriority.Argument);
 			WriteChar(')');
 			break;
 		case CiId.ListRemoveAt:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".remove(at: ");
-			WriteCoerced(CiSystem.IntType, args[0], CiPriority.Argument);
+			WriteCoerced(this.System.IntType, args[0], CiPriority.Argument);
 			WriteChar(')');
 			break;
 		case CiId.ListRemoveRange:
@@ -645,12 +646,12 @@ public class GenSwift : GenPySwift
 			WriteUnwrappedString(args[0], CiPriority.Primary, true);
 			WriteLine(".utf8)");
 			OpenIndexing(args[1]);
-			WriteCoerced(CiSystem.IntType, args[2], CiPriority.Shift);
+			WriteCoerced(this.System.IntType, args[2], CiPriority.Shift);
 			if (args[2].IsLiteralZero())
 				Write("..<");
 			else {
 				Write(" ..< ");
-				WriteCoerced(CiSystem.IntType, args[2], CiPriority.Add); // TODO: side effect
+				WriteCoerced(this.System.IntType, args[2], CiPriority.Add); // TODO: side effect
 				Write(" + ");
 			}
 			WriteLine("cibytes.count] = cibytes[...]");
@@ -803,7 +804,7 @@ public class GenSwift : GenPySwift
 		if (expr.Right.Type is CiEnum)
 			expr.Right.Accept(this, CiPriority.Argument);
 		else
-			WriteCoerced(CiSystem.IntType, expr.Right, CiPriority.Argument);
+			WriteCoerced(this.System.IntType, expr.Right, CiPriority.Argument);
 		WriteChar(']');
 		if (parent != CiPriority.Assign && expr.Left.Type is CiClassType dict && dict.Class.TypeParameterCount == 2)
 			WriteChar('!');
@@ -828,7 +829,7 @@ public class GenSwift : GenPySwift
 		case CiToken.ShiftLeft when expr == binary.Left:
 		case CiToken.ShiftRight when expr == binary.Left:
 			if (expr is CiSymbolReference || expr is CiSelectExpr || expr is CiCallExpr || expr.IsIndexing()) {
-				type = CiSystem.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
+				type = this.System.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
 				if (type != expr.Type) {
 					WriteCoerced(type, expr, parent);
 					return;
@@ -841,7 +842,7 @@ public class GenSwift : GenPySwift
 		case CiToken.GreaterOrEqual:
 		case CiToken.Equal:
 		case CiToken.NotEqual:
-			type = CiSystem.PromoteFloatingTypes(binary.Left.Type, binary.Right.Type);
+			type = this.System.PromoteFloatingTypes(binary.Left.Type, binary.Right.Type);
 			if (type != null && type != expr.Type) {
 				WriteCoerced(type, expr, parent);
 				return;
@@ -1603,6 +1604,7 @@ public class GenSwift : GenPySwift
 
 	public override void WriteProgram(CiProgram program)
 	{
+		this.System = program.System;
 		this.Includes = new SortedSet<string>();
 		this.Throw = false;
 		this.ArrayRef = false;

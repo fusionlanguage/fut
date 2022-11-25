@@ -73,7 +73,7 @@ public class CiParser : CiParserBase
 			newResult.Inner = result;
 			return newResult;
 		case CiToken.LiteralLong:
-			result = CiSystem.NewLiteralLong(this.LongValue, this.Line);
+			result = this.Program.System.NewLiteralLong(this.LongValue, this.Line);
 			NextToken();
 			break;
 		case CiToken.LiteralDouble:
@@ -81,7 +81,7 @@ public class CiParser : CiParserBase
 				NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent | NumberStyles.AllowLeadingSign,
 				CultureInfo.InvariantCulture, out double d))
 				ReportError("Invalid floating-point number");
-			result = new CiLiteralDouble { Line = this.Line, Type = CiSystem.DoubleType, Value = d };
+			result = new CiLiteralDouble { Line = this.Line, Type = this.Program.System.DoubleType, Value = d };
 			NextToken();
 			break;
 		case CiToken.LiteralChar:
@@ -89,19 +89,19 @@ public class CiParser : CiParserBase
 			NextToken();
 			break;
 		case CiToken.LiteralString:
-			result = CiSystem.NewLiteralString(this.StringValue, this.Line);
+			result = this.Program.System.NewLiteralString(this.StringValue, this.Line);
 			NextToken();
 			break;
 		case CiToken.False:
-			result = new CiLiteralFalse { Line = this.Line, Type = CiSystem.BoolType };
+			result = new CiLiteralFalse { Line = this.Line, Type = this.Program.System.BoolType };
 			NextToken();
 			break;
 		case CiToken.True:
-			result = new CiLiteralTrue { Line = this.Line, Type = CiSystem.BoolType };
+			result = new CiLiteralTrue { Line = this.Line, Type = this.Program.System.BoolType };
 			NextToken();
 			break;
 		case CiToken.Null:
-			result = new CiLiteralNull { Line = this.Line, Type = CiSystem.NullType };
+			result = new CiLiteralNull { Line = this.Line, Type = this.Program.System.NullType };
 			NextToken();
 			break;
 		case CiToken.InterpolatedString:
@@ -215,7 +215,7 @@ public class CiParser : CiParserBase
 			}
 
 			callType = ParseCallType();
-			CiExpr type = Eat(CiToken.Void) ? CiSystem.VoidType : ParseType();
+			CiExpr type = Eat(CiToken.Void) ? this.Program.System.VoidType : ParseType();
 			if (See(CiToken.LeftBrace) && type is CiCallExpr call) {
 				// constructor
 				if (call.Method.Name != klass.Name)
@@ -232,7 +232,7 @@ public class CiParser : CiParserBase
 				}
 				if (visibility == CiVisibility.Private)
 					visibility = CiVisibility.Internal; // TODO
-				klass.Constructor = new CiMethodBase { Line = call.Line, Documentation = doc, Visibility = visibility, Parent = klass, Type = CiSystem.VoidType, Name = klass.Name, Body = ParseBlock() };
+				klass.Constructor = new CiMethodBase { Line = call.Line, Documentation = doc, Visibility = visibility, Parent = klass, Type = this.Program.System.VoidType, Name = klass.Name, Body = ParseBlock() };
 				continue;
 			}
 
@@ -274,7 +274,7 @@ public class CiParser : CiParserBase
 				ReportError("Field cannot be public");
 			if (callType != CiCallType.Normal)
 				ReportError($"Field cannot be {CallTypeToString(callType)}");
-			if (type == CiSystem.VoidType)
+			if (type == this.Program.System.VoidType)
 				ReportError("Field cannot be void");
 			CiField field = new CiField { Line = line, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };
 			Expect(CiToken.Semicolon);

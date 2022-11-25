@@ -120,12 +120,12 @@ public class CiResolver : CiVisitor
 		return left;
 	}
 
-	static CiType TryGetPtr(CiType type)
+	CiType TryGetPtr(CiType type)
 	{
 		if (type.Id == CiId.StringStorageType)
-			return CiSystem.StringPtrType;
+			return this.Program.System.StringPtrType;
 		if (type is CiStorageType storage)
-			return new CiReadWriteClassType { Class = storage.Class == CiSystem.ArrayStorageClass ? CiSystem.ArrayPtrClass : storage.Class, TypeArg0 = storage.TypeArg0, TypeArg1 = storage.TypeArg1 };
+			return new CiReadWriteClassType { Class = storage.Class.Id == CiId.ArrayStorageClass ? this.Program.System.ArrayPtrClass : storage.Class, TypeArg0 = storage.TypeArg0, TypeArg1 = storage.TypeArg1 };
 		return type;
 	}
 
@@ -144,7 +144,7 @@ public class CiResolver : CiVisitor
 
 	CiType GetIntegerType(CiExpr left, CiExpr right)
 	{
-		CiType type = CiSystem.PromoteIntegerTypes(left.Type, right.Type);
+		CiType type = this.Program.System.PromoteIntegerTypes(left.Type, right.Type);
 		Coerce(left, type);
 		Coerce(right, type);
 		return type;
@@ -152,16 +152,17 @@ public class CiResolver : CiVisitor
 
 	CiIntegerType GetShiftType(CiExpr left, CiExpr right)
 	{
-		Coerce(right, CiSystem.IntType);
+		CiIntegerType intType = this.Program.System.IntType;
+		Coerce(right, intType);
 		if (left.Type.Id == CiId.LongType)
-			return CiSystem.LongType;
-		Coerce(left, CiSystem.IntType);
-		return CiSystem.IntType;
+			return (CiIntegerType) left.Type;
+		Coerce(left, intType);
+		return intType;
 	}
 
 	CiType GetNumericType(CiExpr left, CiExpr right)
 	{
-		CiType type = CiSystem.PromoteNumericTypes(left.Type, right.Type);
+		CiType type = this.Program.System.PromoteNumericTypes(left.Type, right.Type);
 		Coerce(left, type);
 		Coerce(right, type);
 		return type;
@@ -378,17 +379,17 @@ public class CiResolver : CiVisitor
 	{
 	}
 
-	static CiLiteral ToLiteralBool(CiExpr expr, bool value)
+	CiLiteral ToLiteralBool(CiExpr expr, bool value)
 	{
 		CiLiteral result = value ? new CiLiteralTrue() : new CiLiteralFalse();
 		result.Line = expr.Line;
-		result.Type = CiSystem.BoolType;
+		result.Type = this.Program.System.BoolType;
 		return result;
 	}
 
-	static CiLiteralLong ToLiteralLong(CiExpr expr, long value) => CiSystem.NewLiteralLong(value, expr.Line);
+	CiLiteralLong ToLiteralLong(CiExpr expr, long value) => this.Program.System.NewLiteralLong(value, expr.Line);
 
-	static CiLiteralDouble ToLiteralDouble(CiExpr expr, double value) => new CiLiteralDouble { Line = expr.Line, Type = CiSystem.DoubleType, Value = value };
+	CiLiteralDouble ToLiteralDouble(CiExpr expr, double value) => new CiLiteralDouble { Line = expr.Line, Type = this.Program.System.DoubleType, Value = value };
 
 	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
@@ -437,8 +438,8 @@ public class CiResolver : CiVisitor
 		}
 		sb.Append(expr.Suffix);
 		if (partsCount == 0)
-			return CiSystem.NewLiteralString(sb.ToString(), expr.Line);
-		expr.Type = CiSystem.StringStorageType;
+			return this.Program.System.NewLiteralString(sb.ToString(), expr.Line);
+		expr.Type = this.Program.System.StringStorageType;
 		expr.Parts.RemoveRange(partsCount, expr.Parts.Count - partsCount);
 		expr.Suffix = sb.ToString();
 		return expr;
@@ -576,7 +577,7 @@ public class CiResolver : CiVisitor
 		case CiToken.Decrement:
 			inner = Resolve(expr.Inner);
 			CheckLValue(inner);
-			Coerce(inner, CiSystem.DoubleType);
+			Coerce(inner, this.Program.System.DoubleType);
 			range = inner.Type as CiRangeType;
 			if (range != null) {
 				int delta = expr.Op == CiToken.Increment ? 1 : -1;
@@ -589,7 +590,7 @@ public class CiResolver : CiVisitor
 			return expr;
 		case CiToken.Minus:
 			inner = Resolve(expr.Inner);
-			Coerce(inner, CiSystem.DoubleType);
+			Coerce(inner, this.Program.System.DoubleType);
 			range = inner.Type as CiRangeType;
 			if (range != null)
 				type = range = CiRangeType.New(SaturatedNeg(range.Max), SaturatedNeg(range.Min));
@@ -607,7 +608,7 @@ public class CiResolver : CiVisitor
 				range = null;
 			}
 			else {
-				Coerce(inner, CiSystem.IntType);
+				Coerce(inner, this.Program.System.IntType);
 				range = inner.Type as CiRangeType;
 				if (range != null)
 					type = range = CiRangeType.New(~range.Max, ~range.Min);
@@ -617,7 +618,7 @@ public class CiResolver : CiVisitor
 			break;
 		case CiToken.ExclamationMark:
 			inner = ResolveBool(expr.Inner);
-			return new CiPrefixExpr { Line = expr.Line, Op = CiToken.ExclamationMark, Inner = inner, Type = CiSystem.BoolType };
+			return new CiPrefixExpr { Line = expr.Line, Op = CiToken.ExclamationMark, Inner = inner, Type = this.Program.System.BoolType };
 		case CiToken.New:
 			if (expr.Type != null)
 				return expr;
@@ -633,7 +634,7 @@ public class CiResolver : CiVisitor
 			type = ToType(expr.Inner, true);
 			switch (type) {
 			case CiArrayStorageType array:
-				expr.Type = new CiDynamicPtrType { Class = CiSystem.ArrayPtrClass, TypeArg0 = array.GetElementType() };
+				expr.Type = new CiDynamicPtrType { Class = this.Program.System.ArrayPtrClass, TypeArg0 = array.GetElementType() };
 				expr.Inner = array.LengthExpr;
 				return expr;
 			case CiStorageType klass:
@@ -652,7 +653,7 @@ public class CiResolver : CiVisitor
 				content = File.ReadAllBytes(FindFile(name, expr));
 				this.Program.Resources.Add(name, content);
 			}
-			type = new CiArrayStorageType { Class = CiSystem.ArrayStorageClass, TypeArg0 = CiSystem.ByteType, Length = content.Length };
+			type = new CiArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = this.Program.System.ByteType, Length = content.Length };
 			range = null;
 			break;
 		default:
@@ -670,7 +671,7 @@ public class CiResolver : CiVisitor
 		case CiToken.Increment:
 		case CiToken.Decrement:
 			CheckLValue(expr.Inner);
-			Coerce(expr.Inner, CiSystem.DoubleType);
+			Coerce(expr.Inner, this.Program.System.DoubleType);
 			expr.Type = expr.Inner.Type;
 			return expr;
 		case CiToken.ExclamationMark:
@@ -682,11 +683,11 @@ public class CiResolver : CiVisitor
 		}
 	}
 
-	static CiInterpolatedString ToInterpolatedString(CiExpr expr)
+	CiInterpolatedString ToInterpolatedString(CiExpr expr)
 	{
 		if (expr is CiInterpolatedString interpolated)
 			return interpolated;
-		CiInterpolatedString result = new CiInterpolatedString { Type = CiSystem.StringStorageType };
+		CiInterpolatedString result = new CiInterpolatedString { Type = this.Program.System.StringStorageType };
 		if (expr is CiLiteral literal)
 			result.Suffix = literal.GetLiteralString();
 		else {
@@ -696,9 +697,9 @@ public class CiResolver : CiVisitor
 		return result;
 	}
 
-	static CiInterpolatedString Concatenate(CiInterpolatedString left, CiInterpolatedString right)
+	CiInterpolatedString Concatenate(CiInterpolatedString left, CiInterpolatedString right)
 	{
-		CiInterpolatedString result = new CiInterpolatedString { Type = CiSystem.StringStorageType };
+		CiInterpolatedString result = new CiInterpolatedString { Type = this.Program.System.StringStorageType };
 		result.Parts.AddRange(left.Parts);
 		if (right.Parts.Count == 0)
 			result.Suffix = left.Suffix + right.Suffix;
@@ -758,13 +759,14 @@ public class CiResolver : CiVisitor
 			throw StatementException(expr, $"Cannot compare {left.Type} with {right.Type}");
 		TakePtr(left);
 		TakePtr(right);
-		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = CiSystem.BoolType };
+		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = this.Program.System.BoolType };
 	}
 
 	void CheckComparison(CiExpr left, CiExpr right)
 	{
-		Coerce(left, CiSystem.DoubleType);
-		Coerce(right, CiSystem.DoubleType);
+		CiType doubleType = this.Program.System.DoubleType;
+		Coerce(left, doubleType);
+		Coerce(right, doubleType);
 	}
 
 	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
@@ -781,7 +783,7 @@ public class CiResolver : CiVisitor
 				throw StatementException(expr, "Cannot index this object");
 			switch (klass.Class.Id) {
 			case CiId.StringClass:
-				Coerce(right, CiSystem.IntType);
+				Coerce(right, this.Program.System.IntType);
 				if (left is CiLiteralString stringLiteral && right is CiLiteralLong indexLiteral) {
 					long i = indexLiteral.Value;
 					if (i >= 0 && i <= int.MaxValue) {
@@ -790,12 +792,12 @@ public class CiResolver : CiVisitor
 							return CiLiteralChar.New(c, expr.Line);
 					}
 				}
-				type = CiSystem.CharType;
+				type = this.Program.System.CharType;
 				break;
 			case CiId.ArrayPtrClass:
 			case CiId.ArrayStorageClass:
 			case CiId.ListClass:
-				Coerce(right, CiSystem.IntType);
+				Coerce(right, this.Program.System.IntType);
 				type = klass.GetElementType();
 				break;
 			case CiId.DictionaryClass:
@@ -816,14 +818,14 @@ public class CiResolver : CiVisitor
 					SaturatedAdd(leftRange.Max, rightRange.Max));
 			}
 			else if (left.Type is CiStringType || right.Type is CiStringType) {
-				Coerce(left, CiSystem.PrintableType);
-				Coerce(right, CiSystem.PrintableType);
+				Coerce(left, this.Program.System.PrintableType);
+				Coerce(right, this.Program.System.PrintableType);
 				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
-					return CiSystem.NewLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString(), expr.Line);
+					return this.Program.System.NewLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString(), expr.Line);
 				if (left is CiInterpolatedString || right is CiInterpolatedString)
 					return Concatenate(ToInterpolatedString(left), ToInterpolatedString(right));
 				NotSupported(expr, "String concatenation", "c", "cl");
-				type = CiSystem.StringPtrType;
+				type = this.Program.System.StringPtrType;
 			}
 			else
 				type = GetNumericType(left, right);
@@ -921,7 +923,7 @@ public class CiResolver : CiVisitor
 			}
 			else
 				CheckComparison(left, right);
-			type = CiSystem.BoolType;
+			type = this.Program.System.BoolType;
 			break;
 		case CiToken.LessOrEqual:
 			if (leftRange != null && rightRange != null) {
@@ -932,7 +934,7 @@ public class CiResolver : CiVisitor
 			}
 			else
 				CheckComparison(left, right);
-			type = CiSystem.BoolType;
+			type = this.Program.System.BoolType;
 			break;
 		case CiToken.Greater:
 			if (leftRange != null && rightRange != null) {
@@ -943,7 +945,7 @@ public class CiResolver : CiVisitor
 			}
 			else
 				CheckComparison(left, right);
-			type = CiSystem.BoolType;
+			type = this.Program.System.BoolType;
 			break;
 		case CiToken.GreaterOrEqual:
 			if (leftRange != null && rightRange != null) {
@@ -954,26 +956,26 @@ public class CiResolver : CiVisitor
 			}
 			else
 				CheckComparison(left, right);
-			type = CiSystem.BoolType;
+			type = this.Program.System.BoolType;
 			break;
 
 		case CiToken.CondAnd:
-			Coerce(left, CiSystem.BoolType);
-			Coerce(right, CiSystem.BoolType);
+			Coerce(left, this.Program.System.BoolType);
+			Coerce(right, this.Program.System.BoolType);
 			if (left is CiLiteralTrue)
 				return right;
 			if (left is CiLiteralFalse || right is CiLiteralTrue)
 				return left;
-			type = CiSystem.BoolType;
+			type = this.Program.System.BoolType;
 			break;
 		case CiToken.CondOr:
-			Coerce(left, CiSystem.BoolType);
-			Coerce(right, CiSystem.BoolType);
+			Coerce(left, this.Program.System.BoolType);
+			Coerce(right, this.Program.System.BoolType);
 			if (left is CiLiteralTrue || right is CiLiteralFalse)
 				return left;
 			if (left is CiLiteralFalse)
 				return right;
-			type = CiSystem.BoolType;
+			type = this.Program.System.BoolType;
 			break;
 
 		case CiToken.Assign:
@@ -987,9 +989,9 @@ public class CiResolver : CiVisitor
 		case CiToken.AddAssign:
 			CheckLValue(left);
 			if (left.Type.Id == CiId.StringStorageType)
-				Coerce(right, CiSystem.PrintableType);
+				Coerce(right, this.Program.System.PrintableType);
 			else {
-				Coerce(left, CiSystem.DoubleType);
+				Coerce(left, this.Program.System.DoubleType);
 				Coerce(right, left.Type);
 			}
 			expr.Left = left;
@@ -1001,7 +1003,7 @@ public class CiResolver : CiVisitor
 		case CiToken.MulAssign:
 		case CiToken.DivAssign:
 			CheckLValue(left);
-			Coerce(left, CiSystem.DoubleType);
+			Coerce(left, this.Program.System.DoubleType);
 			Coerce(right, left.Type);
 			expr.Left = left;
 			expr.Right = right;
@@ -1012,8 +1014,8 @@ public class CiResolver : CiVisitor
 		case CiToken.ShiftLeftAssign:
 		case CiToken.ShiftRightAssign:
 			CheckLValue(left);
-			Coerce(left, CiSystem.IntType);
-			Coerce(right, CiSystem.IntType);
+			Coerce(left, this.Program.System.IntType);
+			Coerce(right, this.Program.System.IntType);
 			expr.Left = left;
 			expr.Right = right;
 			expr.Type = left.Type;
@@ -1024,8 +1026,8 @@ public class CiResolver : CiVisitor
 		case CiToken.XorAssign:
 			CheckLValue(left);
 			if (!IsEnumOp(left, right)) {
-				Coerce(left, CiSystem.IntType);
-				Coerce(right, CiSystem.IntType);
+				Coerce(left, this.Program.System.IntType);
+				Coerce(right, this.Program.System.IntType);
 			}
 			expr.Left = left;
 			expr.Right = right;
@@ -1061,7 +1063,7 @@ public class CiResolver : CiVisitor
 			//if (!leftPtr.Class.IsSameOrBaseOf(klass2))
 			//	throw StatementException(expr, $"{leftPtr} is not base class of {klass2.Name}, the 'is' operator would always return 'false'");
 			expr.Left = left;
-			expr.Type = CiSystem.BoolType;
+			expr.Type = this.Program.System.BoolType;
 			return expr;
 
 		case CiToken.Range:
@@ -1089,18 +1091,18 @@ public class CiResolver : CiVisitor
 		return new CiSelectExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
 	}
 
-	static CiType EvalType(CiClassType generic, CiType type)
+	CiType EvalType(CiClassType generic, CiType type)
 	{
 		if (type.Id == CiId.TypeParam0)
 			return generic.TypeArg0;
 		if (type.Id == CiId.TypeParam0NotFinal)
 			return generic.TypeArg0.IsFinal() ? null : generic.TypeArg0;
 		if (type is CiReadWriteClassType array && array.IsArray() && array.GetElementType().Id == CiId.TypeParam0)
-			return new CiReadWriteClassType { Class = CiSystem.ArrayPtrClass, TypeArg0 = generic.TypeArg0 };
+			return new CiReadWriteClassType { Class = this.Program.System.ArrayPtrClass, TypeArg0 = generic.TypeArg0 };
 		return type;
 	}
 
-	static bool CanCall(CiExpr obj, CiMethod method, List<CiExpr> arguments)
+	bool CanCall(CiExpr obj, CiMethod method, List<CiExpr> arguments)
 	{
 		CiVar param = method.Parameters.FirstParameter();
 		foreach (CiExpr arg in arguments) {
@@ -1160,7 +1162,7 @@ public class CiResolver : CiVisitor
 				OpenScope(lambda);
 				lambda.Body = Resolve(lambda.Body);
 				CloseScope();
-				Coerce(lambda.Body, CiSystem.BoolType);
+				Coerce(lambda.Body, this.Program.System.BoolType);
 			}
 			else
 				Coerce(arg, type);
@@ -1220,7 +1222,7 @@ public class CiResolver : CiVisitor
 	CiExpr ResolveBool(CiExpr expr)
 	{
 		expr = Resolve(expr);
-		Coerce(expr, CiSystem.BoolType);
+		Coerce(expr, this.Program.System.BoolType);
 		return expr;
 	}
 
@@ -1356,7 +1358,7 @@ public class CiResolver : CiVisitor
 			throw StatementException(statement.Collection, "Expected a collection");
 		switch (klass.Class.Id) {
 		case CiId.StringClass:
-			if (statement.Count() != 1 || !element.Type.IsAssignableFrom(CiSystem.IntType))
+			if (statement.Count() != 1 || !element.Type.IsAssignableFrom(this.Program.System.IntType))
 				throw StatementException(statement, "Expected int iterator variable");
 			break;
 		case CiId.ArrayStorageClass:
@@ -1402,7 +1404,7 @@ public class CiResolver : CiVisitor
 	public override void VisitLock(CiLock statement)
 	{
 		statement.Lock = Resolve(statement.Lock);
-		Coerce(statement.Lock, CiSystem.LockPtrType);
+		Coerce(statement.Lock, this.Program.System.LockPtrType);
 		statement.Body.AcceptStatement(this);
 	}
 
@@ -1606,7 +1608,7 @@ public class CiResolver : CiVisitor
 			}
 			if (call.Method.Name == "string") {
 				NotSupported(call, "string()", "cl");
-				return CiSystem.StringStorageType;
+				return this.Program.System.StringStorageType;
 			}
 			{
 				if (this.Program.TryLookup(call.Method.Name) is CiClass klass) {
@@ -1641,8 +1643,8 @@ public class CiResolver : CiVisitor
 			if (binary.Right != null) {
 				ExpectNoPtrModifier(expr, ptrModifier);
 				CiExpr lengthExpr = Resolve(binary.Right);
-				Coerce(lengthExpr, CiSystem.IntType);
-				CiArrayStorageType arrayStorage = new CiArrayStorageType { Class = CiSystem.ArrayStorageClass, TypeArg0 = outerArray, LengthExpr = lengthExpr };
+				Coerce(lengthExpr, this.Program.System.IntType);
+				CiArrayStorageType arrayStorage = new CiArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = outerArray, LengthExpr = lengthExpr };
 				if (!dynamic || binary.Left.IsIndexing()) {
 					if (!(lengthExpr is CiLiteralLong literal))
 						throw StatementException(lengthExpr, "Expected constant value");
@@ -1657,7 +1659,7 @@ public class CiResolver : CiVisitor
 			}
 			else {
 				CiType elementType = outerArray;
-				outerArray = CreateClassPtr(CiSystem.ArrayPtrClass, ptrModifier);
+				outerArray = CreateClassPtr(this.Program.System.ArrayPtrClass, ptrModifier);
 				outerArray.TypeArg0 = elementType;
 			}
 			innerArray ??= outerArray;
@@ -1714,7 +1716,7 @@ public class CiResolver : CiVisitor
 			else if (array is CiReadWriteClassType)
 				throw StatementException(konst, "Invalid constant type");
 			else
-				konst.Type = new CiArrayStorageType { Class = CiSystem.ArrayStorageClass, TypeArg0 = elementType, Length = coll.Items.Count };
+				konst.Type = new CiArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = elementType, Length = coll.Items.Count };
 			foreach (CiExpr item in coll.Items)
 				Coerce(item, elementType);
 			coll.Type = konst.Type;
@@ -1774,8 +1776,8 @@ public class CiResolver : CiVisitor
 				}
 				break;
 			case CiMethod method:
-				if (method.TypeExpr == CiSystem.VoidType)
-					method.Type = CiSystem.VoidType;
+				if (method.TypeExpr == this.Program.System.VoidType)
+					method.Type = this.Program.System.VoidType;
 				else
 					ResolveType(method);
 				for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {

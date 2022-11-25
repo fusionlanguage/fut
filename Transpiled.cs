@@ -2743,6 +2743,8 @@ namespace Foxoft.Ci
 	public class CiProgram : CiScope
 	{
 
+		internal CiSystem System;
+
 		internal readonly List<string> TopLevelNatives = new List<string>();
 
 		internal readonly List<CiClass> Classes = new List<CiClass>();

@@ -53,9 +53,9 @@ public static class CiTo
 		Console.WriteLine("--version  Display version information");
 	}
 
-	static CiProgram ParseAndResolve(CiParser parser, CiScope parent, List<string> files, List<string> searchDirs, string lang)
+	static CiProgram ParseAndResolve(CiParser parser, CiSystem system, CiScope parent, List<string> files, List<string> searchDirs, string lang)
 	{
-		parser.Program = new CiProgram { Parent = parent };
+		parser.Program = new CiProgram { Parent = parent, System = system };
 		foreach (string file in files) {
 			byte[] input = File.ReadAllBytes(file);
 			parser.Parse(file, input, input.Length);
@@ -85,15 +85,16 @@ public static class CiTo
 		gen.Namespace = namespace_;
 		gen.OutputFile = outputFile;
 
+		CiSystem system = CiSystem.New();
 		CiProgram program;
 		try {
-			CiScope parent = CiSystem.New();
+			CiScope parent = system;
 			if (referencedFiles.Count > 0) {
-				parent = ParseAndResolve(parser, parent, referencedFiles, searchDirs, lang);
+				parent = ParseAndResolve(parser, system, parent, referencedFiles, searchDirs, lang);
 				if (parent == null)
 					return false;
 			}
-			program = ParseAndResolve(parser, parent, inputFiles, searchDirs, lang);
+			program = ParseAndResolve(parser, system, parent, inputFiles, searchDirs, lang);
 			if (program == null)
 				return false;
 		}

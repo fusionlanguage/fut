@@ -1241,6 +1241,7 @@ public class CiPrintableType : CiType
 
 public class CiProgram : CiScope
 {
+	internal CiSystem System;
 	internal List<string()>() TopLevelNatives;
 	internal List<CiClass>() Classes;
 	internal Dictionary<string(), byte[]#>() Resources;

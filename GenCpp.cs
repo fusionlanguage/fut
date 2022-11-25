@@ -339,17 +339,15 @@ public class GenCpp : GenCCpp
 
 	static bool NeedStringPtrData(CiExpr expr)
 	{
-		if (expr.Type.Id != CiId.StringPtrType)
-			return false;
 		if (expr is CiCallExpr call && call.Method.Symbol.Id == CiId.EnvironmentGetEnvironmentVariable)
 			return false;
-		return true;
+		return expr.Type.Id == CiId.StringPtrType;
 	}
 
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
 		if (NeedStringPtrData(expr.Left) && expr.Right.Type.Id == CiId.NullType) {
-			WriteCoerced(CiSystem.StringPtrType, expr.Left, CiPriority.Primary);
+			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".data()");
 			Write(GetEqOp(not));
 			Write("nullptr");
@@ -357,7 +355,7 @@ public class GenCpp : GenCCpp
 		else if (expr.Left.Type.Id == CiId.NullType && NeedStringPtrData(expr.Right)) {
 			Write("nullptr");
 			Write(GetEqOp(not));
-			WriteCoerced(CiSystem.StringPtrType, expr.Right, CiPriority.Primary);
+			expr.Right.Accept(this, CiPriority.Primary);
 			Write(".data() ");
 		}
 		else
