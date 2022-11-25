@@ -499,9 +499,20 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
+	protected void WritePrintfFormat(CiInterpolatedString expr)
+	{
+		foreach (CiInterpolatedPart part in expr.Parts) {
+			WriteDoubling(part.Prefix, '%');
+			WriteChar('%');
+			WritePrintfWidth(part);
+			WriteChar(GetPrintfFormat(part.Argument.Type, part.Format));
+		}
+		WriteDoubling(expr.Suffix, '%');
+	}
+
 	protected virtual void WriteInterpolatedStringArg(CiExpr expr) => expr.Accept(this, CiPriority.Argument);
 
-	protected void WriteArgs(CiInterpolatedString expr)
+	protected void WriteInterpolatedStringArgs(CiInterpolatedString expr)
 	{
 		foreach (CiInterpolatedPart part in expr.Parts) {
 			Write(", ");
@@ -512,17 +523,11 @@ public abstract class GenBase : CiVisitor
 	protected void WritePrintf(CiInterpolatedString expr, bool newLine)
 	{
 		WriteChar('"');
-		foreach (CiInterpolatedPart part in expr.Parts) {
-			WriteDoubling(part.Prefix, '%');
-			WriteChar('%');
-			WritePrintfWidth(part);
-			WriteChar(GetPrintfFormat(part.Argument.Type, part.Format));
-		}
-		WriteDoubling(expr.Suffix, '%');
+		WritePrintfFormat(expr);
 		if (newLine)
 			Write("\\n");
 		WriteChar('"');
-		WriteArgs(expr);
+		WriteInterpolatedStringArgs(expr);
 		WriteChar(')');
 	}
 

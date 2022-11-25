@@ -48,7 +48,7 @@ public class GenCpp : GenCCpp
 		}
 		WriteDoubling(expr.Suffix, '{');
 		WriteChar('"');
-		WriteArgs(expr);
+		WriteInterpolatedStringArgs(expr);
 		WriteChar(')');
 		return expr;
 	}

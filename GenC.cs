@@ -1963,11 +1963,15 @@ public class GenC : GenCCpp
 					this.StringAssign = true;
 					Write("CiString_Assign(&");
 					expr.Left.Accept(this, CiPriority.Primary);
-					Write(", ");
-					CiInterpolatedString interpolated = new CiInterpolatedString { Type = CiSystem.StringStorageType, Suffix = rightInterpolated.Suffix };
-					interpolated.AddPart("", expr.Left); // TODO: side effect
-					interpolated.Parts.AddRange(rightInterpolated.Parts);
-					VisitInterpolatedString(interpolated, CiPriority.Argument);
+					this.StringFormat = true;
+					Include("stdarg.h");
+					Include("stdio.h");
+					Write(", CiString_Format(\"%s");
+					WritePrintfFormat(rightInterpolated);
+					Write("\", ");
+					expr.Left.Accept(this, CiPriority.Argument); // TODO: side effect
+					WriteInterpolatedStringArgs(rightInterpolated);
+					WriteChar(')');
 				}
 				else {
 					Include("string.h");
