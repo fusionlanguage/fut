@@ -6,6 +6,6 @@ public static class Test
 		a[0] = 5;
 		a[1] = 5;
 		// FIXME:
-		return a == 5; //ERROR: Cannot compare int[2] with 
+		return a == 5; //ERROR: Cannot compare  with 
 	}
 }

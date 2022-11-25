@@ -2317,8 +2317,6 @@ namespace Foxoft.Ci
 		public virtual CiType GetBaseType() => this;
 
 		public virtual CiType GetStorageType() => this;
-
-		public virtual CiType GetPtrOrSelf() => this;
 	}
 
 	public abstract class CiNumericType : CiType
@@ -2669,6 +2667,18 @@ namespace Foxoft.Ci
 		public override string GetClassSuffix() => "!";
 	}
 
+	public class CiStorageType : CiReadWriteClassType
+	{
+
+		public override bool IsFinal() => this.Class.Id != CiId.MatchClass;
+
+		public override bool IsNullable() => false;
+
+		public override bool IsAssignableFrom(CiType right) => right is CiStorageType rightClass && this.Class == rightClass.Class && EqualTypeArguments(rightClass);
+
+		public override string GetClassSuffix() => "()";
+	}
+
 	public class CiDynamicPtrType : CiReadWriteClassType
 	{
 
@@ -2682,8 +2692,38 @@ namespace Foxoft.Ci
 		public override string GetClassSuffix() => "#";
 	}
 
+	public class CiArrayStorageType : CiStorageType
+	{
+
+		internal CiExpr LengthExpr;
+
+		internal int Length;
+
+		internal bool PtrTaken = false;
+
+		public override CiType GetBaseType() => GetElementType().GetBaseType();
+
+		public override bool IsArray() => true;
+
+		public override string GetArraySuffix() => $"[{this.Length}]";
+
+		public override bool EqualsType(CiType right) => right is CiArrayStorageType that && GetElementType().EqualsType(that.GetElementType()) && this.Length == that.Length;
+
+		public override CiType GetStorageType() => GetElementType().GetStorageType();
+	}
+
 	public class CiStringType : CiClassType
 	{
+	}
+
+	public class CiStringStorageType : CiStringType
+	{
+
+		public override bool IsNullable() => false;
+
+		public override bool IsAssignableFrom(CiType right) => right is CiStringType;
+
+		public override string GetClassSuffix() => "()";
 	}
 
 	public class CiPrintableType : CiType

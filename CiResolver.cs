@@ -120,14 +120,23 @@ public class CiResolver : CiVisitor
 		return left;
 	}
 
+	static CiType TryGetPtr(CiType type)
+	{
+		if (type == CiSystem.StringStorageType)
+			return CiSystem.StringPtrType;
+		if (type is CiStorageType storage)
+			return new CiReadWriteClassType { Class = storage.Class == CiSystem.ArrayStorageClass ? CiSystem.ArrayPtrClass : storage.Class, TypeArg0 = storage.TypeArg0, TypeArg1 = storage.TypeArg1 };
+		return type;
+	}
+
 	CiType GetCommonType(CiExpr left, CiExpr right)
 	{
 		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange)
 			return Union(leftRange, rightRange);
-		CiType ptr = left.Type.GetPtrOrSelf();
+		CiType ptr = TryGetPtr(left.Type);
 		if (ptr.IsAssignableFrom(right.Type))
 			return ptr;
-		ptr = right.Type.GetPtrOrSelf();
+		ptr = TryGetPtr(right.Type);
 		if (ptr.IsAssignableFrom(left.Type))
 			return ptr;
 		throw StatementException(left, $"Incompatible types: {left.Type} and {right.Type}");
@@ -643,7 +652,7 @@ public class CiResolver : CiVisitor
 				content = File.ReadAllBytes(FindFile(name, expr));
 				this.Program.Resources.Add(name, content);
 			}
-			type = new CiArrayStorageType { TypeArg0 = CiSystem.ByteType, Length = content.Length };
+			type = new CiArrayStorageType { Class = CiSystem.ArrayStorageClass, TypeArg0 = CiSystem.ByteType, Length = content.Length };
 			range = null;
 			break;
 		default:
@@ -1634,7 +1643,7 @@ public class CiResolver : CiVisitor
 				ExpectNoPtrModifier(expr, ptrModifier);
 				CiExpr lengthExpr = Resolve(binary.Right);
 				Coerce(lengthExpr, CiSystem.IntType);
-				CiArrayStorageType arrayStorage = new CiArrayStorageType { TypeArg0 = outerArray, LengthExpr = lengthExpr };
+				CiArrayStorageType arrayStorage = new CiArrayStorageType { Class = CiSystem.ArrayStorageClass, TypeArg0 = outerArray, LengthExpr = lengthExpr };
 				if (!dynamic || binary.Left.IsIndexing()) {
 					if (!(lengthExpr is CiLiteralLong literal))
 						throw StatementException(lengthExpr, "Expected constant value");
@@ -1706,7 +1715,7 @@ public class CiResolver : CiVisitor
 			else if (array is CiReadWriteClassType)
 				throw StatementException(konst, "Invalid constant type");
 			else
-				konst.Type = new CiArrayStorageType { TypeArg0 = elementType, Length = coll.Items.Count };
+				konst.Type = new CiArrayStorageType { Class = CiSystem.ArrayStorageClass, TypeArg0 = elementType, Length = coll.Items.Count };
 			foreach (CiExpr item in coll.Items)
 				Coerce(item, elementType);
 			coll.Type = konst.Type;

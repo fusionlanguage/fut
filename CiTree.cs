@@ -18,10 +18,7 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 
 namespace Foxoft.Ci
@@ -62,43 +59,6 @@ public class CiLiteralDouble : CiLiteral
 	}
 	public override string GetLiteralString() => this.Value.ToString(CultureInfo.InvariantCulture);
 	public override string ToString() => GetLiteralString();
-}
-
-public class CiStorageType : CiReadWriteClassType
-{
-	public override bool IsFinal() => this.Class.Id != CiId.MatchClass;
-	public override bool IsNullable() => false;
-	public override bool IsAssignableFrom(CiType right) => right is CiStorageType rightClass && this.Class == rightClass.Class && EqualTypeArguments(rightClass);
-	public override CiType GetPtrOrSelf() => new CiReadWriteClassType { Class = this.Class, TypeArg0 = this.TypeArg0, TypeArg1 = this.TypeArg1 };
-	public override string GetClassSuffix() => "()";
-}
-
-public class CiArrayStorageType : CiStorageType
-{
-	internal CiExpr LengthExpr;
-	internal int Length;
-	internal bool PtrTaken = false;
-
-	public CiArrayStorageType()
-	{
-		this.Class = CiSystem.ArrayStorageClass;
-	}
-
-	public override string ToString() => GetBaseType() + GetArraySuffix() + GetElementType().GetArraySuffix();
-	public override CiType GetBaseType() => GetElementType().GetBaseType();
-	public override bool IsArray() => true;
-	public override string GetArraySuffix() => $"[{this.Length}]";
-	public override bool EqualsType(CiType right) => right is CiArrayStorageType that && GetElementType().EqualsType(that.GetElementType()) && this.Length == that.Length;
-	public override CiType GetStorageType() => GetElementType().GetStorageType();
-	public override CiType GetPtrOrSelf() => new CiReadWriteClassType { Class = CiSystem.ArrayPtrClass, TypeArg0 = GetElementType() };
-}
-
-public class CiStringStorageType : CiStringType
-{
-	public override bool IsNullable() => false;
-	public override CiType GetPtrOrSelf() => CiSystem.StringPtrType;
-	public override bool IsAssignableFrom(CiType right) => right is CiStringType;
-	public override string GetClassSuffix() => "()";
 }
 
 public class CiSystem : CiScope
