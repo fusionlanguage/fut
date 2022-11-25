@@ -416,9 +416,9 @@ public abstract class GenBase : CiVisitor
 
 	protected virtual TypeCode GetIntegerTypeCode(CiIntegerType integer, bool promote)
 	{
-		if (integer == CiSystem.LongType)
+		if (integer.Id == CiId.LongType)
 			return TypeCode.Int64;
-		if (promote || integer == CiSystem.IntType)
+		if (promote || integer.Id == CiId.IntType)
 			return TypeCode.Int32;
 		CiRangeType range = (CiRangeType) integer;
 		if (range.Min < 0) {
@@ -437,26 +437,24 @@ public abstract class GenBase : CiVisitor
 
 	protected TypeCode GetTypeCode(CiType type, bool promote)
 	{
-		if (type is CiNumericType) {
+		switch (type.Id) {
+		case CiId.NullType:
+			return TypeCode.Empty;
+		case CiId.FloatType:
+		case CiId.FloatIntType:
+			return TypeCode.Single;
+		case CiId.DoubleType:
+			return TypeCode.Double;
+		case CiId.BoolType:
+			return TypeCode.Boolean;
+		case CiId.StringPtrType:
+		case CiId.StringStorageType:
+			return TypeCode.String;
+		default:
 			if (type is CiIntegerType integer)
 				return GetIntegerTypeCode(integer, promote);
-			switch (type.Id) {
-			case CiId.FloatType:
-			case CiId.FloatIntType:
-				return TypeCode.Single;
-			case CiId.DoubleType:
-				return TypeCode.Double;
-			default:
-				throw new NotImplementedException(type.ToString());
-			}
+			return TypeCode.Object;
 		}
-		else if (type == CiSystem.BoolType)
-			return TypeCode.Boolean;
-		else if (type == CiSystem.NullType)
-			return TypeCode.Empty;
-		else if (type is CiStringType)
-			return TypeCode.String;
-		return TypeCode.Object;
 	}
 
 	protected abstract void WriteTypeAndName(CiNamedValue value);

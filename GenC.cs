@@ -353,7 +353,7 @@ public class GenC : GenCCpp
 				WriteChar(' ');
 			break;
 		case CiEnum _:
-			if (baseType == CiSystem.BoolType) {
+			if (baseType.Id == CiId.BoolType) {
 				IncludeStdBool();
 				Write("bool");
 			}
@@ -434,7 +434,7 @@ public class GenC : GenCCpp
 
 	void WriteSignature(CiMethod method, Action symbol)
 	{
-		if (method.Type == CiSystem.VoidType && method.Throws) {
+		if (method.Type.Id == CiId.VoidType && method.Throws) {
 			IncludeStdBool();
 			Write("bool ");
 			symbol();
@@ -490,21 +490,25 @@ public class GenC : GenCCpp
 		Write(", sizeof(");
 		WriteType(elementType, false);
 		Write("), ");
-		if (elementType == CiSystem.StringStorageType) {
+		switch (elementType) {
+		case CiStringStorageType _:
 			this.PtrConstruct = true;
 			this.ListFrees["String"] = "free(*(void **) ptr)";
 			Write("(CiMethodPtr) CiPtr_Construct, CiList_FreeString");
-		}
-		else if (elementType is CiDynamicPtrType) {
+			break;
+		case CiStorageType storage:
+			WriteXstructorPtrs(storage.Class);
+			break;
+		case CiDynamicPtrType _:
 			this.PtrConstruct = true;
 			this.SharedRelease = true;
 			this.ListFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
 			Write("(CiMethodPtr) CiPtr_Construct, CiList_FreeShared");
-		}
-		else if (elementType is CiStorageType storage)
-			WriteXstructorPtrs(storage.Class);
-		else
+			break;
+		default:
 			Write("NULL, NULL");
+			break;
+		}
 		WriteChar(')');
 		if (parent > CiPriority.Mul)
 			WriteChar(')');
@@ -513,7 +517,7 @@ public class GenC : GenCCpp
 	static bool IsNewString(CiExpr expr)
 	{
 		return expr is CiInterpolatedString
-			|| (expr is CiCallExpr call && expr.Type == CiSystem.StringStorageType && (call.Method.Symbol.Id != CiId.StringSubstring || call.Arguments.Count == 2));
+			|| (expr is CiCallExpr call && expr.Type.Id == CiId.StringStorageType && (call.Method.Symbol.Id != CiId.StringSubstring || call.Arguments.Count == 2));
 	}
 
 	void WriteStringStorageValue(CiExpr expr)
@@ -537,7 +541,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	static bool IsHeapAllocated(CiType type) => type == CiSystem.StringStorageType || type is CiDynamicPtrType;
+	static bool IsHeapAllocated(CiType type) => type.Id == CiId.StringStorageType || type is CiDynamicPtrType;
 
 	protected override void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
 	{
@@ -561,7 +565,7 @@ public class GenC : GenCCpp
 		if (type is CiClassType klass
 		 && (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.StackClass)) {
 			CiType elementType = klass.GetElementType();
-			if (elementType == CiSystem.StringStorageType) {
+			if (elementType.Id == CiId.StringStorageType) {
 				this.ListFrees["String"] = "free(*(void **) ptr)";
 				return "CiList_FreeString";
 			}
@@ -595,13 +599,11 @@ public class GenC : GenCCpp
 
 	string GetDictionaryDestroy(CiType type)
 	{
-		if (type == CiSystem.StringStorageType || type is CiArrayStorageType)
+		switch (type) {
+		case CiStringStorageType _:
+		case CiArrayStorageType _:
 			return "free";
-		if (type is CiDynamicPtrType) {
-			this.SharedRelease = true;
-			return "CiShared_Release";
-		}
-		if (type is CiStorageType storage) {
+		case CiStorageType storage:
 			switch (storage.Class.Id) {
 			case CiId.ListClass:
 			case CiId.StackClass:
@@ -614,8 +616,12 @@ public class GenC : GenCCpp
 			default:
 				return NeedsDestructor(storage.Class) ? $"(GDestroyNotify) {storage.Class.Name}_Delete" /* TODO: emit */ : "free";
 			}
+		case CiDynamicPtrType _:
+			this.SharedRelease = true;
+			return "CiShared_Release";
+		default:
+			return "NULL";
 		}
-		return "NULL";
 	}
 
 	void WriteHashEqual(CiType keyType)
@@ -662,7 +668,7 @@ public class GenC : GenCCpp
 			break;
 		case CiId.SortedDictionaryClass:
 			string valueDestroy = GetDictionaryDestroy(klass.GetValueType());
-			if (klass.GetKeyType() == CiSystem.StringPtrType && valueDestroy == "NULL")
+			if (klass.GetKeyType().Id == CiId.StringPtrType && valueDestroy == "NULL")
 				Write("g_tree_new((GCompareFunc) strcmp");
 			else {
 				Write("g_tree_new_full(CiTree_Compare");
@@ -880,7 +886,7 @@ public class GenC : GenCCpp
 		for (int i = this.CurrentTemporaries.Count; --i >= 0; ) {
 			CiExpr temp = this.CurrentTemporaries[i];
 			if (!(temp is CiType)) {
-				if (temp.Type == CiSystem.StringStorageType) {
+				if (temp.Type.Id == CiId.StringStorageType) {
 					Write("free(citemp");
 					VisitLiteralLong(i);
 					WriteLine(");");
@@ -916,7 +922,7 @@ public class GenC : GenCCpp
 			expr.Accept(this, CiPriority.Argument);
 			WriteChar(')');
 		}
-		else if (type == CiSystem.StringPtrType && expr.Type == CiSystem.StringPtrType) {
+		else if (type.Id == CiId.StringPtrType && expr.Type.Id == CiId.StringPtrType) {
 			Write("(gpointer) ");
 			expr.Accept(this, CiPriority.Primary);
 		}
@@ -926,7 +932,7 @@ public class GenC : GenCCpp
 
 	void WriteGConstPointerCast(CiExpr expr)
 	{
-		if (expr.Type.IsNullable() || expr.Type == CiSystem.StringStorageType)
+		if (expr.Type.IsNullable() || expr.Type.Id == CiId.StringStorageType)
 			expr.Accept(this, CiPriority.Argument);
 		else {
 			Write("(gconstpointer) ");
@@ -948,7 +954,7 @@ public class GenC : GenCCpp
 	{
 		CiType elementType = ((CiClassType) obj.Type).GetElementType();
 		bool parenthesis;
-		if (elementType is CiIntegerType && elementType != CiSystem.LongType) {
+		if (elementType is CiIntegerType && elementType.Id != CiId.LongType) {
 			Write("GPOINTER_TO_INT(");
 			parenthesis = true;
 		}
@@ -986,7 +992,7 @@ public class GenC : GenCCpp
 			WriteGPointerCast(dict.GetValueType(), expr.Right);
 			WriteChar(')');
 		}
-		else if (expr.Left.Type == CiSystem.StringStorageType) {
+		else if (expr.Left.Type.Id == CiId.StringStorageType) {
 			if (parent == CiPriority.Statement
 			 && IsTrimSubstring(expr) is CiExpr length) {
 				WriteIndexing(expr.Left, length);
@@ -1176,9 +1182,9 @@ public class GenC : GenCCpp
 				WriteClassPtr(klass.Class, expr, parent);
 			break;
 		default:
-			if (type == CiSystem.StringStorageType)
+			if (type.Id == CiId.StringStorageType)
 				WriteStringStorageValue(expr);
-			else if (expr.Type == CiSystem.StringStorageType)
+			else if (expr.Type.Id == CiId.StringStorageType)
 				WriteTemporaryOrExpr(expr, parent);
 			else
 				base.WriteCoercedInternal(type, expr, parent);
@@ -1884,7 +1890,7 @@ public class GenC : GenCCpp
 	void WriteDictionaryIndexing(string function, CiBinaryExpr expr, CiPriority parent)
 	{
 		CiClassType klass = (CiClassType) expr.Left.Type;
-		if (klass.GetValueType() is CiIntegerType && klass.GetValueType() != CiSystem.LongType) {
+		if (klass.GetValueType() is CiIntegerType && klass.GetValueType().Id != CiId.LongType) {
 			Write("GPOINTER_TO_INT(");
 			WriteDictionaryLookup(expr.Left, function, expr.Right);
 			WriteChar(')');
@@ -1952,7 +1958,7 @@ public class GenC : GenCCpp
 			}
 			break;
 		case CiToken.AddAssign:
-			if (expr.Left.Type == CiSystem.StringStorageType) {
+			if (expr.Left.Type.Id == CiId.StringStorageType) {
 				if (expr.Right is CiInterpolatedString rightInterpolated) {
 					this.StringAssign = true;
 					Write("CiString_Assign(&");
@@ -2018,7 +2024,7 @@ public class GenC : GenCCpp
 				WriteChar(')');
 			}
 		}
-		else if (throwingMethod.Type == CiSystem.VoidType) {
+		else if (throwingMethod.Type.Id == CiId.VoidType) {
 			WriteChar('!');
 			source(CiPriority.Primary);
 		}
@@ -2212,7 +2218,7 @@ public class GenC : GenCCpp
 		CiMethod throwingMethod = GetThrowingMethod(statement);
 		if (throwingMethod != null)
 			WriteForwardThrow(parent => statement.Accept(this, parent), throwingMethod);
-		else if (statement is CiCallExpr && statement.Type == CiSystem.StringStorageType) {
+		else if (statement is CiCallExpr && statement.Type.Id == CiId.StringStorageType) {
 			Write("free(");
 			statement.Accept(this, CiPriority.Argument);
 			WriteLine(");");
@@ -2241,7 +2247,7 @@ public class GenC : GenCCpp
 	{
 		WriteTypeAndName(iter);
 		Write(" = ");
-		if (iter.Type is CiIntegerType && iter.Type != CiSystem.LongType) {
+		if (iter.Type is CiIntegerType && iter.Type.Id != CiId.LongType) {
 			Write("GPOINTER_TO_INT(");
 			Write(value);
 			WriteChar(')');
@@ -2424,7 +2430,7 @@ public class GenC : GenCCpp
 				Write("NAN");
 			}
 		}
-		else if (this.CurrentMethod.Type == CiSystem.VoidType)
+		else if (this.CurrentMethod.Type.Id == CiId.VoidType)
 			Write("false");
 		else
 			Write("NULL");
@@ -2465,7 +2471,7 @@ public class GenC : GenCCpp
 				WriteChar(')');
 			}
 		}
-		else if (throwingMethod.Type == CiSystem.VoidType)
+		else if (throwingMethod.Type.Id == CiId.VoidType)
 			call.Accept(this, CiPriority.Select);
 		else {
 			call.Accept(this, CiPriority.Equality);
@@ -2891,7 +2897,7 @@ public class GenC : GenCCpp
 			List<CiStatement> statements = block.Statements;
 			if (!block.CompletesNormally())
 				WriteStatements(statements);
-			else if (method.Throws && method.Type == CiSystem.VoidType) {
+			else if (method.Throws && method.Type.Id == CiId.VoidType) {
 				if (statements.Count == 0 || !TryWriteCallAndReturn(statements, statements.Count - 1, null)) {
 					WriteStatements(statements);
 					WriteDestructAll();

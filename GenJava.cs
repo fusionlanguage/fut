@@ -220,9 +220,9 @@ public class GenJava : GenTyped
 
 	protected override TypeCode GetIntegerTypeCode(CiIntegerType integer, bool promote)
 	{
-		if (integer == CiSystem.LongType)
+		if (integer.Id == CiId.LongType)
 			return TypeCode.Int64;
-		if (promote || integer == CiSystem.IntType)
+		if (promote || integer.Id == CiId.IntType)
 			return TypeCode.Int32;
 		CiRangeType range = (CiRangeType) integer;
 		if (range.Min < 0) {
@@ -281,7 +281,7 @@ public class GenJava : GenTyped
 			WriteTypeCode(GetIntegerTypeCode(integer, promote), needClass);
 			break;
 		case CiEnum enu:
-			Write(enu == CiSystem.BoolType
+			Write(enu.Id == CiId.BoolType
 				? needClass ? "Boolean" : "boolean"
 				: needClass ? "Integer" : "int");
 			break;
@@ -403,8 +403,8 @@ public class GenJava : GenTyped
 
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
-		if ((expr.Left.Type is CiStringType && expr.Right.Type != CiSystem.NullType)
-		 || (expr.Right.Type is CiStringType && expr.Left.Type != CiSystem.NullType)) {
+		if ((expr.Left.Type is CiStringType && expr.Right.Type.Id != CiId.NullType)
+		 || (expr.Right.Type is CiStringType && expr.Left.Type.Id != CiId.NullType)) {
 			if (not)
 				WriteChar('!');
 			WriteCall(expr.Left, "equals", expr.Right);
@@ -991,7 +991,7 @@ public class GenJava : GenTyped
 		WriteSignature(method, paramCount);
 		WriteLine();
 		OpenBlock();
-		if (method.Type != CiSystem.VoidType)
+		if (method.Type.Id != CiId.VoidType)
 			Write("return ");
 		WriteName(method);
 		WriteChar('(');

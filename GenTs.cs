@@ -73,7 +73,7 @@ public class GenTs : GenJs
 			Write("number");
 			break;
 		case CiEnum enu:
-			Write(enu == CiSystem.BoolType ? "boolean" : enu.Name);
+			Write(enu.Id == CiId.BoolType ? "boolean" : enu.Name);
 			break;
 		case CiClassType klass:
 			readOnly |= !(klass is CiReadWriteClassType);

@@ -284,7 +284,7 @@ public class GenSwift : GenPySwift
 			Write(type.Id == CiId.DoubleType ? "Double" : "Float");
 			break;
 		case CiEnum _:
-			Write(type == CiSystem.BoolType ? "Bool" : type.Name);
+			Write(type.Id == CiId.BoolType ? "Bool" : type.Name);
 			break;
 		case CiArrayStorageType arrayStg:
 			if (IsArrayRef(arrayStg)) {
@@ -330,10 +330,10 @@ public class GenSwift : GenPySwift
 		case CiId.ArrayStorageClass:
 		case CiId.ListClass:
 		case CiId.HashSetClass:
-			return klass.GetElementType() == CiSystem.StringStorageType;
+			return klass.GetElementType().Id == CiId.StringStorageType;
 		case CiId.DictionaryClass:
 		case CiId.SortedDictionaryClass:
-			return (symbol.Symbol == loop.GetVar() ? klass.GetKeyType() : klass.GetValueType()) == CiSystem.StringStorageType;
+			return (symbol.Symbol == loop.GetVar() ? klass.GetKeyType() : klass.GetValueType()).Id == CiId.StringStorageType;
 		default:
 			throw new NotImplementedException(klass.Class.Name);
 		}
@@ -341,7 +341,7 @@ public class GenSwift : GenPySwift
 
 	void WriteUnwrappedString(CiExpr expr, CiPriority parent, bool substringOk)
 	{
-		if (!(expr is CiLiteral) && expr.Type == CiSystem.StringPtrType && !IsForeachStringStg(expr)) {
+		if (!(expr is CiLiteral) && expr.Type.Id == CiId.StringPtrType && !IsForeachStringStg(expr)) {
 			expr.Accept(this, CiPriority.Primary);
 			WriteChar('!');
 		}
@@ -384,7 +384,7 @@ public class GenSwift : GenPySwift
 				expr.Accept(this, CiPriority.Argument);
 			WriteChar(')');
 		}
-		else if (type == CiSystem.StringStorageType)
+		else if (type.Id == CiId.StringStorageType)
 			WriteUnwrappedString(expr, parent, false);
 		else
 			expr.Accept(this, parent);
@@ -742,7 +742,7 @@ public class GenSwift : GenPySwift
 		if (type is CiNumericType)
 			WriteChar('0');
 		else if (type is CiEnum) {
-			if (type == CiSystem.BoolType)
+			if (type.Id == CiId.BoolType)
 				Write("false");
 			else {
 				WriteName(type);
@@ -750,7 +750,7 @@ public class GenSwift : GenPySwift
 				WriteName(type.First);
 			}
 		}
-		else if (type == CiSystem.StringStorageType)
+		else if (type.Id == CiId.StringStorageType)
 			Write("\"\"");
 		else if (type is CiArrayStorageType array)
 			WriteNewArray(array);
@@ -811,7 +811,7 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteBinaryOperand(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
 	{
-		if (binary.Op == CiToken.Plus && binary.Type == CiSystem.StringPtrType) {
+		if (binary.Op == CiToken.Plus && binary.Type.Id == CiId.StringPtrType) {
 			WriteUnwrappedString(expr, parent, true);
 			return;
 		}
@@ -990,7 +990,7 @@ public class GenSwift : GenPySwift
 
 	public override void VisitExpr(CiExpr statement)
 	{
-		if (statement is CiCallExpr call && statement.Type != CiSystem.VoidType)
+		if (statement is CiCallExpr call && statement.Type.Id != CiId.VoidType)
 			Write("_ = ");
 		base.VisitExpr(statement);
 	}
@@ -1181,7 +1181,7 @@ public class GenSwift : GenPySwift
 			break;
 		case CiId.SortedDictionaryClass:
 			statement.Collection.Accept(this, CiPriority.Primary);
-			Write(klass.GetKeyType() == CiSystem.StringPtrType
+			Write(klass.GetKeyType().Id == CiId.StringPtrType
 				? ".sorted(by: { $0.key! < $1.key! })"
 				: ".sorted(by: { $0.key < $1.key })");
 			break;
@@ -1362,7 +1362,7 @@ public class GenSwift : GenPySwift
 		Write("static let ");
 		WriteName(konst);
 		Write(" = ");
-		if (konst.Type == CiSystem.IntType || konst.Type is CiEnum || konst.Type == CiSystem.StringPtrType)
+		if (konst.Type.Id == CiId.IntType || konst.Type is CiEnum || konst.Type.Id == CiId.StringPtrType)
 			konst.Value.Accept(this, CiPriority.Argument);
 		else {
 			WriteType(konst.Type);
@@ -1381,7 +1381,7 @@ public class GenSwift : GenPySwift
 		if (field.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && !(klass is CiDynamicPtrType) && !(klass is CiStorageType))
 			Write("unowned ");
 		WriteVar(field);
-		if (field.Value == null && (field.Type is CiNumericType || field.Type is CiEnum || field.Type == CiSystem.StringStorageType)) {
+		if (field.Value == null && (field.Type is CiNumericType || field.Type is CiEnum || field.Type.Id == CiId.StringStorageType)) {
 			Write(" = ");
 			WriteDefaultValue(field.Type);
 		}
@@ -1433,7 +1433,7 @@ public class GenSwift : GenPySwift
 		WriteParameters(method, true);
 		if (method.Throws)
 			Write(" throws");
-		if (method.Type != CiSystem.VoidType) {
+		if (method.Type.Id != CiId.VoidType) {
 			Write(" -> ");
 			WriteType(method.Type);
 		}

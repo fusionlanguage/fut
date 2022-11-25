@@ -412,9 +412,9 @@ public class GenPy : GenPySwift
 	{
 		if (type is CiNumericType)
 			WriteChar('0');
-		else if (type == CiSystem.BoolType)
+		else if (type.Id == CiId.BoolType)
 			Write("False");
-		else if (type == CiSystem.StringStorageType)
+		else if (type.Id == CiId.StringStorageType)
 			Write("\"\"");
 		else
 			Write("None");

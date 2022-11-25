@@ -122,7 +122,7 @@ public class CiResolver : CiVisitor
 
 	static CiType TryGetPtr(CiType type)
 	{
-		if (type == CiSystem.StringStorageType)
+		if (type.Id == CiId.StringStorageType)
 			return CiSystem.StringPtrType;
 		if (type is CiStorageType storage)
 			return new CiReadWriteClassType { Class = storage.Class == CiSystem.ArrayStorageClass ? CiSystem.ArrayPtrClass : storage.Class, TypeArg0 = storage.TypeArg0, TypeArg1 = storage.TypeArg1 };
@@ -153,7 +153,7 @@ public class CiResolver : CiVisitor
 	CiIntegerType GetShiftType(CiExpr left, CiExpr right)
 	{
 		Coerce(right, CiSystem.IntType);
-		if (left.Type == CiSystem.LongType)
+		if (left.Type.Id == CiId.LongType)
 			return CiSystem.LongType;
 		Coerce(left, CiSystem.IntType);
 		return CiSystem.IntType;
@@ -262,7 +262,7 @@ public class CiResolver : CiVisitor
 
 	bool IsEnumOp(CiExpr left, CiExpr right)
 	{
-		if (left.Type is CiEnumFlags || left.Type == CiSystem.BoolType) {
+		if (left.Type is CiEnumFlags || left.Type.Id == CiId.BoolType) {
 			Coerce(right, left.Type);
 			return true;
 		}
@@ -986,7 +986,7 @@ public class CiResolver : CiVisitor
 
 		case CiToken.AddAssign:
 			CheckLValue(left);
-			if (left.Type == CiSystem.StringStorageType)
+			if (left.Type.Id == CiId.StringStorageType)
 				Coerce(right, CiSystem.PrintableType);
 			else {
 				Coerce(left, CiSystem.DoubleType);
@@ -1091,11 +1091,11 @@ public class CiResolver : CiVisitor
 
 	static CiType EvalType(CiClassType generic, CiType type)
 	{
-		if (type == CiSystem.TypeParam0)
+		if (type.Id == CiId.TypeParam0)
 			return generic.TypeArg0;
-		if (type == CiSystem.TypeParam0NotFinal)
+		if (type.Id == CiId.TypeParam0NotFinal)
 			return generic.TypeArg0.IsFinal() ? null : generic.TypeArg0;
-		if (type is CiReadWriteClassType array && array.IsArray() && array.GetElementType() == CiSystem.TypeParam0)
+		if (type is CiReadWriteClassType array && array.IsArray() && array.GetElementType().Id == CiId.TypeParam0)
 			return new CiReadWriteClassType { Class = CiSystem.ArrayPtrClass, TypeArg0 = generic.TypeArg0 };
 		return type;
 	}
@@ -1155,7 +1155,7 @@ public class CiResolver : CiVisitor
 				throw StatementException(expr, $"Too few arguments for '{method.Name}'");
 			}
 			CiExpr arg = arguments[i++];
-			if (type == CiSystem.TypeParam0Predicate && arg is CiLambdaExpr lambda) {
+			if (type.Id == CiId.TypeParam0Predicate && arg is CiLambdaExpr lambda) {
 				lambda.First.Type = ((CiClassType) symbol.Left.Type).TypeArg0;
 				OpenScope(lambda);
 				lambda.Body = Resolve(lambda.Body);
@@ -1412,7 +1412,7 @@ public class CiResolver : CiVisitor
 
 	public override void VisitReturn(CiReturn statement)
 	{
-		if (this.CurrentMethod.Type == CiSystem.VoidType) {
+		if (this.CurrentMethod.Type.Id == CiId.VoidType) {
 			if (statement.Value != null)
 				throw StatementException(statement, "Void method cannot return a value");
 		}
@@ -1423,7 +1423,7 @@ public class CiResolver : CiVisitor
 			Coerce(statement.Value, this.CurrentMethod.Type);
 			if (statement.Value is CiSymbolReference symbol
 			 && symbol.Symbol is CiVar local
-			 && (local.Type.IsFinal() || local.Type == CiSystem.StringStorageType)
+			 && (local.Type.IsFinal() || local.Type.Id == CiId.StringStorageType)
 			 && this.CurrentMethod.Type.IsNullable())
 				throw StatementException(statement, "Returning dangling reference to local storage");
 		}
@@ -1826,7 +1826,7 @@ public class CiResolver : CiVisitor
 				if (!(method.Body is CiScope))
 					OpenScope(new CiScope()); // don't add "is Derived d" to parameters
 				method.Body.AcceptStatement(this);
-				if (method.Type != CiSystem.VoidType && method.Body.CompletesNormally())
+				if (method.Type.Id != CiId.VoidType && method.Body.CompletesNormally())
 					throw StatementException(method.Body, "Method can complete without a return value");
 				this.CurrentMethod = null;
 			}

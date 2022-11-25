@@ -87,7 +87,7 @@ public static class CiTo
 
 		CiProgram program;
 		try {
-			CiScope parent = CiSystem.Value;
+			CiScope parent = CiSystem.New();
 			if (referencedFiles.Count > 0) {
 				parent = ParseAndResolve(parser, parent, referencedFiles, searchDirs, lang);
 				if (parent == null)

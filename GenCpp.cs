@@ -302,7 +302,7 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteVarInit(CiNamedValue def)
 	{
-		if (def.Value != null && def.Type == CiSystem.StringStorageType) {
+		if (def.Value != null && def.Type.Id == CiId.StringStorageType) {
 			WriteChar('{');
 			def.Value.Accept(this, CiPriority.Argument);
 			WriteChar('}');
@@ -339,7 +339,7 @@ public class GenCpp : GenCCpp
 
 	static bool NeedStringPtrData(CiExpr expr)
 	{
-		if (expr.Type != CiSystem.StringPtrType)
+		if (expr.Type.Id != CiId.StringPtrType)
 			return false;
 		if (expr is CiCallExpr call && call.Method.Symbol.Id == CiId.EnvironmentGetEnvironmentVariable)
 			return false;
@@ -348,13 +348,13 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
-		if (NeedStringPtrData(expr.Left) && expr.Right.Type == CiSystem.NullType) {
+		if (NeedStringPtrData(expr.Left) && expr.Right.Type.Id == CiId.NullType) {
 			WriteCoerced(CiSystem.StringPtrType, expr.Left, CiPriority.Primary);
 			Write(".data()");
 			Write(GetEqOp(not));
 			Write("nullptr");
 		}
-		else if (expr.Left.Type == CiSystem.NullType && NeedStringPtrData(expr.Right)) {
+		else if (expr.Left.Type.Id == CiId.NullType && NeedStringPtrData(expr.Right)) {
 			Write("nullptr");
 			Write(GetEqOp(not));
 			WriteCoerced(CiSystem.StringPtrType, expr.Right, CiPriority.Primary);
@@ -777,7 +777,7 @@ public class GenCpp : GenCCpp
 			}
 			break;
 		case CiId.HashSetAdd:
-			WriteCall(obj, ((CiClassType) obj.Type).GetElementType() == CiSystem.StringStorageType && args[0].Type == CiSystem.StringPtrType ? "emplace" : "insert", args[0]);
+			WriteCall(obj, ((CiClassType) obj.Type).GetElementType().Id == CiId.StringStorageType && args[0].Type.Id == CiId.StringPtrType ? "emplace" : "insert", args[0]);
 			break;
 		case CiId.HashSetRemove:
 		case CiId.DictionaryRemove:
@@ -864,7 +864,7 @@ public class GenCpp : GenCCpp
 		case CiId.MatchFindStr:
 		case CiId.MatchFindRegex:
 			Write("std::regex_search(");
-			if (args[0].Type == CiSystem.StringPtrType && !(args[0] is CiLiteral))
+			if (args[0].Type.Id == CiId.StringPtrType && !(args[0] is CiLiteral))
 				WriteBeginEnd(args[0]);
 			else
 				args[0].Accept(this, CiPriority.Argument);
@@ -964,7 +964,7 @@ public class GenCpp : GenCCpp
 	{
 		if (type is CiClassType klass && !(klass is CiDynamicPtrType) && !(klass is CiStorageType)) {
 			if (klass.Class.Id == CiId.StringClass) {
-				if (expr.Type == CiSystem.NullType) {
+				if (expr.Type.Id == CiId.NullType) {
 					Include("string_view");
 					Write("std::string_view(nullptr, 0)");
 				}
@@ -1081,7 +1081,7 @@ public class GenCpp : GenCCpp
 				return expr;
 			}
 			break;
-		case CiToken.Assign when expr.Left.Type == CiSystem.StringStorageType && parent == CiPriority.Statement && IsTrimSubstring(expr) is CiExpr length:
+		case CiToken.Assign when expr.Left.Type.Id == CiId.StringStorageType && parent == CiPriority.Statement && IsTrimSubstring(expr) is CiExpr length:
 			WriteCall(expr.Left, "resize", length);
 			return expr;
 		case CiToken.Is:
@@ -1159,16 +1159,16 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteReturnValue(CiExpr value)
 	{
-		if (this.CurrentMethod.Type == CiSystem.StringStorageType
-		 && value.Type == CiSystem.StringPtrType
+		if (this.CurrentMethod.Type.Id == CiId.StringStorageType
+		 && value.Type.Id == CiId.StringPtrType
 		 && !(value is CiLiteral)) {
 			Write("std::string(");
 			base.WriteReturnValue(value);
 			WriteChar(')');
 		}
-		else if (this.CurrentMethod.Type == CiSystem.StringStorageType
+		else if (this.CurrentMethod.Type.Id == CiId.StringStorageType
 			&& IsStringSubstring(value, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)
-			&& ptr.Type != CiSystem.StringStorageType) {
+			&& ptr.Type.Id != CiId.StringStorageType) {
 			Write("std::string(");
 			if (cast)
 				Write("reinterpret_cast<const char *>(");

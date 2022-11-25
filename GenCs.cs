@@ -607,7 +607,7 @@ public class GenCs : GenTyped
 
 	void WriteOrderedDictionaryIndexing(CiBinaryExpr expr)
 	{
-		if (expr.Right.Type == CiSystem.IntType || expr.Right.Type is CiRangeType) {
+		if (expr.Right.Type.Id == CiId.IntType || expr.Right.Type is CiRangeType) {
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write("[(object) ");
 			expr.Right.Accept(this, CiPriority.Primary);
