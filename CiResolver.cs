@@ -1194,7 +1194,8 @@ public class CiResolver : CiVisitor
 				return literal;
 		}
 
-		this.CurrentMethod.Calls.Add(method);
+		if (this.CurrentMethod != null)
+			this.CurrentMethod.Calls.Add(method);
 		if (this.CurrentPureArguments.Count == 0) {
 			expr.Method = symbol;
 			CiType type = method.Type;
