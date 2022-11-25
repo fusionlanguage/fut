@@ -100,52 +100,6 @@ public class CiClass : CiContainerType
 	}
 }
 
-public class CiRangeType : CiIntegerType
-{
-	internal int Min;
-	internal int Max;
-
-	CiRangeType()
-	{
-	}
-
-	public static CiRangeType New(int min, int max)
-	{
-		if (min > max)
-			throw new ArgumentOutOfRangeException();
-		return new CiRangeType { Min = min, Max = max };
-	}
-
-	public override string ToString() => this.Min == this.Max ? this.Min.ToString() : $"({this.Min} .. {this.Max})";
-
-	public override bool IsAssignableFrom(CiType right)
-	{
-		switch (right) {
-		case CiRangeType range:
-			return this.Min <= range.Max && this.Max >= range.Min;
-		case CiIntegerType _:
-			return true;
-		default:
-			return right.Id == CiId.FloatIntType;
-		}
-	}
-
-	public override bool EqualsType(CiType right) => right is CiRangeType that && this.Min == that.Min && this.Max == that.Max;
-
-	public static int GetMask(int v)
-	{
-		// http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-		v |= v >> 1;
-		v |= v >> 2;
-		v |= v >> 4;
-		v |= v >> 8;
-		v |= v >> 16;
-		return v;
-	}
-
-	public int GetVariableBits() => GetMask(this.Min ^ this.Max);
-}
-
 public class CiClassType : CiType
 {
 	internal CiClass Class;

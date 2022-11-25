@@ -2330,6 +2330,46 @@ namespace Foxoft.Ci
 		public override bool IsAssignableFrom(CiType right) => right is CiIntegerType || right.Id == CiId.FloatIntType;
 	}
 
+	public class CiRangeType : CiIntegerType
+	{
+
+		internal int Min;
+
+		internal int Max;
+
+		public static CiRangeType New(int min, int max)
+		{
+			Debug.Assert(min <= max);
+			return new CiRangeType { Min = min, Max = max };
+		}
+
+		public override bool IsAssignableFrom(CiType right)
+		{
+			switch (right) {
+			case CiRangeType range:
+				return this.Min <= range.Max && this.Max >= range.Min;
+			case CiIntegerType _:
+				return true;
+			default:
+				return right.Id == CiId.FloatIntType;
+			}
+		}
+
+		public override bool EqualsType(CiType right) => right is CiRangeType that && this.Min == that.Min && this.Max == that.Max;
+
+		public static int GetMask(int v)
+		{
+			v |= v >> 1;
+			v |= v >> 2;
+			v |= v >> 4;
+			v |= v >> 8;
+			v |= v >> 16;
+			return v;
+		}
+
+		public int GetVariableBits() => GetMask(this.Min ^ this.Max);
+	}
+
 	public class CiFloatingType : CiNumericType
 	{
 
