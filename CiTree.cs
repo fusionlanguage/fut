@@ -80,11 +80,8 @@ public class CiSystem : CiScope
 	internal static readonly CiType PrintableType = new CiPrintableType { Name = "printable" };
 	internal static readonly CiClass ArrayPtrClass = CiClass.New(CiCallType.Normal, CiId.ArrayPtrClass, "ArrayPtr", 1);
 	internal static readonly CiClass ArrayStorageClass = CiClass.New(CiCallType.Normal, CiId.ArrayStorageClass, "ArrayStorage", 1);
-	internal static readonly CiClass ConsoleBase = CiClass.New(CiCallType.Static, CiId.None, "ConsoleBase");
-	internal static readonly CiMember ConsoleError = CiMember.New(ConsoleBase, CiId.ConsoleError, "Error");
 	static readonly CiClass LockClass = CiClass.New(CiCallType.Sealed, CiId.LockClass, "Lock");
 	internal static readonly CiReadWriteClassType LockPtrType = new CiReadWriteClassType { Class = LockClass };
-	internal static readonly CiSymbol BasePtr = CiVar.New(null, "base");
 
 	public static CiLiteralLong NewLiteralLong(long value, int line = 0)
 	{
@@ -146,6 +143,9 @@ public class CiSystem : CiScope
 
 	CiSystem()
 	{
+		CiSymbol basePtr = CiVar.New(null, "base");
+		basePtr.Id = CiId.BasePtr;
+		Add(basePtr);
 		Add(IntType);
 		UIntType.Name = "uint";
 		Add(UIntType);
@@ -221,12 +221,14 @@ public class CiSystem : CiScope
 		AddDictionary(CiId.SortedDictionaryClass, "SortedDictionary", CiId.SortedDictionaryClear, CiId.SortedDictionaryContainsKey, CiId.SortedDictionaryCount, CiId.SortedDictionaryRemove);
 		AddDictionary(CiId.OrderedDictionaryClass, "OrderedDictionary", CiId.OrderedDictionaryClear, CiId.OrderedDictionaryContainsKey, CiId.OrderedDictionaryCount, CiId.OrderedDictionaryRemove);
 
-		ConsoleBase.Add(CiMethod.NewStatic(VoidType, CiId.ConsoleWrite, "Write", CiVar.New(PrintableType, "value")));
-		ConsoleBase.Add(CiMethod.NewStatic(VoidType, CiId.ConsoleWriteLine, "WriteLine", CiVar.New(PrintableType, "value", NewLiteralString(""))));
+		CiClass consoleBase = CiClass.New(CiCallType.Static, CiId.None, "ConsoleBase");
+		consoleBase.Add(CiMethod.NewStatic(VoidType, CiId.ConsoleWrite, "Write", CiVar.New(PrintableType, "value")));
+		consoleBase.Add(CiMethod.NewStatic(VoidType, CiId.ConsoleWriteLine, "WriteLine", CiVar.New(PrintableType, "value", NewLiteralString(""))));
 		CiClass consoleClass = CiClass.New(CiCallType.Static, CiId.None, "Console");
-		consoleClass.Add(ConsoleError);
+		CiMember consoleError = CiMember.New(consoleBase, CiId.ConsoleError, "Error");
+		consoleClass.Add(consoleError);
 		Add(consoleClass);
-		consoleClass.Parent = ConsoleBase;
+		consoleClass.Parent = consoleBase;
 		CiClass utf8EncodingClass = CiClass.New(CiCallType.Sealed, CiId.None, "UTF8Encoding");
 		utf8EncodingClass.Add(CiMethod.New(CiVisibility.Public, IntType, CiId.UTF8GetByteCount, "GetByteCount", CiVar.New(StringPtrType, "str")));
 		utf8EncodingClass.Add(CiMethod.New(CiVisibility.Public, VoidType, CiId.UTF8GetBytes, "GetBytes",
@@ -298,7 +300,6 @@ public class CiSystem : CiScope
 		Add(mathClass);
 
 		Add(LockClass);
-		Add(BasePtr);
 	}
 
 	public static CiSystem New() => new CiSystem();

@@ -1283,6 +1283,7 @@ namespace Foxoft.Ci
 		None,
 		VoidType,
 		NullType,
+		BasePtr,
 		TypeParam0,
 		TypeParam0NotFinal,
 		TypeParam0Predicate,

@@ -609,6 +609,8 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
+	protected static bool IsReferenceTo(CiExpr expr, CiId id) => expr is CiSymbolReference symbol && symbol.Symbol.Id == id;
+
 	protected void WriteArgs(CiMethod method, List<CiExpr> args)
 	{
 		CiVar param = method.Parameters.FirstParameter();

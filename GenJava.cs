@@ -511,7 +511,7 @@ public class GenJava : GenTyped
 
 	void WriteConsoleWrite(CiExpr obj, CiMethod method, List<CiExpr> args, bool newLine)
 	{
-		Write(obj.IsReferenceTo(CiSystem.ConsoleError) ? "System.err" : "System.out");
+		Write(IsReferenceTo(obj, CiId.ConsoleError) ? "System.err" : "System.out");
 		if (args.Count == 1 && args[0] is CiInterpolatedString interpolated) {
 			Write(".format(");
 			WritePrintf(interpolated, newLine);
@@ -729,7 +729,7 @@ public class GenJava : GenTyped
 			break;
 		default:
 			if (obj != null) {
-				if (obj.IsReferenceTo(CiSystem.BasePtr))
+				if (IsReferenceTo(obj, CiId.BasePtr))
 					Write("super");
 				else
 					obj.Accept(this, CiPriority.Primary);

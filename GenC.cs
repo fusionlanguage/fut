@@ -1372,7 +1372,7 @@ public class GenC : GenCCpp
 
 	void WriteConsoleWrite(CiExpr obj, List<CiExpr> args, bool newLine)
 	{
-		bool error = obj.IsReferenceTo(CiSystem.ConsoleError);
+		bool error = IsReferenceTo(obj, CiId.ConsoleError);
 		Include("stdio.h");
 		if (args.Count == 0)
 			Write(error ? "putc('\\n', stderr)" : "putchar('\\n')");
@@ -1412,7 +1412,7 @@ public class GenC : GenCCpp
 
 	protected void WriteCCall(CiExpr obj, CiMethod method, List<CiExpr> args)
 	{
-		if (obj != null && obj.IsReferenceTo(CiSystem.BasePtr)) {
+		if (IsReferenceTo(obj, CiId.BasePtr)) {
 			WriteName(method);
 			Write("(&self->base");
 		}

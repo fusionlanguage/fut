@@ -704,7 +704,7 @@ public class GenSwift : GenPySwift
 					WriteChar('.');
 				}
 			}
-			else if (obj.IsReferenceTo(CiSystem.BasePtr))
+			else if (IsReferenceTo(obj, CiId.BasePtr))
 				Write("super.");
 			else {
 				obj.Accept(this, CiPriority.Primary);

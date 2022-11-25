@@ -467,7 +467,7 @@ public class CiResolver : CiVisitor
 		if (expr.Left != null) {
 			CiExpr left = Resolve(expr.Left);
 			CiSymbolReference leftSymbol = left as CiSymbolReference;
-			if (leftSymbol != null && leftSymbol.Symbol == CiSystem.BasePtr) {
+			if (leftSymbol != null && leftSymbol.Symbol.Id == CiId.BasePtr) {
 				if (this.CurrentMethod == null || !(this.CurrentMethod.Parent.Parent is CiClass baseClass))
 					throw StatementException(expr, "No base class");
 				if (!(baseClass.TryShallowLookup(expr.Name) is CiMethod baseMethod))
@@ -1434,8 +1434,7 @@ public class CiResolver : CiVisitor
 		OpenScope(statement);
 		statement.Value = Resolve(statement.Value);
 		switch (statement.Value.Type) {
-		case CiRangeType _:
-		case CiIntegerType i when i == CiSystem.IntType:
+		case CiIntegerType i when i.Id != CiId.LongType:
 		case CiEnum _:
 		case CiStringType _:
 			break;

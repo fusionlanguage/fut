@@ -468,7 +468,7 @@ public class GenCpp : GenCCpp
 	void WriteConsoleWrite(CiExpr obj, List<CiExpr> args, bool newLine)
 	{
 		Include("iostream");
-		Write(obj.IsReferenceTo(CiSystem.ConsoleError) ? "std::cerr" : "std::cout");
+		Write(IsReferenceTo(obj, CiId.ConsoleError) ? "std::cerr" : "std::cout");
 		if (args.Count == 1) {
 			if (args[0] is CiInterpolatedString interpolated) {
 				bool uppercase = false;
@@ -912,7 +912,7 @@ public class GenCpp : GenCCpp
 			break;
 		default:
 			if (obj != null) {
-				if (obj.IsReferenceTo(CiSystem.BasePtr)) {
+				if (IsReferenceTo(obj, CiId.BasePtr)) {
 					WriteName((CiClass) method.Parent);
 					Write("::");
 				}

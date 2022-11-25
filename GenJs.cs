@@ -596,7 +596,7 @@ public class GenJs : GenBase
 			break;
 		case CiId.ConsoleWrite: // FIXME: Console.Write same as Console.WriteLine
 		case CiId.ConsoleWriteLine:
-			Write(obj.IsReferenceTo(CiSystem.ConsoleError) ? "console.error" : "console.log");
+			Write(IsReferenceTo(obj, CiId.ConsoleError) ? "console.error" : "console.log");
 			if (args.Count == 0)
 				Write("(\"\")");
 			else
@@ -708,7 +708,7 @@ public class GenJs : GenBase
 			if (obj == null)
 				WriteLocalName(method, CiPriority.Primary);
 			else {
-				if (obj.IsReferenceTo(CiSystem.BasePtr))
+				if (IsReferenceTo(obj, CiId.BasePtr))
 					Write("super");
 				else
 					obj.Accept(this, CiPriority.Primary);

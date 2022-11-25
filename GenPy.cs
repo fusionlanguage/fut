@@ -550,7 +550,7 @@ public class GenPy : GenPySwift
 			if (!newLine)
 				Write(", end=\"\"");
 		}
-		if (obj.IsReferenceTo(CiSystem.ConsoleError)) {
+		if (IsReferenceTo(obj, CiId.ConsoleError)) {
 			if (args.Count == 1)
 				Write(", ");
 			Include("sys");
@@ -804,7 +804,7 @@ public class GenPy : GenPySwift
 		default:
 			if (obj == null)
 				WriteLocalName(method, CiPriority.Primary);
-			else if (obj.IsReferenceTo(CiSystem.BasePtr)) {
+			else if (IsReferenceTo(obj, CiId.BasePtr)) {
 				WriteName(method.Parent);
 				WriteChar('.');
 				WriteName(method);
