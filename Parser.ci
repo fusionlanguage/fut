@@ -73,14 +73,7 @@ public abstract class CiParserBase : CiLexer
 
 	CiCodeDoc# ParseDoc() => See(CiToken.DocComment) ? ParseCodeDoc() : null;
 
-	protected CiExpr# ParseSymbolReference!(CiExpr# left)
-	{
-		CiExpr# result = new CiSymbolReference { Line = this.Line, Left = left, Name = this.StringValue };
-		NextToken();
-		return result;
-	}
-
-	protected void CheckXcrementParent()
+	void CheckXcrementParent()
 	{
 		if (this.XcrementParent != null) {
 			string op = See(CiToken.Increment) ? "++" : "--";
@@ -88,13 +81,7 @@ public abstract class CiParserBase : CiLexer
 		}
 	}
 
-	protected CiExpr# ParseParenthesized!()
-	{
-		Expect(CiToken.LeftParenthesis);
-		CiExpr# result = ParseExpr();
-		Expect(CiToken.RightParenthesis);
-		return result;
-	}
+	protected abstract CiLiteralDouble# ParseDouble();
 
 	bool SeeDigit()
 	{
@@ -102,7 +89,7 @@ public abstract class CiParserBase : CiLexer
 		return c >= '0' && c <= '9';
 	}
 
-	protected CiInterpolatedString# ParseInterpolatedString!()
+	CiInterpolatedString# ParseInterpolatedString!()
 	{
 		CiInterpolatedString# result = new CiInterpolatedString { Line = this.Line };
 		do {
@@ -129,7 +116,146 @@ public abstract class CiParserBase : CiLexer
 		return result;
 	}
 
-	protected abstract CiExpr# ParsePrimaryExpr!();
+	CiExpr# ParseParenthesized!()
+	{
+		Expect(CiToken.LeftParenthesis);
+		CiExpr# result = ParseExpr();
+		Expect(CiToken.RightParenthesis);
+		return result;
+	}
+
+	CiSymbolReference# ParseSymbolReference!(CiExpr# left)
+	{
+		CiSymbolReference# result = new CiSymbolReference { Line = this.Line, Left = left, Name = this.StringValue };
+		NextToken();
+		return result;
+	}
+
+	void ParseCollection!(List<CiExpr#>! result, CiToken closing)
+	{
+		if (!See(closing)) {
+			do
+				result.Add(ParseExpr());
+			while (Eat(CiToken.Comma));
+		}
+		ExpectOrSkip(closing);
+	}
+
+	CiExpr# ParsePrimaryExpr!()
+	{
+		CiExpr# result;
+		switch (this.CurrentToken) {
+		case CiToken.Increment:
+		case CiToken.Decrement:
+			CheckXcrementParent();
+			return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParsePrimaryExpr() };
+		case CiToken.Minus:
+		case CiToken.Tilde:
+		case CiToken.ExclamationMark:
+			return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParsePrimaryExpr() };
+		case CiToken.New:
+			CiPrefixExpr# newResult = new CiPrefixExpr { Line = this.Line, Op = NextToken() };
+			result = ParseType();
+			if (Eat(CiToken.LeftBrace))
+				result = new CiBinaryExpr { Line = this.Line, Left = result, Op = CiToken.LeftBrace, Right = ParseObjectLiteral() };
+			newResult.Inner = result;
+			return newResult;
+		case CiToken.LiteralLong:
+			result = this.Program.System.NewLiteralLong(this.LongValue, this.Line);
+			NextToken();
+			break;
+		case CiToken.LiteralDouble:
+			result = ParseDouble();
+			break;
+		case CiToken.LiteralChar:
+			result = CiLiteralChar.New(this.LongValue, this.Line);
+			NextToken();
+			break;
+		case CiToken.LiteralString:
+			result = this.Program.System.NewLiteralString(this.StringValue, this.Line);
+			NextToken();
+			break;
+		case CiToken.False:
+			result = new CiLiteralFalse { Line = this.Line, Type = this.Program.System.BoolType };
+			NextToken();
+			break;
+		case CiToken.True:
+			result = new CiLiteralTrue { Line = this.Line, Type = this.Program.System.BoolType };
+			NextToken();
+			break;
+		case CiToken.Null:
+			result = new CiLiteralNull { Line = this.Line, Type = this.Program.System.NullType };
+			NextToken();
+			break;
+		case CiToken.InterpolatedString:
+			result = ParseInterpolatedString();
+			break;
+		case CiToken.LeftParenthesis:
+			result = ParseParenthesized();
+			break;
+		case CiToken.Id:
+			CiSymbolReference# symbol = ParseSymbolReference(null);
+			if (Eat(CiToken.FatArrow)) {
+				CiLambdaExpr# lambda = new CiLambdaExpr { Line = symbol.Line };
+				lambda.Add(CiVar.New(null, symbol.Name));
+				lambda.Body = ParseExpr();
+				return lambda;
+			}
+			result = symbol;
+			break;
+		case CiToken.Resource:
+			NextToken();
+			if (Eat(CiToken.Less)
+			 && this.StringValue == "byte"
+			 && Eat(CiToken.Id)
+			 && Eat(CiToken.LeftBracket)
+			 && Eat(CiToken.RightBracket)
+			 && Eat(CiToken.Greater))
+				result = new CiPrefixExpr { Line = this.Line, Op = CiToken.Resource, Inner = ParseParenthesized() };
+			else {
+				ReportError("Expected 'resource<byte[]>'");
+				result = null;
+			}
+			break;
+		default:
+			ReportError("Invalid expression");
+			result = null;
+			break;
+		}
+		for (;;) {
+			switch (this.CurrentToken) {
+			case CiToken.Dot:
+				NextToken();
+				result = ParseSymbolReference(result);
+				break;
+			case CiToken.LeftParenthesis:
+				NextToken();
+				if (result is CiSymbolReference# method) {
+					CiCallExpr# call = new CiCallExpr { Line = this.Line, Method = method };
+					ParseCollection(call.Arguments, CiToken.RightParenthesis);
+					result = call;
+				}
+				else
+					ReportError("Expected a method");
+				break;
+			case CiToken.LeftBracket:
+				result = new CiBinaryExpr { Line = this.Line, Left = result, Op = NextToken(), Right = See(CiToken.RightBracket) ? null : ParseExpr() };
+				Expect(CiToken.RightBracket);
+				break;
+			case CiToken.Increment:
+			case CiToken.Decrement:
+				CheckXcrementParent();
+				result = new CiPostfixExpr { Line = this.Line, Inner = result, Op = NextToken() };
+				break;
+			case CiToken.ExclamationMark:
+			case CiToken.Hash:
+				result = new CiPostfixExpr { Line = this.Line, Inner = result, Op = NextToken() };
+				break;
+			default:
+				return result;
+			}
+		}
+	}
 
 	CiExpr# ParseMulExpr!()
 	{
@@ -243,7 +369,7 @@ public abstract class CiParserBase : CiLexer
 		return left;
 	}
 
-	protected CiExpr# ParseExpr!()
+	CiExpr# ParseExpr!()
 	{
 		CiExpr# left = ParseCondOrExpr();
 		if (See(CiToken.QuestionMark)) {
@@ -260,7 +386,7 @@ public abstract class CiParserBase : CiLexer
 		return left;
 	}
 
-	protected CiExpr# ParseType!()
+	CiExpr# ParseType!()
 	{
 		CiExpr# left = ParsePrimaryExpr();
 		if (Eat(CiToken.Range))
@@ -286,16 +412,6 @@ public abstract class CiParserBase : CiLexer
 		return left;
 	}
 
-	protected void ParseCollection!(List<CiExpr#>! result, CiToken closing)
-	{
-		if (!See(closing)) {
-			do
-				result.Add(ParseExpr());
-			while (Eat(CiToken.Comma));
-		}
-		ExpectOrSkip(closing);
-	}
-
 	CiExpr# ParseConstInitializer!()
 	{
 		if (Eat(CiToken.LeftBrace)) {
@@ -306,7 +422,7 @@ public abstract class CiParserBase : CiLexer
 		return ParseExpr();
 	}
 
-	protected CiAggregateInitializer# ParseObjectLiteral!()
+	CiAggregateInitializer# ParseObjectLiteral!()
 	{
 		CiAggregateInitializer# result = new CiAggregateInitializer { Line = this.Line };
 		do {
@@ -319,7 +435,7 @@ public abstract class CiParserBase : CiLexer
 		return result;
 	}
 
-	protected CiExpr# ParseInitializer!()
+	CiExpr# ParseInitializer!()
 	{
 		if (!Eat(CiToken.Assign))
 			return null;

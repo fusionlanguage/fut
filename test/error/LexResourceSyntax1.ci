@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		byte[] a = resource("foo"); //ERROR: Expected 'resource<byte[]>' //ERROR: Expected a method
+		byte[] a = resource("foo"); //ERROR: Expected 'resource<byte[]>' //ERROR: Expected a method //ERROR: Expected ';', got string constant //ERROR: Invalid expression //ERROR: Expected ';', got ')' //ERROR: Invalid expression
 		return true;
 	}
 }
