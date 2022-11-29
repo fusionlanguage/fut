@@ -399,21 +399,20 @@ public class CiResolver : CiVisitor
 			CiInterpolatedPart part = expr.Parts[partsIndex];
 			sb.Append(part.Prefix);
 			CiExpr arg = Resolve(part.Argument);
+			Coerce(arg, this.Program.System.PrintableType);
 			switch (arg.Type) {
 			case CiIntegerType _:
 				if (" DdXx".IndexOf((char) part.Format) < 0)
-					throw StatementException(arg, "Invalid integer format string");
+					throw StatementException(arg, "Invalid format string");
 				break;
 			case CiFloatingType _:
 				if (" FfEe".IndexOf((char) part.Format) < 0)
-					throw StatementException(arg, "Invalid floating-point format string");
-				break;
-			case CiStringType _:
-				if (part.Format != ' ')
-					throw StatementException(arg, "Invalid string format string");
+					throw StatementException(arg, "Invalid format string");
 				break;
 			default:
-				throw StatementException(arg, "Only numbers and strings can be interpolated in strings");
+				if (part.Format != ' ')
+					throw StatementException(arg, "Invalid format string");
+				break;
 			}
 			int width = 0;
 			if (part.WidthExpr != null)

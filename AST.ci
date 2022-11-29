@@ -937,7 +937,7 @@ public class CiRangeType : CiIntegerType
 		return new CiRangeType { Min = min, Max = max };
 	}
 
-	//public override string ToString() => this.Min == this.Max ? this.Min.ToString() : $"({this.Min} .. {this.Max})";
+	public override string() ToString() => this.Min == this.Max ? $"{this.Min}" : $"({this.Min} .. {this.Max})";
 
 	public override bool IsAssignableFrom(CiType right)
 	{
@@ -1196,17 +1196,17 @@ public class CiClassType : CiType
 	public override string() GetArraySuffix() => IsArray() ? "[]" : "";
 	public virtual string GetClassSuffix() => "";
 
-//	public override string() ToString()
-//	{
-//		if (IsArray())
-//			return GetElementType().GetBaseType() + GetArraySuffix() + GetElementType().GetArraySuffix();
-//		switch (this.Class.TypeParameterCount) {
-//		case 0: return this.Class.Name + GetClassSuffix();
-//		case 1: return $"{this.Class.Name}<{this.TypeArg0}>{GetClassSuffix()}";
-//		case 2: return $"{this.Class.Name}<{this.TypeArg0}, {this.TypeArg1}>{GetClassSuffix()}";
-//		default: throw new NotImplementedException();
-//		}
-//	}
+	public override string() ToString()
+	{
+		if (IsArray())
+			return GetElementType().GetBaseType() + GetArraySuffix() + GetElementType().GetArraySuffix();
+		switch (this.Class.TypeParameterCount) {
+		case 0: return this.Class.Name + GetClassSuffix();
+		case 1: return $"{this.Class.Name}<{this.TypeArg0}>{GetClassSuffix()}";
+		case 2: return $"{this.Class.Name}<{this.TypeArg0}, {this.TypeArg1}>{GetClassSuffix()}";
+		default: assert false;
+		}
+	}
 }
 
 public class CiReadWriteClassType : CiClassType
@@ -1247,7 +1247,7 @@ public class CiArrayStorageType : CiStorageType
 	internal int Length;
 	internal bool PtrTaken = false;
 
-//	public override string() ToString() => GetBaseType() + GetArraySuffix() + GetElementType().GetArraySuffix();
+	public override string() ToString() => GetBaseType() + GetArraySuffix() + GetElementType().GetArraySuffix();
 	public override CiType GetBaseType() => GetElementType().GetBaseType();
 	public override bool IsArray() => true;
 	public override string() GetArraySuffix() => $"[{this.Length}]";
@@ -1268,7 +1268,18 @@ public class CiStringStorageType : CiStringType
 
 public class CiPrintableType : CiType
 {
-	public override bool IsAssignableFrom(CiType right) => right is CiStringType || right is CiNumericType;
+	public override bool IsAssignableFrom(CiType right)
+	{
+		switch (right) {
+		case CiNumericType _:
+		case CiStringType _:
+			return true;
+		case CiClassType klass:
+			return klass.TryLookup("ToString") != null; // TODO: refine check
+		default:
+			return false;
+		}
+	}
 }
 
 public class CiSystem : CiScope

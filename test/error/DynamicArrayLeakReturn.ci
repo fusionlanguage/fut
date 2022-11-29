@@ -1,7 +1,6 @@
 public static class Test
 {
-	// FIXME:
-	static int[] Create() => new int[4]; //ERROR: Dynamically allocated array must be assigned to a  reference
+	static int[] Create() => new int[4]; //ERROR: Dynamically allocated array must be assigned to a int[]# reference
 
 	public static bool Run()
 	{

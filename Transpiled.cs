@@ -2378,6 +2378,8 @@ namespace Foxoft.Ci
 			return new CiRangeType { Min = min, Max = max };
 		}
 
+		public override string ToString() => this.Min == this.Max ? $"{this.Min}" : $"({this.Min} .. {this.Max})";
+
 		public override bool IsAssignableFrom(CiType right)
 		{
 			switch (right) {
@@ -2688,6 +2690,22 @@ namespace Foxoft.Ci
 		public override string GetArraySuffix() => IsArray() ? "[]" : "";
 
 		public virtual string GetClassSuffix() => "";
+
+		public override string ToString()
+		{
+			if (IsArray())
+				return GetElementType().GetBaseType() + GetArraySuffix() + GetElementType().GetArraySuffix();
+			switch (this.Class.TypeParameterCount) {
+			case 0:
+				return this.Class.Name + GetClassSuffix();
+			case 1:
+				return $"{this.Class.Name}<{this.TypeArg0}>{GetClassSuffix()}";
+			case 2:
+				return $"{this.Class.Name}<{this.TypeArg0}, {this.TypeArg1}>{GetClassSuffix()}";
+			default:
+				throw new NotImplementedException();
+			}
+		}
 	}
 
 	public class CiReadWriteClassType : CiClassType
@@ -2737,6 +2755,8 @@ namespace Foxoft.Ci
 
 		internal bool PtrTaken = false;
 
+		public override string ToString() => GetBaseType() + GetArraySuffix() + GetElementType().GetArraySuffix();
+
 		public override CiType GetBaseType() => GetElementType().GetBaseType();
 
 		public override bool IsArray() => true;
@@ -2765,7 +2785,18 @@ namespace Foxoft.Ci
 	public class CiPrintableType : CiType
 	{
 
-		public override bool IsAssignableFrom(CiType right) => right is CiStringType || right is CiNumericType;
+		public override bool IsAssignableFrom(CiType right)
+		{
+			switch (right) {
+			case CiNumericType _:
+			case CiStringType _:
+				return true;
+			case CiClassType klass:
+				return klass.TryLookup("ToString") != null;
+			default:
+				return false;
+			}
+		}
 	}
 
 	public class CiSystem : CiScope
