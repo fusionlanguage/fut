@@ -10,7 +10,7 @@ public abstract class Abstract
 	public abstract string ToString(); //FAIL: cl
 }
 
-public class Override : Abstract
+public class Overrid : Abstract
 {
 	public override string ToString() => "Over";
 }
@@ -20,7 +20,7 @@ public static class Test
 	public static bool Run()
 	{
 		Simple() s;
-		Override() o;
+		Overrid() o;
 		Abstract a = o;
 		return $"{s}{o}{a}" == "SimpOverOver"; //FAIL: c cpp TODO
 	}
