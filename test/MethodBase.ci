@@ -21,11 +21,19 @@ class Derived : Base
 	}
 }
 
+class MostDerived : Derived
+{
+	protected override int Quux(int i) => base.Quux(42);
+
+	internal int Baz() => Quux(1);
+}
+
 public static class Test
 {
 	public static bool Run()
 	{
 		Derived() d;
-		return d.Foo() == 15 && d.Bar() == 15;
+		MostDerived() m;
+		return d.Foo() == 15 && d.Bar() == 15 && m.Baz() == 42;
 	}
 }

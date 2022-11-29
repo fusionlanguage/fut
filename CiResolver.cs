@@ -468,57 +468,55 @@ public class CiResolver : CiVisitor
 		if (expr.Left != null) {
 			CiExpr left = Resolve(expr.Left);
 			CiSymbolReference leftSymbol = left as CiSymbolReference;
+			CiScope scope;
 			if (leftSymbol != null && leftSymbol.Symbol.Id == CiId.BasePtr) {
 				if (this.CurrentMethod == null || !(this.CurrentMethod.Parent.Parent is CiClass baseClass))
 					throw StatementException(expr, "No base class");
-				if (!(baseClass.TryShallowLookup(expr.Name) is CiMethod baseMethod))
-					throw StatementException(expr, $"base.{expr.Name} is not a method");
-				if (baseMethod.Visibility == CiVisibility.Private)
-					throw StatementException(expr, $"Cannot access private method {expr.Name}");
+				scope = baseClass;
 				// TODO: static?
-				expr.Symbol = baseMethod;
 			}
-			else {
-				if (leftSymbol == null || !(leftSymbol.Symbol is CiScope scope)) {
-					scope = left.Type;
-					// if (scope is CiClassType ptr)
-					//	scope = ptr.Class;
-				}
-				CiExpr result = Lookup(expr, scope);
-				if (result != expr)
-					return result;
-				if (expr.Symbol is CiMember member) {
-					switch (member.Visibility) {
-					case CiVisibility.Private:
-						if (member.Parent != this.CurrentMethod.Parent
-						 || this.CurrentMethod.Parent != (scope as CiClass ?? ((CiClassType) scope).Class) /* enforced by Java, but not C++/C#/TS */)
-							throw StatementException(expr, $"Cannot access private member {expr.Name}");
+			else if (leftSymbol != null && leftSymbol.Symbol is CiScope obj)
+				scope = obj;
+			else
+				scope = left.Type;
+				// if (scope is CiClassType ptr)
+				//	scope = ptr.Class;
+			CiExpr result = Lookup(expr, scope);
+			if (result != expr)
+				return result;
+			if (expr.Symbol is CiMember member) {
+				switch (member.Visibility) {
+				case CiVisibility.Private:
+					if (member.Parent != this.CurrentMethod.Parent
+					 || this.CurrentMethod.Parent != (scope as CiClass ?? ((CiClassType) scope).Class) /* enforced by Java, but not C++/C#/TS */)
+						throw StatementException(expr, $"Cannot access private member {expr.Name}");
+					break;
+				case CiVisibility.Protected:
+					if (leftSymbol != null && leftSymbol.Symbol.Id == CiId.BasePtr)
 						break;
-					case CiVisibility.Protected:
-						if (!((CiClass) this.CurrentMethod.Parent).IsSameOrBaseOf(scope as CiClass ?? ((CiClassType) scope).Class) /* enforced by C++/C#/TS but not Java */)
-							throw StatementException(expr, $"Cannot access protected member {expr.Name}");
-						break;
-					case CiVisibility.NumericElementType when left.Type is CiClassType klass:
-						if (!(klass.GetElementType() is CiNumericType))
-							throw StatementException(expr, "Method restricted to collections of numbers");
-						break;
-					case CiVisibility.FinalValueType: // DictionaryAdd
-						if (!((CiClassType) left.Type).GetValueType().IsFinal())
-							throw StatementException(expr, "Method restricted to dictionaries with storage values");
+					if (!((CiClass) this.CurrentMethod.Parent).IsSameOrBaseOf(scope as CiClass ?? ((CiClassType) scope).Class) /* enforced by C++/C#/TS but not Java */)
+						throw StatementException(expr, $"Cannot access protected member {expr.Name}");
+					break;
+				case CiVisibility.NumericElementType when left.Type is CiClassType klass:
+					if (!(klass.GetElementType() is CiNumericType))
+						throw StatementException(expr, "Method restricted to collections of numbers");
+					break;
+				case CiVisibility.FinalValueType: // DictionaryAdd
+					if (!((CiClassType) left.Type).GetValueType().IsFinal())
+						throw StatementException(expr, "Method restricted to dictionaries with storage values");
+					break;
+				default:
+					switch (expr.Symbol.Id) {
+					case CiId.ArrayLength:
+						return ToLiteralLong(expr, ((CiArrayStorageType) scope).Length);
+					case CiId.StringLength when left is CiLiteralString leftLiteral:
+						int length = leftLiteral.GetAsciiLength();
+						if (length >= 0)
+							return ToLiteralLong(expr, length);
 						break;
 					default:
 						break;
 					}
-				}
-				switch (expr.Symbol.Id) {
-				case CiId.ArrayLength:
-					return ToLiteralLong(expr, ((CiArrayStorageType) scope).Length);
-				case CiId.StringLength when left is CiLiteralString leftLiteral:
-					int length = leftLiteral.GetAsciiLength();
-					if (length >= 0)
-						return ToLiteralLong(expr, length);
-					break;
-				default:
 					break;
 				}
 			}

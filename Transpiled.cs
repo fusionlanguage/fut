@@ -1589,8 +1589,6 @@ namespace Foxoft.Ci
 
 		public bool Contains(CiSymbol symbol) => this.Dict.ContainsKey(symbol.Name);
 
-		public CiSymbol TryShallowLookup(string name) => this.Dict.ContainsKey(name) ? this.Dict[name] : null;
-
 		public virtual CiSymbol TryLookup(string name)
 		{
 			for (CiScope scope = this; scope != null; scope = scope.Parent) {

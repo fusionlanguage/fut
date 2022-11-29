@@ -1136,27 +1136,30 @@ public class GenC : GenCCpp
 			expr.Accept(this, parent);
 	}
 
+	void WriteUpcast(CiClass resultClass, CiSymbol klass)
+	{
+		for (; klass != resultClass; klass = klass.Parent)
+			Write(".base");
+	}
+
 	void WriteClassPtr(CiClass resultClass, CiExpr expr, CiPriority parent)
 	{
-		CiClass klass;
 		switch (expr.Type) {
 		case CiStorageType storage when storage.Class.Id == CiId.None && !IsDictionaryClassStgIndexing(expr):
 			WriteChar('&');
 			WriteTemporaryOrExpr(expr, CiPriority.Primary);
-			klass = storage.Class;
+			WriteUpcast(resultClass, storage.Class);
 			break;
 		case CiClassType ptr when ptr.Class != resultClass:
 			WriteChar('&');
 			expr.Accept(this, CiPriority.Primary);
 			Write("->base");
-			klass = (CiClass) ptr.Class.Parent;
+			WriteUpcast(resultClass, ptr.Class.Parent);
 			break;
 		default:
 			expr.Accept(this, parent);
-			return;
+			break;
 		}
-		for (; klass != resultClass; klass = (CiClass) klass.Parent)
-			Write(".base");
 	}
 
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
@@ -1412,14 +1415,15 @@ public class GenC : GenCCpp
 
 	protected void WriteCCall(CiExpr obj, CiMethod method, List<CiExpr> args)
 	{
+		CiClass klass = this.CurrentClass;
+		CiClass declaringClass = (CiClass) method.Parent;
 		if (IsReferenceTo(obj, CiId.BasePtr)) {
 			WriteName(method);
 			Write("(&self->base");
+			WriteUpcast(declaringClass, klass.Parent);
 		}
 		else {
-			CiClass klass = this.CurrentClass;
-			CiClass definingClass = (CiClass) method.Parent;
-			CiClass declaringClass = definingClass;
+			CiClass definingClass = declaringClass;
 			switch (method.CallType) {
 			case CiCallType.Override:
 				declaringClass = (CiClass) method.GetDeclaringMethod().Parent;
@@ -1459,8 +1463,7 @@ public class GenC : GenCCpp
 					Write("self");
 				else {
 					Write("&self->base");
-					for (klass = (CiClass) klass.Parent; klass != declaringClass; klass = (CiClass) klass.Parent)
-						Write(".base");
+					WriteUpcast(declaringClass, klass.Parent);
 				}
 			}
 		}
