@@ -1429,14 +1429,18 @@ public class GenSwift : GenPySwift
 			Write("final override ");
 			break;
 		}
-		Write("func ");
-		WriteName(method);
-		WriteParameters(method, true);
-		if (method.Throws)
-			Write(" throws");
-		if (method.Type.Id != CiId.VoidType) {
-			Write(" -> ");
-			WriteType(method.Type);
+		if (method.IsToString())
+			Write("var description : String");
+		else {
+			Write("func ");
+			WriteName(method);
+			WriteParameters(method, true);
+			if (method.Throws)
+				Write(" throws");
+			if (method.Type.Id != CiId.VoidType) {
+				Write(" -> ");
+				WriteType(method.Type);
+			}
 		}
 		WriteLine();
 		OpenBlock();
@@ -1467,7 +1471,13 @@ public class GenSwift : GenPySwift
 		WritePublic(klass);
 		if (klass.CallType == CiCallType.Sealed)
 			Write("final ");
-		OpenClass(klass, "", " : ");
+		StartClass(klass, "", " : ");
+		if (klass.HasToString()) {
+			Write(klass.BaseClassName == null ? " : " : ", ");
+			Write("CustomStringConvertible");
+		}
+		WriteLine();
+		OpenBlock();
 
 		if (NeedsConstructor(klass)) {
 			if (klass.Constructor != null) {

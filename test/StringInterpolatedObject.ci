@@ -1,0 +1,27 @@
+public class Simple
+{
+	internal string Trap = "Oh no";
+	string Name = "Simp";
+	public string ToString() => this.Name; //FAIL: swift TODO unwrap
+}
+
+public abstract class Abstract
+{
+	public abstract string ToString(); //FAIL: cl
+}
+
+public class Override : Abstract
+{
+	public override string ToString() => "Over";
+}
+
+public static class Test
+{
+	public static bool Run()
+	{
+		Simple() s;
+		Override() o;
+		Abstract a = o;
+		return $"{s}{o}{a}" == "SimpOverOver"; //FAIL: c cpp TODO
+	}
+}

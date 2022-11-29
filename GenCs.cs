@@ -785,11 +785,16 @@ public class GenCs : GenTyped
 
 	protected override void WriteMethod(CiMethod method)
 	{
+		if (method.IsToString() && method.CallType == CiCallType.Abstract)
+			return;
 		WriteLine();
 		WriteDoc(method.Documentation);
 		WriteParametersDoc(method);
 		WriteVisibility(method.Visibility);
-		WriteCallType(method.CallType, "sealed override ");
+		if (method.IsToString())
+			Write("override ");
+		else
+			WriteCallType(method.CallType, "sealed override ");
 		WriteTypeAndName(method);
 		WriteParameters(method, true);
 		if (method.Body is CiReturn ret) {

@@ -1521,6 +1521,11 @@ namespace Foxoft.Ci
 
 		public override bool CompletesNormally() => true;
 
+		public override string ToString()
+		{
+			throw new NotImplementedException();
+		}
+
 		public virtual bool IsIndexing() => false;
 
 		public virtual bool IsLiteralZero() => false;
@@ -2552,6 +2557,8 @@ namespace Foxoft.Ci
 			}
 			return method;
 		}
+
+		public bool IsToString() => this.Name == "ToString" && this.CallType != CiCallType.Static && this.Parameters.Count() == 0;
 	}
 
 	public class CiMethodGroup : CiMember
@@ -2639,6 +2646,8 @@ namespace Foxoft.Ci
 			}
 			return true;
 		}
+
+		public bool HasToString() => TryLookup("ToString") is CiMethod method && method.IsToString();
 	}
 
 	public class CiClassType : CiType
@@ -2792,7 +2801,7 @@ namespace Foxoft.Ci
 			case CiStringType _:
 				return true;
 			case CiClassType klass:
-				return klass.TryLookup("ToString") != null;
+				return klass.Class.HasToString();
 			default:
 				return false;
 			}

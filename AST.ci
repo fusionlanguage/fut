@@ -254,6 +254,7 @@ public abstract class CiExpr : CiStatement
 {
 	internal CiType# Type;
 	public override bool CompletesNormally() => true;
+	public virtual string() ToString() { assert false; }
 	public virtual bool IsIndexing() => false;
 	public virtual bool IsLiteralZero() => false;
 	public virtual bool IsConstEnum() => false;
@@ -1079,6 +1080,7 @@ public class CiMethod : CiMethodBase
 		}
 		return method;
 	}
+	public bool IsToString() => this.Name == "ToString" && this.CallType != CiCallType.Static && this.Parameters.Count() == 0;
 }
 
 public class CiMethodGroup : CiMember
@@ -1155,6 +1157,8 @@ public class CiClass : CiContainerType
 		}
 		return true;
 	}
+
+	public bool HasToString() => TryLookup("ToString") is CiMethod method && method.IsToString();
 }
 
 public class CiClassType : CiType
@@ -1275,7 +1279,7 @@ public class CiPrintableType : CiType
 		case CiStringType _:
 			return true;
 		case CiClassType klass:
-			return klass.TryLookup("ToString") != null; // TODO: refine check
+			return klass.Class.HasToString();
 		default:
 			return false;
 		}

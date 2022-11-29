@@ -88,6 +88,14 @@ public class GenC : GenCCpp
 				Write("(const char *) ");
 			WriteArrayPtrAdd(ptr, offset);
 		}
+		else if (expr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass) {
+			// TODO: abstract, virtual, override
+			Write(this.Namespace);
+			Write(klass.Class.Name);
+			Write("_ToString(");
+			WriteClassPtr(klass.Class, expr, CiPriority.Argument);
+			WriteChar(')');
+		}
 		else
 			base.WriteInterpolatedStringArg(expr);
 	}

@@ -68,12 +68,20 @@ public class GenJava : GenTyped
 			case CiId.FloatIntType:
 				Write("Double");
 				break;
+			case CiId.StringPtrType:
+			case CiId.StringStorageType:
+				arg.Accept(this, parent);
+				return expr;
 			default:
-				if (arg.Type is CiStringType) {
-					arg.Accept(this, parent);
+				if (arg.Type is CiIntegerType)
+					Write("Integer");
+				else if (arg.Type is CiClassType) {
+					arg.Accept(this, CiPriority.Primary);
+					Write(".toString()");
 					return expr;
 				}
-				Write("Integer");
+				else
+					throw new NotImplementedException(arg.Type.ToString());
 				break;
 			}
 			WriteCall(".toString", arg);

@@ -488,12 +488,13 @@ public abstract class GenBase : CiVisitor
 	static int GetPrintfFormat(CiType type, int format)
 	{
 		switch (type) {
-		case CiStringType _:
-			return 's';
 		case CiIntegerType _:
 			return format == 'x' || format == 'X' ? format : 'd';
 		case CiNumericType _:
 			return "EefGg".IndexOf((char) format) >= 0 ? format : format == 'F' ? 'f' : 'g';
+		case CiStringType _:
+		case CiClassType _:
+			return 's';
 		default:
 			throw new NotImplementedException(type.ToString());
 		}
@@ -1430,7 +1431,7 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteEnum(CiEnum enu);
 
-	protected void OpenClass(CiClass klass, string suffix, string extendsClause)
+	protected void StartClass(CiClass klass, string suffix, string extendsClause)
 	{
 		Write("class ");
 		Write(klass.Name);
@@ -1439,6 +1440,11 @@ public abstract class GenBase : CiVisitor
 			Write(extendsClause);
 			Write(klass.BaseClassName);
 		}
+	}
+
+	protected void OpenClass(CiClass klass, string suffix, string extendsClause)
+	{
+		StartClass(klass, suffix, extendsClause);
 		WriteLine();
 		OpenBlock();
 	}

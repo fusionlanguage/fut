@@ -1798,9 +1798,8 @@ public class CiResolver : CiVisitor
 						// TODO: check parameter and return type
 						baseMethod.Calls.Add(method);
 					}
-					// TODO: temporarily disabled for ToString in AST.ci
-					//else
-					//	throw StatementException(method, "No method to override");
+					else
+						throw StatementException(method, "No method to override");
 				}
 				break;
 			default:
