@@ -3593,7 +3593,8 @@ namespace Foxoft.Ci
 		{
 			CiLoop outerLoop = this.CurrentLoop;
 			CiCondCompletionStatement outerLoopOrSwitch = this.CurrentLoopOrSwitch;
-			this.CurrentLoopOrSwitch = this.CurrentLoop = loop;
+			this.CurrentLoop = loop;
+			this.CurrentLoopOrSwitch = loop;
 			loop.Body = ParseStatement();
 			this.CurrentLoopOrSwitch = outerLoopOrSwitch;
 			this.CurrentLoop = outerLoop;

@@ -259,8 +259,8 @@ public abstract class CiExpr : CiStatement
 	public virtual bool IsLiteralZero() => false;
 	public virtual bool IsConstEnum() => false;
 	public virtual int IntValue() { assert false; }
-	public virtual CiExpr Accept(CiVisitor visitor, CiPriority parent) { assert false; }
-	public override void AcceptStatement(CiVisitor visitor) { visitor.VisitExpr(this); }
+	public virtual CiExpr Accept(CiVisitor! visitor, CiPriority parent) { assert false; }
+	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitExpr(this); }
 	public virtual bool IsReferenceTo(CiSymbol symbol) => false;
 }
 
@@ -343,7 +343,7 @@ public class CiAggregateInitializer : CiExpr
 public abstract class CiLiteral : CiExpr
 {
 	public abstract bool IsDefaultValue();
-	public virtual string GetLiteralString() { assert false; }
+	public virtual string() GetLiteralString() { assert false; }
 }
 
 public class CiLiteralFalse : CiLiteral
@@ -424,8 +424,8 @@ public class CiLiteralDouble : CiLiteral
 		visitor.VisitLiteralDouble(this.Value);
 		return this;
 	}
-	public override string GetLiteralString() => $"{this.Value}";
-	public override string ToString() => $"{this.Value}";
+	public override string() GetLiteralString() => $"{this.Value}";
+	public override string() ToString() => $"{this.Value}";
 }
 
 public class CiLiteralString : CiLiteral
@@ -731,7 +731,7 @@ public abstract class CiCondCompletionStatement : CiScope
 {
 	bool CompletesNormallyValue;
 	public override bool CompletesNormally() => this.CompletesNormallyValue;
-	public void SetCompletesNormally(bool value) { this.CompletesNormallyValue = value; }
+	public void SetCompletesNormally!(bool value) { this.CompletesNormallyValue = value; }
 }
 
 public class CiBlock : CiCondCompletionStatement
@@ -859,7 +859,7 @@ public class CiSwitch : CiCondCompletionStatement
 		}
 	}
 
-	public static bool HasEarlyBreak(List<CiStatement> body)
+	public static bool HasEarlyBreak(List<CiStatement#> body)
 	{
 		int length = LengthWithoutTrailingBreak(body);
 		for (int i = 0; i < length; i++) {
@@ -869,7 +869,7 @@ public class CiSwitch : CiCondCompletionStatement
 		return false;
 	}
 
-	static bool ListHasContinue(List<CiStatement> statements) => statements.Any(statement => HasContinue(statement));
+	static bool ListHasContinue(List<CiStatement#> statements) => statements.Any(statement => HasContinue(statement));
 
 	static bool HasContinue(CiStatement statement)
 	{
@@ -887,7 +887,7 @@ public class CiSwitch : CiCondCompletionStatement
 		}
 	}
 
-	public static bool HasEarlyBreakAndContinue(List<CiStatement> body) => HasEarlyBreak(body) && ListHasContinue(body);
+	public static bool HasEarlyBreakAndContinue(List<CiStatement#> body) => HasEarlyBreak(body) && ListHasContinue(body);
 }
 
 public class CiThrow : CiStatement
@@ -1347,7 +1347,7 @@ public class CiSystem : CiScope
 
 	void AddDictionary!(CiId id, string name, CiId clearId, CiId containsKeyId, CiId countId, CiId removeId)
 	{
-		CiClass dict = AddCollection(id, name, 2, clearId, countId);
+		CiClass! dict = AddCollection(id, name, 2, clearId, countId);
 		dict.Add(CiMethod.NewMutator(CiVisibility.FinalValueType, VoidType, CiId.DictionaryAdd, "Add", CiVar.New(TypeParam0, "key")));
 		dict.Add(CiMethod.New(CiVisibility.Public, BoolType, containsKeyId, "ContainsKey", CiVar.New(TypeParam0, "key")));
 		dict.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, removeId, "Remove", CiVar.New(TypeParam0, "key")));
@@ -1390,7 +1390,7 @@ public class CiSystem : CiScope
 		Add(FloatType);
 		Add(DoubleType);
 		Add(BoolType);
-		CiClass stringClass = CiClass.New(CiCallType.Normal, CiId.StringClass, "string");
+		CiClass# stringClass = CiClass.New(CiCallType.Normal, CiId.StringClass, "string");
 		stringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringContains, "Contains", CiVar.New(StringPtrType, "value")));
 		stringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringEndsWith, "EndsWith", CiVar.New(StringPtrType, "value")));
 		stringClass.Add(CiMethod.New(CiVisibility.Public, minus1Type, CiId.StringIndexOf, "IndexOf", CiVar.New(StringPtrType, "value")));

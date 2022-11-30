@@ -22,7 +22,7 @@ public abstract class CiParserBase : CiLexer
 	internal CiProgram! Program;
 	string XcrementParent = null;
 	CiLoop CurrentLoop = null;
-	CiCondCompletionStatement CurrentLoopOrSwitch = null;
+	CiCondCompletionStatement! CurrentLoopOrSwitch = null;
 
 	protected abstract string DocParseText();
 
@@ -71,9 +71,9 @@ public abstract class CiParserBase : CiLexer
 		return doc;
 	}
 
-	CiCodeDoc# ParseDoc() => See(CiToken.DocComment) ? ParseCodeDoc() : null;
+	CiCodeDoc# ParseDoc!() => See(CiToken.DocComment) ? ParseCodeDoc() : null;
 
-	void CheckXcrementParent()
+	void CheckXcrementParent!()
 	{
 		if (this.XcrementParent != null) {
 			string op = See(CiToken.Increment) ? "++" : "--";
@@ -524,7 +524,7 @@ public abstract class CiParserBase : CiLexer
 		CiBreak# result = new CiBreak { Line = this.Line, LoopOrSwitch = this.CurrentLoopOrSwitch };
 		Expect(CiToken.Break);
 		Expect(CiToken.Semicolon);
-		if (this.CurrentLoopOrSwitch is CiLoop loop)
+		if (this.CurrentLoopOrSwitch is CiLoop! loop)
 			loop.HasBreak = true;
 		return result;
 	}
@@ -542,8 +542,9 @@ public abstract class CiParserBase : CiLexer
 	void ParseLoopBody!(CiLoop! loop)
 	{
 		CiLoop outerLoop = this.CurrentLoop;
-		CiCondCompletionStatement outerLoopOrSwitch = this.CurrentLoopOrSwitch;
-		this.CurrentLoopOrSwitch = this.CurrentLoop = loop;
+		CiCondCompletionStatement! outerLoopOrSwitch = this.CurrentLoopOrSwitch;
+		this.CurrentLoop = loop;
+		this.CurrentLoopOrSwitch = loop;
 		loop.Body = ParseStatement();
 		this.CurrentLoopOrSwitch = outerLoopOrSwitch;
 		this.CurrentLoop = outerLoop;
@@ -667,7 +668,7 @@ public abstract class CiParserBase : CiLexer
 		result.Value = ParseParenthesized();
 		Expect(CiToken.LeftBrace);
 
-		CiCondCompletionStatement outerLoopOrSwitch = this.CurrentLoopOrSwitch;
+		CiCondCompletionStatement! outerLoopOrSwitch = this.CurrentLoopOrSwitch;
 		this.CurrentLoopOrSwitch = result;
 		while (Eat(CiToken.Case)) {
 			result.Cases.Add();
