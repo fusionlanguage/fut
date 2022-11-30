@@ -500,7 +500,7 @@ public class CiInterpolatedString : CiExpr
 {
 	internal List<CiInterpolatedPart()>() Parts;
 	internal string() Suffix;
-	public void AddPart(string prefix, CiExpr# arg, CiExpr# widthExpr = null, int format = ' ', int precision = -1)
+	public void AddPart!(string prefix, CiExpr# arg, CiExpr# widthExpr = null, int format = ' ', int precision = -1)
 	{
 		this.Parts.Add();
 		CiInterpolatedPart! part = this.Parts[this.Parts.Count - 1];
