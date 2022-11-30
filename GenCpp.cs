@@ -1414,7 +1414,7 @@ public class GenCpp : GenCCpp
 		WriteChar(' ');
 		Write(method.Parent.Name);
 		Write("::");
-		WriteCamelCase(method.Name);
+		WriteCamelCaseNotKeyword(method.Name);
 		WriteParametersAndConst(method, false);
 		WriteBody(method);
 	}
