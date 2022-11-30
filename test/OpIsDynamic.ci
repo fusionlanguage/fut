@@ -1,0 +1,17 @@
+class Base
+{
+	protected virtual void Foo() { }
+}
+
+class Derived : Base
+{
+}
+
+public static class Test
+{
+	public static bool Run()
+	{
+		Base# p = new Derived();
+		return p is Derived; //FAIL: c TODO; cl
+	}
+}

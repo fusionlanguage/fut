@@ -358,7 +358,7 @@ public class GenCpp : GenCCpp
 			Write("nullptr");
 			Write(GetEqOp(not));
 			expr.Right.Accept(this, CiPriority.Primary);
-			Write(".data() ");
+			Write(".data()");
 		}
 		else
 			base.WriteEqual(expr, parent, not);
@@ -1093,7 +1093,14 @@ public class GenCpp : GenCCpp
 			else {
 				Write("dynamic_cast<const ");
 				Write(((CiClass) expr.Right).Name);
-				WriteCall(" *>", expr.Left);
+				Write(" *>(");
+				if (expr.Left.Type is CiDynamicPtrType) {
+					expr.Left.Accept(this, CiPriority.Primary);
+					Write(".get()");
+				}
+				else
+					expr.Left.Accept(this, CiPriority.Argument);
+				WriteChar(')');
 			}
 			return expr;
 		default:
