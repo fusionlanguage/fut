@@ -115,6 +115,7 @@ public class GenCpp : GenCCpp
 		case "Void":
 		case "Volatile":
 		case "While":
+		case "Xor":
 		case "and":
 		case "asm":
 		case "auto":
@@ -142,6 +143,7 @@ public class GenCpp : GenCCpp
 		case "unsigned":
 		case "using":
 		case "volatile":
+		case "xor":
 			WriteChar('_');
 			break;
 		default:

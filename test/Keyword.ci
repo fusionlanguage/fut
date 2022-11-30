@@ -146,6 +146,7 @@ public class Test
 	bool Where = true;
 	bool While = true;
 	bool With = true;
+	bool Xor = true;
 	bool Yield = true;
 
 	public static bool Run()
@@ -254,6 +255,7 @@ public class Test
 		bool volatile = true;
 		bool where = true;
 		bool with = true;
+		bool xor = true;
 		bool yield = true;
 		return o.Abstract
 			&& o.And
@@ -401,6 +403,7 @@ public class Test
 			&& o.Where
 			&& o.While
 			&& o.With
+			&& o.Xor
 			&& o.Yield
 			&& and
 			&& as
@@ -504,6 +507,7 @@ public class Test
 			&& volatile
 			&& where
 			&& with
+			&& xor
 			&& yield;
 	}
 }
