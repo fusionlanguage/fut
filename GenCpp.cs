@@ -1059,6 +1059,18 @@ public class GenCpp : GenCCpp
 		}
 	}
 
+	void WriteGtRawPtr(CiExpr expr)
+	{
+		Write(">(");
+		if (expr.Type is CiDynamicPtrType) {
+			expr.Accept(this, CiPriority.Primary);
+			Write(".get()");
+		}
+		else
+			expr.Accept(this, CiPriority.Argument);
+		WriteChar(')');
+	}
+
 	void WriteIsVar(CiExpr expr, CiVar def)
 	{
 		if (def.Name != "_") {
@@ -1068,12 +1080,13 @@ public class GenCpp : GenCCpp
 		if (def.Type is CiDynamicPtrType dynamic) {
 			Write("std::dynamic_pointer_cast<");
 			Write(dynamic.Class.Name);
+			WriteCall(">", expr);
 		}
 		else {
 			Write("dynamic_cast<");
 			WriteType(def.Type, true);
+			WriteGtRawPtr(expr);
 		}
-		WriteCall(">", expr);
 	}
 
 	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
@@ -1099,14 +1112,8 @@ public class GenCpp : GenCCpp
 			else {
 				Write("dynamic_cast<const ");
 				Write(((CiClass) expr.Right).Name);
-				Write(" *>(");
-				if (expr.Left.Type is CiDynamicPtrType) {
-					expr.Left.Accept(this, CiPriority.Primary);
-					Write(".get()");
-				}
-				else
-					expr.Left.Accept(this, CiPriority.Argument);
-				WriteChar(')');
+				Write(" *");
+				WriteGtRawPtr(expr.Left);
 			}
 			return expr;
 		default:
