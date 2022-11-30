@@ -1065,8 +1065,14 @@ public class GenCpp : GenCCpp
 			WriteTypeAndName(def);
 			Write(" = ");
 		}
-		Write("dynamic_cast<");
-		WriteType(def.Type, true);
+		if (def.Type is CiDynamicPtrType dynamic) {
+			Write("std::dynamic_pointer_cast<");
+			Write(dynamic.Class.Name);
+		}
+		else {
+			Write("dynamic_cast<");
+			WriteType(def.Type, true);
+		}
 		WriteCall(">", expr);
 	}
 

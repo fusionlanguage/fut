@@ -1,0 +1,19 @@
+class Base
+{
+	protected virtual void Foo() { }
+}
+
+class Derived : Base
+{
+}
+
+public static class Test
+{
+	public static bool Run()
+	{
+		Base# p = new Derived();
+		if (p is Derived# d) //FAIL: c js py swift ts TODO; cl java 17
+			return d != null;
+		return false;
+	}
+}
