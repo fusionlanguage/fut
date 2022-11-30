@@ -18,13 +18,18 @@ class Dog : Animal
 {
 }
 
+class Cow : Animal
+{
+}
+
 public static class Test
 {
 	static bool IsCat(Animal a)
 	{
-		switch (a) { //FAIL: c js py ts cl; java 17 --enable-preview
-		case Dog d:
-			return d == null;
+		switch (a) { //FAIL: c js py ts cl
+		case Cow _: //FAIL: java 17 --enable-preview
+		case Dog _:
+			return false;
 		case Cat c:
 			return c.Name == "Simba";
 		default:

@@ -1059,8 +1059,11 @@ public class GenCpp : GenCCpp
 
 	void WriteIsVar(CiExpr expr, CiVar def)
 	{
-		WriteTypeAndName(def);
-		Write(" = dynamic_cast<");
+		if (def.Name != "_") {
+			WriteTypeAndName(def);
+			Write(" = ");
+		}
+		Write("dynamic_cast<");
 		WriteType(def.Type, true);
 		WriteCall(">", expr);
 	}
@@ -1201,10 +1204,11 @@ public class GenCpp : GenCCpp
 			int gotoId = GetSwitchGoto(statement);
 			string op = "if (";
 			foreach (CiCase kase in statement.Cases) {
-				if (kase.Values.Count != 1)
-					throw new NotImplementedException();
-				Write(op);
-				WriteIsVar(statement.Value, (CiVar) kase.Values[0]); // FIXME: side effect in every if
+				foreach (CiVar def in kase.Values) {
+					Write(op);
+					WriteIsVar(statement.Value, def); // FIXME: side effect in every if
+					op = " || ";
+				}
 				WriteChar(')');
 				WriteIfCaseBody(kase.Body, gotoId < 0);
 				op = "else if (";
