@@ -235,7 +235,7 @@ public abstract class GenTyped : GenBase
 			base.WriteCoercedInternal(type, expr, parent);
 	}
 
-	protected override void WriteCharAt(CiBinaryExpr expr) => WriteIndexing(expr, CiPriority.Argument);
+	protected override void WriteCharAt(CiBinaryExpr expr) => WriteIndexing(expr.Left, expr.Right);
 
 	protected override void WriteAssertCast(CiBinaryExpr expr)
 	{

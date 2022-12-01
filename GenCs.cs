@@ -799,9 +799,7 @@ public class GenCs : GenTyped
 		WriteParameters(method, true);
 		if (method.Body is CiReturn ret) {
 			Write(" => ");
-			this.CurrentMethod = method;
-			WriteReturnValue(ret.Value);
-			this.CurrentMethod = null;
+			WriteCoerced(method.Type, ret.Value, CiPriority.Argument);
 			WriteLine(';');
 		}
 		else

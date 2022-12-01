@@ -1288,7 +1288,7 @@ public abstract class GenBase : CiVisitor
 
 	public override void VisitNative(CiNative statement) => Write(statement.Content);
 
-	protected virtual void WriteReturnValue(CiExpr value) => WriteCoerced(this.CurrentMethod.Type, value, CiPriority.Argument);
+	protected virtual void WriteStronglyCoerced(CiType type, CiExpr expr) => WriteCoerced(type, expr, CiPriority.Argument);
 
 	public override void VisitReturn(CiReturn statement)
 	{
@@ -1296,7 +1296,7 @@ public abstract class GenBase : CiVisitor
 			WriteLine("return;");
 		else {
 			Write("return ");
-			WriteReturnValue(statement.Value);
+			WriteStronglyCoerced(this.CurrentMethod.Type, statement.Value);
 			WriteLine(';');
 		}
 	}

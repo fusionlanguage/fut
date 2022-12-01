@@ -15,7 +15,7 @@ public static class Test
 		Dictionary<string(), string>() dict2;
 		dict2["only"] = "test";
 		dict2.Clear();
-		dict2[one] = "jeden"; //FAIL: cpp TODO
+		dict2[one] = "jeden";
 		dict2[two] = "dwa";
 		dict2["three"] = "trzy";
 		dict2.Remove("three");

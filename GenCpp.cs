@@ -384,12 +384,23 @@ public class GenCpp : GenCCpp
 		if (IsClassPtr(expr.Left.Type)) {
 			Write("(*");
 			expr.Left.Accept(this, CiPriority.Primary);
-			Write(")[");
-			expr.Right.Accept(this, CiPriority.Argument);
-			WriteChar(']');
+			WriteChar(')');
 		}
 		else
-			base.WriteIndexing(expr, parent);
+			expr.Left.Accept(this, CiPriority.Primary);
+		WriteChar('[');
+		CiClassType klass = (CiClassType) expr.Left.Type;
+		switch (klass.Class.Id) {
+		case CiId.ArrayPtrClass:
+		case CiId.ArrayStorageClass:
+		case CiId.ListClass:
+			expr.Right.Accept(this, CiPriority.Argument);
+			break;
+		default:
+			WriteStronglyCoerced(klass.GetKeyType(), expr.Right);
+			break;
+		}
+		WriteChar(']');
 	}
 
 	void WriteMemberOp(CiExpr left)
@@ -1180,17 +1191,19 @@ public class GenCpp : GenCCpp
 		CloseBlock();
 	}
 
-	protected override void WriteReturnValue(CiExpr value)
+	// Handle string -> string() for return values and collection indexing.
+	// Not needed for initialization or assignment.
+	protected override void WriteStronglyCoerced(CiType type, CiExpr expr)
 	{
-		if (this.CurrentMethod.Type.Id == CiId.StringStorageType
-		 && value.Type.Id == CiId.StringPtrType
-		 && !(value is CiLiteral)) {
+		if (type.Id == CiId.StringStorageType
+		 && expr.Type.Id == CiId.StringPtrType
+		 && !(expr is CiLiteral)) {
 			Write("std::string(");
-			base.WriteReturnValue(value);
+			expr.Accept(this, CiPriority.Argument);
 			WriteChar(')');
 		}
-		else if (this.CurrentMethod.Type.Id == CiId.StringStorageType
-			&& IsStringSubstring(value, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)
+		else if (type.Id == CiId.StringStorageType
+			&& IsStringSubstring(expr, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)
 			&& ptr.Type.Id != CiId.StringStorageType) {
 			Write("std::string(");
 			if (cast)
@@ -1203,7 +1216,7 @@ public class GenCpp : GenCCpp
 			WriteChar(')');
 		}
 		else
-			base.WriteReturnValue(value);
+			base.WriteStronglyCoerced(type, expr);
 	}
 
 	protected override void WriteCaseBody(List<CiStatement> statements)
