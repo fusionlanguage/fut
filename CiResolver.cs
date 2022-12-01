@@ -1817,15 +1817,19 @@ public class CiResolver : CiVisitor
 			this.CurrentMethod = null;
 		}
 		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiMethod method && method.Body != null) {
-				this.CurrentScope = method.Parameters;
-				this.CurrentMethod = method;
-				if (!(method.Body is CiScope))
-					OpenScope(new CiScope()); // don't add "is Derived d" to parameters
-				method.Body.AcceptStatement(this);
-				if (method.Type.Id != CiId.VoidType && method.Body.CompletesNormally())
-					throw StatementException(method.Body, "Method can complete without a return value");
-				this.CurrentMethod = null;
+			if (symbol is CiMethod method) {
+				if (method.Name == "ToString" && method.CallType != CiCallType.Static && method.Parameters.Count() == 0)
+					method.Id = CiId.ClassToString;
+				if (method.Body != null) {
+					this.CurrentScope = method.Parameters;
+					this.CurrentMethod = method;
+					if (!(method.Body is CiScope))
+						OpenScope(new CiScope()); // don't add "is Derived d" to parameters
+					method.Body.AcceptStatement(this);
+					if (method.Type.Id != CiId.VoidType && method.Body.CompletesNormally())
+						throw StatementException(method.Body, "Method can complete without a return value");
+					this.CurrentMethod = null;
+				}
 			}
 		}
 	}

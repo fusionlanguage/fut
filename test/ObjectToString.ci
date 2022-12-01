@@ -1,0 +1,15 @@
+public class Point
+{
+	internal int X;
+	internal int Y;
+	public string() ToString() => $"{X},{Y}"; //FAIL: cpp - should work with C++20; cl
+}
+
+public class Test
+{
+	public static bool Run()
+	{
+		Point() bar = { X = 3, Y = 6 };
+		return bar.ToString() == "3,6";
+	}
+}

@@ -151,7 +151,7 @@ public class GenPy : GenPySwift
 			WriteNameNotKeyword(symbol.Name);
 			break;
 		case CiMember member:
-			if (member is CiMethod method && method.IsToString())
+			if (member.Id == CiId.ClassToString)
 				Write("__str__");
 			else if (member.Visibility == CiVisibility.Public)
 				WriteNameNotKeyword(symbol.Name);

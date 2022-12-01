@@ -1311,6 +1311,7 @@ namespace Foxoft.Ci
 		StringLength,
 		ArrayLength,
 		ConsoleError,
+		ClassToString,
 		MatchStart,
 		MatchEnd,
 		MatchLength,

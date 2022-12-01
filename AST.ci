@@ -89,6 +89,7 @@ public enum CiId
 	StringLength,
 	ArrayLength,
 	ConsoleError,
+	ClassToString,
 	MatchStart,
 	MatchEnd,
 	MatchLength,

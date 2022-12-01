@@ -446,6 +446,11 @@ public class GenSwift : GenPySwift
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
+		case CiId.ClassToString:
+			obj.Accept(this, CiPriority.Primary);
+			WriteMemberOp(obj, null);
+			Write("description");
+			break;
 		case CiId.StringContains:
 			WriteStringContains(obj, "contains", args);
 			break;
@@ -1438,7 +1443,7 @@ public class GenSwift : GenPySwift
 			Write("final override ");
 			break;
 		}
-		if (method.IsToString())
+		if (method.Id == CiId.ClassToString)
 			Write("var description : String");
 		else {
 			Write("func ");
