@@ -801,10 +801,19 @@ public class GenSwift : GenPySwift
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
 		OpenIndexing(expr.Left);
-		if (expr.Right.Type is CiEnum)
-			expr.Right.Accept(this, CiPriority.Argument);
-		else
-			WriteCoerced(this.System.IntType, expr.Right, CiPriority.Argument);
+		CiClassType klass = (CiClassType) expr.Left.Type;
+		CiType indexType;
+		switch (klass.Class.Id) {
+		case CiId.ArrayPtrClass:
+		case CiId.ArrayStorageClass:
+		case CiId.ListClass:
+			indexType = this.System.IntType;
+			break;
+		default:
+			indexType = klass.GetKeyType();
+			break;
+		}
+		WriteCoerced(indexType, expr.Right, CiPriority.Argument);
 		WriteChar(']');
 		if (parent != CiPriority.Assign && expr.Left.Type is CiClassType dict && dict.Class.TypeParameterCount == 2)
 			WriteChar('!');
