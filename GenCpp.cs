@@ -381,6 +381,21 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
 	{
+		CiClassType klass = (CiClassType) expr.Left.Type;
+		if (parent != CiPriority.Assign) {
+			switch (klass.Class.Id) {
+			case CiId.DictionaryClass:
+			case CiId.SortedDictionaryClass:
+			case CiId.OrderedDictionaryClass:
+				StartMethodCall(expr.Left);
+				Write("find(");
+				WriteStronglyCoerced(klass.GetKeyType(), expr.Right);
+				Write(")->second");
+				return;
+			default:
+				break;
+			}
+		}
 		if (IsClassPtr(expr.Left.Type)) {
 			Write("(*");
 			expr.Left.Accept(this, CiPriority.Primary);
@@ -389,7 +404,6 @@ public class GenCpp : GenCCpp
 		else
 			expr.Left.Accept(this, CiPriority.Primary);
 		WriteChar('[');
-		CiClassType klass = (CiClassType) expr.Left.Type;
 		switch (klass.Class.Id) {
 		case CiId.ArrayPtrClass:
 		case CiId.ArrayStorageClass:
