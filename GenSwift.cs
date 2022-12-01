@@ -1472,7 +1472,7 @@ public class GenSwift : GenPySwift
 		if (klass.CallType == CiCallType.Sealed)
 			Write("final ");
 		StartClass(klass, "", " : ");
-		if (klass.HasToString()) {
+		if (klass.AddsToString()) {
 			Write(klass.BaseClassName == null ? " : " : ", ");
 			Write("CustomStringConvertible");
 		}

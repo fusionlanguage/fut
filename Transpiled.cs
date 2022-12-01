@@ -1569,7 +1569,7 @@ namespace Foxoft.Ci
 	public class CiScope : CiSymbol
 	{
 
-		readonly Dictionary<string, CiSymbol> Dict = new Dictionary<string, CiSymbol>();
+		protected readonly Dictionary<string, CiSymbol> Dict = new Dictionary<string, CiSymbol>();
 
 		internal CiSymbol First = null;
 
@@ -2648,6 +2648,8 @@ namespace Foxoft.Ci
 		}
 
 		public bool HasToString() => TryLookup("ToString") is CiMethod method && method.IsToString();
+
+		public bool AddsToString() => this.Dict.ContainsKey("ToString") && this.Dict["ToString"] is CiMethod method && method.IsToString() && method.CallType != CiCallType.Override && method.CallType != CiCallType.Sealed;
 	}
 
 	public class CiClassType : CiType
