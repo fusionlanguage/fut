@@ -1,9 +1,11 @@
 public class Test
 {
+	static bool IsFoobar(string() s) => s == "foobar"; //FAIL: cl
+
 	public static bool Run()
 	{
 		string p = "foobar";
-		string() s = p; //FAIL: cl
-		return s == "foobar";
+		string() s = p;
+		return s == "foobar" && IsFoobar(p);
 	}
 }

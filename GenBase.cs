@@ -625,7 +625,7 @@ public abstract class GenBase : CiVisitor
 			if (!first)
 				Write(", ");
 			first = false;
-			WriteCoerced(param.Type, arg, CiPriority.Argument);
+			WriteStronglyCoerced(param.Type, arg);
 			param = param.NextParameter();
 		}
 	}
