@@ -2277,7 +2277,7 @@ namespace Foxoft.Ci
 			case CiIf ifStatement:
 				return HasBreak(ifStatement.OnTrue) || (ifStatement.OnFalse != null && HasBreak(ifStatement.OnFalse));
 			case CiBlock block:
-				return block.Statements.Any(statement => HasBreak(statement));
+				return block.Statements.Any(child => HasBreak(child));
 			default:
 				return false;
 			}
