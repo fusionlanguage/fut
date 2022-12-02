@@ -819,7 +819,7 @@ public abstract class GenBase : CiVisitor
 				WriteMemberOp(def, fieldRef);
 				WriteName(fieldRef.Symbol);
 				Write(" = ");
-				field.Right.Accept(this, CiPriority.Argument);
+				WriteCoerced(fieldRef.Type, field.Right, CiPriority.Argument);
 				EndStatement();
 			}
 		}

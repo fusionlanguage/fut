@@ -1,16 +1,17 @@
 class Inner
 {
-	internal int X;
+	internal string() S; //FAIL: cl
 }
 
 public class Test
 {
-	Inner# F = new Inner { X = 42 }; //FAIL: cl
+	Inner# F = new Inner { S = "foo" };
 
 	public static bool Run()
 	{
-		Inner# p = new Inner { X = 5 };
+		string s = "bar";
+		Inner# p = new Inner { S = s };
 		Test() o;
-		return p.X == 5 && o.F.X == 42;
+		return p.S == s && o.F.S == "foo";
 	}
 }
