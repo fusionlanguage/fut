@@ -1008,10 +1008,8 @@ public class CiLexer
 			case '`':
 				return CiDocToken.CodeDelimiter;
 			case '*':
-				if (lastChar == '\n' && PeekChar() == ' ') {
-					ReadChar();
+				if (lastChar == '\n' && EatChar(' '))
 					return CiDocToken.Bullet;
-				}
 				return CiDocToken.Char;
 			case '\r':
 				continue;

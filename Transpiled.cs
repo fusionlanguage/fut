@@ -1194,10 +1194,8 @@ namespace Foxoft.Ci
 				case '`':
 					return CiDocToken.CodeDelimiter;
 				case '*':
-					if (lastChar == '\n' && PeekChar() == ' ') {
-						ReadChar();
+					if (lastChar == '\n' && EatChar(' '))
 						return CiDocToken.Bullet;
-					}
 					return CiDocToken.Char;
 				case '\r':
 					continue;
@@ -3114,8 +3112,10 @@ namespace Foxoft.Ci
 			return para;
 		}
 
-		CiCodeDoc ParseCodeDoc()
+		CiCodeDoc ParseDoc()
 		{
+			if (!See(CiToken.DocComment))
+				return null;
 			DocStartLexing();
 			CiCodeDoc doc = new CiCodeDoc();
 			DocParsePara(doc.Summary);
@@ -3126,8 +3126,6 @@ namespace Foxoft.Ci
 			}
 			return doc;
 		}
-
-		CiCodeDoc ParseDoc() => See(CiToken.DocComment) ? ParseCodeDoc() : null;
 
 		void CheckXcrementParent()
 		{

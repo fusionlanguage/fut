@@ -24,7 +24,7 @@ public abstract class CiParserBase : CiLexer
 	CiLoop CurrentLoop = null;
 	CiCondCompletionStatement! CurrentLoopOrSwitch = null;
 
-	protected abstract string DocParseText();
+	protected abstract string() DocParseText();
 
 	void DocParsePara!(CiDocPara! para)
 	{
@@ -58,8 +58,10 @@ public abstract class CiParserBase : CiLexer
 		return para;
 	}
 
-	CiCodeDoc# ParseCodeDoc!()
+	CiCodeDoc# ParseDoc!()
 	{
+		if (!See(CiToken.DocComment))
+			return null;
 		DocStartLexing();
 		CiCodeDoc# doc = new CiCodeDoc();
 		DocParsePara(doc.Summary);
@@ -70,8 +72,6 @@ public abstract class CiParserBase : CiLexer
 		}
 		return doc;
 	}
-
-	CiCodeDoc# ParseDoc!() => See(CiToken.DocComment) ? ParseCodeDoc() : null;
 
 	void CheckXcrementParent!()
 	{
