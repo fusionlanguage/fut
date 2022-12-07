@@ -797,7 +797,8 @@ public class GenC : GenCCpp
 			if (!IsStringSubstring(binary.Left, out bool _, out CiExpr _, out CiExpr _, out CiExpr _))
 				WriteStorageTemporary(binary.Left);
 			WriteTemporaries(binary.Right);
-			WriteStorageTemporary(binary.Right);
+			if (binary.Op != CiToken.Assign)
+				WriteStorageTemporary(binary.Right);
 			break;
 		case CiSelectExpr select:
 			WriteTemporaries(select.Cond);
@@ -878,7 +879,7 @@ public class GenC : GenCCpp
 		case CiUnaryExpr unary:
 			return unary.Inner != null && HasTemporariesToDestruct(unary.Inner);
 		case CiBinaryExpr binary:
-			return HasTemporariesToDestruct(binary.Left) && HasTemporariesToDestruct(binary.Right);
+			return HasTemporariesToDestruct(binary.Left) || HasTemporariesToDestruct(binary.Right);
 		case CiSelectExpr select:
 			return HasTemporariesToDestruct(select.Cond);
 		case CiCallExpr call:
