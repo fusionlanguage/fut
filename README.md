@@ -34,7 +34,7 @@ cito -o hello.cl hello.ci
 ```
 
 The translated code is lightweight (no virtual machine, emulation nor
-dependencies), human-readable and fits well the target language,
+dependencies), human-readable and fits well with the target language,
 including naming conventions and documentation comments.
 
 Ć is _not_ a general-purpose programming language.

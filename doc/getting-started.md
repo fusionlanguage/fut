@@ -40,10 +40,10 @@ Save the above in `hello.ci`, then issue this command:
     cito -o hello.c,cpp,cs,java,js,py,swift,ts,cl hello.ci
 
 This will translate the Ć code to C, C++, C#, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.
-The `cito` command accepts one or more Ć source files (here just `hello.ci`)
+The `cito` command accepts one or more Ć source files (here, just `hello.ci`)
 and outputs the transpiled source files as specified by the mandatory `-o` option.
 Here we specified several languages, comma-separated.
-In a real-world scenario, you would integrate the `cito` command in your build system.
+In a real-world scenario, you would integrate the `cito` command into your build system.
 
 Now let's look at the outputs. `hello.cs`:
 
@@ -227,10 +227,10 @@ constant char *HelloCi_GetMessage(void)
 As you can see, `cito` simply rewrites your code in different languages.
 
 Now, you may wonder why the code _does not print_ the message in the console?
-That's because Ć was never meant to write complete programs in.
+That's because Ć was never intended to be used to write complete programs.
 What you write are reusable components aka libraries.
 In this minimal example we have a class with one method that returns a string.
-This method is straightforward to be called from all the mentioned languages.
+All the languages mentioned above can easily call this method.
 For example, this is how you could use it from C:
 
 ```c
@@ -250,12 +250,12 @@ The point is, Ć abstracts from the user interfaces.
 
 ## Language documentation
 
-Ć is explained in-depth in its [reference](reference.md).
+Ć is explained in depth in its [reference documentation](reference.md).
 
 ## Example projects
 
-It's always good to study the language by looking at projects written in it.
-Starting with really small ones:
+It's always good to study the language by looking at projects written
+in it - starting with really small ones:
 
 - [a toy ray-tracer](https://github.com/pfusik/ray-ci)
 - [encoder of Data Matrix barcodes](https://github.com/pfusik/datamatrix-ci)
@@ -270,8 +270,8 @@ and a [decoder of 500+ retro image formats](https://recoil.sourceforge.net):
 
 ![RECOIL architecture](https://recoil.sourceforge.net/recoil-internals.png)
 
-`cito` itself is also [being rewritten in Ć](https://github.com/pfusik/cito/issues/48).
+`cito` itself was initially written in C#, but is getting [rewritten in Ć](https://github.com/pfusik/cito/issues/48).
 
 ## Community
 
-Please join our Discussions, submit Issues and Pull requests on GitHub!
+Please join our Discussions and submit Issues and Pull requests on GitHub!
