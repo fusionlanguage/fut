@@ -27,7 +27,7 @@ public abstract class CiParserBase : CiLexer
 	bool DocParseLine!(CiDocPara! para)
 	{
 		if (para.Children.Count > 0)
-			para.Children.Add(new CiDocText { Text = "\n" });
+			para.Children.Add(new CiDocLine());
 		this.LexemeOffset = this.CharOffset;
 		for (int lastNonWhitespace = 0;;) {
 			int c = PeekChar();

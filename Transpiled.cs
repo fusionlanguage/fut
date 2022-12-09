@@ -1339,15 +1339,21 @@ namespace Foxoft.Ci
 
 	abstract class CiDocInline
 	{
-
-		internal string Text;
 	}
 
 	class CiDocText : CiDocInline
 	{
+
+		internal string Text;
 	}
 
 	class CiDocCode : CiDocInline
+	{
+
+		internal string Text;
+	}
+
+	class CiDocLine : CiDocInline
 	{
 	}
 
@@ -3024,7 +3030,7 @@ namespace Foxoft.Ci
 		bool DocParseLine(CiDocPara para)
 		{
 			if (para.Children.Count > 0)
-				para.Children.Add(new CiDocText { Text = "\n" });
+				para.Children.Add(new CiDocLine());
 			this.LexemeOffset = this.CharOffset;
 			for (int lastNonWhitespace = 0;;) {
 				int c = PeekChar();

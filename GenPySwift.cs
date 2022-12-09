@@ -26,18 +26,6 @@ namespace Foxoft.Ci
 
 public abstract class GenPySwift : GenBase
 {
-	void WriteDoc(string text)
-	{
-		foreach (char c in text) {
-			if (c == '\n') {
-				WriteLine();
-				StartDocLine();
-			}
-			else
-				WriteChar(c);
-		}
-	}
-
 	protected override void WriteDocPara(CiDocPara para, bool many)
 	{
 		if (many) {
@@ -49,12 +37,16 @@ public abstract class GenPySwift : GenBase
 		foreach (CiDocInline inline in para.Children) {
 			switch (inline) {
 			case CiDocText text:
-				WriteDoc(text.Text);
+				Write(text.Text);
 				break;
 			case CiDocCode code:
 				WriteChar('`');
-				WriteDoc(code.Text);
+				Write(code.Text);
 				WriteChar('`');
+				break;
+			case CiDocLine _:
+				WriteLine();
+				StartDocLine();
 				break;
 			default:
 				throw new ArgumentException(inline.GetType().Name);

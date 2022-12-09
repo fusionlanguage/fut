@@ -55,6 +55,10 @@ public class GenCs : GenTyped
 					break;
 				}
 				break;
+			case CiDocLine _:
+				WriteLine();
+				StartDocLine();
+				break;
 			default:
 				throw new ArgumentException(inline.GetType().Name);
 			}

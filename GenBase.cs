@@ -180,9 +180,7 @@ public abstract class GenBase : CiVisitor
 			case '>':
 				Write("&gt;");
 				break;
-			case '\n':
-				WriteLine();
-				StartDocLine();
+			case '\r':
 				break;
 			default:
 				WriteChar(c);
@@ -206,6 +204,10 @@ public abstract class GenBase : CiVisitor
 				Write("<code>");
 				WriteXmlDoc(code.Text);
 				Write("</code>");
+				break;
+			case CiDocLine _:
+				WriteLine();
+				StartDocLine();
 				break;
 			default:
 				throw new ArgumentException(inline.GetType().Name);

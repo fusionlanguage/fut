@@ -175,14 +175,19 @@ public enum CiId
 
 abstract class CiDocInline
 {
-	internal string() Text;
 }
 
 class CiDocText : CiDocInline
 {
+	internal string() Text;
 }
 
 class CiDocCode : CiDocInline
+{
+	internal string() Text;
+}
+
+class CiDocLine : CiDocInline
 {
 }
 
