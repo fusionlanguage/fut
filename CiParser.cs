@@ -18,34 +18,12 @@
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
 using System.Globalization;
-using System.Text;
 
 namespace Foxoft.Ci
 {
 
 public class CiParser : CiParserBase
 {
-	static void AppendUtf16(StringBuilder sb, int c)
-	{
-		if (c >= 0x10000) {
-			sb.Append((char) (0xd800 + (c - 0x10000 >> 10 & 0x3ff)));
-			c = 0xdc00 + (c & 0x3ff);
-		}
-		sb.Append((char) c);
-	}
-
-	protected override string DocParseText()
-	{
-		StringBuilder sb = new StringBuilder();
-		while (DocSee(CiDocToken.Char)) {
-			AppendUtf16(sb, this.DocCurrentChar);
-			DocNextToken();
-		}
-		if (sb.Length > 0 && sb[sb.Length - 1] == '\n')
-			sb.Length--;
-		return sb.ToString();
-	}
-
 	protected override CiLiteralDouble ParseDouble()
 	{
 		if (!double.TryParse(GetLexeme().Replace("_", ""),

@@ -74,7 +74,9 @@ public enum CiToken
 	Colon,
 	FatArrow,
 	Range,
-	DocComment,
+	DocRegular,
+	DocBullet,
+	DocBlank,
 	Abstract,
 	Assert,
 	Break,
@@ -118,16 +120,6 @@ public enum CiToken
 	PreEndIf
 }
 
-public enum CiDocToken
-{
-	EndOfFile,
-	Char,
-	CodeDelimiter,
-	Bullet,
-	Para,
-	Period
-}
-
 enum CiPreState
 {
 	NotYet,
@@ -145,7 +137,7 @@ public class CiLexer
 	int NextChar;
 	protected string() Filename;
 	protected int Line;
-	int LexemeOffset;
+	protected int LexemeOffset;
 	protected CiToken CurrentToken;
 	protected long LongValue; // for CiToken.LiteralLong, CiToken.LiteralChar
 	protected string() StringValue; // for CiToken.LiteralString, CiToken.InterpolatedString, CiToken.Id
@@ -260,6 +252,12 @@ public class CiLexer
 			return true;
 		}
 		return false;
+	}
+
+	void SkipWhitespace()
+	{
+		while (PeekChar() == '\t' || PeekChar() == ' ' || PeekChar() == '\r')
+			ReadChar();
 	}
 
 	CiToken ReadIntegerLiteral!(int bits)
@@ -517,9 +515,17 @@ public class CiLexer
 				if (EatChar('/')) {
 					c = ReadChar();
 					if (c == '/' && this.EnableDocComments) {
-						while (EatChar(' ')) {
+						SkipWhitespace();
+						switch (PeekChar()) {
+						case '\n':
+							return CiToken.DocBlank;
+						case '*':
+							ReadChar();
+							SkipWhitespace();
+							return CiToken.DocBullet;
+						default:
+							return CiToken.DocRegular;
 						}
-						return CiToken.DocComment;
 					}
 					while (c != '\n' && c >= 0)
 						c = ReadChar();
@@ -729,7 +735,10 @@ public class CiLexer
 		case CiToken.Colon: return "':'";
 		case CiToken.FatArrow: return "'=>'";
 		case CiToken.Range: return "'..'";
-		case CiToken.DocComment: return "'///'";
+		case CiToken.DocRegular:
+		case CiToken.DocBullet:
+		case CiToken.DocBlank:
+			return "'///'";
 		case CiToken.Abstract: return "'abstract'";
 		case CiToken.Assert: return "'assert'";
 		case CiToken.Break: return "'break'";
@@ -986,67 +995,5 @@ public class CiLexer
 				NextToken();
 			while (!See(CiToken.EndOfFile) && !Eat(expected));
 		}
-	}
-
-	bool DocCheckPeriod;
-	protected int DocCurrentChar;
-	CiDocToken DocCurrentToken;
-
-	CiDocToken DocReadToken!()
-	{
-		for (int lastChar = this.DocCurrentChar; ;) {
-			int c = ReadChar();
-			if (c == '\n') {
-				NextToken();
-				if (!See(CiToken.DocComment))
-					return CiDocToken.EndOfFile;
-			}
-			this.DocCurrentChar = c;
-			switch (c) {
-			case -1:
-				return CiDocToken.EndOfFile;
-			case '`':
-				return CiDocToken.CodeDelimiter;
-			case '*':
-				if (lastChar == '\n' && EatChar(' '))
-					return CiDocToken.Bullet;
-				return CiDocToken.Char;
-			case '\r':
-				continue;
-			case '\n':
-				if (this.DocCheckPeriod && lastChar == '.') {
-					this.DocCheckPeriod = false;
-					return CiDocToken.Period;
-				}
-				if (lastChar == '\n')
-					return CiDocToken.Para;
-				return CiDocToken.Char;
-			default:
-				return CiDocToken.Char;
-			}
-		}
-	}
-
-	protected void DocNextToken!()
-	{
-		this.DocCurrentToken = DocReadToken();
-	}
-
-	protected void DocStartLexing!()
-	{
-		this.DocCheckPeriod = true;
-		this.DocCurrentChar = '\n';
-		DocNextToken();
-	}
-
-	protected bool DocSee(CiDocToken token) => this.DocCurrentToken == token;
-
-	protected bool DocEat!(CiDocToken token)
-	{
-		if (DocSee(token)) {
-			DocNextToken();
-			return true;
-		}
-		return false;
 	}
 }

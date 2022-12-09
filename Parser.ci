@@ -24,53 +24,92 @@ public abstract class CiParserBase : CiLexer
 	CiLoop CurrentLoop = null;
 	CiCondCompletionStatement! CurrentLoopOrSwitch = null;
 
-	protected abstract string() DocParseText();
+	bool DocParseLine!(CiDocPara! para)
+	{
+		if (para.Children.Count > 0)
+			para.Children.Add(new CiDocText { Text = "\n" });
+		this.LexemeOffset = this.CharOffset;
+		for (int lastNonWhitespace = 0;;) {
+			int c = PeekChar();
+			switch (c) {
+			case -1:
+			case '\n':
+				para.Children.Add(new CiDocText { Text = GetLexeme() });
+				ReadChar();
+				return lastNonWhitespace == '.';
+			case '\t':
+			case '\r':
+			case ' ':
+				ReadChar();
+				break;
+			case '`':
+				if (this.CharOffset > this.LexemeOffset)
+					para.Children.Add(new CiDocText { Text = GetLexeme() });
+				ReadChar();
+				this.LexemeOffset = this.CharOffset;
+				for (;;) {
+					c = PeekChar();
+					if (c == '`') {
+						para.Children.Add(new CiDocCode { Text = GetLexeme() });
+						ReadChar();
+						break;
+					}
+					if (c < 0 || c == '\n') {
+						ReportError("Unterminated code in documentation comment");
+						break;
+					}
+					ReadChar();
+				}
+				this.LexemeOffset = this.CharOffset;
+				lastNonWhitespace = '`';
+				break;
+			default:
+				lastNonWhitespace = ReadChar();
+				break;
+			}
+		}
+	}
 
 	void DocParsePara!(CiDocPara! para)
 	{
-		for (;;) {
-			if (DocSee(CiDocToken.Char))
-				para.Children.Add(new CiDocText { Text = DocParseText() });
-			else if (DocEat(CiDocToken.CodeDelimiter)) {
-				para.Children.Add(new CiDocCode { Text = DocParseText() });
-				if (!DocEat(CiDocToken.CodeDelimiter))
-					ReportError("Unterminated code in documentation comment");
-			}
-			else
-				break;
-		}
-		DocEat(CiDocToken.Para);
-	}
-
-	CiDocBlock# DocParseBlock!()
-	{
-		if (DocEat(CiDocToken.Bullet)) {
-			CiDocList# list = new CiDocList();
-			do {
-				list.Items.Add();
-				DocParsePara(list.Items[list.Items.Count - 1]);
-			} while (DocEat(CiDocToken.Bullet));
-			DocEat(CiDocToken.Para);
-			return list;
-		}
-		CiDocPara# para = new CiDocPara();
-		DocParsePara(para);
-		return para;
+		do {
+			DocParseLine(para);
+			NextToken();
+		} while (See(CiToken.DocRegular));
 	}
 
 	CiCodeDoc# ParseDoc!()
 	{
-		if (!See(CiToken.DocComment))
+		if (!See(CiToken.DocRegular))
 			return null;
-		DocStartLexing();
 		CiCodeDoc# doc = new CiCodeDoc();
-		DocParsePara(doc.Summary);
-		if (DocEat(CiDocToken.Period)) {
-			DocEat(CiDocToken.Para);
-			while (!DocSee(CiDocToken.EndOfFile))
-				doc.Details.Add(DocParseBlock());
+		bool period;
+		do {
+			period = DocParseLine(doc.Summary);
+			NextToken();
+		} while (!period && See(CiToken.DocRegular));
+		for (;;) {
+			switch (this.CurrentToken) {
+			case CiToken.DocRegular:
+				CiDocPara# para = new CiDocPara();
+				DocParsePara(para);
+				doc.Details.Add(para);
+				break;
+			case CiToken.DocBullet:
+				CiDocList# list = new CiDocList();
+				do {
+					list.Items.Add();
+					DocParsePara(list.Items[list.Items.Count - 1]);
+				} while (See(CiToken.DocBullet));
+				doc.Details.Add(list);
+				break;
+			case CiToken.DocBlank:
+				NextToken();
+				break;
+			default:
+				return doc;
+			}
 		}
-		return doc;
 	}
 
 	void CheckXcrementParent!()
