@@ -3033,15 +3033,13 @@ namespace Foxoft.Ci
 				para.Children.Add(new CiDocLine());
 			this.LexemeOffset = this.CharOffset;
 			for (int lastNonWhitespace = 0;;) {
-				int c = PeekChar();
-				switch (c) {
+				switch (PeekChar()) {
 				case -1:
 				case '\n':
+				case '\r':
 					para.Children.Add(new CiDocText { Text = GetLexeme() });
-					ReadChar();
 					return lastNonWhitespace == '.';
 				case '\t':
-				case '\r':
 				case ' ':
 					ReadChar();
 					break;
@@ -3051,7 +3049,7 @@ namespace Foxoft.Ci
 					ReadChar();
 					this.LexemeOffset = this.CharOffset;
 					for (;;) {
-						c = PeekChar();
+						int c = PeekChar();
 						if (c == '`') {
 							para.Children.Add(new CiDocCode { Text = GetLexeme() });
 							ReadChar();

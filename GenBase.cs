@@ -180,8 +180,6 @@ public abstract class GenBase : CiVisitor
 			case '>':
 				Write("&gt;");
 				break;
-			case '\r':
-				break;
 			default:
 				WriteChar(c);
 				break;
