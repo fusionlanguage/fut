@@ -170,6 +170,10 @@ public class GenCl : GenC
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
+		case CiId.None:
+		case CiId.ClassToString:
+			WriteCCall(obj, method, args);
+			break;
 		case CiId.StringStartsWith:
 			if (IsOneAsciiString(args[0], out char c)) {
 				if (parent > CiPriority.Equality)
@@ -253,7 +257,7 @@ public class GenCl : GenC
 			WriteCall("trunc", args[0]);
 			break;
 		default:
-			WriteCCall(obj, method, args);
+			NotSupported(obj, method.Name);
 			break;
 		}
 	}
@@ -320,6 +324,7 @@ public class GenCl : GenC
 	public override void WriteProgram(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
+		this.Includes = new SortedSet<string>(); // only to avoid null dereferences on unsupported constructs
 		this.StringLength = false;
 		this.StringEquals = false;
 		this.StringStartsWith = false;

@@ -41,6 +41,7 @@ public abstract class GenBase : CiVisitor
 	protected CiMethodBase CurrentMethod = null;
 	protected readonly HashSet<CiClass> WrittenClasses = new HashSet<CiClass>();
 
+	protected override CiContainerType GetCurrentContainer() => (CiClass) this.CurrentMethod.Parent;
 	protected abstract string GetTargetName();
 
 	protected void NotSupported(CiStatement statement, string feature)
@@ -1507,7 +1508,6 @@ public abstract class GenBase : CiVisitor
 	protected void WriteTypes(CiProgram program)
 	{
 		for (CiSymbol type = program.First; type != null; type = type.Next) {
-			this.CurrentContainer = (CiContainerType) type;
 			if (type is CiClass klass)
 				WriteClass(klass, program);
 			else

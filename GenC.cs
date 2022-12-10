@@ -51,6 +51,7 @@ public class GenC : GenCCpp
 	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
 	protected CiClass CurrentClass;
 
+	protected override CiContainerType GetCurrentContainer() => this.CurrentClass;
 	protected override string GetTargetName() => "C";
 
 	protected override void WriteSelfDoc(CiMethod method)
@@ -575,7 +576,8 @@ public class GenC : GenCCpp
 			Write(" }");
 			break;
 		default:
-			throw new NotImplementedException("Only null, zero and false supported");
+			NotSupported(value, "Array initializer");
+			break;
 		}
 	}
 
@@ -701,7 +703,8 @@ public class GenC : GenCCpp
 					Write("String");
 					break;
 				default:
-					throw new NotImplementedException(klass.GetKeyType().ToString());
+					NotSupported(klass.GetKeyType(), klass.GetKeyType().ToString());
+					break;
 				}
 				Write(", NULL, ");
 				Write(GetDictionaryDestroy(klass.GetKeyType()));
@@ -828,13 +831,14 @@ public class GenC : GenCCpp
 			}
 			break;
 		default:
-			throw new NotImplementedException(expr.GetType().Name);
+			NotSupported(expr, expr.GetType().Name);
+			break;
 		}
 	}
 
 	static bool IsTemporary(CiExpr expr) => expr is CiCallExpr && expr.Type is CiStorageType;
 
-	static bool HasTemporaries(CiExpr expr)
+	bool HasTemporaries(CiExpr expr)
 	{
 		switch (expr) {
 		case CiLiteral _:
@@ -872,11 +876,12 @@ public class GenC : GenCCpp
 			}
 			return false;
 		default:
-			throw new NotImplementedException(expr.GetType().Name);
+			NotSupported(expr, expr.GetType().Name);
+			return false;
 		}
 	}
 
-	static bool HasTemporariesToDestruct(CiExpr expr)
+	bool HasTemporariesToDestruct(CiExpr expr)
 	{
 		switch (expr) {
 		case CiAggregateInitializer init:
@@ -897,7 +902,8 @@ public class GenC : GenCCpp
 			return (call.Method.Left != null && (HasTemporariesToDestruct(call.Method.Left) || IsNewString(call.Method.Left)))
 				|| call.Arguments.Any(arg => HasTemporariesToDestruct(arg) || IsNewString(arg));
 		default:
-			throw new NotImplementedException(expr.GetType().Name);
+			NotSupported(expr, expr.GetType().Name);
+			return false;
 		}
 	}
 
@@ -1258,7 +1264,7 @@ public class GenC : GenCCpp
 				string rightValue = literal.Value;
 				if (lengthExpr is CiLiteralLong leftLength) {
 					if (leftLength.Value != rightLength)
-						throw new NotImplementedException(); // TODO: evaluate compile-time
+						NotYet(left, "String comparison with unmatched length"); // TODO: evaluate compile-time
 					WriteSubstringEqual(cast, ptr, offset, rightValue, parent, not);
 				}
 				else if (not) {
@@ -1493,6 +1499,10 @@ public class GenC : GenCCpp
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
+		case CiId.None:
+		case CiId.ClassToString:
+			WriteCCall(obj, method, args);
+			break;
 		case CiId.StringContains:
 			Include("string.h");
 			if (parent > CiPriority.Equality)
@@ -1544,13 +1554,15 @@ public class GenC : GenCCpp
 				WriteChar(')');
 			break;
 		case CiId.StringSubstring:
-			if (args.Count != 1)
-				throw new NotImplementedException("Substring");
-			if (parent > CiPriority.Add)
-				WriteChar('(');
-			WriteAdd(obj, args[0]);
-			if (parent > CiPriority.Add)
-				WriteChar(')');
+			if (args.Count == 1) {
+				if (parent > CiPriority.Add)
+					WriteChar('(');
+				WriteAdd(obj, args[0]);
+				if (parent > CiPriority.Add)
+					WriteChar(')');
+			}
+			else
+				NotSupported(obj, "Substring");
 			break;
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:
@@ -1582,7 +1594,7 @@ public class GenC : GenCCpp
 			Include("string.h");
 			CiType elementType = ((CiClassType) obj.Type).GetElementType();
 			if (IsHeapAllocated(elementType))
-				throw new NotImplementedException(); // TODO
+				NotYet(obj, "CopyTo for this type"); // TODO
 			Write("memcpy(");
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(", ");
@@ -1896,7 +1908,7 @@ public class GenC : GenCCpp
 			WriteCall("trunc", args[0]);
 			break;
 		default:
-			WriteCCall(obj, method, args);
+			NotSupported(obj, method.Name);
 			break;
 		}
 	}
@@ -2028,7 +2040,10 @@ public class GenC : GenCCpp
 			WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
-	public override void VisitLambdaExpr(CiLambdaExpr expr) => throw new NotImplementedException();
+	public override void VisitLambdaExpr(CiLambdaExpr expr)
+	{
+		NotSupported(expr, "Lambda expression");
+	}
 
 	static CiMethod GetThrowingMethod(CiExpr expr)
 	{
@@ -2382,11 +2397,13 @@ public class GenC : GenCCpp
 				CloseBlock();
 				break;
 			default:
-				throw new NotImplementedException(klass.Class.Name);
+				NotSupported(statement.Collection, klass.Class.Name);
+				break;
 			}
 			break;
 		default:
-			throw new NotImplementedException(statement.Collection.Type.ToString());
+			NotSupported(statement.Collection, statement.Collection.Type.ToString());
+			break;
 		}
 	}
 
@@ -3286,7 +3303,7 @@ public class GenC : GenCCpp
 			WriteClass(klass, program);
 		WriteResources(program.Resources);
 		foreach (CiClass klass in program.Classes) {
-			this.CurrentContainer = this.CurrentClass = klass;
+			this.CurrentClass = klass;
 			WriteConstructor(klass);
 			WriteDestructor(klass);
 			WriteNewDelete(klass, true);

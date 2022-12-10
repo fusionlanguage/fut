@@ -1386,11 +1386,11 @@ namespace Foxoft.Ci
 
 		internal bool HasErrors = false;
 
-		protected CiContainerType CurrentContainer = null;
+		protected abstract CiContainerType GetCurrentContainer();
 
 		protected void ReportError(CiStatement statement, string message)
 		{
-			Console.Error.WriteLine($"{this.CurrentContainer.Filename}({statement.Line}): ERROR: {message}");
+			Console.Error.WriteLine($"{GetCurrentContainer().Filename}({statement.Line}): ERROR: {message}");
 			this.HasErrors = true;
 		}
 

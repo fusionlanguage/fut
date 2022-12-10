@@ -36,9 +36,11 @@ public class CiResolver : CiVisitor
 	readonly HashSet<CiMethod> CurrentPureMethods = new HashSet<CiMethod>();
 	readonly Dictionary<CiVar, CiExpr> CurrentPureArguments = new Dictionary<CiVar, CiExpr>();
 
+	protected override CiContainerType GetCurrentContainer() => this.CurrentScope.GetContainer();
+
 	CiException StatementException(CiStatement statement, string message)
 	{
-		return new CiException(this.CurrentScope.GetContainer().Filename, statement.Line, message);
+		return new CiException(GetCurrentContainer().Filename, statement.Line, message);
 	}
 
 	string FindFile(string name, CiStatement statement)
@@ -609,18 +611,18 @@ public class CiResolver : CiVisitor
 					throw StatementException(expr, "Invalid argument to new");
 				CiAggregateInitializer init = (CiAggregateInitializer) binaryNew.Right;
 				ResolveObjectLiteral(klass, init);
-				expr.Type = new CiDynamicPtrType { Class = klass.Class };
+				expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = klass.Class };
 				expr.Inner = init;
 				return expr;
 			}
 			type = ToType(expr.Inner, true);
 			switch (type) {
 			case CiArrayStorageType array:
-				expr.Type = new CiDynamicPtrType { Class = this.Program.System.ArrayPtrClass, TypeArg0 = array.GetElementType() };
+				expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = this.Program.System.ArrayPtrClass, TypeArg0 = array.GetElementType() };
 				expr.Inner = array.LengthExpr;
 				return expr;
 			case CiStorageType klass:
-				expr.Type = new CiDynamicPtrType { Class = klass.Class };
+				expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = klass.Class };
 				expr.Inner = null;
 				return expr;
 			default:
@@ -669,7 +671,7 @@ public class CiResolver : CiVisitor
 	{
 		if (expr is CiInterpolatedString interpolated)
 			return interpolated;
-		CiInterpolatedString result = new CiInterpolatedString { Type = this.Program.System.StringStorageType };
+		CiInterpolatedString result = new CiInterpolatedString { Line = expr.Line, Type = this.Program.System.StringStorageType };
 		if (expr is CiLiteral literal)
 			result.Suffix = literal.GetLiteralString();
 		else {
@@ -681,7 +683,7 @@ public class CiResolver : CiVisitor
 
 	CiInterpolatedString Concatenate(CiInterpolatedString left, CiInterpolatedString right)
 	{
-		CiInterpolatedString result = new CiInterpolatedString { Type = this.Program.System.StringStorageType };
+		CiInterpolatedString result = new CiInterpolatedString { Line = left.Line, Type = this.Program.System.StringStorageType };
 		result.Parts.AddRange(left.Parts);
 		if (right.Parts.Count == 0)
 			result.Suffix = left.Suffix + right.Suffix;
@@ -1639,6 +1641,7 @@ public class CiResolver : CiVisitor
 		}
 		else
 			baseType = ToBaseType(expr, ptrModifier);
+		baseType.Line = expr.Line;
 
 		if (outerArray == null)
 			return baseType;
