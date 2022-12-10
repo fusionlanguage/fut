@@ -35,6 +35,8 @@ public class GenSwift : GenPySwift
 	readonly List<HashSet<string>> VarsAtIndent = new List<HashSet<string>>();
 	readonly List<bool> VarBytesAtIndent = new List<bool>();
 
+	protected override string GetTargetName() => "Swift";
+
 	protected override void StartDocLine()
 	{
 		Write("/// ");
@@ -240,6 +242,9 @@ public class GenSwift : GenPySwift
 			Write(": ");
 			WriteType(klass.GetValueType());
 			WriteChar(']');
+			break;
+		case CiId.OrderedDictionaryClass:
+			NotSupported(klass, "OrderedDictionary");
 			break;
 		case CiId.LockClass:
 			Include("Foundation");

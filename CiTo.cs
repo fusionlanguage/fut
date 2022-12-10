@@ -54,7 +54,7 @@ public static class CiTo
 		Console.WriteLine("--version  Display version information");
 	}
 
-	static CiProgram ParseAndResolve(CiParser parser, CiSystem system, CiScope parent, List<string> files, List<string> searchDirs, string lang)
+	static CiProgram ParseAndResolve(CiParser parser, CiSystem system, CiScope parent, List<string> files, List<string> searchDirs)
 	{
 		parser.Program = new CiProgram { Parent = parent, System = system };
 		foreach (string file in files) {
@@ -63,11 +63,13 @@ public static class CiTo
 		}
 		if (parser.HasErrors)
 			return null;
-		new CiResolver(parser.Program, searchDirs, lang);
+		CiResolver resolver = new CiResolver(parser.Program, searchDirs);
+		if (resolver.HasErrors)
+			return null;
 		return parser.Program;
 	}
 
-	static bool Process(CiParser parser, List<string> inputFiles, List<string> referencedFiles, List<string> searchDirs, string lang, string namespace_, string outputFile)
+	static bool Emit(CiProgram program, string lang, string namespace_, string outputFile)
 	{
 		GenBase gen;
 		switch (lang) {
@@ -85,28 +87,8 @@ public static class CiTo
 		}
 		gen.Namespace = namespace_;
 		gen.OutputFile = outputFile;
-
-		CiSystem system = CiSystem.New();
-		CiProgram program;
-		try {
-			CiScope parent = system;
-			if (referencedFiles.Count > 0) {
-				parent = ParseAndResolve(parser, system, parent, referencedFiles, searchDirs, lang);
-				if (parent == null)
-					return false;
-			}
-			program = ParseAndResolve(parser, system, parent, inputFiles, searchDirs, lang);
-			if (program == null)
-				return false;
-		}
-		catch (CiException ex) {
-			Console.Error.WriteLine("{0}({1}): ERROR: {2}", ex.Filename, ex.Line, ex.Message);
-			return false;
-//			throw;
-		}
-
 		gen.WriteProgram(program);
-		return true;
+		return !gen.HasErrors;
 	}
 
 	public static int Main(string[] args)
@@ -162,8 +144,28 @@ public static class CiTo
 			Usage();
 			return 1;
 		}
+
+		CiSystem system = CiSystem.New();
+		CiProgram program;
+		try {
+			CiScope parent = system;
+			if (referencedFiles.Count > 0) {
+				parent = ParseAndResolve(parser, system, parent, referencedFiles, searchDirs);
+				if (parent == null)
+					return 1;
+			}
+			program = ParseAndResolve(parser, system, parent, inputFiles, searchDirs);
+		}
+		catch (CiException ex) {
+			Console.Error.WriteLine("{0}({1}): ERROR: {2}", ex.Filename, ex.Line, ex.Message);
+			return 1;
+//			throw;
+		}
+		if (program == null)
+			return 1;
+
 		if (lang != null)
-			return Process(parser, inputFiles, referencedFiles, searchDirs, lang, namespace_, outputFile) ? 0 : 1;
+			return Emit(program, lang, namespace_, outputFile) ? 0 : 1;
 		for (int i = outputFile.Length; --i >= 0; ) {
 			char c = outputFile[i];
 			if (c == '.') {
@@ -174,7 +176,7 @@ public static class CiTo
 					continue;
 				string outputBase = outputFile.Substring(0, i + 1);
 				foreach (string outputExt in outputFile.Substring(i + 1).Split(',')) {
-					if (!Process(parser, inputFiles, referencedFiles, searchDirs, outputExt, namespace_, outputBase + outputExt))
+					if (!Emit(program, outputExt, namespace_, outputBase + outputExt))
 						return 1;
 				}
 				return 0;

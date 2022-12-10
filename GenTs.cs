@@ -29,6 +29,8 @@ public class GenTs : GenJs
 	// GenFullCode = true: generate full TypeScript code
 	bool GenFullCode = false;
 
+	protected override string GetTargetName() => "TypeScript";
+
 	public GenTs WithGenFullCode()
 	{
 		GenFullCode = true;

@@ -28,6 +28,8 @@ public class GenJava : GenTyped
 {
 	string OutputDirectory;
 
+	protected override string GetTargetName() => "Java";
+
 	public override void VisitLiteralLong(long value)
 	{
 		base.VisitLiteralLong(value);

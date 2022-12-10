@@ -31,7 +31,6 @@ public class CiResolver : CiVisitor
 {
 	readonly CiProgram Program;
 	readonly IEnumerable<string> SearchDirs;
-	readonly string Lang;
 	CiScope CurrentScope;
 	CiMethodBase CurrentMethod;
 	readonly HashSet<CiMethod> CurrentPureMethods = new HashSet<CiMethod>();
@@ -40,18 +39,6 @@ public class CiResolver : CiVisitor
 	CiException StatementException(CiStatement statement, string message)
 	{
 		return new CiException(this.CurrentScope.GetContainer().Filename, statement.Line, message);
-	}
-
-	void NotSupported(CiStatement statement, string feature, params string[] langs)
-	{
-		if (langs.Contains(this.Lang))
-			throw StatementException(statement, $"{feature} not supported when targeting {this.Lang}");
-	}
-
-	void NotYet(CiStatement statement, string feature, params string[] langs)
-	{
-		if (langs.Contains(this.Lang))
-			throw StatementException(statement, $"{feature} not supported yet when targeting {this.Lang}");
 	}
 
 	string FindFile(string name, CiStatement statement)
@@ -450,8 +437,6 @@ public class CiResolver : CiVisitor
 			expr.Symbol = scope.TryLookup(expr.Name);
 			if (expr.Symbol == null)
 				throw StatementException(expr, $"{expr.Name} not found");
-			if (expr.Symbol.Id == CiId.RegexClass)
-				NotSupported(expr, "Regex", "cl");
 			expr.Type = expr.Symbol.Type;
 		}
 		if (!(scope is CiEnum) && expr.Symbol is CiConst konst) {
@@ -821,7 +806,6 @@ public class CiResolver : CiVisitor
 					return this.Program.System.NewLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString(), expr.Line);
 				if (left is CiInterpolatedString || right is CiInterpolatedString)
 					return Concatenate(ToInterpolatedString(left), ToInterpolatedString(right));
-				NotSupported(expr, "String concatenation", "c", "cl");
 				type = this.Program.System.StringPtrType;
 			}
 			else
@@ -1038,7 +1022,6 @@ public class CiResolver : CiVisitor
 			switch (right) {
 			case CiSymbolReference symbol:
 				klass2 = symbol.Symbol as CiClass ?? throw StatementException(expr, "Right hand side of the 'is' operator must be a class name");
-				NotSupported(expr, "'is' operator", "c", "cl");
 				expr.Right = klass2;
 				break;
 			case CiVar def:
@@ -1435,10 +1418,9 @@ public class CiResolver : CiVisitor
 		switch (statement.Value.Type) {
 		case CiIntegerType i when i.Id != CiId.LongType:
 		case CiEnum _:
-		case CiStringType _:
+		// case CiStringType _: matched by case CiClassType
 			break;
 		case CiClassType klass when !(klass is CiStorageType):
-			NotSupported(statement, "Type-matching 'switch'", "c", "js", "py", "ts", "cl");
 			break;
 		default:
 			throw StatementException(statement.Value, $"Switch on type {statement.Value.Type} - expected int, enum, string or object reference");
@@ -1499,10 +1481,7 @@ public class CiResolver : CiVisitor
 		if (expr is CiPostfixExpr postfix) {
 			switch (postfix.Op) {
 			case CiToken.ExclamationMark:
-				expr = postfix.Inner;
-				return postfix.Op;
 			case CiToken.Hash:
-				NotSupported(expr, "Dynamic reference", "cl");
 				expr = postfix.Inner;
 				return postfix.Op;
 			default:
@@ -1558,9 +1537,6 @@ public class CiResolver : CiVisitor
 			typeArgs.Add(ToType(typeArgExpr, false));
 		if (typeArgs.Count != generic.TypeParameterCount)
 			throw StatementException(typeArgExprs, $"Expected {generic.TypeParameterCount} type arguments for {generic.Name}, got {typeArgs.Count}");
-		NotSupported(typeArgExprs, generic.Name, "cl");
-		if (generic.Id == CiId.OrderedDictionaryClass)
-			NotSupported(typeArgExprs, "OrderedDictionary", "c", "cpp", "swift");
 		result.Class = generic;
 		result.TypeArg0 = typeArgs[0];
 		if (typeArgs.Count == 2)
@@ -1574,11 +1550,8 @@ public class CiResolver : CiVisitor
 			// built-in, MyEnum, MyClass, MyClass!, MyClass#
 			if (this.Program.TryLookup(symbol.Name) is CiType type) {
 				if (type is CiClass klass) {
-					if (klass.Id == CiId.MatchClass) {
-						if (ptrModifier != CiToken.EndOfFile)
-							throw StatementException(expr, "Read-write references to the built-in class Match are not supported");
-						NotSupported(expr, "Match", "cl");
-					}
+					if (klass.Id == CiId.MatchClass && ptrModifier != CiToken.EndOfFile)
+						throw StatementException(expr, "Read-write references to the built-in class Match are not supported");
 					CiClassType ptr = CreateClassPtr(klass, ptrModifier);
 					if (symbol.Left is CiAggregateInitializer typeArgExprs)
 						FillGenericClass(ptr, klass, typeArgExprs);
@@ -1603,20 +1576,11 @@ public class CiResolver : CiVisitor
 					return storage;
 				}
 			}
-			if (call.Method.Name == "string") {
-				NotSupported(call, "string()", "cl");
+			if (call.Method.Name == "string")
 				return this.Program.System.StringStorageType;
-			}
 			{
-				if (this.Program.TryLookup(call.Method.Name) is CiClass klass) {
-					if (klass.Id == CiId.MatchClass)
-						NotSupported(expr, "Match", "cl");
-					else if (klass.Id == CiId.LockClass) {
-						NotSupported(call, "Lock", "js", "ts", "cl");
-						NotYet(call, "Lock", "c");
-					}
+				if (this.Program.TryLookup(call.Method.Name) is CiClass klass)
 					return new CiStorageType { Class = klass };
-				}
 			}
 			throw StatementException(expr, $"Class {call.Method.Name} not found");
 
@@ -1856,11 +1820,10 @@ public class CiResolver : CiVisitor
 			SetLive(klass.Constructor);
 	}
 
-	public CiResolver(CiProgram program, IEnumerable<string> searchDirs, string lang)
+	public CiResolver(CiProgram program, IEnumerable<string> searchDirs)
 	{
 		this.Program = program;
 		this.SearchDirs = searchDirs;
-		this.Lang = lang;
 		for (CiSymbol type = program.First; type != null; type = type.Next) {
 			if (type is CiClass klass)
 				ResolveBase(klass);

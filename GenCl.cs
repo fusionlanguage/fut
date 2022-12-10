@@ -31,6 +31,8 @@ public class GenCl : GenC
 	bool StringStartsWith;
 	bool BytesEqualsString;
 
+	protected override string GetTargetName() => "OpenCL C";
+
 	protected override void IncludeStdBool()
 	{
 	}
@@ -67,9 +69,28 @@ public class GenCl : GenC
 
 	protected override void WriteStringPtrType() => Write("constant char *");
 
+	protected override void WriteClassType(CiClassType klass, bool space)
+	{
+		switch (klass.Class.Id) {
+		case CiId.None:
+			if (klass is CiDynamicPtrType)
+				NotSupported(klass, "Dynamic reference");
+			else
+				base.WriteClassType(klass, space);
+			break;
+		case CiId.StringClass when klass.IsNullable():
+			WriteStringPtrType();
+			break;
+		default:
+			NotSupported(klass, klass.Class.Name);
+			break;
+		}
+	}
+
 	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
-		throw new NotImplementedException("Interpolated strings not supported in OpenCL C");
+		NotSupported(expr, "Interpolated strings");
+		return expr;
 	}
 
 	protected override void WriteCamelCaseNotKeyword(string name)

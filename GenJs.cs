@@ -28,6 +28,8 @@ public class GenJs : GenBase
 {
 	// TODO: Namespace
 
+	protected override string GetTargetName() => "JavaScript";
+
 	void WriteCamelCaseNotKeyword(string name)
 	{
 		WriteCamelCase(name);
@@ -156,6 +158,9 @@ public class GenJs : GenBase
 			break;
 		case CiId.OrderedDictionaryClass:
 			Write("new Map()");
+			break;
+		case CiId.LockClass:
+			NotSupported(klass, "Lock");
 			break;
 		default:
 			Write("new ");
@@ -856,7 +861,15 @@ public class GenJs : GenBase
 
 	public override void VisitLock(CiLock statement)
 	{
-		throw new NotImplementedException();
+		NotSupported(statement, "Lock");
+	}
+
+	public override void VisitSwitch(CiSwitch statement)
+	{
+		if (statement.IsTypeMatching())
+			NotSupported(statement, "Type-matching 'switch'");
+		else
+			base.VisitSwitch(statement);
 	}
 
 	public override void VisitThrow(CiThrow statement)

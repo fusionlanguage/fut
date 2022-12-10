@@ -30,6 +30,8 @@ public class GenCpp : GenCCpp
 	bool UsingStringViewLiterals;
 	bool HasEnumFlags;
 
+	protected override string GetTargetName() => "C++";
+
 	protected override void IncludeStdInt() => Include("cstdint");
 
 	protected override void IncludeAssert() => Include("cassert");
@@ -244,15 +246,33 @@ public class GenCpp : GenCCpp
 					Write(" const");
 			}
 			else {
-				string cppType = klass.Class.Id switch {
-					CiId.ArrayStorageClass => "array",
-					CiId.ListClass => "vector",
-					CiId.QueueClass => "queue",
-					CiId.StackClass => "stack",
-					CiId.HashSetClass => "unordered_set",
-					CiId.DictionaryClass => "unordered_map",
-					CiId.SortedDictionaryClass => "map",
-					_ => throw new NotImplementedException()
+				string cppType;
+				switch (klass.Class.Id) {
+				case CiId.ArrayStorageClass:
+					cppType = "array";
+					break;
+				case CiId.ListClass:
+					cppType = "vector";
+					break;
+				case CiId.QueueClass:
+					cppType = "queue";
+					break;
+				case CiId.StackClass:
+					cppType = "stack";
+					break;
+				case CiId.HashSetClass:
+					cppType = "unordered_set";
+					break;
+				case CiId.DictionaryClass:
+					cppType = "unordered_map";
+					break;
+				case CiId.SortedDictionaryClass:
+					cppType = "map";
+					break;
+				default:
+					NotSupported(type, type.Name);
+					cppType = "NOT_SUPPORTED";
+					break;
 				};
 				Include(cppType);
 				if (!(klass is CiReadWriteClassType))
@@ -1249,7 +1269,7 @@ public class GenCpp : GenCCpp
 
 	public override void VisitSwitch(CiSwitch statement)
 	{
-		if (statement.Value.Type is CiClassType klass && klass.Class.Id != CiId.StringClass) {
+		if (statement.IsTypeMatching()) {
 			int gotoId = GetSwitchGoto(statement);
 			string op = "if (";
 			foreach (CiCase kase in statement.Cases) {

@@ -26,6 +26,8 @@ namespace Foxoft.Ci
 
 public class GenCs : GenTyped
 {
+	protected override string GetTargetName() => "C++";
+
 	protected override void StartDocLine() => Write("/// ");
 
 	protected override void WriteDocPara(CiDocPara para, bool many)

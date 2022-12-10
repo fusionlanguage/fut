@@ -41,6 +41,18 @@ public abstract class GenBase : CiVisitor
 	protected CiMethodBase CurrentMethod = null;
 	protected readonly HashSet<CiClass> WrittenClasses = new HashSet<CiClass>();
 
+	protected abstract string GetTargetName();
+
+	protected void NotSupported(CiStatement statement, string feature)
+	{
+		ReportError(statement, $"{feature} not supported when targeting {GetTargetName()}");
+	}
+
+	protected void NotYet(CiStatement statement, string feature)
+	{
+		ReportError(statement, $"{feature} not supported yet when targeting {GetTargetName()}");
+	}
+
 	static TextWriter CreateFileWriter(string filename)
 	{
 		TextWriter w = File.CreateText(filename);
@@ -1495,6 +1507,7 @@ public abstract class GenBase : CiVisitor
 	protected void WriteTypes(CiProgram program)
 	{
 		for (CiSymbol type = program.First; type != null; type = type.Next) {
+			this.CurrentContainer = (CiContainerType) type;
 			if (type is CiClass klass)
 				WriteClass(klass, program);
 			else

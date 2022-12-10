@@ -51,6 +51,8 @@ public class GenC : GenCCpp
 	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
 	protected CiClass CurrentClass;
 
+	protected override string GetTargetName() => "C";
+
 	protected override void WriteSelfDoc(CiMethod method)
 	{
 		if (method.CallType == CiCallType.Static)
@@ -337,6 +339,61 @@ public class GenC : GenCCpp
 
 	protected virtual void WriteStringPtrType() => Write("const char *");
 
+	protected virtual void WriteClassType(CiClassType klass, bool space)
+	{
+		switch (klass.Class.Id) {
+		case CiId.None:
+			if (!(klass is CiReadWriteClassType))
+				Write("const ");
+			WriteName(klass.Class);
+			if (!(klass is CiStorageType))
+				Write(" *");
+			else if (space)
+				WriteChar(' ');
+			break;
+		case CiId.StringClass:
+			if (klass.IsNullable())
+				WriteStringPtrType();
+			else
+				Write("char *");
+			break;
+		case CiId.ListClass:
+		case CiId.StackClass:
+			WriteGlib("GArray *");
+			break;
+		case CiId.QueueClass:
+			WriteGlib("GQueue ");
+			if (!(klass is CiStorageType))
+				WriteChar('*');
+			break;
+		case CiId.HashSetClass:
+		case CiId.DictionaryClass:
+			WriteGlib("GHashTable *");
+			break;
+		case CiId.SortedDictionaryClass:
+			WriteGlib("GTree *");
+			break;
+		case CiId.RegexClass:
+			if (!(klass is CiReadWriteClassType))
+				Write("const ");
+			WriteGlib("GRegex *");
+			break;
+		case CiId.MatchClass:
+			if (!(klass is CiReadWriteClassType))
+				Write("const ");
+			WriteGlib("GMatchInfo *");
+			break;
+		case CiId.LockClass:
+			NotYet(klass, "Lock");
+			Include("threads.h");
+			Write("mtx_t ");
+			break;
+		default:
+			NotSupported(klass, klass.Class.Name);
+			break;
+		}
+	}
+
 	void WriteArrayPrefix(CiType type)
 	{
 		if (type is CiClassType array && array.IsArray()) {
@@ -371,53 +428,7 @@ public class GenC : GenCCpp
 				WriteChar(' ');
 			break;
 		case CiClassType klass:
-			switch (klass.Class.Id) {
-			case CiId.StringClass:
-				if (klass.IsNullable())
-					WriteStringPtrType();
-				else
-					Write("char *");
-				break;
-			case CiId.ListClass:
-			case CiId.StackClass:
-				WriteGlib("GArray *");
-				break;
-			case CiId.QueueClass:
-				WriteGlib("GQueue ");
-				if (!(klass is CiStorageType))
-					WriteChar('*');
-				break;
-			case CiId.HashSetClass:
-			case CiId.DictionaryClass:
-				WriteGlib("GHashTable *");
-				break;
-			case CiId.SortedDictionaryClass:
-				WriteGlib("GTree *");
-				break;
-			case CiId.RegexClass:
-				if (!(klass is CiReadWriteClassType))
-					Write("const ");
-				WriteGlib("GRegex *");
-				break;
-			case CiId.MatchClass:
-				if (!(klass is CiReadWriteClassType))
-					Write("const ");
-				WriteGlib("GMatchInfo *");
-				break;
-			case CiId.LockClass:
-				Include("threads.h");
-				Write("mtx_t ");
-				break;
-			default:
-				if (!(klass is CiReadWriteClassType))
-					Write("const ");
-				WriteName(klass.Class);
-				if (!(klass is CiStorageType))
-					Write(" *");
-				else if (space)
-					WriteChar(' ');
-				break;
-			}
+			WriteClassType(klass, space);
 			break;
 		default:
 			Write(baseType.Name);
@@ -1960,6 +1971,10 @@ public class GenC : GenCCpp
 	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
+		case CiToken.Plus:
+			if (expr.Type.Id == CiId.StringPtrType)
+				NotSupported(expr, "String concatenation");
+			break;
 		case CiToken.Equal:
 		case CiToken.NotEqual:
 		case CiToken.Greater:
@@ -1996,6 +2011,9 @@ public class GenC : GenCCpp
 				WriteChar(')');
 				return expr;
 			}
+			break;
+		case CiToken.Is:
+			NotSupported(expr, "'is' operator");
 			break;
 		default:
 			break;
@@ -2434,6 +2452,14 @@ public class GenC : GenCCpp
 		int varsToDestructCount = this.VarsToDestruct.Count;
 		WriteStatements(statements);
 		TrimVarsToDestruct(varsToDestructCount);
+	}
+
+	public override void VisitSwitch(CiSwitch statement)
+	{
+		if (statement.IsTypeMatching())
+			NotSupported(statement, "Type-matching 'switch'");
+		else
+			base.VisitSwitch(statement);
 	}
 
 	void WriteThrowReturnValue()
@@ -3260,7 +3286,7 @@ public class GenC : GenCCpp
 			WriteClass(klass, program);
 		WriteResources(program.Resources);
 		foreach (CiClass klass in program.Classes) {
-			this.CurrentClass = klass;
+			this.CurrentContainer = this.CurrentClass = klass;
 			WriteConstructor(klass);
 			WriteDestructor(klass);
 			WriteNewDelete(klass, true);

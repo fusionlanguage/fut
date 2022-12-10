@@ -1384,6 +1384,16 @@ namespace Foxoft.Ci
 	public abstract class CiVisitor
 	{
 
+		internal bool HasErrors = false;
+
+		protected CiContainerType CurrentContainer = null;
+
+		protected void ReportError(CiStatement statement, string message)
+		{
+			Console.Error.WriteLine($"{this.CurrentContainer.Filename}({statement.Line}): ERROR: {message}");
+			this.HasErrors = true;
+		}
+
 		public abstract void VisitAggregateInitializer(CiAggregateInitializer expr);
 
 		public abstract void VisitVar(CiVar expr);
@@ -2207,6 +2217,8 @@ namespace Foxoft.Ci
 		{
 			visitor.VisitSwitch(this);
 		}
+
+		public bool IsTypeMatching() => this.Value.Type is CiClassType klass && klass.Class.Id != CiId.StringClass;
 
 		public static int LengthWithoutTrailingBreak(List<CiStatement> body)
 		{

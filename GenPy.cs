@@ -29,6 +29,8 @@ public class GenPy : GenPySwift
 	bool ChildPass;
 	bool SwitchBreak;
 
+	protected override string GetTargetName() => "Python";
+
 	protected override void WriteBanner() => WriteLine("# Generated automatically with \"cito\". Do not edit.");
 
 	protected override void StartDocLine()
@@ -1001,6 +1003,10 @@ public class GenPy : GenPySwift
 
 	public override void VisitSwitch(CiSwitch statement)
 	{
+		if (statement.IsTypeMatching()) {
+			NotSupported(statement, "Type-matching 'switch'");
+			return;
+		}
 		bool earlyBreak = statement.Cases.Any(kase => CiSwitch.HasEarlyBreak(kase.Body))
 			|| CiSwitch.HasEarlyBreak(statement.DefaultBody);
 		if (earlyBreak) {
