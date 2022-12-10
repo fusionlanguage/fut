@@ -408,7 +408,7 @@ public class CiLiteralChar : CiLiteralLong
 		visitor.VisitLiteralChar(this.Value);
 		return this;
 	}
-//	public override string ToString()
+//	public override string() ToString()
 //	{
 //		switch (this.Value) {
 //		case '\n': return "'\\n'";
@@ -552,7 +552,7 @@ public class CiImplicitEnumValue : CiExpr
 public class CiSymbolReference : CiExpr
 {
 	internal CiExpr# Left;
-	internal string Name;
+	internal string() Name;
 	internal CiSymbol Symbol;
 	public override bool IsConstEnum() => this.Symbol.Parent is CiEnum;
 	public override int IntValue()
@@ -1107,7 +1107,7 @@ public class CiMethodGroup : CiMember
 public abstract class CiContainerType : CiType
 {
 	internal bool IsPublic;
-	internal string Filename;
+	internal string() Filename;
 }
 
 public class CiEnum : CiContainerType
