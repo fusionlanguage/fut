@@ -810,9 +810,11 @@ public class GenC : GenCCpp
 			WriteTemporaries(binary.Left);
 			if (!IsStringSubstring(binary.Left, out bool _, out CiExpr _, out CiExpr _, out CiExpr _))
 				WriteStorageTemporary(binary.Left);
-			WriteTemporaries(binary.Right);
-			if (binary.Op != CiToken.Assign)
-				WriteStorageTemporary(binary.Right);
+			if (binary.Op != CiToken.Is) {
+				WriteTemporaries(binary.Right);
+				if (binary.Op != CiToken.Assign)
+					WriteStorageTemporary(binary.Right);
+			}
 			break;
 		case CiSelectExpr select:
 			WriteTemporaries(select.Cond);
@@ -830,9 +832,10 @@ public class GenC : GenCCpp
 				param = param.NextParameter();
 			}
 			break;
-		default:
-			NotSupported(expr, expr.GetType().Name);
+		case CiLambdaExpr _:
 			break;
+		default:
+			throw new NotImplementedException(expr.GetType().Name);
 		}
 	}
 
@@ -851,7 +854,7 @@ public class GenC : GenCCpp
 		case CiUnaryExpr unary:
 			return unary.Inner != null && HasTemporaries(unary.Inner);
 		case CiBinaryExpr binary:
-			return HasTemporaries(binary.Left) || HasTemporaries(binary.Right);
+			return HasTemporaries(binary.Left) || (binary.Op != CiToken.Is && HasTemporaries(binary.Right));
 		case CiSelectExpr select:
 			return HasTemporaries(select.Cond);
 		case CiCallExpr call:
@@ -876,8 +879,7 @@ public class GenC : GenCCpp
 			}
 			return false;
 		default:
-			NotSupported(expr, expr.GetType().Name);
-			return false;
+			throw new NotImplementedException(expr.GetType().Name);
 		}
 	}
 
@@ -895,15 +897,14 @@ public class GenC : GenCCpp
 		case CiUnaryExpr unary:
 			return unary.Inner != null && HasTemporariesToDestruct(unary.Inner);
 		case CiBinaryExpr binary:
-			return HasTemporariesToDestruct(binary.Left) || HasTemporariesToDestruct(binary.Right);
+			return HasTemporariesToDestruct(binary.Left) || (binary.Op != CiToken.Is && HasTemporariesToDestruct(binary.Right));
 		case CiSelectExpr select:
 			return HasTemporariesToDestruct(select.Cond);
 		case CiCallExpr call:
 			return (call.Method.Left != null && (HasTemporariesToDestruct(call.Method.Left) || IsNewString(call.Method.Left)))
 				|| call.Arguments.Any(arg => HasTemporariesToDestruct(arg) || IsNewString(arg));
 		default:
-			NotSupported(expr, expr.GetType().Name);
-			return false;
+			throw new NotImplementedException(expr.GetType().Name);
 		}
 	}
 
