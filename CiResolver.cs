@@ -100,7 +100,7 @@ public class CiResolver : CiVisitor
 		if (!type.IsAssignableFrom(expr.Type))
 			throw StatementException(expr, $"Cannot coerce {expr.Type} to {type}");
 		if (expr is CiPrefixExpr prefix && prefix.Op == CiToken.New && !(type is CiDynamicPtrType)) {
-			string kind = prefix.Inner != null ? "array" : "object";
+			string kind = ((CiDynamicPtrType) expr.Type).Class.Id == CiId.ArrayPtrClass ? "array" : "object";
 			throw StatementException(expr, $"Dynamically allocated {kind} must be assigned to a {expr.Type} reference");
 		}
 		TakePtr(expr);
