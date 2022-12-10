@@ -505,7 +505,7 @@ public abstract class GenBase : CiVisitor
 			return format == 'x' || format == 'X' ? format : 'd';
 		case CiNumericType _:
 			return "EefGg".IndexOf((char) format) >= 0 ? format : format == 'F' ? 'f' : 'g';
-		case CiStringType _:
+		// case CiStringType _: - matched by CiClassType
 		case CiClassType _:
 			return 's';
 		default:

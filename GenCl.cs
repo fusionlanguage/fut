@@ -87,6 +87,10 @@ public class GenCl : GenC
 		}
 	}
 
+	protected override void WritePrintfLongPrefix(CiInterpolatedPart part)
+	{
+	}
+
 	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		NotSupported(expr, "Interpolated strings");

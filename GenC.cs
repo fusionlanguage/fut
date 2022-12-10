@@ -73,6 +73,12 @@ public class GenC : GenCCpp
 
 	public override void VisitLiteralNull() => Write("NULL");
 
+	protected virtual void WritePrintfLongPrefix(CiInterpolatedPart part)
+	{
+		if (part.Argument.Type.Id == CiId.LongType)
+			WriteChar('j');
+	}
+
 	protected override void WritePrintfWidth(CiInterpolatedPart part)
 	{
 		base.WritePrintfWidth(part);
@@ -80,6 +86,7 @@ public class GenC : GenCCpp
 			Trace.Assert(part.Precision < 0);
 			Write(".*");
 		}
+		WritePrintfLongPrefix(part);
 	}
 
 	protected override void WriteInterpolatedStringArg(CiExpr expr)
