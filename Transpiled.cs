@@ -3016,7 +3016,7 @@ namespace Foxoft.Ci
 		internal readonly Dictionary<string, byte[]> Resources = new Dictionary<string, byte[]>();
 	}
 
-	public abstract class CiParserBase : CiLexer
+	public class CiParser : CiLexer
 	{
 
 		internal CiProgram Program;
@@ -3124,7 +3124,16 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected abstract CiLiteralDouble ParseDouble();
+		CiLiteralDouble ParseDouble()
+		{
+			double d;
+			bool ok;
+			 ok = double.TryParse(GetLexeme().Replace("_", ""), out d); if (!ok)
+				ReportError("Invalid floating-point number");
+			CiLiteralDouble result = new CiLiteralDouble { Line = this.Line, Type = this.Program.System.DoubleType, Value = d };
+			NextToken();
+			return result;
+		}
 
 		bool SeeDigit()
 		{

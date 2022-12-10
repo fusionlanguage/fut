@@ -32,10 +32,10 @@ DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .
 
 all: cito.exe
 
-cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs CiException.cs CiParser.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs GenPySwift.cs GenPy.cs GenSwift.cs GenTs.cs GenCl.cs CiTo.cs)
+cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs CiException.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs GenPySwift.cs GenPy.cs GenSwift.cs GenTs.cs GenCl.cs CiTo.cs)
 	$(DO_BUILD)
 
-Transpiled.cs: CiLexer.ci AST.ci Parser.ci
+Transpiled.cs: Lexer.ci AST.ci Parser.ci
 	cito -o $@ -n Foxoft.Ci $^
 
 test: test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-cl test-error
@@ -75,7 +75,7 @@ test-GenCCpp.cs: test-c test-cpp
 
 test-GenPySwift.cs: test-py test-swift
 
-test-error test-CiLexer.ci test-Parser.ci test-CiParser.cs test-CiResolver.cs: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
+test-error test-Lexer.ci test-Parser.ci test-CiResolver.cs: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
 	$(DO_SUMMARY)
 
 test-%.ci: $(addsuffix .txt, $(addprefix test/bin/%/, c cpp cs java js ts py swift cl))

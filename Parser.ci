@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-public abstract class CiParserBase : CiLexer
+public class CiParser : CiLexer
 {
 	internal CiProgram! Program;
 	string XcrementParent = null;
@@ -118,7 +118,17 @@ public abstract class CiParserBase : CiLexer
 		}
 	}
 
-	protected abstract CiLiteralDouble# ParseDouble();
+	CiLiteralDouble# ParseDouble()
+	{
+		double d;
+		bool ok;
+		native { ok = double.TryParse(GetLexeme().Replace("_", ""), out d); }
+		if (!ok)
+			ReportError("Invalid floating-point number");
+		CiLiteralDouble# result = new CiLiteralDouble { Line = this.Line, Type = this.Program.System.DoubleType, Value = d };
+		NextToken();
+		return result;
+	}
 
 	bool SeeDigit()
 	{

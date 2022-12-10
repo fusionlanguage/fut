@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 
@@ -110,6 +111,7 @@ public static class CiTo
 
 	public static int Main(string[] args)
 	{
+		CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 		CiParser parser = new CiParser();
 		List<string> inputFiles = new List<string>();
 		List<string> referencedFiles = new List<string>();
