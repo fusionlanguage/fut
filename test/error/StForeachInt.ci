@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		int n = 5;
-		foreach (int i in n) { //ERROR: Expected a collection
+		foreach (int i in n) { //ERROR: 'foreach' invalid on int
 		}
 		return true;
 	}

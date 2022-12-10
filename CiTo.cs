@@ -147,20 +147,13 @@ public static class CiTo
 
 		CiSystem system = CiSystem.New();
 		CiProgram program;
-		try {
-			CiScope parent = system;
-			if (referencedFiles.Count > 0) {
-				parent = ParseAndResolve(parser, system, parent, referencedFiles, searchDirs);
-				if (parent == null)
-					return 1;
-			}
-			program = ParseAndResolve(parser, system, parent, inputFiles, searchDirs);
+		CiScope parent = system;
+		if (referencedFiles.Count > 0) {
+			parent = ParseAndResolve(parser, system, parent, referencedFiles, searchDirs);
+			if (parent == null)
+				return 1;
 		}
-		catch (CiException ex) {
-			Console.Error.WriteLine("{0}({1}): ERROR: {2}", ex.Filename, ex.Line, ex.Message);
-			return 1;
-//			throw;
-		}
+		program = ParseAndResolve(parser, system, parent, inputFiles, searchDirs);
 		if (program == null)
 			return 1;
 

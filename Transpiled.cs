@@ -766,7 +766,7 @@ namespace Foxoft.Ci
 
 		protected bool See(CiToken token) => this.CurrentToken == token;
 
-		static string TokenToString(CiToken token)
+		public static string TokenToString(CiToken token)
 		{
 			switch (token) {
 			case CiToken.EndOfFile:
