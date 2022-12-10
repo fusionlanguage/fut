@@ -339,6 +339,7 @@ public class GenSwift : GenPySwift
 			return klass.GetElementType().Id == CiId.StringStorageType;
 		case CiId.DictionaryClass:
 		case CiId.SortedDictionaryClass:
+		case CiId.OrderedDictionaryClass:
 			return (symbol.Symbol == loop.GetVar() ? klass.GetKeyType() : klass.GetValueType()).Id == CiId.StringStorageType;
 		default:
 			throw new NotImplementedException(klass.Class.Name);
@@ -451,6 +452,26 @@ public class GenSwift : GenPySwift
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
+		case CiId.None:
+		case CiId.ListContains:
+		case CiId.ListSortAll:
+		case CiId.HashSetContains:
+		case CiId.HashSetRemove:
+			if (obj == null) {
+				if (method.IsStatic()) {
+					WriteName(this.CurrentMethod.Parent);
+					WriteChar('.');
+				}
+			}
+			else if (IsReferenceTo(obj, CiId.BasePtr))
+				Write("super.");
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				WriteMemberOp(obj, null);
+			}
+			WriteName(method);
+			WriteArgsInParentheses(method, args);
+			break;
 		case CiId.ClassToString:
 			obj.Accept(this, CiPriority.Primary);
 			WriteMemberOp(obj, null);
@@ -517,24 +538,38 @@ public class GenSwift : GenPySwift
 			WriteRange(args[0], args[3]);
 			WriteChar(']');
 			break;
-		case CiId.ArrayFillAll when obj.Type is CiArrayStorageType array && !IsArrayRef(array):
+		case CiId.ArrayFillAll:
 			obj.Accept(this, CiPriority.Assign);
-			Write(" = [");
-			WriteType(array.GetElementType());
-			Write("](repeating: ");
-			WriteCoerced(array.GetElementType(), args[0], CiPriority.Argument);
-			Write(", count: ");
-			VisitLiteralLong(array.Length);
-			WriteChar(')');
+			if (obj.Type is CiArrayStorageType array && !IsArrayRef(array)) {
+				Write(" = [");
+				WriteType(array.GetElementType());
+				Write("](repeating: ");
+				WriteCoerced(array.GetElementType(), args[0], CiPriority.Argument);
+				Write(", count: ");
+				VisitLiteralLong(array.Length);
+				WriteChar(')');
+			}
+			else {
+				Write(".fill");
+				WriteArgsInParentheses(method, args);
+			}
 			break;
-		case CiId.ArrayFillPart when obj.Type is CiArrayStorageType array && !IsArrayRef(array):
-			OpenIndexing(obj);
-			WriteRange(args[1], args[2]);
-			Write("] = ArraySlice(repeating: ");
-			WriteCoerced(array.GetElementType(), args[0], CiPriority.Argument);
-			Write(", count: ");
-			WriteCoerced(this.System.IntType, args[2], CiPriority.Argument); // FIXME: side effect
-			WriteChar(')');
+		case CiId.ArrayFillPart:
+			if (obj.Type is CiArrayStorageType array2 && !IsArrayRef(array2)) {
+				OpenIndexing(obj);
+				WriteRange(args[1], args[2]);
+				Write("] = ArraySlice(repeating: ");
+				WriteCoerced(array2.GetElementType(), args[0], CiPriority.Argument);
+				Write(", count: ");
+				WriteCoerced(this.System.IntType, args[2], CiPriority.Argument); // FIXME: side effect
+				WriteChar(')');
+			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				WriteMemberOp(obj, null);
+				Write("fill");
+				WriteArgsInParentheses(method, args);
+			}
 			break;
 		case CiId.ArraySortAll:
 			obj.Accept(this, CiPriority.Primary);
@@ -709,20 +744,7 @@ public class GenSwift : GenPySwift
 			WriteCall("trunc", args[0]);
 			break;
 		default:
-			if (obj == null) {
-				if (method.IsStatic()) {
-					WriteName(this.CurrentMethod.Parent);
-					WriteChar('.');
-				}
-			}
-			else if (IsReferenceTo(obj, CiId.BasePtr))
-				Write("super.");
-			else {
-				obj.Accept(this, CiPriority.Primary);
-				WriteMemberOp(obj, null);
-			}
-			WriteName(method);
-			WriteArgsInParentheses(method, args);
+			NotSupported(obj, method.Name);
 			break;
 		}
 	}

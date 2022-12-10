@@ -359,11 +359,15 @@ public class GenPy : GenPySwift
 			return expr;
 
 		case CiToken.Is:
-			Write("isinstance(");
-			expr.Left.Accept(this, CiPriority.Argument);
-			Write(", ");
-			WriteName((CiClass) expr.Right);
-			WriteChar(')');
+			if (expr.Right is CiClass klass) {
+				Write("isinstance(");
+				expr.Left.Accept(this, CiPriority.Argument);
+				Write(", ");
+				WriteName(klass);
+				WriteChar(')');
+			}
+			else
+				NotSupported(expr, "'is' with a variable");
 			return expr;
 
 		default:

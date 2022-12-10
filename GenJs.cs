@@ -442,6 +442,32 @@ public class GenJs : GenBase
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
+		case CiId.None:
+		case CiId.ClassToString:
+		case CiId.StringEndsWith:
+		case CiId.StringIndexOf:
+		case CiId.StringLastIndexOf:
+		case CiId.StringStartsWith:
+		case CiId.ArraySortAll:
+		case CiId.StackPush:
+		case CiId.StackPop:
+		case CiId.HashSetAdd:
+		case CiId.HashSetClear:
+		case CiId.OrderedDictionaryClear:
+		case CiId.MathMethod:
+		case CiId.MathLog2:
+			if (obj == null)
+				WriteLocalName(method, CiPriority.Primary);
+			else {
+				if (IsReferenceTo(obj, CiId.BasePtr))
+					Write("super");
+				else
+					obj.Accept(this, CiPriority.Primary);
+				WriteChar('.');
+				WriteName(method);
+			}
+			WriteArgsInParentheses(method, args);
+			break;
 		case CiId.StringContains:
 		case CiId.ListContains:
 			WriteCall(obj, "includes", args[0]);
@@ -710,17 +736,7 @@ public class GenJs : GenBase
 			WriteCall("Math.trunc", args[0]);
 			break;
 		default:
-			if (obj == null)
-				WriteLocalName(method, CiPriority.Primary);
-			else {
-				if (IsReferenceTo(obj, CiId.BasePtr))
-					Write("super");
-				else
-					obj.Accept(this, CiPriority.Primary);
-				WriteChar('.');
-				WriteName(method);
-			}
-			WriteArgsInParentheses(method, args);
+			NotSupported(obj, method.Name);
 			break;
 		}
 	}
@@ -861,7 +877,7 @@ public class GenJs : GenBase
 
 	public override void VisitLock(CiLock statement)
 	{
-		NotSupported(statement, "Lock");
+		NotSupported(statement, "'lock'");
 	}
 
 	public override void VisitSwitch(CiSwitch statement)

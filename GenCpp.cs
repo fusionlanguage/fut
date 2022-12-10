@@ -270,7 +270,7 @@ public class GenCpp : GenCCpp
 					cppType = "map";
 					break;
 				default:
-					NotSupported(type, type.Name);
+					NotSupported(type, klass.Class.Name);
 					cppType = "NOT_SUPPORTED";
 					break;
 				};
