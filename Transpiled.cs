@@ -4051,4 +4051,352 @@ namespace Foxoft.Ci
 			}
 		}
 	}
+
+	public abstract class CiSema : CiVisitor
+	{
+
+		protected CiProgram Program;
+
+		protected CiScope CurrentScope;
+
+		protected CiType Poison = new CiType { Name = "poison" };
+
+		protected override CiContainerType GetCurrentContainer() => this.CurrentScope.GetContainer();
+
+		protected CiType PoisonError(CiStatement statement, string message)
+		{
+			ReportError(statement, message);
+			return this.Poison;
+		}
+
+		protected static void TakePtr(CiExpr expr)
+		{
+			if (expr.Type is CiArrayStorageType arrayStg)
+				arrayStg.PtrTaken = true;
+		}
+
+		protected bool Coerce(CiExpr expr, CiType type)
+		{
+			if (expr == this.Poison)
+				return false;
+			if (!type.IsAssignableFrom(expr.Type)) {
+				ReportError(expr, $"Cannot coerce {expr.Type} to {type}");
+				return false;
+			}
+			if (expr is CiPrefixExpr prefix && prefix.Op == CiToken.New && !(type is CiDynamicPtrType)) {
+				CiDynamicPtrType newType = (CiDynamicPtrType) expr.Type;
+				string kind = newType.Class.Id == CiId.ArrayPtrClass ? "array" : "object";
+				ReportError(expr, $"Dynamically allocated {kind} must be assigned to a {expr.Type} reference");
+				return false;
+			}
+			TakePtr(expr);
+			return true;
+		}
+
+		protected static CiRangeType Union(CiRangeType left, CiRangeType right)
+		{
+			if (right == null)
+				return left;
+			if (right.Min < left.Min) {
+				if (right.Max >= left.Max)
+					return right;
+				return CiRangeType.New(right.Min, left.Max);
+			}
+			if (right.Max > left.Max)
+				return CiRangeType.New(left.Min, right.Max);
+			return left;
+		}
+
+		CiType TryGetPtr(CiType type)
+		{
+			if (type.Id == CiId.StringStorageType)
+				return this.Program.System.StringPtrType;
+			if (type is CiStorageType storage)
+				return new CiReadWriteClassType { Class = storage.Class.Id == CiId.ArrayStorageClass ? this.Program.System.ArrayPtrClass : storage.Class, TypeArg0 = storage.TypeArg0, TypeArg1 = storage.TypeArg1 };
+			return type;
+		}
+
+		protected CiType GetCommonType(CiExpr left, CiExpr right)
+		{
+			if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange)
+				return Union(leftRange, rightRange);
+			CiType ptr = TryGetPtr(left.Type);
+			if (ptr.IsAssignableFrom(right.Type))
+				return ptr;
+			ptr = TryGetPtr(right.Type);
+			if (ptr.IsAssignableFrom(left.Type))
+				return ptr;
+			return PoisonError(left, $"Incompatible types: {left.Type} and {right.Type}");
+		}
+
+		protected CiType GetIntegerType(CiExpr left, CiExpr right)
+		{
+			CiType type = this.Program.System.PromoteIntegerTypes(left.Type, right.Type);
+			Coerce(left, type);
+			Coerce(right, type);
+			return type;
+		}
+
+		protected CiIntegerType GetShiftType(CiExpr left, CiExpr right)
+		{
+			CiIntegerType intType = this.Program.System.IntType;
+			Coerce(right, intType);
+			if (left.Type.Id == CiId.LongType) {
+				CiIntegerType longType = (CiIntegerType) left.Type;
+				return longType;
+			}
+			Coerce(left, intType);
+			return intType;
+		}
+
+		protected CiType GetNumericType(CiExpr left, CiExpr right)
+		{
+			CiType type = this.Program.System.PromoteNumericTypes(left.Type, right.Type);
+			Coerce(left, type);
+			Coerce(right, type);
+			return type;
+		}
+
+		protected static int SaturatedShiftRight(int a, int b) => a >> (b >= 31 || b < 0 ? 31 : b);
+
+		protected static CiRangeType UnsignedAnd(CiRangeType left, CiRangeType right)
+		{
+			int leftVariableBits = left.GetVariableBits();
+			int rightVariableBits = right.GetVariableBits();
+			int min = left.Min & right.Min & ~CiRangeType.GetMask(~left.Min & ~right.Min & (leftVariableBits | rightVariableBits));
+			int max = (left.Max | leftVariableBits) & (right.Max | rightVariableBits);
+			if (max > left.Max)
+				max = left.Max;
+			if (max > right.Max)
+				max = right.Max;
+			if (min > max)
+				return CiRangeType.New(max, min);
+			return CiRangeType.New(min, max);
+		}
+
+		protected static CiRangeType UnsignedOr(CiRangeType left, CiRangeType right)
+		{
+			int leftVariableBits = left.GetVariableBits();
+			int rightVariableBits = right.GetVariableBits();
+			int min = (left.Min & ~leftVariableBits) | (right.Min & ~rightVariableBits);
+			int max = left.Max | right.Max | CiRangeType.GetMask(left.Max & right.Max & CiRangeType.GetMask(leftVariableBits | rightVariableBits));
+			if (min < left.Min)
+				min = left.Min;
+			if (min < right.Min)
+				min = right.Min;
+			if (min > max)
+				return CiRangeType.New(max, min);
+			return CiRangeType.New(min, max);
+		}
+
+		protected static CiRangeType UnsignedXor(CiRangeType left, CiRangeType right)
+		{
+			int variableBits = left.GetVariableBits() | right.GetVariableBits();
+			int min = (left.Min ^ right.Min) & ~variableBits;
+			int max = (left.Max ^ right.Max) | variableBits;
+			if (min > max)
+				return CiRangeType.New(max, min);
+			return CiRangeType.New(min, max);
+		}
+
+		protected static CiRangeType NewRangeType(int a, int b, int c, int d)
+		{
+			if (a > b) {
+				int t = a;
+				a = b;
+				b = t;
+			}
+			if (c > d) {
+				int t = c;
+				c = d;
+				d = t;
+			}
+			return CiRangeType.New(a <= c ? a : c, b >= d ? b : d);
+		}
+
+		protected bool IsEnumOp(CiExpr left, CiExpr right)
+		{
+			if (left.Type is CiEnum) {
+				if (left.Type.Id != CiId.BoolType && !(left.Type is CiEnumFlags))
+					ReportError(left, $"Define flags enumeration as: enum* {left.Type}");
+				Coerce(right, left.Type);
+				return true;
+			}
+			return false;
+		}
+
+		public override void VisitLiteralLong(long value)
+		{
+		}
+
+		public override void VisitLiteralChar(int value)
+		{
+		}
+
+		public override void VisitLiteralDouble(double value)
+		{
+		}
+
+		public override void VisitLiteralString(string value)
+		{
+		}
+
+		public override void VisitLiteralNull()
+		{
+		}
+
+		public override void VisitLiteralFalse()
+		{
+		}
+
+		public override void VisitLiteralTrue()
+		{
+		}
+
+		protected CiLiteralLong ToLiteralLong(CiExpr expr, long value) => this.Program.System.NewLiteralLong(value, expr.Line);
+
+		protected CiLiteralDouble ToLiteralDouble(CiExpr expr, double value) => new CiLiteralDouble { Line = expr.Line, Type = this.Program.System.DoubleType, Value = value };
+
+		protected CiInterpolatedString ToInterpolatedString(CiExpr expr)
+		{
+			if (expr is CiInterpolatedString interpolated)
+				return interpolated;
+			CiInterpolatedString result = new CiInterpolatedString { Line = expr.Line, Type = this.Program.System.StringStorageType };
+			if (expr is CiLiteral literal)
+				result.Suffix = literal.GetLiteralString();
+			else {
+				result.AddPart("", expr);
+				result.Suffix = "";
+			}
+			return result;
+		}
+
+		protected void CheckComparison(CiExpr left, CiExpr right)
+		{
+			CiType doubleType = this.Program.System.DoubleType;
+			Coerce(left, doubleType);
+			Coerce(right, doubleType);
+		}
+
+		protected CiType EvalType(CiClassType generic, CiType type)
+		{
+			if (type.Id == CiId.TypeParam0)
+				return generic.TypeArg0;
+			if (type.Id == CiId.TypeParam0NotFinal)
+				return generic.TypeArg0.IsFinal() ? null : generic.TypeArg0;
+			if (type is CiReadWriteClassType array && array.IsArray() && array.GetElementType().Id == CiId.TypeParam0)
+				return new CiReadWriteClassType { Class = this.Program.System.ArrayPtrClass, TypeArg0 = generic.TypeArg0 };
+			return type;
+		}
+
+		protected bool CanCall(CiExpr obj, CiMethod method, List<CiExpr> arguments)
+		{
+			CiVar param = method.Parameters.FirstParameter();
+			foreach (CiExpr arg in arguments) {
+				if (param == null)
+					return false;
+				CiType type = param.Type;
+				if (obj != null && obj.Type is CiClassType generic)
+					type = EvalType(generic, type);
+				if (!type.IsAssignableFrom(arg.Type))
+					return false;
+				param = param.NextParameter();
+			}
+			return param == null || param.Value != null;
+		}
+
+		protected void OpenScope(CiScope scope)
+		{
+			scope.Parent = this.CurrentScope;
+			this.CurrentScope = scope;
+		}
+
+		protected void CloseScope()
+		{
+			this.CurrentScope = this.CurrentScope.Parent;
+		}
+
+		protected CiExpr Resolve(CiExpr expr) => expr.Accept(this, CiPriority.Statement);
+
+		public override void VisitExpr(CiExpr statement)
+		{
+			Resolve(statement);
+		}
+
+		protected CiExpr ResolveBool(CiExpr expr)
+		{
+			expr = Resolve(expr);
+			Coerce(expr, this.Program.System.BoolType);
+			return expr;
+		}
+
+		protected bool ResolveStatements(List<CiStatement> statements)
+		{
+			bool reachable = true;
+			foreach (CiStatement statement in statements) {
+				statement.AcceptStatement(this);
+				if (!reachable) {
+					ReportError(statement, "Unreachable statement");
+					return false;
+				}
+				reachable = statement.CompletesNormally();
+			}
+			return reachable;
+		}
+
+		public override void VisitBlock(CiBlock statement)
+		{
+			OpenScope(statement);
+			statement.SetCompletesNormally(ResolveStatements(statement.Statements));
+			CloseScope();
+		}
+
+		public override void VisitBreak(CiBreak statement)
+		{
+			statement.LoopOrSwitch.SetCompletesNormally(true);
+		}
+
+		public override void VisitContinue(CiContinue statement)
+		{
+		}
+
+		public override void VisitNative(CiNative statement)
+		{
+		}
+
+		protected void ExpectNoPtrModifier(CiExpr expr, CiToken ptrModifier)
+		{
+			if (ptrModifier != CiToken.EndOfFile)
+				ReportError(expr, $"Unexpected {CiLexer.TokenToString(ptrModifier)} on a non-reference type");
+		}
+
+		protected static CiClassType CreateClassPtr(CiClass klass, CiToken ptrModifier)
+		{
+			CiClassType ptr;
+			switch (ptrModifier) {
+			case CiToken.EndOfFile:
+				ptr = new CiClassType();
+				break;
+			case CiToken.ExclamationMark:
+				ptr = new CiReadWriteClassType();
+				break;
+			case CiToken.Hash:
+				ptr = new CiDynamicPtrType();
+				break;
+			default:
+				throw new NotImplementedException();
+			}
+			ptr.Class = klass;
+			return ptr;
+		}
+
+		protected static void MarkMethodLive(CiMethodBase method)
+		{
+			if (method.IsLive)
+				return;
+			method.IsLive = true;
+			foreach (CiMethod called in method.Calls)
+				MarkMethodLive(called);
+		}
+	}
 }

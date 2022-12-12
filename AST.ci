@@ -1049,7 +1049,7 @@ public class CiMethodBase : CiMember
 	internal bool Throws;
 	internal CiStatement# Body;
 	internal bool IsLive = false;
-	internal HashSet<CiMethod>() Calls;
+	internal HashSet<CiMethod!>() Calls;
 }
 
 public class CiMethod : CiMethodBase
@@ -1183,8 +1183,8 @@ public class CiClass : CiContainerType
 public class CiClassType : CiType
 {
 	internal CiClass Class;
-	internal CiType TypeArg0;
-	internal CiType TypeArg1;
+	internal CiType# TypeArg0;
+	internal CiType# TypeArg1;
 	public CiType GetElementType() => this.TypeArg0;
 	public CiType GetKeyType() => this.TypeArg0;
 	public CiType GetValueType() => this.TypeArg1;

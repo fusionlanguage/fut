@@ -35,7 +35,7 @@ all: cito.exe
 cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs GenPySwift.cs GenPy.cs GenSwift.cs GenTs.cs GenCl.cs CiTo.cs)
 	$(DO_BUILD)
 
-Transpiled.cs: Lexer.ci AST.ci Parser.ci
+Transpiled.cs: Lexer.ci AST.ci Parser.ci Sema.ci
 	cito -o $@ -n Foxoft.Ci $^
 
 test: test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-cl test-error
