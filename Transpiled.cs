@@ -4257,6 +4257,29 @@ namespace Foxoft.Ci
 
 		protected CiLiteralDouble ToLiteralDouble(CiExpr expr, double value) => new CiLiteralDouble { Line = expr.Line, Type = this.Program.System.DoubleType, Value = value };
 
+		protected void CheckLValue(CiExpr expr)
+		{
+			if (expr is CiSymbolReference symbol) {
+				if (symbol.Symbol is CiVar def) {
+					def.IsAssigned = true;
+					switch (symbol.Symbol.Parent) {
+					case CiFor forLoop:
+						forLoop.IsRange = false;
+						break;
+					case CiForeach _:
+						ReportError(expr, "Cannot assign a foreach iteration variable");
+						break;
+					default:
+						break;
+					}
+				}
+				for (CiScope scope = this.CurrentScope; !(scope is CiClass); scope = scope.Parent) {
+					if (scope is CiFor forLoop && forLoop.IsRange && forLoop.Cond is CiBinaryExpr binaryCond && binaryCond.Right.IsReferenceTo(symbol.Symbol))
+						forLoop.IsRange = false;
+				}
+			}
+		}
+
 		protected CiInterpolatedString ToInterpolatedString(CiExpr expr)
 		{
 			if (expr is CiInterpolatedString interpolated)
@@ -4375,6 +4398,15 @@ namespace Foxoft.Ci
 				ReportError(expr, $"Unexpected {CiLexer.TokenToString(ptrModifier)} on a non-reference type");
 		}
 
+		protected CiExpr FoldConst(CiExpr expr)
+		{
+			expr = Resolve(expr);
+			if (expr is CiLiteral || expr.IsConstEnum())
+				return expr;
+			ReportError(expr, "Expected constant value");
+			return expr;
+		}
+
 		protected static CiClassType CreateClassPtr(CiClass klass, CiToken ptrModifier)
 		{
 			CiClassType ptr;
@@ -4395,13 +4427,25 @@ namespace Foxoft.Ci
 			return ptr;
 		}
 
-		protected static void MarkMethodLive(CiMethodBase method)
+		static void MarkMethodLive(CiMethodBase method)
 		{
 			if (method.IsLive)
 				return;
 			method.IsLive = true;
 			foreach (CiMethod called in method.Calls)
 				MarkMethodLive(called);
+		}
+
+		protected static void MarkClassLive(CiClass klass)
+		{
+			if (!klass.IsPublic)
+				return;
+			for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+				if (symbol is CiMethod method && (method.Visibility == CiVisibility.Public || method.Visibility == CiVisibility.Protected))
+					MarkMethodLive(method);
+			}
+			if (klass.Constructor != null)
+				MarkMethodLive(klass.Constructor);
 		}
 	}
 }

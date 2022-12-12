@@ -282,8 +282,8 @@ public abstract class CiSymbol : CiExpr
 {
 	internal CiId Id = CiId.None;
 	internal string() Name;
-	internal CiSymbol Next;
-	internal CiScope Parent;
+	internal CiSymbol! Next;
+	internal CiScope! Parent;
 	internal CiCodeDoc# Documentation = null;
 	public override string() ToString() => this.Name;
 }
@@ -291,7 +291,7 @@ public abstract class CiSymbol : CiExpr
 public class CiScope : CiSymbol
 {
 	protected Dictionary<string, CiSymbol#>() Dict;
-	internal CiSymbol First = null;
+	internal CiSymbol! First = null;
 	CiSymbol! Last;
 
 	public int Count() => this.Dict.Count;
@@ -561,7 +561,7 @@ public class CiSymbolReference : CiExpr
 {
 	internal CiExpr# Left;
 	internal string() Name;
-	internal CiSymbol Symbol;
+	internal CiSymbol! Symbol;
 	public override bool IsConstEnum() => this.Symbol.Parent is CiEnum;
 	public override int IntValue()
 	{

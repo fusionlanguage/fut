@@ -29,7 +29,7 @@ namespace Foxoft.Ci
 
 public class CiResolver : CiSema
 {
-	readonly IEnumerable<string> SearchDirs;
+	readonly List<string> SearchDirs;
 	CiMethodBase CurrentMethod;
 	readonly HashSet<CiMethod> CurrentPureMethods = new HashSet<CiMethod>();
 	readonly Dictionary<CiVar, CiExpr> CurrentPureArguments = new Dictionary<CiVar, CiExpr>();
@@ -353,33 +353,6 @@ public class CiResolver : CiSema
 				return arg;
 		}
 		return resolved;
-	}
-
-	void CheckLValue(CiExpr expr)
-	{
-		// TODO: check lvalue
-		if (expr is CiSymbolReference symbol) {
-			if (symbol.Symbol is CiVar def) {
-				def.IsAssigned = true;
-				switch (symbol.Symbol.Parent) {
-				case CiFor forLoop:
-					forLoop.IsRange = false;
-					break;
-				case CiForeach _:
-					ReportError(expr, "Cannot assign a foreach iteration variable");
-					break;
-				default:
-					break;
-				}
-			}
-			for (CiScope scope = this.CurrentScope; !(scope is CiClass); scope = scope.Parent) {
-				if (scope is CiFor forLoop
-				 && forLoop.IsRange
-				 && forLoop.Cond is CiBinaryExpr binaryCond
-				 && binaryCond.Right.IsReferenceTo(symbol.Symbol))
-					forLoop.IsRange = false;
-			}
-		}
 	}
 
 	public override CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
@@ -1223,15 +1196,6 @@ public class CiResolver : CiSema
 		return CiToken.EndOfFile; // no modifier
 	}
 
-	CiExpr FoldConst(CiExpr expr)
-	{
-		expr = Resolve(expr);
-		if (expr is CiLiteral || expr.IsConstEnum())
-			return expr;
-		ReportError(expr, "Expected constant value");
-		return expr;
-	}
-
 	int FoldConstInt(CiExpr expr)
 	{
 		if (FoldConst(expr) is CiLiteralLong literal) {
@@ -1528,20 +1492,7 @@ public class CiResolver : CiSema
 		}
 	}
 
-	static void MarkClassLive(CiClass klass)
-	{
-		if (!klass.IsPublic)
-			return;
-		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiMethod method
-			 && (method.Visibility == CiVisibility.Public || method.Visibility == CiVisibility.Protected))
-				MarkMethodLive(method);
-		}
-		if (klass.Constructor != null)
-			MarkMethodLive(klass.Constructor);
-	}
-
-	public CiResolver(CiProgram program, IEnumerable<string> searchDirs)
+	public CiResolver(CiProgram program, List<string> searchDirs)
 	{
 		this.Program = program;
 		this.SearchDirs = searchDirs;
