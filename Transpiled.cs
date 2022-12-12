@@ -4316,6 +4316,11 @@ namespace Foxoft.Ci
 			this.CurrentScope = this.CurrentScope.Parent;
 		}
 
+		public override void VisitLambdaExpr(CiLambdaExpr expr)
+		{
+			ReportError(expr, "Unexpected lambda expression");
+		}
+
 		protected CiExpr Resolve(CiExpr expr) => expr.Accept(this, CiPriority.Statement);
 
 		public override void VisitExpr(CiExpr statement)

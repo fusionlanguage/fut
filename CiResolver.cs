@@ -963,8 +963,6 @@ public class CiResolver : CiSema
 		return expr;
 	}
 
-	public override void VisitLambdaExpr(CiLambdaExpr expr) => throw new NotImplementedException(); // TODO: error message
-
 	public override void VisitConst(CiConst statement)
 	{
 		ResolveConst(statement);

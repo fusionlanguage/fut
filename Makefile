@@ -75,7 +75,7 @@ test-GenCCpp.cs: test-c test-cpp
 
 test-GenPySwift.cs: test-py test-swift
 
-test-error test-Lexer.ci test-Parser.ci test-CiResolver.cs: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
+test-error test-Lexer.ci test-Parser.ci test-Sema.ci test-CiResolver.cs: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
 	$(DO_SUMMARY)
 
 test-%.ci: $(addsuffix .txt, $(addprefix test/bin/%/, c cpp cs java js ts py swift cl))
