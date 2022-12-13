@@ -233,7 +233,7 @@ public abstract class CiVisitor
 	public abstract CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent);
 	public abstract CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent);
 	public abstract CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent);
-	public abstract CiExpr VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent);
+	public abstract void VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent);
 	public abstract CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent);
 	public abstract CiExpr VisitSelectExpr(CiSelectExpr expr, CiPriority parent);
 	public abstract CiExpr VisitCallExpr(CiCallExpr expr, CiPriority parent);
@@ -592,7 +592,11 @@ public class CiPrefixExpr : CiUnaryExpr
 
 public class CiPostfixExpr : CiUnaryExpr
 {
-	public override CiExpr Accept(CiVisitor! visitor, CiPriority parent) => visitor.VisitPostfixExpr(this, parent);
+	public override CiExpr Accept(CiVisitor! visitor, CiPriority parent)
+	{
+		visitor.VisitPostfixExpr(this, parent);
+		return this;
+	}
 }
 
 public class CiBinaryExpr : CiExpr

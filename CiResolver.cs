@@ -452,7 +452,7 @@ public class CiResolver : CiSema
 		return new CiPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
 	}
 
-	public override CiExpr VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
+	public override void VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
 	{
 		expr.Inner = Resolve(expr.Inner);
 		switch (expr.Op) {
@@ -461,10 +461,10 @@ public class CiResolver : CiSema
 			CheckLValue(expr.Inner);
 			Coerce(expr.Inner, this.Program.System.DoubleType);
 			expr.Type = expr.Inner.Type;
-			return expr;
+			break;
 		default:
 			ReportError(expr, $"Unexpected {CiLexer.TokenToString(expr.Op)}");
-			return expr;
+			break;
 		}
 	}
 

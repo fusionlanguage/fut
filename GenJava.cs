@@ -386,7 +386,7 @@ public class GenJava : GenTyped
 		return base.VisitPrefixExpr(expr, parent);
 	}
 
-	public override CiExpr VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
+	public override void VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
 	{
 		if ((expr.Op == CiToken.Increment || expr.Op == CiToken.Decrement)
 		 && expr.Inner is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)) {
@@ -398,9 +398,9 @@ public class GenJava : GenTyped
 				Write(" & 0xff");
 			if (parent > CiPriority.And)
 				WriteChar(')');
-			return expr;
 		}
-		return base.VisitPostfixExpr(expr, parent);
+		else
+			base.VisitPostfixExpr(expr, parent);
 	}
 
 	void WriteIndexingInternal(CiBinaryExpr expr)

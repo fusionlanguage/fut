@@ -880,7 +880,7 @@ public abstract class GenBase : CiVisitor
 		return expr;
 	}
 
-	public override CiExpr VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
+	public override void VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
 	{
 		expr.Inner.Accept(this, CiPriority.Primary);
 		switch (expr.Op) {
@@ -893,7 +893,6 @@ public abstract class GenBase : CiVisitor
 		default:
 			throw new ArgumentException(expr.Op.ToString());
 		}
-		return expr;
 	}
 
 	static bool IsBitOp(CiPriority parent)

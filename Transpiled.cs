@@ -1418,7 +1418,7 @@ namespace Foxoft.Ci
 
 		public abstract CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent);
 
-		public abstract CiExpr VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent);
+		public abstract void VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent);
 
 		public abstract CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent);
 
@@ -1859,7 +1859,11 @@ namespace Foxoft.Ci
 	public class CiPostfixExpr : CiUnaryExpr
 	{
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitPostfixExpr(this, parent);
+		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		{
+			visitor.VisitPostfixExpr(this, parent);
+			return this;
+		}
 	}
 
 	public class CiBinaryExpr : CiExpr
