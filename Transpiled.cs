@@ -4078,6 +4078,8 @@ namespace Foxoft.Ci
 
 		protected CiProgram Program;
 
+		protected CiMethodBase CurrentMethod;
+
 		protected CiScope CurrentScope;
 
 		protected CiType Poison = new CiType { Name = "poison" };
@@ -4428,6 +4430,16 @@ namespace Foxoft.Ci
 			return expr;
 		}
 
+		public override void VisitAssert(CiAssert statement)
+		{
+			statement.Cond = ResolveBool(statement.Cond);
+			if (statement.Message != null) {
+				statement.Message = Resolve(statement.Message);
+				if (!(statement.Message.Type is CiStringType))
+					ReportError(statement, "The second argument of 'assert' must be a string");
+			}
+		}
+
 		protected bool ResolveStatements(List<CiStatement> statements)
 		{
 			bool reachable = true;
@@ -4458,8 +4470,62 @@ namespace Foxoft.Ci
 		{
 		}
 
+		protected void ResolveLoopCond(CiLoop statement)
+		{
+			if (statement.Cond != null) {
+				statement.Cond = ResolveBool(statement.Cond);
+				statement.SetCompletesNormally(!(statement.Cond is CiLiteralTrue));
+			}
+			else
+				statement.SetCompletesNormally(false);
+		}
+
+		public override void VisitDoWhile(CiDoWhile statement)
+		{
+			OpenScope(statement);
+			ResolveLoopCond(statement);
+			statement.Body.AcceptStatement(this);
+			CloseScope();
+		}
+
+		public override void VisitIf(CiIf statement)
+		{
+			statement.Cond = ResolveBool(statement.Cond);
+			statement.OnTrue.AcceptStatement(this);
+			if (statement.OnFalse != null) {
+				statement.OnFalse.AcceptStatement(this);
+				statement.SetCompletesNormally(statement.OnTrue.CompletesNormally() || statement.OnFalse.CompletesNormally());
+			}
+			else
+				statement.SetCompletesNormally(true);
+		}
+
+		public override void VisitLock(CiLock statement)
+		{
+			statement.Lock = Resolve(statement.Lock);
+			Coerce(statement.Lock, this.Program.System.LockPtrType);
+			statement.Body.AcceptStatement(this);
+		}
+
 		public override void VisitNative(CiNative statement)
 		{
+		}
+
+		public override void VisitThrow(CiThrow statement)
+		{
+			if (!this.CurrentMethod.Throws)
+				ReportError(statement, "'throw' in a method not marked 'throws'");
+			statement.Message = Resolve(statement.Message);
+			if (!(statement.Message.Type is CiStringType))
+				ReportError(statement, "The argument of 'throw' must be a string");
+		}
+
+		public override void VisitWhile(CiWhile statement)
+		{
+			OpenScope(statement);
+			ResolveLoopCond(statement);
+			statement.Body.AcceptStatement(this);
+			CloseScope();
 		}
 
 		protected void ExpectNoPtrModifier(CiExpr expr, CiToken ptrModifier)
