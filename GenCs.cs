@@ -285,7 +285,7 @@ public class GenCs : GenTyped
 
 	protected override TypeCode GetTypeCode(CiExpr expr) => expr is CiLiteralChar ? TypeCode.UInt16 : base.GetTypeCode(expr);
 
-	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
+	public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		Write("$\"");
 		foreach (CiInterpolatedPart part in expr.Parts) {
@@ -306,7 +306,6 @@ public class GenCs : GenTyped
 		}
 		WriteDoubling(expr.Suffix, '{');
 		WriteChar('"');
-		return expr;
 	}
 
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
@@ -370,13 +369,13 @@ public class GenCs : GenTyped
 		Write(".Length");
 	}
 
-	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
+	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
 		case CiId.MatchStart:
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".Index");
-			return expr;
+			break;
 		case CiId.MatchEnd:
 			if (parent > CiPriority.Add)
 				WriteChar('(');
@@ -385,13 +384,13 @@ public class GenCs : GenTyped
 			WriteStringLength(expr.Left); // FIXME: side effect
 			if (parent > CiPriority.Add)
 				WriteChar(')');
-			return expr;
+			break;
 		case CiId.MathNaN:
 		case CiId.MathNegativeInfinity:
 		case CiId.MathPositiveInfinity:
 			Write("float.");
 			Write(expr.Symbol.Name);
-			return expr;
+			break;
 		default:
 			if (expr.Symbol.Parent is CiForeach forEach
 			&& forEach.Collection.Type is CiClassType dict
@@ -411,9 +410,10 @@ public class GenCs : GenTyped
 				}
 				if (parent == CiPriority.Primary)
 					WriteChar(')');
-				return expr;
 			}
-			return base.VisitSymbolReference(expr, parent);
+			else
+				base.VisitSymbolReference(expr, parent);
+			break;
 		}
 	}
 
@@ -651,7 +651,7 @@ public class GenCs : GenTyped
 			base.WriteAssign(expr, parent);
 	}
 
-	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
+	public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
 		case CiToken.AndAssign:
@@ -666,9 +666,10 @@ public class GenCs : GenTyped
 			WriteAssignRight(expr);
 			if (parent > CiPriority.Assign)
 				WriteChar(')');
-			return expr;
+			break;
 		default:
-			return base.VisitBinaryExpr(expr, parent);
+			base.VisitBinaryExpr(expr, parent);
+			break;
 		}
 	}
 

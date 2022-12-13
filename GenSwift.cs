@@ -358,7 +358,7 @@ public class GenSwift : GenPySwift
 			expr.Accept(this, parent);
 	}
 
-	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
+	public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		if (expr.Parts.Any(part => part.WidthExpr != null || part.Format != ' ' || part.Precision >= 0)) {
 			Include("Foundation");
@@ -376,7 +376,6 @@ public class GenSwift : GenPySwift
 			Write(expr.Suffix);
 			WriteChar('"');
 		}
-		return expr;
 	}
 
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
@@ -413,20 +412,21 @@ public class GenSwift : GenPySwift
 		WriteChar(')');
 	}
 
-	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
+	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
 		case CiId.MathNaN:
 			Write("Float.nan");
-			return expr;
+			break;
 		case CiId.MathNegativeInfinity:
 			Write("-Float.infinity");
-			return expr;
+			break;
 		case CiId.MathPositiveInfinity:
 			Write("Float.infinity");
-			return expr;
+			break;
 		default:
-			return base.VisitSymbolReference(expr, parent);
+			base.VisitSymbolReference(expr, parent);
+			break;
 		}
 	}
 
@@ -818,16 +818,16 @@ public class GenSwift : GenPySwift
 		WriteChar(')');
 	}
 
-	public override CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
+	public override void VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
 	{
 		if (expr.Op == CiToken.Tilde && expr.Type is CiEnumFlags) {
 			Write(expr.Type.Name);
 			Write("(rawValue: ~");
 			expr.Inner.Accept(this, CiPriority.Primary);
 			Write(".rawValue)");
-			return expr;
 		}
-		return base.VisitPrefixExpr(expr, parent);
+		else
+			base.VisitPrefixExpr(expr, parent);
 	}
 
 	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
@@ -908,41 +908,45 @@ public class GenSwift : GenPySwift
 			WriteCall(expr.Left, method, expr.Right);
 	}
 
-	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
+	public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Type is CiEnumFlags) {
 			switch (expr.Op) {
 			case CiToken.And:
 				WriteEnumFlagsAnd(expr, "intersection", "subtracting");
-				return expr;
+				return;
 			case CiToken.Or:
 				WriteCall(expr.Left, "union", expr.Right);
-				return expr;
+				return;
 			case CiToken.Xor:
 				WriteCall(expr.Left, "symmetricDifference", expr.Right);
-				return expr;
+				return;
 			case CiToken.AndAssign:
 				WriteEnumFlagsAnd(expr, "formIntersection", "subtract");
-				return expr;
+				return;
 			case CiToken.OrAssign:
 				WriteCall(expr.Left, "formUnion", expr.Right);
-				return expr;
+				return;
 			case CiToken.XorAssign:
 				WriteCall(expr.Left, "formSymmetricDifference", expr.Right);
-				return expr;
+				return;
 			default:
 				break;
 			}
 		}
 		switch (expr.Op) {
 		case CiToken.ShiftLeft:
-			return WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Primary, " << ", CiPriority.Primary);
+			WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Primary, " << ", CiPriority.Primary);
+			break;
 		case CiToken.ShiftRight:
-			return WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Primary, " >> ", CiPriority.Primary);
+			WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Primary, " >> ", CiPriority.Primary);
+			break;
 		case CiToken.Or:
-			return WriteBinaryExpr(expr, parent > CiPriority.Add, CiPriority.Add, " | ", CiPriority.Mul);
+			WriteBinaryExpr(expr, parent > CiPriority.Add, CiPriority.Add, " | ", CiPriority.Mul);
+			break;
 		case CiToken.Xor:
-			return WriteBinaryExpr(expr, parent > CiPriority.Add, CiPriority.Add, " ^ ", CiPriority.Mul);
+			WriteBinaryExpr(expr, parent > CiPriority.Add, CiPriority.Add, " ^ ", CiPriority.Mul);
+			break;
 		case CiToken.Assign:
 		case CiToken.AddAssign:
 		case CiToken.SubAssign:
@@ -974,9 +978,10 @@ public class GenSwift : GenPySwift
 			}
 			else
 				WriteCoerced(expr.Type, right, CiPriority.Argument);
-			return expr;
+			break;
 		default:
-			return base.VisitBinaryExpr(expr, parent);
+			base.VisitBinaryExpr(expr, parent);
+			break;
 		}
 	}
 

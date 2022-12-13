@@ -162,13 +162,6 @@ public class CiResolver : CiSema
 		return GetIntegerType(left, right);
 	}
 
-	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
-	{
-		List<CiExpr> items = expr.Items;
-		for (int i = 0; i < items.Count; i++)
-			items[i] = Resolve(items[i]);
-	}
-
 	void ResolveObjectLiteral(CiClassType klass, CiAggregateInitializer init)
 	{
 		foreach (CiBinaryExpr field in init.Items) {
@@ -184,7 +177,7 @@ public class CiResolver : CiSema
 		}
 	}
 
-	public override void VisitVar(CiVar expr)
+	protected override void VisitVar(CiVar expr)
 	{
 		CiType type = ResolveType(expr);
 		if (expr.Value != null) {
@@ -210,7 +203,7 @@ public class CiResolver : CiSema
 		return result;
 	}
 
-	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
+	protected override CiExpr VisitInterpolatedString(CiInterpolatedString expr)
 	{
 		int partsCount = 0;
 		StringBuilder sb = new StringBuilder();
@@ -279,7 +272,7 @@ public class CiResolver : CiSema
 		return expr;
 	}
 
-	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
+	protected override CiExpr VisitSymbolReference(CiSymbolReference expr)
 	{
 		if (expr.Left != null) {
 			CiExpr left = Resolve(expr.Left);
@@ -355,7 +348,7 @@ public class CiResolver : CiSema
 		return resolved;
 	}
 
-	public override CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
+	protected override CiExpr VisitPrefixExpr(CiPrefixExpr expr)
 	{
 		CiExpr inner;
 		CiType type;
@@ -452,22 +445,6 @@ public class CiResolver : CiSema
 		return new CiPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
 	}
 
-	public override void VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
-	{
-		expr.Inner = Resolve(expr.Inner);
-		switch (expr.Op) {
-		case CiToken.Increment:
-		case CiToken.Decrement:
-			CheckLValue(expr.Inner);
-			Coerce(expr.Inner, this.Program.System.DoubleType);
-			expr.Type = expr.Inner.Type;
-			break;
-		default:
-			ReportError(expr, $"Unexpected {CiLexer.TokenToString(expr.Op)}");
-			break;
-		}
-	}
-
 	CiInterpolatedString Concatenate(CiInterpolatedString left, CiInterpolatedString right)
 	{
 		CiInterpolatedString result = new CiInterpolatedString { Line = left.Line, Type = this.Program.System.StringStorageType };
@@ -518,7 +495,7 @@ public class CiResolver : CiSema
 		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = this.Program.System.BoolType };
 	}
 
-	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
+	protected override CiExpr VisitBinaryExpr(CiBinaryExpr expr)
 	{
 		CiExpr left = Resolve(expr.Left);
 		CiExpr right = Resolve(expr.Right);
@@ -824,22 +801,7 @@ public class CiResolver : CiSema
 		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = type };
 	}
 
-	public override CiExpr VisitSelectExpr(CiSelectExpr expr, CiPriority parent)
-	{
-		CiExpr cond = ResolveBool(expr.Cond);
-		CiExpr onTrue = Resolve(expr.OnTrue);
-		CiExpr onFalse = Resolve(expr.OnFalse);
-		CiType type = GetCommonType(onTrue, onFalse);
-		Coerce(onTrue, type);
-		Coerce(onFalse, type);
-		if (cond is CiLiteralTrue)
-			return onTrue;
-		if (cond is CiLiteralFalse)
-			return onFalse;
-		return new CiSelectExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
-	}
-
-	public override CiExpr VisitCallExpr(CiCallExpr expr, CiPriority parent)
+	protected override CiExpr VisitCallExpr(CiCallExpr expr)
 	{
 		if (!(Resolve(expr.Method) is CiSymbolReference symbol))
 			return this.Poison;

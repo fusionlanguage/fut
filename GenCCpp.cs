@@ -76,23 +76,24 @@ public abstract class GenCCpp : GenTyped
 		}
 	}
 
-	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
+	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
 		case CiId.MathNaN:
 			IncludeMath();
 			Write("NAN");
-			return expr;
+			break;
 		case CiId.MathNegativeInfinity:
 			IncludeMath();
 			Write("-INFINITY");
-			return expr;
+			break;
 		case CiId.MathPositiveInfinity:
 			IncludeMath();
 			Write("INFINITY");
-			return expr;
+			break;
 		default:
-			return base.VisitSymbolReference(expr, parent);
+			base.VisitSymbolReference(expr, parent);
+			break;
 		}
 	}
 

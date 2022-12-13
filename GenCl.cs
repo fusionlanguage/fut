@@ -91,10 +91,9 @@ public class GenCl : GenC
 	{
 	}
 
-	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
+	public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		NotSupported(expr, "Interpolated strings");
-		return expr;
 	}
 
 	protected override void WriteCamelCaseNotKeyword(string name)

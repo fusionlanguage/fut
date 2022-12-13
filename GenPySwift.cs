@@ -87,15 +87,16 @@ public abstract class GenPySwift : GenBase
 		Write(" ]");
 	}
 
-	public override CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
+	public override void VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
 		case CiToken.Increment:
 		case CiToken.Decrement:
 			expr.Inner.Accept(this, parent);
-			return expr;
+			break;
 		default:
-			return base.VisitPrefixExpr(expr, parent);
+			base.VisitPrefixExpr(expr, parent);
+			break;
 		}
 	}
 

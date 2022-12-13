@@ -51,7 +51,7 @@ public class GenJava : GenTyped
 			base.WritePrintfWidth(part);
 	}
 
-	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
+	public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		if (expr.Suffix.Length == 0
 		 && expr.Parts.Count == 1
@@ -73,14 +73,14 @@ public class GenJava : GenTyped
 			case CiId.StringPtrType:
 			case CiId.StringStorageType:
 				arg.Accept(this, parent);
-				return expr;
+				return;
 			default:
 				if (arg.Type is CiIntegerType)
 					Write("Integer");
 				else if (arg.Type is CiClassType) {
 					arg.Accept(this, CiPriority.Primary);
 					Write(".toString()");
-					return expr;
+					return;
 				}
 				else
 					throw new NotImplementedException(arg.Type.ToString());
@@ -92,7 +92,6 @@ public class GenJava : GenTyped
 			Write("String.format(");
 			WritePrintf(expr, false);
 		}
-		return expr;
 	}
 
 	void WriteCamelCaseNotKeyword(string name)
@@ -369,7 +368,7 @@ public class GenJava : GenTyped
 		WriteChar(')');
 	}
 
-	public override CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
+	public override void VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
 	{
 		if ((expr.Op == CiToken.Increment || expr.Op == CiToken.Decrement)
 		 && expr.Inner is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)) {
@@ -381,9 +380,9 @@ public class GenJava : GenTyped
 				Write(" & 0xff");
 			if (parent > CiPriority.And)
 				WriteChar(')');
-			return expr;
 		}
-		return base.VisitPrefixExpr(expr, parent);
+		else
+			base.VisitPrefixExpr(expr, parent);
 	}
 
 	public override void VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
@@ -473,7 +472,7 @@ public class GenJava : GenTyped
 		WriteCall(expr.Left, "charAt", expr.Right);
 	}
 
-	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
+	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
 		case CiId.ListCount:
@@ -486,20 +485,20 @@ public class GenJava : GenTyped
 			expr.Left.Accept(this, CiPriority.Primary);
 			WriteMemberOp(expr.Left, expr);
 			Write("size()");
-			return expr;
+			break;
 		case CiId.MathNaN:
 			Write("Float.NaN");
-			return expr;
+			break;
 		case CiId.MathNegativeInfinity:
 			Write("Float.NEGATIVE_INFINITY");
-			return expr;
+			break;
 		case CiId.MathPositiveInfinity:
 			Write("Float.POSITIVE_INFINITY");
-			return expr;
+			break;
 		default:
-			if (WriteJavaMatchProperty(expr, parent))
-				return expr;
-			return base.VisitSymbolReference(expr, parent);
+			if (!WriteJavaMatchProperty(expr, parent))
+				base.VisitSymbolReference(expr, parent);
+			break;
 		}
 	}
 

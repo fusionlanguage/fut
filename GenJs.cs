@@ -196,7 +196,7 @@ public class GenJs : GenBase
 		}
 	}
 
-	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
+	public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		WriteChar('`');
 		foreach (CiInterpolatedPart part in expr.Parts) {
@@ -258,7 +258,6 @@ public class GenJs : GenBase
 		}
 		WriteInterpolatedLiteral(expr.Suffix);
 		WriteChar('`');
-		return expr;
 	}
 
 	protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
@@ -324,7 +323,7 @@ public class GenJs : GenBase
 			WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
-	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
+	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
 		case CiId.ListCount:
@@ -332,21 +331,21 @@ public class GenJs : GenBase
 		case CiId.StackCount:
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".length");
-			return expr;
+			break;
 		case CiId.HashSetCount:
 		case CiId.OrderedDictionaryCount:
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".size");
-			return expr;
+			break;
 		case CiId.DictionaryCount:
 		case CiId.SortedDictionaryCount:
 			WriteCall("Object.keys", expr.Left);
 			Write(".length");
-			return expr;
+			break;
 		case CiId.MatchStart:
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write(".index");
-			return expr;
+			break;
 		case CiId.MatchEnd:
 			if (parent > CiPriority.Add)
 				WriteChar('(');
@@ -356,26 +355,27 @@ public class GenJs : GenBase
 			Write("[0].length");
 			if (parent > CiPriority.Add)
 				WriteChar(')');
-			return expr;
+			break;
 		case CiId.MatchLength:
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write("[0].length");
-			return expr;
+			break;
 		case CiId.MatchValue:
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write("[0]");
-			return expr;
+			break;
 		case CiId.MathNaN:
 			Write("NaN");
-			return expr;
+			break;
 		case CiId.MathNegativeInfinity:
 			Write("-Infinity");
-			return expr;
+			break;
 		case CiId.MathPositiveInfinity:
 			Write("Infinity");
-			return expr;
+			break;
 		default:
-			return base.VisitSymbolReference(expr, parent);
+			base.VisitSymbolReference(expr, parent);
+			break;
 		}
 	}
 
@@ -762,7 +762,7 @@ public class GenJs : GenBase
 
 	protected override string GetIsOperator() => " instanceof ";
 
-	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
+	public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Type is CiIntegerType) {
 			switch (expr.Op) {
@@ -775,7 +775,7 @@ public class GenJs : GenBase
 				Write(" | 0"); // FIXME: long: Math.trunc?
 				if (parent > CiPriority.Or)
 					WriteChar(')');
-				return expr;
+				return;
 			case CiToken.DivAssign:
 				if (parent > CiPriority.Assign)
 					WriteChar('(');
@@ -787,12 +787,12 @@ public class GenJs : GenBase
 				Write(" | 0");
 				if (parent > CiPriority.Assign)
 					WriteChar(')');
-				return expr;
+				return;
 			default:
 				break;
 			}
 		}
-		return base.VisitBinaryExpr(expr, parent);
+		base.VisitBinaryExpr(expr, parent);
 	}
 
 	public override void VisitLambdaExpr(CiLambdaExpr expr)

@@ -199,7 +199,7 @@ public class GenPy : GenPySwift
 			base.VisitAggregateInitializer(expr);
 	}
 
-	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
+	public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		Write("f\"");
 		foreach (CiInterpolatedPart part in expr.Parts) {
@@ -229,10 +229,9 @@ public class GenPy : GenPySwift
 		}
 		WriteDoubling(expr.Suffix, '{');
 		WriteChar('"');
-		return expr;
 	}
 
-	public override CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
+	public override void VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
 	{
 		if (expr.Op == CiToken.ExclamationMark) {
 			if (parent > CiPriority.CondAnd)
@@ -241,9 +240,9 @@ public class GenPy : GenPySwift
 			expr.Inner.Accept(this, CiPriority.Or);
 			if (parent > CiPriority.CondAnd)
 				WriteChar(')');
-			return expr;
 		}
-		return base.VisitPrefixExpr(expr, parent);
+		else
+			base.VisitPrefixExpr(expr, parent);
 	}
 
 	protected override string GetReferenceEqOp(bool not) => not ? " is not " : " is ";
@@ -257,7 +256,7 @@ public class GenPy : GenPySwift
 
 	protected override void WriteStringLength(CiExpr expr) => WriteCall("len", expr);
 
-	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
+	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
 		case CiId.ListCount:
@@ -268,27 +267,27 @@ public class GenPy : GenPySwift
 		case CiId.SortedDictionaryCount:
 		case CiId.OrderedDictionaryCount:
 			WriteStringLength(expr.Left);
-			return expr;
+			break;
 		case CiId.MathNaN:
 			Include("math");
 			Write("math.nan");
-			return expr;
+			break;
 		case CiId.MathNegativeInfinity:
 			Include("math");
 			Write("-math.inf");
-			return expr;
+			break;
 		case CiId.MathPositiveInfinity:
 			Include("math");
 			Write("math.inf");
-			return expr;
+			break;
 		default:
-			if (WriteJavaMatchProperty(expr, parent))
-				return expr;
-			return base.VisitSymbolReference(expr, parent);
+			if (!WriteJavaMatchProperty(expr, parent))
+				base.VisitSymbolReference(expr, parent);
+			break;
 		}
 	}
 
-	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
+	public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
 		case CiToken.Slash when expr.Type is CiIntegerType:
@@ -308,12 +307,14 @@ public class GenPy : GenPySwift
 			expr.Right.Accept(this, CiPriority.Primary);
 			if (!floorDiv || parent > CiPriority.Or)
 				WriteChar(')');
-			return expr;
+			break;
 
 		case CiToken.CondAnd:
-			return WriteBinaryExpr(expr, parent > CiPriority.CondAnd || parent == CiPriority.CondOr, CiPriority.CondAnd, " and ", CiPriority.CondAnd);
+			WriteBinaryExpr(expr, parent > CiPriority.CondAnd || parent == CiPriority.CondOr, CiPriority.CondAnd, " and ", CiPriority.CondAnd);
+			break;
 		case CiToken.CondOr:
-			return WriteBinaryExpr2(expr, parent, CiPriority.CondOr, " or ");
+			WriteBinaryExpr2(expr, parent, CiPriority.CondOr, " or ");
+			break;
 
 		case CiToken.Assign:
 			if (this.AtLineStart) {
@@ -330,7 +331,7 @@ public class GenPy : GenPySwift
 			{
 				(expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign() && rightBinary.Op != CiToken.Assign ? rightBinary.Left /* TODO: side effect*/ : expr.Right).Accept(this, CiPriority.Assign);
 			}
-			return expr;
+			break;
 		case CiToken.AddAssign:
 		case CiToken.SubAssign:
 		case CiToken.MulAssign:
@@ -356,7 +357,7 @@ public class GenPy : GenPySwift
 				WriteChar(' ');
 				right.Accept(this, CiPriority.Argument);
 			}
-			return expr;
+			break;
 
 		case CiToken.Is:
 			if (expr.Right is CiClass klass) {
@@ -368,10 +369,11 @@ public class GenPy : GenPySwift
 			}
 			else
 				NotSupported(expr, "'is' with a variable");
-			return expr;
+			break;
 
 		default:
-			return base.VisitBinaryExpr(expr, parent);
+			base.VisitBinaryExpr(expr, parent);
+			break;
 		}
 	}
 

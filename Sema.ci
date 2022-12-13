@@ -55,6 +55,13 @@ public abstract class CiSema : CiVisitor
 		return true;
 	}
 
+	void VisitAggregateInitializer(CiAggregateInitializer expr)
+	{
+		List<CiExpr#>! items = expr.Items;
+		for (int i = 0; i < items.Count; i++)
+			items[i] = Resolve(items[i]);
+	}
+
 	protected static CiRangeType# Union(CiRangeType# left, CiRangeType# right)
 	{
 		if (right == null)
@@ -190,34 +197,6 @@ public abstract class CiSema : CiVisitor
 		return false;
 	}
 
-	public override void VisitLiteralLong(long value)
-	{
-	}
-
-	public override void VisitLiteralChar(int value)
-	{
-	}
-
-	public override void VisitLiteralDouble(double value)
-	{
-	}
-
-	public override void VisitLiteralString(string value)
-	{
-	}
-
-	public override void VisitLiteralNull()
-	{
-	}
-
-	public override void VisitLiteralFalse()
-	{
-	}
-
-	public override void VisitLiteralTrue()
-	{
-	}
-
 	protected CiLiteralLong# ToLiteralLong(CiExpr expr, long value) => this.Program.System.NewLiteralLong(value, expr.Line);
 
 	protected CiLiteralDouble# ToLiteralDouble(CiExpr expr, double value) => new CiLiteralDouble { Line = expr.Line, Type = this.Program.System.DoubleType, Value = value };
@@ -308,19 +287,89 @@ public abstract class CiSema : CiVisitor
 		this.CurrentScope = this.CurrentScope.Parent;
 	}
 
-	public override void VisitLambdaExpr(CiLambdaExpr expr)
+	protected abstract CiExpr# VisitInterpolatedString!(CiInterpolatedString# expr);
+
+	protected abstract CiExpr# VisitSymbolReference!(CiSymbolReference# expr);
+
+	protected abstract CiExpr# VisitPrefixExpr!(CiPrefixExpr# expr);
+
+	void VisitPostfixExpr!(CiPostfixExpr! expr)
 	{
-		ReportError(expr, "Unexpected lambda expression");
+		expr.Inner = Resolve(expr.Inner);
+		switch (expr.Op) {
+		case CiToken.Increment:
+		case CiToken.Decrement:
+			CheckLValue(expr.Inner);
+			Coerce(expr.Inner, this.Program.System.DoubleType);
+			expr.Type = expr.Inner.Type;
+			break;
+		default:
+			ReportError(expr, $"Unexpected {CiLexer.TokenToString(expr.Op)}");
+			break;
+		}
 	}
 
-	protected CiExpr Resolve(CiExpr expr) => expr.Accept(this, CiPriority.Statement);
+	protected abstract CiExpr# VisitBinaryExpr!(CiBinaryExpr# expr);
 
-	public override void VisitExpr(CiExpr statement)
+	CiExpr# VisitSelectExpr!(CiSelectExpr expr)
+	{
+		CiExpr# cond = ResolveBool(expr.Cond);
+		CiExpr# onTrue = Resolve(expr.OnTrue);
+		CiExpr# onFalse = Resolve(expr.OnFalse);
+		CiType# type = GetCommonType(onTrue, onFalse);
+		Coerce(onTrue, type);
+		Coerce(onFalse, type);
+		if (cond is CiLiteralTrue)
+			return onTrue;
+		if (cond is CiLiteralFalse)
+			return onFalse;
+		return new CiSelectExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
+	}
+
+	protected abstract CiExpr# VisitCallExpr!(CiCallExpr# expr);
+
+	protected abstract void VisitVar(CiVar! expr);
+
+	protected CiExpr# Resolve(CiExpr# expr)
+	{
+		switch (expr) {
+		case CiAggregateInitializer aggregate:
+			VisitAggregateInitializer(aggregate);
+			return expr;
+		case CiLiteral _:
+			return expr;
+		case CiInterpolatedString# interpolated:
+			return VisitInterpolatedString(interpolated);
+		case CiSymbolReference# symbol:
+			return VisitSymbolReference(symbol);
+		case CiPrefixExpr# prefix:
+			return VisitPrefixExpr(prefix);
+		case CiPostfixExpr! postfix:
+			VisitPostfixExpr(postfix);
+			return expr;
+		case CiBinaryExpr# binary:
+			return VisitBinaryExpr(binary);
+		case CiSelectExpr select:
+			return VisitSelectExpr(select);
+		case CiCallExpr# call:
+			return VisitCallExpr(call);
+		case CiLambdaExpr _:
+			ReportError(expr, "Unexpected lambda expression");
+			return expr;
+		case CiVar! def:
+			VisitVar(def);
+			return expr;
+		default:
+			assert false;
+		}
+	}
+
+	public override void VisitExpr(CiExpr# statement)
 	{
 		Resolve(statement);
 	}
 
-	protected CiExpr ResolveBool(CiExpr expr)
+	protected CiExpr# ResolveBool(CiExpr# expr)
 	{
 		expr = Resolve(expr);
 		Coerce(expr, this.Program.System.BoolType);
@@ -367,7 +416,7 @@ public abstract class CiSema : CiVisitor
 			ReportError(expr, $"Unexpected {CiLexer.TokenToString(ptrModifier)} on a non-reference type");
 	}
 
-	protected CiExpr FoldConst(CiExpr expr)
+	protected CiExpr# FoldConst(CiExpr# expr)
 	{
 		expr = Resolve(expr);
 		if (expr is CiLiteral || expr.IsConstEnum())

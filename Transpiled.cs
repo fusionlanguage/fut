@@ -1394,40 +1394,6 @@ namespace Foxoft.Ci
 			this.HasErrors = true;
 		}
 
-		public abstract void VisitAggregateInitializer(CiAggregateInitializer expr);
-
-		public abstract void VisitVar(CiVar expr);
-
-		public abstract void VisitLiteralLong(long value);
-
-		public abstract void VisitLiteralChar(int value);
-
-		public abstract void VisitLiteralDouble(double value);
-
-		public abstract void VisitLiteralString(string value);
-
-		public abstract void VisitLiteralNull();
-
-		public abstract void VisitLiteralFalse();
-
-		public abstract void VisitLiteralTrue();
-
-		public abstract CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent);
-
-		public abstract CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent);
-
-		public abstract CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent);
-
-		public abstract void VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent);
-
-		public abstract CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent);
-
-		public abstract CiExpr VisitSelectExpr(CiSelectExpr expr, CiPriority parent);
-
-		public abstract CiExpr VisitCallExpr(CiCallExpr expr, CiPriority parent);
-
-		public abstract void VisitLambdaExpr(CiLambdaExpr expr);
-
 		public abstract void VisitConst(CiConst statement);
 
 		public abstract void VisitExpr(CiExpr statement);
@@ -1463,6 +1429,44 @@ namespace Foxoft.Ci
 		public abstract void VisitEnumValue(CiConst konst, CiConst previous);
 	}
 
+	public abstract class CiExprVisitor : CiVisitor
+	{
+
+		public abstract void VisitLiteralLong(long value);
+
+		public abstract void VisitLiteralChar(int value);
+
+		public abstract void VisitLiteralDouble(double value);
+
+		public abstract void VisitLiteralString(string value);
+
+		public abstract void VisitLiteralNull();
+
+		public abstract void VisitLiteralFalse();
+
+		public abstract void VisitLiteralTrue();
+
+		public abstract void VisitAggregateInitializer(CiAggregateInitializer expr);
+
+		public abstract void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent);
+
+		public abstract void VisitSymbolReference(CiSymbolReference expr, CiPriority parent);
+
+		public abstract void VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent);
+
+		public abstract void VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent);
+
+		public abstract void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent);
+
+		public abstract void VisitSelectExpr(CiSelectExpr expr, CiPriority parent);
+
+		public abstract void VisitCallExpr(CiCallExpr expr, CiPriority parent);
+
+		public abstract void VisitLambdaExpr(CiLambdaExpr expr);
+
+		public abstract void VisitVar(CiVar expr);
+	}
+
 	public abstract class CiStatement
 	{
 
@@ -1496,7 +1500,7 @@ namespace Foxoft.Ci
 			throw new NotImplementedException();
 		}
 
-		public virtual CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		public virtual void Accept(CiExprVisitor visitor, CiPriority parent)
 		{
 			throw new NotImplementedException();
 		}
@@ -1589,10 +1593,9 @@ namespace Foxoft.Ci
 
 		internal readonly List<CiExpr> Items = new List<CiExpr>();
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitAggregateInitializer(this);
-			return this;
 		}
 	}
 
@@ -1612,10 +1615,9 @@ namespace Foxoft.Ci
 
 		public override bool IsDefaultValue() => true;
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLiteralFalse();
-			return this;
 		}
 
 		public override string ToString() => "false";
@@ -1626,10 +1628,9 @@ namespace Foxoft.Ci
 
 		public override bool IsDefaultValue() => false;
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLiteralTrue();
-			return this;
 		}
 
 		public override string ToString() => "true";
@@ -1640,10 +1641,9 @@ namespace Foxoft.Ci
 
 		public override bool IsDefaultValue() => true;
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLiteralNull();
-			return this;
 		}
 
 		public override string ToString() => "null";
@@ -1660,10 +1660,9 @@ namespace Foxoft.Ci
 
 		public override bool IsDefaultValue() => this.Value == 0;
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLiteralLong(this.Value);
-			return this;
 		}
 
 		public override string GetLiteralString() => $"{this.Value}";
@@ -1676,10 +1675,9 @@ namespace Foxoft.Ci
 
 		public static CiLiteralChar New(int value, int line) => new CiLiteralChar { Line = line, Type = CiRangeType.New(value, value), Value = value };
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLiteralChar((int) this.Value);
-			return this;
 		}
 	}
 
@@ -1690,10 +1688,9 @@ namespace Foxoft.Ci
 
 		public override bool IsDefaultValue() => this.Value == 0 && 1.0f / this.Value > 0;
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLiteralDouble(this.Value);
-			return this;
 		}
 
 		public override string GetLiteralString() => $"{this.Value}";
@@ -1708,10 +1705,9 @@ namespace Foxoft.Ci
 
 		public override bool IsDefaultValue() => false;
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLiteralString(this.Value);
-			return this;
 		}
 
 		public override string GetLiteralString() => this.Value;
@@ -1801,7 +1797,10 @@ namespace Foxoft.Ci
 			part.Precision = precision;
 		}
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitInterpolatedString(this, parent);
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		{
+			visitor.VisitInterpolatedString(this, parent);
+		}
 	}
 
 	public class CiImplicitEnumValue : CiExpr
@@ -1829,7 +1828,10 @@ namespace Foxoft.Ci
 			return konst.Value.IntValue();
 		}
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitSymbolReference(this, parent);
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		{
+			visitor.VisitSymbolReference(this, parent);
+		}
 
 		public override bool IsReferenceTo(CiSymbol symbol) => this.Symbol == symbol;
 
@@ -1855,16 +1857,18 @@ namespace Foxoft.Ci
 			return ~this.Inner.IntValue();
 		}
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitPrefixExpr(this, parent);
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		{
+			visitor.VisitPrefixExpr(this, parent);
+		}
 	}
 
 	public class CiPostfixExpr : CiUnaryExpr
 	{
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitPostfixExpr(this, parent);
-			return this;
 		}
 	}
 
@@ -1905,7 +1909,10 @@ namespace Foxoft.Ci
 			}
 		}
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitBinaryExpr(this, parent);
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		{
+			visitor.VisitBinaryExpr(this, parent);
+		}
 
 		public bool IsAssign()
 		{
@@ -2005,7 +2012,10 @@ namespace Foxoft.Ci
 
 		internal CiExpr OnFalse;
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitSelectExpr(this, parent);
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		{
+			visitor.VisitSelectExpr(this, parent);
+		}
 
 		public override string ToString() => $"({this.Cond} ? {this.OnTrue} : {this.OnFalse})";
 	}
@@ -2017,7 +2027,10 @@ namespace Foxoft.Ci
 
 		internal readonly List<CiExpr> Arguments = new List<CiExpr>();
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitCallExpr(this, parent);
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		{
+			visitor.VisitCallExpr(this, parent);
+		}
 	}
 
 	public class CiLambdaExpr : CiScope
@@ -2025,10 +2038,9 @@ namespace Foxoft.Ci
 
 		internal CiExpr Body;
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLambdaExpr(this);
-			return this;
 		}
 	}
 
@@ -2422,10 +2434,9 @@ namespace Foxoft.Ci
 
 		public static CiVar New(CiType type, string name, CiExpr defaultValue = null) => new CiVar { Type = type, Name = name, Value = defaultValue };
 
-		public override CiExpr Accept(CiVisitor visitor, CiPriority parent)
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitVar(this);
-			return this;
 		}
 
 		public CiVar NextParameter()
@@ -4103,6 +4114,13 @@ namespace Foxoft.Ci
 			return true;
 		}
 
+		void VisitAggregateInitializer(CiAggregateInitializer expr)
+		{
+			List<CiExpr> items = expr.Items;
+			for (int i = 0; i < items.Count; i++)
+				items[i] = Resolve(items[i]);
+		}
+
 		protected static CiRangeType Union(CiRangeType left, CiRangeType right)
 		{
 			if (right == null)
@@ -4235,34 +4253,6 @@ namespace Foxoft.Ci
 			return false;
 		}
 
-		public override void VisitLiteralLong(long value)
-		{
-		}
-
-		public override void VisitLiteralChar(int value)
-		{
-		}
-
-		public override void VisitLiteralDouble(double value)
-		{
-		}
-
-		public override void VisitLiteralString(string value)
-		{
-		}
-
-		public override void VisitLiteralNull()
-		{
-		}
-
-		public override void VisitLiteralFalse()
-		{
-		}
-
-		public override void VisitLiteralTrue()
-		{
-		}
-
 		protected CiLiteralLong ToLiteralLong(CiExpr expr, long value) => this.Program.System.NewLiteralLong(value, expr.Line);
 
 		protected CiLiteralDouble ToLiteralDouble(CiExpr expr, double value) => new CiLiteralDouble { Line = expr.Line, Type = this.Program.System.DoubleType, Value = value };
@@ -4349,12 +4339,82 @@ namespace Foxoft.Ci
 			this.CurrentScope = this.CurrentScope.Parent;
 		}
 
-		public override void VisitLambdaExpr(CiLambdaExpr expr)
+		protected abstract CiExpr VisitInterpolatedString(CiInterpolatedString expr);
+
+		protected abstract CiExpr VisitSymbolReference(CiSymbolReference expr);
+
+		protected abstract CiExpr VisitPrefixExpr(CiPrefixExpr expr);
+
+		void VisitPostfixExpr(CiPostfixExpr expr)
 		{
-			ReportError(expr, "Unexpected lambda expression");
+			expr.Inner = Resolve(expr.Inner);
+			switch (expr.Op) {
+			case CiToken.Increment:
+			case CiToken.Decrement:
+				CheckLValue(expr.Inner);
+				Coerce(expr.Inner, this.Program.System.DoubleType);
+				expr.Type = expr.Inner.Type;
+				break;
+			default:
+				ReportError(expr, $"Unexpected {CiLexer.TokenToString(expr.Op)}");
+				break;
+			}
 		}
 
-		protected CiExpr Resolve(CiExpr expr) => expr.Accept(this, CiPriority.Statement);
+		protected abstract CiExpr VisitBinaryExpr(CiBinaryExpr expr);
+
+		CiExpr VisitSelectExpr(CiSelectExpr expr)
+		{
+			CiExpr cond = ResolveBool(expr.Cond);
+			CiExpr onTrue = Resolve(expr.OnTrue);
+			CiExpr onFalse = Resolve(expr.OnFalse);
+			CiType type = GetCommonType(onTrue, onFalse);
+			Coerce(onTrue, type);
+			Coerce(onFalse, type);
+			if (cond is CiLiteralTrue)
+				return onTrue;
+			if (cond is CiLiteralFalse)
+				return onFalse;
+			return new CiSelectExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
+		}
+
+		protected abstract CiExpr VisitCallExpr(CiCallExpr expr);
+
+		protected abstract void VisitVar(CiVar expr);
+
+		protected CiExpr Resolve(CiExpr expr)
+		{
+			switch (expr) {
+			case CiAggregateInitializer aggregate:
+				VisitAggregateInitializer(aggregate);
+				return expr;
+			case CiLiteral _:
+				return expr;
+			case CiInterpolatedString interpolated:
+				return VisitInterpolatedString(interpolated);
+			case CiSymbolReference symbol:
+				return VisitSymbolReference(symbol);
+			case CiPrefixExpr prefix:
+				return VisitPrefixExpr(prefix);
+			case CiPostfixExpr postfix:
+				VisitPostfixExpr(postfix);
+				return expr;
+			case CiBinaryExpr binary:
+				return VisitBinaryExpr(binary);
+			case CiSelectExpr select:
+				return VisitSelectExpr(select);
+			case CiCallExpr call:
+				return VisitCallExpr(call);
+			case CiLambdaExpr _:
+				ReportError(expr, "Unexpected lambda expression");
+				return expr;
+			case CiVar def:
+				VisitVar(def);
+				return expr;
+			default:
+				throw new NotImplementedException();
+			}
+		}
 
 		public override void VisitExpr(CiExpr statement)
 		{

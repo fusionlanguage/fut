@@ -28,7 +28,7 @@ namespace Foxoft.Ci
 
 public delegate TextWriter TextWriterFactory(string filename);
 
-public abstract class GenBase : CiVisitor
+public abstract class GenBase : CiExprVisitor
 {
 	public string Namespace;
 	public string OutputFile;
@@ -575,7 +575,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
+	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		if (expr.Left == null)
 			WriteLocalName(expr.Symbol, parent);
@@ -586,7 +586,6 @@ public abstract class GenBase : CiVisitor
 			WriteMemberOp(expr.Left, expr);
 			WriteName(expr.Symbol);
 		}
-		return expr;
 	}
 
 	protected virtual void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
@@ -840,7 +839,7 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteResource(string name, int length);
 
-	public override CiExpr VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
+	public override void VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
 		case CiToken.Increment:
@@ -869,15 +868,14 @@ public abstract class GenBase : CiVisitor
 				WriteNewWithFields(dynamic, init);
 			else
 				WriteNew(dynamic, parent);
-			return expr;
+			return;
 		case CiToken.Resource:
 			WriteResource(((CiLiteralString) expr.Inner).Value, ((CiArrayStorageType) expr.Type).Length);
-			return expr;
+			return;
 		default:
 			throw new ArgumentException(expr.Op.ToString());
 		}
 		expr.Inner.Accept(this, CiPriority.Primary);
-		return expr;
 	}
 
 	public override void VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
@@ -950,7 +948,7 @@ public abstract class GenBase : CiVisitor
 		expr.Accept(this, parent);
 	}
 
-	protected CiExpr WriteBinaryExpr(CiBinaryExpr expr, bool parentheses, CiPriority left, string op, CiPriority right)
+	protected void WriteBinaryExpr(CiBinaryExpr expr, bool parentheses, CiPriority left, string op, CiPriority right)
 	{
 		if (parentheses)
 			WriteChar('(');
@@ -959,12 +957,11 @@ public abstract class GenBase : CiVisitor
 		WriteBinaryOperand(expr.Right, right, expr);
 		if (parentheses)
 			WriteChar(')');
-		return expr;
 	}
 
-	protected CiExpr WriteBinaryExpr2(CiBinaryExpr expr, CiPriority parent, CiPriority child, string op)
+	protected void WriteBinaryExpr2(CiBinaryExpr expr, CiPriority parent, CiPriority child, string op)
 	{
-		return WriteBinaryExpr(expr, parent > child, child, op, child);
+		WriteBinaryExpr(expr, parent > child, child, op, child);
 	}
 
 	protected static string GetEqOp(bool not) => not ? " != " : " == ";
@@ -1085,51 +1082,66 @@ public abstract class GenBase : CiVisitor
 
 	protected virtual string GetIsOperator() => " is ";
 
-	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
+	public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
 		case CiToken.Plus:
-			return WriteBinaryExpr(expr, parent > CiPriority.Add || IsBitOp(parent), CiPriority.Add, " + ", CiPriority.Add);
+			WriteBinaryExpr(expr, parent > CiPriority.Add || IsBitOp(parent), CiPriority.Add, " + ", CiPriority.Add);
+			break;
 		case CiToken.Minus:
-			return WriteBinaryExpr(expr, parent > CiPriority.Add || IsBitOp(parent), CiPriority.Add, " - ", CiPriority.Mul);
+			WriteBinaryExpr(expr, parent > CiPriority.Add || IsBitOp(parent), CiPriority.Add, " - ", CiPriority.Mul);
+			break;
 		case CiToken.Asterisk:
-			return WriteBinaryExpr2(expr, parent, CiPriority.Mul, " * ");
+			WriteBinaryExpr2(expr, parent, CiPriority.Mul, " * ");
+			break;
 		case CiToken.Slash:
-			return WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " / ", CiPriority.Primary);
+			WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " / ", CiPriority.Primary);
+			break;
 		case CiToken.Mod:
-			return WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " % ", CiPriority.Primary);
+			WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " % ", CiPriority.Primary);
+			break;
 		case CiToken.ShiftLeft:
-			return WriteBinaryExpr(expr, parent > CiPriority.Shift, CiPriority.Shift, " << ", CiPriority.Mul);
+			WriteBinaryExpr(expr, parent > CiPriority.Shift, CiPriority.Shift, " << ", CiPriority.Mul);
+			break;
 		case CiToken.ShiftRight:
-			return WriteBinaryExpr(expr, parent > CiPriority.Shift, CiPriority.Shift, " >> ", CiPriority.Mul);
+			WriteBinaryExpr(expr, parent > CiPriority.Shift, CiPriority.Shift, " >> ", CiPriority.Mul);
+			break;
 		case CiToken.Less:
-			return WriteBinaryExpr2(expr, parent, CiPriority.Rel, " < ");
+			WriteBinaryExpr2(expr, parent, CiPriority.Rel, " < ");
+			break;
 		case CiToken.LessOrEqual:
-			return WriteBinaryExpr2(expr, parent, CiPriority.Rel, " <= ");
+			WriteBinaryExpr2(expr, parent, CiPriority.Rel, " <= ");
+			break;
 		case CiToken.Greater:
-			return WriteBinaryExpr2(expr, parent, CiPriority.Rel, " > ");
+			WriteBinaryExpr2(expr, parent, CiPriority.Rel, " > ");
+			break;
 		case CiToken.GreaterOrEqual:
-			return WriteBinaryExpr2(expr, parent, CiPriority.Rel, " >= ");
+			WriteBinaryExpr2(expr, parent, CiPriority.Rel, " >= ");
+			break;
 		case CiToken.Equal:
 			WriteEqual(expr, parent, false);
-			return expr;
+			break;
 		case CiToken.NotEqual:
 			WriteEqual(expr, parent, true);
-			return expr;
+			break;
 		case CiToken.And:
 			WriteAnd(expr, parent);
-			return expr;
+			break;
 		case CiToken.Or:
-			return WriteBinaryExpr2(expr, parent, CiPriority.Or, " | ");
+			WriteBinaryExpr2(expr, parent, CiPriority.Or, " | ");
+			break;
 		case CiToken.Xor:
-			return WriteBinaryExpr(expr, parent > CiPriority.Xor || parent == CiPriority.Or, CiPriority.Xor, " ^ ", CiPriority.Xor);
+			WriteBinaryExpr(expr, parent > CiPriority.Xor || parent == CiPriority.Or, CiPriority.Xor, " ^ ", CiPriority.Xor);
+			break;
 		case CiToken.CondAnd:
-			return WriteBinaryExpr(expr, parent > CiPriority.CondAnd || parent == CiPriority.CondOr, CiPriority.CondAnd, " && ", CiPriority.CondAnd);
+			WriteBinaryExpr(expr, parent > CiPriority.CondAnd || parent == CiPriority.CondOr, CiPriority.CondAnd, " && ", CiPriority.CondAnd);
+			break;
 		case CiToken.CondOr:
-			return WriteBinaryExpr2(expr, parent, CiPriority.CondOr, " || ");
+			WriteBinaryExpr2(expr, parent, CiPriority.CondOr, " || ");
+			break;
 		case CiToken.Assign:
 			WriteAssign(expr, parent);
-			return expr;
+			break;
 		case CiToken.AddAssign:
 		case CiToken.SubAssign:
 		case CiToken.MulAssign:
@@ -1149,14 +1161,14 @@ public abstract class GenBase : CiVisitor
 			expr.Right.Accept(this, CiPriority.Argument);
 			if (parent > CiPriority.Assign)
 				WriteChar(')');
-			return expr;
+			break;
 
 		case CiToken.LeftBracket:
 			if (expr.Left.Type is CiStringType)
 				WriteCharAt(expr);
 			else
 				WriteIndexing(expr, parent);
-			return expr;
+			break;
 
 		case CiToken.Is:
 			if (parent > CiPriority.Rel)
@@ -1175,23 +1187,21 @@ public abstract class GenBase : CiVisitor
 			}
 			if (parent > CiPriority.Rel)
 				WriteChar(')');
-			return expr;
+			break;
 
 		default:
 			throw new ArgumentException(expr.Op.ToString());
 		}
 	}
 
-	public override CiExpr VisitSelectExpr(CiSelectExpr expr, CiPriority parent)
+	public override void VisitSelectExpr(CiSelectExpr expr, CiPriority parent)
 	{
 		WriteCoerced(expr.Type, expr, parent);
-		return expr;
 	}
 
-	public override CiExpr VisitCallExpr(CiCallExpr expr, CiPriority parent)
+	public override void VisitCallExpr(CiCallExpr expr, CiPriority parent)
 	{
 		WriteCall(expr.Method.Left, (CiMethod) expr.Method.Symbol, expr.Arguments, parent);
-		return expr;
 	}
 
 	public override void VisitExpr(CiExpr statement)

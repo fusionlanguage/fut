@@ -110,14 +110,13 @@ public class GenC : GenCCpp
 			base.WriteInterpolatedStringArg(expr);
 	}
 
-	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
+	public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		Include("stdarg.h");
 		Include("stdio.h");
 		this.StringFormat = true;
 		Write("CiString_Format(");
 		WritePrintf(expr, false);
-		return expr;
 	}
 
 	protected virtual void WriteCamelCaseNotKeyword(string name)
@@ -287,14 +286,14 @@ public class GenC : GenCCpp
 			&& dict.GetValueType() is CiStorageType;
 	}
 
-	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
+	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
 		case CiId.ListCount:
 		case CiId.StackCount:
 			expr.Left.Accept(this, CiPriority.Primary);
 			Write("->len");
-			return expr;
+			break;
 		case CiId.QueueCount:
 			expr.Left.Accept(this, CiPriority.Primary);
 			if (expr.Left.Type is CiStorageType)
@@ -302,40 +301,39 @@ public class GenC : GenCCpp
 			else
 				Write("->");
 			Write("length");
-			return expr;
+			break;
 		case CiId.HashSetCount:
 		case CiId.DictionaryCount:
 			WriteCall("g_hash_table_size", expr.Left);
-			return expr;
+			break;
 		case CiId.SortedDictionaryCount:
 			WriteCall("g_tree_nnodes", expr.Left);
-			return expr;
+			break;
 		case CiId.MatchStart:
 			WriteMatchProperty(expr, 0);
-			return expr;
+			break;
 		case CiId.MatchEnd:
 			WriteMatchProperty(expr, 1);
-			return expr;
+			break;
 		case CiId.MatchLength:
 			WriteMatchProperty(expr, 2);
-			return expr;
+			break;
 		case CiId.MatchValue:
 			Write("g_match_info_fetch(");
 			expr.Left.Accept(this, CiPriority.Argument);
 			Write(", 0)");
-			return expr;
+			break;
 		default:
-			if (expr.Left == null || expr.Symbol is CiConst) {
+			if (expr.Left == null || expr.Symbol is CiConst)
 				WriteLocalName(expr.Symbol, parent);
-				return expr;
-			}
-			if (IsDictionaryClassStgIndexing(expr.Left)) {
+			else if (IsDictionaryClassStgIndexing(expr.Left)) {
 				expr.Left.Accept(this, CiPriority.Primary);
 				Write("->");
 				WriteName(expr.Symbol);
-				return expr;
 			}
-			return base.VisitSymbolReference(expr, parent);
+			else
+				base.VisitSymbolReference(expr, parent);
+			break;
 		}
 	}
 
@@ -1988,7 +1986,7 @@ public class GenC : GenCCpp
 		base.WriteIndexing(expr, parent);
 	}
 
-	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
+	public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
 		case CiToken.Plus:
@@ -2001,7 +1999,7 @@ public class GenC : GenCCpp
 			if (IsStringEmpty(expr, out CiExpr str)) {
 				str.Accept(this, CiPriority.Primary);
 				Write(expr.Op == CiToken.Equal ? "[0] == '\\0'" : "[0] != '\\0'");
-				return expr;
+				return;
 			}
 			break;
 		case CiToken.AddAssign:
@@ -2029,7 +2027,7 @@ public class GenC : GenCCpp
 					expr.Right.Accept(this, CiPriority.Argument);
 				}
 				WriteChar(')');
-				return expr;
+				return;
 			}
 			break;
 		case CiToken.Is:
@@ -2038,7 +2036,7 @@ public class GenC : GenCCpp
 		default:
 			break;
 		}
-		return base.VisitBinaryExpr(expr, parent);
+		base.VisitBinaryExpr(expr, parent);
 	}
 
 	protected override void WriteResource(string name, int length)

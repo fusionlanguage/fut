@@ -40,7 +40,7 @@ public class GenCpp : GenCCpp
 
 	public override void VisitLiteralNull() => Write("nullptr");
 
-	public override CiExpr VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
+	public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		Include("format");
 		Write("std::format(\"");
@@ -52,7 +52,6 @@ public class GenCpp : GenCCpp
 		WriteChar('"');
 		WriteInterpolatedStringArgs(expr);
 		WriteChar(')');
-		return expr;
 	}
 
 	void WriteCamelCaseNotKeyword(string name)
@@ -1067,7 +1066,7 @@ public class GenCpp : GenCCpp
 		Write("()");
 	}
 
-	public override CiExpr VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
+	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
 		case CiId.ListCount:
@@ -1080,10 +1079,10 @@ public class GenCpp : GenCCpp
 			expr.Left.Accept(this, CiPriority.Primary);
 			WriteMemberOp(expr.Left, expr);
 			Write("size()");
-			return expr;
+			break;
 		case CiId.MatchStart:
 			WriteMatchProperty(expr, "position");
-			return expr;
+			break;
 		case CiId.MatchEnd:
 			if (parent > CiPriority.Add)
 				WriteChar('(');
@@ -1092,15 +1091,16 @@ public class GenCpp : GenCCpp
 			WriteMatchProperty(expr, "length"); // FIXME: side effect
 			if (parent > CiPriority.Add)
 				WriteChar(')');
-			return expr;
+			break;
 		case CiId.MatchLength:
 			WriteMatchProperty(expr, "length");
-			return expr;
+			break;
 		case CiId.MatchValue:
 			WriteMatchProperty(expr, "str");
-			return expr;
+			break;
 		default:
-			return base.VisitSymbolReference(expr, parent);
+			base.VisitSymbolReference(expr, parent);
+			break;
 		}
 	}
 
@@ -1134,7 +1134,7 @@ public class GenCpp : GenCCpp
 		}
 	}
 
-	public override CiExpr VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
+	public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
 		case CiToken.Equal:
@@ -1145,12 +1145,12 @@ public class GenCpp : GenCCpp
 					WriteChar('!');
 				str.Accept(this, CiPriority.Primary);
 				Write(".empty()");
-				return expr;
+				return;
 			}
 			break;
 		case CiToken.Assign when expr.Left.Type.Id == CiId.StringStorageType && parent == CiPriority.Statement && IsTrimSubstring(expr) is CiExpr length:
 			WriteCall(expr.Left, "resize", length);
-			return expr;
+			return;
 		case CiToken.Is:
 			if (expr.Right is CiVar def)
 				WriteIsVar(expr.Left, def);
@@ -1160,11 +1160,11 @@ public class GenCpp : GenCCpp
 				Write(" *");
 				WriteGtRawPtr(expr.Left);
 			}
-			return expr;
+			return;
 		default:
 			break;
 		}
-		return base.VisitBinaryExpr(expr, parent);
+		base.VisitBinaryExpr(expr, parent);
 	}
 
 	public override void VisitLambdaExpr(CiLambdaExpr expr)
