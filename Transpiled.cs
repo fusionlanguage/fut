@@ -1832,6 +1832,8 @@ namespace Foxoft.Ci
 		public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitSymbolReference(this, parent);
 
 		public override bool IsReferenceTo(CiSymbol symbol) => this.Symbol == symbol;
+
+		public override string ToString() => this.Left != null ? $"{this.Left}.{this.Name}" : this.Name;
 	}
 
 	public abstract class CiUnaryExpr : CiExpr
@@ -1990,6 +1992,8 @@ namespace Foxoft.Ci
 				throw new NotImplementedException();
 			}
 		}
+
+		public override string ToString() => this.Op == CiToken.LeftBracket ? $"{this.Left}[{this.Right}]" : $"({this.Left} {GetOpString()} {this.Right})";
 	}
 
 	public class CiSelectExpr : CiExpr
@@ -2002,6 +2006,8 @@ namespace Foxoft.Ci
 		internal CiExpr OnFalse;
 
 		public override CiExpr Accept(CiVisitor visitor, CiPriority parent) => visitor.VisitSelectExpr(this, parent);
+
+		public override string ToString() => $"({this.Cond} ? {this.OnTrue} : {this.OnFalse})";
 	}
 
 	public class CiCallExpr : CiExpr

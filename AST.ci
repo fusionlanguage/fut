@@ -570,7 +570,7 @@ public class CiSymbolReference : CiExpr
 	}
 	public override CiExpr Accept(CiVisitor! visitor, CiPriority parent) => visitor.VisitSymbolReference(this, parent);
 	public override bool IsReferenceTo(CiSymbol symbol) => this.Symbol == symbol;
-	//public override string() ToString() => this.Left != null ? $"{this.Left}.{this.Name}" : this.Name;
+	public override string() ToString() => this.Left != null ? $"{this.Left}.{this.Name}" : this.Name;
 }
 
 public abstract class CiUnaryExpr : CiExpr
@@ -716,7 +716,7 @@ public class CiBinaryExpr : CiExpr
 		}
 	}
 
-	//public override string() ToString() => this.Op == CiToken.LeftBracket ? $"{this.Left}[{this.Right}]" : $"({this.Left} {GetOpString()} {this.Right})";
+	public override string() ToString() => this.Op == CiToken.LeftBracket ? $"{this.Left}[{this.Right}]" : $"({this.Left} {GetOpString()} {this.Right})";
 }
 
 public class CiSelectExpr : CiExpr
@@ -725,7 +725,7 @@ public class CiSelectExpr : CiExpr
 	internal CiExpr# OnTrue;
 	internal CiExpr# OnFalse;
 	public override CiExpr Accept(CiVisitor! visitor, CiPriority parent) => visitor.VisitSelectExpr(this, parent);
-	//public override string() ToString() => $"({this.Cond} ? {this.OnTrue} : {this.OnFalse})";
+	public override string() ToString() => $"({this.Cond} ? {this.OnTrue} : {this.OnFalse})";
 }
 
 public class CiCallExpr : CiExpr
