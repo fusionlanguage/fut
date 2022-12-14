@@ -998,7 +998,7 @@ public class CiResolver : CiSema
 				}
 				break;
 			default:
-				ReportError(statement, "'foreach' invalid on {klass}");
+				ReportError(statement, $"'foreach' invalid on {klass.Class.Name}");
 				break;
 			}
 		}
