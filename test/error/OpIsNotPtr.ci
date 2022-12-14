@@ -1,0 +1,10 @@
+public class Test
+{
+	public static bool Run()
+	{
+		int i = 5;
+		Test() o;
+		return i is Test //ERROR: Left hand side of the 'is' operator must be an object reference
+			&& o is Test; //ERROR: Left hand side of the 'is' operator must be an object reference
+	}
+}

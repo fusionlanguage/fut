@@ -1,0 +1,16 @@
+public class Test
+{
+	public static bool Run()
+	{
+		Test() o;
+		Test p = o;
+		switch (p) {
+		case 5: //ERROR: Expected 'case Type name'
+			return false;
+		case int i: //ERROR: 'case' with non-reference type
+			return false;
+		default:
+			return false;
+		}
+	}
+}

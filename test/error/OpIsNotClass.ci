@@ -1,0 +1,15 @@
+public class Base
+{
+}
+
+public class Test : Base
+{
+	public static bool Run()
+	{
+		Test() o;
+		Base p = o;
+		return p is int //ERROR: Right hand side of the 'is' operator must be a class name
+			&& p is int i //ERROR: Right hand side of the 'is' operator must be an object reference definition
+			&& p is 5; //ERROR: Right hand side of the 'is' operator must be a class name
+	}
+}

@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		5 .. 10; //ERROR: Range within an expression
+		return true;
+	}
+}

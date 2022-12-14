@@ -6,8 +6,13 @@ public static class Test
 		int b = 2;
 		double c = 3; //FAIL: cl if no double support
 		double d = 3.5;
+		byte[2] ba;
+		ba[0] = 3;
+		ba[1] = 200;
 		return a < b
 			&& c < d
-			&& b < c;
+			&& b < c
+			&& ba[0] < ba[1]
+			&& !(ba[1] < ba[0]);
 	}
 }

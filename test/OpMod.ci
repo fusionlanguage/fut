@@ -4,6 +4,10 @@ public static class Test
 	{
 		int a = 7;
 		int b = 3;
-		return a % b == 1;
+		byte[2] ba;
+		ba[0] = 7;
+		ba[1] = 3;
+		return a % b == 1
+			&& ba[0] % ba[1] == 1;
 	}
 }

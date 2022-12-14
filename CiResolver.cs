@@ -859,7 +859,7 @@ public class CiResolver : CiSema
 				Coerce(arg, type);
 		}
 		if (i < arguments.Count)
-			return PoisonError(arguments[i], "Too many arguments");
+			return PoisonError(arguments[i], $"Too many arguments for '{method.Name}'");
 
 		if (method.Throws) {
 			if (this.CurrentMethod == null)

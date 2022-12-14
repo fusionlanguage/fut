@@ -1,0 +1,13 @@
+public class Base
+{
+}
+
+public class Test
+{
+	public static bool Run()
+	{
+		Test() o;
+		Test p = o;
+		return p is Base; //ERROR: Test is not base class of Base, the 'is' operator would always return 'false'
+	}
+}

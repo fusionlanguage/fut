@@ -1,0 +1,9 @@
+public static class Test
+{
+	static bool Foo() => true;
+
+	public static bool Run()
+	{
+		return Foo(42); //ERROR: Too many arguments for 'Foo'
+	}
+}

@@ -4,8 +4,12 @@ public static class Test
 	{
 		int a = 7;
 		int b = 3;
+		byte[2] ba;
+		ba[0] = 7;
+		ba[1] = 3;
 		return a / b == 2
 			&& -7 / b == -2
-			&& a / -3 == -2;
+			&& a / -3 == -2
+			&& ba[0] / ba[1] == 2;
 	}
 }
