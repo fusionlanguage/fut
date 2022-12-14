@@ -1078,21 +1078,6 @@ public class CiResolver : CiSema
 		CloseScope();
 	}
 
-	CiToken GetPtrModifier(ref CiExpr expr)
-	{
-		if (expr is CiPostfixExpr postfix) {
-			switch (postfix.Op) {
-			case CiToken.ExclamationMark:
-			case CiToken.Hash:
-				expr = postfix.Inner;
-				return postfix.Op;
-			default:
-				break;
-			}
-		}
-		return CiToken.EndOfFile; // no modifier
-	}
-
 	int FoldConstInt(CiExpr expr)
 	{
 		if (FoldConst(expr) is CiLiteralLong literal) {
@@ -1180,37 +1165,46 @@ public class CiResolver : CiSema
 			expr = range.Right;
 		}
 
-		CiToken ptrModifier = GetPtrModifier(ref expr);
+		CiToken ptrModifier;
 		CiClassType outerArray = null; // leftmost in source
 		CiClassType innerArray = null; // rightmost in source
-		while (expr is CiBinaryExpr binary && binary.Op == CiToken.LeftBracket) {
-			if (binary.Right != null) {
-				ExpectNoPtrModifier(expr, ptrModifier);
-				CiExpr lengthExpr = Resolve(binary.Right);
-				CiArrayStorageType arrayStorage = new CiArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = outerArray, LengthExpr = lengthExpr, Length = 0 };
-				if (Coerce(lengthExpr, this.Program.System.IntType) && (!dynamic || binary.Left.IsIndexing())) {
-					if (lengthExpr is CiLiteralLong literal) {
-						long length = literal.Value;
-						if (length < 0)
-							ReportError(expr, "Expected non-negative integer");
-						else if (length > int.MaxValue)
-							ReportError(expr, "Integer too big");
+		for (;;) {
+			if (expr is CiPostfixExpr postfix && (postfix.Op == CiToken.ExclamationMark || postfix.Op == CiToken.Hash)) {
+				expr = postfix.Inner;
+				ptrModifier = postfix.Op;
+			}
+			else
+				ptrModifier = CiToken.EndOfFile;
+			if (expr is CiBinaryExpr binary && binary.Op == CiToken.LeftBracket) {
+				if (binary.Right != null) {
+					ExpectNoPtrModifier(expr, ptrModifier);
+					CiExpr lengthExpr = Resolve(binary.Right);
+					CiArrayStorageType arrayStorage = new CiArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = outerArray, LengthExpr = lengthExpr, Length = 0 };
+					if (Coerce(lengthExpr, this.Program.System.IntType) && (!dynamic || binary.Left.IsIndexing())) {
+						if (lengthExpr is CiLiteralLong literal) {
+							long length = literal.Value;
+							if (length < 0)
+								ReportError(expr, "Expected non-negative integer");
+							else if (length > int.MaxValue)
+								ReportError(expr, "Integer too big");
+							else
+								arrayStorage.Length = (int) length;
+						}
 						else
-							arrayStorage.Length = (int) length;
+							ReportError(lengthExpr, "Expected constant value");
 					}
-					else
-						ReportError(lengthExpr, "Expected constant value");
+					outerArray = arrayStorage;
 				}
-				outerArray = arrayStorage;
+				else {
+					CiType elementType = outerArray;
+					outerArray = CreateClassPtr(this.Program.System.ArrayPtrClass, ptrModifier);
+					outerArray.TypeArg0 = elementType;
+				}
+				innerArray ??= outerArray;
+				expr = binary.Left;
 			}
-			else {
-				CiType elementType = outerArray;
-				outerArray = CreateClassPtr(this.Program.System.ArrayPtrClass, ptrModifier);
-				outerArray.TypeArg0 = elementType;
-			}
-			innerArray ??= outerArray;
-			expr = binary.Left;
-			ptrModifier = GetPtrModifier(ref expr);
+			else
+				break;
 		}
 
 		CiType baseType;
