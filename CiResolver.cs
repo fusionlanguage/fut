@@ -782,8 +782,8 @@ public class CiResolver : CiSema
 			default:
 				return PoisonError(expr, "Right hand side of the 'is' operator must be a class name");
 			}
-			if (leftPtr.Class == klass2)
-				return PoisonError(expr, $"{left} is {leftPtr}, the 'is' operator would always return 'true'");
+			if (klass2.IsSameOrBaseOf(leftPtr.Class))
+				return PoisonError(expr, $"{leftPtr} is {klass2.Name}, the 'is' operator would always return 'true'");
 			if (!leftPtr.Class.IsSameOrBaseOf(klass2))
 				return PoisonError(expr, $"{leftPtr} is not base class of {klass2.Name}, the 'is' operator would always return 'false'");
 			expr.Left = left;
