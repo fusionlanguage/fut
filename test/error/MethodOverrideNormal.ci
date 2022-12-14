@@ -1,0 +1,13 @@
+abstract class Base
+{
+	public void Foo()
+	{
+	}
+}
+
+class Derived : Base
+{
+	public override void Foo() //ERROR: Base method is not abstract or virtual
+	{
+	}
+}

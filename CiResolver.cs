@@ -1055,7 +1055,7 @@ public class CiResolver : CiSema
 					 && !(switchPtr is CiDynamicPtrType)
 					 && (casePtr is CiDynamicPtrType || !(switchPtr is CiReadWriteClassType)))
 						ReportError(def, $"{switchPtr} cannot be casted to {casePtr}");
-					else if (switchPtr.Class == casePtr.Class)
+					else if (casePtr.Class.IsSameOrBaseOf(switchPtr.Class))
 						ReportError(def, $"{statement.Value} is {switchPtr}, 'case {casePtr}' would always match");
 					else if (!switchPtr.Class.IsSameOrBaseOf(casePtr.Class))
 						ReportError(def, $"{switchPtr} is not base class of {casePtr.Class.Name}, 'case {casePtr}' would never match");

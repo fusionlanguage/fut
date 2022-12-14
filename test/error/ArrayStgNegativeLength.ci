@@ -1,0 +1,4 @@
+public class Test
+{
+	int[-5] Array; //ERROR: Expected non-negative integer
+}

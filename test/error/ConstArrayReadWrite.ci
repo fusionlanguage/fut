@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		const int[]! c = { 5, 10 }; //ERROR: Invalid constant type
+		return true;
+	}
+}

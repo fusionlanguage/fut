@@ -1,0 +1,9 @@
+public class Test
+{
+	public bool Run()
+	{
+		int x = 5;
+		int[x] a; //ERROR: Expected constant value
+		return true;
+	}
+}

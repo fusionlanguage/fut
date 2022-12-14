@@ -1,0 +1,4 @@
+public class Test
+{
+	int[10000000000] Array; //ERROR: Integer too big
+}

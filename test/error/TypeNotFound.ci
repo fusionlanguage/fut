@@ -1,0 +1,11 @@
+public class Test
+{
+	public static bool Run()
+	{
+		int i;
+		Foo foo; //ERROR: Type Foo not found
+		i j; //ERROR: Type i not found
+		Foo() o; //ERROR: Class Foo not found
+		return true;
+	}
+}
