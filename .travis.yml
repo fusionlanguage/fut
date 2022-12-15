@@ -2,7 +2,7 @@ language: csharp
 dist: focal
 mono: none
 dotnet: 6.0.404
-env: SWIFT_VERSION=5.7.1
+env: SWIFT_VERSION=5.7.2
 vm:
   size: large
 jobs:
