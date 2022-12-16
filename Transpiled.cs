@@ -1163,10 +1163,11 @@ namespace Foxoft.Ci
 			return false;
 		}
 
-		protected void Expect(CiToken expected)
+		protected bool Expect(CiToken expected)
 		{
-			Check(expected);
+			bool found = Check(expected);
 			NextToken();
+			return found;
 		}
 
 		protected void ExpectOrSkip(CiToken expected)
@@ -3919,18 +3920,19 @@ namespace Foxoft.Ci
 			}
 		}
 
-		CiClass ParseClass(CiCallType callType)
+		void ParseClass(CiCodeDoc doc, bool isPublic, CiCallType callType)
 		{
 			Expect(CiToken.Class);
-			CiClass klass = new CiClass { Parent = this.Program, Filename = this.Filename, Line = this.Line, CallType = callType, Name = this.StringValue };
-			Expect(CiToken.Id);
+			CiClass klass = new CiClass { Filename = this.Filename, Line = this.Line, Documentation = doc, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
+			if (Expect(CiToken.Id))
+				AddSymbol(this.Program, klass);
 			if (Eat(CiToken.Colon)) {
 				klass.BaseClassName = this.StringValue;
 				Expect(CiToken.Id);
 			}
 			Expect(CiToken.LeftBrace);
 			while (!See(CiToken.RightBrace) && !See(CiToken.EndOfFile)) {
-				CiCodeDoc doc = ParseDoc();
+				doc = ParseDoc();
 				CiVisibility visibility;
 				switch (this.CurrentToken) {
 				case CiToken.Internal:
@@ -3982,7 +3984,8 @@ namespace Foxoft.Ci
 				}
 				int line = this.Line;
 				string name = this.StringValue;
-				Expect(CiToken.Id);
+				if (!Expect(CiToken.Id))
+					continue;
 				if (See(CiToken.LeftParenthesis) || See(CiToken.ExclamationMark)) {
 					if (callType == CiCallType.Static || klass.CallType == CiCallType.Abstract) {
 					}
@@ -3995,9 +3998,9 @@ namespace Foxoft.Ci
 					if (visibility == CiVisibility.Private && callType != CiCallType.Static && callType != CiCallType.Normal)
 						ReportError($"{CallTypeToString(callType)} method cannot be private");
 					CiMethod method = new CiMethod { Line = line, Documentation = doc, Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
+					AddSymbol(klass, method);
 					method.Parameters.Parent = klass;
 					ParseMethod(method);
-					AddSymbol(klass, method);
 					continue;
 				}
 				if (visibility == CiVisibility.Public)
@@ -4007,23 +4010,24 @@ namespace Foxoft.Ci
 				if (type == this.Program.System.VoidType)
 					ReportError("Field cannot be void");
 				CiField field = new CiField { Line = line, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };
-				Expect(CiToken.Semicolon);
 				AddSymbol(klass, field);
+				Expect(CiToken.Semicolon);
 			}
 			Expect(CiToken.RightBrace);
-			return klass;
 		}
 
-		CiEnum ParseEnum()
+		void ParseEnum(CiCodeDoc doc, bool isPublic)
 		{
 			Expect(CiToken.Enum);
 			bool flags = Eat(CiToken.Asterisk);
 			CiEnum enu = flags ? new CiEnumFlags() : new CiEnum();
-			enu.Parent = this.Program;
 			enu.Filename = this.Filename;
 			enu.Line = this.Line;
+			enu.Documentation = doc;
+			enu.IsPublic = isPublic;
 			enu.Name = this.StringValue;
-			Expect(CiToken.Id);
+			if (Expect(CiToken.Id))
+				AddSymbol(this.Program, enu);
 			Expect(CiToken.LeftBrace);
 			do {
 				CiConst konst = new CiConst { Visibility = CiVisibility.Public, Documentation = ParseDoc(), Line = this.Line, Name = this.StringValue, Type = enu };
@@ -4036,7 +4040,6 @@ namespace Foxoft.Ci
 			}
 			while (Eat(CiToken.Comma));
 			Expect(CiToken.RightBrace);
-			return enu;
 		}
 
 		public void Parse(string filename, byte[] input, int inputLength)
@@ -4044,31 +4047,27 @@ namespace Foxoft.Ci
 			Open(filename, input, inputLength);
 			while (!See(CiToken.EndOfFile)) {
 				CiCodeDoc doc = ParseDoc();
-				CiContainerType type;
 				bool isPublic = Eat(CiToken.Public);
 				switch (this.CurrentToken) {
 				case CiToken.Class:
-					type = ParseClass(CiCallType.Normal);
+					ParseClass(doc, isPublic, CiCallType.Normal);
 					break;
 				case CiToken.Static:
 				case CiToken.Abstract:
 				case CiToken.Sealed:
-					type = ParseClass(ParseCallType());
+					ParseClass(doc, isPublic, ParseCallType());
 					break;
 				case CiToken.Enum:
-					type = ParseEnum();
+					ParseEnum(doc, isPublic);
 					break;
 				case CiToken.Native:
 					this.Program.TopLevelNatives.Add(ParseNative().Content);
-					continue;
+					break;
 				default:
 					ReportError("Expected class or enum");
 					NextToken();
-					continue;
+					break;
 				}
-				type.Documentation = doc;
-				type.IsPublic = isPublic;
-				AddSymbol(this.Program, type);
 			}
 		}
 	}

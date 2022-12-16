@@ -1,4 +1,4 @@
 public static class Test
 {
-	public static bool Run() return true; //ERROR: Expected '{', got 'return' //ERROR: Invalid expression //ERROR: Expected identifier, got 'return' //ERROR: Expected ';', got 'true' //ERROR: Semicolon in class definition
+	public static bool Run() return true; //ERROR: Expected '{', got 'return' //ERROR: Invalid expression //ERROR: Expected identifier, got 'return' //ERROR: Expected identifier, got ';'
 }

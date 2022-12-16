@@ -980,10 +980,11 @@ public class CiLexer
 		return false;
 	}
 
-	protected void Expect!(CiToken expected)
+	protected bool Expect!(CiToken expected)
 	{
-		Check(expected);
+		bool found = Check(expected);
 		NextToken();
+		return found;
 	}
 
 	protected void ExpectOrSkip!(CiToken expected)

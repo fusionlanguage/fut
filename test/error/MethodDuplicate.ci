@@ -1,0 +1,5 @@
+public static class Test
+{
+	public static bool Run() => true;
+	public static bool Run() => true; //ERROR: Duplicate symbol
+}
