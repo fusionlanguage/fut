@@ -48,29 +48,35 @@ public class CiResolver : CiSema
 
 	void ResolveBase(CiClass klass)
 	{
-		this.CurrentScope = klass;
-		switch (klass.VisitStatus) {
-		case CiVisitStatus.NotYet:
-			break;
-		case CiVisitStatus.InProgress:
-			ReportError(klass, $"Circular inheritance for class {klass.Name}");
-			return;
-		case CiVisitStatus.Done:
-			return;
-		}
 		if (klass.BaseClassName != null) {
+			this.CurrentScope = klass;
 			if (this.Program.TryLookup(klass.BaseClassName) is CiClass baseClass) {
 				if (klass.IsPublic && !baseClass.IsPublic)
 					ReportError(klass, "Public class cannot derive from an internal class");
 				klass.Parent = baseClass;
-				klass.VisitStatus = CiVisitStatus.InProgress;
-				ResolveBase(baseClass);
 			}
 			else
 				ReportError(klass, $"Base class {klass.BaseClassName} not found");
 		}
 		this.Program.Classes.Add(klass);
-		klass.VisitStatus = CiVisitStatus.Done;
+	}
+
+	void CheckBaseCycle(CiClass klass)
+	{
+		// Floyd's tortoise and hare cycle-finding algorithm
+		CiSymbol hare = klass;
+		CiSymbol tortoise = klass;
+		do {
+			hare = hare.Parent;
+			if (hare == null)
+				return;
+			hare = hare.Parent;
+			if (hare == null)
+				return;
+			tortoise = tortoise.Parent;
+		} while (tortoise != hare);
+		this.CurrentScope = klass;
+		ReportError(klass, $"Circular inheritance for class {klass.Name}");
 	}
 
 	static int SaturatedNeg(int a)
@@ -1392,6 +1398,8 @@ public class CiResolver : CiSema
 			if (type is CiClass klass)
 				ResolveBase(klass);
 		}
+		foreach (CiClass klass in program.Classes)
+			CheckBaseCycle(klass);
 		for (CiSymbol type = program.First; type != null; type = type.Next)
 			ResolveConsts((CiContainerType) type);
 		foreach (CiClass klass in program.Classes)

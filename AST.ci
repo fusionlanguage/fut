@@ -1109,7 +1109,6 @@ public class CiClass : CiContainerType
 	internal string() BaseClassName;
 	internal CiMethodBase# Constructor;
 	internal List<CiConst#>() ConstArrays;
-	internal CiVisitStatus VisitStatus;
 	public bool AddsVirtualMethods()
 	{
 		for (CiSymbol symbol = this.First; symbol != null; symbol = symbol.Next) {

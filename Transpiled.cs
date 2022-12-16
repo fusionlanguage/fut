@@ -2606,8 +2606,6 @@ namespace Foxoft.Ci
 
 		internal readonly List<CiConst> ConstArrays = new List<CiConst>();
 
-		internal CiVisitStatus VisitStatus;
-
 		public bool AddsVirtualMethods()
 		{
 			for (CiSymbol symbol = this.First; symbol != null; symbol = symbol.Next) {

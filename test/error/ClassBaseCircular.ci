@@ -2,7 +2,7 @@ public class Foo : Test //ERROR: Circular inheritance for class Foo
 {
 }
 
-public class Test : Foo
+public class Test : Foo //ERROR: Circular inheritance for class Test
 {
 	public static bool Run() => true;
 }
