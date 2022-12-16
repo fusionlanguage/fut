@@ -2600,11 +2600,13 @@ namespace Foxoft.Ci
 
 		internal int TypeParameterCount = 0;
 
-		internal string BaseClassName;
+		internal string BaseClassName = "";
 
 		internal CiMethodBase Constructor;
 
 		internal readonly List<CiConst> ConstArrays = new List<CiConst>();
+
+		public bool HasBaseClass() => this.BaseClassName.Length > 0;
 
 		public bool AddsVirtualMethods()
 		{
@@ -4087,6 +4089,39 @@ namespace Foxoft.Ci
 		{
 			ReportError(statement, message);
 			return this.Poison;
+		}
+
+		protected void ResolveBase(CiClass klass)
+		{
+			if (klass.HasBaseClass()) {
+				this.CurrentScope = klass;
+				if (this.Program.TryLookup(klass.BaseClassName) is CiClass baseClass) {
+					if (klass.IsPublic && !baseClass.IsPublic)
+						ReportError(klass, "Public class cannot derive from an internal class");
+					klass.Parent = baseClass;
+				}
+				else
+					ReportError(klass, $"Base class {klass.BaseClassName} not found");
+			}
+			this.Program.Classes.Add(klass);
+		}
+
+		protected void CheckBaseCycle(CiClass klass)
+		{
+			CiSymbol hare = klass;
+			CiSymbol tortoise = klass;
+			do {
+				hare = hare.Parent;
+				if (hare == null)
+					return;
+				hare = hare.Parent;
+				if (hare == null)
+					return;
+				tortoise = tortoise.Parent;
+			}
+			while (tortoise != hare);
+			this.CurrentScope = klass;
+			ReportError(klass, $"Circular inheritance for class {klass.Name}");
 		}
 
 		protected static void TakePtr(CiExpr expr)

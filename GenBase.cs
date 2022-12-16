@@ -1458,7 +1458,7 @@ public abstract class GenBase : CiExprVisitor
 		Write("class ");
 		Write(klass.Name);
 		Write(suffix);
-		if (klass.BaseClassName != null) {
+		if (klass.HasBaseClass()) {
 			Write(extendsClause);
 			Write(klass.BaseClassName);
 		}

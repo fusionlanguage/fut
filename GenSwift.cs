@@ -1519,7 +1519,7 @@ public class GenSwift : GenPySwift
 			Write("final ");
 		StartClass(klass, "", " : ");
 		if (klass.AddsToString()) {
-			Write(klass.BaseClassName == null ? " : " : ", ");
+			Write(klass.HasBaseClass() ? ", " : " : ");
 			Write("CustomStringConvertible");
 		}
 		WriteLine();
@@ -1532,7 +1532,7 @@ public class GenSwift : GenPySwift
 			}
 			else
 				Write("fileprivate ");
-			if (klass.BaseClassName != null)
+			if (klass.HasBaseClass())
 				Write("override ");
 			WriteLine("init()");
 			OpenBlock();

@@ -317,7 +317,7 @@ public class CiScope : CiSymbol
 
 	public bool Contains(CiSymbol symbol) => this.Dict.ContainsKey(symbol.Name);
 
-	public virtual CiSymbol TryLookup(string name)
+	public virtual CiSymbol! TryLookup(string name)
 	{
 		for (CiScope scope = this; scope != null; scope = scope.Parent) {
 			if (scope.Dict.ContainsKey(name))
@@ -1106,9 +1106,10 @@ public class CiClass : CiContainerType
 {
 	internal CiCallType CallType;
 	internal int TypeParameterCount = 0;
-	internal string() BaseClassName;
+	internal string() BaseClassName = "";
 	internal CiMethodBase# Constructor;
 	internal List<CiConst#>() ConstArrays;
+	public bool HasBaseClass() => this.BaseClassName.Length > 0;
 	public bool AddsVirtualMethods()
 	{
 		for (CiSymbol symbol = this.First; symbol != null; symbol = symbol.Next) {

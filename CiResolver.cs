@@ -46,39 +46,6 @@ public class CiResolver : CiSema
 		return Array.Empty<byte>();
 	}
 
-	void ResolveBase(CiClass klass)
-	{
-		if (klass.BaseClassName != null) {
-			this.CurrentScope = klass;
-			if (this.Program.TryLookup(klass.BaseClassName) is CiClass baseClass) {
-				if (klass.IsPublic && !baseClass.IsPublic)
-					ReportError(klass, "Public class cannot derive from an internal class");
-				klass.Parent = baseClass;
-			}
-			else
-				ReportError(klass, $"Base class {klass.BaseClassName} not found");
-		}
-		this.Program.Classes.Add(klass);
-	}
-
-	void CheckBaseCycle(CiClass klass)
-	{
-		// Floyd's tortoise and hare cycle-finding algorithm
-		CiSymbol hare = klass;
-		CiSymbol tortoise = klass;
-		do {
-			hare = hare.Parent;
-			if (hare == null)
-				return;
-			hare = hare.Parent;
-			if (hare == null)
-				return;
-			tortoise = tortoise.Parent;
-		} while (tortoise != hare);
-		this.CurrentScope = klass;
-		ReportError(klass, $"Circular inheritance for class {klass.Name}");
-	}
-
 	static int SaturatedNeg(int a)
 	{
 		if (a == int.MinValue)
