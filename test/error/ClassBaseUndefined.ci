@@ -1,0 +1,4 @@
+public class Test : Base //ERROR: Base class Base not found
+{
+	public static bool Run() => true;
+}

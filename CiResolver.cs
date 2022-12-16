@@ -48,6 +48,7 @@ public class CiResolver : CiSema
 
 	void ResolveBase(CiClass klass)
 	{
+		this.CurrentScope = klass;
 		switch (klass.VisitStatus) {
 		case CiVisitStatus.NotYet:
 			break;
@@ -58,7 +59,7 @@ public class CiResolver : CiSema
 			return;
 		}
 		if (klass.BaseClassName != null) {
-			if (Program.TryLookup(klass.BaseClassName) is CiClass baseClass) {
+			if (this.Program.TryLookup(klass.BaseClassName) is CiClass baseClass) {
 				if (klass.IsPublic && !baseClass.IsPublic)
 					ReportError(klass, "Public class cannot derive from an internal class");
 				klass.Parent = baseClass;

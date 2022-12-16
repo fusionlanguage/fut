@@ -1,0 +1,8 @@
+class Base
+{
+}
+
+public class Test : Base //ERROR: Public class cannot derive from an internal class
+{
+	public static bool Run() => true;
+}
