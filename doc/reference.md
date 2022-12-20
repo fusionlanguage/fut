@@ -903,6 +903,8 @@ You can remove:
 `list.CopyTo(sourceIndex, destinationArray, destinationIndex, count)`
 copies elements from a list to an array.
 
+`list.All(it => predicate)` returns `true` if all the elements satisfy
+the predicate.
 `list.Any(it => predicate)` returns `true` if at least one element satisfies
 the predicate.
 
@@ -986,12 +988,12 @@ create it in the dictionary with `Add(key)`.
 
 #### SortedDictionary
 
-`SortedDictionary` is same as `Dictionary`, except that `foreach`
+`SortedDictionary` is the same as `Dictionary`, except that `foreach`
 iterates in the key order.
 
 #### OrderedDictionary
 
-`OrderedDictionary` is same as `Dictionary`, except that `foreach`
+`OrderedDictionary` is the same as `Dictionary`, except that `foreach`
 iterates in the insertion order.
 
 ## Statements

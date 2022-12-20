@@ -588,6 +588,11 @@ public class GenSwift : GenPySwift
 		case CiId.StackPush:
 			WriteListAppend(obj, args);
 			break;
+		case CiId.ListAll:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".allSatisfy ");
+			args[0].Accept(this, CiPriority.Argument);
+			break;
 		case CiId.ListAny:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".contains ");

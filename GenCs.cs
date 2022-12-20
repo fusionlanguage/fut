@@ -492,6 +492,10 @@ public class GenCs : GenTyped
 		case CiId.ListAdd:
 			WriteListAdd(obj, "Add", args);
 			break;
+		case CiId.ListAll:
+			Include("System.Linq");
+			WriteCall(obj, "All", args[0]);
+			break;
 		case CiId.ListAny:
 			Include("System.Linq");
 			WriteCall(obj, "Any", args[0]);

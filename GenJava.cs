@@ -585,6 +585,9 @@ public class GenJava : GenTyped
 		case CiId.ListAdd:
 			WriteListAdd(obj, "add", args);
 			break;
+		case CiId.ListAll:
+			WriteCall(obj, "stream().allMatch", args[0]);
+			break;
 		case CiId.ListAny:
 			WriteCall(obj, "stream().anyMatch", args[0]);
 			break;

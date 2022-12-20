@@ -500,6 +500,18 @@ public class GenCpp : GenCCpp
 			WriteArgsInParentheses(method, args);
 	}
 
+	void WriteAllAnyContains(string function, CiExpr obj, List<CiExpr> args)
+	{
+		Include("algorithm");
+		Write("std::");
+		Write(function);
+		WriteChar('(');
+		WriteBeginEnd(obj);
+		Write(", ");
+		args[0].Accept(this, CiPriority.Argument);
+		WriteChar(')');
+	}
+
 	void WriteRegex(List<CiExpr> args, int argIndex)
 	{
 		Include("regex");
@@ -718,23 +730,18 @@ public class GenCpp : GenCCpp
 				WriteChar(')');
 			}
 			break;
+		case CiId.ListAll:
+			WriteAllAnyContains("all_of", obj, args);
+			break;
 		case CiId.ListAny:
 			Include("algorithm");
-			Write("std::any_of(");
-			WriteBeginEnd(obj);
-			Write(", ");
-			args[0].Accept(this, CiPriority.Argument);
-			WriteChar(')');
+			WriteAllAnyContains("any_of", obj, args);
 			break;
 		case CiId.ListContains:
-			Include("algorithm");
 			if (parent > CiPriority.Equality)
 				WriteChar('(');
-			Write("std::find(");
-			WriteBeginEnd(obj);
-			Write(", ");
-			args[0].Accept(this, CiPriority.Argument);
-			Write(") != ");
+			WriteAllAnyContains("find", obj, args);
+			Write(" != ");
 			StartMethodCall(obj); // FIXME: side effect
 			Write("end()");
 			if (parent > CiPriority.Equality)

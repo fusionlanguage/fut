@@ -540,6 +540,9 @@ public class GenJs : GenBase
 		case CiId.ListAdd:
 			WriteListAdd(obj, "push", args);
 			break;
+		case CiId.ListAll:
+			WriteCall(obj, "every", args[0]);
+			break;
 		case CiId.ListAny:
 			WriteCall(obj, "some", args[0]);
 			break;

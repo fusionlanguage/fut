@@ -112,6 +112,7 @@ public enum CiId
 	ArraySortAll,
 	ArraySortPart,
 	ListAdd,
+	ListAll,
 	ListAny,
 	ListClear,
 	ListContains,
@@ -1409,6 +1410,7 @@ public class CiSystem : CiScope
 		CiType# typeParam0Predicate = new CiType { Id = CiId.TypeParam0Predicate, Name = "Predicate<T>" };
 		CiClass! listClass = AddCollection(CiId.ListClass, "List", 1, CiId.ListClear, CiId.ListCount);
 		listClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.ListAdd, "Add", CiVar.New(typeParam0NotFinal, "value")));
+		listClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.ListAll, "All", CiVar.New(typeParam0Predicate, "predicate")));
 		listClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.ListAny, "Any", CiVar.New(typeParam0Predicate, "predicate")));
 		listClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.ListContains, "Contains", CiVar.New(TypeParam0, "value")));
 		listClass.Add(CiMethod.New(CiVisibility.Public, VoidType, CiId.ListCopyTo, "CopyTo", CiVar.New(IntType, "sourceIndex"),

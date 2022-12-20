@@ -552,6 +552,19 @@ public class GenPy : GenPySwift
 		Write("sorted(");
 	}
 
+	void WriteAllAny(string function, CiExpr obj, List<CiExpr> args)
+	{
+		Write(function);
+		WriteChar('(');
+		CiLambdaExpr lambda = (CiLambdaExpr) args[0];
+		lambda.Body.Accept(this, CiPriority.Argument);
+		Write(" for ");
+		WriteName(lambda.First);
+		Write(" in ");
+		obj.Accept(this, CiPriority.Argument);
+		WriteChar(')');
+	}
+
 	void WriteConsoleWrite(CiExpr obj, List<CiExpr> args, bool newLine)
 	{
 		Write("print(");
@@ -661,15 +674,11 @@ public class GenPy : GenPySwift
 		case CiId.ListAdd:
 			WriteListAdd(obj, "append", args);
 			break;
+		case CiId.ListAll:
+			WriteAllAny("all", obj, args);
+			break;
 		case CiId.ListAny:
-			Write("any(");
-			CiLambdaExpr lambda = (CiLambdaExpr) args[0];
-			lambda.Body.Accept(this, CiPriority.Argument);
-			Write(" for ");
-			WriteName(lambda.First);
-			Write(" in ");
-			obj.Accept(this, CiPriority.Argument);
-			WriteChar(')');
+			WriteAllAny("any", obj, args);
 			break;
 		case CiId.ListClear:
 		case CiId.StackClear:
