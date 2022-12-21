@@ -1,0 +1,19 @@
+public static class Test
+{
+	static int Sum(List<int> list) //FAIL: swift
+	{
+		int sum = 0;
+		foreach (int i in list)
+			sum += i;
+		return sum;
+	}
+
+	public static bool Run()
+	{
+		List<int>() list; //FAIL: cl
+		list.Add(15);
+		list.Add(5);
+		list.Add(10);
+		return Sum(list) == 30;
+	}
+}

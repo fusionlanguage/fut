@@ -1217,7 +1217,10 @@ public class GenCpp : GenCCpp
 		else
 			WriteTypeAndName(element);
 		Write(" : ");
-		WriteNotRawStringLiteral(statement.Collection, CiPriority.Argument);
+		if (statement.Collection.Type is CiStringType)
+			WriteNotRawStringLiteral(statement.Collection, CiPriority.Argument);
+		else
+			WriteCollectionObject(statement.Collection, CiPriority.Argument);
 		WriteChar(')');
 		WriteChild(statement.Body);
 	}
