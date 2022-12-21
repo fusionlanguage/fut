@@ -2689,7 +2689,7 @@ namespace Foxoft.Ci
 		public override string ToString()
 		{
 			if (IsArray())
-				return GetElementType().GetBaseType() + GetArraySuffix() + GetElementType().GetArraySuffix();
+				return GetElementType().GetBaseType().ToString() + GetArraySuffix() + GetElementType().GetArraySuffix();
 			switch (this.Class.TypeParameterCount) {
 			case 0:
 				return this.Class.Name + GetClassSuffix();
@@ -2750,7 +2750,7 @@ namespace Foxoft.Ci
 
 		internal bool PtrTaken = false;
 
-		public override string ToString() => GetBaseType() + GetArraySuffix() + GetElementType().GetArraySuffix();
+		public override string ToString() => GetBaseType().ToString() + GetArraySuffix() + GetElementType().GetArraySuffix();
 
 		public override CiType GetBaseType() => GetElementType().GetBaseType();
 

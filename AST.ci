@@ -1187,7 +1187,7 @@ public class CiClassType : CiType
 	public override string() ToString()
 	{
 		if (IsArray())
-			return GetElementType().GetBaseType() + GetArraySuffix() + GetElementType().GetArraySuffix();
+			return GetElementType().GetBaseType().ToString() + GetArraySuffix() + GetElementType().GetArraySuffix();
 		switch (this.Class.TypeParameterCount) {
 		case 0: return this.Class.Name + GetClassSuffix();
 		case 1: return $"{this.Class.Name}<{this.TypeArg0}>{GetClassSuffix()}";
@@ -1235,7 +1235,7 @@ public class CiArrayStorageType : CiStorageType
 	internal int Length;
 	internal bool PtrTaken = false;
 
-	public override string() ToString() => GetBaseType() + GetArraySuffix() + GetElementType().GetArraySuffix();
+	public override string() ToString() => GetBaseType().ToString() + GetArraySuffix() + GetElementType().GetArraySuffix();
 	public override CiType GetBaseType() => GetElementType().GetBaseType();
 	public override bool IsArray() => true;
 	public override string() GetArraySuffix() => $"[{this.Length}]";
