@@ -254,7 +254,7 @@ public class CiLexer
 		return false;
 	}
 
-	void SkipWhitespace()
+	void SkipWhitespace!()
 	{
 		while (PeekChar() == '\t' || PeekChar() == ' ' || PeekChar() == '\r')
 			ReadChar();

@@ -118,7 +118,7 @@ public class CiParser : CiLexer
 		}
 	}
 
-	CiLiteralDouble# ParseDouble()
+	CiLiteralDouble# ParseDouble!()
 	{
 		double d;
 		bool ok;

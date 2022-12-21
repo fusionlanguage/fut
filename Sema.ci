@@ -19,7 +19,7 @@
 
 public abstract class CiSema : CiVisitor
 {
-	protected CiProgram Program;
+	protected CiProgram! Program;
 	protected CiMethodBase CurrentMethod;
 	protected CiScope! CurrentScope;
 	protected CiType# Poison = new CiType { Name = "poison" };
@@ -89,7 +89,7 @@ public abstract class CiSema : CiVisitor
 		return true;
 	}
 
-	void VisitAggregateInitializer(CiAggregateInitializer expr)
+	void VisitAggregateInitializer!(CiAggregateInitializer! expr)
 	{
 		List<CiExpr#>! items = expr.Items;
 		for (int i = 0; i < items.Count; i++)
@@ -235,14 +235,14 @@ public abstract class CiSema : CiVisitor
 
 	protected CiLiteralDouble# ToLiteralDouble(CiExpr expr, double value) => new CiLiteralDouble { Line = expr.Line, Type = this.Program.System.DoubleType, Value = value };
 
-	protected void CheckLValue(CiExpr expr)
+	protected void CheckLValue!(CiExpr expr)
 	{
 		// TODO: check lvalue
 		if (expr is CiSymbolReference symbol) {
 			if (symbol.Symbol is CiVar! def) {
 				def.IsAssigned = true;
 				switch (symbol.Symbol.Parent) {
-				case CiFor forLoop:
+				case CiFor! forLoop:
 					forLoop.IsRange = false;
 					break;
 				case CiForeach _:
@@ -364,10 +364,10 @@ public abstract class CiSema : CiVisitor
 
 	protected abstract void VisitVar(CiVar! expr);
 
-	protected CiExpr# Resolve(CiExpr# expr)
+	protected CiExpr# Resolve!(CiExpr# expr)
 	{
 		switch (expr) {
-		case CiAggregateInitializer aggregate:
+		case CiAggregateInitializer! aggregate:
 			VisitAggregateInitializer(aggregate);
 			return expr;
 		case CiLiteral _:
@@ -398,7 +398,7 @@ public abstract class CiSema : CiVisitor
 		}
 	}
 
-	public override void VisitExpr(CiExpr# statement)
+	public override void VisitExpr!(CiExpr# statement)
 	{
 		Resolve(statement);
 	}
@@ -420,10 +420,10 @@ public abstract class CiSema : CiVisitor
 		}
 	}
 
-	protected bool ResolveStatements!(List<CiStatement> statements)
+	protected bool ResolveStatements!(List<CiStatement#> statements)
 	{
 		bool reachable = true;
-		foreach (CiStatement statement in statements) {
+		foreach (CiStatement! statement in statements) {
 			statement.AcceptStatement(this);
 			if (!reachable) {
 				ReportError(statement, "Unreachable statement");
@@ -441,12 +441,12 @@ public abstract class CiSema : CiVisitor
 		CloseScope();
 	}
 
-	public override void VisitBreak(CiBreak statement)
+	public override void VisitBreak!(CiBreak! statement)
 	{
 		statement.LoopOrSwitch.SetCompletesNormally(true);
 	}
 
-	public override void VisitContinue(CiContinue statement)
+	public override void VisitContinue!(CiContinue! statement)
 	{
 	}
 
@@ -487,7 +487,7 @@ public abstract class CiSema : CiVisitor
 		statement.Body.AcceptStatement(this);
 	}
 
-	public override void VisitNative(CiNative statement)
+	public override void VisitNative!(CiNative! statement)
 	{
 	}
 
@@ -514,7 +514,7 @@ public abstract class CiSema : CiVisitor
 			ReportError(expr, $"Unexpected {CiLexer.TokenToString(ptrModifier)} on a non-reference type");
 	}
 
-	protected CiExpr# FoldConst(CiExpr# expr)
+	protected CiExpr# FoldConst!(CiExpr# expr)
 	{
 		expr = Resolve(expr);
 		if (expr is CiLiteral || expr.IsConstEnum())
