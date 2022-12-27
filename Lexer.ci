@@ -148,7 +148,7 @@ public class CiLexer
 	protected bool ParsingTypeArg = false;
 	Stack<bool>() PreElseStack;
 
-	public void AddPreSymbol(string symbol)
+	public void AddPreSymbol!(string symbol)
 	{
 		this.PreSymbols.Add(symbol);
 	}
