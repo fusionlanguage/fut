@@ -354,7 +354,12 @@ public class GenCpp : GenCCpp
 			WriteType(type, false);
 		}
 		Write(">(");
-		GetStaticCastInner(type, expr).Accept(this, CiPriority.Argument);
+		if (expr.Type is CiDynamicPtrType && !(type is CiDynamicPtrType)) {
+			expr.Accept(this, CiPriority.Primary);
+			Write(".get()");
+		}
+		else
+			GetStaticCastInner(type, expr).Accept(this, CiPriority.Argument);
 		WriteChar(')');
 	}
 

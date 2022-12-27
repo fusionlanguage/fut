@@ -16,6 +16,7 @@ public static class Test
 		alik.Food = "mice";
 		Animal# a = alik;
 		assert a is Cat# c;
-		return c.Food == "mice";
+		assert a is Cat c2;
+		return c.Food == "mice" && c2.Food == "mice";
 	}
 }
