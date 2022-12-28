@@ -1021,7 +1021,10 @@ public class CiResolver : CiSema
 		foreach (CiCase kase in statement.Cases) {
 			for (int i = 0; i < kase.Values.Count; i++) {
 				if (statement.Value.Type is CiClassType switchPtr && switchPtr.Class.Id != CiId.StringClass) {
-					if (!(kase.Values[i] is CiVar def) || def.Value != null)
+					CiExpr value = kase.Values[i];
+					if (value is CiBinaryExpr when && when.Op == CiToken.When)
+						value = when.Left;
+					if (!(value is CiVar def) || def.Value != null)
 						ReportError(kase.Values[i], "Expected 'case Type name'");
 					else if (!(ResolveType(def) is CiClassType casePtr) || casePtr is CiStorageType)
 						ReportError(def, "'case' with non-reference type");
@@ -1033,8 +1036,11 @@ public class CiResolver : CiSema
 						ReportError(def, $"{statement.Value} is {switchPtr}, 'case {casePtr}' would always match");
 					else if (!switchPtr.Class.IsSameOrBaseOf(casePtr.Class))
 						ReportError(def, $"{switchPtr} is not base class of {casePtr.Class.Name}, 'case {casePtr}' would never match");
-					else
+					else {
 						statement.Add(def);
+						if (kase.Values[i] is CiBinaryExpr when2 && when2.Op == CiToken.When)
+							when2.Right = ResolveBool(when2.Right);
+					}
 				}
 				else {
 					kase.Values[i] = FoldConst(kase.Values[i]);

@@ -102,6 +102,7 @@ namespace Foxoft.Ci
 		True,
 		Virtual,
 		Void,
+		When,
 		While,
 		EndOfLine,
 		PreIf,
@@ -750,6 +751,8 @@ namespace Foxoft.Ci
 						return CiToken.Virtual;
 					case "void":
 						return CiToken.Void;
+					case "when":
+						return CiToken.When;
 					case "while":
 						return CiToken.While;
 					default:
@@ -953,6 +956,8 @@ namespace Foxoft.Ci
 				return "'virtual'";
 			case CiToken.Void:
 				return "'void'";
+			case CiToken.When:
+				return "'when'";
 			case CiToken.While:
 				return "'while'";
 			case CiToken.EndOfLine:
@@ -3759,8 +3764,11 @@ namespace Foxoft.Ci
 				CiCase kase = result.Cases[result.Cases.Count - 1];
 				do {
 					CiExpr expr = ParseExpr();
-					if (See(CiToken.Id))
+					if (See(CiToken.Id)) {
 						expr = ParseVar(expr);
+						if (Eat(CiToken.When))
+							expr = new CiBinaryExpr { Line = this.Line, Left = expr, Op = CiToken.When, Right = ParseExpr() };
+					}
 					kase.Values.Add(expr);
 					Expect(CiToken.Colon);
 				}
@@ -4295,7 +4303,8 @@ namespace Foxoft.Ci
 
 		protected void CheckLValue(CiExpr expr)
 		{
-			if (expr is CiSymbolReference symbol) {
+			switch (expr) {
+			case CiSymbolReference symbol:
 				switch (symbol.Symbol) {
 				case CiVar def:
 					def.IsAssigned = true;
@@ -4335,6 +4344,12 @@ namespace Foxoft.Ci
 					ReportError(expr, "Cannot modify this");
 					break;
 				}
+				break;
+			case CiBinaryExpr indexing when indexing.Op == CiToken.LeftBracket:
+				break;
+			default:
+				ReportError(expr, "Cannot modify this");
+				break;
 			}
 		}
 

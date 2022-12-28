@@ -1263,7 +1263,19 @@ public class GenSwift : GenPySwift
 		WriteType(this.CurrentMethod.Type);
 	}
 
-	void WriteSwiftCaseBody(CiSwitch statement, List<CiStatement> body)
+	void WriteSwitchCaseVar(CiVar def)
+	{
+		if (def.Name == "_")
+			Write("is ");
+		else {
+			Write("let ");
+			WriteCamelCaseNotKeyword(def.Name);
+			Write(" as ");
+		}
+		WriteType(def.Type);
+	}
+
+	void WriteSwitchCaseBody(CiSwitch statement, List<CiStatement> body)
 	{
 		this.Indent++;
 		VisitXcrement<CiPostfixExpr>(statement.Value, true);
@@ -1282,21 +1294,26 @@ public class GenSwift : GenPySwift
 			Write("case ");
 			for (int i = 0; i < kase.Values.Count; i++) {
 				WriteComma(i);
-				if (kase.Values[i] is CiVar def) {
-					Write("let ");
-					WriteCamelCaseNotKeyword(def.Name);
-					Write(" as ");
-					WriteType(def.Type);
-				}
-				else
+				switch (kase.Values[i]) {
+				case CiBinaryExpr binary when binary.Op == CiToken.When:
+					WriteSwitchCaseVar((CiVar) binary.Left);
+					Write(" where ");
+					WriteExpr(binary.Right, CiPriority.Argument);
+					break;
+				case CiVar def:
+					WriteSwitchCaseVar(def);
+					break;
+				default:
 					WriteCoerced(statement.Value.Type, kase.Values[i], CiPriority.Argument);
+					break;
+				}
 			}
 			WriteLine(':');
-			WriteSwiftCaseBody(statement, kase.Body);
+			WriteSwitchCaseBody(statement, kase.Body);
 		}
 		if (statement.DefaultBody.Count > 0) {
 			WriteLine("default:");
-			WriteSwiftCaseBody(statement, statement.DefaultBody);
+			WriteSwitchCaseBody(statement, statement.DefaultBody);
 		}
 		WriteLine('}');
 	}

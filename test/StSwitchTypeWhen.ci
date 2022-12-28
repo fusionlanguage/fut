@@ -1,0 +1,46 @@
+abstract class Animal
+{
+	internal string Name;
+	internal virtual void MakeSound()
+	{
+	}
+}
+
+class Cat : Animal
+{
+}
+
+class Lion : Cat
+{
+}
+
+class Dog : Animal
+{
+}
+
+class Cow : Animal
+{
+}
+
+public static class Test
+{
+	static bool IsCat(Animal a)
+	{
+		switch (a) { //FAIL: c js py ts cl
+		case Cow _: //FAIL: java 17 --enable-preview
+		case Dog _:
+			return false;
+		case Cat c when c.Name == "Simba": //FAIL: cpp
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	public static bool Run()
+	{
+		Lion() l;
+		l.Name = "Simba";
+		return IsCat(l);
+	}
+}

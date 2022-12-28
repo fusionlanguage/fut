@@ -237,7 +237,8 @@ public abstract class CiSema : CiVisitor
 
 	protected void CheckLValue!(CiExpr expr)
 	{
-		if (expr is CiSymbolReference symbol) {
+		switch (expr) {
+		case CiSymbolReference symbol:
 			switch (symbol.Symbol) {
 			case CiVar! def:
 				def.IsAssigned = true;
@@ -281,6 +282,13 @@ public abstract class CiSema : CiVisitor
 				ReportError(expr, "Cannot modify this");
 				break;
 			}
+			break;
+		case CiBinaryExpr indexing when indexing.Op == CiToken.LeftBracket:
+			// TODO
+			break;
+		default:
+			ReportError(expr, "Cannot modify this");
+			break;
 		}
 	}
 

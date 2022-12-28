@@ -112,6 +112,7 @@ public enum CiToken
 	True,
 	Virtual,
 	Void,
+	When,
 	While,
 	EndOfLine,
 	PreIf,
@@ -663,6 +664,7 @@ public class CiLexer
 				case "true": return CiToken.True;
 				case "virtual": return CiToken.Virtual;
 				case "void": return CiToken.Void;
+				case "when": return CiToken.When;
 				case "while": return CiToken.While;
 				default: return CiToken.Id;
 				}
@@ -774,6 +776,7 @@ public class CiLexer
 		case CiToken.True: return "'true'";
 		case CiToken.Virtual: return "'virtual'";
 		case CiToken.Void: return "'void'";
+		case CiToken.When: return "'when'";
 		case CiToken.While: return "'while'";
 		case CiToken.EndOfLine: return "end-of-line";
 		case CiToken.PreIf: return "'#if'";

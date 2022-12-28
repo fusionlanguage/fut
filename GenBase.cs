@@ -1189,6 +1189,12 @@ public abstract class GenBase : CiExprVisitor
 				WriteChar(')');
 			break;
 
+		case CiToken.When:
+			expr.Left.Accept(this, CiPriority.Argument);
+			Write(" when ");
+			expr.Right.Accept(this, CiPriority.Argument);
+			break;
+
 		default:
 			throw new ArgumentException(expr.Op.ToString());
 		}
