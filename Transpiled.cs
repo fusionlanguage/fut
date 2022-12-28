@@ -2479,6 +2479,8 @@ namespace Foxoft.Ci
 	public class CiMethodBase : CiMember
 	{
 
+		internal bool IsMutator = false;
+
 		internal bool Throws;
 
 		internal CiStatement Body;
@@ -2492,8 +2494,6 @@ namespace Foxoft.Ci
 	{
 
 		internal CiCallType CallType;
-
-		internal bool IsMutator = false;
 
 		internal readonly CiParameters Parameters = new CiParameters();
 
@@ -3981,7 +3981,7 @@ namespace Foxoft.Ci
 					}
 					if (visibility == CiVisibility.Private)
 						visibility = CiVisibility.Internal;
-					klass.Constructor = new CiMethodBase { Line = call.Line, Documentation = doc, Visibility = visibility, Parent = klass, Type = this.Program.System.VoidType, Name = klass.Name, Body = ParseBlock() };
+					klass.Constructor = new CiMethodBase { Line = call.Line, Documentation = doc, Visibility = visibility, Parent = klass, Type = this.Program.System.VoidType, Name = klass.Name, IsMutator = true, Body = ParseBlock() };
 					continue;
 				}
 				int line = this.Line;
@@ -4296,7 +4296,8 @@ namespace Foxoft.Ci
 		protected void CheckLValue(CiExpr expr)
 		{
 			if (expr is CiSymbolReference symbol) {
-				if (symbol.Symbol is CiVar def) {
+				switch (symbol.Symbol) {
+				case CiVar def:
 					def.IsAssigned = true;
 					switch (symbol.Symbol.Parent) {
 					case CiFor forLoop:
@@ -4308,10 +4309,31 @@ namespace Foxoft.Ci
 					default:
 						break;
 					}
-				}
-				for (CiScope scope = this.CurrentScope; !(scope is CiClass); scope = scope.Parent) {
-					if (scope is CiFor forLoop && forLoop.IsRange && forLoop.Cond is CiBinaryExpr binaryCond && binaryCond.Right.IsReferenceTo(symbol.Symbol))
-						forLoop.IsRange = false;
+					for (CiScope scope = this.CurrentScope; !(scope is CiClass); scope = scope.Parent) {
+						if (scope is CiFor forLoop && forLoop.IsRange && forLoop.Cond is CiBinaryExpr binaryCond && binaryCond.Right.IsReferenceTo(symbol.Symbol))
+							forLoop.IsRange = false;
+					}
+					break;
+				case CiField _:
+					if (symbol.Left == null) {
+						if (!this.CurrentMethod.IsMutator)
+							ReportError(expr, "Cannot modify field in a non-mutating method");
+					}
+					else {
+						switch (symbol.Left.Type) {
+						case CiStorageType _:
+							break;
+						case CiReadWriteClassType _:
+							break;
+						case CiClassType _:
+							ReportError(expr, "Cannot modify field through a read-only reference");
+							break;
+						}
+					}
+					break;
+				default:
+					ReportError(expr, "Cannot modify this");
+					break;
 				}
 			}
 		}

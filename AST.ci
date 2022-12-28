@@ -1011,6 +1011,7 @@ public class CiField : CiMember
 
 public class CiMethodBase : CiMember
 {
+	internal bool IsMutator = false;
 	internal bool Throws;
 	internal CiStatement# Body;
 	internal bool IsLive = false;
@@ -1020,7 +1021,6 @@ public class CiMethodBase : CiMember
 public class CiMethod : CiMethodBase
 {
 	internal CiCallType CallType;
-	internal bool IsMutator = false;
 	internal CiParameters() Parameters;
 	public static CiMethod# New(CiVisibility visibility, CiType# type, CiId id, string name, CiVar# param0 = null, CiVar# param1 = null, CiVar# param2 = null, CiVar# param3 = null)
 	{

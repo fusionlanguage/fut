@@ -944,7 +944,8 @@ public class CiParser : CiLexer
 				}
 				if (visibility == CiVisibility.Private)
 					visibility = CiVisibility.Internal; // TODO
-				klass.Constructor = new CiMethodBase { Line = call.Line, Documentation = doc, Visibility = visibility, Parent = klass, Type = this.Program.System.VoidType, Name = klass.Name, Body = ParseBlock() };
+				klass.Constructor = new CiMethodBase { Line = call.Line, Documentation = doc, Visibility = visibility, Parent = klass,
+					Type = this.Program.System.VoidType, Name = klass.Name, IsMutator = true, Body = ParseBlock() };
 				continue;
 			}
 

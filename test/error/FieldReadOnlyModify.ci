@@ -1,0 +1,12 @@
+public class Test
+{
+	int Foo;
+
+	void Modify()
+	{
+		Foo = 1; //ERROR: Cannot modify field in a non-mutating method
+		// TODO: this.Foo = 2;
+		Test p = this;
+		p.Foo = 3; //ERROR: Cannot modify field through a read-only reference
+	}
+}
