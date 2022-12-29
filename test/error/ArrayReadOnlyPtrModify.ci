@@ -1,0 +1,10 @@
+public class Test
+{
+	public bool Run()
+	{
+		int[2] a;
+		int[] p = a;
+		p[1] = 4; //ERROR: Cannot modify array through a read-only reference
+		return true;
+	}
+}

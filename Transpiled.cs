@@ -4346,6 +4346,15 @@ namespace Foxoft.Ci
 				}
 				break;
 			case CiBinaryExpr indexing when indexing.Op == CiToken.LeftBracket:
+				switch (indexing.Left.Type) {
+				case CiStorageType _:
+					break;
+				case CiReadWriteClassType _:
+					break;
+				case CiClassType _:
+					ReportError(expr, "Cannot modify array through a read-only reference");
+					break;
+				}
 				break;
 			default:
 				ReportError(expr, "Cannot modify this");
