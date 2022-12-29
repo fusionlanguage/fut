@@ -121,9 +121,7 @@ public class CiParser : CiLexer
 	CiLiteralDouble# ParseDouble!()
 	{
 		double d;
-		bool ok;
-		native { ok = double.TryParse(GetLexeme().Replace("_", ""), out d); }
-		if (!ok)
+		if (!d.TryParse(GetLexeme().Replace("_", "")))
 			ReportError("Invalid floating-point number");
 		CiLiteralDouble# result = new CiLiteralDouble { Line = this.Line, Type = this.Program.System.DoubleType, Value = d };
 		NextToken();

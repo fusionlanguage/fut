@@ -1267,6 +1267,7 @@ namespace Foxoft.Ci
 		MathNaN,
 		MathNegativeInfinity,
 		MathPositiveInfinity,
+		DoubleTryParse,
 		StringContains,
 		StringEndsWith,
 		StringIndexOf,
@@ -2820,6 +2821,7 @@ namespace Foxoft.Ci
 			Add(ushortType);
 			CiRangeType minus1Type = CiRangeType.New(-1, 2147483647);
 			Add(this.FloatType);
+			this.DoubleType.Add(CiMethod.NewMutator(CiVisibility.Public, this.BoolType, CiId.DoubleTryParse, "TryParse", CiVar.New(this.StringPtrType, "value")));
 			Add(this.DoubleType);
 			Add(this.BoolType);
 			CiClass stringClass = CiClass.New(CiCallType.Normal, CiId.StringClass, "string");
@@ -3168,8 +3170,7 @@ namespace Foxoft.Ci
 		CiLiteralDouble ParseDouble()
 		{
 			double d;
-			bool ok;
-			 ok = double.TryParse(GetLexeme().Replace("_", ""), out d); if (!ok)
+			if (!double.TryParse(GetLexeme().Replace("_", ""), out d))
 				ReportError("Invalid floating-point number");
 			CiLiteralDouble result = new CiLiteralDouble { Line = this.Line, Type = this.Program.System.DoubleType, Value = d };
 			NextToken();

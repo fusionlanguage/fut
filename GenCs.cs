@@ -420,6 +420,13 @@ public class GenCs : GenTyped
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
+		case CiId.DoubleTryParse:
+			Write("double.TryParse(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(", out ");
+			obj.Accept(this, CiPriority.Argument);
+			WriteChar(')');
+			break;
 		case CiId.StringIndexOf:
 		case CiId.StringLastIndexOf:
 			obj.Accept(this, CiPriority.Primary);

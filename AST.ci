@@ -97,6 +97,7 @@ public enum CiId
 	MathNaN,
 	MathNegativeInfinity,
 	MathPositiveInfinity,
+	DoubleTryParse,
 	StringContains,
 	StringEndsWith,
 	StringIndexOf,
@@ -1372,6 +1373,7 @@ public class CiSystem : CiScope
 		Add(ushortType);
 		CiRangeType# minus1Type = CiRangeType.New(-1, 0x7fffffff);
 		Add(FloatType);
+		DoubleType.Add(CiMethod.NewMutator(CiVisibility.Public, BoolType, CiId.DoubleTryParse, "TryParse", CiVar.New(StringPtrType, "value")));
 		Add(DoubleType);
 		Add(BoolType);
 		CiClass# stringClass = CiClass.New(CiCallType.Normal, CiId.StringClass, "string");
