@@ -657,6 +657,9 @@
 					"patterns": [
 						{
 							"include": "#expression"
+						},
+						{
+							"include": "#switch-when-clause"
 						}
 					]
 				},
@@ -672,6 +675,14 @@
 					}
 				}
 			]
+		},
+		"switch-when-clause": {
+			"match": "\\bwhen\\b",
+			"captures": {
+				"0": {
+					"name": "keyword.control.when.ci"
+				}
+			}
 		},
 		"throw-statement": {
 			"begin": "\\bthrow\\b",
