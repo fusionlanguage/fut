@@ -846,9 +846,6 @@
 					"include": "#class-builtin"
 				},
 				{
-					"include": "#type-storage-suffix"
-				},
-				{
 					"include": "#type-array-suffix"
 				}
 			]
@@ -894,28 +891,6 @@
 				},
 				{
 					"include": "#punctuation-comma"
-				}
-			]
-		},
-		"type-storage-suffix": {
-			"begin": "\\(",
-			"beginCaptures": {
-				"0": {
-					"name": "punctuation.parenthesis.open.ci"
-				}
-			},
-			"end": "\\)",
-			"endCaptures": {
-				"0": {
-					"name": "punctuation.parenthesis.close.ci"
-				}
-			},
-			"patterns": [
-				{
-					"include": "#preprocessor"
-				},
-				{
-					"include": "#comment"
 				}
 			]
 		},
@@ -973,7 +948,7 @@
 					"name": "keyword.other.new.ci"
 				}
 			},
-			"end": "(?=[;,])",
+			"end": "(?=[;,)])",
 			"patterns": [
 				{
 					"include": "#preprocessor"
