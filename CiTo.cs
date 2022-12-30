@@ -109,7 +109,7 @@ public static class CiTo
 					Usage();
 					return 0;
 				case "--version":
-					Console.WriteLine("cito 2.0.0");
+					Console.WriteLine("cito 2.1.0");
 					return 0;
 				case "-l":
 					lang = args[++i];

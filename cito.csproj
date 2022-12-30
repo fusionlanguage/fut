@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2.0.0</Version>
+    <Version>2.1.0</Version>
     <Description>Transpiles the Ć programming language to C, C++, C#, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.</Description>
     <PackageTags>Programming Language;Transpiler</PackageTags>
     <PackageProjectUrl>https://github.com/pfusik/cito</PackageProjectUrl>
