@@ -1,6 +1,6 @@
 // CiResolver.cs - Ci symbol resolver
 //
-// Copyright (C) 2011-2022  Piotr Fusik
+// Copyright (C) 2011-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -46,32 +46,6 @@ public class CiResolver : CiSema
 		return Array.Empty<byte>();
 	}
 
-	static int SaturatedNeg(int a)
-	{
-		if (a == int.MinValue)
-			return int.MaxValue;
-		return -a;
-	}
-
-	static int SaturatedAdd(int a, int b)
-	{
-		int c = a + b;
-		if (c >= 0) {
-			if (a < 0 && b < 0)
-				return int.MinValue;
-		}
-		else if (a > 0 && b > 0)
-			return int.MaxValue;
-		return c;
-	}
-
-	static int SaturatedSub(int a, int b)
-	{
-		if (b == int.MinValue)
-			return a < 0 ? a ^ b : int.MaxValue;
-		return SaturatedAdd(a, -b);
-	}
-
 	static int SaturatedMul(int a, int b)
 	{
 		if (a == 0 || b == 0)
@@ -83,13 +57,6 @@ public class CiResolver : CiSema
 		if (int.MaxValue / Math.Abs(a) < Math.Abs(b))
 			return (a ^ b) >> 31 ^ int.MaxValue;
 		return a * b;
-	}
-
-	static int SaturatedDiv(int a, int b)
-	{
-		if (a == int.MinValue && b == -1)
-			return int.MaxValue;
-		return a / b;
 	}
 
 	delegate CiRangeType UnsignedOp(CiRangeType left, CiRangeType right);
@@ -1056,20 +1023,6 @@ public class CiResolver : CiSema
 				ReportError(statement.DefaultBody.Last(), "Default must end with break, continue, return or throw");
 		}
 		CloseScope();
-	}
-
-	int FoldConstInt(CiExpr expr)
-	{
-		if (FoldConst(expr) is CiLiteralLong literal) {
-			long l = literal.Value;
-			if (l < int.MinValue || l > int.MaxValue) {
-				ReportError(expr, "Only 32-bit ranges supported");
-				return 0;
-			}
-			return (int) l;
-		}
-		ReportError(expr, "Expected integer");
-		return 0;
 	}
 
 	void FillGenericClass(CiClassType result, CiSymbol klass, CiAggregateInitializer typeArgExprs)

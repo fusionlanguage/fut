@@ -1,6 +1,6 @@
 // Sema.ci - semantic analysis of Ci
 //
-// Copyright (C) 2011-2022  Piotr Fusik
+// Copyright (C) 2011-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -158,6 +158,39 @@ public abstract class CiSema : CiVisitor
 		Coerce(left, type);
 		Coerce(right, type);
 		return type;
+	}
+
+	protected static int SaturatedNeg(int a)
+	{
+		if (a == int.MinValue)
+			return int.MaxValue;
+		return -a;
+	}
+
+	protected static int SaturatedAdd(int a, int b)
+	{
+		int c = a + b;
+		if (c >= 0) {
+			if (a < 0 && b < 0)
+				return int.MinValue;
+		}
+		else if (a > 0 && b > 0)
+			return int.MaxValue;
+		return c;
+	}
+
+	protected static int SaturatedSub(int a, int b)
+	{
+		if (b == int.MinValue)
+			return a < 0 ? a ^ b : int.MaxValue;
+		return SaturatedAdd(a, -b);
+	}
+
+	protected static int SaturatedDiv(int a, int b)
+	{
+		if (a == int.MinValue && b == -1)
+			return int.MaxValue;
+		return a / b;
 	}
 
 	protected static int SaturatedShiftRight(int a, int b) => a >> (b >= 31 || b < 0 ? 31 : b);
@@ -560,6 +593,20 @@ public abstract class CiSema : CiVisitor
 			return expr;
 		ReportError(expr, "Expected constant value");
 		return expr;
+	}
+
+	protected int FoldConstInt!(CiExpr# expr)
+	{
+		if (FoldConst(expr) is CiLiteralLong literal) {
+			long l = literal.Value;
+			if (l < int.MinValue || l > int.MaxValue) {
+				ReportError(expr, "Only 32-bit ranges supported");
+				return 0;
+			}
+			return l;
+		}
+		ReportError(expr, "Expected integer");
+		return 0;
 	}
 
 	protected static CiClassType# CreateClassPtr(CiClass klass, CiToken ptrModifier)

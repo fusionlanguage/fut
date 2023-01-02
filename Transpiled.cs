@@ -2807,9 +2807,11 @@ namespace Foxoft.Ci
 			CiSymbol basePtr = CiVar.New(null, "base");
 			basePtr.Id = CiId.BasePtr;
 			Add(basePtr);
+			AddMinMaxValue(this.IntType, -2147483648, 2147483647);
 			Add(this.IntType);
 			this.UIntType.Name = "uint";
 			Add(this.UIntType);
+			AddMinMaxValue(this.LongType, -9223372036854775808, 9223372036854775807);
 			Add(this.LongType);
 			this.ByteType.Name = "byte";
 			Add(this.ByteType);
@@ -2894,11 +2896,11 @@ namespace Foxoft.Ci
 			environmentClass.Add(CiMethod.NewStatic(this.StringPtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", CiVar.New(this.StringPtrType, "name")));
 			Add(environmentClass);
 			CiEnum regexOptionsEnum = new CiEnumFlags { Name = "RegexOptions" };
-			CiConst regexOptionsNone = NewConstInt("None", 0);
+			CiConst regexOptionsNone = NewConstLong("None", 0);
 			AddEnumValue(regexOptionsEnum, regexOptionsNone);
-			AddEnumValue(regexOptionsEnum, NewConstInt("IgnoreCase", 1));
-			AddEnumValue(regexOptionsEnum, NewConstInt("Multiline", 2));
-			AddEnumValue(regexOptionsEnum, NewConstInt("Singleline", 16));
+			AddEnumValue(regexOptionsEnum, NewConstLong("IgnoreCase", 1));
+			AddEnumValue(regexOptionsEnum, NewConstLong("Multiline", 2));
+			AddEnumValue(regexOptionsEnum, NewConstLong("Singleline", 16));
 			Add(regexOptionsEnum);
 			CiClass regexClass = CiClass.New(CiCallType.Sealed, CiId.RegexClass, "Regex");
 			regexClass.Add(CiMethod.NewStatic(this.StringStorageType, CiId.RegexEscape, "Escape", CiVar.New(this.StringPtrType, "str")));
@@ -3035,7 +3037,7 @@ namespace Foxoft.Ci
 			enu.Add(value);
 		}
 
-		CiConst NewConstInt(string name, int value)
+		CiConst NewConstLong(string name, long value)
 		{
 			CiConst result = new CiConst { Visibility = CiVisibility.Public, Name = name, Value = NewLiteralLong(value), VisitStatus = CiVisitStatus.Done };
 			result.Type = result.Value.Type;
@@ -3043,6 +3045,12 @@ namespace Foxoft.Ci
 		}
 
 		CiConst NewConstDouble(string name, double value) => new CiConst { Visibility = CiVisibility.Public, Name = name, Value = new CiLiteralDouble { Value = value, Type = this.DoubleType }, Type = this.DoubleType, VisitStatus = CiVisitStatus.Done };
+
+		void AddMinMaxValue(CiIntegerType type, long min, long max)
+		{
+			type.Add(NewConstLong("MinValue", min));
+			type.Add(NewConstLong("MaxValue", max));
+		}
 
 		internal static CiSystem New() => new CiSystem();
 	}
@@ -4230,6 +4238,39 @@ namespace Foxoft.Ci
 			return type;
 		}
 
+		protected static int SaturatedNeg(int a)
+		{
+			if (a == -2147483648)
+				return 2147483647;
+			return -a;
+		}
+
+		protected static int SaturatedAdd(int a, int b)
+		{
+			int c = a + b;
+			if (c >= 0) {
+				if (a < 0 && b < 0)
+					return -2147483648;
+			}
+			else if (a > 0 && b > 0)
+				return 2147483647;
+			return c;
+		}
+
+		protected static int SaturatedSub(int a, int b)
+		{
+			if (b == -2147483648)
+				return a < 0 ? a ^ b : 2147483647;
+			return SaturatedAdd(a, -b);
+		}
+
+		protected static int SaturatedDiv(int a, int b)
+		{
+			if (a == -2147483648 && b == -1)
+				return 2147483647;
+			return a / b;
+		}
+
 		protected static int SaturatedShiftRight(int a, int b) => a >> (b >= 31 || b < 0 ? 31 : b);
 
 		protected static CiRangeType UnsignedAnd(CiRangeType left, CiRangeType right)
@@ -4622,6 +4663,20 @@ namespace Foxoft.Ci
 				return expr;
 			ReportError(expr, "Expected constant value");
 			return expr;
+		}
+
+		protected int FoldConstInt(CiExpr expr)
+		{
+			if (FoldConst(expr) is CiLiteralLong literal) {
+				long l = literal.Value;
+				if (l < -2147483648 || l > 2147483647) {
+					ReportError(expr, "Only 32-bit ranges supported");
+					return 0;
+				}
+				return (int) l;
+			}
+			ReportError(expr, "Expected integer");
+			return 0;
 		}
 
 		protected static CiClassType CreateClassPtr(CiClass klass, CiToken ptrModifier)

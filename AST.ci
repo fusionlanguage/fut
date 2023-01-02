@@ -1,6 +1,6 @@
 // AST.ci - Ci abstract syntax tree
 //
-// Copyright (C) 2011-2022  Piotr Fusik
+// Copyright (C) 2011-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -1277,7 +1277,7 @@ public class CiSystem : CiScope
 	internal CiType# NullType = new CiType { Id = CiId.NullType, Name = "null" };
 	CiType# TypeParam0 = new CiType { Id = CiId.TypeParam0, Name = "T" };
 	internal CiIntegerType# IntType = new CiIntegerType { Id = CiId.IntType, Name = "int" };
-	CiRangeType# UIntType = CiRangeType.New(0, 0x7fffffff);
+	CiRangeType# UIntType = CiRangeType.New(0, int.MaxValue);
 	internal CiIntegerType# LongType = new CiIntegerType { Id = CiId.LongType, Name = "long" };
 	internal CiRangeType# ByteType = CiRangeType.New(0, 0xff);
 	CiFloatingType# FloatType = new CiFloatingType { Id = CiId.FloatType, Name = "float" };
@@ -1293,7 +1293,7 @@ public class CiSystem : CiScope
 
 	internal CiLiteralLong# NewLiteralLong(long value, int line = 0)
 	{
-		CiType# type = value >= -0x80000000 && value <= 0x7fffffff ? CiRangeType.New(value, value) : LongType;
+		CiType# type = value >= int.MinValue && value <= int.MaxValue ? CiRangeType.New(value, value) : LongType;
 		return new CiLiteralLong { Line = line, Type = type, Value = value };
 	}
 
@@ -1344,7 +1344,7 @@ public class CiSystem : CiScope
 		enu.Add(value);
 	}
 
-	CiConst# NewConstInt(string name, int value)
+	CiConst# NewConstLong(string name, long value)
 	{
 		CiConst# result = new CiConst { Visibility = CiVisibility.Public, Name = name, Value = NewLiteralLong(value), VisitStatus = CiVisitStatus.Done };
 		result.Type = result.Value.Type;
@@ -1354,14 +1354,22 @@ public class CiSystem : CiScope
 	CiConst# NewConstDouble(string name, double value)
 		=> new CiConst { Visibility = CiVisibility.Public, Name = name, Value = new CiLiteralDouble { Value = value, Type = DoubleType }, Type = DoubleType, VisitStatus = CiVisitStatus.Done };
 
+	void AddMinMaxValue(CiIntegerType! type, long min, long max)
+	{
+		type.Add(NewConstLong("MinValue", min));
+		type.Add(NewConstLong("MaxValue", max));
+	}
+
 	CiSystem()
 	{
 		CiSymbol# basePtr = CiVar.New(null, "base");
 		basePtr.Id = CiId.BasePtr;
 		Add(basePtr);
+		AddMinMaxValue(IntType, int.MinValue, int.MaxValue);
 		Add(IntType);
 		UIntType.Name = "uint";
 		Add(UIntType);
+		AddMinMaxValue(LongType, long.MinValue, long.MaxValue);
 		Add(LongType);
 		ByteType.Name = "byte";
 		Add(ByteType);
@@ -1371,7 +1379,7 @@ public class CiSystem : CiScope
 		CiRangeType# ushortType = CiRangeType.New(0, 0xffff);
 		ushortType.Name = "ushort";
 		Add(ushortType);
-		CiRangeType# minus1Type = CiRangeType.New(-1, 0x7fffffff);
+		CiRangeType# minus1Type = CiRangeType.New(-1, int.MaxValue);
 		Add(FloatType);
 		DoubleType.Add(CiMethod.NewMutator(CiVisibility.Public, BoolType, CiId.DoubleTryParse, "TryParse", CiVar.New(StringPtrType, "value")));
 		Add(DoubleType);
@@ -1460,11 +1468,11 @@ public class CiSystem : CiScope
 		environmentClass.Add(CiMethod.NewStatic(StringPtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", CiVar.New(StringPtrType, "name")));
 		Add(environmentClass);
 		CiEnum# regexOptionsEnum = new CiEnumFlags { Name = "RegexOptions" };
-		CiConst# regexOptionsNone = NewConstInt("None", 0);
+		CiConst# regexOptionsNone = NewConstLong("None", 0);
 		AddEnumValue(regexOptionsEnum, regexOptionsNone);
-		AddEnumValue(regexOptionsEnum, NewConstInt("IgnoreCase", 1));
-		AddEnumValue(regexOptionsEnum, NewConstInt("Multiline", 2));
-		AddEnumValue(regexOptionsEnum, NewConstInt("Singleline", 16));
+		AddEnumValue(regexOptionsEnum, NewConstLong("IgnoreCase", 1));
+		AddEnumValue(regexOptionsEnum, NewConstLong("Multiline", 2));
+		AddEnumValue(regexOptionsEnum, NewConstLong("Singleline", 16));
 		Add(regexOptionsEnum);
 		CiClass# regexClass = CiClass.New(CiCallType.Sealed, CiId.RegexClass, "Regex");
 		regexClass.Add(CiMethod.NewStatic(StringStorageType, CiId.RegexEscape, "Escape", CiVar.New(StringPtrType, "str")));
