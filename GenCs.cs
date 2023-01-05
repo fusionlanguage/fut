@@ -1,6 +1,6 @@
 // GenCs.cs - C# code generator
 //
-// Copyright (C) 2011-2022  Piotr Fusik
+// Copyright (C) 2011-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -689,6 +689,10 @@ public class GenCs : GenTyped
 		WriteName(expr.First);
 		Write(" => ");
 		expr.Body.Accept(this, CiPriority.Statement);
+	}
+
+	protected override void DefineIsVar(CiExpr expr)
+	{
 	}
 
 	protected override void WriteAssert(CiAssert statement)

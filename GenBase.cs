@@ -1,6 +1,6 @@
 // GenBase.cs - base class for code generators
 //
-// Copyright (C) 2011-2022  Piotr Fusik
+// Copyright (C) 2011-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -1210,8 +1210,53 @@ public abstract class GenBase : CiExprVisitor
 		WriteCall(expr.Method.Left, (CiMethod) expr.Method.Symbol, expr.Arguments, parent);
 	}
 
+	protected virtual void DefineIsVar(CiExpr expr)
+	{
+		switch (expr) {
+		case CiVar _:
+		case CiAggregateInitializer _:
+		case CiLiteral _:
+		case CiLambdaExpr _:
+			break;
+		case CiInterpolatedString interp:
+			foreach (CiInterpolatedPart part in interp.Parts)
+				DefineIsVar(part.Argument);
+			break;
+		case CiSymbolReference symbol:
+			if (symbol.Left != null)
+				DefineIsVar(symbol.Left);
+			break;
+		case CiUnaryExpr unary:
+			if (unary.Inner != null) // new C()
+				DefineIsVar(unary.Inner);
+			break;
+		case CiBinaryExpr binary:
+			DefineIsVar(binary.Left);
+			if (binary.Op != CiToken.Is)
+				DefineIsVar(binary.Right);
+			else if (binary.Right is CiVar def) {
+				WriteTypeAndName(def);
+				EndStatement();
+			}
+			break;
+		case CiSelectExpr select:
+			DefineIsVar(select.Cond);
+			DefineIsVar(select.OnTrue);
+			DefineIsVar(select.OnFalse);
+			break;
+		case CiCallExpr call:
+			DefineIsVar(call.Method);
+			foreach (CiExpr arg in call.Arguments)
+				DefineIsVar(arg);
+			break;
+		default:
+			throw new NotImplementedException(expr.GetType().ToString());
+		}
+	}
+
 	public override void VisitExpr(CiExpr statement)
 	{
+		DefineIsVar(statement);
 		statement.Accept(this, CiPriority.Statement);
 		WriteLine(';');
 		if (statement is CiVar def)
@@ -1297,11 +1342,22 @@ public abstract class GenBase : CiExprVisitor
 		WriteChild(statement.Body);
 	}
 
+	protected virtual bool EmbedIfWhileIsVar(CiExpr expr, bool write) => false;
+
+	void StartIfWhile(string name, CiExpr expr)
+	{
+		if (!EmbedIfWhileIsVar(expr, false))
+			DefineIsVar(expr);
+		Write(name);
+		Write(" (");
+		EmbedIfWhileIsVar(expr, true);
+		expr.Accept(this, CiPriority.Argument);
+		WriteChar(')');
+	}
+
 	public override void VisitIf(CiIf statement)
 	{
-		Write("if (");
-		statement.Cond.Accept(this, CiPriority.Argument);
-		WriteChar(')');
+		StartIfWhile("if", statement.Cond);
 		WriteChild(statement.OnTrue);
 		if (statement.OnFalse != null) {
 			Write("else");
@@ -1323,6 +1379,7 @@ public abstract class GenBase : CiExprVisitor
 		if (statement.Value == null)
 			WriteLine("return;");
 		else {
+			DefineIsVar(statement.Value);
 			Write("return ");
 			WriteStronglyCoerced(this.CurrentMethod.Type, statement.Value);
 			WriteLine(';');
@@ -1359,9 +1416,7 @@ public abstract class GenBase : CiExprVisitor
 
 	public override void VisitWhile(CiWhile statement)
 	{
-		Write("while (");
-		statement.Cond.Accept(this, CiPriority.Argument);
-		WriteChar(')');
+		StartIfWhile("while", statement.Cond);
 		WriteChild(statement.Body);
 	}
 

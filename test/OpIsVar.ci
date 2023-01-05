@@ -13,7 +13,7 @@ public static class Test
 	{
 		Derived() d;
 		Base! b = d;
-		return b is Derived ro && ro == d //FAIL: c cpp js py swift ts cl TODO; java 17
+		return b is Derived ro && ro == d //FAIL: c js py swift ts cl TODO; java 17
 			&& b is Derived! rw && rw == d;
 	}
 }

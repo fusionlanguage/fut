@@ -1,6 +1,6 @@
 // GenPySwift.cs - Python/Swift code generator
 //
-// Copyright (C) 2020-2022  Piotr Fusik
+// Copyright (C) 2020-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -186,8 +186,8 @@ public abstract class GenPySwift : GenBase
 			return seen;
 		case CiCallExpr call:
 			seen = VisitXcrement<T>(call.Method, write);
-			foreach (CiExpr item in call.Arguments)
-				seen |= VisitXcrement<T>(item, write);
+			foreach (CiExpr arg in call.Arguments)
+				seen |= VisitXcrement<T>(arg, write);
 			if (typeof(T) == typeof(CiPrefixExpr))
 				seen |= VisitPreCall(call);
 			return seen;

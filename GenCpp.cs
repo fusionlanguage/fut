@@ -1144,7 +1144,7 @@ public class GenCpp : GenCCpp
 	void WriteIsVar(CiExpr expr, CiVar def)
 	{
 		if (def.Name != "_") {
-			WriteTypeAndName(def);
+			WriteName(def);
 			Write(" = ");
 		}
 		if (def.Type is CiDynamicPtrType dynamic) {
@@ -1177,8 +1177,13 @@ public class GenCpp : GenCCpp
 			WriteCall(expr.Left, "resize", length);
 			return;
 		case CiToken.Is:
-			if (expr.Right is CiVar def)
+			if (expr.Right is CiVar def) {
+				if (parent > CiPriority.Assign)
+					WriteChar('(');
 				WriteIsVar(expr.Left, def);
+				if (parent > CiPriority.Assign)
+					WriteChar(')');
+			}
 			else {
 				Write("dynamic_cast<const ");
 				Write(((CiClass) expr.Right).Name);
@@ -1243,6 +1248,16 @@ public class GenCpp : GenCCpp
 		WriteChild(statement.Body);
 	}
 
+	protected override bool EmbedIfWhileIsVar(CiExpr expr, bool write)
+	{
+		if (expr is CiBinaryExpr binary && binary.Op == CiToken.Is && binary.Right is CiVar def) {
+			if (write)
+				WriteType(def.Type, true);
+			return true;
+		}
+		return false;
+	}
+
 	public override void VisitLock(CiLock statement)
 	{
 		OpenBlock();
@@ -1303,6 +1318,8 @@ public class GenCpp : GenCCpp
 			foreach (CiCase kase in statement.Cases) {
 				foreach (CiVar def in kase.Values) {
 					Write(op);
+					if (def.Name != "_")
+						WriteType(def.Type, true);
 					WriteIsVar(statement.Value, def); // FIXME: side effect in every if
 					op = " || ";
 				}

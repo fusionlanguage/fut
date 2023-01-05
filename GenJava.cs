@@ -846,6 +846,10 @@ public class GenJava : GenTyped
 		expr.Body.Accept(this, CiPriority.Statement);
 	}
 
+	protected override void DefineIsVar(CiExpr expr)
+	{
+	}
+
 	protected override void WriteAssert(CiAssert statement)
 	{
 		if (statement.CompletesNormally()) {
