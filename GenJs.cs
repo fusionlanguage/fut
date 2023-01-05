@@ -468,6 +468,13 @@ public class GenJs : GenBase
 			}
 			WriteArgsInParentheses(method, args);
 			break;
+		case CiId.DoubleTryParse:
+			Write("!isNaN(");
+			obj.Accept(this, CiPriority.Assign);
+			Write(" = parseFloat(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write("))");
+			break;
 		case CiId.StringContains:
 		case CiId.ListContains:
 			WriteCall(obj, "includes", args[0]);
