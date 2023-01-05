@@ -1,6 +1,6 @@
 // GenCpp.cs - C++ code generator
 //
-// Copyright (C) 2011-2022  Piotr Fusik
+// Copyright (C) 2011-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -517,6 +517,16 @@ public class GenCpp : GenCCpp
 		WriteChar(')');
 	}
 
+	void WriteCString(CiExpr expr)
+	{
+		if (expr is CiLiteralString)
+			expr.Accept(this, CiPriority.Argument);
+		else {
+			expr.Accept(this, CiPriority.Primary);
+			Write(".data()");
+		}
+	}
+
 	void WriteRegex(List<CiExpr> args, int argIndex)
 	{
 		Include("regex");
@@ -631,6 +641,14 @@ public class GenCpp : GenCCpp
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
+		case CiId.DoubleTryParse:
+			Include("cstdlib");
+			Write("[&] { char *ciend; ");
+			obj.Accept(this, CiPriority.Assign);
+			Write(" = std::strtod(");
+			WriteCString(args[0]);
+			Write(", &ciend); return *ciend == '\\0'; }()"); // TODO: && *s != '\0'
+			break;
 		case CiId.StringContains:
 			if (parent > CiPriority.Equality)
 				WriteChar('(');
@@ -904,12 +922,7 @@ public class GenCpp : GenCCpp
 		case CiId.EnvironmentGetEnvironmentVariable:
 			Include("cstdlib");
 			Write("std::getenv(");
-			if (args[0] is CiLiteralString)
-				args[0].Accept(this, CiPriority.Argument);
-			else {
-				args[0].Accept(this, CiPriority.Primary);
-				Write(".data()");
-			}
+			WriteCString(args[0]);
 			WriteChar(')');
 			break;
 		case CiId.RegexCompile:
