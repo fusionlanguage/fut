@@ -471,7 +471,7 @@ public class GenJs : GenBase
 		case CiId.DoubleTryParse:
 			Write("!isNaN(");
 			obj.Accept(this, CiPriority.Assign);
-			Write(" = parseFloat(");
+			Write(" = parseFloat("); // ignores trailing invalid characters; Number() does not, but it accepts empty string and bin/oct/hex
 			args[0].Accept(this, CiPriority.Argument);
 			Write("))");
 			break;

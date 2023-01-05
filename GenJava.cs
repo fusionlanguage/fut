@@ -545,6 +545,14 @@ public class GenJava : GenTyped
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
+		case CiId.DoubleTryParse:
+			Include("java.util.function.DoubleSupplier");
+			Write("!Double.isNaN(");
+			obj.Accept(this, CiPriority.Assign);
+			Write(" = ((DoubleSupplier) () -> { try { return Double.parseDouble(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write("); } catch (NumberFormatException e) { return Double.NaN; } }).getAsDouble())");
+			break;
 		case CiId.StringSubstring:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".substring(");
