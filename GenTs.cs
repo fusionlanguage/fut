@@ -1,7 +1,7 @@
 // GenTs.cs - TypeScript code generator
 //
 // Copyright (C) 2020-2021  Andy Edwards
-// Copyright (C) 2020-2022  Piotr Fusik
+// Copyright (C) 2020-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -153,7 +153,7 @@ public class GenTs : GenJs
 		}
 	}
 
-	protected override void WriteAssertCastType(CiVar def)
+	protected override void WriteAsType(CiVar def)
 	{
 		Write(" as ");
 		Write(def.Type.Name);

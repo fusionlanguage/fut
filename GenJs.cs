@@ -28,6 +28,8 @@ public class GenJs : GenBase
 {
 	// TODO: Namespace
 
+	protected readonly List<CiSwitch> SwitchesWithLabel = new List<CiSwitch>();
+
 	protected override string GetTargetName() => "JavaScript";
 
 	void WriteCamelCaseNotKeyword(string name)
@@ -812,20 +814,21 @@ public class GenJs : GenBase
 		expr.Body.Accept(this, CiPriority.Statement);
 	}
 
-	protected virtual void WriteAssertCastType(CiVar def)
+	protected virtual void WriteAsType(CiVar def)
 	{
 	}
 
-	protected override void WriteAssertCast(CiBinaryExpr expr)
+	void WriteVarCast(CiVar def, CiExpr value)
 	{
 		Write("const ");
-		CiVar def = (CiVar) expr.Right;
-		Write(def.Name);
+		WriteCamelCaseNotKeyword(def.Name);
 		Write(" = ");
-		expr.Left.Accept(this, CiPriority.Argument);
-		WriteAssertCastType(def);
-		WriteLine();
+		value.Accept(this, CiPriority.Argument);
+		WriteAsType(def);
+		WriteLine(';');
 	}
+
+	protected override void WriteAssertCast(CiBinaryExpr expr) => WriteVarCast((CiVar) expr.Right, expr.Left);
 
 	protected override void WriteAssert(CiAssert statement)
 	{
@@ -836,6 +839,20 @@ public class GenJs : GenBase
 			statement.Message.Accept(this, CiPriority.Argument);
 		}
 		WriteLine(");");
+	}
+
+	public override void VisitBreak(CiBreak statement)
+	{
+		if (statement.LoopOrSwitch is CiSwitch switchStatement) {
+			int label = this.SwitchesWithLabel.IndexOf(switchStatement);
+			if (label >= 0) {
+				Write("break ciswitch");
+				VisitLiteralLong(label);
+				WriteLine(';');
+				return;
+			}
+		}
+		base.VisitBreak(statement);
 	}
 
 	public override void VisitForeach(CiForeach statement)
@@ -890,10 +907,52 @@ public class GenJs : GenBase
 		NotSupported(statement, "'lock'");
 	}
 
+	void WriteTypeMatchingSwitch(CiSwitch statement)
+	{
+		string op = "if (";
+		foreach (CiCase kase in statement.Cases) {
+			CiVar caseVar = null;
+			foreach (CiVar def in kase.Values) { // TODO: when
+				Write(op);
+				statement.Value.Accept(this, CiPriority.Rel); // FIXME: side effect in every if
+				Write(" instanceof "); 
+				Write(def.Type.Name);
+				op = " || ";
+				if (def.Name != "_")
+					caseVar = def;
+			}
+			Write(") ");
+			OpenBlock();
+			if (caseVar != null)
+				WriteVarCast(caseVar, statement.Value); // FIXME: side effect
+			WriteFirstStatements(kase.Body, CiSwitch.LengthWithoutTrailingBreak(kase.Body));
+			CloseBlock();
+			op = "else if (";
+		}
+		if (statement.HasDefault()) {
+			Write("else ");
+			OpenBlock();
+			WriteFirstStatements(statement.DefaultBody, CiSwitch.LengthWithoutTrailingBreak(statement.DefaultBody));
+			CloseBlock();
+		}
+	}
+
 	public override void VisitSwitch(CiSwitch statement)
 	{
-		if (statement.IsTypeMatching())
-			NotSupported(statement, "Type-matching 'switch'");
+		if (statement.IsTypeMatching()) {
+			if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreak(kase.Body))
+			 || CiSwitch.HasEarlyBreak(statement.DefaultBody)) {
+				Write("ciswitch");
+				VisitLiteralLong(this.SwitchesWithLabel.Count);
+				this.SwitchesWithLabel.Add(statement);
+				Write(": ");
+				OpenBlock();
+				WriteTypeMatchingSwitch(statement);
+				CloseBlock();
+			}
+			else
+				WriteTypeMatchingSwitch(statement);
+		}
 		else
 			base.VisitSwitch(statement);
 	}
@@ -952,6 +1011,7 @@ public class GenJs : GenBase
 	{
 		if (method.CallType == CiCallType.Abstract)
 			return;
+		this.SwitchesWithLabel.Clear();
 		WriteLine();
 		WriteMethodDoc(method);
 		if (method.CallType == CiCallType.Static)
@@ -963,6 +1023,7 @@ public class GenJs : GenBase
 
 	protected void WriteConstructor(CiClass klass)
 	{
+		this.SwitchesWithLabel.Clear();
 		WriteLine("constructor()");
 		OpenBlock();
 		if (klass.Parent is CiClass)
@@ -975,7 +1036,6 @@ public class GenJs : GenBase
 	{
 		if (!WriteBaseClass(klass, program))
 			return;
-
 		WriteLine();
 		WriteDoc(klass.Documentation);
 		OpenClass(klass, "", " extends ");
@@ -992,7 +1052,6 @@ public class GenJs : GenBase
 	{
 		if (resources.Count == 0)
 			return;
-
 		WriteLine();
 		WriteLine("class Ci");
 		OpenBlock();

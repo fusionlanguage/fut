@@ -26,15 +26,20 @@ public static class Test
 {
 	static bool IsCat(Animal a)
 	{
-		switch (a) { //FAIL: c js py ts cl
+		switch (a) { //FAIL: c py cl
 		case Cow _: //FAIL: java 17 --enable-preview
 		case Dog _:
+			if (a == null)
+				break;
 			return false;
 		case Cat c:
 			return c.Name == "Simba";
 		default:
+			if (a == null)
+				break;
 			return false;
 		}
+		return false;
 	}
 
 	public static bool Run()
