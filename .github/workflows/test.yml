@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@main
       - run: make -j3 test-js test-ts
   py-swift:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/setup-dotnet@main
       - uses: swift-actions/setup-swift@main
