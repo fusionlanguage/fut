@@ -776,35 +776,47 @@ public class GenJs : GenBase
 
 	public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Type is CiIntegerType) {
-			switch (expr.Op) {
-			case CiToken.Slash:
-				if (parent > CiPriority.Or)
-					WriteChar('(');
-				expr.Left.Accept(this, CiPriority.Mul);
-				Write(" / ");
-				expr.Right.Accept(this, CiPriority.Primary);
-				Write(" | 0"); // FIXME: long: Math.trunc?
-				if (parent > CiPriority.Or)
-					WriteChar(')');
-				return;
-			case CiToken.DivAssign:
-				if (parent > CiPriority.Assign)
-					WriteChar('(');
-				expr.Left.Accept(this, CiPriority.Assign);
-				Write(" = ");
-				expr.Left.Accept(this, CiPriority.Mul); // TODO: side effect
-				Write(" / ");
-				expr.Right.Accept(this, CiPriority.Primary);
-				Write(" | 0");
-				if (parent > CiPriority.Assign)
-					WriteChar(')');
-				return;
-			default:
-				break;
-			}
+		switch (expr.Op) {
+		case CiToken.Slash when expr.Type is CiIntegerType:
+			if (parent > CiPriority.Or)
+				WriteChar('(');
+			expr.Left.Accept(this, CiPriority.Mul);
+			Write(" / ");
+			expr.Right.Accept(this, CiPriority.Primary);
+			Write(" | 0"); // FIXME: long: Math.trunc?
+			if (parent > CiPriority.Or)
+				WriteChar(')');
+			break;
+		case CiToken.DivAssign when expr.Type is CiIntegerType:
+			if (parent > CiPriority.Assign)
+				WriteChar('(');
+			expr.Left.Accept(this, CiPriority.Assign);
+			Write(" = ");
+			expr.Left.Accept(this, CiPriority.Mul); // TODO: side effect
+			Write(" / ");
+			expr.Right.Accept(this, CiPriority.Primary);
+			Write(" | 0");
+			if (parent > CiPriority.Assign)
+				WriteChar(')');
+			break;
+		case CiToken.Is when expr.Right is CiVar def:
+			if (parent > CiPriority.CondAnd)
+				WriteChar('(');
+			expr.Left.Accept(this, CiPriority.Rel);
+			Write(" instanceof ");
+			Write(def.Type.Name);
+			Write(" && !!(");
+			WriteCamelCaseNotKeyword(def.Name);
+			Write(" = ");
+			expr.Left.Accept(this, CiPriority.Argument); // TODO: side effect
+			WriteChar(')');
+			if (parent > CiPriority.CondAnd)
+				WriteChar(')');
+			break;
+		default:
+			base.VisitBinaryExpr(expr, parent);
+			break;
 		}
-		base.VisitBinaryExpr(expr, parent);
 	}
 
 	public override void VisitLambdaExpr(CiLambdaExpr expr)

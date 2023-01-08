@@ -1235,7 +1235,7 @@ public abstract class GenBase : CiExprVisitor
 			if (binary.Op != CiToken.Is)
 				DefineIsVar(binary.Right);
 			else if (binary.Right is CiVar def) {
-				WriteTypeAndName(def);
+				WriteVar(def);
 				EndStatement();
 			}
 			break;
