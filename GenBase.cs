@@ -1390,21 +1390,25 @@ public abstract class GenBase : CiExprVisitor
 
 	protected virtual void WriteCaseBody(List<CiStatement> statements) => WriteStatements(statements);
 
+	protected virtual void WriteSwitchCase(CiSwitch statement, CiCase kase)
+	{
+		foreach (CiExpr value in kase.Values) {
+			Write("case ");
+			WriteCoercedLiteral(statement.Value.Type, value);
+			WriteLine(':');
+		}
+		this.Indent++;
+		WriteCaseBody(kase.Body);
+		this.Indent--;
+	}
+
 	public override void VisitSwitch(CiSwitch statement)
 	{
 		Write("switch (");
 		WriteSwitchValue(statement.Value);
 		WriteLine(") {");
-		foreach (CiCase kase in statement.Cases) {
-			foreach (CiExpr value in kase.Values) {
-				Write("case ");
-				WriteCoercedLiteral(statement.Value.Type, value);
-				WriteLine(':');
-			}
-			this.Indent++;
-			WriteCaseBody(kase.Body);
-			this.Indent--;
-		}
+		foreach (CiCase kase in statement.Cases)
+			WriteSwitchCase(statement, kase);
 		if (statement.DefaultBody.Count > 0) {
 			WriteLine("default:");
 			this.Indent++;
