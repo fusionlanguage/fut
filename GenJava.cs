@@ -933,7 +933,7 @@ public class GenJava : GenTyped
 					WriteChar('_');
 				WriteLine(':');
 				this.Indent++;
-				WriteCaseBody(kase.Body);
+				WriteSwitchCaseBody(kase.Body);
 				this.Indent--;
 			}
 		}

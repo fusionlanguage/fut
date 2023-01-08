@@ -1296,7 +1296,7 @@ public class GenCpp : GenCCpp
 			base.WriteStronglyCoerced(type, expr);
 	}
 
-	protected override void WriteCaseBody(List<CiStatement> statements)
+	protected override void WriteSwitchCaseBody(List<CiStatement> statements)
 	{
 		bool block = false;
 		foreach (CiStatement statement in statements) {

@@ -1,6 +1,6 @@
 // GenSwift.cs - Swift code generator
 //
-// Copyright (C) 2020-2022  Piotr Fusik
+// Copyright (C) 2020-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -1280,7 +1280,7 @@ public class GenSwift : GenPySwift
 		this.Indent++;
 		VisitXcrement<CiPostfixExpr>(statement.Value, true);
 		InitVarsAtIndent();
-		WriteCaseBody(body);
+		WriteSwitchCaseBody(body);
 		this.Indent--;
 	}
 

@@ -1,6 +1,6 @@
 // GenC.cs - C code generator
 //
-// Copyright (C) 2011-2022  Piotr Fusik
+// Copyright (C) 2011-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -2467,7 +2467,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected override void WriteCaseBody(List<CiStatement> statements)
+	protected override void WriteSwitchCaseBody(List<CiStatement> statements)
 	{
 		if (statements[0] is CiVar
 		 || (statements[0] is CiConst konst && konst.Type is CiArrayStorageType))

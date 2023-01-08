@@ -1,6 +1,6 @@
 // GenCl.cs - OpenCL C code generator
 //
-// Copyright (C) 2020-2022  Piotr Fusik
+// Copyright (C) 2020-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -269,12 +269,12 @@ public class GenCl : GenC
 	{
 	}
 
-	protected override void WriteCaseBody(List<CiStatement> statements)
+	protected override void WriteSwitchCaseBody(List<CiStatement> statements)
 	{
 		if (statements.All(statement => statement is CiAssert))
 			WriteLine(';');
 		else
-			base.WriteCaseBody(statements);
+			base.WriteSwitchCaseBody(statements);
 	}
 
 	void WriteLibrary()

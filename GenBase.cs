@@ -1388,7 +1388,7 @@ public abstract class GenBase : CiExprVisitor
 
 	protected virtual void WriteSwitchValue(CiExpr expr) => expr.Accept(this, CiPriority.Argument);
 
-	protected virtual void WriteCaseBody(List<CiStatement> statements) => WriteStatements(statements);
+	protected virtual void WriteSwitchCaseBody(List<CiStatement> statements) => WriteStatements(statements);
 
 	protected virtual void WriteSwitchCase(CiSwitch statement, CiCase kase)
 	{
@@ -1398,7 +1398,7 @@ public abstract class GenBase : CiExprVisitor
 			WriteLine(':');
 		}
 		this.Indent++;
-		WriteCaseBody(kase.Body);
+		WriteSwitchCaseBody(kase.Body);
 		this.Indent--;
 	}
 
@@ -1412,7 +1412,7 @@ public abstract class GenBase : CiExprVisitor
 		if (statement.DefaultBody.Count > 0) {
 			WriteLine("default:");
 			this.Indent++;
-			WriteCaseBody(statement.DefaultBody);
+			WriteSwitchCaseBody(statement.DefaultBody);
 			this.Indent--;
 		}
 		WriteLine('}');
