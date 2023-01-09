@@ -3,7 +3,7 @@ public class Test
 	public static bool Run()
 	{
 		string s = "foobar";
-		string() r = s.Replace("o", "uu"); //FAIL: c ts TODO; cl
+		string() r = s.Replace("o", "uu"); //FAIL: ts TODO; cl
 		return r == "fuuuubar";
 	}
 }

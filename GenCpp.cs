@@ -673,13 +673,7 @@ public class GenCpp : GenCCpp
 			break;
 		case CiId.StringReplace:
 			this.StringReplace = true;
-			Write("CiString_replace(");
-			obj.Accept(this, CiPriority.Argument);
-			Write(", ");
-			args[0].Accept(this, CiPriority.Argument);
-			Write(", ");
-			args[1].Accept(this, CiPriority.Argument);
-			WriteChar(')');
+			WriteCall("CiString_replace", obj, args[0], args[1]);
 			break;
 		case CiId.StringStartsWith:
 			WriteStringMethod(obj, "starts_with", method, args);

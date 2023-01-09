@@ -34,6 +34,7 @@ public class GenC : GenCCpp
 	bool StringIndexOf;
 	bool StringLastIndexOf;
 	bool StringEndsWith;
+	bool StringReplace;
 	bool StringFormat;
 	bool MatchFind;
 	bool MatchPos;
@@ -1538,6 +1539,12 @@ public class GenC : GenCCpp
 			this.StringLastIndexOf = true;
 			WriteStringMethod("LastIndexOf", obj, args);
 			break;
+		case CiId.StringReplace:
+			Include("string.h");
+			this.StringAppend = true;
+			this.StringReplace = true;
+			WriteCall("CiString_Replace", obj, args[0], args[1]);
+			break;
 		case CiId.StringStartsWith:
 			if (parent > CiPriority.Equality)
 				WriteChar('(');
@@ -3004,14 +3011,19 @@ public class GenC : GenCCpp
 		}
 		if (this.StringAppend) {
 			WriteLine();
-			WriteLine("static void CiString_Append(char **str, const char *suffix)");
+			WriteLine("static void CiString_AppendSubstring(char **str, const char *suffix, size_t suffixLen)");
 			OpenBlock();
-			WriteLine("size_t suffixLen = strlen(suffix);");
 			WriteLine("if (suffixLen == 0)");
 			WriteLine("\treturn;");
-			WriteLine("size_t prefixLen = strlen(*str);");
+			WriteLine("size_t prefixLen = *str == NULL ? 0 : strlen(*str);");
 			WriteLine("*str = realloc(*str, prefixLen + suffixLen + 1);");
-			WriteLine("memcpy(*str + prefixLen, suffix, suffixLen + 1);");
+			WriteLine("memcpy(*str + prefixLen, suffix, suffixLen);");
+			WriteLine("(*str)[prefixLen + suffixLen] = '\\0';");
+			CloseBlock();
+			WriteLine();
+			WriteLine("static void CiString_Append(char **str, const char *suffix)");
+			OpenBlock();
+			WriteLine("CiString_AppendSubstring(str, suffix, strlen(suffix));");
 			CloseBlock();
 		}
 		if (this.StringIndexOf) {
@@ -3045,6 +3057,23 @@ public class GenC : GenCCpp
 			WriteLine("size_t strLen = strlen(str);");
 			WriteLine("size_t suffixLen = strlen(suffix);");
 			WriteLine("return strLen >= suffixLen && memcmp(str + strLen - suffixLen, suffix, suffixLen) == 0;");
+			CloseBlock();
+		}
+		if (this.StringReplace) {
+			WriteLine();
+			WriteLine("static char *CiString_Replace(const char *s, const char *oldValue, const char *newValue)");
+			OpenBlock();
+			Write("for (char *result = NULL;;) ");
+			OpenBlock();
+			WriteLine("const char *p = strstr(s, oldValue);");
+			WriteLine("if (p == NULL) {");
+			WriteLine("\tCiString_Append(&result, s);");
+			WriteLine("\treturn result == NULL ? strdup(\"\") : result;");
+			WriteLine('}');
+			WriteLine("CiString_AppendSubstring(&result, s, p - s);");
+			WriteLine("CiString_Append(&result, newValue);");
+			WriteLine("s = p + strlen(oldValue);");
+			CloseBlock();
 			CloseBlock();
 		}
 		if (this.StringFormat) {
@@ -3291,6 +3320,7 @@ public class GenC : GenCCpp
 		this.StringIndexOf = false;
 		this.StringLastIndexOf = false;
 		this.StringEndsWith = false;
+		this.StringReplace = false;
 		this.StringFormat = false;
 		this.MatchFind = false;
 		this.MatchPos = false;
