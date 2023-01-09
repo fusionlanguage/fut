@@ -5,7 +5,7 @@ public static class Test
 		string() s = "foo"; //FAIL: cl
 		string p = "bar";
 		return s + s == "foofoo" //FAIL: c
-			&& s + p == "foobar" //FAIL: cpp https://stackoverflow.com/questions/44636549/why-is-there-no-support-for-concatenating-stdstring-and-stdstring-view
+			&& s + p == "foobar"
 			&& p + s == "barfoo"
 			&& p + p == "barbar"
 			&& s + "quux" == "fooquux"

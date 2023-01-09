@@ -1167,6 +1167,16 @@ public class GenCpp : GenCCpp
 	public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
+		case CiToken.Plus when expr.Type.Id == CiId.StringStorageType:
+			if (parent > CiPriority.Add)
+				WriteChar('(');
+			// https://stackoverflow.com/questions/44636549/why-is-there-no-support-for-concatenating-stdstring-and-stdstring-view
+			WriteStronglyCoerced(expr.Type, expr.Left);
+			Write(" + ");
+			WriteStronglyCoerced(expr.Type, expr.Right);
+			if (parent > CiPriority.Add)
+				WriteChar(')');
+			return;
 		case CiToken.Equal:
 		case CiToken.NotEqual:
 		case CiToken.Greater:
