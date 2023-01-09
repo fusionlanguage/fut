@@ -29,6 +29,7 @@ public class GenCpp : GenCCpp
 {
 	bool UsingStringViewLiterals;
 	bool HasEnumFlags;
+	bool StringReplace;
 
 	protected override string GetTargetName() => "C++";
 
@@ -668,6 +669,16 @@ public class GenCpp : GenCCpp
 		case CiId.StringLastIndexOf:
 			Write("static_cast<int>(");
 			WriteStringMethod(obj, "rfind", method, args);
+			WriteChar(')');
+			break;
+		case CiId.StringReplace:
+			this.StringReplace = true;
+			Write("CiString_replace(");
+			obj.Accept(this, CiPriority.Argument);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(", ");
+			args[1].Accept(this, CiPriority.Argument);
 			WriteChar(')');
 			break;
 		case CiId.StringStartsWith:
@@ -1569,6 +1580,7 @@ public class GenCpp : GenCCpp
 		this.Includes = headerIncludes;
 		this.UsingStringViewLiterals = false;
 		this.HasEnumFlags = false;
+		this.StringReplace = false;
 		OpenStringWriter();
 		OpenNamespace();
 		for (CiSymbol type = program.First; type != null; type = type.Next) {
@@ -1613,6 +1625,10 @@ public class GenCpp : GenCCpp
 
 		CreateFile(this.OutputFile);
 		WriteTopLevelNatives(program);
+		if (this.StringReplace) {
+			Include("string");
+			Include("string_view");
+		}
 		this.Includes.ExceptWith(headerIncludes);
 		WriteIncludes();
 		Write("#include \"");
@@ -1620,6 +1636,24 @@ public class GenCpp : GenCCpp
 		WriteLine("\"");
 		if (this.UsingStringViewLiterals)
 			WriteLine("using namespace std::string_view_literals;");
+		if (this.StringReplace) {
+			WriteLine();
+			WriteLine("static std::string CiString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
+			OpenBlock();
+			WriteLine("std::string result;");
+			WriteLine("result.reserve(s.size());");
+			WriteLine("for (std::string_view::size_type i = 0;;) {");
+			WriteLine("\tauto j = s.find(oldValue, i);");
+			WriteLine("\tif (j == std::string::npos) {");
+			WriteLine("\t\tresult.append(s, i);");
+			WriteLine("\t\treturn result;");
+			WriteLine("\t}");
+			WriteLine("\tresult.append(s, i, j - i);");
+			WriteLine("\tresult.append(newValue);");
+			WriteLine("\ti = j + oldValue.size();");
+			WriteLine('}');
+			CloseBlock();
+		}
 		CloseStringWriter();
 		CloseFile();
 	}
