@@ -858,7 +858,7 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteBinaryOperand(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
 	{
-		if (binary.Op == CiToken.Plus && binary.Type.Id == CiId.StringPtrType) {
+		if (binary.Op == CiToken.Plus && binary.Type.Id == CiId.StringStorageType) {
 			WriteUnwrappedString(expr, parent, true);
 			return;
 		}

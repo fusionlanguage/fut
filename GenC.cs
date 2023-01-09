@@ -1990,7 +1990,7 @@ public class GenC : GenCCpp
 	{
 		switch (expr.Op) {
 		case CiToken.Plus:
-			if (expr.Type.Id == CiId.StringPtrType)
+			if (expr.Type.Id == CiId.StringStorageType)
 				NotSupported(expr, "String concatenation");
 			break;
 		case CiToken.Equal:

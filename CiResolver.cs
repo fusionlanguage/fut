@@ -490,7 +490,7 @@ public class CiResolver : CiSema
 					return this.Program.System.NewLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString(), expr.Line);
 				if (left is CiInterpolatedString || right is CiInterpolatedString)
 					return Concatenate(ToInterpolatedString(left), ToInterpolatedString(right));
-				type = this.Program.System.StringPtrType;
+				type = this.Program.System.StringStorageType;
 			}
 			else
 				type = GetNumericType(left, right);
