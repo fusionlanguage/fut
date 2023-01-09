@@ -41,6 +41,16 @@ public class GenCpp : GenCCpp
 
 	public override void VisitLiteralNull() => Write("nullptr");
 
+	protected override void WriteInterpolatedStringArg(CiExpr expr)
+	{
+		if (expr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass) {
+			StartMethodCall(expr);
+			Write("toString()");
+		}
+		else
+			base.WriteInterpolatedStringArg(expr);
+	}
+
 	public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		Include("format");
