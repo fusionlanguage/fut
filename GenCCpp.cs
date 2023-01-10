@@ -1,6 +1,6 @@
 // GenCCpp.cs - C/C++ code generator
 //
-// Copyright (C) 2011-2022  Piotr Fusik
+// Copyright (C) 2011-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -195,22 +195,33 @@ public abstract class GenCCpp : GenTyped
 			WriteConst(konst);
 	}
 
-	protected override void WriteAssert(CiAssert statement)
+	protected virtual void WriteUnreachable(CiAssert statement)
 	{
-		IncludeAssert();
-		Write("assert(");
-		if (statement.Message == null)
-			statement.Cond.Accept(this, CiPriority.Argument);
-		else if (statement.Cond is CiLiteralFalse) {
-			WriteChar('!');
-			statement.Message.Accept(this, CiPriority.Primary);
-		}
-		else {
-			statement.Cond.Accept(this, CiPriority.CondAnd);
-			Write(" && ");
+		// TODO: C23, C++23: unreachable()
+		Write("abort();");
+		if (statement.Message != null) {
+			Write(" // ");
 			statement.Message.Accept(this, CiPriority.Argument);
 		}
-		WriteLine(");");
+		WriteLine();
+	}
+
+	protected override void WriteAssert(CiAssert statement)
+	{
+		if (statement.CompletesNormally()) {
+			IncludeAssert();
+			Write("assert(");
+			if (statement.Message == null)
+				statement.Cond.Accept(this, CiPriority.Argument);
+			else {
+				statement.Cond.Accept(this, CiPriority.CondAnd);
+				Write(" && ");
+				statement.Message.Accept(this, CiPriority.Argument);
+			}
+			WriteLine(");");
+		}
+		else
+			WriteUnreachable(statement);
 	}
 
 	public override void VisitBreak(CiBreak statement)

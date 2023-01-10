@@ -1233,6 +1233,13 @@ public class GenCpp : GenCCpp
 		Write("; }");
 	}
 
+	protected override void WriteUnreachable(CiAssert statement)
+	{
+		Include("cstdlib");
+		Write("std::");
+		base.WriteUnreachable(statement);
+	}
+
 	protected override void WriteConst(CiConst konst)
 	{
 		Write("static constexpr ");
