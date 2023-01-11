@@ -850,6 +850,8 @@ public class GenC : GenCCpp
 	bool HasTemporaries(CiExpr expr)
 	{
 		switch (expr) {
+		case CiAggregateInitializer init:
+			return init.Items.Any(expr => HasTemporaries(expr));
 		case CiLiteral _:
 		case CiSymbol _:
 			return false;
@@ -895,6 +897,7 @@ public class GenC : GenCCpp
 		case CiAggregateInitializer init:
 			return init.Items.Any(field => HasTemporariesToDestruct(field));
 		case CiLiteral _:
+		case CiLambdaExpr _:
 			return false;
 		case CiInterpolatedString interp:
 			return interp.Parts.Any(part => HasTemporariesToDestruct(part.Argument));
