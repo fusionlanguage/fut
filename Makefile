@@ -56,7 +56,7 @@ test-cs test-GenCs.cs: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/
 test-java test-GenJava.cs: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-js test-GenJs.cs: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci))
+test-js test-GenJs.cs: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) test/bin/CiParse/js.txt
 	$(DO_SUMMARY)
 
 test-ts test-GenTs.cs: $(patsubst test/%.ci, test/bin/%/ts.txt, $(wildcard test/*.ci))
@@ -141,10 +141,10 @@ test/bin/%/Test.cs: test/%.ci cito.exe
 test/bin/%/Test.java: test/%.ci cito.exe
 	$(DO_CITO)
 
-test/bin/%/Test.js: test/%.ci cito.exe
+test/bin/%/Test.js: test/%.ci cito.exe test/Runner.js
 	$(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< && cat test/Runner.js >>$@ || grep '//FAIL:.*\<js\>' $<)
 
-test/bin/%/Test.ts: test/%.ci cito.exe
+test/bin/%/Test.ts: test/%.ci cito.exe test/Runner.js
 	$(DO)mkdir -p $(@D) && ($(CITO) -D TS -o $@ $< && cat test/Runner.js >>$@ || grep '//FAIL:.*\<ts\>' $<)
 
 test/bin/%/Test.py: test/%.ci cito.exe
@@ -155,6 +155,12 @@ test/bin/%/Test.swift: test/%.ci cito.exe
 
 test/bin/%/Test.cl: test/%.ci cito.exe
 	$(DO_CITO)
+
+test/bin/CiParse/js.txt: test/bin/CiParse/Test.js Lexer.ci AST.ci Parser.ci Sema.ci
+	$(DO)node $^ >$@
+
+test/bin/CiParse/Test.js: Lexer.ci AST.ci Parser.ci cito.exe test/CiParse.js
+	$(DO)mkdir -p $(@D) && $(CITO) -o $@ $(filter %.ci, $^) && cat test/CiParse.js >>$@
 
 test/bin/Resource/java.txt: test/bin/Resource/Test.class test/bin/Runner.class
 	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)$(JAVACPSEP)test" Runner >$@
