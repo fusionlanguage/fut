@@ -27,7 +27,7 @@ DO =
 else
 DO = @echo $@ && 
 endif
-DO_SUMMARY = $(DO)perl test/summary.pl $^
+DO_SUMMARY = $(DO)perl test/summary.pl $(filter %.txt, $^)
 DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 
 all: cito.exe
