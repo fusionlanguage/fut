@@ -826,6 +826,12 @@ public class GenJs : GenBase
 		expr.Body.Accept(this, CiPriority.Statement);
 	}
 
+	protected override void StartTemporaryVar(CiType type) => throw new NotImplementedException();
+
+	protected override void DefineObjectLiteralTemporary(CiUnaryExpr expr)
+	{
+	}
+
 	protected virtual void WriteAsType(CiVar def)
 	{
 	}

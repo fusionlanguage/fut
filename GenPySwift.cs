@@ -206,6 +206,7 @@ public abstract class GenPySwift : GenBase
 				WriteInitCode(def);
 		}
 		VisitXcrement<CiPostfixExpr>(statement, true);
+		CleanupTemporaries();
 	}
 
 	protected override void EndStatement() => WriteLine();
@@ -366,6 +367,7 @@ public abstract class GenPySwift : GenBase
 			WriteLine("return");
 		else {
 			VisitXcrement<CiPrefixExpr>(statement.Value, true);
+			WriteTemporaries(statement.Value);
 			if (VisitXcrement<CiPostfixExpr>(statement.Value, false)) {
 				WriteResultVar(); // FIXME: name clash? only matters if return ... result++, unlikely
 				Write(" = ");
@@ -379,6 +381,7 @@ public abstract class GenPySwift : GenBase
 				WriteCoercedExpr(this.CurrentMethod.Type, statement.Value);
 				WriteLine();
 			}
+			CleanupTemporaries();
 		}
 	}
 

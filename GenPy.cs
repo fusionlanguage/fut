@@ -1,6 +1,6 @@
 // GenPy.cs - Python code generator
 //
-// Copyright (C) 2020-2022  Piotr Fusik
+// Copyright (C) 2020-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -873,12 +873,18 @@ public class GenPy : GenPySwift
 		}
 	}
 
+	protected override void StartTemporaryVar(CiType type)
+	{
+	}
+
 	protected override bool HasInitCode(CiNamedValue def) => (def.Value != null || def.Type.IsFinal()) && !def.IsAssignableStorage();
 
 	public override void VisitExpr(CiExpr statement)
 	{
-		if (!(statement is CiVar def) || HasInitCode(def))
+		if (!(statement is CiVar def) || HasInitCode(def)) {
+			WriteTemporaries(statement);
 			base.VisitExpr(statement);
+		}
 	}
 
 	protected override void StartLine()

@@ -40,6 +40,7 @@ public abstract class GenBase : CiExprVisitor
 	protected SortedSet<string> Includes;
 	protected CiMethodBase CurrentMethod = null;
 	protected readonly HashSet<CiClass> WrittenClasses = new HashSet<CiClass>();
+	protected readonly List<CiExpr> CurrentTemporaries = new List<CiExpr>(); // CiExpr or CiType
 
 	protected override CiContainerType GetCurrentContainer() => (CiClass) this.CurrentMethod.Parent;
 	protected abstract string GetTargetName();
@@ -864,8 +865,15 @@ public abstract class GenBase : CiExprVisitor
 			CiDynamicPtrType dynamic = (CiDynamicPtrType) expr.Type;
 			if (dynamic.Class.Id == CiId.ArrayPtrClass)
 				WriteNewArray(dynamic.GetElementType(), expr.Inner, parent);
-			else if (expr.Inner is CiAggregateInitializer init)
-				WriteNewWithFields(dynamic, init);
+			else if (expr.Inner is CiAggregateInitializer init) {
+				int tempId = this.CurrentTemporaries.IndexOf(expr);
+				if (tempId >= 0) {
+					Write("citemp");
+					VisitLiteralLong(tempId);
+				}
+				else
+					WriteNewWithFields(dynamic, init);
+			}
 			else
 				WriteNew(dynamic, parent);
 			return;
@@ -1210,57 +1218,124 @@ public abstract class GenBase : CiExprVisitor
 		WriteCall(expr.Method.Left, (CiMethod) expr.Method.Symbol, expr.Arguments, parent);
 	}
 
-	protected virtual void DefineIsVar(CiExpr expr)
+	protected abstract void StartTemporaryVar(CiType type);
+
+	protected virtual void WriteObjectLiteralFieldOp() => WriteChar('.');
+
+	protected virtual void DefineObjectLiteralTemporary(CiUnaryExpr expr)
+	{
+		if (expr.Inner is CiAggregateInitializer init) {
+			int id = this.CurrentTemporaries.IndexOf(expr.Type);
+			if (id < 0) {
+				id = this.CurrentTemporaries.Count;
+				StartTemporaryVar(expr.Type);
+				this.CurrentTemporaries.Add(expr);
+			}
+			else
+				this.CurrentTemporaries[id] = expr;
+			Write("citemp");
+			VisitLiteralLong(id);
+			Write(" = ");
+			WriteNew((CiDynamicPtrType) expr.Type, CiPriority.Argument);
+			EndStatement();
+			foreach (CiBinaryExpr field in init.Items) {
+				Write("citemp");
+				VisitLiteralLong(id);
+				CiSymbolReference symbol = (CiSymbolReference) field.Left;
+				WriteObjectLiteralFieldOp();
+				WriteName(symbol.Symbol);
+				Write(" = ");
+				WriteCoerced(field.Left.Type, field.Right, CiPriority.Argument);
+				EndStatement();
+			}
+		}
+	}
+
+	protected virtual void DefineIsVar(CiBinaryExpr binary)
+	{
+		if (binary.Right is CiVar def) {
+			WriteVar(def);
+			EndStatement();
+		}
+	}
+
+	protected void WriteTemporaries(CiExpr expr)
 	{
 		switch (expr) {
-		case CiVar _:
-		case CiAggregateInitializer _:
+		case CiVar def:
+			if (def.Value != null) {
+				if (def.Value is CiUnaryExpr unary && unary.Inner is CiAggregateInitializer)
+					WriteTemporaries(unary.Inner);
+				else
+					WriteTemporaries(def.Value);
+			}
+			break;
+		case CiAggregateInitializer init:
+			foreach (CiBinaryExpr field in init.Items)
+				WriteTemporaries(field.Right);
+			break;
 		case CiLiteral _:
 		case CiLambdaExpr _:
 			break;
 		case CiInterpolatedString interp:
 			foreach (CiInterpolatedPart part in interp.Parts)
-				DefineIsVar(part.Argument);
+				WriteTemporaries(part.Argument);
 			break;
 		case CiSymbolReference symbol:
 			if (symbol.Left != null)
-				DefineIsVar(symbol.Left);
+				WriteTemporaries(symbol.Left);
 			break;
 		case CiUnaryExpr unary:
-			if (unary.Inner != null) // new C()
-				DefineIsVar(unary.Inner);
-			break;
-		case CiBinaryExpr binary:
-			DefineIsVar(binary.Left);
-			if (binary.Op != CiToken.Is)
-				DefineIsVar(binary.Right);
-			else if (binary.Right is CiVar def) {
-				WriteVar(def);
-				EndStatement();
+			if (unary.Inner != null) {
+				WriteTemporaries(unary.Inner);
+				DefineObjectLiteralTemporary(unary);
 			}
 			break;
+		case CiBinaryExpr binary:
+			WriteTemporaries(binary.Left);
+			if (binary.Op == CiToken.Is)
+				DefineIsVar(binary);
+			else
+				WriteTemporaries(binary.Right);
+			break;
 		case CiSelectExpr select:
-			DefineIsVar(select.Cond);
-			DefineIsVar(select.OnTrue);
-			DefineIsVar(select.OnFalse);
+			WriteTemporaries(select.Cond);
+			WriteTemporaries(select.OnTrue);
+			WriteTemporaries(select.OnFalse);
 			break;
 		case CiCallExpr call:
-			DefineIsVar(call.Method);
+			WriteTemporaries(call.Method);
 			foreach (CiExpr arg in call.Arguments)
-				DefineIsVar(arg);
+				WriteTemporaries(arg);
 			break;
 		default:
-			throw new NotImplementedException(expr.GetType().ToString());
+			throw new NotImplementedException(expr.GetType().Name);
+		}
+	}
+
+	protected virtual void CleanupTemporary(int i, CiExpr temp)
+	{
+	}
+
+	protected void CleanupTemporaries()
+	{
+		for (int i = this.CurrentTemporaries.Count; --i >= 0; ) {
+			CiExpr temp = this.CurrentTemporaries[i];
+			if (!(temp is CiType)) {
+				CleanupTemporary(i, temp);
+				this.CurrentTemporaries[i] = temp.Type;
+			}
 		}
 	}
 
 	public override void VisitExpr(CiExpr statement)
 	{
-		DefineIsVar(statement);
+		WriteTemporaries(statement);
 		statement.Accept(this, CiPriority.Statement);
 		WriteLine(';');
 		if (statement is CiVar def)
 			WriteInitCode(def);
+		CleanupTemporaries();
 	}
 
 	public override void VisitConst(CiConst statement)
@@ -1293,7 +1368,9 @@ public abstract class GenBase : CiExprVisitor
 	public override void VisitBlock(CiBlock statement)
 	{
 		OpenBlock();
+		int temporariesCount = this.CurrentTemporaries.Count;
 		WriteStatements(statement.Statements);
+		this.CurrentTemporaries.RemoveRange(temporariesCount, this.CurrentTemporaries.Count - temporariesCount);
 		CloseBlock();
 	}
 
@@ -1346,8 +1423,8 @@ public abstract class GenBase : CiExprVisitor
 
 	void StartIfWhile(string name, CiExpr expr)
 	{
-		if (!EmbedIfWhileIsVar(expr, false))
-			DefineIsVar(expr);
+		if (!EmbedIfWhileIsVar(expr, false)) // FIXME: IsVar but not object literal
+			WriteTemporaries(expr);
 		Write(name);
 		Write(" (");
 		EmbedIfWhileIsVar(expr, true);
@@ -1379,10 +1456,11 @@ public abstract class GenBase : CiExprVisitor
 		if (statement.Value == null)
 			WriteLine("return;");
 		else {
-			DefineIsVar(statement.Value);
+			WriteTemporaries(statement.Value);
 			Write("return ");
 			WriteStronglyCoerced(this.CurrentMethod.Type, statement.Value);
 			WriteLine(';');
+			CleanupTemporaries();
 		}
 	}
 
@@ -1469,6 +1547,7 @@ public abstract class GenBase : CiExprVisitor
 			WriteStatements(((CiBlock) klass.Constructor.Body).Statements);
 			this.CurrentMethod = null;
 		}
+		this.CurrentTemporaries.Clear();
 	}
 
 	protected void FlattenBlock(CiStatement statement)

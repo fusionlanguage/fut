@@ -846,7 +846,7 @@ public class GenJava : GenTyped
 		expr.Body.Accept(this, CiPriority.Statement);
 	}
 
-	protected override void DefineIsVar(CiExpr expr)
+	protected override void DefineIsVar(CiBinaryExpr binary)
 	{
 	}
 

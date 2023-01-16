@@ -1040,8 +1040,11 @@ public class GenSwift : GenPySwift
 		base.WriteCoercedExpr(type, expr);
 	}
 
+	protected override void StartTemporaryVar(CiType type) => Write("var ");
+
 	public override void VisitExpr(CiExpr statement)
 	{
+		WriteTemporaries(statement);
 		if (statement is CiCallExpr call && statement.Type.Id != CiId.VoidType)
 			Write("_ = ");
 		base.VisitExpr(statement);

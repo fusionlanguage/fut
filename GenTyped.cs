@@ -1,6 +1,6 @@
 // GenTyped.cs - C/C++/C#/Java code generator
 //
-// Copyright (C) 2011-2022  Piotr Fusik
+// Copyright (C) 2011-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -236,6 +236,12 @@ public abstract class GenTyped : GenBase
 	}
 
 	protected override void WriteCharAt(CiBinaryExpr expr) => WriteIndexing(expr.Left, expr.Right);
+
+	protected override void StartTemporaryVar(CiType type)
+	{
+		WriteType(type, true);
+		WriteChar(' ');
+	}
 
 	protected override void WriteAssertCast(CiBinaryExpr expr)
 	{

@@ -189,6 +189,8 @@ public abstract class GenCCpp : GenTyped
 		Write("\\n\"");
 	}
 
+	protected override void WriteObjectLiteralFieldOp() => Write("->");
+
 	public override void VisitConst(CiConst konst)
 	{
 		if (konst.Type is CiArrayStorageType)
@@ -309,8 +311,10 @@ public abstract class GenCCpp : GenTyped
 	protected void WriteMethods(CiClass klass)
 	{
 		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiMethod method)
+			if (symbol is CiMethod method) {
 				WriteMethod(method);
+				this.CurrentTemporaries.Clear();
+			}
 		}
 	}
 

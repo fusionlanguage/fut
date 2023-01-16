@@ -7,11 +7,14 @@ public class Test
 {
 	Inner# F = new Inner { S = "foo" };
 
+	static Inner# Create() => new Inner { S = "quux" };
+
 	public static bool Run()
 	{
 		string s = "bar";
 		Inner# p = new Inner { S = s };
 		Test() o;
-		return p.S == s && o.F.S == "foo";
+		Inner# m = Create();
+		return p.S == s && o.F.S == "foo" && m.S == "quux";
 	}
 }

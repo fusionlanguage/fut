@@ -48,7 +48,6 @@ public class GenC : GenCCpp
 	bool TreeCompareString;
 	readonly SortedSet<TypeCode> Compares = new SortedSet<TypeCode>();
 	readonly SortedSet<TypeCode> Contains = new SortedSet<TypeCode>();
-	readonly List<CiExpr> CurrentTemporaries = new List<CiExpr>(); // CiExpr or CiType
 	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
 	protected CiClass CurrentClass;
 
@@ -758,7 +757,7 @@ public class GenC : GenCCpp
 			WriteNewStorage(type);
 	}
 
-	int WriteTemporary(CiType type, CiExpr expr)
+	int WriteCTemporary(CiType type, CiExpr expr)
 	{
 		bool assign = expr != null || (type is CiClassType klass && (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.DictionaryClass || klass.Class.Id == CiId.SortedDictionaryClass));
 		int id = this.CurrentTemporaries.IndexOf(type);
@@ -784,61 +783,60 @@ public class GenC : GenCCpp
 	{
 		if (IsNewString(expr)
 		 || (expr is CiCallExpr && expr.Type is CiStorageType))
-			WriteTemporary(expr.Type, expr);
+			WriteCTemporary(expr.Type, expr);
 	}
 
-	void WriteTemporaries(CiExpr expr)
+	void WriteCTemporaries(CiExpr expr)
 	{
 		switch (expr) {
 		case CiVar def:
 			if (def.Value != null)
-				WriteTemporaries(def.Value);
+				WriteCTemporaries(def.Value);
 			break;
 		case CiAggregateInitializer init:
 			foreach (CiBinaryExpr field in init.Items)
-				WriteTemporaries(field.Right);
+				WriteCTemporaries(field.Right);
 			break;
 		case CiLiteral _:
+		case CiLambdaExpr _:
 			break;
 		case CiInterpolatedString interp:
 			foreach (CiInterpolatedPart part in interp.Parts)
-				WriteTemporaries(part.Argument);
+				WriteCTemporaries(part.Argument);
 			break;
 		case CiSymbolReference symbol:
 			if (symbol.Left != null)
-				WriteTemporaries(symbol.Left);
+				WriteCTemporaries(symbol.Left);
 			break;
 		case CiUnaryExpr unary:
 			if (unary.Inner != null) // new C()
-				WriteTemporaries(unary.Inner);
+				WriteCTemporaries(unary.Inner);
 			break;
 		case CiBinaryExpr binary:
-			WriteTemporaries(binary.Left);
+			WriteCTemporaries(binary.Left);
 			if (!IsStringSubstring(binary.Left, out bool _, out CiExpr _, out CiExpr _, out CiExpr _))
 				WriteStorageTemporary(binary.Left);
 			if (binary.Op != CiToken.Is) {
-				WriteTemporaries(binary.Right);
+				WriteCTemporaries(binary.Right);
 				if (binary.Op != CiToken.Assign)
 					WriteStorageTemporary(binary.Right);
 			}
 			break;
 		case CiSelectExpr select:
-			WriteTemporaries(select.Cond);
+			WriteCTemporaries(select.Cond);
 			break;
 		case CiCallExpr call:
 			if (call.Method.Left != null) {
-				WriteTemporaries(call.Method.Left);
+				WriteCTemporaries(call.Method.Left);
 				WriteStorageTemporary(call.Method.Left);
 			}
 			CiVar param = ((CiMethod) call.Method.Symbol).Parameters.FirstParameter();
 			foreach (CiExpr arg in call.Arguments) {
-				WriteTemporaries(arg);
+				WriteCTemporaries(arg);
 				if (call.Method.Symbol.Id != CiId.ConsoleWrite && call.Method.Symbol.Id != CiId.ConsoleWriteLine && !(param.Type is CiStorageType))
 					WriteStorageTemporary(arg);
 				param = param.NextParameter();
 			}
-			break;
-		case CiLambdaExpr _:
 			break;
 		default:
 			throw new NotImplementedException(expr.GetType().Name);
@@ -917,18 +915,12 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void CleanupTemporaries()
+	protected override void CleanupTemporary(int i, CiExpr temp)
 	{
-		for (int i = this.CurrentTemporaries.Count; --i >= 0; ) {
-			CiExpr temp = this.CurrentTemporaries[i];
-			if (!(temp is CiType)) {
-				if (temp.Type.Id == CiId.StringStorageType) {
-					Write("free(citemp");
-					VisitLiteralLong(i);
-					WriteLine(");");
-				}
-				this.CurrentTemporaries[i] = temp.Type;
-			}
+		if (temp.Type.Id == CiId.StringStorageType) {
+			Write("free(citemp");
+			VisitLiteralLong(i);
+			WriteLine(");");
 		}
 	}
 
@@ -1358,7 +1350,7 @@ public class GenC : GenCCpp
 	{
 		CiType elementType = ((CiClassType) obj.Type).GetElementType();
 		// TODO: don't emit temporary variable if already a var/field of matching type - beware of integer promotions!
-		int id = WriteTemporary(elementType, elementType.IsFinal() ? null : args[args.Count - 1]);
+		int id = WriteCTemporary(elementType, elementType.IsFinal() ? null : args[args.Count - 1]);
 		if (elementType is CiStorageType storage && NeedsConstructor(storage.Class)) {
 			WriteName(storage.Class);
 			Write("_Construct(&citemp");
@@ -2279,24 +2271,27 @@ public class GenC : GenCCpp
 
 	public override void VisitExpr(CiExpr statement)
 	{
-		WriteTemporaries(statement);
+		WriteCTemporaries(statement);
 		CiMethod throwingMethod = GetThrowingMethod(statement);
-		if (throwingMethod != null)
+		if (throwingMethod != null) {
 			WriteForwardThrow(parent => statement.Accept(this, parent), throwingMethod);
+			CleanupTemporaries();
+		}
 		else if (statement is CiCallExpr && statement.Type.Id == CiId.StringStorageType) {
 			Write("free(");
 			statement.Accept(this, CiPriority.Argument);
 			WriteLine(");");
+			CleanupTemporaries();
 		}
 		else if (statement is CiCallExpr && statement.Type is CiDynamicPtrType) {
 			this.SharedRelease = true;
 			Write("CiShared_Release(");
 			statement.Accept(this, CiPriority.Argument);
 			WriteLine(");");
+			CleanupTemporaries();
 		}
 		else
 			base.VisitExpr(statement);
-		CleanupTemporaries();
 	}
 
 	void StartForeachHashTable(CiForeach statement)
@@ -2443,7 +2438,7 @@ public class GenC : GenCCpp
 		}
 		else if (statement.Value is CiLiteral || (this.VarsToDestruct.Count == 0 && !HasTemporariesToDestruct(statement.Value))) {
 			WriteDestructAll();
-			WriteTemporaries(statement.Value);
+			WriteCTemporaries(statement.Value);
 			base.VisitReturn(statement);
 		}
 		else {
@@ -2466,7 +2461,7 @@ public class GenC : GenCCpp
 					return;
 				}
 			}
-			WriteTemporaries(statement.Value);
+			WriteCTemporaries(statement.Value);
 			WriteDefinition(this.CurrentMethod.Type, () => Write("returnValue"), true, true);
 			Write(" = ");
 			WriteCoerced(this.CurrentMethod.Type, statement.Value, CiPriority.Argument);
@@ -2986,7 +2981,6 @@ public class GenC : GenCCpp
 		}
 		else
 			method.Body.AcceptStatement(this);
-		this.CurrentTemporaries.Clear();
 		this.VarsToDestruct.Clear();
 		CloseBlock();
 		this.CurrentMethod = null;
