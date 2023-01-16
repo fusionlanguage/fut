@@ -53,7 +53,7 @@ test-cpp test-GenCpp.cs: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard te
 test-cs test-GenCs.cs: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-java test-GenJava.cs: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci))
+test-java test-GenJava.cs: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) test/bin/CiParse/CiParser.java
 	$(DO_SUMMARY)
 
 test-js test-GenJs.cs: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) test/bin/CiParse/js.txt
