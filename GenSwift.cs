@@ -183,6 +183,8 @@ public class GenSwift : GenPySwift
 	{
 		if (expr.Type == null)
 			return false;
+		if (expr is CiPrefixExpr prefix && prefix.Op == CiToken.New)
+			return false; // from DefineObjectLiteralTemporary
 		if (expr is CiSymbolReference symbol && expr.Type is CiClassType) {
 			if (symbol.Name == "this")
 				return false;

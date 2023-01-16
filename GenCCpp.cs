@@ -189,8 +189,6 @@ public abstract class GenCCpp : GenTyped
 		Write("\\n\"");
 	}
 
-	protected override void WriteObjectLiteralFieldOp() => Write("->");
-
 	public override void VisitConst(CiConst konst)
 	{
 		if (konst.Type is CiArrayStorageType)

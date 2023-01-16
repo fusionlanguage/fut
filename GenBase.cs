@@ -822,18 +822,23 @@ public abstract class GenBase : CiExprVisitor
 
 	protected virtual void EndStatement() => WriteLine(';');
 
+	void WriteAggregateInitField(CiExpr obj, CiBinaryExpr field)
+	{
+		CiSymbolReference fieldRef = (CiSymbolReference) field.Left;
+		WriteMemberOp(obj, fieldRef);
+		WriteName(fieldRef.Symbol);
+		Write(" = ");
+		WriteCoerced(fieldRef.Type, field.Right, CiPriority.Argument);
+		EndStatement();
+	}
+
 	protected virtual void WriteInitCode(CiNamedValue def)
 	{
 		CiAggregateInitializer init = GetAggregateInitializer(def);
 		if (init != null) {
 			foreach (CiBinaryExpr field in init.Items) {
 				WriteLocalName(def, CiPriority.Primary);
-				CiSymbolReference fieldRef = (CiSymbolReference) field.Left;
-				WriteMemberOp(def, fieldRef);
-				WriteName(fieldRef.Symbol);
-				Write(" = ");
-				WriteCoerced(fieldRef.Type, field.Right, CiPriority.Argument);
-				EndStatement();
+				WriteAggregateInitField(def, field);
 			}
 		}
 	}
@@ -1220,8 +1225,6 @@ public abstract class GenBase : CiExprVisitor
 
 	protected abstract void StartTemporaryVar(CiType type);
 
-	protected virtual void WriteObjectLiteralFieldOp() => WriteChar('.');
-
 	protected virtual void DefineObjectLiteralTemporary(CiUnaryExpr expr)
 	{
 		if (expr.Inner is CiAggregateInitializer init) {
@@ -1241,12 +1244,7 @@ public abstract class GenBase : CiExprVisitor
 			foreach (CiBinaryExpr field in init.Items) {
 				Write("citemp");
 				VisitLiteralLong(id);
-				CiSymbolReference symbol = (CiSymbolReference) field.Left;
-				WriteObjectLiteralFieldOp();
-				WriteName(symbol.Symbol);
-				Write(" = ");
-				WriteCoerced(field.Left.Type, field.Right, CiPriority.Argument);
-				EndStatement();
+				WriteAggregateInitField(expr, field);
 			}
 		}
 	}
