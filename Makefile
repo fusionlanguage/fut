@@ -47,7 +47,7 @@ node_modules: package.json package-lock.json
 test-c test-GenC.cs: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-cpp test-GenCpp.cs: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci))
+test-cpp test-GenCpp.cs: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) test/bin/CiParse/Test.cpp
 	$(DO_SUMMARY)
 
 test-cs test-GenCs.cs: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci))
@@ -156,13 +156,19 @@ test/bin/%/Test.swift: test/%.ci cito.exe
 test/bin/%/Test.cl: test/%.ci cito.exe
 	$(DO_CITO)
 
+test/bin/CiParse/cpp.txt: test/bin/CiParse/cpp.exe Lexer.ci AST.ci Parser.ci Sema.ci
+	$(DO)./$< $(filter %.ci, $^) >$@
+
+test/bin/CiParse/cpp.exe: test/bin/CiParse/Test.cpp test/CiParse.cpp
+	$(DO)$(CXX) -o $@ $(CFLAGS) -I $(<D) $^
+
 test/bin/CiParse/java.txt: test/bin/CiParse/CiParse.class Lexer.ci AST.ci Parser.ci Sema.ci
 	$(DO)java -cp "$(<D)" --enable-preview CiParse $(filter %.ci, $^) >$@
 
 test/bin/CiParse/CiParse.class: test/bin/CiParse/CiParser.java test/CiParse.java
 	$(DO)javac -d $(@D) -encoding utf8 --enable-preview -source 17 $(<D)/*.java test/CiParse.java
 
-test/bin/CiParse/CiParser.java: Lexer.ci AST.ci Parser.ci cito.exe
+test/bin/CiParse/Test.cpp test/bin/CiParse/CiParser.java: Lexer.ci AST.ci Parser.ci cito.exe
 	$(DO)mkdir -p $(@D) && $(CITO) -o $@ $(filter %.ci, $^)
 
 test/bin/CiParse/js.txt: test/bin/CiParse/Test.js Lexer.ci AST.ci Parser.ci Sema.ci
