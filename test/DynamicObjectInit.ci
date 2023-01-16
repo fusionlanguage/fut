@@ -14,7 +14,10 @@ public class Test
 		string s = "bar";
 		Inner# p = new Inner { S = s };
 		Test() o;
-		Inner# m = Create();
-		return p.S == s && o.F.S == "foo" && m.S == "quux";
+		Inner# p2 = Create();
+		Inner# p3 = null;
+		if (s == "bar")
+			p3 = new Inner { S = "baz" };
+		return p.S == s && o.F.S == "foo" && p2.S == "quux" && p3.S == "baz";
 	}
 }

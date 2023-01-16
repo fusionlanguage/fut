@@ -37,6 +37,8 @@ public abstract class GenBase : CiExprVisitor
 	StringWriter StringWriter;
 	protected int Indent = 0;
 	protected bool AtLineStart = true;
+	bool AtChildStart = false;
+	bool InChildBlock = false;
 	protected SortedSet<string> Includes;
 	protected CiMethodBase CurrentMethod = null;
 	protected readonly HashSet<CiClass> WrittenClasses = new HashSet<CiClass>();
@@ -65,6 +67,11 @@ public abstract class GenBase : CiExprVisitor
 	protected virtual void StartLine()
 	{
 		if (this.AtLineStart) {
+			if (this.AtChildStart) {
+				this.AtChildStart = false;
+				this.Writer.WriteLine();
+				this.Indent++;
+			}
 			for (int i = 0; i < this.Indent; i++)
 				this.Writer.Write('\t');
 			this.AtLineStart = false;
@@ -1223,11 +1230,23 @@ public abstract class GenBase : CiExprVisitor
 		WriteCall(expr.Method.Left, (CiMethod) expr.Method.Symbol, expr.Arguments, parent);
 	}
 
+	protected void EnsureChildBlock()
+	{
+		if (this.AtChildStart) {
+			this.AtLineStart = false;
+			this.AtChildStart = false;
+			WriteChar(' ');
+			OpenBlock();
+			this.InChildBlock = true;
+		}
+	}
+
 	protected abstract void StartTemporaryVar(CiType type);
 
 	protected virtual void DefineObjectLiteralTemporary(CiUnaryExpr expr)
 	{
 		if (expr.Inner is CiAggregateInitializer init) {
+			EnsureChildBlock();
 			int id = this.CurrentTemporaries.IndexOf(expr.Type);
 			if (id < 0) {
 				id = this.CurrentTemporaries.Count;
@@ -1363,27 +1382,36 @@ public abstract class GenBase : CiExprVisitor
 		WriteFirstStatements(statements, statements.Count);
 	}
 
+	protected virtual void CleanupBlock(CiBlock statement)
+	{
+	}
+
 	public override void VisitBlock(CiBlock statement)
 	{
+		if (this.AtChildStart) {
+			this.AtLineStart = false;
+			this.AtChildStart = false;
+			WriteChar(' ');
+		}
 		OpenBlock();
 		int temporariesCount = this.CurrentTemporaries.Count;
 		WriteStatements(statement.Statements);
+		CleanupBlock(statement);
 		this.CurrentTemporaries.RemoveRange(temporariesCount, this.CurrentTemporaries.Count - temporariesCount);
 		CloseBlock();
 	}
 
 	protected virtual void WriteChild(CiStatement statement)
 	{
-		if (statement is CiBlock block) {
-			WriteChar(' ');
-			VisitBlock(block);
-		}
-		else {
-			WriteLine();
-			this.Indent++;
-			statement.AcceptStatement(this);
+		bool wasInChildBlock = this.InChildBlock;
+		this.AtLineStart = true;
+		this.AtChildStart = true;
+		statement.AcceptStatement(this);
+		if (this.InChildBlock)
+			CloseBlock();
+		else if (!(statement is CiBlock))
 			this.Indent--;
-		}
+		this.InChildBlock = wasInChildBlock;
 	}
 
 	public override void VisitBreak(CiBreak statement) => WriteLine("break;");
