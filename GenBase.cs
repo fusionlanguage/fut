@@ -1508,6 +1508,7 @@ public abstract class GenBase : CiExprVisitor
 
 	public override void VisitSwitch(CiSwitch statement)
 	{
+		WriteTemporaries(statement.Value);
 		Write("switch (");
 		WriteSwitchValue(statement.Value);
 		WriteLine(") {");

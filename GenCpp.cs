@@ -1328,11 +1328,70 @@ public class GenCpp : GenCCpp
 			base.WriteStronglyCoerced(type, expr);
 	}
 
+	static bool HasTemporaries(CiExpr expr)
+	{
+		switch (expr) {
+		case CiAggregateInitializer init:
+			return init.Items.Any(HasTemporaries);
+		case CiLiteral _:
+		case CiLambdaExpr _:
+			return false;
+		case CiInterpolatedString interp:
+			return interp.Parts.Any(part => HasTemporaries(part.Argument));
+		case CiSymbolReference symbol:
+			return symbol.Left != null && HasTemporaries(symbol.Left);
+		case CiUnaryExpr unary:
+			return unary.Inner != null && (HasTemporaries(unary.Inner) || unary.Inner is CiAggregateInitializer);
+		case CiBinaryExpr binary:
+			if (HasTemporaries(binary.Left))
+				return true;
+			if (binary.Op == CiToken.Is)
+				return binary.Right is CiVar;
+			return HasTemporaries(binary.Right);
+		case CiSelectExpr select:
+			return HasTemporaries(select.Cond) || HasTemporaries(select.OnTrue) || HasTemporaries(select.OnFalse);
+		case CiCallExpr call:
+			return HasTemporaries(call.Method) || call.Arguments.Any(HasTemporaries);
+		default:
+			throw new NotImplementedException(expr.GetType().Name);
+		}
+	}
+
+	bool HasVariables(CiStatement statement)
+	{
+		switch (statement) {
+		case CiVar _:
+			return true;
+		case CiAssert assert:
+			return assert.Cond is CiBinaryExpr binary && binary.Op == CiToken.Is && binary.Right is CiVar;
+		case CiBlock _:
+		case CiBreak _:
+		case CiConst _:
+		case CiContinue _:
+		case CiLock _:
+		case CiNative _:
+		case CiThrow _:
+			return false;
+		case CiIf ifStatement:
+			return HasTemporaries(ifStatement.Cond) && !EmbedIfWhileIsVar(ifStatement.Cond, false);
+		case CiLoop loop:
+			return loop.Cond != null && HasTemporaries(loop.Cond);
+		case CiReturn ret:
+			return ret.Value != null && HasTemporaries(ret.Value);
+		case CiSwitch switch_:
+			return HasTemporaries(switch_.Value);
+		case CiExpr expr:
+			return HasTemporaries(expr);
+		default:
+			throw new NotImplementedException(statement.GetType().Name);
+		}
+	}
+
 	protected override void WriteSwitchCaseBody(List<CiStatement> statements)
 	{
 		bool block = false;
 		foreach (CiStatement statement in statements) {
-			if (!block && statement is CiVar) {
+			if (!block && HasVariables(statement)) {
 				OpenBlock();
 				block = true;
 			}
