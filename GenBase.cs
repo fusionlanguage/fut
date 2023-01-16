@@ -1659,6 +1659,7 @@ public abstract class GenBase : CiExprVisitor
 				break;
 			case CiMethod method:
 				WriteMethod(method);
+				this.CurrentTemporaries.Clear();
 				break;
 			case CiVar _: // "this"
 				break;
