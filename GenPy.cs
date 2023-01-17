@@ -1015,9 +1015,10 @@ public class GenPy : GenPySwift
 
 	static bool IsVarReference(CiExpr expr) => expr is CiSymbolReference symbol && symbol.Symbol is CiVar;
 
-	void WritePyCaseBody(List<CiStatement> body)
+	void WritePyCaseBody(CiSwitch statement, List<CiStatement> body)
 	{
 		OpenChild();
+		VisitXcrement<CiPostfixExpr>(statement.Value, true);
 		WriteFirstStatements(body, CiSwitch.LengthWithoutTrailingBreak(body));
 		CloseChild();
 	}
@@ -1036,41 +1037,24 @@ public class GenPy : GenPySwift
 			OpenChild();
 		}
 
-		CiExpr value = statement.Value;
-		VisitXcrement<CiPrefixExpr>(value, true);
-		switch (value) {
-		case CiSymbolReference symbol when symbol.Left == null || IsVarReference(symbol.Left):
-		case CiPrefixExpr prefix when IsVarReference(prefix.Inner): // ++x, --x, -x, ~x
-		case CiBinaryExpr binary when binary.Op == CiToken.LeftBracket && IsVarReference(binary.Left) && binary.Right is CiLiteral:
-			break;
-		default:
-			Write("ci_switch_tmp = ");
-			value.Accept(this, CiPriority.Argument);
-			WriteLine();
-			VisitXcrement<CiPostfixExpr>(value, true);
-			value = null;
-			break;
-		}
-
-		string op = "if ";
+		VisitXcrement<CiPrefixExpr>(statement.Value, true);
+		Write("match ");
+		statement.Value.Accept(this, CiPriority.Argument);
+		OpenChild();
 		foreach (CiCase kase in statement.Cases) {
+			string op = "case ";
 			foreach (CiExpr caseValue in kase.Values) {
 				Write(op);
-				if (value == null)
-					Write("ci_switch_tmp");
-				else
-					value.Accept(this, CiPriority.Equality);
-				Write(" == ");
-				caseValue.Accept(this, CiPriority.Equality);
-				op = " or ";
+				caseValue.Accept(this, CiPriority.Or);
+				op = " | ";
 			}
-			WritePyCaseBody(kase.Body);
-			op = "elif ";
+			WritePyCaseBody(statement, kase.Body);
 		}
 		if (statement.HasDefault()) {
-			Write("else");
-			WritePyCaseBody(statement.DefaultBody);
+			Write("case _");
+			WritePyCaseBody(statement, statement.DefaultBody);
 		}
+		CloseChild();
 
 		if (earlyBreak) {
 			CloseChild();

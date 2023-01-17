@@ -1190,8 +1190,6 @@ static double CalculateArea(Shape s)
 }
 ```
 
-Python has no equivalent of the `switch` statement,
-so it is emulated with a series of `if`/`elif`.
 C, C++ and OpenCL do not support `switch` on strings,
 so `if`/`else if` with string comparisons are generated.
 Object reference matching is currently implemented only for C++, C#, Java
