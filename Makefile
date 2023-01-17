@@ -166,7 +166,7 @@ test/bin/CiParse/java.txt: test/bin/CiParse/CiParse.class Lexer.ci AST.ci Parser
 	$(DO)java -cp "$(<D)" --enable-preview CiParse $(filter %.ci, $^) >$@
 
 test/bin/CiParse/CiParse.class: test/bin/CiParse/CiParser.java test/CiParse.java
-	$(DO)javac -d $(@D) -encoding utf8 --enable-preview -source 17 $(<D)/*.java test/CiParse.java
+	$(DO)javac -d $(@D) -encoding utf8 --enable-preview -source 19 $(<D)/*.java test/CiParse.java
 
 test/bin/CiParse/Test.cpp test/bin/CiParse/CiParser.java: Lexer.ci AST.ci Parser.ci cito.exe
 	$(DO)mkdir -p $(@D) && $(CITO) -o $@ $(filter %.ci, $^)

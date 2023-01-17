@@ -923,14 +923,26 @@ public class GenJava : GenTyped
 			base.WriteSwitchValue(expr);
 	}
 
+	void WriteSwitchCaseVar(CiExpr expr)
+	{
+		CiVar def = (CiVar) expr;
+		def.Accept(this, CiPriority.Argument);
+		if (def.Name == "_") // javac: "as of release 9, '_' is a keyword, and may not be used as an identifier"
+			WriteChar('_');
+	}
+
 	protected override void WriteSwitchCase(CiSwitch statement, CiCase kase)
 	{
 		if (statement.IsTypeMatching()) {
-			foreach (CiVar def in kase.Values) {
+			foreach (CiExpr expr in kase.Values) {
 				Write("case ");
-				def.Accept(this, CiPriority.Argument);
-				if (def.Name == "_") // javac: "as of release 9, '_' is a keyword, and may not be used as an identifier"
-					WriteChar('_');
+				if (expr is CiBinaryExpr when) {
+					WriteSwitchCaseVar(when.Left);
+					Write(" when ");
+					when.Right.Accept(this, CiPriority.Argument);
+				}
+				else
+					WriteSwitchCaseVar(expr);
 				WriteLine(':');
 				this.Indent++;
 				WriteSwitchCaseBody(kase.Body);
