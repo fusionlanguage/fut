@@ -24,6 +24,9 @@ jobs:
     script: make -j5 test-js test-ts
   - name: py, swift
     install:
+      - sudo add-apt-repository ppa:deadsnakes/ppa
+      - sudo apt update
+      - sudo apt install python3.11
       - wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2004/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz
       - tar xf swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz -C ..
-    script: make -j5 test-py test-swift SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu20.04/usr/bin/swiftc
+    script: make -j5 test-py test-swift PYTHON=python3.11 SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu20.04/usr/bin/swiftc
