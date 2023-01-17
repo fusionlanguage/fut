@@ -1013,7 +1013,15 @@ public class GenPy : GenPySwift
 
 	protected override void WriteResultVar() => Write("result");
 
-	static bool IsVarReference(CiExpr expr) => expr is CiSymbolReference symbol && symbol.Symbol is CiVar;
+	void WriteSwitchCaseVar(CiVar def)
+	{
+		WriteName(((CiClassType) def.Type).Class);
+		Write("()");
+		if (def.Name != "_") {
+			Write(" as ");
+			WriteNameNotKeyword(def.Name);
+		}
+	}
 
 	void WritePyCaseBody(CiSwitch statement, List<CiStatement> body)
 	{
@@ -1041,16 +1049,19 @@ public class GenPy : GenPySwift
 			string op = "case ";
 			foreach (CiExpr caseValue in kase.Values) {
 				Write(op);
-				if (caseValue is CiVar def) {
-					WriteName(((CiClassType) def.Type).Class);
-					Write("()");
-					if (def.Name != "_") {
-						Write(" as ");
-						WriteNameNotKeyword(def.Name);
-					}
-				}
-				else
+				switch (caseValue) {
+				case CiVar def:
+					WriteSwitchCaseVar(def);
+					break;
+				case CiBinaryExpr when_:
+					WriteSwitchCaseVar((CiVar) when_.Left);
+					Write(" if ");
+					when_.Right.Accept(this, CiPriority.Argument);
+					break;
+				default:
 					caseValue.Accept(this, CiPriority.Or);
+					break;
+				}
 				op = " | ";
 			}
 			WritePyCaseBody(statement, kase.Body);
