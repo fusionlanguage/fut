@@ -27,6 +27,7 @@ namespace Foxoft.Ci
 public class GenJava : GenTyped
 {
 	string OutputDirectory;
+	int SwitchCaseDiscards;
 
 	protected override string GetTargetName() => "Java";
 
@@ -923,12 +924,16 @@ public class GenJava : GenTyped
 			base.WriteSwitchValue(expr);
 	}
 
-	void WriteSwitchCaseVar(CiExpr expr)
+	bool WriteSwitchCaseVar(CiExpr expr)
 	{
 		CiVar def = (CiVar) expr;
 		def.Accept(this, CiPriority.Argument);
-		if (def.Name == "_") // javac: "as of release 9, '_' is a keyword, and may not be used as an identifier"
-			WriteChar('_');
+		if (def.Name == "_") {
+			// javac: "as of release 9, '_' is a keyword, and may not be used as an identifier"
+			VisitLiteralLong(this.SwitchCaseDiscards++);
+			return true;
+		}
+		return false;
 	}
 
 	protected override void WriteSwitchCase(CiSwitch statement, CiCase kase)
@@ -936,17 +941,20 @@ public class GenJava : GenTyped
 		if (statement.IsTypeMatching()) {
 			foreach (CiExpr expr in kase.Values) {
 				Write("case ");
+				bool discard;
 				if (expr is CiBinaryExpr when) {
-					WriteSwitchCaseVar(when.Left);
+					discard = WriteSwitchCaseVar(when.Left);
 					Write(" when ");
 					when.Right.Accept(this, CiPriority.Argument);
 				}
 				else
-					WriteSwitchCaseVar(expr);
+					discard = WriteSwitchCaseVar(expr);
 				WriteLine(':');
 				this.Indent++;
 				WriteSwitchCaseBody(kase.Body);
 				this.Indent--;
+				if (discard)
+					this.SwitchCaseDiscards--;
 			}
 		}
 		else
@@ -1188,6 +1196,7 @@ public class GenJava : GenTyped
 			this.OutputDirectory = this.OutputFile;
 		else
 			this.OutputDirectory = Path.GetDirectoryName(this.OutputFile);
+		this.SwitchCaseDiscards = 0;
 		WriteTypes(program);
 		if (program.Resources.Count > 0)
 			WriteResources();

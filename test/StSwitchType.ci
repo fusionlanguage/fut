@@ -31,6 +31,12 @@ public static class Test
 		case Dog _:
 			if (a == null)
 				break;
+			switch (a) {
+			case Dog _:
+				break;
+			default:
+				return false;
+			}
 			return false;
 		case Cat c:
 			return c.Name == "Simba";
