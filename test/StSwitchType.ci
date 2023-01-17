@@ -26,7 +26,7 @@ public static class Test
 {
 	static bool IsCat(Animal a)
 	{
-		switch (a) { //FAIL: c py cl
+		switch (a) { //FAIL: c cl
 		case Cow _: //FAIL: java 17 --enable-preview
 		case Dog _:
 			if (a == null)

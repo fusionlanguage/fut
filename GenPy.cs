@@ -1025,10 +1025,6 @@ public class GenPy : GenPySwift
 
 	public override void VisitSwitch(CiSwitch statement)
 	{
-		if (statement.IsTypeMatching()) {
-			NotSupported(statement, "Type-matching 'switch'");
-			return;
-		}
 		bool earlyBreak = statement.Cases.Any(kase => CiSwitch.HasEarlyBreak(kase.Body))
 			|| CiSwitch.HasEarlyBreak(statement.DefaultBody);
 		if (earlyBreak) {
@@ -1045,7 +1041,16 @@ public class GenPy : GenPySwift
 			string op = "case ";
 			foreach (CiExpr caseValue in kase.Values) {
 				Write(op);
-				caseValue.Accept(this, CiPriority.Or);
+				if (caseValue is CiVar def) {
+					WriteName(((CiClassType) def.Type).Class);
+					Write("()");
+					if (def.Name != "_") {
+						Write(" as ");
+						WriteNameNotKeyword(def.Name);
+					}
+				}
+				else
+					caseValue.Accept(this, CiPriority.Or);
 				op = " | ";
 			}
 			WritePyCaseBody(statement, kase.Body);
