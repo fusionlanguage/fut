@@ -904,31 +904,45 @@ public class GenSwift : GenPySwift
 		expr.Accept(this, parent);
 	}
 
-	void WriteEnumFlagsAnd(CiBinaryExpr expr, string method, string notMethod)
+	void WriteEnumFlagsAnd(CiExpr left, string method, string notMethod, CiExpr right)
 	{
-		if (expr.Right is CiPrefixExpr negation && negation.Op == CiToken.Tilde)
-			WriteCall(expr.Left, notMethod, negation.Inner);
+		if (right is CiPrefixExpr negation && negation.Op == CiToken.Tilde)
+			WriteCall(left, notMethod, negation.Inner);
 		else
-			WriteCall(expr.Left, method, expr.Right);
+			WriteCall(left, method, right);
+	}
+
+	CiExpr WriteAssignNested(CiBinaryExpr expr)
+	{
+		if (expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign()) {
+			VisitBinaryExpr(rightBinary, CiPriority.Statement);
+			WriteLine();
+			return rightBinary.Left; // TODO: side effect
+		}
+		return expr.Right;
+	}
+
+	void WriteAssign(CiBinaryExpr expr, CiExpr right)
+	{
+		expr.Left.Accept(this, CiPriority.Assign);
+		WriteChar(' ');
+		Write(expr.GetOpString());
+		WriteChar(' ');
+		if (right is CiLiteralNull
+		 && expr.Left is CiBinaryExpr leftBinary
+		 && leftBinary.Op == CiToken.LeftBracket
+		 && leftBinary.Left.Type is CiClassType dict
+		 && dict.Class.TypeParameterCount == 2) {
+			WriteType(dict.GetValueType());
+			Write(".none");
+		}
+		else
+			WriteCoerced(expr.Type, right, CiPriority.Argument);
 	}
 
 	public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Type is CiEnumFlags) {
-			switch (expr.Op) {
-			case CiToken.AndAssign:
-				WriteEnumFlagsAnd(expr, "formIntersection", "subtract");
-				return;
-			case CiToken.OrAssign:
-				WriteCall(expr.Left, "formUnion", expr.Right);
-				return;
-			case CiToken.XorAssign:
-				WriteCall(expr.Left, "formSymmetricDifference", expr.Right);
-				return;
-			default:
-				break;
-			}
-		}
+		CiExpr right;
 		switch (expr.Op) {
 		case CiToken.ShiftLeft:
 			WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Primary, " << ", CiPriority.Primary);
@@ -940,7 +954,7 @@ public class GenSwift : GenPySwift
 			if (expr.Type.Id == CiId.BoolType)
 				WriteCall("{ a, b in a && b }", expr.Left, expr.Right);
 			else if (expr.Type is CiEnumFlags)
-				WriteEnumFlagsAnd(expr, "intersection", "subtracting");
+				WriteEnumFlagsAnd(expr.Left, "intersection", "subtracting", expr.Right);
 			else
 				WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " & ", CiPriority.Primary);
 			break;
@@ -968,29 +982,60 @@ public class GenSwift : GenPySwift
 		case CiToken.ModAssign:
 		case CiToken.ShiftLeftAssign:
 		case CiToken.ShiftRightAssign:
+			WriteAssign(expr, WriteAssignNested(expr));
+			break;
 		case CiToken.AndAssign:
-		case CiToken.OrAssign:
-		case CiToken.XorAssign:
-			CiExpr right = expr.Right;
-			if (right is CiBinaryExpr rightBinary && rightBinary.IsAssign()) {
-				VisitBinaryExpr(rightBinary, CiPriority.Statement);
-				WriteLine();
-				right = rightBinary.Left; // TODO: side effect
+			right = WriteAssignNested(expr);
+			if (expr.Type.Id == CiId.BoolType) {
+				Write("if ");
+				if (right is CiPrefixExpr negation && negation.Op == CiToken.ExclamationMark) {
+					// avoid swiftc "error: unary operators must not be juxtaposed; parenthesize inner expression"
+					negation.Inner.Accept(this, CiPriority.Argument);
+				}
+				else {
+					WriteChar('!');
+					right.Accept(this, CiPriority.Primary);
+				}
+				OpenChild();
+				expr.Left.Accept(this, CiPriority.Assign);
+				WriteLine(" = false");
+				this.Indent--;
+				WriteChar('}');
 			}
-			expr.Left.Accept(this, CiPriority.Assign);
-			WriteChar(' ');
-			Write(expr.GetOpString());
-			WriteChar(' ');
-			if (right is CiLiteralNull
-			 && expr.Left is CiBinaryExpr leftBinary
-			 && leftBinary.Op == CiToken.LeftBracket
-			 && leftBinary.Left.Type is CiClassType dict
-			 && dict.Class.TypeParameterCount == 2) {
-				WriteType(dict.GetValueType());
-				Write(".none");
-			}
+			else if (expr.Type is CiEnumFlags)
+				WriteEnumFlagsAnd(expr.Left, "formIntersection", "subtract", right);
 			else
-				WriteCoerced(expr.Type, right, CiPriority.Argument);
+				WriteAssign(expr, right);
+			break;
+		case CiToken.OrAssign:
+			right = WriteAssignNested(expr);
+			if (expr.Type.Id == CiId.BoolType) {
+				Write("if ");
+				right.Accept(this, CiPriority.Argument);
+				OpenChild();
+				expr.Left.Accept(this, CiPriority.Assign);
+				WriteLine(" = true");
+				this.Indent--;
+				WriteChar('}');
+			}
+			else if (expr.Type is CiEnumFlags)
+				WriteCall(expr.Left, "formUnion", right);
+			else
+				WriteAssign(expr, right);
+			break;
+		case CiToken.XorAssign:
+			right = WriteAssignNested(expr);
+			if (expr.Type.Id == CiId.BoolType) {
+				expr.Left.Accept(this, CiPriority.Assign);
+				Write(" = ");
+				expr.Left.Accept(this, CiPriority.Equality); // TODO: side effect
+				Write(" != ");
+				expr.Right.Accept(this, CiPriority.Equality);
+			}
+			else if (expr.Type is CiEnumFlags)
+				WriteCall(expr.Left, "formSymmetricDifference", right);
+			else
+				WriteAssign(expr, right);
 			break;
 		default:
 			base.VisitBinaryExpr(expr, parent);

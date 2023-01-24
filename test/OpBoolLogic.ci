@@ -4,7 +4,7 @@ public static class Test
 	{
 		bool t = true;
 		bool f = false;
-		t &= !f; //FAIL: swift TODO
+		t &= !f;
 		f |= !t;
 		t ^= f;
 		return (t & !f)
