@@ -4,10 +4,10 @@ public static class Test
 	{
 		bool t = true;
 		bool f = false;
-		t &= !f;
+		t &= !f; //FAIL: swift TODO
 		f |= !t;
 		t ^= f;
-		return (t & !f) //FAIL: swift TODO
+		return (t & !f)
 			&& (t | f)
 			&& (t ^ f);
 	}

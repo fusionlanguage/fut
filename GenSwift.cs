@@ -860,51 +860,48 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteBinaryOperand(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
 	{
-		if (binary.Op == CiToken.Plus && binary.Type.Id == CiId.StringStorageType) {
-			WriteUnwrappedString(expr, parent, true);
-			return;
-		}
-		CiType type;
-		switch (binary.Op) {
-		case CiToken.Plus:
-		case CiToken.Minus:
-		case CiToken.Asterisk:
-		case CiToken.Slash:
-		case CiToken.Mod:
-		case CiToken.And:
-		case CiToken.Or:
-		case CiToken.Xor:
-		case CiToken.ShiftLeft when expr == binary.Left:
-		case CiToken.ShiftRight when expr == binary.Left:
-			if (expr is CiSymbolReference || expr is CiSelectExpr || expr is CiCallExpr || expr.IsIndexing()) {
-				type = this.System.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
-				if (type != expr.Type) {
+		if (expr.Type.Id != CiId.BoolType) {
+			if (binary.Op == CiToken.Plus && binary.Type.Id == CiId.StringStorageType) {
+				WriteUnwrappedString(expr, parent, true);
+				return;
+			}
+			CiType type;
+			switch (binary.Op) {
+			case CiToken.Plus:
+			case CiToken.Minus:
+			case CiToken.Asterisk:
+			case CiToken.Slash:
+			case CiToken.Mod:
+			case CiToken.And:
+			case CiToken.Or:
+			case CiToken.Xor:
+			case CiToken.ShiftLeft when expr == binary.Left:
+			case CiToken.ShiftRight when expr == binary.Left:
+				if (expr is CiSymbolReference || expr is CiSelectExpr || expr is CiCallExpr || expr.IsIndexing()) {
+					type = this.System.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
+					if (type != expr.Type) {
+						WriteCoerced(type, expr, parent);
+						return;
+					}
+				}
+				break;
+			case CiToken.Less:
+			case CiToken.LessOrEqual:
+			case CiToken.Greater:
+			case CiToken.GreaterOrEqual:
+			case CiToken.Equal:
+			case CiToken.NotEqual:
+				type = this.System.PromoteFloatingTypes(binary.Left.Type, binary.Right.Type);
+				if (type != null && type != expr.Type) {
 					WriteCoerced(type, expr, parent);
 					return;
 				}
+				break;
+			default:
+				break;
 			}
-			break;
-		case CiToken.Less:
-		case CiToken.LessOrEqual:
-		case CiToken.Greater:
-		case CiToken.GreaterOrEqual:
-		case CiToken.Equal:
-		case CiToken.NotEqual:
-			type = this.System.PromoteFloatingTypes(binary.Left.Type, binary.Right.Type);
-			if (type != null && type != expr.Type) {
-				WriteCoerced(type, expr, parent);
-				return;
-			}
-			break;
-		default:
-			break;
 		}
 		expr.Accept(this, parent);
-	}
-
-	protected override void WriteAnd(CiBinaryExpr expr, CiPriority parent)
-	{
-		WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " & ", CiPriority.Primary);
 	}
 
 	void WriteEnumFlagsAnd(CiBinaryExpr expr, string method, string notMethod)
@@ -919,15 +916,6 @@ public class GenSwift : GenPySwift
 	{
 		if (expr.Type is CiEnumFlags) {
 			switch (expr.Op) {
-			case CiToken.And:
-				WriteEnumFlagsAnd(expr, "intersection", "subtracting");
-				return;
-			case CiToken.Or:
-				WriteCall(expr.Left, "union", expr.Right);
-				return;
-			case CiToken.Xor:
-				WriteCall(expr.Left, "symmetricDifference", expr.Right);
-				return;
 			case CiToken.AndAssign:
 				WriteEnumFlagsAnd(expr, "formIntersection", "subtract");
 				return;
@@ -948,11 +936,29 @@ public class GenSwift : GenPySwift
 		case CiToken.ShiftRight:
 			WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Primary, " >> ", CiPriority.Primary);
 			break;
+		case CiToken.And:
+			if (expr.Type.Id == CiId.BoolType)
+				WriteCall("{ a, b in a && b }", expr.Left, expr.Right);
+			else if (expr.Type is CiEnumFlags)
+				WriteEnumFlagsAnd(expr, "intersection", "subtracting");
+			else
+				WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " & ", CiPriority.Primary);
+			break;
 		case CiToken.Or:
-			WriteBinaryExpr(expr, parent > CiPriority.Add, CiPriority.Add, " | ", CiPriority.Mul);
+			if (expr.Type.Id == CiId.BoolType)
+				WriteCall("{ a, b in a || b }", expr.Left, expr.Right);
+			else if (expr.Type is CiEnumFlags)
+				WriteCall(expr.Left, "union", expr.Right);
+			else
+				WriteBinaryExpr(expr, parent > CiPriority.Add, CiPriority.Add, " | ", CiPriority.Mul);
 			break;
 		case CiToken.Xor:
-			WriteBinaryExpr(expr, parent > CiPriority.Add, CiPriority.Add, " ^ ", CiPriority.Mul);
+			if (expr.Type.Id == CiId.BoolType)
+				WriteEqual(expr, parent, true);
+			else if (expr.Type is CiEnumFlags)
+				WriteCall(expr.Left, "symmetricDifference", expr.Right);
+			else
+				WriteBinaryExpr(expr, parent > CiPriority.Add, CiPriority.Add, " ^ ", CiPriority.Mul);
 			break;
 		case CiToken.Assign:
 		case CiToken.AddAssign:
