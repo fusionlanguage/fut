@@ -774,6 +774,20 @@ public class GenJs : GenBase
 
 	protected override string GetIsOperator() => " instanceof ";
 
+	protected virtual void WriteBoolAndOr(CiBinaryExpr expr)
+	{
+		Write("!!");
+		base.VisitBinaryExpr(expr, CiPriority.Primary);
+	}
+
+	void WriteBoolAndOrAssign(CiBinaryExpr expr, CiPriority parent)
+	{
+		expr.Right.Accept(this, parent);
+		WriteLine(')');
+		WriteChar('\t');
+		expr.Left.Accept(this, CiPriority.Assign);
+	}
+
 	public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
@@ -798,6 +812,28 @@ public class GenJs : GenBase
 			Write(" | 0");
 			if (parent > CiPriority.Assign)
 				WriteChar(')');
+			break;
+		case CiToken.And when expr.Type.Id == CiId.BoolType:
+		case CiToken.Or when expr.Type.Id == CiId.BoolType:
+			WriteBoolAndOr(expr);
+			break;
+		case CiToken.Xor when expr.Type.Id == CiId.BoolType:
+			WriteEqual(expr, parent, true);
+			break;
+		case CiToken.AndAssign when expr.Type.Id == CiId.BoolType:
+			Write("if (!"); // FIXME: picks up parent "else"
+			WriteBoolAndOrAssign(expr, CiPriority.Primary);
+			Write(" = false");
+			break;
+		case CiToken.OrAssign when expr.Type.Id == CiId.BoolType:
+			Write("if ("); // FIXME: picks up parent "else"
+			WriteBoolAndOrAssign(expr, CiPriority.Argument);
+			Write(" = true");
+			break;
+		case CiToken.XorAssign when expr.Type.Id == CiId.BoolType:
+			expr.Left.Accept(this, CiPriority.Assign);
+			Write(" = ");
+			WriteEqual(expr, CiPriority.Argument, true); // TODO: side effect
 			break;
 		case CiToken.Is when expr.Right is CiVar def:
 			if (parent > CiPriority.CondAnd)

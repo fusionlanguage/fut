@@ -159,6 +159,17 @@ public class GenTs : GenJs
 		Write(def.Type.Name);
 	}
 
+	protected override void WriteBoolAndOr(CiBinaryExpr expr)
+	{
+		Write("[ ");
+		expr.Left.Accept(this, CiPriority.Argument);
+		Write(", ");
+		expr.Right.Accept(this, CiPriority.Argument);
+		Write(" ].");
+		Write(expr.Op == CiToken.And ? "every" : "some");
+		Write("(Boolean)");
+	}
+
 	void WriteVisibility(CiVisibility visibility)
 	{
 		switch (visibility) {
