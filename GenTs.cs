@@ -57,7 +57,6 @@ public class GenTs : GenJs
 		WriteChar(' ');
 		OpenBlock();
 		enu.AcceptValues(this);
-		WriteLine();
 		CloseBlock();
 	}
 
