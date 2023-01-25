@@ -1,14 +1,14 @@
 {
   "name": "cito",
   "private": true,
-  "version": "0.0.0-development",
+  "version": "2.1.0-development",
   "repository": "https://github.com/pfusik/cito.git",
   "author": "Piotr Fusik",
   "dependencies": {
-    "ts-node": "^10.3.0",
-    "typescript": "^4.4.4"
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.4"
   },
   "devDependencies": {
-    "@types/node": "^16.11.1"
+    "@types/node": "^18.11.18"
   }
 }
