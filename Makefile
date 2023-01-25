@@ -171,7 +171,7 @@ test/bin/CiParse/Test.cpp test/bin/CiParse/CiParser.java: Lexer.ci AST.ci Parser
 test/bin/CiParse/js.txt: test/bin/CiParse/Test.js Lexer.ci AST.ci Parser.ci Sema.ci
 	$(DO)node $^ >$@
 
-test/bin/CiParse/Test.js: Lexer.ci AST.ci Parser.ci cito.exe test/CiParse.js
+test/bin/CiParse/Test.js test/bin/CiParse/Test.ts: Lexer.ci AST.ci Parser.ci cito.exe test/CiParse.js
 	$(DO)mkdir -p $(@D) && $(CITO) -o $@ $(filter %.ci, $^) && cat test/CiParse.js >>$@
 
 test/bin/Resource/java.txt: test/bin/Resource/Test.class test/bin/Runner.class
