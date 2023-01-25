@@ -11,7 +11,7 @@
     "url": "https://github.com/pfusik/cito.git"
   },
   "engines": {
-    "vscode": "0.10.x"
+    "vscode": "^1.0.0"
   },
   "categories": [
     "Programming Languages"
@@ -42,5 +42,17 @@
         "path": "./syntaxes/ci.tmLanguage.json"
       }
     ]
+  },
+  "activationEvents": [
+    "onLanguage:ci"
+  ],
+  "main": "./out/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ."
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.0.0",
+    "typescript": "^4.9.4"
   }
 }
