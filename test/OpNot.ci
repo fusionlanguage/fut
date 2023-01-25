@@ -8,7 +8,7 @@ public static class Test
 		return !a
 			&& !(a && a)
 			&& !(a && !a)
-			&& !(a & a) //FAIL: swift ts TODO
+			&& !(a & a)
 			&& !(a & !a)
 			&& !(!t & a)
 			&& (!a | !a)
