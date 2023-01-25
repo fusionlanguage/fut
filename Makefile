@@ -41,9 +41,6 @@ Transpiled.cs: Lexer.ci AST.ci Parser.ci Sema.ci
 test: test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-cl test-error
 	perl test/summary.pl test/bin/*/*.txt
 
-node_modules: package.json package-lock.json
-	npm i
-
 test-c test-GenC.cs: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
@@ -187,6 +184,9 @@ $(addprefix test/bin/Resource/Test., c cpp cs java js ts py swift cl): test/Reso
 
 test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 	$(DO)javac -d $(@D) -cp test/bin/Basic $<
+
+node_modules: package.json
+	npm i --no-package-lock
 
 test/bin/%/error.txt: test/error/%.ci cito.exe
 	$(DO)mkdir -p $(@D) && ! $(CITO) -o $(@:%.txt=%.cs) $< 2>$@ && perl -ne 'print "$$ARGV($$.): $$1\n" while m!//(ERROR: .+?)(?=$$| //)!g' $< | diff -u --strip-trailing-cr - $@ && echo PASSED >$@
