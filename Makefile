@@ -93,8 +93,8 @@ test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
 test/bin/%/js.txt: test/bin/%/Test.js
 	$(DO)node $< >$@ || grep '//FAIL:.*\<js\>' test/$*.ci
 
-test/bin/%/ts.txt: test/bin/%/Test.ts node_modules
-	$(DO)node_modules/.bin/ts-node $< >$@ || grep '//FAIL:.*\<ts\>' test/$*.ci
+test/bin/%/ts.txt: test/bin/%/Test.ts test/node_modules test/tsconfig.json
+	$(DO)test/node_modules/.bin/ts-node $< >$@ || grep '//FAIL:.*\<ts\>' test/$*.ci
 
 test/bin/%/py.txt: test/Runner.py test/bin/%/Test.py
 	$(DO)PYTHONPATH=$(@D) $(PYTHON) $< >$@ || grep '//FAIL:.*\<py\>' test/$*.ci
@@ -185,8 +185,8 @@ $(addprefix test/bin/Resource/Test., c cpp cs java js ts py swift cl): test/Reso
 test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 	$(DO)javac -d $(@D) -cp test/bin/Basic $<
 
-node_modules: package.json
-	npm i --no-package-lock
+test/node_modules: test/package.json
+	cd $(<D) && npm i --no-package-lock
 
 test/bin/%/error.txt: test/error/%.ci cito.exe
 	$(DO)mkdir -p $(@D) && ! $(CITO) -o $(@:%.txt=%.cs) $< 2>$@ && perl -ne 'print "$$ARGV($$.): $$1\n" while m!//(ERROR: .+?)(?=$$| //)!g' $< | diff -u --strip-trailing-cr - $@ && echo PASSED >$@
