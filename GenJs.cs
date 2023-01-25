@@ -886,11 +886,18 @@ public class GenJs : GenBase
 
 	protected override void WriteAssert(CiAssert statement)
 	{
-		Write("console.assert(");
-		statement.Cond.Accept(this, CiPriority.Argument);
-		if (statement.Message != null) {
-			Write(", ");
-			statement.Message.Accept(this, CiPriority.Argument);
+		if (statement.CompletesNormally()) {
+			Write("console.assert(");
+			statement.Cond.Accept(this, CiPriority.Argument);
+			if (statement.Message != null) {
+				Write(", ");
+				statement.Message.Accept(this, CiPriority.Argument);
+			}
+		}
+		else {
+			Write("throw new Error(");
+			if (statement.Message != null)
+				statement.Message.Accept(this, CiPriority.Argument);
 		}
 		WriteLine(");");
 	}
