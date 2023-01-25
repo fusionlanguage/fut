@@ -1,6 +1,6 @@
 // CiTo.cs - Ci translator
 //
-// Copyright (C) 2011-2022  Piotr Fusik
+// Copyright (C) 2011-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -54,7 +54,7 @@ public static class CiTo
 		Console.WriteLine("--version  Display version information");
 	}
 
-	static CiProgram ParseAndResolve(CiParser parser, CiSystem system, CiScope parent, List<string> files, List<string> searchDirs)
+	static CiProgram ParseAndResolve(CiConsoleParser parser, CiSystem system, CiScope parent, List<string> files, List<string> searchDirs)
 	{
 		parser.Program = new CiProgram { Parent = parent, System = system };
 		foreach (string file in files) {
@@ -94,7 +94,7 @@ public static class CiTo
 	public static int Main(string[] args)
 	{
 		CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-		CiParser parser = new CiParser();
+		CiConsoleParser parser = new CiConsoleParser();
 		List<string> inputFiles = new List<string>();
 		List<string> referencedFiles = new List<string>();
 		List<string> searchDirs = new List<string>();

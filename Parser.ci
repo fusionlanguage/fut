@@ -1,6 +1,6 @@
 // Parser.ci - Ci parser
 //
-// Copyright (C) 2011-2022  Piotr Fusik
+// Copyright (C) 2011-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-public class CiParser : CiLexer
+public abstract class CiParser : CiLexer
 {
 	internal CiProgram! Program;
 	string XcrementParent = null;

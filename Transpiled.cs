@@ -118,14 +118,12 @@ namespace Foxoft.Ci
 		AlreadyElse
 	}
 
-	public class CiLexer
+	public abstract class CiLexer
 	{
 
 		protected byte[] Input;
 
 		int InputLength;
-
-		internal bool HasErrors = false;
 
 		int NextOffset;
 
@@ -175,11 +173,7 @@ namespace Foxoft.Ci
 			NextToken();
 		}
 
-		protected void ReportError(string message)
-		{
-			Console.Error.WriteLine($"{this.Filename}({this.Line}): ERROR: {message}");
-			this.HasErrors = true;
-		}
+		protected abstract void ReportError(string message);
 
 		int ReadByte()
 		{
@@ -3067,7 +3061,7 @@ namespace Foxoft.Ci
 		internal readonly Dictionary<string, byte[]> Resources = new Dictionary<string, byte[]>();
 	}
 
-	public class CiParser : CiLexer
+	public abstract class CiParser : CiLexer
 	{
 
 		internal CiProgram Program;
@@ -4088,6 +4082,18 @@ namespace Foxoft.Ci
 					break;
 				}
 			}
+		}
+	}
+
+	public class CiConsoleParser : CiParser
+	{
+
+		internal bool HasErrors = false;
+
+		protected override void ReportError(string message)
+		{
+			Console.Error.WriteLine($"{this.Filename}({this.Line}): ERROR: {message}");
+			this.HasErrors = true;
 		}
 	}
 

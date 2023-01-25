@@ -1,6 +1,6 @@
 // Lexer.ci - Ci lexer
 //
-// Copyright (C) 2011-2022  Piotr Fusik
+// Copyright (C) 2011-2023  Piotr Fusik
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -128,11 +128,10 @@ enum CiPreState
 	AlreadyElse
 }
 
-public class CiLexer
+public abstract class CiLexer
 {
 	protected byte[] Input;
 	int InputLength;
-	internal bool HasErrors = false;
 	int NextOffset;
 	protected int CharOffset;
 	int NextChar;
@@ -167,11 +166,7 @@ public class CiLexer
 		NextToken();
 	}
 
-	protected void ReportError!(string message)
-	{
-		Console.Error.WriteLine($"{this.Filename}({this.Line}): ERROR: {message}");
-		this.HasErrors = true;
-	}
+	protected abstract void ReportError!(string message);
 
 	int ReadByte!()
 	{
