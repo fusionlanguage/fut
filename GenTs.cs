@@ -39,14 +39,6 @@ public class GenTs : GenJs
 
 	protected override bool IsJsPrivate(CiMember member) => false;
 
-	void StartContainerType(CiContainerType container)
-	{
-		WriteLine();
-		WriteDoc(container.Documentation);
-		if (container.IsPublic)
-			Write("export ");
-	}
-
 	public override void VisitEnumValue(CiConst konst, CiConst previous)
 	{
 		WriteEnumValue(konst);

@@ -1,4 +1,5 @@
-const fs = require("fs");
+import fs from "fs";
+import { CiParser, CiProgram, CiSystem } from "./bin/CiParse/Test.js";
 const system = CiSystem.new();
 const parser = new CiParser();
 parser.program = new CiProgram();

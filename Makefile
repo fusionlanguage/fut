@@ -32,7 +32,7 @@ DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .
 
 all: cito.exe
 
-cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs GenPySwift.cs GenPy.cs GenSwift.cs GenTs.cs GenCl.cs CiTo.cs)
+cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs CiResolver.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJsNoModule.cs GenJs.cs GenPySwift.cs GenPy.cs GenSwift.cs GenTs.cs GenCl.cs CiTo.cs)
 	$(DO_BUILD)
 
 Transpiled.cs: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci
@@ -53,7 +53,7 @@ test-cs test-GenCs.cs: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/
 test-java test-GenJava.cs: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) test/bin/CiParse/CiParser.java
 	$(DO_SUMMARY)
 
-test-js test-GenJs.cs: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) test/bin/CiParse/js.txt
+test-js test-GenJsNoModule.cs test-GenJs.cs: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) test/bin/CiParse/js.txt
 	$(DO_SUMMARY)
 
 test-ts test-GenTs.cs: $(patsubst test/%.ci, test/bin/%/ts.txt, $(wildcard test/*.ci))
@@ -90,8 +90,8 @@ test/bin/%/cs.txt: test/bin/%/cs.dll test/cs.runtimeconfig.json
 test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
 	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)" Runner >$@ || grep '//FAIL:.*\<java\>' test/$*.ci
 
-test/bin/%/js.txt: test/bin/%/Test.js
-	$(DO)node $< >$@ || grep '//FAIL:.*\<js\>' test/$*.ci
+test/bin/%/js.txt: test/bin/%/Test.js test/bin/%/Runner.js
+	$(DO)(cd $(@D) && node Runner.js >$(@F)) || grep '//FAIL:.*\<js\>' test/$*.ci
 
 test/bin/%/ts.txt: test/bin/%/Test.ts test/node_modules test/tsconfig.json
 	$(DO)test/node_modules/.bin/ts-node $< >$@ || grep '//FAIL:.*\<ts\>' test/$*.ci
@@ -117,6 +117,9 @@ test/bin/%/cs.dll: test/bin/%/Test.cs test/Runner.cs
 test/bin/%/Test.class: test/bin/%/Test.java
 	$(DO)javac -d $(@D) -encoding utf8 $(<D)/*.java || grep '//FAIL:.*\<java\>' test/$*.ci
 
+test/bin/%/Runner.js: test/Runner.js
+	$(DO)mkdir -p $(@D) && cp $< $@
+
 test/bin/%/swift.exe: test/bin/%/Test.swift test/main.swift
 	$(DO)$(SWIFTC) -o $@ $^ || grep '//FAIL:.*\<swift\>' test/$*.ci
 
@@ -138,11 +141,11 @@ test/bin/%/Test.cs: test/%.ci cito.exe
 test/bin/%/Test.java: test/%.ci cito.exe
 	$(DO_CITO)
 
-test/bin/%/Test.js: test/%.ci cito.exe test/Runner.js
-	$(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< && cat test/Runner.js >>$@ || grep '//FAIL:.*\<js\>' $<)
+test/bin/%/Test.js: test/%.ci cito.exe
+	$(DO_CITO)
 
-test/bin/%/Test.ts: test/%.ci cito.exe test/Runner.js
-	$(DO)mkdir -p $(@D) && ($(CITO) -D TS -o $@ $< && cat test/Runner.js >>$@ || grep '//FAIL:.*\<ts\>' $<)
+test/bin/%/Test.ts: test/%.ci cito.exe test/Runner.ts
+	$(DO)mkdir -p $(@D) && ($(CITO) -D TS -o $@ $< && cat test/Runner.ts >>$@ || grep '//FAIL:.*\<ts\>' $<)
 
 test/bin/%/Test.py: test/%.ci cito.exe
 	$(DO_CITO)
@@ -165,14 +168,11 @@ test/bin/CiParse/java.txt: test/bin/CiParse/CiParse.class Lexer.ci AST.ci Parser
 test/bin/CiParse/CiParse.class: test/bin/CiParse/CiParser.java test/CiParse.java
 	$(DO)javac -d $(@D) -encoding utf8 --enable-preview -source 19 $(<D)/*.java test/CiParse.java
 
-test/bin/CiParse/Test.cpp test/bin/CiParse/CiParser.java: Lexer.ci AST.ci Parser.ci ConsoleParser.ci cito.exe
+test/bin/CiParse/js.txt: test/CiParse.js test/bin/CiParse/Test.js Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci
+	$(DO)node test/CiParse.js Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci >$@
+
+test/bin/CiParse/Test.cpp test/bin/CiParse/CiParser.java test/bin/CiParse/Test.js test/bin/CiParse/Test.ts: Lexer.ci AST.ci Parser.ci ConsoleParser.ci cito.exe
 	$(DO)mkdir -p $(@D) && $(CITO) -o $@ $(filter %.ci, $^)
-
-test/bin/CiParse/js.txt: test/bin/CiParse/Test.js Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci
-	$(DO)node $^ >$@
-
-test/bin/CiParse/Test.js test/bin/CiParse/Test.ts: Lexer.ci AST.ci Parser.ci ConsoleParser.ci cito.exe test/CiParse.js
-	$(DO)mkdir -p $(@D) && $(CITO) -o $@ $(filter %.ci, $^) && cat test/CiParse.js >>$@
 
 test/bin/Resource/java.txt: test/bin/Resource/Test.class test/bin/Runner.class
 	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)$(JAVACPSEP)test" Runner >$@
