@@ -77,7 +77,7 @@ public static class CiTo
 		case "cpp": gen = new GenCpp(); break;
 		case "cs": gen = new GenCs(); break;
 		case "java": gen = new GenJava(); break;
-		case "js": gen = new GenJs(); break;
+		case "js": case "mjs": gen = new GenJs(); break;
 		case "py": gen = new GenPy(); break;
 		case "swift": gen = new GenSwift(); break;
 		case "ts": gen = new GenTs().WithGenFullCode(); break;
