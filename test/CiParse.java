@@ -6,8 +6,8 @@ public class CiParse
 {
 	public static void main(String[] args) throws IOException
 	{
-		CiSystem system = CiSystem.new_();
-		CiParser parser = new CiParser();
+		final CiSystem system = CiSystem.new_();
+		final CiConsoleParser parser = new CiConsoleParser();
 		parser.program = new CiProgram();
 		parser.program.parent = system;
 		parser.program.system = system;
