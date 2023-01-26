@@ -1,22 +1,38 @@
 import * as vscode from "vscode";
+import { CiParser, CiProgram, CiSystem } from "./parser.js";
 
-export function activate(context: vscode.ExtensionContext) {
-//	vscode.window.showInformationMessage("Hello, world!");
-	const diagnosticCollection = vscode.languages.createDiagnosticCollection("ci");
-	if (vscode.window.activeTextEditor) {
-		updateDiagnostics(vscode.window.activeTextEditor.document, diagnosticCollection);
+class VsCodeParser extends CiParser
+{
+	private system = CiSystem.new();
+	diagnostics: vscode.Diagnostic[] = [];
+
+	protected reportError(message: string) : void
+	{
+		this.diagnostics.push(new vscode.Diagnostic(new vscode.Range(this.line - 1, 0, this.line, 0), message));
 	}
-	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => {
-		if (editor) {
-			updateDiagnostics(editor.document, diagnosticCollection);
-		}
-	}));
+
+	updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: vscode.DiagnosticCollection): void
+	{
+		if (document.languageId != "ci")
+			return;
+		this.diagnostics.length = 0;
+		this.program = new CiProgram();
+		this.program.parent = this.system;
+		this.program.system = this.system;
+		const input = new TextEncoder().encode(document.getText());
+		this.parse(document.fileName, input, input.length);
+		diagnosticCollection.set(document.uri, this.diagnostics);
+	}
 }
 
-function updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: vscode.DiagnosticCollection): void {
-	if (document.languageId != "ci")
-		return;
-	const diagnostics = [];
-	diagnostics.push(new vscode.Diagnostic(new vscode.Range(0, 0, 1, 0), "hello"));
-	diagnosticCollection.set(document.uri, diagnostics);
+export function activate(context: vscode.ExtensionContext): void {
+	const parser = new VsCodeParser();
+	const diagnosticCollection = vscode.languages.createDiagnosticCollection("ci");
+	if (vscode.window.activeTextEditor)
+		parser.updateDiagnostics(vscode.window.activeTextEditor.document, diagnosticCollection);
+	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => {
+			if (editor)
+				parser.updateDiagnostics(editor.document, diagnosticCollection);
+		}));
+	context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(e => parser.updateDiagnostics(e.document, diagnosticCollection)));
 }
