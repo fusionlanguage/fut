@@ -11,7 +11,7 @@ int main(int argc, char **argv)
 	CiProgram program;
 	program.parent = system.get();
 	program.system = system.get();
-	CiParser parser;
+	CiConsoleParser parser;
 	parser.program = &program;
 	std::string input;
 	for (int i = 1; i < argc; i++) {
