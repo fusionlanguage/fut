@@ -136,6 +136,9 @@ or the ternary operator. This is because such expressions wouldn't easily
 translate to Python or Swift, where incrementations and decrementations
 are implemented as `+=` and `-=` statements.
 
+`MinValue` and `MaxValue` constants are defined for all integer types,
+for example `int.MaxValue`.
+
 ### Floating-point numbers
 
 There are two floating-point types: `float` and `double`.

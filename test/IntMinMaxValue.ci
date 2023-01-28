@@ -3,6 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		return int.MinValue == -0x80000000 && int.MaxValue == 0x7fffffff
-			&& long.MinValue == -0x8000000000000000 && long.MaxValue == 0x7fffffffffffffff;
+			&& long.MinValue == -0x8000000000000000 && long.MaxValue == 0x7fffffffffffffff
+			&& short.MinValue == -0x8000 && short.MaxValue == 0x7fff;
 	}
 }

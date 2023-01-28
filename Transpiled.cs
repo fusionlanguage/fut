@@ -2362,10 +2362,19 @@ namespace Foxoft.Ci
 
 		internal int Max;
 
+		static void AddMinMaxValue(CiRangeType target, string name, int value)
+		{
+			CiRangeType type = target.Min == target.Max ? target : new CiRangeType { Min = value, Max = value };
+			target.Add(new CiConst { Visibility = CiVisibility.Public, Name = name, Value = new CiLiteralLong { Type = type, Value = value }, VisitStatus = CiVisitStatus.Done });
+		}
+
 		public static CiRangeType New(int min, int max)
 		{
 			Debug.Assert(min <= max);
-			return new CiRangeType { Min = min, Max = max };
+			CiRangeType result = new CiRangeType { Min = min, Max = max };
+			AddMinMaxValue(result, "MinValue", min);
+			AddMinMaxValue(result, "MaxValue", max);
+			return result;
 		}
 
 		public override string ToString() => this.Min == this.Max ? $"{this.Min}" : $"({this.Min} .. {this.Max})";
@@ -3040,10 +3049,10 @@ namespace Foxoft.Ci
 
 		CiConst NewConstDouble(string name, double value) => new CiConst { Visibility = CiVisibility.Public, Name = name, Value = new CiLiteralDouble { Value = value, Type = this.DoubleType }, Type = this.DoubleType, VisitStatus = CiVisitStatus.Done };
 
-		void AddMinMaxValue(CiIntegerType type, long min, long max)
+		void AddMinMaxValue(CiIntegerType target, long min, long max)
 		{
-			type.Add(NewConstLong("MinValue", min));
-			type.Add(NewConstLong("MaxValue", max));
+			target.Add(NewConstLong("MinValue", min));
+			target.Add(NewConstLong("MaxValue", max));
 		}
 
 		internal static CiSystem New() => new CiSystem();
