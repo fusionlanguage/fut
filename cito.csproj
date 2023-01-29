@@ -5,6 +5,8 @@
     <Description>Transpiles the Ć programming language to C, C++, C#, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.</Description>
     <PackageTags>Programming Language;Transpiler</PackageTags>
     <PackageProjectUrl>https://github.com/pfusik/cito</PackageProjectUrl>
+    <PackageIcon>ci-logo.png</PackageIcon>
+    <PackageReadmeFile>dotnet-tool.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/pfusik/cito.git</RepositoryUrl>
     <Authors>Piotr Fusik</Authors>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
@@ -13,10 +15,13 @@
     <RollForward>LatestMajor</RollForward>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <PackAsTool>true</PackAsTool>
+    <PackRelease>true</PackRelease>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="test\**" />
+    <None Include="doc\dotnet-tool.md" Pack="true" PackagePath="\" />
+    <None Include="editors\vscode\ci-logo.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
