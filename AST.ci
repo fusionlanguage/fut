@@ -1171,7 +1171,7 @@ public class CiClassType : CiType
 
 	public override CiSymbol# TryLookup(string name) => this.Class.TryLookup(name);
 
-	protected bool EqualTypeArguments(CiClassType right)
+	internal bool EqualTypeArguments(CiClassType right)
 	{
 		switch (this.Class.TypeParameterCount) {
 		case 0: return true;

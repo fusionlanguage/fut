@@ -135,14 +135,6 @@ public class CiResolver : CiSema
 		this.CurrentScope.Add(expr);
 	}
 
-	CiLiteral ToLiteralBool(CiExpr expr, bool value)
-	{
-		CiLiteral result = value ? new CiLiteralTrue() : new CiLiteralFalse();
-		result.Line = expr.Line;
-		result.Type = this.Program.System.BoolType;
-		return result;
-	}
-
 	protected override CiExpr VisitInterpolatedString(CiInterpolatedString expr)
 	{
 		int partsCount = 0;
@@ -367,41 +359,6 @@ public class CiResolver : CiSema
 		if (range != null && range.Min == range.Max)
 			return ToLiteralLong(expr, range.Min);
 		return new CiPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
-	}
-
-	CiExpr ResolveEquality(CiBinaryExpr expr, CiExpr left, CiExpr right)
-	{
-		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {
-			if (leftRange.Min == leftRange.Max && leftRange.Min == rightRange.Min && leftRange.Min == rightRange.Max)
-				return ToLiteralBool(expr, expr.Op == CiToken.Equal);
-			if (leftRange.Max < rightRange.Min || leftRange.Min > rightRange.Max)
-				return ToLiteralBool(expr, expr.Op == CiToken.NotEqual);
-		}
-		else if (left.Type == right.Type) {
-			switch (left) {
-			case CiLiteralLong leftLong when right is CiLiteralLong rightLong:
-				return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ (leftLong.Value == rightLong.Value));
-			case CiLiteralDouble leftDouble when right is CiLiteralDouble rightDouble:
-				return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ (leftDouble.Value == rightDouble.Value));
-			case CiLiteralString leftString when right is CiLiteralString rightString:
-				return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ (leftString.Value == rightString.Value));
-			case CiLiteralNull _:
-				return ToLiteralBool(expr, expr.Op == CiToken.Equal);
-			case CiLiteralFalse _:
-				return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ (right is CiLiteralFalse));
-			case CiLiteralTrue _:
-				return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ (right is CiLiteralTrue));
-			default:
-				break;
-			}
-			if (left.IsConstEnum() && right.IsConstEnum())
-				return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ (left.IntValue() == right.IntValue()));
-		}
-		if (!left.Type.IsAssignableFrom(right.Type) && !right.Type.IsAssignableFrom(left.Type))
-			return PoisonError(expr, $"Cannot compare {left.Type} with {right.Type}");
-		TakePtr(left);
-		TakePtr(right);
-		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = this.Program.System.BoolType };
 	}
 
 	protected override CiExpr VisitBinaryExpr(CiBinaryExpr expr)
