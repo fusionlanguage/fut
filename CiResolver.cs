@@ -815,66 +815,6 @@ public class CiResolver : CiSema
 			((CiClass) this.CurrentScope.GetContainer()).ConstArrays.Add(statement);
 	}
 
-	public override void VisitFor(CiFor statement)
-	{
-		OpenScope(statement);
-		if (statement.Init != null)
-			statement.Init.AcceptStatement(this);
-		ResolveLoopCond(statement);
-		if (statement.Advance != null)
-			statement.Advance.AcceptStatement(this);
-		if (statement.Init is CiVar iter
-			&& iter.Type is CiIntegerType
-			&& iter.Value != null
-			&& statement.Cond is CiBinaryExpr cond
-			&& cond.Left.IsReferenceTo(iter)
-			&& (cond.Right is CiLiteral || (cond.Right is CiSymbolReference limitSymbol && limitSymbol.Symbol is CiVar))) {
-			long step = 0;
-			switch (statement.Advance) {
-			case CiUnaryExpr unary when unary.Inner.IsReferenceTo(iter):
-				switch (unary.Op) {
-				case CiToken.Increment:
-					step = 1;
-					break;
-				case CiToken.Decrement:
-					step = -1;
-					break;
-				default:
-					break;
-				}
-				break;
-			case CiBinaryExpr binary when binary.Left.IsReferenceTo(iter) && binary.Right is CiLiteralLong literalStep:
-				switch (binary.Op) {
-				case CiToken.AddAssign:
-					step = literalStep.Value;
-					break;
-				case CiToken.SubAssign:
-					step = -literalStep.Value;
-					break;
-				default:
-					break;
-				}
-				break;
-			default:
-				break;
-			}
-			switch (cond.Op) {
-			case CiToken.Less when step > 0:
-			case CiToken.LessOrEqual when step > 0:
-			case CiToken.Greater when step < 0:
-			case CiToken.GreaterOrEqual when step < 0:
-				statement.IsRange = true;
-				statement.RangeStep = step;
-				break;
-			default:
-				break;
-			}
-			statement.IsIteratorUsed = false;
-		}
-		statement.Body.AcceptStatement(this);
-		CloseScope();
-	}
-
 	void ResolveCode(CiClass klass)
 	{
 		if (klass.Constructor != null) {

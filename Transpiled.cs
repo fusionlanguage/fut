@@ -4778,7 +4778,7 @@ namespace Foxoft.Ci
 		{
 		}
 
-		protected void ResolveLoopCond(CiLoop statement)
+		void ResolveLoopCond(CiLoop statement)
 		{
 			if (statement.Cond != null) {
 				statement.Cond = ResolveBool(statement.Cond);
@@ -4792,6 +4792,54 @@ namespace Foxoft.Ci
 		{
 			OpenScope(statement);
 			ResolveLoopCond(statement);
+			statement.Body.AcceptStatement(this);
+			CloseScope();
+		}
+
+		public override void VisitFor(CiFor statement)
+		{
+			OpenScope(statement);
+			if (statement.Init != null)
+				statement.Init.AcceptStatement(this);
+			ResolveLoopCond(statement);
+			if (statement.Advance != null)
+				statement.Advance.AcceptStatement(this);
+			if (statement.Init is CiVar iter && iter.Type is CiIntegerType && iter.Value != null && statement.Cond is CiBinaryExpr cond && cond.Left.IsReferenceTo(iter) && (cond.Right is CiLiteral || (cond.Right is CiSymbolReference limitSymbol && limitSymbol.Symbol is CiVar))) {
+				long step = 0;
+				switch (statement.Advance) {
+				case CiUnaryExpr unary when unary.Inner.IsReferenceTo(iter):
+					switch (unary.Op) {
+					case CiToken.Increment:
+						step = 1;
+						break;
+					case CiToken.Decrement:
+						step = -1;
+						break;
+					default:
+						break;
+					}
+					break;
+				case CiBinaryExpr binary when binary.Left.IsReferenceTo(iter) && binary.Right is CiLiteralLong literalStep:
+					switch (binary.Op) {
+					case CiToken.AddAssign:
+						step = literalStep.Value;
+						break;
+					case CiToken.SubAssign:
+						step = -literalStep.Value;
+						break;
+					default:
+						break;
+					}
+					break;
+				default:
+					break;
+				}
+				if ((step > 0 && (cond.Op == CiToken.Less || cond.Op == CiToken.LessOrEqual)) || (step < 0 && (cond.Op == CiToken.Greater || cond.Op == CiToken.GreaterOrEqual))) {
+					statement.IsRange = true;
+					statement.RangeStep = step;
+				}
+				statement.IsIteratorUsed = false;
+			}
 			statement.Body.AcceptStatement(this);
 			CloseScope();
 		}
