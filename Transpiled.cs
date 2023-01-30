@@ -1284,6 +1284,7 @@ namespace Foxoft.Ci
 		ListCopyTo,
 		ListCount,
 		ListInsert,
+		ListLast,
 		ListRemoveAt,
 		ListRemoveRange,
 		ListSortAll,
@@ -2862,6 +2863,7 @@ namespace Foxoft.Ci
 			listClass.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.ListContains, "Contains", CiVar.New(this.TypeParam0, "value")));
 			listClass.Add(CiMethod.New(CiVisibility.Public, this.VoidType, CiId.ListCopyTo, "CopyTo", CiVar.New(this.IntType, "sourceIndex"), CiVar.New(new CiReadWriteClassType { Class = this.ArrayPtrClass, TypeArg0 = this.TypeParam0 }, "destinationArray"), CiVar.New(this.IntType, "destinationIndex"), CiVar.New(this.IntType, "count")));
 			listClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.ListInsert, "Insert", CiVar.New(this.UIntType, "index"), CiVar.New(typeParam0NotFinal, "value")));
+			listClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.TypeParam0, CiId.ListLast, "Last"));
 			listClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.ListRemoveAt, "RemoveAt", CiVar.New(this.IntType, "index")));
 			listClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.ListRemoveRange, "RemoveRange", CiVar.New(this.IntType, "index"), CiVar.New(this.IntType, "count")));
 			listClass.Add(CiMethodGroup.New(CiMethod.NewMutator(CiVisibility.NumericElementType, this.VoidType, CiId.ListSortAll, "Sort"), CiMethod.NewMutator(CiVisibility.NumericElementType, this.VoidType, CiId.ListSortPart, "Sort", CiVar.New(this.IntType, "startIndex"), CiVar.New(this.IntType, "count"))));
@@ -4856,6 +4858,59 @@ namespace Foxoft.Ci
 				if (statement.Value is CiSymbolReference symbol && symbol.Symbol is CiVar local && (local.Type.IsFinal() || local.Type.Id == CiId.StringStorageType) && this.CurrentMethod.Type.IsNullable())
 					ReportError(statement, "Returning dangling reference to local storage");
 			}
+		}
+
+		public override void VisitSwitch(CiSwitch statement)
+		{
+			OpenScope(statement);
+			statement.Value = Resolve(statement.Value);
+			switch (statement.Value.Type) {
+			case CiIntegerType i when i.Id != CiId.LongType:
+			case CiEnum _:
+				break;
+			case CiClassType klass when !(klass is CiStorageType):
+				break;
+			default:
+				ReportError(statement.Value, $"Switch on type {statement.Value.Type} - expected int, enum, string or object reference");
+				return;
+			}
+			statement.SetCompletesNormally(false);
+			foreach (CiCase kase in statement.Cases) {
+				for (int i = 0; i < kase.Values.Count; i++) {
+					if (statement.Value.Type is CiClassType switchPtr && switchPtr.Class.Id != CiId.StringClass) {
+						CiExpr value = kase.Values[i];
+						if (value is CiBinaryExpr when1 && when1.Op == CiToken.When)
+							value = when1.Left;
+						if (!(value is CiVar def) || def.Value != null)
+							ReportError(kase.Values[i], "Expected 'case Type name'");
+						else if (!(ResolveType(def) is CiClassType casePtr) || casePtr is CiStorageType)
+							ReportError(def, "'case' with non-reference type");
+						else if (casePtr is CiReadWriteClassType && !(switchPtr is CiDynamicPtrType) && (casePtr is CiDynamicPtrType || !(switchPtr is CiReadWriteClassType)))
+							ReportError(def, $"{switchPtr} cannot be casted to {casePtr}");
+						else if (casePtr.Class.IsSameOrBaseOf(switchPtr.Class))
+							ReportError(def, $"{statement.Value} is {switchPtr}, 'case {casePtr}' would always match");
+						else if (!switchPtr.Class.IsSameOrBaseOf(casePtr.Class))
+							ReportError(def, $"{switchPtr} is not base class of {casePtr.Class.Name}, 'case {casePtr}' would never match");
+						else {
+							statement.Add(def);
+							if (kase.Values[i] is CiBinaryExpr when2 && when2.Op == CiToken.When)
+								when2.Right = ResolveBool(when2.Right);
+						}
+					}
+					else {
+						kase.Values[i] = FoldConst(kase.Values[i]);
+						Coerce(kase.Values[i], statement.Value.Type);
+					}
+				}
+				if (ResolveStatements(kase.Body))
+					ReportError(kase.Body.Last(), "Case must end with break, continue, return or throw");
+			}
+			if (statement.DefaultBody.Count > 0) {
+				bool reachable = ResolveStatements(statement.DefaultBody);
+				if (reachable)
+					ReportError(statement.DefaultBody.Last(), "Default must end with break, continue, return or throw");
+			}
+			CloseScope();
 		}
 
 		public override void VisitThrow(CiThrow statement)

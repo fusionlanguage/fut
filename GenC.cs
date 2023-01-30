@@ -1662,6 +1662,12 @@ public class GenC : GenCCpp
 		case CiId.ListInsert:
 			WriteListAddInsert(obj, true, "g_array_insert_val", args);
 			break;
+		case CiId.ListLast:
+		case CiId.StackPeek:
+			StartArrayIndexing(obj, ((CiClassType) obj.Type).GetElementType());
+			obj.Accept(this, CiPriority.Primary); // TODO: side effect
+			Write("->len - 1)");
+			break;
 		case CiId.ListRemoveAt:
 			WriteCall("g_array_remove_index", obj, args[0]);
 			break;
@@ -1694,11 +1700,6 @@ public class GenC : GenCCpp
 			break;
 		case CiId.QueuePeek:
 			WriteQueueGet("g_queue_peek_head", obj, parent);
-			break;
-		case CiId.StackPeek:
-			StartArrayIndexing(obj, ((CiClassType) obj.Type).GetElementType());
-			obj.Accept(this, CiPriority.Primary); // TODO: side effect
-			Write("->len - 1)");
 			break;
 		case CiId.StackPop:
 			// FIXME: destroy

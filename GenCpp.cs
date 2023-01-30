@@ -799,6 +799,10 @@ public class GenCpp : GenCCpp
 			}
 			WriteChar(')');
 			break;
+		case CiId.ListLast:
+			StartMethodCall(obj);
+			Write("back()");
+			break;
 		case CiId.ListRemoveAt:
 			StartMethodCall(obj);
 			Write("erase(");

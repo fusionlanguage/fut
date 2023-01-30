@@ -894,6 +894,7 @@ listOfInts[1] = 5;
 ```
 
 `Count` returns the number of elements in the list.
+`Last()` returns the last element.
 
 You can remove:
 

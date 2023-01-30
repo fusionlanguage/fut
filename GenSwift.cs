@@ -621,6 +621,11 @@ public class GenSwift : GenPySwift
 			WriteCoerced(this.System.IntType, args[0], CiPriority.Argument);
 			WriteChar(')');
 			break;
+		case CiId.ListLast:
+		case CiId.StackPeek:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".last");
+			break;
 		case CiId.ListRemoveAt:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".remove(at: ");
@@ -640,10 +645,6 @@ public class GenSwift : GenPySwift
 		case CiId.QueuePeek:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".first");
-			break;
-		case CiId.StackPeek:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".last");
 			break;
 		case CiId.StackPop:
 			obj.Accept(this, CiPriority.Primary);

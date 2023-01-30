@@ -617,6 +617,12 @@ public class GenJava : GenTyped
 		case CiId.ListInsert:
 			WriteListInsert(obj, "add", args);
 			break;
+		case CiId.ListLast:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".get(");
+			obj.Accept(this, CiPriority.Primary); // FIXME: side effect
+			Write(".size() - 1)");
+			break;
 		case CiId.ListRemoveAt:
 			WriteCall(obj, "remove", args[0]);
 			break;

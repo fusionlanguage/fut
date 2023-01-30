@@ -563,6 +563,11 @@ public class GenJsNoModule : GenBase
 		case CiId.ListInsert:
 			WriteListInsert(obj, "splice", args, ", 0, ");
 			break;
+		case CiId.ListLast:
+		case CiId.StackPeek:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".at(-1)");
+			break;
 		case CiId.ListRemoveAt:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".splice(");
@@ -598,10 +603,6 @@ public class GenJsNoModule : GenBase
 		case CiId.QueuePeek:
 			obj.Accept(this, CiPriority.Primary);
 			Write("[0]");
-			break;
-		case CiId.StackPeek:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".at(-1)");
 			break;
 		case CiId.HashSetContains:
 			WriteCall(obj, "has", args[0]);

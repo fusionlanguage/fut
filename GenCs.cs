@@ -510,6 +510,11 @@ public class GenCs : GenTyped
 		case CiId.ListInsert:
 			WriteListInsert(obj, "Insert", args);
 			break;
+		case CiId.ListLast:
+			Include("System.Linq");
+			obj.Accept(this, CiPriority.Primary);
+			Write(".Last()");
+			break;
 		case CiId.ListSortPart:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".Sort(");

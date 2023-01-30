@@ -695,6 +695,11 @@ public class GenPy : GenPySwift
 		case CiId.ListInsert:
 			WriteListInsert(obj, "insert", args);
 			break;
+		case CiId.ListLast:
+		case CiId.StackPeek:
+			obj.Accept(this, CiPriority.Primary);
+			Write("[-1]");
+			break;
 		case CiId.ListRemoveAt:
 		case CiId.DictionaryRemove:
 		case CiId.SortedDictionaryRemove:
@@ -718,10 +723,6 @@ public class GenPy : GenPySwift
 		case CiId.QueuePeek:
 			obj.Accept(this, CiPriority.Primary);
 			Write("[0]");
-			break;
-		case CiId.StackPeek:
-			obj.Accept(this, CiPriority.Primary);
-			Write("[-1]");
 			break;
 		case CiId.DictionaryAdd:
 			WriteDictionaryAdd(obj, args);
