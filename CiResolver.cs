@@ -102,21 +102,6 @@ public class CiResolver : CiSema
 		return GetIntegerType(left, right);
 	}
 
-	void ResolveObjectLiteral(CiClassType klass, CiAggregateInitializer init)
-	{
-		foreach (CiBinaryExpr field in init.Items) {
-			Trace.Assert(field.Op == CiToken.Assign);
-			CiSymbolReference symbol = (CiSymbolReference) field.Left;
-			Lookup(symbol, klass);
-			if (symbol.Symbol is CiField) {
-				field.Right = Resolve(field.Right);
-				Coerce(field.Right, symbol.Type);
-			}
-			else
-				ReportError(field, "Expected a field");
-		}
-	}
-
 	protected override void VisitVar(CiVar expr)
 	{
 		CiType type = ResolveType(expr);

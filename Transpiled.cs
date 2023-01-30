@@ -4348,6 +4348,22 @@ namespace Foxoft.Ci
 
 		protected CiLiteralDouble ToLiteralDouble(CiExpr expr, double value) => new CiLiteralDouble { Line = expr.Line, Type = this.Program.System.DoubleType, Value = value };
 
+		protected void ResolveObjectLiteral(CiClassType klass, CiAggregateInitializer init)
+		{
+			foreach (CiExpr item in init.Items) {
+				CiBinaryExpr field = (CiBinaryExpr) item;
+				Debug.Assert(field.Op == CiToken.Assign);
+				CiSymbolReference symbol = (CiSymbolReference) field.Left;
+				Lookup(symbol, klass);
+				if (symbol.Symbol is CiField) {
+					field.Right = Resolve(field.Right);
+					Coerce(field.Right, symbol.Type);
+				}
+				else
+					ReportError(field, "Expected a field");
+			}
+		}
+
 		protected CiExpr ResolveEquality(CiBinaryExpr expr, CiExpr left, CiExpr right)
 		{
 			if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {
