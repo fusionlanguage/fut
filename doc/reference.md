@@ -873,6 +873,7 @@ List<int[2]>() listOfIntPairs; // array storage
 
 `Add` appends a new element at the end of the list.
 `Insert` inserts an element at any position.
+`AddRange` appends all elements of the passed list.
 
 ```csharp
 listOfInts.Add(42);

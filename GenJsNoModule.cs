@@ -548,6 +548,12 @@ public class GenJsNoModule : GenBase
 		case CiId.ListAdd:
 			WriteListAdd(obj, "push", args);
 			break;
+		case CiId.ListAddRange:
+			obj.Accept(this, CiPriority.Primary);
+			Write(".push(...");
+			args[0].Accept(this, CiPriority.Argument);
+			WriteChar(')');
+			break;
 		case CiId.ListAll:
 			WriteCall(obj, "every", args[0]);
 			break;

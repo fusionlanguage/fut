@@ -1277,6 +1277,7 @@ namespace Foxoft.Ci
 		ArraySortAll,
 		ArraySortPart,
 		ListAdd,
+		ListAddRange,
 		ListAll,
 		ListAny,
 		ListClear,
@@ -2858,6 +2859,7 @@ namespace Foxoft.Ci
 			CiType typeParam0Predicate = new CiType { Id = CiId.TypeParam0Predicate, Name = "Predicate<T>" };
 			CiClass listClass = AddCollection(CiId.ListClass, "List", 1, CiId.ListClear, CiId.ListCount);
 			listClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.ListAdd, "Add", CiVar.New(typeParam0NotFinal, "value")));
+			listClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.ListAddRange, "AddRange", CiVar.New(new CiClassType { Class = listClass, TypeArg0 = this.TypeParam0 }, "source")));
 			listClass.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.ListAll, "All", CiVar.New(typeParam0Predicate, "predicate")));
 			listClass.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.ListAny, "Any", CiVar.New(typeParam0Predicate, "predicate")));
 			listClass.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.ListContains, "Contains", CiVar.New(this.TypeParam0, "value")));
@@ -4421,6 +4423,21 @@ namespace Foxoft.Ci
 			}
 		}
 
+		protected CiInterpolatedString Concatenate(CiInterpolatedString left, CiInterpolatedString right)
+		{
+			CiInterpolatedString result = new CiInterpolatedString { Line = left.Line, Type = this.Program.System.StringStorageType };
+			result.Parts.AddRange(left.Parts);
+			if (right.Parts.Count == 0)
+				result.Suffix = left.Suffix + right.Suffix;
+			else {
+				result.Parts.AddRange(right.Parts);
+				CiInterpolatedPart middle = result.Parts[left.Parts.Count];
+				middle.Prefix = left.Suffix + middle.Prefix;
+				result.Suffix = right.Suffix;
+			}
+			return result;
+		}
+
 		protected CiInterpolatedString ToInterpolatedString(CiExpr expr)
 		{
 			if (expr is CiInterpolatedString interpolated)
@@ -4464,8 +4481,12 @@ namespace Foxoft.Ci
 				return generic.TypeArg0;
 			if (type.Id == CiId.TypeParam0NotFinal)
 				return generic.TypeArg0.IsFinal() ? null : generic.TypeArg0;
-			if (type is CiReadWriteClassType array && array.IsArray() && array.GetElementType().Id == CiId.TypeParam0)
-				return new CiReadWriteClassType { Class = this.Program.System.ArrayPtrClass, TypeArg0 = generic.TypeArg0 };
+			if (type is CiClassType collection && collection.Class.TypeParameterCount == 1 && collection.TypeArg0.Id == CiId.TypeParam0) {
+				CiClassType result = type is CiReadWriteClassType ? new CiReadWriteClassType() : new CiClassType();
+				result.Class = collection.Class;
+				result.TypeArg0 = generic.TypeArg0;
+				return result;
+			}
 			return type;
 		}
 

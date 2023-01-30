@@ -369,21 +369,6 @@ public class CiResolver : CiSema
 		return new CiPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
 	}
 
-	CiInterpolatedString Concatenate(CiInterpolatedString left, CiInterpolatedString right)
-	{
-		CiInterpolatedString result = new CiInterpolatedString { Line = left.Line, Type = this.Program.System.StringStorageType };
-		result.Parts.AddRange(left.Parts);
-		if (right.Parts.Count == 0)
-			result.Suffix = left.Suffix + right.Suffix;
-		else {
-			result.Parts.AddRange(right.Parts);
-			CiInterpolatedPart middle = result.Parts[left.Parts.Count];
-			middle.Prefix = left.Suffix + middle.Prefix;
-			result.Suffix = right.Suffix;
-		}
-		return result;
-	}
-
 	CiExpr ResolveEquality(CiBinaryExpr expr, CiExpr left, CiExpr right)
 	{
 		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {

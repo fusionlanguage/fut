@@ -590,6 +590,11 @@ public class GenSwift : GenPySwift
 		case CiId.StackPush:
 			WriteListAppend(obj, args);
 			break;
+		case CiId.ListAddRange:
+			obj.Accept(this, CiPriority.Assign);
+			Write(" += ");
+			args[0].Accept(this, CiPriority.Argument);
+			break;
 		case CiId.ListAll:
 			obj.Accept(this, CiPriority.Primary);
 			Write(".allSatisfy ");

@@ -674,6 +674,11 @@ public class GenPy : GenPySwift
 		case CiId.ListAdd:
 			WriteListAdd(obj, "append", args);
 			break;
+		case CiId.ListAddRange:
+			obj.Accept(this, CiPriority.Assign);
+			Write(" += ");
+			args[0].Accept(this, CiPriority.Argument);
+			break;
 		case CiId.ListAll:
 			WriteAllAny("all", obj, args);
 			break;

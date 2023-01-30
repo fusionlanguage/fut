@@ -768,6 +768,14 @@ public class GenCpp : GenCCpp
 				WriteChar(')');
 			}
 			break;
+		case CiId.ListAddRange:
+			StartMethodCall(obj);
+			Write("insert(");
+			StartMethodCall(obj); // FIXME: side effect
+			Write("end(), ");
+			WriteBeginEnd(args[0]);
+			WriteChar(')');
+			break;
 		case CiId.ListAll:
 			WriteAllAnyContains("all_of", obj, args);
 			break;

@@ -1,0 +1,14 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		List<int>() dest; //FAIL: cl
+		dest.Add(5);
+		dest.Add(10);
+		List<int>() src;
+		src.Add(3);
+		src.Add(6);
+		dest.AddRange(src); //FAIL: c
+		return dest.Count == 4 && dest[0] == 5 && dest[1] == 10 && dest[2] == 3 && dest[3] == 6;
+	}
+}
