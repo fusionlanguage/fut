@@ -302,9 +302,9 @@ public class CiScope : CiSymbol
 
 	public int Count() => this.Dict.Count;
 
-	public CiVar FirstParameter()
+	public CiVar! FirstParameter()
 	{
-		assert this.First is CiVar result;
+		assert this.First is CiVar! result;
 		return result;
 	}
 
@@ -319,7 +319,7 @@ public class CiScope : CiSymbol
 
 	public bool Contains(CiSymbol symbol) => this.Dict.ContainsKey(symbol.Name);
 
-	public virtual CiSymbol! TryLookup(string name)
+	public virtual CiSymbol# TryLookup(string name)
 	{
 		for (CiScope scope = this; scope != null; scope = scope.Parent) {
 			if (scope.Dict.ContainsKey(name))
@@ -770,10 +770,10 @@ public class CiFor : CiLoop
 
 public class CiForeach : CiLoop
 {
-	internal CiExpr Collection;
+	internal CiExpr# Collection;
 	public override void AcceptStatement!(CiVisitor! visitor) { visitor.VisitForeach(this); }
-	public CiVar GetVar() => this.FirstParameter();
-	public CiVar GetValueVar() => this.FirstParameter().NextParameter();
+	public CiVar! GetVar() => this.FirstParameter();
+	public CiVar! GetValueVar() => this.FirstParameter().NextParameter();
 }
 
 public class CiIf : CiCondCompletionStatement
@@ -992,9 +992,9 @@ public class CiVar : CiNamedValue
 	public static CiVar# New(CiType# type, string name, CiExpr# defaultValue = null)
 		=> new CiVar { Type = type, Name = name, Value = defaultValue };
 	public override void Accept(CiExprVisitor! visitor, CiPriority parent) { visitor.VisitVar(this); }
-	public CiVar NextParameter()
+	public CiVar! NextParameter()
 	{
-		assert this.Next is CiVar def;
+		assert this.Next is CiVar! def;
 		return def;
 	}
 }
@@ -1160,14 +1160,14 @@ public class CiClassType : CiType
 	internal CiClass Class;
 	internal CiType# TypeArg0;
 	internal CiType# TypeArg1;
-	public CiType GetElementType() => this.TypeArg0;
+	public CiType# GetElementType() => this.TypeArg0;
 	public CiType GetKeyType() => this.TypeArg0;
 	public CiType GetValueType() => this.TypeArg1;
 	public override bool IsNullable() => true;
 	public override bool IsArray() => this.Class.Id == CiId.ArrayPtrClass;
 	public override CiType GetBaseType() => IsArray() ? GetElementType().GetBaseType() : this;
 
-	public override CiSymbol! TryLookup(string name) => this.Class.TryLookup(name);
+	public override CiSymbol# TryLookup(string name) => this.Class.TryLookup(name);
 
 	protected bool EqualTypeArguments(CiClassType right)
 	{

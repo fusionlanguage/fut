@@ -196,22 +196,6 @@ public class CiResolver : CiSema
 		return expr;
 	}
 
-	CiExpr Lookup(CiSymbolReference expr, CiScope scope)
-	{
-		if (expr.Symbol == null) {
-			expr.Symbol = scope.TryLookup(expr.Name);
-			if (expr.Symbol == null)
-				return PoisonError(expr, $"{expr.Name} not found");
-			expr.Type = expr.Symbol.Type;
-		}
-		if (!(scope is CiEnum) && expr.Symbol is CiConst konst) {
-			ResolveConst(konst);
-			if (konst.Value is CiLiteral || konst.Value is CiSymbolReference)
-				return konst.Value;
-		}
-		return expr;
-	}
-
 	protected override CiExpr VisitSymbolReference(CiSymbolReference expr)
 	{
 		if (expr.Left != null) {
@@ -849,9 +833,11 @@ public class CiResolver : CiSema
 	public override void VisitFor(CiFor statement)
 	{
 		OpenScope(statement);
-		statement.Init?.AcceptStatement(this);
+		if (statement.Init != null)
+			statement.Init.AcceptStatement(this);
 		ResolveLoopCond(statement);
-		statement.Advance?.AcceptStatement(this);
+		if (statement.Advance != null)
+			statement.Advance.AcceptStatement(this);
 		if (statement.Init is CiVar iter
 			&& iter.Type is CiIntegerType
 			&& iter.Value != null
@@ -902,71 +888,6 @@ public class CiResolver : CiSema
 		}
 		statement.Body.AcceptStatement(this);
 		CloseScope();
-	}
-
-	public override void VisitForeach(CiForeach statement)
-	{
-		OpenScope(statement);
-		CiVar element = statement.GetVar();
-		ResolveType(element);
-		Resolve(statement.Collection);
-		if (statement.Collection.Type is CiClassType klass) {
-			switch (klass.Class.Id) {
-			case CiId.StringClass:
-				if (statement.Count() != 1 || !element.Type.IsAssignableFrom(this.Program.System.IntType))
-					ReportError(statement, "Expected int iterator variable");
-				break;
-			case CiId.ArrayStorageClass:
-			case CiId.ListClass:
-			case CiId.HashSetClass:
-				if (statement.Count() != 1)
-					ReportError(statement, "Expected one iterator variable");
-				else if (!element.Type.IsAssignableFrom(klass.GetElementType()))
-					ReportError(statement, $"Cannot coerce {klass.GetElementType()} to {element.Type}");
-				break;
-			case CiId.DictionaryClass:
-			case CiId.SortedDictionaryClass:
-			case CiId.OrderedDictionaryClass:
-				if (statement.Count() != 2)
-					ReportError(statement, "Expected (TKey key, TValue value) iterator");
-				else {
-					CiVar value = statement.GetValueVar();
-					ResolveType(value);
-					if (!element.Type.IsAssignableFrom(klass.GetKeyType()))
-						ReportError(statement, $"Cannot coerce {klass.GetKeyType()} to {element.Type}");
-					else if (!value.Type.IsAssignableFrom(klass.GetValueType()))
-						ReportError(statement, $"Cannot coerce {klass.GetValueType()} to {value.Type}");
-				}
-				break;
-			default:
-				ReportError(statement, $"'foreach' invalid on {klass.Class.Name}");
-				break;
-			}
-		}
-		else
-			ReportError(statement, $"'foreach' invalid on {statement.Collection.Type}");
-		statement.SetCompletesNormally(true);
-		statement.Body.AcceptStatement(this);
-		CloseScope();
-	}
-
-	public override void VisitReturn(CiReturn statement)
-	{
-		if (this.CurrentMethod.Type.Id == CiId.VoidType) {
-			if (statement.Value != null)
-				ReportError(statement, "Void method cannot return a value");
-		}
-		else if (statement.Value == null)
-			ReportError(statement, "Missing return value");
-		else {
-			statement.Value = Resolve(statement.Value);
-			Coerce(statement.Value, this.CurrentMethod.Type);
-			if (statement.Value is CiSymbolReference symbol
-			 && symbol.Symbol is CiVar local
-			 && (local.Type.IsFinal() || local.Type.Id == CiId.StringStorageType)
-			 && this.CurrentMethod.Type.IsNullable())
-				ReportError(statement, "Returning dangling reference to local storage");
-		}
 	}
 
 	public override void VisitSwitch(CiSwitch statement)
@@ -1025,72 +946,7 @@ public class CiResolver : CiSema
 		CloseScope();
 	}
 
-	void FillGenericClass(CiClassType result, CiSymbol klass, CiAggregateInitializer typeArgExprs)
-	{
-		if (!(klass is CiClass generic)) {
-			ReportError(typeArgExprs, $"{klass.Name} is not a class");
-			return;
-		}
-		List<CiType> typeArgs = new List<CiType>();
-		foreach (CiExpr typeArgExpr in typeArgExprs.Items)
-			typeArgs.Add(ToType(typeArgExpr, false));
-		if (typeArgs.Count != generic.TypeParameterCount) {
-			ReportError(typeArgExprs, $"Expected {generic.TypeParameterCount} type arguments for {generic.Name}, got {typeArgs.Count}");
-			return;
-		}
-		result.Class = generic;
-		result.TypeArg0 = typeArgs[0];
-		if (typeArgs.Count == 2)
-			result.TypeArg1 = typeArgs[1];
-	}
-
-	CiType ToBaseType(CiExpr expr, CiToken ptrModifier)
-	{
-		switch (expr) {
-		case CiSymbolReference symbol:
-			// built-in, MyEnum, MyClass, MyClass!, MyClass#
-			if (this.Program.TryLookup(symbol.Name) is CiType type) {
-				if (type is CiClass klass) {
-					if (klass.Id == CiId.MatchClass && ptrModifier != CiToken.EndOfFile)
-						ReportError(expr, "Read-write references to the built-in class Match are not supported");
-					CiClassType ptr = CreateClassPtr(klass, ptrModifier);
-					if (symbol.Left is CiAggregateInitializer typeArgExprs)
-						FillGenericClass(ptr, klass, typeArgExprs);
-					else
-						ptr.Name = klass.Name; // TODO: needed?
-					return ptr;
-				}
-				ExpectNoPtrModifier(expr, ptrModifier);
-				return type;
-			}
-			return PoisonError(expr, $"Type {symbol.Name} not found");
-
-		case CiCallExpr call:
-			// string(), MyClass()
-			ExpectNoPtrModifier(expr, ptrModifier);
-			if (call.Arguments.Count != 0)
-				ReportError(call, "Expected empty parentheses for storage type");
-			{
-				if (call.Method.Left is CiAggregateInitializer typeArgExprs) {
-					CiStorageType storage = new CiStorageType();
-					FillGenericClass(storage, this.Program.TryLookup(call.Method.Name), typeArgExprs);
-					return storage;
-				}
-			}
-			if (call.Method.Name == "string")
-				return this.Program.System.StringStorageType;
-			{
-				if (this.Program.TryLookup(call.Method.Name) is CiClass klass)
-					return new CiStorageType { Class = klass };
-			}
-			return PoisonError(expr, $"Class {call.Method.Name} not found");
-
-		default:
-			return PoisonError(expr, "Invalid type");
-		}
-	}
-
-	CiType ToType(CiExpr expr, bool dynamic)
+	protected override CiType ToType(CiExpr expr, bool dynamic)
 	{
 		CiExpr minExpr = null;
 		if (expr is CiBinaryExpr range && range.Op == CiToken.Range) {
@@ -1157,137 +1013,6 @@ public class CiResolver : CiSema
 			return baseType;
 		innerArray.TypeArg0 = baseType;
 		return outerArray;
-	}
-
-	CiType ResolveType(CiNamedValue def)
-	{
-		def.Type = ToType(def.TypeExpr, false);
-		return def.Type;
-	}
-
-	void ResolveConst(CiConst konst)
-	{
-		switch (konst.VisitStatus) {
-		case CiVisitStatus.NotYet:
-			break;
-		case CiVisitStatus.InProgress:
-			konst.Value = PoisonError(konst, $"Circular dependency in value of constant {konst.Name}");
-			konst.VisitStatus = CiVisitStatus.Done;
-			return;
-		case CiVisitStatus.Done:
-			return;
-		}
-		konst.VisitStatus = CiVisitStatus.InProgress;
-		if (!(this.CurrentScope is CiEnum))
-			ResolveType(konst);
-		konst.Value = Resolve(konst.Value);
-		if (konst.Value is CiAggregateInitializer coll) {
-			if (konst.Type is CiClassType array) {
-				CiType elementType = array.GetElementType();
-				if (array is CiArrayStorageType arrayStg) {
-					if (arrayStg.Length != coll.Items.Count)
-						ReportError(konst, $"Declared {arrayStg.Length} elements, initialized {coll.Items.Count}");
-				}
-				else if (array is CiReadWriteClassType)
-					ReportError(konst, "Invalid constant type");
-				else
-					konst.Type = new CiArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = elementType, Length = coll.Items.Count };
-				coll.Type = konst.Type;
-				foreach (CiExpr item in coll.Items)
-					Coerce(item, elementType);
-			}
-			else
-				ReportError(konst, $"Array initializer for scalar constant {konst.Name}");
-		}
-		else if (this.CurrentScope is CiEnum && konst.Value.Type is CiRangeType && konst.Value is CiLiteral) {
-		}
-		else if (konst.Value is CiLiteral || konst.Value.IsConstEnum())
-			Coerce(konst.Value, konst.Type);
-		else if (konst.Value != this.Poison)
-			ReportError(konst.Value, $"Value for constant {konst.Name} is not constant");
-		konst.InMethod = this.CurrentMethod;
-		konst.VisitStatus = CiVisitStatus.Done;
-	}
-
-	public override void VisitEnumValue(CiConst konst, CiConst previous)
-	{
-		if (konst.Value != null) {
-			ResolveConst(konst);
-			((CiEnum) konst.Parent).HasExplicitValue = true;
-		}
-		else
-			konst.Value = new CiImplicitEnumValue { Value = previous == null ? 0 : previous.Value.IntValue() + 1 };
-	}
-
-	void ResolveConsts(CiContainerType container)
-	{
-		this.CurrentScope = container;
-		switch (container) {
-		case CiClass klass:
-			for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
-				if (symbol is CiConst konst)
-					ResolveConst(konst);
-			}
-			break;
-		case CiEnum enu:
-			enu.AcceptValues(this);
-			break;
-		default:
-			throw new NotImplementedException(container.ToString());
-		}
-	}
-
-	void ResolveTypes(CiClass klass)
-	{
-		this.CurrentScope = klass;
-		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
-			switch (symbol) {
-			case CiField field:
-				CiType type = ResolveType(field);
-				if (field.Value != null) {
-					field.Value = Resolve(field.Value);
-					if (!field.IsAssignableStorage()) {
-						if (type is CiArrayStorageType array)
-							type = array.GetElementType();
-						Coerce(field.Value, type);
-					}
-				}
-				break;
-			case CiMethod method:
-				if (method.TypeExpr == this.Program.System.VoidType)
-					method.Type = this.Program.System.VoidType;
-				else
-					ResolveType(method);
-				for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
-					ResolveType(param);
-					if (param.Value != null) {
-						param.Value = FoldConst(param.Value);
-						Coerce(param.Value, param.Type);
-					}
-				}
-				if (method.CallType == CiCallType.Override || method.CallType == CiCallType.Sealed) {
-					if (klass.Parent.TryLookup(method.Name) is CiMethod baseMethod) {
-						// TODO: check private
-						switch (baseMethod.CallType) {
-						case CiCallType.Abstract:
-						case CiCallType.Virtual:
-						case CiCallType.Override:
-							break;
-						default:
-							ReportError(method, "Base method is not abstract or virtual");
-							break;
-						}
-						// TODO: check parameter and return type
-						baseMethod.Calls.Add(method);
-					}
-					else
-						ReportError(method, "No method to override");
-				}
-				break;
-			default:
-				break;
-			}
-		}
 	}
 
 	void ResolveCode(CiClass klass)
