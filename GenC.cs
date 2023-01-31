@@ -1886,6 +1886,14 @@ public class GenC : GenCCpp
 			IncludeMath();
 			WriteCall("isinf", args[0]);
 			break;
+		case CiId.MathMaxDouble:
+			IncludeMath();
+			WriteCall("fmax", args[0], args[1]);
+			break;
+		case CiId.MathMinDouble:
+			IncludeMath();
+			WriteCall("fmin", args[0], args[1]);
+			break;
 		case CiId.MathTruncate:
 			IncludeMath();
 			WriteCall("trunc", args[0]);

@@ -1339,6 +1339,10 @@ namespace Foxoft.Ci
 		MathIsInfinity,
 		MathIsNaN,
 		MathLog2,
+		MathMaxInt,
+		MathMaxDouble,
+		MathMinInt,
+		MathMinDouble,
 		MathTruncate
 	}
 
@@ -2944,6 +2948,8 @@ namespace Foxoft.Ci
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Log", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathLog2, "Log2", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Log10", CiVar.New(this.DoubleType, "a")));
+			mathClass.Add(CiMethodGroup.New(CiMethod.NewStatic(this.IntType, CiId.MathMaxInt, "Max", CiVar.New(this.IntType, "a"), CiVar.New(this.IntType, "b")), CiMethod.NewStatic(this.FloatType, CiId.MathMaxDouble, "Max", CiVar.New(this.DoubleType, "a"), CiVar.New(this.DoubleType, "b"))));
+			mathClass.Add(CiMethodGroup.New(CiMethod.NewStatic(this.IntType, CiId.MathMinInt, "Min", CiVar.New(this.IntType, "a"), CiVar.New(this.IntType, "b")), CiMethod.NewStatic(this.FloatType, CiId.MathMinDouble, "Min", CiVar.New(this.DoubleType, "a"), CiVar.New(this.DoubleType, "b"))));
 			mathClass.Add(CiMember.New(this.FloatType, CiId.MathNaN, "NaN"));
 			mathClass.Add(CiMember.New(this.FloatType, CiId.MathNegativeInfinity, "NegativeInfinity"));
 			mathClass.Add(NewConstDouble("PI", 3.1415926535897931));

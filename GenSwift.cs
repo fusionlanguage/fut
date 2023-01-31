@@ -733,7 +733,12 @@ public class GenSwift : GenPySwift
 			WriteArgsInParentheses(method, args);
 			break;
 		case CiId.MathAbs:
-			WriteCall("abs", args[0]);
+		case CiId.MathMaxInt:
+		case CiId.MathMaxDouble:
+		case CiId.MathMinInt:
+		case CiId.MathMinDouble:
+			WriteCamelCase(method.Name);
+			WriteArgsInParentheses(method, args);
 			break;
 		case CiId.MathCeiling:
 			Include("Foundation");

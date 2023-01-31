@@ -825,6 +825,14 @@ public class GenPy : GenPySwift
 			Include("math");
 			WriteCall("math.isinf", args[0]);
 			break;
+		case CiId.MathMaxInt:
+		case CiId.MathMaxDouble:
+			WriteCall("max", args[0], args[1]);
+			break;
+		case CiId.MathMinInt:
+		case CiId.MathMinDouble:
+			WriteCall("min", args[0], args[1]);
+			break;
 		case CiId.MathTruncate:
 			Include("math");
 			WriteCall("math.trunc", args[0]);

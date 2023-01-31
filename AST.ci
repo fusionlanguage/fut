@@ -175,6 +175,10 @@ public enum CiId
 	MathIsInfinity,
 	MathIsNaN,
 	MathLog2,
+	MathMaxInt,
+	MathMaxDouble,
+	MathMinInt,
+	MathMinDouble,
 	MathTruncate
 }
 
@@ -1529,6 +1533,12 @@ public class CiSystem : CiScope
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Log", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathLog2, "Log2", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Log10", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethodGroup.New(
+				CiMethod.NewStatic(IntType, CiId.MathMaxInt, "Max", CiVar.New(IntType, "a"), CiVar.New(IntType, "b")),
+				CiMethod.NewStatic(FloatType, CiId.MathMaxDouble, "Max", CiVar.New(DoubleType, "a"), CiVar.New(DoubleType, "b"))));
+		mathClass.Add(CiMethodGroup.New(
+				CiMethod.NewStatic(IntType, CiId.MathMinInt, "Min", CiVar.New(IntType, "a"), CiVar.New(IntType, "b")),
+				CiMethod.NewStatic(FloatType, CiId.MathMinDouble, "Min", CiVar.New(DoubleType, "a"), CiVar.New(DoubleType, "b"))));
 		mathClass.Add(CiMember.New(FloatType, CiId.MathNaN, "NaN"));
 		mathClass.Add(CiMember.New(FloatType, CiId.MathNegativeInfinity, "NegativeInfinity"));
 		mathClass.Add(NewConstDouble("PI", Math.PI));

@@ -605,6 +605,10 @@ public class GenCs : GenTyped
 		case CiId.MathCeiling:
 		case CiId.MathFusedMultiplyAdd:
 		case CiId.MathLog2:
+		case CiId.MathMaxInt:
+		case CiId.MathMaxDouble:
+		case CiId.MathMinInt:
+		case CiId.MathMinDouble:
 		case CiId.MathTruncate:
 			Include("System");
 			Write("Math.");

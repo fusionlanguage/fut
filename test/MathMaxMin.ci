@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		return Math.Min(-5, 10) == -5 && Math.Max(-5, 10) == 10 //FAIL: c TODO
+			&& Math.Min(-3.0, 10.5) == -3 && Math.Max(-3.0, 10.5) == 10.5;
+	}
+}

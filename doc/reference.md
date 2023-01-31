@@ -173,6 +173,10 @@ and static methods:
 * `Math.Log(double a)`
 * `Math.Log10(double a)`
 * `Math.Log2(double a)`
+* `Math.Max(int a, int b)`
+* `Math.Max(double a, double b)`
+* `Math.Min(int a, int b)`
+* `Math.Min(double a, double b)`
 * `Math.Pow(double x, double y)`
 * `Math.Sin(double a)`
 * `Math.Sinh(double a)`

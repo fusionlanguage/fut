@@ -261,6 +261,18 @@ public class GenCl : GenC
 		case CiId.MathIsInfinity:
 			WriteCall("isinf", args[0]);
 			break;
+		case CiId.MathMaxInt:
+			WriteCall("max", args[0], args[1]);
+			break;
+		case CiId.MathMaxDouble:
+			WriteCall("fmax", args[0], args[1]);
+			break;
+		case CiId.MathMinInt:
+			WriteCall("min", args[0], args[1]);
+			break;
+		case CiId.MathMinDouble:
+			WriteCall("fmin", args[0], args[1]);
+			break;
 		case CiId.MathTruncate:
 			WriteCall("trunc", args[0]);
 			break;

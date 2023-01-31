@@ -15,6 +15,10 @@ double fabs(double x) { return __builtin_fabs(x); }
 float floor(float x) { return __builtin_floor(x); }
 double floor(double x) { return __builtin_floor(x); }
 double fma(double x, double y, double z) { return __builtin_fma(x, y, z); }
+float fmax(float x, float y) { return __builtin_fmax(x, y); }
+double fmax(double x, double y) { return __builtin_fmax(x, y); }
+float fmin(float x, float y) { return __builtin_fmin(x, y); }
+double fmin(double x, double y) { return __builtin_fmin(x, y); }
 bool isfinite(float x) { return __builtin_isfinite(x); }
 bool isinf(float x) { return __builtin_isinf(x); }
 bool isnan(float x) { return __builtin_isnan(x); }
@@ -22,6 +26,8 @@ bool isnan(double x) { return __builtin_isnan(x); }
 double log(double x) { return __builtin_log(x); }
 double log2(double x) { return __builtin_log2(x); }
 double log10(double x) { return __builtin_log10(x); }
+double max(int x, int y) { return x < y ? y : x; }
+double min(int x, int y) { return y < x ? y : x; }
 double pow(double x, double y) { return __builtin_pow(x, y); }
 double sin(double x) { return __builtin_sin(x); }
 double sinh(double x) { return __builtin_sinh(x); }

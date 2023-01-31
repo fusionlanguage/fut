@@ -1003,6 +1003,16 @@ public class GenCpp : GenCCpp
 			IncludeMath();
 			WriteCall("std::isinf", args[0]);
 			break;
+		case CiId.MathMaxInt:
+		case CiId.MathMaxDouble: // TODO: <cmath> fmax ?
+			Include("algorithm");
+			WriteCall("std::max", args[0], args[1]);
+			break;
+		case CiId.MathMinInt:
+		case CiId.MathMinDouble: // TODO: <cmath> fmin ?
+			Include("algorithm");
+			WriteCall("std::min", args[0], args[1]);
+			break;
 		case CiId.MathTruncate:
 			IncludeMath();
 			WriteCall("std::trunc", args[0]);
