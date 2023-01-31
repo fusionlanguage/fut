@@ -65,7 +65,7 @@ public abstract class CiSema : CiVisitor
 		ReportError(klass, $"Circular inheritance for class {klass.Name}");
 	}
 
-	protected static void TakePtr(CiExpr expr)
+	static void TakePtr(CiExpr expr)
 	{
 		if (expr.Type is CiArrayStorageType! arrayStg)
 			arrayStg.PtrTaken = true;
@@ -123,7 +123,7 @@ public abstract class CiSema : CiVisitor
 		}
 	}
 
-	protected static CiRangeType# Union(CiRangeType# left, CiRangeType# right)
+	static CiRangeType# Union(CiRangeType# left, CiRangeType# right)
 	{
 		if (right == null)
 			return left;
@@ -137,7 +137,7 @@ public abstract class CiSema : CiVisitor
 		return left;
 	}
 
-	protected CiType# GetIntegerType!(CiExpr left, CiExpr right)
+	CiType# GetIntegerType!(CiExpr left, CiExpr right)
 	{
 		CiType# type = this.Program.System.PromoteIntegerTypes(left.Type, right.Type);
 		Coerce(left, type);
@@ -145,7 +145,7 @@ public abstract class CiSema : CiVisitor
 		return type;
 	}
 
-	protected CiIntegerType# GetShiftType!(CiExpr left, CiExpr right)
+	CiIntegerType# GetShiftType!(CiExpr left, CiExpr right)
 	{
 		CiIntegerType# intType = this.Program.System.IntType;
 		Coerce(right, intType);
@@ -157,7 +157,7 @@ public abstract class CiSema : CiVisitor
 		return intType;
 	}
 
-	protected CiType# GetNumericType!(CiExpr left, CiExpr right)
+	CiType# GetNumericType!(CiExpr left, CiExpr right)
 	{
 		CiType# type = this.Program.System.PromoteNumericTypes(left.Type, right.Type);
 		Coerce(left, type);
@@ -172,7 +172,7 @@ public abstract class CiSema : CiVisitor
 		return -a;
 	}
 
-	protected static int SaturatedAdd(int a, int b)
+	static int SaturatedAdd(int a, int b)
 	{
 		int c = a + b;
 		if (c >= 0) {
@@ -184,14 +184,14 @@ public abstract class CiSema : CiVisitor
 		return c;
 	}
 
-	protected static int SaturatedSub(int a, int b)
+	static int SaturatedSub(int a, int b)
 	{
 		if (b == int.MinValue)
 			return a < 0 ? a ^ b : int.MaxValue;
 		return SaturatedAdd(a, -b);
 	}
 
-	protected static int SaturatedMul(int a, int b)
+	static int SaturatedMul(int a, int b)
 	{
 		if (a == 0 || b == 0)
 			return 0;
@@ -204,14 +204,14 @@ public abstract class CiSema : CiVisitor
 		return a * b;
 	}
 
-	protected static int SaturatedDiv(int a, int b)
+	static int SaturatedDiv(int a, int b)
 	{
 		if (a == int.MinValue && b == -1)
 			return int.MaxValue;
 		return a / b;
 	}
 
-	protected static int SaturatedShiftRight(int a, int b) => a >> (b >= 31 || b < 0 ? 31 : b);
+	static int SaturatedShiftRight(int a, int b) => a >> (b >= 31 || b < 0 ? 31 : b);
 
 	static CiRangeType# BitwiseUnsignedOp(CiRangeType left, CiToken op, CiRangeType right)
 	{
@@ -252,7 +252,7 @@ public abstract class CiSema : CiVisitor
 		return CiRangeType.New(min, max);
 	}
 
-	protected bool IsEnumOp!(CiExpr left, CiExpr right)
+	bool IsEnumOp!(CiExpr left, CiExpr right)
 	{
 		if (left.Type is CiEnum) {
 			if (left.Type.Id != CiId.BoolType && !(left.Type is CiEnumFlags))
@@ -263,7 +263,7 @@ public abstract class CiSema : CiVisitor
 		return false;
 	}
 
-	protected CiType# BitwiseOp!(CiExpr left, CiToken op, CiExpr right)
+	CiType# BitwiseOp!(CiExpr left, CiToken op, CiExpr right)
 	{
 		if (left.Type is CiRangeType# leftRange && right.Type is CiRangeType# rightRange) {
 			CiRangeType# range = null;
@@ -302,7 +302,7 @@ public abstract class CiSema : CiVisitor
 		return GetIntegerType(left, right);
 	}
 
-	protected static CiRangeType# NewRangeType(int a, int b, int c, int d)
+	static CiRangeType# NewRangeType(int a, int b, int c, int d)
 	{
 		if (a > b) {
 			int t = a;
@@ -317,7 +317,7 @@ public abstract class CiSema : CiVisitor
 		return CiRangeType.New(a <= c ? a : c, b >= d ? b : d);
 	}
 
-	protected CiLiteral# ToLiteralBool(CiExpr expr, bool value)
+	CiLiteral# ToLiteralBool(CiExpr expr, bool value)
 	{
 		CiLiteral# result = value ? new CiLiteralTrue() : new CiLiteralFalse();
 		result.Line = expr.Line;
@@ -345,7 +345,7 @@ public abstract class CiSema : CiVisitor
 		}
 	}
 
-	protected CiExpr# ResolveEquality(CiBinaryExpr expr, CiExpr# left, CiExpr# right)
+	CiExpr# ResolveEquality(CiBinaryExpr expr, CiExpr# left, CiExpr# right)
 	{
 		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {
 			if (leftRange.Min == leftRange.Max && leftRange.Min == rightRange.Min && leftRange.Min == rightRange.Max)
@@ -446,7 +446,7 @@ public abstract class CiSema : CiVisitor
 		}
 	}
 
-	protected CiInterpolatedString# Concatenate(CiInterpolatedString left, CiInterpolatedString right)
+	CiInterpolatedString# Concatenate(CiInterpolatedString left, CiInterpolatedString right)
 	{
 		CiInterpolatedString# result = new CiInterpolatedString { Line = left.Line, Type = this.Program.System.StringStorageType };
 		result.Parts.AddRange(left.Parts);
@@ -461,7 +461,7 @@ public abstract class CiSema : CiVisitor
 		return result;
 	}
 
-	protected CiInterpolatedString# ToInterpolatedString(CiExpr# expr)
+	CiInterpolatedString# ToInterpolatedString(CiExpr# expr)
 	{
 		if (expr is CiInterpolatedString# interpolated)
 			return interpolated;
@@ -491,7 +491,7 @@ public abstract class CiSema : CiVisitor
 		return expr;
 	}
 
-	protected void CheckComparison!(CiExpr left, CiExpr right)
+	void CheckComparison!(CiExpr left, CiExpr right)
 	{
 		CiType doubleType = this.Program.System.DoubleType;
 		Coerce(left, doubleType);
@@ -562,7 +562,278 @@ public abstract class CiSema : CiVisitor
 		}
 	}
 
-	protected abstract CiExpr# VisitBinaryExpr!(CiBinaryExpr# expr);
+	protected abstract CiExpr# ResolveIs(CiBinaryExpr expr, CiExpr left, CiExpr right);
+
+	CiExpr# VisitBinaryExpr!(CiBinaryExpr# expr)
+	{
+		CiExpr# left = Resolve(expr.Left);
+		CiExpr# right = Resolve(expr.Right);
+		CiType# type;
+
+		switch (expr.Op) {
+		case CiToken.LeftBracket:
+			if (!(left.Type is CiClassType klass))
+				return PoisonError(expr, "Cannot index this object");
+			switch (klass.Class.Id) {
+			case CiId.StringClass:
+				Coerce(right, this.Program.System.IntType);
+				if (left is CiLiteralString stringLiteral && right is CiLiteralLong indexLiteral) {
+					long i = indexLiteral.Value;
+					if (i >= 0 && i <= int.MaxValue) {
+						int c = stringLiteral.GetAsciiAt(i);
+						if (c >= 0)
+							return CiLiteralChar.New(c, expr.Line);
+					}
+				}
+				type = this.Program.System.CharType;
+				break;
+			case CiId.ArrayPtrClass:
+			case CiId.ArrayStorageClass:
+			case CiId.ListClass:
+				Coerce(right, this.Program.System.IntType);
+				type = klass.GetElementType();
+				break;
+			case CiId.DictionaryClass:
+			case CiId.SortedDictionaryClass:
+			case CiId.OrderedDictionaryClass:
+				Coerce(right, klass.GetKeyType());
+				type = klass.GetValueType();
+				break;
+			default:
+				return PoisonError(expr, "Cannot index this object");
+			}
+			break;
+
+		case CiToken.Plus:
+			if (left.Type is CiRangeType leftAdd && right.Type is CiRangeType rightAdd) {
+				type = CiRangeType.New(
+					SaturatedAdd(leftAdd.Min, rightAdd.Min),
+					SaturatedAdd(leftAdd.Max, rightAdd.Max));
+			}
+			else if (left.Type is CiStringType || right.Type is CiStringType) {
+				Coerce(left, this.Program.System.PrintableType);
+				Coerce(right, this.Program.System.PrintableType);
+				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
+					return this.Program.System.NewLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString(), expr.Line);
+				if (left is CiInterpolatedString || right is CiInterpolatedString)
+					return Concatenate(ToInterpolatedString(left), ToInterpolatedString(right));
+				type = this.Program.System.StringStorageType;
+			}
+			else
+				type = GetNumericType(left, right);
+			break;
+		case CiToken.Minus:
+			if (left.Type is CiRangeType leftSub && right.Type is CiRangeType rightSub) {
+				type = CiRangeType.New(
+					SaturatedSub(leftSub.Min, rightSub.Max),
+					SaturatedSub(leftSub.Max, rightSub.Min));
+			}
+			else
+				type = GetNumericType(left, right);
+			break;
+		case CiToken.Asterisk:
+			if (left.Type is CiRangeType leftMul && right.Type is CiRangeType rightMul) {
+				type = NewRangeType(
+					SaturatedMul(leftMul.Min, rightMul.Min),
+					SaturatedMul(leftMul.Min, rightMul.Max),
+					SaturatedMul(leftMul.Max, rightMul.Min),
+					SaturatedMul(leftMul.Max, rightMul.Max));
+			}
+			else
+				type = GetNumericType(left, right);
+			break;
+		case CiToken.Slash:
+			if (left.Type is CiRangeType leftDiv && right.Type is CiRangeType rightDiv) {
+				int denMin = rightDiv.Min;
+				if (denMin == 0)
+					denMin = 1;
+				int denMax = rightDiv.Max;
+				if (denMax == 0)
+					denMax = -1;
+				type = NewRangeType(
+					SaturatedDiv(leftDiv.Min, denMin),
+					SaturatedDiv(leftDiv.Min, denMax),
+					SaturatedDiv(leftDiv.Max, denMin),
+					SaturatedDiv(leftDiv.Max, denMax));
+			}
+			else
+				type = GetNumericType(left, right);
+			break;
+		case CiToken.Mod:
+			if (left.Type is CiRangeType leftMod && right.Type is CiRangeType rightMod) {
+				int den = ~Math.Min(rightMod.Min, -rightMod.Max); // max(abs(rightRange))-1
+				if (den < 0)
+					return PoisonError(expr, "Mod zero");
+				type = CiRangeType.New(
+					leftMod.Min >= 0 ? 0 : Math.Max(leftMod.Min, -den),
+					leftMod.Max < 0 ? 0 : Math.Min(leftMod.Max, den));
+			}
+			else
+				type = GetIntegerType(left, right);
+			break;
+
+		case CiToken.And:
+		case CiToken.Or:
+		case CiToken.Xor:
+			type = BitwiseOp(left, expr.Op, right);
+			break;
+
+		case CiToken.ShiftLeft:
+			if (left.Type is CiRangeType leftShl && right.Type is CiRangeType rightShl && leftShl.Min == leftShl.Max && rightShl.Min == rightShl.Max) {
+				// TODO: improve
+				int result = leftShl.Min << rightShl.Min;
+				type = CiRangeType.New(result, result);
+			}
+			else
+				type = GetShiftType(left, right);
+			break;
+		case CiToken.ShiftRight:
+			if (left.Type is CiRangeType leftShr && right.Type is CiRangeType rightShr) {
+				if (rightShr.Min < 0)
+					rightShr = CiRangeType.New(0, 32);
+				type = CiRangeType.New(
+					SaturatedShiftRight(leftShr.Min, leftShr.Min < 0 ? rightShr.Min : rightShr.Max),
+					SaturatedShiftRight(leftShr.Max, leftShr.Max < 0 ? rightShr.Max : rightShr.Min));
+			}
+			else
+				type = GetShiftType(left, right);
+			break;
+
+		case CiToken.Equal:
+		case CiToken.NotEqual:
+			return ResolveEquality(expr, left, right);
+		case CiToken.Less:
+			if (left.Type is CiRangeType leftLess && right.Type is CiRangeType rightLess) {
+				if (leftLess.Max < rightLess.Min)
+					return ToLiteralBool(expr, true);
+				if (leftLess.Min >= rightLess.Max)
+					return ToLiteralBool(expr, false);
+			}
+			else
+				CheckComparison(left, right);
+			type = this.Program.System.BoolType;
+			break;
+		case CiToken.LessOrEqual:
+			if (left.Type is CiRangeType leftLeq && right.Type is CiRangeType rightLeq) {
+				if (leftLeq.Max <= rightLeq.Min)
+					return ToLiteralBool(expr, true);
+				if (leftLeq.Min > rightLeq.Max)
+					return ToLiteralBool(expr, false);
+			}
+			else
+				CheckComparison(left, right);
+			type = this.Program.System.BoolType;
+			break;
+		case CiToken.Greater:
+			if (left.Type is CiRangeType leftGreater && right.Type is CiRangeType rightGreater) {
+				if (leftGreater.Min > rightGreater.Max)
+					return ToLiteralBool(expr, true);
+				if (leftGreater.Max <= rightGreater.Min)
+					return ToLiteralBool(expr, false);
+			}
+			else
+				CheckComparison(left, right);
+			type = this.Program.System.BoolType;
+			break;
+		case CiToken.GreaterOrEqual:
+			if (left.Type is CiRangeType leftGeq && right.Type is CiRangeType rightGeq) {
+				if (leftGeq.Min >= rightGeq.Max)
+					return ToLiteralBool(expr, true);
+				if (leftGeq.Max < rightGeq.Min)
+					return ToLiteralBool(expr, false);
+			}
+			else
+				CheckComparison(left, right);
+			type = this.Program.System.BoolType;
+			break;
+
+		case CiToken.CondAnd:
+			Coerce(left, this.Program.System.BoolType);
+			Coerce(right, this.Program.System.BoolType);
+			if (left is CiLiteralTrue)
+				return right;
+			if (left is CiLiteralFalse || right is CiLiteralTrue)
+				return left;
+			type = this.Program.System.BoolType;
+			break;
+		case CiToken.CondOr:
+			Coerce(left, this.Program.System.BoolType);
+			Coerce(right, this.Program.System.BoolType);
+			if (left is CiLiteralTrue || right is CiLiteralFalse)
+				return left;
+			if (left is CiLiteralFalse)
+				return right;
+			type = this.Program.System.BoolType;
+			break;
+
+		case CiToken.Assign:
+			CheckLValue(left);
+			Coerce(right, left.Type);
+			expr.Left = left;
+			expr.Right = right;
+			expr.Type = left.Type;
+			return expr;
+
+		case CiToken.AddAssign:
+			CheckLValue(left);
+			if (left.Type.Id == CiId.StringStorageType)
+				Coerce(right, this.Program.System.PrintableType);
+			else {
+				Coerce(left, this.Program.System.DoubleType);
+				Coerce(right, left.Type);
+			}
+			expr.Left = left;
+			expr.Right = right;
+			expr.Type = left.Type;
+			return expr;
+
+		case CiToken.SubAssign:
+		case CiToken.MulAssign:
+		case CiToken.DivAssign:
+			CheckLValue(left);
+			Coerce(left, this.Program.System.DoubleType);
+			Coerce(right, left.Type);
+			expr.Left = left;
+			expr.Right = right;
+			expr.Type = left.Type;
+			return expr;
+
+		case CiToken.ModAssign:
+		case CiToken.ShiftLeftAssign:
+		case CiToken.ShiftRightAssign:
+			CheckLValue(left);
+			Coerce(left, this.Program.System.IntType);
+			Coerce(right, this.Program.System.IntType);
+			expr.Left = left;
+			expr.Right = right;
+			expr.Type = left.Type;
+			return expr;
+
+		case CiToken.AndAssign:
+		case CiToken.OrAssign:
+		case CiToken.XorAssign:
+			CheckLValue(left);
+			if (!IsEnumOp(left, right)) {
+				Coerce(left, this.Program.System.IntType);
+				Coerce(right, this.Program.System.IntType);
+			}
+			expr.Left = left;
+			expr.Right = right;
+			expr.Type = left.Type;
+			return expr;
+
+		case CiToken.Is:
+			return ResolveIs(expr, left, right);
+
+		case CiToken.Range:
+			return PoisonError(expr, "Range within an expression");
+		default:
+			assert false;
+		}
+		if (type is CiRangeType range && range.Min == range.Max)
+			return ToLiteralLong(expr, range.Min);
+		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = type };
+	}
 
 	CiType# TryGetPtr(CiType# type)
 	{
