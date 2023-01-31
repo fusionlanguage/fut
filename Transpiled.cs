@@ -4270,41 +4270,37 @@ namespace Foxoft.Ci
 
 		protected static int SaturatedShiftRight(int a, int b) => a >> (b >= 31 || b < 0 ? 31 : b);
 
-		protected static CiRangeType UnsignedAnd(CiRangeType left, CiRangeType right)
+		protected static CiRangeType BitwiseUnsignedOp(CiRangeType left, CiToken op, CiRangeType right)
 		{
 			int leftVariableBits = left.GetVariableBits();
 			int rightVariableBits = right.GetVariableBits();
-			int min = left.Min & right.Min & ~CiRangeType.GetMask(~left.Min & ~right.Min & (leftVariableBits | rightVariableBits));
-			int max = (left.Max | leftVariableBits) & (right.Max | rightVariableBits);
-			if (max > left.Max)
-				max = left.Max;
-			if (max > right.Max)
-				max = right.Max;
-			if (min > max)
-				return CiRangeType.New(max, min);
-			return CiRangeType.New(min, max);
-		}
-
-		protected static CiRangeType UnsignedOr(CiRangeType left, CiRangeType right)
-		{
-			int leftVariableBits = left.GetVariableBits();
-			int rightVariableBits = right.GetVariableBits();
-			int min = (left.Min & ~leftVariableBits) | (right.Min & ~rightVariableBits);
-			int max = left.Max | right.Max | CiRangeType.GetMask(left.Max & right.Max & CiRangeType.GetMask(leftVariableBits | rightVariableBits));
-			if (min < left.Min)
-				min = left.Min;
-			if (min < right.Min)
-				min = right.Min;
-			if (min > max)
-				return CiRangeType.New(max, min);
-			return CiRangeType.New(min, max);
-		}
-
-		protected static CiRangeType UnsignedXor(CiRangeType left, CiRangeType right)
-		{
-			int variableBits = left.GetVariableBits() | right.GetVariableBits();
-			int min = (left.Min ^ right.Min) & ~variableBits;
-			int max = (left.Max ^ right.Max) | variableBits;
+			int min;
+			int max;
+			switch (op) {
+			case CiToken.And:
+				min = left.Min & right.Min & ~CiRangeType.GetMask(~left.Min & ~right.Min & (leftVariableBits | rightVariableBits));
+				max = (left.Max | leftVariableBits) & (right.Max | rightVariableBits);
+				if (max > left.Max)
+					max = left.Max;
+				if (max > right.Max)
+					max = right.Max;
+				break;
+			case CiToken.Or:
+				min = (left.Min & ~leftVariableBits) | (right.Min & ~rightVariableBits);
+				max = left.Max | right.Max | CiRangeType.GetMask(left.Max & right.Max & CiRangeType.GetMask(leftVariableBits | rightVariableBits));
+				if (min < left.Min)
+					min = left.Min;
+				if (min < right.Min)
+					min = right.Min;
+				break;
+			case CiToken.Xor:
+				int variableBits = leftVariableBits | rightVariableBits;
+				min = (left.Min ^ right.Min) & ~variableBits;
+				max = (left.Max ^ right.Max) | variableBits;
+				break;
+			default:
+				throw new NotImplementedException();
+			}
 			if (min > max)
 				return CiRangeType.New(max, min);
 			return CiRangeType.New(min, max);

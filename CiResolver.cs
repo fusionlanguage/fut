@@ -59,8 +59,6 @@ public class CiResolver : CiSema
 		return a * b;
 	}
 
-	delegate CiRangeType UnsignedOp(CiRangeType left, CiRangeType right);
-
 	static void SplitBySign(CiRangeType source, out CiRangeType negative, out CiRangeType positive)
 	{
 		if (source.Min >= 0) {
@@ -77,7 +75,7 @@ public class CiResolver : CiSema
 		}
 	}
 
-	CiType BitwiseOp(CiExpr left, CiExpr right, UnsignedOp op)
+	CiType BitwiseOp(CiExpr left, CiToken op, CiExpr right)
 	{
 		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {
 			SplitBySign(leftRange, out CiRangeType leftNegative, out CiRangeType leftPositive);
@@ -85,15 +83,15 @@ public class CiResolver : CiSema
 			CiRangeType range = null;
 			if (leftNegative != null) {
 				if (rightNegative != null)
-					range = op(leftNegative, rightNegative);
+					range = BitwiseUnsignedOp(leftNegative, op, rightNegative);
 				if (rightPositive != null)
-					range = Union(op(leftNegative, rightPositive), range);
+					range = Union(BitwiseUnsignedOp(leftNegative, op, rightPositive), range);
 			}
 			if (leftPositive != null) {
 				if (rightNegative != null)
-					range = Union(op(leftPositive, rightNegative), range);
+					range = Union(BitwiseUnsignedOp(leftPositive, op, rightNegative), range);
 				if (rightPositive != null)
-					range = Union(op(leftPositive, rightPositive), range);
+					range = Union(BitwiseUnsignedOp(leftPositive, op, rightPositive), range);
 			}
 			return range;
 		}
@@ -457,13 +455,9 @@ public class CiResolver : CiSema
 			break;
 
 		case CiToken.And:
-			type = BitwiseOp(left, right, UnsignedAnd);
-			break;
 		case CiToken.Or:
-			type = BitwiseOp(left, right, UnsignedOr);
-			break;
 		case CiToken.Xor:
-			type = BitwiseOp(left, right, UnsignedXor);
+			type = BitwiseOp(left, expr.Op, right);
 			break;
 
 		case CiToken.ShiftLeft:
