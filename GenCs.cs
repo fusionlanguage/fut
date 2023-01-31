@@ -601,6 +601,7 @@ public class GenCs : GenTyped
 			Write("].Value");
 			break;
 		case CiId.MathMethod:
+		case CiId.MathAbs:
 		case CiId.MathCeiling:
 		case CiId.MathFusedMultiplyAdd:
 		case CiId.MathLog2:

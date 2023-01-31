@@ -168,6 +168,7 @@ public enum CiId
 	MatchFindRegex,
 	MatchGetCapture,
 	MathMethod,
+	MathAbs,
 	MathCeiling,
 	MathFusedMultiplyAdd,
 	MathIsFinite,
@@ -1507,6 +1508,9 @@ public class CiSystem : CiScope
 
 		CiFloatingType# floatIntType = new CiFloatingType { Id = CiId.FloatIntType, Name = "float" };
 		CiClass# mathClass = CiClass.New(CiCallType.Static, CiId.None, "Math");
+		mathClass.Add(CiMethodGroup.New(
+				CiMethod.NewStatic(IntType, CiId.MathAbs, "Abs", CiVar.New(IntType, "a")),
+				CiMethod.NewStatic(FloatType, CiId.MathAbs, "Abs", CiVar.New(DoubleType, "a"))));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Acos", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Asin", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Atan", CiVar.New(DoubleType, "a")));

@@ -247,6 +247,11 @@ public class GenCl : GenC
 			WriteLowercase(method.Name);
 			WriteArgsInParentheses(method, args);
 			break;
+		case CiId.MathAbs:
+			if (args[0].Type is CiFloatingType)
+				WriteChar('f');
+			WriteCall("abs", args[0]);
+			break;
 		case CiId.MathCeiling:
 			WriteCall("ceil", args[0]);
 			break;

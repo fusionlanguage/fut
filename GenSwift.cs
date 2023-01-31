@@ -732,6 +732,9 @@ public class GenSwift : GenPySwift
 			WriteCamelCase(method.Name);
 			WriteArgsInParentheses(method, args);
 			break;
+		case CiId.MathAbs:
+			WriteCall("abs", args[0]);
+			break;
 		case CiId.MathCeiling:
 			Include("Foundation");
 			WriteCall("ceil", args[0]);

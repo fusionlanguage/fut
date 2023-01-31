@@ -1851,24 +1851,43 @@ public class GenC : GenCCpp
 		case CiId.MathIsFinite:
 		case CiId.MathIsNaN:
 		case CiId.MathLog2:
-			Include("math.h");
+			IncludeMath();
 			WriteLowercase(method.Name);
 			WriteArgsInParentheses(method, args);
 			break;
+		case CiId.MathAbs:
+			switch (args[0].Type.Id) {
+			case CiId.LongType:
+				WriteCall("llabs", args[0]);
+				break;
+			case CiId.FloatType:
+				IncludeMath();
+				WriteCall("fabsf", args[0]);
+				break;
+			case CiId.FloatIntType:
+			case CiId.DoubleType:
+				IncludeMath();
+				WriteCall("fabs", args[0]);
+				break;
+			default:
+				WriteCall("abs", args[0]);
+				break;
+			}
+			break;
 		case CiId.MathCeiling:
-			Include("math.h");
+			IncludeMath();
 			WriteCall("ceil", args[0]);
 			break;
 		case CiId.MathFusedMultiplyAdd:
-			Include("math.h");
+			IncludeMath();
 			WriteCall("fma", args[0], args[1], args[2]);
 			break;
 		case CiId.MathIsInfinity:
-			Include("math.h");
+			IncludeMath();
 			WriteCall("isinf", args[0]);
 			break;
 		case CiId.MathTruncate:
-			Include("math.h");
+			IncludeMath();
 			WriteCall("trunc", args[0]);
 			break;
 		default:

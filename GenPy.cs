@@ -810,6 +810,9 @@ public class GenPy : GenPySwift
 			WriteLowercase(method.Name);
 			WriteArgsInParentheses(method, args);
 			break;
+		case CiId.MathAbs:
+			WriteCall("abs", args[0]);
+			break;
 		case CiId.MathCeiling:
 			Include("math");
 			WriteCall("math.ceil", args[0]);

@@ -1332,6 +1332,7 @@ namespace Foxoft.Ci
 		MatchFindRegex,
 		MatchGetCapture,
 		MathMethod,
+		MathAbs,
 		MathCeiling,
 		MathFusedMultiplyAdd,
 		MathIsFinite,
@@ -2924,6 +2925,7 @@ namespace Foxoft.Ci
 			Add(matchClass);
 			CiFloatingType floatIntType = new CiFloatingType { Id = CiId.FloatIntType, Name = "float" };
 			CiClass mathClass = CiClass.New(CiCallType.Static, CiId.None, "Math");
+			mathClass.Add(CiMethodGroup.New(CiMethod.NewStatic(this.IntType, CiId.MathAbs, "Abs", CiVar.New(this.IntType, "a")), CiMethod.NewStatic(this.FloatType, CiId.MathAbs, "Abs", CiVar.New(this.DoubleType, "a"))));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Acos", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Asin", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Atan", CiVar.New(this.DoubleType, "a")));
@@ -4286,6 +4288,19 @@ namespace Foxoft.Ci
 			if (b == -2147483648)
 				return a < 0 ? a ^ b : 2147483647;
 			return SaturatedAdd(a, -b);
+		}
+
+		protected static int SaturatedMul(int a, int b)
+		{
+			if (a == 0 || b == 0)
+				return 0;
+			if (a == -2147483648)
+				return b >> 31 ^ a;
+			if (b == -2147483648)
+				return a >> 31 ^ b;
+			if (2147483647 / Math.Abs(a) < Math.Abs(b))
+				return (a ^ b) >> 31 ^ 2147483647;
+			return a * b;
 		}
 
 		protected static int SaturatedDiv(int a, int b)

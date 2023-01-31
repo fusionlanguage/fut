@@ -154,6 +154,8 @@ There's a built-in `Math` class with the following constants:
 
 and static methods:
 
+* `Math.Abs(int a)`
+* `Math.Abs(double a)`
 * `Math.Acos(double a)`
 * `Math.Asin(double a)`
 * `Math.Atan(double a)`

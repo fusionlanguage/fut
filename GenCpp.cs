@@ -982,28 +982,29 @@ public class GenCpp : GenCCpp
 			WriteCall("str", args[0]);
 			break;
 		case CiId.MathMethod:
+		case CiId.MathAbs:
 		case CiId.MathIsFinite:
 		case CiId.MathIsNaN:
 		case CiId.MathLog2:
-			Include("cmath");
+			IncludeMath();
 			Write("std::");
 			WriteLowercase(method.Name);
 			WriteArgsInParentheses(method, args);
 			break;
 		case CiId.MathCeiling:
-			Include("cmath");
+			IncludeMath();
 			WriteCall("std::ceil", args[0]);
 			break;
 		case CiId.MathFusedMultiplyAdd:
-			Include("cmath");
+			IncludeMath();
 			WriteCall("std::fma", args[0], args[1], args[2]);
 			break;
 		case CiId.MathIsInfinity:
-			Include("cmath");
+			IncludeMath();
 			WriteCall("std::isinf", args[0]);
 			break;
 		case CiId.MathTruncate:
-			Include("cmath");
+			IncludeMath();
 			WriteCall("std::trunc", args[0]);
 			break;
 		default:

@@ -1,5 +1,6 @@
 #include <cstdio>
 
+int abs(int x) { return __builtin_abs(x); }
 double acos(double x) { return __builtin_acos(x); }
 double asin(double x) { return __builtin_asin(x); }
 double atan(double x) { return __builtin_atan(x); }
@@ -9,6 +10,8 @@ double ceil(double x) { return __builtin_ceil(x); }
 double cos(double x) { return __builtin_cos(x); }
 double cosh(double x) { return __builtin_cosh(x); }
 double exp(double x) { return __builtin_exp(x); }
+float fabs(float x) { return __builtin_fabs(x); }
+double fabs(double x) { return __builtin_fabs(x); }
 float floor(float x) { return __builtin_floor(x); }
 double floor(double x) { return __builtin_floor(x); }
 double fma(double x, double y, double z) { return __builtin_fma(x, y, z); }

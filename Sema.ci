@@ -191,6 +191,19 @@ public abstract class CiSema : CiVisitor
 		return SaturatedAdd(a, -b);
 	}
 
+	protected static int SaturatedMul(int a, int b)
+	{
+		if (a == 0 || b == 0)
+			return 0;
+		if (a == int.MinValue)
+			return b >> 31 ^ a;
+		if (b == int.MinValue)
+			return a >> 31 ^ b;
+		if (int.MaxValue / Math.Abs(a) < Math.Abs(b))
+			return (a ^ b) >> 31 ^ int.MaxValue;
+		return a * b;
+	}
+
 	protected static int SaturatedDiv(int a, int b)
 	{
 		if (a == int.MinValue && b == -1)

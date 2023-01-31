@@ -456,6 +456,7 @@ public class GenJsNoModule : GenBase
 		case CiId.HashSetClear:
 		case CiId.OrderedDictionaryClear:
 		case CiId.MathMethod:
+		case CiId.MathAbs:
 		case CiId.MathLog2:
 			if (obj == null)
 				WriteLocalName(method, CiPriority.Primary);

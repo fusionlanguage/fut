@@ -46,19 +46,6 @@ public class CiResolver : CiSema
 		return Array.Empty<byte>();
 	}
 
-	static int SaturatedMul(int a, int b)
-	{
-		if (a == 0 || b == 0)
-			return 0;
-		if (a == int.MinValue)
-			return b >> 31 ^ a;
-		if (b == int.MinValue)
-			return a >> 31 ^ b;
-		if (int.MaxValue / Math.Abs(a) < Math.Abs(b))
-			return (a ^ b) >> 31 ^ int.MaxValue;
-		return a * b;
-	}
-
 	protected override void VisitVar(CiVar expr)
 	{
 		CiType type = ResolveType(expr);
