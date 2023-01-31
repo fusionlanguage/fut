@@ -1243,7 +1243,7 @@ public class CiDynamicPtrType : CiReadWriteClassType
 
 public class CiArrayStorageType : CiStorageType
 {
-	internal CiExpr LengthExpr;
+	internal CiExpr# LengthExpr;
 	internal int Length;
 	internal bool PtrTaken = false;
 

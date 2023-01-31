@@ -96,6 +96,33 @@ public abstract class CiSema : CiVisitor
 			items[i] = Resolve(items[i]);
 	}
 
+	protected CiExpr# ResolveNew!(CiPrefixExpr# expr)
+	{
+		if (expr.Type != null)
+			return expr;
+		if (expr.Inner is CiBinaryExpr binaryNew && binaryNew.Op == CiToken.LeftBrace) {
+			if (!(ToType(binaryNew.Left, true) is CiClassType klass) || klass is CiReadWriteClassType)
+				return PoisonError(expr, "Invalid argument to new");
+			assert binaryNew.Right is CiAggregateInitializer# init;
+			ResolveObjectLiteral(klass, init);
+			expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = klass.Class };
+			expr.Inner = init;
+			return expr;
+		}
+		switch (ToType(expr.Inner, true)) {
+		case CiArrayStorageType array:
+			expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = this.Program.System.ArrayPtrClass, TypeArg0 = array.GetElementType() };
+			expr.Inner = array.LengthExpr;
+			return expr;
+		case CiStorageType klass:
+			expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = klass.Class };
+			expr.Inner = null;
+			return expr;
+		default:
+			return PoisonError(expr, "Invalid argument to new");
+		}
+	}
+
 	protected static CiRangeType# Union(CiRangeType# left, CiRangeType# right)
 	{
 		if (right == null)
@@ -723,7 +750,7 @@ public abstract class CiSema : CiVisitor
 			if (expr is CiBinaryExpr binary && binary.Op == CiToken.LeftBracket) {
 				if (binary.Right != null) {
 					ExpectNoPtrModifier(expr, ptrModifier);
-					CiExpr lengthExpr = Resolve(binary.Right);
+					CiExpr# lengthExpr = Resolve(binary.Right);
 					CiArrayStorageType# arrayStorage = new CiArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = outerArray, LengthExpr = lengthExpr, Length = 0 };
 					if (Coerce(lengthExpr, this.Program.System.IntType) && (!dynamic || binary.Left.IsIndexing())) {
 						if (lengthExpr is CiLiteralLong literal) {

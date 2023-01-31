@@ -4193,6 +4193,33 @@ namespace Foxoft.Ci
 				items[i] = Resolve(items[i]);
 		}
 
+		protected CiExpr ResolveNew(CiPrefixExpr expr)
+		{
+			if (expr.Type != null)
+				return expr;
+			if (expr.Inner is CiBinaryExpr binaryNew && binaryNew.Op == CiToken.LeftBrace) {
+				if (!(ToType(binaryNew.Left, true) is CiClassType klass) || klass is CiReadWriteClassType)
+					return PoisonError(expr, "Invalid argument to new");
+				CiAggregateInitializer init = (CiAggregateInitializer) binaryNew.Right;
+				ResolveObjectLiteral(klass, init);
+				expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = klass.Class };
+				expr.Inner = init;
+				return expr;
+			}
+			switch (ToType(expr.Inner, true)) {
+			case CiArrayStorageType array:
+				expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = this.Program.System.ArrayPtrClass, TypeArg0 = array.GetElementType() };
+				expr.Inner = array.LengthExpr;
+				return expr;
+			case CiStorageType klass:
+				expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = klass.Class };
+				expr.Inner = null;
+				return expr;
+			default:
+				return PoisonError(expr, "Invalid argument to new");
+			}
+		}
+
 		protected static CiRangeType Union(CiRangeType left, CiRangeType right)
 		{
 			if (right == null)
