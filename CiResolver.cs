@@ -45,24 +45,6 @@ public class CiResolver : CiSema
 		return Array.Empty<byte>();
 	}
 
-	protected override void VisitVar(CiVar expr)
-	{
-		CiType type = ResolveType(expr);
-		if (expr.Value != null) {
-			if (type is CiStorageType storage && expr.Value is CiAggregateInitializer init)
-				ResolveObjectLiteral(storage, init);
-			else {
-				expr.Value = Resolve(expr.Value);
-				if (!expr.IsAssignableStorage()) {
-					if (type is CiArrayStorageType array)
-						type = array.GetElementType();
-					Coerce(expr.Value, type);
-				}
-			}
-		}
-		this.CurrentScope.Add(expr);
-	}
-
 	protected override CiExpr VisitInterpolatedString(CiInterpolatedString expr)
 	{
 		int partsCount = 0;

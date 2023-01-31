@@ -4431,7 +4431,7 @@ namespace Foxoft.Ci
 
 		protected CiLiteralDouble ToLiteralDouble(CiExpr expr, double value) => new CiLiteralDouble { Line = expr.Line, Type = this.Program.System.DoubleType, Value = value };
 
-		protected void ResolveObjectLiteral(CiClassType klass, CiAggregateInitializer init)
+		void ResolveObjectLiteral(CiClassType klass, CiAggregateInitializer init)
 		{
 			foreach (CiExpr item in init.Items) {
 				CiBinaryExpr field = (CiBinaryExpr) item;
@@ -4969,7 +4969,23 @@ namespace Foxoft.Ci
 
 		protected abstract CiExpr VisitCallExpr(CiCallExpr expr);
 
-		protected abstract void VisitVar(CiVar expr);
+		void VisitVar(CiVar expr)
+		{
+			CiType type = ResolveType(expr);
+			if (expr.Value != null) {
+				if (type is CiStorageType storage && expr.Value is CiAggregateInitializer init)
+					ResolveObjectLiteral(storage, init);
+				else {
+					expr.Value = Resolve(expr.Value);
+					if (!expr.IsAssignableStorage()) {
+						if (type is CiArrayStorageType array)
+							type = array.GetElementType();
+						Coerce(expr.Value, type);
+					}
+				}
+			}
+			this.CurrentScope.Add(expr);
+		}
 
 		protected CiExpr Resolve(CiExpr expr)
 		{
