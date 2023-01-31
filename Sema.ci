@@ -173,7 +173,7 @@ public abstract class CiSema : CiVisitor
 
 	protected static int SaturatedShiftRight(int a, int b) => a >> (b >= 31 || b < 0 ? 31 : b);
 
-	protected static CiRangeType# BitwiseUnsignedOp(CiRangeType left, CiToken op, CiRangeType right)
+	static CiRangeType# BitwiseUnsignedOp(CiRangeType left, CiToken op, CiRangeType right)
 	{
 		int leftVariableBits = left.GetVariableBits();
 		int rightVariableBits = right.GetVariableBits();
@@ -212,6 +212,56 @@ public abstract class CiSema : CiVisitor
 		return CiRangeType.New(min, max);
 	}
 
+	protected bool IsEnumOp!(CiExpr left, CiExpr right)
+	{
+		if (left.Type is CiEnum) {
+			if (left.Type.Id != CiId.BoolType && !(left.Type is CiEnumFlags))
+				ReportError(left, $"Define flags enumeration as: enum* {left.Type}");
+			Coerce(right, left.Type);
+			return true;
+		}
+		return false;
+	}
+
+	protected CiType# BitwiseOp!(CiExpr left, CiToken op, CiExpr right)
+	{
+		if (left.Type is CiRangeType# leftRange && right.Type is CiRangeType# rightRange) {
+			CiRangeType# range = null;
+			CiRangeType# rightNegative;
+			CiRangeType# rightPositive;
+			if (rightRange.Min >= 0) {
+				rightNegative = null;
+				rightPositive = rightRange;
+			}
+			else if (rightRange.Max < 0) {
+				rightNegative = rightRange;
+				rightPositive = null;
+			}
+			else {
+				rightNegative = CiRangeType.New(rightRange.Min, -1);
+				rightPositive = CiRangeType.New(0, rightRange.Max);
+			}
+			if (leftRange.Min < 0) {
+				CiRangeType leftNegative = leftRange.Max < 0 ? leftRange : CiRangeType.New(leftRange.Min, -1);
+				if (rightNegative != null)
+					range = BitwiseUnsignedOp(leftNegative, op, rightNegative);
+				if (rightPositive != null)
+					range = Union(BitwiseUnsignedOp(leftNegative, op, rightPositive), range);
+			}
+			if (leftRange.Max >= 0) {
+				CiRangeType leftPositive = leftRange.Min >= 0 ? leftRange : CiRangeType.New(0, leftRange.Max);
+				if (rightNegative != null)
+					range = Union(BitwiseUnsignedOp(leftPositive, op, rightNegative), range);
+				if (rightPositive != null)
+					range = Union(BitwiseUnsignedOp(leftPositive, op, rightPositive), range);
+			}
+			return range;
+		}
+		if (IsEnumOp(left, right))
+			return left.Type;
+		return GetIntegerType(left, right);
+	}
+
 	protected static CiRangeType# NewRangeType(int a, int b, int c, int d)
 	{
 		if (a > b) {
@@ -225,17 +275,6 @@ public abstract class CiSema : CiVisitor
 			d = t;
 		}
 		return CiRangeType.New(a <= c ? a : c, b >= d ? b : d);
-	}
-
-	protected bool IsEnumOp!(CiExpr left, CiExpr right)
-	{
-		if (left.Type is CiEnum) {
-			if (left.Type.Id != CiId.BoolType && !(left.Type is CiEnumFlags))
-				ReportError(left, $"Define flags enumeration as: enum* {left.Type}");
-			Coerce(right, left.Type);
-			return true;
-		}
-		return false;
 	}
 
 	protected CiLiteral# ToLiteralBool(CiExpr expr, bool value)

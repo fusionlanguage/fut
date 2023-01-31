@@ -59,47 +59,6 @@ public class CiResolver : CiSema
 		return a * b;
 	}
 
-	static void SplitBySign(CiRangeType source, out CiRangeType negative, out CiRangeType positive)
-	{
-		if (source.Min >= 0) {
-			negative = null;
-			positive = source;
-		}
-		else if (source.Max < 0) {
-			negative = source;
-			positive = null;
-		}
-		else {
-			negative = CiRangeType.New(source.Min, -1);
-			positive = CiRangeType.New(0, source.Max);
-		}
-	}
-
-	CiType BitwiseOp(CiExpr left, CiToken op, CiExpr right)
-	{
-		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {
-			SplitBySign(leftRange, out CiRangeType leftNegative, out CiRangeType leftPositive);
-			SplitBySign(rightRange, out CiRangeType rightNegative, out CiRangeType rightPositive);
-			CiRangeType range = null;
-			if (leftNegative != null) {
-				if (rightNegative != null)
-					range = BitwiseUnsignedOp(leftNegative, op, rightNegative);
-				if (rightPositive != null)
-					range = Union(BitwiseUnsignedOp(leftNegative, op, rightPositive), range);
-			}
-			if (leftPositive != null) {
-				if (rightNegative != null)
-					range = Union(BitwiseUnsignedOp(leftPositive, op, rightNegative), range);
-				if (rightPositive != null)
-					range = Union(BitwiseUnsignedOp(leftPositive, op, rightPositive), range);
-			}
-			return range;
-		}
-		if (IsEnumOp(left, right))
-			return left.Type;
-		return GetIntegerType(left, right);
-	}
-
 	protected override void VisitVar(CiVar expr)
 	{
 		CiType type = ResolveType(expr);
