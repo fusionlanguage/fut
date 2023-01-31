@@ -319,8 +319,6 @@ public class CiResolver : CiSema
 		CiExpr left = Resolve(expr.Left);
 		CiExpr right = Resolve(expr.Right);
 		CiType type;
-		CiRangeType leftRange = left.Type as CiRangeType;
-		CiRangeType rightRange = right.Type as CiRangeType;
 
 		switch (expr.Op) {
 		case CiToken.LeftBracket:
@@ -357,10 +355,10 @@ public class CiResolver : CiSema
 			break;
 
 		case CiToken.Plus:
-			if (leftRange != null && rightRange != null) {
+			if (left.Type is CiRangeType leftAdd && right.Type is CiRangeType rightAdd) {
 				type = CiRangeType.New(
-					SaturatedAdd(leftRange.Min, rightRange.Min),
-					SaturatedAdd(leftRange.Max, rightRange.Max));
+					SaturatedAdd(leftAdd.Min, rightAdd.Min),
+					SaturatedAdd(leftAdd.Max, rightAdd.Max));
 			}
 			else if (left.Type is CiStringType || right.Type is CiStringType) {
 				Coerce(left, this.Program.System.PrintableType);
@@ -375,50 +373,50 @@ public class CiResolver : CiSema
 				type = GetNumericType(left, right);
 			break;
 		case CiToken.Minus:
-			if (leftRange != null && rightRange != null) {
+			if (left.Type is CiRangeType leftSub && right.Type is CiRangeType rightSub) {
 				type = CiRangeType.New(
-					SaturatedSub(leftRange.Min, rightRange.Max),
-					SaturatedSub(leftRange.Max, rightRange.Min));
+					SaturatedSub(leftSub.Min, rightSub.Max),
+					SaturatedSub(leftSub.Max, rightSub.Min));
 			}
 			else
 				type = GetNumericType(left, right);
 			break;
 		case CiToken.Asterisk:
-			if (leftRange != null && rightRange != null) {
+			if (left.Type is CiRangeType leftMul && right.Type is CiRangeType rightMul) {
 				type = NewRangeType(
-					SaturatedMul(leftRange.Min, rightRange.Min),
-					SaturatedMul(leftRange.Min, rightRange.Max),
-					SaturatedMul(leftRange.Max, rightRange.Min),
-					SaturatedMul(leftRange.Max, rightRange.Max));
+					SaturatedMul(leftMul.Min, rightMul.Min),
+					SaturatedMul(leftMul.Min, rightMul.Max),
+					SaturatedMul(leftMul.Max, rightMul.Min),
+					SaturatedMul(leftMul.Max, rightMul.Max));
 			}
 			else
 				type = GetNumericType(left, right);
 			break;
 		case CiToken.Slash:
-			if (leftRange != null && rightRange != null) {
-				int denMin = rightRange.Min;
+			if (left.Type is CiRangeType leftDiv && right.Type is CiRangeType rightDiv) {
+				int denMin = rightDiv.Min;
 				if (denMin == 0)
 					denMin = 1;
-				int denMax = rightRange.Max;
+				int denMax = rightDiv.Max;
 				if (denMax == 0)
 					denMax = -1;
 				type = NewRangeType(
-					SaturatedDiv(leftRange.Min, denMin),
-					SaturatedDiv(leftRange.Min, denMax),
-					SaturatedDiv(leftRange.Max, denMin),
-					SaturatedDiv(leftRange.Max, denMax));
+					SaturatedDiv(leftDiv.Min, denMin),
+					SaturatedDiv(leftDiv.Min, denMax),
+					SaturatedDiv(leftDiv.Max, denMin),
+					SaturatedDiv(leftDiv.Max, denMax));
 			}
 			else
 				type = GetNumericType(left, right);
 			break;
 		case CiToken.Mod:
-			if (leftRange != null && rightRange != null) {
-				int den = ~Math.Min(rightRange.Min, -rightRange.Max); // max(abs(rightRange))-1
+			if (left.Type is CiRangeType leftMod && right.Type is CiRangeType rightMod) {
+				int den = ~Math.Min(rightMod.Min, -rightMod.Max); // max(abs(rightRange))-1
 				if (den < 0)
 					return PoisonError(expr, "Mod zero");
 				type = CiRangeType.New(
-					leftRange.Min >= 0 ? 0 : Math.Max(leftRange.Min, -den),
-					leftRange.Max < 0 ? 0 : Math.Min(leftRange.Max, den));
+					leftMod.Min >= 0 ? 0 : Math.Max(leftMod.Min, -den),
+					leftMod.Max < 0 ? 0 : Math.Min(leftMod.Max, den));
 			}
 			else
 				type = GetIntegerType(left, right);
@@ -431,21 +429,21 @@ public class CiResolver : CiSema
 			break;
 
 		case CiToken.ShiftLeft:
-			if (leftRange != null && rightRange != null && leftRange.Min == leftRange.Max && rightRange.Min == rightRange.Max) {
+			if (left.Type is CiRangeType leftShl && right.Type is CiRangeType rightShl && leftShl.Min == leftShl.Max && rightShl.Min == rightShl.Max) {
 				// TODO: improve
-				int result = leftRange.Min << rightRange.Min;
+				int result = leftShl.Min << rightShl.Min;
 				type = CiRangeType.New(result, result);
 			}
 			else
 				type = GetShiftType(left, right);
 			break;
 		case CiToken.ShiftRight:
-			if (leftRange != null && rightRange != null) {
-				if (rightRange.Min < 0)
-					rightRange = CiRangeType.New(0, 32);
+			if (left.Type is CiRangeType leftShr && right.Type is CiRangeType rightShr) {
+				if (rightShr.Min < 0)
+					rightShr = CiRangeType.New(0, 32);
 				type = CiRangeType.New(
-					SaturatedShiftRight(leftRange.Min, leftRange.Min < 0 ? rightRange.Min : rightRange.Max),
-					SaturatedShiftRight(leftRange.Max, leftRange.Max < 0 ? rightRange.Max : rightRange.Min));
+					SaturatedShiftRight(leftShr.Min, leftShr.Min < 0 ? rightShr.Min : rightShr.Max),
+					SaturatedShiftRight(leftShr.Max, leftShr.Max < 0 ? rightShr.Max : rightShr.Min));
 			}
 			else
 				type = GetShiftType(left, right);
@@ -455,10 +453,10 @@ public class CiResolver : CiSema
 		case CiToken.NotEqual:
 			return ResolveEquality(expr, left, right);
 		case CiToken.Less:
-			if (leftRange != null && rightRange != null) {
-				if (leftRange.Max < rightRange.Min)
+			if (left.Type is CiRangeType leftLess && right.Type is CiRangeType rightLess) {
+				if (leftLess.Max < rightLess.Min)
 					return ToLiteralBool(expr, true);
-				if (leftRange.Min >= rightRange.Max)
+				if (leftLess.Min >= rightLess.Max)
 					return ToLiteralBool(expr, false);
 			}
 			else
@@ -466,10 +464,10 @@ public class CiResolver : CiSema
 			type = this.Program.System.BoolType;
 			break;
 		case CiToken.LessOrEqual:
-			if (leftRange != null && rightRange != null) {
-				if (leftRange.Max <= rightRange.Min)
+			if (left.Type is CiRangeType leftLeq && right.Type is CiRangeType rightLeq) {
+				if (leftLeq.Max <= rightLeq.Min)
 					return ToLiteralBool(expr, true);
-				if (leftRange.Min > rightRange.Max)
+				if (leftLeq.Min > rightLeq.Max)
 					return ToLiteralBool(expr, false);
 			}
 			else
@@ -477,10 +475,10 @@ public class CiResolver : CiSema
 			type = this.Program.System.BoolType;
 			break;
 		case CiToken.Greater:
-			if (leftRange != null && rightRange != null) {
-				if (leftRange.Min > rightRange.Max)
+			if (left.Type is CiRangeType leftGreater && right.Type is CiRangeType rightGreater) {
+				if (leftGreater.Min > rightGreater.Max)
 					return ToLiteralBool(expr, true);
-				if (leftRange.Max <= rightRange.Min)
+				if (leftGreater.Max <= rightGreater.Min)
 					return ToLiteralBool(expr, false);
 			}
 			else
@@ -488,10 +486,10 @@ public class CiResolver : CiSema
 			type = this.Program.System.BoolType;
 			break;
 		case CiToken.GreaterOrEqual:
-			if (leftRange != null && rightRange != null) {
-				if (leftRange.Min >= rightRange.Max)
+			if (left.Type is CiRangeType leftGeq && right.Type is CiRangeType rightGeq) {
+				if (leftGeq.Min >= rightGeq.Max)
 					return ToLiteralBool(expr, true);
-				if (leftRange.Max < rightRange.Min)
+				if (leftGeq.Max < rightGeq.Min)
 					return ToLiteralBool(expr, false);
 			}
 			else

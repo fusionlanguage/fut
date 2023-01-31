@@ -1164,7 +1164,7 @@ public class CiClassType : CiType
 	internal CiType# TypeArg1;
 	public CiType# GetElementType() => this.TypeArg0;
 	public CiType GetKeyType() => this.TypeArg0;
-	public CiType GetValueType() => this.TypeArg1;
+	public CiType# GetValueType() => this.TypeArg1;
 	public override bool IsNullable() => true;
 	public override bool IsArray() => this.Class.Id == CiId.ArrayPtrClass;
 	public override CiType GetBaseType() => IsArray() ? GetElementType().GetBaseType() : this;
