@@ -303,6 +303,40 @@ public class CiResolver : CiSema
 		return new CiPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
 	}
 
+	CiExpr ResolveIs(CiBinaryExpr expr, CiExpr left, CiExpr right)
+	{
+		if (!(left.Type is CiClassType leftPtr) || left.Type is CiStorageType)
+			return PoisonError(expr, "Left hand side of the 'is' operator must be an object reference");
+		CiClass klass;
+		switch (right) {
+		case CiSymbolReference symbol:
+			if (symbol.Symbol is CiClass klass2)
+				expr.Right = klass = klass2;
+			else
+				return PoisonError(expr, "Right hand side of the 'is' operator must be a class name");
+			break;
+		case CiVar def:
+			if (!(def.Type is CiClassType rightPtr))
+				return PoisonError(expr, "Right hand side of the 'is' operator must be an object reference definition");
+			if (rightPtr is CiReadWriteClassType
+			 && !(leftPtr is CiDynamicPtrType)
+			 && (rightPtr is CiDynamicPtrType || !(leftPtr is CiReadWriteClassType)))
+				return PoisonError(expr, $"{leftPtr} cannot be casted to {rightPtr}");
+			// TODO: outside assert NotSupported(expr, "'is' operator", "c", "cpp", "js", "py", "swift", "ts", "cl");
+			klass = rightPtr.Class;
+			break;
+		default:
+			return PoisonError(expr, "Right hand side of the 'is' operator must be a class name");
+		}
+		if (klass.IsSameOrBaseOf(leftPtr.Class))
+			return PoisonError(expr, $"{leftPtr} is {klass.Name}, the 'is' operator would always return 'true'");
+		if (!leftPtr.Class.IsSameOrBaseOf(klass))
+			return PoisonError(expr, $"{leftPtr} is not base class of {klass.Name}, the 'is' operator would always return 'false'");
+		expr.Left = left;
+		expr.Type = this.Program.System.BoolType;
+		return expr;
+	}
+
 	protected override CiExpr VisitBinaryExpr(CiBinaryExpr expr)
 	{
 		CiExpr left = Resolve(expr.Left);
@@ -564,36 +598,7 @@ public class CiResolver : CiSema
 			return expr;
 
 		case CiToken.Is:
-			if (!(left.Type is CiClassType leftPtr) || left.Type is CiStorageType)
-				return PoisonError(expr, "Left hand side of the 'is' operator must be an object reference");
-			CiClass klass2;
-			switch (right) {
-			case CiSymbolReference symbol:
-				if (symbol.Symbol is CiClass klass3)
-					expr.Right = klass2 = klass3;
-				else
-					return PoisonError(expr, "Right hand side of the 'is' operator must be a class name");
-				break;
-			case CiVar def:
-				if (!(def.Type is CiClassType rightPtr))
-					return PoisonError(expr, "Right hand side of the 'is' operator must be an object reference definition");
-				if (rightPtr is CiReadWriteClassType
-				 && !(leftPtr is CiDynamicPtrType)
-				 && (rightPtr is CiDynamicPtrType || !(leftPtr is CiReadWriteClassType)))
-					return PoisonError(expr, $"{leftPtr} cannot be casted to {rightPtr}");
-				// TODO: outside assert NotSupported(expr, "'is' operator", "c", "cpp", "js", "py", "swift", "ts", "cl");
-				klass2 = rightPtr.Class;
-				break;
-			default:
-				return PoisonError(expr, "Right hand side of the 'is' operator must be a class name");
-			}
-			if (klass2.IsSameOrBaseOf(leftPtr.Class))
-				return PoisonError(expr, $"{leftPtr} is {klass2.Name}, the 'is' operator would always return 'true'");
-			if (!leftPtr.Class.IsSameOrBaseOf(klass2))
-				return PoisonError(expr, $"{leftPtr} is not base class of {klass2.Name}, the 'is' operator would always return 'false'");
-			expr.Left = left;
-			expr.Type = this.Program.System.BoolType;
-			return expr;
+			return ResolveIs(expr, left, right);
 
 		case CiToken.Range:
 			return PoisonError(expr, "Range within an expression");
