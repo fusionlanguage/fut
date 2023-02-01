@@ -27,6 +27,8 @@ public static class Test
 	static bool IsCat(Animal a)
 	{
 		switch (a) { //FAIL: c cl
+		case null:
+			return false;
 		case Cow _: //FAIL: java 17 --enable-preview
 		case Dog _:
 			if (a == null)

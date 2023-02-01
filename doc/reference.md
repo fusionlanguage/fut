@@ -1189,6 +1189,8 @@ Object references are matched by their _runtime type_:
 static double CalculateArea(Shape s)
 {
     switch (s) {
+    case null:
+        return 0;
     case Square sqr:
         return sqr.Size * sqr.Size;
     case Rectangle rect:

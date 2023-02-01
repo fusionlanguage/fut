@@ -5377,7 +5377,9 @@ namespace Foxoft.Ci
 						CiExpr value = kase.Values[i];
 						if (value is CiBinaryExpr when1 && when1.Op == CiToken.When)
 							value = when1.Left;
-						if (!(value is CiVar def) || def.Value != null)
+						if (value is CiLiteralNull) {
+						}
+						else if (!(value is CiVar def) || def.Value != null)
 							ReportError(kase.Values[i], "Expected 'case Type name'");
 						else if (!(ResolveType(def) is CiClassType casePtr) || casePtr is CiStorageType)
 							ReportError(def, "'case' with non-reference type");

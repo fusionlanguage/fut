@@ -1430,11 +1430,21 @@ public class GenCpp : GenCCpp
 			int gotoId = GetSwitchGoto(statement);
 			string op = "if (";
 			foreach (CiCase kase in statement.Cases) {
-				foreach (CiVar def in kase.Values) {
+				foreach (CiExpr value in kase.Values) {
 					Write(op);
-					if (def.Name != "_")
-						WriteType(def.Type, true);
-					WriteIsVar(statement.Value, def); // FIXME: side effect in every if
+					switch (value) {
+					case CiVar def:
+						if (def.Name != "_")
+							WriteType(def.Type, true);
+						WriteIsVar(statement.Value, def); // FIXME: side effect in every if
+						break;
+					case CiLiteralNull _:
+						statement.Value.Accept(this, CiPriority.Equality);
+						Write(" == nullptr");
+						break;
+					default:
+						throw new NotImplementedException(value.GetType().Name);
+					}
 					op = " || ";
 				}
 				WriteChar(')');

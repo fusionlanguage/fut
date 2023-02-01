@@ -935,9 +935,8 @@ public class GenJava : GenTyped
 
 	bool WriteSwitchCaseVar(CiExpr expr)
 	{
-		CiVar def = (CiVar) expr;
-		def.Accept(this, CiPriority.Argument);
-		if (def.Name == "_") {
+		expr.Accept(this, CiPriority.Argument);
+		if (expr is CiVar def && def.Name == "_") {
 			// javac: "as of release 9, '_' is a keyword, and may not be used as an identifier"
 			VisitLiteralLong(this.SwitchCaseDiscards++);
 			return true;

@@ -984,14 +984,23 @@ public class GenJsNoModule : GenBase
 		string op = "if (";
 		foreach (CiCase kase in statement.Cases) {
 			CiVar caseVar = null;
-			foreach (CiVar def in kase.Values) { // TODO: when
+			foreach (CiExpr value in kase.Values) { // TODO: when
 				Write(op);
 				statement.Value.Accept(this, CiPriority.Rel); // FIXME: side effect in every if
-				Write(" instanceof "); 
-				Write(def.Type.Name);
+				switch (value) {
+				case CiVar def:
+					Write(" instanceof "); 
+					Write(def.Type.Name);
+					if (def.Name != "_")
+						caseVar = def;
+					break;
+				case CiLiteralNull _:
+					Write(" == null");
+					break;
+				default:
+					throw new NotImplementedException(value.GetType().Name);
+				}
 				op = " || ";
-				if (def.Name != "_")
-					caseVar = def;
 			}
 			Write(") ");
 			OpenBlock();
