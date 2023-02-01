@@ -308,8 +308,9 @@ public class CiResolver : CiSema
 			method = m;
 			break;
 		case CiMethodGroup group:
-			method = group.Methods.FirstOrDefault(m => CanCall(symbol.Left, m, arguments))
-				?? /* pick first for the error message */ group.Methods[0];
+			method = group.Methods[0];
+			if (!CanCall(symbol.Left, method, arguments))
+				method = group.Methods[1];
 			break;
 		default:
 			return PoisonError(symbol, "Expected a method");
@@ -359,12 +360,12 @@ public class CiResolver : CiSema
 			i = 0;
 			for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter())
 				this.CurrentPureArguments.Add(param, i < arguments.Count ? arguments[i++] : param.Value);
-			CiLiteral literal = Resolve(ret.Value) as CiLiteral;
+			CiExpr result = Resolve(ret.Value);
 			for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter())
 				this.CurrentPureArguments.Remove(param);
 			this.CurrentPureMethods.Remove(method);
-			if (literal != null)
-				return literal;
+			if (result is CiLiteral)
+				return result;
 		}
 
 		if (this.CurrentMethod != null)
