@@ -744,6 +744,10 @@ public class GenSwift : GenPySwift
 			Include("Foundation");
 			WriteCall("ceil", args[0]);
 			break;
+		case CiId.MathClamp:
+			Write("min(max(");
+			WriteClampAsMinMax(args);
+			break;
 		case CiId.MathFusedMultiplyAdd:
 			Include("Foundation");
 			WriteCall("fma", args[0], args[1], args[2]);

@@ -692,6 +692,16 @@ public abstract class GenBase : CiExprVisitor
 		WriteCall(method, arg0, arg1);
 	}
 
+	protected void WriteClampAsMinMax(List<CiExpr> args)
+	{
+		args[0].Accept(this, CiPriority.Argument);
+		Write(", ");
+		args[1].Accept(this, CiPriority.Argument);
+		Write("), ");
+		args[2].Accept(this, CiPriority.Argument);
+		WriteChar(')');
+	}
+
 	protected abstract void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent);
 
 	protected virtual void WriteNewArray(CiArrayStorageType array)

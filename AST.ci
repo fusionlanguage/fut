@@ -170,6 +170,7 @@ public enum CiId
 	MathMethod,
 	MathAbs,
 	MathCeiling,
+	MathClamp,
 	MathFusedMultiplyAdd,
 	MathIsFinite,
 	MathIsInfinity,
@@ -1522,6 +1523,9 @@ public class CiSystem : CiScope
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Atan2", CiVar.New(DoubleType, "y"), CiVar.New(DoubleType, "x")));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Cbrt", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethod.NewStatic(floatIntType, CiId.MathCeiling, "Ceiling", CiVar.New(DoubleType, "a")));
+		mathClass.Add(CiMethodGroup.New(
+				CiMethod.NewStatic(IntType, CiId.MathClamp, "Clamp", CiVar.New(LongType, "value"), CiVar.New(LongType, "min"), CiVar.New(LongType, "max")),
+				CiMethod.NewStatic(FloatType, CiId.MathClamp, "Clamp", CiVar.New(DoubleType, "value"), CiVar.New(DoubleType, "min"), CiVar.New(DoubleType, "max"))));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Cos", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Cosh", CiVar.New(DoubleType, "a")));
 		mathClass.Add(NewConstDouble("E", Math.E));

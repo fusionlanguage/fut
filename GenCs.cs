@@ -603,6 +603,7 @@ public class GenCs : GenTyped
 		case CiId.MathMethod:
 		case CiId.MathAbs:
 		case CiId.MathCeiling:
+		case CiId.MathClamp:
 		case CiId.MathFusedMultiplyAdd:
 		case CiId.MathLog2:
 		case CiId.MathMaxInt:

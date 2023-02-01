@@ -996,6 +996,10 @@ public class GenCpp : GenCCpp
 			IncludeMath();
 			WriteCall("std::ceil", args[0]);
 			break;
+		case CiId.MathClamp:
+			Include("algorithm");
+			WriteCall("std::clamp", args[0], args[1], args[2]);
+			break;
 		case CiId.MathFusedMultiplyAdd:
 			IncludeMath();
 			WriteCall("std::fma", args[0], args[1], args[2]);

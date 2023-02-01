@@ -41,6 +41,10 @@ double sqrt(double x) { return __builtin_sqrt(x); }
 double tan(double x) { return __builtin_tan(x); }
 double tanh(double x) { return __builtin_tanh(x); }
 double trunc(double x) { return __builtin_trunc(x); }
+int clamp(int value, int lo, int hi) { return min(max(value, lo), hi); }
+long clamp(long value, long lo, long hi) { return min(max(value, lo), hi); }
+float clamp(float value, float lo, float hi) { return fmin(fmax(value, lo), hi); }
+double clamp(double value, double lo, double hi) { return fmin(fmax(value, lo), hi); }
 
 extern "C" bool Test_Run();
 

@@ -1334,6 +1334,7 @@ namespace Foxoft.Ci
 		MathMethod,
 		MathAbs,
 		MathCeiling,
+		MathClamp,
 		MathFusedMultiplyAdd,
 		MathIsFinite,
 		MathIsInfinity,
@@ -2937,6 +2938,7 @@ namespace Foxoft.Ci
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Atan2", CiVar.New(this.DoubleType, "y"), CiVar.New(this.DoubleType, "x")));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Cbrt", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(floatIntType, CiId.MathCeiling, "Ceiling", CiVar.New(this.DoubleType, "a")));
+			mathClass.Add(CiMethodGroup.New(CiMethod.NewStatic(this.IntType, CiId.MathClamp, "Clamp", CiVar.New(this.LongType, "value"), CiVar.New(this.LongType, "min"), CiVar.New(this.LongType, "max")), CiMethod.NewStatic(this.FloatType, CiId.MathClamp, "Clamp", CiVar.New(this.DoubleType, "value"), CiVar.New(this.DoubleType, "min"), CiVar.New(this.DoubleType, "max"))));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Cos", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Cosh", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(NewConstDouble("E", 2.7182818284590451));

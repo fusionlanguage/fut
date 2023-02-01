@@ -737,6 +737,10 @@ public class GenJava : GenTyped
 		case CiId.MathCeiling:
 			WriteCall("Math.ceil", args[0]);
 			break;
+		case CiId.MathClamp:
+			Write("Math.min(Math.max(");
+			WriteClampAsMinMax(args);
+			break;
 		case CiId.MathFusedMultiplyAdd:
 			WriteCall("Math.fma", args[0], args[1], args[2]);
 			break;

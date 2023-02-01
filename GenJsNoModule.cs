@@ -732,6 +732,10 @@ public class GenJsNoModule : GenBase
 		case CiId.MathCeiling:
 			WriteCall("Math.ceil", args[0]);
 			break;
+		case CiId.MathClamp:
+			Write("Math.min(Math.max(");
+			WriteClampAsMinMax(args);
+			break;
 		case CiId.MathFusedMultiplyAdd:
 			if (parent > CiPriority.Add)
 				WriteChar('(');

@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		return Math.Clamp(5, 0, 255) == 5 && Math.Clamp(-5, 0, 255) == 0 && Math.Clamp(1000, 0, 255) == 255 //FAIL: c TODO
+			&& Math.Clamp(0.25, 0.0, 1.0) == 0.25 && Math.Clamp(-5.0, 0.0, 1.0) == 0.0 && Math.Clamp(1000.0, 0.0, 1.0) == 1.0;
+	}
+}

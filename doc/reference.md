@@ -163,6 +163,9 @@ and static methods:
 * `Math.Atan2(double y, double x)`
 * `Math.Cbrt(double a)`
 * `Math.Ceiling(double a)`
+* `Math.Clamp(int value, int min, int max)`
+* `Math.Clamp(long value, long min, long max)`
+* `Math.Clamp(double value, double min, double max)`
 * `Math.Cos(double a)`
 * `Math.Cosh(double a)`
 * `Math.Exp(double a)`

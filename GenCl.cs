@@ -232,6 +232,7 @@ public class GenCl : GenC
 			Write("[_i]");
 			break;
 		case CiId.MathMethod:
+		case CiId.MathClamp:
 		case CiId.MathIsFinite:
 		case CiId.MathIsNaN:
 		case CiId.MathLog2:
