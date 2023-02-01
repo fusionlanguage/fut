@@ -73,11 +73,7 @@ public class GenC : GenCCpp
 
 	public override void VisitLiteralNull() => Write("NULL");
 
-	protected virtual void WritePrintfLongPrefix(CiInterpolatedPart part)
-	{
-		if (part.Argument.Type.Id == CiId.LongType)
-			WriteChar('j');
-	}
+	protected virtual void WritePrintfLongPrefix() => WriteChar('j');
 
 	protected override void WritePrintfWidth(CiInterpolatedPart part)
 	{
@@ -86,7 +82,8 @@ public class GenC : GenCCpp
 			Trace.Assert(part.Precision < 0);
 			Write(".*");
 		}
-		WritePrintfLongPrefix(part);
+		if (part.Argument.Type.Id == CiId.LongType)
+			WritePrintfLongPrefix();
 	}
 
 	protected override void WriteInterpolatedStringArg(CiExpr expr)
@@ -1356,13 +1353,13 @@ public class GenC : GenCCpp
 			WriteChar('0');
 	}
 
-	protected void WritePrintfNotInterpolated(List<CiExpr> args, string longPrefix, bool newLine)
+	protected void WritePrintfNotInterpolated(List<CiExpr> args, bool newLine)
 	{
 		Write("\"%");
 		switch (args[0].Type) {
 		case CiIntegerType intType:
 			if (intType.Id == CiId.LongType)
-				Write(longPrefix);
+				WritePrintfLongPrefix();
 			WriteChar('d');
 			break;
 		case CiFloatingType _:
@@ -1391,7 +1388,7 @@ public class GenC : GenCCpp
 		}
 		else if (args[0].Type is CiNumericType) {
 			Write(error ? "fprintf(stderr, " : "printf(");
-			WritePrintfNotInterpolated(args, "ll", newLine);
+			WritePrintfNotInterpolated(args, newLine);
 		}
 		else if (!newLine) {
 			Write("fputs(");

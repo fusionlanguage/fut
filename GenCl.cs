@@ -87,9 +87,7 @@ public class GenCl : GenC
 		}
 	}
 
-	protected override void WritePrintfLongPrefix(CiInterpolatedPart part)
-	{
-	}
+	protected override void WritePrintfLongPrefix() => WriteChar('l');
 
 	public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
@@ -160,7 +158,7 @@ public class GenCl : GenC
 		else if (args[0] is CiInterpolatedString interpolated)
 			WritePrintf(interpolated, newLine);
 		else
-			WritePrintfNotInterpolated(args, "l", newLine);
+			WritePrintfNotInterpolated(args, newLine);
 	}
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
