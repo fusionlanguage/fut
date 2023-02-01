@@ -249,7 +249,7 @@ public abstract class GenTyped : GenBase
 		WriteTypeAndName(def);
 		Write(" = ");
 		WriteStaticCast(def.Type, expr.Left);
-		WriteLine(';');
+		WriteCharLine(';');
 	}
 }
 

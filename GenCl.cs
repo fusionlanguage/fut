@@ -280,7 +280,7 @@ public class GenCl : GenC
 	protected override void WriteSwitchCaseBody(List<CiStatement> statements)
 	{
 		if (statements.All(statement => statement is CiAssert))
-			WriteLine(';');
+			WriteCharLine(';');
 		else
 			base.WriteSwitchCaseBody(statements);
 	}
@@ -304,7 +304,7 @@ public class GenCl : GenC
 			WriteLine("for (size_t i = 0; str1[i] == str2[i]; i++) {");
 			WriteLine("\tif (str1[i] == '\\0')");
 			WriteLine("\t\treturn true;");
-			WriteLine('}');
+			WriteCharLine('}');
 			WriteLine("return false;");
 			CloseBlock();
 		}
@@ -315,7 +315,7 @@ public class GenCl : GenC
 			WriteLine("for (int i = 0; str2[i] != '\\0'; i++) {");
 			WriteLine("\tif (str1[i] != str2[i])");
 			WriteLine("\t\treturn false;");
-			WriteLine('}');
+			WriteCharLine('}');
 			WriteLine("return true;");
 			CloseBlock();
 		}
@@ -326,7 +326,7 @@ public class GenCl : GenC
 			WriteLine("for (int i = 0; str[i] != '\\0'; i++) {");
 			WriteLine("\tif (mem[i] != str[i])");
 			WriteLine("\t\treturn false;");
-			WriteLine('}');
+			WriteCharLine('}');
 			WriteLine("return true;");
 			CloseBlock();
 		}

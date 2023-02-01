@@ -302,7 +302,7 @@ public class GenJsNoModule : GenBase
 			WriteArrayElement(def, nesting);
 			Write(" = ");
 			WriteNewArray(innerArray.GetElementType(), innerArray.LengthExpr, CiPriority.Argument);
-			WriteLine(';');
+			WriteCharLine(';');
 			array = innerArray;
 		}
 		if (array.GetElementType() is CiStorageType klass) {
@@ -310,7 +310,7 @@ public class GenJsNoModule : GenBase
 			WriteArrayElement(def, nesting);
 			Write(" = ");
 			WriteNew(klass, CiPriority.Argument);
-			WriteLine(';');
+			WriteCharLine(';');
 		}
 		while (--nesting >= 0)
 			CloseBlock();
@@ -628,7 +628,7 @@ public class GenJsNoModule : GenBase
 		case CiId.SortedDictionaryClear:
 			Write("for (const key in ");
 			obj.Accept(this, CiPriority.Argument);
-			WriteLine(')');
+			WriteCharLine(')');
 			Write("\tdelete ");
 			obj.Accept(this, CiPriority.Primary); // FIXME: side effect
 			Write("[key];");
@@ -794,7 +794,7 @@ public class GenJsNoModule : GenBase
 	void WriteBoolAndOrAssign(CiBinaryExpr expr, CiPriority parent)
 	{
 		expr.Right.Accept(this, parent);
-		WriteLine(')');
+		WriteCharLine(')');
 		WriteChar('\t');
 		expr.Left.Accept(this, CiPriority.Assign);
 	}
@@ -890,7 +890,7 @@ public class GenJsNoModule : GenBase
 		Write(" = ");
 		value.Accept(this, CiPriority.Argument);
 		WriteAsType(def);
-		WriteLine(';');
+		WriteCharLine(';');
 	}
 
 	protected override void WriteAssertCast(CiBinaryExpr expr) => WriteVarCast((CiVar) expr.Right, expr.Left);
@@ -920,7 +920,7 @@ public class GenJsNoModule : GenBase
 			if (label >= 0) {
 				Write("break ciswitch");
 				VisitLiteralLong(label);
-				WriteLine(';');
+				WriteCharLine(';');
 				return;
 			}
 		}
@@ -1042,7 +1042,7 @@ public class GenJsNoModule : GenBase
 	{
 		Write("throw ");
 		statement.Message.Accept(this, CiPriority.Argument);
-		WriteLine(';');
+		WriteCharLine(';');
 	}
 
 	protected virtual void StartContainerType(CiContainerType container)
@@ -1054,7 +1054,7 @@ public class GenJsNoModule : GenBase
 	public override void VisitEnumValue(CiConst konst, CiConst previous)
 	{
 		if (previous != null)
-			WriteLine(',');
+			WriteCharLine(',');
 		WriteDoc(konst.Documentation);
 		WriteUppercaseWithUnderscores(konst.Name);
 		Write(" : ");
@@ -1082,7 +1082,7 @@ public class GenJsNoModule : GenBase
 			WriteName(konst);
 			Write(" = ");
 			konst.Value.Accept(this, CiPriority.Argument);
-			WriteLine(';');
+			WriteCharLine(';');
 		}
 	}
 
@@ -1090,7 +1090,7 @@ public class GenJsNoModule : GenBase
 	{
 		WriteDoc(field.Documentation);
 		base.WriteVar(field);
-		WriteLine(';');
+		WriteCharLine(';');
 	}
 
 	protected override void WriteMethod(CiMethod method)

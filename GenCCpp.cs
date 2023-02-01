@@ -231,7 +231,7 @@ public abstract class GenCCpp : GenTyped
 			if (gotoId >= 0) {
 				Write("goto ciafterswitch");
 				VisitLiteralLong(gotoId);
-				WriteLine(';');
+				WriteCharLine(';');
 				return;
 			}
 		}

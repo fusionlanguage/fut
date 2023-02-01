@@ -341,7 +341,7 @@ public class GenCs : GenTyped
 			WriteArrayElement(def, nesting);
 			Write(" = ");
 			WriteNewArray(innerArray.GetElementType(), innerArray.LengthExpr, CiPriority.Argument);
-			WriteLine(';');
+			WriteCharLine(';');
 			array = innerArray;
 		}
 		if (array.GetElementType() is CiStorageType klass) {
@@ -349,7 +349,7 @@ public class GenCs : GenTyped
 			WriteArrayElement(def, nesting);
 			Write(" = ");
 			WriteNew(klass, CiPriority.Argument);
-			WriteLine(';');
+			WriteCharLine(';');
 		}
 		while (--nesting >= 0)
 			CloseBlock();
@@ -796,7 +796,7 @@ public class GenCs : GenTyped
 		WriteTypeAndName(konst);
 		Write(" = ");
 		WriteCoercedExpr(konst.Type, konst.Value);
-		WriteLine(';');
+		WriteCharLine(';');
 	}
 
 	protected override void WriteField(CiField field)
@@ -807,7 +807,7 @@ public class GenCs : GenTyped
 		if (field.Type.IsFinal() && !field.IsAssignableStorage())
 			Write("readonly ");
 		WriteVar(field);
-		WriteLine(';');
+		WriteCharLine(';');
 	}
 
 	protected override void WriteParameterDoc(CiVar param, bool first)
@@ -836,7 +836,7 @@ public class GenCs : GenTyped
 		if (method.Body is CiReturn ret) {
 			Write(" => ");
 			WriteCoerced(method.Type, ret.Value, CiPriority.Argument);
-			WriteLine(';');
+			WriteCharLine(';');
 		}
 		else
 			WriteBody(method);

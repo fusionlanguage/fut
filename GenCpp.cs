@@ -1269,7 +1269,7 @@ public class GenCpp : GenCCpp
 		WriteTypeAndName(konst);
 		Write(" = ");
 		konst.Value.Accept(this, CiPriority.Argument);
-		WriteLine(';');
+		WriteCharLine(';');
 	}
 
 	public override void VisitForeach(CiForeach statement)
@@ -1471,13 +1471,13 @@ public class GenCpp : GenCCpp
 		WriteLine();
 		Write("namespace ");
 		WriteLine(this.Namespace);
-		WriteLine('{');
+		WriteCharLine('{');
 	}
 
 	void CloseNamespace()
 	{
 		if (this.Namespace != null)
-			WriteLine('}');
+			WriteCharLine('}');
 	}
 
 	protected override void WriteEnum(CiEnum enu)
@@ -1496,7 +1496,7 @@ public class GenCpp : GenCCpp
 			this.HasEnumFlags = true;
 			Write("CI_ENUM_FLAG_OPERATORS(");
 			Write(enu.Name);
-			WriteLine(')');
+			WriteCharLine(')');
 		}
 	}
 
@@ -1525,7 +1525,7 @@ public class GenCpp : GenCCpp
 	{
 		WriteDoc(field.Documentation);
 		WriteVar(field);
-		WriteLine(';');
+		WriteCharLine(';');
 	}
 
 	void WriteParametersAndConst(CiMethod method, bool defaultArguments)
@@ -1543,7 +1543,7 @@ public class GenCpp : GenCCpp
 			return;
 
 		Write(visibilityKeyword);
-		WriteLine(':');
+		WriteCharLine(':');
 		this.Indent++;
 
 		if (constructor) {
@@ -1555,7 +1555,7 @@ public class GenCpp : GenCCpp
 				Write(" = delete");
 			else if (!NeedsConstructor(klass))
 				Write(" = default");
-			WriteLine(';');
+			WriteCharLine(';');
 		}
 
 		if (destructor) {
@@ -1603,7 +1603,7 @@ public class GenCpp : GenCCpp
 				default:
 					break;
 				}
-				WriteLine(';');
+				WriteCharLine(';');
 				break;
 			default:
 				throw new NotImplementedException(member.Type.ToString());
@@ -1679,7 +1679,7 @@ public class GenCpp : GenCCpp
 				WriteBytes(resources[name]);
 				Write(" }");
 			}
-			WriteLine(';');
+			WriteCharLine(';');
 		}
 		CloseBlock();
 		CloseBlock();
@@ -1702,7 +1702,7 @@ public class GenCpp : GenCCpp
 			else {
 				Write("class ");
 				Write(type.Name);
-				WriteLine(';');
+				WriteCharLine(';');
 			}
 		}
 		foreach (CiClass klass in program.Classes)
@@ -1764,7 +1764,7 @@ public class GenCpp : GenCCpp
 			WriteLine("\tresult.append(s, i, j - i);");
 			WriteLine("\tresult.append(newValue);");
 			WriteLine("\ti = j + oldValue.size();");
-			WriteLine('}');
+			WriteCharLine('}');
 			CloseBlock();
 		}
 		CloseStringWriter();

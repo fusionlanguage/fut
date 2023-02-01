@@ -841,7 +841,7 @@ public class GenJava : GenTyped
 			WriteArrayElement(def, nesting);
 			Write(" = ");
 			WriteNew((CiStorageType) array.GetElementType(), CiPriority.Argument);
-			WriteLine(';');
+			WriteCharLine(';');
 			while (--nesting >= 0)
 				CloseBlock();
 		}
@@ -876,7 +876,7 @@ public class GenJava : GenTyped
 			statement.Message?.Accept(this, CiPriority.Argument);
 			WriteChar(')');
 		}
-		WriteLine(';');
+		WriteCharLine(';');
 	}
 
 	public override void VisitForeach(CiForeach statement)
@@ -957,7 +957,7 @@ public class GenJava : GenTyped
 				}
 				else
 					discard = WriteSwitchCaseVar(expr);
-				WriteLine(':');
+				WriteCharLine(':');
 				this.Indent++;
 				WriteSwitchCaseBody(kase.Body);
 				this.Indent--;
@@ -982,7 +982,7 @@ public class GenJava : GenTyped
 		if (this.Namespace != null) {
 			Write("package ");
 			Write(this.Namespace);
-			WriteLine(';');
+			WriteCharLine(';');
 		}
 	}
 
@@ -996,7 +996,7 @@ public class GenJava : GenTyped
 			VisitLiteralLong(imp.Value);
 		else
 			konst.Value.Accept(this, CiPriority.Argument);
-		WriteLine(';');
+		WriteCharLine(';');
 	}
 
 	protected override void WriteEnum(CiEnum enu)
@@ -1085,7 +1085,7 @@ public class GenJava : GenTyped
 		WriteTypeAndName(konst);
 		Write(" = ");
 		WriteCoercedExpr(konst.Type, konst.Value);
-		WriteLine(';');
+		WriteCharLine(';');
 	}
 
 	protected override void WriteField(CiField field)
@@ -1093,7 +1093,7 @@ public class GenJava : GenTyped
 		WriteDoc(field.Documentation);
 		WriteVisibility(field.Visibility);
 		WriteVar(field);
-		WriteLine(';');
+		WriteCharLine(';');
 	}
 
 	protected override void WriteMethod(CiMethod method)

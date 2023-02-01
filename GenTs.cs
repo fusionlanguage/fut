@@ -42,7 +42,7 @@ public class GenTs : GenJs
 	public override void VisitEnumValue(CiConst konst, CiConst previous)
 	{
 		WriteEnumValue(konst);
-		WriteLine(',');
+		WriteCharLine(',');
 	}
 
 	protected override void WriteEnum(CiEnum enu)
@@ -198,7 +198,7 @@ public class GenTs : GenJs
 			Write(" = ");
 			konst.Value.Accept(this, CiPriority.Argument);
 		}
-		WriteLine(';');
+		WriteCharLine(';');
 	}
 
 	protected override void WriteField(CiField field)
@@ -210,7 +210,7 @@ public class GenTs : GenJs
 		WriteTypeAndName(field);
 		if (this.GenFullCode)
 			WriteVarInit(field);
-		WriteLine(';');
+		WriteCharLine(';');
 	}
 
 	protected override void WriteMethod(CiMethod method)
@@ -258,7 +258,7 @@ public class GenTs : GenJs
 		if (this.GenFullCode)
 			WriteBody(method);
 		else
-			WriteLine(';');
+			WriteCharLine(';');
 	}
 
 	protected override void WriteClass(CiClass klass, CiProgram program)

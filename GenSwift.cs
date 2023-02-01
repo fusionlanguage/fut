@@ -1177,7 +1177,7 @@ public class GenSwift : GenPySwift
 		expr.Left.Accept(this, CiPriority.Equality /* TODO? */);
 		Write(" as! ");
 		Write(def.Type.Name);
-		WriteLine('?');
+		WriteCharLine('?');
 	}
 
 	protected override void WriteAssert(CiAssert statement)
@@ -1188,7 +1188,7 @@ public class GenSwift : GenPySwift
 			Write(", ");
 			WriteExpr(statement.Message, CiPriority.Argument);
 		}
-		WriteLine(')');
+		WriteCharLine(')');
 	}
 
 	public override void VisitBreak(CiBreak statement) => WriteLine("break");
@@ -1378,14 +1378,14 @@ public class GenSwift : GenPySwift
 					break;
 				}
 			}
-			WriteLine(':');
+			WriteCharLine(':');
 			WriteSwitchCaseBody(statement, kase.Body);
 		}
 		if (statement.DefaultBody.Count > 0) {
 			WriteLine("default:");
 			WriteSwitchCaseBody(statement, statement.DefaultBody);
 		}
-		WriteLine('}');
+		WriteCharLine('}');
 	}
 
 	public override void VisitThrow(CiThrow statement)
@@ -1394,7 +1394,7 @@ public class GenSwift : GenPySwift
 		VisitXcrement<CiPrefixExpr>(statement.Message, true);
 		Write("throw CiError.error(");
 		WriteExpr(statement.Message, CiPriority.Argument);
-		WriteLine(')');
+		WriteCharLine(')');
 	}
 
 	void WriteReadOnlyParameter(CiVar param)
@@ -1429,7 +1429,7 @@ public class GenSwift : GenPySwift
 			Write("rawValue: ");
 			VisitLiteralLong(i);
 		}
-		WriteLine(')');
+		WriteCharLine(')');
 	}
 
 	protected override void WriteEnum(CiEnum enu)

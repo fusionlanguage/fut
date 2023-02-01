@@ -912,7 +912,7 @@ public class GenPy : GenPySwift
 
 	protected override void OpenChild()
 	{
-		WriteLine(':');
+		WriteCharLine(':');
 		this.Indent++;
 		this.ChildPass = true;
 	}
@@ -1102,7 +1102,7 @@ public class GenPy : GenPySwift
 		VisitXcrement<CiPrefixExpr>(statement.Message, true);
 		Write("raise Exception(");
 		statement.Message.Accept(this, CiPriority.Argument);
-		WriteLine(')');
+		WriteCharLine(')');
 		// FIXME: WriteXcrement<CiPostfixExpr>(statement.Message);
 	}
 
@@ -1232,7 +1232,7 @@ public class GenPy : GenPySwift
 			int i = 0;
 			foreach (byte b in resources[name]) {
 				if (i > 0 && (i & 15) == 0) {
-					WriteLine('"');
+					WriteCharLine('"');
 					Write("b\"");
 				}
 				Write($"\\x{b:x2}");

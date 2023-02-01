@@ -170,7 +170,7 @@ public abstract class GenBase : CiExprVisitor
 		this.AtLineStart = true;
 	}
 
-	protected void WriteLine(char c)
+	protected void WriteCharLine(char c)
 	{
 		StartLine();
 		this.Writer.WriteLine(c);
@@ -365,21 +365,21 @@ public abstract class GenBase : CiExprVisitor
 
 	protected void OpenBlock()
 	{
-		WriteLine('{');
+		WriteCharLine('{');
 		this.Indent++;
 	}
 
 	protected void CloseBlock()
 	{
 		this.Indent--;
-		WriteLine('}');
+		WriteCharLine('}');
 	}
 
 	protected void WriteComma(int i)
 	{
 		if (i > 0) {
 			if ((i & 15) == 0) {
-				WriteLine(',');
+				WriteCharLine(',');
 				WriteChar('\t');
 			}
 			else
@@ -827,7 +827,7 @@ public abstract class GenBase : CiExprVisitor
 		return expr as CiAggregateInitializer;
 	}
 
-	protected virtual void EndStatement() => WriteLine(';');
+	protected virtual void EndStatement() => WriteCharLine(';');
 
 	void WriteAggregateInitField(CiExpr obj, CiBinaryExpr field)
 	{
@@ -1349,7 +1349,7 @@ public abstract class GenBase : CiExprVisitor
 	{
 		WriteTemporaries(statement);
 		statement.Accept(this, CiPriority.Statement);
-		WriteLine(';');
+		WriteCharLine(';');
 		if (statement is CiVar def)
 			WriteInitCode(def);
 		CleanupTemporaries();
@@ -1485,7 +1485,7 @@ public abstract class GenBase : CiExprVisitor
 			WriteTemporaries(statement.Value);
 			Write("return ");
 			WriteStronglyCoerced(this.CurrentMethod.Type, statement.Value);
-			WriteLine(';');
+			WriteCharLine(';');
 			CleanupTemporaries();
 		}
 	}
@@ -1499,7 +1499,7 @@ public abstract class GenBase : CiExprVisitor
 		foreach (CiExpr value in kase.Values) {
 			Write("case ");
 			WriteCoercedLiteral(statement.Value.Type, value);
-			WriteLine(':');
+			WriteCharLine(':');
 		}
 		this.Indent++;
 		WriteSwitchCaseBody(kase.Body);
@@ -1520,7 +1520,7 @@ public abstract class GenBase : CiExprVisitor
 			WriteSwitchCaseBody(statement.DefaultBody);
 			this.Indent--;
 		}
-		WriteLine('}');
+		WriteCharLine('}');
 	}
 
 	public override void VisitWhile(CiWhile statement)
@@ -1588,7 +1588,7 @@ public abstract class GenBase : CiExprVisitor
 	protected void WriteBody(CiMethod method)
 	{
 		if (method.CallType == CiCallType.Abstract)
-			WriteLine(';');
+			WriteCharLine(';');
 		else {
 			WriteLine();
 			this.CurrentMethod = method;
@@ -1618,7 +1618,7 @@ public abstract class GenBase : CiExprVisitor
 	public override void VisitEnumValue(CiConst konst, CiConst previous)
 	{
 		if (previous != null)
-			WriteLine(',');
+			WriteCharLine(',');
 		WriteEnumValue(konst);
 	}
 
