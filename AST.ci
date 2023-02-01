@@ -1513,7 +1513,7 @@ public class CiSystem : CiScope
 		CiFloatingType# floatIntType = new CiFloatingType { Id = CiId.FloatIntType, Name = "float" };
 		CiClass# mathClass = CiClass.New(CiCallType.Static, CiId.None, "Math");
 		mathClass.Add(CiMethodGroup.New(
-				CiMethod.NewStatic(IntType, CiId.MathAbs, "Abs", CiVar.New(IntType, "a")),
+				CiMethod.NewStatic(IntType, CiId.MathAbs, "Abs", CiVar.New(LongType, "a")),
 				CiMethod.NewStatic(FloatType, CiId.MathAbs, "Abs", CiVar.New(DoubleType, "a"))));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Acos", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Asin", CiVar.New(DoubleType, "a")));
@@ -1534,10 +1534,10 @@ public class CiSystem : CiScope
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathLog2, "Log2", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Log10", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethodGroup.New(
-				CiMethod.NewStatic(IntType, CiId.MathMaxInt, "Max", CiVar.New(IntType, "a"), CiVar.New(IntType, "b")),
+				CiMethod.NewStatic(IntType, CiId.MathMaxInt, "Max", CiVar.New(LongType, "a"), CiVar.New(LongType, "b")),
 				CiMethod.NewStatic(FloatType, CiId.MathMaxDouble, "Max", CiVar.New(DoubleType, "a"), CiVar.New(DoubleType, "b"))));
 		mathClass.Add(CiMethodGroup.New(
-				CiMethod.NewStatic(IntType, CiId.MathMinInt, "Min", CiVar.New(IntType, "a"), CiVar.New(IntType, "b")),
+				CiMethod.NewStatic(IntType, CiId.MathMinInt, "Min", CiVar.New(LongType, "a"), CiVar.New(LongType, "b")),
 				CiMethod.NewStatic(FloatType, CiId.MathMinDouble, "Min", CiVar.New(DoubleType, "a"), CiVar.New(DoubleType, "b"))));
 		mathClass.Add(CiMember.New(FloatType, CiId.MathNaN, "NaN"));
 		mathClass.Add(CiMember.New(FloatType, CiId.MathNegativeInfinity, "NegativeInfinity"));

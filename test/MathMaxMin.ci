@@ -2,7 +2,9 @@ public static class Test
 {
 	public static bool Run()
 	{
-		return Math.Min(-5, 10) == -5 && Math.Max(-5, 10) == 10 //FAIL: c TODO
+		long l = 0x1000000;
+		l *= l;
+		return Math.Min(-5, 10) == -5 && Math.Max(-5, 10) == 10 && Math.Max(l, l) == l //FAIL: c cl TODO
 			&& Math.Min(-3.0, 10.5) == -3 && Math.Max(-3.0, 10.5) == 10.5;
 	}
 }

@@ -3,8 +3,10 @@ public static class Test
 	public static bool Run()
 	{
 		int i = Math.Abs(-1000);
+		long l = -1000000000;
+		l *= i;
 		float f = Math.Abs(-10.5);
 		double d = Math.Abs(-1e200); //FAIL: cl if no double support
-		return i == 1000 && f == 10.5 && d == 1e200;
+		return i == 1000 && Math.Abs(l) == -l && f == 10.5 && d == 1e200;
 	}
 }

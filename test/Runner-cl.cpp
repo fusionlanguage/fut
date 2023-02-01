@@ -1,6 +1,7 @@
 #include <cstdio>
 
 int abs(int x) { return __builtin_abs(x); }
+long abs(long x) { return __builtin_llabs(x); }
 double acos(double x) { return __builtin_acos(x); }
 double asin(double x) { return __builtin_asin(x); }
 double atan(double x) { return __builtin_atan(x); }
@@ -10,9 +11,9 @@ double ceil(double x) { return __builtin_ceil(x); }
 double cos(double x) { return __builtin_cos(x); }
 double cosh(double x) { return __builtin_cosh(x); }
 double exp(double x) { return __builtin_exp(x); }
-float fabs(float x) { return __builtin_fabs(x); }
+float fabs(float x) { return __builtin_fabsf(x); }
 double fabs(double x) { return __builtin_fabs(x); }
-float floor(float x) { return __builtin_floor(x); }
+float floor(float x) { return __builtin_floorf(x); }
 double floor(double x) { return __builtin_floor(x); }
 double fma(double x, double y, double z) { return __builtin_fma(x, y, z); }
 float fmax(float x, float y) { return __builtin_fmax(x, y); }
@@ -26,8 +27,10 @@ bool isnan(double x) { return __builtin_isnan(x); }
 double log(double x) { return __builtin_log(x); }
 double log2(double x) { return __builtin_log2(x); }
 double log10(double x) { return __builtin_log10(x); }
-double max(int x, int y) { return x < y ? y : x; }
-double min(int x, int y) { return y < x ? y : x; }
+int max(int x, int y) { return x < y ? y : x; }
+long max(long x, long y) { return x < y ? y : x; }
+int min(int x, int y) { return y < x ? y : x; }
+long min(long x, long y) { return y < x ? y : x; }
 double pow(double x, double y) { return __builtin_pow(x, y); }
 double sin(double x) { return __builtin_sin(x); }
 double sinh(double x) { return __builtin_sinh(x); }
