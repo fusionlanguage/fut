@@ -155,6 +155,7 @@ There's a built-in `Math` class with the following constants:
 and static methods:
 
 * `Math.Abs(int a)`
+* `Math.Abs(long a)`
 * `Math.Abs(double a)`
 * `Math.Acos(double a)`
 * `Math.Asin(double a)`
@@ -174,10 +175,13 @@ and static methods:
 * `Math.Log10(double a)`
 * `Math.Log2(double a)`
 * `Math.Max(int a, int b)`
+* `Math.Max(long a, long b)`
 * `Math.Max(double a, double b)`
 * `Math.Min(int a, int b)`
+* `Math.Min(long a, long b)`
 * `Math.Min(double a, double b)`
 * `Math.Pow(double x, double y)`
+* `Math.Round(double a)`
 * `Math.Sin(double a)`
 * `Math.Sinh(double a)`
 * `Math.Sqrt(double a)`
@@ -193,6 +197,7 @@ double d = 10.5;
 int i = Math.Trunc(d); // translated to: (int) d
 int j = Math.Ceiling(d);
 int k = Math.Floor(d);
+int n = Math.Round(d);
 ```
 
 ### Enumerations

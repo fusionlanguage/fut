@@ -1909,6 +1909,10 @@ public class GenC : GenCCpp
 			IncludeMath();
 			WriteCall("fmin", args[0], args[1]);
 			break;
+		case CiId.MathRound:
+			IncludeMath();
+			WriteCall("round", args[0]);
+			break;
 		case CiId.MathTruncate:
 			IncludeMath();
 			WriteCall("trunc", args[0]);

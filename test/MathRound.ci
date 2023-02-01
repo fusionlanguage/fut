@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int i = Math.Round(200.75);
+		return i == 201 && Math.Round(0.25) == 0 && Math.Round(1.75) == 2
+			&& Math.Round(Math.Pow(2.0, 100)) == Math.Pow(2.0, 100);
+	}
+}

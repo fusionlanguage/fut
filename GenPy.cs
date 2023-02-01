@@ -833,6 +833,9 @@ public class GenPy : GenPySwift
 		case CiId.MathMinDouble:
 			WriteCall("min", args[0], args[1]);
 			break;
+		case CiId.MathRound:
+			WriteCall("round", args[0]);
+			break;
 		case CiId.MathTruncate:
 			Include("math");
 			WriteCall("math.trunc", args[0]);

@@ -1343,6 +1343,7 @@ namespace Foxoft.Ci
 		MathMaxDouble,
 		MathMinInt,
 		MathMinDouble,
+		MathRound,
 		MathTruncate
 	}
 
@@ -2955,6 +2956,7 @@ namespace Foxoft.Ci
 			mathClass.Add(NewConstDouble("PI", 3.1415926535897931));
 			mathClass.Add(CiMember.New(this.FloatType, CiId.MathPositiveInfinity, "PositiveInfinity"));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Pow", CiVar.New(this.DoubleType, "x"), CiVar.New(this.DoubleType, "y")));
+			mathClass.Add(CiMethod.NewStatic(floatIntType, CiId.MathRound, "Round", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Sin", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Sinh", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Sqrt", CiVar.New(this.DoubleType, "a")));

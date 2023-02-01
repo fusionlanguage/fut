@@ -760,6 +760,10 @@ public class GenSwift : GenPySwift
 			args[0].Accept(this, CiPriority.Primary);
 			Write(".isNaN");
 			break;
+		case CiId.MathRound:
+			args[0].Accept(this, CiPriority.Primary);
+			Write(".rounded()");
+			break;
 		case CiId.MathTruncate:
 			Include("Foundation");
 			WriteCall("trunc", args[0]);

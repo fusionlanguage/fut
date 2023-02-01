@@ -986,6 +986,7 @@ public class GenCpp : GenCCpp
 		case CiId.MathIsFinite:
 		case CiId.MathIsNaN:
 		case CiId.MathLog2:
+		case CiId.MathRound:
 			IncludeMath();
 			Write("std::");
 			WriteLowercase(method.Name);

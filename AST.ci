@@ -179,6 +179,7 @@ public enum CiId
 	MathMaxDouble,
 	MathMinInt,
 	MathMinDouble,
+	MathRound,
 	MathTruncate
 }
 
@@ -1544,6 +1545,7 @@ public class CiSystem : CiScope
 		mathClass.Add(NewConstDouble("PI", Math.PI));
 		mathClass.Add(CiMember.New(FloatType, CiId.MathPositiveInfinity, "PositiveInfinity"));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Pow", CiVar.New(DoubleType, "x"), CiVar.New(DoubleType, "y")));
+		mathClass.Add(CiMethod.NewStatic(floatIntType, CiId.MathRound, "Round", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Sin", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Sinh", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Sqrt", CiVar.New(DoubleType, "a")));

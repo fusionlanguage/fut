@@ -457,11 +457,12 @@ public class GenJsNoModule : GenBase
 		case CiId.OrderedDictionaryClear:
 		case CiId.MathMethod:
 		case CiId.MathAbs:
+		case CiId.MathLog2:
 		case CiId.MathMaxInt:
 		case CiId.MathMaxDouble:
 		case CiId.MathMinInt:
 		case CiId.MathMinDouble:
-		case CiId.MathLog2:
+		case CiId.MathRound:
 			if (obj == null)
 				WriteLocalName(method, CiPriority.Primary);
 			else {

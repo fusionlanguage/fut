@@ -31,7 +31,10 @@ int max(int x, int y) { return x < y ? y : x; }
 long max(long x, long y) { return x < y ? y : x; }
 int min(int x, int y) { return y < x ? y : x; }
 long min(long x, long y) { return y < x ? y : x; }
+float pow(float x, float y) { return __builtin_powf(x, y); }
 double pow(double x, double y) { return __builtin_pow(x, y); }
+float round(float x) { return __builtin_roundf(x); }
+double round(double x) { return __builtin_round(x); }
 double sin(double x) { return __builtin_sin(x); }
 double sinh(double x) { return __builtin_sinh(x); }
 double sqrt(double x) { return __builtin_sqrt(x); }

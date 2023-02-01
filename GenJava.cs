@@ -757,6 +757,9 @@ public class GenJava : GenTyped
 			if (parent > CiPriority.Mul)
 				WriteChar(')');
 			break;
+		case CiId.MathRound:
+			WriteCall("Math.rint", args[0]);
+			break;
 		default:
 			if (obj != null) {
 				if (IsReferenceTo(obj, CiId.BasePtr))
