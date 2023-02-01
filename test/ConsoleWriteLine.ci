@@ -10,6 +10,9 @@ public static class Test
 		Console.WriteLine(i);
 		Console.WriteLine($"i={i:X}");
 		Console.WriteLine($"i={i:X}={i}");
+		long l = 5;
+		Console.WriteLine(l);
+		Console.WriteLine($"l={l}");
 		return true;
 	}
 }

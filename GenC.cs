@@ -1356,6 +1356,29 @@ public class GenC : GenCCpp
 			WriteChar('0');
 	}
 
+	protected void WritePrintfNotInterpolated(List<CiExpr> args, string longPrefix, bool newLine)
+	{
+		Write("\"%");
+		switch (args[0].Type) {
+		case CiIntegerType intType:
+			if (intType.Id == CiId.LongType)
+				Write(longPrefix);
+			WriteChar('d');
+			break;
+		case CiFloatingType _:
+			WriteChar('g');
+			break;
+		default:
+			WriteChar('s');
+			break;
+		}
+		if (newLine)
+			Write("\\n");
+		Write("\", ");
+		args[0].Accept(this, CiPriority.Argument);
+		WriteChar(')');
+	}
+
 	void WriteConsoleWrite(CiExpr obj, List<CiExpr> args, bool newLine)
 	{
 		bool error = IsReferenceTo(obj, CiId.ConsoleError);
@@ -1368,12 +1391,7 @@ public class GenC : GenCCpp
 		}
 		else if (args[0].Type is CiNumericType) {
 			Write(error ? "fprintf(stderr, " : "printf(");
-			Write(args[0].Type is CiIntegerType ? "\"%d" : "\"%g");
-			if (newLine)
-				Write("\\n");
-			Write("\", ");
-			args[0].Accept(this, CiPriority.Argument);
-			WriteChar(')');
+			WritePrintfNotInterpolated(args, "ll", newLine);
 		}
 		else if (!newLine) {
 			Write("fputs(");

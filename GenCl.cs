@@ -159,27 +159,8 @@ public class GenCl : GenC
 			Write("\"\\n\")");
 		else if (args[0] is CiInterpolatedString interpolated)
 			WritePrintf(interpolated, newLine);
-		else {
-			Write("\"%");
-			switch (args[0].Type) {
-			case CiIntegerType intType:
-				if (intType.Id == CiId.LongType)
-					WriteChar('l');
-				WriteChar('d');
-				break;
-			case CiFloatingType _:
-				WriteChar('g');
-				break;
-			default:
-				WriteChar('s');
-				break;
-			}
-			if (newLine)
-				Write("\\n");
-			Write("\", ");
-			args[0].Accept(this, CiPriority.Argument);
-			WriteChar(')');
-		}
+		else
+			WritePrintfNotInterpolated(args, "l", newLine);
 	}
 
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
