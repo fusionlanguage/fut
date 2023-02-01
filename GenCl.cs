@@ -161,7 +161,19 @@ public class GenCl : GenC
 			WritePrintf(interpolated, newLine);
 		else {
 			Write("\"%");
-			WriteChar(args[0].Type is CiIntegerType ? 'd' : args[0].Type is CiFloatingType ? 'g' : 's');
+			switch (args[0].Type) {
+			case CiIntegerType intType:
+				if (intType.Id == CiId.LongType)
+					WriteChar('l');
+				WriteChar('d');
+				break;
+			case CiFloatingType _:
+				WriteChar('g');
+				break;
+			default:
+				WriteChar('s');
+				break;
+			}
 			if (newLine)
 				Write("\\n");
 			Write("\", ");
