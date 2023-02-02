@@ -380,14 +380,6 @@ public class CiResolver : CiSema
 		return expr;
 	}
 
-	public override void VisitConst(CiConst statement)
-	{
-		ResolveConst(statement);
-		this.CurrentScope.Add(statement);
-		if (statement.Type is CiArrayStorageType)
-			((CiClass) this.CurrentScope.GetContainer()).ConstArrays.Add(statement);
-	}
-
 	void ResolveCode(CiClass klass)
 	{
 		if (klass.Constructor != null) {

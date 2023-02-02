@@ -1079,6 +1079,7 @@ public class GenSwift : GenPySwift
 		case CiVar _:
 		case CiLiteral _:
 		case CiLambdaExpr _:
+		case CiConst _:
 			return false;
 		case CiAggregateInitializer init:
 			return init.Items.Any(field => Throws(field));

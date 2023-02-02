@@ -949,6 +949,9 @@ public abstract class CiSema : CiVisitor
 		case CiVar# def:
 			VisitVar(def);
 			return expr;
+		case CiConst# konst:
+			VisitConst(konst);
+			return expr;
 		default:
 			assert false;
 		}
@@ -1521,6 +1524,16 @@ public abstract class CiSema : CiVisitor
 			ReportError(konst.Value, $"Value for constant {konst.Name} is not constant");
 		konst.InMethod = this.CurrentMethod;
 		konst.VisitStatus = CiVisitStatus.Done;
+	}
+
+	void VisitConst!(CiConst# statement)
+	{
+		ResolveConst(statement);
+		this.CurrentScope.Add(statement);
+		if (statement.Type is CiArrayStorageType) {
+			assert this.CurrentScope.GetContainer() is CiClass klass;
+			klass.ConstArrays.Add(statement);
+		}
 	}
 
 	public override void VisitEnumValue!(CiConst! konst, CiConst previous)

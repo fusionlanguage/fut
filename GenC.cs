@@ -797,6 +797,7 @@ public class GenC : GenCCpp
 			break;
 		case CiLiteral _:
 		case CiLambdaExpr _:
+		case CiConst _:
 			break;
 		case CiInterpolatedString interp:
 			foreach (CiInterpolatedPart part in interp.Parts)

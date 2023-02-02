@@ -150,6 +150,7 @@ public abstract class GenPySwift : GenBase
 		case CiAggregateInitializer _:
 		case CiLiteral _:
 		case CiLambdaExpr _:
+		case CiConst _:
 			return false;
 		case CiInterpolatedString interp:
 			seen = false;
