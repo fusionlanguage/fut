@@ -360,11 +360,11 @@ public class GenPy : GenPySwift
 			break;
 
 		case CiToken.Is:
-			if (expr.Right is CiClass klass) {
+			if (expr.Right is CiSymbolReference symbol) {
 				Write("isinstance(");
 				expr.Left.Accept(this, CiPriority.Argument);
 				Write(", ");
-				WriteName(klass);
+				WriteName(symbol.Symbol);
 				WriteChar(')');
 			}
 			else

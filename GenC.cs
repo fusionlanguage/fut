@@ -815,11 +815,9 @@ public class GenC : GenCCpp
 			WriteCTemporaries(binary.Left);
 			if (!IsStringSubstring(binary.Left, out bool _, out CiExpr _, out CiExpr _, out CiExpr _))
 				WriteStorageTemporary(binary.Left);
-			if (binary.Op != CiToken.Is) {
-				WriteCTemporaries(binary.Right);
-				if (binary.Op != CiToken.Assign)
-					WriteStorageTemporary(binary.Right);
-			}
+			WriteCTemporaries(binary.Right);
+			if (binary.Op != CiToken.Assign)
+				WriteStorageTemporary(binary.Right);
 			break;
 		case CiSelectExpr select:
 			WriteCTemporaries(select.Cond);

@@ -1230,18 +1230,18 @@ public class GenCpp : GenCCpp
 			WriteCall(expr.Left, "resize", length);
 			return;
 		case CiToken.Is:
-			if (expr.Right is CiVar def) {
-				if (parent > CiPriority.Assign)
-					WriteChar('(');
-				WriteIsVar(expr.Left, def);
-				if (parent > CiPriority.Assign)
-					WriteChar(')');
-			}
-			else {
+			if (expr.Right is CiSymbolReference symbol) {
 				Write("dynamic_cast<const ");
-				Write(((CiClass) expr.Right).Name);
+				Write(symbol.Symbol.Name);
 				Write(" *");
 				WriteGtRawPtr(expr.Left);
+			}
+			else {
+				if (parent > CiPriority.Assign)
+					WriteChar('(');
+				WriteIsVar(expr.Left, (CiVar) expr.Right);
+				if (parent > CiPriority.Assign)
+					WriteChar(')');
 			}
 			return;
 		default:

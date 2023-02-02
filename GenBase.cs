@@ -1184,16 +1184,10 @@ public abstract class GenBase : CiExprVisitor
 				WriteChar('(');
 			expr.Left.Accept(this, CiPriority.Rel);
 			Write(GetIsOperator());
-			switch (expr.Right) {
-			case CiClass klass:
-				WriteName(klass);
-				break;
-			case CiVar def:
-				WriteTypeAndName(def);
-				break;
-			default:
-				throw new NotImplementedException(expr.Right.ToString());
-			}
+			if (expr.Right is CiSymbolReference symbol)
+				WriteName(symbol.Symbol);
+			else
+				WriteTypeAndName((CiVar) expr.Right);
 			if (parent > CiPriority.Rel)
 				WriteChar(')');
 			break;
