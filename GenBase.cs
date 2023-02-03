@@ -1276,7 +1276,6 @@ public abstract class GenBase : CiExprVisitor
 			break;
 		case CiLiteral _:
 		case CiLambdaExpr _:
-		case CiConst _:
 			break;
 		case CiInterpolatedString interp:
 			foreach (CiInterpolatedPart part in interp.Parts)
@@ -1333,14 +1332,13 @@ public abstract class GenBase : CiExprVisitor
 	{
 		WriteTemporaries(statement);
 		statement.Accept(this, CiPriority.Statement);
-		if (!(statement is CiConst))
-			WriteCharLine(';');
+		WriteCharLine(';');
 		if (statement is CiVar def)
 			WriteInitCode(def);
 		CleanupTemporaries();
 	}
 
-	public override void VisitConst(CiConst konst)
+	public override void VisitConst(CiConst statement)
 	{
 	}
 

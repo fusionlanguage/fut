@@ -189,10 +189,10 @@ public abstract class GenCCpp : GenTyped
 		Write("\\n\"");
 	}
 
-	public override void VisitConst(CiConst konst)
+	public override void VisitConst(CiConst statement)
 	{
-		if (konst.Type is CiArrayStorageType)
-			WriteConst(konst);
+		if (statement.Type is CiArrayStorageType)
+			WriteConst(statement);
 	}
 
 	protected virtual void WriteUnreachable(CiAssert statement)

@@ -232,6 +232,7 @@ public abstract class CiVisitor
 		this.HasErrors = true;
 	}
 
+	public abstract void VisitConst!(CiConst statement);
 	public abstract void VisitExpr!(CiExpr! statement);
 	public abstract void VisitBlock!(CiBlock! statement);
 	public abstract void VisitAssert!(CiAssert! statement);
@@ -269,7 +270,6 @@ public abstract class CiExprVisitor : CiVisitor
 	public abstract void VisitCallExpr(CiCallExpr expr, CiPriority parent);
 	public abstract void VisitLambdaExpr(CiLambdaExpr expr);
 	public abstract void VisitVar(CiVar expr);
-	public abstract void VisitConst(CiConst konst);
 }
 
 public abstract class CiStatement
@@ -1019,7 +1019,7 @@ public class CiConst : CiMember
 {
 	internal CiMethodBase InMethod;
 	internal CiVisitStatus VisitStatus;
-	public override void Accept(CiExprVisitor! visitor, CiPriority parent) { visitor.VisitConst(this); }
+	public override void AcceptStatement!(CiVisitor! visitor) { visitor.VisitConst(this); }
 	public override bool IsStatic() => true;
 }
 

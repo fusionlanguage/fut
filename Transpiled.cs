@@ -1405,6 +1405,8 @@ namespace Foxoft.Ci
 			this.HasErrors = true;
 		}
 
+		public abstract void VisitConst(CiConst statement);
+
 		public abstract void VisitExpr(CiExpr statement);
 
 		public abstract void VisitBlock(CiBlock statement);
@@ -1474,8 +1476,6 @@ namespace Foxoft.Ci
 		public abstract void VisitLambdaExpr(CiLambdaExpr expr);
 
 		public abstract void VisitVar(CiVar expr);
-
-		public abstract void VisitConst(CiConst konst);
 	}
 
 	public abstract class CiStatement
@@ -2480,7 +2480,7 @@ namespace Foxoft.Ci
 
 		internal CiVisitStatus VisitStatus;
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void AcceptStatement(CiVisitor visitor)
 		{
 			visitor.VisitConst(this);
 		}
@@ -5049,9 +5049,6 @@ namespace Foxoft.Ci
 			case CiVar def:
 				VisitVar(def);
 				return expr;
-			case CiConst konst:
-				VisitConst(konst);
-				return expr;
 			default:
 				throw new NotImplementedException();
 			}
@@ -5215,7 +5212,16 @@ namespace Foxoft.Ci
 		{
 			bool reachable = true;
 			foreach (CiStatement statement in statements) {
-				statement.AcceptStatement(this);
+				if (statement is CiConst konst) {
+					ResolveConst(konst);
+					this.CurrentScope.Add(konst);
+					if (konst.Type is CiArrayStorageType) {
+						CiClass klass = (CiClass) this.CurrentScope.GetContainer();
+						klass.ConstArrays.Add(konst);
+					}
+				}
+				else
+					statement.AcceptStatement(this);
 				if (!reachable) {
 					ReportError(statement, "Unreachable statement");
 					return false;
@@ -5605,14 +5611,8 @@ namespace Foxoft.Ci
 			konst.VisitStatus = CiVisitStatus.Done;
 		}
 
-		void VisitConst(CiConst statement)
+		public override void VisitConst(CiConst statement)
 		{
-			ResolveConst(statement);
-			this.CurrentScope.Add(statement);
-			if (statement.Type is CiArrayStorageType) {
-				CiClass klass = (CiClass) this.CurrentScope.GetContainer();
-				klass.ConstArrays.Add(statement);
-			}
 		}
 
 		public override void VisitEnumValue(CiConst konst, CiConst previous)
