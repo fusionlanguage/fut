@@ -4698,6 +4698,8 @@ namespace Foxoft.Ci
 		{
 			CiExpr left = Resolve(expr.Left);
 			CiExpr right = Resolve(expr.Right);
+			if (left == this.Poison || right == this.Poison)
+				return this.Poison;
 			CiType type;
 			switch (expr.Op) {
 			case CiToken.LeftBracket:

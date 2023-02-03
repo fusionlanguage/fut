@@ -4,6 +4,6 @@ public class Test
 	{
 		while (x) { //ERROR: x not found
 		}
-		return true;
+		return x + 1; //ERROR: x not found
 	}
 }
