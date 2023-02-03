@@ -1333,7 +1333,8 @@ public abstract class GenBase : CiExprVisitor
 	{
 		WriteTemporaries(statement);
 		statement.Accept(this, CiPriority.Statement);
-		WriteCharLine(';');
+		if (!(statement is CiConst))
+			WriteCharLine(';');
 		if (statement is CiVar def)
 			WriteInitCode(def);
 		CleanupTemporaries();
