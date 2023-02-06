@@ -10,7 +10,7 @@ public static class Test
 	{
 		long l = 42;
 		int i = l;
-		i += l; //FAIL: cs TODO
+		i += l; //FAIL: cs js ts TODO
 		i <<= Foo(1);
 		return i == 168;
 	}

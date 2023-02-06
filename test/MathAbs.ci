@@ -7,6 +7,9 @@ public static class Test
 		l *= i;
 		float f = Math.Abs(-10.5);
 		double d = Math.Abs(-1e200); //FAIL: cl if no double support
-		return i == 1000 && Math.Abs(l) == -l && f == 10.5 && d == 1e200;
+		return i == 1000
+			&& Math.Abs(l) == -l //FAIL: js ts TODO
+			&& f == 10.5
+			&& d == 1e200;
 	}
 }

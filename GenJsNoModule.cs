@@ -104,8 +104,7 @@ public class GenJsNoModule : GenBase
 		case CiId.IntType:
 			return "Int32";
 		case CiId.LongType:
-			// TODO: UInt32 if possible?
-			return "Float64"; // no 64-bit integers in JavaScript
+			return "BigInt64";
 		case CiId.FloatType:
 			return "Float32";
 		case CiId.DoubleType:
@@ -281,6 +280,32 @@ public class GenJsNoModule : GenBase
 			Write(".codePointAt(0)");
 	}
 
+	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
+	{
+		if (type is CiNumericType) { // not CiPrintableType
+			if (type.Id == CiId.LongType) {
+				if (expr is CiLiteralLong) {
+					expr.Accept(this, CiPriority.Primary);
+					WriteChar('n');
+					return;
+				}
+				if (expr.Type.Id != CiId.LongType) {
+					Write("BigInt(");
+					expr.Accept(this, CiPriority.Argument);
+					WriteChar(')');
+					return;
+				}
+			}
+			else if (expr.Type.Id == CiId.LongType) {
+				Write("Number(");
+				expr.Accept(this, CiPriority.Argument);
+				WriteChar(')');
+				return;
+			}
+		}
+		expr.Accept(this, parent);
+	}
+
 	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		Write("new ");
@@ -390,6 +415,8 @@ public class GenJsNoModule : GenBase
 	{
 		WriteCall(expr.Left, "charCodeAt", expr.Right);
 	}
+
+	protected override void WriteBinaryOperand(CiExpr expr, CiPriority parent, CiBinaryExpr binary) => WriteCoerced(binary.Type, expr, parent);
 
 	static bool IsIdentifier(string s)
 	{
@@ -776,6 +803,8 @@ public class GenJsNoModule : GenBase
 		else
 			base.WriteIndexing(expr, parent);
 	}
+
+	protected override void WriteAssignRight(CiBinaryExpr expr) => WriteCoerced(expr.Left.Type, expr.Right, CiPriority.Argument);
 
 	protected override void WriteAssign(CiBinaryExpr expr, CiPriority parent)
 	{

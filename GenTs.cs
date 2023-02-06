@@ -70,7 +70,7 @@ public class GenTs : GenJs
 	{
 		switch (type) {
 		case CiNumericType _:
-			Write("number");
+			Write(type.Id == CiId.LongType ? "bigint" : "number");
 			break;
 		case CiEnum enu:
 			Write(enu.Id == CiId.BoolType ? "boolean" : enu.Name);

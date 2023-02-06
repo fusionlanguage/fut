@@ -69,9 +69,7 @@ and the ternary operator `x ? y : z` (if `x` then `y` else `z`).
 ### Integers
 
 Most of the time, you will use the 32-bit integer type `int`.
-For larger numbers, use the 64-bit `long`. JavaScript, however,
-only supports 64-bit floating-point values and not 64-bit integers,
-so operations on `long` are subject to precision loss when using JavaScript.
+For larger numbers, use the 64-bit `long`.
 
 `int` and `long` are often sufficient for scalar variables. For arrays,
 you want to conserve storage space and use smaller types where possible.
