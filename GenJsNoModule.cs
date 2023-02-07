@@ -290,16 +290,12 @@ public class GenJsNoModule : GenBase
 					return;
 				}
 				if (expr.Type.Id != CiId.LongType) {
-					Write("BigInt(");
-					expr.Accept(this, CiPriority.Argument);
-					WriteChar(')');
+					WriteCall("BigInt", expr);
 					return;
 				}
 			}
 			else if (expr.Type.Id == CiId.LongType) {
-				Write("Number(");
-				expr.Accept(this, CiPriority.Argument);
-				WriteChar(')');
+				WriteCall("Number", expr);
 				return;
 			}
 		}
