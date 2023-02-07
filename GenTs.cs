@@ -25,6 +25,8 @@ namespace Foxoft.Ci
 
 public class GenTs : GenJs
 {
+	CiSystem System;
+
 	// GenFullCode = false: only generate TypeScript declarations (.d.ts files)
 	// GenFullCode = true: generate full TypeScript code
 	bool GenFullCode = false;
@@ -155,6 +157,27 @@ public class GenTs : GenJs
 	{
 		Write(" as ");
 		Write(def.Type.Name);
+	}
+
+	protected override void WriteBinaryOperand(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
+	{
+		CiType type = binary.Type;
+		if (expr.Type is CiNumericType) {
+			switch (binary.Op) {
+			case CiToken.Equal:
+			case CiToken.NotEqual:
+			case CiToken.Less:
+			case CiToken.LessOrEqual:
+			case CiToken.Greater:
+			case CiToken.GreaterOrEqual:
+				// work around https://github.com/microsoft/TypeScript/issues/30540
+				type = this.System.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
+				break;
+			default:
+				break;
+			}
+		}
+		WriteCoerced(type, expr, parent);
 	}
 
 	protected override void WriteBoolAndOr(CiBinaryExpr expr)
@@ -301,6 +324,7 @@ public class GenTs : GenJs
 
 	public override void WriteProgram(CiProgram program)
 	{
+		this.System = program.System;
 		CreateFile(this.OutputFile);
 		if (this.GenFullCode)
 			WriteTopLevelNatives(program);

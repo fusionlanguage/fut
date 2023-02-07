@@ -22,7 +22,7 @@ public static class Test
 			&& ia[0] == 200
 			&& Get(a, 1) == 200
 			&& sa[0] == 200
-			&& la[0] == 200 //FAIL: ts TODO
+			&& la[0] == 200
 			&& fa[0] == 200;
 	}
 }
