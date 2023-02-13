@@ -137,6 +137,8 @@ public abstract class CiLexer
 	int NextChar;
 	protected string() Filename;
 	protected int Line;
+	protected int Column;
+	protected int TokenColumn;
 	protected int LexemeOffset;
 	protected CiToken CurrentToken;
 	protected long LongValue; // for CiToken.LiteralLong, CiToken.LiteralChar
@@ -160,6 +162,7 @@ public abstract class CiLexer
 		this.InputLength = inputLength;
 		this.NextOffset = 0;
 		this.Line = 1;
+		this.Column = 1;
 		FillNextChar();
 		if (this.NextChar == 0xfeff) // BOM
 			FillNextChar();
@@ -228,12 +231,15 @@ public abstract class CiLexer
 		switch (c) {
 		case '\t':
 		case ' ':
+			this.Column++;
 			break;
 		case '\n':
 			this.Line++;
+			this.Column = 1;
 			this.AtLineStart = true;
 			break;
 		default:
+			this.Column++;
 			this.AtLineStart = false;
 			break;
 		}
@@ -455,6 +461,7 @@ public abstract class CiLexer
 	{
 		for (;;) {
 			bool atLineStart = this.AtLineStart;
+			this.TokenColumn = this.Column;
 			this.LexemeOffset = this.CharOffset;
 			int c = ReadChar();
 			switch (c) {

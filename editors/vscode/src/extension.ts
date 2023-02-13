@@ -8,7 +8,7 @@ class VsCodeParser extends CiParser
 
 	protected reportError(message: string) : void
 	{
-		this.diagnostics.push(new vscode.Diagnostic(new vscode.Range(this.line - 1, 0, this.line, 0), message));
+		this.diagnostics.push(new vscode.Diagnostic(new vscode.Range(this.line - 1, this.tokenColumn - 1, this.line - 1, this.column - 1), message));
 	}
 
 	updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: vscode.DiagnosticCollection): void

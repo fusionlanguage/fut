@@ -135,6 +135,10 @@ namespace Foxoft.Ci
 
 		protected int Line;
 
+		protected int Column;
+
+		protected int TokenColumn;
+
 		protected int LexemeOffset;
 
 		protected CiToken CurrentToken;
@@ -167,6 +171,7 @@ namespace Foxoft.Ci
 			this.InputLength = inputLength;
 			this.NextOffset = 0;
 			this.Line = 1;
+			this.Column = 1;
 			FillNextChar();
 			if (this.NextChar == 65279)
 				FillNextChar();
@@ -238,12 +243,15 @@ namespace Foxoft.Ci
 			switch (c) {
 			case '\t':
 			case ' ':
+				this.Column++;
 				break;
 			case '\n':
 				this.Line++;
+				this.Column = 1;
 				this.AtLineStart = true;
 				break;
 			default:
+				this.Column++;
 				this.AtLineStart = false;
 				break;
 			}
@@ -467,6 +475,7 @@ namespace Foxoft.Ci
 		{
 			for (;;) {
 				bool atLineStart = this.AtLineStart;
+				this.TokenColumn = this.Column;
 				this.LexemeOffset = this.CharOffset;
 				int c = ReadChar();
 				switch (c) {
