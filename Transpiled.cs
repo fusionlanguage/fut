@@ -444,6 +444,10 @@ namespace Foxoft.Ci
 					this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
 					return CiToken.LiteralString;
 				}
+				if (c < 0) {
+					ReportError("Unterminated string literal");
+					return CiToken.EndOfFile;
+				}
 				if (interpolated && c == '{') {
 					int endOffset = this.CharOffset;
 					ReadChar();
