@@ -436,27 +436,35 @@ namespace Foxoft.Ci
 
 		protected CiToken ReadString(bool interpolated)
 		{
-			for (int offset = this.CharOffset;;) {
-				int c = PeekChar();
-				if (c == '"') {
-					int endOffset = this.CharOffset;
-					ReadChar();
-					this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
-					return CiToken.LiteralString;
-				}
-				if (c < 0) {
+			for (int offset = this.CharOffset;; ReadCharLiteral()) {
+				switch (PeekChar()) {
+				case -1:
 					ReportError("Unterminated string literal");
 					return CiToken.EndOfFile;
-				}
-				if (interpolated && c == '{') {
-					int endOffset = this.CharOffset;
-					ReadChar();
-					if (PeekChar() != '{') {
+				case '\n':
+					ReportError("Unterminated string literal");
+					this.StringValue = "";
+					return CiToken.LiteralString;
+				case '"':
+					{
+						int endOffset = this.CharOffset;
+						ReadChar();
 						this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
-						return CiToken.InterpolatedString;
 					}
+					return CiToken.LiteralString;
+				case '{':
+					if (interpolated) {
+						int endOffset = this.CharOffset;
+						ReadChar();
+						if (PeekChar() != '{') {
+							this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
+							return CiToken.InterpolatedString;
+						}
+					}
+					break;
+				default:
+					break;
 				}
-				ReadCharLiteral();
 			}
 		}
 

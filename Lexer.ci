@@ -422,27 +422,33 @@ public abstract class CiLexer
 
 	protected CiToken ReadString!(bool interpolated)
 	{
-		for (int offset = this.CharOffset; ; ) {
-			int c = PeekChar();
-			if (c == '"') {
+		for (int offset = this.CharOffset; ; ReadCharLiteral()) {
+			switch (PeekChar()) {
+			case -1:
+				ReportError("Unterminated string literal");
+				return CiToken.EndOfFile;
+			case '\n':
+				ReportError("Unterminated string literal");
+				this.StringValue = "";
+				return CiToken.LiteralString;
+			case '"':
 				int endOffset = this.CharOffset;
 				ReadChar();
 				this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
 				return CiToken.LiteralString;
-			}
-			if (c < 0) {
-				ReportError("Unterminated string literal");
-				return CiToken.EndOfFile;
-			}
-			if (interpolated && c == '{') {
-				int endOffset = this.CharOffset;
-				ReadChar();
-				if (PeekChar() != '{') {
-					this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
-					return CiToken.InterpolatedString;
+			case '{':
+				if (interpolated) {
+					int endOffset = this.CharOffset;
+					ReadChar();
+					if (PeekChar() != '{') {
+						this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
+						return CiToken.InterpolatedString;
+					}
 				}
+				break;
+			default:
+				break;
 			}
-			ReadCharLiteral();
 		}
 	}
 
