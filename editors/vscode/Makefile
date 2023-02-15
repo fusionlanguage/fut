@@ -1,4 +1,4 @@
-VERSION = 2.1.1
+VERSION = 2.1.2
 
 run: ci-$(VERSION).vsix
 	'$(LOCALAPPDATA)\Programs\Microsoft VS Code\bin\code' --extensionDevelopmentPath=$(abspath .)
