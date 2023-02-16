@@ -1,0 +1,14 @@
+public static class Test
+{
+	static bool Foo()
+	{
+		string() s = "bar"; //FAIL: cl
+		bool ok = s.Length == 3;
+		return ok;
+	}
+
+	public static bool Run()
+	{
+		return Foo();
+	}
+}

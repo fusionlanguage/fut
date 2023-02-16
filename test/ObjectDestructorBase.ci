@@ -1,0 +1,18 @@
+public class Base
+{
+	internal string() Foo; //FAIL: cl
+}
+
+public class Test : Base
+{
+	public Test()
+	{
+	}
+
+	public static bool Run()
+	{
+		Test() o;
+		o.Foo = "bar";
+		return o.Foo == "bar";
+	}
+}

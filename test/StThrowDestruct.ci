@@ -1,0 +1,19 @@
+public class Test
+{
+	static int IntThrow() throws
+	{
+		throw "Foo";
+	}
+
+	public static string() Outer() throws
+	{
+		string() s = "bar"; //FAIL: cl
+		IntThrow();
+		return s;
+	}
+
+	public static bool Run()
+	{
+		return true;
+	}
+}

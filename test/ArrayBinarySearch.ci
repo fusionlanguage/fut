@@ -12,6 +12,7 @@ public static class Test
 		int three = 3;
 		byte five = 5;
 		return a.BinarySearch(three) == 1 //FAIL: js swift ts TODO; c TODO bigendian
+			&& a.BinarySearch(three) * 2 == 2
 			&& d.BinarySearch(five, 1, 2) == 2
 			&& p.BinarySearch(five, 1, 3) == 2;
 	}

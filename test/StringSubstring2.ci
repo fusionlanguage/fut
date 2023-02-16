@@ -7,6 +7,8 @@ public class Test
 		string escaped = "hello\n";
 		return ptr.Substring(one, 3) != "ARE"
 			&& escaped.Substring(3, 3) == "lo\n"
-			&& escaped.Substring(3) == "lo\n";
+			&& escaped.Substring(3) == "lo\n"
+			&& escaped.Substring(3)[0] == 'l'
+			&& !(escaped.Substring(3, 3) == "LO\n");
 	}
 }

@@ -12,6 +12,16 @@ class Derived : Base
 	{
 		return true;
 	}
+
+	internal virtual bool Bar() => true;
+}
+
+class MostDerived : Derived
+{
+	internal override bool Foo()
+	{
+		return false;
+	}
 }
 
 public static class Test
@@ -19,6 +29,7 @@ public static class Test
 	public static bool Run()
 	{
 		Base# d = new Derived();
-		return d.Foo();
+		Derived# m = new MostDerived();
+		return d.Foo() && m.Bar() && !m.Foo();
 	}
 }

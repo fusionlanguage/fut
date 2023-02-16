@@ -22,6 +22,13 @@ public static class Test
 		foreach (string s in ssl)
 			sum += s.Length;
 
-		return sum == 30 + 4 + 5;
+		List<bool>() bl;
+		bl.Add(true);
+		bl.Add(false);
+		foreach (bool b in bl)
+			if (!b)
+				sum++;
+
+		return sum == 30 + 4 + 5 + 1;
 	}
 }

@@ -1,0 +1,21 @@
+public class Test
+{
+	int Foo = 42;
+
+	public Test()
+	{
+	}
+
+	public static bool Run()
+	{
+		Dictionary<int, Test()>() dict; //FAIL: cl
+		dict.Add(1);
+		dict.Clear();
+		dict.Add(1);
+		dict.Add(2);
+		dict.Add(3);
+		dict[3].Foo = 30;
+		dict.Remove(1);
+		return dict.Count == 2 && dict[2].Foo == 42 && dict[3].Foo == 30 && dict.ContainsKey(2);
+	}
+}
