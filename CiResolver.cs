@@ -102,6 +102,8 @@ public class CiResolver : CiSema
 	{
 		if (expr.Left != null) {
 			CiExpr left = Resolve(expr.Left);
+			if (left == this.Poison)
+				return left;
 			CiSymbolReference leftSymbol = left as CiSymbolReference;
 			CiScope scope;
 			if (leftSymbol != null && leftSymbol.Symbol.Id == CiId.BasePtr) {

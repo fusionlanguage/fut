@@ -4,6 +4,7 @@ public class Test
 	{
 		while (x) { //ERROR: x not found
 		}
+		Foo.Bar; //ERROR: Foo not found
 		return x + 1; //ERROR: x not found
 	}
 }

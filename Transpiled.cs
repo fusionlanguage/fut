@@ -4668,7 +4668,7 @@ namespace Foxoft.Ci
 
 		protected abstract CiExpr VisitPrefixExpr(CiPrefixExpr expr);
 
-		void VisitPostfixExpr(CiPostfixExpr expr)
+		CiExpr VisitPostfixExpr(CiPostfixExpr expr)
 		{
 			expr.Inner = Resolve(expr.Inner);
 			switch (expr.Op) {
@@ -4677,10 +4677,9 @@ namespace Foxoft.Ci
 				CheckLValue(expr.Inner);
 				Coerce(expr.Inner, this.Program.System.DoubleType);
 				expr.Type = expr.Inner.Type;
-				break;
+				return expr;
 			default:
-				ReportError(expr, $"Unexpected {CiLexer.TokenToString(expr.Op)}");
-				break;
+				return PoisonError(expr, $"Unexpected {CiLexer.TokenToString(expr.Op)}");
 			}
 		}
 
@@ -5058,8 +5057,7 @@ namespace Foxoft.Ci
 			case CiPrefixExpr prefix:
 				return VisitPrefixExpr(prefix);
 			case CiPostfixExpr postfix:
-				VisitPostfixExpr(postfix);
-				return expr;
+				return VisitPostfixExpr(postfix);
 			case CiBinaryExpr binary:
 				return VisitBinaryExpr(binary);
 			case CiSelectExpr select:
@@ -5089,20 +5087,16 @@ namespace Foxoft.Ci
 			return expr;
 		}
 
-		void FillGenericClass(CiClassType result, CiSymbol klass, CiAggregateInitializer typeArgExprs)
+		void FillGenericClass(CiClassType result, CiClass klass, CiAggregateInitializer typeArgExprs)
 		{
-			if (!(klass is CiClass generic)) {
-				ReportError(typeArgExprs, $"{klass.Name} is not a class");
-				return;
-			}
 			List<CiType> typeArgs = new List<CiType>();
 			foreach (CiExpr typeArgExpr in typeArgExprs.Items)
 				typeArgs.Add(ToType(typeArgExpr, false));
-			if (typeArgs.Count != generic.TypeParameterCount) {
-				ReportError(typeArgExprs, $"Expected {generic.TypeParameterCount} type arguments for {generic.Name}, got {typeArgs.Count}");
+			if (typeArgs.Count != klass.TypeParameterCount) {
+				ReportError(result, $"Expected {klass.TypeParameterCount} type arguments for {klass.Name}, got {typeArgs.Count}");
 				return;
 			}
-			result.Class = generic;
+			result.Class = klass;
 			result.TypeArg0 = typeArgs[0];
 			if (typeArgs.Count == 2)
 				result.TypeArg1 = typeArgs[1];
@@ -5133,9 +5127,12 @@ namespace Foxoft.Ci
 					ReportError(call, "Expected empty parentheses for storage type");
 				{
 					if (call.Method.Left is CiAggregateInitializer typeArgExprs) {
-						CiStorageType storage = new CiStorageType();
-						FillGenericClass(storage, this.Program.TryLookup(call.Method.Name), typeArgExprs);
-						return storage;
+						CiStorageType storage = new CiStorageType { Line = call.Line };
+						if (this.Program.TryLookup(call.Method.Name) is CiClass klass) {
+							FillGenericClass(storage, klass, typeArgExprs);
+							return storage;
+						}
+						return PoisonError(typeArgExprs, $"{call.Method.Name} is not a class");
 					}
 				}
 				if (call.Method.Name == "string")
@@ -5299,7 +5296,7 @@ namespace Foxoft.Ci
 			if (statement.Init is CiVar iter && iter.Type is CiIntegerType && iter.Value != null && statement.Cond is CiBinaryExpr cond && cond.Left.IsReferenceTo(iter) && (cond.Right is CiLiteral || (cond.Right is CiSymbolReference limitSymbol && limitSymbol.Symbol is CiVar))) {
 				long step = 0;
 				switch (statement.Advance) {
-				case CiUnaryExpr unary when unary.Inner.IsReferenceTo(iter):
+				case CiUnaryExpr unary when unary.Inner != null && unary.Inner.IsReferenceTo(iter):
 					switch (unary.Op) {
 					case CiToken.Increment:
 						step = 1;
