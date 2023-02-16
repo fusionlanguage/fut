@@ -1,0 +1,13 @@
+public class Base
+{
+}
+
+public class Test : Base
+{
+	public static bool Run()
+	{
+		Test() o;
+		Base p = o;
+		return p is Test! rw; //ERROR: Base cannot be casted to Test!
+	}
+}

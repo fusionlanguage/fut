@@ -7,6 +7,8 @@ public static class Test
 		int a = 5;
 		int b = 1;
 		bool c = true;
+		int d = 13;
+		d >>= 2;
 		return a >> b == 2
 			&& (c ? a : b) >> 1 == 2
 			&& 32 >> (c ? a : b) == 1
@@ -29,6 +31,7 @@ public static class Test
 			&& (a / b) >> 1 == 2
 			&& 64 >> (a / b) == 2
 			&& (a % 3) >> 1 == 1
-			&& 32 >> (a % 3) == 8;
+			&& 32 >> (a % 3) == 8
+			&& d == 3;
 	}
 }

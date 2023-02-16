@@ -1,0 +1,8 @@
+public class Test
+{
+	public static bool Run()
+	{
+		Test() o = { Run = 3 }; //ERROR: Expected a field
+		return true;
+	}
+}

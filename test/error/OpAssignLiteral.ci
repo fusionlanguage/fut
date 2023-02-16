@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		2 = 4; //ERROR: Cannot modify this //ERROR: Cannot coerce 4 to 2
+		return true;
+	}
+}

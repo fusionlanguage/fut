@@ -6,6 +6,7 @@ public static class Test
 		int b = 3;
 		bool c = true;
 		int d = 8;
+		long l = 1;
 		return a << b == 16
 			&& (c ? a : b) << 1 == 4
 			&& 1 << (c ? a : b) == 4
@@ -28,6 +29,7 @@ public static class Test
 			&& d / a << 1 == 8
 			&& 1 << d / a == 16
 			&& d % b << 1 == 4
-			&& 1 << d % b == 4;
+			&& 1 << d % b == 4
+			&& l << 60 == 0x1000000000000000;
 	}
 }

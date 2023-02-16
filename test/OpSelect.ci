@@ -1,0 +1,24 @@
+abstract class Shape
+{
+}
+
+class Rectangle : Shape
+{
+}
+
+class Circle : Shape
+{
+}
+
+public static class Test
+{
+	public static bool Run()
+	{
+		bool a = true;
+		int[] b = null;
+		Rectangle() r;
+		Circle() c;
+		Shape! s = a ? r : c; //FAIL: cpp TODO
+		return a ? (true ? s : null) == r : b[0] == 5;
+	}
+}

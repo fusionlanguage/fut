@@ -4,6 +4,6 @@ public static class Test
 	{
 		string() s = "foo"; //FAIL: cl
 		string p = "ba'r";
-		return s[1] == 'o' && p[1] == 'a' && p[2] == '\'';
+		return s[1] == 'o' && p[1] == 'a' && p[2] == '\'' && "quux"[3] == 'x';
 	}
 }

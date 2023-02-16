@@ -1,0 +1,10 @@
+abstract class Base
+{
+}
+
+class Derived : Base
+{
+	public override void Foo() //ERROR: No method to override
+	{
+	}
+}

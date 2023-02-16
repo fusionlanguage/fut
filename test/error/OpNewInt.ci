@@ -1,0 +1,9 @@
+public class Test
+{
+	public static bool Run()
+	{
+		return new int //ERROR: Invalid argument to new
+			&& new int { Value = 5 } //ERROR: Invalid argument to new
+			&& new Test! { Value = 5 }; //ERROR: Invalid argument to new
+	}
+}

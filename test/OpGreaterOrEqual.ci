@@ -13,6 +13,7 @@ public static class Test
 			&& !(c >= d) && d - 0.5 >= c
 			&& d >= a
 			&& ba[1] >= ba[0]
-			&& !(ba[0] >= ba[1]);
+			&& !(ba[0] >= ba[1])
+			&& !(ba[1] >= 256);
 	}
 }

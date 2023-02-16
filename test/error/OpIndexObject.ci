@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		Test() o;
+		int i = o["foo"]; //ERROR: Cannot index this object
+		return true;
+	}
+}

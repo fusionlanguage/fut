@@ -5,6 +5,8 @@ public static class Test
 		int a = 0x0a;
 		int b = 8;
 		bool c = true;
+		byte b1 = 192;
+		byte b2 = 65;
 		return (a ^ b) == 2
 			&& ((c ? a : b) ^ 1) == 0xb
 			&& (2 ^ (c ? a : b)) == 8
@@ -27,6 +29,7 @@ public static class Test
 			&& ((a / b) ^ 3) == 2
 			&& (7 ^ (a / 5)) == 5
 			&& ((a % b) ^ 1) == 3
-			&& (4 ^ (a % b)) == 6;
+			&& (4 ^ (a % b)) == 6
+			&& (b1 ^ b2) == 129;
 	}
 }

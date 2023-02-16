@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int factorial = 5!; //ERROR: Unexpected '!'
+		return true;
+	}
+}

@@ -14,7 +14,7 @@ public static class Test
 		string() s6 = $"{f}";
 		double d = f;
 		string() s7 = $"{d}";
-		return  s1 == "1 + 2 == 3"
+		return s1 == "1 + 2 == 3"
 			&& s2 == "\"`{$1$"
 			&& s3 == "1"
 			&& s4 == "1"

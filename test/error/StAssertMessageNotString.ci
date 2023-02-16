@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		assert true, true; //ERROR: The second argument of 'assert' must be a string
+		return true;
+	}
+}
