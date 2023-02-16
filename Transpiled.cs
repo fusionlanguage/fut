@@ -5033,8 +5033,11 @@ namespace Foxoft.Ci
 				else {
 					expr.Value = Resolve(expr.Value);
 					if (!expr.IsAssignableStorage()) {
-						if (type is CiArrayStorageType array)
+						if (type is CiArrayStorageType array) {
 							type = array.GetElementType();
+							if (!(expr.Value is CiLiteral literal) || !literal.IsDefaultValue())
+								ReportError(expr.Value, "Only null, zero and false supported as an array initializer");
+						}
 						Coerce(expr.Value, type);
 					}
 				}

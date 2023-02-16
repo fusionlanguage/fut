@@ -1,0 +1,14 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int[5] a = 5; //ERROR: Only null, zero and false supported as an array initializer
+		byte[5] b = 10; //ERROR: Only null, zero and false supported as an array initializer
+		bool[5] c = true; //ERROR: Only null, zero and false supported as an array initializer
+		string[5] s = "foo"; //ERROR: Only null, zero and false supported as an array initializer
+		for (int i = 0; i < 5; i++)
+			if (a[i] != 5 || b[i] != 10 || !c[i] || s[i] != "foo")
+				return false;
+		return true;
+	}
+}

@@ -578,8 +578,7 @@ public class GenC : GenCCpp
 			Write(" }");
 			break;
 		default:
-			NotSupported(value, "Array initializer");
-			break;
+			throw new NotImplementedException("Only null, zero and false supported");
 		}
 	}
 
