@@ -432,9 +432,11 @@ public abstract class CiLexer
 				this.StringValue = "";
 				return CiToken.LiteralString;
 			case '"':
-				int endOffset = this.CharOffset;
-				ReadChar();
-				this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
+				{
+					int endOffset = this.CharOffset;
+					ReadChar();
+					this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
+				}
 				return CiToken.LiteralString;
 			case '{':
 				if (interpolated) {
