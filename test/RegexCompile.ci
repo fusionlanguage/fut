@@ -4,7 +4,8 @@ public class Test
 	{
 		Regex# re = Regex.Compile("^\\d+$"); //FAIL: swift TODO; cl
 		string s = "123";
-		if (!re.IsMatch(s))
+		Regex pre = re;
+		if (!re.IsMatch(s) || !pre.IsMatch("6502"))
 			return false;
 		s = "The quick brown fox jumps over the lazy dog";
 		re = Regex.Compile("(B.+?) (\\wo\\w)", RegexOptions.IgnoreCase); //FAIL: c TODO memleak

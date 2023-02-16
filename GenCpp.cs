@@ -649,6 +649,16 @@ public class GenCpp : GenCCpp
 			Write(" << '\\n'");
 	}
 
+	void WriteRegexArgument(CiExpr expr)
+	{
+		if (expr.Type is CiDynamicPtrType)
+			expr.Accept(this, CiPriority.Argument);
+		else {
+			WriteChar('*');
+			expr.Accept(this, CiPriority.Primary);
+		}
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
@@ -970,9 +980,9 @@ public class GenCpp : GenCCpp
 			}
 			Write(", ");
 			if (method.Id == CiId.RegexIsMatchRegex)
-				obj.Accept(this, CiPriority.Argument);
+				WriteRegexArgument(obj);
 			else if (method.Id == CiId.MatchFindRegex)
-				args[1].Accept(this, CiPriority.Argument);
+				WriteRegexArgument(args[1]);
 			else
 				WriteRegex(args, 1);
 			WriteChar(')');
@@ -1090,8 +1100,14 @@ public class GenCpp : GenCCpp
 			}
 			switch (expr.Type) {
 			case CiDynamicPtrType _:
-				expr.Accept(this, CiPriority.Primary);
-				Write(".get()");
+				if (klass.Class.Id == CiId.RegexClass) {
+					WriteChar('&');
+					expr.Accept(this, CiPriority.Primary);
+				}
+				else {
+					expr.Accept(this, CiPriority.Primary);
+					Write(".get()");
+				}
 				return;
 			case CiClassType _ when !IsCppPtr(expr):
 				WriteChar('&');
