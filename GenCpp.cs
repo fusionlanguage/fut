@@ -365,7 +365,11 @@ public class GenCpp : GenCCpp
 			WriteType(type, false);
 		}
 		Write(">(");
-		if (expr.Type is CiDynamicPtrType && !(type is CiDynamicPtrType)) {
+		if (expr.Type is CiStorageType) {
+			WriteChar('&');
+			expr.Accept(this, CiPriority.Primary);
+		}
+		else if (expr.Type is CiDynamicPtrType && !(type is CiDynamicPtrType)) {
 			expr.Accept(this, CiPriority.Primary);
 			Write(".get()");
 		}
@@ -1128,6 +1132,18 @@ public class GenCpp : GenCCpp
 			}
 		}
 		base.WriteCoercedInternal(type, expr, parent);
+	}
+
+	protected override void WriteSelectValues(CiType type, CiSelectExpr expr)
+	{
+		if (expr.OnTrue.Type is CiClassType trueClass && expr.OnFalse.Type is CiClassType falseClass
+			&& !trueClass.Class.IsSameOrBaseOf(falseClass.Class) && !falseClass.Class.IsSameOrBaseOf(trueClass.Class)) {
+			WriteStaticCast(type, expr.OnTrue);
+			Write(" : ");
+			WriteStaticCast(type, expr.OnFalse);
+		}
+		else
+			base.WriteSelectValues(type, expr);
 	}
 
 	protected override void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not)

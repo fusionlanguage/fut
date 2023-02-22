@@ -377,7 +377,7 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	protected override void WriteCoerced(CiType type, CiSelectExpr expr, CiPriority parent)
+	protected override void WriteCoercedSelect(CiType type, CiSelectExpr expr, CiPriority parent)
 	{
 		if (parent > CiPriority.Select)
 			WriteChar('(');

@@ -18,7 +18,7 @@ public static class Test
 		int[] b = null;
 		Rectangle() r;
 		Circle() c;
-		Shape! s = a ? r : c; //FAIL: cpp TODO
+		Shape! s = a ? r : c;
 		return a ? (true ? s : null) == r : b[0] == 5;
 	}
 }
