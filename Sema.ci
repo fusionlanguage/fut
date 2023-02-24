@@ -36,7 +36,7 @@ public abstract class CiSema : CiVisitor
 	{
 		if (klass.HasBaseClass()) {
 			this.CurrentScope = klass;
-			if (this.Program.TryLookup(klass.BaseClassName) is CiClass! baseClass) {
+			if (this.Program.TryLookup(klass.BaseClassName, true) is CiClass! baseClass) {
 				if (klass.IsPublic && !baseClass.IsPublic)
 					ReportError(klass, "Public class cannot derive from an internal class");
 				klass.Parent = baseClass;
@@ -478,7 +478,7 @@ public abstract class CiSema : CiVisitor
 	protected CiExpr Lookup(CiSymbolReference! expr, CiScope scope)
 	{
 		if (expr.Symbol == null) {
-			expr.Symbol = scope.TryLookup(expr.Name);
+			expr.Symbol = scope.TryLookup(expr.Name, expr.Left == null);
 			if (expr.Symbol == null)
 				return PoisonError(expr, $"{expr.Name} not found");
 			expr.Type = expr.Symbol.Type;
@@ -1021,17 +1021,21 @@ public abstract class CiSema : CiVisitor
 		switch (expr) {
 		case CiSymbolReference symbol:
 			// built-in, MyEnum, MyClass, MyClass!, MyClass#
-			if (this.Program.TryLookup(symbol.Name) is CiType# type) {
+			if (this.Program.TryLookup(symbol.Name, true) is CiType# type) {
 				if (type is CiClass klass) {
 					if (klass.Id == CiId.MatchClass && ptrModifier != CiToken.EndOfFile)
 						ReportError(expr, "Read-write references to the built-in class Match are not supported");
 					CiClassType# ptr = CreateClassPtr(klass, ptrModifier);
 					if (symbol.Left is CiAggregateInitializer typeArgExprs)
 						FillGenericClass(ptr, klass, typeArgExprs);
+					else if (symbol.Left != null)
+						return PoisonError(expr, "Invalid type");
 					else
 						ptr.Name = klass.Name; // TODO: needed?
 					return ptr;
 				}
+				else if (symbol.Left != null)
+					return PoisonError(expr, "Invalid type");
 				ExpectNoPtrModifier(expr, ptrModifier);
 				return type;
 			}
@@ -1042,19 +1046,19 @@ public abstract class CiSema : CiVisitor
 			ExpectNoPtrModifier(expr, ptrModifier);
 			if (call.Arguments.Count != 0)
 				ReportError(call, "Expected empty parentheses for storage type");
-			{
-				if (call.Method.Left is CiAggregateInitializer typeArgExprs) {
-					CiStorageType# storage = new CiStorageType { Line = call.Line };
-					if (this.Program.TryLookup(call.Method.Name) is CiClass klass) {
-						FillGenericClass(storage, klass, typeArgExprs);
-						return storage;
-					}
-					return PoisonError(typeArgExprs, $"{call.Method.Name} is not a class");
+			if (call.Method.Left is CiAggregateInitializer typeArgExprs2) {
+				CiStorageType# storage = new CiStorageType { Line = call.Line };
+				if (this.Program.TryLookup(call.Method.Name, true) is CiClass klass) {
+					FillGenericClass(storage, klass, typeArgExprs2);
+					return storage;
 				}
+				return PoisonError(typeArgExprs2, $"{call.Method.Name} is not a class");
 			}
+			else if (call.Method.Left != null)
+				return PoisonError(expr, "Invalid type");
 			if (call.Method.Name == "string")
 				return this.Program.System.StringStorageType;
-			if (this.Program.TryLookup(call.Method.Name) is CiClass klass2)
+			if (this.Program.TryLookup(call.Method.Name, true) is CiClass klass2)
 				return new CiStorageType { Class = klass2 };
 			return PoisonError(expr, $"Class {call.Method.Name} not found");
 
@@ -1498,7 +1502,7 @@ public abstract class CiSema : CiVisitor
 					}
 				}
 				if (method.CallType == CiCallType.Override || method.CallType == CiCallType.Sealed) {
-					if (klass.Parent.TryLookup(method.Name) is CiMethod baseMethod) {
+					if (klass.Parent.TryLookup(method.Name, false) is CiMethod baseMethod) {
 						// TODO: check private
 						switch (baseMethod.CallType) {
 						case CiCallType.Abstract:

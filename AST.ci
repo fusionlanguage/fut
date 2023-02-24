@@ -328,9 +328,9 @@ public class CiScope : CiSymbol
 
 	public bool Contains(CiSymbol symbol) => this.Dict.ContainsKey(symbol.Name);
 
-	public CiSymbol# TryLookup(string name)
+	public CiSymbol# TryLookup(string name, bool global)
 	{
-		for (CiScope scope = this; scope != null; scope = scope.Parent) {
+		for (CiScope scope = this; scope != null && (global || !(scope is CiProgram || scope is CiSystem)); scope = scope.Parent) {
 			if (scope.Dict.ContainsKey(name))
 				return scope.Dict[name];
 		}
@@ -1075,7 +1075,7 @@ public class CiMethod : CiMethodBase
 	{
 		CiMethod method = this;
 		while (method.CallType == CiCallType.Override) {
-			assert method.Parent.Parent.TryLookup(method.Name) is CiMethod baseMethod;
+			assert method.Parent.Parent.TryLookup(method.Name, false) is CiMethod baseMethod;
 			method = baseMethod;
 		}
 		return method;
@@ -1158,7 +1158,7 @@ public class CiClass : CiContainerType
 		return true;
 	}
 
-	public bool HasToString() => TryLookup("ToString") is CiMethod method && method.IsToString();
+	public bool HasToString() => TryLookup("ToString", false) is CiMethod method && method.IsToString();
 
 	public bool AddsToString() => this.Dict.ContainsKey("ToString") && this.Dict["ToString"] is CiMethod method && method.IsToString()
 		&& method.CallType != CiCallType.Override && method.CallType != CiCallType.Sealed;

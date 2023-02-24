@@ -2778,7 +2778,7 @@ public class GenC : GenCCpp
 			WriteVtbl(definingClass, baseClass);
 		for (CiSymbol symbol = declaringClass.First; symbol != null; symbol = symbol.Next) {
 			if (symbol is CiMethod declaredMethod && declaredMethod.IsAbstractOrVirtual()) {
-				CiSymbol definedMethod = definingClass.TryLookup(declaredMethod.Name);
+				CiSymbol definedMethod = definingClass.TryLookup(declaredMethod.Name, false);
 				if (declaredMethod != definedMethod) {
 					WriteChar('(');
 					WriteSignature(declaredMethod, () => {

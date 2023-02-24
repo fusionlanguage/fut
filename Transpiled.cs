@@ -1589,9 +1589,9 @@ namespace Foxoft.Ci
 
 		public bool Contains(CiSymbol symbol) => this.Dict.ContainsKey(symbol.Name);
 
-		public CiSymbol TryLookup(string name)
+		public CiSymbol TryLookup(string name, bool global)
 		{
-			for (CiScope scope = this; scope != null; scope = scope.Parent) {
+			for (CiScope scope = this; scope != null && (global || !(scope is CiProgram || scope is CiSystem)); scope = scope.Parent) {
 				if (scope.Dict.ContainsKey(name))
 					return scope.Dict[name];
 			}
@@ -2575,7 +2575,7 @@ namespace Foxoft.Ci
 		{
 			CiMethod method = this;
 			while (method.CallType == CiCallType.Override) {
-				CiMethod baseMethod = (CiMethod) method.Parent.Parent.TryLookup(method.Name);
+				CiMethod baseMethod = (CiMethod) method.Parent.Parent.TryLookup(method.Name, false);
 				method = baseMethod;
 			}
 			return method;
@@ -2670,7 +2670,7 @@ namespace Foxoft.Ci
 			return true;
 		}
 
-		public bool HasToString() => TryLookup("ToString") is CiMethod method && method.IsToString();
+		public bool HasToString() => TryLookup("ToString", false) is CiMethod method && method.IsToString();
 
 		public bool AddsToString() => this.Dict.ContainsKey("ToString") && this.Dict["ToString"] is CiMethod method && method.IsToString() && method.CallType != CiCallType.Override && method.CallType != CiCallType.Sealed;
 	}
@@ -4164,7 +4164,7 @@ namespace Foxoft.Ci
 		{
 			if (klass.HasBaseClass()) {
 				this.CurrentScope = klass;
-				if (this.Program.TryLookup(klass.BaseClassName) is CiClass baseClass) {
+				if (this.Program.TryLookup(klass.BaseClassName, true) is CiClass baseClass) {
 					if (klass.IsPublic && !baseClass.IsPublic)
 						ReportError(klass, "Public class cannot derive from an internal class");
 					klass.Parent = baseClass;
@@ -4598,7 +4598,7 @@ namespace Foxoft.Ci
 		protected CiExpr Lookup(CiSymbolReference expr, CiScope scope)
 		{
 			if (expr.Symbol == null) {
-				expr.Symbol = scope.TryLookup(expr.Name);
+				expr.Symbol = scope.TryLookup(expr.Name, expr.Left == null);
 				if (expr.Symbol == null)
 					return PoisonError(expr, $"{expr.Name} not found");
 				expr.Type = expr.Symbol.Type;
@@ -5107,17 +5107,21 @@ namespace Foxoft.Ci
 		{
 			switch (expr) {
 			case CiSymbolReference symbol:
-				if (this.Program.TryLookup(symbol.Name) is CiType type) {
+				if (this.Program.TryLookup(symbol.Name, true) is CiType type) {
 					if (type is CiClass klass) {
 						if (klass.Id == CiId.MatchClass && ptrModifier != CiToken.EndOfFile)
 							ReportError(expr, "Read-write references to the built-in class Match are not supported");
 						CiClassType ptr = CreateClassPtr(klass, ptrModifier);
 						if (symbol.Left is CiAggregateInitializer typeArgExprs)
 							FillGenericClass(ptr, klass, typeArgExprs);
+						else if (symbol.Left != null)
+							return PoisonError(expr, "Invalid type");
 						else
 							ptr.Name = klass.Name;
 						return ptr;
 					}
+					else if (symbol.Left != null)
+						return PoisonError(expr, "Invalid type");
 					ExpectNoPtrModifier(expr, ptrModifier);
 					return type;
 				}
@@ -5126,19 +5130,19 @@ namespace Foxoft.Ci
 				ExpectNoPtrModifier(expr, ptrModifier);
 				if (call.Arguments.Count != 0)
 					ReportError(call, "Expected empty parentheses for storage type");
-				{
-					if (call.Method.Left is CiAggregateInitializer typeArgExprs) {
-						CiStorageType storage = new CiStorageType { Line = call.Line };
-						if (this.Program.TryLookup(call.Method.Name) is CiClass klass) {
-							FillGenericClass(storage, klass, typeArgExprs);
-							return storage;
-						}
-						return PoisonError(typeArgExprs, $"{call.Method.Name} is not a class");
+				if (call.Method.Left is CiAggregateInitializer typeArgExprs2) {
+					CiStorageType storage = new CiStorageType { Line = call.Line };
+					if (this.Program.TryLookup(call.Method.Name, true) is CiClass klass) {
+						FillGenericClass(storage, klass, typeArgExprs2);
+						return storage;
 					}
+					return PoisonError(typeArgExprs2, $"{call.Method.Name} is not a class");
 				}
+				else if (call.Method.Left != null)
+					return PoisonError(expr, "Invalid type");
 				if (call.Method.Name == "string")
 					return this.Program.System.StringStorageType;
-				if (this.Program.TryLookup(call.Method.Name) is CiClass klass2)
+				if (this.Program.TryLookup(call.Method.Name, true) is CiClass klass2)
 					return new CiStorageType { Class = klass2 };
 				return PoisonError(expr, $"Class {call.Method.Name} not found");
 			default:
@@ -5566,7 +5570,7 @@ namespace Foxoft.Ci
 						}
 					}
 					if (method.CallType == CiCallType.Override || method.CallType == CiCallType.Sealed) {
-						if (klass.Parent.TryLookup(method.Name) is CiMethod baseMethod) {
+						if (klass.Parent.TryLookup(method.Name, false) is CiMethod baseMethod) {
 							switch (baseMethod.CallType) {
 							case CiCallType.Abstract:
 							case CiCallType.Virtual:
