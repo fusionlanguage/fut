@@ -29,7 +29,6 @@ namespace Foxoft.Ci
 public class CiResolver : CiSema
 {
 	readonly List<string> SearchDirs;
-	readonly HashSet<CiMethod> CurrentPureMethods = new HashSet<CiMethod>();
 
 	byte[] ReadResource(string name, CiStatement statement)
 	{
@@ -169,104 +168,6 @@ public class CiResolver : CiSema
 		if (range != null && range.Min == range.Max)
 			return ToLiteralLong(expr, range.Min);
 		return new CiPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
-	}
-
-	protected override CiExpr VisitCallExpr(CiCallExpr expr)
-	{
-		if (!(Resolve(expr.Method) is CiSymbolReference symbol))
-			return this.Poison;
-		List<CiExpr> arguments;
-		int i;
-		if (this.CurrentPureArguments.Count == 0) {
-			arguments = expr.Arguments;
-			for (i = 0; i < arguments.Count; i++) {
-				if (!(arguments[i] is CiLambdaExpr))
-					arguments[i] = Resolve(arguments[i]);
-			}
-		}
-		else {
-			arguments = new List<CiExpr>(expr.Arguments.Count);
-			foreach (CiExpr arg in expr.Arguments)
-				arguments.Add(Resolve(arg));
-		}
-		CiMethod method;
-		switch (symbol.Symbol) {
-		case null:
-			return this.Poison;
-		case CiMethod m:
-			method = m;
-			break;
-		case CiMethodGroup group:
-			method = group.Methods[0];
-			if (!CanCall(symbol.Left, method, arguments))
-				method = group.Methods[1];
-			break;
-		default:
-			return PoisonError(symbol, "Expected a method");
-		}
-
-		// TODO: check static
-		i = 0;
-		for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
-			CiType type = param.Type;
-			if (symbol.Left != null && symbol.Left.Type is CiClassType generic) {
-				type = EvalType(generic, type);
-				if (type == null)
-					continue;
-			}
-			if (i >= arguments.Count) {
-				if (param.Value != null)
-					break;
-				return PoisonError(expr, $"Too few arguments for '{method.Name}'");
-			}
-			CiExpr arg = arguments[i++];
-			if (type.Id == CiId.TypeParam0Predicate && arg is CiLambdaExpr lambda) {
-				lambda.First.Type = ((CiClassType) symbol.Left.Type).TypeArg0;
-				OpenScope(lambda);
-				lambda.Body = Resolve(lambda.Body);
-				CloseScope();
-				Coerce(lambda.Body, this.Program.System.BoolType);
-			}
-			else
-				Coerce(arg, type);
-		}
-		if (i < arguments.Count)
-			return PoisonError(arguments[i], $"Too many arguments for '{method.Name}'");
-
-		if (method.Throws) {
-			if (this.CurrentMethod == null)
-				return PoisonError(expr, $"Cannot call method '{method.Name}' here because it is marked 'throws'");
-			if (!this.CurrentMethod.Throws)
-				return PoisonError(expr, "Method marked 'throws' called from a method not marked 'throws'");
-		}
-
-		symbol.Symbol = method;
-
-		if (method.CallType == CiCallType.Static
-		 && method.Body is CiReturn ret
-		 && arguments.All(arg => arg is CiLiteral)
-		 && this.CurrentPureMethods.Add(method)) {
-			i = 0;
-			for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter())
-				this.CurrentPureArguments.Add(param, i < arguments.Count ? arguments[i++] : param.Value);
-			CiExpr result = Resolve(ret.Value);
-			for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter())
-				this.CurrentPureArguments.Remove(param);
-			this.CurrentPureMethods.Remove(method);
-			if (result is CiLiteral)
-				return result;
-		}
-
-		if (this.CurrentMethod != null)
-			this.CurrentMethod.Calls.Add(method);
-		if (this.CurrentPureArguments.Count == 0) {
-			expr.Method = symbol;
-			CiType type = method.Type;
-			if (symbol.Left != null && symbol.Left.Type is CiClassType generic)
-				type = EvalType(generic, type);
-			expr.Type = type;
-		}
-		return expr;
 	}
 
 	void ResolveCode(CiClass klass)

@@ -4168,9 +4168,11 @@ namespace Foxoft.Ci
 
 		protected CiScope CurrentScope;
 
-		protected readonly Dictionary<CiVar, CiExpr> CurrentPureArguments = new Dictionary<CiVar, CiExpr>();
+		readonly HashSet<CiMethod> CurrentPureMethods = new HashSet<CiMethod>();
 
-		protected CiType Poison = new CiType { Name = "poison" };
+		readonly Dictionary<CiVar, CiExpr> CurrentPureArguments = new Dictionary<CiVar, CiExpr>();
+
+		CiType Poison = new CiType { Name = "poison" };
 
 		protected override CiContainerType GetCurrentContainer() => this.CurrentScope.GetContainer();
 
@@ -4638,7 +4640,7 @@ namespace Foxoft.Ci
 			Coerce(right, doubleType);
 		}
 
-		protected CiType EvalType(CiClassType generic, CiType type)
+		CiType EvalType(CiClassType generic, CiType type)
 		{
 			if (type.Id == CiId.TypeParam0)
 				return generic.TypeArg0;
@@ -4653,7 +4655,7 @@ namespace Foxoft.Ci
 			return type;
 		}
 
-		protected bool CanCall(CiExpr obj, CiMethod method, List<CiExpr> arguments)
+		bool CanCall(CiExpr obj, CiMethod method, List<CiExpr> arguments)
 		{
 			CiVar param = method.Parameters.FirstParameter();
 			foreach (CiExpr arg in arguments) {
@@ -4675,7 +4677,7 @@ namespace Foxoft.Ci
 			this.CurrentScope = scope;
 		}
 
-		protected void CloseScope()
+		void CloseScope()
 		{
 			this.CurrentScope = this.CurrentScope.Parent;
 		}
@@ -5126,7 +5128,104 @@ namespace Foxoft.Ci
 			return new CiSelectExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
 		}
 
-		protected abstract CiExpr VisitCallExpr(CiCallExpr expr);
+		CiExpr ResolveCallWithArguments(CiCallExpr expr, List<CiExpr> arguments)
+		{
+			if (!(Resolve(expr.Method) is CiSymbolReference symbol))
+				return this.Poison;
+			CiMethod method;
+			switch (symbol.Symbol) {
+			case null:
+				return this.Poison;
+			case CiMethod m:
+				method = m;
+				break;
+			case CiMethodGroup group:
+				method = group.Methods[0];
+				if (!CanCall(symbol.Left, method, arguments))
+					method = group.Methods[1];
+				break;
+			default:
+				return PoisonError(symbol, "Expected a method");
+			}
+			int i = 0;
+			for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+				CiType type = param.Type;
+				if (symbol.Left != null && symbol.Left.Type is CiClassType generic) {
+					type = EvalType(generic, type);
+					if (type == null)
+						continue;
+				}
+				if (i >= arguments.Count) {
+					if (param.Value != null)
+						break;
+					return PoisonError(expr, $"Too few arguments for '{method.Name}'");
+				}
+				CiExpr arg = arguments[i++];
+				if (type.Id == CiId.TypeParam0Predicate && arg is CiLambdaExpr lambda) {
+					CiClassType klass = (CiClassType) symbol.Left.Type;
+					lambda.First.Type = klass.TypeArg0;
+					OpenScope(lambda);
+					lambda.Body = Resolve(lambda.Body);
+					CloseScope();
+					Coerce(lambda.Body, this.Program.System.BoolType);
+				}
+				else
+					Coerce(arg, type);
+			}
+			if (i < arguments.Count)
+				return PoisonError(arguments[i], $"Too many arguments for '{method.Name}'");
+			if (method.Throws) {
+				if (this.CurrentMethod == null)
+					return PoisonError(expr, $"Cannot call method '{method.Name}' here because it is marked 'throws'");
+				if (!this.CurrentMethod.Throws)
+					return PoisonError(expr, "Method marked 'throws' called from a method not marked 'throws'");
+			}
+			symbol.Symbol = method;
+			if (method.CallType == CiCallType.Static && method.Body is CiReturn ret && arguments.All(arg => arg is CiLiteral) && !this.CurrentPureMethods.Contains(method)) {
+				this.CurrentPureMethods.Add(method);
+				i = 0;
+				for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+					if (i < arguments.Count)
+						this.CurrentPureArguments[param] = arguments[i++];
+					else
+						this.CurrentPureArguments[param] = param.Value;
+				}
+				CiExpr result = Resolve(ret.Value);
+				for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter())
+					this.CurrentPureArguments.Remove(param);
+				this.CurrentPureMethods.Remove(method);
+				if (result is CiLiteral)
+					return result;
+			}
+			if (this.CurrentMethod != null)
+				this.CurrentMethod.Calls.Add(method);
+			if (this.CurrentPureArguments.Count == 0) {
+				expr.Method = symbol;
+				CiType type = method.Type;
+				if (symbol.Left != null && symbol.Left.Type is CiClassType generic)
+					type = EvalType(generic, type);
+				expr.Type = type;
+			}
+			return expr;
+		}
+
+		CiExpr VisitCallExpr(CiCallExpr expr)
+		{
+			if (this.CurrentPureArguments.Count == 0) {
+				List<CiExpr> arguments = expr.Arguments;
+				for (int i = 0; i < arguments.Count; i++) {
+					if (!(arguments[i] is CiLambdaExpr))
+						arguments[i] = Resolve(arguments[i]);
+				}
+				return ResolveCallWithArguments(expr, arguments);
+			}
+			else {
+				List<CiExpr> arguments = new List<CiExpr>();
+				foreach (CiExpr arg in expr.Arguments)
+					arguments.Add(Resolve(arg));
+				return ResolveCallWithArguments(expr, arguments);
+			}
+		}
 
 		void VisitVar(CiVar expr)
 		{
@@ -5256,7 +5355,7 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected CiType ToType(CiExpr expr, bool dynamic)
+		CiType ToType(CiExpr expr, bool dynamic)
 		{
 			CiExpr minExpr = null;
 			if (expr is CiBinaryExpr range && range.Op == CiToken.Range) {
@@ -5323,7 +5422,7 @@ namespace Foxoft.Ci
 			return outerArray;
 		}
 
-		protected CiType ResolveType(CiNamedValue def)
+		CiType ResolveType(CiNamedValue def)
 		{
 			def.Type = ToType(def.TypeExpr, false);
 			return def.Type;
@@ -5339,7 +5438,7 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected bool ResolveStatements(List<CiStatement> statements)
+		bool ResolveStatements(List<CiStatement> statements)
 		{
 			bool reachable = true;
 			foreach (CiStatement statement in statements) {
@@ -5601,7 +5700,7 @@ namespace Foxoft.Ci
 			CloseScope();
 		}
 
-		protected void ExpectNoPtrModifier(CiExpr expr, CiToken ptrModifier)
+		void ExpectNoPtrModifier(CiExpr expr, CiToken ptrModifier)
 		{
 			if (ptrModifier != CiToken.EndOfFile)
 				ReportError(expr, $"Unexpected {CiLexer.TokenToString(ptrModifier)} on a non-reference type");
@@ -5630,7 +5729,7 @@ namespace Foxoft.Ci
 			return 0;
 		}
 
-		protected static CiClassType CreateClassPtr(CiClass klass, CiToken ptrModifier)
+		static CiClassType CreateClassPtr(CiClass klass, CiToken ptrModifier)
 		{
 			CiClassType ptr;
 			switch (ptrModifier) {
@@ -5698,7 +5797,7 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected void ResolveConst(CiConst konst)
+		void ResolveConst(CiConst konst)
 		{
 			switch (konst.VisitStatus) {
 			case CiVisitStatus.NotYet:
