@@ -22,6 +22,7 @@ public abstract class CiSema : CiVisitor
 	protected CiProgram! Program;
 	protected CiMethodBase CurrentMethod;
 	protected CiScope! CurrentScope;
+	protected Dictionary<CiVar, CiExpr#>() CurrentPureArguments;
 	protected CiType# Poison = new CiType { Name = "poison" };
 
 	protected override CiContainerType GetCurrentContainer() => this.CurrentScope.GetContainer();
@@ -334,7 +335,7 @@ public abstract class CiSema : CiVisitor
 		foreach (CiExpr! item in init.Items) {
 			assert item is CiBinaryExpr! field;
 			assert field.Op == CiToken.Assign;
-			assert field.Left is CiSymbolReference! symbol;
+			assert field.Left is CiSymbolReference# symbol;
 			Lookup(symbol, klass.Class);
 			if (symbol.Symbol is CiField) {
 				field.Right = Resolve(field.Right);
@@ -475,7 +476,7 @@ public abstract class CiSema : CiVisitor
 		return result;
 	}
 
-	protected CiExpr Lookup(CiSymbolReference! expr, CiScope scope)
+	CiExpr# Lookup!(CiSymbolReference# expr, CiScope scope)
 	{
 		if (expr.Symbol == null) {
 			expr.Symbol = scope.TryLookup(expr.Name, expr.Left == null);
@@ -542,7 +543,103 @@ public abstract class CiSema : CiVisitor
 
 	protected abstract CiExpr# VisitInterpolatedString!(CiInterpolatedString# expr);
 
-	protected abstract CiExpr# VisitSymbolReference!(CiSymbolReference# expr);
+	CiExpr# VisitSymbolReference!(CiSymbolReference# expr)
+	{
+		if (expr.Left == null) {
+			CiExpr# resolved = Lookup(expr, this.CurrentScope);
+			if (expr.Symbol is CiMember nearMember) {
+				if (nearMember.Visibility == CiVisibility.Private
+				 && nearMember.Parent is CiClass memberClass // not local const
+				 && memberClass != GetCurrentContainer())
+					ReportError(expr, $"Cannot access private member {expr.Name}");
+				if (!nearMember.IsStatic()
+				 && (this.CurrentMethod == null || this.CurrentMethod.IsStatic()))
+					ReportError(expr, $"Cannot use instance member {expr.Name} from static context");
+			}
+			if (resolved is CiSymbolReference symbol
+			 && symbol.Symbol is CiVar v) {
+				if (v.Parent is CiFor! loop)
+					loop.IsIteratorUsed = true;
+				else if (this.CurrentPureArguments.ContainsKey(v)) // TryGetValue
+					return this.CurrentPureArguments[v];
+			}
+			return resolved;
+		}
+
+		CiExpr# left = Resolve(expr.Left);
+		if (left == this.Poison)
+			return left;
+		CiScope scope;
+		bool isBase = left is CiSymbolReference baseSymbol && baseSymbol.Symbol.Id == CiId.BasePtr;
+		if (isBase) {
+			if (this.CurrentMethod == null || !(this.CurrentMethod.Parent.Parent is CiClass baseClass))
+				return PoisonError(expr, "No base class");
+			scope = baseClass;
+			// TODO: static?
+		}
+		else if (left is CiSymbolReference leftSymbol && leftSymbol.Symbol is CiScope obj)
+			scope = obj;
+		else {
+			scope = left.Type;
+			if (scope is CiClassType klass)
+				scope = klass.Class;
+		}
+		CiExpr# result = Lookup(expr, scope);
+		if (result != expr)
+			return result;
+		if (expr.Symbol is CiMember member) {
+			switch (member.Visibility) {
+			case CiVisibility.Private:
+				if (member.Parent != this.CurrentMethod.Parent
+				 || this.CurrentMethod.Parent != scope) // enforced by Java, but not C++/C#/TS
+					ReportError(expr, $"Cannot access private member {expr.Name}");
+				break;
+			case CiVisibility.Protected:
+				if (isBase)
+					break;
+				assert this.CurrentMethod.Parent is CiClass currentClass;
+				assert scope is CiClass scopeClass;
+				if (!currentClass.IsSameOrBaseOf(scopeClass)) // enforced by C++/C#/TS but not Java 
+					ReportError(expr, $"Cannot access protected member {expr.Name}");
+				break;
+			case CiVisibility.NumericElementType:
+				if (left.Type is CiClassType klass && !(klass.GetElementType() is CiNumericType))
+					ReportError(expr, "Method restricted to collections of numbers");
+				break;
+			case CiVisibility.FinalValueType: // DictionaryAdd
+				assert left.Type is CiClassType dictionary;
+				if (!dictionary.GetValueType().IsFinal())
+					ReportError(expr, "Method restricted to dictionaries with storage values");
+				break;
+			default:
+				switch (expr.Symbol.Id) {
+				case CiId.ArrayLength:
+					assert left.Type is CiArrayStorageType arrayStorage;
+					return ToLiteralLong(expr, arrayStorage.Length);
+				case CiId.StringLength:
+					if (left is CiLiteralString leftLiteral) {
+						int length = leftLiteral.GetAsciiLength();
+						if (length >= 0)
+							return ToLiteralLong(expr, length);
+					}
+					break;
+				default:
+					break;
+				}
+				break;
+			}
+			if (!(member is CiMethodGroup)) {
+				if (left is CiSymbolReference leftContainer && leftContainer.Symbol is CiContainerType) {
+					if (!member.IsStatic())
+						ReportError(expr, $"Cannot use instance member {expr.Name} without an object");
+				}
+				// TODO: Console.Error
+				// else if (member.IsStatic())
+				// 	ReportError(expr, $"{expr.Name} is static");
+			}
+		}
+		return new CiSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
+	}
 
 	protected abstract CiExpr# VisitPrefixExpr!(CiPrefixExpr# expr);
 
