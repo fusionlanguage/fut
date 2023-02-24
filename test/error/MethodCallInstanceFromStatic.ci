@@ -1,0 +1,17 @@
+public class Test
+{
+	bool Field = true;
+
+	void InstanceMethod()
+	{
+	}
+
+	public static bool Run()
+	{
+		if (Field) //ERROR: Cannot use instance member Field from static context
+			InstanceMethod(); //ERROR: Cannot use instance member InstanceMethod from static context
+		if (Match.Length > 0) //ERROR: Cannot use instance member Length without an object
+			Test.InstanceMethod(); //ERROR: Cannot use instance member InstanceMethod without an object
+		return true;
+	}
+}

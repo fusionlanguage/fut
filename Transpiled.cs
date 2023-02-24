@@ -2452,7 +2452,7 @@ namespace Foxoft.Ci
 		public bool IsAssignableStorage() => this.Type is CiStorageType && !(this.Type is CiArrayStorageType) && this.Value is CiLiteralNull;
 	}
 
-	public class CiMember : CiNamedValue
+	public abstract class CiMember : CiNamedValue
 	{
 		protected CiMember()
 		{
@@ -2460,12 +2460,7 @@ namespace Foxoft.Ci
 
 		internal CiVisibility Visibility;
 
-		public static CiMember New(CiType type, CiId id, string name) => new CiMember { Visibility = CiVisibility.Public, Type = type, Id = id, Name = name };
-
-		public virtual bool IsStatic()
-		{
-			throw new NotImplementedException();
-		}
+		public abstract bool IsStatic();
 	}
 
 	public class CiVar : CiNamedValue
@@ -2515,6 +2510,22 @@ namespace Foxoft.Ci
 		public override bool IsStatic() => false;
 	}
 
+	public class CiProperty : CiMember
+	{
+
+		public override bool IsStatic() => false;
+
+		public static CiProperty New(CiType type, CiId id, string name) => new CiProperty { Visibility = CiVisibility.Public, Type = type, Id = id, Name = name };
+	}
+
+	public class CiStaticProperty : CiMember
+	{
+
+		public override bool IsStatic() => true;
+
+		public static CiStaticProperty New(CiType type, CiId id, string name) => new CiStaticProperty { Visibility = CiVisibility.Public, Type = type, Id = id, Name = name };
+	}
+
 	public class CiMethodBase : CiMember
 	{
 
@@ -2527,6 +2538,8 @@ namespace Foxoft.Ci
 		internal bool IsLive = false;
 
 		internal readonly HashSet<CiMethod> Calls = new HashSet<CiMethod>();
+
+		public override bool IsStatic() => false;
 	}
 
 	public class CiMethod : CiMethodBase
@@ -2591,6 +2604,11 @@ namespace Foxoft.Ci
 		}
 
 		internal readonly CiMethod[] Methods = new CiMethod[2];
+
+		public override bool IsStatic()
+		{
+			throw new NotImplementedException();
+		}
 
 		public static CiMethodGroup New(CiMethod method0, CiMethod method1)
 		{
@@ -2862,7 +2880,7 @@ namespace Foxoft.Ci
 			stringClass.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.StringEndsWith, "EndsWith", CiVar.New(this.StringPtrType, "value")));
 			stringClass.Add(CiMethod.New(CiVisibility.Public, minus1Type, CiId.StringIndexOf, "IndexOf", CiVar.New(this.StringPtrType, "value")));
 			stringClass.Add(CiMethod.New(CiVisibility.Public, minus1Type, CiId.StringLastIndexOf, "LastIndexOf", CiVar.New(this.StringPtrType, "value")));
-			stringClass.Add(CiMember.New(this.UIntType, CiId.StringLength, "Length"));
+			stringClass.Add(CiProperty.New(this.UIntType, CiId.StringLength, "Length"));
 			stringClass.Add(CiMethod.New(CiVisibility.Public, this.StringStorageType, CiId.StringReplace, "Replace", CiVar.New(this.StringPtrType, "oldValue"), CiVar.New(this.StringPtrType, "newValue")));
 			stringClass.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.StringStartsWith, "StartsWith", CiVar.New(this.StringPtrType, "value")));
 			stringClass.Add(CiMethod.New(CiVisibility.Public, this.StringStorageType, CiId.StringSubstring, "Substring", CiVar.New(this.IntType, "offset"), CiVar.New(this.IntType, "length", NewLiteralLong(-1))));
@@ -2879,7 +2897,7 @@ namespace Foxoft.Ci
 			this.ArrayStorageClass.Parent = this.ArrayPtrClass;
 			this.ArrayStorageClass.Add(CiMethodGroup.New(CiMethod.New(CiVisibility.NumericElementType, this.IntType, CiId.ArrayBinarySearchAll, "BinarySearch", CiVar.New(this.TypeParam0, "value")), arrayBinarySearchPart));
 			this.ArrayStorageClass.Add(CiMethodGroup.New(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.ArrayFillAll, "Fill", CiVar.New(this.TypeParam0, "value")), arrayFillPart));
-			this.ArrayStorageClass.Add(CiMember.New(this.UIntType, CiId.ArrayLength, "Length"));
+			this.ArrayStorageClass.Add(CiProperty.New(this.UIntType, CiId.ArrayLength, "Length"));
 			this.ArrayStorageClass.Add(CiMethodGroup.New(CiMethod.NewMutator(CiVisibility.NumericElementType, this.VoidType, CiId.ArraySortAll, "Sort"), arraySortPart));
 			CiType typeParam0NotFinal = new CiType { Id = CiId.TypeParam0NotFinal, Name = "T" };
 			CiType typeParam0Predicate = new CiType { Id = CiId.TypeParam0Predicate, Name = "Predicate<T>" };
@@ -2914,7 +2932,7 @@ namespace Foxoft.Ci
 			consoleBase.Add(CiMethod.NewStatic(this.VoidType, CiId.ConsoleWrite, "Write", CiVar.New(this.PrintableType, "value")));
 			consoleBase.Add(CiMethod.NewStatic(this.VoidType, CiId.ConsoleWriteLine, "WriteLine", CiVar.New(this.PrintableType, "value", NewLiteralString(""))));
 			CiClass consoleClass = CiClass.New(CiCallType.Static, CiId.None, "Console");
-			CiMember consoleError = CiMember.New(consoleBase, CiId.ConsoleError, "Error");
+			CiStaticProperty consoleError = CiStaticProperty.New(consoleBase, CiId.ConsoleError, "Error");
 			consoleClass.Add(consoleError);
 			Add(consoleClass);
 			consoleClass.Parent = consoleBase;
@@ -2923,7 +2941,7 @@ namespace Foxoft.Ci
 			utf8EncodingClass.Add(CiMethod.New(CiVisibility.Public, this.VoidType, CiId.UTF8GetBytes, "GetBytes", CiVar.New(this.StringPtrType, "str"), CiVar.New(new CiReadWriteClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, "bytes"), CiVar.New(this.IntType, "byteIndex")));
 			utf8EncodingClass.Add(CiMethod.New(CiVisibility.Public, this.StringStorageType, CiId.UTF8GetString, "GetString", CiVar.New(new CiClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, "bytes"), CiVar.New(this.IntType, "offset"), CiVar.New(this.IntType, "length")));
 			CiClass encodingClass = CiClass.New(CiCallType.Static, CiId.None, "Encoding");
-			encodingClass.Add(CiMember.New(utf8EncodingClass, CiId.None, "UTF8"));
+			encodingClass.Add(CiStaticProperty.New(utf8EncodingClass, CiId.None, "UTF8"));
 			Add(encodingClass);
 			CiClass environmentClass = CiClass.New(CiCallType.Static, CiId.None, "Environment");
 			environmentClass.Add(CiMethod.NewStatic(this.StringPtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", CiVar.New(this.StringPtrType, "name")));
@@ -2942,11 +2960,11 @@ namespace Foxoft.Ci
 			Add(regexClass);
 			CiClass matchClass = CiClass.New(CiCallType.Sealed, CiId.MatchClass, "Match");
 			matchClass.Add(CiMethodGroup.New(CiMethod.NewMutator(CiVisibility.Public, this.BoolType, CiId.MatchFindStr, "Find", CiVar.New(this.StringPtrType, "input"), CiVar.New(this.StringPtrType, "pattern"), CiVar.New(regexOptionsEnum, "options", regexOptionsNone)), CiMethod.NewMutator(CiVisibility.Public, this.BoolType, CiId.MatchFindRegex, "Find", CiVar.New(this.StringPtrType, "input"), CiVar.New(new CiClassType { Class = regexClass }, "pattern"))));
-			matchClass.Add(CiMember.New(this.IntType, CiId.MatchStart, "Start"));
-			matchClass.Add(CiMember.New(this.IntType, CiId.MatchEnd, "End"));
+			matchClass.Add(CiProperty.New(this.IntType, CiId.MatchStart, "Start"));
+			matchClass.Add(CiProperty.New(this.IntType, CiId.MatchEnd, "End"));
 			matchClass.Add(CiMethod.New(CiVisibility.Public, this.StringPtrType, CiId.MatchGetCapture, "GetCapture", CiVar.New(this.UIntType, "group")));
-			matchClass.Add(CiMember.New(this.UIntType, CiId.MatchLength, "Length"));
-			matchClass.Add(CiMember.New(this.StringPtrType, CiId.MatchValue, "Value"));
+			matchClass.Add(CiProperty.New(this.UIntType, CiId.MatchLength, "Length"));
+			matchClass.Add(CiProperty.New(this.StringPtrType, CiId.MatchValue, "Value"));
 			Add(matchClass);
 			CiFloatingType floatIntType = new CiFloatingType { Id = CiId.FloatIntType, Name = "float" };
 			CiClass mathClass = CiClass.New(CiCallType.Static, CiId.None, "Math");
@@ -2972,10 +2990,10 @@ namespace Foxoft.Ci
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Log10", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethodGroup.New(CiMethod.NewStatic(this.IntType, CiId.MathMaxInt, "Max", CiVar.New(this.LongType, "a"), CiVar.New(this.LongType, "b")), CiMethod.NewStatic(this.FloatType, CiId.MathMaxDouble, "Max", CiVar.New(this.DoubleType, "a"), CiVar.New(this.DoubleType, "b"))));
 			mathClass.Add(CiMethodGroup.New(CiMethod.NewStatic(this.IntType, CiId.MathMinInt, "Min", CiVar.New(this.LongType, "a"), CiVar.New(this.LongType, "b")), CiMethod.NewStatic(this.FloatType, CiId.MathMinDouble, "Min", CiVar.New(this.DoubleType, "a"), CiVar.New(this.DoubleType, "b"))));
-			mathClass.Add(CiMember.New(this.FloatType, CiId.MathNaN, "NaN"));
-			mathClass.Add(CiMember.New(this.FloatType, CiId.MathNegativeInfinity, "NegativeInfinity"));
+			mathClass.Add(CiStaticProperty.New(this.FloatType, CiId.MathNaN, "NaN"));
+			mathClass.Add(CiStaticProperty.New(this.FloatType, CiId.MathNegativeInfinity, "NegativeInfinity"));
 			mathClass.Add(NewConstDouble("PI", 3.1415926535897931));
-			mathClass.Add(CiMember.New(this.FloatType, CiId.MathPositiveInfinity, "PositiveInfinity"));
+			mathClass.Add(CiStaticProperty.New(this.FloatType, CiId.MathPositiveInfinity, "PositiveInfinity"));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Pow", CiVar.New(this.DoubleType, "x"), CiVar.New(this.DoubleType, "y")));
 			mathClass.Add(CiMethod.NewStatic(floatIntType, CiId.MathRound, "Round", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Sin", CiVar.New(this.DoubleType, "a")));
@@ -3056,7 +3074,7 @@ namespace Foxoft.Ci
 		{
 			CiClass result = CiClass.New(CiCallType.Normal, id, name, typeParameterCount);
 			result.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, clearId, "Clear"));
-			result.Add(CiMember.New(this.UIntType, countId, "Count"));
+			result.Add(CiProperty.New(this.UIntType, countId, "Count"));
 			Add(result);
 			return result;
 		}

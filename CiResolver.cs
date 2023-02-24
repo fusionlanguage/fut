@@ -157,16 +157,29 @@ public class CiResolver : CiSema
 					}
 					break;
 				}
+				if (!(member is CiMethodGroup)) {
+					if (leftSymbol != null && leftSymbol.Symbol is CiContainerType) {
+						if (!member.IsStatic())
+							ReportError(expr, $"Cannot use instance member {expr.Name} without an object");
+					}
+					// TODO: Console.Error
+					// else if (member.IsStatic())
+					// 	ReportError(expr, $"{expr.Name} is static");
+				}
 			}
 			return new CiSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
 		}
 
 		CiExpr resolved = Lookup(expr, this.CurrentScope);
-		if (expr.Symbol is CiMember nearMember
-		 && nearMember.Visibility == CiVisibility.Private
-		 && nearMember.Parent is CiClass memberClass // not local const
-		 && memberClass != (this.CurrentScope as CiClass ?? this.CurrentMethod.Parent))
-			ReportError(expr, $"Cannot access private member {expr.Name}");
+		if (expr.Symbol is CiMember nearMember) {
+			if (nearMember.Visibility == CiVisibility.Private
+			 && nearMember.Parent is CiClass memberClass // not local const
+			 && memberClass != (this.CurrentScope as CiClass ?? this.CurrentMethod.Parent))
+				ReportError(expr, $"Cannot access private member {expr.Name}");
+			if (!nearMember.IsStatic()
+			 && (this.CurrentMethod == null || this.CurrentMethod.IsStatic()))
+				ReportError(expr, $"Cannot use instance member {expr.Name} from static context");
+		}
 		if (resolved is CiSymbolReference symbol
 		 && symbol.Symbol is CiVar v) {
 			if (v.Parent is CiFor loop)
