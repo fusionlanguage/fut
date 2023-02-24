@@ -104,15 +104,15 @@ public class CiResolver : CiSema
 			CiExpr left = Resolve(expr.Left);
 			if (left == this.Poison)
 				return left;
-			CiSymbolReference leftSymbol = left as CiSymbolReference;
 			CiScope scope;
-			if (leftSymbol != null && leftSymbol.Symbol.Id == CiId.BasePtr) {
+			bool isBase = left is CiSymbolReference baseSymbol && baseSymbol.Symbol.Id == CiId.BasePtr;
+			if (isBase) {
 				if (this.CurrentMethod == null || !(this.CurrentMethod.Parent.Parent is CiClass baseClass))
 					return PoisonError(expr, "No base class");
 				scope = baseClass;
 				// TODO: static?
 			}
-			else if (leftSymbol != null && leftSymbol.Symbol is CiScope obj)
+			else if (left is CiSymbolReference leftSymbol && leftSymbol.Symbol is CiScope obj)
 				scope = obj;
 			else {
 				scope = left.Type;
@@ -130,9 +130,7 @@ public class CiResolver : CiSema
 						ReportError(expr, $"Cannot access private member {expr.Name}");
 					break;
 				case CiVisibility.Protected:
-					if (leftSymbol != null && leftSymbol.Symbol.Id == CiId.BasePtr)
-						break;
-					if (!((CiClass) this.CurrentMethod.Parent).IsSameOrBaseOf((CiClass) scope) /* enforced by C++/C#/TS but not Java */)
+					if (!isBase && !((CiClass) this.CurrentMethod.Parent).IsSameOrBaseOf((CiClass) scope) /* enforced by C++/C#/TS but not Java */)
 						ReportError(expr, $"Cannot access protected member {expr.Name}");
 					break;
 				case CiVisibility.NumericElementType when left.Type is CiClassType klass:
@@ -158,7 +156,7 @@ public class CiResolver : CiSema
 					break;
 				}
 				if (!(member is CiMethodGroup)) {
-					if (leftSymbol != null && leftSymbol.Symbol is CiContainerType) {
+					if (left is CiSymbolReference leftContainer && leftContainer.Symbol is CiContainerType) {
 						if (!member.IsStatic())
 							ReportError(expr, $"Cannot use instance member {expr.Name} without an object");
 					}
@@ -174,7 +172,7 @@ public class CiResolver : CiSema
 		if (expr.Symbol is CiMember nearMember) {
 			if (nearMember.Visibility == CiVisibility.Private
 			 && nearMember.Parent is CiClass memberClass // not local const
-			 && memberClass != (this.CurrentScope as CiClass ?? this.CurrentMethod.Parent))
+			 && memberClass != GetCurrentContainer())
 				ReportError(expr, $"Cannot access private member {expr.Name}");
 			if (!nearMember.IsStatic()
 			 && (this.CurrentMethod == null || this.CurrentMethod.IsStatic()))
