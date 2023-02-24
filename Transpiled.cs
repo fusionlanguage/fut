@@ -1589,7 +1589,7 @@ namespace Foxoft.Ci
 
 		public bool Contains(CiSymbol symbol) => this.Dict.ContainsKey(symbol.Name);
 
-		public virtual CiSymbol TryLookup(string name)
+		public CiSymbol TryLookup(string name)
 		{
 			for (CiScope scope = this; scope != null; scope = scope.Parent) {
 				if (scope.Dict.ContainsKey(name))
@@ -2695,8 +2695,6 @@ namespace Foxoft.Ci
 		public override bool IsArray() => this.Class.Id == CiId.ArrayPtrClass;
 
 		public override CiType GetBaseType() => IsArray() ? GetElementType().GetBaseType() : this;
-
-		public override CiSymbol TryLookup(string name) => this.Class.TryLookup(name);
 
 		internal bool EqualTypeArguments(CiClassType right)
 		{
@@ -4462,7 +4460,7 @@ namespace Foxoft.Ci
 				CiBinaryExpr field = (CiBinaryExpr) item;
 				Debug.Assert(field.Op == CiToken.Assign);
 				CiSymbolReference symbol = (CiSymbolReference) field.Left;
-				Lookup(symbol, klass);
+				Lookup(symbol, klass.Class);
 				if (symbol.Symbol is CiField) {
 					field.Right = Resolve(field.Right);
 					Coerce(field.Right, symbol.Type);

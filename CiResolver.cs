@@ -114,10 +114,11 @@ public class CiResolver : CiSema
 			}
 			else if (leftSymbol != null && leftSymbol.Symbol is CiScope obj)
 				scope = obj;
-			else
+			else {
 				scope = left.Type;
-				// if (scope is CiClassType ptr)
-				//	scope = ptr.Class;
+				if (scope is CiClassType klass)
+					scope = klass.Class;
+			}
 			CiExpr result = Lookup(expr, scope);
 			if (result != expr)
 				return result;
@@ -125,13 +126,13 @@ public class CiResolver : CiSema
 				switch (member.Visibility) {
 				case CiVisibility.Private:
 					if (member.Parent != this.CurrentMethod.Parent
-					 || this.CurrentMethod.Parent != (scope as CiClass ?? ((CiClassType) scope).Class) /* enforced by Java, but not C++/C#/TS */)
+					 || this.CurrentMethod.Parent != scope /* enforced by Java, but not C++/C#/TS */)
 						ReportError(expr, $"Cannot access private member {expr.Name}");
 					break;
 				case CiVisibility.Protected:
 					if (leftSymbol != null && leftSymbol.Symbol.Id == CiId.BasePtr)
 						break;
-					if (!((CiClass) this.CurrentMethod.Parent).IsSameOrBaseOf(scope as CiClass ?? ((CiClassType) scope).Class) /* enforced by C++/C#/TS but not Java */)
+					if (!((CiClass) this.CurrentMethod.Parent).IsSameOrBaseOf((CiClass) scope) /* enforced by C++/C#/TS but not Java */)
 						ReportError(expr, $"Cannot access protected member {expr.Name}");
 					break;
 				case CiVisibility.NumericElementType when left.Type is CiClassType klass:
@@ -145,7 +146,7 @@ public class CiResolver : CiSema
 				default:
 					switch (expr.Symbol.Id) {
 					case CiId.ArrayLength:
-						return ToLiteralLong(expr, ((CiArrayStorageType) scope).Length);
+						return ToLiteralLong(expr, ((CiArrayStorageType) left.Type).Length);
 					case CiId.StringLength when left is CiLiteralString leftLiteral:
 						int length = leftLiteral.GetAsciiLength();
 						if (length >= 0)

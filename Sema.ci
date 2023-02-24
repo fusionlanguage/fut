@@ -335,7 +335,7 @@ public abstract class CiSema : CiVisitor
 			assert item is CiBinaryExpr! field;
 			assert field.Op == CiToken.Assign;
 			assert field.Left is CiSymbolReference! symbol;
-			Lookup(symbol, klass);
+			Lookup(symbol, klass.Class);
 			if (symbol.Symbol is CiField) {
 				field.Right = Resolve(field.Right);
 				Coerce(field.Right, symbol.Type);
