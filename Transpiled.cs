@@ -3300,18 +3300,18 @@ namespace Foxoft.Ci
 			ExpectOrSkip(closing);
 		}
 
-		CiExpr ParsePrimaryExpr()
+		CiExpr ParsePrimaryExpr(bool type)
 		{
 			CiExpr result;
 			switch (this.CurrentToken) {
 			case CiToken.Increment:
 			case CiToken.Decrement:
 				CheckXcrementParent();
-				return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParsePrimaryExpr() };
+				return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParsePrimaryExpr(false) };
 			case CiToken.Minus:
 			case CiToken.Tilde:
 			case CiToken.ExclamationMark:
-				return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParsePrimaryExpr() };
+				return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParsePrimaryExpr(false) };
 			case CiToken.New:
 				CiPrefixExpr newResult = new CiPrefixExpr { Line = this.Line, Op = NextToken() };
 				result = ParseType();
@@ -3359,6 +3359,17 @@ namespace Foxoft.Ci
 					lambda.Add(CiVar.New(null, symbol.Name));
 					lambda.Body = ParseExpr();
 					return lambda;
+				}
+				if (type && Eat(CiToken.Less)) {
+					CiAggregateInitializer typeArgs = new CiAggregateInitializer();
+					bool saveTypeArg = this.ParsingTypeArg;
+					this.ParsingTypeArg = true;
+					do
+						typeArgs.Items.Add(ParseType());
+					while (Eat(CiToken.Comma));
+					Expect(CiToken.RightAngle);
+					this.ParsingTypeArg = saveTypeArg;
+					symbol.Left = typeArgs;
 				}
 				result = symbol;
 				break;
@@ -3413,13 +3424,13 @@ namespace Foxoft.Ci
 
 		CiExpr ParseMulExpr()
 		{
-			CiExpr left = ParsePrimaryExpr();
+			CiExpr left = ParsePrimaryExpr(false);
 			for (;;) {
 				switch (this.CurrentToken) {
 				case CiToken.Asterisk:
 				case CiToken.Slash:
 				case CiToken.Mod:
-					left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr() };
+					left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(false) };
 					break;
 				default:
 					return left;
@@ -3455,7 +3466,7 @@ namespace Foxoft.Ci
 					left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseShiftExpr() };
 					break;
 				case CiToken.Is:
-					CiBinaryExpr isExpr = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr() };
+					CiBinaryExpr isExpr = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(true) };
 					if (See(CiToken.Id)) {
 						isExpr.Right = new CiVar { Line = this.Line, TypeExpr = isExpr.Right, Name = this.StringValue };
 						NextToken();
@@ -3542,27 +3553,9 @@ namespace Foxoft.Ci
 
 		CiExpr ParseType()
 		{
-			CiExpr left = ParsePrimaryExpr();
+			CiExpr left = ParsePrimaryExpr(true);
 			if (Eat(CiToken.Range))
-				return new CiBinaryExpr { Line = this.Line, Left = left, Op = CiToken.Range, Right = ParsePrimaryExpr() };
-			if (left is CiSymbolReference symbol && Eat(CiToken.Less)) {
-				CiAggregateInitializer typeArgs = new CiAggregateInitializer();
-				left = new CiSymbolReference { Line = this.Line, Left = typeArgs, Name = symbol.Name };
-				bool saveTypeArg = this.ParsingTypeArg;
-				this.ParsingTypeArg = true;
-				do
-					typeArgs.Items.Add(ParseType());
-				while (Eat(CiToken.Comma));
-				Expect(CiToken.RightAngle);
-				this.ParsingTypeArg = saveTypeArg;
-				if (Eat(CiToken.ExclamationMark))
-					left = new CiPostfixExpr { Line = this.Line, Inner = left, Op = CiToken.ExclamationMark };
-				else if (Eat(CiToken.LeftParenthesis)) {
-					Expect(CiToken.RightParenthesis);
-					CiSymbolReference classType = (CiSymbolReference) left;
-					left = new CiCallExpr { Line = this.Line, Method = classType };
-				}
-			}
+				return new CiBinaryExpr { Line = this.Line, Left = left, Op = CiToken.Range, Right = ParsePrimaryExpr(true) };
 			return left;
 		}
 
