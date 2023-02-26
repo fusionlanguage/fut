@@ -193,7 +193,7 @@ public class GenSwift : GenPySwift
 			 && array.GetElementType() is CiStorageType)
 				return false;
 		}
-		return expr.Type.IsNullable();
+		return expr.Type.Nullable;
 	}
 
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
@@ -206,7 +206,7 @@ public class GenSwift : GenPySwift
 	void OpenIndexing(CiExpr collection)
 	{
 		collection.Accept(this, CiPriority.Primary);
-		if (!(collection.Type is CiStorageType))
+		if (collection.Type.Nullable)
 			WriteChar('!');
 		WriteChar('[');
 	}
@@ -309,7 +309,7 @@ public class GenSwift : GenPySwift
 			break;
 		case CiClassType klass:
 			WriteClassName(klass);
-			if (klass.IsNullable())
+			if (klass.Nullable)
 				WriteChar('?');
 			break;
 		default:
@@ -350,7 +350,7 @@ public class GenSwift : GenPySwift
 
 	void WriteUnwrappedString(CiExpr expr, CiPriority parent, bool substringOk)
 	{
-		if (!(expr is CiLiteral) && expr.Type.Id == CiId.StringPtrType && !IsForeachStringStg(expr)) {
+		if (expr.Type.Nullable && !IsForeachStringStg(expr)) {
 			expr.Accept(this, CiPriority.Primary);
 			WriteChar('!');
 		}
@@ -812,7 +812,7 @@ public class GenSwift : GenPySwift
 				WriteName(type.First);
 			}
 		}
-		else if (type.Id == CiId.StringStorageType)
+		else if (type is CiStringType && !type.Nullable)
 			Write("\"\"");
 		else if (type is CiArrayStorageType array)
 			WriteNewArray(array);
@@ -1184,8 +1184,7 @@ public class GenSwift : GenPySwift
 		Write(" = ");
 		expr.Left.Accept(this, CiPriority.Equality /* TODO? */);
 		Write(" as! ");
-		Write(def.Type.Name);
-		WriteCharLine('?');
+		WriteLine(def.Type.Name);
 	}
 
 	protected override void WriteAssert(CiAssert statement)
@@ -1311,7 +1310,7 @@ public class GenSwift : GenPySwift
 			break;
 		case CiId.SortedDictionaryClass:
 			statement.Collection.Accept(this, CiPriority.Primary);
-			Write(klass.GetKeyType().Id == CiId.StringPtrType
+			Write(klass.GetKeyType().Nullable
 				? ".sorted(by: { $0.key! < $1.key! })"
 				: ".sorted(by: { $0.key < $1.key })");
 			break;

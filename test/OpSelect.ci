@@ -15,7 +15,7 @@ public static class Test
 	public static bool Run()
 	{
 		bool a = true;
-		int[] b = null;
+		int[]? b = null;
 		Rectangle() r;
 		Circle() c;
 		Shape! s = a ? r : c;

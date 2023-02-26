@@ -1,6 +1,6 @@
 abstract class Animal
 {
-	internal string Name;
+	internal string? Name;
 	internal virtual void MakeSound()
 	{
 	}

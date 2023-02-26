@@ -15,7 +15,7 @@ public class Test
 		Inner# p = new Inner { S = s };
 		Test() o;
 		Inner# p2 = Create();
-		Inner# p3 = null;
+		Inner#? p3 = null;
 		if (s == "bar")
 			p3 = new Inner { S = "baz" };
 		return p.S == s && o.F.S == "foo" && p2.S == "quux" && p3.S == "baz";

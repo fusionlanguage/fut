@@ -355,10 +355,10 @@ public class GenC : GenCCpp
 				WriteChar(' ');
 			break;
 		case CiId.StringClass:
-			if (klass.IsNullable())
-				WriteStringPtrType();
-			else
+			if (klass.Id == CiId.StringStorageType)
 				Write("char *");
+			else
+				WriteStringPtrType();
 			break;
 		case CiId.ListClass:
 		case CiId.StackClass:
@@ -909,7 +909,7 @@ public class GenC : GenCCpp
 
 	void WriteGConstPointerCast(CiExpr expr)
 	{
-		if (expr.Type.IsNullable() || expr.Type.Id == CiId.StringStorageType)
+		if (expr.Type is CiClassType && !(expr.Type is CiStorageType))
 			expr.Accept(this, CiPriority.Argument);
 		else {
 			Write("(gconstpointer) ");

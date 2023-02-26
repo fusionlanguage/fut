@@ -1,11 +1,11 @@
 class Animal
 {
-	internal string Name;
+	internal string? Name;
 }
 
 class Cat : Animal
 {
-	internal string Food;
+	internal string? Food;
 }
 
 public static class Test

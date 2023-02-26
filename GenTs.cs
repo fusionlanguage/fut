@@ -90,10 +90,10 @@ public class GenTs : GenJs
 			case CiId.StackClass:
 				if (readOnly)
 					Write("readonly ");
-				if (klass.GetElementType().IsNullable())
+				if (klass.GetElementType().Nullable)
 					WriteChar('(');
 				WriteType(klass.GetElementType());
-				if (klass.GetElementType().IsNullable())
+				if (klass.GetElementType().Nullable)
 					WriteChar(')');
 				Write("[]");
 				break;
@@ -144,7 +144,7 @@ public class GenTs : GenJs
 					WriteChar('>');
 				break;
 			}
-			if (type.IsNullable())
+			if (type.Nullable)
 				Write(" | null");
 			break;
 		default:

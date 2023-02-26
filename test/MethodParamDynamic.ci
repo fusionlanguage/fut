@@ -1,6 +1,6 @@
 public class Test
 {
-	Test# Parent; //FAIL: cl
+	Test#? Parent; //FAIL: cl
 
 	void SetParent!(Test# parent)
 	{
@@ -20,7 +20,7 @@ public class Test
 	{
 	}
 
-	int[]# Array;
+	int[]#? Array;
 
 	void SetArray!(int[]# a)
 	{

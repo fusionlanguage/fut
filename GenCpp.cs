@@ -224,7 +224,7 @@ public class GenCpp : GenCCpp
 		case CiClassType klass:
 			if (klass.Class.TypeParameterCount == 0) {
 				if (klass.Class.Id == CiId.StringClass) {
-					string cppType = klass.IsNullable() ? "string_view" : "string";
+					string cppType = klass.Id == CiId.StringStorageType ? "string" : "string_view";
 					Include(cppType);
 					Write("std::");
 					Write(cppType);

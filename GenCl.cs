@@ -78,7 +78,7 @@ public class GenCl : GenC
 			else
 				base.WriteClassType(klass, space);
 			break;
-		case CiId.StringClass when klass.IsNullable():
+		case CiId.StringClass when klass.Id != CiId.StringStorageType:
 			WriteStringPtrType();
 			break;
 		default:

@@ -5,22 +5,22 @@ class Data
 public class Test
 {
 	Data() Storage;
-	Data# Dynamic = null; //FAIL: cl
+	Data#? Dynamic = null; //FAIL: cl
 
 	Data ReturnStorage() => Storage;
 
-	Data ReturnDynamic() => Dynamic;
+	Data? ReturnDynamic() => Dynamic;
 
-	Data ReturnConditional(bool dyn) => dyn ? Dynamic : Storage;
+	Data? ReturnConditional(bool dyn) => dyn ? Dynamic : Storage;
 
 	int[2] ArrayStorage;
-	int[]# ArrayDynamic = null;
+	int[]#? ArrayDynamic = null;
 
 	int[] ReturnArrayStorage() => ArrayStorage;
 
-	int[] ReturnArrayDynamic() => ArrayDynamic;
+	int[]? ReturnArrayDynamic() => ArrayDynamic;
 
-	int[] ReturnArrayConditional(bool dyn) => dyn ? ArrayDynamic : ArrayStorage;
+	int[]? ReturnArrayConditional(bool dyn) => dyn ? ArrayDynamic : ArrayStorage;
 
 	public static bool Run()
 	{

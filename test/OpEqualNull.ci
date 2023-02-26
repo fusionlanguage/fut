@@ -2,9 +2,9 @@ public class Test
 {
 	public static bool Run()
 	{
-		Test o = null;
-		int[] a = null;
-		string s = null;
+		Test? o = null;
+		int[]? a = null;
+		string? s = null;
 		return o == null && null == o
 			&& a == null && null == a
 			&& s == null && null == s;

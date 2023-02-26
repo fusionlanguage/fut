@@ -20,8 +20,8 @@
 public abstract class CiSema : CiVisitor
 {
 	protected CiProgram! Program;
-	protected CiMethodBase CurrentMethod;
-	protected CiScope! CurrentScope;
+	protected CiMethodBase? CurrentMethod;
+	protected CiScope!? CurrentScope;
 	HashSet<CiMethod>() CurrentPureMethods;
 	Dictionary<CiVar, CiExpr#>() CurrentPureArguments;
 	CiType# Poison = new CiType { Name = "poison" };
@@ -52,7 +52,7 @@ public abstract class CiSema : CiVisitor
 	protected void CheckBaseCycle!(CiClass! klass)
 	{
 		// Floyd's tortoise and hare cycle-finding algorithm
-		CiSymbol hare = klass;
+		CiSymbol? hare = klass;
 		CiSymbol tortoise = klass;
 		do {
 			hare = hare.Parent;
@@ -125,7 +125,7 @@ public abstract class CiSema : CiVisitor
 		}
 	}
 
-	static CiRangeType# Union(CiRangeType# left, CiRangeType# right)
+	static CiRangeType# Union(CiRangeType# left, CiRangeType#? right)
 	{
 		if (right == null)
 			return left;
@@ -268,9 +268,9 @@ public abstract class CiSema : CiVisitor
 	CiType# BitwiseOp!(CiExpr left, CiToken op, CiExpr right)
 	{
 		if (left.Type is CiRangeType# leftRange && right.Type is CiRangeType# rightRange) {
-			CiRangeType# range = null;
-			CiRangeType# rightNegative;
-			CiRangeType# rightPositive;
+			CiRangeType#? range = null;
+			CiRangeType#? rightNegative;
+			CiRangeType#? rightPositive;
 			if (rightRange.Min >= 0) {
 				rightNegative = null;
 				rightPositive = rightRange;
@@ -515,9 +515,9 @@ public abstract class CiSema : CiVisitor
 		return type;
 	}
 
-	bool CanCall(CiExpr obj, CiMethod method, List<CiExpr#> arguments)
+	bool CanCall(CiExpr? obj, CiMethod method, List<CiExpr#> arguments)
 	{
-		CiVar param = method.Parameters.FirstParameter();
+		CiVar? param = method.Parameters.FirstParameter();
 		foreach (CiExpr arg in arguments) {
 			if (param == null)
 				return false;
@@ -966,16 +966,30 @@ public abstract class CiSema : CiVisitor
 		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = type };
 	}
 
-	CiType# TryGetPtr(CiType# type)
+	CiType# TryGetPtr(CiType# type, bool nullable)
 	{
 		if (type.Id == CiId.StringStorageType)
-			return this.Program.System.StringPtrType;
+			return nullable ? this.Program.System.StringNullablePtrType : this.Program.System.StringPtrType;
 		if (type is CiStorageType storage)
-			return new CiReadWriteClassType { Class = storage.Class.Id == CiId.ArrayStorageClass ? this.Program.System.ArrayPtrClass : storage.Class, TypeArg0 = storage.TypeArg0, TypeArg1 = storage.TypeArg1 };
+			return new CiReadWriteClassType { Class = storage.Class.Id == CiId.ArrayStorageClass ? this.Program.System.ArrayPtrClass : storage.Class, Nullable = nullable, TypeArg0 = storage.TypeArg0, TypeArg1 = storage.TypeArg1 };
+		if (nullable && type is CiClassType ptr && !ptr.Nullable) {
+			CiClassType# result;
+			if (type is CiDynamicPtrType)
+				result = new CiDynamicPtrType();
+			else if (type is CiReadWriteClassType)
+				result = new CiReadWriteClassType();
+			else
+				result = new CiClassType();
+			result.Class = ptr.Class;
+			result.Nullable = true;
+			result.TypeArg0 = ptr.TypeArg0;
+			result.TypeArg1 = ptr.TypeArg1;
+			return result;
+		}
 		return type;
 	}
 
-	static CiClass GetLowestCommonAncestor(CiClass left, CiClass right)
+	static CiClass? GetLowestCommonAncestor(CiClass left, CiClass right)
 	{
 		for (;;) {
 			if (left.IsSameOrBaseOf(right))
@@ -991,14 +1005,15 @@ public abstract class CiSema : CiVisitor
 	{
 		if (left.Type is CiRangeType# leftRange && right.Type is CiRangeType# rightRange)
 			return Union(leftRange, rightRange);
-		CiType# ptr = TryGetPtr(left.Type);
+		bool nullable = left.Type.Nullable || right.Type.Nullable;
+		CiType# ptr = TryGetPtr(left.Type, nullable);
 		if (ptr.IsAssignableFrom(right.Type))
 			return ptr;
-		ptr = TryGetPtr(right.Type);
+		ptr = TryGetPtr(right.Type, nullable);
 		if (ptr.IsAssignableFrom(left.Type))
 			return ptr;
 		if (left.Type is CiClassType leftClass && right.Type is CiClassType rightClass && leftClass.EqualTypeArguments(rightClass)) {
-			CiClass klass = GetLowestCommonAncestor(leftClass.Class, rightClass.Class);
+			CiClass? klass = GetLowestCommonAncestor(leftClass.Class, rightClass.Class);
 			if (klass != null) {
 				CiClassType# result;
 				if (!(leftClass is CiReadWriteClassType) || !(rightClass is CiReadWriteClassType))
@@ -1008,6 +1023,7 @@ public abstract class CiSema : CiVisitor
 				else
 					result = new CiReadWriteClassType();
 				result.Class = klass;
+				result.Nullable = nullable;
 				result.TypeArg0 = leftClass.TypeArg0;
 				result.TypeArg1 = leftClass.TypeArg1;
 				return result;
@@ -1053,8 +1069,8 @@ public abstract class CiSema : CiVisitor
 
 		// TODO: check static
 		int i = 0;
-		for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
-			CiType# type = param.Type;
+		for (CiVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+			CiType#? type = param.Type;
 			if (symbol.Left != null && symbol.Left.Type is CiClassType generic) {
 				type = EvalType(generic, type);
 				if (type == null)
@@ -1095,14 +1111,14 @@ public abstract class CiSema : CiVisitor
 		 && !this.CurrentPureMethods.Contains(method)) {
 			this.CurrentPureMethods.Add(method);
 			i = 0;
-			for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+			for (CiVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 				if (i < arguments.Count)
 					this.CurrentPureArguments[param] = arguments[i++];
 				else
 					this.CurrentPureArguments[param] = param.Value;
 			}
 			CiExpr# result = Resolve(ret.Value);
-			for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter())
+			for (CiVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter())
 				this.CurrentPureArguments.Remove(param);
 			this.CurrentPureMethods.Remove(method);
 			if (result is CiLiteral)
@@ -1205,6 +1221,27 @@ public abstract class CiSema : CiVisitor
 		return expr;
 	}
 
+	static CiClassType# CreateClassPtr(CiClass klass, CiToken ptrModifier, bool nullable)
+	{
+		CiClassType# ptr;
+		switch (ptrModifier) {
+		case CiToken.EndOfFile:
+			ptr = new CiClassType();
+			break;
+		case CiToken.ExclamationMark:
+			ptr = new CiReadWriteClassType();
+			break;
+		case CiToken.Hash:
+			ptr = new CiDynamicPtrType();
+			break;
+		default:
+			assert false;
+		}
+		ptr.Class = klass;
+		ptr.Nullable = nullable;
+		return ptr;
+	}
+
 	void FillGenericClass(CiClassType! result, CiClass klass, CiAggregateInitializer typeArgExprs)
 	{
 		List<CiType#>() typeArgs;
@@ -1220,16 +1257,24 @@ public abstract class CiSema : CiVisitor
 			result.TypeArg1 = typeArgs[1];
 	}
 
-	CiType# ToBaseType!(CiExpr expr, CiToken ptrModifier)
+	void ExpectNoPtrModifier!(CiExpr expr, CiToken ptrModifier, bool nullable)
+	{
+		if (ptrModifier != CiToken.EndOfFile)
+			ReportError(expr, $"Unexpected {CiLexer.TokenToString(ptrModifier)} on a non-reference type");
+		if (nullable)
+			ReportError(expr, "Nullable value types not supported");
+	}
+
+	CiType# ToBaseType!(CiExpr expr, CiToken ptrModifier, bool nullable)
 	{
 		switch (expr) {
 		case CiSymbolReference symbol:
-			// built-in, MyEnum, MyClass, MyClass!, MyClass#
+			// built-in, string?, MyEnum, MyClass, MyClass?, MyClass!, MyClass!?, MyClass#, MyClass#?
 			if (this.Program.TryLookup(symbol.Name, true) is CiType# type) {
 				if (type is CiClass klass) {
 					if (klass.Id == CiId.MatchClass && ptrModifier != CiToken.EndOfFile)
 						ReportError(expr, "Read-write references to the built-in class Match are not supported");
-					CiClassType# ptr = CreateClassPtr(klass, ptrModifier);
+					CiClassType# ptr = CreateClassPtr(klass, ptrModifier, nullable);
 					if (symbol.Left is CiAggregateInitializer typeArgExprs)
 						FillGenericClass(ptr, klass, typeArgExprs);
 					else if (symbol.Left != null)
@@ -1240,14 +1285,18 @@ public abstract class CiSema : CiVisitor
 				}
 				else if (symbol.Left != null)
 					return PoisonError(expr, "Invalid type");
-				ExpectNoPtrModifier(expr, ptrModifier);
+				if (type.Id == CiId.StringPtrType && nullable) {
+					type = this.Program.System.StringNullablePtrType;
+					nullable = false;
+				}
+				ExpectNoPtrModifier(expr, ptrModifier, nullable);
 				return type;
 			}
 			return PoisonError(expr, $"Type {symbol.Name} not found");
 
 		case CiCallExpr call:
 			// string(), MyClass()
-			ExpectNoPtrModifier(expr, ptrModifier);
+			ExpectNoPtrModifier(expr, ptrModifier, nullable);
 			if (call.Arguments.Count != 0)
 				ReportError(call, "Expected empty parentheses for storage type");
 			if (call.Method.Left is CiAggregateInitializer typeArgExprs2) {
@@ -1273,16 +1322,23 @@ public abstract class CiSema : CiVisitor
 
 	CiType# ToType(CiExpr# expr, bool dynamic)
 	{
-		CiExpr# minExpr = null;
+		CiExpr#? minExpr = null;
 		if (expr is CiBinaryExpr range && range.Op == CiToken.Range) {
 			minExpr = range.Left;
 			expr = range.Right;
 		}
 
+		bool nullable;
 		CiToken ptrModifier;
-		CiClassType# outerArray = null; // leftmost in source
-		CiClassType! innerArray = null; // rightmost in source
+		CiClassType#? outerArray = null; // leftmost in source
+		CiClassType!? innerArray = null; // rightmost in source
 		for (;;) {
+			if (expr is CiPostfixExpr question && question.Op == CiToken.QuestionMark) {
+				expr = question.Inner;
+				nullable = true;
+			}
+			else
+				nullable = false;
 			if (expr is CiPostfixExpr postfix && (postfix.Op == CiToken.ExclamationMark || postfix.Op == CiToken.Hash)) {
 				expr = postfix.Inner;
 				ptrModifier = postfix.Op;
@@ -1291,7 +1347,7 @@ public abstract class CiSema : CiVisitor
 				ptrModifier = CiToken.EndOfFile;
 			if (expr is CiBinaryExpr binary && binary.Op == CiToken.LeftBracket) {
 				if (binary.Right != null) {
-					ExpectNoPtrModifier(expr, ptrModifier);
+					ExpectNoPtrModifier(expr, ptrModifier, nullable);
 					CiExpr# lengthExpr = Resolve(binary.Right);
 					CiArrayStorageType# arrayStorage = new CiArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = outerArray, LengthExpr = lengthExpr, Length = 0 };
 					if (Coerce(lengthExpr, this.Program.System.IntType) && (!dynamic || binary.Left.IsIndexing())) {
@@ -1311,7 +1367,7 @@ public abstract class CiSema : CiVisitor
 				}
 				else {
 					CiType# elementType = outerArray;
-					outerArray = CreateClassPtr(this.Program.System.ArrayPtrClass, ptrModifier);
+					outerArray = CreateClassPtr(this.Program.System.ArrayPtrClass, ptrModifier, nullable);
 					outerArray.TypeArg0 = elementType;
 				}
 				if (innerArray == null)
@@ -1324,7 +1380,7 @@ public abstract class CiSema : CiVisitor
 
 		CiType# baseType;
 		if (minExpr != null) {
-			ExpectNoPtrModifier(expr, ptrModifier);
+			ExpectNoPtrModifier(expr, ptrModifier, nullable);
 			int min = FoldConstInt(minExpr);
 			int max = FoldConstInt(expr);
 			if (min > max)
@@ -1332,7 +1388,7 @@ public abstract class CiSema : CiVisitor
 			baseType = CiRangeType.New(min, max);
 		}
 		else
-			baseType = ToBaseType(expr, ptrModifier);
+			baseType = ToBaseType(expr, ptrModifier, nullable);
 		baseType.Line = expr.Line;
 
 		if (outerArray == null)
@@ -1550,8 +1606,8 @@ public abstract class CiSema : CiVisitor
 			Coerce(statement.Value, this.CurrentMethod.Type);
 			if (statement.Value is CiSymbolReference symbol
 			 && symbol.Symbol is CiVar local
-			 && (local.Type.IsFinal() || local.Type.Id == CiId.StringStorageType)
-			 && this.CurrentMethod.Type.IsNullable())
+			 && ((local.Type.IsFinal() && !(this.CurrentMethod.Type is CiStorageType))
+				|| (local.Type.Id == CiId.StringStorageType && this.CurrentMethod.Type.Id != CiId.StringStorageType)))
 				ReportError(statement, "Returning dangling reference to local storage");
 		}
 	}
@@ -1631,12 +1687,6 @@ public abstract class CiSema : CiVisitor
 		CloseScope();
 	}
 
-	void ExpectNoPtrModifier!(CiExpr expr, CiToken ptrModifier)
-	{
-		if (ptrModifier != CiToken.EndOfFile)
-			ReportError(expr, $"Unexpected {CiLexer.TokenToString(ptrModifier)} on a non-reference type");
-	}
-
 	protected CiExpr# FoldConst!(CiExpr# expr)
 	{
 		expr = Resolve(expr);
@@ -1660,30 +1710,10 @@ public abstract class CiSema : CiVisitor
 		return 0;
 	}
 
-	static CiClassType# CreateClassPtr(CiClass klass, CiToken ptrModifier)
-	{
-		CiClassType# ptr;
-		switch (ptrModifier) {
-		case CiToken.EndOfFile:
-			ptr = new CiClassType();
-			break;
-		case CiToken.ExclamationMark:
-			ptr = new CiReadWriteClassType();
-			break;
-		case CiToken.Hash:
-			ptr = new CiDynamicPtrType();
-			break;
-		default:
-			assert false;
-		}
-		ptr.Class = klass;
-		return ptr;
-	}
-
 	protected void ResolveTypes!(CiClass! klass)
 	{
 		this.CurrentScope = klass;
-		for (CiSymbol! symbol = klass.First; symbol != null; symbol = symbol.Next) {
+		for (CiSymbol!? symbol = klass.First; symbol != null; symbol = symbol.Next) {
 			switch (symbol) {
 			case CiField! field:
 				CiType! type = ResolveType(field);
@@ -1698,7 +1728,7 @@ public abstract class CiSema : CiVisitor
 					method.Type = this.Program.System.VoidType;
 				else
 					ResolveType(method);
-				for (CiVar! param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+				for (CiVar!? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 					ResolveType(param);
 					if (param.Value != null) {
 						param.Value = FoldConst(param.Value);
@@ -1778,7 +1808,7 @@ public abstract class CiSema : CiVisitor
 	{
 	}
 
-	public override void VisitEnumValue!(CiConst! konst, CiConst previous)
+	public override void VisitEnumValue!(CiConst! konst, CiConst? previous)
 	{
 		if (konst.Value != null) {
 			ResolveConst(konst);
@@ -1794,7 +1824,7 @@ public abstract class CiSema : CiVisitor
 		this.CurrentScope = container;
 		switch (container) {
 		case CiClass klass:
-			for (CiSymbol! symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			for (CiSymbol!? symbol = klass.First; symbol != null; symbol = symbol.Next) {
 				if (symbol is CiConst! konst)
 					ResolveConst(konst);
 			}
@@ -1820,7 +1850,7 @@ public abstract class CiSema : CiVisitor
 	{
 		if (!klass.IsPublic)
 			return;
-		for (CiSymbol! symbol = klass.First; symbol != null; symbol = symbol.Next) {
+		for (CiSymbol!? symbol = klass.First; symbol != null; symbol = symbol.Next) {
 			if (symbol is CiMethod! method
 			 && (method.Visibility == CiVisibility.Public || method.Visibility == CiVisibility.Protected))
 				MarkMethodLive(method);

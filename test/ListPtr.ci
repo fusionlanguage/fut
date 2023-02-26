@@ -11,7 +11,7 @@ public static class Test
 	{
 		List<int>() l;
 		l.Add(5);
-		List<int>! p;
+		List<int>!? p;
 		p = l;
 		p.RemoveAt(0);
 		p.Clear();

@@ -1,6 +1,6 @@
 public static class Test
 {
-	static string ReturnString() => null;
+	static string? ReturnString() => null;
 
 	public static bool Run()
 	{

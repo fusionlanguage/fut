@@ -5,7 +5,7 @@ class Data
 public class Test
 {
 	Data() Storage;
-	Data# Dynamic = null; //FAIL: cl
+	Data#? Dynamic = null; //FAIL: cl
 
 	bool IsNull(bool dyn)
 		=> (dyn ? Dynamic : Storage) == null;
@@ -14,7 +14,7 @@ public class Test
 		=> this == that;
 
 	int[2] ArrayStorage;
-	int[]# ArrayDynamic = null;
+	int[]#? ArrayDynamic = null;
 
 	bool IsArrayNull(bool dyn)
 		=> (dyn ? ArrayDynamic : ArrayStorage) == null;

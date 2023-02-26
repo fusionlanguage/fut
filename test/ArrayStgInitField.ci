@@ -3,7 +3,7 @@ public class Test
 	int[5] Ints = 0;
 	byte[5] Bytes = 0;
 	bool[5] Bools = false;
-	string[5] Strings = null;
+	string?[5] Strings = null;
 
 	public static bool Run()
 	{

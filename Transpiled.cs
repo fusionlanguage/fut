@@ -2358,6 +2358,8 @@ namespace Foxoft.Ci
 	public class CiType : CiScope
 	{
 
+		internal bool Nullable = false;
+
 		public virtual string GetArraySuffix() => "";
 
 		public virtual bool IsAssignableFrom(CiType right) => this == right;
@@ -2367,8 +2369,6 @@ namespace Foxoft.Ci
 		public virtual bool IsArray() => false;
 
 		public virtual bool IsFinal() => false;
-
-		public virtual bool IsNullable() => false;
 
 		public virtual CiType GetBaseType() => this;
 
@@ -2708,8 +2708,6 @@ namespace Foxoft.Ci
 
 		public CiType GetValueType() => this.TypeArg1;
 
-		public override bool IsNullable() => true;
-
 		public override bool IsArray() => this.Class.Id == CiId.ArrayPtrClass;
 
 		public override CiType GetBaseType() => IsArray() ? GetElementType().GetBaseType() : this;
@@ -2732,7 +2730,7 @@ namespace Foxoft.Ci
 
 		public override bool IsAssignableFrom(CiType right)
 		{
-			return right.Id == CiId.NullType || (right is CiClassType rightClass && IsAssignableFromClass(rightClass));
+			return (this.Nullable && right.Id == CiId.NullType) || (right is CiClassType rightClass && IsAssignableFromClass(rightClass));
 		}
 
 		public override bool EqualsType(CiType right) => right is CiClassType that && this.Class == that.Class && EqualTypeArguments(that);
@@ -2763,7 +2761,7 @@ namespace Foxoft.Ci
 
 		public override bool IsAssignableFrom(CiType right)
 		{
-			return right.Id == CiId.NullType || (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
+			return (this.Nullable && right.Id == CiId.NullType) || (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
 		}
 
 		public override string GetArraySuffix() => IsArray() ? "[]!" : "";
@@ -2776,8 +2774,6 @@ namespace Foxoft.Ci
 
 		public override bool IsFinal() => this.Class.Id != CiId.MatchClass;
 
-		public override bool IsNullable() => false;
-
 		public override bool IsAssignableFrom(CiType right) => right is CiStorageType rightClass && this.Class == rightClass.Class && EqualTypeArguments(rightClass);
 
 		public override string GetClassSuffix() => "()";
@@ -2788,7 +2784,7 @@ namespace Foxoft.Ci
 
 		public override bool IsAssignableFrom(CiType right)
 		{
-			return right.Id == CiId.NullType || (right is CiDynamicPtrType rightClass && IsAssignableFromClass(rightClass));
+			return (this.Nullable && right.Id == CiId.NullType) || (right is CiDynamicPtrType rightClass && IsAssignableFromClass(rightClass));
 		}
 
 		public override string GetArraySuffix() => IsArray() ? "[]#" : "";
@@ -2824,8 +2820,6 @@ namespace Foxoft.Ci
 
 	public class CiStringStorageType : CiStringType
 	{
-
-		public override bool IsNullable() => false;
 
 		public override bool IsAssignableFrom(CiType right) => right is CiStringType;
 
@@ -2886,6 +2880,7 @@ namespace Foxoft.Ci
 			stringClass.Add(CiMethod.New(CiVisibility.Public, this.StringStorageType, CiId.StringSubstring, "Substring", CiVar.New(this.IntType, "offset"), CiVar.New(this.IntType, "length", NewLiteralLong(-1))));
 			this.StringPtrType.Class = stringClass;
 			Add(this.StringPtrType);
+			this.StringNullablePtrType.Class = stringClass;
 			this.StringStorageType.Class = stringClass;
 			CiMethod arrayBinarySearchPart = CiMethod.New(CiVisibility.NumericElementType, this.IntType, CiId.ArrayBinarySearchPart, "BinarySearch", CiVar.New(this.TypeParam0, "value"), CiVar.New(this.IntType, "startIndex"), CiVar.New(this.IntType, "count"));
 			this.ArrayPtrClass.Add(arrayBinarySearchPart);
@@ -2944,7 +2939,7 @@ namespace Foxoft.Ci
 			encodingClass.Add(CiStaticProperty.New(utf8EncodingClass, CiId.None, "UTF8"));
 			Add(encodingClass);
 			CiClass environmentClass = CiClass.New(CiCallType.Static, CiId.None, "Environment");
-			environmentClass.Add(CiMethod.NewStatic(this.StringPtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", CiVar.New(this.StringPtrType, "name")));
+			environmentClass.Add(CiMethod.NewStatic(this.StringNullablePtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", CiVar.New(this.StringPtrType, "name")));
 			Add(environmentClass);
 			CiEnum regexOptionsEnum = new CiEnumFlags { Name = "RegexOptions" };
 			CiConst regexOptionsNone = NewConstLong("None", 0);
@@ -3010,7 +3005,7 @@ namespace Foxoft.Ci
 
 		internal CiType VoidType = new CiType { Id = CiId.VoidType, Name = "void" };
 
-		internal CiType NullType = new CiType { Id = CiId.NullType, Name = "null" };
+		internal CiType NullType = new CiType { Id = CiId.NullType, Name = "null", Nullable = true };
 
 		CiType TypeParam0 = new CiType { Id = CiId.TypeParam0, Name = "T" };
 
@@ -3031,6 +3026,8 @@ namespace Foxoft.Ci
 		internal CiEnum BoolType = new CiEnum { Id = CiId.BoolType, Name = "bool" };
 
 		internal CiStringType StringPtrType = new CiStringType { Id = CiId.StringPtrType, Name = "string" };
+
+		internal CiStringType StringNullablePtrType = new CiStringType { Id = CiId.StringPtrType, Name = "string", Nullable = true };
 
 		internal CiStringStorageType StringStorageType = new CiStringStorageType { Id = CiId.StringStorageType };
 
@@ -3416,6 +3413,11 @@ namespace Foxoft.Ci
 				case CiToken.Hash:
 					result = new CiPostfixExpr { Line = this.Line, Inner = result, Op = NextToken() };
 					break;
+				case CiToken.QuestionMark:
+					if (!type)
+						return result;
+					result = new CiPostfixExpr { Line = this.Line, Inner = result, Op = NextToken() };
+					break;
 				default:
 					return result;
 				}
@@ -3466,7 +3468,7 @@ namespace Foxoft.Ci
 					left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseShiftExpr() };
 					break;
 				case CiToken.Is:
-					CiBinaryExpr isExpr = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(true) };
+					CiBinaryExpr isExpr = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(false) };
 					if (See(CiToken.Id)) {
 						isExpr.Right = new CiVar { Line = this.Line, TypeExpr = isExpr.Right, Name = this.StringValue };
 						NextToken();
@@ -5056,12 +5058,26 @@ namespace Foxoft.Ci
 			return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = type };
 		}
 
-		CiType TryGetPtr(CiType type)
+		CiType TryGetPtr(CiType type, bool nullable)
 		{
 			if (type.Id == CiId.StringStorageType)
-				return this.Program.System.StringPtrType;
+				return nullable ? this.Program.System.StringNullablePtrType : this.Program.System.StringPtrType;
 			if (type is CiStorageType storage)
-				return new CiReadWriteClassType { Class = storage.Class.Id == CiId.ArrayStorageClass ? this.Program.System.ArrayPtrClass : storage.Class, TypeArg0 = storage.TypeArg0, TypeArg1 = storage.TypeArg1 };
+				return new CiReadWriteClassType { Class = storage.Class.Id == CiId.ArrayStorageClass ? this.Program.System.ArrayPtrClass : storage.Class, Nullable = nullable, TypeArg0 = storage.TypeArg0, TypeArg1 = storage.TypeArg1 };
+			if (nullable && type is CiClassType ptr && !ptr.Nullable) {
+				CiClassType result;
+				if (type is CiDynamicPtrType)
+					result = new CiDynamicPtrType();
+				else if (type is CiReadWriteClassType)
+					result = new CiReadWriteClassType();
+				else
+					result = new CiClassType();
+				result.Class = ptr.Class;
+				result.Nullable = true;
+				result.TypeArg0 = ptr.TypeArg0;
+				result.TypeArg1 = ptr.TypeArg1;
+				return result;
+			}
 			return type;
 		}
 
@@ -5081,10 +5097,11 @@ namespace Foxoft.Ci
 		{
 			if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange)
 				return Union(leftRange, rightRange);
-			CiType ptr = TryGetPtr(left.Type);
+			bool nullable = left.Type.Nullable || right.Type.Nullable;
+			CiType ptr = TryGetPtr(left.Type, nullable);
 			if (ptr.IsAssignableFrom(right.Type))
 				return ptr;
-			ptr = TryGetPtr(right.Type);
+			ptr = TryGetPtr(right.Type, nullable);
 			if (ptr.IsAssignableFrom(left.Type))
 				return ptr;
 			if (left.Type is CiClassType leftClass && right.Type is CiClassType rightClass && leftClass.EqualTypeArguments(rightClass)) {
@@ -5098,6 +5115,7 @@ namespace Foxoft.Ci
 					else
 						result = new CiReadWriteClassType();
 					result.Class = klass;
+					result.Nullable = nullable;
 					result.TypeArg0 = leftClass.TypeArg0;
 					result.TypeArg1 = leftClass.TypeArg1;
 					return result;
@@ -5286,6 +5304,27 @@ namespace Foxoft.Ci
 			return expr;
 		}
 
+		static CiClassType CreateClassPtr(CiClass klass, CiToken ptrModifier, bool nullable)
+		{
+			CiClassType ptr;
+			switch (ptrModifier) {
+			case CiToken.EndOfFile:
+				ptr = new CiClassType();
+				break;
+			case CiToken.ExclamationMark:
+				ptr = new CiReadWriteClassType();
+				break;
+			case CiToken.Hash:
+				ptr = new CiDynamicPtrType();
+				break;
+			default:
+				throw new NotImplementedException();
+			}
+			ptr.Class = klass;
+			ptr.Nullable = nullable;
+			return ptr;
+		}
+
 		void FillGenericClass(CiClassType result, CiClass klass, CiAggregateInitializer typeArgExprs)
 		{
 			List<CiType> typeArgs = new List<CiType>();
@@ -5301,7 +5340,15 @@ namespace Foxoft.Ci
 				result.TypeArg1 = typeArgs[1];
 		}
 
-		CiType ToBaseType(CiExpr expr, CiToken ptrModifier)
+		void ExpectNoPtrModifier(CiExpr expr, CiToken ptrModifier, bool nullable)
+		{
+			if (ptrModifier != CiToken.EndOfFile)
+				ReportError(expr, $"Unexpected {CiLexer.TokenToString(ptrModifier)} on a non-reference type");
+			if (nullable)
+				ReportError(expr, "Nullable value types not supported");
+		}
+
+		CiType ToBaseType(CiExpr expr, CiToken ptrModifier, bool nullable)
 		{
 			switch (expr) {
 			case CiSymbolReference symbol:
@@ -5309,7 +5356,7 @@ namespace Foxoft.Ci
 					if (type is CiClass klass) {
 						if (klass.Id == CiId.MatchClass && ptrModifier != CiToken.EndOfFile)
 							ReportError(expr, "Read-write references to the built-in class Match are not supported");
-						CiClassType ptr = CreateClassPtr(klass, ptrModifier);
+						CiClassType ptr = CreateClassPtr(klass, ptrModifier, nullable);
 						if (symbol.Left is CiAggregateInitializer typeArgExprs)
 							FillGenericClass(ptr, klass, typeArgExprs);
 						else if (symbol.Left != null)
@@ -5320,12 +5367,16 @@ namespace Foxoft.Ci
 					}
 					else if (symbol.Left != null)
 						return PoisonError(expr, "Invalid type");
-					ExpectNoPtrModifier(expr, ptrModifier);
+					if (type.Id == CiId.StringPtrType && nullable) {
+						type = this.Program.System.StringNullablePtrType;
+						nullable = false;
+					}
+					ExpectNoPtrModifier(expr, ptrModifier, nullable);
 					return type;
 				}
 				return PoisonError(expr, $"Type {symbol.Name} not found");
 			case CiCallExpr call:
-				ExpectNoPtrModifier(expr, ptrModifier);
+				ExpectNoPtrModifier(expr, ptrModifier, nullable);
 				if (call.Arguments.Count != 0)
 					ReportError(call, "Expected empty parentheses for storage type");
 				if (call.Method.Left is CiAggregateInitializer typeArgExprs2) {
@@ -5355,10 +5406,17 @@ namespace Foxoft.Ci
 				minExpr = range.Left;
 				expr = range.Right;
 			}
+			bool nullable;
 			CiToken ptrModifier;
 			CiClassType outerArray = null;
 			CiClassType innerArray = null;
 			for (;;) {
+				if (expr is CiPostfixExpr question && question.Op == CiToken.QuestionMark) {
+					expr = question.Inner;
+					nullable = true;
+				}
+				else
+					nullable = false;
 				if (expr is CiPostfixExpr postfix && (postfix.Op == CiToken.ExclamationMark || postfix.Op == CiToken.Hash)) {
 					expr = postfix.Inner;
 					ptrModifier = postfix.Op;
@@ -5367,7 +5425,7 @@ namespace Foxoft.Ci
 					ptrModifier = CiToken.EndOfFile;
 				if (expr is CiBinaryExpr binary && binary.Op == CiToken.LeftBracket) {
 					if (binary.Right != null) {
-						ExpectNoPtrModifier(expr, ptrModifier);
+						ExpectNoPtrModifier(expr, ptrModifier, nullable);
 						CiExpr lengthExpr = Resolve(binary.Right);
 						CiArrayStorageType arrayStorage = new CiArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = outerArray, LengthExpr = lengthExpr, Length = 0 };
 						if (Coerce(lengthExpr, this.Program.System.IntType) && (!dynamic || binary.Left.IsIndexing())) {
@@ -5387,7 +5445,7 @@ namespace Foxoft.Ci
 					}
 					else {
 						CiType elementType = outerArray;
-						outerArray = CreateClassPtr(this.Program.System.ArrayPtrClass, ptrModifier);
+						outerArray = CreateClassPtr(this.Program.System.ArrayPtrClass, ptrModifier, nullable);
 						outerArray.TypeArg0 = elementType;
 					}
 					if (innerArray == null)
@@ -5399,7 +5457,7 @@ namespace Foxoft.Ci
 			}
 			CiType baseType;
 			if (minExpr != null) {
-				ExpectNoPtrModifier(expr, ptrModifier);
+				ExpectNoPtrModifier(expr, ptrModifier, nullable);
 				int min = FoldConstInt(minExpr);
 				int max = FoldConstInt(expr);
 				if (min > max)
@@ -5407,7 +5465,7 @@ namespace Foxoft.Ci
 				baseType = CiRangeType.New(min, max);
 			}
 			else
-				baseType = ToBaseType(expr, ptrModifier);
+				baseType = ToBaseType(expr, ptrModifier, nullable);
 			baseType.Line = expr.Line;
 			if (outerArray == null)
 				return baseType;
@@ -5616,7 +5674,7 @@ namespace Foxoft.Ci
 			else {
 				statement.Value = Resolve(statement.Value);
 				Coerce(statement.Value, this.CurrentMethod.Type);
-				if (statement.Value is CiSymbolReference symbol && symbol.Symbol is CiVar local && (local.Type.IsFinal() || local.Type.Id == CiId.StringStorageType) && this.CurrentMethod.Type.IsNullable())
+				if (statement.Value is CiSymbolReference symbol && symbol.Symbol is CiVar local && ((local.Type.IsFinal() && !(this.CurrentMethod.Type is CiStorageType)) || (local.Type.Id == CiId.StringStorageType && this.CurrentMethod.Type.Id != CiId.StringStorageType)))
 					ReportError(statement, "Returning dangling reference to local storage");
 			}
 		}
@@ -5693,12 +5751,6 @@ namespace Foxoft.Ci
 			CloseScope();
 		}
 
-		void ExpectNoPtrModifier(CiExpr expr, CiToken ptrModifier)
-		{
-			if (ptrModifier != CiToken.EndOfFile)
-				ReportError(expr, $"Unexpected {CiLexer.TokenToString(ptrModifier)} on a non-reference type");
-		}
-
 		protected CiExpr FoldConst(CiExpr expr)
 		{
 			expr = Resolve(expr);
@@ -5720,26 +5772,6 @@ namespace Foxoft.Ci
 			}
 			ReportError(expr, "Expected integer");
 			return 0;
-		}
-
-		static CiClassType CreateClassPtr(CiClass klass, CiToken ptrModifier)
-		{
-			CiClassType ptr;
-			switch (ptrModifier) {
-			case CiToken.EndOfFile:
-				ptr = new CiClassType();
-				break;
-			case CiToken.ExclamationMark:
-				ptr = new CiReadWriteClassType();
-				break;
-			case CiToken.Hash:
-				ptr = new CiDynamicPtrType();
-				break;
-			default:
-				throw new NotImplementedException();
-			}
-			ptr.Class = klass;
-			return ptr;
 		}
 
 		protected void ResolveTypes(CiClass klass)

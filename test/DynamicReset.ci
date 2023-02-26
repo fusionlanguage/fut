@@ -2,10 +2,10 @@ public class Test
 {
 	public static bool Run()
 	{
-		Test# p = new Test(); //FAIL: cl
+		Test#? p = new Test(); //FAIL: cl
 		p = null;
 
-		int[]# a = new int[2]; //FAIL: cpp - should work with C++20
+		int[]#? a = new int[2]; //FAIL: cpp - should work with C++20
 		a = null;
 		return p == null && a == null;
 	}

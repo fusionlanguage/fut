@@ -7,7 +7,7 @@ public static class Test
 		bool[5] c;
 		short[5] d;
 		ushort[5] e;
-		string[5] s;
+		string?[5] s;
 		for (int i = 0; i < 5; i++) {
 			a[i] = i;
 			b[i] = i;

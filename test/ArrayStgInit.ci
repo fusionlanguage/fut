@@ -5,7 +5,7 @@ public static class Test
 		int[5] a = 0;
 		byte[5] b = 0;
 		bool[5] c = false;
-		string[5] s = null;
+		string?[5] s = null;
 		for (int i = 0; i < 5; i++)
 			if (a[i] != 0 || b[i] != 0 || c[i] || s[i] != null)
 				return false;

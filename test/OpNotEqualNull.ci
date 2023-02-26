@@ -3,10 +3,10 @@ public class Test
 	public static bool Run()
 	{
 		Test() o;
-		Test op = o;
+		Test? op = o;
 		int[2] a;
-		int[] ap = a;
-		string sp = "foo";
+		int[]? ap = a;
+		string? sp = "foo";
 		return op != null
 			&& ap != null
 			&& sp != null;

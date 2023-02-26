@@ -6,7 +6,7 @@ public static class Test
 	public static bool Run()
 	{
 		bool a = true;
-		int[] b = null;
+		int[]? b = null;
 		return (a || b[0] == 5)
 			&& (true || false)
 			&& (a || false)

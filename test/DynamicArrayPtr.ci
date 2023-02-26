@@ -6,11 +6,11 @@ public class Test
 	{
 		Test() o1;
 		Test() o2;
-		Test[]# a = new Test[2]; //FAIL: cpp - should work with C++20; cl
+		Test?[]# a = new Test?[2]; //FAIL: cpp - should work with C++20; cl
 		a[0] = o1;
 		a[1] = o2;
 
-		Test#[]# d = new Test#[2];
+		Test#?[]# d = new Test#?[2];
 		d[0] = new Test();
 		d[0].X = 5;
 		d[1] = new Test();
@@ -22,7 +22,7 @@ public class Test
 		int[2] a2;
 		a2[0] = 4;
 		a2[1] = 8;
-		int[]#[] aa = new int[2][];
+		int[]#[]? aa = new int[2][]?;
 		aa[0] = a1;
 		aa[1] = a2;
 

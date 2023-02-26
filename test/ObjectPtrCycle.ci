@@ -1,6 +1,6 @@
 public class Test
 {
-	Test Ref;
+	Test? Ref;
 
 	public static bool Run()
 	{

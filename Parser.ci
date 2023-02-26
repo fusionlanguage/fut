@@ -20,9 +20,9 @@
 public abstract class CiParser : CiLexer
 {
 	internal CiProgram! Program;
-	string XcrementParent = null;
-	CiLoop CurrentLoop = null;
-	CiCondCompletionStatement! CurrentLoopOrSwitch = null;
+	string? XcrementParent = null;
+	CiLoop? CurrentLoop = null;
+	CiCondCompletionStatement!? CurrentLoopOrSwitch = null;
 
 	bool DocParseLine!(CiDocPara! para)
 	{
@@ -76,7 +76,7 @@ public abstract class CiParser : CiLexer
 		} while (See(CiToken.DocRegular));
 	}
 
-	CiCodeDoc# ParseDoc!()
+	CiCodeDoc#? ParseDoc!()
 	{
 		if (!See(CiToken.DocRegular))
 			return null;
@@ -169,7 +169,7 @@ public abstract class CiParser : CiLexer
 		return result;
 	}
 
-	CiSymbolReference# ParseSymbolReference!(CiExpr# left)
+	CiSymbolReference# ParseSymbolReference!(CiExpr#? left)
 	{
 		CiSymbolReference# result = new CiSymbolReference { Line = this.Line, Left = left, Name = this.StringValue };
 		NextToken();
@@ -188,7 +188,7 @@ public abstract class CiParser : CiLexer
 
 	CiExpr# ParsePrimaryExpr!(bool type)
 	{
-		CiExpr# result;
+		CiExpr#? result;
 		switch (this.CurrentToken) {
 		case CiToken.Increment:
 		case CiToken.Decrement:
@@ -307,6 +307,11 @@ public abstract class CiParser : CiLexer
 			case CiToken.Hash:
 				result = new CiPostfixExpr { Line = this.Line, Inner = result, Op = NextToken() };
 				break;
+			case CiToken.QuestionMark:
+				if (!type)
+					return result;
+				result = new CiPostfixExpr { Line = this.Line, Inner = result, Op = NextToken() };
+				break;
 			default:
 				return result;
 			}
@@ -357,7 +362,7 @@ public abstract class CiParser : CiLexer
 				left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseShiftExpr() };
 				break;
 			case CiToken.Is:
-				CiBinaryExpr# isExpr = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(true) };
+				CiBinaryExpr# isExpr = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(false) };
 				if (See(CiToken.Id)) {
 					isExpr.Right = new CiVar { Line = this.Line, TypeExpr = isExpr.Right, Name = this.StringValue };
 					NextToken();
@@ -473,7 +478,7 @@ public abstract class CiParser : CiLexer
 		return result;
 	}
 
-	CiExpr# ParseInitializer!()
+	CiExpr#? ParseInitializer!()
 	{
 		if (!Eat(CiToken.Assign))
 			return null;
@@ -663,7 +668,7 @@ public abstract class CiParser : CiLexer
 		return result;
 	}
 
-	CiNative# ParseNative!()
+	CiNative#? ParseNative!()
 	{
 		int line = this.Line;
 		Expect(CiToken.Native);

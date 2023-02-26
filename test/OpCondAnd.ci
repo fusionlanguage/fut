@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		bool a = false;
-		int[] b = null;
+		int[]? b = null;
 		return !(a && b[0] == 0);
 	}
 }

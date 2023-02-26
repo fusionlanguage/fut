@@ -1,6 +1,6 @@
 abstract class Animal
 {
-	internal string Name;
+	internal string? Name;
 	internal virtual void MakeSound()
 	{
 	}
@@ -24,7 +24,7 @@ class Cow : Animal
 
 public static class Test
 {
-	static bool IsCat(Animal a)
+	static bool IsCat(Animal? a)
 	{
 		switch (a) { //FAIL: c cl
 		case null:

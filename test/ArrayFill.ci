@@ -10,7 +10,7 @@ public static class Test
 		int[]! p = a;
 		p.Fill(10, 4, 2);
 		d.Fill(0, 2, 3);
-		string[2] s;
+		string?[2] s;
 		s.Fill(null, 0, 2);
 		return a[0] == 5 && a[1] == 0 && a[2] == 0 && a[3] == 20
 			&& a[4] == 10 && a[5] == 10 && a[6] == 35

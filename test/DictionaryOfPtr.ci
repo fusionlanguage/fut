@@ -2,17 +2,17 @@ public class Test
 {
 	public static bool Run()
 	{
-		Dictionary<int, string>() sd; //FAIL: cl
+		Dictionary<int, string?>() sd; //FAIL: cl
 		sd[1] = "foo";
 		sd[2] = null;
 
 		int[2] a;
-		Dictionary<int, int[]>() ad;
+		Dictionary<int, int[]?>() ad;
 		ad[1] = a;
 		ad[2] = null;
 
 		Test() o;
-		Dictionary<int, Test>() od;
+		Dictionary<int, Test?>() od;
 		od[1] = o;
 		od[2] = null;
 

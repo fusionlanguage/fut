@@ -18,10 +18,10 @@ public class Test
 			sum += t.Foo + p.Foo;
 		}
 
-		Test[2] pa;
+		Test?[2] pa;
 		pa[0] = oa[0];
 		pa[1] = oa[1];
-		foreach (Test t in pa)
+		foreach (Test? t in pa)
 			sum += t.Foo;
 
 		return sum == 30 + 4 + 2;
