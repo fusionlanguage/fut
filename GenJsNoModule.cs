@@ -479,11 +479,8 @@ public class GenJsNoModule : GenBase
 		case CiId.HashSetClear:
 		case CiId.OrderedDictionaryClear:
 		case CiId.MathMethod:
-		case CiId.MathAbs:
 		case CiId.MathLog2:
-		case CiId.MathMaxInt:
 		case CiId.MathMaxDouble:
-		case CiId.MathMinInt:
 		case CiId.MathMinDouble:
 		case CiId.MathRound:
 			if (obj == null)
@@ -752,6 +749,9 @@ public class GenJsNoModule : GenBase
 		case CiId.MatchGetCapture:
 			WriteIndexing(obj, args[0]);
 			break;
+		case CiId.MathAbs:
+			WriteCall("Math.abs", args[0]);
+			break;
 		case CiId.MathCeiling:
 			WriteCall("Math.ceil", args[0]);
 			break;
@@ -782,6 +782,12 @@ public class GenJsNoModule : GenBase
 			Write(" == Infinity");
 			if (parent > CiPriority.Equality)
 				WriteChar(')');
+			break;
+		case CiId.MathMaxInt:
+			WriteCall("Math.max", args[0], args[1]);
+			break;
+		case CiId.MathMinInt:
+			WriteCall("Math.min", args[0], args[1]);
 			break;
 		case CiId.MathTruncate:
 			WriteCall("Math.trunc", args[0]);
