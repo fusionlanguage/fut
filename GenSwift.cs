@@ -312,7 +312,7 @@ public class GenSwift : GenPySwift
 
 	public override void VisitLiteralNull() => Write("nil");
 
-	void WriteUnwrappedString(CiExpr expr, CiPriority parent, bool substringOk)
+	void WriteUnwrapped(CiExpr expr, CiPriority parent, bool substringOk)
 	{
 		if (expr.Type.Nullable) {
 			expr.Accept(this, CiPriority.Primary);
@@ -336,7 +336,7 @@ public class GenSwift : GenPySwift
 			foreach (CiInterpolatedPart part in expr.Parts) {
 				Write(part.Prefix);
 				Write("\\(");
-				WriteUnwrappedString(part.Argument, CiPriority.Argument, true);
+				WriteUnwrapped(part.Argument, CiPriority.Argument, true);
 				WriteChar(')');
 			}
 			Write(expr.Suffix);
@@ -356,15 +356,15 @@ public class GenSwift : GenPySwift
 				expr.Accept(this, CiPriority.Argument);
 			WriteChar(')');
 		}
-		else if (type.Id == CiId.StringStorageType)
-			WriteUnwrappedString(expr, parent, false);
+		else if (!type.Nullable)
+			WriteUnwrapped(expr, parent, false);
 		else
 			expr.Accept(this, parent);
 	}
 
 	protected override void WriteStringLength(CiExpr expr)
 	{
-		WriteUnwrappedString(expr, CiPriority.Primary, true);
+		WriteUnwrapped(expr, CiPriority.Primary, true);
 		Write(".count");
 	}
 
@@ -372,7 +372,7 @@ public class GenSwift : GenPySwift
 	{
 		this.StringCharAt = true;
 		Write("ciStringCharAt(");
-		WriteUnwrappedString(expr.Left, CiPriority.Argument, false);
+		WriteUnwrapped(expr.Left, CiPriority.Argument, false);
 		Write(", ");
 		expr.Right.Accept(this, CiPriority.Argument);
 		WriteChar(')');
@@ -400,11 +400,11 @@ public class GenSwift : GenPySwift
 
 	void WriteStringContains(CiExpr obj, string name, List<CiExpr> args)
 	{
-		WriteUnwrappedString(obj, CiPriority.Primary, true);
+		WriteUnwrapped(obj, CiPriority.Primary, true);
 		WriteChar('.');
 		Write(name);
 		WriteChar('(');
-		WriteUnwrappedString(args[0], CiPriority.Argument, true);
+		WriteUnwrapped(args[0], CiPriority.Argument, true);
 		WriteChar(')');
 	}
 
@@ -453,26 +453,26 @@ public class GenSwift : GenPySwift
 			Include("Foundation");
 			this.StringIndexOf = true;
 			Write("ciStringIndexOf(");
-			WriteUnwrappedString(obj, CiPriority.Argument, true);
+			WriteUnwrapped(obj, CiPriority.Argument, true);
 			Write(", ");
-			WriteUnwrappedString(args[0], CiPriority.Argument, true);
+			WriteUnwrapped(args[0], CiPriority.Argument, true);
 			WriteChar(')');
 			break;
 		case CiId.StringLastIndexOf:
 			Include("Foundation");
 			this.StringIndexOf = true;
 			Write("ciStringIndexOf(");
-			WriteUnwrappedString(obj, CiPriority.Argument, true);
+			WriteUnwrapped(obj, CiPriority.Argument, true);
 			Write(", ");
-			WriteUnwrappedString(args[0], CiPriority.Argument, true);
+			WriteUnwrapped(args[0], CiPriority.Argument, true);
 			Write(", .backwards)");
 			break;
 		case CiId.StringReplace:
-			WriteUnwrappedString(obj, CiPriority.Primary, true);
+			WriteUnwrapped(obj, CiPriority.Primary, true);
 			Write(".replacingOccurrences(of: ");
-			WriteUnwrappedString(args[0], CiPriority.Argument, true);
+			WriteUnwrapped(args[0], CiPriority.Argument, true);
 			Write(", with: ");
-			WriteUnwrappedString(args[1], CiPriority.Argument, true);
+			WriteUnwrapped(args[1], CiPriority.Argument, true);
 			WriteChar(')');
 			break;
 		case CiId.StringStartsWith:
@@ -480,11 +480,11 @@ public class GenSwift : GenPySwift
 			break;
 		case CiId.StringSubstring:
 			if (args[0].IsLiteralZero())
-				WriteUnwrappedString(obj, CiPriority.Primary, true);
+				WriteUnwrapped(obj, CiPriority.Primary, true);
 			else {
 				this.StringSubstring = true;
 				Write("ciStringSubstring(");
-				WriteUnwrappedString(obj, CiPriority.Argument, false);
+				WriteUnwrapped(obj, CiPriority.Argument, false);
 				Write(", ");
 				WriteCoerced(this.System.IntType, args[0], CiPriority.Argument);
 				WriteChar(')');
@@ -647,25 +647,25 @@ public class GenSwift : GenPySwift
 		case CiId.ConsoleWrite:
 			// TODO: stderr
 			Write("print(");
-			WriteUnwrappedString(args[0], CiPriority.Argument, true);
+			WriteUnwrapped(args[0], CiPriority.Argument, true);
 			Write(", terminator: \"\")");
 			break;
 		case CiId.ConsoleWriteLine:
 			// TODO: stderr
 			Write("print(");
 			if (args.Count == 1)
-				WriteUnwrappedString(args[0], CiPriority.Argument, true);
+				WriteUnwrapped(args[0], CiPriority.Argument, true);
 			WriteChar(')');
 			break;
 		case CiId.UTF8GetByteCount:
-			WriteUnwrappedString(args[0], CiPriority.Primary, true);
+			WriteUnwrapped(args[0], CiPriority.Primary, true);
 			Write(".utf8.count");
 			break;
 		case CiId.UTF8GetBytes:
 			if (AddVar("cibytes"))
 				Write(this.VarBytesAtIndent[this.Indent] ? "var " : "let ");
 			Write("cibytes = [UInt8](");
-			WriteUnwrappedString(args[0], CiPriority.Primary, true);
+			WriteUnwrapped(args[0], CiPriority.Primary, true);
 			WriteLine(".utf8)");
 			OpenIndexing(args[1]);
 			WriteCoerced(this.System.IntType, args[2], CiPriority.Shift);
@@ -687,7 +687,7 @@ public class GenSwift : GenPySwift
 		case CiId.EnvironmentGetEnvironmentVariable:
 			Include("Foundation");
 			Write("ProcessInfo.processInfo.environment[");
-			WriteUnwrappedString(args[0], CiPriority.Argument, false);
+			WriteUnwrapped(args[0], CiPriority.Argument, false);
 			WriteChar(']');
 			break;
 		case CiId.MathMethod:
@@ -848,7 +848,7 @@ public class GenSwift : GenPySwift
 	{
 		if (expr.Type.Id != CiId.BoolType) {
 			if (binary.Op == CiToken.Plus && binary.Type.Id == CiId.StringStorageType) {
-				WriteUnwrappedString(expr, parent, true);
+				WriteUnwrapped(expr, parent, true);
 				return;
 			}
 			CiType type;

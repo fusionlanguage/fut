@@ -1,0 +1,9 @@
+public class Test
+{
+	public static bool Run()
+	{
+		string? s = "foo";
+		string n = s;
+		return n == "foo";
+	}
+}
