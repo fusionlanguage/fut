@@ -179,26 +179,9 @@ public class GenSwift : GenPySwift
 			base.WriteLocalName(symbol, parent);
 	}
 
-	static bool NeedsUnwrap(CiExpr expr)
-	{
-		if (expr.Type == null)
-			return false;
-		if (expr is CiPrefixExpr prefix && prefix.Op == CiToken.New)
-			return false; // from DefineObjectLiteralTemporary
-		if (expr is CiSymbolReference symbol && expr.Type is CiClassType) {
-			if (symbol.Name == "this")
-				return false;
-			if (symbol.Symbol.Parent is CiForeach forEach
-			 && forEach.Collection.Type is CiArrayStorageType array
-			 && array.GetElementType() is CiStorageType)
-				return false;
-		}
-		return expr.Type.Nullable;
-	}
-
 	protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 	{
-		if (NeedsUnwrap(left))
+		if (left.Type != null && left.Type.Nullable)
 			WriteChar('!');
 		WriteChar('.');
 	}
@@ -329,28 +312,9 @@ public class GenSwift : GenPySwift
 
 	public override void VisitLiteralNull() => Write("nil");
 
-	static bool IsForeachStringStg(CiExpr expr)
-	{
-		if (!(expr is CiSymbolReference symbol) || !(symbol.Symbol.Parent is CiForeach loop))
-			return false;
-		CiClassType klass = (CiClassType) loop.Collection.Type;
-		switch (klass.Class.Id) {
-		case CiId.ArrayStorageClass:
-		case CiId.ListClass:
-		case CiId.HashSetClass:
-			return klass.GetElementType().Id == CiId.StringStorageType;
-		case CiId.DictionaryClass:
-		case CiId.SortedDictionaryClass:
-		case CiId.OrderedDictionaryClass:
-			return (symbol.Symbol == loop.GetVar() ? klass.GetKeyType() : klass.GetValueType()).Id == CiId.StringStorageType;
-		default:
-			throw new NotImplementedException(klass.Class.Name);
-		}
-	}
-
 	void WriteUnwrappedString(CiExpr expr, CiPriority parent, bool substringOk)
 	{
-		if (expr.Type.Nullable && !IsForeachStringStg(expr)) {
+		if (expr.Type.Nullable) {
 			expr.Accept(this, CiPriority.Primary);
 			WriteChar('!');
 		}
