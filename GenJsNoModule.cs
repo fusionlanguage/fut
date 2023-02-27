@@ -463,6 +463,20 @@ public class GenJsNoModule : GenBase
 		}
 	}
 
+	static bool HasLong(List<CiExpr> args) => args.Any(arg => arg.Type.Id == CiId.LongType);
+
+	void WriteMathMaxMin(CiMethod method, string name, int op, List<CiExpr> args)
+	{
+		if (HasLong(args)) {
+			Write("((x, y) => x ");
+			WriteChar(op);
+			Write(" y ? x : y)");
+			WriteArgsInParentheses(method, args);
+		}
+		else
+			WriteCall(name, args[0], args[1]);
+	}
+
 	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
@@ -756,8 +770,14 @@ public class GenJsNoModule : GenBase
 			WriteCall("Math.ceil", args[0]);
 			break;
 		case CiId.MathClamp:
-			Write("Math.min(Math.max(");
-			WriteClampAsMinMax(args);
+			if (method.Type.Id == CiId.IntType && HasLong(args)) {
+				Write("((x, min, max) => x < min ? min : x > max ? max : x)");
+				WriteArgsInParentheses(method, args);
+			}
+			else {
+				Write("Math.min(Math.max(");
+				WriteClampAsMinMax(args);
+			}
 			break;
 		case CiId.MathFusedMultiplyAdd:
 			if (parent > CiPriority.Add)
@@ -784,10 +804,10 @@ public class GenJsNoModule : GenBase
 				WriteChar(')');
 			break;
 		case CiId.MathMaxInt:
-			WriteCall("Math.max", args[0], args[1]);
+			WriteMathMaxMin(method, "Math.max", '>', args);
 			break;
 		case CiId.MathMinInt:
-			WriteCall("Math.min", args[0], args[1]);
+			WriteMathMaxMin(method, "Math.min", '<', args);
 			break;
 		case CiId.MathTruncate:
 			WriteCall("Math.trunc", args[0]);
