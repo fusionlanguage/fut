@@ -750,7 +750,7 @@ public class GenJsNoModule : GenBase
 			WriteIndexing(obj, args[0]);
 			break;
 		case CiId.MathAbs:
-			WriteCall("Math.abs", args[0]);
+			WriteCall(args[0].Type.Id == CiId.LongType ? "(x => x < 0n ? -x : x)" : "Math.abs", args[0]);
 			break;
 		case CiId.MathCeiling:
 			WriteCall("Math.ceil", args[0]);
