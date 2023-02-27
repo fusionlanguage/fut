@@ -7,6 +7,7 @@ public static class Test
 		bool c = true;
 		byte b1 = 192;
 		byte b2 = 65;
+		long l1 = 1 << 60;
 		return (a | b) == 7
 			&& ((c ? a : b) | 2) == 7
 			&& (3 | (c ? a : b)) == 7
@@ -30,6 +31,7 @@ public static class Test
 			&& (a | (10 / b)) == 7
 			&& ((a % b) | 1) == 3
 			&& (2 | (a % b)) == 2
-			&& (b1 | b2) == 193;
+			&& (b1 | b2) == 193
+			&& (l1 | a << 1) == l1 + 10;
 	}
 }
