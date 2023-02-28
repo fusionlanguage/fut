@@ -1,7 +1,7 @@
 public class Test
 {
-	Test[2] ArrayStg;
-	Test[] ArrayPtr;
+	Test?[2] ArrayStg;
+	Test?[]? ArrayPtr;
 	List<Test>() ListStg; //FAIL: cl
 	Dictionary<int, Test>() DictStg;
 
