@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace Foxoft.Ci
@@ -28,11 +27,13 @@ namespace Foxoft.Ci
 
 public class CiResolver : CiSema
 {
-	readonly List<string> SearchDirs;
+	readonly List<string> ResourceDirs = new List<string>();
+
+	public void AddResourceDir(string path) => this.ResourceDirs.Add(path);
 
 	byte[] ReadResource(string name, CiStatement statement)
 	{
-		foreach (string dir in this.SearchDirs) {
+		foreach (string dir in this.ResourceDirs) {
 			string path = Path.Combine(dir, name);
 			if (File.Exists(path))
 				return File.ReadAllBytes(path);
@@ -170,7 +171,7 @@ public class CiResolver : CiSema
 		return new CiPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
 	}
 
-	void ResolveCode(CiClass klass)
+	protected override void ResolveCode(CiClass klass)
 	{
 		if (klass.Constructor != null) {
 			this.CurrentScope = klass;
@@ -194,26 +195,6 @@ public class CiResolver : CiSema
 				}
 			}
 		}
-	}
-
-	public CiResolver(CiProgram program, List<string> searchDirs)
-	{
-		this.Program = program;
-		this.SearchDirs = searchDirs;
-		for (CiSymbol type = program.First; type != null; type = type.Next) {
-			if (type is CiClass klass)
-				ResolveBase(klass);
-		}
-		foreach (CiClass klass in program.Classes)
-			CheckBaseCycle(klass);
-		for (CiSymbol type = program.First; type != null; type = type.Next)
-			ResolveConsts((CiContainerType) type);
-		foreach (CiClass klass in program.Classes)
-			ResolveTypes(klass);
-		foreach (CiClass klass in program.Classes)
-			ResolveCode(klass);
-		foreach (CiClass klass in program.Classes)
-			MarkClassLive(klass);
 	}
 }
 

@@ -34,7 +34,7 @@ public abstract class CiSema : CiVisitor
 		return this.Poison;
 	}
 
-	protected void ResolveBase!(CiClass! klass)
+	void ResolveBase!(CiClass! klass)
 	{
 		if (klass.HasBaseClass()) {
 			this.CurrentScope = klass;
@@ -49,7 +49,7 @@ public abstract class CiSema : CiVisitor
 		this.Program.Classes.Add(klass);
 	}
 
-	protected void CheckBaseCycle!(CiClass! klass)
+	void CheckBaseCycle!(CiClass! klass)
 	{
 		// Floyd's tortoise and hare cycle-finding algorithm
 		CiSymbol? hare = klass;
@@ -1710,7 +1710,7 @@ public abstract class CiSema : CiVisitor
 		return 0;
 	}
 
-	protected void ResolveTypes!(CiClass! klass)
+	void ResolveTypes!(CiClass! klass)
 	{
 		this.CurrentScope = klass;
 		for (CiSymbol!? symbol = klass.First; symbol != null; symbol = symbol.Next) {
@@ -1819,7 +1819,7 @@ public abstract class CiSema : CiVisitor
 			konst.Value = new CiImplicitEnumValue { Value = previous == null ? 0 : previous.Value.IntValue() + 1 };
 	}
 
-	protected void ResolveConsts!(CiContainerType! container)
+	void ResolveConsts!(CiContainerType! container)
 	{
 		this.CurrentScope = container;
 		switch (container) {
@@ -1837,6 +1837,8 @@ public abstract class CiSema : CiVisitor
 		}
 	}
 
+	protected abstract void ResolveCode!(CiClass! klass);
+
 	static void MarkMethodLive(CiMethodBase! method)
 	{
 		if (method.IsLive)
@@ -1846,7 +1848,7 @@ public abstract class CiSema : CiVisitor
 			MarkMethodLive(called);
 	}
 
-	protected static void MarkClassLive(CiClass klass)
+	static void MarkClassLive(CiClass klass)
 	{
 		if (!klass.IsPublic)
 			return;
@@ -1857,5 +1859,26 @@ public abstract class CiSema : CiVisitor
 		}
 		if (klass.Constructor != null)
 			MarkMethodLive(klass.Constructor);
+	}
+
+	public void Process!(CiProgram! program)
+	{
+		this.Program = program;
+		for (CiSymbol!? type = program.First; type != null; type = type.Next) {
+			if (type is CiClass! klass)
+				ResolveBase(klass);
+		}
+		foreach (CiClass! klass in program.Classes)
+			CheckBaseCycle(klass);
+		for (CiSymbol!? type = program.First; type != null; type = type.Next) {
+			assert type is CiContainerType! container;
+			ResolveConsts(container);
+		}
+		foreach (CiClass! klass in program.Classes)
+			ResolveTypes(klass);
+		foreach (CiClass! klass in program.Classes)
+			ResolveCode(klass);
+		foreach (CiClass klass in program.Classes)
+			MarkClassLive(klass);
 	}
 }

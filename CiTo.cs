@@ -54,7 +54,7 @@ public static class CiTo
 		Console.WriteLine("--version  Display version information");
 	}
 
-	static CiProgram ParseAndResolve(CiConsoleParser parser, CiSystem system, CiScope parent, List<string> files, List<string> searchDirs)
+	static CiProgram ParseAndResolve(CiConsoleParser parser, CiSystem system, CiScope parent, List<string> files, CiResolver sema)
 	{
 		parser.Program = new CiProgram { Parent = parent, System = system };
 		foreach (string file in files) {
@@ -63,8 +63,8 @@ public static class CiTo
 		}
 		if (parser.HasErrors)
 			return null;
-		CiResolver resolver = new CiResolver(parser.Program, searchDirs);
-		if (resolver.HasErrors)
+		sema.Process(parser.Program);
+		if (sema.HasErrors)
 			return null;
 		return parser.Program;
 	}
@@ -97,7 +97,7 @@ public static class CiTo
 		CiConsoleParser parser = new CiConsoleParser();
 		List<string> inputFiles = new List<string>();
 		List<string> referencedFiles = new List<string>();
-		List<string> searchDirs = new List<string>();
+		CiResolver sema = new CiResolver();
 		string lang = null;
 		string outputFile = null;
 		string namespace_ = null;
@@ -130,7 +130,7 @@ public static class CiTo
 					referencedFiles.Add(args[++i]);
 					break;
 				case "-I":
-					searchDirs.Add(args[++i]);
+					sema.AddResourceDir(args[++i]);
 					break;
 				default:
 					throw new ArgumentException("Unknown option: " + arg);
@@ -149,11 +149,11 @@ public static class CiTo
 		CiProgram program;
 		CiScope parent = system;
 		if (referencedFiles.Count > 0) {
-			parent = ParseAndResolve(parser, system, parent, referencedFiles, searchDirs);
+			parent = ParseAndResolve(parser, system, parent, referencedFiles, sema);
 			if (parent == null)
 				return 1;
 		}
-		program = ParseAndResolve(parser, system, parent, inputFiles, searchDirs);
+		program = ParseAndResolve(parser, system, parent, inputFiles, sema);
 		if (program == null)
 			return 1;
 

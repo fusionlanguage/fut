@@ -4177,7 +4177,7 @@ namespace Foxoft.Ci
 			return this.Poison;
 		}
 
-		protected void ResolveBase(CiClass klass)
+		void ResolveBase(CiClass klass)
 		{
 			if (klass.HasBaseClass()) {
 				this.CurrentScope = klass;
@@ -4192,7 +4192,7 @@ namespace Foxoft.Ci
 			this.Program.Classes.Add(klass);
 		}
 
-		protected void CheckBaseCycle(CiClass klass)
+		void CheckBaseCycle(CiClass klass)
 		{
 			CiSymbol hare = klass;
 			CiSymbol tortoise = klass;
@@ -5774,7 +5774,7 @@ namespace Foxoft.Ci
 			return 0;
 		}
 
-		protected void ResolveTypes(CiClass klass)
+		void ResolveTypes(CiClass klass)
 		{
 			this.CurrentScope = klass;
 			for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
@@ -5881,7 +5881,7 @@ namespace Foxoft.Ci
 				konst.Value = new CiImplicitEnumValue { Value = previous == null ? 0 : previous.Value.IntValue() + 1 };
 		}
 
-		protected void ResolveConsts(CiContainerType container)
+		void ResolveConsts(CiContainerType container)
 		{
 			this.CurrentScope = container;
 			switch (container) {
@@ -5899,6 +5899,8 @@ namespace Foxoft.Ci
 			}
 		}
 
+		protected abstract void ResolveCode(CiClass klass);
+
 		static void MarkMethodLive(CiMethodBase method)
 		{
 			if (method.IsLive)
@@ -5908,7 +5910,7 @@ namespace Foxoft.Ci
 				MarkMethodLive(called);
 		}
 
-		protected static void MarkClassLive(CiClass klass)
+		static void MarkClassLive(CiClass klass)
 		{
 			if (!klass.IsPublic)
 				return;
@@ -5918,6 +5920,27 @@ namespace Foxoft.Ci
 			}
 			if (klass.Constructor != null)
 				MarkMethodLive(klass.Constructor);
+		}
+
+		public void Process(CiProgram program)
+		{
+			this.Program = program;
+			for (CiSymbol type = program.First; type != null; type = type.Next) {
+				if (type is CiClass klass)
+					ResolveBase(klass);
+			}
+			foreach (CiClass klass in program.Classes)
+				CheckBaseCycle(klass);
+			for (CiSymbol type = program.First; type != null; type = type.Next) {
+				CiContainerType container = (CiContainerType) type;
+				ResolveConsts(container);
+			}
+			foreach (CiClass klass in program.Classes)
+				ResolveTypes(klass);
+			foreach (CiClass klass in program.Classes)
+				ResolveCode(klass);
+			foreach (CiClass klass in program.Classes)
+				MarkClassLive(klass);
 		}
 	}
 }
