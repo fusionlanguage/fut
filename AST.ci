@@ -486,7 +486,7 @@ public class CiLiteralString : CiLiteral
 public class CiInterpolatedPart
 {
 	internal string() Prefix;
-	internal CiExpr#? Argument;
+	internal CiExpr# Argument;
 	internal CiExpr#? WidthExpr;
 	internal int Width;
 	internal int Format;
@@ -580,7 +580,7 @@ public class CiPostfixExpr : CiUnaryExpr
 
 public class CiBinaryExpr : CiExpr
 {
-	internal CiExpr#? Left;
+	internal CiExpr# Left;
 	internal CiToken Op;
 	internal CiExpr#? Right;
 	public override bool IsIndexing() => this.Op == CiToken.LeftBracket;
@@ -700,23 +700,23 @@ public class CiBinaryExpr : CiExpr
 
 public class CiSelectExpr : CiExpr
 {
-	internal CiExpr#? Cond;
-	internal CiExpr#? OnTrue;
-	internal CiExpr#? OnFalse;
+	internal CiExpr# Cond;
+	internal CiExpr# OnTrue;
+	internal CiExpr# OnFalse;
 	public override void Accept(CiExprVisitor! visitor, CiPriority parent) { visitor.VisitSelectExpr(this, parent); }
 	public override string() ToString() => $"({this.Cond} ? {this.OnTrue} : {this.OnFalse})";
 }
 
 public class CiCallExpr : CiExpr
 {
-	internal CiSymbolReference#? Method;
+	internal CiSymbolReference# Method;
 	internal List<CiExpr#>() Arguments;
 	public override void Accept(CiExprVisitor! visitor, CiPriority parent) { visitor.VisitCallExpr(this, parent); }
 }
 
 public class CiLambdaExpr : CiScope
 {
-	internal CiExpr#? Body;
+	internal CiExpr# Body;
 	public override void Accept(CiExprVisitor! visitor, CiPriority parent) { visitor.VisitLambdaExpr(this); }
 }
 
@@ -735,7 +735,7 @@ public class CiBlock : CiCondCompletionStatement
 
 public class CiAssert : CiStatement
 {
-	internal CiExpr#? Cond;
+	internal CiExpr# Cond;
 	internal CiExpr#? Message = null;
 	public override bool CompletesNormally() => !(this.Cond is CiLiteralFalse);
 	public override void AcceptStatement!(CiVisitor! visitor) { visitor.VisitAssert(this); }
@@ -744,20 +744,20 @@ public class CiAssert : CiStatement
 public abstract class CiLoop : CiCondCompletionStatement
 {
 	internal CiExpr#? Cond;
-	internal CiStatement#? Body;
+	internal CiStatement# Body;
 	internal bool HasBreak = false;
 }
 
 public class CiBreak : CiStatement
 {
-	internal CiCondCompletionStatement!? LoopOrSwitch;
+	internal CiCondCompletionStatement! LoopOrSwitch;
 	public override bool CompletesNormally() => false;
 	public override void AcceptStatement!(CiVisitor! visitor) { visitor.VisitBreak(this); }
 }
 
 public class CiContinue : CiStatement
 {
-	internal CiLoop? Loop;
+	internal CiLoop Loop;
 	public override bool CompletesNormally() => false;
 	public override void AcceptStatement!(CiVisitor! visitor) { visitor.VisitContinue(this); }
 }
@@ -779,7 +779,7 @@ public class CiFor : CiLoop
 
 public class CiForeach : CiLoop
 {
-	internal CiExpr#? Collection;
+	internal CiExpr# Collection;
 	public override void AcceptStatement!(CiVisitor! visitor) { visitor.VisitForeach(this); }
 	public CiVar! GetVar() => this.FirstParameter();
 	public CiVar! GetValueVar() => this.FirstParameter().NextParameter();
@@ -787,16 +787,16 @@ public class CiForeach : CiLoop
 
 public class CiIf : CiCondCompletionStatement
 {
-	internal CiExpr#? Cond;
-	internal CiStatement#? OnTrue;
+	internal CiExpr# Cond;
+	internal CiStatement# OnTrue;
 	internal CiStatement#? OnFalse;
 	public override void AcceptStatement!(CiVisitor! visitor) { visitor.VisitIf(this); }
 }
 
 public class CiLock : CiStatement
 {
-	internal CiExpr#? Lock;
-	internal CiStatement#? Body;
+	internal CiExpr# Lock;
+	internal CiStatement# Body;
 	public override bool CompletesNormally() => this.Body.CompletesNormally();
 	public override void AcceptStatement!(CiVisitor! visitor) { visitor.VisitLock(this); }
 }
@@ -823,7 +823,7 @@ public class CiCase
 
 public class CiSwitch : CiCondCompletionStatement
 {
-	internal CiExpr#? Value;
+	internal CiExpr# Value;
 	internal List<CiCase()>() Cases;
 	internal List<CiStatement#>() DefaultBody;
 	public override void AcceptStatement!(CiVisitor! visitor) { visitor.VisitSwitch(this); }
@@ -887,7 +887,7 @@ public class CiSwitch : CiCondCompletionStatement
 
 public class CiThrow : CiStatement
 {
-	internal CiExpr#? Message;
+	internal CiExpr# Message;
 	public override bool CompletesNormally() => false;
 	public override void AcceptStatement!(CiVisitor! visitor) { visitor.VisitThrow(this); }
 }
@@ -999,7 +999,7 @@ public class CiVar : CiNamedValue
 	public static CiVar# New(CiType#? type, string name, CiExpr#? defaultValue = null)
 		=> new CiVar { Type = type, Name = name, Value = defaultValue };
 	public override void Accept(CiExprVisitor! visitor, CiPriority parent) { visitor.VisitVar(this); }
-	public CiVar! NextParameter()
+	public CiVar!? NextParameter()
 	{
 		assert this.Next is CiVar! def;
 		return def;
@@ -1180,7 +1180,7 @@ public class CiClass : CiContainerType
 
 public class CiClassType : CiType
 {
-	internal CiClass? Class;
+	internal CiClass Class;
 	internal CiType#? TypeArg0;
 	internal CiType#? TypeArg1;
 	public CiType# GetElementType() => this.TypeArg0;
