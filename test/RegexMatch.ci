@@ -7,7 +7,7 @@ public class Test
 		return m.Find(s, "(B.+?) (\\wo\\w)", RegexOptions.IgnoreCase) //FAIL: swift TODO; cl
 			&& m.Start == 10
 			&& m.End == 19
-			&& m.Length == 9
+			&& m.Length == 9 && m.Length * 2 == 18
 			&& m.Value == "brown fox" //FAIL: c TODO memleak
 			&& m.GetCapture(1) == "brown" && m.GetCapture(2) == "fox";
 	}

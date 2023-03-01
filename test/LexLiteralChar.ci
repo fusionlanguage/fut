@@ -2,11 +2,12 @@ public static class Test
 {
 	public static bool Run()
 	{
+		int backslash = '\\';
 		return ' ' == 0x20
 			&& 'A' == 0x41
 			&& '\'' == 0x27
 			&& '"' == 0x22
-			&& '\\' == 0x5c
+			&& '\\' == 0x5c && backslash == 0x5c
 			&& '\n' == 0x0a
 			&& '\r' == 0x0d
 			&& '\t' == 0x09;

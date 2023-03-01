@@ -991,10 +991,7 @@ public abstract class GenBase : CiExprVisitor
 		WriteBinaryExpr(expr, parent > CiPriority.CondAnd && parent != CiPriority.And, CiPriority.And, " & ", CiPriority.And);
 	}
 
-	protected virtual void WriteAssignRight(CiBinaryExpr expr)
-	{
-		expr.Right.Accept(this, CiPriority.Argument);
-	}
+	protected virtual void WriteAssignRight(CiBinaryExpr expr) => WriteCoerced(expr.Left.Type, expr.Right, CiPriority.Argument);
 
 	protected virtual void WriteAssign(CiBinaryExpr expr, CiPriority parent)
 	{

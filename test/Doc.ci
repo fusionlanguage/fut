@@ -7,7 +7,9 @@
 /// * item2
 ///
 /// One more paragraph.
-/// 2 * 3 = 6.
+/// 2 * 3 < 7
+///
+/// M&Ms :->
 public class Test
 {
 	/// Constructs a test.
@@ -16,6 +18,7 @@ public class Test
 	}
 
 	/// An integer.
+	/// Details.
 	internal int X;
 
 	/// Returns `true` if the passed integer is even.

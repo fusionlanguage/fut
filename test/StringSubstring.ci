@@ -33,6 +33,7 @@ public class Test
 			&& objInit1 == "oobar" && localInit1 == "arek" && localAssign1 == "arek"
 			&& o.Ptr.Substring(1) == "oobar" && ptr.Substring(1) == "arek"
 			&& ptr.Substring(1, three) == "are" && ptr.Substring(1, three) != "ARE"
-			&& initial == "A" && initial2 == "E" && initial3 == "L";
+			&& initial == "A" && initial2 == "E" && initial3 == "L"
+			&& foo.Substring(1, 0) == "";
 	}
 }

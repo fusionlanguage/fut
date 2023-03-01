@@ -1,10 +1,10 @@
 public static class Test
 {
-	const int[3] ClassConst = { 5, 10, 15 };
+	const int[20] ClassConst = { 0, 5, 0, 0, 0, 0, 3, 0, 3, 0, 0, 0, 3, 0, 1, 0, 12, 1, 0, 2 };
 
 	static int Sum(int[] a, int length)
 	{
-		const int[4] localConst = { 3, 2, 1, 0 };
+		const int[20] localConst = { 0, 0, 0, 3, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 };
 		int sum = 0;
 		for (int i = 0; i < length; i++)
 			sum += a[i] + localConst[i];
@@ -15,6 +15,6 @@ public static class Test
 	{
 		const int[4] localConst = { 1, 2, 3, 4 };
 		return Sum(ClassConst, ClassConst.Length) == 36
-			&& Sum(localConst, localConst.Length) == 16;
+			&& Sum(localConst, localConst.Length) == 13;
 	}
 }

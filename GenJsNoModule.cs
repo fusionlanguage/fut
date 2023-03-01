@@ -805,8 +805,6 @@ public class GenJsNoModule : GenBase
 			base.WriteIndexing(expr, parent);
 	}
 
-	protected override void WriteAssignRight(CiBinaryExpr expr) => WriteCoerced(expr.Left.Type, expr.Right, CiPriority.Argument);
-
 	protected override void WriteAssign(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Left is CiBinaryExpr indexing

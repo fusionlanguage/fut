@@ -5,7 +5,7 @@ public class Test
 		string s = "123";
 		return Regex.IsMatch(s, "^\\d+$") //FAIL: swift TODO; cl
 			&& Regex.IsMatch(s, "3")
-			&& !Regex.IsMatch(s, "x")
+			&& !Regex.IsMatch(s, "x", RegexOptions.None)
 			&& Regex.IsMatch("1/\\2", "^\\d/\\\\\\d$")
 			&& Regex.IsMatch("foo", "FOO", RegexOptions.IgnoreCase)
 			&& Regex.IsMatch("a\nb", "^B", RegexOptions.IgnoreCase | RegexOptions.Multiline)

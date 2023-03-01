@@ -206,7 +206,7 @@ public abstract class GenTyped : GenBase
 				return;
 			}
 		}
-		WriteCoerced(expr.Left.Type, expr.Right, CiPriority.Argument);
+		base.WriteAssignRight(expr);
 	}
 
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)

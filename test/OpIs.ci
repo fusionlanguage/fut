@@ -7,12 +7,17 @@ class Derived : Base
 {
 }
 
+class NotThis : Base
+{
+}
+
 public static class Test
 {
 	public static bool Run()
 	{
 		Derived() d;
 		Base b = d;
-		return b is Derived; //FAIL: c cl TODO
+		return b is Derived //FAIL: c cl TODO
+			&& !(b is NotThis);
 	}
 }
