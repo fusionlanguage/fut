@@ -43,54 +43,6 @@ public class CiResolver : CiSema
 		return Array.Empty<byte>();
 	}
 
-	protected override CiExpr VisitInterpolatedString(CiInterpolatedString expr)
-	{
-		int partsCount = 0;
-		string s = "";
-		for (int partsIndex = 0; partsIndex < expr.Parts.Count; partsIndex++) {
-			CiInterpolatedPart part = expr.Parts[partsIndex];
-			s += part.Prefix;
-			CiExpr arg = Resolve(part.Argument);
-			Coerce(arg, this.Program.System.PrintableType);
-			switch (arg.Type) {
-			case CiIntegerType _:
-				if (" DdXx".IndexOf((char) part.Format) < 0)
-					ReportError(arg, "Invalid format string");
-				break;
-			case CiFloatingType _:
-				if (" FfEe".IndexOf((char) part.Format) < 0)
-					ReportError(arg, "Invalid format string");
-				break;
-			default:
-				if (part.Format != ' ')
-					ReportError(arg, "Invalid format string");
-				break;
-			}
-			int width = 0;
-			if (part.WidthExpr != null)
-				width = FoldConstInt(part.WidthExpr);
-			if (arg is CiLiteral literal && !(arg is CiLiteralDouble) && part.Format == ' ' && part.WidthExpr == null) // float formatting is runtime-locale-specific
-				s += literal.GetLiteralString();
-			else {
-				CiInterpolatedPart targetPart = expr.Parts[partsCount++];
-				targetPart.Prefix = s;
-				targetPart.Argument = arg;
-				targetPart.WidthExpr = part.WidthExpr;
-				targetPart.Width = width;
-				targetPart.Format = part.Format;
-				targetPart.Precision = part.Precision;
-				s = "";
-			}
-		}
-		s += expr.Suffix;
-		if (partsCount == 0)
-			return this.Program.System.NewLiteralString(s, expr.Line);
-		expr.Type = this.Program.System.StringStorageType;
-		expr.Parts.RemoveRange(partsCount, expr.Parts.Count - partsCount);
-		expr.Suffix = s;
-		return expr;
-	}
-
 	protected override CiExpr VisitPrefixExpr(CiPrefixExpr expr)
 	{
 		CiExpr inner;

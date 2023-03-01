@@ -542,7 +542,73 @@ public abstract class CiSema : CiVisitor
 		this.CurrentScope = this.CurrentScope.Parent;
 	}
 
-	protected abstract CiExpr# VisitInterpolatedString!(CiInterpolatedString# expr);
+	CiExpr# VisitInterpolatedString!(CiInterpolatedString# expr)
+	{
+		int partsCount = 0;
+		string() s = "";
+		for (int partsIndex = 0; partsIndex < expr.Parts.Count; partsIndex++) {
+			CiInterpolatedPart part = expr.Parts[partsIndex];
+			s += part.Prefix;
+			CiExpr# arg = Resolve(part.Argument);
+			Coerce(arg, this.Program.System.PrintableType);
+			switch (arg.Type) {
+			case CiIntegerType _:
+				switch (part.Format) {
+				case ' ':
+					if (arg is CiLiteralLong literalLong && part.WidthExpr == null) {
+						s += $"{literalLong.Value}";
+						continue;
+					}
+					break;
+				case 'D':
+				case 'd':
+				case 'X':
+				case 'x':
+					break;
+				default:
+					ReportError(arg, "Invalid format string");
+					break;
+				}
+				break;
+			case CiFloatingType _:
+				switch (part.Format) {
+				case ' ':
+				case 'F':
+				case 'f':
+				case 'E':
+				case 'e':
+					break;
+				default:
+					ReportError(arg, "Invalid format string");
+					break;
+				}
+				break;
+			default:
+				if (part.Format != ' ')
+					ReportError(arg, "Invalid format string");
+				else if (arg is CiLiteralString literalString && part.WidthExpr == null) {
+					s += literalString.Value;
+					continue;
+				}
+				break;
+			}
+			CiInterpolatedPart! targetPart = expr.Parts[partsCount++];
+			targetPart.Prefix = s;
+			targetPart.Argument = arg;
+			targetPart.WidthExpr = part.WidthExpr;
+			targetPart.Width = part.WidthExpr != null ? FoldConstInt(part.WidthExpr) : 0;
+			targetPart.Format = part.Format;
+			targetPart.Precision = part.Precision;
+			s = "";
+		}
+		s += expr.Suffix;
+		if (partsCount == 0)
+			return this.Program.System.NewLiteralString(s, expr.Line);
+		expr.Type = this.Program.System.StringStorageType;
+		expr.Parts.RemoveRange(partsCount, expr.Parts.Count - partsCount);
+		expr.Suffix = s;
+		return expr;
+	}
 
 	CiExpr# VisitSymbolReference!(CiSymbolReference# expr)
 	{
@@ -1696,7 +1762,7 @@ public abstract class CiSema : CiVisitor
 		return expr;
 	}
 
-	protected int FoldConstInt!(CiExpr# expr)
+	int FoldConstInt!(CiExpr# expr)
 	{
 		if (FoldConst(expr) is CiLiteralLong literal) {
 			long l = literal.Value;
