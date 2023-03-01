@@ -358,13 +358,11 @@ public class GenJsNoModule : GenBase
 		case CiId.ListCount:
 		case CiId.QueueCount:
 		case CiId.StackCount:
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".length");
+			WritePostfix(expr.Left, ".length");
 			break;
 		case CiId.HashSetCount:
 		case CiId.OrderedDictionaryCount:
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".size");
+			WritePostfix(expr.Left, ".size");
 			break;
 		case CiId.DictionaryCount:
 		case CiId.SortedDictionaryCount:
@@ -372,26 +370,21 @@ public class GenJsNoModule : GenBase
 			Write(".length");
 			break;
 		case CiId.MatchStart:
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".index");
+			WritePostfix(expr.Left, ".index");
 			break;
 		case CiId.MatchEnd:
 			if (parent > CiPriority.Add)
 				WriteChar('(');
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".index + ");
-			expr.Left.Accept(this, CiPriority.Primary); // FIXME: side effect
-			Write("[0].length");
+			WritePostfix(expr.Left, ".index + ");
+			WritePostfix(expr.Left, "[0].length"); // FIXME: side effect
 			if (parent > CiPriority.Add)
 				WriteChar(')');
 			break;
 		case CiId.MatchLength:
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write("[0].length");
+			WritePostfix(expr.Left, "[0].length");
 			break;
 		case CiId.MatchValue:
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write("[0]");
+			WritePostfix(expr.Left, "[0]");
 			break;
 		case CiId.MathNaN:
 			Write("NaN");
@@ -410,8 +403,7 @@ public class GenJsNoModule : GenBase
 
 	protected override void WriteStringLength(CiExpr expr)
 	{
-		expr.Accept(this, CiPriority.Primary);
-		Write(".length");
+		WritePostfix(expr, ".length");
 	}
 
 	protected override void WriteCharAt(CiBinaryExpr expr)
@@ -531,8 +523,7 @@ public class GenJsNoModule : GenBase
 			WriteCall(obj, "replaceAll", args[0], args[1]);
 			break;
 		case CiId.StringSubstring:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".substring(");
+			WritePostfix(obj, ".substring(");
 			args[0].Accept(this, CiPriority.Argument);
 			if (args.Count == 2) {
 				Write(", ");
@@ -542,8 +533,7 @@ public class GenJsNoModule : GenBase
 			break;
 		case CiId.ArrayFillAll:
 		case CiId.ArrayFillPart:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".fill(");
+			WritePostfix(obj, ".fill(");
 			args[0].Accept(this, CiPriority.Argument);
 			if (args.Count == 3) {
 				Write(", ");
@@ -561,8 +551,7 @@ public class GenJsNoModule : GenBase
 				if (wholeSource)
 					obj.Accept(this, CiPriority.Argument);
 				else {
-					obj.Accept(this, CiPriority.Primary);
-					Write(method.Id == CiId.ArrayCopyTo ? ".subarray(" : ".slice(");
+					WritePostfix(obj, method.Id == CiId.ArrayCopyTo ? ".subarray(" : ".slice(");
 					WriteStartEnd(args[0], args[3]);
 					WriteChar(')');
 				}
@@ -587,8 +576,7 @@ public class GenJsNoModule : GenBase
 			WriteChar(')');
 			break;
 		case CiId.ArraySortPart:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".subarray(");
+			WritePostfix(obj, ".subarray(");
 			WriteStartEnd(args[0], args[1]);
 			Write(").sort()");
 			break;
@@ -596,8 +584,7 @@ public class GenJsNoModule : GenBase
 			WriteListAdd(obj, "push", args);
 			break;
 		case CiId.ListAddRange:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".push(...");
+			WritePostfix(obj, ".push(...");
 			args[0].Accept(this, CiPriority.Argument);
 			WriteChar(')');
 			break;
@@ -610,20 +597,17 @@ public class GenJsNoModule : GenBase
 		case CiId.ListClear:
 		case CiId.QueueClear:
 		case CiId.StackClear:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".length = 0");
+			WritePostfix(obj, ".length = 0");
 			break;
 		case CiId.ListInsert:
 			WriteListInsert(obj, "splice", args, ", 0, ");
 			break;
 		case CiId.ListLast:
 		case CiId.StackPeek:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".at(-1)");
+			WritePostfix(obj, ".at(-1)");
 			break;
 		case CiId.ListRemoveAt:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".splice(");
+			WritePostfix(obj, ".splice(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", 1)");
 			break;
@@ -631,31 +615,26 @@ public class GenJsNoModule : GenBase
 			WriteCall(obj, "splice", args[0], args[1]);
 			break;
 		case CiId.ListSortAll:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".sort((a, b) => a - b)");
+			WritePostfix(obj, ".sort((a, b) => a - b)");
 			break;
 		case CiId.ListSortPart:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".splice(");
+			WritePostfix(obj, ".splice(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
 			args[1].Accept(this, CiPriority.Argument);
 			Write(", ...");
-			obj.Accept(this, CiPriority.Primary); // TODO: side effect
-			Write(".slice(");
+			WritePostfix(obj, ".slice(");
 			WriteStartEnd(args[0], args[1]); // TODO: side effect
 			Write(").sort((a, b) => a - b))");
 			break;
 		case CiId.QueueDequeue:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".shift()");
+			WritePostfix(obj, ".shift()");
 			break;
 		case CiId.QueueEnqueue:
 			WriteCall(obj, "push", args[0]);
 			break;
 		case CiId.QueuePeek:
-			obj.Accept(this, CiPriority.Primary);
-			Write("[0]");
+			WritePostfix(obj, "[0]");
 			break;
 		case CiId.HashSetContains:
 			WriteCall(obj, "has", args[0]);
@@ -672,8 +651,7 @@ public class GenJsNoModule : GenBase
 			obj.Accept(this, CiPriority.Argument);
 			WriteCharLine(')');
 			Write("\tdelete ");
-			obj.Accept(this, CiPriority.Primary); // FIXME: side effect
-			Write("[key];");
+			WritePostfix(obj, "[key];"); // FIXME: side effect
 			break;
 		case CiId.DictionaryContainsKey:
 		case CiId.SortedDictionaryContainsKey:
@@ -709,18 +687,13 @@ public class GenJsNoModule : GenBase
 			Write(", ");
 			if (args[2].IsLiteralZero())
 				args[1].Accept(this, CiPriority.Argument);
-			else {
-				args[1].Accept(this, CiPriority.Primary);
-				Write(".subarray(");
-				args[2].Accept(this, CiPriority.Argument);
-				WriteChar(')');
-			}
+			else
+				WriteCall(args[1], "subarray", args[2]);
 			WriteChar(')');
 			break;
 		case CiId.UTF8GetString:
 			Write("new TextDecoder().decode(");
-			args[0].Accept(this, CiPriority.Primary);
-			Write(".subarray(");
+			WritePostfix(args[0], ".subarray(");
 			args[1].Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteAdd(args[1], args[2]); // FIXME: side effect
@@ -741,8 +714,7 @@ public class GenJsNoModule : GenBase
 			WriteNewRegex(args, 0);
 			break;
 		case CiId.RegexEscape:
-			args[0].Accept(this, CiPriority.Primary);
-			Write(".replace(/[-\\/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&')");
+			WritePostfix(args[0], ".replace(/[-\\/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&')");
 			break;
 		case CiId.RegexIsMatchStr:
 			WriteNewRegex(args, 1);

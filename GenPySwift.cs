@@ -129,8 +129,7 @@ public abstract class GenPySwift : GenBase
 
 	protected void WriteListAppend(CiExpr obj, List<CiExpr> args)
 	{
-		obj.Accept(this, CiPriority.Primary);
-		Write(".append(");
+		WritePostfix(obj, ".append(");
 		CiType elementType = ((CiClassType) obj.Type).GetElementType();
 		if (args.Count == 0)
 			WriteNewStorage(elementType);

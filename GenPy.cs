@@ -689,21 +689,17 @@ public class GenPy : GenPySwift
 		case CiId.StackClear:
 			if (((CiClassType) obj.Type).GetElementType() is CiNumericType number && GetArrayCode(number) != 'B') {
 				Write("del ");
-				obj.Accept(this, CiPriority.Primary);
-				Write("[:]");
+				WritePostfix(obj, "[:]");
 			}
-			else {
-				obj.Accept(this, CiPriority.Primary);
-				Write(".clear()");
-			}
+			else
+				WritePostfix(obj, ".clear()");
 			break;
 		case CiId.ListInsert:
 			WriteListInsert(obj, "insert", args);
 			break;
 		case CiId.ListLast:
 		case CiId.StackPeek:
-			obj.Accept(this, CiPriority.Primary);
-			Write("[-1]");
+			WritePostfix(obj, "[-1]");
 			break;
 		case CiId.ListRemoveAt:
 		case CiId.DictionaryRemove:
@@ -718,16 +714,14 @@ public class GenPy : GenPySwift
 			WriteSlice(args[0], args[1]);
 			break;
 		case CiId.QueueDequeue:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".popleft()");
+			WritePostfix(obj, ".popleft()");
 			break;
 		case CiId.QueueEnqueue:
 		case CiId.StackPush:
 			WriteListAppend(obj, args);
 			break;
 		case CiId.QueuePeek:
-			obj.Accept(this, CiPriority.Primary);
-			Write("[0]");
+			WritePostfix(obj, "[0]");
 			break;
 		case CiId.DictionaryAdd:
 			WriteDictionaryAdd(obj, args);
@@ -740,8 +734,7 @@ public class GenPy : GenPySwift
 			break;
 		case CiId.UTF8GetByteCount:
 			Write("len(");
-			args[0].Accept(this, CiPriority.Primary);
-			Write(".encode(\"utf8\"))");
+			WritePostfix(args[0], ".encode(\"utf8\"))");
 			break;
 		case CiId.UTF8GetBytes:
 			Write("cibytes = ");
@@ -1007,13 +1000,10 @@ public class GenPy : GenPySwift
 			Write(" in ");
 			if (dict.Class.Id == CiId.SortedDictionaryClass) {
 				Write("sorted(");
-				statement.Collection.Accept(this, CiPriority.Primary);
-				Write(".items())");
+				WritePostfix(statement.Collection, ".items())");
 			}
-			else {
-				statement.Collection.Accept(this, CiPriority.Primary);
-				Write(".items()");
-			}
+			else
+				WritePostfix(statement.Collection, ".items()");
 		}
 		else {
 			Write(" in ");

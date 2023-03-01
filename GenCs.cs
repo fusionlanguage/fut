@@ -365,22 +365,19 @@ public class GenCs : GenTyped
 
 	protected override void WriteStringLength(CiExpr expr)
 	{
-		expr.Accept(this, CiPriority.Primary);
-		Write(".Length");
+		WritePostfix(expr, ".Length");
 	}
 
 	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
 		case CiId.MatchStart:
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".Index");
+			WritePostfix(expr.Left, ".Index");
 			break;
 		case CiId.MatchEnd:
 			if (parent > CiPriority.Add)
 				WriteChar('(');
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".Index + ");
+			WritePostfix(expr.Left, ".Index + ");
 			WriteStringLength(expr.Left); // FIXME: side effect
 			if (parent > CiPriority.Add)
 				WriteChar(')');
@@ -512,18 +509,15 @@ public class GenCs : GenTyped
 			break;
 		case CiId.ListLast:
 			Include("System.Linq");
-			obj.Accept(this, CiPriority.Primary);
-			Write(".Last()");
+			WritePostfix(obj, ".Last()");
 			break;
 		case CiId.ListSortPart:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".Sort(");
+			WritePostfix(obj, ".Sort(");
 			WriteArgs(method, args);
 			Write(", null)");
 			break;
 		case CiId.DictionaryAdd:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".Add(");
+			WritePostfix(obj, ".Add(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteNewStorage(((CiClassType) obj.Type).GetValueType());
@@ -552,8 +546,7 @@ public class GenCs : GenTyped
 			Write("Encoding.UTF8.GetBytes(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", 0, ");
-			args[0].Accept(this, CiPriority.Primary); // FIXME: side effect
-			Write(".Length, ");
+			WritePostfix(args[0], ".Length, "); // FIXME: side effect
 			args[1].Accept(this, CiPriority.Argument);
 			Write(", ");
 			args[2].Accept(this, CiPriority.Argument);
@@ -595,8 +588,7 @@ public class GenCs : GenTyped
 			Write(").Success");
 			break;
 		case CiId.MatchGetCapture:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".Groups[");
+			WritePostfix(obj, ".Groups[");
 			args[0].Accept(this, CiPriority.Argument);
 			Write("].Value");
 			break;
@@ -637,8 +629,7 @@ public class GenCs : GenTyped
 	void WriteOrderedDictionaryIndexing(CiBinaryExpr expr)
 	{
 		if (expr.Right.Type.Id == CiId.IntType || expr.Right.Type is CiRangeType) {
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write("[(object) ");
+			WritePostfix(expr.Left, "[(object) ");
 			expr.Right.Accept(this, CiPriority.Primary);
 			WriteChar(']');
 		}

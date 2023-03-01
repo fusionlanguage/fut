@@ -288,8 +288,7 @@ public class GenC : GenCCpp
 		switch (expr.Symbol.Id) {
 		case CiId.ListCount:
 		case CiId.StackCount:
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write("->len");
+			WritePostfix(expr.Left, "->len");
 			break;
 		case CiId.QueueCount:
 			expr.Left.Accept(this, CiPriority.Primary);
@@ -324,8 +323,7 @@ public class GenC : GenCCpp
 			if (expr.Left == null || expr.Symbol is CiConst)
 				WriteLocalName(expr.Symbol, parent);
 			else if (IsDictionaryClassStgIndexing(expr.Left)) {
-				expr.Left.Accept(this, CiPriority.Primary);
-				Write("->");
+				WritePostfix(expr.Left, "->");
 				WriteName(expr.Symbol);
 			}
 			else
@@ -1095,8 +1093,7 @@ public class GenC : GenCCpp
 			WriteChar('(');
 			WriteType(list.GetElementType(), false);
 			Write(" *) ");
-			expr.Accept(this, CiPriority.Primary);
-			Write("->data");
+			WritePostfix(expr, "->data");
 		}
 		else
 			expr.Accept(this, parent);
@@ -1129,8 +1126,7 @@ public class GenC : GenCCpp
 			break;
 		case CiClassType ptr when ptr.Class != resultClass:
 			WriteChar('&');
-			expr.Accept(this, CiPriority.Primary);
-			Write("->base");
+			WritePostfix(expr, "->base");
 			WriteUpcast(resultClass, ptr.Class.Parent);
 			break;
 		default:
@@ -1511,8 +1507,7 @@ public class GenC : GenCCpp
 			if (parent > CiPriority.Equality)
 				WriteChar('(');
 			if (IsOneAsciiString(args[0], out char c2)) {
-				obj.Accept(this, CiPriority.Primary);
-				Write("[0] == ");
+				WritePostfix(obj, "[0] == ");
 				VisitLiteralChar(c2);
 			}
 			else {
@@ -1636,8 +1631,7 @@ public class GenC : GenCCpp
 				Write("g_array_set_size(");
 				obj.Accept(this, CiPriority.Argument);
 				Write(", ");
-				obj.Accept(this, CiPriority.Primary); // TODO: side effect
-				Write("->len + 1)");
+				WritePostfix(obj, "->len + 1)"); // TODO: side effect
 				break;
 			default:
 				WriteListAddInsert(obj, false, "g_array_append_val", args);
@@ -1663,10 +1657,8 @@ public class GenC : GenCCpp
 				WriteTypeCode(typeCode);
 			}
 			Write(" *) ");
-			obj.Accept(this, CiPriority.Primary);
-			Write("->data, ");
-			obj.Accept(this, CiPriority.Primary); // TODO: side effect
-			Write("->len, ");
+			WritePostfix(obj, "->data, ");
+			WritePostfix(obj, "->len, "); // TODO: side effect
 			args[0].Accept(this, CiPriority.Argument);
 			WriteChar(')');
 			this.Contains.Add(typeCode);
@@ -1677,8 +1669,7 @@ public class GenC : GenCCpp
 		case CiId.ListLast:
 		case CiId.StackPeek:
 			StartArrayIndexing(obj, ((CiClassType) obj.Type).GetElementType());
-			obj.Accept(this, CiPriority.Primary); // TODO: side effect
-			Write("->len - 1)");
+			WritePostfix(obj, "->len - 1)"); // TODO: side effect
 			break;
 		case CiId.ListRemoveAt:
 			WriteCall("g_array_remove_index", obj, args[0]);
@@ -1717,8 +1708,7 @@ public class GenC : GenCCpp
 			// FIXME: destroy
 			StartArrayIndexing(obj, ((CiClassType) obj.Type).GetElementType());
 			Write("--");
-			obj.Accept(this, CiPriority.Primary); // TODO: side effect
-			Write("->len)");
+			WritePostfix(obj, "->len)"); // TODO: side effect
 			break;
 		case CiId.HashSetAdd:
 			Write("g_hash_table_add(");
@@ -1963,8 +1953,7 @@ public class GenC : GenCCpp
 				if (klass.GetElementType() is CiArrayStorageType) {
 					WriteChar('(');
 					WriteDynamicArrayCast(klass.GetElementType());
-					expr.Left.Accept(this, CiPriority.Primary);
-					Write("->data)[");
+					WritePostfix(expr.Left, "->data)[");
 					expr.Right.Accept(this, CiPriority.Argument);
 					WriteChar(']');
 				}
@@ -1998,8 +1987,7 @@ public class GenC : GenCCpp
 		case CiToken.NotEqual:
 		case CiToken.Greater:
 			if (IsStringEmpty(expr, out CiExpr str)) {
-				str.Accept(this, CiPriority.Primary);
-				Write(expr.Op == CiToken.Equal ? "[0] == '\\0'" : "[0] != '\\0'");
+				WritePostfix(str, expr.Op == CiToken.Equal ? "[0] == '\\0'" : "[0] != '\\0'");
 				return;
 			}
 			break;
@@ -2319,8 +2307,7 @@ public class GenC : GenCCpp
 				Write(" = (");
 				WriteType(elementType, false);
 				Write(" const *) ");
-				statement.Collection.Accept(this, CiPriority.Primary);
-				Write("->data, ");
+				WritePostfix(statement.Collection, "->data, ");
 				for (; elementType.IsArray(); elementType = ((CiClassType) elementType).GetElementType())
 					WriteChar('*');
 				if (elementType is CiClassType)
@@ -2328,8 +2315,7 @@ public class GenC : GenCCpp
 				Write("*ciend = ");
 				WriteCamelCaseNotKeyword(element);
 				Write(" + ");
-				statement.Collection.Accept(this, CiPriority.Primary); // TODO: side effect
-				Write("->len; ");
+				WritePostfix(statement.Collection, "->len; "); // TODO: side effect
 				WriteCamelCaseNotKeyword(element);
 				Write(" < ciend; ");
 				WriteCamelCaseNotKeyword(element);

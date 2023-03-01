@@ -557,26 +557,21 @@ public abstract class GenBase : CiExprVisitor
 	{
 		switch (expr.Symbol.Id) {
 		case CiId.MatchStart:
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".start()");
+			WritePostfix(expr.Left, ".start()");
 			return true;
 		case CiId.MatchEnd:
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".end()");
+			WritePostfix(expr.Left, ".end()");
 			return true;
 		case CiId.MatchLength:
 			if (parent > CiPriority.Add)
 				WriteChar('(');
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".end() - ");
-			expr.Left.Accept(this, CiPriority.Primary); // FIXME: side effect
-			Write(".start()");
+			WritePostfix(expr.Left, ".end() - ");
+			WritePostfix(expr.Left, ".start()"); // FIXME: side effect
 			if (parent > CiPriority.Add)
 				WriteChar(')');
 			return true;
 		case CiId.MatchValue:
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".group()");
+			WritePostfix(expr.Left, ".group()");
 			return true;
 		default:
 			return false;
@@ -688,6 +683,12 @@ public abstract class GenBase : CiExprVisitor
 			arg.Accept(this, CiPriority.Argument);
 		}
 		WriteChar(')');
+	}
+
+	protected void WritePostfix(CiExpr obj, string s)
+	{
+		obj.Accept(this, CiPriority.Primary);
+		Write(s);
 	}
 
 	protected void WriteCall(CiExpr obj, string method, CiExpr arg0, CiExpr arg1 = null)

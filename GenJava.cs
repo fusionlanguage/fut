@@ -79,8 +79,7 @@ public class GenJava : GenTyped
 				if (arg.Type is CiIntegerType)
 					Write("Integer");
 				else if (arg.Type is CiClassType) {
-					arg.Accept(this, CiPriority.Primary);
-					Write(".toString()");
+					WritePostfix(arg, ".toString()");
 					return;
 				}
 				else
@@ -464,8 +463,7 @@ public class GenJava : GenTyped
 
 	protected override void WriteStringLength(CiExpr expr)
 	{
-		expr.Accept(this, CiPriority.Primary);
-		Write(".length()");
+		WritePostfix(expr, ".length()");
 	}
 
 	protected override void WriteCharAt(CiBinaryExpr expr)
@@ -555,8 +553,7 @@ public class GenJava : GenTyped
 			Write("); } catch (NumberFormatException e) { return Double.NaN; } }).getAsDouble())");
 			break;
 		case CiId.StringSubstring:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".substring(");
+			WritePostfix(obj, ".substring(");
 			args[0].Accept(this, CiPriority.Argument);
 			if (args.Count == 2) {
 				Write(", ");
@@ -612,8 +609,7 @@ public class GenJava : GenTyped
 			WriteChar('[');
 			StartAdd(args[2]); // FIXME: side effect in every iteration
 			Write("_i] = ");
-			obj.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
-			Write(".get(");
+			WritePostfix(obj, ".get("); // FIXME: side effect in every iteration
 			StartAdd(args[0]); // FIXME: side effect in every iteration
 			Write("_i)");
 			break;
@@ -621,44 +617,36 @@ public class GenJava : GenTyped
 			WriteListInsert(obj, "add", args);
 			break;
 		case CiId.ListLast:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".get(");
-			obj.Accept(this, CiPriority.Primary); // FIXME: side effect
-			Write(".size() - 1)");
+			WritePostfix(obj, ".get(");
+			WritePostfix(obj, ".size() - 1)"); // FIXME: side effect
 			break;
 		case CiId.ListRemoveAt:
 			WriteCall(obj, "remove", args[0]);
 			break;
 		case CiId.ListRemoveRange:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".subList(");
+			WritePostfix(obj, ".subList(");
 			WriteStartEnd(args[0], args[1]);
 			Write(").clear()");
 			break;
 		case CiId.ListSortAll:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".sort(null)");
+			WritePostfix(obj, ".sort(null)");
 			break;
 		case CiId.ListSortPart:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".subList(");
+			WritePostfix(obj, ".subList(");
 			WriteStartEnd(args[0], args[1]);
 			Write(").sort(null)");
 			break;
 		case CiId.QueueDequeue:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".remove()");
+			WritePostfix(obj, ".remove()");
 			break;
 		case CiId.QueueEnqueue:
 			WriteCall(obj, "add", args[0]);
 			break;
 		case CiId.QueuePeek:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".element()");
+			WritePostfix(obj, ".element()");
 			break;
 		case CiId.DictionaryAdd:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".put(");
+			WritePostfix(obj, ".put(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteNewStorage(((CiClassType) obj.Type).GetValueType());
@@ -672,8 +660,7 @@ public class GenJava : GenTyped
 			break;
 		case CiId.UTF8GetByteCount:
 			Include("java.nio.charset.StandardCharsets");
-			args[0].Accept(this, CiPriority.Primary);
-			Write(".getBytes(StandardCharsets.UTF_8).length"); // FIXME: quick&dirty!
+			WritePostfix(args[0], ".getBytes(StandardCharsets.UTF_8).length"); // FIXME: quick&dirty!
 			break;
 		case CiId.UTF8GetBytes:
 			Include("java.nio.ByteBuffer");
@@ -686,8 +673,7 @@ public class GenJava : GenTyped
 			Write(", ");
 			args[2].Accept(this, CiPriority.Argument);
 			Write(", ");
-			args[1].Accept(this, CiPriority.Primary); // FIXME: side effect
-			Write(".length");
+			WritePostfix(args[1], ".length"); // FIXME: side effect
 			if (!args[2].IsLiteralZero()) {
 				Write(" - ");
 				args[2].Accept(this, CiPriority.Mul); // FIXME: side effect
@@ -812,8 +798,7 @@ public class GenJava : GenTyped
 		 && indexing.Op == CiToken.LeftBracket
 		 && indexing.Left.Type is CiClassType klass
 		 && !klass.IsArray()) {
-			indexing.Left.Accept(this, CiPriority.Primary);
-			Write(klass.Class.Id == CiId.ListClass ? ".set(" : ".put(");
+			WritePostfix(indexing.Left, klass.Class.Id == CiId.ListClass ? ".set(" : ".put(");
 			indexing.Right.Accept(this, CiPriority.Argument);
 			Write(", ");
 			WriteNotPromoted(expr.Type, expr.Right);
@@ -911,8 +896,7 @@ public class GenJava : GenTyped
 			WriteChar(' ');
 			Write(statement.GetVar().Name);
 			Write(" : ");
-			statement.Collection.Accept(this, CiPriority.Primary);
-			Write(".entrySet()");
+			WritePostfix(statement.Collection, ".entrySet()");
 			break;
 		default:
 			WriteTypeAndName(statement.GetVar());

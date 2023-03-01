@@ -369,10 +369,8 @@ public class GenCpp : GenCCpp
 			WriteChar('&');
 			expr.Accept(this, CiPriority.Primary);
 		}
-		else if (expr.Type is CiDynamicPtrType && !(type is CiDynamicPtrType)) {
-			expr.Accept(this, CiPriority.Primary);
-			Write(".get()");
-		}
+		else if (expr.Type is CiDynamicPtrType && !(type is CiDynamicPtrType))
+			WritePostfix(expr, ".get()");
 		else
 			GetStaticCastInner(type, expr).Accept(this, CiPriority.Argument);
 		WriteChar(')');
@@ -388,16 +386,14 @@ public class GenCpp : GenCCpp
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
 		if (NeedStringPtrData(expr.Left) && expr.Right.Type.Id == CiId.NullType) {
-			expr.Left.Accept(this, CiPriority.Primary);
-			Write(".data()");
+			WritePostfix(expr.Left, ".data()");
 			Write(GetEqOp(not));
 			Write("nullptr");
 		}
 		else if (expr.Left.Type.Id == CiId.NullType && NeedStringPtrData(expr.Right)) {
 			Write("nullptr");
 			Write(GetEqOp(not));
-			expr.Right.Accept(this, CiPriority.Primary);
-			Write(".data()");
+			WritePostfix(expr.Right, ".data()");
 		}
 		else
 			base.WriteEqual(expr, parent, not);
@@ -536,10 +532,8 @@ public class GenCpp : GenCCpp
 	{
 		if (expr is CiLiteralString)
 			expr.Accept(this, CiPriority.Argument);
-		else {
-			expr.Accept(this, CiPriority.Primary);
-			Write(".data()");
-		}
+		else
+			WritePostfix(expr, ".data()");
 	}
 
 	void WriteRegex(List<CiExpr> args, int argIndex)
@@ -944,12 +938,10 @@ public class GenCpp : GenCCpp
 				WriteChar(')');
 			}
 			else {
-				args[0].Accept(this, CiPriority.Primary);
-				Write(".copy(reinterpret_cast<char *>("); // cast pointer signedness
+				WritePostfix(args[0], ".copy(reinterpret_cast<char *>("); // cast pointer signedness
 				WriteArrayPtrAdd(args[1], args[2]);
 				Write("), ");
-				args[0].Accept(this, CiPriority.Primary); // FIXME: side effect
-				Write(".size())");
+				WritePostfix(args[0], ".size())"); // FIXME: side effect
 			}
 			break;
 		case CiId.UTF8GetString:
@@ -1069,12 +1061,10 @@ public class GenCpp : GenCCpp
 		switch (expr.Type) {
 		case CiArrayStorageType _:
 		case CiStringType _:
-			expr.Accept(this, CiPriority.Primary);
-			Write(".data()");
+			WritePostfix(expr, ".data()");
 			break;
 		case CiDynamicPtrType _:
-			expr.Accept(this, CiPriority.Primary);
-			Write(".get()");
+			WritePostfix(expr, ".get()");
 			break;
 		case CiClassType klass when klass.Class.Id == CiId.ListClass:
 			StartMethodCall(expr);
@@ -1108,10 +1098,8 @@ public class GenCpp : GenCCpp
 					WriteChar('&');
 					expr.Accept(this, CiPriority.Primary);
 				}
-				else {
-					expr.Accept(this, CiPriority.Primary);
-					Write(".get()");
-				}
+				else
+					WritePostfix(expr, ".get()");
 				return;
 			case CiClassType _ when !IsCppPtr(expr):
 				WriteChar('&');
@@ -1207,10 +1195,8 @@ public class GenCpp : GenCCpp
 	void WriteGtRawPtr(CiExpr expr)
 	{
 		Write(">(");
-		if (expr.Type is CiDynamicPtrType) {
-			expr.Accept(this, CiPriority.Primary);
-			Write(".get()");
-		}
+		if (expr.Type is CiDynamicPtrType)
+			WritePostfix(expr, ".get()");
 		else
 			expr.Accept(this, CiPriority.Argument);
 		WriteChar(')');
@@ -1253,8 +1239,7 @@ public class GenCpp : GenCCpp
 			if (IsStringEmpty(expr, out CiExpr str)) {
 				if (expr.Op != CiToken.Equal)
 					WriteChar('!');
-				str.Accept(this, CiPriority.Primary);
-				Write(".empty()");
+				WritePostfix(str, ".empty()");
 				return;
 			}
 			break;

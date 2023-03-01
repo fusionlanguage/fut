@@ -172,8 +172,7 @@ public class GenCl : GenC
 			if (IsOneAsciiString(args[0], out char c)) {
 				if (parent > CiPriority.Equality)
 					WriteChar('(');
-				obj.Accept(this, CiPriority.Primary);
-				Write("[0] == ");
+				WritePostfix(obj, "[0] == ");
 				VisitLiteralChar(c);
 				if (parent > CiPriority.Equality)
 					WriteChar(')');
@@ -228,8 +227,7 @@ public class GenCl : GenC
 			WriteChar('[');
 			StartAdd(args[2]); // FIXME: side effect in every iteration
 			Write("_i] = ");
-			args[0].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
-			Write("[_i]");
+			WritePostfix(args[0], "[_i]"); // FIXME: side effect in every iteration
 			break;
 		case CiId.MathMethod:
 		case CiId.MathClamp:

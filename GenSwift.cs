@@ -538,8 +538,7 @@ public class GenSwift : GenPySwift
 			}
 			break;
 		case CiId.ArraySortAll:
-			obj.Accept(this, CiPriority.Primary);
-			Write("[0..<");
+			WritePostfix(obj, "[0..<");
 			VisitLiteralLong(((CiArrayStorageType) obj.Type).Length);
 			Write("].sort()");
 			break;
@@ -560,13 +559,11 @@ public class GenSwift : GenPySwift
 			args[0].Accept(this, CiPriority.Argument);
 			break;
 		case CiId.ListAll:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".allSatisfy ");
+			WritePostfix(obj, ".allSatisfy ");
 			args[0].Accept(this, CiPriority.Argument);
 			break;
 		case CiId.ListAny:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".contains ");
+			WritePostfix(obj, ".contains ");
 			args[0].Accept(this, CiPriority.Argument);
 			break;
 		case CiId.ListClear:
@@ -575,12 +572,10 @@ public class GenSwift : GenPySwift
 		case CiId.HashSetClear:
 		case CiId.DictionaryClear:
 		case CiId.SortedDictionaryClear:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".removeAll()");
+			WritePostfix(obj, ".removeAll()");
 			break;
 		case CiId.ListInsert:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".insert(");
+			WritePostfix(obj, ".insert(");
 			CiType elementType = ((CiClassType) obj.Type).GetElementType();
 			if (args.Count == 1)
 				WriteNewStorage(elementType);
@@ -592,36 +587,29 @@ public class GenSwift : GenPySwift
 			break;
 		case CiId.ListLast:
 		case CiId.StackPeek:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".last");
+			WritePostfix(obj, ".last");
 			break;
 		case CiId.ListRemoveAt:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".remove(at: ");
+			WritePostfix(obj, ".remove(at: ");
 			WriteCoerced(this.System.IntType, args[0], CiPriority.Argument);
 			WriteChar(')');
 			break;
 		case CiId.ListRemoveRange:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".removeSubrange(");
+			WritePostfix(obj, ".removeSubrange(");
 			WriteRange(args[0], args[1]);
 			WriteChar(')');
 			break;
 		case CiId.QueueDequeue:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".removeFirst()");
+			WritePostfix(obj, ".removeFirst()");
 			break;
 		case CiId.QueuePeek:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".first");
+			WritePostfix(obj, ".first");
 			break;
 		case CiId.StackPop:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".removeLast()");
+			WritePostfix(obj, ".removeLast()");
 			break;
 		case CiId.HashSetAdd:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".insert(");
+			WritePostfix(obj, ".insert(");
 			WriteCoerced(((CiClassType) obj.Type).GetElementType(), args[0], CiPriority.Argument);
 			WriteChar(')');
 			break;
@@ -639,8 +627,7 @@ public class GenSwift : GenPySwift
 			break;
 		case CiId.DictionaryRemove:
 		case CiId.SortedDictionaryRemove:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".removeValue(forKey: ");
+			WritePostfix(obj, ".removeValue(forKey: ");
 			args[0].Accept(this, CiPriority.Argument);
 			WriteChar(')');
 			break;
@@ -717,20 +704,16 @@ public class GenSwift : GenPySwift
 			WriteCall("fma", args[0], args[1], args[2]);
 			break;
 		case CiId.MathIsFinite:
-			args[0].Accept(this, CiPriority.Primary);
-			Write(".isFinite");
+			WritePostfix(args[0], ".isFinite");
 			break;
 		case CiId.MathIsInfinity:
-			args[0].Accept(this, CiPriority.Primary);
-			Write(".isInfinite");
+			WritePostfix(args[0], ".isInfinite");
 			break;
 		case CiId.MathIsNaN:
-			args[0].Accept(this, CiPriority.Primary);
-			Write(".isNaN");
+			WritePostfix(args[0], ".isNaN");
 			break;
 		case CiId.MathRound:
-			args[0].Accept(this, CiPriority.Primary);
-			Write(".rounded()");
+			WritePostfix(args[0], ".rounded()");
 			break;
 		case CiId.MathTruncate:
 			Include("Foundation");
@@ -816,8 +799,7 @@ public class GenSwift : GenPySwift
 		if (expr.Op == CiToken.Tilde && expr.Type is CiEnumFlags) {
 			Write(expr.Type.Name);
 			Write("(rawValue: ~");
-			expr.Inner.Accept(this, CiPriority.Primary);
-			Write(".rawValue)");
+			WritePostfix(expr.Inner, ".rawValue)");
 		}
 		else
 			base.VisitPrefixExpr(expr, parent);
@@ -1269,12 +1251,10 @@ public class GenSwift : GenPySwift
 		CiClassType klass = (CiClassType) statement.Collection.Type;
 		switch (klass.Class.Id) {
 		case CiId.StringClass:
-			statement.Collection.Accept(this, CiPriority.Primary);
-			Write(".unicodeScalars");
+			WritePostfix(statement.Collection, ".unicodeScalars");
 			break;
 		case CiId.SortedDictionaryClass:
-			statement.Collection.Accept(this, CiPriority.Primary);
-			Write(klass.GetKeyType().Nullable
+			WritePostfix(statement.Collection, klass.GetKeyType().Nullable
 				? ".sorted(by: { $0.key! < $1.key! })"
 				: ".sorted(by: { $0.key < $1.key })");
 			break;
