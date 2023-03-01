@@ -69,13 +69,8 @@ public class CiResolver : CiSema
 			int width = 0;
 			if (part.WidthExpr != null)
 				width = FoldConstInt(part.WidthExpr);
-			if (arg is CiLiteral literal && !(arg.Type is CiFloatingType)) { // float formatting is runtime-locale-specific
-				string stringArg = part.Format == ' ' ? literal.GetLiteralString()
-					: ((CiLiteralLong) arg).Value.ToString((char) part.Format + (part.Precision < 0 ? "" : part.Precision.ToString()));
-				if (part.WidthExpr != null)
-					stringArg = width >= 0 ? stringArg.PadLeft(width) : stringArg.PadRight(-width);
-				s += stringArg;
-			}
+			if (arg is CiLiteral literal && !(arg is CiLiteralDouble) && part.Format == ' ' && part.WidthExpr == null) // float formatting is runtime-locale-specific
+				s += literal.GetLiteralString();
 			else {
 				CiInterpolatedPart targetPart = expr.Parts[partsCount++];
 				targetPart.Prefix = s;

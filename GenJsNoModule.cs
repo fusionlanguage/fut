@@ -205,6 +205,8 @@ public class GenJsNoModule : GenBase
 			if (part.Width != 0 || part.Format != ' ') {
 				part.Argument.Accept(this, CiPriority.Primary);
 				if (part.Argument.Type is CiNumericType) {
+					if (part.Argument is CiLiteralLong)
+						WriteChar(' ');
 					switch (part.Format) {
 					case 'E':
 						Write(".toExponential(");
