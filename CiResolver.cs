@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace Foxoft.Ci
 {
@@ -47,10 +46,10 @@ public class CiResolver : CiSema
 	protected override CiExpr VisitInterpolatedString(CiInterpolatedString expr)
 	{
 		int partsCount = 0;
-		StringBuilder sb = new StringBuilder();
+		string s = "";
 		for (int partsIndex = 0; partsIndex < expr.Parts.Count; partsIndex++) {
 			CiInterpolatedPart part = expr.Parts[partsIndex];
-			sb.Append(part.Prefix);
+			s += part.Prefix;
 			CiExpr arg = Resolve(part.Argument);
 			Coerce(arg, this.Program.System.PrintableType);
 			switch (arg.Type) {
@@ -75,25 +74,25 @@ public class CiResolver : CiSema
 					: ((CiLiteralLong) arg).Value.ToString((char) part.Format + (part.Precision < 0 ? "" : part.Precision.ToString()));
 				if (part.WidthExpr != null)
 					stringArg = width >= 0 ? stringArg.PadLeft(width) : stringArg.PadRight(-width);
-				sb.Append(stringArg);
+				s += stringArg;
 			}
 			else {
 				CiInterpolatedPart targetPart = expr.Parts[partsCount++];
-				targetPart.Prefix = sb.ToString();
+				targetPart.Prefix = s;
 				targetPart.Argument = arg;
 				targetPart.WidthExpr = part.WidthExpr;
 				targetPart.Width = width;
 				targetPart.Format = part.Format;
 				targetPart.Precision = part.Precision;
-				sb.Clear();
+				s = "";
 			}
 		}
-		sb.Append(expr.Suffix);
+		s += expr.Suffix;
 		if (partsCount == 0)
-			return this.Program.System.NewLiteralString(sb.ToString(), expr.Line);
+			return this.Program.System.NewLiteralString(s, expr.Line);
 		expr.Type = this.Program.System.StringStorageType;
 		expr.Parts.RemoveRange(partsCount, expr.Parts.Count - partsCount);
-		expr.Suffix = sb.ToString();
+		expr.Suffix = s;
 		return expr;
 	}
 
