@@ -203,10 +203,15 @@ public class GenJsNoModule : GenBase
 			WriteInterpolatedLiteral(part.Prefix);
 			Write("${");
 			if (part.Width != 0 || part.Format != ' ') {
-				part.Argument.Accept(this, CiPriority.Primary);
+				if (part.Argument is CiLiteralLong || part.Argument is CiPrefixExpr) {
+					// FIXME: we should rather split CiPriority.Primary into CiPriority.Prefix and CiPriority.Suffix
+					WriteChar('(');
+					part.Argument.Accept(this, CiPriority.Primary);
+					WriteChar(')');
+				}
+				else
+					part.Argument.Accept(this, CiPriority.Primary);
 				if (part.Argument.Type is CiNumericType) {
-					if (part.Argument is CiLiteralLong)
-						WriteChar(' ');
 					switch (part.Format) {
 					case 'E':
 						Write(".toExponential(");
