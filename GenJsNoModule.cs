@@ -837,17 +837,17 @@ public class GenJsNoModule : GenBase
 	public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
-		case CiToken.Slash when expr.Type is CiIntegerType:
+		case CiToken.Slash when expr.Type is CiIntegerType && expr.Type.Id != CiId.LongType:
 			if (parent > CiPriority.Or)
 				WriteChar('(');
 			expr.Left.Accept(this, CiPriority.Mul);
 			Write(" / ");
 			expr.Right.Accept(this, CiPriority.Primary);
-			Write(" | 0"); // FIXME: long: Math.trunc?
+			Write(" | 0");
 			if (parent > CiPriority.Or)
 				WriteChar(')');
 			break;
-		case CiToken.DivAssign when expr.Type is CiIntegerType:
+		case CiToken.DivAssign when expr.Type is CiIntegerType && expr.Type.Id != CiId.LongType:
 			if (parent > CiPriority.Assign)
 				WriteChar('(');
 			expr.Left.Accept(this, CiPriority.Assign);
