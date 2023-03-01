@@ -30,7 +30,7 @@ public class CiResolver : CiSema
 
 	public void AddResourceDir(string path) => this.ResourceDirs.Add(path);
 
-	byte[] ReadResource(string name, CiStatement statement)
+	byte[] ReadResource(string name, CiPrefixExpr expr)
 	{
 		foreach (string dir in this.ResourceDirs) {
 			string path = Path.Combine(dir, name);
@@ -39,82 +39,17 @@ public class CiResolver : CiSema
 		}
 		if (File.Exists(name))
 			return File.ReadAllBytes(name);
-		ReportError(statement, $"File {name} not found");
+		ReportError(expr, $"File {name} not found");
 		return Array.Empty<byte>();
 	}
 
-	protected override CiExpr VisitPrefixExpr(CiPrefixExpr expr)
+	protected override int GetResourceLength(string name, CiPrefixExpr expr)
 	{
-		CiExpr inner;
-		CiType type;
-		CiRangeType range;
-		switch (expr.Op) {
-		case CiToken.Increment:
-		case CiToken.Decrement:
-			inner = Resolve(expr.Inner);
-			CheckLValue(inner);
-			Coerce(inner, this.Program.System.DoubleType);
-			range = inner.Type as CiRangeType;
-			if (range != null) {
-				int delta = expr.Op == CiToken.Increment ? 1 : -1;
-				type = CiRangeType.New(range.Min + delta, range.Max + delta);
-			}
-			else
-				type = inner.Type;
-			expr.Inner = inner;
-			expr.Type = type;
-			return expr;
-		case CiToken.Minus:
-			inner = Resolve(expr.Inner);
-			Coerce(inner, this.Program.System.DoubleType);
-			range = inner.Type as CiRangeType;
-			if (range != null)
-				type = range = CiRangeType.New(SaturatedNeg(range.Max), SaturatedNeg(range.Min));
-			else if (inner is CiLiteralDouble d)
-				return ToLiteralDouble(expr, -d.Value);
-			else if (inner is CiLiteralLong l)
-				return ToLiteralLong(expr, -l.Value);
-			else
-				type = inner.Type;
-			break;
-		case CiToken.Tilde:
-			inner = Resolve(expr.Inner);
-			if (inner.Type is CiEnumFlags) {
-				type = inner.Type;
-				range = null;
-			}
-			else {
-				Coerce(inner, this.Program.System.IntType);
-				range = inner.Type as CiRangeType;
-				if (range != null)
-					type = range = CiRangeType.New(~range.Max, ~range.Min);
-				else
-					type = inner.Type;
-			}
-			break;
-		case CiToken.ExclamationMark:
-			inner = ResolveBool(expr.Inner);
-			return new CiPrefixExpr { Line = expr.Line, Op = CiToken.ExclamationMark, Inner = inner, Type = this.Program.System.BoolType };
-		case CiToken.New:
-			return ResolveNew(expr);
-		case CiToken.Resource:
-			if (!(FoldConst(expr.Inner) is CiLiteralString resourceName))
-				return PoisonError(expr, "Resource name must be string");
-			inner = resourceName;
-			string name = resourceName.Value;
-			if (!this.Program.Resources.TryGetValue(name, out byte[] content)) {
-				content = ReadResource(name, expr);
-				this.Program.Resources.Add(name, content);
-			}
-			type = new CiArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = this.Program.System.ByteType, Length = content.Length };
-			range = null;
-			break;
-		default:
-			throw new NotImplementedException(expr.Op.ToString());
+		if (!this.Program.Resources.TryGetValue(name, out byte[] content)) {
+			content = ReadResource(name, expr);
+			this.Program.Resources.Add(name, content);
 		}
-		if (range != null && range.Min == range.Max)
-			return ToLiteralLong(expr, range.Min);
-		return new CiPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
+		return content.Length;
 	}
 
 	protected override void ResolveCode(CiClass klass)

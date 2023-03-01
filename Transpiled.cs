@@ -4171,7 +4171,7 @@ namespace Foxoft.Ci
 
 		protected override CiContainerType GetCurrentContainer() => this.CurrentScope.GetContainer();
 
-		protected CiType PoisonError(CiStatement statement, string message)
+		CiType PoisonError(CiStatement statement, string message)
 		{
 			ReportError(statement, message);
 			return this.Poison;
@@ -4216,7 +4216,7 @@ namespace Foxoft.Ci
 				arrayStg.PtrTaken = true;
 		}
 
-		protected bool Coerce(CiExpr expr, CiType type)
+		bool Coerce(CiExpr expr, CiType type)
 		{
 			if (expr == this.Poison)
 				return false;
@@ -4241,7 +4241,7 @@ namespace Foxoft.Ci
 				items[i] = Resolve(items[i]);
 		}
 
-		protected CiExpr ResolveNew(CiPrefixExpr expr)
+		CiExpr ResolveNew(CiPrefixExpr expr)
 		{
 			if (expr.Type != null)
 				return expr;
@@ -4310,7 +4310,7 @@ namespace Foxoft.Ci
 			return type;
 		}
 
-		protected static int SaturatedNeg(int a)
+		static int SaturatedNeg(int a)
 		{
 			if (a == -2147483648)
 				return 2147483647;
@@ -4467,9 +4467,9 @@ namespace Foxoft.Ci
 			return result;
 		}
 
-		protected CiLiteralLong ToLiteralLong(CiExpr expr, long value) => this.Program.System.NewLiteralLong(value, expr.Line);
+		CiLiteralLong ToLiteralLong(CiExpr expr, long value) => this.Program.System.NewLiteralLong(value, expr.Line);
 
-		protected CiLiteralDouble ToLiteralDouble(CiExpr expr, double value) => new CiLiteralDouble { Line = expr.Line, Type = this.Program.System.DoubleType, Value = value };
+		CiLiteralDouble ToLiteralDouble(CiExpr expr, double value) => new CiLiteralDouble { Line = expr.Line, Type = this.Program.System.DoubleType, Value = value };
 
 		void ResolveObjectLiteral(CiClassType klass, CiAggregateInitializer init)
 		{
@@ -4522,7 +4522,7 @@ namespace Foxoft.Ci
 			return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = this.Program.System.BoolType };
 		}
 
-		protected void CheckLValue(CiExpr expr)
+		void CheckLValue(CiExpr expr)
 		{
 			switch (expr) {
 			case CiSymbolReference symbol:
@@ -4833,7 +4833,69 @@ namespace Foxoft.Ci
 			return new CiSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
 		}
 
-		protected abstract CiExpr VisitPrefixExpr(CiPrefixExpr expr);
+		protected abstract int GetResourceLength(string name, CiPrefixExpr expr);
+
+		CiExpr VisitPrefixExpr(CiPrefixExpr expr)
+		{
+			CiExpr inner;
+			CiType type;
+			switch (expr.Op) {
+			case CiToken.Increment:
+			case CiToken.Decrement:
+				inner = Resolve(expr.Inner);
+				CheckLValue(inner);
+				Coerce(inner, this.Program.System.DoubleType);
+				if (inner.Type is CiRangeType xcrementRange) {
+					int delta = expr.Op == CiToken.Increment ? 1 : -1;
+					type = CiRangeType.New(xcrementRange.Min + delta, xcrementRange.Max + delta);
+				}
+				else
+					type = inner.Type;
+				expr.Inner = inner;
+				expr.Type = type;
+				return expr;
+			case CiToken.Minus:
+				inner = Resolve(expr.Inner);
+				Coerce(inner, this.Program.System.DoubleType);
+				if (inner.Type is CiRangeType negRange)
+					type = CiRangeType.New(SaturatedNeg(negRange.Max), SaturatedNeg(negRange.Min));
+				else if (inner is CiLiteralDouble d)
+					return ToLiteralDouble(expr, -d.Value);
+				else if (inner is CiLiteralLong l)
+					return ToLiteralLong(expr, -l.Value);
+				else
+					type = inner.Type;
+				break;
+			case CiToken.Tilde:
+				inner = Resolve(expr.Inner);
+				if (inner.Type is CiEnumFlags)
+					type = inner.Type;
+				else {
+					Coerce(inner, this.Program.System.IntType);
+					if (inner.Type is CiRangeType notRange)
+						type = CiRangeType.New(~notRange.Max, ~notRange.Min);
+					else
+						type = inner.Type;
+				}
+				break;
+			case CiToken.ExclamationMark:
+				inner = ResolveBool(expr.Inner);
+				return new CiPrefixExpr { Line = expr.Line, Op = CiToken.ExclamationMark, Inner = inner, Type = this.Program.System.BoolType };
+			case CiToken.New:
+				return ResolveNew(expr);
+			case CiToken.Resource:
+				if (!(FoldConst(expr.Inner) is CiLiteralString resourceName))
+					return PoisonError(expr, "Resource name must be string");
+				inner = resourceName;
+				type = new CiArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = this.Program.System.ByteType, Length = GetResourceLength(resourceName.Value, expr) };
+				break;
+			default:
+				throw new NotImplementedException();
+			}
+			if (type is CiRangeType range && range.Min == range.Max)
+				return ToLiteralLong(expr, range.Min);
+			return new CiPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
+		}
 
 		CiExpr VisitPostfixExpr(CiPostfixExpr expr)
 		{
@@ -5325,7 +5387,7 @@ namespace Foxoft.Ci
 			this.CurrentScope.Add(expr);
 		}
 
-		protected CiExpr Resolve(CiExpr expr)
+		CiExpr Resolve(CiExpr expr)
 		{
 			switch (expr) {
 			case CiAggregateInitializer aggregate:
@@ -5363,7 +5425,7 @@ namespace Foxoft.Ci
 			Resolve(statement);
 		}
 
-		protected CiExpr ResolveBool(CiExpr expr)
+		CiExpr ResolveBool(CiExpr expr)
 		{
 			expr = Resolve(expr);
 			Coerce(expr, this.Program.System.BoolType);
@@ -5817,7 +5879,7 @@ namespace Foxoft.Ci
 			CloseScope();
 		}
 
-		protected CiExpr FoldConst(CiExpr expr)
+		CiExpr FoldConst(CiExpr expr)
 		{
 			expr = Resolve(expr);
 			if (expr is CiLiteral || expr.IsConstEnum())
