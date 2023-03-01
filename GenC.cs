@@ -1557,7 +1557,7 @@ public class GenC : GenCCpp
 			if (args.Count == 1)
 				VisitLiteralLong(((CiArrayStorageType) obj.Type).Length);
 			else
-				args[2].Accept(this, CiPriority.Primary);
+				args[2].Accept(this, CiPriority.Argument);
 			WriteSizeofCompare(elementType2);
 			Write(" - ");
 			WriteArrayPtr(obj, CiPriority.Mul);
@@ -1625,7 +1625,7 @@ public class GenC : GenCCpp
 			Write("qsort(");
 			WriteArrayPtrAdd(obj, args[0]);
 			Write(", ");
-			args[1].Accept(this, CiPriority.Primary);
+			args[1].Accept(this, CiPriority.Argument);
 			WriteSizeofCompare(((CiClassType) obj.Type).GetElementType());
 			break;
 		case CiId.ListAdd:

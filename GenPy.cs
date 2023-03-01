@@ -607,9 +607,9 @@ public class GenPy : GenPySwift
 		case CiId.DictionaryContainsKey:
 		case CiId.SortedDictionaryContainsKey:
 		case CiId.OrderedDictionaryContainsKey:
-			args[0].Accept(this, CiPriority.Primary);
+			args[0].Accept(this, CiPriority.Rel);
 			Write(" in ");
-			obj.Accept(this, CiPriority.Primary);
+			obj.Accept(this, CiPriority.Rel);
 			break;
 		case CiId.StringEndsWith:
 			WriteCall(obj, "endswith", args[0]);
