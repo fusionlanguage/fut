@@ -1476,6 +1476,21 @@ public abstract class GenBase : CiExprVisitor
 		}
 	}
 
+	protected void WriteSwitchWhenVars(CiSwitch statement)
+	{
+		foreach (CiCase kase in statement.Cases) {
+			foreach (CiExpr value in kase.Values) {
+				if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
+					CiVar whenVar = (CiVar) when1.Left;
+					if (whenVar.Name != "_") {
+						WriteVar(whenVar);
+						EndStatement();
+					}
+				}
+			}
+		}
+	}
+
 	protected virtual void WriteSwitchValue(CiExpr expr) => expr.Accept(this, CiPriority.Argument);
 
 	protected virtual void WriteSwitchCaseBody(List<CiStatement> statements) => WriteStatements(statements);

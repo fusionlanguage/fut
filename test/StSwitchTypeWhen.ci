@@ -30,7 +30,7 @@ public static class Test
 		case Cow _:
 		case Dog _:
 			return false;
-		case Cat c when c.Name == "Simba": //FAIL: cpp TODO; java 19 --enable-preview
+		case Cat c when c.Name == "Simba": //FAIL: java 19 --enable-preview
 			return true;
 		default:
 			return false;

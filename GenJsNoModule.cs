@@ -1021,17 +1021,7 @@ public class GenJsNoModule : GenBase
 
 	void WriteTypeMatchingSwitch(CiSwitch statement)
 	{
-		foreach (CiCase kase in statement.Cases) {
-			foreach (CiExpr value in kase.Values) {
-				if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
-					CiVar whenVar = (CiVar) when1.Left;
-					if (whenVar.Name != "_") {
-						WriteVar(whenVar);
-						EndStatement();
-					}
-				}
-			}
-		}
+		WriteSwitchWhenVars(statement);
 		string op = "if (";
 		foreach (CiCase kase in statement.Cases) {
 			CiVar caseVar = null;
@@ -1044,7 +1034,7 @@ public class GenJsNoModule : GenBase
 						caseVar = def;
 					break;
 				case CiLiteralNull _:
-					statement.Value.Accept(this, CiPriority.Rel); // FIXME: side effect in every if
+					statement.Value.Accept(this, CiPriority.Equality); // FIXME: side effect in every if
 					Write(" == null");
 					break;
 				case CiBinaryExpr when1 when when1.Op == CiToken.When:

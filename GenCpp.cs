@@ -1202,8 +1202,10 @@ public class GenCpp : GenCCpp
 		WriteChar(')');
 	}
 
-	void WriteIsVar(CiExpr expr, CiVar def)
+	void WriteIsVar(CiExpr expr, CiVar def, CiPriority parent)
 	{
+		if (parent > CiPriority.Assign)
+			WriteChar('(');
 		if (def.Name != "_") {
 			WriteName(def);
 			Write(" = ");
@@ -1218,6 +1220,8 @@ public class GenCpp : GenCCpp
 			WriteType(def.Type, true);
 			WriteGtRawPtr(expr);
 		}
+		if (parent > CiPriority.Assign)
+			WriteChar(')');
 	}
 
 	public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
@@ -1253,13 +1257,8 @@ public class GenCpp : GenCCpp
 				Write(" *");
 				WriteGtRawPtr(expr.Left);
 			}
-			else {
-				if (parent > CiPriority.Assign)
-					WriteChar('(');
-				WriteIsVar(expr.Left, (CiVar) expr.Right);
-				if (parent > CiPriority.Assign)
-					WriteChar(')');
-			}
+			else
+				WriteIsVar(expr.Left, (CiVar) expr.Right, parent);
 			return;
 		default:
 			break;
@@ -1449,6 +1448,7 @@ public class GenCpp : GenCCpp
 	public override void VisitSwitch(CiSwitch statement)
 	{
 		if (statement.IsTypeMatching()) {
+			WriteSwitchWhenVars(statement);
 			int gotoId = GetSwitchGoto(statement);
 			string op = "if (";
 			foreach (CiCase kase in statement.Cases) {
@@ -1458,11 +1458,17 @@ public class GenCpp : GenCCpp
 					case CiVar def:
 						if (def.Name != "_")
 							WriteType(def.Type, true);
-						WriteIsVar(statement.Value, def); // FIXME: side effect in every if
+						WriteIsVar(statement.Value, def, CiPriority.Argument); // FIXME: side effect in every if
 						break;
 					case CiLiteralNull _:
-						statement.Value.Accept(this, CiPriority.Equality);
+						statement.Value.Accept(this, CiPriority.Equality); // FIXME: side effect in every if
 						Write(" == nullptr");
+						break;
+					case CiBinaryExpr when1 when when1.Op == CiToken.When:
+						CiVar whenVar = (CiVar) when1.Left;
+						WriteIsVar(statement.Value, whenVar, CiPriority.CondAnd); // FIXME: side effect in every if
+						Write(" && ");
+						when1.Right.Accept(this, CiPriority.CondAnd);
 						break;
 					default:
 						throw new NotImplementedException(value.GetType().Name);
