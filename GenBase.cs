@@ -1257,6 +1257,7 @@ public abstract class GenBase : CiExprVisitor
 	protected virtual void DefineIsVar(CiBinaryExpr binary)
 	{
 		if (binary.Right is CiVar def) {
+			EnsureChildBlock();
 			WriteVar(def);
 			EndStatement();
 		}
@@ -1392,6 +1393,7 @@ public abstract class GenBase : CiExprVisitor
 		bool wasInChildBlock = this.InChildBlock;
 		this.AtLineStart = true;
 		this.AtChildStart = true;
+		this.InChildBlock = false;
 		statement.AcceptStatement(this);
 		if (this.InChildBlock)
 			CloseBlock();
