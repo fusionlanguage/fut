@@ -832,6 +832,24 @@ public class GenJsNoModule : GenBase
 		expr.Left.Accept(this, CiPriority.Assign);
 	}
 
+	void WriteIsVar(CiExpr expr, CiVar def, bool assign, CiPriority parent)
+	{
+		if (parent > CiPriority.CondAnd)
+			WriteChar('(');
+		expr.Accept(this, CiPriority.Rel);
+		Write(" instanceof ");
+		Write(def.Type.Name);
+		if (assign) {
+			Write(" && !!(");
+			WriteCamelCaseNotKeyword(def.Name);
+			Write(" = ");
+			expr.Accept(this, CiPriority.Argument); // TODO: side effect
+			WriteChar(')');
+		}
+		if (parent > CiPriority.CondAnd)
+			WriteChar(')');
+	}
+
 	public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		switch (expr.Op) {
@@ -880,18 +898,7 @@ public class GenJsNoModule : GenBase
 			WriteEqual(expr, CiPriority.Argument, true); // TODO: side effect
 			break;
 		case CiToken.Is when expr.Right is CiVar def:
-			if (parent > CiPriority.CondAnd)
-				WriteChar('(');
-			expr.Left.Accept(this, CiPriority.Rel);
-			Write(" instanceof ");
-			Write(def.Type.Name);
-			Write(" && !!(");
-			WriteCamelCaseNotKeyword(def.Name);
-			Write(" = ");
-			expr.Left.Accept(this, CiPriority.Argument); // TODO: side effect
-			WriteChar(')');
-			if (parent > CiPriority.CondAnd)
-				WriteChar(')');
+			WriteIsVar(expr.Left, def, true, parent);
 			break;
 		default:
 			base.VisitBinaryExpr(expr, parent);
@@ -1014,21 +1021,37 @@ public class GenJsNoModule : GenBase
 
 	void WriteTypeMatchingSwitch(CiSwitch statement)
 	{
+		foreach (CiCase kase in statement.Cases) {
+			foreach (CiExpr value in kase.Values) {
+				if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
+					CiVar whenVar = (CiVar) when1.Left;
+					if (whenVar.Name != "_") {
+						WriteVar(whenVar);
+						EndStatement();
+					}
+				}
+			}
+		}
 		string op = "if (";
 		foreach (CiCase kase in statement.Cases) {
 			CiVar caseVar = null;
-			foreach (CiExpr value in kase.Values) { // TODO: when
+			foreach (CiExpr value in kase.Values) {
 				Write(op);
-				statement.Value.Accept(this, CiPriority.Rel); // FIXME: side effect in every if
 				switch (value) {
 				case CiVar def:
-					Write(" instanceof "); 
-					Write(def.Type.Name);
+					WriteIsVar(statement.Value, def, false, CiPriority.CondOr); // FIXME: side effect in every if
 					if (def.Name != "_")
 						caseVar = def;
 					break;
 				case CiLiteralNull _:
+					statement.Value.Accept(this, CiPriority.Rel); // FIXME: side effect in every if
 					Write(" == null");
+					break;
+				case CiBinaryExpr when1 when when1.Op == CiToken.When:
+					CiVar whenVar = (CiVar) when1.Left;
+					WriteIsVar(statement.Value, whenVar, whenVar.Name != "_", CiPriority.CondAnd); // FIXME: side effect in every if
+					Write(" && ");
+					when1.Right.Accept(this, CiPriority.CondAnd);
 					break;
 				default:
 					throw new NotImplementedException(value.GetType().Name);
