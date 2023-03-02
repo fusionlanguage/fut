@@ -35,6 +35,7 @@ public class GenJsNoModule : GenBase
 		WriteCamelCase(name);
 		switch (name) {
 		case "Constructor":
+		case "arguments":
 		case "await":
 		case "catch":
 		case "debugger":
