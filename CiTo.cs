@@ -1,4 +1,4 @@
-// CiTo.cs - Ci translator
+// CiTo.cs - Ci transpiler
 //
 // Copyright (C) 2011-2023  Piotr Fusik
 //
@@ -54,7 +54,7 @@ public static class CiTo
 		Console.WriteLine("--version  Display version information");
 	}
 
-	static CiProgram ParseAndResolve(CiConsoleParser parser, CiSystem system, CiScope parent, List<string> files, CiResolver sema)
+	static CiProgram ParseAndResolve(CiConsoleParser parser, CiSystem system, CiScope parent, List<string> files, FileResourceSema sema)
 	{
 		parser.Program = new CiProgram { Parent = parent, System = system };
 		foreach (string file in files) {
@@ -97,7 +97,7 @@ public static class CiTo
 		CiConsoleParser parser = new CiConsoleParser();
 		List<string> inputFiles = new List<string>();
 		List<string> referencedFiles = new List<string>();
-		CiResolver sema = new CiResolver();
+		FileResourceSema sema = new FileResourceSema();
 		string lang = null;
 		string outputFile = null;
 		string namespace_ = null;

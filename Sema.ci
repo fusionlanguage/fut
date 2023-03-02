@@ -17,11 +17,11 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-public abstract class CiSema : CiVisitor
+public class CiSema : CiVisitor
 {
 	protected CiProgram! Program;
-	protected CiMethodBase? CurrentMethod;
-	protected CiScope!? CurrentScope;
+	CiMethodBase? CurrentMethod;
+	CiScope!? CurrentScope;
 	HashSet<CiMethod>() CurrentPureMethods;
 	Dictionary<CiVar, CiExpr#>() CurrentPureArguments;
 	CiType# Poison = new CiType { Name = "poison" };
@@ -531,7 +531,7 @@ public abstract class CiSema : CiVisitor
 		return param == null || param.Value != null;
 	}
 
-	protected void OpenScope!(CiScope! scope)
+	void OpenScope!(CiScope! scope)
 	{
 		scope.Parent = this.CurrentScope;
 		this.CurrentScope = scope;
@@ -708,7 +708,7 @@ public abstract class CiSema : CiVisitor
 		return new CiSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
 	}
 
-	protected abstract int GetResourceLength!(string name, CiPrefixExpr expr);
+	protected virtual int GetResourceLength!(string name, CiPrefixExpr expr) => 0;
 
 	CiExpr# VisitPrefixExpr!(CiPrefixExpr# expr)
 	{
@@ -1965,7 +1965,31 @@ public abstract class CiSema : CiVisitor
 		}
 	}
 
-	protected abstract void ResolveCode!(CiClass! klass);
+	void ResolveCode!(CiClass! klass)
+	{
+		if (klass.Constructor != null) {
+			this.CurrentScope = klass;
+			this.CurrentMethod = klass.Constructor;
+			klass.Constructor.Body.AcceptStatement(this);
+			this.CurrentMethod = null;
+		}
+		for (CiSymbol!? symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is CiMethod! method) {
+				if (method.Name == "ToString" && method.CallType != CiCallType.Static && method.Parameters.Count() == 0)
+					method.Id = CiId.ClassToString;
+				if (method.Body != null) {
+					this.CurrentScope = method.Parameters;
+					this.CurrentMethod = method;
+					if (!(method.Body is CiScope))
+						OpenScope(method.MethodScope); // don't add "is Derived d" to parameters
+					method.Body.AcceptStatement(this);
+					if (method.Type.Id != CiId.VoidType && method.Body.CompletesNormally())
+						ReportError(method.Body, "Method can complete without a return value");
+					this.CurrentMethod = null;
+				}
+			}
+		}
+	}
 
 	static void MarkMethodLive(CiMethodBase! method)
 	{

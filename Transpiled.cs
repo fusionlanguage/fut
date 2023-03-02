@@ -2549,6 +2549,8 @@ namespace Foxoft.Ci
 
 		internal readonly CiParameters Parameters = new CiParameters();
 
+		internal readonly CiScope MethodScope = new CiScope();
+
 		public static CiMethod New(CiVisibility visibility, CiType type, CiId id, string name, CiVar param0 = null, CiVar param1 = null, CiVar param2 = null, CiVar param3 = null)
 		{
 			CiMethod result = new CiMethod { Visibility = visibility, CallType = CiCallType.Normal, Type = type, Id = id, Name = name };
@@ -4154,14 +4156,14 @@ namespace Foxoft.Ci
 		}
 	}
 
-	public abstract class CiSema : CiVisitor
+	public class CiSema : CiVisitor
 	{
 
 		protected CiProgram Program;
 
-		protected CiMethodBase CurrentMethod;
+		CiMethodBase CurrentMethod;
 
-		protected CiScope CurrentScope;
+		CiScope CurrentScope;
 
 		readonly HashSet<CiMethod> CurrentPureMethods = new HashSet<CiMethod>();
 
@@ -4666,7 +4668,7 @@ namespace Foxoft.Ci
 			return param == null || param.Value != null;
 		}
 
-		protected void OpenScope(CiScope scope)
+		void OpenScope(CiScope scope)
 		{
 			scope.Parent = this.CurrentScope;
 			this.CurrentScope = scope;
@@ -4833,7 +4835,7 @@ namespace Foxoft.Ci
 			return new CiSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
 		}
 
-		protected abstract int GetResourceLength(string name, CiPrefixExpr expr);
+		protected virtual int GetResourceLength(string name, CiPrefixExpr expr) => 0;
 
 		CiExpr VisitPrefixExpr(CiPrefixExpr expr)
 		{
@@ -6027,7 +6029,31 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected abstract void ResolveCode(CiClass klass);
+		void ResolveCode(CiClass klass)
+		{
+			if (klass.Constructor != null) {
+				this.CurrentScope = klass;
+				this.CurrentMethod = klass.Constructor;
+				klass.Constructor.Body.AcceptStatement(this);
+				this.CurrentMethod = null;
+			}
+			for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+				if (symbol is CiMethod method) {
+					if (method.Name == "ToString" && method.CallType != CiCallType.Static && method.Parameters.Count() == 0)
+						method.Id = CiId.ClassToString;
+					if (method.Body != null) {
+						this.CurrentScope = method.Parameters;
+						this.CurrentMethod = method;
+						if (!(method.Body is CiScope))
+							OpenScope(method.MethodScope);
+						method.Body.AcceptStatement(this);
+						if (method.Type.Id != CiId.VoidType && method.Body.CompletesNormally())
+							ReportError(method.Body, "Method can complete without a return value");
+						this.CurrentMethod = null;
+					}
+				}
+			}
+		}
 
 		static void MarkMethodLive(CiMethodBase method)
 		{

@@ -1054,6 +1054,7 @@ public class CiMethod : CiMethodBase
 {
 	internal CiCallType CallType;
 	internal CiParameters() Parameters;
+	internal CiScope() MethodScope;
 	public static CiMethod# New(CiVisibility visibility, CiType# type, CiId id, string name, CiVar#? param0 = null, CiVar#? param1 = null, CiVar#? param2 = null, CiVar#? param3 = null)
 	{
 		CiMethod# result = new CiMethod { Visibility = visibility, CallType = CiCallType.Normal, Type = type, Id = id, Name = name };
