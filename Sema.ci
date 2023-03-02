@@ -422,6 +422,8 @@ public class CiSema : CiVisitor
 					case CiClassType _:
 						ReportError(expr, "Cannot modify field through a read-only reference");
 						break;
+					default:
+						assert false;
 					}
 				}
 				break;
@@ -440,6 +442,8 @@ public class CiSema : CiVisitor
 			case CiClassType _:
 				ReportError(expr, "Cannot modify array through a read-only reference");
 				break;
+			default:
+				assert false;
 			}
 			break;
 		default:

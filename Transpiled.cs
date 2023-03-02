@@ -4560,6 +4560,8 @@ namespace Foxoft.Ci
 						case CiClassType _:
 							ReportError(expr, "Cannot modify field through a read-only reference");
 							break;
+						default:
+							throw new NotImplementedException();
 						}
 					}
 					break;
@@ -4577,6 +4579,8 @@ namespace Foxoft.Ci
 				case CiClassType _:
 					ReportError(expr, "Cannot modify array through a read-only reference");
 					break;
+				default:
+					throw new NotImplementedException();
 				}
 				break;
 			default:
