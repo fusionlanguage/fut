@@ -191,6 +191,18 @@ public class GenTs : GenJs
 		Write("(Boolean)");
 	}
 
+	protected override void DefineIsVar(CiBinaryExpr binary)
+	{
+		if (binary.Right is CiVar def) {
+			EnsureChildBlock();
+			Write("let ");
+			WriteName(def);
+			Write(": ");
+			WriteType(binary.Left.Type);
+			EndStatement();
+		}
+	}
+
 	void WriteVisibility(CiVisibility visibility)
 	{
 		switch (visibility) {

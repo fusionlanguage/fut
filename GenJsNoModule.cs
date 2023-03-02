@@ -835,19 +835,20 @@ public class GenJsNoModule : GenBase
 
 	void WriteIsVar(CiExpr expr, CiVar def, bool assign, CiPriority parent)
 	{
-		if (parent > CiPriority.CondAnd)
+		if (parent > CiPriority.Rel)
 			WriteChar('(');
-		expr.Accept(this, CiPriority.Rel);
-		Write(" instanceof ");
-		Write(def.Type.Name);
 		if (assign) {
-			Write(" && !!(");
+			WriteChar('(');
 			WriteCamelCaseNotKeyword(def.Name);
 			Write(" = ");
-			expr.Accept(this, CiPriority.Argument); // TODO: side effect
+			expr.Accept(this, CiPriority.Argument);
 			WriteChar(')');
 		}
-		if (parent > CiPriority.CondAnd)
+		else
+			expr.Accept(this, CiPriority.Rel);
+		Write(" instanceof ");
+		Write(def.Type.Name);
+		if (parent > CiPriority.Rel)
 			WriteChar(')');
 	}
 
