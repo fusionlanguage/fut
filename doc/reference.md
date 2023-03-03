@@ -248,10 +248,11 @@ enum* Seasons
 
 ### Strings
 
-In Ć there are two string data types:
+In Ć there are three string data types:
 
 * String storage, written as `string()`.
 * String reference, written simply as `string`.
+* Nullable string reference, written as `string?`.
 
 This distinction enables straightforward translation to C and C++,
 which have no garbage collector.
@@ -266,8 +267,7 @@ A string reference can do the following:
 * Reference a string storage. The reference becomes invalid
   once the string storage is modified or destroyed.
 * Reference a string literal (e.g. `"foo"`). Such references are always valid.
-* Have the value `null`. This is a special value for reference types,
-  meaning "nothing is referenced."
+* Nullable references may have the value `null`.
 
 String literals are written in double quotes: `"Hello world"`.
 You may use `\n` and the other escape sequences allowed in character literals.
@@ -277,8 +277,9 @@ Possible string operations include the following:
 * Assignment with `=`. For string storage in C and C++, a copy is made.
 * Concatenation with `+` and `+=`.
 * Comparison with `==` and `!=`. `cito` translates this to `strcmp` in C
-  and `str1.equals(str2)` in Java. The two comparison operators can also
-  be used to check for `null` value - use `str == null` or `str != null`.
+  and `str1.equals(str2)` in Java.
+  The two comparison operators can also be used to check nullable references
+  for the `null` value - use `str == null` or `str != null`.
   It is not legal to compare two string references if any of them is `null`.
 * Length retrieval with `str.Length`.
 * _Code unit_ retrieval with `str[index]`.
@@ -422,6 +423,9 @@ and can be accessed in O(1) time.
 * Dynamic array reference, written as `T[]#`.
 * Read-only array reference, written as `T[]`.
 * Read-write array reference, written as `T[]!`.
+* Nullable dynamic array reference, written as `T[]#?`.
+* Nullable read-only array reference, written as `T[]?`.
+* Nullable read-write array reference, written as `T[]!?`.
 
 Dynamic array references are allocated on the heap using `new`:
 
@@ -489,7 +493,6 @@ else
     Console.WriteLine("not found");
 ```
 
-All reference types (including the dynamic reference) can have the value `null`.
 References might be compared - this compares the identity of the arrays,
 not their contents:
 
@@ -718,12 +721,15 @@ case FourCC("WAVE"): // OK, compile-time constant
 Once a class is defined, you can _instantiate_ it,
 that is, create _objects_ using the class as a template.
 
-Similarly to arrays, there are four types associated with every class `C`:
+Similarly to arrays, there are seven types associated with every class `C`:
 
 * `C()` is object storage.
-* `C#` is dynamic object reference.
-* `C` is read-only object reference.
-* `C!` is read-write object reference.
+* `C#` is a dynamic object reference.
+* `C` is a read-only object reference.
+* `C!` is a read-write object reference.
+* `C#?` is a nullable dynamic object reference.
+* `C?` is a nullable read-only object reference.
+* `C!?` is a nullable read-write object reference.
 
 The simplest way to instantiate objects is with object storage:
 
@@ -737,6 +743,7 @@ This translates as follows:
 Cat alik = new Cat(); // C#
 final Cat alik = new Cat(); // Java
 const alik = new Cat(); // JavaScript
+const alik : Cat = new Cat(); // TypeScript
 alik = Cat() # Python
 let alik = Cat() // Swift
 Cat alik; // C++
@@ -1192,7 +1199,7 @@ The `default` clause, if present, must be specified last.
 Object references are matched by their _runtime type_:
 
 ```
-static double CalculateArea(Shape s)
+static double CalculateArea(Shape? s)
 {
     switch (s) {
     case null:
@@ -1275,7 +1282,7 @@ with `Environment.GetEnvironmentVariable`.
 `null` is returned if the variable is not defined.
 
 ```csharp
-string homeDir = Environment.GetEnvironmentVariable("HOME");
+string? homeDir = Environment.GetEnvironmentVariable("HOME");
 if (homeDir == null)
     Console.WriteLine("Homeless user");
 ```
