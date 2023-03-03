@@ -1435,30 +1435,49 @@ public abstract class GenBase : CiExprVisitor
 
 	protected virtual bool EmbedIfWhileIsVar(CiExpr expr, bool write) => false;
 
-	void StartIfWhile(string name, CiExpr expr)
+	void StartIfWhile(CiExpr expr)
 	{
-		if (!EmbedIfWhileIsVar(expr, false)) // FIXME: IsVar but not object literal
-			WriteTemporaries(expr);
-		Write(name);
-		Write(" (");
 		EmbedIfWhileIsVar(expr, true);
 		expr.Accept(this, CiPriority.Argument);
 		WriteChar(')');
 	}
 
-	public override void VisitIf(CiIf statement)
+	void WriteIf(CiIf statement)
 	{
-		StartIfWhile("if", statement.Cond);
+		Write("if (");
+		StartIfWhile(statement.Cond);
 		WriteChild(statement.OnTrue);
 		if (statement.OnFalse != null) {
 			Write("else");
-			if (statement.OnFalse is CiIf) {
-				WriteChar(' ');
-				statement.OnFalse.AcceptStatement(this);
+			if (statement.OnFalse is CiIf elseIf) {
+				bool wasInChildBlock = this.InChildBlock;
+				this.AtLineStart = true;
+				this.AtChildStart = true;
+				this.InChildBlock = false;
+				if (!EmbedIfWhileIsVar(elseIf.Cond, false)) // FIXME: IsVar but not object literal
+					WriteTemporaries(elseIf.Cond);
+				if (this.InChildBlock) {
+					WriteIf(elseIf);
+					CloseBlock();
+				}
+				else {
+					this.AtLineStart = false;
+					this.AtChildStart = false;
+					WriteChar(' ');
+					WriteIf(elseIf);
+				}
+				this.InChildBlock = wasInChildBlock;
 			}
 			else
 				WriteChild(statement.OnFalse);
 		}
+	}
+
+	public override void VisitIf(CiIf statement)
+	{
+		if (!EmbedIfWhileIsVar(statement.Cond, false)) // FIXME: IsVar but not object literal
+			WriteTemporaries(statement.Cond);
+		WriteIf(statement);
 	}
 
 	public override void VisitNative(CiNative statement) => Write(statement.Content);
@@ -1528,7 +1547,10 @@ public abstract class GenBase : CiExprVisitor
 
 	public override void VisitWhile(CiWhile statement)
 	{
-		StartIfWhile("while", statement.Cond);
+		if (!EmbedIfWhileIsVar(statement.Cond, false)) // FIXME: IsVar but not object literal
+			WriteTemporaries(statement.Cond);
+		Write("while (");
+		StartIfWhile(statement.Cond);
 		WriteChild(statement.Body);
 	}
 
