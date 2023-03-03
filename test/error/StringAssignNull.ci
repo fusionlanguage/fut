@@ -1,0 +1,16 @@
+public static class Test
+{
+	static void Foo(string s)
+	{
+	}
+
+	static string ReturnMismatch() => null; //ERROR: Cannot coerce null to string
+
+	public static bool Run()
+	{
+		string() s = null; //ERROR: Cannot coerce null to string()
+		string p = null; //ERROR: Cannot coerce null to string
+		Foo(null); //ERROR: Cannot coerce null to string
+		return true;
+	}
+}
