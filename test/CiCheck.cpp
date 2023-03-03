@@ -19,5 +19,7 @@ int main(int argc, char **argv)
 		std::getline(std::ifstream(inputFilename), input, '\0');
 		parser.parse(inputFilename, reinterpret_cast<const uint8_t *>(input.data()), input.size());
 	}
+	CiSema sema;
+	sema.process(&program);
 	std::cout << "PASSED\n";
 }

@@ -44,16 +44,16 @@ test: test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-
 test-c test-GenC.cs: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-cpp test-GenCpp.cs: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) test/bin/CiParse/Test.cpp
+test-cpp test-GenCpp.cs: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) test/bin/CiCheck/Test.cpp
 	$(DO_SUMMARY)
 
 test-cs test-GenCs.cs: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-java test-GenJava.cs: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) test/bin/CiParse/CiParser.java
+test-java test-GenJava.cs: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) test/bin/CiCheck/CiSema.java
 	$(DO_SUMMARY)
 
-test-js test-GenJsNoModule.cs test-GenJs.cs: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) test/bin/CiParse/js.txt
+test-js test-GenJsNoModule.cs test-GenJs.cs: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) test/bin/CiCheck/js.txt
 	$(DO_SUMMARY)
 
 test-ts test-GenTs.cs: $(patsubst test/%.ci, test/bin/%/ts.txt, $(wildcard test/*.ci))
@@ -156,22 +156,22 @@ test/bin/%/Test.swift: test/%.ci cito.exe
 test/bin/%/Test.cl: test/%.ci cito.exe
 	$(DO_CITO)
 
-test/bin/CiParse/cpp.txt: test/bin/CiParse/cpp.exe Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci
+test/bin/CiCheck/cpp.txt: test/bin/CiCheck/cpp.exe Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci
 	$(DO)./$< $(filter %.ci, $^) >$@
 
-test/bin/CiParse/cpp.exe: test/bin/CiParse/Test.cpp test/CiParse.cpp
+test/bin/CiCheck/cpp.exe: test/bin/CiCheck/Test.cpp test/CiCheck.cpp
 	$(DO)$(CXX) -o $@ $(CFLAGS) -I $(<D) $^
 
-test/bin/CiParse/java.txt: test/bin/CiParse/CiParse.class Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci
-	$(DO)java -cp "$(<D)" --enable-preview CiParse $(filter %.ci, $^) >$@
+test/bin/CiCheck/java.txt: test/bin/CiCheck/CiSema.class Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci
+	$(DO)java -cp "$(<D)" --enable-preview CiCheck $(filter %.ci, $^) >$@
 
-test/bin/CiParse/CiParse.class: test/bin/CiParse/CiParser.java test/CiParse.java
-	$(DO)javac -d $(@D) -encoding utf8 --enable-preview -source 19 $(<D)/*.java test/CiParse.java
+test/bin/CiCheck/CiSema.class: test/bin/CiCheck/CiSema.java test/CiCheck.java
+	$(DO)javac -d $(@D) -encoding utf8 --enable-preview -source 19 $(<D)/*.java test/CiCheck.java
 
-test/bin/CiParse/js.txt: test/CiParse.js test/bin/CiParse/Test.js Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci
-	$(DO)node test/CiParse.js Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci >$@
+test/bin/CiCheck/js.txt: test/CiCheck.js test/bin/CiCheck/Test.js Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci
+	$(DO)node test/CiCheck.js Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci >$@
 
-test/bin/CiParse/Test.cpp test/bin/CiParse/CiParser.java test/bin/CiParse/Test.js test/bin/CiParse/Test.ts: Lexer.ci AST.ci Parser.ci ConsoleParser.ci cito.exe
+test/bin/CiCheck/Test.cpp test/bin/CiCheck/CiSema.java test/bin/CiCheck/Test.js test/bin/CiCheck/Test.ts: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci cito.exe
 	$(DO)mkdir -p $(@D) && $(CITO) -o $@ $(filter %.ci, $^)
 
 test/bin/Resource/java.txt: test/bin/Resource/Test.class test/bin/Runner.class

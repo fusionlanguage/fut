@@ -2,7 +2,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class CiParse
+public class CiCheck
 {
 	public static void main(String[] args) throws IOException
 	{
@@ -15,6 +15,8 @@ public class CiParse
 			byte[] input = Files.readAllBytes(Path.of(inputFilename));
 			parser.parse(inputFilename, input, input.length);
 		}
+		final CiSema sema = new CiSema();
+		sema.process(parser.program);
 		System.out.println("PASSED");
 	}
 }
