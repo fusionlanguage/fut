@@ -28,6 +28,14 @@ namespace Foxoft.Ci
 
 public delegate TextWriter TextWriterFactory(string filename);
 
+public enum CiAtStart
+{
+	None,
+	Line,
+	Child,
+	Else
+}
+
 public abstract class GenBase : CiExprVisitor
 {
 	public string Namespace;
@@ -36,8 +44,7 @@ public abstract class GenBase : CiExprVisitor
 	TextWriter Writer;
 	StringWriter StringWriter;
 	protected int Indent = 0;
-	protected bool AtLineStart = true;
-	bool AtChildStart = false;
+	protected CiAtStart AtStart = CiAtStart.Line;
 	bool InChildBlock = false;
 	protected SortedSet<string> Includes;
 	protected CiMethodBase CurrentMethod = null;
@@ -66,15 +73,14 @@ public abstract class GenBase : CiExprVisitor
 
 	protected virtual void StartLine()
 	{
-		if (this.AtLineStart) {
-			if (this.AtChildStart) {
-				this.AtChildStart = false;
+		if (this.AtStart != CiAtStart.None) {
+			if (this.AtStart != CiAtStart.Line) {
 				this.Writer.WriteLine();
 				this.Indent++;
 			}
 			for (int i = 0; i < this.Indent; i++)
 				this.Writer.Write('\t');
-			this.AtLineStart = false;
+			this.AtStart = CiAtStart.None;
 		}
 	}
 
@@ -167,21 +173,21 @@ public abstract class GenBase : CiExprVisitor
 	protected void WriteLine()
 	{
 		this.Writer.WriteLine();
-		this.AtLineStart = true;
+		this.AtStart = CiAtStart.Line;
 	}
 
 	protected void WriteCharLine(char c)
 	{
 		StartLine();
 		this.Writer.WriteLine(c);
-		this.AtLineStart = true;
+		this.AtStart = CiAtStart.Line;
 	}
 
 	protected void WriteLine(string s)
 	{
 		StartLine();
 		this.Writer.WriteLine(s);
-		this.AtLineStart = true;
+		this.AtStart = CiAtStart.Line;
 	}
 
 	#region JavaDoc
@@ -1218,9 +1224,8 @@ public abstract class GenBase : CiExprVisitor
 
 	protected void EnsureChildBlock()
 	{
-		if (this.AtChildStart) {
-			this.AtLineStart = false;
-			this.AtChildStart = false;
+		if (this.AtStart >= CiAtStart.Child) {
+			this.AtStart = CiAtStart.None;
 			WriteChar(' ');
 			OpenBlock();
 			this.InChildBlock = true;
@@ -1375,9 +1380,8 @@ public abstract class GenBase : CiExprVisitor
 
 	public override void VisitBlock(CiBlock statement)
 	{
-		if (this.AtChildStart) {
-			this.AtLineStart = false;
-			this.AtChildStart = false;
+		if (this.AtStart >= CiAtStart.Child) {
+			this.AtStart = CiAtStart.None;
 			WriteChar(' ');
 		}
 		OpenBlock();
@@ -1388,11 +1392,10 @@ public abstract class GenBase : CiExprVisitor
 		CloseBlock();
 	}
 
-	protected virtual void WriteChild(CiStatement statement)
+	protected virtual void WriteChild(CiStatement statement, CiAtStart atStart = CiAtStart.Child)
 	{
 		bool wasInChildBlock = this.InChildBlock;
-		this.AtLineStart = true;
-		this.AtChildStart = true;
+		this.AtStart = atStart;
 		this.InChildBlock = false;
 		statement.AcceptStatement(this);
 		if (this.InChildBlock)
@@ -1435,29 +1438,22 @@ public abstract class GenBase : CiExprVisitor
 
 	protected virtual bool EmbedIfWhileIsVar(CiExpr expr, bool write) => false;
 
-	void StartIfWhile(string name, CiExpr expr)
-	{
-		if (!EmbedIfWhileIsVar(expr, false)) // FIXME: IsVar but not object literal
-			WriteTemporaries(expr);
-		Write(name);
-		Write(" (");
-		EmbedIfWhileIsVar(expr, true);
-		expr.Accept(this, CiPriority.Argument);
-		WriteChar(')');
-	}
-
 	public override void VisitIf(CiIf statement)
 	{
-		StartIfWhile("if", statement.Cond);
+		if (!EmbedIfWhileIsVar(statement.Cond, false)) // FIXME: IsVar but not object literal
+			WriteTemporaries(statement.Cond);
+		if (this.AtStart == CiAtStart.Else) {
+			this.AtStart = CiAtStart.None;
+			WriteChar(' ');
+		}
+		Write("if (");
+		EmbedIfWhileIsVar(statement.Cond, true);
+		statement.Cond.Accept(this, CiPriority.Argument);
+		WriteChar(')');
 		WriteChild(statement.OnTrue);
 		if (statement.OnFalse != null) {
 			Write("else");
-			if (statement.OnFalse is CiIf) {
-				WriteChar(' ');
-				statement.OnFalse.AcceptStatement(this);
-			}
-			else
-				WriteChild(statement.OnFalse);
+			WriteChild(statement.OnFalse, CiAtStart.Else);
 		}
 	}
 
@@ -1528,7 +1524,12 @@ public abstract class GenBase : CiExprVisitor
 
 	public override void VisitWhile(CiWhile statement)
 	{
-		StartIfWhile("while", statement.Cond);
+		if (!EmbedIfWhileIsVar(statement.Cond, false)) // FIXME: IsVar but not object literal
+			WriteTemporaries(statement.Cond);
+		Write("while (");
+		EmbedIfWhileIsVar(statement.Cond, true);
+		statement.Cond.Accept(this, CiPriority.Argument);
+		WriteChar(')');
 		WriteChild(statement.Body);
 	}
 

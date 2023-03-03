@@ -214,7 +214,7 @@ public abstract class GenPySwift : GenBase
 
 	protected abstract void CloseChild();
 
-	protected override void WriteChild(CiStatement statement)
+	protected override void WriteChild(CiStatement statement, CiAtStart atStart = CiAtStart.Child)
 	{
 		OpenChild();
 		statement.AcceptStatement(this);

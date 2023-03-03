@@ -317,7 +317,7 @@ public class GenPy : GenPySwift
 			break;
 
 		case CiToken.Assign:
-			if (this.AtLineStart) {
+			if (this.AtStart != CiAtStart.None) {
 				for (CiExpr right = expr.Right; right is CiBinaryExpr rightBinary && rightBinary.IsAssign(); right = rightBinary.Right) {
 					if (rightBinary.Op != CiToken.Assign) {
 						VisitBinaryExpr(rightBinary, CiPriority.Statement);

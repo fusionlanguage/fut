@@ -15,7 +15,9 @@ public static class Test
 		Derived() d;
 		Base!? b = d;
 		if (b != null)
-			if (b is Derived ro && ro.Ok()) //FAIL: c py swift cl TODO; java 17
+			if (b is Derived ro && !ro.Ok()) //FAIL: c py swift cl TODO; java 17
+				return false;
+			else if (b is Derived! rw && rw.Ok())
 				return true;
 		return false;
 	}
