@@ -2741,17 +2741,19 @@ namespace Foxoft.Ci
 
 		public virtual string GetClassSuffix() => "";
 
+		string GetNullableSuffix() => this.Nullable ? "?" : "";
+
 		public override string ToString()
 		{
 			if (IsArray())
-				return GetElementType().GetBaseType().ToString() + GetArraySuffix() + GetElementType().GetArraySuffix();
+				return $"{GetElementType().GetBaseType()}{GetArraySuffix()}{GetNullableSuffix()}{GetElementType().GetArraySuffix()}";
 			switch (this.Class.TypeParameterCount) {
 			case 0:
-				return this.Class.Name + GetClassSuffix();
+				return $"{this.Class.Name}{GetClassSuffix()}{GetNullableSuffix()}";
 			case 1:
-				return $"{this.Class.Name}<{this.TypeArg0}>{GetClassSuffix()}";
+				return $"{this.Class.Name}<{this.TypeArg0}>{GetClassSuffix()}{GetNullableSuffix()}";
 			case 2:
-				return $"{this.Class.Name}<{this.TypeArg0}, {this.TypeArg1}>{GetClassSuffix()}";
+				return $"{this.Class.Name}<{this.TypeArg0}, {this.TypeArg1}>{GetClassSuffix()}{GetNullableSuffix()}";
 			default:
 				throw new NotImplementedException();
 			}
@@ -2802,8 +2804,6 @@ namespace Foxoft.Ci
 		internal int Length;
 
 		internal bool PtrTaken = false;
-
-		public override string ToString() => GetBaseType().ToString() + GetArraySuffix() + GetElementType().GetArraySuffix();
 
 		public override CiType GetBaseType() => GetElementType().GetBaseType();
 

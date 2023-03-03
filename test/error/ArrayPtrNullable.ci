@@ -1,0 +1,11 @@
+public class Test
+{
+	public bool Run()
+	{
+		Test?[] a = null; //ERROR: Cannot coerce null to Test?[]
+		Test[2] as;
+		Test[]!? a1 = as;
+		a1[0] = null; //ERROR: Cannot coerce null to Test
+		return true;
+	}
+}
