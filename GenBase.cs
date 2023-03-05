@@ -26,13 +26,10 @@ using System.Text.RegularExpressions;
 namespace Foxoft.Ci
 {
 
-public delegate TextWriter TextWriterFactory(string filename);
-
 public abstract class GenBase : CiExprVisitor
 {
 	public string Namespace;
 	public string OutputFile;
-	public TextWriterFactory CreateTextWriter = CreateFileWriter;
 	TextWriter Writer;
 	StringWriter StringWriter;
 	protected int Indent = 0;
@@ -57,7 +54,7 @@ public abstract class GenBase : CiExprVisitor
 		ReportError(statement, $"{feature} not supported yet when targeting {GetTargetName()}");
 	}
 
-	static TextWriter CreateFileWriter(string filename)
+	static TextWriter CreateTextWriter(string filename)
 	{
 		TextWriter w = File.CreateText(filename);
 		w.NewLine = "\n";
@@ -335,9 +332,7 @@ public abstract class GenBase : CiExprVisitor
 
 	protected void OpenStringWriter()
 	{
-		this.StringWriter = new StringWriter();
-		this.StringWriter.NewLine = "\n";
-		this.Writer = this.StringWriter;
+		this.Writer = this.StringWriter = new StringWriter { NewLine = "\n" };
 	}
 
 	protected void CloseStringWriter()
