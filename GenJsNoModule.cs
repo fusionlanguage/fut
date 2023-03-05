@@ -669,13 +669,22 @@ public class GenJsNoModule : GenBase
 		case CiId.OrderedDictionaryRemove:
 			WriteCall(obj, "delete", args[0]);
 			break;
-		case CiId.ConsoleWrite: // FIXME: Console.Write same as Console.WriteLine
-		case CiId.ConsoleWriteLine:
-			Write(IsReferenceTo(obj, CiId.ConsoleError) ? "console.error" : "console.log");
-			if (args.Count == 0)
-				Write("(\"\")");
+		case CiId.ConsoleWrite:
+			Write(IsReferenceTo(obj, CiId.ConsoleError) ? "process.stderr" : "process.stdout");
+			Write(".write(");
+			if (args[0].Type is CiStringType)
+				args[0].Accept(this, CiPriority.Argument);
 			else
-				WriteArgsInParentheses(method, args);
+				WriteCall("String", args[0]);
+			WriteChar(')');
+			break;
+		case CiId.ConsoleWriteLine:
+			Write(IsReferenceTo(obj, CiId.ConsoleError) ? "console.error(" : "console.log(");
+			if (args.Count == 0)
+				Write("\"\"");
+			else
+				args[0].Accept(this, CiPriority.Argument);
+			WriteChar(')');
 			break;
 		case CiId.UTF8GetByteCount:
 			Write("new TextEncoder().encode(");
