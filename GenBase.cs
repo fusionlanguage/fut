@@ -54,19 +54,14 @@ public abstract class GenBase : CiExprVisitor
 		ReportError(statement, $"{feature} not supported yet when targeting {GetTargetName()}");
 	}
 
-	static TextWriter CreateTextWriter(string filename)
-	{
-		TextWriter w = File.CreateText(filename);
-		w.NewLine = "\n";
-		return w;
-	}
+	static TextWriter CreateTextWriter(string filename) => File.CreateText(filename);
 
 	protected virtual void StartLine()
 	{
 		if (this.AtLineStart) {
 			if (this.AtChildStart) {
 				this.AtChildStart = false;
-				this.Writer.WriteLine();
+				this.Writer.Write('\n');
 				this.Indent++;
 			}
 			for (int i = 0; i < this.Indent; i++)
@@ -163,22 +158,22 @@ public abstract class GenBase : CiExprVisitor
 
 	protected void WriteLine()
 	{
-		this.Writer.WriteLine();
+		this.Writer.Write('\n');
 		this.AtLineStart = true;
 	}
 
 	protected void WriteCharLine(char c)
 	{
 		StartLine();
-		this.Writer.WriteLine(c);
-		this.AtLineStart = true;
+		this.Writer.Write(c);
+		WriteLine();
 	}
 
 	protected void WriteLine(string s)
 	{
 		StartLine();
-		this.Writer.WriteLine(s);
-		this.AtLineStart = true;
+		this.Writer.Write(s);
+		WriteLine();
 	}
 
 	#region JavaDoc
@@ -332,7 +327,7 @@ public abstract class GenBase : CiExprVisitor
 
 	protected void OpenStringWriter()
 	{
-		this.Writer = this.StringWriter = new StringWriter { NewLine = "\n" };
+		this.Writer = this.StringWriter = new StringWriter();
 	}
 
 	protected void CloseStringWriter()
