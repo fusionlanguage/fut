@@ -1815,6 +1815,10 @@ public class GenC : GenCCpp
 		case CiId.TextWriterWrite:
 			WriteTextWriterWrite(obj, args, false);
 			break;
+		case CiId.TextWriterWriteChar:
+			Include("stdio.h");
+			WriteCall("putc", args[0], obj);
+			break;
 		case CiId.TextWriterWriteLine:
 			WriteTextWriterWrite(obj, args, true);
 			break;

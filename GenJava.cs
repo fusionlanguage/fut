@@ -658,6 +658,9 @@ public class GenJava : GenTyped
 			obj.Accept(this, CiPriority.Primary);
 			WriteWrite(method, args, false);
 			break;
+		case CiId.TextWriterWriteChar:
+			WriteCall(obj, "write", args[0]);
+			break;
 		case CiId.TextWriterWriteLine:
 			obj.Accept(this, CiPriority.Primary);
 			WriteWrite(method, args, true);

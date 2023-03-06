@@ -553,6 +553,16 @@ public class GenCs : GenTyped
 			}
 			WriteChar(')');
 			break;
+		case CiId.TextWriterWriteChar:
+			WritePostfix(obj, ".Write(");
+			if (args[0] is CiLiteralChar)
+				args[0].Accept(this, CiPriority.Argument);
+			else {
+				Write("(char) ");
+				args[0].Accept(this, CiPriority.Primary);
+			}
+			WriteChar(')');
+			break;
 		case CiId.EnvironmentGetEnvironmentVariable:
 			Include("System");
 			obj.Accept(this, CiPriority.Primary);

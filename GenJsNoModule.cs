@@ -673,12 +673,15 @@ public class GenJsNoModule : GenBase
 			WriteCall(obj, "delete", args[0]);
 			break;
 		case CiId.TextWriterWrite:
-			obj.Accept(this, CiPriority.Primary);
-			Write(".write(");
+			WritePostfix(obj, ".write(");
 			if (args[0].Type is CiStringType)
 				args[0].Accept(this, CiPriority.Argument);
 			else
 				WriteCall("String", args[0]);
+			WriteChar(')');
+			break;
+		case CiId.TextWriterWriteChar:
+			WriteCall(obj, "write(String.fromCharCode", args[0]);
 			WriteChar(')');
 			break;
 		case CiId.TextWriterWriteLine:
@@ -691,8 +694,7 @@ public class GenJsNoModule : GenBase
 				WriteChar(')');
 			}
 			else {
-				obj.Accept(this, CiPriority.Primary);
-				Write(".write(");
+				WritePostfix(obj, ".write(");
 				if (args.Count != 0) {
 					// TODO: coalesce string literals
 					args[0].Accept(this, CiPriority.Add);

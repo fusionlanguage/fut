@@ -1341,6 +1341,7 @@ namespace Foxoft.Ci
 		OrderedDictionaryCount,
 		OrderedDictionaryRemove,
 		TextWriterWrite,
+		TextWriterWriteChar,
 		TextWriterWriteLine,
 		ConsoleWrite,
 		ConsoleWriteLine,
@@ -2930,6 +2931,7 @@ namespace Foxoft.Ci
 			AddDictionary(CiId.OrderedDictionaryClass, "OrderedDictionary", CiId.OrderedDictionaryClear, CiId.OrderedDictionaryContainsKey, CiId.OrderedDictionaryCount, CiId.OrderedDictionaryRemove);
 			CiClass textWriterClass = CiClass.New(CiCallType.Normal, CiId.TextWriterClass, "TextWriter");
 			textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.TextWriterWrite, "Write", CiVar.New(this.PrintableType, "value")));
+			textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.TextWriterWriteChar, "WriteChar", CiVar.New(this.IntType, "c")));
 			textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.TextWriterWriteLine, "WriteLine", CiVar.New(this.PrintableType, "value", NewLiteralString(""))));
 			Add(textWriterClass);
 			CiClass consoleClass = CiClass.New(CiCallType.Static, CiId.None, "Console");

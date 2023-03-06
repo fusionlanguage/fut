@@ -917,6 +917,14 @@ public class GenCpp : GenCCpp
 			WriteCollectionObject(obj, CiPriority.Shift);
 			WriteWrite(args, false);
 			break;
+		case CiId.TextWriterWriteChar:
+			WriteCollectionObject(obj, CiPriority.Shift);
+			Write(" << ");
+			if (args[0] is CiLiteralChar)
+				args[0].Accept(this, CiPriority.Mul);
+			else
+				WriteCall("static_cast<char>", args[0]);
+			break;
 		case CiId.TextWriterWriteLine:
 			WriteCollectionObject(obj, CiPriority.Shift);
 			WriteWrite(args, true);

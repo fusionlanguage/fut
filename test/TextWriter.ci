@@ -14,6 +14,10 @@ public static class Test
 		long l = 5;
 		w.WriteLine(l);
 		w.WriteLine($"l={l}");
+		w.Write('c');
+		w.WriteChar('c');
+		int newLine = '\n';
+		w.WriteChar(newLine);
 		return true;
 	}
 }

@@ -720,6 +720,10 @@ public class GenPy : GenPySwift
 			obj.Accept(this, CiPriority.Argument);
 			WriteChar(')');
 			break;
+		case CiId.TextWriterWriteChar:
+			WriteCall(obj, "write(chr", args[0]);
+			WriteChar(')');
+			break;
 		case CiId.TextWriterWriteLine:
 			Write("print(");
 			if (args.Count == 1) {
