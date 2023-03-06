@@ -233,6 +233,10 @@ public class GenCpp : GenCCpp
 				if (!(klass is CiReadWriteClassType))
 					Write("const ");
 				switch (klass.Class.Id) {
+				case CiId.TextWriterClass:
+					Include("iostream");
+					Write("std::ostream");
+					break;
 				case CiId.RegexClass:
 					Include("regex");
 					Write("std::regex");
@@ -907,11 +911,11 @@ public class GenCpp : GenCCpp
 				WriteChar(')');
 			break;
 		case CiId.TextWriterWrite:
-			obj.Accept(this, CiPriority.Shift);
+			WriteCollectionObject(obj, CiPriority.Shift);
 			WriteWrite(args, false);
 			break;
 		case CiId.TextWriterWriteLine:
-			obj.Accept(this, CiPriority.Shift);
+			WriteCollectionObject(obj, CiPriority.Shift);
 			WriteWrite(args, true);
 			break;
 		case CiId.ConsoleWrite:

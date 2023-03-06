@@ -249,6 +249,10 @@ public class GenCs : GenTyped
 				Include("System.Collections.Specialized");
 				Write("OrderedDictionary");
 				break;
+			case CiId.TextWriterClass:
+				Include("System.IO");
+				Write("TextWriter");
+				break;
 			case CiId.RegexClass:
 			case CiId.MatchClass:
 				Include("System.Text.RegularExpressions");

@@ -377,6 +377,10 @@ public class GenC : GenCCpp
 		case CiId.SortedDictionaryClass:
 			WriteGlib("GTree *");
 			break;
+		case CiId.TextWriterClass:
+			Include("stdio.h");
+			Write("FILE *");
+			break;
 		case CiId.RegexClass:
 			if (!(klass is CiReadWriteClassType))
 				Write("const ");

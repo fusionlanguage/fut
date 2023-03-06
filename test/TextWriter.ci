@@ -1,0 +1,19 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		TextWriter! w = Console.Error; //FAIL: java swift ts cl
+		w.WriteLine("Hello");
+		string s = "World";
+		w.WriteLine(s);
+		w.WriteLine();
+		int i = 42;
+		w.WriteLine(i);
+		w.WriteLine($"i={i:X}");
+		w.WriteLine($"i={i:X}={i}");
+		long l = 5;
+		w.WriteLine(l);
+		w.WriteLine($"l={l}");
+		return true;
+	}
+}
