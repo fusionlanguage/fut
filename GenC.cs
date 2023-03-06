@@ -73,7 +73,7 @@ public class GenC : GenCCpp
 
 	public override void VisitLiteralNull() => Write("NULL");
 
-	protected virtual void WritePrintfLongPrefix() => WriteChar('j');
+	protected virtual void WritePrintfLongPrefix() => Write("ll");
 
 	protected override void WritePrintfWidth(CiInterpolatedPart part)
 	{
@@ -84,6 +84,16 @@ public class GenC : GenCCpp
 		}
 		if (part.Argument.Type.Id == CiId.LongType)
 			WritePrintfLongPrefix();
+	}
+
+	protected virtual void WriteInterpolatedStringArgBase(CiExpr expr)
+	{
+		if (expr.Type.Id == CiId.LongType) {
+			Write("(long long) ");
+			expr.Accept(this, CiPriority.Primary);
+		}
+		else
+			expr.Accept(this, CiPriority.Argument);
 	}
 
 	protected override void WriteInterpolatedStringArg(CiExpr expr)
@@ -104,7 +114,7 @@ public class GenC : GenCCpp
 			WriteChar(')');
 		}
 		else
-			base.WriteInterpolatedStringArg(expr);
+			WriteInterpolatedStringArgBase(expr);
 	}
 
 	public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
@@ -1372,7 +1382,7 @@ public class GenC : GenCCpp
 		if (newLine)
 			Write("\\n");
 		Write("\", ");
-		args[0].Accept(this, CiPriority.Argument);
+		WriteInterpolatedStringArgBase(args[0]);
 		WriteChar(')');
 	}
 

@@ -89,6 +89,8 @@ public class GenCl : GenC
 
 	protected override void WritePrintfLongPrefix() => WriteChar('l');
 
+	protected override void WriteInterpolatedStringArgBase(CiExpr expr) => expr.Accept(this, CiPriority.Argument);
+
 	public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		NotSupported(expr, "Interpolated strings");
