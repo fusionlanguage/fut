@@ -356,6 +356,9 @@ public class GenJsNoModule : GenBase
 	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
+		case CiId.ConsoleError:
+			Write("process.stderr");
+			break;
 		case CiId.ListCount:
 		case CiId.QueueCount:
 		case CiId.StackCount:
@@ -669,8 +672,8 @@ public class GenJsNoModule : GenBase
 		case CiId.OrderedDictionaryRemove:
 			WriteCall(obj, "delete", args[0]);
 			break;
-		case CiId.ConsoleWrite:
-			Write(IsReferenceTo(obj, CiId.ConsoleError) ? "process.stderr" : "process.stdout");
+		case CiId.TextWriterWrite:
+			obj.Accept(this, CiPriority.Primary);
 			Write(".write(");
 			if (args[0].Type is CiStringType)
 				args[0].Accept(this, CiPriority.Argument);
@@ -678,8 +681,36 @@ public class GenJsNoModule : GenBase
 				WriteCall("String", args[0]);
 			WriteChar(')');
 			break;
+		case CiId.TextWriterWriteLine:
+			if (IsReferenceTo(obj, CiId.ConsoleError)) {
+				Write("console.error(");
+				if (args.Count == 0)
+					Write("\"\"");
+				else
+					args[0].Accept(this, CiPriority.Argument);
+				WriteChar(')');
+			}
+			else {
+				obj.Accept(this, CiPriority.Primary);
+				Write(".write(");
+				if (args.Count != 0) {
+					// TODO: coalesce string literals
+					args[0].Accept(this, CiPriority.Add);
+					Write(" + ");
+				}
+				Write("\"\\n\")");
+			}
+			break;
+		case CiId.ConsoleWrite:
+			Write("process.stdout.write(");
+			if (args[0].Type is CiStringType)
+				args[0].Accept(this, CiPriority.Argument);
+			else
+				WriteCall("String", args[0]);
+			WriteChar(')');
+			break;
 		case CiId.ConsoleWriteLine:
-			Write(IsReferenceTo(obj, CiId.ConsoleError) ? "console.error(" : "console.log(");
+			Write("console.log(");
 			if (args.Count == 0)
 				Write("\"\"");
 			else

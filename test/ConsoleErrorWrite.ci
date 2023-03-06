@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		Console.Error.Write("Hello");
+		Console.Error.Write("Hello"); //FAIL: swift TODO; cl
 		int i = 42;
 		Console.Error.Write($"i={i:X}");
 		return true;

@@ -259,6 +259,10 @@ public class GenPy : GenPySwift
 	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
+		case CiId.ConsoleError:
+			Include("sys");
+			Write("sys.stderr");
+			break;
 		case CiId.ListCount:
 		case CiId.QueueCount:
 		case CiId.StackCount:
@@ -565,23 +569,6 @@ public class GenPy : GenPySwift
 		WriteChar(')');
 	}
 
-	void WriteConsoleWrite(CiExpr obj, List<CiExpr> args, bool newLine)
-	{
-		Write("print(");
-		if (args.Count == 1) {
-			args[0].Accept(this, CiPriority.Argument);
-			if (!newLine)
-				Write(", end=\"\"");
-		}
-		if (IsReferenceTo(obj, CiId.ConsoleError)) {
-			if (args.Count == 1)
-				Write(", ");
-			Include("sys");
-			Write("file=sys.stderr");
-		}
-		WriteChar(')');
-	}
-
 	void WriteRegexOptions(List<CiExpr> args)
 	{
 		Include("re");
@@ -726,11 +713,33 @@ public class GenPy : GenPySwift
 		case CiId.DictionaryAdd:
 			WriteDictionaryAdd(obj, args);
 			break;
+		case CiId.TextWriterWrite:
+			Write("print(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(", end=\"\", file=");
+			obj.Accept(this, CiPriority.Argument);
+			WriteChar(')');
+			break;
+		case CiId.TextWriterWriteLine:
+			Write("print(");
+			if (args.Count == 1) {
+				args[0].Accept(this, CiPriority.Argument);
+				Write(", ");
+			}
+			Write("file=");
+			obj.Accept(this, CiPriority.Argument);
+			WriteChar(')');
+			break;
 		case CiId.ConsoleWrite:
-			WriteConsoleWrite(obj, args, false);
+			Write("print(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(", end=\"\")");
 			break;
 		case CiId.ConsoleWriteLine:
-			WriteConsoleWrite(obj, args, true);
+			Write("print(");
+			if (args.Count == 1)
+				args[0].Accept(this, CiPriority.Argument);
+			WriteChar(')');
 			break;
 		case CiId.UTF8GetByteCount:
 			Write("len(");

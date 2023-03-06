@@ -371,6 +371,10 @@ public class GenCs : GenTyped
 	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
+		case CiId.ConsoleError:
+			Include("System");
+			Write("Console.Error");
+			break;
 		case CiId.MatchStart:
 			WritePostfix(expr.Left, ".Index");
 			break;

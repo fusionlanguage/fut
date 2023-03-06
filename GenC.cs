@@ -286,6 +286,9 @@ public class GenC : GenCCpp
 	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
+		case CiId.ConsoleError:
+			Write("stderr");
+			break;
 		case CiId.ListCount:
 		case CiId.StackCount:
 			WritePostfix(expr.Left, "->len");
@@ -1369,36 +1372,66 @@ public class GenC : GenCCpp
 		WriteChar(')');
 	}
 
-	void WriteConsoleWrite(CiExpr obj, List<CiExpr> args, bool newLine)
+	void WriteTextWriterWrite(CiExpr obj, List<CiExpr> args, bool newLine)
 	{
-		bool error = IsReferenceTo(obj, CiId.ConsoleError);
 		Include("stdio.h");
-		if (args.Count == 0)
-			Write(error ? "putc('\\n', stderr)" : "putchar('\\n')");
+		if (args.Count == 0) {
+			Write("putc('\\n', ");
+			obj.Accept(this, CiPriority.Argument);
+			WriteChar(')');
+		}
 		else if (args[0] is CiInterpolatedString interpolated) {
-			Write(error ? "fprintf(stderr, " : "printf(");
+			Write("fprintf(");
+			obj.Accept(this, CiPriority.Argument);
+			Write(", ");
 			WritePrintf(interpolated, newLine);
 		}
 		else if (args[0].Type is CiNumericType) {
-			Write(error ? "fprintf(stderr, " : "printf(");
+			Write("fprintf(");
+			obj.Accept(this, CiPriority.Argument);
+			Write(", ");
 			WritePrintfNotInterpolated(args, newLine);
 		}
 		else if (!newLine) {
 			Write("fputs(");
 			args[0].Accept(this, CiPriority.Argument);
-			Write(error ? ", stderr)" : ", stdout)");
+			Write(", ");
+			obj.Accept(this, CiPriority.Argument);
+			WriteChar(')');
 		}
-		else if (error) {
-			if (args[0] is CiLiteralString literal) {
-				Write("fputs(");
-				WriteStringLiteralWithNewLine(literal.Value);
-				Write(", stderr)");
-			}
-			else {
-				Write("fprintf(stderr, \"%s\\n\", ");
-				args[0].Accept(this, CiPriority.Argument);
-				WriteChar(')');
-			}
+		else if (args[0] is CiLiteralString literal) {
+			Write("fputs(");
+			WriteStringLiteralWithNewLine(literal.Value);
+			Write(", ");
+			obj.Accept(this, CiPriority.Argument);
+			WriteChar(')');
+		}
+		else {
+			Write("fprintf(");
+			obj.Accept(this, CiPriority.Argument);
+			Write(", \"%s\\n\", ");
+			args[0].Accept(this, CiPriority.Argument);
+			WriteChar(')');
+		}
+	}
+
+	void WriteConsoleWrite(List<CiExpr> args, bool newLine)
+	{
+		Include("stdio.h");
+		if (args.Count == 0)
+			Write("putchar('\\n')");
+		else if (args[0] is CiInterpolatedString interpolated) {
+			Write("printf(");
+			WritePrintf(interpolated, newLine);
+		}
+		else if (args[0].Type is CiNumericType) {
+			Write("printf(");
+			WritePrintfNotInterpolated(args, newLine);
+		}
+		else if (!newLine) {
+			Write("fputs(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(", stdout)");
 		}
 		else
 			WriteCall("puts", args[0]);
@@ -1775,11 +1808,17 @@ public class GenC : GenCCpp
 		case CiId.SortedDictionaryRemove:
 			WriteDictionaryLookup(obj, "g_tree_remove", args[0]);
 			break;
+		case CiId.TextWriterWrite:
+			WriteTextWriterWrite(obj, args, false);
+			break;
+		case CiId.TextWriterWriteLine:
+			WriteTextWriterWrite(obj, args, true);
+			break;
 		case CiId.ConsoleWrite:
-			WriteConsoleWrite(obj, args, false);
+			WriteConsoleWrite(args, false);
 			break;
 		case CiId.ConsoleWriteLine:
-			WriteConsoleWrite(obj, args, true);
+			WriteConsoleWrite(args, true);
 			break;
 		case CiId.UTF8GetByteCount:
 			WriteStringLength(args[0]);

@@ -1268,6 +1268,7 @@ namespace Foxoft.Ci
 		DictionaryClass,
 		SortedDictionaryClass,
 		OrderedDictionaryClass,
+		TextWriterClass,
 		RegexClass,
 		MatchClass,
 		LockClass,
@@ -1339,6 +1340,8 @@ namespace Foxoft.Ci
 		OrderedDictionaryContainsKey,
 		OrderedDictionaryCount,
 		OrderedDictionaryRemove,
+		TextWriterWrite,
+		TextWriterWriteLine,
 		ConsoleWrite,
 		ConsoleWriteLine,
 		UTF8GetByteCount,
@@ -2925,14 +2928,15 @@ namespace Foxoft.Ci
 			AddDictionary(CiId.DictionaryClass, "Dictionary", CiId.DictionaryClear, CiId.DictionaryContainsKey, CiId.DictionaryCount, CiId.DictionaryRemove);
 			AddDictionary(CiId.SortedDictionaryClass, "SortedDictionary", CiId.SortedDictionaryClear, CiId.SortedDictionaryContainsKey, CiId.SortedDictionaryCount, CiId.SortedDictionaryRemove);
 			AddDictionary(CiId.OrderedDictionaryClass, "OrderedDictionary", CiId.OrderedDictionaryClear, CiId.OrderedDictionaryContainsKey, CiId.OrderedDictionaryCount, CiId.OrderedDictionaryRemove);
-			CiClass consoleBase = CiClass.New(CiCallType.Static, CiId.None, "ConsoleBase");
-			consoleBase.Add(CiMethod.NewStatic(this.VoidType, CiId.ConsoleWrite, "Write", CiVar.New(this.PrintableType, "value")));
-			consoleBase.Add(CiMethod.NewStatic(this.VoidType, CiId.ConsoleWriteLine, "WriteLine", CiVar.New(this.PrintableType, "value", NewLiteralString(""))));
+			CiClass textWriterClass = CiClass.New(CiCallType.Normal, CiId.TextWriterClass, "TextWriter");
+			textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.TextWriterWrite, "Write", CiVar.New(this.PrintableType, "value")));
+			textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.TextWriterWriteLine, "WriteLine", CiVar.New(this.PrintableType, "value", NewLiteralString(""))));
+			Add(textWriterClass);
 			CiClass consoleClass = CiClass.New(CiCallType.Static, CiId.None, "Console");
-			CiStaticProperty consoleError = CiStaticProperty.New(consoleBase, CiId.ConsoleError, "Error");
-			consoleClass.Add(consoleError);
+			consoleClass.Add(CiMethod.NewStatic(this.VoidType, CiId.ConsoleWrite, "Write", CiVar.New(this.PrintableType, "value")));
+			consoleClass.Add(CiMethod.NewStatic(this.VoidType, CiId.ConsoleWriteLine, "WriteLine", CiVar.New(this.PrintableType, "value", NewLiteralString(""))));
+			consoleClass.Add(CiStaticProperty.New(new CiStorageType { Class = textWriterClass }, CiId.ConsoleError, "Error"));
 			Add(consoleClass);
-			consoleClass.Parent = consoleBase;
 			CiClass utf8EncodingClass = CiClass.New(CiCallType.Sealed, CiId.None, "UTF8Encoding");
 			utf8EncodingClass.Add(CiMethod.New(CiVisibility.Public, this.IntType, CiId.UTF8GetByteCount, "GetByteCount", CiVar.New(this.StringPtrType, "str")));
 			utf8EncodingClass.Add(CiMethod.New(CiVisibility.Public, this.VoidType, CiId.UTF8GetBytes, "GetBytes", CiVar.New(this.StringPtrType, "str"), CiVar.New(new CiReadWriteClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, "bytes"), CiVar.New(this.IntType, "byteIndex")));

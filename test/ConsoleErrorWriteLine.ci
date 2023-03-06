@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		Console.Error.WriteLine("Hello");
+		Console.Error.WriteLine("Hello"); //FAIL: swift TODO; cl
 		string s = "World";
 		Console.Error.WriteLine(s);
 		Console.Error.WriteLine();

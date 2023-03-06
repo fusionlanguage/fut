@@ -83,6 +83,7 @@ public enum CiId
 	DictionaryClass,
 	SortedDictionaryClass,
 	OrderedDictionaryClass,
+	TextWriterClass,
 	RegexClass,
 	MatchClass,
 	LockClass,
@@ -154,6 +155,8 @@ public enum CiId
 	OrderedDictionaryContainsKey,
 	OrderedDictionaryCount,
 	OrderedDictionaryRemove,
+	TextWriterWrite,
+	TextWriterWriteLine,
 	ConsoleWrite,
 	ConsoleWriteLine,
 	UTF8GetByteCount,
@@ -1479,14 +1482,15 @@ public class CiSystem : CiScope
 		AddDictionary(CiId.SortedDictionaryClass, "SortedDictionary", CiId.SortedDictionaryClear, CiId.SortedDictionaryContainsKey, CiId.SortedDictionaryCount, CiId.SortedDictionaryRemove);
 		AddDictionary(CiId.OrderedDictionaryClass, "OrderedDictionary", CiId.OrderedDictionaryClear, CiId.OrderedDictionaryContainsKey, CiId.OrderedDictionaryCount, CiId.OrderedDictionaryRemove);
 
-		CiClass# consoleBase = CiClass.New(CiCallType.Static, CiId.None, "ConsoleBase");
-		consoleBase.Add(CiMethod.NewStatic(VoidType, CiId.ConsoleWrite, "Write", CiVar.New(PrintableType, "value")));
-		consoleBase.Add(CiMethod.NewStatic(VoidType, CiId.ConsoleWriteLine, "WriteLine", CiVar.New(PrintableType, "value", NewLiteralString(""))));
+		CiClass# textWriterClass = CiClass.New(CiCallType.Normal, CiId.TextWriterClass, "TextWriter");
+		textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.TextWriterWrite, "Write", CiVar.New(PrintableType, "value")));
+		textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.TextWriterWriteLine, "WriteLine", CiVar.New(PrintableType, "value", NewLiteralString(""))));
+		Add(textWriterClass);
 		CiClass# consoleClass = CiClass.New(CiCallType.Static, CiId.None, "Console");
-		CiStaticProperty# consoleError = CiStaticProperty.New(consoleBase, CiId.ConsoleError, "Error");
-		consoleClass.Add(consoleError);
+		consoleClass.Add(CiMethod.NewStatic(VoidType, CiId.ConsoleWrite, "Write", CiVar.New(PrintableType, "value")));
+		consoleClass.Add(CiMethod.NewStatic(VoidType, CiId.ConsoleWriteLine, "WriteLine", CiVar.New(PrintableType, "value", NewLiteralString(""))));
+		consoleClass.Add(CiStaticProperty.New(new CiStorageType { Class = textWriterClass }, CiId.ConsoleError, "Error"));
 		Add(consoleClass);
-		consoleClass.Parent = consoleBase;
 		CiClass# utf8EncodingClass = CiClass.New(CiCallType.Sealed, CiId.None, "UTF8Encoding");
 		utf8EncodingClass.Add(CiMethod.New(CiVisibility.Public, IntType, CiId.UTF8GetByteCount, "GetByteCount", CiVar.New(StringPtrType, "str")));
 		utf8EncodingClass.Add(CiMethod.New(CiVisibility.Public, VoidType, CiId.UTF8GetBytes, "GetBytes",

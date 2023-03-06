@@ -545,10 +545,9 @@ public class GenCpp : GenCCpp
 		WriteChar(')');
 	}
 
-	void WriteConsoleWrite(CiExpr obj, List<CiExpr> args, bool newLine)
+	void WriteWrite(List<CiExpr> args, bool newLine)
 	{
 		Include("iostream");
-		Write(IsReferenceTo(obj, CiId.ConsoleError) ? "std::cerr" : "std::cout");
 		if (args.Count == 1) {
 			if (args[0] is CiInterpolatedString interpolated) {
 				bool uppercase = false;
@@ -907,11 +906,21 @@ public class GenCpp : GenCCpp
 			if (parent > CiPriority.Equality)
 				WriteChar(')');
 			break;
+		case CiId.TextWriterWrite:
+			obj.Accept(this, CiPriority.Shift);
+			WriteWrite(args, false);
+			break;
+		case CiId.TextWriterWriteLine:
+			obj.Accept(this, CiPriority.Shift);
+			WriteWrite(args, true);
+			break;
 		case CiId.ConsoleWrite:
-			WriteConsoleWrite(obj, args, false);
+			Write("std::cout");
+			WriteWrite(args, false);
 			break;
 		case CiId.ConsoleWriteLine:
-			WriteConsoleWrite(obj, args, true);
+			Write("std::cout");
+			WriteWrite(args, true);
 			break;
 		case CiId.UTF8GetByteCount:
 			if (args[0] is CiLiteral) {
@@ -1157,6 +1166,9 @@ public class GenCpp : GenCCpp
 	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
+		case CiId.ConsoleError:
+			Write("std::cerr");
+			break;
 		case CiId.ListCount:
 		case CiId.QueueCount:
 		case CiId.StackCount:

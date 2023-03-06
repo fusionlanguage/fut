@@ -474,6 +474,9 @@ public class GenJava : GenTyped
 	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
+		case CiId.ConsoleError:
+			Write("System.err");
+			break;
 		case CiId.ListCount:
 		case CiId.QueueCount:
 		case CiId.StackCount:
@@ -517,9 +520,8 @@ public class GenJava : GenTyped
 		WriteChar(')');
 	}
 
-	void WriteConsoleWrite(CiExpr obj, CiMethod method, List<CiExpr> args, bool newLine)
+	void WriteWrite(CiMethod method, List<CiExpr> args, bool newLine)
 	{
-		Write(IsReferenceTo(obj, CiId.ConsoleError) ? "System.err" : "System.out");
 		if (args.Count == 1 && args[0] is CiInterpolatedString interpolated) {
 			Write(".format(");
 			WritePrintf(interpolated, newLine);
@@ -652,11 +654,21 @@ public class GenJava : GenTyped
 			WriteNewStorage(((CiClassType) obj.Type).GetValueType());
 			WriteChar(')');
 			break;
+		case CiId.TextWriterWrite:
+			obj.Accept(this, CiPriority.Primary);
+			WriteWrite(method, args, false);
+			break;
+		case CiId.TextWriterWriteLine:
+			obj.Accept(this, CiPriority.Primary);
+			WriteWrite(method, args, true);
+			break;
 		case CiId.ConsoleWrite:
-			WriteConsoleWrite(obj, method, args, false);
+			Write("System.out");
+			WriteWrite(method, args, false);
 			break;
 		case CiId.ConsoleWriteLine:
-			WriteConsoleWrite(obj, method, args, true);
+			Write("System.out");
+			WriteWrite(method, args, true);
 			break;
 		case CiId.UTF8GetByteCount:
 			Include("java.nio.charset.StandardCharsets");
