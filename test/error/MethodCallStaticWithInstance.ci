@@ -1,0 +1,16 @@
+public class Test
+{
+	const bool Foo = true;
+
+	static void StaticMethod()
+	{
+	}
+
+	public static bool Run()
+	{
+		Test() o;
+		if (o.Foo) // TODO: Foo is static
+			o.StaticMethod(); //ERROR: StaticMethod is static
+		return true;
+	}
+}

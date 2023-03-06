@@ -4838,6 +4838,8 @@ namespace Foxoft.Ci
 						if (!member.IsStatic())
 							ReportError(expr, $"Cannot use instance member {expr.Name} without an object");
 					}
+					else if (member.IsStatic())
+						ReportError(expr, $"{expr.Name} is static");
 				}
 			}
 			return new CiSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
