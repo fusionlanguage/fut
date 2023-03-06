@@ -643,7 +643,10 @@ public class GenCpp : GenCCpp
 					WriteStringLiteralWithNewLine(literal.Value);
 					return;
 				}
-				args[0].Accept(this, CiPriority.Mul);
+				else if (args[0] is CiLiteralChar)
+					WriteCall("static_cast<int>", args[0]);
+				else
+					args[0].Accept(this, CiPriority.Mul);
 			}
 		}
 		if (newLine)

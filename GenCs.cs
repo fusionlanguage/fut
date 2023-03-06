@@ -534,8 +534,25 @@ public class GenCs : GenTyped
 		case CiId.OrderedDictionaryContainsKey:
 			WriteCall(obj, "Contains", args[0]);
 			break;
+		case CiId.TextWriterWrite:
+		case CiId.TextWriterWriteLine:
 		case CiId.ConsoleWrite:
 		case CiId.ConsoleWriteLine:
+			Include("System"); // FIXME: not for TextWriter
+			obj.Accept(this, CiPriority.Primary);
+			WriteChar('.');
+			Write(method.Name);
+			WriteChar('(');
+			if (args.Count != 0) {
+				if (args[0] is CiLiteralChar) {
+					Write("(int) ");
+					args[0].Accept(this, CiPriority.Primary);
+				}
+				else
+					args[0].Accept(this, CiPriority.Argument);
+			}
+			WriteChar(')');
+			break;
 		case CiId.EnvironmentGetEnvironmentVariable:
 			Include("System");
 			obj.Accept(this, CiPriority.Primary);
