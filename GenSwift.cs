@@ -889,7 +889,7 @@ public class GenSwift : GenPySwift
 	{
 		if (expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign()) {
 			VisitBinaryExpr(rightBinary, CiPriority.Statement);
-			WriteLine();
+			WriteNewLine();
 			return rightBinary.Left; // TODO: side effect
 		}
 		return expr.Right;
@@ -1175,7 +1175,7 @@ public class GenSwift : GenPySwift
 			CloseChild();
 			Write("while ");
 			WriteExpr(statement.Cond, CiPriority.Argument);
-			WriteLine();
+			WriteNewLine();
 		}
 	}
 
@@ -1191,7 +1191,7 @@ public class GenSwift : GenPySwift
 			VisitXcrement<CiPrefixExpr>(loop.Cond, true);
 			Write("let ciDoLoop = ");
 			loop.Cond.Accept(this, CiPriority.Argument);
-			WriteLine();
+			WriteNewLine();
 			VisitXcrement<CiPostfixExpr>(loop.Cond, true);
 			Write("if !ciDoLoop");
 			OpenChild();
@@ -1393,7 +1393,7 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteEnum(CiEnum enu)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(enu.Documentation);
 		WritePublic(enu);
 		if (enu is CiEnumFlags) {
@@ -1409,7 +1409,7 @@ public class GenSwift : GenPySwift
 			Write(enu.Name);
 			if (enu.HasExplicitValue)
 				Write(" : Int");
-			WriteLine();
+			WriteNewLine();
 			OpenBlock();
 			Dictionary<int, CiConst> valueToConst = new Dictionary<int, CiConst>();
 			for (CiConst konst = (CiConst) enu.First; konst != null; konst = (CiConst) konst.Next) {
@@ -1430,7 +1430,7 @@ public class GenSwift : GenPySwift
 					}
 					valueToConst.Add(i, konst);
 				}
-				WriteLine();
+				WriteNewLine();
 			}
 		}
 		CloseBlock();
@@ -1454,7 +1454,7 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteConst(CiConst konst)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(konst.Documentation);
 		WriteVisibility(konst.Visibility);
 		Write("static let ");
@@ -1468,12 +1468,12 @@ public class GenSwift : GenPySwift
 			konst.Value.Accept(this, CiPriority.Argument);
 			WriteChar(')');
 		}
-		WriteLine();
+		WriteNewLine();
 	}
 
 	protected override void WriteField(CiField field)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(field.Documentation);
 		WriteVisibility(field.Visibility);
 		if (field.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && !(klass is CiDynamicPtrType) && !(klass is CiStorageType))
@@ -1488,7 +1488,7 @@ public class GenSwift : GenPySwift
 			WriteName(((CiStorageType) field.Type).Class);
 			Write("()");
 		}
-		WriteLine();
+		WriteNewLine();
 	}
 
 	protected override void WriteParameterDoc(CiVar param, bool first)
@@ -1497,12 +1497,12 @@ public class GenSwift : GenPySwift
 		WriteName(param);
 		WriteChar(' ');
 		WriteDocPara(param.Documentation.Summary, false);
-		WriteLine();
+		WriteNewLine();
 	}
 
 	protected override void WriteMethod(CiMethod method)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(method.Documentation);
 		WriteParametersDoc(method);
 		switch (method.CallType) {
@@ -1539,7 +1539,7 @@ public class GenSwift : GenPySwift
 				WriteType(method.Type);
 			}
 		}
-		WriteLine();
+		WriteNewLine();
 		OpenBlock();
 		if (method.CallType == CiCallType.Abstract)
 			WriteLine("preconditionFailure(\"Abstract method called\")");
@@ -1550,7 +1550,7 @@ public class GenSwift : GenPySwift
 					WriteTypeAndName(param);
 					Write(" = ");
 					WriteReadOnlyParameter(param);
-					WriteLine();
+					WriteNewLine();
 				}
 			}
 			InitVarsAtIndent();
@@ -1563,7 +1563,7 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteClass(CiClass klass, CiProgram program)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(klass.Documentation);
 		WritePublic(klass);
 		if (klass.CallType == CiCallType.Sealed)
@@ -1573,7 +1573,7 @@ public class GenSwift : GenPySwift
 			Write(klass.HasBaseClass() ? ", " : " : ");
 			Write("CustomStringConvertible");
 		}
-		WriteLine();
+		WriteNewLine();
 		OpenBlock();
 
 		if (NeedsConstructor(klass)) {
@@ -1600,33 +1600,33 @@ public class GenSwift : GenPySwift
 	void WriteLibrary()
 	{
 		if (this.Throw) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("public enum CiError : Error");
 			OpenBlock();
 			WriteLine("case error(String)");
 			CloseBlock();
 		}
 		if (this.ArrayRef) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("public class ArrayRef<T> : Sequence");
 			OpenBlock();
 			WriteLine("var array : [T]");
-			WriteLine();
+			WriteNewLine();
 			WriteLine("init(_ array : [T])");
 			OpenBlock();
 			WriteLine("self.array = array");
 			CloseBlock();
-			WriteLine();
+			WriteNewLine();
 			WriteLine("init(repeating: T, count: Int)");
 			OpenBlock();
 			WriteLine("self.array = [T](repeating: repeating, count: count)");
 			CloseBlock();
-			WriteLine();
+			WriteNewLine();
 			WriteLine("init(factory: () -> T, count: Int)");
 			OpenBlock();
 			WriteLine("self.array = (1...count).map({_ in factory() })");
 			CloseBlock();
-			WriteLine();
+			WriteNewLine();
 			WriteLine("subscript(index: Int) -> T");
 			OpenBlock();
 			WriteLine("get");
@@ -1649,17 +1649,17 @@ public class GenSwift : GenPySwift
 			WriteLine("array[bounds] = value");
 			CloseBlock();
 			CloseBlock();
-			WriteLine();
+			WriteNewLine();
 			WriteLine("func fill(_ value: T)");
 			OpenBlock();
 			WriteLine("array = [T](repeating: value, count: array.count)");
 			CloseBlock();
-			WriteLine();
+			WriteNewLine();
 			WriteLine("func fill(_ value: T, _ startIndex : Int, _ count : Int)");
 			OpenBlock();
 			WriteLine("array[startIndex ..< startIndex + count] = ArraySlice(repeating: value, count: count)");
 			CloseBlock();
-			WriteLine();
+			WriteNewLine();
 			WriteLine("public func makeIterator() -> IndexingIterator<Array<T>>");
 			OpenBlock();
 			WriteLine("return array.makeIterator()");
@@ -1667,14 +1667,14 @@ public class GenSwift : GenPySwift
 			CloseBlock();
 		}
 		if (this.StringCharAt) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("fileprivate func ciStringCharAt(_ s: String, _ offset: Int) -> Int");
 			OpenBlock();
 			WriteLine("return Int(s.unicodeScalars[s.index(s.startIndex, offsetBy: offset)].value)");
 			CloseBlock();
 		}
 		if (this.StringIndexOf) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("fileprivate func ciStringIndexOf<S1 : StringProtocol, S2 : StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
 			OpenBlock();
 			WriteLine("guard let index = haystack.range(of: needle, options: options) else { return -1 }");
@@ -1682,7 +1682,7 @@ public class GenSwift : GenPySwift
 			CloseBlock();
 		}
 		if (this.StringSubstring) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("fileprivate func ciStringSubstring(_ s: String, _ offset: Int) -> Substring");
 			OpenBlock();
 			WriteLine("return s[s.index(s.startIndex, offsetBy: offset)...]");
@@ -1695,7 +1695,7 @@ public class GenSwift : GenPySwift
 		if (resources.Count == 0)
 			return;
 		this.ArrayRef = true;
-		WriteLine();
+		WriteNewLine();
 		WriteLine("fileprivate final class CiResource");
 		OpenBlock();
 		foreach (string name in resources.Keys.OrderBy(k => k)) {

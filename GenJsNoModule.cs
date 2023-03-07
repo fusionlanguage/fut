@@ -1148,7 +1148,7 @@ public class GenJsNoModule : GenBase
 
 	protected virtual void StartContainerType(CiContainerType container)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(container.Documentation);
 	}
 
@@ -1170,14 +1170,14 @@ public class GenJsNoModule : GenBase
 		Write(" = ");
 		OpenBlock();
 		enu.AcceptValues(this);
-		WriteLine();
+		WriteNewLine();
 		CloseBlock();
 	}
 
 	protected override void WriteConst(CiConst konst)
 	{
 		if (konst.Visibility != CiVisibility.Private || konst.Type is CiArrayStorageType) {
-			WriteLine();
+			WriteNewLine();
 			WriteDoc(konst.Documentation);
 			Write("static ");
 			WriteName(konst);
@@ -1199,7 +1199,7 @@ public class GenJsNoModule : GenBase
 		if (method.CallType == CiCallType.Abstract)
 			return;
 		this.SwitchesWithLabel.Clear();
-		WriteLine();
+		WriteNewLine();
 		WriteMethodDoc(method);
 		if (method.CallType == CiCallType.Static)
 			Write("static ");
@@ -1238,7 +1238,7 @@ public class GenJsNoModule : GenBase
 	{
 		if (resources.Count == 0)
 			return;
-		WriteLine();
+		WriteNewLine();
 		WriteLine("class Ci");
 		OpenBlock();
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
@@ -1249,13 +1249,13 @@ public class GenJsNoModule : GenBase
 			WriteBytes(resources[name]);
 			WriteLine(" ]);");
 		}
-		WriteLine();
+		WriteNewLine();
 		CloseBlock();
 	}
 
 	protected virtual void WriteUseStrict()
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteLine("\"use strict\";");
 	}
 

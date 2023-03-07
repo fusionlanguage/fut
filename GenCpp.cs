@@ -1537,7 +1537,7 @@ public class GenCpp : GenCCpp
 	{
 		if (this.Namespace == null)
 			return;
-		WriteLine();
+		WriteNewLine();
 		Write("namespace ");
 		WriteLine(this.Namespace);
 		WriteCharLine('{');
@@ -1551,13 +1551,13 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteEnum(CiEnum enu)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(enu.Documentation);
 		Write("enum class ");
 		WriteLine(enu.Name);
 		OpenBlock();
 		enu.AcceptValues(this);
-		WriteLine();
+		WriteNewLine();
 		this.Indent--;
 		WriteLine("};");
 		if (enu is CiEnumFlags) {
@@ -1684,7 +1684,7 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteClass(CiClass klass)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(klass.Documentation);
 		OpenClass(klass, klass.CallType == CiCallType.Sealed ? " final" : "", " : public ");
 		this.Indent--;
@@ -1714,7 +1714,7 @@ public class GenCpp : GenCCpp
 		if (method.CallType == CiCallType.Abstract)
 			return;
 		this.SwitchesWithGoto.Clear();
-		WriteLine();
+		WriteNewLine();
 		WriteType(method.Type, true);
 		WriteChar(' ');
 		Write(method.Parent.Name);
@@ -1728,7 +1728,7 @@ public class GenCpp : GenCCpp
 	{
 		if (resources.Count == 0)
 			return;
-		WriteLine();
+		WriteNewLine();
 		WriteLine("namespace");
 		OpenBlock();
 		WriteLine("namespace CiResource");
@@ -1819,7 +1819,7 @@ public class GenCpp : GenCCpp
 		if (this.UsingStringViewLiterals)
 			WriteLine("using namespace std::string_view_literals;");
 		if (this.StringReplace) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static std::string CiString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
 			OpenBlock();
 			WriteLine("std::string result;");

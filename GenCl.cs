@@ -286,7 +286,7 @@ public class GenCl : GenC
 	void WriteLibrary()
 	{
 		if (this.StringLength) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static int strlen(constant char *str)");
 			OpenBlock();
 			WriteLine("int len = 0;");
@@ -296,7 +296,7 @@ public class GenCl : GenC
 			CloseBlock();
 		}
 		if (this.StringEquals) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static bool CiString_Equals(constant char *str1, constant char *str2)");
 			OpenBlock();
 			WriteLine("for (size_t i = 0; str1[i] == str2[i]; i++) {");
@@ -307,7 +307,7 @@ public class GenCl : GenC
 			CloseBlock();
 		}
 		if (this.StringStartsWith) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static bool CiString_StartsWith(constant char *str1, constant char *str2)");
 			OpenBlock();
 			WriteLine("for (int i = 0; str2[i] != '\\0'; i++) {");
@@ -318,7 +318,7 @@ public class GenCl : GenC
 			CloseBlock();
 		}
 		if (this.BytesEqualsString) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static bool CiBytes_Equals(const uchar *mem, constant char *str)");
 			OpenBlock();
 			WriteLine("for (int i = 0; str[i] != '\\0'; i++) {");

@@ -203,7 +203,7 @@ public abstract class GenCCpp : GenTyped
 			Write(" // ");
 			statement.Message.Accept(this, CiPriority.Argument);
 		}
-		WriteLine();
+		WriteNewLine();
 	}
 
 	protected override void WriteAssert(CiAssert statement)
@@ -253,7 +253,7 @@ public abstract class GenCCpp : GenTyped
 		int length = CiSwitch.LengthWithoutTrailingBreak(body);
 		if (doWhile && CiSwitch.HasEarlyBreak(body)) {
 			this.Indent++;
-			WriteLine();
+			WriteNewLine();
 			Write("do ");
 			OpenBlock();
 			WriteFirstStatements(body, length);

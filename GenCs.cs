@@ -33,7 +33,7 @@ public class GenCs : GenTyped
 	protected override void WriteDocPara(CiDocPara para, bool many)
 	{
 		if (many) {
-			WriteLine();
+			WriteNewLine();
 			Write("/// <para>");
 		}
 		foreach (CiDocInline inline in para.Children) {
@@ -58,7 +58,7 @@ public class GenCs : GenTyped
 				}
 				break;
 			case CiDocLine _:
-				WriteLine();
+				WriteNewLine();
 				StartDocLine();
 				break;
 			default:
@@ -71,7 +71,7 @@ public class GenCs : GenTyped
 
 	protected override void WriteDocList(CiDocList list)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteLine("/// <list type=\"bullet\">");
 		foreach (CiDocPara item in list.Items) {
 			Write("/// <item>");
@@ -802,7 +802,7 @@ public class GenCs : GenTyped
 
 	protected override void WriteEnum(CiEnum enu)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(enu.Documentation);
 		if (enu is CiEnumFlags) {
 			Include("System");
@@ -813,13 +813,13 @@ public class GenCs : GenTyped
 		WriteLine(enu.Name);
 		OpenBlock();
 		enu.AcceptValues(this);
-		WriteLine();
+		WriteNewLine();
 		CloseBlock();
 	}
 
 	protected override void WriteConst(CiConst konst)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(konst.Documentation);
 		WriteVisibility(konst.Visibility);
 		Write(konst.Type is CiArrayStorageType ? "static readonly " : "const ");
@@ -831,7 +831,7 @@ public class GenCs : GenTyped
 
 	protected override void WriteField(CiField field)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(field.Documentation);
 		WriteVisibility(field.Visibility);
 		if (field.Type.IsFinal() && !field.IsAssignableStorage())
@@ -853,7 +853,7 @@ public class GenCs : GenTyped
 	{
 		if (method.Id == CiId.ClassToString && method.CallType == CiCallType.Abstract)
 			return;
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(method.Documentation);
 		WriteParametersDoc(method);
 		WriteVisibility(method.Visibility);
@@ -874,7 +874,7 @@ public class GenCs : GenTyped
 
 	protected override void WriteClass(CiClass klass, CiProgram program)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(klass.Documentation);
 		WritePublic(klass);
 		WriteCallType(klass.CallType, "sealed ");
@@ -901,7 +901,7 @@ public class GenCs : GenTyped
 
 	void WriteResources(Dictionary<string, byte[]> resources)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteLine("internal static class CiResource");
 		OpenBlock();
 		foreach (string name in resources.Keys.OrderBy(k => k)) {

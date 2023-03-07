@@ -223,7 +223,7 @@ public class GenTs : GenJs
 
 	protected override void WriteConst(CiConst konst)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(konst.Documentation);
 		WriteVisibility(konst.Visibility);
 		Write("static readonly ");
@@ -251,7 +251,7 @@ public class GenTs : GenJs
 
 	protected override void WriteMethod(CiMethod method)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteMethodDoc(method);
 		WriteVisibility(method.Visibility);
 		switch (method.CallType) {

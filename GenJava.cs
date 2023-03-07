@@ -1012,7 +1012,7 @@ public class GenJava : GenTyped
 	protected override void WriteEnum(CiEnum enu)
 	{
 		CreateJavaFile(enu.Name);
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(enu.Documentation);
 		WritePublic(enu);
 		Write("interface ");
@@ -1025,7 +1025,7 @@ public class GenJava : GenTyped
 
 	void WriteSignature(CiMethod method, int paramCount)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteMethodDoc(method);
 		WriteVisibility(method.Visibility);
 		switch (method.CallType) {
@@ -1069,7 +1069,7 @@ public class GenJava : GenTyped
 		if (paramCount + 1 < method.Parameters.Count())
 			WriteOverloads(method, paramCount + 1);
 		WriteSignature(method, paramCount);
-		WriteLine();
+		WriteNewLine();
 		OpenBlock();
 		if (method.Type.Id != CiId.VoidType)
 			Write("return ");
@@ -1088,7 +1088,7 @@ public class GenJava : GenTyped
 
 	protected override void WriteConst(CiConst konst)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(konst.Documentation);
 		WriteVisibility(konst.Visibility);
 		Write("static final ");
@@ -1168,7 +1168,7 @@ public class GenJava : GenTyped
 		CreateJavaFile(klass.Name);
 		WriteTopLevelNatives(program);
 		WriteIncludes("import ", ";");
-		WriteLine();
+		WriteNewLine();
 		CloseStringWriter();
 		CloseFile();
 	}
@@ -1178,9 +1178,9 @@ public class GenJava : GenTyped
 		CreateJavaFile("CiResource");
 		WriteLine("import java.io.DataInputStream;");
 		WriteLine("import java.io.IOException;");
-		WriteLine();
+		WriteNewLine();
 		Write("class CiResource");
-		WriteLine();
+		WriteNewLine();
 		OpenBlock();
 		WriteLine("static byte[] getByteArray(String name, int length)");
 		OpenBlock();

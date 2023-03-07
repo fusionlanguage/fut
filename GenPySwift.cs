@@ -29,9 +29,9 @@ public abstract class GenPySwift : GenBase
 	protected override void WriteDocPara(CiDocPara para, bool many)
 	{
 		if (many) {
-			WriteLine();
+			WriteNewLine();
 			StartDocLine();
-			WriteLine();
+			WriteNewLine();
 			StartDocLine();
 		}
 		foreach (CiDocInline inline in para.Children) {
@@ -45,7 +45,7 @@ public abstract class GenPySwift : GenBase
 				WriteChar('`');
 				break;
 			case CiDocLine _:
-				WriteLine();
+				WriteNewLine();
 				StartDocLine();
 				break;
 			default:
@@ -58,11 +58,11 @@ public abstract class GenPySwift : GenBase
 
 	protected override void WriteDocList(CiDocList list)
 	{
-		WriteLine();
+		WriteNewLine();
 		foreach (CiDocPara item in list.Items) {
 			Write(GetDocBullet());
 			WriteDocPara(item, false);
-			WriteLine();
+			WriteNewLine();
 		}
 		StartDocLine();
 	}
@@ -200,7 +200,7 @@ public abstract class GenPySwift : GenBase
 		VisitXcrement<CiPrefixExpr>(statement, true);
 		if (!(statement is CiUnaryExpr unary) || (unary.Op != CiToken.Increment && unary.Op != CiToken.Decrement)) {
 			WriteExpr(statement, CiPriority.Statement);
-			WriteLine();
+			WriteNewLine();
 			if (statement is CiVar def)
 				WriteInitCode(def);
 		}
@@ -208,7 +208,7 @@ public abstract class GenPySwift : GenBase
 		CleanupTemporaries();
 	}
 
-	protected override void EndStatement() => WriteLine();
+	protected override void EndStatement() => WriteNewLine();
 
 	protected abstract void OpenChild();
 
@@ -371,14 +371,14 @@ public abstract class GenPySwift : GenBase
 				WriteResultVar(); // FIXME: name clash? only matters if return ... result++, unlikely
 				Write(" = ");
 				WriteCoercedExpr(this.CurrentMethod.Type, statement.Value);
-				WriteLine();
+				WriteNewLine();
 				VisitXcrement<CiPostfixExpr>(statement.Value, true);
 				WriteLine("return result");
 			}
 			else {
 				Write("return ");
 				WriteCoercedExpr(this.CurrentMethod.Type, statement.Value);
-				WriteLine();
+				WriteNewLine();
 			}
 			CleanupTemporaries();
 		}

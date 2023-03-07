@@ -2156,7 +2156,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		else {
-			WriteLine();
+			WriteNewLine();
 			this.Indent++;
 			VisitThrow(null);
 			this.Indent--;
@@ -2596,12 +2596,12 @@ public class GenC : GenCCpp
 
 	protected override void WriteEnum(CiEnum enu)
 	{
-		WriteLine();
+		WriteNewLine();
 		WriteDoc(enu.Documentation);
 		Write("typedef enum ");
 		OpenBlock();
 		enu.AcceptValues(this);
-		WriteLine();
+		WriteNewLine();
 		this.Indent--;
 		Write("} ");
 		WriteName(enu);
@@ -2723,7 +2723,7 @@ public class GenC : GenCCpp
 			WriteName(konst);
 			WriteChar(' ');
 			konst.Value.Accept(this, CiPriority.Argument);
-			WriteLine();
+			WriteNewLine();
 		}
 	}
 
@@ -2783,13 +2783,13 @@ public class GenC : GenCCpp
 			switch (symbol) {
 			case CiConst konst when (konst.Visibility == CiVisibility.Public) == pub:
 				if (pub) {
-					WriteLine();
+					WriteNewLine();
 					WriteDoc(konst.Documentation);
 				}
 				WriteConst(konst);
 				break;
 			case CiMethod method when method.IsLive && (method.Visibility == CiVisibility.Public) == pub && method.CallType != CiCallType.Abstract:
-				WriteLine();
+				WriteNewLine();
 				WriteMethodDoc(method);
 				WriteSignature(method);
 				WriteCharLine(';');
@@ -2803,7 +2803,7 @@ public class GenC : GenCCpp
 	protected override void WriteClass(CiClass klass)
 	{
 		if (klass.CallType != CiCallType.Static) {
-			WriteLine();
+			WriteNewLine();
 			if (klass.AddsVirtualMethods())
 				WriteVtblStruct(klass);
 			WriteDoc(klass.Documentation);
@@ -2867,9 +2867,9 @@ public class GenC : GenCCpp
 		if (!NeedsConstructor(klass))
 			return;
 		this.SwitchesWithGoto.Clear();
-		WriteLine();
+		WriteNewLine();
 		WriteXstructorSignature("Construct", klass);
-		WriteLine();
+		WriteNewLine();
 		OpenBlock();
 		if (klass.Parent is CiClass baseClass && NeedsConstructor(baseClass)) {
 			WriteName(baseClass);
@@ -2911,9 +2911,9 @@ public class GenC : GenCCpp
 	{
 		if (!NeedsDestructor(klass))
 			return;
-		WriteLine();
+		WriteNewLine();
 		WriteXstructorSignature("Destruct", klass);
-		WriteLine();
+		WriteNewLine();
 		OpenBlock();
 		WriteDestructFields(klass.First);
 		if (klass.Parent is CiClass baseClass && NeedsDestructor(baseClass)) {
@@ -2928,13 +2928,13 @@ public class GenC : GenCCpp
 		if (!klass.IsPublic || klass.Constructor == null || klass.Constructor.Visibility != CiVisibility.Public)
 			return;
 
-		WriteLine();
+		WriteNewLine();
 		WriteName(klass);
 		Write(" *");
 		WriteName(klass);
 		Write("_New(void)");
 		if (define) {
-			WriteLine();
+			WriteNewLine();
 			OpenBlock();
 			WriteName(klass);
 			Write(" *self = (");
@@ -2951,7 +2951,7 @@ public class GenC : GenCCpp
 			}
 			WriteLine("return self;");
 			CloseBlock();
-			WriteLine();
+			WriteNewLine();
 		}
 		else
 			WriteCharLine(';');
@@ -2962,7 +2962,7 @@ public class GenC : GenCCpp
 		WriteName(klass);
 		Write(" *self)");
 		if (define) {
-			WriteLine();
+			WriteNewLine();
 			OpenBlock();
 			if (NeedsDestructor(klass)) {
 				WriteLine("if (self == NULL)");
@@ -2984,13 +2984,13 @@ public class GenC : GenCCpp
 		if (!method.IsLive || method.CallType == CiCallType.Abstract)
 			return;
 		this.SwitchesWithGoto.Clear();
-		WriteLine();
+		WriteNewLine();
 		WriteSignature(method);
 		for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 			if (NeedToDestruct(param))
 				this.VarsToDestruct.Add(param);
 		}
-		WriteLine();
+		WriteNewLine();
 		this.CurrentMethod = method;
 		OpenBlock();
 		if (method.Body is CiBlock block) {
@@ -3019,7 +3019,7 @@ public class GenC : GenCCpp
 	void WriteLibrary()
 	{
 		if (this.StringAssign) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static void CiString_Assign(char **str, char *value)");
 			OpenBlock();
 			WriteLine("free(*str);");
@@ -3027,7 +3027,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		if (this.StringSubstring) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static char *CiString_Substring(const char *str, int len)");
 			OpenBlock();
 			WriteLine("char *p = malloc(len + 1);");
@@ -3037,7 +3037,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		if (this.StringAppend) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static void CiString_AppendSubstring(char **str, const char *suffix, size_t suffixLen)");
 			OpenBlock();
 			WriteLine("if (suffixLen == 0)");
@@ -3047,14 +3047,14 @@ public class GenC : GenCCpp
 			WriteLine("memcpy(*str + prefixLen, suffix, suffixLen);");
 			WriteLine("(*str)[prefixLen + suffixLen] = '\\0';");
 			CloseBlock();
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static void CiString_Append(char **str, const char *suffix)");
 			OpenBlock();
 			WriteLine("CiString_AppendSubstring(str, suffix, strlen(suffix));");
 			CloseBlock();
 		}
 		if (this.StringIndexOf) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static int CiString_IndexOf(const char *str, const char *needle)");
 			OpenBlock();
 			WriteLine("const char *p = strstr(str, needle);");
@@ -3062,7 +3062,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		if (this.StringLastIndexOf) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static int CiString_LastIndexOf(const char *str, const char *needle)");
 			OpenBlock();
 			WriteLine("if (needle[0] == '\\0')");
@@ -3078,7 +3078,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		if (this.StringEndsWith) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static bool CiString_EndsWith(const char *str, const char *suffix)");
 			OpenBlock();
 			WriteLine("size_t strLen = strlen(str);");
@@ -3087,7 +3087,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		if (this.StringReplace) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static char *CiString_Replace(const char *s, const char *oldValue, const char *newValue)");
 			OpenBlock();
 			Write("for (char *result = NULL;;) ");
@@ -3104,7 +3104,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		if (this.StringFormat) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static char *CiString_Format(const char *format, ...)");
 			OpenBlock();
 			WriteLine("va_list args1;");
@@ -3120,7 +3120,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		if (this.MatchFind) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static bool CiMatch_Find(GMatchInfo **match_info, const char *input, const char *pattern, GRegexCompileFlags options)");
 			OpenBlock();
 			WriteLine("GRegex *regex = g_regex_new(pattern, options, 0, NULL);");
@@ -3130,7 +3130,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		if (this.MatchPos) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static int CiMatch_GetPos(const GMatchInfo *match_info, int which)");
 			OpenBlock();
 			WriteLine("int start;");
@@ -3147,14 +3147,14 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		if (this.PtrConstruct) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static void CiPtr_Construct(void **ptr)");
 			OpenBlock();
 			WriteLine("*ptr = NULL;");
 			CloseBlock();
 		}
 		if (this.SharedMake || this.SharedAddRef || this.SharedRelease) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("typedef void (*CiMethodPtr)(void *);");
 			WriteLine("typedef struct {");
 			this.Indent++;
@@ -3166,7 +3166,7 @@ public class GenC : GenCCpp
 			WriteLine("} CiShared;");
 		}
 		if (this.SharedMake) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static void *CiShared_Make(size_t count, size_t unitSize, CiMethodPtr constructor, CiMethodPtr destructor)");
 			OpenBlock();
 			WriteLine("CiShared *self = (CiShared *) malloc(sizeof(CiShared) + count * unitSize);");
@@ -3183,7 +3183,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		if (this.SharedAddRef) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static void *CiShared_AddRef(void *ptr)");
 			OpenBlock();
 			WriteLine("if (ptr != NULL)");
@@ -3192,7 +3192,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		if (this.SharedRelease || this.SharedAssign) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static void CiShared_Release(void *ptr)");
 			OpenBlock();
 			WriteLine("if (ptr == NULL)");
@@ -3209,7 +3209,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		if (this.SharedAssign) {
-			WriteLine();
+			WriteNewLine();
 			WriteLine("static void CiShared_Assign(void **ptr, void *value)");
 			OpenBlock();
 			WriteLine("CiShared_Release(*ptr);");
@@ -3217,7 +3217,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		foreach (KeyValuePair<string, string> nameContent in this.ListFrees) {
-			WriteLine();
+			WriteNewLine();
 			Write("static void CiList_Free");
 			Write(nameContent.Key);
 			WriteLine("(void *ptr)");
@@ -3227,7 +3227,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		if (this.TreeCompareInteger) {
-			WriteLine();
+			WriteNewLine();
 			Write("static int CiTree_CompareInteger(gconstpointer pa, gconstpointer pb, gpointer user_data)");
 			OpenBlock();
 			WriteLine("gintptr a = (gintptr) pa;");
@@ -3236,14 +3236,14 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		if (this.TreeCompareString) {
-			WriteLine();
+			WriteNewLine();
 			Write("static int CiTree_CompareString(gconstpointer a, gconstpointer b, gpointer user_data)");
 			OpenBlock();
 			WriteLine("return strcmp((const char *) a, (const char *) b);");
 			CloseBlock();
 		}
 		foreach (TypeCode typeCode in this.Compares) {
-			WriteLine();
+			WriteNewLine();
 			Write("static int CiCompare_");
 			WriteTypeCode(typeCode);
 			WriteLine("(const void *pa, const void *pb)");
@@ -3271,7 +3271,7 @@ public class GenC : GenCCpp
 			CloseBlock();
 		}
 		foreach (TypeCode typeCode in this.Contains) {
-			WriteLine();
+			WriteNewLine();
 			Write("static bool CiArray_Contains_");
 			if (typeCode == TypeCode.String)
 				Write("string(const char * const *a, size_t len, const char *");
@@ -3299,7 +3299,7 @@ public class GenC : GenCCpp
 	{
 		if (resources.Count == 0)
 			return;
-		WriteLine();
+		WriteNewLine();
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
 			Write("static const ");
 			WriteTypeCode(TypeCode.Byte);
@@ -3334,7 +3334,7 @@ public class GenC : GenCCpp
 		WriteLine("#endif");
 		WriteTypedefs(program, true);
 		CloseStringWriter();
-		WriteLine();
+		WriteNewLine();
 		WriteLine("#ifdef __cplusplus");
 		WriteCharLine('}');
 		WriteLine("#endif");
