@@ -274,7 +274,7 @@ public class GenCs : GenTyped
 		}
 	}
 
-	protected override void WriteNewWithFields(CiType type, CiAggregateInitializer init)
+	protected override void WriteNewWithFields(CiReadWriteClassType type, CiAggregateInitializer init)
 	{
 		Write("new ");
 		WriteType(type, false);

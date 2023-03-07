@@ -730,10 +730,10 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	protected override void WriteNewArray(CiArrayStorageType array)
+	protected override void WriteNewArrayStorage(CiArrayStorageType array)
 	{
 		if (IsArrayRef(array))
-			base.WriteNewArray(array);
+			base.WriteNewArrayStorage(array);
 		else {
 			WriteChar('[');
 			WriteType(array.GetElementType());
@@ -767,7 +767,7 @@ public class GenSwift : GenPySwift
 		else if (type is CiStringType && !type.Nullable)
 			Write("\"\"");
 		else if (type is CiArrayStorageType array)
-			WriteNewArray(array);
+			WriteNewArrayStorage(array);
 		else
 			Write("nil");
 	}

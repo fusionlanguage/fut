@@ -6639,6 +6639,61 @@ namespace Foxoft.Ci
 			WriteChar(')');
 		}
 
+		protected abstract void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent);
+
+		protected virtual void WriteNewArrayStorage(CiArrayStorageType array)
+		{
+			WriteNewArray(array.GetElementType(), array.LengthExpr, CiPriority.Argument);
+		}
+
+		protected abstract void WriteNew(CiReadWriteClassType klass, CiPriority parent);
+
+		protected void WriteNewStorage(CiType type)
+		{
+			switch (type) {
+			case CiArrayStorageType array:
+				WriteNewArrayStorage(array);
+				break;
+			case CiStorageType storage:
+				WriteNew(storage, CiPriority.Argument);
+				break;
+			default:
+				throw new NotImplementedException();
+			}
+		}
+
+		protected virtual void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
+		{
+			Write(" = ");
+			WriteNewArrayStorage(array);
+		}
+
+		protected virtual void WriteNewWithFields(CiReadWriteClassType type, CiAggregateInitializer init)
+		{
+			WriteNew(type, CiPriority.Argument);
+		}
+
+		protected virtual void WriteStorageInit(CiNamedValue def)
+		{
+			Write(" = ");
+			if (def.Value is CiAggregateInitializer init) {
+				CiReadWriteClassType klass = (CiReadWriteClassType) def.Type;
+				WriteNewWithFields(klass, init);
+			}
+			else
+				WriteNewStorage(def.Type);
+		}
+
+		protected void WriteArrayElement(CiNamedValue def, int nesting)
+		{
+			WriteLocalName(def, CiPriority.Primary);
+			for (int i = 0; i < nesting; i++) {
+				Write("[_i");
+				VisitLiteralLong(i);
+				WriteChar(']');
+			}
+		}
+
 		protected virtual void EndStatement()
 		{
 			WriteCharLine(';');
@@ -6757,6 +6812,38 @@ namespace Foxoft.Ci
 		protected virtual void WriteNotPromoted(CiType type, CiExpr expr)
 		{
 			expr.Accept(this, CiPriority.Argument);
+		}
+
+		protected void WriteListAdd(CiExpr obj, string method, List<CiExpr> args)
+		{
+			obj.Accept(this, CiPriority.Primary);
+			WriteChar('.');
+			Write(method);
+			WriteChar('(');
+			CiClassType klass = (CiClassType) obj.Type;
+			CiType elementType = klass.GetElementType();
+			if (args.Count == 0)
+				WriteNewStorage(elementType);
+			else
+				WriteNotPromoted(elementType, args[0]);
+			WriteChar(')');
+		}
+
+		protected void WriteListInsert(CiExpr obj, string method, List<CiExpr> args, string separator = ", ")
+		{
+			obj.Accept(this, CiPriority.Primary);
+			WriteChar('.');
+			Write(method);
+			WriteChar('(');
+			args[0].Accept(this, CiPriority.Argument);
+			Write(separator);
+			CiClassType klass = (CiClassType) obj.Type;
+			CiType elementType = klass.GetElementType();
+			if (args.Count == 1)
+				WriteNewStorage(elementType);
+			else
+				WriteNotPromoted(elementType, args[1]);
+			WriteChar(')');
 		}
 
 		protected void EnsureChildBlock()

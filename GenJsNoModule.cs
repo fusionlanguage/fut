@@ -172,10 +172,10 @@ public class GenJsNoModule : GenBase
 		}
 	}
 
-	protected override void WriteNewWithFields(CiType type, CiAggregateInitializer init)
+	protected override void WriteNewWithFields(CiReadWriteClassType type, CiAggregateInitializer init)
 	{
 		Write("Object.assign(");
-		WriteNew((CiReadWriteClassType) type, CiPriority.Argument);
+		WriteNew(type, CiPriority.Argument);
 		WriteChar(',');
 		WriteObjectLiteral(init, ": ");
 		WriteChar(')');

@@ -244,35 +244,6 @@ public abstract class GenBase : GenBaseBase
 		WriteCall(method, arg0, arg1);
 	}
 
-	protected abstract void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent);
-
-	protected virtual void WriteNewArray(CiArrayStorageType array)
-	{
-		WriteNewArray(array.GetElementType(), array.LengthExpr, CiPriority.Argument);
-	}
-
-	protected abstract void WriteNew(CiReadWriteClassType klass, CiPriority parent);
-
-	protected void WriteNewStorage(CiType type)
-	{
-		switch (type) {
-		case CiArrayStorageType array:
-			WriteNewArray(array);
-			break;
-		case CiStorageType storage:
-			WriteNew(storage, CiPriority.Argument);
-			break;
-		default:
-			throw new NotImplementedException();
-		}
-	}
-
-	protected virtual void WriteArrayStorageInit(CiArrayStorageType array, CiExpr value)
-	{
-		Write(" = ");
-		WriteNewArray(array);
-	}
-
 	protected void WriteObjectLiteral(CiAggregateInitializer init, string separator)
 	{
 		string prefix = " { ";
@@ -286,20 +257,9 @@ public abstract class GenBase : GenBaseBase
 		Write(" }");
 	}
 
-	protected virtual void WriteNewWithFields(CiType type, CiAggregateInitializer init) => WriteNew((CiReadWriteClassType) type, CiPriority.Argument);
-
 	protected virtual void WriteCoercedExpr(CiType type, CiExpr expr)
 	{
 		WriteCoerced(type, expr, CiPriority.Argument);
-	}
-
-	protected virtual void WriteStorageInit(CiNamedValue def)
-	{
-		Write(" = ");
-		if (def.Value is CiAggregateInitializer init)
-			WriteNewWithFields(def.Type, init);
-		else
-			WriteNewStorage(def.Type);
 	}
 
 	protected virtual void WriteVarInit(CiNamedValue def)
@@ -323,16 +283,6 @@ public abstract class GenBase : GenBaseBase
 	}
 
 	public override void VisitVar(CiVar expr) => WriteVar(expr);
-
-	protected void WriteArrayElement(CiNamedValue def, int nesting)
-	{
-		WriteLocalName(def, CiPriority.Primary);
-		for (int i = 0; i < nesting; i++) {
-			Write("[_i");
-			VisitLiteralLong(i);
-			WriteChar(']');
-		}
-	}
 
 	static CiAggregateInitializer GetAggregateInitializer(CiNamedValue def)
 	{
@@ -450,36 +400,6 @@ public abstract class GenBase : GenBaseBase
 		WriteAssignRight(expr);
 		if (parent > CiPriority.Assign)
 			WriteChar(')');
-	}
-
-	protected void WriteListAdd(CiExpr obj, string method, List<CiExpr> args)
-	{
-		obj.Accept(this, CiPriority.Primary);
-		WriteChar('.');
-		Write(method);
-		WriteChar('(');
-		CiType elementType = ((CiClassType) obj.Type).GetElementType();
-		if (args.Count == 0)
-			WriteNewStorage(elementType);
-		else
-			WriteNotPromoted(elementType, args[0]);
-		WriteChar(')');
-	}
-
-	protected void WriteListInsert(CiExpr obj, string method, List<CiExpr> args, string separator = ", ")
-	{
-		obj.Accept(this, CiPriority.Primary);
-		WriteChar('.');
-		Write(method);
-		WriteChar('(');
-		args[0].Accept(this, CiPriority.Argument);
-		Write(separator);
-		CiType elementType = ((CiClassType) obj.Type).GetElementType();
-		if (args.Count == 1)
-			WriteNewStorage(elementType);
-		else
-			WriteNotPromoted(elementType, args[1]);
-		WriteChar(')');
 	}
 
 	protected void WriteDictionaryAdd(CiExpr obj, List<CiExpr> args)
