@@ -251,8 +251,9 @@ public class GenCs : GenTyped
 				Write("OrderedDictionary");
 				break;
 			case CiId.TextWriterClass:
+			case CiId.StringWriterClass:
 				Include("System.IO");
-				Write("TextWriter");
+				Write(klass.Class.Name);
 				break;
 			case CiId.RegexClass:
 			case CiId.MatchClass:

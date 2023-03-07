@@ -1,0 +1,17 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		StringWriter() w; //FAIL: c java js swift ts TODO; cl
+		w.Write("Hello");
+		string s = "World";
+		w.Write(s);
+		TextWriter! tw = w;
+		tw.Write(42);
+		long l = 5;
+		w.Write(l);
+		tw.Write('c');
+		w.WriteChar('c');
+		return w.ToString() == "HelloWorld42599c";
+	}
+}

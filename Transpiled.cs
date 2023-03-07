@@ -1270,6 +1270,7 @@ namespace Foxoft.Ci
 		SortedDictionaryClass,
 		OrderedDictionaryClass,
 		TextWriterClass,
+		StringWriterClass,
 		RegexClass,
 		MatchClass,
 		LockClass,
@@ -1351,6 +1352,7 @@ namespace Foxoft.Ci
 		TextWriterWriteLine,
 		ConsoleWrite,
 		ConsoleWriteLine,
+		StringWriterToString,
 		UTF8GetByteCount,
 		UTF8GetBytes,
 		UTF8GetString,
@@ -2943,6 +2945,10 @@ namespace Foxoft.Ci
 			consoleClass.Add(CiMethod.NewStatic(this.VoidType, CiId.ConsoleWriteLine, "WriteLine", CiVar.New(this.PrintableType, "value", NewLiteralString(""))));
 			consoleClass.Add(CiStaticProperty.New(new CiStorageType { Class = textWriterClass }, CiId.ConsoleError, "Error"));
 			Add(consoleClass);
+			CiClass stringWriterClass = CiClass.New(CiCallType.Sealed, CiId.StringWriterClass, "StringWriter");
+			stringWriterClass.Add(CiMethod.New(CiVisibility.Public, this.StringPtrType, CiId.StringWriterToString, "ToString"));
+			Add(stringWriterClass);
+			stringWriterClass.Parent = textWriterClass;
 			CiClass utf8EncodingClass = CiClass.New(CiCallType.Sealed, CiId.None, "UTF8Encoding");
 			utf8EncodingClass.Add(CiMethod.New(CiVisibility.Public, this.IntType, CiId.UTF8GetByteCount, "GetByteCount", CiVar.New(this.StringPtrType, "str")));
 			utf8EncodingClass.Add(CiMethod.New(CiVisibility.Public, this.VoidType, CiId.UTF8GetBytes, "GetBytes", CiVar.New(this.StringPtrType, "str"), CiVar.New(new CiReadWriteClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, "bytes"), CiVar.New(this.IntType, "byteIndex")));

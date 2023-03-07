@@ -85,6 +85,7 @@ public enum CiId
 	SortedDictionaryClass,
 	OrderedDictionaryClass,
 	TextWriterClass,
+	StringWriterClass,
 	RegexClass,
 	MatchClass,
 	LockClass,
@@ -166,6 +167,7 @@ public enum CiId
 	TextWriterWriteLine,
 	ConsoleWrite,
 	ConsoleWriteLine,
+	StringWriterToString,
 	UTF8GetByteCount,
 	UTF8GetBytes,
 	UTF8GetString,
@@ -1505,6 +1507,10 @@ public class CiSystem : CiScope
 		consoleClass.Add(CiMethod.NewStatic(VoidType, CiId.ConsoleWriteLine, "WriteLine", CiVar.New(PrintableType, "value", NewLiteralString(""))));
 		consoleClass.Add(CiStaticProperty.New(new CiStorageType { Class = textWriterClass }, CiId.ConsoleError, "Error"));
 		Add(consoleClass);
+		CiClass# stringWriterClass = CiClass.New(CiCallType.Sealed, CiId.StringWriterClass, "StringWriter");
+		stringWriterClass.Add(CiMethod.New(CiVisibility.Public, StringPtrType, CiId.StringWriterToString, "ToString"));
+		Add(stringWriterClass);
+		stringWriterClass.Parent = textWriterClass;
 		CiClass# utf8EncodingClass = CiClass.New(CiCallType.Sealed, CiId.None, "UTF8Encoding");
 		utf8EncodingClass.Add(CiMethod.New(CiVisibility.Public, IntType, CiId.UTF8GetByteCount, "GetByteCount", CiVar.New(StringPtrType, "str")));
 		utf8EncodingClass.Add(CiMethod.New(CiVisibility.Public, VoidType, CiId.UTF8GetBytes, "GetBytes",

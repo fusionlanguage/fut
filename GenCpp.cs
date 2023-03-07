@@ -237,6 +237,10 @@ public class GenCpp : GenCCpp
 					Include("iostream");
 					Write("std::ostream");
 					break;
+				case CiId.StringWriterClass:
+					Include("sstream");
+					Write("std::stringstream");
+					break;
 				case CiId.RegexClass:
 					Include("regex");
 					Write("std::regex");
@@ -941,6 +945,10 @@ public class GenCpp : GenCCpp
 		case CiId.ConsoleWriteLine:
 			Write("std::cout");
 			WriteWrite(args, true);
+			break;
+		case CiId.StringWriterToString:
+			StartMethodCall(obj);
+			Write("view()");
 			break;
 		case CiId.UTF8GetByteCount:
 			if (args[0] is CiLiteral) {

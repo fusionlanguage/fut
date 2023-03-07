@@ -520,6 +520,10 @@ public class GenPy : GenPySwift
 			Include("collections");
 			Write("collections.OrderedDict()");
 			break;
+		case CiId.StringWriterClass:
+			Include("io");
+			Write("io.StringIO()");
+			break;
 		case CiId.LockClass:
 			Include("threading");
 			Write("threading.RLock()");
@@ -747,6 +751,9 @@ public class GenPy : GenPySwift
 			if (args.Count == 1)
 				args[0].Accept(this, CiPriority.Argument);
 			WriteChar(')');
+			break;
+		case CiId.StringWriterToString:
+			WritePostfix(obj, ".getvalue()");
 			break;
 		case CiId.UTF8GetByteCount:
 			Write("len(");
