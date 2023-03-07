@@ -267,6 +267,7 @@ public class GenPy : GenPySwift
 		case CiId.QueueCount:
 		case CiId.StackCount:
 		case CiId.HashSetCount:
+		case CiId.SortedSetCount:
 		case CiId.DictionaryCount:
 		case CiId.SortedDictionaryCount:
 		case CiId.OrderedDictionaryCount:
@@ -508,6 +509,7 @@ public class GenPy : GenPySwift
 			Write("collections.deque()");
 			break;
 		case CiId.HashSetClass:
+		case CiId.SortedSetClass:
 			Write("set()");
 			break;
 		case CiId.DictionaryClass:
@@ -591,6 +593,7 @@ public class GenPy : GenPySwift
 		case CiId.StringContains:
 		case CiId.ListContains:
 		case CiId.HashSetContains:
+		case CiId.SortedSetContains:
 		case CiId.DictionaryContainsKey:
 		case CiId.SortedDictionaryContainsKey:
 		case CiId.OrderedDictionaryContainsKey:
@@ -1007,11 +1010,12 @@ public class GenPy : GenPySwift
 	{
 		Write("for ");
 		WriteName(statement.GetVar());
-		if (statement.Collection.Type is CiClassType dict && dict.Class.TypeParameterCount == 2) {
+		CiClassType klass = (CiClassType) statement.Collection.Type;
+		if (klass.Class.TypeParameterCount == 2) {
 			Write(", ");
 			WriteName(statement.GetValueVar());
 			Write(" in ");
-			if (dict.Class.Id == CiId.SortedDictionaryClass) {
+			if (klass.Class.Id == CiId.SortedDictionaryClass) {
 				Write("sorted(");
 				WritePostfix(statement.Collection, ".items())");
 			}
@@ -1020,7 +1024,10 @@ public class GenPy : GenPySwift
 		}
 		else {
 			Write(" in ");
-			statement.Collection.Accept(this, CiPriority.Argument);
+			if (klass.Class.Id == CiId.SortedSetClass)
+				WriteCall("sorted", statement.Collection);
+			else
+				statement.Collection.Accept(this, CiPriority.Argument);
 		}
 		WriteChild(statement.Body);
 	}

@@ -1670,6 +1670,7 @@ public class CiSema : CiVisitor
 			case CiId.ArrayStorageClass:
 			case CiId.ListClass:
 			case CiId.HashSetClass:
+			case CiId.SortedSetClass:
 				if (statement.Count() != 1)
 					ReportError(statement, "Expected one iterator variable");
 				else if (!element.Type.IsAssignableFrom(klass.GetElementType()))

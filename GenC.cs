@@ -315,6 +315,7 @@ public class GenC : GenCCpp
 		case CiId.DictionaryCount:
 			WriteCall("g_hash_table_size", expr.Left);
 			break;
+		case CiId.SortedSetCount:
 		case CiId.SortedDictionaryCount:
 			WriteCall("g_tree_nnodes", expr.Left);
 			break;
@@ -384,6 +385,7 @@ public class GenC : GenCCpp
 		case CiId.DictionaryClass:
 			WriteGlib("GHashTable *");
 			break;
+		case CiId.SortedSetClass:
 		case CiId.SortedDictionaryClass:
 			WriteGlib("GTree *");
 			break;
@@ -619,11 +621,12 @@ public class GenC : GenCCpp
 					return "CiList_FreeList";
 				case CiId.HashSetClass:
 				case CiId.DictionaryClass:
-					this.ListFrees["Dictionary"] = "g_hash_table_unref(*(GHashTable **) ptr)";
-					return "CiList_FreeDictionary";
+					this.ListFrees["HashTable"] = "g_hash_table_unref(*(GHashTable **) ptr)";
+					return "CiList_FreeHashTable";
+				case CiId.SortedSetClass:
 				case CiId.SortedDictionaryClass:
-					this.ListFrees["SortedDictionary"] = "g_tree_unref(*(GTree **) ptr)";
-					return "CiList_FreeSortedDictionary";
+					this.ListFrees["Tree"] = "g_tree_unref(*(GTree **) ptr)";
+					return "CiList_FreeTree";
 				default:
 					if (NeedsDestructor(storage.Class))
 						return $"(GDestroyNotify) {storage.Class.Name}_Destruct";
@@ -648,6 +651,7 @@ public class GenC : GenCCpp
 			case CiId.HashSetClass:
 			case CiId.DictionaryClass:
 				return "(GDestroyNotify) g_hash_table_unref";
+			case CiId.SortedSetClass:
 			case CiId.SortedDictionaryClass:
 				return "(GDestroyNotify) g_tree_unref";
 			default:
@@ -685,6 +689,33 @@ public class GenC : GenCCpp
 		WriteChar(')');
 	}
 
+	void WriteNewTree(CiType keyType, string valueDestroy)
+	{
+		if (keyType.Id == CiId.StringPtrType && valueDestroy == "NULL")
+			Write("g_tree_new((GCompareFunc) strcmp");
+		else {
+			Write("g_tree_new_full(CiTree_Compare");
+			switch (keyType) {
+			case CiIntegerType _:
+				this.TreeCompareInteger = true;
+				Write("Integer");
+				break;
+			case CiStringType _:
+				this.TreeCompareString = true;
+				Write("String");
+				break;
+			default:
+				NotSupported(keyType, keyType.ToString());
+				break;
+			}
+			Write(", NULL, ");
+			Write(GetDictionaryDestroy(keyType));
+			Write(", ");
+			Write(valueDestroy);
+		}
+		WriteChar(')');
+	}
+
 	protected override void WriteNew(CiReadWriteClassType klass, CiPriority parent)
 	{
 		switch (klass.Class.Id) {
@@ -700,34 +731,14 @@ public class GenC : GenCCpp
 		case CiId.HashSetClass:
 			WriteNewHashTable(klass.GetElementType(), "NULL");
 			break;
+		case CiId.SortedSetClass:
+			WriteNewTree(klass.GetElementType(), "NULL");
+			break;
 		case CiId.DictionaryClass:
 			WriteNewHashTable(klass.GetKeyType(), GetDictionaryDestroy(klass.GetValueType()));
 			break;
 		case CiId.SortedDictionaryClass:
-			string valueDestroy = GetDictionaryDestroy(klass.GetValueType());
-			if (klass.GetKeyType().Id == CiId.StringPtrType && valueDestroy == "NULL")
-				Write("g_tree_new((GCompareFunc) strcmp");
-			else {
-				Write("g_tree_new_full(CiTree_Compare");
-				switch (klass.GetKeyType()) {
-				case CiIntegerType _:
-					this.TreeCompareInteger = true;
-					Write("Integer");
-					break;
-				case CiStringType _:
-					this.TreeCompareString = true;
-					Write("String");
-					break;
-				default:
-					NotSupported(klass.GetKeyType(), klass.GetKeyType().ToString());
-					break;
-				}
-				Write(", NULL, ");
-				Write(GetDictionaryDestroy(klass.GetKeyType()));
-				Write(", ");
-				Write(valueDestroy);
-			}
-			WriteChar(')');
+			WriteNewTree(klass.GetKeyType(), GetDictionaryDestroy(klass.GetValueType()));
 			break;
 		default:
 			this.SharedMake = true;
@@ -1765,13 +1776,23 @@ public class GenC : GenCCpp
 			WriteChar(')');
 			break;
 		case CiId.HashSetClear:
+		case CiId.DictionaryClear:
 			WriteCall("g_hash_table_remove_all", obj);
 			break;
 		case CiId.HashSetContains:
+		case CiId.DictionaryContainsKey:
 			WriteDictionaryLookup(obj, "g_hash_table_contains", args[0]);
 			break;
 		case CiId.HashSetRemove:
+		case CiId.DictionaryRemove:
 			WriteDictionaryLookup(obj, "g_hash_table_remove", args[0]);
+			break;
+		case CiId.SortedSetAdd:
+			Write("g_tree_insert(");
+			obj.Accept(this, CiPriority.Argument);
+			Write(", ");
+			WriteGPointerCast(((CiClassType) obj.Type).GetKeyType(), args[0]);
+			Write(", NULL)");
 			break;
 		case CiId.DictionaryAdd:
 			StartDictionaryInsert(obj, args[0]);
@@ -1797,21 +1818,14 @@ public class GenC : GenCCpp
 			}
 			WriteChar(')');
 			break;
-		case CiId.DictionaryClear:
-			WriteCall("g_hash_table_remove_all", obj);
-			break;
-		case CiId.DictionaryContainsKey:
-			WriteDictionaryLookup(obj, "g_hash_table_contains", args[0]);
-			break;
-		case CiId.DictionaryRemove:
-			WriteDictionaryLookup(obj, "g_hash_table_remove", args[0]);
-			break;
+		case CiId.SortedSetClear:
 		case CiId.SortedDictionaryClear:
 			// TODO: since glib-2.70: WriteCall("g_tree_remove_all", obj);
 			Write("g_tree_destroy(g_tree_ref(");
 			obj.Accept(this, CiPriority.Argument);
 			Write("))");
 			break;
+		case CiId.SortedSetContains:
 		case CiId.SortedDictionaryContainsKey:
 			Write("g_tree_lookup_extended(");
 			obj.Accept(this, CiPriority.Argument);
@@ -1819,6 +1833,7 @@ public class GenC : GenCCpp
 			WriteGConstPointerCast(args[0]);
 			Write(", NULL, NULL)");
 			break;
+		case CiId.SortedSetRemove:
 		case CiId.SortedDictionaryRemove:
 			WriteDictionaryLookup(obj, "g_tree_remove", args[0]);
 			break;
@@ -2193,6 +2208,7 @@ public class GenC : GenCCpp
 			case CiId.DictionaryClass:
 				Write("g_hash_table_unref(");
 				break;
+			case CiId.SortedSetClass:
 			case CiId.SortedDictionaryClass:
 				Write("g_tree_unref(");
 				break;
@@ -2387,6 +2403,15 @@ public class GenC : GenCCpp
 				WriteDictIterVar(statement.GetVar(), "cikey");
 				FlattenBlock(statement.Body);
 				CloseBlock();
+				CloseBlock();
+				break;
+			case CiId.SortedSetClass:
+				Write("for (GTreeNode *cisetit = g_tree_node_first(");
+				statement.Collection.Accept(this, CiPriority.Argument);
+				Write("); cisetit != NULL; cisetit = g_tree_node_next(cisetit)) ");
+				OpenBlock();
+				WriteDictIterVar(statement.GetVar(), "g_tree_node_key(cisetit)");
+				FlattenBlock(statement.Body);
 				CloseBlock();
 				break;
 			case CiId.DictionaryClass:
@@ -2686,6 +2711,7 @@ public class GenC : GenCCpp
 	{
 		if (konst.Type is CiArrayStorageType array) {
 			Write("static ");
+			// FIXME: array of strings
 			Write(GetConst(array));
 			WriteTypeAndName(konst);
 			Write(" = ");

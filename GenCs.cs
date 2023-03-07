@@ -232,6 +232,7 @@ public class GenCs : GenTyped
 			case CiId.QueueClass:
 			case CiId.StackClass:
 			case CiId.HashSetClass:
+			case CiId.SortedSetClass:
 				Write(klass.Class.Name);
 				WriteElementType(klass.GetElementType());
 				break;

@@ -1265,6 +1265,7 @@ namespace Foxoft.Ci
 		QueueClass,
 		StackClass,
 		HashSetClass,
+		SortedSetClass,
 		DictionaryClass,
 		SortedDictionaryClass,
 		OrderedDictionaryClass,
@@ -1327,6 +1328,11 @@ namespace Foxoft.Ci
 		HashSetContains,
 		HashSetCount,
 		HashSetRemove,
+		SortedSetAdd,
+		SortedSetClear,
+		SortedSetContains,
+		SortedSetCount,
+		SortedSetRemove,
 		DictionaryAdd,
 		DictionaryClear,
 		DictionaryContainsKey,
@@ -2922,10 +2928,8 @@ namespace Foxoft.Ci
 			stackClass.Add(CiMethod.New(CiVisibility.Public, this.TypeParam0, CiId.StackPeek, "Peek"));
 			stackClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.StackPush, "Push", CiVar.New(this.TypeParam0, "value")));
 			stackClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.TypeParam0, CiId.StackPop, "Pop"));
-			CiClass hashSetClass = AddCollection(CiId.HashSetClass, "HashSet", 1, CiId.HashSetClear, CiId.HashSetCount);
-			hashSetClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.HashSetAdd, "Add", CiVar.New(this.TypeParam0, "value")));
-			hashSetClass.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.HashSetContains, "Contains", CiVar.New(this.TypeParam0, "value")));
-			hashSetClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.HashSetRemove, "Remove", CiVar.New(this.TypeParam0, "value")));
+			AddSet(CiId.HashSetClass, "HashSet", CiId.HashSetAdd, CiId.HashSetClear, CiId.HashSetContains, CiId.HashSetCount, CiId.HashSetRemove);
+			AddSet(CiId.SortedSetClass, "SortedSet", CiId.SortedSetAdd, CiId.SortedSetClear, CiId.SortedSetContains, CiId.SortedSetCount, CiId.SortedSetRemove);
 			AddDictionary(CiId.DictionaryClass, "Dictionary", CiId.DictionaryClear, CiId.DictionaryContainsKey, CiId.DictionaryCount, CiId.DictionaryRemove);
 			AddDictionary(CiId.SortedDictionaryClass, "SortedDictionary", CiId.SortedDictionaryClear, CiId.SortedDictionaryContainsKey, CiId.SortedDictionaryCount, CiId.SortedDictionaryRemove);
 			AddDictionary(CiId.OrderedDictionaryClass, "OrderedDictionary", CiId.OrderedDictionaryClear, CiId.OrderedDictionaryContainsKey, CiId.OrderedDictionaryCount, CiId.OrderedDictionaryRemove);
@@ -3082,6 +3086,14 @@ namespace Foxoft.Ci
 			result.Add(CiProperty.New(this.UIntType, countId, "Count"));
 			Add(result);
 			return result;
+		}
+
+		void AddSet(CiId id, string name, CiId addId, CiId clearId, CiId containsId, CiId countId, CiId removeId)
+		{
+			CiClass set = AddCollection(id, name, 1, clearId, countId);
+			set.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, addId, "Add", CiVar.New(this.TypeParam0, "value")));
+			set.Add(CiMethod.New(CiVisibility.Public, this.BoolType, containsId, "Contains", CiVar.New(this.TypeParam0, "value")));
+			set.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, removeId, "Remove", CiVar.New(this.TypeParam0, "value")));
 		}
 
 		void AddDictionary(CiId id, string name, CiId clearId, CiId containsKeyId, CiId countId, CiId removeId)
@@ -5751,6 +5763,7 @@ namespace Foxoft.Ci
 				case CiId.ArrayStorageClass:
 				case CiId.ListClass:
 				case CiId.HashSetClass:
+				case CiId.SortedSetClass:
 					if (statement.Count() != 1)
 						ReportError(statement, "Expected one iterator variable");
 					else if (!element.Type.IsAssignableFrom(klass.GetElementType()))

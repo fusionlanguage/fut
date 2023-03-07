@@ -216,6 +216,7 @@ public class GenSwift : GenPySwift
 			WriteChar(']');
 			break;
 		case CiId.HashSetClass:
+		case CiId.SortedSetClass:
 			Write("Set<");
 			WriteType(klass.GetElementType());
 			WriteChar('>');
@@ -423,6 +424,8 @@ public class GenSwift : GenPySwift
 		case CiId.ListSortAll:
 		case CiId.HashSetContains:
 		case CiId.HashSetRemove:
+		case CiId.SortedSetContains:
+		case CiId.SortedSetRemove:
 			if (obj == null) {
 				if (method.IsStatic()) {
 					WriteName(this.CurrentMethod.Parent);
@@ -570,6 +573,7 @@ public class GenSwift : GenPySwift
 		case CiId.QueueClear:
 		case CiId.StackClear:
 		case CiId.HashSetClear:
+		case CiId.SortedSetClear:
 		case CiId.DictionaryClear:
 		case CiId.SortedDictionaryClear:
 			WritePostfix(obj, ".removeAll()");
@@ -609,6 +613,7 @@ public class GenSwift : GenPySwift
 			WritePostfix(obj, ".removeLast()");
 			break;
 		case CiId.HashSetAdd:
+		case CiId.SortedSetAdd:
 			WritePostfix(obj, ".insert(");
 			WriteCoerced(((CiClassType) obj.Type).GetElementType(), args[0], CiPriority.Argument);
 			WriteChar(')');
@@ -1252,6 +1257,9 @@ public class GenSwift : GenPySwift
 		switch (klass.Class.Id) {
 		case CiId.StringClass:
 			WritePostfix(statement.Collection, ".unicodeScalars");
+			break;
+		case CiId.SortedSetClass:
+			WritePostfix(statement.Collection, ".sorted()");
 			break;
 		case CiId.SortedDictionaryClass:
 			WritePostfix(statement.Collection, klass.GetKeyType().Nullable

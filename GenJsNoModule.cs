@@ -151,6 +151,7 @@ public class GenJsNoModule : GenBase
 			Write("[]");
 			break;
 		case CiId.HashSetClass:
+		case CiId.SortedSetClass:
 			Write("new Set()");
 			break;
 		case CiId.DictionaryClass:
@@ -365,6 +366,7 @@ public class GenJsNoModule : GenBase
 			WritePostfix(expr.Left, ".length");
 			break;
 		case CiId.HashSetCount:
+		case CiId.SortedSetCount:
 		case CiId.OrderedDictionaryCount:
 			WritePostfix(expr.Left, ".size");
 			break;
@@ -494,6 +496,8 @@ public class GenJsNoModule : GenBase
 		case CiId.StackPop:
 		case CiId.HashSetAdd:
 		case CiId.HashSetClear:
+		case CiId.SortedSetAdd:
+		case CiId.SortedSetClear:
 		case CiId.OrderedDictionaryClear:
 		case CiId.MathMethod:
 		case CiId.MathLog2:
@@ -641,9 +645,13 @@ public class GenJsNoModule : GenBase
 			WritePostfix(obj, "[0]");
 			break;
 		case CiId.HashSetContains:
+		case CiId.SortedSetContains:
+		case CiId.OrderedDictionaryContainsKey:
 			WriteCall(obj, "has", args[0]);
 			break;
 		case CiId.HashSetRemove:
+		case CiId.SortedSetRemove:
+		case CiId.OrderedDictionaryRemove:
 			WriteCall(obj, "delete", args[0]);
 			break;
 		case CiId.DictionaryAdd:
@@ -665,12 +673,6 @@ public class GenJsNoModule : GenBase
 		case CiId.SortedDictionaryRemove:
 			Write("delete ");
 			WriteIndexing(obj, args[0]);
-			break;
-		case CiId.OrderedDictionaryContainsKey:
-			WriteCall(obj, "has", args[0]);
-			break;
-		case CiId.OrderedDictionaryRemove:
-			WriteCall(obj, "delete", args[0]);
 			break;
 		case CiId.TextWriterWrite:
 			WritePostfix(obj, ".write(");
@@ -1023,6 +1025,15 @@ public class GenJsNoModule : GenBase
 			WriteName(statement.GetVar());
 			Write(" of ");
 			statement.Collection.Accept(this, CiPriority.Argument);
+			break;
+		case CiId.SortedSetClass:
+			WriteName(statement.GetVar());
+			Write(" of Array.from(");
+			statement.Collection.Accept(this, CiPriority.Argument);
+			Write(").sort(");
+			if (klass.GetElementType() is CiNumericType)
+				Write("(a, b) => a - b");
+			WriteChar(')');
 			break;
 		case CiId.DictionaryClass:
 		case CiId.SortedDictionaryClass:

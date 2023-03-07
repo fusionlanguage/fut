@@ -277,6 +277,9 @@ public class GenCpp : GenCCpp
 				case CiId.HashSetClass:
 					cppType = "unordered_set";
 					break;
+				case CiId.SortedSetClass:
+					cppType = "set";
+					break;
 				case CiId.DictionaryClass:
 					cppType = "unordered_map";
 					break;
@@ -892,9 +895,11 @@ public class GenCpp : GenCCpp
 			}
 			break;
 		case CiId.HashSetAdd:
+		case CiId.SortedSetAdd:
 			WriteCall(obj, ((CiClassType) obj.Type).GetElementType().Id == CiId.StringStorageType && args[0].Type.Id == CiId.StringPtrType ? "emplace" : "insert", args[0]);
 			break;
 		case CiId.HashSetRemove:
+		case CiId.SortedSetRemove:
 		case CiId.DictionaryRemove:
 		case CiId.SortedDictionaryRemove:
 			WriteCall(obj, "erase", args[0]);
@@ -1188,6 +1193,7 @@ public class GenCpp : GenCCpp
 		case CiId.QueueCount:
 		case CiId.StackCount:
 		case CiId.HashSetCount:
+		case CiId.SortedSetCount:
 		case CiId.DictionaryCount:
 		case CiId.SortedDictionaryCount:
 		case CiId.OrderedDictionaryCount:

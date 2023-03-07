@@ -107,6 +107,7 @@ public class GenTs : GenJs
 					Write("Array");
 					break;
 				case CiId.HashSetClass:
+				case CiId.SortedSetClass:
 					Write("Set<");
 					WriteType(klass.GetElementType(), false);
 					WriteChar('>');

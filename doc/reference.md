@@ -30,7 +30,7 @@ Similarly, the outputs in other languages do _not_ rely on anything except
 the standard language. There are two exceptions:
 
 1. If the Ć code uses regular expressions, `List`, `Queue`, `Stack`, `HashSet`,
-   `Dictionary` or `SortedDictionary`, the C output relies
+   `SortedSet`, `Dictionary` or `SortedDictionary`, the C output relies
    on [GLib](https://wiki.gnome.org/Projects/GLib) implementations of these.
 2. `Math.FusedMultiplyAdd` is implemented in Python
    with [pyfma](https://pypi.org/project/pyfma/).
@@ -864,12 +864,13 @@ The `is` operator cannot be used for:
 
 ### Collections
 
-In addition to arrays, Ć has seven built-in collection types:
+In addition to arrays, Ć has eight built-in collection types:
 
 * `List<T>` is a resizable array (`std::vector` in C++, `ArrayList` in Java)
 * `Queue<T>` is a FIFO (first in, first out) collection
 * `Stack<T>` is a LIFO (last in, first out) collection
 * `HashSet<T>` is a collection of unique values
+* `SortedSet<T>` is a collection of unique sorted values
 * `Dictionary<TKey, TValue>` is a dictionary
   (`std::unordered_map` in C++, `HashMap` in Java)
 * `SortedDictionary<TKey, TValue>` is a dictionary sorted by key
@@ -982,6 +983,11 @@ A `HashSet` is a collection of unique values: numbers, strings, or enumerations.
 The `Count` property returns the number of elements in a `HashSet`.
 You can iterate over elements of a `HashSet` with `foreach`, but the iteration
 order is not specified.
+
+#### SortedSet
+
+`SortedSet` is the same as `HashSet`, except that `foreach` iterates
+in the value order.
 
 #### Dictionary
 

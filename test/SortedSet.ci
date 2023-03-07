@@ -1,0 +1,45 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		SortedSet<int>() s; //FAIL: cl
+		s.Add(42);
+		s.Clear();
+		s.Add(11);
+		s.Add(3);
+		s.Add(2);
+		s.Add(11);
+		s.Remove(2);
+		SortedSet<string()>() ss;
+		ss.Add("foo");
+		string p = "bar";
+		ss.Add(p);
+		int i = 0;
+		foreach (int x in s) {
+			const int[] expected = { 3, 11 };
+			if (x != expected[i++])
+				return false;
+		}
+		i = 0;
+		foreach (string x in ss) {
+			// FIXME: c
+			// const string[] expecteds = { "bar", "foo" };
+			// if (x != expecteds[i++])
+			// 	return false;
+			switch (i) {
+			case 0:
+				if (x != "bar")
+					return false;
+				break;
+			case 1:
+				if (x != "foo")
+					return false;
+				break;
+			default:
+				return false;
+			}
+			i++;
+		}
+		return true;
+	}
+}

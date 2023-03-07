@@ -316,6 +316,9 @@ public class GenJava : GenTyped
 			case CiId.HashSetClass:
 				WriteCollectionType("HashSet", klass.GetElementType());
 				break;
+			case CiId.SortedSetClass:
+				WriteCollectionType("TreeSet", klass.GetElementType());
+				break;
 			case CiId.DictionaryClass:
 				Include("java.util.HashMap");
 				WriteDictType("HashMap", klass);
@@ -481,6 +484,7 @@ public class GenJava : GenTyped
 		case CiId.QueueCount:
 		case CiId.StackCount:
 		case CiId.HashSetCount:
+		case CiId.SortedSetCount:
 		case CiId.DictionaryCount:
 		case CiId.SortedDictionaryCount:
 		case CiId.OrderedDictionaryCount:
