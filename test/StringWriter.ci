@@ -12,6 +12,6 @@ public static class Test
 		w.Write(l);
 		tw.Write('c');
 		w.WriteChar('c');
-		return w.ToString() == "HelloWorld42599c";
+		return w.ToString() == "HelloWorld42599c"; //FAIL: cpp - should work with C++20
 	}
 }
