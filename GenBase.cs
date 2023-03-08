@@ -233,25 +233,6 @@ public abstract class GenBase : GenBaseBase
 			}
 		}
 	}
-
-	protected void WriteParameters(CiMethod method, bool first, bool defaultArguments)
-	{
-		for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
-			if (!first)
-				Write(", ");
-			first = false;
-			WriteParameter(param);
-			if (defaultArguments)
-				WriteVarInit(param);
-		}
-		WriteChar(')');
-	}
-
-	protected void WriteParameters(CiMethod method, bool defaultArguments)
-	{
-		WriteChar('(');
-		WriteParameters(method, true, defaultArguments);
-	}
 }
 
 }

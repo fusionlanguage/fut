@@ -2638,7 +2638,7 @@ public class GenC : GenCCpp
 			Write("const ");
 		WriteName(method.Parent);
 		Write(" *self");
-		WriteParameters(method, false, false);
+		WriteRemainingParameters(method, false, false);
 	}
 
 	void WriteSignature(CiMethod method)

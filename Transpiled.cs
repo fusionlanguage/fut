@@ -7554,11 +7554,6 @@ namespace Foxoft.Ci
 				statement.AcceptStatement(this);
 		}
 
-		protected virtual void WriteParameter(CiVar param)
-		{
-			WriteTypeAndName(param);
-		}
-
 		protected virtual bool HasInitCode(CiNamedValue def) => GetAggregateInitializer(def) != null;
 
 		protected virtual bool NeedsConstructor(CiClass klass)
@@ -7588,6 +7583,30 @@ namespace Foxoft.Ci
 				this.CurrentMethod = null;
 			}
 			this.CurrentTemporaries.Clear();
+		}
+
+		protected virtual void WriteParameter(CiVar param)
+		{
+			WriteTypeAndName(param);
+		}
+
+		protected void WriteRemainingParameters(CiMethod method, bool first, bool defaultArguments)
+		{
+			for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+				if (!first)
+					Write(", ");
+				first = false;
+				WriteParameter(param);
+				if (defaultArguments)
+					WriteVarInit(param);
+			}
+			WriteChar(')');
+		}
+
+		protected void WriteParameters(CiMethod method, bool defaultArguments)
+		{
+			WriteChar('(');
+			WriteRemainingParameters(method, true, defaultArguments);
 		}
 
 		protected void WriteBody(CiMethod method)

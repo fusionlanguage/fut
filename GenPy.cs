@@ -1188,10 +1188,12 @@ public class GenPy : GenPySwift
 			WriteLine("@staticmethod");
 		Write("def ");
 		WriteName(method);
-		WriteChar('(');
-		if (method.CallType != CiCallType.Static)
-			Write("self");
-		WriteParameters(method, method.CallType == CiCallType.Static, true);
+		if (method.CallType == CiCallType.Static)
+			WriteParameters(method, true);
+		else {
+			Write("(self");
+			WriteRemainingParameters(method, false, true);
+		}
 		this.CurrentMethod = method;
 		OpenChild();
 		WritePyDoc(method);
