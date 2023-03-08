@@ -4261,38 +4261,178 @@ namespace Foxoft.Ci
 			return true;
 		}
 
-		void VisitAggregateInitializer(CiAggregateInitializer expr)
+		CiExpr VisitInterpolatedString(CiInterpolatedString expr)
 		{
-			List<CiExpr> items = expr.Items;
-			for (int i = 0; i < items.Count; i++)
-				items[i] = Resolve(items[i]);
+			int partsCount = 0;
+			string s = "";
+			for (int partsIndex = 0; partsIndex < expr.Parts.Count; partsIndex++) {
+				CiInterpolatedPart part = expr.Parts[partsIndex];
+				s += part.Prefix;
+				CiExpr arg = Resolve(part.Argument);
+				Coerce(arg, this.Program.System.PrintableType);
+				switch (arg.Type) {
+				case CiIntegerType _:
+					switch (part.Format) {
+					case ' ':
+						if (arg is CiLiteralLong literalLong && part.WidthExpr == null) {
+							s += $"{literalLong.Value}";
+							continue;
+						}
+						break;
+					case 'D':
+					case 'd':
+					case 'X':
+					case 'x':
+						break;
+					default:
+						ReportError(arg, "Invalid format string");
+						break;
+					}
+					break;
+				case CiFloatingType _:
+					switch (part.Format) {
+					case ' ':
+					case 'F':
+					case 'f':
+					case 'E':
+					case 'e':
+						break;
+					default:
+						ReportError(arg, "Invalid format string");
+						break;
+					}
+					break;
+				default:
+					if (part.Format != ' ')
+						ReportError(arg, "Invalid format string");
+					else if (arg is CiLiteralString literalString && part.WidthExpr == null) {
+						s += literalString.Value;
+						continue;
+					}
+					break;
+				}
+				CiInterpolatedPart targetPart = expr.Parts[partsCount++];
+				targetPart.Prefix = s;
+				targetPart.Argument = arg;
+				targetPart.WidthExpr = part.WidthExpr;
+				targetPart.Width = part.WidthExpr != null ? FoldConstInt(part.WidthExpr) : 0;
+				targetPart.Format = part.Format;
+				targetPart.Precision = part.Precision;
+				s = "";
+			}
+			s += expr.Suffix;
+			if (partsCount == 0)
+				return this.Program.System.NewLiteralString(s, expr.Line);
+			expr.Type = this.Program.System.StringStorageType;
+			expr.Parts.RemoveRange(partsCount, expr.Parts.Count - partsCount);
+			expr.Suffix = s;
+			return expr;
 		}
 
-		CiExpr ResolveNew(CiPrefixExpr expr)
+		CiExpr Lookup(CiSymbolReference expr, CiScope scope)
 		{
-			if (expr.Type != null)
-				return expr;
-			if (expr.Inner is CiBinaryExpr binaryNew && binaryNew.Op == CiToken.LeftBrace) {
-				if (!(ToType(binaryNew.Left, true) is CiClassType klass) || klass is CiReadWriteClassType)
-					return PoisonError(expr, "Invalid argument to new");
-				CiAggregateInitializer init = (CiAggregateInitializer) binaryNew.Right;
-				ResolveObjectLiteral(klass, init);
-				expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = klass.Class };
-				expr.Inner = init;
-				return expr;
+			if (expr.Symbol == null) {
+				expr.Symbol = scope.TryLookup(expr.Name, expr.Left == null);
+				if (expr.Symbol == null)
+					return PoisonError(expr, $"{expr.Name} not found");
+				expr.Type = expr.Symbol.Type;
 			}
-			switch (ToType(expr.Inner, true)) {
-			case CiArrayStorageType array:
-				expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = this.Program.System.ArrayPtrClass, TypeArg0 = array.GetElementType() };
-				expr.Inner = array.LengthExpr;
-				return expr;
-			case CiStorageType klass:
-				expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = klass.Class };
-				expr.Inner = null;
-				return expr;
-			default:
-				return PoisonError(expr, "Invalid argument to new");
+			if (!(scope is CiEnum) && expr.Symbol is CiConst konst) {
+				ResolveConst(konst);
+				if (konst.Value is CiLiteral || konst.Value is CiSymbolReference)
+					return konst.Value;
 			}
+			return expr;
+		}
+
+		CiExpr VisitSymbolReference(CiSymbolReference expr)
+		{
+			if (expr.Left == null) {
+				CiExpr resolved = Lookup(expr, this.CurrentScope);
+				if (expr.Symbol is CiMember nearMember) {
+					if (nearMember.Visibility == CiVisibility.Private && nearMember.Parent is CiClass memberClass && memberClass != GetCurrentContainer())
+						ReportError(expr, $"Cannot access private member {expr.Name}");
+					if (!nearMember.IsStatic() && (this.CurrentMethod == null || this.CurrentMethod.IsStatic()))
+						ReportError(expr, $"Cannot use instance member {expr.Name} from static context");
+				}
+				if (resolved is CiSymbolReference symbol && symbol.Symbol is CiVar v) {
+					if (v.Parent is CiFor loop)
+						loop.IsIteratorUsed = true;
+					else if (this.CurrentPureArguments.ContainsKey(v))
+						return this.CurrentPureArguments[v];
+				}
+				return resolved;
+			}
+			CiExpr left = Resolve(expr.Left);
+			if (left == this.Poison)
+				return left;
+			CiScope scope;
+			bool isBase = left is CiSymbolReference baseSymbol && baseSymbol.Symbol.Id == CiId.BasePtr;
+			if (isBase) {
+				if (this.CurrentMethod == null || !(this.CurrentMethod.Parent.Parent is CiClass baseClass))
+					return PoisonError(expr, "No base class");
+				scope = baseClass;
+			}
+			else if (left is CiSymbolReference leftSymbol && leftSymbol.Symbol is CiScope obj)
+				scope = obj;
+			else {
+				scope = left.Type;
+				if (scope is CiClassType klass)
+					scope = klass.Class;
+			}
+			CiExpr result = Lookup(expr, scope);
+			if (result != expr)
+				return result;
+			if (expr.Symbol is CiMember member) {
+				switch (member.Visibility) {
+				case CiVisibility.Private:
+					if (member.Parent != this.CurrentMethod.Parent || this.CurrentMethod.Parent != scope)
+						ReportError(expr, $"Cannot access private member {expr.Name}");
+					break;
+				case CiVisibility.Protected:
+					if (isBase)
+						break;
+					CiClass currentClass = (CiClass) this.CurrentMethod.Parent;
+					CiClass scopeClass = (CiClass) scope;
+					if (!currentClass.IsSameOrBaseOf(scopeClass))
+						ReportError(expr, $"Cannot access protected member {expr.Name}");
+					break;
+				case CiVisibility.NumericElementType:
+					if (left.Type is CiClassType klass && !(klass.GetElementType() is CiNumericType))
+						ReportError(expr, "Method restricted to collections of numbers");
+					break;
+				case CiVisibility.FinalValueType:
+					CiClassType dictionary = (CiClassType) left.Type;
+					if (!dictionary.GetValueType().IsFinal())
+						ReportError(expr, "Method restricted to dictionaries with storage values");
+					break;
+				default:
+					switch (expr.Symbol.Id) {
+					case CiId.ArrayLength:
+						CiArrayStorageType arrayStorage = (CiArrayStorageType) left.Type;
+						return ToLiteralLong(expr, arrayStorage.Length);
+					case CiId.StringLength:
+						if (left is CiLiteralString leftLiteral) {
+							int length = leftLiteral.GetAsciiLength();
+							if (length >= 0)
+								return ToLiteralLong(expr, length);
+						}
+						break;
+					default:
+						break;
+					}
+					break;
+				}
+				if (!(member is CiMethodGroup)) {
+					if (left is CiSymbolReference leftContainer && leftContainer.Symbol is CiContainerType) {
+						if (!member.IsStatic())
+							ReportError(expr, $"Cannot use instance member {expr.Name} without an object");
+					}
+					else if (member.IsStatic())
+						ReportError(expr, $"{expr.Name} is static");
+				}
+			}
+			return new CiSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
 		}
 
 		static CiRangeType Union(CiRangeType left, CiRangeType right)
@@ -4498,57 +4638,6 @@ namespace Foxoft.Ci
 
 		CiLiteralDouble ToLiteralDouble(CiExpr expr, double value) => new CiLiteralDouble { Line = expr.Line, Type = this.Program.System.DoubleType, Value = value };
 
-		void ResolveObjectLiteral(CiClassType klass, CiAggregateInitializer init)
-		{
-			foreach (CiExpr item in init.Items) {
-				CiBinaryExpr field = (CiBinaryExpr) item;
-				Debug.Assert(field.Op == CiToken.Assign);
-				CiSymbolReference symbol = (CiSymbolReference) field.Left;
-				Lookup(symbol, klass.Class);
-				if (symbol.Symbol is CiField) {
-					field.Right = Resolve(field.Right);
-					Coerce(field.Right, symbol.Type);
-				}
-				else
-					ReportError(field, "Expected a field");
-			}
-		}
-
-		CiExpr ResolveEquality(CiBinaryExpr expr, CiExpr left, CiExpr right)
-		{
-			if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {
-				if (leftRange.Min == leftRange.Max && leftRange.Min == rightRange.Min && leftRange.Min == rightRange.Max)
-					return ToLiteralBool(expr, expr.Op == CiToken.Equal);
-				if (leftRange.Max < rightRange.Min || leftRange.Min > rightRange.Max)
-					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual);
-			}
-			else if (left.Type == right.Type) {
-				switch (left) {
-				case CiLiteralLong leftLong when right is CiLiteralLong rightLong:
-					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ leftLong.Value == rightLong.Value);
-				case CiLiteralDouble leftDouble when right is CiLiteralDouble rightDouble:
-					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ leftDouble.Value == rightDouble.Value);
-				case CiLiteralString leftString when right is CiLiteralString rightString:
-					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ leftString.Value == rightString.Value);
-				case CiLiteralNull _:
-					return ToLiteralBool(expr, expr.Op == CiToken.Equal);
-				case CiLiteralFalse _:
-					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ right is CiLiteralFalse);
-				case CiLiteralTrue _:
-					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ right is CiLiteralTrue);
-				default:
-					break;
-				}
-				if (left.IsConstEnum() && right.IsConstEnum())
-					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ left.IntValue() == right.IntValue());
-			}
-			if (!left.Type.IsAssignableFrom(right.Type) && !right.Type.IsAssignableFrom(left.Type))
-				return PoisonError(expr, $"Cannot compare {left.Type} with {right.Type}");
-			TakePtr(left);
-			TakePtr(right);
-			return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = this.Program.System.BoolType };
-		}
-
 		void CheckLValue(CiExpr expr)
 		{
 			switch (expr) {
@@ -4643,58 +4732,11 @@ namespace Foxoft.Ci
 			return result;
 		}
 
-		CiExpr Lookup(CiSymbolReference expr, CiScope scope)
-		{
-			if (expr.Symbol == null) {
-				expr.Symbol = scope.TryLookup(expr.Name, expr.Left == null);
-				if (expr.Symbol == null)
-					return PoisonError(expr, $"{expr.Name} not found");
-				expr.Type = expr.Symbol.Type;
-			}
-			if (!(scope is CiEnum) && expr.Symbol is CiConst konst) {
-				ResolveConst(konst);
-				if (konst.Value is CiLiteral || konst.Value is CiSymbolReference)
-					return konst.Value;
-			}
-			return expr;
-		}
-
 		void CheckComparison(CiExpr left, CiExpr right)
 		{
 			CiType doubleType = this.Program.System.DoubleType;
 			Coerce(left, doubleType);
 			Coerce(right, doubleType);
-		}
-
-		CiType EvalType(CiClassType generic, CiType type)
-		{
-			if (type.Id == CiId.TypeParam0)
-				return generic.TypeArg0;
-			if (type.Id == CiId.TypeParam0NotFinal)
-				return generic.TypeArg0.IsFinal() ? null : generic.TypeArg0;
-			if (type is CiClassType collection && collection.Class.TypeParameterCount == 1 && collection.TypeArg0.Id == CiId.TypeParam0) {
-				CiClassType result = type is CiReadWriteClassType ? new CiReadWriteClassType() : new CiClassType();
-				result.Class = collection.Class;
-				result.TypeArg0 = generic.TypeArg0;
-				return result;
-			}
-			return type;
-		}
-
-		bool CanCall(CiExpr obj, CiMethod method, List<CiExpr> arguments)
-		{
-			CiVar param = method.Parameters.FirstParameter();
-			foreach (CiExpr arg in arguments) {
-				if (param == null)
-					return false;
-				CiType type = param.Type;
-				if (obj != null && obj.Type is CiClassType generic)
-					type = EvalType(generic, type);
-				if (!type.IsAssignableFrom(arg.Type))
-					return false;
-				param = param.NextParameter();
-			}
-			return param == null || param.Value != null;
 		}
 
 		void OpenScope(CiScope scope)
@@ -4708,162 +4750,31 @@ namespace Foxoft.Ci
 			this.CurrentScope = this.CurrentScope.Parent;
 		}
 
-		CiExpr VisitInterpolatedString(CiInterpolatedString expr)
+		CiExpr ResolveNew(CiPrefixExpr expr)
 		{
-			int partsCount = 0;
-			string s = "";
-			for (int partsIndex = 0; partsIndex < expr.Parts.Count; partsIndex++) {
-				CiInterpolatedPart part = expr.Parts[partsIndex];
-				s += part.Prefix;
-				CiExpr arg = Resolve(part.Argument);
-				Coerce(arg, this.Program.System.PrintableType);
-				switch (arg.Type) {
-				case CiIntegerType _:
-					switch (part.Format) {
-					case ' ':
-						if (arg is CiLiteralLong literalLong && part.WidthExpr == null) {
-							s += $"{literalLong.Value}";
-							continue;
-						}
-						break;
-					case 'D':
-					case 'd':
-					case 'X':
-					case 'x':
-						break;
-					default:
-						ReportError(arg, "Invalid format string");
-						break;
-					}
-					break;
-				case CiFloatingType _:
-					switch (part.Format) {
-					case ' ':
-					case 'F':
-					case 'f':
-					case 'E':
-					case 'e':
-						break;
-					default:
-						ReportError(arg, "Invalid format string");
-						break;
-					}
-					break;
-				default:
-					if (part.Format != ' ')
-						ReportError(arg, "Invalid format string");
-					else if (arg is CiLiteralString literalString && part.WidthExpr == null) {
-						s += literalString.Value;
-						continue;
-					}
-					break;
-				}
-				CiInterpolatedPart targetPart = expr.Parts[partsCount++];
-				targetPart.Prefix = s;
-				targetPart.Argument = arg;
-				targetPart.WidthExpr = part.WidthExpr;
-				targetPart.Width = part.WidthExpr != null ? FoldConstInt(part.WidthExpr) : 0;
-				targetPart.Format = part.Format;
-				targetPart.Precision = part.Precision;
-				s = "";
+			if (expr.Type != null)
+				return expr;
+			if (expr.Inner is CiBinaryExpr binaryNew && binaryNew.Op == CiToken.LeftBrace) {
+				if (!(ToType(binaryNew.Left, true) is CiClassType klass) || klass is CiReadWriteClassType)
+					return PoisonError(expr, "Invalid argument to new");
+				CiAggregateInitializer init = (CiAggregateInitializer) binaryNew.Right;
+				ResolveObjectLiteral(klass, init);
+				expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = klass.Class };
+				expr.Inner = init;
+				return expr;
 			}
-			s += expr.Suffix;
-			if (partsCount == 0)
-				return this.Program.System.NewLiteralString(s, expr.Line);
-			expr.Type = this.Program.System.StringStorageType;
-			expr.Parts.RemoveRange(partsCount, expr.Parts.Count - partsCount);
-			expr.Suffix = s;
-			return expr;
-		}
-
-		CiExpr VisitSymbolReference(CiSymbolReference expr)
-		{
-			if (expr.Left == null) {
-				CiExpr resolved = Lookup(expr, this.CurrentScope);
-				if (expr.Symbol is CiMember nearMember) {
-					if (nearMember.Visibility == CiVisibility.Private && nearMember.Parent is CiClass memberClass && memberClass != GetCurrentContainer())
-						ReportError(expr, $"Cannot access private member {expr.Name}");
-					if (!nearMember.IsStatic() && (this.CurrentMethod == null || this.CurrentMethod.IsStatic()))
-						ReportError(expr, $"Cannot use instance member {expr.Name} from static context");
-				}
-				if (resolved is CiSymbolReference symbol && symbol.Symbol is CiVar v) {
-					if (v.Parent is CiFor loop)
-						loop.IsIteratorUsed = true;
-					else if (this.CurrentPureArguments.ContainsKey(v))
-						return this.CurrentPureArguments[v];
-				}
-				return resolved;
+			switch (ToType(expr.Inner, true)) {
+			case CiArrayStorageType array:
+				expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = this.Program.System.ArrayPtrClass, TypeArg0 = array.GetElementType() };
+				expr.Inner = array.LengthExpr;
+				return expr;
+			case CiStorageType klass:
+				expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = klass.Class };
+				expr.Inner = null;
+				return expr;
+			default:
+				return PoisonError(expr, "Invalid argument to new");
 			}
-			CiExpr left = Resolve(expr.Left);
-			if (left == this.Poison)
-				return left;
-			CiScope scope;
-			bool isBase = left is CiSymbolReference baseSymbol && baseSymbol.Symbol.Id == CiId.BasePtr;
-			if (isBase) {
-				if (this.CurrentMethod == null || !(this.CurrentMethod.Parent.Parent is CiClass baseClass))
-					return PoisonError(expr, "No base class");
-				scope = baseClass;
-			}
-			else if (left is CiSymbolReference leftSymbol && leftSymbol.Symbol is CiScope obj)
-				scope = obj;
-			else {
-				scope = left.Type;
-				if (scope is CiClassType klass)
-					scope = klass.Class;
-			}
-			CiExpr result = Lookup(expr, scope);
-			if (result != expr)
-				return result;
-			if (expr.Symbol is CiMember member) {
-				switch (member.Visibility) {
-				case CiVisibility.Private:
-					if (member.Parent != this.CurrentMethod.Parent || this.CurrentMethod.Parent != scope)
-						ReportError(expr, $"Cannot access private member {expr.Name}");
-					break;
-				case CiVisibility.Protected:
-					if (isBase)
-						break;
-					CiClass currentClass = (CiClass) this.CurrentMethod.Parent;
-					CiClass scopeClass = (CiClass) scope;
-					if (!currentClass.IsSameOrBaseOf(scopeClass))
-						ReportError(expr, $"Cannot access protected member {expr.Name}");
-					break;
-				case CiVisibility.NumericElementType:
-					if (left.Type is CiClassType klass && !(klass.GetElementType() is CiNumericType))
-						ReportError(expr, "Method restricted to collections of numbers");
-					break;
-				case CiVisibility.FinalValueType:
-					CiClassType dictionary = (CiClassType) left.Type;
-					if (!dictionary.GetValueType().IsFinal())
-						ReportError(expr, "Method restricted to dictionaries with storage values");
-					break;
-				default:
-					switch (expr.Symbol.Id) {
-					case CiId.ArrayLength:
-						CiArrayStorageType arrayStorage = (CiArrayStorageType) left.Type;
-						return ToLiteralLong(expr, arrayStorage.Length);
-					case CiId.StringLength:
-						if (left is CiLiteralString leftLiteral) {
-							int length = leftLiteral.GetAsciiLength();
-							if (length >= 0)
-								return ToLiteralLong(expr, length);
-						}
-						break;
-					default:
-						break;
-					}
-					break;
-				}
-				if (!(member is CiMethodGroup)) {
-					if (left is CiSymbolReference leftContainer && leftContainer.Symbol is CiContainerType) {
-						if (!member.IsStatic())
-							ReportError(expr, $"Cannot use instance member {expr.Name} without an object");
-					}
-					else if (member.IsStatic())
-						ReportError(expr, $"{expr.Name} is static");
-				}
-			}
-			return new CiSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
 		}
 
 		protected virtual int GetResourceLength(string name, CiPrefixExpr expr) => 0;
@@ -4943,6 +4854,41 @@ namespace Foxoft.Ci
 			default:
 				return PoisonError(expr, $"Unexpected {CiLexer.TokenToString(expr.Op)}");
 			}
+		}
+
+		CiExpr ResolveEquality(CiBinaryExpr expr, CiExpr left, CiExpr right)
+		{
+			if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {
+				if (leftRange.Min == leftRange.Max && leftRange.Min == rightRange.Min && leftRange.Min == rightRange.Max)
+					return ToLiteralBool(expr, expr.Op == CiToken.Equal);
+				if (leftRange.Max < rightRange.Min || leftRange.Min > rightRange.Max)
+					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual);
+			}
+			else if (left.Type == right.Type) {
+				switch (left) {
+				case CiLiteralLong leftLong when right is CiLiteralLong rightLong:
+					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ leftLong.Value == rightLong.Value);
+				case CiLiteralDouble leftDouble when right is CiLiteralDouble rightDouble:
+					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ leftDouble.Value == rightDouble.Value);
+				case CiLiteralString leftString when right is CiLiteralString rightString:
+					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ leftString.Value == rightString.Value);
+				case CiLiteralNull _:
+					return ToLiteralBool(expr, expr.Op == CiToken.Equal);
+				case CiLiteralFalse _:
+					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ right is CiLiteralFalse);
+				case CiLiteralTrue _:
+					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ right is CiLiteralTrue);
+				default:
+					break;
+				}
+				if (left.IsConstEnum() && right.IsConstEnum())
+					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ left.IntValue() == right.IntValue());
+			}
+			if (!left.Type.IsAssignableFrom(right.Type) && !right.Type.IsAssignableFrom(left.Type))
+				return PoisonError(expr, $"Cannot compare {left.Type} with {right.Type}");
+			TakePtr(left);
+			TakePtr(right);
+			return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = this.Program.System.BoolType };
 		}
 
 		CiExpr ResolveIs(CiBinaryExpr expr, CiExpr left, CiExpr right)
@@ -5300,6 +5246,37 @@ namespace Foxoft.Ci
 			return new CiSelectExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
 		}
 
+		CiType EvalType(CiClassType generic, CiType type)
+		{
+			if (type.Id == CiId.TypeParam0)
+				return generic.TypeArg0;
+			if (type.Id == CiId.TypeParam0NotFinal)
+				return generic.TypeArg0.IsFinal() ? null : generic.TypeArg0;
+			if (type is CiClassType collection && collection.Class.TypeParameterCount == 1 && collection.TypeArg0.Id == CiId.TypeParam0) {
+				CiClassType result = type is CiReadWriteClassType ? new CiReadWriteClassType() : new CiClassType();
+				result.Class = collection.Class;
+				result.TypeArg0 = generic.TypeArg0;
+				return result;
+			}
+			return type;
+		}
+
+		bool CanCall(CiExpr obj, CiMethod method, List<CiExpr> arguments)
+		{
+			CiVar param = method.Parameters.FirstParameter();
+			foreach (CiExpr arg in arguments) {
+				if (param == null)
+					return false;
+				CiType type = param.Type;
+				if (obj != null && obj.Type is CiClassType generic)
+					type = EvalType(generic, type);
+				if (!type.IsAssignableFrom(arg.Type))
+					return false;
+				param = param.NextParameter();
+			}
+			return param == null || param.Value != null;
+		}
+
 		CiExpr ResolveCallWithArguments(CiCallExpr expr, List<CiExpr> arguments)
 		{
 			if (!(Resolve(expr.Method) is CiSymbolReference symbol))
@@ -5399,6 +5376,22 @@ namespace Foxoft.Ci
 			}
 		}
 
+		void ResolveObjectLiteral(CiClassType klass, CiAggregateInitializer init)
+		{
+			foreach (CiExpr item in init.Items) {
+				CiBinaryExpr field = (CiBinaryExpr) item;
+				Debug.Assert(field.Op == CiToken.Assign);
+				CiSymbolReference symbol = (CiSymbolReference) field.Left;
+				Lookup(symbol, klass.Class);
+				if (symbol.Symbol is CiField) {
+					field.Right = Resolve(field.Right);
+					Coerce(field.Right, symbol.Type);
+				}
+				else
+					ReportError(field, "Expected a field");
+			}
+		}
+
 		void VisitVar(CiVar expr)
 		{
 			CiType type = ResolveType(expr);
@@ -5424,7 +5417,9 @@ namespace Foxoft.Ci
 		{
 			switch (expr) {
 			case CiAggregateInitializer aggregate:
-				VisitAggregateInitializer(aggregate);
+				List<CiExpr> items = aggregate.Items;
+				for (int i = 0; i < items.Count; i++)
+					items[i] = Resolve(items[i]);
 				return expr;
 			case CiLiteral _:
 				return expr;
