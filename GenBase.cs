@@ -138,77 +138,6 @@ public abstract class GenBase : GenBaseBase
 		}
 	}
 
-	protected bool WriteJavaMatchProperty(CiSymbolReference expr, CiPriority parent)
-	{
-		switch (expr.Symbol.Id) {
-		case CiId.MatchStart:
-			WritePostfix(expr.Left, ".start()");
-			return true;
-		case CiId.MatchEnd:
-			WritePostfix(expr.Left, ".end()");
-			return true;
-		case CiId.MatchLength:
-			if (parent > CiPriority.Add)
-				WriteChar('(');
-			WritePostfix(expr.Left, ".end() - ");
-			WritePostfix(expr.Left, ".start()"); // FIXME: side effect
-			if (parent > CiPriority.Add)
-				WriteChar(')');
-			return true;
-		case CiId.MatchValue:
-			WritePostfix(expr.Left, ".group()");
-			return true;
-		default:
-			return false;
-		}
-	}
-
-	protected virtual void WriteSelectValues(CiType type, CiSelectExpr expr)
-	{
-		WriteCoerced(type, expr.OnTrue, CiPriority.Select);
-		Write(" : ");
-		WriteCoerced(type, expr.OnFalse, CiPriority.Select);
-	}
-
-	protected virtual void WriteCoercedSelect(CiType type, CiSelectExpr expr, CiPriority parent)
-	{
-		if (parent > CiPriority.Select)
-			WriteChar('(');
-		expr.Cond.Accept(this, CiPriority.Select);
-		Write(" ? ");
-		WriteSelectValues(type, expr);
-		if (parent > CiPriority.Select)
-			WriteChar(')');
-	}
-
-	protected void WriteCoerced(CiType type, CiExpr expr, CiPriority parent)
-	{
-		if (expr is CiSelectExpr select)
-			WriteCoercedSelect(type, select, parent);
-		else
-			WriteCoercedInternal(type, expr, parent);
-	}
-
-	protected void WriteArgs(CiMethod method, List<CiExpr> args)
-	{
-		CiVar param = method.Parameters.FirstParameter();
-		bool first = true;
-		foreach (CiExpr arg in args) {
-			if (!first)
-				Write(", ");
-			first = false;
-			WriteStronglyCoerced(param.Type, arg);
-			param = param.NextParameter();
-		}
-	}
-
-	protected void WriteArgsInParentheses(CiMethod method, List<CiExpr> args)
-	{
-		WriteChar('(');
-		WriteArgs(method, args);
-		WriteChar(')');
-	}
-
 	protected void WriteCall(string function, CiExpr arg0, CiExpr arg1 = null, CiExpr arg2 = null)
 	{
 		Write(function);
@@ -243,77 +172,6 @@ public abstract class GenBase : GenBaseBase
 		WriteMemberOp(obj, null);
 		WriteCall(method, arg0, arg1);
 	}
-
-	protected void WriteObjectLiteral(CiAggregateInitializer init, string separator)
-	{
-		string prefix = " { ";
-		foreach (CiBinaryExpr field in init.Items) {
-			Write(prefix);
-			WriteName(((CiSymbolReference) field.Left).Symbol);
-			Write(separator);
-			WriteCoerced(field.Left.Type, field.Right, CiPriority.Argument);
-			prefix = ", ";
-		}
-		Write(" }");
-	}
-
-	protected virtual void WriteCoercedExpr(CiType type, CiExpr expr)
-	{
-		WriteCoerced(type, expr, CiPriority.Argument);
-	}
-
-	protected virtual void WriteVarInit(CiNamedValue def)
-	{
-		if (def.IsAssignableStorage()) {
-		}
-		else if (def.Type is CiArrayStorageType array)
-			WriteArrayStorageInit(array, def.Value);
-		else if (def.Value != null && !(def.Value is CiAggregateInitializer)) {
-			Write(" = ");
-			WriteCoercedExpr(def.Type, def.Value);
-		}
-		else if (def.Type.IsFinal() && !(def.Parent is CiParameters))
-			WriteStorageInit(def);
-	}
-
-	protected virtual void WriteVar(CiNamedValue def)
-	{
-		WriteTypeAndName(def);
-		WriteVarInit(def);
-	}
-
-	public override void VisitVar(CiVar expr) => WriteVar(expr);
-
-	static CiAggregateInitializer GetAggregateInitializer(CiNamedValue def)
-	{
-		CiExpr expr = def.Value;
-		if (def.Value is CiPrefixExpr unary)
-			expr = unary.Inner;
-		return expr as CiAggregateInitializer;
-	}
-
-	void WriteAggregateInitField(CiExpr obj, CiBinaryExpr field)
-	{
-		CiSymbolReference fieldRef = (CiSymbolReference) field.Left;
-		WriteMemberOp(obj, fieldRef);
-		WriteName(fieldRef.Symbol);
-		Write(" = ");
-		WriteCoerced(fieldRef.Type, field.Right, CiPriority.Argument);
-		EndStatement();
-	}
-
-	protected virtual void WriteInitCode(CiNamedValue def)
-	{
-		CiAggregateInitializer init = GetAggregateInitializer(def);
-		if (init != null) {
-			foreach (CiBinaryExpr field in init.Items) {
-				WriteLocalName(def, CiPriority.Primary);
-				WriteAggregateInitField(def, field);
-			}
-		}
-	}
-
-	protected abstract void WriteResource(string name, int length);
 
 	public override void VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
 	{
@@ -374,41 +232,6 @@ public abstract class GenBase : GenBaseBase
 		}
 	}
 
-	protected void WriteBinaryExpr2(CiBinaryExpr expr, CiPriority parent, CiPriority child, string op)
-	{
-		WriteBinaryExpr(expr, parent > child, child, op, child);
-	}
-
-	protected virtual void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
-	{
-		WriteBinaryExpr2(expr, parent, CiPriority.Equality, GetEqOp(not));
-	}
-
-	protected virtual void WriteAnd(CiBinaryExpr expr, CiPriority parent)
-	{
-		WriteBinaryExpr(expr, parent > CiPriority.CondAnd && parent != CiPriority.And, CiPriority.And, " & ", CiPriority.And);
-	}
-
-	protected virtual void WriteAssignRight(CiBinaryExpr expr) => WriteCoerced(expr.Left.Type, expr.Right, CiPriority.Argument);
-
-	protected virtual void WriteAssign(CiBinaryExpr expr, CiPriority parent)
-	{
-		if (parent > CiPriority.Assign)
-			WriteChar('(');
-		expr.Left.Accept(this, CiPriority.Assign);
-		Write(" = ");
-		WriteAssignRight(expr);
-		if (parent > CiPriority.Assign)
-			WriteChar(')');
-	}
-
-	protected void WriteDictionaryAdd(CiExpr obj, List<CiExpr> args)
-	{
-		WriteIndexing(obj, args[0]);
-		Write(" = ");
-		WriteNewStorage(((CiClassType) obj.Type).GetValueType());
-	}
-
 	protected bool WriteRegexOptions(List<CiExpr> args, string prefix, string separator, string suffix, string i, string m, string s)
 	{
 		CiExpr expr = args[args.Count - 1];
@@ -435,19 +258,6 @@ public abstract class GenBase : GenBaseBase
 	}
 
 	protected abstract void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent);
-
-	protected void WriteIndexing(CiExpr collection, CiExpr index)
-	{
-		collection.Accept(this, CiPriority.Primary);
-		WriteChar('[');
-		index.Accept(this, CiPriority.Argument);
-		WriteChar(']');
-	}
-
-	protected virtual void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
-	{
-		WriteIndexing(expr.Left, expr.Right);
-	}
 
 	protected virtual string GetIsOperator() => " is ";
 
@@ -536,7 +346,7 @@ public abstract class GenBase : GenBaseBase
 			if (expr.Left.Type is CiStringType)
 				WriteCharAt(expr);
 			else
-				WriteIndexing(expr, parent);
+				WriteIndexingExpr(expr, parent);
 			break;
 
 		case CiToken.Is:
@@ -561,11 +371,6 @@ public abstract class GenBase : GenBaseBase
 		default:
 			throw new ArgumentException(expr.Op.ToString());
 		}
-	}
-
-	public override void VisitSelectExpr(CiSelectExpr expr, CiPriority parent)
-	{
-		WriteCoercedSelect(expr.Type, expr, parent);
 	}
 
 	public override void VisitCallExpr(CiCallExpr expr, CiPriority parent)
@@ -595,15 +400,6 @@ public abstract class GenBase : GenBaseBase
 				VisitLiteralLong(id);
 				WriteAggregateInitField(expr, field);
 			}
-		}
-	}
-
-	protected virtual void DefineIsVar(CiBinaryExpr binary)
-	{
-		if (binary.Right is CiVar def) {
-			EnsureChildBlock();
-			WriteVar(def);
-			EndStatement();
 		}
 	}
 
@@ -709,8 +505,6 @@ public abstract class GenBase : GenBaseBase
 		WriteIf(statement);
 	}
 
-	protected virtual void WriteStronglyCoerced(CiType type, CiExpr expr) => WriteCoerced(type, expr, CiPriority.Argument);
-
 	public override void VisitReturn(CiReturn statement)
 	{
 		if (statement.Value == null)
@@ -721,21 +515,6 @@ public abstract class GenBase : GenBaseBase
 			WriteStronglyCoerced(this.CurrentMethod.Type, statement.Value);
 			WriteCharLine(';');
 			CleanupTemporaries();
-		}
-	}
-
-	protected void WriteSwitchWhenVars(CiSwitch statement)
-	{
-		foreach (CiCase kase in statement.Cases) {
-			foreach (CiExpr value in kase.Values) {
-				if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
-					CiVar whenVar = (CiVar) when1.Left;
-					if (whenVar.Name != "_") {
-						WriteVar(whenVar);
-						EndStatement();
-					}
-				}
-			}
 		}
 	}
 
@@ -765,8 +544,6 @@ public abstract class GenBase : GenBaseBase
 		WriteChild(statement.Body);
 	}
 
-	protected virtual void WriteParameter(CiVar param) => WriteTypeAndName(param);
-
 	protected void WriteParameters(CiMethod method, bool first, bool defaultArguments)
 	{
 		for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
@@ -785,34 +562,6 @@ public abstract class GenBase : GenBaseBase
 		WriteChar('(');
 		WriteParameters(method, true, defaultArguments);
 	}
-
-	protected virtual bool HasInitCode(CiNamedValue def) => GetAggregateInitializer(def) != null;
-
-	protected virtual bool NeedsConstructor(CiClass klass)
-	{
-		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiField field && HasInitCode(field))
-				return true;
-		}
-		return klass.Constructor != null;
-	}
-
-	protected virtual void WriteInitField(CiField field) => WriteInitCode(field);
-
-	protected void WriteConstructorBody(CiClass klass)
-	{
-		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiField field)
-				WriteInitField(field);
-		}
-		if (klass.Constructor != null) {
-			this.CurrentMethod = klass.Constructor;
-			WriteStatements(((CiBlock) klass.Constructor.Body).Statements);
-			this.CurrentMethod = null;
-		}
-		this.CurrentTemporaries.Clear();
-	}
-
 }
 
 }

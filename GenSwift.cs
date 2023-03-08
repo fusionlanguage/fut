@@ -810,7 +810,7 @@ public class GenSwift : GenPySwift
 			base.VisitPrefixExpr(expr, parent);
 	}
 
-	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
+	protected override void WriteIndexingExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		OpenIndexing(expr.Left);
 		CiClassType klass = (CiClassType) expr.Left.Type;

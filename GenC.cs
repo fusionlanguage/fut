@@ -2017,7 +2017,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
+	protected override void WriteIndexingExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Left.Type is CiClassType klass) {
 			switch (klass.Class.Id) {
@@ -2045,7 +2045,7 @@ public class GenC : GenCCpp
 				break;
 			}
 		}
-		base.WriteIndexing(expr, parent);
+		base.WriteIndexingExpr(expr, parent);
 	}
 
 	public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)

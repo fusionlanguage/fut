@@ -425,7 +425,7 @@ public class GenCpp : GenCCpp
 		return false;
 	}
 
-	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
+	protected override void WriteIndexingExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		CiClassType klass = (CiClassType) expr.Left.Type;
 		if (parent != CiPriority.Assign) {

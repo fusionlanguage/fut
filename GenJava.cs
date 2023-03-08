@@ -408,7 +408,7 @@ public class GenJava : GenTyped
 	void WriteIndexingInternal(CiBinaryExpr expr)
 	{
 		if (expr.Left.Type.IsArray())
-			base.WriteIndexing(expr, CiPriority.And /* don't care */);
+			base.WriteIndexingExpr(expr, CiPriority.And /* don't care */);
 		else
 			WriteCall(expr.Left, "get", expr.Right);
 	}
@@ -783,7 +783,7 @@ public class GenJava : GenTyped
 		}
 	}
 
-	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
+	protected override void WriteIndexingExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (parent != CiPriority.Assign && IsUnsignedByte(expr.Type)) {
 			if (parent > CiPriority.And)

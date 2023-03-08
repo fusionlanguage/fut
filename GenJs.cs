@@ -842,12 +842,12 @@ public class GenJsNoModule : GenBase
 		}
 	}
 
-	protected override void WriteIndexing(CiBinaryExpr expr, CiPriority parent)
+	protected override void WriteIndexingExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Left.Type is CiClassType dict && dict.Class.Id == CiId.OrderedDictionaryClass)
 			WriteCall(expr.Left, "get", expr.Right);
 		else
-			base.WriteIndexing(expr, parent);
+			base.WriteIndexingExpr(expr, parent);
 	}
 
 	protected override void WriteAssign(CiBinaryExpr expr, CiPriority parent)

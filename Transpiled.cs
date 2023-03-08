@@ -4734,9 +4734,13 @@ namespace Foxoft.Ci
 
 		void CheckComparison(CiExpr left, CiExpr right)
 		{
-			CiType doubleType = this.Program.System.DoubleType;
-			Coerce(left, doubleType);
-			Coerce(right, doubleType);
+			if (left.Type is CiEnum)
+				Coerce(right, left.Type);
+			else {
+				CiType doubleType = this.Program.System.DoubleType;
+				Coerce(left, doubleType);
+				Coerce(right, doubleType);
+			}
 		}
 
 		void OpenScope(CiScope scope)
@@ -6500,6 +6504,11 @@ namespace Foxoft.Ci
 			WriteCharLine('}');
 		}
 
+		protected virtual void EndStatement()
+		{
+			WriteCharLine(';');
+		}
+
 		protected void WriteComma(int i)
 		{
 			if (i > 0) {
@@ -6606,9 +6615,45 @@ namespace Foxoft.Ci
 			Write(s);
 		}
 
+		protected virtual void WriteSelectValues(CiType type, CiSelectExpr expr)
+		{
+			WriteCoerced(type, expr.OnTrue, CiPriority.Select);
+			Write(" : ");
+			WriteCoerced(type, expr.OnFalse, CiPriority.Select);
+		}
+
+		protected virtual void WriteCoercedSelect(CiType type, CiSelectExpr expr, CiPriority parent)
+		{
+			if (parent > CiPriority.Select)
+				WriteChar('(');
+			expr.Cond.Accept(this, CiPriority.Select);
+			Write(" ? ");
+			WriteSelectValues(type, expr);
+			if (parent > CiPriority.Select)
+				WriteChar(')');
+		}
+
 		protected virtual void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 		{
 			expr.Accept(this, parent);
+		}
+
+		protected void WriteCoerced(CiType type, CiExpr expr, CiPriority parent)
+		{
+			if (expr is CiSelectExpr select)
+				WriteCoercedSelect(type, select, parent);
+			else
+				WriteCoercedInternal(type, expr, parent);
+		}
+
+		protected virtual void WriteCoercedExpr(CiType type, CiExpr expr)
+		{
+			WriteCoerced(type, expr, CiPriority.Argument);
+		}
+
+		protected virtual void WriteStronglyCoerced(CiType type, CiExpr expr)
+		{
+			WriteCoerced(type, expr, CiPriority.Argument);
 		}
 
 		protected virtual void WriteCoercedLiteral(CiType type, CiExpr literal)
@@ -6624,13 +6669,23 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected void WriteClampAsMinMax(List<CiExpr> args)
+		protected void WriteArgs(CiMethod method, List<CiExpr> args)
 		{
-			args[0].Accept(this, CiPriority.Argument);
-			Write(", ");
-			args[1].Accept(this, CiPriority.Argument);
-			Write("), ");
-			args[2].Accept(this, CiPriority.Argument);
+			CiVar param = method.Parameters.FirstParameter();
+			bool first = true;
+			foreach (CiExpr arg in args) {
+				if (!first)
+					Write(", ");
+				first = false;
+				WriteStronglyCoerced(param.Type, arg);
+				param = param.NextParameter();
+			}
+		}
+
+		protected void WriteArgsInParentheses(CiMethod method, List<CiExpr> args)
+		{
+			WriteChar('(');
+			WriteArgs(method, args);
 			WriteChar(')');
 		}
 
@@ -6679,6 +6734,85 @@ namespace Foxoft.Ci
 				WriteNewStorage(def.Type);
 		}
 
+		protected virtual void WriteVarInit(CiNamedValue def)
+		{
+			if (def.IsAssignableStorage()) {
+			}
+			else if (def.Type is CiArrayStorageType array)
+				WriteArrayStorageInit(array, def.Value);
+			else if (def.Value != null && !(def.Value is CiAggregateInitializer)) {
+				Write(" = ");
+				WriteCoercedExpr(def.Type, def.Value);
+			}
+			else if (def.Type.IsFinal() && !(def.Parent is CiParameters))
+				WriteStorageInit(def);
+		}
+
+		protected virtual void WriteVar(CiNamedValue def)
+		{
+			WriteTypeAndName(def);
+			WriteVarInit(def);
+		}
+
+		public override void VisitVar(CiVar expr)
+		{
+			WriteVar(expr);
+		}
+
+		protected void WriteObjectLiteral(CiAggregateInitializer init, string separator)
+		{
+			string prefix = " { ";
+			foreach (CiExpr expr in init.Items) {
+				Write(prefix);
+				CiBinaryExpr assign = (CiBinaryExpr) expr;
+				CiSymbolReference field = (CiSymbolReference) assign.Left;
+				WriteName(field.Symbol);
+				Write(separator);
+				WriteCoerced(assign.Left.Type, assign.Right, CiPriority.Argument);
+				prefix = ", ";
+			}
+			Write(" }");
+		}
+
+		protected static CiAggregateInitializer GetAggregateInitializer(CiNamedValue def)
+		{
+			CiExpr expr = def.Value;
+			if (expr is CiPrefixExpr unary)
+				expr = unary.Inner;
+			return expr is CiAggregateInitializer init ? init : null;
+		}
+
+		protected void WriteAggregateInitField(CiExpr obj, CiBinaryExpr assign)
+		{
+			CiSymbolReference field = (CiSymbolReference) assign.Left;
+			WriteMemberOp(obj, field);
+			WriteName(field.Symbol);
+			Write(" = ");
+			WriteCoerced(field.Type, assign.Right, CiPriority.Argument);
+			EndStatement();
+		}
+
+		protected virtual void WriteInitCode(CiNamedValue def)
+		{
+			CiAggregateInitializer init = GetAggregateInitializer(def);
+			if (init != null) {
+				foreach (CiExpr expr in init.Items) {
+					WriteLocalName(def, CiPriority.Primary);
+					CiBinaryExpr assign = (CiBinaryExpr) expr;
+					WriteAggregateInitField(def, assign);
+				}
+			}
+		}
+
+		protected virtual void DefineIsVar(CiBinaryExpr binary)
+		{
+			if (binary.Right is CiVar def) {
+				EnsureChildBlock();
+				WriteVar(def);
+				EndStatement();
+			}
+		}
+
 		protected void WriteArrayElement(CiNamedValue def, int nesting)
 		{
 			WriteLocalName(def, CiPriority.Primary);
@@ -6687,11 +6821,6 @@ namespace Foxoft.Ci
 				VisitLiteralLong(i);
 				WriteChar(']');
 			}
-		}
-
-		protected virtual void EndStatement()
-		{
-			WriteCharLine(';');
 		}
 
 		protected void OpenLoop(string intString, int nesting, int count)
@@ -6709,6 +6838,8 @@ namespace Foxoft.Ci
 			Write("++) ");
 			OpenBlock();
 		}
+
+		protected abstract void WriteResource(string name, int length);
 
 		public override void VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
 		{
@@ -6778,7 +6909,51 @@ namespace Foxoft.Ci
 				WriteChar(')');
 		}
 
+		protected void WriteBinaryExpr2(CiBinaryExpr expr, CiPriority parent, CiPriority child, string op)
+		{
+			WriteBinaryExpr(expr, parent > child, child, op, child);
+		}
+
 		protected static string GetEqOp(bool not) => not ? " != " : " == ";
+
+		protected virtual void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+		{
+			WriteBinaryExpr2(expr, parent, CiPriority.Equality, GetEqOp(not));
+		}
+
+		protected virtual void WriteAnd(CiBinaryExpr expr, CiPriority parent)
+		{
+			WriteBinaryExpr(expr, parent > CiPriority.CondAnd && parent != CiPriority.And, CiPriority.And, " & ", CiPriority.And);
+		}
+
+		protected virtual void WriteAssignRight(CiBinaryExpr expr)
+		{
+			WriteCoerced(expr.Left.Type, expr.Right, CiPriority.Argument);
+		}
+
+		protected virtual void WriteAssign(CiBinaryExpr expr, CiPriority parent)
+		{
+			if (parent > CiPriority.Assign)
+				WriteChar('(');
+			expr.Left.Accept(this, CiPriority.Assign);
+			Write(" = ");
+			WriteAssignRight(expr);
+			if (parent > CiPriority.Assign)
+				WriteChar(')');
+		}
+
+		protected void WriteIndexing(CiExpr collection, CiExpr index)
+		{
+			collection.Accept(this, CiPriority.Primary);
+			WriteChar('[');
+			index.Accept(this, CiPriority.Argument);
+			WriteChar(']');
+		}
+
+		protected virtual void WriteIndexingExpr(CiBinaryExpr expr, CiPriority parent)
+		{
+			WriteIndexing(expr.Left, expr.Right);
+		}
 
 		protected virtual void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 		{
@@ -6788,6 +6963,31 @@ namespace Foxoft.Ci
 		protected abstract void WriteStringLength(CiExpr expr);
 
 		protected static bool IsReferenceTo(CiExpr expr, CiId id) => expr is CiSymbolReference symbol && symbol.Symbol.Id == id;
+
+		protected bool WriteJavaMatchProperty(CiSymbolReference expr, CiPriority parent)
+		{
+			switch (expr.Symbol.Id) {
+			case CiId.MatchStart:
+				WritePostfix(expr.Left, ".start()");
+				return true;
+			case CiId.MatchEnd:
+				WritePostfix(expr.Left, ".end()");
+				return true;
+			case CiId.MatchLength:
+				if (parent > CiPriority.Add)
+					WriteChar('(');
+				WritePostfix(expr.Left, ".end() - ");
+				WritePostfix(expr.Left, ".start()");
+				if (parent > CiPriority.Add)
+					WriteChar(')');
+				return true;
+			case CiId.MatchValue:
+				WritePostfix(expr.Left, ".group()");
+				return true;
+			default:
+				return false;
+			}
+		}
 
 		public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 		{
@@ -6839,6 +7039,29 @@ namespace Foxoft.Ci
 			else
 				WriteNotPromoted(elementType, args[1]);
 			WriteChar(')');
+		}
+
+		protected void WriteDictionaryAdd(CiExpr obj, List<CiExpr> args)
+		{
+			WriteIndexing(obj, args[0]);
+			Write(" = ");
+			CiClassType dict = (CiClassType) obj.Type;
+			WriteNewStorage(dict.GetValueType());
+		}
+
+		protected void WriteClampAsMinMax(List<CiExpr> args)
+		{
+			args[0].Accept(this, CiPriority.Argument);
+			Write(", ");
+			args[1].Accept(this, CiPriority.Argument);
+			Write("), ");
+			args[2].Accept(this, CiPriority.Argument);
+			WriteChar(')');
+		}
+
+		public override void VisitSelectExpr(CiSelectExpr expr, CiPriority parent)
+		{
+			WriteCoercedSelect(expr.Type, expr, parent);
 		}
 
 		protected void EnsureChildBlock()
@@ -6981,6 +7204,21 @@ namespace Foxoft.Ci
 			Write(statement.Content);
 		}
 
+		protected void WriteSwitchWhenVars(CiSwitch statement)
+		{
+			foreach (CiCase kase in statement.Cases) {
+				foreach (CiExpr value in kase.Values) {
+					if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
+						CiVar whenVar = (CiVar) when1.Left;
+						if (whenVar.Name != "_") {
+							WriteVar(whenVar);
+							EndStatement();
+						}
+					}
+				}
+			}
+		}
+
 		protected virtual void WriteSwitchValue(CiExpr expr)
 		{
 			expr.Accept(this, CiPriority.Argument);
@@ -7009,6 +7247,42 @@ namespace Foxoft.Ci
 				WriteStatements(block.Statements);
 			else
 				statement.AcceptStatement(this);
+		}
+
+		protected virtual void WriteParameter(CiVar param)
+		{
+			WriteTypeAndName(param);
+		}
+
+		protected virtual bool HasInitCode(CiNamedValue def) => GetAggregateInitializer(def) != null;
+
+		protected virtual bool NeedsConstructor(CiClass klass)
+		{
+			for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+				if (symbol is CiField field && HasInitCode(field))
+					return true;
+			}
+			return klass.Constructor != null;
+		}
+
+		protected virtual void WriteInitField(CiField field)
+		{
+			WriteInitCode(field);
+		}
+
+		protected void WriteConstructorBody(CiClass klass)
+		{
+			for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+				if (symbol is CiField field)
+					WriteInitField(field);
+			}
+			if (klass.Constructor != null) {
+				this.CurrentMethod = klass.Constructor;
+				CiBlock block = (CiBlock) klass.Constructor.Body;
+				WriteStatements(block.Statements);
+				this.CurrentMethod = null;
+			}
+			this.CurrentTemporaries.Clear();
 		}
 
 		protected void WriteBody(CiMethod method)

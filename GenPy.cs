@@ -250,7 +250,7 @@ public class GenPy : GenPySwift
 	protected override void WriteCharAt(CiBinaryExpr expr)
 	{
 		Write("ord(");
-		WriteIndexing(expr, CiPriority.Argument);
+		WriteIndexingExpr(expr, CiPriority.Argument);
 		WriteChar(')');
 	}
 
