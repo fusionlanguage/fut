@@ -579,9 +579,13 @@ public class CiSema : CiVisitor
 
 	void CheckComparison!(CiExpr left, CiExpr right)
 	{
-		CiType doubleType = this.Program.System.DoubleType;
-		Coerce(left, doubleType);
-		Coerce(right, doubleType);
+		if (left.Type is CiEnum)
+			Coerce(right, left.Type);
+		else {
+			CiType doubleType = this.Program.System.DoubleType;
+			Coerce(left, doubleType);
+			Coerce(right, doubleType);
+		}
 	}
 
 	void OpenScope!(CiScope! scope)

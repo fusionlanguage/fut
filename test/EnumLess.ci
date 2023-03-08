@@ -1,0 +1,19 @@
+public enum DayOfWeek
+{
+	Sunday,
+	Monday,
+	Tuesday,
+	Wednesday,
+	Thursday,
+	Friday,
+	Saturday
+}
+
+public class Test
+{
+	public static bool Run()
+	{
+		DayOfWeek wed = DayOfWeek.Wednesday;
+		return wed < DayOfWeek.Friday; //FAIL: py swift
+	}
+}
