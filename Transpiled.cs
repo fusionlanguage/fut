@@ -6144,9 +6144,9 @@ namespace Foxoft.Ci
 
 		protected bool AtLineStart = true;
 
-		protected bool AtChildStart = false;
+		bool AtChildStart = false;
 
-		protected bool InChildBlock = false;
+		bool InChildBlock = false;
 
 		protected CiMethodBase CurrentMethod = null;
 
@@ -7237,6 +7237,64 @@ namespace Foxoft.Ci
 
 		protected abstract void StartTemporaryVar(CiType type);
 
+		protected abstract void DefineObjectLiteralTemporary(CiUnaryExpr expr);
+
+		protected void WriteTemporaries(CiExpr expr)
+		{
+			switch (expr) {
+			case CiVar def:
+				if (def.Value != null) {
+					if (def.Value is CiUnaryExpr unary && unary.Inner is CiAggregateInitializer)
+						WriteTemporaries(unary.Inner);
+					else
+						WriteTemporaries(def.Value);
+				}
+				break;
+			case CiAggregateInitializer init:
+				foreach (CiExpr assignExpr in init.Items) {
+					CiBinaryExpr assign = (CiBinaryExpr) assignExpr;
+					WriteTemporaries(assign.Right);
+				}
+				break;
+			case CiLiteral _:
+			case CiLambdaExpr _:
+				break;
+			case CiInterpolatedString interp:
+				foreach (CiInterpolatedPart part in interp.Parts)
+					WriteTemporaries(part.Argument);
+				break;
+			case CiSymbolReference symbol:
+				if (symbol.Left != null)
+					WriteTemporaries(symbol.Left);
+				break;
+			case CiUnaryExpr unary:
+				if (unary.Inner != null) {
+					WriteTemporaries(unary.Inner);
+					DefineObjectLiteralTemporary(unary);
+				}
+				break;
+			case CiBinaryExpr binary:
+				WriteTemporaries(binary.Left);
+				if (binary.Op == CiToken.Is)
+					DefineIsVar(binary);
+				else
+					WriteTemporaries(binary.Right);
+				break;
+			case CiSelectExpr select:
+				WriteTemporaries(select.Cond);
+				WriteTemporaries(select.OnTrue);
+				WriteTemporaries(select.OnFalse);
+				break;
+			case CiCallExpr call:
+				WriteTemporaries(call.Method);
+				foreach (CiExpr arg in call.Arguments)
+					WriteTemporaries(arg);
+				break;
+			default:
+				throw new NotImplementedException();
+			}
+		}
+
 		protected virtual void CleanupTemporary(int i, CiExpr temp)
 		{
 		}
@@ -7250,6 +7308,16 @@ namespace Foxoft.Ci
 					this.CurrentTemporaries[i] = temp.Type;
 				}
 			}
+		}
+
+		public override void VisitExpr(CiExpr statement)
+		{
+			WriteTemporaries(statement);
+			statement.Accept(this, CiPriority.Statement);
+			WriteCharLine(';');
+			if (statement is CiVar def)
+				WriteInitCode(def);
+			CleanupTemporaries();
 		}
 
 		public override void VisitConst(CiConst statement)
@@ -7359,9 +7427,60 @@ namespace Foxoft.Ci
 			WriteChar(')');
 		}
 
+		void WriteIf(CiIf statement)
+		{
+			Write("if (");
+			StartIfWhile(statement.Cond);
+			WriteChild(statement.OnTrue);
+			if (statement.OnFalse != null) {
+				Write("else");
+				if (statement.OnFalse is CiIf elseIf) {
+					bool wasInChildBlock = this.InChildBlock;
+					this.AtLineStart = true;
+					this.AtChildStart = true;
+					this.InChildBlock = false;
+					if (!EmbedIfWhileIsVar(elseIf.Cond, false))
+						WriteTemporaries(elseIf.Cond);
+					if (this.InChildBlock) {
+						WriteIf(elseIf);
+						CloseBlock();
+					}
+					else {
+						this.AtLineStart = false;
+						this.AtChildStart = false;
+						WriteChar(' ');
+						WriteIf(elseIf);
+					}
+					this.InChildBlock = wasInChildBlock;
+				}
+				else
+					WriteChild(statement.OnFalse);
+			}
+		}
+
+		public override void VisitIf(CiIf statement)
+		{
+			if (!EmbedIfWhileIsVar(statement.Cond, false))
+				WriteTemporaries(statement.Cond);
+			WriteIf(statement);
+		}
+
 		public override void VisitNative(CiNative statement)
 		{
 			Write(statement.Content);
+		}
+
+		public override void VisitReturn(CiReturn statement)
+		{
+			if (statement.Value == null)
+				WriteLine("return;");
+			else {
+				WriteTemporaries(statement.Value);
+				Write("return ");
+				WriteStronglyCoerced(this.CurrentMethod.Type, statement.Value);
+				WriteCharLine(';');
+				CleanupTemporaries();
+			}
 		}
 
 		protected void WriteSwitchWhenVars(CiSwitch statement)
@@ -7399,6 +7518,32 @@ namespace Foxoft.Ci
 			this.Indent++;
 			WriteSwitchCaseBody(kase.Body);
 			this.Indent--;
+		}
+
+		public override void VisitSwitch(CiSwitch statement)
+		{
+			WriteTemporaries(statement.Value);
+			Write("switch (");
+			WriteSwitchValue(statement.Value);
+			WriteLine(") {");
+			foreach (CiCase kase in statement.Cases)
+				WriteSwitchCase(statement, kase);
+			if (statement.DefaultBody.Count > 0) {
+				WriteLine("default:");
+				this.Indent++;
+				WriteSwitchCaseBody(statement.DefaultBody);
+				this.Indent--;
+			}
+			WriteCharLine('}');
+		}
+
+		public override void VisitWhile(CiWhile statement)
+		{
+			if (!EmbedIfWhileIsVar(statement.Cond, false))
+				WriteTemporaries(statement.Cond);
+			Write("while (");
+			StartIfWhile(statement.Cond);
+			WriteChild(statement.Body);
 		}
 
 		protected void FlattenBlock(CiStatement statement)
