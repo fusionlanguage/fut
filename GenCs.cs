@@ -424,7 +424,7 @@ public class GenCs : GenTyped
 		}
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
+	protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
 		case CiId.DoubleTryParse:
@@ -508,11 +508,11 @@ public class GenCs : GenTyped
 			break;
 		case CiId.ListAll:
 			Include("System.Linq");
-			WriteCall(obj, "All", args[0]);
+			WriteMethodCall(obj, "All", args[0]);
 			break;
 		case CiId.ListAny:
 			Include("System.Linq");
-			WriteCall(obj, "Any", args[0]);
+			WriteMethodCall(obj, "Any", args[0]);
 			break;
 		case CiId.ListInsert:
 			WriteListInsert(obj, "Insert", args);
@@ -534,7 +534,7 @@ public class GenCs : GenTyped
 			WriteChar(')');
 			break;
 		case CiId.OrderedDictionaryContainsKey:
-			WriteCall(obj, "Contains", args[0]);
+			WriteMethodCall(obj, "Contains", args[0]);
 			break;
 		case CiId.TextWriterWrite:
 		case CiId.TextWriterWriteLine:
@@ -621,7 +621,7 @@ public class GenCs : GenTyped
 			WriteChar('(');
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = ");
-			WriteCall(args[1], "Match", args[0]);
+			WriteMethodCall(args[1], "Match", args[0]);
 			Write(").Success");
 			break;
 		case CiId.MatchGetCapture:

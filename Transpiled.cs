@@ -6615,6 +6615,34 @@ namespace Foxoft.Ci
 			Write(s);
 		}
 
+		protected void WriteCall(string function, CiExpr arg0, CiExpr arg1 = null, CiExpr arg2 = null)
+		{
+			Write(function);
+			WriteChar('(');
+			arg0.Accept(this, CiPriority.Argument);
+			if (arg1 != null) {
+				Write(", ");
+				arg1.Accept(this, CiPriority.Argument);
+				if (arg2 != null) {
+					Write(", ");
+					arg2.Accept(this, CiPriority.Argument);
+				}
+			}
+			WriteChar(')');
+		}
+
+		protected virtual void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
+		{
+			WriteChar('.');
+		}
+
+		protected void WriteMethodCall(CiExpr obj, string method, CiExpr arg0, CiExpr arg1 = null)
+		{
+			obj.Accept(this, CiPriority.Primary);
+			WriteMemberOp(obj, null);
+			WriteCall(method, arg0, arg1);
+		}
+
 		protected virtual void WriteSelectValues(CiType type, CiSelectExpr expr)
 		{
 			WriteCoerced(type, expr.OnTrue, CiPriority.Select);
@@ -6893,6 +6921,19 @@ namespace Foxoft.Ci
 			WriteAdd(startIndex, length);
 		}
 
+		static bool IsBitOp(CiPriority parent)
+		{
+			switch (parent) {
+			case CiPriority.Or:
+			case CiPriority.Xor:
+			case CiPriority.And:
+			case CiPriority.Shift:
+				return true;
+			default:
+				return false;
+			}
+		}
+
 		protected virtual void WriteBinaryOperand(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
 		{
 			expr.Accept(this, parent);
@@ -6955,9 +6996,120 @@ namespace Foxoft.Ci
 			WriteIndexing(expr.Left, expr.Right);
 		}
 
-		protected virtual void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
+		protected virtual string GetIsOperator() => " is ";
+
+		public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 		{
-			WriteChar('.');
+			switch (expr.Op) {
+			case CiToken.Plus:
+				WriteBinaryExpr(expr, parent > CiPriority.Add || IsBitOp(parent), CiPriority.Add, " + ", CiPriority.Add);
+				break;
+			case CiToken.Minus:
+				WriteBinaryExpr(expr, parent > CiPriority.Add || IsBitOp(parent), CiPriority.Add, " - ", CiPriority.Mul);
+				break;
+			case CiToken.Asterisk:
+				WriteBinaryExpr2(expr, parent, CiPriority.Mul, " * ");
+				break;
+			case CiToken.Slash:
+				WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " / ", CiPriority.Primary);
+				break;
+			case CiToken.Mod:
+				WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " % ", CiPriority.Primary);
+				break;
+			case CiToken.ShiftLeft:
+				WriteBinaryExpr(expr, parent > CiPriority.Shift, CiPriority.Shift, " << ", CiPriority.Mul);
+				break;
+			case CiToken.ShiftRight:
+				WriteBinaryExpr(expr, parent > CiPriority.Shift, CiPriority.Shift, " >> ", CiPriority.Mul);
+				break;
+			case CiToken.Less:
+				WriteBinaryExpr2(expr, parent, CiPriority.Rel, " < ");
+				break;
+			case CiToken.LessOrEqual:
+				WriteBinaryExpr2(expr, parent, CiPriority.Rel, " <= ");
+				break;
+			case CiToken.Greater:
+				WriteBinaryExpr2(expr, parent, CiPriority.Rel, " > ");
+				break;
+			case CiToken.GreaterOrEqual:
+				WriteBinaryExpr2(expr, parent, CiPriority.Rel, " >= ");
+				break;
+			case CiToken.Equal:
+				WriteEqual(expr, parent, false);
+				break;
+			case CiToken.NotEqual:
+				WriteEqual(expr, parent, true);
+				break;
+			case CiToken.And:
+				WriteAnd(expr, parent);
+				break;
+			case CiToken.Or:
+				WriteBinaryExpr2(expr, parent, CiPriority.Or, " | ");
+				break;
+			case CiToken.Xor:
+				WriteBinaryExpr(expr, parent > CiPriority.Xor || parent == CiPriority.Or, CiPriority.Xor, " ^ ", CiPriority.Xor);
+				break;
+			case CiToken.CondAnd:
+				WriteBinaryExpr(expr, parent > CiPriority.CondAnd || parent == CiPriority.CondOr, CiPriority.CondAnd, " && ", CiPriority.CondAnd);
+				break;
+			case CiToken.CondOr:
+				WriteBinaryExpr2(expr, parent, CiPriority.CondOr, " || ");
+				break;
+			case CiToken.Assign:
+				WriteAssign(expr, parent);
+				break;
+			case CiToken.AddAssign:
+			case CiToken.SubAssign:
+			case CiToken.MulAssign:
+			case CiToken.DivAssign:
+			case CiToken.ModAssign:
+			case CiToken.ShiftLeftAssign:
+			case CiToken.ShiftRightAssign:
+			case CiToken.AndAssign:
+			case CiToken.OrAssign:
+			case CiToken.XorAssign:
+				if (parent > CiPriority.Assign)
+					WriteChar('(');
+				expr.Left.Accept(this, CiPriority.Assign);
+				WriteChar(' ');
+				Write(expr.GetOpString());
+				WriteChar(' ');
+				expr.Right.Accept(this, CiPriority.Argument);
+				if (parent > CiPriority.Assign)
+					WriteChar(')');
+				break;
+			case CiToken.LeftBracket:
+				if (expr.Left.Type is CiStringType)
+					WriteCharAt(expr);
+				else
+					WriteIndexingExpr(expr, parent);
+				break;
+			case CiToken.Is:
+				if (parent > CiPriority.Rel)
+					WriteChar('(');
+				expr.Left.Accept(this, CiPriority.Rel);
+				Write(GetIsOperator());
+				switch (expr.Right) {
+				case CiSymbolReference symbol:
+					WriteName(symbol.Symbol);
+					break;
+				case CiVar def:
+					WriteTypeAndName(def);
+					break;
+				default:
+					throw new NotImplementedException();
+				}
+				if (parent > CiPriority.Rel)
+					WriteChar(')');
+				break;
+			case CiToken.When:
+				expr.Left.Accept(this, CiPriority.Argument);
+				Write(" when ");
+				expr.Right.Accept(this, CiPriority.Argument);
+				break;
+			default:
+				throw new NotImplementedException();
+			}
 		}
 
 		protected abstract void WriteStringLength(CiExpr expr);
@@ -7057,6 +7209,14 @@ namespace Foxoft.Ci
 			Write("), ");
 			args[2].Accept(this, CiPriority.Argument);
 			WriteChar(')');
+		}
+
+		protected abstract void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent);
+
+		public override void VisitCallExpr(CiCallExpr expr, CiPriority parent)
+		{
+			CiMethod method = (CiMethod) expr.Method.Symbol;
+			WriteCallExpr(expr.Method.Left, method, expr.Arguments, parent);
 		}
 
 		public override void VisitSelectExpr(CiSelectExpr expr, CiPriority parent)

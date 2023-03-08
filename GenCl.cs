@@ -163,7 +163,7 @@ public class GenCl : GenC
 			WritePrintfNotInterpolated(args, newLine);
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
+	protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
 		case CiId.None:

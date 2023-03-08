@@ -414,7 +414,7 @@ public class GenJsNoModule : GenBase
 
 	protected override void WriteCharAt(CiBinaryExpr expr)
 	{
-		WriteCall(expr.Left, "charCodeAt", expr.Right);
+		WriteMethodCall(expr.Left, "charCodeAt", expr.Right);
 	}
 
 	protected override void WriteBinaryOperand(CiExpr expr, CiPriority parent, CiBinaryExpr binary) => WriteCoerced(binary.Type, expr, parent);
@@ -482,7 +482,7 @@ public class GenJsNoModule : GenBase
 			WriteCall(name, args[0], args[1]);
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
+	protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
 		case CiId.None:
@@ -525,10 +525,10 @@ public class GenJsNoModule : GenBase
 			break;
 		case CiId.StringContains:
 		case CiId.ListContains:
-			WriteCall(obj, "includes", args[0]);
+			WriteMethodCall(obj, "includes", args[0]);
 			break;
 		case CiId.StringReplace:
-			WriteCall(obj, "replaceAll", args[0], args[1]);
+			WriteMethodCall(obj, "replaceAll", args[0], args[1]);
 			break;
 		case CiId.StringSubstring:
 			WritePostfix(obj, ".substring(");
@@ -597,10 +597,10 @@ public class GenJsNoModule : GenBase
 			WriteChar(')');
 			break;
 		case CiId.ListAll:
-			WriteCall(obj, "every", args[0]);
+			WriteMethodCall(obj, "every", args[0]);
 			break;
 		case CiId.ListAny:
-			WriteCall(obj, "some", args[0]);
+			WriteMethodCall(obj, "some", args[0]);
 			break;
 		case CiId.ListClear:
 		case CiId.QueueClear:
@@ -620,7 +620,7 @@ public class GenJsNoModule : GenBase
 			Write(", 1)");
 			break;
 		case CiId.ListRemoveRange:
-			WriteCall(obj, "splice", args[0], args[1]);
+			WriteMethodCall(obj, "splice", args[0], args[1]);
 			break;
 		case CiId.ListSortAll:
 			WritePostfix(obj, ".sort((a, b) => a - b)");
@@ -639,7 +639,7 @@ public class GenJsNoModule : GenBase
 			WritePostfix(obj, ".shift()");
 			break;
 		case CiId.QueueEnqueue:
-			WriteCall(obj, "push", args[0]);
+			WriteMethodCall(obj, "push", args[0]);
 			break;
 		case CiId.QueuePeek:
 			WritePostfix(obj, "[0]");
@@ -647,12 +647,12 @@ public class GenJsNoModule : GenBase
 		case CiId.HashSetContains:
 		case CiId.SortedSetContains:
 		case CiId.OrderedDictionaryContainsKey:
-			WriteCall(obj, "has", args[0]);
+			WriteMethodCall(obj, "has", args[0]);
 			break;
 		case CiId.HashSetRemove:
 		case CiId.SortedSetRemove:
 		case CiId.OrderedDictionaryRemove:
-			WriteCall(obj, "delete", args[0]);
+			WriteMethodCall(obj, "delete", args[0]);
 			break;
 		case CiId.DictionaryAdd:
 			WriteDictionaryAdd(obj, args);
@@ -667,7 +667,7 @@ public class GenJsNoModule : GenBase
 			break;
 		case CiId.DictionaryContainsKey:
 		case CiId.SortedDictionaryContainsKey:
-			WriteCall(obj, "hasOwnProperty", args[0]);
+			WriteMethodCall(obj, "hasOwnProperty", args[0]);
 			break;
 		case CiId.DictionaryRemove:
 		case CiId.SortedDictionaryRemove:
@@ -683,7 +683,7 @@ public class GenJsNoModule : GenBase
 			WriteChar(')');
 			break;
 		case CiId.TextWriterWriteChar:
-			WriteCall(obj, "write(String.fromCharCode", args[0]);
+			WriteMethodCall(obj, "write(String.fromCharCode", args[0]);
 			WriteChar(')');
 			break;
 		case CiId.TextWriterWriteLine:
@@ -733,7 +733,7 @@ public class GenJsNoModule : GenBase
 			if (args[2].IsLiteralZero())
 				args[1].Accept(this, CiPriority.Argument);
 			else
-				WriteCall(args[1], "subarray", args[2]);
+				WriteMethodCall(args[1], "subarray", args[2]);
 			WriteChar(')');
 			break;
 		case CiId.UTF8GetString:
@@ -766,7 +766,7 @@ public class GenJsNoModule : GenBase
 			WriteCall(".test", args[0]);
 			break;
 		case CiId.RegexIsMatchRegex:
-			WriteCall(obj, "test", args[0]);
+			WriteMethodCall(obj, "test", args[0]);
 			break;
 		case CiId.MatchFindStr:
 		case CiId.MatchFindRegex:
@@ -845,7 +845,7 @@ public class GenJsNoModule : GenBase
 	protected override void WriteIndexingExpr(CiBinaryExpr expr, CiPriority parent)
 	{
 		if (expr.Left.Type is CiClassType dict && dict.Class.Id == CiId.OrderedDictionaryClass)
-			WriteCall(expr.Left, "get", expr.Right);
+			WriteMethodCall(expr.Left, "get", expr.Right);
 		else
 			base.WriteIndexingExpr(expr, parent);
 	}
@@ -856,7 +856,7 @@ public class GenJsNoModule : GenBase
 		 && indexing.Op == CiToken.LeftBracket
 		 && indexing.Left.Type is CiClassType dict
 		 && dict.Class.Id == CiId.OrderedDictionaryClass)
-			WriteCall(indexing.Left, "set", indexing.Right, expr.Right);
+			WriteMethodCall(indexing.Left, "set", indexing.Right, expr.Right);
 		else
 			base.WriteAssign(expr, parent);
 	}

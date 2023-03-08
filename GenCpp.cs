@@ -670,7 +670,7 @@ public class GenCpp : GenCCpp
 		}
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
+	protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
 		case CiId.DoubleTryParse:
@@ -871,7 +871,7 @@ public class GenCpp : GenCCpp
 			}
 			break;
 		case CiId.QueueEnqueue:
-			WriteCall(obj, "push", args[0]);
+			WriteMethodCall(obj, "push", args[0]);
 			break;
 		case CiId.QueuePeek:
 			StartMethodCall(obj);
@@ -900,13 +900,13 @@ public class GenCpp : GenCCpp
 			break;
 		case CiId.HashSetAdd:
 		case CiId.SortedSetAdd:
-			WriteCall(obj, ((CiClassType) obj.Type).GetElementType().Id == CiId.StringStorageType && args[0].Type.Id == CiId.StringPtrType ? "emplace" : "insert", args[0]);
+			WriteMethodCall(obj, ((CiClassType) obj.Type).GetElementType().Id == CiId.StringStorageType && args[0].Type.Id == CiId.StringPtrType ? "emplace" : "insert", args[0]);
 			break;
 		case CiId.HashSetRemove:
 		case CiId.SortedSetRemove:
 		case CiId.DictionaryRemove:
 		case CiId.SortedDictionaryRemove:
-			WriteCall(obj, "erase", args[0]);
+			WriteMethodCall(obj, "erase", args[0]);
 			break;
 		case CiId.DictionaryAdd:
 			WriteIndexing(obj, args[0]);
@@ -1289,7 +1289,7 @@ public class GenCpp : GenCCpp
 			}
 			break;
 		case CiToken.Assign when expr.Left.Type.Id == CiId.StringStorageType && parent == CiPriority.Statement && IsTrimSubstring(expr) is CiExpr length:
-			WriteCall(expr.Left, "resize", length);
+			WriteMethodCall(expr.Left, "resize", length);
 			return;
 		case CiToken.Is:
 			if (expr.Right is CiSymbolReference symbol) {

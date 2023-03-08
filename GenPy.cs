@@ -591,7 +591,7 @@ public class GenPy : GenPySwift
 		WriteChar(')');
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
+	protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
 		case CiId.StringContains:
@@ -606,25 +606,36 @@ public class GenPy : GenPySwift
 			obj.Accept(this, CiPriority.Rel);
 			break;
 		case CiId.StringEndsWith:
-			WriteCall(obj, "endswith", args[0]);
+			WriteMethodCall(obj, "endswith", args[0]);
 			break;
 		case CiId.StringIndexOf:
-			WriteCall(obj, "find", args[0]);
+			WriteMethodCall(obj, "find", args[0]);
 			break;
 		case CiId.StringLastIndexOf:
-			WriteCall(obj, "rfind", args[0]);
+			WriteMethodCall(obj, "rfind", args[0]);
 			break;
 		case CiId.StringStartsWith:
-			WriteCall(obj, "startswith", args[0]);
+			WriteMethodCall(obj, "startswith", args[0]);
 			break;
 		case CiId.StringSubstring:
 			obj.Accept(this, CiPriority.Primary);
 			WriteSlice(args[0], args.Count == 2 ? args[1] : null);
 			break;
 		case CiId.ArrayBinarySearchAll:
+			Include("bisect");
+			WriteCall("bisect.bisect_left", obj, args[0]);
+			break;
 		case CiId.ArrayBinarySearchPart:
 			Include("bisect");
-			WriteCall("bisect.bisect_left", obj, args);
+			Write("bisect.bisect_left(");
+			obj.Accept(this, CiPriority.Argument);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(", ");
+			args[1].Accept(this, CiPriority.Argument);
+			Write(", ");
+			args[2].Accept(this, CiPriority.Argument);
+			WriteChar(')');
 			break;
 		case CiId.ArrayCopyTo:
 		case CiId.ListCopyTo:
@@ -728,7 +739,7 @@ public class GenPy : GenPySwift
 			WriteChar(')');
 			break;
 		case CiId.TextWriterWriteChar:
-			WriteCall(obj, "write(chr", args[0]);
+			WriteMethodCall(obj, "write(chr", args[0]);
 			WriteChar(')');
 			break;
 		case CiId.TextWriterWriteLine:
@@ -800,7 +811,7 @@ public class GenPy : GenPySwift
 		case CiId.RegexIsMatchRegex:
 			if (parent > CiPriority.Equality)
 				WriteChar('(');
-			WriteCall(obj, "search", args[0]);
+			WriteMethodCall(obj, "search", args[0]);
 			Write(" is not None");
 			if (parent > CiPriority.Equality)
 				WriteChar(')');
@@ -815,7 +826,7 @@ public class GenPy : GenPySwift
 				WriteChar(')');
 			break;
 		case CiId.MatchGetCapture:
-			WriteCall(obj, "group", args[0]);
+			WriteMethodCall(obj, "group", args[0]);
 			break;
 		case CiId.MathMethod:
 		case CiId.MathIsFinite:
@@ -905,7 +916,7 @@ public class GenPy : GenPySwift
 		case CiId.MatchFindRegex:
 			call.Method.Left.Accept(this, CiPriority.Assign);
 			Write(" = ");
-			WriteCall(call.Arguments[1], "search", call.Arguments[0]);
+			WriteMethodCall(call.Arguments[1], "search", call.Arguments[0]);
 			WriteNewLine();
 			return true;
 		default:

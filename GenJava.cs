@@ -410,7 +410,7 @@ public class GenJava : GenTyped
 		if (expr.Left.Type.IsArray())
 			base.WriteIndexingExpr(expr, CiPriority.And /* don't care */);
 		else
-			WriteCall(expr.Left, "get", expr.Right);
+			WriteMethodCall(expr.Left, "get", expr.Right);
 	}
 
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
@@ -419,7 +419,7 @@ public class GenJava : GenTyped
 		 || (expr.Right.Type is CiStringType && expr.Left.Type.Id != CiId.NullType)) {
 			if (not)
 				WriteChar('!');
-			WriteCall(expr.Left, "equals", expr.Right);
+			WriteMethodCall(expr.Left, "equals", expr.Right);
 		}
 		else if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)
 			&& expr.Right is CiLiteralLong rightLiteral && rightLiteral.Value >= 0 && rightLiteral.Value <= byte.MaxValue) {
@@ -471,7 +471,7 @@ public class GenJava : GenTyped
 
 	protected override void WriteCharAt(CiBinaryExpr expr)
 	{
-		WriteCall(expr.Left, "charAt", expr.Right);
+		WriteMethodCall(expr.Left, "charAt", expr.Right);
 	}
 
 	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
@@ -547,7 +547,7 @@ public class GenJava : GenTyped
 		WriteChar(')');
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
+	protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
 		case CiId.DoubleTryParse:
@@ -598,13 +598,13 @@ public class GenJava : GenTyped
 			WriteListAdd(obj, "add", args);
 			break;
 		case CiId.ListAddRange:
-			WriteCall(obj, "addAll", args[0]);
+			WriteMethodCall(obj, "addAll", args[0]);
 			break;
 		case CiId.ListAll:
-			WriteCall(obj, "stream().allMatch", args[0]);
+			WriteMethodCall(obj, "stream().allMatch", args[0]);
 			break;
 		case CiId.ListAny:
-			WriteCall(obj, "stream().anyMatch", args[0]);
+			WriteMethodCall(obj, "stream().anyMatch", args[0]);
 			break;
 		case CiId.ListCopyTo:
 			Write("for (int _i = 0; _i < ");
@@ -627,7 +627,7 @@ public class GenJava : GenTyped
 			WritePostfix(obj, ".size() - 1)"); // FIXME: side effect
 			break;
 		case CiId.ListRemoveAt:
-			WriteCall(obj, "remove", args[0]);
+			WriteMethodCall(obj, "remove", args[0]);
 			break;
 		case CiId.ListRemoveRange:
 			WritePostfix(obj, ".subList(");
@@ -646,7 +646,7 @@ public class GenJava : GenTyped
 			WritePostfix(obj, ".remove()");
 			break;
 		case CiId.QueueEnqueue:
-			WriteCall(obj, "add", args[0]);
+			WriteMethodCall(obj, "add", args[0]);
 			break;
 		case CiId.QueuePeek:
 			WritePostfix(obj, ".element()");
@@ -663,7 +663,7 @@ public class GenJava : GenTyped
 			WriteWrite(method, args, false);
 			break;
 		case CiId.TextWriterWriteChar:
-			WriteCall(obj, "write", args[0]);
+			WriteMethodCall(obj, "write", args[0]);
 			break;
 		case CiId.TextWriterWriteLine:
 			obj.Accept(this, CiPriority.Primary);
@@ -721,7 +721,7 @@ public class GenJava : GenTyped
 			Write(".find()");
 			break;
 		case CiId.RegexIsMatchRegex:
-			WriteCall(obj, "matcher", args[0]);
+			WriteMethodCall(obj, "matcher", args[0]);
 			Write(".find()");
 			break;
 		case CiId.MatchFindStr:
@@ -737,7 +737,7 @@ public class GenJava : GenTyped
 			Write(").find()");
 			break;
 		case CiId.MatchGetCapture:
-			WriteCall(obj, "group", args[0]);
+			WriteMethodCall(obj, "group", args[0]);
 			break;
 		case CiId.MathCeiling:
 			WriteCall("Math.ceil", args[0]);

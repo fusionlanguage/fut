@@ -416,7 +416,7 @@ public class GenSwift : GenPySwift
 		WriteAdd(startIndex, length); // TODO: side effect
 	}
 
-	protected override void WriteCall(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
+	protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
 		case CiId.None:
@@ -880,9 +880,9 @@ public class GenSwift : GenPySwift
 	void WriteEnumFlagsAnd(CiExpr left, string method, string notMethod, CiExpr right)
 	{
 		if (right is CiPrefixExpr negation && negation.Op == CiToken.Tilde)
-			WriteCall(left, notMethod, negation.Inner);
+			WriteMethodCall(left, notMethod, negation.Inner);
 		else
-			WriteCall(left, method, right);
+			WriteMethodCall(left, method, right);
 	}
 
 	CiExpr WriteAssignNested(CiBinaryExpr expr)
@@ -935,7 +935,7 @@ public class GenSwift : GenPySwift
 			if (expr.Type.Id == CiId.BoolType)
 				WriteCall("{ a, b in a || b }", expr.Left, expr.Right);
 			else if (expr.Type is CiEnumFlags)
-				WriteCall(expr.Left, "union", expr.Right);
+				WriteMethodCall(expr.Left, "union", expr.Right);
 			else
 				WriteBinaryExpr(expr, parent > CiPriority.Add, CiPriority.Add, " | ", CiPriority.Mul);
 			break;
@@ -943,7 +943,7 @@ public class GenSwift : GenPySwift
 			if (expr.Type.Id == CiId.BoolType)
 				WriteEqual(expr, parent, true);
 			else if (expr.Type is CiEnumFlags)
-				WriteCall(expr.Left, "symmetricDifference", expr.Right);
+				WriteMethodCall(expr.Left, "symmetricDifference", expr.Right);
 			else
 				WriteBinaryExpr(expr, parent > CiPriority.Add, CiPriority.Add, " ^ ", CiPriority.Mul);
 			break;
@@ -992,7 +992,7 @@ public class GenSwift : GenPySwift
 				WriteChar('}');
 			}
 			else if (expr.Type is CiEnumFlags)
-				WriteCall(expr.Left, "formUnion", right);
+				WriteMethodCall(expr.Left, "formUnion", right);
 			else
 				WriteAssign(expr, right);
 			break;
@@ -1006,7 +1006,7 @@ public class GenSwift : GenPySwift
 				expr.Right.Accept(this, CiPriority.Equality);
 			}
 			else if (expr.Type is CiEnumFlags)
-				WriteCall(expr.Left, "formSymmetricDifference", right);
+				WriteMethodCall(expr.Left, "formSymmetricDifference", right);
 			else
 				WriteAssign(expr, right);
 			break;
