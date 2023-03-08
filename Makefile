@@ -32,7 +32,7 @@ DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .
 
 all: cito.exe
 
-cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs FileResourceSema.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJsNoModule.cs GenJs.cs GenPySwift.cs GenPy.cs GenSwift.cs GenTs.cs GenCl.cs CiTo.cs)
+cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs FileResourceSema.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs GenPySwift.cs GenPy.cs GenSwift.cs GenTs.cs GenCl.cs CiTo.cs)
 	$(DO_BUILD)
 
 Transpiled.cs: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBaseBase.ci
@@ -53,7 +53,7 @@ test-cs test-GenCs.cs: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/
 test-java test-GenJava.cs: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) test/bin/CiCheck/CiSema.java
 	$(DO_SUMMARY)
 
-test-js test-GenJsNoModule.cs test-GenJs.cs: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) test/bin/CiCheck/js.txt
+test-js test-GenJs.cs: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) test/bin/CiCheck/js.txt
 	$(DO_SUMMARY)
 
 test-ts test-GenTs.cs: $(patsubst test/%.ci, test/bin/%/ts.txt, $(wildcard test/*.ci))
