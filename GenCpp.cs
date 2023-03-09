@@ -1339,9 +1339,9 @@ public class GenCpp : GenCCpp
 		Write("for (");
 		if (statement.Count() == 2) {
 			Write("const auto &[");
-			Write(element.Name);
+			WriteCamelCaseNotKeyword(element.Name);
 			Write(", ");
-			Write(statement.GetValueVar().Name);
+			WriteCamelCaseNotKeyword(statement.GetValueVar().Name);
 			WriteChar(']');
 		}
 		else {
@@ -1351,13 +1351,13 @@ public class GenCpp : GenCCpp
 					Write("const ");
 				Write(storage.Class.Name);
 				Write(" &");
-				Write(element.Name);
+				WriteCamelCaseNotKeyword(element.Name);
 				break;
 			case CiDynamicPtrType dynamic:
 				Write("const ");
 				WriteType(dynamic, true);
 				Write(" &");
-				Write(element.Name);
+				WriteCamelCaseNotKeyword(element.Name);
 				break;
 			default:
 				WriteTypeAndName(element);
