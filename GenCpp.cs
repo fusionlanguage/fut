@@ -365,6 +365,15 @@ public class GenCpp : GenCCpp
 			base.WriteVarInit(def);
 	}
 
+	static bool IsSharedPtr(CiExpr expr)
+	{
+		if (expr.Type is CiDynamicPtrType)
+			return true;
+		 return expr is CiSymbolReference symbol
+			&& symbol.Symbol.Parent is CiForeach loop
+			&& ((CiClassType) loop.Collection.Type).GetElementType() is CiDynamicPtrType;
+	}
+
 	protected override void WriteStaticCast(CiType type, CiExpr expr)
 	{
 		if (type is CiDynamicPtrType dynamic) {
@@ -380,7 +389,7 @@ public class GenCpp : GenCCpp
 			WriteChar('&');
 			expr.Accept(this, CiPriority.Primary);
 		}
-		else if (expr.Type is CiDynamicPtrType && !(type is CiDynamicPtrType))
+		else if (!(type is CiDynamicPtrType) && IsSharedPtr(expr))
 			WritePostfix(expr, ".get()");
 		else
 			GetStaticCastInner(type, expr).Accept(this, CiPriority.Argument);
@@ -1128,8 +1137,7 @@ public class GenCpp : GenCCpp
 				WriteArrayPtr(expr, parent);
 				return;
 			}
-			switch (expr.Type) {
-			case CiDynamicPtrType _:
+			if (IsSharedPtr(expr)) {
 				if (klass.Class.Id == CiId.RegexClass) {
 					WriteChar('&');
 					expr.Accept(this, CiPriority.Primary);
@@ -1137,7 +1145,8 @@ public class GenCpp : GenCCpp
 				else
 					WritePostfix(expr, ".get()");
 				return;
-			case CiClassType _ when !IsCppPtr(expr):
+			}
+			if (expr.Type is CiClassType && !IsCppPtr(expr)) {
 				WriteChar('&');
 				if (expr is CiCallExpr) {
 					Write("static_cast<");
@@ -1151,8 +1160,6 @@ public class GenCpp : GenCCpp
 				else
 					expr.Accept(this, CiPriority.Primary);
 				return;
-			default:
-				break;
 			}
 		}
 		base.WriteCoercedInternal(type, expr, parent);
@@ -1235,7 +1242,7 @@ public class GenCpp : GenCCpp
 	void WriteGtRawPtr(CiExpr expr)
 	{
 		Write(">(");
-		if (expr.Type is CiDynamicPtrType)
+		if (IsSharedPtr(expr))
 			WritePostfix(expr, ".get()");
 		else
 			expr.Accept(this, CiPriority.Argument);
