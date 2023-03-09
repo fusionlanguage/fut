@@ -2673,6 +2673,8 @@ namespace Foxoft.Ci
 
 		internal int TypeParameterCount = 0;
 
+		internal bool HasSubclasses = false;
+
 		internal string BaseClassName = "";
 
 		internal CiMethodBase Constructor;
@@ -4211,6 +4213,7 @@ namespace Foxoft.Ci
 				if (this.Program.TryLookup(klass.BaseClassName, true) is CiClass baseClass) {
 					if (klass.IsPublic && !baseClass.IsPublic)
 						ReportError(klass, "Public class cannot derive from an internal class");
+					baseClass.HasSubclasses = true;
 					klass.Parent = baseClass;
 				}
 				else

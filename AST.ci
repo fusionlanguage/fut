@@ -1153,6 +1153,7 @@ public class CiClass : CiContainerType
 {
 	internal CiCallType CallType;
 	internal int TypeParameterCount = 0;
+	internal bool HasSubclasses = false;
 	internal string() BaseClassName = "";
 	internal CiMethodBase#? Constructor;
 	internal List<CiConst>() ConstArrays;

@@ -1622,7 +1622,7 @@ public class GenCpp : GenCCpp
 	void WriteDeclarations(CiClass klass, CiVisibility visibility, string visibilityKeyword)
 	{
 		bool constructor = GetConstructorVisibility(klass) == visibility;
-		bool destructor = visibility == CiVisibility.Public && klass.AddsVirtualMethods();
+		bool destructor = visibility == CiVisibility.Public && (klass.HasSubclasses || klass.AddsVirtualMethods());
 		if (!constructor && !destructor && !HasMembersOfVisibility(klass, visibility))
 			return;
 
