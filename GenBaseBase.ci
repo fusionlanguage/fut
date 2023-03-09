@@ -1363,6 +1363,7 @@ public abstract class GenBaseBase : CiExprVisitor
 						WriteVar(whenVar);
 						EndStatement();
 					}
+					WriteTemporaries(when1);
 				}
 			}
 		}

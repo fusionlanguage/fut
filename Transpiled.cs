@@ -7496,6 +7496,7 @@ namespace Foxoft.Ci
 							WriteVar(whenVar);
 							EndStatement();
 						}
+						WriteTemporaries(when1);
 					}
 				}
 			}
