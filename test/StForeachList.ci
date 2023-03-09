@@ -39,6 +39,14 @@ public class Test
 		foreach (Test o in ol) //FAIL: c TODO
 			sum += o.Foo;
 
-		return sum == 30 + 4 + 5 + 1 + 15;
+		List<Test#>() dl;
+		dl.Add(new Test());
+		dl[0].Foo = 7;
+		dl.Add(new Test());
+		dl[1].Foo = 3;
+		foreach (Test d in dl)
+			sum += d.Foo;
+
+		return sum == 30 + 4 + 5 + 1 + 15 + 10;
 	}
 }

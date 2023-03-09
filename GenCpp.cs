@@ -1344,15 +1344,26 @@ public class GenCpp : GenCCpp
 			Write(statement.GetValueVar().Name);
 			WriteChar(']');
 		}
-		else if (((CiClassType) statement.Collection.Type).GetElementType() is CiStorageType storage) {
-			if (!(element.Type is CiReadWriteClassType))
+		else {
+			switch (((CiClassType) statement.Collection.Type).GetElementType()) {
+			case CiStorageType storage:
+				if (!(element.Type is CiReadWriteClassType))
+					Write("const ");
+				Write(storage.Class.Name);
+				Write(" &");
+				Write(element.Name);
+				break;
+			case CiDynamicPtrType dynamic:
 				Write("const ");
-			Write(storage.Class.Name);
-			Write(" &");
-			Write(element.Name);
+				WriteType(dynamic, true);
+				Write(" &");
+				Write(element.Name);
+				break;
+			default:
+				WriteTypeAndName(element);
+				break;
+			}
 		}
-		else
-			WriteTypeAndName(element);
 		Write(" : ");
 		if (statement.Collection.Type is CiStringType)
 			WriteNotRawStringLiteral(statement.Collection, CiPriority.Argument);
