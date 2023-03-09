@@ -29,7 +29,7 @@ public abstract class GenBaseBase : CiExprVisitor
 	bool InChildBlock = false;
 	protected CiMethodBase? CurrentMethod = null;
 	protected HashSet<CiClass>() WrittenClasses;
-	protected List<CiExpr#>() CurrentTemporaries; // CiExpr or CiType
+	protected List<CiExpr>() CurrentTemporaries; // CiExpr or CiType
 
 	protected override CiContainerType GetCurrentContainer()
 	{
@@ -656,9 +656,9 @@ public abstract class GenBaseBase : CiExprVisitor
 	protected void WriteObjectLiteral!(CiAggregateInitializer init, string separator)
 	{
 		string prefix = " { ";
-		foreach (CiExpr expr in init.Items) {
+		foreach (CiExpr item in init.Items) {
 			Write(prefix);
-			assert expr is CiBinaryExpr assign;
+			assert item is CiBinaryExpr assign;
 			assert assign.Left is CiSymbolReference field;
 			WriteName(field.Symbol);
 			Write(separator);
@@ -676,8 +676,9 @@ public abstract class GenBaseBase : CiExprVisitor
 		return expr is CiAggregateInitializer init ? init : null;
 	}
 
-	protected void WriteAggregateInitField!(CiExpr obj, CiBinaryExpr assign) // TODO: private
+	void WriteAggregateInitField!(CiExpr obj, CiExpr item)
 	{
+		assert item is CiBinaryExpr assign;
 		assert assign.Left is CiSymbolReference field;
 		WriteMemberOp(obj, field);
 		WriteName(field.Symbol);
@@ -690,10 +691,9 @@ public abstract class GenBaseBase : CiExprVisitor
 	{
 		CiAggregateInitializer? init = GetAggregateInitializer(def);
 		if (init != null) {
-			foreach (CiExpr expr in init.Items) {
+			foreach (CiExpr item in init.Items) {
 				WriteLocalName(def, CiPriority.Primary);
-				assert expr is CiBinaryExpr assign;
-				WriteAggregateInitField(def, assign);
+				WriteAggregateInitField(def, item);
 			}
 		}
 	}
@@ -734,6 +734,54 @@ public abstract class GenBaseBase : CiExprVisitor
 	}
 
 	protected abstract void WriteResource!(string name, int length);
+
+	public override void VisitPrefixExpr!(CiPrefixExpr expr, CiPriority parent)
+	{
+		switch (expr.Op) {
+		case CiToken.Increment:
+			Write("++");
+			break;
+		case CiToken.Decrement:
+			Write("--");
+			break;
+		case CiToken.Minus:
+			WriteChar('-');
+			// FIXME: - --foo[bar]
+			if (expr.Inner is CiPrefixExpr inner && (inner.Op == CiToken.Minus || inner.Op == CiToken.Decrement))
+				WriteChar(' ');
+			break;
+		case CiToken.Tilde:
+			WriteChar('~');
+			break;
+		case CiToken.ExclamationMark:
+			WriteChar('!');
+			break;
+		case CiToken.New:
+			assert expr.Type is CiDynamicPtrType dynamic;
+			if (dynamic.Class.Id == CiId.ArrayPtrClass)
+				WriteNewArray(dynamic.GetElementType(), expr.Inner, parent);
+			else if (expr.Inner is CiAggregateInitializer init) {
+				int tempId = this.CurrentTemporaries.IndexOf(expr);
+				if (tempId >= 0) {
+					Write("citemp");
+					VisitLiteralLong(tempId);
+				}
+				else
+					WriteNewWithFields(dynamic, init);
+			}
+			else
+				WriteNew(dynamic, parent);
+			return;
+		case CiToken.Resource:
+			assert expr.Inner is CiLiteralString name;
+			assert expr.Type is CiArrayStorageType array;
+			WriteResource(name.Value, array.Length);
+			return;
+		default:
+			assert false;
+		}
+		expr.Inner.Accept(this, CiPriority.Primary);
+	}
 
 	public override void VisitPostfixExpr!(CiPostfixExpr expr, CiPriority parent)
 	{
@@ -1107,7 +1155,31 @@ public abstract class GenBaseBase : CiExprVisitor
 
 	protected abstract void StartTemporaryVar!(CiType type);
 
-	protected abstract void DefineObjectLiteralTemporary!(CiUnaryExpr expr);
+	protected virtual void DefineObjectLiteralTemporary!(CiUnaryExpr expr)
+	{
+		if (expr.Inner is CiAggregateInitializer init) {
+			EnsureChildBlock();
+			int id = this.CurrentTemporaries.IndexOf(expr.Type);
+			if (id < 0) {
+				id = this.CurrentTemporaries.Count;
+				StartTemporaryVar(expr.Type);
+				this.CurrentTemporaries.Add(expr);
+			}
+			else
+				this.CurrentTemporaries[id] = expr;
+			Write("citemp");
+			VisitLiteralLong(id);
+			Write(" = ");
+			assert expr.Type is CiDynamicPtrType dynamic;
+			WriteNew(dynamic, CiPriority.Argument);
+			EndStatement();
+			foreach (CiExpr item in init.Items) {
+				Write("citemp");
+				VisitLiteralLong(id);
+				WriteAggregateInitField(expr, item);
+			}
+		}
+	}
 
 	protected void WriteTemporaries!(CiExpr expr)
 	{
@@ -1121,8 +1193,8 @@ public abstract class GenBaseBase : CiExprVisitor
 			}
 			break;
 		case CiAggregateInitializer init:
-			foreach (CiExpr assignExpr in init.Items) {
-				assert assignExpr is CiBinaryExpr assign;
+			foreach (CiExpr item in init.Items) {
+				assert item is CiBinaryExpr assign;
 				WriteTemporaries(assign.Right);
 			}
 			break;

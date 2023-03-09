@@ -6795,9 +6795,9 @@ namespace Foxoft.Ci
 		protected void WriteObjectLiteral(CiAggregateInitializer init, string separator)
 		{
 			string prefix = " { ";
-			foreach (CiExpr expr in init.Items) {
+			foreach (CiExpr item in init.Items) {
 				Write(prefix);
-				CiBinaryExpr assign = (CiBinaryExpr) expr;
+				CiBinaryExpr assign = (CiBinaryExpr) item;
 				CiSymbolReference field = (CiSymbolReference) assign.Left;
 				WriteName(field.Symbol);
 				Write(separator);
@@ -6815,8 +6815,9 @@ namespace Foxoft.Ci
 			return expr is CiAggregateInitializer init ? init : null;
 		}
 
-		protected void WriteAggregateInitField(CiExpr obj, CiBinaryExpr assign)
+		void WriteAggregateInitField(CiExpr obj, CiExpr item)
 		{
+			CiBinaryExpr assign = (CiBinaryExpr) item;
 			CiSymbolReference field = (CiSymbolReference) assign.Left;
 			WriteMemberOp(obj, field);
 			WriteName(field.Symbol);
@@ -6829,10 +6830,9 @@ namespace Foxoft.Ci
 		{
 			CiAggregateInitializer init = GetAggregateInitializer(def);
 			if (init != null) {
-				foreach (CiExpr expr in init.Items) {
+				foreach (CiExpr item in init.Items) {
 					WriteLocalName(def, CiPriority.Primary);
-					CiBinaryExpr assign = (CiBinaryExpr) expr;
-					WriteAggregateInitField(def, assign);
+					WriteAggregateInitField(def, item);
 				}
 			}
 		}
@@ -6873,6 +6873,53 @@ namespace Foxoft.Ci
 		}
 
 		protected abstract void WriteResource(string name, int length);
+
+		public override void VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
+		{
+			switch (expr.Op) {
+			case CiToken.Increment:
+				Write("++");
+				break;
+			case CiToken.Decrement:
+				Write("--");
+				break;
+			case CiToken.Minus:
+				WriteChar('-');
+				if (expr.Inner is CiPrefixExpr inner && (inner.Op == CiToken.Minus || inner.Op == CiToken.Decrement))
+					WriteChar(' ');
+				break;
+			case CiToken.Tilde:
+				WriteChar('~');
+				break;
+			case CiToken.ExclamationMark:
+				WriteChar('!');
+				break;
+			case CiToken.New:
+				CiDynamicPtrType dynamic = (CiDynamicPtrType) expr.Type;
+				if (dynamic.Class.Id == CiId.ArrayPtrClass)
+					WriteNewArray(dynamic.GetElementType(), expr.Inner, parent);
+				else if (expr.Inner is CiAggregateInitializer init) {
+					int tempId = this.CurrentTemporaries.IndexOf(expr);
+					if (tempId >= 0) {
+						Write("citemp");
+						VisitLiteralLong(tempId);
+					}
+					else
+						WriteNewWithFields(dynamic, init);
+				}
+				else
+					WriteNew(dynamic, parent);
+				return;
+			case CiToken.Resource:
+				CiLiteralString name = (CiLiteralString) expr.Inner;
+				CiArrayStorageType array = (CiArrayStorageType) expr.Type;
+				WriteResource(name.Value, array.Length);
+				return;
+			default:
+				throw new NotImplementedException();
+			}
+			expr.Inner.Accept(this, CiPriority.Primary);
+		}
 
 		public override void VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
 		{
@@ -7242,7 +7289,31 @@ namespace Foxoft.Ci
 
 		protected abstract void StartTemporaryVar(CiType type);
 
-		protected abstract void DefineObjectLiteralTemporary(CiUnaryExpr expr);
+		protected virtual void DefineObjectLiteralTemporary(CiUnaryExpr expr)
+		{
+			if (expr.Inner is CiAggregateInitializer init) {
+				EnsureChildBlock();
+				int id = this.CurrentTemporaries.IndexOf(expr.Type);
+				if (id < 0) {
+					id = this.CurrentTemporaries.Count;
+					StartTemporaryVar(expr.Type);
+					this.CurrentTemporaries.Add(expr);
+				}
+				else
+					this.CurrentTemporaries[id] = expr;
+				Write("citemp");
+				VisitLiteralLong(id);
+				Write(" = ");
+				CiDynamicPtrType dynamic = (CiDynamicPtrType) expr.Type;
+				WriteNew(dynamic, CiPriority.Argument);
+				EndStatement();
+				foreach (CiExpr item in init.Items) {
+					Write("citemp");
+					VisitLiteralLong(id);
+					WriteAggregateInitField(expr, item);
+				}
+			}
+		}
 
 		protected void WriteTemporaries(CiExpr expr)
 		{
@@ -7256,8 +7327,8 @@ namespace Foxoft.Ci
 				}
 				break;
 			case CiAggregateInitializer init:
-				foreach (CiExpr assignExpr in init.Items) {
-					CiBinaryExpr assign = (CiBinaryExpr) assignExpr;
+				foreach (CiExpr item in init.Items) {
+					CiBinaryExpr assign = (CiBinaryExpr) item;
 					WriteTemporaries(assign.Right);
 				}
 				break;

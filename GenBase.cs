@@ -138,52 +138,6 @@ public abstract class GenBase : GenBaseBase
 		}
 	}
 
-	public override void VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
-	{
-		switch (expr.Op) {
-		case CiToken.Increment:
-			Write("++");
-			break;
-		case CiToken.Decrement:
-			Write("--");
-			break;
-		case CiToken.Minus:
-			WriteChar('-');
-			// FIXME: - --foo[bar]
-			if (expr.Inner is CiPrefixExpr inner && (inner.Op == CiToken.Minus || inner.Op == CiToken.Decrement))
-				WriteChar(' ');
-			break;
-		case CiToken.Tilde:
-			WriteChar('~');
-			break;
-		case CiToken.ExclamationMark:
-			WriteChar('!');
-			break;
-		case CiToken.New:
-			CiDynamicPtrType dynamic = (CiDynamicPtrType) expr.Type;
-			if (dynamic.Class.Id == CiId.ArrayPtrClass)
-				WriteNewArray(dynamic.GetElementType(), expr.Inner, parent);
-			else if (expr.Inner is CiAggregateInitializer init) {
-				int tempId = this.CurrentTemporaries.IndexOf(expr);
-				if (tempId >= 0) {
-					Write("citemp");
-					VisitLiteralLong(tempId);
-				}
-				else
-					WriteNewWithFields(dynamic, init);
-			}
-			else
-				WriteNew(dynamic, parent);
-			return;
-		case CiToken.Resource:
-			WriteResource(((CiLiteralString) expr.Inner).Value, ((CiArrayStorageType) expr.Type).Length);
-			return;
-		default:
-			throw new ArgumentException(expr.Op.ToString());
-		}
-		expr.Inner.Accept(this, CiPriority.Primary);
-	}
-
 	protected bool WriteRegexOptions(List<CiExpr> args, string prefix, string separator, string suffix, string i, string m, string s)
 	{
 		CiExpr expr = args[args.Count - 1];
@@ -207,31 +161,6 @@ public abstract class GenBase : GenBaseBase
 		}
 		Write(suffix);
 		return true;
-	}
-
-	protected override void DefineObjectLiteralTemporary(CiUnaryExpr expr) // TODO: virtual
-	{
-		if (expr.Inner is CiAggregateInitializer init) {
-			EnsureChildBlock();
-			int id = this.CurrentTemporaries.IndexOf(expr.Type);
-			if (id < 0) {
-				id = this.CurrentTemporaries.Count;
-				StartTemporaryVar(expr.Type);
-				this.CurrentTemporaries.Add(expr);
-			}
-			else
-				this.CurrentTemporaries[id] = expr;
-			Write("citemp");
-			VisitLiteralLong(id);
-			Write(" = ");
-			WriteNew((CiDynamicPtrType) expr.Type, CiPriority.Argument);
-			EndStatement();
-			foreach (CiBinaryExpr field in init.Items) {
-				Write("citemp");
-				VisitLiteralLong(id);
-				WriteAggregateInitField(expr, field);
-			}
-		}
 	}
 }
 
