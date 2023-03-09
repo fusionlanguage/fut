@@ -1,5 +1,7 @@
-public static class Test
+public class Test
 {
+	int Foo;
+
 	public static bool Run()
 	{
 		List<int>() list; //FAIL: cl
@@ -29,6 +31,14 @@ public static class Test
 			if (!b)
 				sum++;
 
-		return sum == 30 + 4 + 5 + 1;
+		List<Test()>() ol;
+		ol.Add();
+		ol[0].Foo = 5;
+		ol.Add();
+		ol[1].Foo = 10;
+		foreach (Test o in ol) //FAIL: c TODO
+			sum += o.Foo;
+
+		return sum == 30 + 4 + 5 + 1 + 15;
 	}
 }
