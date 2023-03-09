@@ -822,6 +822,17 @@ public class GenCpp : GenCCpp
 			if (parent > CiPriority.Equality)
 				WriteChar(')');
 			break;
+		case CiId.ListIndexOf:
+			{
+				CiType elementType = ((CiClassType) obj.Type).GetElementType();
+				Write("[](");
+				WriteCollectionType("vector", elementType);
+				Write(" &v, const ");
+				WriteType(elementType, false);
+			}
+			Include("algorithm");
+			WriteCall(" &value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }", obj, args[0]);
+			break;
 		case CiId.ListInsert:
 			StartMethodCall(obj);
 			if (args.Count == 1) {

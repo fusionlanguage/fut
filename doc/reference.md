@@ -924,6 +924,8 @@ You can remove:
 * A continuous sequence of elements with `RemoveRange(index, count)`.
 
 `list.Contains(value)` returns `true` if the list contains the specified item.
+`list.IndexOf(value)` returns the position of the specified element
+or -1 if not found.
 
 `list.CopyTo(sourceIndex, destinationArray, destinationIndex, count)`
 copies elements from a list to an array.

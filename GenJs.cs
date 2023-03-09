@@ -492,6 +492,7 @@ public class GenJsNoModule : GenBase
 		case CiId.StringLastIndexOf:
 		case CiId.StringStartsWith:
 		case CiId.ArraySortAll:
+		case CiId.ListIndexOf:
 		case CiId.StackPush:
 		case CiId.StackPop:
 		case CiId.HashSetAdd:

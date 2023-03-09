@@ -535,6 +535,13 @@ public class GenPy : GenPySwift
 		}
 	}
 
+	void WriteContains(CiExpr haystack, CiExpr needle)
+	{
+		needle.Accept(this, CiPriority.Rel);
+		Write(" in ");
+		haystack.Accept(this, CiPriority.Rel);
+	}
+
 	void WriteSlice(CiExpr startIndex, CiExpr length)
 	{
 		WriteChar('[');
@@ -601,9 +608,7 @@ public class GenPy : GenPySwift
 		case CiId.DictionaryContainsKey:
 		case CiId.SortedDictionaryContainsKey:
 		case CiId.OrderedDictionaryContainsKey:
-			args[0].Accept(this, CiPriority.Rel);
-			Write(" in ");
-			obj.Accept(this, CiPriority.Rel);
+			WriteContains(obj, args[0]);
 			break;
 		case CiId.StringEndsWith:
 			WriteMethodCall(obj, "endswith", args[0]);
@@ -698,6 +703,16 @@ public class GenPy : GenPySwift
 			}
 			else
 				WritePostfix(obj, ".clear()");
+			break;
+		case CiId.ListIndexOf:
+			if (parent > CiPriority.Select)
+				WriteChar('(');
+			WriteMethodCall(obj, "index", args[0]);
+			Write(" if ");
+			WriteContains(obj, args[0]); // TODO: side effects
+			Write(" else -1");
+			if (parent > CiPriority.Select)
+				WriteChar(')');
 			break;
 		case CiId.ListInsert:
 			WriteListInsert(obj, "insert", args);

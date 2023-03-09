@@ -578,6 +578,15 @@ public class GenSwift : GenPySwift
 		case CiId.SortedDictionaryClear:
 			WritePostfix(obj, ".removeAll()");
 			break;
+		case CiId.ListIndexOf:
+			if (parent > CiPriority.Rel)
+				WriteChar('(');
+			WritePostfix(obj, ".firstIndex(of: ");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(") ?? -1");
+			if (parent > CiPriority.Rel)
+				WriteChar(')');
+			break;
 		case CiId.ListInsert:
 			WritePostfix(obj, ".insert(");
 			CiType elementType = ((CiClassType) obj.Type).GetElementType();

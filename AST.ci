@@ -123,6 +123,7 @@ public enum CiId
 	ListContains,
 	ListCopyTo,
 	ListCount,
+	ListIndexOf,
 	ListInsert,
 	ListLast,
 	ListRemoveAt,
@@ -1477,6 +1478,7 @@ public class CiSystem : CiScope
 		listClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.ListContains, "Contains", CiVar.New(TypeParam0, "value")));
 		listClass.Add(CiMethod.New(CiVisibility.Public, VoidType, CiId.ListCopyTo, "CopyTo", CiVar.New(IntType, "sourceIndex"),
 			CiVar.New(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"), CiVar.New(IntType, "destinationIndex"), CiVar.New(IntType, "count")));
+		listClass.Add(CiMethod.NewMutator(CiVisibility.Public, IntType, CiId.ListIndexOf, "IndexOf", CiVar.New(TypeParam0, "value")));
 		listClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.ListInsert, "Insert", CiVar.New(UIntType, "index"), CiVar.New(typeParam0NotFinal, "value")));
 		listClass.Add(CiMethod.NewMutator(CiVisibility.Public, TypeParam0, CiId.ListLast, "Last"));
 		listClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.ListRemoveAt, "RemoveAt", CiVar.New(IntType, "index")));

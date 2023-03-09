@@ -1309,6 +1309,7 @@ namespace Foxoft.Ci
 		ListContains,
 		ListCopyTo,
 		ListCount,
+		ListIndexOf,
 		ListInsert,
 		ListLast,
 		ListRemoveAt,
@@ -2920,6 +2921,7 @@ namespace Foxoft.Ci
 			listClass.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.ListAny, "Any", CiVar.New(typeParam0Predicate, "predicate")));
 			listClass.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.ListContains, "Contains", CiVar.New(this.TypeParam0, "value")));
 			listClass.Add(CiMethod.New(CiVisibility.Public, this.VoidType, CiId.ListCopyTo, "CopyTo", CiVar.New(this.IntType, "sourceIndex"), CiVar.New(new CiReadWriteClassType { Class = this.ArrayPtrClass, TypeArg0 = this.TypeParam0 }, "destinationArray"), CiVar.New(this.IntType, "destinationIndex"), CiVar.New(this.IntType, "count")));
+			listClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.IntType, CiId.ListIndexOf, "IndexOf", CiVar.New(this.TypeParam0, "value")));
 			listClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.ListInsert, "Insert", CiVar.New(this.UIntType, "index"), CiVar.New(typeParam0NotFinal, "value")));
 			listClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.TypeParam0, CiId.ListLast, "Last"));
 			listClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.ListRemoveAt, "RemoveAt", CiVar.New(this.IntType, "index")));
