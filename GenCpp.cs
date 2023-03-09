@@ -825,13 +825,17 @@ public class GenCpp : GenCCpp
 		case CiId.ListIndexOf:
 			{
 				CiType elementType = ((CiClassType) obj.Type).GetElementType();
-				Write("[](");
+				Write("[](const ");
 				WriteCollectionType("vector", elementType);
-				Write(" &v, const ");
+				Write(" &v, ");
 				WriteType(elementType, false);
+				Include("algorithm");
+				Write(" value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(");
+				WriteCollectionObject(obj, CiPriority.Argument);
+				Write(", ");
+				WriteCoerced(elementType, args[0], CiPriority.Argument);
+				WriteChar(')');
 			}
-			Include("algorithm");
-			WriteCall(" &value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }", obj, args[0]);
 			break;
 		case CiId.ListInsert:
 			StartMethodCall(obj);
