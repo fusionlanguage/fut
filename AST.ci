@@ -329,10 +329,10 @@ public class CiScope : CiSymbol
 		return result;
 	}
 
-	public CiContainerType GetContainer()
+	public CiContainerType! GetContainer!()
 	{
-		for (CiScope? scope = this; scope != null; scope = scope.Parent) {
-			if (scope is CiContainerType container)
+		for (CiScope!? scope = this; scope != null; scope = scope.Parent) {
+			if (scope is CiContainerType! container)
 				return container;
 		}
 		assert false;

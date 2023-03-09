@@ -706,7 +706,7 @@ public class CiSema : CiVisitor
 		}
 	}
 
-	CiExpr# ResolveEquality(CiBinaryExpr expr, CiExpr# left, CiExpr# right)
+	CiExpr# ResolveEquality!(CiBinaryExpr expr, CiExpr# left, CiExpr# right)
 	{
 		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {
 			if (leftRange.Min == leftRange.Max && leftRange.Min == rightRange.Min && leftRange.Min == rightRange.Max)
@@ -741,7 +741,7 @@ public class CiSema : CiVisitor
 		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = this.Program.System.BoolType };
 	}
 
-	CiExpr# ResolveIs(CiBinaryExpr# expr, CiExpr# left, CiExpr right)
+	CiExpr# ResolveIs!(CiBinaryExpr# expr, CiExpr# left, CiExpr right)
 	{
 		if (!(left.Type is CiClassType leftPtr) || left.Type is CiStorageType)
 			return PoisonError(expr, "Left hand side of the 'is' operator must be an object reference");
@@ -1160,7 +1160,7 @@ public class CiSema : CiVisitor
 		return param == null || param.Value != null;
 	}
 
-	CiExpr# ResolveCallWithArguments(CiCallExpr# expr, List<CiExpr#> arguments)
+	CiExpr# ResolveCallWithArguments!(CiCallExpr# expr, List<CiExpr#> arguments)
 	{
 		if (!(Resolve(expr.Method) is CiSymbolReference# symbol))
 			return this.Poison;
@@ -1284,7 +1284,7 @@ public class CiSema : CiVisitor
 		}
 	}
 
-	void VisitVar(CiVar# expr)
+	void VisitVar!(CiVar# expr)
 	{
 		CiType type = ResolveType(expr);
 		if (expr.Value != null) {
@@ -1373,7 +1373,7 @@ public class CiSema : CiVisitor
 		return ptr;
 	}
 
-	void FillGenericClass(CiClassType! result, CiClass klass, CiAggregateInitializer typeArgExprs)
+	void FillGenericClass!(CiClassType! result, CiClass klass, CiAggregateInitializer typeArgExprs)
 	{
 		List<CiType#>() typeArgs;
 		foreach (CiExpr# typeArgExpr in typeArgExprs.Items)
@@ -1451,7 +1451,7 @@ public class CiSema : CiVisitor
 		}
 	}
 
-	CiType# ToType(CiExpr# expr, bool dynamic)
+	CiType# ToType!(CiExpr# expr, bool dynamic)
 	{
 		CiExpr#? minExpr = null;
 		if (expr is CiBinaryExpr range && range.Op == CiToken.Range) {
@@ -1528,7 +1528,7 @@ public class CiSema : CiVisitor
 		return outerArray;
 	}
 
-	CiType# ResolveType(CiNamedValue! def)
+	CiType# ResolveType!(CiNamedValue! def)
 	{
 		def.Type = ToType(def.TypeExpr, false);
 		return def.Type;
@@ -1552,7 +1552,7 @@ public class CiSema : CiVisitor
 				ResolveConst(konst);
 				this.CurrentScope.Add(konst);
 				if (konst.Type is CiArrayStorageType) {
-					assert this.CurrentScope.GetContainer() is CiClass klass;
+					assert this.CurrentScope.GetContainer() is CiClass! klass;
 					klass.ConstArrays.Add(konst);
 				}
 			}
@@ -1760,7 +1760,7 @@ public class CiSema : CiVisitor
 			return;
 		}
 		statement.SetCompletesNormally(false);
-		foreach (CiCase kase in statement.Cases) {
+		foreach (CiCase! kase in statement.Cases) {
 			for (int i = 0; i < kase.Values.Count; i++) {
 				if (statement.Value.Type is CiClassType switchPtr && switchPtr.Class.Id != CiId.StringClass) {
 					CiExpr# value = kase.Values[i];
