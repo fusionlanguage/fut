@@ -1477,6 +1477,12 @@ namespace Foxoft.Ci
 	public abstract class CiExprVisitor : CiVisitor
 	{
 
+		public abstract void VisitLiteralNull();
+
+		public abstract void VisitLiteralFalse();
+
+		public abstract void VisitLiteralTrue();
+
 		public abstract void VisitLiteralLong(long value);
 
 		public abstract void VisitLiteralChar(int value);
@@ -1484,12 +1490,6 @@ namespace Foxoft.Ci
 		public abstract void VisitLiteralDouble(double value);
 
 		public abstract void VisitLiteralString(string value);
-
-		public abstract void VisitLiteralNull();
-
-		public abstract void VisitLiteralFalse();
-
-		public abstract void VisitLiteralTrue();
 
 		public abstract void VisitAggregateInitializer(CiAggregateInitializer expr);
 
@@ -1655,6 +1655,19 @@ namespace Foxoft.Ci
 		}
 	}
 
+	public class CiLiteralNull : CiLiteral
+	{
+
+		public override bool IsDefaultValue() => true;
+
+		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		{
+			visitor.VisitLiteralNull();
+		}
+
+		public override string ToString() => "null";
+	}
+
 	public class CiLiteralFalse : CiLiteral
 	{
 
@@ -1679,19 +1692,6 @@ namespace Foxoft.Ci
 		}
 
 		public override string ToString() => "true";
-	}
-
-	public class CiLiteralNull : CiLiteral
-	{
-
-		public override bool IsDefaultValue() => true;
-
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
-		{
-			visitor.VisitLiteralNull();
-		}
-
-		public override string ToString() => "null";
 	}
 
 	public class CiLiteralLong : CiLiteral
