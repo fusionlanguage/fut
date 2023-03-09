@@ -18,6 +18,6 @@ public static class Test
 		Derived() d;
 		Base b = d;
 		return b is Derived //FAIL: c cl TODO
-			&& !(b is NotThis);
+			&& !(b is NotThis) & b is Derived;
 	}
 }

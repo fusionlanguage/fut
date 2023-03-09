@@ -1299,6 +1299,8 @@ public class GenCpp : GenCCpp
 			return;
 		case CiToken.Is:
 			if (expr.Right is CiSymbolReference symbol) {
+				if (parent >= CiPriority.Or && parent <= CiPriority.Mul)
+					Write("!!");
 				Write("dynamic_cast<const ");
 				Write(symbol.Symbol.Name);
 				Write(" *");
