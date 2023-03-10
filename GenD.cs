@@ -1,7 +1,7 @@
 // GenD.cs - D code generator
 //
 // Copyright (C) 2011-2023  Piotr Fusik
-// Copyright (C) 2023 Adrian Matoga
+// Copyright (C) 2023  Adrian Matoga
 //
 // This file is part of CiTo, see https://github.com/pfusik/cito
 //
@@ -53,9 +53,9 @@ public class GenD : GenCCppD
 			case CiDocCode code:
 				switch (code.Text) {
 				default:
-					Write("`");
+					WriteChar('`');
 					WriteXmlDoc(code.Text);
-					Write("`");
+					WriteChar('`');
 					break;
 				}
 				break;
@@ -361,13 +361,13 @@ public class GenD : GenCCppD
 				Include("std.container.array");
 				Write("Array!(");
 				WriteElementType(klass.GetElementType());
-				Write(")");
+				WriteChar(')');
 				break;
 			case CiId.QueueClass:
 				Include("std.container.dlist");
 				Write("DList!(");
 				WriteElementType(klass.GetElementType());
-				Write(")");
+				WriteChar(')');
 				break;
 			case CiId.HashSetClass:
 				Write("bool[");
@@ -516,7 +516,7 @@ public class GenD : GenCCppD
 				WriteArrayElement(def, nesting);
 				Write(" = ");
 				WriteNew(klass, CiPriority.Argument);
-				WriteLine(";");
+				WriteCharLine(';');
 			}
 			while (--nesting >= 0)
 				CloseBlock();
@@ -543,7 +543,7 @@ public class GenD : GenCCppD
 							WriteNew(klass, CiPriority.Argument);
 						else
 							WriteCoercedExpr(def.Type, def.Value);
-						WriteLine(";");
+						WriteCharLine(';');
 					}
 					base.WriteInitCode(def);
 					break;
@@ -972,7 +972,7 @@ public class GenD : GenCCppD
 			break;
 		case CiId.MatchFindStr:
 			Include("std.regex");
-			Write("(");
+			WriteChar('(');
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = ");
 			args[0].Accept(this, CiPriority.Primary);
@@ -985,7 +985,7 @@ public class GenD : GenCCppD
 			break;
 		case CiId.MatchFindRegex:
 			Include("std.regex");
-			Write("(");
+			WriteChar('(');
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = ");
 			WriteMethodCall(args[0], "matchFirst", args[1]);
@@ -1063,7 +1063,7 @@ public class GenD : GenCCppD
 				HasSortedDictionaryFind = true;
 				Write(".find(");
 				WriteStronglyCoerced(klass.GetKeyType(), expr.Right);
-				Write(")");
+				WriteChar(')');
 				return;
 			} else
 				throw new InvalidOperationException();
@@ -1128,7 +1128,7 @@ public class GenD : GenCCppD
 				indexing.Right.Accept(this, CiPriority.Argument);
 				Write(", ");
 				WriteNotPromoted(expr.Type, expr.Right);
-				Write(")");
+				WriteChar(')');
 				return;
 			throw new NotImplementedException();
 			default:
@@ -1321,7 +1321,7 @@ public class GenD : GenCCppD
 		WriteTypeAndName(konst);
 		Write(" = ");
 		WriteCoercedExpr(konst.Type, konst.Value);
-		WriteLine(";");
+		WriteCharLine(';');
 	}
 
 	protected override void WriteField(CiField field)
@@ -1334,7 +1334,7 @@ public class GenD : GenCCppD
 			Write(" = ");
 			WriteCoercedExpr(field.Type, field.Value);
 		}
-		WriteLine(";");
+		WriteCharLine(';');
 	}
 
 	protected override void WriteMethod(CiMethod method)
