@@ -316,7 +316,6 @@ public class GenD : GenCCppD
 		}
 	}
 
-
 	protected static bool IsCreateWithNew(CiType type)
 	{
 		if (type is CiClassType klass) {
@@ -697,6 +696,18 @@ public class GenD : GenCCppD
 			WritePostfix(obj, " = ");
 			WritePostfix(args[0], ".to!double; return true; } catch (ConvException e) return false; }()");
 			break;
+		case CiId.StringContains:
+			Include("std.algorithm");
+			WritePostfix(obj, ".canFind");
+			WriteArgsInParentheses(method, args);
+			break;
+		case CiId.StringEndsWith:
+		case CiId.StringIndexOf:
+		case CiId.StringLastIndexOf:
+		case CiId.StringReplace:
+		case CiId.StringStartsWith:
+			Include("std.string");
+			goto default;
 		case CiId.StringSubstring:
 			obj.Accept(this, CiPriority.Primary);
 			WriteChar('[');
@@ -822,57 +833,6 @@ public class GenD : GenCCppD
 			Write("[].countUntil");
 			WriteArgsInParentheses(method, args);
 			break;
-		case CiId.DictionaryAdd:
-			if (obj.Type is CiClassType klass && klass.Class.Id == CiId.SortedDictionaryClass) {
-				HasSortedDictionaryInsert = true;
-				WritePostfix(obj, ".replace(");
-			} else
-				WritePostfix(obj, ".require(");
-			args[0].Accept(this, CiPriority.Argument);
-			Write(", ");
-			WriteInsertedArg(((CiClassType) obj.Type).GetValueType(), args, 1);
-			break;
-		case CiId.SortedSetAdd:
-			WritePostfix(obj, ".insert(");
-			WriteInsertedArg(((CiClassType) obj.Type).GetElementType(), args, 0);
-			break;
-		case CiId.SortedSetRemove:
-			WritePostfix(obj, ".removeKey");
-			WriteArgsInParentheses(method, args);
-			break;
-		case CiId.HashSetAdd:
-			WritePostfix(obj, ".require(");
-			args[0].Accept(this, CiPriority.Argument);
-			Write(", true)");
-			break;
-		case CiId.DictionaryClear:
-		case CiId.HashSetClear:
-			WritePostfix(obj, ".clear()");
-			break;
-		case CiId.DictionaryContainsKey:
-		case CiId.HashSetContains:
-			WriteChar('(');
-			args[0].Accept(this, CiPriority.Rel);
-			Write(" in ");
-			obj.Accept(this, CiPriority.Primary);
-			WriteChar(')');
-			break;
-		case CiId.SortedDictionaryRemove:
-			WriteClassReference(obj);
-			Write(".removeKey(tuple(");
-			args[0].Accept(this, CiPriority.Argument);
-			Write(", ");
-			WriteStaticInitializer(((CiClassType) obj.Type).GetValueType());
-			Write("))");
-			break;
-		case CiId.SortedDictionaryContainsKey:
-			Write("tuple(");
-			args[0].Accept(this, CiPriority.Argument);
-			Write(", ");
-			WriteStaticInitializer(((CiClassType) obj.Type).GetValueType());
-			Write(") in ");
-			WriteClassReference(obj);
-			break;
 		case CiId.QueueDequeue:
 			HasQueueDequeue = true;
 			goto default;
@@ -890,18 +850,57 @@ public class GenD : GenCCppD
 		case CiId.StackPop:
 			HasStackPop = true;
 			goto default;
-		case CiId.StringContains:
-			Include("std.algorithm");
-			WritePostfix(obj, ".canFind");
+		case CiId.HashSetAdd:
+			WritePostfix(obj, ".require(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(", true)");
+			break;
+		case CiId.HashSetClear:
+		case CiId.DictionaryClear:
+			WritePostfix(obj, ".clear()");
+			break;
+		case CiId.HashSetContains:
+		case CiId.DictionaryContainsKey:
+			WriteChar('(');
+			args[0].Accept(this, CiPriority.Rel);
+			Write(" in ");
+			obj.Accept(this, CiPriority.Primary);
+			WriteChar(')');
+			break;
+		case CiId.SortedSetAdd:
+			WritePostfix(obj, ".insert(");
+			WriteInsertedArg(((CiClassType) obj.Type).GetElementType(), args, 0);
+			break;
+		case CiId.SortedSetRemove:
+			WritePostfix(obj, ".removeKey");
 			WriteArgsInParentheses(method, args);
 			break;
-		case CiId.StringEndsWith:
-		case CiId.StringStartsWith:
-		case CiId.StringIndexOf:
-		case CiId.StringLastIndexOf:
-		case CiId.StringReplace:
-			Include("std.string");
-			goto default;
+		case CiId.DictionaryAdd:
+			if (obj.Type is CiClassType klass && klass.Class.Id == CiId.SortedDictionaryClass) {
+				HasSortedDictionaryInsert = true;
+				WritePostfix(obj, ".replace(");
+			} else
+				WritePostfix(obj, ".require(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(", ");
+			WriteInsertedArg(((CiClassType) obj.Type).GetValueType(), args, 1);
+			break;
+		case CiId.SortedDictionaryContainsKey:
+			Write("tuple(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(", ");
+			WriteStaticInitializer(((CiClassType) obj.Type).GetValueType());
+			Write(") in ");
+			WriteClassReference(obj);
+			break;
+		case CiId.SortedDictionaryRemove:
+			WriteClassReference(obj);
+			Write(".removeKey(tuple(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(", ");
+			WriteStaticInitializer(((CiClassType) obj.Type).GetValueType());
+			Write("))");
+			break;
 		case CiId.TextWriterWrite:
 		case CiId.TextWriterWriteLine:
 			WritePostfix(obj, ".");
@@ -949,6 +948,12 @@ public class GenD : GenCCppD
 			WriteRegexOptions(args, ", \"", "", "\"", "i", "m", "s");
 			WriteChar(')');
 			break;
+		case CiId.RegexEscape:
+			Include("std.regex");
+			Include("std.conv");
+			args[0].Accept(this, CiPriority.Argument);
+			Write(".escaper.to!string");
+			break;
 		case CiId.RegexIsMatchRegex:
 			Include("std.regex");
 			WritePostfix(args[0], ".matchFirst(");
@@ -963,12 +968,6 @@ public class GenD : GenCCppD
 			(args.Count > 1 ? args[1] : obj).Accept(this, CiPriority.Argument);
 			WriteRegexOptions(args, ", \"", "", "\")", "i", "m", "s");
 			WriteChar(')');
-			break;
-		case CiId.RegexEscape:
-			Include("std.regex");
-			Include("std.conv");
-			args[0].Accept(this, CiPriority.Argument);
-			Write(".escaper.to!string");
 			break;
 		case CiId.MatchFindStr:
 			Include("std.regex");
@@ -1011,10 +1010,10 @@ public class GenD : GenCCppD
 			WriteArgsInParentheses(method, args);
 			break;
 		case CiId.MathClamp:
-		case CiId.MathMinDouble:
-		case CiId.MathMinInt:
-		case CiId.MathMaxDouble:
 		case CiId.MathMaxInt:
+		case CiId.MathMaxDouble:
+		case CiId.MathMinInt:
+		case CiId.MathMinDouble:
 			Include("std.algorithm");
 			Write(GetMathMethodName(method));
 			WriteArgsInParentheses(method, args);
@@ -1075,7 +1074,7 @@ public class GenD : GenCCppD
 
 	static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
 
-	protected  bool IsIsComparable(CiExpr expr) {
+	protected bool IsIsComparable(CiExpr expr) {
 		if (expr is CiLiteralNull)
 			return true;
 		if (expr.Type is CiClassType klass) {
@@ -1330,7 +1329,7 @@ public class GenD : GenCCppD
 		WriteDoc(field.Documentation);
 		WriteVisibility(field.Visibility);
 		WriteTypeAndName(field);
-		if (field.Value != null && field.Value is CiLiteral) {
+		if (field.Value is CiLiteral) {
 			Write(" = ");
 			WriteCoercedExpr(field.Type, field.Value);
 		}
@@ -1484,13 +1483,12 @@ public class GenD : GenCCppD
 
 		if (this.HasListInsert || this.HasListRemoveAt || this.HasStackPop)
 			Include("std.container.array");
+		if (this.HasQueueDequeue)
+			Include("std.container.dlist");
 		if (this.HasSortedDictionaryFind || this.HasSortedDictionaryInsert)
 			Include("std.container.rbtree");
 		if (this.HasSortedDictionaryFind || this.HasSortedDictionaryInsert)
 			Include("std.typecons");
-		if (this.HasQueueDequeue) {
-			Include("std.container.dlist");
-		}
 
 		CreateFile(this.OutputFile);
 		WriteIncludes("import ", ";");
