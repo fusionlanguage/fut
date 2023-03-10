@@ -19,26 +19,27 @@ SWIFTC += -sanitize=address
 endif
 CC = clang
 CXX = clang++ -std=c++2a
+DC = dmd
 PYTHON = python3 -B
 
 MAKEFLAGS = -r
 ifdef V
-DO = 
+DO =
 else
-DO = @echo $@ && 
+DO = @echo $@ &&
 endif
 DO_SUMMARY = $(DO)perl test/summary.pl $(filter %.txt, $^)
 DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 
 all: cito.exe
 
-cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs FileResourceSema.cs GenBase.cs GenTyped.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenJava.cs GenJs.cs GenPySwift.cs GenPy.cs GenSwift.cs GenTs.cs GenCl.cs CiTo.cs)
+cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs FileResourceSema.cs GenBase.cs GenTyped.cs GenCCpp.cs GenCCppD.cs GenC.cs GenCpp.cs GenCs.cs GenD.cs GenJava.cs GenJs.cs GenPySwift.cs GenPy.cs GenSwift.cs GenTs.cs GenCl.cs CiTo.cs)
 	$(DO_BUILD)
 
 Transpiled.cs: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBaseBase.ci
 	cito -o $@ -n Foxoft.Ci $^
 
-test: test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-cl test-error
+test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error
 	perl test/summary.pl test/bin/*/*.txt
 
 test-c test-GenC.cs: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
@@ -48,6 +49,9 @@ test-cpp test-GenCpp.cs: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard te
 	$(DO_SUMMARY)
 
 test-cs test-GenCs.cs: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci))
+	$(DO_SUMMARY)
+
+test-d test-GenD.cs: $(patsubst test/%.ci, test/bin/%/d.txt, $(wildcard test/*.ci)) test/bin/CiCheck/Test.d
 	$(DO_SUMMARY)
 
 test-java test-GenJava.cs: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) test/bin/CiCheck/CiSema.java
@@ -87,6 +91,9 @@ test/bin/%/cpp.txt: test/bin/%/cpp.exe
 test/bin/%/cs.txt: test/bin/%/cs.dll test/cs.runtimeconfig.json
 	$(DO)dotnet exec --runtimeconfig test/cs.runtimeconfig.json $< >$@ || grep '//FAIL:.*\<cs\>' test/$*.ci
 
+test/bin/%/d.txt: test/bin/%/d.exe
+	$(DO)./$< >$@ || grep '//FAIL:.*\<d\>' test/$*.ci
+
 test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
 	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)" Runner >$@ || grep '//FAIL:.*\<java\>' test/$*.ci
 
@@ -114,6 +121,9 @@ test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
 test/bin/%/cs.dll: test/bin/%/Test.cs test/Runner.cs
 	$(DO)$(CSC) -out:$@ $^ || grep '//FAIL:.*\<cs\>' test/$*.ci
 
+test/bin/%/d.exe: test/bin/%/Test.d test/Runner.d
+	$(DO)$(DC) -of$@ $(DFLAGS) -I$(<D) $^ || grep '//FAIL:.*\<d\>' test/$*.ci
+
 test/bin/%/Test.class: test/bin/%/Test.java
 	$(DO)javac -d $(@D) -encoding utf8 $(<D)/*.java || grep '//FAIL:.*\<java\>' test/$*.ci
 
@@ -136,6 +146,9 @@ test/bin/%/Test.cpp: test/%.ci cito.exe
 	$(DO_CITO)
 
 test/bin/%/Test.cs: test/%.ci cito.exe
+	$(DO_CITO)
+
+test/bin/%/Test.d: test/%.ci cito.exe
 	$(DO_CITO)
 
 test/bin/%/Test.java: test/%.ci cito.exe
@@ -162,6 +175,12 @@ test/bin/CiCheck/cpp.txt: test/bin/CiCheck/cpp.exe Lexer.ci AST.ci Parser.ci Con
 test/bin/CiCheck/cpp.exe: test/bin/CiCheck/Test.cpp test/CiCheck.cpp
 	$(DO)$(CXX) -o $@ $(CFLAGS) -I $(<D) $^
 
+test/bin/CiCheck/d.txt: test/bin/CiCheck/d.exe Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBaseBase.ci
+	$(DO)./$< $(filter %.ci, $^) >$@
+
+test/bin/CiCheck/d.exe: test/bin/CiCheck/Test.d test/CiCheck.d
+	$(DO)$(DC) -of$@ $(DFLAGS) -I$(<D) $^
+
 test/bin/CiCheck/java.txt: test/bin/CiCheck/CiSema.class Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBaseBase.ci
 	$(DO)java -cp "$(<D)" --enable-preview CiCheck $(filter %.ci, $^) >$@
 
@@ -171,16 +190,16 @@ test/bin/CiCheck/CiSema.class: test/bin/CiCheck/CiSema.java test/CiCheck.java
 test/bin/CiCheck/js.txt: test/CiCheck.js test/bin/CiCheck/Test.js Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBaseBase.ci
 	$(DO)node test/CiCheck.js Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci >$@
 
-test/bin/CiCheck/Test.cpp test/bin/CiCheck/CiSema.java test/bin/CiCheck/Test.js test/bin/CiCheck/Test.ts: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci cito.exe
+test/bin/CiCheck/Test.cpp test/bin/CiCheck/Test.d test/bin/CiCheck/CiSema.java test/bin/CiCheck/Test.js test/bin/CiCheck/Test.ts: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci cito.exe
 	$(DO)mkdir -p $(@D) && $(CITO) -o $@ $(filter %.ci, $^)
 
 test/bin/Resource/java.txt: test/bin/Resource/Test.class test/bin/Runner.class
 	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)$(JAVACPSEP)test" Runner >$@
 
-$(addprefix test/bin/Resource/Test., c cpp cs java js ts py swift cl): test/Resource.ci cito.exe
+$(addprefix test/bin/Resource/Test., c cpp cs d java js ts py swift cl): test/Resource.ci cito.exe
 	$(DO)mkdir -p $(@D) && ($(CITO) -o $@ -I $(<D) $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 
-.PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.ts test/bin/%/Test.d.ts test/bin/%/Test.py test/bin/%/Test.swift test/bin/%/Test.cl
+.PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.d test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.ts test/bin/%/Test.d.ts test/bin/%/Test.py test/bin/%/Test.swift test/bin/%/Test.cl
 
 test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 	$(DO)javac -d $(@D) -cp test/bin/Basic $<
@@ -191,7 +210,7 @@ test/node_modules: test/package.json
 test/bin/%/error.txt: test/error/%.ci cito.exe
 	$(DO)mkdir -p $(@D) && ! $(CITO) -o $(@:%.txt=%.cs) $< 2>$@ && perl -ne 'print "$$ARGV($$.): $$1\n" while m!//(ERROR: .+?)(?=$$| //)!g' $< | diff -u --strip-trailing-cr - $@ && echo PASSED >$@
 
-test-transpile: $(foreach t, $(patsubst test/%.ci, test/bin/%/Test., $(wildcard test/*.ci)), $tc $tcpp $tcs $tjava $tjs $tts $tpy $tswift $tcl)
+test-transpile: $(foreach t, $(patsubst test/%.ci, test/bin/%/Test., $(wildcard test/*.ci)), $tc $tcpp $tcs $td $tjava $tjs $tts $tpy $tswift $tcl)
 
 coverage/output.xml:
 	$(MAKE) clean cito.exe CSCFLAGS=-debug+
@@ -219,6 +238,6 @@ clean:
 	$(RM) cito.exe
 	$(RM) -r test/bin
 
-.PHONY: all test test-c test-cpp test-cs test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov install install-cito uninstall clean
+.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov install install-cito uninstall clean
 
 .DELETE_ON_ERROR:

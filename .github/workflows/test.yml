@@ -25,6 +25,14 @@ jobs:
           dotnet-version: 6.0.406
       - uses: actions/checkout@main
       - run: make -j3 test-cs
+  d:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: dlang-community/setup-dlang@v1
+        with:
+          compiler: dmd-latest
+      - uses: actions/checkout@main
+      - run: make -j3 test-d
   js-ts:
     runs-on: ubuntu-22.04
     steps:

@@ -38,6 +38,7 @@ public static class CiTo
 		Console.WriteLine("-l c       Translate to C");
 		Console.WriteLine("-l cpp     Translate to C++");
 		Console.WriteLine("-l cs      Translate to C#");
+		Console.WriteLine("-l d       Translate to D");
 		Console.WriteLine("-l java    Translate to Java");
 		Console.WriteLine("-l js      Translate to JavaScript");
 		Console.WriteLine("-l py      Translate to Python");
@@ -76,6 +77,7 @@ public static class CiTo
 		case "c": gen = new GenC(); break;
 		case "cpp": gen = new GenCpp(); break;
 		case "cs": gen = new GenCs(); break;
+		case "d": gen = new GenD(); break;
 		case "java": gen = new GenJava(); break;
 		case "js": case "mjs": gen = new GenJs(); break;
 		case "py": gen = new GenPy(); break;

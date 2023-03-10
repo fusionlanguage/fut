@@ -7,6 +7,6 @@ public static class Test
 	{
 		int i = 1000000;
 		return Foo == 1000000000000000
-			&& i * Bar == Foo; //FAIL: c cpp cs java ts cl
+			&& i * Bar == Foo; //FAIL: c cpp cs d java ts cl
 	}
 }

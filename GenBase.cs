@@ -138,12 +138,17 @@ public abstract class GenBase : GenBaseBase
 		}
 	}
 
-	protected bool WriteRegexOptions(List<CiExpr> args, string prefix, string separator, string suffix, string i, string m, string s)
+	protected RegexOptions GetRegexOptions(List<CiExpr> args)
 	{
 		CiExpr expr = args[args.Count - 1];
 		if (!(expr.Type is CiEnum))
-			return false;
-		RegexOptions options = (RegexOptions) expr.IntValue();
+			return RegexOptions.None;
+		return (RegexOptions) expr.IntValue();
+	}
+
+	protected bool WriteRegexOptions(List<CiExpr> args, string prefix, string separator, string suffix, string i, string m, string s)
+	{
+		RegexOptions options = GetRegexOptions(args);
 		if (options == RegexOptions.None)
 			return false;
 		Write(prefix);

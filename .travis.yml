@@ -19,6 +19,11 @@ jobs:
     script: make -j5 test-cpp test-java CXX='clang++-12 -std=c++20'
   - name: cs
     script: make -j5 test-cs
+  - name: d
+    install:
+      - curl -fsS https://dlang.org/install.sh -O
+      - bash install.sh
+    script: source `bash install.sh -a` && make -j5 test-d
   - name: js, ts
     install: nvm install node
     script: make -j5 test-js test-ts

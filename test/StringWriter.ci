@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		StringWriter() w; //FAIL: c java js swift ts TODO; cl
+		StringWriter() w; //FAIL: c d java js swift ts TODO; cl
 		w.Write("Hello");
 		string s = "World";
 		w.Write(s);
