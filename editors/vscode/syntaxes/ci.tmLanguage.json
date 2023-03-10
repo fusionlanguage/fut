@@ -859,7 +859,7 @@
 			}
 		},
 		"class-builtin": {
-			"match": "\\b(Console|Dictionary|Encoding|Environment|HashSet|List|Lock|Match|Math|Regex|RegexOptions|SortedDictionary|Stack)\\b",
+			"match": "\\b(Console|Dictionary|Encoding|Environment|HashSet|List|Lock|Match|Math|Regex|RegexOptions|SortedDictionary|SortedSet|Stack|StringWriter|TextWriter)\\b",
 			"captures": {
 				"1": {
 					"name": "support.class.ci"
