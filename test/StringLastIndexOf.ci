@@ -4,14 +4,14 @@ public class Test
 	{
 		string() s = "foobar"; //FAIL: cl
 		string p = "foobar";
-		return (s.LastIndexOf("") == 5 /* .NET */ || s.LastIndexOf("") == 6 /* Java, JavaScript */) //FAIL: swift TODO
+		return (s.LastIndexOf("") == 5 /* .NET */ || s.LastIndexOf("") == 6 /* Java, JavaScript */ || s.LastIndexOf("") == -1 /* D */) //FAIL: swift TODO
 			&& s.LastIndexOf("r") == 5
 			&& s.LastIndexOf("bar") == 3
 			&& s.LastIndexOf("foobar") == 0
 			&& s.LastIndexOf("f") == 0
 			&& s.LastIndexOf("oo") == 1
 			&& s.LastIndexOf("barek") == -1
-			&& (p.LastIndexOf("") == 5 /* .NET */ || p.LastIndexOf("") == 6 /* Java, JavaScript */)
+			&& (p.LastIndexOf("") == 5 /* .NET */ || p.LastIndexOf("") == 6 /* Java, JavaScript */ || s.LastIndexOf("") == -1 /* D */)
 			&& p.LastIndexOf("r") == 5
 			&& p.LastIndexOf("bar") == 3
 			&& p.LastIndexOf("foobar") == 0

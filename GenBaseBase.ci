@@ -1425,16 +1425,23 @@ public abstract class GenBaseBase : CiExprVisitor
 		}
 	}
 
-	protected void WriteSwitchWhenVars!(CiSwitch statement)
+	protected void DefineVar!(CiVar def)
+	{
+		if (def.Name != "_") {
+			WriteVar(def);
+			EndStatement();
+		}
+	}
+
+	protected void WriteSwitchWhenVars!(CiSwitch statement, bool whenOnly = true)
 	{
 		foreach (CiCase kase in statement.Cases) {
 			foreach (CiExpr value in kase.Values) {
-				if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
+				if (!whenOnly && value is CiVar var)
+					DefineVar(var);
+				else if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
 					assert when1.Left is CiVar whenVar;
-					if (whenVar.Name != "_") {
-						WriteVar(whenVar);
-						EndStatement();
-					}
+					DefineVar(whenVar);
 					WriteTemporaries(when1);
 				}
 			}

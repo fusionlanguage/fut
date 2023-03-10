@@ -2996,7 +2996,7 @@ namespace Foxoft.Ci
 			mathClass.Add(CiMethodGroup.New(CiMethod.NewStatic(this.IntType, CiId.MathClamp, "Clamp", CiVar.New(this.LongType, "value"), CiVar.New(this.LongType, "min"), CiVar.New(this.LongType, "max")), CiMethod.NewStatic(this.FloatType, CiId.MathClamp, "Clamp", CiVar.New(this.DoubleType, "value"), CiVar.New(this.DoubleType, "min"), CiVar.New(this.DoubleType, "max"))));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Cos", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Cosh", CiVar.New(this.DoubleType, "a")));
-			mathClass.Add(NewConstDouble("E", 2.7182818284590451));
+			mathClass.Add(NewConstDouble("E", 2.718281828459045));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Exp", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(floatIntType, CiId.MathMethod, "Floor", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathFusedMultiplyAdd, "FusedMultiplyAdd", CiVar.New(this.DoubleType, "x"), CiVar.New(this.DoubleType, "y"), CiVar.New(this.DoubleType, "z")));
@@ -3010,7 +3010,7 @@ namespace Foxoft.Ci
 			mathClass.Add(CiMethodGroup.New(CiMethod.NewStatic(this.IntType, CiId.MathMinInt, "Min", CiVar.New(this.LongType, "a"), CiVar.New(this.LongType, "b")), CiMethod.NewStatic(this.FloatType, CiId.MathMinDouble, "Min", CiVar.New(this.DoubleType, "a"), CiVar.New(this.DoubleType, "b"))));
 			mathClass.Add(CiStaticProperty.New(this.FloatType, CiId.MathNaN, "NaN"));
 			mathClass.Add(CiStaticProperty.New(this.FloatType, CiId.MathNegativeInfinity, "NegativeInfinity"));
-			mathClass.Add(NewConstDouble("PI", 3.1415926535897931));
+			mathClass.Add(NewConstDouble("PI", 3.141592653589793));
 			mathClass.Add(CiStaticProperty.New(this.FloatType, CiId.MathPositiveInfinity, "PositiveInfinity"));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Pow", CiVar.New(this.DoubleType, "x"), CiVar.New(this.DoubleType, "y")));
 			mathClass.Add(CiMethod.NewStatic(floatIntType, CiId.MathRound, "Round", CiVar.New(this.DoubleType, "a")));
@@ -7559,16 +7559,23 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected void WriteSwitchWhenVars(CiSwitch statement)
+		protected void DefineVar(CiVar def)
+		{
+			if (def.Name != "_") {
+				WriteVar(def);
+				EndStatement();
+			}
+		}
+
+		protected void WriteSwitchWhenVars(CiSwitch statement, bool whenOnly = true)
 		{
 			foreach (CiCase kase in statement.Cases) {
 				foreach (CiExpr value in kase.Values) {
-					if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
+					if (!whenOnly && value is CiVar var)
+						DefineVar(var);
+					else if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
 						CiVar whenVar = (CiVar) when1.Left;
-						if (whenVar.Name != "_") {
-							WriteVar(whenVar);
-							EndStatement();
-						}
+						DefineVar(whenVar);
 						WriteTemporaries(when1);
 					}
 				}
