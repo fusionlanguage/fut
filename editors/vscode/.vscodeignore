@@ -1,3 +1,4 @@
 Makefile
 src/extension.ts
+src/parser.js
 tsconfig.json
