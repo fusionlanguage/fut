@@ -20,7 +20,7 @@
 public class CiSema : CiVisitor
 {
 	protected CiProgram! Program;
-	CiMethodBase? CurrentMethod;
+	CiMethodBase!? CurrentMethod;
 	CiScope!? CurrentScope;
 	HashSet<CiMethod>() CurrentPureMethods;
 	Dictionary<CiVar, CiExpr#>() CurrentPureArguments;
@@ -1868,7 +1868,7 @@ public class CiSema : CiVisitor
 					}
 				}
 				if (method.CallType == CiCallType.Override || method.CallType == CiCallType.Sealed) {
-					if (klass.Parent.TryLookup(method.Name, false) is CiMethod baseMethod) {
+					if (klass.Parent.TryLookup(method.Name, false) is CiMethod! baseMethod) {
 						// TODO: check private
 						switch (baseMethod.CallType) {
 						case CiCallType.Abstract:
