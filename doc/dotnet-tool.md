@@ -1,5 +1,5 @@
 ﻿Ć is a programming language which can be translated automatically to
-C, C++, C#, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.
+C, C++, C#, D, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.
 Instead of writing code in all these languages, you can write it once in Ć:
 
 ```csharp
@@ -17,6 +17,7 @@ Then translate into target languages using `cito` on the command line:
 cito -o hello.c hello.ci
 cito -o hello.cpp hello.ci
 cito -o hello.cs hello.ci
+cito -o hello.d hello.ci
 cito -o HelloCi.java hello.ci # Java enforces filenames for public classes
 cito -o hello.js hello.ci
 cito -o hello.py hello.ci
