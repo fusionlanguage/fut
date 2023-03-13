@@ -25,15 +25,15 @@ when it feels the right thing to do. This doesn't happen too often, but if your 
 is to spend weeks on debugging some obviously low-quality code, it's better to spend
 three days designing and implementing it from scratch.
 
-Having said that, back in 2007 I strongly objected rewriting my player from C to Java.
+Having said that, back in 2007 I strongly objected rewriting my chiptune player from C to Java.
 This is because the Java player was not going to _replace_ the C player.
-C was better for performance, low memory footprint and no huge downloads.
+C was better for performance, low memory footprint and minimal download size.
 So it looked like we are going to have two _copies_ of my chiptune player:
 one for desktop operating systems, the other for web browsers.
-The code was going to be very similar, but only the programmers could keep it in sync manually.
+The code was going to be very similar, but only the programmers would keep it in sync manually.
 
-I felt this was fundamentally wrong. It would violate the fundamental rule of programming:
-_Don't Repeat Yourself (DRY)_. Maintaining copies of code just to integrate
+I felt that this was fundamentally wrong. It would violate the fundamental rule of programming:
+_Don't Repeat Yourself (DRY)_. Maintaining full copies of code just to integrate it
 with different environments (desktop vs web) is a high price.
 I started thinking about how I could port my player to web browsers without having to copy it
 as a Java project.
@@ -44,30 +44,30 @@ When you see code such as:
 
 ```c
 if (foo)
-	bar();
+    bar();
 for (int i = 0; i < n; i++)
-	doStuff(i);
+    doStuff(i);
 ```
 
-it could be either C, C++, Java or C#.
+it can be either C, C++, Java or C#.
 
 Differences come into play when you:
 
-- Define functions (called methods in Java and C#) -- `static` means different things.
-- Use pointers in C or C++ (these need `*`, `&` and `->`).
-- Some things are just spelled differently (for example `NULL` vs `null`,
-  there was no `nullptr` in 2007).
+- Define functions (called methods in Java and C#) - `static` means different things.
+- Use pointers in C or C++ (with `*`, `&` and `->` operators).
+- Some things are just spelled differently, for example `NULL` vs `null`
+  (there was no `nullptr` in 2007).
 
 I realized that I could use the C preprocessor to emit Java code if I define and consistently
 use a couple of macros. If you are curious, the first working version was
 [this](https://sourceforge.net/p/asap/code/ci/1339af683b60c0da54a5084673bb167e53679750/tree/java/ASAP.ppjava).
 This is an input to the C preprocessor. It defines the macros for Java output,
-the classes that the code works on, includes three other source files and finally defines
+the data structures, includes three other source files and finally defines
 the public interface of the Java code.
 [Here](https://sourceforge.net/p/asap/code/ci/1339af683b60c0da54a5084673bb167e53679750/tree/apokeysnd.c)
-is one of the included C source files.
+is one of the three C source files it includes.
 
-The code worked very well. Users were happy and astonished by high performance of the Java code,
+This approach worked very well. Users were happy and astonished by high performance of the Java code,
 which was practically C code masqueraded as Java.
 A few days later I made a port of my chiptune player to Java-enabled mobile phones.
 
@@ -76,11 +76,11 @@ In 2008, Maciek Konecki contributed a
 that made the player valid C# code. C# is similar to Java, so why not.
 
 In 2009, Flash Player was still very popular and I had requests to port my chiptune player to it.
-Flash Player's programming language was called ActionScript, so I had to prepare macros for it.
+I updated my macros for ActionScript, Flash Player's programming language.
 If you are unfamiliar with ActionScript, its syntax is similar to the much newer TypeScript.
-Basically JavaScript with explicit types.
+Basically it's JavaScript with explicit types.
 That means that all local variable definitions start with `var`, so a macro is needed.
-It was also straightforward to emit JavaScript. The result was the
+I realized I can also emit JavaScript. The result was the
 [anylang.h header file](https://sourceforge.net/p/asap/code/ci/3c2e92f7323ac3154267ab0e9460d7b35a8e7aaf/tree/anylang.h).
 
 It all worked fine, but the
@@ -90,12 +90,59 @@ did not look pretty.
 ## A programming language is even more powerful
 
 I was happy of being able to produce C, Java, C#, JavaScript and ActionScript from same source code.
-However, I wasn't proud how this source code looked like.
+The weak point was how this source code looked like.
 
 I realized that if I want to have good-looking source code, I need to design a programming language
 instead of just a set of macros. This is how Ć and its transpiler `cito` came to life in 2011.
 
-The initial goal was very modest: just being able to transpile my chiptune player, but with a clean
-source code syntax instead of obscure C macros. I chose C# as the implementation language for `cito`.
+The initial goal was very modest: just transpile my chiptune player, but with a clean syntax
+instead of obscure C macros. I chose C# as the implementation language for `cito`.
 
-_to be continued_
+In 2011 I released `cito` 0.1.0 with backends to C, C#, Java, JavaScript, ActionScript
+and [D](https://dlang.org).
+There were two flavors of the C backend: one that emitted C99 and the other that emitted C89,
+because at that point Visual Studio did not even support C99.
+The D backend was contributed by [Adrian Matoga](https://github.com/epi).
+
+Also in 2011 there was `cito` 0.2.0 with a simple editor called CiPad that was showing
+the translations as you typed.
+
+In 2013 I decided to port to Ć my other open-source project with a fancy name: FAIL
+(later renamed to [RECOIL](https://recoil.sourceforge.net)).
+In the process, the Ć language received class inheritance and dynamic allocation,
+in version 0.3.0.
+In 0.4.0 it got a Perl backend.
+
+## Second-system syndrome
+
+Ć was good enough for my projects, but generally speaking it was quite a limited language.
+For instance, there were no floating-point numbers, just two integer types (`int` and `byte`)
+and string storage had a fixed capacity which directly translated into a C array of characters.
+I realized that in order for the language to be applicable for a wider variety of projects,
+it must be more expressive.
+I decided that "version 1.0" will be designed and written from scratch which I started in 2014.
+
+The result was that "version 1" was largely only in my head, because "version 0" worked very well
+for my own purposes. Also, I expected corporations to create a language similar to what I envisioned.
+While I was coding a lot _in_ Ć, I wasn't really _developing_ Ć until 2019.
+
+## Version 1.0
+
+In 2019 I decided to materialize my ideas on version 1.0. `cito` got a C++ backend, collections,
+interpolated strings and a testsuite run in [Travis CI](https://www.travis-ci.com).
+I updated my projects to version 1.0.
+
+In 2020 I added Python, Swift and OpenCL backends.
+The latter meant that you could run Ć code on your GPU!
+[Andy Edwards](https://github.com/jedwards1211) contributed a TypeScript backend.
+
+There were no binary releases of version 1.
+I expected users to build `cito` themselves. It's a developer's tool after all!
+
+## Version 2.0
+
+In 2022 I started porting `cito` to Ć. This is a large effort tracked in #48.
+
+Starting with 2.0.0, new versions are released as a .NET tool, so if you have a .NET SDK,
+you can install `cito` with one command.
+I also added [syntax highlighting](editors.md) to a few editors.
