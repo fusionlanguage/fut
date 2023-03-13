@@ -141,8 +141,8 @@ I expected users to build `cito` themselves. It's a developer's tool after all!
 
 ## Version 2.0
 
-In 2022 I started porting `cito` to Ć. This is a large effort tracked in #48.
+In 2022 I started porting `cito` to Ć. This is a [large effort](https://github.com/pfusik/cito/issues/48).
 
 Starting with 2.0.0, new versions are released as a .NET tool, so if you have a .NET SDK,
 you can install `cito` with one command.
-I also added [syntax highlighting](editors.md) to a few editors.
+I also added [syntax highlighting](editors.md) to a couple of editors.
