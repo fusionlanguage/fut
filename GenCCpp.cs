@@ -37,7 +37,7 @@ public abstract class GenCCpp : GenCCppD
 
 	protected override int GetLiteralChars() => 127;
 
-	protected override void WriteTypeCode(TypeCode typeCode)
+	protected virtual void WriteTypeCode(TypeCode typeCode)
 	{
 		switch (typeCode) {
 		case TypeCode.SByte:

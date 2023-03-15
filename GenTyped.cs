@@ -1,4 +1,4 @@
-// GenTyped.cs - C/C++/C#/Java code generator
+// GenTyped.cs - C/C++/C#/D/Java code generator
 //
 // Copyright (C) 2011-2023  Piotr Fusik
 //
@@ -25,8 +25,6 @@ namespace Foxoft.Ci
 
 public abstract class GenTyped : GenBase
 {
-	protected abstract void WriteTypeCode(TypeCode typeCode);
-
 	protected abstract void WriteType(CiType type, bool promote);
 
 	protected override void WriteTypeAndName(CiNamedValue value)

@@ -262,8 +262,6 @@ public class GenJava : GenTyped
 		}
 	}
 
-	protected override void WriteTypeCode(TypeCode typeCode) => WriteTypeCode(typeCode, false);
-
 	void WriteCollectionType(string name, CiType elementType)
 	{
 		Include("java.util." + name);

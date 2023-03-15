@@ -151,7 +151,7 @@ public class GenCs : GenTyped
 
 	protected override int GetLiteralChars() => 0x10000;
 
-	protected override void WriteTypeCode(TypeCode typeCode)
+	void WriteTypeCode(TypeCode typeCode)
 	{
 		switch (typeCode) {
 		case TypeCode.SByte: Write("sbyte"); break;
