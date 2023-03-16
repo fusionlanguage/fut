@@ -530,6 +530,8 @@ public class GenJsNoModule : GenBase
 			WriteTryParse("Int", obj, args);
 			break;
 		case CiId.LongTryParse:
+			if (args.Count != 1)
+				NotSupported(args[1], "Radix");
 			Write("(() => { try { ");
 			obj.Accept(this, CiPriority.Assign);
 			Write("  = BigInt(");
