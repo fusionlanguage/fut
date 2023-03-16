@@ -35,6 +35,7 @@ public class GenD : GenCCppD
 	bool HasSortedDictionaryFind;
 	bool HasQueueDequeue;
 	bool HasStackPop;
+
 	protected override string GetTargetName() => "D";
 
 	protected override void StartDocLine() => Write("/// ");
@@ -122,139 +123,139 @@ public class GenD : GenCCppD
 			Write(symbol.Name);
 			return;
 		}
-		string camelCaseName = Char.ToLowerInvariant(symbol.Name[0]) + symbol.Name.Substring(1);
+		string camelCaseName = char.ToLowerInvariant(symbol.Name[0]) + symbol.Name.Substring(1);
 		Write(camelCaseName);
 		switch (camelCaseName) {
-			case "abstract":
-			case "alias":
-			case "align":
-			case "asm":
-			case "assert":
-			case "auto":
-			case "body":
-			case "bool":
-			case "break":
-			case "byte":
+		case "abstract":
+		case "alias":
+		case "align":
+		case "asm":
+		case "assert":
+		case "auto":
+		case "body":
+		case "bool":
+		case "break":
+		case "byte":
 
-			case "case":
-			case "cast":
-			case "catch":
-			case "cdouble":
-			case "cent":
-			case "cfloat":
-			case "char":
-			case "class":
-			case "const":
-			case "continue":
-			case "creal":
+		case "case":
+		case "cast":
+		case "catch":
+		case "cdouble":
+		case "cent":
+		case "cfloat":
+		case "char":
+		case "class":
+		case "const":
+		case "continue":
+		case "creal":
 
-			case "dchar":
-			case "debug":
-			case "default":
-			case "delegate":
-			case "delete":
-			case "deprecated":
-			case "do":
-			case "double":
+		case "dchar":
+		case "debug":
+		case "default":
+		case "delegate":
+		case "delete":
+		case "deprecated":
+		case "do":
+		case "double":
 
-			case "else":
-			case "enum":
-			case "export":
-			case "extern":
+		case "else":
+		case "enum":
+		case "export":
+		case "extern":
 
-			case "false":
-			case "final":
-			case "finally":
-			case "float":
-			case "for":
-			case "foreach":
-			case "foreach_reverse":
-			case "function":
+		case "false":
+		case "final":
+		case "finally":
+		case "float":
+		case "for":
+		case "foreach":
+		case "foreach_reverse":
+		case "function":
 
-			case "goto":
+		case "goto":
 
-			case "idouble":
-			case "if":
-			case "ifloat":
-			case "immutable":
-			case "import":
-			case "in":
-			case "inout":
-			case "int":
-			case "interface":
-			case "invariant":
-			case "ireal":
-			case "is":
+		case "idouble":
+		case "if":
+		case "ifloat":
+		case "immutable":
+		case "import":
+		case "in":
+		case "inout":
+		case "int":
+		case "interface":
+		case "invariant":
+		case "ireal":
+		case "is":
 
-			case "lazy":
-			case "long":
+		case "lazy":
+		case "long":
 
-			case "macro":
-			case "mixin":
-			case "module":
+		case "macro":
+		case "mixin":
+		case "module":
 
-			case "new":
-			case "nothrow":
-			case "null":
+		case "new":
+		case "nothrow":
+		case "null":
 
-			case "out":
-			case "override":
+		case "out":
+		case "override":
 
-			case "package":
-			case "pragma":
-			case "private":
-			case "protected":
-			case "public":
-			case "pure":
+		case "package":
+		case "pragma":
+		case "private":
+		case "protected":
+		case "public":
+		case "pure":
 
-			case "real":
-			case "ref":
-			case "return":
+		case "real":
+		case "ref":
+		case "return":
 
-			case "scope":
-			case "shared":
-			case "short":
-			case "sizeof":
-			case "static":
-			case "string":
-			case "struct":
-			case "super":
-			case "switch":
-			case "synchronized":
+		case "scope":
+		case "shared":
+		case "short":
+		case "sizeof":
+		case "static":
+		case "string":
+		case "struct":
+		case "super":
+		case "switch":
+		case "synchronized":
 
-			case "template":
-			case "throw":
-			case "true":
-			case "try":
-			case "typeid":
-			case "typeof":
+		case "template":
+		case "throw":
+		case "true":
+		case "try":
+		case "typeid":
+		case "typeof":
 
-			case "ubyte":
-			case "ucent":
-			case "uint":
-			case "ulong":
-			case "union":
-			case "unittest":
-			case "ushort":
+		case "ubyte":
+		case "ucent":
+		case "uint":
+		case "ulong":
+		case "union":
+		case "unittest":
+		case "ushort":
 
-			case "version":
-			case "void":
+		case "version":
+		case "void":
 
-			case "wchar":
-			case "while":
-			case "with":
+		case "wchar":
+		case "while":
+		case "with":
 
-			case "__FILE__":
-			case "__FILE_FULL_PATH__":
-			case "__MODULE__":
-			case "__LINE__":
-			case "__FUNCTION__":
-			case "__PRETTY_FUNCTION__":
+		case "__FILE__":
+		case "__FILE_FULL_PATH__":
+		case "__MODULE__":
+		case "__LINE__":
+		case "__FUNCTION__":
+		case "__PRETTY_FUNCTION__":
 
-			case "__gshared":
-			case "__traits":
-			case "__vector":
-			case "__parameters":
+		case "__gshared":
+		case "__traits":
+		case "__vector":
+		case "__parameters":
 			WriteChar('_');
 			break;
 		default:
@@ -518,7 +519,8 @@ public class GenD : GenCCppD
 			}
 			while (--nesting >= 0)
 				CloseBlock();
-		} else {
+		}
+		else {
 			if (def.Type is CiReadWriteClassType klass) {
 				switch (klass.Class.Id) {
 				case CiId.StringClass:
@@ -571,7 +573,8 @@ public class GenD : GenCCppD
 		if (IsCreateWithNew(klass)) {
 			Write("new ");
 			WriteType(klass, false);
-		} else
+		}
+		else
 			WriteStaticInitializer(klass);
 	}
 
@@ -887,7 +890,8 @@ public class GenD : GenCCppD
 			if (obj.Type is CiClassType klass && klass.Class.Id == CiId.SortedDictionaryClass) {
 				HasSortedDictionaryInsert = true;
 				WritePostfix(obj, ".replace(");
-			} else
+			}
+			else
 				WritePostfix(obj, ".require(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
@@ -1066,14 +1070,13 @@ public class GenD : GenCCppD
 			WriteChar(']');
 			break;
 		case CiId.SortedDictionaryClass:
-			if (parent != CiPriority.Assign) {
-				HasSortedDictionaryFind = true;
-				Write(".find(");
-				WriteStronglyCoerced(klass.GetKeyType(), expr.Right);
-				WriteChar(')');
-				return;
-			} else
+			if (parent == CiPriority.Assign)
 				throw new InvalidOperationException();
+			HasSortedDictionaryFind = true;
+			Write(".find(");
+			WriteStronglyCoerced(klass.GetKeyType(), expr.Right);
+			WriteChar(')');
+			return;
 		default:
 			throw new ArgumentOutOfRangeException();
 		}
@@ -1082,7 +1085,8 @@ public class GenD : GenCCppD
 
 	static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
 
-	protected bool IsIsComparable(CiExpr expr) {
+	protected bool IsIsComparable(CiExpr expr)
+	{
 		if (expr is CiLiteralNull)
 			return true;
 		if (expr.Type is CiClassType klass) {
@@ -1096,7 +1100,8 @@ public class GenD : GenCCppD
 		return false;
 	}
 
-	protected string GetEqOp(CiExpr left, CiExpr right, bool not) {
+	protected string GetEqOp(CiExpr left, CiExpr right, bool not)
+	{
 		var op = (IsIsComparable(left) || IsIsComparable(right))
 			? (not ? " !is " : " is ")
 			: (not ? " != " : " == ");
@@ -1283,7 +1288,8 @@ public class GenD : GenCCppD
 				op = "else if (";
 			}
 			EndSwitchAsIfs(statement, gotoId);
-		} else {
+		}
+		else {
 			Write("switch (");
 			WriteSwitchValue(statement.Value);
 			WriteLine(") {");
@@ -1434,13 +1440,16 @@ public class GenD : GenCCppD
 		if (type is CiRangeType left && (expr is CiLiteralLong || expr.Type is CiIntegerType || (expr.Type is CiRangeType range && !type.IsAssignableFrom(range)))) {
 			WriteStaticCast(type, expr);
 			return;
-		} else if (type is CiIntegerType && expr is CiSymbolReference symref && IsLong(symref)) {
+		}
+		else if (type is CiIntegerType && expr is CiSymbolReference symref && IsLong(symref)) {
 			WriteStaticCast(type, expr);
 			return;
-		} else if (type is CiFloatingType && !(expr.Type is CiFloatingType)) {
+		}
+		else if (type is CiFloatingType && !(expr.Type is CiFloatingType)) {
 			WriteStaticCast(type, expr);
 			return;
-		} else if (type is CiClassType klass && !(klass is CiDynamicPtrType) && !(klass is CiStorageType)) {
+		}
+		else if (type is CiClassType klass && !(klass is CiDynamicPtrType) && !(klass is CiStorageType)) {
 			switch (expr.Type) {
 			case CiArrayStorageType _:
 				base.WriteCoercedInternal(type, expr, CiPriority.Primary);
