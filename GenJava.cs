@@ -548,6 +548,56 @@ public class GenJava : GenTyped
 	protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
+		case CiId.None:
+		case CiId.ClassToString:
+		case CiId.StringContains:
+		case CiId.StringEndsWith:
+		case CiId.StringIndexOf:
+		case CiId.StringLastIndexOf:
+		case CiId.StringReplace:
+		case CiId.StringStartsWith:
+		case CiId.ListClear:
+		case CiId.ListContains:
+		case CiId.ListIndexOf:
+		case CiId.QueueClear:
+		case CiId.StackClear:
+		case CiId.StackPeek:
+		case CiId.StackPush:
+		case CiId.StackPop:
+		case CiId.HashSetAdd:
+		case CiId.HashSetClear:
+		case CiId.HashSetContains:
+		case CiId.HashSetRemove:
+		case CiId.SortedSetAdd:
+		case CiId.SortedSetClear:
+		case CiId.SortedSetContains:
+		case CiId.SortedSetRemove:
+		case CiId.DictionaryClear:
+		case CiId.DictionaryContainsKey:
+		case CiId.DictionaryRemove:
+		case CiId.SortedDictionaryClear:
+		case CiId.SortedDictionaryContainsKey:
+		case CiId.SortedDictionaryRemove:
+		case CiId.OrderedDictionaryClear:
+		case CiId.OrderedDictionaryContainsKey:
+		case CiId.OrderedDictionaryRemove:
+		case CiId.StringWriterToString:
+		case CiId.MathMethod:
+		case CiId.MathAbs:
+		case CiId.MathMaxInt:
+		case CiId.MathMaxDouble:
+		case CiId.MathMinInt:
+		case CiId.MathMinDouble:
+			if (obj != null) {
+				if (IsReferenceTo(obj, CiId.BasePtr))
+					Write("super");
+				else
+					obj.Accept(this, CiPriority.Primary);
+				WriteChar('.');
+			}
+			WriteName(method);
+			WriteArgsInParentheses(method, args);
+			break;
 		case CiId.DoubleTryParse:
 			Include("java.util.function.DoubleSupplier");
 			Write("!Double.isNaN(");
@@ -768,15 +818,7 @@ public class GenJava : GenTyped
 			WriteCall("Math.rint", args[0]);
 			break;
 		default:
-			if (obj != null) {
-				if (IsReferenceTo(obj, CiId.BasePtr))
-					Write("super");
-				else
-					obj.Accept(this, CiPriority.Primary);
-				WriteChar('.');
-			}
-			WriteName(method);
-			WriteArgsInParentheses(method, args);
+			NotSupported(obj, method.Name);
 			break;
 		}
 	}
