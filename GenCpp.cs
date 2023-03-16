@@ -681,6 +681,32 @@ public class GenCpp : GenCCpp
 	protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
+		case CiId.None:
+		case CiId.ClassToString:
+		case CiId.ListClear:
+		case CiId.StackPush:
+		case CiId.HashSetClear:
+		case CiId.HashSetContains:
+		case CiId.SortedSetClear:
+		case CiId.SortedSetContains:
+		case CiId.DictionaryClear:
+		case CiId.SortedDictionaryClear:
+			if (obj != null) {
+				if (IsReferenceTo(obj, CiId.BasePtr)) {
+					WriteName((CiClass) method.Parent);
+					Write("::");
+				}
+				else {
+					obj.Accept(this, CiPriority.Primary);
+					if (method.CallType == CiCallType.Static)
+						Write("::");
+					else
+						WriteMemberOp(obj);
+				}
+			}
+			WriteName(method);
+			WriteArgsInParentheses(method, args);
+			break;
 		case CiId.IntTryParse:
 		case CiId.LongTryParse:
 			Include("cstdlib");
@@ -1106,21 +1132,7 @@ public class GenCpp : GenCCpp
 			WriteCall("std::trunc", args[0]);
 			break;
 		default:
-			if (obj != null) {
-				if (IsReferenceTo(obj, CiId.BasePtr)) {
-					WriteName((CiClass) method.Parent);
-					Write("::");
-				}
-				else {
-					obj.Accept(this, CiPriority.Primary);
-					if (method.CallType == CiCallType.Static)
-						Write("::");
-					else
-						WriteMemberOp(obj);
-				}
-			}
-			WriteName(method);
-			WriteArgsInParentheses(method, args);
+			NotSupported(obj, method.Name);
 			break;
 		}
 	}
