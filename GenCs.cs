@@ -433,6 +433,12 @@ public class GenCs : GenTyped
 			Write(obj.Type.Name);
 			Write(".TryParse(");
 			args[0].Accept(this, CiPriority.Argument);
+			if (args.Count == 2) {
+				if (!(args[1] is CiLiteralLong radix) || radix.Value != 16)
+					NotSupported(args[1], "Radix");
+				Include("System.Globalization");
+				Write(", NumberStyles.HexNumber, null");
+			}
 			Write(", out ");
 			obj.Accept(this, CiPriority.Argument);
 			WriteChar(')');

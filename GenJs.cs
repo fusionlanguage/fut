@@ -424,10 +424,8 @@ public class GenJsNoModule : GenBase
 		Write("!isNaN(");
 		obj.Accept(this, CiPriority.Assign);
 		Write(" = parse"); // ignores trailing invalid characters; Number() does not, but it accepts empty string and bin/oct/hex
-		Write(suffix);
-		WriteChar('(');
-		args[0].Accept(this, CiPriority.Argument);
-		Write("))");
+		WriteCall(suffix, args[0], args.Count == 2 ? args[1] : null);
+		WriteChar(')');
 	}
 
 	static bool IsIdentifier(string s)

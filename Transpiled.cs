@@ -2871,12 +2871,12 @@ namespace Foxoft.Ci
 			basePtr.Id = CiId.BasePtr;
 			Add(basePtr);
 			AddMinMaxValue(this.IntType, -2147483648, 2147483647);
-			this.IntType.Add(CiMethod.NewMutator(CiVisibility.Public, this.BoolType, CiId.IntTryParse, "TryParse", CiVar.New(this.StringPtrType, "value")));
+			this.IntType.Add(CiMethod.NewMutator(CiVisibility.Public, this.BoolType, CiId.IntTryParse, "TryParse", CiVar.New(this.StringPtrType, "value"), CiVar.New(this.IntType, "radix", NewLiteralLong(0))));
 			Add(this.IntType);
 			this.UIntType.Name = "uint";
 			Add(this.UIntType);
 			AddMinMaxValue(this.LongType, -9223372036854775808, 9223372036854775807);
-			this.LongType.Add(CiMethod.NewMutator(CiVisibility.Public, this.BoolType, CiId.LongTryParse, "TryParse", CiVar.New(this.StringPtrType, "value")));
+			this.LongType.Add(CiMethod.NewMutator(CiVisibility.Public, this.BoolType, CiId.LongTryParse, "TryParse", CiVar.New(this.StringPtrType, "value"), CiVar.New(this.IntType, "radix", NewLiteralLong(0))));
 			Add(this.LongType);
 			this.ByteType.Name = "byte";
 			Add(this.ByteType);

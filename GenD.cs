@@ -697,6 +697,11 @@ public class GenD : GenCCppD
 			WritePostfix(obj, " = ");
 			WritePostfix(args[0], ".to!");
 			Write(obj.Type.Name);
+			if (args.Count == 2) {
+				WriteChar('(');
+				args[1].Accept(this, CiPriority.Argument);
+				WriteChar(')');
+			}
 			Write("; return true; } catch (ConvException e) return false; }()");
 			break;
 		case CiId.StringContains:

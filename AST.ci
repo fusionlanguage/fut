@@ -1419,12 +1419,12 @@ public class CiSystem : CiScope
 		basePtr.Id = CiId.BasePtr;
 		Add(basePtr);
 		AddMinMaxValue(IntType, int.MinValue, int.MaxValue);
-		IntType.Add(CiMethod.NewMutator(CiVisibility.Public, BoolType, CiId.IntTryParse, "TryParse", CiVar.New(StringPtrType, "value")));
+		IntType.Add(CiMethod.NewMutator(CiVisibility.Public, BoolType, CiId.IntTryParse, "TryParse", CiVar.New(StringPtrType, "value"), CiVar.New(IntType, "radix", NewLiteralLong(0))));
 		Add(IntType);
 		UIntType.Name = "uint";
 		Add(UIntType);
 		AddMinMaxValue(LongType, long.MinValue, long.MaxValue);
-		LongType.Add(CiMethod.NewMutator(CiVisibility.Public, BoolType, CiId.LongTryParse, "TryParse", CiVar.New(StringPtrType, "value")));
+		LongType.Add(CiMethod.NewMutator(CiVisibility.Public, BoolType, CiId.LongTryParse, "TryParse", CiVar.New(StringPtrType, "value"), CiVar.New(IntType, "radix", NewLiteralLong(0))));
 		Add(LongType);
 		ByteType.Name = "byte";
 		Add(ByteType);
