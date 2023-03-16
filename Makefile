@@ -79,7 +79,7 @@ test-GenPySwift.cs: test-py test-swift
 test-error test-Lexer.ci test-Parser.ci test-Sema.ci: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
 	$(DO_SUMMARY)
 
-test-%.ci: $(addsuffix .txt, $(addprefix test/bin/%/, c cpp cs java js ts py swift cl))
+test-%.ci: $(addsuffix .txt, $(addprefix test/bin/%/, c cpp cs d java js ts py swift cl))
 	#
 
 test/bin/%/c.txt: test/bin/%/c.exe
