@@ -717,11 +717,8 @@ public class GenCpp : GenCCpp
 				WriteChar('l');
 			WriteChar('(');
 			WriteCString(args[0]);
-			Write(", &ciend, ");
-			if (args.Count == 2)
-				args[1].Accept(this, CiPriority.Argument);
-			else
-				Write("10");
+			Write(", &ciend");
+			WriteTryParseRadix(args);
 			Write("); return *ciend == '\\0'; }()"); // TODO: && *s != '\0'
 			break;
 		case CiId.DoubleTryParse:

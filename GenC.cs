@@ -28,6 +28,9 @@ namespace Foxoft.Ci
 
 public class GenC : GenCCpp
 {
+	bool IntTryParse;
+	bool LongTryParse;
+	bool DoubleTryParse;
 	bool StringAssign;
 	bool StringSubstring;
 	bool StringAppend;
@@ -1519,12 +1522,39 @@ public class GenC : GenCCpp
 		WriteArgsAndRightParenthesis(method, args);
 	}
 
+	void WriteTryParse(CiExpr obj, List<CiExpr> args)
+	{
+		IncludeStdBool();
+		Write("_TryParse(&");
+		obj.Accept(this, CiPriority.Primary);
+		Write(", ");
+		args[0].Accept(this, CiPriority.Argument);
+		if (obj.Type is CiIntegerType)
+			WriteTryParseRadix(args);
+		WriteChar(')');
+	}
+
 	protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
 		case CiId.None:
 		case CiId.ClassToString:
 			WriteCCall(obj, method, args);
+			break;
+		case CiId.IntTryParse:
+			this.IntTryParse = true;
+			Write("CiInt");
+			WriteTryParse(obj, args);
+			break;
+		case CiId.LongTryParse:
+			this.LongTryParse = true;
+			Write("CiLong");
+			WriteTryParse(obj, args);
+			break;
+		case CiId.DoubleTryParse:
+			this.DoubleTryParse = true;
+			Write("CiDouble");
+			WriteTryParse(obj, args);
 			break;
 		case CiId.StringContains:
 			Include("string.h");
@@ -3016,8 +3046,30 @@ public class GenC : GenCCpp
 		this.CurrentMethod = null;
 	}
 
+	void WriteTryParseLibrary(string signature, string call)
+	{
+		WriteNewLine();
+		Write("static bool Ci");
+		WriteLine(signature);
+		OpenBlock();
+		WriteLine("if (*str == '\\0')");
+		WriteLine("\treturn false;");
+		WriteLine("char *end;");
+		Write("*result = strto");
+		Write(call);
+		WriteLine(");");
+		WriteLine("return *end == '\\0';");
+		CloseBlock();
+	}
+
 	void WriteLibrary()
 	{
+		if (this.IntTryParse)
+			WriteTryParseLibrary("Int_TryParse(int *result, const char *str, int base)", "l(str, &end, base");
+		if (this.LongTryParse)
+			WriteTryParseLibrary("Long_TryParse(int64_t *result, const char *str, int base)", "ll(str, &end, base");
+		if (this.DoubleTryParse)
+			WriteTryParseLibrary("Double_TryParse(double *result, const char *str)", "d(str, &end");
 		if (this.StringAssign) {
 			WriteNewLine();
 			WriteLine("static void CiString_Assign(char **str, char *value)");
@@ -3341,6 +3393,9 @@ public class GenC : GenCCpp
 		CloseFile();
 
 		this.Includes = new SortedSet<string>();
+		this.IntTryParse = false;
+		this.LongTryParse = false;
+		this.DoubleTryParse = false;
 		this.StringAssign = false;
 		this.StringSubstring = false;
 		this.StringAppend = false;

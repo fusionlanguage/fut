@@ -7217,6 +7217,15 @@ namespace Foxoft.Ci
 			expr.Accept(this, CiPriority.Argument);
 		}
 
+		protected void WriteTryParseRadix(List<CiExpr> args)
+		{
+			Write(", ");
+			if (args.Count == 2)
+				args[1].Accept(this, CiPriority.Argument);
+			else
+				Write("10");
+		}
+
 		protected void WriteListAdd(CiExpr obj, string method, List<CiExpr> args)
 		{
 			obj.Accept(this, CiPriority.Primary);

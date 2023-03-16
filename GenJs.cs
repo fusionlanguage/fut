@@ -522,11 +522,7 @@ public class GenJsNoModule : GenBase
 			obj.Accept(this, CiPriority.Assign);
 			Write(" = parseInt(");
 			args[0].Accept(this, CiPriority.Argument);
-			Write(", ");
-			if (args.Count == 2)
-				args[1].Accept(this, CiPriority.Argument);
-			else
-				Write("10");
+			WriteTryParseRadix(args);
 			Write("))");
 			break;
 		case CiId.LongTryParse:
