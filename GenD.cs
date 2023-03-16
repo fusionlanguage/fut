@@ -275,7 +275,6 @@ public class GenD : GenCCppD
 		case TypeCode.UInt32: Write("uint"); break;
 		case TypeCode.Int64: Write("long"); break;
 		case TypeCode.UInt64: Write("ulong"); break;
-		case TypeCode.Boolean: Write("bool"); break;
 		default: throw new NotImplementedException(typeCode.ToString());
 		}
 	}
@@ -690,11 +689,15 @@ public class GenD : GenCCppD
 	protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
+		case CiId.IntTryParse:
+		case CiId.LongTryParse:
 		case CiId.DoubleTryParse:
 			Include("std.conv");
 			Write("() { try { ");
 			WritePostfix(obj, " = ");
-			WritePostfix(args[0], ".to!double; return true; } catch (ConvException e) return false; }()");
+			WritePostfix(args[0], ".to!");
+			Write(obj.Type.Name);
+			Write("; return true; } catch (ConvException e) return false; }()");
 			break;
 		case CiId.StringContains:
 			Include("std.algorithm");

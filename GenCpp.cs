@@ -681,6 +681,18 @@ public class GenCpp : GenCCpp
 	protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
+		case CiId.IntTryParse:
+		case CiId.LongTryParse:
+			Include("cstdlib");
+			Write("[&] { char *ciend; ");
+			obj.Accept(this, CiPriority.Assign);
+			Write(" = std::strtol");
+			if (method.Id == CiId.LongTryParse)
+				WriteChar('l');
+			WriteChar('(');
+			WriteCString(args[0]);
+			Write(", &ciend, 10); return *ciend == '\\0'; }()"); // TODO: && *s != '\0'
+			break;
 		case CiId.DoubleTryParse:
 			Include("cstdlib");
 			Write("[&] { char *ciend; ");

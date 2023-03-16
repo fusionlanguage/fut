@@ -419,6 +419,17 @@ public class GenJsNoModule : GenBase
 
 	protected override void WriteBinaryOperand(CiExpr expr, CiPriority parent, CiBinaryExpr binary) => WriteCoerced(binary.Type, expr, parent);
 
+	void WriteTryParse(string suffix, CiExpr obj, List<CiExpr> args)
+	{
+		Write("!isNaN(");
+		obj.Accept(this, CiPriority.Assign);
+		Write(" = parse"); // ignores trailing invalid characters; Number() does not, but it accepts empty string and bin/oct/hex
+		Write(suffix);
+		WriteChar('(');
+		args[0].Accept(this, CiPriority.Argument);
+		Write("))");
+	}
+
 	static bool IsIdentifier(string s)
 	{
 		return s.Length > 0
@@ -517,12 +528,11 @@ public class GenJsNoModule : GenBase
 			}
 			WriteArgsInParentheses(method, args);
 			break;
+		case CiId.IntTryParse:
+			WriteTryParse("Int", obj, args);
+			break;
 		case CiId.DoubleTryParse:
-			Write("!isNaN(");
-			obj.Accept(this, CiPriority.Assign);
-			Write(" = parseFloat("); // ignores trailing invalid characters; Number() does not, but it accepts empty string and bin/oct/hex
-			args[0].Accept(this, CiPriority.Argument);
-			Write("))");
+			WriteTryParse("Float", obj, args);
 			break;
 		case CiId.StringContains:
 		case CiId.ListContains:

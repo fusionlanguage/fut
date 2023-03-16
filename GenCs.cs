@@ -427,8 +427,11 @@ public class GenCs : GenTyped
 	protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
+		case CiId.IntTryParse:
+		case CiId.LongTryParse:
 		case CiId.DoubleTryParse:
-			Write("double.TryParse(");
+			Write(obj.Type.Name);
+			Write(".TryParse(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", out ");
 			obj.Accept(this, CiPriority.Argument);

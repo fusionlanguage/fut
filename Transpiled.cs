@@ -1286,6 +1286,8 @@ namespace Foxoft.Ci
 		MathNaN,
 		MathNegativeInfinity,
 		MathPositiveInfinity,
+		IntTryParse,
+		LongTryParse,
 		DoubleTryParse,
 		StringContains,
 		StringEndsWith,
@@ -2869,10 +2871,12 @@ namespace Foxoft.Ci
 			basePtr.Id = CiId.BasePtr;
 			Add(basePtr);
 			AddMinMaxValue(this.IntType, -2147483648, 2147483647);
+			this.IntType.Add(CiMethod.NewMutator(CiVisibility.Public, this.BoolType, CiId.IntTryParse, "TryParse", CiVar.New(this.StringPtrType, "value")));
 			Add(this.IntType);
 			this.UIntType.Name = "uint";
 			Add(this.UIntType);
 			AddMinMaxValue(this.LongType, -9223372036854775808, 9223372036854775807);
+			this.LongType.Add(CiMethod.NewMutator(CiVisibility.Public, this.BoolType, CiId.LongTryParse, "TryParse", CiVar.New(this.StringPtrType, "value")));
 			Add(this.LongType);
 			this.ByteType.Name = "byte";
 			Add(this.ByteType);
@@ -2996,7 +3000,7 @@ namespace Foxoft.Ci
 			mathClass.Add(CiMethodGroup.New(CiMethod.NewStatic(this.IntType, CiId.MathClamp, "Clamp", CiVar.New(this.LongType, "value"), CiVar.New(this.LongType, "min"), CiVar.New(this.LongType, "max")), CiMethod.NewStatic(this.FloatType, CiId.MathClamp, "Clamp", CiVar.New(this.DoubleType, "value"), CiVar.New(this.DoubleType, "min"), CiVar.New(this.DoubleType, "max"))));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Cos", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Cosh", CiVar.New(this.DoubleType, "a")));
-			mathClass.Add(NewConstDouble("E", 2.718281828459045));
+			mathClass.Add(NewConstDouble("E", 2.7182818284590451));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Exp", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(floatIntType, CiId.MathMethod, "Floor", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathFusedMultiplyAdd, "FusedMultiplyAdd", CiVar.New(this.DoubleType, "x"), CiVar.New(this.DoubleType, "y"), CiVar.New(this.DoubleType, "z")));
@@ -3010,7 +3014,7 @@ namespace Foxoft.Ci
 			mathClass.Add(CiMethodGroup.New(CiMethod.NewStatic(this.IntType, CiId.MathMinInt, "Min", CiVar.New(this.LongType, "a"), CiVar.New(this.LongType, "b")), CiMethod.NewStatic(this.FloatType, CiId.MathMinDouble, "Min", CiVar.New(this.DoubleType, "a"), CiVar.New(this.DoubleType, "b"))));
 			mathClass.Add(CiStaticProperty.New(this.FloatType, CiId.MathNaN, "NaN"));
 			mathClass.Add(CiStaticProperty.New(this.FloatType, CiId.MathNegativeInfinity, "NegativeInfinity"));
-			mathClass.Add(NewConstDouble("PI", 3.141592653589793));
+			mathClass.Add(NewConstDouble("PI", 3.1415926535897931));
 			mathClass.Add(CiStaticProperty.New(this.FloatType, CiId.MathPositiveInfinity, "PositiveInfinity"));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Pow", CiVar.New(this.DoubleType, "x"), CiVar.New(this.DoubleType, "y")));
 			mathClass.Add(CiMethod.NewStatic(floatIntType, CiId.MathRound, "Round", CiVar.New(this.DoubleType, "a")));
