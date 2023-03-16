@@ -531,6 +531,13 @@ public class GenJsNoModule : GenBase
 		case CiId.IntTryParse:
 			WriteTryParse("Int", obj, args);
 			break;
+		case CiId.LongTryParse:
+			Write("(() => { try { ");
+			obj.Accept(this, CiPriority.Assign);
+			Write("  = BigInt(");
+			args[0].Accept(this, CiPriority.Argument);
+			Write("); return true; } catch { return false; }})()");
+			break;
 		case CiId.DoubleTryParse:
 			WriteTryParse("Float", obj, args);
 			break;
