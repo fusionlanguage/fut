@@ -4,6 +4,6 @@ public static class Test
 	{
 		int i;
 		return !i.TryParse("foo") && i.TryParse("42") && i == 42 //FAIL: c java py swift cl
-			&& i.TryParse("c0d3", 16) && i == 0xc0d3;
+			&& i.TryParse("c0d3", 16) && i == 0xc0d3 && !i.TryParse("0xf");
 	}
 }
