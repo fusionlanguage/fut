@@ -229,25 +229,19 @@ public class GenJava : GenTyped
 
 	protected override TypeCode GetIntegerTypeCode(CiIntegerType integer, bool promote)
 	{
-		if (integer.Id == CiId.LongType)
-			return TypeCode.Int64;
-		if (promote || integer.Id == CiId.IntType)
+		TypeCode typeCode = base.GetIntegerTypeCode(integer, promote);
+		switch (typeCode) {
+		case TypeCode.Byte:
+			CiRangeType range = (CiRangeType) integer;
+			if (range.Min < range.Max) // not CiLiteral
+				return TypeCode.SByte; // store unsigned bytes in Java signed bytes
+			break;
+		case TypeCode.UInt16:
 			return TypeCode.Int32;
-		CiRangeType range = (CiRangeType) integer;
-		if (range.Min < 0) {
-			if (range.Min < short.MinValue || range.Max > short.MaxValue)
-				return TypeCode.Int32;
-			if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
-				return TypeCode.Int16;
-			return TypeCode.SByte;
+		default:
+			break;
 		}
-		if (range.Max > short.MaxValue)
-			return TypeCode.Int32;
-		if (range.Max > byte.MaxValue)
-			return TypeCode.Int16;
-		if (range.Min == range.Max && range.Max > sbyte.MaxValue) // CiLiteral
-			return TypeCode.Byte;
-		return TypeCode.SByte; // store unsigned bytes in Java signed bytes
+		return typeCode;
 	}
 
 	void WriteCollectionType(string name, CiType elementType)
