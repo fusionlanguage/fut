@@ -199,7 +199,7 @@ public class GenCpp : GenCCpp
 	{
 		switch (type) {
 		case CiIntegerType integer:
-			WriteTypeCode(GetIntegerTypeCode(integer, promote));
+			WriteNumericType(GetIntegerTypeCode(integer, promote));
 			break;
 		case CiDynamicPtrType dynamic:
 			switch (dynamic.Class.Id) {

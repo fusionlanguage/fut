@@ -436,7 +436,7 @@ public class GenC : GenCCpp
 		CiType baseType = type.GetBaseType();
 		switch (baseType) {
 		case CiIntegerType integer:
-			WriteTypeCode(GetIntegerTypeCode(integer, promote && type == baseType));
+			WriteNumericType(GetIntegerTypeCode(integer, promote && type == baseType));
 			if (space)
 				WriteChar(' ');
 			break;
@@ -1298,9 +1298,9 @@ public class GenC : GenCCpp
 	{
 		Write(", sizeof(");
 		TypeCode typeCode = GetTypeCode(elementType, false);
-		WriteTypeCode(typeCode);
+		WriteNumericType(typeCode);
 		Write("), CiCompare_");
-		WriteTypeCode(typeCode);
+		WriteNumericType(typeCode);
 		WriteChar(')');
 		this.Compares.Add(typeCode);
 	}
@@ -1740,9 +1740,9 @@ public class GenC : GenCCpp
 				Write("string((const char * const");
 			}
 			else {
-				WriteTypeCode(typeCode);
+				WriteNumericType(typeCode);
 				Write("((const ");
-				WriteTypeCode(typeCode);
+				WriteNumericType(typeCode);
 			}
 			Write(" *) ");
 			WritePostfix(obj, "->data, ");
@@ -1770,7 +1770,7 @@ public class GenC : GenCCpp
 			obj.Accept(this, CiPriority.Argument);
 			TypeCode typeCode2 = GetTypeCode(((CiClassType) obj.Type).GetElementType(), false);
 			Write(", CiCompare_");
-			WriteTypeCode(typeCode2);
+			WriteNumericType(typeCode2);
 			WriteChar(')');
 			this.Compares.Add(typeCode2);
 			break;
@@ -3297,16 +3297,16 @@ public class GenC : GenCCpp
 		foreach (TypeCode typeCode in this.Compares) {
 			WriteNewLine();
 			Write("static int CiCompare_");
-			WriteTypeCode(typeCode);
+			WriteNumericType(typeCode);
 			WriteLine("(const void *pa, const void *pb)");
 			OpenBlock();
-			WriteTypeCode(typeCode);
+			WriteNumericType(typeCode);
 			Write(" a = *(const ");
-			WriteTypeCode(typeCode);
+			WriteNumericType(typeCode);
 			WriteLine(" *) pa;");
-			WriteTypeCode(typeCode);
+			WriteNumericType(typeCode);
 			Write(" b = *(const ");
-			WriteTypeCode(typeCode);
+			WriteNumericType(typeCode);
 			WriteLine(" *) pb;");
 			switch (typeCode) {
 			case TypeCode.Byte:
@@ -3328,11 +3328,11 @@ public class GenC : GenCCpp
 			if (typeCode == TypeCode.String)
 				Write("string(const char * const *a, size_t len, const char *");
 			else {
-				WriteTypeCode(typeCode);
+				WriteNumericType(typeCode);
 				Write("(const ");
-				WriteTypeCode(typeCode);
+				WriteNumericType(typeCode);
 				Write(" *a, size_t len, ");
-				WriteTypeCode(typeCode);
+				WriteNumericType(typeCode);
 			}
 			WriteLine(" value)");
 			OpenBlock();
@@ -3354,7 +3354,7 @@ public class GenC : GenCCpp
 		WriteNewLine();
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
 			Write("static const ");
-			WriteTypeCode(TypeCode.Byte);
+			WriteNumericType(TypeCode.Byte);
 			WriteChar(' ');
 			WriteResource(name, -1);
 			WriteChar('[');

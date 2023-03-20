@@ -41,7 +41,7 @@ public class GenCl : GenC
 	{
 	}
 
-	protected override void WriteTypeCode(TypeCode typeCode)
+	protected override void WriteNumericType(TypeCode typeCode)
 	{
 		switch (typeCode) {
 		case TypeCode.SByte:

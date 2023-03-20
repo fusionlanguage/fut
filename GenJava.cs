@@ -250,7 +250,7 @@ public class GenJava : GenTyped
 		return TypeCode.SByte; // store unsigned bytes in Java signed bytes
 	}
 
-	void WriteTypeCode(TypeCode typeCode, bool needClass)
+	void WriteIntegerType(TypeCode typeCode, bool needClass)
 	{
 		switch (typeCode) {
 		case TypeCode.Byte:
@@ -285,7 +285,7 @@ public class GenJava : GenTyped
 	{
 		switch (type) {
 		case CiIntegerType integer:
-			WriteTypeCode(GetIntegerTypeCode(integer, promote), needClass);
+			WriteIntegerType(GetIntegerTypeCode(integer, promote), needClass);
 			break;
 		case CiEnum enu:
 			Write(enu.Id == CiId.BoolType
