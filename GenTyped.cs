@@ -177,16 +177,14 @@ public abstract class GenTyped : GenBase
 			expr.Accept(this, CiPriority.Argument);
 	}
 
-	protected virtual bool IsNotPromotedIndexing(CiBinaryExpr expr) => expr.Op == CiToken.LeftBracket;
-
-	protected virtual TypeCode GetTypeCode(CiExpr expr)
+	protected virtual bool IsPromoted(CiExpr expr)
 	{
 		switch (expr) {
 		case CiLiteral _:
-		case CiBinaryExpr binary when IsNotPromotedIndexing(binary) || binary.IsAssign():
-			return GetTypeCode(expr.Type, false);
+		case CiBinaryExpr binary when binary.Op == CiToken.LeftBracket || binary.IsAssign():
+			return false;
 		default:
-			return GetTypeCode(expr.Type, true);
+			return true;
 		}
 	}
 
@@ -194,7 +192,7 @@ public abstract class GenTyped : GenBase
 	{
 		if (expr.Left.IsIndexing()) {
 			TypeCode leftTypeCode = GetTypeCode(expr.Left.Type, false);
-			TypeCode rightTypeCode = GetTypeCode(expr.Right);
+			TypeCode rightTypeCode = GetTypeCode(expr.Right.Type, IsPromoted(expr.Right));
 			if (leftTypeCode == TypeCode.SByte && rightTypeCode == TypeCode.SByte) {
 				expr.Right.Accept(this, CiPriority.Assign); // omit Java "& 0xff"
 				return;

@@ -297,7 +297,7 @@ public class GenCs : GenTyped
 			literal.Accept(this, CiPriority.Argument);
 	}
 
-	protected override TypeCode GetTypeCode(CiExpr expr) => expr is CiLiteralChar ? TypeCode.UInt16 : base.GetTypeCode(expr);
+	protected override bool IsPromoted(CiExpr expr) => base.IsPromoted(expr) || expr is CiLiteralChar;
 
 	public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{

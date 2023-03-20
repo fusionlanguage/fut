@@ -837,11 +837,11 @@ public class GenJava : GenTyped
 			WriteIndexingInternal(expr);
 	}
 
-	protected override bool IsNotPromotedIndexing(CiBinaryExpr expr) => expr.Op == CiToken.LeftBracket && !IsUnsignedByte(expr.Type);
+	protected override bool IsPromoted(CiExpr expr) => base.IsPromoted(expr) || IsUnsignedByteIndexing(expr);
 
 	protected override void WriteAssignRight(CiBinaryExpr expr)
 	{
-		if ((!expr.Left.IsIndexing() || !IsUnsignedByte(expr.Left.Type))
+		if (!IsUnsignedByteIndexing(expr.Left)
 		 && expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign() && IsUnsignedByte(expr.Right.Type)) {
 			WriteChar('(');
 			base.WriteAssignRight(expr);
