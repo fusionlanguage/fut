@@ -250,18 +250,6 @@ public class GenJava : GenTyped
 		return TypeCode.SByte; // store unsigned bytes in Java signed bytes
 	}
 
-	void WriteIntegerType(TypeCode typeCode, bool needClass)
-	{
-		switch (typeCode) {
-		case TypeCode.Byte:
-		case TypeCode.SByte: Write(needClass ? "Byte" : "byte"); break;
-		case TypeCode.Int16: Write(needClass ? "Short" : "short"); break;
-		case TypeCode.Int32: Write(needClass ? "Integer" : "int"); break;
-		case TypeCode.Int64: Write(needClass ? "Long" : "long"); break;
-		default: throw new NotImplementedException(typeCode.ToString());
-		}
-	}
-
 	void WriteCollectionType(string name, CiType elementType)
 	{
 		Include("java.util." + name);
@@ -285,7 +273,23 @@ public class GenJava : GenTyped
 	{
 		switch (type) {
 		case CiIntegerType integer:
-			WriteIntegerType(GetIntegerTypeCode(integer, promote), needClass);
+			switch (GetIntegerTypeCode(integer, promote)) {
+			case TypeCode.Byte:
+			case TypeCode.SByte:
+				Write(needClass ? "Byte" : "byte");
+				break;
+			case TypeCode.Int16:
+				Write(needClass ? "Short" : "short");
+				break;
+			case TypeCode.Int32:
+				Write(needClass ? "Integer" : "int");
+				break;
+			case TypeCode.Int64:
+				Write(needClass ? "Long" : "long");
+				break;
+			default:
+				throw new NotImplementedException(integer.ToString());
+			}
 			break;
 		case CiEnum enu:
 			Write(enu.Id == CiId.BoolType

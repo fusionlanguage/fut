@@ -265,21 +265,6 @@ public class GenD : GenCCppD
 
 	protected override int GetLiteralChars() => 0x10000;
 
-	void WriteIntegerType(TypeCode typeCode)
-	{
-		switch (typeCode) {
-		case TypeCode.SByte: Write("byte"); break;
-		case TypeCode.Byte: Write("ubyte"); break;
-		case TypeCode.Int16: Write("short"); break;
-		case TypeCode.UInt16: Write("ushort"); break;
-		case TypeCode.Int32: Write("int"); break;
-		case TypeCode.UInt32: Write("uint"); break;
-		case TypeCode.Int64: Write("long"); break;
-		case TypeCode.UInt64: Write("ulong"); break;
-		default: throw new NotImplementedException(typeCode.ToString());
-		}
-	}
-
 	void WriteVisibility(CiVisibility visibility)
 	{
 		switch (visibility) {
@@ -340,7 +325,34 @@ public class GenD : GenCCppD
 	{
 		switch (type) {
 		case CiIntegerType integer:
-			WriteIntegerType(GetIntegerTypeCode(integer, promote));
+			switch (GetIntegerTypeCode(integer, promote)) {
+			case TypeCode.SByte:
+				Write("byte");
+				break;
+			case TypeCode.Byte:
+				Write("ubyte");
+				break;
+			case TypeCode.Int16:
+				Write("short");
+				break;
+			case TypeCode.UInt16:
+				Write("ushort");
+				break;
+			case TypeCode.Int32:
+				Write("int");
+				break;
+			case TypeCode.UInt32:
+				Write("uint");
+				break;
+			case TypeCode.Int64:
+				Write("long");
+				break;
+			case TypeCode.UInt64:
+				Write("ulong");
+				break;
+			default:
+				throw new NotImplementedException(integer.ToString());
+			}
 			break;
 		case CiClassType klass:
 			switch (klass.Class.Id) {

@@ -151,19 +151,6 @@ public class GenCs : GenTyped
 
 	protected override int GetLiteralChars() => 0x10000;
 
-	void WriteIntegerType(TypeCode typeCode)
-	{
-		switch (typeCode) {
-		case TypeCode.SByte: Write("sbyte"); break;
-		case TypeCode.Byte: Write("byte"); break;
-		case TypeCode.Int16: Write("short"); break;
-		case TypeCode.UInt16: Write("ushort"); break;
-		case TypeCode.Int32: Write("int"); break;
-		case TypeCode.Int64: Write("long"); break;
-		default: throw new NotImplementedException(typeCode.ToString());
-		}
-	}
-
 	void WriteVisibility(CiVisibility visibility)
 	{
 		switch (visibility) {
@@ -216,7 +203,28 @@ public class GenCs : GenTyped
 	{
 		switch (type) {
 		case CiIntegerType integer:
-			WriteIntegerType(GetIntegerTypeCode(integer, promote));
+			switch (GetIntegerTypeCode(integer, promote)) {
+			case TypeCode.SByte:
+				Write("sbyte");
+				break;
+			case TypeCode.Byte:
+				Write("byte");
+				break;
+			case TypeCode.Int16:
+				Write("short");
+				break;
+			case TypeCode.UInt16:
+				Write("ushort");
+				break;
+			case TypeCode.Int32:
+				Write("int");
+				break;
+			case TypeCode.Int64:
+				Write("long");
+				break;
+			default:
+				throw new NotImplementedException(integer.ToString());
+			}
 			break;
 		case CiClassType klass:
 			switch (klass.Class.Id) {
