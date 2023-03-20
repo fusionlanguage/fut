@@ -373,14 +373,29 @@ public class GenJava : GenTyped
 		WriteChar(')');
 	}
 
+	static bool IsUnsignedByte(CiType type)
+	{
+		return type is CiRangeType range && range.Min >= 0 && range.Max > sbyte.MaxValue && range.Max <= byte.MaxValue;
+	}
+
+	static bool IsUnsignedByteIndexing(CiExpr expr) => expr.IsIndexing() && IsUnsignedByte(expr.Type);
+
+	void WriteIndexingInternal(CiBinaryExpr expr)
+	{
+		if (expr.Left.Type.IsArray())
+			base.WriteIndexingExpr(expr, CiPriority.And /* don't care */);
+		else
+			WriteMethodCall(expr.Left, "get", expr.Right);
+	}
+
 	public override void VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
 	{
 		if ((expr.Op == CiToken.Increment || expr.Op == CiToken.Decrement)
-		 && expr.Inner is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)) {
+		 && IsUnsignedByteIndexing(expr.Inner)) {
 			if (parent > CiPriority.And)
 				WriteChar('(');
 			Write(expr.Op == CiToken.Increment ? "++" : "--");
-			WriteIndexingInternal(leftBinary);
+			WriteIndexingInternal((CiBinaryExpr) expr.Inner);
 			if (parent != CiPriority.Statement)
 				Write(" & 0xff");
 			if (parent > CiPriority.And)
@@ -393,10 +408,10 @@ public class GenJava : GenTyped
 	public override void VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
 	{
 		if ((expr.Op == CiToken.Increment || expr.Op == CiToken.Decrement)
-		 && expr.Inner is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)) {
+		 && IsUnsignedByteIndexing(expr.Inner)) {
 			if (parent > CiPriority.And)
 				WriteChar('(');
-			WriteIndexingInternal(leftBinary);
+			WriteIndexingInternal((CiBinaryExpr) expr.Inner);
 			Write(expr.Op == CiToken.Increment ? "++" : "--");
 			if (parent != CiPriority.Statement)
 				Write(" & 0xff");
@@ -407,14 +422,6 @@ public class GenJava : GenTyped
 			base.VisitPostfixExpr(expr, parent);
 	}
 
-	void WriteIndexingInternal(CiBinaryExpr expr)
-	{
-		if (expr.Left.Type.IsArray())
-			base.WriteIndexingExpr(expr, CiPriority.And /* don't care */);
-		else
-			WriteMethodCall(expr.Left, "get", expr.Right);
-	}
-
 	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
 		if ((expr.Left.Type is CiStringType && expr.Right.Type.Id != CiId.NullType)
@@ -423,11 +430,11 @@ public class GenJava : GenTyped
 				WriteChar('!');
 			WriteMethodCall(expr.Left, "equals", expr.Right);
 		}
-		else if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)
+		else if (IsUnsignedByteIndexing(expr.Left)
 			&& expr.Right is CiLiteralLong rightLiteral && rightLiteral.Value >= 0 && rightLiteral.Value <= byte.MaxValue) {
 			if (parent > CiPriority.Equality)
 				WriteChar('(');
-			WriteIndexingInternal(leftBinary); // omit "& 0xff"
+			WriteIndexingInternal((CiBinaryExpr) expr.Left); // omit "& 0xff"
 			Write(GetEqOp(not));
 			VisitLiteralLong((sbyte) rightLiteral.Value);
 			if (parent > CiPriority.Equality)
@@ -435,11 +442,6 @@ public class GenJava : GenTyped
 		}
 		else
 			base.WriteEqual(expr, parent, not);
-	}
-
-	static bool IsUnsignedByte(CiType type)
-	{
-		return type is CiRangeType range && range.Min >= 0 && range.Max > sbyte.MaxValue && range.Max <= byte.MaxValue;
 	}
 
 	protected override void WriteCoercedLiteral(CiType type, CiExpr literal)
@@ -452,11 +454,11 @@ public class GenJava : GenTyped
 
 	protected override void WriteAnd(CiBinaryExpr expr, CiPriority parent)
 	{
-		if (expr.Left is CiBinaryExpr leftBinary && leftBinary.Op == CiToken.LeftBracket && IsUnsignedByte(leftBinary.Type)
+		if (IsUnsignedByteIndexing(expr.Left)
 		 && expr.Right is CiLiteralLong rightLiteral) {
 			if (parent > CiPriority.CondAnd && parent != CiPriority.And)
 				WriteChar('(');
-			WriteIndexingInternal(leftBinary);
+			WriteIndexingInternal((CiBinaryExpr) expr.Left);
 			Write(" & ");
 			VisitLiteralLong(0xff & rightLiteral.Value);
 			if (parent > CiPriority.CondAnd && parent != CiPriority.And)
@@ -981,8 +983,8 @@ public class GenJava : GenTyped
 
 	protected override void WriteSwitchValue(CiExpr expr)
 	{
-		if (expr is CiBinaryExpr indexing && indexing.Op == CiToken.LeftBracket && IsUnsignedByte(indexing.Type))
-			WriteIndexingInternal(indexing); // omit "& 0xff"
+		if (IsUnsignedByteIndexing(expr))
+			WriteIndexingInternal((CiBinaryExpr) expr); // omit "& 0xff"
 		else
 			base.WriteSwitchValue(expr);
 	}
