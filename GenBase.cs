@@ -99,21 +99,17 @@ public abstract class GenBase : GenBaseBase
 	{
 		if (integer.Id == CiId.LongType)
 			return TypeCode.Int64;
-		if (promote || integer.Id == CiId.IntType)
-			return TypeCode.Int32;
-		CiRangeType range = (CiRangeType) integer;
-		if (range.Min < 0) {
-			if (range.Min < short.MinValue || range.Max > short.MaxValue)
-				return TypeCode.Int32;
-			if (range.Min < sbyte.MinValue || range.Max > sbyte.MaxValue)
+		if (!promote && integer is CiRangeType range) {
+			if (range.Min >= sbyte.MinValue && range.Max <= sbyte.MaxValue)
+				return TypeCode.SByte;
+			if (range.Min >= 0 && range.Max <= byte.MaxValue)
+				return TypeCode.Byte;
+			if (range.Min >= short.MinValue && range.Max <= short.MaxValue)
 				return TypeCode.Int16;
-			return TypeCode.SByte;
+			if (range.Min >= 0 && range.Max <= ushort.MaxValue)
+				return TypeCode.UInt16;
 		}
-		if (range.Max > ushort.MaxValue)
-			return TypeCode.Int32;
-		if (range.Max > byte.MaxValue)
-			return TypeCode.UInt16;
-		return TypeCode.Byte;
+		return TypeCode.Int32;
 	}
 
 	protected TypeCode GetTypeCode(CiType type, bool promote)
