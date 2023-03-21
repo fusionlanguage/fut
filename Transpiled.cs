@@ -1251,6 +1251,10 @@ namespace Foxoft.Ci
 		TypeParam0,
 		TypeParam0NotFinal,
 		TypeParam0Predicate,
+		SByteRange,
+		ByteRange,
+		ShortRange,
+		UShortRange,
 		IntType,
 		LongType,
 		FloatType,
@@ -6528,6 +6532,24 @@ namespace Foxoft.Ci
 				else
 					Write(", ");
 			}
+		}
+
+		protected virtual CiId GetTypeId(CiType type, bool promote)
+		{
+			if (type is CiRangeType range) {
+				if (promote)
+					return CiId.IntType;
+				if (range.Min >= -128 && range.Max <= 127)
+					return CiId.SByteRange;
+				if (range.Min >= 0 && range.Max <= 255)
+					return CiId.ByteRange;
+				if (range.Min >= -32768 && range.Max <= 32767)
+					return CiId.ShortRange;
+				if (range.Min >= 0 && range.Max <= 65535)
+					return CiId.UShortRange;
+				return CiId.IntType;
+			}
+			return type.Id;
 		}
 
 		protected abstract void WriteTypeAndName(CiNamedValue value);

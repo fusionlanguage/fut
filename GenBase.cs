@@ -17,7 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -93,45 +92,6 @@ public abstract class GenBase : GenBaseBase
 			}
 		}
 		Write(".0"); // it looked like an integer
-	}
-
-	protected virtual TypeCode GetIntegerTypeCode(CiIntegerType integer, bool promote)
-	{
-		if (integer.Id == CiId.LongType)
-			return TypeCode.Int64;
-		if (!promote && integer is CiRangeType range) {
-			if (range.Min >= sbyte.MinValue && range.Max <= sbyte.MaxValue)
-				return TypeCode.SByte;
-			if (range.Min >= 0 && range.Max <= byte.MaxValue)
-				return TypeCode.Byte;
-			if (range.Min >= short.MinValue && range.Max <= short.MaxValue)
-				return TypeCode.Int16;
-			if (range.Min >= 0 && range.Max <= ushort.MaxValue)
-				return TypeCode.UInt16;
-		}
-		return TypeCode.Int32;
-	}
-
-	protected TypeCode GetTypeCode(CiType type, bool promote)
-	{
-		switch (type.Id) {
-		case CiId.NullType:
-			return TypeCode.Empty;
-		case CiId.FloatType:
-		case CiId.FloatIntType:
-			return TypeCode.Single;
-		case CiId.DoubleType:
-			return TypeCode.Double;
-		case CiId.BoolType:
-			return TypeCode.Boolean;
-		case CiId.StringPtrType:
-		case CiId.StringStorageType:
-			return TypeCode.String;
-		default:
-			if (type is CiIntegerType integer)
-				return GetIntegerTypeCode(integer, promote);
-			return TypeCode.Object;
-		}
 	}
 
 	protected RegexOptions GetRegexOptions(List<CiExpr> args)

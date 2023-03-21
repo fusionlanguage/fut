@@ -245,31 +245,28 @@ public class GenSwift : GenPySwift
 	void WriteType(CiType type)
 	{
 		switch (type) {
-		case CiIntegerType integer:
-			switch (GetIntegerTypeCode(integer, false)) {
-			case TypeCode.SByte:
+		case CiIntegerType _:
+			switch (GetTypeId(type, false)) {
+			case CiId.SByteRange:
 				Write("Int8");
 				break;
-			case TypeCode.Byte:
+			case CiId.ByteRange:
 				Write("UInt8");
 				break;
-			case TypeCode.Int16:
+			case CiId.ShortRange:
 				Write("Int16");
 				break;
-			case TypeCode.UInt16:
+			case CiId.UShortRange:
 				Write("UInt16");
 				break;
-			case TypeCode.Int32:
+			case CiId.IntType:
 				Write("Int");
 				break;
-			case TypeCode.UInt32:
-				Write("UInt32");
-				break;
-			case TypeCode.Int64:
+			case CiId.LongType:
 				Write("Int64");
 				break;
 			default:
-				throw new NotImplementedException(integer.ToString());
+				throw new NotImplementedException(type.ToString());
 			}
 			break;
 		case CiFloatingType _:
@@ -348,7 +345,7 @@ public class GenSwift : GenPySwift
 	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 	{
 		if (type is CiNumericType && !(expr is CiLiteral)
-		 && GetTypeCode(type, false) != GetTypeCode(expr.Type, expr is CiBinaryExpr binary && binary.Op != CiToken.LeftBracket)) {
+		 && GetTypeId(type, false) != GetTypeId(expr.Type, expr is CiBinaryExpr binary && binary.Op != CiToken.LeftBracket)) {
 			WriteType(type);
 			WriteChar('(');
 			if (type is CiIntegerType && expr is CiCallExpr call && call.Method.Symbol.Id == CiId.MathTruncate)

@@ -227,16 +227,16 @@ public class GenJava : GenTyped
 		}
 	}
 
-	protected override TypeCode GetIntegerTypeCode(CiIntegerType integer, bool promote)
+	protected override CiId GetTypeId(CiType type, bool promote)
 	{
-		TypeCode typeCode = base.GetIntegerTypeCode(integer, promote);
-		switch (typeCode) {
-		case TypeCode.Byte:
-			return TypeCode.SByte; // store unsigned bytes in Java signed bytes
-		case TypeCode.UInt16:
-			return TypeCode.Int32;
+		CiId id = base.GetTypeId(type, promote);
+		switch (id) {
+		case CiId.ByteRange:
+			return CiId.SByteRange; // store unsigned bytes in Java signed bytes
+		case CiId.UShortRange:
+			return CiId.IntType;
 		default:
-			return typeCode;
+			return id;
 		}
 	}
 
@@ -262,22 +262,22 @@ public class GenJava : GenTyped
 	void WriteType(CiType type, bool promote, bool needClass)
 	{
 		switch (type) {
-		case CiIntegerType integer:
-			switch (GetIntegerTypeCode(integer, promote)) {
-			case TypeCode.SByte:
+		case CiIntegerType _:
+			switch (GetTypeId(type, promote)) {
+			case CiId.SByteRange:
 				Write(needClass ? "Byte" : "byte");
 				break;
-			case TypeCode.Int16:
+			case CiId.ShortRange:
 				Write(needClass ? "Short" : "short");
 				break;
-			case TypeCode.Int32:
+			case CiId.IntType:
 				Write(needClass ? "Integer" : "int");
 				break;
-			case TypeCode.Int64:
+			case CiId.LongType:
 				Write(needClass ? "Long" : "long");
 				break;
 			default:
-				throw new NotImplementedException(integer.ToString());
+				throw new NotImplementedException(type.ToString());
 			}
 			break;
 		case CiEnum enu:

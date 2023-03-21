@@ -41,29 +41,29 @@ public class GenCl : GenC
 	{
 	}
 
-	protected override void WriteNumericType(TypeCode typeCode)
+	protected override void WriteNumericType(CiId id)
 	{
-		switch (typeCode) {
-		case TypeCode.SByte:
+		switch (id) {
+		case CiId.SByteRange:
 			Write("char");
 			break;
-		case TypeCode.Byte:
+		case CiId.ByteRange:
 			Write("uchar");
 			break;
-		case TypeCode.Int16:
+		case CiId.ShortRange:
 			Write("short");
 			break;
-		case TypeCode.UInt16:
+		case CiId.UShortRange:
 			Write("ushort");
 			break;
-		case TypeCode.Int32:
+		case CiId.IntType:
 			Write("int");
 			break;
-		case TypeCode.Int64:
+		case CiId.LongType:
 			Write("long");
 			break;
 		default:
-			throw new NotImplementedException(typeCode.ToString());
+			throw new NotImplementedException(id.ToString());
 		}
 	}
 

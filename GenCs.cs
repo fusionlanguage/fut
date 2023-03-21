@@ -202,28 +202,28 @@ public class GenCs : GenTyped
 	protected override void WriteType(CiType type, bool promote)
 	{
 		switch (type) {
-		case CiIntegerType integer:
-			switch (GetIntegerTypeCode(integer, promote)) {
-			case TypeCode.SByte:
+		case CiIntegerType _:
+			switch (GetTypeId(type, promote)) {
+			case CiId.SByteRange:
 				Write("sbyte");
 				break;
-			case TypeCode.Byte:
+			case CiId.ByteRange:
 				Write("byte");
 				break;
-			case TypeCode.Int16:
+			case CiId.ShortRange:
 				Write("short");
 				break;
-			case TypeCode.UInt16:
+			case CiId.UShortRange:
 				Write("ushort");
 				break;
-			case TypeCode.Int32:
+			case CiId.IntType:
 				Write("int");
 				break;
-			case TypeCode.Int64:
+			case CiId.LongType:
 				Write("long");
 				break;
 			default:
-				throw new NotImplementedException(integer.ToString());
+				throw new NotImplementedException(type.ToString());
 			}
 			break;
 		case CiClassType klass:

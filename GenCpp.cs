@@ -198,8 +198,8 @@ public class GenCpp : GenCCpp
 	protected override void WriteType(CiType type, bool promote)
 	{
 		switch (type) {
-		case CiIntegerType integer:
-			WriteNumericType(GetIntegerTypeCode(integer, promote));
+		case CiIntegerType _:
+			WriteNumericType(GetTypeId(type, promote));
 			break;
 		case CiDynamicPtrType dynamic:
 			switch (dynamic.Class.Id) {

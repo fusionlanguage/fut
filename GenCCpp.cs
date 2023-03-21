@@ -37,40 +37,40 @@ public abstract class GenCCpp : GenCCppD
 
 	protected override int GetLiteralChars() => 127;
 
-	protected virtual void WriteNumericType(TypeCode typeCode)
+	protected virtual void WriteNumericType(CiId id)
 	{
-		switch (typeCode) {
-		case TypeCode.SByte:
+		switch (id) {
+		case CiId.SByteRange:
 			IncludeStdInt();
 			Write("int8_t");
 			break;
-		case TypeCode.Byte:
+		case CiId.ByteRange:
 			IncludeStdInt();
 			Write("uint8_t");
 			break;
-		case TypeCode.Int16:
+		case CiId.ShortRange:
 			IncludeStdInt();
 			Write("int16_t");
 			break;
-		case TypeCode.UInt16:
+		case CiId.UShortRange:
 			IncludeStdInt();
 			Write("uint16_t");
 			break;
-		case TypeCode.Int32:
+		case CiId.IntType:
 			Write("int");
 			break;
-		case TypeCode.Int64:
+		case CiId.LongType:
 			IncludeStdInt();
 			Write("int64_t");
 			break;
-		case TypeCode.Single:
+		case CiId.FloatType:
 			Write("float");
 			break;
-		case TypeCode.Double:
+		case CiId.DoubleType:
 			Write("double");
 			break;
 		default:
-			throw new NotImplementedException(typeCode.ToString());
+			throw new NotImplementedException(id.ToString());
 		}
 	}
 

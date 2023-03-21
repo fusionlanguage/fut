@@ -78,51 +78,51 @@ public abstract class GenTyped : GenBase
 		return false;
 	}
 
-	protected static bool IsNarrower(TypeCode left, TypeCode right)
+	protected static bool IsNarrower(CiId left, CiId right)
 	{
 		switch (left) {
-		case TypeCode.SByte:
+		case CiId.SByteRange:
 			switch (right) {
-			case TypeCode.Byte:
-			case TypeCode.Int16:
-			case TypeCode.UInt16:
-			case TypeCode.Int32:
-			case TypeCode.Int64:
+			case CiId.ByteRange:
+			case CiId.ShortRange:
+			case CiId.UShortRange:
+			case CiId.IntType:
+			case CiId.LongType:
 				return true;
 			default:
 				return false;
 			}
-		case TypeCode.Byte:
+		case CiId.ByteRange:
 			switch (right) {
-			case TypeCode.SByte:
-			case TypeCode.Int16:
-			case TypeCode.UInt16:
-			case TypeCode.Int32:
-			case TypeCode.Int64:
+			case CiId.SByteRange:
+			case CiId.ShortRange:
+			case CiId.UShortRange:
+			case CiId.IntType:
+			case CiId.LongType:
 				return true;
 			default:
 				return false;
 			}
-		case TypeCode.Int16:
+		case CiId.ShortRange:
 			switch (right) {
-			case TypeCode.UInt16:
-			case TypeCode.Int32:
-			case TypeCode.Int64:
+			case CiId.UShortRange:
+			case CiId.IntType:
+			case CiId.LongType:
 				return true;
 			default:
 				return false;
 			}
-		case TypeCode.UInt16:
+		case CiId.UShortRange:
 			switch (right) {
-			case TypeCode.Int16:
-			case TypeCode.Int32:
-			case TypeCode.Int64:
+			case CiId.ShortRange:
+			case CiId.IntType:
+			case CiId.LongType:
 				return true;
 			default:
 				return false;
 			}
-		case TypeCode.Int32:
-			return right == TypeCode.Int64;
+		case CiId.IntType:
+			return right == CiId.LongType;
 		default:
 			return false;
 		}
@@ -131,19 +131,18 @@ public abstract class GenTyped : GenBase
 	protected CiExpr GetStaticCastInner(CiType type, CiExpr expr)
 	{
 		if (expr is CiBinaryExpr binary && binary.Op == CiToken.And && binary.Right is CiLiteralLong rightMask
-		 && type is CiIntegerType integer) {
+		 && type is CiIntegerType) {
 			long mask;
-			switch (GetIntegerTypeCode(integer, false)) {
-			case TypeCode.Byte:
-			case TypeCode.SByte:
+			switch (GetTypeId(type, false)) {
+			case CiId.ByteRange:
+			case CiId.SByteRange:
 				mask = 0xff;
 				break;
-			case TypeCode.Int16:
-			case TypeCode.UInt16:
+			case CiId.ShortRange:
+			case CiId.UShortRange:
 				mask = 0xffff;
 				break;
-			case TypeCode.Int32:
-			case TypeCode.UInt32:
+			case CiId.IntType:
 				mask = 0xffffffff;
 				break;
 			default:
@@ -170,9 +169,9 @@ public abstract class GenTyped : GenBase
 
 	protected override void WriteNotPromoted(CiType type, CiExpr expr)
 	{
-		if (type is CiIntegerType elementType
-		 && IsNarrower(GetIntegerTypeCode(elementType, false), GetIntegerTypeCode((CiIntegerType) expr.Type, true)))
-			WriteStaticCast(elementType, expr);
+		if (type is CiIntegerType
+		 && IsNarrower(GetTypeId(type, false), GetTypeId(expr.Type, true)))
+			WriteStaticCast(type, expr);
 		else
 			expr.Accept(this, CiPriority.Argument);
 	}
@@ -195,13 +194,13 @@ public abstract class GenTyped : GenBase
 				WriteCoercedLiteral(expr.Left.Type, expr.Right);
 				return;
 			}
-			TypeCode leftTypeCode = GetTypeCode(expr.Left.Type, false);
-			TypeCode rightTypeCode = GetTypeCode(expr.Right.Type, IsPromoted(expr.Right));
-			if (leftTypeCode == TypeCode.SByte && rightTypeCode == TypeCode.SByte) {
+			CiId leftTypeId = GetTypeId(expr.Left.Type, false);
+			CiId rightTypeId = GetTypeId(expr.Right.Type, IsPromoted(expr.Right));
+			if (leftTypeId == CiId.SByteRange && rightTypeId == CiId.SByteRange) {
 				expr.Right.Accept(this, CiPriority.Assign); // omit Java "& 0xff"
 				return;
 			}
-			if (IsNarrower(leftTypeCode, rightTypeCode)) {
+			if (IsNarrower(leftTypeId, rightTypeId)) {
 				WriteStaticCast(expr.Left.Type, expr.Right);
 				return;
 			}

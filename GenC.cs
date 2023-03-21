@@ -49,8 +49,8 @@ public class GenC : GenCCpp
 	readonly SortedDictionary<string, string> ListFrees = new SortedDictionary<string, string>();
 	bool TreeCompareInteger;
 	bool TreeCompareString;
-	readonly SortedSet<TypeCode> Compares = new SortedSet<TypeCode>();
-	readonly SortedSet<TypeCode> Contains = new SortedSet<TypeCode>();
+	readonly SortedSet<CiId> Compares = new SortedSet<CiId>();
+	readonly SortedSet<CiId> Contains = new SortedSet<CiId>();
 	readonly List<CiVar> VarsToDestruct = new List<CiVar>();
 	protected CiClass CurrentClass;
 
@@ -435,8 +435,8 @@ public class GenC : GenCCpp
 	{
 		CiType baseType = type.GetBaseType();
 		switch (baseType) {
-		case CiIntegerType integer:
-			WriteNumericType(GetIntegerTypeCode(integer, promote && type == baseType));
+		case CiIntegerType _:
+			WriteNumericType(GetTypeId(baseType, promote && type == baseType));
 			if (space)
 				WriteChar(' ');
 			break;
@@ -1297,12 +1297,12 @@ public class GenC : GenCCpp
 	void WriteSizeofCompare(CiType elementType)
 	{
 		Write(", sizeof(");
-		TypeCode typeCode = GetTypeCode(elementType, false);
-		WriteNumericType(typeCode);
+		CiId typeId = GetTypeId(elementType, false);
+		WriteNumericType(typeId);
 		Write("), CiCompare_");
-		WriteNumericType(typeCode);
+		WriteNumericType(typeId);
 		WriteChar(')');
-		this.Compares.Add(typeCode);
+		this.Compares.Add(typeId);
 	}
 
 	protected void WriteArrayFill(CiExpr obj, List<CiExpr> args)
@@ -1734,22 +1734,24 @@ public class GenC : GenCCpp
 			break;
 		case CiId.ListContains:
 			Write("CiArray_Contains_");
-			TypeCode typeCode = GetTypeCode(((CiClassType) obj.Type).GetElementType(), false);
-			if (typeCode == TypeCode.String) {
+			CiId typeId = GetTypeId(((CiClassType) obj.Type).GetElementType(), false);
+			if (typeId == CiId.StringStorageType)
+				typeId = CiId.StringPtrType;
+			if (typeId == CiId.StringPtrType) {
 				Include("string.h");
 				Write("string((const char * const");
 			}
 			else {
-				WriteNumericType(typeCode);
+				WriteNumericType(typeId);
 				Write("((const ");
-				WriteNumericType(typeCode);
+				WriteNumericType(typeId);
 			}
 			Write(" *) ");
 			WritePostfix(obj, "->data, ");
 			WritePostfix(obj, "->len, "); // TODO: side effect
 			args[0].Accept(this, CiPriority.Argument);
 			WriteChar(')');
-			this.Contains.Add(typeCode);
+			this.Contains.Add(typeId);
 			break;
 		case CiId.ListInsert:
 			WriteListAddInsert(obj, true, "g_array_insert_val", args);
@@ -1768,11 +1770,11 @@ public class GenC : GenCCpp
 		case CiId.ListSortAll:
 			Write("g_array_sort(");
 			obj.Accept(this, CiPriority.Argument);
-			TypeCode typeCode2 = GetTypeCode(((CiClassType) obj.Type).GetElementType(), false);
+			CiId typeId2 = GetTypeId(((CiClassType) obj.Type).GetElementType(), false);
 			Write(", CiCompare_");
-			WriteNumericType(typeCode2);
+			WriteNumericType(typeId2);
 			WriteChar(')');
-			this.Compares.Add(typeCode2);
+			this.Compares.Add(typeId2);
 			break;
 		case CiId.QueueClear:
 			Write("g_queue_clear("); // TODO: g_queue_clear_full
@@ -3294,25 +3296,25 @@ public class GenC : GenCCpp
 			WriteLine("return strcmp((const char *) a, (const char *) b);");
 			CloseBlock();
 		}
-		foreach (TypeCode typeCode in this.Compares) {
+		foreach (CiId typeId in this.Compares) {
 			WriteNewLine();
 			Write("static int CiCompare_");
-			WriteNumericType(typeCode);
+			WriteNumericType(typeId);
 			WriteLine("(const void *pa, const void *pb)");
 			OpenBlock();
-			WriteNumericType(typeCode);
+			WriteNumericType(typeId);
 			Write(" a = *(const ");
-			WriteNumericType(typeCode);
+			WriteNumericType(typeId);
 			WriteLine(" *) pa;");
-			WriteNumericType(typeCode);
+			WriteNumericType(typeId);
 			Write(" b = *(const ");
-			WriteNumericType(typeCode);
+			WriteNumericType(typeId);
 			WriteLine(" *) pb;");
-			switch (typeCode) {
-			case TypeCode.Byte:
-			case TypeCode.SByte:
-			case TypeCode.Int16:
-			case TypeCode.UInt16:
+			switch (typeId) {
+			case CiId.ByteRange:
+			case CiId.SByteRange:
+			case CiId.ShortRange:
+			case CiId.UShortRange:
 				// subtraction can't overflow int
 				WriteLine("return a - b;");
 				break;
@@ -3322,22 +3324,22 @@ public class GenC : GenCCpp
 			}
 			CloseBlock();
 		}
-		foreach (TypeCode typeCode in this.Contains) {
+		foreach (CiId typeId in this.Contains) {
 			WriteNewLine();
 			Write("static bool CiArray_Contains_");
-			if (typeCode == TypeCode.String)
+			if (typeId == CiId.StringPtrType)
 				Write("string(const char * const *a, size_t len, const char *");
 			else {
-				WriteNumericType(typeCode);
+				WriteNumericType(typeId);
 				Write("(const ");
-				WriteNumericType(typeCode);
+				WriteNumericType(typeId);
 				Write(" *a, size_t len, ");
-				WriteNumericType(typeCode);
+				WriteNumericType(typeId);
 			}
 			WriteLine(" value)");
 			OpenBlock();
 			WriteLine("for (size_t i = 0; i < len; i++)");
-			if (typeCode == TypeCode.String)
+			if (typeId == CiId.StringPtrType)
 				WriteLine("\tif (strcmp(a[i], value) == 0)");
 			else
 				WriteLine("\tif (a[i] == value)");
@@ -3354,7 +3356,7 @@ public class GenC : GenCCpp
 		WriteNewLine();
 		foreach (string name in resources.Keys.OrderBy(k => k)) {
 			Write("static const ");
-			WriteNumericType(TypeCode.Byte);
+			WriteNumericType(CiId.ByteRange);
 			WriteChar(' ');
 			WriteResource(name, -1);
 			WriteChar('[');
