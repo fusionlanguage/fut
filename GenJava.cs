@@ -262,7 +262,7 @@ public class GenJava : GenTyped
 	void WriteType(CiType type, bool promote, bool needClass)
 	{
 		switch (type) {
-		case CiIntegerType _:
+		case CiNumericType _:
 			switch (GetTypeId(type, promote)) {
 			case CiId.SByteRange:
 				Write(needClass ? "Byte" : "byte");
@@ -275,6 +275,12 @@ public class GenJava : GenTyped
 				break;
 			case CiId.LongType:
 				Write(needClass ? "Long" : "long");
+				break;
+			case CiId.FloatType:
+				Write(needClass ? "Float" : "float");
+				break;
+			case CiId.DoubleType:
+				Write(needClass ? "Double" : "double");
 				break;
 			default:
 				throw new NotImplementedException(type.ToString());
