@@ -232,16 +232,12 @@ public class GenJava : GenTyped
 		TypeCode typeCode = base.GetIntegerTypeCode(integer, promote);
 		switch (typeCode) {
 		case TypeCode.Byte:
-			CiRangeType range = (CiRangeType) integer;
-			if (range.Min < range.Max) // not CiLiteral
-				return TypeCode.SByte; // store unsigned bytes in Java signed bytes
-			break;
+			return TypeCode.SByte; // store unsigned bytes in Java signed bytes
 		case TypeCode.UInt16:
 			return TypeCode.Int32;
 		default:
-			break;
+			return typeCode;
 		}
-		return typeCode;
 	}
 
 	void WriteCollectionType(string name, CiType elementType)
@@ -268,7 +264,6 @@ public class GenJava : GenTyped
 		switch (type) {
 		case CiIntegerType integer:
 			switch (GetIntegerTypeCode(integer, promote)) {
-			case TypeCode.Byte:
 			case TypeCode.SByte:
 				Write(needClass ? "Byte" : "byte");
 				break;

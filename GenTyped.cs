@@ -191,6 +191,10 @@ public abstract class GenTyped : GenBase
 	protected override void WriteAssignRight(CiBinaryExpr expr)
 	{
 		if (expr.Left.IsIndexing()) {
+			if (expr.Right is CiLiteralLong) {
+				WriteCoercedLiteral(expr.Left.Type, expr.Right);
+				return;
+			}
 			TypeCode leftTypeCode = GetTypeCode(expr.Left.Type, false);
 			TypeCode rightTypeCode = GetTypeCode(expr.Right.Type, IsPromoted(expr.Right));
 			if (leftTypeCode == TypeCode.SByte && rightTypeCode == TypeCode.SByte) {
