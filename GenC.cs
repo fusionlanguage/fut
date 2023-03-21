@@ -1297,7 +1297,7 @@ public class GenC : GenCCpp
 	void WriteSizeofCompare(CiType elementType)
 	{
 		Write(", sizeof(");
-		CiId typeId = GetTypeId(elementType, false);
+		CiId typeId = elementType.Id;
 		WriteNumericType(typeId);
 		Write("), CiCompare_");
 		WriteNumericType(typeId);
@@ -1734,7 +1734,7 @@ public class GenC : GenCCpp
 			break;
 		case CiId.ListContains:
 			Write("CiArray_Contains_");
-			CiId typeId = GetTypeId(((CiClassType) obj.Type).GetElementType(), false);
+			CiId typeId = ((CiClassType) obj.Type).GetElementType().Id;
 			if (typeId == CiId.StringStorageType)
 				typeId = CiId.StringPtrType;
 			if (typeId == CiId.StringPtrType) {
@@ -1770,7 +1770,7 @@ public class GenC : GenCCpp
 		case CiId.ListSortAll:
 			Write("g_array_sort(");
 			obj.Accept(this, CiPriority.Argument);
-			CiId typeId2 = GetTypeId(((CiClassType) obj.Type).GetElementType(), false);
+			CiId typeId2 = ((CiClassType) obj.Type).GetElementType().Id;
 			Write(", CiCompare_");
 			WriteNumericType(typeId2);
 			WriteChar(')');

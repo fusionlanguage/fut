@@ -245,8 +245,8 @@ public class GenSwift : GenPySwift
 	void WriteType(CiType type)
 	{
 		switch (type) {
-		case CiIntegerType _:
-			switch (GetTypeId(type, false)) {
+		case CiNumericType _:
+			switch (type.Id) {
 			case CiId.SByteRange:
 				Write("Int8");
 				break;
@@ -265,12 +265,15 @@ public class GenSwift : GenPySwift
 			case CiId.LongType:
 				Write("Int64");
 				break;
+			case CiId.FloatType:
+				Write("Float");
+				break;
+			case CiId.DoubleType:
+				Write("Double");
+				break;
 			default:
 				throw new NotImplementedException(type.ToString());
 			}
-			break;
-		case CiFloatingType _:
-			Write(type.Id == CiId.DoubleType ? "Double" : "Float");
 			break;
 		case CiEnum _:
 			Write(type.Id == CiId.BoolType ? "Bool" : type.Name);

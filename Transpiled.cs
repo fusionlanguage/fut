@@ -2421,7 +2421,7 @@ namespace Foxoft.Ci
 		public static CiRangeType New(int min, int max)
 		{
 			Debug.Assert(min <= max);
-			CiRangeType result = new CiRangeType { Min = min, Max = max };
+			CiRangeType result = new CiRangeType { Id = min >= -128 && max <= 127 ? CiId.SByteRange : min >= 0 && max <= 255 ? CiId.ByteRange : min >= -32768 && max <= 32767 ? CiId.ShortRange : min >= 0 && max <= 65535 ? CiId.UShortRange : CiId.IntType, Min = min, Max = max };
 			AddMinMaxValue(result, "MinValue", min);
 			AddMinMaxValue(result, "MaxValue", max);
 			return result;
@@ -6534,23 +6534,7 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected virtual CiId GetTypeId(CiType type, bool promote)
-		{
-			if (type is CiRangeType range) {
-				if (promote)
-					return CiId.IntType;
-				if (range.Min >= -128 && range.Max <= 127)
-					return CiId.SByteRange;
-				if (range.Min >= 0 && range.Max <= 255)
-					return CiId.ByteRange;
-				if (range.Min >= -32768 && range.Max <= 32767)
-					return CiId.ShortRange;
-				if (range.Min >= 0 && range.Max <= 65535)
-					return CiId.UShortRange;
-				return CiId.IntType;
-			}
-			return type.Id;
-		}
+		protected virtual CiId GetTypeId(CiType type, bool promote) => promote && type is CiRangeType ? CiId.IntType : type.Id;
 
 		protected abstract void WriteTypeAndName(CiNamedValue value);
 

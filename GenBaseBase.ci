@@ -386,23 +386,7 @@ public abstract class GenBaseBase : CiExprVisitor
 		}
 	}
 
-	protected virtual CiId GetTypeId(CiType type, bool promote)
-	{
-		if (type is CiRangeType range) {
-			if (promote)
-				return CiId.IntType;
-			if (range.Min >= -128 && range.Max <= 127)
-				return CiId.SByteRange;
-			if (range.Min >= 0 && range.Max <= byte.MaxValue)
-				return CiId.ByteRange;
-			if (range.Min >= short.MinValue && range.Max <= short.MaxValue)
-				return CiId.ShortRange;
-			if (range.Min >= 0 && range.Max <= ushort.MaxValue)
-				return CiId.UShortRange;
-			return CiId.IntType;
-		}
-		return type.Id;
-	}
+	protected virtual CiId GetTypeId(CiType type, bool promote) => promote && type is CiRangeType  ? CiId.IntType : type.Id;
 
 	protected abstract void WriteTypeAndName!(CiNamedValue value);
 

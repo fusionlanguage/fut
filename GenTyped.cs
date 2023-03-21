@@ -133,7 +133,7 @@ public abstract class GenTyped : GenBase
 		if (expr is CiBinaryExpr binary && binary.Op == CiToken.And && binary.Right is CiLiteralLong rightMask
 		 && type is CiIntegerType) {
 			long mask;
-			switch (GetTypeId(type, false)) {
+			switch (type.Id) {
 			case CiId.ByteRange:
 			case CiId.SByteRange:
 				mask = 0xff;
@@ -170,7 +170,7 @@ public abstract class GenTyped : GenBase
 	protected override void WriteNotPromoted(CiType type, CiExpr expr)
 	{
 		if (type is CiIntegerType
-		 && IsNarrower(GetTypeId(type, false), GetTypeId(expr.Type, true)))
+		 && IsNarrower(type.Id, GetTypeId(expr.Type, true)))
 			WriteStaticCast(type, expr);
 		else
 			expr.Accept(this, CiPriority.Argument);
@@ -194,7 +194,7 @@ public abstract class GenTyped : GenBase
 				WriteCoercedLiteral(expr.Left.Type, expr.Right);
 				return;
 			}
-			CiId leftTypeId = GetTypeId(expr.Left.Type, false);
+			CiId leftTypeId = expr.Left.Type.Id;
 			CiId rightTypeId = GetTypeId(expr.Right.Type, IsPromoted(expr.Right));
 			if (leftTypeId == CiId.SByteRange && rightTypeId == CiId.SByteRange) {
 				expr.Right.Accept(this, CiPriority.Assign); // omit Java "& 0xff"
