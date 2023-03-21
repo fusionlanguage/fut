@@ -466,14 +466,6 @@ public class GenD : GenCCppD
 		WriteChar(')');
 	}
 
-	protected override void WriteCoercedLiteral(CiType type, CiExpr literal)
-	{
-		if (literal is CiLiteralChar && type is CiRangeType range && range.Max <= 0xff)
-			WriteStaticCast(type, literal);
-		else
-			literal.Accept(this, CiPriority.Argument);
-	}
-
 	public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 	{
 		Include("std.format");
