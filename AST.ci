@@ -1152,7 +1152,7 @@ public class CiEnum : CiContainerType
 	{
 		CiConst? previous = null;
 		for (CiSymbol!? symbol = this.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiConst! konst) { // not HasFlags
+			if (symbol is CiConst! konst) { // not HasFlag
 				visitor.VisitEnumValue(konst, previous);
 				previous = konst;
 			}

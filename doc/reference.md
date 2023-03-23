@@ -245,6 +245,13 @@ enum* Seasons
 ```
 
 `enum*` values can be combined with the `| & ^ ~` operators.
+The `HasFlag` method can be used to check if the `enum*`
+has all the specified flags:
+
+```csharp
+Seasons s = Seasons.Warm;
+bool ok = s.HasFlag(Seasons.Summer);
+```
 
 ### Strings
 
