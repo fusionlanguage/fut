@@ -3386,7 +3386,7 @@ public class GenC : GenCCpp
 
 		CreateFile(headerFile);
 		WriteLine("#pragma once");
-		WriteIncludes();
+		WriteCIncludes();
 		WriteLine("#ifdef __cplusplus");
 		WriteLine("extern \"C\" {");
 		WriteLine("#endif");
@@ -3437,7 +3437,7 @@ public class GenC : GenCCpp
 		CreateFile(this.OutputFile);
 		WriteTopLevelNatives(program);
 		Include("stdlib.h");
-		WriteIncludes();
+		WriteCIncludes();
 		Write("#include \"");
 		Write(Path.GetFileName(headerFile));
 		WriteLine("\"");

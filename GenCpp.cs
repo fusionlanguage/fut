@@ -1848,7 +1848,7 @@ public class GenCpp : GenCCpp
 
 		CreateFile(headerFile);
 		WriteLine("#pragma once");
-		WriteIncludes();
+		WriteCIncludes();
 		if (this.HasEnumFlags) {
 			WriteLine("#define CI_ENUM_FLAG_OPERATORS(T) \\");
 			WriteLine("\tinline constexpr T operator~(T a) { return static_cast<T>(~static_cast<std::underlying_type_t<T>>(a)); } \\");
@@ -1879,7 +1879,7 @@ public class GenCpp : GenCCpp
 			Include("string");
 			Include("string_view");
 		}
-		WriteIncludes();
+		WriteCIncludes();
 		Write("#include \"");
 		Write(Path.GetFileName(headerFile));
 		WriteLine("\"");

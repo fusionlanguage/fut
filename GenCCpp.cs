@@ -33,7 +33,7 @@ public abstract class GenCCpp : GenCCppD
 
 	protected abstract void IncludeMath();
 
-	protected void WriteIncludes() => WriteIncludes("#include <", ">");
+	protected void WriteCIncludes() => WriteIncludes("#include <", ">");
 
 	protected override int GetLiteralChars() => 127;
 
