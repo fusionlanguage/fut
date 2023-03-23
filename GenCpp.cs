@@ -1793,7 +1793,7 @@ public class GenCpp : GenCCpp
 		WriteBody(method);
 	}
 
-	void WriteResources(Dictionary<string, byte[]> resources, bool define)
+	void WriteResources(SortedDictionary<string, byte[]> resources, bool define)
 	{
 		if (resources.Count == 0)
 			return;
@@ -1802,7 +1802,7 @@ public class GenCpp : GenCCpp
 		OpenBlock();
 		WriteLine("namespace CiResource");
 		OpenBlock();
-		foreach (string name in resources.Keys.OrderBy(k => k)) {
+		foreach (string name in resources.Keys) {
 			if (!define)
 				Write("extern ");
 			Include("array");

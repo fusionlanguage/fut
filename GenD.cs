@@ -1463,12 +1463,12 @@ public class GenD : GenCCppD
 		base.WriteCoercedInternal(type, expr, parent);
 	}
 
-	void WriteResources(Dictionary<string, byte[]> resources)
+	void WriteResources(SortedDictionary<string, byte[]> resources)
 	{
 		WriteNewLine();
 		WriteLine("private static struct CiResource");
 		OpenBlock();
-		foreach (string name in resources.Keys.OrderBy(k => k)) {
+		foreach (string name in resources.Keys) {
 			Write("private static ubyte[] ");
 			WriteResource(name, -1);
 			WriteLine(" = [");

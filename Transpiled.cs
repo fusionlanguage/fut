@@ -3169,7 +3169,7 @@ namespace Foxoft.Ci
 
 		internal readonly List<CiClass> Classes = new List<CiClass>();
 
-		internal readonly Dictionary<string, byte[]> Resources = new Dictionary<string, byte[]>();
+		internal readonly SortedDictionary<string, byte[]> Resources = new SortedDictionary<string, byte[]>();
 	}
 
 	public abstract class CiParser : CiLexer
@@ -9522,7 +9522,7 @@ namespace Foxoft.Ci
 			CloseBlock();
 		}
 
-		protected void WriteLib(Dictionary<string, byte[]> resources)
+		protected void WriteLib(SortedDictionary<string, byte[]> resources)
 		{
 			if (resources.Count == 0)
 				return;
@@ -9530,7 +9530,7 @@ namespace Foxoft.Ci
 			WriteLine("class Ci");
 			OpenBlock();
 			
-			foreach (string name in resources.Keys.OrderBy(k => k)) {
+			foreach (string name in resources.Keys) {
 				Write("static ");
 				WriteResource(name, -1);
 				WriteLine(" = new Uint8Array([");

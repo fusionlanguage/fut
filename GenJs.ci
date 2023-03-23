@@ -1276,7 +1276,7 @@ public class GenJsNoModule : GenBase
 		CloseBlock();
 	}
 
-	protected void WriteLib!(Dictionary<string, byte[]> resources)
+	protected void WriteLib!(SortedDictionary<string, byte[]> resources)
 	{
 		if (resources.Count == 0)
 			return;
@@ -1284,7 +1284,7 @@ public class GenJsNoModule : GenBase
 		WriteLine("class Ci");
 		OpenBlock();
 		native {
-			foreach (string name in resources.Keys.OrderBy(k => k)) {
+			foreach (string name in resources.Keys) {
 				Write("static ");
 				WriteResource(name, -1);
 				WriteLine(" = new Uint8Array([");

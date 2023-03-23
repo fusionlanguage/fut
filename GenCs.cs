@@ -919,12 +919,12 @@ public class GenCs : GenTyped
 		CloseBlock();
 	}
 
-	void WriteResources(Dictionary<string, byte[]> resources)
+	void WriteResources(SortedDictionary<string, byte[]> resources)
 	{
 		WriteNewLine();
 		WriteLine("internal static class CiResource");
 		OpenBlock();
-		foreach (string name in resources.Keys.OrderBy(k => k)) {
+		foreach (string name in resources.Keys) {
 			Write("internal static readonly byte[] ");
 			WriteResource(name, -1);
 			WriteLine(" = {");

@@ -1270,14 +1270,14 @@ public class GenPy : GenPySwift
 		CloseChild();
 	}
 
-	void WriteResources(Dictionary<string, byte[]> resources)
+	void WriteResources(SortedDictionary<string, byte[]> resources)
 	{
 		if (resources.Count == 0)
 			return;
 		WriteNewLine();
 		Write("class _CiResource");
 		OpenChild();
-		foreach (string name in resources.Keys.OrderBy(k => k)) {
+		foreach (string name in resources.Keys) {
 			WriteResource(name, -1);
 			WriteLine(" = (");
 			this.Indent++;

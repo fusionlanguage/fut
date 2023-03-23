@@ -3354,12 +3354,12 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected void WriteResources(Dictionary<string, byte[]> resources)
+	protected void WriteResources(SortedDictionary<string, byte[]> resources)
 	{
 		if (resources.Count == 0)
 			return;
 		WriteNewLine();
-		foreach (string name in resources.Keys.OrderBy(k => k)) {
+		foreach (string name in resources.Keys) {
 			Write("static const ");
 			WriteNumericType(CiId.ByteRange);
 			WriteChar(' ');
