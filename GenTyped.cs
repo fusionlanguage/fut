@@ -65,18 +65,7 @@ public abstract class GenTyped : GenBase
 		}
 	}
 
-	protected bool IsOneAsciiString(CiExpr expr, out char c)
-	{
-		if (expr is CiLiteralString literal) {
-			int i = literal.GetOneAscii();
-			if (i >= 0) {
-				c = (char) i;
-				return true;
-			}
-		}
-		c = '\0';
-		return false;
-	}
+	protected int GetOneAscii(CiExpr expr) => expr is CiLiteralString literal ? literal.GetOneAscii() : -1;
 
 	protected static bool IsNarrower(CiId left, CiId right)
 	{
@@ -176,16 +165,7 @@ public abstract class GenTyped : GenBase
 			expr.Accept(this, CiPriority.Argument);
 	}
 
-	protected virtual bool IsPromoted(CiExpr expr)
-	{
-		switch (expr) {
-		case CiLiteral _:
-		case CiBinaryExpr binary when binary.Op == CiToken.LeftBracket || binary.IsAssign():
-			return false;
-		default:
-			return true;
-		}
-	}
+	protected virtual bool IsPromoted(CiExpr expr) => !(expr is CiBinaryExpr binary && (binary.Op == CiToken.LeftBracket || binary.IsAssign()));
 
 	protected override void WriteAssignRight(CiBinaryExpr expr)
 	{

@@ -174,7 +174,8 @@ public class GenCl : GenC
 			WriteEnumHasFlag(obj, args, parent);
 			break;
 		case CiId.StringStartsWith:
-			if (IsOneAsciiString(args[0], out char c)) {
+			int c = GetOneAscii(args[0]);
+			if (c >= 0) {
 				if (parent > CiPriority.Equality)
 					WriteChar('(');
 				WritePostfix(obj, "[0] == ");

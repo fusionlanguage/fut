@@ -459,7 +459,8 @@ public class GenCs : GenTyped
 			WriteChar('.');
 			Write(method.Name);
 			WriteChar('(');
-			if (IsOneAsciiString(args[0], out char c))
+			int c = GetOneAscii(args[0]);
+			if (c >= 0)
 				VisitLiteralChar(c);
 			else
 				args[0].Accept(this, CiPriority.Argument);

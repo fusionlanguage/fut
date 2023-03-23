@@ -1563,7 +1563,8 @@ public class GenC : GenCCpp
 			Include("string.h");
 			if (parent > CiPriority.Equality)
 				WriteChar('(');
-			if (IsOneAsciiString(args[0], out char c)) {
+			int c = GetOneAscii(args[0]);
+			if (c >= 0) {
 				Write("strchr(");
 				obj.Accept(this, CiPriority.Argument);
 				Write(", ");
@@ -1597,7 +1598,8 @@ public class GenC : GenCCpp
 		case CiId.StringStartsWith:
 			if (parent > CiPriority.Equality)
 				WriteChar('(');
-			if (IsOneAsciiString(args[0], out char c2)) {
+			int c2 = GetOneAscii(args[0]);
+			if (c2 >= 0) {
 				WritePostfix(obj, "[0] == ");
 				VisitLiteralChar(c2);
 			}

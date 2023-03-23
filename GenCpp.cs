@@ -533,7 +533,8 @@ public class GenCpp : GenCCpp
 		WriteNotRawStringLiteral(obj, CiPriority.Primary);
 		WriteChar('.');
 		Write(name);
-		if (IsOneAsciiString(args[0], out char c)) {
+		int c = GetOneAscii(args[0]);
+		if (c >= 0) {
 			WriteChar('(');
 			VisitLiteralChar(c);
 			WriteChar(')');

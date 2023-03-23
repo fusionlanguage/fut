@@ -1774,7 +1774,7 @@ namespace Foxoft.Ci
 			int length = 0;
 			bool escaped = false;
 			foreach (int c in this.Value) {
-				if (c > 127)
+				if (c < 0 || c > 127)
 					return -1;
 				if (!escaped && c == '\\')
 					escaped = true;
@@ -1790,7 +1790,7 @@ namespace Foxoft.Ci
 		{
 			bool escaped = false;
 			foreach (int c in this.Value) {
-				if (c > 127)
+				if (c < 0 || c > 127)
 					return -1;
 				if (!escaped && c == '\\')
 					escaped = true;
@@ -1809,9 +1809,9 @@ namespace Foxoft.Ci
 			switch (this.Value.Length) {
 			case 1:
 				int c = this.Value[0];
-				return c > 127 ? -1 : c;
+				return c >= 0 && c <= 127 ? c : -1;
 			case 2:
-				return this.Value[0] != '\\' ? -1 : CiLexer.GetEscapedChar(this.Value[1]);
+				return this.Value[0] == '\\' ? CiLexer.GetEscapedChar(this.Value[1]) : -1;
 			default:
 				return -1;
 			}
