@@ -8201,6 +8201,77 @@ namespace Foxoft.Ci
 		}
 	}
 
+	public abstract class GenCCppD : GenTyped
+	{
+
+		protected readonly List<CiSwitch> SwitchesWithGoto = new List<CiSwitch>();
+
+		public override void VisitConst(CiConst statement)
+		{
+			if (statement.Type is CiArrayStorageType)
+				WriteConst(statement);
+		}
+
+		public override void VisitBreak(CiBreak statement)
+		{
+			if (statement.LoopOrSwitch is CiSwitch switchStatement) {
+				int gotoId = this.SwitchesWithGoto.IndexOf(switchStatement);
+				if (gotoId >= 0) {
+					Write("goto ciafterswitch");
+					VisitLiteralLong(gotoId);
+					WriteCharLine(';');
+					return;
+				}
+			}
+			base.VisitBreak(statement);
+		}
+
+		protected int GetSwitchGoto(CiSwitch statement)
+		{
+			if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreakAndContinue(kase.Body)) || CiSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
+				this.SwitchesWithGoto.Add(statement);
+				return this.SwitchesWithGoto.Count - 1;
+			}
+			return -1;
+		}
+
+		protected void WriteIfCaseBody(List<CiStatement> body, bool doWhile)
+		{
+			int length = CiSwitch.LengthWithoutTrailingBreak(body);
+			if (doWhile && CiSwitch.HasEarlyBreak(body)) {
+				this.Indent++;
+				WriteNewLine();
+				Write("do ");
+				OpenBlock();
+				WriteFirstStatements(body, length);
+				CloseBlock();
+				WriteLine("while (0);");
+				this.Indent--;
+			}
+			else if (length == 1)
+				WriteChild(body[0]);
+			else {
+				WriteChar(' ');
+				OpenBlock();
+				WriteFirstStatements(body, length);
+				CloseBlock();
+			}
+		}
+
+		protected void EndSwitchAsIfs(CiSwitch statement, int gotoId)
+		{
+			if (statement.HasDefault()) {
+				Write("else");
+				WriteIfCaseBody(statement.DefaultBody, gotoId < 0);
+			}
+			if (gotoId >= 0) {
+				Write("ciafterswitch");
+				VisitLiteralLong(gotoId);
+				WriteLine(": ;");
+			}
+		}
+	}
+
 	public class GenJsNoModule : GenBase
 	{
 

@@ -30,11 +30,11 @@ DO = @echo $@ &&
 endif
 DO_SUMMARY = $(DO)perl test/summary.pl $(filter %.txt, $^)
 DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
-SOURCE_CI = Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenTyped.ci GenJs.ci GenTs.ci
+SOURCE_CI = Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenTyped.ci GenCCppD.ci GenJs.ci GenTs.ci
 
 all: cito.exe
 
-cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs FileResourceSema.cs GenCCpp.cs GenCCppD.cs GenC.cs GenCpp.cs GenCs.cs GenD.cs GenJava.cs GenPySwift.cs GenPy.cs GenSwift.cs GenCl.cs CiTo.cs)
+cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs FileResourceSema.cs GenCCpp.cs GenC.cs GenCpp.cs GenCs.cs GenD.cs GenJava.cs GenPySwift.cs GenPy.cs GenSwift.cs GenCl.cs CiTo.cs)
 	$(DO_BUILD)
 
 Transpiled.cs: $(SOURCE_CI)

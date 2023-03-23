@@ -1,4 +1,4 @@
-// GenCCppD.cs - Base for C/C++/D code generators
+// GenCCppD.ci - base for C/C++/D code generators
 //
 // Copyright (C) 2011-2023  Piotr Fusik
 //
@@ -17,25 +17,17 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-
-namespace Foxoft.Ci
-{
-
 public abstract class GenCCppD : GenTyped
 {
-	protected readonly List<CiSwitch> SwitchesWithGoto = new List<CiSwitch>();
+	protected List<CiSwitch>() SwitchesWithGoto;
 
-	public override void VisitConst(CiConst statement)
+	public override void VisitConst!(CiConst statement)
 	{
 		if (statement.Type is CiArrayStorageType)
 			WriteConst(statement);
 	}
 
-	public override void VisitBreak(CiBreak statement)
+	public override void VisitBreak!(CiBreak! statement)
 	{
 		if (statement.LoopOrSwitch is CiSwitch switchStatement) {
 			int gotoId = this.SwitchesWithGoto.IndexOf(switchStatement);
@@ -49,7 +41,7 @@ public abstract class GenCCppD : GenTyped
 		base.VisitBreak(statement);
 	}
 
-	protected int GetSwitchGoto(CiSwitch statement)
+	protected int GetSwitchGoto!(CiSwitch statement)
 	{
 		if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreakAndContinue(kase.Body))
 		 || CiSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
@@ -59,7 +51,7 @@ public abstract class GenCCppD : GenTyped
 		return -1;
 	}
 
-	protected void WriteIfCaseBody(List<CiStatement> body, bool doWhile)
+	protected void WriteIfCaseBody!(List<CiStatement#> body, bool doWhile)
 	{
 		int length = CiSwitch.LengthWithoutTrailingBreak(body);
 		if (doWhile && CiSwitch.HasEarlyBreak(body)) {
@@ -82,7 +74,7 @@ public abstract class GenCCppD : GenTyped
 		}
 	}
 
-	protected void EndSwitchAsIfs(CiSwitch statement, int gotoId)
+	protected void EndSwitchAsIfs!(CiSwitch statement, int gotoId)
 	{
 		if (statement.HasDefault()) {
 			Write("else");
@@ -94,8 +86,4 @@ public abstract class GenCCppD : GenTyped
 			WriteLine(": ;");
 		}
 	}
-
-
-}
-
 }
