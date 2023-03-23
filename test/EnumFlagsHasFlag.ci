@@ -16,6 +16,6 @@ public static class Test
 	public static bool Run()
 	{
 		DaysOfWeek d = DaysOfWeek.Friday | DaysOfWeek.Weekend;
-		return d.HasFlag(DaysOfWeek.Friday) && d.HasFlag(DaysOfWeek.Weekend) && !d.HasFlag(DaysOfWeek.Thursday | DaysOfWeek.Friday); //FAIL: cpp TODO
+		return d.HasFlag(DaysOfWeek.Friday) && d.HasFlag(DaysOfWeek.Weekend) && !d.HasFlag(DaysOfWeek.Thursday | DaysOfWeek.Friday);
 	}
 }

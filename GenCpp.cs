@@ -487,6 +487,13 @@ public class GenCpp : GenCCpp
 			WriteMemberOp(left);
 	}
 
+	protected override void WriteEnumAsInt(CiExpr expr, CiPriority parent)
+	{
+		Write("static_cast<int>(");
+		expr.Accept(this, CiPriority.Argument);
+		WriteChar(')');
+	}
+
 	void StartMethodCall(CiExpr obj)
 	{
 		obj.Accept(this, CiPriority.Primary);
@@ -706,6 +713,9 @@ public class GenCpp : GenCCpp
 			}
 			WriteName(method);
 			WriteArgsInParentheses(method, args);
+			break;
+		case CiId.EnumHasFlag:
+			WriteEnumHasFlag(obj, args, parent);
 			break;
 		case CiId.IntTryParse:
 		case CiId.LongTryParse:

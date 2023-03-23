@@ -7236,6 +7236,11 @@ namespace Foxoft.Ci
 			expr.Accept(this, CiPriority.Argument);
 		}
 
+		protected virtual void WriteEnumAsInt(CiExpr expr, CiPriority parent)
+		{
+			expr.Accept(this, parent);
+		}
+
 		protected void WriteEnumHasFlag(CiExpr obj, List<CiExpr> args, CiPriority parent)
 		{
 			if (parent > CiPriority.Equality)
@@ -7243,16 +7248,16 @@ namespace Foxoft.Ci
 			int i = args[0].IntValue();
 			if ((i & (i - 1)) == 0 && i != 0) {
 				WriteChar('(');
-				obj.Accept(this, CiPriority.And);
+				WriteEnumAsInt(obj, CiPriority.And);
 				Write(" & ");
-				args[0].Accept(this, CiPriority.And);
+				WriteEnumAsInt(args[0], CiPriority.And);
 				Write(") != 0");
 			}
 			else {
 				Write("(~");
-				obj.Accept(this, CiPriority.Primary);
+				WriteEnumAsInt(obj, CiPriority.Primary);
 				Write(" & ");
-				args[0].Accept(this, CiPriority.And);
+				WriteEnumAsInt(args[0], CiPriority.And);
 				Write(") == 0");
 			}
 			if (parent > CiPriority.Equality)
