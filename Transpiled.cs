@@ -9288,4 +9288,319 @@ namespace Foxoft.Ci
 		{
 		}
 	}
+
+	public class GenTs : GenJs
+	{
+
+		CiSystem System;
+
+		bool GenFullCode = false;
+
+		protected override string GetTargetName() => "TypeScript";
+
+		public GenTs WithGenFullCode()
+		{
+			this.GenFullCode = true;
+			return this;
+		}
+
+		protected override bool IsJsPrivate(CiMember member) => false;
+
+		public override void VisitEnumValue(CiConst konst, CiConst previous)
+		{
+			WriteEnumValue(konst);
+			WriteCharLine(',');
+		}
+
+		protected override void WriteEnum(CiEnum enu)
+		{
+			StartContainerType(enu);
+			Write("enum ");
+			Write(enu.Name);
+			WriteChar(' ');
+			OpenBlock();
+			enu.AcceptValues(this);
+			CloseBlock();
+		}
+
+		protected override void WriteTypeAndName(CiNamedValue value)
+		{
+			WriteName(value);
+			Write(": ");
+			WriteType(value.Type);
+		}
+
+		void WriteType(CiType type, bool readOnly = false)
+		{
+			switch (type) {
+			case CiNumericType _:
+				Write(type.Id == CiId.LongType ? "bigint" : "number");
+				break;
+			case CiEnum enu:
+				Write(enu.Id == CiId.BoolType ? "boolean" : enu.Name);
+				break;
+			case CiClassType klass:
+				readOnly |= !(klass is CiReadWriteClassType);
+				
+				switch (klass.Class.Id) {
+				case CiId.StringClass:
+					Write("string");
+					break;
+				case CiId.ArrayPtrClass when !(klass.GetElementType() is CiNumericType):
+				case CiId.ArrayStorageClass when !(klass.GetElementType() is CiNumericType):
+				case CiId.ListClass:
+				case CiId.QueueClass:
+				case CiId.StackClass:
+					if (readOnly)
+						Write("readonly ");
+					if (klass.GetElementType().Nullable)
+						WriteChar('(');
+					WriteType(klass.GetElementType());
+					if (klass.GetElementType().Nullable)
+						WriteChar(')');
+					Write("[]");
+					break;
+				default:
+					if (readOnly && klass.Class.TypeParameterCount > 0)
+						Write("Readonly<");
+					switch (klass.Class.Id) {
+					case CiId.ArrayPtrClass:
+					case CiId.ArrayStorageClass:
+						Write(GetArrayElementType((CiNumericType) klass.GetElementType()));
+						Write("Array");
+						break;
+					case CiId.HashSetClass:
+					case CiId.SortedSetClass:
+						Write("Set<");
+						WriteType(klass.GetElementType(), false);
+						WriteChar('>');
+						break;
+					case CiId.DictionaryClass:
+					case CiId.SortedDictionaryClass:
+						if (klass.GetKeyType() is CiEnum)
+							Write("Partial<");
+						Write("Record<");
+						WriteType(klass.GetKeyType());
+						Write(", ");
+						WriteType(klass.GetValueType());
+						WriteChar('>');
+						if (klass.GetKeyType() is CiEnum)
+							WriteChar('>');
+						break;
+					case CiId.OrderedDictionaryClass:
+						Write("Map<");
+						WriteType(klass.GetKeyType());
+						Write(", ");
+						WriteType(klass.GetValueType());
+						WriteChar('>');
+						break;
+					case CiId.RegexClass:
+						Write("RegExp");
+						break;
+					case CiId.MatchClass:
+						Write("RegExpMatchArray");
+						break;
+					default:
+						Write(klass.Class.Name);
+						break;
+					}
+					if (readOnly && klass.Class.TypeParameterCount > 0)
+						WriteChar('>');
+					break;
+				}
+			if (type.Nullable)
+					Write(" | null");
+				break;
+			default:
+				Write(type.Name);
+				break;
+			}
+		}
+
+		protected override void WriteAsType(CiVar def)
+		{
+			Write(" as ");
+			Write(def.Type.Name);
+		}
+
+		protected override void WriteBinaryOperand(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
+		{
+			CiType type = binary.Type;
+			if (expr.Type is CiNumericType) {
+				switch (binary.Op) {
+				case CiToken.Equal:
+				case CiToken.NotEqual:
+				case CiToken.Less:
+				case CiToken.LessOrEqual:
+				case CiToken.Greater:
+				case CiToken.GreaterOrEqual:
+					type = this.System.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
+					break;
+				default:
+					break;
+				}
+			}
+			WriteCoerced(type, expr, parent);
+		}
+
+		protected override void WriteBoolAndOr(CiBinaryExpr expr)
+		{
+			Write("[ ");
+			expr.Left.Accept(this, CiPriority.Argument);
+			Write(", ");
+			expr.Right.Accept(this, CiPriority.Argument);
+			Write(" ].");
+			Write(expr.Op == CiToken.And ? "every" : "some");
+			Write("(Boolean)");
+		}
+
+		protected override void DefineIsVar(CiBinaryExpr binary)
+		{
+			if (binary.Right is CiVar def) {
+				EnsureChildBlock();
+				Write("let ");
+				WriteName(def);
+				Write(": ");
+				WriteType(binary.Left.Type);
+				EndStatement();
+			}
+		}
+
+		void WriteVisibility(CiVisibility visibility)
+		{
+			switch (visibility) {
+			case CiVisibility.Private:
+				Write("private ");
+				break;
+			case CiVisibility.Internal:
+				break;
+			case CiVisibility.Protected:
+				Write("protected ");
+				break;
+			case CiVisibility.Public:
+				Write("public ");
+				break;
+			}
+		}
+
+		protected override void WriteConst(CiConst konst)
+		{
+			WriteNewLine();
+			WriteDoc(konst.Documentation);
+			WriteVisibility(konst.Visibility);
+			Write("static readonly ");
+			WriteName(konst);
+			Write(": ");
+			WriteType(konst.Type, true);
+			if (this.GenFullCode) {
+				Write(" = ");
+				konst.Value.Accept(this, CiPriority.Argument);
+			}
+			WriteCharLine(';');
+		}
+
+		protected override void WriteField(CiField field)
+		{
+			WriteDoc(field.Documentation);
+			WriteVisibility(field.Visibility);
+			if (field.Type.IsFinal() && !field.IsAssignableStorage())
+				Write("readonly ");
+			WriteTypeAndName(field);
+			if (this.GenFullCode)
+				WriteVarInit(field);
+			WriteCharLine(';');
+		}
+
+		protected override void WriteMethod(CiMethod method)
+		{
+			WriteNewLine();
+			WriteMethodDoc(method);
+			WriteVisibility(method.Visibility);
+			switch (method.CallType) {
+			case CiCallType.Static:
+				Write("static ");
+				break;
+			case CiCallType.Virtual:
+				break;
+			case CiCallType.Abstract:
+				Write("abstract ");
+				break;
+			case CiCallType.Override:
+				break;
+			case CiCallType.Normal:
+				break;
+			case CiCallType.Sealed:
+				break;
+			default:
+				throw new NotImplementedException();
+			}
+			WriteName(method);
+			WriteChar('(');
+			int i = 0;
+			for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+				if (i > 0)
+					Write(", ");
+				WriteName(param);
+				if (param.Value != null && !this.GenFullCode)
+					WriteChar('?');
+				Write(": ");
+				WriteType(param.Type);
+				if (param.Value != null && this.GenFullCode)
+					WriteVarInit(param);
+				i++;
+			}
+			Write("): ");
+			WriteType(method.Type);
+			if (this.GenFullCode)
+				WriteBody(method);
+			else
+				WriteCharLine(';');
+		}
+
+		protected override void WriteClass(CiClass klass, CiProgram program)
+		{
+			if (!WriteBaseClass(klass, program))
+				return;
+			StartContainerType(klass);
+			switch (klass.CallType) {
+			case CiCallType.Normal:
+				break;
+			case CiCallType.Abstract:
+				Write("abstract ");
+				break;
+			case CiCallType.Static:
+			case CiCallType.Sealed:
+				break;
+			default:
+				throw new NotImplementedException();
+			}
+			OpenClass(klass, "", " extends ");
+			if (NeedsConstructor(klass) || klass.CallType == CiCallType.Static) {
+				if (klass.Constructor != null) {
+					WriteDoc(klass.Constructor.Documentation);
+					WriteVisibility(klass.Constructor.Visibility);
+				}
+				else if (klass.CallType == CiCallType.Static)
+					Write("private ");
+				if (this.GenFullCode)
+					WriteConstructor(klass);
+				else
+					WriteLine("constructor();");
+			}
+			WriteMembers(klass, this.GenFullCode);
+			CloseBlock();
+		}
+
+		public override void WriteProgram(CiProgram program)
+		{
+			this.System = program.System;
+			CreateFile(this.OutputFile);
+			if (this.GenFullCode)
+				WriteTopLevelNatives(program);
+			WriteTypes(program);
+			if (this.GenFullCode)
+				WriteLib(program.Resources);
+			CloseFile();
+		}
+	}
 }

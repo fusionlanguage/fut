@@ -1,4 +1,4 @@
-// GenTs.cs - TypeScript code generator
+// GenTs.ci - TypeScript code generator
 //
 // Copyright (C) 2020-2021  Andy Edwards
 // Copyright (C) 2020-2023  Piotr Fusik
@@ -18,11 +18,6 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-using System;
-
-namespace Foxoft.Ci
-{
-
 public class GenTs : GenJs
 {
 	CiSystem System;
@@ -33,7 +28,7 @@ public class GenTs : GenJs
 
 	protected override string GetTargetName() => "TypeScript";
 
-	public GenTs WithGenFullCode()
+	public GenTs WithGenFullCode!()
 	{
 		GenFullCode = true;
 		return this;
@@ -41,13 +36,13 @@ public class GenTs : GenJs
 
 	protected override bool IsJsPrivate(CiMember member) => false;
 
-	public override void VisitEnumValue(CiConst konst, CiConst previous)
+	public override void VisitEnumValue!(CiConst! konst, CiConst previous)
 	{
 		WriteEnumValue(konst);
 		WriteCharLine(',');
 	}
 
-	protected override void WriteEnum(CiEnum enu)
+	protected override void WriteEnum!(CiEnum enu)
 	{
 		// WARNING: TypeScript enums allow reverse lookup that the Js generator currently
 		// doesn't implement
@@ -61,14 +56,14 @@ public class GenTs : GenJs
 		CloseBlock();
 	}
 
-	protected override void WriteTypeAndName(CiNamedValue value)
+	protected override void WriteTypeAndName!(CiNamedValue value)
 	{
 		WriteName(value);
 		Write(": ");
 		WriteType(value.Type);
 	}
 
-	void WriteType(CiType type, bool readOnly = false)
+	void WriteType!(CiType type, bool readOnly = false)
 	{
 		switch (type) {
 		case CiNumericType _:
@@ -79,71 +74,73 @@ public class GenTs : GenJs
 			break;
 		case CiClassType klass:
 			readOnly |= !(klass is CiReadWriteClassType);
-			switch (klass.Class.Id) {
-			case CiId.StringClass:
-				Write("string");
-				break;
-			case CiId.ArrayPtrClass when !(klass.GetElementType() is CiNumericType):
-			case CiId.ArrayStorageClass when !(klass.GetElementType() is CiNumericType):
-			case CiId.ListClass:
-			case CiId.QueueClass:
-			case CiId.StackClass:
-				if (readOnly)
-					Write("readonly ");
-				if (klass.GetElementType().Nullable)
-					WriteChar('(');
-				WriteType(klass.GetElementType());
-				if (klass.GetElementType().Nullable)
-					WriteChar(')');
-				Write("[]");
-				break;
-			default:
-				if (readOnly && klass.Class.TypeParameterCount > 0)
-					Write("Readonly<");
+			native {
 				switch (klass.Class.Id) {
-				case CiId.ArrayPtrClass:
-				case CiId.ArrayStorageClass:
-					Write(GetArrayElementType((CiNumericType) klass.GetElementType()));
-					Write("Array");
+				case CiId.StringClass:
+					Write("string");
 					break;
-				case CiId.HashSetClass:
-				case CiId.SortedSetClass:
-					Write("Set<");
-					WriteType(klass.GetElementType(), false);
-					WriteChar('>');
-					break;
-				case CiId.DictionaryClass:
-				case CiId.SortedDictionaryClass:
-					if (klass.GetKeyType() is CiEnum)
-						Write("Partial<");
-					Write("Record<");
-					WriteType(klass.GetKeyType());
-					Write(", ");
-					WriteType(klass.GetValueType());
-					WriteChar('>');
-					if (klass.GetKeyType() is CiEnum)
-						WriteChar('>');
-					break;
-				case CiId.OrderedDictionaryClass:
-					Write("Map<");
-					WriteType(klass.GetKeyType());
-					Write(", ");
-					WriteType(klass.GetValueType());
-					WriteChar('>');
-					break;
-				case CiId.RegexClass:
-					Write("RegExp");
-					break;
-				case CiId.MatchClass:
-					Write("RegExpMatchArray");
+				case CiId.ArrayPtrClass when !(klass.GetElementType() is CiNumericType):
+				case CiId.ArrayStorageClass when !(klass.GetElementType() is CiNumericType):
+				case CiId.ListClass:
+				case CiId.QueueClass:
+				case CiId.StackClass:
+					if (readOnly)
+						Write("readonly ");
+					if (klass.GetElementType().Nullable)
+						WriteChar('(');
+					WriteType(klass.GetElementType());
+					if (klass.GetElementType().Nullable)
+						WriteChar(')');
+					Write("[]");
 					break;
 				default:
-					Write(klass.Class.Name);
+					if (readOnly && klass.Class.TypeParameterCount > 0)
+						Write("Readonly<");
+					switch (klass.Class.Id) {
+					case CiId.ArrayPtrClass:
+					case CiId.ArrayStorageClass:
+						Write(GetArrayElementType((CiNumericType) klass.GetElementType()));
+						Write("Array");
+						break;
+					case CiId.HashSetClass:
+					case CiId.SortedSetClass:
+						Write("Set<");
+						WriteType(klass.GetElementType(), false);
+						WriteChar('>');
+						break;
+					case CiId.DictionaryClass:
+					case CiId.SortedDictionaryClass:
+						if (klass.GetKeyType() is CiEnum)
+							Write("Partial<");
+						Write("Record<");
+						WriteType(klass.GetKeyType());
+						Write(", ");
+						WriteType(klass.GetValueType());
+						WriteChar('>');
+						if (klass.GetKeyType() is CiEnum)
+							WriteChar('>');
+						break;
+					case CiId.OrderedDictionaryClass:
+						Write("Map<");
+						WriteType(klass.GetKeyType());
+						Write(", ");
+						WriteType(klass.GetValueType());
+						WriteChar('>');
+						break;
+					case CiId.RegexClass:
+						Write("RegExp");
+						break;
+					case CiId.MatchClass:
+						Write("RegExpMatchArray");
+						break;
+					default:
+						Write(klass.Class.Name);
+						break;
+					}
+					if (readOnly && klass.Class.TypeParameterCount > 0)
+						WriteChar('>');
 					break;
 				}
-				if (readOnly && klass.Class.TypeParameterCount > 0)
-					WriteChar('>');
-				break;
 			}
 			if (type.Nullable)
 				Write(" | null");
@@ -154,13 +151,13 @@ public class GenTs : GenJs
 		}
 	}
 
-	protected override void WriteAsType(CiVar def)
+	protected override void WriteAsType!(CiVar def)
 	{
 		Write(" as ");
 		Write(def.Type.Name);
 	}
 
-	protected override void WriteBinaryOperand(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
+	protected override void WriteBinaryOperand!(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
 	{
 		CiType type = binary.Type;
 		if (expr.Type is CiNumericType) {
@@ -181,7 +178,7 @@ public class GenTs : GenJs
 		WriteCoerced(type, expr, parent);
 	}
 
-	protected override void WriteBoolAndOr(CiBinaryExpr expr)
+	protected override void WriteBoolAndOr!(CiBinaryExpr expr)
 	{
 		Write("[ ");
 		expr.Left.Accept(this, CiPriority.Argument);
@@ -192,7 +189,7 @@ public class GenTs : GenJs
 		Write("(Boolean)");
 	}
 
-	protected override void DefineIsVar(CiBinaryExpr binary)
+	protected override void DefineIsVar!(CiBinaryExpr binary)
 	{
 		if (binary.Right is CiVar def) {
 			EnsureChildBlock();
@@ -204,7 +201,7 @@ public class GenTs : GenJs
 		}
 	}
 
-	void WriteVisibility(CiVisibility visibility)
+	void WriteVisibility!(CiVisibility visibility)
 	{
 		switch (visibility) {
 		case CiVisibility.Private:
@@ -221,7 +218,7 @@ public class GenTs : GenJs
 		}
 	}
 
-	protected override void WriteConst(CiConst konst)
+	protected override void WriteConst!(CiConst konst)
 	{
 		WriteNewLine();
 		WriteDoc(konst.Documentation);
@@ -237,7 +234,7 @@ public class GenTs : GenJs
 		WriteCharLine(';');
 	}
 
-	protected override void WriteField(CiField field)
+	protected override void WriteField!(CiField field)
 	{
 		WriteDoc(field.Documentation);
 		WriteVisibility(field.Visibility);
@@ -249,7 +246,7 @@ public class GenTs : GenJs
 		WriteCharLine(';');
 	}
 
-	protected override void WriteMethod(CiMethod method)
+	protected override void WriteMethod!(CiMethod method)
 	{
 		WriteNewLine();
 		WriteMethodDoc(method);
@@ -272,12 +269,12 @@ public class GenTs : GenJs
 			// no final methods in TS
 			break;
 		default:
-			throw new NotImplementedException(method.CallType.ToString());
+			assert false;
 		}
 		WriteName(method);
 		WriteChar('(');
 		int i = 0;
-		for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+		for (CiVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 			if (i > 0)
 				Write(", ");
 			WriteName(param);
@@ -297,7 +294,7 @@ public class GenTs : GenJs
 			WriteCharLine(';');
 	}
 
-	protected override void WriteClass(CiClass klass, CiProgram program)
+	protected override void WriteClass!(CiClass klass, CiProgram program)
 	{
 		if (!WriteBaseClass(klass, program))
 			return;
@@ -314,7 +311,7 @@ public class GenTs : GenJs
 			// there's no final/sealed keyword, but we accomplish it by marking the constructor private
 			break;
 		default:
-			throw new NotImplementedException(klass.CallType.ToString());
+			assert false;
 		}
 		OpenClass(klass, "", " extends ");
 
@@ -335,7 +332,7 @@ public class GenTs : GenJs
 		CloseBlock();
 	}
 
-	public override void WriteProgram(CiProgram program)
+	public override void WriteProgram!(CiProgram program)
 	{
 		this.System = program.System;
 		CreateFile(this.OutputFile);
@@ -346,6 +343,4 @@ public class GenTs : GenJs
 			WriteLib(program.Resources);
 		CloseFile();
 	}
-}
-
 }
