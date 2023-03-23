@@ -169,25 +169,25 @@ test/bin/%/Test.swift: test/%.ci cito.exe
 test/bin/%/Test.cl: test/%.ci cito.exe
 	$(DO_CITO)
 
-test/bin/CiCheck/cpp.txt: test/bin/CiCheck/cpp.exe Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenJs.ci
+test/bin/CiCheck/cpp.txt: test/bin/CiCheck/cpp.exe Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenJs.ci GenTs.ci
 	$(DO)./$< $(filter %.ci, $^) >$@
 
 test/bin/CiCheck/cpp.exe: test/bin/CiCheck/Test.cpp test/CiCheck.cpp
 	$(DO)$(CXX) -o $@ $(CFLAGS) -I $(<D) $^
 
-test/bin/CiCheck/d.txt: test/bin/CiCheck/d.exe Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenJs.ci
+test/bin/CiCheck/d.txt: test/bin/CiCheck/d.exe Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenJs.ci GenTs.ci
 	$(DO)./$< $(filter %.ci, $^) >$@
 
 test/bin/CiCheck/d.exe: test/bin/CiCheck/Test.d test/CiCheck.d
 	$(DO)$(DC) -of$@ $(DFLAGS) -I$(<D) $^
 
-test/bin/CiCheck/java.txt: test/bin/CiCheck/CiSema.class Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenJs.ci
+test/bin/CiCheck/java.txt: test/bin/CiCheck/CiSema.class Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenJs.ci GenTs.ci
 	$(DO)java -cp "$(<D)" --enable-preview CiCheck $(filter %.ci, $^) >$@
 
 test/bin/CiCheck/CiSema.class: test/bin/CiCheck/CiSema.java test/CiCheck.java
 	$(DO)javac -d $(@D) -encoding utf8 --enable-preview -source 20 $(<D)/*.java test/CiCheck.java
 
-test/bin/CiCheck/js.txt: test/CiCheck.js test/bin/CiCheck/Test.js Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenJs.ci
+test/bin/CiCheck/js.txt: test/CiCheck.js test/bin/CiCheck/Test.js Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenJs.ci GenTs.ci
 	$(DO)node test/CiCheck.js $(filter %.ci, $^) >$@
 
 test/bin/CiCheck/Test.cpp test/bin/CiCheck/Test.d test/bin/CiCheck/CiSema.java test/bin/CiCheck/Test.js test/bin/CiCheck/Test.ts: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci cito.exe
