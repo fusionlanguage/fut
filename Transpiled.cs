@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 namespace Foxoft.Ci
 {
 
@@ -1276,6 +1277,7 @@ namespace Foxoft.Ci
 		OrderedDictionaryClass,
 		TextWriterClass,
 		StringWriterClass,
+		RegexOptionsEnum,
 		RegexClass,
 		MatchClass,
 		LockClass,
@@ -2972,7 +2974,7 @@ namespace Foxoft.Ci
 			CiClass environmentClass = CiClass.New(CiCallType.Static, CiId.None, "Environment");
 			environmentClass.Add(CiMethod.NewStatic(this.StringNullablePtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", CiVar.New(this.StringPtrType, "name")));
 			Add(environmentClass);
-			CiEnum regexOptionsEnum = new CiEnumFlags { Name = "RegexOptions" };
+			CiEnum regexOptionsEnum = new CiEnumFlags { Id = CiId.RegexOptionsEnum, Name = "RegexOptions" };
 			CiConst regexOptionsNone = NewConstLong("None", 0);
 			AddEnumValue(regexOptionsEnum, regexOptionsNone);
 			AddEnumValue(regexOptionsEnum, NewConstLong("IgnoreCase", 1));
@@ -7281,6 +7283,8 @@ namespace Foxoft.Ci
 			args[2].Accept(this, CiPriority.Argument);
 			WriteChar(')');
 		}
+
+		protected abstract RegexOptions GetRegexOptions(List<CiExpr> args);
 
 		protected abstract void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent);
 

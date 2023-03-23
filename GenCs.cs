@@ -277,6 +277,8 @@ public class GenCs : GenTyped
 			}
 			break;
 		default:
+			if (type.Id == CiId.RegexOptionsEnum)
+				Include("System.Text.RegularExpressions");
 			Write(type.Name);
 			break;
 		}

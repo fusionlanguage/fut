@@ -94,7 +94,7 @@ public abstract class GenBase : GenBaseBase
 		Write(".0"); // it looked like an integer
 	}
 
-	protected RegexOptions GetRegexOptions(List<CiExpr> args)
+	protected override RegexOptions GetRegexOptions(List<CiExpr> args)
 	{
 		CiExpr expr = args[args.Count - 1];
 		if (!(expr.Type is CiEnum))
