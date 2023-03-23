@@ -639,12 +639,12 @@ public abstract class GenBase : CiExprVisitor
 		WriteCoerced(type, expr, CiPriority.Argument);
 	}
 
-	protected virtual void WriteCoercedLiteral!(CiType type, CiExpr literal)
+	protected virtual void WriteCoercedLiteral!(CiType? type, CiExpr literal)
 	{
 		literal.Accept(this, CiPriority.Argument);
 	}
 
-	protected void WriteCoercedLiterals!(CiType type, List<CiExpr#> exprs)
+	protected void WriteCoercedLiterals!(CiType? type, List<CiExpr#> exprs)
 	{
 		for (int i = 0; i < exprs.Count; i++) {
 			WriteComma(i);
@@ -1288,7 +1288,7 @@ public abstract class GenBase : CiExprVisitor
 		return true;
 	}
 
-	protected abstract void WriteCallExpr!(CiExpr obj, CiMethod method, List<CiExpr#> args, CiPriority parent);
+	protected abstract void WriteCallExpr!(CiExpr? obj, CiMethod method, List<CiExpr#> args, CiPriority parent);
 
 	public override void VisitCallExpr!(CiCallExpr expr, CiPriority parent)
 	{
