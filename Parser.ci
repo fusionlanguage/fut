@@ -1001,7 +1001,7 @@ public abstract class CiParser : CiLexer
 	{
 		Expect(CiToken.Enum);
 		bool flags = Eat(CiToken.Asterisk);
-		CiEnum# enu = flags ? new CiEnumFlags() : new CiEnum();
+		CiEnum# enu = flags ? this.Program.System.NewEnumFlags() : new CiEnum();
 		enu.Filename = this.Filename;
 		enu.Line = this.Line;
 		enu.Documentation = doc;

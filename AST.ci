@@ -105,6 +105,7 @@ public enum CiId
 	MathNaN,
 	MathNegativeInfinity,
 	MathPositiveInfinity,
+	EnumHasFlag,
 	IntTryParse,
 	LongTryParse,
 	DoubleTryParse,
@@ -1151,9 +1152,10 @@ public class CiEnum : CiContainerType
 	{
 		CiConst? previous = null;
 		for (CiSymbol!? symbol = this.First; symbol != null; symbol = symbol.Next) {
-			assert symbol is CiConst! konst;
-			visitor.VisitEnumValue(konst, previous);
-			previous = konst;
+			if (symbol is CiConst! konst) { // not HasFlags
+				visitor.VisitEnumValue(konst, previous);
+				previous = konst;
+			}
 		}
 	}
 }
@@ -1376,6 +1378,13 @@ public class CiSystem : CiScope
 		return result != null ? result : PromoteIntegerTypes(left, right);
 	}
 
+	internal CiEnumFlags# NewEnumFlags()
+	{
+		CiEnumFlags# enu = new CiEnumFlags();
+		enu.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.EnumHasFlag, "HasFlag", CiVar.New(enu, "flag")));
+		return enu;
+	}
+
 	CiClass! AddCollection!(CiId id, string name, int typeParameterCount, CiId clearId, CiId countId)
 	{
 		CiClass# result = CiClass.New(CiCallType.Normal, id, name, typeParameterCount);
@@ -1540,7 +1549,9 @@ public class CiSystem : CiScope
 		CiClass# environmentClass = CiClass.New(CiCallType.Static, CiId.None, "Environment");
 		environmentClass.Add(CiMethod.NewStatic(StringNullablePtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", CiVar.New(StringPtrType, "name")));
 		Add(environmentClass);
-		CiEnum# regexOptionsEnum = new CiEnumFlags { Id = CiId.RegexOptionsEnum, Name = "RegexOptions" };
+		CiEnumFlags# regexOptionsEnum = NewEnumFlags();
+		regexOptionsEnum.Id = CiId.RegexOptionsEnum;
+		regexOptionsEnum.Name = "RegexOptions";
 		CiConst# regexOptionsNone = NewConstLong("None", 0);
 		AddEnumValue(regexOptionsEnum, regexOptionsNone);
 		AddEnumValue(regexOptionsEnum, NewConstLong("IgnoreCase", 1));

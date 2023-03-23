@@ -1,0 +1,21 @@
+enum* DaysOfWeek
+{
+	None = 0,
+	Sunday = 1 << 0,
+	Monday = 1 << 1,
+	Tuesday = 1 << 2,
+	Wednesday = 1 << 3,
+	Thursday = 1 << 4,
+	Friday = 1 << 5,
+	Saturday = 1 << 6,
+	Weekend = Saturday | Sunday
+}
+
+public static class Test
+{
+	public static bool Run()
+	{
+		DaysOfWeek d = DaysOfWeek.Friday | DaysOfWeek.Weekend;
+		return d.HasFlag(DaysOfWeek.Friday) && d.HasFlag(DaysOfWeek.Weekend) && !d.HasFlag(DaysOfWeek.Thursday | DaysOfWeek.Friday); //FAIL: c cpp d java js py swift ts cl TODO
+	}
+}

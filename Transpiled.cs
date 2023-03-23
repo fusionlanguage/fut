@@ -1292,6 +1292,7 @@ namespace Foxoft.Ci
 		MathNaN,
 		MathNegativeInfinity,
 		MathPositiveInfinity,
+		EnumHasFlag,
 		IntTryParse,
 		LongTryParse,
 		DoubleTryParse,
@@ -2660,9 +2661,10 @@ namespace Foxoft.Ci
 		{
 			CiConst previous = null;
 			for (CiSymbol symbol = this.First; symbol != null; symbol = symbol.Next) {
-				CiConst konst = (CiConst) symbol;
-				visitor.VisitEnumValue(konst, previous);
-				previous = konst;
+				if (symbol is CiConst konst) {
+					visitor.VisitEnumValue(konst, previous);
+					previous = konst;
+				}
 			}
 		}
 	}
@@ -2974,7 +2976,9 @@ namespace Foxoft.Ci
 			CiClass environmentClass = CiClass.New(CiCallType.Static, CiId.None, "Environment");
 			environmentClass.Add(CiMethod.NewStatic(this.StringNullablePtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", CiVar.New(this.StringPtrType, "name")));
 			Add(environmentClass);
-			CiEnum regexOptionsEnum = new CiEnumFlags { Id = CiId.RegexOptionsEnum, Name = "RegexOptions" };
+			CiEnumFlags regexOptionsEnum = NewEnumFlags();
+			regexOptionsEnum.Id = CiId.RegexOptionsEnum;
+			regexOptionsEnum.Name = "RegexOptions";
 			CiConst regexOptionsNone = NewConstLong("None", 0);
 			AddEnumValue(regexOptionsEnum, regexOptionsNone);
 			AddEnumValue(regexOptionsEnum, NewConstLong("IgnoreCase", 1));
@@ -3098,6 +3102,13 @@ namespace Foxoft.Ci
 		{
 			CiType result = PromoteFloatingTypes(left, right);
 			return result != null ? result : PromoteIntegerTypes(left, right);
+		}
+
+		internal CiEnumFlags NewEnumFlags()
+		{
+			CiEnumFlags enu = new CiEnumFlags();
+			enu.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.EnumHasFlag, "HasFlag", CiVar.New(enu, "flag")));
+			return enu;
 		}
 
 		CiClass AddCollection(CiId id, string name, int typeParameterCount, CiId clearId, CiId countId)
@@ -4131,7 +4142,7 @@ namespace Foxoft.Ci
 		{
 			Expect(CiToken.Enum);
 			bool flags = Eat(CiToken.Asterisk);
-			CiEnum enu = flags ? new CiEnumFlags() : new CiEnum();
+			CiEnum enu = flags ? this.Program.System.NewEnumFlags() : new CiEnum();
 			enu.Filename = this.Filename;
 			enu.Line = this.Line;
 			enu.Documentation = doc;
@@ -7285,6 +7296,28 @@ namespace Foxoft.Ci
 		}
 
 		protected abstract RegexOptions GetRegexOptions(List<CiExpr> args);
+
+		protected bool WriteRegexOptions(List<CiExpr> args, string prefix, string separator, string suffix, string i, string m, string s)
+		{
+			RegexOptions options = GetRegexOptions(args);
+			if (options == RegexOptions.None)
+				return false;
+			Write(prefix);
+			if (options.HasFlag(RegexOptions.IgnoreCase))
+				Write(i);
+			if (options.HasFlag(RegexOptions.Multiline)) {
+				if (options.HasFlag(RegexOptions.IgnoreCase))
+					Write(separator);
+				Write(m);
+			}
+			if (options.HasFlag(RegexOptions.Singleline)) {
+				if (options != RegexOptions.Singleline)
+					Write(separator);
+				Write(s);
+			}
+			Write(suffix);
+			return true;
+		}
 
 		protected abstract void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent);
 

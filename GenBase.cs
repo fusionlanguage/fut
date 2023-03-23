@@ -101,28 +101,6 @@ public abstract class GenBase : GenBaseBase
 			return RegexOptions.None;
 		return (RegexOptions) expr.IntValue();
 	}
-
-	protected bool WriteRegexOptions(List<CiExpr> args, string prefix, string separator, string suffix, string i, string m, string s)
-	{
-		RegexOptions options = GetRegexOptions(args);
-		if (options == RegexOptions.None)
-			return false;
-		Write(prefix);
-		if (options.HasFlag(RegexOptions.IgnoreCase))
-			Write(i);
-		if (options.HasFlag(RegexOptions.Multiline)) {
-			if (options.HasFlag(RegexOptions.IgnoreCase))
-				Write(separator);
-			Write(m);
-		}
-		if (options.HasFlag(RegexOptions.Singleline)) {
-			if (options != RegexOptions.Singleline)
-				Write(separator);
-			Write(s);
-		}
-		Write(suffix);
-		return true;
-	}
 }
 
 }
