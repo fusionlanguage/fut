@@ -185,7 +185,7 @@ test/bin/CiCheck/java.txt: test/bin/CiCheck/CiSema.class Lexer.ci AST.ci Parser.
 	$(DO)java -cp "$(<D)" --enable-preview CiCheck $(filter %.ci, $^) >$@
 
 test/bin/CiCheck/CiSema.class: test/bin/CiCheck/CiSema.java test/CiCheck.java
-	$(DO)javac -d $(@D) -encoding utf8 --enable-preview -source 19 $(<D)/*.java test/CiCheck.java
+	$(DO)javac -d $(@D) -encoding utf8 --enable-preview -source 20 $(<D)/*.java test/CiCheck.java
 
 test/bin/CiCheck/js.txt: test/CiCheck.js test/bin/CiCheck/Test.js Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenJs.ci
 	$(DO)node test/CiCheck.js $(filter %.ci, $^) >$@
