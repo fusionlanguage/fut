@@ -601,6 +601,7 @@ public class GenPy : GenPySwift
 	protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
+		case CiId.EnumHasFlag:
 		case CiId.StringContains:
 		case CiId.ListContains:
 		case CiId.HashSetContains:

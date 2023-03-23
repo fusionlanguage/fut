@@ -517,6 +517,9 @@ public class GenJsNoModule : GenBase
 			}
 			WriteArgsInParentheses(method, args);
 			break;
+		case CiId.EnumHasFlag:
+			WriteEnumHasFlag(obj, args, parent);
+			break;
 		case CiId.IntTryParse:
 			Write("!isNaN(");
 			obj.Accept(this, CiPriority.Assign);

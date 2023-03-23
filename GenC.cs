@@ -1541,6 +1541,9 @@ public class GenC : GenCCpp
 		case CiId.ClassToString:
 			WriteCCall(obj, method, args);
 			break;
+		case CiId.EnumHasFlag:
+			WriteEnumHasFlag(obj, args, parent);
+			break;
 		case CiId.IntTryParse:
 			this.IntTryParse = true;
 			Write("CiInt");

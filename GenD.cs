@@ -690,6 +690,9 @@ public class GenD : GenCCppD
 	protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 	{
 		switch (method.Id) {
+		case CiId.EnumHasFlag:
+			WriteEnumHasFlag(obj, args, parent);
+			break;
 		case CiId.IntTryParse:
 		case CiId.LongTryParse:
 		case CiId.DoubleTryParse:

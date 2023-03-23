@@ -446,6 +446,9 @@ public class GenSwift : GenPySwift
 			WriteMemberOp(obj, null);
 			Write("description");
 			break;
+		case CiId.EnumHasFlag:
+			WriteMethodCall(obj, "contains", args[0]);
+			break;
 		case CiId.StringContains:
 			WriteStringContains(obj, "contains", args);
 			break;

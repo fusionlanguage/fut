@@ -599,6 +599,9 @@ public class GenJava : GenTyped
 			WriteName(method);
 			WriteArgsInParentheses(method, args);
 			break;
+		case CiId.EnumHasFlag:
+			WriteEnumHasFlag(obj, args, parent);
+			break;
 		case CiId.DoubleTryParse:
 			Include("java.util.function.DoubleSupplier");
 			Write("!Double.isNaN(");

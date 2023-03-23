@@ -170,6 +170,9 @@ public class GenCl : GenC
 		case CiId.ClassToString:
 			WriteCCall(obj, method, args);
 			break;
+		case CiId.EnumHasFlag:
+			WriteEnumHasFlag(obj, args, parent);
+			break;
 		case CiId.StringStartsWith:
 			if (IsOneAsciiString(args[0], out char c)) {
 				if (parent > CiPriority.Equality)

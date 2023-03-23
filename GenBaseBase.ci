@@ -1081,6 +1081,29 @@ public abstract class GenBaseBase : CiExprVisitor
 		expr.Accept(this, CiPriority.Argument);
 	}
 
+	protected void WriteEnumHasFlag!(CiExpr obj, List<CiExpr#> args, CiPriority parent)
+	{
+		if (parent > CiPriority.Equality)
+			WriteChar('(');
+		int i = args[0].IntValue();
+		if ((i & i - 1) == 0 && i != 0) { // TODO: BitOperations.IsPow2
+			WriteChar('(');
+			obj.Accept(this, CiPriority.And);
+			Write(" & ");
+			args[0].Accept(this, CiPriority.And);
+			Write(") != 0");
+		}
+		else {
+			Write("(~");
+			obj.Accept(this, CiPriority.Primary);
+			Write(" & ");
+			args[0].Accept(this, CiPriority.And);
+			Write(") == 0");
+		}
+		if (parent > CiPriority.Equality)
+			WriteChar(')');
+	}
+
 	protected void WriteTryParseRadix!(List<CiExpr#> args)
 	{
 		Write(", ");
