@@ -7988,6 +7988,219 @@ namespace Foxoft.Ci
 		public abstract void WriteProgram(CiProgram program);
 	}
 
+	public abstract class GenTyped : GenBase
+	{
+
+		protected abstract void WriteType(CiType type, bool promote);
+
+		protected override void WriteTypeAndName(CiNamedValue value)
+		{
+			WriteType(value.Type, true);
+			WriteChar(' ');
+			WriteName(value);
+		}
+
+		public override void VisitLiteralDouble(double value)
+		{
+			base.VisitLiteralDouble(value);
+			float f = (float) value;
+			if (f == value)
+				WriteChar('f');
+		}
+
+		public override void VisitAggregateInitializer(CiAggregateInitializer expr)
+		{
+			CiArrayStorageType array = (CiArrayStorageType) expr.Type;
+			Write("{ ");
+			WriteCoercedLiterals(array.GetElementType(), expr.Items);
+			Write(" }");
+		}
+
+		protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
+		{
+			Write("new ");
+			WriteType(elementType.GetBaseType(), false);
+			WriteChar('[');
+			lengthExpr.Accept(this, CiPriority.Argument);
+			WriteChar(']');
+			while (elementType.IsArray()) {
+				WriteChar('[');
+				if (elementType is CiArrayStorageType arrayStorage)
+					arrayStorage.LengthExpr.Accept(this, CiPriority.Argument);
+				WriteChar(']');
+				CiClassType array = (CiClassType) elementType;
+				elementType = array.GetElementType();
+			}
+		}
+
+		protected int GetOneAscii(CiExpr expr) => expr is CiLiteralString literal ? literal.GetOneAscii() : -1;
+
+		protected static bool IsNarrower(CiId left, CiId right)
+		{
+			switch (left) {
+			case CiId.SByteRange:
+				switch (right) {
+				case CiId.ByteRange:
+				case CiId.ShortRange:
+				case CiId.UShortRange:
+				case CiId.IntType:
+				case CiId.LongType:
+					return true;
+				default:
+					return false;
+				}
+			case CiId.ByteRange:
+				switch (right) {
+				case CiId.SByteRange:
+				case CiId.ShortRange:
+				case CiId.UShortRange:
+				case CiId.IntType:
+				case CiId.LongType:
+					return true;
+				default:
+					return false;
+				}
+			case CiId.ShortRange:
+				switch (right) {
+				case CiId.UShortRange:
+				case CiId.IntType:
+				case CiId.LongType:
+					return true;
+				default:
+					return false;
+				}
+			case CiId.UShortRange:
+				switch (right) {
+				case CiId.ShortRange:
+				case CiId.IntType:
+				case CiId.LongType:
+					return true;
+				default:
+					return false;
+				}
+			case CiId.IntType:
+				return right == CiId.LongType;
+			default:
+				return false;
+			}
+		}
+
+		protected CiExpr GetStaticCastInner(CiType type, CiExpr expr)
+		{
+			if (expr is CiBinaryExpr binary && binary.Op == CiToken.And && binary.Right is CiLiteralLong rightMask && type is CiIntegerType) {
+				long mask;
+				switch (type.Id) {
+				case CiId.ByteRange:
+				case CiId.SByteRange:
+					mask = 255;
+					break;
+				case CiId.ShortRange:
+				case CiId.UShortRange:
+					mask = 65535;
+					break;
+				case CiId.IntType:
+					mask = 4294967295;
+					break;
+				default:
+					return expr;
+				}
+				if ((rightMask.Value & mask) == mask)
+					return binary.Left;
+			}
+			return expr;
+		}
+
+		protected void WriteStaticCastType(CiType type)
+		{
+			WriteChar('(');
+			WriteType(type, false);
+			Write(") ");
+		}
+
+		protected virtual void WriteStaticCast(CiType type, CiExpr expr)
+		{
+			WriteStaticCastType(type);
+			GetStaticCastInner(type, expr).Accept(this, CiPriority.Primary);
+		}
+
+		protected override void WriteNotPromoted(CiType type, CiExpr expr)
+		{
+			if (type is CiIntegerType && IsNarrower(type.Id, GetTypeId(expr.Type, true)))
+				WriteStaticCast(type, expr);
+			else
+				expr.Accept(this, CiPriority.Argument);
+		}
+
+		protected virtual bool IsPromoted(CiExpr expr) => !(expr is CiBinaryExpr binary && (binary.Op == CiToken.LeftBracket || binary.IsAssign()));
+
+		protected override void WriteAssignRight(CiBinaryExpr expr)
+		{
+			if (expr.Left.IsIndexing()) {
+				if (expr.Right is CiLiteralLong) {
+					WriteCoercedLiteral(expr.Left.Type, expr.Right);
+					return;
+				}
+				CiId leftTypeId = expr.Left.Type.Id;
+				CiId rightTypeId = GetTypeId(expr.Right.Type, IsPromoted(expr.Right));
+				if (leftTypeId == CiId.SByteRange && rightTypeId == CiId.SByteRange) {
+					expr.Right.Accept(this, CiPriority.Assign);
+					return;
+				}
+				if (IsNarrower(leftTypeId, rightTypeId)) {
+					WriteStaticCast(expr.Left.Type, expr.Right);
+					return;
+				}
+			}
+			base.WriteAssignRight(expr);
+		}
+
+		protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
+		{
+			if (type is CiIntegerType && type.Id != CiId.LongType && expr.Type.Id == CiId.LongType)
+				WriteStaticCast(type, expr);
+			else if (type.Id == CiId.FloatType && expr.Type.Id == CiId.DoubleType) {
+				if (expr is CiLiteralDouble literal) {
+					base.VisitLiteralDouble(literal.Value);
+					WriteChar('f');
+				}
+				else
+					WriteStaticCast(type, expr);
+			}
+			else if (type is CiIntegerType && expr.Type.Id == CiId.FloatIntType) {
+				if (expr is CiCallExpr call && call.Method.Symbol.Id == CiId.MathTruncate) {
+					expr = call.Arguments[0];
+					if (expr is CiLiteralDouble literal) {
+						VisitLiteralLong((long) literal.Value);
+						return;
+					}
+				}
+				WriteStaticCast(type, expr);
+			}
+			else
+				base.WriteCoercedInternal(type, expr, parent);
+		}
+
+		protected override void WriteCharAt(CiBinaryExpr expr)
+		{
+			WriteIndexing(expr.Left, expr.Right);
+		}
+
+		protected override void StartTemporaryVar(CiType type)
+		{
+			WriteType(type, true);
+			WriteChar(' ');
+		}
+
+		protected override void WriteAssertCast(CiBinaryExpr expr)
+		{
+			CiVar def = (CiVar) expr.Right;
+			WriteTypeAndName(def);
+			Write(" = ");
+			WriteStaticCast(def.Type, expr.Left);
+			WriteCharLine(';');
+		}
+	}
+
 	public class GenJsNoModule : GenBase
 	{
 

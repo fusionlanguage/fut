@@ -1,4 +1,4 @@
-// GenTyped.cs - C/C++/C#/D/Java code generator
+// GenTyped.ci - C/C++/C#/D/Java code generator
 //
 // Copyright (C) 2011-2023  Piotr Fusik
 //
@@ -17,39 +17,34 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-using System;
-using System.Collections.Generic;
-
-namespace Foxoft.Ci
-{
-
 public abstract class GenTyped : GenBase
 {
-	protected abstract void WriteType(CiType type, bool promote);
+	protected abstract void WriteType!(CiType type, bool promote);
 
-	protected override void WriteTypeAndName(CiNamedValue value)
+	protected override void WriteTypeAndName!(CiNamedValue value)
 	{
 		WriteType(value.Type, true);
 		WriteChar(' ');
 		WriteName(value);
 	}
 
-	public override void VisitLiteralDouble(double value)
+	public override void VisitLiteralDouble!(double value)
 	{
 		base.VisitLiteralDouble(value);
-		if ((float) value == value)
+		float f = value;
+		if (f == value)
 			WriteChar('f');
 	}
 
 	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
 	{
-		CiType type = ((CiArrayStorageType) expr.Type).GetElementType();
+		assert expr.Type is CiArrayStorageType array;
 		Write("{ ");
-		WriteCoercedLiterals(type, expr.Items);
+		WriteCoercedLiterals(array.GetElementType(), expr.Items);
 		Write(" }");
 	}
 
-	protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
+	protected override void WriteNewArray!(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		Write("new ");
 		WriteType(elementType.GetBaseType(), false);
@@ -61,7 +56,8 @@ public abstract class GenTyped : GenBase
 			if (elementType is CiArrayStorageType arrayStorage)
 				arrayStorage.LengthExpr.Accept(this, CiPriority.Argument);
 			WriteChar(']');
-			elementType = ((CiClassType) elementType).GetElementType();
+			assert elementType is CiClassType array;
+			elementType = array.GetElementType();
 		}
 	}
 
@@ -143,20 +139,20 @@ public abstract class GenTyped : GenBase
 		return expr;
 	}
 
-	protected void WriteStaticCastType(CiType type)
+	protected void WriteStaticCastType!(CiType type)
 	{
 		WriteChar('(');
 		WriteType(type, false);
 		Write(") ");
 	}
 
-	protected virtual void WriteStaticCast(CiType type, CiExpr expr)
+	protected virtual void WriteStaticCast!(CiType type, CiExpr expr)
 	{
 		WriteStaticCastType(type);
 		GetStaticCastInner(type, expr).Accept(this, CiPriority.Primary);
 	}
 
-	protected override void WriteNotPromoted(CiType type, CiExpr expr)
+	protected override void WriteNotPromoted!(CiType type, CiExpr expr)
 	{
 		if (type is CiIntegerType
 		 && IsNarrower(type.Id, GetTypeId(expr.Type, true)))
@@ -167,7 +163,7 @@ public abstract class GenTyped : GenBase
 
 	protected virtual bool IsPromoted(CiExpr expr) => !(expr is CiBinaryExpr binary && (binary.Op == CiToken.LeftBracket || binary.IsAssign()));
 
-	protected override void WriteAssignRight(CiBinaryExpr expr)
+	protected override void WriteAssignRight!(CiBinaryExpr expr)
 	{
 		if (expr.Left.IsIndexing()) {
 			if (expr.Right is CiLiteralLong) {
@@ -188,7 +184,7 @@ public abstract class GenTyped : GenBase
 		base.WriteAssignRight(expr);
 	}
 
-	protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
+	protected override void WriteCoercedInternal!(CiType type, CiExpr expr, CiPriority parent)
 	{
 		if (type is CiIntegerType && type.Id != CiId.LongType && expr.Type.Id == CiId.LongType)
 			WriteStaticCast(type, expr);
@@ -204,7 +200,7 @@ public abstract class GenTyped : GenBase
 			if (expr is CiCallExpr call && call.Method.Symbol.Id == CiId.MathTruncate) {
 				expr = call.Arguments[0];
 				if (expr is CiLiteralDouble literal) {
-					VisitLiteralLong((long) literal.Value); // TODO: range check
+					VisitLiteralLong(Math.Truncate(literal.Value)); // TODO: range check
 					return;
 				}
 			}
@@ -214,22 +210,23 @@ public abstract class GenTyped : GenBase
 			base.WriteCoercedInternal(type, expr, parent);
 	}
 
-	protected override void WriteCharAt(CiBinaryExpr expr) => WriteIndexing(expr.Left, expr.Right);
+	protected override void WriteCharAt!(CiBinaryExpr expr)
+	{
+		WriteIndexing(expr.Left, expr.Right);
+	}
 
-	protected override void StartTemporaryVar(CiType type)
+	protected override void StartTemporaryVar!(CiType type)
 	{
 		WriteType(type, true);
 		WriteChar(' ');
 	}
 
-	protected override void WriteAssertCast(CiBinaryExpr expr)
+	protected override void WriteAssertCast!(CiBinaryExpr expr)
 	{
-		CiVar def = (CiVar) expr.Right;
+		assert expr.Right is CiVar def;
 		WriteTypeAndName(def);
 		Write(" = ");
 		WriteStaticCast(def.Type, expr.Left);
 		WriteCharLine(';');
 	}
-}
-
 }

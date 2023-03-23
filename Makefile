@@ -30,13 +30,14 @@ DO = @echo $@ &&
 endif
 DO_SUMMARY = $(DO)perl test/summary.pl $(filter %.txt, $^)
 DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
+SOURCE_CI = Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenTyped.ci GenJs.ci GenTs.ci
 
 all: cito.exe
 
-cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs FileResourceSema.cs GenTyped.cs GenCCpp.cs GenCCppD.cs GenC.cs GenCpp.cs GenCs.cs GenD.cs GenJava.cs GenPySwift.cs GenPy.cs GenSwift.cs GenCl.cs CiTo.cs)
+cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs FileResourceSema.cs GenCCpp.cs GenCCppD.cs GenC.cs GenCpp.cs GenCs.cs GenD.cs GenJava.cs GenPySwift.cs GenPy.cs GenSwift.cs GenCl.cs CiTo.cs)
 	$(DO_BUILD)
 
-Transpiled.cs: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenJs.ci GenTs.ci
+Transpiled.cs: $(SOURCE_CI)
 	cito -o $@ -n Foxoft.Ci $^
 
 test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error
@@ -169,26 +170,26 @@ test/bin/%/Test.swift: test/%.ci cito.exe
 test/bin/%/Test.cl: test/%.ci cito.exe
 	$(DO_CITO)
 
-test/bin/CiCheck/cpp.txt: test/bin/CiCheck/cpp.exe Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenJs.ci GenTs.ci
-	$(DO)./$< $(filter %.ci, $^) >$@
+test/bin/CiCheck/cpp.txt: test/bin/CiCheck/cpp.exe $(SOURCE_CI)
+	$(DO)./$< $(SOURCE_CI) >$@
 
 test/bin/CiCheck/cpp.exe: test/bin/CiCheck/Test.cpp test/CiCheck.cpp
 	$(DO)$(CXX) -o $@ $(CFLAGS) -I $(<D) $^
 
-test/bin/CiCheck/d.txt: test/bin/CiCheck/d.exe Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenJs.ci GenTs.ci
-	$(DO)./$< $(filter %.ci, $^) >$@
+test/bin/CiCheck/d.txt: test/bin/CiCheck/d.exe $(SOURCE_CI)
+	$(DO)./$< $(SOURCE_CI) >$@
 
 test/bin/CiCheck/d.exe: test/bin/CiCheck/Test.d test/CiCheck.d
 	$(DO)$(DC) -of$@ $(DFLAGS) -I$(<D) $^
 
-test/bin/CiCheck/java.txt: test/bin/CiCheck/CiSema.class Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenJs.ci GenTs.ci
-	$(DO)java -cp "$(<D)" --enable-preview CiCheck $(filter %.ci, $^) >$@
+test/bin/CiCheck/java.txt: test/bin/CiCheck/CiSema.class $(SOURCE_CI)
+	$(DO)java -cp "$(<D)" --enable-preview CiCheck $(SOURCE_CI) >$@
 
 test/bin/CiCheck/CiSema.class: test/bin/CiCheck/CiSema.java test/CiCheck.java
 	$(DO)javac -d $(@D) -encoding utf8 --enable-preview -source 20 $(<D)/*.java test/CiCheck.java
 
-test/bin/CiCheck/js.txt: test/CiCheck.js test/bin/CiCheck/Test.js Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenJs.ci GenTs.ci
-	$(DO)node test/CiCheck.js $(filter %.ci, $^) >$@
+test/bin/CiCheck/js.txt: test/CiCheck.js test/bin/CiCheck/Test.js $(SOURCE_CI)
+	$(DO)node test/CiCheck.js $(SOURCE_CI) >$@
 
 test/bin/CiCheck/Test.cpp test/bin/CiCheck/Test.d test/bin/CiCheck/CiSema.java test/bin/CiCheck/Test.js test/bin/CiCheck/Test.ts: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci cito.exe
 	$(DO)mkdir -p $(@D) && $(CITO) -o $@ $(filter %.ci, $^)
