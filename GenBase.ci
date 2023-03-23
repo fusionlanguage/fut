@@ -1,4 +1,4 @@
-// GenBaseBase.ci - base class for code generators
+// GenBase.ci - base class for code generators
 //
 // Copyright (C) 2011-2023  Piotr Fusik
 //
@@ -17,18 +17,18 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-public abstract class GenBaseBase : CiExprVisitor
+public abstract class GenBase : CiExprVisitor
 {
 	internal string() Namespace;
 	internal string() OutputFile;
-	protected TextWriter! Writer; // TODO: private
-	protected StringWriter! StringWriter; // TODO: private
+	TextWriter! Writer;
+	StringWriter!? StringWriter;
 	protected int Indent = 0;
 	protected bool AtLineStart = true;
 	bool AtChildStart = false;
 	bool InChildBlock = false;
 	protected bool InHeaderFile = false;
-	protected SortedDictionary<string(), bool>() Includes;
+	SortedDictionary<string(), bool>() Includes;
 	protected CiMethodBase? CurrentMethod = null;
 	protected HashSet<CiClass>() WrittenClasses;
 	protected List<CiExpr>() CurrentTemporaries; // CiExpr or CiType
@@ -115,6 +115,34 @@ public abstract class GenBaseBase : CiExprVisitor
 		}
 		else
 			this.Writer.Write(c);
+	}
+
+	public override void VisitLiteralDouble!(double value)
+	{
+		string() s;
+		native {
+			s = value.ToString("R");
+		}
+		Write(s);
+		foreach (int c in s) {
+			switch (c) {
+			case '-':
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				break;
+			default:
+				return;
+			}
+		}
+		Write(".0"); // it looked like an integer
 	}
 
 	public override void VisitLiteralString!(string value)
@@ -215,10 +243,51 @@ public abstract class GenBaseBase : CiExprVisitor
 		WriteLine("// Generated automatically with \"cito\". Do not edit.");
 	}
 
+	protected void CreateFile!(string filename)
+	{
+		native {
+			this.Writer = File.CreateText(filename);
+		}
+		WriteBanner();
+	}
+
+	protected void CloseFile!()
+	{
+		native {
+			this.Writer.Close();
+		}
+	}
+
+	protected void OpenStringWriter()
+	{
+		native {
+			this.Writer = this.StringWriter = new StringWriter();
+		}
+	}
+
+	protected void CloseStringWriter()
+	{
+		this.Writer.Write(this.StringWriter.ToString());
+		this.StringWriter = null;
+	}
+
 	protected void Include!(string name)
 	{
 		if (!this.Includes.ContainsKey(name))
 			this.Includes[name] = this.InHeaderFile;
+	}
+
+	protected void WriteIncludes!(string prefix, string suffix)
+	{
+		native {
+			foreach (KeyValuePair<string, bool> pair in this.Includes) {
+				if (pair.Value == this.InHeaderFile) {
+					Write(prefix);
+					Write(pair.Key);
+					WriteLine(suffix);
+				}
+			}
+		}
 	}
 
 	protected virtual void StartDocLine!()
@@ -391,6 +460,16 @@ public abstract class GenBaseBase : CiExprVisitor
 			}
 			else
 				Write(", ");
+		}
+	}
+
+	protected void WriteBytes!(byte[] array)
+	{
+		native {
+			for (int i = 0; i < array.Length; i++) {
+				WriteComma(i);
+				VisitLiteralLong(array[i]);
+			}
 		}
 	}
 
@@ -678,7 +757,7 @@ public abstract class GenBaseBase : CiExprVisitor
 		Write(" }");
 	}
 
-	protected static CiAggregateInitializer? GetAggregateInitializer!(CiNamedValue def) // TODO: private
+	static CiAggregateInitializer? GetAggregateInitializer!(CiNamedValue def)
 	{
 		CiExpr expr = def.Value;
 		if (expr is CiPrefixExpr unary)
@@ -1176,7 +1255,16 @@ public abstract class GenBaseBase : CiExprVisitor
 		WriteChar(')');
 	}
 
-	protected abstract RegexOptions GetRegexOptions(List<CiExpr#> args);
+	protected RegexOptions GetRegexOptions(List<CiExpr#> args)
+	{
+		CiExpr expr = args[args.Count - 1];
+		if (expr.Type is CiEnum) {
+			native {
+				return (RegexOptions) expr.IntValue();
+			}
+		}
+		return RegexOptions.None;
+	}
 
 	protected bool WriteRegexOptions!(List<CiExpr#> args, string prefix, string separator, string suffix, string i, string m, string s)
 	{
@@ -1433,7 +1521,7 @@ public abstract class GenBaseBase : CiExprVisitor
 
 	protected virtual bool EmbedIfWhileIsVar!(CiExpr expr, bool write) => false;
 
-	protected void StartIfWhile!(CiExpr expr) // TODO: private
+	void StartIfWhile!(CiExpr expr)
 	{
 		EmbedIfWhileIsVar(expr, true);
 		expr.Accept(this, CiPriority.Argument);

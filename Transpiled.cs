@@ -6155,16 +6155,16 @@ namespace Foxoft.Ci
 		}
 	}
 
-	public abstract class GenBaseBase : CiExprVisitor
+	public abstract class GenBase : CiExprVisitor
 	{
 
 		internal string Namespace;
 
 		internal string OutputFile;
 
-		protected TextWriter Writer;
+		TextWriter Writer;
 
-		protected StringWriter StringWriter;
+		StringWriter StringWriter;
 
 		protected int Indent = 0;
 
@@ -6176,7 +6176,7 @@ namespace Foxoft.Ci
 
 		protected bool InHeaderFile = false;
 
-		protected readonly SortedDictionary<string, bool> Includes = new SortedDictionary<string, bool>();
+		readonly SortedDictionary<string, bool> Includes = new SortedDictionary<string, bool>();
 
 		protected CiMethodBase CurrentMethod = null;
 
@@ -6280,6 +6280,33 @@ namespace Foxoft.Ci
 				this.Writer.Write(c);
 		}
 
+		public override void VisitLiteralDouble(double value)
+		{
+			string s;
+			
+			s = value.ToString("R");
+		Write(s);
+			foreach (int c in s) {
+				switch (c) {
+				case '-':
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9':
+					break;
+				default:
+					return;
+				}
+			}
+			Write(".0");
+		}
+
 		public override void VisitLiteralString(string value)
 		{
 			WriteChar('"');
@@ -6378,10 +6405,47 @@ namespace Foxoft.Ci
 			WriteLine("// Generated automatically with \"cito\". Do not edit.");
 		}
 
+		protected void CreateFile(string filename)
+		{
+			
+			this.Writer = File.CreateText(filename);
+		WriteBanner();
+		}
+
+		protected void CloseFile()
+		{
+			
+			this.Writer.Close();
+		}
+
+		protected void OpenStringWriter()
+		{
+			
+			this.Writer = this.StringWriter = new StringWriter();
+		}
+
+		protected void CloseStringWriter()
+		{
+			this.Writer.Write(this.StringWriter.ToString());
+			this.StringWriter = null;
+		}
+
 		protected void Include(string name)
 		{
 			if (!this.Includes.ContainsKey(name))
 				this.Includes[name] = this.InHeaderFile;
+		}
+
+		protected void WriteIncludes(string prefix, string suffix)
+		{
+			
+			foreach (KeyValuePair<string, bool> pair in this.Includes) {
+				if (pair.Value == this.InHeaderFile) {
+					Write(prefix);
+					Write(pair.Key);
+					WriteLine(suffix);
+				}
+			}
 		}
 
 		protected virtual void StartDocLine()
@@ -6554,6 +6618,15 @@ namespace Foxoft.Ci
 				}
 				else
 					Write(", ");
+			}
+		}
+
+		protected void WriteBytes(byte[] array)
+		{
+			
+			for (int i = 0; i < array.Length; i++) {
+				WriteComma(i);
+				VisitLiteralLong(array[i]);
 			}
 		}
 
@@ -6840,7 +6913,7 @@ namespace Foxoft.Ci
 			Write(" }");
 		}
 
-		protected static CiAggregateInitializer GetAggregateInitializer(CiNamedValue def)
+		static CiAggregateInitializer GetAggregateInitializer(CiNamedValue def)
 		{
 			CiExpr expr = def.Value;
 			if (expr is CiPrefixExpr unary)
@@ -7333,7 +7406,15 @@ namespace Foxoft.Ci
 			WriteChar(')');
 		}
 
-		protected abstract RegexOptions GetRegexOptions(List<CiExpr> args);
+		protected RegexOptions GetRegexOptions(List<CiExpr> args)
+		{
+			CiExpr expr = args[args.Count - 1];
+			if (expr.Type is CiEnum) {
+				
+				return (RegexOptions) expr.IntValue();
+			}
+			return RegexOptions.None;
+		}
 
 		protected bool WriteRegexOptions(List<CiExpr> args, string prefix, string separator, string suffix, string i, string m, string s)
 		{
@@ -7590,7 +7671,7 @@ namespace Foxoft.Ci
 
 		protected virtual bool EmbedIfWhileIsVar(CiExpr expr, bool write) => false;
 
-		protected void StartIfWhile(CiExpr expr)
+		void StartIfWhile(CiExpr expr)
 		{
 			EmbedIfWhileIsVar(expr, true);
 			expr.Accept(this, CiPriority.Argument);
