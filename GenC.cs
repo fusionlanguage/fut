@@ -3375,8 +3375,7 @@ public class GenC : GenCCpp
 	{
 		this.WrittenClasses.Clear();
 		string headerFile = Path.ChangeExtension(this.OutputFile, "h");
-		SortedSet<string> headerIncludes = new SortedSet<string>();
-		this.Includes = headerIncludes;
+		this.InHeaderFile = true;
 		OpenStringWriter();
 		foreach (CiClass klass in program.Classes) {
 			WriteNewDelete(klass, false);
@@ -3397,7 +3396,7 @@ public class GenC : GenCCpp
 		WriteLine("#endif");
 		CloseFile();
 
-		this.Includes = new SortedSet<string>();
+		this.InHeaderFile = false;
 		this.IntTryParse = false;
 		this.LongTryParse = false;
 		this.DoubleTryParse = false;
@@ -3435,8 +3434,7 @@ public class GenC : GenCCpp
 
 		CreateFile(this.OutputFile);
 		WriteTopLevelNatives(program);
-		this.Includes.ExceptWith(headerIncludes);
-		this.Includes.Add("stdlib.h");
+		Include("stdlib.h");
 		WriteIncludes();
 		Write("#include \"");
 		Write(Path.GetFileName(headerFile));

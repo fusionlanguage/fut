@@ -27,8 +27,6 @@ namespace Foxoft.Ci
 
 public abstract class GenBase : GenBaseBase
 {
-	protected SortedSet<string> Includes;
-
 	static TextWriter CreateTextWriter(string filename) => File.CreateText(filename);
 
 	protected void CreateFile(string filename)
@@ -50,14 +48,14 @@ public abstract class GenBase : GenBaseBase
 		this.StringWriter = null;
 	}
 
-	protected void Include(string name) => this.Includes.Add(name);
-
 	protected void WriteIncludes(string prefix, string suffix)
 	{
-		foreach (string name in this.Includes) {
-			Write(prefix);
-			Write(name);
-			WriteLine(suffix);
+		foreach (KeyValuePair<string, bool> pair in this.Includes) {
+			if (pair.Value == this.InHeaderFile) {
+				Write(prefix);
+				Write(pair.Key);
+				WriteLine(suffix);
+			}
 		}
 	}
 

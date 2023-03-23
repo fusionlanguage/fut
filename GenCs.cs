@@ -936,7 +936,6 @@ public class GenCs : GenTyped
 
 	public override void WriteProgram(CiProgram program)
 	{
-		this.Includes = new SortedSet<string>();
 		OpenStringWriter();
 		if (this.Namespace != null) {
 			Write("namespace ");

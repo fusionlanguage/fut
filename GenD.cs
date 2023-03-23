@@ -1481,7 +1481,6 @@ public class GenD : GenCCppD
 
 	public override void WriteProgram(CiProgram program)
 	{
-		this.Includes = new SortedSet<string>();
 		this.HasListInsert = false;
 		this.HasListRemoveAt = false;
 

@@ -336,7 +336,6 @@ public class GenCl : GenC
 	public override void WriteProgram(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
-		this.Includes = new SortedSet<string>(); // only to avoid null dereferences on unsupported constructs
 		this.StringLength = false;
 		this.StringEquals = false;
 		this.StringStartsWith = false;

@@ -1724,7 +1724,6 @@ public class GenSwift : GenPySwift
 	public override void WriteProgram(CiProgram program)
 	{
 		this.System = program.System;
-		this.Includes = new SortedSet<string>();
 		this.Throw = false;
 		this.ArrayRef = false;
 		this.StringCharAt = false;

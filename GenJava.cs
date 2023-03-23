@@ -1166,7 +1166,6 @@ public class GenJava : GenTyped
 
 	protected override void WriteClass(CiClass klass, CiProgram program)
 	{
-		this.Includes = new SortedSet<string>();
 		OpenStringWriter();
 
 		WriteDoc(klass.Documentation);

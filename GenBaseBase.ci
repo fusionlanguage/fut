@@ -27,6 +27,8 @@ public abstract class GenBaseBase : CiExprVisitor
 	protected bool AtLineStart = true;
 	bool AtChildStart = false;
 	bool InChildBlock = false;
+	protected bool InHeaderFile = false;
+	protected SortedDictionary<string(), bool>() Includes;
 	protected CiMethodBase? CurrentMethod = null;
 	protected HashSet<CiClass>() WrittenClasses;
 	protected List<CiExpr>() CurrentTemporaries; // CiExpr or CiType
@@ -211,6 +213,12 @@ public abstract class GenBaseBase : CiExprVisitor
 	protected virtual void WriteBanner!()
 	{
 		WriteLine("// Generated automatically with \"cito\". Do not edit.");
+	}
+
+	protected void Include!(string name)
+	{
+		if (!this.Includes.ContainsKey(name))
+			this.Includes[name] = this.InHeaderFile;
 	}
 
 	protected virtual void StartDocLine!()

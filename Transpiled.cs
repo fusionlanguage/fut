@@ -6174,6 +6174,10 @@ namespace Foxoft.Ci
 
 		bool InChildBlock = false;
 
+		protected bool InHeaderFile = false;
+
+		protected readonly SortedDictionary<string, bool> Includes = new SortedDictionary<string, bool>();
+
 		protected CiMethodBase CurrentMethod = null;
 
 		protected readonly HashSet<CiClass> WrittenClasses = new HashSet<CiClass>();
@@ -6372,6 +6376,12 @@ namespace Foxoft.Ci
 		protected virtual void WriteBanner()
 		{
 			WriteLine("// Generated automatically with \"cito\". Do not edit.");
+		}
+
+		protected void Include(string name)
+		{
+			if (!this.Includes.ContainsKey(name))
+				this.Includes[name] = this.InHeaderFile;
 		}
 
 		protected virtual void StartDocLine()

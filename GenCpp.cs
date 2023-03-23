@@ -1826,8 +1826,7 @@ public class GenCpp : GenCCpp
 	{
 		this.WrittenClasses.Clear();
 		string headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
-		SortedSet<string> headerIncludes = new SortedSet<string>();
-		this.Includes = headerIncludes;
+		this.InHeaderFile = true;
 		this.UsingStringViewLiterals = false;
 		this.HasEnumFlags = false;
 		this.StringReplace = false;
@@ -1862,7 +1861,7 @@ public class GenCpp : GenCCpp
 		CloseStringWriter();
 		CloseFile();
 
-		this.Includes = new SortedSet<string>();
+		this.InHeaderFile = false;
 		OpenStringWriter();
 		WriteResources(program.Resources, false);
 		OpenNamespace();
@@ -1879,7 +1878,6 @@ public class GenCpp : GenCCpp
 			Include("string");
 			Include("string_view");
 		}
-		this.Includes.ExceptWith(headerIncludes);
 		WriteIncludes();
 		Write("#include \"");
 		Write(Path.GetFileName(headerFile));

@@ -1299,7 +1299,6 @@ public class GenPy : GenPySwift
 
 	public override void WriteProgram(CiProgram program)
 	{
-		this.Includes = new SortedSet<string>();
 		this.SwitchBreak = false;
 		OpenStringWriter();
 		WriteTypes(program);
