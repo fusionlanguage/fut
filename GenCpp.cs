@@ -1339,7 +1339,8 @@ public class GenCpp : GenCCpp
 		case CiToken.Equal:
 		case CiToken.NotEqual:
 		case CiToken.Greater:
-			if (IsStringEmpty(expr, out CiExpr str)) {
+			CiExpr str = IsStringEmpty(expr);
+			if (str != null) {
 				if (expr.Op != CiToken.Equal)
 					WriteChar('!');
 				WritePostfix(str, ".empty()");

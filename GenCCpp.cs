@@ -119,15 +119,12 @@ public abstract class GenCCpp : GenCCppD
 			WriteChar(')');
 	}
 
-	protected static bool IsStringEmpty(CiBinaryExpr expr, out CiExpr str)
+	protected static CiExpr IsStringEmpty(CiBinaryExpr expr)
 	{
 		if (expr.Left is CiSymbolReference symbol && symbol.Symbol.Id == CiId.StringLength
-			&& expr.Right.IsLiteralZero()) {
-			str = symbol.Left;
-			return true;
-		}
-		str = null;
-		return false;
+			&& expr.Right.IsLiteralZero())
+			return symbol.Left;
+		return null;
 	}
 
 	protected abstract void WriteArrayPtr(CiExpr expr, CiPriority parent);

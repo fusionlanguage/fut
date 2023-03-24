@@ -2095,7 +2095,8 @@ public class GenC : GenCCpp
 		case CiToken.Equal:
 		case CiToken.NotEqual:
 		case CiToken.Greater:
-			if (IsStringEmpty(expr, out CiExpr str)) {
+			CiExpr str = IsStringEmpty(expr);
+			if (str != null) {
 				WritePostfix(str, expr.Op == CiToken.Equal ? "[0] == '\\0'" : "[0] != '\\0'");
 				return;
 			}
