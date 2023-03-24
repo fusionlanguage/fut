@@ -9247,8 +9247,7 @@ namespace Foxoft.Ci
 		public override void VisitLiteralLong(long value)
 		{
 			base.VisitLiteralLong(value);
-			int i = (int) value;
-			if (i != value)
+			if (value < -2147483648 || value > 2147483647)
 				WriteChar('L');
 		}
 

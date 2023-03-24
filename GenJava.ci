@@ -27,8 +27,7 @@ public class GenJava : GenTyped
 	public override void VisitLiteralLong!(long value)
 	{
 		base.VisitLiteralLong(value);
-		int i = value;
-		if (i != value)
+		if (value < int.MinValue || value > int.MaxValue)
 			WriteChar('L');
 	}
 
