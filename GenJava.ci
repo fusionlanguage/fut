@@ -24,7 +24,7 @@ public class GenJava : GenTyped
 
 	protected override string GetTargetName() => "Java";
 
-	public override void VisitLiteralLong(long value)
+	public override void VisitLiteralLong!(long value)
 	{
 		base.VisitLiteralLong(value);
 		int i = value;

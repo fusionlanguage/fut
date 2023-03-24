@@ -36,7 +36,7 @@ public abstract class GenTyped : GenBase
 			WriteChar('f');
 	}
 
-	public override void VisitAggregateInitializer(CiAggregateInitializer expr)
+	public override void VisitAggregateInitializer!(CiAggregateInitializer expr)
 	{
 		assert expr.Type is CiArrayStorageType array;
 		Write("{ ");

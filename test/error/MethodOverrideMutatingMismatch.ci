@@ -1,0 +1,17 @@
+abstract class Base
+{
+	public virtual void Foo()
+	{
+	}
+	public abstract void Bar!();
+}
+
+class Derived : Base
+{
+	public override void Foo!() //ERROR: Mutating method cannot override a non-mutating method
+	{
+	}
+	public override void Bar() //ERROR: Non-mutating method cannot override a mutating method
+	{
+	}
+}

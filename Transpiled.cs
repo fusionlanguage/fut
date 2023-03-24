@@ -5997,6 +5997,12 @@ namespace Foxoft.Ci
 								ReportError(method, "Base method is not abstract or virtual");
 								break;
 							}
+							if (method.IsMutator != baseMethod.IsMutator) {
+								if (method.IsMutator)
+									ReportError(method, "Mutating method cannot override a non-mutating method");
+								else
+									ReportError(method, "Non-mutating method cannot override a mutating method");
+							}
 							baseMethod.Calls.Add(method);
 						}
 						else
