@@ -1236,9 +1236,10 @@ public class CiClassType : CiType
 			|| (right is CiClassType rightClass && IsAssignableFromClass(rightClass));
 	}
 
+	protected bool EqualsTypeInternal(CiClassType that) => this.Nullable == that.Nullable && this.Class == that.Class && EqualTypeArguments(that);
+
 	public override bool EqualsType(CiType right)
-		=> right is CiClassType that // TODO: exact match
-			&& this.Nullable == that.Nullable && this.Class == that.Class && EqualTypeArguments(that);
+		=> right is CiClassType that && !(right is CiReadWriteClassType) && EqualsTypeInternal(that);
 
 	public override string() GetArraySuffix() => IsArray() ? "[]" : "";
 	public virtual string GetClassSuffix() => "";
@@ -1265,6 +1266,9 @@ public class CiReadWriteClassType : CiClassType
 			|| (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
 	}
 
+	public override bool EqualsType(CiType right)
+		=> right is CiReadWriteClassType that && !(right is CiStorageType) && !(right is CiDynamicPtrType) && EqualsTypeInternal(that);
+
 	public override string() GetArraySuffix() => IsArray() ? "[]!" : "";
 	public override string GetClassSuffix() => "!";
 }
@@ -1273,6 +1277,7 @@ public class CiStorageType : CiReadWriteClassType
 {
 	public override bool IsFinal() => this.Class.Id != CiId.MatchClass;
 	public override bool IsAssignableFrom(CiType right) => right is CiStorageType rightClass && this.Class == rightClass.Class && EqualTypeArguments(rightClass);
+	public override bool EqualsType(CiType right) => right is CiStorageType that && EqualsTypeInternal(that);
 	public override string GetClassSuffix() => "()";
 }
 
@@ -1283,6 +1288,9 @@ public class CiDynamicPtrType : CiReadWriteClassType
 		return (this.Nullable && right.Id == CiId.NullType)
 			|| (right is CiDynamicPtrType rightClass && IsAssignableFromClass(rightClass));
 	}
+	public override bool EqualsType(CiType right) => right is CiReadWriteClassType that && EqualsTypeInternal(that);
+	// FIXME: temporary hack for Sema.ci, should be:
+	// public override bool EqualsType(CiType right) => right is CiDynamicPtrType that && EqualsTypeInternal(that);
 
 	public override string() GetArraySuffix() => IsArray() ? "[]#" : "";
 	public override string GetClassSuffix() => "#";

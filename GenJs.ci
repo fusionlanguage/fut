@@ -479,9 +479,9 @@ public class GenJsNoModule : GenBase
 		}
 	}
 
-	static bool HasLong(List<CiExpr> args) => args.Any(arg => arg.Type.Id == CiId.LongType);
+	static bool HasLong(List<CiExpr#> args) => args.Any(arg => arg.Type.Id == CiId.LongType);
 
-	void WriteMathMaxMin!(CiMethod method, string name, int op, List<CiExpr> args)
+	void WriteMathMaxMin!(CiMethod method, string name, int op, List<CiExpr#> args)
 	{
 		if (HasLong(args)) {
 			Write("((x, y) => x ");
@@ -1194,7 +1194,7 @@ public class GenJsNoModule : GenBase
 		WriteDoc(container.Documentation);
 	}
 
-	public override void VisitEnumValue!(CiConst konst, CiConst? previous)
+	public override void VisitEnumValue!(CiConst! konst, CiConst? previous)
 	{
 		if (previous != null)
 			WriteCharLine(',');
@@ -1276,7 +1276,7 @@ public class GenJsNoModule : GenBase
 		CloseBlock();
 	}
 
-	protected void WriteLib!(SortedDictionary<string, byte[]> resources)
+	protected void WriteLib!(SortedDictionary<string, byte[]#> resources)
 	{
 		if (resources.Count == 0)
 			return;

@@ -2761,7 +2761,9 @@ namespace Foxoft.Ci
 			return (this.Nullable && right.Id == CiId.NullType) || (right is CiClassType rightClass && IsAssignableFromClass(rightClass));
 		}
 
-		public override bool EqualsType(CiType right) => right is CiClassType that && this.Nullable == that.Nullable && this.Class == that.Class && EqualTypeArguments(that);
+		protected bool EqualsTypeInternal(CiClassType that) => this.Nullable == that.Nullable && this.Class == that.Class && EqualTypeArguments(that);
+
+		public override bool EqualsType(CiType right) => right is CiClassType that && !(right is CiReadWriteClassType) && EqualsTypeInternal(that);
 
 		public override string GetArraySuffix() => IsArray() ? "[]" : "";
 
@@ -2794,6 +2796,8 @@ namespace Foxoft.Ci
 			return (this.Nullable && right.Id == CiId.NullType) || (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
 		}
 
+		public override bool EqualsType(CiType right) => right is CiReadWriteClassType that && !(right is CiStorageType) && !(right is CiDynamicPtrType) && EqualsTypeInternal(that);
+
 		public override string GetArraySuffix() => IsArray() ? "[]!" : "";
 
 		public override string GetClassSuffix() => "!";
@@ -2806,6 +2810,8 @@ namespace Foxoft.Ci
 
 		public override bool IsAssignableFrom(CiType right) => right is CiStorageType rightClass && this.Class == rightClass.Class && EqualTypeArguments(rightClass);
 
+		public override bool EqualsType(CiType right) => right is CiStorageType that && EqualsTypeInternal(that);
+
 		public override string GetClassSuffix() => "()";
 	}
 
@@ -2816,6 +2822,8 @@ namespace Foxoft.Ci
 		{
 			return (this.Nullable && right.Id == CiId.NullType) || (right is CiDynamicPtrType rightClass && IsAssignableFromClass(rightClass));
 		}
+
+		public override bool EqualsType(CiType right) => right is CiReadWriteClassType that && EqualsTypeInternal(that);
 
 		public override string GetArraySuffix() => IsArray() ? "[]#" : "";
 

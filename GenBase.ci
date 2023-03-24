@@ -652,7 +652,7 @@ public abstract class GenBase : CiExprVisitor
 		}
 	}
 
-	protected void WriteArgs!(CiMethod method, List<CiExpr> args)
+	protected void WriteArgs!(CiMethod method, List<CiExpr#> args)
 	{
 		CiVar param = method.Parameters.FirstParameter();
 		bool first = true;
@@ -665,7 +665,7 @@ public abstract class GenBase : CiExprVisitor
 		}
 	}
 
-	protected void WriteArgsInParentheses!(CiMethod method, List<CiExpr> args)
+	protected void WriteArgsInParentheses!(CiMethod method, List<CiExpr#> args)
 	{
 		WriteChar('(');
 		WriteArgs(method, args);
