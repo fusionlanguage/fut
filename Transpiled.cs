@@ -8272,6 +8272,939 @@ namespace Foxoft.Ci
 		}
 	}
 
+	public class GenCs : GenTyped
+	{
+
+		protected override string GetTargetName() => "C++";
+
+		protected override void StartDocLine()
+		{
+			Write("/// ");
+		}
+
+		protected override void WriteDocPara(CiDocPara para, bool many)
+		{
+			if (many) {
+				WriteNewLine();
+				Write("/// <para>");
+			}
+			foreach (CiDocInline inline in para.Children) {
+				switch (inline) {
+				case CiDocText text:
+					WriteXmlDoc(text.Text);
+					break;
+				case CiDocCode code:
+					switch (code.Text) {
+					case "true":
+					case "false":
+					case "null":
+						Write("<see langword=\"");
+						Write(code.Text);
+						Write("\" />");
+						break;
+					default:
+						Write("<c>");
+						WriteXmlDoc(code.Text);
+						Write("</c>");
+						break;
+					}
+					break;
+				case CiDocLine _:
+					WriteNewLine();
+					StartDocLine();
+					break;
+				default:
+					throw new NotImplementedException();
+				}
+			}
+			if (many)
+				Write("</para>");
+		}
+
+		protected override void WriteDocList(CiDocList list)
+		{
+			WriteNewLine();
+			WriteLine("/// <list type=\"bullet\">");
+			foreach (CiDocPara item in list.Items) {
+				Write("/// <item>");
+				WriteDocPara(item, false);
+				WriteLine("</item>");
+			}
+			Write("/// </list>");
+		}
+
+		protected override void WriteDoc(CiCodeDoc doc)
+		{
+			if (doc == null)
+				return;
+			Write("/// <summary>");
+			WriteDocPara(doc.Summary, false);
+			WriteLine("</summary>");
+			if (doc.Details.Count > 0) {
+				Write("/// <remarks>");
+				if (doc.Details.Count == 1)
+					WriteDocBlock(doc.Details[0], false);
+				else {
+					foreach (CiDocBlock block in doc.Details)
+						WriteDocBlock(block, true);
+				}
+				WriteLine("</remarks>");
+			}
+		}
+
+		protected override void WriteName(CiSymbol symbol)
+		{
+			if (symbol is CiConst konst && konst.InMethod != null)
+				Write(konst.InMethod.Name);
+			Write(symbol.Name);
+			switch (symbol.Name) {
+			case "as":
+			case "await":
+			case "catch":
+			case "char":
+			case "checked":
+			case "decimal":
+			case "delegate":
+			case "event":
+			case "explicit":
+			case "extern":
+			case "finally":
+			case "fixed":
+			case "goto":
+			case "implicit":
+			case "interface":
+			case "is":
+			case "lock":
+			case "namespace":
+			case "object":
+			case "operator":
+			case "out":
+			case "params":
+			case "private":
+			case "readonly":
+			case "ref":
+			case "sbyte":
+			case "sizeof":
+			case "stackalloc":
+			case "struct":
+			case "try":
+			case "typeof":
+			case "ulong":
+			case "unchecked":
+			case "unsafe":
+			case "using":
+			case "volatile":
+				WriteChar('_');
+				break;
+			default:
+				break;
+			}
+		}
+
+		protected override int GetLiteralChars() => 65536;
+
+		void WriteVisibility(CiVisibility visibility)
+		{
+			switch (visibility) {
+			case CiVisibility.Private:
+				break;
+			case CiVisibility.Internal:
+				Write("internal ");
+				break;
+			case CiVisibility.Protected:
+				Write("protected ");
+				break;
+			case CiVisibility.Public:
+				Write("public ");
+				break;
+			}
+		}
+
+		void WriteCallType(CiCallType callType, string sealedString)
+		{
+			switch (callType) {
+			case CiCallType.Static:
+				Write("static ");
+				break;
+			case CiCallType.Normal:
+				break;
+			case CiCallType.Abstract:
+				Write("abstract ");
+				break;
+			case CiCallType.Virtual:
+				Write("virtual ");
+				break;
+			case CiCallType.Override:
+				Write("override ");
+				break;
+			case CiCallType.Sealed:
+				Write(sealedString);
+				break;
+			}
+		}
+
+		void WriteElementType(CiType elementType)
+		{
+			Include("System.Collections.Generic");
+			WriteChar('<');
+			WriteType(elementType, false);
+			WriteChar('>');
+		}
+
+		protected override void WriteType(CiType type, bool promote)
+		{
+			switch (type) {
+			case CiIntegerType _:
+				switch (GetTypeId(type, promote)) {
+				case CiId.SByteRange:
+					Write("sbyte");
+					break;
+				case CiId.ByteRange:
+					Write("byte");
+					break;
+				case CiId.ShortRange:
+					Write("short");
+					break;
+				case CiId.UShortRange:
+					Write("ushort");
+					break;
+				case CiId.IntType:
+					Write("int");
+					break;
+				case CiId.LongType:
+					Write("long");
+					break;
+				default:
+					throw new NotImplementedException();
+				}
+				break;
+			case CiClassType klass:
+				switch (klass.Class.Id) {
+				case CiId.StringClass:
+					Write("string");
+					break;
+				case CiId.ArrayPtrClass:
+				case CiId.ArrayStorageClass:
+					WriteType(klass.GetElementType(), false);
+					Write("[]");
+					break;
+				case CiId.ListClass:
+				case CiId.QueueClass:
+				case CiId.StackClass:
+				case CiId.HashSetClass:
+				case CiId.SortedSetClass:
+					Write(klass.Class.Name);
+					WriteElementType(klass.GetElementType());
+					break;
+				case CiId.DictionaryClass:
+				case CiId.SortedDictionaryClass:
+					Include("System.Collections.Generic");
+					Write(klass.Class.Name);
+					WriteChar('<');
+					WriteType(klass.GetKeyType(), false);
+					Write(", ");
+					WriteType(klass.GetValueType(), false);
+					WriteChar('>');
+					break;
+				case CiId.OrderedDictionaryClass:
+					Include("System.Collections.Specialized");
+					Write("OrderedDictionary");
+					break;
+				case CiId.TextWriterClass:
+				case CiId.StringWriterClass:
+					Include("System.IO");
+					Write(klass.Class.Name);
+					break;
+				case CiId.RegexClass:
+				case CiId.MatchClass:
+					Include("System.Text.RegularExpressions");
+					Write(klass.Class.Name);
+					break;
+				case CiId.LockClass:
+					Write("object");
+					break;
+				default:
+					Write(klass.Class.Name);
+					break;
+				}
+				break;
+			default:
+				if (type.Id == CiId.RegexOptionsEnum)
+					Include("System.Text.RegularExpressions");
+				Write(type.Name);
+				break;
+			}
+		}
+
+		protected override void WriteNewWithFields(CiReadWriteClassType type, CiAggregateInitializer init)
+		{
+			Write("new ");
+			WriteType(type, false);
+			WriteObjectLiteral(init, " = ");
+		}
+
+		protected override void WriteCoercedLiteral(CiType type, CiExpr literal)
+		{
+			if (literal is CiLiteralChar && type is CiRangeType range && range.Max <= 255)
+				WriteStaticCast(type, literal);
+			else
+				literal.Accept(this, CiPriority.Argument);
+		}
+
+		protected override bool IsPromoted(CiExpr expr) => base.IsPromoted(expr) || expr is CiLiteralChar;
+
+		public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
+		{
+			Write("$\"");
+			foreach (CiInterpolatedPart part in expr.Parts) {
+				WriteDoubling(part.Prefix, '{');
+				WriteChar('{');
+				part.Argument.Accept(this, CiPriority.Argument);
+				if (part.WidthExpr != null) {
+					WriteChar(',');
+					VisitLiteralLong(part.Width);
+				}
+				if (part.Format != ' ') {
+					WriteChar(':');
+					WriteChar(part.Format);
+					if (part.Precision >= 0)
+						VisitLiteralLong(part.Precision);
+				}
+				WriteChar('}');
+			}
+			WriteDoubling(expr.Suffix, '{');
+			WriteChar('"');
+		}
+
+		protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
+		{
+			Write("new ");
+			WriteType(elementType.GetBaseType(), false);
+			WriteChar('[');
+			lengthExpr.Accept(this, CiPriority.Argument);
+			WriteChar(']');
+			while (elementType is CiClassType array && array.IsArray()) {
+				Write("[]");
+				elementType = array.GetElementType();
+			}
+		}
+
+		protected override void WriteNew(CiReadWriteClassType klass, CiPriority parent)
+		{
+			Write("new ");
+			WriteType(klass, false);
+			Write("()");
+		}
+
+		protected override bool HasInitCode(CiNamedValue def) => def.Type is CiArrayStorageType array && array.GetElementType() is CiStorageType;
+
+		protected override void WriteInitCode(CiNamedValue def)
+		{
+			if (!HasInitCode(def))
+				return;
+			CiArrayStorageType array = (CiArrayStorageType) def.Type;
+			int nesting = 0;
+			while (array.GetElementType() is CiArrayStorageType innerArray) {
+				OpenLoop("int", nesting++, array.Length);
+				WriteArrayElement(def, nesting);
+				Write(" = ");
+				WriteNewArray(innerArray.GetElementType(), innerArray.LengthExpr, CiPriority.Argument);
+				WriteCharLine(';');
+				array = innerArray;
+			}
+			if (array.GetElementType() is CiStorageType klass) {
+				OpenLoop("int", nesting++, array.Length);
+				WriteArrayElement(def, nesting);
+				Write(" = ");
+				WriteNew(klass, CiPriority.Argument);
+				WriteCharLine(';');
+			}
+			while (--nesting >= 0)
+				CloseBlock();
+		}
+
+		protected override void WriteResource(string name, int length)
+		{
+			if (length >= 0)
+				Write("CiResource.");
+			foreach (int c in name)
+				WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+		}
+
+		protected override void WriteStringLength(CiExpr expr)
+		{
+			WritePostfix(expr, ".Length");
+		}
+
+		public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
+		{
+			switch (expr.Symbol.Id) {
+			case CiId.ConsoleError:
+				Include("System");
+				Write("Console.Error");
+				break;
+			case CiId.MatchStart:
+				WritePostfix(expr.Left, ".Index");
+				break;
+			case CiId.MatchEnd:
+				if (parent > CiPriority.Add)
+					WriteChar('(');
+				WritePostfix(expr.Left, ".Index + ");
+				WriteStringLength(expr.Left);
+				if (parent > CiPriority.Add)
+					WriteChar(')');
+				break;
+			case CiId.MathNaN:
+			case CiId.MathNegativeInfinity:
+			case CiId.MathPositiveInfinity:
+				Write("float.");
+				Write(expr.Symbol.Name);
+				break;
+			default:
+				if (expr.Symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiClassType dict && dict.Class.Id == CiId.OrderedDictionaryClass) {
+					if (parent == CiPriority.Primary)
+						WriteChar('(');
+					CiVar element = forEach.GetVar();
+					
+					if (expr.Symbol == element) {
+						WriteStaticCastType(dict.GetKeyType());
+						WriteName(element);
+						Write(".Key");
+					}
+					else {
+						WriteStaticCastType(dict.GetValueType());
+						WriteName(element);
+						Write(".Value");
+					}
+				if (parent == CiPriority.Primary)
+						WriteChar(')');
+				}
+				else
+					base.VisitSymbolReference(expr, parent);
+				break;
+			}
+		}
+
+		protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
+		{
+			switch (method.Id) {
+			case CiId.IntTryParse:
+			case CiId.LongTryParse:
+			case CiId.DoubleTryParse:
+				Write(obj.Type.Name);
+				Write(".TryParse(");
+				args[0].Accept(this, CiPriority.Argument);
+				if (args.Count == 2) {
+					if (!(args[1] is CiLiteralLong radix) || radix.Value != 16)
+						NotSupported(args[1], "Radix");
+					Include("System.Globalization");
+					Write(", NumberStyles.HexNumber, null");
+				}
+				Write(", out ");
+				obj.Accept(this, CiPriority.Argument);
+				WriteChar(')');
+				break;
+			case CiId.StringIndexOf:
+			case CiId.StringLastIndexOf:
+				obj.Accept(this, CiPriority.Primary);
+				WriteChar('.');
+				Write(method.Name);
+				WriteChar('(');
+				int c = GetOneAscii(args[0]);
+				if (c >= 0)
+					VisitLiteralChar(c);
+				else
+					args[0].Accept(this, CiPriority.Argument);
+				WriteChar(')');
+				break;
+			case CiId.ArrayBinarySearchAll:
+			case CiId.ArrayBinarySearchPart:
+				Include("System");
+				Write("Array.BinarySearch(");
+				obj.Accept(this, CiPriority.Argument);
+				Write(", ");
+				if (args.Count == 3) {
+					args[1].Accept(this, CiPriority.Argument);
+					Write(", ");
+					args[2].Accept(this, CiPriority.Argument);
+					Write(", ");
+				}
+				CiClassType array = (CiClassType) obj.Type;
+				WriteNotPromoted(array.GetElementType(), args[0]);
+				WriteChar(')');
+				break;
+			case CiId.ArrayCopyTo:
+				Include("System");
+				Write("Array.Copy(");
+				obj.Accept(this, CiPriority.Argument);
+				Write(", ");
+				WriteArgs(method, args);
+				WriteChar(')');
+				break;
+			case CiId.ArrayFillAll:
+			case CiId.ArrayFillPart:
+				Include("System");
+				if (args[0] is CiLiteral literal && literal.IsDefaultValue()) {
+					Write("Array.Clear(");
+					obj.Accept(this, CiPriority.Argument);
+					if (args.Count == 1) {
+						Write(", 0, ");
+						CiArrayStorageType array2 = (CiArrayStorageType) obj.Type;
+						VisitLiteralLong(array2.Length);
+					}
+				}
+				else {
+					Write("Array.Fill(");
+					obj.Accept(this, CiPriority.Argument);
+					Write(", ");
+					CiClassType array2 = (CiClassType) obj.Type;
+					WriteNotPromoted(array2.GetElementType(), args[0]);
+				}
+				if (args.Count == 3) {
+					Write(", ");
+					args[1].Accept(this, CiPriority.Argument);
+					Write(", ");
+					args[2].Accept(this, CiPriority.Argument);
+				}
+				WriteChar(')');
+				break;
+			case CiId.ArraySortAll:
+				Include("System");
+				WriteCall("Array.Sort", obj);
+				break;
+			case CiId.ArraySortPart:
+				Include("System");
+				WriteCall("Array.Sort", obj, args[0], args[1]);
+				break;
+			case CiId.ListAdd:
+				WriteListAdd(obj, "Add", args);
+				break;
+			case CiId.ListAll:
+				Include("System.Linq");
+				WriteMethodCall(obj, "All", args[0]);
+				break;
+			case CiId.ListAny:
+				Include("System.Linq");
+				WriteMethodCall(obj, "Any", args[0]);
+				break;
+			case CiId.ListInsert:
+				WriteListInsert(obj, "Insert", args);
+				break;
+			case CiId.ListLast:
+				Include("System.Linq");
+				WritePostfix(obj, ".Last()");
+				break;
+			case CiId.ListSortPart:
+				WritePostfix(obj, ".Sort(");
+				WriteArgs(method, args);
+				Write(", null)");
+				break;
+			case CiId.DictionaryAdd:
+				WritePostfix(obj, ".Add(");
+				args[0].Accept(this, CiPriority.Argument);
+				Write(", ");
+				CiClassType dict = (CiClassType) obj.Type;
+				WriteNewStorage(dict.GetValueType());
+				WriteChar(')');
+				break;
+			case CiId.OrderedDictionaryContainsKey:
+				WriteMethodCall(obj, "Contains", args[0]);
+				break;
+			case CiId.TextWriterWrite:
+			case CiId.TextWriterWriteLine:
+			case CiId.ConsoleWrite:
+			case CiId.ConsoleWriteLine:
+				Include("System");
+				obj.Accept(this, CiPriority.Primary);
+				WriteChar('.');
+				Write(method.Name);
+				WriteChar('(');
+				if (args.Count != 0) {
+					if (args[0] is CiLiteralChar) {
+						Write("(int) ");
+						args[0].Accept(this, CiPriority.Primary);
+					}
+					else
+						args[0].Accept(this, CiPriority.Argument);
+				}
+				WriteChar(')');
+				break;
+			case CiId.TextWriterWriteChar:
+				WritePostfix(obj, ".Write(");
+				if (args[0] is CiLiteralChar)
+					args[0].Accept(this, CiPriority.Argument);
+				else {
+					Write("(char) ");
+					args[0].Accept(this, CiPriority.Primary);
+				}
+				WriteChar(')');
+				break;
+			case CiId.EnvironmentGetEnvironmentVariable:
+				Include("System");
+				obj.Accept(this, CiPriority.Primary);
+				WriteChar('.');
+				Write(method.Name);
+				WriteArgsInParentheses(method, args);
+				break;
+			case CiId.UTF8GetByteCount:
+				Include("System.Text");
+				Write("Encoding.UTF8.GetByteCount(");
+				args[0].Accept(this, CiPriority.Argument);
+				WriteChar(')');
+				break;
+			case CiId.UTF8GetBytes:
+				Include("System.Text");
+				Write("Encoding.UTF8.GetBytes(");
+				args[0].Accept(this, CiPriority.Argument);
+				Write(", 0, ");
+				WritePostfix(args[0], ".Length, ");
+				args[1].Accept(this, CiPriority.Argument);
+				Write(", ");
+				args[2].Accept(this, CiPriority.Argument);
+				WriteChar(')');
+				break;
+			case CiId.UTF8GetString:
+				Include("System.Text");
+				Write("Encoding.UTF8.GetString");
+				WriteArgsInParentheses(method, args);
+				break;
+			case CiId.RegexCompile:
+				Include("System.Text.RegularExpressions");
+				Write("new Regex");
+				WriteArgsInParentheses(method, args);
+				break;
+			case CiId.RegexEscape:
+			case CiId.RegexIsMatchStr:
+			case CiId.RegexIsMatchRegex:
+				Include("System.Text.RegularExpressions");
+				obj.Accept(this, CiPriority.Primary);
+				WriteChar('.');
+				Write(method.Name);
+				WriteArgsInParentheses(method, args);
+				break;
+			case CiId.MatchFindStr:
+				Include("System.Text.RegularExpressions");
+				WriteChar('(');
+				obj.Accept(this, CiPriority.Assign);
+				Write(" = Regex.Match");
+				WriteArgsInParentheses(method, args);
+				Write(").Success");
+				break;
+			case CiId.MatchFindRegex:
+				Include("System.Text.RegularExpressions");
+				WriteChar('(');
+				obj.Accept(this, CiPriority.Assign);
+				Write(" = ");
+				WriteMethodCall(args[1], "Match", args[0]);
+				Write(").Success");
+				break;
+			case CiId.MatchGetCapture:
+				WritePostfix(obj, ".Groups[");
+				args[0].Accept(this, CiPriority.Argument);
+				Write("].Value");
+				break;
+			case CiId.MathMethod:
+			case CiId.MathAbs:
+			case CiId.MathCeiling:
+			case CiId.MathClamp:
+			case CiId.MathFusedMultiplyAdd:
+			case CiId.MathLog2:
+			case CiId.MathMaxInt:
+			case CiId.MathMaxDouble:
+			case CiId.MathMinInt:
+			case CiId.MathMinDouble:
+			case CiId.MathRound:
+			case CiId.MathTruncate:
+				Include("System");
+				Write("Math.");
+				Write(method.Name);
+				WriteArgsInParentheses(method, args);
+				break;
+			case CiId.MathIsFinite:
+			case CiId.MathIsInfinity:
+			case CiId.MathIsNaN:
+				Write("double.");
+				WriteCall(method.Name, args[0]);
+				break;
+			default:
+				if (obj != null) {
+					obj.Accept(this, CiPriority.Primary);
+					WriteChar('.');
+				}
+				WriteName(method);
+				WriteArgsInParentheses(method, args);
+				break;
+			}
+		}
+
+		void WriteOrderedDictionaryIndexing(CiBinaryExpr expr)
+		{
+			if (expr.Right.Type.Id == CiId.IntType || expr.Right.Type is CiRangeType) {
+				WritePostfix(expr.Left, "[(object) ");
+				expr.Right.Accept(this, CiPriority.Primary);
+				WriteChar(']');
+			}
+			else
+				base.WriteIndexingExpr(expr, CiPriority.And);
+		}
+
+		protected override void WriteIndexingExpr(CiBinaryExpr expr, CiPriority parent)
+		{
+			if (expr.Left.Type is CiClassType dict && dict.Class.Id == CiId.OrderedDictionaryClass) {
+				if (parent == CiPriority.Primary)
+					WriteChar('(');
+				WriteStaticCastType(expr.Type);
+				WriteOrderedDictionaryIndexing(expr);
+				if (parent == CiPriority.Primary)
+					WriteChar(')');
+			}
+			else
+				base.WriteIndexingExpr(expr, parent);
+		}
+
+		protected override void WriteAssign(CiBinaryExpr expr, CiPriority parent)
+		{
+			if (expr.Left is CiBinaryExpr indexing && indexing.Op == CiToken.LeftBracket && indexing.Left.Type is CiClassType dict && dict.Class.Id == CiId.OrderedDictionaryClass) {
+				WriteOrderedDictionaryIndexing(indexing);
+				Write(" = ");
+				WriteAssignRight(expr);
+			}
+			else
+				base.WriteAssign(expr, parent);
+		}
+
+		public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
+		{
+			switch (expr.Op) {
+			case CiToken.AndAssign:
+			case CiToken.OrAssign:
+			case CiToken.XorAssign:
+				if (parent > CiPriority.Assign)
+					WriteChar('(');
+				expr.Left.Accept(this, CiPriority.Assign);
+				WriteChar(' ');
+				Write(expr.GetOpString());
+				WriteChar(' ');
+				WriteAssignRight(expr);
+				if (parent > CiPriority.Assign)
+					WriteChar(')');
+				break;
+			default:
+				base.VisitBinaryExpr(expr, parent);
+				break;
+			}
+		}
+
+		public override void VisitLambdaExpr(CiLambdaExpr expr)
+		{
+			WriteName(expr.First);
+			Write(" => ");
+			expr.Body.Accept(this, CiPriority.Statement);
+		}
+
+		protected override void DefineObjectLiteralTemporary(CiUnaryExpr expr)
+		{
+		}
+
+		protected override void DefineIsVar(CiBinaryExpr binary)
+		{
+		}
+
+		protected override void WriteAssert(CiAssert statement)
+		{
+			if (statement.CompletesNormally()) {
+				Include("System.Diagnostics");
+				Write("Debug.Assert(");
+				statement.Cond.Accept(this, CiPriority.Argument);
+				if (statement.Message != null) {
+					Write(", ");
+					statement.Message.Accept(this, CiPriority.Argument);
+				}
+			}
+			else {
+				Include("System");
+				Write("throw new NotImplementedException(");
+				if (statement.Message != null)
+					statement.Message.Accept(this, CiPriority.Argument);
+			}
+			WriteLine(");");
+		}
+
+		public override void VisitForeach(CiForeach statement)
+		{
+			Write("foreach (");
+			if (statement.Collection.Type is CiClassType dict && dict.Class.TypeParameterCount == 2) {
+				if (dict.Class.Id == CiId.OrderedDictionaryClass) {
+					Include("System.Collections");
+					Write("DictionaryEntry ");
+					WriteName(statement.GetVar());
+				}
+				else {
+					WriteChar('(');
+					WriteTypeAndName(statement.GetVar());
+					Write(", ");
+					WriteTypeAndName(statement.GetValueVar());
+					WriteChar(')');
+				}
+			}
+			else
+				WriteTypeAndName(statement.GetVar());
+			Write(" in ");
+			statement.Collection.Accept(this, CiPriority.Argument);
+			WriteChar(')');
+			WriteChild(statement.Body);
+		}
+
+		public override void VisitLock(CiLock statement)
+		{
+			Write("lock (");
+			statement.Lock.Accept(this, CiPriority.Argument);
+			WriteChar(')');
+			WriteChild(statement.Body);
+		}
+
+		public override void VisitThrow(CiThrow statement)
+		{
+			Include("System");
+			Write("throw new Exception(");
+			statement.Message.Accept(this, CiPriority.Argument);
+			WriteLine(");");
+		}
+
+		protected override void WriteEnum(CiEnum enu)
+		{
+			WriteNewLine();
+			WriteDoc(enu.Documentation);
+			if (enu is CiEnumFlags) {
+				Include("System");
+				WriteLine("[Flags]");
+			}
+			WritePublic(enu);
+			Write("enum ");
+			WriteLine(enu.Name);
+			OpenBlock();
+			enu.AcceptValues(this);
+			WriteNewLine();
+			CloseBlock();
+		}
+
+		protected override void WriteConst(CiConst konst)
+		{
+			WriteNewLine();
+			WriteDoc(konst.Documentation);
+			WriteVisibility(konst.Visibility);
+			Write(konst.Type is CiArrayStorageType ? "static readonly " : "const ");
+			WriteTypeAndName(konst);
+			Write(" = ");
+			WriteCoercedExpr(konst.Type, konst.Value);
+			WriteCharLine(';');
+		}
+
+		protected override void WriteField(CiField field)
+		{
+			WriteNewLine();
+			WriteDoc(field.Documentation);
+			WriteVisibility(field.Visibility);
+			if (field.Type.IsFinal() && !field.IsAssignableStorage())
+				Write("readonly ");
+			WriteVar(field);
+			WriteCharLine(';');
+		}
+
+		protected override void WriteParameterDoc(CiVar param, bool first)
+		{
+			Write("/// <param name=\"");
+			WriteName(param);
+			Write("\">");
+			WriteDocPara(param.Documentation.Summary, false);
+			WriteLine("</param>");
+		}
+
+		protected override void WriteMethod(CiMethod method)
+		{
+			if (method.Id == CiId.ClassToString && method.CallType == CiCallType.Abstract)
+				return;
+			WriteNewLine();
+			WriteDoc(method.Documentation);
+			WriteParametersDoc(method);
+			WriteVisibility(method.Visibility);
+			if (method.Id == CiId.ClassToString)
+				Write("override ");
+			else
+				WriteCallType(method.CallType, "sealed override ");
+			WriteTypeAndName(method);
+			WriteParameters(method, true);
+			if (method.Body is CiReturn ret) {
+				Write(" => ");
+				WriteCoerced(method.Type, ret.Value, CiPriority.Argument);
+				WriteCharLine(';');
+			}
+			else
+				WriteBody(method);
+		}
+
+		protected override void WriteClass(CiClass klass, CiProgram program)
+		{
+			WriteNewLine();
+			WriteDoc(klass.Documentation);
+			WritePublic(klass);
+			WriteCallType(klass.CallType, "sealed ");
+			OpenClass(klass, "", " : ");
+			if (NeedsConstructor(klass)) {
+				if (klass.Constructor != null) {
+					WriteDoc(klass.Constructor.Documentation);
+					WriteVisibility(klass.Constructor.Visibility);
+				}
+				else
+					Write("internal ");
+				Write(klass.Name);
+				WriteLine("()");
+				OpenBlock();
+				WriteConstructorBody(klass);
+				CloseBlock();
+			}
+			WriteMembers(klass, true);
+			CloseBlock();
+		}
+
+		void WriteResources(SortedDictionary<string, byte[]> resources)
+		{
+			WriteNewLine();
+			WriteLine("internal static class CiResource");
+			OpenBlock();
+			
+			foreach (string name in resources.Keys) {
+				Write("internal static readonly byte[] ");
+				WriteResource(name, -1);
+				WriteLine(" = {");
+				WriteChar('\t');
+				WriteBytes(resources[name]);
+				WriteLine(" };");
+			}
+		CloseBlock();
+		}
+
+		public override void WriteProgram(CiProgram program)
+		{
+			OpenStringWriter();
+			if (this.Namespace != null) {
+				Write("namespace ");
+				WriteLine(this.Namespace);
+				OpenBlock();
+			}
+			WriteTopLevelNatives(program);
+			WriteTypes(program);
+			if (program.Resources.Count > 0)
+				WriteResources(program.Resources);
+			if (this.Namespace != null)
+				CloseBlock();
+			CreateFile(this.OutputFile);
+			WriteIncludes("using ", ";");
+			CloseStringWriter();
+			CloseFile();
+		}
+	}
+
 	public class GenJsNoModule : GenBase
 	{
 
