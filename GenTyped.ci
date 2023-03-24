@@ -56,8 +56,7 @@ public abstract class GenTyped : GenBase
 			if (elementType is CiArrayStorageType arrayStorage)
 				arrayStorage.LengthExpr.Accept(this, CiPriority.Argument);
 			WriteChar(']');
-			assert elementType is CiClassType array;
-			elementType = array.GetElementType();
+			elementType = elementType.AsClassType().GetElementType();
 		}
 	}
 

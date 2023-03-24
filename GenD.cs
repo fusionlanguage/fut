@@ -746,7 +746,7 @@ public class GenD : GenCCppD
 				args[2].Accept(this, CiPriority.Add);
 			}
 			Write("].assumeSorted.trisect(");
-			WriteNotPromoted(((CiClassType) obj.Type).GetElementType(), args[0]);
+			WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
 			Write("); return cisearch[1].length ? cibegin + cisearch[0].length : -1; }()");
 			break;
 		case CiId.ArrayCopyTo:
@@ -774,7 +774,7 @@ public class GenD : GenCCppD
 				args[2].Accept(this, CiPriority.Argument);
 			}
 			Write("].fill(");
-			WriteNotPromoted(((CiClassType) obj.Type).GetElementType(), args[0]);
+			WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
 			WriteChar(')');
 			break;
 		case CiId.ArraySortAll:
@@ -794,7 +794,7 @@ public class GenD : GenCCppD
 		case CiId.ListAdd:
 		case CiId.QueueEnqueue:
 			WritePostfix(obj, ".insertBack(");
-			WriteInsertedArg(((CiClassType) obj.Type).GetElementType(), args);
+			WriteInsertedArg(obj.Type.AsClassType().GetElementType(), args);
 			break;
 		case CiId.ListAddRange:
 			WriteClassReference(obj);
@@ -828,7 +828,7 @@ public class GenD : GenCCppD
 			WritePostfix(obj, ".insertInPlace(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
-			WriteInsertedArg(((CiClassType) obj.Type).GetElementType(), args, 1);
+			WriteInsertedArg(obj.Type.AsClassType().GetElementType(), args, 1);
 			break;
 		case CiId.ListLast:
 			WritePostfix(obj, ".back");
@@ -881,7 +881,7 @@ public class GenD : GenCCppD
 			break;
 		case CiId.SortedSetAdd:
 			WritePostfix(obj, ".insert(");
-			WriteInsertedArg(((CiClassType) obj.Type).GetElementType(), args, 0);
+			WriteInsertedArg(obj.Type.AsClassType().GetElementType(), args, 0);
 			break;
 		case CiId.SortedSetRemove:
 			WritePostfix(obj, ".removeKey");
@@ -896,13 +896,13 @@ public class GenD : GenCCppD
 				WritePostfix(obj, ".require(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
-			WriteInsertedArg(((CiClassType) obj.Type).GetValueType(), args, 1);
+			WriteInsertedArg(obj.Type.AsClassType().GetValueType(), args, 1);
 			break;
 		case CiId.SortedDictionaryContainsKey:
 			Write("tuple(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
-			WriteStaticInitializer(((CiClassType) obj.Type).GetValueType());
+			WriteStaticInitializer(obj.Type.AsClassType().GetValueType());
 			Write(") in ");
 			WriteClassReference(obj);
 			break;
@@ -911,7 +911,7 @@ public class GenD : GenCCppD
 			Write(".removeKey(tuple(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
-			WriteStaticInitializer(((CiClassType) obj.Type).GetValueType());
+			WriteStaticInitializer(obj.Type.AsClassType().GetValueType());
 			Write("))");
 			break;
 		case CiId.TextWriterWrite:

@@ -476,8 +476,7 @@ public class GenCs : GenTyped
 				args[2].Accept(this, CiPriority.Argument);
 				Write(", ");
 			}
-			assert obj.Type is CiClassType array;
-			WriteNotPromoted(array.GetElementType(), args[0]);
+			WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
 			WriteChar(')');
 			break;
 		case CiId.ArrayCopyTo:
@@ -497,16 +496,15 @@ public class GenCs : GenTyped
 				if (args.Count == 1) {
 					// .NET Framework compatibility
 					Write(", 0, ");
-					assert obj.Type is CiArrayStorageType array2;
-					VisitLiteralLong(array2.Length);
+					assert obj.Type is CiArrayStorageType array;
+					VisitLiteralLong(array.Length);
 				}
 			}
 			else {
 				Write("Array.Fill(");
 				obj.Accept(this, CiPriority.Argument);
 				Write(", ");
-				assert obj.Type is CiClassType array2;
-				WriteNotPromoted(array2.GetElementType(), args[0]);
+				WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
 			}
 			if (args.Count == 3) {
 				Write(", ");
@@ -551,8 +549,7 @@ public class GenCs : GenTyped
 			WritePostfix(obj, ".Add(");
 			args[0].Accept(this, CiPriority.Argument);
 			Write(", ");
-			assert obj.Type is CiClassType dict;
-			WriteNewStorage(dict.GetValueType());
+			WriteNewStorage(obj.Type.AsClassType().GetValueType());
 			WriteChar(')');
 			break;
 		case CiId.OrderedDictionaryContainsKey:

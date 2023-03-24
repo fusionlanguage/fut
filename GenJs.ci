@@ -586,8 +586,7 @@ public class GenJsNoModule : GenBase
 			args[1].Accept(this, CiPriority.Primary);
 			bool wholeSource = obj.Type is CiArrayStorageType sourceStorage && args[0].IsLiteralZero()
 				&& args[3] is CiLiteralLong literalLength && literalLength.Value == sourceStorage.Length;
-			assert obj.Type is CiClassType container;
-			if (container.GetElementType() is CiNumericType) {
+			if (obj.Type.AsClassType().GetElementType() is CiNumericType) {
 				Write(".set(");
 				if (wholeSource)
 					obj.Accept(this, CiPriority.Argument);

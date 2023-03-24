@@ -592,7 +592,7 @@ public class GenSwift : GenPySwift
 			break;
 		case CiId.ListInsert:
 			WritePostfix(obj, ".insert(");
-			CiType elementType = ((CiClassType) obj.Type).GetElementType();
+			CiType elementType = obj.Type.AsClassType().GetElementType();
 			if (args.Count == 1)
 				WriteNewStorage(elementType);
 			else
@@ -627,7 +627,7 @@ public class GenSwift : GenPySwift
 		case CiId.HashSetAdd:
 		case CiId.SortedSetAdd:
 			WritePostfix(obj, ".insert(");
-			WriteCoerced(((CiClassType) obj.Type).GetElementType(), args[0], CiPriority.Argument);
+			WriteCoerced(obj.Type.AsClassType().GetElementType(), args[0], CiPriority.Argument);
 			WriteChar(')');
 			break;
 		case CiId.DictionaryAdd:

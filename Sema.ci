@@ -240,8 +240,7 @@ public class CiSema : CiVisitor
 					ReportError(expr, "Method restricted to collections of numbers");
 				break;
 			case CiVisibility.FinalValueType: // DictionaryAdd
-				assert left.Type is CiClassType dictionary;
-				if (!dictionary.GetValueType().IsFinal())
+				if (!left.Type.AsClassType().GetValueType().IsFinal())
 					ReportError(expr, "Method restricted to dictionaries with storage values");
 				break;
 			default:
@@ -1196,8 +1195,7 @@ public class CiSema : CiVisitor
 			}
 			CiExpr! arg = arguments[i++];
 			if (type.Id == CiId.TypeParam0Predicate && arg is CiLambdaExpr! lambda) {
-				assert symbol.Left.Type is CiClassType klass;
-				lambda.First.Type = klass.TypeArg0;
+				lambda.First.Type = symbol.Left.Type.AsClassType().TypeArg0;
 				OpenScope(lambda);
 				lambda.Body = Resolve(lambda.Body);
 				CloseScope();

@@ -958,7 +958,7 @@ public class GenC : GenCCpp
 
 	void WriteQueueGet(string function, CiExpr obj, CiPriority parent)
 	{
-		CiType elementType = ((CiClassType) obj.Type).GetElementType();
+		CiType elementType = obj.Type.AsClassType().GetElementType();
 		bool parenthesis;
 		if (elementType is CiIntegerType && elementType.Id != CiId.LongType) {
 			Write("GPOINTER_TO_INT(");
@@ -1109,7 +1109,7 @@ public class GenC : GenCCpp
 			WriteChar('.');
 		else
 			Write("->");
-		for (CiClass klass = ((CiClassType) left.Type).Class; klass != symbolClass; klass = (CiClass) klass.Parent)
+		for (CiClass klass = left.Type.AsClassType().Class; klass != symbolClass; klass = (CiClass) klass.Parent)
 			Write("base.");
 	}
 
@@ -1324,7 +1324,7 @@ public class GenC : GenCCpp
 
 	void WriteListAddInsert(CiExpr obj, bool insert, string function, List<CiExpr> args)
 	{
-		CiType elementType = ((CiClassType) obj.Type).GetElementType();
+		CiType elementType = obj.Type.AsClassType().GetElementType();
 		// TODO: don't emit temporary variable if already a var/field of matching type - beware of integer promotions!
 		int id = WriteCTemporary(elementType, elementType.IsFinal() ? null : args[args.Count - 1]);
 		if (elementType is CiStorageType storage && NeedsConstructor(storage.Class)) {
@@ -1483,7 +1483,7 @@ public class GenC : GenCCpp
 			case CiCallType.Abstract:
 			case CiCallType.Virtual:
 				if (obj != null)
-					klass = obj.Type as CiClass ?? ((CiClassType) obj.Type).Class;
+					klass = obj.Type as CiClass ?? obj.Type.AsClassType().Class;
 				CiClass ptrClass = GetVtblPtrClass(klass);
 				CiClass structClass = GetVtblStructClass(definingClass);
 				if (structClass != ptrClass) {
@@ -1632,7 +1632,7 @@ public class GenC : GenCCpp
 			if (parent > CiPriority.Add)
 				WriteChar('(');
 			Write("(const ");
-			CiType elementType2 = ((CiClassType) obj.Type).GetElementType();
+			CiType elementType2 = obj.Type.AsClassType().GetElementType();
 			WriteType(elementType2, false);
 			Write(" *) bsearch(&");
 			args[0].Accept(this, CiPriority.Primary); // TODO: not lvalue, promoted
@@ -1655,7 +1655,7 @@ public class GenC : GenCCpp
 		case CiId.ArrayCopyTo:
 		case CiId.ListCopyTo:
 			Include("string.h");
-			CiType elementType = ((CiClassType) obj.Type).GetElementType();
+			CiType elementType = obj.Type.AsClassType().GetElementType();
 			if (IsHeapAllocated(elementType))
 				NotYet(obj, "CopyTo for this type"); // TODO
 			Write("memcpy(");
@@ -1692,7 +1692,7 @@ public class GenC : GenCCpp
 					Write(", 0, ");
 					args[2].Accept(this, CiPriority.Mul);
 					Write(" * sizeof(");
-					WriteType(((CiClassType) obj.Type).GetElementType(), false);
+					WriteType(obj.Type.AsClassType().GetElementType(), false);
 					WriteChar(')');
 				}
 				WriteChar(')');
@@ -1714,11 +1714,11 @@ public class GenC : GenCCpp
 			WriteArrayPtrAdd(obj, args[0]);
 			Write(", ");
 			args[1].Accept(this, CiPriority.Argument);
-			WriteSizeofCompare(((CiClassType) obj.Type).GetElementType());
+			WriteSizeofCompare(obj.Type.AsClassType().GetElementType());
 			break;
 		case CiId.ListAdd:
 		case CiId.StackPush:
-			switch (((CiClassType) obj.Type).GetElementType()) {
+			switch (obj.Type.AsClassType().GetElementType()) {
 			case CiArrayStorageType _:
 			case CiStorageType storage when storage.Class.Id == CiId.None && !NeedsConstructor(storage.Class):
 				Write("g_array_set_size(");
@@ -1739,7 +1739,7 @@ public class GenC : GenCCpp
 			break;
 		case CiId.ListContains:
 			Write("CiArray_Contains_");
-			CiId typeId = ((CiClassType) obj.Type).GetElementType().Id;
+			CiId typeId = obj.Type.AsClassType().GetElementType().Id;
 			if (typeId == CiId.StringStorageType)
 				typeId = CiId.StringPtrType;
 			if (typeId == CiId.StringPtrType) {
@@ -1763,7 +1763,7 @@ public class GenC : GenCCpp
 			break;
 		case CiId.ListLast:
 		case CiId.StackPeek:
-			StartArrayIndexing(obj, ((CiClassType) obj.Type).GetElementType());
+			StartArrayIndexing(obj, obj.Type.AsClassType().GetElementType());
 			WritePostfix(obj, "->len - 1)"); // TODO: side effect
 			break;
 		case CiId.ListRemoveAt:
@@ -1775,7 +1775,7 @@ public class GenC : GenCCpp
 		case CiId.ListSortAll:
 			Write("g_array_sort(");
 			obj.Accept(this, CiPriority.Argument);
-			CiId typeId2 = ((CiClassType) obj.Type).GetElementType().Id;
+			CiId typeId2 = obj.Type.AsClassType().GetElementType().Id;
 			Write(", CiCompare_");
 			WriteNumericType(typeId2);
 			WriteChar(')');
@@ -1793,7 +1793,7 @@ public class GenC : GenCCpp
 			Write("g_queue_push_tail(");
 			WriteQueueObject(obj);
 			Write(", ");
-			WriteGPointerCast(((CiClassType) obj.Type).GetElementType(), args[0]);
+			WriteGPointerCast(obj.Type.AsClassType().GetElementType(), args[0]);
 			WriteChar(')');
 			break;
 		case CiId.QueuePeek:
@@ -1801,7 +1801,7 @@ public class GenC : GenCCpp
 			break;
 		case CiId.StackPop:
 			// FIXME: destroy
-			StartArrayIndexing(obj, ((CiClassType) obj.Type).GetElementType());
+			StartArrayIndexing(obj, obj.Type.AsClassType().GetElementType());
 			Write("--");
 			WritePostfix(obj, "->len)"); // TODO: side effect
 			break;
@@ -1809,7 +1809,7 @@ public class GenC : GenCCpp
 			Write("g_hash_table_add(");
 			obj.Accept(this, CiPriority.Argument);
 			Write(", ");
-			WriteGPointerCast(((CiClassType) obj.Type).GetElementType(), args[0]);
+			WriteGPointerCast(obj.Type.AsClassType().GetElementType(), args[0]);
 			WriteChar(')');
 			break;
 		case CiId.HashSetClear:
@@ -1828,12 +1828,12 @@ public class GenC : GenCCpp
 			Write("g_tree_insert(");
 			obj.Accept(this, CiPriority.Argument);
 			Write(", ");
-			WriteGPointerCast(((CiClassType) obj.Type).GetKeyType(), args[0]);
+			WriteGPointerCast(obj.Type.AsClassType().GetKeyType(), args[0]);
 			Write(", NULL)");
 			break;
 		case CiId.DictionaryAdd:
 			StartDictionaryInsert(obj, args[0]);
-			CiStorageType valueType = (CiStorageType) ((CiClassType) obj.Type).GetValueType();
+			CiStorageType valueType = (CiStorageType) obj.Type.AsClassType().GetValueType();
 			switch (valueType.Class.Id) {
 			case CiId.ListClass:
 			case CiId.StackClass:
@@ -2419,7 +2419,7 @@ public class GenC : GenCCpp
 				WriteType(elementType, false);
 				Write(" const *) ");
 				WritePostfix(statement.Collection, "->data, ");
-				for (; elementType.IsArray(); elementType = ((CiClassType) elementType).GetElementType())
+				for (; elementType.IsArray(); elementType = elementType.AsClassType().GetElementType())
 					WriteChar('*');
 				if (elementType is CiClassType)
 					Write("* const ");

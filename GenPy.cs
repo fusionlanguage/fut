@@ -555,7 +555,7 @@ public class GenPy : GenPySwift
 	void WriteAssignSorted(CiExpr obj, string byteArray)
 	{
 		Write(" = ");
-		char c = GetArrayCode((CiNumericType) ((CiClassType) obj.Type).GetElementType());
+		char c = GetArrayCode((CiNumericType) obj.Type.AsClassType().GetElementType());
 		if (c == 'B') {
 			Write(byteArray);
 			WriteChar('(');
@@ -662,8 +662,7 @@ public class GenPy : GenPySwift
 			else {
 				WriteSlice(args[1], args[2]);
 				Write(" = ");
-				CiClassType klass = (CiClassType) obj.Type;
-				WriteNewArray(klass.GetElementType(), args[0], args[2]); // TODO: side effect
+				WriteNewArray(obj.Type.AsClassType().GetElementType(), args[0], args[2]); // TODO: side effect
 			}
 			break;
 		case CiId.ArraySortAll:
@@ -698,7 +697,7 @@ public class GenPy : GenPySwift
 			break;
 		case CiId.ListClear:
 		case CiId.StackClear:
-			if (((CiClassType) obj.Type).GetElementType() is CiNumericType number && GetArrayCode(number) != 'B') {
+			if (obj.Type.AsClassType().GetElementType() is CiNumericType number && GetArrayCode(number) != 'B') {
 				Write("del ");
 				WritePostfix(obj, "[:]");
 			}
@@ -1083,7 +1082,7 @@ public class GenPy : GenPySwift
 
 	void WriteSwitchCaseVar(CiVar def)
 	{
-		WriteName(((CiClassType) def.Type).Class);
+		WriteName(def.Type.AsClassType().Class);
 		Write("()");
 		if (def.Name != "_") {
 			Write(" as ");

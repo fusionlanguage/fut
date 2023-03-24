@@ -932,6 +932,11 @@ public class CiType : CiScope
 	public virtual bool IsFinal() => false;
 	public virtual CiType GetBaseType() => this;
 	public virtual CiType GetStorageType() => this;
+	public CiClassType AsClassType()
+	{
+		assert this is CiClassType klass;
+		return klass;
+	}
 }
 
 public abstract class CiNumericType : CiType

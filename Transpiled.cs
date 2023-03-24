@@ -2396,6 +2396,12 @@ namespace Foxoft.Ci
 		public virtual CiType GetBaseType() => this;
 
 		public virtual CiType GetStorageType() => this;
+
+		public CiClassType AsClassType()
+		{
+			CiClassType klass = (CiClassType) this;
+			return klass;
+		}
 	}
 
 	public abstract class CiNumericType : CiType
@@ -4436,8 +4442,7 @@ namespace Foxoft.Ci
 						ReportError(expr, "Method restricted to collections of numbers");
 					break;
 				case CiVisibility.FinalValueType:
-					CiClassType dictionary = (CiClassType) left.Type;
-					if (!dictionary.GetValueType().IsFinal())
+					if (!left.Type.AsClassType().GetValueType().IsFinal())
 						ReportError(expr, "Method restricted to dictionaries with storage values");
 					break;
 				default:
@@ -5349,8 +5354,7 @@ namespace Foxoft.Ci
 				}
 				CiExpr arg = arguments[i++];
 				if (type.Id == CiId.TypeParam0Predicate && arg is CiLambdaExpr lambda) {
-					CiClassType klass = (CiClassType) symbol.Left.Type;
-					lambda.First.Type = klass.TypeArg0;
+					lambda.First.Type = symbol.Left.Type.AsClassType().TypeArg0;
 					OpenScope(lambda);
 					lambda.Body = Resolve(lambda.Body);
 					CloseScope();
@@ -7395,8 +7399,7 @@ namespace Foxoft.Ci
 			WriteChar('.');
 			Write(method);
 			WriteChar('(');
-			CiClassType klass = (CiClassType) obj.Type;
-			CiType elementType = klass.GetElementType();
+			CiType elementType = obj.Type.AsClassType().GetElementType();
 			if (args.Count == 0)
 				WriteNewStorage(elementType);
 			else
@@ -7412,8 +7415,7 @@ namespace Foxoft.Ci
 			WriteChar('(');
 			args[0].Accept(this, CiPriority.Argument);
 			Write(separator);
-			CiClassType klass = (CiClassType) obj.Type;
-			CiType elementType = klass.GetElementType();
+			CiType elementType = obj.Type.AsClassType().GetElementType();
 			if (args.Count == 1)
 				WriteNewStorage(elementType);
 			else
@@ -7425,8 +7427,7 @@ namespace Foxoft.Ci
 		{
 			WriteIndexing(obj, args[0]);
 			Write(" = ");
-			CiClassType dict = (CiClassType) obj.Type;
-			WriteNewStorage(dict.GetValueType());
+			WriteNewStorage(obj.Type.AsClassType().GetValueType());
 		}
 
 		protected void WriteClampAsMinMax(List<CiExpr> args)
@@ -8061,8 +8062,7 @@ namespace Foxoft.Ci
 				if (elementType is CiArrayStorageType arrayStorage)
 					arrayStorage.LengthExpr.Accept(this, CiPriority.Argument);
 				WriteChar(']');
-				CiClassType array = (CiClassType) elementType;
-				elementType = array.GetElementType();
+				elementType = elementType.AsClassType().GetElementType();
 			}
 		}
 
@@ -8762,8 +8762,7 @@ namespace Foxoft.Ci
 					args[2].Accept(this, CiPriority.Argument);
 					Write(", ");
 				}
-				CiClassType array = (CiClassType) obj.Type;
-				WriteNotPromoted(array.GetElementType(), args[0]);
+				WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
 				WriteChar(')');
 				break;
 			case CiId.ArrayCopyTo:
@@ -8782,16 +8781,15 @@ namespace Foxoft.Ci
 					obj.Accept(this, CiPriority.Argument);
 					if (args.Count == 1) {
 						Write(", 0, ");
-						CiArrayStorageType array2 = (CiArrayStorageType) obj.Type;
-						VisitLiteralLong(array2.Length);
+						CiArrayStorageType array = (CiArrayStorageType) obj.Type;
+						VisitLiteralLong(array.Length);
 					}
 				}
 				else {
 					Write("Array.Fill(");
 					obj.Accept(this, CiPriority.Argument);
 					Write(", ");
-					CiClassType array2 = (CiClassType) obj.Type;
-					WriteNotPromoted(array2.GetElementType(), args[0]);
+					WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
 				}
 				if (args.Count == 3) {
 					Write(", ");
@@ -8836,8 +8834,7 @@ namespace Foxoft.Ci
 				WritePostfix(obj, ".Add(");
 				args[0].Accept(this, CiPriority.Argument);
 				Write(", ");
-				CiClassType dict = (CiClassType) obj.Type;
-				WriteNewStorage(dict.GetValueType());
+				WriteNewStorage(obj.Type.AsClassType().GetValueType());
 				WriteChar(')');
 				break;
 			case CiId.OrderedDictionaryContainsKey:
@@ -9739,8 +9736,7 @@ namespace Foxoft.Ci
 				WriteStartEnd(args[1], args[2]);
 				Write(", ");
 			}
-			CiClassType array = (CiClassType) obj.Type;
-			WriteNotPromoted(array.GetElementType(), args[0]);
+			WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
 			WriteChar(')');
 		}
 
@@ -9928,8 +9924,7 @@ namespace Foxoft.Ci
 				WritePostfix(obj, ".put(");
 				args[0].Accept(this, CiPriority.Argument);
 				Write(", ");
-				CiClassType dict = (CiClassType) obj.Type;
-				WriteNewStorage(dict.GetValueType());
+				WriteNewStorage(obj.Type.AsClassType().GetValueType());
 				WriteChar(')');
 				break;
 			case CiId.TextWriterWrite:
@@ -11047,8 +11042,7 @@ namespace Foxoft.Ci
 			case CiId.ListCopyTo:
 				args[1].Accept(this, CiPriority.Primary);
 				bool wholeSource = obj.Type is CiArrayStorageType sourceStorage && args[0].IsLiteralZero() && args[3] is CiLiteralLong literalLength && literalLength.Value == sourceStorage.Length;
-				CiClassType container = (CiClassType) obj.Type;
-				if (container.GetElementType() is CiNumericType) {
+				if (obj.Type.AsClassType().GetElementType() is CiNumericType) {
 					Write(".set(");
 					if (wholeSource)
 						obj.Accept(this, CiPriority.Argument);
