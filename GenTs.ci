@@ -36,7 +36,7 @@ public class GenTs : GenJs
 
 	protected override bool IsJsPrivate(CiMember member) => false;
 
-	public override void VisitEnumValue!(CiConst! konst, CiConst previous)
+	public override void VisitEnumValue!(CiConst! konst, CiConst? previous)
 	{
 		WriteEnumValue(konst);
 		WriteCharLine(',');

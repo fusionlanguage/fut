@@ -2761,7 +2761,7 @@ namespace Foxoft.Ci
 			return (this.Nullable && right.Id == CiId.NullType) || (right is CiClassType rightClass && IsAssignableFromClass(rightClass));
 		}
 
-		public override bool EqualsType(CiType right) => right is CiClassType that && this.Class == that.Class && EqualTypeArguments(that);
+		public override bool EqualsType(CiType right) => right is CiClassType that && this.Nullable == that.Nullable && this.Class == that.Class && EqualTypeArguments(that);
 
 		public override string GetArraySuffix() => IsArray() ? "[]" : "";
 
@@ -5997,11 +5997,30 @@ namespace Foxoft.Ci
 								ReportError(method, "Base method is not abstract or virtual");
 								break;
 							}
+							if (!method.Type.EqualsType(baseMethod.Type))
+								ReportError(method, "Base method has a different return type");
 							if (method.IsMutator != baseMethod.IsMutator) {
 								if (method.IsMutator)
 									ReportError(method, "Mutating method cannot override a non-mutating method");
 								else
 									ReportError(method, "Non-mutating method cannot override a mutating method");
+							}
+							CiVar baseParam = baseMethod.Parameters.FirstParameter();
+							for (CiVar param = method.Parameters.FirstParameter();; param = param.NextParameter()) {
+								if (param == null) {
+									if (baseParam != null)
+										ReportError(method, "Fewer parameters than the overridden method");
+									break;
+								}
+								if (baseParam == null) {
+									ReportError(method, "More parameters than the overridden method");
+									break;
+								}
+								if (!param.Type.EqualsType(baseParam.Type)) {
+									ReportError(method, "Base method has a different parameter type");
+									break;
+								}
+								baseParam = baseParam.NextParameter();
 							}
 							baseMethod.Calls.Add(method);
 						}

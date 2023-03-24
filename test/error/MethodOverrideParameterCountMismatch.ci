@@ -1,0 +1,20 @@
+abstract class Base
+{
+	public virtual void Foo(int x)
+	{
+	}
+}
+
+class Derived : Base
+{
+	public override void Foo() //ERROR: Fewer parameters than the overridden method
+	{
+	}
+}
+
+class AnotherDerived : Base
+{
+	public override void Foo(int x, int y) //ERROR: More parameters than the overridden method
+	{
+	}
+}

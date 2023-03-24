@@ -287,7 +287,7 @@ public class GenCs : GenTyped
 		WriteObjectLiteral(init, " = ");
 	}
 
-	protected override void WriteCoercedLiteral!(CiType type, CiExpr literal)
+	protected override void WriteCoercedLiteral!(CiType? type, CiExpr literal)
 	{
 		if (literal is CiLiteralChar && type is CiRangeType range && range.Max <= 0xff)
 			WriteStaticCast(type, literal);

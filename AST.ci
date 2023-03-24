@@ -269,7 +269,7 @@ public abstract class CiVisitor
 	public abstract void VisitSwitch!(CiSwitch! statement);
 	public abstract void VisitThrow!(CiThrow! statement);
 	public abstract void VisitWhile!(CiWhile! statement);
-	public abstract void VisitEnumValue!(CiConst! konst, CiConst previous);
+	public abstract void VisitEnumValue!(CiConst! konst, CiConst? previous);
 }
 
 public abstract class CiExprVisitor : CiVisitor
@@ -1238,7 +1238,7 @@ public class CiClassType : CiType
 
 	public override bool EqualsType(CiType right)
 		=> right is CiClassType that // TODO: exact match
-			&& this.Class == that.Class && EqualTypeArguments(that);
+			&& this.Nullable == that.Nullable && this.Class == that.Class && EqualTypeArguments(that);
 
 	public override string() GetArraySuffix() => IsArray() ? "[]" : "";
 	public virtual string GetClassSuffix() => "";

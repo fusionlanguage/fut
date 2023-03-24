@@ -1879,13 +1879,31 @@ public class CiSema : CiVisitor
 							ReportError(method, "Base method is not abstract or virtual");
 							break;
 						}
+						if (!method.Type.EqualsType(baseMethod.Type))
+							ReportError(method, "Base method has a different return type");
 						if (method.IsMutator != baseMethod.IsMutator) {
 							if (method.IsMutator)
 								ReportError(method, "Mutating method cannot override a non-mutating method");
 							else
 								ReportError(method, "Non-mutating method cannot override a mutating method");
 						}
-						// TODO: check parameter and return type
+						CiVar? baseParam = baseMethod.Parameters.FirstParameter();
+						for (CiVar? param = method.Parameters.FirstParameter(); ; param = param.NextParameter()) {
+							if (param == null) {
+								if (baseParam != null)
+									ReportError(method, "Fewer parameters than the overridden method");
+								break;
+							}
+							if (baseParam == null) {
+								ReportError(method, "More parameters than the overridden method");
+								break;
+							}
+							if (!param.Type.EqualsType(baseParam.Type)) {
+								ReportError(method, "Base method has a different parameter type");
+								break;
+							}
+							baseParam = baseParam.NextParameter();
+						}
 						baseMethod.Calls.Add(method);
 					}
 					else

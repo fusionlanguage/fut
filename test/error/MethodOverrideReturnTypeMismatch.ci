@@ -1,0 +1,9 @@
+abstract class Base
+{
+	public virtual int Foo() => 5;
+}
+
+class Derived : Base
+{
+	public override long Foo() => 42; //ERROR: Base method has a different return type
+}

@@ -444,7 +444,7 @@ public class GenJava : GenTyped
 			base.WriteEqual(expr, parent, not);
 	}
 
-	protected override void WriteCoercedLiteral!(CiType type, CiExpr expr)
+	protected override void WriteCoercedLiteral!(CiType? type, CiExpr expr)
 	{
 		if (IsUnsignedByte(type)) {
 			assert expr is CiLiteralLong literal;
@@ -1056,7 +1056,7 @@ public class GenJava : GenTyped
 		}
 	}
 
-	public override void VisitEnumValue!(CiConst konst, CiConst previous)
+	public override void VisitEnumValue!(CiConst konst, CiConst? previous)
 	{
 		WriteDoc(konst.Documentation);
 		Write("int ");

@@ -1,0 +1,13 @@
+abstract class Base
+{
+	public virtual void Foo(int x)
+	{
+	}
+}
+
+class Derived : Base
+{
+	public override void Foo(long x) //ERROR: Base method has a different parameter type
+	{
+	}
+}
