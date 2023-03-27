@@ -1467,16 +1467,17 @@ public class GenCpp : GenCCpp
 			WriteChar(')');
 		}
 		else if (type.Id == CiId.StringStorageType
-			&& IsStringSubstring(expr, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)
-			&& ptr.Type.Id != CiId.StringStorageType) {
+			&& IsStringSubstring(expr) is CiCallExpr call
+			&& GetStringSubstringPtr(call).Type.Id != CiId.StringStorageType) {
 			Write("std::string(");
+			bool cast = IsUTF8GetString(call);
 			if (cast)
 				Write("reinterpret_cast<const char *>(");
-			WriteArrayPtrAdd(ptr, offset);
+			WriteStringPtrAdd(call);
 			if (cast)
 				WriteChar(')');
 			Write(", ");
-			length.Accept(this, CiPriority.Argument);
+			GetStringSubstringLength(call).Accept(this, CiPriority.Argument);
 			WriteChar(')');
 		}
 		else

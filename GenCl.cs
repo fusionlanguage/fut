@@ -120,11 +120,11 @@ public class GenCl : GenC
 
 	protected override string GetConst(CiArrayStorageType array) => array.PtrTaken ? "const " : "constant ";
 
-	protected override void WriteSubstringEqual(bool cast, CiExpr ptr, CiExpr offset, string literal, CiPriority parent, bool not)
+	protected override void WriteSubstringEqual(CiCallExpr call, string literal, CiPriority parent, bool not)
 	{
 		if (not)
 			WriteChar('!');
-		if (cast) {
+		if (IsUTF8GetString(call)) {
 			this.BytesEqualsString = true;
 			Write("CiBytes_Equals(");
 		}
@@ -132,7 +132,7 @@ public class GenCl : GenC
 			this.StringStartsWith = true;
 			Write("CiString_StartsWith(");
 		}
-		WriteArrayPtrAdd(ptr, offset);
+		WriteStringPtrAdd(call);
 		Write(", ");
 		VisitLiteralString(literal);
 		WriteChar(')');

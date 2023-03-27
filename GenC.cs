@@ -81,7 +81,7 @@ public class GenC : GenCCpp
 	protected override void WritePrintfWidth(CiInterpolatedPart part)
 	{
 		base.WritePrintfWidth(part);
-		if (IsStringSubstring(part.Argument, out bool _, out CiExpr _, out CiExpr _, out CiExpr _)) {
+		if (IsStringSubstring(part.Argument) != null) {
 			Trace.Assert(part.Precision < 0);
 			Write(".*");
 		}
@@ -99,14 +99,19 @@ public class GenC : GenCCpp
 			expr.Accept(this, CiPriority.Argument);
 	}
 
+	void WriteStringPtrAddCast(CiCallExpr call)
+	{
+		if (IsUTF8GetString(call))
+			Write("(const char *) ");
+		WriteStringPtrAdd(call);
+	}
+
 	protected override void WriteInterpolatedStringArg(CiExpr expr)
 	{
-		if (IsStringSubstring(expr, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)) {
-			length.Accept(this, CiPriority.Argument);
+		if (IsStringSubstring(expr) is CiCallExpr call) {
+			GetStringSubstringLength(call).Accept(this, CiPriority.Argument);
 			Write(", ");
-			if (cast)
-				Write("(const char *) ");
-			WriteArrayPtrAdd(ptr, offset);
+			WriteStringPtrAddCast(call);
 		}
 		else if (expr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass) {
 			// TODO: abstract, virtual, override
@@ -564,15 +569,13 @@ public class GenC : GenCCpp
 
 	void WriteStringStorageValue(CiExpr expr)
 	{
-		if (IsStringSubstring(expr, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)) {
+		if (IsStringSubstring(expr) is CiCallExpr call) {
 			Include("string.h");
 			this.StringSubstring = true;
 			Write("CiString_Substring(");
-			if (cast)
-				Write("(const char *) ");
-			WriteArrayPtrAdd(ptr, offset);
+			WriteStringPtrAddCast(call);
 			Write(", ");
-			length.Accept(this, CiPriority.Argument);
+			GetStringSubstringLength(call).Accept(this, CiPriority.Argument);
 			WriteChar(')');
 		}
 		else if (IsNewString(expr))
@@ -840,7 +843,7 @@ public class GenC : GenCCpp
 			break;
 		case CiBinaryExpr binary:
 			WriteCTemporaries(binary.Left);
-			if (!IsStringSubstring(binary.Left, out bool _, out CiExpr _, out CiExpr _, out CiExpr _))
+			if (IsStringSubstring(binary.Left) == null)
 				WriteStorageTemporary(binary.Left);
 			WriteCTemporaries(binary.Right);
 			if (binary.Op != CiToken.Assign)
@@ -1199,13 +1202,13 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected virtual void WriteSubstringEqual(bool cast, CiExpr ptr, CiExpr offset, string literal, CiPriority parent, bool not)
+	protected virtual void WriteSubstringEqual(CiCallExpr call, string literal, CiPriority parent, bool not)
 	{
 		if (parent > CiPriority.Equality)
 			WriteChar('(');
 		Include("string.h");
 		Write("memcmp(");
-		WriteArrayPtrAdd(ptr, offset);
+		WriteStringPtrAdd(call);
 		Write(", ");
 		VisitLiteralString(literal);
 		Write(", ");
@@ -1235,15 +1238,16 @@ public class GenC : GenCCpp
 
 	protected override void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not)
 	{
-		if (IsStringSubstring(left, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr lengthExpr)
+		if (IsStringSubstring(left) is CiCallExpr call
 		 && right is CiLiteralString literal) {
+			CiExpr lengthExpr = GetStringSubstringLength(call);
 			int rightLength = literal.GetAsciiLength();
 			if (rightLength >= 0) {
 				string rightValue = literal.Value;
 				if (lengthExpr is CiLiteralLong leftLength) {
 					if (leftLength.Value != rightLength)
 						NotYet(left, "String comparison with unmatched length"); // TODO: evaluate compile-time
-					WriteSubstringEqual(cast, ptr, offset, rightValue, parent, not);
+					WriteSubstringEqual(call, rightValue, parent, not);
 				}
 				else if (not) {
 					if (parent > CiPriority.CondOr)
@@ -1252,7 +1256,7 @@ public class GenC : GenCCpp
 					Write(" != ");
 					VisitLiteralLong(rightLength);
 					Write(" || ");
-					WriteSubstringEqual(cast, ptr, offset, rightValue, CiPriority.CondOr, true);
+					WriteSubstringEqual(call, rightValue, CiPriority.CondOr, true);
 					if (parent > CiPriority.CondOr)
 						WriteChar(')');
 				}
@@ -1263,7 +1267,7 @@ public class GenC : GenCCpp
 					Write(" == ");
 					VisitLiteralLong(rightLength);
 					Write(" && ");
-					WriteSubstringEqual(cast, ptr, offset, rightValue, CiPriority.CondAnd, false);
+					WriteSubstringEqual(call, rightValue, CiPriority.CondAnd, false);
 					if (parent > CiPriority.CondAnd || parent == CiPriority.CondOr)
 						WriteChar(')');
 				}

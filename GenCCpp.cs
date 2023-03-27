@@ -138,40 +138,37 @@ public abstract class GenCCpp : GenCCppD
 		}
 	}
 
-	protected static bool IsStringSubstring(CiExpr expr, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)
+	protected static CiCallExpr IsStringSubstring(CiExpr expr)
 	{
 		if (expr is CiCallExpr call) {
-			CiMethod method = (CiMethod) call.Method.Symbol;
-			List<CiExpr> args = call.Arguments;
-			if (method.Id == CiId.StringSubstring && args.Count == 2) {
-				cast = false;
-				ptr = call.Method.Left;
-				offset = args[0];
-				length = args[1];
-				return true;
-			}
-			if (method.Id == CiId.UTF8GetString) {
-				cast = true;
-				ptr = args[0];
-				offset = args[1];
-				length = args[2];
-				return true;
-			}
+			CiId id = call.Method.Symbol.Id;
+			if ((id == CiId.StringSubstring && call.Arguments.Count == 2)
+			 || id == CiId.UTF8GetString)
+				return call;
 		}
-		cast = false;
-		ptr = null;
-		offset = null;
-		length = null;
-		return false;
+		return null;
+	}
+
+	protected static bool IsUTF8GetString(CiCallExpr call) => call.Method.Symbol.Id == CiId.UTF8GetString;
+
+	protected static CiExpr GetStringSubstringPtr(CiCallExpr call) => IsUTF8GetString(call) ? call.Arguments[0] : call.Method.Left;
+
+	protected static CiExpr GetStringSubstringOffset(CiCallExpr call) => call.Arguments[IsUTF8GetString(call) ? 1 : 0];
+
+	protected static CiExpr GetStringSubstringLength(CiCallExpr call) => call.Arguments[IsUTF8GetString(call) ? 2 : 1];
+
+	protected void WriteStringPtrAdd(CiCallExpr call)
+	{
+		WriteArrayPtrAdd(GetStringSubstringPtr(call), GetStringSubstringOffset(call));
 	}
 
 	protected static CiExpr IsTrimSubstring(CiBinaryExpr expr)
 	{
-		if (IsStringSubstring(expr.Right, out bool cast, out CiExpr ptr, out CiExpr offset, out CiExpr length)
-		 && !cast
-		 && expr.Left is CiSymbolReference leftSymbol && ptr.IsReferenceTo(leftSymbol.Symbol) // TODO: more complex expr
-		 && offset.IsLiteralZero())
-			return length;
+		if (IsStringSubstring(expr.Right) is CiCallExpr call
+		 && !IsUTF8GetString(call)
+		 && expr.Left is CiSymbolReference leftSymbol && GetStringSubstringPtr(call).IsReferenceTo(leftSymbol.Symbol) // TODO: more complex expr
+		 && GetStringSubstringOffset(call).IsLiteralZero())
+			return GetStringSubstringLength(call);
 		return null;
 	}
 
