@@ -8534,6 +8534,1882 @@ namespace Foxoft.Ci
 		}
 	}
 
+	public class GenCpp : GenCCpp
+	{
+
+		bool UsingStringViewLiterals;
+
+		bool HasEnumFlags;
+
+		bool StringReplace;
+
+		protected override string GetTargetName() => "C++";
+
+		protected override void IncludeStdInt()
+		{
+			Include("cstdint");
+		}
+
+		protected override void IncludeAssert()
+		{
+			Include("cassert");
+		}
+
+		protected override void IncludeMath()
+		{
+			Include("cmath");
+		}
+
+		public override void VisitLiteralNull()
+		{
+			Write("nullptr");
+		}
+
+		void StartMethodCall(CiExpr obj)
+		{
+			obj.Accept(this, CiPriority.Primary);
+			WriteMemberOp(obj, null);
+		}
+
+		protected override void WriteInterpolatedStringArg(CiExpr expr)
+		{
+			if (expr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass) {
+				StartMethodCall(expr);
+				Write("toString()");
+			}
+			else
+				base.WriteInterpolatedStringArg(expr);
+		}
+
+		public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
+		{
+			Include("format");
+			Write("std::format(\"");
+			foreach (CiInterpolatedPart part in expr.Parts) {
+				WriteDoubling(part.Prefix, '{');
+				Write("{}");
+			}
+			WriteDoubling(expr.Suffix, '{');
+			WriteChar('"');
+			WriteInterpolatedStringArgs(expr);
+			WriteChar(')');
+		}
+
+		void WriteCamelCaseNotKeyword(string name)
+		{
+			WriteCamelCase(name);
+			switch (name) {
+			case "And":
+			case "Asm":
+			case "Auto":
+			case "Bool":
+			case "Break":
+			case "Byte":
+			case "Case":
+			case "Catch":
+			case "Char":
+			case "Class":
+			case "Const":
+			case "Continue":
+			case "Default":
+			case "Delete":
+			case "Do":
+			case "Double":
+			case "Else":
+			case "Enum":
+			case "Explicit":
+			case "Export":
+			case "Extern":
+			case "False":
+			case "Float":
+			case "For":
+			case "Goto":
+			case "If":
+			case "Inline":
+			case "Int":
+			case "Long":
+			case "Namespace":
+			case "New":
+			case "Not":
+			case "Nullptr":
+			case "Operator":
+			case "Or":
+			case "Override":
+			case "Private":
+			case "Protected":
+			case "Public":
+			case "Register":
+			case "Return":
+			case "Short":
+			case "Signed":
+			case "Sizeof":
+			case "Static":
+			case "Struct":
+			case "Switch":
+			case "Throw":
+			case "True":
+			case "Try":
+			case "Typedef":
+			case "Union":
+			case "Unsigned":
+			case "Using":
+			case "Virtual":
+			case "Void":
+			case "Volatile":
+			case "While":
+			case "Xor":
+			case "and":
+			case "asm":
+			case "auto":
+			case "catch":
+			case "char":
+			case "delete":
+			case "explicit":
+			case "export":
+			case "extern":
+			case "goto":
+			case "inline":
+			case "namespace":
+			case "not":
+			case "nullptr":
+			case "operator":
+			case "or":
+			case "private":
+			case "register":
+			case "signed":
+			case "sizeof":
+			case "struct":
+			case "try":
+			case "typedef":
+			case "union":
+			case "unsigned":
+			case "using":
+			case "volatile":
+			case "xor":
+				WriteChar('_');
+				break;
+			default:
+				break;
+			}
+		}
+
+		protected override void WriteName(CiSymbol symbol)
+		{
+			switch (symbol) {
+			case CiContainerType _:
+				Write(symbol.Name);
+				break;
+			case CiVar _:
+			case CiMember _:
+				WriteCamelCaseNotKeyword(symbol.Name);
+				break;
+			default:
+				throw new NotImplementedException();
+			}
+		}
+
+		protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
+		{
+			if (symbol is CiField)
+				Write("this->");
+			WriteName(symbol);
+		}
+
+		void WriteCollectionType(string name, CiType elementType)
+		{
+			Include(name);
+			Write("std::");
+			Write(name);
+			WriteChar('<');
+			WriteType(elementType, false);
+			WriteChar('>');
+		}
+
+		protected override void WriteType(CiType type, bool promote)
+		{
+			switch (type) {
+			case CiIntegerType _:
+				WriteNumericType(GetTypeId(type, promote));
+				break;
+			case CiDynamicPtrType dynamic:
+				switch (dynamic.Class.Id) {
+				case CiId.RegexClass:
+					Include("regex");
+					Write("std::regex");
+					break;
+				case CiId.ArrayPtrClass:
+					Include("memory");
+					Write("std::shared_ptr<");
+					WriteType(dynamic.GetElementType(), false);
+					Write("[]>");
+					break;
+				default:
+					Include("memory");
+					Write("std::shared_ptr<");
+					Write(dynamic.Class.Name);
+					WriteChar('>');
+					break;
+				}
+				break;
+			case CiClassType klass:
+				if (klass.Class.TypeParameterCount == 0) {
+					if (klass.Class.Id == CiId.StringClass) {
+						string cppType = klass.Id == CiId.StringStorageType ? "string" : "string_view";
+						Include(cppType);
+						Write("std::");
+						Write(cppType);
+						break;
+					}
+					if (!(klass is CiReadWriteClassType))
+						Write("const ");
+					switch (klass.Class.Id) {
+					case CiId.TextWriterClass:
+						Include("iostream");
+						Write("std::ostream");
+						break;
+					case CiId.StringWriterClass:
+						Include("sstream");
+						Write("std::stringstream");
+						break;
+					case CiId.RegexClass:
+						Include("regex");
+						Write("std::regex");
+						break;
+					case CiId.MatchClass:
+						Include("regex");
+						Write("std::cmatch");
+						break;
+					case CiId.LockClass:
+						Include("mutex");
+						Write("std::recursive_mutex");
+						break;
+					default:
+						Write(klass.Class.Name);
+						break;
+					}
+				}
+				else if (klass.Class.Id == CiId.ArrayPtrClass) {
+					WriteType(klass.GetElementType(), false);
+					if (!(klass is CiReadWriteClassType))
+						Write(" const");
+				}
+				else {
+					string cppType;
+					switch (klass.Class.Id) {
+					case CiId.ArrayStorageClass:
+						cppType = "array";
+						break;
+					case CiId.ListClass:
+						cppType = "vector";
+						break;
+					case CiId.QueueClass:
+						cppType = "queue";
+						break;
+					case CiId.StackClass:
+						cppType = "stack";
+						break;
+					case CiId.HashSetClass:
+						cppType = "unordered_set";
+						break;
+					case CiId.SortedSetClass:
+						cppType = "set";
+						break;
+					case CiId.DictionaryClass:
+						cppType = "unordered_map";
+						break;
+					case CiId.SortedDictionaryClass:
+						cppType = "map";
+						break;
+					default:
+						NotSupported(type, klass.Class.Name);
+						cppType = "NOT_SUPPORTED";
+						break;
+					}
+					Include(cppType);
+					if (!(klass is CiReadWriteClassType))
+						Write("const ");
+					Write("std::");
+					Write(cppType);
+					WriteChar('<');
+					WriteType(klass.TypeArg0, false);
+					if (klass is CiArrayStorageType arrayStorage) {
+						Write(", ");
+						VisitLiteralLong(arrayStorage.Length);
+					}
+					else if (klass.Class.TypeParameterCount == 2) {
+						Write(", ");
+						WriteType(klass.GetValueType(), false);
+					}
+					WriteChar('>');
+				}
+				if (!(klass is CiStorageType))
+					Write(" *");
+				break;
+			default:
+				Write(type.Name);
+				break;
+			}
+		}
+
+		protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
+		{
+			Include("memory");
+			Write("std::make_shared<");
+			WriteType(elementType, false);
+			Write("[]>(");
+			lengthExpr.Accept(this, CiPriority.Argument);
+			WriteChar(')');
+		}
+
+		protected override void WriteNew(CiReadWriteClassType klass, CiPriority parent)
+		{
+			Include("memory");
+			Write("std::make_shared<");
+			Write(klass.Class.Name);
+			Write(">()");
+		}
+
+		protected override void WriteStorageInit(CiNamedValue def)
+		{
+		}
+
+		protected override void WriteVarInit(CiNamedValue def)
+		{
+			if (def.Value != null && def.Type.Id == CiId.StringStorageType) {
+				WriteChar('{');
+				def.Value.Accept(this, CiPriority.Argument);
+				WriteChar('}');
+			}
+			else if (def.Type is CiArrayStorageType) {
+				switch (def.Value) {
+				case null:
+					break;
+				case CiLiteral literal when literal.IsDefaultValue():
+					Write(" {}");
+					break;
+				default:
+					throw new NotImplementedException();
+				}
+			}
+			else
+				base.WriteVarInit(def);
+		}
+
+		static bool IsSharedPtr(CiExpr expr)
+		{
+			if (expr.Type is CiDynamicPtrType)
+				return true;
+			return expr is CiSymbolReference symbol && symbol.Symbol.Parent is CiForeach loop && loop.Collection.Type.AsClassType().GetElementType() is CiDynamicPtrType;
+		}
+
+		protected override void WriteStaticCast(CiType type, CiExpr expr)
+		{
+			if (type is CiDynamicPtrType dynamic) {
+				Write("std::static_pointer_cast<");
+				Write(dynamic.Class.Name);
+			}
+			else {
+				Write("static_cast<");
+				WriteType(type, false);
+			}
+			Write(">(");
+			if (expr.Type is CiStorageType) {
+				WriteChar('&');
+				expr.Accept(this, CiPriority.Primary);
+			}
+			else if (!(type is CiDynamicPtrType) && IsSharedPtr(expr))
+				WritePostfix(expr, ".get()");
+			else
+				GetStaticCastInner(type, expr).Accept(this, CiPriority.Argument);
+			WriteChar(')');
+		}
+
+		static bool NeedStringPtrData(CiExpr expr)
+		{
+			if (expr is CiCallExpr call && call.Method.Symbol.Id == CiId.EnvironmentGetEnvironmentVariable)
+				return false;
+			return expr.Type.Id == CiId.StringPtrType;
+		}
+
+		protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+		{
+			if (NeedStringPtrData(expr.Left) && expr.Right.Type.Id == CiId.NullType) {
+				WritePostfix(expr.Left, ".data()");
+				Write(GetEqOp(not));
+				Write("nullptr");
+			}
+			else if (expr.Left.Type.Id == CiId.NullType && NeedStringPtrData(expr.Right)) {
+				Write("nullptr");
+				Write(GetEqOp(not));
+				WritePostfix(expr.Right, ".data()");
+			}
+			else
+				base.WriteEqual(expr, parent, not);
+		}
+
+		static bool IsClassPtr(CiType type) => type is CiClassType ptr && !(type is CiStorageType) && ptr.Class.Id != CiId.StringClass && ptr.Class.Id != CiId.ArrayPtrClass;
+
+		static bool IsCppPtr(CiExpr expr)
+		{
+			if (IsClassPtr(expr.Type)) {
+				if (expr is CiSymbolReference symbol && symbol.Symbol.Parent is CiForeach loop && loop.Collection.Type.AsClassType().GetElementType() is CiStorageType)
+					return false;
+				return true;
+			}
+			return false;
+		}
+
+		protected override void WriteIndexingExpr(CiBinaryExpr expr, CiPriority parent)
+		{
+			CiClassType klass = (CiClassType) expr.Left.Type;
+			if (parent != CiPriority.Assign) {
+				switch (klass.Class.Id) {
+				case CiId.DictionaryClass:
+				case CiId.SortedDictionaryClass:
+				case CiId.OrderedDictionaryClass:
+					StartMethodCall(expr.Left);
+					Write("find(");
+					WriteStronglyCoerced(klass.GetKeyType(), expr.Right);
+					Write(")->second");
+					return;
+				default:
+					break;
+				}
+			}
+			if (IsClassPtr(expr.Left.Type)) {
+				Write("(*");
+				expr.Left.Accept(this, CiPriority.Primary);
+				WriteChar(')');
+			}
+			else
+				expr.Left.Accept(this, CiPriority.Primary);
+			WriteChar('[');
+			switch (klass.Class.Id) {
+			case CiId.ArrayPtrClass:
+			case CiId.ArrayStorageClass:
+			case CiId.ListClass:
+				expr.Right.Accept(this, CiPriority.Argument);
+				break;
+			default:
+				WriteStronglyCoerced(klass.GetKeyType(), expr.Right);
+				break;
+			}
+			WriteChar(']');
+		}
+
+		protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
+		{
+			if (symbol != null && symbol.Symbol is CiConst)
+				Write("::");
+			else if (IsCppPtr(left))
+				Write("->");
+			else
+				WriteChar('.');
+		}
+
+		protected override void WriteEnumAsInt(CiExpr expr, CiPriority parent)
+		{
+			Write("static_cast<int>(");
+			expr.Accept(this, CiPriority.Argument);
+			WriteChar(')');
+		}
+
+		void WriteCollectionObject(CiExpr obj, CiPriority priority)
+		{
+			if (obj.Type is CiStorageType)
+				obj.Accept(this, priority);
+			else {
+				WriteChar('*');
+				obj.Accept(this, CiPriority.Primary);
+			}
+		}
+
+		void WriteBeginEnd(CiExpr obj)
+		{
+			StartMethodCall(obj);
+			Write("begin(), ");
+			StartMethodCall(obj);
+			Write("end()");
+		}
+
+		void WriteNotRawStringLiteral(CiExpr obj, CiPriority priority)
+		{
+			obj.Accept(this, priority);
+			if (obj is CiLiteralString) {
+				Include("string_view");
+				this.UsingStringViewLiterals = true;
+				Write("sv");
+			}
+		}
+
+		void WriteStringMethod(CiExpr obj, string name, CiMethod method, List<CiExpr> args)
+		{
+			WriteNotRawStringLiteral(obj, CiPriority.Primary);
+			WriteChar('.');
+			Write(name);
+			int c = GetOneAscii(args[0]);
+			if (c >= 0) {
+				WriteChar('(');
+				VisitLiteralChar(c);
+				WriteChar(')');
+			}
+			else
+				WriteArgsInParentheses(method, args);
+		}
+
+		void WriteAllAnyContains(string function, CiExpr obj, List<CiExpr> args)
+		{
+			Include("algorithm");
+			Write("std::");
+			Write(function);
+			WriteChar('(');
+			WriteBeginEnd(obj);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Argument);
+			WriteChar(')');
+		}
+
+		void WriteCString(CiExpr expr)
+		{
+			if (expr is CiLiteralString)
+				expr.Accept(this, CiPriority.Argument);
+			else
+				WritePostfix(expr, ".data()");
+		}
+
+		void WriteRegex(List<CiExpr> args, int argIndex)
+		{
+			Include("regex");
+			Write("std::regex(");
+			args[argIndex].Accept(this, CiPriority.Argument);
+			WriteRegexOptions(args, ", std::regex::ECMAScript | ", " | ", "", "std::regex::icase", "std::regex::multiline", "std::regex::NOT_SUPPORTED_singleline");
+			WriteChar(')');
+		}
+
+		void WriteWrite(List<CiExpr> args, bool newLine)
+		{
+			Include("iostream");
+			if (args.Count == 1) {
+				if (args[0] is CiInterpolatedString interpolated) {
+					bool uppercase = false;
+					bool hex = false;
+					int flt = 'G';
+					foreach (CiInterpolatedPart part in interpolated.Parts) {
+						switch (part.Format) {
+						case 'E':
+						case 'G':
+						case 'X':
+							if (!uppercase) {
+								Write(" << std::uppercase");
+								uppercase = true;
+							}
+							break;
+						case 'e':
+						case 'g':
+						case 'x':
+							if (uppercase) {
+								Write(" << std::nouppercase");
+								uppercase = false;
+							}
+							break;
+						default:
+							break;
+						}
+						switch (part.Format) {
+						case 'E':
+						case 'e':
+							if (flt != 'E') {
+								Write(" << std::scientific");
+								flt = 'E';
+							}
+							break;
+						case 'F':
+						case 'f':
+							if (flt != 'F') {
+								Write(" << std::fixed");
+								flt = 'F';
+							}
+							break;
+						case 'X':
+						case 'x':
+							if (!hex) {
+								Write(" << std::hex");
+								hex = true;
+							}
+							break;
+						default:
+							if (hex) {
+								Write(" << std::dec");
+								hex = false;
+							}
+							if (flt != 'G') {
+								Write(" << std::defaultfloat");
+								flt = 'G';
+							}
+							break;
+						}
+						if (part.Prefix.Length > 0) {
+							Write(" << ");
+							VisitLiteralString(part.Prefix);
+						}
+						Write(" << ");
+						part.Argument.Accept(this, CiPriority.Mul);
+					}
+					if (uppercase)
+						Write(" << std::nouppercase");
+					if (hex)
+						Write(" << std::dec");
+					if (flt != 'G')
+						Write(" << std::defaultfloat");
+					if (interpolated.Suffix.Length > 0) {
+						Write(" << ");
+						if (newLine) {
+							WriteStringLiteralWithNewLine(interpolated.Suffix);
+							return;
+						}
+						VisitLiteralString(interpolated.Suffix);
+					}
+				}
+				else {
+					Write(" << ");
+					if (newLine && args[0] is CiLiteralString literal) {
+						WriteStringLiteralWithNewLine(literal.Value);
+						return;
+					}
+					else if (args[0] is CiLiteralChar)
+						WriteCall("static_cast<int>", args[0]);
+					else
+						args[0].Accept(this, CiPriority.Mul);
+				}
+			}
+			if (newLine)
+				Write(" << '\\n'");
+		}
+
+		void WriteRegexArgument(CiExpr expr)
+		{
+			if (expr.Type is CiDynamicPtrType)
+				expr.Accept(this, CiPriority.Argument);
+			else {
+				WriteChar('*');
+				expr.Accept(this, CiPriority.Primary);
+			}
+		}
+
+		protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
+		{
+			switch (method.Id) {
+			case CiId.None:
+			case CiId.ClassToString:
+			case CiId.ListClear:
+			case CiId.StackPush:
+			case CiId.HashSetClear:
+			case CiId.HashSetContains:
+			case CiId.SortedSetClear:
+			case CiId.SortedSetContains:
+			case CiId.DictionaryClear:
+			case CiId.SortedDictionaryClear:
+				if (obj != null) {
+					if (IsReferenceTo(obj, CiId.BasePtr)) {
+						WriteName(method.Parent);
+						Write("::");
+					}
+					else {
+						obj.Accept(this, CiPriority.Primary);
+						if (method.CallType == CiCallType.Static)
+							Write("::");
+						else
+							WriteMemberOp(obj, null);
+					}
+				}
+				WriteName(method);
+				WriteArgsInParentheses(method, args);
+				break;
+			case CiId.EnumHasFlag:
+				WriteEnumHasFlag(obj, args, parent);
+				break;
+			case CiId.IntTryParse:
+			case CiId.LongTryParse:
+				Include("cstdlib");
+				Write("[&] { char *ciend; ");
+				obj.Accept(this, CiPriority.Assign);
+				Write(" = std::strtol");
+				if (method.Id == CiId.LongTryParse)
+					WriteChar('l');
+				WriteChar('(');
+				WriteCString(args[0]);
+				Write(", &ciend");
+				WriteTryParseRadix(args);
+				Write("); return *ciend == '\\0'; }()");
+				break;
+			case CiId.DoubleTryParse:
+				Include("cstdlib");
+				Write("[&] { char *ciend; ");
+				obj.Accept(this, CiPriority.Assign);
+				Write(" = std::strtod(");
+				WriteCString(args[0]);
+				Write(", &ciend); return *ciend == '\\0'; }()");
+				break;
+			case CiId.StringContains:
+				if (parent > CiPriority.Equality)
+					WriteChar('(');
+				WriteStringMethod(obj, "find", method, args);
+				Write(" != std::string::npos");
+				if (parent > CiPriority.Equality)
+					WriteChar(')');
+				break;
+			case CiId.StringEndsWith:
+				WriteStringMethod(obj, "ends_with", method, args);
+				break;
+			case CiId.StringIndexOf:
+				Write("static_cast<int>(");
+				WriteStringMethod(obj, "find", method, args);
+				WriteChar(')');
+				break;
+			case CiId.StringLastIndexOf:
+				Write("static_cast<int>(");
+				WriteStringMethod(obj, "rfind", method, args);
+				WriteChar(')');
+				break;
+			case CiId.StringReplace:
+				this.StringReplace = true;
+				WriteCall("CiString_replace", obj, args[0], args[1]);
+				break;
+			case CiId.StringStartsWith:
+				WriteStringMethod(obj, "starts_with", method, args);
+				break;
+			case CiId.StringSubstring:
+				WriteStringMethod(obj, "substr", method, args);
+				break;
+			case CiId.ArrayBinarySearchAll:
+			case CiId.ArrayBinarySearchPart:
+				Include("algorithm");
+				if (parent > CiPriority.Add)
+					WriteChar('(');
+				Write("std::lower_bound(");
+				if (args.Count == 1)
+					WriteBeginEnd(obj);
+				else {
+					WriteArrayPtrAdd(obj, args[1]);
+					Write(", ");
+					WriteArrayPtrAdd(obj, args[1]);
+					Write(" + ");
+					args[2].Accept(this, CiPriority.Add);
+				}
+				Write(", ");
+				args[0].Accept(this, CiPriority.Argument);
+				Write(") - ");
+				WriteArrayPtr(obj, CiPriority.Mul);
+				if (parent > CiPriority.Add)
+					WriteChar(')');
+				break;
+			case CiId.ArrayCopyTo:
+			case CiId.ListCopyTo:
+				Include("algorithm");
+				Write("std::copy_n(");
+				WriteArrayPtrAdd(obj, args[0]);
+				Write(", ");
+				args[3].Accept(this, CiPriority.Argument);
+				Write(", ");
+				WriteArrayPtrAdd(args[1], args[2]);
+				WriteChar(')');
+				break;
+			case CiId.ArrayFillAll:
+				StartMethodCall(obj);
+				Write("fill(");
+				WriteCoerced(obj.Type.AsClassType().GetElementType(), args[0], CiPriority.Argument);
+				WriteChar(')');
+				break;
+			case CiId.ArrayFillPart:
+				Include("algorithm");
+				Write("std::fill_n(");
+				WriteArrayPtrAdd(obj, args[1]);
+				Write(", ");
+				args[2].Accept(this, CiPriority.Argument);
+				Write(", ");
+				args[0].Accept(this, CiPriority.Argument);
+				WriteChar(')');
+				break;
+			case CiId.ArraySortAll:
+			case CiId.ListSortAll:
+				Include("algorithm");
+				Write("std::sort(");
+				WriteBeginEnd(obj);
+				WriteChar(')');
+				break;
+			case CiId.ArraySortPart:
+			case CiId.ListSortPart:
+				Include("algorithm");
+				Write("std::sort(");
+				WriteArrayPtrAdd(obj, args[0]);
+				Write(", ");
+				WriteArrayPtrAdd(obj, args[0]);
+				Write(" + ");
+				args[1].Accept(this, CiPriority.Add);
+				WriteChar(')');
+				break;
+			case CiId.ListAdd:
+				StartMethodCall(obj);
+				if (args.Count == 0)
+					Write("emplace_back()");
+				else {
+					Write("push_back(");
+					WriteCoerced(obj.Type.AsClassType().GetElementType(), args[0], CiPriority.Argument);
+					WriteChar(')');
+				}
+				break;
+			case CiId.ListAddRange:
+				StartMethodCall(obj);
+				Write("insert(");
+				StartMethodCall(obj);
+				Write("end(), ");
+				WriteBeginEnd(args[0]);
+				WriteChar(')');
+				break;
+			case CiId.ListAll:
+				WriteAllAnyContains("all_of", obj, args);
+				break;
+			case CiId.ListAny:
+				Include("algorithm");
+				WriteAllAnyContains("any_of", obj, args);
+				break;
+			case CiId.ListContains:
+				if (parent > CiPriority.Equality)
+					WriteChar('(');
+				WriteAllAnyContains("find", obj, args);
+				Write(" != ");
+				StartMethodCall(obj);
+				Write("end()");
+				if (parent > CiPriority.Equality)
+					WriteChar(')');
+				break;
+			case CiId.ListIndexOf:
+				{
+					CiType elementType = obj.Type.AsClassType().GetElementType();
+					Write("[](const ");
+					WriteCollectionType("vector", elementType);
+					Write(" &v, ");
+					WriteType(elementType, false);
+					Include("algorithm");
+					Write(" value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(");
+					WriteCollectionObject(obj, CiPriority.Argument);
+					Write(", ");
+					WriteCoerced(elementType, args[0], CiPriority.Argument);
+					WriteChar(')');
+				}
+				break;
+			case CiId.ListInsert:
+				StartMethodCall(obj);
+				if (args.Count == 1) {
+					Write("emplace(");
+					WriteArrayPtrAdd(obj, args[0]);
+				}
+				else {
+					Write("insert(");
+					WriteArrayPtrAdd(obj, args[0]);
+					Write(", ");
+					WriteCoerced(obj.Type.AsClassType().GetElementType(), args[1], CiPriority.Argument);
+				}
+				WriteChar(')');
+				break;
+			case CiId.ListLast:
+				StartMethodCall(obj);
+				Write("back()");
+				break;
+			case CiId.ListRemoveAt:
+				StartMethodCall(obj);
+				Write("erase(");
+				WriteArrayPtrAdd(obj, args[0]);
+				WriteChar(')');
+				break;
+			case CiId.ListRemoveRange:
+				StartMethodCall(obj);
+				Write("erase(");
+				WriteArrayPtrAdd(obj, args[0]);
+				Write(", ");
+				WriteArrayPtrAdd(obj, args[0]);
+				Write(" + ");
+				args[1].Accept(this, CiPriority.Add);
+				WriteChar(')');
+				break;
+			case CiId.QueueClear:
+			case CiId.StackClear:
+				WriteCollectionObject(obj, CiPriority.Assign);
+				Write(" = {}");
+				break;
+			case CiId.QueueDequeue:
+				if (parent == CiPriority.Statement) {
+					StartMethodCall(obj);
+					Write("pop()");
+				}
+				else {
+					CiType elementType = obj.Type.AsClassType().GetElementType();
+					Write("[](");
+					WriteCollectionType("queue", elementType);
+					Write(" &q) { ");
+					WriteType(elementType, false);
+					Write(" front = q.front(); q.pop(); return front; }(");
+					WriteCollectionObject(obj, CiPriority.Argument);
+					WriteChar(')');
+				}
+				break;
+			case CiId.QueueEnqueue:
+				WriteMethodCall(obj, "push", args[0]);
+				break;
+			case CiId.QueuePeek:
+				StartMethodCall(obj);
+				Write("front()");
+				break;
+			case CiId.StackPeek:
+				StartMethodCall(obj);
+				Write("top()");
+				break;
+			case CiId.StackPop:
+				if (parent == CiPriority.Statement) {
+					StartMethodCall(obj);
+					Write("pop()");
+				}
+				else {
+					CiType elementType = obj.Type.AsClassType().GetElementType();
+					Write("[](");
+					WriteCollectionType("stack", elementType);
+					Write(" &s) { ");
+					WriteType(elementType, false);
+					Write(" top = s.top(); s.pop(); return top; }(");
+					WriteCollectionObject(obj, CiPriority.Argument);
+					WriteChar(')');
+				}
+				break;
+			case CiId.HashSetAdd:
+			case CiId.SortedSetAdd:
+				WriteMethodCall(obj, obj.Type.AsClassType().GetElementType().Id == CiId.StringStorageType && args[0].Type.Id == CiId.StringPtrType ? "emplace" : "insert", args[0]);
+				break;
+			case CiId.HashSetRemove:
+			case CiId.SortedSetRemove:
+			case CiId.DictionaryRemove:
+			case CiId.SortedDictionaryRemove:
+				WriteMethodCall(obj, "erase", args[0]);
+				break;
+			case CiId.DictionaryAdd:
+				WriteIndexing(obj, args[0]);
+				break;
+			case CiId.DictionaryContainsKey:
+			case CiId.SortedDictionaryContainsKey:
+				if (parent > CiPriority.Equality)
+					WriteChar('(');
+				StartMethodCall(obj);
+				Write("count");
+				WriteArgsInParentheses(method, args);
+				Write(" != 0");
+				if (parent > CiPriority.Equality)
+					WriteChar(')');
+				break;
+			case CiId.TextWriterWrite:
+				WriteCollectionObject(obj, CiPriority.Shift);
+				WriteWrite(args, false);
+				break;
+			case CiId.TextWriterWriteChar:
+				WriteCollectionObject(obj, CiPriority.Shift);
+				Write(" << ");
+				if (args[0] is CiLiteralChar)
+					args[0].Accept(this, CiPriority.Mul);
+				else
+					WriteCall("static_cast<char>", args[0]);
+				break;
+			case CiId.TextWriterWriteLine:
+				WriteCollectionObject(obj, CiPriority.Shift);
+				WriteWrite(args, true);
+				break;
+			case CiId.ConsoleWrite:
+				Write("std::cout");
+				WriteWrite(args, false);
+				break;
+			case CiId.ConsoleWriteLine:
+				Write("std::cout");
+				WriteWrite(args, true);
+				break;
+			case CiId.StringWriterToString:
+				StartMethodCall(obj);
+				Write("view()");
+				break;
+			case CiId.UTF8GetByteCount:
+				if (args[0] is CiLiteral) {
+					if (parent > CiPriority.Add)
+						WriteChar('(');
+					Write("sizeof(");
+					args[0].Accept(this, CiPriority.Argument);
+					Write(") - 1");
+					if (parent > CiPriority.Add)
+						WriteChar(')');
+				}
+				else
+					WriteStringLength(args[0]);
+				break;
+			case CiId.UTF8GetBytes:
+				if (args[0] is CiLiteral) {
+					Include("algorithm");
+					Write("std::copy_n(");
+					args[0].Accept(this, CiPriority.Argument);
+					Write(", sizeof(");
+					args[0].Accept(this, CiPriority.Argument);
+					Write(") - 1, ");
+					WriteArrayPtrAdd(args[1], args[2]);
+					WriteChar(')');
+				}
+				else {
+					WritePostfix(args[0], ".copy(reinterpret_cast<char *>(");
+					WriteArrayPtrAdd(args[1], args[2]);
+					Write("), ");
+					WritePostfix(args[0], ".size())");
+				}
+				break;
+			case CiId.UTF8GetString:
+				Include("string_view");
+				Write("std::string_view(reinterpret_cast<const char *>(");
+				WriteArrayPtrAdd(args[0], args[1]);
+				Write("), ");
+				args[2].Accept(this, CiPriority.Argument);
+				WriteChar(')');
+				break;
+			case CiId.EnvironmentGetEnvironmentVariable:
+				Include("cstdlib");
+				Write("std::getenv(");
+				WriteCString(args[0]);
+				WriteChar(')');
+				break;
+			case CiId.RegexCompile:
+				WriteRegex(args, 0);
+				break;
+			case CiId.RegexIsMatchStr:
+			case CiId.RegexIsMatchRegex:
+			case CiId.MatchFindStr:
+			case CiId.MatchFindRegex:
+				Write("std::regex_search(");
+				if (args[0].Type.Id == CiId.StringPtrType && !(args[0] is CiLiteral))
+					WriteBeginEnd(args[0]);
+				else
+					args[0].Accept(this, CiPriority.Argument);
+				if (method.Id == CiId.MatchFindStr || method.Id == CiId.MatchFindRegex) {
+					Write(", ");
+					obj.Accept(this, CiPriority.Argument);
+				}
+				Write(", ");
+				if (method.Id == CiId.RegexIsMatchRegex)
+					WriteRegexArgument(obj);
+				else if (method.Id == CiId.MatchFindRegex)
+					WriteRegexArgument(args[1]);
+				else
+					WriteRegex(args, 1);
+				WriteChar(')');
+				break;
+			case CiId.MatchGetCapture:
+				StartMethodCall(obj);
+				WriteCall("str", args[0]);
+				break;
+			case CiId.MathMethod:
+			case CiId.MathAbs:
+			case CiId.MathIsFinite:
+			case CiId.MathIsNaN:
+			case CiId.MathLog2:
+			case CiId.MathRound:
+				IncludeMath();
+				Write("std::");
+				WriteLowercase(method.Name);
+				WriteArgsInParentheses(method, args);
+				break;
+			case CiId.MathCeiling:
+				IncludeMath();
+				WriteCall("std::ceil", args[0]);
+				break;
+			case CiId.MathClamp:
+				Include("algorithm");
+				WriteCall("std::clamp", args[0], args[1], args[2]);
+				break;
+			case CiId.MathFusedMultiplyAdd:
+				IncludeMath();
+				WriteCall("std::fma", args[0], args[1], args[2]);
+				break;
+			case CiId.MathIsInfinity:
+				IncludeMath();
+				WriteCall("std::isinf", args[0]);
+				break;
+			case CiId.MathMaxInt:
+			case CiId.MathMaxDouble:
+				Include("algorithm");
+				WriteCall("std::max", args[0], args[1]);
+				break;
+			case CiId.MathMinInt:
+			case CiId.MathMinDouble:
+				Include("algorithm");
+				WriteCall("std::min", args[0], args[1]);
+				break;
+			case CiId.MathTruncate:
+				IncludeMath();
+				WriteCall("std::trunc", args[0]);
+				break;
+			default:
+				NotSupported(obj, method.Name);
+				break;
+			}
+		}
+
+		protected override void WriteResource(string name, int length)
+		{
+			if (length >= 0)
+				Write("CiResource::");
+			foreach (int c in name)
+				WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+		}
+
+		protected override void WriteArrayPtr(CiExpr expr, CiPriority parent)
+		{
+			switch (expr.Type) {
+			case CiArrayStorageType _:
+			case CiStringType _:
+				WritePostfix(expr, ".data()");
+				break;
+			case CiDynamicPtrType _:
+				WritePostfix(expr, ".get()");
+				break;
+			case CiClassType klass when klass.Class.Id == CiId.ListClass:
+				StartMethodCall(expr);
+				Write("begin()");
+				break;
+			default:
+				expr.Accept(this, parent);
+				break;
+			}
+		}
+
+		protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
+		{
+			if (type is CiClassType klass && !(klass is CiDynamicPtrType) && !(klass is CiStorageType)) {
+				if (klass.Class.Id == CiId.StringClass) {
+					if (expr.Type.Id == CiId.NullType) {
+						Include("string_view");
+						Write("std::string_view(nullptr, 0)");
+					}
+					else
+						expr.Accept(this, parent);
+					return;
+				}
+				if (klass.Class.Id == CiId.ArrayPtrClass) {
+					WriteArrayPtr(expr, parent);
+					return;
+				}
+				if (IsSharedPtr(expr)) {
+					if (klass.Class.Id == CiId.RegexClass) {
+						WriteChar('&');
+						expr.Accept(this, CiPriority.Primary);
+					}
+					else
+						WritePostfix(expr, ".get()");
+					return;
+				}
+				if (expr.Type is CiClassType && !IsCppPtr(expr)) {
+					WriteChar('&');
+					if (expr is CiCallExpr) {
+						Write("static_cast<");
+						if (!(klass is CiReadWriteClassType))
+							Write("const ");
+						WriteName(klass.Class);
+						Write(" &>(");
+						expr.Accept(this, CiPriority.Argument);
+						WriteChar(')');
+					}
+					else
+						expr.Accept(this, CiPriority.Primary);
+					return;
+				}
+			}
+			base.WriteCoercedInternal(type, expr, parent);
+		}
+
+		protected override void WriteSelectValues(CiType type, CiSelectExpr expr)
+		{
+			if (expr.OnTrue.Type is CiClassType trueClass && expr.OnFalse.Type is CiClassType falseClass && !trueClass.Class.IsSameOrBaseOf(falseClass.Class) && !falseClass.Class.IsSameOrBaseOf(trueClass.Class)) {
+				WriteStaticCast(type, expr.OnTrue);
+				Write(" : ");
+				WriteStaticCast(type, expr.OnFalse);
+			}
+			else
+				base.WriteSelectValues(type, expr);
+		}
+
+		protected override void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not)
+		{
+			left.Accept(this, CiPriority.Equality);
+			Write(GetEqOp(not));
+			right.Accept(this, CiPriority.Equality);
+		}
+
+		protected override void WriteStringLength(CiExpr expr)
+		{
+			WriteNotRawStringLiteral(expr, CiPriority.Primary);
+			Write(".length()");
+		}
+
+		void WriteMatchProperty(CiSymbolReference expr, string name)
+		{
+			StartMethodCall(expr.Left);
+			Write(name);
+			Write("()");
+		}
+
+		public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
+		{
+			switch (expr.Symbol.Id) {
+			case CiId.ConsoleError:
+				Write("std::cerr");
+				break;
+			case CiId.ListCount:
+			case CiId.QueueCount:
+			case CiId.StackCount:
+			case CiId.HashSetCount:
+			case CiId.SortedSetCount:
+			case CiId.DictionaryCount:
+			case CiId.SortedDictionaryCount:
+			case CiId.OrderedDictionaryCount:
+				expr.Left.Accept(this, CiPriority.Primary);
+				WriteMemberOp(expr.Left, expr);
+				Write("size()");
+				break;
+			case CiId.MatchStart:
+				WriteMatchProperty(expr, "position");
+				break;
+			case CiId.MatchEnd:
+				if (parent > CiPriority.Add)
+					WriteChar('(');
+				WriteMatchProperty(expr, "position");
+				Write(" + ");
+				WriteMatchProperty(expr, "length");
+				if (parent > CiPriority.Add)
+					WriteChar(')');
+				break;
+			case CiId.MatchLength:
+				WriteMatchProperty(expr, "length");
+				break;
+			case CiId.MatchValue:
+				WriteMatchProperty(expr, "str");
+				break;
+			default:
+				base.VisitSymbolReference(expr, parent);
+				break;
+			}
+		}
+
+		void WriteGtRawPtr(CiExpr expr)
+		{
+			Write(">(");
+			if (IsSharedPtr(expr))
+				WritePostfix(expr, ".get()");
+			else
+				expr.Accept(this, CiPriority.Argument);
+			WriteChar(')');
+		}
+
+		void WriteIsVar(CiExpr expr, CiVar def, CiPriority parent)
+		{
+			if (parent > CiPriority.Assign)
+				WriteChar('(');
+			if (def.Name != "_") {
+				WriteName(def);
+				Write(" = ");
+			}
+			if (def.Type is CiDynamicPtrType dynamic) {
+				Write("std::dynamic_pointer_cast<");
+				Write(dynamic.Class.Name);
+				WriteCall(">", expr);
+			}
+			else {
+				Write("dynamic_cast<");
+				WriteType(def.Type, true);
+				WriteGtRawPtr(expr);
+			}
+			if (parent > CiPriority.Assign)
+				WriteChar(')');
+		}
+
+		public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
+		{
+			
+			switch (expr.Op) {
+			case CiToken.Plus when expr.Type.Id == CiId.StringStorageType:
+				if (parent > CiPriority.Add)
+					WriteChar('(');
+				// https://stackoverflow.com/questions/44636549/why-is-there-no-support-for-concatenating-stdstring-and-stdstring-view
+				WriteStronglyCoerced(expr.Type, expr.Left);
+				Write(" + ");
+				WriteStronglyCoerced(expr.Type, expr.Right);
+				if (parent > CiPriority.Add)
+					WriteChar(')');
+				return;
+			case CiToken.Equal:
+			case CiToken.NotEqual:
+			case CiToken.Greater:
+				CiExpr str = IsStringEmpty(expr);
+				if (str != null) {
+					if (expr.Op != CiToken.Equal)
+						WriteChar('!');
+					WritePostfix(str, ".empty()");
+					return;
+				}
+				break;
+			case CiToken.Assign when expr.Left.Type.Id == CiId.StringStorageType && parent == CiPriority.Statement && IsTrimSubstring(expr) is CiExpr length:
+				WriteMethodCall(expr.Left, "resize", length);
+				return;
+			case CiToken.Is:
+				if (expr.Right is CiSymbolReference symbol) {
+					if (parent >= CiPriority.Or && parent <= CiPriority.Mul)
+						Write("!!");
+					Write("dynamic_cast<const ");
+					Write(symbol.Symbol.Name);
+					Write(" *");
+					WriteGtRawPtr(expr.Left);
+				}
+				else
+					WriteIsVar(expr.Left, (CiVar) expr.Right, parent);
+				return;
+			default:
+				break;
+			}
+		base.VisitBinaryExpr(expr, parent);
+		}
+
+		public override void VisitLambdaExpr(CiLambdaExpr expr)
+		{
+			Write("[](const ");
+			WriteType(expr.First.Type, false);
+			Write(" &");
+			WriteName(expr.First);
+			Write(") { return ");
+			expr.Body.Accept(this, CiPriority.Argument);
+			Write("; }");
+		}
+
+		protected override void WriteUnreachable(CiAssert statement)
+		{
+			Include("cstdlib");
+			Write("std::");
+			base.WriteUnreachable(statement);
+		}
+
+		protected override void WriteConst(CiConst konst)
+		{
+			Write("static constexpr ");
+			WriteTypeAndName(konst);
+			Write(" = ");
+			konst.Value.Accept(this, CiPriority.Argument);
+			WriteCharLine(';');
+		}
+
+		public override void VisitForeach(CiForeach statement)
+		{
+			CiVar element = statement.GetVar();
+			Write("for (");
+			if (statement.Count() == 2) {
+				Write("const auto &[");
+				WriteCamelCaseNotKeyword(element.Name);
+				Write(", ");
+				WriteCamelCaseNotKeyword(statement.GetValueVar().Name);
+				WriteChar(']');
+			}
+			else {
+				switch (statement.Collection.Type.AsClassType().GetElementType()) {
+				case CiStorageType storage:
+					if (!(element.Type is CiReadWriteClassType))
+						Write("const ");
+					Write(storage.Class.Name);
+					Write(" &");
+					WriteCamelCaseNotKeyword(element.Name);
+					break;
+				case CiDynamicPtrType dynamic:
+					Write("const ");
+					WriteType(dynamic, true);
+					Write(" &");
+					WriteCamelCaseNotKeyword(element.Name);
+					break;
+				default:
+					WriteTypeAndName(element);
+					break;
+				}
+			}
+			Write(" : ");
+			if (statement.Collection.Type is CiStringType)
+				WriteNotRawStringLiteral(statement.Collection, CiPriority.Argument);
+			else
+				WriteCollectionObject(statement.Collection, CiPriority.Argument);
+			WriteChar(')');
+			WriteChild(statement.Body);
+		}
+
+		protected override bool EmbedIfWhileIsVar(CiExpr expr, bool write)
+		{
+			if (expr is CiBinaryExpr binary && binary.Op == CiToken.Is && binary.Right is CiVar def) {
+				if (write)
+					WriteType(def.Type, true);
+				return true;
+			}
+			return false;
+		}
+
+		public override void VisitLock(CiLock statement)
+		{
+			OpenBlock();
+			Write("const std::lock_guard<std::recursive_mutex> lock(");
+			statement.Lock.Accept(this, CiPriority.Argument);
+			WriteLine(");");
+			FlattenBlock(statement.Body);
+			CloseBlock();
+		}
+
+		protected override void WriteStronglyCoerced(CiType type, CiExpr expr)
+		{
+			if (type.Id == CiId.StringStorageType && expr.Type.Id == CiId.StringPtrType && !(expr is CiLiteral)) {
+				Write("std::string(");
+				expr.Accept(this, CiPriority.Argument);
+				WriteChar(')');
+			}
+			else {
+				CiCallExpr call = IsStringSubstring(expr);
+				if (call != null && type.Id == CiId.StringStorageType && GetStringSubstringPtr(call).Type.Id != CiId.StringStorageType) {
+					Write("std::string(");
+					bool cast = IsUTF8GetString(call);
+					if (cast)
+						Write("reinterpret_cast<const char *>(");
+					WriteStringPtrAdd(call);
+					if (cast)
+						WriteChar(')');
+					Write(", ");
+					GetStringSubstringLength(call).Accept(this, CiPriority.Argument);
+					WriteChar(')');
+				}
+				else
+					base.WriteStronglyCoerced(type, expr);
+			}
+		}
+
+		static bool HasTemporaries(CiExpr expr)
+		{
+			switch (expr) {
+			case CiAggregateInitializer init:
+				return init.Items.Any(item => HasTemporaries(item));
+			case CiLiteral _:
+			case CiLambdaExpr _:
+				return false;
+			case CiInterpolatedString interp:
+				return interp.Parts.Any(part => HasTemporaries(part.Argument));
+			case CiSymbolReference symbol:
+				return symbol.Left != null && HasTemporaries(symbol.Left);
+			case CiUnaryExpr unary:
+				return unary.Inner != null && (HasTemporaries(unary.Inner) || unary.Inner is CiAggregateInitializer);
+			case CiBinaryExpr binary:
+				if (HasTemporaries(binary.Left))
+					return true;
+				if (binary.Op == CiToken.Is)
+					return binary.Right is CiVar;
+				return HasTemporaries(binary.Right);
+			case CiSelectExpr select:
+				return HasTemporaries(select.Cond) || HasTemporaries(select.OnTrue) || HasTemporaries(select.OnFalse);
+			case CiCallExpr call:
+				return HasTemporaries(call.Method) || call.Arguments.Any(arg => HasTemporaries(arg));
+			default:
+				throw new NotImplementedException();
+			}
+		}
+
+		bool HasVariables(CiStatement statement)
+		{
+			switch (statement) {
+			case CiVar _:
+				return true;
+			case CiAssert asrt:
+				return asrt.Cond is CiBinaryExpr binary && binary.Op == CiToken.Is && binary.Right is CiVar;
+			case CiBlock _:
+			case CiBreak _:
+			case CiConst _:
+			case CiContinue _:
+			case CiLock _:
+			case CiNative _:
+			case CiThrow _:
+				return false;
+			case CiIf ifStatement:
+				return HasTemporaries(ifStatement.Cond) && !EmbedIfWhileIsVar(ifStatement.Cond, false);
+			case CiLoop loop:
+				return loop.Cond != null && HasTemporaries(loop.Cond);
+			case CiReturn ret:
+				return ret.Value != null && HasTemporaries(ret.Value);
+			case CiSwitch switch_:
+				return HasTemporaries(switch_.Value);
+			case CiExpr expr:
+				return HasTemporaries(expr);
+			default:
+				throw new NotImplementedException();
+			}
+		}
+
+		protected override void WriteSwitchCaseBody(List<CiStatement> statements)
+		{
+			bool block = false;
+			foreach (CiStatement statement in statements) {
+				if (!block && HasVariables(statement)) {
+					OpenBlock();
+					block = true;
+				}
+				statement.AcceptStatement(this);
+			}
+			if (block)
+				CloseBlock();
+		}
+
+		public override void VisitSwitch(CiSwitch statement)
+		{
+			if (statement.IsTypeMatching()) {
+				WriteSwitchWhenVars(statement);
+				int gotoId = GetSwitchGoto(statement);
+				string op = "if (";
+				foreach (CiCase kase in statement.Cases) {
+					foreach (CiExpr value in kase.Values) {
+						Write(op);
+						switch (value) {
+						case CiVar def:
+							if (def.Name != "_")
+								WriteType(def.Type, true);
+							WriteIsVar(statement.Value, def, CiPriority.Argument);
+							break;
+						case CiLiteralNull _:
+							statement.Value.Accept(this, CiPriority.Equality);
+							Write(" == nullptr");
+							break;
+						case CiBinaryExpr when1 when when1.Op == CiToken.When:
+							CiVar whenVar = (CiVar) when1.Left;
+							WriteIsVar(statement.Value, whenVar, CiPriority.CondAnd);
+							Write(" && ");
+							when1.Right.Accept(this, CiPriority.CondAnd);
+							break;
+						default:
+							throw new NotImplementedException();
+						}
+						op = " || ";
+					}
+					WriteChar(')');
+					WriteIfCaseBody(kase.Body, gotoId < 0);
+					op = "else if (";
+				}
+				EndSwitchAsIfs(statement, gotoId);
+			}
+			else
+				base.VisitSwitch(statement);
+		}
+
+		public override void VisitThrow(CiThrow statement)
+		{
+			Include("exception");
+			WriteLine("throw std::exception();");
+		}
+
+		void OpenNamespace()
+		{
+			if (this.Namespace == null)
+				return;
+			WriteNewLine();
+			Write("namespace ");
+			WriteLine(this.Namespace);
+			WriteCharLine('{');
+		}
+
+		void CloseNamespace()
+		{
+			if (this.Namespace != null)
+				WriteCharLine('}');
+		}
+
+		protected override void WriteEnum(CiEnum enu)
+		{
+			WriteNewLine();
+			WriteDoc(enu.Documentation);
+			Write("enum class ");
+			WriteLine(enu.Name);
+			OpenBlock();
+			enu.AcceptValues(this);
+			WriteNewLine();
+			this.Indent--;
+			WriteLine("};");
+			if (enu is CiEnumFlags) {
+				Include("type_traits");
+				this.HasEnumFlags = true;
+				Write("CI_ENUM_FLAG_OPERATORS(");
+				Write(enu.Name);
+				WriteCharLine(')');
+			}
+		}
+
+		static CiVisibility GetConstructorVisibility(CiClass klass)
+		{
+			switch (klass.CallType) {
+			case CiCallType.Static:
+				return CiVisibility.Private;
+			case CiCallType.Abstract:
+				return CiVisibility.Protected;
+			default:
+				return CiVisibility.Public;
+			}
+		}
+
+		static bool HasMembersOfVisibility(CiClass klass, CiVisibility visibility)
+		{
+			for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+				if (symbol is CiMember member && member.Visibility == visibility)
+					return true;
+			}
+			return false;
+		}
+
+		protected override void WriteField(CiField field)
+		{
+			WriteDoc(field.Documentation);
+			WriteVar(field);
+			WriteCharLine(';');
+		}
+
+		void WriteParametersAndConst(CiMethod method, bool defaultArguments)
+		{
+			WriteParameters(method, defaultArguments);
+			if (method.CallType != CiCallType.Static && !method.IsMutator)
+				Write(" const");
+		}
+
+		void WriteDeclarations(CiClass klass, CiVisibility visibility, string visibilityKeyword)
+		{
+			bool constructor = GetConstructorVisibility(klass) == visibility;
+			bool destructor = visibility == CiVisibility.Public && (klass.HasSubclasses || klass.AddsVirtualMethods());
+			if (!constructor && !destructor && !HasMembersOfVisibility(klass, visibility))
+				return;
+			Write(visibilityKeyword);
+			WriteCharLine(':');
+			this.Indent++;
+			if (constructor) {
+				if (klass.Constructor != null)
+					WriteDoc(klass.Constructor.Documentation);
+				Write(klass.Name);
+				Write("()");
+				if (klass.CallType == CiCallType.Static)
+					Write(" = delete");
+				else if (!NeedsConstructor(klass))
+					Write(" = default");
+				WriteCharLine(';');
+			}
+			if (destructor) {
+				Write("virtual ~");
+				Write(klass.Name);
+				WriteLine("() = default;");
+			}
+			for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+				if (!(symbol is CiMember member) || member.Visibility != visibility)
+					continue;
+				switch (member) {
+				case CiConst konst:
+					WriteDoc(konst.Documentation);
+					WriteConst(konst);
+					break;
+				case CiField field:
+					WriteField(field);
+					break;
+				case CiMethod method:
+					WriteMethodDoc(method);
+					switch (method.CallType) {
+					case CiCallType.Static:
+						Write("static ");
+						break;
+					case CiCallType.Abstract:
+					case CiCallType.Virtual:
+						Write("virtual ");
+						break;
+					default:
+						break;
+					}
+					WriteTypeAndName(method);
+					WriteParametersAndConst(method, true);
+					switch (method.CallType) {
+					case CiCallType.Abstract:
+						Write(" = 0");
+						break;
+					case CiCallType.Override:
+						Write(" override");
+						break;
+					case CiCallType.Sealed:
+						Write(" final");
+						break;
+					default:
+						break;
+					}
+					WriteCharLine(';');
+					break;
+				default:
+					throw new NotImplementedException();
+				}
+			}
+			this.Indent--;
+		}
+
+		protected override void WriteClassInternal(CiClass klass)
+		{
+			WriteNewLine();
+			WriteDoc(klass.Documentation);
+			OpenClass(klass, klass.CallType == CiCallType.Sealed ? " final" : "", " : public ");
+			this.Indent--;
+			WriteDeclarations(klass, CiVisibility.Public, "public");
+			WriteDeclarations(klass, CiVisibility.Protected, "protected");
+			WriteDeclarations(klass, CiVisibility.Internal, "public");
+			WriteDeclarations(klass, CiVisibility.Private, "private");
+			WriteLine("};");
+		}
+
+		void WriteConstructor(CiClass klass)
+		{
+			if (!NeedsConstructor(klass))
+				return;
+			this.SwitchesWithGoto.Clear();
+			Write(klass.Name);
+			Write("::");
+			Write(klass.Name);
+			WriteLine("()");
+			OpenBlock();
+			WriteConstructorBody(klass);
+			CloseBlock();
+		}
+
+		protected override void WriteMethod(CiMethod method)
+		{
+			if (method.CallType == CiCallType.Abstract)
+				return;
+			this.SwitchesWithGoto.Clear();
+			WriteNewLine();
+			WriteType(method.Type, true);
+			WriteChar(' ');
+			Write(method.Parent.Name);
+			Write("::");
+			WriteCamelCaseNotKeyword(method.Name);
+			WriteParametersAndConst(method, false);
+			WriteBody(method);
+		}
+
+		void WriteResources(SortedDictionary<string, byte[]> resources, bool define)
+		{
+			if (resources.Count == 0)
+				return;
+			WriteNewLine();
+			WriteLine("namespace");
+			OpenBlock();
+			WriteLine("namespace CiResource");
+			OpenBlock();
+			
+			foreach (string name in resources.Keys) {
+				if (!define)
+					Write("extern ");
+				Include("array");
+				Include("cstdint");
+				Write("const std::array<uint8_t, ");
+				VisitLiteralLong(resources[name].Length);
+				Write("> ");
+				WriteResource(name, -1);
+				if (define) {
+					WriteLine(" = {");
+					WriteChar('\t');
+					WriteBytes(resources[name]);
+					Write(" }");
+				}
+				WriteCharLine(';');
+			}
+		CloseBlock();
+			CloseBlock();
+		}
+
+		public override void WriteProgram(CiProgram program)
+		{
+			this.WrittenClasses.Clear();
+			string headerFile;
+			
+			headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
+		this.InHeaderFile = true;
+			this.UsingStringViewLiterals = false;
+			this.HasEnumFlags = false;
+			this.StringReplace = false;
+			OpenStringWriter();
+			OpenNamespace();
+			for (CiSymbol type = program.First; type != null; type = type.Next) {
+				if (type is CiEnum enu)
+					WriteEnum(enu);
+				else {
+					Write("class ");
+					Write(type.Name);
+					WriteCharLine(';');
+				}
+			}
+			foreach (CiClass klass in program.Classes)
+				WriteClass(klass, program);
+			CloseNamespace();
+			CreateFile(headerFile);
+			WriteLine("#pragma once");
+			WriteCIncludes();
+			if (this.HasEnumFlags) {
+				WriteLine("#define CI_ENUM_FLAG_OPERATORS(T) \\");
+				WriteLine("\tinline constexpr T operator~(T a) { return static_cast<T>(~static_cast<std::underlying_type_t<T>>(a)); } \\");
+				WriteLine("\tinline constexpr T operator&(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) & static_cast<std::underlying_type_t<T>>(b)); } \\");
+				WriteLine("\tinline constexpr T operator|(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) | static_cast<std::underlying_type_t<T>>(b)); } \\");
+				WriteLine("\tinline constexpr T operator^(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) ^ static_cast<std::underlying_type_t<T>>(b)); } \\");
+				WriteLine("\tinline constexpr T &operator&=(T &a, T b) { return (a = a & b); } \\");
+				WriteLine("\tinline constexpr T &operator|=(T &a, T b) { return (a = a | b); } \\");
+				WriteLine("\tinline constexpr T &operator^=(T &a, T b) { return (a = a ^ b); }");
+			}
+			CloseStringWriter();
+			CloseFile();
+			this.InHeaderFile = false;
+			OpenStringWriter();
+			WriteResources(program.Resources, false);
+			OpenNamespace();
+			foreach (CiClass klass in program.Classes) {
+				WriteConstructor(klass);
+				WriteMethods(klass);
+			}
+			WriteResources(program.Resources, true);
+			CloseNamespace();
+			CreateFile(this.OutputFile);
+			WriteTopLevelNatives(program);
+			if (this.StringReplace) {
+				Include("string");
+				Include("string_view");
+			}
+			WriteCIncludes();
+			Write("#include \"");
+			
+			Write(Path.GetFileName(headerFile));
+		WriteLine("\"");
+			if (this.UsingStringViewLiterals)
+				WriteLine("using namespace std::string_view_literals;");
+			if (this.StringReplace) {
+				WriteNewLine();
+				WriteLine("static std::string CiString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
+				OpenBlock();
+				WriteLine("std::string result;");
+				WriteLine("result.reserve(s.size());");
+				WriteLine("for (std::string_view::size_type i = 0;;) {");
+				WriteLine("\tauto j = s.find(oldValue, i);");
+				WriteLine("\tif (j == std::string::npos) {");
+				WriteLine("\t\tresult.append(s, i);");
+				WriteLine("\t\treturn result;");
+				WriteLine("\t}");
+				WriteLine("\tresult.append(s, i, j - i);");
+				WriteLine("\tresult.append(newValue);");
+				WriteLine("\ti = j + oldValue.size();");
+				WriteCharLine('}');
+				CloseBlock();
+			}
+			CloseStringWriter();
+			CloseFile();
+		}
+	}
+
 	public class GenCs : GenTyped
 	{
 
