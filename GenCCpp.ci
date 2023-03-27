@@ -1,4 +1,4 @@
-// GenCCpp.cs - C/C++ code generator
+// GenCCpp.ci - C/C++ code generator
 //
 // Copyright (C) 2011-2023  Piotr Fusik
 //
@@ -17,25 +17,22 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-using System;
-using System.Collections.Generic;
-
-namespace Foxoft.Ci
-{
-
 public abstract class GenCCpp : GenCCppD
 {
-	protected abstract void IncludeStdInt();
+	protected abstract void IncludeStdInt!();
 
-	protected abstract void IncludeAssert();
+	protected abstract void IncludeAssert!();
 
-	protected abstract void IncludeMath();
+	protected abstract void IncludeMath!();
 
-	protected void WriteCIncludes() => WriteIncludes("#include <", ">");
+	protected void WriteCIncludes!()
+	{
+		WriteIncludes("#include <", ">");
+	}
 
 	protected override int GetLiteralChars() => 127;
 
-	protected virtual void WriteNumericType(CiId id)
+	protected virtual void WriteNumericType!(CiId id)
 	{
 		switch (id) {
 		case CiId.SByteRange:
@@ -68,11 +65,11 @@ public abstract class GenCCpp : GenCCppD
 			Write("double");
 			break;
 		default:
-			throw new NotImplementedException(id.ToString());
+			assert false;
 		}
 	}
 
-	public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
+	public override void VisitSymbolReference!(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
 		case CiId.MathNaN:
@@ -93,11 +90,11 @@ public abstract class GenCCpp : GenCCppD
 		}
 	}
 
-	protected abstract void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not);
+	protected abstract void WriteEqualString!(CiExpr left, CiExpr right, CiPriority parent, bool not);
 
 	static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
 
-	protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+	protected override void WriteEqual!(CiBinaryExpr expr, CiPriority parent, bool not)
 	{
 		CiType coercedType;
 		if (IsPtrTo(expr.Left, expr.Right))
@@ -117,7 +114,7 @@ public abstract class GenCCpp : GenCCppD
 			WriteChar(')');
 	}
 
-	protected static CiExpr IsStringEmpty(CiBinaryExpr expr)
+	protected static CiExpr? IsStringEmpty(CiBinaryExpr expr)
 	{
 		if (expr.Left is CiSymbolReference symbol && symbol.Symbol.Id == CiId.StringLength
 			&& expr.Right.IsLiteralZero())
@@ -125,9 +122,9 @@ public abstract class GenCCpp : GenCCppD
 		return null;
 	}
 
-	protected abstract void WriteArrayPtr(CiExpr expr, CiPriority parent);
+	protected abstract void WriteArrayPtr!(CiExpr expr, CiPriority parent);
 
-	protected void WriteArrayPtrAdd(CiExpr array, CiExpr index)
+	protected void WriteArrayPtrAdd!(CiExpr array, CiExpr index)
 	{
 		if (index.IsLiteralZero())
 			WriteArrayPtr(array, CiPriority.Argument);
@@ -138,7 +135,7 @@ public abstract class GenCCpp : GenCCppD
 		}
 	}
 
-	protected static CiCallExpr IsStringSubstring(CiExpr expr)
+	protected static CiCallExpr? IsStringSubstring(CiExpr expr)
 	{
 		if (expr is CiCallExpr call) {
 			CiId id = call.Method.Symbol.Id;
@@ -157,14 +154,15 @@ public abstract class GenCCpp : GenCCppD
 
 	protected static CiExpr GetStringSubstringLength(CiCallExpr call) => call.Arguments[IsUTF8GetString(call) ? 2 : 1];
 
-	protected void WriteStringPtrAdd(CiCallExpr call)
+	protected void WriteStringPtrAdd!(CiCallExpr call)
 	{
 		WriteArrayPtrAdd(GetStringSubstringPtr(call), GetStringSubstringOffset(call));
 	}
 
-	protected static CiExpr IsTrimSubstring(CiBinaryExpr expr)
+	protected static CiExpr? IsTrimSubstring(CiBinaryExpr expr)
 	{
-		if (IsStringSubstring(expr.Right) is CiCallExpr call
+		CiCallExpr? call = IsStringSubstring(expr.Right);
+		if (call != null
 		 && !IsUTF8GetString(call)
 		 && expr.Left is CiSymbolReference leftSymbol && GetStringSubstringPtr(call).IsReferenceTo(leftSymbol.Symbol) // TODO: more complex expr
 		 && GetStringSubstringOffset(call).IsLiteralZero())
@@ -172,14 +170,14 @@ public abstract class GenCCpp : GenCCppD
 		return null;
 	}
 
-	protected void WriteStringLiteralWithNewLine(string s)
+	protected void WriteStringLiteralWithNewLine!(string s)
 	{
 		WriteChar('"');
 		Write(s);
 		Write("\\n\"");
 	}
 
-	protected virtual void WriteUnreachable(CiAssert statement)
+	protected virtual void WriteUnreachable!(CiAssert statement)
 	{
 		// TODO: C23, C++23: unreachable()
 		Write("abort();");
@@ -190,7 +188,7 @@ public abstract class GenCCpp : GenCCppD
 		WriteNewLine();
 	}
 
-	protected override void WriteAssert(CiAssert statement)
+	protected override void WriteAssert!(CiAssert statement)
 	{
 		if (statement.CompletesNormally()) {
 			IncludeAssert();
@@ -208,7 +206,7 @@ public abstract class GenCCpp : GenCCppD
 			WriteUnreachable(statement);
 	}
 
-	public override void VisitSwitch(CiSwitch statement)
+	public override void VisitSwitch!(CiSwitch! statement)
 	{
 		if (!(statement.Value.Type is CiStringType)) {
 			base.VisitSwitch(statement);
@@ -230,9 +228,9 @@ public abstract class GenCCpp : GenCCppD
 		EndSwitchAsIfs(statement, gotoId);
 	}
 
-	protected void WriteMethods(CiClass klass)
+	protected void WriteMethods!(CiClass klass)
 	{
-		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+		for (CiSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
 			if (symbol is CiMethod method) {
 				WriteMethod(method);
 				this.CurrentTemporaries.Clear();
@@ -240,19 +238,17 @@ public abstract class GenCCpp : GenCCppD
 		}
 	}
 
-	protected abstract void WriteClass(CiClass klass);
+	protected abstract void WriteClassInternal!(CiClass klass);
 
-	protected override void WriteClass(CiClass klass, CiProgram program)
+	protected override void WriteClass!(CiClass klass, CiProgram program)
 	{
 		// topological sorting of class hierarchy and class storage fields
 		if (!WriteBaseClass(klass, program))
 			return;
-		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+		for (CiSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
 			if (symbol is CiField field && field.Type.GetBaseType() is CiStorageType storage && storage.Class.Id == CiId.None)
 				WriteClass(storage.Class, program);
 		}
-		WriteClass(klass);
+		WriteClassInternal(klass);
 	}
-}
-
 }

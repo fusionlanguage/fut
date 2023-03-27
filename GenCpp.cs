@@ -1753,7 +1753,7 @@ public class GenCpp : GenCCpp
 		this.Indent--;
 	}
 
-	protected override void WriteClass(CiClass klass)
+	protected override void WriteClassInternal(CiClass klass)
 	{
 		WriteNewLine();
 		WriteDoc(klass.Documentation);

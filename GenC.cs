@@ -2842,7 +2842,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected override void WriteClass(CiClass klass)
+	protected override void WriteClassInternal(CiClass klass)
 	{
 		if (klass.CallType != CiCallType.Static) {
 			WriteNewLine();
