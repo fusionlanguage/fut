@@ -11350,13 +11350,13 @@ namespace Foxoft.Ci
 
 		bool HasListRemoveAt;
 
-		bool HasSortedDictionaryInsert;
-
-		bool HasSortedDictionaryFind;
-
 		bool HasQueueDequeue;
 
 		bool HasStackPop;
+
+		bool HasSortedDictionaryInsert;
+
+		bool HasSortedDictionaryFind;
 
 		protected override string GetTargetName() => "D";
 
@@ -11444,97 +11444,161 @@ namespace Foxoft.Ci
 				Write(symbol.Name);
 				return;
 			}
-			string camelCaseName;
-			
-			camelCaseName = char.ToLowerInvariant(symbol.Name[0]) + symbol.Name.Substring(1);
-		Write(camelCaseName);
-			switch (camelCaseName) {
-			case "abstract":
+			WriteCamelCase(symbol.Name);
+			switch (symbol.Name) {
+			case "Abstract":
+			case "Alias":
+			case "Align":
+			case "Asm":
+			case "Assert":
+			case "Auto":
+			case "Body":
+			case "Bool":
+			case "Break":
+			case "Byte":
+			case "Case":
+			case "Cast":
+			case "Catch":
+			case "Cdouble":
+			case "Cent":
+			case "Cfloat":
+			case "Char":
+			case "Class":
+			case "Const":
+			case "Continue":
+			case "Creal":
+			case "Dchar":
+			case "Debug":
+			case "Default":
+			case "Delegate":
+			case "Delete":
+			case "Deprecated":
+			case "Do":
+			case "Double":
+			case "Else":
+			case "Enum":
+			case "Export":
+			case "Extern":
+			case "False":
+			case "Final":
+			case "Finally":
+			case "Float":
+			case "For":
+			case "Foreach":
+			case "Foreach_reverse":
+			case "Function":
+			case "Goto":
+			case "Idouble":
+			case "If":
+			case "IfLoat":
+			case "Immutable":
+			case "Import":
+			case "In":
+			case "Inout":
+			case "Int":
+			case "Interface":
+			case "Invariant":
+			case "Ireal":
+			case "Is":
+			case "Lazy":
+			case "Long":
+			case "Macro":
+			case "Mixin":
+			case "Module":
+			case "New":
+			case "Nothrow":
+			case "Null":
+			case "Out":
+			case "Override":
+			case "Package":
+			case "Pragma":
+			case "Private":
+			case "Protected":
+			case "Public":
+			case "Pure":
+			case "Real":
+			case "Ref":
+			case "Return":
+			case "Scope":
+			case "Shared":
+			case "Short":
+			case "Sizeof":
+			case "Static":
+			case "String":
+			case "Struct":
+			case "Super":
+			case "Switch":
+			case "Synchronized":
+			case "Template":
+			case "Throw":
+			case "True":
+			case "Try":
+			case "Typeid":
+			case "Typeof":
+			case "Ubyte":
+			case "Ucent":
+			case "Uint":
+			case "Ulong":
+			case "Union":
+			case "Unittest":
+			case "Ushort":
+			case "Version":
+			case "Void":
+			case "Wchar":
+			case "While":
+			case "With":
 			case "alias":
 			case "align":
 			case "asm":
-			case "assert":
 			case "auto":
 			case "body":
-			case "bool":
-			case "break":
-			case "byte":
-			case "case":
 			case "cast":
 			case "catch":
 			case "cdouble":
 			case "cent":
 			case "cfloat":
 			case "char":
-			case "class":
-			case "const":
-			case "continue":
 			case "creal":
 			case "dchar":
 			case "debug":
-			case "default":
 			case "delegate":
 			case "delete":
 			case "deprecated":
-			case "do":
-			case "double":
-			case "else":
-			case "enum":
 			case "export":
 			case "extern":
-			case "false":
 			case "final":
 			case "finally":
-			case "float":
-			case "for":
-			case "foreach":
 			case "foreach_reverse":
 			case "function":
 			case "goto":
 			case "idouble":
-			case "if":
 			case "ifloat":
 			case "immutable":
 			case "import":
 			case "in":
 			case "inout":
-			case "int":
 			case "interface":
 			case "invariant":
 			case "ireal":
-			case "is":
 			case "lazy":
-			case "long":
 			case "macro":
 			case "mixin":
 			case "module":
-			case "new":
 			case "nothrow":
-			case "null":
 			case "out":
-			case "override":
 			case "package":
 			case "pragma":
 			case "private":
-			case "protected":
-			case "public":
 			case "pure":
 			case "real":
 			case "ref":
-			case "return":
 			case "scope":
 			case "shared":
-			case "short":
 			case "sizeof":
-			case "static":
-			case "string":
 			case "struct":
 			case "super":
-			case "switch":
 			case "synchronized":
 			case "template":
-			case "throw":
-			case "true":
 			case "try":
 			case "typeid":
 			case "typeof":
@@ -11546,9 +11610,7 @@ namespace Foxoft.Ci
 			case "unittest":
 			case "ushort":
 			case "version":
-			case "void":
 			case "wchar":
-			case "while":
 			case "with":
 			case "__FILE__":
 			case "__FILE_FULL_PATH__":
@@ -11970,29 +12032,6 @@ namespace Foxoft.Ci
 			}
 		}
 
-		static string GetMathMethodName(CiMethod method)
-		{
-			switch (method.Id) {
-			case CiId.MathCeiling:
-				return "ceil";
-			case CiId.MathFusedMultiplyAdd:
-				return "fma";
-			case CiId.MathIsFinite:
-				return "isFinite";
-			case CiId.MathIsInfinity:
-				return "isInfinity";
-			case CiId.MathIsNaN:
-				return "isNaN";
-			case CiId.MathTruncate:
-				return "trunc";
-			default:
-				for (;;) {
-					
-					return method.Name.ToLower();
-				}
-			}
-		}
-
 		void WriteInsertedArg(CiType type, List<CiExpr> args, int index = 0)
 		{
 			if (args.Count <= index) {
@@ -12006,7 +12045,6 @@ namespace Foxoft.Ci
 
 		protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 		{
-			
 			switch (method.Id) {
 			case CiId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
@@ -12032,12 +12070,25 @@ namespace Foxoft.Ci
 				WriteArgsInParentheses(method, args);
 				break;
 			case CiId.StringEndsWith:
+				Include("std.string");
+				WriteMethodCall(obj, "endsWith", args[0]);
+				break;
 			case CiId.StringIndexOf:
+				Include("std.string");
+				WriteMethodCall(obj, "indexOf", args[0]);
+				break;
 			case CiId.StringLastIndexOf:
+				Include("std.string");
+				WriteMethodCall(obj, "lastIndexOf", args[0]);
+				break;
 			case CiId.StringReplace:
+				Include("std.string");
+				WriteMethodCall(obj, "replace", args[0], args[1]);
+				break;
 			case CiId.StringStartsWith:
 				Include("std.string");
-				goto default;
+				WriteMethodCall(obj, "startsWith", args[0]);
+				break;
 			case CiId.StringSubstring:
 				obj.Accept(this, CiPriority.Primary);
 				WriteChar('[');
@@ -12164,8 +12215,11 @@ namespace Foxoft.Ci
 				WriteArgsInParentheses(method, args);
 				break;
 			case CiId.QueueDequeue:
-				HasQueueDequeue = true;
-				goto default;
+				this.HasQueueDequeue = true;
+				Include("std.container.dlist");
+				WriteClassReference(obj);
+				Write(".dequeue()");
+				break;
 			case CiId.QueuePeek:
 				WritePostfix(obj, ".front");
 				break;
@@ -12178,8 +12232,10 @@ namespace Foxoft.Ci
 				args[0].Accept(this, CiPriority.Assign);
 				break;
 			case CiId.StackPop:
-				HasStackPop = true;
-				goto default;
+				this.HasStackPop = true;
+				WriteClassReference(obj);
+				Write(".pop()");
+				break;
 			case CiId.HashSetAdd:
 				WritePostfix(obj, ".require(");
 				args[0].Accept(this, CiPriority.Argument);
@@ -12206,8 +12262,8 @@ namespace Foxoft.Ci
 				WriteArgsInParentheses(method, args);
 				break;
 			case CiId.DictionaryAdd:
-				if (obj.Type is CiClassType klass && klass.Class.Id == CiId.SortedDictionaryClass) {
-					HasSortedDictionaryInsert = true;
+				if (obj.Type.AsClassType().Class.Id == CiId.SortedDictionaryClass) {
+					this.HasSortedDictionaryInsert = true;
 					WritePostfix(obj, ".replace(");
 				}
 				else
@@ -12294,7 +12350,7 @@ namespace Foxoft.Ci
 			case CiId.RegexIsMatchStr:
 				Include("std.regex");
 				WritePostfix(args[0], ".matchFirst(");
-				if (GetRegexOptions(args) != System.Text.RegularExpressions.RegexOptions.None)
+				if (GetRegexOptions(args) != RegexOptions.None)
 					Write("regex(");
 				(args.Count > 1 ? args[1] : obj).Accept(this, CiPriority.Argument);
 				WriteRegexOptions(args, ", \"", "", "\")", "i", "m", "s");
@@ -12307,7 +12363,7 @@ namespace Foxoft.Ci
 				Write(" = ");
 				args[0].Accept(this, CiPriority.Primary);
 				Write(".matchFirst(");
-				if (GetRegexOptions(args) != System.Text.RegularExpressions.RegexOptions.None)
+				if (GetRegexOptions(args) != RegexOptions.None)
 					Write("regex(");
 				args[1].Accept(this, CiPriority.Argument);
 				WriteRegexOptions(args, ", \"", "", "\")", "i", "m", "s");
@@ -12322,23 +12378,22 @@ namespace Foxoft.Ci
 				WriteChar(')');
 				break;
 			case CiId.MatchGetCapture:
-				WritePostfix(obj, "[");
-				args[0].Accept(this, CiPriority.Argument);
-				WriteChar(']');
+				WriteIndexing(obj, args[0]);
 				break;
 			case CiId.MathMethod:
 			case CiId.MathAbs:
-			case CiId.MathCeiling:
-			case CiId.MathFusedMultiplyAdd:
-			case CiId.MathLog2:
-			case CiId.MathTruncate:
 			case CiId.MathIsFinite:
 			case CiId.MathIsInfinity:
 			case CiId.MathIsNaN:
+			case CiId.MathLog2:
 			case CiId.MathRound:
 				Include("std.math");
-				Write(GetMathMethodName(method));
+				WriteCamelCase(method.Name);
 				WriteArgsInParentheses(method, args);
+				break;
+			case CiId.MathCeiling:
+				Include("std.math");
+				WriteCall("ceil", args[0]);
 				break;
 			case CiId.MathClamp:
 			case CiId.MathMaxInt:
@@ -12346,8 +12401,16 @@ namespace Foxoft.Ci
 			case CiId.MathMinInt:
 			case CiId.MathMinDouble:
 				Include("std.algorithm");
-				Write(GetMathMethodName(method));
+				WriteLowercase(method.Name);
 				WriteArgsInParentheses(method, args);
+				break;
+			case CiId.MathFusedMultiplyAdd:
+				Include("std.math");
+				WriteCall("fma", args[0], args[1], args[2]);
+				break;
+			case CiId.MathTruncate:
+				Include("std.math");
+				WriteCall("trunc", args[0]);
 				break;
 			default:
 				if (obj != null) {
@@ -12380,6 +12443,8 @@ namespace Foxoft.Ci
 			case CiId.SortedDictionaryClass:
 				Debug.Assert(parent != CiPriority.Assign);
 				this.HasSortedDictionaryFind = true;
+				Include("std.container.rbtree");
+				Include("std.typecons");
 				Write(".find(");
 				WriteStronglyCoerced(klass.GetKeyType(), expr.Right);
 				WriteChar(')');
@@ -12787,6 +12852,10 @@ namespace Foxoft.Ci
 		{
 			this.HasListInsert = false;
 			this.HasListRemoveAt = false;
+			this.HasQueueDequeue = false;
+			this.HasStackPop = false;
+			this.HasSortedDictionaryInsert = false;
+			this.HasSortedDictionaryFind = false;
 			OpenStringWriter();
 			if (this.Namespace != null) {
 				Write("struct ");
@@ -12800,15 +12869,13 @@ namespace Foxoft.Ci
 				WriteResources(program.Resources);
 			if (this.Namespace != null)
 				CloseBlock();
+			CreateFile(this.OutputFile);
 			if (this.HasListInsert || this.HasListRemoveAt || this.HasStackPop)
 				Include("std.container.array");
-			if (this.HasQueueDequeue)
-				Include("std.container.dlist");
-			if (this.HasSortedDictionaryFind || this.HasSortedDictionaryInsert)
+			if (this.HasSortedDictionaryInsert) {
 				Include("std.container.rbtree");
-			if (this.HasSortedDictionaryFind || this.HasSortedDictionaryInsert)
 				Include("std.typecons");
-			CreateFile(this.OutputFile);
+			}
 			WriteIncludes("import ", ";");
 			if (this.HasListInsert) {
 				WriteNewLine();
@@ -12824,6 +12891,20 @@ namespace Foxoft.Ci
 				WriteLine("arr.linearRemove((*arr)[pos .. pos + count]);");
 				CloseBlock();
 			}
+			if (this.HasQueueDequeue) {
+				WriteNewLine();
+				WriteLine("private T dequeue(T)(ref DList!T q)");
+				OpenBlock();
+				WriteLine("scope(exit) q.removeFront(); return q.front;");
+				CloseBlock();
+			}
+			if (this.HasStackPop) {
+				WriteNewLine();
+				WriteLine("private T pop(T)(ref Array!T stack)");
+				OpenBlock();
+				WriteLine("scope(exit) stack.removeBack(); return stack.back;");
+				CloseBlock();
+			}
 			if (this.HasSortedDictionaryFind) {
 				WriteNewLine();
 				WriteLine("private U find(T, U)(RedBlackTree!(Tuple!(T, U), \"a[0] < b[0]\") dict, T key)");
@@ -12837,20 +12918,6 @@ namespace Foxoft.Ci
 				OpenBlock();
 				WriteLine("dict.removeKey(tuple(key, U.init));");
 				WriteLine("dict.insert(tuple(key, value));");
-				CloseBlock();
-			}
-			if (this.HasQueueDequeue) {
-				WriteNewLine();
-				WriteLine("private T dequeue(T)(ref DList!T q)");
-				OpenBlock();
-				WriteLine("scope(exit) q.removeFront(); return q.front;");
-				CloseBlock();
-			}
-			if (this.HasStackPop) {
-				WriteNewLine();
-				WriteLine("private T pop(T)(ref Array!T stack)");
-				OpenBlock();
-				WriteLine("scope(exit) stack.removeBack(); return stack.back;");
 				CloseBlock();
 			}
 			CloseStringWriter();
