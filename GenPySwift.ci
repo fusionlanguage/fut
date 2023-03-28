@@ -123,7 +123,7 @@ public abstract class GenPySwift : GenBase
 		expr.Accept(this, parent);
 	}
 
-	protected void WriteListAppend!(CiExpr obj, List<CiExpr> args)
+	protected void WriteListAppend!(CiExpr obj, List<CiExpr#> args)
 	{
 		WritePostfix(obj, ".append(");
 		CiType elementType = obj.Type.AsClassType().GetElementType();
@@ -134,7 +134,7 @@ public abstract class GenPySwift : GenBase
 		WriteChar(')');
 	}
 
-	protected virtual bool VisitPreCall(CiCallExpr call) => false;
+	protected virtual bool VisitPreCall!(CiCallExpr call) => false;
 
 	protected bool VisitXcrement!(CiExpr expr, bool postfix, bool write)
 	{
