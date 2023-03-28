@@ -75,8 +75,7 @@ public abstract class GenPySwift : GenBase
 	public override void VisitAggregateInitializer!(CiAggregateInitializer expr)
 	{
 		Write("[ ");
-		assert expr.Type is CiArrayStorageType array;
-		WriteCoercedLiterals(array.GetElementType(), expr.Items);
+		WriteCoercedLiterals(expr.Type.AsClassType().GetElementType(), expr.Items);
 		Write(" ]");
 	}
 

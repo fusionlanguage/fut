@@ -38,9 +38,8 @@ public abstract class GenTyped : GenBase
 
 	public override void VisitAggregateInitializer!(CiAggregateInitializer expr)
 	{
-		assert expr.Type is CiArrayStorageType array;
 		Write("{ ");
-		WriteCoercedLiterals(array.GetElementType(), expr.Items);
+		WriteCoercedLiterals(expr.Type.AsClassType().GetElementType(), expr.Items);
 		Write(" }");
 	}
 
