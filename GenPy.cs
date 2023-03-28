@@ -1069,11 +1069,11 @@ public class GenPy : GenPySwift
 
 	public override void VisitLock(CiLock statement)
 	{
-		VisitXcrement<CiPrefixExpr>(statement.Lock, true);
+		VisitXcrement(statement.Lock, false, true);
 		Write("with ");
 		statement.Lock.Accept(this, CiPriority.Argument);
 		OpenChild();
-		VisitXcrement<CiPostfixExpr>(statement.Lock, true);
+		VisitXcrement(statement.Lock, true, true);
 		statement.Body.AcceptStatement(this);
 		CloseChild();
 	}
@@ -1093,7 +1093,7 @@ public class GenPy : GenPySwift
 	void WritePyCaseBody(CiSwitch statement, List<CiStatement> body)
 	{
 		OpenChild();
-		VisitXcrement<CiPostfixExpr>(statement.Value, true);
+		VisitXcrement(statement.Value, true, true);
 		WriteFirstStatements(body, CiSwitch.LengthWithoutTrailingBreak(body));
 		CloseChild();
 	}
@@ -1108,7 +1108,7 @@ public class GenPy : GenPySwift
 			OpenChild();
 		}
 
-		VisitXcrement<CiPrefixExpr>(statement.Value, true);
+		VisitXcrement(statement.Value, false, true);
 		Write("match ");
 		statement.Value.Accept(this, CiPriority.Argument);
 		OpenChild();
@@ -1149,11 +1149,11 @@ public class GenPy : GenPySwift
 
 	public override void VisitThrow(CiThrow statement)
 	{
-		VisitXcrement<CiPrefixExpr>(statement.Message, true);
+		VisitXcrement(statement.Message, false, true);
 		Write("raise Exception(");
 		statement.Message.Accept(this, CiPriority.Argument);
 		WriteCharLine(')');
-		// FIXME: WriteXcrement<CiPostfixExpr>(statement.Message);
+		// FIXME: VisitXcrement(statement.Message, true, true);
 	}
 
 	public override void VisitEnumValue(CiConst konst, CiConst previous)

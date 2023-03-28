@@ -140,12 +140,12 @@ public abstract class GenPySwift : GenBase
 
 	protected virtual bool VisitPreCall(CiCallExpr call) => false;
 
-	protected bool VisitXcrement<T>(CiExpr expr, bool write) where T : CiUnaryExpr
+	protected bool VisitXcrement(CiExpr expr, bool postfix, bool write)
 	{
 		bool seen;
 		switch (expr) {
 		case CiVar def:
-			return def.Value != null && VisitXcrement<T>(def.Value, write);
+			return def.Value != null && VisitXcrement(def.Value, postfix, write);
 		case CiAggregateInitializer _:
 		case CiLiteral _:
 		case CiLambdaExpr _:
@@ -153,15 +153,15 @@ public abstract class GenPySwift : GenBase
 		case CiInterpolatedString interp:
 			seen = false;
 			foreach (CiInterpolatedPart part in interp.Parts)
-				seen |= VisitXcrement<T>(part.Argument, write);
+				seen |= VisitXcrement(part.Argument, postfix, write);
 			return seen;
 		case CiSymbolReference symbol:
-			return symbol.Left != null && VisitXcrement<T>(symbol.Left, write);
+			return symbol.Left != null && VisitXcrement(symbol.Left, postfix, write);
 		case CiUnaryExpr unary:
 			if (unary.Inner == null) // new C()
 				return false;
-			seen = VisitXcrement<T>(unary.Inner, write);
-			if ((unary.Op == CiToken.Increment || unary.Op == CiToken.Decrement) && unary is T) {
+			seen = VisitXcrement(unary.Inner, postfix, write);
+			if ((unary.Op == CiToken.Increment || unary.Op == CiToken.Decrement) && postfix == unary is CiPostfixExpr) {
 				if (write) {
 					WriteExpr(unary.Inner, CiPriority.Assign);
 					WriteLine(unary.Op == CiToken.Increment ? " += 1" : " -= 1");
@@ -170,24 +170,24 @@ public abstract class GenPySwift : GenBase
 			}
 			return seen;
 		case CiBinaryExpr binary:
-			seen = VisitXcrement<T>(binary.Left, write);
+			seen = VisitXcrement(binary.Left, postfix, write);
 			if (binary.Op == CiToken.Is)
 				return seen;
 			if (binary.Op == CiToken.CondAnd || binary.Op == CiToken.CondOr)
-				Trace.Assert(!VisitXcrement<T>(binary.Right, false));
+				Trace.Assert(!VisitXcrement(binary.Right, postfix, false));
 			else
-				seen |= VisitXcrement<T>(binary.Right, write);
+				seen |= VisitXcrement(binary.Right, postfix, write);
 			return seen;
 		case CiSelectExpr select:
-			seen = VisitXcrement<T>(select.Cond, write);
-			Trace.Assert(!VisitXcrement<T>(select.OnTrue, false));
-			Trace.Assert(!VisitXcrement<T>(select.OnFalse, false));
+			seen = VisitXcrement(select.Cond, postfix, write);
+			Trace.Assert(!VisitXcrement(select.OnTrue, postfix, false));
+			Trace.Assert(!VisitXcrement(select.OnFalse, postfix, false));
 			return seen;
 		case CiCallExpr call:
-			seen = VisitXcrement<T>(call.Method, write);
+			seen = VisitXcrement(call.Method, postfix, write);
 			foreach (CiExpr arg in call.Arguments)
-				seen |= VisitXcrement<T>(arg, write);
-			if (typeof(T) == typeof(CiPrefixExpr))
+				seen |= VisitXcrement(arg, postfix, write);
+			if (!postfix)
 				seen |= VisitPreCall(call);
 			return seen;
 		default:
@@ -197,14 +197,14 @@ public abstract class GenPySwift : GenBase
 
 	public override void VisitExpr(CiExpr statement)
 	{
-		VisitXcrement<CiPrefixExpr>(statement, true);
+		VisitXcrement(statement, false, true);
 		if (!(statement is CiUnaryExpr unary) || (unary.Op != CiToken.Increment && unary.Op != CiToken.Decrement)) {
 			WriteExpr(statement, CiPriority.Statement);
 			WriteNewLine();
 			if (statement is CiVar def)
 				WriteInitCode(def);
 		}
-		VisitXcrement<CiPostfixExpr>(statement, true);
+		VisitXcrement(statement, true, true);
 		CleanupTemporaries();
 	}
 
@@ -225,11 +225,11 @@ public abstract class GenPySwift : GenBase
 
 	bool OpenCond(string statement, CiExpr cond, CiPriority parent)
 	{
-		VisitXcrement<CiPrefixExpr>(cond, true);
+		VisitXcrement(cond, false, true);
 		Write(statement);
 		WriteExpr(cond, parent);
 		OpenChild();
-		return VisitXcrement<CiPostfixExpr>(cond, true);
+		return VisitXcrement(cond, true, true);
 	}
 
 	protected virtual void WriteContinueDoWhile(CiExpr cond)
@@ -237,7 +237,7 @@ public abstract class GenPySwift : GenBase
 		OpenCond("if ", cond, CiPriority.Argument);
 		WriteLine("continue");
 		CloseChild();
-		VisitXcrement<CiPostfixExpr>(cond, true);
+		VisitXcrement(cond, true, true);
 		WriteLine("break");
 	}
 
@@ -251,7 +251,7 @@ public abstract class GenPySwift : GenBase
 			forLoop.Advance?.AcceptStatement(this);
 		}
 		if (NeedCondXcrement(loop))
-			VisitXcrement<CiPrefixExpr>(loop.Cond, true);
+			VisitXcrement(loop.Cond, false, true);
 	}
 
 	public override void VisitContinue(CiContinue statement)
@@ -281,7 +281,7 @@ public abstract class GenPySwift : GenBase
 			OpenCond(GetIfNot(), statement.Cond, CiPriority.Primary);
 			WriteLine("break");
 			CloseChild();
-			VisitXcrement<CiPostfixExpr>(statement.Cond, true);
+			VisitXcrement(statement.Cond, true, true);
 		}
 		CloseChild();
 	}
@@ -298,14 +298,14 @@ public abstract class GenPySwift : GenBase
 			EndBody(loop);
 		CloseChild();
 		if (NeedCondXcrement(loop)) {
-			if (loop.HasBreak && VisitXcrement<CiPostfixExpr>(loop.Cond, false)) {
+			if (loop.HasBreak && VisitXcrement(loop.Cond, true, false)) {
 				Write("else");
 				OpenChild();
-				VisitXcrement<CiPostfixExpr>(loop.Cond, true);
+				VisitXcrement(loop.Cond, true, true);
 				CloseChild();
 			}
 			else
-				VisitXcrement<CiPostfixExpr>(loop.Cond, true);
+				VisitXcrement(loop.Cond, true, true);
 		}
 	}
 
@@ -342,16 +342,16 @@ public abstract class GenPySwift : GenBase
 		statement.OnTrue.AcceptStatement(this);
 		CloseChild();
 		if (statement.OnFalse == null && condPostXcrement && !statement.OnTrue.CompletesNormally())
-			VisitXcrement<CiPostfixExpr>(statement.Cond, true);
+			VisitXcrement(statement.Cond, true, true);
 		else if (statement.OnFalse != null || condPostXcrement) {
-			if (!condPostXcrement && statement.OnFalse is CiIf childIf && !VisitXcrement<CiPrefixExpr>(childIf.Cond, false)) {
+			if (!condPostXcrement && statement.OnFalse is CiIf childIf && !VisitXcrement(childIf.Cond, false, false)) {
 				WriteElseIf();
 				VisitIf(childIf);
 			}
 			else {
 				Write("else");
 				OpenChild();
-				VisitXcrement<CiPostfixExpr>(statement.Cond, true);
+				VisitXcrement(statement.Cond, true, true);
 				statement.OnFalse?.AcceptStatement(this);
 				CloseChild();
 			}
@@ -365,14 +365,14 @@ public abstract class GenPySwift : GenBase
 		if (statement.Value == null)
 			WriteLine("return");
 		else {
-			VisitXcrement<CiPrefixExpr>(statement.Value, true);
+			VisitXcrement(statement.Value, false, true);
 			WriteTemporaries(statement.Value);
-			if (VisitXcrement<CiPostfixExpr>(statement.Value, false)) {
+			if (VisitXcrement(statement.Value, true, false)) {
 				WriteResultVar(); // FIXME: name clash? only matters if return ... result++, unlikely
 				Write(" = ");
 				WriteCoercedExpr(this.CurrentMethod.Type, statement.Value);
 				WriteNewLine();
-				VisitXcrement<CiPostfixExpr>(statement.Value, true);
+				VisitXcrement(statement.Value, true, true);
 				WriteLine("return result");
 			}
 			else {

@@ -1164,26 +1164,26 @@ public class GenSwift : GenPySwift
 	public override void VisitBreak(CiBreak statement) => WriteLine("break");
 
 	protected override bool NeedCondXcrement(CiLoop loop)
-		=> loop.Cond != null && (!loop.HasBreak || !VisitXcrement<CiPostfixExpr>(loop.Cond, false));
+		=> loop.Cond != null && (!loop.HasBreak || !VisitXcrement(loop.Cond, true, false));
 
 	protected override string GetIfNot() => "if !";
 
 	protected override void WriteContinueDoWhile(CiExpr cond)
 	{
-		VisitXcrement<CiPrefixExpr>(cond, true);
+		VisitXcrement(cond, false, true);
 		WriteLine("continue");
 	}
 
 	public override void VisitDoWhile(CiDoWhile statement)
 	{
-		if (VisitXcrement<CiPostfixExpr>(statement.Cond, false))
+		if (VisitXcrement(statement.Cond, true, false))
 			base.VisitDoWhile(statement);
 		else {
 			Write("repeat");
 			OpenChild();
 			statement.Body.AcceptStatement(this);
 			if (statement.Body.CompletesNormally())
-				VisitXcrement<CiPrefixExpr>(statement.Cond, true);
+				VisitXcrement(statement.Cond, false, true);
 			CloseChild();
 			Write("while ");
 			WriteExpr(statement.Cond, CiPriority.Argument);
@@ -1200,11 +1200,11 @@ public class GenSwift : GenPySwift
 		else {
 			Write("while true");
 			OpenChild();
-			VisitXcrement<CiPrefixExpr>(loop.Cond, true);
+			VisitXcrement(loop.Cond, false, true);
 			Write("let ciDoLoop = ");
 			loop.Cond.Accept(this, CiPriority.Argument);
 			WriteNewLine();
-			VisitXcrement<CiPostfixExpr>(loop.Cond, true);
+			VisitXcrement(loop.Cond, true, true);
 			Write("if !ciDoLoop");
 			OpenChild();
 			WriteLine("break");
@@ -1319,7 +1319,7 @@ public class GenSwift : GenPySwift
 	void WriteSwitchCaseBody(CiSwitch statement, List<CiStatement> body)
 	{
 		this.Indent++;
-		VisitXcrement<CiPostfixExpr>(statement.Value, true);
+		VisitXcrement(statement.Value, true, true);
 		InitVarsAtIndent();
 		WriteSwitchCaseBody(body);
 		this.Indent--;
@@ -1327,7 +1327,7 @@ public class GenSwift : GenPySwift
 
 	public override void VisitSwitch(CiSwitch statement)
 	{
-		VisitXcrement<CiPrefixExpr>(statement.Value, true);
+		VisitXcrement(statement.Value, false, true);
 		Write("switch ");
 		WriteExpr(statement.Value, CiPriority.Argument);
 		WriteLine(" {");
@@ -1362,7 +1362,7 @@ public class GenSwift : GenPySwift
 	public override void VisitThrow(CiThrow statement)
 	{
 		this.Throw = true;
-		VisitXcrement<CiPrefixExpr>(statement.Message, true);
+		VisitXcrement(statement.Message, false, true);
 		Write("throw CiError.error(");
 		WriteExpr(statement.Message, CiPriority.Argument);
 		WriteCharLine(')');
