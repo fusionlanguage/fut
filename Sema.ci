@@ -1602,11 +1602,9 @@ public class CiSema : CiVisitor
 	public override void VisitFor!(CiFor! statement)
 	{
 		OpenScope(statement);
-		if (statement.Init != null)
-			statement.Init.AcceptStatement(this);
+		VisitOptionalStatement(statement.Init);
 		ResolveLoopCond(statement);
-		if (statement.Advance != null)
-			statement.Advance.AcceptStatement(this);
+		VisitOptionalStatement(statement.Advance);
 		if (statement.Init is CiVar iter
 			&& iter.Type is CiIntegerType
 			&& iter.Value != null

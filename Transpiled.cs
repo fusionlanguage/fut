@@ -1443,6 +1443,12 @@ namespace Foxoft.Ci
 
 		protected abstract CiContainerType GetCurrentContainer();
 
+		protected void VisitOptionalStatement(CiStatement statement)
+		{
+			if (statement != null)
+				statement.AcceptStatement(this);
+		}
+
 		protected void ReportError(CiStatement statement, string message)
 		{
 			Console.Error.WriteLine($"{GetCurrentContainer().Filename}({statement.Line}): ERROR: {message}");
@@ -5747,11 +5753,9 @@ namespace Foxoft.Ci
 		public override void VisitFor(CiFor statement)
 		{
 			OpenScope(statement);
-			if (statement.Init != null)
-				statement.Init.AcceptStatement(this);
+			VisitOptionalStatement(statement.Init);
 			ResolveLoopCond(statement);
-			if (statement.Advance != null)
-				statement.Advance.AcceptStatement(this);
+			VisitOptionalStatement(statement.Advance);
 			if (statement.Init is CiVar iter && iter.Type is CiIntegerType && iter.Value != null && statement.Cond is CiBinaryExpr cond && cond.Left.IsReferenceTo(iter) && (cond.Right is CiLiteral || (cond.Right is CiSymbolReference limitSymbol && limitSymbol.Symbol is CiVar))) {
 				long step = 0;
 				switch (statement.Advance) {
@@ -14192,6 +14196,384 @@ namespace Foxoft.Ci
 			if (this.GenFullCode)
 				WriteLib(program.Resources);
 			CloseFile();
+		}
+	}
+
+	public abstract class GenPySwift : GenBase
+	{
+
+		protected override void WriteDocPara(CiDocPara para, bool many)
+		{
+			if (many) {
+				WriteNewLine();
+				StartDocLine();
+				WriteNewLine();
+				StartDocLine();
+			}
+			foreach (CiDocInline inline in para.Children) {
+				switch (inline) {
+				case CiDocText text:
+					Write(text.Text);
+					break;
+				case CiDocCode code:
+					WriteChar('`');
+					Write(code.Text);
+					WriteChar('`');
+					break;
+				case CiDocLine _:
+					WriteNewLine();
+					StartDocLine();
+					break;
+				default:
+					throw new NotImplementedException();
+				}
+			}
+		}
+
+		protected abstract string GetDocBullet();
+
+		protected override void WriteDocList(CiDocList list)
+		{
+			WriteNewLine();
+			foreach (CiDocPara item in list.Items) {
+				Write(GetDocBullet());
+				WriteDocPara(item, false);
+				WriteNewLine();
+			}
+			StartDocLine();
+		}
+
+		protected override void WriteLocalName(CiSymbol symbol, CiPriority parent)
+		{
+			if (symbol is CiMember member) {
+				if (member.IsStatic())
+					WriteName(this.CurrentMethod.Parent);
+				else
+					Write("self");
+				WriteChar('.');
+			}
+			WriteName(symbol);
+		}
+
+		public override void VisitAggregateInitializer(CiAggregateInitializer expr)
+		{
+			Write("[ ");
+			CiArrayStorageType array = (CiArrayStorageType) expr.Type;
+			WriteCoercedLiterals(array.GetElementType(), expr.Items);
+			Write(" ]");
+		}
+
+		public override void VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
+		{
+			switch (expr.Op) {
+			case CiToken.Increment:
+			case CiToken.Decrement:
+				expr.Inner.Accept(this, parent);
+				break;
+			default:
+				base.VisitPrefixExpr(expr, parent);
+				break;
+			}
+		}
+
+		public override void VisitPostfixExpr(CiPostfixExpr expr, CiPriority parent)
+		{
+			switch (expr.Op) {
+			case CiToken.Increment:
+			case CiToken.Decrement:
+				expr.Inner.Accept(this, parent);
+				break;
+			default:
+				base.VisitPostfixExpr(expr, parent);
+				break;
+			}
+		}
+
+		static bool IsPtr(CiExpr expr) => expr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && !(klass is CiStorageType);
+
+		protected abstract string GetReferenceEqOp(bool not);
+
+		protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+		{
+			if (IsPtr(expr.Left) || IsPtr(expr.Right))
+				WriteBinaryExpr2(expr, parent, CiPriority.Equality, GetReferenceEqOp(not));
+			else
+				base.WriteEqual(expr, parent, not);
+		}
+
+		protected virtual void WriteExpr(CiExpr expr, CiPriority parent)
+		{
+			expr.Accept(this, parent);
+		}
+
+		protected void WriteListAppend(CiExpr obj, List<CiExpr> args)
+		{
+			WritePostfix(obj, ".append(");
+			CiType elementType = obj.Type.AsClassType().GetElementType();
+			if (args.Count == 0)
+				WriteNewStorage(elementType);
+			else
+				WriteCoerced(elementType, args[0], CiPriority.Argument);
+			WriteChar(')');
+		}
+
+		protected virtual bool VisitPreCall(CiCallExpr call) => false;
+
+		protected bool VisitXcrement(CiExpr expr, bool postfix, bool write)
+		{
+			bool seen;
+			switch (expr) {
+			case CiVar def:
+				return def.Value != null && VisitXcrement(def.Value, postfix, write);
+			case CiAggregateInitializer _:
+			case CiLiteral _:
+			case CiLambdaExpr _:
+				return false;
+			case CiInterpolatedString interp:
+				seen = false;
+				foreach (CiInterpolatedPart part in interp.Parts)
+					seen |= VisitXcrement(part.Argument, postfix, write);
+				return seen;
+			case CiSymbolReference symbol:
+				return symbol.Left != null && VisitXcrement(symbol.Left, postfix, write);
+			case CiUnaryExpr unary:
+				if (unary.Inner == null)
+					return false;
+				seen = VisitXcrement(unary.Inner, postfix, write);
+				if ((unary.Op == CiToken.Increment || unary.Op == CiToken.Decrement) && postfix == unary is CiPostfixExpr) {
+					if (write) {
+						WriteExpr(unary.Inner, CiPriority.Assign);
+						WriteLine(unary.Op == CiToken.Increment ? " += 1" : " -= 1");
+					}
+					seen = true;
+				}
+				return seen;
+			case CiBinaryExpr binary:
+				seen = VisitXcrement(binary.Left, postfix, write);
+				if (binary.Op == CiToken.Is)
+					return seen;
+				if (binary.Op == CiToken.CondAnd || binary.Op == CiToken.CondOr)
+					Debug.Assert(!VisitXcrement(binary.Right, postfix, false));
+				else
+					seen |= VisitXcrement(binary.Right, postfix, write);
+				return seen;
+			case CiSelectExpr select:
+				seen = VisitXcrement(select.Cond, postfix, write);
+				Debug.Assert(!VisitXcrement(select.OnTrue, postfix, false));
+				Debug.Assert(!VisitXcrement(select.OnFalse, postfix, false));
+				return seen;
+			case CiCallExpr call:
+				seen = VisitXcrement(call.Method, postfix, write);
+				foreach (CiExpr arg in call.Arguments)
+					seen |= VisitXcrement(arg, postfix, write);
+				if (!postfix)
+					seen |= VisitPreCall(call);
+				return seen;
+			default:
+				throw new NotImplementedException();
+			}
+		}
+
+		public override void VisitExpr(CiExpr statement)
+		{
+			VisitXcrement(statement, false, true);
+			if (!(statement is CiUnaryExpr unary) || (unary.Op != CiToken.Increment && unary.Op != CiToken.Decrement)) {
+				WriteExpr(statement, CiPriority.Statement);
+				WriteNewLine();
+				if (statement is CiVar def)
+					WriteInitCode(def);
+			}
+			VisitXcrement(statement, true, true);
+			CleanupTemporaries();
+		}
+
+		protected override void EndStatement()
+		{
+			WriteNewLine();
+		}
+
+		protected abstract void OpenChild();
+
+		protected abstract void CloseChild();
+
+		protected override void WriteChild(CiStatement statement)
+		{
+			OpenChild();
+			statement.AcceptStatement(this);
+			CloseChild();
+		}
+
+		public override void VisitBlock(CiBlock statement)
+		{
+			WriteStatements(statement.Statements);
+		}
+
+		bool OpenCond(string statement, CiExpr cond, CiPriority parent)
+		{
+			VisitXcrement(cond, false, true);
+			Write(statement);
+			WriteExpr(cond, parent);
+			OpenChild();
+			return VisitXcrement(cond, true, true);
+		}
+
+		protected virtual void WriteContinueDoWhile(CiExpr cond)
+		{
+			OpenCond("if ", cond, CiPriority.Argument);
+			WriteLine("continue");
+			CloseChild();
+			VisitXcrement(cond, true, true);
+			WriteLine("break");
+		}
+
+		protected virtual bool NeedCondXcrement(CiLoop loop) => loop.Cond != null;
+
+		void EndBody(CiLoop loop)
+		{
+			if (loop is CiFor forLoop) {
+				if (forLoop.IsRange)
+					return;
+				VisitOptionalStatement(forLoop.Advance);
+			}
+			if (NeedCondXcrement(loop))
+				VisitXcrement(loop.Cond, false, true);
+		}
+
+		public override void VisitContinue(CiContinue statement)
+		{
+			if (statement.Loop is CiDoWhile doWhile)
+				WriteContinueDoWhile(doWhile.Cond);
+			else {
+				EndBody(statement.Loop);
+				WriteLine("continue");
+			}
+		}
+
+		void OpenWhileTrue()
+		{
+			Write("while ");
+			VisitLiteralTrue();
+			OpenChild();
+		}
+
+		protected abstract string GetIfNot();
+
+		public override void VisitDoWhile(CiDoWhile statement)
+		{
+			OpenWhileTrue();
+			statement.Body.AcceptStatement(this);
+			if (statement.Body.CompletesNormally()) {
+				OpenCond(GetIfNot(), statement.Cond, CiPriority.Primary);
+				WriteLine("break");
+				CloseChild();
+				VisitXcrement(statement.Cond, true, true);
+			}
+			CloseChild();
+		}
+
+		protected virtual void OpenWhile(CiLoop loop)
+		{
+			OpenCond("while ", loop.Cond, CiPriority.Argument);
+		}
+
+		void CloseWhile(CiLoop loop)
+		{
+			loop.Body.AcceptStatement(this);
+			if (loop.Body.CompletesNormally())
+				EndBody(loop);
+			CloseChild();
+			if (NeedCondXcrement(loop)) {
+				if (loop.HasBreak && VisitXcrement(loop.Cond, true, false)) {
+					Write("else");
+					OpenChild();
+					VisitXcrement(loop.Cond, true, true);
+					CloseChild();
+				}
+				else
+					VisitXcrement(loop.Cond, true, true);
+			}
+		}
+
+		protected abstract void WriteForRange(CiVar iter, CiBinaryExpr cond, long rangeStep);
+
+		public override void VisitFor(CiFor statement)
+		{
+			if (statement.IsRange) {
+				CiVar iter = (CiVar) statement.Init;
+				Write("for ");
+				if (statement.IsIteratorUsed)
+					WriteName(iter);
+				else
+					WriteChar('_');
+				Write(" in ");
+				CiBinaryExpr cond = (CiBinaryExpr) statement.Cond;
+				WriteForRange(iter, cond, statement.RangeStep);
+				WriteChild(statement.Body);
+			}
+			else {
+				VisitOptionalStatement(statement.Init);
+				if (statement.Cond != null)
+					OpenWhile(statement);
+				else
+					OpenWhileTrue();
+				CloseWhile(statement);
+			}
+		}
+
+		protected abstract void WriteElseIf();
+
+		public override void VisitIf(CiIf statement)
+		{
+			bool condPostXcrement = OpenCond("if ", statement.Cond, CiPriority.Argument);
+			statement.OnTrue.AcceptStatement(this);
+			CloseChild();
+			if (statement.OnFalse == null && condPostXcrement && !statement.OnTrue.CompletesNormally())
+				VisitXcrement(statement.Cond, true, true);
+			else if (statement.OnFalse != null || condPostXcrement) {
+				if (!condPostXcrement && statement.OnFalse is CiIf childIf && !VisitXcrement(childIf.Cond, false, false)) {
+					WriteElseIf();
+					VisitIf(childIf);
+				}
+				else {
+					Write("else");
+					OpenChild();
+					VisitXcrement(statement.Cond, true, true);
+					VisitOptionalStatement(statement.OnFalse);
+					CloseChild();
+				}
+			}
+		}
+
+		protected abstract void WriteResultVar();
+
+		public override void VisitReturn(CiReturn statement)
+		{
+			if (statement.Value == null)
+				WriteLine("return");
+			else {
+				VisitXcrement(statement.Value, false, true);
+				WriteTemporaries(statement.Value);
+				if (VisitXcrement(statement.Value, true, false)) {
+					WriteResultVar();
+					Write(" = ");
+					WriteCoercedExpr(this.CurrentMethod.Type, statement.Value);
+					WriteNewLine();
+					VisitXcrement(statement.Value, true, true);
+					WriteLine("return result");
+				}
+				else {
+					Write("return ");
+					WriteCoercedExpr(this.CurrentMethod.Type, statement.Value);
+					WriteNewLine();
+				}
+				CleanupTemporaries();
+			}
+		}
+
+		public override void VisitWhile(CiWhile statement)
+		{
+			OpenWhile(statement);
+			CloseWhile(statement);
 		}
 	}
 }

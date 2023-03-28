@@ -30,11 +30,11 @@ DO = @echo $@ &&
 endif
 DO_SUMMARY = $(DO)perl test/summary.pl $(filter %.txt, $^)
 DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
-SOURCE_CI = Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenTyped.ci GenCCppD.ci GenCCpp.ci GenCpp.ci GenCs.ci GenJava.ci GenJs.ci GenTs.ci
+SOURCE_CI = Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenTyped.ci GenCCppD.ci GenCCpp.ci GenCpp.ci GenCs.ci GenJava.ci GenJs.ci GenTs.ci GenPySwift.ci
 
 all: cito.exe
 
-cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs FileResourceSema.cs GenC.cs GenD.cs GenPySwift.cs GenPy.cs GenSwift.cs GenCl.cs CiTo.cs)
+cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs FileResourceSema.cs GenC.cs GenD.cs GenPy.cs GenSwift.cs GenCl.cs CiTo.cs)
 	$(DO_BUILD)
 
 Transpiled.cs: $(SOURCE_CI)
@@ -75,7 +75,7 @@ test-cl test-GenCl.cs: $(patsubst test/%.ci, test/bin/%/cl.txt, $(wildcard test/
 
 test-GenCCpp.ci: test-c test-cpp
 
-test-GenPySwift.cs: test-py test-swift
+test-GenPySwift.ci: test-py test-swift
 
 test-error test-Lexer.ci test-Parser.ci test-Sema.ci: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
 	$(DO_SUMMARY)
