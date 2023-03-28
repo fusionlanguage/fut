@@ -467,7 +467,7 @@ public class GenC : GenCCpp
 		WriteArrayPrefix(type);
 		symbol();
 		while (type.IsArray()) {
-			CiType elementType = ((CiClassType) type).GetElementType();
+			CiType elementType = type.AsClassType().GetElementType();
 			if (type is CiArrayStorageType arrayStorage) {
 				WriteChar('[');
 				VisitLiteralLong(arrayStorage.Length);
