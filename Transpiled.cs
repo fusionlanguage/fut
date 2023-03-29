@@ -3849,26 +3849,30 @@ namespace Foxoft.Ci
 
 		CiNative ParseNative()
 		{
-			int line = this.Line;
+			CiNative result = new CiNative { Line = this.Line };
 			Expect(CiToken.Native);
-			int offset = this.CharOffset;
-			Expect(CiToken.LeftBrace);
-			int nesting = 1;
-			for (;;) {
-				if (See(CiToken.EndOfFile)) {
-					Expect(CiToken.RightBrace);
-					return null;
+			if (See(CiToken.LiteralString))
+				result.Content = this.StringValue;
+			else {
+				int offset = this.CharOffset;
+				Expect(CiToken.LeftBrace);
+				int nesting = 1;
+				for (;;) {
+					if (See(CiToken.EndOfFile)) {
+						Expect(CiToken.RightBrace);
+						return result;
+					}
+					if (See(CiToken.LeftBrace))
+						nesting++;
+					else if (See(CiToken.RightBrace)) {
+						if (--nesting == 0)
+							break;
+					}
+					NextToken();
 				}
-				if (See(CiToken.LeftBrace))
-					nesting++;
-				else if (See(CiToken.RightBrace)) {
-					if (--nesting == 0)
-						break;
-				}
-				NextToken();
+				Debug.Assert(this.Input[this.CharOffset - 1] == '}');
+				result.Content = Encoding.UTF8.GetString(this.Input, offset, this.CharOffset - 1 - offset);
 			}
-			Debug.Assert(this.Input[this.CharOffset - 1] == '}');
-			CiNative result = new CiNative { Line = line, Content = Encoding.UTF8.GetString(this.Input, offset, this.CharOffset - 1 - offset) };
 			NextToken();
 			return result;
 		}
