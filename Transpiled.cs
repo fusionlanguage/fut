@@ -17886,6 +17886,7 @@ namespace Foxoft.Ci
 			OpenStringWriter();
 			WriteTypes(program);
 			CreateFile(this.OutputFile);
+			WriteTopLevelNatives(program);
 			WriteIncludes("import ", "");
 			CloseStringWriter();
 			WriteLibrary();
@@ -19200,6 +19201,7 @@ namespace Foxoft.Ci
 			OpenStringWriter();
 			WriteTypes(program);
 			CreateFile(this.OutputFile);
+			WriteTopLevelNatives(program);
 			WriteIncludes("import ", "");
 			if (this.SwitchBreak) {
 				WriteNewLine();
