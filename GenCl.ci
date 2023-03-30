@@ -1,4 +1,4 @@
-// GenCl.cs - OpenCL C code generator
+// GenCl.ci - OpenCL C code generator
 //
 // Copyright (C) 2020-2023  Piotr Fusik
 //
@@ -17,13 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Foxoft.Ci
-{
-
 public class GenCl : GenC
 {
 	bool StringLength;
@@ -33,15 +26,15 @@ public class GenCl : GenC
 
 	protected override string GetTargetName() => "OpenCL C";
 
-	protected override void IncludeStdBool()
+	protected override void IncludeStdBool!()
 	{
 	}
 
-	protected override void IncludeMath()
+	protected override void IncludeMath!()
 	{
 	}
 
-	protected override void WriteNumericType(CiId id)
+	protected override void WriteNumericType!(CiId id)
 	{
 		switch (id) {
 		case CiId.SByteRange:
@@ -63,13 +56,16 @@ public class GenCl : GenC
 			Write("long");
 			break;
 		default:
-			throw new NotImplementedException(id.ToString());
+			assert false;
 		}
 	}
 
-	protected override void WriteStringPtrType() => Write("constant char *");
+	protected override void WriteStringPtrType!()
+	{
+		Write("constant char *");
+	}
 
-	protected override void WriteClassType(CiClassType klass, bool space)
+	protected override void WriteClassType!(CiClassType klass, bool space)
 	{
 		switch (klass.Class.Id) {
 		case CiId.None:
@@ -78,8 +74,11 @@ public class GenCl : GenC
 			else
 				base.WriteClassType(klass, space);
 			break;
-		case CiId.StringClass when klass.Id != CiId.StringStorageType:
-			WriteStringPtrType();
+		case CiId.StringClass:
+			if (klass.Id == CiId.StringStorageType)
+				NotSupported(klass, "string()");
+			else
+				WriteStringPtrType();
 			break;
 		default:
 			NotSupported(klass, klass.Class.Name);
@@ -87,16 +86,22 @@ public class GenCl : GenC
 		}
 	}
 
-	protected override void WritePrintfLongPrefix() => WriteChar('l');
+	protected override void WritePrintfLongPrefix!()
+	{
+		WriteChar('l');
+	}
 
-	protected override void WriteInterpolatedStringArgBase(CiExpr expr) => expr.Accept(this, CiPriority.Argument);
+	protected override void WriteInterpolatedStringArgBase!(CiExpr expr)
+	{
+		expr.Accept(this, CiPriority.Argument);
+	}
 
-	public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
+	public override void VisitInterpolatedString!(CiInterpolatedString expr, CiPriority parent)
 	{
 		NotSupported(expr, "Interpolated strings");
 	}
 
-	protected override void WriteCamelCaseNotKeyword(string name)
+	protected override void WriteCamelCaseNotKeyword!(string name)
 	{
 		switch (name) {
 		case "Constant":
@@ -120,7 +125,7 @@ public class GenCl : GenC
 
 	protected override string GetConst(CiArrayStorageType array) => array.PtrTaken ? "const " : "constant ";
 
-	protected override void WriteSubstringEqual(CiCallExpr call, string literal, CiPriority parent, bool not)
+	protected override void WriteSubstringEqual!(CiCallExpr call, string literal, CiPriority parent, bool not)
 	{
 		if (not)
 			WriteChar('!');
@@ -138,7 +143,7 @@ public class GenCl : GenC
 		WriteChar(')');
 	}
 
-	protected override void WriteEqualStringInternal(CiExpr left, CiExpr right, CiPriority parent, bool not)
+	protected override void WriteEqualStringInternal!(CiExpr left, CiExpr right, CiPriority parent, bool not)
 	{
 		this.StringEquals = true;
 		if (not)
@@ -146,13 +151,13 @@ public class GenCl : GenC
 		WriteCall("CiString_Equals", left, right);
 	}
 
-	protected override void WriteStringLength(CiExpr expr)
+	protected override void WriteStringLength!(CiExpr expr)
 	{
 		this.StringLength = true;
 		WriteCall("strlen", expr);
 	}
 
-	void WriteConsoleWrite(List<CiExpr> args, bool newLine)
+	void WriteConsoleWrite!(List<CiExpr#> args, bool newLine)
 	{
 		Write("printf(");
 		if (args.Count == 0)
@@ -163,7 +168,7 @@ public class GenCl : GenC
 			WritePrintfNotInterpolated(args, newLine);
 	}
 
-	protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
+	protected override void WriteCallExpr!(CiExpr? obj, CiMethod method, List<CiExpr#> args, CiPriority parent)
 	{
 		switch (method.Id) {
 		case CiId.None:
@@ -189,8 +194,7 @@ public class GenCl : GenC
 			}
 			break;
 		case CiId.StringSubstring:
-			if (args.Count != 1)
-				throw new NotImplementedException("Substring");
+			assert args.Count == 1;
 			if (parent > CiPriority.Add)
 				WriteChar('(');
 			WriteAdd(obj, args[0]);
@@ -275,11 +279,11 @@ public class GenCl : GenC
 		}
 	}
 
-	protected override void WriteAssert(CiAssert statement)
+	protected override void WriteAssert!(CiAssert statement)
 	{
 	}
 
-	protected override void WriteSwitchCaseBody(List<CiStatement> statements)
+	protected override void WriteSwitchCaseBody!(List<CiStatement#> statements)
 	{
 		if (statements.All(statement => statement is CiAssert))
 			WriteCharLine(';');
@@ -287,7 +291,7 @@ public class GenCl : GenC
 			base.WriteSwitchCaseBody(statements);
 	}
 
-	void WriteLibrary()
+	void WriteLibrary!()
 	{
 		if (this.StringLength) {
 			WriteNewLine();
@@ -334,7 +338,7 @@ public class GenCl : GenC
 		}
 	}
 
-	public override void WriteProgram(CiProgram program)
+	public override void WriteProgram!(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
 		this.StringLength = false;
@@ -363,6 +367,3 @@ public class GenCl : GenC
 		CloseFile();
 	}
 }
-
-}
-

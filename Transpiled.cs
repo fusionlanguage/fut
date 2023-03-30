@@ -12031,6 +12031,360 @@ namespace Foxoft.Ci
 		}
 	}
 
+	public class GenCl : GenC
+	{
+
+		bool StringLength;
+
+		bool StringEquals;
+
+		bool StringStartsWith;
+
+		bool BytesEqualsString;
+
+		protected override string GetTargetName() => "OpenCL C";
+
+		protected override void IncludeStdBool()
+		{
+		}
+
+		protected override void IncludeMath()
+		{
+		}
+
+		protected override void WriteNumericType(CiId id)
+		{
+			switch (id) {
+			case CiId.SByteRange:
+				Write("char");
+				break;
+			case CiId.ByteRange:
+				Write("uchar");
+				break;
+			case CiId.ShortRange:
+				Write("short");
+				break;
+			case CiId.UShortRange:
+				Write("ushort");
+				break;
+			case CiId.IntType:
+				Write("int");
+				break;
+			case CiId.LongType:
+				Write("long");
+				break;
+			default:
+				throw new NotImplementedException();
+			}
+		}
+
+		protected override void WriteStringPtrType()
+		{
+			Write("constant char *");
+		}
+
+		protected override void WriteClassType(CiClassType klass, bool space)
+		{
+			switch (klass.Class.Id) {
+			case CiId.None:
+				if (klass is CiDynamicPtrType)
+					NotSupported(klass, "Dynamic reference");
+				else
+					base.WriteClassType(klass, space);
+				break;
+			case CiId.StringClass:
+				if (klass.Id == CiId.StringStorageType)
+					NotSupported(klass, "string()");
+				else
+					WriteStringPtrType();
+				break;
+			default:
+				NotSupported(klass, klass.Class.Name);
+				break;
+			}
+		}
+
+		protected override void WritePrintfLongPrefix()
+		{
+			WriteChar('l');
+		}
+
+		protected override void WriteInterpolatedStringArgBase(CiExpr expr)
+		{
+			expr.Accept(this, CiPriority.Argument);
+		}
+
+		public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
+		{
+			NotSupported(expr, "Interpolated strings");
+		}
+
+		protected override void WriteCamelCaseNotKeyword(string name)
+		{
+			switch (name) {
+			case "Constant":
+			case "Global":
+			case "Kernel":
+			case "Local":
+			case "Private":
+			case "constant":
+			case "global":
+			case "kernel":
+			case "local":
+			case "private":
+				WriteCamelCase(name);
+				WriteChar('_');
+				break;
+			default:
+				base.WriteCamelCaseNotKeyword(name);
+				break;
+			}
+		}
+
+		protected override string GetConst(CiArrayStorageType array) => array.PtrTaken ? "const " : "constant ";
+
+		protected override void WriteSubstringEqual(CiCallExpr call, string literal, CiPriority parent, bool not)
+		{
+			if (not)
+				WriteChar('!');
+			if (IsUTF8GetString(call)) {
+				this.BytesEqualsString = true;
+				Write("CiBytes_Equals(");
+			}
+			else {
+				this.StringStartsWith = true;
+				Write("CiString_StartsWith(");
+			}
+			WriteStringPtrAdd(call);
+			Write(", ");
+			VisitLiteralString(literal);
+			WriteChar(')');
+		}
+
+		protected override void WriteEqualStringInternal(CiExpr left, CiExpr right, CiPriority parent, bool not)
+		{
+			this.StringEquals = true;
+			if (not)
+				WriteChar('!');
+			WriteCall("CiString_Equals", left, right);
+		}
+
+		protected override void WriteStringLength(CiExpr expr)
+		{
+			this.StringLength = true;
+			WriteCall("strlen", expr);
+		}
+
+		void WriteConsoleWrite(List<CiExpr> args, bool newLine)
+		{
+			Write("printf(");
+			if (args.Count == 0)
+				Write("\"\\n\")");
+			else if (args[0] is CiInterpolatedString interpolated)
+				WritePrintf(interpolated, newLine);
+			else
+				WritePrintfNotInterpolated(args, newLine);
+		}
+
+		protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
+		{
+			switch (method.Id) {
+			case CiId.None:
+			case CiId.ClassToString:
+				WriteCCall(obj, method, args);
+				break;
+			case CiId.EnumHasFlag:
+				WriteEnumHasFlag(obj, args, parent);
+				break;
+			case CiId.StringStartsWith:
+				int c = GetOneAscii(args[0]);
+				if (c >= 0) {
+					if (parent > CiPriority.Equality)
+						WriteChar('(');
+					WritePostfix(obj, "[0] == ");
+					VisitLiteralChar(c);
+					if (parent > CiPriority.Equality)
+						WriteChar(')');
+				}
+				else {
+					this.StringStartsWith = true;
+					WriteCall("CiString_StartsWith", obj, args[0]);
+				}
+				break;
+			case CiId.StringSubstring:
+				Debug.Assert(args.Count == 1);
+				if (parent > CiPriority.Add)
+					WriteChar('(');
+				WriteAdd(obj, args[0]);
+				if (parent > CiPriority.Add)
+					WriteChar(')');
+				break;
+			case CiId.ArrayCopyTo:
+				Write("for (size_t _i = 0; _i < ");
+				args[3].Accept(this, CiPriority.Rel);
+				WriteLine("; _i++)");
+				WriteChar('\t');
+				args[1].Accept(this, CiPriority.Primary);
+				WriteChar('[');
+				StartAdd(args[2]);
+				Write("_i] = ");
+				obj.Accept(this, CiPriority.Primary);
+				WriteChar('[');
+				StartAdd(args[0]);
+				Write("_i]");
+				break;
+			case CiId.ArrayFillAll:
+			case CiId.ArrayFillPart:
+				WriteArrayFill(obj, args);
+				break;
+			case CiId.ConsoleWrite:
+				WriteConsoleWrite(args, false);
+				break;
+			case CiId.ConsoleWriteLine:
+				WriteConsoleWrite(args, true);
+				break;
+			case CiId.UTF8GetByteCount:
+				WriteStringLength(args[0]);
+				break;
+			case CiId.UTF8GetBytes:
+				Write("for (size_t _i = 0; ");
+				args[0].Accept(this, CiPriority.Primary);
+				WriteLine("[_i] != '\\0'; _i++)");
+				WriteChar('\t');
+				args[1].Accept(this, CiPriority.Primary);
+				WriteChar('[');
+				StartAdd(args[2]);
+				Write("_i] = ");
+				WritePostfix(args[0], "[_i]");
+				break;
+			case CiId.MathMethod:
+			case CiId.MathClamp:
+			case CiId.MathIsFinite:
+			case CiId.MathIsNaN:
+			case CiId.MathLog2:
+			case CiId.MathMaxInt:
+			case CiId.MathMinInt:
+			case CiId.MathRound:
+				WriteLowercase(method.Name);
+				WriteArgsInParentheses(method, args);
+				break;
+			case CiId.MathAbs:
+				if (args[0].Type is CiFloatingType)
+					WriteChar('f');
+				WriteCall("abs", args[0]);
+				break;
+			case CiId.MathCeiling:
+				WriteCall("ceil", args[0]);
+				break;
+			case CiId.MathFusedMultiplyAdd:
+				WriteCall("fma", args[0], args[1], args[2]);
+				break;
+			case CiId.MathIsInfinity:
+				WriteCall("isinf", args[0]);
+				break;
+			case CiId.MathMaxDouble:
+				WriteCall("fmax", args[0], args[1]);
+				break;
+			case CiId.MathMinDouble:
+				WriteCall("fmin", args[0], args[1]);
+				break;
+			case CiId.MathTruncate:
+				WriteCall("trunc", args[0]);
+				break;
+			default:
+				NotSupported(obj, method.Name);
+				break;
+			}
+		}
+
+		protected override void WriteAssert(CiAssert statement)
+		{
+		}
+
+		protected override void WriteSwitchCaseBody(List<CiStatement> statements)
+		{
+			if (statements.All(statement => statement is CiAssert))
+				WriteCharLine(';');
+			else
+				base.WriteSwitchCaseBody(statements);
+		}
+
+		void WriteLibrary()
+		{
+			if (this.StringLength) {
+				WriteNewLine();
+				WriteLine("static int strlen(constant char *str)");
+				OpenBlock();
+				WriteLine("int len = 0;");
+				WriteLine("while (str[len] != '\\0')");
+				WriteLine("\tlen++;");
+				WriteLine("return len;");
+				CloseBlock();
+			}
+			if (this.StringEquals) {
+				WriteNewLine();
+				WriteLine("static bool CiString_Equals(constant char *str1, constant char *str2)");
+				OpenBlock();
+				WriteLine("for (size_t i = 0; str1[i] == str2[i]; i++) {");
+				WriteLine("\tif (str1[i] == '\\0')");
+				WriteLine("\t\treturn true;");
+				WriteCharLine('}');
+				WriteLine("return false;");
+				CloseBlock();
+			}
+			if (this.StringStartsWith) {
+				WriteNewLine();
+				WriteLine("static bool CiString_StartsWith(constant char *str1, constant char *str2)");
+				OpenBlock();
+				WriteLine("for (int i = 0; str2[i] != '\\0'; i++) {");
+				WriteLine("\tif (str1[i] != str2[i])");
+				WriteLine("\t\treturn false;");
+				WriteCharLine('}');
+				WriteLine("return true;");
+				CloseBlock();
+			}
+			if (this.BytesEqualsString) {
+				WriteNewLine();
+				WriteLine("static bool CiBytes_Equals(const uchar *mem, constant char *str)");
+				OpenBlock();
+				WriteLine("for (int i = 0; str[i] != '\\0'; i++) {");
+				WriteLine("\tif (mem[i] != str[i])");
+				WriteLine("\t\treturn false;");
+				WriteCharLine('}');
+				WriteLine("return true;");
+				CloseBlock();
+			}
+		}
+
+		public override void WriteProgram(CiProgram program)
+		{
+			this.WrittenClasses.Clear();
+			this.StringLength = false;
+			this.StringEquals = false;
+			this.StringStartsWith = false;
+			this.BytesEqualsString = false;
+			OpenStringWriter();
+			foreach (CiClass klass in program.Classes) {
+				this.CurrentClass = klass;
+				WriteConstructor(klass);
+				WriteDestructor(klass);
+				WriteMethods(klass);
+			}
+			CreateFile(this.OutputFile);
+			WriteTopLevelNatives(program);
+			WriteTypedefs(program, true);
+			foreach (CiClass klass in program.Classes)
+				WriteSignatures(klass, true);
+			WriteTypedefs(program, false);
+			foreach (CiClass klass in program.Classes)
+				WriteClass(klass, program);
+			WriteResources(program.Resources);
+			WriteLibrary();
+			CloseStringWriter();
+			CloseFile();
+		}
+	}
+
 	public class GenCpp : GenCCpp
 	{
 
