@@ -9422,6 +9422,7 @@ namespace Foxoft.Ci
 				StartDefinition(type, false, true);
 				Write("citemp");
 				VisitLiteralLong(id);
+				EndDefinition(type);
 				if (assign)
 					WriteAssignTemporary(type, expr);
 				WriteCharLine(';');

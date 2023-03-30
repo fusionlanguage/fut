@@ -873,6 +873,7 @@ public class GenC : GenCCpp
 			StartDefinition(type, false, true);
 			Write("citemp");
 			VisitLiteralLong(id);
+			EndDefinition(type);
 			if (assign)
 				WriteAssignTemporary(type, expr);
 			WriteCharLine(';');
