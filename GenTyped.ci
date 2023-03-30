@@ -43,6 +43,12 @@ public abstract class GenTyped : GenBase
 		Write(" }");
 	}
 
+	protected void WriteArrayStorageLength!(CiExpr expr)
+	{
+		assert expr.Type is CiArrayStorageType array;
+		VisitLiteralLong(array.Length);
+	}
+
 	protected override void WriteNewArray!(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		Write("new ");

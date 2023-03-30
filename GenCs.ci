@@ -496,8 +496,7 @@ public class GenCs : GenTyped
 				if (args.Count == 1) {
 					// .NET Framework compatibility
 					Write(", 0, ");
-					assert obj.Type is CiArrayStorageType array;
-					VisitLiteralLong(array.Length);
+					WriteArrayStorageLength(obj);
 				}
 			}
 			else {
