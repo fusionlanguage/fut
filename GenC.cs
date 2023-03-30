@@ -1064,6 +1064,51 @@ public class GenC : GenCCpp
 			|| base.HasInitCode(def);
 	}
 
+	CiPriority StartForwardThrow(CiMethod throwingMethod)
+	{
+		Write("if (");
+		switch (throwingMethod.Type.Id) {
+		case CiId.FloatType:
+		case CiId.DoubleType:
+			IncludeMath();
+			Write("isnan(");
+			return CiPriority.Argument;
+		case CiId.VoidType:
+			WriteChar('!');
+			return CiPriority.Primary;
+		default:
+			return CiPriority.Equality;
+		}
+	}
+
+	void EndForwardThrow(CiMethod throwingMethod)
+	{
+		switch (throwingMethod.Type.Id) {
+		case CiId.FloatType:
+		case CiId.DoubleType:
+			WriteChar(')');
+			break;
+		case CiId.VoidType:
+			break;
+		default:
+			Write(throwingMethod.Type is CiIntegerType ? " == -1" : " == NULL");
+			break;
+		}
+		WriteChar(')');
+		if (this.VarsToDestruct.Count > 0) {
+			WriteChar(' ');
+			OpenBlock();
+			VisitThrow(null);
+			CloseBlock();
+		}
+		else {
+			WriteNewLine();
+			this.Indent++;
+			VisitThrow(null);
+			this.Indent--;
+		}
+	}
+
 	protected override void WriteInitCode(CiNamedValue def)
 	{
 		if (!HasInitCode(def))
@@ -1100,8 +1145,11 @@ public class GenC : GenCCpp
 				WriteCharLine(';');
 			}
 			CiMethod throwingMethod = GetThrowingMethod(def.Value);
-			if (throwingMethod != null)
-				WriteForwardThrow(parent => WriteArrayElement(def, nesting), throwingMethod);
+			if (throwingMethod != null) {
+				StartForwardThrow(throwingMethod);
+				WriteArrayElement(def, nesting);
+				EndForwardThrow(throwingMethod);
+			}
 		}
 		if (GetListDestroy(type) is string destroy) {
 			Write("g_array_set_clear_func(");
@@ -2176,44 +2224,6 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteForwardThrow(Action<CiPriority> source, CiMethod throwingMethod)
-	{
-		Write("if (");
-		if (throwingMethod.Type is CiNumericType) {
-			if (throwingMethod.Type is CiIntegerType) {
-				source(CiPriority.Equality);
-				Write(" == -1");
-			}
-			else {
-				IncludeMath();
-				Write("isnan(");
-				source(CiPriority.Argument);
-				WriteChar(')');
-			}
-		}
-		else if (throwingMethod.Type.Id == CiId.VoidType) {
-			WriteChar('!');
-			source(CiPriority.Primary);
-		}
-		else {
-			source(CiPriority.Equality);
-			Write(" == NULL");
-		}
-		WriteChar(')');
-		if (this.VarsToDestruct.Count > 0) {
-			WriteChar(' ');
-			OpenBlock();
-			VisitThrow(null);
-			CloseBlock();
-		}
-		else {
-			WriteNewLine();
-			this.Indent++;
-			VisitThrow(null);
-			this.Indent--;
-		}
-	}
-
 	void WriteDestruct(CiSymbol symbol)
 	{
 		if (!NeedToDestruct(symbol))
@@ -2346,7 +2356,8 @@ public class GenC : GenCCpp
 		CiMethod throwingMethod = GetThrowingMethod(statement);
 		if (throwingMethod != null) {
 			EnsureChildBlock();
-			WriteForwardThrow(parent => statement.Accept(this, parent), throwingMethod);
+			statement.Accept(this, StartForwardThrow(throwingMethod));
+			EndForwardThrow(throwingMethod);
 			CleanupTemporaries();
 		}
 		else if (statement is CiCallExpr && statement.Type.Id == CiId.StringStorageType) {
