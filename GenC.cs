@@ -436,7 +436,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteDefinition(CiType type, Action symbol, bool promote, bool space)
+	void StartDefinition(CiType type, bool promote, bool space)
 	{
 		CiType baseType = type.GetBaseType();
 		switch (baseType) {
@@ -465,7 +465,10 @@ public class GenC : GenCCpp
 			break;
 		}
 		WriteArrayPrefix(type);
-		symbol();
+	}
+
+	void EndDefinition(CiType type)
+	{
 		while (type.IsArray()) {
 			CiType elementType = type.AsClassType().GetElementType();
 			if (type is CiArrayStorageType arrayStorage) {
@@ -479,31 +482,35 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteSignature(CiMethod method, Action symbol)
+	void WriteReturnType(CiMethod method)
 	{
 		if (method.Type.Id == CiId.VoidType && method.Throws) {
 			IncludeStdBool();
 			Write("bool ");
-			symbol();
 		}
 		else
-			WriteDefinition(method.Type, symbol, true, true);
+			StartDefinition(method.Type, true, true);
 	}
 
 	protected override void WriteType(CiType type, bool promote)
 	{
-		WriteDefinition(type, () => {}, promote, type is CiClassType arrayPtr && arrayPtr.Class.Id == CiId.ArrayPtrClass);
+		StartDefinition(type, promote, type is CiClassType arrayPtr && arrayPtr.Class.Id == CiId.ArrayPtrClass);
+		EndDefinition(type);
 	}
 
 	protected override void WriteTypeAndName(CiNamedValue value)
 	{
-		WriteDefinition(value.Type, () => WriteName(value), true, true);
+		StartDefinition(value.Type, true, true);
+		WriteName(value);
+		EndDefinition(value.Type);
 	}
 
 	void WriteDynamicArrayCast(CiType elementType)
 	{
 		WriteChar('(');
-		WriteDefinition(elementType, () => Write(elementType.IsArray() ? "(*)" : "*"), false, true);
+		StartDefinition(elementType, false, true);
+		Write(elementType.IsArray() ? "(*)" : "*");
+		EndDefinition(elementType);
 		Write(") ");
 	}
 
@@ -792,7 +799,9 @@ public class GenC : GenCCpp
 		int id = this.CurrentTemporaries.IndexOf(type);
 		if (id < 0) {
 			id = this.CurrentTemporaries.Count;
-			WriteDefinition(type, () => { Write("citemp"); VisitLiteralLong(id); }, false, true);
+			StartDefinition(type, false, true);
+			Write("citemp");
+			VisitLiteralLong(id);
 			if (assign)
 				WriteAssignTemporary(type, expr);
 			WriteCharLine(';');
@@ -2533,8 +2542,8 @@ public class GenC : GenCCpp
 			}
 			WriteCTemporaries(statement.Value);
 			EnsureChildBlock();
-			WriteDefinition(this.CurrentMethod.Type, () => Write("returnValue"), true, true);
-			Write(" = ");
+			StartDefinition(this.CurrentMethod.Type, true, true);
+			Write("returnValue = ");
 			WriteCoerced(this.CurrentMethod.Type, statement.Value, CiPriority.Argument);
 			WriteCharLine(';');
 			CleanupTemporaries();
@@ -2688,17 +2697,16 @@ public class GenC : GenCCpp
 		CiClass klass = (CiClass) method.Parent;
 		if (!klass.IsPublic || method.Visibility != CiVisibility.Public)
 			Write("static ");
-		WriteSignature(method, () => {
-			WriteName(klass);
-			WriteChar('_');
-			Write(method.Name);
-			if (method.CallType != CiCallType.Static)
-				WriteInstanceParameters(method);
-			else if (method.Parameters.Count() == 0)
-				Write("(void)");
-			else
-				WriteParameters(method, false);
-		});
+		WriteReturnType(method);
+		WriteName(klass);
+		WriteChar('_');
+		Write(method.Name);
+		if (method.CallType != CiCallType.Static)
+			WriteInstanceParameters(method);
+		else if (method.Parameters.Count() == 0)
+			Write("(void)");
+		else
+			WriteParameters(method, false);
 	}
 
 	static CiClass GetVtblStructClass(CiClass klass)
@@ -2725,12 +2733,11 @@ public class GenC : GenCCpp
 			WriteVtblFields(baseClass);
 		for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
 			if (symbol is CiMethod method && method.IsAbstractOrVirtual()) {
-				WriteSignature(method, () => {
-					Write("(*");
-					WriteCamelCase(method.Name);
-					WriteChar(')');
-					WriteInstanceParameters(method);
-				});
+				WriteReturnType(method);
+				Write("(*");
+				WriteCamelCase(method.Name);
+				WriteChar(')');
+				WriteInstanceParameters(method);
 				WriteCharLine(';');
 			}
 		}
@@ -2892,10 +2899,9 @@ public class GenC : GenCCpp
 				CiSymbol definedMethod = definingClass.TryLookup(declaredMethod.Name, false);
 				if (declaredMethod != definedMethod) {
 					WriteChar('(');
-					WriteSignature(declaredMethod, () => {
-						Write("(*)");
-						WriteInstanceParameters(declaredMethod);
-					});
+					WriteReturnType(declaredMethod);
+					Write("(*)");
+					WriteInstanceParameters(declaredMethod);
 					Write(") ");
 				}
 				WriteName(definedMethod);
