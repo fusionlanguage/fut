@@ -120,7 +120,7 @@ public abstract class GenBase : CiExprVisitor
 	public override void VisitLiteralDouble!(double value)
 	{
 		string() s;
-		native {
+		native { // TODO: double.ToString
 			s = value.ToString("R");
 		}
 		Write(s);
@@ -245,7 +245,7 @@ public abstract class GenBase : CiExprVisitor
 
 	protected void CreateFile!(string filename)
 	{
-		native {
+		native { // TODO: File
 			this.Writer = File.CreateText(filename);
 		}
 		WriteBanner();
@@ -253,14 +253,14 @@ public abstract class GenBase : CiExprVisitor
 
 	protected void CloseFile!()
 	{
-		native {
+		native { // TODO: Writer.Close
 			this.Writer.Close();
 		}
 	}
 
 	protected void OpenStringWriter()
 	{
-		native {
+		native { // TODO: StringWriter
 			this.Writer = this.StringWriter = new StringWriter();
 		}
 	}
@@ -279,7 +279,7 @@ public abstract class GenBase : CiExprVisitor
 
 	protected void WriteIncludes!(string prefix, string suffix)
 	{
-		native {
+		native { // TODO: foreach SortedDictionary
 			foreach (KeyValuePair<string, bool> pair in this.Includes) {
 				if (pair.Value == this.InHeaderFile) {
 					Write(prefix);
@@ -467,7 +467,7 @@ public abstract class GenBase : CiExprVisitor
 
 	protected void WriteBytes!(byte[] array)
 	{
-		native {
+		native { // TODO: resource
 			for (int i = 0; i < array.Length; i++) {
 				WriteComma(i);
 				VisitLiteralLong(array[i]);
@@ -1258,7 +1258,7 @@ public abstract class GenBase : CiExprVisitor
 	{
 		CiExpr expr = args[args.Count - 1];
 		if (expr.Type is CiEnum) {
-			native {
+			native { // TODO: Enum.FromInt
 				return (RegexOptions) expr.IntValue();
 			}
 		}

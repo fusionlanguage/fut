@@ -857,7 +857,7 @@ public class GenSwift : GenPySwift
 				return;
 			}
 			CiType type;
-			native {
+			native { // TODO: case enum when
 				switch (binary.Op) {
 				case CiToken.Plus:
 				case CiToken.Minus:
@@ -1125,7 +1125,7 @@ public class GenSwift : GenPySwift
 	protected override void WriteVar!(CiNamedValue def)
 	{
 		if (def is CiField || AddVar(def.Name)) {
-			native {
+			native { // TODO: ? : parentheses
 				Write((def.Type is CiClass ? !def.IsAssignableStorage()
 					: def.Type is CiArrayStorageType array ? IsArrayRef(array)
 					: def is CiVar local && !local.IsAssigned && !(def.Type is CiStorageType)) ? "let " : "var ");
@@ -1141,7 +1141,7 @@ public class GenSwift : GenPySwift
 	protected override void WriteStatements!(List<CiStatement#> statements)
 	{
 		// Encoding.UTF8.GetBytes returns void, so it can only be called as a statement
-		native {
+		native { // TODO: List.Count(lambda)
 			this.VarBytesAtIndent[this.Indent] = statements.Count(s => s is CiCallExpr call && call.Method.Symbol.Id == CiId.UTF8GetBytes) > 1;
 		}
 		base.WriteStatements(statements);
@@ -1735,7 +1735,7 @@ public class GenSwift : GenPySwift
 		WriteNewLine();
 		WriteLine("fileprivate final class CiResource");
 		OpenBlock();
-		native {
+		native { // TODO: foreach SortedDictionary
 			foreach (string name in resources.Keys) {
 				Write("static let ");
 				WriteResource(name, -1);

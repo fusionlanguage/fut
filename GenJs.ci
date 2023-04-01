@@ -429,7 +429,7 @@ public class GenJsNoModule : GenBase
 	static bool IsIdentifier(string s)
 	{
 		for (;;) {
-			native {
+			native { // TODO: string.All
 				return s.Length > 0
 					&& s[0] >= 'A'
 					&& s.All(c => CiLexer.IsLetterOrDigit(c));
@@ -930,7 +930,7 @@ public class GenJsNoModule : GenBase
 
 	public override void VisitBinaryExpr!(CiBinaryExpr expr, CiPriority parent)
 	{
-		native {
+		native { // TODO: case enum when
 			switch (expr.Op) {
 			case CiToken.Slash when expr.Type is CiIntegerType && expr.Type.Id != CiId.LongType:
 				if (parent > CiPriority.Or)
@@ -1282,7 +1282,7 @@ public class GenJsNoModule : GenBase
 		WriteNewLine();
 		WriteLine("class Ci");
 		OpenBlock();
-		native {
+		native { // TODO: foreach SortedDictionary
 			foreach (string name in resources.Keys) {
 				Write("static ");
 				WriteResource(name, -1);

@@ -6328,7 +6328,7 @@ namespace Foxoft.Ci
 		public override void VisitLiteralDouble(double value)
 		{
 			string s;
-			
+			 // TODO: double.ToString
 			s = value.ToString("R");
 		Write(s);
 			foreach (int c in s) {
@@ -6452,20 +6452,20 @@ namespace Foxoft.Ci
 
 		protected void CreateFile(string filename)
 		{
-			
+			 // TODO: File
 			this.Writer = File.CreateText(filename);
 		WriteBanner();
 		}
 
 		protected void CloseFile()
 		{
-			
+			 // TODO: Writer.Close
 			this.Writer.Close();
 		}
 
 		protected void OpenStringWriter()
 		{
-			
+			 // TODO: StringWriter
 			this.Writer = this.StringWriter = new StringWriter();
 		}
 
@@ -6483,7 +6483,7 @@ namespace Foxoft.Ci
 
 		protected void WriteIncludes(string prefix, string suffix)
 		{
-			
+			 // TODO: foreach SortedDictionary
 			foreach (KeyValuePair<string, bool> pair in this.Includes) {
 				if (pair.Value == this.InHeaderFile) {
 					Write(prefix);
@@ -6670,7 +6670,7 @@ namespace Foxoft.Ci
 
 		protected void WriteBytes(byte[] array)
 		{
-			
+			 // TODO: resource
 			for (int i = 0; i < array.Length; i++) {
 				WriteComma(i);
 				VisitLiteralLong(array[i]);
@@ -7454,7 +7454,7 @@ namespace Foxoft.Ci
 		{
 			CiExpr expr = args[args.Count - 1];
 			if (expr.Type is CiEnum) {
-				
+				 // TODO: Enum.FromInt
 				return (RegexOptions) expr.IntValue();
 			}
 			return RegexOptions.None;
@@ -10935,7 +10935,7 @@ namespace Foxoft.Ci
 			int i = this.VarsToDestruct.Count;
 			for (; i > 0; i--) {
 				CiNamedValue def = this.VarsToDestruct[i - 1];
-				
+				 // TODO: reference comparison
 				if (def.Parent != statement) // destroy only the variables in this block
 					break;
 			if (statement.CompletesNormally())
@@ -11138,7 +11138,7 @@ namespace Foxoft.Ci
 			}
 			else {
 				if (statement.Value is CiSymbolReference symbol) {
-					
+					 // TODO: List.Contains(reference)
 					if (this.VarsToDestruct.Contains(symbol.Symbol)) {
 						// Optimization: avoid copy
 						WriteDestructAll(symbol.Symbol);
@@ -11859,7 +11859,7 @@ namespace Foxoft.Ci
 				WriteLine("*ptr = value;");
 				CloseBlock();
 			}
-			
+			 // TODO: foreach SortedDictionary
 			foreach (KeyValuePair<string, string> nameContent in this.ListFrees) {
 				WriteNewLine();
 				Write("static void CiList_Free");
@@ -11943,7 +11943,7 @@ namespace Foxoft.Ci
 			if (resources.Count == 0)
 				return;
 			WriteNewLine();
-			
+			 // TODO: foreach SortedDictionary
 			foreach (string name in resources.Keys) {
 				Write("static const ");
 				WriteNumericType(CiId.ByteRange);
@@ -11962,7 +11962,7 @@ namespace Foxoft.Ci
 		{
 			this.WrittenClasses.Clear();
 			string headerFile;
-			
+			 // TODO: Path
 			headerFile = Path.ChangeExtension(this.OutputFile, "h");
 		this.InHeaderFile = true;
 			OpenStringWriter();
@@ -12023,7 +12023,7 @@ namespace Foxoft.Ci
 			Include("stdlib.h");
 			WriteCIncludes();
 			Write("#include \"");
-			
+			 // TODO: Path
 			Write(Path.GetFileName(headerFile));
 		WriteLine("\"");
 			WriteLibrary();
@@ -13685,7 +13685,7 @@ namespace Foxoft.Ci
 
 		public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 		{
-			
+			 // TODO: case enum when
 			switch (expr.Op) {
 			case CiToken.Plus when expr.Type.Id == CiId.StringStorageType:
 				if (parent > CiPriority.Add)
@@ -14156,7 +14156,7 @@ namespace Foxoft.Ci
 			OpenBlock();
 			WriteLine("namespace CiResource");
 			OpenBlock();
-			
+			 // TODO: foreach SortedDictionary
 			foreach (string name in resources.Keys) {
 				if (!define)
 					Write("extern ");
@@ -14182,7 +14182,7 @@ namespace Foxoft.Ci
 		{
 			this.WrittenClasses.Clear();
 			string headerFile;
-			
+			 // TODO: Path
 			headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
 		this.InHeaderFile = true;
 			this.UsingStringViewLiterals = false;
@@ -14235,7 +14235,7 @@ namespace Foxoft.Ci
 			}
 			WriteCIncludes();
 			Write("#include \"");
-			
+			 // TODO: Path
 			Write(Path.GetFileName(headerFile));
 		WriteLine("\"");
 			if (this.UsingStringViewLiterals)
@@ -14656,7 +14656,7 @@ namespace Foxoft.Ci
 					if (parent == CiPriority.Primary)
 						WriteChar('(');
 					CiVar element = forEach.GetVar();
-					
+					 // TODO: reference comparison
 					if (expr.Symbol == element) {
 						WriteStaticCastType(dict.GetKeyType());
 						WriteName(element);
@@ -15159,7 +15159,7 @@ namespace Foxoft.Ci
 			WriteNewLine();
 			WriteLine("internal static class CiResource");
 			OpenBlock();
-			
+			 // TODO: foreach SortedDictionary
 			foreach (string name in resources.Keys) {
 				Write("internal static readonly byte[] ");
 				WriteResource(name, -1);
@@ -16685,7 +16685,7 @@ namespace Foxoft.Ci
 			WriteNewLine();
 			WriteLine("private static struct CiResource");
 			OpenBlock();
-			
+			 // TODO: foreach SortedDictionary
 			foreach (string name in resources.Keys) {
 				Write("private static ubyte[] ");
 				WriteResource(name, -1);
@@ -17785,7 +17785,7 @@ namespace Foxoft.Ci
 
 		void CreateJavaFile(string className)
 		{
-			
+			 // TODO: Path
 			CreateFile(Path.Combine(this.OutputDirectory, className + ".java"));
 		if (this.Namespace != null) {
 				Write("package ");
@@ -18002,7 +18002,7 @@ namespace Foxoft.Ci
 
 		public override void WriteProgram(CiProgram program)
 		{
-			
+			 // TODO: Path, Directory
 			if (Directory.Exists(this.OutputFile))
 				this.OutputDirectory = this.OutputFile;
 			else
@@ -18425,7 +18425,7 @@ namespace Foxoft.Ci
 		static bool IsIdentifier(string s)
 		{
 			for (;;) {
-				
+				 // TODO: string.All
 				return s.Length > 0
 					&& s[0] >= 'A'
 					&& s.All(c => CiLexer.IsLetterOrDigit(c));
@@ -18920,7 +18920,7 @@ namespace Foxoft.Ci
 
 		public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 		{
-			
+			 // TODO: case enum when
 			switch (expr.Op) {
 			case CiToken.Slash when expr.Type is CiIntegerType && expr.Type.Id != CiId.LongType:
 				if (parent > CiPriority.Or)
@@ -19270,7 +19270,7 @@ namespace Foxoft.Ci
 			WriteNewLine();
 			WriteLine("class Ci");
 			OpenBlock();
-			
+			 // TODO: foreach SortedDictionary
 			foreach (string name in resources.Keys) {
 				Write("static ");
 				WriteResource(name, -1);
@@ -19366,7 +19366,7 @@ namespace Foxoft.Ci
 				break;
 			case CiClassType klass:
 				readOnly |= !(klass is CiReadWriteClassType);
-				
+				 // TODO: case enum when
 				switch (klass.Class.Id) {
 				case CiId.StringClass:
 					Write("string");
@@ -20851,7 +20851,7 @@ namespace Foxoft.Ci
 					return;
 				}
 				CiType type;
-				
+				 // TODO: case enum when
 				switch (binary.Op) {
 				case CiToken.Plus:
 				case CiToken.Minus:
@@ -21111,7 +21111,7 @@ namespace Foxoft.Ci
 		protected override void WriteVar(CiNamedValue def)
 		{
 			if (def is CiField || AddVar(def.Name)) {
-				
+				 // TODO: ? : parentheses
 				Write((def.Type is CiClass ? !def.IsAssignableStorage()
 					: def.Type is CiArrayStorageType array ? IsArrayRef(array)
 					: def is CiVar local && !local.IsAssigned && !(def.Type is CiStorageType)) ? "let " : "var ");
@@ -21125,7 +21125,7 @@ namespace Foxoft.Ci
 
 		protected override void WriteStatements(List<CiStatement> statements)
 		{
-			
+			 // TODO: List.Count(lambda)
 			this.VarBytesAtIndent[this.Indent] = statements.Count(s => s is CiCallExpr call && call.Method.Symbol.Id == CiId.UTF8GetBytes) > 1;
 		base.WriteStatements(statements);
 		}
@@ -21712,7 +21712,7 @@ namespace Foxoft.Ci
 			WriteNewLine();
 			WriteLine("fileprivate final class CiResource");
 			OpenBlock();
-			
+			 // TODO: foreach SortedDictionary
 			foreach (string name in resources.Keys) {
 				Write("static let ");
 				WriteResource(name, -1);
@@ -23023,7 +23023,7 @@ namespace Foxoft.Ci
 			WriteNewLine();
 			Write("class _CiResource");
 			OpenChild();
-			
+			 // TODO: foreach SortedDictionary
 			foreach (string name in resources.Keys) {
 				WriteResource(name, -1);
 				WriteLine(" = (");

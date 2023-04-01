@@ -1513,7 +1513,7 @@ public class GenD : GenCCppD
 		WriteNewLine();
 		WriteLine("private static struct CiResource");
 		OpenBlock();
-		native {
+		native { // TODO: foreach SortedDictionary
 			foreach (string name in resources.Keys) {
 				Write("private static ubyte[] ");
 				WriteResource(name, -1);

@@ -2401,7 +2401,7 @@ public class GenC : GenCCpp
 		int i = this.VarsToDestruct.Count;
 		for (; i > 0; i--) {
 			CiNamedValue def = this.VarsToDestruct[i - 1]; // CiVar
-			native {
+			native { // TODO: reference comparison
 				if (def.Parent != statement) // destroy only the variables in this block
 					break;
 			}
@@ -2606,7 +2606,7 @@ public class GenC : GenCCpp
 		}
 		else {
 			if (statement.Value is CiSymbolReference symbol) {
-				native {
+				native { // TODO: List.Contains(reference)
 					if (this.VarsToDestruct.Contains(symbol.Symbol)) {
 						// Optimization: avoid copy
 						WriteDestructAll(symbol.Symbol);
@@ -3336,7 +3336,7 @@ public class GenC : GenCCpp
 			WriteLine("*ptr = value;");
 			CloseBlock();
 		}
-		native {
+		native { // TODO: foreach SortedDictionary
 			foreach (KeyValuePair<string, string> nameContent in this.ListFrees) {
 				WriteNewLine();
 				Write("static void CiList_Free");
@@ -3422,7 +3422,7 @@ public class GenC : GenCCpp
 		if (resources.Count == 0)
 			return;
 		WriteNewLine();
-		native {
+		native { // TODO: foreach SortedDictionary
 			foreach (string name in resources.Keys) {
 				Write("static const ");
 				WriteNumericType(CiId.ByteRange);
@@ -3442,7 +3442,7 @@ public class GenC : GenCCpp
 	{
 		this.WrittenClasses.Clear();
 		string headerFile;
-		native {
+		native { // TODO: Path
 			headerFile = Path.ChangeExtension(this.OutputFile, "h");
 		}
 		this.InHeaderFile = true;
@@ -3507,7 +3507,7 @@ public class GenC : GenCCpp
 		Include("stdlib.h");
 		WriteCIncludes();
 		Write("#include \"");
-		native {
+		native { // TODO: Path
 			Write(Path.GetFileName(headerFile));
 		}
 		WriteLine("\"");

@@ -74,7 +74,7 @@ public class GenTs : GenJs
 			break;
 		case CiClassType klass:
 			readOnly |= !(klass is CiReadWriteClassType);
-			native {
+			native { // TODO: case enum when
 				switch (klass.Class.Id) {
 				case CiId.StringClass:
 					Write("string");

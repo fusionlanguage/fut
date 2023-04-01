@@ -1323,7 +1323,7 @@ public class GenCpp : GenCCpp
 
 	public override void VisitBinaryExpr!(CiBinaryExpr expr, CiPriority parent)
 	{
-		native {
+		native { // TODO: case enum when
 			switch (expr.Op) {
 			case CiToken.Plus when expr.Type.Id == CiId.StringStorageType:
 				if (parent > CiPriority.Add)
@@ -1807,7 +1807,7 @@ public class GenCpp : GenCCpp
 		OpenBlock();
 		WriteLine("namespace CiResource");
 		OpenBlock();
-		native {
+		native { // TODO: foreach SortedDictionary
 			foreach (string name in resources.Keys) {
 				if (!define)
 					Write("extern ");
@@ -1834,7 +1834,7 @@ public class GenCpp : GenCCpp
 	{
 		this.WrittenClasses.Clear();
 		string headerFile;
-		native {
+		native { // TODO: Path
 			headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
 		}
 		this.InHeaderFile = true;
@@ -1891,7 +1891,7 @@ public class GenCpp : GenCCpp
 		}
 		WriteCIncludes();
 		Write("#include \"");
-		native {
+		native { // TODO: Path
 			Write(Path.GetFileName(headerFile));
 		}
 		WriteLine("\"");

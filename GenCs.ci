@@ -411,7 +411,7 @@ public class GenCs : GenTyped
 				if (parent == CiPriority.Primary)
 					WriteChar('(');
 				CiVar element = forEach.GetVar();
-				native {
+				native { // TODO: reference comparison
 					if (expr.Symbol == element) {
 						WriteStaticCastType(dict.GetKeyType());
 						WriteName(element);
@@ -923,7 +923,7 @@ public class GenCs : GenTyped
 		WriteNewLine();
 		WriteLine("internal static class CiResource");
 		OpenBlock();
-		native {
+		native { // TODO: foreach SortedDictionary
 			foreach (string name in resources.Keys) {
 				Write("internal static readonly byte[] ");
 				WriteResource(name, -1);

@@ -1043,7 +1043,7 @@ public class GenJava : GenTyped
 
 	void CreateJavaFile!(string className)
 	{
-		native {
+		native { // TODO: Path
 			CreateFile(Path.Combine(this.OutputDirectory, className + ".java"));
 		}
 		if (this.Namespace != null) {
@@ -1266,7 +1266,7 @@ public class GenJava : GenTyped
 
 	public override void WriteProgram!(CiProgram program)
 	{
-		native {
+		native { // TODO: Path, Directory
 			if (Directory.Exists(this.OutputFile))
 				this.OutputDirectory = this.OutputFile;
 			else

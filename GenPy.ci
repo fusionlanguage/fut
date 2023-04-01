@@ -1304,7 +1304,7 @@ public class GenPy : GenPySwift
 		WriteNewLine();
 		Write("class _CiResource");
 		OpenChild();
-		native {
+		native { // TODO: foreach SortedDictionary
 			foreach (string name in resources.Keys) {
 				WriteResource(name, -1);
 				WriteLine(" = (");
