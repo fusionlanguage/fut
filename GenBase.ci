@@ -288,6 +288,8 @@ public abstract class GenBase : CiExprVisitor
 				}
 			}
 		}
+		if (!this.InHeaderFile)
+			this.Includes.Clear();
 	}
 
 	protected virtual void StartDocLine!()

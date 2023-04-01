@@ -6491,6 +6491,8 @@ namespace Foxoft.Ci
 					WriteLine(suffix);
 				}
 			}
+		if (!this.InHeaderFile)
+				this.Includes.Clear();
 		}
 
 		protected virtual void StartDocLine()
