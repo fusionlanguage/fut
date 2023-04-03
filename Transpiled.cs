@@ -1851,7 +1851,7 @@ namespace Foxoft.Ci
 		public void AddPart(string prefix, CiExpr arg, CiExpr widthExpr = null, int format = ' ', int precision = -1)
 		{
 			this.Parts.Add(new CiInterpolatedPart());
-			CiInterpolatedPart part = this.Parts.Last();
+			CiInterpolatedPart part = this.Parts[^1];
 			part.Prefix = prefix;
 			part.Argument = arg;
 			part.WidthExpr = widthExpr;
@@ -3279,7 +3279,7 @@ namespace Foxoft.Ci
 					CiDocList list = new CiDocList();
 					do {
 						list.Items.Add(new CiDocPara());
-						DocParsePara(list.Items.Last());
+						DocParsePara(list.Items[^1]);
 					}
 					while (See(CiToken.DocBullet));
 					doc.Details.Add(list);
@@ -3898,7 +3898,7 @@ namespace Foxoft.Ci
 			this.CurrentLoopOrSwitch = result;
 			while (Eat(CiToken.Case)) {
 				result.Cases.Add(new CiCase());
-				CiCase kase = result.Cases.Last();
+				CiCase kase = result.Cases[^1];
 				do {
 					CiExpr expr = ParseExpr();
 					if (See(CiToken.Id))
@@ -5936,12 +5936,12 @@ namespace Foxoft.Ci
 					}
 				}
 				if (ResolveStatements(kase.Body))
-					ReportError(kase.Body.Last(), "Case must end with break, continue, return or throw");
+					ReportError(kase.Body[^1], "Case must end with break, continue, return or throw");
 			}
 			if (statement.DefaultBody.Count > 0) {
 				bool reachable = ResolveStatements(statement.DefaultBody);
 				if (reachable)
-					ReportError(statement.DefaultBody.Last(), "Default must end with break, continue, return or throw");
+					ReportError(statement.DefaultBody[^1], "Default must end with break, continue, return or throw");
 			}
 			CloseScope();
 		}
@@ -7456,7 +7456,7 @@ namespace Foxoft.Ci
 
 		protected RegexOptions GetRegexOptions(List<CiExpr> args)
 		{
-			CiExpr expr = args.Last();
+			CiExpr expr = args[^1];
 			if (expr.Type is CiEnum) {
 				 // TODO: Enum.FromInt
 				return (RegexOptions) expr.IntValue();
@@ -10079,7 +10079,7 @@ namespace Foxoft.Ci
 		void WriteListAddInsert(CiExpr obj, bool insert, string function, List<CiExpr> args)
 		{
 			CiType elementType = obj.Type.AsClassType().GetElementType();
-			int id = WriteCTemporary(elementType, elementType.IsFinal() ? null : args.Last());
+			int id = WriteCTemporary(elementType, elementType.IsFinal() ? null : args[^1]);
 			if (elementType is CiStorageType storage && NeedsConstructor(storage.Class)) {
 				WriteName(storage.Class);
 				Write("_Construct(&citemp");
@@ -14791,8 +14791,7 @@ namespace Foxoft.Ci
 				WriteListInsert(obj, "Insert", args);
 				break;
 			case CiId.ListLast:
-				Include("System.Linq");
-				WritePostfix(obj, ".Last()");
+				WritePostfix(obj, "[^1]");
 				break;
 			case CiId.ListSortPart:
 				WritePostfix(obj, ".Sort(");

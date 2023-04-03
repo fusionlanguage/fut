@@ -536,8 +536,7 @@ public class GenCs : GenTyped
 			WriteListInsert(obj, "Insert", args);
 			break;
 		case CiId.ListLast:
-			Include("System.Linq");
-			WritePostfix(obj, ".Last()");
+			WritePostfix(obj, "[^1]");
 			break;
 		case CiId.ListSortPart:
 			WritePostfix(obj, ".Sort(");
