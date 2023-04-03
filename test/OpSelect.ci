@@ -19,6 +19,8 @@ public static class Test
 		Rectangle() r;
 		Circle() c;
 		Shape! s = a ? r : c;
-		return a ? (true ? s : null) == r : b[0] == 5;
+		if ((a ? a : false) ? false : a)
+			return false;
+		return (a ? (true ? s : null) == r : b[0] == 5);
 	}
 }

@@ -609,7 +609,7 @@ public abstract class GenBase : CiExprVisitor
 	{
 		if (parent > CiPriority.Select)
 			WriteChar('(');
-		expr.Cond.Accept(this, CiPriority.Select);
+		expr.Cond.Accept(this, CiPriority.SelectCond);
 		Write(" ? ");
 		WriteSelectValues(type, expr);
 		if (parent > CiPriority.Select)

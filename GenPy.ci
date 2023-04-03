@@ -428,7 +428,7 @@ public class GenPy : GenPySwift
 			WriteChar('(');
 		WriteCoerced(type, expr.OnTrue, CiPriority.Select);
 		Write(" if ");
-		expr.Cond.Accept(this, CiPriority.Select);
+		expr.Cond.Accept(this, CiPriority.SelectCond);
 		Write(" else ");
 		WriteCoerced(type, expr.OnFalse, CiPriority.Select);
 		if (parent > CiPriority.Select)

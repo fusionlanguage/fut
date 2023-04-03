@@ -43,6 +43,7 @@ public enum CiPriority
 	Argument,
 	Assign,
 	Select,
+	SelectCond,
 	CondOr,
 	CondAnd,
 	Or,

@@ -1230,6 +1230,7 @@ namespace Foxoft.Ci
 		Argument,
 		Assign,
 		Select,
+		SelectCond,
 		CondOr,
 		CondAnd,
 		Or,
@@ -6815,7 +6816,7 @@ namespace Foxoft.Ci
 		{
 			if (parent > CiPriority.Select)
 				WriteChar('(');
-			expr.Cond.Accept(this, CiPriority.Select);
+			expr.Cond.Accept(this, CiPriority.SelectCond);
 			Write(" ? ");
 			WriteSelectValues(type, expr);
 			if (parent > CiPriority.Select)
@@ -21123,11 +21124,8 @@ namespace Foxoft.Ci
 		protected override void WriteVar(CiNamedValue def)
 		{
 			if (def is CiField || AddVar(def.Name)) {
-				 // TODO: ? : parentheses
-				Write((def.Type is CiClass ? !def.IsAssignableStorage()
-					: def.Type is CiArrayStorageType array ? IsArrayRef(array)
-					: def is CiVar local && !local.IsAssigned && !(def.Type is CiStorageType)) ? "let " : "var ");
-			base.WriteVar(def);
+				Write((def.Type is CiClass ? !def.IsAssignableStorage() : def.Type is CiArrayStorageType array ? IsArrayRef(array) : def is CiVar local && !local.IsAssigned && !(def.Type is CiStorageType)) ? "let " : "var ");
+				base.WriteVar(def);
 			}
 			else {
 				WriteName(def);
@@ -22165,7 +22163,7 @@ namespace Foxoft.Ci
 				WriteChar('(');
 			WriteCoerced(type, expr.OnTrue, CiPriority.Select);
 			Write(" if ");
-			expr.Cond.Accept(this, CiPriority.Select);
+			expr.Cond.Accept(this, CiPriority.SelectCond);
 			Write(" else ");
 			WriteCoerced(type, expr.OnFalse, CiPriority.Select);
 			if (parent > CiPriority.Select)
