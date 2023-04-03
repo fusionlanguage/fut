@@ -11951,7 +11951,7 @@ namespace Foxoft.Ci
 				WriteChar(' ');
 				WriteResource(name, -1);
 				WriteChar('[');
-				 // TODO: native Length
+				 // TODO: resource
 				VisitLiteralLong(content.Length);
 			WriteLine("] = {");
 				WriteChar('\t');
@@ -14173,7 +14173,7 @@ namespace Foxoft.Ci
 				Include("array");
 				Include("cstdint");
 				Write("const std::array<uint8_t, ");
-				 // TODO: native Length
+				 // TODO: resource
 				VisitLiteralLong(content.Length);
 			Write("> ");
 				WriteResource(name, -1);
@@ -21352,8 +21352,10 @@ namespace Foxoft.Ci
 					WriteComma(i);
 					switch (kase.Values[i]) {
 					case CiBinaryExpr when1 when when1.Op == CiToken.When:
-						CiVar whenVar = (CiVar) when1.Left;
-						WriteSwitchCaseVar(whenVar);
+						if (when1.Left is CiVar whenVar)
+							WriteSwitchCaseVar(whenVar);
+						else
+							WriteCoerced(statement.Value.Type, when1.Left, CiPriority.Argument);
 						Write(" where ");
 						WriteExpr(when1.Right, CiPriority.Argument);
 						break;
@@ -22876,8 +22878,10 @@ namespace Foxoft.Ci
 						WriteSwitchCaseVar(def);
 						break;
 					case CiBinaryExpr when1:
-						CiVar whenVar = (CiVar) when1.Left;
-						WriteSwitchCaseVar(whenVar);
+						if (when1.Left is CiVar whenVar)
+							WriteSwitchCaseVar(whenVar);
+						else
+							when1.Left.Accept(this, CiPriority.Argument);
 						Write(" if ");
 						when1.Right.Accept(this, CiPriority.Argument);
 						break;
@@ -23040,7 +23044,7 @@ namespace Foxoft.Ci
 				this.Indent++;
 				Write("b\"");
 				int i = 0;
-				 // TODO: native Length
+				 // TODO: resource
 				foreach (byte b in content) {
 					if (i > 0 && (i & 15) == 0) {
 						WriteCharLine('"');

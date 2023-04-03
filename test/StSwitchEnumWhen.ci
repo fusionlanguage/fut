@@ -11,7 +11,7 @@ public class Test
 	static bool Check(Season s, bool cold)
 	{
 		switch (s) {
-		case Season.Spring when !cold: //FAIL: c cpp d java js py swift ts cl TODO
+		case Season.Spring when !cold: //FAIL: c cpp d java js py ts cl TODO
 		case Season.Summer when !cold:
 			return true;
 		case Season.Fall when cold:

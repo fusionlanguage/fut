@@ -1357,8 +1357,10 @@ public class GenSwift : GenPySwift
 				WriteComma(i);
 				switch (kase.Values[i]) {
 				case CiBinaryExpr when1 when when1.Op == CiToken.When:
-					assert when1.Left is CiVar whenVar;
-					WriteSwitchCaseVar(whenVar);
+					if (when1.Left is CiVar whenVar)
+						WriteSwitchCaseVar(whenVar);
+					else
+						WriteCoerced(statement.Value.Type, when1.Left, CiPriority.Argument);
 					Write(" where ");
 					WriteExpr(when1.Right, CiPriority.Argument);
 					break;

@@ -1143,8 +1143,10 @@ public class GenPy : GenPySwift
 					WriteSwitchCaseVar(def);
 					break;
 				case CiBinaryExpr when1:
-					assert when1.Left is CiVar whenVar;
-					WriteSwitchCaseVar(whenVar);
+					if (when1.Left is CiVar whenVar)
+						WriteSwitchCaseVar(whenVar);
+					else
+						when1.Left.Accept(this, CiPriority.Argument);
 					Write(" if ");
 					when1.Right.Accept(this, CiPriority.Argument);
 					break;
