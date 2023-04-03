@@ -248,7 +248,7 @@ public abstract class CiVisitor
 {
 	internal bool HasErrors = false;
 	protected abstract CiContainerType GetCurrentContainer();
-	protected void VisitOptionalStatement!(CiStatement? statement)
+	protected void VisitOptionalStatement!(CiStatement!? statement)
 	{
 		if (statement != null)
 			statement.AcceptStatement(this);

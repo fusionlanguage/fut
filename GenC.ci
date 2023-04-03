@@ -721,7 +721,7 @@ public class GenC : GenCCpp
 		return null;
 	}
 
-	string() GetDictionaryDestroy(CiType type)
+	string() GetDictionaryDestroy!(CiType type)
 	{
 		switch (type) {
 		case CiStringStorageType _:
@@ -1259,7 +1259,7 @@ public class GenC : GenCCpp
 			Write("NULL");
 	}
 
-	void WriteThrow()
+	void WriteThrow!()
 	{
 		WriteDestructAll();
 		Write("return ");
@@ -1768,7 +1768,7 @@ public class GenC : GenCCpp
 		WriteChar(')');
 	}
 
-	void StartArrayIndexing(CiExpr obj, CiType elementType)
+	void StartArrayIndexing!(CiExpr obj, CiType elementType)
 	{
 		Write("g_array_index(");
 		obj.Accept(this, CiPriority.Argument);
@@ -2738,7 +2738,7 @@ public class GenC : GenCCpp
 		WriteCharLine(';');
 	}
 
-	protected void WriteTypedefs(CiProgram program, bool pub)
+	protected void WriteTypedefs!(CiProgram program, bool pub)
 	{
 		for (CiSymbol? type = program.First; type != null; type = type.Next) {
 			switch (type) {
@@ -2756,7 +2756,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteInstanceParameters(CiMethod method)
+	void WriteInstanceParameters!(CiMethod method)
 	{
 		WriteChar('(');
 		if (!method.IsMutator)

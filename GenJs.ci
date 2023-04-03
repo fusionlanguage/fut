@@ -95,7 +95,7 @@ public class GenJsNoModule : GenBase
 		WriteName(value);
 	}
 
-	protected void WriteArrayElementType(CiType type)
+	protected void WriteArrayElementType!(CiType type)
 	{
 		switch (type.Id) {
 		case CiId.SByteRange:

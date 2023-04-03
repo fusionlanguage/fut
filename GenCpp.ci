@@ -45,7 +45,7 @@ public class GenCpp : GenCCpp
 		Write("nullptr");
 	}
 
-	void StartMethodCall(CiExpr obj)
+	void StartMethodCall!(CiExpr obj)
 	{
 		obj.Accept(this, CiPriority.Primary);
 		WriteMemberOp(obj, null);
@@ -1289,7 +1289,7 @@ public class GenCpp : GenCCpp
 		}
 	}
 
-	void WriteGtRawPtr(CiExpr expr)
+	void WriteGtRawPtr!(CiExpr expr)
 	{
 		Write(">(");
 		if (IsSharedPtr(expr))
@@ -1299,7 +1299,7 @@ public class GenCpp : GenCCpp
 		WriteChar(')');
 	}
 
-	void WriteIsVar(CiExpr expr, CiVar def, CiPriority parent)
+	void WriteIsVar!(CiExpr expr, CiVar def, CiPriority parent)
 	{
 		if (parent > CiPriority.Assign)
 			WriteChar('(');
@@ -1807,7 +1807,7 @@ public class GenCpp : GenCCpp
 		WriteBody(method);
 	}
 
-	void WriteResources(SortedDictionary<string(), byte[]#> resources, bool define)
+	void WriteResources!(SortedDictionary<string(), byte[]#> resources, bool define)
 	{
 		if (resources.Count == 0)
 			return;

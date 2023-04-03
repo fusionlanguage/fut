@@ -623,7 +623,7 @@ public class GenD : GenCCppD
 		WritePostfix(expr, ".length");
 	}
 
-	void WriteClassReference(CiExpr expr, CiPriority priority = CiPriority.Primary)
+	void WriteClassReference!(CiExpr expr, CiPriority priority = CiPriority.Primary)
 	{
 		if (IsStructPtr(expr.Type)) {
 			Write("(*");
@@ -1468,7 +1468,7 @@ public class GenD : GenCCppD
 		}
 	}
 
-	void WriteArrayPtr(CiExpr expr, CiPriority parent)
+	void WriteArrayPtr!(CiExpr expr, CiPriority parent)
 	{
 		switch (expr.Type) {
 		case CiArrayStorageType _:
