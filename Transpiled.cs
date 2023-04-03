@@ -2436,7 +2436,7 @@ namespace Foxoft.Ci
 		public static CiRangeType New(int min, int max)
 		{
 			Debug.Assert(min <= max);
-			CiRangeType result = new CiRangeType { Id = min >= -128 && max <= 127 ? CiId.SByteRange : min >= 0 && max <= 255 ? CiId.ByteRange : min >= -32768 && max <= 32767 ? CiId.ShortRange : min >= 0 && max <= 65535 ? CiId.UShortRange : CiId.IntType, Min = min, Max = max };
+			CiRangeType result = new CiRangeType { Id = min >= 0 && max <= 255 ? CiId.ByteRange : min >= -128 && max <= 127 ? CiId.SByteRange : min >= -32768 && max <= 32767 ? CiId.ShortRange : min >= 0 && max <= 65535 ? CiId.UShortRange : CiId.IntType, Min = min, Max = max };
 			AddMinMaxValue(result, "MinValue", min);
 			AddMinMaxValue(result, "MaxValue", max);
 			return result;

@@ -968,8 +968,8 @@ public class CiRangeType : CiIntegerType
 	{
 		assert min <= max;
 		CiRangeType# result = new CiRangeType { Id =
- 			min >= -128 && max <= 127 ? CiId.SByteRange :
 			min >= 0 && max <= byte.MaxValue ? CiId.ByteRange :
+ 			min >= -128 && max <= 127 ? CiId.SByteRange :
 			min >= short.MinValue && max <= short.MaxValue ? CiId.ShortRange :
 			min >= 0 && max <= ushort.MaxValue ? CiId.UShortRange :
 			CiId.IntType, Min = min, Max = max };
