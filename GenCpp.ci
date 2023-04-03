@@ -1816,24 +1816,24 @@ public class GenCpp : GenCCpp
 		OpenBlock();
 		WriteLine("namespace CiResource");
 		OpenBlock();
-		native { // TODO: foreach SortedDictionary
-			foreach (string name in resources.Keys) {
-				if (!define)
-					Write("extern ");
-				Include("array");
-				Include("cstdint");
-				Write("const std::array<uint8_t, ");
-				VisitLiteralLong(resources[name].Length);
-				Write("> ");
-				WriteResource(name, -1);
-				if (define) {
-					WriteLine(" = {");
-					WriteChar('\t');
-					WriteBytes(resources[name]);
-					Write(" }");
-				}
-				WriteCharLine(';');
+		foreach ((string name, byte[] content) in resources) {
+			if (!define)
+				Write("extern ");
+			Include("array");
+			Include("cstdint");
+			Write("const std::array<uint8_t, ");
+			native { // TODO: resource
+				VisitLiteralLong(content.Length);
 			}
+			Write("> ");
+			WriteResource(name, -1);
+			if (define) {
+				WriteLine(" = {");
+				WriteChar('\t');
+				WriteBytes(content);
+				Write(" }");
+			}
+			WriteCharLine(';');
 		}
 		CloseBlock();
 		CloseBlock();

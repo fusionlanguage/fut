@@ -1304,14 +1304,14 @@ public class GenPy : GenPySwift
 		WriteNewLine();
 		Write("class _CiResource");
 		OpenChild();
-		native { // TODO: foreach SortedDictionary
-			foreach (string name in resources.Keys) {
-				WriteResource(name, -1);
-				WriteLine(" = (");
-				this.Indent++;
-				Write("b\"");
-				int i = 0;
-				foreach (byte b in resources[name]) {
+		foreach ((string name, byte[] content) in resources) {
+			WriteResource(name, -1);
+			WriteLine(" = (");
+			this.Indent++;
+			Write("b\"");
+			int i = 0;
+			native { // TODO: resource
+				foreach (byte b in content) {
 					if (i > 0 && (i & 15) == 0) {
 						WriteCharLine('"');
 						Write("b\"");
@@ -1319,9 +1319,9 @@ public class GenPy : GenPySwift
 					WriteResourceByte(b);
 					i++;
 				}
-				WriteLine("\" )");
-				this.Indent--;
 			}
+			WriteLine("\" )");
+			this.Indent--;
 		}
 		CloseChild();
 	}

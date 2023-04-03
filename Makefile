@@ -6,17 +6,14 @@ CSC := dotnet '$(DOTNET_BASE_DIR)Roslyn/bincore/csc.dll' -nologo $(patsubst %,'-
 CFLAGS = -Wall -Werror
 SWIFTC = swiftc
 ifeq ($(OS),Windows_NT)
-DO_BUILD = "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/Roslyn/csc.exe" -nologo -out:$@ $(CSCFLAGS) $^
-CITO = ./cito.exe
 JAVACPSEP = ;
 SWIFTC += -no-color-diagnostics -sdk '$(SDKROOT)' -Xlinker -noexp -Xlinker -noimplib
 else
-DO_BUILD = dotnet build
-CITO = dotnet run --no-build --
 JAVACPSEP = :
 CFLAGS += -fsanitize=address -g
 SWIFTC += -sanitize=address
 endif
+CITO = dotnet run --no-build --
 CC = clang
 CXX = clang++ -std=c++2a
 DC = dmd
@@ -32,10 +29,10 @@ DO_SUMMARY = $(DO)perl test/summary.pl $(filter %.txt, $^)
 DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 SOURCE_CI = Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenTyped.ci GenCCppD.ci GenCCpp.ci GenC.ci GenCl.ci GenCpp.ci GenCs.ci GenD.ci GenJava.ci GenJs.ci GenTs.ci GenPySwift.ci GenSwift.ci GenPy.ci
 
-all: cito.exe
+all: bin/Debug/net6.0/cito.dll
 
-cito.exe: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs FileResourceSema.cs CiTo.cs)
-	$(DO_BUILD)
+bin/Debug/net6.0/cito.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs FileResourceSema.cs CiTo.cs)
+	dotnet build
 
 Transpiled.cs: $(SOURCE_CI)
 	cito -o $@ -n Foxoft.Ci $^
@@ -140,34 +137,34 @@ test/bin/%/cl.exe: test/bin/%/cl.o test/Runner-cl.cpp
 test/bin/%/cl.o: test/bin/%/Test.cl
 	$(DO)clang -c -o $@ $(CFLAGS) -Wno-constant-logical-operand -cl-std=CL2.0 -include opencl-c.h $< || grep '//FAIL:.*\<cl\>' test/$*.ci
 
-test/bin/%/Test.c: test/%.ci cito.exe
+test/bin/%/Test.c: test/%.ci bin/Debug/net6.0/cito.dll
 	$(DO_CITO)
 
-test/bin/%/Test.cpp: test/%.ci cito.exe
+test/bin/%/Test.cpp: test/%.ci bin/Debug/net6.0/cito.dll
 	$(DO_CITO)
 
-test/bin/%/Test.cs: test/%.ci cito.exe
+test/bin/%/Test.cs: test/%.ci bin/Debug/net6.0/cito.dll
 	$(DO_CITO)
 
-test/bin/%/Test.d: test/%.ci cito.exe
+test/bin/%/Test.d: test/%.ci bin/Debug/net6.0/cito.dll
 	$(DO_CITO)
 
-test/bin/%/Test.java: test/%.ci cito.exe
+test/bin/%/Test.java: test/%.ci bin/Debug/net6.0/cito.dll
 	$(DO_CITO)
 
-test/bin/%/Test.js: test/%.ci cito.exe
+test/bin/%/Test.js: test/%.ci bin/Debug/net6.0/cito.dll
 	$(DO_CITO)
 
-test/bin/%/Test.ts: test/%.ci cito.exe test/Runner.ts
+test/bin/%/Test.ts: test/%.ci bin/Debug/net6.0/cito.dll test/Runner.ts
 	$(DO)mkdir -p $(@D) && ($(CITO) -D TS -o $@ $< && cat test/Runner.ts >>$@ || grep '//FAIL:.*\<ts\>' $<)
 
-test/bin/%/Test.py: test/%.ci cito.exe
+test/bin/%/Test.py: test/%.ci bin/Debug/net6.0/cito.dll
 	$(DO_CITO)
 
-test/bin/%/Test.swift: test/%.ci cito.exe
+test/bin/%/Test.swift: test/%.ci bin/Debug/net6.0/cito.dll
 	$(DO_CITO)
 
-test/bin/%/Test.cl: test/%.ci cito.exe
+test/bin/%/Test.cl: test/%.ci bin/Debug/net6.0/cito.dll
 	$(DO_CITO)
 
 test/bin/CiCheck/cpp.txt: test/bin/CiCheck/cpp.exe $(SOURCE_CI)
@@ -191,13 +188,13 @@ test/bin/CiCheck/CiSema.class: test/bin/CiCheck/CiSema.java test/CiCheck.java
 test/bin/CiCheck/js.txt: test/CiCheck.js test/bin/CiCheck/Test.js $(SOURCE_CI)
 	$(DO)node test/CiCheck.js $(SOURCE_CI) >$@
 
-test/bin/CiCheck/Test.cpp test/bin/CiCheck/Test.d test/bin/CiCheck/CiSema.java test/bin/CiCheck/Test.js test/bin/CiCheck/Test.ts: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci cito.exe
+test/bin/CiCheck/Test.cpp test/bin/CiCheck/Test.d test/bin/CiCheck/CiSema.java test/bin/CiCheck/Test.js test/bin/CiCheck/Test.ts: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci bin/Debug/net6.0/cito.dll
 	$(DO)mkdir -p $(@D) && $(CITO) -o $@ $(filter %.ci, $^)
 
 test/bin/Resource/java.txt: test/bin/Resource/Test.class test/bin/Runner.class
 	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)$(JAVACPSEP)test" Runner >$@
 
-$(addprefix test/bin/Resource/Test., c cpp cs d java js ts py swift cl): test/Resource.ci cito.exe
+$(addprefix test/bin/Resource/Test., c cpp cs d java js ts py swift cl): test/Resource.ci bin/Debug/net6.0/cito.dll
 	$(DO)mkdir -p $(@D) && ($(CITO) -o $@ -I $(<D) $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 
 .PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.d test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.ts test/bin/%/Test.d.ts test/bin/%/Test.py test/bin/%/Test.swift test/bin/%/Test.cl
@@ -208,13 +205,13 @@ test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 test/node_modules: test/package.json
 	cd $(<D) && npm i --no-package-lock
 
-test/bin/%/error.txt: test/error/%.ci cito.exe
+test/bin/%/error.txt: test/error/%.ci bin/Debug/net6.0/cito.dll
 	$(DO)mkdir -p $(@D) && ! $(CITO) -o $(@:%.txt=%.cs) $< 2>$@ && perl -ne 'print "$$ARGV($$.): $$1\n" while m!//(ERROR: .+?)(?=$$| //)!g' $< | diff -u --strip-trailing-cr - $@ && echo PASSED >$@
 
 test-transpile: $(foreach t, $(patsubst test/%.ci, test/bin/%/Test., $(wildcard test/*.ci)), $tc $tcpp $tcs $td $tjava $tjs $tts $tpy $tswift $tcl)
 
 coverage/output.xml:
-	$(MAKE) clean cito.exe CSCFLAGS=-debug+
+	$(MAKE) clean bin/Debug/net6.0/cito.dll
 	dotnet-coverage collect -f xml -o $@ "make -j`nproc` test-transpile test-error"
 
 coverage: coverage/output.xml
@@ -223,22 +220,10 @@ coverage: coverage/output.xml
 codecov: coverage/output.xml
 	./codecov -f $<
 
-install: install-cito
-
-install-cito: cito.exe
-	mkdir -p $(DESTDIR)$(prefix)/lib/cito $(DESTDIR)$(prefix)/bin
-	cp $< $(DESTDIR)$(prefix)/lib/cito/cito.exe
-	(echo '#!/bin/sh' && echo 'exec /usr/bin/mono $(DESTDIR)$(prefix)/lib/cito/cito.exe "$$@"') >$(DESTDIR)$(prefix)/bin/cito
-	chmod 755 $(DESTDIR)$(prefix)/bin/cito
-
-uninstall:
-	$(RM) $(DESTDIR)$(prefix)/bin/cito $(DESTDIR)$(prefix)/lib/cito/cito.exe
-	rmdir $(DESTDIR)$(prefix)/lib/cito
-
 clean:
 	$(RM) cito.exe
 	$(RM) -r test/bin
 
-.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov install install-cito uninstall clean
+.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov clean
 
 .DELETE_ON_ERROR:

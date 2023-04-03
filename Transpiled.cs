@@ -3030,7 +3030,7 @@ namespace Foxoft.Ci
 			mathClass.Add(CiMethodGroup.New(CiMethod.NewStatic(this.IntType, CiId.MathClamp, "Clamp", CiVar.New(this.LongType, "value"), CiVar.New(this.LongType, "min"), CiVar.New(this.LongType, "max")), CiMethod.NewStatic(this.FloatType, CiId.MathClamp, "Clamp", CiVar.New(this.DoubleType, "value"), CiVar.New(this.DoubleType, "min"), CiVar.New(this.DoubleType, "max"))));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Cos", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Cosh", CiVar.New(this.DoubleType, "a")));
-			mathClass.Add(NewConstDouble("E", 2.7182818284590451));
+			mathClass.Add(NewConstDouble("E", 2.718281828459045));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Exp", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(floatIntType, CiId.MathMethod, "Floor", CiVar.New(this.DoubleType, "a")));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathFusedMultiplyAdd, "FusedMultiplyAdd", CiVar.New(this.DoubleType, "x"), CiVar.New(this.DoubleType, "y"), CiVar.New(this.DoubleType, "z")));
@@ -3044,7 +3044,7 @@ namespace Foxoft.Ci
 			mathClass.Add(CiMethodGroup.New(CiMethod.NewStatic(this.IntType, CiId.MathMinInt, "Min", CiVar.New(this.LongType, "a"), CiVar.New(this.LongType, "b")), CiMethod.NewStatic(this.FloatType, CiId.MathMinDouble, "Min", CiVar.New(this.DoubleType, "a"), CiVar.New(this.DoubleType, "b"))));
 			mathClass.Add(CiStaticProperty.New(this.FloatType, CiId.MathNaN, "NaN"));
 			mathClass.Add(CiStaticProperty.New(this.FloatType, CiId.MathNegativeInfinity, "NegativeInfinity"));
-			mathClass.Add(NewConstDouble("PI", 3.1415926535897931));
+			mathClass.Add(NewConstDouble("PI", 3.141592653589793));
 			mathClass.Add(CiStaticProperty.New(this.FloatType, CiId.MathPositiveInfinity, "PositiveInfinity"));
 			mathClass.Add(CiMethod.NewStatic(this.FloatType, CiId.MathMethod, "Pow", CiVar.New(this.DoubleType, "x"), CiVar.New(this.DoubleType, "y")));
 			mathClass.Add(CiMethod.NewStatic(floatIntType, CiId.MathRound, "Round", CiVar.New(this.DoubleType, "a")));
@@ -6487,15 +6487,14 @@ namespace Foxoft.Ci
 
 		protected void WriteIncludes(string prefix, string suffix)
 		{
-			 // TODO: foreach SortedDictionary
-			foreach (KeyValuePair<string, bool> pair in this.Includes) {
-				if (pair.Value == this.InHeaderFile) {
+			foreach ((string name, bool inHeaderFile) in this.Includes) {
+				if (inHeaderFile == this.InHeaderFile) {
 					Write(prefix);
-					Write(pair.Key);
+					Write(name);
 					WriteLine(suffix);
 				}
 			}
-		if (!this.InHeaderFile)
+			if (!this.InHeaderFile)
 				this.Includes.Clear();
 		}
 
@@ -11863,18 +11862,17 @@ namespace Foxoft.Ci
 				WriteLine("*ptr = value;");
 				CloseBlock();
 			}
-			 // TODO: foreach SortedDictionary
-			foreach (KeyValuePair<string, string> nameContent in this.ListFrees) {
+			foreach ((string name, string content) in this.ListFrees) {
 				WriteNewLine();
 				Write("static void CiList_Free");
-				Write(nameContent.Key);
+				Write(name);
 				WriteLine("(void *ptr)");
 				OpenBlock();
-				Write(nameContent.Value);
+				Write(content);
 				WriteCharLine(';');
 				CloseBlock();
 			}
-		if (this.TreeCompareInteger) {
+			if (this.TreeCompareInteger) {
 				WriteNewLine();
 				Write("static int CiTree_CompareInteger(gconstpointer pa, gconstpointer pb, gpointer user_data)");
 				OpenBlock();
@@ -11947,17 +11945,17 @@ namespace Foxoft.Ci
 			if (resources.Count == 0)
 				return;
 			WriteNewLine();
-			 // TODO: foreach SortedDictionary
-			foreach (string name in resources.Keys) {
+			foreach ((string name, byte[] content) in resources) {
 				Write("static const ");
 				WriteNumericType(CiId.ByteRange);
 				WriteChar(' ');
 				WriteResource(name, -1);
 				WriteChar('[');
-				VisitLiteralLong(resources[name].Length);
-				WriteLine("] = {");
+				 // TODO: native Length
+				VisitLiteralLong(content.Length);
+			WriteLine("] = {");
 				WriteChar('\t');
-				WriteBytes(resources[name]);
+				WriteBytes(content);
 				WriteLine(" };");
 			}
 		}
@@ -14169,25 +14167,25 @@ namespace Foxoft.Ci
 			OpenBlock();
 			WriteLine("namespace CiResource");
 			OpenBlock();
-			 // TODO: foreach SortedDictionary
-			foreach (string name in resources.Keys) {
+			foreach ((string name, byte[] content) in resources) {
 				if (!define)
 					Write("extern ");
 				Include("array");
 				Include("cstdint");
 				Write("const std::array<uint8_t, ");
-				VisitLiteralLong(resources[name].Length);
-				Write("> ");
+				 // TODO: native Length
+				VisitLiteralLong(content.Length);
+			Write("> ");
 				WriteResource(name, -1);
 				if (define) {
 					WriteLine(" = {");
 					WriteChar('\t');
-					WriteBytes(resources[name]);
+					WriteBytes(content);
 					Write(" }");
 				}
 				WriteCharLine(';');
 			}
-		CloseBlock();
+			CloseBlock();
 			CloseBlock();
 		}
 
@@ -15172,16 +15170,15 @@ namespace Foxoft.Ci
 			WriteNewLine();
 			WriteLine("internal static class CiResource");
 			OpenBlock();
-			 // TODO: foreach SortedDictionary
-			foreach (string name in resources.Keys) {
+			foreach ((string name, byte[] content) in resources) {
 				Write("internal static readonly byte[] ");
 				WriteResource(name, -1);
 				WriteLine(" = {");
 				WriteChar('\t');
-				WriteBytes(resources[name]);
+				WriteBytes(content);
 				WriteLine(" };");
 			}
-		CloseBlock();
+			CloseBlock();
 		}
 
 		public override void WriteProgram(CiProgram program)
@@ -16698,16 +16695,15 @@ namespace Foxoft.Ci
 			WriteNewLine();
 			WriteLine("private static struct CiResource");
 			OpenBlock();
-			 // TODO: foreach SortedDictionary
-			foreach (string name in resources.Keys) {
+			foreach ((string name, byte[] content) in resources) {
 				Write("private static ubyte[] ");
 				WriteResource(name, -1);
 				WriteLine(" = [");
 				WriteChar('\t');
-				WriteBytes(resources[name]);
+				WriteBytes(content);
 				WriteLine(" ];");
 			}
-		CloseBlock();
+			CloseBlock();
 		}
 
 		public override void WriteProgram(CiProgram program)
@@ -19290,16 +19286,15 @@ namespace Foxoft.Ci
 			WriteNewLine();
 			WriteLine("class Ci");
 			OpenBlock();
-			 // TODO: foreach SortedDictionary
-			foreach (string name in resources.Keys) {
+			foreach ((string name, byte[] content) in resources) {
 				Write("static ");
 				WriteResource(name, -1);
 				WriteLine(" = new Uint8Array([");
 				WriteChar('\t');
-				WriteBytes(resources[name]);
+				WriteBytes(content);
 				WriteLine(" ]);");
 			}
-		WriteNewLine();
+			WriteNewLine();
 			CloseBlock();
 		}
 
@@ -21729,16 +21724,15 @@ namespace Foxoft.Ci
 			WriteNewLine();
 			WriteLine("fileprivate final class CiResource");
 			OpenBlock();
-			 // TODO: foreach SortedDictionary
-			foreach (string name in resources.Keys) {
+			foreach ((string name, byte[] content) in resources) {
 				Write("static let ");
 				WriteResource(name, -1);
 				WriteLine(" = ArrayRef<UInt8>([");
 				WriteChar('\t');
-				WriteBytes(resources[name]);
+				WriteBytes(content);
 				WriteLine(" ])");
 			}
-		CloseBlock();
+			CloseBlock();
 		}
 
 		public override void WriteProgram(CiProgram program)
@@ -23040,14 +23034,14 @@ namespace Foxoft.Ci
 			WriteNewLine();
 			Write("class _CiResource");
 			OpenChild();
-			 // TODO: foreach SortedDictionary
-			foreach (string name in resources.Keys) {
+			foreach ((string name, byte[] content) in resources) {
 				WriteResource(name, -1);
 				WriteLine(" = (");
 				this.Indent++;
 				Write("b\"");
 				int i = 0;
-				foreach (byte b in resources[name]) {
+				 // TODO: native Length
+				foreach (byte b in content) {
 					if (i > 0 && (i & 15) == 0) {
 						WriteCharLine('"');
 						Write("b\"");
@@ -23055,10 +23049,10 @@ namespace Foxoft.Ci
 					WriteResourceByte(b);
 					i++;
 				}
-				WriteLine("\" )");
+			WriteLine("\" )");
 				this.Indent--;
 			}
-		CloseChild();
+			CloseChild();
 		}
 
 		public override void WriteProgram(CiProgram program)

@@ -923,15 +923,13 @@ public class GenCs : GenTyped
 		WriteNewLine();
 		WriteLine("internal static class CiResource");
 		OpenBlock();
-		native { // TODO: foreach SortedDictionary
-			foreach (string name in resources.Keys) {
-				Write("internal static readonly byte[] ");
-				WriteResource(name, -1);
-				WriteLine(" = {");
-				WriteChar('\t');
-				WriteBytes(resources[name]);
-				WriteLine(" };");
-			}
+		foreach ((string name, byte[] content) in resources) {
+			Write("internal static readonly byte[] ");
+			WriteResource(name, -1);
+			WriteLine(" = {");
+			WriteChar('\t');
+			WriteBytes(content);
+			WriteLine(" };");
 		}
 		CloseBlock();
 	}

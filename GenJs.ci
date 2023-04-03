@@ -1288,15 +1288,13 @@ public class GenJsNoModule : GenBase
 		WriteNewLine();
 		WriteLine("class Ci");
 		OpenBlock();
-		native { // TODO: foreach SortedDictionary
-			foreach (string name in resources.Keys) {
-				Write("static ");
-				WriteResource(name, -1);
-				WriteLine(" = new Uint8Array([");
-				WriteChar('\t');
-				WriteBytes(resources[name]);
-				WriteLine(" ]);");
-			}
+		foreach ((string name, byte[] content) in resources) {
+			Write("static ");
+			WriteResource(name, -1);
+			WriteLine(" = new Uint8Array([");
+			WriteChar('\t');
+			WriteBytes(content);
+			WriteLine(" ]);");
 		}
 		WriteNewLine();
 		CloseBlock();

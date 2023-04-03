@@ -3336,17 +3336,15 @@ public class GenC : GenCCpp
 			WriteLine("*ptr = value;");
 			CloseBlock();
 		}
-		native { // TODO: foreach SortedDictionary
-			foreach (KeyValuePair<string, string> nameContent in this.ListFrees) {
-				WriteNewLine();
-				Write("static void CiList_Free");
-				Write(nameContent.Key);
-				WriteLine("(void *ptr)");
-				OpenBlock();
-				Write(nameContent.Value);
-				WriteCharLine(';');
-				CloseBlock();
-			}
+		foreach ((string name, string content) in this.ListFrees) {
+			WriteNewLine();
+			Write("static void CiList_Free");
+			Write(name);
+			WriteLine("(void *ptr)");
+			OpenBlock();
+			Write(content);
+			WriteCharLine(';');
+			CloseBlock();
 		}
 		if (this.TreeCompareInteger) {
 			WriteNewLine();
@@ -3422,19 +3420,19 @@ public class GenC : GenCCpp
 		if (resources.Count == 0)
 			return;
 		WriteNewLine();
-		native { // TODO: foreach SortedDictionary
-			foreach (string name in resources.Keys) {
-				Write("static const ");
-				WriteNumericType(CiId.ByteRange);
-				WriteChar(' ');
-				WriteResource(name, -1);
-				WriteChar('[');
-				VisitLiteralLong(resources[name].Length);
-				WriteLine("] = {");
-				WriteChar('\t');
-				WriteBytes(resources[name]);
-				WriteLine(" };");
+		foreach ((string name, byte[] content) in resources) {
+			Write("static const ");
+			WriteNumericType(CiId.ByteRange);
+			WriteChar(' ');
+			WriteResource(name, -1);
+			WriteChar('[');
+			native { // TODO: resource
+				VisitLiteralLong(content.Length);
 			}
+			WriteLine("] = {");
+			WriteChar('\t');
+			WriteBytes(content);
+			WriteLine(" };");
 		}
 	}
 
