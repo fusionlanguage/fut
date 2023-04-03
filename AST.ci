@@ -527,7 +527,7 @@ public class CiInterpolatedString : CiExpr
 	public void AddPart!(string prefix, CiExpr# arg, CiExpr#? widthExpr = null, int format = ' ', int precision = -1)
 	{
 		this.Parts.Add();
-		CiInterpolatedPart! part = this.Parts[this.Parts.Count - 1];
+		CiInterpolatedPart! part = this.Parts.Last();
 		part.Prefix = prefix;
 		part.Argument = arg;
 		part.WidthExpr = widthExpr;

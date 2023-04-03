@@ -1851,7 +1851,7 @@ namespace Foxoft.Ci
 		public void AddPart(string prefix, CiExpr arg, CiExpr widthExpr = null, int format = ' ', int precision = -1)
 		{
 			this.Parts.Add(new CiInterpolatedPart());
-			CiInterpolatedPart part = this.Parts[this.Parts.Count - 1];
+			CiInterpolatedPart part = this.Parts.Last();
 			part.Prefix = prefix;
 			part.Argument = arg;
 			part.WidthExpr = widthExpr;
@@ -3279,7 +3279,7 @@ namespace Foxoft.Ci
 					CiDocList list = new CiDocList();
 					do {
 						list.Items.Add(new CiDocPara());
-						DocParsePara(list.Items[list.Items.Count - 1]);
+						DocParsePara(list.Items.Last());
 					}
 					while (See(CiToken.DocBullet));
 					doc.Details.Add(list);
@@ -3898,7 +3898,7 @@ namespace Foxoft.Ci
 			this.CurrentLoopOrSwitch = result;
 			while (Eat(CiToken.Case)) {
 				result.Cases.Add(new CiCase());
-				CiCase kase = result.Cases[result.Cases.Count - 1];
+				CiCase kase = result.Cases.Last();
 				do {
 					CiExpr expr = ParseExpr();
 					if (See(CiToken.Id))
@@ -7456,7 +7456,7 @@ namespace Foxoft.Ci
 
 		protected RegexOptions GetRegexOptions(List<CiExpr> args)
 		{
-			CiExpr expr = args[args.Count - 1];
+			CiExpr expr = args.Last();
 			if (expr.Type is CiEnum) {
 				 // TODO: Enum.FromInt
 				return (RegexOptions) expr.IntValue();
@@ -10079,7 +10079,7 @@ namespace Foxoft.Ci
 		void WriteListAddInsert(CiExpr obj, bool insert, string function, List<CiExpr> args)
 		{
 			CiType elementType = obj.Type.AsClassType().GetElementType();
-			int id = WriteCTemporary(elementType, elementType.IsFinal() ? null : args[args.Count - 1]);
+			int id = WriteCTemporary(elementType, elementType.IsFinal() ? null : args.Last());
 			if (elementType is CiStorageType storage && NeedsConstructor(storage.Class)) {
 				WriteName(storage.Class);
 				Write("_Construct(&citemp");

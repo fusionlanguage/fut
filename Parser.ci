@@ -97,7 +97,7 @@ public abstract class CiParser : CiLexer
 				CiDocList# list = new CiDocList();
 				do {
 					list.Items.Add();
-					DocParsePara(list.Items[list.Items.Count - 1]);
+					DocParsePara(list.Items.Last());
 				} while (See(CiToken.DocBullet));
 				doc.Details.Add(list);
 				break;
@@ -719,7 +719,7 @@ public abstract class CiParser : CiLexer
 		this.CurrentLoopOrSwitch = result;
 		while (Eat(CiToken.Case)) {
 			result.Cases.Add();
-			CiCase! kase = result.Cases[result.Cases.Count - 1];
+			CiCase! kase = result.Cases.Last();
 			do {
 				CiExpr# expr = ParseExpr();
 				if (See(CiToken.Id))

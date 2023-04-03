@@ -1254,7 +1254,7 @@ public abstract class GenBase : CiExprVisitor
 
 	protected RegexOptions GetRegexOptions(List<CiExpr#> args)
 	{
-		CiExpr expr = args[args.Count - 1];
+		CiExpr expr = args.Last();
 		if (expr.Type is CiEnum) {
 			native { // TODO: Enum.FromInt
 				return (RegexOptions) expr.IntValue();

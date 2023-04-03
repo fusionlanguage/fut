@@ -1538,7 +1538,7 @@ public class GenC : GenCCpp
 	{
 		CiType elementType = obj.Type.AsClassType().GetElementType();
 		// TODO: don't emit temporary variable if already a var/field of matching type - beware of integer promotions!
-		int id = WriteCTemporary(elementType, elementType.IsFinal() ? null : args[args.Count - 1]);
+		int id = WriteCTemporary(elementType, elementType.IsFinal() ? null : args.Last());
 		if (elementType is CiStorageType storage && NeedsConstructor(storage.Class)) {
 			WriteName(storage.Class);
 			Write("_Construct(&citemp");
