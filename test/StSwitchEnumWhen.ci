@@ -1,0 +1,36 @@
+enum Season
+{
+	Spring,
+	Summer,
+	Fall,
+	Winter
+}
+
+public class Test
+{
+	static bool Check(Season s, bool cold)
+	{
+		switch (s) {
+		case Season.Spring when !cold: //FAIL: c cpp d java js py swift ts cl TODO
+		case Season.Summer when !cold:
+			return true;
+		case Season.Fall when cold:
+		case Season.Winter when cold:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	public static bool Run()
+	{
+		return Check(Season.Spring, false)
+			&& Check(Season.Summer, false)
+			&& Check(Season.Fall, true)
+			&& Check(Season.Winter, true)
+			&& !Check(Season.Spring, true)
+			&& !Check(Season.Summer, true)
+			&& !Check(Season.Fall, false)
+			&& !Check(Season.Winter, false);
+	}
+}

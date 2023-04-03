@@ -856,42 +856,39 @@ public class GenSwift : GenPySwift
 				WriteUnwrapped(expr, parent, true);
 				return;
 			}
-			CiType type;
-			native { // TODO: case enum when
-				switch (binary.Op) {
-				case CiToken.Plus:
-				case CiToken.Minus:
-				case CiToken.Asterisk:
-				case CiToken.Slash:
-				case CiToken.Mod:
-				case CiToken.And:
-				case CiToken.Or:
-				case CiToken.Xor:
-				case CiToken.ShiftLeft when expr == binary.Left:
-				case CiToken.ShiftRight when expr == binary.Left:
-					if (!(expr is CiLiteral)) {
-						type = this.System.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
-						if (type != expr.Type) {
-							WriteCoerced(type, expr, parent);
-							return;
-						}
-					}
-					break;
-				case CiToken.Less:
-				case CiToken.LessOrEqual:
-				case CiToken.Greater:
-				case CiToken.GreaterOrEqual:
-				case CiToken.Equal:
-				case CiToken.NotEqual:
-					type = this.System.PromoteFloatingTypes(binary.Left.Type, binary.Right.Type);
-					if (type != null && type != expr.Type) {
+			switch (binary.Op) {
+			case CiToken.Plus:
+			case CiToken.Minus:
+			case CiToken.Asterisk:
+			case CiToken.Slash:
+			case CiToken.Mod:
+			case CiToken.And:
+			case CiToken.Or:
+			case CiToken.Xor:
+			case CiToken.ShiftLeft when expr == binary.Left:
+			case CiToken.ShiftRight when expr == binary.Left:
+				if (!(expr is CiLiteral)) {
+					CiType type = this.System.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
+					if (type != expr.Type) {
 						WriteCoerced(type, expr, parent);
 						return;
 					}
-					break;
-				default:
-					break;
 				}
+				break;
+			case CiToken.Less:
+			case CiToken.LessOrEqual:
+			case CiToken.Greater:
+			case CiToken.GreaterOrEqual:
+			case CiToken.Equal:
+			case CiToken.NotEqual:
+				CiType? typeComp = this.System.PromoteFloatingTypes(binary.Left.Type, binary.Right.Type);
+				if (typeComp != null && typeComp != expr.Type) {
+					WriteCoerced(typeComp, expr, parent);
+					return;
+				}
+				break;
+			default:
+				break;
 			}
 		}
 		expr.Accept(this, parent);

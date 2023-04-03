@@ -95,25 +95,33 @@ public class GenJsNoModule : GenBase
 		WriteName(value);
 	}
 
-	protected static string GetArrayElementType(CiNumericType type)
+	protected void WriteArrayElementType(CiType type)
 	{
 		switch (type.Id) {
 		case CiId.SByteRange:
-			return "Int8";
+			Write("Int8");
+			break;
 		case CiId.ByteRange:
-			return "Uint8";
+			Write("Uint8");
+			break;
 		case CiId.ShortRange:
-			return "Int16";
+			Write("Int16");
+			break;
 		case CiId.UShortRange:
-			return "Uint16";
+			Write("Uint16");
+			break;
 		case CiId.IntType:
-			return "Int32";
+			Write("Int32");
+			break;
 		case CiId.LongType:
-			return "BigInt64";
+			Write("BigInt64");
+			break;
 		case CiId.FloatType:
-			return "Float32";
+			Write("Float32");
+			break;
 		case CiId.DoubleType:
-			return "Float64";
+			Write("Float64");
+			break;
 		default:
 			assert false;
 		}
@@ -125,7 +133,7 @@ public class GenJsNoModule : GenBase
 		bool numeric = false;
 		if (array.GetElementType() is CiNumericType number) {
 			Write("new ");
-			Write(GetArrayElementType(number));
+			WriteArrayElementType(number);
 			Write("Array(");
 			numeric = true;
 		}
@@ -318,8 +326,8 @@ public class GenJsNoModule : GenBase
 	protected override void WriteNewArray!(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 	{
 		Write("new ");
-		if (elementType is CiNumericType numeric)
-			Write(GetArrayElementType(numeric));
+		if (elementType is CiNumericType)
+			WriteArrayElementType(elementType);
 		WriteCall("Array", lengthExpr);
 	}
 
@@ -930,59 +938,57 @@ public class GenJsNoModule : GenBase
 
 	public override void VisitBinaryExpr!(CiBinaryExpr expr, CiPriority parent)
 	{
-		native { // TODO: case enum when
-			switch (expr.Op) {
-			case CiToken.Slash when expr.Type is CiIntegerType && expr.Type.Id != CiId.LongType:
-				if (parent > CiPriority.Or)
-					WriteChar('(');
-				expr.Left.Accept(this, CiPriority.Mul);
-				Write(" / ");
-				expr.Right.Accept(this, CiPriority.Primary);
-				Write(" | 0");
-				if (parent > CiPriority.Or)
-					WriteChar(')');
-				break;
-			case CiToken.DivAssign when expr.Type is CiIntegerType && expr.Type.Id != CiId.LongType:
-				if (parent > CiPriority.Assign)
-					WriteChar('(');
-				expr.Left.Accept(this, CiPriority.Assign);
-				Write(" = ");
-				expr.Left.Accept(this, CiPriority.Mul); // TODO: side effect
-				Write(" / ");
-				expr.Right.Accept(this, CiPriority.Primary);
-				Write(" | 0");
-				if (parent > CiPriority.Assign)
-					WriteChar(')');
-				break;
-			case CiToken.And when expr.Type.Id == CiId.BoolType:
-			case CiToken.Or when expr.Type.Id == CiId.BoolType:
-				WriteBoolAndOr(expr);
-				break;
-			case CiToken.Xor when expr.Type.Id == CiId.BoolType:
-				WriteEqual(expr, parent, true);
-				break;
-			case CiToken.AndAssign when expr.Type.Id == CiId.BoolType:
-				Write("if (!"); // FIXME: picks up parent "else"
-				WriteBoolAndOrAssign(expr, CiPriority.Primary);
-				Write(" = false");
-				break;
-			case CiToken.OrAssign when expr.Type.Id == CiId.BoolType:
-				Write("if ("); // FIXME: picks up parent "else"
-				WriteBoolAndOrAssign(expr, CiPriority.Argument);
-				Write(" = true");
-				break;
-			case CiToken.XorAssign when expr.Type.Id == CiId.BoolType:
-				expr.Left.Accept(this, CiPriority.Assign);
-				Write(" = ");
-				WriteEqual(expr, CiPriority.Argument, true); // TODO: side effect
-				break;
-			case CiToken.Is when expr.Right is CiVar def:
-				WriteIsVar(expr.Left, def, true, parent);
-				break;
-			default:
-				base.VisitBinaryExpr(expr, parent);
-				break;
-			}
+		switch (expr.Op) {
+		case CiToken.Slash when expr.Type is CiIntegerType && expr.Type.Id != CiId.LongType:
+			if (parent > CiPriority.Or)
+				WriteChar('(');
+			expr.Left.Accept(this, CiPriority.Mul);
+			Write(" / ");
+			expr.Right.Accept(this, CiPriority.Primary);
+			Write(" | 0");
+			if (parent > CiPriority.Or)
+				WriteChar(')');
+			break;
+		case CiToken.DivAssign when expr.Type is CiIntegerType && expr.Type.Id != CiId.LongType:
+			if (parent > CiPriority.Assign)
+				WriteChar('(');
+			expr.Left.Accept(this, CiPriority.Assign);
+			Write(" = ");
+			expr.Left.Accept(this, CiPriority.Mul); // TODO: side effect
+			Write(" / ");
+			expr.Right.Accept(this, CiPriority.Primary);
+			Write(" | 0");
+			if (parent > CiPriority.Assign)
+				WriteChar(')');
+			break;
+		case CiToken.And when expr.Type.Id == CiId.BoolType:
+		case CiToken.Or when expr.Type.Id == CiId.BoolType:
+			WriteBoolAndOr(expr);
+			break;
+		case CiToken.Xor when expr.Type.Id == CiId.BoolType:
+			WriteEqual(expr, parent, true);
+			break;
+		case CiToken.AndAssign when expr.Type.Id == CiId.BoolType:
+			Write("if (!"); // FIXME: picks up parent "else"
+			WriteBoolAndOrAssign(expr, CiPriority.Primary);
+			Write(" = false");
+			break;
+		case CiToken.OrAssign when expr.Type.Id == CiId.BoolType:
+			Write("if ("); // FIXME: picks up parent "else"
+			WriteBoolAndOrAssign(expr, CiPriority.Argument);
+			Write(" = true");
+			break;
+		case CiToken.XorAssign when expr.Type.Id == CiId.BoolType:
+			expr.Left.Accept(this, CiPriority.Assign);
+			Write(" = ");
+			WriteEqual(expr, CiPriority.Argument, true); // TODO: side effect
+			break;
+		case CiToken.Is when expr.Right is CiVar def:
+			WriteIsVar(expr.Left, def, true, parent);
+			break;
+		default:
+			base.VisitBinaryExpr(expr, parent);
+			break;
 		}
 	}
 

@@ -74,73 +74,71 @@ public class GenTs : GenJs
 			break;
 		case CiClassType klass:
 			readOnly |= !(klass is CiReadWriteClassType);
-			native { // TODO: case enum when
+			switch (klass.Class.Id) {
+			case CiId.StringClass:
+				Write("string");
+				break;
+			case CiId.ArrayPtrClass when !(klass.GetElementType() is CiNumericType):
+			case CiId.ArrayStorageClass when !(klass.GetElementType() is CiNumericType):
+			case CiId.ListClass:
+			case CiId.QueueClass:
+			case CiId.StackClass:
+				if (readOnly)
+					Write("readonly ");
+				if (klass.GetElementType().Nullable)
+					WriteChar('(');
+				WriteType(klass.GetElementType());
+				if (klass.GetElementType().Nullable)
+					WriteChar(')');
+				Write("[]");
+				break;
+			default:
+				if (readOnly && klass.Class.TypeParameterCount > 0)
+					Write("Readonly<");
 				switch (klass.Class.Id) {
-				case CiId.StringClass:
-					Write("string");
+				case CiId.ArrayPtrClass:
+				case CiId.ArrayStorageClass:
+					WriteArrayElementType(klass.GetElementType());
+					Write("Array");
 					break;
-				case CiId.ArrayPtrClass when !(klass.GetElementType() is CiNumericType):
-				case CiId.ArrayStorageClass when !(klass.GetElementType() is CiNumericType):
-				case CiId.ListClass:
-				case CiId.QueueClass:
-				case CiId.StackClass:
-					if (readOnly)
-						Write("readonly ");
-					if (klass.GetElementType().Nullable)
-						WriteChar('(');
-					WriteType(klass.GetElementType());
-					if (klass.GetElementType().Nullable)
-						WriteChar(')');
-					Write("[]");
+				case CiId.HashSetClass:
+				case CiId.SortedSetClass:
+					Write("Set<");
+					WriteType(klass.GetElementType(), false);
+					WriteChar('>');
+					break;
+				case CiId.DictionaryClass:
+				case CiId.SortedDictionaryClass:
+					if (klass.GetKeyType() is CiEnum)
+						Write("Partial<");
+					Write("Record<");
+					WriteType(klass.GetKeyType());
+					Write(", ");
+					WriteType(klass.GetValueType());
+					WriteChar('>');
+					if (klass.GetKeyType() is CiEnum)
+						WriteChar('>');
+					break;
+				case CiId.OrderedDictionaryClass:
+					Write("Map<");
+					WriteType(klass.GetKeyType());
+					Write(", ");
+					WriteType(klass.GetValueType());
+					WriteChar('>');
+					break;
+				case CiId.RegexClass:
+					Write("RegExp");
+					break;
+				case CiId.MatchClass:
+					Write("RegExpMatchArray");
 					break;
 				default:
-					if (readOnly && klass.Class.TypeParameterCount > 0)
-						Write("Readonly<");
-					switch (klass.Class.Id) {
-					case CiId.ArrayPtrClass:
-					case CiId.ArrayStorageClass:
-						Write(GetArrayElementType((CiNumericType) klass.GetElementType()));
-						Write("Array");
-						break;
-					case CiId.HashSetClass:
-					case CiId.SortedSetClass:
-						Write("Set<");
-						WriteType(klass.GetElementType(), false);
-						WriteChar('>');
-						break;
-					case CiId.DictionaryClass:
-					case CiId.SortedDictionaryClass:
-						if (klass.GetKeyType() is CiEnum)
-							Write("Partial<");
-						Write("Record<");
-						WriteType(klass.GetKeyType());
-						Write(", ");
-						WriteType(klass.GetValueType());
-						WriteChar('>');
-						if (klass.GetKeyType() is CiEnum)
-							WriteChar('>');
-						break;
-					case CiId.OrderedDictionaryClass:
-						Write("Map<");
-						WriteType(klass.GetKeyType());
-						Write(", ");
-						WriteType(klass.GetValueType());
-						WriteChar('>');
-						break;
-					case CiId.RegexClass:
-						Write("RegExp");
-						break;
-					case CiId.MatchClass:
-						Write("RegExpMatchArray");
-						break;
-					default:
-						Write(klass.Class.Name);
-						break;
-					}
-					if (readOnly && klass.Class.TypeParameterCount > 0)
-						WriteChar('>');
+					Write(klass.Class.Name);
 					break;
 				}
+				if (readOnly && klass.Class.TypeParameterCount > 0)
+					WriteChar('>');
+				break;
 			}
 			if (type.Nullable)
 				Write(" | null");

@@ -1323,9 +1323,9 @@ public class GenCpp : GenCCpp
 
 	public override void VisitBinaryExpr!(CiBinaryExpr expr, CiPriority parent)
 	{
-		native { // TODO: case enum when
-			switch (expr.Op) {
-			case CiToken.Plus when expr.Type.Id == CiId.StringStorageType:
+		switch (expr.Op) {
+		case CiToken.Plus:
+			if (expr.Type.Id == CiId.StringStorageType) {
 				if (parent > CiPriority.Add)
 					WriteChar('(');
 				// https://stackoverflow.com/questions/44636549/why-is-there-no-support-for-concatenating-stdstring-and-stdstring-view
@@ -1335,35 +1335,44 @@ public class GenCpp : GenCCpp
 				if (parent > CiPriority.Add)
 					WriteChar(')');
 				return;
-			case CiToken.Equal:
-			case CiToken.NotEqual:
-			case CiToken.Greater:
-				CiExpr str = IsStringEmpty(expr);
-				if (str != null) {
-					if (expr.Op != CiToken.Equal)
-						WriteChar('!');
-					WritePostfix(str, ".empty()");
-					return;
-				}
-				break;
-			case CiToken.Assign when expr.Left.Type.Id == CiId.StringStorageType && parent == CiPriority.Statement && IsTrimSubstring(expr) is CiExpr length:
+			}
+			break;
+		case CiToken.Equal:
+		case CiToken.NotEqual:
+		case CiToken.Greater:
+			CiExpr? str = IsStringEmpty(expr);
+			if (str != null) {
+				if (expr.Op != CiToken.Equal)
+					WriteChar('!');
+				WritePostfix(str, ".empty()");
+				return;
+			}
+			break;
+		case CiToken.Assign:
+			CiExpr? length = IsTrimSubstring(expr);
+			if (length != null && expr.Left.Type.Id == CiId.StringStorageType && parent == CiPriority.Statement) {
 				WriteMethodCall(expr.Left, "resize", length);
 				return;
-			case CiToken.Is:
-				if (expr.Right is CiSymbolReference symbol) {
-					if (parent >= CiPriority.Or && parent <= CiPriority.Mul)
-						Write("!!");
-					Write("dynamic_cast<const ");
-					Write(symbol.Symbol.Name);
-					Write(" *");
-					WriteGtRawPtr(expr.Left);
-				}
-				else
-					WriteIsVar(expr.Left, (CiVar) expr.Right, parent);
+			}
+			break;
+		case CiToken.Is:
+			switch (expr.Right) {
+			case CiSymbolReference symbol:
+				if (parent >= CiPriority.Or && parent <= CiPriority.Mul)
+					Write("!!");
+				Write("dynamic_cast<const ");
+				Write(symbol.Symbol.Name);
+				Write(" *");
+				WriteGtRawPtr(expr.Left);
+				return;
+			case CiVar def:
+				WriteIsVar(expr.Left, def, parent);
 				return;
 			default:
-				break;
+				assert false;
 			}
+		default:
+			break;
 		}
 		base.VisitBinaryExpr(expr, parent);
 	}

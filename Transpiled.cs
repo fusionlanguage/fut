@@ -3900,11 +3900,10 @@ namespace Foxoft.Ci
 				CiCase kase = result.Cases[result.Cases.Count - 1];
 				do {
 					CiExpr expr = ParseExpr();
-					if (See(CiToken.Id)) {
+					if (See(CiToken.Id))
 						expr = ParseVar(expr);
-						if (Eat(CiToken.When))
-							expr = new CiBinaryExpr { Line = this.Line, Left = expr, Op = CiToken.When, Right = ParseExpr() };
-					}
+					if (Eat(CiToken.When))
+						expr = new CiBinaryExpr { Line = this.Line, Left = expr, Op = CiToken.When, Right = ParseExpr() };
 					kase.Values.Add(expr);
 					Expect(CiToken.Colon);
 				}
@@ -5924,6 +5923,11 @@ namespace Foxoft.Ci
 							if (kase.Values[i] is CiBinaryExpr when2 && when2.Op == CiToken.When)
 								when2.Right = ResolveBool(when2.Right);
 						}
+					}
+					else if (kase.Values[i] is CiBinaryExpr when1 && when1.Op == CiToken.When) {
+						when1.Left = FoldConst(when1.Left);
+						Coerce(when1.Left, statement.Value.Type);
+						when1.Right = ResolveBool(when1.Right);
 					}
 					else {
 						kase.Values[i] = FoldConst(kase.Values[i]);
@@ -13685,18 +13689,19 @@ namespace Foxoft.Ci
 
 		public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 		{
-			 // TODO: case enum when
 			switch (expr.Op) {
-			case CiToken.Plus when expr.Type.Id == CiId.StringStorageType:
-				if (parent > CiPriority.Add)
-					WriteChar('(');
-				// https://stackoverflow.com/questions/44636549/why-is-there-no-support-for-concatenating-stdstring-and-stdstring-view
-				WriteStronglyCoerced(expr.Type, expr.Left);
-				Write(" + ");
-				WriteStronglyCoerced(expr.Type, expr.Right);
-				if (parent > CiPriority.Add)
-					WriteChar(')');
-				return;
+			case CiToken.Plus:
+				if (expr.Type.Id == CiId.StringStorageType) {
+					if (parent > CiPriority.Add)
+						WriteChar('(');
+					WriteStronglyCoerced(expr.Type, expr.Left);
+					Write(" + ");
+					WriteStronglyCoerced(expr.Type, expr.Right);
+					if (parent > CiPriority.Add)
+						WriteChar(')');
+					return;
+				}
+				break;
 			case CiToken.Equal:
 			case CiToken.NotEqual:
 			case CiToken.Greater:
@@ -13708,25 +13713,33 @@ namespace Foxoft.Ci
 					return;
 				}
 				break;
-			case CiToken.Assign when expr.Left.Type.Id == CiId.StringStorageType && parent == CiPriority.Statement && IsTrimSubstring(expr) is CiExpr length:
-				WriteMethodCall(expr.Left, "resize", length);
-				return;
+			case CiToken.Assign:
+				CiExpr length = IsTrimSubstring(expr);
+				if (length != null && expr.Left.Type.Id == CiId.StringStorageType && parent == CiPriority.Statement) {
+					WriteMethodCall(expr.Left, "resize", length);
+					return;
+				}
+				break;
 			case CiToken.Is:
-				if (expr.Right is CiSymbolReference symbol) {
+				switch (expr.Right) {
+				case CiSymbolReference symbol:
 					if (parent >= CiPriority.Or && parent <= CiPriority.Mul)
 						Write("!!");
 					Write("dynamic_cast<const ");
 					Write(symbol.Symbol.Name);
 					Write(" *");
 					WriteGtRawPtr(expr.Left);
+					return;
+				case CiVar def:
+					WriteIsVar(expr.Left, def, parent);
+					return;
+				default:
+					throw new NotImplementedException();
 				}
-				else
-					WriteIsVar(expr.Left, (CiVar) expr.Right, parent);
-				return;
 			default:
 				break;
 			}
-		base.VisitBinaryExpr(expr, parent);
+			base.VisitBinaryExpr(expr, parent);
 		}
 
 		public override void VisitLambdaExpr(CiLambdaExpr expr)
@@ -18093,25 +18106,33 @@ namespace Foxoft.Ci
 			WriteName(value);
 		}
 
-		protected static string GetArrayElementType(CiNumericType type)
+		protected void WriteArrayElementType(CiType type)
 		{
 			switch (type.Id) {
 			case CiId.SByteRange:
-				return "Int8";
+				Write("Int8");
+				break;
 			case CiId.ByteRange:
-				return "Uint8";
+				Write("Uint8");
+				break;
 			case CiId.ShortRange:
-				return "Int16";
+				Write("Int16");
+				break;
 			case CiId.UShortRange:
-				return "Uint16";
+				Write("Uint16");
+				break;
 			case CiId.IntType:
-				return "Int32";
+				Write("Int32");
+				break;
 			case CiId.LongType:
-				return "BigInt64";
+				Write("BigInt64");
+				break;
 			case CiId.FloatType:
-				return "Float32";
+				Write("Float32");
+				break;
 			case CiId.DoubleType:
-				return "Float64";
+				Write("Float64");
+				break;
 			default:
 				throw new NotImplementedException();
 			}
@@ -18123,7 +18144,7 @@ namespace Foxoft.Ci
 			bool numeric = false;
 			if (array.GetElementType() is CiNumericType number) {
 				Write("new ");
-				Write(GetArrayElementType(number));
+				WriteArrayElementType(number);
 				Write("Array(");
 				numeric = true;
 			}
@@ -18314,8 +18335,8 @@ namespace Foxoft.Ci
 		protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)
 		{
 			Write("new ");
-			if (elementType is CiNumericType numeric)
-				Write(GetArrayElementType(numeric));
+			if (elementType is CiNumericType)
+				WriteArrayElementType(elementType);
 			WriteCall("Array", lengthExpr);
 		}
 
@@ -18920,7 +18941,6 @@ namespace Foxoft.Ci
 
 		public override void VisitBinaryExpr(CiBinaryExpr expr, CiPriority parent)
 		{
-			 // TODO: case enum when
 			switch (expr.Op) {
 			case CiToken.Slash when expr.Type is CiIntegerType && expr.Type.Id != CiId.LongType:
 				if (parent > CiPriority.Or)
@@ -18937,7 +18957,7 @@ namespace Foxoft.Ci
 					WriteChar('(');
 				expr.Left.Accept(this, CiPriority.Assign);
 				Write(" = ");
-				expr.Left.Accept(this, CiPriority.Mul); // TODO: side effect
+				expr.Left.Accept(this, CiPriority.Mul);
 				Write(" / ");
 				expr.Right.Accept(this, CiPriority.Primary);
 				Write(" | 0");
@@ -18952,19 +18972,19 @@ namespace Foxoft.Ci
 				WriteEqual(expr, parent, true);
 				break;
 			case CiToken.AndAssign when expr.Type.Id == CiId.BoolType:
-				Write("if (!"); // FIXME: picks up parent "else"
+				Write("if (!");
 				WriteBoolAndOrAssign(expr, CiPriority.Primary);
 				Write(" = false");
 				break;
 			case CiToken.OrAssign when expr.Type.Id == CiId.BoolType:
-				Write("if ("); // FIXME: picks up parent "else"
+				Write("if (");
 				WriteBoolAndOrAssign(expr, CiPriority.Argument);
 				Write(" = true");
 				break;
 			case CiToken.XorAssign when expr.Type.Id == CiId.BoolType:
 				expr.Left.Accept(this, CiPriority.Assign);
 				Write(" = ");
-				WriteEqual(expr, CiPriority.Argument, true); // TODO: side effect
+				WriteEqual(expr, CiPriority.Argument, true);
 				break;
 			case CiToken.Is when expr.Right is CiVar def:
 				WriteIsVar(expr.Left, def, true, parent);
@@ -19366,7 +19386,6 @@ namespace Foxoft.Ci
 				break;
 			case CiClassType klass:
 				readOnly |= !(klass is CiReadWriteClassType);
-				 // TODO: case enum when
 				switch (klass.Class.Id) {
 				case CiId.StringClass:
 					Write("string");
@@ -19391,7 +19410,7 @@ namespace Foxoft.Ci
 					switch (klass.Class.Id) {
 					case CiId.ArrayPtrClass:
 					case CiId.ArrayStorageClass:
-						Write(GetArrayElementType((CiNumericType) klass.GetElementType()));
+						WriteArrayElementType(klass.GetElementType());
 						Write("Array");
 						break;
 					case CiId.HashSetClass:
@@ -19433,7 +19452,7 @@ namespace Foxoft.Ci
 						WriteChar('>');
 					break;
 				}
-			if (type.Nullable)
+				if (type.Nullable)
 					Write(" | null");
 				break;
 			default:
@@ -20850,8 +20869,6 @@ namespace Foxoft.Ci
 					WriteUnwrapped(expr, parent, true);
 					return;
 				}
-				CiType type;
-				 // TODO: case enum when
 				switch (binary.Op) {
 				case CiToken.Plus:
 				case CiToken.Minus:
@@ -20864,7 +20881,7 @@ namespace Foxoft.Ci
 				case CiToken.ShiftLeft when expr == binary.Left:
 				case CiToken.ShiftRight when expr == binary.Left:
 					if (!(expr is CiLiteral)) {
-						type = this.System.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
+						CiType type = this.System.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
 						if (type != expr.Type) {
 							WriteCoerced(type, expr, parent);
 							return;
@@ -20877,9 +20894,9 @@ namespace Foxoft.Ci
 				case CiToken.GreaterOrEqual:
 				case CiToken.Equal:
 				case CiToken.NotEqual:
-					type = this.System.PromoteFloatingTypes(binary.Left.Type, binary.Right.Type);
-					if (type != null && type != expr.Type) {
-						WriteCoerced(type, expr, parent);
+					CiType typeComp = this.System.PromoteFloatingTypes(binary.Left.Type, binary.Right.Type);
+					if (typeComp != null && typeComp != expr.Type) {
+						WriteCoerced(typeComp, expr, parent);
 						return;
 					}
 					break;

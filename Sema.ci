@@ -1782,6 +1782,11 @@ public class CiSema : CiVisitor
 							when2.Right = ResolveBool(when2.Right);
 					}
 				}
+				else if (kase.Values[i] is CiBinaryExpr! when1 && when1.Op == CiToken.When) {
+					when1.Left = FoldConst(when1.Left);
+					Coerce(when1.Left, statement.Value.Type);
+					when1.Right = ResolveBool(when1.Right);
+				}
 				else {
 					kase.Values[i] = FoldConst(kase.Values[i]);
 					Coerce(kase.Values[i], statement.Value.Type);

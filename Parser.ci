@@ -722,11 +722,10 @@ public abstract class CiParser : CiLexer
 			CiCase! kase = result.Cases[result.Cases.Count - 1];
 			do {
 				CiExpr# expr = ParseExpr();
-				if (See(CiToken.Id)) {
+				if (See(CiToken.Id))
 					expr = ParseVar(expr);
-					if (Eat(CiToken.When))
-						expr = new CiBinaryExpr { Line = this.Line, Left = expr, Op = CiToken.When, Right = ParseExpr() };
-				}
+				if (Eat(CiToken.When))
+					expr = new CiBinaryExpr { Line = this.Line, Left = expr, Op = CiToken.When, Right = ParseExpr() };
 				kase.Values.Add(expr);
 				Expect(CiToken.Colon);
 			} while (Eat(CiToken.Case));
