@@ -16786,8 +16786,6 @@ namespace Foxoft.Ci
 	public class GenJava : GenTyped
 	{
 
-		string OutputDirectory;
-
 		int SwitchCaseDiscards;
 
 		protected override string GetTargetName() => "Java";
@@ -17795,7 +17793,7 @@ namespace Foxoft.Ci
 		void CreateJavaFile(string className)
 		{
 			 // TODO: Path
-			CreateFile(Path.Combine(this.OutputDirectory, className + ".java"));
+			CreateFile(Path.Combine(this.OutputFile, className + ".java"));
 		if (this.Namespace != null) {
 				Write("package ");
 				Write(this.Namespace);
@@ -18011,12 +18009,7 @@ namespace Foxoft.Ci
 
 		public override void WriteProgram(CiProgram program)
 		{
-			 // TODO: Path, Directory
-			if (Directory.Exists(this.OutputFile))
-				this.OutputDirectory = this.OutputFile;
-			else
-				this.OutputDirectory = Path.GetDirectoryName(this.OutputFile);
-		this.SwitchCaseDiscards = 0;
+			this.SwitchCaseDiscards = 0;
 			WriteTypes(program);
 			if (program.Resources.Count > 0)
 				WriteResources();

@@ -74,18 +74,44 @@ public static class CiTo
 	{
 		GenBase gen;
 		switch (lang) {
-		case "c": gen = new GenC(); break;
-		case "cpp": gen = new GenCpp(); break;
-		case "cs": gen = new GenCs(); break;
-		case "d": gen = new GenD(); break;
-		case "java": gen = new GenJava(); break;
-		case "js": case "mjs": gen = new GenJs(); break;
-		case "py": gen = new GenPy(); break;
-		case "swift": gen = new GenSwift(); break;
-		case "ts": gen = new GenTs().WithGenFullCode(); break;
-		case "d.ts": gen = new GenTs(); break;
-		case "cl": gen = new GenCl(); break;
-		default: throw new ArgumentException("Unknown language: " + lang);
+		case "c":
+			gen = new GenC();
+			break;
+		case "cpp":
+			gen = new GenCpp();
+			break;
+		case "cs":
+			gen = new GenCs();
+			break;
+		case "d":
+			gen = new GenD();
+			break;
+		case "java":
+			gen = new GenJava();
+			if (!Directory.Exists(outputFile))
+				outputFile = Path.GetDirectoryName(outputFile);
+			break;
+		case "js":
+		case "mjs":
+			gen = new GenJs();
+			break;
+		case "py":
+			gen = new GenPy();
+			break;
+		case "swift":
+			gen = new GenSwift();
+			break;
+		case "ts":
+			gen = new GenTs().WithGenFullCode();
+			break;
+		case "d.ts":
+			gen = new GenTs();
+			break;
+		case "cl":
+			gen = new GenCl();
+			break;
+		default:
+			throw new ArgumentException("Unknown language: " + lang);
 		}
 		gen.Namespace = namespace_;
 		gen.OutputFile = outputFile;
