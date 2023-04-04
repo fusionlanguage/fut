@@ -360,10 +360,8 @@ public class GenJsNoModule : GenBase
 
 	protected override void WriteResource!(string name, int length)
 	{
-		if (length >= 0) // reference as opposed to definition
-			Write("Ci.");
-		foreach (int c in name)
-			WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+		Write("Ci.");
+		WriteResourceName(name);
 	}
 
 	public override void VisitSymbolReference!(CiSymbolReference expr, CiPriority parent)
@@ -1290,7 +1288,7 @@ public class GenJsNoModule : GenBase
 		OpenBlock();
 		foreach ((string name, List<byte> content) in resources) {
 			Write("static ");
-			WriteResource(name, -1);
+			WriteResourceName(name);
 			WriteLine(" = new Uint8Array([");
 			WriteChar('\t');
 			WriteBytes(content);

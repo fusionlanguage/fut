@@ -925,10 +925,8 @@ public class GenPy : GenPySwift
 
 	protected override void WriteResource!(string name, int length)
 	{
-		if (length >= 0) // reference as opposed to definition
-			Write("_CiResource.");
-		foreach (int c in name)
-			WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+		Write("_CiResource.");
+		WriteResourceName(name);
 	}
 
 	protected override bool VisitPreCall!(CiCallExpr call)
@@ -1307,7 +1305,7 @@ public class GenPy : GenPySwift
 		Write("class _CiResource");
 		OpenChild();
 		foreach ((string name, List<byte> content) in resources) {
-			WriteResource(name, -1);
+			WriteResourceName(name);
 			WriteLine(" = (");
 			this.Indent++;
 			Write("b\"");

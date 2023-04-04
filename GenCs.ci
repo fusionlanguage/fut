@@ -369,10 +369,8 @@ public class GenCs : GenTyped
 
 	protected override void WriteResource!(string name, int length)
 	{
-		if (length >= 0) // reference as opposed to definition
-			Write("CiResource.");
-		foreach (int c in name)
-			WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+		Write("CiResource.");
+		WriteResourceName(name);
 	}
 
 	protected override void WriteStringLength!(CiExpr expr)
@@ -924,7 +922,7 @@ public class GenCs : GenTyped
 		OpenBlock();
 		foreach ((string name, List<byte> content) in resources) {
 			Write("internal static readonly byte[] ");
-			WriteResource(name, -1);
+			WriteResourceName(name);
 			WriteLine(" = {");
 			WriteChar('\t');
 			WriteBytes(content);

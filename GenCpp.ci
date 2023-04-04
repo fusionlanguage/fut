@@ -1145,10 +1145,8 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteResource!(string name, int length)
 	{
-		if (length >= 0) // reference as opposed to definition
-			Write("CiResource::");
-		foreach (int c in name)
-			WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+		Write("CiResource::");
+		WriteResourceName(name);
 	}
 
 	protected override void WriteArrayPtr!(CiExpr expr, CiPriority parent)
@@ -1824,7 +1822,7 @@ public class GenCpp : GenCCpp
 			Write("const std::array<uint8_t, ");
 			VisitLiteralLong(content.Count);
 			Write("> ");
-			WriteResource(name, -1);
+			WriteResourceName(name);
 			if (define) {
 				WriteLine(" = {");
 				WriteChar('\t');

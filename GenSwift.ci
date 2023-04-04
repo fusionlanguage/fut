@@ -1035,10 +1035,8 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteResource!(string name, int length)
 	{
-		if (length >= 0) // reference as opposed to definition
-			Write("CiResource.");
-		foreach (int c in name)
-			WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+		Write("CiResource.");
+		WriteResourceName(name);
 	}
 
 	static bool Throws(CiExpr expr)
@@ -1734,7 +1732,7 @@ public class GenSwift : GenPySwift
 		OpenBlock();
 		foreach ((string name, List<byte> content) in resources) {
 			Write("static let ");
-			WriteResource(name, -1);
+			WriteResourceName(name);
 			WriteLine(" = ArrayRef<UInt8>([");
 			WriteChar('\t');
 			WriteBytes(content);

@@ -821,6 +821,12 @@ public abstract class GenBase : CiExprVisitor
 		OpenBlock();
 	}
 
+	protected void WriteResourceName!(string name)
+	{
+		foreach (int c in name)
+			WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+	}
+
 	protected abstract void WriteResource!(string name, int length);
 
 	public override void VisitPrefixExpr!(CiPrefixExpr expr, CiPriority parent)

@@ -2372,8 +2372,7 @@ public class GenC : GenCCpp
 	protected override void WriteResource!(string name, int length)
 	{
 		Write("CiResource_");
-		foreach (int c in name)
-			WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+		WriteResourceName(name);
 	}
 
 	public override void VisitLambdaExpr!(CiLambdaExpr expr)

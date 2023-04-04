@@ -7029,6 +7029,12 @@ namespace Foxoft.Ci
 			OpenBlock();
 		}
 
+		protected void WriteResourceName(string name)
+		{
+			foreach (int c in name)
+				WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+		}
+
 		protected abstract void WriteResource(string name, int length);
 
 		public override void VisitPrefixExpr(CiPrefixExpr expr, CiPriority parent)
@@ -10953,8 +10959,7 @@ namespace Foxoft.Ci
 		protected override void WriteResource(string name, int length)
 		{
 			Write("CiResource_");
-			foreach (int c in name)
-				WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+			WriteResourceName(name);
 		}
 
 		public override void VisitLambdaExpr(CiLambdaExpr expr)
@@ -13542,10 +13547,8 @@ namespace Foxoft.Ci
 
 		protected override void WriteResource(string name, int length)
 		{
-			if (length >= 0)
-				Write("CiResource::");
-			foreach (int c in name)
-				WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+			Write("CiResource::");
+			WriteResourceName(name);
 		}
 
 		protected override void WriteArrayPtr(CiExpr expr, CiPriority parent)
@@ -14207,7 +14210,7 @@ namespace Foxoft.Ci
 				Write("const std::array<uint8_t, ");
 				VisitLiteralLong(content.Count);
 				Write("> ");
-				WriteResource(name, -1);
+				WriteResourceName(name);
 				if (define) {
 					WriteLine(" = {");
 					WriteChar('\t');
@@ -14647,10 +14650,8 @@ namespace Foxoft.Ci
 
 		protected override void WriteResource(string name, int length)
 		{
-			if (length >= 0)
-				Write("CiResource.");
-			foreach (int c in name)
-				WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+			Write("CiResource.");
+			WriteResourceName(name);
 		}
 
 		protected override void WriteStringLength(CiExpr expr)
@@ -15191,7 +15192,7 @@ namespace Foxoft.Ci
 			OpenBlock();
 			foreach ((string name, List<byte> content) in resources) {
 				Write("internal static readonly byte[] ");
-				WriteResource(name, -1);
+				WriteResourceName(name);
 				WriteLine(" = {");
 				WriteChar('\t');
 				WriteBytes(content);
@@ -15820,10 +15821,8 @@ namespace Foxoft.Ci
 
 		protected override void WriteResource(string name, int length)
 		{
-			if (length >= 0)
-				Write("CiResource.");
-			foreach (int c in name)
-				WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+			Write("CiResource.");
+			WriteResourceName(name);
 		}
 
 		protected override void WriteStringLength(CiExpr expr)
@@ -16716,7 +16715,7 @@ namespace Foxoft.Ci
 			OpenBlock();
 			foreach ((string name, List<byte> content) in resources) {
 				Write("private static ubyte[] ");
-				WriteResource(name, -1);
+				WriteResourceName(name);
 				WriteLine(" = [");
 				WriteChar('\t');
 				WriteBytes(content);
@@ -18377,10 +18376,8 @@ namespace Foxoft.Ci
 
 		protected override void WriteResource(string name, int length)
 		{
-			if (length >= 0)
-				Write("Ci.");
-			foreach (int c in name)
-				WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+			Write("Ci.");
+			WriteResourceName(name);
 		}
 
 		public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
@@ -19300,7 +19297,7 @@ namespace Foxoft.Ci
 			OpenBlock();
 			foreach ((string name, List<byte> content) in resources) {
 				Write("static ");
-				WriteResource(name, -1);
+				WriteResourceName(name);
 				WriteLine(" = new Uint8Array([");
 				WriteChar('\t');
 				WriteBytes(content);
@@ -21050,10 +21047,8 @@ namespace Foxoft.Ci
 
 		protected override void WriteResource(string name, int length)
 		{
-			if (length >= 0)
-				Write("CiResource.");
-			foreach (int c in name)
-				WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+			Write("CiResource.");
+			WriteResourceName(name);
 		}
 
 		static bool Throws(CiExpr expr)
@@ -21737,7 +21732,7 @@ namespace Foxoft.Ci
 			OpenBlock();
 			foreach ((string name, List<byte> content) in resources) {
 				Write("static let ");
-				WriteResource(name, -1);
+				WriteResourceName(name);
 				WriteLine(" = ArrayRef<UInt8>([");
 				WriteChar('\t');
 				WriteBytes(content);
@@ -22671,10 +22666,8 @@ namespace Foxoft.Ci
 
 		protected override void WriteResource(string name, int length)
 		{
-			if (length >= 0)
-				Write("_CiResource.");
-			foreach (int c in name)
-				WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+			Write("_CiResource.");
+			WriteResourceName(name);
 		}
 
 		protected override bool VisitPreCall(CiCallExpr call)
@@ -23048,7 +23041,7 @@ namespace Foxoft.Ci
 			Write("class _CiResource");
 			OpenChild();
 			foreach ((string name, List<byte> content) in resources) {
-				WriteResource(name, -1);
+				WriteResourceName(name);
 				WriteLine(" = (");
 				this.Indent++;
 				Write("b\"");
