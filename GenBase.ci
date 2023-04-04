@@ -19,7 +19,7 @@
 
 public abstract class GenBase : CiExprVisitor
 {
-	internal string? Namespace;
+	internal string() Namespace;
 	internal string() OutputFile;
 	TextWriter! Writer;
 	StringWriter!? StringWriter;

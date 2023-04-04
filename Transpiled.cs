@@ -14009,7 +14009,7 @@ namespace Foxoft.Ci
 
 		void OpenNamespace()
 		{
-			if (this.Namespace == null)
+			if (this.Namespace.Length == 0)
 				return;
 			WriteNewLine();
 			Write("namespace ");
@@ -14019,7 +14019,7 @@ namespace Foxoft.Ci
 
 		void CloseNamespace()
 		{
-			if (this.Namespace != null)
+			if (this.Namespace.Length != 0)
 				WriteCharLine('}');
 		}
 
@@ -15204,7 +15204,7 @@ namespace Foxoft.Ci
 		public override void WriteProgram(CiProgram program)
 		{
 			OpenStringWriter();
-			if (this.Namespace != null) {
+			if (this.Namespace.Length != 0) {
 				Write("namespace ");
 				WriteLine(this.Namespace);
 				OpenBlock();
@@ -15213,7 +15213,7 @@ namespace Foxoft.Ci
 			WriteTypes(program);
 			if (program.Resources.Count > 0)
 				WriteResources(program.Resources);
-			if (this.Namespace != null)
+			if (this.Namespace.Length != 0)
 				CloseBlock();
 			CreateFile(this.OutputFile);
 			WriteIncludes("using ", ";");
@@ -16733,7 +16733,7 @@ namespace Foxoft.Ci
 			this.HasSortedDictionaryInsert = false;
 			this.HasSortedDictionaryFind = false;
 			OpenStringWriter();
-			if (this.Namespace != null) {
+			if (this.Namespace.Length != 0) {
 				Write("struct ");
 				WriteLine(this.Namespace);
 				OpenBlock();
@@ -16743,7 +16743,7 @@ namespace Foxoft.Ci
 			WriteTypes(program);
 			if (program.Resources.Count > 0)
 				WriteResources(program.Resources);
-			if (this.Namespace != null)
+			if (this.Namespace.Length != 0)
 				CloseBlock();
 			CreateFile(this.OutputFile);
 			if (this.HasListInsert || this.HasListRemoveAt || this.HasStackPop)
@@ -17809,7 +17809,7 @@ namespace Foxoft.Ci
 		{
 			 // TODO: Path
 			CreateFile(Path.Combine(this.OutputFile, className + ".java"));
-		if (this.Namespace != null) {
+		if (this.Namespace.Length != 0) {
 				Write("package ");
 				Write(this.Namespace);
 				WriteCharLine(';');

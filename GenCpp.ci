@@ -1616,7 +1616,7 @@ public class GenCpp : GenCCpp
 
 	void OpenNamespace!()
 	{
-		if (this.Namespace == null)
+		if (this.Namespace.Length == 0)
 			return;
 		WriteNewLine();
 		Write("namespace ");
@@ -1626,7 +1626,7 @@ public class GenCpp : GenCCpp
 
 	void CloseNamespace!()
 	{
-		if (this.Namespace != null)
+		if (this.Namespace.Length != 0)
 			WriteCharLine('}');
 	}
 

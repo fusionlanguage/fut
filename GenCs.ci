@@ -934,7 +934,7 @@ public class GenCs : GenTyped
 	public override void WriteProgram!(CiProgram program)
 	{
 		OpenStringWriter();
-		if (this.Namespace != null) {
+		if (this.Namespace.Length != 0) {
 			Write("namespace ");
 			WriteLine(this.Namespace);
 			OpenBlock();
@@ -943,7 +943,7 @@ public class GenCs : GenTyped
 		WriteTypes(program);
 		if (program.Resources.Count > 0)
 			WriteResources(program.Resources);
-		if (this.Namespace != null)
+		if (this.Namespace.Length != 0)
 			CloseBlock();
 
 		CreateFile(this.OutputFile);
