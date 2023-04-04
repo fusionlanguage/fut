@@ -17142,10 +17142,7 @@ namespace Foxoft.Ci
 			WriteChar(')');
 		}
 
-		static bool IsUnsignedByte(CiType type)
-		{
-			return type is CiRangeType range && range.Min >= 0 && range.Max > 127 && range.Max <= 255;
-		}
+		static bool IsUnsignedByte(CiType type) => type.Id == CiId.ByteRange && type is CiRangeType range && range.Max > 127;
 
 		static bool IsUnsignedByteIndexing(CiExpr expr) => expr.IsIndexing() && IsUnsignedByte(expr.Type);
 
@@ -17203,7 +17200,7 @@ namespace Foxoft.Ci
 					WriteChar('!');
 				WriteMethodCall(expr.Left, "equals", expr.Right);
 			}
-			else if (IsUnsignedByteIndexing(expr.Left) && expr.Right is CiLiteralLong rightLiteral && rightLiteral.Value >= 0 && rightLiteral.Value <= 255) {
+			else if (IsUnsignedByteIndexing(expr.Left) && expr.Right is CiLiteralLong rightLiteral && rightLiteral.Type.Id == CiId.ByteRange) {
 				if (parent > CiPriority.Equality)
 					WriteChar('(');
 				CiBinaryExpr indexing = (CiBinaryExpr) expr.Left;
