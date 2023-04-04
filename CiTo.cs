@@ -128,7 +128,7 @@ public static class CiTo
 		FileResourceSema sema = new FileResourceSema();
 		string lang = null;
 		string outputFile = null;
-		string namespace_ = null;
+		string namespace_ = "";
 		for (int i = 0; i < args.Length; i++) {
 			string arg = args[i];
 			if (arg[0] == '-') {
