@@ -25,7 +25,7 @@ public abstract class GenCCpp : GenCCppD
 
 	protected abstract void IncludeMath!();
 
-	protected void WriteCIncludes!()
+	void WriteCIncludes!()
 	{
 		WriteIncludes("#include <", ">");
 	}
@@ -250,5 +250,48 @@ public abstract class GenCCpp : GenCCppD
 				WriteClass(storage.Class, program);
 		}
 		WriteClassInternal(klass);
+	}
+
+	static string() ChangeExtension(string path, string ext)
+	{
+		int extIndex = path.Length;
+		for (int i = extIndex; --i >= 0 && path[i] != '/' && path[i] != '\\'; ) {
+			if (path[i] == '.') {
+				extIndex = i;
+				break;
+			}
+		}
+		return path.Substring(0, extIndex) + ext;
+	}
+
+	protected void CreateHeaderFile!(string headerExt)
+	{
+		CreateFile(ChangeExtension(this.OutputFile, headerExt));
+		WriteLine("#pragma once");
+		WriteCIncludes();
+	}
+
+	static string() GetFilenameWithoutExtension(string path)
+	{
+		int pathLength = path.Length;
+		int extIndex = pathLength;
+		int i = pathLength;
+		while (--i >= 0 && path[i] != '/' && path[i] != '\\') {
+			if (path[i] == '.' && extIndex == pathLength)
+				extIndex = i;
+		}
+		i++;
+		return path.Substring(i, extIndex - i);
+	}
+
+	protected void CreateImplementationFile!(CiProgram program, string headerExt)
+	{
+		CreateFile(this.OutputFile);
+		WriteTopLevelNatives(program);
+		WriteCIncludes();
+		Write("#include \"");
+		Write(GetFilenameWithoutExtension(this.OutputFile));
+		Write(headerExt);
+		WriteCharLine('"');
 	}
 }

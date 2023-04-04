@@ -1842,10 +1842,6 @@ public class GenCpp : GenCCpp
 	public override void WriteProgram!(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
-		string headerFile;
-		native { // TODO: Path
-			headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
-		}
 		this.InHeaderFile = true;
 		this.UsingStringViewLiterals = false;
 		this.HasEnumFlags = false;
@@ -1865,9 +1861,7 @@ public class GenCpp : GenCCpp
 			WriteClass(klass, program);
 		CloseNamespace();
 
-		CreateFile(headerFile);
-		WriteLine("#pragma once");
-		WriteCIncludes();
+		CreateHeaderFile(".hpp");
 		if (this.HasEnumFlags) {
 			WriteLine("#define CI_ENUM_FLAG_OPERATORS(T) \\");
 			WriteLine("\tinline constexpr T operator~(T a) { return static_cast<T>(~static_cast<std::underlying_type_t<T>>(a)); } \\");
@@ -1892,18 +1886,11 @@ public class GenCpp : GenCCpp
 		WriteResources(program.Resources, true);
 		CloseNamespace();
 
-		CreateFile(this.OutputFile);
-		WriteTopLevelNatives(program);
 		if (this.StringReplace) {
 			Include("string");
 			Include("string_view");
 		}
-		WriteCIncludes();
-		Write("#include \"");
-		native { // TODO: Path
-			Write(Path.GetFileName(headerFile));
-		}
-		WriteLine("\"");
+		CreateImplementationFile(program, ".hpp");
 		if (this.UsingStringViewLiterals)
 			WriteLine("using namespace std::string_view_literals;");
 		if (this.StringReplace) {

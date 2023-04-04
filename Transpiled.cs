@@ -8333,7 +8333,7 @@ namespace Foxoft.Ci
 
 		protected abstract void IncludeMath();
 
-		protected void WriteCIncludes()
+		void WriteCIncludes()
 		{
 			WriteIncludes("#include <", ">");
 		}
@@ -8550,6 +8550,49 @@ namespace Foxoft.Ci
 					WriteClass(storage.Class, program);
 			}
 			WriteClassInternal(klass);
+		}
+
+		static string ChangeExtension(string path, string ext)
+		{
+			int extIndex = path.Length;
+			for (int i = extIndex; --i >= 0 && path[i] != '/' && path[i] != '\\';) {
+				if (path[i] == '.') {
+					extIndex = i;
+					break;
+				}
+			}
+			return path.Substring(0, extIndex) + ext;
+		}
+
+		protected void CreateHeaderFile(string headerExt)
+		{
+			CreateFile(ChangeExtension(this.OutputFile, headerExt));
+			WriteLine("#pragma once");
+			WriteCIncludes();
+		}
+
+		static string GetFilenameWithoutExtension(string path)
+		{
+			int pathLength = path.Length;
+			int extIndex = pathLength;
+			int i = pathLength;
+			while (--i >= 0 && path[i] != '/' && path[i] != '\\') {
+				if (path[i] == '.' && extIndex == pathLength)
+					extIndex = i;
+			}
+			i++;
+			return path.Substring(i, extIndex - i);
+		}
+
+		protected void CreateImplementationFile(CiProgram program, string headerExt)
+		{
+			CreateFile(this.OutputFile);
+			WriteTopLevelNatives(program);
+			WriteCIncludes();
+			Write("#include \"");
+			Write(GetFilenameWithoutExtension(this.OutputFile));
+			Write(headerExt);
+			WriteCharLine('"');
 		}
 	}
 
@@ -11964,18 +12007,13 @@ namespace Foxoft.Ci
 		public override void WriteProgram(CiProgram program)
 		{
 			this.WrittenClasses.Clear();
-			string headerFile;
-			 // TODO: Path
-			headerFile = Path.ChangeExtension(this.OutputFile, "h");
-		this.InHeaderFile = true;
+			this.InHeaderFile = true;
 			OpenStringWriter();
 			foreach (CiClass klass in program.Classes) {
 				WriteNewDelete(klass, false);
 				WriteSignatures(klass, true);
 			}
-			CreateFile(headerFile);
-			WriteLine("#pragma once");
-			WriteCIncludes();
+			CreateHeaderFile(".h");
 			WriteLine("#ifdef __cplusplus");
 			WriteLine("extern \"C\" {");
 			WriteLine("#endif");
@@ -12021,14 +12059,8 @@ namespace Foxoft.Ci
 				WriteNewDelete(klass, true);
 				WriteMethods(klass);
 			}
-			CreateFile(this.OutputFile);
-			WriteTopLevelNatives(program);
 			Include("stdlib.h");
-			WriteCIncludes();
-			Write("#include \"");
-			 // TODO: Path
-			Write(Path.GetFileName(headerFile));
-		WriteLine("\"");
+			CreateImplementationFile(program, ".h");
 			WriteLibrary();
 			WriteTypedefs(program, false);
 			CloseStringWriter();
@@ -14193,10 +14225,7 @@ namespace Foxoft.Ci
 		public override void WriteProgram(CiProgram program)
 		{
 			this.WrittenClasses.Clear();
-			string headerFile;
-			 // TODO: Path
-			headerFile = Path.ChangeExtension(this.OutputFile, "hpp");
-		this.InHeaderFile = true;
+			this.InHeaderFile = true;
 			this.UsingStringViewLiterals = false;
 			this.HasEnumFlags = false;
 			this.StringReplace = false;
@@ -14214,9 +14243,7 @@ namespace Foxoft.Ci
 			foreach (CiClass klass in program.Classes)
 				WriteClass(klass, program);
 			CloseNamespace();
-			CreateFile(headerFile);
-			WriteLine("#pragma once");
-			WriteCIncludes();
+			CreateHeaderFile(".hpp");
 			if (this.HasEnumFlags) {
 				WriteLine("#define CI_ENUM_FLAG_OPERATORS(T) \\");
 				WriteLine("\tinline constexpr T operator~(T a) { return static_cast<T>(~static_cast<std::underlying_type_t<T>>(a)); } \\");
@@ -14239,17 +14266,11 @@ namespace Foxoft.Ci
 			}
 			WriteResources(program.Resources, true);
 			CloseNamespace();
-			CreateFile(this.OutputFile);
-			WriteTopLevelNatives(program);
 			if (this.StringReplace) {
 				Include("string");
 				Include("string_view");
 			}
-			WriteCIncludes();
-			Write("#include \"");
-			 // TODO: Path
-			Write(Path.GetFileName(headerFile));
-		WriteLine("\"");
+			CreateImplementationFile(program, ".hpp");
 			if (this.UsingStringViewLiterals)
 				WriteLine("using namespace std::string_view_literals;");
 			if (this.StringReplace) {

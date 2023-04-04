@@ -3439,10 +3439,6 @@ public class GenC : GenCCpp
 	public override void WriteProgram!(CiProgram program)
 	{
 		this.WrittenClasses.Clear();
-		string headerFile;
-		native { // TODO: Path
-			headerFile = Path.ChangeExtension(this.OutputFile, "h");
-		}
 		this.InHeaderFile = true;
 		OpenStringWriter();
 		foreach (CiClass klass in program.Classes) {
@@ -3450,9 +3446,7 @@ public class GenC : GenCCpp
 			WriteSignatures(klass, true);
 		}
 
-		CreateFile(headerFile);
-		WriteLine("#pragma once");
-		WriteCIncludes();
+		CreateHeaderFile(".h");
 		WriteLine("#ifdef __cplusplus");
 		WriteLine("extern \"C\" {");
 		WriteLine("#endif");
@@ -3500,15 +3494,8 @@ public class GenC : GenCCpp
 			WriteMethods(klass);
 		}
 
-		CreateFile(this.OutputFile);
-		WriteTopLevelNatives(program);
 		Include("stdlib.h");
-		WriteCIncludes();
-		Write("#include \"");
-		native { // TODO: Path
-			Write(Path.GetFileName(headerFile));
-		}
-		WriteLine("\"");
+		CreateImplementationFile(program, ".h");
 		WriteLibrary();
 		WriteTypedefs(program, false);
 		CloseStringWriter();
