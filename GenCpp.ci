@@ -1807,7 +1807,7 @@ public class GenCpp : GenCCpp
 		WriteBody(method);
 	}
 
-	void WriteResources!(SortedDictionary<string(), byte[]#> resources, bool define)
+	void WriteResources!(SortedDictionary<string(), List<byte>()> resources, bool define)
 	{
 		if (resources.Count == 0)
 			return;
@@ -1816,15 +1816,13 @@ public class GenCpp : GenCCpp
 		OpenBlock();
 		WriteLine("namespace CiResource");
 		OpenBlock();
-		foreach ((string name, byte[] content) in resources) {
+		foreach ((string name, List<byte> content) in resources) {
 			if (!define)
 				Write("extern ");
 			Include("array");
 			Include("cstdint");
 			Write("const std::array<uint8_t, ");
-			native { // TODO: resource
-				VisitLiteralLong(content.Length);
-			}
+			VisitLiteralLong(content.Count);
 			Write("> ");
 			WriteResource(name, -1);
 			if (define) {

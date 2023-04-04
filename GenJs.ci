@@ -1281,14 +1281,14 @@ public class GenJsNoModule : GenBase
 		CloseBlock();
 	}
 
-	protected void WriteLib!(SortedDictionary<string, byte[]#> resources)
+	protected void WriteLib!(SortedDictionary<string, List<byte>()> resources)
 	{
 		if (resources.Count == 0)
 			return;
 		WriteNewLine();
 		WriteLine("class Ci");
 		OpenBlock();
-		foreach ((string name, byte[] content) in resources) {
+		foreach ((string name, List<byte> content) in resources) {
 			Write("static ");
 			WriteResource(name, -1);
 			WriteLine(" = new Uint8Array([");

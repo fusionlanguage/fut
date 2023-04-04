@@ -3415,20 +3415,18 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected void WriteResources!(SortedDictionary<string(), byte[]#> resources)
+	protected void WriteResources!(SortedDictionary<string(), List<byte>()> resources)
 	{
 		if (resources.Count == 0)
 			return;
 		WriteNewLine();
-		foreach ((string name, byte[] content) in resources) {
+		foreach ((string name, List<byte> content) in resources) {
 			Write("static const ");
 			WriteNumericType(CiId.ByteRange);
 			WriteChar(' ');
 			WriteResource(name, -1);
 			WriteChar('[');
-			native { // TODO: resource
-				VisitLiteralLong(content.Length);
-			}
+			VisitLiteralLong(content.Count);
 			WriteLine("] = {");
 			WriteChar('\t');
 			WriteBytes(content);

@@ -917,12 +917,12 @@ public class GenCs : GenTyped
 		CloseBlock();
 	}
 
-	void WriteResources!(SortedDictionary<string(), byte[]#> resources)
+	void WriteResources!(SortedDictionary<string(), List<byte>()> resources)
 	{
 		WriteNewLine();
 		WriteLine("internal static class CiResource");
 		OpenBlock();
-		foreach ((string name, byte[] content) in resources) {
+		foreach ((string name, List<byte> content) in resources) {
 			Write("internal static readonly byte[] ");
 			WriteResource(name, -1);
 			WriteLine(" = {");

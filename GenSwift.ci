@@ -1724,7 +1724,7 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	void WriteResources!(SortedDictionary<string(), byte[]#> resources)
+	void WriteResources!(SortedDictionary<string(), List<byte>()> resources)
 	{
 		if (resources.Count == 0)
 			return;
@@ -1732,7 +1732,7 @@ public class GenSwift : GenPySwift
 		WriteNewLine();
 		WriteLine("fileprivate final class CiResource");
 		OpenBlock();
-		foreach ((string name, byte[] content) in resources) {
+		foreach ((string name, List<byte> content) in resources) {
 			Write("static let ");
 			WriteResource(name, -1);
 			WriteLine(" = ArrayRef<UInt8>([");

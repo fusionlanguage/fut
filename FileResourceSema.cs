@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Foxoft.Ci
 {
@@ -30,26 +31,26 @@ public class FileResourceSema : CiSema
 
 	public void AddResourceDir(string path) => this.ResourceDirs.Add(path);
 
-	byte[] ReadResource(string name, CiPrefixExpr expr)
+	List<byte> ReadResource(string name, CiPrefixExpr expr)
 	{
 		foreach (string dir in this.ResourceDirs) {
 			string path = Path.Combine(dir, name);
 			if (File.Exists(path))
-				return File.ReadAllBytes(path);
+				return File.ReadAllBytes(path).ToList();
 		}
 		if (File.Exists(name))
-			return File.ReadAllBytes(name);
+			return File.ReadAllBytes(name).ToList();
 		ReportError(expr, $"File {name} not found");
-		return Array.Empty<byte>();
+		return new List<byte>();
 	}
 
 	protected override int GetResourceLength(string name, CiPrefixExpr expr)
 	{
-		if (!this.Program.Resources.TryGetValue(name, out byte[] content)) {
+		if (!this.Program.Resources.TryGetValue(name, out List<byte> content)) {
 			content = ReadResource(name, expr);
 			this.Program.Resources.Add(name, content);
 		}
-		return content.Length;
+		return content.Count;
 	}
 }
 

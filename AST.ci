@@ -1654,5 +1654,5 @@ public class CiProgram : CiScope
 	internal CiSystem System;
 	internal List<string()>() TopLevelNatives;
 	internal List<CiClass!>() Classes;
-	internal SortedDictionary<string(), byte[]#>() Resources;
+	internal SortedDictionary<string(), List<byte>()>() Resources;
 }

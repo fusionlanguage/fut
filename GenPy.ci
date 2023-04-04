@@ -1299,28 +1299,26 @@ public class GenPy : GenPySwift
 		Write($"\\x{b:x2}");
 	}
 
-	void WriteResources!(SortedDictionary<string(), byte[]#> resources)
+	void WriteResources!(SortedDictionary<string(), List<byte>()> resources)
 	{
 		if (resources.Count == 0)
 			return;
 		WriteNewLine();
 		Write("class _CiResource");
 		OpenChild();
-		foreach ((string name, byte[] content) in resources) {
+		foreach ((string name, List<byte> content) in resources) {
 			WriteResource(name, -1);
 			WriteLine(" = (");
 			this.Indent++;
 			Write("b\"");
 			int i = 0;
-			native { // TODO: resource
-				foreach (byte b in content) {
-					if (i > 0 && (i & 15) == 0) {
-						WriteCharLine('"');
-						Write("b\"");
-					}
-					WriteResourceByte(b);
-					i++;
+			foreach (byte b in content) {
+				if (i > 0 && (i & 15) == 0) {
+					WriteCharLine('"');
+					Write("b\"");
 				}
+				WriteResourceByte(b);
+				i++;
 			}
 			WriteLine("\" )");
 			this.Indent--;

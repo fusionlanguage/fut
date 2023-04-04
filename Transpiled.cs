@@ -3190,7 +3190,7 @@ namespace Foxoft.Ci
 
 		internal readonly List<CiClass> Classes = new List<CiClass>();
 
-		internal readonly SortedDictionary<string, byte[]> Resources = new SortedDictionary<string, byte[]>();
+		internal readonly SortedDictionary<string, List<byte>> Resources = new SortedDictionary<string, List<byte>>();
 	}
 
 	public abstract class CiParser : CiLexer
@@ -6672,12 +6672,12 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected void WriteBytes(byte[] array)
+		protected void WriteBytes(List<byte> content)
 		{
-			 // TODO: resource
-			for (int i = 0; i < array.Length; i++) {
-				WriteComma(i);
-				VisitLiteralLong(array[i]);
+			int i = 0;
+			foreach (int b in content) {
+				WriteComma(i++);
+				VisitLiteralLong(b);
 			}
 		}
 
@@ -11984,20 +11984,19 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected void WriteResources(SortedDictionary<string, byte[]> resources)
+		protected void WriteResources(SortedDictionary<string, List<byte>> resources)
 		{
 			if (resources.Count == 0)
 				return;
 			WriteNewLine();
-			foreach ((string name, byte[] content) in resources) {
+			foreach ((string name, List<byte> content) in resources) {
 				Write("static const ");
 				WriteNumericType(CiId.ByteRange);
 				WriteChar(' ');
 				WriteResource(name, -1);
 				WriteChar('[');
-				 // TODO: resource
-				VisitLiteralLong(content.Length);
-			WriteLine("] = {");
+				VisitLiteralLong(content.Count);
+				WriteLine("] = {");
 				WriteChar('\t');
 				WriteBytes(content);
 				WriteLine(" };");
@@ -14191,7 +14190,7 @@ namespace Foxoft.Ci
 			WriteBody(method);
 		}
 
-		void WriteResources(SortedDictionary<string, byte[]> resources, bool define)
+		void WriteResources(SortedDictionary<string, List<byte>> resources, bool define)
 		{
 			if (resources.Count == 0)
 				return;
@@ -14200,15 +14199,14 @@ namespace Foxoft.Ci
 			OpenBlock();
 			WriteLine("namespace CiResource");
 			OpenBlock();
-			foreach ((string name, byte[] content) in resources) {
+			foreach ((string name, List<byte> content) in resources) {
 				if (!define)
 					Write("extern ");
 				Include("array");
 				Include("cstdint");
 				Write("const std::array<uint8_t, ");
-				 // TODO: resource
-				VisitLiteralLong(content.Length);
-			Write("> ");
+				VisitLiteralLong(content.Count);
+				Write("> ");
 				WriteResource(name, -1);
 				if (define) {
 					WriteLine(" = {");
@@ -15186,12 +15184,12 @@ namespace Foxoft.Ci
 			CloseBlock();
 		}
 
-		void WriteResources(SortedDictionary<string, byte[]> resources)
+		void WriteResources(SortedDictionary<string, List<byte>> resources)
 		{
 			WriteNewLine();
 			WriteLine("internal static class CiResource");
 			OpenBlock();
-			foreach ((string name, byte[] content) in resources) {
+			foreach ((string name, List<byte> content) in resources) {
 				Write("internal static readonly byte[] ");
 				WriteResource(name, -1);
 				WriteLine(" = {");
@@ -16711,12 +16709,12 @@ namespace Foxoft.Ci
 			base.WriteCoercedInternal(type, expr, parent);
 		}
 
-		void WriteResources(SortedDictionary<string, byte[]> resources)
+		void WriteResources(SortedDictionary<string, List<byte>> resources)
 		{
 			WriteNewLine();
 			WriteLine("private static struct CiResource");
 			OpenBlock();
-			foreach ((string name, byte[] content) in resources) {
+			foreach ((string name, List<byte> content) in resources) {
 				Write("private static ubyte[] ");
 				WriteResource(name, -1);
 				WriteLine(" = [");
@@ -19293,14 +19291,14 @@ namespace Foxoft.Ci
 			CloseBlock();
 		}
 
-		protected void WriteLib(SortedDictionary<string, byte[]> resources)
+		protected void WriteLib(SortedDictionary<string, List<byte>> resources)
 		{
 			if (resources.Count == 0)
 				return;
 			WriteNewLine();
 			WriteLine("class Ci");
 			OpenBlock();
-			foreach ((string name, byte[] content) in resources) {
+			foreach ((string name, List<byte> content) in resources) {
 				Write("static ");
 				WriteResource(name, -1);
 				WriteLine(" = new Uint8Array([");
@@ -21729,7 +21727,7 @@ namespace Foxoft.Ci
 			}
 		}
 
-		void WriteResources(SortedDictionary<string, byte[]> resources)
+		void WriteResources(SortedDictionary<string, List<byte>> resources)
 		{
 			if (resources.Count == 0)
 				return;
@@ -21737,7 +21735,7 @@ namespace Foxoft.Ci
 			WriteNewLine();
 			WriteLine("fileprivate final class CiResource");
 			OpenBlock();
-			foreach ((string name, byte[] content) in resources) {
+			foreach ((string name, List<byte> content) in resources) {
 				Write("static let ");
 				WriteResource(name, -1);
 				WriteLine(" = ArrayRef<UInt8>([");
@@ -23042,21 +23040,20 @@ namespace Foxoft.Ci
 			Write($"\\x{b:x2}");
 		}
 
-		void WriteResources(SortedDictionary<string, byte[]> resources)
+		void WriteResources(SortedDictionary<string, List<byte>> resources)
 		{
 			if (resources.Count == 0)
 				return;
 			WriteNewLine();
 			Write("class _CiResource");
 			OpenChild();
-			foreach ((string name, byte[] content) in resources) {
+			foreach ((string name, List<byte> content) in resources) {
 				WriteResource(name, -1);
 				WriteLine(" = (");
 				this.Indent++;
 				Write("b\"");
 				int i = 0;
-				 // TODO: resource
-				foreach (byte b in content) {
+				foreach (int b in content) {
 					if (i > 0 && (i & 15) == 0) {
 						WriteCharLine('"');
 						Write("b\"");
@@ -23064,7 +23061,7 @@ namespace Foxoft.Ci
 					WriteResourceByte(b);
 					i++;
 				}
-			WriteLine("\" )");
+				WriteLine("\" )");
 				this.Indent--;
 			}
 			CloseChild();
