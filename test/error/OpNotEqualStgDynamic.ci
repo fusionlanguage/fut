@@ -1,0 +1,12 @@
+public class Test
+{
+	public static bool Run()
+	{
+		Test() o;
+		Test# d = new Test();
+		return o != null //ERROR: Cannot compare Test() with null
+			&& o == o //ERROR: Cannot compare Test() with Test()
+			&& o != d //ERROR: Cannot compare Test() with Test#
+			&& d != o; //ERROR: Cannot compare Test# with Test()
+	}
+}

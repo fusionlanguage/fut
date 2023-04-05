@@ -409,17 +409,15 @@ public class GenCs : GenTyped
 				if (parent == CiPriority.Primary)
 					WriteChar('(');
 				CiVar element = forEach.GetVar();
-				native { // TODO: reference comparison
-					if (expr.Symbol == element) {
-						WriteStaticCastType(dict.GetKeyType());
-						WriteName(element);
-						Write(".Key");
-					}
-					else {
-						WriteStaticCastType(dict.GetValueType());
-						WriteName(element);
-						Write(".Value");
-					}
+				if (expr.Symbol == element) {
+					WriteStaticCastType(dict.GetKeyType());
+					WriteName(element);
+					Write(".Key");
+				}
+				else {
+					WriteStaticCastType(dict.GetValueType());
+					WriteName(element);
+					Write(".Value");
 				}
 				if (parent == CiPriority.Primary)
 					WriteChar(')');

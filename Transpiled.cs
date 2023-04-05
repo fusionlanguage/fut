@@ -4909,15 +4909,35 @@ namespace Foxoft.Ci
 			}
 		}
 
+		static bool CanCompareEqual(CiType left, CiType right)
+		{
+			switch (left) {
+			case CiNumericType _:
+				return right is CiNumericType;
+			case CiEnum _:
+				return left == right;
+			case CiClassType leftClass:
+				if (left.Nullable && right.Id == CiId.NullType)
+					return true;
+				if ((left is CiStorageType && (right is CiStorageType || right is CiDynamicPtrType)) || (left is CiDynamicPtrType && right is CiStorageType))
+					return false;
+				return right is CiClassType rightClass && (leftClass.Class.IsSameOrBaseOf(rightClass.Class) || rightClass.Class.IsSameOrBaseOf(leftClass.Class)) && leftClass.EqualTypeArguments(rightClass);
+			default:
+				return left.Id == CiId.NullType && right.Nullable;
+			}
+		}
+
 		CiExpr ResolveEquality(CiBinaryExpr expr, CiExpr left, CiExpr right)
 		{
+			if (!CanCompareEqual(left.Type, right.Type))
+				return PoisonError(expr, $"Cannot compare {left.Type} with {right.Type}");
 			if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {
 				if (leftRange.Min == leftRange.Max && leftRange.Min == rightRange.Min && leftRange.Min == rightRange.Max)
 					return ToLiteralBool(expr, expr.Op == CiToken.Equal);
 				if (leftRange.Max < rightRange.Min || leftRange.Min > rightRange.Max)
 					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual);
 			}
-			else if (left.Type == right.Type) {
+			else {
 				switch (left) {
 				case CiLiteralLong leftLong when right is CiLiteralLong rightLong:
 					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ leftLong.Value == rightLong.Value);
@@ -4937,8 +4957,6 @@ namespace Foxoft.Ci
 				if (left.IsConstEnum() && right.IsConstEnum())
 					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ left.IntValue() == right.IntValue());
 			}
-			if (!left.Type.IsAssignableFrom(right.Type) && !right.Type.IsAssignableFrom(left.Type))
-				return PoisonError(expr, $"Cannot compare {left.Type} with {right.Type}");
 			TakePtr(left);
 			TakePtr(right);
 			return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = this.Program.System.BoolType };
@@ -10987,10 +11005,9 @@ namespace Foxoft.Ci
 			int i = this.VarsToDestruct.Count;
 			for (; i > 0; i--) {
 				CiNamedValue def = this.VarsToDestruct[i - 1];
-				 // TODO: reference comparison
-				if (def.Parent != statement) // destroy only the variables in this block
+				if (def.Parent != statement)
 					break;
-			if (statement.CompletesNormally())
+				if (statement.CompletesNormally())
 					WriteDestruct(def);
 			}
 			TrimVarsToDestruct(i);
@@ -14688,7 +14705,6 @@ namespace Foxoft.Ci
 					if (parent == CiPriority.Primary)
 						WriteChar('(');
 					CiVar element = forEach.GetVar();
-					 // TODO: reference comparison
 					if (expr.Symbol == element) {
 						WriteStaticCastType(dict.GetKeyType());
 						WriteName(element);
@@ -14699,7 +14715,7 @@ namespace Foxoft.Ci
 						WriteName(element);
 						Write(".Value");
 					}
-				if (parent == CiPriority.Primary)
+					if (parent == CiPriority.Primary)
 						WriteChar(')');
 				}
 				else

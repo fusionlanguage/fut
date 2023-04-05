@@ -2400,10 +2400,8 @@ public class GenC : GenCCpp
 		int i = this.VarsToDestruct.Count;
 		for (; i > 0; i--) {
 			CiNamedValue def = this.VarsToDestruct[i - 1]; // CiVar
-			native { // TODO: reference comparison
-				if (def.Parent != statement) // destroy only the variables in this block
-					break;
-			}
+			if (def.Parent != statement) // destroy only the variables in this block
+				break;
 			if (statement.CompletesNormally())
 				WriteDestruct(def);
 		}

@@ -2,6 +2,10 @@ class Data
 {
 }
 
+class Derived : Data
+{
+}
+
 public class Test
 {
 	Data() Storage;
@@ -22,8 +26,12 @@ public class Test
 	public static bool Run()
 	{
 		Test() o;
+		Derived#? d = new Derived();
+		Data# b = d;
+		Derived r = d;
 		return o.IsNull(true) && !o.IsNull(false)
 			&& o.IsThis(o)
-			&& o.IsArrayNull(true) && !o.IsArrayNull(false);
+			&& o.IsArrayNull(true) && !o.IsArrayNull(false)
+			&& b == d && r == d;
 	}
 }
