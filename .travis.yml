@@ -1,7 +1,7 @@
 language: csharp
 dist: focal
 mono: none
-dotnet: 6.0.407
+dotnet: 6.0.408
 env: SWIFT_VERSION=5.8
 vm:
   size: large
