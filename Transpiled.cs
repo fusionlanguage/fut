@@ -8501,7 +8501,7 @@ namespace Foxoft.Ci
 			else {
 				WriteArrayPtr(array, CiPriority.Add);
 				Write(" + ");
-				index.Accept(this, CiPriority.Add);
+				index.Accept(this, CiPriority.Mul);
 			}
 		}
 
