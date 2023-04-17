@@ -520,16 +520,9 @@ public class GenCpp : GenCCpp
 	{
 		WriteArrayPtrAdd(obj, index);
 		Write(", ");
-		if (index.IsLiteralZero())
-			WriteArrayPtrAdd(obj, count); // FIXME: side effect
-		else {
-			WriteArrayPtr(obj, CiPriority.Add); // FIXME: side effect
-			Write(" + (");
-			index.Accept(this, CiPriority.Add); // FIXME: side effect
-			Write(" + ");
-			count.Accept(this, CiPriority.Add);
-			WriteChar(')');
-		}
+		WriteArrayPtrAdd(obj, index); // FIXME: side effect
+		Write(" + ");
+		count.Accept(this, CiPriority.Mul);
 	}
 
 	void WriteNotRawStringLiteral!(CiExpr obj, CiPriority priority)

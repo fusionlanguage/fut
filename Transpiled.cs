@@ -12984,16 +12984,9 @@ namespace Foxoft.Ci
 		{
 			WriteArrayPtrAdd(obj, index);
 			Write(", ");
-			if (index.IsLiteralZero())
-				WriteArrayPtrAdd(obj, count);
-			else {
-				WriteArrayPtr(obj, CiPriority.Add);
-				Write(" + (");
-				index.Accept(this, CiPriority.Add);
-				Write(" + ");
-				count.Accept(this, CiPriority.Add);
-				WriteChar(')');
-			}
+			WriteArrayPtrAdd(obj, index);
+			Write(" + ");
+			count.Accept(this, CiPriority.Mul);
 		}
 
 		void WriteNotRawStringLiteral(CiExpr obj, CiPriority priority)
