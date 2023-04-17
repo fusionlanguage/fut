@@ -21,7 +21,7 @@ public class CiSema
 {
 	protected CiProgram! Program;
 	internal bool HasErrors = false;
-	CiMethodBase!? CurrentMethod;
+	CiMethodBase!? CurrentMethod = null;
 	CiScope!? CurrentScope;
 	HashSet<CiMethod>() CurrentPureMethods;
 	Dictionary<CiVar, CiExpr#>() CurrentPureArguments;
@@ -610,8 +610,10 @@ public class CiSema
 	{
 		if (expr.Type != null)
 			return expr;
+		CiType# type;
 		if (expr.Inner is CiBinaryExpr binaryNew && binaryNew.Op == CiToken.LeftBrace) {
-			if (!(ToType(binaryNew.Left, true) is CiClassType klass) || klass is CiReadWriteClassType)
+			type = ToType(binaryNew.Left, true);
+			if (!(type is CiClassType klass) || klass is CiReadWriteClassType)
 				return PoisonError(expr, "Invalid argument to new");
 			assert binaryNew.Right is CiAggregateInitializer# init;
 			ResolveObjectLiteral(klass, init);
@@ -619,7 +621,8 @@ public class CiSema
 			expr.Inner = init;
 			return expr;
 		}
-		switch (ToType(expr.Inner, true)) {
+		type = ToType(expr.Inner, true);
+		switch (type) {
 		case CiArrayStorageType array:
 			expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = this.Program.System.ArrayPtrClass, TypeArg0 = array.GetElementType() };
 			expr.Inner = array.LengthExpr;

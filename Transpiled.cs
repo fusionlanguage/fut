@@ -2892,6 +2892,7 @@ namespace Foxoft.Ci
 	{
 		internal CiSystem()
 		{
+			this.Parent = null;
 			CiSymbol basePtr = CiVar.New(null, "base");
 			basePtr.Id = CiId.BasePtr;
 			Add(basePtr);
@@ -4233,7 +4234,7 @@ namespace Foxoft.Ci
 
 		internal bool HasErrors = false;
 
-		CiMethodBase CurrentMethod;
+		CiMethodBase CurrentMethod = null;
 
 		CiScope CurrentScope;
 
@@ -4811,8 +4812,10 @@ namespace Foxoft.Ci
 		{
 			if (expr.Type != null)
 				return expr;
+			CiType type;
 			if (expr.Inner is CiBinaryExpr binaryNew && binaryNew.Op == CiToken.LeftBrace) {
-				if (!(ToType(binaryNew.Left, true) is CiClassType klass) || klass is CiReadWriteClassType)
+				type = ToType(binaryNew.Left, true);
+				if (!(type is CiClassType klass) || klass is CiReadWriteClassType)
 					return PoisonError(expr, "Invalid argument to new");
 				CiAggregateInitializer init = (CiAggregateInitializer) binaryNew.Right;
 				ResolveObjectLiteral(klass, init);
@@ -4820,7 +4823,8 @@ namespace Foxoft.Ci
 				expr.Inner = init;
 				return expr;
 			}
-			switch (ToType(expr.Inner, true)) {
+			type = ToType(expr.Inner, true);
+			switch (type) {
 			case CiArrayStorageType array:
 				expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = this.Program.System.ArrayPtrClass, TypeArg0 = array.GetElementType() };
 				expr.Inner = array.LengthExpr;

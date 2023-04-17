@@ -1447,6 +1447,7 @@ public class CiSystem : CiScope
 
 	CiSystem()
 	{
+		Parent = null;
 		CiSymbol# basePtr = CiVar.New(null, "base");
 		basePtr.Id = CiId.BasePtr;
 		Add(basePtr);
