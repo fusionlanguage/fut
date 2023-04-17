@@ -12980,6 +12980,15 @@ namespace Foxoft.Ci
 			Write("end()");
 		}
 
+		void WritePtrRange(CiExpr obj, CiExpr index, CiExpr count)
+		{
+			WriteArrayPtrAdd(obj, index);
+			Write(", ");
+			WriteArrayPtrAdd(obj, index);
+			Write(" + ");
+			count.Accept(this, CiPriority.Add);
+		}
+
 		void WriteNotRawStringLiteral(CiExpr obj, CiPriority priority)
 		{
 			obj.Accept(this, priority);
@@ -13237,13 +13246,8 @@ namespace Foxoft.Ci
 				Write("std::lower_bound(");
 				if (args.Count == 1)
 					WriteBeginEnd(obj);
-				else {
-					WriteArrayPtrAdd(obj, args[1]);
-					Write(", ");
-					WriteArrayPtrAdd(obj, args[1]);
-					Write(" + ");
-					args[2].Accept(this, CiPriority.Add);
-				}
+				else
+					WritePtrRange(obj, args[1], args[2]);
 				Write(", ");
 				args[0].Accept(this, CiPriority.Argument);
 				Write(") - ");
@@ -13289,11 +13293,7 @@ namespace Foxoft.Ci
 			case CiId.ListSortPart:
 				Include("algorithm");
 				Write("std::sort(");
-				WriteArrayPtrAdd(obj, args[0]);
-				Write(", ");
-				WriteArrayPtrAdd(obj, args[0]);
-				Write(" + ");
-				args[1].Accept(this, CiPriority.Add);
+				WritePtrRange(obj, args[0], args[1]);
 				WriteChar(')');
 				break;
 			case CiId.ListAdd:
@@ -13373,11 +13373,7 @@ namespace Foxoft.Ci
 			case CiId.ListRemoveRange:
 				StartMethodCall(obj);
 				Write("erase(");
-				WriteArrayPtrAdd(obj, args[0]);
-				Write(", ");
-				WriteArrayPtrAdd(obj, args[0]);
-				Write(" + ");
-				args[1].Accept(this, CiPriority.Add);
+				WritePtrRange(obj, args[0], args[1]);
 				WriteChar(')');
 				break;
 			case CiId.QueueClear:
