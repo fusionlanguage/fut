@@ -206,7 +206,7 @@ public abstract class GenCCpp : GenCCppD
 			WriteUnreachable(statement);
 	}
 
-	public override void VisitSwitch!(CiSwitch! statement)
+	public override void VisitSwitch!(CiSwitch statement)
 	{
 		if (!(statement.Value.Type is CiStringType)) {
 			base.VisitSwitch(statement);

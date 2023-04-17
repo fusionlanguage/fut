@@ -1489,10 +1489,6 @@ namespace Foxoft.Ci
 		public abstract void VisitWhile(CiWhile statement);
 
 		public abstract void VisitEnumValue(CiConst konst, CiConst previous);
-	}
-
-	public abstract class CiExprVisitor : CiVisitor
-	{
 
 		public abstract void VisitLiteralNull();
 
@@ -1562,7 +1558,7 @@ namespace Foxoft.Ci
 			throw new NotImplementedException();
 		}
 
-		public virtual void Accept(CiExprVisitor visitor, CiPriority parent)
+		public virtual void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			throw new NotImplementedException();
 		}
@@ -1655,7 +1651,7 @@ namespace Foxoft.Ci
 
 		internal readonly List<CiExpr> Items = new List<CiExpr>();
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitAggregateInitializer(this);
 		}
@@ -1677,7 +1673,7 @@ namespace Foxoft.Ci
 
 		public override bool IsDefaultValue() => true;
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLiteralNull();
 		}
@@ -1690,7 +1686,7 @@ namespace Foxoft.Ci
 
 		public override bool IsDefaultValue() => true;
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLiteralFalse();
 		}
@@ -1703,7 +1699,7 @@ namespace Foxoft.Ci
 
 		public override bool IsDefaultValue() => false;
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLiteralTrue();
 		}
@@ -1722,7 +1718,7 @@ namespace Foxoft.Ci
 
 		public override bool IsDefaultValue() => this.Value == 0;
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLiteralLong(this.Value);
 		}
@@ -1737,7 +1733,7 @@ namespace Foxoft.Ci
 
 		public static CiLiteralChar New(int value, int line) => new CiLiteralChar { Line = line, Type = CiRangeType.New(value, value), Value = value };
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLiteralChar((int) this.Value);
 		}
@@ -1750,7 +1746,7 @@ namespace Foxoft.Ci
 
 		public override bool IsDefaultValue() => this.Value == 0 && 1.0f / this.Value > 0;
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLiteralDouble(this.Value);
 		}
@@ -1767,7 +1763,7 @@ namespace Foxoft.Ci
 
 		public override bool IsDefaultValue() => false;
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLiteralString(this.Value);
 		}
@@ -1859,7 +1855,7 @@ namespace Foxoft.Ci
 			part.Precision = precision;
 		}
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitInterpolatedString(this, parent);
 		}
@@ -1890,7 +1886,7 @@ namespace Foxoft.Ci
 			return konst.Value.IntValue();
 		}
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitSymbolReference(this, parent);
 		}
@@ -1919,7 +1915,7 @@ namespace Foxoft.Ci
 			return ~this.Inner.IntValue();
 		}
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitPrefixExpr(this, parent);
 		}
@@ -1928,7 +1924,7 @@ namespace Foxoft.Ci
 	public class CiPostfixExpr : CiUnaryExpr
 	{
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitPostfixExpr(this, parent);
 		}
@@ -1971,7 +1967,7 @@ namespace Foxoft.Ci
 			}
 		}
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitBinaryExpr(this, parent);
 		}
@@ -2074,7 +2070,7 @@ namespace Foxoft.Ci
 
 		internal CiExpr OnFalse;
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitSelectExpr(this, parent);
 		}
@@ -2089,7 +2085,7 @@ namespace Foxoft.Ci
 
 		internal readonly List<CiExpr> Arguments = new List<CiExpr>();
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitCallExpr(this, parent);
 		}
@@ -2100,7 +2096,7 @@ namespace Foxoft.Ci
 
 		internal CiExpr Body;
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitLambdaExpr(this);
 		}
@@ -2506,7 +2502,7 @@ namespace Foxoft.Ci
 
 		public static CiVar New(CiType type, string name, CiExpr defaultValue = null) => new CiVar { Type = type, Name = name, Value = defaultValue };
 
-		public override void Accept(CiExprVisitor visitor, CiPriority parent)
+		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
 			visitor.VisitVar(this);
 		}
@@ -6262,7 +6258,7 @@ namespace Foxoft.Ci
 		}
 	}
 
-	public abstract class GenBase : CiExprVisitor
+	public abstract class GenBase : CiVisitor
 	{
 
 		internal string Namespace;

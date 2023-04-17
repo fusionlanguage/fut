@@ -955,7 +955,7 @@ public class GenPy : GenPySwift
 
 	protected override bool HasInitCode(CiNamedValue def) => (def.Value != null || def.Type.IsFinal()) && !def.IsAssignableStorage();
 
-	public override void VisitExpr!(CiExpr! statement)
+	public override void VisitExpr!(CiExpr statement)
 	{
 		if (!(statement is CiVar def) || HasInitCode(def)) {
 			WriteTemporaries(statement);
@@ -1008,7 +1008,7 @@ public class GenPy : GenPySwift
 		WriteNewLine();
 	}
 
-	public override void VisitBreak!(CiBreak! statement)
+	public override void VisitBreak!(CiBreak statement)
 	{
 		WriteLine(statement.LoopOrSwitch is CiSwitch ? "raise _CiBreak()" : "break");
 	}
@@ -1053,7 +1053,7 @@ public class GenPy : GenPySwift
 		WriteChar(')');
 	}
 
-	public override void VisitForeach!(CiForeach! statement)
+	public override void VisitForeach!(CiForeach statement)
 	{
 		Write("for ");
 		WriteName(statement.GetVar());
@@ -1084,7 +1084,7 @@ public class GenPy : GenPySwift
 		Write("el");
 	}
 
-	public override void VisitLock!(CiLock! statement)
+	public override void VisitLock!(CiLock statement)
 	{
 		VisitXcrement(statement.Lock, false, true);
 		Write("with ");
@@ -1118,7 +1118,7 @@ public class GenPy : GenPySwift
 		CloseChild();
 	}
 
-	public override void VisitSwitch!(CiSwitch! statement)
+	public override void VisitSwitch!(CiSwitch statement)
 	{
 		bool earlyBreak = statement.Cases.Any(kase => CiSwitch.HasEarlyBreak(kase.Body))
 			|| CiSwitch.HasEarlyBreak(statement.DefaultBody);
@@ -1170,7 +1170,7 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	public override void VisitThrow!(CiThrow! statement)
+	public override void VisitThrow!(CiThrow statement)
 	{
 		VisitXcrement(statement.Message, false, true);
 		Write("raise Exception(");
@@ -1179,7 +1179,7 @@ public class GenPy : GenPySwift
 		// FIXME: VisitXcrement(statement.Message, true, true);
 	}
 
-	public override void VisitEnumValue!(CiConst! konst, CiConst? previous)
+	public override void VisitEnumValue!(CiConst konst, CiConst? previous)
 	{
 		WriteUppercaseWithUnderscores(konst.Name);
 		Write(" = ");

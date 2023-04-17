@@ -1087,7 +1087,7 @@ public class GenSwift : GenPySwift
 		Write("var ");
 	}
 
-	public override void VisitExpr!(CiExpr! statement)
+	public override void VisitExpr!(CiExpr statement)
 	{
 		WriteTemporaries(statement);
 		if (statement is CiCallExpr call && statement.Type.Id != CiId.VoidType)
@@ -1171,7 +1171,7 @@ public class GenSwift : GenPySwift
 		WriteCharLine(')');
 	}
 
-	public override void VisitBreak!(CiBreak! statement)
+	public override void VisitBreak!(CiBreak statement)
 	{
 		WriteLine("break");
 	}
@@ -1187,7 +1187,7 @@ public class GenSwift : GenPySwift
 		WriteLine("continue");
 	}
 
-	public override void VisitDoWhile!(CiDoWhile! statement)
+	public override void VisitDoWhile!(CiDoWhile statement)
 	{
 		if (VisitXcrement(statement.Cond, true, false))
 			base.VisitDoWhile(statement);
@@ -1268,7 +1268,7 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	public override void VisitForeach!(CiForeach! statement)
+	public override void VisitForeach!(CiForeach statement)
 	{
 		Write("for ");
 		if (statement.Count() == 2) {
@@ -1301,7 +1301,7 @@ public class GenSwift : GenPySwift
 		WriteChild(statement.Body);
 	}
 
-	public override void VisitLock!(CiLock! statement)
+	public override void VisitLock!(CiLock statement)
 	{
 		statement.Lock.Accept(this, CiPriority.Primary);
 		WriteLine(".lock()");
@@ -1341,7 +1341,7 @@ public class GenSwift : GenPySwift
 		this.Indent--;
 	}
 
-	public override void VisitSwitch!(CiSwitch! statement)
+	public override void VisitSwitch!(CiSwitch statement)
 	{
 		VisitXcrement(statement.Value, false, true);
 		Write("switch ");
@@ -1378,7 +1378,7 @@ public class GenSwift : GenPySwift
 		WriteCharLine('}');
 	}
 
-	public override void VisitThrow!(CiThrow! statement)
+	public override void VisitThrow!(CiThrow statement)
 	{
 		this.Throw = true;
 		VisitXcrement(statement.Message, false, true);
@@ -1404,7 +1404,7 @@ public class GenSwift : GenPySwift
 		WriteType(param.Type);
 	}
 
-	public override void VisitEnumValue!(CiConst! konst, CiConst? previous)
+	public override void VisitEnumValue!(CiConst konst, CiConst? previous)
 	{
 		WriteDoc(konst.Documentation);
 		Write("static let ");

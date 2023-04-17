@@ -1272,7 +1272,7 @@ public class GenD : GenCCppD
 		WriteLine(");");
 	}
 
-	public override void VisitForeach!(CiForeach! statement)
+	public override void VisitForeach!(CiForeach statement)
 	{
 		Write("foreach (");
 		if (statement.Collection.Type is CiClassType dict && dict.Class.TypeParameterCount == 2) {
@@ -1290,7 +1290,7 @@ public class GenD : GenCCppD
 		WriteChild(statement.Body);
 	}
 
-	public override void VisitLock!(CiLock! statement)
+	public override void VisitLock!(CiLock statement)
 	{
 		Write("synchronized (");
 		statement.Lock.Accept(this, CiPriority.Argument);
@@ -1298,7 +1298,7 @@ public class GenD : GenCCppD
 		WriteChild(statement.Body);
 	}
 
-	public override void VisitSwitch!(CiSwitch! statement)
+	public override void VisitSwitch!(CiSwitch statement)
 	{
 		WriteTemporaries(statement.Value);
 		if (statement.IsTypeMatching()) {
@@ -1351,7 +1351,7 @@ public class GenD : GenCCppD
 		}
 	}
 
-	public override void VisitThrow!(CiThrow! statement)
+	public override void VisitThrow!(CiThrow statement)
 	{
 		Include("std.exception");
 		Write("throw new Exception(");

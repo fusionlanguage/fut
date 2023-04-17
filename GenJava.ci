@@ -939,7 +939,7 @@ public class GenJava : GenTyped
 		WriteCharLine(';');
 	}
 
-	public override void VisitForeach!(CiForeach! statement)
+	public override void VisitForeach!(CiForeach statement)
 	{
 		Write("for (");
 		assert statement.Collection.Type is CiClassType klass;
@@ -976,7 +976,7 @@ public class GenJava : GenTyped
 		WriteChild(statement.Body);
 	}
 
-	public override void VisitLock!(CiLock! statement)
+	public override void VisitLock!(CiLock statement)
 	{
 		Write("synchronized (");
 		statement.Lock.Accept(this, CiPriority.Argument);
@@ -1030,7 +1030,7 @@ public class GenJava : GenTyped
 			base.WriteSwitchCase(statement, kase);
 	}
 
-	public override void VisitThrow!(CiThrow! statement)
+	public override void VisitThrow!(CiThrow statement)
 	{
 		Write("throw new Exception(");
 		statement.Message.Accept(this, CiPriority.Argument);
@@ -1049,7 +1049,7 @@ public class GenJava : GenTyped
 		}
 	}
 
-	public override void VisitEnumValue!(CiConst! konst, CiConst? previous)
+	public override void VisitEnumValue!(CiConst konst, CiConst? previous)
 	{
 		WriteDoc(konst.Documentation);
 		Write("int ");

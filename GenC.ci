@@ -2408,19 +2408,19 @@ public class GenC : GenCCpp
 		TrimVarsToDestruct(i);
 	}
 
-	public override void VisitBreak!(CiBreak! statement)
+	public override void VisitBreak!(CiBreak statement)
 	{
 		WriteDestructLoopOrSwitch(statement.LoopOrSwitch);
 		base.VisitBreak(statement);
 	}
 
-	public override void VisitContinue!(CiContinue! statement)
+	public override void VisitContinue!(CiContinue statement)
 	{
 		WriteDestructLoopOrSwitch(statement.Loop);
 		base.VisitContinue(statement);
 	}
 
-	public override void VisitExpr!(CiExpr! statement)
+	public override void VisitExpr!(CiExpr statement)
 	{
 		WriteCTemporaries(statement);
 		CiMethod? throwingMethod = GetThrowingMethod(statement);
@@ -2472,7 +2472,7 @@ public class GenC : GenCCpp
 		WriteCharLine(';');
 	}
 
-	public override void VisitForeach!(CiForeach! statement)
+	public override void VisitForeach!(CiForeach statement)
 	{
 		string element = statement.GetVar().Name;
 		switch (statement.Collection.Type) {
@@ -2578,7 +2578,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	public override void VisitLock!(CiLock! statement)
+	public override void VisitLock!(CiLock statement)
 	{
 		Write("mtx_lock(&");
 		statement.Lock.Accept(this, CiPriority.Primary);
@@ -2590,7 +2590,7 @@ public class GenC : GenCCpp
 		WriteLine(");");
 	}
 
-	public override void VisitReturn!(CiReturn! statement)
+	public override void VisitReturn!(CiReturn statement)
 	{
 		if (statement.Value == null) {
 			WriteDestructAll();
@@ -2645,7 +2645,7 @@ public class GenC : GenCCpp
 		TrimVarsToDestruct(varsToDestructCount);
 	}
 
-	public override void VisitSwitch!(CiSwitch! statement)
+	public override void VisitSwitch!(CiSwitch statement)
 	{
 		if (statement.IsTypeMatching())
 			NotSupported(statement, "Type-matching 'switch'");
@@ -2653,7 +2653,7 @@ public class GenC : GenCCpp
 			base.VisitSwitch(statement);
 	}
 
-	public override void VisitThrow!(CiThrow! statement)
+	public override void VisitThrow!(CiThrow statement)
 	{
 		WriteThrow();
 	}

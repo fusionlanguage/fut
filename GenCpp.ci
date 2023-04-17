@@ -1402,7 +1402,7 @@ public class GenCpp : GenCCpp
 		WriteCharLine(';');
 	}
 
-	public override void VisitForeach!(CiForeach! statement)
+	public override void VisitForeach!(CiForeach statement)
 	{
 		CiVar element = statement.GetVar();
 		Write("for (");
@@ -1452,7 +1452,7 @@ public class GenCpp : GenCCpp
 		return false;
 	}
 
-	public override void VisitLock!(CiLock! statement)
+	public override void VisitLock!(CiLock statement)
 	{
 		OpenBlock();
 		Write("const std::lock_guard<std::recursive_mutex> lock(");
@@ -1567,7 +1567,7 @@ public class GenCpp : GenCCpp
 			CloseBlock();
 	}
 
-	public override void VisitSwitch!(CiSwitch! statement)
+	public override void VisitSwitch!(CiSwitch statement)
 	{
 		if (statement.IsTypeMatching()) {
 			WriteSwitchWhenVars(statement);
@@ -1607,7 +1607,7 @@ public class GenCpp : GenCCpp
 			base.VisitSwitch(statement);
 	}
 
-	public override void VisitThrow!(CiThrow! statement)
+	public override void VisitThrow!(CiThrow statement)
 	{
 		Include("exception");
 		WriteLine("throw std::exception();");

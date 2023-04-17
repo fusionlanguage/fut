@@ -27,7 +27,7 @@ public abstract class GenCCppD : GenTyped
 			WriteConst(statement);
 	}
 
-	public override void VisitBreak!(CiBreak! statement)
+	public override void VisitBreak!(CiBreak statement)
 	{
 		if (statement.LoopOrSwitch is CiSwitch switchStatement) {
 			int gotoId = this.SwitchesWithGoto.IndexOf(switchStatement);

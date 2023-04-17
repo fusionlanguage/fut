@@ -773,7 +773,7 @@ public class GenCs : GenTyped
 		WriteLine(");");
 	}
 
-	public override void VisitForeach!(CiForeach! statement)
+	public override void VisitForeach!(CiForeach statement)
 	{
 		Write("foreach (");
 		if (statement.Collection.Type is CiClassType dict && dict.Class.TypeParameterCount == 2) {
@@ -798,7 +798,7 @@ public class GenCs : GenTyped
 		WriteChild(statement.Body);
 	}
 
-	public override void VisitLock!(CiLock! statement)
+	public override void VisitLock!(CiLock statement)
 	{
 		Write("lock (");
 		statement.Lock.Accept(this, CiPriority.Argument);
@@ -806,7 +806,7 @@ public class GenCs : GenTyped
 		WriteChild(statement.Body);
 	}
 
-	public override void VisitThrow!(CiThrow! statement)
+	public override void VisitThrow!(CiThrow statement)
 	{
 		Include("System");
 		Write("throw new Exception(");

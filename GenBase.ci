@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-public abstract class GenBase : CiExprVisitor
+public abstract class GenBase : CiVisitor
 {
 	internal string() Namespace;
 	internal string() OutputFile;
@@ -1413,7 +1413,7 @@ public abstract class GenBase : CiExprVisitor
 		}
 	}
 
-	public override void VisitExpr!(CiExpr! statement)
+	public override void VisitExpr!(CiExpr statement)
 	{
 		WriteTemporaries(statement);
 		statement.Accept(this, CiPriority.Statement);
@@ -1431,7 +1431,7 @@ public abstract class GenBase : CiExprVisitor
 
 	protected abstract void WriteAssert!(CiAssert statement);
 
-	public override void VisitAssert!(CiAssert! statement)
+	public override void VisitAssert!(CiAssert statement)
 	{
 		if (statement.Cond is CiBinaryExpr binary && binary.Op == CiToken.Is && binary.Right is CiVar)
 			WriteAssertCast(binary);
@@ -1454,7 +1454,7 @@ public abstract class GenBase : CiExprVisitor
 	{
 	}
 
-	public override void VisitBlock!(CiBlock! statement)
+	public override void VisitBlock!(CiBlock statement)
 	{
 		if (this.AtChildStart) {
 			this.AtLineStart = false;
@@ -1483,17 +1483,17 @@ public abstract class GenBase : CiExprVisitor
 		this.InChildBlock = wasInChildBlock;
 	}
 
-	public override void VisitBreak!(CiBreak! statement)
+	public override void VisitBreak!(CiBreak statement)
 	{
 		WriteLine("break;");
 	}
 
-	public override void VisitContinue!(CiContinue! statement)
+	public override void VisitContinue!(CiContinue statement)
 	{
 		WriteLine("continue;");
 	}
 
-	public override void VisitDoWhile!(CiDoWhile! statement)
+	public override void VisitDoWhile!(CiDoWhile statement)
 	{
 		Write("do");
 		WriteChild(statement.Body);
@@ -1502,7 +1502,7 @@ public abstract class GenBase : CiExprVisitor
 		WriteLine(");");
 	}
 
-	public override void VisitFor!(CiFor! statement)
+	public override void VisitFor!(CiFor statement)
 	{
 		Write("for (");
 		if (statement.Init != null)
@@ -1530,7 +1530,7 @@ public abstract class GenBase : CiExprVisitor
 		WriteChar(')');
 	}
 
-	void WriteIf!(CiIf! statement)
+	void WriteIf!(CiIf statement)
 	{
 		Write("if (");
 		StartIfWhile(statement.Cond);
@@ -1561,19 +1561,19 @@ public abstract class GenBase : CiExprVisitor
 		}
 	}
 
-	public override void VisitIf!(CiIf! statement)
+	public override void VisitIf!(CiIf statement)
 	{
 		if (!EmbedIfWhileIsVar(statement.Cond, false)) // FIXME: IsVar but not object literal
 			WriteTemporaries(statement.Cond);
 		WriteIf(statement);
 	}
 
-	public override void VisitNative!(CiNative! statement)
+	public override void VisitNative!(CiNative statement)
 	{
 		Write(statement.Content);
 	}
 
-	public override void VisitReturn!(CiReturn! statement)
+	public override void VisitReturn!(CiReturn statement)
 	{
 		if (statement.Value == null)
 			WriteLine("return;");
@@ -1631,7 +1631,7 @@ public abstract class GenBase : CiExprVisitor
 		this.Indent--;
 	}
 
-	public override void VisitSwitch!(CiSwitch! statement)
+	public override void VisitSwitch!(CiSwitch statement)
 	{
 		WriteTemporaries(statement.Value);
 		Write("switch (");
@@ -1648,7 +1648,7 @@ public abstract class GenBase : CiExprVisitor
 		WriteCharLine('}');
 	}
 
-	public override void VisitWhile!(CiWhile! statement)
+	public override void VisitWhile!(CiWhile statement)
 	{
 		if (!EmbedIfWhileIsVar(statement.Cond, false)) // FIXME: IsVar but not object literal
 			WriteTemporaries(statement.Cond);
@@ -1740,7 +1740,7 @@ public abstract class GenBase : CiExprVisitor
 			Write("public ");
 	}
 
-	protected void WriteEnumValue!(CiConst! konst)
+	protected void WriteEnumValue!(CiConst konst)
 	{
 		WriteDoc(konst.Documentation);
 		WriteName(konst);
@@ -1750,7 +1750,7 @@ public abstract class GenBase : CiExprVisitor
 		}
 	}
 
-	public override void VisitEnumValue!(CiConst! konst, CiConst? previous)
+	public override void VisitEnumValue!(CiConst konst, CiConst? previous)
 	{
 		if (previous != null)
 			WriteCharLine(',');

@@ -1044,7 +1044,7 @@ public class GenJsNoModule : GenBase
 		WriteLine(");");
 	}
 
-	public override void VisitBreak!(CiBreak! statement)
+	public override void VisitBreak!(CiBreak statement)
 	{
 		if (statement.LoopOrSwitch is CiSwitch switchStatement) {
 			int label = this.SwitchesWithLabel.IndexOf(switchStatement);
@@ -1058,7 +1058,7 @@ public class GenJsNoModule : GenBase
 		base.VisitBreak(statement);
 	}
 
-	public override void VisitForeach!(CiForeach! statement)
+	public override void VisitForeach!(CiForeach statement)
 	{
 		Write("for (const ");
 		assert statement.Collection.Type is CiClassType klass;
@@ -1114,7 +1114,7 @@ public class GenJsNoModule : GenBase
 		WriteChild(statement.Body);
 	}
 
-	public override void VisitLock!(CiLock! statement)
+	public override void VisitLock!(CiLock statement)
 	{
 		NotSupported(statement, "'lock'");
 	}
@@ -1164,7 +1164,7 @@ public class GenJsNoModule : GenBase
 		}
 	}
 
-	public override void VisitSwitch!(CiSwitch! statement)
+	public override void VisitSwitch!(CiSwitch statement)
 	{
 		if (statement.IsTypeMatching()) {
 			if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreak(kase.Body))
@@ -1184,7 +1184,7 @@ public class GenJsNoModule : GenBase
 			base.VisitSwitch(statement);
 	}
 
-	public override void VisitThrow!(CiThrow! statement)
+	public override void VisitThrow!(CiThrow statement)
 	{
 		Write("throw ");
 		statement.Message.Accept(this, CiPriority.Argument);
@@ -1197,7 +1197,7 @@ public class GenJsNoModule : GenBase
 		WriteDoc(container.Documentation);
 	}
 
-	public override void VisitEnumValue!(CiConst! konst, CiConst? previous)
+	public override void VisitEnumValue!(CiConst konst, CiConst? previous)
 	{
 		if (previous != null)
 			WriteCharLine(',');
