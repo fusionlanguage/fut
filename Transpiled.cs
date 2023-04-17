@@ -2917,19 +2917,18 @@ namespace Foxoft.Ci
 			this.DoubleType.Add(CiMethod.NewMutator(CiVisibility.Public, this.BoolType, CiId.DoubleTryParse, "TryParse", CiVar.New(this.StringPtrType, "value")));
 			Add(this.DoubleType);
 			Add(this.BoolType);
-			CiClass stringClass = CiClass.New(CiCallType.Normal, CiId.StringClass, "string");
-			stringClass.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.StringContains, "Contains", CiVar.New(this.StringPtrType, "value")));
-			stringClass.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.StringEndsWith, "EndsWith", CiVar.New(this.StringPtrType, "value")));
-			stringClass.Add(CiMethod.New(CiVisibility.Public, minus1Type, CiId.StringIndexOf, "IndexOf", CiVar.New(this.StringPtrType, "value")));
-			stringClass.Add(CiMethod.New(CiVisibility.Public, minus1Type, CiId.StringLastIndexOf, "LastIndexOf", CiVar.New(this.StringPtrType, "value")));
-			stringClass.Add(CiProperty.New(this.UIntType, CiId.StringLength, "Length"));
-			stringClass.Add(CiMethod.New(CiVisibility.Public, this.StringStorageType, CiId.StringReplace, "Replace", CiVar.New(this.StringPtrType, "oldValue"), CiVar.New(this.StringPtrType, "newValue")));
-			stringClass.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.StringStartsWith, "StartsWith", CiVar.New(this.StringPtrType, "value")));
-			stringClass.Add(CiMethod.New(CiVisibility.Public, this.StringStorageType, CiId.StringSubstring, "Substring", CiVar.New(this.IntType, "offset"), CiVar.New(this.IntType, "length", NewLiteralLong(-1))));
-			this.StringPtrType.Class = stringClass;
+			this.StringClass.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.StringContains, "Contains", CiVar.New(this.StringPtrType, "value")));
+			this.StringClass.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.StringEndsWith, "EndsWith", CiVar.New(this.StringPtrType, "value")));
+			this.StringClass.Add(CiMethod.New(CiVisibility.Public, minus1Type, CiId.StringIndexOf, "IndexOf", CiVar.New(this.StringPtrType, "value")));
+			this.StringClass.Add(CiMethod.New(CiVisibility.Public, minus1Type, CiId.StringLastIndexOf, "LastIndexOf", CiVar.New(this.StringPtrType, "value")));
+			this.StringClass.Add(CiProperty.New(this.UIntType, CiId.StringLength, "Length"));
+			this.StringClass.Add(CiMethod.New(CiVisibility.Public, this.StringStorageType, CiId.StringReplace, "Replace", CiVar.New(this.StringPtrType, "oldValue"), CiVar.New(this.StringPtrType, "newValue")));
+			this.StringClass.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.StringStartsWith, "StartsWith", CiVar.New(this.StringPtrType, "value")));
+			this.StringClass.Add(CiMethod.New(CiVisibility.Public, this.StringStorageType, CiId.StringSubstring, "Substring", CiVar.New(this.IntType, "offset"), CiVar.New(this.IntType, "length", NewLiteralLong(-1))));
+			this.StringPtrType.Class = this.StringClass;
 			Add(this.StringPtrType);
-			this.StringNullablePtrType.Class = stringClass;
-			this.StringStorageType.Class = stringClass;
+			this.StringNullablePtrType.Class = this.StringClass;
+			this.StringStorageType.Class = this.StringClass;
 			CiMethod arrayBinarySearchPart = CiMethod.New(CiVisibility.NumericElementType, this.IntType, CiId.ArrayBinarySearchPart, "BinarySearch", CiVar.New(this.TypeParam0, "value"), CiVar.New(this.IntType, "startIndex"), CiVar.New(this.IntType, "count"));
 			this.ArrayPtrClass.Add(arrayBinarySearchPart);
 			this.ArrayPtrClass.Add(CiMethod.New(CiVisibility.Public, this.VoidType, CiId.ArrayCopyTo, "CopyTo", CiVar.New(this.IntType, "sourceIndex"), CiVar.New(new CiReadWriteClassType { Class = this.ArrayPtrClass, TypeArg0 = this.TypeParam0 }, "destinationArray"), CiVar.New(this.IntType, "destinationIndex"), CiVar.New(this.IntType, "count")));
@@ -3079,6 +3078,8 @@ namespace Foxoft.Ci
 		internal CiRangeType CharType = CiRangeType.New(-128, 65535);
 
 		internal CiEnum BoolType = new CiEnum { Id = CiId.BoolType, Name = "bool" };
+
+		CiClass StringClass = CiClass.New(CiCallType.Normal, CiId.StringClass, "string");
 
 		internal CiStringType StringPtrType = new CiStringType { Id = CiId.StringPtrType, Name = "string" };
 

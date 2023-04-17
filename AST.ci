@@ -1353,6 +1353,7 @@ public class CiSystem : CiScope
 	internal CiFloatingType# DoubleType = new CiFloatingType { Id = CiId.DoubleType, Name = "double" };
 	internal CiRangeType# CharType = CiRangeType.New(-0x80, 0xffff);
 	internal CiEnum# BoolType = new CiEnum { Id = CiId.BoolType, Name = "bool" };
+	CiClass# StringClass = CiClass.New(CiCallType.Normal, CiId.StringClass, "string");
 	internal CiStringType# StringPtrType = new CiStringType { Id = CiId.StringPtrType, Name = "string" };
 	internal CiStringType# StringNullablePtrType = new CiStringType { Id = CiId.StringPtrType, Name = "string", Nullable = true };
 	internal CiStringStorageType# StringStorageType = new CiStringStorageType { Id = CiId.StringStorageType };
@@ -1472,19 +1473,18 @@ public class CiSystem : CiScope
 		DoubleType.Add(CiMethod.NewMutator(CiVisibility.Public, BoolType, CiId.DoubleTryParse, "TryParse", CiVar.New(StringPtrType, "value")));
 		Add(DoubleType);
 		Add(BoolType);
-		CiClass# stringClass = CiClass.New(CiCallType.Normal, CiId.StringClass, "string");
-		stringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringContains, "Contains", CiVar.New(StringPtrType, "value")));
-		stringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringEndsWith, "EndsWith", CiVar.New(StringPtrType, "value")));
-		stringClass.Add(CiMethod.New(CiVisibility.Public, minus1Type, CiId.StringIndexOf, "IndexOf", CiVar.New(StringPtrType, "value")));
-		stringClass.Add(CiMethod.New(CiVisibility.Public, minus1Type, CiId.StringLastIndexOf, "LastIndexOf", CiVar.New(StringPtrType, "value")));
-		stringClass.Add(CiProperty.New(UIntType, CiId.StringLength, "Length"));
-		stringClass.Add(CiMethod.New(CiVisibility.Public, StringStorageType, CiId.StringReplace, "Replace", CiVar.New(StringPtrType, "oldValue"), CiVar.New(StringPtrType, "newValue")));
-		stringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringStartsWith, "StartsWith", CiVar.New(StringPtrType, "value")));
-		stringClass.Add(CiMethod.New(CiVisibility.Public, StringStorageType, CiId.StringSubstring, "Substring", CiVar.New(IntType, "offset"), CiVar.New(IntType, "length", NewLiteralLong(-1)))); // TODO: UIntType
-		StringPtrType.Class = stringClass;
+		StringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringContains, "Contains", CiVar.New(StringPtrType, "value")));
+		StringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringEndsWith, "EndsWith", CiVar.New(StringPtrType, "value")));
+		StringClass.Add(CiMethod.New(CiVisibility.Public, minus1Type, CiId.StringIndexOf, "IndexOf", CiVar.New(StringPtrType, "value")));
+		StringClass.Add(CiMethod.New(CiVisibility.Public, minus1Type, CiId.StringLastIndexOf, "LastIndexOf", CiVar.New(StringPtrType, "value")));
+		StringClass.Add(CiProperty.New(UIntType, CiId.StringLength, "Length"));
+		StringClass.Add(CiMethod.New(CiVisibility.Public, StringStorageType, CiId.StringReplace, "Replace", CiVar.New(StringPtrType, "oldValue"), CiVar.New(StringPtrType, "newValue")));
+		StringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringStartsWith, "StartsWith", CiVar.New(StringPtrType, "value")));
+		StringClass.Add(CiMethod.New(CiVisibility.Public, StringStorageType, CiId.StringSubstring, "Substring", CiVar.New(IntType, "offset"), CiVar.New(IntType, "length", NewLiteralLong(-1)))); // TODO: UIntType
+		StringPtrType.Class = StringClass;
 		Add(StringPtrType);
-		StringNullablePtrType.Class = stringClass;
-		StringStorageType.Class = stringClass;
+		StringNullablePtrType.Class = StringClass;
+		StringStorageType.Class = StringClass;
 		CiMethod# arrayBinarySearchPart = CiMethod.New(CiVisibility.NumericElementType, IntType, CiId.ArrayBinarySearchPart, "BinarySearch",
 			CiVar.New(TypeParam0, "value"), CiVar.New(IntType, "startIndex"), CiVar.New(IntType, "count"));
 		ArrayPtrClass.Add(arrayBinarySearchPart);
