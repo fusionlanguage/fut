@@ -2836,7 +2836,7 @@ namespace Foxoft.Ci
 			return (this.Nullable && right.Id == CiId.NullType) || (right is CiDynamicPtrType rightClass && IsAssignableFromClass(rightClass));
 		}
 
-		public override bool EqualsType(CiType right) => right is CiReadWriteClassType that && EqualsTypeInternal(that);
+		public override bool EqualsType(CiType right) => right is CiDynamicPtrType that && EqualsTypeInternal(that);
 
 		public override string GetArraySuffix() => IsArray() ? "[]#" : "";
 
@@ -4230,10 +4230,12 @@ namespace Foxoft.Ci
 		}
 	}
 
-	public class CiSema : CiVisitor
+	public class CiSema
 	{
 
 		protected CiProgram Program;
+
+		internal bool HasErrors = false;
 
 		CiMethodBase CurrentMethod;
 
@@ -4245,7 +4247,13 @@ namespace Foxoft.Ci
 
 		CiType Poison = new CiType { Name = "poison" };
 
-		protected override CiContainerType GetCurrentContainer() => this.CurrentScope.GetContainer();
+		CiContainerType GetCurrentContainer() => this.CurrentScope.GetContainer();
+
+		protected void ReportError(CiStatement statement, string message)
+		{
+			Console.Error.WriteLine($"{GetCurrentContainer().Filename}({statement.Line}): ERROR: {message}");
+			this.HasErrors = true;
+		}
 
 		CiType PoisonError(CiStatement statement, string message)
 		{
@@ -4318,7 +4326,7 @@ namespace Foxoft.Ci
 			for (int partsIndex = 0; partsIndex < expr.Parts.Count; partsIndex++) {
 				CiInterpolatedPart part = expr.Parts[partsIndex];
 				s += part.Prefix;
-				CiExpr arg = Resolve(part.Argument);
+				CiExpr arg = VisitExpr(part.Argument);
 				Coerce(arg, this.Program.System.PrintableType);
 				switch (arg.Type) {
 				case CiIntegerType _:
@@ -4413,7 +4421,7 @@ namespace Foxoft.Ci
 				}
 				return resolved;
 			}
-			CiExpr left = Resolve(expr.Left);
+			CiExpr left = VisitExpr(expr.Left);
 			if (left == this.Poison)
 				return left;
 			CiScope scope;
@@ -4839,7 +4847,7 @@ namespace Foxoft.Ci
 			switch (expr.Op) {
 			case CiToken.Increment:
 			case CiToken.Decrement:
-				inner = Resolve(expr.Inner);
+				inner = VisitExpr(expr.Inner);
 				CheckLValue(inner);
 				Coerce(inner, this.Program.System.DoubleType);
 				if (inner.Type is CiRangeType xcrementRange) {
@@ -4852,10 +4860,13 @@ namespace Foxoft.Ci
 				expr.Type = type;
 				return expr;
 			case CiToken.Minus:
-				inner = Resolve(expr.Inner);
+				inner = VisitExpr(expr.Inner);
 				Coerce(inner, this.Program.System.DoubleType);
-				if (inner.Type is CiRangeType negRange)
+				if (inner.Type is CiRangeType negRange) {
+					if (negRange.Min == negRange.Max)
+						return ToLiteralLong(expr, -negRange.Min);
 					type = CiRangeType.New(SaturatedNeg(negRange.Max), SaturatedNeg(negRange.Min));
+				}
 				else if (inner is CiLiteralDouble d)
 					return ToLiteralDouble(expr, -d.Value);
 				else if (inner is CiLiteralLong l)
@@ -4864,7 +4875,7 @@ namespace Foxoft.Ci
 					type = inner.Type;
 				break;
 			case CiToken.Tilde:
-				inner = Resolve(expr.Inner);
+				inner = VisitExpr(expr.Inner);
 				if (inner.Type is CiEnumFlags)
 					type = inner.Type;
 				else {
@@ -4889,14 +4900,12 @@ namespace Foxoft.Ci
 			default:
 				throw new NotImplementedException();
 			}
-			if (type is CiRangeType range && range.Min == range.Max)
-				return ToLiteralLong(expr, range.Min);
 			return new CiPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
 		}
 
 		CiExpr VisitPostfixExpr(CiPostfixExpr expr)
 		{
-			expr.Inner = Resolve(expr.Inner);
+			expr.Inner = VisitExpr(expr.Inner);
 			switch (expr.Op) {
 			case CiToken.Increment:
 			case CiToken.Decrement:
@@ -4995,8 +5004,8 @@ namespace Foxoft.Ci
 
 		CiExpr VisitBinaryExpr(CiBinaryExpr expr)
 		{
-			CiExpr left = Resolve(expr.Left);
-			CiExpr right = Resolve(expr.Right);
+			CiExpr left = VisitExpr(expr.Left);
+			CiExpr right = VisitExpr(expr.Right);
 			if (left == this.Poison || right == this.Poison)
 				return this.Poison;
 			CiType type;
@@ -5305,8 +5314,8 @@ namespace Foxoft.Ci
 		CiExpr VisitSelectExpr(CiSelectExpr expr)
 		{
 			CiExpr cond = ResolveBool(expr.Cond);
-			CiExpr onTrue = Resolve(expr.OnTrue);
-			CiExpr onFalse = Resolve(expr.OnFalse);
+			CiExpr onTrue = VisitExpr(expr.OnTrue);
+			CiExpr onFalse = VisitExpr(expr.OnFalse);
 			CiType type = GetCommonType(onTrue, onFalse);
 			Coerce(onTrue, type);
 			Coerce(onFalse, type);
@@ -5350,7 +5359,7 @@ namespace Foxoft.Ci
 
 		CiExpr ResolveCallWithArguments(CiCallExpr expr, List<CiExpr> arguments)
 		{
-			if (!(Resolve(expr.Method) is CiSymbolReference symbol))
+			if (!(VisitExpr(expr.Method) is CiSymbolReference symbol))
 				return this.Poison;
 			CiMethod method;
 			switch (symbol.Symbol) {
@@ -5384,7 +5393,7 @@ namespace Foxoft.Ci
 				if (type.Id == CiId.TypeParam0Predicate && arg is CiLambdaExpr lambda) {
 					lambda.First.Type = symbol.Left.Type.AsClassType().TypeArg0;
 					OpenScope(lambda);
-					lambda.Body = Resolve(lambda.Body);
+					lambda.Body = VisitExpr(lambda.Body);
 					CloseScope();
 					Coerce(lambda.Body, this.Program.System.BoolType);
 				}
@@ -5409,7 +5418,7 @@ namespace Foxoft.Ci
 					else
 						this.CurrentPureArguments[param] = param.Value;
 				}
-				CiExpr result = Resolve(ret.Value);
+				CiExpr result = VisitExpr(ret.Value);
 				for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter())
 					this.CurrentPureArguments.Remove(param);
 				this.CurrentPureMethods.Remove(method);
@@ -5434,14 +5443,14 @@ namespace Foxoft.Ci
 				List<CiExpr> arguments = expr.Arguments;
 				for (int i = 0; i < arguments.Count; i++) {
 					if (!(arguments[i] is CiLambdaExpr))
-						arguments[i] = Resolve(arguments[i]);
+						arguments[i] = VisitExpr(arguments[i]);
 				}
 				return ResolveCallWithArguments(expr, arguments);
 			}
 			else {
 				List<CiExpr> arguments = new List<CiExpr>();
 				foreach (CiExpr arg in expr.Arguments)
-					arguments.Add(Resolve(arg));
+					arguments.Add(VisitExpr(arg));
 				return ResolveCallWithArguments(expr, arguments);
 			}
 		}
@@ -5454,7 +5463,7 @@ namespace Foxoft.Ci
 				CiSymbolReference symbol = (CiSymbolReference) field.Left;
 				Lookup(symbol, klass.Class);
 				if (symbol.Symbol is CiField) {
-					field.Right = Resolve(field.Right);
+					field.Right = VisitExpr(field.Right);
 					Coerce(field.Right, symbol.Type);
 				}
 				else
@@ -5469,7 +5478,7 @@ namespace Foxoft.Ci
 				if (type is CiStorageType storage && expr.Value is CiAggregateInitializer init)
 					ResolveObjectLiteral(storage, init);
 				else {
-					expr.Value = Resolve(expr.Value);
+					expr.Value = VisitExpr(expr.Value);
 					if (!expr.IsAssignableStorage()) {
 						if (type is CiArrayStorageType array) {
 							type = array.GetElementType();
@@ -5483,13 +5492,13 @@ namespace Foxoft.Ci
 			this.CurrentScope.Add(expr);
 		}
 
-		CiExpr Resolve(CiExpr expr)
+		CiExpr VisitExpr(CiExpr expr)
 		{
 			switch (expr) {
 			case CiAggregateInitializer aggregate:
 				List<CiExpr> items = aggregate.Items;
 				for (int i = 0; i < items.Count; i++)
-					items[i] = Resolve(items[i]);
+					items[i] = VisitExpr(items[i]);
 				return expr;
 			case CiLiteral _:
 				return expr;
@@ -5518,14 +5527,9 @@ namespace Foxoft.Ci
 			}
 		}
 
-		public override void VisitExpr(CiExpr statement)
-		{
-			Resolve(statement);
-		}
-
 		CiExpr ResolveBool(CiExpr expr)
 		{
-			expr = Resolve(expr);
+			expr = VisitExpr(expr);
 			Coerce(expr, this.Program.System.BoolType);
 			return expr;
 		}
@@ -5652,7 +5656,7 @@ namespace Foxoft.Ci
 				if (expr is CiBinaryExpr binary && binary.Op == CiToken.LeftBracket) {
 					if (binary.Right != null) {
 						ExpectNoPtrModifier(expr, ptrModifier, nullable);
-						CiExpr lengthExpr = Resolve(binary.Right);
+						CiExpr lengthExpr = VisitExpr(binary.Right);
 						CiArrayStorageType arrayStorage = new CiArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = outerArray, LengthExpr = lengthExpr, Length = 0 };
 						if (Coerce(lengthExpr, this.Program.System.IntType) && (!dynamic || binary.Left.IsIndexing())) {
 							if (lengthExpr is CiLiteralLong literal) {
@@ -5705,11 +5709,11 @@ namespace Foxoft.Ci
 			return def.Type;
 		}
 
-		public override void VisitAssert(CiAssert statement)
+		void VisitAssert(CiAssert statement)
 		{
 			statement.Cond = ResolveBool(statement.Cond);
 			if (statement.Message != null) {
-				statement.Message = Resolve(statement.Message);
+				statement.Message = VisitExpr(statement.Message);
 				if (!(statement.Message.Type is CiStringType))
 					ReportError(statement, "The second argument of 'assert' must be a string");
 			}
@@ -5728,7 +5732,7 @@ namespace Foxoft.Ci
 					}
 				}
 				else
-					statement.AcceptStatement(this);
+					VisitStatement(statement);
 				if (!reachable) {
 					ReportError(statement, "Unreachable statement");
 					return false;
@@ -5738,20 +5742,11 @@ namespace Foxoft.Ci
 			return reachable;
 		}
 
-		public override void VisitBlock(CiBlock statement)
+		void VisitBlock(CiBlock statement)
 		{
 			OpenScope(statement);
 			statement.SetCompletesNormally(ResolveStatements(statement.Statements));
 			CloseScope();
-		}
-
-		public override void VisitBreak(CiBreak statement)
-		{
-			statement.LoopOrSwitch.SetCompletesNormally(true);
-		}
-
-		public override void VisitContinue(CiContinue statement)
-		{
 		}
 
 		void ResolveLoopCond(CiLoop statement)
@@ -5764,20 +5759,22 @@ namespace Foxoft.Ci
 				statement.SetCompletesNormally(false);
 		}
 
-		public override void VisitDoWhile(CiDoWhile statement)
+		void VisitDoWhile(CiDoWhile statement)
 		{
 			OpenScope(statement);
 			ResolveLoopCond(statement);
-			statement.Body.AcceptStatement(this);
+			VisitStatement(statement.Body);
 			CloseScope();
 		}
 
-		public override void VisitFor(CiFor statement)
+		void VisitFor(CiFor statement)
 		{
 			OpenScope(statement);
-			VisitOptionalStatement(statement.Init);
+			if (statement.Init != null)
+				VisitStatement(statement.Init);
 			ResolveLoopCond(statement);
-			VisitOptionalStatement(statement.Advance);
+			if (statement.Advance != null)
+				VisitStatement(statement.Advance);
 			if (statement.Init is CiVar iter && iter.Type is CiIntegerType && iter.Value != null && statement.Cond is CiBinaryExpr cond && cond.Left.IsReferenceTo(iter) && (cond.Right is CiLiteral || (cond.Right is CiSymbolReference limitSymbol && limitSymbol.Symbol is CiVar))) {
 				long step = 0;
 				switch (statement.Advance) {
@@ -5814,16 +5811,16 @@ namespace Foxoft.Ci
 				}
 				statement.IsIteratorUsed = false;
 			}
-			statement.Body.AcceptStatement(this);
+			VisitStatement(statement.Body);
 			CloseScope();
 		}
 
-		public override void VisitForeach(CiForeach statement)
+		void VisitForeach(CiForeach statement)
 		{
 			OpenScope(statement);
 			CiVar element = statement.GetVar();
 			ResolveType(element);
-			Resolve(statement.Collection);
+			VisitExpr(statement.Collection);
 			if (statement.Collection.Type is CiClassType klass) {
 				switch (klass.Class.Id) {
 				case CiId.StringClass:
@@ -5861,34 +5858,30 @@ namespace Foxoft.Ci
 			else
 				ReportError(statement, $"'foreach' invalid on {statement.Collection.Type}");
 			statement.SetCompletesNormally(true);
-			statement.Body.AcceptStatement(this);
+			VisitStatement(statement.Body);
 			CloseScope();
 		}
 
-		public override void VisitIf(CiIf statement)
+		void VisitIf(CiIf statement)
 		{
 			statement.Cond = ResolveBool(statement.Cond);
-			statement.OnTrue.AcceptStatement(this);
+			VisitStatement(statement.OnTrue);
 			if (statement.OnFalse != null) {
-				statement.OnFalse.AcceptStatement(this);
+				VisitStatement(statement.OnFalse);
 				statement.SetCompletesNormally(statement.OnTrue.CompletesNormally() || statement.OnFalse.CompletesNormally());
 			}
 			else
 				statement.SetCompletesNormally(true);
 		}
 
-		public override void VisitLock(CiLock statement)
+		void VisitLock(CiLock statement)
 		{
-			statement.Lock = Resolve(statement.Lock);
+			statement.Lock = VisitExpr(statement.Lock);
 			Coerce(statement.Lock, this.Program.System.LockPtrType);
-			statement.Body.AcceptStatement(this);
+			VisitStatement(statement.Body);
 		}
 
-		public override void VisitNative(CiNative statement)
-		{
-		}
-
-		public override void VisitReturn(CiReturn statement)
+		void VisitReturn(CiReturn statement)
 		{
 			if (this.CurrentMethod.Type.Id == CiId.VoidType) {
 				if (statement.Value != null)
@@ -5897,17 +5890,17 @@ namespace Foxoft.Ci
 			else if (statement.Value == null)
 				ReportError(statement, "Missing return value");
 			else {
-				statement.Value = Resolve(statement.Value);
+				statement.Value = VisitExpr(statement.Value);
 				Coerce(statement.Value, this.CurrentMethod.Type);
 				if (statement.Value is CiSymbolReference symbol && symbol.Symbol is CiVar local && ((local.Type.IsFinal() && !(this.CurrentMethod.Type is CiStorageType)) || (local.Type.Id == CiId.StringStorageType && this.CurrentMethod.Type.Id != CiId.StringStorageType)))
 					ReportError(statement, "Returning dangling reference to local storage");
 			}
 		}
 
-		public override void VisitSwitch(CiSwitch statement)
+		void VisitSwitch(CiSwitch statement)
 		{
 			OpenScope(statement);
-			statement.Value = Resolve(statement.Value);
+			statement.Value = VisitExpr(statement.Value);
 			switch (statement.Value.Type) {
 			case CiIntegerType i when i.Id != CiId.LongType:
 			case CiEnum _:
@@ -5964,26 +5957,76 @@ namespace Foxoft.Ci
 			CloseScope();
 		}
 
-		public override void VisitThrow(CiThrow statement)
+		void VisitThrow(CiThrow statement)
 		{
 			if (!this.CurrentMethod.Throws)
 				ReportError(statement, "'throw' in a method not marked 'throws'");
-			statement.Message = Resolve(statement.Message);
+			statement.Message = VisitExpr(statement.Message);
 			if (!(statement.Message.Type is CiStringType))
 				ReportError(statement, "The argument of 'throw' must be a string");
 		}
 
-		public override void VisitWhile(CiWhile statement)
+		void VisitWhile(CiWhile statement)
 		{
 			OpenScope(statement);
 			ResolveLoopCond(statement);
-			statement.Body.AcceptStatement(this);
+			VisitStatement(statement.Body);
 			CloseScope();
+		}
+
+		void VisitStatement(CiStatement statement)
+		{
+			switch (statement) {
+			case CiAssert asrt:
+				VisitAssert(asrt);
+				break;
+			case CiBlock block:
+				VisitBlock(block);
+				break;
+			case CiBreak brk:
+				brk.LoopOrSwitch.SetCompletesNormally(true);
+				break;
+			case CiContinue _:
+			case CiNative _:
+				break;
+			case CiDoWhile doWhile:
+				VisitDoWhile(doWhile);
+				break;
+			case CiFor forLoop:
+				VisitFor(forLoop);
+				break;
+			case CiForeach foreachLoop:
+				VisitForeach(foreachLoop);
+				break;
+			case CiIf ifStatement:
+				VisitIf(ifStatement);
+				break;
+			case CiLock lockStatement:
+				VisitLock(lockStatement);
+				break;
+			case CiReturn ret:
+				VisitReturn(ret);
+				break;
+			case CiSwitch switchStatement:
+				VisitSwitch(switchStatement);
+				break;
+			case CiThrow throwStatement:
+				VisitThrow(throwStatement);
+				break;
+			case CiWhile whileStatement:
+				VisitWhile(whileStatement);
+				break;
+			case CiExpr expr:
+				VisitExpr(expr);
+				break;
+			default:
+				throw new NotImplementedException();
+			}
 		}
 
 		CiExpr FoldConst(CiExpr expr)
 		{
-			expr = Resolve(expr);
+			expr = VisitExpr(expr);
 			if (expr is CiLiteral || expr.IsConstEnum())
 				return expr;
 			ReportError(expr, "Expected constant value");
@@ -6012,7 +6055,7 @@ namespace Foxoft.Ci
 				case CiField field:
 					CiType type = ResolveType(field);
 					if (field.Value != null) {
-						field.Value = Resolve(field.Value);
+						field.Value = VisitExpr(field.Value);
 						if (!field.IsAssignableStorage())
 							Coerce(field.Value, type is CiArrayStorageType array ? array.GetElementType() : type);
 					}
@@ -6092,7 +6135,7 @@ namespace Foxoft.Ci
 			konst.VisitStatus = CiVisitStatus.InProgress;
 			if (!(this.CurrentScope is CiEnum))
 				ResolveType(konst);
-			konst.Value = Resolve(konst.Value);
+			konst.Value = VisitExpr(konst.Value);
 			if (konst.Value is CiAggregateInitializer coll) {
 				if (konst.Type is CiClassType array) {
 					CiType elementType = array.GetElementType();
@@ -6121,21 +6164,6 @@ namespace Foxoft.Ci
 			konst.VisitStatus = CiVisitStatus.Done;
 		}
 
-		public override void VisitConst(CiConst statement)
-		{
-		}
-
-		public override void VisitEnumValue(CiConst konst, CiConst previous)
-		{
-			if (konst.Value != null) {
-				ResolveConst(konst);
-				CiEnum enu = (CiEnum) konst.Parent;
-				enu.HasExplicitValue = true;
-			}
-			else
-				konst.Value = new CiImplicitEnumValue { Value = previous == null ? 0 : previous.Value.IntValue() + 1 };
-		}
-
 		void ResolveConsts(CiContainerType container)
 		{
 			this.CurrentScope = container;
@@ -6147,7 +6175,18 @@ namespace Foxoft.Ci
 				}
 				break;
 			case CiEnum enu:
-				enu.AcceptValues(this);
+				CiConst previous = null;
+				for (CiSymbol symbol = enu.First; symbol != null; symbol = symbol.Next) {
+					if (symbol is CiConst konst) {
+						if (konst.Value != null) {
+							ResolveConst(konst);
+							enu.HasExplicitValue = true;
+						}
+						else
+							konst.Value = new CiImplicitEnumValue { Value = previous == null ? 0 : previous.Value.IntValue() + 1 };
+						previous = konst;
+					}
+				}
 				break;
 			default:
 				throw new NotImplementedException();
@@ -6159,7 +6198,7 @@ namespace Foxoft.Ci
 			if (klass.Constructor != null) {
 				this.CurrentScope = klass;
 				this.CurrentMethod = klass.Constructor;
-				klass.Constructor.Body.AcceptStatement(this);
+				VisitStatement(klass.Constructor.Body);
 				this.CurrentMethod = null;
 			}
 			for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
@@ -6171,7 +6210,7 @@ namespace Foxoft.Ci
 						this.CurrentMethod = method;
 						if (!(method.Body is CiScope))
 							OpenScope(method.MethodScope);
-						method.Body.AcceptStatement(this);
+						VisitStatement(method.Body);
 						if (method.Type.Id != CiId.VoidType && method.Body.CompletesNormally())
 							ReportError(method.Body, "Method can complete without a return value");
 						this.CurrentMethod = null;

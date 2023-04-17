@@ -1299,9 +1299,7 @@ public class CiDynamicPtrType : CiReadWriteClassType
 		return (this.Nullable && right.Id == CiId.NullType)
 			|| (right is CiDynamicPtrType rightClass && IsAssignableFromClass(rightClass));
 	}
-	public override bool EqualsType(CiType right) => right is CiReadWriteClassType that && EqualsTypeInternal(that);
-	// FIXME: temporary hack for Sema.ci, should be:
-	// public override bool EqualsType(CiType right) => right is CiDynamicPtrType that && EqualsTypeInternal(that);
+	public override bool EqualsType(CiType right) => right is CiDynamicPtrType that && EqualsTypeInternal(that);
 
 	public override string() GetArraySuffix() => IsArray() ? "[]#" : "";
 	public override string GetClassSuffix() => "#";
