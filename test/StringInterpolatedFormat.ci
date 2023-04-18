@@ -4,14 +4,14 @@ public static class Test
 	{
 		string s = "foo";
 		int i = 15;
-		string() s1 = $"{i,3} {s,4}"; //FAIL: swift TODO; cl
+		string() s1 = $"{i,3} {s,4}"; //FAIL: cpp C++20; swift TODO; cl
 		string() s2 = $"{i,-3}{s,-5}";
 		string() s3 = $"{i:X} {i:x}";
 		string() s4 = $"{i:D3} {i:d3} {i:X2} {i:x2}";
 		double d = 1.5;
 		string() s5 = $"{d:F2} {d:f2}";
 		string() s6 = $"{d:E2} {d:e2}";
-		return s1 == " 15  foo" //FAIL: cpp - should work with C++20
+		return s1 == " 15  foo"
 			&& s2 == "15 foo  "
 			&& s3 == "F f"
 			&& s4 == "015 015 0F 0f"

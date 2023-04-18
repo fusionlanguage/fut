@@ -6805,6 +6805,30 @@ namespace Foxoft.Ci
 			WriteDoubling(expr.Suffix, '%');
 		}
 
+		protected void WritePyFormat(CiInterpolatedPart part)
+		{
+			if (part.WidthExpr != null || part.Precision >= 0 || (part.Format != ' ' && part.Format != 'D'))
+				WriteChar(':');
+			if (part.WidthExpr != null) {
+				if (part.Width >= 0) {
+					if (!(part.Argument.Type is CiNumericType))
+						WriteChar('>');
+					VisitLiteralLong(part.Width);
+				}
+				else {
+					WriteChar('<');
+					VisitLiteralLong(-part.Width);
+				}
+			}
+			if (part.Precision >= 0) {
+				WriteChar(part.Argument.Type is CiIntegerType ? '0' : '.');
+				VisitLiteralLong(part.Precision);
+			}
+			if (part.Format != ' ' && part.Format != 'D')
+				WriteChar(part.Format);
+			WriteChar('}');
+		}
+
 		protected virtual void WriteInterpolatedStringArg(CiExpr expr)
 		{
 			expr.Accept(this, CiPriority.Argument);
@@ -12536,7 +12560,8 @@ namespace Foxoft.Ci
 			Write("std::format(\"");
 			foreach (CiInterpolatedPart part in expr.Parts) {
 				WriteDoubling(part.Prefix, '{');
-				Write("{}");
+				WriteChar('{');
+				WritePyFormat(part);
 			}
 			WriteDoubling(expr.Suffix, '{');
 			WriteChar('"');
@@ -22034,26 +22059,7 @@ namespace Foxoft.Ci
 				WriteDoubling(part.Prefix, '{');
 				WriteChar('{');
 				part.Argument.Accept(this, CiPriority.Argument);
-				if (part.WidthExpr != null || part.Precision >= 0 || (part.Format != ' ' && part.Format != 'D'))
-					WriteChar(':');
-				if (part.WidthExpr != null) {
-					if (part.Width >= 0) {
-						if (!(part.Argument.Type is CiNumericType))
-							WriteChar('>');
-						VisitLiteralLong(part.Width);
-					}
-					else {
-						WriteChar('<');
-						VisitLiteralLong(-part.Width);
-					}
-				}
-				if (part.Precision >= 0) {
-					WriteChar(part.Argument.Type is CiIntegerType ? '0' : '.');
-					VisitLiteralLong(part.Precision);
-				}
-				if (part.Format != ' ' && part.Format != 'D')
-					WriteChar(part.Format);
-				WriteChar('}');
+				WritePyFormat(part);
 			}
 			WriteDoubling(expr.Suffix, '{');
 			WriteChar('"');

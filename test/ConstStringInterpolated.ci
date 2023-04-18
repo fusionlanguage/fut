@@ -4,10 +4,10 @@ public static class Test
 	{
 		const string s1 = $"foo";
 		const string s2 = $"<{s1}|{40 + 2}>";
-		/* TODO const */ string() s3 = $"<{s1,5}|{8 - 50, 4}>"; //FAIL: cpp - should work with C++20; py swift TODO; cl
+		/* TODO const */ string() s3 = $"<{s1,5}|{8 - 50, 4}>"; //FAIL: py swift TODO; cl
 		/* const */ string() s4 = $"<{s1,-5}|{41 + 1, -4}>";
 		/* const */ string() s5 = $"<{42:D3}|{42:X}|{42:x}|{42:X3}|{42:x3}" + ">";
-		/* const */ string() s6 = $"<{42,4:D3}|{42,4:X}|{42,-4:x}" + $"|{42,4:X3}|{42,-4:x3}>"; //FAIL: java TODO
+		/* const */ string() s6 = $"<{42,4:D3}|{42,4:X}|{42,-4:x}" + $"|{42,4:X3}|{42,-4:x3}>"; //FAIL: cpp java TODO
 		return s1 == "foo"
 			&& s2 == "<foo|42>"
 			&& s3 == "<  foo| -42>"

@@ -67,7 +67,8 @@ public class GenCpp : GenCCpp
 		Write("std::format(\"");
 		foreach (CiInterpolatedPart part in expr.Parts) {
 			WriteDoubling(part.Prefix, '{');
-			Write("{}");
+			WriteChar('{');
+			WritePyFormat(part);
 		}
 		WriteDoubling(expr.Suffix, '{');
 		WriteChar('"');
