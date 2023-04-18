@@ -12743,7 +12743,7 @@ namespace Foxoft.Ci
 						break;
 					case CiId.StringWriterClass:
 						Include("sstream");
-						Write("std::stringstream");
+						Write("std::ostringstream");
 						break;
 					case CiId.RegexClass:
 						Include("regex");
