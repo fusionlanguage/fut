@@ -22,6 +22,6 @@ public static class Test
 		Simple() s;
 		Overrid() o;
 		Abstract a = o;
-		return $"{s}{o}{a}" == "SimpOverOver"; //FAIL: c TODO; cpp - should work with C++20
+		return $"{s}{o}{a}" == "SimpOverOver"; //FAIL: c TODO; cpp C++20
 	}
 }

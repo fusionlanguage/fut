@@ -4,18 +4,22 @@ DOTNET_BASE_DIR := $(shell dotnet --info | sed -n 's/ Base Path:   //p')
 DOTNET_REF_DIR := $(DOTNET_BASE_DIR)../../packs/Microsoft.NETCore.App.Ref/6.0.16/ref/net6.0
 CSC := dotnet '$(DOTNET_BASE_DIR)Roslyn/bincore/csc.dll' -nologo $(patsubst %,'-r:$(DOTNET_REF_DIR)/System.%.dll', Collections Collections.Specialized Console Linq Runtime Text.RegularExpressions Threading)
 CFLAGS = -Wall -Werror
+CXXFLAGS = -Wall -Werror -std=c++2a
 SWIFTC = swiftc
 ifeq ($(OS),Windows_NT)
 JAVACPSEP = ;
+CXXFLAGS += -stdlib=libc++ -fexperimental-library
+CXXLIBS += -lstdc++
 SWIFTC += -no-color-diagnostics -sdk '$(SDKROOT)' -Xlinker -noexp -Xlinker -noimplib
 else
 JAVACPSEP = :
 CFLAGS += -fsanitize=address -g
+CXXFLAGS += -fsanitize=address -g
 SWIFTC += -sanitize=address
 endif
 CITO = dotnet run --no-build --
 CC = clang
-CXX = clang++ -std=c++2a
+CXX = clang++
 DC = dmd
 PYTHON = python3 -B
 
@@ -114,7 +118,7 @@ test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
 	$(DO)$(CC) -o $@ $(CFLAGS) -Wno-unused-function -I $(<D) $^ `pkg-config --cflags --libs glib-2.0` -lm || grep '//FAIL:.*\<c\>' test/$*.ci
 
 test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
-	$(DO)$(CXX) -o $@ $(CFLAGS) -I $(<D) $^ || grep '//FAIL:.*\<cpp\>' test/$*.ci
+	$(DO)$(CXX) -o $@ $(CXXFLAGS) -I $(<D) $^ $(CXXLIBS) || grep '//FAIL:.*\<cpp\>' test/$*.ci
 
 test/bin/%/cs.dll: test/bin/%/Test.cs test/Runner.cs
 	$(DO)$(CSC) -out:$@ $^ || grep '//FAIL:.*\<cs\>' test/$*.ci
@@ -171,7 +175,7 @@ test/bin/CiCheck/cpp.txt: test/bin/CiCheck/cpp.exe $(SOURCE_CI)
 	$(DO)./$< $(SOURCE_CI) >$@
 
 test/bin/CiCheck/cpp.exe: test/bin/CiCheck/Test.cpp test/CiCheck.cpp
-	$(DO)$(CXX) -o $@ $(CFLAGS) -I $(<D) $^
+	$(DO)$(CXX) -o $@ $(CXXFLAGS) -I $(<D) $^ $(CXXLIBS)
 
 test/bin/CiCheck/d.txt: test/bin/CiCheck/d.exe $(SOURCE_CI)
 	$(DO)./$< $(SOURCE_CI) >$@

@@ -6,7 +6,7 @@ public class Test
 
 	static int[]# CreateIntArray()
 	{
-		int[]# a = new int[2]; //FAIL: cpp - should work with C++20
+		int[]# a = new int[2]; //FAIL: cpp C++20
 		a[0] = 5;
 		a[1] = 10;
 		return a;

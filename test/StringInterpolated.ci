@@ -4,7 +4,7 @@ public static class Test
 	{
 		int one = 1;
 		string s = "1 + 2";
-		string() s1 = $"{s} == {one + 2}"; //FAIL: cpp - should work with C++20; cl
+		string() s1 = $"{s} == {one + 2}"; //FAIL: cpp C++20; cl
 		string() s2 = $"\"`{{${one}$";
 		string() s3 = $"{one}";
 		string() s4 = $"{s3}";
