@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		int[7] a;
-		byte[]# d = new byte[7]; //FAIL: cpp - should work with C++20; cl
+		byte[]# d = new byte[7]; //FAIL: cpp C++20; cl
 		for (int i = 0; i < a.Length; i++)
 			d[i] = a[i] = (i + 1) * 5;
 		a.Fill(0, 1, 2);

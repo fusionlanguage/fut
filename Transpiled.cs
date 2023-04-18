@@ -13305,7 +13305,7 @@ namespace Foxoft.Ci
 				Write(", ");
 				args[2].Accept(this, CiPriority.Argument);
 				Write(", ");
-				args[0].Accept(this, CiPriority.Argument);
+				WriteCoerced(obj.Type.AsClassType().GetElementType(), args[0], CiPriority.Argument);
 				WriteChar(')');
 				break;
 			case CiId.ArraySortAll:
