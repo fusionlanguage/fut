@@ -4339,6 +4339,8 @@ namespace Foxoft.Ci
 					case 'd':
 					case 'X':
 					case 'x':
+						if (part.WidthExpr != null && part.Precision >= 0)
+							ReportError(part.WidthExpr, "Cannot format an integer with both width and precision");
 						break;
 					default:
 						ReportError(arg, "Invalid format string");
@@ -16897,8 +16899,6 @@ namespace Foxoft.Ci
 		protected override void WritePrintfWidth(CiInterpolatedPart part)
 		{
 			if (part.Precision >= 0 && part.Argument.Type is CiIntegerType) {
-				if (part.WidthExpr != null)
-					NotSupported(part.WidthExpr, "Formatting integer with both width and precision");
 				WriteChar('0');
 				VisitLiteralLong(part.Precision);
 			}

@@ -121,6 +121,8 @@ public class CiSema
 				case 'd':
 				case 'X':
 				case 'x':
+					if (part.WidthExpr != null && part.Precision >= 0)
+						ReportError(part.WidthExpr, "Cannot format an integer with both width and precision");
 					break;
 				default:
 					ReportError(arg, "Invalid format string");

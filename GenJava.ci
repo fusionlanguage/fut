@@ -35,8 +35,6 @@ public class GenJava : GenTyped
 	protected override void WritePrintfWidth!(CiInterpolatedPart part)
 	{
 		if (part.Precision >= 0 && part.Argument.Type is CiIntegerType) {
-			if (part.WidthExpr != null)
-				NotSupported(part.WidthExpr, "Formatting integer with both width and precision");
 			WriteChar('0');
 			VisitLiteralLong(part.Precision);
 		}
