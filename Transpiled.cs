@@ -7254,11 +7254,16 @@ namespace Foxoft.Ci
 			WriteBinaryExpr(expr, parent > child, child, op, child);
 		}
 
+		void WriteRel(CiBinaryExpr expr, CiPriority parent, string op)
+		{
+			WriteBinaryExpr(expr, parent > CiPriority.CondAnd, CiPriority.Rel, op, CiPriority.Rel);
+		}
+
 		protected static string GetEqOp(bool not) => not ? " != " : " == ";
 
 		protected virtual void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 		{
-			WriteBinaryExpr2(expr, parent, CiPriority.Equality, GetEqOp(not));
+			WriteBinaryExpr(expr, parent > CiPriority.CondAnd, CiPriority.Equality, GetEqOp(not), CiPriority.Equality);
 		}
 
 		protected virtual void WriteAnd(CiBinaryExpr expr, CiPriority parent)
@@ -7322,16 +7327,16 @@ namespace Foxoft.Ci
 				WriteBinaryExpr(expr, parent > CiPriority.Shift, CiPriority.Shift, " >> ", CiPriority.Mul);
 				break;
 			case CiToken.Less:
-				WriteBinaryExpr2(expr, parent, CiPriority.Rel, " < ");
+				WriteRel(expr, parent, " < ");
 				break;
 			case CiToken.LessOrEqual:
-				WriteBinaryExpr2(expr, parent, CiPriority.Rel, " <= ");
+				WriteRel(expr, parent, " <= ");
 				break;
 			case CiToken.Greater:
-				WriteBinaryExpr2(expr, parent, CiPriority.Rel, " > ");
+				WriteRel(expr, parent, " > ");
 				break;
 			case CiToken.GreaterOrEqual:
-				WriteBinaryExpr2(expr, parent, CiPriority.Rel, " >= ");
+				WriteRel(expr, parent, " >= ");
 				break;
 			case CiToken.Equal:
 				WriteEqual(expr, parent, false);

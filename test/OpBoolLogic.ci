@@ -7,8 +7,15 @@ public static class Test
 		t &= !f;
 		f |= !t;
 		t ^= f;
+		int five = 5;
 		return (t & !f)
 			&& (t | f)
-			&& (t ^ f);
+			&& (t ^ f)
+			&& (t & (t == true))
+			&& (t & (five < 10))
+			&& (f | (t == true))
+			&& (f | (five > 2))
+			&& (f ^ (t == true))
+			&& (f ^ (five <= 5));
 	}
 }
