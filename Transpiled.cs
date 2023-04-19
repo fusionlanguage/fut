@@ -4952,22 +4952,22 @@ namespace Foxoft.Ci
 			else {
 				switch (left) {
 				case CiLiteralLong leftLong when right is CiLiteralLong rightLong:
-					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ leftLong.Value == rightLong.Value);
+					return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ (leftLong.Value == rightLong.Value));
 				case CiLiteralDouble leftDouble when right is CiLiteralDouble rightDouble:
-					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ leftDouble.Value == rightDouble.Value);
+					return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ (leftDouble.Value == rightDouble.Value));
 				case CiLiteralString leftString when right is CiLiteralString rightString:
-					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ leftString.Value == rightString.Value);
+					return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ (leftString.Value == rightString.Value));
 				case CiLiteralNull _:
 					return ToLiteralBool(expr, expr.Op == CiToken.Equal);
 				case CiLiteralFalse _:
-					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ right is CiLiteralFalse);
+					return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ right is CiLiteralFalse);
 				case CiLiteralTrue _:
-					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ right is CiLiteralTrue);
+					return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ right is CiLiteralTrue);
 				default:
 					break;
 				}
 				if (left.IsConstEnum() && right.IsConstEnum())
-					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual ^ left.IntValue() == right.IntValue());
+					return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ (left.IntValue() == right.IntValue()));
 			}
 			TakePtr(left);
 			TakePtr(right);
@@ -11545,14 +11545,14 @@ namespace Foxoft.Ci
 		{
 			for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
 				switch (symbol) {
-				case CiConst konst when konst.Visibility == CiVisibility.Public == pub:
+				case CiConst konst when (konst.Visibility == CiVisibility.Public) == pub:
 					if (pub) {
 						WriteNewLine();
 						WriteDoc(konst.Documentation);
 					}
 					WriteConst(konst);
 					break;
-				case CiMethod method when method.IsLive && method.Visibility == CiVisibility.Public == pub && method.CallType != CiCallType.Abstract:
+				case CiMethod method when method.IsLive && (method.Visibility == CiVisibility.Public) == pub && method.CallType != CiCallType.Abstract:
 					WriteNewLine();
 					WriteMethodDoc(method);
 					WriteSignature(method);
@@ -21222,11 +21222,22 @@ namespace Foxoft.Ci
 			}
 		}
 
+		static bool NeedsVarBytes(List<CiStatement> statements)
+		{
+			int count = 0;
+			foreach (CiStatement statement in statements) {
+				if (statement is CiCallExpr call && call.Method.Symbol.Id == CiId.UTF8GetBytes) {
+					if (++count == 2)
+						return true;
+				}
+			}
+			return false;
+		}
+
 		protected override void WriteStatements(List<CiStatement> statements)
 		{
-			 // TODO: List.Count(lambda)
-			this.VarBytesAtIndent[this.Indent] = statements.Count(s => s is CiCallExpr call && call.Method.Symbol.Id == CiId.UTF8GetBytes) > 1;
-		base.WriteStatements(statements);
+			this.VarBytesAtIndent[this.Indent] = NeedsVarBytes(statements);
+			base.WriteStatements(statements);
 		}
 
 		public override void VisitLambdaExpr(CiLambdaExpr expr)

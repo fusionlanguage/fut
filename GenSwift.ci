@@ -1131,12 +1131,22 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	protected override void WriteStatements!(List<CiStatement#> statements)
+	static bool NeedsVarBytes(List<CiStatement#> statements)
 	{
 		// Encoding.UTF8.GetBytes returns void, so it can only be called as a statement
-		native { // TODO: List.Count(lambda)
-			this.VarBytesAtIndent[this.Indent] = statements.Count(s => s is CiCallExpr call && call.Method.Symbol.Id == CiId.UTF8GetBytes) > 1;
+		int count = 0;
+		foreach (CiStatement statement in statements) {
+			if (statement is CiCallExpr call && call.Method.Symbol.Id == CiId.UTF8GetBytes) {
+				if (++count == 2)
+					return true;
+			}
 		}
+		return false;
+	}
+
+	protected override void WriteStatements!(List<CiStatement#> statements)
+	{
+		this.VarBytesAtIndent[this.Indent] = NeedsVarBytes(statements);
 		base.WriteStatements(statements);
 	}
 
