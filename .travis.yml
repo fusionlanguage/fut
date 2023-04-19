@@ -25,7 +25,7 @@ jobs:
       - bash install.sh
     script: source `bash install.sh -a` && make -j5 test-d
   - name: js, ts
-    install: nvm install node
+    install: nvm install --lts
     script: make -j5 test-js test-ts
   - name: py, swift
     install:
