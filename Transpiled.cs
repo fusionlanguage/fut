@@ -13657,7 +13657,7 @@ namespace Foxoft.Ci
 				if (klass.Class.Id == CiId.StringClass) {
 					if (expr.Type.Id == CiId.NullType) {
 						Include("string_view");
-						Write("std::string_view(nullptr, 0)");
+						Write("std::string_view()");
 					}
 					else
 						expr.Accept(this, parent);
