@@ -1584,10 +1584,14 @@ public class GenCpp : GenCCpp
 						Write(" == nullptr");
 						break;
 					case CiBinaryExpr when1 when when1.Op == CiToken.When:
+						if (kase.Values.Count > 1)
+							WriteChar('(');
 						assert when1.Left is CiVar whenVar;
 						WriteIsVar(statement.Value, whenVar, CiPriority.CondAnd); // FIXME: side effect in every if
 						Write(" && ");
 						when1.Right.Accept(this, CiPriority.CondAnd);
+						if (kase.Values.Count > 1)
+							WriteChar(')');
 						break;
 					default:
 						assert false;

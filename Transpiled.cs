@@ -14061,10 +14061,14 @@ namespace Foxoft.Ci
 							Write(" == nullptr");
 							break;
 						case CiBinaryExpr when1 when when1.Op == CiToken.When:
+							if (kase.Values.Count > 1)
+								WriteChar('(');
 							CiVar whenVar = (CiVar) when1.Left;
 							WriteIsVar(statement.Value, whenVar, CiPriority.CondAnd);
 							Write(" && ");
 							when1.Right.Accept(this, CiPriority.CondAnd);
+							if (kase.Values.Count > 1)
+								WriteChar(')');
 							break;
 						default:
 							throw new NotImplementedException();
