@@ -22,7 +22,7 @@ public abstract class GenBase : CiVisitor
 	internal string() Namespace;
 	internal string() OutputFile;
 	TextWriter! Writer;
-	StringWriter!? StringWriter;
+	StringWriter() StringWriter;
 	protected int Indent = 0;
 	protected bool AtLineStart = true;
 	bool AtChildStart = false;
@@ -258,17 +258,15 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void OpenStringWriter()
+	protected void OpenStringWriter!()
 	{
-		native { // TODO: StringWriter
-			this.Writer = this.StringWriter = new StringWriter();
-		}
+		this.Writer = this.StringWriter;
 	}
 
-	protected void CloseStringWriter()
+	protected void CloseStringWriter!()
 	{
 		this.Writer.Write(this.StringWriter.ToString());
-		this.StringWriter = null;
+		this.StringWriter.Clear();
 	}
 
 	protected void Include!(string name)

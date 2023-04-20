@@ -177,6 +177,7 @@ public enum CiId
 	TextWriterWriteLine,
 	ConsoleWrite,
 	ConsoleWriteLine,
+	StringWriterClear,
 	StringWriterToString,
 	UTF8GetByteCount,
 	UTF8GetBytes,
@@ -1548,6 +1549,7 @@ public class CiSystem : CiScope
 		consoleClass.Add(CiStaticProperty.New(new CiStorageType { Class = textWriterClass }, CiId.ConsoleError, "Error"));
 		Add(consoleClass);
 		CiClass# stringWriterClass = CiClass.New(CiCallType.Sealed, CiId.StringWriterClass, "StringWriter");
+		stringWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.StringWriterClear, "Clear"));
 		stringWriterClass.Add(CiMethod.New(CiVisibility.Public, StringPtrType, CiId.StringWriterToString, "ToString"));
 		Add(stringWriterClass);
 		stringWriterClass.Parent = textWriterClass;

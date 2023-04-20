@@ -1364,6 +1364,7 @@ namespace Foxoft.Ci
 		TextWriterWriteLine,
 		ConsoleWrite,
 		ConsoleWriteLine,
+		StringWriterClear,
 		StringWriterToString,
 		UTF8GetByteCount,
 		UTF8GetBytes,
@@ -2980,6 +2981,7 @@ namespace Foxoft.Ci
 			consoleClass.Add(CiStaticProperty.New(new CiStorageType { Class = textWriterClass }, CiId.ConsoleError, "Error"));
 			Add(consoleClass);
 			CiClass stringWriterClass = CiClass.New(CiCallType.Sealed, CiId.StringWriterClass, "StringWriter");
+			stringWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.StringWriterClear, "Clear"));
 			stringWriterClass.Add(CiMethod.New(CiVisibility.Public, this.StringPtrType, CiId.StringWriterToString, "ToString"));
 			Add(stringWriterClass);
 			stringWriterClass.Parent = textWriterClass;
@@ -6274,7 +6276,7 @@ namespace Foxoft.Ci
 
 		TextWriter Writer;
 
-		StringWriter StringWriter;
+		readonly StringWriter StringWriter = new StringWriter();
 
 		protected int Indent = 0;
 
@@ -6530,14 +6532,13 @@ namespace Foxoft.Ci
 
 		protected void OpenStringWriter()
 		{
-			 // TODO: StringWriter
-			this.Writer = this.StringWriter = new StringWriter();
+			this.Writer = this.StringWriter;
 		}
 
 		protected void CloseStringWriter()
 		{
 			this.Writer.Write(this.StringWriter.ToString());
-			this.StringWriter = null;
+			this.StringWriter.GetStringBuilder().Clear();
 		}
 
 		protected void Include(string name)
@@ -13497,6 +13498,11 @@ namespace Foxoft.Ci
 				WriteCollectionObject(obj, CiPriority.Shift);
 				WriteWrite(args, true);
 				break;
+			case CiId.StringWriterClear:
+				Include("string");
+				StartMethodCall(obj);
+				Write("str(std::string())");
+				break;
 			case CiId.ConsoleWrite:
 				Write("std::cout");
 				WriteWrite(args, false);
@@ -14934,6 +14940,9 @@ namespace Foxoft.Ci
 						args[0].Accept(this, CiPriority.Argument);
 				}
 				WriteChar(')');
+				break;
+			case CiId.StringWriterClear:
+				WritePostfix(obj, ".GetStringBuilder().Clear()");
 				break;
 			case CiId.TextWriterWriteChar:
 				WritePostfix(obj, ".Write(");

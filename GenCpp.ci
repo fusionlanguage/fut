@@ -1007,6 +1007,11 @@ public class GenCpp : GenCCpp
 			WriteCollectionObject(obj, CiPriority.Shift);
 			WriteWrite(args, true);
 			break;
+		case CiId.StringWriterClear:
+			Include("string");
+			StartMethodCall(obj);
+			Write("str(std::string())");
+			break;
 		case CiId.ConsoleWrite:
 			Write("std::cout");
 			WriteWrite(args, false);

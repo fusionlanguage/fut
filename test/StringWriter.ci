@@ -3,6 +3,8 @@ public static class Test
 	public static bool Run()
 	{
 		StringWriter() w; //FAIL: c d java js swift ts TODO; cl
+		w.Write("kill me");
+		w.Clear();
 		w.Write("Hello");
 		string s = "World";
 		w.Write(s);

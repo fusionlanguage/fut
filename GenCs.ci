@@ -568,6 +568,9 @@ public class GenCs : GenTyped
 			}
 			WriteChar(')');
 			break;
+		case CiId.StringWriterClear:
+			WritePostfix(obj, ".GetStringBuilder().Clear()");
+			break;
 		case CiId.TextWriterWriteChar:
 			WritePostfix(obj, ".Write(");
 			if (args[0] is CiLiteralChar)
