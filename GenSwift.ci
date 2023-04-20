@@ -409,7 +409,7 @@ public class GenSwift : GenPySwift
 	{
 		WriteCoerced(this.System.IntType, startIndex, CiPriority.Shift);
 		Write("..<");
-		WriteAdd(startIndex, length); // TODO: side effect
+		WriteAdd(startIndex, length); // FIXME: side effect
 	}
 
 	bool AddVar!(string name)
@@ -683,7 +683,7 @@ public class GenSwift : GenPySwift
 				Write("..<");
 			else {
 				Write(" ..< ");
-				WriteCoerced(this.System.IntType, args[2], CiPriority.Add); // TODO: side effect
+				WriteCoerced(this.System.IntType, args[2], CiPriority.Add); // FIXME: side effect
 				Write(" + ");
 			}
 			WriteLine("cibytes.count] = cibytes[...]");
@@ -907,7 +907,7 @@ public class GenSwift : GenPySwift
 		if (expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign()) {
 			VisitBinaryExpr(rightBinary, CiPriority.Statement);
 			WriteNewLine();
-			return rightBinary.Left; // TODO: side effect
+			return rightBinary.Left; // FIXME: side effect
 		}
 		return expr.Right;
 	}
@@ -1018,7 +1018,7 @@ public class GenSwift : GenPySwift
 			if (expr.Type.Id == CiId.BoolType) {
 				expr.Left.Accept(this, CiPriority.Assign);
 				Write(" = ");
-				expr.Left.Accept(this, CiPriority.Equality); // TODO: side effect
+				expr.Left.Accept(this, CiPriority.Equality); // FIXME: side effect
 				Write(" != ");
 				expr.Right.Accept(this, CiPriority.Equality);
 			}

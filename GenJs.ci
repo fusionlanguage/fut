@@ -573,7 +573,7 @@ public class GenJsNoModule : GenBase
 			args[0].Accept(this, CiPriority.Argument);
 			if (args.Count == 2) {
 				Write(", ");
-				WriteAdd(args[0], args[1]); // TODO: side effect
+				WriteAdd(args[0], args[1]); // FIXME: side effect
 			}
 			WriteChar(')');
 			break;
@@ -670,7 +670,7 @@ public class GenJsNoModule : GenBase
 			args[1].Accept(this, CiPriority.Argument);
 			Write(", ...");
 			WritePostfix(obj, ".slice(");
-			WriteStartEnd(args[0], args[1]); // TODO: side effect
+			WriteStartEnd(args[0], args[1]); // FIXME: side effect
 			Write(").sort((a, b) => a - b))");
 			break;
 		case CiId.QueueDequeue:
@@ -952,7 +952,7 @@ public class GenJsNoModule : GenBase
 				WriteChar('(');
 			expr.Left.Accept(this, CiPriority.Assign);
 			Write(" = ");
-			expr.Left.Accept(this, CiPriority.Mul); // TODO: side effect
+			expr.Left.Accept(this, CiPriority.Mul); // FIXME: side effect
 			Write(" / ");
 			expr.Right.Accept(this, CiPriority.Primary);
 			Write(" | 0");
@@ -979,7 +979,7 @@ public class GenJsNoModule : GenBase
 		case CiToken.XorAssign when expr.Type.Id == CiId.BoolType:
 			expr.Left.Accept(this, CiPriority.Assign);
 			Write(" = ");
-			WriteEqual(expr, CiPriority.Argument, true); // TODO: side effect
+			WriteEqual(expr, CiPriority.Argument, true); // FIXME: side effect
 			break;
 		case CiToken.Is when expr.Right is CiVar def:
 			WriteIsVar(expr.Left, def, true, parent);

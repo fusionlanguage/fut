@@ -616,7 +616,7 @@ public class GenJava : GenTyped
 			args[0].Accept(this, CiPriority.Argument);
 			if (args.Count == 2) {
 				Write(", ");
-				WriteAdd(args[0], args[1]); // TODO: side effect
+				WriteAdd(args[0], args[1]); // FIXME: side effect
 			}
 			WriteChar(')');
 			break;

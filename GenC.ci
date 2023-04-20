@@ -1853,7 +1853,7 @@ public class GenC : GenCCpp
 				Write(", ");
 				args[0].Accept(this, CiPriority.Argument);
 				Write(", strlen(");
-				args[0].Accept(this, CiPriority.Argument); // TODO: side effect
+				args[0].Accept(this, CiPriority.Argument); // FIXME: side effect
 				Write(")) == 0");
 			}
 			if (parent > CiPriority.Equality)
@@ -1964,7 +1964,7 @@ public class GenC : GenCCpp
 				Write("g_array_set_size(");
 				obj.Accept(this, CiPriority.Argument);
 				Write(", ");
-				WritePostfix(obj, "->len + 1)"); // TODO: side effect
+				WritePostfix(obj, "->len + 1)"); // FIXME: side effect
 				break;
 			default:
 				WriteListAddInsert(obj, false, "g_array_append_val", args);
@@ -1993,7 +1993,7 @@ public class GenC : GenCCpp
 			}
 			Write(" *) ");
 			WritePostfix(obj, "->data, ");
-			WritePostfix(obj, "->len, "); // TODO: side effect
+			WritePostfix(obj, "->len, "); // FIXME: side effect
 			args[0].Accept(this, CiPriority.Argument);
 			WriteChar(')');
 			this.Contains.Add(typeId);
@@ -2004,7 +2004,7 @@ public class GenC : GenCCpp
 		case CiId.ListLast:
 		case CiId.StackPeek:
 			StartArrayIndexing(obj, obj.Type.AsClassType().GetElementType());
-			WritePostfix(obj, "->len - 1)"); // TODO: side effect
+			WritePostfix(obj, "->len - 1)"); // FIXME: side effect
 			break;
 		case CiId.ListRemoveAt:
 			WriteCall("g_array_remove_index", obj, args[0]);
@@ -2043,7 +2043,7 @@ public class GenC : GenCCpp
 			// FIXME: destroy
 			StartArrayIndexing(obj, obj.Type.AsClassType().GetElementType());
 			Write("--");
-			WritePostfix(obj, "->len)"); // TODO: side effect
+			WritePostfix(obj, "->len)"); // FIXME: side effect
 			break;
 		case CiId.HashSetAdd:
 			Write("g_hash_table_add(");
@@ -2343,7 +2343,7 @@ public class GenC : GenCCpp
 					Write(", CiString_Format(\"%s");
 					WritePrintfFormat(rightInterpolated);
 					Write("\", ");
-					expr.Left.Accept(this, CiPriority.Argument); // TODO: side effect
+					expr.Left.Accept(this, CiPriority.Argument); // FIXME: side effect
 					WriteInterpolatedStringArgs(rightInterpolated);
 					WriteChar(')');
 				}
@@ -2519,7 +2519,7 @@ public class GenC : GenCCpp
 				Write("*ciend = ");
 				WriteCamelCaseNotKeyword(element);
 				Write(" + ");
-				WritePostfix(statement.Collection, "->len; "); // TODO: side effect
+				WritePostfix(statement.Collection, "->len; "); // FIXME: side effect
 				WriteCamelCaseNotKeyword(element);
 				Write(" < ciend; ");
 				WriteCamelCaseNotKeyword(element);

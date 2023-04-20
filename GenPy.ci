@@ -355,7 +355,7 @@ public class GenPy : GenPySwift
 			expr.Left.Accept(this, CiPriority.Assign);
 			Write(" = ");
 			{
-				(expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign() && rightBinary.Op != CiToken.Assign ? rightBinary.Left /* TODO: side effect*/ : expr.Right).Accept(this, CiPriority.Assign);
+				(expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign() && rightBinary.Op != CiToken.Assign ? rightBinary.Left /* FIXME: side effect*/ : expr.Right).Accept(this, CiPriority.Assign);
 			}
 			break;
 		case CiToken.AddAssign:
@@ -373,7 +373,7 @@ public class GenPy : GenPySwift
 				if (right is CiBinaryExpr rightBinary && rightBinary.IsAssign()) {
 					VisitBinaryExpr(rightBinary, CiPriority.Statement);
 					WriteNewLine();
-					right = rightBinary.Left; // TODO: side effect
+					right = rightBinary.Left; // FIXME: side effect
 				}
 				expr.Left.Accept(this, CiPriority.Assign);
 				WriteChar(' ');
@@ -541,7 +541,7 @@ public class GenPy : GenPySwift
 		startIndex.Accept(this, CiPriority.Argument);
 		WriteChar(':');
 		if (length != null)
-			WriteAdd(startIndex, length); // TODO: side effect
+			WriteAdd(startIndex, length); // FIXME: side effect
 		WriteChar(']');
 	}
 
@@ -655,7 +655,7 @@ public class GenPy : GenPySwift
 			else {
 				WriteSlice(args[1], args[2]);
 				Write(" = ");
-				WritePyNewArray(obj.Type.AsClassType().GetElementType(), args[0], args[2]); // TODO: side effect
+				WritePyNewArray(obj.Type.AsClassType().GetElementType(), args[0], args[2]); // FIXME: side effect
 			}
 			break;
 		case CiId.ArraySortAll:
@@ -702,7 +702,7 @@ public class GenPy : GenPySwift
 				WriteChar('(');
 			WriteMethodCall(obj, "index", args[0]);
 			Write(" if ");
-			WriteContains(obj, args[0]); // TODO: side effects
+			WriteContains(obj, args[0]); // FIXME: side effects
 			Write(" else -1");
 			if (parent > CiPriority.Select)
 				WriteChar(')');
@@ -791,7 +791,7 @@ public class GenPy : GenPySwift
 			WriteChar('[');
 			args[2].Accept(this, CiPriority.Argument);
 			WriteChar(':');
-			StartAdd(args[2]); // TODO: side effect
+			StartAdd(args[2]); // FIXME: side effect
 			WriteLine("len(cibytes)] = cibytes");
 			break;
 		case CiId.UTF8GetString:

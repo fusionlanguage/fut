@@ -956,7 +956,7 @@ public abstract class GenBase : CiVisitor
 	{
 		startIndex.Accept(this, CiPriority.Argument);
 		Write(", ");
-		WriteAdd(startIndex, length); // TODO: side effect
+		WriteAdd(startIndex, length); // FIXME: side effect
 	}
 
 	static bool IsBitOp(CiPriority parent)
