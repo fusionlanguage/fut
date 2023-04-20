@@ -18553,12 +18553,13 @@ namespace Foxoft.Ci
 
 		static bool IsIdentifier(string s)
 		{
-			for (;;) {
-				 // TODO: string.All
-				return s.Length > 0
-					&& s[0] >= 'A'
-					&& s.All(c => CiLexer.IsLetterOrDigit(c));
+			if (s.Length == 0 || s[0] < 'A')
+				return false;
+			foreach (int c in s) {
+				if (!CiLexer.IsLetterOrDigit(c))
+					return false;
 			}
+			return true;
 		}
 
 		void WriteNewRegex(List<CiExpr> args, int argIndex)
