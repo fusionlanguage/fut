@@ -22626,6 +22626,11 @@ namespace Foxoft.Ci
 					args[0].Accept(this, CiPriority.Argument);
 				WriteChar(')');
 				break;
+			case CiId.StringWriterClear:
+				WritePostfix(obj, ".seek(0)");
+				WriteNewLine();
+				WritePostfix(obj, ".truncate(0)");
+				break;
 			case CiId.StringWriterToString:
 				WritePostfix(obj, ".getvalue()");
 				break;
