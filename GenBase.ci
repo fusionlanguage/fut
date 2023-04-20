@@ -17,10 +17,17 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
+public abstract class GenHost
+{
+	public abstract TextWriter! CreateFile!(string? directory, string filename);
+	public abstract void CloseFile!();
+}
+
 public abstract class GenBase : CiVisitor
 {
 	internal string() Namespace;
 	internal string() OutputFile;
+	internal GenHost! Host;
 	TextWriter! Writer;
 	StringWriter() StringWriter;
 	protected int Indent = 0;
@@ -243,19 +250,20 @@ public abstract class GenBase : CiVisitor
 		WriteLine("// Generated automatically with \"cito\". Do not edit.");
 	}
 
-	protected void CreateFile!(string filename)
+	protected void CreateFile!(string? directory, string filename)
 	{
-		native { // TODO: File
-			this.Writer = File.CreateText(filename);
-		}
+		this.Writer = this.Host.CreateFile(directory, filename);
 		WriteBanner();
+	}
+
+	protected void CreateOutputFile!()
+	{
+		CreateFile(null, this.OutputFile);
 	}
 
 	protected void CloseFile!()
 	{
-		native { // TODO: Writer.Close
-			this.Writer.Close();
-		}
+		this.Host.CloseFile();
 	}
 
 	protected void OpenStringWriter!()

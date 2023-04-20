@@ -333,7 +333,7 @@ public class GenTs : GenJs
 	public override void WriteProgram!(CiProgram program)
 	{
 		this.System = program.System;
-		CreateFile(this.OutputFile);
+		CreateOutputFile();
 		if (this.GenFullCode)
 			WriteTopLevelNatives(program);
 		WriteTypes(program);

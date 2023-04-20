@@ -353,7 +353,7 @@ public class GenCl : GenC
 			WriteMethods(klass);
 		}
 
-		CreateFile(this.OutputFile);
+		CreateOutputFile();
 		WriteTopLevelNatives(program);
 		WriteTypedefs(program, true);
 		foreach (CiClass klass in program.Classes)

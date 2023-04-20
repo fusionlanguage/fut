@@ -266,7 +266,7 @@ public abstract class GenCCpp : GenCCppD
 
 	protected void CreateHeaderFile!(string headerExt)
 	{
-		CreateFile(ChangeExtension(this.OutputFile, headerExt));
+		CreateFile(null, ChangeExtension(this.OutputFile, headerExt));
 		WriteLine("#pragma once");
 		WriteCIncludes();
 	}
@@ -286,7 +286,7 @@ public abstract class GenCCpp : GenCCppD
 
 	protected void CreateImplementationFile!(CiProgram program, string headerExt)
 	{
-		CreateFile(this.OutputFile);
+		CreateOutputFile();
 		WriteTopLevelNatives(program);
 		WriteCIncludes();
 		Write("#include \"");

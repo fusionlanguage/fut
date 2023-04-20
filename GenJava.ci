@@ -1037,9 +1037,7 @@ public class GenJava : GenTyped
 
 	void CreateJavaFile!(string className)
 	{
-		native { // TODO: Path
-			CreateFile(Path.Combine(this.OutputFile, className + ".java"));
-		}
+		CreateFile(this.OutputFile, className + ".java");
 		if (this.Namespace.Length != 0) {
 			Write("package ");
 			Write(this.Namespace);

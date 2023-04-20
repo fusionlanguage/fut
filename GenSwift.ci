@@ -1762,7 +1762,7 @@ public class GenSwift : GenPySwift
 		OpenStringWriter();
 		WriteTypes(program);
 
-		CreateFile(this.OutputFile);
+		CreateOutputFile();
 		WriteTopLevelNatives(program);
 		WriteIncludes("import ", "");
 		CloseStringWriter();

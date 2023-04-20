@@ -947,7 +947,7 @@ public class GenCs : GenTyped
 		if (this.Namespace.Length != 0)
 			CloseBlock();
 
-		CreateFile(this.OutputFile);
+		CreateOutputFile();
 		WriteIncludes("using ", ";");
 		CloseStringWriter();
 		CloseFile();

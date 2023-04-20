@@ -6267,12 +6267,22 @@ namespace Foxoft.Ci
 		}
 	}
 
+	public abstract class GenHost
+	{
+
+		public abstract TextWriter CreateFile(string directory, string filename);
+
+		public abstract void CloseFile();
+	}
+
 	public abstract class GenBase : CiVisitor
 	{
 
 		internal string Namespace;
 
 		internal string OutputFile;
+
+		internal GenHost Host;
 
 		TextWriter Writer;
 
@@ -6517,17 +6527,20 @@ namespace Foxoft.Ci
 			WriteLine("// Generated automatically with \"cito\". Do not edit.");
 		}
 
-		protected void CreateFile(string filename)
+		protected void CreateFile(string directory, string filename)
 		{
-			 // TODO: File
-			this.Writer = File.CreateText(filename);
-		WriteBanner();
+			this.Writer = this.Host.CreateFile(directory, filename);
+			WriteBanner();
+		}
+
+		protected void CreateOutputFile()
+		{
+			CreateFile(null, this.OutputFile);
 		}
 
 		protected void CloseFile()
 		{
-			 // TODO: Writer.Close
-			this.Writer.Close();
+			this.Host.CloseFile();
 		}
 
 		protected void OpenStringWriter()
@@ -8662,7 +8675,7 @@ namespace Foxoft.Ci
 
 		protected void CreateHeaderFile(string headerExt)
 		{
-			CreateFile(ChangeExtension(this.OutputFile, headerExt));
+			CreateFile(null, ChangeExtension(this.OutputFile, headerExt));
 			WriteLine("#pragma once");
 			WriteCIncludes();
 		}
@@ -8682,7 +8695,7 @@ namespace Foxoft.Ci
 
 		protected void CreateImplementationFile(CiProgram program, string headerExt)
 		{
-			CreateFile(this.OutputFile);
+			CreateOutputFile();
 			WriteTopLevelNatives(program);
 			WriteCIncludes();
 			Write("#include \"");
@@ -9047,6 +9060,7 @@ namespace Foxoft.Ci
 		{
 			switch (expr.Symbol.Id) {
 			case CiId.ConsoleError:
+				Include("stdio.h");
 				Write("stderr");
 				break;
 			case CiId.ListCount:
@@ -10294,7 +10308,6 @@ namespace Foxoft.Ci
 
 		void WriteTextWriterWrite(CiExpr obj, List<CiExpr> args, bool newLine)
 		{
-			Include("stdio.h");
 			if (args.Count == 0) {
 				Write("putc('\\n', ");
 				obj.Accept(this, CiPriority.Argument);
@@ -10795,7 +10808,6 @@ namespace Foxoft.Ci
 				WriteTextWriterWrite(obj, args, false);
 				break;
 			case CiId.TextWriterWriteChar:
-				Include("stdio.h");
 				WriteCall("putc", args[0], obj);
 				break;
 			case CiId.TextWriterWriteLine:
@@ -12500,7 +12512,7 @@ namespace Foxoft.Ci
 				WriteDestructor(klass);
 				WriteMethods(klass);
 			}
-			CreateFile(this.OutputFile);
+			CreateOutputFile();
 			WriteTopLevelNatives(program);
 			WriteTypedefs(program, true);
 			foreach (CiClass klass in program.Classes)
@@ -15312,7 +15324,7 @@ namespace Foxoft.Ci
 				WriteResources(program.Resources);
 			if (this.Namespace.Length != 0)
 				CloseBlock();
-			CreateFile(this.OutputFile);
+			CreateOutputFile();
 			WriteIncludes("using ", ";");
 			CloseStringWriter();
 			CloseFile();
@@ -16842,7 +16854,7 @@ namespace Foxoft.Ci
 				WriteResources(program.Resources);
 			if (this.Namespace.Length != 0)
 				CloseBlock();
-			CreateFile(this.OutputFile);
+			CreateOutputFile();
 			if (this.HasListInsert || this.HasListRemoveAt || this.HasStackPop)
 				Include("std.container.array");
 			if (this.HasSortedDictionaryInsert) {
@@ -17902,9 +17914,8 @@ namespace Foxoft.Ci
 
 		void CreateJavaFile(string className)
 		{
-			 // TODO: Path
-			CreateFile(Path.Combine(this.OutputFile, className + ".java"));
-		if (this.Namespace.Length != 0) {
+			CreateFile(this.OutputFile, className + ".java");
+			if (this.Namespace.Length != 0) {
 				Write("package ");
 				Write(this.Namespace);
 				WriteCharLine(';');
@@ -19407,7 +19418,7 @@ namespace Foxoft.Ci
 
 		public override void WriteProgram(CiProgram program)
 		{
-			CreateFile(this.OutputFile);
+			CreateOutputFile();
 			WriteTopLevelNatives(program);
 			WriteTypes(program);
 			WriteLib(program.Resources);
@@ -19734,7 +19745,7 @@ namespace Foxoft.Ci
 		public override void WriteProgram(CiProgram program)
 		{
 			this.System = program.System;
-			CreateFile(this.OutputFile);
+			CreateOutputFile();
 			if (this.GenFullCode)
 				WriteTopLevelNatives(program);
 			WriteTypes(program);
@@ -21854,7 +21865,7 @@ namespace Foxoft.Ci
 			this.StringSubstring = false;
 			OpenStringWriter();
 			WriteTypes(program);
-			CreateFile(this.OutputFile);
+			CreateOutputFile();
 			WriteTopLevelNatives(program);
 			WriteIncludes("import ", "");
 			CloseStringWriter();
@@ -23149,7 +23160,7 @@ namespace Foxoft.Ci
 			this.SwitchBreak = false;
 			OpenStringWriter();
 			WriteTypes(program);
-			CreateFile(this.OutputFile);
+			CreateOutputFile();
 			WriteTopLevelNatives(program);
 			WriteIncludes("import ", "");
 			if (this.SwitchBreak) {

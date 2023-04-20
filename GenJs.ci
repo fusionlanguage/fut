@@ -1306,7 +1306,7 @@ public class GenJsNoModule : GenBase
 
 	public override void WriteProgram!(CiProgram program)
 	{
-		CreateFile(this.OutputFile);
+		CreateOutputFile();
 		WriteTopLevelNatives(program);
 		WriteTypes(program);
 		WriteLib(program.Resources);

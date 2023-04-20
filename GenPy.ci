@@ -1310,7 +1310,7 @@ public class GenPy : GenPySwift
 		this.SwitchBreak = false;
 		OpenStringWriter();
 		WriteTypes(program);
-		CreateFile(this.OutputFile);
+		CreateOutputFile();
 		WriteTopLevelNatives(program);
 		WriteIncludes("import ", "");
 		if (this.SwitchBreak) {

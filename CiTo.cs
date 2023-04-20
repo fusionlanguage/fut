@@ -29,6 +29,24 @@ using System.Reflection;
 namespace Foxoft.Ci
 {
 
+public class FileGenHost : GenHost
+{
+	TextWriter CurrentFile;
+
+	public override TextWriter CreateFile(string directory, string filename)
+	{
+		if (directory != null)
+			filename = Path.Combine(directory, filename);
+		this.CurrentFile = new StreamWriter(filename);
+		return this.CurrentFile;
+	}
+
+	public override void CloseFile()
+	{
+		this.CurrentFile.Close();
+	}
+}
+
 public static class CiTo
 {
 	static void Usage()
@@ -115,6 +133,7 @@ public static class CiTo
 		}
 		gen.Namespace = namespace_;
 		gen.OutputFile = outputFile;
+		gen.Host = new FileGenHost();
 		gen.WriteProgram(program);
 		return !gen.HasErrors;
 	}
