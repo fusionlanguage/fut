@@ -351,6 +351,7 @@ public class GenC : GenCCpp
 	{
 		switch (expr.Symbol.Id) {
 		case CiId.ConsoleError:
+			Include("stdio.h");
 			Write("stderr");
 			break;
 		case CiId.ListCount:
@@ -1614,7 +1615,6 @@ public class GenC : GenCCpp
 
 	void WriteTextWriterWrite!(CiExpr obj, List<CiExpr#> args, bool newLine)
 	{
-		Include("stdio.h");
 		if (args.Count == 0) {
 			Write("putc('\\n', ");
 			obj.Accept(this, CiPriority.Argument);
@@ -2118,7 +2118,6 @@ public class GenC : GenCCpp
 			WriteTextWriterWrite(obj, args, false);
 			break;
 		case CiId.TextWriterWriteChar:
-			Include("stdio.h");
 			WriteCall("putc", args[0], obj);
 			break;
 		case CiId.TextWriterWriteLine:
