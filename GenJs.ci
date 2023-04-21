@@ -1279,7 +1279,7 @@ public class GenJsNoModule : GenBase
 		CloseBlock();
 	}
 
-	protected void WriteLib!(SortedDictionary<string, List<byte>()> resources)
+	protected void WriteLib!(SortedDictionary<string(), List<byte>()> resources)
 	{
 		if (resources.Count == 0)
 			return;

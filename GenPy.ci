@@ -1096,7 +1096,7 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	void WritePyCaseBody(CiSwitch statement, List<CiStatement#> body)
+	void WritePyCaseBody!(CiSwitch statement, List<CiStatement#> body)
 	{
 		OpenChild();
 		VisitXcrement(statement.Value, true, true);
