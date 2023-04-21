@@ -9929,11 +9929,11 @@ namespace Foxoft.Ci
 			this.Indent -= nesting;
 		}
 
-		void WriteDestructAll(CiSymbol exceptSymbol = null)
+		void WriteDestructAll(CiVar exceptVar = null)
 		{
 			for (int i = this.VarsToDestruct.Count; --i >= 0;) {
-				CiSymbol symbol = this.VarsToDestruct[i];
-				if (symbol != exceptSymbol)
+				CiNamedValue symbol = this.VarsToDestruct[i];
+				if (symbol != exceptVar)
 					WriteDestruct(symbol);
 			}
 		}
@@ -11290,24 +11290,20 @@ namespace Foxoft.Ci
 				base.VisitReturn(statement);
 			}
 			else {
-				if (statement.Value is CiSymbolReference symbol) {
-					 // TODO: List.Contains(reference)
-					if (this.VarsToDestruct.Contains(symbol.Symbol)) {
-						// Optimization: avoid copy
-						WriteDestructAll(symbol.Symbol);
+				if (statement.Value is CiSymbolReference symbol && symbol.Symbol is CiVar local) {
+					if (this.VarsToDestruct.Contains(local)) {
+						WriteDestructAll(local);
 						Write("return ");
 						if (this.CurrentMethod.Type is CiClassType resultPtr)
-							WriteClassPtr(resultPtr.Class, symbol, CiPriority.Argument); // upcast, but don't AddRef
+							WriteClassPtr(resultPtr.Class, symbol, CiPriority.Argument);
 						else
 							symbol.Accept(this, CiPriority.Argument);
 						WriteCharLine(';');
 						return;
 					}
-				if (symbol.Left == null) {
-						WriteDestructAll();
-						base.VisitReturn(statement);
-						return;
-					}
+					WriteDestructAll();
+					base.VisitReturn(statement);
+					return;
 				}
 				WriteCTemporaries(statement.Value);
 				EnsureChildBlock();
