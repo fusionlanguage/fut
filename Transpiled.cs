@@ -8754,7 +8754,7 @@ namespace Foxoft.Ci
 
 		readonly SortedSet<CiId> Contains = new SortedSet<CiId>();
 
-		readonly List<CiNamedValue> VarsToDestruct = new List<CiNamedValue>();
+		readonly List<CiVar> VarsToDestruct = new List<CiVar>();
 
 		protected CiClass CurrentClass;
 
@@ -9698,8 +9698,10 @@ namespace Foxoft.Ci
 		protected override void WriteVar(CiNamedValue def)
 		{
 			base.WriteVar(def);
-			if (NeedToDestruct(def))
-				this.VarsToDestruct.Add(def);
+			if (NeedToDestruct(def)) {
+				CiVar local = (CiVar) def;
+				this.VarsToDestruct.Add(local);
+			}
 		}
 
 		void WriteGPointerCast(CiType type, CiExpr expr)
@@ -9932,9 +9934,9 @@ namespace Foxoft.Ci
 		void WriteDestructAll(CiVar exceptVar = null)
 		{
 			for (int i = this.VarsToDestruct.Count; --i >= 0;) {
-				CiNamedValue symbol = this.VarsToDestruct[i];
-				if (symbol != exceptVar)
-					WriteDestruct(symbol);
+				CiVar def = this.VarsToDestruct[i];
+				if (def != exceptVar)
+					WriteDestruct(def);
 			}
 		}
 
@@ -11072,7 +11074,7 @@ namespace Foxoft.Ci
 		void WriteDestructLoopOrSwitch(CiCondCompletionStatement loopOrSwitch)
 		{
 			for (int i = this.VarsToDestruct.Count; --i >= 0;) {
-				CiNamedValue def = this.VarsToDestruct[i];
+				CiVar def = this.VarsToDestruct[i];
 				if (!loopOrSwitch.Encloses(def))
 					break;
 				WriteDestruct(def);
@@ -11088,7 +11090,7 @@ namespace Foxoft.Ci
 		{
 			int i = this.VarsToDestruct.Count;
 			for (; i > 0; i--) {
-				CiNamedValue def = this.VarsToDestruct[i - 1];
+				CiVar def = this.VarsToDestruct[i - 1];
 				if (def.Parent != statement)
 					break;
 				if (statement.CompletesNormally())

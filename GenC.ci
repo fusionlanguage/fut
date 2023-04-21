@@ -42,7 +42,7 @@ public class GenC : GenCCpp
 	bool TreeCompareString;
 	SortedSet<CiId>() Compares;
 	SortedSet<CiId>() Contains;
-	List<CiNamedValue>() VarsToDestruct; // CiVar
+	List<CiVar>() VarsToDestruct;
 	protected CiClass CurrentClass;
 
 	protected override CiContainerType GetCurrentContainer() => this.CurrentClass;
@@ -993,8 +993,10 @@ public class GenC : GenCCpp
 	protected override void WriteVar!(CiNamedValue def)
 	{
 		base.WriteVar(def);
-		if (NeedToDestruct(def))
-			this.VarsToDestruct.Add(def);
+		if (NeedToDestruct(def)) {
+			assert def is CiVar local;
+			this.VarsToDestruct.Add(local);
+		}
 	}
 
 	void WriteGPointerCast!(CiType type, CiExpr expr)
@@ -1238,9 +1240,9 @@ public class GenC : GenCCpp
 	void WriteDestructAll!(CiVar? exceptVar = null)
 	{
 		for (int i = this.VarsToDestruct.Count; --i >= 0; ) {
-			CiNamedValue symbol = this.VarsToDestruct[i]; // CiVar
-			if (symbol != exceptVar)
-				WriteDestruct(symbol);
+			CiVar def = this.VarsToDestruct[i];
+			if (def != exceptVar)
+				WriteDestruct(def);
 		}
 	}
 
@@ -2382,7 +2384,7 @@ public class GenC : GenCCpp
 	void WriteDestructLoopOrSwitch!(CiCondCompletionStatement loopOrSwitch)
 	{
 		for (int i = this.VarsToDestruct.Count; --i >= 0; ) {
-			CiNamedValue def = this.VarsToDestruct[i]; // CiVar
+			CiVar def = this.VarsToDestruct[i];
 			if (!loopOrSwitch.Encloses(def))
 				break;
 			WriteDestruct(def);
@@ -2398,7 +2400,7 @@ public class GenC : GenCCpp
 	{
 		int i = this.VarsToDestruct.Count;
 		for (; i > 0; i--) {
-			CiNamedValue def = this.VarsToDestruct[i - 1]; // CiVar
+			CiVar def = this.VarsToDestruct[i - 1];
 			if (def.Parent != statement) // destroy only the variables in this block
 				break;
 			if (statement.CompletesNormally())
