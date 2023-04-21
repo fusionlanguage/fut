@@ -8409,14 +8409,14 @@ namespace Foxoft.Ci
 				WriteLine("while (0);");
 				this.Indent--;
 			}
-			else if (length == 1)
-				WriteChild(body[0]);
-			else {
+			else if (length != 1 || body[0] is CiIf) {
 				WriteChar(' ');
 				OpenBlock();
 				WriteFirstStatements(body, length);
 				CloseBlock();
 			}
+			else
+				WriteChild(body[0]);
 		}
 
 		protected void EndSwitchAsIfs(CiSwitch statement, int gotoId)

@@ -28,7 +28,9 @@ public static class Test
 	{
 		switch (a) { //FAIL: c cl
 		case null:
-			return false;
+			if (a == null)
+				return false;
+			break;
 		case Cow _: //FAIL: java 17 --enable-preview
 		case Dog _:
 			if (a == null)
