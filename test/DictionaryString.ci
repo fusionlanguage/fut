@@ -36,9 +36,9 @@ public static class Test
 		dict4["three"] = "trzy";
 		dict4.Remove("three");
 
-		return dict.Count == 2 && dict[one] == "jeden" && dict[two] == "dwa" && dict.ContainsKey(two)
-			&& dict2.Count == 2 && dict2[one] == "jeden" && dict2[two] == "dwa" && dict2.ContainsKey(two)
-			&& dict3.Count == 2 && dict3[one] == "jeden" && dict3[two] == "dwa" && dict3.ContainsKey(two)
-			&& dict4.Count == 2 && dict4[one] == "jeden" && dict4[two] == "dwa" && dict4.ContainsKey(two);
+		return dict.Count == 2 && dict[one] == "jeden" && dict[two] == "dwa" && dict.ContainsKey(one) && dict.ContainsKey(two)
+			&& dict2.Count == 2 && dict2[one] == "jeden" && dict2[two] == "dwa" && dict2.ContainsKey(one) && dict2.ContainsKey(two)
+			&& dict3.Count == 2 && dict3[one] == "jeden" && dict3[two] == "dwa" && dict3.ContainsKey(one) && dict3.ContainsKey(two)
+			&& dict4.Count == 2 && dict4[one] == "jeden" && dict4[two] == "dwa" && dict4.ContainsKey(one) && dict4.ContainsKey(two);
 	}
 }

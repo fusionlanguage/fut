@@ -13486,9 +13486,9 @@ namespace Foxoft.Ci
 				if (parent > CiPriority.Equality)
 					WriteChar('(');
 				StartMethodCall(obj);
-				Write("count");
-				WriteArgsInParentheses(method, args);
-				Write(" != 0");
+				Write("count(");
+				WriteStronglyCoerced(obj.Type.AsClassType().GetKeyType(), args[0]);
+				Write(") != 0");
 				if (parent > CiPriority.Equality)
 					WriteChar(')');
 				break;
