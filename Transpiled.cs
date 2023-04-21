@@ -17605,6 +17605,9 @@ namespace Foxoft.Ci
 				obj.Accept(this, CiPriority.Primary);
 				WriteWrite(method, args, true);
 				break;
+			case CiId.StringWriterClear:
+				WritePostfix(obj, ".getBuffer().setLength(0)");
+				break;
 			case CiId.ConsoleWrite:
 				Write("System.out");
 				WriteWrite(method, args, false);
