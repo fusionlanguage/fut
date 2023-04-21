@@ -1187,7 +1187,7 @@ public class GenSwift : GenPySwift
 	}
 
 	protected override bool NeedCondXcrement(CiLoop loop)
-		=> loop.Cond != null && (!loop.HasBreak || !VisitXcrement(loop.Cond, true, false));
+		=> loop.Cond != null && (!loop.HasBreak || !VisitXcrement(loop.Cond, true, false)); // FIXME: mutator
 
 	protected override string GetIfNot() => "if !";
 

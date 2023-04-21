@@ -1541,7 +1541,7 @@ public class GenCpp : GenCCpp
 		case CiThrow _:
 			return false;
 		case CiIf ifStatement:
-			return HasTemporaries(ifStatement.Cond) && !EmbedIfWhileIsVar(ifStatement.Cond, false);
+			return HasTemporaries(ifStatement.Cond) && !EmbedIfWhileIsVar(ifStatement.Cond, false); // FIXME: mutator
 		case CiLoop loop:
 			return loop.Cond != null && HasTemporaries(loop.Cond);
 		case CiReturn ret:
