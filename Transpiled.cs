@@ -21235,7 +21235,7 @@ namespace Foxoft.Ci
 		protected override void WriteVar(CiNamedValue def)
 		{
 			if (def is CiField || AddVar(def.Name)) {
-				Write((def.Type is CiClass ? !def.IsAssignableStorage() : def.Type is CiArrayStorageType array ? IsArrayRef(array) : def is CiVar local && !local.IsAssigned && !(def.Type is CiStorageType)) ? "let " : "var ");
+				Write((def.Type is CiArrayStorageType array ? IsArrayRef(array) : def.Type is CiStorageType stg ? stg.Class.TypeParameterCount == 0 && !def.IsAssignableStorage() : def is CiVar local && !local.IsAssigned) ? "let " : "var ");
 				base.WriteVar(def);
 			}
 			else {
