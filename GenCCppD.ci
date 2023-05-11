@@ -21,6 +21,8 @@ public abstract class GenCCppD : GenTyped
 {
 	protected List<CiSwitch>() SwitchesWithGoto;
 
+	protected static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
+
 	public override void VisitConst!(CiConst statement)
 	{
 		if (statement.Type is CiArrayStorageType)

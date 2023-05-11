@@ -8367,6 +8367,8 @@ namespace Foxoft.Ci
 
 		protected readonly List<CiSwitch> SwitchesWithGoto = new List<CiSwitch>();
 
+		protected static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
+
 		public override void VisitConst(CiConst statement)
 		{
 			if (statement.Type is CiArrayStorageType)
@@ -8508,8 +8510,6 @@ namespace Foxoft.Ci
 		}
 
 		protected abstract void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not);
-
-		static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
 
 		protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 		{
@@ -16438,24 +16438,9 @@ namespace Foxoft.Ci
 			}
 		}
 
-		static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
+		static bool IsIsComparable(CiExpr expr) => expr is CiLiteralNull || (expr.Type is CiClassType klass && klass.Class.Id == CiId.ArrayPtrClass);
 
-		bool IsIsComparable(CiExpr expr)
-		{
-			if (expr is CiLiteralNull)
-				return true;
-			if (expr.Type is CiClassType klass) {
-				switch (klass.Class.Id) {
-				case CiId.ArrayPtrClass:
-					return true;
-				default:
-					break;
-				}
-			}
-			return false;
-		}
-
-		string GetEqOp(CiExpr left, CiExpr right, bool not)
+		static string GetEqOp(CiExpr left, CiExpr right, bool not)
 		{
 			return IsIsComparable(left) || IsIsComparable(right) ? not ? " !is " : " is " : not ? " != " : " == ";
 		}
@@ -16775,44 +16760,20 @@ namespace Foxoft.Ci
 			}
 		}
 
-		void WriteArrayPtr(CiExpr expr, CiPriority parent)
-		{
-			switch (expr.Type) {
-			case CiArrayStorageType _:
-			case CiStringType _:
-				WritePostfix(expr, ".ptr");
-				break;
-			default:
-				expr.Accept(this, parent);
-				break;
-			}
-		}
-
 		protected override void WriteCoercedInternal(CiType type, CiExpr expr, CiPriority parent)
 		{
-			if (type is CiRangeType left && (expr is CiLiteralLong || expr.Type is CiIntegerType || (expr.Type is CiRangeType range && !type.IsAssignableFrom(range)))) {
+			if (type is CiRangeType)
 				WriteStaticCast(type, expr);
-				return;
-			}
-			else if (type is CiIntegerType && expr is CiSymbolReference symref && IsLong(symref)) {
+			else if (type is CiIntegerType && expr is CiSymbolReference symref && IsLong(symref))
 				WriteStaticCast(type, expr);
-				return;
-			}
-			else if (type is CiFloatingType && !(expr.Type is CiFloatingType)) {
+			else if (type is CiFloatingType && !(expr.Type is CiFloatingType))
 				WriteStaticCast(type, expr);
-				return;
+			else if (type is CiClassType && !(type is CiArrayStorageType) && expr.Type is CiArrayStorageType) {
+				base.WriteCoercedInternal(type, expr, CiPriority.Primary);
+				Write("[]");
 			}
-			else if (type is CiClassType klass && !(klass is CiDynamicPtrType) && !(klass is CiStorageType)) {
-				switch (expr.Type) {
-				case CiArrayStorageType _:
-					base.WriteCoercedInternal(type, expr, CiPriority.Primary);
-					Write("[]");
-					return;
-				default:
-					break;
-				}
-			}
-			base.WriteCoercedInternal(type, expr, parent);
+			else
+				base.WriteCoercedInternal(type, expr, parent);
 		}
 
 		void WriteResources(SortedDictionary<string, List<byte>> resources)
