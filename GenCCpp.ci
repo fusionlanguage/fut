@@ -92,26 +92,6 @@ public abstract class GenCCpp : GenCCppD
 
 	protected abstract void WriteEqualString!(CiExpr left, CiExpr right, CiPriority parent, bool not);
 
-	protected override void WriteEqual!(CiBinaryExpr expr, CiPriority parent, bool not)
-	{
-		CiType coercedType;
-		if (IsPtrTo(expr.Left, expr.Right))
-			coercedType = expr.Left.Type;
-		else if (IsPtrTo(expr.Right, expr.Left))
-			coercedType = expr.Right.Type;
-		else {
-			base.WriteEqual(expr, parent, not);
-			return;
-		}
-		if (parent > CiPriority.Equality)
-			WriteChar('(');
-		WriteCoerced(coercedType, expr.Left, CiPriority.Equality);
-		Write(GetEqOp(not));
-		WriteCoerced(coercedType, expr.Right, CiPriority.Equality);
-		if (parent > CiPriority.Equality)
-			WriteChar(')');
-	}
-
 	protected static CiExpr? IsStringEmpty(CiBinaryExpr expr)
 	{
 		if (expr.Left is CiSymbolReference symbol && symbol.Symbol.Id == CiId.StringLength

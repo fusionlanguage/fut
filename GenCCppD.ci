@@ -21,7 +21,27 @@ public abstract class GenCCppD : GenTyped
 {
 	protected List<CiSwitch>() SwitchesWithGoto;
 
-	protected static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
+	static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
+
+	protected override void WriteEqual!(CiBinaryExpr expr, CiPriority parent, bool not)
+	{
+		CiType coercedType;
+		if (IsPtrTo(expr.Left, expr.Right))
+			coercedType = expr.Left.Type;
+		else if (IsPtrTo(expr.Right, expr.Left))
+			coercedType = expr.Right.Type;
+		else {
+			base.WriteEqual(expr, parent, not);
+			return;
+		}
+		if (parent > CiPriority.Equality)
+			WriteChar('(');
+		WriteCoerced(coercedType, expr.Left, CiPriority.Equality);
+		Write(GetEqOp(not));
+		WriteCoerced(coercedType, expr.Right, CiPriority.Equality);
+		if (parent > CiPriority.Equality)
+			WriteChar(')');
+	}
 
 	public override void VisitConst!(CiConst statement)
 	{

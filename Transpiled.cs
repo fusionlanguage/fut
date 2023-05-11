@@ -8367,7 +8367,27 @@ namespace Foxoft.Ci
 
 		protected readonly List<CiSwitch> SwitchesWithGoto = new List<CiSwitch>();
 
-		protected static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
+		static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
+
+		protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+		{
+			CiType coercedType;
+			if (IsPtrTo(expr.Left, expr.Right))
+				coercedType = expr.Left.Type;
+			else if (IsPtrTo(expr.Right, expr.Left))
+				coercedType = expr.Right.Type;
+			else {
+				base.WriteEqual(expr, parent, not);
+				return;
+			}
+			if (parent > CiPriority.Equality)
+				WriteChar('(');
+			WriteCoerced(coercedType, expr.Left, CiPriority.Equality);
+			Write(GetEqOp(not));
+			WriteCoerced(coercedType, expr.Right, CiPriority.Equality);
+			if (parent > CiPriority.Equality)
+				WriteChar(')');
+		}
 
 		public override void VisitConst(CiConst statement)
 		{
@@ -8510,26 +8530,6 @@ namespace Foxoft.Ci
 		}
 
 		protected abstract void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not);
-
-		protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
-		{
-			CiType coercedType;
-			if (IsPtrTo(expr.Left, expr.Right))
-				coercedType = expr.Left.Type;
-			else if (IsPtrTo(expr.Right, expr.Left))
-				coercedType = expr.Right.Type;
-			else {
-				base.WriteEqual(expr, parent, not);
-				return;
-			}
-			if (parent > CiPriority.Equality)
-				WriteChar('(');
-			WriteCoerced(coercedType, expr.Left, CiPriority.Equality);
-			Write(GetEqOp(not));
-			WriteCoerced(coercedType, expr.Right, CiPriority.Equality);
-			if (parent > CiPriority.Equality)
-				WriteChar(')');
-		}
 
 		protected static CiExpr IsStringEmpty(CiBinaryExpr expr)
 		{
@@ -16440,29 +16440,12 @@ namespace Foxoft.Ci
 
 		static bool IsIsComparable(CiExpr expr) => expr is CiLiteralNull || (expr.Type is CiClassType klass && klass.Class.Id == CiId.ArrayPtrClass);
 
-		static string GetEqOp(CiExpr left, CiExpr right, bool not)
-		{
-			return IsIsComparable(left) || IsIsComparable(right) ? not ? " !is " : " is " : not ? " != " : " == ";
-		}
-
 		protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
 		{
-			CiType coercedType;
-			if (IsPtrTo(expr.Left, expr.Right))
-				coercedType = expr.Left.Type;
-			else if (IsPtrTo(expr.Right, expr.Left))
-				coercedType = expr.Right.Type;
-			else {
+			if (IsIsComparable(expr.Left) || IsIsComparable(expr.Right))
+				WriteBinaryExpr2(expr, parent, CiPriority.Equality, not ? " !is " : " is ");
+			else
 				base.WriteEqual(expr, parent, not);
-				return;
-			}
-			if (parent > CiPriority.Equality)
-				WriteChar('(');
-			WriteCoerced(coercedType, expr.Left, CiPriority.Equality);
-			Write(GetEqOp(expr.Left, expr.Right, not));
-			WriteCoerced(coercedType, expr.Right, CiPriority.Equality);
-			if (parent > CiPriority.Equality)
-				WriteChar(')');
 		}
 
 		protected override void WriteAssign(CiBinaryExpr expr, CiPriority parent)
