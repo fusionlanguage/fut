@@ -414,19 +414,19 @@ public class GenJava : GenTyped
 		VisitLiteralLong((literal.Value ^ 0x80) - 0x80);
 	}
 
-	protected override void WriteEqual!(CiBinaryExpr expr, CiPriority parent, bool not)
+	protected override void WriteEqual!(CiExpr left, CiExpr right, CiPriority parent, bool not)
 	{
-		if ((expr.Left.Type is CiStringType && expr.Right.Type.Id != CiId.NullType)
-		 || (expr.Right.Type is CiStringType && expr.Left.Type.Id != CiId.NullType)) {
+		if ((left.Type is CiStringType && right.Type.Id != CiId.NullType)
+		 || (right.Type is CiStringType && left.Type.Id != CiId.NullType)) {
 			if (not)
 				WriteChar('!');
-			WriteMethodCall(expr.Left, "equals", expr.Right);
+			WriteMethodCall(left, "equals", right);
 		}
-		else if (IsUnsignedByteIndexing(expr.Left)
-			&& expr.Right is CiLiteralLong rightLiteral && rightLiteral.Type.Id == CiId.ByteRange) {
+		else if (IsUnsignedByteIndexing(left)
+			&& right is CiLiteralLong rightLiteral && rightLiteral.Type.Id == CiId.ByteRange) {
 			if (parent > CiPriority.Equality)
 				WriteChar('(');
-			assert expr.Left is CiBinaryExpr indexing;
+			assert left is CiBinaryExpr indexing;
 			WriteIndexingInternal(indexing); // omit "& 0xff"
 			Write(GetEqOp(not));
 			WriteSByteLiteral(rightLiteral);
@@ -434,7 +434,7 @@ public class GenJava : GenTyped
 				WriteChar(')');
 		}
 		else
-			base.WriteEqual(expr, parent, not);
+			base.WriteEqual(left, right, parent, not);
 	}
 
 	protected override void WriteCoercedLiteral!(CiType? type, CiExpr expr)

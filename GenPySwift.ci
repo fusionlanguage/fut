@@ -109,12 +109,12 @@ public abstract class GenPySwift : GenBase
 
 	protected abstract string GetReferenceEqOp(bool not);
 
-	protected override void WriteEqual!(CiBinaryExpr expr, CiPriority parent, bool not)
+	protected override void WriteEqual!(CiExpr left, CiExpr right, CiPriority parent, bool not)
 	{
-		if (IsPtr(expr.Left) || IsPtr(expr.Right))
-			WriteBinaryExpr2(expr, parent, CiPriority.Equality, GetReferenceEqOp(not));
+		if (IsPtr(left) || IsPtr(right))
+			WriteEqualExpr(left, right, parent, GetReferenceEqOp(not));
 		else
-			base.WriteEqual(expr, parent, not);
+			base.WriteEqual(left, right, parent, not);
 	}
 
 	protected virtual void WriteExpr!(CiExpr expr, CiPriority parent)

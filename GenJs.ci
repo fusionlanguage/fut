@@ -964,7 +964,7 @@ public class GenJsNoModule : GenBase
 			WriteBoolAndOr(expr);
 			break;
 		case CiToken.Xor when expr.Type.Id == CiId.BoolType:
-			WriteEqual(expr, parent, true);
+			WriteEqual(expr.Left, expr.Right, parent, true);
 			break;
 		case CiToken.AndAssign when expr.Type.Id == CiId.BoolType:
 			Write("if (!"); // FIXME: picks up parent "else"
@@ -979,7 +979,7 @@ public class GenJsNoModule : GenBase
 		case CiToken.XorAssign when expr.Type.Id == CiId.BoolType:
 			expr.Left.Accept(this, CiPriority.Assign);
 			Write(" = ");
-			WriteEqual(expr, CiPriority.Argument, true); // FIXME: side effect
+			WriteEqual(expr.Left, expr.Right, CiPriority.Argument, true); // FIXME: side effect
 			break;
 		case CiToken.Is when expr.Right is CiVar def:
 			WriteIsVar(expr.Left, def, true, parent);

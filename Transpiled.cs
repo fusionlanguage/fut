@@ -7275,9 +7275,25 @@ namespace Foxoft.Ci
 
 		protected static string GetEqOp(bool not) => not ? " != " : " == ";
 
-		protected virtual void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+		protected virtual void WriteEqualOperand(CiExpr expr, CiExpr other)
 		{
-			WriteBinaryExpr(expr, parent > CiPriority.CondAnd, CiPriority.Equality, GetEqOp(not), CiPriority.Equality);
+			expr.Accept(this, CiPriority.Equality);
+		}
+
+		protected void WriteEqualExpr(CiExpr left, CiExpr right, CiPriority parent, string op)
+		{
+			if (parent > CiPriority.CondAnd)
+				WriteChar('(');
+			WriteEqualOperand(left, right);
+			Write(op);
+			WriteEqualOperand(right, left);
+			if (parent > CiPriority.CondAnd)
+				WriteChar(')');
+		}
+
+		protected virtual void WriteEqual(CiExpr left, CiExpr right, CiPriority parent, bool not)
+		{
+			WriteEqualExpr(left, right, parent, GetEqOp(not));
 		}
 
 		protected virtual void WriteAnd(CiBinaryExpr expr, CiPriority parent)
@@ -7353,10 +7369,10 @@ namespace Foxoft.Ci
 				WriteRel(expr, parent, " >= ");
 				break;
 			case CiToken.Equal:
-				WriteEqual(expr, parent, false);
+				WriteEqual(expr.Left, expr.Right, parent, false);
 				break;
 			case CiToken.NotEqual:
-				WriteEqual(expr, parent, true);
+				WriteEqual(expr.Left, expr.Right, parent, true);
 				break;
 			case CiToken.And:
 				WriteAnd(expr, parent);
@@ -8369,22 +8385,22 @@ namespace Foxoft.Ci
 
 		static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
 
-		protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+		protected override void WriteEqual(CiExpr left, CiExpr right, CiPriority parent, bool not)
 		{
 			CiType coercedType;
-			if (IsPtrTo(expr.Left, expr.Right))
-				coercedType = expr.Left.Type;
-			else if (IsPtrTo(expr.Right, expr.Left))
-				coercedType = expr.Right.Type;
+			if (IsPtrTo(left, right))
+				coercedType = left.Type;
+			else if (IsPtrTo(right, left))
+				coercedType = right.Type;
 			else {
-				base.WriteEqual(expr, parent, not);
+				base.WriteEqual(left, right, parent, not);
 				return;
 			}
 			if (parent > CiPriority.Equality)
 				WriteChar('(');
-			WriteCoerced(coercedType, expr.Left, CiPriority.Equality);
+			WriteCoerced(coercedType, left, CiPriority.Equality);
 			Write(GetEqOp(not));
-			WriteCoerced(coercedType, expr.Right, CiPriority.Equality);
+			WriteCoerced(coercedType, right, CiPriority.Equality);
 			if (parent > CiPriority.Equality)
 				WriteChar(')');
 		}
@@ -8529,8 +8545,6 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected abstract void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not);
-
 		protected static CiExpr IsStringEmpty(CiBinaryExpr expr)
 		{
 			if (expr.Left is CiSymbolReference symbol && symbol.Symbol.Id == CiId.StringLength && expr.Right.IsLiteralZero())
@@ -8619,23 +8633,23 @@ namespace Foxoft.Ci
 
 		public override void VisitSwitch(CiSwitch statement)
 		{
-			if (!(statement.Value.Type is CiStringType)) {
-				base.VisitSwitch(statement);
-				return;
-			}
-			int gotoId = GetSwitchGoto(statement);
-			string op = "if (";
-			foreach (CiCase kase in statement.Cases) {
-				foreach (CiExpr caseValue in kase.Values) {
-					Write(op);
-					WriteEqualString(statement.Value, caseValue, kase.Values.Count == 1 ? CiPriority.Argument : CiPriority.CondOr, false);
-					op = " || ";
+			if (statement.Value.Type is CiStringType) {
+				int gotoId = GetSwitchGoto(statement);
+				string op = "if (";
+				foreach (CiCase kase in statement.Cases) {
+					foreach (CiExpr caseValue in kase.Values) {
+						Write(op);
+						WriteEqual(statement.Value, caseValue, kase.Values.Count == 1 ? CiPriority.Argument : CiPriority.CondOr, false);
+						op = " || ";
+					}
+					WriteChar(')');
+					WriteIfCaseBody(kase.Body, gotoId < 0);
+					op = "else if (";
 				}
-				WriteChar(')');
-				WriteIfCaseBody(kase.Body, gotoId < 0);
-				op = "else if (";
+				EndSwitchAsIfs(statement, gotoId);
 			}
-			EndSwitchAsIfs(statement, gotoId);
+			else
+				base.VisitSwitch(statement);
 		}
 
 		protected void WriteMethods(CiClass klass)
@@ -10141,53 +10155,49 @@ namespace Foxoft.Ci
 				WriteChar(')');
 		}
 
-		protected override void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not)
+		protected override void WriteEqual(CiExpr left, CiExpr right, CiPriority parent, bool not)
 		{
-			CiCallExpr call = IsStringSubstring(left);
-			if (call != null && right is CiLiteralString literal) {
-				CiExpr lengthExpr = GetStringSubstringLength(call);
-				int rightLength = literal.GetAsciiLength();
-				if (rightLength >= 0) {
-					string rightValue = literal.Value;
-					if (lengthExpr is CiLiteralLong leftLength) {
-						if (leftLength.Value != rightLength)
-							NotYet(left, "String comparison with unmatched length");
-						WriteSubstringEqual(call, rightValue, parent, not);
+			if (left.Type is CiStringType && right.Type is CiStringType) {
+				CiCallExpr call = IsStringSubstring(left);
+				if (call != null && right is CiLiteralString literal) {
+					CiExpr lengthExpr = GetStringSubstringLength(call);
+					int rightLength = literal.GetAsciiLength();
+					if (rightLength >= 0) {
+						string rightValue = literal.Value;
+						if (lengthExpr is CiLiteralLong leftLength) {
+							if (leftLength.Value != rightLength)
+								NotYet(left, "String comparison with unmatched length");
+							WriteSubstringEqual(call, rightValue, parent, not);
+						}
+						else if (not) {
+							if (parent > CiPriority.CondOr)
+								WriteChar('(');
+							lengthExpr.Accept(this, CiPriority.Equality);
+							Write(" != ");
+							VisitLiteralLong(rightLength);
+							Write(" || ");
+							WriteSubstringEqual(call, rightValue, CiPriority.CondOr, true);
+							if (parent > CiPriority.CondOr)
+								WriteChar(')');
+						}
+						else {
+							if (parent > CiPriority.CondAnd || parent == CiPriority.CondOr)
+								WriteChar('(');
+							lengthExpr.Accept(this, CiPriority.Equality);
+							Write(" == ");
+							VisitLiteralLong(rightLength);
+							Write(" && ");
+							WriteSubstringEqual(call, rightValue, CiPriority.CondAnd, false);
+							if (parent > CiPriority.CondAnd || parent == CiPriority.CondOr)
+								WriteChar(')');
+						}
+						return;
 					}
-					else if (not) {
-						if (parent > CiPriority.CondOr)
-							WriteChar('(');
-						lengthExpr.Accept(this, CiPriority.Equality);
-						Write(" != ");
-						VisitLiteralLong(rightLength);
-						Write(" || ");
-						WriteSubstringEqual(call, rightValue, CiPriority.CondOr, true);
-						if (parent > CiPriority.CondOr)
-							WriteChar(')');
-					}
-					else {
-						if (parent > CiPriority.CondAnd || parent == CiPriority.CondOr)
-							WriteChar('(');
-						lengthExpr.Accept(this, CiPriority.Equality);
-						Write(" == ");
-						VisitLiteralLong(rightLength);
-						Write(" && ");
-						WriteSubstringEqual(call, rightValue, CiPriority.CondAnd, false);
-						if (parent > CiPriority.CondAnd || parent == CiPriority.CondOr)
-							WriteChar(')');
-					}
-					return;
 				}
+				WriteEqualStringInternal(left, right, parent, not);
 			}
-			WriteEqualStringInternal(left, right, parent, not);
-		}
-
-		protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
-		{
-			if (expr.Left.Type is CiStringType && expr.Right.Type is CiStringType)
-				WriteEqualString(expr.Left, expr.Right, parent, not);
 			else
-				base.WriteEqual(expr, parent, not);
+				base.WriteEqual(left, right, parent, not);
 		}
 
 		protected override void WriteStringLength(CiExpr expr)
@@ -12923,20 +12933,20 @@ namespace Foxoft.Ci
 			return expr.Type.Id == CiId.StringPtrType;
 		}
 
-		protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+		protected override void WriteEqual(CiExpr left, CiExpr right, CiPriority parent, bool not)
 		{
-			if (NeedStringPtrData(expr.Left) && expr.Right.Type.Id == CiId.NullType) {
-				WritePostfix(expr.Left, ".data()");
+			if (NeedStringPtrData(left) && right.Type.Id == CiId.NullType) {
+				WritePostfix(left, ".data()");
 				Write(GetEqOp(not));
 				Write("nullptr");
 			}
-			else if (expr.Left.Type.Id == CiId.NullType && NeedStringPtrData(expr.Right)) {
+			else if (left.Type.Id == CiId.NullType && NeedStringPtrData(right)) {
 				Write("nullptr");
 				Write(GetEqOp(not));
-				WritePostfix(expr.Right, ".data()");
+				WritePostfix(right, ".data()");
 			}
 			else
-				base.WriteEqual(expr, parent, not);
+				base.WriteEqual(left, right, parent, not);
 		}
 
 		static bool IsClassPtr(CiType type) => type is CiClassType ptr && !(type is CiStorageType) && ptr.Class.Id != CiId.StringClass && ptr.Class.Id != CiId.ArrayPtrClass;
@@ -13725,13 +13735,6 @@ namespace Foxoft.Ci
 			}
 			else
 				base.WriteSelectValues(type, expr);
-		}
-
-		protected override void WriteEqualString(CiExpr left, CiExpr right, CiPriority parent, bool not)
-		{
-			left.Accept(this, CiPriority.Equality);
-			Write(GetEqOp(not));
-			right.Accept(this, CiPriority.Equality);
 		}
 
 		protected override void WriteStringLength(CiExpr expr)
@@ -16440,12 +16443,12 @@ namespace Foxoft.Ci
 
 		static bool IsIsComparable(CiExpr expr) => expr is CiLiteralNull || (expr.Type is CiClassType klass && klass.Class.Id == CiId.ArrayPtrClass);
 
-		protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+		protected override void WriteEqual(CiExpr left, CiExpr right, CiPriority parent, bool not)
 		{
-			if (IsIsComparable(expr.Left) || IsIsComparable(expr.Right))
-				WriteBinaryExpr2(expr, parent, CiPriority.Equality, not ? " !is " : " is ");
+			if (IsIsComparable(left) || IsIsComparable(right))
+				WriteEqualExpr(left, right, parent, not ? " !is " : " is ");
 			else
-				base.WriteEqual(expr, parent, not);
+				base.WriteEqual(left, right, parent, not);
 		}
 
 		protected override void WriteAssign(CiBinaryExpr expr, CiPriority parent)
@@ -17242,17 +17245,17 @@ namespace Foxoft.Ci
 			VisitLiteralLong((literal.Value ^ 128) - 128);
 		}
 
-		protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+		protected override void WriteEqual(CiExpr left, CiExpr right, CiPriority parent, bool not)
 		{
-			if ((expr.Left.Type is CiStringType && expr.Right.Type.Id != CiId.NullType) || (expr.Right.Type is CiStringType && expr.Left.Type.Id != CiId.NullType)) {
+			if ((left.Type is CiStringType && right.Type.Id != CiId.NullType) || (right.Type is CiStringType && left.Type.Id != CiId.NullType)) {
 				if (not)
 					WriteChar('!');
-				WriteMethodCall(expr.Left, "equals", expr.Right);
+				WriteMethodCall(left, "equals", right);
 			}
-			else if (IsUnsignedByteIndexing(expr.Left) && expr.Right is CiLiteralLong rightLiteral && rightLiteral.Type.Id == CiId.ByteRange) {
+			else if (IsUnsignedByteIndexing(left) && right is CiLiteralLong rightLiteral && rightLiteral.Type.Id == CiId.ByteRange) {
 				if (parent > CiPriority.Equality)
 					WriteChar('(');
-				CiBinaryExpr indexing = (CiBinaryExpr) expr.Left;
+				CiBinaryExpr indexing = (CiBinaryExpr) left;
 				WriteIndexingInternal(indexing);
 				Write(GetEqOp(not));
 				WriteSByteLiteral(rightLiteral);
@@ -17260,7 +17263,7 @@ namespace Foxoft.Ci
 					WriteChar(')');
 			}
 			else
-				base.WriteEqual(expr, parent, not);
+				base.WriteEqual(left, right, parent, not);
 		}
 
 		protected override void WriteCoercedLiteral(CiType type, CiExpr expr)
@@ -19023,7 +19026,7 @@ namespace Foxoft.Ci
 				WriteBoolAndOr(expr);
 				break;
 			case CiToken.Xor when expr.Type.Id == CiId.BoolType:
-				WriteEqual(expr, parent, true);
+				WriteEqual(expr.Left, expr.Right, parent, true);
 				break;
 			case CiToken.AndAssign when expr.Type.Id == CiId.BoolType:
 				Write("if (!");
@@ -19038,7 +19041,7 @@ namespace Foxoft.Ci
 			case CiToken.XorAssign when expr.Type.Id == CiId.BoolType:
 				expr.Left.Accept(this, CiPriority.Assign);
 				Write(" = ");
-				WriteEqual(expr, CiPriority.Argument, true);
+				WriteEqual(expr.Left, expr.Right, CiPriority.Argument, true);
 				break;
 			case CiToken.Is when expr.Right is CiVar def:
 				WriteIsVar(expr.Left, def, true, parent);
@@ -19540,6 +19543,14 @@ namespace Foxoft.Ci
 			WriteCoerced(type, expr, parent);
 		}
 
+		protected override void WriteEqualOperand(CiExpr expr, CiExpr other)
+		{
+			if (expr.Type is CiNumericType)
+				WriteCoerced(this.System.PromoteNumericTypes(expr.Type, other.Type), expr, CiPriority.Equality);
+			else
+				expr.Accept(this, CiPriority.Equality);
+		}
+
 		protected override void WriteBoolAndOr(CiBinaryExpr expr)
 		{
 			Write("[ ");
@@ -19794,12 +19805,12 @@ namespace Foxoft.Ci
 
 		protected abstract string GetReferenceEqOp(bool not);
 
-		protected override void WriteEqual(CiBinaryExpr expr, CiPriority parent, bool not)
+		protected override void WriteEqual(CiExpr left, CiExpr right, CiPriority parent, bool not)
 		{
-			if (IsPtr(expr.Left) || IsPtr(expr.Right))
-				WriteBinaryExpr2(expr, parent, CiPriority.Equality, GetReferenceEqOp(not));
+			if (IsPtr(left) || IsPtr(right))
+				WriteEqualExpr(left, right, parent, GetReferenceEqOp(not));
 			else
-				base.WriteEqual(expr, parent, not);
+				base.WriteEqual(left, right, parent, not);
 		}
 
 		protected virtual void WriteExpr(CiExpr expr, CiPriority parent)
@@ -21020,7 +21031,7 @@ namespace Foxoft.Ci
 				break;
 			case CiToken.Xor:
 				if (expr.Type.Id == CiId.BoolType)
-					WriteEqual(expr, parent, true);
+					WriteEqual(expr.Left, expr.Right, parent, true);
 				else if (expr.Type is CiEnumFlags)
 					WriteMethodCall(expr.Left, "symmetricDifference", expr.Right);
 				else

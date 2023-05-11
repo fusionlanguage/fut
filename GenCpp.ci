@@ -414,20 +414,20 @@ public class GenCpp : GenCCpp
 		return expr.Type.Id == CiId.StringPtrType;
 	}
 
-	protected override void WriteEqual!(CiBinaryExpr expr, CiPriority parent, bool not)
+	protected override void WriteEqual!(CiExpr left, CiExpr right, CiPriority parent, bool not)
 	{
-		if (NeedStringPtrData(expr.Left) && expr.Right.Type.Id == CiId.NullType) {
-			WritePostfix(expr.Left, ".data()");
+		if (NeedStringPtrData(left) && right.Type.Id == CiId.NullType) {
+			WritePostfix(left, ".data()");
 			Write(GetEqOp(not));
 			Write("nullptr");
 		}
-		else if (expr.Left.Type.Id == CiId.NullType && NeedStringPtrData(expr.Right)) {
+		else if (left.Type.Id == CiId.NullType && NeedStringPtrData(right)) {
 			Write("nullptr");
 			Write(GetEqOp(not));
-			WritePostfix(expr.Right, ".data()");
+			WritePostfix(right, ".data()");
 		}
 		else
-			base.WriteEqual(expr, parent, not);
+			base.WriteEqual(left, right, parent, not);
 	}
 
 	static bool IsClassPtr(CiType type) => type is CiClassType ptr && !(type is CiStorageType) && ptr.Class.Id != CiId.StringClass && ptr.Class.Id != CiId.ArrayPtrClass;
@@ -1225,13 +1225,6 @@ public class GenCpp : GenCCpp
 		}
 		else
 			base.WriteSelectValues(type, expr);
-	}
-
-	protected override void WriteEqualString!(CiExpr left, CiExpr right, CiPriority parent, bool not)
-	{
-		left.Accept(this, CiPriority.Equality);
-		Write(GetEqOp(not));
-		right.Accept(this, CiPriority.Equality);
 	}
 
 	protected override void WriteStringLength!(CiExpr expr)

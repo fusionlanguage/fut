@@ -23,22 +23,22 @@ public abstract class GenCCppD : GenTyped
 
 	static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
 
-	protected override void WriteEqual!(CiBinaryExpr expr, CiPriority parent, bool not)
+	protected override void WriteEqual!(CiExpr left, CiExpr right, CiPriority parent, bool not)
 	{
 		CiType coercedType;
-		if (IsPtrTo(expr.Left, expr.Right))
-			coercedType = expr.Left.Type;
-		else if (IsPtrTo(expr.Right, expr.Left))
-			coercedType = expr.Right.Type;
+		if (IsPtrTo(left, right))
+			coercedType = left.Type;
+		else if (IsPtrTo(right, left))
+			coercedType = right.Type;
 		else {
-			base.WriteEqual(expr, parent, not);
+			base.WriteEqual(left, right, parent, not);
 			return;
 		}
 		if (parent > CiPriority.Equality)
 			WriteChar('(');
-		WriteCoerced(coercedType, expr.Left, CiPriority.Equality);
+		WriteCoerced(coercedType, left, CiPriority.Equality);
 		Write(GetEqOp(not));
-		WriteCoerced(coercedType, expr.Right, CiPriority.Equality);
+		WriteCoerced(coercedType, right, CiPriority.Equality);
 		if (parent > CiPriority.Equality)
 			WriteChar(')');
 	}

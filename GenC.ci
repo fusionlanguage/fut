@@ -1447,53 +1447,49 @@ public class GenC : GenCCpp
 			WriteChar(')');
 	}
 
-	protected override void WriteEqualString!(CiExpr left, CiExpr right, CiPriority parent, bool not)
+	protected override void WriteEqual!(CiExpr left, CiExpr right, CiPriority parent, bool not)
 	{
-		CiCallExpr? call = IsStringSubstring(left);
-		if (call != null && right is CiLiteralString literal) {
-			CiExpr lengthExpr = GetStringSubstringLength(call);
-			int rightLength = literal.GetAsciiLength();
-			if (rightLength >= 0) {
-				string rightValue = literal.Value;
-				if (lengthExpr is CiLiteralLong leftLength) {
-					if (leftLength.Value != rightLength)
-						NotYet(left, "String comparison with unmatched length"); // TODO: evaluate compile-time
-					WriteSubstringEqual(call, rightValue, parent, not);
+		if (left.Type is CiStringType && right.Type is CiStringType) {
+			CiCallExpr? call = IsStringSubstring(left);
+			if (call != null && right is CiLiteralString literal) {
+				CiExpr lengthExpr = GetStringSubstringLength(call);
+				int rightLength = literal.GetAsciiLength();
+				if (rightLength >= 0) {
+					string rightValue = literal.Value;
+					if (lengthExpr is CiLiteralLong leftLength) {
+						if (leftLength.Value != rightLength)
+							NotYet(left, "String comparison with unmatched length"); // TODO: evaluate compile-time
+						WriteSubstringEqual(call, rightValue, parent, not);
+					}
+					else if (not) {
+						if (parent > CiPriority.CondOr)
+							WriteChar('(');
+						lengthExpr.Accept(this, CiPriority.Equality);
+						Write(" != ");
+						VisitLiteralLong(rightLength);
+						Write(" || ");
+						WriteSubstringEqual(call, rightValue, CiPriority.CondOr, true);
+						if (parent > CiPriority.CondOr)
+							WriteChar(')');
+					}
+					else {
+						if (parent > CiPriority.CondAnd || parent == CiPriority.CondOr)
+							WriteChar('(');
+						lengthExpr.Accept(this, CiPriority.Equality);
+						Write(" == ");
+						VisitLiteralLong(rightLength);
+						Write(" && ");
+						WriteSubstringEqual(call, rightValue, CiPriority.CondAnd, false);
+						if (parent > CiPriority.CondAnd || parent == CiPriority.CondOr)
+							WriteChar(')');
+					}
+					return;
 				}
-				else if (not) {
-					if (parent > CiPriority.CondOr)
-						WriteChar('(');
-					lengthExpr.Accept(this, CiPriority.Equality);
-					Write(" != ");
-					VisitLiteralLong(rightLength);
-					Write(" || ");
-					WriteSubstringEqual(call, rightValue, CiPriority.CondOr, true);
-					if (parent > CiPriority.CondOr)
-						WriteChar(')');
-				}
-				else {
-					if (parent > CiPriority.CondAnd || parent == CiPriority.CondOr)
-						WriteChar('(');
-					lengthExpr.Accept(this, CiPriority.Equality);
-					Write(" == ");
-					VisitLiteralLong(rightLength);
-					Write(" && ");
-					WriteSubstringEqual(call, rightValue, CiPriority.CondAnd, false);
-					if (parent > CiPriority.CondAnd || parent == CiPriority.CondOr)
-						WriteChar(')');
-				}
-				return;
 			}
+			WriteEqualStringInternal(left, right, parent, not);
 		}
-		WriteEqualStringInternal(left, right, parent, not);
-	}
-
-	protected override void WriteEqual!(CiBinaryExpr expr, CiPriority parent, bool not)
-	{
-		if (expr.Left.Type is CiStringType && expr.Right.Type is CiStringType)
-			WriteEqualString(expr.Left, expr.Right, parent, not);
 		else
-			base.WriteEqual(expr, parent, not);
+			base.WriteEqual(left, right, parent, not);
 	}
 
 	protected override void WriteStringLength!(CiExpr expr)

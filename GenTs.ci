@@ -176,6 +176,14 @@ public class GenTs : GenJs
 		WriteCoerced(type, expr, parent);
 	}
 
+	protected override void WriteEqualOperand!(CiExpr expr, CiExpr other)
+	{
+		if (expr.Type is CiNumericType)
+			WriteCoerced(this.System.PromoteNumericTypes(expr.Type, other.Type), expr, CiPriority.Equality);
+		else
+			expr.Accept(this, CiPriority.Equality);
+	}
+
 	protected override void WriteBoolAndOr!(CiBinaryExpr expr)
 	{
 		Write("[ ");

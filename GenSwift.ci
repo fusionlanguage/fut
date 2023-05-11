@@ -958,7 +958,7 @@ public class GenSwift : GenPySwift
 			break;
 		case CiToken.Xor:
 			if (expr.Type.Id == CiId.BoolType)
-				WriteEqual(expr, parent, true);
+				WriteEqual(expr.Left, expr.Right, parent, true);
 			else if (expr.Type is CiEnumFlags)
 				WriteMethodCall(expr.Left, "symmetricDifference", expr.Right);
 			else

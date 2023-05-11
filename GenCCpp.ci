@@ -90,8 +90,6 @@ public abstract class GenCCpp : GenCCppD
 		}
 	}
 
-	protected abstract void WriteEqualString!(CiExpr left, CiExpr right, CiPriority parent, bool not);
-
 	protected static CiExpr? IsStringEmpty(CiBinaryExpr expr)
 	{
 		if (expr.Left is CiSymbolReference symbol && symbol.Symbol.Id == CiId.StringLength
@@ -186,24 +184,23 @@ public abstract class GenCCpp : GenCCppD
 
 	public override void VisitSwitch!(CiSwitch statement)
 	{
-		if (!(statement.Value.Type is CiStringType)) {
-			base.VisitSwitch(statement);
-			return;
-		}
-
-		int gotoId = GetSwitchGoto(statement);
-		string op = "if (";
-		foreach (CiCase kase in statement.Cases) {
-			foreach (CiExpr caseValue in kase.Values) {
-				Write(op);
-				WriteEqualString(statement.Value, caseValue, kase.Values.Count == 1 ? CiPriority.Argument : CiPriority.CondOr, false); // FIXME: side effect
-				op = " || ";
+		if (statement.Value.Type is CiStringType) {
+			int gotoId = GetSwitchGoto(statement);
+			string op = "if (";
+			foreach (CiCase kase in statement.Cases) {
+				foreach (CiExpr caseValue in kase.Values) {
+					Write(op);
+					WriteEqual(statement.Value, caseValue, kase.Values.Count == 1 ? CiPriority.Argument : CiPriority.CondOr, false); // FIXME: side effect
+					op = " || ";
+				}
+				WriteChar(')');
+				WriteIfCaseBody(kase.Body, gotoId < 0);
+				op = "else if (";
 			}
-			WriteChar(')');
-			WriteIfCaseBody(kase.Body, gotoId < 0);
-			op = "else if (";
+			EndSwitchAsIfs(statement, gotoId);
 		}
-		EndSwitchAsIfs(statement, gotoId);
+		else
+			base.VisitSwitch(statement);
 	}
 
 	protected void WriteMethods!(CiClass klass)

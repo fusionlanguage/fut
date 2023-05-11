@@ -1126,12 +1126,12 @@ public class GenD : GenCCppD
 
 	static bool IsIsComparable(CiExpr expr) => expr is CiLiteralNull || (expr.Type is CiClassType klass && klass.Class.Id == CiId.ArrayPtrClass);
 
-	protected override void WriteEqual!(CiBinaryExpr expr, CiPriority parent, bool not)
+	protected override void WriteEqual!(CiExpr left, CiExpr right, CiPriority parent, bool not)
 	{
-		if (IsIsComparable(expr.Left) || IsIsComparable(expr.Right))
-			WriteBinaryExpr2(expr, parent, CiPriority.Equality, not ? " !is " : " is ");
+		if (IsIsComparable(left) || IsIsComparable(right))
+			WriteEqualExpr(left, right, parent, not ? " !is " : " is ");
 		else
-			base.WriteEqual(expr, parent, not);
+			base.WriteEqual(left, right, parent, not);
 	}
 
 	protected override void WriteAssign!(CiBinaryExpr expr, CiPriority parent)
