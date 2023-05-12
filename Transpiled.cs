@@ -13824,9 +13824,9 @@ namespace Foxoft.Ci
 
 		void WriteIsVar(CiExpr expr, CiVar def, CiPriority parent)
 		{
-			if (parent > CiPriority.Assign)
-				WriteChar('(');
 			if (def.Name != "_") {
+				if (parent > CiPriority.Assign)
+					WriteChar('(');
 				WriteName(def);
 				Write(" = ");
 			}
@@ -13840,7 +13840,7 @@ namespace Foxoft.Ci
 				WriteType(def.Type, true);
 				WriteGtRawPtr(expr);
 			}
-			if (parent > CiPriority.Assign)
+			if (def.Name != "_" && parent > CiPriority.Assign)
 				WriteChar(')');
 		}
 

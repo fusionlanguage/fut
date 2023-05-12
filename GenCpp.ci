@@ -1294,9 +1294,9 @@ public class GenCpp : GenCCpp
 
 	void WriteIsVar!(CiExpr expr, CiVar def, CiPriority parent)
 	{
-		if (parent > CiPriority.Assign)
-			WriteChar('(');
 		if (def.Name != "_") {
+			if (parent > CiPriority.Assign)
+				WriteChar('(');
 			WriteName(def);
 			Write(" = ");
 		}
@@ -1310,7 +1310,7 @@ public class GenCpp : GenCCpp
 			WriteType(def.Type, true);
 			WriteGtRawPtr(expr);
 		}
-		if (parent > CiPriority.Assign)
+		if (def.Name != "_" && parent > CiPriority.Assign)
 			WriteChar(')');
 	}
 
