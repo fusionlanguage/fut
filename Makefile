@@ -76,6 +76,8 @@ test-cl test-GenCl.ci: $(patsubst test/%.ci, test/bin/%/cl.txt, $(wildcard test/
 
 test-GenCCpp.ci: test-c test-cpp
 
+test-GenCCppD.ci: test-c test-cpp test-d
+
 test-GenPySwift.ci: test-py test-swift
 
 test-error test-Lexer.ci test-Parser.ci test-Sema.ci: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))

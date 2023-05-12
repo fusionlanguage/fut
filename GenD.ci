@@ -1264,48 +1264,25 @@ public class GenD : GenCCppD
 		WriteChild(statement.Body);
 	}
 
+	protected override void WriteSwitchCaseCond!(CiSwitch statement, CiExpr value, CiPriority parent)
+	{
+		if (value is CiVar def) {
+			WriteIsVar(statement.Value, def, CiPriority.Equality); // FIXME: side effect in every if
+			Write(" !is null");
+		}
+		else
+			base.WriteSwitchCaseCond(statement, value, parent);
+	}
+
 	public override void VisitSwitch!(CiSwitch statement)
 	{
 		WriteTemporaries(statement.Value);
 		if (statement.IsTypeMatching()) {
 			WriteSwitchWhenVars(statement, false);
-			int gotoId = GetSwitchGoto(statement);
-			string op = "if (";
-			foreach (CiCase kase in statement.Cases) {
-				foreach (CiExpr value in kase.Values) {
-					Write(op);
-					switch (value) {
-					case CiVar def:
-						WriteIsVar(statement.Value, def, CiPriority.Equality); // FIXME: side effect in every if
-						Write(" !is null");
-						break;
-					case CiLiteralNull _:
-						statement.Value.Accept(this, CiPriority.Equality); // FIXME: side effect in every if
-						Write(" is null");
-						break;
-					case CiBinaryExpr when1 when when1.Op == CiToken.When:
-						assert when1.Left is CiVar whenVar;
-						WriteIsVar(statement.Value, whenVar, CiPriority.Equality); // FIXME: side effect in every if
-						Write(" !is null && ");
-						when1.Right.Accept(this, CiPriority.CondAnd);
-						break;
-					default:
-						assert false;
-					}
-					op = " || ";
-				}
-				WriteChar(')');
-				WriteIfCaseBody(kase.Body, gotoId < 0);
-				op = "else if (";
-			}
-			EndSwitchAsIfs(statement, gotoId);
+			WriteSwitchAsIfs(statement);
 		}
 		else {
-			Write("switch (");
-			WriteSwitchValue(statement.Value);
-			WriteLine(") {");
-			foreach (CiCase kase in statement.Cases)
-				WriteSwitchCase(statement, kase);
+			StartSwitch(statement);
 			WriteLine("default:");
 			this.Indent++;
 			if (statement.DefaultBody.Count > 0)

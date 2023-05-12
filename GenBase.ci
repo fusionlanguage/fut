@@ -1637,9 +1637,9 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void DefineVar!(CiVar def)
+	void DefineVar!(CiExpr value)
 	{
-		if (def.Name != "_") {
+		if (value is CiVar def && def.Name != "_") {
 			WriteVar(def);
 			EndStatement();
 		}
@@ -1649,13 +1649,12 @@ public abstract class GenBase : CiVisitor
 	{
 		foreach (CiCase kase in statement.Cases) {
 			foreach (CiExpr value in kase.Values) {
-				if (!whenOnly && value is CiVar var)
-					DefineVar(var);
-				else if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
-					assert when1.Left is CiVar whenVar;
-					DefineVar(whenVar);
+				if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
+					DefineVar(when1.Left);
 					WriteTemporaries(when1);
 				}
+				else if (!whenOnly)
+					DefineVar(value);
 			}
 		}
 	}
@@ -1682,14 +1681,19 @@ public abstract class GenBase : CiVisitor
 		this.Indent--;
 	}
 
-	public override void VisitSwitch!(CiSwitch statement)
+	protected void StartSwitch!(CiSwitch statement)
 	{
-		WriteTemporaries(statement.Value);
 		Write("switch (");
 		WriteSwitchValue(statement.Value);
 		WriteLine(") {");
 		foreach (CiCase kase in statement.Cases)
 			WriteSwitchCase(statement, kase);
+	}
+
+	public override void VisitSwitch!(CiSwitch statement)
+	{
+		WriteTemporaries(statement.Value);
+		StartSwitch(statement);
 		if (statement.DefaultBody.Count > 0) {
 			WriteLine("default:");
 			this.Indent++;

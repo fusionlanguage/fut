@@ -1489,6 +1489,17 @@ public class GenCpp : GenCCpp
 		}
 	}
 
+	protected override void WriteSwitchCaseCond!(CiSwitch statement, CiExpr value, CiPriority parent)
+	{
+		if (value is CiVar def) {
+			if (parent == CiPriority.Argument && def.Name != "_")
+				WriteType(def.Type, true);
+			WriteIsVar(statement.Value, def, parent); // FIXME: side effect in every if
+		}
+		else
+			base.WriteSwitchCaseCond(statement, value, parent);
+	}
+
 	static bool HasTemporaries(CiExpr expr)
 	{
 		switch (expr) {
@@ -1566,41 +1577,7 @@ public class GenCpp : GenCCpp
 	{
 		if (statement.IsTypeMatching()) {
 			WriteSwitchWhenVars(statement);
-			int gotoId = GetSwitchGoto(statement);
-			string op = "if (";
-			foreach (CiCase kase in statement.Cases) {
-				foreach (CiExpr value in kase.Values) {
-					Write(op);
-					switch (value) {
-					case CiVar def:
-						if (def.Name != "_")
-							WriteType(def.Type, true);
-						WriteIsVar(statement.Value, def, CiPriority.Argument); // FIXME: side effect in every if
-						break;
-					case CiLiteralNull _:
-						statement.Value.Accept(this, CiPriority.Equality); // FIXME: side effect in every if
-						Write(" == nullptr");
-						break;
-					case CiBinaryExpr when1 when when1.Op == CiToken.When:
-						if (kase.Values.Count > 1)
-							WriteChar('(');
-						assert when1.Left is CiVar whenVar;
-						WriteIsVar(statement.Value, whenVar, CiPriority.CondAnd); // FIXME: side effect in every if
-						Write(" && ");
-						when1.Right.Accept(this, CiPriority.CondAnd);
-						if (kase.Values.Count > 1)
-							WriteChar(')');
-						break;
-					default:
-						assert false;
-					}
-					op = " || ";
-				}
-				WriteChar(')');
-				WriteIfCaseBody(kase.Body, gotoId < 0);
-				op = "else if (";
-			}
-			EndSwitchAsIfs(statement, gotoId);
+			WriteSwitchAsIfs(statement);
 		}
 		else
 			base.VisitSwitch(statement);

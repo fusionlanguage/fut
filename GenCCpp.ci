@@ -184,21 +184,8 @@ public abstract class GenCCpp : GenCCppD
 
 	public override void VisitSwitch!(CiSwitch statement)
 	{
-		if (statement.Value.Type is CiStringType) {
-			int gotoId = GetSwitchGoto(statement);
-			string op = "if (";
-			foreach (CiCase kase in statement.Cases) {
-				foreach (CiExpr caseValue in kase.Values) {
-					Write(op);
-					WriteEqual(statement.Value, caseValue, kase.Values.Count == 1 ? CiPriority.Argument : CiPriority.CondOr, false); // FIXME: side effect
-					op = " || ";
-				}
-				WriteChar(')');
-				WriteIfCaseBody(kase.Body, gotoId < 0);
-				op = "else if (";
-			}
-			EndSwitchAsIfs(statement, gotoId);
-		}
+		if (statement.Value.Type is CiStringType)
+			WriteSwitchAsIfs(statement);
 		else
 			base.VisitSwitch(statement);
 	}
