@@ -1121,7 +1121,7 @@ public class GenJsNoModule : GenBase
 
 	void WriteTypeMatchingSwitch!(CiSwitch statement)
 	{
-		WriteSwitchWhenVars(statement);
+		WriteSwitchWhenVars(statement, true);
 		string op = "if (";
 		foreach (CiCase kase in statement.Cases) {
 			CiVar? caseVar = null;

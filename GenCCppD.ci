@@ -63,16 +63,6 @@ public abstract class GenCCppD : GenTyped
 		base.VisitBreak(statement);
 	}
 
-	protected int GetSwitchGoto!(CiSwitch statement)
-	{
-		if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreakAndContinue(kase.Body))
-		 || CiSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
-			this.SwitchesWithGoto.Add(statement);
-			return this.SwitchesWithGoto.Count - 1;
-		}
-		return -1;
-	}
-
 	protected virtual void WriteSwitchCaseCond!(CiSwitch statement, CiExpr value, CiPriority parent)
 	{
 		if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
@@ -113,7 +103,14 @@ public abstract class GenCCppD : GenTyped
 
 	protected void WriteSwitchAsIfs!(CiSwitch statement)
 	{
-		int gotoId = GetSwitchGoto(statement);
+		int gotoId;
+		if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreakAndContinue(kase.Body))
+		 || CiSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
+			gotoId = this.SwitchesWithGoto.Count;
+			this.SwitchesWithGoto.Add(statement);
+		}
+		else
+			gotoId = -1;
 		string op = "if (";
 		foreach (CiCase kase in statement.Cases) {
 			CiPriority parent = kase.Values.Count == 1 ? CiPriority.Argument : CiPriority.CondOr;

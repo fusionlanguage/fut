@@ -1576,7 +1576,7 @@ public class GenCpp : GenCCpp
 	public override void VisitSwitch!(CiSwitch statement)
 	{
 		if (statement.IsTypeMatching()) {
-			WriteSwitchWhenVars(statement);
+			WriteSwitchWhenVars(statement, true);
 			WriteSwitchAsIfs(statement);
 		}
 		else

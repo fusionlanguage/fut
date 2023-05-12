@@ -1645,7 +1645,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WriteSwitchWhenVars!(CiSwitch statement, bool whenOnly = true)
+	protected void WriteSwitchWhenVars!(CiSwitch statement, bool whenOnly)
 	{
 		foreach (CiCase kase in statement.Cases) {
 			foreach (CiExpr value in kase.Values) {

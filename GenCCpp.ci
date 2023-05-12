@@ -184,8 +184,10 @@ public abstract class GenCCpp : GenCCppD
 
 	public override void VisitSwitch!(CiSwitch statement)
 	{
-		if (statement.Value.Type is CiStringType)
+		if (statement.Value.Type is CiStringType || statement.HasWhen()) {
+			WriteSwitchWhenVars(statement, true);
 			WriteSwitchAsIfs(statement);
+		}
 		else
 			base.VisitSwitch(statement);
 	}

@@ -854,6 +854,8 @@ public class CiSwitch : CiCondCompletionStatement
 
 	public bool IsTypeMatching() => this.Value.Type is CiClassType klass && klass.Class.Id != CiId.StringClass;
 
+	public bool HasWhen() => this.Cases.Any(kase => kase.Values.Any(value => value is CiBinaryExpr when1 && when1.Op == CiToken.When));
+
 	public static int LengthWithoutTrailingBreak(List<CiStatement#> body)
 	{
 		int length = body.Count;

@@ -2301,6 +2301,8 @@ namespace Foxoft.Ci
 
 		public bool IsTypeMatching() => this.Value.Type is CiClassType klass && klass.Class.Id != CiId.StringClass;
 
+		public bool HasWhen() => this.Cases.Any(kase => kase.Values.Any(value => value is CiBinaryExpr when1 && when1.Op == CiToken.When));
+
 		public static int LengthWithoutTrailingBreak(List<CiStatement> body)
 		{
 			int length = body.Count;
@@ -7915,7 +7917,7 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected void WriteSwitchWhenVars(CiSwitch statement, bool whenOnly = true)
+		protected void WriteSwitchWhenVars(CiSwitch statement, bool whenOnly)
 		{
 			foreach (CiCase kase in statement.Cases) {
 				foreach (CiExpr value in kase.Values) {
@@ -8429,15 +8431,6 @@ namespace Foxoft.Ci
 			base.VisitBreak(statement);
 		}
 
-		protected int GetSwitchGoto(CiSwitch statement)
-		{
-			if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreakAndContinue(kase.Body)) || CiSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
-				this.SwitchesWithGoto.Add(statement);
-				return this.SwitchesWithGoto.Count - 1;
-			}
-			return -1;
-		}
-
 		protected virtual void WriteSwitchCaseCond(CiSwitch statement, CiExpr value, CiPriority parent)
 		{
 			if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
@@ -8478,7 +8471,13 @@ namespace Foxoft.Ci
 
 		protected void WriteSwitchAsIfs(CiSwitch statement)
 		{
-			int gotoId = GetSwitchGoto(statement);
+			int gotoId;
+			if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreakAndContinue(kase.Body)) || CiSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
+				gotoId = this.SwitchesWithGoto.Count;
+				this.SwitchesWithGoto.Add(statement);
+			}
+			else
+				gotoId = -1;
 			string op = "if (";
 			foreach (CiCase kase in statement.Cases) {
 				CiPriority parent = kase.Values.Count == 1 ? CiPriority.Argument : CiPriority.CondOr;
@@ -8665,8 +8664,10 @@ namespace Foxoft.Ci
 
 		public override void VisitSwitch(CiSwitch statement)
 		{
-			if (statement.Value.Type is CiStringType)
+			if (statement.Value.Type is CiStringType || statement.HasWhen()) {
+				WriteSwitchWhenVars(statement, true);
 				WriteSwitchAsIfs(statement);
+			}
 			else
 				base.VisitSwitch(statement);
 		}
@@ -14014,7 +14015,7 @@ namespace Foxoft.Ci
 		protected override void WriteSwitchCaseCond(CiSwitch statement, CiExpr value, CiPriority parent)
 		{
 			if (value is CiVar def) {
-				if (parent != CiPriority.CondAnd && def.Name != "_")
+				if (parent == CiPriority.Argument && def.Name != "_")
 					WriteType(def.Type, true);
 				WriteIsVar(statement.Value, def, parent);
 			}
@@ -14098,7 +14099,7 @@ namespace Foxoft.Ci
 		public override void VisitSwitch(CiSwitch statement)
 		{
 			if (statement.IsTypeMatching()) {
-				WriteSwitchWhenVars(statement);
+				WriteSwitchWhenVars(statement, true);
 				WriteSwitchAsIfs(statement);
 			}
 			else
@@ -16587,7 +16588,7 @@ namespace Foxoft.Ci
 		public override void VisitSwitch(CiSwitch statement)
 		{
 			WriteTemporaries(statement.Value);
-			if (statement.IsTypeMatching()) {
+			if (statement.IsTypeMatching() || statement.HasWhen()) {
 				WriteSwitchWhenVars(statement, false);
 				WriteSwitchAsIfs(statement);
 			}
@@ -19156,7 +19157,7 @@ namespace Foxoft.Ci
 
 		void WriteTypeMatchingSwitch(CiSwitch statement)
 		{
-			WriteSwitchWhenVars(statement);
+			WriteSwitchWhenVars(statement, true);
 			string op = "if (";
 			foreach (CiCase kase in statement.Cases) {
 				CiVar caseVar = null;

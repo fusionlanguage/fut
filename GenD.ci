@@ -1277,7 +1277,7 @@ public class GenD : GenCCppD
 	public override void VisitSwitch!(CiSwitch statement)
 	{
 		WriteTemporaries(statement.Value);
-		if (statement.IsTypeMatching()) {
+		if (statement.IsTypeMatching() || statement.HasWhen()) {
 			WriteSwitchWhenVars(statement, false);
 			WriteSwitchAsIfs(statement);
 		}
