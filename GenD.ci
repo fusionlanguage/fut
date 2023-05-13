@@ -1264,6 +1264,11 @@ public class GenD : GenCCppD
 		WriteChild(statement.Body);
 	}
 
+	protected override void WriteSwitchCaseTypeVar!(CiExpr value)
+	{
+		DefineVar(value);
+	}
+
 	protected override void WriteSwitchCaseCond!(CiSwitch statement, CiExpr value, CiPriority parent)
 	{
 		if (value is CiVar def) {
@@ -1277,10 +1282,8 @@ public class GenD : GenCCppD
 	public override void VisitSwitch!(CiSwitch statement)
 	{
 		WriteTemporaries(statement.Value);
-		if (statement.IsTypeMatching() || statement.HasWhen()) {
-			WriteSwitchWhenVars(statement, false);
-			WriteSwitchAsIfs(statement);
-		}
+		if (statement.IsTypeMatching() || statement.HasWhen())
+			WriteSwitchAsIfsWithGoto(statement);
 		else {
 			StartSwitch(statement);
 			WriteLine("default:");

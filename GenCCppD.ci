@@ -63,74 +63,19 @@ public abstract class GenCCppD : GenTyped
 		base.VisitBreak(statement);
 	}
 
-	protected virtual void WriteSwitchCaseCond!(CiSwitch statement, CiExpr value, CiPriority parent)
+	protected void WriteSwitchAsIfsWithGoto!(CiSwitch statement)
 	{
-		if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
-			if (parent > CiPriority.SelectCond)
-				WriteChar('(');
-			WriteSwitchCaseCond(statement, when1.Left, CiPriority.CondAnd); // FIXME: side effect in every if
-			Write(" && ");
-			when1.Right.Accept(this, CiPriority.CondAnd);
-			if (parent > CiPriority.SelectCond)
-				WriteChar(')');
-		}
-		else
-			WriteEqual(statement.Value, value, parent, false); // FIXME: side effect in every if
-	}
-
-	void WriteIfCaseBody!(List<CiStatement#> body, bool doWhile)
-	{
-		int length = CiSwitch.LengthWithoutTrailingBreak(body);
-		if (doWhile && CiSwitch.HasEarlyBreak(body)) {
-			this.Indent++;
-			WriteNewLine();
-			Write("do ");
-			OpenBlock();
-			WriteFirstStatements(body, length);
-			CloseBlock();
-			WriteLine("while (0);");
-			this.Indent--;
-		}
-		else if (length != 1 || body[0] is CiIf) {
-			WriteChar(' ');
-			OpenBlock();
-			WriteFirstStatements(body, length);
-			CloseBlock();
-		}
-		else
-			WriteChild(body[0]);
-	}
-
-	protected void WriteSwitchAsIfs!(CiSwitch statement)
-	{
-		int gotoId;
+		WriteSwitchWhenVars(statement);
 		if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreakAndContinue(kase.Body))
 		 || CiSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
-			gotoId = this.SwitchesWithGoto.Count;
+			int gotoId = this.SwitchesWithGoto.Count;
 			this.SwitchesWithGoto.Add(statement);
-		}
-		else
-			gotoId = -1;
-		string op = "if (";
-		foreach (CiCase kase in statement.Cases) {
-			CiPriority parent = kase.Values.Count == 1 ? CiPriority.Argument : CiPriority.CondOr;
-			foreach (CiExpr value in kase.Values) {
-				Write(op);
-				WriteSwitchCaseCond(statement, value, parent);
-				op = " || ";
-			}
-			WriteChar(')');
-			WriteIfCaseBody(kase.Body, gotoId < 0);
-			op = "else if (";
-		}
-		if (statement.HasDefault()) {
-			Write("else");
-			WriteIfCaseBody(statement.DefaultBody, gotoId < 0);
-		}
-		if (gotoId >= 0) {
+			WriteSwitchAsIfs(statement, false);
 			Write("ciafterswitch");
 			VisitLiteralLong(gotoId);
 			WriteLine(": ;");
 		}
+		else
+			WriteSwitchAsIfs(statement, true);
 	}
 }

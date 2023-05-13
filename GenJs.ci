@@ -1119,38 +1119,28 @@ public class GenJsNoModule : GenBase
 		NotSupported(statement, "'lock'");
 	}
 
+	protected override void WriteSwitchCaseCond!(CiSwitch statement, CiExpr value, CiPriority parent)
+	{
+		if (value is CiVar def)
+			WriteIsVar(statement.Value, def, parent == CiPriority.CondAnd && def.Name != "_", parent); // FIXME: side effect in every if
+		else
+			base.WriteSwitchCaseCond(statement, value, parent);
+	}
+
 	void WriteTypeMatchingSwitch!(CiSwitch statement)
 	{
-		WriteSwitchWhenVars(statement, true);
+		WriteSwitchWhenVars(statement);
 		string op = "if (";
 		foreach (CiCase kase in statement.Cases) {
-			CiVar? caseVar = null;
+			CiPriority parent = kase.Values.Count == 1 ? CiPriority.Argument : CiPriority.CondOr;
 			foreach (CiExpr value in kase.Values) {
 				Write(op);
-				switch (value) {
-				case CiVar def:
-					WriteIsVar(statement.Value, def, false, CiPriority.CondOr); // FIXME: side effect in every if
-					if (def.Name != "_")
-						caseVar = def;
-					break;
-				case CiLiteralNull _:
-					statement.Value.Accept(this, CiPriority.Equality); // FIXME: side effect in every if
-					Write(" == null");
-					break;
-				case CiBinaryExpr when1 when when1.Op == CiToken.When:
-					assert when1.Left is CiVar whenVar;
-					WriteIsVar(statement.Value, whenVar, whenVar.Name != "_", CiPriority.CondAnd); // FIXME: side effect in every if
-					Write(" && ");
-					when1.Right.Accept(this, CiPriority.CondAnd);
-					break;
-				default:
-					assert false;
-				}
+				WriteSwitchCaseCond(statement, value, parent);
 				op = " || ";
 			}
 			Write(") ");
 			OpenBlock();
-			if (caseVar != null)
+			if (kase.Values[0] is CiVar caseVar && caseVar.Name != "_")
 				WriteVarCast(caseVar, statement.Value); // FIXME: side effect
 			WriteFirstStatements(kase.Body, CiSwitch.LengthWithoutTrailingBreak(kase.Body));
 			CloseBlock();

@@ -1637,7 +1637,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	void DefineVar!(CiExpr value)
+	protected void DefineVar!(CiExpr value)
 	{
 		if (value is CiVar def && def.Name != "_") {
 			WriteVar(def);
@@ -1645,7 +1645,11 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WriteSwitchWhenVars!(CiSwitch statement, bool whenOnly)
+	protected virtual void WriteSwitchCaseTypeVar!(CiExpr value)
+	{
+	}
+
+	protected void WriteSwitchWhenVars!(CiSwitch statement)
 	{
 		foreach (CiCase kase in statement.Cases) {
 			foreach (CiExpr value in kase.Values) {
@@ -1653,8 +1657,8 @@ public abstract class GenBase : CiVisitor
 					DefineVar(when1.Left);
 					WriteTemporaries(when1);
 				}
-				else if (!whenOnly)
-					DefineVar(value);
+				else
+					WriteSwitchCaseTypeVar(value);
 			}
 		}
 	}
@@ -1688,6 +1692,64 @@ public abstract class GenBase : CiVisitor
 		WriteLine(") {");
 		foreach (CiCase kase in statement.Cases)
 			WriteSwitchCase(statement, kase);
+	}
+
+	protected virtual void WriteSwitchCaseCond!(CiSwitch statement, CiExpr value, CiPriority parent)
+	{
+		if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
+			if (parent > CiPriority.SelectCond)
+				WriteChar('(');
+			WriteSwitchCaseCond(statement, when1.Left, CiPriority.CondAnd); // FIXME: side effect in every if
+			Write(" && ");
+			when1.Right.Accept(this, CiPriority.CondAnd);
+			if (parent > CiPriority.SelectCond)
+				WriteChar(')');
+		}
+		else
+			WriteEqual(statement.Value, value, parent, false); // FIXME: side effect in every if
+	}
+
+	void WriteIfCaseBody!(List<CiStatement#> body, bool doWhile)
+	{
+		int length = CiSwitch.LengthWithoutTrailingBreak(body);
+		if (doWhile && CiSwitch.HasEarlyBreak(body)) {
+			this.Indent++;
+			WriteNewLine();
+			Write("do ");
+			OpenBlock();
+			WriteFirstStatements(body, length);
+			CloseBlock();
+			WriteLine("while (0);");
+			this.Indent--;
+		}
+		else if (length != 1 || body[0] is CiIf) {
+			WriteChar(' ');
+			OpenBlock();
+			WriteFirstStatements(body, length);
+			CloseBlock();
+		}
+		else
+			WriteChild(body[0]);
+	}
+
+	protected void WriteSwitchAsIfs!(CiSwitch statement, bool doWhile)
+	{
+		string op = "if (";
+		foreach (CiCase kase in statement.Cases) {
+			CiPriority parent = kase.Values.Count == 1 ? CiPriority.Argument : CiPriority.CondOr;
+			foreach (CiExpr value in kase.Values) {
+				Write(op);
+				WriteSwitchCaseCond(statement, value, parent);
+				op = " || ";
+			}
+			WriteChar(')');
+			WriteIfCaseBody(kase.Body, doWhile);
+			op = "else if (";
+		}
+		if (statement.HasDefault()) {
+			Write("else");
+			WriteIfCaseBody(statement.DefaultBody, doWhile);
+		}
 	}
 
 	public override void VisitSwitch!(CiSwitch statement)
