@@ -437,7 +437,7 @@ public class GenCpp : GenCCpp
 		if (IsClassPtr(expr.Type)) {
 			if (expr is CiSymbolReference symbol
 			 && symbol.Symbol.Parent is CiForeach loop
-			 && loop.Collection.Type.AsClassType().GetElementType() is CiStorageType)
+			 && (symbol.Symbol == loop.GetVar() ? loop.Collection.Type.AsClassType().TypeArg0 : loop.Collection.Type.AsClassType().TypeArg1) is CiStorageType)
 				return false; // C++ reference
 			return true; // C++ pointer
 		}
@@ -501,12 +501,12 @@ public class GenCpp : GenCCpp
 
 	void WriteCollectionObject!(CiExpr obj, CiPriority priority)
 	{
-		if (obj.Type is CiStorageType)
-			obj.Accept(this, priority);
-		else {
+		if (IsCppPtr(obj)) {
 			WriteChar('*');
 			obj.Accept(this, CiPriority.Primary);
 		}
+		else
+			obj.Accept(this, priority);
 	}
 
 	void WriteBeginEnd!(CiExpr obj)

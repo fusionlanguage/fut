@@ -12977,7 +12977,7 @@ namespace Foxoft.Ci
 		static bool IsCppPtr(CiExpr expr)
 		{
 			if (IsClassPtr(expr.Type)) {
-				if (expr is CiSymbolReference symbol && symbol.Symbol.Parent is CiForeach loop && loop.Collection.Type.AsClassType().GetElementType() is CiStorageType)
+				if (expr is CiSymbolReference symbol && symbol.Symbol.Parent is CiForeach loop && (symbol.Symbol == loop.GetVar() ? loop.Collection.Type.AsClassType().TypeArg0 : loop.Collection.Type.AsClassType().TypeArg1) is CiStorageType)
 					return false;
 				return true;
 			}
@@ -13041,12 +13041,12 @@ namespace Foxoft.Ci
 
 		void WriteCollectionObject(CiExpr obj, CiPriority priority)
 		{
-			if (obj.Type is CiStorageType)
-				obj.Accept(this, priority);
-			else {
+			if (IsCppPtr(obj)) {
 				WriteChar('*');
 				obj.Accept(this, CiPriority.Primary);
 			}
+			else
+				obj.Accept(this, priority);
 		}
 
 		void WriteBeginEnd(CiExpr obj)
