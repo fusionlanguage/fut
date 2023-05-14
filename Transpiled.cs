@@ -13908,7 +13908,9 @@ namespace Foxoft.Ci
 			WriteType(expr.First.Type, false);
 			Write(" &");
 			WriteName(expr.First);
-			Write(") { return ");
+			Write(") { ");
+			WriteTemporaries(expr.Body);
+			Write("return ");
 			expr.Body.Accept(this, CiPriority.Argument);
 			Write("; }");
 		}
