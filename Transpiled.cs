@@ -7827,6 +7827,8 @@ namespace Foxoft.Ci
 
 		public override void VisitFor(CiFor statement)
 		{
+			if (statement.Cond != null)
+				WriteTemporaries(statement.Cond);
 			Write("for (");
 			if (statement.Init != null)
 				statement.Init.Accept(this, CiPriority.Statement);
@@ -8649,6 +8651,7 @@ namespace Foxoft.Ci
 		protected override void WriteAssert(CiAssert statement)
 		{
 			if (statement.CompletesNormally()) {
+				WriteTemporaries(statement.Cond);
 				IncludeAssert();
 				Write("assert(");
 				if (statement.Message == null)

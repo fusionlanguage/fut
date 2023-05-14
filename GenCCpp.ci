@@ -167,6 +167,7 @@ public abstract class GenCCpp : GenCCppD
 	protected override void WriteAssert!(CiAssert statement)
 	{
 		if (statement.CompletesNormally()) {
+			WriteTemporaries(statement.Cond);
 			IncludeAssert();
 			Write("assert(");
 			if (statement.Message == null)
