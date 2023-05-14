@@ -7921,20 +7921,6 @@ namespace Foxoft.Ci
 		{
 		}
 
-		protected void WriteSwitchWhenVars(CiSwitch statement)
-		{
-			foreach (CiCase kase in statement.Cases) {
-				foreach (CiExpr value in kase.Values) {
-					if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
-						DefineVar(when1.Left);
-						WriteTemporaries(when1);
-					}
-					else
-						WriteSwitchCaseTypeVar(value);
-				}
-			}
-		}
-
 		protected virtual void WriteSwitchValue(CiExpr expr)
 		{
 			expr.Accept(this, CiPriority.Argument);
@@ -7981,7 +7967,7 @@ namespace Foxoft.Ci
 				WriteEqual(statement.Value, value, parent, false);
 		}
 
-		void WriteIfCaseBody(List<CiStatement> body, bool doWhile)
+		protected virtual void WriteIfCaseBody(List<CiStatement> body, bool doWhile, CiSwitch statement, CiCase kase)
 		{
 			int length = CiSwitch.LengthWithoutTrailingBreak(body);
 			if (doWhile && CiSwitch.HasEarlyBreak(body)) {
@@ -8006,6 +7992,16 @@ namespace Foxoft.Ci
 
 		protected void WriteSwitchAsIfs(CiSwitch statement, bool doWhile)
 		{
+			foreach (CiCase kase in statement.Cases) {
+				foreach (CiExpr value in kase.Values) {
+					if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
+						DefineVar(when1.Left);
+						WriteTemporaries(when1);
+					}
+					else
+						WriteSwitchCaseTypeVar(value);
+				}
+			}
 			string op = "if (";
 			foreach (CiCase kase in statement.Cases) {
 				CiPriority parent = kase.Values.Count == 1 ? CiPriority.Argument : CiPriority.CondOr;
@@ -8015,12 +8011,12 @@ namespace Foxoft.Ci
 					op = " || ";
 				}
 				WriteChar(')');
-				WriteIfCaseBody(kase.Body, doWhile);
+				WriteIfCaseBody(kase.Body, doWhile, statement, kase);
 				op = "else if (";
 			}
 			if (statement.HasDefault()) {
 				Write("else");
-				WriteIfCaseBody(statement.DefaultBody, doWhile);
+				WriteIfCaseBody(statement.DefaultBody, doWhile, statement, null);
 			}
 		}
 
@@ -8495,7 +8491,6 @@ namespace Foxoft.Ci
 
 		protected void WriteSwitchAsIfsWithGoto(CiSwitch statement)
 		{
-			WriteSwitchWhenVars(statement);
 			if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreakAndContinue(kase.Body)) || CiSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
 				int gotoId = this.SwitchesWithGoto.Count;
 				this.SwitchesWithGoto.Add(statement);
@@ -19169,47 +19164,33 @@ namespace Foxoft.Ci
 				base.WriteSwitchCaseCond(statement, value, parent);
 		}
 
-		void WriteTypeMatchingSwitch(CiSwitch statement)
+		protected override void WriteIfCaseBody(List<CiStatement> body, bool doWhile, CiSwitch statement, CiCase kase)
 		{
-			WriteSwitchWhenVars(statement);
-			string op = "if (";
-			foreach (CiCase kase in statement.Cases) {
-				CiPriority parent = kase.Values.Count == 1 ? CiPriority.Argument : CiPriority.CondOr;
-				foreach (CiExpr value in kase.Values) {
-					Write(op);
-					WriteSwitchCaseCond(statement, value, parent);
-					op = " || ";
-				}
-				Write(") ");
+			if (kase != null && kase.Values[0] is CiVar caseVar && caseVar.Name != "_") {
+				WriteChar(' ');
 				OpenBlock();
-				if (kase.Values[0] is CiVar caseVar && caseVar.Name != "_")
-					WriteVarCast(caseVar, statement.Value);
+				WriteVarCast(caseVar, statement.Value);
 				WriteFirstStatements(kase.Body, CiSwitch.LengthWithoutTrailingBreak(kase.Body));
 				CloseBlock();
-				op = "else if (";
 			}
-			if (statement.HasDefault()) {
-				Write("else ");
-				OpenBlock();
-				WriteFirstStatements(statement.DefaultBody, CiSwitch.LengthWithoutTrailingBreak(statement.DefaultBody));
-				CloseBlock();
-			}
+			else
+				base.WriteIfCaseBody(body, doWhile, statement, kase);
 		}
 
 		public override void VisitSwitch(CiSwitch statement)
 		{
-			if (statement.IsTypeMatching()) {
+			if (statement.IsTypeMatching() || statement.HasWhen()) {
 				if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreak(kase.Body)) || CiSwitch.HasEarlyBreak(statement.DefaultBody)) {
 					Write("ciswitch");
 					VisitLiteralLong(this.SwitchesWithLabel.Count);
 					this.SwitchesWithLabel.Add(statement);
 					Write(": ");
 					OpenBlock();
-					WriteTypeMatchingSwitch(statement);
+					WriteSwitchAsIfs(statement, false);
 					CloseBlock();
 				}
 				else
-					WriteTypeMatchingSwitch(statement);
+					WriteSwitchAsIfs(statement, false);
 			}
 			else
 				base.VisitSwitch(statement);

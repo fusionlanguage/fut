@@ -1127,36 +1127,22 @@ public class GenJsNoModule : GenBase
 			base.WriteSwitchCaseCond(statement, value, parent);
 	}
 
-	void WriteTypeMatchingSwitch!(CiSwitch statement)
+	protected override void WriteIfCaseBody!(List<CiStatement#> body, bool doWhile, CiSwitch statement, CiCase? kase)
 	{
-		WriteSwitchWhenVars(statement);
-		string op = "if (";
-		foreach (CiCase kase in statement.Cases) {
-			CiPriority parent = kase.Values.Count == 1 ? CiPriority.Argument : CiPriority.CondOr;
-			foreach (CiExpr value in kase.Values) {
-				Write(op);
-				WriteSwitchCaseCond(statement, value, parent);
-				op = " || ";
-			}
-			Write(") ");
+		if (kase != null && kase.Values[0] is CiVar caseVar && caseVar.Name != "_") {
+			WriteChar(' ');
 			OpenBlock();
-			if (kase.Values[0] is CiVar caseVar && caseVar.Name != "_")
-				WriteVarCast(caseVar, statement.Value); // FIXME: side effect
+			WriteVarCast(caseVar, statement.Value); // FIXME: side effect
 			WriteFirstStatements(kase.Body, CiSwitch.LengthWithoutTrailingBreak(kase.Body));
 			CloseBlock();
-			op = "else if (";
 		}
-		if (statement.HasDefault()) {
-			Write("else ");
-			OpenBlock();
-			WriteFirstStatements(statement.DefaultBody, CiSwitch.LengthWithoutTrailingBreak(statement.DefaultBody));
-			CloseBlock();
-		}
+		else
+			base.WriteIfCaseBody(body, doWhile, statement, kase);
 	}
 
 	public override void VisitSwitch!(CiSwitch statement)
 	{
-		if (statement.IsTypeMatching()) {
+		if (statement.IsTypeMatching() || statement.HasWhen()) {
 			if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreak(kase.Body))
 			 || CiSwitch.HasEarlyBreak(statement.DefaultBody)) {
 				Write("ciswitch");
@@ -1164,11 +1150,11 @@ public class GenJsNoModule : GenBase
 				this.SwitchesWithLabel.Add(statement);
 				Write(": ");
 				OpenBlock();
-				WriteTypeMatchingSwitch(statement);
+				WriteSwitchAsIfs(statement, false);
 				CloseBlock();
 			}
 			else
-				WriteTypeMatchingSwitch(statement);
+				WriteSwitchAsIfs(statement, false);
 		}
 		else
 			base.VisitSwitch(statement);
