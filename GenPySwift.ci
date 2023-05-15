@@ -242,7 +242,7 @@ public abstract class GenPySwift : GenBase
 		WriteLine("break");
 	}
 
-	protected virtual bool NeedCondXcrement(CiLoop loop) => loop.Cond != null;
+	protected virtual bool NeedCondXcrement!(CiLoop loop) => loop.Cond != null;
 
 	void EndBody!(CiLoop loop)
 	{

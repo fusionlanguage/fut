@@ -1531,13 +1531,15 @@ public class GenCpp : GenCCpp
 		}
 	}
 
+	static bool IsIsVar(CiExpr expr) => expr is CiBinaryExpr binary && binary.Op == CiToken.Is && binary.Right is CiVar;
+
 	bool HasVariables(CiStatement statement)
 	{
 		switch (statement) {
 		case CiVar _:
 			return true;
 		case CiAssert asrt:
-			return asrt.Cond is CiBinaryExpr binary && binary.Op == CiToken.Is && binary.Right is CiVar;
+			return IsIsVar(asrt.Cond);
 		case CiBlock _:
 		case CiBreak _:
 		case CiConst _:
@@ -1547,7 +1549,7 @@ public class GenCpp : GenCCpp
 		case CiThrow _:
 			return false;
 		case CiIf ifStatement:
-			return HasTemporaries(ifStatement.Cond) && !EmbedIfWhileIsVar(ifStatement.Cond, false); // FIXME: mutator
+			return HasTemporaries(ifStatement.Cond) && !IsIsVar(ifStatement.Cond);
 		case CiLoop loop:
 			return loop.Cond != null && HasTemporaries(loop.Cond);
 		case CiReturn ret:

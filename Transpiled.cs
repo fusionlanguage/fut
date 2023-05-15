@@ -9324,16 +9324,21 @@ namespace Foxoft.Ci
 
 		static bool IsHeapAllocated(CiType type) => type.Id == CiId.StringStorageType || type is CiDynamicPtrType;
 
-		static bool NeedToDestruct(CiSymbol symbol)
+		static bool NeedToDestructType(CiType type)
 		{
-			CiType type = symbol.Type;
-			while (type is CiArrayStorageType array)
-				type = array.GetElementType();
 			if (IsHeapAllocated(type))
 				return true;
 			if (type is CiStorageType storage)
 				return NeedsDestructor(storage.Class) || storage.Class.TypeParameterCount > 0 || storage.Id == CiId.MatchClass || storage.Id == CiId.LockClass;
 			return false;
+		}
+
+		static bool NeedToDestruct(CiSymbol symbol)
+		{
+			CiType type = symbol.Type;
+			while (type is CiArrayStorageType array)
+				type = array.GetElementType();
+			return NeedToDestructType(type);
 		}
 
 		static bool NeedsDestructor(CiClass klass)
@@ -9427,6 +9432,11 @@ namespace Foxoft.Ci
 			default:
 				throw new NotImplementedException();
 			}
+		}
+
+		static bool HasListDestroy(CiType type)
+		{
+			return type is CiClassType klass && (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.StackClass) && NeedToDestructType(klass.GetElementType());
 		}
 
 		string GetListDestroy(CiType type)
@@ -9871,7 +9881,7 @@ namespace Foxoft.Ci
 		{
 			if (def.IsAssignableStorage())
 				return false;
-			return (def is CiField && (def.Value != null || IsHeapAllocated(def.Type.GetStorageType()) || (def.Type is CiClassType klass && (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.DictionaryClass || klass.Class.Id == CiId.SortedDictionaryClass)))) || GetThrowingMethod(def.Value) != null || (def.Type.GetStorageType() is CiStorageType storage && (storage.Class.Id == CiId.LockClass || NeedsConstructor(storage.Class))) || GetListDestroy(def.Type) != null || base.HasInitCode(def);
+			return (def is CiField && (def.Value != null || IsHeapAllocated(def.Type.GetStorageType()) || (def.Type is CiClassType klass && (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.DictionaryClass || klass.Class.Id == CiId.SortedDictionaryClass)))) || GetThrowingMethod(def.Value) != null || (def.Type.GetStorageType() is CiStorageType storage && (storage.Class.Id == CiId.LockClass || NeedsConstructor(storage.Class))) || HasListDestroy(def.Type) || base.HasInitCode(def);
 		}
 
 		CiPriority StartForwardThrow(CiMethod throwingMethod)
@@ -14057,13 +14067,15 @@ namespace Foxoft.Ci
 			}
 		}
 
+		static bool IsIsVar(CiExpr expr) => expr is CiBinaryExpr binary && binary.Op == CiToken.Is && binary.Right is CiVar;
+
 		bool HasVariables(CiStatement statement)
 		{
 			switch (statement) {
 			case CiVar _:
 				return true;
 			case CiAssert asrt:
-				return asrt.Cond is CiBinaryExpr binary && binary.Op == CiToken.Is && binary.Right is CiVar;
+				return IsIsVar(asrt.Cond);
 			case CiBlock _:
 			case CiBreak _:
 			case CiConst _:
@@ -14073,7 +14085,7 @@ namespace Foxoft.Ci
 			case CiThrow _:
 				return false;
 			case CiIf ifStatement:
-				return HasTemporaries(ifStatement.Cond) && !EmbedIfWhileIsVar(ifStatement.Cond, false);
+				return HasTemporaries(ifStatement.Cond) && !IsIsVar(ifStatement.Cond);
 			case CiLoop loop:
 				return loop.Cond != null && HasTemporaries(loop.Cond);
 			case CiReturn ret:

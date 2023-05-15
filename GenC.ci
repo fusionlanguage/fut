@@ -578,16 +578,21 @@ public class GenC : GenCCpp
 
 	static bool IsHeapAllocated(CiType type) => type.Id == CiId.StringStorageType || type is CiDynamicPtrType;
 
-	static bool NeedToDestruct(CiSymbol symbol)
+	static bool NeedToDestructType(CiType type)
 	{
-		CiType type = symbol.Type;
-		while (type is CiArrayStorageType array)
-			type = array.GetElementType();
 		if (IsHeapAllocated(type))
 			return true;
 		if (type is CiStorageType storage)
 			return NeedsDestructor(storage.Class) || storage.Class.TypeParameterCount > 0 /* built-in collections */ || storage.Id == CiId.MatchClass || storage.Id == CiId.LockClass;
 		return false;
+	}
+
+	static bool NeedToDestruct(CiSymbol symbol)
+	{
+		CiType type = symbol.Type;
+		while (type is CiArrayStorageType array)
+			type = array.GetElementType();
+		return NeedToDestructType(type);
 	}
 
 	static bool NeedsDestructor(CiClass klass)
@@ -684,7 +689,14 @@ public class GenC : GenCCpp
 		}
 	}
 
-	string? GetListDestroy(CiType type)
+	static bool HasListDestroy(CiType type)
+	{
+		return type is CiClassType klass
+			&& (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.StackClass)
+			&& NeedToDestructType(klass.GetElementType());
+	}
+
+	string? GetListDestroy!(CiType type)
 	{
 		if (type is CiClassType klass
 		 && (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.StackClass)) {
@@ -1139,7 +1151,7 @@ public class GenC : GenCCpp
 		return (def is CiField && (def.Value != null || IsHeapAllocated(def.Type.GetStorageType()) || (def.Type is CiClassType klass && (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.DictionaryClass || klass.Class.Id == CiId.SortedDictionaryClass))))
 			|| GetThrowingMethod(def.Value) != null
 			|| (def.Type.GetStorageType() is CiStorageType storage && (storage.Class.Id == CiId.LockClass || NeedsConstructor(storage.Class)))
-			|| GetListDestroy(def.Type) != null
+			|| HasListDestroy(def.Type)
 			|| base.HasInitCode(def);
 	}
 
