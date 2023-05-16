@@ -273,8 +273,6 @@ public class GenCs : GenTyped
 			}
 			break;
 		default:
-			if (type.Id == CiId.RegexOptionsEnum)
-				Include("System.Text.RegularExpressions");
 			Write(type.Name);
 			break;
 		}
@@ -832,6 +830,12 @@ public class GenCs : GenTyped
 		enu.AcceptValues(this);
 		WriteNewLine();
 		CloseBlock();
+	}
+
+	protected override void WriteRegexOptionsEnum!(CiProgram program)
+	{
+		if (program.RegexOptionsEnum)
+			Include("System.Text.RegularExpressions");
 	}
 
 	protected override void WriteConst!(CiConst konst)

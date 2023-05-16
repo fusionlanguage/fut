@@ -2997,22 +2997,23 @@ namespace Foxoft.Ci
 			CiClass environmentClass = CiClass.New(CiCallType.Static, CiId.None, "Environment");
 			environmentClass.Add(CiMethod.NewStatic(this.StringNullablePtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", CiVar.New(this.StringPtrType, "name")));
 			Add(environmentClass);
-			CiEnumFlags regexOptionsEnum = NewEnumFlags();
-			regexOptionsEnum.Id = CiId.RegexOptionsEnum;
-			regexOptionsEnum.Name = "RegexOptions";
+			this.RegexOptionsEnum = NewEnumFlags();
+			this.RegexOptionsEnum.IsPublic = true;
+			this.RegexOptionsEnum.Id = CiId.RegexOptionsEnum;
+			this.RegexOptionsEnum.Name = "RegexOptions";
 			CiConst regexOptionsNone = NewConstLong("None", 0);
-			AddEnumValue(regexOptionsEnum, regexOptionsNone);
-			AddEnumValue(regexOptionsEnum, NewConstLong("IgnoreCase", 1));
-			AddEnumValue(regexOptionsEnum, NewConstLong("Multiline", 2));
-			AddEnumValue(regexOptionsEnum, NewConstLong("Singleline", 16));
-			Add(regexOptionsEnum);
+			AddEnumValue(this.RegexOptionsEnum, regexOptionsNone);
+			AddEnumValue(this.RegexOptionsEnum, NewConstLong("IgnoreCase", 1));
+			AddEnumValue(this.RegexOptionsEnum, NewConstLong("Multiline", 2));
+			AddEnumValue(this.RegexOptionsEnum, NewConstLong("Singleline", 16));
+			Add(this.RegexOptionsEnum);
 			CiClass regexClass = CiClass.New(CiCallType.Sealed, CiId.RegexClass, "Regex");
 			regexClass.Add(CiMethod.NewStatic(this.StringStorageType, CiId.RegexEscape, "Escape", CiVar.New(this.StringPtrType, "str")));
-			regexClass.Add(CiMethodGroup.New(CiMethod.NewStatic(this.BoolType, CiId.RegexIsMatchStr, "IsMatch", CiVar.New(this.StringPtrType, "input"), CiVar.New(this.StringPtrType, "pattern"), CiVar.New(regexOptionsEnum, "options", regexOptionsNone)), CiMethod.New(CiVisibility.Public, this.BoolType, CiId.RegexIsMatchRegex, "IsMatch", CiVar.New(this.StringPtrType, "input"))));
-			regexClass.Add(CiMethod.NewStatic(new CiDynamicPtrType { Class = regexClass }, CiId.RegexCompile, "Compile", CiVar.New(this.StringPtrType, "pattern"), CiVar.New(regexOptionsEnum, "options", regexOptionsNone)));
+			regexClass.Add(CiMethodGroup.New(CiMethod.NewStatic(this.BoolType, CiId.RegexIsMatchStr, "IsMatch", CiVar.New(this.StringPtrType, "input"), CiVar.New(this.StringPtrType, "pattern"), CiVar.New(this.RegexOptionsEnum, "options", regexOptionsNone)), CiMethod.New(CiVisibility.Public, this.BoolType, CiId.RegexIsMatchRegex, "IsMatch", CiVar.New(this.StringPtrType, "input"))));
+			regexClass.Add(CiMethod.NewStatic(new CiDynamicPtrType { Class = regexClass }, CiId.RegexCompile, "Compile", CiVar.New(this.StringPtrType, "pattern"), CiVar.New(this.RegexOptionsEnum, "options", regexOptionsNone)));
 			Add(regexClass);
 			CiClass matchClass = CiClass.New(CiCallType.Sealed, CiId.MatchClass, "Match");
-			matchClass.Add(CiMethodGroup.New(CiMethod.NewMutator(CiVisibility.Public, this.BoolType, CiId.MatchFindStr, "Find", CiVar.New(this.StringPtrType, "input"), CiVar.New(this.StringPtrType, "pattern"), CiVar.New(regexOptionsEnum, "options", regexOptionsNone)), CiMethod.NewMutator(CiVisibility.Public, this.BoolType, CiId.MatchFindRegex, "Find", CiVar.New(this.StringPtrType, "input"), CiVar.New(new CiClassType { Class = regexClass }, "pattern"))));
+			matchClass.Add(CiMethodGroup.New(CiMethod.NewMutator(CiVisibility.Public, this.BoolType, CiId.MatchFindStr, "Find", CiVar.New(this.StringPtrType, "input"), CiVar.New(this.StringPtrType, "pattern"), CiVar.New(this.RegexOptionsEnum, "options", regexOptionsNone)), CiMethod.NewMutator(CiVisibility.Public, this.BoolType, CiId.MatchFindRegex, "Find", CiVar.New(this.StringPtrType, "input"), CiVar.New(new CiClassType { Class = regexClass }, "pattern"))));
 			matchClass.Add(CiProperty.New(this.IntType, CiId.MatchStart, "Start"));
 			matchClass.Add(CiProperty.New(this.IntType, CiId.MatchEnd, "End"));
 			matchClass.Add(CiMethod.New(CiVisibility.Public, this.StringPtrType, CiId.MatchGetCapture, "GetCapture", CiVar.New(this.UIntType, "group")));
@@ -3096,6 +3097,8 @@ namespace Foxoft.Ci
 		internal CiClass ArrayPtrClass = CiClass.New(CiCallType.Normal, CiId.ArrayPtrClass, "ArrayPtr", 1);
 
 		internal CiClass ArrayStorageClass = CiClass.New(CiCallType.Normal, CiId.ArrayStorageClass, "ArrayStorage", 1);
+
+		internal CiEnumFlags RegexOptionsEnum;
 
 		internal CiReadWriteClassType LockPtrType = new CiReadWriteClassType();
 
@@ -3193,6 +3196,8 @@ namespace Foxoft.Ci
 		internal readonly List<CiClass> Classes = new List<CiClass>();
 
 		internal readonly SortedDictionary<string, List<byte>> Resources = new SortedDictionary<string, List<byte>>();
+
+		internal bool RegexOptionsEnum = false;
 	}
 
 	public abstract class CiParser : CiLexer
@@ -4417,11 +4422,15 @@ namespace Foxoft.Ci
 					if (!nearMember.IsStatic() && (this.CurrentMethod == null || this.CurrentMethod.IsStatic()))
 						ReportError(expr, $"Cannot use instance member {expr.Name} from static context");
 				}
-				if (resolved is CiSymbolReference symbol && symbol.Symbol is CiVar v) {
-					if (v.Parent is CiFor loop)
-						loop.IsIteratorUsed = true;
-					else if (this.CurrentPureArguments.ContainsKey(v))
-						return this.CurrentPureArguments[v];
+				if (resolved is CiSymbolReference symbol) {
+					if (symbol.Symbol is CiVar v) {
+						if (v.Parent is CiFor loop)
+							loop.IsIteratorUsed = true;
+						else if (this.CurrentPureArguments.ContainsKey(v))
+							return this.CurrentPureArguments[v];
+					}
+					else if (symbol.Symbol.Id == CiId.RegexOptionsEnum)
+						this.Program.RegexOptionsEnum = true;
 				}
 				return resolved;
 			}
@@ -8146,6 +8155,12 @@ namespace Foxoft.Ci
 
 		protected abstract void WriteEnum(CiEnum enu);
 
+		protected virtual void WriteRegexOptionsEnum(CiProgram program)
+		{
+			if (program.RegexOptionsEnum)
+				WriteEnum(program.System.RegexOptionsEnum);
+		}
+
 		protected void StartClass(CiClass klass, string suffix, string extendsClause)
 		{
 			Write("class ");
@@ -8210,6 +8225,7 @@ namespace Foxoft.Ci
 
 		protected void WriteTypes(CiProgram program)
 		{
+			WriteRegexOptionsEnum(program);
 			for (CiSymbol type = program.First; type != null; type = type.Next) {
 				switch (type) {
 				case CiClass klass:
@@ -12219,6 +12235,7 @@ namespace Foxoft.Ci
 			Include("stdlib.h");
 			CreateImplementationFile(program, ".h");
 			WriteLibrary();
+			WriteRegexOptionsEnum(program);
 			WriteTypedefs(program, false);
 			CloseStringWriter();
 			CloseFile();
@@ -12566,6 +12583,7 @@ namespace Foxoft.Ci
 			}
 			CreateOutputFile();
 			WriteTopLevelNatives(program);
+			WriteRegexOptionsEnum(program);
 			WriteTypedefs(program, true);
 			foreach (CiClass klass in program.Classes)
 				WriteSignatures(klass, true);
@@ -14363,6 +14381,7 @@ namespace Foxoft.Ci
 			this.StringReplace = false;
 			OpenStringWriter();
 			OpenNamespace();
+			WriteRegexOptionsEnum(program);
 			for (CiSymbol type = program.First; type != null; type = type.Next) {
 				if (type is CiEnum enu)
 					WriteEnum(enu);
@@ -14685,8 +14704,6 @@ namespace Foxoft.Ci
 				}
 				break;
 			default:
-				if (type.Id == CiId.RegexOptionsEnum)
-					Include("System.Text.RegularExpressions");
 				Write(type.Name);
 				break;
 			}
@@ -15237,6 +15254,12 @@ namespace Foxoft.Ci
 			enu.AcceptValues(this);
 			WriteNewLine();
 			CloseBlock();
+		}
+
+		protected override void WriteRegexOptionsEnum(CiProgram program)
+		{
+			if (program.RegexOptionsEnum)
+				Include("System.Text.RegularExpressions");
 		}
 
 		protected override void WriteConst(CiConst konst)

@@ -1,0 +1,8 @@
+public class Test
+{
+	public static bool Run()
+	{
+		RegexOptions o = RegexOptions.IgnoreCase | RegexOptions.Multiline;
+		return o.HasFlag(RegexOptions.IgnoreCase);
+	}
+}

@@ -1874,6 +1874,12 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract void WriteEnum!(CiEnum enu);
 
+	protected virtual void WriteRegexOptionsEnum!(CiProgram program)
+	{
+		if (program.RegexOptionsEnum)
+			WriteEnum(program.System.RegexOptionsEnum);
+	}
+
 	protected void StartClass!(CiClass klass, string suffix, string extendsClause)
 	{
 		Write("class ");
@@ -1939,6 +1945,7 @@ public abstract class GenBase : CiVisitor
 
 	protected void WriteTypes!(CiProgram program)
 	{
+		WriteRegexOptionsEnum(program);
 		for (CiSymbol? type = program.First; type != null; type = type.Next) {
 			switch (type) {
 			case CiClass klass:

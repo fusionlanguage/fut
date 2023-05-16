@@ -1822,6 +1822,7 @@ public class GenCpp : GenCCpp
 		this.StringReplace = false;
 		OpenStringWriter();
 		OpenNamespace();
+		WriteRegexOptionsEnum(program);
 		for (CiSymbol? type = program.First; type != null; type = type.Next) {
 			if (type is CiEnum enu)
 				WriteEnum(enu);

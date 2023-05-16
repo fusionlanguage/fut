@@ -1363,6 +1363,7 @@ public class CiSystem : CiScope
 	internal CiType# PrintableType = new CiPrintableType { Name = "printable" };
 	internal CiClass# ArrayPtrClass = CiClass.New(CiCallType.Normal, CiId.ArrayPtrClass, "ArrayPtr", 1);
 	internal CiClass# ArrayStorageClass = CiClass.New(CiCallType.Normal, CiId.ArrayStorageClass, "ArrayStorage", 1);
+	internal CiEnumFlags# RegexOptionsEnum;
 	internal CiReadWriteClassType# LockPtrType = new CiReadWriteClassType();
 
 	internal CiLiteralLong# NewLiteralLong(long value, int line = 0)
@@ -1567,26 +1568,27 @@ public class CiSystem : CiScope
 		CiClass# environmentClass = CiClass.New(CiCallType.Static, CiId.None, "Environment");
 		environmentClass.Add(CiMethod.NewStatic(StringNullablePtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", CiVar.New(StringPtrType, "name")));
 		Add(environmentClass);
-		CiEnumFlags# regexOptionsEnum = NewEnumFlags();
-		regexOptionsEnum.Id = CiId.RegexOptionsEnum;
-		regexOptionsEnum.Name = "RegexOptions";
+		RegexOptionsEnum = NewEnumFlags();
+		RegexOptionsEnum.IsPublic = true;
+		RegexOptionsEnum.Id = CiId.RegexOptionsEnum;
+		RegexOptionsEnum.Name = "RegexOptions";
 		CiConst# regexOptionsNone = NewConstLong("None", 0);
-		AddEnumValue(regexOptionsEnum, regexOptionsNone);
-		AddEnumValue(regexOptionsEnum, NewConstLong("IgnoreCase", 1));
-		AddEnumValue(regexOptionsEnum, NewConstLong("Multiline", 2));
-		AddEnumValue(regexOptionsEnum, NewConstLong("Singleline", 16));
-		Add(regexOptionsEnum);
+		AddEnumValue(RegexOptionsEnum, regexOptionsNone);
+		AddEnumValue(RegexOptionsEnum, NewConstLong("IgnoreCase", 1));
+		AddEnumValue(RegexOptionsEnum, NewConstLong("Multiline", 2));
+		AddEnumValue(RegexOptionsEnum, NewConstLong("Singleline", 16));
+		Add(RegexOptionsEnum);
 		CiClass# regexClass = CiClass.New(CiCallType.Sealed, CiId.RegexClass, "Regex");
 		regexClass.Add(CiMethod.NewStatic(StringStorageType, CiId.RegexEscape, "Escape", CiVar.New(StringPtrType, "str")));
 		regexClass.Add(CiMethodGroup.New(
-				CiMethod.NewStatic(BoolType, CiId.RegexIsMatchStr, "IsMatch", CiVar.New(StringPtrType, "input"), CiVar.New(StringPtrType, "pattern"), CiVar.New(regexOptionsEnum, "options", regexOptionsNone)),
-				CiMethod.New(CiVisibility.Public, BoolType, CiId.RegexIsMatchRegex, "IsMatch", CiVar.New(StringPtrType, "input"))));
-		regexClass.Add(CiMethod.NewStatic(new CiDynamicPtrType { Class = regexClass }, CiId.RegexCompile, "Compile", CiVar.New(StringPtrType, "pattern"), CiVar.New(regexOptionsEnum, "options", regexOptionsNone)));
+			CiMethod.NewStatic(BoolType, CiId.RegexIsMatchStr, "IsMatch", CiVar.New(StringPtrType, "input"), CiVar.New(StringPtrType, "pattern"), CiVar.New(RegexOptionsEnum, "options", regexOptionsNone)),
+			CiMethod.New(CiVisibility.Public, BoolType, CiId.RegexIsMatchRegex, "IsMatch", CiVar.New(StringPtrType, "input"))));
+		regexClass.Add(CiMethod.NewStatic(new CiDynamicPtrType { Class = regexClass }, CiId.RegexCompile, "Compile", CiVar.New(StringPtrType, "pattern"), CiVar.New(RegexOptionsEnum, "options", regexOptionsNone)));
 		Add(regexClass);
 		CiClass# matchClass = CiClass.New(CiCallType.Sealed, CiId.MatchClass, "Match");
 		matchClass.Add(CiMethodGroup.New(
-				CiMethod.NewMutator(CiVisibility.Public, BoolType, CiId.MatchFindStr, "Find", CiVar.New(StringPtrType, "input"), CiVar.New(StringPtrType, "pattern"), CiVar.New(regexOptionsEnum, "options", regexOptionsNone)),
-				CiMethod.NewMutator(CiVisibility.Public, BoolType, CiId.MatchFindRegex, "Find", CiVar.New(StringPtrType, "input"), CiVar.New(new CiClassType { Class = regexClass }, "pattern"))));
+			CiMethod.NewMutator(CiVisibility.Public, BoolType, CiId.MatchFindStr, "Find", CiVar.New(StringPtrType, "input"), CiVar.New(StringPtrType, "pattern"), CiVar.New(RegexOptionsEnum, "options", regexOptionsNone)),
+			CiMethod.NewMutator(CiVisibility.Public, BoolType, CiId.MatchFindRegex, "Find", CiVar.New(StringPtrType, "input"), CiVar.New(new CiClassType { Class = regexClass }, "pattern"))));
 		matchClass.Add(CiProperty.New(IntType, CiId.MatchStart, "Start"));
 		matchClass.Add(CiProperty.New(IntType, CiId.MatchEnd, "End"));
 		matchClass.Add(CiMethod.New(CiVisibility.Public, StringPtrType, CiId.MatchGetCapture, "GetCapture", CiVar.New(UIntType, "group")));
@@ -1597,8 +1599,8 @@ public class CiSystem : CiScope
 		CiFloatingType# floatIntType = new CiFloatingType { Id = CiId.FloatIntType, Name = "float" };
 		CiClass# mathClass = CiClass.New(CiCallType.Static, CiId.None, "Math");
 		mathClass.Add(CiMethodGroup.New(
-				CiMethod.NewStatic(IntType, CiId.MathAbs, "Abs", CiVar.New(LongType, "a")),
-				CiMethod.NewStatic(FloatType, CiId.MathAbs, "Abs", CiVar.New(DoubleType, "a"))));
+			CiMethod.NewStatic(IntType, CiId.MathAbs, "Abs", CiVar.New(LongType, "a")),
+			CiMethod.NewStatic(FloatType, CiId.MathAbs, "Abs", CiVar.New(DoubleType, "a"))));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Acos", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Asin", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Atan", CiVar.New(DoubleType, "a")));
@@ -1606,8 +1608,8 @@ public class CiSystem : CiScope
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Cbrt", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethod.NewStatic(floatIntType, CiId.MathCeiling, "Ceiling", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethodGroup.New(
-				CiMethod.NewStatic(IntType, CiId.MathClamp, "Clamp", CiVar.New(LongType, "value"), CiVar.New(LongType, "min"), CiVar.New(LongType, "max")),
-				CiMethod.NewStatic(FloatType, CiId.MathClamp, "Clamp", CiVar.New(DoubleType, "value"), CiVar.New(DoubleType, "min"), CiVar.New(DoubleType, "max"))));
+			CiMethod.NewStatic(IntType, CiId.MathClamp, "Clamp", CiVar.New(LongType, "value"), CiVar.New(LongType, "min"), CiVar.New(LongType, "max")),
+			CiMethod.NewStatic(FloatType, CiId.MathClamp, "Clamp", CiVar.New(DoubleType, "value"), CiVar.New(DoubleType, "min"), CiVar.New(DoubleType, "max"))));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Cos", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Cosh", CiVar.New(DoubleType, "a")));
 		mathClass.Add(NewConstDouble("E", Math.E));
@@ -1621,11 +1623,11 @@ public class CiSystem : CiScope
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathLog2, "Log2", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Log10", CiVar.New(DoubleType, "a")));
 		mathClass.Add(CiMethodGroup.New(
-				CiMethod.NewStatic(IntType, CiId.MathMaxInt, "Max", CiVar.New(LongType, "a"), CiVar.New(LongType, "b")),
-				CiMethod.NewStatic(FloatType, CiId.MathMaxDouble, "Max", CiVar.New(DoubleType, "a"), CiVar.New(DoubleType, "b"))));
+			CiMethod.NewStatic(IntType, CiId.MathMaxInt, "Max", CiVar.New(LongType, "a"), CiVar.New(LongType, "b")),
+			CiMethod.NewStatic(FloatType, CiId.MathMaxDouble, "Max", CiVar.New(DoubleType, "a"), CiVar.New(DoubleType, "b"))));
 		mathClass.Add(CiMethodGroup.New(
-				CiMethod.NewStatic(IntType, CiId.MathMinInt, "Min", CiVar.New(LongType, "a"), CiVar.New(LongType, "b")),
-				CiMethod.NewStatic(FloatType, CiId.MathMinDouble, "Min", CiVar.New(DoubleType, "a"), CiVar.New(DoubleType, "b"))));
+			CiMethod.NewStatic(IntType, CiId.MathMinInt, "Min", CiVar.New(LongType, "a"), CiVar.New(LongType, "b")),
+			CiMethod.NewStatic(FloatType, CiId.MathMinDouble, "Min", CiVar.New(DoubleType, "a"), CiVar.New(DoubleType, "b"))));
 		mathClass.Add(CiStaticProperty.New(FloatType, CiId.MathNaN, "NaN"));
 		mathClass.Add(CiStaticProperty.New(FloatType, CiId.MathNegativeInfinity, "NegativeInfinity"));
 		mathClass.Add(NewConstDouble("PI", Math.PI));
@@ -1654,4 +1656,5 @@ public class CiProgram : CiScope
 	internal List<string()>() TopLevelNatives;
 	internal List<CiClass!>() Classes;
 	internal SortedDictionary<string(), List<byte>()>() Resources;
+	internal bool RegexOptionsEnum = false;
 }

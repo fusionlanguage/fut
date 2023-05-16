@@ -355,6 +355,7 @@ public class GenCl : GenC
 
 		CreateOutputFile();
 		WriteTopLevelNatives(program);
+		WriteRegexOptionsEnum(program);
 		WriteTypedefs(program, true);
 		foreach (CiClass klass in program.Classes)
 			WriteSignatures(klass, true);

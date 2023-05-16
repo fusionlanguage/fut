@@ -198,12 +198,15 @@ public class CiSema
 				 && (this.CurrentMethod == null || this.CurrentMethod.IsStatic()))
 					ReportError(expr, $"Cannot use instance member {expr.Name} from static context");
 			}
-			if (resolved is CiSymbolReference symbol
-			 && symbol.Symbol is CiVar v) {
-				if (v.Parent is CiFor! loop)
-					loop.IsIteratorUsed = true;
-				else if (this.CurrentPureArguments.ContainsKey(v)) // TryGetValue
-					return this.CurrentPureArguments[v];
+			if (resolved is CiSymbolReference symbol) {
+				if (symbol.Symbol is CiVar v) {
+					if (v.Parent is CiFor! loop)
+						loop.IsIteratorUsed = true;
+					else if (this.CurrentPureArguments.ContainsKey(v)) // TryGetValue
+						return this.CurrentPureArguments[v];
+				}
+				else if (symbol.Symbol.Id == CiId.RegexOptionsEnum)
+					this.Program.RegexOptionsEnum = true;
 			}
 			return resolved;
 		}
