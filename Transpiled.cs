@@ -14592,6 +14592,8 @@ namespace Foxoft.Ci
 			case CiVisibility.Public:
 				Write("public ");
 				break;
+			default:
+				throw new NotImplementedException();
 			}
 		}
 
@@ -15672,11 +15674,14 @@ namespace Foxoft.Ci
 			case CiVisibility.Private:
 				Write("private ");
 				break;
+			case CiVisibility.Internal:
+			case CiVisibility.Public:
+				break;
 			case CiVisibility.Protected:
 				Write("protected ");
 				break;
-			case CiVisibility.Public:
-				break;
+			default:
+				throw new NotImplementedException();
 			}
 		}
 
@@ -17075,6 +17080,8 @@ namespace Foxoft.Ci
 			case CiVisibility.Public:
 				Write("public ");
 				break;
+			default:
+				throw new NotImplementedException();
 			}
 		}
 
@@ -19590,6 +19597,8 @@ namespace Foxoft.Ci
 			case CiVisibility.Public:
 				Write("public ");
 				break;
+			default:
+				throw new NotImplementedException();
 			}
 		}
 
@@ -21557,6 +21566,8 @@ namespace Foxoft.Ci
 			case CiVisibility.Public:
 				Write("public ");
 				break;
+			default:
+				throw new NotImplementedException();
 			}
 		}
 

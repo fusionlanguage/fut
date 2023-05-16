@@ -221,6 +221,8 @@ public class GenTs : GenJs
 		case CiVisibility.Public:
 			Write("public ");
 			break;
+		default:
+			assert false;
 		}
 	}
 

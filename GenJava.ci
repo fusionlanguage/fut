@@ -214,6 +214,8 @@ public class GenJava : GenTyped
 		case CiVisibility.Public:
 			Write("public ");
 			break;
+		default:
+			assert false;
 		}
 	}
 

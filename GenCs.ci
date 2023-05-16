@@ -161,6 +161,8 @@ public class GenCs : GenTyped
 		case CiVisibility.Public:
 			Write("public ");
 			break;
+		default:
+			assert false;
 		}
 	}
 

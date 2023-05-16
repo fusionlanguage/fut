@@ -306,11 +306,14 @@ public class GenD : GenCCppD
 		case CiVisibility.Private:
 			Write("private ");
 			break;
+		case CiVisibility.Internal:
+		case CiVisibility.Public:
+			break;
 		case CiVisibility.Protected:
 			Write("protected ");
 			break;
-		case CiVisibility.Public:
-			break;
+		default:
+			assert false;
 		}
 	}
 
