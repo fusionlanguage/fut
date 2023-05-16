@@ -13595,7 +13595,7 @@ namespace Foxoft.Ci
 				break;
 			case CiId.StringWriterToString:
 				StartMethodCall(obj);
-				Write("view()");
+				Write("str()");
 				break;
 			case CiId.UTF8GetByteCount:
 				if (args[0] is CiLiteral) {
