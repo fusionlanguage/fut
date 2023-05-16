@@ -2,7 +2,7 @@ public class Test
 {
 	public static bool Run()
 	{
-		RegexOptions o = RegexOptions.IgnoreCase | RegexOptions.Multiline;
+		RegexOptions o = RegexOptions.IgnoreCase | RegexOptions.Multiline; //FAIL: swift TODO
 		return o.HasFlag(RegexOptions.IgnoreCase);
 	}
 }
