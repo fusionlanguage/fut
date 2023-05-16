@@ -21000,7 +21000,7 @@ namespace Foxoft.Ci
 			return expr.Right;
 		}
 
-		void WriteAssign(CiBinaryExpr expr, CiExpr right)
+		void WriteSwiftAssign(CiBinaryExpr expr, CiExpr right)
 		{
 			expr.Left.Accept(this, CiPriority.Assign);
 			WriteChar(' ');
@@ -21056,7 +21056,7 @@ namespace Foxoft.Ci
 			case CiToken.ModAssign:
 			case CiToken.ShiftLeftAssign:
 			case CiToken.ShiftRightAssign:
-				WriteAssign(expr, WriteAssignNested(expr));
+				WriteSwiftAssign(expr, WriteAssignNested(expr));
 				break;
 			case CiToken.AndAssign:
 				right = WriteAssignNested(expr);
@@ -21078,7 +21078,7 @@ namespace Foxoft.Ci
 				else if (expr.Type is CiEnumFlags)
 					WriteEnumFlagsAnd(expr.Left, "formIntersection", "subtract", right);
 				else
-					WriteAssign(expr, right);
+					WriteSwiftAssign(expr, right);
 				break;
 			case CiToken.OrAssign:
 				right = WriteAssignNested(expr);
@@ -21094,7 +21094,7 @@ namespace Foxoft.Ci
 				else if (expr.Type is CiEnumFlags)
 					WriteMethodCall(expr.Left, "formUnion", right);
 				else
-					WriteAssign(expr, right);
+					WriteSwiftAssign(expr, right);
 				break;
 			case CiToken.XorAssign:
 				right = WriteAssignNested(expr);
@@ -21108,7 +21108,7 @@ namespace Foxoft.Ci
 				else if (expr.Type is CiEnumFlags)
 					WriteMethodCall(expr.Left, "formSymmetricDifference", right);
 				else
-					WriteAssign(expr, right);
+					WriteSwiftAssign(expr, right);
 				break;
 			default:
 				base.VisitBinaryExpr(expr, parent);
