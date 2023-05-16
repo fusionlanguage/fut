@@ -9436,13 +9436,13 @@ namespace Foxoft.Ci
 
 		static bool HasListDestroy(CiType type)
 		{
-			return type is CiClassType klass && (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.StackClass) && NeedToDestructType(klass.GetElementType());
+			return type is CiStorageType list && (list.Class.Id == CiId.ListClass || list.Class.Id == CiId.StackClass) && NeedToDestructType(list.GetElementType());
 		}
 
 		string GetListDestroy(CiType type)
 		{
-			if (type is CiClassType klass && (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.StackClass)) {
-				CiType elementType = klass.GetElementType();
+			if (type is CiClassType list && (list.Class.Id == CiId.ListClass || list.Class.Id == CiId.StackClass)) {
+				CiType elementType = list.GetElementType();
 				if (elementType.Id == CiId.StringStorageType) {
 					this.ListFrees["String"] = "free(*(void **) ptr)";
 					return "CiList_FreeString";
