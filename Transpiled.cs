@@ -9328,8 +9328,21 @@ namespace Foxoft.Ci
 		{
 			if (IsHeapAllocated(type))
 				return true;
-			if (type is CiStorageType storage)
-				return NeedsDestructor(storage.Class) || storage.Class.TypeParameterCount > 0 || storage.Id == CiId.MatchClass || storage.Id == CiId.LockClass;
+			if (type is CiStorageType storage) {
+				switch (storage.Class.Id) {
+				case CiId.ListClass:
+				case CiId.StackClass:
+				case CiId.HashSetClass:
+				case CiId.SortedSetClass:
+				case CiId.DictionaryClass:
+				case CiId.SortedDictionaryClass:
+				case CiId.MatchClass:
+				case CiId.LockClass:
+					return true;
+				default:
+					return NeedsDestructor(storage.Class);
+				}
+			}
 			return false;
 		}
 
@@ -9432,48 +9445,6 @@ namespace Foxoft.Ci
 			default:
 				throw new NotImplementedException();
 			}
-		}
-
-		static bool HasListDestroy(CiType type)
-		{
-			return type is CiStorageType list && (list.Class.Id == CiId.ListClass || list.Class.Id == CiId.StackClass) && NeedToDestructType(list.GetElementType());
-		}
-
-		string GetListDestroy(CiType type)
-		{
-			if (type is CiClassType list && (list.Class.Id == CiId.ListClass || list.Class.Id == CiId.StackClass)) {
-				CiType elementType = list.GetElementType();
-				if (elementType.Id == CiId.StringStorageType) {
-					this.ListFrees["String"] = "free(*(void **) ptr)";
-					return "CiList_FreeString";
-				}
-				if (elementType is CiDynamicPtrType) {
-					this.SharedRelease = true;
-					this.ListFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
-					return "CiList_FreeShared";
-				}
-				if (elementType is CiStorageType storage) {
-					switch (storage.Class.Id) {
-					case CiId.ListClass:
-					case CiId.StackClass:
-						this.ListFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
-						return "CiList_FreeList";
-					case CiId.HashSetClass:
-					case CiId.DictionaryClass:
-						this.ListFrees["HashTable"] = "g_hash_table_unref(*(GHashTable **) ptr)";
-						return "CiList_FreeHashTable";
-					case CiId.SortedSetClass:
-					case CiId.SortedDictionaryClass:
-						this.ListFrees["Tree"] = "g_tree_unref(*(GTree **) ptr)";
-						return "CiList_FreeTree";
-					default:
-						if (NeedsDestructor(storage.Class))
-							return $"(GDestroyNotify) {storage.Class.Name}_Destruct";
-						break;
-					}
-				}
-			}
-			return null;
 		}
 
 		string GetDictionaryDestroy(CiType type)
@@ -9877,6 +9848,11 @@ namespace Foxoft.Ci
 			}
 		}
 
+		static bool HasListDestroy(CiType type)
+		{
+			return type is CiStorageType list && (list.Class.Id == CiId.ListClass || list.Class.Id == CiId.StackClass) && NeedToDestructType(list.GetElementType());
+		}
+
 		protected override bool HasInitCode(CiNamedValue def)
 		{
 			if (def.IsAssignableStorage())
@@ -10081,12 +10057,47 @@ namespace Foxoft.Ci
 					EndForwardThrow(throwingMethod);
 				}
 			}
-			string destroy = GetListDestroy(type);
-			if (destroy != null) {
+			if (HasListDestroy(type)) {
 				Write("g_array_set_clear_func(");
 				WriteArrayElement(def, nesting);
 				Write(", ");
-				Write(destroy);
+				switch (type.AsClassType().GetElementType()) {
+				case CiStringStorageType _:
+					this.ListFrees["String"] = "free(*(void **) ptr)";
+					Write("CiList_FreeString");
+					break;
+				case CiDynamicPtrType _:
+					this.SharedRelease = true;
+					this.ListFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
+					Write("CiList_FreeShared");
+					break;
+				case CiStorageType storage:
+					switch (storage.Class.Id) {
+					case CiId.ListClass:
+					case CiId.StackClass:
+						this.ListFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
+						Write("CiList_FreeList");
+						break;
+					case CiId.HashSetClass:
+					case CiId.DictionaryClass:
+						this.ListFrees["HashTable"] = "g_hash_table_unref(*(GHashTable **) ptr)";
+						Write("CiList_FreeHashTable");
+						break;
+					case CiId.SortedSetClass:
+					case CiId.SortedDictionaryClass:
+						this.ListFrees["Tree"] = "g_tree_unref(*(GTree **) ptr)";
+						Write("CiList_FreeTree");
+						break;
+					default:
+						Write("(GDestroyNotify) ");
+						WriteName(storage.Class);
+						Write("_Destruct");
+						break;
+					}
+					break;
+				default:
+					throw new NotImplementedException();
+				}
 				WriteLine(");");
 			}
 			while (--nesting >= 0)
