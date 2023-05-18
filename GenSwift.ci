@@ -451,6 +451,12 @@ public class GenSwift : GenPySwift
 			WriteMemberOp(obj, null);
 			Write("description");
 			break;
+		case CiId.EnumFromInt:
+			Write(method.Type.Name);
+			Write("(rawValue: ");
+			args[0].Accept(this, CiPriority.Argument);
+			WriteChar(')');
+			break;
 		case CiId.EnumHasFlag:
 			WriteMethodCall(obj, "contains", args[0]);
 			break;
@@ -1454,25 +1460,26 @@ public class GenSwift : GenPySwift
 			OpenBlock();
 			Dictionary<int, CiConst>() valueToConst;
 			for (CiSymbol? symbol = enu.First; symbol != null; symbol = symbol.Next) {
-				assert symbol is CiConst konst;
-				WriteDoc(konst.Documentation);
-				int i = konst.Value.IntValue();
-				if (valueToConst.ContainsKey(i)) {
-					Write("static let ");
-					WriteName(konst);
-					Write(" = ");
-					WriteName(valueToConst[i]);
-				}
-				else {
-					Write("case ");
-					WriteName(konst);
-					if (!(konst.Value is CiImplicitEnumValue)) {
+				if (symbol is CiConst konst) { // skip FromInt
+					WriteDoc(konst.Documentation);
+					int i = konst.Value.IntValue();
+					if (valueToConst.ContainsKey(i)) {
+						Write("static let ");
+						WriteName(konst);
 						Write(" = ");
-						VisitLiteralLong(i);
+						WriteName(valueToConst[i]);
 					}
-					valueToConst[i] = konst;
+					else {
+						Write("case ");
+						WriteName(konst);
+						if (!(konst.Value is CiImplicitEnumValue)) {
+							Write(" = ");
+							VisitLiteralLong(i);
+						}
+						valueToConst[i] = konst;
+					}
+					WriteNewLine();
 				}
-				WriteNewLine();
 			}
 		}
 		CloseBlock();

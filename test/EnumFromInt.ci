@@ -1,0 +1,13 @@
+enum Number
+{
+	One = 1,
+	Five = 5
+}
+
+public static class Test
+{
+	public static bool Run()
+	{
+		return Number.FromInt(1) == Number.One && Number.FromInt(5) == Number.Five;
+	}
+}

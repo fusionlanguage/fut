@@ -1311,11 +1311,8 @@ public abstract class GenBase : CiVisitor
 	protected RegexOptions GetRegexOptions(List<CiExpr#> args)
 	{
 		CiExpr expr = args.Last();
-		if (expr.Type is CiEnum) {
-			native { // TODO: Enum.FromInt
-				return (RegexOptions) expr.IntValue();
-			}
-		}
+		if (expr.Type is CiEnum)
+			return RegexOptions.FromInt(expr.IntValue());
 		return RegexOptions.None;
 	}
 

@@ -1804,6 +1804,9 @@ public class GenC : GenCCpp
 		case CiId.ClassToString:
 			WriteCCall(obj, method, args);
 			break;
+		case CiId.EnumFromInt:
+			WriteStaticCast(method.Type, args[0]);
+			break;
 		case CiId.EnumHasFlag:
 			WriteEnumHasFlag(obj, args, parent);
 			break;

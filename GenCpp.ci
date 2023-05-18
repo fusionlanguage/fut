@@ -723,6 +723,9 @@ public class GenCpp : GenCCpp
 			WriteName(method);
 			WriteArgsInParentheses(method, args);
 			break;
+		case CiId.EnumFromInt:
+			WriteStaticCast(method.Type, args[0]);
+			break;
 		case CiId.EnumHasFlag:
 			WriteEnumHasFlag(obj, args, parent);
 			break;

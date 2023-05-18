@@ -106,6 +106,7 @@ public enum CiId
 	MathNaN,
 	MathNegativeInfinity,
 	MathPositiveInfinity,
+	EnumFromInt,
 	EnumHasFlag,
 	IntTryParse,
 	LongTryParse,
@@ -1363,7 +1364,7 @@ public class CiSystem : CiScope
 	internal CiType# PrintableType = new CiPrintableType { Name = "printable" };
 	internal CiClass# ArrayPtrClass = CiClass.New(CiCallType.Normal, CiId.ArrayPtrClass, "ArrayPtr", 1);
 	internal CiClass# ArrayStorageClass = CiClass.New(CiCallType.Normal, CiId.ArrayStorageClass, "ArrayStorage", 1);
-	internal CiEnumFlags# RegexOptionsEnum;
+	internal CiEnum# RegexOptionsEnum;
 	internal CiReadWriteClassType# LockPtrType = new CiReadWriteClassType();
 
 	internal CiLiteralLong# NewLiteralLong(long value, int line = 0)
@@ -1396,10 +1397,12 @@ public class CiSystem : CiScope
 		return result != null ? result : PromoteIntegerTypes(left, right);
 	}
 
-	internal CiEnumFlags# NewEnumFlags()
+	internal CiEnum# NewEnum(bool flags)
 	{
-		CiEnumFlags# enu = new CiEnumFlags();
-		enu.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.EnumHasFlag, "HasFlag", CiVar.New(enu, "flag")));
+		CiEnum# enu = flags ? new CiEnumFlags() : new CiEnum();
+		enu.Add(CiMethod.NewStatic(enu, CiId.EnumFromInt, "FromInt", CiVar.New(IntType, "value")));
+		if (flags)
+			enu.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.EnumHasFlag, "HasFlag", CiVar.New(enu, "flag")));
 		return enu;
 	}
 
@@ -1568,7 +1571,7 @@ public class CiSystem : CiScope
 		CiClass# environmentClass = CiClass.New(CiCallType.Static, CiId.None, "Environment");
 		environmentClass.Add(CiMethod.NewStatic(StringNullablePtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", CiVar.New(StringPtrType, "name")));
 		Add(environmentClass);
-		RegexOptionsEnum = NewEnumFlags();
+		RegexOptionsEnum = NewEnum(true);
 		RegexOptionsEnum.IsPublic = true;
 		RegexOptionsEnum.Id = CiId.RegexOptionsEnum;
 		RegexOptionsEnum.Name = "RegexOptions";

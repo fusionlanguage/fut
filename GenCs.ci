@@ -431,6 +431,9 @@ public class GenCs : GenTyped
 	protected override void WriteCallExpr!(CiExpr? obj, CiMethod method, List<CiExpr#> args, CiPriority parent)
 	{
 		switch (method.Id) {
+		case CiId.EnumFromInt:
+			WriteStaticCast(method.Type, args[0]);
+			break;
 		case CiId.IntTryParse:
 		case CiId.LongTryParse:
 		case CiId.DoubleTryParse:

@@ -602,6 +602,9 @@ public class GenJava : GenTyped
 			WriteName(method);
 			WriteArgsInParentheses(method, args);
 			break;
+		case CiId.EnumFromInt:
+			args[0].Accept(this, parent);
+			break;
 		case CiId.EnumHasFlag:
 			WriteEnumHasFlag(obj, args, parent);
 			break;

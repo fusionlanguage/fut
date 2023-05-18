@@ -1293,6 +1293,7 @@ namespace Foxoft.Ci
 		MathNaN,
 		MathNegativeInfinity,
 		MathPositiveInfinity,
+		EnumFromInt,
 		EnumHasFlag,
 		IntTryParse,
 		LongTryParse,
@@ -2997,7 +2998,7 @@ namespace Foxoft.Ci
 			CiClass environmentClass = CiClass.New(CiCallType.Static, CiId.None, "Environment");
 			environmentClass.Add(CiMethod.NewStatic(this.StringNullablePtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", CiVar.New(this.StringPtrType, "name")));
 			Add(environmentClass);
-			this.RegexOptionsEnum = NewEnumFlags();
+			this.RegexOptionsEnum = NewEnum(true);
 			this.RegexOptionsEnum.IsPublic = true;
 			this.RegexOptionsEnum.Id = CiId.RegexOptionsEnum;
 			this.RegexOptionsEnum.Name = "RegexOptions";
@@ -3098,7 +3099,7 @@ namespace Foxoft.Ci
 
 		internal CiClass ArrayStorageClass = CiClass.New(CiCallType.Normal, CiId.ArrayStorageClass, "ArrayStorage", 1);
 
-		internal CiEnumFlags RegexOptionsEnum;
+		internal CiEnum RegexOptionsEnum;
 
 		internal CiReadWriteClassType LockPtrType = new CiReadWriteClassType();
 
@@ -3130,10 +3131,12 @@ namespace Foxoft.Ci
 			return result != null ? result : PromoteIntegerTypes(left, right);
 		}
 
-		internal CiEnumFlags NewEnumFlags()
+		internal CiEnum NewEnum(bool flags)
 		{
-			CiEnumFlags enu = new CiEnumFlags();
-			enu.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.EnumHasFlag, "HasFlag", CiVar.New(enu, "flag")));
+			CiEnum enu = flags ? new CiEnumFlags() : new CiEnum();
+			enu.Add(CiMethod.NewStatic(enu, CiId.EnumFromInt, "FromInt", CiVar.New(this.IntType, "value")));
+			if (flags)
+				enu.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.EnumHasFlag, "HasFlag", CiVar.New(enu, "flag")));
 			return enu;
 		}
 
@@ -4173,7 +4176,7 @@ namespace Foxoft.Ci
 		{
 			Expect(CiToken.Enum);
 			bool flags = Eat(CiToken.Asterisk);
-			CiEnum enu = flags ? this.Program.System.NewEnumFlags() : new CiEnum();
+			CiEnum enu = this.Program.System.NewEnum(flags);
 			enu.Filename = this.Filename;
 			enu.Line = this.Line;
 			enu.Documentation = doc;
@@ -7595,10 +7598,8 @@ namespace Foxoft.Ci
 		protected RegexOptions GetRegexOptions(List<CiExpr> args)
 		{
 			CiExpr expr = args[^1];
-			if (expr.Type is CiEnum) {
-				 // TODO: Enum.FromInt
+			if (expr.Type is CiEnum)
 				return (RegexOptions) expr.IntValue();
-			}
 			return RegexOptions.None;
 		}
 
@@ -10551,6 +10552,9 @@ namespace Foxoft.Ci
 			case CiId.ClassToString:
 				WriteCCall(obj, method, args);
 				break;
+			case CiId.EnumFromInt:
+				WriteStaticCast(method.Type, args[0]);
+				break;
 			case CiId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
 				break;
@@ -12406,6 +12410,9 @@ namespace Foxoft.Ci
 			case CiId.ClassToString:
 				WriteCCall(obj, method, args);
 				break;
+			case CiId.EnumFromInt:
+				WriteStaticCast(method.Type, args[0]);
+				break;
 			case CiId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
 				break;
@@ -13299,6 +13306,9 @@ namespace Foxoft.Ci
 				}
 				WriteName(method);
 				WriteArgsInParentheses(method, args);
+				break;
+			case CiId.EnumFromInt:
+				WriteStaticCast(method.Type, args[0]);
 				break;
 			case CiId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
@@ -14862,6 +14872,9 @@ namespace Foxoft.Ci
 		protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 		{
 			switch (method.Id) {
+			case CiId.EnumFromInt:
+				WriteStaticCast(method.Type, args[0]);
+				break;
 			case CiId.IntTryParse:
 			case CiId.LongTryParse:
 			case CiId.DoubleTryParse:
@@ -16086,6 +16099,9 @@ namespace Foxoft.Ci
 		protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 		{
 			switch (method.Id) {
+			case CiId.EnumFromInt:
+				WriteStaticCast(method.Type, args[0]);
+				break;
 			case CiId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
 				break;
@@ -17463,6 +17479,9 @@ namespace Foxoft.Ci
 				WriteName(method);
 				WriteArgsInParentheses(method, args);
 				break;
+			case CiId.EnumFromInt:
+				args[0].Accept(this, parent);
+				break;
 			case CiId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
 				break;
@@ -18635,6 +18654,9 @@ namespace Foxoft.Ci
 					WriteName(method);
 				}
 				WriteArgsInParentheses(method, args);
+				break;
+			case CiId.EnumFromInt:
+				args[0].Accept(this, parent);
 				break;
 			case CiId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
@@ -20543,6 +20565,12 @@ namespace Foxoft.Ci
 				WriteMemberOp(obj, null);
 				Write("description");
 				break;
+			case CiId.EnumFromInt:
+				Write(method.Type.Name);
+				Write("(rawValue: ");
+				args[0].Accept(this, CiPriority.Argument);
+				WriteChar(')');
+				break;
 			case CiId.EnumHasFlag:
 				WriteMethodCall(obj, "contains", args[0]);
 				break;
@@ -21531,25 +21559,26 @@ namespace Foxoft.Ci
 				OpenBlock();
 				Dictionary<int, CiConst> valueToConst = new Dictionary<int, CiConst>();
 				for (CiSymbol symbol = enu.First; symbol != null; symbol = symbol.Next) {
-					CiConst konst = (CiConst) symbol;
-					WriteDoc(konst.Documentation);
-					int i = konst.Value.IntValue();
-					if (valueToConst.ContainsKey(i)) {
-						Write("static let ");
-						WriteName(konst);
-						Write(" = ");
-						WriteName(valueToConst[i]);
-					}
-					else {
-						Write("case ");
-						WriteName(konst);
-						if (!(konst.Value is CiImplicitEnumValue)) {
+					if (symbol is CiConst konst) {
+						WriteDoc(konst.Documentation);
+						int i = konst.Value.IntValue();
+						if (valueToConst.ContainsKey(i)) {
+							Write("static let ");
+							WriteName(konst);
 							Write(" = ");
-							VisitLiteralLong(i);
+							WriteName(valueToConst[i]);
 						}
-						valueToConst[i] = konst;
+						else {
+							Write("case ");
+							WriteName(konst);
+							if (!(konst.Value is CiImplicitEnumValue)) {
+								Write(" = ");
+								VisitLiteralLong(i);
+							}
+							valueToConst[i] = konst;
+						}
+						WriteNewLine();
 					}
-					WriteNewLine();
 				}
 			}
 			CloseBlock();
@@ -22421,6 +22450,10 @@ namespace Foxoft.Ci
 		protected override void WriteCallExpr(CiExpr obj, CiMethod method, List<CiExpr> args, CiPriority parent)
 		{
 			switch (method.Id) {
+			case CiId.EnumFromInt:
+				WriteName(method.Type);
+				WriteArgsInParentheses(method, args);
+				break;
 			case CiId.EnumHasFlag:
 			case CiId.StringContains:
 			case CiId.ListContains:

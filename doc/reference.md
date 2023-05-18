@@ -218,7 +218,17 @@ enum DayOfWeek
 }
 ```
 
-There are no conversions between enumerated and integer types.
+Convert an integer to an enumeration with the `FromInt` method:
+
+```csharp
+enum Number
+{
+    One = 1,
+    Five = 5
+}
+
+assert Number.FromInt(5) == Number.Five;
+```
 
 `enum` may be preceded with the keyword `public` to extend the visibility
 of the type outside Ć, that is, make the enumerated type part
