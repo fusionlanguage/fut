@@ -5,6 +5,8 @@ public class Test
 		while (x) { //ERROR: x not found
 		}
 		Foo.Bar; //ERROR: Foo not found
+		bool b = true;
+		int y = b ? x : false; //ERROR: x not found
 		return x + 1; //ERROR: x not found
 	}
 }

@@ -5332,6 +5332,8 @@ namespace Foxoft.Ci
 			CiExpr cond = ResolveBool(expr.Cond);
 			CiExpr onTrue = VisitExpr(expr.OnTrue);
 			CiExpr onFalse = VisitExpr(expr.OnFalse);
+			if (onTrue == this.Poison || onFalse == this.Poison)
+				return this.Poison;
 			CiType type = GetCommonType(onTrue, onFalse);
 			Coerce(onTrue, type);
 			Coerce(onFalse, type);
