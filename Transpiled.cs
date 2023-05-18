@@ -2670,6 +2670,14 @@ namespace Foxoft.Ci
 
 		internal bool HasExplicitValue = false;
 
+		public CiSymbol GetFirstValue()
+		{
+			CiSymbol symbol = this.First;
+			while (!(symbol is CiConst))
+				symbol = symbol.Next;
+			return symbol;
+		}
+
 		public void AcceptValues(CiVisitor visitor)
 		{
 			CiConst previous = null;
@@ -20889,23 +20897,29 @@ namespace Foxoft.Ci
 
 		void WriteDefaultValue(CiType type)
 		{
-			if (type is CiNumericType)
+			switch (type) {
+			case CiNumericType _:
 				WriteChar('0');
-			else if (type is CiEnum) {
-				if (type.Id == CiId.BoolType)
+				break;
+			case CiEnum enu:
+				if (enu.Id == CiId.BoolType)
 					Write("false");
 				else {
-					WriteName(type);
+					WriteName(enu);
 					WriteChar('.');
-					WriteName(type.First);
+					WriteName(enu.GetFirstValue());
 				}
-			}
-			else if (type is CiStringType && !type.Nullable)
+				break;
+			case CiStringType _ when !type.Nullable:
 				Write("\"\"");
-			else if (type is CiArrayStorageType array)
+				break;
+			case CiArrayStorageType array:
 				WriteNewArrayStorage(array);
-			else
+				break;
+			default:
 				Write("nil");
+				break;
+			}
 		}
 
 		protected override void WriteNewArray(CiType elementType, CiExpr lengthExpr, CiPriority parent)

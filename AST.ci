@@ -1159,6 +1159,13 @@ public abstract class CiContainerType : CiType
 public class CiEnum : CiContainerType
 {
 	internal bool HasExplicitValue = false;
+	public CiSymbol GetFirstValue()
+	{
+		CiSymbol symbol = this.First;
+		while (!(symbol is CiConst))
+			symbol = symbol.Next;
+		return symbol;
+	}
 	public void AcceptValues(CiVisitor! visitor)
 	{
 		CiConst? previous = null;
