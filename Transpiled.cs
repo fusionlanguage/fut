@@ -6428,10 +6428,8 @@ namespace Foxoft.Ci
 
 		public override void VisitLiteralDouble(double value)
 		{
-			string s;
-			 // TODO: double.ToString
-			s = value.ToString("R");
-		Write(s);
+			string s = $"{value}";
+			Write(s);
 			foreach (int c in s) {
 				switch (c) {
 				case '-':

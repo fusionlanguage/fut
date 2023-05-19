@@ -126,10 +126,7 @@ public abstract class GenBase : CiVisitor
 
 	public override void VisitLiteralDouble!(double value)
 	{
-		string() s;
-		native { // TODO: double.ToString
-			s = value.ToString("R");
-		}
+		string() s = $"{value}";
 		Write(s);
 		foreach (int c in s) {
 			switch (c) {
