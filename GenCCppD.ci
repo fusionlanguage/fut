@@ -21,6 +21,14 @@ public abstract class GenCCppD : GenTyped
 {
 	protected List<CiSwitch>() SwitchesWithGoto;
 
+	public override void VisitLiteralLong!(long i)
+	{
+		if (i == long.MinValue)
+			Write("(-9223372036854775807 - 1)");
+		else
+			base.VisitLiteralLong(i);
+	}
+
 	static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
 
 	protected override void WriteEqual!(CiExpr left, CiExpr right, CiPriority parent, bool not)

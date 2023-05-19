@@ -8476,6 +8476,14 @@ namespace Foxoft.Ci
 
 		protected readonly List<CiSwitch> SwitchesWithGoto = new List<CiSwitch>();
 
+		public override void VisitLiteralLong(long i)
+		{
+			if (i == -9223372036854775808)
+				Write("(-9223372036854775807 - 1)");
+			else
+				base.VisitLiteralLong(i);
+		}
+
 		static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
 
 		protected override void WriteEqual(CiExpr left, CiExpr right, CiPriority parent, bool not)

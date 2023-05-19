@@ -2,8 +2,10 @@ public static class Test
 {
 	public static bool Run()
 	{
-		return int.MinValue == -0x80000000 && int.MaxValue == 0x7fffffff
-			&& long.MinValue == -0x8000000000000000 && long.MaxValue == 0x7fffffffffffffff
+		int intZero = 0;
+		long longZero = 0;
+		return int.MinValue == -0x80000000 && int.MaxValue == 0x7fffffff && int.MinValue < intZero
+			&& long.MinValue == -0x8000000000000000 && long.MaxValue == 0x7fffffffffffffff && long.MinValue < longZero
 			&& short.MinValue == -0x8000 && short.MaxValue == 0x7fff;
 	}
 }
