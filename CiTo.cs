@@ -255,7 +255,7 @@ public static class CiTo
 			 || c == Path.VolumeSeparatorChar)
 				break;
 		}
-		throw new ArgumentException("Don't know what language to translate to: no extension in '{0}' and no '-l' option");
+		throw new ArgumentException($"Don't know what language to translate to: no extension in '{outputFile}' and no '-l' option");
 	}
 }
 
