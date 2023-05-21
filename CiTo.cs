@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 [assembly: AssemblyTitle("CiTo")]
@@ -28,6 +29,35 @@ using System.Reflection;
 
 namespace Foxoft.Ci
 {
+
+public class FileResourceSema : CiSema
+{
+	readonly List<string> ResourceDirs = new List<string>();
+
+	public void AddResourceDir(string path) => this.ResourceDirs.Add(path);
+
+	List<byte> ReadResource(string name, CiPrefixExpr expr)
+	{
+		foreach (string dir in this.ResourceDirs) {
+			string path = Path.Combine(dir, name);
+			if (File.Exists(path))
+				return File.ReadAllBytes(path).ToList();
+		}
+		if (File.Exists(name))
+			return File.ReadAllBytes(name).ToList();
+		ReportError(expr, $"File {name} not found");
+		return new List<byte>();
+	}
+
+	protected override int GetResourceLength(string name, CiPrefixExpr expr)
+	{
+		if (!this.Program.Resources.TryGetValue(name, out List<byte> content)) {
+			content = ReadResource(name, expr);
+			this.Program.Resources.Add(name, content);
+		}
+		return content.Count;
+	}
+}
 
 public class FileGenHost : GenHost
 {
@@ -193,14 +223,13 @@ public static class CiTo
 		}
 
 		CiSystem system = CiSystem.New();
-		CiProgram program;
 		CiScope parent = system;
 		if (referencedFiles.Count > 0) {
 			parent = ParseAndResolve(parser, system, parent, referencedFiles, sema);
 			if (parent == null)
 				return 1;
 		}
-		program = ParseAndResolve(parser, system, parent, inputFiles, sema);
+		CiProgram program = ParseAndResolve(parser, system, parent, inputFiles, sema);
 		if (program == null)
 			return 1;
 

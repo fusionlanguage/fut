@@ -35,14 +35,14 @@ SOURCE_CI = Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenTyp
 
 all: bin/Debug/net6.0/cito.dll
 
-bin/Debug/net6.0/cito.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs FileResourceSema.cs CiTo.cs)
+bin/Debug/net6.0/cito.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs CiTo.cs)
 	dotnet build
 
 Transpiled.cs: $(SOURCE_CI)
 	cito -o $@ -n Foxoft.Ci $^
 
 test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error
-	perl test/summary.pl test/bin/*/*.txt
+	$(DO)perl test/summary.pl test/bin/*/*.txt
 
 test-c test-GenC.ci: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
