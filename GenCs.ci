@@ -584,6 +584,16 @@ public class GenCs : GenTyped
 			}
 			WriteChar(')');
 			break;
+		case CiId.TextWriterWriteCodePoint:
+			WritePostfix(obj, ".Write(");
+			if (args[0] is CiLiteralChar literalChar && literalChar.Value < 0x10000)
+				args[0].Accept(this, CiPriority.Argument);
+			else {
+				Include("System.Text");
+				WriteCall("new Rune", args[0]);
+			}
+			WriteChar(')');
+			break;
 		case CiId.EnvironmentGetEnvironmentVariable:
 			Include("System");
 			obj.Accept(this, CiPriority.Primary);

@@ -727,6 +727,10 @@ public class GenJsNoModule : GenBase
 			WriteMethodCall(obj, "write(String.fromCharCode", args[0]);
 			WriteChar(')');
 			break;
+		case CiId.TextWriterWriteCodePoint:
+			WriteMethodCall(obj, "write(String.fromCodePoint", args[0]);
+			WriteChar(')');
+			break;
 		case CiId.TextWriterWriteLine:
 			if (IsReferenceTo(obj, CiId.ConsoleError)) {
 				Write("console.error(");

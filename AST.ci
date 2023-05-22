@@ -175,6 +175,7 @@ public enum CiId
 	OrderedDictionaryRemove,
 	TextWriterWrite,
 	TextWriterWriteChar,
+	TextWriterWriteCodePoint,
 	TextWriterWriteLine,
 	ConsoleWrite,
 	ConsoleWriteLine,
@@ -1554,6 +1555,7 @@ public class CiSystem : CiScope
 		CiClass# textWriterClass = CiClass.New(CiCallType.Normal, CiId.TextWriterClass, "TextWriter");
 		textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.TextWriterWrite, "Write", CiVar.New(PrintableType, "value")));
 		textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.TextWriterWriteChar, "WriteChar", CiVar.New(IntType, "c")));
+		textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.TextWriterWriteCodePoint, "WriteCodePoint", CiVar.New(IntType, "c")));
 		textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.TextWriterWriteLine, "WriteLine", CiVar.New(PrintableType, "value", NewLiteralString(""))));
 		Add(textWriterClass);
 		CiClass# consoleClass = CiClass.New(CiCallType.Static, CiId.None, "Console");

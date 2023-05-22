@@ -302,6 +302,7 @@ enum class CiId
 	orderedDictionaryRemove,
 	textWriterWrite,
 	textWriterWriteChar,
+	textWriterWriteCodePoint,
 	textWriterWriteLine,
 	consoleWrite,
 	consoleWriteLine,

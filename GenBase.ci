@@ -75,7 +75,7 @@ public abstract class GenBase : CiVisitor
 	protected void WriteChar!(int c)
 	{
 		StartLine();
-		this.Writer.WriteChar(c);
+		this.Writer.WriteCodePoint(c);
 	}
 
 	protected void Write!(string s)

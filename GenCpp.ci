@@ -1001,10 +1001,61 @@ public class GenCpp : GenCCpp
 		case CiId.TextWriterWriteChar:
 			WriteCollectionObject(obj, CiPriority.Shift);
 			Write(" << ");
-			if (args[0] is CiLiteralChar)
+			if (args[0] is CiLiteralChar literalChar && literalChar.Value < 127) // TODO: issue error for non-ASCII character
 				args[0].Accept(this, CiPriority.Mul);
 			else
 				WriteCall("static_cast<char>", args[0]);
+			break;
+		case CiId.TextWriterWriteCodePoint:
+			if (args[0] is CiLiteralChar literalChar2 && literalChar2.Value < 127) {
+				WriteCollectionObject(obj, CiPriority.Shift);
+				Write(" << ");
+				args[0].Accept(this, CiPriority.Mul);
+			}
+			else {
+				Write("if ("); // FIXME: parent if
+				args[0].Accept(this, CiPriority.Rel);
+				WriteLine(" < 0x80)");
+				WriteChar('\t');
+				WriteCollectionObject(obj, CiPriority.Shift);
+				Write(" << ");
+				WriteCall("static_cast<char>", args[0]); // FIXME: side effect
+				WriteCharLine(';');
+				Write("else if (");
+				args[0].Accept(this, CiPriority.Rel); // FIXME: side effect
+				WriteLine(" < 0x800)");
+				WriteChar('\t');
+				WriteCollectionObject(obj, CiPriority.Shift);
+				Write(" << static_cast<char>(0xc0 | ");
+				args[0].Accept(this, CiPriority.Shift); // FIXME: side effect
+				Write(" >> 6) << static_cast<char>(0x80 | (");
+				args[0].Accept(this, CiPriority.And); // FIXME: side effect
+				WriteLine(" & 0x3f));");
+				Write("else if (");
+				args[0].Accept(this, CiPriority.Rel); // FIXME: side effect
+				WriteLine(" < 0x10000)");
+				WriteChar('\t');
+				WriteCollectionObject(obj, CiPriority.Shift);
+				Write(" << static_cast<char>(0xe0 | ");
+				args[0].Accept(this, CiPriority.Shift); // FIXME: side effect
+				Write(" >> 12) << static_cast<char>(0x80 | (");
+				args[0].Accept(this, CiPriority.Shift); // FIXME: side effect
+				Write(" >> 6 & 0x3f)) << static_cast<char>(0x80 | (");
+				args[0].Accept(this, CiPriority.And); // FIXME: side effect
+				WriteLine(" & 0x3f));");
+				WriteLine("else");
+				WriteChar('\t');
+				WriteCollectionObject(obj, CiPriority.Shift);
+				Write(" << static_cast<char>(0xf0 | ");
+				args[0].Accept(this, CiPriority.Shift); // FIXME: side effect
+				Write(" >> 18) << static_cast<char>(0x80 | (");
+				args[0].Accept(this, CiPriority.Shift); // FIXME: side effect
+				Write(" >> 12 & 0x3f)) << static_cast<char>(0x80 | (");
+				args[0].Accept(this, CiPriority.Shift); // FIXME: side effect
+				Write(" >> 6 & 0x3f)) << static_cast<char>(0x80 | (");
+				args[0].Accept(this, CiPriority.And); // FIXME: side effect
+				Write(" & 0x3f))");
+			}
 			break;
 		case CiId.TextWriterWriteLine:
 			WriteCollectionObject(obj, CiPriority.Shift);

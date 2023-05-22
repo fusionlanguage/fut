@@ -1362,6 +1362,7 @@ namespace Foxoft.Ci
 		OrderedDictionaryRemove,
 		TextWriterWrite,
 		TextWriterWriteChar,
+		TextWriterWriteCodePoint,
 		TextWriterWriteLine,
 		ConsoleWrite,
 		ConsoleWriteLine,
@@ -2984,6 +2985,7 @@ namespace Foxoft.Ci
 			CiClass textWriterClass = CiClass.New(CiCallType.Normal, CiId.TextWriterClass, "TextWriter");
 			textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.TextWriterWrite, "Write", CiVar.New(this.PrintableType, "value")));
 			textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.TextWriterWriteChar, "WriteChar", CiVar.New(this.IntType, "c")));
+			textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.TextWriterWriteCodePoint, "WriteCodePoint", CiVar.New(this.IntType, "c")));
 			textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.TextWriterWriteLine, "WriteLine", CiVar.New(this.PrintableType, "value", NewLiteralString(""))));
 			Add(textWriterClass);
 			CiClass consoleClass = CiClass.New(CiCallType.Static, CiId.None, "Console");
@@ -6365,7 +6367,7 @@ namespace Foxoft.Ci
 		protected void WriteChar(int c)
 		{
 			StartLine();
-			this.Writer.Write((char) c);
+			this.Writer.Write(new Rune(c));
 		}
 
 		protected void Write(string s)
@@ -13597,10 +13599,61 @@ namespace Foxoft.Ci
 			case CiId.TextWriterWriteChar:
 				WriteCollectionObject(obj, CiPriority.Shift);
 				Write(" << ");
-				if (args[0] is CiLiteralChar)
+				if (args[0] is CiLiteralChar literalChar && literalChar.Value < 127)
 					args[0].Accept(this, CiPriority.Mul);
 				else
 					WriteCall("static_cast<char>", args[0]);
+				break;
+			case CiId.TextWriterWriteCodePoint:
+				if (args[0] is CiLiteralChar literalChar2 && literalChar2.Value < 127) {
+					WriteCollectionObject(obj, CiPriority.Shift);
+					Write(" << ");
+					args[0].Accept(this, CiPriority.Mul);
+				}
+				else {
+					Write("if (");
+					args[0].Accept(this, CiPriority.Rel);
+					WriteLine(" < 0x80)");
+					WriteChar('\t');
+					WriteCollectionObject(obj, CiPriority.Shift);
+					Write(" << ");
+					WriteCall("static_cast<char>", args[0]);
+					WriteCharLine(';');
+					Write("else if (");
+					args[0].Accept(this, CiPriority.Rel);
+					WriteLine(" < 0x800)");
+					WriteChar('\t');
+					WriteCollectionObject(obj, CiPriority.Shift);
+					Write(" << static_cast<char>(0xc0 | ");
+					args[0].Accept(this, CiPriority.Shift);
+					Write(" >> 6) << static_cast<char>(0x80 | (");
+					args[0].Accept(this, CiPriority.And);
+					WriteLine(" & 0x3f));");
+					Write("else if (");
+					args[0].Accept(this, CiPriority.Rel);
+					WriteLine(" < 0x10000)");
+					WriteChar('\t');
+					WriteCollectionObject(obj, CiPriority.Shift);
+					Write(" << static_cast<char>(0xe0 | ");
+					args[0].Accept(this, CiPriority.Shift);
+					Write(" >> 12) << static_cast<char>(0x80 | (");
+					args[0].Accept(this, CiPriority.Shift);
+					Write(" >> 6 & 0x3f)) << static_cast<char>(0x80 | (");
+					args[0].Accept(this, CiPriority.And);
+					WriteLine(" & 0x3f));");
+					WriteLine("else");
+					WriteChar('\t');
+					WriteCollectionObject(obj, CiPriority.Shift);
+					Write(" << static_cast<char>(0xf0 | ");
+					args[0].Accept(this, CiPriority.Shift);
+					Write(" >> 18) << static_cast<char>(0x80 | (");
+					args[0].Accept(this, CiPriority.Shift);
+					Write(" >> 12 & 0x3f)) << static_cast<char>(0x80 | (");
+					args[0].Accept(this, CiPriority.Shift);
+					Write(" >> 6 & 0x3f)) << static_cast<char>(0x80 | (");
+					args[0].Accept(this, CiPriority.And);
+					Write(" & 0x3f))");
+				}
 				break;
 			case CiId.TextWriterWriteLine:
 				WriteCollectionObject(obj, CiPriority.Shift);
@@ -15035,6 +15088,16 @@ namespace Foxoft.Ci
 				else {
 					Write("(char) ");
 					args[0].Accept(this, CiPriority.Primary);
+				}
+				WriteChar(')');
+				break;
+			case CiId.TextWriterWriteCodePoint:
+				WritePostfix(obj, ".Write(");
+				if (args[0] is CiLiteralChar literalChar && literalChar.Value < 65536)
+					args[0].Accept(this, CiPriority.Argument);
+				else {
+					Include("System.Text");
+					WriteCall("new Rune", args[0]);
 				}
 				WriteChar(')');
 				break;
@@ -18859,6 +18922,10 @@ namespace Foxoft.Ci
 				break;
 			case CiId.TextWriterWriteChar:
 				WriteMethodCall(obj, "write(String.fromCharCode", args[0]);
+				WriteChar(')');
+				break;
+			case CiId.TextWriterWriteCodePoint:
+				WriteMethodCall(obj, "write(String.fromCodePoint", args[0]);
 				WriteChar(')');
 				break;
 			case CiId.TextWriterWriteLine:

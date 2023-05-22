@@ -2451,6 +2451,7 @@ CiSystem::CiSystem()
 	std::shared_ptr<CiClass> textWriterClass = CiClass::new_(CiCallType::normal, CiId::textWriterClass, "TextWriter");
 	textWriterClass->add(CiMethod::newMutator(CiVisibility::public_, this->voidType, CiId::textWriterWrite, "Write", CiVar::new_(this->printableType, "value")));
 	textWriterClass->add(CiMethod::newMutator(CiVisibility::public_, this->voidType, CiId::textWriterWriteChar, "WriteChar", CiVar::new_(this->intType, "c")));
+	textWriterClass->add(CiMethod::newMutator(CiVisibility::public_, this->voidType, CiId::textWriterWriteCodePoint, "WriteCodePoint", CiVar::new_(this->intType, "c")));
 	textWriterClass->add(CiMethod::newMutator(CiVisibility::public_, this->voidType, CiId::textWriterWriteLine, "WriteLine", CiVar::new_(this->printableType, "value", newLiteralString(""))));
 	add(textWriterClass);
 	std::shared_ptr<CiClass> consoleClass = CiClass::new_(CiCallType::static_, CiId::none, "Console");
@@ -6174,7 +6175,14 @@ void GenBase::startLine()
 void GenBase::writeChar(int c)
 {
 	startLine();
-	*this->writer << static_cast<char>(c);
+	if (c < 0x80)
+		*this->writer << static_cast<char>(c);
+	else if (c < 0x800)
+		*this->writer << static_cast<char>(0xc0 | c >> 6) << static_cast<char>(0x80 | (c & 0x3f));
+	else if (c < 0x10000)
+		*this->writer << static_cast<char>(0xe0 | c >> 12) << static_cast<char>(0x80 | (c >> 6 & 0x3f)) << static_cast<char>(0x80 | (c & 0x3f));
+	else
+		*this->writer << static_cast<char>(0xf0 | c >> 18) << static_cast<char>(0x80 | (c >> 12 & 0x3f)) << static_cast<char>(0x80 | (c >> 6 & 0x3f)) << static_cast<char>(0x80 | (c & 0x3f));
 }
 
 void GenBase::write(std::string_view s)
@@ -13180,11 +13188,68 @@ void GenCpp::writeCallExpr(const CiExpr * obj, const CiMethod * method, const st
 	case CiId::textWriterWriteChar:
 		writeCollectionObject(obj, CiPriority::shift);
 		write(" << ");
-		if (dynamic_cast<const CiLiteralChar *>((*args)[0].get()))
-			(*args)[0]->accept(this, CiPriority::mul);
-		else
-			writeCall("static_cast<char>", (*args)[0].get());
-		break;
+		{
+			const CiLiteralChar * literalChar;
+			if ((literalChar = dynamic_cast<const CiLiteralChar *>((*args)[0].get())) && literalChar->value < 127)
+				(*args)[0]->accept(this, CiPriority::mul);
+			else
+				writeCall("static_cast<char>", (*args)[0].get());
+			break;
+		}
+	case CiId::textWriterWriteCodePoint:
+		{
+			const CiLiteralChar * literalChar2;
+			if ((literalChar2 = dynamic_cast<const CiLiteralChar *>((*args)[0].get())) && literalChar2->value < 127) {
+				writeCollectionObject(obj, CiPriority::shift);
+				write(" << ");
+				(*args)[0]->accept(this, CiPriority::mul);
+			}
+			else {
+				write("if (");
+				(*args)[0]->accept(this, CiPriority::rel);
+				writeLine(" < 0x80)");
+				writeChar('\t');
+				writeCollectionObject(obj, CiPriority::shift);
+				write(" << ");
+				writeCall("static_cast<char>", (*args)[0].get());
+				writeCharLine(';');
+				write("else if (");
+				(*args)[0]->accept(this, CiPriority::rel);
+				writeLine(" < 0x800)");
+				writeChar('\t');
+				writeCollectionObject(obj, CiPriority::shift);
+				write(" << static_cast<char>(0xc0 | ");
+				(*args)[0]->accept(this, CiPriority::shift);
+				write(" >> 6) << static_cast<char>(0x80 | (");
+				(*args)[0]->accept(this, CiPriority::and_);
+				writeLine(" & 0x3f));");
+				write("else if (");
+				(*args)[0]->accept(this, CiPriority::rel);
+				writeLine(" < 0x10000)");
+				writeChar('\t');
+				writeCollectionObject(obj, CiPriority::shift);
+				write(" << static_cast<char>(0xe0 | ");
+				(*args)[0]->accept(this, CiPriority::shift);
+				write(" >> 12) << static_cast<char>(0x80 | (");
+				(*args)[0]->accept(this, CiPriority::shift);
+				write(" >> 6 & 0x3f)) << static_cast<char>(0x80 | (");
+				(*args)[0]->accept(this, CiPriority::and_);
+				writeLine(" & 0x3f));");
+				writeLine("else");
+				writeChar('\t');
+				writeCollectionObject(obj, CiPriority::shift);
+				write(" << static_cast<char>(0xf0 | ");
+				(*args)[0]->accept(this, CiPriority::shift);
+				write(" >> 18) << static_cast<char>(0x80 | (");
+				(*args)[0]->accept(this, CiPriority::shift);
+				write(" >> 12 & 0x3f)) << static_cast<char>(0x80 | (");
+				(*args)[0]->accept(this, CiPriority::shift);
+				write(" >> 6 & 0x3f)) << static_cast<char>(0x80 | (");
+				(*args)[0]->accept(this, CiPriority::and_);
+				write(" & 0x3f))");
+			}
+			break;
+		}
 	case CiId::textWriterWriteLine:
 		writeCollectionObject(obj, CiPriority::shift);
 		writeWrite(args, true);
@@ -14584,6 +14649,19 @@ void GenCs::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std
 		}
 		writeChar(')');
 		break;
+	case CiId::textWriterWriteCodePoint:
+		writePostfix(obj, ".Write(");
+		{
+			const CiLiteralChar * literalChar;
+			if ((literalChar = dynamic_cast<const CiLiteralChar *>((*args)[0].get())) && literalChar->value < 65536)
+				(*args)[0]->accept(this, CiPriority::argument);
+			else {
+				include("System.Text");
+				writeCall("new Rune", (*args)[0].get());
+			}
+			writeChar(')');
+			break;
+		}
 	case CiId::environmentGetEnvironmentVariable:
 		include("System");
 		obj->accept(this, CiPriority::primary);
@@ -18139,6 +18217,10 @@ void GenJsNoModule::writeCallExpr(const CiExpr * obj, const CiMethod * method, c
 		break;
 	case CiId::textWriterWriteChar:
 		writeMethodCall(obj, "write(String.fromCharCode", (*args)[0].get());
+		writeChar(')');
+		break;
+	case CiId::textWriterWriteCodePoint:
+		writeMethodCall(obj, "write(String.fromCodePoint", (*args)[0].get());
 		writeChar(')');
 		break;
 	case CiId::textWriterWriteLine:
