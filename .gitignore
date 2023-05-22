@@ -1,5 +1,7 @@
 /.vs
 /bin
+/cito
+/cito.exe
 /coverage
 /obj
 /Properties

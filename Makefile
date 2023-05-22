@@ -7,6 +7,7 @@ CFLAGS = -Wall -Werror
 CXXFLAGS = -Wall -Werror -std=c++2a
 SWIFTC = swiftc
 ifeq ($(OS),Windows_NT)
+EXEEXT = .exe
 JAVACPSEP = ;
 CXXFLAGS += -stdlib=libc++ -fexperimental-library
 CXXLIBS += -lstdc++
@@ -33,13 +34,19 @@ DO_SUMMARY = $(DO)perl test/summary.pl $(filter %.txt, $^)
 DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 SOURCE_CI = Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenTyped.ci GenCCppD.ci GenCCpp.ci GenC.ci GenCl.ci GenCpp.ci GenCs.ci GenD.ci GenJava.ci GenJs.ci GenTs.ci GenPySwift.ci GenSwift.ci GenPy.ci
 
-all: bin/Debug/net6.0/cito.dll
+all: bin/Debug/net6.0/cito.dll Transpiled.cpp
 
 bin/Debug/net6.0/cito.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs CiTo.cs)
 	dotnet build
 
 Transpiled.cs: $(SOURCE_CI)
-	cito -o $@ -n Foxoft.Ci $^
+	$(DO)cito -o $@ -n Foxoft.Ci $^
+
+cito$(EXEEXT): cito.cpp Transpiled.cpp
+	$(DO)$(CXX) -o $@ $(CXXFLAGS) -O2 -s $^ $(CXXLIBS)
+
+Transpiled.cpp: $(SOURCE_CI)
+	$(DO)cito -o $@ $^
 
 test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error
 	$(DO)perl test/summary.pl test/bin/*/*.txt
@@ -227,7 +234,7 @@ codecov: coverage/output.xml
 	./codecov -f $<
 
 clean:
-	$(RM) cito.exe
+	$(RM) cito$(EXEEXT)
 	$(RM) -r test/bin
 
 .PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov clean
