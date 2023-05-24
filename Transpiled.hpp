@@ -2484,6 +2484,7 @@ protected:
 	virtual void writeUseStrict();
 private:
 	std::vector<const CiSwitch *> switchesWithLabel;
+	bool stringWriter = false;
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeInterpolatedLiteral(std::string_view s);
 	static bool isIdentifier(std::string_view s);

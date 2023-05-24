@@ -17651,6 +17651,8 @@ void GenJsNoModule::writeNew(const CiReadWriteClassType * klass, CiPriority pare
 		break;
 	default:
 		write("new ");
+		if (klass->class_->id == CiId::stringWriterClass)
+			this->stringWriter = true;
 		write(klass->class_->name);
 		write("()");
 		break;
@@ -18006,6 +18008,8 @@ void GenJsNoModule::writeCallExpr(const CiExpr * obj, const CiMethod * method, c
 	case CiId::sortedSetAdd:
 	case CiId::sortedSetClear:
 	case CiId::orderedDictionaryClear:
+	case CiId::stringWriterClear:
+	case CiId::stringWriterToString:
 	case CiId::mathMethod:
 	case CiId::mathLog2:
 	case CiId::mathMaxDouble:
@@ -18753,6 +18757,28 @@ void GenJsNoModule::writeClass(const CiClass * klass, const CiProgram * program)
 
 void GenJsNoModule::writeLib(const std::map<std::string, std::vector<uint8_t>> * resources)
 {
+	if (this->stringWriter) {
+		writeNewLine();
+		writeLine("class StringWriter");
+		openBlock();
+		writeLine("#buf = \"\";");
+		writeNewLine();
+		writeLine("write(s)");
+		openBlock();
+		writeLine("this.#buf += s;");
+		closeBlock();
+		writeNewLine();
+		writeLine("clear()");
+		openBlock();
+		writeLine("this.#buf = \"\";");
+		closeBlock();
+		writeNewLine();
+		writeLine("toString()");
+		openBlock();
+		writeLine("return this.#buf;");
+		closeBlock();
+		closeBlock();
+	}
 	if (resources->size() == 0)
 		return;
 	writeNewLine();

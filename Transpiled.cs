@@ -18221,6 +18221,8 @@ namespace Foxoft.Ci
 
 		readonly List<CiSwitch> SwitchesWithLabel = new List<CiSwitch>();
 
+		bool StringWriter = false;
+
 		protected override string GetTargetName() => "JavaScript";
 
 		void WriteCamelCaseNotKeyword(string name)
@@ -18368,6 +18370,8 @@ namespace Foxoft.Ci
 				break;
 			default:
 				Write("new ");
+				if (klass.Class.Id == CiId.StringWriterClass)
+					this.StringWriter = true;
 				Write(klass.Class.Name);
 				Write("()");
 				break;
@@ -18715,6 +18719,8 @@ namespace Foxoft.Ci
 			case CiId.SortedSetAdd:
 			case CiId.SortedSetClear:
 			case CiId.OrderedDictionaryClear:
+			case CiId.StringWriterClear:
+			case CiId.StringWriterToString:
 			case CiId.MathMethod:
 			case CiId.MathLog2:
 			case CiId.MathMaxDouble:
@@ -19456,6 +19462,28 @@ namespace Foxoft.Ci
 
 		protected void WriteLib(SortedDictionary<string, List<byte>> resources)
 		{
+			if (this.StringWriter) {
+				WriteNewLine();
+				WriteLine("class StringWriter");
+				OpenBlock();
+				WriteLine("#buf = \"\";");
+				WriteNewLine();
+				WriteLine("write(s)");
+				OpenBlock();
+				WriteLine("this.#buf += s;");
+				CloseBlock();
+				WriteNewLine();
+				WriteLine("clear()");
+				OpenBlock();
+				WriteLine("this.#buf = \"\";");
+				CloseBlock();
+				WriteNewLine();
+				WriteLine("toString()");
+				OpenBlock();
+				WriteLine("return this.#buf;");
+				CloseBlock();
+				CloseBlock();
+			}
 			if (resources.Count == 0)
 				return;
 			WriteNewLine();

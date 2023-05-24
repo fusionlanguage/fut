@@ -2,13 +2,13 @@ public static class Test
 {
 	public static bool Run()
 	{
-		StringWriter() w; //FAIL: c d java js swift ts TODO; cl
+		StringWriter() w; //FAIL: c d java swift TODO; cl
 		w.Write("kill me");
 		w.Clear();
 		w.Write("Hello");
 		string s = "World";
 		w.Write(s);
-		TextWriter! tw = w;
+		TextWriter! tw = w; //FAIL: ts
 		tw.Write(42);
 		long l = 5;
 		w.Write(l);
