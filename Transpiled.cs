@@ -10766,18 +10766,23 @@ namespace Foxoft.Ci
 			case CiId.ListContains:
 				Write("CiArray_Contains_");
 				CiId typeId = obj.Type.AsClassType().GetElementType().Id;
-				if (typeId == CiId.StringStorageType)
+				switch (typeId) {
+				case CiId.None:
+					Write("object(");
+					break;
+				case CiId.StringStorageType:
+				case CiId.StringPtrType:
 					typeId = CiId.StringPtrType;
-				if (typeId == CiId.StringPtrType) {
 					Include("string.h");
-					Write("string((const char * const");
-				}
-				else {
+					Write("string((const char * const *) ");
+					break;
+				default:
 					WriteNumericType(typeId);
 					Write("((const ");
 					WriteNumericType(typeId);
+					Write(" *) ");
+					break;
 				}
-				Write(" *) ");
 				WritePostfix(obj, "->data, ");
 				WritePostfix(obj, "->len, ");
 				args[0].Accept(this, CiPriority.Argument);
@@ -11669,6 +11674,7 @@ namespace Foxoft.Ci
 
 		protected override void WriteClassInternal(CiClass klass)
 		{
+			this.CurrentClass = klass;
 			if (klass.CallType != CiCallType.Static) {
 				WriteNewLine();
 				if (klass.AddsVirtualMethods())
@@ -12158,7 +12164,9 @@ namespace Foxoft.Ci
 			foreach (CiId typeId in this.Contains) {
 				WriteNewLine();
 				Write("static bool CiArray_Contains_");
-				if (typeId == CiId.StringPtrType)
+				if (typeId == CiId.None)
+					Write("object(const void * const *a, size_t len, const void *");
+				else if (typeId == CiId.StringPtrType)
 					Write("string(const char * const *a, size_t len, const char *");
 				else {
 					WriteNumericType(typeId);

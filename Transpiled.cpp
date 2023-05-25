@@ -10452,18 +10452,23 @@ void GenC::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std:
 		write("CiArray_Contains_");
 		{
 			CiId typeId = obj->type->asClassType()->getElementType()->id;
-			if (typeId == CiId::stringStorageType)
+			switch (typeId) {
+			case CiId::none:
+				write("object(");
+				break;
+			case CiId::stringStorageType:
+			case CiId::stringPtrType:
 				typeId = CiId::stringPtrType;
-			if (typeId == CiId::stringPtrType) {
 				include("string.h");
-				write("string((const char * const");
-			}
-			else {
+				write("string((const char * const *) ");
+				break;
+			default:
 				writeNumericType(typeId);
 				write("((const ");
 				writeNumericType(typeId);
+				write(" *) ");
+				break;
 			}
-			write(" *) ");
 			writePostfix(obj, "->data, ");
 			writePostfix(obj, "->len, ");
 			(*args)[0]->accept(this, CiPriority::argument);
@@ -11368,6 +11373,7 @@ void GenC::writeSignatures(const CiClass * klass, bool pub)
 
 void GenC::writeClassInternal(const CiClass * klass)
 {
+	this->currentClass = klass;
 	if (klass->callType != CiCallType::static_) {
 		writeNewLine();
 		if (klass->addsVirtualMethods())
@@ -11860,7 +11866,9 @@ void GenC::writeLibrary()
 	for (CiId typeId : this->contains) {
 		writeNewLine();
 		write("static bool CiArray_Contains_");
-		if (typeId == CiId::stringPtrType)
+		if (typeId == CiId::none)
+			write("object(const void * const *a, size_t len, const void *");
+		else if (typeId == CiId::stringPtrType)
 			write("string(const char * const *a, size_t len, const char *");
 		else {
 			writeNumericType(typeId);
