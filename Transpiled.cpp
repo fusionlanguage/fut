@@ -4027,7 +4027,7 @@ std::shared_ptr<CiExpr> CiSema::visitInterpolatedString(std::shared_ptr<CiInterp
 		s += part->prefix;
 		std::shared_ptr<CiExpr> arg = visitExpr(part->argument);
 		coerce(arg.get(), this->program->system->printableType.get());
-		if (dynamic_cast<const CiIntegerType *>(arg->type.get()))
+		if (dynamic_cast<const CiIntegerType *>(arg->type.get())) {
 			switch (part->format) {
 			case ' ':
 				{
@@ -4049,7 +4049,8 @@ std::shared_ptr<CiExpr> CiSema::visitInterpolatedString(std::shared_ptr<CiInterp
 				reportError(arg.get(), "Invalid format string");
 				break;
 			}
-		else if (dynamic_cast<const CiFloatingType *>(arg->type.get()))
+		}
+		else if (dynamic_cast<const CiFloatingType *>(arg->type.get())) {
 			switch (part->format) {
 			case ' ':
 			case 'F':
@@ -4061,6 +4062,7 @@ std::shared_ptr<CiExpr> CiSema::visitInterpolatedString(std::shared_ptr<CiInterp
 				reportError(arg.get(), "Invalid format string");
 				break;
 			}
+		}
 		else {
 			if (part->format != ' ')
 				reportError(arg.get(), "Invalid format string");
@@ -4444,7 +4446,7 @@ std::shared_ptr<CiLiteralDouble> CiSema::toLiteralDouble(const CiExpr * expr, do
 void CiSema::checkLValue(const CiExpr * expr)
 {
 	const CiBinaryExpr * indexing;
-	if (const CiSymbolReference *symbol = dynamic_cast<const CiSymbolReference *>(expr))
+	if (const CiSymbolReference *symbol = dynamic_cast<const CiSymbolReference *>(expr)) {
 		if (CiVar *def = dynamic_cast<CiVar *>(symbol->symbol)) {
 			def->isAssigned = true;
 			if (CiFor *forLoop = dynamic_cast<CiFor *>(symbol->symbol->parent))
@@ -4476,7 +4478,8 @@ void CiSema::checkLValue(const CiExpr * expr)
 		}
 		else
 			reportError(expr, "Cannot modify this");
-	else if ((indexing = dynamic_cast<const CiBinaryExpr *>(expr)) && indexing->op == CiToken::leftBracket)
+	}
+	else if ((indexing = dynamic_cast<const CiBinaryExpr *>(expr)) && indexing->op == CiToken::leftBracket) {
 		if (dynamic_cast<const CiStorageType *>(indexing->left->type.get())) {
 		}
 		else if (dynamic_cast<const CiReadWriteClassType *>(indexing->left->type.get())) {
@@ -4485,6 +4488,7 @@ void CiSema::checkLValue(const CiExpr * expr)
 			reportError(expr, "Cannot modify array through a read-only reference");
 		else
 			std::abort();
+	}
 	else
 		reportError(expr, "Cannot modify this");
 }
@@ -5662,7 +5666,7 @@ void CiSema::visitFor(CiFor * statement)
 		const CiUnaryExpr * unary;
 		const CiBinaryExpr * binary;
 		const CiLiteralLong * literalStep;
-		if ((unary = dynamic_cast<const CiUnaryExpr *>(statement->advance.get())) && unary->inner != nullptr && unary->inner->isReferenceTo(iter))
+		if ((unary = dynamic_cast<const CiUnaryExpr *>(statement->advance.get())) && unary->inner != nullptr && unary->inner->isReferenceTo(iter)) {
 			switch (unary->op) {
 			case CiToken::increment:
 				step = 1;
@@ -5673,7 +5677,8 @@ void CiSema::visitFor(CiFor * statement)
 			default:
 				break;
 			}
-		else if ((binary = dynamic_cast<const CiBinaryExpr *>(statement->advance.get())) && binary->left->isReferenceTo(iter) && (literalStep = dynamic_cast<const CiLiteralLong *>(binary->right.get())))
+		}
+		else if ((binary = dynamic_cast<const CiBinaryExpr *>(statement->advance.get())) && binary->left->isReferenceTo(iter) && (literalStep = dynamic_cast<const CiLiteralLong *>(binary->right.get()))) {
 			switch (binary->op) {
 			case CiToken::addAssign:
 				step = literalStep->value;
@@ -5684,6 +5689,7 @@ void CiSema::visitFor(CiFor * statement)
 			default:
 				break;
 			}
+		}
 		if ((step > 0 && (cond->op == CiToken::less || cond->op == CiToken::lessOrEqual)) || (step < 0 && (cond->op == CiToken::greater || cond->op == CiToken::greaterOrEqual))) {
 			statement->isRange = true;
 			statement->rangeStep = step;
@@ -6623,7 +6629,7 @@ int GenBase::getPrintfFormat(const CiType * type, int format)
 {
 	if (dynamic_cast<const CiIntegerType *>(type))
 		return format == 'x' || format == 'X' ? format : 'd';
-	else if (dynamic_cast<const CiNumericType *>(type))
+	else if (dynamic_cast<const CiNumericType *>(type)) {
 		switch (format) {
 		case 'E':
 		case 'e':
@@ -6636,6 +6642,7 @@ int GenBase::getPrintfFormat(const CiType * type, int format)
 		default:
 			return 'g';
 		}
+	}
 	else if (dynamic_cast<const CiClassType *>(type))
 		return 's';
 	else
@@ -7804,7 +7811,7 @@ void GenBase::writeIfCaseBody(const std::vector<std::shared_ptr<CiStatement>> * 
 		writeLine("while (0);");
 		this->indent--;
 	}
-	else if (length != 1 || dynamic_cast<const CiIf *>((*body)[0].get())) {
+	else if (length != 1 || dynamic_cast<const CiIf *>((*body)[0].get()) || dynamic_cast<const CiSwitch *>((*body)[0].get())) {
 		writeChar(' ');
 		openBlock();
 		writeFirstStatements(body, length);
@@ -9172,7 +9179,7 @@ std::string GenC::getDictionaryDestroy(const CiType * type)
 {
 	if (dynamic_cast<const CiStringStorageType *>(type) || dynamic_cast<const CiArrayStorageType *>(type))
 		return "free";
-	else if (const CiStorageType *storage = dynamic_cast<const CiStorageType *>(type))
+	else if (const CiStorageType *storage = dynamic_cast<const CiStorageType *>(type)) {
 		switch (storage->class_->id) {
 		case CiId::listClass:
 		case CiId::stackClass:
@@ -9186,6 +9193,7 @@ std::string GenC::getDictionaryDestroy(const CiType * type)
 		default:
 			return std::string(needsDestructor(storage->class_) ? std::format("(GDestroyNotify) {}_Delete", storage->class_->name) : "free");
 		}
+	}
 	else if (dynamic_cast<const CiDynamicPtrType *>(type)) {
 		this->sharedRelease = true;
 		return "CiShared_Release";
@@ -9620,7 +9628,7 @@ void GenC::writeDestruct(const CiSymbol * symbol)
 			write("CiShared_Release(");
 		}
 	}
-	else if (const CiStorageType *storage = dynamic_cast<const CiStorageType *>(type))
+	else if (const CiStorageType *storage = dynamic_cast<const CiStorageType *>(type)) {
 		switch (storage->class_->id) {
 		case CiId::listClass:
 		case CiId::stackClass:
@@ -9649,6 +9657,7 @@ void GenC::writeDestruct(const CiSymbol * symbol)
 			write("_Destruct(&");
 			break;
 		}
+	}
 	else
 		write("free(");
 	writeLocalName(symbol, CiPriority::primary);
@@ -9783,7 +9792,7 @@ void GenC::writeInitCode(const CiNamedValue * def)
 			this->listFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
 			write("CiList_FreeShared");
 		}
-		else if (const CiStorageType *storage = dynamic_cast<const CiStorageType *>(type->asClassType()->getElementType().get()))
+		else if (const CiStorageType *storage = dynamic_cast<const CiStorageType *>(type->asClassType()->getElementType().get())) {
 			switch (storage->class_->id) {
 			case CiId::listClass:
 			case CiId::stackClass:
@@ -9806,6 +9815,7 @@ void GenC::writeInitCode(const CiNamedValue * def)
 				write("_Destruct");
 				break;
 			}
+		}
 		else
 			std::abort();
 		writeLine(");");
@@ -10974,7 +10984,7 @@ void GenC::visitForeach(const CiForeach * statement)
 		write("++)");
 		writeChild(statement->body.get());
 	}
-	else if (const CiClassType *klass = dynamic_cast<const CiClassType *>(statement->collection->type.get()))
+	else if (const CiClassType *klass = dynamic_cast<const CiClassType *>(statement->collection->type.get())) {
 		switch (klass->class_->id) {
 		case CiId::stringClass:
 			write("for (");
@@ -11059,6 +11069,7 @@ void GenC::visitForeach(const CiForeach * statement)
 			notSupported(statement->collection.get(), klass->class_->name);
 			break;
 		}
+	}
 	else
 		notSupported(statement->collection.get(), statement->collection->type->toString());
 }
@@ -12410,7 +12421,7 @@ void GenCpp::writeType(const CiType * type, bool promote)
 {
 	if (dynamic_cast<const CiIntegerType *>(type))
 		writeNumericType(getTypeId(type, promote));
-	else if (const CiDynamicPtrType *dynamic = dynamic_cast<const CiDynamicPtrType *>(type))
+	else if (const CiDynamicPtrType *dynamic = dynamic_cast<const CiDynamicPtrType *>(type)) {
 		switch (dynamic->class_->id) {
 		case CiId::regexClass:
 			include("regex");
@@ -12429,6 +12440,7 @@ void GenCpp::writeType(const CiType * type, bool promote)
 			writeChar('>');
 			break;
 		}
+	}
 	else if (const CiClassType *klass = dynamic_cast<const CiClassType *>(type))
 		do {
 			if (klass->class_->typeParameterCount == 0) {
@@ -14141,7 +14153,7 @@ void GenCs::writeDocPara(const CiDocPara * para, bool many)
 	for (const std::shared_ptr<CiDocInline> &inline_ : para->children) {
 		if (const CiDocText *text = dynamic_cast<const CiDocText *>(inline_.get()))
 			writeXmlDoc(text->text);
-		else if (const CiDocCode *code = dynamic_cast<const CiDocCode *>(inline_.get()))
+		else if (const CiDocCode *code = dynamic_cast<const CiDocCode *>(inline_.get())) {
 			if (code->text == "true" || code->text == "false" || code->text == "null") {
 				write("<see langword=\"");
 				write(code->text);
@@ -14152,6 +14164,7 @@ void GenCs::writeDocPara(const CiDocPara * para, bool many)
 				writeXmlDoc(code->text);
 				write("</c>");
 			}
+		}
 		else if (dynamic_cast<const CiDocLine *>(inline_.get())) {
 			writeNewLine();
 			startDocLine();
@@ -14261,7 +14274,7 @@ void GenCs::writeElementType(const CiType * elementType)
 
 void GenCs::writeType(const CiType * type, bool promote)
 {
-	if (dynamic_cast<const CiIntegerType *>(type))
+	if (dynamic_cast<const CiIntegerType *>(type)) {
 		switch (getTypeId(type, promote)) {
 		case CiId::sByteRange:
 			write("sbyte");
@@ -14284,7 +14297,8 @@ void GenCs::writeType(const CiType * type, bool promote)
 		default:
 			std::abort();
 		}
-	else if (const CiClassType *klass = dynamic_cast<const CiClassType *>(type))
+	}
+	else if (const CiClassType *klass = dynamic_cast<const CiClassType *>(type)) {
 		switch (klass->class_->id) {
 		case CiId::stringClass:
 			write("string");
@@ -14333,6 +14347,7 @@ void GenCs::writeType(const CiType * type, bool promote)
 			write(klass->class_->name);
 			break;
 		}
+	}
 	else
 		write(type->name);
 }
@@ -15204,7 +15219,7 @@ void GenD::writeElementType(const CiType * type)
 
 void GenD::writeType(const CiType * type, bool promote)
 {
-	if (dynamic_cast<const CiIntegerType *>(type))
+	if (dynamic_cast<const CiIntegerType *>(type)) {
 		switch (getTypeId(type, promote)) {
 		case CiId::sByteRange:
 			write("byte");
@@ -15227,7 +15242,8 @@ void GenD::writeType(const CiType * type, bool promote)
 		default:
 			std::abort();
 		}
-	else if (const CiClassType *klass = dynamic_cast<const CiClassType *>(type))
+	}
+	else if (const CiClassType *klass = dynamic_cast<const CiClassType *>(type)) {
 		switch (klass->class_->id) {
 		case CiId::stringClass:
 			write("string");
@@ -15306,6 +15322,7 @@ void GenD::writeType(const CiType * type, bool promote)
 			write(klass->class_->name);
 			break;
 		}
+	}
 	else
 		write(type->name);
 }
@@ -16517,7 +16534,7 @@ void GenJava::writeDictType(std::string_view name, const CiClassType * dict)
 
 void GenJava::writeJavaType(const CiType * type, bool promote, bool needClass)
 {
-	if (dynamic_cast<const CiNumericType *>(type))
+	if (dynamic_cast<const CiNumericType *>(type)) {
 		switch (getTypeId(type, promote)) {
 		case CiId::sByteRange:
 			write(needClass ? "Byte" : "byte");
@@ -16540,9 +16557,10 @@ void GenJava::writeJavaType(const CiType * type, bool promote, bool needClass)
 		default:
 			std::abort();
 		}
+	}
 	else if (const CiEnum *enu = dynamic_cast<const CiEnum *>(type))
 		write(enu->id == CiId::boolType ? needClass ? "Boolean" : "boolean" : needClass ? "Integer" : "int");
-	else if (const CiClassType *klass = dynamic_cast<const CiClassType *>(type))
+	else if (const CiClassType *klass = dynamic_cast<const CiClassType *>(type)) {
 		switch (klass->class_->id) {
 		case CiId::stringClass:
 			write("String");
@@ -16594,6 +16612,7 @@ void GenJava::writeJavaType(const CiType * type, bool promote, bool needClass)
 			write(klass->class_->name);
 			break;
 		}
+	}
 	else
 		write(type->name);
 }
@@ -19635,7 +19654,7 @@ void GenSwift::writeClassName(const CiClassType * klass)
 
 void GenSwift::writeType(const CiType * type)
 {
-	if (dynamic_cast<const CiNumericType *>(type))
+	if (dynamic_cast<const CiNumericType *>(type)) {
 		switch (type->id) {
 		case CiId::sByteRange:
 			write("Int8");
@@ -19664,6 +19683,7 @@ void GenSwift::writeType(const CiType * type)
 		default:
 			std::abort();
 		}
+	}
 	else if (dynamic_cast<const CiEnum *>(type))
 		write(type->id == CiId::boolType ? "Bool" : type->name);
 	else if (const CiArrayStorageType *arrayStg = dynamic_cast<const CiArrayStorageType *>(type)) {

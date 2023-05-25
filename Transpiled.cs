@@ -8002,7 +8002,7 @@ namespace Foxoft.Ci
 				WriteLine("while (0);");
 				this.Indent--;
 			}
-			else if (length != 1 || body[0] is CiIf) {
+			else if (length != 1 || body[0] is CiIf || body[0] is CiSwitch) {
 				WriteChar(' ');
 				OpenBlock();
 				WriteFirstStatements(body, length);

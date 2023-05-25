@@ -45,7 +45,7 @@ Transpiled.cs: $(SOURCE_CI)
 cito$(EXEEXT): cito.cpp Transpiled.cpp
 	$(DO)$(CXX) -o $@ $(CXXFLAGS) -O2 -s $^ $(CXXLIBS)
 
-Transpiled.cpp: $(SOURCE_CI)
+Transpiled.cpp Transpiled.d Transpiled.js: $(SOURCE_CI)
 	$(DO)cito -o $@ $^
 
 test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error
