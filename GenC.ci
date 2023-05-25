@@ -1788,6 +1788,19 @@ public class GenC : GenCCpp
 		WriteChar(')');
 	}
 
+	protected void WriteStringSubstring!(CiExpr obj, List<CiExpr#> args, CiPriority parent)
+	{
+		if (args.Count == 1) {
+			if (parent > CiPriority.Add)
+				WriteChar('(');
+			WriteAdd(obj, args[0]);
+			if (parent > CiPriority.Add)
+				WriteChar(')');
+		}
+		else
+			NotSupported(obj, "Substring");
+	}
+
 	void StartArrayIndexing!(CiExpr obj, CiType elementType)
 	{
 		Write("g_array_index(");
@@ -1883,15 +1896,7 @@ public class GenC : GenCCpp
 				WriteChar(')');
 			break;
 		case CiId.StringSubstring:
-			if (args.Count == 1) {
-				if (parent > CiPriority.Add)
-					WriteChar('(');
-				WriteAdd(obj, args[0]);
-				if (parent > CiPriority.Add)
-					WriteChar(')');
-			}
-			else
-				NotSupported(obj, "Substring");
+			WriteStringSubstring(obj, args, parent);
 			break;
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:

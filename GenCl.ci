@@ -197,12 +197,7 @@ public class GenCl : GenC
 			}
 			break;
 		case CiId.StringSubstring:
-			assert args.Count == 1;
-			if (parent > CiPriority.Add)
-				WriteChar('(');
-			WriteAdd(obj, args[0]);
-			if (parent > CiPriority.Add)
-				WriteChar(')');
+			WriteStringSubstring(obj, args, parent);
 			break;
 		case CiId.ArrayCopyTo:
 			Write("for (size_t _i = 0; _i < ");

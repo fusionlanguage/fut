@@ -10229,6 +10229,19 @@ void GenC::writeTryParse(const CiExpr * obj, const std::vector<std::shared_ptr<C
 	writeChar(')');
 }
 
+void GenC::writeStringSubstring(const CiExpr * obj, const std::vector<std::shared_ptr<CiExpr>> * args, CiPriority parent)
+{
+	if (args->size() == 1) {
+		if (parent > CiPriority::add)
+			writeChar('(');
+		writeAdd(obj, (*args)[0].get());
+		if (parent > CiPriority::add)
+			writeChar(')');
+	}
+	else
+		notSupported(obj, "Substring");
+}
+
 void GenC::startArrayIndexing(const CiExpr * obj, const CiType * elementType)
 {
 	write("g_array_index(");
@@ -10328,15 +10341,7 @@ void GenC::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std:
 			break;
 		}
 	case CiId::stringSubstring:
-		if (args->size() == 1) {
-			if (parent > CiPriority::add)
-				writeChar('(');
-			writeAdd(obj, (*args)[0].get());
-			if (parent > CiPriority::add)
-				writeChar(')');
-		}
-		else
-			notSupported(obj, "Substring");
+		writeStringSubstring(obj, args, parent);
 		break;
 	case CiId::arrayBinarySearchAll:
 	case CiId::arrayBinarySearchPart:
@@ -12142,12 +12147,7 @@ void GenCl::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std
 			break;
 		}
 	case CiId::stringSubstring:
-		assert(args->size() == 1);
-		if (parent > CiPriority::add)
-			writeChar('(');
-		writeAdd(obj, (*args)[0].get());
-		if (parent > CiPriority::add)
-			writeChar(')');
+		writeStringSubstring(obj, args, parent);
 		break;
 	case CiId::arrayCopyTo:
 		write("for (size_t _i = 0; _i < ");

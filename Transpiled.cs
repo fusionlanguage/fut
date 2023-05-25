@@ -10552,6 +10552,19 @@ namespace Foxoft.Ci
 			WriteChar(')');
 		}
 
+		protected void WriteStringSubstring(CiExpr obj, List<CiExpr> args, CiPriority parent)
+		{
+			if (args.Count == 1) {
+				if (parent > CiPriority.Add)
+					WriteChar('(');
+				WriteAdd(obj, args[0]);
+				if (parent > CiPriority.Add)
+					WriteChar(')');
+			}
+			else
+				NotSupported(obj, "Substring");
+		}
+
 		void StartArrayIndexing(CiExpr obj, CiType elementType)
 		{
 			Write("g_array_index(");
@@ -10647,15 +10660,7 @@ namespace Foxoft.Ci
 					WriteChar(')');
 				break;
 			case CiId.StringSubstring:
-				if (args.Count == 1) {
-					if (parent > CiPriority.Add)
-						WriteChar('(');
-					WriteAdd(obj, args[0]);
-					if (parent > CiPriority.Add)
-						WriteChar(')');
-				}
-				else
-					NotSupported(obj, "Substring");
+				WriteStringSubstring(obj, args, parent);
 				break;
 			case CiId.ArrayBinarySearchAll:
 			case CiId.ArrayBinarySearchPart:
@@ -12456,12 +12461,7 @@ namespace Foxoft.Ci
 				}
 				break;
 			case CiId.StringSubstring:
-				Debug.Assert(args.Count == 1);
-				if (parent > CiPriority.Add)
-					WriteChar('(');
-				WriteAdd(obj, args[0]);
-				if (parent > CiPriority.Add)
-					WriteChar(')');
+				WriteStringSubstring(obj, args, parent);
 				break;
 			case CiId.ArrayCopyTo:
 				Write("for (size_t _i = 0; _i < ");

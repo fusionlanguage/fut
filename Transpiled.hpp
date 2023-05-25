@@ -2001,6 +2001,7 @@ protected:
 	void writeArrayFill(const CiExpr * obj, const std::vector<std::shared_ptr<CiExpr>> * args);
 	void writePrintfNotInterpolated(const std::vector<std::shared_ptr<CiExpr>> * args, bool newLine);
 	void writeCCall(const CiExpr * obj, const CiMethod * method, const std::vector<std::shared_ptr<CiExpr>> * args);
+	void writeStringSubstring(const CiExpr * obj, const std::vector<std::shared_ptr<CiExpr>> * args, CiPriority parent);
 	void writeCallExpr(const CiExpr * obj, const CiMethod * method, const std::vector<std::shared_ptr<CiExpr>> * args, CiPriority parent) override;
 	void writeIndexingExpr(const CiBinaryExpr * expr, CiPriority parent) override;
 	void writeResource(std::string_view name, int length) override;
