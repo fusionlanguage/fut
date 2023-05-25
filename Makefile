@@ -45,7 +45,7 @@ Transpiled.cs: $(SOURCE_CI)
 cito$(EXEEXT): cito.cpp Transpiled.cpp
 	$(DO)$(CXX) -o $@ $(CXXFLAGS) -O2 -s $^ $(CXXLIBS)
 
-Transpiled.cpp: $(SOURCE_CI)
+Transpiled.cpp Transpiled.js: $(SOURCE_CI)
 	$(DO)cito -o $@ $^
 
 test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error
@@ -54,7 +54,7 @@ test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swif
 test-c test-GenC.ci: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-cpp test-GenCpp.ci: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) test/bin/CiCheck/Test.cpp
+test-cpp test-GenCpp.ci: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) Transpiled.cpp
 	$(DO_SUMMARY)
 
 test-cs test-GenCs.ci: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci))
@@ -66,7 +66,7 @@ test-d test-GenD.ci: $(patsubst test/%.ci, test/bin/%/d.txt, $(wildcard test/*.c
 test-java test-GenJava.ci: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) test/bin/CiCheck/CiSema.java
 	$(DO_SUMMARY)
 
-test-js test-GenJs.ci: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) test/bin/CiCheck/js.txt
+test-js test-GenJs.ci: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) test/bin/CiCheck/js.txt Transpiled.js
 	$(DO_SUMMARY)
 
 test-ts test-GenTs.ci: $(patsubst test/%.ci, test/bin/%/ts.txt, $(wildcard test/*.ci))
@@ -180,12 +180,6 @@ test/bin/%/Test.swift: test/%.ci bin/Debug/net6.0/cito.dll
 test/bin/%/Test.cl: test/%.ci bin/Debug/net6.0/cito.dll
 	$(DO_CITO)
 
-test/bin/CiCheck/cpp.txt: test/bin/CiCheck/cpp.exe $(SOURCE_CI)
-	$(DO)./$< $(SOURCE_CI) >$@
-
-test/bin/CiCheck/cpp.exe: test/bin/CiCheck/Test.cpp test/CiCheck.cpp
-	$(DO)$(CXX) -o $@ $(CXXFLAGS) -I $(<D) $^ $(CXXLIBS)
-
 test/bin/CiCheck/d.txt: test/bin/CiCheck/d.exe $(SOURCE_CI)
 	$(DO)./$< $(SOURCE_CI) >$@
 
@@ -201,7 +195,7 @@ test/bin/CiCheck/CiSema.class: test/bin/CiCheck/CiSema.java test/CiCheck.java
 test/bin/CiCheck/js.txt: test/CiCheck.js test/bin/CiCheck/Test.js $(SOURCE_CI)
 	$(DO)node test/CiCheck.js $(SOURCE_CI) >$@
 
-test/bin/CiCheck/Test.cpp test/bin/CiCheck/Test.d test/bin/CiCheck/CiSema.java test/bin/CiCheck/Test.js test/bin/CiCheck/Test.ts: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci bin/Debug/net6.0/cito.dll
+test/bin/CiCheck/Test.d test/bin/CiCheck/CiSema.java test/bin/CiCheck/Test.js test/bin/CiCheck/Test.ts: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci bin/Debug/net6.0/cito.dll
 	$(DO)mkdir -p $(@D) && $(CITO) -o $@ $(filter %.ci, $^)
 
 test/bin/Resource/java.txt: test/bin/Resource/Test.class test/bin/Runner.class
