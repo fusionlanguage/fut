@@ -76,7 +76,7 @@ class FileResourceSema : public CiSema
 				return;
 			}
 		}
-		stream.open(name, std::ios_base::binary);
+		stream.open(std::string{name}, std::ios_base::binary);
 		if (stream) {
 			std::string input = slurp(stream);
 			content.assign(input.begin(), input.end());
@@ -110,7 +110,7 @@ public:
 	std::ostream *createFile(std::string_view directory, std::string_view filename) override
 	{
 		if (directory.empty())
-			stream.open(filename, std::ios_base::binary);
+			stream.open(std::string{filename}, std::ios_base::binary);
 		else
 			stream.open(std::filesystem::path(directory) / filename, std::ios_base::binary);
 		return &stream;
