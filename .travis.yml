@@ -16,7 +16,7 @@ jobs:
     script: make -j5 test-c test-cl test-error
   - name: cpp, java
     install: sudo apt install clang-12
-    script: make -j5 test-cpp test-java CXX='clang++-12 -std=c++20'
+    script: make -j5 test-cpp test-java CXX=clang++-12
   - name: cs
     script: make -j5 test-cs
   - name: d

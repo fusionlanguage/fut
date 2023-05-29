@@ -4,7 +4,7 @@ DOTNET_BASE_DIR := $(shell dotnet --info | sed -n 's/ Base Path:   //p')
 DOTNET_REF_DIR := $(DOTNET_BASE_DIR)../../packs/Microsoft.NETCore.App.Ref/6.0.16/ref/net6.0
 CSC := dotnet '$(DOTNET_BASE_DIR)Roslyn/bincore/csc.dll' -nologo $(patsubst %,'-r:$(DOTNET_REF_DIR)/System.%.dll', Collections Collections.Specialized Console Linq Runtime Text.RegularExpressions Threading)
 CFLAGS = -Wall -Werror
-CXXFLAGS = -Wall -Werror -std=c++2a
+CXXFLAGS = -Wall -Werror -std=c++20
 SWIFTC = swiftc
 ifeq ($(OS),Windows_NT)
 EXEEXT = .exe
