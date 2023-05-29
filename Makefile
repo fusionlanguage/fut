@@ -9,8 +9,6 @@ SWIFTC = swiftc
 ifeq ($(OS),Windows_NT)
 EXEEXT = .exe
 JAVACPSEP = ;
-CXXFLAGS += -stdlib=libc++ -fexperimental-library
-CXXLIBS += -lstdc++
 SWIFTC += -no-color-diagnostics -sdk '$(SDKROOT)' -Xlinker -noexp -Xlinker -noimplib
 else
 JAVACPSEP = :
@@ -43,7 +41,7 @@ Transpiled.cs: $(SOURCE_CI)
 	$(DO)cito -o $@ -n Foxoft.Ci $^
 
 cito$(EXEEXT): cito.cpp Transpiled.cpp
-	$(DO)$(CXX) -o $@ $(CXXFLAGS) -O2 -s $^ $(CXXLIBS)
+	$(DO)$(CXX) -o $@ $(CXXFLAGS) -O2 -s -static $^
 
 Transpiled.cpp Transpiled.d Transpiled.js: $(SOURCE_CI)
 	$(DO)cito -o $@ $^
@@ -127,7 +125,7 @@ test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
 	$(DO)$(CC) -o $@ $(CFLAGS) -Wno-unused-function -I $(<D) $^ `pkg-config --cflags --libs glib-2.0` -lm || grep '//FAIL:.*\<c\>' test/$*.ci
 
 test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
-	$(DO)$(CXX) -o $@ $(CXXFLAGS) -I $(<D) $^ $(CXXLIBS) || grep '//FAIL:.*\<cpp\>' test/$*.ci
+	$(DO)$(CXX) -o $@ $(CXXFLAGS) -I $(<D) $^ || grep '//FAIL:.*\<cpp\>' test/$*.ci
 
 test/bin/%/cs.dll: test/bin/%/Test.cs test/Runner.cs
 	$(DO)$(CSC) -out:$@ $^ || grep '//FAIL:.*\<cs\>' test/$*.ci
@@ -184,7 +182,7 @@ test/bin/CiCheck/cpp.txt: test/bin/CiCheck/cpp.exe $(SOURCE_CI)
 	$(DO)./$< $(SOURCE_CI) >$@
 
 test/bin/CiCheck/cpp.exe: test/bin/CiCheck/Test.cpp test/CiCheck.cpp
-	$(DO)$(CXX) -o $@ $(CXXFLAGS) -I $(<D) $^ $(CXXLIBS)
+	$(DO)$(CXX) -o $@ $(CXXFLAGS) -I $(<D) $^
 
 test/bin/CiCheck/d.txt: test/bin/CiCheck/d.exe $(SOURCE_CI)
 	$(DO)./$< $(SOURCE_CI) >$@
