@@ -159,7 +159,8 @@ public static class CiTo
 			gen = new GenCl();
 			break;
 		default:
-			throw new ArgumentException("Unknown language: " + lang);
+			Console.Error.WriteLine($"cito: unknown language: {lang}");
+			return false;
 		}
 		gen.Namespace = namespace_;
 		gen.OutputFile = outputFile;
@@ -199,8 +200,10 @@ public static class CiTo
 					break;
 				case "-D":
 					string symbol = args[++i];
-					if (symbol == "true" || symbol == "false")
-						throw new ArgumentException(symbol + " is reserved");
+					if (symbol == "true" || symbol == "false") {
+						Console.Error.WriteLine($"cito: {symbol} is reserved");
+						return 1;
+					}
 					parser.AddPreSymbol(symbol);
 					break;
 				case "-r":
@@ -210,7 +213,8 @@ public static class CiTo
 					sema.AddResourceDir(args[++i]);
 					break;
 				default:
-					throw new ArgumentException("Unknown option: " + arg);
+					Console.Error.WriteLine($"cito: unknown option: {arg}");
+					return 1;
 				}
 			}
 			else {
@@ -255,7 +259,8 @@ public static class CiTo
 			 || c == Path.VolumeSeparatorChar)
 				break;
 		}
-		throw new ArgumentException($"Don't know what language to translate to: no extension in '{outputFile}' and no '-l' option");
+		Console.Error.WriteLine($"Don't know what language to translate to: no extension in '{outputFile}' and no '-l' option");
+		return 1;
 	}
 }
 
