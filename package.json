@@ -1,0 +1,8 @@
+{
+  "name": "cito-js",
+  "private": true,
+  "version": "3.0.0-development",
+  "repository": "https://github.com/pfusik/cito.git",
+  "author": "Piotr Fusik",
+  "type": "module"
+}
