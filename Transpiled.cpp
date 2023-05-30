@@ -3327,11 +3327,12 @@ std::shared_ptr<CiVar> CiParser::parseVar(std::shared_ptr<CiExpr> type)
 	return result;
 }
 
-std::shared_ptr<CiConst> CiParser::parseConst()
+std::shared_ptr<CiConst> CiParser::parseConst(CiVisibility visibility)
 {
 	expect(CiToken::const_);
 	std::shared_ptr<CiConst> konst = std::make_shared<CiConst>();
 	konst->line = this->line;
+	konst->visibility = visibility;
 	konst->typeExpr = parseType();
 	konst->name = this->stringValue;
 	nextToken();
@@ -3650,7 +3651,7 @@ std::shared_ptr<CiStatement> CiParser::parseStatement()
 	case CiToken::break_:
 		return parseBreak();
 	case CiToken::const_:
-		return parseConst();
+		return parseConst(CiVisibility::private_);
 	case CiToken::continue_:
 		return parseContinue();
 	case CiToken::do_:
@@ -3790,9 +3791,8 @@ void CiParser::parseClass(std::shared_ptr<CiCodeDoc> doc, bool isPublic, CiCallT
 			break;
 		}
 		if (see(CiToken::const_)) {
-			std::shared_ptr<CiConst> konst = parseConst();
+			std::shared_ptr<CiConst> konst = parseConst(visibility);
 			konst->documentation = doc;
-			konst->visibility = visibility;
 			addSymbol(klass.get(), konst);
 			continue;
 		}

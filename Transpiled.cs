@@ -3703,10 +3703,10 @@ namespace Foxoft.Ci
 			return result;
 		}
 
-		CiConst ParseConst()
+		CiConst ParseConst(CiVisibility visibility)
 		{
 			Expect(CiToken.Const);
-			CiConst konst = new CiConst { Line = this.Line, TypeExpr = ParseType(), Name = this.StringValue };
+			CiConst konst = new CiConst { Line = this.Line, Visibility = visibility, TypeExpr = ParseType(), Name = this.StringValue };
 			NextToken();
 			Expect(CiToken.Assign);
 			konst.Value = ParseConstInitializer();
@@ -3990,7 +3990,7 @@ namespace Foxoft.Ci
 			case CiToken.Break:
 				return ParseBreak();
 			case CiToken.Const:
-				return ParseConst();
+				return ParseConst(CiVisibility.Private);
 			case CiToken.Continue:
 				return ParseContinue();
 			case CiToken.Do:
@@ -4122,9 +4122,8 @@ namespace Foxoft.Ci
 					break;
 				}
 				if (See(CiToken.Const)) {
-					CiConst konst = ParseConst();
+					CiConst konst = ParseConst(visibility);
 					konst.Documentation = doc;
-					konst.Visibility = visibility;
 					AddSymbol(klass, konst);
 					continue;
 				}

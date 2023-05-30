@@ -3821,10 +3821,10 @@ export class CiParser extends CiLexer
 		return result;
 	}
 
-	#parseConst()
+	#parseConst(visibility)
 	{
 		this.expect(CiToken.CONST);
-		let konst = Object.assign(new CiConst(), { line: this.line, typeExpr: this.#parseType(), name: this.stringValue });
+		let konst = Object.assign(new CiConst(), { line: this.line, visibility: visibility, typeExpr: this.#parseType(), name: this.stringValue });
 		this.nextToken();
 		this.expect(CiToken.ASSIGN);
 		konst.value = this.#parseConstInitializer();
@@ -4109,7 +4109,7 @@ export class CiParser extends CiLexer
 		case CiToken.BREAK:
 			return this.#parseBreak();
 		case CiToken.CONST:
-			return this.#parseConst();
+			return this.#parseConst(CiVisibility.PRIVATE);
 		case CiToken.CONTINUE:
 			return this.#parseContinue();
 		case CiToken.DO:
@@ -4241,9 +4241,8 @@ export class CiParser extends CiLexer
 				break;
 			}
 			if (this.see(CiToken.CONST)) {
-				let konst = this.#parseConst();
+				let konst = this.#parseConst(visibility);
 				konst.documentation = doc;
-				konst.visibility = visibility;
 				this.#addSymbol(klass, konst);
 				continue;
 			}

@@ -1499,7 +1499,7 @@ private:
 	std::shared_ptr<CiExpr> parseInitializer();
 	void addSymbol(CiScope * scope, std::shared_ptr<CiSymbol> symbol);
 	std::shared_ptr<CiVar> parseVar(std::shared_ptr<CiExpr> type);
-	std::shared_ptr<CiConst> parseConst();
+	std::shared_ptr<CiConst> parseConst(CiVisibility visibility);
 	std::shared_ptr<CiExpr> parseAssign(bool allowVar);
 	std::shared_ptr<CiBlock> parseBlock();
 	std::shared_ptr<CiAssert> parseAssert();
