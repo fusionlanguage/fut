@@ -10817,7 +10817,7 @@ export class GenC extends GenCCpp
 	writeCCall(obj, method, args)
 	{
 		let klass = this.currentClass;
-		const declaringClass = method.parent;
+		let declaringClass = method.parent;
 		if (GenC.isReferenceTo(obj, CiId.BASE_PTR)) {
 			this.writeName(method);
 			this.write("(&self->base");
@@ -15272,7 +15272,7 @@ export class GenCs extends GenTyped
 	{
 		if (!this.hasInitCode(def))
 			return;
-		const array = def.type;
+		let array = def.type;
 		let nesting = 0;
 		let innerArray;
 		while ((innerArray = array.getElementType()) instanceof CiArrayStorageType) {
@@ -19037,7 +19037,7 @@ export class GenJsNoModule extends GenBase
 	{
 		if (!this.hasInitCode(def))
 			return;
-		const array = def.type;
+		let array = def.type;
 		let nesting = 0;
 		let innerArray;
 		while ((innerArray = array.getElementType()) instanceof CiArrayStorageType) {
@@ -19725,7 +19725,7 @@ export class GenJsNoModule extends GenBase
 
 	#writeVarCast(def, value)
 	{
-		this.write("const ");
+		this.write(def.isAssigned ? "let " : "const ");
 		this.#writeCamelCaseNotKeyword(def.name);
 		this.write(" = ");
 		value.accept(this, CiPriority.ARGUMENT);

@@ -18541,7 +18541,7 @@ void GenJsNoModule::writeAsType(const CiVar * def)
 
 void GenJsNoModule::writeVarCast(const CiVar * def, const CiExpr * value)
 {
-	write("const ");
+	write(def->isAssigned ? "let " : "const ");
 	writeCamelCaseNotKeyword(def->name);
 	write(" = ");
 	value->accept(this, CiPriority::argument);

@@ -19226,7 +19226,7 @@ namespace Foxoft.Ci
 
 		void WriteVarCast(CiVar def, CiExpr value)
 		{
-			Write("const ");
+			Write(def.IsAssigned ? "let " : "const ");
 			WriteCamelCaseNotKeyword(def.Name);
 			Write(" = ");
 			value.Accept(this, CiPriority.Argument);
