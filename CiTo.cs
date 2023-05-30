@@ -181,24 +181,28 @@ public static class CiTo
 		string namespace_ = "";
 		for (int i = 0; i < args.Length; i++) {
 			string arg = args[i];
-			if (arg[0] == '-') {
-				switch (arg) {
-				case "--help":
-					Usage();
-					return 0;
-				case "--version":
-					Console.WriteLine("cito 3.0.0 (C#)");
-					return 0;
-				case "-l":
+			if (arg.Length < 2 || arg[0] != '-')
+				inputFiles.Add(arg);
+			else if (arg == "--help") {
+				Usage();
+				return 0;
+			}
+			else if (arg == "--version") {
+				Console.WriteLine("cito 3.0.0 (C#)");
+				return 0;
+			}
+			else if (arg.Length == 2 && i + 1 < args.Length) {
+				switch (arg[1]) {
+				case 'l':
 					lang = args[++i];
 					break;
-				case "-o":
+				case 'o':
 					outputFile = args[++i];
 					break;
-				case "-n":
+				case 'n':
 					namespace_ = args[++i];
 					break;
-				case "-D":
+				case 'D':
 					string symbol = args[++i];
 					if (symbol == "true" || symbol == "false") {
 						Console.Error.WriteLine($"cito: {symbol} is reserved");
@@ -206,10 +210,10 @@ public static class CiTo
 					}
 					parser.AddPreSymbol(symbol);
 					break;
-				case "-r":
+				case 'r':
 					referencedFiles.Add(args[++i]);
 					break;
-				case "-I":
+				case 'i':
 					sema.AddResourceDir(args[++i]);
 					break;
 				default:
@@ -218,7 +222,8 @@ public static class CiTo
 				}
 			}
 			else {
-				inputFiles.Add(arg);
+				Console.Error.WriteLine($"cito: unknown option: {arg}");
+				return 1;
 			}
 		}
 		if (outputFile == null || inputFiles.Count == 0) {
