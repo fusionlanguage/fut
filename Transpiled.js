@@ -10106,7 +10106,9 @@ export class GenC extends GenCCpp
 	{
 		let elementType = obj.type.asClassType().getElementType();
 		let parenthesis;
-		if (elementType instanceof CiIntegerType && elementType.id != CiId.LONG_TYPE) {
+		if (parent == CiPriority.STATEMENT)
+			parenthesis = false;
+		else if (elementType instanceof CiIntegerType && elementType.id != CiId.LONG_TYPE) {
 			this.write("GPOINTER_TO_INT(");
 			parenthesis = true;
 		}

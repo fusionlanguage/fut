@@ -9479,7 +9479,9 @@ void GenC::writeQueueGet(std::string_view function, const CiExpr * obj, CiPriori
 {
 	const CiType * elementType = obj->type->asClassType()->getElementType().get();
 	bool parenthesis;
-	if (dynamic_cast<const CiIntegerType *>(elementType) && elementType->id != CiId::longType) {
+	if (parent == CiPriority::statement)
+		parenthesis = false;
+	else if (dynamic_cast<const CiIntegerType *>(elementType) && elementType->id != CiId::longType) {
 		write("GPOINTER_TO_INT(");
 		parenthesis = true;
 	}

@@ -9797,7 +9797,9 @@ namespace Foxoft.Ci
 		{
 			CiType elementType = obj.Type.AsClassType().GetElementType();
 			bool parenthesis;
-			if (elementType is CiIntegerType && elementType.Id != CiId.LongType) {
+			if (parent == CiPriority.Statement)
+				parenthesis = false;
+			else if (elementType is CiIntegerType && elementType.Id != CiId.LongType) {
 				Write("GPOINTER_TO_INT(");
 				parenthesis = true;
 			}
