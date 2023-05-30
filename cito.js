@@ -239,7 +239,7 @@ for (let i = 2; i < process.argv.length; i++) {
 		case "-r":
 			referencedFiles.push(process.argv[++i]);
 			break;
-		case "-i":
+		case "-I":
 			sema.addResourceDir(process.argv[++i]);
 			break;
 		default:
