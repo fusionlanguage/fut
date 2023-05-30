@@ -213,7 +213,7 @@ public static class CiTo
 				case 'r':
 					referencedFiles.Add(args[++i]);
 					break;
-				case 'i':
+				case 'I':
 					sema.AddResourceDir(args[++i]);
 					break;
 				default:
