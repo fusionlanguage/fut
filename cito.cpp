@@ -104,21 +104,21 @@ protected:
 
 class FileGenHost : public GenHost
 {
-	std::ofstream stream;
+	std::ofstream currentFile;
 
 public:
 	std::ostream *createFile(std::string_view directory, std::string_view filename) override
 	{
 		if (directory.empty())
-			stream.open(std::string{filename}, std::ios_base::binary);
+			currentFile.open(std::string{filename}, std::ios_base::binary);
 		else
-			stream.open(std::filesystem::path(directory) / filename, std::ios_base::binary);
-		return &stream;
+			currentFile.open(std::filesystem::path(directory) / filename, std::ios_base::binary);
+		return &currentFile;
 	}
 
 	void closeFile() override
 	{
-		stream.close();
+		currentFile.close();
 	}
 };
 
