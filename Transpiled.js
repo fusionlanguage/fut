@@ -631,8 +631,10 @@ export class CiLexer
 					return CiToken.GREATER_OR_EQUAL;
 				return CiToken.GREATER;
 			case 39:
-				if (this.peekChar() == 39)
+				if (this.peekChar() == 39) {
 					this.reportError("Empty character literal");
+					this.longValue = 0n;
+				}
 				else
 					this.longValue = BigInt(this.#readCharLiteral());
 				if (!this.#eatChar(39))

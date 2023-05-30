@@ -652,8 +652,10 @@ namespace Foxoft.Ci
 						return CiToken.GreaterOrEqual;
 					return CiToken.Greater;
 				case '\'':
-					if (PeekChar() == '\'')
+					if (PeekChar() == '\'') {
 						ReportError("Empty character literal");
+						this.LongValue = 0;
+					}
 					else
 						this.LongValue = ReadCharLiteral();
 					if (!EatChar('\''))

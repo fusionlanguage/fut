@@ -514,8 +514,10 @@ CiToken CiLexer::readPreToken()
 				return CiToken::greaterOrEqual;
 			return CiToken::greater;
 		case '\'':
-			if (peekChar() == '\'')
+			if (peekChar() == '\'') {
 				reportError("Empty character literal");
+				this->longValue = 0;
+			}
 			else
 				this->longValue = readCharLiteral();
 			if (!eatChar('\''))
