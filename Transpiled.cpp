@@ -18560,6 +18560,7 @@ void GenJsNoModule::writeAssertCast(const CiBinaryExpr * expr)
 void GenJsNoModule::writeAssert(const CiAssert * statement)
 {
 	if (statement->completesNormally()) {
+		writeTemporaries(statement->cond.get());
 		write("console.assert(");
 		statement->cond->accept(this, CiPriority::argument);
 		if (statement->message != nullptr) {

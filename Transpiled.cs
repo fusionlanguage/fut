@@ -19244,6 +19244,7 @@ namespace Foxoft.Ci
 		protected override void WriteAssert(CiAssert statement)
 		{
 			if (statement.CompletesNormally()) {
+				WriteTemporaries(statement.Cond);
 				Write("console.assert(");
 				statement.Cond.Accept(this, CiPriority.Argument);
 				if (statement.Message != null) {

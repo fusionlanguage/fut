@@ -16580,6 +16580,8 @@ export class GenD extends GenCCppD
 			this.write("double.infinity");
 			break;
 		default:
+			let forEach;
+			let dict;
 			console.assert(!((forEach = expr.symbol.parent) instanceof CiForeach && (dict = forEach.collection.type) instanceof CiClassType && dict.class.id == CiId.ORDERED_DICTIONARY_CLASS));
 			super.visitSymbolReference(expr, parent);
 			break;
@@ -19743,6 +19745,7 @@ export class GenJsNoModule extends GenBase
 	writeAssert(statement)
 	{
 		if (statement.completesNormally()) {
+			this.writeTemporaries(statement.cond);
 			this.write("console.assert(");
 			statement.cond.accept(this, CiPriority.ARGUMENT);
 			if (statement.message != null) {
