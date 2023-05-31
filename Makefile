@@ -16,8 +16,6 @@ CXXFLAGS += -fsanitize=address -g
 SWIFTC += -sanitize=address
 endif
 CITO = dotnet run --no-build --
-CC = clang
-CXX = clang++
 DC = dmd
 PYTHON = python3 -B
 

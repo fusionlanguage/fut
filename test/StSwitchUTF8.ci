@@ -10,7 +10,7 @@ public static class Test
 		int len = 2;
 		switch (Encoding.UTF8.GetString(a, 1, len)) {
 		case "":
-		case "foob":
+		case "foob": //FAIL: c TODO gcc memcmp bounds
 			return false;
 		case "bar":
 		case "oo":

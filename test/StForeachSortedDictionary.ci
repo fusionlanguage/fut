@@ -23,7 +23,7 @@ public static class Test
 		dict2["II"] = 2;
 		int i = 0;
 		foreach ((string key, int value) in dict2) {
-			if (key.Length != i || value != i)
+			if (key.Length != i || value != i) //FAIL: cpp TODO gcc different signedness
 				return false;
 			i++;
 		}
