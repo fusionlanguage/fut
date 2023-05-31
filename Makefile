@@ -7,7 +7,6 @@ CFLAGS = -Wall -Werror
 CXXFLAGS = -Wall -Werror -std=c++20
 SWIFTC = swiftc
 ifeq ($(OS),Windows_NT)
-EXEEXT = .exe
 JAVACPSEP = ;
 SWIFTC += -no-color-diagnostics -sdk '$(SDKROOT)' -Xlinker -noexp -Xlinker -noimplib
 else
@@ -40,8 +39,19 @@ bin/Debug/net6.0/cito.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs C
 Transpiled.cs: $(SOURCE_CI)
 	$(DO)cito -o $@ -n Foxoft.Ci $^
 
-cito$(EXEEXT): cito.cpp Transpiled.cpp
-	$(DO)$(CXX) -o $@ $(CXXFLAGS) -O2 -s -static $^
+ifeq ($(OS),Windows_NT)
+
+cito: cito.exe
+
+cito.exe: cito.cpp Transpiled.cpp
+	$(DO)$(CXX) -o $@ -std=c++20 -Wall -O2 -s -static $^
+
+else
+
+cito: cito.cpp Transpiled.cpp
+	$(DO)$(CXX) -o $@ -std=c++20 -Wall -O2 $^
+
+endif
 
 Transpiled.cpp Transpiled.d Transpiled.js: $(SOURCE_CI)
 	$(DO)cito -o $@ $^
@@ -232,7 +242,7 @@ codecov: coverage/output.xml
 	./codecov -f $<
 
 clean:
-	$(RM) cito$(EXEEXT)
+	$(RM) cito cito.exe
 	$(RM) -r test/bin
 
 .PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov clean
