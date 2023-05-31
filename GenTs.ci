@@ -158,20 +158,9 @@ public class GenTs : GenJs
 	protected override void WriteBinaryOperand!(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
 	{
 		CiType type = binary.Type;
-		if (expr.Type is CiNumericType) {
-			switch (binary.Op) {
-			case CiToken.Equal:
-			case CiToken.NotEqual:
-			case CiToken.Less:
-			case CiToken.LessOrEqual:
-			case CiToken.Greater:
-			case CiToken.GreaterOrEqual:
-				// work around https://github.com/microsoft/TypeScript/issues/30540
-				type = this.System.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
-				break;
-			default:
-				break;
-			}
+		if (expr.Type is CiNumericType && binary.IsRel()) {
+			// work around https://github.com/microsoft/TypeScript/issues/30540
+			type = this.System.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
 		}
 		WriteCoerced(type, expr, parent);
 	}

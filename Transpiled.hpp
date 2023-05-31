@@ -865,6 +865,7 @@ public:
 	bool isConstEnum() const override;
 	int intValue() const override;
 	void accept(CiVisitor * visitor, CiPriority parent) const override;
+	bool isRel() const;
 	bool isAssign() const;
 	std::string_view getOpString() const;
 	std::string toString() const override;

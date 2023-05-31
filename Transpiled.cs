@@ -1977,6 +1977,21 @@ namespace Foxoft.Ci
 			visitor.VisitBinaryExpr(this, parent);
 		}
 
+		public bool IsRel()
+		{
+			switch (this.Op) {
+			case CiToken.Equal:
+			case CiToken.NotEqual:
+			case CiToken.Less:
+			case CiToken.LessOrEqual:
+			case CiToken.Greater:
+			case CiToken.GreaterOrEqual:
+				return true;
+			default:
+				return false;
+			}
+		}
+
 		public bool IsAssign()
 		{
 			switch (this.Op) {
@@ -7293,11 +7308,6 @@ namespace Foxoft.Ci
 			WriteBinaryExpr(expr, parent > child, child, op, child);
 		}
 
-		void WriteRel(CiBinaryExpr expr, CiPriority parent, string op)
-		{
-			WriteBinaryExpr(expr, parent > CiPriority.CondAnd, CiPriority.Rel, op, CiPriority.Rel);
-		}
-
 		protected static string GetEqOp(bool not) => not ? " != " : " == ";
 
 		protected virtual void WriteEqualOperand(CiExpr expr, CiExpr other)
@@ -7319,6 +7329,11 @@ namespace Foxoft.Ci
 		protected virtual void WriteEqual(CiExpr left, CiExpr right, CiPriority parent, bool not)
 		{
 			WriteEqualExpr(left, right, parent, GetEqOp(not));
+		}
+
+		void WriteRel(CiBinaryExpr expr, CiPriority parent, string op)
+		{
+			WriteBinaryExpr(expr, parent > CiPriority.CondAnd, CiPriority.Rel, op, CiPriority.Rel);
 		}
 
 		protected virtual void WriteAnd(CiBinaryExpr expr, CiPriority parent)
@@ -7381,6 +7396,12 @@ namespace Foxoft.Ci
 			case CiToken.ShiftRight:
 				WriteBinaryExpr(expr, parent > CiPriority.Shift, CiPriority.Shift, " >> ", CiPriority.Mul);
 				break;
+			case CiToken.Equal:
+				WriteEqual(expr.Left, expr.Right, parent, false);
+				break;
+			case CiToken.NotEqual:
+				WriteEqual(expr.Left, expr.Right, parent, true);
+				break;
 			case CiToken.Less:
 				WriteRel(expr, parent, " < ");
 				break;
@@ -7392,12 +7413,6 @@ namespace Foxoft.Ci
 				break;
 			case CiToken.GreaterOrEqual:
 				WriteRel(expr, parent, " >= ");
-				break;
-			case CiToken.Equal:
-				WriteEqual(expr.Left, expr.Right, parent, false);
-				break;
-			case CiToken.NotEqual:
-				WriteEqual(expr.Left, expr.Right, parent, true);
 				break;
 			case CiToken.And:
 				WriteAnd(expr, parent);
@@ -18642,7 +18657,7 @@ namespace Foxoft.Ci
 
 		protected override void WriteBinaryOperand(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
 		{
-			WriteCoerced(binary.Type, expr, parent);
+			WriteCoerced(binary.IsRel() ? expr.Type : binary.Type, expr, parent);
 		}
 
 		static bool IsIdentifier(string s)
@@ -19680,19 +19695,8 @@ namespace Foxoft.Ci
 		protected override void WriteBinaryOperand(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
 		{
 			CiType type = binary.Type;
-			if (expr.Type is CiNumericType) {
-				switch (binary.Op) {
-				case CiToken.Equal:
-				case CiToken.NotEqual:
-				case CiToken.Less:
-				case CiToken.LessOrEqual:
-				case CiToken.Greater:
-				case CiToken.GreaterOrEqual:
-					type = this.System.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
-					break;
-				default:
-					break;
-				}
+			if (expr.Type is CiNumericType && binary.IsRel()) {
+				type = this.System.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
 			}
 			WriteCoerced(type, expr, parent);
 		}
@@ -21120,12 +21124,12 @@ namespace Foxoft.Ci
 						}
 					}
 					break;
+				case CiToken.Equal:
+				case CiToken.NotEqual:
 				case CiToken.Less:
 				case CiToken.LessOrEqual:
 				case CiToken.Greater:
 				case CiToken.GreaterOrEqual:
-				case CiToken.Equal:
-				case CiToken.NotEqual:
 					CiType typeComp = this.System.PromoteFloatingTypes(binary.Left.Type, binary.Right.Type);
 					if (typeComp != null && typeComp != expr.Type) {
 						WriteCoerced(typeComp, expr, parent);

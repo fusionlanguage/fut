@@ -1478,6 +1478,21 @@ void CiBinaryExpr::accept(CiVisitor * visitor, CiPriority parent) const
 	visitor->visitBinaryExpr(this, parent);
 }
 
+bool CiBinaryExpr::isRel() const
+{
+	switch (this->op) {
+	case CiToken::equal:
+	case CiToken::notEqual:
+	case CiToken::less:
+	case CiToken::lessOrEqual:
+	case CiToken::greater:
+	case CiToken::greaterOrEqual:
+		return true;
+	default:
+		return false;
+	}
+}
+
 bool CiBinaryExpr::isAssign() const
 {
 	switch (this->op) {
@@ -7107,11 +7122,6 @@ void GenBase::writeBinaryExpr2(const CiBinaryExpr * expr, CiPriority parent, CiP
 	writeBinaryExpr(expr, parent > child, child, op, child);
 }
 
-void GenBase::writeRel(const CiBinaryExpr * expr, CiPriority parent, std::string_view op)
-{
-	writeBinaryExpr(expr, parent > CiPriority::condAnd, CiPriority::rel, op, CiPriority::rel);
-}
-
 std::string_view GenBase::getEqOp(bool not_)
 {
 	return not_ ? " != " : " == ";
@@ -7136,6 +7146,11 @@ void GenBase::writeEqualExpr(const CiExpr * left, const CiExpr * right, CiPriori
 void GenBase::writeEqual(const CiExpr * left, const CiExpr * right, CiPriority parent, bool not_)
 {
 	writeEqualExpr(left, right, parent, getEqOp(not_));
+}
+
+void GenBase::writeRel(const CiBinaryExpr * expr, CiPriority parent, std::string_view op)
+{
+	writeBinaryExpr(expr, parent > CiPriority::condAnd, CiPriority::rel, op, CiPriority::rel);
 }
 
 void GenBase::writeAnd(const CiBinaryExpr * expr, CiPriority parent)
@@ -7201,6 +7216,12 @@ void GenBase::visitBinaryExpr(const CiBinaryExpr * expr, CiPriority parent)
 	case CiToken::shiftRight:
 		writeBinaryExpr(expr, parent > CiPriority::shift, CiPriority::shift, " >> ", CiPriority::mul);
 		break;
+	case CiToken::equal:
+		writeEqual(expr->left.get(), expr->right.get(), parent, false);
+		break;
+	case CiToken::notEqual:
+		writeEqual(expr->left.get(), expr->right.get(), parent, true);
+		break;
 	case CiToken::less:
 		writeRel(expr, parent, " < ");
 		break;
@@ -7212,12 +7233,6 @@ void GenBase::visitBinaryExpr(const CiBinaryExpr * expr, CiPriority parent)
 		break;
 	case CiToken::greaterOrEqual:
 		writeRel(expr, parent, " >= ");
-		break;
-	case CiToken::equal:
-		writeEqual(expr->left.get(), expr->right.get(), parent, false);
-		break;
-	case CiToken::notEqual:
-		writeEqual(expr->left.get(), expr->right.get(), parent, true);
 		break;
 	case CiToken::and_:
 		writeAnd(expr, parent);
@@ -17948,7 +17963,7 @@ void GenJsNoModule::writeCharAt(const CiBinaryExpr * expr)
 
 void GenJsNoModule::writeBinaryOperand(const CiExpr * expr, CiPriority parent, const CiBinaryExpr * binary)
 {
-	writeCoerced(binary->type.get(), expr, parent);
+	writeCoerced(binary->isRel() ? expr->type.get() : binary->type.get(), expr, parent);
 }
 
 bool GenJsNoModule::isIdentifier(std::string_view s)
@@ -18977,19 +18992,8 @@ void GenTs::writeAsType(const CiVar * def)
 void GenTs::writeBinaryOperand(const CiExpr * expr, CiPriority parent, const CiBinaryExpr * binary)
 {
 	const CiType * type = binary->type.get();
-	if (dynamic_cast<const CiNumericType *>(expr->type.get())) {
-		switch (binary->op) {
-		case CiToken::equal:
-		case CiToken::notEqual:
-		case CiToken::less:
-		case CiToken::lessOrEqual:
-		case CiToken::greater:
-		case CiToken::greaterOrEqual:
-			type = this->system->promoteNumericTypes(binary->left->type, binary->right->type).get();
-			break;
-		default:
-			break;
-		}
+	if (dynamic_cast<const CiNumericType *>(expr->type.get()) && binary->isRel()) {
+		type = this->system->promoteNumericTypes(binary->left->type, binary->right->type).get();
 	}
 	writeCoerced(type, expr, parent);
 }
@@ -20303,7 +20307,7 @@ void GenSwift::writeBinaryOperand(const CiExpr * expr, CiPriority parent, const 
 				}
 			}
 		}
-		else if (binary->op == CiToken::less || binary->op == CiToken::lessOrEqual || binary->op == CiToken::greater || binary->op == CiToken::greaterOrEqual || binary->op == CiToken::equal || binary->op == CiToken::notEqual) {
+		else if (binary->op == CiToken::equal || binary->op == CiToken::notEqual || binary->op == CiToken::less || binary->op == CiToken::lessOrEqual || binary->op == CiToken::greater || binary->op == CiToken::greaterOrEqual) {
 			const CiType * typeComp = this->system->promoteFloatingTypes(binary->left->type.get(), binary->right->type.get()).get();
 			if (typeComp != nullptr && typeComp != expr->type.get()) {
 				writeCoerced(typeComp, expr, parent);

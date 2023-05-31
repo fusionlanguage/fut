@@ -635,6 +635,20 @@ public class CiBinaryExpr : CiExpr
 		}
 	}
 	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitBinaryExpr(this, parent); }
+	public bool IsRel()
+	{
+		switch (this.Op) {
+		case CiToken.Equal:
+		case CiToken.NotEqual:
+		case CiToken.Less:
+		case CiToken.LessOrEqual:
+		case CiToken.Greater:
+		case CiToken.GreaterOrEqual:
+			return true;
+		default:
+			return false;
+		}
+	}
 	public bool IsAssign()
 	{
 		switch (this.Op) {

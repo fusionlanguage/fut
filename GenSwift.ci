@@ -887,12 +887,12 @@ public class GenSwift : GenPySwift
 					}
 				}
 				break;
+			case CiToken.Equal:
+			case CiToken.NotEqual:
 			case CiToken.Less:
 			case CiToken.LessOrEqual:
 			case CiToken.Greater:
 			case CiToken.GreaterOrEqual:
-			case CiToken.Equal:
-			case CiToken.NotEqual:
 				CiType? typeComp = this.System.PromoteFloatingTypes(binary.Left.Type, binary.Right.Type);
 				if (typeComp != null && typeComp != expr.Type) {
 					WriteCoerced(typeComp, expr, parent);

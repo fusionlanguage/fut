@@ -367,7 +367,7 @@ export class CiLexer
 			}
 			if (i == 0)
 				leadingZero = true;
-			if (i > (c < 8 ? 922337203685477580 : 922337203685477579))
+			if (i > (c < 8 ? 922337203685477580n : 922337203685477579n))
 				tooBig = true;
 			else
 				i = 10n * i + BigInt(c);
@@ -1938,6 +1938,21 @@ export class CiBinaryExpr extends CiExpr
 	accept(visitor, parent)
 	{
 		visitor.visitBinaryExpr(this, parent);
+	}
+
+	isRel()
+	{
+		switch (this.op) {
+		case CiToken.EQUAL:
+		case CiToken.NOT_EQUAL:
+		case CiToken.LESS:
+		case CiToken.LESS_OR_EQUAL:
+		case CiToken.GREATER:
+		case CiToken.GREATER_OR_EQUAL:
+			return true;
+		default:
+			return false;
+		}
 	}
 
 	isAssign()
@@ -7561,11 +7576,6 @@ export class GenBase extends CiVisitor
 		this.writeBinaryExpr(expr, parent > child, child, op, child);
 	}
 
-	#writeRel(expr, parent, op)
-	{
-		this.writeBinaryExpr(expr, parent > CiPriority.COND_AND, CiPriority.REL, op, CiPriority.REL);
-	}
-
 	static getEqOp(not)
 	{
 		return not ? " != " : " == ";
@@ -7590,6 +7600,11 @@ export class GenBase extends CiVisitor
 	writeEqual(left, right, parent, not)
 	{
 		this.writeEqualExpr(left, right, parent, GenBase.getEqOp(not));
+	}
+
+	#writeRel(expr, parent, op)
+	{
+		this.writeBinaryExpr(expr, parent > CiPriority.COND_AND, CiPriority.REL, op, CiPriority.REL);
 	}
 
 	writeAnd(expr, parent)
@@ -7655,6 +7670,12 @@ export class GenBase extends CiVisitor
 		case CiToken.SHIFT_RIGHT:
 			this.writeBinaryExpr(expr, parent > CiPriority.SHIFT, CiPriority.SHIFT, " >> ", CiPriority.MUL);
 			break;
+		case CiToken.EQUAL:
+			this.writeEqual(expr.left, expr.right, parent, false);
+			break;
+		case CiToken.NOT_EQUAL:
+			this.writeEqual(expr.left, expr.right, parent, true);
+			break;
 		case CiToken.LESS:
 			this.#writeRel(expr, parent, " < ");
 			break;
@@ -7666,12 +7687,6 @@ export class GenBase extends CiVisitor
 			break;
 		case CiToken.GREATER_OR_EQUAL:
 			this.#writeRel(expr, parent, " >= ");
-			break;
-		case CiToken.EQUAL:
-			this.writeEqual(expr.left, expr.right, parent, false);
-			break;
-		case CiToken.NOT_EQUAL:
-			this.writeEqual(expr.left, expr.right, parent, true);
 			break;
 		case CiToken.AND:
 			this.writeAnd(expr, parent);
@@ -19136,7 +19151,7 @@ export class GenJsNoModule extends GenBase
 
 	writeBinaryOperand(expr, parent, binary)
 	{
-		this.writeCoerced(binary.type, expr, parent);
+		this.writeCoerced(binary.isRel() ? expr.type : binary.type, expr, parent);
 	}
 
 	static #isIdentifier(s)
@@ -20178,19 +20193,8 @@ export class GenTs extends GenJs
 	writeBinaryOperand(expr, parent, binary)
 	{
 		let type = binary.type;
-		if (expr.type instanceof CiNumericType) {
-			switch (binary.op) {
-			case CiToken.EQUAL:
-			case CiToken.NOT_EQUAL:
-			case CiToken.LESS:
-			case CiToken.LESS_OR_EQUAL:
-			case CiToken.GREATER:
-			case CiToken.GREATER_OR_EQUAL:
-				type = this.#system.promoteNumericTypes(binary.left.type, binary.right.type);
-				break;
-			default:
-				break;
-			}
+		if (expr.type instanceof CiNumericType && binary.isRel()) {
+			type = this.#system.promoteNumericTypes(binary.left.type, binary.right.type);
 		}
 		this.writeCoerced(type, expr, parent);
 	}
@@ -21626,7 +21630,7 @@ export class GenSwift extends GenPySwift
 					}
 				}
 			}
-			else if (binary.op == CiToken.LESS || binary.op == CiToken.LESS_OR_EQUAL || binary.op == CiToken.GREATER || binary.op == CiToken.GREATER_OR_EQUAL || binary.op == CiToken.EQUAL || binary.op == CiToken.NOT_EQUAL) {
+			else if (binary.op == CiToken.EQUAL || binary.op == CiToken.NOT_EQUAL || binary.op == CiToken.LESS || binary.op == CiToken.LESS_OR_EQUAL || binary.op == CiToken.GREATER || binary.op == CiToken.GREATER_OR_EQUAL) {
 				let typeComp = this.#system.promoteFloatingTypes(binary.left.type, binary.right.type);
 				if (typeComp != null && typeComp != expr.type) {
 					this.writeCoerced(typeComp, expr, parent);

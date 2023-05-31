@@ -432,7 +432,7 @@ public class GenJsNoModule : GenBase
 
 	protected override void WriteBinaryOperand!(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
 	{
-		WriteCoerced(binary.Type, expr, parent);
+		WriteCoerced(binary.IsRel() ? expr.Type : binary.Type, expr, parent);
 	}
 
 	static bool IsIdentifier(string s)
