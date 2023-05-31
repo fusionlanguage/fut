@@ -9987,8 +9987,10 @@ void GenC::writeEqual(const CiExpr * left, const CiExpr * right, CiPriority pare
 					lengthExpr->accept(this, CiPriority::equality);
 					write(" != ");
 					visitLiteralLong(rightLength);
-					write(" || ");
-					writeSubstringEqual(call, rightValue, CiPriority::condOr, true);
+					if (rightLength > 0) {
+						write(" || ");
+						writeSubstringEqual(call, rightValue, CiPriority::condOr, true);
+					}
 					if (parent > CiPriority::condOr)
 						writeChar(')');
 				}
@@ -9998,8 +10000,10 @@ void GenC::writeEqual(const CiExpr * left, const CiExpr * right, CiPriority pare
 					lengthExpr->accept(this, CiPriority::equality);
 					write(" == ");
 					visitLiteralLong(rightLength);
-					write(" && ");
-					writeSubstringEqual(call, rightValue, CiPriority::condAnd, false);
+					if (rightLength > 0) {
+						write(" && ");
+						writeSubstringEqual(call, rightValue, CiPriority::condAnd, false);
+					}
 					if (parent > CiPriority::condAnd || parent == CiPriority::condOr)
 						writeChar(')');
 				}

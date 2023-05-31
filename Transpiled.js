@@ -10641,8 +10641,10 @@ export class GenC extends GenCCpp
 						lengthExpr.accept(this, CiPriority.EQUALITY);
 						this.write(" != ");
 						this.visitLiteralLong(BigInt(rightLength));
-						this.write(" || ");
-						this.writeSubstringEqual(call, rightValue, CiPriority.COND_OR, true);
+						if (rightLength > 0) {
+							this.write(" || ");
+							this.writeSubstringEqual(call, rightValue, CiPriority.COND_OR, true);
+						}
 						if (parent > CiPriority.COND_OR)
 							this.writeChar(41);
 					}
@@ -10652,8 +10654,10 @@ export class GenC extends GenCCpp
 						lengthExpr.accept(this, CiPriority.EQUALITY);
 						this.write(" == ");
 						this.visitLiteralLong(BigInt(rightLength));
-						this.write(" && ");
-						this.writeSubstringEqual(call, rightValue, CiPriority.COND_AND, false);
+						if (rightLength > 0) {
+							this.write(" && ");
+							this.writeSubstringEqual(call, rightValue, CiPriority.COND_AND, false);
+						}
 						if (parent > CiPriority.COND_AND || parent == CiPriority.COND_OR)
 							this.writeChar(41);
 					}

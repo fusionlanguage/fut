@@ -10301,8 +10301,10 @@ namespace Foxoft.Ci
 							lengthExpr.Accept(this, CiPriority.Equality);
 							Write(" != ");
 							VisitLiteralLong(rightLength);
-							Write(" || ");
-							WriteSubstringEqual(call, rightValue, CiPriority.CondOr, true);
+							if (rightLength > 0) {
+								Write(" || ");
+								WriteSubstringEqual(call, rightValue, CiPriority.CondOr, true);
+							}
 							if (parent > CiPriority.CondOr)
 								WriteChar(')');
 						}
@@ -10312,8 +10314,10 @@ namespace Foxoft.Ci
 							lengthExpr.Accept(this, CiPriority.Equality);
 							Write(" == ");
 							VisitLiteralLong(rightLength);
-							Write(" && ");
-							WriteSubstringEqual(call, rightValue, CiPriority.CondAnd, false);
+							if (rightLength > 0) {
+								Write(" && ");
+								WriteSubstringEqual(call, rightValue, CiPriority.CondAnd, false);
+							}
 							if (parent > CiPriority.CondAnd || parent == CiPriority.CondOr)
 								WriteChar(')');
 						}
