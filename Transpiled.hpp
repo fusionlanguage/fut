@@ -1800,6 +1800,7 @@ protected:
 	bool writeRegexOptions(const std::vector<std::shared_ptr<CiExpr>> * args, std::string_view prefix, std::string_view separator, std::string_view suffix, std::string_view i, std::string_view m, std::string_view s);
 	virtual void writeCallExpr(const CiExpr * obj, const CiMethod * method, const std::vector<std::shared_ptr<CiExpr>> * args, CiPriority parent) = 0;
 	void ensureChildBlock();
+	static bool hasTemporaries(const CiExpr * expr);
 	virtual void startTemporaryVar(const CiType * type) = 0;
 	virtual void defineObjectLiteralTemporary(const CiUnaryExpr * expr);
 	void writeTemporaries(const CiExpr * expr);
@@ -2226,7 +2227,6 @@ private:
 	void writeMatchProperty(const CiSymbolReference * expr, std::string_view name);
 	void writeGtRawPtr(const CiExpr * expr);
 	void writeIsVar(const CiExpr * expr, const CiVar * def, CiPriority parent);
-	static bool hasTemporaries(const CiExpr * expr);
 	static bool isIsVar(const CiExpr * expr);
 	bool hasVariables(const CiStatement * statement) const;
 	void openNamespace();

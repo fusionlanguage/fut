@@ -1556,35 +1556,6 @@ public class GenCpp : GenCCpp
 			base.WriteSwitchCaseCond(statement, value, parent);
 	}
 
-	static bool HasTemporaries(CiExpr expr)
-	{
-		switch (expr) {
-		case CiAggregateInitializer init:
-			return init.Items.Any(item => HasTemporaries(item));
-		case CiLiteral _:
-		case CiLambdaExpr _:
-			return false;
-		case CiInterpolatedString interp:
-			return interp.Parts.Any(part => HasTemporaries(part.Argument));
-		case CiSymbolReference symbol:
-			return symbol.Left != null && HasTemporaries(symbol.Left);
-		case CiUnaryExpr unary:
-			return unary.Inner != null && (HasTemporaries(unary.Inner) || unary.Inner is CiAggregateInitializer);
-		case CiBinaryExpr binary:
-			if (HasTemporaries(binary.Left))
-				return true;
-			if (binary.Op == CiToken.Is)
-				return binary.Right is CiVar;
-			return HasTemporaries(binary.Right);
-		case CiSelectExpr select:
-			return HasTemporaries(select.Cond) || HasTemporaries(select.OnTrue) || HasTemporaries(select.OnFalse);
-		case CiCallExpr call:
-			return HasTemporaries(call.Method) || call.Arguments.Any(arg => HasTemporaries(arg));
-		default:
-			assert false;
-		}
-	}
-
 	static bool IsIsVar(CiExpr expr) => expr is CiBinaryExpr binary && binary.Op == CiToken.Is && binary.Right is CiVar;
 
 	bool HasVariables(CiStatement statement)

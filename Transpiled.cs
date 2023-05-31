@@ -7673,6 +7673,35 @@ namespace Foxoft.Ci
 			}
 		}
 
+		protected static bool HasTemporaries(CiExpr expr)
+		{
+			switch (expr) {
+			case CiAggregateInitializer init:
+				return init.Items.Any(item => HasTemporaries(item));
+			case CiLiteral _:
+			case CiLambdaExpr _:
+				return false;
+			case CiInterpolatedString interp:
+				return interp.Parts.Any(part => HasTemporaries(part.Argument));
+			case CiSymbolReference symbol:
+				return symbol.Left != null && HasTemporaries(symbol.Left);
+			case CiUnaryExpr unary:
+				return unary.Inner != null && (HasTemporaries(unary.Inner) || unary.Inner is CiAggregateInitializer);
+			case CiBinaryExpr binary:
+				if (HasTemporaries(binary.Left))
+					return true;
+				if (binary.Op == CiToken.Is)
+					return binary.Right is CiVar;
+				return HasTemporaries(binary.Right);
+			case CiSelectExpr select:
+				return HasTemporaries(select.Cond) || HasTemporaries(select.OnTrue) || HasTemporaries(select.OnFalse);
+			case CiCallExpr call:
+				return HasTemporaries(call.Method) || call.Arguments.Any(arg => HasTemporaries(arg));
+			default:
+				throw new NotImplementedException();
+			}
+		}
+
 		protected abstract void StartTemporaryVar(CiType type);
 
 		protected virtual void DefineObjectLiteralTemporary(CiUnaryExpr expr)
@@ -14172,35 +14201,6 @@ namespace Foxoft.Ci
 				base.WriteSwitchCaseCond(statement, value, parent);
 		}
 
-		static bool HasTemporaries(CiExpr expr)
-		{
-			switch (expr) {
-			case CiAggregateInitializer init:
-				return init.Items.Any(item => HasTemporaries(item));
-			case CiLiteral _:
-			case CiLambdaExpr _:
-				return false;
-			case CiInterpolatedString interp:
-				return interp.Parts.Any(part => HasTemporaries(part.Argument));
-			case CiSymbolReference symbol:
-				return symbol.Left != null && HasTemporaries(symbol.Left);
-			case CiUnaryExpr unary:
-				return unary.Inner != null && (HasTemporaries(unary.Inner) || unary.Inner is CiAggregateInitializer);
-			case CiBinaryExpr binary:
-				if (HasTemporaries(binary.Left))
-					return true;
-				if (binary.Op == CiToken.Is)
-					return binary.Right is CiVar;
-				return HasTemporaries(binary.Right);
-			case CiSelectExpr select:
-				return HasTemporaries(select.Cond) || HasTemporaries(select.OnTrue) || HasTemporaries(select.OnFalse);
-			case CiCallExpr call:
-				return HasTemporaries(call.Method) || call.Arguments.Any(arg => HasTemporaries(arg));
-			default:
-				throw new NotImplementedException();
-			}
-		}
-
 		static bool IsIsVar(CiExpr expr) => expr is CiBinaryExpr binary && binary.Op == CiToken.Is && binary.Right is CiVar;
 
 		bool HasVariables(CiStatement statement)
@@ -19226,7 +19226,16 @@ namespace Foxoft.Ci
 		{
 			WriteName(expr.First);
 			Write(" => ");
-			expr.Body.Accept(this, CiPriority.Statement);
+			if (HasTemporaries(expr.Body)) {
+				OpenBlock();
+				WriteTemporaries(expr.Body);
+				Write("return ");
+				expr.Body.Accept(this, CiPriority.Argument);
+				WriteCharLine(';');
+				CloseBlock();
+			}
+			else
+				expr.Body.Accept(this, CiPriority.Statement);
 		}
 
 		protected override void StartTemporaryVar(CiType type)

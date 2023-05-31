@@ -2289,7 +2289,11 @@ export class CiSwitch extends CiCondCompletionStatement
 
 	hasWhen()
 	{
-		return this.cases.some(kase => kase.values.some(value => (when1 = value) instanceof CiBinaryExpr && when1.op == CiToken.WHEN));
+		return this.cases.some(kase => kase.values.some(value => {
+			let when1;
+			return (when1 = value) instanceof CiBinaryExpr && when1.op == CiToken.WHEN;
+		}
+		));
 	}
 
 	static lengthWithoutTrailingBreak(body)
@@ -7943,6 +7947,46 @@ export class GenBase extends CiVisitor
 			this.openBlock();
 			this.#inChildBlock = true;
 		}
+	}
+
+	static hasTemporaries(expr)
+	{
+		if (expr instanceof CiAggregateInitializer) {
+			const init = expr;
+			return init.items.some(item => GenBase.hasTemporaries(item));
+		}
+		else if (expr instanceof CiLiteral || expr instanceof CiLambdaExpr)
+			return false;
+		else if (expr instanceof CiInterpolatedString) {
+			const interp = expr;
+			return interp.parts.some(part => GenBase.hasTemporaries(part.argument));
+		}
+		else if (expr instanceof CiSymbolReference) {
+			const symbol = expr;
+			return symbol.left != null && GenBase.hasTemporaries(symbol.left);
+		}
+		else if (expr instanceof CiUnaryExpr) {
+			const unary = expr;
+			return unary.inner != null && (GenBase.hasTemporaries(unary.inner) || unary.inner instanceof CiAggregateInitializer);
+		}
+		else if (expr instanceof CiBinaryExpr) {
+			const binary = expr;
+			if (GenBase.hasTemporaries(binary.left))
+				return true;
+			if (binary.op == CiToken.IS)
+				return binary.right instanceof CiVar;
+			return GenBase.hasTemporaries(binary.right);
+		}
+		else if (expr instanceof CiSelectExpr) {
+			const select = expr;
+			return GenBase.hasTemporaries(select.cond) || GenBase.hasTemporaries(select.onTrue) || GenBase.hasTemporaries(select.onFalse);
+		}
+		else if (expr instanceof CiCallExpr) {
+			const call = expr;
+			return GenBase.hasTemporaries(call.method) || call.arguments.some(arg => GenBase.hasTemporaries(arg));
+		}
+		else
+			throw new Error();
 	}
 
 	defineObjectLiteralTemporary(expr)
@@ -14543,46 +14587,6 @@ export class GenCpp extends GenCCpp
 			super.writeSwitchCaseCond(statement, value, parent);
 	}
 
-	static #hasTemporaries(expr)
-	{
-		if (expr instanceof CiAggregateInitializer) {
-			const init = expr;
-			return init.items.some(item => GenCpp.#hasTemporaries(item));
-		}
-		else if (expr instanceof CiLiteral || expr instanceof CiLambdaExpr)
-			return false;
-		else if (expr instanceof CiInterpolatedString) {
-			const interp = expr;
-			return interp.parts.some(part => GenCpp.#hasTemporaries(part.argument));
-		}
-		else if (expr instanceof CiSymbolReference) {
-			const symbol = expr;
-			return symbol.left != null && GenCpp.#hasTemporaries(symbol.left);
-		}
-		else if (expr instanceof CiUnaryExpr) {
-			const unary = expr;
-			return unary.inner != null && (GenCpp.#hasTemporaries(unary.inner) || unary.inner instanceof CiAggregateInitializer);
-		}
-		else if (expr instanceof CiBinaryExpr) {
-			const binary = expr;
-			if (GenCpp.#hasTemporaries(binary.left))
-				return true;
-			if (binary.op == CiToken.IS)
-				return binary.right instanceof CiVar;
-			return GenCpp.#hasTemporaries(binary.right);
-		}
-		else if (expr instanceof CiSelectExpr) {
-			const select = expr;
-			return GenCpp.#hasTemporaries(select.cond) || GenCpp.#hasTemporaries(select.onTrue) || GenCpp.#hasTemporaries(select.onFalse);
-		}
-		else if (expr instanceof CiCallExpr) {
-			const call = expr;
-			return GenCpp.#hasTemporaries(call.method) || call.arguments.some(arg => GenCpp.#hasTemporaries(arg));
-		}
-		else
-			throw new Error();
-	}
-
 	static #isIsVar(expr)
 	{
 		let binary;
@@ -14601,23 +14605,23 @@ export class GenCpp extends GenCCpp
 			return false;
 		else if (statement instanceof CiIf) {
 			const ifStatement = statement;
-			return GenCpp.#hasTemporaries(ifStatement.cond) && !GenCpp.#isIsVar(ifStatement.cond);
+			return GenCpp.hasTemporaries(ifStatement.cond) && !GenCpp.#isIsVar(ifStatement.cond);
 		}
 		else if (statement instanceof CiLoop) {
 			const loop = statement;
-			return loop.cond != null && GenCpp.#hasTemporaries(loop.cond);
+			return loop.cond != null && GenCpp.hasTemporaries(loop.cond);
 		}
 		else if (statement instanceof CiReturn) {
 			const ret = statement;
-			return ret.value != null && GenCpp.#hasTemporaries(ret.value);
+			return ret.value != null && GenCpp.hasTemporaries(ret.value);
 		}
 		else if (statement instanceof CiSwitch) {
 			const switch_ = statement;
-			return GenCpp.#hasTemporaries(switch_.value);
+			return GenCpp.hasTemporaries(switch_.value);
 		}
 		else if (statement instanceof CiExpr) {
 			const expr = statement;
-			return GenCpp.#hasTemporaries(expr);
+			return GenCpp.hasTemporaries(expr);
 		}
 		else
 			throw new Error();
@@ -19727,7 +19731,16 @@ export class GenJsNoModule extends GenBase
 	{
 		this.writeName(expr.first);
 		this.write(" => ");
-		expr.body.accept(this, CiPriority.STATEMENT);
+		if (GenJsNoModule.hasTemporaries(expr.body)) {
+			this.openBlock();
+			this.writeTemporaries(expr.body);
+			this.write("return ");
+			expr.body.accept(this, CiPriority.ARGUMENT);
+			this.writeCharLine(59);
+			this.closeBlock();
+		}
+		else
+			expr.body.accept(this, CiPriority.STATEMENT);
 	}
 
 	startTemporaryVar(type)

@@ -7487,6 +7487,33 @@ void GenBase::ensureChildBlock()
 	}
 }
 
+bool GenBase::hasTemporaries(const CiExpr * expr)
+{
+	if (const CiAggregateInitializer *init = dynamic_cast<const CiAggregateInitializer *>(expr))
+		return std::any_of(init->items.begin(), init->items.end(), [](const std::shared_ptr<CiExpr> &item) { return hasTemporaries(item.get()); });
+	else if (dynamic_cast<const CiLiteral *>(expr) || dynamic_cast<const CiLambdaExpr *>(expr))
+		return false;
+	else if (const CiInterpolatedString *interp = dynamic_cast<const CiInterpolatedString *>(expr))
+		return std::any_of(interp->parts.begin(), interp->parts.end(), [](const CiInterpolatedPart &part) { return hasTemporaries(part.argument.get()); });
+	else if (const CiSymbolReference *symbol = dynamic_cast<const CiSymbolReference *>(expr))
+		return symbol->left != nullptr && hasTemporaries(symbol->left.get());
+	else if (const CiUnaryExpr *unary = dynamic_cast<const CiUnaryExpr *>(expr))
+		return unary->inner != nullptr && (hasTemporaries(unary->inner.get()) || dynamic_cast<const CiAggregateInitializer *>(unary->inner.get()));
+	else if (const CiBinaryExpr *binary = dynamic_cast<const CiBinaryExpr *>(expr)) {
+		if (hasTemporaries(binary->left.get()))
+			return true;
+		if (binary->op == CiToken::is)
+			return dynamic_cast<const CiVar *>(binary->right.get());
+		return hasTemporaries(binary->right.get());
+	}
+	else if (const CiSelectExpr *select = dynamic_cast<const CiSelectExpr *>(expr))
+		return hasTemporaries(select->cond.get()) || hasTemporaries(select->onTrue.get()) || hasTemporaries(select->onFalse.get());
+	else if (const CiCallExpr *call = dynamic_cast<const CiCallExpr *>(expr))
+		return hasTemporaries(call->method.get()) || std::any_of(call->arguments.begin(), call->arguments.end(), [](const std::shared_ptr<CiExpr> &arg) { return hasTemporaries(arg.get()); });
+	else
+		std::abort();
+}
+
 void GenBase::defineObjectLiteralTemporary(const CiUnaryExpr * expr)
 {
 	if (const CiAggregateInitializer *init = dynamic_cast<const CiAggregateInitializer *>(expr->inner.get())) {
@@ -13781,33 +13808,6 @@ void GenCpp::writeSwitchCaseCond(const CiSwitch * statement, const CiExpr * valu
 		GenBase::writeSwitchCaseCond(statement, value, parent);
 }
 
-bool GenCpp::hasTemporaries(const CiExpr * expr)
-{
-	if (const CiAggregateInitializer *init = dynamic_cast<const CiAggregateInitializer *>(expr))
-		return std::any_of(init->items.begin(), init->items.end(), [](const std::shared_ptr<CiExpr> &item) { return hasTemporaries(item.get()); });
-	else if (dynamic_cast<const CiLiteral *>(expr) || dynamic_cast<const CiLambdaExpr *>(expr))
-		return false;
-	else if (const CiInterpolatedString *interp = dynamic_cast<const CiInterpolatedString *>(expr))
-		return std::any_of(interp->parts.begin(), interp->parts.end(), [](const CiInterpolatedPart &part) { return hasTemporaries(part.argument.get()); });
-	else if (const CiSymbolReference *symbol = dynamic_cast<const CiSymbolReference *>(expr))
-		return symbol->left != nullptr && hasTemporaries(symbol->left.get());
-	else if (const CiUnaryExpr *unary = dynamic_cast<const CiUnaryExpr *>(expr))
-		return unary->inner != nullptr && (hasTemporaries(unary->inner.get()) || dynamic_cast<const CiAggregateInitializer *>(unary->inner.get()));
-	else if (const CiBinaryExpr *binary = dynamic_cast<const CiBinaryExpr *>(expr)) {
-		if (hasTemporaries(binary->left.get()))
-			return true;
-		if (binary->op == CiToken::is)
-			return dynamic_cast<const CiVar *>(binary->right.get());
-		return hasTemporaries(binary->right.get());
-	}
-	else if (const CiSelectExpr *select = dynamic_cast<const CiSelectExpr *>(expr))
-		return hasTemporaries(select->cond.get()) || hasTemporaries(select->onTrue.get()) || hasTemporaries(select->onFalse.get());
-	else if (const CiCallExpr *call = dynamic_cast<const CiCallExpr *>(expr))
-		return hasTemporaries(call->method.get()) || std::any_of(call->arguments.begin(), call->arguments.end(), [](const std::shared_ptr<CiExpr> &arg) { return hasTemporaries(arg.get()); });
-	else
-		std::abort();
-}
-
 bool GenCpp::isIsVar(const CiExpr * expr)
 {
 	const CiBinaryExpr * binary;
@@ -18542,7 +18542,16 @@ void GenJsNoModule::visitLambdaExpr(const CiLambdaExpr * expr)
 {
 	writeName(expr->first);
 	write(" => ");
-	expr->body->accept(this, CiPriority::statement);
+	if (hasTemporaries(expr->body.get())) {
+		openBlock();
+		writeTemporaries(expr->body.get());
+		write("return ");
+		expr->body->accept(this, CiPriority::argument);
+		writeCharLine(';');
+		closeBlock();
+	}
+	else
+		expr->body->accept(this, CiPriority::statement);
 }
 
 void GenJsNoModule::startTemporaryVar(const CiType * type)

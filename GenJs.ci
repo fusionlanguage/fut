@@ -1006,7 +1006,16 @@ public class GenJsNoModule : GenBase
 	{
 		WriteName(expr.First);
 		Write(" => ");
-		expr.Body.Accept(this, CiPriority.Statement);
+		if (HasTemporaries(expr.Body)) {
+			OpenBlock();
+			WriteTemporaries(expr.Body);
+			Write("return ");
+			expr.Body.Accept(this, CiPriority.Argument);
+			WriteCharLine(';');
+			CloseBlock();
+		}
+		else
+			expr.Body.Accept(this, CiPriority.Statement);
 	}
 
 	protected override void StartTemporaryVar!(CiType type)
