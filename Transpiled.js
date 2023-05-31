@@ -11233,9 +11233,13 @@ export class GenC extends GenCCpp
 			this.#writeQueueGet("g_queue_peek_head", obj, parent);
 			break;
 		case CiId.STACK_POP:
-			this.#startArrayIndexing(obj, obj.type.asClassType().getElementType());
-			this.write("--");
-			this.writePostfix(obj, "->len)");
+			if (parent == CiPriority.STATEMENT)
+				this.writePostfix(obj, "->len--");
+			else {
+				this.#startArrayIndexing(obj, obj.type.asClassType().getElementType());
+				this.write("--");
+				this.writePostfix(obj, "->len)");
+			}
 			break;
 		case CiId.HASH_SET_ADD:
 			this.write("g_hash_table_add(");

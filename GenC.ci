@@ -2080,9 +2080,13 @@ public class GenC : GenCCpp
 			break;
 		case CiId.StackPop:
 			// FIXME: destroy
-			StartArrayIndexing(obj, obj.Type.AsClassType().GetElementType());
-			Write("--");
-			WritePostfix(obj, "->len)"); // FIXME: side effect
+			if (parent == CiPriority.Statement)
+				WritePostfix(obj, "->len--");
+			else {
+				StartArrayIndexing(obj, obj.Type.AsClassType().GetElementType());
+				Write("--");
+				WritePostfix(obj, "->len)"); // FIXME: side effect
+			}
 			break;
 		case CiId.HashSetAdd:
 			Write("g_hash_table_add(");

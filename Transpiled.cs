@@ -10887,9 +10887,13 @@ namespace Foxoft.Ci
 				WriteQueueGet("g_queue_peek_head", obj, parent);
 				break;
 			case CiId.StackPop:
-				StartArrayIndexing(obj, obj.Type.AsClassType().GetElementType());
-				Write("--");
-				WritePostfix(obj, "->len)");
+				if (parent == CiPriority.Statement)
+					WritePostfix(obj, "->len--");
+				else {
+					StartArrayIndexing(obj, obj.Type.AsClassType().GetElementType());
+					Write("--");
+					WritePostfix(obj, "->len)");
+				}
 				break;
 			case CiId.HashSetAdd:
 				Write("g_hash_table_add(");

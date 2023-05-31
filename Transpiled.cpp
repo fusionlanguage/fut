@@ -10585,9 +10585,13 @@ void GenC::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std:
 		writeQueueGet("g_queue_peek_head", obj, parent);
 		break;
 	case CiId::stackPop:
-		startArrayIndexing(obj, obj->type->asClassType()->getElementType().get());
-		write("--");
-		writePostfix(obj, "->len)");
+		if (parent == CiPriority::statement)
+			writePostfix(obj, "->len--");
+		else {
+			startArrayIndexing(obj, obj->type->asClassType()->getElementType().get());
+			write("--");
+			writePostfix(obj, "->len)");
+		}
 		break;
 	case CiId::hashSetAdd:
 		write("g_hash_table_add(");
