@@ -26,7 +26,7 @@
             <Keywords name="Folders in comment, close"></Keywords>
             <Keywords name="Keywords1">abstract assert base break case class const continue default do else enum false for foreach if in internal is lock native new null override protected public resource return sealed static switch this throw throws true virtual when while</Keywords>
             <Keywords name="Keywords2">bool byte double float int long short string uint ushort void</Keywords>
-            <Keywords name="Keywords3">Console Dictionary Encoding Environment HashSet List Lock Match Math Regex RegexOptions SortedDictionary Stack</Keywords>
+            <Keywords name="Keywords3">Console Dictionary Encoding Environment HashSet List Lock Match Math OrderedDictionary Queue Regex RegexOptions SortedDictionary SortedSet Stack StringWriter TextWriter</Keywords>
             <Keywords name="Keywords4">#elif #else #endif #if</Keywords>
             <Keywords name="Keywords5"></Keywords>
             <Keywords name="Keywords6"></Keywords>
