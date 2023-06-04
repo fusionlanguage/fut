@@ -1,4 +1,5 @@
 prefix := /usr/local
+bindir = $(prefix)/bin
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
 DOTNET_BASE_DIR := $(shell dotnet --info | sed -n 's/ Base Path:   //p')
 DOTNET_REF_DIR := $(shell realpath '$(DOTNET_BASE_DIR)../../packs/Microsoft.NETCore.App.Ref'/*/ref/net* | head -1)
@@ -18,6 +19,7 @@ endif
 CITO = dotnet run --no-build --
 DC = dmd
 PYTHON = python3 -B
+INSTALL = install
 
 MAKEFLAGS = -r
 ifdef V
@@ -239,10 +241,16 @@ coverage: coverage/output.xml
 codecov: coverage/output.xml
 	./codecov -f $<
 
+install: cito
+	$(INSTALL) -D $< $(DESTDIR)$(bindir)/cito
+
+uninstall:
+	$(RM) $(DESTDIR)$(bindir)/cito
+
 clean:
 	$(RM) cito cito.exe
 	$(RM) -r test/bin
 
-.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov clean
+.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov install uninstall clean
 
 .DELETE_ON_ERROR:
