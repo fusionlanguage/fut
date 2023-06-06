@@ -6403,7 +6403,8 @@ void GenBase::createOutputFile()
 
 void GenBase::closeFile()
 {
-	this->host->closeFile();
+	if (!this->host->closeFile())
+		this->hasErrors = true;
 }
 
 void GenBase::openStringWriter()

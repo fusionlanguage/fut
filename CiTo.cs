@@ -71,9 +71,10 @@ public class FileGenHost : GenHost
 		return this.CurrentFile;
 	}
 
-	public override void CloseFile()
+	public override bool CloseFile()
 	{
 		this.CurrentFile.Close();
+		return true;
 	}
 }
 
@@ -159,7 +160,7 @@ public static class CiTo
 			gen = new GenCl();
 			break;
 		default:
-			Console.Error.WriteLine($"cito: unknown language: {lang}");
+			Console.Error.WriteLine($"cito: ERROR: Unknown language: {lang}");
 			return false;
 		}
 		gen.Namespace = namespace_;
@@ -205,7 +206,7 @@ public static class CiTo
 				case 'D':
 					string symbol = args[++i];
 					if (symbol == "true" || symbol == "false") {
-						Console.Error.WriteLine($"cito: {symbol} is reserved");
+						Console.Error.WriteLine($"cito: ERROR: '{symbol}' is reserved");
 						return 1;
 					}
 					parser.AddPreSymbol(symbol);
@@ -217,12 +218,12 @@ public static class CiTo
 					sema.AddResourceDir(args[++i]);
 					break;
 				default:
-					Console.Error.WriteLine($"cito: unknown option: {arg}");
+					Console.Error.WriteLine($"cito: ERROR: Unknown option: {arg}");
 					return 1;
 				}
 			}
 			else {
-				Console.Error.WriteLine($"cito: unknown option: {arg}");
+				Console.Error.WriteLine($"cito: ERROR: Unknown option: {arg}");
 				return 1;
 			}
 		}
@@ -233,39 +234,45 @@ public static class CiTo
 
 		CiSystem system = CiSystem.New();
 		CiScope parent = system;
-		if (referencedFiles.Count > 0) {
-			parent = ParseAndResolve(parser, system, parent, referencedFiles, sema);
-			if (parent == null)
-				return 1;
-		}
-		CiProgram program = ParseAndResolve(parser, system, parent, inputFiles, sema);
-		if (program == null)
-			return 1;
-
-		if (lang != null)
-			return Emit(program, lang, namespace_, outputFile) ? 0 : 1;
-		for (int i = outputFile.Length; --i >= 0; ) {
-			char c = outputFile[i];
-			if (c == '.') {
-				if (i >= 2
-				 && (outputFile[i - 2] == '.' || outputFile[i - 2] == ',')
-				 && string.CompareOrdinal(outputFile, i - 1, "d.ts", 0, 4) == 0
-				 && (i + 3 == outputFile.Length || outputFile[i + 3] == ','))
-					continue;
-				string outputBase = outputFile.Substring(0, i + 1);
-				foreach (string outputExt in outputFile.Substring(i + 1).Split(',')) {
-					if (!Emit(program, outputExt, namespace_, outputBase + outputExt))
-						return 1;
-				}
-				return 0;
+		try {
+			if (referencedFiles.Count > 0) {
+				parent = ParseAndResolve(parser, system, parent, referencedFiles, sema);
+				if (parent == null)
+					return 1;
 			}
-			if (c == Path.DirectorySeparatorChar
-			 || c == Path.AltDirectorySeparatorChar
-			 || c == Path.VolumeSeparatorChar)
-				break;
+			CiProgram program = ParseAndResolve(parser, system, parent, inputFiles, sema);
+			if (program == null)
+				return 1;
+
+			if (lang != null)
+				return Emit(program, lang, namespace_, outputFile) ? 0 : 1;
+			for (int i = outputFile.Length; --i >= 0; ) {
+				char c = outputFile[i];
+				if (c == '.') {
+					if (i >= 2
+					 && (outputFile[i - 2] == '.' || outputFile[i - 2] == ',')
+					 && string.CompareOrdinal(outputFile, i - 1, "d.ts", 0, 4) == 0
+					 && (i + 3 == outputFile.Length || outputFile[i + 3] == ','))
+						continue;
+					string outputBase = outputFile.Substring(0, i + 1);
+					foreach (string outputExt in outputFile.Substring(i + 1).Split(',')) {
+						if (!Emit(program, outputExt, namespace_, outputBase + outputExt))
+							return 1;
+					}
+					return 0;
+				}
+				if (c == Path.DirectorySeparatorChar
+				 || c == Path.AltDirectorySeparatorChar
+				 || c == Path.VolumeSeparatorChar)
+					break;
+			}
+			Console.Error.WriteLine($"cito: ERROR: Don't know what language to translate to: no extension in '{outputFile}' and no '-l' option");
+			return 1;
 		}
-		Console.Error.WriteLine($"Don't know what language to translate to: no extension in '{outputFile}' and no '-l' option");
-		return 1;
+		catch (IOException e) {
+			Console.Error.WriteLine("cito: ERROR: " + e.Message);
+			return 1;
+		}
 	}
 }
 

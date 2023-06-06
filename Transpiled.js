@@ -6843,7 +6843,8 @@ export class GenBase extends CiVisitor
 
 	closeFile()
 	{
-		this.host.closeFile();
+		if (!this.host.closeFile())
+			this.hasErrors = true;
 	}
 
 	openStringWriter()

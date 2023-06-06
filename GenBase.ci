@@ -20,7 +20,7 @@
 public abstract class GenHost
 {
 	public abstract TextWriter! CreateFile!(string? directory, string filename);
-	public abstract void CloseFile!();
+	public abstract bool CloseFile!();
 }
 
 public abstract class GenBase : CiVisitor
@@ -260,7 +260,8 @@ public abstract class GenBase : CiVisitor
 
 	protected void CloseFile!()
 	{
-		this.Host.CloseFile();
+		if (!this.Host.CloseFile())
+			this.HasErrors = true;
 	}
 
 	protected void OpenStringWriter!()

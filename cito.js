@@ -67,12 +67,17 @@ class FileGenHost extends GenHost
 		if (directory != null)
 			filename = path.join(directory, filename);
 		this.#currentFile = fs.createWriteStream(filename);
+		this.#currentFile.on("error", e => {
+				console.error(`${filename}: ERROR: ${e.message}`);
+				process.exit(1);
+			});
 		return this.#currentFile;
 	}
 
 	closeFile()
 	{
 		this.#currentFile.close();
+		return true;
 	}
 }
 
@@ -168,7 +173,7 @@ function emit(program, lang, namespace, outputFile)
 		gen = new GenCl();
 		break;
 	default:
-		console.error(`cito: unknown language: ${lang}`);
+		console.error(`cito: ERROR: Unknown language: ${lang}`);
 		return false;
 	}
 	gen.namespace = namespace;
@@ -194,7 +199,7 @@ function emitImplicitLang(program, namespace, outputFile)
 		if (c == "/" || c == "\\" || c == ":")
 			break;
 	}
-	console.error(`Don't know what language to translate to: no extension in '${outputFile}' and no '-l' option`);
+	console.error(`cito: ERROR: Don't know what language to translate to: no extension in '${outputFile}' and no '-l' option`);
 	process.exit(1);
 }
 
@@ -231,7 +236,7 @@ for (let i = 2; i < process.argv.length; i++) {
 		case "-D":
 			const symbol = process.argv[++i];
 			if (symbol == "true" || symbol == "false") {
-				console.error(`cito: ${symbol} is reserved`);
+				console.error(`cito: ERROR: '${symbol}' is reserved`);
 				process.exit(1);
 			}
 			parser.addPreSymbol(symbol);
@@ -243,12 +248,12 @@ for (let i = 2; i < process.argv.length; i++) {
 			sema.addResourceDir(process.argv[++i]);
 			break;
 		default:
-			console.error(`cito: unknown option: ${arg}`);
+			console.error(`cito: ERROR: Unknown option: ${arg}`);
 			process.exit(1);
 		}
 	}
 	else {
-		console.error(`cito: unknown option: ${arg}`);
+		console.error(`cito: ERROR: Unknown option: ${arg}`);
 		process.exit(1);
 	}
 }
@@ -259,11 +264,17 @@ if (outputFile == null || inputFiles.length == 0) {
 
 const system = CiSystem.new();
 let parent = system;
-if (referencedFiles.length > 0)
-	parent = parseAndResolve(parser, system, parent, referencedFiles, sema);
-const program = parseAndResolve(parser, system, parent, inputFiles, sema);
+try {
+	if (referencedFiles.length > 0)
+		parent = parseAndResolve(parser, system, parent, referencedFiles, sema);
+	const program = parseAndResolve(parser, system, parent, inputFiles, sema);
 
-if (lang != null)
-	emit(program, lang, namespace, outputFile);
-else
-	emitImplicitLang(program, namespace, outputFile);
+	if (lang != null)
+		emit(program, lang, namespace, outputFile);
+	else
+		emitImplicitLang(program, namespace, outputFile);
+}
+catch (e) {
+	console.error(`cito: ERROR: ${e.message}`);
+	process.exit(1);
+}

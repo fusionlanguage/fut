@@ -104,21 +104,28 @@ protected:
 
 class FileGenHost : public GenHost
 {
+	std::string currentFilename;
 	std::ofstream currentFile;
 
 public:
 	std::ostream *createFile(std::string_view directory, std::string_view filename) override
 	{
+		currentFilename = filename;
 		if (directory.empty())
-			currentFile.open(std::string{filename}, std::ios_base::binary);
+			currentFile.open(currentFilename, std::ios_base::binary);
 		else
 			currentFile.open(std::filesystem::path(directory) / filename, std::ios_base::binary);
 		return &currentFile;
 	}
 
-	void closeFile() override
+	bool closeFile() override
 	{
 		currentFile.close();
+		if (!currentFile) {
+			std::cerr << currentFilename << ": ERROR: " << strerror(errno) << '\n';
+			return false;
+		}
+		return true;
 	}
 };
 
@@ -129,6 +136,10 @@ static bool parseAndResolve(CiConsoleParser *parser, CiProgram *program,
 	for (const char *file : files) {
 		std::ifstream stream(file);
 		std::string input = slurp(stream);
+		if (!stream) {
+			std::cerr << file << ": ERROR: " << strerror(errno) << '\n';
+			return false;
+		}
 		parser->parse(file, reinterpret_cast<const uint8_t *>(input.data()), input.size());
 	}
 	if (parser->hasErrors)
@@ -172,7 +183,7 @@ static bool emit(CiProgram *program, const char *lang, const char *namespace_, c
 	else if (strcmp(lang, "cl") == 0)
 		gen = std::make_unique<GenCl>();
 	else {
-		std::cerr << "cito: unknown language: " << lang << '\n';
+		std::cerr << "cito: ERROR: Unknown language: " << lang << '\n';
 		return false;
 	}
 	gen->namespace_ = namespace_;
@@ -231,12 +242,12 @@ int main(int argc, char **argv)
 				sema.addResourceDir(argv[++i]);
 				break;
 			default:
-				std::cerr << "cito: unknown option: " << arg << '\n';
+				std::cerr << "cito: ERROR: Unknown option: " << arg << '\n';
 				return 1;
 			}
 		}
 		else {
-			std::cerr << "cito: unknown option: " << arg << '\n';
+			std::cerr << "cito: ERROR: Unknown option: " << arg << '\n';
 			return 1;
 		}
 	}
@@ -289,6 +300,6 @@ int main(int argc, char **argv)
 		if (c == '/' || c == '\\' || c == ':')
 			break;
 	}
-	std::cerr << "cito: don't know what language to translate to: no extension in '" << outputFile << "' and no '-l' option\n";
+	std::cerr << "cito: ERROR: Don't know what language to translate to: no extension in '" << outputFile << "' and no '-l' option\n";
 	return 1;
 }
