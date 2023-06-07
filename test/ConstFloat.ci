@@ -1,7 +1,7 @@
 public static class Test
 {
 	public const float Foo = -10.5;
-	public const float[] Array = { -1.0, -2 };
+	public const float[] Array = { -1.0, -2, 0.1 };
 
 	public static bool Run()
 	{

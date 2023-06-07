@@ -666,9 +666,9 @@ public abstract class GenBase : CiVisitor
 		WriteCoerced(type, expr, CiPriority.Argument);
 	}
 
-	protected virtual void WriteCoercedLiteral!(CiType? type, CiExpr literal)
+	protected virtual void WriteCoercedLiteral!(CiType? type, CiExpr expr)
 	{
-		literal.Accept(this, CiPriority.Argument);
+		expr.Accept(this, CiPriority.Argument);
 	}
 
 	protected void WriteCoercedLiterals!(CiType? type, List<CiExpr#> exprs)

@@ -287,12 +287,12 @@ public class GenCs : GenTyped
 		WriteObjectLiteral(init, " = ");
 	}
 
-	protected override void WriteCoercedLiteral!(CiType? type, CiExpr literal)
+	protected override void WriteCoercedLiteral!(CiType? type, CiExpr expr)
 	{
-		if (literal is CiLiteralChar && type is CiRangeType range && range.Max <= 0xff)
-			WriteStaticCast(type, literal);
+		if (expr is CiLiteralChar && type is CiRangeType range && range.Max <= 0xff)
+			WriteStaticCast(type, expr);
 		else
-			literal.Accept(this, CiPriority.Argument);
+			base.WriteCoercedLiteral(type, expr);
 	}
 
 	protected override bool IsPromoted(CiExpr expr) => base.IsPromoted(expr) || expr is CiLiteralChar;

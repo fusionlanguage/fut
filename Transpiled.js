@@ -7250,9 +7250,9 @@ export class GenBase extends CiVisitor
 		this.writeCoerced(type, expr, CiPriority.ARGUMENT);
 	}
 
-	writeCoercedLiteral(type, literal)
+	writeCoercedLiteral(type, expr)
 	{
-		literal.accept(this, CiPriority.ARGUMENT);
+		expr.accept(this, CiPriority.ARGUMENT);
 	}
 
 	writeCoercedLiterals(type, exprs)
@@ -8596,19 +8596,18 @@ export class GenBase extends CiVisitor
 export class GenTyped extends GenBase
 {
 
+	writeCoercedLiteral(type, expr)
+	{
+		expr.accept(this, CiPriority.ARGUMENT);
+		if (type != null && type.id == CiId.FLOAT_TYPE && expr instanceof CiLiteralDouble)
+			this.writeChar(102);
+	}
+
 	writeTypeAndName(value)
 	{
 		this.writeType(value.type, true);
 		this.writeChar(32);
 		this.writeName(value);
-	}
-
-	visitLiteralDouble(value)
-	{
-		super.visitLiteralDouble(value);
-		let f = value;
-		if (f == value)
-			this.writeChar(102);
 	}
 
 	visitAggregateInitializer(expr)
@@ -8742,7 +8741,7 @@ export class GenTyped extends GenBase
 		if (type instanceof CiIntegerType && GenTyped.isNarrower(type.id, this.getTypeId(expr.type, true)))
 			this.writeStaticCast(type, expr);
 		else
-			expr.accept(this, CiPriority.ARGUMENT);
+			this.writeCoercedLiteral(type, expr);
 	}
 
 	isPromoted(expr)
@@ -8779,7 +8778,7 @@ export class GenTyped extends GenBase
 		else if (type.id == CiId.FLOAT_TYPE && expr.type.id == CiId.DOUBLE_TYPE) {
 			let literal;
 			if ((literal = expr) instanceof CiLiteralDouble) {
-				super.visitLiteralDouble(literal.value);
+				this.visitLiteralDouble(literal.value);
 				this.writeChar(102);
 			}
 			else
@@ -15235,13 +15234,13 @@ export class GenCs extends GenTyped
 		this.writeObjectLiteral(init, " = ");
 	}
 
-	writeCoercedLiteral(type, literal)
+	writeCoercedLiteral(type, expr)
 	{
 		let range;
-		if (literal instanceof CiLiteralChar && (range = type) instanceof CiRangeType && range.max <= 255)
-			this.writeStaticCast(type, literal);
+		if (expr instanceof CiLiteralChar && (range = type) instanceof CiRangeType && range.max <= 255)
+			this.writeStaticCast(type, expr);
 		else
-			literal.accept(this, CiPriority.ARGUMENT);
+			super.writeCoercedLiteral(type, expr);
 	}
 
 	isPromoted(expr)
@@ -17901,7 +17900,7 @@ export class GenJava extends GenTyped
 			this.#writeSByteLiteral(literal);
 		}
 		else
-			expr.accept(this, CiPriority.ARGUMENT);
+			super.writeCoercedLiteral(type, expr);
 	}
 
 	writeAnd(expr, parent)

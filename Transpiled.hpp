@@ -1748,7 +1748,7 @@ protected:
 	void writeCoerced(const CiType * type, const CiExpr * expr, CiPriority parent);
 	virtual void writeCoercedExpr(const CiType * type, const CiExpr * expr);
 	virtual void writeStronglyCoerced(const CiType * type, const CiExpr * expr);
-	virtual void writeCoercedLiteral(const CiType * type, const CiExpr * literal);
+	virtual void writeCoercedLiteral(const CiType * type, const CiExpr * expr);
 	void writeCoercedLiterals(const CiType * type, const std::vector<std::shared_ptr<CiExpr>> * exprs);
 	void writeArgs(const CiMethod * method, const std::vector<std::shared_ptr<CiExpr>> * args);
 	void writeArgsInParentheses(const CiMethod * method, const std::vector<std::shared_ptr<CiExpr>> * args);
@@ -1869,11 +1869,11 @@ class GenTyped : public GenBase
 {
 public:
 	virtual ~GenTyped() = default;
-	void visitLiteralDouble(double value) override;
 	void visitAggregateInitializer(const CiAggregateInitializer * expr) override;
 protected:
 	GenTyped() = default;
 	virtual void writeType(const CiType * type, bool promote) = 0;
+	void writeCoercedLiteral(const CiType * type, const CiExpr * expr) override;
 	void writeTypeAndName(const CiNamedValue * value) override;
 	void writeArrayStorageLength(const CiExpr * expr);
 	void writeNewArray(const CiType * elementType, const CiExpr * lengthExpr, CiPriority parent) override;
@@ -2261,7 +2261,7 @@ protected:
 	int getLiteralChars() const override;
 	void writeType(const CiType * type, bool promote) override;
 	void writeNewWithFields(const CiReadWriteClassType * type, const CiAggregateInitializer * init) override;
-	void writeCoercedLiteral(const CiType * type, const CiExpr * literal) override;
+	void writeCoercedLiteral(const CiType * type, const CiExpr * expr) override;
 	bool isPromoted(const CiExpr * expr) const override;
 	void writeNewArray(const CiType * elementType, const CiExpr * lengthExpr, CiPriority parent) override;
 	void writeNew(const CiReadWriteClassType * klass, CiPriority parent) override;

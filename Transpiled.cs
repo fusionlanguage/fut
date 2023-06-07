@@ -6985,9 +6985,9 @@ namespace Foxoft.Ci
 			WriteCoerced(type, expr, CiPriority.Argument);
 		}
 
-		protected virtual void WriteCoercedLiteral(CiType type, CiExpr literal)
+		protected virtual void WriteCoercedLiteral(CiType type, CiExpr expr)
 		{
-			literal.Accept(this, CiPriority.Argument);
+			expr.Accept(this, CiPriority.Argument);
 		}
 
 		protected void WriteCoercedLiterals(CiType type, List<CiExpr> exprs)
@@ -8305,19 +8305,18 @@ namespace Foxoft.Ci
 
 		protected abstract void WriteType(CiType type, bool promote);
 
+		protected override void WriteCoercedLiteral(CiType type, CiExpr expr)
+		{
+			expr.Accept(this, CiPriority.Argument);
+			if (type != null && type.Id == CiId.FloatType && expr is CiLiteralDouble)
+				WriteChar('f');
+		}
+
 		protected override void WriteTypeAndName(CiNamedValue value)
 		{
 			WriteType(value.Type, true);
 			WriteChar(' ');
 			WriteName(value);
-		}
-
-		public override void VisitLiteralDouble(double value)
-		{
-			base.VisitLiteralDouble(value);
-			float f = (float) value;
-			if (f == value)
-				WriteChar('f');
 		}
 
 		public override void VisitAggregateInitializer(CiAggregateInitializer expr)
@@ -8444,7 +8443,7 @@ namespace Foxoft.Ci
 			if (type is CiIntegerType && IsNarrower(type.Id, GetTypeId(expr.Type, true)))
 				WriteStaticCast(type, expr);
 			else
-				expr.Accept(this, CiPriority.Argument);
+				WriteCoercedLiteral(type, expr);
 		}
 
 		protected virtual bool IsPromoted(CiExpr expr) => !(expr is CiBinaryExpr binary && (binary.Op == CiToken.LeftBracket || binary.IsAssign()));
@@ -8476,7 +8475,7 @@ namespace Foxoft.Ci
 				WriteStaticCast(type, expr);
 			else if (type.Id == CiId.FloatType && expr.Type.Id == CiId.DoubleType) {
 				if (expr is CiLiteralDouble literal) {
-					base.VisitLiteralDouble(literal.Value);
+					VisitLiteralDouble(literal.Value);
 					WriteChar('f');
 				}
 				else
@@ -14832,12 +14831,12 @@ namespace Foxoft.Ci
 			WriteObjectLiteral(init, " = ");
 		}
 
-		protected override void WriteCoercedLiteral(CiType type, CiExpr literal)
+		protected override void WriteCoercedLiteral(CiType type, CiExpr expr)
 		{
-			if (literal is CiLiteralChar && type is CiRangeType range && range.Max <= 255)
-				WriteStaticCast(type, literal);
+			if (expr is CiLiteralChar && type is CiRangeType range && range.Max <= 255)
+				WriteStaticCast(type, expr);
 			else
-				literal.Accept(this, CiPriority.Argument);
+				base.WriteCoercedLiteral(type, expr);
 		}
 
 		protected override bool IsPromoted(CiExpr expr) => base.IsPromoted(expr) || expr is CiLiteralChar;
@@ -17436,7 +17435,7 @@ namespace Foxoft.Ci
 				WriteSByteLiteral(literal);
 			}
 			else
-				expr.Accept(this, CiPriority.Argument);
+				base.WriteCoercedLiteral(type, expr);
 		}
 
 		protected override void WriteAnd(CiBinaryExpr expr, CiPriority parent)

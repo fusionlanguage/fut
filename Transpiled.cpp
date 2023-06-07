@@ -6801,9 +6801,9 @@ void GenBase::writeStronglyCoerced(const CiType * type, const CiExpr * expr)
 	writeCoerced(type, expr, CiPriority::argument);
 }
 
-void GenBase::writeCoercedLiteral(const CiType * type, const CiExpr * literal)
+void GenBase::writeCoercedLiteral(const CiType * type, const CiExpr * expr)
 {
-	literal->accept(this, CiPriority::argument);
+	expr->accept(this, CiPriority::argument);
 }
 
 void GenBase::writeCoercedLiterals(const CiType * type, const std::vector<std::shared_ptr<CiExpr>> * exprs)
@@ -8092,19 +8092,18 @@ void GenBase::writeTypes(const CiProgram * program)
 	}
 }
 
+void GenTyped::writeCoercedLiteral(const CiType * type, const CiExpr * expr)
+{
+	expr->accept(this, CiPriority::argument);
+	if (type != nullptr && type->id == CiId::floatType && dynamic_cast<const CiLiteralDouble *>(expr))
+		writeChar('f');
+}
+
 void GenTyped::writeTypeAndName(const CiNamedValue * value)
 {
 	writeType(value->type.get(), true);
 	writeChar(' ');
 	writeName(value);
-}
-
-void GenTyped::visitLiteralDouble(double value)
-{
-	GenBase::visitLiteralDouble(value);
-	float f = static_cast<float>(value);
-	if (f == value)
-		writeChar('f');
 }
 
 void GenTyped::visitAggregateInitializer(const CiAggregateInitializer * expr)
@@ -8237,7 +8236,7 @@ void GenTyped::writeNotPromoted(const CiType * type, const CiExpr * expr)
 	if (dynamic_cast<const CiIntegerType *>(type) && isNarrower(type->id, getTypeId(expr->type.get(), true)))
 		writeStaticCast(type, expr);
 	else
-		expr->accept(this, CiPriority::argument);
+		writeCoercedLiteral(type, expr);
 }
 
 bool GenTyped::isPromoted(const CiExpr * expr) const
@@ -8273,7 +8272,7 @@ void GenTyped::writeCoercedInternal(const CiType * type, const CiExpr * expr, Ci
 		writeStaticCast(type, expr);
 	else if (type->id == CiId::floatType && expr->type->id == CiId::doubleType) {
 		if (const CiLiteralDouble *literal = dynamic_cast<const CiLiteralDouble *>(expr)) {
-			GenBase::visitLiteralDouble(literal->value);
+			visitLiteralDouble(literal->value);
 			writeChar('f');
 		}
 		else
@@ -14387,13 +14386,13 @@ void GenCs::writeNewWithFields(const CiReadWriteClassType * type, const CiAggreg
 	writeObjectLiteral(init, " = ");
 }
 
-void GenCs::writeCoercedLiteral(const CiType * type, const CiExpr * literal)
+void GenCs::writeCoercedLiteral(const CiType * type, const CiExpr * expr)
 {
 	const CiRangeType * range;
-	if (dynamic_cast<const CiLiteralChar *>(literal) && (range = dynamic_cast<const CiRangeType *>(type)) && range->max <= 255)
-		writeStaticCast(type, literal);
+	if (dynamic_cast<const CiLiteralChar *>(expr) && (range = dynamic_cast<const CiRangeType *>(type)) && range->max <= 255)
+		writeStaticCast(type, expr);
 	else
-		literal->accept(this, CiPriority::argument);
+		GenTyped::writeCoercedLiteral(type, expr);
 }
 
 bool GenCs::isPromoted(const CiExpr * expr) const
@@ -16755,7 +16754,7 @@ void GenJava::writeCoercedLiteral(const CiType * type, const CiExpr * expr)
 		writeSByteLiteral(literal);
 	}
 	else
-		expr->accept(this, CiPriority::argument);
+		GenTyped::writeCoercedLiteral(type, expr);
 }
 
 void GenJava::writeAnd(const CiBinaryExpr * expr, CiPriority parent)

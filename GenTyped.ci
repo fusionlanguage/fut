@@ -21,19 +21,18 @@ public abstract class GenTyped : GenBase
 {
 	protected abstract void WriteType!(CiType type, bool promote);
 
+	protected override void WriteCoercedLiteral!(CiType? type, CiExpr expr)
+	{
+		expr.Accept(this, CiPriority.Argument);
+		if (type != null && type.Id == CiId.FloatType && expr is CiLiteralDouble)
+			WriteChar('f');
+	}
+
 	protected override void WriteTypeAndName!(CiNamedValue value)
 	{
 		WriteType(value.Type, true);
 		WriteChar(' ');
 		WriteName(value);
-	}
-
-	public override void VisitLiteralDouble!(double value)
-	{
-		base.VisitLiteralDouble(value);
-		float f = value;
-		if (f == value)
-			WriteChar('f');
 	}
 
 	public override void VisitAggregateInitializer!(CiAggregateInitializer expr)
@@ -162,7 +161,7 @@ public abstract class GenTyped : GenBase
 		 && IsNarrower(type.Id, GetTypeId(expr.Type, true)))
 			WriteStaticCast(type, expr);
 		else
-			expr.Accept(this, CiPriority.Argument);
+			WriteCoercedLiteral(type, expr);
 	}
 
 	protected virtual bool IsPromoted(CiExpr expr) => !(expr is CiBinaryExpr binary && (binary.Op == CiToken.LeftBracket || binary.IsAssign()));
@@ -194,7 +193,7 @@ public abstract class GenTyped : GenBase
 			WriteStaticCast(type, expr);
 		else if (type.Id == CiId.FloatType && expr.Type.Id == CiId.DoubleType) {
 			if (expr is CiLiteralDouble literal) {
-				base.VisitLiteralDouble(literal.Value);
+				VisitLiteralDouble(literal.Value);
 				WriteChar('f');
 			}
 			else

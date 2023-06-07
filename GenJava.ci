@@ -446,7 +446,7 @@ public class GenJava : GenTyped
 			WriteSByteLiteral(literal);
 		}
 		else
-			expr.Accept(this, CiPriority.Argument);
+			base.WriteCoercedLiteral(type, expr);
 	}
 
 	protected override void WriteAnd!(CiBinaryExpr expr, CiPriority parent)
