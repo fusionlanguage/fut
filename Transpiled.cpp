@@ -1286,7 +1286,7 @@ void CiLiteralChar::accept(CiVisitor * visitor, CiPriority parent) const
 
 bool CiLiteralDouble::isDefaultValue() const
 {
-	return this->value == 0 && 1.0f / this->value > 0;
+	return this->value == 0 && 1.0 / this->value > 0;
 }
 
 void CiLiteralDouble::accept(CiVisitor * visitor, CiPriority parent) const
@@ -2853,6 +2853,7 @@ std::shared_ptr<CiExpr> CiParser::parseParenthesized()
 
 std::shared_ptr<CiSymbolReference> CiParser::parseSymbolReference(std::shared_ptr<CiExpr> left)
 {
+	check(CiToken::id);
 	std::shared_ptr<CiSymbolReference> result = std::make_shared<CiSymbolReference>();
 	result->line = this->line;
 	result->left = left;

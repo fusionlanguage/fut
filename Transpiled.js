@@ -3513,6 +3513,7 @@ export class CiParser extends CiLexer
 
 	#parseSymbolReference(left)
 	{
+		this.check(CiToken.ID);
 		let result = Object.assign(new CiSymbolReference(), { line: this.line, left: left, name: this.stringValue });
 		this.nextToken();
 		return result;

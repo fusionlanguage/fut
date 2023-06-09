@@ -171,6 +171,7 @@ public abstract class CiParser : CiLexer
 
 	CiSymbolReference# ParseSymbolReference!(CiExpr#? left)
 	{
+		Check(CiToken.Id);
 		CiSymbolReference# result = new CiSymbolReference { Line = this.Line, Left = left, Name = this.StringValue };
 		NextToken();
 		return result;

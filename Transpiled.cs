@@ -1749,7 +1749,7 @@ namespace Foxoft.Ci
 
 		internal double Value;
 
-		public override bool IsDefaultValue() => this.Value == 0 && 1.0f / this.Value > 0;
+		public override bool IsDefaultValue() => this.Value == 0 && 1.0 / this.Value > 0;
 
 		public override void Accept(CiVisitor visitor, CiPriority parent)
 		{
@@ -3392,6 +3392,7 @@ namespace Foxoft.Ci
 
 		CiSymbolReference ParseSymbolReference(CiExpr left)
 		{
+			Check(CiToken.Id);
 			CiSymbolReference result = new CiSymbolReference { Line = this.Line, Left = left, Name = this.StringValue };
 			NextToken();
 			return result;
