@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		double a = 1.2.3; //ERROR: Invalid floating-point number
+		double a = 1.2.3; //ERROR: Expected identifier, got integer constant
 		return true;
 	}
 }

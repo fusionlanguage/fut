@@ -290,6 +290,7 @@ export class CiLexer
 	#readFloatLiteral(needDigit)
 	{
 		let underscoreE = false;
+		let exponent = false;
 		for (;;) {
 			let c = this.peekChar();
 			switch (c) {
@@ -303,18 +304,22 @@ export class CiLexer
 			case 55:
 			case 56:
 			case 57:
-			case 46:
 				this.readChar();
 				needDigit = false;
 				break;
 			case 69:
 			case 101:
+				if (exponent) {
+					this.reportError("Invalid floating-point number");
+					return CiToken.LITERAL_DOUBLE;
+				}
 				if (needDigit)
 					underscoreE = true;
 				this.readChar();
 				c = this.peekChar();
 				if (c == 43 || c == 45)
 					this.readChar();
+				exponent = true;
 				needDigit = true;
 				break;
 			case 95:
@@ -349,6 +354,8 @@ export class CiLexer
 				c -= 48;
 				break;
 			case 46:
+				this.readChar();
+				return this.#readFloatLiteral(true);
 			case 101:
 			case 69:
 				return this.#readFloatLiteral(needDigit);

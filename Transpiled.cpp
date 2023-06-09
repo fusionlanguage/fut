@@ -174,6 +174,7 @@ CiToken CiLexer::readIntegerLiteral(int bits)
 CiToken CiLexer::readFloatLiteral(bool needDigit)
 {
 	bool underscoreE = false;
+	bool exponent = false;
 	for (;;) {
 		int c = peekChar();
 		switch (c) {
@@ -187,18 +188,22 @@ CiToken CiLexer::readFloatLiteral(bool needDigit)
 		case '7':
 		case '8':
 		case '9':
-		case '.':
 			readChar();
 			needDigit = false;
 			break;
 		case 'E':
 		case 'e':
+			if (exponent) {
+				reportError("Invalid floating-point number");
+				return CiToken::literalDouble;
+			}
 			if (needDigit)
 				underscoreE = true;
 			readChar();
 			c = peekChar();
 			if (c == '+' || c == '-')
 				readChar();
+			exponent = true;
 			needDigit = true;
 			break;
 		case '_':
@@ -233,6 +238,8 @@ CiToken CiLexer::readNumberLiteral(int64_t i)
 			c -= '0';
 			break;
 		case '.':
+			readChar();
+			return readFloatLiteral(true);
 		case 'e':
 		case 'E':
 			return readFloatLiteral(needDigit);

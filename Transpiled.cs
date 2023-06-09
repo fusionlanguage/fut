@@ -314,6 +314,7 @@ namespace Foxoft.Ci
 		CiToken ReadFloatLiteral(bool needDigit)
 		{
 			bool underscoreE = false;
+			bool exponent = false;
 			for (;;) {
 				int c = PeekChar();
 				switch (c) {
@@ -327,18 +328,22 @@ namespace Foxoft.Ci
 				case '7':
 				case '8':
 				case '9':
-				case '.':
 					ReadChar();
 					needDigit = false;
 					break;
 				case 'E':
 				case 'e':
+					if (exponent) {
+						ReportError("Invalid floating-point number");
+						return CiToken.LiteralDouble;
+					}
 					if (needDigit)
 						underscoreE = true;
 					ReadChar();
 					c = PeekChar();
 					if (c == '+' || c == '-')
 						ReadChar();
+					exponent = true;
 					needDigit = true;
 					break;
 				case '_':
@@ -373,6 +378,8 @@ namespace Foxoft.Ci
 					c -= '0';
 					break;
 				case '.':
+					ReadChar();
+					return ReadFloatLiteral(true);
 				case 'e':
 				case 'E':
 					return ReadFloatLiteral(needDigit);
