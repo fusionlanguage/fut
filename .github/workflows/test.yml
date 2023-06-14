@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/setup-dotnet@main
         with:
-          dotnet-version: 6.0.408
+          dotnet-version: 6.0.410
       - uses: actions/checkout@main
       - run: make -j3 test-cs
   d:
