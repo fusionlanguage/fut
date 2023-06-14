@@ -7211,7 +7211,7 @@ void GenBase::visitBinaryExpr(const CiBinaryExpr * expr, CiPriority parent)
 		writeBinaryExpr(expr, parent > CiPriority::add || isBitOp(parent), CiPriority::add, " - ", CiPriority::mul);
 		break;
 	case CiToken::asterisk:
-		writeBinaryExpr2(expr, parent, CiPriority::mul, " * ");
+		writeBinaryExpr(expr, parent > CiPriority::mul, CiPriority::mul, " * ", CiPriority::primary);
 		break;
 	case CiToken::slash:
 		writeBinaryExpr(expr, parent > CiPriority::mul, CiPriority::mul, " / ", CiPriority::primary);

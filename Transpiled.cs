@@ -7391,7 +7391,7 @@ namespace Foxoft.Ci
 				WriteBinaryExpr(expr, parent > CiPriority.Add || IsBitOp(parent), CiPriority.Add, " - ", CiPriority.Mul);
 				break;
 			case CiToken.Asterisk:
-				WriteBinaryExpr2(expr, parent, CiPriority.Mul, " * ");
+				WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " * ", CiPriority.Primary);
 				break;
 			case CiToken.Slash:
 				WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " / ", CiPriority.Primary);

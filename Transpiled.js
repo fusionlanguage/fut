@@ -7669,7 +7669,7 @@ export class GenBase extends CiVisitor
 			this.writeBinaryExpr(expr, parent > CiPriority.ADD || GenBase.#isBitOp(parent), CiPriority.ADD, " - ", CiPriority.MUL);
 			break;
 		case CiToken.ASTERISK:
-			this.writeBinaryExpr2(expr, parent, CiPriority.MUL, " * ");
+			this.writeBinaryExpr(expr, parent > CiPriority.MUL, CiPriority.MUL, " * ", CiPriority.PRIMARY);
 			break;
 		case CiToken.SLASH:
 			this.writeBinaryExpr(expr, parent > CiPriority.MUL, CiPriority.MUL, " / ", CiPriority.PRIMARY);

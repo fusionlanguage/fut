@@ -9,6 +9,7 @@ public static class Test
 		ba[1] = 3;
 		return a / b == 2
 			&& -7 / b == -2
+			&& 3 * (a / b) == 6
 			&& a / -3 == -2
 			&& ba[0] / ba[1] == 2;
 	}
