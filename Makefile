@@ -241,10 +241,12 @@ test/node_modules: test/package.json
 test/bin/%/error.txt: test/error/%.ci cito
 	$(DO)mkdir -p $(@D) && ! $(CITO) -o $(@:%.txt=%.cs) $< 2>$@ && perl -ne 'print "$$ARGV($$.): $$1\n" while m!//(ERROR: .+?)(?=$$| //)!g' $< | diff -u --strip-trailing-cr - $@ && echo PASSED >$@
 
-test-transpile: $(foreach t, $(patsubst test/%.ci, test/bin/%/Test., $(wildcard test/*.ci)), $tc $tcpp $tcs $td $tjava $tjs $tts $tpy $tswift $tcl)
+test-transpile: $(patsubst test/%.ci, test/bin/%/all, $(wildcard test/*.ci))
+
+test/bin/%/all: test/%.ci cito
+	$(DO)mkdir -p $(@D) && $(CITO) -o $(@D)/Test.c,cpp,cs,d,java,js,d.ts,ts,py,swift,cl $< || true
 
 coverage/output.xml:
-	$(MAKE) clean
 	dotnet-coverage collect -f xml -o $@ "make -j`nproc` test-transpile test-error CITO_HOST=cs"
 
 coverage: coverage/output.xml
