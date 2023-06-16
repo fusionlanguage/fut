@@ -1,37 +1,37 @@
-language: csharp
-dist: focal
-mono: none
-dotnet: 6.0.410
+language: cpp
+dist: jammy
 env: SWIFT_VERSION=5.8.1
 vm:
   size: large
 jobs:
-  - name: coverage
-    install:
-      - dotnet tool install -g dotnet-coverage
-      - curl -Os https://uploader.codecov.io/latest/linux/codecov
-      - chmod +x codecov
-    script: PATH+=:$HOME/.dotnet/tools make codecov
   - name: c, cl, error
-    script: make -j5 test-c test-cl test-error
+    install:
+      - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+      - sudo apt install g++-13
+    script: make -j5 test-c test-cl test-error CXX=g++-13
   - name: cpp, java
-    install: sudo apt install clang-12
-    script: make -j5 test-cpp test-java CXX=clang++-12
-  - name: cs
-    script: make -j5 test-cs
+    install:
+      - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+      - sudo apt install g++-13
+    script: make -j5 test-cpp test-java CXX=g++-13
   - name: d
     install:
+      - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+      - sudo apt install g++-13
       - curl -fsS https://dlang.org/install.sh -O
       - bash install.sh
-    script: source `bash install.sh -a` && make -j5 test-d
+    script: source `bash install.sh -a` && make -j5 test-d CXX=g++-13
   - name: js, ts
-    install: nvm install --lts
-    script: make -j5 test-js test-ts
+    install:
+      - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+      - sudo apt install g++-13
+      - nvm install --lts
+    script: make -j5 test-js test-ts CXX=g++-13
   - name: py, swift
     install:
+      - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
       - sudo add-apt-repository -y ppa:deadsnakes/ppa
-      - sudo apt update
-      - sudo apt install python3.12
-      - wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2004/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz
-      - tar xf swift-$SWIFT_VERSION-RELEASE-ubuntu20.04.tar.gz -C ..
-    script: make -j5 test-py test-swift PYTHON=python3.12 SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu20.04/usr/bin/swiftc
+      - sudo apt install g++-13 python3.12
+      - wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2004/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu22.04.tar.gz
+      - tar xf swift-$SWIFT_VERSION-RELEASE-ubuntu22.04.tar.gz -C ..
+    script: make -j5 test-py test-swift CXX=g++-13 PYTHON=python3.12 SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu22.04/usr/bin/swiftc

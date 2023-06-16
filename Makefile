@@ -1,22 +1,25 @@
 prefix := /usr/local
 bindir = $(prefix)/bin
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
-DOTNET_BASE_DIR := $(shell dotnet --info | sed -n 's/ Base Path:   //p')
+CXXFLAGS = -std=c++20 -Wall -O2
+DOTNET_BASE_DIR := $(shell dotnet --info | sed -n 's/ Base Path:   //p' 2>/dev/null)
+ifdef DOTNET_BASE_DIR
 DOTNET_REF_DIR := $(shell realpath '$(DOTNET_BASE_DIR)../../packs/Microsoft.NETCore.App.Ref'/*/ref/net* | head -1)
 CSC := dotnet '$(DOTNET_BASE_DIR)Roslyn/bincore/csc.dll' -nologo $(patsubst %,'-r:$(DOTNET_REF_DIR)/System.%.dll', Collections Collections.Specialized Console Linq Runtime Text.RegularExpressions Threading)
-CFLAGS = -Wall -Werror
-CXXFLAGS = -Wall -Werror -std=c++20
+endif
+TEST_CFLAGS = -Wall -Werror
+TEST_CXXFLAGS = -std=c++20 -Wall -Werror
 SWIFTC = swiftc
 ifeq ($(OS),Windows_NT)
 JAVACPSEP = ;
 SWIFTC += -no-color-diagnostics -sdk '$(SDKROOT)' -Xlinker -noexp -Xlinker -noimplib
 else
 JAVACPSEP = :
-CFLAGS += -fsanitize=address -g
-CXXFLAGS += -fsanitize=address -g
+TEST_CFLAGS += -fsanitize=address -g
+TEST_CXXFLAGS += -fsanitize=address -g
 SWIFTC += -sanitize=address
 endif
-CITO = dotnet run --no-build --
+CITO = ./cito
 DC = dmd
 PYTHON = python3 -B
 INSTALL = install
@@ -31,30 +34,30 @@ DO_SUMMARY = $(DO)perl test/summary.pl $(filter %.txt, $^)
 DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 SOURCE_CI = Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenTyped.ci GenCCppD.ci GenCCpp.ci GenC.ci GenCl.ci GenCpp.ci GenCs.ci GenD.ci GenJava.ci GenJs.ci GenTs.ci GenPySwift.ci GenSwift.ci GenPy.ci
 
-all: bin/Debug/net6.0/cito.dll Transpiled.cpp Transpiled.js
-
-bin/Debug/net6.0/cito.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs CiTo.cs)
-	dotnet build
-
-Transpiled.cs: $(SOURCE_CI)
-	$(DO)cito -o $@ -n Foxoft.Ci $^
+all: cito Transpiled.cs Transpiled.js
 
 ifeq ($(OS),Windows_NT)
 
 cito: cito.exe
 
 cito.exe: cito.cpp Transpiled.cpp
-	$(DO)$(CXX) -o $@ -std=c++20 -Wall -O2 -s -static $^
+	$(DO)$(CXX) -o $@ $(CXXFLAGS) -s -static $^
 
 else
 
 cito: cito.cpp Transpiled.cpp
-	$(DO)$(CXX) -o $@ -std=c++20 -Wall -O2 $^
+	$(DO)$(CXX) -o $@ $(CXXFLAGS) $^
 
 endif
 
 Transpiled.cpp Transpiled.d Transpiled.js: $(SOURCE_CI)
-	$(DO)cito -o $@ $^
+	$(DO)$(CITO) -o $@ $^
+
+bin/Debug/net6.0/cito.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs CiTo.cs)
+	dotnet build
+
+Transpiled.cs: $(SOURCE_CI)
+	$(DO)$(CITO) -o $@ -n Foxoft.Ci $^
 
 test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error
 	$(DO)perl test/summary.pl test/bin/*/*.txt
@@ -62,19 +65,19 @@ test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swif
 test-c test-GenC.ci: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-cpp test-GenCpp.ci: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) test/bin/CiCheck/Test.cpp
+test-cpp test-GenCpp.ci: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) Transpiled.cpp
 	$(DO_SUMMARY)
 
 test-cs test-GenCs.ci: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-d test-GenD.ci: $(patsubst test/%.ci, test/bin/%/d.txt, $(wildcard test/*.ci)) test/bin/CiCheck/Test.d
+test-d test-GenD.ci: $(patsubst test/%.ci, test/bin/%/d.txt, $(wildcard test/*.ci)) Transpiled.d
 	$(DO_SUMMARY)
 
 test-java test-GenJava.ci: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) test/bin/CiCheck/CiSema.java
 	$(DO_SUMMARY)
 
-test-js test-GenJs.ci: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) test/bin/CiCheck/js.txt
+test-js test-GenJs.ci: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) Transpiled.js
 	$(DO_SUMMARY)
 
 test-ts test-GenTs.ci: $(patsubst test/%.ci, test/bin/%/ts.txt, $(wildcard test/*.ci))
@@ -132,10 +135,10 @@ test/bin/%/cl.txt: test/bin/%/cl.exe
 	$(DO)./$< >$@ || grep '//FAIL:.*\<cl\>' test/$*.ci
 
 test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
-	$(DO)$(CC) -o $@ $(CFLAGS) -Wno-unused-function -I $(<D) $^ `pkg-config --cflags --libs glib-2.0` -lm || grep '//FAIL:.*\<c\>' test/$*.ci
+	$(DO)$(CC) -o $@ $(TEST_CFLAGS) -Wno-unused-function -I $(<D) $^ `pkg-config --cflags --libs glib-2.0` -lm || grep '//FAIL:.*\<c\>' test/$*.ci
 
 test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
-	$(DO)$(CXX) -o $@ $(CXXFLAGS) -I $(<D) $^ || grep '//FAIL:.*\<cpp\>' test/$*.ci
+	$(DO)$(CXX) -o $@ $(TEST_CXXFLAGS) -I $(<D) $^ || grep '//FAIL:.*\<cpp\>' test/$*.ci
 
 test/bin/%/cs.dll: test/bin/%/Test.cs test/Runner.cs
 	$(DO)$(CSC) -out:$@ $^ || grep '//FAIL:.*\<cs\>' test/$*.ci
@@ -153,46 +156,40 @@ test/bin/%/swift.exe: test/bin/%/Test.swift test/main.swift
 	$(DO)$(SWIFTC) -o $@ $^ || grep '//FAIL:.*\<swift\>' test/$*.ci
 
 test/bin/%/cl.exe: test/bin/%/cl.o test/Runner-cl.cpp
-	$(DO)clang++ -o $@ $(CFLAGS) $^ || grep '//FAIL:.*\<cl\>' test/$*.ci
+	$(DO)clang++ -o $@ $(TEST_CFLAGS) $^ || grep '//FAIL:.*\<cl\>' test/$*.ci
 
 test/bin/%/cl.o: test/bin/%/Test.cl
-	$(DO)clang -c -o $@ $(CFLAGS) -Wno-constant-logical-operand -cl-std=CL2.0 -include opencl-c.h $< || grep '//FAIL:.*\<cl\>' test/$*.ci
+	$(DO)clang -c -o $@ $(TEST_CFLAGS) -Wno-constant-logical-operand -cl-std=CL2.0 -include opencl-c.h $< || grep '//FAIL:.*\<cl\>' test/$*.ci
 
-test/bin/%/Test.c: test/%.ci bin/Debug/net6.0/cito.dll
+test/bin/%/Test.c: test/%.ci cito
 	$(DO_CITO)
 
-test/bin/%/Test.cpp: test/%.ci bin/Debug/net6.0/cito.dll
+test/bin/%/Test.cpp: test/%.ci cito
 	$(DO_CITO)
 
-test/bin/%/Test.cs: test/%.ci bin/Debug/net6.0/cito.dll
+test/bin/%/Test.cs: test/%.ci cito
 	$(DO_CITO)
 
-test/bin/%/Test.d: test/%.ci bin/Debug/net6.0/cito.dll
+test/bin/%/Test.d: test/%.ci cito
 	$(DO_CITO)
 
-test/bin/%/Test.java: test/%.ci bin/Debug/net6.0/cito.dll
+test/bin/%/Test.java: test/%.ci cito
 	$(DO_CITO)
 
-test/bin/%/Test.js: test/%.ci bin/Debug/net6.0/cito.dll
+test/bin/%/Test.js: test/%.ci cito
 	$(DO_CITO)
 
-test/bin/%/Test.ts: test/%.ci bin/Debug/net6.0/cito.dll test/Runner.ts
+test/bin/%/Test.ts: test/%.ci cito test/Runner.ts
 	$(DO)mkdir -p $(@D) && ($(CITO) -D TS -o $@ $< && cat test/Runner.ts >>$@ || grep '//FAIL:.*\<ts\>' $<)
 
-test/bin/%/Test.py: test/%.ci bin/Debug/net6.0/cito.dll
+test/bin/%/Test.py: test/%.ci cito
 	$(DO_CITO)
 
-test/bin/%/Test.swift: test/%.ci bin/Debug/net6.0/cito.dll
+test/bin/%/Test.swift: test/%.ci cito
 	$(DO_CITO)
 
-test/bin/%/Test.cl: test/%.ci bin/Debug/net6.0/cito.dll
+test/bin/%/Test.cl: test/%.ci cito
 	$(DO_CITO)
-
-test/bin/CiCheck/cpp.txt: test/bin/CiCheck/cpp.exe $(SOURCE_CI)
-	$(DO)./$< $(SOURCE_CI) >$@
-
-test/bin/CiCheck/cpp.exe: test/bin/CiCheck/Test.cpp test/CiCheck.cpp
-	$(DO)$(CXX) -o $@ $(CXXFLAGS) -I $(<D) $^
 
 test/bin/CiCheck/d.txt: test/bin/CiCheck/d.exe $(SOURCE_CI)
 	$(DO)./$< $(SOURCE_CI) >$@
@@ -209,13 +206,13 @@ test/bin/CiCheck/CiSema.class: test/bin/CiCheck/CiSema.java test/CiCheck.java
 test/bin/CiCheck/js.txt: test/CiCheck.js test/bin/CiCheck/Test.js $(SOURCE_CI)
 	$(DO)node test/CiCheck.js $(SOURCE_CI) >$@
 
-test/bin/CiCheck/Test.cpp test/bin/CiCheck/Test.d test/bin/CiCheck/CiSema.java test/bin/CiCheck/Test.js test/bin/CiCheck/Test.ts: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci bin/Debug/net6.0/cito.dll
+test/bin/CiCheck/Test.d test/bin/CiCheck/CiSema.java test/bin/CiCheck/Test.js test/bin/CiCheck/Test.ts: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci cito
 	$(DO)mkdir -p $(@D) && $(CITO) -o $@ $(filter %.ci, $^)
 
 test/bin/Resource/java.txt: test/bin/Resource/Test.class test/bin/Runner.class
 	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)$(JAVACPSEP)test" Runner >$@
 
-$(addprefix test/bin/Resource/Test., c cpp cs d java js ts py swift cl): test/Resource.ci bin/Debug/net6.0/cito.dll
+$(addprefix test/bin/Resource/Test., c cpp cs d java js ts py swift cl): test/Resource.ci cito
 	$(DO)mkdir -p $(@D) && ($(CITO) -o $@ -I $(<D) $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 
 .PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.d test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.ts test/bin/%/Test.d.ts test/bin/%/Test.py test/bin/%/Test.swift test/bin/%/Test.cl
@@ -226,14 +223,14 @@ test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 test/node_modules: test/package.json
 	cd $(<D) && npm i --no-package-lock
 
-test/bin/%/error.txt: test/error/%.ci bin/Debug/net6.0/cito.dll
+test/bin/%/error.txt: test/error/%.ci cito
 	$(DO)mkdir -p $(@D) && ! $(CITO) -o $(@:%.txt=%.cs) $< 2>$@ && perl -ne 'print "$$ARGV($$.): $$1\n" while m!//(ERROR: .+?)(?=$$| //)!g' $< | diff -u --strip-trailing-cr - $@ && echo PASSED >$@
 
 test-transpile: $(foreach t, $(patsubst test/%.ci, test/bin/%/Test., $(wildcard test/*.ci)), $tc $tcpp $tcs $td $tjava $tjs $tts $tpy $tswift $tcl)
 
 coverage/output.xml:
 	$(MAKE) clean bin/Debug/net6.0/cito.dll
-	dotnet-coverage collect -f xml -o $@ "make -j`nproc` test-transpile test-error"
+	dotnet-coverage collect -f xml -o $@ 'make -j`nproc` test-transpile test-error CITO="dotnet run --no-build --"'
 
 coverage: coverage/output.xml
 	reportgenerator -reports:$< -targetdir:coverage
