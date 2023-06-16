@@ -249,6 +249,9 @@ test/bin/%/all: test/%.ci cito
 test/bin/CiTo/all: $(SOURCE_CI) cito
 	$(DO)mkdir -p $(@D) && $(CITO) -o $(@D)/Test.cpp,cs,d,js,d.ts,ts $(SOURCE_CI)
 
+test/bin/Resource/all: test/Resource.ci cito
+	$(DO)mkdir -p $(@D) && $(CITO) -o $(@D)/Test.c,cpp,cs,d,java,js,d.ts,ts,py,swift,cl -I $(<D) $<
+
 coverage/output.xml:
 	dotnet-coverage collect -f xml -o $@ "make -j`nproc` test-transpile test-error CITO_HOST=cs"
 

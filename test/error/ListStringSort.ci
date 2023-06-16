@@ -1,0 +1,10 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		List<string>() list;
+		list.Add("foo");
+		list.Sort(); //ERROR: Method restricted to collections of numbers
+		return true;
+	}
+}

@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int? i = 42; //ERROR: Nullable value types not supported
+		return true;
+	}
+}

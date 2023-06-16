@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		byte[] a = resource<byte[]>(42); //ERROR: Resource name must be a string
+		return true;
+	}
+}

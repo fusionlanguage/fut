@@ -3,8 +3,10 @@ public static class Test
 	public static bool Run()
 	{
 		int a = 42;
+		byte b = 5;
 		double c = 10.5; //FAIL: cl if no double support
 		return -a == -42
+			&& -b == -5 //FAIL: swift TODO
 			&& -c == -10.5;
 	}
 }

@@ -4138,10 +4138,6 @@ namespace Foxoft.Ci
 					visibility = CiVisibility.Public;
 					NextToken();
 					break;
-				case CiToken.Semicolon:
-					ReportError("Semicolon in class definition");
-					NextToken();
-					continue;
 				default:
 					visibility = CiVisibility.Private;
 					break;
@@ -4389,7 +4385,7 @@ namespace Foxoft.Ci
 							ReportError(part.WidthExpr, "Cannot format an integer with both width and precision");
 						break;
 					default:
-						ReportError(arg, "Invalid format string");
+						ReportError(arg, "Invalid format");
 						break;
 					}
 					break;
@@ -4402,13 +4398,13 @@ namespace Foxoft.Ci
 					case 'e':
 						break;
 					default:
-						ReportError(arg, "Invalid format string");
+						ReportError(arg, "Invalid format");
 						break;
 					}
 					break;
 				default:
 					if (part.Format != ' ')
-						ReportError(arg, "Invalid format string");
+						ReportError(arg, "Invalid format");
 					else if (arg is CiLiteralString literalString && part.WidthExpr == null) {
 						s += literalString.Value;
 						continue;
@@ -4946,7 +4942,7 @@ namespace Foxoft.Ci
 				return ResolveNew(expr);
 			case CiToken.Resource:
 				if (!(FoldConst(expr.Inner) is CiLiteralString resourceName))
-					return PoisonError(expr, "Resource name must be string");
+					return PoisonError(expr, "Resource name must be a string");
 				inner = resourceName;
 				type = new CiArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = this.Program.System.ByteType, Length = GetResourceLength(resourceName.Value, expr) };
 				break;

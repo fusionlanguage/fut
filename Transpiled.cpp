@@ -3807,10 +3807,6 @@ void CiParser::parseClass(std::shared_ptr<CiCodeDoc> doc, bool isPublic, CiCallT
 			visibility = CiVisibility::public_;
 			nextToken();
 			break;
-		case CiToken::semicolon:
-			reportError("Semicolon in class definition");
-			nextToken();
-			continue;
 		default:
 			visibility = CiVisibility::private_;
 			break;
@@ -4071,7 +4067,7 @@ std::shared_ptr<CiExpr> CiSema::visitInterpolatedString(std::shared_ptr<CiInterp
 					reportError(part->widthExpr.get(), "Cannot format an integer with both width and precision");
 				break;
 			default:
-				reportError(arg.get(), "Invalid format string");
+				reportError(arg.get(), "Invalid format");
 				break;
 			}
 		}
@@ -4084,13 +4080,13 @@ std::shared_ptr<CiExpr> CiSema::visitInterpolatedString(std::shared_ptr<CiInterp
 			case 'e':
 				break;
 			default:
-				reportError(arg.get(), "Invalid format string");
+				reportError(arg.get(), "Invalid format");
 				break;
 			}
 		}
 		else {
 			if (part->format != ' ')
-				reportError(arg.get(), "Invalid format string");
+				reportError(arg.get(), "Invalid format");
 			else {
 				const CiLiteralString * literalString;
 				if ((literalString = dynamic_cast<const CiLiteralString *>(arg.get())) && part->widthExpr == nullptr) {
@@ -4682,7 +4678,7 @@ std::shared_ptr<CiExpr> CiSema::visitPrefixExpr(std::shared_ptr<CiPrefixExpr> ex
 		{
 			std::shared_ptr<CiLiteralString> resourceName;
 			if (!(resourceName = std::dynamic_pointer_cast<CiLiteralString>(foldConst(expr->inner))))
-				return poisonError(expr.get(), "Resource name must be string");
+				return poisonError(expr.get(), "Resource name must be a string");
 			inner = resourceName;
 			std::shared_ptr<CiArrayStorageType> citemp1 = std::make_shared<CiArrayStorageType>();
 			citemp1->class_ = this->program->system->arrayStorageClass.get();

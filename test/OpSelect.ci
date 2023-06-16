@@ -21,6 +21,8 @@ public static class Test
 		Shape! s = a ? r : c;
 		if ((a ? a : false) ? false : a)
 			return false;
+		if (!a ? true : false)
+			return false;
 		return (a ? (true ? s : null) == r : b[0] == 5);
 	}
 }

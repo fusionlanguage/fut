@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		Dictionary<int, int>() dict;
+		dict.Add(5); //ERROR: Method restricted to dictionaries with storage values
+		return true;
+	}
+}

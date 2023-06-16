@@ -1,0 +1,7 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		return 5 % 0; //ERROR: Mod zero
+	}
+}

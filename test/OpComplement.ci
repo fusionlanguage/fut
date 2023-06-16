@@ -3,6 +3,8 @@ public static class Test
 	public static bool Run()
 	{
 		int a = 42;
-		return ~a == -43;
+		byte b = 1;
+		return ~a == -43
+			&& ~b == ~1;
 	}
 }

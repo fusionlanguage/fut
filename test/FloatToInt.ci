@@ -4,7 +4,7 @@ public static class Test
 	{
 		int e = Math.Truncate(Math.E);
 		float f = Math.PI;
-		int pi = Math.Floor(f);
+		byte pi = Math.Floor(f);
 		return e == 2 && pi == 3;
 	}
 }

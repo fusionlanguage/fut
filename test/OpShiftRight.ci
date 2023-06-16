@@ -9,6 +9,7 @@ public static class Test
 		bool c = true;
 		int d = 13;
 		d >>= 2;
+		short s = 1;
 		return a >> b == 2
 			&& (c ? a : b) >> 1 == 2
 			&& 32 >> (c ? a : b) == 1
@@ -32,6 +33,7 @@ public static class Test
 			&& 64 >> (a / b) == 2
 			&& (a % 3) >> 1 == 1
 			&& 32 >> (a % 3) == 8
+			&& a >> s == 2
 			&& d == 3;
 	}
 }

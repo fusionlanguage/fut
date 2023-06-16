@@ -910,11 +910,6 @@ public abstract class CiParser : CiLexer
 				visibility = CiVisibility.Public;
 				NextToken();
 				break;
-			case CiToken.Semicolon:
-				ReportError("Semicolon in class definition");
-				NextToken();
-				continue;
-
 			default:
 				visibility = CiVisibility.Private;
 				break;

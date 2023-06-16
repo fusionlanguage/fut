@@ -1,0 +1,12 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int i = 42;
+		float f = 10.5;
+		string() s = $"|{i:F5}|"; //ERROR: Invalid format
+		string() s2 = $"|{f:X2}|"; //ERROR: Invalid format
+		string() s3 = $"{s:D10}"; //ERROR: Invalid format
+		return true;
+	}
+}

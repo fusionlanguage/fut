@@ -4261,10 +4261,6 @@ export class CiParser extends CiLexer
 				visibility = CiVisibility.PUBLIC;
 				this.nextToken();
 				break;
-			case CiToken.SEMICOLON:
-				this.reportError("Semicolon in class definition");
-				this.nextToken();
-				continue;
 			default:
 				visibility = CiVisibility.PRIVATE;
 				break;
@@ -4511,7 +4507,7 @@ export class CiSema
 						this.reportError(part.widthExpr, "Cannot format an integer with both width and precision");
 					break;
 				default:
-					this.reportError(arg, "Invalid format string");
+					this.reportError(arg, "Invalid format");
 					break;
 				}
 			}
@@ -4524,13 +4520,13 @@ export class CiSema
 				case 101:
 					break;
 				default:
-					this.reportError(arg, "Invalid format string");
+					this.reportError(arg, "Invalid format");
 					break;
 				}
 			}
 			else {
 				if (part.format != 32)
-					this.reportError(arg, "Invalid format string");
+					this.reportError(arg, "Invalid format");
 				else {
 					let literalString;
 					if ((literalString = arg) instanceof CiLiteralString && part.widthExpr == null) {
@@ -5106,7 +5102,7 @@ export class CiSema
 		case CiToken.RESOURCE:
 			let resourceName;
 			if (!((resourceName = this.#foldConst(expr.inner)) instanceof CiLiteralString))
-				return this.#poisonError(expr, "Resource name must be string");
+				return this.#poisonError(expr, "Resource name must be a string");
 			inner = resourceName;
 			type = Object.assign(new CiArrayStorageType(), { class: this.program.system.arrayStorageClass, typeArg0: this.program.system.byteType, length: this.getResourceLength(resourceName.value, expr) });
 			break;
