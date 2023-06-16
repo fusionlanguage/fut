@@ -56,7 +56,7 @@ Transpiled.cpp: $(SOURCE_CI)
 bin/Debug/net6.0/cito.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs CiTo.cs)
 	dotnet build
 
-Transpiled.cs: $(SOURCE_CI) cito
+Transpiled.cs: $(SOURCE_CI)
 	$(DO)$(CITO) -o $@ -n Foxoft.Ci $^
 
 Transpiled.d Transpiled.js: $(SOURCE_CI) cito
@@ -71,7 +71,7 @@ test-c test-GenC.ci: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.c
 test-cpp test-GenCpp.ci: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) Transpiled.cpp
 	$(DO_SUMMARY)
 
-test-cs test-GenCs.ci: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci))
+test-cs test-GenCs.ci: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) Transpiled.cs
 	$(DO_SUMMARY)
 
 test-d test-GenD.ci: $(patsubst test/%.ci, test/bin/%/d.txt, $(wildcard test/*.ci)) Transpiled.d
