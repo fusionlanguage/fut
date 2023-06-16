@@ -244,7 +244,7 @@ test/bin/%/error.txt: test/error/%.ci cito
 test-transpile: $(foreach t, $(patsubst test/%.ci, test/bin/%/Test., $(wildcard test/*.ci)), $tc $tcpp $tcs $td $tjava $tjs $tts $tpy $tswift $tcl)
 
 coverage/output.xml:
-	$(MAKE) clean bin/Debug/net6.0/cito.dll
+	$(MAKE) clean
 	dotnet-coverage collect -f xml -o $@ "make -j`nproc` test-transpile test-error CITO_HOST=cs"
 
 coverage: coverage/output.xml
