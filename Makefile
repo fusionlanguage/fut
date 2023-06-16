@@ -218,10 +218,7 @@ test/bin/CiCheck/java.txt: test/bin/CiCheck/CiSema.class $(SOURCE_CI)
 test/bin/CiCheck/CiSema.class: test/bin/CiCheck/CiSema.java test/CiCheck.java
 	$(DO)javac -d $(@D) -encoding utf8 --enable-preview -source 20 $(<D)/*.java test/CiCheck.java
 
-test/bin/CiCheck/js.txt: test/CiCheck.js test/bin/CiCheck/Test.js $(SOURCE_CI)
-	$(DO)node test/CiCheck.js $(SOURCE_CI) >$@
-
-test/bin/CiCheck/Test.d test/bin/CiCheck/CiSema.java test/bin/CiCheck/Test.js test/bin/CiCheck/Test.ts: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci cito
+test/bin/CiCheck/Test.d test/bin/CiCheck/CiSema.java: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci cito
 	$(DO)mkdir -p $(@D) && $(CITO) -o $@ $(filter %.ci, $^)
 
 test/bin/Resource/java.txt: test/bin/Resource/Test.class test/bin/Runner.class
