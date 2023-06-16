@@ -6,7 +6,7 @@ vm:
 jobs:
   - name: coverage
     install:
-      - sudo apt install dotnet-sdk-7.0
+      - sudo apt install dotnet-sdk-6.0
       - dotnet tool install -g dotnet-coverage
       - curl -Os https://uploader.codecov.io/latest/linux/codecov
       - chmod +x codecov
