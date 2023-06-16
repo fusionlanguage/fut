@@ -4,13 +4,13 @@ jobs:
   c-cl-error:
     runs-on: ubuntu-22.04
     steps:
-      - uses: Totto16/setup-gcc@main
+      - uses: Totto16/setup-gcc@master
       - uses: actions/checkout@main
       - run: make -j3 test-c test-cl test-error
   cpp-java:
     runs-on: ubuntu-22.04
     steps:
-      - uses: Totto16/setup-gcc@main
+      - uses: Totto16/setup-gcc@master
       - uses: actions/setup-java@main
         with:
           distribution: temurin
@@ -20,7 +20,7 @@ jobs:
   cs:
     runs-on: ubuntu-22.04
     steps:
-      - uses: Totto16/setup-gcc@main
+      - uses: Totto16/setup-gcc@master
       - uses: actions/setup-dotnet@main
         with:
           dotnet-version: 6.0.410
@@ -29,7 +29,7 @@ jobs:
   d:
     runs-on: ubuntu-22.04
     steps:
-      - uses: Totto16/setup-gcc@main
+      - uses: Totto16/setup-gcc@master
       - uses: dlang-community/setup-dlang@v1
         with:
           compiler: dmd-latest
@@ -38,14 +38,14 @@ jobs:
   js-ts:
     runs-on: ubuntu-22.04
     steps:
-      - uses: Totto16/setup-gcc@main
+      - uses: Totto16/setup-gcc@master
       - uses: actions/setup-node@main
       - uses: actions/checkout@main
       - run: make -j3 test-js test-ts
   py-swift:
     runs-on: ubuntu-22.04
     steps:
-      - uses: Totto16/setup-gcc@main
+      - uses: Totto16/setup-gcc@master
       - uses: swift-actions/setup-swift@main
       - uses: actions/checkout@main
       - run: make -j3 test-py test-swift
