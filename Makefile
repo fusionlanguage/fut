@@ -33,7 +33,7 @@ DO_SUMMARY = $(DO)perl test/summary.pl $(filter %.txt, $^)
 DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 SOURCE_CI = Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenTyped.ci GenCCppD.ci GenCCpp.ci GenC.ci GenCl.ci GenCpp.ci GenCs.ci GenD.ci GenJava.ci GenJs.ci GenTs.ci GenPySwift.ci GenSwift.ci GenPy.ci
 
-all: cito Transpiled.cs Transpiled.js
+all: cito Transpiled.cpp Transpiled.cs Transpiled.js
 
 ifeq ($(CITO_HOST),cs)
 
@@ -241,10 +241,13 @@ test/node_modules: test/package.json
 test/bin/%/error.txt: test/error/%.ci cito
 	$(DO)mkdir -p $(@D) && ! $(CITO) -o $(@:%.txt=%.cs) $< 2>$@ && perl -ne 'print "$$ARGV($$.): $$1\n" while m!//(ERROR: .+?)(?=$$| //)!g' $< | diff -u --strip-trailing-cr - $@ && echo PASSED >$@
 
-test-transpile: $(patsubst test/%.ci, test/bin/%/all, $(wildcard test/*.ci))
+test-transpile: $(patsubst test/%.ci, test/bin/%/all, $(wildcard test/*.ci)) test/bin/CiTo/all
 
 test/bin/%/all: test/%.ci cito
 	$(DO)mkdir -p $(@D) && $(CITO) -o $(@D)/Test.c,cpp,cs,d,java,js,d.ts,ts,py,swift,cl $< || true
+
+test/bin/CiTo/all: $(SOURCE_CI) cito
+	$(DO)mkdir -p $(@D) && $(CITO) -o $(@D)/Test.cpp,cs,d,js,d.ts,ts $(SOURCE_CI)
 
 coverage/output.xml:
 	dotnet-coverage collect -f xml -o $@ "make -j`nproc` test-transpile test-error CITO_HOST=cs"
@@ -265,6 +268,6 @@ clean:
 	$(RM) cito cito.exe
 	$(RM) -r test/bin
 
-.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov install uninstall clean
+.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile test/bin/CiTo/all coverage/output.xml coverage codecov install uninstall clean
 
 .DELETE_ON_ERROR:
