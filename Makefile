@@ -233,7 +233,7 @@ test-transpile: $(foreach t, $(patsubst test/%.ci, test/bin/%/Test., $(wildcard 
 
 coverage/output.xml:
 	$(MAKE) clean bin/Debug/net6.0/cito.dll
-	dotnet-coverage collect -f xml -o $@ 'make -j`nproc` test-transpile test-error CITO="dotnet run --no-build --"'
+	dotnet-coverage collect -f xml -o $@ "make -j`nproc` test-transpile test-error CITO='dotnet run --no-build --'"
 
 coverage: coverage/output.xml
 	reportgenerator -reports:$< -targetdir:coverage
