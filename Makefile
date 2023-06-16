@@ -50,14 +50,17 @@ cito: cito.cpp Transpiled.cpp
 
 endif
 
-Transpiled.cpp Transpiled.d Transpiled.js: $(SOURCE_CI)
+Transpiled.cpp: $(SOURCE_CI)
 	$(DO)$(CITO) -o $@ $^
 
 bin/Debug/net6.0/cito.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs CiTo.cs)
 	dotnet build
 
-Transpiled.cs: $(SOURCE_CI)
+Transpiled.cs: $(SOURCE_CI) cito
 	$(DO)$(CITO) -o $@ -n Foxoft.Ci $^
+
+Transpiled.d Transpiled.js: $(SOURCE_CI) cito
+	$(DO)$(CITO) -o $@ $^
 
 test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error
 	$(DO)perl test/summary.pl test/bin/*/*.txt
