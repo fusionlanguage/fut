@@ -19,7 +19,6 @@ TEST_CFLAGS += -fsanitize=address -g
 TEST_CXXFLAGS += -fsanitize=address -g
 SWIFTC += -sanitize=address
 endif
-CITO = ./cito
 DC = dmd
 PYTHON = python3 -B
 INSTALL = install
@@ -36,7 +35,24 @@ SOURCE_CI = Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenTyp
 
 all: cito Transpiled.cs Transpiled.js
 
-ifeq ($(OS),Windows_NT)
+ifeq ($(CITO_HOST),cs)
+
+CITO = dotnet run --no-build --
+
+cito: bin/Debug/net6.0/cito.dll
+
+bin/Debug/net6.0/cito.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs CiTo.cs)
+	dotnet build
+
+else ifeq ($(CITO_HOST),node)
+
+CITO = node cito.js
+
+cito: Transpiled.js
+
+else ifeq ($(OS),Windows_NT)
+
+CITO = ./cito
 
 cito: cito.exe
 
@@ -45,22 +61,18 @@ cito.exe: cito.cpp Transpiled.cpp
 
 else
 
+CITO = ./cito
+
 cito: cito.cpp Transpiled.cpp
 	$(DO)$(CXX) -o $@ $(CXXFLAGS) $^
 
 endif
 
-Transpiled.cpp: $(SOURCE_CI)
+Transpiled.cpp Transpiled.js: $(SOURCE_CI)
 	$(DO)$(CITO) -o $@ $^
-
-bin/Debug/net6.0/cito.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs CiTo.cs)
-	dotnet build
 
 Transpiled.cs: $(SOURCE_CI)
 	$(DO)$(CITO) -o $@ -n Foxoft.Ci $^
-
-Transpiled.d Transpiled.js: $(SOURCE_CI) cito
-	$(DO)$(CITO) -o $@ $(SOURCE_CI)
 
 test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error
 	$(DO)perl test/summary.pl test/bin/*/*.txt
@@ -74,7 +86,7 @@ test-cpp test-GenCpp.ci: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard te
 test-cs test-GenCs.ci: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) Transpiled.cs
 	$(DO_SUMMARY)
 
-test-d test-GenD.ci: $(patsubst test/%.ci, test/bin/%/d.txt, $(wildcard test/*.ci)) Transpiled.d
+test-d test-GenD.ci: $(patsubst test/%.ci, test/bin/%/d.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
 test-java test-GenJava.ci: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) test/bin/CiCheck/CiSema.java
@@ -233,7 +245,7 @@ test-transpile: $(foreach t, $(patsubst test/%.ci, test/bin/%/Test., $(wildcard 
 
 coverage/output.xml:
 	$(MAKE) clean bin/Debug/net6.0/cito.dll
-	dotnet-coverage collect -f xml -o $@ "make -j`nproc` test-transpile test-error CITO='dotnet run --no-build --'"
+	dotnet-coverage collect -f xml -o $@ "make -j`nproc` test-transpile test-error CITO_HOST=cs"
 
 coverage: coverage/output.xml
 	reportgenerator -reports:$< -targetdir:coverage
