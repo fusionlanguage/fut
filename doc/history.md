@@ -141,8 +141,11 @@ I expected users to build `cito` themselves. It's a developer's tool after all!
 
 ## Version 2.0
 
-In 2022 I started porting `cito` to Ć. This is a [large effort](https://github.com/pfusik/cito/issues/48).
-
-Starting with 2.0.0, new versions are released as a .NET tool, so if you have a .NET SDK,
-you can install `cito` with one command.
+Starting with 2.0.0, new versions were released as a .NET tool, so if you had a .NET SDK,
+you could install `cito` with one command.
 I also added [syntax highlighting](editors.md) to a couple of editors.
+
+## Version 3.0
+
+`cito` 3.0 is self-hosted, transpiling itself to C++, C# and JavaScript.
+This means it no longer requires .NET.

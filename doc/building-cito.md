@@ -1,22 +1,30 @@
 ﻿# How to compile and test cito
 
-`cito` is currently written in C#.
+`cito` is implemented in Ć.
+To solve the egg-and-chicken problem, its transpilations to C++, C#
+and JavaScript are included with the source code.
 
-You can build it with [.NET 7.0 or 6.0 SDK](https://dotnet.microsoft.com/en-us/download)
-on Windows/macOS/Linux or .NET Framework on Windows only.
+## Building a C++ cito
 
-On Windows, the .NET SDK is included in Visual Studio 2022.
-
-Build cito with the following command line:
-
-    dotnet build
-
-Alternatively, if you have GNU Make, build using:
+You need a C++20 compiler, such as GCC 13 or Clang 16.
+Build with:
 
     make
 
-On Windows, this will build for .NET Framework.
-On other platforms it is equivalent to `dotnet build`.
+## Building a C# cito
+
+You need [.NET 7.0 or 6.0 SDK](https://dotnet.microsoft.com/en-us/download).
+On Windows, it is included in Visual Studio 2022.
+Build with:
+
+    make CITO_HOST=cs
+
+## Building a Node.js cito
+
+You need [Node.js](nodejs.org).
+Build with:
+
+    make CITO_HOST=node
 
 ## Testing
 
@@ -24,7 +32,7 @@ To run cito tests, you will need:
 * GNU Make
 * perl
 * GNU diff
-* Clang C and C++ compilers
+* C and C++ compilers
 * [Java compiler](https://www.oracle.com/java/technologies/downloads/)
 * [Node.js](https://nodejs.org/)
 * Python
@@ -35,7 +43,7 @@ To get GNU Make, perl, GNU diff, Clang, Python and GLib on Windows,
 install [MSYS2](https://www.msys2.org/), start "MSYS2 MinGW 64-bit"
 and add packages with:
 
-    pacman -S make perl diffutils mingw-w64-x86_64-clang mingw-w64-x86_64-python mingw-w64-x86_64-glib2
+    pacman -S make perl diffutils mingw-w64-x86_64-gcc mingw-w64-x86_64-python mingw-w64-x86_64-glib2
 
 On macOS:
 
