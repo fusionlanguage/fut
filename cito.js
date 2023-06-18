@@ -188,7 +188,7 @@ function emitImplicitLang(program, namespace, outputFile)
 	for (let i = outputFile.length; --i >= 0; ) {
 		const c = outputFile.charAt(i);
 		if (c == ".") {
-			if (i >= 2 && /[.,]d\.ts($|,)/.test(outputFile.slice(i - 2)))
+			if (i >= 2 && /^[.,]d\.ts($|,)/.test(outputFile.slice(i - 2)))
 				continue;
 			const outputBase = outputFile.slice(0, i + 1);
 			let ok = true;
