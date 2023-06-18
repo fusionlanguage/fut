@@ -284,18 +284,16 @@ int main(int argc, char **argv)
 				continue;
 			std::string outputBase { outputFile, i + 1 };
 			const char *extBegin = outputFile + i + 1;
+			bool ok = true;
 			for (;;) {
 				const char *extEnd = strchr(extBegin, ',');
 				if (extEnd == nullptr)
 					break;
 				std::string outputExt = std::string(extBegin, extEnd);
-				if (!emit(&program, outputExt.c_str(), namespace_, (outputBase + outputExt).c_str()))
-					return 1;
+				ok &= emit(&program, outputExt.c_str(), namespace_, (outputBase + outputExt).c_str());
 				extBegin = extEnd + 1;
 			}
-			if (!emit(&program, extBegin, namespace_, (outputBase + extBegin).c_str()))
-				return 1;
-			return 0;
+			return ok & emit(&program, extBegin, namespace_, (outputBase + extBegin).c_str()) ? 0 : 1;
 		}
 		if (c == '/' || c == '\\' || c == ':')
 			break;

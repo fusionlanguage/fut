@@ -255,11 +255,10 @@ public static class CiTo
 					 && (i + 3 == outputFile.Length || outputFile[i + 3] == ','))
 						continue;
 					string outputBase = outputFile.Substring(0, i + 1);
-					foreach (string outputExt in outputFile.Substring(i + 1).Split(',')) {
-						if (!Emit(program, outputExt, namespace_, outputBase + outputExt))
-							return 1;
-					}
-					return 0;
+					bool ok = true;
+					foreach (string outputExt in outputFile.Substring(i + 1).Split(','))
+						ok &= Emit(program, outputExt, namespace_, outputBase + outputExt);
+					return ok ? 0 : 1;
 				}
 				if (c == Path.DirectorySeparatorChar
 				 || c == Path.AltDirectorySeparatorChar
