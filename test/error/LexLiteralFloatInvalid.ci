@@ -3,6 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		double a = 1.2.3; //ERROR: Expected identifier, got integer constant
+		double b = 1e2e3; //ERROR: Invalid floating-point number //ERROR: Expected ';', got identifier //ERROR: Invalid expression
 		return true;
 	}
 }

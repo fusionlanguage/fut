@@ -7,6 +7,9 @@ public static class Test
 		li.Add(15);
 		li.Add(15);
 
+		List<double>() ld;
+		ld.Add(Math.PI);
+
 		List<string>() lsp;
 		lsp.Add("foo");
 		lsp.Add("bar");
@@ -15,6 +18,7 @@ public static class Test
 		lss.Add("foo");
 		lss.Add("bar");
 		return li.Contains(15) && !li.Contains(1)
+			&& ld.Contains(Math.PI)
 			&& lsp.Contains("bar") && !lsp.Contains("quux")
 			&& lss.Contains("bar") && !lss.Contains("quux");
 	}
