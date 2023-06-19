@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		TextWriter! w = Console.Error; //FAIL: java swift ts cl
+		TextWriter! w = Console.Error; //FAIL: swift ts cl
 		w.WriteLine("Hello");
 		string s = "World";
 		w.WriteLine(s);

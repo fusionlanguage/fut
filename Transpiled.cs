@@ -17036,6 +17036,37 @@ namespace Foxoft.Ci
 
 		protected override int GetLiteralChars() => 65536;
 
+		void WriteToString(CiExpr expr, CiPriority parent)
+		{
+			switch (expr.Type.Id) {
+			case CiId.LongType:
+				Write("Long");
+				break;
+			case CiId.FloatType:
+				Write("Float");
+				break;
+			case CiId.DoubleType:
+			case CiId.FloatIntType:
+				Write("Double");
+				break;
+			case CiId.StringPtrType:
+			case CiId.StringStorageType:
+				expr.Accept(this, parent);
+				return;
+			default:
+				if (expr.Type is CiIntegerType)
+					Write("Integer");
+				else if (expr.Type is CiClassType) {
+					WritePostfix(expr, ".toString()");
+					return;
+				}
+				else
+					throw new NotImplementedException();
+				break;
+			}
+			WriteCall(".toString", expr);
+		}
+
 		protected override void WritePrintfWidth(CiInterpolatedPart part)
 		{
 			if (part.Precision >= 0 && part.Argument.Type is CiIntegerType) {
@@ -17048,36 +17079,8 @@ namespace Foxoft.Ci
 
 		public override void VisitInterpolatedString(CiInterpolatedString expr, CiPriority parent)
 		{
-			if (expr.Suffix.Length == 0 && expr.Parts.Count == 1 && expr.Parts[0].Prefix.Length == 0 && expr.Parts[0].WidthExpr == null && expr.Parts[0].Format == ' ') {
-				CiExpr arg = expr.Parts[0].Argument;
-				switch (arg.Type.Id) {
-				case CiId.LongType:
-					Write("Long");
-					break;
-				case CiId.FloatType:
-					Write("Float");
-					break;
-				case CiId.DoubleType:
-				case CiId.FloatIntType:
-					Write("Double");
-					break;
-				case CiId.StringPtrType:
-				case CiId.StringStorageType:
-					arg.Accept(this, parent);
-					return;
-				default:
-					if (arg.Type is CiIntegerType)
-						Write("Integer");
-					else if (arg.Type is CiClassType) {
-						WritePostfix(arg, ".toString()");
-						return;
-					}
-					else
-						throw new NotImplementedException();
-					break;
-				}
-				WriteCall(".toString", arg);
-			}
+			if (expr.Suffix.Length == 0 && expr.Parts.Count == 1 && expr.Parts[0].Prefix.Length == 0 && expr.Parts[0].WidthExpr == null && expr.Parts[0].Format == ' ')
+				WriteToString(expr.Parts[0].Argument, parent);
 			else {
 				Write("String.format(");
 				WritePrintf(expr, false);
@@ -17317,6 +17320,9 @@ namespace Foxoft.Ci
 				case CiId.OrderedDictionaryClass:
 					Include("java.util.LinkedHashMap");
 					WriteDictType("LinkedHashMap", klass);
+					break;
+				case CiId.TextWriterClass:
+					Write("Appendable");
 					break;
 				case CiId.RegexClass:
 					Include("java.util.regex.Pattern");
@@ -17710,15 +17716,43 @@ namespace Foxoft.Ci
 				WriteChar(')');
 				break;
 			case CiId.TextWriterWrite:
-				obj.Accept(this, CiPriority.Primary);
-				WriteWrite(method, args, false);
+				Write("try { ");
+				WritePostfix(obj, ".append(");
+				WriteToString(args[0], CiPriority.Argument);
+				Include("java.io.IOException");
+				Write("); } catch (IOException e) { throw new RuntimeException(e); }");
 				break;
 			case CiId.TextWriterWriteChar:
-				WriteMethodCall(obj, "write", args[0]);
+				Write("try { ");
+				WritePostfix(obj, ".append(");
+				if (!(args[0] is CiLiteralChar))
+					Write("(char) ");
+				args[0].Accept(this, CiPriority.Primary);
+				Include("java.io.IOException");
+				Write("); } catch (IOException e) { throw new RuntimeException(e); }");
+				break;
+			case CiId.TextWriterWriteCodePoint:
+				Write("try { ");
+				WritePostfix(obj, ".append(Character.toChars(");
+				args[0].Accept(this, CiPriority.Argument);
+				Include("java.io.IOException");
+				Write(")); } catch (IOException e) { throw new RuntimeException(e); }");
 				break;
 			case CiId.TextWriterWriteLine:
-				obj.Accept(this, CiPriority.Primary);
-				WriteWrite(method, args, true);
+				Write("try { ");
+				WritePostfix(obj, ".append(");
+				if (args.Count == 0)
+					Write("'\\n'");
+				else if (args[0] is CiInterpolatedString interpolated) {
+					Write("String.format(");
+					WritePrintf(interpolated, true);
+				}
+				else {
+					WriteToString(args[0], CiPriority.Argument);
+					Write(").append('\\n'");
+				}
+				Include("java.io.IOException");
+				Write("); } catch (IOException e) { throw new RuntimeException(e); }");
 				break;
 			case CiId.StringWriterClear:
 				WritePostfix(obj, ".getBuffer().setLength(0)");

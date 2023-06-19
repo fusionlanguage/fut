@@ -2409,6 +2409,7 @@ protected:
 	void writeClass(const CiClass * klass, const CiProgram * program) override;
 private:
 	int switchCaseDiscards;
+	void writeToString(const CiExpr * expr, CiPriority parent);
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeVisibility(CiVisibility visibility);
 	void writeCollectionType(std::string_view name, const CiType * elementType);

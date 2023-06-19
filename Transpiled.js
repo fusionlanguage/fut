@@ -17491,6 +17491,37 @@ export class GenJava extends GenTyped
 		return 65536;
 	}
 
+	#writeToString(expr, parent)
+	{
+		switch (expr.type.id) {
+		case CiId.LONG_TYPE:
+			this.write("Long");
+			break;
+		case CiId.FLOAT_TYPE:
+			this.write("Float");
+			break;
+		case CiId.DOUBLE_TYPE:
+		case CiId.FLOAT_INT_TYPE:
+			this.write("Double");
+			break;
+		case CiId.STRING_PTR_TYPE:
+		case CiId.STRING_STORAGE_TYPE:
+			expr.accept(this, parent);
+			return;
+		default:
+			if (expr.type instanceof CiIntegerType)
+				this.write("Integer");
+			else if (expr.type instanceof CiClassType) {
+				this.writePostfix(expr, ".toString()");
+				return;
+			}
+			else
+				throw new Error();
+			break;
+		}
+		this.writeCall(".toString", expr);
+	}
+
 	writePrintfWidth(part)
 	{
 		if (part.precision >= 0 && part.argument.type instanceof CiIntegerType) {
@@ -17503,36 +17534,8 @@ export class GenJava extends GenTyped
 
 	visitInterpolatedString(expr, parent)
 	{
-		if (expr.suffix.length == 0 && expr.parts.length == 1 && expr.parts[0].prefix.length == 0 && expr.parts[0].widthExpr == null && expr.parts[0].format == 32) {
-			let arg = expr.parts[0].argument;
-			switch (arg.type.id) {
-			case CiId.LONG_TYPE:
-				this.write("Long");
-				break;
-			case CiId.FLOAT_TYPE:
-				this.write("Float");
-				break;
-			case CiId.DOUBLE_TYPE:
-			case CiId.FLOAT_INT_TYPE:
-				this.write("Double");
-				break;
-			case CiId.STRING_PTR_TYPE:
-			case CiId.STRING_STORAGE_TYPE:
-				arg.accept(this, parent);
-				return;
-			default:
-				if (arg.type instanceof CiIntegerType)
-					this.write("Integer");
-				else if (arg.type instanceof CiClassType) {
-					this.writePostfix(arg, ".toString()");
-					return;
-				}
-				else
-					throw new Error();
-				break;
-			}
-			this.writeCall(".toString", arg);
-		}
+		if (expr.suffix.length == 0 && expr.parts.length == 1 && expr.parts[0].prefix.length == 0 && expr.parts[0].widthExpr == null && expr.parts[0].format == 32)
+			this.#writeToString(expr.parts[0].argument, parent);
 		else {
 			this.write("String.format(");
 			this.writePrintf(expr, false);
@@ -17771,6 +17774,9 @@ export class GenJava extends GenTyped
 			case CiId.ORDERED_DICTIONARY_CLASS:
 				this.include("java.util.LinkedHashMap");
 				this.#writeDictType("LinkedHashMap", klass);
+				break;
+			case CiId.TEXT_WRITER_CLASS:
+				this.write("Appendable");
 				break;
 			case CiId.REGEX_CLASS:
 				this.include("java.util.regex.Pattern");
@@ -18174,15 +18180,46 @@ export class GenJava extends GenTyped
 			this.writeChar(41);
 			break;
 		case CiId.TEXT_WRITER_WRITE:
-			obj.accept(this, CiPriority.PRIMARY);
-			this.#writeWrite(method, args, false);
+			this.write("try { ");
+			this.writePostfix(obj, ".append(");
+			this.#writeToString(args[0], CiPriority.ARGUMENT);
+			this.include("java.io.IOException");
+			this.write("); } catch (IOException e) { throw new RuntimeException(e); }");
 			break;
 		case CiId.TEXT_WRITER_WRITE_CHAR:
-			this.writeMethodCall(obj, "write", args[0]);
+			this.write("try { ");
+			this.writePostfix(obj, ".append(");
+			if (!(args[0] instanceof CiLiteralChar))
+				this.write("(char) ");
+			args[0].accept(this, CiPriority.PRIMARY);
+			this.include("java.io.IOException");
+			this.write("); } catch (IOException e) { throw new RuntimeException(e); }");
+			break;
+		case CiId.TEXT_WRITER_WRITE_CODE_POINT:
+			this.write("try { ");
+			this.writePostfix(obj, ".append(Character.toChars(");
+			args[0].accept(this, CiPriority.ARGUMENT);
+			this.include("java.io.IOException");
+			this.write(")); } catch (IOException e) { throw new RuntimeException(e); }");
 			break;
 		case CiId.TEXT_WRITER_WRITE_LINE:
-			obj.accept(this, CiPriority.PRIMARY);
-			this.#writeWrite(method, args, true);
+			this.write("try { ");
+			this.writePostfix(obj, ".append(");
+			if (args.length == 0)
+				this.write("'\\n'");
+			else {
+				let interpolated;
+				if ((interpolated = args[0]) instanceof CiInterpolatedString) {
+					this.write("String.format(");
+					this.writePrintf(interpolated, true);
+				}
+				else {
+					this.#writeToString(args[0], CiPriority.ARGUMENT);
+					this.write(").append('\\n'");
+				}
+			}
+			this.include("java.io.IOException");
+			this.write("); } catch (IOException e) { throw new RuntimeException(e); }");
 			break;
 		case CiId.STRING_WRITER_CLEAR:
 			this.writePostfix(obj, ".getBuffer().setLength(0)");
