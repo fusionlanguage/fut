@@ -17733,10 +17733,9 @@ namespace Foxoft.Ci
 				break;
 			case CiId.TextWriterWriteCodePoint:
 				Write("try { ");
-				WritePostfix(obj, ".append(Character.toChars(");
-				args[0].Accept(this, CiPriority.Argument);
+				WriteMethodCall(obj, "append(Character.toString", args[0]);
 				Include("java.io.IOException");
-				Write(")); } catch (IOException e) { throw new RuntimeException(e); }");
+				Write("); } catch (IOException e) { throw new RuntimeException(e); }");
 				break;
 			case CiId.TextWriterWriteLine:
 				Write("try { ");

@@ -18197,10 +18197,9 @@ export class GenJava extends GenTyped
 			break;
 		case CiId.TEXT_WRITER_WRITE_CODE_POINT:
 			this.write("try { ");
-			this.writePostfix(obj, ".append(Character.toChars(");
-			args[0].accept(this, CiPriority.ARGUMENT);
+			this.writeMethodCall(obj, "append(Character.toString", args[0]);
 			this.include("java.io.IOException");
-			this.write(")); } catch (IOException e) { throw new RuntimeException(e); }");
+			this.write("); } catch (IOException e) { throw new RuntimeException(e); }");
 			break;
 		case CiId.TEXT_WRITER_WRITE_LINE:
 			this.write("try { ");

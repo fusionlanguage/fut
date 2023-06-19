@@ -17051,10 +17051,9 @@ void GenJava::writeCallExpr(const CiExpr * obj, const CiMethod * method, const s
 		break;
 	case CiId::textWriterWriteCodePoint:
 		write("try { ");
-		writePostfix(obj, ".append(Character.toChars(");
-		(*args)[0]->accept(this, CiPriority::argument);
+		writeMethodCall(obj, "append(Character.toString", (*args)[0].get());
 		include("java.io.IOException");
-		write(")); } catch (IOException e) { throw new RuntimeException(e); }");
+		write("); } catch (IOException e) { throw new RuntimeException(e); }");
 		break;
 	case CiId::textWriterWriteLine:
 		write("try { ");
