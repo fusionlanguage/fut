@@ -5003,12 +5003,13 @@ namespace Foxoft.Ci
 					return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ (leftDouble.Value == rightDouble.Value));
 				case CiLiteralString leftString when right is CiLiteralString rightString:
 					return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ (leftString.Value == rightString.Value));
-				case CiLiteralNull _:
+				case CiLiteralNull _ when right is CiLiteralNull:
+				case CiLiteralFalse _ when right is CiLiteralFalse:
+				case CiLiteralTrue _ when right is CiLiteralTrue:
 					return ToLiteralBool(expr, expr.Op == CiToken.Equal);
-				case CiLiteralFalse _:
-					return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ right is CiLiteralFalse);
-				case CiLiteralTrue _:
-					return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ right is CiLiteralTrue);
+				case CiLiteralFalse _ when right is CiLiteralTrue:
+				case CiLiteralTrue _ when right is CiLiteralFalse:
+					return ToLiteralBool(expr, expr.Op == CiToken.NotEqual);
 				default:
 					break;
 				}

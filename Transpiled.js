@@ -5171,12 +5171,10 @@ export class CiSema
 				return this.#toLiteralBool(expr, (expr.op == CiToken.NOT_EQUAL) != (leftDouble.value == rightDouble.value));
 			else if ((leftString = left) instanceof CiLiteralString && (rightString = right) instanceof CiLiteralString)
 				return this.#toLiteralBool(expr, (expr.op == CiToken.NOT_EQUAL) != (leftString.value == rightString.value));
-			else if (left instanceof CiLiteralNull)
+			else if ((left instanceof CiLiteralNull && right instanceof CiLiteralNull) || (left instanceof CiLiteralFalse && right instanceof CiLiteralFalse) || (left instanceof CiLiteralTrue && right instanceof CiLiteralTrue))
 				return this.#toLiteralBool(expr, expr.op == CiToken.EQUAL);
-			else if (left instanceof CiLiteralFalse)
-				return this.#toLiteralBool(expr, (expr.op == CiToken.NOT_EQUAL) != right instanceof CiLiteralFalse);
-			else if (left instanceof CiLiteralTrue)
-				return this.#toLiteralBool(expr, (expr.op == CiToken.NOT_EQUAL) != right instanceof CiLiteralTrue);
+			else if ((left instanceof CiLiteralFalse && right instanceof CiLiteralTrue) || (left instanceof CiLiteralTrue && right instanceof CiLiteralFalse))
+				return this.#toLiteralBool(expr, expr.op == CiToken.NOT_EQUAL);
 			if (left.isConstEnum() && right.isConstEnum())
 				return this.#toLiteralBool(expr, (expr.op == CiToken.NOT_EQUAL) != (left.intValue() == right.intValue()));
 		}

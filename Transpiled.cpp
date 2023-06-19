@@ -4756,12 +4756,10 @@ std::shared_ptr<CiExpr> CiSema::resolveEquality(const CiBinaryExpr * expr, std::
 			return toLiteralBool(expr, (expr->op == CiToken::notEqual) ^ (leftDouble->value == rightDouble->value));
 		else if ((leftString = dynamic_cast<const CiLiteralString *>(left.get())) && (rightString = dynamic_cast<const CiLiteralString *>(right.get())))
 			return toLiteralBool(expr, (expr->op == CiToken::notEqual) ^ (leftString->value == rightString->value));
-		else if (dynamic_cast<const CiLiteralNull *>(left.get()))
+		else if ((dynamic_cast<const CiLiteralNull *>(left.get()) && dynamic_cast<const CiLiteralNull *>(right.get())) || (dynamic_cast<const CiLiteralFalse *>(left.get()) && dynamic_cast<const CiLiteralFalse *>(right.get())) || (dynamic_cast<const CiLiteralTrue *>(left.get()) && dynamic_cast<const CiLiteralTrue *>(right.get())))
 			return toLiteralBool(expr, expr->op == CiToken::equal);
-		else if (dynamic_cast<const CiLiteralFalse *>(left.get()))
-			return toLiteralBool(expr, (expr->op == CiToken::notEqual) ^ !!dynamic_cast<const CiLiteralFalse *>(right.get()));
-		else if (dynamic_cast<const CiLiteralTrue *>(left.get()))
-			return toLiteralBool(expr, (expr->op == CiToken::notEqual) ^ !!dynamic_cast<const CiLiteralTrue *>(right.get()));
+		else if ((dynamic_cast<const CiLiteralFalse *>(left.get()) && dynamic_cast<const CiLiteralTrue *>(right.get())) || (dynamic_cast<const CiLiteralTrue *>(left.get()) && dynamic_cast<const CiLiteralFalse *>(right.get())))
+			return toLiteralBool(expr, expr->op == CiToken::notEqual);
 		if (left->isConstEnum() && right->isConstEnum())
 			return toLiteralBool(expr, (expr->op == CiToken::notEqual) ^ (left->intValue() == right->intValue()));
 	}

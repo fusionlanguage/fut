@@ -7,8 +7,8 @@ public class Test
 		int[2] a;
 		int[]? ap = a;
 		string? sp = "foo";
-		return op != null
-			&& ap != null
-			&& sp != null;
+		return op != null && null != op
+			&& ap != null && null != ap
+			&& sp != null && null != sp;
 	}
 }
