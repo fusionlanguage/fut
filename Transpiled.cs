@@ -6098,79 +6098,6 @@ namespace Foxoft.Ci
 			return 0;
 		}
 
-		void ResolveTypes(CiClass klass)
-		{
-			this.CurrentScope = klass;
-			for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
-				switch (symbol) {
-				case CiField field:
-					CiType type = ResolveType(field);
-					if (field.Value != null) {
-						field.Value = VisitExpr(field.Value);
-						if (!field.IsAssignableStorage())
-							Coerce(field.Value, type is CiArrayStorageType array ? array.GetElementType() : type);
-					}
-					break;
-				case CiMethod method:
-					if (method.TypeExpr == this.Program.System.VoidType)
-						method.Type = this.Program.System.VoidType;
-					else
-						ResolveType(method);
-					for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
-						ResolveType(param);
-						if (param.Value != null) {
-							param.Value = FoldConst(param.Value);
-							Coerce(param.Value, param.Type);
-						}
-					}
-					if (method.CallType == CiCallType.Override || method.CallType == CiCallType.Sealed) {
-						if (klass.Parent.TryLookup(method.Name, false) is CiMethod baseMethod) {
-							switch (baseMethod.CallType) {
-							case CiCallType.Abstract:
-							case CiCallType.Virtual:
-							case CiCallType.Override:
-								break;
-							default:
-								ReportError(method, "Base method is not abstract or virtual");
-								break;
-							}
-							if (!method.Type.EqualsType(baseMethod.Type))
-								ReportError(method, "Base method has a different return type");
-							if (method.IsMutator != baseMethod.IsMutator) {
-								if (method.IsMutator)
-									ReportError(method, "Mutating method cannot override a non-mutating method");
-								else
-									ReportError(method, "Non-mutating method cannot override a mutating method");
-							}
-							CiVar baseParam = baseMethod.Parameters.FirstParameter();
-							for (CiVar param = method.Parameters.FirstParameter();; param = param.NextParameter()) {
-								if (param == null) {
-									if (baseParam != null)
-										ReportError(method, "Fewer parameters than the overridden method");
-									break;
-								}
-								if (baseParam == null) {
-									ReportError(method, "More parameters than the overridden method");
-									break;
-								}
-								if (!param.Type.EqualsType(baseParam.Type)) {
-									ReportError(method, "Base method has a different parameter type");
-									break;
-								}
-								baseParam = baseParam.NextParameter();
-							}
-							baseMethod.Calls.Add(method);
-						}
-						else
-							ReportError(method, "No method to override");
-					}
-					break;
-				default:
-					break;
-				}
-			}
-		}
-
 		void ResolveConst(CiConst konst)
 		{
 			switch (konst.VisitStatus) {
@@ -6244,6 +6171,38 @@ namespace Foxoft.Ci
 			}
 		}
 
+		void ResolveTypes(CiClass klass)
+		{
+			this.CurrentScope = klass;
+			for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+				switch (symbol) {
+				case CiField field:
+					CiType type = ResolveType(field);
+					if (field.Value != null) {
+						field.Value = VisitExpr(field.Value);
+						if (!field.IsAssignableStorage())
+							Coerce(field.Value, type is CiArrayStorageType array ? array.GetElementType() : type);
+					}
+					break;
+				case CiMethod method:
+					if (method.TypeExpr == this.Program.System.VoidType)
+						method.Type = this.Program.System.VoidType;
+					else
+						ResolveType(method);
+					for (CiVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+						ResolveType(param);
+						if (param.Value != null) {
+							param.Value = FoldConst(param.Value);
+							Coerce(param.Value, param.Type);
+						}
+					}
+					break;
+				default:
+					break;
+				}
+			}
+		}
+
 		void ResolveCode(CiClass klass)
 		{
 			if (klass.Constructor != null) {
@@ -6257,6 +6216,47 @@ namespace Foxoft.Ci
 					if (method.Name == "ToString" && method.CallType != CiCallType.Static && method.Parameters.Count() == 0)
 						method.Id = CiId.ClassToString;
 					if (method.Body != null) {
+						if (method.CallType == CiCallType.Override || method.CallType == CiCallType.Sealed) {
+							if (klass.Parent.TryLookup(method.Name, false) is CiMethod baseMethod) {
+								switch (baseMethod.CallType) {
+								case CiCallType.Abstract:
+								case CiCallType.Virtual:
+								case CiCallType.Override:
+									break;
+								default:
+									ReportError(method, "Base method is not abstract or virtual");
+									break;
+								}
+								if (!method.Type.EqualsType(baseMethod.Type))
+									ReportError(method, "Base method has a different return type");
+								if (method.IsMutator != baseMethod.IsMutator) {
+									if (method.IsMutator)
+										ReportError(method, "Mutating method cannot override a non-mutating method");
+									else
+										ReportError(method, "Non-mutating method cannot override a mutating method");
+								}
+								CiVar baseParam = baseMethod.Parameters.FirstParameter();
+								for (CiVar param = method.Parameters.FirstParameter();; param = param.NextParameter()) {
+									if (param == null) {
+										if (baseParam != null)
+											ReportError(method, "Fewer parameters than the overridden method");
+										break;
+									}
+									if (baseParam == null) {
+										ReportError(method, "More parameters than the overridden method");
+										break;
+									}
+									if (!param.Type.EqualsType(baseParam.Type)) {
+										ReportError(method, "Base method has a different parameter type");
+										break;
+									}
+									baseParam = baseParam.NextParameter();
+								}
+								baseMethod.Calls.Add(method);
+							}
+							else
+								ReportError(method, "No method to override");
+						}
 						this.CurrentScope = method.Parameters;
 						this.CurrentMethod = method;
 						if (!(method.Body is CiScope))

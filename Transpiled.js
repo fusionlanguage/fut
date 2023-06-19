@@ -6371,80 +6371,6 @@ export class CiSema
 		return 0;
 	}
 
-	#resolveTypes(klass)
-	{
-		this.#currentScope = klass;
-		for (let symbol = klass.first; symbol != null; symbol = symbol.next) {
-			if (symbol instanceof CiField) {
-				const field = symbol;
-				let type = this.#resolveType(field);
-				if (field.value != null) {
-					field.value = this.#visitExpr(field.value);
-					if (!field.isAssignableStorage()) {
-						let array;
-						this.#coerce(field.value, (array = type) instanceof CiArrayStorageType ? array.getElementType() : type);
-					}
-				}
-			}
-			else if (symbol instanceof CiMethod) {
-				const method = symbol;
-				if (method.typeExpr == this.program.system.voidType)
-					method.type = this.program.system.voidType;
-				else
-					this.#resolveType(method);
-				for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
-					this.#resolveType(param);
-					if (param.value != null) {
-						param.value = this.#foldConst(param.value);
-						this.#coerce(param.value, param.type);
-					}
-				}
-				if (method.callType == CiCallType.OVERRIDE || method.callType == CiCallType.SEALED) {
-					let baseMethod;
-					if ((baseMethod = klass.parent.tryLookup(method.name, false)) instanceof CiMethod) {
-						switch (baseMethod.callType) {
-						case CiCallType.ABSTRACT:
-						case CiCallType.VIRTUAL:
-						case CiCallType.OVERRIDE:
-							break;
-						default:
-							this.reportError(method, "Base method is not abstract or virtual");
-							break;
-						}
-						if (!method.type.equalsType(baseMethod.type))
-							this.reportError(method, "Base method has a different return type");
-						if (method.isMutator != baseMethod.isMutator) {
-							if (method.isMutator)
-								this.reportError(method, "Mutating method cannot override a non-mutating method");
-							else
-								this.reportError(method, "Non-mutating method cannot override a mutating method");
-						}
-						let baseParam = baseMethod.parameters.firstParameter();
-						for (let param = method.parameters.firstParameter();; param = param.nextParameter()) {
-							if (param == null) {
-								if (baseParam != null)
-									this.reportError(method, "Fewer parameters than the overridden method");
-								break;
-							}
-							if (baseParam == null) {
-								this.reportError(method, "More parameters than the overridden method");
-								break;
-							}
-							if (!param.type.equalsType(baseParam.type)) {
-								this.reportError(method, "Base method has a different parameter type");
-								break;
-							}
-							baseParam = baseParam.nextParameter();
-						}
-						baseMethod.calls.add(method);
-					}
-					else
-						this.reportError(method, "No method to override");
-				}
-			}
-		}
-	}
-
 	#resolveConst(konst)
 	{
 		switch (konst.visitStatus) {
@@ -6523,6 +6449,38 @@ export class CiSema
 			throw new Error();
 	}
 
+	#resolveTypes(klass)
+	{
+		this.#currentScope = klass;
+		for (let symbol = klass.first; symbol != null; symbol = symbol.next) {
+			if (symbol instanceof CiField) {
+				const field = symbol;
+				let type = this.#resolveType(field);
+				if (field.value != null) {
+					field.value = this.#visitExpr(field.value);
+					if (!field.isAssignableStorage()) {
+						let array;
+						this.#coerce(field.value, (array = type) instanceof CiArrayStorageType ? array.getElementType() : type);
+					}
+				}
+			}
+			else if (symbol instanceof CiMethod) {
+				const method = symbol;
+				if (method.typeExpr == this.program.system.voidType)
+					method.type = this.program.system.voidType;
+				else
+					this.#resolveType(method);
+				for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
+					this.#resolveType(param);
+					if (param.value != null) {
+						param.value = this.#foldConst(param.value);
+						this.#coerce(param.value, param.type);
+					}
+				}
+			}
+		}
+	}
+
 	#resolveCode(klass)
 	{
 		if (klass.constructor_ != null) {
@@ -6537,6 +6495,48 @@ export class CiSema
 				if (method.name == "ToString" && method.callType != CiCallType.STATIC && method.parameters.count() == 0)
 					method.id = CiId.CLASS_TO_STRING;
 				if (method.body != null) {
+					if (method.callType == CiCallType.OVERRIDE || method.callType == CiCallType.SEALED) {
+						let baseMethod;
+						if ((baseMethod = klass.parent.tryLookup(method.name, false)) instanceof CiMethod) {
+							switch (baseMethod.callType) {
+							case CiCallType.ABSTRACT:
+							case CiCallType.VIRTUAL:
+							case CiCallType.OVERRIDE:
+								break;
+							default:
+								this.reportError(method, "Base method is not abstract or virtual");
+								break;
+							}
+							if (!method.type.equalsType(baseMethod.type))
+								this.reportError(method, "Base method has a different return type");
+							if (method.isMutator != baseMethod.isMutator) {
+								if (method.isMutator)
+									this.reportError(method, "Mutating method cannot override a non-mutating method");
+								else
+									this.reportError(method, "Non-mutating method cannot override a mutating method");
+							}
+							let baseParam = baseMethod.parameters.firstParameter();
+							for (let param = method.parameters.firstParameter();; param = param.nextParameter()) {
+								if (param == null) {
+									if (baseParam != null)
+										this.reportError(method, "Fewer parameters than the overridden method");
+									break;
+								}
+								if (baseParam == null) {
+									this.reportError(method, "More parameters than the overridden method");
+									break;
+								}
+								if (!param.type.equalsType(baseParam.type)) {
+									this.reportError(method, "Base method has a different parameter type");
+									break;
+								}
+								baseParam = baseParam.nextParameter();
+							}
+							baseMethod.calls.add(method);
+						}
+						else
+							this.reportError(method, "No method to override");
+					}
 					this.#currentScope = method.parameters;
 					this.#currentMethod = method;
 					if (!(method.body instanceof CiScope))

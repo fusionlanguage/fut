@@ -1,0 +1,29 @@
+class Derived : Base
+{
+	internal override bool Foo() //FAIL: cl
+	{
+		return true;
+	}
+
+	internal bool Bar()
+	{
+		return Foo();
+	}
+}
+
+abstract class Base
+{
+	internal virtual bool Foo()
+	{
+		return false;
+	}
+}
+
+public static class Test
+{
+	public static bool Run()
+	{
+		Derived() d;
+		return d.Foo() && d.Bar();
+	}
+}

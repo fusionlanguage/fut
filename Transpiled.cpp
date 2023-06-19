@@ -5951,77 +5951,6 @@ int CiSema::foldConstInt(std::shared_ptr<CiExpr> expr)
 	return 0;
 }
 
-void CiSema::resolveTypes(CiClass * klass)
-{
-	this->currentScope = klass;
-	for (CiSymbol * symbol = klass->first; symbol != nullptr; symbol = symbol->next) {
-		if (CiField *field = dynamic_cast<CiField *>(symbol)) {
-			CiType * type = resolveType(field).get();
-			if (field->value != nullptr) {
-				field->value = visitExpr(field->value);
-				if (!field->isAssignableStorage()) {
-					const CiArrayStorageType * array;
-					coerce(field->value.get(), (array = dynamic_cast<const CiArrayStorageType *>(type)) ? array->getElementType().get() : type);
-				}
-			}
-		}
-		else if (CiMethod *method = dynamic_cast<CiMethod *>(symbol)) {
-			if (method->typeExpr == this->program->system->voidType)
-				method->type = this->program->system->voidType;
-			else
-				resolveType(method);
-			for (CiVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
-				resolveType(param);
-				if (param->value != nullptr) {
-					param->value = foldConst(param->value);
-					coerce(param->value.get(), param->type.get());
-				}
-			}
-			if (method->callType == CiCallType::override_ || method->callType == CiCallType::sealed) {
-				if (CiMethod *baseMethod = dynamic_cast<CiMethod *>(klass->parent->tryLookup(method->name, false).get())) {
-					switch (baseMethod->callType) {
-					case CiCallType::abstract:
-					case CiCallType::virtual_:
-					case CiCallType::override_:
-						break;
-					default:
-						reportError(method, "Base method is not abstract or virtual");
-						break;
-					}
-					if (!method->type->equalsType(baseMethod->type.get()))
-						reportError(method, "Base method has a different return type");
-					if (method->isMutator != baseMethod->isMutator) {
-						if (method->isMutator)
-							reportError(method, "Mutating method cannot override a non-mutating method");
-						else
-							reportError(method, "Non-mutating method cannot override a mutating method");
-					}
-					const CiVar * baseParam = baseMethod->parameters.firstParameter();
-					for (const CiVar * param = method->parameters.firstParameter();; param = param->nextParameter()) {
-						if (param == nullptr) {
-							if (baseParam != nullptr)
-								reportError(method, "Fewer parameters than the overridden method");
-							break;
-						}
-						if (baseParam == nullptr) {
-							reportError(method, "More parameters than the overridden method");
-							break;
-						}
-						if (!param->type->equalsType(baseParam->type.get())) {
-							reportError(method, "Base method has a different parameter type");
-							break;
-						}
-						baseParam = baseParam->nextParameter();
-					}
-					baseMethod->calls.insert(method);
-				}
-				else
-					reportError(method, "No method to override");
-			}
-		}
-	}
-}
-
 void CiSema::resolveConst(CiConst * konst)
 {
 	switch (konst->visitStatus) {
@@ -6100,6 +6029,36 @@ void CiSema::resolveConsts(CiContainerType * container)
 		std::abort();
 }
 
+void CiSema::resolveTypes(CiClass * klass)
+{
+	this->currentScope = klass;
+	for (CiSymbol * symbol = klass->first; symbol != nullptr; symbol = symbol->next) {
+		if (CiField *field = dynamic_cast<CiField *>(symbol)) {
+			CiType * type = resolveType(field).get();
+			if (field->value != nullptr) {
+				field->value = visitExpr(field->value);
+				if (!field->isAssignableStorage()) {
+					const CiArrayStorageType * array;
+					coerce(field->value.get(), (array = dynamic_cast<const CiArrayStorageType *>(type)) ? array->getElementType().get() : type);
+				}
+			}
+		}
+		else if (CiMethod *method = dynamic_cast<CiMethod *>(symbol)) {
+			if (method->typeExpr == this->program->system->voidType)
+				method->type = this->program->system->voidType;
+			else
+				resolveType(method);
+			for (CiVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
+				resolveType(param);
+				if (param->value != nullptr) {
+					param->value = foldConst(param->value);
+					coerce(param->value.get(), param->type.get());
+				}
+			}
+		}
+	}
+}
+
 void CiSema::resolveCode(CiClass * klass)
 {
 	if (klass->constructor != nullptr) {
@@ -6113,6 +6072,47 @@ void CiSema::resolveCode(CiClass * klass)
 			if (method->name == "ToString" && method->callType != CiCallType::static_ && method->parameters.count() == 0)
 				method->id = CiId::classToString;
 			if (method->body != nullptr) {
+				if (method->callType == CiCallType::override_ || method->callType == CiCallType::sealed) {
+					if (CiMethod *baseMethod = dynamic_cast<CiMethod *>(klass->parent->tryLookup(method->name, false).get())) {
+						switch (baseMethod->callType) {
+						case CiCallType::abstract:
+						case CiCallType::virtual_:
+						case CiCallType::override_:
+							break;
+						default:
+							reportError(method, "Base method is not abstract or virtual");
+							break;
+						}
+						if (!method->type->equalsType(baseMethod->type.get()))
+							reportError(method, "Base method has a different return type");
+						if (method->isMutator != baseMethod->isMutator) {
+							if (method->isMutator)
+								reportError(method, "Mutating method cannot override a non-mutating method");
+							else
+								reportError(method, "Non-mutating method cannot override a mutating method");
+						}
+						const CiVar * baseParam = baseMethod->parameters.firstParameter();
+						for (const CiVar * param = method->parameters.firstParameter();; param = param->nextParameter()) {
+							if (param == nullptr) {
+								if (baseParam != nullptr)
+									reportError(method, "Fewer parameters than the overridden method");
+								break;
+							}
+							if (baseParam == nullptr) {
+								reportError(method, "More parameters than the overridden method");
+								break;
+							}
+							if (!param->type->equalsType(baseParam->type.get())) {
+								reportError(method, "Base method has a different parameter type");
+								break;
+							}
+							baseParam = baseParam->nextParameter();
+						}
+						baseMethod->calls.insert(method);
+					}
+					else
+						reportError(method, "No method to override");
+				}
 				this->currentScope = &method->parameters;
 				this->currentMethod = method;
 				if (!dynamic_cast<const CiScope *>(method->body.get()))

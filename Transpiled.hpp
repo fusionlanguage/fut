@@ -1627,9 +1627,9 @@ private:
 	void visitStatement(std::shared_ptr<CiStatement> statement);
 	std::shared_ptr<CiExpr> foldConst(std::shared_ptr<CiExpr> expr);
 	int foldConstInt(std::shared_ptr<CiExpr> expr);
-	void resolveTypes(CiClass * klass);
 	void resolveConst(CiConst * konst);
 	void resolveConsts(CiContainerType * container);
+	void resolveTypes(CiClass * klass);
 	void resolveCode(CiClass * klass);
 	static void markMethodLive(CiMethodBase * method);
 	static void markClassLive(const CiClass * klass);
