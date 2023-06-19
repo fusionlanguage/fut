@@ -21950,6 +21950,7 @@ void GenPy::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std
 		writeChar(')');
 		break;
 	case CiId::textWriterWriteChar:
+	case CiId::textWriterWriteCodePoint:
 		writeMethodCall(obj, "write(chr", (*args)[0].get());
 		writeChar(')');
 		break;

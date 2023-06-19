@@ -751,6 +751,7 @@ public class GenPy : GenPySwift
 			WriteChar(')');
 			break;
 		case CiId.TextWriterWriteChar:
+		case CiId.TextWriterWriteCodePoint:
 			WriteMethodCall(obj, "write(chr", args[0]);
 			WriteChar(')');
 			break;

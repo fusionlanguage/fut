@@ -22794,6 +22794,7 @@ namespace Foxoft.Ci
 				WriteChar(')');
 				break;
 			case CiId.TextWriterWriteChar:
+			case CiId.TextWriterWriteCodePoint:
 				WriteMethodCall(obj, "write(chr", args[0]);
 				WriteChar(')');
 				break;

@@ -23339,6 +23339,7 @@ export class GenPy extends GenPySwift
 			this.writeChar(41);
 			break;
 		case CiId.TEXT_WRITER_WRITE_CHAR:
+		case CiId.TEXT_WRITER_WRITE_CODE_POINT:
 			this.writeMethodCall(obj, "write(chr", args[0]);
 			this.writeChar(41);
 			break;
