@@ -17034,42 +17034,69 @@ void GenJava::writeCallExpr(const CiExpr * obj, const CiMethod * method, const s
 		writeChar(')');
 		break;
 	case CiId::textWriterWrite:
-		write("try { ");
-		writePostfix(obj, ".append(");
-		writeToString((*args)[0].get(), CiPriority::argument);
-		include("java.io.IOException");
-		write("); } catch (IOException e) { throw new RuntimeException(e); }");
-		break;
-	case CiId::textWriterWriteChar:
-		write("try { ");
-		writePostfix(obj, ".append(");
-		if (!dynamic_cast<const CiLiteralChar *>((*args)[0].get()))
-			write("(char) ");
-		(*args)[0]->accept(this, CiPriority::primary);
-		include("java.io.IOException");
-		write("); } catch (IOException e) { throw new RuntimeException(e); }");
-		break;
-	case CiId::textWriterWriteCodePoint:
-		write("try { ");
-		writeMethodCall(obj, "append(Character.toString", (*args)[0].get());
-		include("java.io.IOException");
-		write("); } catch (IOException e) { throw new RuntimeException(e); }");
-		break;
-	case CiId::textWriterWriteLine:
-		write("try { ");
-		writePostfix(obj, ".append(");
-		if (args->size() == 0)
-			write("'\\n'");
-		else if (const CiInterpolatedString *interpolated = dynamic_cast<const CiInterpolatedString *>((*args)[0].get())) {
-			write("String.format(");
-			writePrintf(interpolated, true);
+		if (isReferenceTo(obj, CiId::consoleError)) {
+			write("System.err");
+			writeWrite(method, args, false);
 		}
 		else {
+			write("try { ");
+			writePostfix(obj, ".append(");
 			writeToString((*args)[0].get(), CiPriority::argument);
-			write(").append('\\n'");
+			include("java.io.IOException");
+			write("); } catch (IOException e) { throw new RuntimeException(e); }");
 		}
-		include("java.io.IOException");
-		write("); } catch (IOException e) { throw new RuntimeException(e); }");
+		break;
+	case CiId::textWriterWriteChar:
+		if (isReferenceTo(obj, CiId::consoleError)) {
+			write("System.err.print(");
+			if (!dynamic_cast<const CiLiteralChar *>((*args)[0].get()))
+				write("(char) ");
+			(*args)[0]->accept(this, CiPriority::primary);
+			writeChar(')');
+		}
+		else {
+			write("try { ");
+			writePostfix(obj, ".append(");
+			if (!dynamic_cast<const CiLiteralChar *>((*args)[0].get()))
+				write("(char) ");
+			(*args)[0]->accept(this, CiPriority::primary);
+			include("java.io.IOException");
+			write("); } catch (IOException e) { throw new RuntimeException(e); }");
+		}
+		break;
+	case CiId::textWriterWriteCodePoint:
+		if (isReferenceTo(obj, CiId::consoleError)) {
+			writeCall("System.err.print(Character.toChars", (*args)[0].get());
+			writeChar(')');
+		}
+		else {
+			write("try { ");
+			writeMethodCall(obj, "append(Character.toString", (*args)[0].get());
+			include("java.io.IOException");
+			write("); } catch (IOException e) { throw new RuntimeException(e); }");
+		}
+		break;
+	case CiId::textWriterWriteLine:
+		if (isReferenceTo(obj, CiId::consoleError)) {
+			write("System.err");
+			writeWrite(method, args, true);
+		}
+		else {
+			write("try { ");
+			writePostfix(obj, ".append(");
+			if (args->size() == 0)
+				write("'\\n'");
+			else if (const CiInterpolatedString *interpolated = dynamic_cast<const CiInterpolatedString *>((*args)[0].get())) {
+				write("String.format(");
+				writePrintf(interpolated, true);
+			}
+			else {
+				writeToString((*args)[0].get(), CiPriority::argument);
+				write(").append('\\n'");
+			}
+			include("java.io.IOException");
+			write("); } catch (IOException e) { throw new RuntimeException(e); }");
+		}
 		break;
 	case CiId::stringWriterClear:
 		writePostfix(obj, ".getBuffer().setLength(0)");

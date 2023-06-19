@@ -17716,42 +17716,69 @@ namespace Foxoft.Ci
 				WriteChar(')');
 				break;
 			case CiId.TextWriterWrite:
-				Write("try { ");
-				WritePostfix(obj, ".append(");
-				WriteToString(args[0], CiPriority.Argument);
-				Include("java.io.IOException");
-				Write("); } catch (IOException e) { throw new RuntimeException(e); }");
-				break;
-			case CiId.TextWriterWriteChar:
-				Write("try { ");
-				WritePostfix(obj, ".append(");
-				if (!(args[0] is CiLiteralChar))
-					Write("(char) ");
-				args[0].Accept(this, CiPriority.Primary);
-				Include("java.io.IOException");
-				Write("); } catch (IOException e) { throw new RuntimeException(e); }");
-				break;
-			case CiId.TextWriterWriteCodePoint:
-				Write("try { ");
-				WriteMethodCall(obj, "append(Character.toString", args[0]);
-				Include("java.io.IOException");
-				Write("); } catch (IOException e) { throw new RuntimeException(e); }");
-				break;
-			case CiId.TextWriterWriteLine:
-				Write("try { ");
-				WritePostfix(obj, ".append(");
-				if (args.Count == 0)
-					Write("'\\n'");
-				else if (args[0] is CiInterpolatedString interpolated) {
-					Write("String.format(");
-					WritePrintf(interpolated, true);
+				if (IsReferenceTo(obj, CiId.ConsoleError)) {
+					Write("System.err");
+					WriteWrite(method, args, false);
 				}
 				else {
+					Write("try { ");
+					WritePostfix(obj, ".append(");
 					WriteToString(args[0], CiPriority.Argument);
-					Write(").append('\\n'");
+					Include("java.io.IOException");
+					Write("); } catch (IOException e) { throw new RuntimeException(e); }");
 				}
-				Include("java.io.IOException");
-				Write("); } catch (IOException e) { throw new RuntimeException(e); }");
+				break;
+			case CiId.TextWriterWriteChar:
+				if (IsReferenceTo(obj, CiId.ConsoleError)) {
+					Write("System.err.print(");
+					if (!(args[0] is CiLiteralChar))
+						Write("(char) ");
+					args[0].Accept(this, CiPriority.Primary);
+					WriteChar(')');
+				}
+				else {
+					Write("try { ");
+					WritePostfix(obj, ".append(");
+					if (!(args[0] is CiLiteralChar))
+						Write("(char) ");
+					args[0].Accept(this, CiPriority.Primary);
+					Include("java.io.IOException");
+					Write("); } catch (IOException e) { throw new RuntimeException(e); }");
+				}
+				break;
+			case CiId.TextWriterWriteCodePoint:
+				if (IsReferenceTo(obj, CiId.ConsoleError)) {
+					WriteCall("System.err.print(Character.toChars", args[0]);
+					WriteChar(')');
+				}
+				else {
+					Write("try { ");
+					WriteMethodCall(obj, "append(Character.toString", args[0]);
+					Include("java.io.IOException");
+					Write("); } catch (IOException e) { throw new RuntimeException(e); }");
+				}
+				break;
+			case CiId.TextWriterWriteLine:
+				if (IsReferenceTo(obj, CiId.ConsoleError)) {
+					Write("System.err");
+					WriteWrite(method, args, true);
+				}
+				else {
+					Write("try { ");
+					WritePostfix(obj, ".append(");
+					if (args.Count == 0)
+						Write("'\\n'");
+					else if (args[0] is CiInterpolatedString interpolated) {
+						Write("String.format(");
+						WritePrintf(interpolated, true);
+					}
+					else {
+						WriteToString(args[0], CiPriority.Argument);
+						Write(").append('\\n'");
+					}
+					Include("java.io.IOException");
+					Write("); } catch (IOException e) { throw new RuntimeException(e); }");
+				}
 				break;
 			case CiId.StringWriterClear:
 				WritePostfix(obj, ".getBuffer().setLength(0)");

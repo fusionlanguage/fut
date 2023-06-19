@@ -18180,45 +18180,72 @@ export class GenJava extends GenTyped
 			this.writeChar(41);
 			break;
 		case CiId.TEXT_WRITER_WRITE:
-			this.write("try { ");
-			this.writePostfix(obj, ".append(");
-			this.#writeToString(args[0], CiPriority.ARGUMENT);
-			this.include("java.io.IOException");
-			this.write("); } catch (IOException e) { throw new RuntimeException(e); }");
+			if (GenJava.isReferenceTo(obj, CiId.CONSOLE_ERROR)) {
+				this.write("System.err");
+				this.#writeWrite(method, args, false);
+			}
+			else {
+				this.write("try { ");
+				this.writePostfix(obj, ".append(");
+				this.#writeToString(args[0], CiPriority.ARGUMENT);
+				this.include("java.io.IOException");
+				this.write("); } catch (IOException e) { throw new RuntimeException(e); }");
+			}
 			break;
 		case CiId.TEXT_WRITER_WRITE_CHAR:
-			this.write("try { ");
-			this.writePostfix(obj, ".append(");
-			if (!(args[0] instanceof CiLiteralChar))
-				this.write("(char) ");
-			args[0].accept(this, CiPriority.PRIMARY);
-			this.include("java.io.IOException");
-			this.write("); } catch (IOException e) { throw new RuntimeException(e); }");
+			if (GenJava.isReferenceTo(obj, CiId.CONSOLE_ERROR)) {
+				this.write("System.err.print(");
+				if (!(args[0] instanceof CiLiteralChar))
+					this.write("(char) ");
+				args[0].accept(this, CiPriority.PRIMARY);
+				this.writeChar(41);
+			}
+			else {
+				this.write("try { ");
+				this.writePostfix(obj, ".append(");
+				if (!(args[0] instanceof CiLiteralChar))
+					this.write("(char) ");
+				args[0].accept(this, CiPriority.PRIMARY);
+				this.include("java.io.IOException");
+				this.write("); } catch (IOException e) { throw new RuntimeException(e); }");
+			}
 			break;
 		case CiId.TEXT_WRITER_WRITE_CODE_POINT:
-			this.write("try { ");
-			this.writeMethodCall(obj, "append(Character.toString", args[0]);
-			this.include("java.io.IOException");
-			this.write("); } catch (IOException e) { throw new RuntimeException(e); }");
+			if (GenJava.isReferenceTo(obj, CiId.CONSOLE_ERROR)) {
+				this.writeCall("System.err.print(Character.toChars", args[0]);
+				this.writeChar(41);
+			}
+			else {
+				this.write("try { ");
+				this.writeMethodCall(obj, "append(Character.toString", args[0]);
+				this.include("java.io.IOException");
+				this.write("); } catch (IOException e) { throw new RuntimeException(e); }");
+			}
 			break;
 		case CiId.TEXT_WRITER_WRITE_LINE:
-			this.write("try { ");
-			this.writePostfix(obj, ".append(");
-			if (args.length == 0)
-				this.write("'\\n'");
-			else {
-				let interpolated;
-				if ((interpolated = args[0]) instanceof CiInterpolatedString) {
-					this.write("String.format(");
-					this.writePrintf(interpolated, true);
-				}
-				else {
-					this.#writeToString(args[0], CiPriority.ARGUMENT);
-					this.write(").append('\\n'");
-				}
+			if (GenJava.isReferenceTo(obj, CiId.CONSOLE_ERROR)) {
+				this.write("System.err");
+				this.#writeWrite(method, args, true);
 			}
-			this.include("java.io.IOException");
-			this.write("); } catch (IOException e) { throw new RuntimeException(e); }");
+			else {
+				this.write("try { ");
+				this.writePostfix(obj, ".append(");
+				if (args.length == 0)
+					this.write("'\\n'");
+				else {
+					let interpolated;
+					if ((interpolated = args[0]) instanceof CiInterpolatedString) {
+						this.write("String.format(");
+						this.writePrintf(interpolated, true);
+					}
+					else {
+						this.#writeToString(args[0], CiPriority.ARGUMENT);
+						this.write(").append('\\n'");
+					}
+				}
+				this.include("java.io.IOException");
+				this.write("); } catch (IOException e) { throw new RuntimeException(e); }");
+			}
 			break;
 		case CiId.STRING_WRITER_CLEAR:
 			this.writePostfix(obj, ".getBuffer().setLength(0)");
