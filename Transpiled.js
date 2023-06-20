@@ -16894,9 +16894,14 @@ export class GenD extends GenCCppD
 			break;
 		case CiId.TEXT_WRITER_WRITE_CHAR:
 			this.writePostfix(obj, ".write(");
-			if (args[0] instanceof CiLiteralChar)
+			if (!(args[0] instanceof CiLiteralChar))
 				this.write("cast(char) ");
-			args[0].accept(this, CiPriority.ARGUMENT);
+			args[0].accept(this, CiPriority.PRIMARY);
+			this.writeChar(41);
+			break;
+		case CiId.TEXT_WRITER_WRITE_CODE_POINT:
+			this.writePostfix(obj, ".write(cast(dchar) ");
+			args[0].accept(this, CiPriority.PRIMARY);
 			this.writeChar(41);
 			break;
 		case CiId.CONSOLE_WRITE:

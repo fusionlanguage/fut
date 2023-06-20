@@ -16457,9 +16457,14 @@ namespace Foxoft.Ci
 				break;
 			case CiId.TextWriterWriteChar:
 				WritePostfix(obj, ".write(");
-				if (args[0] is CiLiteralChar)
+				if (!(args[0] is CiLiteralChar))
 					Write("cast(char) ");
-				args[0].Accept(this, CiPriority.Argument);
+				args[0].Accept(this, CiPriority.Primary);
+				WriteChar(')');
+				break;
+			case CiId.TextWriterWriteCodePoint:
+				WritePostfix(obj, ".write(cast(dchar) ");
+				args[0].Accept(this, CiPriority.Primary);
 				WriteChar(')');
 				break;
 			case CiId.ConsoleWrite:

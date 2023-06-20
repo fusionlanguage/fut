@@ -15845,9 +15845,14 @@ void GenD::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std:
 		break;
 	case CiId::textWriterWriteChar:
 		writePostfix(obj, ".write(");
-		if (dynamic_cast<const CiLiteralChar *>((*args)[0].get()))
+		if (!dynamic_cast<const CiLiteralChar *>((*args)[0].get()))
 			write("cast(char) ");
-		(*args)[0]->accept(this, CiPriority::argument);
+		(*args)[0]->accept(this, CiPriority::primary);
+		writeChar(')');
+		break;
+	case CiId::textWriterWriteCodePoint:
+		writePostfix(obj, ".write(cast(dchar) ");
+		(*args)[0]->accept(this, CiPriority::primary);
 		writeChar(')');
 		break;
 	case CiId::consoleWrite:
