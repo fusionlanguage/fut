@@ -816,9 +816,7 @@ public class GenCs : GenTyped
 
 	public override void VisitLock!(CiLock statement)
 	{
-		Write("lock (");
-		statement.Lock.Accept(this, CiPriority.Argument);
-		WriteChar(')');
+		WriteCall("lock ", statement.Lock);
 		WriteChild(statement.Body);
 	}
 

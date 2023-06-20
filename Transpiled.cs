@@ -15358,9 +15358,7 @@ namespace Foxoft.Ci
 
 		public override void VisitLock(CiLock statement)
 		{
-			Write("lock (");
-			statement.Lock.Accept(this, CiPriority.Argument);
-			WriteChar(')');
+			WriteCall("lock ", statement.Lock);
 			WriteChild(statement.Body);
 		}
 
@@ -16063,10 +16061,9 @@ namespace Foxoft.Ci
 					case CiId.HashSetClass:
 					case CiId.SortedDictionaryClass:
 					case CiId.OrderedDictionaryClass:
-					case CiId.LockClass:
-						break;
 					case CiId.RegexClass:
 					case CiId.MatchClass:
+					case CiId.LockClass:
 						break;
 					default:
 						if (def.Parent is CiClass) {
@@ -16194,11 +16191,8 @@ namespace Foxoft.Ci
 				Write(newLine ? "writefln(" : "writef(");
 				WritePrintf(interpolated, false);
 			}
-			else {
-				Write(newLine ? "writeln(" : "write(");
-				args[0].Accept(this, CiPriority.Argument);
-				WriteChar(')');
-			}
+			else
+				WriteCall(newLine ? "writeln" : "write", args[0]);
 		}
 
 		void WriteInsertedArg(CiType type, List<CiExpr> args, int index = 0)
@@ -16346,9 +16340,7 @@ namespace Foxoft.Ci
 			case CiId.ListAll:
 				Include("std.algorithm");
 				WriteClassReference(obj);
-				Write("[].all!(");
-				args[0].Accept(this, CiPriority.Argument);
-				WriteChar(')');
+				WriteCall("[].all!", args[0]);
 				break;
 			case CiId.ListAny:
 				Include("std.algorithm");
@@ -16360,9 +16352,7 @@ namespace Foxoft.Ci
 			case CiId.ListContains:
 				Include("std.algorithm");
 				WriteClassReference(obj);
-				Write("[].canFind(");
-				args[0].Accept(this, CiPriority.Argument);
-				WriteChar(')');
+				WriteCall("[].canFind", args[0]);
 				break;
 			case CiId.ListInsert:
 				this.HasListInsert = true;
@@ -16510,8 +16500,7 @@ namespace Foxoft.Ci
 			case CiId.RegexEscape:
 				Include("std.regex");
 				Include("std.conv");
-				args[0].Accept(this, CiPriority.Argument);
-				Write(".escaper.to!string");
+				WritePostfix(args[0], ".escaper.to!string");
 				break;
 			case CiId.RegexIsMatchRegex:
 				Include("std.regex");
@@ -16757,9 +16746,7 @@ namespace Foxoft.Ci
 
 		public override void VisitLock(CiLock statement)
 		{
-			Write("synchronized (");
-			statement.Lock.Accept(this, CiPriority.Argument);
-			WriteChar(')');
+			WriteCall("synchronized ", statement.Lock);
 			WriteChild(statement.Body);
 		}
 
@@ -18032,9 +18019,7 @@ namespace Foxoft.Ci
 
 		public override void VisitLock(CiLock statement)
 		{
-			Write("synchronized (");
-			statement.Lock.Accept(this, CiPriority.Argument);
-			WriteChar(')');
+			WriteCall("synchronized ", statement.Lock);
 			WriteChild(statement.Body);
 		}
 

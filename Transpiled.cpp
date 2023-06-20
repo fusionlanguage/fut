@@ -14936,9 +14936,7 @@ void GenCs::visitForeach(const CiForeach * statement)
 
 void GenCs::visitLock(const CiLock * statement)
 {
-	write("lock (");
-	statement->lock->accept(this, CiPriority::argument);
-	writeChar(')');
+	writeCall("lock ", statement->lock.get());
 	writeChild(statement->body.get());
 }
 
@@ -15449,10 +15447,9 @@ void GenD::writeInitCode(const CiNamedValue * def)
 			case CiId::hashSetClass:
 			case CiId::sortedDictionaryClass:
 			case CiId::orderedDictionaryClass:
-			case CiId::lockClass:
-				break;
 			case CiId::regexClass:
 			case CiId::matchClass:
+			case CiId::lockClass:
 				break;
 			default:
 				if (dynamic_cast<const CiClass *>(def->parent)) {
@@ -15582,11 +15579,8 @@ void GenD::writeWrite(const std::vector<std::shared_ptr<CiExpr>> * args, bool ne
 		write(newLine ? "writefln(" : "writef(");
 		writePrintf(interpolated, false);
 	}
-	else {
-		write(newLine ? "writeln(" : "write(");
-		(*args)[0]->accept(this, CiPriority::argument);
-		writeChar(')');
-	}
+	else
+		writeCall(newLine ? "writeln" : "write", (*args)[0].get());
 }
 
 void GenD::writeInsertedArg(const CiType * type, const std::vector<std::shared_ptr<CiExpr>> * args, int index)
@@ -15734,9 +15728,7 @@ void GenD::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std:
 	case CiId::listAll:
 		include("std.algorithm");
 		writeClassReference(obj);
-		write("[].all!(");
-		(*args)[0]->accept(this, CiPriority::argument);
-		writeChar(')');
+		writeCall("[].all!", (*args)[0].get());
 		break;
 	case CiId::listAny:
 		include("std.algorithm");
@@ -15748,9 +15740,7 @@ void GenD::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std:
 	case CiId::listContains:
 		include("std.algorithm");
 		writeClassReference(obj);
-		write("[].canFind(");
-		(*args)[0]->accept(this, CiPriority::argument);
-		writeChar(')');
+		writeCall("[].canFind", (*args)[0].get());
 		break;
 	case CiId::listInsert:
 		this->hasListInsert = true;
@@ -15898,8 +15888,7 @@ void GenD::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std:
 	case CiId::regexEscape:
 		include("std.regex");
 		include("std.conv");
-		(*args)[0]->accept(this, CiPriority::argument);
-		write(".escaper.to!string");
+		writePostfix((*args)[0].get(), ".escaper.to!string");
 		break;
 	case CiId::regexIsMatchRegex:
 		include("std.regex");
@@ -16150,9 +16139,7 @@ void GenD::visitForeach(const CiForeach * statement)
 
 void GenD::visitLock(const CiLock * statement)
 {
-	write("synchronized (");
-	statement->lock->accept(this, CiPriority::argument);
-	writeChar(')');
+	writeCall("synchronized ", statement->lock.get());
 	writeChild(statement->body.get());
 }
 
@@ -17362,9 +17349,7 @@ void GenJava::visitForeach(const CiForeach * statement)
 
 void GenJava::visitLock(const CiLock * statement)
 {
-	write("synchronized (");
-	statement->lock->accept(this, CiPriority::argument);
-	writeChar(')');
+	writeCall("synchronized ", statement->lock.get());
 	writeChild(statement->body.get());
 }
 

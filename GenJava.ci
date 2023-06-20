@@ -1044,9 +1044,7 @@ public class GenJava : GenTyped
 
 	public override void VisitLock!(CiLock statement)
 	{
-		Write("synchronized (");
-		statement.Lock.Accept(this, CiPriority.Argument);
-		WriteChar(')');
+		WriteCall("synchronized ", statement.Lock);
 		WriteChild(statement.Body);
 	}
 

@@ -15778,9 +15778,7 @@ export class GenCs extends GenTyped
 
 	visitLock(statement)
 	{
-		this.write("lock (");
-		statement.lock.accept(this, CiPriority.ARGUMENT);
-		this.writeChar(41);
+		this.writeCall("lock ", statement.lock);
 		this.writeChild(statement.body);
 	}
 
@@ -16495,10 +16493,9 @@ export class GenD extends GenCCppD
 				case CiId.HASH_SET_CLASS:
 				case CiId.SORTED_DICTIONARY_CLASS:
 				case CiId.ORDERED_DICTIONARY_CLASS:
-				case CiId.LOCK_CLASS:
-					break;
 				case CiId.REGEX_CLASS:
 				case CiId.MATCH_CLASS:
+				case CiId.LOCK_CLASS:
 					break;
 				default:
 					if (def.parent instanceof CiClass) {
@@ -16630,11 +16627,8 @@ export class GenD extends GenCCppD
 				this.write(newLine ? "writefln(" : "writef(");
 				this.writePrintf(interpolated, false);
 			}
-			else {
-				this.write(newLine ? "writeln(" : "write(");
-				args[0].accept(this, CiPriority.ARGUMENT);
-				this.writeChar(41);
-			}
+			else
+				this.writeCall(newLine ? "writeln" : "write", args[0]);
 		}
 	}
 
@@ -16783,9 +16777,7 @@ export class GenD extends GenCCppD
 		case CiId.LIST_ALL:
 			this.include("std.algorithm");
 			this.#writeClassReference(obj);
-			this.write("[].all!(");
-			args[0].accept(this, CiPriority.ARGUMENT);
-			this.writeChar(41);
+			this.writeCall("[].all!", args[0]);
 			break;
 		case CiId.LIST_ANY:
 			this.include("std.algorithm");
@@ -16797,9 +16789,7 @@ export class GenD extends GenCCppD
 		case CiId.LIST_CONTAINS:
 			this.include("std.algorithm");
 			this.#writeClassReference(obj);
-			this.write("[].canFind(");
-			args[0].accept(this, CiPriority.ARGUMENT);
-			this.writeChar(41);
+			this.writeCall("[].canFind", args[0]);
 			break;
 		case CiId.LIST_INSERT:
 			this.#hasListInsert = true;
@@ -16947,8 +16937,7 @@ export class GenD extends GenCCppD
 		case CiId.REGEX_ESCAPE:
 			this.include("std.regex");
 			this.include("std.conv");
-			args[0].accept(this, CiPriority.ARGUMENT);
-			this.write(".escaper.to!string");
+			this.writePostfix(args[0], ".escaper.to!string");
 			break;
 		case CiId.REGEX_IS_MATCH_REGEX:
 			this.include("std.regex");
@@ -17202,9 +17191,7 @@ export class GenD extends GenCCppD
 
 	visitLock(statement)
 	{
-		this.write("synchronized (");
-		statement.lock.accept(this, CiPriority.ARGUMENT);
-		this.writeChar(41);
+		this.writeCall("synchronized ", statement.lock);
 		this.writeChild(statement.body);
 	}
 
@@ -18513,9 +18500,7 @@ export class GenJava extends GenTyped
 
 	visitLock(statement)
 	{
-		this.write("synchronized (");
-		statement.lock.accept(this, CiPriority.ARGUMENT);
-		this.writeChar(41);
+		this.writeCall("synchronized ", statement.lock);
 		this.writeChild(statement.body);
 	}
 
