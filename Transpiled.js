@@ -8648,6 +8648,18 @@ export class GenTyped extends GenBase
 		return (literal = expr) instanceof CiLiteralString ? literal.getOneAscii() : -1;
 	}
 
+	writeCharMethodCall(obj, method, arg)
+	{
+		obj.accept(this, CiPriority.PRIMARY);
+		this.writeChar(46);
+		this.write(method);
+		this.writeChar(40);
+		if (!(arg instanceof CiLiteralChar))
+			this.write("(char) ");
+		arg.accept(this, CiPriority.PRIMARY);
+		this.writeChar(41);
+	}
+
 	static isNarrower(left, right)
 	{
 		switch (left) {
@@ -15536,14 +15548,7 @@ export class GenCs extends GenTyped
 			this.writePostfix(obj, ".GetStringBuilder().Clear()");
 			break;
 		case CiId.TEXT_WRITER_WRITE_CHAR:
-			this.writePostfix(obj, ".Write(");
-			if (args[0] instanceof CiLiteralChar)
-				args[0].accept(this, CiPriority.ARGUMENT);
-			else {
-				this.write("(char) ");
-				args[0].accept(this, CiPriority.PRIMARY);
-			}
-			this.writeChar(41);
+			this.writeCharMethodCall(obj, "Write", args[0]);
 			break;
 		case CiId.TEXT_WRITER_WRITE_CODE_POINT:
 			this.writePostfix(obj, ".Write(");
@@ -18185,21 +18190,13 @@ export class GenJava extends GenTyped
 			}
 			break;
 		case CiId.TEXT_WRITER_WRITE_CHAR:
-			if (GenJava.isReferenceTo(obj, CiId.CONSOLE_ERROR)) {
-				this.write("System.err.print(");
-				if (!(args[0] instanceof CiLiteralChar))
-					this.write("(char) ");
-				args[0].accept(this, CiPriority.PRIMARY);
-				this.writeChar(41);
-			}
+			if (GenJava.isReferenceTo(obj, CiId.CONSOLE_ERROR))
+				this.writeCharMethodCall(obj, "print", args[0]);
 			else {
 				this.write("try { ");
-				this.writePostfix(obj, ".append(");
-				if (!(args[0] instanceof CiLiteralChar))
-					this.write("(char) ");
-				args[0].accept(this, CiPriority.PRIMARY);
+				this.writeCharMethodCall(obj, "append", args[0]);
 				this.include("java.io.IOException");
-				this.write("); } catch (IOException e) { throw new RuntimeException(e); }");
+				this.write("; } catch (IOException e) { throw new RuntimeException(e); }");
 			}
 			break;
 		case CiId.TEXT_WRITER_WRITE_CODE_POINT:

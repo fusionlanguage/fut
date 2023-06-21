@@ -8355,6 +8355,18 @@ namespace Foxoft.Ci
 
 		protected int GetOneAscii(CiExpr expr) => expr is CiLiteralString literal ? literal.GetOneAscii() : -1;
 
+		protected void WriteCharMethodCall(CiExpr obj, string method, CiExpr arg)
+		{
+			obj.Accept(this, CiPriority.Primary);
+			WriteChar('.');
+			Write(method);
+			WriteChar('(');
+			if (!(arg is CiLiteralChar))
+				Write("(char) ");
+			arg.Accept(this, CiPriority.Primary);
+			WriteChar(')');
+		}
+
 		protected static bool IsNarrower(CiId left, CiId right)
 		{
 			switch (left) {
@@ -15121,14 +15133,7 @@ namespace Foxoft.Ci
 				WritePostfix(obj, ".GetStringBuilder().Clear()");
 				break;
 			case CiId.TextWriterWriteChar:
-				WritePostfix(obj, ".Write(");
-				if (args[0] is CiLiteralChar)
-					args[0].Accept(this, CiPriority.Argument);
-				else {
-					Write("(char) ");
-					args[0].Accept(this, CiPriority.Primary);
-				}
-				WriteChar(')');
+				WriteCharMethodCall(obj, "Write", args[0]);
 				break;
 			case CiId.TextWriterWriteCodePoint:
 				WritePostfix(obj, ".Write(");
@@ -17721,21 +17726,13 @@ namespace Foxoft.Ci
 				}
 				break;
 			case CiId.TextWriterWriteChar:
-				if (IsReferenceTo(obj, CiId.ConsoleError)) {
-					Write("System.err.print(");
-					if (!(args[0] is CiLiteralChar))
-						Write("(char) ");
-					args[0].Accept(this, CiPriority.Primary);
-					WriteChar(')');
-				}
+				if (IsReferenceTo(obj, CiId.ConsoleError))
+					WriteCharMethodCall(obj, "print", args[0]);
 				else {
 					Write("try { ");
-					WritePostfix(obj, ".append(");
-					if (!(args[0] is CiLiteralChar))
-						Write("(char) ");
-					args[0].Accept(this, CiPriority.Primary);
+					WriteCharMethodCall(obj, "append", args[0]);
 					Include("java.io.IOException");
-					Write("); } catch (IOException e) { throw new RuntimeException(e); }");
+					Write("; } catch (IOException e) { throw new RuntimeException(e); }");
 				}
 				break;
 			case CiId.TextWriterWriteCodePoint:

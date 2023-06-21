@@ -66,6 +66,18 @@ public abstract class GenTyped : GenBase
 
 	protected int GetOneAscii(CiExpr expr) => expr is CiLiteralString literal ? literal.GetOneAscii() : -1;
 
+	protected void WriteCharMethodCall!(CiExpr obj, string method, CiExpr arg)
+	{
+		obj.Accept(this, CiPriority.Primary);
+		WriteChar('.');
+		Write(method);
+		WriteChar('(');
+		if (!(arg is CiLiteralChar))
+			Write("(char) ");
+		arg.Accept(this, CiPriority.Primary);
+		WriteChar(')');
+	}
+
 	protected static bool IsNarrower(CiId left, CiId right)
 	{
 		switch (left) {

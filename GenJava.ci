@@ -736,21 +736,13 @@ public class GenJava : GenTyped
 			}
 			break;
 		case CiId.TextWriterWriteChar:
-			if (IsReferenceTo(obj, CiId.ConsoleError)) {
-				Write("System.err.print(");
-				if (!(args[0] is CiLiteralChar))
-					Write("(char) ");
-				args[0].Accept(this, CiPriority.Primary);
-				WriteChar(')');
-			}
+			if (IsReferenceTo(obj, CiId.ConsoleError))
+				WriteCharMethodCall(obj, "print", args[0]);
 			else {
 				Write("try { ");
-				WritePostfix(obj, ".append(");
-				if (!(args[0] is CiLiteralChar))
-					Write("(char) ");
-				args[0].Accept(this, CiPriority.Primary);
+				WriteCharMethodCall(obj, "append", args[0]);
 				Include("java.io.IOException");
-				Write("); } catch (IOException e) { throw new RuntimeException(e); }");
+				Write("; } catch (IOException e) { throw new RuntimeException(e); }");
 			}
 			break;
 		case CiId.TextWriterWriteCodePoint:

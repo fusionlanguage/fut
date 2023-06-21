@@ -1878,6 +1878,7 @@ protected:
 	void writeArrayStorageLength(const CiExpr * expr);
 	void writeNewArray(const CiType * elementType, const CiExpr * lengthExpr, CiPriority parent) override;
 	int getOneAscii(const CiExpr * expr) const;
+	void writeCharMethodCall(const CiExpr * obj, std::string_view method, const CiExpr * arg);
 	static bool isNarrower(CiId left, CiId right);
 	const CiExpr * getStaticCastInner(const CiType * type, const CiExpr * expr) const;
 	void writeStaticCastType(const CiType * type);

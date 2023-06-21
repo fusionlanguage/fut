@@ -8143,6 +8143,18 @@ int GenTyped::getOneAscii(const CiExpr * expr) const
 	return (literal = dynamic_cast<const CiLiteralString *>(expr)) ? literal->getOneAscii() : -1;
 }
 
+void GenTyped::writeCharMethodCall(const CiExpr * obj, std::string_view method, const CiExpr * arg)
+{
+	obj->accept(this, CiPriority::primary);
+	writeChar('.');
+	write(method);
+	writeChar('(');
+	if (!dynamic_cast<const CiLiteralChar *>(arg))
+		write("(char) ");
+	arg->accept(this, CiPriority::primary);
+	writeChar(')');
+}
+
 bool GenTyped::isNarrower(CiId left, CiId right)
 {
 	switch (left) {
@@ -14692,14 +14704,7 @@ void GenCs::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std
 		writePostfix(obj, ".GetStringBuilder().Clear()");
 		break;
 	case CiId::textWriterWriteChar:
-		writePostfix(obj, ".Write(");
-		if (dynamic_cast<const CiLiteralChar *>((*args)[0].get()))
-			(*args)[0]->accept(this, CiPriority::argument);
-		else {
-			write("(char) ");
-			(*args)[0]->accept(this, CiPriority::primary);
-		}
-		writeChar(')');
+		writeCharMethodCall(obj, "Write", (*args)[0].get());
 		break;
 	case CiId::textWriterWriteCodePoint:
 		writePostfix(obj, ".Write(");
@@ -17039,21 +17044,13 @@ void GenJava::writeCallExpr(const CiExpr * obj, const CiMethod * method, const s
 		}
 		break;
 	case CiId::textWriterWriteChar:
-		if (isReferenceTo(obj, CiId::consoleError)) {
-			write("System.err.print(");
-			if (!dynamic_cast<const CiLiteralChar *>((*args)[0].get()))
-				write("(char) ");
-			(*args)[0]->accept(this, CiPriority::primary);
-			writeChar(')');
-		}
+		if (isReferenceTo(obj, CiId::consoleError))
+			writeCharMethodCall(obj, "print", (*args)[0].get());
 		else {
 			write("try { ");
-			writePostfix(obj, ".append(");
-			if (!dynamic_cast<const CiLiteralChar *>((*args)[0].get()))
-				write("(char) ");
-			(*args)[0]->accept(this, CiPriority::primary);
+			writeCharMethodCall(obj, "append", (*args)[0].get());
 			include("java.io.IOException");
-			write("); } catch (IOException e) { throw new RuntimeException(e); }");
+			write("; } catch (IOException e) { throw new RuntimeException(e); }");
 		}
 		break;
 	case CiId::textWriterWriteCodePoint:
