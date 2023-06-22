@@ -680,9 +680,9 @@ public class GenD : GenCCppD
 		 	Write("double.infinity");
 		 	break;
 		default:
-			assert !(expr.Symbol.Parent is CiForeach forEach
-				&& forEach.Collection.Type is CiClassType dict
-				&& dict.Class.Id == CiId.OrderedDictionaryClass);
+			// assert !(expr.Symbol.Parent is CiForeach forEach
+			// 	&& forEach.Collection.Type is CiClassType dict
+			// 	&& dict.Class.Id == CiId.OrderedDictionaryClass);
 			base.VisitSymbolReference(expr, parent);
 			break;
 		}
@@ -1120,7 +1120,10 @@ public class GenD : GenCCppD
 			Write(".find(");
 			WriteStronglyCoerced(klass.GetKeyType(), expr.Right);
 			WriteChar(')');
-			return;
+			break;
+		case CiId.OrderedDictionaryClass:
+			NotSupported(expr, "OrderedDictionary");
+			break;
 		default:
 			assert false;
 		}
@@ -1150,7 +1153,6 @@ public class GenD : GenCCppD
 				WriteNotPromoted(expr.Type, expr.Right);
 				WriteChar(')');
 				return;
-			// TODO: throw new NotImplementedException();
 			default:
 				break;
 			}

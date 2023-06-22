@@ -16613,9 +16613,6 @@ export class GenD extends GenCCppD
 			this.write("double.infinity");
 			break;
 		default:
-			let forEach;
-			let dict;
-			console.assert(!((forEach = expr.symbol.parent) instanceof CiForeach && (dict = forEach.collection.type) instanceof CiClassType && dict.class.id == CiId.ORDERED_DICTIONARY_CLASS));
 			super.visitSymbolReference(expr, parent);
 			break;
 		}
@@ -17056,7 +17053,10 @@ export class GenD extends GenCCppD
 			this.write(".find(");
 			this.writeStronglyCoerced(klass.getKeyType(), expr.right);
 			this.writeChar(41);
-			return;
+			break;
+		case CiId.ORDERED_DICTIONARY_CLASS:
+			this.notSupported(expr, "OrderedDictionary");
+			break;
 		default:
 			throw new Error();
 		}

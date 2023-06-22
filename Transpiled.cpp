@@ -15567,9 +15567,6 @@ void GenD::visitSymbolReference(const CiSymbolReference * expr, CiPriority paren
 		write("double.infinity");
 		break;
 	default:
-		const CiForeach * forEach;
-		const CiClassType * dict;
-		assert(!((forEach = dynamic_cast<const CiForeach *>(expr->symbol->parent)) && (dict = dynamic_cast<const CiClassType *>(forEach->collection->type.get())) && dict->class_->id == CiId::orderedDictionaryClass));
 		GenBase::visitSymbolReference(expr, parent);
 		break;
 	}
@@ -16007,7 +16004,10 @@ void GenD::writeIndexingExpr(const CiBinaryExpr * expr, CiPriority parent)
 		write(".find(");
 		writeStronglyCoerced(klass->getKeyType(), expr->right.get());
 		writeChar(')');
-		return;
+		break;
+	case CiId::orderedDictionaryClass:
+		notSupported(expr, "OrderedDictionary");
+		break;
 	default:
 		std::abort();
 	}

@@ -16181,7 +16181,6 @@ namespace Foxoft.Ci
 				Write("double.infinity");
 				break;
 			default:
-				Debug.Assert(!(expr.Symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiClassType dict && dict.Class.Id == CiId.OrderedDictionaryClass));
 				base.VisitSymbolReference(expr, parent);
 				break;
 			}
@@ -16619,7 +16618,10 @@ namespace Foxoft.Ci
 				Write(".find(");
 				WriteStronglyCoerced(klass.GetKeyType(), expr.Right);
 				WriteChar(')');
-				return;
+				break;
+			case CiId.OrderedDictionaryClass:
+				NotSupported(expr, "OrderedDictionary");
+				break;
 			default:
 				throw new NotImplementedException();
 			}
