@@ -29,7 +29,7 @@ jobs:
           version: 13
       - uses: actions/setup-dotnet@main
         with:
-          dotnet-version: 6.0.410
+          dotnet-version: 6.0.411
       - uses: actions/checkout@main
       - run: make -j3 test-cs
   d:
