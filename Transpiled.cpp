@@ -18688,12 +18688,18 @@ void GenJsNoModule::visitForeach(const CiForeach * statement)
 		break;
 	case CiId::sortedSetClass:
 		writeName(statement->getVar());
-		write(" of Array.from(");
+		write(" of ");
+		if (const CiNumericType *number = dynamic_cast<const CiNumericType *>(klass->getElementType().get())) {
+			write("new ");
+			writeArrayElementType(number);
+			write("Array(");
+		}
+		else if (dynamic_cast<const CiEnum *>(klass->getElementType().get()))
+			write("new Int32Array(");
+		else
+			write("Array.from(");
 		statement->collection->accept(this, CiPriority::argument);
-		write(").sort(");
-		if (dynamic_cast<const CiNumericType *>(klass->getElementType().get()))
-			write("(a, b) => a - b");
-		writeChar(')');
+		write(").sort()");
 		break;
 	case CiId::dictionaryClass:
 	case CiId::sortedDictionaryClass:
@@ -18711,7 +18717,7 @@ void GenJsNoModule::visitForeach(const CiForeach * statement)
 				if (klass->class_->id == CiId::sortedDictionaryClass)
 					write(".sort((a, b) => a[0].localeCompare(b[0]))");
 			}
-			else if (dynamic_cast<const CiNumericType *>(statement->getVar()->type.get())) {
+			else if (dynamic_cast<const CiNumericType *>(statement->getVar()->type.get()) || dynamic_cast<const CiEnum *>(statement->getVar()->type.get())) {
 				write(".map(e => [+e[0], e[1]])");
 				if (klass->class_->id == CiId::sortedDictionaryClass)
 					write(".sort((a, b) => a[0] - b[0])");

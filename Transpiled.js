@@ -12576,7 +12576,7 @@ export class GenC extends GenCCpp
 			this.writeLine("return strcmp((const char *) a, (const char *) b);");
 			this.closeBlock();
 		}
-		for (const typeId of Array.from(this.#compares).sort()) {
+		for (const typeId of new Int32Array(this.#compares).sort()) {
 			this.writeNewLine();
 			this.write("static int CiCompare_");
 			this.writeNumericType(typeId);
@@ -12603,7 +12603,7 @@ export class GenC extends GenCCpp
 			}
 			this.closeBlock();
 		}
-		for (const typeId of Array.from(this.#contains).sort()) {
+		for (const typeId of new Int32Array(this.#contains).sort()) {
 			this.writeNewLine();
 			this.write("static bool CiArray_Contains_");
 			if (typeId == CiId.NONE)
@@ -19881,12 +19881,19 @@ export class GenJsNoModule extends GenBase
 			break;
 		case CiId.SORTED_SET_CLASS:
 			this.writeName(statement.getVar());
-			this.write(" of Array.from(");
+			this.write(" of ");
+			if (klass.getElementType() instanceof CiNumericType) {
+				const number = klass.getElementType();
+				this.write("new ");
+				this.writeArrayElementType(number);
+				this.write("Array(");
+			}
+			else if (klass.getElementType() instanceof CiEnum)
+				this.write("new Int32Array(");
+			else
+				this.write("Array.from(");
 			statement.collection.accept(this, CiPriority.ARGUMENT);
-			this.write(").sort(");
-			if (klass.getElementType() instanceof CiNumericType)
-				this.write("(a, b) => a - b");
-			this.writeChar(41);
+			this.write(").sort()");
 			break;
 		case CiId.DICTIONARY_CLASS:
 		case CiId.SORTED_DICTIONARY_CLASS:
@@ -19904,7 +19911,7 @@ export class GenJsNoModule extends GenBase
 					if (klass.class.id == CiId.SORTED_DICTIONARY_CLASS)
 						this.write(".sort((a, b) => a[0].localeCompare(b[0]))");
 				}
-				else if (statement.getVar().type instanceof CiNumericType) {
+				else if (statement.getVar().type instanceof CiNumericType || statement.getVar().type instanceof CiEnum) {
 					this.write(".map(e => [+e[0], e[1]])");
 					if (klass.class.id == CiId.SORTED_DICTIONARY_CLASS)
 						this.write(".sort((a, b) => a[0] - b[0])");

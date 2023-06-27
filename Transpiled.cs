@@ -19377,12 +19377,22 @@ namespace Foxoft.Ci
 				break;
 			case CiId.SortedSetClass:
 				WriteName(statement.GetVar());
-				Write(" of Array.from(");
+				Write(" of ");
+				switch (klass.GetElementType()) {
+				case CiNumericType number:
+					Write("new ");
+					WriteArrayElementType(number);
+					Write("Array(");
+					break;
+				case CiEnum _:
+					Write("new Int32Array(");
+					break;
+				default:
+					Write("Array.from(");
+					break;
+				}
 				statement.Collection.Accept(this, CiPriority.Argument);
-				Write(").sort(");
-				if (klass.GetElementType() is CiNumericType)
-					Write("(a, b) => a - b");
-				WriteChar(')');
+				Write(").sort()");
 				break;
 			case CiId.DictionaryClass:
 			case CiId.SortedDictionaryClass:
@@ -19402,6 +19412,7 @@ namespace Foxoft.Ci
 							Write(".sort((a, b) => a[0].localeCompare(b[0]))");
 						break;
 					case CiNumericType _:
+					case CiEnum _:
 						Write(".map(e => [+e[0], e[1]])");
 						if (klass.Class.Id == CiId.SortedDictionaryClass)
 							Write(".sort((a, b) => a[0] - b[0])");
