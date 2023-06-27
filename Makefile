@@ -243,15 +243,15 @@ test/node_modules: test/package.json
 test/bin/%/error.txt: test/error/%.ci cito
 	$(DO)mkdir -p $(@D) && ! $(CITO) -o $(@:%.txt=%.cs) $< 2>$@ && perl -ne 'print "$$ARGV($$.): $$1\n" while m!//(ERROR: .+?)(?=$$| //)!g' $< | diff -u --strip-trailing-cr - $@ && echo PASSED >$@
 
-test-transpile: $(patsubst test/%.ci, test/bin/%/all, $(wildcard test/*.ci)) test/bin/CiTo/all
+test-transpile: $(patsubst test/%.ci, test/$(CITO_HOST)/%/all, $(wildcard test/*.ci)) test/$(CITO_HOST)/CiTo/all
 
-test/bin/%/all: test/%.ci cito
+test/$(CITO_HOST)/%/all: test/%.ci cito
 	$(DO)mkdir -p $(@D) && $(CITO) -o $(@D)/Test.c,cpp,cs,d,java,js,d.ts,ts,py,swift,cl $< || true
 
-test/bin/CiTo/all: $(SOURCE_CI) cito
+test/$(CITO_HOST)/CiTo/all: $(SOURCE_CI) cito
 	$(DO)mkdir -p $(@D) && $(CITO) -o $(@D)/Test.cpp,cs,d,js,d.ts,ts $(SOURCE_CI)
 
-test/bin/Resource/all: test/Resource.ci cito
+test/$(CITO_HOST)/Resource/all: test/Resource.ci cito
 	$(DO)mkdir -p $(@D) && $(CITO) -o $(@D)/Test.c,cpp,cs,d,java,js,d.ts,ts,py,swift,cl -I $(<D) $<
 
 coverage/output.xml:
@@ -271,8 +271,8 @@ uninstall:
 
 clean:
 	$(RM) cito cito.exe
-	$(RM) -r test/bin
+	$(RM) -r test/bin test/cpp test/cs test/node
 
-.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile test/bin/CiTo/all coverage/output.xml coverage codecov install uninstall clean
+.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov install uninstall clean
 
 .DELETE_ON_ERROR:
