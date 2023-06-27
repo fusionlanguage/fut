@@ -53,7 +53,7 @@ it can be either C, C++, Java or C#.
 
 Differences come into play when you:
 
-- Define functions (called methods in Java and C#) - `static` means different things.
+- Define functions (called methods in Java and C#) - the `static` keyword means different things.
 - Use pointers in C or C++ (with `*`, `&` and `->` operators).
 - Some things are just spelled differently, for example `NULL` vs `null`
   (there was no `nullptr` in 2007).
@@ -76,7 +76,7 @@ In 2008, Maciek Konecki contributed a
 that made the player valid C# code. C# is similar to Java, so why not.
 
 In 2009, Flash Player was still very popular and I had requests to port my chiptune player to it.
-I updated my macros for ActionScript, Flash Player's programming language.
+I updated my macros for ActionScript, the Flash Player's programming language.
 If you are unfamiliar with ActionScript, its syntax is similar to the much newer TypeScript.
 Basically it's JavaScript with explicit types.
 That means that all local variable definitions start with `var`, so a macro is needed.
@@ -107,7 +107,7 @@ The D backend was contributed by [Adrian Matoga](https://github.com/epi).
 Also in 2011 there was `cito` 0.2.0 with a simple editor called CiPad that was showing
 the translations as you typed.
 
-In 2013 I decided to port to Ć my other open-source project with a fancy name: FAIL
+In 2013 I decided to rewrite in Ć my other open-source project with a fancy name: FAIL
 (later renamed to [RECOIL](https://recoil.sourceforge.net)).
 In the process, the Ć language received class inheritance and dynamic allocation,
 in version 0.3.0.
