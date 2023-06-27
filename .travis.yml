@@ -54,6 +54,6 @@ jobs:
       - sudo apt install g++-13 dotnet-sdk-7.0
       - nvm install --lts
     script:
-      - make -j5 host-diff
+      - make -j5 host-diff CXX=g++-13
       - make -j5 test-error CITO_HOST=cs
       - make -j5 test-error CITO_HOST=node
