@@ -50,6 +50,7 @@ jobs:
     script: make -j5 test-py test-swift CXX=g++-13 PYTHON=python3.12 SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu22.04/usr/bin/swiftc
   - name: host-diff
     install:
+      - sudo apt update
       - sudo apt install dotnet-sdk-7.0
       - nvm install --lts
     script: make -j5 host-diff
