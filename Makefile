@@ -1,6 +1,7 @@
 prefix := /usr/local
 bindir = $(prefix)/bin
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
+CITO_HOST = cpp
 CXXFLAGS = -std=c++20 -Wall -O2
 DOTNET_BASE_DIR := $(shell dotnet --info 2>/dev/null | sed -n 's/ Base Path:   //p')
 ifdef DOTNET_BASE_DIR
@@ -35,7 +36,25 @@ SOURCE_CI = Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci GenBase.ci GenTyp
 
 all: cito Transpiled.cpp Transpiled.cs Transpiled.js
 
-ifeq ($(CITO_HOST),cs)
+ifeq ($(CITO_HOST),cpp)
+
+CITO = ./cito
+
+ifeq ($(OS),Windows_NT)
+
+cito: cito.exe
+
+cito.exe: cito.cpp Transpiled.cpp
+	$(DO)$(CXX) -o $@ $(CXXFLAGS) -s -static $^
+
+else
+
+cito: cito.cpp Transpiled.cpp
+	$(DO)$(CXX) -o $@ $(CXXFLAGS) $^
+
+endif
+
+else ifeq ($(CITO_HOST),cs)
 
 CITO = dotnet run --no-build --
 
@@ -50,22 +69,8 @@ CITO = node cito.js
 
 cito: Transpiled.js
 
-else ifeq ($(OS),Windows_NT)
-
-CITO = ./cito
-
-cito: cito.exe
-
-cito.exe: cito.cpp Transpiled.cpp
-	$(DO)$(CXX) -o $@ $(CXXFLAGS) -s -static $^
-
 else
-
-CITO = ./cito
-
-cito: cito.cpp Transpiled.cpp
-	$(DO)$(CXX) -o $@ $(CXXFLAGS) $^
-
+$(error CITO_HOST must be "cpp", "cs" or "node")
 endif
 
 Transpiled.cpp Transpiled.js: $(SOURCE_CI)
