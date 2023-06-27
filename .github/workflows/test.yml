@@ -70,3 +70,5 @@ jobs:
       - uses: actions/setup-node@main
       - uses: actions/checkout@main
       - run: make -j3 host-diff
+      - run: make -j3 test-error CITO_HOST=cs
+      - run: make -j3 test-error CITO_HOST=node
