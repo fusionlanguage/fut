@@ -61,3 +61,12 @@ jobs:
       - uses: swift-actions/setup-swift@main
       - uses: actions/checkout@main
       - run: make -j3 test-py test-swift
+  host-diff:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/setup-dotnet@main
+        with:
+          dotnet-version: 6
+      - uses: actions/setup-node@main
+      - uses: actions/checkout@main
+      - run: make -j3 host-diff

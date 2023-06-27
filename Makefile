@@ -263,6 +263,11 @@ coverage: coverage/output.xml
 codecov: coverage/output.xml
 	./codecov -f $<
 
+host-diff:
+	$(MAKE) test-transpile CITO_HOST=cs
+	$(MAKE) test-transpile CITO_HOST=node
+	diff -rui test/cs test/node # -i because 1e+300 vs 1E+300
+
 install: cito
 	$(INSTALL) -D $< $(DESTDIR)$(bindir)/cito
 
@@ -273,6 +278,6 @@ clean:
 	$(RM) cito cito.exe
 	$(RM) -r test/bin test/cpp test/cs test/node
 
-.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov install uninstall clean
+.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov host-diff install uninstall clean
 
 .DELETE_ON_ERROR:
