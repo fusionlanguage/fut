@@ -1640,7 +1640,7 @@ class GenHost
 public:
 	virtual ~GenHost() = default;
 	virtual std::ostream * createFile(std::string_view directory, std::string_view filename) = 0;
-	virtual bool closeFile() = 0;
+	virtual bool closeFile(bool remove) = 0;
 protected:
 	GenHost() = default;
 };

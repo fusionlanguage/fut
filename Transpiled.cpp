@@ -6405,7 +6405,7 @@ void GenBase::createOutputFile()
 
 void GenBase::closeFile()
 {
-	if (!this->host->closeFile())
+	if (!this->host->closeFile(this->hasErrors))
 		this->hasErrors = true;
 }
 

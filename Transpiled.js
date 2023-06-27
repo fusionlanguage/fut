@@ -6845,7 +6845,7 @@ export class GenBase extends CiVisitor
 
 	closeFile()
 	{
-		if (!this.host.closeFile())
+		if (!this.host.closeFile(this.hasErrors))
 			this.hasErrors = true;
 	}
 

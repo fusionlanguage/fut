@@ -61,19 +61,23 @@ public class FileResourceSema : CiSema
 
 public class FileGenHost : GenHost
 {
+	string Filename;
 	TextWriter CurrentFile;
 
 	public override TextWriter CreateFile(string directory, string filename)
 	{
 		if (directory != null)
 			filename = Path.Combine(directory, filename);
+		this.Filename = filename;
 		this.CurrentFile = new StreamWriter(filename);
 		return this.CurrentFile;
 	}
 
-	public override bool CloseFile()
+	public override bool CloseFile(bool remove)
 	{
 		this.CurrentFile.Close();
+		if (remove)
+			File.Delete(this.Filename);
 		return true;
 	}
 }

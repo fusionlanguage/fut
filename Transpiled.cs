@@ -6319,7 +6319,7 @@ namespace Foxoft.Ci
 
 		public abstract TextWriter CreateFile(string directory, string filename);
 
-		public abstract bool CloseFile();
+		public abstract bool CloseFile(bool remove);
 	}
 
 	public abstract class GenBase : CiVisitor
@@ -6585,7 +6585,7 @@ namespace Foxoft.Ci
 
 		protected void CloseFile()
 		{
-			if (!this.Host.CloseFile())
+			if (!this.Host.CloseFile(this.HasErrors))
 				this.HasErrors = true;
 		}
 

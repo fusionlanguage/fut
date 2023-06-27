@@ -69,14 +69,17 @@ class FileGenHost extends GenHost
 		this.#currentFile = fs.createWriteStream(filename);
 		this.#currentFile.on("error", e => {
 				console.error(`${filename}: ERROR: ${e.message}`);
-				process.exit(1);
+				process.exitCode = 1;
 			});
 		return this.#currentFile;
 	}
 
-	closeFile()
+	closeFile(remove)
 	{
-		this.#currentFile.close();
+		if (remove)
+			this.#currentFile.close(() => fs.unlinkSync(this.#currentFile.path));
+		else
+			this.#currentFile.close();
 		return true;
 	}
 }

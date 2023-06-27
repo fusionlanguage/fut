@@ -118,10 +118,12 @@ public:
 		return &currentFile;
 	}
 
-	bool closeFile() override
+	bool closeFile(bool remove) override
 	{
 		currentFile.close();
-		if (!currentFile) {
+		if (remove)
+			std::remove(currentFilename.c_str());
+		else if (!currentFile) {
 			std::cerr << currentFilename << ": ERROR: " << strerror(errno) << '\n';
 			return false;
 		}
