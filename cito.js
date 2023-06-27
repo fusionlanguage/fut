@@ -177,13 +177,15 @@ function emit(program, lang, namespace, outputFile)
 		break;
 	default:
 		console.error(`cito: ERROR: Unknown language: ${lang}`);
-		return false;
+		process.exitCode = 1;
+		return;
 	}
 	gen.namespace = namespace;
 	gen.outputFile = outputFile;
 	gen.host = new FileGenHost();
 	gen.writeProgram(program);
-	return !gen.hasErrors;
+	if (gen.hasErrors)
+		process.exitCode = 1;
 }
 
 function emitImplicitLang(program, namespace, outputFile)
@@ -194,18 +196,15 @@ function emitImplicitLang(program, namespace, outputFile)
 			if (i >= 2 && /^[.,]d\.ts($|,)/.test(outputFile.slice(i - 2)))
 				continue;
 			const outputBase = outputFile.slice(0, i + 1);
-			let ok = true;
-			for (const outputExt of outputFile.slice(i + 1).split(",")) {
-				if (!emit(program, outputExt, namespace, outputBase + outputExt))
-					ok = false;
-			}
-			return ok;
+			for (const outputExt of outputFile.slice(i + 1).split(","))
+				emit(program, outputExt, namespace, outputBase + outputExt);
+			return;
 		}
 		if (c == "/" || c == "\\" || c == ":")
 			break;
 	}
 	console.error(`cito: ERROR: Don't know what language to translate to: no extension in '${outputFile}' and no '-l' option`);
-	return false;
+	process.exitCode = 1;
 }
 
 const parser = new CiConsoleParser();
@@ -273,13 +272,10 @@ try {
 	if (referencedFiles.length > 0)
 		parent = parseAndResolve(parser, system, parent, referencedFiles, sema);
 	const program = parseAndResolve(parser, system, parent, inputFiles, sema);
-
-	if (lang != null) {
-		if (!emit(program, lang, namespace, outputFile))
-			process.exit(1);
-	}
-	else if (!emitImplicitLang(program, namespace, outputFile))
-		process.exit(1);
+	if (lang != null)
+		emit(program, lang, namespace, outputFile);
+	else
+		emitImplicitLang(program, namespace, outputFile);
 }
 catch (e) {
 	console.error(`cito: ERROR: ${e.message}`);
