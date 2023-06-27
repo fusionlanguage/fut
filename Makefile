@@ -264,9 +264,11 @@ codecov: coverage/output.xml
 	./codecov -f $<
 
 host-diff:
+	$(MAKE) test-transpile CITO_HOST=cpp
 	$(MAKE) test-transpile CITO_HOST=cs
 	$(MAKE) test-transpile CITO_HOST=node
-	diff -rui test/cs test/node # -i because 1e+300 vs 1E+300
+	diff -ruI "[0-9][Ee][-+][0-9]\|\.0" test/cpp test/cs
+	diff -ruI "[0-9][Ee][-+][0-9]" test/cs test/node
 
 install: cito
 	$(INSTALL) -D $< $(DESTDIR)$(bindir)/cito

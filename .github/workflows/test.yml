@@ -64,6 +64,9 @@ jobs:
   host-diff:
     runs-on: ubuntu-22.04
     steps:
+      - uses: Totto16/setup-gcc@master
+        with:
+          version: 13
       - uses: actions/setup-dotnet@main
         with:
           dotnet-version: 6
