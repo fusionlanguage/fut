@@ -2431,6 +2431,7 @@ CiSystem::CiSystem()
 	this->arrayPtrClass->add(arraySortPart);
 	this->arrayStorageClass->parent = this->arrayPtrClass.get();
 	this->arrayStorageClass->add(CiMethodGroup::new_(CiMethod::new_(CiVisibility::numericElementType, this->intType, CiId::arrayBinarySearchAll, "BinarySearch", CiVar::new_(this->typeParam0, "value")), arrayBinarySearchPart));
+	this->arrayStorageClass->add(CiMethod::new_(CiVisibility::public_, this->boolType, CiId::arrayContains, "Contains", CiVar::new_(this->typeParam0, "value")));
 	this->arrayStorageClass->add(CiMethodGroup::new_(CiMethod::newMutator(CiVisibility::public_, this->voidType, CiId::arrayFillAll, "Fill", CiVar::new_(this->typeParam0, "value")), arrayFillPart));
 	this->arrayStorageClass->add(CiProperty::new_(this->uIntType, CiId::arrayLength, "Length"));
 	this->arrayStorageClass->add(CiMethodGroup::new_(CiMethod::newMutator(CiVisibility::numericElementType, this->voidType, CiId::arraySortAll, "Sort"), arraySortPart));
@@ -10316,6 +10317,30 @@ void GenC::writeStringSubstring(const CiExpr * obj, const std::vector<std::share
 		notSupported(obj, "Substring");
 }
 
+void GenC::startArrayContains(const CiExpr * obj)
+{
+	write("CiArray_Contains_");
+	CiId typeId = obj->type->asClassType()->getElementType()->id;
+	switch (typeId) {
+	case CiId::none:
+		write("object(");
+		break;
+	case CiId::stringStorageType:
+	case CiId::stringPtrType:
+		typeId = CiId::stringPtrType;
+		include("string.h");
+		write("string((const char * const *) ");
+		break;
+	default:
+		writeNumericType(typeId);
+		write("((const ");
+		writeNumericType(typeId);
+		write(" *) ");
+		break;
+	}
+	this->contains.insert(typeId);
+}
+
 void GenC::startArrayIndexing(const CiExpr * obj, const CiType * elementType)
 {
 	write("g_array_index(");
@@ -10444,6 +10469,15 @@ void GenC::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std:
 				writeChar(')');
 			break;
 		}
+	case CiId::arrayContains:
+		startArrayContains(obj);
+		obj->accept(this, CiPriority::argument);
+		write(", ");
+		writeArrayStorageLength(obj);
+		write(", ");
+		(*args)[0]->accept(this, CiPriority::argument);
+		writeChar(')');
+		break;
 	case CiId::arrayCopyTo:
 	case CiId::listCopyTo:
 		include("string.h");
@@ -10528,33 +10562,12 @@ void GenC::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std:
 		write(", 0)");
 		break;
 	case CiId::listContains:
-		write("CiArray_Contains_");
-		{
-			CiId typeId = obj->type->asClassType()->getElementType()->id;
-			switch (typeId) {
-			case CiId::none:
-				write("object(");
-				break;
-			case CiId::stringStorageType:
-			case CiId::stringPtrType:
-				typeId = CiId::stringPtrType;
-				include("string.h");
-				write("string((const char * const *) ");
-				break;
-			default:
-				writeNumericType(typeId);
-				write("((const ");
-				writeNumericType(typeId);
-				write(" *) ");
-				break;
-			}
-			writePostfix(obj, "->data, ");
-			writePostfix(obj, "->len, ");
-			(*args)[0]->accept(this, CiPriority::argument);
-			writeChar(')');
-			this->contains.insert(typeId);
-			break;
-		}
+		startArrayContains(obj);
+		writePostfix(obj, "->data, ");
+		writePostfix(obj, "->len, ");
+		(*args)[0]->accept(this, CiPriority::argument);
+		writeChar(')');
+		break;
 	case CiId::listInsert:
 		writeListAddInsert(obj, true, "g_array_insert_val", args);
 		break;
@@ -13076,6 +13089,17 @@ void GenCpp::writeCallExpr(const CiExpr * obj, const CiMethod * method, const st
 		if (parent > CiPriority::add)
 			writeChar(')');
 		break;
+	case CiId::arrayContains:
+	case CiId::listContains:
+		if (parent > CiPriority::equality)
+			writeChar('(');
+		writeAllAnyContains("find", obj, args);
+		write(" != ");
+		startMethodCall(obj);
+		write("end()");
+		if (parent > CiPriority::equality)
+			writeChar(')');
+		break;
 	case CiId::arrayCopyTo:
 	case CiId::listCopyTo:
 		include("algorithm");
@@ -13141,16 +13165,6 @@ void GenCpp::writeCallExpr(const CiExpr * obj, const CiMethod * method, const st
 	case CiId::listAny:
 		include("algorithm");
 		writeAllAnyContains("any_of", obj, args);
-		break;
-	case CiId::listContains:
-		if (parent > CiPriority::equality)
-			writeChar('(');
-		writeAllAnyContains("find", obj, args);
-		write(" != ");
-		startMethodCall(obj);
-		write("end()");
-		if (parent > CiPriority::equality)
-			writeChar(')');
 		break;
 	case CiId::listIndexOf:
 		{
@@ -14605,6 +14619,10 @@ void GenCs::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std
 		writeNotPromoted(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
 		writeChar(')');
 		break;
+	case CiId::arrayContains:
+		include("System.Linq");
+		writeMethodCall(obj, "Contains", (*args)[0].get());
+		break;
 	case CiId::arrayCopyTo:
 		include("System");
 		write("Array.Copy(");
@@ -15674,6 +15692,12 @@ void GenD::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std:
 		writeNotPromoted(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
 		write("); return cisearch[1].length ? cibegin + cisearch[0].length : -1; }()");
 		break;
+	case CiId::arrayContains:
+	case CiId::listContains:
+		include("std.algorithm");
+		writeClassReference(obj);
+		writeCall("[].canFind", (*args)[0].get());
+		break;
 	case CiId::arrayCopyTo:
 	case CiId::listCopyTo:
 		include("std.algorithm");
@@ -15738,11 +15762,6 @@ void GenD::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std:
 		write("[].any!(");
 		(*args)[0]->accept(this, CiPriority::argument);
 		writeChar(')');
-		break;
-	case CiId::listContains:
-		include("std.algorithm");
-		writeClassReference(obj);
-		writeCall("[].canFind", (*args)[0].get());
 		break;
 	case CiId::listInsert:
 		this->hasListInsert = true;
@@ -18161,6 +18180,7 @@ void GenJsNoModule::writeCallExpr(const CiExpr * obj, const CiMethod * method, c
 		write("))");
 		break;
 	case CiId::stringContains:
+	case CiId::arrayContains:
 	case CiId::listContains:
 		writeMethodCall(obj, "includes", (*args)[0].get());
 		break;
@@ -19926,6 +19946,7 @@ void GenSwift::writeCallExpr(const CiExpr * obj, const CiMethod * method, const 
 {
 	switch (method->id) {
 	case CiId::none:
+	case CiId::arrayContains:
 	case CiId::listContains:
 	case CiId::listSortAll:
 	case CiId::hashSetContains:
@@ -21815,6 +21836,7 @@ void GenPy::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std
 		break;
 	case CiId::enumHasFlag:
 	case CiId::stringContains:
+	case CiId::arrayContains:
 	case CiId::listContains:
 	case CiId::hashSetContains:
 	case CiId::sortedSetContains:

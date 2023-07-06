@@ -425,6 +425,7 @@ public class GenSwift : GenPySwift
 	{
 		switch (method.Id) {
 		case CiId.None:
+		case CiId.ArrayContains:
 		case CiId.ListContains:
 		case CiId.ListSortAll:
 		case CiId.HashSetContains:

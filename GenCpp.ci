@@ -799,6 +799,17 @@ public class GenCpp : GenCCpp
 			if (parent > CiPriority.Add)
 				WriteChar(')');
 			break;
+		case CiId.ArrayContains:
+		case CiId.ListContains:
+			if (parent > CiPriority.Equality)
+				WriteChar('(');
+			WriteAllAnyContains("find", obj, args);
+			Write(" != ");
+			StartMethodCall(obj); // FIXME: side effect
+			Write("end()");
+			if (parent > CiPriority.Equality)
+				WriteChar(')');
+			break;
 		case CiId.ArrayCopyTo:
 		case CiId.ListCopyTo:
 			Include("algorithm");
@@ -864,16 +875,6 @@ public class GenCpp : GenCCpp
 		case CiId.ListAny:
 			Include("algorithm");
 			WriteAllAnyContains("any_of", obj, args);
-			break;
-		case CiId.ListContains:
-			if (parent > CiPriority.Equality)
-				WriteChar('(');
-			WriteAllAnyContains("find", obj, args);
-			Write(" != ");
-			StartMethodCall(obj); // FIXME: side effect
-			Write("end()");
-			if (parent > CiPriority.Equality)
-				WriteChar(')');
 			break;
 		case CiId.ListIndexOf:
 			{

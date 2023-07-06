@@ -1316,6 +1316,7 @@ namespace Foxoft.Ci
 		StringSubstring,
 		ArrayBinarySearchAll,
 		ArrayBinarySearchPart,
+		ArrayContains,
 		ArrayCopyTo,
 		ArrayFillAll,
 		ArrayFillPart,
@@ -2975,6 +2976,7 @@ namespace Foxoft.Ci
 			this.ArrayPtrClass.Add(arraySortPart);
 			this.ArrayStorageClass.Parent = this.ArrayPtrClass;
 			this.ArrayStorageClass.Add(CiMethodGroup.New(CiMethod.New(CiVisibility.NumericElementType, this.IntType, CiId.ArrayBinarySearchAll, "BinarySearch", CiVar.New(this.TypeParam0, "value")), arrayBinarySearchPart));
+			this.ArrayStorageClass.Add(CiMethod.New(CiVisibility.Public, this.BoolType, CiId.ArrayContains, "Contains", CiVar.New(this.TypeParam0, "value")));
 			this.ArrayStorageClass.Add(CiMethodGroup.New(CiMethod.NewMutator(CiVisibility.Public, this.VoidType, CiId.ArrayFillAll, "Fill", CiVar.New(this.TypeParam0, "value")), arrayFillPart));
 			this.ArrayStorageClass.Add(CiProperty.New(this.UIntType, CiId.ArrayLength, "Length"));
 			this.ArrayStorageClass.Add(CiMethodGroup.New(CiMethod.NewMutator(CiVisibility.NumericElementType, this.VoidType, CiId.ArraySortAll, "Sort"), arraySortPart));
@@ -10633,6 +10635,30 @@ namespace Foxoft.Ci
 				NotSupported(obj, "Substring");
 		}
 
+		void StartArrayContains(CiExpr obj)
+		{
+			Write("CiArray_Contains_");
+			CiId typeId = obj.Type.AsClassType().GetElementType().Id;
+			switch (typeId) {
+			case CiId.None:
+				Write("object(");
+				break;
+			case CiId.StringStorageType:
+			case CiId.StringPtrType:
+				typeId = CiId.StringPtrType;
+				Include("string.h");
+				Write("string((const char * const *) ");
+				break;
+			default:
+				WriteNumericType(typeId);
+				Write("((const ");
+				WriteNumericType(typeId);
+				Write(" *) ");
+				break;
+			}
+			this.Contains.Add(typeId);
+		}
+
 		void StartArrayIndexing(CiExpr obj, CiType elementType)
 		{
 			Write("g_array_index(");
@@ -10755,6 +10781,15 @@ namespace Foxoft.Ci
 				if (parent > CiPriority.Add)
 					WriteChar(')');
 				break;
+			case CiId.ArrayContains:
+				StartArrayContains(obj);
+				obj.Accept(this, CiPriority.Argument);
+				Write(", ");
+				WriteArrayStorageLength(obj);
+				Write(", ");
+				args[0].Accept(this, CiPriority.Argument);
+				WriteChar(')');
+				break;
 			case CiId.ArrayCopyTo:
 			case CiId.ListCopyTo:
 				Include("string.h");
@@ -10837,30 +10872,11 @@ namespace Foxoft.Ci
 				Write(", 0)");
 				break;
 			case CiId.ListContains:
-				Write("CiArray_Contains_");
-				CiId typeId = obj.Type.AsClassType().GetElementType().Id;
-				switch (typeId) {
-				case CiId.None:
-					Write("object(");
-					break;
-				case CiId.StringStorageType:
-				case CiId.StringPtrType:
-					typeId = CiId.StringPtrType;
-					Include("string.h");
-					Write("string((const char * const *) ");
-					break;
-				default:
-					WriteNumericType(typeId);
-					Write("((const ");
-					WriteNumericType(typeId);
-					Write(" *) ");
-					break;
-				}
+				StartArrayContains(obj);
 				WritePostfix(obj, "->data, ");
 				WritePostfix(obj, "->len, ");
 				args[0].Accept(this, CiPriority.Argument);
 				WriteChar(')');
-				this.Contains.Add(typeId);
 				break;
 			case CiId.ListInsert:
 				WriteListAddInsert(obj, true, "g_array_insert_val", args);
@@ -13479,6 +13495,17 @@ namespace Foxoft.Ci
 				if (parent > CiPriority.Add)
 					WriteChar(')');
 				break;
+			case CiId.ArrayContains:
+			case CiId.ListContains:
+				if (parent > CiPriority.Equality)
+					WriteChar('(');
+				WriteAllAnyContains("find", obj, args);
+				Write(" != ");
+				StartMethodCall(obj);
+				Write("end()");
+				if (parent > CiPriority.Equality)
+					WriteChar(')');
+				break;
 			case CiId.ArrayCopyTo:
 			case CiId.ListCopyTo:
 				Include("algorithm");
@@ -13544,16 +13571,6 @@ namespace Foxoft.Ci
 			case CiId.ListAny:
 				Include("algorithm");
 				WriteAllAnyContains("any_of", obj, args);
-				break;
-			case CiId.ListContains:
-				if (parent > CiPriority.Equality)
-					WriteChar('(');
-				WriteAllAnyContains("find", obj, args);
-				Write(" != ");
-				StartMethodCall(obj);
-				Write("end()");
-				if (parent > CiPriority.Equality)
-					WriteChar(')');
 				break;
 			case CiId.ListIndexOf:
 				{
@@ -15037,6 +15054,10 @@ namespace Foxoft.Ci
 				WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
 				WriteChar(')');
 				break;
+			case CiId.ArrayContains:
+				Include("System.Linq");
+				WriteMethodCall(obj, "Contains", args[0]);
+				break;
 			case CiId.ArrayCopyTo:
 				Include("System");
 				Write("Array.Copy(");
@@ -16288,6 +16309,12 @@ namespace Foxoft.Ci
 				WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
 				Write("); return cisearch[1].length ? cibegin + cisearch[0].length : -1; }()");
 				break;
+			case CiId.ArrayContains:
+			case CiId.ListContains:
+				Include("std.algorithm");
+				WriteClassReference(obj);
+				WriteCall("[].canFind", args[0]);
+				break;
 			case CiId.ArrayCopyTo:
 			case CiId.ListCopyTo:
 				Include("std.algorithm");
@@ -16352,11 +16379,6 @@ namespace Foxoft.Ci
 				Write("[].any!(");
 				args[0].Accept(this, CiPriority.Argument);
 				WriteChar(')');
-				break;
-			case CiId.ListContains:
-				Include("std.algorithm");
-				WriteClassReference(obj);
-				WriteCall("[].canFind", args[0]);
 				break;
 			case CiId.ListInsert:
 				this.HasListInsert = true;
@@ -18857,6 +18879,7 @@ namespace Foxoft.Ci
 				Write("))");
 				break;
 			case CiId.StringContains:
+			case CiId.ArrayContains:
 			case CiId.ListContains:
 				WriteMethodCall(obj, "includes", args[0]);
 				break;
@@ -20746,6 +20769,7 @@ namespace Foxoft.Ci
 		{
 			switch (method.Id) {
 			case CiId.None:
+			case CiId.ArrayContains:
 			case CiId.ListContains:
 			case CiId.ListSortAll:
 			case CiId.HashSetContains:
@@ -22669,6 +22693,7 @@ namespace Foxoft.Ci
 				break;
 			case CiId.EnumHasFlag:
 			case CiId.StringContains:
+			case CiId.ArrayContains:
 			case CiId.ListContains:
 			case CiId.HashSetContains:
 			case CiId.SortedSetContains:

@@ -635,6 +635,15 @@ public class GenJava : GenTyped
 		case CiId.ArrayBinarySearchPart:
 			WriteArrayBinarySearchFill(obj, "binarySearch", args);
 			break;
+// fails for "int" etc.
+//		case CiId.ArrayContains:
+//			Include("java.util.List");
+//			Write("List.of(");
+//			obj.Accept(this, CiPriority.Argument);
+//			Write(").contains(");
+//			args[0].Accept(this, CiPriority.Argument);
+//			WriteChar(')');
+//			break;
 		case CiId.ArrayCopyTo:
 			Write("System.arraycopy(");
 			obj.Accept(this, CiPriority.Argument);

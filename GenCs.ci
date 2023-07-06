@@ -478,6 +478,10 @@ public class GenCs : GenTyped
 			WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
 			WriteChar(')');
 			break;
+		case CiId.ArrayContains:
+			Include("System.Linq");
+			WriteMethodCall(obj, "Contains", args[0]);
+			break;
 		case CiId.ArrayCopyTo:
 			Include("System");
 			Write("Array.Copy(");

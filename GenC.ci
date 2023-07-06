@@ -1807,6 +1807,30 @@ public class GenC : GenCCpp
 			NotSupported(obj, "Substring");
 	}
 
+	void StartArrayContains!(CiExpr obj)
+	{
+		Write("CiArray_Contains_");
+		CiId typeId = obj.Type.AsClassType().GetElementType().Id;
+		switch (typeId) {
+		case CiId.None:
+			Write("object(");
+			break;
+		case CiId.StringStorageType:
+		case CiId.StringPtrType:
+			typeId = CiId.StringPtrType;
+			Include("string.h");
+			Write("string((const char * const *) ");
+			break;
+		default:
+			WriteNumericType(typeId);
+			Write("((const ");
+			WriteNumericType(typeId);
+			Write(" *) ");
+			break;
+		}
+		this.Contains.Add(typeId);
+	}
+
 	void StartArrayIndexing!(CiExpr obj, CiType elementType)
 	{
 		Write("g_array_index(");
@@ -1929,6 +1953,15 @@ public class GenC : GenCCpp
 			if (parent > CiPriority.Add)
 				WriteChar(')');
 			break;
+		case CiId.ArrayContains:
+			StartArrayContains(obj);
+			obj.Accept(this, CiPriority.Argument);
+			Write(", ");
+			WriteArrayStorageLength(obj);
+			Write(", ");
+			args[0].Accept(this, CiPriority.Argument);
+			WriteChar(')');
+			break;
 		case CiId.ArrayCopyTo:
 		case CiId.ListCopyTo:
 			Include("string.h");
@@ -2012,30 +2045,11 @@ public class GenC : GenCCpp
 			Write(", 0)");
 			break;
 		case CiId.ListContains:
-			Write("CiArray_Contains_");
-			CiId typeId = obj.Type.AsClassType().GetElementType().Id;
-			switch (typeId) {
-			case CiId.None:
-				Write("object(");
-				break;
-			case CiId.StringStorageType:
-			case CiId.StringPtrType:
-				typeId = CiId.StringPtrType;
-				Include("string.h");
-				Write("string((const char * const *) ");
-				break;
-			default:
-				WriteNumericType(typeId);
-				Write("((const ");
-				WriteNumericType(typeId);
-				Write(" *) ");
-				break;
-			}
+			StartArrayContains(obj);
 			WritePostfix(obj, "->data, ");
 			WritePostfix(obj, "->len, "); // FIXME: side effect
 			args[0].Accept(this, CiPriority.Argument);
 			WriteChar(')');
-			this.Contains.Add(typeId);
 			break;
 		case CiId.ListInsert:
 			WriteListAddInsert(obj, true, "g_array_insert_val", args);

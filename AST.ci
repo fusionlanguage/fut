@@ -120,6 +120,7 @@ public enum CiId
 	StringSubstring,
 	ArrayBinarySearchAll,
 	ArrayBinarySearchPart,
+	ArrayContains,
 	ArrayCopyTo,
 	ArrayFillAll,
 	ArrayFillPart,
@@ -1527,6 +1528,7 @@ public class CiSystem : CiScope
 		ArrayStorageClass.Parent = ArrayPtrClass;
 		ArrayStorageClass.Add(CiMethodGroup.New(CiMethod.New(CiVisibility.NumericElementType, IntType, CiId.ArrayBinarySearchAll, "BinarySearch", CiVar.New(TypeParam0, "value")),
 			arrayBinarySearchPart));
+		ArrayStorageClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.ArrayContains, "Contains", CiVar.New(TypeParam0, "value")));
 		ArrayStorageClass.Add(CiMethodGroup.New(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.ArrayFillAll, "Fill", CiVar.New(TypeParam0, "value")),
 			arrayFillPart));
 		ArrayStorageClass.Add(CiProperty.New(UIntType, CiId.ArrayLength, "Length"));

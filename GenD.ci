@@ -790,6 +790,12 @@ public class GenD : GenCCppD
 			WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
 			Write("); return cisearch[1].length ? cibegin + cisearch[0].length : -1; }()");
 			break;
+		case CiId.ArrayContains:
+		case CiId.ListContains:
+			Include("std.algorithm");
+			WriteClassReference(obj);
+			WriteCall("[].canFind", args[0]);
+			break;
 		case CiId.ArrayCopyTo:
 		case CiId.ListCopyTo:
 			Include("std.algorithm");
@@ -854,11 +860,6 @@ public class GenD : GenCCppD
 			Write("[].any!(");
 			args[0].Accept(this, CiPriority.Argument);
 			WriteChar(')');
-			break;
-		case CiId.ListContains:
-			Include("std.algorithm");
-			WriteClassReference(obj);
-			WriteCall("[].canFind", args[0]);
 			break;
 		case CiId.ListInsert:
 			this.HasListInsert = true;

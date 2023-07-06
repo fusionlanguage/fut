@@ -1296,93 +1296,94 @@ export const CiId = {
 	STRING_SUBSTRING : 58,
 	ARRAY_BINARY_SEARCH_ALL : 59,
 	ARRAY_BINARY_SEARCH_PART : 60,
-	ARRAY_COPY_TO : 61,
-	ARRAY_FILL_ALL : 62,
-	ARRAY_FILL_PART : 63,
-	ARRAY_SORT_ALL : 64,
-	ARRAY_SORT_PART : 65,
-	LIST_ADD : 66,
-	LIST_ADD_RANGE : 67,
-	LIST_ALL : 68,
-	LIST_ANY : 69,
-	LIST_CLEAR : 70,
-	LIST_CONTAINS : 71,
-	LIST_COPY_TO : 72,
-	LIST_COUNT : 73,
-	LIST_INDEX_OF : 74,
-	LIST_INSERT : 75,
-	LIST_LAST : 76,
-	LIST_REMOVE_AT : 77,
-	LIST_REMOVE_RANGE : 78,
-	LIST_SORT_ALL : 79,
-	LIST_SORT_PART : 80,
-	QUEUE_CLEAR : 81,
-	QUEUE_COUNT : 82,
-	QUEUE_DEQUEUE : 83,
-	QUEUE_ENQUEUE : 84,
-	QUEUE_PEEK : 85,
-	STACK_CLEAR : 86,
-	STACK_COUNT : 87,
-	STACK_PEEK : 88,
-	STACK_PUSH : 89,
-	STACK_POP : 90,
-	HASH_SET_ADD : 91,
-	HASH_SET_CLEAR : 92,
-	HASH_SET_CONTAINS : 93,
-	HASH_SET_COUNT : 94,
-	HASH_SET_REMOVE : 95,
-	SORTED_SET_ADD : 96,
-	SORTED_SET_CLEAR : 97,
-	SORTED_SET_CONTAINS : 98,
-	SORTED_SET_COUNT : 99,
-	SORTED_SET_REMOVE : 100,
-	DICTIONARY_ADD : 101,
-	DICTIONARY_CLEAR : 102,
-	DICTIONARY_CONTAINS_KEY : 103,
-	DICTIONARY_COUNT : 104,
-	DICTIONARY_REMOVE : 105,
-	SORTED_DICTIONARY_CLEAR : 106,
-	SORTED_DICTIONARY_CONTAINS_KEY : 107,
-	SORTED_DICTIONARY_COUNT : 108,
-	SORTED_DICTIONARY_REMOVE : 109,
-	ORDERED_DICTIONARY_CLEAR : 110,
-	ORDERED_DICTIONARY_CONTAINS_KEY : 111,
-	ORDERED_DICTIONARY_COUNT : 112,
-	ORDERED_DICTIONARY_REMOVE : 113,
-	TEXT_WRITER_WRITE : 114,
-	TEXT_WRITER_WRITE_CHAR : 115,
-	TEXT_WRITER_WRITE_CODE_POINT : 116,
-	TEXT_WRITER_WRITE_LINE : 117,
-	CONSOLE_WRITE : 118,
-	CONSOLE_WRITE_LINE : 119,
-	STRING_WRITER_CLEAR : 120,
-	STRING_WRITER_TO_STRING : 121,
-	U_T_F8_GET_BYTE_COUNT : 122,
-	U_T_F8_GET_BYTES : 123,
-	U_T_F8_GET_STRING : 124,
-	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 125,
-	REGEX_COMPILE : 126,
-	REGEX_ESCAPE : 127,
-	REGEX_IS_MATCH_STR : 128,
-	REGEX_IS_MATCH_REGEX : 129,
-	MATCH_FIND_STR : 130,
-	MATCH_FIND_REGEX : 131,
-	MATCH_GET_CAPTURE : 132,
-	MATH_METHOD : 133,
-	MATH_ABS : 134,
-	MATH_CEILING : 135,
-	MATH_CLAMP : 136,
-	MATH_FUSED_MULTIPLY_ADD : 137,
-	MATH_IS_FINITE : 138,
-	MATH_IS_INFINITY : 139,
-	MATH_IS_NA_N : 140,
-	MATH_LOG2 : 141,
-	MATH_MAX_INT : 142,
-	MATH_MAX_DOUBLE : 143,
-	MATH_MIN_INT : 144,
-	MATH_MIN_DOUBLE : 145,
-	MATH_ROUND : 146,
-	MATH_TRUNCATE : 147
+	ARRAY_CONTAINS : 61,
+	ARRAY_COPY_TO : 62,
+	ARRAY_FILL_ALL : 63,
+	ARRAY_FILL_PART : 64,
+	ARRAY_SORT_ALL : 65,
+	ARRAY_SORT_PART : 66,
+	LIST_ADD : 67,
+	LIST_ADD_RANGE : 68,
+	LIST_ALL : 69,
+	LIST_ANY : 70,
+	LIST_CLEAR : 71,
+	LIST_CONTAINS : 72,
+	LIST_COPY_TO : 73,
+	LIST_COUNT : 74,
+	LIST_INDEX_OF : 75,
+	LIST_INSERT : 76,
+	LIST_LAST : 77,
+	LIST_REMOVE_AT : 78,
+	LIST_REMOVE_RANGE : 79,
+	LIST_SORT_ALL : 80,
+	LIST_SORT_PART : 81,
+	QUEUE_CLEAR : 82,
+	QUEUE_COUNT : 83,
+	QUEUE_DEQUEUE : 84,
+	QUEUE_ENQUEUE : 85,
+	QUEUE_PEEK : 86,
+	STACK_CLEAR : 87,
+	STACK_COUNT : 88,
+	STACK_PEEK : 89,
+	STACK_PUSH : 90,
+	STACK_POP : 91,
+	HASH_SET_ADD : 92,
+	HASH_SET_CLEAR : 93,
+	HASH_SET_CONTAINS : 94,
+	HASH_SET_COUNT : 95,
+	HASH_SET_REMOVE : 96,
+	SORTED_SET_ADD : 97,
+	SORTED_SET_CLEAR : 98,
+	SORTED_SET_CONTAINS : 99,
+	SORTED_SET_COUNT : 100,
+	SORTED_SET_REMOVE : 101,
+	DICTIONARY_ADD : 102,
+	DICTIONARY_CLEAR : 103,
+	DICTIONARY_CONTAINS_KEY : 104,
+	DICTIONARY_COUNT : 105,
+	DICTIONARY_REMOVE : 106,
+	SORTED_DICTIONARY_CLEAR : 107,
+	SORTED_DICTIONARY_CONTAINS_KEY : 108,
+	SORTED_DICTIONARY_COUNT : 109,
+	SORTED_DICTIONARY_REMOVE : 110,
+	ORDERED_DICTIONARY_CLEAR : 111,
+	ORDERED_DICTIONARY_CONTAINS_KEY : 112,
+	ORDERED_DICTIONARY_COUNT : 113,
+	ORDERED_DICTIONARY_REMOVE : 114,
+	TEXT_WRITER_WRITE : 115,
+	TEXT_WRITER_WRITE_CHAR : 116,
+	TEXT_WRITER_WRITE_CODE_POINT : 117,
+	TEXT_WRITER_WRITE_LINE : 118,
+	CONSOLE_WRITE : 119,
+	CONSOLE_WRITE_LINE : 120,
+	STRING_WRITER_CLEAR : 121,
+	STRING_WRITER_TO_STRING : 122,
+	U_T_F8_GET_BYTE_COUNT : 123,
+	U_T_F8_GET_BYTES : 124,
+	U_T_F8_GET_STRING : 125,
+	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 126,
+	REGEX_COMPILE : 127,
+	REGEX_ESCAPE : 128,
+	REGEX_IS_MATCH_STR : 129,
+	REGEX_IS_MATCH_REGEX : 130,
+	MATCH_FIND_STR : 131,
+	MATCH_FIND_REGEX : 132,
+	MATCH_GET_CAPTURE : 133,
+	MATH_METHOD : 134,
+	MATH_ABS : 135,
+	MATH_CEILING : 136,
+	MATH_CLAMP : 137,
+	MATH_FUSED_MULTIPLY_ADD : 138,
+	MATH_IS_FINITE : 139,
+	MATH_IS_INFINITY : 140,
+	MATH_IS_NA_N : 141,
+	MATH_LOG2 : 142,
+	MATH_MAX_INT : 143,
+	MATH_MAX_DOUBLE : 144,
+	MATH_MIN_INT : 145,
+	MATH_MIN_DOUBLE : 146,
+	MATH_ROUND : 147,
+	MATH_TRUNCATE : 148
 }
 
 class CiDocInline
@@ -3116,6 +3117,7 @@ export class CiSystem extends CiScope
 		this.arrayPtrClass.add(arraySortPart);
 		this.arrayStorageClass.parent = this.arrayPtrClass;
 		this.arrayStorageClass.add(CiMethodGroup.new(CiMethod.new(CiVisibility.NUMERIC_ELEMENT_TYPE, this.intType, CiId.ARRAY_BINARY_SEARCH_ALL, "BinarySearch", CiVar.new(this.#typeParam0, "value")), arrayBinarySearchPart));
+		this.arrayStorageClass.add(CiMethod.new(CiVisibility.PUBLIC, this.boolType, CiId.ARRAY_CONTAINS, "Contains", CiVar.new(this.#typeParam0, "value")));
 		this.arrayStorageClass.add(CiMethodGroup.new(CiMethod.newMutator(CiVisibility.PUBLIC, this.voidType, CiId.ARRAY_FILL_ALL, "Fill", CiVar.new(this.#typeParam0, "value")), arrayFillPart));
 		this.arrayStorageClass.add(CiProperty.new(this.#uIntType, CiId.ARRAY_LENGTH, "Length"));
 		this.arrayStorageClass.add(CiMethodGroup.new(CiMethod.newMutator(CiVisibility.NUMERIC_ELEMENT_TYPE, this.voidType, CiId.ARRAY_SORT_ALL, "Sort"), arraySortPart));
@@ -10978,6 +10980,30 @@ export class GenC extends GenCCpp
 			this.notSupported(obj, "Substring");
 	}
 
+	#startArrayContains(obj)
+	{
+		this.write("CiArray_Contains_");
+		let typeId = obj.type.asClassType().getElementType().id;
+		switch (typeId) {
+		case CiId.NONE:
+			this.write("object(");
+			break;
+		case CiId.STRING_STORAGE_TYPE:
+		case CiId.STRING_PTR_TYPE:
+			typeId = CiId.STRING_PTR_TYPE;
+			this.include("string.h");
+			this.write("string((const char * const *) ");
+			break;
+		default:
+			this.writeNumericType(typeId);
+			this.write("((const ");
+			this.writeNumericType(typeId);
+			this.write(" *) ");
+			break;
+		}
+		this.#contains.add(typeId);
+	}
+
 	#startArrayIndexing(obj, elementType)
 	{
 		this.write("g_array_index(");
@@ -11100,6 +11126,15 @@ export class GenC extends GenCCpp
 			if (parent > CiPriority.ADD)
 				this.writeChar(41);
 			break;
+		case CiId.ARRAY_CONTAINS:
+			this.#startArrayContains(obj);
+			obj.accept(this, CiPriority.ARGUMENT);
+			this.write(", ");
+			this.writeArrayStorageLength(obj);
+			this.write(", ");
+			args[0].accept(this, CiPriority.ARGUMENT);
+			this.writeChar(41);
+			break;
 		case CiId.ARRAY_COPY_TO:
 		case CiId.LIST_COPY_TO:
 			this.include("string.h");
@@ -11180,30 +11215,11 @@ export class GenC extends GenCCpp
 			this.write(", 0)");
 			break;
 		case CiId.LIST_CONTAINS:
-			this.write("CiArray_Contains_");
-			let typeId = obj.type.asClassType().getElementType().id;
-			switch (typeId) {
-			case CiId.NONE:
-				this.write("object(");
-				break;
-			case CiId.STRING_STORAGE_TYPE:
-			case CiId.STRING_PTR_TYPE:
-				typeId = CiId.STRING_PTR_TYPE;
-				this.include("string.h");
-				this.write("string((const char * const *) ");
-				break;
-			default:
-				this.writeNumericType(typeId);
-				this.write("((const ");
-				this.writeNumericType(typeId);
-				this.write(" *) ");
-				break;
-			}
+			this.#startArrayContains(obj);
 			this.writePostfix(obj, "->data, ");
 			this.writePostfix(obj, "->len, ");
 			args[0].accept(this, CiPriority.ARGUMENT);
 			this.writeChar(41);
-			this.#contains.add(typeId);
 			break;
 		case CiId.LIST_INSERT:
 			this.#writeListAddInsert(obj, true, "g_array_insert_val", args);
@@ -13857,6 +13873,17 @@ export class GenCpp extends GenCCpp
 			if (parent > CiPriority.ADD)
 				this.writeChar(41);
 			break;
+		case CiId.ARRAY_CONTAINS:
+		case CiId.LIST_CONTAINS:
+			if (parent > CiPriority.EQUALITY)
+				this.writeChar(40);
+			this.#writeAllAnyContains("find", obj, args);
+			this.write(" != ");
+			this.#startMethodCall(obj);
+			this.write("end()");
+			if (parent > CiPriority.EQUALITY)
+				this.writeChar(41);
+			break;
 		case CiId.ARRAY_COPY_TO:
 		case CiId.LIST_COPY_TO:
 			this.include("algorithm");
@@ -13922,16 +13949,6 @@ export class GenCpp extends GenCCpp
 		case CiId.LIST_ANY:
 			this.include("algorithm");
 			this.#writeAllAnyContains("any_of", obj, args);
-			break;
-		case CiId.LIST_CONTAINS:
-			if (parent > CiPriority.EQUALITY)
-				this.writeChar(40);
-			this.#writeAllAnyContains("find", obj, args);
-			this.write(" != ");
-			this.#startMethodCall(obj);
-			this.write("end()");
-			if (parent > CiPriority.EQUALITY)
-				this.writeChar(41);
 			break;
 		case CiId.LIST_INDEX_OF:
 			{
@@ -15451,6 +15468,10 @@ export class GenCs extends GenTyped
 			this.writeNotPromoted(obj.type.asClassType().getElementType(), args[0]);
 			this.writeChar(41);
 			break;
+		case CiId.ARRAY_CONTAINS:
+			this.include("System.Linq");
+			this.writeMethodCall(obj, "Contains", args[0]);
+			break;
 		case CiId.ARRAY_COPY_TO:
 			this.include("System");
 			this.write("Array.Copy(");
@@ -16723,6 +16744,12 @@ export class GenD extends GenCCppD
 			this.writeNotPromoted(obj.type.asClassType().getElementType(), args[0]);
 			this.write("); return cisearch[1].length ? cibegin + cisearch[0].length : -1; }()");
 			break;
+		case CiId.ARRAY_CONTAINS:
+		case CiId.LIST_CONTAINS:
+			this.include("std.algorithm");
+			this.#writeClassReference(obj);
+			this.writeCall("[].canFind", args[0]);
+			break;
 		case CiId.ARRAY_COPY_TO:
 		case CiId.LIST_COPY_TO:
 			this.include("std.algorithm");
@@ -16787,11 +16814,6 @@ export class GenD extends GenCCppD
 			this.write("[].any!(");
 			args[0].accept(this, CiPriority.ARGUMENT);
 			this.writeChar(41);
-			break;
-		case CiId.LIST_CONTAINS:
-			this.include("std.algorithm");
-			this.#writeClassReference(obj);
-			this.writeCall("[].canFind", args[0]);
 			break;
 		case CiId.LIST_INSERT:
 			this.#hasListInsert = true;
@@ -19357,6 +19379,7 @@ export class GenJsNoModule extends GenBase
 			this.write("))");
 			break;
 		case CiId.STRING_CONTAINS:
+		case CiId.ARRAY_CONTAINS:
 		case CiId.LIST_CONTAINS:
 			this.writeMethodCall(obj, "includes", args[0]);
 			break;
@@ -21261,6 +21284,7 @@ export class GenSwift extends GenPySwift
 	{
 		switch (method.id) {
 		case CiId.NONE:
+		case CiId.ARRAY_CONTAINS:
 		case CiId.LIST_CONTAINS:
 		case CiId.LIST_SORT_ALL:
 		case CiId.HASH_SET_CONTAINS:
@@ -23207,6 +23231,7 @@ export class GenPy extends GenPySwift
 			break;
 		case CiId.ENUM_HAS_FLAG:
 		case CiId.STRING_CONTAINS:
+		case CiId.ARRAY_CONTAINS:
 		case CiId.LIST_CONTAINS:
 		case CiId.HASH_SET_CONTAINS:
 		case CiId.SORTED_SET_CONTAINS:

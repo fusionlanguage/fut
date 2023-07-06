@@ -570,6 +570,7 @@ public class GenJsNoModule : GenBase
 			Write("))");
 			break;
 		case CiId.StringContains:
+		case CiId.ArrayContains:
 		case CiId.ListContains:
 			WriteMethodCall(obj, "includes", args[0]);
 			break;

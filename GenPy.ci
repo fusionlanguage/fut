@@ -600,6 +600,7 @@ public class GenPy : GenPySwift
 			break;
 		case CiId.EnumHasFlag:
 		case CiId.StringContains:
+		case CiId.ArrayContains:
 		case CiId.ListContains:
 		case CiId.HashSetContains:
 		case CiId.SortedSetContains:

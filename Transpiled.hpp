@@ -247,6 +247,7 @@ enum class CiId
 	stringSubstring,
 	arrayBinarySearchAll,
 	arrayBinarySearchPart,
+	arrayContains,
 	arrayCopyTo,
 	arrayFillAll,
 	arrayFillPart,
@@ -2103,6 +2104,7 @@ private:
 	static const CiClass * getVtblStructClass(const CiClass * klass);
 	static const CiClass * getVtblPtrClass(const CiClass * klass);
 	void writeTryParse(const CiExpr * obj, const std::vector<std::shared_ptr<CiExpr>> * args);
+	void startArrayContains(const CiExpr * obj);
 	void startArrayIndexing(const CiExpr * obj, const CiType * elementType);
 	void writeDictionaryIndexing(std::string_view function, const CiBinaryExpr * expr, CiPriority parent);
 	void writeDestructLoopOrSwitch(const CiCondCompletionStatement * loopOrSwitch);

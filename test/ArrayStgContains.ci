@@ -1,0 +1,11 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int[3] a;
+		a[0] = 5;
+		a[1] = 10;
+		a[2] = 15;
+		return a.Contains(10) && !a.Contains(1); //FAIL: java cl
+	}
+}

@@ -489,6 +489,12 @@ or the whole array storage:
 arrayStorage.Fill(0);
 ```
 
+Check if the array storage contains an element:
+
+```csharp
+bool found = arrayStorage.Contains(42);
+```
+
 Array slices can be copied to other arrays and within the same array with
 `sourceArray.CopyTo(sourceIndex, destinationArray, destinationIndex, count)`.
 
