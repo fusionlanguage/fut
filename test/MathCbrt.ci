@@ -3,6 +3,6 @@ public static class Test
 	public static bool Run()
 	{
 		double a = 8; //FAIL: cl if no double support
-		return Math.Cbrt(a) == 2; //FAIL: py
+		return Math.Cbrt(a) == 2; //FAIL: py 3.11
 	}
 }
