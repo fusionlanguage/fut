@@ -18852,11 +18852,6 @@ export class GenJsNoModule extends GenBase
 		}
 	}
 
-	isJsPrivate(member)
-	{
-		return member.visibility == CiVisibility.PRIVATE;
-	}
-
 	writeName(symbol)
 	{
 		if (symbol instanceof CiContainerType)
@@ -18873,7 +18868,7 @@ export class GenJsNoModule extends GenBase
 			this.#writeCamelCaseNotKeyword(symbol.name);
 		else if (symbol instanceof CiMember) {
 			const member = symbol;
-			if (this.isJsPrivate(member)) {
+			if (member.visibility == CiVisibility.PRIVATE) {
 				this.writeChar(35);
 				this.writeCamelCase(symbol.name);
 				if (symbol.name == "Constructor")
@@ -20180,11 +20175,6 @@ export class GenTs extends GenJs
 		return this;
 	}
 
-	isJsPrivate(member)
-	{
-		return false;
-	}
-
 	visitEnumValue(konst, previous)
 	{
 		this.writeEnumValue(konst);
@@ -20338,8 +20328,6 @@ export class GenTs extends GenJs
 	{
 		switch (visibility) {
 		case CiVisibility.PRIVATE:
-			this.write("private ");
-			break;
 		case CiVisibility.INTERNAL:
 			break;
 		case CiVisibility.PROTECTED:

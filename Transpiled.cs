@@ -18369,8 +18369,6 @@ namespace Foxoft.Ci
 			}
 		}
 
-		protected virtual bool IsJsPrivate(CiMember member) => member.Visibility == CiVisibility.Private;
-
 		protected override void WriteName(CiSymbol symbol)
 		{
 			switch (symbol) {
@@ -18388,7 +18386,7 @@ namespace Foxoft.Ci
 				WriteCamelCaseNotKeyword(symbol.Name);
 				break;
 			case CiMember member:
-				if (IsJsPrivate(member)) {
+				if (member.Visibility == CiVisibility.Private) {
 					WriteChar('#');
 					WriteCamelCase(symbol.Name);
 					if (symbol.Name == "Constructor")
@@ -19679,8 +19677,6 @@ namespace Foxoft.Ci
 			return this;
 		}
 
-		protected override bool IsJsPrivate(CiMember member) => false;
-
 		public override void VisitEnumValue(CiConst konst, CiConst previous)
 		{
 			WriteEnumValue(konst);
@@ -19841,8 +19837,6 @@ namespace Foxoft.Ci
 		{
 			switch (visibility) {
 			case CiVisibility.Private:
-				Write("private ");
-				break;
 			case CiVisibility.Internal:
 				break;
 			case CiVisibility.Protected:

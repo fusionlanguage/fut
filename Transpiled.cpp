@@ -17663,11 +17663,6 @@ void GenJsNoModule::writeCamelCaseNotKeyword(std::string_view name)
 		writeChar('_');
 }
 
-bool GenJsNoModule::isJsPrivate(const CiMember * member) const
-{
-	return member->visibility == CiVisibility::private_;
-}
-
 void GenJsNoModule::writeName(const CiSymbol * symbol)
 {
 	if (dynamic_cast<const CiContainerType *>(symbol))
@@ -17682,7 +17677,7 @@ void GenJsNoModule::writeName(const CiSymbol * symbol)
 	else if (dynamic_cast<const CiVar *>(symbol))
 		writeCamelCaseNotKeyword(symbol->name);
 	else if (const CiMember *member = dynamic_cast<const CiMember *>(symbol)) {
-		if (isJsPrivate(member)) {
+		if (member->visibility == CiVisibility::private_) {
 			writeChar('#');
 			writeCamelCase(symbol->name);
 			if (symbol->name == "Constructor")
@@ -18972,11 +18967,6 @@ const GenTs * GenTs::withGenFullCode()
 	return this;
 }
 
-bool GenTs::isJsPrivate(const CiMember * member) const
-{
-	return false;
-}
-
 void GenTs::visitEnumValue(const CiConst * konst, const CiConst * previous)
 {
 	writeEnumValue(konst);
@@ -19125,8 +19115,6 @@ void GenTs::writeVisibility(CiVisibility visibility)
 {
 	switch (visibility) {
 	case CiVisibility::private_:
-		write("private ");
-		break;
 	case CiVisibility::internal:
 		break;
 	case CiVisibility::protected_:

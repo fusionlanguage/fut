@@ -2451,7 +2451,6 @@ public:
 	void writeProgram(const CiProgram * program) override;
 protected:
 	std::string_view getTargetName() const override;
-	virtual bool isJsPrivate(const CiMember * member) const;
 	void writeName(const CiSymbol * symbol) override;
 	void writeTypeAndName(const CiNamedValue * value) override;
 	void writeArrayElementType(const CiType * type);
@@ -2521,7 +2520,6 @@ public:
 	void writeProgram(const CiProgram * program) override;
 protected:
 	std::string_view getTargetName() const override;
-	bool isJsPrivate(const CiMember * member) const override;
 	void writeEnum(const CiEnum * enu) override;
 	void writeTypeAndName(const CiNamedValue * value) override;
 	void writeAsType(const CiVar * def) override;

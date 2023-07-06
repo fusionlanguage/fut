@@ -34,8 +34,6 @@ public class GenTs : GenJs
 		return this;
 	}
 
-	protected override bool IsJsPrivate(CiMember member) => false;
-
 	public override void VisitEnumValue!(CiConst konst, CiConst? previous)
 	{
 		WriteEnumValue(konst);
@@ -200,8 +198,6 @@ public class GenTs : GenJs
 	{
 		switch (visibility) {
 		case CiVisibility.Private:
-			Write("private ");
-			break;
 		case CiVisibility.Internal:
 			break;
 		case CiVisibility.Protected:

@@ -58,8 +58,6 @@ public class GenJsNoModule : GenBase
 		}
 	}
 
-	protected virtual bool IsJsPrivate(CiMember member) => member.Visibility == CiVisibility.Private;
-
 	protected override void WriteName!(CiSymbol symbol)
 	{
 		switch (symbol) {
@@ -77,7 +75,7 @@ public class GenJsNoModule : GenBase
 			WriteCamelCaseNotKeyword(symbol.Name);
 			break;
 		case CiMember member:
-			if (IsJsPrivate(member)) {
+			if (member.Visibility == CiVisibility.Private) {
 				WriteChar('#');
 				WriteCamelCase(symbol.Name);
 				if (symbol.Name == "Constructor")
