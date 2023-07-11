@@ -1,0 +1,12 @@
+Source: cito
+Maintainer: Piotr Fusik <fox@scene.pl>
+Section: devel
+Priority: optional
+Standards-Version: 4.6.0
+Build-Depends: debhelper (>= 7), g++-13
+
+Package: cito
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: Transpiles the Ć programming langauge to
+ C, C++, C#, D, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.

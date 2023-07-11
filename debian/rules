@@ -1,0 +1,11 @@
+#!/usr/bin/make -f
+%:
+	dh $@
+
+override_dh_auto_build:
+	dh_auto_build -- CXX=g++-13 CXXFLAGS="$(CXXFLAGS) -static-libstdc++"
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	$(MAKE) DESTDIR=$$(pwd)/debian/tmp prefix=/usr install

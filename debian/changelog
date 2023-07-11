@@ -1,0 +1,5 @@
+cito (3.0.0-1) UNRELEASED; urgency=low
+
+  * First deb packaging.
+
+ -- Piotr Fusik <fox@scene.pl>  Tue, 11 Jul 2023 13:40:42 +0200
