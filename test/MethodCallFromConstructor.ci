@@ -1,0 +1,20 @@
+class Foo
+{
+	static void Bar()
+	{
+	}
+
+	internal Foo()
+	{
+		Bar();
+	}
+}
+
+public class Test
+{
+	public static bool Run()
+	{
+		Foo() o;
+		return true;
+	}
+}

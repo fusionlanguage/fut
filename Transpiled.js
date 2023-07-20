@@ -6561,12 +6561,12 @@ export class CiSema
 
 	static #markClassLive(klass)
 	{
-		if (!klass.isPublic)
-			return;
-		for (let symbol = klass.first; symbol != null; symbol = symbol.next) {
-			let method;
-			if ((method = symbol) instanceof CiMethod && (method.visibility == CiVisibility.PUBLIC || method.visibility == CiVisibility.PROTECTED))
-				CiSema.#markMethodLive(method);
+		if (klass.isPublic) {
+			for (let symbol = klass.first; symbol != null; symbol = symbol.next) {
+				let method;
+				if ((method = symbol) instanceof CiMethod && (method.visibility == CiVisibility.PUBLIC || method.visibility == CiVisibility.PROTECTED))
+					CiSema.#markMethodLive(method);
+			}
 		}
 		if (klass.constructor_ != null)
 			CiSema.#markMethodLive(klass.constructor_);

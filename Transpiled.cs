@@ -6284,11 +6284,11 @@ namespace Foxoft.Ci
 
 		static void MarkClassLive(CiClass klass)
 		{
-			if (!klass.IsPublic)
-				return;
-			for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
-				if (symbol is CiMethod method && (method.Visibility == CiVisibility.Public || method.Visibility == CiVisibility.Protected))
-					MarkMethodLive(method);
+			if (klass.IsPublic) {
+				for (CiSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+					if (symbol is CiMethod method && (method.Visibility == CiVisibility.Public || method.Visibility == CiVisibility.Protected))
+						MarkMethodLive(method);
+				}
 			}
 			if (klass.Constructor != null)
 				MarkMethodLive(klass.Constructor);

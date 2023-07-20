@@ -6136,12 +6136,12 @@ void CiSema::markMethodLive(CiMethodBase * method)
 
 void CiSema::markClassLive(const CiClass * klass)
 {
-	if (!klass->isPublic)
-		return;
-	for (CiSymbol * symbol = klass->first; symbol != nullptr; symbol = symbol->next) {
-		CiMethod * method;
-		if ((method = dynamic_cast<CiMethod *>(symbol)) && (method->visibility == CiVisibility::public_ || method->visibility == CiVisibility::protected_))
-			markMethodLive(method);
+	if (klass->isPublic) {
+		for (CiSymbol * symbol = klass->first; symbol != nullptr; symbol = symbol->next) {
+			CiMethod * method;
+			if ((method = dynamic_cast<CiMethod *>(symbol)) && (method->visibility == CiVisibility::public_ || method->visibility == CiVisibility::protected_))
+				markMethodLive(method);
+		}
 	}
 	if (klass->constructor != nullptr)
 		markMethodLive(klass->constructor.get());
