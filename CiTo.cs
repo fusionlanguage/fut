@@ -108,14 +108,14 @@ public static class CiTo
 		Console.WriteLine("--version  Display version information");
 	}
 
-	static CiProgram ParseAndResolve(CiConsoleParser parser, CiSystem system, CiScope parent, List<string> files, FileResourceSema sema)
+	static CiProgram ParseAndResolve(CiParser parser, CiSystem system, CiScope parent, List<string> files, FileResourceSema sema, CiConsoleHost host)
 	{
 		parser.Program = new CiProgram { Parent = parent, System = system };
 		foreach (string file in files) {
 			byte[] input = File.ReadAllBytes(file);
 			parser.Parse(file, input, input.Length);
 		}
-		if (parser.HasErrors)
+		if (host.HasErrors())
 			return null;
 		sema.Process(parser.Program);
 		if (sema.HasErrors)
@@ -177,7 +177,7 @@ public static class CiTo
 	public static int Main(string[] args)
 	{
 		CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-		CiConsoleParser parser = new CiConsoleParser();
+		CiParser parser = new CiParser();
 		List<string> inputFiles = new List<string>();
 		List<string> referencedFiles = new List<string>();
 		FileResourceSema sema = new FileResourceSema();
@@ -236,15 +236,17 @@ public static class CiTo
 			return 1;
 		}
 
+		CiConsoleHost host = new CiConsoleHost();
+		parser.SetHost(host);
 		CiSystem system = CiSystem.New();
 		CiScope parent = system;
 		try {
 			if (referencedFiles.Count > 0) {
-				parent = ParseAndResolve(parser, system, parent, referencedFiles, sema);
+				parent = ParseAndResolve(parser, system, parent, referencedFiles, sema, host);
 				if (parent == null)
 					return 1;
 			}
-			CiProgram program = ParseAndResolve(parser, system, parent, inputFiles, sema);
+			CiProgram program = ParseAndResolve(parser, system, parent, inputFiles, sema, host);
 			if (program == null)
 				return 1;
 

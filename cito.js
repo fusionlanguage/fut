@@ -19,7 +19,7 @@
 
 import fs from "fs";
 import path from "path";
-import { CiConsoleParser, CiProgram, CiSema, CiSystem, GenHost, GenC, GenCpp, GenCs, GenD, GenJava, GenJs, GenPy, GenSwift, GenTs, GenCl } from "./Transpiled.js";
+import { CiParser, CiProgram, CiSema, CiSystem, CiConsoleHost, GenHost, GenC, GenCpp, GenCs, GenD, GenJava, GenJs, GenPy, GenSwift, GenTs, GenCl } from "./Transpiled.js";
 
 class FileResourceSema extends CiSema
 {
@@ -108,7 +108,7 @@ function usage()
 	console.log("--version  Display version information");
 }
 
-function parseAndResolve(parser, system, parent, files, sema)
+function parseAndResolve(parser, system, parent, files, sema, host)
 {
 	parser.program = new CiProgram();
 	parser.program.parent = parent;
@@ -117,7 +117,7 @@ function parseAndResolve(parser, system, parent, files, sema)
 		const input = fs.readFileSync(file);
 		parser.parse(file, input, input.length);
 	}
-	if (parser.hasErrors)
+	if (host.hasErrors())
 		process.exit(1);
 	sema.process(parser.program);
 	if (sema.hasErrors)
@@ -207,7 +207,7 @@ function emitImplicitLang(program, namespace, outputFile)
 	process.exitCode = 1;
 }
 
-const parser = new CiConsoleParser();
+const parser = new CiParser();
 const inputFiles = [];
 const referencedFiles = [];
 const sema = new FileResourceSema();
@@ -266,12 +266,14 @@ if (outputFile == null || inputFiles.length == 0) {
 	process.exit(1);
 }
 
+const host = new CiConsoleHost();
+parser.setHost(host);
 const system = CiSystem.new();
 let parent = system;
 try {
 	if (referencedFiles.length > 0)
-		parent = parseAndResolve(parser, system, parent, referencedFiles, sema);
-	const program = parseAndResolve(parser, system, parent, inputFiles, sema);
+		parent = parseAndResolve(parser, system, parent, referencedFiles, sema, host);
+	const program = parseAndResolve(parser, system, parent, inputFiles, sema, host);
 	if (lang != null)
 		emit(program, lang, namespace, outputFile);
 	else

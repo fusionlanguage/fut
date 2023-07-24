@@ -22,6 +22,11 @@ static std::string CiString_replace(std::string_view s, std::string_view oldValu
 	}
 }
 
+void CiLexer::setHost(CiParserHost * host)
+{
+	this->host = host;
+}
+
 void CiLexer::addPreSymbol(std::string_view symbol)
 {
 	this->preSymbols.emplace(symbol);
@@ -39,6 +44,11 @@ void CiLexer::open(std::string_view filename, uint8_t const * input, int inputLe
 	if (this->nextChar == 65279)
 		fillNextChar();
 	nextToken();
+}
+
+void CiLexer::reportError(std::string_view message)
+{
+	this->host->reportError(this->filename, this->line, this->tokenColumn, this->line, this->column, message);
 }
 
 int CiLexer::readByte()
@@ -3954,10 +3964,15 @@ void CiParser::parse(std::string_view filename, uint8_t const * input, int input
 	}
 }
 
-void CiConsoleParser::reportError(std::string_view message)
+void CiConsoleHost::reportError(std::string_view filename, int startLine, int startColumn, int endLine, int endColumn, std::string_view message)
 {
-	std::cerr << this->filename << "(" << this->line << "): ERROR: " << message << '\n';
-	this->hasErrors = true;
+	this->errors = true;
+	std::cerr << filename << "(" << startLine << "): ERROR: " << message << '\n';
+}
+
+bool CiConsoleHost::hasErrors() const
+{
+	return this->errors;
 }
 CiSema::CiSema()
 {

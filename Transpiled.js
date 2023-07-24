@@ -7,6 +7,10 @@ export const RegexOptions = {
 	SINGLELINE : 16
 }
 
+export class CiParserHost
+{
+}
+
 export const CiToken = {
 	END_OF_FILE : 0,
 	ID : 1,
@@ -123,6 +127,7 @@ export class CiLexer
 	#nextOffset;
 	charOffset;
 	#nextChar;
+	#host;
 	filename;
 	line;
 	column;
@@ -137,6 +142,11 @@ export class CiLexer
 	#enableDocComments = true;
 	parsingTypeArg = false;
 	#preElseStack = [];
+
+	setHost(host)
+	{
+		this.#host = host;
+	}
 
 	addPreSymbol(symbol)
 	{
@@ -155,6 +165,11 @@ export class CiLexer
 		if (this.#nextChar == 65279)
 			this.#fillNextChar();
 		this.nextToken();
+	}
+
+	reportError(message)
+	{
+		this.#host.reportError(this.filename, this.line, this.tokenColumn, this.line, this.column, message);
 	}
 
 	#readByte()
@@ -4384,14 +4399,19 @@ export class CiParser extends CiLexer
 	}
 }
 
-export class CiConsoleParser extends CiParser
+export class CiConsoleHost extends CiParserHost
 {
-	hasErrors = false;
+	#errors = false;
 
-	reportError(message)
+	reportError(filename, startLine, startColumn, endLine, endColumn, message)
 	{
-		console.error(`${this.filename}(${this.line}): ERROR: ${message}`);
-		this.hasErrors = true;
+		this.#errors = true;
+		console.error(`${filename}(${startLine}): ERROR: ${message}`);
+	}
+
+	hasErrors()
+	{
+		return this.#errors;
 	}
 }
 

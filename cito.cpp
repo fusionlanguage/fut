@@ -128,8 +128,8 @@ public:
 	}
 };
 
-static bool parseAndResolve(CiConsoleParser *parser, CiProgram *program,
-	const std::vector<const char *> &files, FileResourceSema *sema)
+static bool parseAndResolve(CiParser *parser, CiProgram *program,
+	const std::vector<const char *> &files, FileResourceSema *sema, const CiConsoleHost *host)
 {
 	parser->program = program;
 	for (const char *file : files) {
@@ -141,7 +141,7 @@ static bool parseAndResolve(CiConsoleParser *parser, CiProgram *program,
 		}
 		parser->parse(file, reinterpret_cast<const uint8_t *>(input.data()), input.size());
 	}
-	if (parser->hasErrors)
+	if (host->hasErrors())
 		return false;
 	sema->process(program);
 	return !sema->hasErrors;
@@ -195,7 +195,7 @@ static bool emit(CiProgram *program, const char *lang, const char *namespace_, c
 
 int main(int argc, char **argv)
 {
-	CiConsoleParser parser;
+	CiParser parser;
 	std::vector<const char *> inputFiles;
 	std::vector<const char *> referencedFiles;
 	FileResourceSema sema;
@@ -255,20 +255,22 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	CiConsoleHost host;
+	parser.setHost(&host);
 	std::shared_ptr<CiSystem> system = CiSystem::new_();
 	CiScope *parent = system.get();
 	CiProgram references;
 	if (!referencedFiles.empty()) {
 		references.parent = parent;
 		references.system = system.get();
-		if (!parseAndResolve(&parser, &references, referencedFiles, &sema))
+		if (!parseAndResolve(&parser, &references, referencedFiles, &sema, &host))
 			return 1;
 		parent = &references;
 	}
 	CiProgram program;
 	program.parent = parent;
 	program.system = system.get();
-	if (!parseAndResolve(&parser, &program, inputFiles, &sema))
+	if (!parseAndResolve(&parser, &program, inputFiles, &sema, &host))
 		return 1;
 
 	if (lang != nullptr)

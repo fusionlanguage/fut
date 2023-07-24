@@ -1,4 +1,4 @@
-// ConsoleParser.ci - Ci parser emitting errors to stderr
+// ConsoleHost.ci - emit errors to stderr
 //
 // Copyright (C) 2023  Piotr Fusik
 //
@@ -17,13 +17,15 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-public class CiConsoleParser : CiParser
+public class CiConsoleHost : CiParserHost
 {
-	internal bool HasErrors = false;
+	bool Errors = false;
 
-	protected override void ReportError!(string message)
+	public override void ReportError!(string filename, int startLine, int startColumn, int endLine, int endColumn, string message)
 	{
-		Console.Error.WriteLine($"{this.Filename}({this.Line}): ERROR: {message}");
-		this.HasErrors = true;
+		this.Errors = true;
+		Console.Error.WriteLine($"{filename}({startLine}): ERROR: {message}");
 	}
+
+	public bool HasErrors() => this.Errors;
 }

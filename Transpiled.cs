@@ -9,6 +9,12 @@ using System.Text.RegularExpressions;
 namespace Foxoft.Ci
 {
 
+	public abstract class CiParserHost
+	{
+
+		public abstract void ReportError(string filename, int startLine, int startColumn, int endLine, int endColumn, string message);
+	}
+
 	public enum CiToken
 	{
 		EndOfFile,
@@ -133,6 +139,8 @@ namespace Foxoft.Ci
 
 		int NextChar;
 
+		CiParserHost Host;
+
 		protected string Filename;
 
 		protected int Line;
@@ -161,6 +169,11 @@ namespace Foxoft.Ci
 
 		readonly Stack<bool> PreElseStack = new Stack<bool>();
 
+		public void SetHost(CiParserHost host)
+		{
+			this.Host = host;
+		}
+
 		public void AddPreSymbol(string symbol)
 		{
 			this.PreSymbols.Add(symbol);
@@ -180,7 +193,10 @@ namespace Foxoft.Ci
 			NextToken();
 		}
 
-		protected abstract void ReportError(string message);
+		protected void ReportError(string message)
+		{
+			this.Host.ReportError(this.Filename, this.Line, this.TokenColumn, this.Line, this.Column, message);
+		}
 
 		int ReadByte()
 		{
@@ -3239,7 +3255,7 @@ namespace Foxoft.Ci
 		internal bool RegexOptionsEnum = false;
 	}
 
-	public abstract class CiParser : CiLexer
+	public class CiParser : CiLexer
 	{
 
 		internal CiProgram Program;
@@ -4260,16 +4276,18 @@ namespace Foxoft.Ci
 		}
 	}
 
-	public class CiConsoleParser : CiParser
+	public class CiConsoleHost : CiParserHost
 	{
 
-		internal bool HasErrors = false;
+		bool Errors = false;
 
-		protected override void ReportError(string message)
+		public override void ReportError(string filename, int startLine, int startColumn, int endLine, int endColumn, string message)
 		{
-			Console.Error.WriteLine($"{this.Filename}({this.Line}): ERROR: {message}");
-			this.HasErrors = true;
+			this.Errors = true;
+			Console.Error.WriteLine($"{filename}({startLine}): ERROR: {message}");
 		}
+
+		public bool HasErrors() => this.Errors;
 	}
 
 	public class CiSema

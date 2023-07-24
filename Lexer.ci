@@ -17,6 +17,11 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
+public abstract class CiParserHost
+{
+	public abstract void ReportError!(string filename, int startLine, int startColumn, int endLine, int endColumn, string message);
+}
+
 public enum CiToken
 {
 	EndOfFile,
@@ -135,6 +140,7 @@ public abstract class CiLexer
 	int NextOffset;
 	protected int CharOffset;
 	int NextChar;
+	CiParserHost! Host;
 	protected string() Filename;
 	protected int Line;
 	protected int Column;
@@ -149,6 +155,11 @@ public abstract class CiLexer
 	bool EnableDocComments = true;
 	protected bool ParsingTypeArg = false;
 	Stack<bool>() PreElseStack;
+
+	public void SetHost!(CiParserHost! host)
+	{
+		this.Host = host;
+	}
 
 	public void AddPreSymbol!(string symbol)
 	{
@@ -169,7 +180,10 @@ public abstract class CiLexer
 		NextToken();
 	}
 
-	protected abstract void ReportError!(string message);
+	protected void ReportError!(string message)
+	{
+		this.Host.ReportError(this.Filename, this.Line, this.TokenColumn, this.Line, this.Column, message);
+	}
 
 	int ReadByte!()
 	{

@@ -31,6 +31,7 @@ enum class RegexOptions
 	singleline = 16
 };
 CI_ENUM_FLAG_OPERATORS(RegexOptions)
+class CiParserHost;
 
 enum class CiToken
 {
@@ -424,7 +425,7 @@ class CiPrintableType;
 class CiSystem;
 class CiProgram;
 class CiParser;
-class CiConsoleParser;
+class CiConsoleHost;
 class CiSema;
 class GenHost;
 class GenBase;
@@ -444,10 +445,20 @@ class GenPySwift;
 class GenSwift;
 class GenPy;
 
+class CiParserHost
+{
+public:
+	virtual ~CiParserHost() = default;
+	virtual void reportError(std::string_view filename, int startLine, int startColumn, int endLine, int endColumn, std::string_view message) = 0;
+protected:
+	CiParserHost() = default;
+};
+
 class CiLexer
 {
 public:
 	virtual ~CiLexer() = default;
+	void setHost(CiParserHost * host);
 	void addPreSymbol(std::string_view symbol);
 	static bool isLetterOrDigit(int c);
 	static int getEscapedChar(int c);
@@ -466,7 +477,7 @@ protected:
 	std::string stringValue;
 	bool parsingTypeArg = false;
 	void open(std::string_view filename, uint8_t const * input, int inputLength);
-	virtual void reportError(std::string_view message) = 0;
+	void reportError(std::string_view message);
 	int peekChar() const;
 	int readChar();
 	CiToken readString(bool interpolated);
@@ -481,6 +492,7 @@ private:
 	int inputLength;
 	int nextOffset;
 	int nextChar;
+	CiParserHost * host;
 	std::unordered_set<std::string> preSymbols;
 	bool atLineStart = true;
 	bool lineMode = false;
@@ -1463,10 +1475,8 @@ public:
 class CiParser : public CiLexer
 {
 public:
-	virtual ~CiParser() = default;
-	void parse(std::string_view filename, uint8_t const * input, int inputLength);
-protected:
 	CiParser() = default;
+	void parse(std::string_view filename, uint8_t const * input, int inputLength);
 public:
 	CiProgram * program;
 private:
@@ -1527,14 +1537,14 @@ private:
 	void parseEnum(std::shared_ptr<CiCodeDoc> doc, bool isPublic);
 };
 
-class CiConsoleParser : public CiParser
+class CiConsoleHost : public CiParserHost
 {
 public:
-	CiConsoleParser() = default;
-protected:
-	void reportError(std::string_view message) override;
-public:
-	bool hasErrors = false;
+	CiConsoleHost() = default;
+	void reportError(std::string_view filename, int startLine, int startColumn, int endLine, int endColumn, std::string_view message) override;
+	bool hasErrors() const;
+private:
+	bool errors = false;
 };
 
 class CiSema
