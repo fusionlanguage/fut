@@ -19,7 +19,7 @@
 
 import fs from "fs";
 import path from "path";
-import { CiParser, CiProgram, CiSema, CiSystem, CiConsoleHost, GenHost, GenC, GenCpp, GenCs, GenD, GenJava, GenJs, GenPy, GenSwift, GenTs, GenCl } from "./Transpiled.js";
+import { CiParser, CiProgram, CiSema, CiSystem, CiConsoleHost, GenC, GenCpp, GenCs, GenD, GenJava, GenJs, GenPy, GenSwift, GenTs, GenCl } from "./Transpiled.js";
 
 class FileResourceSema extends CiSema
 {
@@ -134,7 +134,7 @@ function isDirectory(filename)
 	}
 }
 
-function emit(program, lang, namespace, outputFile)
+function emit(program, lang, namespace, outputFile, host)
 {
 	let gen;
 	switch (lang) {
@@ -181,14 +181,15 @@ function emit(program, lang, namespace, outputFile)
 	}
 	gen.namespace = namespace;
 	gen.outputFile = outputFile;
-	const host = new FileGenHost();
 	gen.setHost(host);
 	gen.writeProgram(program);
-	if (host.hasErrors)
+	if (host.hasErrors) {
+		host.hasErrors = false;
 		process.exitCode = 1;
+	}
 }
 
-function emitImplicitLang(program, namespace, outputFile)
+function emitImplicitLang(program, namespace, outputFile, host)
 {
 	for (let i = outputFile.length; --i >= 0; ) {
 		const c = outputFile.charAt(i);
@@ -197,7 +198,7 @@ function emitImplicitLang(program, namespace, outputFile)
 				continue;
 			const outputBase = outputFile.slice(0, i + 1);
 			for (const outputExt of outputFile.slice(i + 1).split(","))
-				emit(program, outputExt, namespace, outputBase + outputExt);
+				emit(program, outputExt, namespace, outputBase + outputExt, host);
 			return;
 		}
 		if (c == "/" || c == "\\" || c == ":")
@@ -266,7 +267,7 @@ if (outputFile == null || inputFiles.length == 0) {
 	process.exit(1);
 }
 
-const host = new CiConsoleHost();
+const host = new FileGenHost();
 parser.setHost(host);
 sema.setHost(host);
 const system = CiSystem.new();
@@ -276,9 +277,9 @@ try {
 		parent = parseAndResolve(parser, system, parent, referencedFiles, sema, host);
 	const program = parseAndResolve(parser, system, parent, inputFiles, sema, host);
 	if (lang != null)
-		emit(program, lang, namespace, outputFile);
+		emit(program, lang, namespace, outputFile, host);
 	else
-		emitImplicitLang(program, namespace, outputFile);
+		emitImplicitLang(program, namespace, outputFile, host);
 }
 catch (e) {
 	console.error(`cito: ERROR: ${e.message}`);

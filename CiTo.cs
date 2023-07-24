@@ -122,7 +122,7 @@ public static class CiTo
 		return parser.Program;
 	}
 
-	static bool Emit(CiProgram program, string lang, string namespace_, string outputFile)
+	static void Emit(CiProgram program, string lang, string namespace_, string outputFile, FileGenHost host)
 	{
 		GenBase gen;
 		switch (lang) {
@@ -164,14 +164,13 @@ public static class CiTo
 			break;
 		default:
 			Console.Error.WriteLine($"cito: ERROR: Unknown language: {lang}");
-			return false;
+			host.HasErrors = true;
+			return;
 		}
 		gen.Namespace = namespace_;
 		gen.OutputFile = outputFile;
-		FileGenHost host = new FileGenHost();
 		gen.SetHost(host);
 		gen.WriteProgram(program);
-		return !host.HasErrors;
 	}
 
 	public static int Main(string[] args)
@@ -251,8 +250,10 @@ public static class CiTo
 			if (program == null)
 				return 1;
 
-			if (lang != null)
-				return Emit(program, lang, namespace_, outputFile) ? 0 : 1;
+			if (lang != null) {
+				Emit(program, lang, namespace_, outputFile, host);
+				return host.HasErrors ? 1 : 0;
+			}
 			for (int i = outputFile.Length; --i >= 0; ) {
 				char c = outputFile[i];
 				if (c == '.') {
@@ -262,10 +263,15 @@ public static class CiTo
 					 && (i + 3 == outputFile.Length || outputFile[i + 3] == ','))
 						continue;
 					string outputBase = outputFile.Substring(0, i + 1);
-					bool ok = true;
-					foreach (string outputExt in outputFile.Substring(i + 1).Split(','))
-						ok &= Emit(program, outputExt, namespace_, outputBase + outputExt);
-					return ok ? 0 : 1;
+					int exitCode = 0;
+					foreach (string outputExt in outputFile.Substring(i + 1).Split(',')) {
+						Emit(program, outputExt, namespace_, outputBase + outputExt, host);
+						if (host.HasErrors) {
+							host.HasErrors = false;
+							exitCode = 1;
+						}
+					}
+					return exitCode;
 				}
 				if (c == Path.DirectorySeparatorChar
 				 || c == Path.AltDirectorySeparatorChar

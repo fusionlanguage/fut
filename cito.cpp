@@ -146,7 +146,7 @@ static bool parseAndResolve(CiParser *parser, CiProgram *program,
 	return !host->hasErrors;
 }
 
-static bool emit(CiProgram *program, const char *lang, const char *namespace_, const char *outputFile)
+static void emit(CiProgram *program, const char *lang, const char *namespace_, const char *outputFile, FileGenHost *host)
 {
 	std::string dir;
 	std::unique_ptr<GenBase> gen;
@@ -182,14 +182,13 @@ static bool emit(CiProgram *program, const char *lang, const char *namespace_, c
 		gen = std::make_unique<GenCl>();
 	else {
 		std::cerr << "cito: ERROR: Unknown language: " << lang << '\n';
-		return false;
+		host->hasErrors = true;
+		return;
 	}
 	gen->namespace_ = namespace_;
 	gen->outputFile = outputFile;
-	FileGenHost host;
-	gen->setHost(&host);
+	gen->setHost(host);
 	gen->writeProgram(program);
-	return !host.hasErrors;
 }
 
 int main(int argc, char **argv)
@@ -273,8 +272,10 @@ int main(int argc, char **argv)
 	if (!parseAndResolve(&parser, &program, inputFiles, &sema, &host))
 		return 1;
 
-	if (lang != nullptr)
-		return emit(&program, lang, namespace_, outputFile) ? 0 : 1;
+	if (lang != nullptr) {
+		emit(&program, lang, namespace_, outputFile, &host);
+		return host.hasErrors ? 1 : 0;
+	}
 	for (size_t i = strlen(outputFile); --i >= 0; ) {
 		char c = outputFile[i];
 		if (c == '.') {
@@ -285,16 +286,21 @@ int main(int argc, char **argv)
 				continue;
 			std::string outputBase { outputFile, i + 1 };
 			const char *extBegin = outputFile + i + 1;
-			bool ok = true;
+			int exitCode = 0;
 			for (;;) {
 				const char *extEnd = strchr(extBegin, ',');
 				if (extEnd == nullptr)
 					break;
 				std::string outputExt = std::string(extBegin, extEnd);
-				ok &= emit(&program, outputExt.c_str(), namespace_, (outputBase + outputExt).c_str());
+				emit(&program, outputExt.c_str(), namespace_, (outputBase + outputExt).c_str(), &host);
+				if (host.hasErrors) {
+					host.hasErrors = false;
+					exitCode = 1;
+				}
 				extBegin = extEnd + 1;
 			}
-			return ok & emit(&program, extBegin, namespace_, (outputBase + extBegin).c_str()) ? 0 : 1;
+			emit(&program, extBegin, namespace_, (outputBase + extBegin).c_str(), &host);
+			return host.hasErrors ? 1 : exitCode;
 		}
 		if (c == '/' || c == '\\' || c == ':')
 			break;
