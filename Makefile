@@ -94,7 +94,7 @@ test-cs test-GenCs.ci: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/
 test-d test-GenD.ci: $(patsubst test/%.ci, test/bin/%/d.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-java test-GenJava.ci: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci)) test/bin/CiCheck/CiSema.java
+test-java test-GenJava.ci: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
 test-js test-GenJs.ci: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) Transpiled.js
@@ -210,21 +210,6 @@ test/bin/%/Test.swift: test/%.ci cito
 
 test/bin/%/Test.cl: test/%.ci cito
 	$(DO_CITO)
-
-test/bin/CiCheck/d.txt: test/bin/CiCheck/d.exe $(SOURCE_CI)
-	$(DO)./$< $(SOURCE_CI) >$@
-
-test/bin/CiCheck/d.exe: test/bin/CiCheck/Test.d test/CiCheck.d
-	$(DO)$(DC) -of$@ $(DFLAGS) -I$(<D) $^
-
-test/bin/CiCheck/java.txt: test/bin/CiCheck/CiSema.class $(SOURCE_CI)
-	$(DO)java -cp "$(<D)" --enable-preview CiCheck $(SOURCE_CI) >$@
-
-test/bin/CiCheck/CiSema.class: test/bin/CiCheck/CiSema.java test/CiCheck.java
-	$(DO)javac -d $(@D) -encoding utf8 --enable-preview -source 20 $(<D)/*.java test/CiCheck.java
-
-test/bin/CiCheck/Test.d test/bin/CiCheck/CiSema.java: Lexer.ci AST.ci Parser.ci ConsoleParser.ci Sema.ci cito
-	$(DO)mkdir -p $(@D) && $(CITO) -o $@ $(filter %.ci, $^)
 
 test/bin/Resource/java.txt: test/bin/Resource/Test.class test/bin/Runner.class
 	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)$(JAVACPSEP)test" Runner >$@
