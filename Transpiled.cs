@@ -5112,9 +5112,8 @@ namespace Foxoft.Ci
 				if (left.Type is CiRangeType leftAdd && right.Type is CiRangeType rightAdd) {
 					type = CiRangeType.New(SaturatedAdd(leftAdd.Min, rightAdd.Min), SaturatedAdd(leftAdd.Max, rightAdd.Max));
 				}
-				else if (left.Type is CiStringType || right.Type is CiStringType) {
-					Coerce(left, this.Program.System.PrintableType);
-					Coerce(right, this.Program.System.PrintableType);
+				else if (left.Type is CiStringType) {
+					Coerce(right, this.Program.System.StringPtrType);
 					if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
 						return this.Program.System.NewLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString(), expr.Line);
 					if (left is CiInterpolatedString || right is CiInterpolatedString)
@@ -5258,7 +5257,7 @@ namespace Foxoft.Ci
 			case CiToken.AddAssign:
 				CheckLValue(left);
 				if (left.Type.Id == CiId.StringStorageType)
-					Coerce(right, this.Program.System.PrintableType);
+					Coerce(right, this.Program.System.StringPtrType);
 				else {
 					Coerce(left, this.Program.System.DoubleType);
 					Coerce(right, left.Type);

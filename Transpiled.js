@@ -5288,9 +5288,8 @@ export class CiSema
 			if ((leftAdd = left.type) instanceof CiRangeType && (rightAdd = right.type) instanceof CiRangeType) {
 				type = CiRangeType.new(CiSema.#saturatedAdd(leftAdd.min, rightAdd.min), CiSema.#saturatedAdd(leftAdd.max, rightAdd.max));
 			}
-			else if (left.type instanceof CiStringType || right.type instanceof CiStringType) {
-				this.#coerce(left, this.program.system.printableType);
-				this.#coerce(right, this.program.system.printableType);
+			else if (left.type instanceof CiStringType) {
+				this.#coerce(right, this.program.system.stringPtrType);
 				let leftLiteral;
 				let rightLiteral;
 				if ((leftLiteral = left) instanceof CiLiteral && (rightLiteral = right) instanceof CiLiteral)
@@ -5456,7 +5455,7 @@ export class CiSema
 		case CiToken.ADD_ASSIGN:
 			this.#checkLValue(left);
 			if (left.type.id == CiId.STRING_STORAGE_TYPE)
-				this.#coerce(right, this.program.system.printableType);
+				this.#coerce(right, this.program.system.stringPtrType);
 			else {
 				this.#coerce(left, this.program.system.doubleType);
 				this.#coerce(right, left.type);

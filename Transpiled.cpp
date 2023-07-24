@@ -4868,9 +4868,8 @@ std::shared_ptr<CiExpr> CiSema::visitBinaryExpr(std::shared_ptr<CiBinaryExpr> ex
 			if ((leftAdd = dynamic_cast<const CiRangeType *>(left->type.get())) && (rightAdd = dynamic_cast<const CiRangeType *>(right->type.get()))) {
 				type = CiRangeType::new_(saturatedAdd(leftAdd->min, rightAdd->min), saturatedAdd(leftAdd->max, rightAdd->max));
 			}
-			else if (dynamic_cast<const CiStringType *>(left->type.get()) || dynamic_cast<const CiStringType *>(right->type.get())) {
-				coerce(left.get(), this->program->system->printableType.get());
-				coerce(right.get(), this->program->system->printableType.get());
+			else if (dynamic_cast<const CiStringType *>(left->type.get())) {
+				coerce(right.get(), this->program->system->stringPtrType.get());
 				const CiLiteral * leftLiteral;
 				const CiLiteral * rightLiteral;
 				if ((leftLiteral = dynamic_cast<const CiLiteral *>(left.get())) && (rightLiteral = dynamic_cast<const CiLiteral *>(right.get())))
@@ -5057,7 +5056,7 @@ std::shared_ptr<CiExpr> CiSema::visitBinaryExpr(std::shared_ptr<CiBinaryExpr> ex
 	case CiToken::addAssign:
 		checkLValue(left.get());
 		if (left->type->id == CiId::stringStorageType)
-			coerce(right.get(), this->program->system->printableType.get());
+			coerce(right.get(), this->program->system->stringPtrType.get());
 		else {
 			coerce(left.get(), this->program->system->doubleType.get());
 			coerce(right.get(), left->type.get());
