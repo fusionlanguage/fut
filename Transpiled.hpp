@@ -426,6 +426,7 @@ class CiSystem;
 class CiProgram;
 class CiParser;
 class CiConsoleHost;
+class CiSemaHost;
 class CiSema;
 class GenHost;
 class GenBase;
@@ -477,13 +478,13 @@ protected:
 	std::string stringValue;
 	bool parsingTypeArg = false;
 	void open(std::string_view filename, uint8_t const * input, int inputLength);
-	void reportError(std::string_view message);
+	void reportError(std::string_view message) const;
 	int peekChar() const;
 	int readChar();
 	CiToken readString(bool interpolated);
 	std::string getLexeme() const;
 	bool see(CiToken token) const;
-	bool check(CiToken expected);
+	bool check(CiToken expected) const;
 	CiToken nextToken();
 	bool eat(CiToken token);
 	bool expect(CiToken expected);
@@ -1537,7 +1538,15 @@ private:
 	void parseEnum(std::shared_ptr<CiCodeDoc> doc, bool isPublic);
 };
 
-class CiConsoleHost : public CiParserHost
+class CiSemaHost : public CiParserHost
+{
+public:
+	virtual ~CiSemaHost() = default;
+protected:
+	CiSemaHost() = default;
+};
+
+class CiConsoleHost : public CiSemaHost
 {
 public:
 	CiConsoleHost() = default;
@@ -1552,32 +1561,32 @@ class CiSema
 public:
 	CiSema();
 	virtual ~CiSema() = default;
+	void setHost(CiSemaHost * host);
 	void process(CiProgram * program);
 protected:
 	CiProgram * program;
-	void reportError(const CiStatement * statement, std::string_view message);
+	void reportError(const CiStatement * statement, std::string_view message) const;
 	virtual int getResourceLength(std::string_view name, const CiPrefixExpr * expr);
-public:
-	bool hasErrors = false;
 private:
+	CiSemaHost * host;
 	CiMethodBase * currentMethod = nullptr;
 	CiScope * currentScope;
 	std::unordered_set<const CiMethod *> currentPureMethods;
 	std::unordered_map<const CiVar *, std::shared_ptr<CiExpr>> currentPureArguments;
 	std::shared_ptr<CiType> poison = std::make_shared<CiType>();
 	const CiContainerType * getCurrentContainer() const;
-	std::shared_ptr<CiType> poisonError(const CiStatement * statement, std::string_view message);
+	std::shared_ptr<CiType> poisonError(const CiStatement * statement, std::string_view message) const;
 	void resolveBase(CiClass * klass);
 	void checkBaseCycle(CiClass * klass);
 	static void takePtr(const CiExpr * expr);
-	bool coerce(const CiExpr * expr, const CiType * type);
+	bool coerce(const CiExpr * expr, const CiType * type) const;
 	std::shared_ptr<CiExpr> visitInterpolatedString(std::shared_ptr<CiInterpolatedString> expr);
 	std::shared_ptr<CiExpr> lookup(std::shared_ptr<CiSymbolReference> expr, const CiScope * scope);
 	std::shared_ptr<CiExpr> visitSymbolReference(std::shared_ptr<CiSymbolReference> expr);
 	static std::shared_ptr<CiRangeType> union_(std::shared_ptr<CiRangeType> left, std::shared_ptr<CiRangeType> right);
-	std::shared_ptr<CiType> getIntegerType(const CiExpr * left, const CiExpr * right);
-	std::shared_ptr<CiIntegerType> getShiftType(const CiExpr * left, const CiExpr * right);
-	std::shared_ptr<CiType> getNumericType(const CiExpr * left, const CiExpr * right);
+	std::shared_ptr<CiType> getIntegerType(const CiExpr * left, const CiExpr * right) const;
+	std::shared_ptr<CiIntegerType> getShiftType(const CiExpr * left, const CiExpr * right) const;
+	std::shared_ptr<CiType> getNumericType(const CiExpr * left, const CiExpr * right) const;
 	static int saturatedNeg(int a);
 	static int saturatedAdd(int a, int b);
 	static int saturatedSub(int a, int b);
@@ -1585,28 +1594,28 @@ private:
 	static int saturatedDiv(int a, int b);
 	static int saturatedShiftRight(int a, int b);
 	static std::shared_ptr<CiRangeType> bitwiseUnsignedOp(const CiRangeType * left, CiToken op, const CiRangeType * right);
-	bool isEnumOp(const CiExpr * left, const CiExpr * right);
-	std::shared_ptr<CiType> bitwiseOp(const CiExpr * left, CiToken op, const CiExpr * right);
+	bool isEnumOp(const CiExpr * left, const CiExpr * right) const;
+	std::shared_ptr<CiType> bitwiseOp(const CiExpr * left, CiToken op, const CiExpr * right) const;
 	static std::shared_ptr<CiRangeType> newRangeType(int a, int b, int c, int d);
 	std::shared_ptr<CiLiteral> toLiteralBool(const CiExpr * expr, bool value) const;
 	std::shared_ptr<CiLiteralLong> toLiteralLong(const CiExpr * expr, int64_t value) const;
 	std::shared_ptr<CiLiteralDouble> toLiteralDouble(const CiExpr * expr, double value) const;
-	void checkLValue(const CiExpr * expr);
+	void checkLValue(const CiExpr * expr) const;
 	std::shared_ptr<CiInterpolatedString> concatenate(const CiInterpolatedString * left, const CiInterpolatedString * right) const;
 	std::shared_ptr<CiInterpolatedString> toInterpolatedString(std::shared_ptr<CiExpr> expr) const;
-	void checkComparison(const CiExpr * left, const CiExpr * right);
+	void checkComparison(const CiExpr * left, const CiExpr * right) const;
 	void openScope(CiScope * scope);
 	void closeScope();
 	std::shared_ptr<CiExpr> resolveNew(std::shared_ptr<CiPrefixExpr> expr);
 	std::shared_ptr<CiExpr> visitPrefixExpr(std::shared_ptr<CiPrefixExpr> expr);
 	std::shared_ptr<CiExpr> visitPostfixExpr(std::shared_ptr<CiPostfixExpr> expr);
 	static bool canCompareEqual(const CiType * left, const CiType * right);
-	std::shared_ptr<CiExpr> resolveEquality(const CiBinaryExpr * expr, std::shared_ptr<CiExpr> left, std::shared_ptr<CiExpr> right);
-	std::shared_ptr<CiExpr> resolveIs(std::shared_ptr<CiBinaryExpr> expr, std::shared_ptr<CiExpr> left, const CiExpr * right);
+	std::shared_ptr<CiExpr> resolveEquality(const CiBinaryExpr * expr, std::shared_ptr<CiExpr> left, std::shared_ptr<CiExpr> right) const;
+	std::shared_ptr<CiExpr> resolveIs(std::shared_ptr<CiBinaryExpr> expr, std::shared_ptr<CiExpr> left, const CiExpr * right) const;
 	std::shared_ptr<CiExpr> visitBinaryExpr(std::shared_ptr<CiBinaryExpr> expr);
 	std::shared_ptr<CiType> tryGetPtr(std::shared_ptr<CiType> type, bool nullable) const;
 	static const CiClass * getLowestCommonAncestor(const CiClass * left, const CiClass * right);
-	std::shared_ptr<CiType> getCommonType(const CiExpr * left, const CiExpr * right);
+	std::shared_ptr<CiType> getCommonType(const CiExpr * left, const CiExpr * right) const;
 	std::shared_ptr<CiExpr> visitSelectExpr(const CiSelectExpr * expr);
 	std::shared_ptr<CiType> evalType(const CiClassType * generic, std::shared_ptr<CiType> type) const;
 	bool canCall(const CiExpr * obj, const CiMethod * method, const std::vector<std::shared_ptr<CiExpr>> * arguments) const;
@@ -1618,7 +1627,7 @@ private:
 	std::shared_ptr<CiExpr> resolveBool(std::shared_ptr<CiExpr> expr);
 	static std::shared_ptr<CiClassType> createClassPtr(const CiClass * klass, CiToken ptrModifier, bool nullable);
 	void fillGenericClass(CiClassType * result, const CiClass * klass, const CiAggregateInitializer * typeArgExprs);
-	void expectNoPtrModifier(const CiExpr * expr, CiToken ptrModifier, bool nullable);
+	void expectNoPtrModifier(const CiExpr * expr, CiToken ptrModifier, bool nullable) const;
 	std::shared_ptr<CiType> toBaseType(const CiExpr * expr, CiToken ptrModifier, bool nullable);
 	std::shared_ptr<CiType> toType(std::shared_ptr<CiExpr> expr, bool dynamic);
 	std::shared_ptr<CiType> resolveType(CiNamedValue * def);

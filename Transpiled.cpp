@@ -46,7 +46,7 @@ void CiLexer::open(std::string_view filename, uint8_t const * input, int inputLe
 	nextToken();
 }
 
-void CiLexer::reportError(std::string_view message)
+void CiLexer::reportError(std::string_view message) const
 {
 	this->host->reportError(this->filename, this->line, this->tokenColumn, this->line, this->column, message);
 }
@@ -874,7 +874,7 @@ std::string_view CiLexer::tokenToString(CiToken token)
 	}
 }
 
-bool CiLexer::check(CiToken expected)
+bool CiLexer::check(CiToken expected) const
 {
 	if (see(expected))
 		return true;
@@ -3979,18 +3979,22 @@ CiSema::CiSema()
 	this->poison->name = "poison";
 }
 
+void CiSema::setHost(CiSemaHost * host)
+{
+	this->host = host;
+}
+
 const CiContainerType * CiSema::getCurrentContainer() const
 {
 	return this->currentScope->getContainer();
 }
 
-void CiSema::reportError(const CiStatement * statement, std::string_view message)
+void CiSema::reportError(const CiStatement * statement, std::string_view message) const
 {
-	std::cerr << getCurrentContainer()->filename << "(" << statement->line << "): ERROR: " << message << '\n';
-	this->hasErrors = true;
+	this->host->reportError(getCurrentContainer()->filename, statement->line, 1, statement->line, 1, message);
 }
 
-std::shared_ptr<CiType> CiSema::poisonError(const CiStatement * statement, std::string_view message)
+std::shared_ptr<CiType> CiSema::poisonError(const CiStatement * statement, std::string_view message) const
 {
 	reportError(statement, message);
 	return this->poison;
@@ -4036,7 +4040,7 @@ void CiSema::takePtr(const CiExpr * expr)
 		arrayStg->ptrTaken = true;
 }
 
-bool CiSema::coerce(const CiExpr * expr, const CiType * type)
+bool CiSema::coerce(const CiExpr * expr, const CiType * type) const
 {
 	if (expr == this->poison.get())
 		return false;
@@ -4274,7 +4278,7 @@ std::shared_ptr<CiRangeType> CiSema::union_(std::shared_ptr<CiRangeType> left, s
 	return left;
 }
 
-std::shared_ptr<CiType> CiSema::getIntegerType(const CiExpr * left, const CiExpr * right)
+std::shared_ptr<CiType> CiSema::getIntegerType(const CiExpr * left, const CiExpr * right) const
 {
 	std::shared_ptr<CiType> type = this->program->system->promoteIntegerTypes(left->type.get(), right->type.get());
 	coerce(left, type.get());
@@ -4282,7 +4286,7 @@ std::shared_ptr<CiType> CiSema::getIntegerType(const CiExpr * left, const CiExpr
 	return type;
 }
 
-std::shared_ptr<CiIntegerType> CiSema::getShiftType(const CiExpr * left, const CiExpr * right)
+std::shared_ptr<CiIntegerType> CiSema::getShiftType(const CiExpr * left, const CiExpr * right) const
 {
 	std::shared_ptr<CiIntegerType> intType = this->program->system->intType;
 	coerce(right, intType.get());
@@ -4294,7 +4298,7 @@ std::shared_ptr<CiIntegerType> CiSema::getShiftType(const CiExpr * left, const C
 	return intType;
 }
 
-std::shared_ptr<CiType> CiSema::getNumericType(const CiExpr * left, const CiExpr * right)
+std::shared_ptr<CiType> CiSema::getNumericType(const CiExpr * left, const CiExpr * right) const
 {
 	std::shared_ptr<CiType> type = this->program->system->promoteNumericTypes(left->type, right->type);
 	coerce(left, type.get());
@@ -4391,7 +4395,7 @@ std::shared_ptr<CiRangeType> CiSema::bitwiseUnsignedOp(const CiRangeType * left,
 	return CiRangeType::new_(min, max);
 }
 
-bool CiSema::isEnumOp(const CiExpr * left, const CiExpr * right)
+bool CiSema::isEnumOp(const CiExpr * left, const CiExpr * right) const
 {
 	if (dynamic_cast<const CiEnum *>(left->type.get())) {
 		if (left->type->id != CiId::boolType && !dynamic_cast<const CiEnumFlags *>(left->type.get()))
@@ -4402,7 +4406,7 @@ bool CiSema::isEnumOp(const CiExpr * left, const CiExpr * right)
 	return false;
 }
 
-std::shared_ptr<CiType> CiSema::bitwiseOp(const CiExpr * left, CiToken op, const CiExpr * right)
+std::shared_ptr<CiType> CiSema::bitwiseOp(const CiExpr * left, CiToken op, const CiExpr * right) const
 {
 	std::shared_ptr<CiRangeType> leftRange;
 	std::shared_ptr<CiRangeType> rightRange;
@@ -4480,7 +4484,7 @@ std::shared_ptr<CiLiteralDouble> CiSema::toLiteralDouble(const CiExpr * expr, do
 	return citemp0;
 }
 
-void CiSema::checkLValue(const CiExpr * expr)
+void CiSema::checkLValue(const CiExpr * expr) const
 {
 	const CiBinaryExpr * indexing;
 	if (const CiSymbolReference *symbol = dynamic_cast<const CiSymbolReference *>(expr)) {
@@ -4563,7 +4567,7 @@ std::shared_ptr<CiInterpolatedString> CiSema::toInterpolatedString(std::shared_p
 	return result;
 }
 
-void CiSema::checkComparison(const CiExpr * left, const CiExpr * right)
+void CiSema::checkComparison(const CiExpr * left, const CiExpr * right) const
 {
 	if (dynamic_cast<const CiEnum *>(left->type.get()))
 		coerce(right, left->type.get());
@@ -4747,7 +4751,7 @@ bool CiSema::canCompareEqual(const CiType * left, const CiType * right)
 		return left->id == CiId::nullType && right->nullable;
 }
 
-std::shared_ptr<CiExpr> CiSema::resolveEquality(const CiBinaryExpr * expr, std::shared_ptr<CiExpr> left, std::shared_ptr<CiExpr> right)
+std::shared_ptr<CiExpr> CiSema::resolveEquality(const CiBinaryExpr * expr, std::shared_ptr<CiExpr> left, std::shared_ptr<CiExpr> right) const
 {
 	if (!canCompareEqual(left->type.get(), right->type.get()))
 		return poisonError(expr, std::format("Cannot compare {} with {}", left->type->toString(), right->type->toString()));
@@ -4790,7 +4794,7 @@ std::shared_ptr<CiExpr> CiSema::resolveEquality(const CiBinaryExpr * expr, std::
 	return citemp0;
 }
 
-std::shared_ptr<CiExpr> CiSema::resolveIs(std::shared_ptr<CiBinaryExpr> expr, std::shared_ptr<CiExpr> left, const CiExpr * right)
+std::shared_ptr<CiExpr> CiSema::resolveIs(std::shared_ptr<CiBinaryExpr> expr, std::shared_ptr<CiExpr> left, const CiExpr * right) const
 {
 	const CiClassType * leftPtr;
 	if (!(leftPtr = dynamic_cast<const CiClassType *>(left->type.get())) || dynamic_cast<const CiStorageType *>(left->type.get()))
@@ -5166,7 +5170,7 @@ const CiClass * CiSema::getLowestCommonAncestor(const CiClass * left, const CiCl
 	}
 }
 
-std::shared_ptr<CiType> CiSema::getCommonType(const CiExpr * left, const CiExpr * right)
+std::shared_ptr<CiType> CiSema::getCommonType(const CiExpr * left, const CiExpr * right) const
 {
 	std::shared_ptr<CiRangeType> leftRange;
 	std::shared_ptr<CiRangeType> rightRange;
@@ -5476,7 +5480,7 @@ void CiSema::fillGenericClass(CiClassType * result, const CiClass * klass, const
 		result->typeArg1 = typeArgs[1];
 }
 
-void CiSema::expectNoPtrModifier(const CiExpr * expr, CiToken ptrModifier, bool nullable)
+void CiSema::expectNoPtrModifier(const CiExpr * expr, CiToken ptrModifier, bool nullable) const
 {
 	if (ptrModifier != CiToken::endOfFile)
 		reportError(expr, std::format("Unexpected {} on a non-reference type", CiLexer::tokenToString(ptrModifier)));

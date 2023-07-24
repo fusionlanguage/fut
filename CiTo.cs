@@ -118,7 +118,7 @@ public static class CiTo
 		if (host.HasErrors())
 			return null;
 		sema.Process(parser.Program);
-		if (sema.HasErrors)
+		if (host.HasErrors())
 			return null;
 		return parser.Program;
 	}
@@ -238,6 +238,7 @@ public static class CiTo
 
 		CiConsoleHost host = new CiConsoleHost();
 		parser.SetHost(host);
+		sema.SetHost(host);
 		CiSystem system = CiSystem.New();
 		CiScope parent = system;
 		try {

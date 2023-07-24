@@ -17,25 +17,33 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
+public abstract class CiSemaHost : CiParserHost
+{
+}
+
 public class CiSema
 {
 	protected CiProgram! Program;
-	internal bool HasErrors = false;
+	CiSemaHost! Host;
 	CiMethodBase!? CurrentMethod = null;
 	CiScope!? CurrentScope;
 	HashSet<CiMethod>() CurrentPureMethods;
 	Dictionary<CiVar, CiExpr#>() CurrentPureArguments;
 	CiType# Poison = new CiType { Name = "poison" };
 
-	CiContainerType GetCurrentContainer() => this.CurrentScope.GetContainer();
-
-	protected void ReportError!(CiStatement statement, string message)
+	public void SetHost!(CiSemaHost! host)
 	{
-		Console.Error.WriteLine($"{GetCurrentContainer().Filename}({statement.Line}): ERROR: {message}");
-		this.HasErrors = true;
+		this.Host = host;
 	}
 
-	CiType# PoisonError!(CiStatement statement, string message)
+	CiContainerType GetCurrentContainer() => this.CurrentScope.GetContainer();
+
+	protected void ReportError(CiStatement statement, string message)
+	{
+		this.Host.ReportError(GetCurrentContainer().Filename, statement.Line, 1, statement.Line, 1,message);
+	}
+
+	CiType# PoisonError(CiStatement statement, string message)
 	{
 		ReportError(statement, message);
 		return this.Poison;
@@ -81,7 +89,7 @@ public class CiSema
 			arrayStg.PtrTaken = true;
 	}
 
-	bool Coerce!(CiExpr expr, CiType type)
+	bool Coerce(CiExpr expr, CiType type)
 	{
 		if (expr == this.Poison)
 			return false;
@@ -298,7 +306,7 @@ public class CiSema
 		return left;
 	}
 
-	CiType# GetIntegerType!(CiExpr left, CiExpr right)
+	CiType# GetIntegerType(CiExpr left, CiExpr right)
 	{
 		CiType# type = this.Program.System.PromoteIntegerTypes(left.Type, right.Type);
 		Coerce(left, type);
@@ -306,7 +314,7 @@ public class CiSema
 		return type;
 	}
 
-	CiIntegerType# GetShiftType!(CiExpr left, CiExpr right)
+	CiIntegerType# GetShiftType(CiExpr left, CiExpr right)
 	{
 		CiIntegerType# intType = this.Program.System.IntType;
 		Coerce(right, intType);
@@ -318,7 +326,7 @@ public class CiSema
 		return intType;
 	}
 
-	CiType# GetNumericType!(CiExpr left, CiExpr right)
+	CiType# GetNumericType(CiExpr left, CiExpr right)
 	{
 		CiType# type = this.Program.System.PromoteNumericTypes(left.Type, right.Type);
 		Coerce(left, type);
@@ -413,7 +421,7 @@ public class CiSema
 		return CiRangeType.New(min, max);
 	}
 
-	bool IsEnumOp!(CiExpr left, CiExpr right)
+	bool IsEnumOp(CiExpr left, CiExpr right)
 	{
 		if (left.Type is CiEnum) {
 			if (left.Type.Id != CiId.BoolType && !(left.Type is CiEnumFlags))
@@ -424,7 +432,7 @@ public class CiSema
 		return false;
 	}
 
-	CiType# BitwiseOp!(CiExpr left, CiToken op, CiExpr right)
+	CiType# BitwiseOp(CiExpr left, CiToken op, CiExpr right)
 	{
 		if (left.Type is CiRangeType# leftRange && right.Type is CiRangeType# rightRange) {
 			CiRangeType#? range = null;
@@ -490,7 +498,7 @@ public class CiSema
 
 	CiLiteralDouble# ToLiteralDouble(CiExpr expr, double value) => new CiLiteralDouble { Line = expr.Line, Type = this.Program.System.DoubleType, Value = value };
 
-	void CheckLValue!(CiExpr expr)
+	void CheckLValue(CiExpr expr)
 	{
 		switch (expr) {
 		case CiSymbolReference symbol:
@@ -589,7 +597,7 @@ public class CiSema
 		return result;
 	}
 
-	void CheckComparison!(CiExpr left, CiExpr right)
+	void CheckComparison(CiExpr left, CiExpr right)
 	{
 		if (left.Type is CiEnum)
 			Coerce(right, left.Type);
@@ -742,7 +750,7 @@ public class CiSema
 		}
 	}
 
-	CiExpr# ResolveEquality!(CiBinaryExpr expr, CiExpr# left, CiExpr# right)
+	CiExpr# ResolveEquality(CiBinaryExpr expr, CiExpr# left, CiExpr# right)
 	{
 		if (!CanCompareEqual(left.Type, right.Type))
 			return PoisonError(expr, $"Cannot compare {left.Type} with {right.Type}");
@@ -778,7 +786,7 @@ public class CiSema
 		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = this.Program.System.BoolType };
 	}
 
-	CiExpr# ResolveIs!(CiBinaryExpr# expr, CiExpr# left, CiExpr right)
+	CiExpr# ResolveIs(CiBinaryExpr# expr, CiExpr# left, CiExpr right)
 	{
 		if (!(left.Type is CiClassType leftPtr) || left.Type is CiStorageType)
 			return PoisonError(expr, "Left hand side of the 'is' operator must be an object reference");
@@ -1120,7 +1128,7 @@ public class CiSema
 		}
 	}
 
-	CiType# GetCommonType!(CiExpr left, CiExpr right)
+	CiType# GetCommonType(CiExpr left, CiExpr right)
 	{
 		if (left.Type is CiRangeType# leftRange && right.Type is CiRangeType# rightRange)
 			return Union(leftRange, rightRange);
@@ -1421,7 +1429,7 @@ public class CiSema
 			result.TypeArg1 = typeArgs[1];
 	}
 
-	void ExpectNoPtrModifier!(CiExpr expr, CiToken ptrModifier, bool nullable)
+	void ExpectNoPtrModifier(CiExpr expr, CiToken ptrModifier, bool nullable)
 	{
 		if (ptrModifier != CiToken.EndOfFile)
 			ReportError(expr, $"Unexpected {CiLexer.TokenToString(ptrModifier)} on a non-reference type");

@@ -4399,7 +4399,11 @@ export class CiParser extends CiLexer
 	}
 }
 
-export class CiConsoleHost extends CiParserHost
+export class CiSemaHost extends CiParserHost
+{
+}
+
+export class CiConsoleHost extends CiSemaHost
 {
 	#errors = false;
 
@@ -4418,12 +4422,17 @@ export class CiConsoleHost extends CiParserHost
 export class CiSema
 {
 	program;
-	hasErrors = false;
+	#host;
 	#currentMethod = null;
 	#currentScope;
 	#currentPureMethods = new Set();
 	#currentPureArguments = {};
 	#poison = Object.assign(new CiType(), { name: "poison" });
+
+	setHost(host)
+	{
+		this.#host = host;
+	}
 
 	#getCurrentContainer()
 	{
@@ -4432,8 +4441,7 @@ export class CiSema
 
 	reportError(statement, message)
 	{
-		console.error(`${this.#getCurrentContainer().filename}(${statement.line}): ERROR: ${message}`);
-		this.hasErrors = true;
+		this.#host.reportError(this.#getCurrentContainer().filename, statement.line, 1, statement.line, 1, message);
 	}
 
 	#poisonError(statement, message)

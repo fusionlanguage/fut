@@ -120,7 +120,7 @@ function parseAndResolve(parser, system, parent, files, sema, host)
 	if (host.hasErrors())
 		process.exit(1);
 	sema.process(parser.program);
-	if (sema.hasErrors)
+	if (host.hasErrors())
 		process.exit(1);
 	return parser.program;
 }
@@ -268,6 +268,7 @@ if (outputFile == null || inputFiles.length == 0) {
 
 const host = new CiConsoleHost();
 parser.setHost(host);
+sema.setHost(host);
 const system = CiSystem.new();
 let parent = system;
 try {

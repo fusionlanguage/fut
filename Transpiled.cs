@@ -4276,7 +4276,7 @@ namespace Foxoft.Ci
 		}
 	}
 
-	public class CiConsoleHost : CiParserHost
+	public class CiConsoleHost : CiSemaHost
 	{
 
 		bool Errors = false;
@@ -4290,12 +4290,16 @@ namespace Foxoft.Ci
 		public bool HasErrors() => this.Errors;
 	}
 
+	public abstract class CiSemaHost : CiParserHost
+	{
+	}
+
 	public class CiSema
 	{
 
 		protected CiProgram Program;
 
-		internal bool HasErrors = false;
+		CiSemaHost Host;
 
 		CiMethodBase CurrentMethod = null;
 
@@ -4307,12 +4311,16 @@ namespace Foxoft.Ci
 
 		CiType Poison = new CiType { Name = "poison" };
 
+		public void SetHost(CiSemaHost host)
+		{
+			this.Host = host;
+		}
+
 		CiContainerType GetCurrentContainer() => this.CurrentScope.GetContainer();
 
 		protected void ReportError(CiStatement statement, string message)
 		{
-			Console.Error.WriteLine($"{GetCurrentContainer().Filename}({statement.Line}): ERROR: {message}");
-			this.HasErrors = true;
+			this.Host.ReportError(GetCurrentContainer().Filename, statement.Line, 1, statement.Line, 1, message);
 		}
 
 		CiType PoisonError(CiStatement statement, string message)

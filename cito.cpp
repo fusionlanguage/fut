@@ -144,7 +144,7 @@ static bool parseAndResolve(CiParser *parser, CiProgram *program,
 	if (host->hasErrors())
 		return false;
 	sema->process(program);
-	return !sema->hasErrors;
+	return !host->hasErrors();
 }
 
 static bool emit(CiProgram *program, const char *lang, const char *namespace_, const char *outputFile)
@@ -257,6 +257,7 @@ int main(int argc, char **argv)
 
 	CiConsoleHost host;
 	parser.setHost(&host);
+	sema.setHost(&host);
 	std::shared_ptr<CiSystem> system = CiSystem::new_();
 	CiScope *parent = system.get();
 	CiProgram references;

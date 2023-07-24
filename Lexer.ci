@@ -180,7 +180,7 @@ public abstract class CiLexer
 		NextToken();
 	}
 
-	protected void ReportError!(string message)
+	protected void ReportError(string message)
 	{
 		this.Host.ReportError(this.Filename, this.Line, this.TokenColumn, this.Line, this.Column, message);
 	}
@@ -824,7 +824,7 @@ public abstract class CiLexer
 		}
 	}
 
-	protected bool Check!(CiToken expected)
+	protected bool Check(CiToken expected)
 	{
 		if (See(expected))
 			return true;
