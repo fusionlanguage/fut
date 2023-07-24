@@ -1091,12 +1091,6 @@ void CiVisitor::visitOptionalStatement(const CiStatement * statement)
 		statement->acceptStatement(this);
 }
 
-void CiVisitor::reportError(const CiStatement * statement, std::string_view message)
-{
-	std::cerr << getCurrentContainer()->filename << "(" << statement->line << "): ERROR: " << message << '\n';
-	this->hasErrors = true;
-}
-
 bool CiExpr::completesNormally() const
 {
 	return true;
@@ -3966,13 +3960,8 @@ void CiParser::parse(std::string_view filename, uint8_t const * input, int input
 
 void CiConsoleHost::reportError(std::string_view filename, int startLine, int startColumn, int endLine, int endColumn, std::string_view message)
 {
-	this->errors = true;
+	this->hasErrors = true;
 	std::cerr << filename << "(" << startLine << "): ERROR: " << message << '\n';
-}
-
-bool CiConsoleHost::hasErrors() const
-{
-	return this->errors;
 }
 CiSema::CiSema()
 {
@@ -6187,18 +6176,28 @@ void CiSema::process(CiProgram * program)
 		markClassLive(klass);
 }
 
+void GenBase::setHost(GenHost * host)
+{
+	this->host = host;
+}
+
 const CiContainerType * GenBase::getCurrentContainer() const
 {
 	const CiClass * klass = static_cast<const CiClass *>(this->currentMethod->parent);
 	return klass;
 }
 
-void GenBase::notSupported(const CiStatement * statement, std::string_view feature)
+void GenBase::reportError(const CiStatement * statement, std::string_view message) const
+{
+	this->host->reportError(getCurrentContainer()->filename, statement->line, 1, statement->line, 1, message);
+}
+
+void GenBase::notSupported(const CiStatement * statement, std::string_view feature) const
 {
 	reportError(statement, std::format("{} not supported when targeting {}", feature, getTargetName()));
 }
 
-void GenBase::notYet(const CiStatement * statement, std::string_view feature)
+void GenBase::notYet(const CiStatement * statement, std::string_view feature) const
 {
 	reportError(statement, std::format("{} not supported yet when targeting {}", feature, getTargetName()));
 }
@@ -6425,8 +6424,7 @@ void GenBase::createOutputFile()
 
 void GenBase::closeFile()
 {
-	if (!this->host->closeFile(this->hasErrors))
-		this->hasErrors = true;
+	this->host->closeFile();
 }
 
 void GenBase::openStringWriter()

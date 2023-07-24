@@ -627,11 +627,7 @@ public:
 	virtual void visitVar(const CiVar * expr) = 0;
 protected:
 	CiVisitor() = default;
-	virtual const CiContainerType * getCurrentContainer() const = 0;
 	void visitOptionalStatement(const CiStatement * statement);
-	void reportError(const CiStatement * statement, std::string_view message);
-public:
-	bool hasErrors = false;
 };
 
 class CiStatement
@@ -1546,14 +1542,24 @@ protected:
 	CiSemaHost() = default;
 };
 
-class CiConsoleHost : public CiSemaHost
+class GenHost : public CiSemaHost
 {
 public:
-	CiConsoleHost() = default;
+	virtual ~GenHost() = default;
+	virtual std::ostream * createFile(std::string_view directory, std::string_view filename) = 0;
+	virtual void closeFile() = 0;
+protected:
+	GenHost() = default;
+};
+
+class CiConsoleHost : public GenHost
+{
+public:
 	void reportError(std::string_view filename, int startLine, int startColumn, int endLine, int endColumn, std::string_view message) override;
-	bool hasErrors() const;
-private:
-	bool errors = false;
+protected:
+	CiConsoleHost() = default;
+public:
+	bool hasErrors = false;
 };
 
 class CiSema
@@ -1655,20 +1661,11 @@ private:
 	static void markClassLive(const CiClass * klass);
 };
 
-class GenHost
-{
-public:
-	virtual ~GenHost() = default;
-	virtual std::ostream * createFile(std::string_view directory, std::string_view filename) = 0;
-	virtual bool closeFile(bool remove) = 0;
-protected:
-	GenHost() = default;
-};
-
 class GenBase : public CiVisitor
 {
 public:
 	virtual ~GenBase() = default;
+	void setHost(GenHost * host);
 	void visitLiteralNull() override;
 	void visitLiteralFalse() override;
 	void visitLiteralTrue() override;
@@ -1706,10 +1703,10 @@ protected:
 	const CiMethodBase * currentMethod = nullptr;
 	std::unordered_set<const CiClass *> writtenClasses;
 	std::vector<const CiExpr *> currentTemporaries;
-	const CiContainerType * getCurrentContainer() const override;
+	virtual const CiContainerType * getCurrentContainer() const;
 	virtual std::string_view getTargetName() const = 0;
-	void notSupported(const CiStatement * statement, std::string_view feature);
-	void notYet(const CiStatement * statement, std::string_view feature);
+	void notSupported(const CiStatement * statement, std::string_view feature) const;
+	void notYet(const CiStatement * statement, std::string_view feature) const;
 	virtual void startLine();
 	void writeChar(int c);
 	void write(std::string_view s);
@@ -1867,13 +1864,14 @@ protected:
 public:
 	std::string namespace_;
 	std::string outputFile;
-	GenHost * host;
 private:
+	GenHost * host;
 	std::ostream * writer;
 	std::ostringstream stringWriter;
 	bool atChildStart = false;
 	bool inChildBlock = false;
 	std::map<std::string, bool> includes;
+	void reportError(const CiStatement * statement, std::string_view message) const;
 	void writeLowercaseChar(int c);
 	void writeUppercaseChar(int c);
 	static int getPrintfFormat(const CiType * type, int format);

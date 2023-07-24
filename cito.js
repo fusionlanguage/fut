@@ -58,7 +58,7 @@ class FileResourceSema extends CiSema
 	}
 }
 
-class FileGenHost extends GenHost
+class FileGenHost extends CiConsoleHost
 {
 	#currentFile;
 
@@ -76,11 +76,10 @@ class FileGenHost extends GenHost
 
 	closeFile(remove)
 	{
-		if (remove)
+		if (this.hasErrors)
 			this.#currentFile.close(() => fs.unlinkSync(this.#currentFile.path));
 		else
 			this.#currentFile.close();
-		return true;
 	}
 }
 
@@ -117,10 +116,10 @@ function parseAndResolve(parser, system, parent, files, sema, host)
 		const input = fs.readFileSync(file);
 		parser.parse(file, input, input.length);
 	}
-	if (host.hasErrors())
+	if (host.hasErrors)
 		process.exit(1);
 	sema.process(parser.program);
-	if (host.hasErrors())
+	if (host.hasErrors)
 		process.exit(1);
 	return parser.program;
 }
@@ -182,9 +181,10 @@ function emit(program, lang, namespace, outputFile)
 	}
 	gen.namespace = namespace;
 	gen.outputFile = outputFile;
-	gen.host = new FileGenHost();
+	const host = new FileGenHost();
+	gen.setHost(host);
 	gen.writeProgram(program);
-	if (gen.hasErrors)
+	if (host.hasErrors)
 		process.exitCode = 1;
 }
 

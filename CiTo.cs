@@ -59,7 +59,7 @@ public class FileResourceSema : CiSema
 	}
 }
 
-public class FileGenHost : GenHost
+public class FileGenHost : CiConsoleHost
 {
 	string Filename;
 	TextWriter CurrentFile;
@@ -73,12 +73,11 @@ public class FileGenHost : GenHost
 		return this.CurrentFile;
 	}
 
-	public override bool CloseFile(bool remove)
+	public override void CloseFile()
 	{
 		this.CurrentFile.Close();
-		if (remove)
+		if (this.HasErrors)
 			File.Delete(this.Filename);
-		return true;
 	}
 }
 
@@ -115,10 +114,10 @@ public static class CiTo
 			byte[] input = File.ReadAllBytes(file);
 			parser.Parse(file, input, input.Length);
 		}
-		if (host.HasErrors())
+		if (host.HasErrors)
 			return null;
 		sema.Process(parser.Program);
-		if (host.HasErrors())
+		if (host.HasErrors)
 			return null;
 		return parser.Program;
 	}
@@ -169,9 +168,10 @@ public static class CiTo
 		}
 		gen.Namespace = namespace_;
 		gen.OutputFile = outputFile;
-		gen.Host = new FileGenHost();
+		FileGenHost host = new FileGenHost();
+		gen.SetHost(host);
 		gen.WriteProgram(program);
-		return !gen.HasErrors;
+		return !host.HasErrors;
 	}
 
 	public static int Main(string[] args)
@@ -236,7 +236,7 @@ public static class CiTo
 			return 1;
 		}
 
-		CiConsoleHost host = new CiConsoleHost();
+		FileGenHost host = new FileGenHost();
 		parser.SetHost(host);
 		sema.SetHost(host);
 		CiSystem system = CiSystem.New();

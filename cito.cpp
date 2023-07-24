@@ -102,7 +102,7 @@ protected:
 	}
 };
 
-class FileGenHost : public GenHost
+class FileGenHost : public CiConsoleHost
 {
 	std::string currentFilename;
 	std::ofstream currentFile;
@@ -115,16 +115,15 @@ public:
 		return &currentFile;
 	}
 
-	bool closeFile(bool remove) override
+	void closeFile() override
 	{
 		currentFile.close();
-		if (remove)
+		if (hasErrors)
 			std::remove(currentFilename.c_str());
 		else if (!currentFile) {
 			std::cerr << currentFilename << ": ERROR: " << strerror(errno) << '\n';
-			return false;
+			hasErrors = true;
 		}
-		return true;
 	}
 };
 
@@ -141,10 +140,10 @@ static bool parseAndResolve(CiParser *parser, CiProgram *program,
 		}
 		parser->parse(file, reinterpret_cast<const uint8_t *>(input.data()), input.size());
 	}
-	if (host->hasErrors())
+	if (host->hasErrors)
 		return false;
 	sema->process(program);
-	return !host->hasErrors();
+	return !host->hasErrors;
 }
 
 static bool emit(CiProgram *program, const char *lang, const char *namespace_, const char *outputFile)
@@ -188,9 +187,9 @@ static bool emit(CiProgram *program, const char *lang, const char *namespace_, c
 	gen->namespace_ = namespace_;
 	gen->outputFile = outputFile;
 	FileGenHost host;
-	gen->host = &host;
+	gen->setHost(&host);
 	gen->writeProgram(program);
-	return !gen->hasErrors;
+	return !host.hasErrors;
 }
 
 int main(int argc, char **argv)
@@ -255,7 +254,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	CiConsoleHost host;
+	FileGenHost host;
 	parser.setHost(&host);
 	sema.setHost(&host);
 	std::shared_ptr<CiSystem> system = CiSystem::new_();

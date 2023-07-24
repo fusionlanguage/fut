@@ -1469,20 +1469,10 @@ namespace Foxoft.Ci
 	public abstract class CiVisitor
 	{
 
-		internal bool HasErrors = false;
-
-		protected abstract CiContainerType GetCurrentContainer();
-
 		protected void VisitOptionalStatement(CiStatement statement)
 		{
 			if (statement != null)
 				statement.AcceptStatement(this);
-		}
-
-		protected void ReportError(CiStatement statement, string message)
-		{
-			Console.Error.WriteLine($"{GetCurrentContainer().Filename}({statement.Line}): ERROR: {message}");
-			this.HasErrors = true;
 		}
 
 		public abstract void VisitConst(CiConst statement);
@@ -4276,18 +4266,16 @@ namespace Foxoft.Ci
 		}
 	}
 
-	public class CiConsoleHost : CiSemaHost
+	public abstract class CiConsoleHost : GenHost
 	{
 
-		bool Errors = false;
+		internal bool HasErrors = false;
 
 		public override void ReportError(string filename, int startLine, int startColumn, int endLine, int endColumn, string message)
 		{
-			this.Errors = true;
+			this.HasErrors = true;
 			Console.Error.WriteLine($"{filename}({startLine}): ERROR: {message}");
 		}
-
-		public bool HasErrors() => this.Errors;
 	}
 
 	public abstract class CiSemaHost : CiParserHost
@@ -6342,12 +6330,12 @@ namespace Foxoft.Ci
 		}
 	}
 
-	public abstract class GenHost
+	public abstract class GenHost : CiSemaHost
 	{
 
 		public abstract TextWriter CreateFile(string directory, string filename);
 
-		public abstract bool CloseFile(bool remove);
+		public abstract void CloseFile();
 	}
 
 	public abstract class GenBase : CiVisitor
@@ -6357,7 +6345,7 @@ namespace Foxoft.Ci
 
 		internal string OutputFile;
 
-		internal GenHost Host;
+		GenHost Host;
 
 		TextWriter Writer;
 
@@ -6381,13 +6369,23 @@ namespace Foxoft.Ci
 
 		protected readonly List<CiExpr> CurrentTemporaries = new List<CiExpr>();
 
-		protected override CiContainerType GetCurrentContainer()
+		public void SetHost(GenHost host)
+		{
+			this.Host = host;
+		}
+
+		protected virtual CiContainerType GetCurrentContainer()
 		{
 			CiClass klass = (CiClass) this.CurrentMethod.Parent;
 			return klass;
 		}
 
 		protected abstract string GetTargetName();
+
+		void ReportError(CiStatement statement, string message)
+		{
+			this.Host.ReportError(GetCurrentContainer().Filename, statement.Line, 1, statement.Line, 1, message);
+		}
 
 		protected void NotSupported(CiStatement statement, string feature)
 		{
@@ -6613,8 +6611,7 @@ namespace Foxoft.Ci
 
 		protected void CloseFile()
 		{
-			if (!this.Host.CloseFile(this.HasErrors))
-				this.HasErrors = true;
+			this.Host.CloseFile();
 		}
 
 		protected void OpenStringWriter()

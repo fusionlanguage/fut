@@ -250,17 +250,10 @@ public class CiCodeDoc
 
 public abstract class CiVisitor
 {
-	internal bool HasErrors = false;
-	protected abstract CiContainerType GetCurrentContainer();
 	protected void VisitOptionalStatement!(CiStatement? statement)
 	{
 		if (statement != null)
 			statement.AcceptStatement(this);
-	}
-	protected void ReportError!(CiStatement statement, string message)
-	{
-		Console.Error.WriteLine($"{GetCurrentContainer().Filename}({statement.Line}): ERROR: {message}");
-		this.HasErrors = true;
 	}
 
 	public abstract void VisitConst!(CiConst statement);

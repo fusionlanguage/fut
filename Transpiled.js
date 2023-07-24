@@ -1441,18 +1441,11 @@ export class CiCodeDoc
 
 export class CiVisitor
 {
-	hasErrors = false;
 
 	visitOptionalStatement(statement)
 	{
 		if (statement != null)
 			statement.acceptStatement(this);
-	}
-
-	reportError(statement, message)
-	{
-		console.error(`${this.getCurrentContainer().filename}(${statement.line}): ERROR: ${message}`);
-		this.hasErrors = true;
 	}
 }
 
@@ -4403,19 +4396,18 @@ export class CiSemaHost extends CiParserHost
 {
 }
 
-export class CiConsoleHost extends CiSemaHost
+export class GenHost extends CiSemaHost
 {
-	#errors = false;
+}
+
+export class CiConsoleHost extends GenHost
+{
+	hasErrors = false;
 
 	reportError(filename, startLine, startColumn, endLine, endColumn, message)
 	{
-		this.#errors = true;
+		this.hasErrors = true;
 		console.error(`${filename}(${startLine}): ERROR: ${message}`);
-	}
-
-	hasErrors()
-	{
-		return this.#errors;
 	}
 }
 
@@ -6623,15 +6615,11 @@ export class CiSema
 	}
 }
 
-export class GenHost
-{
-}
-
 export class GenBase extends CiVisitor
 {
 	namespace;
 	outputFile;
-	host;
+	#host;
 	#writer;
 	#stringWriter = new StringWriter();
 	indent = 0;
@@ -6644,20 +6632,30 @@ export class GenBase extends CiVisitor
 	writtenClasses = new Set();
 	currentTemporaries = [];
 
+	setHost(host)
+	{
+		this.#host = host;
+	}
+
 	getCurrentContainer()
 	{
 		const klass = this.currentMethod.parent;
 		return klass;
 	}
 
+	#reportError(statement, message)
+	{
+		this.#host.reportError(this.getCurrentContainer().filename, statement.line, 1, statement.line, 1, message);
+	}
+
 	notSupported(statement, feature)
 	{
-		this.reportError(statement, `${feature} not supported when targeting ${this.getTargetName()}`);
+		this.#reportError(statement, `${feature} not supported when targeting ${this.getTargetName()}`);
 	}
 
 	notYet(statement, feature)
 	{
-		this.reportError(statement, `${feature} not supported yet when targeting ${this.getTargetName()}`);
+		this.#reportError(statement, `${feature} not supported yet when targeting ${this.getTargetName()}`);
 	}
 
 	startLine()
@@ -6864,7 +6862,7 @@ export class GenBase extends CiVisitor
 
 	createFile(directory, filename)
 	{
-		this.#writer = this.host.createFile(directory, filename);
+		this.#writer = this.#host.createFile(directory, filename);
 		this.writeBanner();
 	}
 
@@ -6875,8 +6873,7 @@ export class GenBase extends CiVisitor
 
 	closeFile()
 	{
-		if (!this.host.closeFile(this.hasErrors))
-			this.hasErrors = true;
+		this.#host.closeFile();
 	}
 
 	openStringWriter()

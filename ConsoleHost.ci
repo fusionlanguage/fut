@@ -17,15 +17,13 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-public class CiConsoleHost : CiSemaHost
+public abstract class CiConsoleHost : GenHost
 {
-	bool Errors = false;
+	internal bool HasErrors = false;
 
 	public override void ReportError!(string filename, int startLine, int startColumn, int endLine, int endColumn, string message)
 	{
-		this.Errors = true;
+		this.HasErrors = true;
 		Console.Error.WriteLine($"{filename}({startLine}): ERROR: {message}");
 	}
-
-	public bool HasErrors() => this.Errors;
 }

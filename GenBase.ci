@@ -17,17 +17,17 @@
 // You should have received a copy of the GNU General Public License
 // along with CiTo.  If not, see http://www.gnu.org/licenses/
 
-public abstract class GenHost
+public abstract class GenHost : CiSemaHost
 {
 	public abstract TextWriter! CreateFile!(string? directory, string filename);
-	public abstract bool CloseFile!(bool remove);
+	public abstract void CloseFile!();
 }
 
 public abstract class GenBase : CiVisitor
 {
 	internal string() Namespace;
 	internal string() OutputFile;
-	internal GenHost! Host;
+	GenHost! Host;
 	TextWriter! Writer;
 	StringWriter() StringWriter;
 	protected int Indent = 0;
@@ -40,7 +40,12 @@ public abstract class GenBase : CiVisitor
 	protected HashSet<CiClass>() WrittenClasses;
 	protected List<CiExpr>() CurrentTemporaries; // CiExpr or CiType
 
-	protected override CiContainerType GetCurrentContainer()
+	public void SetHost!(GenHost! host)
+	{
+		this.Host = host;
+	}
+
+	protected virtual CiContainerType GetCurrentContainer()
 	{
 		assert this.CurrentMethod.Parent is CiClass klass;
 		return klass;
@@ -48,12 +53,17 @@ public abstract class GenBase : CiVisitor
 
 	protected abstract string GetTargetName();
 
-	protected void NotSupported!(CiStatement statement, string feature)
+	void ReportError(CiStatement statement, string message)
+	{
+		this.Host.ReportError(GetCurrentContainer().Filename, statement.Line, 1, statement.Line, 1, message);
+	}
+
+	protected void NotSupported(CiStatement statement, string feature)
 	{
 		ReportError(statement, $"{feature} not supported when targeting {GetTargetName()}");
 	}
 
-	protected void NotYet!(CiStatement statement, string feature)
+	protected void NotYet(CiStatement statement, string feature)
 	{
 		ReportError(statement, $"{feature} not supported yet when targeting {GetTargetName()}");
 	}
@@ -260,8 +270,7 @@ public abstract class GenBase : CiVisitor
 
 	protected void CloseFile!()
 	{
-		if (!this.Host.CloseFile(this.HasErrors))
-			this.HasErrors = true;
+		this.Host.CloseFile();
 	}
 
 	protected void OpenStringWriter!()
