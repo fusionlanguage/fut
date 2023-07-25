@@ -74,10 +74,12 @@ class FileGenHost extends CiConsoleHost
 		return this.#currentFile;
 	}
 
-	closeFile(remove)
+	closeFile()
 	{
-		if (this.hasErrors)
-			this.#currentFile.close(() => fs.unlinkSync(this.#currentFile.path));
+		if (this.hasErrors) {
+			const filename = this.#currentFile.path;
+			this.#currentFile.close(() => fs.unlinkSync(filename));
+		}
 		else
 			this.#currentFile.close();
 	}
