@@ -9157,6 +9157,14 @@ namespace Foxoft.Ci
 			}
 		}
 
+		void WriteForeachArrayIndexing(CiForeach forEach, CiSymbol symbol)
+		{
+			forEach.Collection.Accept(this, CiPriority.Primary);
+			WriteChar('[');
+			WriteCamelCaseNotKeyword(symbol.Name);
+			WriteChar(']');
+		}
+
 		void WriteSelfForField(CiSymbol fieldClass)
 		{
 			Write("self->");
@@ -9188,12 +9196,8 @@ namespace Foxoft.Ci
 						if (parent > CiPriority.Add)
 							WriteChar(')');
 					}
-					else {
-						forEach.Collection.Accept(this, CiPriority.Primary);
-						WriteChar('[');
-						WriteCamelCaseNotKeyword(symbol.Name);
-						WriteChar(']');
-					}
+					else
+						WriteForeachArrayIndexing(forEach, symbol);
 					return;
 				default:
 					break;
@@ -9217,6 +9221,9 @@ namespace Foxoft.Ci
 		public override void VisitSymbolReference(CiSymbolReference expr, CiPriority parent)
 		{
 			switch (expr.Symbol.Id) {
+			case CiId.StringLength:
+				WriteStringLength(expr.Left);
+				break;
 			case CiId.ConsoleError:
 				Include("stdio.h");
 				Write("stderr");
@@ -9260,6 +9267,11 @@ namespace Foxoft.Ci
 					WriteLocalName(expr.Symbol, parent);
 				else if (IsDictionaryClassStgIndexing(expr.Left)) {
 					WritePostfix(expr.Left, "->");
+					WriteName(expr.Symbol);
+				}
+				else if (expr.Left is CiSymbolReference symbol && symbol.Symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiArrayStorageType array) {
+					WriteForeachArrayIndexing(forEach, symbol.Symbol);
+					WriteMemberAccess(array.GetElementType(), expr.Symbol.Parent);
 					WriteName(expr.Symbol);
 				}
 				else
@@ -10228,19 +10240,19 @@ namespace Foxoft.Ci
 			base.WriteInitCode(def);
 		}
 
-		void WriteMemberAccess(CiExpr left, CiSymbol symbolClass)
+		void WriteMemberAccess(CiType leftType, CiSymbol symbolClass)
 		{
-			if (left.Type is CiStorageType)
+			if (leftType is CiStorageType)
 				WriteChar('.');
 			else
 				Write("->");
-			for (CiSymbol klass = left.Type.AsClassType().Class; klass != symbolClass; klass = klass.Parent)
+			for (CiSymbol klass = leftType.AsClassType().Class; klass != symbolClass; klass = klass.Parent)
 				Write("base.");
 		}
 
 		protected override void WriteMemberOp(CiExpr left, CiSymbolReference symbol)
 		{
-			WriteMemberAccess(left, symbol.Symbol.Parent);
+			WriteMemberAccess(left.Type, symbol.Symbol.Parent);
 		}
 
 		protected override void WriteArrayPtr(CiExpr expr, CiPriority parent)
@@ -10603,7 +10615,7 @@ namespace Foxoft.Ci
 					}
 					if (obj != null) {
 						obj.Accept(this, CiPriority.Primary);
-						WriteMemberAccess(obj, ptrClass);
+						WriteMemberAccess(obj.Type, ptrClass);
 					}
 					else
 						WriteSelfForField(ptrClass);

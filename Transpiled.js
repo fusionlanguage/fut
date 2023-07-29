@@ -9458,6 +9458,14 @@ export class GenC extends GenCCpp
 			this.writeCamelCaseNotKeyword(symbol.name);
 	}
 
+	#writeForeachArrayIndexing(forEach, symbol)
+	{
+		forEach.collection.accept(this, CiPriority.PRIMARY);
+		this.writeChar(91);
+		this.writeCamelCaseNotKeyword(symbol.name);
+		this.writeChar(93);
+	}
+
 	#writeSelfForField(fieldClass)
 	{
 		this.write("self->");
@@ -9490,12 +9498,8 @@ export class GenC extends GenCCpp
 					if (parent > CiPriority.ADD)
 						this.writeChar(41);
 				}
-				else {
-					forEach.collection.accept(this, CiPriority.PRIMARY);
-					this.writeChar(91);
-					this.writeCamelCaseNotKeyword(symbol.name);
-					this.writeChar(93);
-				}
+				else
+					this.#writeForeachArrayIndexing(forEach, symbol);
 				return;
 			default:
 				break;
@@ -9519,6 +9523,9 @@ export class GenC extends GenCCpp
 	visitSymbolReference(expr, parent)
 	{
 		switch (expr.symbol.id) {
+		case CiId.STRING_LENGTH:
+			this.writeStringLength(expr.left);
+			break;
 		case CiId.CONSOLE_ERROR:
 			this.include("stdio.h");
 			this.write("stderr");
@@ -9564,8 +9571,18 @@ export class GenC extends GenCCpp
 				this.writePostfix(expr.left, "->");
 				this.writeName(expr.symbol);
 			}
-			else
-				super.visitSymbolReference(expr, parent);
+			else {
+				let symbol;
+				let forEach;
+				let array;
+				if ((symbol = expr.left) instanceof CiSymbolReference && (forEach = symbol.symbol.parent) instanceof CiForeach && (array = forEach.collection.type) instanceof CiArrayStorageType) {
+					this.#writeForeachArrayIndexing(forEach, symbol.symbol);
+					this.#writeMemberAccess(array.getElementType(), expr.symbol.parent);
+					this.writeName(expr.symbol);
+				}
+				else
+					super.visitSymbolReference(expr, parent);
+			}
 			break;
 		}
 	}
@@ -10564,19 +10581,19 @@ export class GenC extends GenCCpp
 		super.writeInitCode(def);
 	}
 
-	#writeMemberAccess(left, symbolClass)
+	#writeMemberAccess(leftType, symbolClass)
 	{
-		if (left.type instanceof CiStorageType)
+		if (leftType instanceof CiStorageType)
 			this.writeChar(46);
 		else
 			this.write("->");
-		for (let klass = left.type.asClassType().class; klass != symbolClass; klass = klass.parent)
+		for (let klass = leftType.asClassType().class; klass != symbolClass; klass = klass.parent)
 			this.write("base.");
 	}
 
 	writeMemberOp(left, symbol)
 	{
-		this.#writeMemberAccess(left, symbol.symbol.parent);
+		this.#writeMemberAccess(left.type, symbol.symbol.parent);
 	}
 
 	writeArrayPtr(expr, parent)
@@ -10950,7 +10967,7 @@ export class GenC extends GenCCpp
 				}
 				if (obj != null) {
 					obj.accept(this, CiPriority.PRIMARY);
-					this.#writeMemberAccess(obj, ptrClass);
+					this.#writeMemberAccess(obj.type, ptrClass);
 				}
 				else
 					this.#writeSelfForField(ptrClass);

@@ -24,6 +24,12 @@ public class Test
 		foreach (Test? t in pa)
 			sum += t.Foo;
 
-		return sum == 30 + 4 + 2;
+		string[2] sa;
+		sa[0] = "foo";
+		sa[1] = "quux";
+		foreach (string s in sa)
+			sum += s.Length;
+
+		return sum == 30 + 4 + 2 + 7;
 	}
 }

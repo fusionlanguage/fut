@@ -290,6 +290,14 @@ public class GenC : GenCCpp
 		}
 	}
 
+	void WriteForeachArrayIndexing!(CiForeach forEach, CiSymbol symbol)
+	{
+		forEach.Collection.Accept(this, CiPriority.Primary);
+		WriteChar('[');
+		WriteCamelCaseNotKeyword(symbol.Name);
+		WriteChar(']');
+	}
+
 	void WriteSelfForField!(CiSymbol fieldClass) // CiClass
 	{
 		Write("self->");
@@ -321,12 +329,8 @@ public class GenC : GenCCpp
 					if (parent > CiPriority.Add)
 						WriteChar(')');
 				}
-				else {
-					forEach.Collection.Accept(this, CiPriority.Primary);
-					WriteChar('[');
-					WriteCamelCaseNotKeyword(symbol.Name);
-					WriteChar(']');
-				}
+				else
+					WriteForeachArrayIndexing(forEach, symbol);
 				return;
 			default:
 				break;
@@ -350,6 +354,9 @@ public class GenC : GenCCpp
 	public override void VisitSymbolReference!(CiSymbolReference expr, CiPriority parent)
 	{
 		switch (expr.Symbol.Id) {
+		case CiId.StringLength:
+			WriteStringLength(expr.Left);
+			break;
 		case CiId.ConsoleError:
 			Include("stdio.h");
 			Write("stderr");
@@ -393,6 +400,12 @@ public class GenC : GenCCpp
 				WriteLocalName(expr.Symbol, parent);
 			else if (IsDictionaryClassStgIndexing(expr.Left)) {
 				WritePostfix(expr.Left, "->");
+				WriteName(expr.Symbol);
+			}
+			else if (expr.Left is CiSymbolReference symbol && symbol.Symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiArrayStorageType array) {
+				// not essential, but a[i].foo looks better than (a + i)->foo
+				WriteForeachArrayIndexing(forEach, symbol.Symbol);
+				WriteMemberAccess(array.GetElementType(), expr.Symbol.Parent);
 				WriteName(expr.Symbol);
 			}
 			else
@@ -1377,19 +1390,19 @@ public class GenC : GenCCpp
 		base.WriteInitCode(def);
 	}
 
-	void WriteMemberAccess!(CiExpr left, CiSymbol /* CiClass */ symbolClass)
+	void WriteMemberAccess!(CiType leftType, CiSymbol /* CiClass */ symbolClass)
 	{
-		if (left.Type is CiStorageType)
+		if (leftType is CiStorageType)
 			WriteChar('.');
 		else
 			Write("->");
-		for (CiSymbol klass = left.Type.AsClassType().Class; klass != symbolClass; klass = klass.Parent)
+		for (CiSymbol klass = leftType.AsClassType().Class; klass != symbolClass; klass = klass.Parent)
 			Write("base.");
 	}
 
 	protected override void WriteMemberOp!(CiExpr left, CiSymbolReference? symbol)
 	{
-		WriteMemberAccess(left, symbol.Symbol.Parent);
+		WriteMemberAccess(left.Type, symbol.Symbol.Parent);
 	}
 
 	protected override void WriteArrayPtr!(CiExpr expr, CiPriority parent)
@@ -1753,7 +1766,7 @@ public class GenC : GenCCpp
 				}
 				if (obj != null) {
 					obj.Accept(this, CiPriority.Primary);
-					WriteMemberAccess(obj, ptrClass);
+					WriteMemberAccess(obj.Type, ptrClass);
 				}
 				else
 					WriteSelfForField(ptrClass);

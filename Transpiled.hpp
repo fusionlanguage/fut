@@ -2071,6 +2071,7 @@ private:
 	void writeTemporaryOrExpr(const CiExpr * expr, CiPriority parent);
 	void writeUpcast(const CiClass * resultClass, const CiSymbol * klass);
 	void writeClassPtr(const CiClass * resultClass, const CiExpr * expr, CiPriority parent);
+	void writeForeachArrayIndexing(const CiForeach * forEach, const CiSymbol * symbol);
 	void writeSelfForField(const CiSymbol * fieldClass);
 	void writeMatchProperty(const CiSymbolReference * expr, int which);
 	void writeGlib(std::string_view s);
@@ -2109,7 +2110,7 @@ private:
 	void writeThrowReturnValue();
 	void writeThrow();
 	void endForwardThrow(const CiMethod * throwingMethod);
-	void writeMemberAccess(const CiExpr * left, const CiSymbol * symbolClass);
+	void writeMemberAccess(const CiType * leftType, const CiSymbol * symbolClass);
 	void writeStringMethod(std::string_view name, const CiExpr * obj, const std::vector<std::shared_ptr<CiExpr>> * args);
 	void writeSizeofCompare(const CiType * elementType);
 	void writeListAddInsert(const CiExpr * obj, bool insert, std::string_view function, const std::vector<std::shared_ptr<CiExpr>> * args);

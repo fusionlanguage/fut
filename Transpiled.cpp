@@ -8839,6 +8839,14 @@ void GenC::writeName(const CiSymbol * symbol)
 		writeCamelCaseNotKeyword(symbol->name);
 }
 
+void GenC::writeForeachArrayIndexing(const CiForeach * forEach, const CiSymbol * symbol)
+{
+	forEach->collection->accept(this, CiPriority::primary);
+	writeChar('[');
+	writeCamelCaseNotKeyword(symbol->name);
+	writeChar(']');
+}
+
 void GenC::writeSelfForField(const CiSymbol * fieldClass)
 {
 	write("self->");
@@ -8870,12 +8878,8 @@ void GenC::writeLocalName(const CiSymbol * symbol, CiPriority parent)
 				if (parent > CiPriority::add)
 					writeChar(')');
 			}
-			else {
-				forEach->collection->accept(this, CiPriority::primary);
-				writeChar('[');
-				writeCamelCaseNotKeyword(symbol->name);
-				writeChar(']');
-			}
+			else
+				writeForeachArrayIndexing(forEach, symbol);
 			return;
 		default:
 			break;
@@ -8899,6 +8903,9 @@ void GenC::writeMatchProperty(const CiSymbolReference * expr, int which)
 void GenC::visitSymbolReference(const CiSymbolReference * expr, CiPriority parent)
 {
 	switch (expr->symbol->id) {
+	case CiId::stringLength:
+		writeStringLength(expr->left.get());
+		break;
 	case CiId::consoleError:
 		include("stdio.h");
 		write("stderr");
@@ -8944,8 +8951,18 @@ void GenC::visitSymbolReference(const CiSymbolReference * expr, CiPriority paren
 			writePostfix(expr->left.get(), "->");
 			writeName(expr->symbol);
 		}
-		else
-			GenCCpp::visitSymbolReference(expr, parent);
+		else {
+			const CiSymbolReference * symbol;
+			const CiForeach * forEach;
+			const CiArrayStorageType * array;
+			if ((symbol = dynamic_cast<const CiSymbolReference *>(expr->left.get())) && (forEach = dynamic_cast<const CiForeach *>(symbol->symbol->parent)) && (array = dynamic_cast<const CiArrayStorageType *>(forEach->collection->type.get()))) {
+				writeForeachArrayIndexing(forEach, symbol->symbol);
+				writeMemberAccess(array->getElementType().get(), expr->symbol->parent);
+				writeName(expr->symbol);
+			}
+			else
+				GenCCpp::visitSymbolReference(expr, parent);
+		}
 		break;
 	}
 }
@@ -9902,19 +9919,19 @@ void GenC::writeInitCode(const CiNamedValue * def)
 	GenBase::writeInitCode(def);
 }
 
-void GenC::writeMemberAccess(const CiExpr * left, const CiSymbol * symbolClass)
+void GenC::writeMemberAccess(const CiType * leftType, const CiSymbol * symbolClass)
 {
-	if (dynamic_cast<const CiStorageType *>(left->type.get()))
+	if (dynamic_cast<const CiStorageType *>(leftType))
 		writeChar('.');
 	else
 		write("->");
-	for (const CiSymbol * klass = left->type->asClassType()->class_; klass != symbolClass; klass = klass->parent)
+	for (const CiSymbol * klass = leftType->asClassType()->class_; klass != symbolClass; klass = klass->parent)
 		write("base.");
 }
 
 void GenC::writeMemberOp(const CiExpr * left, const CiSymbolReference * symbol)
 {
-	writeMemberAccess(left, symbol->symbol->parent);
+	writeMemberAccess(left->type.get(), symbol->symbol->parent);
 }
 
 void GenC::writeArrayPtr(const CiExpr * expr, CiPriority parent)
@@ -10278,7 +10295,7 @@ void GenC::writeCCall(const CiExpr * obj, const CiMethod * method, const std::ve
 				}
 				if (obj != nullptr) {
 					obj->accept(this, CiPriority::primary);
-					writeMemberAccess(obj, ptrClass);
+					writeMemberAccess(obj->type.get(), ptrClass);
 				}
 				else
 					writeSelfForField(ptrClass);
