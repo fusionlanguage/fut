@@ -18901,6 +18901,8 @@ export class GenJsNoModule extends GenBase
 			this.write(symbol.name);
 		else if (symbol instanceof CiConst) {
 			const konst = symbol;
+			if (konst.visibility == CiVisibility.PRIVATE)
+				this.writeChar(35);
 			if (konst.inMethod != null) {
 				this.writeUppercaseWithUnderscores(konst.inMethod.name);
 				this.writeChar(95);

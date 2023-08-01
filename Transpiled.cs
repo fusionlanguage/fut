@@ -18412,6 +18412,8 @@ namespace Foxoft.Ci
 				Write(symbol.Name);
 				break;
 			case CiConst konst:
+				if (konst.Visibility == CiVisibility.Private)
+					WriteChar('#');
 				if (konst.InMethod != null) {
 					WriteUppercaseWithUnderscores(konst.InMethod.Name);
 					WriteChar('_');

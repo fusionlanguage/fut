@@ -17703,6 +17703,8 @@ void GenJsNoModule::writeName(const CiSymbol * symbol)
 	if (dynamic_cast<const CiContainerType *>(symbol))
 		write(symbol->name);
 	else if (const CiConst *konst = dynamic_cast<const CiConst *>(symbol)) {
+		if (konst->visibility == CiVisibility::private_)
+			writeChar('#');
 		if (konst->inMethod != nullptr) {
 			writeUppercaseWithUnderscores(konst->inMethod->name);
 			writeChar('_');
