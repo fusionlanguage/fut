@@ -17934,7 +17934,9 @@ export class GenJava extends GenTyped
 
 	#writeSByteLiteral(literal)
 	{
-		this.visitLiteralLong((literal.value ^ 128n) - 128n);
+		if (literal.value >= 128)
+			this.write("(byte) ");
+		literal.accept(this, CiPriority.PRIMARY);
 	}
 
 	writeEqual(left, right, parent, not)

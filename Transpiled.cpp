@@ -16777,7 +16777,9 @@ void GenJava::visitPostfixExpr(const CiPostfixExpr * expr, CiPriority parent)
 
 void GenJava::writeSByteLiteral(const CiLiteralLong * literal)
 {
-	visitLiteralLong((literal->value ^ 128) - 128);
+	if (literal->value >= 128)
+		write("(byte) ");
+	literal->accept(this, CiPriority::primary);
 }
 
 void GenJava::writeEqual(const CiExpr * left, const CiExpr * right, CiPriority parent, bool not_)

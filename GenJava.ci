@@ -419,7 +419,9 @@ public class GenJava : GenTyped
 
 	void WriteSByteLiteral!(CiLiteralLong literal)
 	{
-		VisitLiteralLong((literal.Value ^ 0x80) - 0x80);
+		if (literal.Value >= 0x80)
+			Write("(byte) ");
+		literal.Accept(this, CiPriority.Primary);
 	}
 
 	protected override void WriteEqual!(CiExpr left, CiExpr right, CiPriority parent, bool not)

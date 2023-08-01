@@ -17470,7 +17470,9 @@ namespace Foxoft.Ci
 
 		void WriteSByteLiteral(CiLiteralLong literal)
 		{
-			VisitLiteralLong((literal.Value ^ 128) - 128);
+			if (literal.Value >= 128)
+				Write("(byte) ");
+			literal.Accept(this, CiPriority.Primary);
 		}
 
 		protected override void WriteEqual(CiExpr left, CiExpr right, CiPriority parent, bool not)
