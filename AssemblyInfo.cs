@@ -1,9 +1,8 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyCompany("Foxoft")]
-[assembly: AssemblyProduct("Ci Programming Language")]
+[assembly: AssemblyProduct("Fusion Programming Language")]
 [assembly: AssemblyCopyright("Copyright © Piotr Fusik 2011-2023")]
 [assembly: ComVisible(false)]
-[assembly: AssemblyVersion("2.2.0.0")]
-[assembly: AssemblyFileVersion("2.2.0.0")]
+[assembly: AssemblyVersion("3.0.0.0")]
+[assembly: AssemblyFileVersion("3.0.0.0")]

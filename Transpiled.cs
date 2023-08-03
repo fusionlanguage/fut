@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-namespace Foxoft.Ci
+namespace Fusion
 {
 
 	public abstract class CiParserHost

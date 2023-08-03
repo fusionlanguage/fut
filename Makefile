@@ -77,7 +77,7 @@ Transpiled.cpp Transpiled.js: $(SOURCE_CI)
 	$(DO)$(CITO) -o $@ $^
 
 Transpiled.cs: $(SOURCE_CI)
-	$(DO)$(CITO) -o $@ -n Foxoft.Ci $^
+	$(DO)$(CITO) -o $@ -n Fusion $^
 
 test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error
 	$(DO)perl test/summary.pl test/bin/*/*.txt

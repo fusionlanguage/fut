@@ -26,9 +26,9 @@ using System.Linq;
 using System.Reflection;
 
 [assembly: AssemblyTitle("CiTo")]
-[assembly: AssemblyDescription("Ci Translator")]
+[assembly: AssemblyDescription("Fusion Transpiler")]
 
-namespace Foxoft.Ci
+namespace Fusion
 {
 
 public class FileResourceSema : CiSema
