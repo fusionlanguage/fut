@@ -1,4 +1,4 @@
-[![Travis CI](https://travis-ci.com/pfusik/cito.svg?branch=master)](https://travis-ci.com/github/pfusik/cito)
+[![Travis CI](https://app.travis-ci.com/fusionlanguage/fut.svg?branch=master)](https://app.travis-ci.com/fusionlanguage/fut)
 [![GitHub Actions](https://github.com/fusionlanguage/fut/actions/workflows/test.yml/badge.svg)](https://github.com/fusionlanguage/fut/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/pfusik/cito/branch/master/graph/badge.svg?token=M7UX4WJKI3)](https://codecov.io/gh/pfusik/cito)
 
