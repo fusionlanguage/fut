@@ -65,7 +65,7 @@ bin/Debug/net6.0/cito.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs C
 
 else ifeq ($(FUT_HOST),node)
 
-CITO = node cito.js
+CITO = node fut.js
 
 cito: Transpiled.js
 

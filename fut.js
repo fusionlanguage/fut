@@ -1,4 +1,4 @@
-// cito.js - Fusion transpiler
+// fut.js - Fusion transpiler
 //
 // Copyright (C) 2011-2023  Piotr Fusik
 //
@@ -88,7 +88,7 @@ class FileGenHost extends CiConsoleHost
 
 function usage()
 {
-	console.log("Usage: cito [OPTIONS] -o FILE INPUT.ci");
+	console.log("Usage: node fut.js [OPTIONS] -o FILE INPUT.ci");
 	console.log("Options:");
 	console.log("-l c       Translate to C");
 	console.log("-l cpp     Translate to C++");
@@ -178,7 +178,7 @@ function emit(program, lang, namespace, outputFile, host)
 		gen = new GenCl();
 		break;
 	default:
-		console.error(`cito: ERROR: Unknown language: ${lang}`);
+		console.error(`fut: ERROR: Unknown language: ${lang}`);
 		process.exitCode = 1;
 		return;
 	}
@@ -207,7 +207,7 @@ function emitImplicitLang(program, namespace, outputFile, host)
 		if (c == "/" || c == "\\" || c == ":")
 			break;
 	}
-	console.error(`cito: ERROR: Don't know what language to translate to: no extension in '${outputFile}' and no '-l' option`);
+	console.error(`fut: ERROR: Don't know what language to translate to: no extension in '${outputFile}' and no '-l' option`);
 	process.exitCode = 1;
 }
 
@@ -227,7 +227,7 @@ for (let i = 2; i < process.argv.length; i++) {
 		process.exit(0);
 	}
 	else if (arg == "--version") {
-		console.log("cito 3.0.0 (Node.js)");
+		console.log("fut 3.0.0 (Node.js)");
 		process.exit(0);
 	}
 	else if (i + 1 < process.argv.length) {
@@ -244,7 +244,7 @@ for (let i = 2; i < process.argv.length; i++) {
 		case "-D":
 			const symbol = process.argv[++i];
 			if (symbol == "true" || symbol == "false") {
-				console.error(`cito: ERROR: '${symbol}' is reserved`);
+				console.error(`fut: ERROR: '${symbol}' is reserved`);
 				process.exit(1);
 			}
 			parser.addPreSymbol(symbol);
@@ -256,12 +256,12 @@ for (let i = 2; i < process.argv.length; i++) {
 			sema.addResourceDir(process.argv[++i]);
 			break;
 		default:
-			console.error(`cito: ERROR: Unknown option: ${arg}`);
+			console.error(`fut: ERROR: Unknown option: ${arg}`);
 			process.exit(1);
 		}
 	}
 	else {
-		console.error(`cito: ERROR: Unknown option: ${arg}`);
+		console.error(`fut: ERROR: Unknown option: ${arg}`);
 		process.exit(1);
 	}
 }
@@ -285,6 +285,6 @@ try {
 		emitImplicitLang(program, namespace, outputFile, host);
 }
 catch (e) {
-	console.error(`cito: ERROR: ${e.message}`);
+	console.error(`fut: ERROR: ${e.message}`);
 	process.exit(1);
 }
