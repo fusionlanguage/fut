@@ -1,4 +1,4 @@
-// ConsoleHost.ci - emit errors to stderr
+// ConsoleHost.fu - emit errors to stderr
 //
 // Copyright (C) 2023  Piotr Fusik
 //

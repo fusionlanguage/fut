@@ -32,7 +32,7 @@ DO = @echo $@ &&
 endif
 DO_SUMMARY = $(DO)perl test/summary.pl $(filter %.txt, $^)
 DO_CITO = $(DO)mkdir -p $(@D) && ($(CITO) -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
-SOURCE_CI = Lexer.ci AST.ci Parser.ci ConsoleHost.ci Sema.ci GenBase.ci GenTyped.ci GenCCppD.ci GenCCpp.ci GenC.ci GenCl.ci GenCpp.ci GenCs.ci GenD.ci GenJava.ci GenJs.ci GenTs.ci GenPySwift.ci GenSwift.ci GenPy.ci
+SOURCE_CI = Lexer.fu AST.fu Parser.fu ConsoleHost.fu Sema.fu GenBase.fu GenTyped.fu GenCCppD.fu GenCCpp.fu GenC.fu GenCl.fu GenCpp.fu GenCs.fu GenD.fu GenJava.fu GenJs.fu GenTs.fu GenPySwift.fu GenSwift.fu GenPy.fu
 
 all: cito Transpiled.cpp Transpiled.cs Transpiled.js
 
@@ -82,43 +82,43 @@ Transpiled.cs: $(SOURCE_CI)
 test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error
 	$(DO)perl test/summary.pl test/bin/*/*.txt
 
-test-c test-GenC.ci: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
+test-c test-GenC.fu: $(patsubst test/%.ci, test/bin/%/c.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-cpp test-GenCpp.ci: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) Transpiled.cpp
+test-cpp test-GenCpp.fu: $(patsubst test/%.ci, test/bin/%/cpp.txt, $(wildcard test/*.ci)) Transpiled.cpp
 	$(DO_SUMMARY)
 
-test-cs test-GenCs.ci: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) Transpiled.cs
+test-cs test-GenCs.fu: $(patsubst test/%.ci, test/bin/%/cs.txt, $(wildcard test/*.ci)) Transpiled.cs
 	$(DO_SUMMARY)
 
-test-d test-GenD.ci: $(patsubst test/%.ci, test/bin/%/d.txt, $(wildcard test/*.ci))
+test-d test-GenD.fu: $(patsubst test/%.ci, test/bin/%/d.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-java test-GenJava.ci: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci))
+test-java test-GenJava.fu: $(patsubst test/%.ci, test/bin/%/java.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-js test-GenJs.ci: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) Transpiled.js
+test-js test-GenJs.fu: $(patsubst test/%.ci, test/bin/%/js.txt, $(wildcard test/*.ci)) Transpiled.js
 	$(DO_SUMMARY)
 
-test-ts test-GenTs.ci: $(patsubst test/%.ci, test/bin/%/ts.txt, $(wildcard test/*.ci))
+test-ts test-GenTs.fu: $(patsubst test/%.ci, test/bin/%/ts.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-py test-GenPy.ci: $(patsubst test/%.ci, test/bin/%/py.txt, $(wildcard test/*.ci))
+test-py test-GenPy.fu: $(patsubst test/%.ci, test/bin/%/py.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-swift test-GenSwift.ci: $(patsubst test/%.ci, test/bin/%/swift.txt, $(wildcard test/*.ci))
+test-swift test-GenSwift.fu: $(patsubst test/%.ci, test/bin/%/swift.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-cl test-GenCl.ci: $(patsubst test/%.ci, test/bin/%/cl.txt, $(wildcard test/*.ci))
+test-cl test-GenCl.fu: $(patsubst test/%.ci, test/bin/%/cl.txt, $(wildcard test/*.ci))
 	$(DO_SUMMARY)
 
-test-GenCCpp.ci: test-c test-cpp
+test-GenCCpp.fu: test-c test-cpp
 
-test-GenCCppD.ci: test-c test-cpp test-d
+test-GenCCppD.fu: test-c test-cpp test-d
 
-test-GenPySwift.ci: test-py test-swift
+test-GenPySwift.fu: test-py test-swift
 
-test-error test-Lexer.ci test-Parser.ci test-Sema.ci: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
+test-error test-Lexer.fu test-Parser.fu test-Sema.fu: $(patsubst test/error/%.ci, test/bin/%/error.txt, $(wildcard test/error/*.ci))
 	$(DO_SUMMARY)
 
 test-%.ci: $(addsuffix .txt, $(addprefix test/bin/%/, c cpp cs d java js ts py swift cl))
