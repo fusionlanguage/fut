@@ -1,4 +1,4 @@
-﻿# Getting started with Ć
+# Getting started with Fusion
 
 ## Installing cito
 
@@ -18,14 +18,14 @@ If it displays instructions on how to configure your PATH variable, please follo
 
 ## Syntax highlighting
 
-To install Ć syntax highlighting in your IDE or text editor, follow the [instructions](editors.md).
+To install Fusion syntax highlighting in your IDE or text editor, follow the [instructions](editors.md).
 
 ## Hello, world!
 
-Now you are ready to try out your first Ć code:
+Now you are ready to try out your first Fusion code:
 
 ```csharp
-public static class HelloCi
+public static class HelloFu
 {
     /// Returns a greeting message.
     public static string GetMessage()
@@ -35,12 +35,12 @@ public static class HelloCi
 }
 ```
 
-Save the above in `hello.ci`, then issue this command:
+Save the above in `hello.fu`, then issue this command:
 
-    cito -o hello.c,cpp,cs,java,js,py,swift,ts,cl hello.ci
+    cito -o hello.c,cpp,cs,java,js,py,swift,ts,cl hello.fu
 
-This will translate the Ć code to C, C++, C#, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.
-The `cito` command accepts one or more Ć source files (here, just `hello.ci`)
+This will translate the Fusion code to C, C++, C#, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.
+The `cito` command accepts one or more Fusion source files (here, just `hello.fu`)
 and outputs the transpiled source files as specified by the mandatory `-o` option.
 Here we specified several languages, comma-separated.
 In a real-world scenario, you would integrate the `cito` command into your build system.
@@ -48,7 +48,7 @@ In a real-world scenario, you would integrate the `cito` command into your build
 Now let's look at the outputs. `hello.cs`:
 
 ```csharp
-public static class HelloCi
+public static class HelloFu
 {
 
 	/// <summary>Returns a greeting message.</summary>
@@ -59,15 +59,15 @@ public static class HelloCi
 }
 ```
 
-This is virtually identical to the Ć source, with just documentation comment markup added.
+This is virtually identical to the Fusion source, with just documentation comment markup added.
 
-The Java source file is named `HelloCi.java`, after the public class it defines.
+The Java source file is named `HelloFu.java`, after the public class it defines.
 This is a requirement of the Java programming language.
 
 ```java
-public final class HelloCi
+public final class HelloFu
 {
-	private HelloCi()
+	private HelloFu()
 	{
 	}
 
@@ -89,9 +89,9 @@ The C++ translation consists of two files: `hello.hpp` defines the class and _de
 ```cpp
 #pragma once
 #include <string_view>
-class HelloCi;
+class HelloFu;
 
-class HelloCi
+class HelloFu
 {
 public:
 	/**
@@ -99,7 +99,7 @@ public:
 	 */
 	static std::string_view getMessage();
 private:
-	HelloCi() = delete;
+	HelloFu() = delete;
 };
 ```
 
@@ -108,7 +108,7 @@ while `hello.cpp` _defines_ the method:
 ```cpp
 #include "hello.hpp"
 
-std::string_view HelloCi::getMessage()
+std::string_view HelloFu::getMessage()
 {
 	return "Hello, world!";
 }
@@ -127,7 +127,7 @@ extern "C" {
 /**
  * Returns a greeting message.
  */
-const char *HelloCi_GetMessage(void);
+const char *HelloFu_GetMessage(void);
 
 #ifdef __cplusplus
 }
@@ -140,7 +140,7 @@ and the implementation file `hello.c`:
 #include <stdlib.h>
 #include "hello.h"
 
-const char *HelloCi_GetMessage(void)
+const char *HelloFu_GetMessage(void)
 {
 	return "Hello, world!";
 }
@@ -149,7 +149,7 @@ const char *HelloCi_GetMessage(void)
 `hello.swift` is in the Apple-centric language Swift:
 
 ```swift
-public class HelloCi
+public class HelloFu
 {
 
 	/// Returns a greeting message.
@@ -167,7 +167,7 @@ The JavaScript output `hello.js` does not specify the return type:
 ```js
 "use strict";
 
-class HelloCi
+class HelloFu
 {
 
 	/**
@@ -183,7 +183,7 @@ class HelloCi
 TypeScript is a JavaScript derivative, with explicit types and visibility control:
 
 ```ts
-export class HelloCi
+export class HelloFu
 {
 	private constructor()
 	{
@@ -202,7 +202,7 @@ export class HelloCi
 `hello.py` in Python:
 
 ```python
-class HelloCi:
+class HelloFu:
 
 	@staticmethod
 	def get_message():
@@ -216,9 +216,9 @@ Finally, there's OpenCL code that can run on a GPU:
 /**
  * Returns a greeting message.
  */
-constant char *HelloCi_GetMessage(void);
+constant char *HelloFu_GetMessage(void);
 
-constant char *HelloCi_GetMessage(void)
+constant char *HelloFu_GetMessage(void)
 {
 	return "Hello, world!";
 }
@@ -227,7 +227,7 @@ constant char *HelloCi_GetMessage(void)
 As you can see, `cito` simply rewrites your code in different languages.
 
 Now, you may wonder why the code _does not print_ the message in the console?
-That's because Ć was never intended to be used to write complete programs.
+That's because Fusion was never intended to be used to write complete programs.
 What you write are reusable components aka libraries.
 In this minimal example we have a class with one method that returns a string.
 All the languages mentioned above can easily call this method.
@@ -239,18 +239,18 @@ For example, this is how you could use it from C:
 
 int main()
 {
-    puts(HelloCi_GetMessage());
+    puts(HelloFu_GetMessage());
 }
 ```
 
 In Java, you could display the message in a message box.
 In Python, you could emit the message to a website.
 In C++, you could display the message on an embedded display.
-The point is, Ć abstracts from the user interfaces.
+The point is, Fusion abstracts from the user interfaces.
 
 ## Language documentation
 
-Ć is explained in depth in its [reference documentation](reference.md).
+Fusion is explained in depth in its [reference documentation](reference.md).
 
 ## Example projects
 
@@ -258,7 +258,7 @@ It's always good to study the language by looking at projects written
 in it - starting with really small ones:
 
 - [a toy ray-tracer](https://github.com/pfusik/ray-ci)
-- [encoder of Data Matrix barcodes](https://github.com/pfusik/datamatrix-ci)
+- [encoder of Data Matrix barcodes](https://github.com/pfusik/datamatrix-fu)
 - [encoder/decoder of the Quite OK Image format](https://github.com/pfusik/qoi-ci)
 - [decoder of PNG, GIF and JPEG](https://github.com/pfusik/image-ci)
 
@@ -270,7 +270,7 @@ and a [decoder of 500+ retro image formats](https://recoil.sourceforge.net):
 
 ![RECOIL architecture](https://recoil.sourceforge.net/recoil-internals.png)
 
-`cito` itself was initially written in C#, but is getting [rewritten in Ć](https://github.com/pfusik/cito/issues/48).
+`cito` itself was initially written in C#, but is getting [rewritten in Fusion](https://github.com/pfusik/cito/issues/48).
 
 ## Community
 
