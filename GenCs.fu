@@ -370,7 +370,7 @@ public class GenCs : GenTyped
 
 	protected override void WriteResource!(string name, int length)
 	{
-		Write("CiResource.");
+		Write("FuResource.");
 		WriteResourceName(name);
 	}
 
@@ -934,7 +934,7 @@ public class GenCs : GenTyped
 	void WriteResources!(SortedDictionary<string(), List<byte>()> resources)
 	{
 		WriteNewLine();
-		WriteLine("internal static class CiResource");
+		WriteLine("internal static class FuResource");
 		OpenBlock();
 		foreach ((string name, List<byte> content) in resources) {
 			Write("internal static readonly byte[] ");

@@ -63,7 +63,7 @@ public abstract class GenCCppD : GenTyped
 		if (statement.LoopOrSwitch is CiSwitch switchStatement) {
 			int gotoId = this.SwitchesWithGoto.IndexOf(switchStatement);
 			if (gotoId >= 0) {
-				Write("goto ciafterswitch");
+				Write("goto fuafterswitch");
 				VisitLiteralLong(gotoId);
 				WriteCharLine(';');
 				return;
@@ -79,7 +79,7 @@ public abstract class GenCCppD : GenTyped
 			int gotoId = this.SwitchesWithGoto.Count;
 			this.SwitchesWithGoto.Add(statement);
 			WriteSwitchAsIfs(statement, false);
-			Write("ciafterswitch");
+			Write("fuafterswitch");
 			VisitLiteralLong(gotoId);
 			WriteLine(": ;");
 		}

@@ -364,7 +364,7 @@ public class GenJsNoModule : GenBase
 
 	protected override void WriteResource!(string name, int length)
 	{
-		Write("Ci.");
+		Write("Fu.");
 		WriteResourceName(name);
 	}
 
@@ -1073,7 +1073,7 @@ public class GenJsNoModule : GenBase
 		if (statement.LoopOrSwitch is CiSwitch switchStatement) {
 			int label = this.SwitchesWithLabel.IndexOf(switchStatement);
 			if (label >= 0) {
-				Write("break ciswitch");
+				Write("break fuswitch");
 				VisitLiteralLong(label);
 				WriteCharLine(';');
 				return;
@@ -1180,7 +1180,7 @@ public class GenJsNoModule : GenBase
 		if (statement.IsTypeMatching() || statement.HasWhen()) {
 			if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreak(kase.Body))
 			 || CiSwitch.HasEarlyBreak(statement.DefaultBody)) {
-				Write("ciswitch");
+				Write("fuswitch");
 				VisitLiteralLong(this.SwitchesWithLabel.Count);
 				this.SwitchesWithLabel.Add(statement);
 				Write(": ");
@@ -1317,7 +1317,7 @@ public class GenJsNoModule : GenBase
 		if (resources.Count == 0)
 			return;
 		WriteNewLine();
-		WriteLine("class Ci");
+		WriteLine("class Fu");
 		OpenBlock();
 		foreach ((string name, List<byte> content) in resources) {
 			Write("static ");

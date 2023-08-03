@@ -615,7 +615,7 @@ public class GenD : GenCCppD
 
 	protected override void WriteResource!(string name, int length)
 	{
-		Write("CiResource.");
+		Write("FuResource.");
 		WriteResourceName(name);
 	}
 
@@ -775,21 +775,21 @@ public class GenD : GenCCppD
 		case CiId.ArrayBinarySearchAll:
 		case CiId.ArrayBinarySearchPart:
 			Include("std.range");
-			Write("() { size_t cibegin = ");
+			Write("() { size_t fubegin = ");
 			if (args.Count == 3)
 				args[1].Accept(this, CiPriority.Argument);
 			else
 				WriteChar('0');
-			Write("; auto cisearch = ");
+			Write("; auto fusearch = ");
 			WriteClassReference(obj);
 			WriteChar('[');
 			if (args.Count == 3) {
-				Write("cibegin .. cibegin + ");
+				Write("fubegin .. fubegin + ");
 				args[2].Accept(this, CiPriority.Add);
 			}
 			Write("].assumeSorted.trisect(");
 			WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
-			Write("); return cisearch[1].length ? cibegin + cisearch[0].length : -1; }()");
+			Write("); return fusearch[1].length ? fubegin + fusearch[0].length : -1; }()");
 			break;
 		case CiId.ArrayContains:
 		case CiId.ListContains:
@@ -1435,7 +1435,7 @@ public class GenD : GenCCppD
 	void WriteResources!(SortedDictionary<string(), List<byte>()> resources)
 	{
 		WriteNewLine();
-		WriteLine("private static struct CiResource");
+		WriteLine("private static struct FuResource");
 		OpenBlock();
 		foreach ((string name, List<byte> content) in resources) {
 			Write("private static ubyte[] ");

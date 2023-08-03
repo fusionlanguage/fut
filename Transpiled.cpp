@@ -6,7 +6,7 @@
 #include <format>
 #include "Transpiled.hpp"
 
-static std::string CiString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)
+static std::string FuString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)
 {
 	std::string result;
 	result.reserve(s.size());
@@ -1283,11 +1283,11 @@ std::string CiLiteralLong::toString() const
 
 std::shared_ptr<CiLiteralChar> CiLiteralChar::new_(int value, int line)
 {
-	std::shared_ptr<CiLiteralChar> citemp0 = std::make_shared<CiLiteralChar>();
-	citemp0->line = line;
-	citemp0->type = CiRangeType::new_(value, value);
-	citemp0->value = value;
-	return citemp0;
+	std::shared_ptr<CiLiteralChar> futemp0 = std::make_shared<CiLiteralChar>();
+	futemp0->line = line;
+	futemp0->type = CiRangeType::new_(value, value);
+	futemp0->value = value;
+	return futemp0;
 }
 
 void CiLiteralChar::accept(CiVisitor * visitor, CiPriority parent) const
@@ -1859,19 +1859,19 @@ bool CiIntegerType::isAssignableFrom(const CiType * right) const
 
 void CiRangeType::addMinMaxValue(std::shared_ptr<CiRangeType> target, std::string_view name, int value)
 {
-	std::shared_ptr<CiRangeType> citemp0 = std::make_shared<CiRangeType>();
-	citemp0->min = value;
-	citemp0->max = value;
-	std::shared_ptr<CiRangeType> type = target->min == target->max ? target : citemp0;
-	std::shared_ptr<CiLiteralLong> citemp1 = std::make_shared<CiLiteralLong>();
-	citemp1->type = type;
-	citemp1->value = value;
-	std::shared_ptr<CiConst> citemp2 = std::make_shared<CiConst>();
-	citemp2->visibility = CiVisibility::public_;
-	citemp2->name = name;
-	citemp2->value = citemp1;
-	citemp2->visitStatus = CiVisitStatus::done;
-	target->add(citemp2);
+	std::shared_ptr<CiRangeType> futemp0 = std::make_shared<CiRangeType>();
+	futemp0->min = value;
+	futemp0->max = value;
+	std::shared_ptr<CiRangeType> type = target->min == target->max ? target : futemp0;
+	std::shared_ptr<CiLiteralLong> futemp1 = std::make_shared<CiLiteralLong>();
+	futemp1->type = type;
+	futemp1->value = value;
+	std::shared_ptr<CiConst> futemp2 = std::make_shared<CiConst>();
+	futemp2->visibility = CiVisibility::public_;
+	futemp2->name = name;
+	futemp2->value = futemp1;
+	futemp2->visitStatus = CiVisitStatus::done;
+	target->add(futemp2);
 }
 
 std::shared_ptr<CiRangeType> CiRangeType::new_(int min, int max)
@@ -1937,11 +1937,11 @@ CiMember::CiMember()
 
 std::shared_ptr<CiVar> CiVar::new_(std::shared_ptr<CiType> type, std::string_view name, std::shared_ptr<CiExpr> defaultValue)
 {
-	std::shared_ptr<CiVar> citemp0 = std::make_shared<CiVar>();
-	citemp0->type = type;
-	citemp0->name = name;
-	citemp0->value = defaultValue;
-	return citemp0;
+	std::shared_ptr<CiVar> futemp0 = std::make_shared<CiVar>();
+	futemp0->type = type;
+	futemp0->name = name;
+	futemp0->value = defaultValue;
+	return futemp0;
 }
 
 void CiVar::accept(CiVisitor * visitor, CiPriority parent) const
@@ -1977,12 +1977,12 @@ bool CiProperty::isStatic() const
 
 std::shared_ptr<CiProperty> CiProperty::new_(std::shared_ptr<CiType> type, CiId id, std::string_view name)
 {
-	std::shared_ptr<CiProperty> citemp0 = std::make_shared<CiProperty>();
-	citemp0->visibility = CiVisibility::public_;
-	citemp0->type = type;
-	citemp0->id = id;
-	citemp0->name = name;
-	return citemp0;
+	std::shared_ptr<CiProperty> futemp0 = std::make_shared<CiProperty>();
+	futemp0->visibility = CiVisibility::public_;
+	futemp0->type = type;
+	futemp0->id = id;
+	futemp0->name = name;
+	return futemp0;
 }
 
 bool CiStaticProperty::isStatic() const
@@ -1992,12 +1992,12 @@ bool CiStaticProperty::isStatic() const
 
 std::shared_ptr<CiStaticProperty> CiStaticProperty::new_(std::shared_ptr<CiType> type, CiId id, std::string_view name)
 {
-	std::shared_ptr<CiStaticProperty> citemp0 = std::make_shared<CiStaticProperty>();
-	citemp0->visibility = CiVisibility::public_;
-	citemp0->type = type;
-	citemp0->id = id;
-	citemp0->name = name;
-	return citemp0;
+	std::shared_ptr<CiStaticProperty> futemp0 = std::make_shared<CiStaticProperty>();
+	futemp0->visibility = CiVisibility::public_;
+	futemp0->type = type;
+	futemp0->id = id;
+	futemp0->name = name;
+	return futemp0;
 }
 
 bool CiMethodBase::isStatic() const
@@ -2104,9 +2104,9 @@ void CiEnum::acceptValues(CiVisitor * visitor) const
 }
 CiClass::CiClass()
 {
-	std::shared_ptr<CiReadWriteClassType> citemp0 = std::make_shared<CiReadWriteClassType>();
-	citemp0->class_ = this;
-	add(CiVar::new_(citemp0, "this"));
+	std::shared_ptr<CiReadWriteClassType> futemp0 = std::make_shared<CiReadWriteClassType>();
+	futemp0->class_ = this;
+	add(CiVar::new_(futemp0, "this"));
 }
 
 bool CiClass::hasBaseClass() const
@@ -2126,12 +2126,12 @@ bool CiClass::addsVirtualMethods() const
 
 std::shared_ptr<CiClass> CiClass::new_(CiCallType callType, CiId id, std::string_view name, int typeParameterCount)
 {
-	std::shared_ptr<CiClass> citemp0 = std::make_shared<CiClass>();
-	citemp0->callType = callType;
-	citemp0->id = id;
-	citemp0->name = name;
-	citemp0->typeParameterCount = typeParameterCount;
-	return citemp0;
+	std::shared_ptr<CiClass> futemp0 = std::make_shared<CiClass>();
+	futemp0->callType = callType;
+	futemp0->id = id;
+	futemp0->name = name;
+	futemp0->typeParameterCount = typeParameterCount;
+	return futemp0;
 }
 
 bool CiClass::isSameOrBaseOf(const CiClass * derived) const
@@ -2425,10 +2425,10 @@ CiSystem::CiSystem()
 	this->stringStorageType->class_ = this->stringClass.get();
 	std::shared_ptr<CiMethod> arrayBinarySearchPart = CiMethod::new_(CiVisibility::numericElementType, this->intType, CiId::arrayBinarySearchPart, "BinarySearch", CiVar::new_(this->typeParam0, "value"), CiVar::new_(this->intType, "startIndex"), CiVar::new_(this->intType, "count"));
 	this->arrayPtrClass->add(arrayBinarySearchPart);
-	std::shared_ptr<CiReadWriteClassType> citemp0 = std::make_shared<CiReadWriteClassType>();
-	citemp0->class_ = this->arrayPtrClass.get();
-	citemp0->typeArg0 = this->typeParam0;
-	this->arrayPtrClass->add(CiMethod::new_(CiVisibility::public_, this->voidType, CiId::arrayCopyTo, "CopyTo", CiVar::new_(this->intType, "sourceIndex"), CiVar::new_(citemp0, "destinationArray"), CiVar::new_(this->intType, "destinationIndex"), CiVar::new_(this->intType, "count")));
+	std::shared_ptr<CiReadWriteClassType> futemp0 = std::make_shared<CiReadWriteClassType>();
+	futemp0->class_ = this->arrayPtrClass.get();
+	futemp0->typeArg0 = this->typeParam0;
+	this->arrayPtrClass->add(CiMethod::new_(CiVisibility::public_, this->voidType, CiId::arrayCopyTo, "CopyTo", CiVar::new_(this->intType, "sourceIndex"), CiVar::new_(futemp0, "destinationArray"), CiVar::new_(this->intType, "destinationIndex"), CiVar::new_(this->intType, "count")));
 	std::shared_ptr<CiMethod> arrayFillPart = CiMethod::newMutator(CiVisibility::public_, this->voidType, CiId::arrayFillPart, "Fill", CiVar::new_(this->typeParam0, "value"), CiVar::new_(this->intType, "startIndex"), CiVar::new_(this->intType, "count"));
 	this->arrayPtrClass->add(arrayFillPart);
 	std::shared_ptr<CiMethod> arraySortPart = CiMethod::newMutator(CiVisibility::numericElementType, this->voidType, CiId::arraySortPart, "Sort", CiVar::new_(this->intType, "startIndex"), CiVar::new_(this->intType, "count"));
@@ -2447,17 +2447,17 @@ CiSystem::CiSystem()
 	typeParam0Predicate->name = "Predicate<T>";
 	CiClass * listClass = addCollection(CiId::listClass, "List", 1, CiId::listClear, CiId::listCount);
 	listClass->add(CiMethod::newMutator(CiVisibility::public_, this->voidType, CiId::listAdd, "Add", CiVar::new_(typeParam0NotFinal, "value")));
-	std::shared_ptr<CiClassType> citemp1 = std::make_shared<CiClassType>();
-	citemp1->class_ = listClass;
-	citemp1->typeArg0 = this->typeParam0;
-	listClass->add(CiMethod::newMutator(CiVisibility::public_, this->voidType, CiId::listAddRange, "AddRange", CiVar::new_(citemp1, "source")));
+	std::shared_ptr<CiClassType> futemp1 = std::make_shared<CiClassType>();
+	futemp1->class_ = listClass;
+	futemp1->typeArg0 = this->typeParam0;
+	listClass->add(CiMethod::newMutator(CiVisibility::public_, this->voidType, CiId::listAddRange, "AddRange", CiVar::new_(futemp1, "source")));
 	listClass->add(CiMethod::new_(CiVisibility::public_, this->boolType, CiId::listAll, "All", CiVar::new_(typeParam0Predicate, "predicate")));
 	listClass->add(CiMethod::new_(CiVisibility::public_, this->boolType, CiId::listAny, "Any", CiVar::new_(typeParam0Predicate, "predicate")));
 	listClass->add(CiMethod::new_(CiVisibility::public_, this->boolType, CiId::listContains, "Contains", CiVar::new_(this->typeParam0, "value")));
-	std::shared_ptr<CiReadWriteClassType> citemp2 = std::make_shared<CiReadWriteClassType>();
-	citemp2->class_ = this->arrayPtrClass.get();
-	citemp2->typeArg0 = this->typeParam0;
-	listClass->add(CiMethod::new_(CiVisibility::public_, this->voidType, CiId::listCopyTo, "CopyTo", CiVar::new_(this->intType, "sourceIndex"), CiVar::new_(citemp2, "destinationArray"), CiVar::new_(this->intType, "destinationIndex"), CiVar::new_(this->intType, "count")));
+	std::shared_ptr<CiReadWriteClassType> futemp2 = std::make_shared<CiReadWriteClassType>();
+	futemp2->class_ = this->arrayPtrClass.get();
+	futemp2->typeArg0 = this->typeParam0;
+	listClass->add(CiMethod::new_(CiVisibility::public_, this->voidType, CiId::listCopyTo, "CopyTo", CiVar::new_(this->intType, "sourceIndex"), CiVar::new_(futemp2, "destinationArray"), CiVar::new_(this->intType, "destinationIndex"), CiVar::new_(this->intType, "count")));
 	listClass->add(CiMethod::newMutator(CiVisibility::public_, this->intType, CiId::listIndexOf, "IndexOf", CiVar::new_(this->typeParam0, "value")));
 	listClass->add(CiMethod::newMutator(CiVisibility::public_, this->voidType, CiId::listInsert, "Insert", CiVar::new_(this->uIntType, "index"), CiVar::new_(typeParam0NotFinal, "value")));
 	listClass->add(CiMethod::newMutator(CiVisibility::public_, this->typeParam0, CiId::listLast, "Last"));
@@ -2486,9 +2486,9 @@ CiSystem::CiSystem()
 	std::shared_ptr<CiClass> consoleClass = CiClass::new_(CiCallType::static_, CiId::none, "Console");
 	consoleClass->add(CiMethod::newStatic(this->voidType, CiId::consoleWrite, "Write", CiVar::new_(this->printableType, "value")));
 	consoleClass->add(CiMethod::newStatic(this->voidType, CiId::consoleWriteLine, "WriteLine", CiVar::new_(this->printableType, "value", newLiteralString(""))));
-	std::shared_ptr<CiStorageType> citemp3 = std::make_shared<CiStorageType>();
-	citemp3->class_ = textWriterClass.get();
-	consoleClass->add(CiStaticProperty::new_(citemp3, CiId::consoleError, "Error"));
+	std::shared_ptr<CiStorageType> futemp3 = std::make_shared<CiStorageType>();
+	futemp3->class_ = textWriterClass.get();
+	consoleClass->add(CiStaticProperty::new_(futemp3, CiId::consoleError, "Error"));
 	add(consoleClass);
 	std::shared_ptr<CiClass> stringWriterClass = CiClass::new_(CiCallType::sealed, CiId::stringWriterClass, "StringWriter");
 	stringWriterClass->add(CiMethod::newMutator(CiVisibility::public_, this->voidType, CiId::stringWriterClear, "Clear"));
@@ -2497,14 +2497,14 @@ CiSystem::CiSystem()
 	stringWriterClass->parent = textWriterClass.get();
 	std::shared_ptr<CiClass> utf8EncodingClass = CiClass::new_(CiCallType::sealed, CiId::none, "UTF8Encoding");
 	utf8EncodingClass->add(CiMethod::new_(CiVisibility::public_, this->intType, CiId::uTF8GetByteCount, "GetByteCount", CiVar::new_(this->stringPtrType, "str")));
-	std::shared_ptr<CiReadWriteClassType> citemp4 = std::make_shared<CiReadWriteClassType>();
-	citemp4->class_ = this->arrayPtrClass.get();
-	citemp4->typeArg0 = this->byteType;
-	utf8EncodingClass->add(CiMethod::new_(CiVisibility::public_, this->voidType, CiId::uTF8GetBytes, "GetBytes", CiVar::new_(this->stringPtrType, "str"), CiVar::new_(citemp4, "bytes"), CiVar::new_(this->intType, "byteIndex")));
-	std::shared_ptr<CiClassType> citemp5 = std::make_shared<CiClassType>();
-	citemp5->class_ = this->arrayPtrClass.get();
-	citemp5->typeArg0 = this->byteType;
-	utf8EncodingClass->add(CiMethod::new_(CiVisibility::public_, this->stringStorageType, CiId::uTF8GetString, "GetString", CiVar::new_(citemp5, "bytes"), CiVar::new_(this->intType, "offset"), CiVar::new_(this->intType, "length")));
+	std::shared_ptr<CiReadWriteClassType> futemp4 = std::make_shared<CiReadWriteClassType>();
+	futemp4->class_ = this->arrayPtrClass.get();
+	futemp4->typeArg0 = this->byteType;
+	utf8EncodingClass->add(CiMethod::new_(CiVisibility::public_, this->voidType, CiId::uTF8GetBytes, "GetBytes", CiVar::new_(this->stringPtrType, "str"), CiVar::new_(futemp4, "bytes"), CiVar::new_(this->intType, "byteIndex")));
+	std::shared_ptr<CiClassType> futemp5 = std::make_shared<CiClassType>();
+	futemp5->class_ = this->arrayPtrClass.get();
+	futemp5->typeArg0 = this->byteType;
+	utf8EncodingClass->add(CiMethod::new_(CiVisibility::public_, this->stringStorageType, CiId::uTF8GetString, "GetString", CiVar::new_(futemp5, "bytes"), CiVar::new_(this->intType, "offset"), CiVar::new_(this->intType, "length")));
 	std::shared_ptr<CiClass> encodingClass = CiClass::new_(CiCallType::static_, CiId::none, "Encoding");
 	encodingClass->add(CiStaticProperty::new_(utf8EncodingClass, CiId::none, "UTF8"));
 	add(encodingClass);
@@ -2524,14 +2524,14 @@ CiSystem::CiSystem()
 	std::shared_ptr<CiClass> regexClass = CiClass::new_(CiCallType::sealed, CiId::regexClass, "Regex");
 	regexClass->add(CiMethod::newStatic(this->stringStorageType, CiId::regexEscape, "Escape", CiVar::new_(this->stringPtrType, "str")));
 	regexClass->add(CiMethodGroup::new_(CiMethod::newStatic(this->boolType, CiId::regexIsMatchStr, "IsMatch", CiVar::new_(this->stringPtrType, "input"), CiVar::new_(this->stringPtrType, "pattern"), CiVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), CiMethod::new_(CiVisibility::public_, this->boolType, CiId::regexIsMatchRegex, "IsMatch", CiVar::new_(this->stringPtrType, "input"))));
-	std::shared_ptr<CiDynamicPtrType> citemp6 = std::make_shared<CiDynamicPtrType>();
-	citemp6->class_ = regexClass.get();
-	regexClass->add(CiMethod::newStatic(citemp6, CiId::regexCompile, "Compile", CiVar::new_(this->stringPtrType, "pattern"), CiVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)));
+	std::shared_ptr<CiDynamicPtrType> futemp6 = std::make_shared<CiDynamicPtrType>();
+	futemp6->class_ = regexClass.get();
+	regexClass->add(CiMethod::newStatic(futemp6, CiId::regexCompile, "Compile", CiVar::new_(this->stringPtrType, "pattern"), CiVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)));
 	add(regexClass);
 	std::shared_ptr<CiClass> matchClass = CiClass::new_(CiCallType::sealed, CiId::matchClass, "Match");
-	std::shared_ptr<CiClassType> citemp7 = std::make_shared<CiClassType>();
-	citemp7->class_ = regexClass.get();
-	matchClass->add(CiMethodGroup::new_(CiMethod::newMutator(CiVisibility::public_, this->boolType, CiId::matchFindStr, "Find", CiVar::new_(this->stringPtrType, "input"), CiVar::new_(this->stringPtrType, "pattern"), CiVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), CiMethod::newMutator(CiVisibility::public_, this->boolType, CiId::matchFindRegex, "Find", CiVar::new_(this->stringPtrType, "input"), CiVar::new_(citemp7, "pattern"))));
+	std::shared_ptr<CiClassType> futemp7 = std::make_shared<CiClassType>();
+	futemp7->class_ = regexClass.get();
+	matchClass->add(CiMethodGroup::new_(CiMethod::newMutator(CiVisibility::public_, this->boolType, CiId::matchFindStr, "Find", CiVar::new_(this->stringPtrType, "input"), CiVar::new_(this->stringPtrType, "pattern"), CiVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), CiMethod::newMutator(CiVisibility::public_, this->boolType, CiId::matchFindRegex, "Find", CiVar::new_(this->stringPtrType, "input"), CiVar::new_(futemp7, "pattern"))));
 	matchClass->add(CiProperty::new_(this->intType, CiId::matchStart, "Start"));
 	matchClass->add(CiProperty::new_(this->intType, CiId::matchEnd, "End"));
 	matchClass->add(CiMethod::new_(CiVisibility::public_, this->stringPtrType, CiId::matchGetCapture, "GetCapture", CiVar::new_(this->uIntType, "group")));
@@ -2585,20 +2585,20 @@ CiSystem::CiSystem()
 std::shared_ptr<CiLiteralLong> CiSystem::newLiteralLong(int64_t value, int line) const
 {
 	std::shared_ptr<CiType> type = value >= -2147483648 && value <= 2147483647 ? CiRangeType::new_(static_cast<int>(value), static_cast<int>(value)) : this->longType;
-	std::shared_ptr<CiLiteralLong> citemp0 = std::make_shared<CiLiteralLong>();
-	citemp0->line = line;
-	citemp0->type = type;
-	citemp0->value = value;
-	return citemp0;
+	std::shared_ptr<CiLiteralLong> futemp0 = std::make_shared<CiLiteralLong>();
+	futemp0->line = line;
+	futemp0->type = type;
+	futemp0->value = value;
+	return futemp0;
 }
 
 std::shared_ptr<CiLiteralString> CiSystem::newLiteralString(std::string_view value, int line) const
 {
-	std::shared_ptr<CiLiteralString> citemp0 = std::make_shared<CiLiteralString>();
-	citemp0->line = line;
-	citemp0->type = this->stringPtrType;
-	citemp0->value = value;
-	return citemp0;
+	std::shared_ptr<CiLiteralString> futemp0 = std::make_shared<CiLiteralString>();
+	futemp0->line = line;
+	futemp0->type = this->stringPtrType;
+	futemp0->value = value;
+	return futemp0;
 }
 
 std::shared_ptr<CiType> CiSystem::promoteIntegerTypes(const CiType * left, const CiType * right) const
@@ -2674,16 +2674,16 @@ std::shared_ptr<CiConst> CiSystem::newConstLong(std::string_view name, int64_t v
 
 std::shared_ptr<CiConst> CiSystem::newConstDouble(std::string_view name, double value) const
 {
-	std::shared_ptr<CiLiteralDouble> citemp0 = std::make_shared<CiLiteralDouble>();
-	citemp0->value = value;
-	citemp0->type = this->doubleType;
-	std::shared_ptr<CiConst> citemp1 = std::make_shared<CiConst>();
-	citemp1->visibility = CiVisibility::public_;
-	citemp1->name = name;
-	citemp1->value = citemp0;
-	citemp1->type = this->doubleType;
-	citemp1->visitStatus = CiVisitStatus::done;
-	return citemp1;
+	std::shared_ptr<CiLiteralDouble> futemp0 = std::make_shared<CiLiteralDouble>();
+	futemp0->value = value;
+	futemp0->type = this->doubleType;
+	std::shared_ptr<CiConst> futemp1 = std::make_shared<CiConst>();
+	futemp1->visibility = CiVisibility::public_;
+	futemp1->name = name;
+	futemp1->value = futemp0;
+	futemp1->type = this->doubleType;
+	futemp1->visitStatus = CiVisitStatus::done;
+	return futemp1;
 }
 
 void CiSystem::addMinMaxValue(CiIntegerType * target, int64_t min, int64_t max) const
@@ -2708,9 +2708,9 @@ bool CiParser::docParseLine(CiDocPara * para)
 		case '\n':
 		case '\r':
 			{
-				std::shared_ptr<CiDocText> citemp0 = std::make_shared<CiDocText>();
-				citemp0->text = getLexeme();
-				para->children.push_back(citemp0);
+				std::shared_ptr<CiDocText> futemp0 = std::make_shared<CiDocText>();
+				futemp0->text = getLexeme();
+				para->children.push_back(futemp0);
 				return lastNonWhitespace == '.';
 			}
 		case '\t':
@@ -2719,18 +2719,18 @@ bool CiParser::docParseLine(CiDocPara * para)
 			break;
 		case '`':
 			if (this->charOffset > this->lexemeOffset) {
-				std::shared_ptr<CiDocText> citemp1 = std::make_shared<CiDocText>();
-				citemp1->text = getLexeme();
-				para->children.push_back(citemp1);
+				std::shared_ptr<CiDocText> futemp1 = std::make_shared<CiDocText>();
+				futemp1->text = getLexeme();
+				para->children.push_back(futemp1);
 			}
 			readChar();
 			this->lexemeOffset = this->charOffset;
 			for (;;) {
 				int c = peekChar();
 				if (c == '`') {
-					std::shared_ptr<CiDocCode> citemp2 = std::make_shared<CiDocCode>();
-					citemp2->text = getLexeme();
-					para->children.push_back(citemp2);
+					std::shared_ptr<CiDocCode> futemp2 = std::make_shared<CiDocCode>();
+					futemp2->text = getLexeme();
+					para->children.push_back(futemp2);
 					readChar();
 					break;
 				}
@@ -2810,7 +2810,7 @@ void CiParser::checkXcrementParent()
 std::shared_ptr<CiLiteralDouble> CiParser::parseDouble()
 {
 	double d;
-	if (![&] { char *ciend; d = std::strtod(CiString_replace(getLexeme(), "_", "").data(), &ciend); return *ciend == '\0'; }())
+	if (![&] { char *ciend; d = std::strtod(FuString_replace(getLexeme(), "_", "").data(), &ciend); return *ciend == '\0'; }())
 		reportError("Invalid floating-point number");
 	std::shared_ptr<CiLiteralDouble> result = std::make_shared<CiLiteralDouble>();
 	result->line = this->line;
@@ -2831,7 +2831,7 @@ std::shared_ptr<CiInterpolatedString> CiParser::parseInterpolatedString()
 	std::shared_ptr<CiInterpolatedString> result = std::make_shared<CiInterpolatedString>();
 	result->line = this->line;
 	do {
-		std::string prefix{CiString_replace(this->stringValue, "{{", "{")};
+		std::string prefix{FuString_replace(this->stringValue, "{{", "{")};
 		nextToken();
 		std::shared_ptr<CiExpr> arg = parseExpr();
 		std::shared_ptr<CiExpr> width = eat(CiToken::comma) ? parseExpr() : nullptr;
@@ -2850,7 +2850,7 @@ std::shared_ptr<CiInterpolatedString> CiParser::parseInterpolatedString()
 		check(CiToken::rightBrace);
 	}
 	while (readString(true) == CiToken::interpolatedString);
-	result->suffix = CiString_replace(this->stringValue, "{{", "{");
+	result->suffix = FuString_replace(this->stringValue, "{{", "{");
 	nextToken();
 	return result;
 }
@@ -2892,21 +2892,21 @@ std::shared_ptr<CiExpr> CiParser::parsePrimaryExpr(bool type)
 	case CiToken::decrement:
 		checkXcrementParent();
 		{
-			std::shared_ptr<CiPrefixExpr> citemp0 = std::make_shared<CiPrefixExpr>();
-			citemp0->line = this->line;
-			citemp0->op = nextToken();
-			citemp0->inner = parsePrimaryExpr(false);
-			return citemp0;
+			std::shared_ptr<CiPrefixExpr> futemp0 = std::make_shared<CiPrefixExpr>();
+			futemp0->line = this->line;
+			futemp0->op = nextToken();
+			futemp0->inner = parsePrimaryExpr(false);
+			return futemp0;
 		}
 	case CiToken::minus:
 	case CiToken::tilde:
 	case CiToken::exclamationMark:
 		{
-			std::shared_ptr<CiPrefixExpr> citemp1 = std::make_shared<CiPrefixExpr>();
-			citemp1->line = this->line;
-			citemp1->op = nextToken();
-			citemp1->inner = parsePrimaryExpr(false);
-			return citemp1;
+			std::shared_ptr<CiPrefixExpr> futemp1 = std::make_shared<CiPrefixExpr>();
+			futemp1->line = this->line;
+			futemp1->op = nextToken();
+			futemp1->inner = parsePrimaryExpr(false);
+			return futemp1;
 		}
 	case CiToken::new_:
 		{
@@ -2915,12 +2915,12 @@ std::shared_ptr<CiExpr> CiParser::parsePrimaryExpr(bool type)
 			newResult->op = nextToken();
 			result = parseType();
 			if (eat(CiToken::leftBrace)) {
-				std::shared_ptr<CiBinaryExpr> citemp2 = std::make_shared<CiBinaryExpr>();
-				citemp2->line = this->line;
-				citemp2->left = result;
-				citemp2->op = CiToken::leftBrace;
-				citemp2->right = parseObjectLiteral();
-				result = citemp2;
+				std::shared_ptr<CiBinaryExpr> futemp2 = std::make_shared<CiBinaryExpr>();
+				futemp2->line = this->line;
+				futemp2->left = result;
+				futemp2->op = CiToken::leftBrace;
+				futemp2->right = parseObjectLiteral();
+				result = futemp2;
 			}
 			newResult->inner = result;
 			return newResult;
@@ -2942,28 +2942,28 @@ std::shared_ptr<CiExpr> CiParser::parsePrimaryExpr(bool type)
 		break;
 	case CiToken::false_:
 		{
-			std::shared_ptr<CiLiteralFalse> citemp3 = std::make_shared<CiLiteralFalse>();
-			citemp3->line = this->line;
-			citemp3->type = this->program->system->boolType;
-			result = citemp3;
+			std::shared_ptr<CiLiteralFalse> futemp3 = std::make_shared<CiLiteralFalse>();
+			futemp3->line = this->line;
+			futemp3->type = this->program->system->boolType;
+			result = futemp3;
 			nextToken();
 			break;
 		}
 	case CiToken::true_:
 		{
-			std::shared_ptr<CiLiteralTrue> citemp4 = std::make_shared<CiLiteralTrue>();
-			citemp4->line = this->line;
-			citemp4->type = this->program->system->boolType;
-			result = citemp4;
+			std::shared_ptr<CiLiteralTrue> futemp4 = std::make_shared<CiLiteralTrue>();
+			futemp4->line = this->line;
+			futemp4->type = this->program->system->boolType;
+			result = futemp4;
 			nextToken();
 			break;
 		}
 	case CiToken::null:
 		{
-			std::shared_ptr<CiLiteralNull> citemp5 = std::make_shared<CiLiteralNull>();
-			citemp5->line = this->line;
-			citemp5->type = this->program->system->nullType;
-			result = citemp5;
+			std::shared_ptr<CiLiteralNull> futemp5 = std::make_shared<CiLiteralNull>();
+			futemp5->line = this->line;
+			futemp5->type = this->program->system->nullType;
+			result = futemp5;
 			nextToken();
 			break;
 		}
@@ -3000,11 +3000,11 @@ std::shared_ptr<CiExpr> CiParser::parsePrimaryExpr(bool type)
 	case CiToken::resource:
 		nextToken();
 		if (eat(CiToken::less) && this->stringValue == "byte" && eat(CiToken::id) && eat(CiToken::leftBracket) && eat(CiToken::rightBracket) && eat(CiToken::greater)) {
-			std::shared_ptr<CiPrefixExpr> citemp6 = std::make_shared<CiPrefixExpr>();
-			citemp6->line = this->line;
-			citemp6->op = CiToken::resource;
-			citemp6->inner = parseParenthesized();
-			result = citemp6;
+			std::shared_ptr<CiPrefixExpr> futemp6 = std::make_shared<CiPrefixExpr>();
+			futemp6->line = this->line;
+			futemp6->op = CiToken::resource;
+			futemp6->inner = parseParenthesized();
+			result = futemp6;
 		}
 		else {
 			reportError("Expected 'resource<byte[]>'");
@@ -3036,12 +3036,12 @@ std::shared_ptr<CiExpr> CiParser::parsePrimaryExpr(bool type)
 			break;
 		case CiToken::leftBracket:
 			{
-				std::shared_ptr<CiBinaryExpr> citemp7 = std::make_shared<CiBinaryExpr>();
-				citemp7->line = this->line;
-				citemp7->left = result;
-				citemp7->op = nextToken();
-				citemp7->right = see(CiToken::rightBracket) ? nullptr : parseExpr();
-				result = citemp7;
+				std::shared_ptr<CiBinaryExpr> futemp7 = std::make_shared<CiBinaryExpr>();
+				futemp7->line = this->line;
+				futemp7->left = result;
+				futemp7->op = nextToken();
+				futemp7->right = see(CiToken::rightBracket) ? nullptr : parseExpr();
+				result = futemp7;
 				expect(CiToken::rightBracket);
 				break;
 			}
@@ -3049,32 +3049,32 @@ std::shared_ptr<CiExpr> CiParser::parsePrimaryExpr(bool type)
 		case CiToken::decrement:
 			checkXcrementParent();
 			{
-				std::shared_ptr<CiPostfixExpr> citemp8 = std::make_shared<CiPostfixExpr>();
-				citemp8->line = this->line;
-				citemp8->inner = result;
-				citemp8->op = nextToken();
-				result = citemp8;
+				std::shared_ptr<CiPostfixExpr> futemp8 = std::make_shared<CiPostfixExpr>();
+				futemp8->line = this->line;
+				futemp8->inner = result;
+				futemp8->op = nextToken();
+				result = futemp8;
 				break;
 			}
 		case CiToken::exclamationMark:
 		case CiToken::hash:
 			{
-				std::shared_ptr<CiPostfixExpr> citemp9 = std::make_shared<CiPostfixExpr>();
-				citemp9->line = this->line;
-				citemp9->inner = result;
-				citemp9->op = nextToken();
-				result = citemp9;
+				std::shared_ptr<CiPostfixExpr> futemp9 = std::make_shared<CiPostfixExpr>();
+				futemp9->line = this->line;
+				futemp9->inner = result;
+				futemp9->op = nextToken();
+				result = futemp9;
 				break;
 			}
 		case CiToken::questionMark:
 			if (!type)
 				return result;
 			{
-				std::shared_ptr<CiPostfixExpr> citemp10 = std::make_shared<CiPostfixExpr>();
-				citemp10->line = this->line;
-				citemp10->inner = result;
-				citemp10->op = nextToken();
-				result = citemp10;
+				std::shared_ptr<CiPostfixExpr> futemp10 = std::make_shared<CiPostfixExpr>();
+				futemp10->line = this->line;
+				futemp10->inner = result;
+				futemp10->op = nextToken();
+				result = futemp10;
 				break;
 			}
 		default:
@@ -3092,12 +3092,12 @@ std::shared_ptr<CiExpr> CiParser::parseMulExpr()
 		case CiToken::slash:
 		case CiToken::mod:
 			{
-				std::shared_ptr<CiBinaryExpr> citemp0 = std::make_shared<CiBinaryExpr>();
-				citemp0->line = this->line;
-				citemp0->left = left;
-				citemp0->op = nextToken();
-				citemp0->right = parsePrimaryExpr(false);
-				left = citemp0;
+				std::shared_ptr<CiBinaryExpr> futemp0 = std::make_shared<CiBinaryExpr>();
+				futemp0->line = this->line;
+				futemp0->left = left;
+				futemp0->op = nextToken();
+				futemp0->right = parsePrimaryExpr(false);
+				left = futemp0;
 				break;
 			}
 		default:
@@ -3110,12 +3110,12 @@ std::shared_ptr<CiExpr> CiParser::parseAddExpr()
 {
 	std::shared_ptr<CiExpr> left = parseMulExpr();
 	while (see(CiToken::plus) || see(CiToken::minus)) {
-		std::shared_ptr<CiBinaryExpr> citemp0 = std::make_shared<CiBinaryExpr>();
-		citemp0->line = this->line;
-		citemp0->left = left;
-		citemp0->op = nextToken();
-		citemp0->right = parseMulExpr();
-		left = citemp0;
+		std::shared_ptr<CiBinaryExpr> futemp0 = std::make_shared<CiBinaryExpr>();
+		futemp0->line = this->line;
+		futemp0->left = left;
+		futemp0->op = nextToken();
+		futemp0->right = parseMulExpr();
+		left = futemp0;
 	}
 	return left;
 }
@@ -3124,12 +3124,12 @@ std::shared_ptr<CiExpr> CiParser::parseShiftExpr()
 {
 	std::shared_ptr<CiExpr> left = parseAddExpr();
 	while (see(CiToken::shiftLeft) || see(CiToken::shiftRight)) {
-		std::shared_ptr<CiBinaryExpr> citemp0 = std::make_shared<CiBinaryExpr>();
-		citemp0->line = this->line;
-		citemp0->left = left;
-		citemp0->op = nextToken();
-		citemp0->right = parseAddExpr();
-		left = citemp0;
+		std::shared_ptr<CiBinaryExpr> futemp0 = std::make_shared<CiBinaryExpr>();
+		futemp0->line = this->line;
+		futemp0->left = left;
+		futemp0->op = nextToken();
+		futemp0->right = parseAddExpr();
+		left = futemp0;
 	}
 	return left;
 }
@@ -3144,12 +3144,12 @@ std::shared_ptr<CiExpr> CiParser::parseRelExpr()
 		case CiToken::greater:
 		case CiToken::greaterOrEqual:
 			{
-				std::shared_ptr<CiBinaryExpr> citemp0 = std::make_shared<CiBinaryExpr>();
-				citemp0->line = this->line;
-				citemp0->left = left;
-				citemp0->op = nextToken();
-				citemp0->right = parseShiftExpr();
-				left = citemp0;
+				std::shared_ptr<CiBinaryExpr> futemp0 = std::make_shared<CiBinaryExpr>();
+				futemp0->line = this->line;
+				futemp0->left = left;
+				futemp0->op = nextToken();
+				futemp0->right = parseShiftExpr();
+				left = futemp0;
 				break;
 			}
 		case CiToken::is:
@@ -3160,11 +3160,11 @@ std::shared_ptr<CiExpr> CiParser::parseRelExpr()
 				isExpr->op = nextToken();
 				isExpr->right = parsePrimaryExpr(false);
 				if (see(CiToken::id)) {
-					std::shared_ptr<CiVar> citemp1 = std::make_shared<CiVar>();
-					citemp1->line = this->line;
-					citemp1->typeExpr = isExpr->right;
-					citemp1->name = this->stringValue;
-					isExpr->right = citemp1;
+					std::shared_ptr<CiVar> futemp1 = std::make_shared<CiVar>();
+					futemp1->line = this->line;
+					futemp1->typeExpr = isExpr->right;
+					futemp1->name = this->stringValue;
+					isExpr->right = futemp1;
 					nextToken();
 				}
 				return isExpr;
@@ -3179,12 +3179,12 @@ std::shared_ptr<CiExpr> CiParser::parseEqualityExpr()
 {
 	std::shared_ptr<CiExpr> left = parseRelExpr();
 	while (see(CiToken::equal) || see(CiToken::notEqual)) {
-		std::shared_ptr<CiBinaryExpr> citemp0 = std::make_shared<CiBinaryExpr>();
-		citemp0->line = this->line;
-		citemp0->left = left;
-		citemp0->op = nextToken();
-		citemp0->right = parseRelExpr();
-		left = citemp0;
+		std::shared_ptr<CiBinaryExpr> futemp0 = std::make_shared<CiBinaryExpr>();
+		futemp0->line = this->line;
+		futemp0->left = left;
+		futemp0->op = nextToken();
+		futemp0->right = parseRelExpr();
+		left = futemp0;
 	}
 	return left;
 }
@@ -3193,12 +3193,12 @@ std::shared_ptr<CiExpr> CiParser::parseAndExpr()
 {
 	std::shared_ptr<CiExpr> left = parseEqualityExpr();
 	while (see(CiToken::and_)) {
-		std::shared_ptr<CiBinaryExpr> citemp0 = std::make_shared<CiBinaryExpr>();
-		citemp0->line = this->line;
-		citemp0->left = left;
-		citemp0->op = nextToken();
-		citemp0->right = parseEqualityExpr();
-		left = citemp0;
+		std::shared_ptr<CiBinaryExpr> futemp0 = std::make_shared<CiBinaryExpr>();
+		futemp0->line = this->line;
+		futemp0->left = left;
+		futemp0->op = nextToken();
+		futemp0->right = parseEqualityExpr();
+		left = futemp0;
 	}
 	return left;
 }
@@ -3207,12 +3207,12 @@ std::shared_ptr<CiExpr> CiParser::parseXorExpr()
 {
 	std::shared_ptr<CiExpr> left = parseAndExpr();
 	while (see(CiToken::xor_)) {
-		std::shared_ptr<CiBinaryExpr> citemp0 = std::make_shared<CiBinaryExpr>();
-		citemp0->line = this->line;
-		citemp0->left = left;
-		citemp0->op = nextToken();
-		citemp0->right = parseAndExpr();
-		left = citemp0;
+		std::shared_ptr<CiBinaryExpr> futemp0 = std::make_shared<CiBinaryExpr>();
+		futemp0->line = this->line;
+		futemp0->left = left;
+		futemp0->op = nextToken();
+		futemp0->right = parseAndExpr();
+		left = futemp0;
 	}
 	return left;
 }
@@ -3221,12 +3221,12 @@ std::shared_ptr<CiExpr> CiParser::parseOrExpr()
 {
 	std::shared_ptr<CiExpr> left = parseXorExpr();
 	while (see(CiToken::or_)) {
-		std::shared_ptr<CiBinaryExpr> citemp0 = std::make_shared<CiBinaryExpr>();
-		citemp0->line = this->line;
-		citemp0->left = left;
-		citemp0->op = nextToken();
-		citemp0->right = parseXorExpr();
-		left = citemp0;
+		std::shared_ptr<CiBinaryExpr> futemp0 = std::make_shared<CiBinaryExpr>();
+		futemp0->line = this->line;
+		futemp0->left = left;
+		futemp0->op = nextToken();
+		futemp0->right = parseXorExpr();
+		left = futemp0;
 	}
 	return left;
 }
@@ -3237,12 +3237,12 @@ std::shared_ptr<CiExpr> CiParser::parseCondAndExpr()
 	while (see(CiToken::condAnd)) {
 		std::string_view saveXcrementParent = this->xcrementParent;
 		this->xcrementParent = "&&";
-		std::shared_ptr<CiBinaryExpr> citemp0 = std::make_shared<CiBinaryExpr>();
-		citemp0->line = this->line;
-		citemp0->left = left;
-		citemp0->op = nextToken();
-		citemp0->right = parseOrExpr();
-		left = citemp0;
+		std::shared_ptr<CiBinaryExpr> futemp0 = std::make_shared<CiBinaryExpr>();
+		futemp0->line = this->line;
+		futemp0->left = left;
+		futemp0->op = nextToken();
+		futemp0->right = parseOrExpr();
+		left = futemp0;
 		this->xcrementParent = saveXcrementParent;
 	}
 	return left;
@@ -3254,12 +3254,12 @@ std::shared_ptr<CiExpr> CiParser::parseCondOrExpr()
 	while (see(CiToken::condOr)) {
 		std::string_view saveXcrementParent = this->xcrementParent;
 		this->xcrementParent = "||";
-		std::shared_ptr<CiBinaryExpr> citemp0 = std::make_shared<CiBinaryExpr>();
-		citemp0->line = this->line;
-		citemp0->left = left;
-		citemp0->op = nextToken();
-		citemp0->right = parseCondAndExpr();
-		left = citemp0;
+		std::shared_ptr<CiBinaryExpr> futemp0 = std::make_shared<CiBinaryExpr>();
+		futemp0->line = this->line;
+		futemp0->left = left;
+		futemp0->op = nextToken();
+		futemp0->right = parseCondAndExpr();
+		left = futemp0;
 		this->xcrementParent = saveXcrementParent;
 	}
 	return left;
@@ -3288,12 +3288,12 @@ std::shared_ptr<CiExpr> CiParser::parseType()
 {
 	std::shared_ptr<CiExpr> left = parsePrimaryExpr(true);
 	if (eat(CiToken::range)) {
-		std::shared_ptr<CiBinaryExpr> citemp0 = std::make_shared<CiBinaryExpr>();
-		citemp0->line = this->line;
-		citemp0->left = left;
-		citemp0->op = CiToken::range;
-		citemp0->right = parsePrimaryExpr(true);
-		return citemp0;
+		std::shared_ptr<CiBinaryExpr> futemp0 = std::make_shared<CiBinaryExpr>();
+		futemp0->line = this->line;
+		futemp0->left = left;
+		futemp0->op = CiToken::range;
+		futemp0->right = parsePrimaryExpr(true);
+		return futemp0;
 	}
 	return left;
 }
@@ -3317,12 +3317,12 @@ std::shared_ptr<CiAggregateInitializer> CiParser::parseObjectLiteral()
 		int line = this->line;
 		std::shared_ptr<CiExpr> field = parseSymbolReference(nullptr);
 		expect(CiToken::assign);
-		std::shared_ptr<CiBinaryExpr> citemp0 = std::make_shared<CiBinaryExpr>();
-		citemp0->line = line;
-		citemp0->left = field;
-		citemp0->op = CiToken::assign;
-		citemp0->right = parseExpr();
-		result->items.push_back(citemp0);
+		std::shared_ptr<CiBinaryExpr> futemp0 = std::make_shared<CiBinaryExpr>();
+		futemp0->line = line;
+		futemp0->left = field;
+		futemp0->op = CiToken::assign;
+		futemp0->right = parseExpr();
+		result->items.push_back(futemp0);
 	}
 	while (eat(CiToken::comma));
 	expect(CiToken::rightBrace);
@@ -3388,12 +3388,12 @@ std::shared_ptr<CiExpr> CiParser::parseAssign(bool allowVar)
 	case CiToken::shiftLeftAssign:
 	case CiToken::shiftRightAssign:
 		{
-			std::shared_ptr<CiBinaryExpr> citemp0 = std::make_shared<CiBinaryExpr>();
-			citemp0->line = this->line;
-			citemp0->left = left;
-			citemp0->op = nextToken();
-			citemp0->right = parseAssign(false);
-			return citemp0;
+			std::shared_ptr<CiBinaryExpr> futemp0 = std::make_shared<CiBinaryExpr>();
+			futemp0->line = this->line;
+			futemp0->left = left;
+			futemp0->op = nextToken();
+			futemp0->right = parseAssign(false);
+			return futemp0;
 		}
 	case CiToken::id:
 		if (allowVar)
@@ -3497,11 +3497,11 @@ std::shared_ptr<CiFor> CiParser::parseFor()
 
 void CiParser::parseForeachIterator(CiForeach * result)
 {
-	std::shared_ptr<CiVar> citemp0 = std::make_shared<CiVar>();
-	citemp0->line = this->line;
-	citemp0->typeExpr = parseType();
-	citemp0->name = this->stringValue;
-	addSymbol(result, citemp0);
+	std::shared_ptr<CiVar> futemp0 = std::make_shared<CiVar>();
+	futemp0->line = this->line;
+	futemp0->typeExpr = parseType();
+	futemp0->name = this->stringValue;
+	addSymbol(result, futemp0);
 	nextToken();
 }
 
@@ -3607,12 +3607,12 @@ std::shared_ptr<CiSwitch> CiParser::parseSwitch()
 			if (see(CiToken::id))
 				expr = parseVar(expr);
 			if (eat(CiToken::when)) {
-				std::shared_ptr<CiBinaryExpr> citemp0 = std::make_shared<CiBinaryExpr>();
-				citemp0->line = this->line;
-				citemp0->left = expr;
-				citemp0->op = CiToken::when;
-				citemp0->right = parseExpr();
-				expr = citemp0;
+				std::shared_ptr<CiBinaryExpr> futemp0 = std::make_shared<CiBinaryExpr>();
+				futemp0->line = this->line;
+				futemp0->left = expr;
+				futemp0->op = CiToken::when;
+				futemp0->right = parseExpr();
+				expr = futemp0;
 			}
 			kase->values.push_back(expr);
 			expect(CiToken::colon);
@@ -3840,16 +3840,16 @@ void CiParser::parseClass(std::shared_ptr<CiCodeDoc> doc, bool isPublic, CiCallT
 			}
 			if (visibility == CiVisibility::private_)
 				visibility = CiVisibility::internal;
-			std::shared_ptr<CiMethodBase> citemp0 = std::make_shared<CiMethodBase>();
-			citemp0->line = call->line;
-			citemp0->documentation = doc;
-			citemp0->visibility = visibility;
-			citemp0->parent = klass.get();
-			citemp0->type = this->program->system->voidType;
-			citemp0->name = klass->name;
-			citemp0->isMutator = true;
-			citemp0->body = parseBlock();
-			klass->constructor = citemp0;
+			std::shared_ptr<CiMethodBase> futemp0 = std::make_shared<CiMethodBase>();
+			futemp0->line = call->line;
+			futemp0->documentation = doc;
+			futemp0->visibility = visibility;
+			futemp0->parent = klass.get();
+			futemp0->type = this->program->system->voidType;
+			futemp0->name = klass->name;
+			futemp0->isMutator = true;
+			futemp0->body = parseBlock();
+			klass->constructor = futemp0;
 			continue;
 		}
 		int line = this->line;
@@ -4244,13 +4244,13 @@ std::shared_ptr<CiExpr> CiSema::visitSymbolReference(std::shared_ptr<CiSymbolRef
 				reportError(expr.get(), std::format("{} is static", expr->name));
 		}
 	}
-	std::shared_ptr<CiSymbolReference> citemp0 = std::make_shared<CiSymbolReference>();
-	citemp0->line = expr->line;
-	citemp0->left = left;
-	citemp0->name = expr->name;
-	citemp0->symbol = expr->symbol;
-	citemp0->type = expr->type;
-	return citemp0;
+	std::shared_ptr<CiSymbolReference> futemp0 = std::make_shared<CiSymbolReference>();
+	futemp0->line = expr->line;
+	futemp0->left = left;
+	futemp0->name = expr->name;
+	futemp0->symbol = expr->symbol;
+	futemp0->type = expr->type;
+	return futemp0;
 }
 
 std::shared_ptr<CiRangeType> CiSema::union_(std::shared_ptr<CiRangeType> left, std::shared_ptr<CiRangeType> right)
@@ -4466,11 +4466,11 @@ std::shared_ptr<CiLiteralLong> CiSema::toLiteralLong(const CiExpr * expr, int64_
 
 std::shared_ptr<CiLiteralDouble> CiSema::toLiteralDouble(const CiExpr * expr, double value) const
 {
-	std::shared_ptr<CiLiteralDouble> citemp0 = std::make_shared<CiLiteralDouble>();
-	citemp0->line = expr->line;
-	citemp0->type = this->program->system->doubleType;
-	citemp0->value = value;
-	return citemp0;
+	std::shared_ptr<CiLiteralDouble> futemp0 = std::make_shared<CiLiteralDouble>();
+	futemp0->line = expr->line;
+	futemp0->type = this->program->system->doubleType;
+	futemp0->value = value;
+	return futemp0;
 }
 
 void CiSema::checkLValue(const CiExpr * expr) const
@@ -4591,28 +4591,28 @@ std::shared_ptr<CiExpr> CiSema::resolveNew(std::shared_ptr<CiPrefixExpr> expr)
 			return poisonError(expr.get(), "Invalid argument to new");
 		std::shared_ptr<CiAggregateInitializer> init = std::static_pointer_cast<CiAggregateInitializer>(binaryNew->right);
 		resolveObjectLiteral(klass, init.get());
-		std::shared_ptr<CiDynamicPtrType> citemp0 = std::make_shared<CiDynamicPtrType>();
-		citemp0->line = expr->line;
-		citemp0->class_ = klass->class_;
-		expr->type = citemp0;
+		std::shared_ptr<CiDynamicPtrType> futemp0 = std::make_shared<CiDynamicPtrType>();
+		futemp0->line = expr->line;
+		futemp0->class_ = klass->class_;
+		expr->type = futemp0;
 		expr->inner = init;
 		return expr;
 	}
 	type = toType(expr->inner, true);
 	if (const CiArrayStorageType *array = dynamic_cast<const CiArrayStorageType *>(type.get())) {
-		std::shared_ptr<CiDynamicPtrType> citemp0 = std::make_shared<CiDynamicPtrType>();
-		citemp0->line = expr->line;
-		citemp0->class_ = this->program->system->arrayPtrClass.get();
-		citemp0->typeArg0 = array->getElementType();
-		expr->type = citemp0;
+		std::shared_ptr<CiDynamicPtrType> futemp0 = std::make_shared<CiDynamicPtrType>();
+		futemp0->line = expr->line;
+		futemp0->class_ = this->program->system->arrayPtrClass.get();
+		futemp0->typeArg0 = array->getElementType();
+		expr->type = futemp0;
 		expr->inner = array->lengthExpr;
 		return expr;
 	}
 	else if (const CiStorageType *klass = dynamic_cast<const CiStorageType *>(type.get())) {
-		std::shared_ptr<CiDynamicPtrType> citemp1 = std::make_shared<CiDynamicPtrType>();
-		citemp1->line = expr->line;
-		citemp1->class_ = klass->class_;
-		expr->type = citemp1;
+		std::shared_ptr<CiDynamicPtrType> futemp1 = std::make_shared<CiDynamicPtrType>();
+		futemp1->line = expr->line;
+		futemp1->class_ = klass->class_;
+		expr->type = futemp1;
 		expr->inner = nullptr;
 		return expr;
 	}
@@ -4674,12 +4674,12 @@ std::shared_ptr<CiExpr> CiSema::visitPrefixExpr(std::shared_ptr<CiPrefixExpr> ex
 	case CiToken::exclamationMark:
 		inner = resolveBool(expr->inner);
 		{
-			std::shared_ptr<CiPrefixExpr> citemp0 = std::make_shared<CiPrefixExpr>();
-			citemp0->line = expr->line;
-			citemp0->op = CiToken::exclamationMark;
-			citemp0->inner = inner;
-			citemp0->type = this->program->system->boolType;
-			return citemp0;
+			std::shared_ptr<CiPrefixExpr> futemp0 = std::make_shared<CiPrefixExpr>();
+			futemp0->line = expr->line;
+			futemp0->op = CiToken::exclamationMark;
+			futemp0->inner = inner;
+			futemp0->type = this->program->system->boolType;
+			return futemp0;
 		}
 	case CiToken::new_:
 		return resolveNew(expr);
@@ -4689,22 +4689,22 @@ std::shared_ptr<CiExpr> CiSema::visitPrefixExpr(std::shared_ptr<CiPrefixExpr> ex
 			if (!(resourceName = std::dynamic_pointer_cast<CiLiteralString>(foldConst(expr->inner))))
 				return poisonError(expr.get(), "Resource name must be a string");
 			inner = resourceName;
-			std::shared_ptr<CiArrayStorageType> citemp1 = std::make_shared<CiArrayStorageType>();
-			citemp1->class_ = this->program->system->arrayStorageClass.get();
-			citemp1->typeArg0 = this->program->system->byteType;
-			citemp1->length = getResourceLength(resourceName->value, expr.get());
-			type = citemp1;
+			std::shared_ptr<CiArrayStorageType> futemp1 = std::make_shared<CiArrayStorageType>();
+			futemp1->class_ = this->program->system->arrayStorageClass.get();
+			futemp1->typeArg0 = this->program->system->byteType;
+			futemp1->length = getResourceLength(resourceName->value, expr.get());
+			type = futemp1;
 			break;
 		}
 	default:
 		std::abort();
 	}
-	std::shared_ptr<CiPrefixExpr> citemp2 = std::make_shared<CiPrefixExpr>();
-	citemp2->line = expr->line;
-	citemp2->op = expr->op;
-	citemp2->inner = inner;
-	citemp2->type = type;
-	return citemp2;
+	std::shared_ptr<CiPrefixExpr> futemp2 = std::make_shared<CiPrefixExpr>();
+	futemp2->line = expr->line;
+	futemp2->op = expr->op;
+	futemp2->inner = inner;
+	futemp2->type = type;
+	return futemp2;
 }
 
 std::shared_ptr<CiExpr> CiSema::visitPostfixExpr(std::shared_ptr<CiPostfixExpr> expr)
@@ -4774,13 +4774,13 @@ std::shared_ptr<CiExpr> CiSema::resolveEquality(const CiBinaryExpr * expr, std::
 	}
 	takePtr(left.get());
 	takePtr(right.get());
-	std::shared_ptr<CiBinaryExpr> citemp0 = std::make_shared<CiBinaryExpr>();
-	citemp0->line = expr->line;
-	citemp0->left = left;
-	citemp0->op = expr->op;
-	citemp0->right = right;
-	citemp0->type = this->program->system->boolType;
-	return citemp0;
+	std::shared_ptr<CiBinaryExpr> futemp0 = std::make_shared<CiBinaryExpr>();
+	futemp0->line = expr->line;
+	futemp0->left = left;
+	futemp0->op = expr->op;
+	futemp0->right = right;
+	futemp0->type = this->program->system->boolType;
+	return futemp0;
 }
 
 std::shared_ptr<CiExpr> CiSema::resolveIs(std::shared_ptr<CiBinaryExpr> expr, std::shared_ptr<CiExpr> left, const CiExpr * right) const
@@ -5107,13 +5107,13 @@ std::shared_ptr<CiExpr> CiSema::visitBinaryExpr(std::shared_ptr<CiBinaryExpr> ex
 	const CiRangeType * range;
 	if ((range = dynamic_cast<const CiRangeType *>(type.get())) && range->min == range->max)
 		return toLiteralLong(expr.get(), range->min);
-	std::shared_ptr<CiBinaryExpr> citemp0 = std::make_shared<CiBinaryExpr>();
-	citemp0->line = expr->line;
-	citemp0->left = left;
-	citemp0->op = expr->op;
-	citemp0->right = right;
-	citemp0->type = type;
-	return citemp0;
+	std::shared_ptr<CiBinaryExpr> futemp0 = std::make_shared<CiBinaryExpr>();
+	futemp0->line = expr->line;
+	futemp0->left = left;
+	futemp0->op = expr->op;
+	futemp0->right = right;
+	futemp0->type = type;
+	return futemp0;
 }
 
 std::shared_ptr<CiType> CiSema::tryGetPtr(std::shared_ptr<CiType> type, bool nullable) const
@@ -5121,12 +5121,12 @@ std::shared_ptr<CiType> CiSema::tryGetPtr(std::shared_ptr<CiType> type, bool nul
 	if (type->id == CiId::stringStorageType)
 		return nullable ? this->program->system->stringNullablePtrType : this->program->system->stringPtrType;
 	if (const CiStorageType *storage = dynamic_cast<const CiStorageType *>(type.get())) {
-		std::shared_ptr<CiReadWriteClassType> citemp0 = std::make_shared<CiReadWriteClassType>();
-		citemp0->class_ = storage->class_->id == CiId::arrayStorageClass ? this->program->system->arrayPtrClass.get() : storage->class_;
-		citemp0->nullable = nullable;
-		citemp0->typeArg0 = storage->typeArg0;
-		citemp0->typeArg1 = storage->typeArg1;
-		return citemp0;
+		std::shared_ptr<CiReadWriteClassType> futemp0 = std::make_shared<CiReadWriteClassType>();
+		futemp0->class_ = storage->class_->id == CiId::arrayStorageClass ? this->program->system->arrayPtrClass.get() : storage->class_;
+		futemp0->nullable = nullable;
+		futemp0->typeArg0 = storage->typeArg0;
+		futemp0->typeArg1 = storage->typeArg1;
+		return futemp0;
 	}
 	const CiClassType * ptr;
 	if (nullable && (ptr = dynamic_cast<const CiClassType *>(type.get())) && !ptr->nullable) {
@@ -5207,13 +5207,13 @@ std::shared_ptr<CiExpr> CiSema::visitSelectExpr(const CiSelectExpr * expr)
 		return onTrue;
 	if (dynamic_cast<const CiLiteralFalse *>(cond.get()))
 		return onFalse;
-	std::shared_ptr<CiSelectExpr> citemp0 = std::make_shared<CiSelectExpr>();
-	citemp0->line = expr->line;
-	citemp0->cond = cond;
-	citemp0->onTrue = onTrue;
-	citemp0->onFalse = onFalse;
-	citemp0->type = type;
-	return citemp0;
+	std::shared_ptr<CiSelectExpr> futemp0 = std::make_shared<CiSelectExpr>();
+	futemp0->line = expr->line;
+	futemp0->cond = cond;
+	futemp0->onTrue = onTrue;
+	futemp0->onFalse = onFalse;
+	futemp0->type = type;
+	return futemp0;
 }
 
 std::shared_ptr<CiType> CiSema::evalType(const CiClassType * generic, std::shared_ptr<CiType> type) const
@@ -5521,9 +5521,9 @@ std::shared_ptr<CiType> CiSema::toBaseType(const CiExpr * expr, CiToken ptrModif
 		if (call->method->name == "string")
 			return this->program->system->stringStorageType;
 		if (const CiClass *klass2 = dynamic_cast<const CiClass *>(this->program->tryLookup(call->method->name, true).get())) {
-			std::shared_ptr<CiStorageType> citemp0 = std::make_shared<CiStorageType>();
-			citemp0->class_ = klass2;
-			return citemp0;
+			std::shared_ptr<CiStorageType> futemp0 = std::make_shared<CiStorageType>();
+			futemp0->class_ = klass2;
+			return futemp0;
 		}
 		return poisonError(expr, std::format("Class {} not found", call->method->name));
 	}
@@ -5983,11 +5983,11 @@ void CiSema::resolveConst(CiConst * konst)
 			else if (dynamic_cast<const CiReadWriteClassType *>(array))
 				reportError(konst, "Invalid constant type");
 			else {
-				std::shared_ptr<CiArrayStorageType> citemp0 = std::make_shared<CiArrayStorageType>();
-				citemp0->class_ = this->program->system->arrayStorageClass.get();
-				citemp0->typeArg0 = elementType;
-				citemp0->length = coll->items.size();
-				konst->type = citemp0;
+				std::shared_ptr<CiArrayStorageType> futemp0 = std::make_shared<CiArrayStorageType>();
+				futemp0->class_ = this->program->system->arrayStorageClass.get();
+				futemp0->typeArg0 = elementType;
+				futemp0->length = coll->items.size();
+				konst->type = futemp0;
 			}
 			coll->type = konst->type;
 			for (const std::shared_ptr<CiExpr> &item : coll->items)
@@ -6023,9 +6023,9 @@ void CiSema::resolveConsts(CiContainerType * container)
 					enu->hasExplicitValue = true;
 				}
 				else {
-					std::shared_ptr<CiImplicitEnumValue> citemp0 = std::make_shared<CiImplicitEnumValue>();
-					citemp0->value = previous == nullptr ? 0 : previous->value->intValue() + 1;
-					konst->value = citemp0;
+					std::shared_ptr<CiImplicitEnumValue> futemp0 = std::make_shared<CiImplicitEnumValue>();
+					futemp0->value = previous == nullptr ? 0 : previous->value->intValue() + 1;
+					konst->value = futemp0;
 				}
 				previous = konst;
 			}
@@ -7033,7 +7033,7 @@ void GenBase::visitPrefixExpr(const CiPrefixExpr * expr, CiPriority parent)
 			else if (const CiAggregateInitializer *init = dynamic_cast<const CiAggregateInitializer *>(expr->inner.get())) {
 				int tempId = [](const std::vector<const CiExpr *> &v, const CiExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, expr);
 				if (tempId >= 0) {
-					write("citemp");
+					write("futemp");
 					visitLiteralLong(tempId);
 				}
 				else
@@ -7546,14 +7546,14 @@ void GenBase::defineObjectLiteralTemporary(const CiUnaryExpr * expr)
 		}
 		else
 			this->currentTemporaries[id] = expr;
-		write("citemp");
+		write("futemp");
 		visitLiteralLong(id);
 		write(" = ");
 		const CiDynamicPtrType * dynamic = static_cast<const CiDynamicPtrType *>(expr->type.get());
 		writeNew(dynamic, CiPriority::argument);
 		endStatement();
 		for (const std::shared_ptr<CiExpr> &item : init->items) {
-			write("citemp");
+			write("futemp");
 			visitLiteralLong(id);
 			writeAggregateInitField(expr, item.get());
 		}
@@ -8389,7 +8389,7 @@ void GenCCppD::visitBreak(const CiBreak * statement)
 	if (const CiSwitch *switchStatement = dynamic_cast<const CiSwitch *>(statement->loopOrSwitch)) {
 		int gotoId = [](const std::vector<const CiSwitch *> &v, const CiSwitch * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->switchesWithGoto, switchStatement);
 		if (gotoId >= 0) {
-			write("goto ciafterswitch");
+			write("goto fuafterswitch");
 			visitLiteralLong(gotoId);
 			writeCharLine(';');
 			return;
@@ -8404,7 +8404,7 @@ void GenCCppD::writeSwitchAsIfsWithGoto(const CiSwitch * statement)
 		int gotoId = this->switchesWithGoto.size();
 		this->switchesWithGoto.push_back(statement);
 		writeSwitchAsIfs(statement, false);
-		write("ciafterswitch");
+		write("fuafterswitch");
 		visitLiteralLong(gotoId);
 		writeLine(": ;");
 	}
@@ -8741,7 +8741,7 @@ void GenC::writeTemporaryOrExpr(const CiExpr * expr, CiPriority parent)
 {
 	int tempId = [](const std::vector<const CiExpr *> &v, const CiExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, expr);
 	if (tempId >= 0) {
-		write("citemp");
+		write("futemp");
 		visitLiteralLong(tempId);
 	}
 	else
@@ -8799,7 +8799,7 @@ void GenC::visitInterpolatedString(const CiInterpolatedString * expr, CiPriority
 	include("stdarg.h");
 	include("stdio.h");
 	this->stringFormat = true;
-	write("CiString_Format(");
+	write("FuString_Format(");
 	writePrintf(expr, false);
 }
 
@@ -8893,7 +8893,7 @@ void GenC::writeLocalName(const CiSymbol * symbol, CiPriority parent)
 void GenC::writeMatchProperty(const CiSymbolReference * expr, int which)
 {
 	this->matchPos = true;
-	write("CiMatch_GetPos(");
+	write("FuMatch_GetPos(");
 	expr->left->accept(this, CiPriority::argument);
 	write(", ");
 	visitLiteralLong(which);
@@ -9132,7 +9132,7 @@ void GenC::writeDynamicArrayCast(const CiType * elementType)
 void GenC::writeXstructorPtr(bool need, const CiClass * klass, std::string_view name)
 {
 	if (need) {
-		write("(CiMethodPtr) ");
+		write("(FuMethodPtr) ");
 		writeName(klass);
 		writeChar('_');
 		write(name);
@@ -9200,7 +9200,7 @@ void GenC::writeNewArray(const CiType * elementType, const CiExpr * lengthExpr, 
 	if (parent > CiPriority::mul)
 		writeChar('(');
 	writeDynamicArrayCast(elementType);
-	write("CiShared_Make(");
+	write("FuShared_Make(");
 	lengthExpr->accept(this, CiPriority::argument);
 	write(", sizeof(");
 	writeType(elementType, false);
@@ -9208,15 +9208,15 @@ void GenC::writeNewArray(const CiType * elementType, const CiExpr * lengthExpr, 
 	if (dynamic_cast<const CiStringStorageType *>(elementType)) {
 		this->ptrConstruct = true;
 		this->listFrees["String"] = "free(*(void **) ptr)";
-		write("(CiMethodPtr) CiPtr_Construct, CiList_FreeString");
+		write("(FuMethodPtr) FuPtr_Construct, FuList_FreeString");
 	}
 	else if (const CiStorageType *storage = dynamic_cast<const CiStorageType *>(elementType))
 		writeXstructorPtrs(storage->class_);
 	else if (dynamic_cast<const CiDynamicPtrType *>(elementType)) {
 		this->ptrConstruct = true;
 		this->sharedRelease = true;
-		this->listFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
-		write("(CiMethodPtr) CiPtr_Construct, CiList_FreeShared");
+		this->listFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
+		write("(FuMethodPtr) FuPtr_Construct, FuList_FreeShared");
 	}
 	else
 		write("NULL, NULL");
@@ -9237,7 +9237,7 @@ void GenC::writeStringStorageValue(const CiExpr * expr)
 	if (call != nullptr) {
 		include("string.h");
 		this->stringSubstring = true;
-		write("CiString_Substring(");
+		write("FuString_Substring(");
 		writeStringPtrAddCast(call);
 		write(", ");
 		getStringSubstringLength(call)->accept(this, CiPriority::argument);
@@ -9288,7 +9288,7 @@ std::string GenC::getDictionaryDestroy(const CiType * type)
 	}
 	else if (dynamic_cast<const CiDynamicPtrType *>(type)) {
 		this->sharedRelease = true;
-		return "CiShared_Release";
+		return "FuShared_Release";
 	}
 	else
 		return "NULL";
@@ -9323,7 +9323,7 @@ void GenC::writeNewTree(const CiType * keyType, std::string_view valueDestroy)
 	if (keyType->id == CiId::stringPtrType && valueDestroy == "NULL")
 		write("g_tree_new((GCompareFunc) strcmp");
 	else {
-		write("g_tree_new_full(CiTree_Compare");
+		write("g_tree_new_full(FuTree_Compare");
 		if (dynamic_cast<const CiIntegerType *>(keyType)) {
 			this->treeCompareInteger = true;
 			write("Integer");
@@ -9371,7 +9371,7 @@ void GenC::writeNew(const CiReadWriteClassType * klass, CiPriority parent)
 		if (parent > CiPriority::mul)
 			writeChar('(');
 		writeStaticCastType(klass);
-		write("CiShared_Make(1, sizeof(");
+		write("FuShared_Make(1, sizeof(");
 		writeName(klass->class_);
 		write("), ");
 		writeXstructorPtrs(klass->class_);
@@ -9414,7 +9414,7 @@ int GenC::writeCTemporary(const CiType * type, const CiExpr * expr)
 	if (id < 0) {
 		id = this->currentTemporaries.size();
 		startDefinition(type, false, true);
-		write("citemp");
+		write("futemp");
 		visitLiteralLong(id);
 		endDefinition(type);
 		if (assign)
@@ -9423,7 +9423,7 @@ int GenC::writeCTemporary(const CiType * type, const CiExpr * expr)
 		this->currentTemporaries.push_back(expr);
 	}
 	else if (assign) {
-		write("citemp");
+		write("futemp");
 		visitLiteralLong(id);
 		writeAssignTemporary(type, expr);
 		writeCharLine(';');
@@ -9515,7 +9515,7 @@ bool GenC::hasTemporariesToDestruct(const CiExpr * expr)
 void GenC::cleanupTemporary(int i, const CiExpr * temp)
 {
 	if (temp->type->id == CiId::stringStorageType) {
-		write("free(citemp");
+		write("free(futemp");
 		visitLiteralLong(i);
 		writeLine(");");
 	}
@@ -9616,7 +9616,7 @@ void GenC::writeAssign(const CiBinaryExpr * expr, CiPriority parent)
 		}
 		else {
 			this->stringAssign = true;
-			write("CiString_Assign(&");
+			write("FuString_Assign(&");
 			expr->left->accept(this, CiPriority::primary);
 			write(", ");
 			writeStringStorageValue(expr->right.get());
@@ -9629,12 +9629,12 @@ void GenC::writeAssign(const CiBinaryExpr * expr, CiPriority parent)
 		}
 		else {
 			this->sharedAssign = true;
-			write("CiShared_Assign((void **) &");
+			write("FuShared_Assign((void **) &");
 			expr->left->accept(this, CiPriority::primary);
 			write(", ");
 			if (dynamic_cast<const CiSymbolReference *>(expr->right.get())) {
 				this->sharedAddRef = true;
-				write("CiShared_AddRef(");
+				write("FuShared_AddRef(");
 				expr->right->accept(this, CiPriority::argument);
 				writeChar(')');
 			}
@@ -9719,7 +9719,7 @@ void GenC::writeDestruct(const CiSymbol * symbol)
 			write("g_regex_unref(");
 		else {
 			this->sharedRelease = true;
-			write("CiShared_Release(");
+			write("FuShared_Release(");
 		}
 	}
 	else if (const CiStorageType *storage = dynamic_cast<const CiStorageType *>(type)) {
@@ -9879,29 +9879,29 @@ void GenC::writeInitCode(const CiNamedValue * def)
 		write(", ");
 		if (dynamic_cast<const CiStringStorageType *>(type->asClassType()->getElementType().get())) {
 			this->listFrees["String"] = "free(*(void **) ptr)";
-			write("CiList_FreeString");
+			write("FuList_FreeString");
 		}
 		else if (dynamic_cast<const CiDynamicPtrType *>(type->asClassType()->getElementType().get())) {
 			this->sharedRelease = true;
-			this->listFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
-			write("CiList_FreeShared");
+			this->listFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
+			write("FuList_FreeShared");
 		}
 		else if (const CiStorageType *storage = dynamic_cast<const CiStorageType *>(type->asClassType()->getElementType().get())) {
 			switch (storage->class_->id) {
 			case CiId::listClass:
 			case CiId::stackClass:
 				this->listFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
-				write("CiList_FreeList");
+				write("FuList_FreeList");
 				break;
 			case CiId::hashSetClass:
 			case CiId::dictionaryClass:
 				this->listFrees["HashTable"] = "g_hash_table_unref(*(GHashTable **) ptr)";
-				write("CiList_FreeHashTable");
+				write("FuList_FreeHashTable");
 				break;
 			case CiId::sortedSetClass:
 			case CiId::sortedDictionaryClass:
 				this->listFrees["Tree"] = "g_tree_unref(*(GTree **) ptr)";
-				write("CiList_FreeTree");
+				write("FuList_FreeTree");
 				break;
 			default:
 				write("(GDestroyNotify) ");
@@ -9960,7 +9960,7 @@ void GenC::writeCoercedInternal(const CiType * type, const CiExpr * expr, CiPrio
 			writeName(dynamic->class_);
 			write(" *) ");
 		}
-		writeCall("CiShared_AddRef", expr);
+		writeCall("FuShared_AddRef", expr);
 	}
 	else if ((klass = dynamic_cast<const CiClassType *>(type)) && klass->class_->id != CiId::stringClass && klass->class_->id != CiId::arrayPtrClass && !dynamic_cast<const CiStorageType *>(klass)) {
 		if (klass->class_->id == CiId::queueClass && dynamic_cast<const CiStorageType *>(expr->type.get())) {
@@ -10073,7 +10073,7 @@ void GenC::writeStringLength(const CiExpr * expr)
 void GenC::writeStringMethod(std::string_view name, const CiExpr * obj, const std::vector<std::shared_ptr<CiExpr>> * args)
 {
 	include("string.h");
-	write("CiString_");
+	write("FuString_");
 	writeCall(name, obj, (*args)[0].get());
 }
 
@@ -10082,7 +10082,7 @@ void GenC::writeSizeofCompare(const CiType * elementType)
 	write(", sizeof(");
 	CiId typeId = elementType->id;
 	writeNumericType(typeId);
-	write("), CiCompare_");
+	write("), FuCompare_");
 	writeNumericType(typeId);
 	writeChar(')');
 	this->compares.insert(typeId);
@@ -10112,7 +10112,7 @@ void GenC::writeListAddInsert(const CiExpr * obj, bool insert, std::string_view 
 	const CiStorageType * storage;
 	if ((storage = dynamic_cast<const CiStorageType *>(elementType)) && needsConstructor(storage->class_)) {
 		writeName(storage->class_);
-		write("_Construct(&citemp");
+		write("_Construct(&futemp");
 		visitLiteralLong(id);
 		writeLine(");");
 	}
@@ -10123,7 +10123,7 @@ void GenC::writeListAddInsert(const CiExpr * obj, bool insert, std::string_view 
 		write(", ");
 		(*args)[0]->accept(this, CiPriority::argument);
 	}
-	write(", citemp");
+	write(", futemp");
 	visitLiteralLong(id);
 	writeChar(')');
 	this->currentTemporaries[id] = elementType;
@@ -10352,7 +10352,7 @@ void GenC::writeStringSubstring(const CiExpr * obj, const std::vector<std::share
 
 void GenC::startArrayContains(const CiExpr * obj)
 {
-	write("CiArray_Contains_");
+	write("FuArray_Contains_");
 	CiId typeId = obj->type->asClassType()->getElementType()->id;
 	switch (typeId) {
 	case CiId::none:
@@ -10398,17 +10398,17 @@ void GenC::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std:
 		break;
 	case CiId::intTryParse:
 		this->intTryParse = true;
-		write("CiInt");
+		write("FuInt");
 		writeTryParse(obj, args);
 		break;
 	case CiId::longTryParse:
 		this->longTryParse = true;
-		write("CiLong");
+		write("FuLong");
 		writeTryParse(obj, args);
 		break;
 	case CiId::doubleTryParse:
 		this->doubleTryParse = true;
-		write("CiDouble");
+		write("FuDouble");
 		writeTryParse(obj, args);
 		break;
 	case CiId::stringContains:
@@ -10447,7 +10447,7 @@ void GenC::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std:
 		include("string.h");
 		this->stringAppend = true;
 		this->stringReplace = true;
-		writeCall("CiString_Replace", obj, (*args)[0].get(), (*args)[1].get());
+		writeCall("FuString_Replace", obj, (*args)[0].get(), (*args)[1].get());
 		break;
 	case CiId::stringStartsWith:
 		if (parent > CiPriority::equality)
@@ -10620,7 +10620,7 @@ void GenC::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std:
 		obj->accept(this, CiPriority::argument);
 		{
 			CiId typeId2 = obj->type->asClassType()->getElementType()->id;
-			write(", CiCompare_");
+			write(", FuCompare_");
 			writeNumericType(typeId2);
 			writeChar(')');
 			this->compares.insert(typeId2);
@@ -10784,7 +10784,7 @@ void GenC::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std:
 		break;
 	case CiId::matchFindStr:
 		this->matchFind = true;
-		write("CiMatch_Find(&");
+		write("FuMatch_Find(&");
 		obj->accept(this, CiPriority::primary);
 		write(", ");
 		writeTemporaryOrExpr((*args)[0].get(), CiPriority::argument);
@@ -10947,12 +10947,12 @@ void GenC::visitBinaryExpr(const CiBinaryExpr * expr, CiPriority parent)
 		if (expr->left->type->id == CiId::stringStorageType) {
 			if (const CiInterpolatedString *rightInterpolated = dynamic_cast<const CiInterpolatedString *>(expr->right.get())) {
 				this->stringAssign = true;
-				write("CiString_Assign(&");
+				write("FuString_Assign(&");
 				expr->left->accept(this, CiPriority::primary);
 				this->stringFormat = true;
 				include("stdarg.h");
 				include("stdio.h");
-				write(", CiString_Format(\"%s");
+				write(", FuString_Format(\"%s");
 				writePrintfFormat(rightInterpolated);
 				write("\", ");
 				expr->left->accept(this, CiPriority::argument);
@@ -10962,7 +10962,7 @@ void GenC::visitBinaryExpr(const CiBinaryExpr * expr, CiPriority parent)
 			else {
 				include("string.h");
 				this->stringAppend = true;
-				write("CiString_Append(&");
+				write("FuString_Append(&");
 				expr->left->accept(this, CiPriority::primary);
 				write(", ");
 				expr->right->accept(this, CiPriority::argument);
@@ -10982,7 +10982,7 @@ void GenC::visitBinaryExpr(const CiBinaryExpr * expr, CiPriority parent)
 
 void GenC::writeResource(std::string_view name, int length)
 {
-	write("CiResource_");
+	write("FuResource_");
 	writeResourceName(name);
 }
 
@@ -11049,7 +11049,7 @@ void GenC::visitExpr(const CiExpr * statement)
 	}
 	else if (dynamic_cast<const CiCallExpr *>(statement) && dynamic_cast<const CiDynamicPtrType *>(statement->type.get())) {
 		this->sharedRelease = true;
-		write("CiShared_Release(");
+		write("FuShared_Release(");
 		statement->accept(this, CiPriority::argument);
 		writeLine(");");
 		cleanupTemporaries();
@@ -11061,8 +11061,8 @@ void GenC::visitExpr(const CiExpr * statement)
 void GenC::startForeachHashTable(const CiForeach * statement)
 {
 	openBlock();
-	writeLine("GHashTableIter cidictit;");
-	write("g_hash_table_iter_init(&cidictit, ");
+	writeLine("GHashTableIter fudictit;");
+	write("g_hash_table_iter_init(&fudictit, ");
 	statement->collection->accept(this, CiPriority::argument);
 	writeLine(");");
 }
@@ -11141,41 +11141,41 @@ void GenC::visitForeach(const CiForeach * statement)
 			}
 		case CiId::hashSetClass:
 			startForeachHashTable(statement);
-			writeLine("gpointer cikey;");
-			write("while (g_hash_table_iter_next(&cidictit, &cikey, NULL)) ");
+			writeLine("gpointer fukey;");
+			write("while (g_hash_table_iter_next(&fudictit, &fukey, NULL)) ");
 			openBlock();
-			writeDictIterVar(statement->getVar(), "cikey");
+			writeDictIterVar(statement->getVar(), "fukey");
 			flattenBlock(statement->body.get());
 			closeBlock();
 			closeBlock();
 			break;
 		case CiId::sortedSetClass:
-			write("for (GTreeNode *cisetit = g_tree_node_first(");
+			write("for (GTreeNode *fusetit = g_tree_node_first(");
 			statement->collection->accept(this, CiPriority::argument);
-			write("); cisetit != NULL; cisetit = g_tree_node_next(cisetit)) ");
+			write("); fusetit != NULL; fusetit = g_tree_node_next(fusetit)) ");
 			openBlock();
-			writeDictIterVar(statement->getVar(), "g_tree_node_key(cisetit)");
+			writeDictIterVar(statement->getVar(), "g_tree_node_key(fusetit)");
 			flattenBlock(statement->body.get());
 			closeBlock();
 			break;
 		case CiId::dictionaryClass:
 			startForeachHashTable(statement);
-			writeLine("gpointer cikey, civalue;");
-			write("while (g_hash_table_iter_next(&cidictit, &cikey, &civalue)) ");
+			writeLine("gpointer fukey, fuvalue;");
+			write("while (g_hash_table_iter_next(&fudictit, &fukey, &fuvalue)) ");
 			openBlock();
-			writeDictIterVar(statement->getVar(), "cikey");
-			writeDictIterVar(statement->getValueVar(), "civalue");
+			writeDictIterVar(statement->getVar(), "fukey");
+			writeDictIterVar(statement->getValueVar(), "fuvalue");
 			flattenBlock(statement->body.get());
 			closeBlock();
 			closeBlock();
 			break;
 		case CiId::sortedDictionaryClass:
-			write("for (GTreeNode *cidictit = g_tree_node_first(");
+			write("for (GTreeNode *fudictit = g_tree_node_first(");
 			statement->collection->accept(this, CiPriority::argument);
-			write("); cidictit != NULL; cidictit = g_tree_node_next(cidictit)) ");
+			write("); fudictit != NULL; fudictit = g_tree_node_next(fudictit)) ");
 			openBlock();
-			writeDictIterVar(statement->getVar(), "g_tree_node_key(cidictit)");
-			writeDictIterVar(statement->getValueVar(), "g_tree_node_value(cidictit)");
+			writeDictIterVar(statement->getVar(), "g_tree_node_key(fudictit)");
+			writeDictIterVar(statement->getValueVar(), "g_tree_node_value(fudictit)");
 			flattenBlock(statement->body.get());
 			closeBlock();
 			break;
@@ -11721,7 +11721,7 @@ void GenC::writeMethod(const CiMethod * method)
 void GenC::writeTryParseLibrary(std::string_view signature, std::string_view call)
 {
 	writeNewLine();
-	write("static bool Ci");
+	write("static bool Fu");
 	writeLine(signature);
 	openBlock();
 	writeLine("if (*str == '\\0')");
@@ -11744,7 +11744,7 @@ void GenC::writeLibrary()
 		writeTryParseLibrary("Double_TryParse(double *result, const char *str)", "d(str, &end");
 	if (this->stringAssign) {
 		writeNewLine();
-		writeLine("static void CiString_Assign(char **str, char *value)");
+		writeLine("static void FuString_Assign(char **str, char *value)");
 		openBlock();
 		writeLine("free(*str);");
 		writeLine("*str = value;");
@@ -11752,7 +11752,7 @@ void GenC::writeLibrary()
 	}
 	if (this->stringSubstring) {
 		writeNewLine();
-		writeLine("static char *CiString_Substring(const char *str, int len)");
+		writeLine("static char *FuString_Substring(const char *str, int len)");
 		openBlock();
 		writeLine("char *p = malloc(len + 1);");
 		writeLine("memcpy(p, str, len);");
@@ -11762,7 +11762,7 @@ void GenC::writeLibrary()
 	}
 	if (this->stringAppend) {
 		writeNewLine();
-		writeLine("static void CiString_AppendSubstring(char **str, const char *suffix, size_t suffixLen)");
+		writeLine("static void FuString_AppendSubstring(char **str, const char *suffix, size_t suffixLen)");
 		openBlock();
 		writeLine("if (suffixLen == 0)");
 		writeLine("\treturn;");
@@ -11772,14 +11772,14 @@ void GenC::writeLibrary()
 		writeLine("(*str)[prefixLen + suffixLen] = '\\0';");
 		closeBlock();
 		writeNewLine();
-		writeLine("static void CiString_Append(char **str, const char *suffix)");
+		writeLine("static void FuString_Append(char **str, const char *suffix)");
 		openBlock();
-		writeLine("CiString_AppendSubstring(str, suffix, strlen(suffix));");
+		writeLine("FuString_AppendSubstring(str, suffix, strlen(suffix));");
 		closeBlock();
 	}
 	if (this->stringIndexOf) {
 		writeNewLine();
-		writeLine("static int CiString_IndexOf(const char *str, const char *needle)");
+		writeLine("static int FuString_IndexOf(const char *str, const char *needle)");
 		openBlock();
 		writeLine("const char *p = strstr(str, needle);");
 		writeLine("return p == NULL ? -1 : (int) (p - str);");
@@ -11787,7 +11787,7 @@ void GenC::writeLibrary()
 	}
 	if (this->stringLastIndexOf) {
 		writeNewLine();
-		writeLine("static int CiString_LastIndexOf(const char *str, const char *needle)");
+		writeLine("static int FuString_LastIndexOf(const char *str, const char *needle)");
 		openBlock();
 		writeLine("if (needle[0] == '\\0')");
 		writeLine("\treturn (int) strlen(str);");
@@ -11803,7 +11803,7 @@ void GenC::writeLibrary()
 	}
 	if (this->stringEndsWith) {
 		writeNewLine();
-		writeLine("static bool CiString_EndsWith(const char *str, const char *suffix)");
+		writeLine("static bool FuString_EndsWith(const char *str, const char *suffix)");
 		openBlock();
 		writeLine("size_t strLen = strlen(str);");
 		writeLine("size_t suffixLen = strlen(suffix);");
@@ -11812,24 +11812,24 @@ void GenC::writeLibrary()
 	}
 	if (this->stringReplace) {
 		writeNewLine();
-		writeLine("static char *CiString_Replace(const char *s, const char *oldValue, const char *newValue)");
+		writeLine("static char *FuString_Replace(const char *s, const char *oldValue, const char *newValue)");
 		openBlock();
 		write("for (char *result = NULL;;) ");
 		openBlock();
 		writeLine("const char *p = strstr(s, oldValue);");
 		writeLine("if (p == NULL) {");
-		writeLine("\tCiString_Append(&result, s);");
+		writeLine("\tFuString_Append(&result, s);");
 		writeLine("\treturn result == NULL ? strdup(\"\") : result;");
 		writeCharLine('}');
-		writeLine("CiString_AppendSubstring(&result, s, p - s);");
-		writeLine("CiString_Append(&result, newValue);");
+		writeLine("FuString_AppendSubstring(&result, s, p - s);");
+		writeLine("FuString_Append(&result, newValue);");
 		writeLine("s = p + strlen(oldValue);");
 		closeBlock();
 		closeBlock();
 	}
 	if (this->stringFormat) {
 		writeNewLine();
-		writeLine("static char *CiString_Format(const char *format, ...)");
+		writeLine("static char *FuString_Format(const char *format, ...)");
 		openBlock();
 		writeLine("va_list args1;");
 		writeLine("va_start(args1, format);");
@@ -11845,7 +11845,7 @@ void GenC::writeLibrary()
 	}
 	if (this->matchFind) {
 		writeNewLine();
-		writeLine("static bool CiMatch_Find(GMatchInfo **match_info, const char *input, const char *pattern, GRegexCompileFlags options)");
+		writeLine("static bool FuMatch_Find(GMatchInfo **match_info, const char *input, const char *pattern, GRegexCompileFlags options)");
 		openBlock();
 		writeLine("GRegex *regex = g_regex_new(pattern, options, 0, NULL);");
 		writeLine("bool result = g_regex_match(regex, input, 0, match_info);");
@@ -11855,7 +11855,7 @@ void GenC::writeLibrary()
 	}
 	if (this->matchPos) {
 		writeNewLine();
-		writeLine("static int CiMatch_GetPos(const GMatchInfo *match_info, int which)");
+		writeLine("static int FuMatch_GetPos(const GMatchInfo *match_info, int which)");
 		openBlock();
 		writeLine("int start;");
 		writeLine("int end;");
@@ -11872,28 +11872,28 @@ void GenC::writeLibrary()
 	}
 	if (this->ptrConstruct) {
 		writeNewLine();
-		writeLine("static void CiPtr_Construct(void **ptr)");
+		writeLine("static void FuPtr_Construct(void **ptr)");
 		openBlock();
 		writeLine("*ptr = NULL;");
 		closeBlock();
 	}
 	if (this->sharedMake || this->sharedAddRef || this->sharedRelease) {
 		writeNewLine();
-		writeLine("typedef void (*CiMethodPtr)(void *);");
+		writeLine("typedef void (*FuMethodPtr)(void *);");
 		writeLine("typedef struct {");
 		this->indent++;
 		writeLine("size_t count;");
 		writeLine("size_t unitSize;");
 		writeLine("size_t refCount;");
-		writeLine("CiMethodPtr destructor;");
+		writeLine("FuMethodPtr destructor;");
 		this->indent--;
-		writeLine("} CiShared;");
+		writeLine("} FuShared;");
 	}
 	if (this->sharedMake) {
 		writeNewLine();
-		writeLine("static void *CiShared_Make(size_t count, size_t unitSize, CiMethodPtr constructor, CiMethodPtr destructor)");
+		writeLine("static void *FuShared_Make(size_t count, size_t unitSize, FuMethodPtr constructor, FuMethodPtr destructor)");
 		openBlock();
-		writeLine("CiShared *self = (CiShared *) malloc(sizeof(CiShared) + count * unitSize);");
+		writeLine("FuShared *self = (FuShared *) malloc(sizeof(FuShared) + count * unitSize);");
 		writeLine("self->count = count;");
 		writeLine("self->unitSize = unitSize;");
 		writeLine("self->refCount = 1;");
@@ -11908,20 +11908,20 @@ void GenC::writeLibrary()
 	}
 	if (this->sharedAddRef) {
 		writeNewLine();
-		writeLine("static void *CiShared_AddRef(void *ptr)");
+		writeLine("static void *FuShared_AddRef(void *ptr)");
 		openBlock();
 		writeLine("if (ptr != NULL)");
-		writeLine("\t((CiShared *) ptr)[-1].refCount++;");
+		writeLine("\t((FuShared *) ptr)[-1].refCount++;");
 		writeLine("return ptr;");
 		closeBlock();
 	}
 	if (this->sharedRelease || this->sharedAssign) {
 		writeNewLine();
-		writeLine("static void CiShared_Release(void *ptr)");
+		writeLine("static void FuShared_Release(void *ptr)");
 		openBlock();
 		writeLine("if (ptr == NULL)");
 		writeLine("\treturn;");
-		writeLine("CiShared *self = (CiShared *) ptr - 1;");
+		writeLine("FuShared *self = (FuShared *) ptr - 1;");
 		writeLine("if (--self->refCount != 0)");
 		writeLine("\treturn;");
 		write("if (self->destructor != NULL) ");
@@ -11934,15 +11934,15 @@ void GenC::writeLibrary()
 	}
 	if (this->sharedAssign) {
 		writeNewLine();
-		writeLine("static void CiShared_Assign(void **ptr, void *value)");
+		writeLine("static void FuShared_Assign(void **ptr, void *value)");
 		openBlock();
-		writeLine("CiShared_Release(*ptr);");
+		writeLine("FuShared_Release(*ptr);");
 		writeLine("*ptr = value;");
 		closeBlock();
 	}
 	for (const auto &[name, content] : this->listFrees) {
 		writeNewLine();
-		write("static void CiList_Free");
+		write("static void FuList_Free");
 		write(name);
 		writeLine("(void *ptr)");
 		openBlock();
@@ -11952,7 +11952,7 @@ void GenC::writeLibrary()
 	}
 	if (this->treeCompareInteger) {
 		writeNewLine();
-		write("static int CiTree_CompareInteger(gconstpointer pa, gconstpointer pb, gpointer user_data)");
+		write("static int FuTree_CompareInteger(gconstpointer pa, gconstpointer pb, gpointer user_data)");
 		openBlock();
 		writeLine("gintptr a = (gintptr) pa;");
 		writeLine("gintptr b = (gintptr) pb;");
@@ -11961,14 +11961,14 @@ void GenC::writeLibrary()
 	}
 	if (this->treeCompareString) {
 		writeNewLine();
-		write("static int CiTree_CompareString(gconstpointer a, gconstpointer b, gpointer user_data)");
+		write("static int FuTree_CompareString(gconstpointer a, gconstpointer b, gpointer user_data)");
 		openBlock();
 		writeLine("return strcmp((const char *) a, (const char *) b);");
 		closeBlock();
 	}
 	for (CiId typeId : this->compares) {
 		writeNewLine();
-		write("static int CiCompare_");
+		write("static int FuCompare_");
 		writeNumericType(typeId);
 		writeLine("(const void *pa, const void *pb)");
 		openBlock();
@@ -11995,7 +11995,7 @@ void GenC::writeLibrary()
 	}
 	for (CiId typeId : this->contains) {
 		writeNewLine();
-		write("static bool CiArray_Contains_");
+		write("static bool FuArray_Contains_");
 		if (typeId == CiId::none)
 			write("object(const void * const *a, size_t len, const void *");
 		else if (typeId == CiId::stringPtrType)
@@ -12204,11 +12204,11 @@ void GenCl::writeSubstringEqual(const CiCallExpr * call, std::string_view litera
 		writeChar('!');
 	if (isUTF8GetString(call)) {
 		this->bytesEqualsString = true;
-		write("CiBytes_Equals(");
+		write("FuBytes_Equals(");
 	}
 	else {
 		this->stringStartsWith = true;
-		write("CiString_StartsWith(");
+		write("FuString_StartsWith(");
 	}
 	writeStringPtrAdd(call);
 	write(", ");
@@ -12221,7 +12221,7 @@ void GenCl::writeEqualStringInternal(const CiExpr * left, const CiExpr * right, 
 	this->stringEquals = true;
 	if (not_)
 		writeChar('!');
-	writeCall("CiString_Equals", left, right);
+	writeCall("FuString_Equals", left, right);
 }
 
 void GenCl::writeStringLength(const CiExpr * expr)
@@ -12267,7 +12267,7 @@ void GenCl::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std
 			}
 			else {
 				this->stringStartsWith = true;
-				writeCall("CiString_StartsWith", obj, (*args)[0].get());
+				writeCall("FuString_StartsWith", obj, (*args)[0].get());
 			}
 			break;
 		}
@@ -12378,7 +12378,7 @@ void GenCl::writeLibrary()
 	}
 	if (this->stringEquals) {
 		writeNewLine();
-		writeLine("static bool CiString_Equals(constant char *str1, constant char *str2)");
+		writeLine("static bool FuString_Equals(constant char *str1, constant char *str2)");
 		openBlock();
 		writeLine("for (size_t i = 0; str1[i] == str2[i]; i++) {");
 		writeLine("\tif (str1[i] == '\\0')");
@@ -12389,7 +12389,7 @@ void GenCl::writeLibrary()
 	}
 	if (this->stringStartsWith) {
 		writeNewLine();
-		writeLine("static bool CiString_StartsWith(constant char *str1, constant char *str2)");
+		writeLine("static bool FuString_StartsWith(constant char *str1, constant char *str2)");
 		openBlock();
 		writeLine("for (int i = 0; str2[i] != '\\0'; i++) {");
 		writeLine("\tif (str1[i] != str2[i])");
@@ -12400,7 +12400,7 @@ void GenCl::writeLibrary()
 	}
 	if (this->bytesEqualsString) {
 		writeNewLine();
-		writeLine("static bool CiBytes_Equals(const uchar *mem, constant char *str)");
+		writeLine("static bool FuBytes_Equals(const uchar *mem, constant char *str)");
 		openBlock();
 		writeLine("for (int i = 0; str[i] != '\\0'; i++) {");
 		writeLine("\tif (mem[i] != str[i])");
@@ -13097,7 +13097,7 @@ void GenCpp::writeCallExpr(const CiExpr * obj, const CiMethod * method, const st
 		break;
 	case CiId::stringReplace:
 		this->stringReplace = true;
-		writeCall("CiString_replace", obj, (*args)[0].get(), (*args)[1].get());
+		writeCall("FuString_replace", obj, (*args)[0].get(), (*args)[1].get());
 		break;
 	case CiId::stringStartsWith:
 		writeStringMethod(obj, "starts_with", method, args);
@@ -13529,7 +13529,7 @@ void GenCpp::writeCallExpr(const CiExpr * obj, const CiMethod * method, const st
 
 void GenCpp::writeResource(std::string_view name, int length)
 {
-	write("CiResource::");
+	write("FuResource::");
 	writeResourceName(name);
 }
 
@@ -13963,7 +13963,7 @@ void GenCpp::writeEnum(const CiEnum * enu)
 	if (dynamic_cast<const CiEnumFlags *>(enu)) {
 		include("type_traits");
 		this->hasEnumFlags = true;
-		write("CI_ENUM_FLAG_OPERATORS(");
+		write("FU_ENUM_FLAG_OPERATORS(");
 		write(enu->name);
 		writeCharLine(')');
 	}
@@ -14125,7 +14125,7 @@ void GenCpp::writeResources(const std::map<std::string, std::vector<uint8_t>> * 
 	writeNewLine();
 	writeLine("namespace");
 	openBlock();
-	writeLine("namespace CiResource");
+	writeLine("namespace FuResource");
 	openBlock();
 	for (const auto &[name, content] : *resources) {
 		if (!define)
@@ -14172,7 +14172,7 @@ void GenCpp::writeProgram(const CiProgram * program)
 	closeNamespace();
 	createHeaderFile(".hpp");
 	if (this->hasEnumFlags) {
-		writeLine("#define CI_ENUM_FLAG_OPERATORS(T) \\");
+		writeLine("#define FU_ENUM_FLAG_OPERATORS(T) \\");
 		writeLine("\tinline constexpr T operator~(T a) { return static_cast<T>(~static_cast<std::underlying_type_t<T>>(a)); } \\");
 		writeLine("\tinline constexpr T operator&(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) & static_cast<std::underlying_type_t<T>>(b)); } \\");
 		writeLine("\tinline constexpr T operator|(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) | static_cast<std::underlying_type_t<T>>(b)); } \\");
@@ -14202,7 +14202,7 @@ void GenCpp::writeProgram(const CiProgram * program)
 		writeLine("using namespace std::string_view_literals;");
 	if (this->stringReplace) {
 		writeNewLine();
-		writeLine("static std::string CiString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
+		writeLine("static std::string FuString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
 		openBlock();
 		writeLine("std::string result;");
 		writeLine("result.reserve(s.size());");
@@ -14538,7 +14538,7 @@ void GenCs::writeInitCode(const CiNamedValue * def)
 
 void GenCs::writeResource(std::string_view name, int length)
 {
-	write("CiResource.");
+	write("FuResource.");
 	writeResourceName(name);
 }
 
@@ -15109,7 +15109,7 @@ void GenCs::writeClass(const CiClass * klass, const CiProgram * program)
 void GenCs::writeResources(const std::map<std::string, std::vector<uint8_t>> * resources)
 {
 	writeNewLine();
-	writeLine("internal static class CiResource");
+	writeLine("internal static class FuResource");
 	openBlock();
 	for (const auto &[name, content] : *resources) {
 		write("internal static readonly byte[] ");
@@ -15552,7 +15552,7 @@ void GenD::writeNew(const CiReadWriteClassType * klass, CiPriority parent)
 
 void GenD::writeResource(std::string_view name, int length)
 {
-	write("CiResource.");
+	write("FuResource.");
 	writeResourceName(name);
 }
 
@@ -15709,21 +15709,21 @@ void GenD::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std:
 	case CiId::arrayBinarySearchAll:
 	case CiId::arrayBinarySearchPart:
 		include("std.range");
-		write("() { size_t cibegin = ");
+		write("() { size_t fubegin = ");
 		if (args->size() == 3)
 			(*args)[1]->accept(this, CiPriority::argument);
 		else
 			writeChar('0');
-		write("; auto cisearch = ");
+		write("; auto fusearch = ");
 		writeClassReference(obj);
 		writeChar('[');
 		if (args->size() == 3) {
-			write("cibegin .. cibegin + ");
+			write("fubegin .. fubegin + ");
 			(*args)[2]->accept(this, CiPriority::add);
 		}
 		write("].assumeSorted.trisect(");
 		writeNotPromoted(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
-		write("); return cisearch[1].length ? cibegin + cisearch[0].length : -1; }()");
+		write("); return fusearch[1].length ? fubegin + fusearch[0].length : -1; }()");
 		break;
 	case CiId::arrayContains:
 	case CiId::listContains:
@@ -16371,7 +16371,7 @@ void GenD::writeCoercedInternal(const CiType * type, const CiExpr * expr, CiPrio
 void GenD::writeResources(const std::map<std::string, std::vector<uint8_t>> * resources)
 {
 	writeNewLine();
-	writeLine("private static struct CiResource");
+	writeLine("private static struct FuResource");
 	openBlock();
 	for (const auto &[name, content] : *resources) {
 		write("private static ubyte[] ");
@@ -16715,7 +16715,7 @@ void GenJava::writeNew(const CiReadWriteClassType * klass, CiPriority parent)
 
 void GenJava::writeResource(std::string_view name, int length)
 {
-	write("CiResource.getByteArray(");
+	write("FuResource.getByteArray(");
 	visitLiteralString(name);
 	write(", ");
 	visitLiteralLong(length);
@@ -17645,17 +17645,17 @@ void GenJava::writeClass(const CiClass * klass, const CiProgram * program)
 
 void GenJava::writeResources()
 {
-	createJavaFile("CiResource");
+	createJavaFile("FuResource");
 	writeLine("import java.io.DataInputStream;");
 	writeLine("import java.io.IOException;");
 	writeNewLine();
-	write("class CiResource");
+	write("class FuResource");
 	writeNewLine();
 	openBlock();
 	writeLine("static byte[] getByteArray(String name, int length)");
 	openBlock();
 	write("DataInputStream dis = new DataInputStream(");
-	writeLine("CiResource.class.getResourceAsStream(name));");
+	writeLine("FuResource.class.getResourceAsStream(name));");
 	writeLine("byte[] result = new byte[length];");
 	write("try ");
 	openBlock();
@@ -18002,7 +18002,7 @@ void GenJsNoModule::writeInitCode(const CiNamedValue * def)
 
 void GenJsNoModule::writeResource(std::string_view name, int length)
 {
-	write("Ci.");
+	write("Fu.");
 	writeResourceName(name);
 }
 
@@ -18716,7 +18716,7 @@ void GenJsNoModule::visitBreak(const CiBreak * statement)
 	if (const CiSwitch *switchStatement = dynamic_cast<const CiSwitch *>(statement->loopOrSwitch)) {
 		int label = [](const std::vector<const CiSwitch *> &v, const CiSwitch * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->switchesWithLabel, switchStatement);
 		if (label >= 0) {
-			write("break ciswitch");
+			write("break fuswitch");
 			visitLiteralLong(label);
 			writeCharLine(';');
 			return;
@@ -18816,7 +18816,7 @@ void GenJsNoModule::visitSwitch(const CiSwitch * statement)
 {
 	if (statement->isTypeMatching() || statement->hasWhen()) {
 		if (std::any_of(statement->cases.begin(), statement->cases.end(), [](const CiCase &kase) { return CiSwitch::hasEarlyBreak(&kase.body); }) || CiSwitch::hasEarlyBreak(&statement->defaultBody)) {
-			write("ciswitch");
+			write("fuswitch");
 			visitLiteralLong(this->switchesWithLabel.size());
 			this->switchesWithLabel.push_back(statement);
 			write(": ");
@@ -18953,7 +18953,7 @@ void GenJsNoModule::writeLib(const std::map<std::string, std::vector<uint8_t>> *
 	if (resources->size() == 0)
 		return;
 	writeNewLine();
-	writeLine("class Ci");
+	writeLine("class Fu");
 	openBlock();
 	for (const auto &[name, content] : *resources) {
 		write("static ");
@@ -19911,7 +19911,7 @@ void GenSwift::writeStringLength(const CiExpr * expr)
 void GenSwift::writeCharAt(const CiBinaryExpr * expr)
 {
 	this->stringCharAt = true;
-	write("ciStringCharAt(");
+	write("fuStringCharAt(");
 	writeUnwrapped(expr->left.get(), CiPriority::argument, false);
 	write(", ");
 	expr->right->accept(this, CiPriority::argument);
@@ -20016,7 +20016,7 @@ void GenSwift::writeCallExpr(const CiExpr * obj, const CiMethod * method, const 
 	case CiId::stringIndexOf:
 		include("Foundation");
 		this->stringIndexOf = true;
-		write("ciStringIndexOf(");
+		write("fuStringIndexOf(");
 		writeUnwrapped(obj, CiPriority::argument, true);
 		write(", ");
 		writeUnwrapped((*args)[0].get(), CiPriority::argument, true);
@@ -20025,7 +20025,7 @@ void GenSwift::writeCallExpr(const CiExpr * obj, const CiMethod * method, const 
 	case CiId::stringLastIndexOf:
 		include("Foundation");
 		this->stringIndexOf = true;
-		write("ciStringIndexOf(");
+		write("fuStringIndexOf(");
 		writeUnwrapped(obj, CiPriority::argument, true);
 		write(", ");
 		writeUnwrapped((*args)[0].get(), CiPriority::argument, true);
@@ -20047,7 +20047,7 @@ void GenSwift::writeCallExpr(const CiExpr * obj, const CiMethod * method, const 
 			writeUnwrapped(obj, CiPriority::primary, true);
 		else {
 			this->stringSubstring = true;
-			write("ciStringSubstring(");
+			write("fuStringSubstring(");
 			writeUnwrapped(obj, CiPriority::argument, false);
 			write(", ");
 			writeCoerced(this->system->intType.get(), (*args)[0].get(), CiPriority::argument);
@@ -20233,9 +20233,9 @@ void GenSwift::writeCallExpr(const CiExpr * obj, const CiMethod * method, const 
 		write(".utf8.count");
 		break;
 	case CiId::uTF8GetBytes:
-		if (addVar("cibytes"))
+		if (addVar("fubytes"))
 			write(this->varBytesAtIndent[this->indent] ? "var " : "let ");
-		write("cibytes = [UInt8](");
+		write("fubytes = [UInt8](");
 		writeUnwrapped((*args)[0].get(), CiPriority::primary, true);
 		writeLine(".utf8)");
 		openIndexing((*args)[1].get());
@@ -20247,7 +20247,7 @@ void GenSwift::writeCallExpr(const CiExpr * obj, const CiMethod * method, const 
 			writeCoerced(this->system->intType.get(), (*args)[2].get(), CiPriority::add);
 			write(" + ");
 		}
-		writeLine("cibytes.count] = cibytes[...]");
+		writeLine("fubytes.count] = fubytes[...]");
 		break;
 	case CiId::uTF8GetString:
 		write("String(decoding: ");
@@ -20577,7 +20577,7 @@ void GenSwift::visitBinaryExpr(const CiBinaryExpr * expr, CiPriority parent)
 
 void GenSwift::writeResource(std::string_view name, int length)
 {
-	write("CiResource.");
+	write("FuResource.");
 	writeResourceName(name);
 }
 
@@ -20938,7 +20938,7 @@ void GenSwift::visitThrow(const CiThrow * statement)
 
 void GenSwift::writeReadOnlyParameter(const CiVar * param)
 {
-	write("ciParam");
+	write("fuParam");
 	writePascalCase(param->name);
 }
 
@@ -21250,14 +21250,14 @@ void GenSwift::writeLibrary()
 	}
 	if (this->stringCharAt) {
 		writeNewLine();
-		writeLine("fileprivate func ciStringCharAt(_ s: String, _ offset: Int) -> Int");
+		writeLine("fileprivate func fuStringCharAt(_ s: String, _ offset: Int) -> Int");
 		openBlock();
 		writeLine("return Int(s.unicodeScalars[s.index(s.startIndex, offsetBy: offset)].value)");
 		closeBlock();
 	}
 	if (this->stringIndexOf) {
 		writeNewLine();
-		writeLine("fileprivate func ciStringIndexOf<S1 : StringProtocol, S2 : StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
+		writeLine("fileprivate func fuStringIndexOf<S1 : StringProtocol, S2 : StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
 		openBlock();
 		writeLine("guard let index = haystack.range(of: needle, options: options) else { return -1 }");
 		writeLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");
@@ -21265,7 +21265,7 @@ void GenSwift::writeLibrary()
 	}
 	if (this->stringSubstring) {
 		writeNewLine();
-		writeLine("fileprivate func ciStringSubstring(_ s: String, _ offset: Int) -> Substring");
+		writeLine("fileprivate func fuStringSubstring(_ s: String, _ offset: Int) -> Substring");
 		openBlock();
 		writeLine("return s[s.index(s.startIndex, offsetBy: offset)...]");
 		closeBlock();
@@ -21278,7 +21278,7 @@ void GenSwift::writeResources(const std::map<std::string, std::vector<uint8_t>> 
 		return;
 	this->arrayRef = true;
 	writeNewLine();
-	writeLine("fileprivate final class CiResource");
+	writeLine("fileprivate final class FuResource");
 	openBlock();
 	for (const auto &[name, content] : *resources) {
 		write("static let ");
@@ -22054,7 +22054,7 @@ void GenPy::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std
 		writePostfix((*args)[0].get(), ".encode(\"utf8\"))");
 		break;
 	case CiId::uTF8GetBytes:
-		write("cibytes = ");
+		write("fubytes = ");
 		(*args)[0]->accept(this, CiPriority::primary);
 		writeLine(".encode(\"utf8\")");
 		(*args)[1]->accept(this, CiPriority::primary);
@@ -22062,7 +22062,7 @@ void GenPy::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std
 		(*args)[2]->accept(this, CiPriority::argument);
 		writeChar(':');
 		startAdd((*args)[2].get());
-		writeLine("len(cibytes)] = cibytes");
+		writeLine("len(fubytes)] = fubytes");
 		break;
 	case CiId::uTF8GetString:
 		(*args)[0]->accept(this, CiPriority::primary);
@@ -22181,7 +22181,7 @@ void GenPy::writeCallExpr(const CiExpr * obj, const CiMethod * method, const std
 
 void GenPy::writeResource(std::string_view name, int length)
 {
-	write("_CiResource.");
+	write("_FuResource.");
 	writeResourceName(name);
 }
 
@@ -22556,7 +22556,7 @@ void GenPy::writeResources(const std::map<std::string, std::vector<uint8_t>> * r
 	if (resources->size() == 0)
 		return;
 	writeNewLine();
-	write("class _CiResource");
+	write("class _FuResource");
 	openChild();
 	for (const auto &[name, content] : *resources) {
 		writeResourceName(name);

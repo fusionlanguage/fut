@@ -7500,7 +7500,7 @@ export class GenBase extends CiVisitor
 				if ((init = expr.inner) instanceof CiAggregateInitializer) {
 					let tempId = this.currentTemporaries.indexOf(expr);
 					if (tempId >= 0) {
-						this.write("citemp");
+						this.write("futemp");
 						this.visitLiteralLong(BigInt(tempId));
 					}
 					else
@@ -8031,14 +8031,14 @@ export class GenBase extends CiVisitor
 			}
 			else
 				this.currentTemporaries[id] = expr;
-			this.write("citemp");
+			this.write("futemp");
 			this.visitLiteralLong(BigInt(id));
 			this.write(" = ");
 			const dynamic = expr.type;
 			this.writeNew(dynamic, CiPriority.ARGUMENT);
 			this.endStatement();
 			for (const item of init.items) {
-				this.write("citemp");
+				this.write("futemp");
 				this.visitLiteralLong(BigInt(id));
 				this.#writeAggregateInitField(expr, item);
 			}
@@ -8911,7 +8911,7 @@ export class GenCCppD extends GenTyped
 		if ((switchStatement = statement.loopOrSwitch) instanceof CiSwitch) {
 			let gotoId = this.switchesWithGoto.indexOf(switchStatement);
 			if (gotoId >= 0) {
-				this.write("goto ciafterswitch");
+				this.write("goto fuafterswitch");
 				this.visitLiteralLong(BigInt(gotoId));
 				this.writeCharLine(59);
 				return;
@@ -8926,7 +8926,7 @@ export class GenCCppD extends GenTyped
 			let gotoId = this.switchesWithGoto.length;
 			this.switchesWithGoto.push(statement);
 			this.writeSwitchAsIfs(statement, false);
-			this.write("ciafterswitch");
+			this.write("fuafterswitch");
 			this.visitLiteralLong(BigInt(gotoId));
 			this.writeLine(": ;");
 		}
@@ -9298,7 +9298,7 @@ export class GenC extends GenCCpp
 	{
 		let tempId = this.currentTemporaries.indexOf(expr);
 		if (tempId >= 0) {
-			this.write("citemp");
+			this.write("futemp");
 			this.visitLiteralLong(BigInt(tempId));
 		}
 		else
@@ -9356,7 +9356,7 @@ export class GenC extends GenCCpp
 		this.include("stdarg.h");
 		this.include("stdio.h");
 		this.#stringFormat = true;
-		this.write("CiString_Format(");
+		this.write("FuString_Format(");
 		this.writePrintf(expr, false);
 	}
 
@@ -9513,7 +9513,7 @@ export class GenC extends GenCCpp
 	#writeMatchProperty(expr, which)
 	{
 		this.#matchPos = true;
-		this.write("CiMatch_GetPos(");
+		this.write("FuMatch_GetPos(");
 		expr.left.accept(this, CiPriority.ARGUMENT);
 		this.write(", ");
 		this.visitLiteralLong(BigInt(which));
@@ -9755,7 +9755,7 @@ export class GenC extends GenCCpp
 	#writeXstructorPtr(need, klass, name)
 	{
 		if (need) {
-			this.write("(CiMethodPtr) ");
+			this.write("(FuMethodPtr) ");
 			this.writeName(klass);
 			this.writeChar(95);
 			this.write(name);
@@ -9825,7 +9825,7 @@ export class GenC extends GenCCpp
 		if (parent > CiPriority.MUL)
 			this.writeChar(40);
 		this.#writeDynamicArrayCast(elementType);
-		this.write("CiShared_Make(");
+		this.write("FuShared_Make(");
 		lengthExpr.accept(this, CiPriority.ARGUMENT);
 		this.write(", sizeof(");
 		this.writeType(elementType, false);
@@ -9833,7 +9833,7 @@ export class GenC extends GenCCpp
 		if (elementType instanceof CiStringStorageType) {
 			this.#ptrConstruct = true;
 			this.#listFrees["String"] = "free(*(void **) ptr)";
-			this.write("(CiMethodPtr) CiPtr_Construct, CiList_FreeString");
+			this.write("(FuMethodPtr) FuPtr_Construct, FuList_FreeString");
 		}
 		else if (elementType instanceof CiStorageType) {
 			const storage = elementType;
@@ -9842,8 +9842,8 @@ export class GenC extends GenCCpp
 		else if (elementType instanceof CiDynamicPtrType) {
 			this.#ptrConstruct = true;
 			this.#sharedRelease = true;
-			this.#listFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
-			this.write("(CiMethodPtr) CiPtr_Construct, CiList_FreeShared");
+			this.#listFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
+			this.write("(FuMethodPtr) FuPtr_Construct, FuList_FreeShared");
 		}
 		else
 			this.write("NULL, NULL");
@@ -9864,7 +9864,7 @@ export class GenC extends GenCCpp
 		if (call != null) {
 			this.include("string.h");
 			this.#stringSubstring = true;
-			this.write("CiString_Substring(");
+			this.write("FuString_Substring(");
 			this.#writeStringPtrAddCast(call);
 			this.write(", ");
 			GenC.getStringSubstringLength(call).accept(this, CiPriority.ARGUMENT);
@@ -9916,7 +9916,7 @@ export class GenC extends GenCCpp
 		}
 		else if (type instanceof CiDynamicPtrType) {
 			this.#sharedRelease = true;
-			return "CiShared_Release";
+			return "FuShared_Release";
 		}
 		else
 			return "NULL";
@@ -9951,7 +9951,7 @@ export class GenC extends GenCCpp
 		if (keyType.id == CiId.STRING_PTR_TYPE && valueDestroy == "NULL")
 			this.write("g_tree_new((GCompareFunc) strcmp");
 		else {
-			this.write("g_tree_new_full(CiTree_Compare");
+			this.write("g_tree_new_full(FuTree_Compare");
 			if (keyType instanceof CiIntegerType) {
 				this.#treeCompareInteger = true;
 				this.write("Integer");
@@ -9999,7 +9999,7 @@ export class GenC extends GenCCpp
 			if (parent > CiPriority.MUL)
 				this.writeChar(40);
 			this.writeStaticCastType(klass);
-			this.write("CiShared_Make(1, sizeof(");
+			this.write("FuShared_Make(1, sizeof(");
 			this.writeName(klass.class);
 			this.write("), ");
 			this.#writeXstructorPtrs(klass.class);
@@ -10042,7 +10042,7 @@ export class GenC extends GenCCpp
 		if (id < 0) {
 			id = this.currentTemporaries.length;
 			this.#startDefinition(type, false, true);
-			this.write("citemp");
+			this.write("futemp");
 			this.visitLiteralLong(BigInt(id));
 			this.#endDefinition(type);
 			if (assign)
@@ -10051,7 +10051,7 @@ export class GenC extends GenCCpp
 			this.currentTemporaries.push(expr);
 		}
 		else if (assign) {
-			this.write("citemp");
+			this.write("futemp");
 			this.visitLiteralLong(BigInt(id));
 			this.#writeAssignTemporary(type, expr);
 			this.writeCharLine(59);
@@ -10168,7 +10168,7 @@ export class GenC extends GenCCpp
 	cleanupTemporary(i, temp)
 	{
 		if (temp.type.id == CiId.STRING_STORAGE_TYPE) {
-			this.write("free(citemp");
+			this.write("free(futemp");
 			this.visitLiteralLong(BigInt(i));
 			this.writeLine(");");
 		}
@@ -10269,7 +10269,7 @@ export class GenC extends GenCCpp
 			}
 			else {
 				this.#stringAssign = true;
-				this.write("CiString_Assign(&");
+				this.write("FuString_Assign(&");
 				expr.left.accept(this, CiPriority.PRIMARY);
 				this.write(", ");
 				this.#writeStringStorageValue(expr.right);
@@ -10284,12 +10284,12 @@ export class GenC extends GenCCpp
 				}
 				else {
 					this.#sharedAssign = true;
-					this.write("CiShared_Assign((void **) &");
+					this.write("FuShared_Assign((void **) &");
 					expr.left.accept(this, CiPriority.PRIMARY);
 					this.write(", ");
 					if (expr.right instanceof CiSymbolReference) {
 						this.#sharedAddRef = true;
-						this.write("CiShared_AddRef(");
+						this.write("FuShared_AddRef(");
 						expr.right.accept(this, CiPriority.ARGUMENT);
 						this.writeChar(41);
 					}
@@ -10378,7 +10378,7 @@ export class GenC extends GenCCpp
 				this.write("g_regex_unref(");
 			else {
 				this.#sharedRelease = true;
-				this.write("CiShared_Release(");
+				this.write("FuShared_Release(");
 			}
 		}
 		else if (type instanceof CiStorageType) {
@@ -10540,12 +10540,12 @@ export class GenC extends GenCCpp
 			this.write(", ");
 			if (type.asClassType().getElementType() instanceof CiStringStorageType) {
 				this.#listFrees["String"] = "free(*(void **) ptr)";
-				this.write("CiList_FreeString");
+				this.write("FuList_FreeString");
 			}
 			else if (type.asClassType().getElementType() instanceof CiDynamicPtrType) {
 				this.#sharedRelease = true;
-				this.#listFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
-				this.write("CiList_FreeShared");
+				this.#listFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
+				this.write("FuList_FreeShared");
 			}
 			else if (type.asClassType().getElementType() instanceof CiStorageType) {
 				const storage = type.asClassType().getElementType();
@@ -10553,17 +10553,17 @@ export class GenC extends GenCCpp
 				case CiId.LIST_CLASS:
 				case CiId.STACK_CLASS:
 					this.#listFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
-					this.write("CiList_FreeList");
+					this.write("FuList_FreeList");
 					break;
 				case CiId.HASH_SET_CLASS:
 				case CiId.DICTIONARY_CLASS:
 					this.#listFrees["HashTable"] = "g_hash_table_unref(*(GHashTable **) ptr)";
-					this.write("CiList_FreeHashTable");
+					this.write("FuList_FreeHashTable");
 					break;
 				case CiId.SORTED_SET_CLASS:
 				case CiId.SORTED_DICTIONARY_CLASS:
 					this.#listFrees["Tree"] = "g_tree_unref(*(GTree **) ptr)";
-					this.write("CiList_FreeTree");
+					this.write("FuList_FreeTree");
 					break;
 				default:
 					this.write("(GDestroyNotify) ");
@@ -10622,7 +10622,7 @@ export class GenC extends GenCCpp
 				this.writeName(dynamic.class);
 				this.write(" *) ");
 			}
-			this.writeCall("CiShared_AddRef", expr);
+			this.writeCall("FuShared_AddRef", expr);
 		}
 		else if ((klass = type) instanceof CiClassType && klass.class.id != CiId.STRING_CLASS && klass.class.id != CiId.ARRAY_PTR_CLASS && !(klass instanceof CiStorageType)) {
 			if (klass.class.id == CiId.QUEUE_CLASS && expr.type instanceof CiStorageType) {
@@ -10736,7 +10736,7 @@ export class GenC extends GenCCpp
 	#writeStringMethod(name, obj, args)
 	{
 		this.include("string.h");
-		this.write("CiString_");
+		this.write("FuString_");
 		this.writeCall(name, obj, args[0]);
 	}
 
@@ -10745,7 +10745,7 @@ export class GenC extends GenCCpp
 		this.write(", sizeof(");
 		let typeId = elementType.id;
 		this.writeNumericType(typeId);
-		this.write("), CiCompare_");
+		this.write("), FuCompare_");
 		this.writeNumericType(typeId);
 		this.writeChar(41);
 		this.#compares.add(typeId);
@@ -10775,7 +10775,7 @@ export class GenC extends GenCCpp
 		let storage;
 		if ((storage = elementType) instanceof CiStorageType && this.needsConstructor(storage.class)) {
 			this.writeName(storage.class);
-			this.write("_Construct(&citemp");
+			this.write("_Construct(&futemp");
 			this.visitLiteralLong(BigInt(id));
 			this.writeLine(");");
 		}
@@ -10786,7 +10786,7 @@ export class GenC extends GenCCpp
 			this.write(", ");
 			args[0].accept(this, CiPriority.ARGUMENT);
 		}
-		this.write(", citemp");
+		this.write(", futemp");
 		this.visitLiteralLong(BigInt(id));
 		this.writeChar(41);
 		this.currentTemporaries[id] = elementType;
@@ -11023,7 +11023,7 @@ export class GenC extends GenCCpp
 
 	#startArrayContains(obj)
 	{
-		this.write("CiArray_Contains_");
+		this.write("FuArray_Contains_");
 		let typeId = obj.type.asClassType().getElementType().id;
 		switch (typeId) {
 		case CiId.NONE:
@@ -11069,17 +11069,17 @@ export class GenC extends GenCCpp
 			break;
 		case CiId.INT_TRY_PARSE:
 			this.#intTryParse = true;
-			this.write("CiInt");
+			this.write("FuInt");
 			this.#writeTryParse(obj, args);
 			break;
 		case CiId.LONG_TRY_PARSE:
 			this.#longTryParse = true;
-			this.write("CiLong");
+			this.write("FuLong");
 			this.#writeTryParse(obj, args);
 			break;
 		case CiId.DOUBLE_TRY_PARSE:
 			this.#doubleTryParse = true;
-			this.write("CiDouble");
+			this.write("FuDouble");
 			this.#writeTryParse(obj, args);
 			break;
 		case CiId.STRING_CONTAINS:
@@ -11116,7 +11116,7 @@ export class GenC extends GenCCpp
 			this.include("string.h");
 			this.#stringAppend = true;
 			this.#stringReplace = true;
-			this.writeCall("CiString_Replace", obj, args[0], args[1]);
+			this.writeCall("FuString_Replace", obj, args[0], args[1]);
 			break;
 		case CiId.STRING_STARTS_WITH:
 			if (parent > CiPriority.EQUALITY)
@@ -11280,7 +11280,7 @@ export class GenC extends GenCCpp
 			this.write("g_array_sort(");
 			obj.accept(this, CiPriority.ARGUMENT);
 			let typeId2 = obj.type.asClassType().getElementType().id;
-			this.write(", CiCompare_");
+			this.write(", FuCompare_");
 			this.writeNumericType(typeId2);
 			this.writeChar(41);
 			this.#compares.add(typeId2);
@@ -11441,7 +11441,7 @@ export class GenC extends GenCCpp
 			break;
 		case CiId.MATCH_FIND_STR:
 			this.#matchFind = true;
-			this.write("CiMatch_Find(&");
+			this.write("FuMatch_Find(&");
 			obj.accept(this, CiPriority.PRIMARY);
 			this.write(", ");
 			this.#writeTemporaryOrExpr(args[0], CiPriority.ARGUMENT);
@@ -11604,12 +11604,12 @@ export class GenC extends GenCCpp
 				let rightInterpolated;
 				if ((rightInterpolated = expr.right) instanceof CiInterpolatedString) {
 					this.#stringAssign = true;
-					this.write("CiString_Assign(&");
+					this.write("FuString_Assign(&");
 					expr.left.accept(this, CiPriority.PRIMARY);
 					this.#stringFormat = true;
 					this.include("stdarg.h");
 					this.include("stdio.h");
-					this.write(", CiString_Format(\"%s");
+					this.write(", FuString_Format(\"%s");
 					this.writePrintfFormat(rightInterpolated);
 					this.write("\", ");
 					expr.left.accept(this, CiPriority.ARGUMENT);
@@ -11619,7 +11619,7 @@ export class GenC extends GenCCpp
 				else {
 					this.include("string.h");
 					this.#stringAppend = true;
-					this.write("CiString_Append(&");
+					this.write("FuString_Append(&");
 					expr.left.accept(this, CiPriority.PRIMARY);
 					this.write(", ");
 					expr.right.accept(this, CiPriority.ARGUMENT);
@@ -11639,7 +11639,7 @@ export class GenC extends GenCCpp
 
 	writeResource(name, length)
 	{
-		this.write("CiResource_");
+		this.write("FuResource_");
 		this.writeResourceName(name);
 	}
 
@@ -11706,7 +11706,7 @@ export class GenC extends GenCCpp
 		}
 		else if (statement instanceof CiCallExpr && statement.type instanceof CiDynamicPtrType) {
 			this.#sharedRelease = true;
-			this.write("CiShared_Release(");
+			this.write("FuShared_Release(");
 			statement.accept(this, CiPriority.ARGUMENT);
 			this.writeLine(");");
 			this.cleanupTemporaries();
@@ -11718,8 +11718,8 @@ export class GenC extends GenCCpp
 	#startForeachHashTable(statement)
 	{
 		this.openBlock();
-		this.writeLine("GHashTableIter cidictit;");
-		this.write("g_hash_table_iter_init(&cidictit, ");
+		this.writeLine("GHashTableIter fudictit;");
+		this.write("g_hash_table_iter_init(&fudictit, ");
 		statement.collection.accept(this, CiPriority.ARGUMENT);
 		this.writeLine(");");
 	}
@@ -11798,41 +11798,41 @@ export class GenC extends GenCCpp
 				break;
 			case CiId.HASH_SET_CLASS:
 				this.#startForeachHashTable(statement);
-				this.writeLine("gpointer cikey;");
-				this.write("while (g_hash_table_iter_next(&cidictit, &cikey, NULL)) ");
+				this.writeLine("gpointer fukey;");
+				this.write("while (g_hash_table_iter_next(&fudictit, &fukey, NULL)) ");
 				this.openBlock();
-				this.#writeDictIterVar(statement.getVar(), "cikey");
+				this.#writeDictIterVar(statement.getVar(), "fukey");
 				this.flattenBlock(statement.body);
 				this.closeBlock();
 				this.closeBlock();
 				break;
 			case CiId.SORTED_SET_CLASS:
-				this.write("for (GTreeNode *cisetit = g_tree_node_first(");
+				this.write("for (GTreeNode *fusetit = g_tree_node_first(");
 				statement.collection.accept(this, CiPriority.ARGUMENT);
-				this.write("); cisetit != NULL; cisetit = g_tree_node_next(cisetit)) ");
+				this.write("); fusetit != NULL; fusetit = g_tree_node_next(fusetit)) ");
 				this.openBlock();
-				this.#writeDictIterVar(statement.getVar(), "g_tree_node_key(cisetit)");
+				this.#writeDictIterVar(statement.getVar(), "g_tree_node_key(fusetit)");
 				this.flattenBlock(statement.body);
 				this.closeBlock();
 				break;
 			case CiId.DICTIONARY_CLASS:
 				this.#startForeachHashTable(statement);
-				this.writeLine("gpointer cikey, civalue;");
-				this.write("while (g_hash_table_iter_next(&cidictit, &cikey, &civalue)) ");
+				this.writeLine("gpointer fukey, fuvalue;");
+				this.write("while (g_hash_table_iter_next(&fudictit, &fukey, &fuvalue)) ");
 				this.openBlock();
-				this.#writeDictIterVar(statement.getVar(), "cikey");
-				this.#writeDictIterVar(statement.getValueVar(), "civalue");
+				this.#writeDictIterVar(statement.getVar(), "fukey");
+				this.#writeDictIterVar(statement.getValueVar(), "fuvalue");
 				this.flattenBlock(statement.body);
 				this.closeBlock();
 				this.closeBlock();
 				break;
 			case CiId.SORTED_DICTIONARY_CLASS:
-				this.write("for (GTreeNode *cidictit = g_tree_node_first(");
+				this.write("for (GTreeNode *fudictit = g_tree_node_first(");
 				statement.collection.accept(this, CiPriority.ARGUMENT);
-				this.write("); cidictit != NULL; cidictit = g_tree_node_next(cidictit)) ");
+				this.write("); fudictit != NULL; fudictit = g_tree_node_next(fudictit)) ");
 				this.openBlock();
-				this.#writeDictIterVar(statement.getVar(), "g_tree_node_key(cidictit)");
-				this.#writeDictIterVar(statement.getValueVar(), "g_tree_node_value(cidictit)");
+				this.#writeDictIterVar(statement.getVar(), "g_tree_node_key(fudictit)");
+				this.#writeDictIterVar(statement.getValueVar(), "g_tree_node_value(fudictit)");
 				this.flattenBlock(statement.body);
 				this.closeBlock();
 				break;
@@ -12388,7 +12388,7 @@ export class GenC extends GenCCpp
 	#writeTryParseLibrary(signature, call)
 	{
 		this.writeNewLine();
-		this.write("static bool Ci");
+		this.write("static bool Fu");
 		this.writeLine(signature);
 		this.openBlock();
 		this.writeLine("if (*str == '\\0')");
@@ -12411,7 +12411,7 @@ export class GenC extends GenCCpp
 			this.#writeTryParseLibrary("Double_TryParse(double *result, const char *str)", "d(str, &end");
 		if (this.#stringAssign) {
 			this.writeNewLine();
-			this.writeLine("static void CiString_Assign(char **str, char *value)");
+			this.writeLine("static void FuString_Assign(char **str, char *value)");
 			this.openBlock();
 			this.writeLine("free(*str);");
 			this.writeLine("*str = value;");
@@ -12419,7 +12419,7 @@ export class GenC extends GenCCpp
 		}
 		if (this.#stringSubstring) {
 			this.writeNewLine();
-			this.writeLine("static char *CiString_Substring(const char *str, int len)");
+			this.writeLine("static char *FuString_Substring(const char *str, int len)");
 			this.openBlock();
 			this.writeLine("char *p = malloc(len + 1);");
 			this.writeLine("memcpy(p, str, len);");
@@ -12429,7 +12429,7 @@ export class GenC extends GenCCpp
 		}
 		if (this.#stringAppend) {
 			this.writeNewLine();
-			this.writeLine("static void CiString_AppendSubstring(char **str, const char *suffix, size_t suffixLen)");
+			this.writeLine("static void FuString_AppendSubstring(char **str, const char *suffix, size_t suffixLen)");
 			this.openBlock();
 			this.writeLine("if (suffixLen == 0)");
 			this.writeLine("\treturn;");
@@ -12439,14 +12439,14 @@ export class GenC extends GenCCpp
 			this.writeLine("(*str)[prefixLen + suffixLen] = '\\0';");
 			this.closeBlock();
 			this.writeNewLine();
-			this.writeLine("static void CiString_Append(char **str, const char *suffix)");
+			this.writeLine("static void FuString_Append(char **str, const char *suffix)");
 			this.openBlock();
-			this.writeLine("CiString_AppendSubstring(str, suffix, strlen(suffix));");
+			this.writeLine("FuString_AppendSubstring(str, suffix, strlen(suffix));");
 			this.closeBlock();
 		}
 		if (this.#stringIndexOf) {
 			this.writeNewLine();
-			this.writeLine("static int CiString_IndexOf(const char *str, const char *needle)");
+			this.writeLine("static int FuString_IndexOf(const char *str, const char *needle)");
 			this.openBlock();
 			this.writeLine("const char *p = strstr(str, needle);");
 			this.writeLine("return p == NULL ? -1 : (int) (p - str);");
@@ -12454,7 +12454,7 @@ export class GenC extends GenCCpp
 		}
 		if (this.#stringLastIndexOf) {
 			this.writeNewLine();
-			this.writeLine("static int CiString_LastIndexOf(const char *str, const char *needle)");
+			this.writeLine("static int FuString_LastIndexOf(const char *str, const char *needle)");
 			this.openBlock();
 			this.writeLine("if (needle[0] == '\\0')");
 			this.writeLine("\treturn (int) strlen(str);");
@@ -12470,7 +12470,7 @@ export class GenC extends GenCCpp
 		}
 		if (this.#stringEndsWith) {
 			this.writeNewLine();
-			this.writeLine("static bool CiString_EndsWith(const char *str, const char *suffix)");
+			this.writeLine("static bool FuString_EndsWith(const char *str, const char *suffix)");
 			this.openBlock();
 			this.writeLine("size_t strLen = strlen(str);");
 			this.writeLine("size_t suffixLen = strlen(suffix);");
@@ -12479,24 +12479,24 @@ export class GenC extends GenCCpp
 		}
 		if (this.#stringReplace) {
 			this.writeNewLine();
-			this.writeLine("static char *CiString_Replace(const char *s, const char *oldValue, const char *newValue)");
+			this.writeLine("static char *FuString_Replace(const char *s, const char *oldValue, const char *newValue)");
 			this.openBlock();
 			this.write("for (char *result = NULL;;) ");
 			this.openBlock();
 			this.writeLine("const char *p = strstr(s, oldValue);");
 			this.writeLine("if (p == NULL) {");
-			this.writeLine("\tCiString_Append(&result, s);");
+			this.writeLine("\tFuString_Append(&result, s);");
 			this.writeLine("\treturn result == NULL ? strdup(\"\") : result;");
 			this.writeCharLine(125);
-			this.writeLine("CiString_AppendSubstring(&result, s, p - s);");
-			this.writeLine("CiString_Append(&result, newValue);");
+			this.writeLine("FuString_AppendSubstring(&result, s, p - s);");
+			this.writeLine("FuString_Append(&result, newValue);");
 			this.writeLine("s = p + strlen(oldValue);");
 			this.closeBlock();
 			this.closeBlock();
 		}
 		if (this.#stringFormat) {
 			this.writeNewLine();
-			this.writeLine("static char *CiString_Format(const char *format, ...)");
+			this.writeLine("static char *FuString_Format(const char *format, ...)");
 			this.openBlock();
 			this.writeLine("va_list args1;");
 			this.writeLine("va_start(args1, format);");
@@ -12512,7 +12512,7 @@ export class GenC extends GenCCpp
 		}
 		if (this.#matchFind) {
 			this.writeNewLine();
-			this.writeLine("static bool CiMatch_Find(GMatchInfo **match_info, const char *input, const char *pattern, GRegexCompileFlags options)");
+			this.writeLine("static bool FuMatch_Find(GMatchInfo **match_info, const char *input, const char *pattern, GRegexCompileFlags options)");
 			this.openBlock();
 			this.writeLine("GRegex *regex = g_regex_new(pattern, options, 0, NULL);");
 			this.writeLine("bool result = g_regex_match(regex, input, 0, match_info);");
@@ -12522,7 +12522,7 @@ export class GenC extends GenCCpp
 		}
 		if (this.#matchPos) {
 			this.writeNewLine();
-			this.writeLine("static int CiMatch_GetPos(const GMatchInfo *match_info, int which)");
+			this.writeLine("static int FuMatch_GetPos(const GMatchInfo *match_info, int which)");
 			this.openBlock();
 			this.writeLine("int start;");
 			this.writeLine("int end;");
@@ -12539,28 +12539,28 @@ export class GenC extends GenCCpp
 		}
 		if (this.#ptrConstruct) {
 			this.writeNewLine();
-			this.writeLine("static void CiPtr_Construct(void **ptr)");
+			this.writeLine("static void FuPtr_Construct(void **ptr)");
 			this.openBlock();
 			this.writeLine("*ptr = NULL;");
 			this.closeBlock();
 		}
 		if (this.#sharedMake || this.#sharedAddRef || this.#sharedRelease) {
 			this.writeNewLine();
-			this.writeLine("typedef void (*CiMethodPtr)(void *);");
+			this.writeLine("typedef void (*FuMethodPtr)(void *);");
 			this.writeLine("typedef struct {");
 			this.indent++;
 			this.writeLine("size_t count;");
 			this.writeLine("size_t unitSize;");
 			this.writeLine("size_t refCount;");
-			this.writeLine("CiMethodPtr destructor;");
+			this.writeLine("FuMethodPtr destructor;");
 			this.indent--;
-			this.writeLine("} CiShared;");
+			this.writeLine("} FuShared;");
 		}
 		if (this.#sharedMake) {
 			this.writeNewLine();
-			this.writeLine("static void *CiShared_Make(size_t count, size_t unitSize, CiMethodPtr constructor, CiMethodPtr destructor)");
+			this.writeLine("static void *FuShared_Make(size_t count, size_t unitSize, FuMethodPtr constructor, FuMethodPtr destructor)");
 			this.openBlock();
-			this.writeLine("CiShared *self = (CiShared *) malloc(sizeof(CiShared) + count * unitSize);");
+			this.writeLine("FuShared *self = (FuShared *) malloc(sizeof(FuShared) + count * unitSize);");
 			this.writeLine("self->count = count;");
 			this.writeLine("self->unitSize = unitSize;");
 			this.writeLine("self->refCount = 1;");
@@ -12575,20 +12575,20 @@ export class GenC extends GenCCpp
 		}
 		if (this.#sharedAddRef) {
 			this.writeNewLine();
-			this.writeLine("static void *CiShared_AddRef(void *ptr)");
+			this.writeLine("static void *FuShared_AddRef(void *ptr)");
 			this.openBlock();
 			this.writeLine("if (ptr != NULL)");
-			this.writeLine("\t((CiShared *) ptr)[-1].refCount++;");
+			this.writeLine("\t((FuShared *) ptr)[-1].refCount++;");
 			this.writeLine("return ptr;");
 			this.closeBlock();
 		}
 		if (this.#sharedRelease || this.#sharedAssign) {
 			this.writeNewLine();
-			this.writeLine("static void CiShared_Release(void *ptr)");
+			this.writeLine("static void FuShared_Release(void *ptr)");
 			this.openBlock();
 			this.writeLine("if (ptr == NULL)");
 			this.writeLine("\treturn;");
-			this.writeLine("CiShared *self = (CiShared *) ptr - 1;");
+			this.writeLine("FuShared *self = (FuShared *) ptr - 1;");
 			this.writeLine("if (--self->refCount != 0)");
 			this.writeLine("\treturn;");
 			this.write("if (self->destructor != NULL) ");
@@ -12601,15 +12601,15 @@ export class GenC extends GenCCpp
 		}
 		if (this.#sharedAssign) {
 			this.writeNewLine();
-			this.writeLine("static void CiShared_Assign(void **ptr, void *value)");
+			this.writeLine("static void FuShared_Assign(void **ptr, void *value)");
 			this.openBlock();
-			this.writeLine("CiShared_Release(*ptr);");
+			this.writeLine("FuShared_Release(*ptr);");
 			this.writeLine("*ptr = value;");
 			this.closeBlock();
 		}
 		for (const [name, content] of Object.entries(this.#listFrees).sort((a, b) => a[0].localeCompare(b[0]))) {
 			this.writeNewLine();
-			this.write("static void CiList_Free");
+			this.write("static void FuList_Free");
 			this.write(name);
 			this.writeLine("(void *ptr)");
 			this.openBlock();
@@ -12619,7 +12619,7 @@ export class GenC extends GenCCpp
 		}
 		if (this.#treeCompareInteger) {
 			this.writeNewLine();
-			this.write("static int CiTree_CompareInteger(gconstpointer pa, gconstpointer pb, gpointer user_data)");
+			this.write("static int FuTree_CompareInteger(gconstpointer pa, gconstpointer pb, gpointer user_data)");
 			this.openBlock();
 			this.writeLine("gintptr a = (gintptr) pa;");
 			this.writeLine("gintptr b = (gintptr) pb;");
@@ -12628,14 +12628,14 @@ export class GenC extends GenCCpp
 		}
 		if (this.#treeCompareString) {
 			this.writeNewLine();
-			this.write("static int CiTree_CompareString(gconstpointer a, gconstpointer b, gpointer user_data)");
+			this.write("static int FuTree_CompareString(gconstpointer a, gconstpointer b, gpointer user_data)");
 			this.openBlock();
 			this.writeLine("return strcmp((const char *) a, (const char *) b);");
 			this.closeBlock();
 		}
 		for (const typeId of new Int32Array(this.#compares).sort()) {
 			this.writeNewLine();
-			this.write("static int CiCompare_");
+			this.write("static int FuCompare_");
 			this.writeNumericType(typeId);
 			this.writeLine("(const void *pa, const void *pb)");
 			this.openBlock();
@@ -12662,7 +12662,7 @@ export class GenC extends GenCCpp
 		}
 		for (const typeId of new Int32Array(this.#contains).sort()) {
 			this.writeNewLine();
-			this.write("static bool CiArray_Contains_");
+			this.write("static bool FuArray_Contains_");
 			if (typeId == CiId.NONE)
 				this.write("object(const void * const *a, size_t len, const void *");
 			else if (typeId == CiId.STRING_PTR_TYPE)
@@ -12892,11 +12892,11 @@ export class GenCl extends GenC
 			this.writeChar(33);
 		if (GenCl.isUTF8GetString(call)) {
 			this.#bytesEqualsString = true;
-			this.write("CiBytes_Equals(");
+			this.write("FuBytes_Equals(");
 		}
 		else {
 			this.#stringStartsWith = true;
-			this.write("CiString_StartsWith(");
+			this.write("FuString_StartsWith(");
 		}
 		this.writeStringPtrAdd(call);
 		this.write(", ");
@@ -12909,7 +12909,7 @@ export class GenCl extends GenC
 		this.#stringEquals = true;
 		if (not)
 			this.writeChar(33);
-		this.writeCall("CiString_Equals", left, right);
+		this.writeCall("FuString_Equals", left, right);
 	}
 
 	writeStringLength(expr)
@@ -12957,7 +12957,7 @@ export class GenCl extends GenC
 			}
 			else {
 				this.#stringStartsWith = true;
-				this.writeCall("CiString_StartsWith", obj, args[0]);
+				this.writeCall("FuString_StartsWith", obj, args[0]);
 			}
 			break;
 		case CiId.STRING_SUBSTRING:
@@ -13067,7 +13067,7 @@ export class GenCl extends GenC
 		}
 		if (this.#stringEquals) {
 			this.writeNewLine();
-			this.writeLine("static bool CiString_Equals(constant char *str1, constant char *str2)");
+			this.writeLine("static bool FuString_Equals(constant char *str1, constant char *str2)");
 			this.openBlock();
 			this.writeLine("for (size_t i = 0; str1[i] == str2[i]; i++) {");
 			this.writeLine("\tif (str1[i] == '\\0')");
@@ -13078,7 +13078,7 @@ export class GenCl extends GenC
 		}
 		if (this.#stringStartsWith) {
 			this.writeNewLine();
-			this.writeLine("static bool CiString_StartsWith(constant char *str1, constant char *str2)");
+			this.writeLine("static bool FuString_StartsWith(constant char *str1, constant char *str2)");
 			this.openBlock();
 			this.writeLine("for (int i = 0; str2[i] != '\\0'; i++) {");
 			this.writeLine("\tif (str1[i] != str2[i])");
@@ -13089,7 +13089,7 @@ export class GenCl extends GenC
 		}
 		if (this.#bytesEqualsString) {
 			this.writeNewLine();
-			this.writeLine("static bool CiBytes_Equals(const uchar *mem, constant char *str)");
+			this.writeLine("static bool FuBytes_Equals(const uchar *mem, constant char *str)");
 			this.openBlock();
 			this.writeLine("for (int i = 0; str[i] != '\\0'; i++) {");
 			this.writeLine("\tif (mem[i] != str[i])");
@@ -13320,7 +13320,7 @@ export class GenCpp extends GenCCpp
 
 	writeType(type, promote)
 	{
-		ciswitch0: {
+		fuswitch0: {
 			if (type instanceof CiIntegerType)
 				this.writeNumericType(this.getTypeId(type, promote));
 			else if (type instanceof CiDynamicPtrType) {
@@ -13352,7 +13352,7 @@ export class GenCpp extends GenCCpp
 						this.include(cppType);
 						this.write("std::");
 						this.write(cppType);
-						break ciswitch0;
+						break fuswitch0;
 					}
 					if (!(klass instanceof CiReadWriteClassType))
 						this.write("const ");
@@ -13889,7 +13889,7 @@ export class GenCpp extends GenCCpp
 			break;
 		case CiId.STRING_REPLACE:
 			this.#stringReplace = true;
-			this.writeCall("CiString_replace", obj, args[0], args[1]);
+			this.writeCall("FuString_replace", obj, args[0], args[1]);
 			break;
 		case CiId.STRING_STARTS_WITH:
 			this.#writeStringMethod(obj, "starts_with", method, args);
@@ -14317,7 +14317,7 @@ export class GenCpp extends GenCCpp
 
 	writeResource(name, length)
 	{
-		this.write("CiResource::");
+		this.write("FuResource::");
 		this.writeResourceName(name);
 	}
 
@@ -14765,7 +14765,7 @@ export class GenCpp extends GenCCpp
 		if (enu instanceof CiEnumFlags) {
 			this.include("type_traits");
 			this.#hasEnumFlags = true;
-			this.write("CI_ENUM_FLAG_OPERATORS(");
+			this.write("FU_ENUM_FLAG_OPERATORS(");
 			this.write(enu.name);
 			this.writeCharLine(41);
 		}
@@ -14931,7 +14931,7 @@ export class GenCpp extends GenCCpp
 		this.writeNewLine();
 		this.writeLine("namespace");
 		this.openBlock();
-		this.writeLine("namespace CiResource");
+		this.writeLine("namespace FuResource");
 		this.openBlock();
 		for (const [name, content] of Object.entries(resources).sort((a, b) => a[0].localeCompare(b[0]))) {
 			if (!define)
@@ -14979,7 +14979,7 @@ export class GenCpp extends GenCCpp
 		this.#closeNamespace();
 		this.createHeaderFile(".hpp");
 		if (this.#hasEnumFlags) {
-			this.writeLine("#define CI_ENUM_FLAG_OPERATORS(T) \\");
+			this.writeLine("#define FU_ENUM_FLAG_OPERATORS(T) \\");
 			this.writeLine("\tinline constexpr T operator~(T a) { return static_cast<T>(~static_cast<std::underlying_type_t<T>>(a)); } \\");
 			this.writeLine("\tinline constexpr T operator&(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) & static_cast<std::underlying_type_t<T>>(b)); } \\");
 			this.writeLine("\tinline constexpr T operator|(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) | static_cast<std::underlying_type_t<T>>(b)); } \\");
@@ -15009,7 +15009,7 @@ export class GenCpp extends GenCCpp
 			this.writeLine("using namespace std::string_view_literals;");
 		if (this.#stringReplace) {
 			this.writeNewLine();
-			this.writeLine("static std::string CiString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
+			this.writeLine("static std::string FuString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
 			this.openBlock();
 			this.writeLine("std::string result;");
 			this.writeLine("result.reserve(s.size());");
@@ -15399,7 +15399,7 @@ export class GenCs extends GenTyped
 
 	writeResource(name, length)
 	{
-		this.write("CiResource.");
+		this.write("FuResource.");
 		this.writeResourceName(name);
 	}
 
@@ -15963,7 +15963,7 @@ export class GenCs extends GenTyped
 	#writeResources(resources)
 	{
 		this.writeNewLine();
-		this.writeLine("internal static class CiResource");
+		this.writeLine("internal static class FuResource");
 		this.openBlock();
 		for (const [name, content] of Object.entries(resources).sort((a, b) => a[0].localeCompare(b[0]))) {
 			this.write("internal static readonly byte[] ");
@@ -16609,7 +16609,7 @@ export class GenD extends GenCCppD
 
 	writeResource(name, length)
 	{
-		this.write("CiResource.");
+		this.write("FuResource.");
 		this.writeResourceName(name);
 	}
 
@@ -16769,21 +16769,21 @@ export class GenD extends GenCCppD
 		case CiId.ARRAY_BINARY_SEARCH_ALL:
 		case CiId.ARRAY_BINARY_SEARCH_PART:
 			this.include("std.range");
-			this.write("() { size_t cibegin = ");
+			this.write("() { size_t fubegin = ");
 			if (args.length == 3)
 				args[1].accept(this, CiPriority.ARGUMENT);
 			else
 				this.writeChar(48);
-			this.write("; auto cisearch = ");
+			this.write("; auto fusearch = ");
 			this.#writeClassReference(obj);
 			this.writeChar(91);
 			if (args.length == 3) {
-				this.write("cibegin .. cibegin + ");
+				this.write("fubegin .. fubegin + ");
 				args[2].accept(this, CiPriority.ADD);
 			}
 			this.write("].assumeSorted.trisect(");
 			this.writeNotPromoted(obj.type.asClassType().getElementType(), args[0]);
-			this.write("); return cisearch[1].length ? cibegin + cisearch[0].length : -1; }()");
+			this.write("); return fusearch[1].length ? fubegin + fusearch[0].length : -1; }()");
 			break;
 		case CiId.ARRAY_CONTAINS:
 		case CiId.LIST_CONTAINS:
@@ -17440,7 +17440,7 @@ export class GenD extends GenCCppD
 	#writeResources(resources)
 	{
 		this.writeNewLine();
-		this.writeLine("private static struct CiResource");
+		this.writeLine("private static struct FuResource");
 		this.openBlock();
 		for (const [name, content] of Object.entries(resources).sort((a, b) => a[0].localeCompare(b[0]))) {
 			this.write("private static ubyte[] ");
@@ -17872,7 +17872,7 @@ export class GenJava extends GenTyped
 
 	writeResource(name, length)
 	{
-		this.write("CiResource.getByteArray(");
+		this.write("FuResource.getByteArray(");
 		this.visitLiteralString(name);
 		this.write(", ");
 		this.visitLiteralLong(BigInt(length));
@@ -18809,17 +18809,17 @@ export class GenJava extends GenTyped
 
 	#writeResources()
 	{
-		this.#createJavaFile("CiResource");
+		this.#createJavaFile("FuResource");
 		this.writeLine("import java.io.DataInputStream;");
 		this.writeLine("import java.io.IOException;");
 		this.writeNewLine();
-		this.write("class CiResource");
+		this.write("class FuResource");
 		this.writeNewLine();
 		this.openBlock();
 		this.writeLine("static byte[] getByteArray(String name, int length)");
 		this.openBlock();
 		this.write("DataInputStream dis = new DataInputStream(");
-		this.writeLine("CiResource.class.getResourceAsStream(name));");
+		this.writeLine("FuResource.class.getResourceAsStream(name));");
 		this.writeLine("byte[] result = new byte[length];");
 		this.write("try ");
 		this.openBlock();
@@ -19208,7 +19208,7 @@ export class GenJsNoModule extends GenBase
 
 	writeResource(name, length)
 	{
-		this.write("Ci.");
+		this.write("Fu.");
 		this.writeResourceName(name);
 	}
 
@@ -19920,7 +19920,7 @@ export class GenJsNoModule extends GenBase
 		if ((switchStatement = statement.loopOrSwitch) instanceof CiSwitch) {
 			let label = this.#switchesWithLabel.indexOf(switchStatement);
 			if (label >= 0) {
-				this.write("break ciswitch");
+				this.write("break fuswitch");
 				this.visitLiteralLong(BigInt(label));
 				this.writeCharLine(59);
 				return;
@@ -20022,7 +20022,7 @@ export class GenJsNoModule extends GenBase
 	{
 		if (statement.isTypeMatching() || statement.hasWhen()) {
 			if (statement.cases.some(kase => CiSwitch.hasEarlyBreak(kase.body)) || CiSwitch.hasEarlyBreak(statement.defaultBody)) {
-				this.write("ciswitch");
+				this.write("fuswitch");
 				this.visitLiteralLong(BigInt(this.#switchesWithLabel.length));
 				this.#switchesWithLabel.push(statement);
 				this.write(": ");
@@ -20159,7 +20159,7 @@ export class GenJsNoModule extends GenBase
 		if (Object.keys(resources).length == 0)
 			return;
 		this.writeNewLine();
-		this.writeLine("class Ci");
+		this.writeLine("class Fu");
 		this.openBlock();
 		for (const [name, content] of Object.entries(resources).sort((a, b) => a[0].localeCompare(b[0]))) {
 			this.write("static ");
@@ -21257,7 +21257,7 @@ export class GenSwift extends GenPySwift
 	writeCharAt(expr)
 	{
 		this.#stringCharAt = true;
-		this.write("ciStringCharAt(");
+		this.write("fuStringCharAt(");
 		this.#writeUnwrapped(expr.left, CiPriority.ARGUMENT, false);
 		this.write(", ");
 		expr.right.accept(this, CiPriority.ARGUMENT);
@@ -21362,7 +21362,7 @@ export class GenSwift extends GenPySwift
 		case CiId.STRING_INDEX_OF:
 			this.include("Foundation");
 			this.#stringIndexOf = true;
-			this.write("ciStringIndexOf(");
+			this.write("fuStringIndexOf(");
 			this.#writeUnwrapped(obj, CiPriority.ARGUMENT, true);
 			this.write(", ");
 			this.#writeUnwrapped(args[0], CiPriority.ARGUMENT, true);
@@ -21371,7 +21371,7 @@ export class GenSwift extends GenPySwift
 		case CiId.STRING_LAST_INDEX_OF:
 			this.include("Foundation");
 			this.#stringIndexOf = true;
-			this.write("ciStringIndexOf(");
+			this.write("fuStringIndexOf(");
 			this.#writeUnwrapped(obj, CiPriority.ARGUMENT, true);
 			this.write(", ");
 			this.#writeUnwrapped(args[0], CiPriority.ARGUMENT, true);
@@ -21393,7 +21393,7 @@ export class GenSwift extends GenPySwift
 				this.#writeUnwrapped(obj, CiPriority.PRIMARY, true);
 			else {
 				this.#stringSubstring = true;
-				this.write("ciStringSubstring(");
+				this.write("fuStringSubstring(");
 				this.#writeUnwrapped(obj, CiPriority.ARGUMENT, false);
 				this.write(", ");
 				this.writeCoerced(this.#system.intType, args[0], CiPriority.ARGUMENT);
@@ -21571,9 +21571,9 @@ export class GenSwift extends GenPySwift
 			this.write(".utf8.count");
 			break;
 		case CiId.U_T_F8_GET_BYTES:
-			if (this.#addVar("cibytes"))
+			if (this.#addVar("fubytes"))
 				this.write(this.#varBytesAtIndent[this.indent] ? "var " : "let ");
-			this.write("cibytes = [UInt8](");
+			this.write("fubytes = [UInt8](");
 			this.#writeUnwrapped(args[0], CiPriority.PRIMARY, true);
 			this.writeLine(".utf8)");
 			this.#openIndexing(args[1]);
@@ -21585,7 +21585,7 @@ export class GenSwift extends GenPySwift
 				this.writeCoerced(this.#system.intType, args[2], CiPriority.ADD);
 				this.write(" + ");
 			}
-			this.writeLine("cibytes.count] = cibytes[...]");
+			this.writeLine("fubytes.count] = fubytes[...]");
 			break;
 		case CiId.U_T_F8_GET_STRING:
 			this.write("String(decoding: ");
@@ -21919,7 +21919,7 @@ export class GenSwift extends GenPySwift
 
 	writeResource(name, length)
 	{
-		this.write("CiResource.");
+		this.write("FuResource.");
 		this.writeResourceName(name);
 	}
 
@@ -22296,7 +22296,7 @@ export class GenSwift extends GenPySwift
 
 	#writeReadOnlyParameter(param)
 	{
-		this.write("ciParam");
+		this.write("fuParam");
 		this.writePascalCase(param.name);
 	}
 
@@ -22609,14 +22609,14 @@ export class GenSwift extends GenPySwift
 		}
 		if (this.#stringCharAt) {
 			this.writeNewLine();
-			this.writeLine("fileprivate func ciStringCharAt(_ s: String, _ offset: Int) -> Int");
+			this.writeLine("fileprivate func fuStringCharAt(_ s: String, _ offset: Int) -> Int");
 			this.openBlock();
 			this.writeLine("return Int(s.unicodeScalars[s.index(s.startIndex, offsetBy: offset)].value)");
 			this.closeBlock();
 		}
 		if (this.#stringIndexOf) {
 			this.writeNewLine();
-			this.writeLine("fileprivate func ciStringIndexOf<S1 : StringProtocol, S2 : StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
+			this.writeLine("fileprivate func fuStringIndexOf<S1 : StringProtocol, S2 : StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
 			this.openBlock();
 			this.writeLine("guard let index = haystack.range(of: needle, options: options) else { return -1 }");
 			this.writeLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");
@@ -22624,7 +22624,7 @@ export class GenSwift extends GenPySwift
 		}
 		if (this.#stringSubstring) {
 			this.writeNewLine();
-			this.writeLine("fileprivate func ciStringSubstring(_ s: String, _ offset: Int) -> Substring");
+			this.writeLine("fileprivate func fuStringSubstring(_ s: String, _ offset: Int) -> Substring");
 			this.openBlock();
 			this.writeLine("return s[s.index(s.startIndex, offsetBy: offset)...]");
 			this.closeBlock();
@@ -22637,7 +22637,7 @@ export class GenSwift extends GenPySwift
 			return;
 		this.#arrayRef = true;
 		this.writeNewLine();
-		this.writeLine("fileprivate final class CiResource");
+		this.writeLine("fileprivate final class FuResource");
 		this.openBlock();
 		for (const [name, content] of Object.entries(resources).sort((a, b) => a[0].localeCompare(b[0]))) {
 			this.write("static let ");
@@ -23455,7 +23455,7 @@ export class GenPy extends GenPySwift
 			this.writePostfix(args[0], ".encode(\"utf8\"))");
 			break;
 		case CiId.U_T_F8_GET_BYTES:
-			this.write("cibytes = ");
+			this.write("fubytes = ");
 			args[0].accept(this, CiPriority.PRIMARY);
 			this.writeLine(".encode(\"utf8\")");
 			args[1].accept(this, CiPriority.PRIMARY);
@@ -23463,7 +23463,7 @@ export class GenPy extends GenPySwift
 			args[2].accept(this, CiPriority.ARGUMENT);
 			this.writeChar(58);
 			this.startAdd(args[2]);
-			this.writeLine("len(cibytes)] = cibytes");
+			this.writeLine("len(fubytes)] = fubytes");
 			break;
 		case CiId.U_T_F8_GET_STRING:
 			args[0].accept(this, CiPriority.PRIMARY);
@@ -23582,7 +23582,7 @@ export class GenPy extends GenPySwift
 
 	writeResource(name, length)
 	{
-		this.write("_CiResource.");
+		this.write("_FuResource.");
 		this.writeResourceName(name);
 	}
 
@@ -23964,7 +23964,7 @@ export class GenPy extends GenPySwift
 		if (Object.keys(resources).length == 0)
 			return;
 		this.writeNewLine();
-		this.write("class _CiResource");
+		this.write("class _FuResource");
 		this.openChild();
 		for (const [name, content] of Object.entries(resources).sort((a, b) => a[0].localeCompare(b[0]))) {
 			this.writeResourceName(name);

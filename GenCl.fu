@@ -132,11 +132,11 @@ public class GenCl : GenC
 			WriteChar('!');
 		if (IsUTF8GetString(call)) {
 			this.BytesEqualsString = true;
-			Write("CiBytes_Equals(");
+			Write("FuBytes_Equals(");
 		}
 		else {
 			this.StringStartsWith = true;
-			Write("CiString_StartsWith(");
+			Write("FuString_StartsWith(");
 		}
 		WriteStringPtrAdd(call);
 		Write(", ");
@@ -149,7 +149,7 @@ public class GenCl : GenC
 		this.StringEquals = true;
 		if (not)
 			WriteChar('!');
-		WriteCall("CiString_Equals", left, right);
+		WriteCall("FuString_Equals", left, right);
 	}
 
 	protected override void WriteStringLength!(CiExpr expr)
@@ -194,7 +194,7 @@ public class GenCl : GenC
 			}
 			else {
 				this.StringStartsWith = true;
-				WriteCall("CiString_StartsWith", obj, args[0]);
+				WriteCall("FuString_StartsWith", obj, args[0]);
 			}
 			break;
 		case CiId.StringSubstring:
@@ -304,7 +304,7 @@ public class GenCl : GenC
 		}
 		if (this.StringEquals) {
 			WriteNewLine();
-			WriteLine("static bool CiString_Equals(constant char *str1, constant char *str2)");
+			WriteLine("static bool FuString_Equals(constant char *str1, constant char *str2)");
 			OpenBlock();
 			WriteLine("for (size_t i = 0; str1[i] == str2[i]; i++) {");
 			WriteLine("\tif (str1[i] == '\\0')");
@@ -315,7 +315,7 @@ public class GenCl : GenC
 		}
 		if (this.StringStartsWith) {
 			WriteNewLine();
-			WriteLine("static bool CiString_StartsWith(constant char *str1, constant char *str2)");
+			WriteLine("static bool FuString_StartsWith(constant char *str1, constant char *str2)");
 			OpenBlock();
 			WriteLine("for (int i = 0; str2[i] != '\\0'; i++) {");
 			WriteLine("\tif (str1[i] != str2[i])");
@@ -326,7 +326,7 @@ public class GenCl : GenC
 		}
 		if (this.BytesEqualsString) {
 			WriteNewLine();
-			WriteLine("static bool CiBytes_Equals(const uchar *mem, constant char *str)");
+			WriteLine("static bool FuBytes_Equals(const uchar *mem, constant char *str)");
 			OpenBlock();
 			WriteLine("for (int i = 0; str[i] != '\\0'; i++) {");
 			WriteLine("\tif (mem[i] != str[i])");

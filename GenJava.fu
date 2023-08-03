@@ -363,7 +363,7 @@ public class GenJava : GenTyped
 
 	protected override void WriteResource!(string name, int length)
 	{
-		Write("CiResource.getByteArray(");
+		Write("FuResource.getByteArray(");
 		VisitLiteralString(name);
 		Write(", ");
 		VisitLiteralLong(length);
@@ -1293,17 +1293,17 @@ public class GenJava : GenTyped
 
 	void WriteResources!()
 	{
-		CreateJavaFile("CiResource");
+		CreateJavaFile("FuResource");
 		WriteLine("import java.io.DataInputStream;");
 		WriteLine("import java.io.IOException;");
 		WriteNewLine();
-		Write("class CiResource");
+		Write("class FuResource");
 		WriteNewLine();
 		OpenBlock();
 		WriteLine("static byte[] getByteArray(String name, int length)");
 		OpenBlock();
 		Write("DataInputStream dis = new DataInputStream(");
-		WriteLine("CiResource.class.getResourceAsStream(name));");
+		WriteLine("FuResource.class.getResourceAsStream(name));");
 		WriteLine("byte[] result = new byte[length];");
 		Write("try ");
 		OpenBlock();

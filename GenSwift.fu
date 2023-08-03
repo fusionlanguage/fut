@@ -369,7 +369,7 @@ public class GenSwift : GenPySwift
 	protected override void WriteCharAt!(CiBinaryExpr expr)
 	{
 		this.StringCharAt = true;
-		Write("ciStringCharAt(");
+		Write("fuStringCharAt(");
 		WriteUnwrapped(expr.Left, CiPriority.Argument, false);
 		Write(", ");
 		expr.Right.Accept(this, CiPriority.Argument);
@@ -471,7 +471,7 @@ public class GenSwift : GenPySwift
 		case CiId.StringIndexOf:
 			Include("Foundation");
 			this.StringIndexOf = true;
-			Write("ciStringIndexOf(");
+			Write("fuStringIndexOf(");
 			WriteUnwrapped(obj, CiPriority.Argument, true);
 			Write(", ");
 			WriteUnwrapped(args[0], CiPriority.Argument, true);
@@ -480,7 +480,7 @@ public class GenSwift : GenPySwift
 		case CiId.StringLastIndexOf:
 			Include("Foundation");
 			this.StringIndexOf = true;
-			Write("ciStringIndexOf(");
+			Write("fuStringIndexOf(");
 			WriteUnwrapped(obj, CiPriority.Argument, true);
 			Write(", ");
 			WriteUnwrapped(args[0], CiPriority.Argument, true);
@@ -502,7 +502,7 @@ public class GenSwift : GenPySwift
 				WriteUnwrapped(obj, CiPriority.Primary, true);
 			else {
 				this.StringSubstring = true;
-				Write("ciStringSubstring(");
+				Write("fuStringSubstring(");
 				WriteUnwrapped(obj, CiPriority.Argument, false);
 				Write(", ");
 				WriteCoerced(this.System.IntType, args[0], CiPriority.Argument);
@@ -680,9 +680,9 @@ public class GenSwift : GenPySwift
 			Write(".utf8.count");
 			break;
 		case CiId.UTF8GetBytes:
-			if (AddVar("cibytes"))
+			if (AddVar("fubytes"))
 				Write(this.VarBytesAtIndent[this.Indent] ? "var " : "let ");
-			Write("cibytes = [UInt8](");
+			Write("fubytes = [UInt8](");
 			WriteUnwrapped(args[0], CiPriority.Primary, true);
 			WriteLine(".utf8)");
 			OpenIndexing(args[1]);
@@ -694,7 +694,7 @@ public class GenSwift : GenPySwift
 				WriteCoerced(this.System.IntType, args[2], CiPriority.Add); // FIXME: side effect
 				Write(" + ");
 			}
-			WriteLine("cibytes.count] = cibytes[...]");
+			WriteLine("fubytes.count] = fubytes[...]");
 			break;
 		case CiId.UTF8GetString:
 			Write("String(decoding: ");
@@ -1049,7 +1049,7 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteResource!(string name, int length)
 	{
-		Write("CiResource.");
+		Write("FuResource.");
 		WriteResourceName(name);
 	}
 
@@ -1413,7 +1413,7 @@ public class GenSwift : GenPySwift
 
 	void WriteReadOnlyParameter!(CiVar param)
 	{
-		Write("ciParam");
+		Write("fuParam");
 		WritePascalCase(param.Name);
 	}
 
@@ -1727,14 +1727,14 @@ public class GenSwift : GenPySwift
 		}
 		if (this.StringCharAt) {
 			WriteNewLine();
-			WriteLine("fileprivate func ciStringCharAt(_ s: String, _ offset: Int) -> Int");
+			WriteLine("fileprivate func fuStringCharAt(_ s: String, _ offset: Int) -> Int");
 			OpenBlock();
 			WriteLine("return Int(s.unicodeScalars[s.index(s.startIndex, offsetBy: offset)].value)");
 			CloseBlock();
 		}
 		if (this.StringIndexOf) {
 			WriteNewLine();
-			WriteLine("fileprivate func ciStringIndexOf<S1 : StringProtocol, S2 : StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
+			WriteLine("fileprivate func fuStringIndexOf<S1 : StringProtocol, S2 : StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
 			OpenBlock();
 			WriteLine("guard let index = haystack.range(of: needle, options: options) else { return -1 }");
 			WriteLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");
@@ -1742,7 +1742,7 @@ public class GenSwift : GenPySwift
 		}
 		if (this.StringSubstring) {
 			WriteNewLine();
-			WriteLine("fileprivate func ciStringSubstring(_ s: String, _ offset: Int) -> Substring");
+			WriteLine("fileprivate func fuStringSubstring(_ s: String, _ offset: Int) -> Substring");
 			OpenBlock();
 			WriteLine("return s[s.index(s.startIndex, offsetBy: offset)...]");
 			CloseBlock();
@@ -1755,7 +1755,7 @@ public class GenSwift : GenPySwift
 			return;
 		this.ArrayRef = true;
 		WriteNewLine();
-		WriteLine("fileprivate final class CiResource");
+		WriteLine("fileprivate final class FuResource");
 		OpenBlock();
 		foreach ((string name, List<byte> content) in resources) {
 			Write("static let ");

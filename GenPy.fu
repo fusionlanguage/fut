@@ -791,7 +791,7 @@ public class GenPy : GenPySwift
 			WritePostfix(args[0], ".encode(\"utf8\"))");
 			break;
 		case CiId.UTF8GetBytes:
-			Write("cibytes = ");
+			Write("fubytes = ");
 			args[0].Accept(this, CiPriority.Primary);
 			WriteLine(".encode(\"utf8\")");
 			args[1].Accept(this, CiPriority.Primary);
@@ -799,7 +799,7 @@ public class GenPy : GenPySwift
 			args[2].Accept(this, CiPriority.Argument);
 			WriteChar(':');
 			StartAdd(args[2]); // FIXME: side effect
-			WriteLine("len(cibytes)] = cibytes");
+			WriteLine("len(fubytes)] = fubytes");
 			break;
 		case CiId.UTF8GetString:
 			args[0].Accept(this, CiPriority.Primary);
@@ -918,7 +918,7 @@ public class GenPy : GenPySwift
 
 	protected override void WriteResource!(string name, int length)
 	{
-		Write("_CiResource.");
+		Write("_FuResource.");
 		WriteResourceName(name);
 	}
 
@@ -1295,7 +1295,7 @@ public class GenPy : GenPySwift
 		if (resources.Count == 0)
 			return;
 		WriteNewLine();
-		Write("class _CiResource");
+		Write("class _FuResource");
 		OpenChild();
 		foreach ((string name, List<byte> content) in resources) {
 			WriteResourceName(name);

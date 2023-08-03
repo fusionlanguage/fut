@@ -775,7 +775,7 @@ public class GenCpp : GenCCpp
 			break;
 		case CiId.StringReplace:
 			this.StringReplace = true;
-			WriteCall("CiString_replace", obj, args[0], args[1]);
+			WriteCall("FuString_replace", obj, args[0], args[1]);
 			break;
 		case CiId.StringStartsWith:
 			WriteStringMethod(obj, "starts_with", method, args);
@@ -1203,7 +1203,7 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteResource!(string name, int length)
 	{
-		Write("CiResource::");
+		Write("FuResource::");
 		WriteResourceName(name);
 	}
 
@@ -1649,7 +1649,7 @@ public class GenCpp : GenCCpp
 		if (enu is CiEnumFlags) {
 			Include("type_traits");
 			this.HasEnumFlags = true;
-			Write("CI_ENUM_FLAG_OPERATORS(");
+			Write("FU_ENUM_FLAG_OPERATORS(");
 			Write(enu.Name);
 			WriteCharLine(')');
 		}
@@ -1817,7 +1817,7 @@ public class GenCpp : GenCCpp
 		WriteNewLine();
 		WriteLine("namespace");
 		OpenBlock();
-		WriteLine("namespace CiResource");
+		WriteLine("namespace FuResource");
 		OpenBlock();
 		foreach ((string name, List<byte> content) in resources) {
 			if (!define)
@@ -1865,7 +1865,7 @@ public class GenCpp : GenCCpp
 
 		CreateHeaderFile(".hpp");
 		if (this.HasEnumFlags) {
-			WriteLine("#define CI_ENUM_FLAG_OPERATORS(T) \\");
+			WriteLine("#define FU_ENUM_FLAG_OPERATORS(T) \\");
 			WriteLine("\tinline constexpr T operator~(T a) { return static_cast<T>(~static_cast<std::underlying_type_t<T>>(a)); } \\");
 			WriteLine("\tinline constexpr T operator&(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) & static_cast<std::underlying_type_t<T>>(b)); } \\");
 			WriteLine("\tinline constexpr T operator|(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) | static_cast<std::underlying_type_t<T>>(b)); } \\");
@@ -1897,7 +1897,7 @@ public class GenCpp : GenCCpp
 			WriteLine("using namespace std::string_view_literals;");
 		if (this.StringReplace) {
 			WriteNewLine();
-			WriteLine("static std::string CiString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
+			WriteLine("static std::string FuString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
 			OpenBlock();
 			WriteLine("std::string result;");
 			WriteLine("result.reserve(s.size());");

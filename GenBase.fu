@@ -895,7 +895,7 @@ public abstract class GenBase : CiVisitor
 			else if (expr.Inner is CiAggregateInitializer init) {
 				int tempId = this.CurrentTemporaries.IndexOf(expr);
 				if (tempId >= 0) {
-					Write("citemp");
+					Write("futemp");
 					VisitLiteralLong(tempId);
 				}
 				else
@@ -1413,14 +1413,14 @@ public abstract class GenBase : CiVisitor
 			}
 			else
 				this.CurrentTemporaries[id] = expr;
-			Write("citemp");
+			Write("futemp");
 			VisitLiteralLong(id);
 			Write(" = ");
 			assert expr.Type is CiDynamicPtrType dynamic;
 			WriteNew(dynamic, CiPriority.Argument);
 			EndStatement();
 			foreach (CiExpr item in init.Items) {
-				Write("citemp");
+				Write("futemp");
 				VisitLiteralLong(id);
 				WriteAggregateInitField(expr, item);
 			}

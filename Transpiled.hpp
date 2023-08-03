@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#define CI_ENUM_FLAG_OPERATORS(T) \
+#define FU_ENUM_FLAG_OPERATORS(T) \
 	inline constexpr T operator~(T a) { return static_cast<T>(~static_cast<std::underlying_type_t<T>>(a)); } \
 	inline constexpr T operator&(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) & static_cast<std::underlying_type_t<T>>(b)); } \
 	inline constexpr T operator|(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) | static_cast<std::underlying_type_t<T>>(b)); } \
@@ -30,7 +30,7 @@ enum class RegexOptions
 	multiline = 2,
 	singleline = 16
 };
-CI_ENUM_FLAG_OPERATORS(RegexOptions)
+FU_ENUM_FLAG_OPERATORS(RegexOptions)
 class CiParserHost;
 
 enum class CiToken

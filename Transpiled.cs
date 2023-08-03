@@ -7232,7 +7232,7 @@ namespace Fusion
 				else if (expr.Inner is CiAggregateInitializer init) {
 					int tempId = this.CurrentTemporaries.IndexOf(expr);
 					if (tempId >= 0) {
-						Write("citemp");
+						Write("futemp");
 						VisitLiteralLong(tempId);
 					}
 					else
@@ -7746,14 +7746,14 @@ namespace Fusion
 				}
 				else
 					this.CurrentTemporaries[id] = expr;
-				Write("citemp");
+				Write("futemp");
 				VisitLiteralLong(id);
 				Write(" = ");
 				CiDynamicPtrType dynamic = (CiDynamicPtrType) expr.Type;
 				WriteNew(dynamic, CiPriority.Argument);
 				EndStatement();
 				foreach (CiExpr item in init.Items) {
-					Write("citemp");
+					Write("futemp");
 					VisitLiteralLong(id);
 					WriteAggregateInitField(expr, item);
 				}
@@ -8603,7 +8603,7 @@ namespace Fusion
 			if (statement.LoopOrSwitch is CiSwitch switchStatement) {
 				int gotoId = this.SwitchesWithGoto.IndexOf(switchStatement);
 				if (gotoId >= 0) {
-					Write("goto ciafterswitch");
+					Write("goto fuafterswitch");
 					VisitLiteralLong(gotoId);
 					WriteCharLine(';');
 					return;
@@ -8618,7 +8618,7 @@ namespace Fusion
 				int gotoId = this.SwitchesWithGoto.Count;
 				this.SwitchesWithGoto.Add(statement);
 				WriteSwitchAsIfs(statement, false);
-				Write("ciafterswitch");
+				Write("fuafterswitch");
 				VisitLiteralLong(gotoId);
 				WriteLine(": ;");
 			}
@@ -8996,7 +8996,7 @@ namespace Fusion
 		{
 			int tempId = this.CurrentTemporaries.IndexOf(expr);
 			if (tempId >= 0) {
-				Write("citemp");
+				Write("futemp");
 				VisitLiteralLong(tempId);
 			}
 			else
@@ -9052,7 +9052,7 @@ namespace Fusion
 			Include("stdarg.h");
 			Include("stdio.h");
 			this.StringFormat = true;
-			Write("CiString_Format(");
+			Write("FuString_Format(");
 			WritePrintf(expr, false);
 		}
 
@@ -9211,7 +9211,7 @@ namespace Fusion
 		void WriteMatchProperty(CiSymbolReference expr, int which)
 		{
 			this.MatchPos = true;
-			Write("CiMatch_GetPos(");
+			Write("FuMatch_GetPos(");
 			expr.Left.Accept(this, CiPriority.Argument);
 			Write(", ");
 			VisitLiteralLong(which);
@@ -9446,7 +9446,7 @@ namespace Fusion
 		void WriteXstructorPtr(bool need, CiClass klass, string name)
 		{
 			if (need) {
-				Write("(CiMethodPtr) ");
+				Write("(FuMethodPtr) ");
 				WriteName(klass);
 				WriteChar('_');
 				Write(name);
@@ -9509,7 +9509,7 @@ namespace Fusion
 			if (parent > CiPriority.Mul)
 				WriteChar('(');
 			WriteDynamicArrayCast(elementType);
-			Write("CiShared_Make(");
+			Write("FuShared_Make(");
 			lengthExpr.Accept(this, CiPriority.Argument);
 			Write(", sizeof(");
 			WriteType(elementType, false);
@@ -9518,7 +9518,7 @@ namespace Fusion
 			case CiStringStorageType _:
 				this.PtrConstruct = true;
 				this.ListFrees["String"] = "free(*(void **) ptr)";
-				Write("(CiMethodPtr) CiPtr_Construct, CiList_FreeString");
+				Write("(FuMethodPtr) FuPtr_Construct, FuList_FreeString");
 				break;
 			case CiStorageType storage:
 				WriteXstructorPtrs(storage.Class);
@@ -9526,8 +9526,8 @@ namespace Fusion
 			case CiDynamicPtrType _:
 				this.PtrConstruct = true;
 				this.SharedRelease = true;
-				this.ListFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
-				Write("(CiMethodPtr) CiPtr_Construct, CiList_FreeShared");
+				this.ListFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
+				Write("(FuMethodPtr) FuPtr_Construct, FuList_FreeShared");
 				break;
 			default:
 				Write("NULL, NULL");
@@ -9549,7 +9549,7 @@ namespace Fusion
 			if (call != null) {
 				Include("string.h");
 				this.StringSubstring = true;
-				Write("CiString_Substring(");
+				Write("FuString_Substring(");
 				WriteStringPtrAddCast(call);
 				Write(", ");
 				GetStringSubstringLength(call).Accept(this, CiPriority.Argument);
@@ -9602,7 +9602,7 @@ namespace Fusion
 				}
 			case CiDynamicPtrType _:
 				this.SharedRelease = true;
-				return "CiShared_Release";
+				return "FuShared_Release";
 			default:
 				return "NULL";
 			}
@@ -9637,7 +9637,7 @@ namespace Fusion
 			if (keyType.Id == CiId.StringPtrType && valueDestroy == "NULL")
 				Write("g_tree_new((GCompareFunc) strcmp");
 			else {
-				Write("g_tree_new_full(CiTree_Compare");
+				Write("g_tree_new_full(FuTree_Compare");
 				switch (keyType) {
 				case CiIntegerType _:
 					this.TreeCompareInteger = true;
@@ -9688,7 +9688,7 @@ namespace Fusion
 				if (parent > CiPriority.Mul)
 					WriteChar('(');
 				WriteStaticCastType(klass);
-				Write("CiShared_Make(1, sizeof(");
+				Write("FuShared_Make(1, sizeof(");
 				WriteName(klass.Class);
 				Write("), ");
 				WriteXstructorPtrs(klass.Class);
@@ -9730,7 +9730,7 @@ namespace Fusion
 			if (id < 0) {
 				id = this.CurrentTemporaries.Count;
 				StartDefinition(type, false, true);
-				Write("citemp");
+				Write("futemp");
 				VisitLiteralLong(id);
 				EndDefinition(type);
 				if (assign)
@@ -9739,7 +9739,7 @@ namespace Fusion
 				this.CurrentTemporaries.Add(expr);
 			}
 			else if (assign) {
-				Write("citemp");
+				Write("futemp");
 				VisitLiteralLong(id);
 				WriteAssignTemporary(type, expr);
 				WriteCharLine(';');
@@ -9840,7 +9840,7 @@ namespace Fusion
 		protected override void CleanupTemporary(int i, CiExpr temp)
 		{
 			if (temp.Type.Id == CiId.StringStorageType) {
-				Write("free(citemp");
+				Write("free(futemp");
 				VisitLiteralLong(i);
 				WriteLine(");");
 			}
@@ -9939,7 +9939,7 @@ namespace Fusion
 				}
 				else {
 					this.StringAssign = true;
-					Write("CiString_Assign(&");
+					Write("FuString_Assign(&");
 					expr.Left.Accept(this, CiPriority.Primary);
 					Write(", ");
 					WriteStringStorageValue(expr.Right);
@@ -9952,12 +9952,12 @@ namespace Fusion
 				}
 				else {
 					this.SharedAssign = true;
-					Write("CiShared_Assign((void **) &");
+					Write("FuShared_Assign((void **) &");
 					expr.Left.Accept(this, CiPriority.Primary);
 					Write(", ");
 					if (expr.Right is CiSymbolReference) {
 						this.SharedAddRef = true;
-						Write("CiShared_AddRef(");
+						Write("FuShared_AddRef(");
 						expr.Right.Accept(this, CiPriority.Argument);
 						WriteChar(')');
 					}
@@ -10040,7 +10040,7 @@ namespace Fusion
 					Write("g_regex_unref(");
 				else {
 					this.SharedRelease = true;
-					Write("CiShared_Release(");
+					Write("FuShared_Release(");
 				}
 				break;
 			case CiStorageType storage:
@@ -10199,29 +10199,29 @@ namespace Fusion
 				switch (type.AsClassType().GetElementType()) {
 				case CiStringStorageType _:
 					this.ListFrees["String"] = "free(*(void **) ptr)";
-					Write("CiList_FreeString");
+					Write("FuList_FreeString");
 					break;
 				case CiDynamicPtrType _:
 					this.SharedRelease = true;
-					this.ListFrees["Shared"] = "CiShared_Release(*(void **) ptr)";
-					Write("CiList_FreeShared");
+					this.ListFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
+					Write("FuList_FreeShared");
 					break;
 				case CiStorageType storage:
 					switch (storage.Class.Id) {
 					case CiId.ListClass:
 					case CiId.StackClass:
 						this.ListFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
-						Write("CiList_FreeList");
+						Write("FuList_FreeList");
 						break;
 					case CiId.HashSetClass:
 					case CiId.DictionaryClass:
 						this.ListFrees["HashTable"] = "g_hash_table_unref(*(GHashTable **) ptr)";
-						Write("CiList_FreeHashTable");
+						Write("FuList_FreeHashTable");
 						break;
 					case CiId.SortedSetClass:
 					case CiId.SortedDictionaryClass:
 						this.ListFrees["Tree"] = "g_tree_unref(*(GTree **) ptr)";
-						Write("CiList_FreeTree");
+						Write("FuList_FreeTree");
 						break;
 					default:
 						Write("(GDestroyNotify) ");
@@ -10279,7 +10279,7 @@ namespace Fusion
 					WriteName(dynamic.Class);
 					Write(" *) ");
 				}
-				WriteCall("CiShared_AddRef", expr);
+				WriteCall("FuShared_AddRef", expr);
 				break;
 			case CiClassType klass when klass.Class.Id != CiId.StringClass && klass.Class.Id != CiId.ArrayPtrClass && !(klass is CiStorageType):
 				if (klass.Class.Id == CiId.QueueClass && expr.Type is CiStorageType) {
@@ -10392,7 +10392,7 @@ namespace Fusion
 		void WriteStringMethod(string name, CiExpr obj, List<CiExpr> args)
 		{
 			Include("string.h");
-			Write("CiString_");
+			Write("FuString_");
 			WriteCall(name, obj, args[0]);
 		}
 
@@ -10401,7 +10401,7 @@ namespace Fusion
 			Write(", sizeof(");
 			CiId typeId = elementType.Id;
 			WriteNumericType(typeId);
-			Write("), CiCompare_");
+			Write("), FuCompare_");
 			WriteNumericType(typeId);
 			WriteChar(')');
 			this.Compares.Add(typeId);
@@ -10430,7 +10430,7 @@ namespace Fusion
 			int id = WriteCTemporary(elementType, elementType.IsFinal() ? null : args[^1]);
 			if (elementType is CiStorageType storage && NeedsConstructor(storage.Class)) {
 				WriteName(storage.Class);
-				Write("_Construct(&citemp");
+				Write("_Construct(&futemp");
 				VisitLiteralLong(id);
 				WriteLine(");");
 			}
@@ -10441,7 +10441,7 @@ namespace Fusion
 				Write(", ");
 				args[0].Accept(this, CiPriority.Argument);
 			}
-			Write(", citemp");
+			Write(", futemp");
 			VisitLiteralLong(id);
 			WriteChar(')');
 			this.CurrentTemporaries[id] = elementType;
@@ -10671,7 +10671,7 @@ namespace Fusion
 
 		void StartArrayContains(CiExpr obj)
 		{
-			Write("CiArray_Contains_");
+			Write("FuArray_Contains_");
 			CiId typeId = obj.Type.AsClassType().GetElementType().Id;
 			switch (typeId) {
 			case CiId.None:
@@ -10717,17 +10717,17 @@ namespace Fusion
 				break;
 			case CiId.IntTryParse:
 				this.IntTryParse = true;
-				Write("CiInt");
+				Write("FuInt");
 				WriteTryParse(obj, args);
 				break;
 			case CiId.LongTryParse:
 				this.LongTryParse = true;
-				Write("CiLong");
+				Write("FuLong");
 				WriteTryParse(obj, args);
 				break;
 			case CiId.DoubleTryParse:
 				this.DoubleTryParse = true;
-				Write("CiDouble");
+				Write("FuDouble");
 				WriteTryParse(obj, args);
 				break;
 			case CiId.StringContains:
@@ -10764,7 +10764,7 @@ namespace Fusion
 				Include("string.h");
 				this.StringAppend = true;
 				this.StringReplace = true;
-				WriteCall("CiString_Replace", obj, args[0], args[1]);
+				WriteCall("FuString_Replace", obj, args[0], args[1]);
 				break;
 			case CiId.StringStartsWith:
 				if (parent > CiPriority.Equality)
@@ -10930,7 +10930,7 @@ namespace Fusion
 				Write("g_array_sort(");
 				obj.Accept(this, CiPriority.Argument);
 				CiId typeId2 = obj.Type.AsClassType().GetElementType().Id;
-				Write(", CiCompare_");
+				Write(", FuCompare_");
 				WriteNumericType(typeId2);
 				WriteChar(')');
 				this.Compares.Add(typeId2);
@@ -11091,7 +11091,7 @@ namespace Fusion
 				break;
 			case CiId.MatchFindStr:
 				this.MatchFind = true;
-				Write("CiMatch_Find(&");
+				Write("FuMatch_Find(&");
 				obj.Accept(this, CiPriority.Primary);
 				Write(", ");
 				WriteTemporaryOrExpr(args[0], CiPriority.Argument);
@@ -11251,12 +11251,12 @@ namespace Fusion
 				if (expr.Left.Type.Id == CiId.StringStorageType) {
 					if (expr.Right is CiInterpolatedString rightInterpolated) {
 						this.StringAssign = true;
-						Write("CiString_Assign(&");
+						Write("FuString_Assign(&");
 						expr.Left.Accept(this, CiPriority.Primary);
 						this.StringFormat = true;
 						Include("stdarg.h");
 						Include("stdio.h");
-						Write(", CiString_Format(\"%s");
+						Write(", FuString_Format(\"%s");
 						WritePrintfFormat(rightInterpolated);
 						Write("\", ");
 						expr.Left.Accept(this, CiPriority.Argument);
@@ -11266,7 +11266,7 @@ namespace Fusion
 					else {
 						Include("string.h");
 						this.StringAppend = true;
-						Write("CiString_Append(&");
+						Write("FuString_Append(&");
 						expr.Left.Accept(this, CiPriority.Primary);
 						Write(", ");
 						expr.Right.Accept(this, CiPriority.Argument);
@@ -11286,7 +11286,7 @@ namespace Fusion
 
 		protected override void WriteResource(string name, int length)
 		{
-			Write("CiResource_");
+			Write("FuResource_");
 			WriteResourceName(name);
 		}
 
@@ -11353,7 +11353,7 @@ namespace Fusion
 			}
 			else if (statement is CiCallExpr && statement.Type is CiDynamicPtrType) {
 				this.SharedRelease = true;
-				Write("CiShared_Release(");
+				Write("FuShared_Release(");
 				statement.Accept(this, CiPriority.Argument);
 				WriteLine(");");
 				CleanupTemporaries();
@@ -11365,8 +11365,8 @@ namespace Fusion
 		void StartForeachHashTable(CiForeach statement)
 		{
 			OpenBlock();
-			WriteLine("GHashTableIter cidictit;");
-			Write("g_hash_table_iter_init(&cidictit, ");
+			WriteLine("GHashTableIter fudictit;");
+			Write("g_hash_table_iter_init(&fudictit, ");
 			statement.Collection.Accept(this, CiPriority.Argument);
 			WriteLine(");");
 		}
@@ -11444,41 +11444,41 @@ namespace Fusion
 					break;
 				case CiId.HashSetClass:
 					StartForeachHashTable(statement);
-					WriteLine("gpointer cikey;");
-					Write("while (g_hash_table_iter_next(&cidictit, &cikey, NULL)) ");
+					WriteLine("gpointer fukey;");
+					Write("while (g_hash_table_iter_next(&fudictit, &fukey, NULL)) ");
 					OpenBlock();
-					WriteDictIterVar(statement.GetVar(), "cikey");
+					WriteDictIterVar(statement.GetVar(), "fukey");
 					FlattenBlock(statement.Body);
 					CloseBlock();
 					CloseBlock();
 					break;
 				case CiId.SortedSetClass:
-					Write("for (GTreeNode *cisetit = g_tree_node_first(");
+					Write("for (GTreeNode *fusetit = g_tree_node_first(");
 					statement.Collection.Accept(this, CiPriority.Argument);
-					Write("); cisetit != NULL; cisetit = g_tree_node_next(cisetit)) ");
+					Write("); fusetit != NULL; fusetit = g_tree_node_next(fusetit)) ");
 					OpenBlock();
-					WriteDictIterVar(statement.GetVar(), "g_tree_node_key(cisetit)");
+					WriteDictIterVar(statement.GetVar(), "g_tree_node_key(fusetit)");
 					FlattenBlock(statement.Body);
 					CloseBlock();
 					break;
 				case CiId.DictionaryClass:
 					StartForeachHashTable(statement);
-					WriteLine("gpointer cikey, civalue;");
-					Write("while (g_hash_table_iter_next(&cidictit, &cikey, &civalue)) ");
+					WriteLine("gpointer fukey, fuvalue;");
+					Write("while (g_hash_table_iter_next(&fudictit, &fukey, &fuvalue)) ");
 					OpenBlock();
-					WriteDictIterVar(statement.GetVar(), "cikey");
-					WriteDictIterVar(statement.GetValueVar(), "civalue");
+					WriteDictIterVar(statement.GetVar(), "fukey");
+					WriteDictIterVar(statement.GetValueVar(), "fuvalue");
 					FlattenBlock(statement.Body);
 					CloseBlock();
 					CloseBlock();
 					break;
 				case CiId.SortedDictionaryClass:
-					Write("for (GTreeNode *cidictit = g_tree_node_first(");
+					Write("for (GTreeNode *fudictit = g_tree_node_first(");
 					statement.Collection.Accept(this, CiPriority.Argument);
-					Write("); cidictit != NULL; cidictit = g_tree_node_next(cidictit)) ");
+					Write("); fudictit != NULL; fudictit = g_tree_node_next(fudictit)) ");
 					OpenBlock();
-					WriteDictIterVar(statement.GetVar(), "g_tree_node_key(cidictit)");
-					WriteDictIterVar(statement.GetValueVar(), "g_tree_node_value(cidictit)");
+					WriteDictIterVar(statement.GetVar(), "g_tree_node_key(fudictit)");
+					WriteDictIterVar(statement.GetValueVar(), "g_tree_node_value(fudictit)");
 					FlattenBlock(statement.Body);
 					CloseBlock();
 					break;
@@ -12016,7 +12016,7 @@ namespace Fusion
 		void WriteTryParseLibrary(string signature, string call)
 		{
 			WriteNewLine();
-			Write("static bool Ci");
+			Write("static bool Fu");
 			WriteLine(signature);
 			OpenBlock();
 			WriteLine("if (*str == '\\0')");
@@ -12039,7 +12039,7 @@ namespace Fusion
 				WriteTryParseLibrary("Double_TryParse(double *result, const char *str)", "d(str, &end");
 			if (this.StringAssign) {
 				WriteNewLine();
-				WriteLine("static void CiString_Assign(char **str, char *value)");
+				WriteLine("static void FuString_Assign(char **str, char *value)");
 				OpenBlock();
 				WriteLine("free(*str);");
 				WriteLine("*str = value;");
@@ -12047,7 +12047,7 @@ namespace Fusion
 			}
 			if (this.StringSubstring) {
 				WriteNewLine();
-				WriteLine("static char *CiString_Substring(const char *str, int len)");
+				WriteLine("static char *FuString_Substring(const char *str, int len)");
 				OpenBlock();
 				WriteLine("char *p = malloc(len + 1);");
 				WriteLine("memcpy(p, str, len);");
@@ -12057,7 +12057,7 @@ namespace Fusion
 			}
 			if (this.StringAppend) {
 				WriteNewLine();
-				WriteLine("static void CiString_AppendSubstring(char **str, const char *suffix, size_t suffixLen)");
+				WriteLine("static void FuString_AppendSubstring(char **str, const char *suffix, size_t suffixLen)");
 				OpenBlock();
 				WriteLine("if (suffixLen == 0)");
 				WriteLine("\treturn;");
@@ -12067,14 +12067,14 @@ namespace Fusion
 				WriteLine("(*str)[prefixLen + suffixLen] = '\\0';");
 				CloseBlock();
 				WriteNewLine();
-				WriteLine("static void CiString_Append(char **str, const char *suffix)");
+				WriteLine("static void FuString_Append(char **str, const char *suffix)");
 				OpenBlock();
-				WriteLine("CiString_AppendSubstring(str, suffix, strlen(suffix));");
+				WriteLine("FuString_AppendSubstring(str, suffix, strlen(suffix));");
 				CloseBlock();
 			}
 			if (this.StringIndexOf) {
 				WriteNewLine();
-				WriteLine("static int CiString_IndexOf(const char *str, const char *needle)");
+				WriteLine("static int FuString_IndexOf(const char *str, const char *needle)");
 				OpenBlock();
 				WriteLine("const char *p = strstr(str, needle);");
 				WriteLine("return p == NULL ? -1 : (int) (p - str);");
@@ -12082,7 +12082,7 @@ namespace Fusion
 			}
 			if (this.StringLastIndexOf) {
 				WriteNewLine();
-				WriteLine("static int CiString_LastIndexOf(const char *str, const char *needle)");
+				WriteLine("static int FuString_LastIndexOf(const char *str, const char *needle)");
 				OpenBlock();
 				WriteLine("if (needle[0] == '\\0')");
 				WriteLine("\treturn (int) strlen(str);");
@@ -12098,7 +12098,7 @@ namespace Fusion
 			}
 			if (this.StringEndsWith) {
 				WriteNewLine();
-				WriteLine("static bool CiString_EndsWith(const char *str, const char *suffix)");
+				WriteLine("static bool FuString_EndsWith(const char *str, const char *suffix)");
 				OpenBlock();
 				WriteLine("size_t strLen = strlen(str);");
 				WriteLine("size_t suffixLen = strlen(suffix);");
@@ -12107,24 +12107,24 @@ namespace Fusion
 			}
 			if (this.StringReplace) {
 				WriteNewLine();
-				WriteLine("static char *CiString_Replace(const char *s, const char *oldValue, const char *newValue)");
+				WriteLine("static char *FuString_Replace(const char *s, const char *oldValue, const char *newValue)");
 				OpenBlock();
 				Write("for (char *result = NULL;;) ");
 				OpenBlock();
 				WriteLine("const char *p = strstr(s, oldValue);");
 				WriteLine("if (p == NULL) {");
-				WriteLine("\tCiString_Append(&result, s);");
+				WriteLine("\tFuString_Append(&result, s);");
 				WriteLine("\treturn result == NULL ? strdup(\"\") : result;");
 				WriteCharLine('}');
-				WriteLine("CiString_AppendSubstring(&result, s, p - s);");
-				WriteLine("CiString_Append(&result, newValue);");
+				WriteLine("FuString_AppendSubstring(&result, s, p - s);");
+				WriteLine("FuString_Append(&result, newValue);");
 				WriteLine("s = p + strlen(oldValue);");
 				CloseBlock();
 				CloseBlock();
 			}
 			if (this.StringFormat) {
 				WriteNewLine();
-				WriteLine("static char *CiString_Format(const char *format, ...)");
+				WriteLine("static char *FuString_Format(const char *format, ...)");
 				OpenBlock();
 				WriteLine("va_list args1;");
 				WriteLine("va_start(args1, format);");
@@ -12140,7 +12140,7 @@ namespace Fusion
 			}
 			if (this.MatchFind) {
 				WriteNewLine();
-				WriteLine("static bool CiMatch_Find(GMatchInfo **match_info, const char *input, const char *pattern, GRegexCompileFlags options)");
+				WriteLine("static bool FuMatch_Find(GMatchInfo **match_info, const char *input, const char *pattern, GRegexCompileFlags options)");
 				OpenBlock();
 				WriteLine("GRegex *regex = g_regex_new(pattern, options, 0, NULL);");
 				WriteLine("bool result = g_regex_match(regex, input, 0, match_info);");
@@ -12150,7 +12150,7 @@ namespace Fusion
 			}
 			if (this.MatchPos) {
 				WriteNewLine();
-				WriteLine("static int CiMatch_GetPos(const GMatchInfo *match_info, int which)");
+				WriteLine("static int FuMatch_GetPos(const GMatchInfo *match_info, int which)");
 				OpenBlock();
 				WriteLine("int start;");
 				WriteLine("int end;");
@@ -12167,28 +12167,28 @@ namespace Fusion
 			}
 			if (this.PtrConstruct) {
 				WriteNewLine();
-				WriteLine("static void CiPtr_Construct(void **ptr)");
+				WriteLine("static void FuPtr_Construct(void **ptr)");
 				OpenBlock();
 				WriteLine("*ptr = NULL;");
 				CloseBlock();
 			}
 			if (this.SharedMake || this.SharedAddRef || this.SharedRelease) {
 				WriteNewLine();
-				WriteLine("typedef void (*CiMethodPtr)(void *);");
+				WriteLine("typedef void (*FuMethodPtr)(void *);");
 				WriteLine("typedef struct {");
 				this.Indent++;
 				WriteLine("size_t count;");
 				WriteLine("size_t unitSize;");
 				WriteLine("size_t refCount;");
-				WriteLine("CiMethodPtr destructor;");
+				WriteLine("FuMethodPtr destructor;");
 				this.Indent--;
-				WriteLine("} CiShared;");
+				WriteLine("} FuShared;");
 			}
 			if (this.SharedMake) {
 				WriteNewLine();
-				WriteLine("static void *CiShared_Make(size_t count, size_t unitSize, CiMethodPtr constructor, CiMethodPtr destructor)");
+				WriteLine("static void *FuShared_Make(size_t count, size_t unitSize, FuMethodPtr constructor, FuMethodPtr destructor)");
 				OpenBlock();
-				WriteLine("CiShared *self = (CiShared *) malloc(sizeof(CiShared) + count * unitSize);");
+				WriteLine("FuShared *self = (FuShared *) malloc(sizeof(FuShared) + count * unitSize);");
 				WriteLine("self->count = count;");
 				WriteLine("self->unitSize = unitSize;");
 				WriteLine("self->refCount = 1;");
@@ -12203,20 +12203,20 @@ namespace Fusion
 			}
 			if (this.SharedAddRef) {
 				WriteNewLine();
-				WriteLine("static void *CiShared_AddRef(void *ptr)");
+				WriteLine("static void *FuShared_AddRef(void *ptr)");
 				OpenBlock();
 				WriteLine("if (ptr != NULL)");
-				WriteLine("\t((CiShared *) ptr)[-1].refCount++;");
+				WriteLine("\t((FuShared *) ptr)[-1].refCount++;");
 				WriteLine("return ptr;");
 				CloseBlock();
 			}
 			if (this.SharedRelease || this.SharedAssign) {
 				WriteNewLine();
-				WriteLine("static void CiShared_Release(void *ptr)");
+				WriteLine("static void FuShared_Release(void *ptr)");
 				OpenBlock();
 				WriteLine("if (ptr == NULL)");
 				WriteLine("\treturn;");
-				WriteLine("CiShared *self = (CiShared *) ptr - 1;");
+				WriteLine("FuShared *self = (FuShared *) ptr - 1;");
 				WriteLine("if (--self->refCount != 0)");
 				WriteLine("\treturn;");
 				Write("if (self->destructor != NULL) ");
@@ -12229,15 +12229,15 @@ namespace Fusion
 			}
 			if (this.SharedAssign) {
 				WriteNewLine();
-				WriteLine("static void CiShared_Assign(void **ptr, void *value)");
+				WriteLine("static void FuShared_Assign(void **ptr, void *value)");
 				OpenBlock();
-				WriteLine("CiShared_Release(*ptr);");
+				WriteLine("FuShared_Release(*ptr);");
 				WriteLine("*ptr = value;");
 				CloseBlock();
 			}
 			foreach ((string name, string content) in this.ListFrees) {
 				WriteNewLine();
-				Write("static void CiList_Free");
+				Write("static void FuList_Free");
 				Write(name);
 				WriteLine("(void *ptr)");
 				OpenBlock();
@@ -12247,7 +12247,7 @@ namespace Fusion
 			}
 			if (this.TreeCompareInteger) {
 				WriteNewLine();
-				Write("static int CiTree_CompareInteger(gconstpointer pa, gconstpointer pb, gpointer user_data)");
+				Write("static int FuTree_CompareInteger(gconstpointer pa, gconstpointer pb, gpointer user_data)");
 				OpenBlock();
 				WriteLine("gintptr a = (gintptr) pa;");
 				WriteLine("gintptr b = (gintptr) pb;");
@@ -12256,14 +12256,14 @@ namespace Fusion
 			}
 			if (this.TreeCompareString) {
 				WriteNewLine();
-				Write("static int CiTree_CompareString(gconstpointer a, gconstpointer b, gpointer user_data)");
+				Write("static int FuTree_CompareString(gconstpointer a, gconstpointer b, gpointer user_data)");
 				OpenBlock();
 				WriteLine("return strcmp((const char *) a, (const char *) b);");
 				CloseBlock();
 			}
 			foreach (CiId typeId in this.Compares) {
 				WriteNewLine();
-				Write("static int CiCompare_");
+				Write("static int FuCompare_");
 				WriteNumericType(typeId);
 				WriteLine("(const void *pa, const void *pb)");
 				OpenBlock();
@@ -12290,7 +12290,7 @@ namespace Fusion
 			}
 			foreach (CiId typeId in this.Contains) {
 				WriteNewLine();
-				Write("static bool CiArray_Contains_");
+				Write("static bool FuArray_Contains_");
 				if (typeId == CiId.None)
 					Write("object(const void * const *a, size_t len, const void *");
 				else if (typeId == CiId.StringPtrType)
@@ -12517,11 +12517,11 @@ namespace Fusion
 				WriteChar('!');
 			if (IsUTF8GetString(call)) {
 				this.BytesEqualsString = true;
-				Write("CiBytes_Equals(");
+				Write("FuBytes_Equals(");
 			}
 			else {
 				this.StringStartsWith = true;
-				Write("CiString_StartsWith(");
+				Write("FuString_StartsWith(");
 			}
 			WriteStringPtrAdd(call);
 			Write(", ");
@@ -12534,7 +12534,7 @@ namespace Fusion
 			this.StringEquals = true;
 			if (not)
 				WriteChar('!');
-			WriteCall("CiString_Equals", left, right);
+			WriteCall("FuString_Equals", left, right);
 		}
 
 		protected override void WriteStringLength(CiExpr expr)
@@ -12579,7 +12579,7 @@ namespace Fusion
 				}
 				else {
 					this.StringStartsWith = true;
-					WriteCall("CiString_StartsWith", obj, args[0]);
+					WriteCall("FuString_StartsWith", obj, args[0]);
 				}
 				break;
 			case CiId.StringSubstring:
@@ -12689,7 +12689,7 @@ namespace Fusion
 			}
 			if (this.StringEquals) {
 				WriteNewLine();
-				WriteLine("static bool CiString_Equals(constant char *str1, constant char *str2)");
+				WriteLine("static bool FuString_Equals(constant char *str1, constant char *str2)");
 				OpenBlock();
 				WriteLine("for (size_t i = 0; str1[i] == str2[i]; i++) {");
 				WriteLine("\tif (str1[i] == '\\0')");
@@ -12700,7 +12700,7 @@ namespace Fusion
 			}
 			if (this.StringStartsWith) {
 				WriteNewLine();
-				WriteLine("static bool CiString_StartsWith(constant char *str1, constant char *str2)");
+				WriteLine("static bool FuString_StartsWith(constant char *str1, constant char *str2)");
 				OpenBlock();
 				WriteLine("for (int i = 0; str2[i] != '\\0'; i++) {");
 				WriteLine("\tif (str1[i] != str2[i])");
@@ -12711,7 +12711,7 @@ namespace Fusion
 			}
 			if (this.BytesEqualsString) {
 				WriteNewLine();
-				WriteLine("static bool CiBytes_Equals(const uchar *mem, constant char *str)");
+				WriteLine("static bool FuBytes_Equals(const uchar *mem, constant char *str)");
 				OpenBlock();
 				WriteLine("for (int i = 0; str[i] != '\\0'; i++) {");
 				WriteLine("\tif (mem[i] != str[i])");
@@ -13504,7 +13504,7 @@ namespace Fusion
 				break;
 			case CiId.StringReplace:
 				this.StringReplace = true;
-				WriteCall("CiString_replace", obj, args[0], args[1]);
+				WriteCall("FuString_replace", obj, args[0], args[1]);
 				break;
 			case CiId.StringStartsWith:
 				WriteStringMethod(obj, "starts_with", method, args);
@@ -13930,7 +13930,7 @@ namespace Fusion
 
 		protected override void WriteResource(string name, int length)
 		{
-			Write("CiResource::");
+			Write("FuResource::");
 			WriteResourceName(name);
 		}
 
@@ -14367,7 +14367,7 @@ namespace Fusion
 			if (enu is CiEnumFlags) {
 				Include("type_traits");
 				this.HasEnumFlags = true;
-				Write("CI_ENUM_FLAG_OPERATORS(");
+				Write("FU_ENUM_FLAG_OPERATORS(");
 				Write(enu.Name);
 				WriteCharLine(')');
 			}
@@ -14530,7 +14530,7 @@ namespace Fusion
 			WriteNewLine();
 			WriteLine("namespace");
 			OpenBlock();
-			WriteLine("namespace CiResource");
+			WriteLine("namespace FuResource");
 			OpenBlock();
 			foreach ((string name, List<byte> content) in resources) {
 				if (!define)
@@ -14577,7 +14577,7 @@ namespace Fusion
 			CloseNamespace();
 			CreateHeaderFile(".hpp");
 			if (this.HasEnumFlags) {
-				WriteLine("#define CI_ENUM_FLAG_OPERATORS(T) \\");
+				WriteLine("#define FU_ENUM_FLAG_OPERATORS(T) \\");
 				WriteLine("\tinline constexpr T operator~(T a) { return static_cast<T>(~static_cast<std::underlying_type_t<T>>(a)); } \\");
 				WriteLine("\tinline constexpr T operator&(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) & static_cast<std::underlying_type_t<T>>(b)); } \\");
 				WriteLine("\tinline constexpr T operator|(T a, T b) { return static_cast<T>(static_cast<std::underlying_type_t<T>>(a) | static_cast<std::underlying_type_t<T>>(b)); } \\");
@@ -14607,7 +14607,7 @@ namespace Fusion
 				WriteLine("using namespace std::string_view_literals;");
 			if (this.StringReplace) {
 				WriteNewLine();
-				WriteLine("static std::string CiString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
+				WriteLine("static std::string FuString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
 				OpenBlock();
 				WriteLine("std::string result;");
 				WriteLine("result.reserve(s.size());");
@@ -14981,7 +14981,7 @@ namespace Fusion
 
 		protected override void WriteResource(string name, int length)
 		{
-			Write("CiResource.");
+			Write("FuResource.");
 			WriteResourceName(name);
 		}
 
@@ -15535,7 +15535,7 @@ namespace Fusion
 		void WriteResources(SortedDictionary<string, List<byte>> resources)
 		{
 			WriteNewLine();
-			WriteLine("internal static class CiResource");
+			WriteLine("internal static class FuResource");
 			OpenBlock();
 			foreach ((string name, List<byte> content) in resources) {
 				Write("internal static readonly byte[] ");
@@ -16170,7 +16170,7 @@ namespace Fusion
 
 		protected override void WriteResource(string name, int length)
 		{
-			Write("CiResource.");
+			Write("FuResource.");
 			WriteResourceName(name);
 		}
 
@@ -16327,21 +16327,21 @@ namespace Fusion
 			case CiId.ArrayBinarySearchAll:
 			case CiId.ArrayBinarySearchPart:
 				Include("std.range");
-				Write("() { size_t cibegin = ");
+				Write("() { size_t fubegin = ");
 				if (args.Count == 3)
 					args[1].Accept(this, CiPriority.Argument);
 				else
 					WriteChar('0');
-				Write("; auto cisearch = ");
+				Write("; auto fusearch = ");
 				WriteClassReference(obj);
 				WriteChar('[');
 				if (args.Count == 3) {
-					Write("cibegin .. cibegin + ");
+					Write("fubegin .. fubegin + ");
 					args[2].Accept(this, CiPriority.Add);
 				}
 				Write("].assumeSorted.trisect(");
 				WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
-				Write("); return cisearch[1].length ? cibegin + cisearch[0].length : -1; }()");
+				Write("); return fusearch[1].length ? fubegin + fusearch[0].length : -1; }()");
 				break;
 			case CiId.ArrayContains:
 			case CiId.ListContains:
@@ -16985,7 +16985,7 @@ namespace Fusion
 		void WriteResources(SortedDictionary<string, List<byte>> resources)
 		{
 			WriteNewLine();
-			WriteLine("private static struct CiResource");
+			WriteLine("private static struct FuResource");
 			OpenBlock();
 			foreach ((string name, List<byte> content) in resources) {
 				Write("private static ubyte[] ");
@@ -17415,7 +17415,7 @@ namespace Fusion
 
 		protected override void WriteResource(string name, int length)
 		{
-			Write("CiResource.getByteArray(");
+			Write("FuResource.getByteArray(");
 			VisitLiteralString(name);
 			Write(", ");
 			VisitLiteralLong(length);
@@ -18320,17 +18320,17 @@ namespace Fusion
 
 		void WriteResources()
 		{
-			CreateJavaFile("CiResource");
+			CreateJavaFile("FuResource");
 			WriteLine("import java.io.DataInputStream;");
 			WriteLine("import java.io.IOException;");
 			WriteNewLine();
-			Write("class CiResource");
+			Write("class FuResource");
 			WriteNewLine();
 			OpenBlock();
 			WriteLine("static byte[] getByteArray(String name, int length)");
 			OpenBlock();
 			Write("DataInputStream dis = new DataInputStream(");
-			WriteLine("CiResource.class.getResourceAsStream(name));");
+			WriteLine("FuResource.class.getResourceAsStream(name));");
 			WriteLine("byte[] result = new byte[length];");
 			Write("try ");
 			OpenBlock();
@@ -18708,7 +18708,7 @@ namespace Fusion
 
 		protected override void WriteResource(string name, int length)
 		{
-			Write("Ci.");
+			Write("Fu.");
 			WriteResourceName(name);
 		}
 
@@ -19412,7 +19412,7 @@ namespace Fusion
 			if (statement.LoopOrSwitch is CiSwitch switchStatement) {
 				int label = this.SwitchesWithLabel.IndexOf(switchStatement);
 				if (label >= 0) {
-					Write("break ciswitch");
+					Write("break fuswitch");
 					VisitLiteralLong(label);
 					WriteCharLine(';');
 					return;
@@ -19518,7 +19518,7 @@ namespace Fusion
 		{
 			if (statement.IsTypeMatching() || statement.HasWhen()) {
 				if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreak(kase.Body)) || CiSwitch.HasEarlyBreak(statement.DefaultBody)) {
-					Write("ciswitch");
+					Write("fuswitch");
 					VisitLiteralLong(this.SwitchesWithLabel.Count);
 					this.SwitchesWithLabel.Add(statement);
 					Write(": ");
@@ -19655,7 +19655,7 @@ namespace Fusion
 			if (resources.Count == 0)
 				return;
 			WriteNewLine();
-			WriteLine("class Ci");
+			WriteLine("class Fu");
 			OpenBlock();
 			foreach ((string name, List<byte> content) in resources) {
 				Write("static ");
@@ -20744,7 +20744,7 @@ namespace Fusion
 		protected override void WriteCharAt(CiBinaryExpr expr)
 		{
 			this.StringCharAt = true;
-			Write("ciStringCharAt(");
+			Write("fuStringCharAt(");
 			WriteUnwrapped(expr.Left, CiPriority.Argument, false);
 			Write(", ");
 			expr.Right.Accept(this, CiPriority.Argument);
@@ -20846,7 +20846,7 @@ namespace Fusion
 			case CiId.StringIndexOf:
 				Include("Foundation");
 				this.StringIndexOf = true;
-				Write("ciStringIndexOf(");
+				Write("fuStringIndexOf(");
 				WriteUnwrapped(obj, CiPriority.Argument, true);
 				Write(", ");
 				WriteUnwrapped(args[0], CiPriority.Argument, true);
@@ -20855,7 +20855,7 @@ namespace Fusion
 			case CiId.StringLastIndexOf:
 				Include("Foundation");
 				this.StringIndexOf = true;
-				Write("ciStringIndexOf(");
+				Write("fuStringIndexOf(");
 				WriteUnwrapped(obj, CiPriority.Argument, true);
 				Write(", ");
 				WriteUnwrapped(args[0], CiPriority.Argument, true);
@@ -20877,7 +20877,7 @@ namespace Fusion
 					WriteUnwrapped(obj, CiPriority.Primary, true);
 				else {
 					this.StringSubstring = true;
-					Write("ciStringSubstring(");
+					Write("fuStringSubstring(");
 					WriteUnwrapped(obj, CiPriority.Argument, false);
 					Write(", ");
 					WriteCoerced(this.System.IntType, args[0], CiPriority.Argument);
@@ -21053,9 +21053,9 @@ namespace Fusion
 				Write(".utf8.count");
 				break;
 			case CiId.UTF8GetBytes:
-				if (AddVar("cibytes"))
+				if (AddVar("fubytes"))
 					Write(this.VarBytesAtIndent[this.Indent] ? "var " : "let ");
-				Write("cibytes = [UInt8](");
+				Write("fubytes = [UInt8](");
 				WriteUnwrapped(args[0], CiPriority.Primary, true);
 				WriteLine(".utf8)");
 				OpenIndexing(args[1]);
@@ -21067,7 +21067,7 @@ namespace Fusion
 					WriteCoerced(this.System.IntType, args[2], CiPriority.Add);
 					Write(" + ");
 				}
-				WriteLine("cibytes.count] = cibytes[...]");
+				WriteLine("fubytes.count] = fubytes[...]");
 				break;
 			case CiId.UTF8GetString:
 				Write("String(decoding: ");
@@ -21417,7 +21417,7 @@ namespace Fusion
 
 		protected override void WriteResource(string name, int length)
 		{
-			Write("CiResource.");
+			Write("FuResource.");
 			WriteResourceName(name);
 		}
 
@@ -21773,7 +21773,7 @@ namespace Fusion
 
 		void WriteReadOnlyParameter(CiVar param)
 		{
-			Write("ciParam");
+			Write("fuParam");
 			WritePascalCase(param.Name);
 		}
 
@@ -22084,14 +22084,14 @@ namespace Fusion
 			}
 			if (this.StringCharAt) {
 				WriteNewLine();
-				WriteLine("fileprivate func ciStringCharAt(_ s: String, _ offset: Int) -> Int");
+				WriteLine("fileprivate func fuStringCharAt(_ s: String, _ offset: Int) -> Int");
 				OpenBlock();
 				WriteLine("return Int(s.unicodeScalars[s.index(s.startIndex, offsetBy: offset)].value)");
 				CloseBlock();
 			}
 			if (this.StringIndexOf) {
 				WriteNewLine();
-				WriteLine("fileprivate func ciStringIndexOf<S1 : StringProtocol, S2 : StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
+				WriteLine("fileprivate func fuStringIndexOf<S1 : StringProtocol, S2 : StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
 				OpenBlock();
 				WriteLine("guard let index = haystack.range(of: needle, options: options) else { return -1 }");
 				WriteLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");
@@ -22099,7 +22099,7 @@ namespace Fusion
 			}
 			if (this.StringSubstring) {
 				WriteNewLine();
-				WriteLine("fileprivate func ciStringSubstring(_ s: String, _ offset: Int) -> Substring");
+				WriteLine("fileprivate func fuStringSubstring(_ s: String, _ offset: Int) -> Substring");
 				OpenBlock();
 				WriteLine("return s[s.index(s.startIndex, offsetBy: offset)...]");
 				CloseBlock();
@@ -22112,7 +22112,7 @@ namespace Fusion
 				return;
 			this.ArrayRef = true;
 			WriteNewLine();
-			WriteLine("fileprivate final class CiResource");
+			WriteLine("fileprivate final class FuResource");
 			OpenBlock();
 			foreach ((string name, List<byte> content) in resources) {
 				Write("static let ");
@@ -22915,7 +22915,7 @@ namespace Fusion
 				WritePostfix(args[0], ".encode(\"utf8\"))");
 				break;
 			case CiId.UTF8GetBytes:
-				Write("cibytes = ");
+				Write("fubytes = ");
 				args[0].Accept(this, CiPriority.Primary);
 				WriteLine(".encode(\"utf8\")");
 				args[1].Accept(this, CiPriority.Primary);
@@ -22923,7 +22923,7 @@ namespace Fusion
 				args[2].Accept(this, CiPriority.Argument);
 				WriteChar(':');
 				StartAdd(args[2]);
-				WriteLine("len(cibytes)] = cibytes");
+				WriteLine("len(fubytes)] = fubytes");
 				break;
 			case CiId.UTF8GetString:
 				args[0].Accept(this, CiPriority.Primary);
@@ -23042,7 +23042,7 @@ namespace Fusion
 
 		protected override void WriteResource(string name, int length)
 		{
-			Write("_CiResource.");
+			Write("_FuResource.");
 			WriteResourceName(name);
 		}
 
@@ -23414,7 +23414,7 @@ namespace Fusion
 			if (resources.Count == 0)
 				return;
 			WriteNewLine();
-			Write("class _CiResource");
+			Write("class _FuResource");
 			OpenChild();
 			foreach ((string name, List<byte> content) in resources) {
 				WriteResourceName(name);
