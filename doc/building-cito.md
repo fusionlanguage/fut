@@ -1,6 +1,6 @@
-﻿# How to compile and test cito
+# How to compile and test cito
 
-`cito` is implemented in Ć.
+`cito` is implemented in Fusion.
 To solve the egg-and-chicken problem, its transpilations to C++, C#
 and JavaScript are included with the source code.
 
@@ -17,14 +17,14 @@ You need [.NET 7.0 or 6.0 SDK](https://dotnet.microsoft.com/en-us/download).
 On Windows, it is included in Visual Studio 2022.
 Build with:
 
-    make CITO_HOST=cs
+    make FUT_HOST=cs
 
 ## Building a Node.js cito
 
 You need [Node.js](nodejs.org).
 Build with:
 
-    make CITO_HOST=node
+    make FUT_HOST=node
 
 ## Testing
 

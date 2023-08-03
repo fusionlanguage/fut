@@ -55,5 +55,5 @@ jobs:
       - nvm install --lts
     script:
       - make -j5 host-diff CXX=g++-13
-      - make -j5 test-error CITO_HOST=cs
-      - make -j5 test-error CITO_HOST=node
+      - make -j5 test-error FUT_HOST=cs
+      - make -j5 test-error FUT_HOST=node

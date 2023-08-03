@@ -1,7 +1,7 @@
 prefix := /usr/local
 bindir = $(prefix)/bin
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
-CITO_HOST = cpp
+FUT_HOST = cpp
 CXXFLAGS = -Wall -O2
 DOTNET_BASE_DIR := $(shell dotnet --info 2>/dev/null | sed -n 's/ Base Path:   //p')
 ifdef DOTNET_BASE_DIR
@@ -36,7 +36,7 @@ SOURCE_CI = Lexer.fu AST.fu Parser.fu ConsoleHost.fu Sema.fu GenBase.fu GenTyped
 
 all: cito Transpiled.cpp Transpiled.cs Transpiled.js
 
-ifeq ($(CITO_HOST),cpp)
+ifeq ($(FUT_HOST),cpp)
 
 CITO = ./cito
 
@@ -54,7 +54,7 @@ cito: cito.cpp Transpiled.cpp
 
 endif
 
-else ifeq ($(CITO_HOST),cs)
+else ifeq ($(FUT_HOST),cs)
 
 CITO = dotnet run --no-build --
 
@@ -63,14 +63,14 @@ cito: bin/Debug/net6.0/cito.dll
 bin/Debug/net6.0/cito.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs CiTo.cs)
 	dotnet build
 
-else ifeq ($(CITO_HOST),node)
+else ifeq ($(FUT_HOST),node)
 
 CITO = node cito.js
 
 cito: Transpiled.js
 
 else
-$(error CITO_HOST must be "cpp", "cs" or "node")
+$(error FUT_HOST must be "cpp", "cs" or "node")
 endif
 
 Transpiled.cpp Transpiled.js: $(SOURCE_CI)
@@ -228,19 +228,19 @@ test/node_modules: test/package.json
 test/bin/%/error.txt: test/error/%.fu cito
 	$(DO)mkdir -p $(@D) && ! $(CITO) -o $(@:%.txt=%.cs) $< 2>$@ && perl -ne 'print "$$ARGV($$.): $$1\n" while m!//(ERROR: .+?)(?=$$| //)!g' $< | diff -u --strip-trailing-cr - $@ && echo PASSED >$@
 
-test-transpile: $(patsubst test/%.fu, test/$(CITO_HOST)/%/all, $(wildcard test/*.fu)) test/$(CITO_HOST)/CiTo/all
+test-transpile: $(patsubst test/%.fu, test/$(FUT_HOST)/%/all, $(wildcard test/*.fu)) test/$(FUT_HOST)/CiTo/all
 
-test/$(CITO_HOST)/%/all: test/%.fu cito
+test/$(FUT_HOST)/%/all: test/%.fu cito
 	$(DO)mkdir -p $(@D) && $(CITO) -o $(@D)/Test.c,cpp,cs,d,java,js,d.ts,ts,py,swift,cl $< || true
 
-test/$(CITO_HOST)/CiTo/all: $(SOURCE_CI) cito
+test/$(FUT_HOST)/CiTo/all: $(SOURCE_CI) cito
 	$(DO)mkdir -p $(@D) && $(CITO) -o $(@D)/Test.cpp,cs,d,js,d.ts,ts $(SOURCE_CI)
 
-test/$(CITO_HOST)/Resource/all: test/Resource.fu cito
+test/$(FUT_HOST)/Resource/all: test/Resource.fu cito
 	$(DO)mkdir -p $(@D) && $(CITO) -o $(@D)/Test.c,cpp,cs,d,java,js,d.ts,ts,py,swift,cl -I $(<D) $<
 
 coverage/output.xml:
-	dotnet-coverage collect -f xml -o $@ "make -j`nproc` test-transpile test-error CITO_HOST=cs"
+	dotnet-coverage collect -f xml -o $@ "make -j`nproc` test-transpile test-error FUT_HOST=cs"
 
 coverage: coverage/output.xml
 	reportgenerator -reports:$< -targetdir:coverage
@@ -249,9 +249,9 @@ codecov: coverage/output.xml
 	./codecov -f $<
 
 host-diff:
-	$(MAKE) test-transpile CITO_HOST=cpp
-	$(MAKE) test-transpile CITO_HOST=cs
-	$(MAKE) test-transpile CITO_HOST=node
+	$(MAKE) test-transpile FUT_HOST=cpp
+	$(MAKE) test-transpile FUT_HOST=cs
+	$(MAKE) test-transpile FUT_HOST=node
 	diff -ruI "[0-9][Ee][-+][0-9]\|\.0" test/cpp test/cs
 	diff -ruI "[0-9][Ee][-+][0-9]" test/cs test/node
 
