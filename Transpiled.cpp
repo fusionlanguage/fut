@@ -1,4 +1,4 @@
-// Generated automatically with "cito". Do not edit.
+// Generated automatically with "fut". Do not edit.
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -6407,7 +6407,7 @@ void GenBase::writeLine(std::string_view s)
 
 void GenBase::writeBanner()
 {
-	writeLine("// Generated automatically with \"cito\". Do not edit.");
+	writeLine("// Generated automatically with \"fut\". Do not edit.");
 }
 
 void GenBase::createFile(std::string_view directory, std::string_view filename)
@@ -21317,7 +21317,7 @@ std::string_view GenPy::getTargetName() const
 
 void GenPy::writeBanner()
 {
-	writeLine("# Generated automatically with \"cito\". Do not edit.");
+	writeLine("# Generated automatically with \"fut\". Do not edit.");
 }
 
 void GenPy::startDocLine()

@@ -88,7 +88,7 @@ class FileGenHost extends CiConsoleHost
 
 function usage()
 {
-	console.log("Usage: node fut.js [OPTIONS] -o FILE INPUT.ci");
+	console.log("Usage: node fut.js [OPTIONS] -o FILE INPUT.fu");
 	console.log("Options:");
 	console.log("-l c       Translate to C");
 	console.log("-l cpp     Translate to C++");

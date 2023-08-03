@@ -7,4 +7,4 @@ ci-$(VERSION).vsix: package.json ci-logo.png ci-file.svg language-configuration.
 	$(APPDATA)/npm/vsce package
 
 src/parser.js: ../../Lexer.fu ../../AST.fu ../../Parser.fu
-	cito -o $@ $^
+	fut -o $@ $^

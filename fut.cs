@@ -86,7 +86,7 @@ public static class Fut
 {
 	static void Usage()
 	{
-		Console.WriteLine("Usage: fut [OPTIONS] -o FILE INPUT.ci");
+		Console.WriteLine("Usage: fut [OPTIONS] -o FILE INPUT.fu");
 		Console.WriteLine("Options:");
 		Console.WriteLine("-l c       Translate to C");
 		Console.WriteLine("-l cpp     Translate to C++");

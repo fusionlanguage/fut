@@ -255,7 +255,7 @@ public abstract class GenBase : CiVisitor
 
 	protected virtual void WriteBanner!()
 	{
-		WriteLine("// Generated automatically with \"cito\". Do not edit.");
+		WriteLine("// Generated automatically with \"fut\". Do not edit.");
 	}
 
 	protected void CreateFile!(string? directory, string filename)

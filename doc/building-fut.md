@@ -1,17 +1,17 @@
-# How to compile and test cito
+# How to compile and test fut
 
-`cito` is implemented in Fusion.
+`fut` is implemented in Fusion.
 To solve the egg-and-chicken problem, its transpilations to C++, C#
 and JavaScript are included with the source code.
 
-## Building a C++ cito
+## Building a C++ fut
 
 You need a C++20 compiler, such as GCC 13 or Clang 16.
 Build with:
 
     make
 
-## Building a C# cito
+## Building a C# fut
 
 You need [.NET 7.0 or 6.0 SDK](https://dotnet.microsoft.com/en-us/download).
 On Windows, it is included in Visual Studio 2022.
@@ -19,7 +19,7 @@ Build with:
 
     make FUT_HOST=cs
 
-## Building a Node.js cito
+## Building a Node.js fut
 
 You need [Node.js](nodejs.org).
 Build with:
@@ -28,7 +28,7 @@ Build with:
 
 ## Testing
 
-To run cito tests, you will need:
+To run `fut` tests, you will need:
 * GNU Make
 * perl
 * GNU diff

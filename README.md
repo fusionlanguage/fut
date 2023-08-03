@@ -19,19 +19,19 @@ public class HelloFu
 }
 ```
 
-Then translate into target languages using `cito` on the command line:
+Then translate into target languages using `fut` on the command line:
 ```
-cito -o hello.c hello.fu
-cito -o hello.cpp hello.fu
-cito -o hello.cs hello.fu
-cito -o hello.d hello.fu
-cito -o HelloFu.java hello.fu # Java enforces filenames for public classes
-cito -o hello.js hello.fu
-cito -o hello.py hello.fu
-cito -o hello.swift hello.fu
-cito -o hello.ts hello.fu
-cito -o hello.d.ts hello.fu # TypeScript declarations only
-cito -o hello.cl hello.fu
+fut -o hello.c hello.fu
+fut -o hello.cpp hello.fu
+fut -o hello.cs hello.fu
+fut -o hello.d hello.fu
+fut -o HelloFu.java hello.fu # Java enforces filenames for public classes
+fut -o hello.js hello.fu
+fut -o hello.py hello.fu
+fut -o hello.swift hello.fu
+fut -o hello.ts hello.fu
+fut -o hello.d.ts hello.fu # TypeScript declarations only
+fut -o hello.cl hello.fu
 ```
 
 The translated code is lightweight (no virtual machine, emulation nor

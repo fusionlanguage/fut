@@ -1,4 +1,4 @@
-// Generated automatically with "cito". Do not edit.
+// Generated automatically with "fut". Do not edit.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6594,7 +6594,7 @@ namespace Fusion
 
 		protected virtual void WriteBanner()
 		{
-			WriteLine("// Generated automatically with \"cito\". Do not edit.");
+			WriteLine("// Generated automatically with \"fut\". Do not edit.");
 		}
 
 		protected void CreateFile(string directory, string filename)
@@ -22156,7 +22156,7 @@ namespace Fusion
 
 		protected override void WriteBanner()
 		{
-			WriteLine("# Generated automatically with \"cito\". Do not edit.");
+			WriteLine("# Generated automatically with \"fut\". Do not edit.");
 		}
 
 		protected override void StartDocLine()

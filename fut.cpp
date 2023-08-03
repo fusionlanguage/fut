@@ -1,4 +1,4 @@
-// cito.cpp - Fusion transpiler
+// fut.cpp - Fusion transpiler
 //
 // Copyright (C) 2011-2023  Piotr Fusik
 //
@@ -33,7 +33,7 @@
 static void usage()
 {
 	std::cout <<
-		"Usage: cito [OPTIONS] -o FILE INPUT.ci\n"
+		"Usage: fut [OPTIONS] -o FILE INPUT.fu\n"
 		"Options:\n"
 		"-l c       Translate to C\n"
 		"-l cpp     Translate to C++\n"
@@ -182,7 +182,7 @@ static void emit(CiProgram *program, const char *lang, const char *namespace_, c
 	else if (strcmp(lang, "cl") == 0)
 		gen = std::make_unique<GenCl>();
 	else {
-		std::cerr << "cito: ERROR: Unknown language: " << lang << '\n';
+		std::cerr << "fut: ERROR: Unknown language: " << lang << '\n';
 		host->hasErrors = true;
 		return;
 	}
@@ -210,7 +210,7 @@ int main(int argc, char **argv)
 			return 0;
 		}
 		else if (strcmp(arg, "--version") == 0) {
-			puts("cito 3.0.0 (C++)");
+			puts("fut 3.0.0 (C++)");
 			return 0;
 		}
 		else if (arg[1] != '\0' && arg[2] == '\0' && i + 1 < argc) {
@@ -227,7 +227,7 @@ int main(int argc, char **argv)
 			case 'D': {
 					const char *symbol = argv[++i];
 					if (strcmp(symbol, "true") == 0 || strcmp(symbol, "false") == 0) {
-						std::cerr << "cito: '" << symbol << "' is reserved\n";
+						std::cerr << "fut: '" << symbol << "' is reserved\n";
 						return 1;
 					}
 					parser.addPreSymbol(symbol);
@@ -240,12 +240,12 @@ int main(int argc, char **argv)
 				sema.addResourceDir(argv[++i]);
 				break;
 			default:
-				std::cerr << "cito: ERROR: Unknown option: " << arg << '\n';
+				std::cerr << "fut: ERROR: Unknown option: " << arg << '\n';
 				return 1;
 			}
 		}
 		else {
-			std::cerr << "cito: ERROR: Unknown option: " << arg << '\n';
+			std::cerr << "fut: ERROR: Unknown option: " << arg << '\n';
 			return 1;
 		}
 	}
@@ -306,6 +306,6 @@ int main(int argc, char **argv)
 		if (c == '/' || c == '\\' || c == ':')
 			break;
 	}
-	std::cerr << "cito: ERROR: Don't know what language to translate to: no extension in '" << outputFile << "' and no '-l' option\n";
+	std::cerr << "fut: ERROR: Don't know what language to translate to: no extension in '" << outputFile << "' and no '-l' option\n";
 	return 1;
 }

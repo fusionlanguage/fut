@@ -1,4 +1,4 @@
-// Generated automatically with "cito". Do not edit.
+// Generated automatically with "fut". Do not edit.
 
 export const RegexOptions = {
 	NONE : 0,
@@ -6856,7 +6856,7 @@ export class GenBase extends CiVisitor
 
 	writeBanner()
 	{
-		this.writeLine("// Generated automatically with \"cito\". Do not edit.");
+		this.writeLine("// Generated automatically with \"fut\". Do not edit.");
 	}
 
 	createFile(directory, filename)
@@ -22682,7 +22682,7 @@ export class GenPy extends GenPySwift
 
 	writeBanner()
 	{
-		this.writeLine("# Generated automatically with \"cito\". Do not edit.");
+		this.writeLine("# Generated automatically with \"fut\". Do not edit.");
 	}
 
 	startDocLine()

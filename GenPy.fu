@@ -27,7 +27,7 @@ public class GenPy : GenPySwift
 
 	protected override void WriteBanner!()
 	{
-		WriteLine("# Generated automatically with \"cito\". Do not edit.");
+		WriteLine("# Generated automatically with \"fut\". Do not edit.");
 	}
 
 	protected override void StartDocLine!()

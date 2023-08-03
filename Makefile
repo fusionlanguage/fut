@@ -34,22 +34,22 @@ DO_SUMMARY = $(DO)perl test/summary.pl $(filter %.txt, $^)
 DO_FUT = $(DO)mkdir -p $(@D) && ($(FUT) -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 SOURCE_FU = Lexer.fu AST.fu Parser.fu ConsoleHost.fu Sema.fu GenBase.fu GenTyped.fu GenCCppD.fu GenCCpp.fu GenC.fu GenCl.fu GenCpp.fu GenCs.fu GenD.fu GenJava.fu GenJs.fu GenTs.fu GenPySwift.fu GenSwift.fu GenPy.fu
 
-all: cito Transpiled.cpp Transpiled.cs Transpiled.js
+all: fut Transpiled.cpp Transpiled.cs Transpiled.js
 
 ifeq ($(FUT_HOST),cpp)
 
-FUT = ./cito
+FUT = ./fut
 
 ifeq ($(OS),Windows_NT)
 
-cito: cito.exe
+fut: fut.exe
 
-cito.exe: cito.cpp Transpiled.cpp
+fut.exe: fut.cpp Transpiled.cpp
 	$(DO)$(CXX) -o $@ -std=c++20 $(CXXFLAGS) -s -static $^
 
 else
 
-cito: cito.cpp Transpiled.cpp
+fut: fut.cpp Transpiled.cpp
 	$(DO)$(CXX) -o $@ -std=c++20 $(CXXFLAGS) $^
 
 endif
@@ -58,7 +58,7 @@ else ifeq ($(FUT_HOST),cs)
 
 FUT = dotnet run --no-build --
 
-cito: bin/Debug/net6.0/fut.dll
+fut: bin/Debug/net6.0/fut.dll
 
 bin/Debug/net6.0/fut.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs fut.cs)
 	dotnet build
@@ -67,7 +67,7 @@ else ifeq ($(FUT_HOST),node)
 
 FUT = node fut.js
 
-cito: Transpiled.js
+fut: Transpiled.js
 
 else
 $(error FUT_HOST must be "cpp", "cs" or "node")
@@ -181,40 +181,40 @@ test/bin/%/cl.exe: test/bin/%/cl.o test/Runner-cl.cpp
 test/bin/%/cl.o: test/bin/%/Test.cl
 	$(DO)clang -c -o $@ $(TEST_CFLAGS) -Wno-constant-logical-operand -cl-std=CL2.0 -include opencl-c.h $< || grep '//FAIL:.*\<cl\>' test/$*.fu
 
-test/bin/%/Test.c: test/%.fu cito
+test/bin/%/Test.c: test/%.fu fut
 	$(DO_FUT)
 
-test/bin/%/Test.cpp: test/%.fu cito
+test/bin/%/Test.cpp: test/%.fu fut
 	$(DO_FUT)
 
-test/bin/%/Test.cs: test/%.fu cito
+test/bin/%/Test.cs: test/%.fu fut
 	$(DO_FUT)
 
-test/bin/%/Test.d: test/%.fu cito
+test/bin/%/Test.d: test/%.fu fut
 	$(DO_FUT)
 
-test/bin/%/Test.java: test/%.fu cito
+test/bin/%/Test.java: test/%.fu fut
 	$(DO_FUT)
 
-test/bin/%/Test.js: test/%.fu cito
+test/bin/%/Test.js: test/%.fu fut
 	$(DO_FUT)
 
-test/bin/%/Test.ts: test/%.fu cito test/Runner.ts
+test/bin/%/Test.ts: test/%.fu fut test/Runner.ts
 	$(DO)mkdir -p $(@D) && ($(FUT) -D TS -o $@ $< && cat test/Runner.ts >>$@ || grep '//FAIL:.*\<ts\>' $<)
 
-test/bin/%/Test.py: test/%.fu cito
+test/bin/%/Test.py: test/%.fu fut
 	$(DO_FUT)
 
-test/bin/%/Test.swift: test/%.fu cito
+test/bin/%/Test.swift: test/%.fu fut
 	$(DO_FUT)
 
-test/bin/%/Test.cl: test/%.fu cito
+test/bin/%/Test.cl: test/%.fu fut
 	$(DO_FUT)
 
 test/bin/Resource/java.txt: test/bin/Resource/Test.class test/bin/Runner.class
 	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)$(JAVACPSEP)test" Runner >$@
 
-$(addprefix test/bin/Resource/Test., c cpp cs d java js ts py swift cl): test/Resource.fu cito
+$(addprefix test/bin/Resource/Test., c cpp cs d java js ts py swift cl): test/Resource.fu fut
 	$(DO)mkdir -p $(@D) && ($(FUT) -o $@ -I $(<D) $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 
 .PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.d test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.ts test/bin/%/Test.d.ts test/bin/%/Test.py test/bin/%/Test.swift test/bin/%/Test.cl
@@ -225,18 +225,18 @@ test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
 test/node_modules: test/package.json
 	cd $(<D) && npm i --no-package-lock
 
-test/bin/%/error.txt: test/error/%.fu cito
+test/bin/%/error.txt: test/error/%.fu fut
 	$(DO)mkdir -p $(@D) && ! $(FUT) -o $(@:%.txt=%.cs) $< 2>$@ && perl -ne 'print "$$ARGV($$.): $$1\n" while m!//(ERROR: .+?)(?=$$| //)!g' $< | diff -u --strip-trailing-cr - $@ && echo PASSED >$@
 
-test-transpile: $(patsubst test/%.fu, test/$(FUT_HOST)/%/all, $(wildcard test/*.fu)) test/$(FUT_HOST)/CiTo/all
+test-transpile: $(patsubst test/%.fu, test/$(FUT_HOST)/%/all, $(wildcard test/*.fu)) test/$(FUT_HOST)/fut/all
 
-test/$(FUT_HOST)/%/all: test/%.fu cito
+test/$(FUT_HOST)/%/all: test/%.fu fut
 	$(DO)mkdir -p $(@D) && $(FUT) -o $(@D)/Test.c,cpp,cs,d,java,js,d.ts,ts,py,swift,cl $< || true
 
-test/$(FUT_HOST)/CiTo/all: $(SOURCE_FU) cito
+test/$(FUT_HOST)/fut/all: $(SOURCE_FU) fut
 	$(DO)mkdir -p $(@D) && $(FUT) -o $(@D)/Test.cpp,cs,d,js,d.ts,ts $(SOURCE_FU)
 
-test/$(FUT_HOST)/Resource/all: test/Resource.fu cito
+test/$(FUT_HOST)/Resource/all: test/Resource.fu fut
 	$(DO)mkdir -p $(@D) && $(FUT) -o $(@D)/Test.c,cpp,cs,d,java,js,d.ts,ts,py,swift,cl -I $(<D) $<
 
 coverage/output.xml:
@@ -255,14 +255,14 @@ host-diff:
 	diff -ruI "[0-9][Ee][-+][0-9]\|\.0" test/cpp test/cs
 	diff -ruI "[0-9][Ee][-+][0-9]" test/cs test/node
 
-install: cito
-	$(INSTALL) -D $< $(DESTDIR)$(bindir)/cito
+install: fut
+	$(INSTALL) -D $< $(DESTDIR)$(bindir)/fut
 
 uninstall:
-	$(RM) $(DESTDIR)$(bindir)/cito
+	$(RM) $(DESTDIR)$(bindir)/fut
 
 clean:
-	$(RM) cito cito.exe
+	$(RM) fut fut.exe
 	$(RM) -r test/bin test/cpp test/cs test/node
 
 .PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov host-diff install uninstall clean
