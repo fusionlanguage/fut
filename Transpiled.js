@@ -1600,7 +1600,7 @@ export class FuLiteral extends FuExpr
 	}
 }
 
-export class FuLiteralNull extends FuLiteral
+class FuLiteralNull extends FuLiteral
 {
 
 	isDefaultValue()
@@ -1619,7 +1619,7 @@ export class FuLiteralNull extends FuLiteral
 	}
 }
 
-export class FuLiteralFalse extends FuLiteral
+class FuLiteralFalse extends FuLiteral
 {
 
 	isDefaultValue()
@@ -1638,7 +1638,7 @@ export class FuLiteralFalse extends FuLiteral
 	}
 }
 
-export class FuLiteralTrue extends FuLiteral
+class FuLiteralTrue extends FuLiteral
 {
 
 	isDefaultValue()
@@ -1657,7 +1657,7 @@ export class FuLiteralTrue extends FuLiteral
 	}
 }
 
-export class FuLiteralLong extends FuLiteral
+class FuLiteralLong extends FuLiteral
 {
 	value;
 
@@ -1692,7 +1692,7 @@ export class FuLiteralLong extends FuLiteral
 	}
 }
 
-export class FuLiteralChar extends FuLiteralLong
+class FuLiteralChar extends FuLiteralLong
 {
 
 	static new(value, line)
@@ -1706,7 +1706,7 @@ export class FuLiteralChar extends FuLiteralLong
 	}
 }
 
-export class FuLiteralDouble extends FuLiteral
+class FuLiteralDouble extends FuLiteral
 {
 	value;
 
@@ -1731,7 +1731,7 @@ export class FuLiteralDouble extends FuLiteral
 	}
 }
 
-export class FuLiteralString extends FuLiteral
+class FuLiteralString extends FuLiteral
 {
 	value;
 
@@ -1836,7 +1836,7 @@ export class FuInterpolatedString extends FuExpr
 	}
 }
 
-export class FuImplicitEnumValue extends FuExpr
+class FuImplicitEnumValue extends FuExpr
 {
 	value;
 
@@ -2091,7 +2091,7 @@ export class FuCallExpr extends FuExpr
 	}
 }
 
-export class FuLambdaExpr extends FuScope
+class FuLambdaExpr extends FuScope
 {
 	body;
 
@@ -2149,7 +2149,7 @@ export class FuLoop extends FuCondCompletionStatement
 	hasBreak = false;
 }
 
-export class FuBreak extends FuStatement
+class FuBreak extends FuStatement
 {
 	loopOrSwitch;
 
@@ -2164,7 +2164,7 @@ export class FuBreak extends FuStatement
 	}
 }
 
-export class FuContinue extends FuStatement
+class FuContinue extends FuStatement
 {
 	loop;
 
@@ -2179,7 +2179,7 @@ export class FuContinue extends FuStatement
 	}
 }
 
-export class FuDoWhile extends FuLoop
+class FuDoWhile extends FuLoop
 {
 
 	acceptStatement(visitor)
@@ -2188,7 +2188,7 @@ export class FuDoWhile extends FuLoop
 	}
 }
 
-export class FuFor extends FuLoop
+class FuFor extends FuLoop
 {
 	init;
 	advance;
@@ -2202,7 +2202,7 @@ export class FuFor extends FuLoop
 	}
 }
 
-export class FuForeach extends FuLoop
+class FuForeach extends FuLoop
 {
 	collection;
 
@@ -2222,7 +2222,7 @@ export class FuForeach extends FuLoop
 	}
 }
 
-export class FuIf extends FuCondCompletionStatement
+class FuIf extends FuCondCompletionStatement
 {
 	cond;
 	onTrue;
@@ -2234,7 +2234,7 @@ export class FuIf extends FuCondCompletionStatement
 	}
 }
 
-export class FuLock extends FuStatement
+class FuLock extends FuStatement
 {
 	lock;
 	body;
@@ -2250,7 +2250,7 @@ export class FuLock extends FuStatement
 	}
 }
 
-export class FuNative extends FuStatement
+class FuNative extends FuStatement
 {
 	content;
 
@@ -2265,7 +2265,7 @@ export class FuNative extends FuStatement
 	}
 }
 
-export class FuReturn extends FuStatement
+class FuReturn extends FuStatement
 {
 	value;
 
@@ -2382,7 +2382,7 @@ export class FuSwitch extends FuCondCompletionStatement
 	}
 }
 
-export class FuThrow extends FuStatement
+class FuThrow extends FuStatement
 {
 	message;
 
@@ -2397,7 +2397,7 @@ export class FuThrow extends FuStatement
 	}
 }
 
-export class FuWhile extends FuLoop
+class FuWhile extends FuLoop
 {
 
 	acceptStatement(visitor)
@@ -2456,11 +2456,11 @@ export class FuType extends FuScope
 	}
 }
 
-export class FuNumericType extends FuType
+class FuNumericType extends FuType
 {
 }
 
-export class FuIntegerType extends FuNumericType
+class FuIntegerType extends FuNumericType
 {
 
 	isAssignableFrom(right)
@@ -2469,7 +2469,7 @@ export class FuIntegerType extends FuNumericType
 	}
 }
 
-export class FuRangeType extends FuIntegerType
+class FuRangeType extends FuIntegerType
 {
 	min;
 	max;
@@ -2528,7 +2528,7 @@ export class FuRangeType extends FuIntegerType
 	}
 }
 
-export class FuFloatingType extends FuNumericType
+class FuFloatingType extends FuNumericType
 {
 
 	isAssignableFrom(right)
@@ -2578,7 +2578,7 @@ export class FuVar extends FuNamedValue
 	}
 }
 
-export const FuVisitStatus = {
+const FuVisitStatus = {
 	NOT_YET : 0,
 	IN_PROGRESS : 1,
 	DONE : 2
@@ -2609,7 +2609,7 @@ export class FuField extends FuMember
 	}
 }
 
-export class FuProperty extends FuMember
+class FuProperty extends FuMember
 {
 
 	isStatic()
@@ -2623,7 +2623,7 @@ export class FuProperty extends FuMember
 	}
 }
 
-export class FuStaticProperty extends FuMember
+class FuStaticProperty extends FuMember
 {
 
 	isStatic()
@@ -2714,7 +2714,7 @@ export class FuMethod extends FuMethodBase
 	}
 }
 
-export class FuMethodGroup extends FuMember
+class FuMethodGroup extends FuMember
 {
 	constructor()
 	{
@@ -2767,7 +2767,7 @@ export class FuEnum extends FuContainerType
 	}
 }
 
-export class FuEnumFlags extends FuEnum
+class FuEnumFlags extends FuEnum
 {
 }
 
@@ -2981,7 +2981,7 @@ export class FuStorageType extends FuReadWriteClassType
 	}
 }
 
-export class FuDynamicPtrType extends FuReadWriteClassType
+class FuDynamicPtrType extends FuReadWriteClassType
 {
 
 	isAssignableFrom(right)
@@ -3040,11 +3040,11 @@ export class FuArrayStorageType extends FuStorageType
 	}
 }
 
-export class FuStringType extends FuClassType
+class FuStringType extends FuClassType
 {
 }
 
-export class FuStringStorageType extends FuStringType
+class FuStringStorageType extends FuStringType
 {
 
 	isAssignableFrom(right)
@@ -3058,7 +3058,7 @@ export class FuStringStorageType extends FuStringType
 	}
 }
 
-export class FuPrintableType extends FuType
+class FuPrintableType extends FuType
 {
 
 	isAssignableFrom(right)

@@ -1687,7 +1687,7 @@ namespace Fusion
 		}
 	}
 
-	public class FuLiteralNull : FuLiteral
+	class FuLiteralNull : FuLiteral
 	{
 
 		public override bool IsDefaultValue() => true;
@@ -1700,7 +1700,7 @@ namespace Fusion
 		public override string ToString() => "null";
 	}
 
-	public class FuLiteralFalse : FuLiteral
+	class FuLiteralFalse : FuLiteral
 	{
 
 		public override bool IsDefaultValue() => true;
@@ -1713,7 +1713,7 @@ namespace Fusion
 		public override string ToString() => "false";
 	}
 
-	public class FuLiteralTrue : FuLiteral
+	class FuLiteralTrue : FuLiteral
 	{
 
 		public override bool IsDefaultValue() => false;
@@ -1726,7 +1726,7 @@ namespace Fusion
 		public override string ToString() => "true";
 	}
 
-	public class FuLiteralLong : FuLiteral
+	class FuLiteralLong : FuLiteral
 	{
 
 		internal long Value;
@@ -1747,7 +1747,7 @@ namespace Fusion
 		public override string ToString() => $"{this.Value}";
 	}
 
-	public class FuLiteralChar : FuLiteralLong
+	class FuLiteralChar : FuLiteralLong
 	{
 
 		public static FuLiteralChar New(int value, int line) => new FuLiteralChar { Line = line, Type = FuRangeType.New(value, value), Value = value };
@@ -1758,7 +1758,7 @@ namespace Fusion
 		}
 	}
 
-	public class FuLiteralDouble : FuLiteral
+	class FuLiteralDouble : FuLiteral
 	{
 
 		internal double Value;
@@ -1775,7 +1775,7 @@ namespace Fusion
 		public override string ToString() => $"{this.Value}";
 	}
 
-	public class FuLiteralString : FuLiteral
+	class FuLiteralString : FuLiteral
 	{
 
 		internal string Value;
@@ -1880,7 +1880,7 @@ namespace Fusion
 		}
 	}
 
-	public class FuImplicitEnumValue : FuExpr
+	class FuImplicitEnumValue : FuExpr
 	{
 
 		internal int Value;
@@ -2125,7 +2125,7 @@ namespace Fusion
 		}
 	}
 
-	public class FuLambdaExpr : FuScope
+	class FuLambdaExpr : FuScope
 	{
 
 		internal FuExpr Body;
@@ -2185,7 +2185,7 @@ namespace Fusion
 		internal bool HasBreak = false;
 	}
 
-	public class FuBreak : FuStatement
+	class FuBreak : FuStatement
 	{
 
 		internal FuCondCompletionStatement LoopOrSwitch;
@@ -2198,7 +2198,7 @@ namespace Fusion
 		}
 	}
 
-	public class FuContinue : FuStatement
+	class FuContinue : FuStatement
 	{
 
 		internal FuLoop Loop;
@@ -2211,7 +2211,7 @@ namespace Fusion
 		}
 	}
 
-	public class FuDoWhile : FuLoop
+	class FuDoWhile : FuLoop
 	{
 
 		public override void AcceptStatement(FuVisitor visitor)
@@ -2220,7 +2220,7 @@ namespace Fusion
 		}
 	}
 
-	public class FuFor : FuLoop
+	class FuFor : FuLoop
 	{
 
 		internal FuExpr Init;
@@ -2239,7 +2239,7 @@ namespace Fusion
 		}
 	}
 
-	public class FuForeach : FuLoop
+	class FuForeach : FuLoop
 	{
 
 		internal FuExpr Collection;
@@ -2254,7 +2254,7 @@ namespace Fusion
 		public FuVar GetValueVar() => this.FirstParameter().NextParameter();
 	}
 
-	public class FuIf : FuCondCompletionStatement
+	class FuIf : FuCondCompletionStatement
 	{
 
 		internal FuExpr Cond;
@@ -2269,7 +2269,7 @@ namespace Fusion
 		}
 	}
 
-	public class FuLock : FuStatement
+	class FuLock : FuStatement
 	{
 
 		internal FuExpr Lock;
@@ -2284,7 +2284,7 @@ namespace Fusion
 		}
 	}
 
-	public class FuNative : FuStatement
+	class FuNative : FuStatement
 	{
 
 		internal string Content;
@@ -2297,7 +2297,7 @@ namespace Fusion
 		}
 	}
 
-	public class FuReturn : FuStatement
+	class FuReturn : FuStatement
 	{
 
 		internal FuExpr Value;
@@ -2391,7 +2391,7 @@ namespace Fusion
 		public static bool HasEarlyBreakAndContinue(List<FuStatement> body) => HasEarlyBreak(body) && ListHasContinue(body);
 	}
 
-	public class FuThrow : FuStatement
+	class FuThrow : FuStatement
 	{
 
 		internal FuExpr Message;
@@ -2404,7 +2404,7 @@ namespace Fusion
 		}
 	}
 
-	public class FuWhile : FuLoop
+	class FuWhile : FuLoop
 	{
 
 		public override void AcceptStatement(FuVisitor visitor)
@@ -2443,17 +2443,17 @@ namespace Fusion
 		}
 	}
 
-	public abstract class FuNumericType : FuType
+	abstract class FuNumericType : FuType
 	{
 	}
 
-	public class FuIntegerType : FuNumericType
+	class FuIntegerType : FuNumericType
 	{
 
 		public override bool IsAssignableFrom(FuType right) => right is FuIntegerType || right.Id == FuId.FloatIntType;
 	}
 
-	public class FuRangeType : FuIntegerType
+	class FuRangeType : FuIntegerType
 	{
 
 		internal int Min;
@@ -2504,7 +2504,7 @@ namespace Fusion
 		public int GetVariableBits() => GetMask(this.Min ^ this.Max);
 	}
 
-	public class FuFloatingType : FuNumericType
+	class FuFloatingType : FuNumericType
 	{
 
 		public override bool IsAssignableFrom(FuType right) => right is FuNumericType;
@@ -2550,7 +2550,7 @@ namespace Fusion
 		}
 	}
 
-	public enum FuVisitStatus
+	enum FuVisitStatus
 	{
 		NotYet,
 		InProgress,
@@ -2578,7 +2578,7 @@ namespace Fusion
 		public override bool IsStatic() => false;
 	}
 
-	public class FuProperty : FuMember
+	class FuProperty : FuMember
 	{
 
 		public override bool IsStatic() => false;
@@ -2586,7 +2586,7 @@ namespace Fusion
 		public static FuProperty New(FuType type, FuId id, string name) => new FuProperty { Visibility = FuVisibility.Public, Type = type, Id = id, Name = name };
 	}
 
-	public class FuStaticProperty : FuMember
+	class FuStaticProperty : FuMember
 	{
 
 		public override bool IsStatic() => true;
@@ -2667,7 +2667,7 @@ namespace Fusion
 		public bool IsToString() => this.Name == "ToString" && this.CallType != FuCallType.Static && this.Parameters.Count() == 0;
 	}
 
-	public class FuMethodGroup : FuMember
+	class FuMethodGroup : FuMember
 	{
 		internal FuMethodGroup()
 		{
@@ -2722,7 +2722,7 @@ namespace Fusion
 		}
 	}
 
-	public class FuEnumFlags : FuEnum
+	class FuEnumFlags : FuEnum
 	{
 	}
 
@@ -2868,7 +2868,7 @@ namespace Fusion
 		public override string GetClassSuffix() => "()";
 	}
 
-	public class FuDynamicPtrType : FuReadWriteClassType
+	class FuDynamicPtrType : FuReadWriteClassType
 	{
 
 		public override bool IsAssignableFrom(FuType right)
@@ -2903,11 +2903,11 @@ namespace Fusion
 		public override FuType GetStorageType() => GetElementType().GetStorageType();
 	}
 
-	public class FuStringType : FuClassType
+	class FuStringType : FuClassType
 	{
 	}
 
-	public class FuStringStorageType : FuStringType
+	class FuStringStorageType : FuStringType
 	{
 
 		public override bool IsAssignableFrom(FuType right) => right is FuStringType;
@@ -2915,7 +2915,7 @@ namespace Fusion
 		public override string GetClassSuffix() => "()";
 	}
 
-	public class FuPrintableType : FuType
+	class FuPrintableType : FuType
 	{
 
 		public override bool IsAssignableFrom(FuType right)

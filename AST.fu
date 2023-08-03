@@ -392,28 +392,28 @@ public abstract class FuLiteral : FuExpr
 	public virtual string() GetLiteralString() { assert false; }
 }
 
-public class FuLiteralNull : FuLiteral
+class FuLiteralNull : FuLiteral
 {
 	public override bool IsDefaultValue() => true;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralNull(); }
 	public override string() ToString() => "null";
 }
 
-public class FuLiteralFalse : FuLiteral
+class FuLiteralFalse : FuLiteral
 {
 	public override bool IsDefaultValue() => true;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralFalse(); }
 	public override string() ToString() => "false";
 }
 
-public class FuLiteralTrue : FuLiteral
+class FuLiteralTrue : FuLiteral
 {
 	public override bool IsDefaultValue() => false;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralTrue(); }
 	public override string() ToString() => "true";
 }
 
-public class FuLiteralLong : FuLiteral
+class FuLiteralLong : FuLiteral
 {
 	internal long Value;
 	public override bool IsLiteralZero() => this.Value == 0;
@@ -424,7 +424,7 @@ public class FuLiteralLong : FuLiteral
 	public override string() ToString() => $"{this.Value}";
 }
 
-public class FuLiteralChar : FuLiteralLong
+class FuLiteralChar : FuLiteralLong
 {
 	public static FuLiteralChar# New(int value, int line) => new FuLiteralChar { Line = line, Type = FuRangeType.New(value, value), Value = value };
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralChar(this.Value); }
@@ -441,7 +441,7 @@ public class FuLiteralChar : FuLiteralLong
 //	}
 }
 
-public class FuLiteralDouble : FuLiteral
+class FuLiteralDouble : FuLiteral
 {
 	internal double Value;
 	public override bool IsDefaultValue() => this.Value == 0 && 1.0 / this.Value > 0; // rule out -0.0
@@ -450,7 +450,7 @@ public class FuLiteralDouble : FuLiteral
 	public override string() ToString() => $"{this.Value}";
 }
 
-public class FuLiteralString : FuLiteral
+class FuLiteralString : FuLiteral
 {
 	internal string() Value;
 	public override bool IsDefaultValue() => false;
@@ -555,7 +555,7 @@ public class FuInterpolatedString : FuExpr
 //	}
 }
 
-public class FuImplicitEnumValue : FuExpr
+class FuImplicitEnumValue : FuExpr
 {
 	internal int Value;
 	public override int IntValue() => this.Value;
@@ -749,7 +749,7 @@ public class FuCallExpr : FuExpr
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitCallExpr(this, parent); }
 }
 
-public class FuLambdaExpr : FuScope
+class FuLambdaExpr : FuScope
 {
 	internal FuExpr# Body;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLambdaExpr(this); }
@@ -783,26 +783,26 @@ public abstract class FuLoop : FuCondCompletionStatement
 	internal bool HasBreak = false;
 }
 
-public class FuBreak : FuStatement
+class FuBreak : FuStatement
 {
 	internal FuCondCompletionStatement! LoopOrSwitch;
 	public override bool CompletesNormally() => false;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitBreak(this); }
 }
 
-public class FuContinue : FuStatement
+class FuContinue : FuStatement
 {
 	internal FuLoop Loop;
 	public override bool CompletesNormally() => false;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitContinue(this); }
 }
 
-public class FuDoWhile : FuLoop
+class FuDoWhile : FuLoop
 {
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitDoWhile(this); }
 }
 
-public class FuFor : FuLoop
+class FuFor : FuLoop
 {
 	internal FuExpr#? Init;
 	internal FuExpr#? Advance;
@@ -812,7 +812,7 @@ public class FuFor : FuLoop
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitFor(this); }
 }
 
-public class FuForeach : FuLoop
+class FuForeach : FuLoop
 {
 	internal FuExpr# Collection;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitForeach(this); }
@@ -820,7 +820,7 @@ public class FuForeach : FuLoop
 	public FuVar! GetValueVar() => this.FirstParameter().NextParameter();
 }
 
-public class FuIf : FuCondCompletionStatement
+class FuIf : FuCondCompletionStatement
 {
 	internal FuExpr# Cond;
 	internal FuStatement# OnTrue;
@@ -828,7 +828,7 @@ public class FuIf : FuCondCompletionStatement
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitIf(this); }
 }
 
-public class FuLock : FuStatement
+class FuLock : FuStatement
 {
 	internal FuExpr# Lock;
 	internal FuStatement# Body;
@@ -836,14 +836,14 @@ public class FuLock : FuStatement
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitLock(this); }
 }
 
-public class FuNative : FuStatement
+class FuNative : FuStatement
 {
 	internal string() Content;
 	public override bool CompletesNormally() => true;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitNative(this); }
 }
 
-public class FuReturn : FuStatement
+class FuReturn : FuStatement
 {
 	internal FuExpr#? Value;
 	public override bool CompletesNormally() => false;
@@ -922,14 +922,14 @@ public class FuSwitch : FuCondCompletionStatement
 	public static bool HasEarlyBreakAndContinue(List<FuStatement#> body) => HasEarlyBreak(body) && ListHasContinue(body);
 }
 
-public class FuThrow : FuStatement
+class FuThrow : FuStatement
 {
 	internal FuExpr# Message;
 	public override bool CompletesNormally() => false;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitThrow(this); }
 }
 
-public class FuWhile : FuLoop
+class FuWhile : FuLoop
 {
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitWhile(this); }
 }
@@ -955,16 +955,16 @@ public class FuType : FuScope
 	}
 }
 
-public abstract class FuNumericType : FuType
+abstract class FuNumericType : FuType
 {
 }
 
-public class FuIntegerType : FuNumericType
+class FuIntegerType : FuNumericType
 {
 	public override bool IsAssignableFrom(FuType right) => right is FuIntegerType || right.Id == FuId.FloatIntType;
 }
 
-public class FuRangeType : FuIntegerType
+class FuRangeType : FuIntegerType
 {
 	internal int Min;
 	internal int Max;
@@ -1019,7 +1019,7 @@ public class FuRangeType : FuIntegerType
 	public int GetVariableBits() => GetMask(this.Min ^ this.Max);
 }
 
-public class FuFloatingType : FuNumericType
+class FuFloatingType : FuNumericType
 {
 	public override bool IsAssignableFrom(FuType right) => right is FuNumericType;
 }
@@ -1053,7 +1053,7 @@ public class FuVar : FuNamedValue
 	}
 }
 
-public enum FuVisitStatus
+enum FuVisitStatus
 {
 	NotYet,
 	InProgress,
@@ -1073,14 +1073,14 @@ public class FuField : FuMember
 	public override bool IsStatic() => false;
 }
 
-public class FuProperty : FuMember
+class FuProperty : FuMember
 {
 	public override bool IsStatic() => false;
 	public static FuProperty# New(FuType# type, FuId id, string name)
 		=> new FuProperty { Visibility = FuVisibility.Public, Type = type, Id = id, Name = name };
 }
 
-public class FuStaticProperty : FuMember
+class FuStaticProperty : FuMember
 {
 	public override bool IsStatic() => true;
 	public static FuStaticProperty# New(FuType# type, FuId id, string name)
@@ -1144,7 +1144,7 @@ public class FuMethod : FuMethodBase
 	public bool IsToString() => this.Name == "ToString" && this.CallType != FuCallType.Static && this.Parameters.Count() == 0;
 }
 
-public class FuMethodGroup : FuMember
+class FuMethodGroup : FuMember
 {
 	internal FuMethod#?[2] Methods;
 	FuMethodGroup()
@@ -1188,7 +1188,7 @@ public class FuEnum : FuContainerType
 	}
 }
 
-public class FuEnumFlags : FuEnum
+class FuEnumFlags : FuEnum
 {
 }
 
@@ -1309,7 +1309,7 @@ public class FuStorageType : FuReadWriteClassType
 	public override string GetClassSuffix() => "()";
 }
 
-public class FuDynamicPtrType : FuReadWriteClassType
+class FuDynamicPtrType : FuReadWriteClassType
 {
 	public override bool IsAssignableFrom(FuType right)
 	{
@@ -1335,17 +1335,17 @@ public class FuArrayStorageType : FuStorageType
 	public override FuType GetStorageType() => GetElementType().GetStorageType();
 }
 
-public class FuStringType : FuClassType
+class FuStringType : FuClassType
 {
 }
 
-public class FuStringStorageType : FuStringType
+class FuStringStorageType : FuStringType
 {
 	public override bool IsAssignableFrom(FuType right) => right is FuStringType;
 	public override string GetClassSuffix() => "()";
 }
 
-public class FuPrintableType : FuType
+class FuPrintableType : FuType
 {
 	public override bool IsAssignableFrom(FuType right)
 	{
