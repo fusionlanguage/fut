@@ -58,9 +58,9 @@ else ifeq ($(FUT_HOST),cs)
 
 CITO = dotnet run --no-build --
 
-cito: bin/Debug/net6.0/cito.dll
+cito: bin/Debug/net6.0/fut.dll
 
-bin/Debug/net6.0/cito.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs CiTo.cs)
+bin/Debug/net6.0/fut.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs fut.cs)
 	dotnet build
 
 else ifeq ($(FUT_HOST),node)

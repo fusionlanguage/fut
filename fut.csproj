@@ -1,13 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2.2.0</Version>
-    <Description>Transpiles the Ć programming language to C, C++, C#, D, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.</Description>
+    <Version>3.0.0</Version>
+    <Description>Transpiles the Fusion programming language to C, C++, C#, D, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.</Description>
     <PackageTags>Programming Language;Transpiler</PackageTags>
-    <PackageProjectUrl>https://github.com/pfusik/cito</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/fusionlanguage/fut</PackageProjectUrl>
     <PackageIcon>ci-logo.png</PackageIcon>
     <PackageReadmeFile>dotnet-tool.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/pfusik/cito.git</RepositoryUrl>
+    <RepositoryUrl>https://github.com/fusionlanguage/fut.git</RepositoryUrl>
     <Authors>Piotr Fusik</Authors>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <OutputType>Exe</OutputType>

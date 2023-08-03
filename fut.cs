@@ -1,4 +1,4 @@
-// CiTo.cs - Fusion transpiler
+// fut.cs - Fusion transpiler
 //
 // Copyright (C) 2011-2023  Piotr Fusik
 //
@@ -25,7 +25,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-[assembly: AssemblyTitle("CiTo")]
+[assembly: AssemblyTitle("fut")]
 [assembly: AssemblyDescription("Fusion Transpiler")]
 
 namespace Fusion
@@ -82,11 +82,11 @@ public class FileGenHost : CiConsoleHost
 	}
 }
 
-public static class CiTo
+public static class Fut
 {
 	static void Usage()
 	{
-		Console.WriteLine("Usage: cito [OPTIONS] -o FILE INPUT.ci");
+		Console.WriteLine("Usage: fut [OPTIONS] -o FILE INPUT.ci");
 		Console.WriteLine("Options:");
 		Console.WriteLine("-l c       Translate to C");
 		Console.WriteLine("-l cpp     Translate to C++");
@@ -164,7 +164,7 @@ public static class CiTo
 			gen = new GenCl();
 			break;
 		default:
-			Console.Error.WriteLine($"cito: ERROR: Unknown language: {lang}");
+			Console.Error.WriteLine($"fut: ERROR: Unknown language: {lang}");
 			host.HasErrors = true;
 			return;
 		}
@@ -193,7 +193,7 @@ public static class CiTo
 				return 0;
 			}
 			else if (arg == "--version") {
-				Console.WriteLine("cito 3.0.0 (C#)");
+				Console.WriteLine("fut 3.0.0 (C#)");
 				return 0;
 			}
 			else if (arg.Length == 2 && i + 1 < args.Length) {
@@ -210,7 +210,7 @@ public static class CiTo
 				case 'D':
 					string symbol = args[++i];
 					if (symbol == "true" || symbol == "false") {
-						Console.Error.WriteLine($"cito: ERROR: '{symbol}' is reserved");
+						Console.Error.WriteLine($"fut: ERROR: '{symbol}' is reserved");
 						return 1;
 					}
 					parser.AddPreSymbol(symbol);
@@ -222,12 +222,12 @@ public static class CiTo
 					sema.AddResourceDir(args[++i]);
 					break;
 				default:
-					Console.Error.WriteLine($"cito: ERROR: Unknown option: {arg}");
+					Console.Error.WriteLine($"fut: ERROR: Unknown option: {arg}");
 					return 1;
 				}
 			}
 			else {
-				Console.Error.WriteLine($"cito: ERROR: Unknown option: {arg}");
+				Console.Error.WriteLine($"fut: ERROR: Unknown option: {arg}");
 				return 1;
 			}
 		}
@@ -279,11 +279,11 @@ public static class CiTo
 				 || c == Path.VolumeSeparatorChar)
 					break;
 			}
-			Console.Error.WriteLine($"cito: ERROR: Don't know what language to translate to: no extension in '{outputFile}' and no '-l' option");
+			Console.Error.WriteLine($"fut: ERROR: Don't know what language to translate to: no extension in '{outputFile}' and no '-l' option");
 			return 1;
 		}
 		catch (IOException e) {
-			Console.Error.WriteLine("cito: ERROR: " + e.Message);
+			Console.Error.WriteLine("fut: ERROR: " + e.Message);
 			return 1;
 		}
 	}
