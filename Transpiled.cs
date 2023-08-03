@@ -244,7 +244,7 @@ namespace Fusion
 
 		protected int PeekChar() => this.NextChar;
 
-		public static bool IsLetterOrDigit(int c)
+		internal static bool IsLetterOrDigit(int c)
 		{
 			if (c >= 'a' && c <= 'z')
 				return true;
@@ -422,7 +422,7 @@ namespace Fusion
 			}
 		}
 
-		public static int GetEscapedChar(int c)
+		internal static int GetEscapedChar(int c)
 		{
 			switch (c) {
 			case '"':
@@ -811,7 +811,7 @@ namespace Fusion
 
 		protected bool See(FuToken token) => this.CurrentToken == token;
 
-		public static string TokenToString(FuToken token)
+		internal static string TokenToString(FuToken token)
 		{
 			switch (token) {
 			case FuToken.EndOfFile:

@@ -461,9 +461,6 @@ public:
 	virtual ~FuLexer() = default;
 	void setHost(FuParserHost * host);
 	void addPreSymbol(std::string_view symbol);
-	static bool isLetterOrDigit(int c);
-	static int getEscapedChar(int c);
-	static std::string_view tokenToString(FuToken token);
 protected:
 	FuLexer() = default;
 	uint8_t const * input;
@@ -489,6 +486,10 @@ protected:
 	bool eat(FuToken token);
 	bool expect(FuToken expected);
 	void expectOrSkip(FuToken expected);
+public:
+	static bool isLetterOrDigit(int c);
+	static int getEscapedChar(int c);
+	static std::string_view tokenToString(FuToken token);
 private:
 	int inputLength;
 	int nextOffset;
