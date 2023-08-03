@@ -1,14 +1,14 @@
-Name: cito
+Name: fut
 Version: 3.0.0
 Release: 1
-Summary: Ć Transpiler
+Summary: Fusion Transpiler
 License: GPLv3+
-Source: https://github.com/pfusik/cito/archive/cto-%{version}/cito-%{version}.tar.gz
-URL: https://github.com/pfusik/cito
+Source: https://github.com/fusionlanguage/fut/archive/fut-%{version}/fut-%{version}.tar.gz
+URL: https://github.com/fusionlanguage/fut
 BuildRequires: gcc >= 13
 
 %description
-Transpiles the Ć programming langauge to
+Transpiles the Fusion programming langauge to
 C, C++, C#, D, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.
 
 %prep
@@ -21,9 +21,9 @@ make CXXFLAGS="%{build_cxxflags}"
 make DESTDIR=%{buildroot} prefix=%{_prefix} install
 
 %files
-%{_bindir}/cito
+%{_bindir}/fut
 
 %changelog
-* Tue Jul 11 2023 Piotr Fusik <fox@scene.pl>
+* Thu Aug 3 2023 Piotr Fusik <piotr@fusion-lang.org>
 - 3.0.0-1
 - Initial packaging

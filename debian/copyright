@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Name: cito
-Source: https://github.com/pfusik/cito
+Name: fut
+Source: https://github.com/fusionlanguage/fut
 
 Files: *
-Copyright: 2011-2023 Piotr Fusik <fox@scene.pl>
+Copyright: 2011-2023 Piotr Fusik <piotr@fusion-lang.org>
 License: GPL-3+

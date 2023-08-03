@@ -1,8 +1,8 @@
 {
-  "name": "cito-js",
+  "name": "fut-js",
   "private": true,
   "version": "3.0.0-development",
-  "repository": "https://github.com/pfusik/cito.git",
+  "repository": "https://github.com/fusionlanguage/fut.git",
   "author": "Piotr Fusik",
   "type": "module"
 }

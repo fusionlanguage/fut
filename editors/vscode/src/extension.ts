@@ -13,7 +13,7 @@ class VsCodeHost extends CiParserHost
 
 	updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: vscode.DiagnosticCollection): void
 	{
-		if (document.languageId != "ci")
+		if (document.languageId != "fu")
 			return;
 		this.#diagnostics.length = 0;
 		const parser = new CiParser();
@@ -29,7 +29,7 @@ class VsCodeHost extends CiParserHost
 
 export function activate(context: vscode.ExtensionContext): void {
 	const host = new VsCodeHost();
-	const diagnosticCollection = vscode.languages.createDiagnosticCollection("ci");
+	const diagnosticCollection = vscode.languages.createDiagnosticCollection("fu");
 	if (vscode.window.activeTextEditor)
 		host.updateDiagnostics(vscode.window.activeTextEditor.document, diagnosticCollection);
 	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => {

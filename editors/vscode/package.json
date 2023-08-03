@@ -1,14 +1,14 @@
 {
   "name": "ci",
-  "version": "2.2.0",
+  "version": "3.0.0",
   "publisher": "pfusik",
   "license": "MIT",
-  "displayName": "Ć",
-  "description": "Ć language syntax highlighting",
+  "displayName": "Fusion",
+  "description": "Fusion language syntax highlighting",
   "icon": "ci-logo.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pfusik/cito.git"
+    "url": "https://github.com/fusionlanguage/fut.git"
   },
   "engines": {
     "vscode": "^1.0.0"
@@ -17,8 +17,8 @@
     "Programming Languages"
   ],
   "keywords": [
-    "ci",
-    "cito",
+    "fusion",
+    "fut",
     "transpiler"
   ],
   "contributes": {
@@ -26,7 +26,7 @@
       {
         "id": "ci",
         "extensions": [
-          ".ci"
+          ".fu"
         ],
         "icon": {
           "light": "./ci-file.svg",

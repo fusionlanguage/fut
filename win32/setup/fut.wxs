@@ -1,18 +1,18 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-	<Package Name="Ci Transpiler" Version="3.0.0" Manufacturer="Piotr Fusik" Language="1033" UpgradeCode="0c3e3a72-72a5-4426-a1ce-f3ebd49fc8e3">
-		<Media Id="1" Cabinet="cito.cab" CompressionLevel="high" EmbedCab="yes" />
+	<Package Name="Fusion Transpiler" Version="3.0.0" Manufacturer="Piotr Fusik" Language="1033" UpgradeCode="0c3e3a72-72a5-4426-a1ce-f3ebd49fc8e3">
+		<Media Id="1" Cabinet="fut.cab" CompressionLevel="high" EmbedCab="yes" />
 		<StandardDirectory Id="ProgramFiles6432Folder">
-			<Directory Id="INSTALLFOLDER" Name="cito">
-				<Component Id="cito.exe">
-					<File Source="cito.exe" />
+			<Directory Id="INSTALLFOLDER" Name="Fusion">
+				<Component Id="fut.exe">
+					<File Source="fut.exe" />
 					<Environment Action="set" Name="Path" Part="last" Permanent="no" System="yes" Value="[INSTALLFOLDER]" />
 				</Component>
 			</Directory>
 		</StandardDirectory>
-		<Feature Id="cito.exe">
-			<ComponentRef Id="cito.exe" />
+		<Feature Id="fut.exe">
+			<ComponentRef Id="fut.exe" />
 		</Feature>
-		<Property Id="ARPHELPLINK" Value="https://github.com/pfusik/cito" />
+		<Property Id="ARPHELPLINK" Value="https://fusion-lang.org" />
 		<Property Id="WIXUI_DONTVALIDATEPATH" Value="1" />
 		<Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
 		<UIRef Id="WixUI_Common" />
