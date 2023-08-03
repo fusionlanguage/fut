@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
-import { CiParser, CiProgram, CiSystem, CiParserHost } from "./parser.js";
+import { FuParser, FuProgram, FuSystem, FuParserHost } from "./parser.js";
 
-class VsCodeHost extends CiParserHost
+class VsCodeHost extends FuParserHost
 {
-	#system = CiSystem.new();
+	#system = FuSystem.new();
 	#diagnostics: vscode.Diagnostic[] = [];
 
 	reportError(filename: string, startLine: number, startColumn: number, endLine: number, endColumn: number, message: string) : void
@@ -16,9 +16,9 @@ class VsCodeHost extends CiParserHost
 		if (document.languageId != "fu")
 			return;
 		this.#diagnostics.length = 0;
-		const parser = new CiParser();
+		const parser = new FuParser();
 		parser.setHost(this);
-		parser.program = new CiProgram();
+		parser.program = new FuProgram();
 		parser.program.parent = this.#system;
 		parser.program.system = this.#system;
 		const input = new TextEncoder().encode(document.getText());

@@ -20,130 +20,130 @@
 
 public abstract class GenTyped : GenBase
 {
-	protected abstract void WriteType!(CiType type, bool promote);
+	protected abstract void WriteType!(FuType type, bool promote);
 
-	protected override void WriteCoercedLiteral!(CiType? type, CiExpr expr)
+	protected override void WriteCoercedLiteral!(FuType? type, FuExpr expr)
 	{
-		expr.Accept(this, CiPriority.Argument);
-		if (type != null && type.Id == CiId.FloatType && expr is CiLiteralDouble)
+		expr.Accept(this, FuPriority.Argument);
+		if (type != null && type.Id == FuId.FloatType && expr is FuLiteralDouble)
 			WriteChar('f');
 	}
 
-	protected override void WriteTypeAndName!(CiNamedValue value)
+	protected override void WriteTypeAndName!(FuNamedValue value)
 	{
 		WriteType(value.Type, true);
 		WriteChar(' ');
 		WriteName(value);
 	}
 
-	public override void VisitAggregateInitializer!(CiAggregateInitializer expr)
+	internal override void VisitAggregateInitializer!(FuAggregateInitializer expr)
 	{
 		Write("{ ");
 		WriteCoercedLiterals(expr.Type.AsClassType().GetElementType(), expr.Items);
 		Write(" }");
 	}
 
-	protected void WriteArrayStorageLength!(CiExpr expr)
+	protected void WriteArrayStorageLength!(FuExpr expr)
 	{
-		assert expr.Type is CiArrayStorageType array;
+		assert expr.Type is FuArrayStorageType array;
 		VisitLiteralLong(array.Length);
 	}
 
-	protected override void WriteNewArray!(CiType elementType, CiExpr lengthExpr, CiPriority parent)
+	protected override void WriteNewArray!(FuType elementType, FuExpr lengthExpr, FuPriority parent)
 	{
 		Write("new ");
 		WriteType(elementType.GetBaseType(), false);
 		WriteChar('[');
-		lengthExpr.Accept(this, CiPriority.Argument);
+		lengthExpr.Accept(this, FuPriority.Argument);
 		WriteChar(']');
 		while (elementType.IsArray()) {
 			WriteChar('[');
-			if (elementType is CiArrayStorageType arrayStorage)
-				arrayStorage.LengthExpr.Accept(this, CiPriority.Argument);
+			if (elementType is FuArrayStorageType arrayStorage)
+				arrayStorage.LengthExpr.Accept(this, FuPriority.Argument);
 			WriteChar(']');
 			elementType = elementType.AsClassType().GetElementType();
 		}
 	}
 
-	protected int GetOneAscii(CiExpr expr) => expr is CiLiteralString literal ? literal.GetOneAscii() : -1;
+	protected int GetOneAscii(FuExpr expr) => expr is FuLiteralString literal ? literal.GetOneAscii() : -1;
 
-	protected void WriteCharMethodCall!(CiExpr obj, string method, CiExpr arg)
+	protected void WriteCharMethodCall!(FuExpr obj, string method, FuExpr arg)
 	{
-		obj.Accept(this, CiPriority.Primary);
+		obj.Accept(this, FuPriority.Primary);
 		WriteChar('.');
 		Write(method);
 		WriteChar('(');
-		if (!(arg is CiLiteralChar))
+		if (!(arg is FuLiteralChar))
 			Write("(char) ");
-		arg.Accept(this, CiPriority.Primary);
+		arg.Accept(this, FuPriority.Primary);
 		WriteChar(')');
 	}
 
-	protected static bool IsNarrower(CiId left, CiId right)
+	protected static bool IsNarrower(FuId left, FuId right)
 	{
 		switch (left) {
-		case CiId.SByteRange:
+		case FuId.SByteRange:
 			switch (right) {
-			case CiId.ByteRange:
-			case CiId.ShortRange:
-			case CiId.UShortRange:
-			case CiId.IntType:
-			case CiId.LongType:
+			case FuId.ByteRange:
+			case FuId.ShortRange:
+			case FuId.UShortRange:
+			case FuId.IntType:
+			case FuId.LongType:
 				return true;
 			default:
 				return false;
 			}
-		case CiId.ByteRange:
+		case FuId.ByteRange:
 			switch (right) {
-			case CiId.SByteRange:
-			case CiId.ShortRange:
-			case CiId.UShortRange:
-			case CiId.IntType:
-			case CiId.LongType:
+			case FuId.SByteRange:
+			case FuId.ShortRange:
+			case FuId.UShortRange:
+			case FuId.IntType:
+			case FuId.LongType:
 				return true;
 			default:
 				return false;
 			}
-		case CiId.ShortRange:
+		case FuId.ShortRange:
 			switch (right) {
-			case CiId.UShortRange:
-			case CiId.IntType:
-			case CiId.LongType:
+			case FuId.UShortRange:
+			case FuId.IntType:
+			case FuId.LongType:
 				return true;
 			default:
 				return false;
 			}
-		case CiId.UShortRange:
+		case FuId.UShortRange:
 			switch (right) {
-			case CiId.ShortRange:
-			case CiId.IntType:
-			case CiId.LongType:
+			case FuId.ShortRange:
+			case FuId.IntType:
+			case FuId.LongType:
 				return true;
 			default:
 				return false;
 			}
-		case CiId.IntType:
-			return right == CiId.LongType;
+		case FuId.IntType:
+			return right == FuId.LongType;
 		default:
 			return false;
 		}
 	}
 
-	protected CiExpr GetStaticCastInner(CiType type, CiExpr expr)
+	protected FuExpr GetStaticCastInner(FuType type, FuExpr expr)
 	{
-		if (expr is CiBinaryExpr binary && binary.Op == CiToken.And && binary.Right is CiLiteralLong rightMask
-		 && type is CiIntegerType) {
+		if (expr is FuBinaryExpr binary && binary.Op == FuToken.And && binary.Right is FuLiteralLong rightMask
+		 && type is FuIntegerType) {
 			long mask;
 			switch (type.Id) {
-			case CiId.ByteRange:
-			case CiId.SByteRange:
+			case FuId.ByteRange:
+			case FuId.SByteRange:
 				mask = 0xff;
 				break;
-			case CiId.ShortRange:
-			case CiId.UShortRange:
+			case FuId.ShortRange:
+			case FuId.UShortRange:
 				mask = 0xffff;
 				break;
-			case CiId.IntType:
+			case FuId.IntType:
 				mask = 0xffffffff;
 				break;
 			default:
@@ -155,41 +155,41 @@ public abstract class GenTyped : GenBase
 		return expr;
 	}
 
-	protected void WriteStaticCastType!(CiType type)
+	protected void WriteStaticCastType!(FuType type)
 	{
 		WriteChar('(');
 		WriteType(type, false);
 		Write(") ");
 	}
 
-	protected virtual void WriteStaticCast!(CiType type, CiExpr expr)
+	protected virtual void WriteStaticCast!(FuType type, FuExpr expr)
 	{
 		WriteStaticCastType(type);
-		GetStaticCastInner(type, expr).Accept(this, CiPriority.Primary);
+		GetStaticCastInner(type, expr).Accept(this, FuPriority.Primary);
 	}
 
-	protected override void WriteNotPromoted!(CiType type, CiExpr expr)
+	protected override void WriteNotPromoted!(FuType type, FuExpr expr)
 	{
-		if (type is CiIntegerType
+		if (type is FuIntegerType
 		 && IsNarrower(type.Id, GetTypeId(expr.Type, true)))
 			WriteStaticCast(type, expr);
 		else
 			WriteCoercedLiteral(type, expr);
 	}
 
-	protected virtual bool IsPromoted(CiExpr expr) => !(expr is CiBinaryExpr binary && (binary.Op == CiToken.LeftBracket || binary.IsAssign()));
+	protected virtual bool IsPromoted(FuExpr expr) => !(expr is FuBinaryExpr binary && (binary.Op == FuToken.LeftBracket || binary.IsAssign()));
 
-	protected override void WriteAssignRight!(CiBinaryExpr expr)
+	protected override void WriteAssignRight!(FuBinaryExpr expr)
 	{
 		if (expr.Left.IsIndexing()) {
-			if (expr.Right is CiLiteralLong) {
+			if (expr.Right is FuLiteralLong) {
 				WriteCoercedLiteral(expr.Left.Type, expr.Right);
 				return;
 			}
-			CiId leftTypeId = expr.Left.Type.Id;
-			CiId rightTypeId = GetTypeId(expr.Right.Type, IsPromoted(expr.Right));
-			if (leftTypeId == CiId.SByteRange && rightTypeId == CiId.SByteRange) {
-				expr.Right.Accept(this, CiPriority.Assign); // omit Java "& 0xff"
+			FuId leftTypeId = expr.Left.Type.Id;
+			FuId rightTypeId = GetTypeId(expr.Right.Type, IsPromoted(expr.Right));
+			if (leftTypeId == FuId.SByteRange && rightTypeId == FuId.SByteRange) {
+				expr.Right.Accept(this, FuPriority.Assign); // omit Java "& 0xff"
 				return;
 			}
 			if (IsNarrower(leftTypeId, rightTypeId)) {
@@ -200,22 +200,22 @@ public abstract class GenTyped : GenBase
 		base.WriteAssignRight(expr);
 	}
 
-	protected override void WriteCoercedInternal!(CiType type, CiExpr expr, CiPriority parent)
+	protected override void WriteCoercedInternal!(FuType type, FuExpr expr, FuPriority parent)
 	{
-		if (type is CiIntegerType && type.Id != CiId.LongType && expr.Type.Id == CiId.LongType)
+		if (type is FuIntegerType && type.Id != FuId.LongType && expr.Type.Id == FuId.LongType)
 			WriteStaticCast(type, expr);
-		else if (type.Id == CiId.FloatType && expr.Type.Id == CiId.DoubleType) {
-			if (expr is CiLiteralDouble literal) {
+		else if (type.Id == FuId.FloatType && expr.Type.Id == FuId.DoubleType) {
+			if (expr is FuLiteralDouble literal) {
 				VisitLiteralDouble(literal.Value);
 				WriteChar('f');
 			}
 			else
 				WriteStaticCast(type, expr);
 		}
-		else if (type is CiIntegerType && expr.Type.Id == CiId.FloatIntType) {
-			if (expr is CiCallExpr call && call.Method.Symbol.Id == CiId.MathTruncate) {
+		else if (type is FuIntegerType && expr.Type.Id == FuId.FloatIntType) {
+			if (expr is FuCallExpr call && call.Method.Symbol.Id == FuId.MathTruncate) {
 				expr = call.Arguments[0];
-				if (expr is CiLiteralDouble literal) {
+				if (expr is FuLiteralDouble literal) {
 					VisitLiteralLong(Math.Truncate(literal.Value)); // TODO: range check
 					return;
 				}
@@ -226,20 +226,20 @@ public abstract class GenTyped : GenBase
 			base.WriteCoercedInternal(type, expr, parent);
 	}
 
-	protected override void WriteCharAt!(CiBinaryExpr expr)
+	protected override void WriteCharAt!(FuBinaryExpr expr)
 	{
 		WriteIndexing(expr.Left, expr.Right);
 	}
 
-	protected override void StartTemporaryVar!(CiType type)
+	protected override void StartTemporaryVar!(FuType type)
 	{
 		WriteType(type, true);
 		WriteChar(' ');
 	}
 
-	protected override void WriteAssertCast!(CiBinaryExpr expr)
+	protected override void WriteAssertCast!(FuBinaryExpr expr)
 	{
-		assert expr.Right is CiVar def;
+		assert expr.Right is FuVar def;
 		WriteTypeAndName(def);
 		Write(" = ");
 		WriteStaticCast(def.Type, expr.Left);

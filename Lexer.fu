@@ -18,12 +18,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
-public abstract class CiParserHost
+public abstract class FuParserHost
 {
 	public abstract void ReportError!(string filename, int startLine, int startColumn, int endLine, int endColumn, string message);
 }
 
-public enum CiToken
+public enum FuToken
 {
 	EndOfFile,
 	Id,
@@ -127,29 +127,29 @@ public enum CiToken
 	PreEndIf
 }
 
-enum CiPreState
+enum FuPreState
 {
 	NotYet,
 	Already,
 	AlreadyElse
 }
 
-public abstract class CiLexer
+public abstract class FuLexer
 {
 	protected byte[] Input;
 	int InputLength;
 	int NextOffset;
 	protected int CharOffset;
 	int NextChar;
-	CiParserHost! Host;
+	FuParserHost! Host;
 	protected string() Filename;
 	protected int Line;
 	protected int Column;
 	protected int TokenColumn;
 	protected int LexemeOffset;
-	protected CiToken CurrentToken;
-	protected long LongValue; // for CiToken.LiteralLong, CiToken.LiteralChar
-	protected string() StringValue; // for CiToken.LiteralString, CiToken.InterpolatedString, CiToken.Id
+	protected FuToken CurrentToken;
+	protected long LongValue; // for FuToken.LiteralLong, FuToken.LiteralChar
+	protected string() StringValue; // for FuToken.LiteralString, FuToken.InterpolatedString, FuToken.Id
 	HashSet<string()>() PreSymbols;
 	bool AtLineStart = true;
 	bool LineMode = false;
@@ -157,7 +157,7 @@ public abstract class CiLexer
 	protected bool ParsingTypeArg = false;
 	Stack<bool>() PreElseStack;
 
-	public void SetHost!(CiParserHost! host)
+	public void SetHost!(FuParserHost! host)
 	{
 		this.Host = host;
 	}
@@ -277,7 +277,7 @@ public abstract class CiLexer
 			ReadChar();
 	}
 
-	CiToken ReadIntegerLiteral!(int bits)
+	FuToken ReadIntegerLiteral!(int bits)
 	{
 		bool invalidDigit = false;
 		bool tooBig = false;
@@ -300,7 +300,7 @@ public abstract class CiLexer
 					ReportError("Invalid integer");
 				else if (tooBig)
 					ReportError("Integer too big");
-				return CiToken.LiteralLong;
+				return FuToken.LiteralLong;
 			}
 			if (c >= 1 << bits)
 				invalidDigit = true;
@@ -312,7 +312,7 @@ public abstract class CiLexer
 		}
 	}
 
-	CiToken ReadFloatLiteral!(bool needDigit)
+	FuToken ReadFloatLiteral!(bool needDigit)
 	{
 		bool underscoreE = false;
 		bool exponent = false;
@@ -336,7 +336,7 @@ public abstract class CiLexer
 			case 'e':
 				if (exponent) {
 					ReportError("Invalid floating-point number");
-					return CiToken.LiteralDouble;
+					return FuToken.LiteralDouble;
 				}
 				if (needDigit)
 					underscoreE = true;
@@ -357,12 +357,12 @@ public abstract class CiLexer
 				 || (c >= 'A' && c <= 'Z')
 				 || (c >= 'a' && c <= 'z'))
 					ReportError("Invalid floating-point number");
-				return CiToken.LiteralDouble;
+				return FuToken.LiteralDouble;
 			}
 		}
 	}
 
-	CiToken ReadNumberLiteral!(long i)
+	FuToken ReadNumberLiteral!(long i)
 	{
 		bool leadingZero = false;
 		bool tooBig = false;
@@ -400,7 +400,7 @@ public abstract class CiLexer
 					ReportError("Invalid integer");
 				else if (tooBig)
 					ReportError("Integer too big");
-				return CiToken.LiteralLong;
+				return FuToken.LiteralLong;
 			}
 			if (i == 0)
 				leadingZero = true;
@@ -442,31 +442,31 @@ public abstract class CiLexer
 		return c;
 	}
 
-	protected CiToken ReadString!(bool interpolated)
+	protected FuToken ReadString!(bool interpolated)
 	{
 		for (int offset = this.CharOffset; ; ReadCharLiteral()) {
 			switch (PeekChar()) {
 			case -1:
 				ReportError("Unterminated string literal");
-				return CiToken.EndOfFile;
+				return FuToken.EndOfFile;
 			case '\n':
 				ReportError("Unterminated string literal");
 				this.StringValue = "";
-				return CiToken.LiteralString;
+				return FuToken.LiteralString;
 			case '"':
 				{
 					int endOffset = this.CharOffset;
 					ReadChar();
 					this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
 				}
-				return CiToken.LiteralString;
+				return FuToken.LiteralString;
 			case '{':
 				if (interpolated) {
 					int endOffset = this.CharOffset;
 					ReadChar();
 					if (PeekChar() != '{') {
 						this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
-						return CiToken.InterpolatedString;
+						return FuToken.InterpolatedString;
 					}
 				}
 				break;
@@ -491,7 +491,7 @@ public abstract class CiLexer
 		}
 	}
 
-	CiToken ReadPreToken!()
+	FuToken ReadPreToken!()
 	{
 		for (;;) {
 			bool atLineStart = this.AtLineStart;
@@ -500,54 +500,54 @@ public abstract class CiLexer
 			int c = ReadChar();
 			switch (c) {
 			case -1:
-				return CiToken.EndOfFile;
+				return FuToken.EndOfFile;
 			case '\t':
 			case '\r':
 			case ' ':
 				break;
 			case '\n':
 				if (this.LineMode)
-					return CiToken.EndOfLine;
+					return FuToken.EndOfLine;
 				break;
 			case '#':
 				if (!atLineStart)
-					return CiToken.Hash;
+					return FuToken.Hash;
 				this.LexemeOffset = this.CharOffset;
 				ReadId(ReadChar());
 				switch (this.StringValue) {
-				case "if": return CiToken.PreIf;
-				case "elif": return CiToken.PreElIf;
-				case "else": return CiToken.PreElse;
-				case "endif": return CiToken.PreEndIf;
+				case "if": return FuToken.PreIf;
+				case "elif": return FuToken.PreElIf;
+				case "else": return FuToken.PreElse;
+				case "endif": return FuToken.PreEndIf;
 				default:
 					ReportError("Unknown preprocessor directive");
 					continue;
 				}
-			case ';': return CiToken.Semicolon;
+			case ';': return FuToken.Semicolon;
 			case '.':
-				if (EatChar('.')) return CiToken.Range;
-				return CiToken.Dot;
-			case ',': return CiToken.Comma;
-			case '(': return CiToken.LeftParenthesis;
-			case ')': return CiToken.RightParenthesis;
-			case '[': return CiToken.LeftBracket;
-			case ']': return CiToken.RightBracket;
-			case '{': return CiToken.LeftBrace;
-			case '}': return CiToken.RightBrace;
-			case '~': return CiToken.Tilde;
-			case '?': return CiToken.QuestionMark;
-			case ':': return CiToken.Colon;
+				if (EatChar('.')) return FuToken.Range;
+				return FuToken.Dot;
+			case ',': return FuToken.Comma;
+			case '(': return FuToken.LeftParenthesis;
+			case ')': return FuToken.RightParenthesis;
+			case '[': return FuToken.LeftBracket;
+			case ']': return FuToken.RightBracket;
+			case '{': return FuToken.LeftBrace;
+			case '}': return FuToken.RightBrace;
+			case '~': return FuToken.Tilde;
+			case '?': return FuToken.QuestionMark;
+			case ':': return FuToken.Colon;
 			case '+':
-				if (EatChar('+')) return CiToken.Increment;
-				if (EatChar('=')) return CiToken.AddAssign;
-				return CiToken.Plus;
+				if (EatChar('+')) return FuToken.Increment;
+				if (EatChar('=')) return FuToken.AddAssign;
+				return FuToken.Plus;
 			case '-':
-				if (EatChar('-')) return CiToken.Decrement;
-				if (EatChar('=')) return CiToken.SubAssign;
-				return CiToken.Minus;
+				if (EatChar('-')) return FuToken.Decrement;
+				if (EatChar('=')) return FuToken.SubAssign;
+				return FuToken.Minus;
 			case '*':
-				if (EatChar('=')) return CiToken.MulAssign;
-				return CiToken.Asterisk;
+				if (EatChar('=')) return FuToken.MulAssign;
+				return FuToken.Asterisk;
 			case '/':
 				if (EatChar('/')) {
 					c = ReadChar();
@@ -555,18 +555,18 @@ public abstract class CiLexer
 						SkipWhitespace();
 						switch (PeekChar()) {
 						case '\n':
-							return CiToken.DocBlank;
+							return FuToken.DocBlank;
 						case '*':
 							ReadChar();
 							SkipWhitespace();
-							return CiToken.DocBullet;
+							return FuToken.DocBullet;
 						default:
-							return CiToken.DocRegular;
+							return FuToken.DocRegular;
 						}
 					}
 					while (c != '\n' && c >= 0)
 						c = ReadChar();
-					if (c == '\n' && this.LineMode) return CiToken.EndOfLine;
+					if (c == '\n' && this.LineMode) return FuToken.EndOfLine;
 					break;
 				}
 				if (EatChar('*')) {
@@ -575,50 +575,50 @@ public abstract class CiLexer
 						c = ReadChar();
 						if (c < 0) {
 							ReportError($"Unterminated multi-line comment, started in line {startLine}");
-							return CiToken.EndOfFile;
+							return FuToken.EndOfFile;
 						}
 					} while (c != '*' || PeekChar() != '/');
 					ReadChar();
 					break;
 				}
-				if (EatChar('=')) return CiToken.DivAssign;
-				return CiToken.Slash;
+				if (EatChar('=')) return FuToken.DivAssign;
+				return FuToken.Slash;
 			case '%':
-				if (EatChar('=')) return CiToken.ModAssign;
-				return CiToken.Mod;
+				if (EatChar('=')) return FuToken.ModAssign;
+				return FuToken.Mod;
 			case '&':
-				if (EatChar('&')) return CiToken.CondAnd;
-				if (EatChar('=')) return CiToken.AndAssign;
-				return CiToken.And;
+				if (EatChar('&')) return FuToken.CondAnd;
+				if (EatChar('=')) return FuToken.AndAssign;
+				return FuToken.And;
 			case '|':
-				if (EatChar('|')) return CiToken.CondOr;
-				if (EatChar('=')) return CiToken.OrAssign;
-				return CiToken.Or;
+				if (EatChar('|')) return FuToken.CondOr;
+				if (EatChar('=')) return FuToken.OrAssign;
+				return FuToken.Or;
 			case '^':
-				if (EatChar('=')) return CiToken.XorAssign;
-				return CiToken.Xor;
+				if (EatChar('=')) return FuToken.XorAssign;
+				return FuToken.Xor;
 			case '=':
-				if (EatChar('=')) return CiToken.Equal;
-				if (EatChar('>')) return CiToken.FatArrow;
-				return CiToken.Assign;
+				if (EatChar('=')) return FuToken.Equal;
+				if (EatChar('>')) return FuToken.FatArrow;
+				return FuToken.Assign;
 			case '!':
-				if (EatChar('=')) return CiToken.NotEqual;
-				return CiToken.ExclamationMark;
+				if (EatChar('=')) return FuToken.NotEqual;
+				return FuToken.ExclamationMark;
 			case '<':
 				if (EatChar('<')) {
-					if (EatChar('=')) return CiToken.ShiftLeftAssign;
-					return CiToken.ShiftLeft;
+					if (EatChar('=')) return FuToken.ShiftLeftAssign;
+					return FuToken.ShiftLeft;
 				}
-				if (EatChar('=')) return CiToken.LessOrEqual;
-				return CiToken.Less;
+				if (EatChar('=')) return FuToken.LessOrEqual;
+				return FuToken.Less;
 			case '>':
-				if (this.ParsingTypeArg) return CiToken.RightAngle;
+				if (this.ParsingTypeArg) return FuToken.RightAngle;
 				if (EatChar('>')) {
-					if (EatChar('=')) return CiToken.ShiftRightAssign;
-					return CiToken.ShiftRight;
+					if (EatChar('=')) return FuToken.ShiftRightAssign;
+					return FuToken.ShiftRight;
 				}
-				if (EatChar('=')) return CiToken.GreaterOrEqual;
-				return CiToken.Greater;
+				if (EatChar('=')) return FuToken.GreaterOrEqual;
+				return FuToken.Greater;
 			case '\'':
 				if (PeekChar() == '\'') {
 					ReportError("Empty character literal");
@@ -628,7 +628,7 @@ public abstract class CiLexer
 					this.LongValue = ReadCharLiteral();
 				if (!EatChar('\''))
 					ReportError("Unterminated character literal");
-				return CiToken.LiteralChar;
+				return FuToken.LiteralChar;
 			case '"':
 				return ReadString(false);
 			case '$':
@@ -667,44 +667,44 @@ public abstract class CiLexer
 				ReadId(c);
 				switch (this.StringValue) {
 				case "": continue; // invalid character
-				case "abstract": return CiToken.Abstract;
-				case "assert": return CiToken.Assert;
-				case "break": return CiToken.Break;
-				case "case": return CiToken.Case;
-				case "class": return CiToken.Class;
-				case "const": return CiToken.Const;
-				case "continue": return CiToken.Continue;
-				case "default": return CiToken.Default;
-				case "do": return CiToken.Do;
-				case "else": return CiToken.Else;
-				case "enum": return CiToken.Enum;
-				case "false": return CiToken.False;
-				case "for": return CiToken.For;
-				case "foreach": return CiToken.Foreach;
-				case "if": return CiToken.If;
-				case "in": return CiToken.In;
-				case "internal": return CiToken.Internal;
-				case "is": return CiToken.Is;
-				case "lock": return CiToken.Lock_;
-				case "native": return CiToken.Native;
-				case "new": return CiToken.New;
-				case "null": return CiToken.Null;
-				case "override": return CiToken.Override;
-				case "protected": return CiToken.Protected;
-				case "public": return CiToken.Public;
-				case "resource": return CiToken.Resource;
-				case "return": return CiToken.Return;
-				case "sealed": return CiToken.Sealed;
-				case "static": return CiToken.Static;
-				case "switch": return CiToken.Switch;
-				case "throw": return CiToken.Throw;
-				case "throws": return CiToken.Throws;
-				case "true": return CiToken.True;
-				case "virtual": return CiToken.Virtual;
-				case "void": return CiToken.Void;
-				case "when": return CiToken.When;
-				case "while": return CiToken.While;
-				default: return CiToken.Id;
+				case "abstract": return FuToken.Abstract;
+				case "assert": return FuToken.Assert;
+				case "break": return FuToken.Break;
+				case "case": return FuToken.Case;
+				case "class": return FuToken.Class;
+				case "const": return FuToken.Const;
+				case "continue": return FuToken.Continue;
+				case "default": return FuToken.Default;
+				case "do": return FuToken.Do;
+				case "else": return FuToken.Else;
+				case "enum": return FuToken.Enum;
+				case "false": return FuToken.False;
+				case "for": return FuToken.For;
+				case "foreach": return FuToken.Foreach;
+				case "if": return FuToken.If;
+				case "in": return FuToken.In;
+				case "internal": return FuToken.Internal;
+				case "is": return FuToken.Is;
+				case "lock": return FuToken.Lock_;
+				case "native": return FuToken.Native;
+				case "new": return FuToken.New;
+				case "null": return FuToken.Null;
+				case "override": return FuToken.Override;
+				case "protected": return FuToken.Protected;
+				case "public": return FuToken.Public;
+				case "resource": return FuToken.Resource;
+				case "return": return FuToken.Return;
+				case "sealed": return FuToken.Sealed;
+				case "static": return FuToken.Static;
+				case "switch": return FuToken.Switch;
+				case "throw": return FuToken.Throw;
+				case "throws": return FuToken.Throws;
+				case "true": return FuToken.True;
+				case "virtual": return FuToken.Virtual;
+				case "void": return FuToken.Void;
+				case "when": return FuToken.When;
+				case "while": return FuToken.While;
+				default: return FuToken.Id;
 				}
 			}
 		}
@@ -715,117 +715,117 @@ public abstract class CiLexer
 		this.CurrentToken = ReadPreToken();
 	}
 
-	protected bool See(CiToken token) => this.CurrentToken == token;
+	protected bool See(FuToken token) => this.CurrentToken == token;
 
-	public static string TokenToString(CiToken token)
+	public static string TokenToString(FuToken token)
 	{
 		switch (token) {
-		case CiToken.EndOfFile: return "end-of-file";
-		case CiToken.Id: return "identifier";
-		case CiToken.LiteralLong: return "integer constant";
-		case CiToken.LiteralDouble: return "floating-point constant";
-		case CiToken.LiteralChar: return "character constant";
-		case CiToken.LiteralString: return "string constant";
-		case CiToken.InterpolatedString: return "interpolated string";
-		case CiToken.Semicolon: return "';'";
-		case CiToken.Dot: return "'.'";
-		case CiToken.Comma: return "','";
-		case CiToken.LeftParenthesis: return "'('";
-		case CiToken.RightParenthesis: return "')'";
-		case CiToken.LeftBracket: return "'['";
-		case CiToken.RightBracket: return "']'";
-		case CiToken.LeftBrace: return "'{'";
-		case CiToken.RightBrace: return "'}'";
-		case CiToken.Plus: return "'+'";
-		case CiToken.Minus: return "'-'";
-		case CiToken.Asterisk: return "'*'";
-		case CiToken.Slash: return "'/'";
-		case CiToken.Mod: return "'%'";
-		case CiToken.And: return "'&'";
-		case CiToken.Or: return "'|'";
-		case CiToken.Xor: return "'^'";
-		case CiToken.Tilde: return "'~'";
-		case CiToken.ShiftLeft: return "'<<'";
-		case CiToken.ShiftRight: return "'>>'";
-		case CiToken.Equal: return "'=='";
-		case CiToken.NotEqual: return "'!='";
-		case CiToken.Less: return "'<'";
-		case CiToken.LessOrEqual: return "'<='";
-		case CiToken.Greater: return "'>'";
-		case CiToken.GreaterOrEqual: return "'>='";
-		case CiToken.RightAngle: return "'>'";
-		case CiToken.CondAnd: return "'&&'";
-		case CiToken.CondOr: return "'||'";
-		case CiToken.ExclamationMark: return "'!'";
-		case CiToken.Hash: return "'#'";
-		case CiToken.Assign: return "'='";
-		case CiToken.AddAssign: return "'+='";
-		case CiToken.SubAssign: return "'-='";
-		case CiToken.MulAssign: return "'*='";
-		case CiToken.DivAssign: return "'/='";
-		case CiToken.ModAssign: return "'%='";
-		case CiToken.AndAssign: return "'&='";
-		case CiToken.OrAssign: return "'|='";
-		case CiToken.XorAssign: return "'^='";
-		case CiToken.ShiftLeftAssign: return "'<<='";
-		case CiToken.ShiftRightAssign: return "'>>='";
-		case CiToken.Increment: return "'++'";
-		case CiToken.Decrement: return "'--'";
-		case CiToken.QuestionMark: return "'?'";
-		case CiToken.Colon: return "':'";
-		case CiToken.FatArrow: return "'=>'";
-		case CiToken.Range: return "'..'";
-		case CiToken.DocRegular:
-		case CiToken.DocBullet:
-		case CiToken.DocBlank:
+		case FuToken.EndOfFile: return "end-of-file";
+		case FuToken.Id: return "identifier";
+		case FuToken.LiteralLong: return "integer constant";
+		case FuToken.LiteralDouble: return "floating-point constant";
+		case FuToken.LiteralChar: return "character constant";
+		case FuToken.LiteralString: return "string constant";
+		case FuToken.InterpolatedString: return "interpolated string";
+		case FuToken.Semicolon: return "';'";
+		case FuToken.Dot: return "'.'";
+		case FuToken.Comma: return "','";
+		case FuToken.LeftParenthesis: return "'('";
+		case FuToken.RightParenthesis: return "')'";
+		case FuToken.LeftBracket: return "'['";
+		case FuToken.RightBracket: return "']'";
+		case FuToken.LeftBrace: return "'{'";
+		case FuToken.RightBrace: return "'}'";
+		case FuToken.Plus: return "'+'";
+		case FuToken.Minus: return "'-'";
+		case FuToken.Asterisk: return "'*'";
+		case FuToken.Slash: return "'/'";
+		case FuToken.Mod: return "'%'";
+		case FuToken.And: return "'&'";
+		case FuToken.Or: return "'|'";
+		case FuToken.Xor: return "'^'";
+		case FuToken.Tilde: return "'~'";
+		case FuToken.ShiftLeft: return "'<<'";
+		case FuToken.ShiftRight: return "'>>'";
+		case FuToken.Equal: return "'=='";
+		case FuToken.NotEqual: return "'!='";
+		case FuToken.Less: return "'<'";
+		case FuToken.LessOrEqual: return "'<='";
+		case FuToken.Greater: return "'>'";
+		case FuToken.GreaterOrEqual: return "'>='";
+		case FuToken.RightAngle: return "'>'";
+		case FuToken.CondAnd: return "'&&'";
+		case FuToken.CondOr: return "'||'";
+		case FuToken.ExclamationMark: return "'!'";
+		case FuToken.Hash: return "'#'";
+		case FuToken.Assign: return "'='";
+		case FuToken.AddAssign: return "'+='";
+		case FuToken.SubAssign: return "'-='";
+		case FuToken.MulAssign: return "'*='";
+		case FuToken.DivAssign: return "'/='";
+		case FuToken.ModAssign: return "'%='";
+		case FuToken.AndAssign: return "'&='";
+		case FuToken.OrAssign: return "'|='";
+		case FuToken.XorAssign: return "'^='";
+		case FuToken.ShiftLeftAssign: return "'<<='";
+		case FuToken.ShiftRightAssign: return "'>>='";
+		case FuToken.Increment: return "'++'";
+		case FuToken.Decrement: return "'--'";
+		case FuToken.QuestionMark: return "'?'";
+		case FuToken.Colon: return "':'";
+		case FuToken.FatArrow: return "'=>'";
+		case FuToken.Range: return "'..'";
+		case FuToken.DocRegular:
+		case FuToken.DocBullet:
+		case FuToken.DocBlank:
 			return "'///'";
-		case CiToken.Abstract: return "'abstract'";
-		case CiToken.Assert: return "'assert'";
-		case CiToken.Break: return "'break'";
-		case CiToken.Case: return "'case'";
-		case CiToken.Class: return "'class'";
-		case CiToken.Const: return "'const'";
-		case CiToken.Continue: return "'continue'";
-		case CiToken.Default: return "'default'";
-		case CiToken.Do: return "'do'";
-		case CiToken.Else: return "'else'";
-		case CiToken.Enum: return "'enum'";
-		case CiToken.False: return "'false'";
-		case CiToken.For: return "'for'";
-		case CiToken.Foreach: return "'foreach'";
-		case CiToken.If: return "'if'";
-		case CiToken.In: return "'in'";
-		case CiToken.Internal: return "'internal'";
-		case CiToken.Is: return "'is'";
-		case CiToken.Lock_: return "'lock'";
-		case CiToken.Native: return "'native'";
-		case CiToken.New: return "'new'";
-		case CiToken.Null: return "'null'";
-		case CiToken.Override: return "'override'";
-		case CiToken.Protected: return "'protected'";
-		case CiToken.Public: return "'public'";
-		case CiToken.Resource: return "'resource'";
-		case CiToken.Return: return "'return'";
-		case CiToken.Sealed: return "'sealed'";
-		case CiToken.Static: return "'static'";
-		case CiToken.Switch: return "'switch'";
-		case CiToken.Throw: return "'throw'";
-		case CiToken.Throws: return "'throws'";
-		case CiToken.True: return "'true'";
-		case CiToken.Virtual: return "'virtual'";
-		case CiToken.Void: return "'void'";
-		case CiToken.When: return "'when'";
-		case CiToken.While: return "'while'";
-		case CiToken.EndOfLine: return "end-of-line";
-		case CiToken.PreIf: return "'#if'";
-		case CiToken.PreElIf: return "'#elif'";
-		case CiToken.PreElse: return "'#else'";
-		case CiToken.PreEndIf: return "'#endif'";
+		case FuToken.Abstract: return "'abstract'";
+		case FuToken.Assert: return "'assert'";
+		case FuToken.Break: return "'break'";
+		case FuToken.Case: return "'case'";
+		case FuToken.Class: return "'class'";
+		case FuToken.Const: return "'const'";
+		case FuToken.Continue: return "'continue'";
+		case FuToken.Default: return "'default'";
+		case FuToken.Do: return "'do'";
+		case FuToken.Else: return "'else'";
+		case FuToken.Enum: return "'enum'";
+		case FuToken.False: return "'false'";
+		case FuToken.For: return "'for'";
+		case FuToken.Foreach: return "'foreach'";
+		case FuToken.If: return "'if'";
+		case FuToken.In: return "'in'";
+		case FuToken.Internal: return "'internal'";
+		case FuToken.Is: return "'is'";
+		case FuToken.Lock_: return "'lock'";
+		case FuToken.Native: return "'native'";
+		case FuToken.New: return "'new'";
+		case FuToken.Null: return "'null'";
+		case FuToken.Override: return "'override'";
+		case FuToken.Protected: return "'protected'";
+		case FuToken.Public: return "'public'";
+		case FuToken.Resource: return "'resource'";
+		case FuToken.Return: return "'return'";
+		case FuToken.Sealed: return "'sealed'";
+		case FuToken.Static: return "'static'";
+		case FuToken.Switch: return "'switch'";
+		case FuToken.Throw: return "'throw'";
+		case FuToken.Throws: return "'throws'";
+		case FuToken.True: return "'true'";
+		case FuToken.Virtual: return "'virtual'";
+		case FuToken.Void: return "'void'";
+		case FuToken.When: return "'when'";
+		case FuToken.While: return "'while'";
+		case FuToken.EndOfLine: return "end-of-line";
+		case FuToken.PreIf: return "'#if'";
+		case FuToken.PreElIf: return "'#elif'";
+		case FuToken.PreElse: return "'#else'";
+		case FuToken.PreEndIf: return "'#endif'";
 		default: assert false;
 		}
 	}
 
-	protected bool Check(CiToken expected)
+	protected bool Check(FuToken expected)
 	{
 		if (See(expected))
 			return true;
@@ -833,7 +833,7 @@ public abstract class CiLexer
 		return false;
 	}
 
-	bool EatPre!(CiToken token)
+	bool EatPre!(FuToken token)
 	{
 		if (See(token)) {
 			NextPreToken();
@@ -844,22 +844,22 @@ public abstract class CiLexer
 
 	bool ParsePrePrimary!()
 	{
-		if (EatPre(CiToken.ExclamationMark))
+		if (EatPre(FuToken.ExclamationMark))
 			return !ParsePrePrimary();
-		if (EatPre(CiToken.LeftParenthesis)) {
+		if (EatPre(FuToken.LeftParenthesis)) {
 			bool result = ParsePreOr();
-			Check(CiToken.RightParenthesis);
+			Check(FuToken.RightParenthesis);
 			NextPreToken();
 			return result;
 		}
-		if (See(CiToken.Id)) {
+		if (See(FuToken.Id)) {
 			bool result = this.PreSymbols.Contains(this.StringValue);
 			NextPreToken();
 			return result;
 		}
-		if (EatPre(CiToken.False))
+		if (EatPre(FuToken.False))
 			return false;
-		if (EatPre(CiToken.True))
+		if (EatPre(FuToken.True))
 			return true;
 		ReportError("Invalid preprocessor expression");
 		return false;
@@ -869,9 +869,9 @@ public abstract class CiLexer
 	{
 		bool result = ParsePrePrimary();
 		for (;;) {
-			if (EatPre(CiToken.Equal))
+			if (EatPre(FuToken.Equal))
 				result = result == ParsePrePrimary();
-			else if (EatPre(CiToken.NotEqual))
+			else if (EatPre(FuToken.NotEqual))
 				result ^= ParsePrePrimary();
 			else
 				return result;
@@ -881,7 +881,7 @@ public abstract class CiLexer
 	bool ParsePreAnd!()
 	{
 		bool result = ParsePreEquality();
-		while (EatPre(CiToken.CondAnd))
+		while (EatPre(FuToken.CondAnd))
 			result &= ParsePreEquality();
 		return result;
 	}
@@ -889,7 +889,7 @@ public abstract class CiLexer
 	bool ParsePreOr!()
 	{
 		bool result = ParsePreAnd();
-		while (EatPre(CiToken.CondOr))
+		while (EatPre(FuToken.CondOr))
 			result |= ParsePreAnd();
 		return result;
 	}
@@ -899,7 +899,7 @@ public abstract class CiLexer
 		this.LineMode = true;
 		NextPreToken();
 		bool result = ParsePreOr();
-		Check(CiToken.EndOfLine);
+		Check(FuToken.EndOfLine);
 		this.LineMode = false;
 		return result;
 	}
@@ -907,8 +907,8 @@ public abstract class CiLexer
 	void ExpectEndOfLine!(string directive)
 	{
 		this.LineMode = true;
-		CiToken token = ReadPreToken();
-		if (token != CiToken.EndOfLine && token != CiToken.EndOfFile)
+		FuToken token = ReadPreToken();
+		if (token != FuToken.EndOfLine && token != FuToken.EndOfFile)
 			ReportError($"Unexpected characters after '{directive}'");
 		this.LineMode = false;
 	}
@@ -924,39 +924,39 @@ public abstract class CiLexer
 		return true;
 	}
 
-	void SkipUnmet!(CiPreState state)
+	void SkipUnmet!(FuPreState state)
 	{
 		this.EnableDocComments = false;
 		for (;;) {
-			// state == CiPreState.NotYet: we are in a conditional that wasn't met yet
+			// state == FuPreState.NotYet: we are in a conditional that wasn't met yet
 			// else: we are in a conditional that was met before
 			switch (ReadPreToken()) {
-			case CiToken.EndOfFile:
+			case FuToken.EndOfFile:
 				ReportError("Expected '#endif', got end-of-file");
 				return;
-			case CiToken.PreIf:
+			case FuToken.PreIf:
 				ParsePreExpr();
-				SkipUnmet(CiPreState.Already);
+				SkipUnmet(FuPreState.Already);
 				break;
-			case CiToken.PreElIf:
-				if (state == CiPreState.AlreadyElse)
+			case FuToken.PreElIf:
+				if (state == FuPreState.AlreadyElse)
 					ReportError("'#elif' after '#else'");
-				if (ParsePreExpr() && state == CiPreState.NotYet) {
+				if (ParsePreExpr() && state == FuPreState.NotYet) {
 					this.PreElseStack.Push(false);
 					return;
 				}
 				break;
-			case CiToken.PreElse:
-				if (state == CiPreState.AlreadyElse)
+			case FuToken.PreElse:
+				if (state == FuPreState.AlreadyElse)
 					ReportError("'#else' after '#else'");
 				ExpectEndOfLine("#else");
-				if (state == CiPreState.NotYet) {
+				if (state == FuPreState.NotYet) {
 					this.PreElseStack.Push(true);
 					return;
 				}
-				state = CiPreState.AlreadyElse;
+				state = FuPreState.AlreadyElse;
 				break;
-			case CiToken.PreEndIf:
+			case FuToken.PreEndIf:
 				ExpectEndOfLine("#endif");
 				return;
 			default:
@@ -965,37 +965,37 @@ public abstract class CiLexer
 		}
 	}
 
-	CiToken ReadToken!()
+	FuToken ReadToken!()
 	{
 		for (;;) {
 			// we are in no conditionals or in all met
 			this.EnableDocComments = true;
-			CiToken token = ReadPreToken();
+			FuToken token = ReadPreToken();
 			bool matched;
 			switch (token) {
-			case CiToken.EndOfFile:
+			case FuToken.EndOfFile:
 				if (this.PreElseStack.Count != 0)
 					ReportError("Expected '#endif', got end-of-file");
-				return CiToken.EndOfFile;
-			case CiToken.PreIf:
+				return FuToken.EndOfFile;
+			case FuToken.PreIf:
 				if (ParsePreExpr())
 					this.PreElseStack.Push(false);
 				else
-					SkipUnmet(CiPreState.NotYet);
+					SkipUnmet(FuPreState.NotYet);
 				break;
-			case CiToken.PreElIf:
+			case FuToken.PreElIf:
 				matched = PopPreElse("#elif");
 				ParsePreExpr();
 				if (matched)
-					SkipUnmet(CiPreState.Already);
+					SkipUnmet(FuPreState.Already);
 				break;
-			case CiToken.PreElse:
+			case FuToken.PreElse:
 				matched = PopPreElse("#else");
 				ExpectEndOfLine("#else");
 				if (matched)
-					SkipUnmet(CiPreState.AlreadyElse);
+					SkipUnmet(FuPreState.AlreadyElse);
 				break;
-			case CiToken.PreEndIf:
+			case FuToken.PreEndIf:
 				PopPreElse("#endif");
 				ExpectEndOfLine("#endif");
 				break;
@@ -1005,14 +1005,14 @@ public abstract class CiLexer
 		}
 	}
 
-	protected CiToken NextToken!()
+	protected FuToken NextToken!()
 	{
-		CiToken token = this.CurrentToken;
+		FuToken token = this.CurrentToken;
 		this.CurrentToken = ReadToken();
 		return token;
 	}
 
-	protected bool Eat!(CiToken token)
+	protected bool Eat!(FuToken token)
 	{
 		if (See(token)) {
 			NextToken();
@@ -1021,21 +1021,21 @@ public abstract class CiLexer
 		return false;
 	}
 
-	protected bool Expect!(CiToken expected)
+	protected bool Expect!(FuToken expected)
 	{
 		bool found = Check(expected);
 		NextToken();
 		return found;
 	}
 
-	protected void ExpectOrSkip!(CiToken expected)
+	protected void ExpectOrSkip!(FuToken expected)
 	{
 		if (Check(expected))
 			NextToken();
 		else {
 			do
 				NextToken();
-			while (!See(CiToken.EndOfFile) && !Eat(expected));
+			while (!See(FuToken.EndOfFile) && !Eat(expected));
 		}
 	}
 }

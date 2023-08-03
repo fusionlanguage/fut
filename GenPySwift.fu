@@ -20,7 +20,7 @@
 
 public abstract class GenPySwift : GenBase
 {
-	protected override void WriteDocPara!(CiDocPara para, bool many)
+	protected override void WriteDocPara!(FuDocPara para, bool many)
 	{
 		if (many) {
 			WriteNewLine();
@@ -28,17 +28,17 @@ public abstract class GenPySwift : GenBase
 			WriteNewLine();
 			StartDocLine();
 		}
-		foreach (CiDocInline inline in para.Children) {
+		foreach (FuDocInline inline in para.Children) {
 			switch (inline) {
-			case CiDocText text:
+			case FuDocText text:
 				Write(text.Text);
 				break;
-			case CiDocCode code:
+			case FuDocCode code:
 				WriteChar('`');
 				Write(code.Text);
 				WriteChar('`');
 				break;
-			case CiDocLine _:
+			case FuDocLine _:
 				WriteNewLine();
 				StartDocLine();
 				break;
@@ -50,10 +50,10 @@ public abstract class GenPySwift : GenBase
 
 	protected abstract string GetDocBullet();
 
-	protected override void WriteDocList!(CiDocList list)
+	protected override void WriteDocList!(FuDocList list)
 	{
 		WriteNewLine();
-		foreach (CiDocPara item in list.Items) {
+		foreach (FuDocPara item in list.Items) {
 			Write(GetDocBullet());
 			WriteDocPara(item, false);
 			WriteNewLine();
@@ -61,9 +61,9 @@ public abstract class GenPySwift : GenBase
 		StartDocLine();
 	}
 
-	protected override void WriteLocalName!(CiSymbol symbol, CiPriority parent)
+	protected override void WriteLocalName!(FuSymbol symbol, FuPriority parent)
 	{
-		if (symbol is CiMember member) {
+		if (symbol is FuMember member) {
 			if (member.IsStatic())
 				WriteName(this.CurrentMethod.Parent);
 			else
@@ -73,18 +73,18 @@ public abstract class GenPySwift : GenBase
 		WriteName(symbol);
 	}
 
-	public override void VisitAggregateInitializer!(CiAggregateInitializer expr)
+	internal override void VisitAggregateInitializer!(FuAggregateInitializer expr)
 	{
 		Write("[ ");
 		WriteCoercedLiterals(expr.Type.AsClassType().GetElementType(), expr.Items);
 		Write(" ]");
 	}
 
-	public override void VisitPrefixExpr!(CiPrefixExpr expr, CiPriority parent)
+	internal override void VisitPrefixExpr!(FuPrefixExpr expr, FuPriority parent)
 	{
 		switch (expr.Op) {
-		case CiToken.Increment:
-		case CiToken.Decrement:
+		case FuToken.Increment:
+		case FuToken.Decrement:
 			expr.Inner.Accept(this, parent);
 			break;
 		default:
@@ -93,11 +93,11 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
-	public override void VisitPostfixExpr!(CiPostfixExpr expr, CiPriority parent)
+	internal override void VisitPostfixExpr!(FuPostfixExpr expr, FuPriority parent)
 	{
 		switch (expr.Op) {
-		case CiToken.Increment:
-		case CiToken.Decrement:
+		case FuToken.Increment:
+		case FuToken.Decrement:
 			expr.Inner.Accept(this, parent);
 			break;
 		default:
@@ -106,11 +106,11 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
-	static bool IsPtr(CiExpr expr) => expr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && !(klass is CiStorageType);
+	static bool IsPtr(FuExpr expr) => expr.Type is FuClassType klass && klass.Class.Id != FuId.StringClass && !(klass is FuStorageType);
 
 	protected abstract string GetReferenceEqOp(bool not);
 
-	protected override void WriteEqual!(CiExpr left, CiExpr right, CiPriority parent, bool not)
+	protected override void WriteEqual!(FuExpr left, FuExpr right, FuPriority parent, bool not)
 	{
 		if (IsPtr(left) || IsPtr(right))
 			WriteEqualExpr(left, right, parent, GetReferenceEqOp(not));
@@ -118,70 +118,70 @@ public abstract class GenPySwift : GenBase
 			base.WriteEqual(left, right, parent, not);
 	}
 
-	protected virtual void WriteExpr!(CiExpr expr, CiPriority parent)
+	protected virtual void WriteExpr!(FuExpr expr, FuPriority parent)
 	{
 		expr.Accept(this, parent);
 	}
 
-	protected void WriteListAppend!(CiExpr obj, List<CiExpr#> args)
+	protected void WriteListAppend!(FuExpr obj, List<FuExpr#> args)
 	{
 		WritePostfix(obj, ".append(");
-		CiType elementType = obj.Type.AsClassType().GetElementType();
+		FuType elementType = obj.Type.AsClassType().GetElementType();
 		if (args.Count == 0)
 			WriteNewStorage(elementType);
 		else
-			WriteCoerced(elementType, args[0], CiPriority.Argument);
+			WriteCoerced(elementType, args[0], FuPriority.Argument);
 		WriteChar(')');
 	}
 
-	protected virtual bool VisitPreCall!(CiCallExpr call) => false;
+	protected virtual bool VisitPreCall!(FuCallExpr call) => false;
 
-	protected bool VisitXcrement!(CiExpr expr, bool postfix, bool write)
+	protected bool VisitXcrement!(FuExpr expr, bool postfix, bool write)
 	{
 		bool seen;
 		switch (expr) {
-		case CiVar def:
+		case FuVar def:
 			return def.Value != null && VisitXcrement(def.Value, postfix, write);
-		case CiAggregateInitializer _:
-		case CiLiteral _:
-		case CiLambdaExpr _:
+		case FuAggregateInitializer _:
+		case FuLiteral _:
+		case FuLambdaExpr _:
 			return false;
-		case CiInterpolatedString interp:
+		case FuInterpolatedString interp:
 			seen = false;
-			foreach (CiInterpolatedPart part in interp.Parts)
+			foreach (FuInterpolatedPart part in interp.Parts)
 				seen |= VisitXcrement(part.Argument, postfix, write);
 			return seen;
-		case CiSymbolReference symbol:
+		case FuSymbolReference symbol:
 			return symbol.Left != null && VisitXcrement(symbol.Left, postfix, write);
-		case CiUnaryExpr unary:
+		case FuUnaryExpr unary:
 			if (unary.Inner == null) // new C()
 				return false;
 			seen = VisitXcrement(unary.Inner, postfix, write);
-			if ((unary.Op == CiToken.Increment || unary.Op == CiToken.Decrement) && postfix == unary is CiPostfixExpr) {
+			if ((unary.Op == FuToken.Increment || unary.Op == FuToken.Decrement) && postfix == unary is FuPostfixExpr) {
 				if (write) {
-					WriteExpr(unary.Inner, CiPriority.Assign);
-					WriteLine(unary.Op == CiToken.Increment ? " += 1" : " -= 1");
+					WriteExpr(unary.Inner, FuPriority.Assign);
+					WriteLine(unary.Op == FuToken.Increment ? " += 1" : " -= 1");
 				}
 				seen = true;
 			}
 			return seen;
-		case CiBinaryExpr binary:
+		case FuBinaryExpr binary:
 			seen = VisitXcrement(binary.Left, postfix, write);
-			if (binary.Op == CiToken.Is)
+			if (binary.Op == FuToken.Is)
 				return seen;
-			if (binary.Op == CiToken.CondAnd || binary.Op == CiToken.CondOr)
+			if (binary.Op == FuToken.CondAnd || binary.Op == FuToken.CondOr)
 				assert !VisitXcrement(binary.Right, postfix, false);
 			else
 				seen |= VisitXcrement(binary.Right, postfix, write);
 			return seen;
-		case CiSelectExpr select:
+		case FuSelectExpr select:
 			seen = VisitXcrement(select.Cond, postfix, write);
 			assert !VisitXcrement(select.OnTrue, postfix, false);
 			assert !VisitXcrement(select.OnFalse, postfix, false);
 			return seen;
-		case CiCallExpr call:
+		case FuCallExpr call:
 			seen = VisitXcrement(call.Method, postfix, write);
-			foreach (CiExpr arg in call.Arguments)
+			foreach (FuExpr arg in call.Arguments)
 				seen |= VisitXcrement(arg, postfix, write);
 			if (!postfix)
 				seen |= VisitPreCall(call);
@@ -191,13 +191,13 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
-	public override void VisitExpr!(CiExpr statement)
+	internal override void VisitExpr!(FuExpr statement)
 	{
 		VisitXcrement(statement, false, true);
-		if (!(statement is CiUnaryExpr unary) || (unary.Op != CiToken.Increment && unary.Op != CiToken.Decrement)) {
-			WriteExpr(statement, CiPriority.Statement);
+		if (!(statement is FuUnaryExpr unary) || (unary.Op != FuToken.Increment && unary.Op != FuToken.Decrement)) {
+			WriteExpr(statement, FuPriority.Statement);
 			WriteNewLine();
-			if (statement is CiVar def)
+			if (statement is FuVar def)
 				WriteInitCode(def);
 		}
 		VisitXcrement(statement, true, true);
@@ -213,19 +213,19 @@ public abstract class GenPySwift : GenBase
 
 	protected abstract void CloseChild!();
 
-	protected override void WriteChild!(CiStatement! statement)
+	protected override void WriteChild!(FuStatement! statement)
 	{
 		OpenChild();
 		statement.AcceptStatement(this);
 		CloseChild();
 	}
 
-	public override void VisitBlock!(CiBlock statement)
+	internal override void VisitBlock!(FuBlock statement)
 	{
 		WriteStatements(statement.Statements);
 	}
 
-	bool OpenCond!(string statement, CiExpr cond, CiPriority parent)
+	bool OpenCond!(string statement, FuExpr cond, FuPriority parent)
 	{
 		VisitXcrement(cond, false, true);
 		Write(statement);
@@ -234,20 +234,20 @@ public abstract class GenPySwift : GenBase
 		return VisitXcrement(cond, true, true);
 	}
 
-	protected virtual void WriteContinueDoWhile!(CiExpr cond)
+	protected virtual void WriteContinueDoWhile!(FuExpr cond)
 	{
-		OpenCond("if ", cond, CiPriority.Argument);
+		OpenCond("if ", cond, FuPriority.Argument);
 		WriteLine("continue");
 		CloseChild();
 		VisitXcrement(cond, true, true);
 		WriteLine("break");
 	}
 
-	protected virtual bool NeedCondXcrement!(CiLoop loop) => loop.Cond != null;
+	protected virtual bool NeedCondXcrement!(FuLoop loop) => loop.Cond != null;
 
-	void EndBody!(CiLoop loop)
+	void EndBody!(FuLoop loop)
 	{
-		if (loop is CiFor forLoop) {
+		if (loop is FuFor forLoop) {
 			if (forLoop.IsRange)
 				return;
 			VisitOptionalStatement(forLoop.Advance);
@@ -256,9 +256,9 @@ public abstract class GenPySwift : GenBase
 			VisitXcrement(loop.Cond, false, true);
 	}
 
-	public override void VisitContinue!(CiContinue statement)
+	internal override void VisitContinue!(FuContinue statement)
 	{
-		if (statement.Loop is CiDoWhile doWhile)
+		if (statement.Loop is FuDoWhile doWhile)
 			WriteContinueDoWhile(doWhile.Cond);
 		else {
 			EndBody(statement.Loop);
@@ -275,12 +275,12 @@ public abstract class GenPySwift : GenBase
 
 	protected abstract string GetIfNot();
 
-	public override void VisitDoWhile!(CiDoWhile statement)
+	internal override void VisitDoWhile!(FuDoWhile statement)
 	{
 		OpenWhileTrue();
 		statement.Body.AcceptStatement(this);
 		if (statement.Body.CompletesNormally()) {
-			OpenCond(GetIfNot(), statement.Cond, CiPriority.Primary);
+			OpenCond(GetIfNot(), statement.Cond, FuPriority.Primary);
 			WriteLine("break");
 			CloseChild();
 			VisitXcrement(statement.Cond, true, true);
@@ -288,12 +288,12 @@ public abstract class GenPySwift : GenBase
 		CloseChild();
 	}
 
-	protected virtual void OpenWhile!(CiLoop loop)
+	protected virtual void OpenWhile!(FuLoop loop)
 	{
-		OpenCond("while ", loop.Cond, CiPriority.Argument);
+		OpenCond("while ", loop.Cond, FuPriority.Argument);
 	}
 
-	void CloseWhile!(CiLoop loop)
+	void CloseWhile!(FuLoop loop)
 	{
 		loop.Body.AcceptStatement(this);
 		if (loop.Body.CompletesNormally())
@@ -311,19 +311,19 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
-	protected abstract void WriteForRange!(CiVar iter, CiBinaryExpr cond, long rangeStep);
+	protected abstract void WriteForRange!(FuVar iter, FuBinaryExpr cond, long rangeStep);
 
-	public override void VisitFor!(CiFor statement)
+	internal override void VisitFor!(FuFor statement)
 	{
 		if (statement.IsRange) {
-			assert statement.Init is CiVar iter;
+			assert statement.Init is FuVar iter;
 			Write("for ");
 			if (statement.IsIteratorUsed)
 				WriteName(iter);
 			else
 				WriteChar('_');
 			Write(" in ");
-			assert statement.Cond is CiBinaryExpr cond;
+			assert statement.Cond is FuBinaryExpr cond;
 			WriteForRange(iter, cond, statement.RangeStep);
 			WriteChild(statement.Body);
 		}
@@ -339,15 +339,15 @@ public abstract class GenPySwift : GenBase
 
 	protected abstract void WriteElseIf!();
 
-	public override void VisitIf!(CiIf statement)
+	internal override void VisitIf!(FuIf statement)
 	{
-		bool condPostXcrement = OpenCond("if ", statement.Cond, CiPriority.Argument);
+		bool condPostXcrement = OpenCond("if ", statement.Cond, FuPriority.Argument);
 		statement.OnTrue.AcceptStatement(this);
 		CloseChild();
 		if (statement.OnFalse == null && condPostXcrement && !statement.OnTrue.CompletesNormally())
 			VisitXcrement(statement.Cond, true, true);
 		else if (statement.OnFalse != null || condPostXcrement) {
-			if (!condPostXcrement && statement.OnFalse is CiIf! childIf && !VisitXcrement(childIf.Cond, false, false)) {
+			if (!condPostXcrement && statement.OnFalse is FuIf! childIf && !VisitXcrement(childIf.Cond, false, false)) {
 				WriteElseIf();
 				VisitIf(childIf);
 			}
@@ -363,7 +363,7 @@ public abstract class GenPySwift : GenBase
 
 	protected abstract void WriteResultVar!();
 
-	public override void VisitReturn!(CiReturn statement)
+	internal override void VisitReturn!(FuReturn statement)
 	{
 		if (statement.Value == null)
 			WriteLine("return");
@@ -387,7 +387,7 @@ public abstract class GenPySwift : GenBase
 		}
 	}
 
-	public override void VisitWhile!(CiWhile statement)
+	internal override void VisitWhile!(FuWhile statement)
 	{
 		OpenWhile(statement);
 		CloseWhile(statement);

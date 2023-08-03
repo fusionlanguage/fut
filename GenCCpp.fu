@@ -33,36 +33,36 @@ public abstract class GenCCpp : GenCCppD
 
 	protected override int GetLiteralChars() => 127;
 
-	protected virtual void WriteNumericType!(CiId id)
+	protected virtual void WriteNumericType!(FuId id)
 	{
 		switch (id) {
-		case CiId.SByteRange:
+		case FuId.SByteRange:
 			IncludeStdInt();
 			Write("int8_t");
 			break;
-		case CiId.ByteRange:
+		case FuId.ByteRange:
 			IncludeStdInt();
 			Write("uint8_t");
 			break;
-		case CiId.ShortRange:
+		case FuId.ShortRange:
 			IncludeStdInt();
 			Write("int16_t");
 			break;
-		case CiId.UShortRange:
+		case FuId.UShortRange:
 			IncludeStdInt();
 			Write("uint16_t");
 			break;
-		case CiId.IntType:
+		case FuId.IntType:
 			Write("int");
 			break;
-		case CiId.LongType:
+		case FuId.LongType:
 			IncludeStdInt();
 			Write("int64_t");
 			break;
-		case CiId.FloatType:
+		case FuId.FloatType:
 			Write("float");
 			break;
-		case CiId.DoubleType:
+		case FuId.DoubleType:
 			Write("double");
 			break;
 		default:
@@ -70,18 +70,18 @@ public abstract class GenCCpp : GenCCppD
 		}
 	}
 
-	public override void VisitSymbolReference!(CiSymbolReference expr, CiPriority parent)
+	internal override void VisitSymbolReference!(FuSymbolReference expr, FuPriority parent)
 	{
 		switch (expr.Symbol.Id) {
-		case CiId.MathNaN:
+		case FuId.MathNaN:
 			IncludeMath();
 			Write("NAN");
 			break;
-		case CiId.MathNegativeInfinity:
+		case FuId.MathNegativeInfinity:
 			IncludeMath();
 			Write("-INFINITY");
 			break;
-		case CiId.MathPositiveInfinity:
+		case FuId.MathPositiveInfinity:
 			IncludeMath();
 			Write("INFINITY");
 			break;
@@ -91,57 +91,57 @@ public abstract class GenCCpp : GenCCppD
 		}
 	}
 
-	protected static CiExpr? IsStringEmpty(CiBinaryExpr expr)
+	protected static FuExpr? IsStringEmpty(FuBinaryExpr expr)
 	{
-		if (expr.Left is CiSymbolReference symbol && symbol.Symbol.Id == CiId.StringLength
+		if (expr.Left is FuSymbolReference symbol && symbol.Symbol.Id == FuId.StringLength
 			&& expr.Right.IsLiteralZero())
 			return symbol.Left;
 		return null;
 	}
 
-	protected abstract void WriteArrayPtr!(CiExpr expr, CiPriority parent);
+	protected abstract void WriteArrayPtr!(FuExpr expr, FuPriority parent);
 
-	protected void WriteArrayPtrAdd!(CiExpr array, CiExpr index)
+	protected void WriteArrayPtrAdd!(FuExpr array, FuExpr index)
 	{
 		if (index.IsLiteralZero())
-			WriteArrayPtr(array, CiPriority.Argument);
+			WriteArrayPtr(array, FuPriority.Argument);
 		else {
-			WriteArrayPtr(array, CiPriority.Add);
+			WriteArrayPtr(array, FuPriority.Add);
 			Write(" + ");
-			index.Accept(this, CiPriority.Mul);
+			index.Accept(this, FuPriority.Mul);
 		}
 	}
 
-	protected static CiCallExpr? IsStringSubstring(CiExpr expr)
+	protected static FuCallExpr? IsStringSubstring(FuExpr expr)
 	{
-		if (expr is CiCallExpr call) {
-			CiId id = call.Method.Symbol.Id;
-			if ((id == CiId.StringSubstring && call.Arguments.Count == 2)
-			 || id == CiId.UTF8GetString)
+		if (expr is FuCallExpr call) {
+			FuId id = call.Method.Symbol.Id;
+			if ((id == FuId.StringSubstring && call.Arguments.Count == 2)
+			 || id == FuId.UTF8GetString)
 				return call;
 		}
 		return null;
 	}
 
-	protected static bool IsUTF8GetString(CiCallExpr call) => call.Method.Symbol.Id == CiId.UTF8GetString;
+	protected static bool IsUTF8GetString(FuCallExpr call) => call.Method.Symbol.Id == FuId.UTF8GetString;
 
-	protected static CiExpr GetStringSubstringPtr(CiCallExpr call) => IsUTF8GetString(call) ? call.Arguments[0] : call.Method.Left;
+	protected static FuExpr GetStringSubstringPtr(FuCallExpr call) => IsUTF8GetString(call) ? call.Arguments[0] : call.Method.Left;
 
-	protected static CiExpr GetStringSubstringOffset(CiCallExpr call) => call.Arguments[IsUTF8GetString(call) ? 1 : 0];
+	protected static FuExpr GetStringSubstringOffset(FuCallExpr call) => call.Arguments[IsUTF8GetString(call) ? 1 : 0];
 
-	protected static CiExpr GetStringSubstringLength(CiCallExpr call) => call.Arguments[IsUTF8GetString(call) ? 2 : 1];
+	protected static FuExpr GetStringSubstringLength(FuCallExpr call) => call.Arguments[IsUTF8GetString(call) ? 2 : 1];
 
-	protected void WriteStringPtrAdd!(CiCallExpr call)
+	protected void WriteStringPtrAdd!(FuCallExpr call)
 	{
 		WriteArrayPtrAdd(GetStringSubstringPtr(call), GetStringSubstringOffset(call));
 	}
 
-	protected static CiExpr? IsTrimSubstring(CiBinaryExpr expr)
+	protected static FuExpr? IsTrimSubstring(FuBinaryExpr expr)
 	{
-		CiCallExpr? call = IsStringSubstring(expr.Right);
+		FuCallExpr? call = IsStringSubstring(expr.Right);
 		if (call != null
 		 && !IsUTF8GetString(call)
-		 && expr.Left is CiSymbolReference leftSymbol && GetStringSubstringPtr(call).IsReferenceTo(leftSymbol.Symbol) // TODO: more complex expr
+		 && expr.Left is FuSymbolReference leftSymbol && GetStringSubstringPtr(call).IsReferenceTo(leftSymbol.Symbol) // TODO: more complex expr
 		 && GetStringSubstringOffset(call).IsLiteralZero())
 			return GetStringSubstringLength(call);
 		return null;
@@ -154,29 +154,29 @@ public abstract class GenCCpp : GenCCppD
 		Write("\\n\"");
 	}
 
-	protected virtual void WriteUnreachable!(CiAssert statement)
+	protected virtual void WriteUnreachable!(FuAssert statement)
 	{
 		// TODO: C23, C++23: unreachable()
 		Write("abort();");
 		if (statement.Message != null) {
 			Write(" // ");
-			statement.Message.Accept(this, CiPriority.Argument);
+			statement.Message.Accept(this, FuPriority.Argument);
 		}
 		WriteNewLine();
 	}
 
-	protected override void WriteAssert!(CiAssert statement)
+	protected override void WriteAssert!(FuAssert statement)
 	{
 		if (statement.CompletesNormally()) {
 			WriteTemporaries(statement.Cond);
 			IncludeAssert();
 			Write("assert(");
 			if (statement.Message == null)
-				statement.Cond.Accept(this, CiPriority.Argument);
+				statement.Cond.Accept(this, FuPriority.Argument);
 			else {
-				statement.Cond.Accept(this, CiPriority.CondAnd);
+				statement.Cond.Accept(this, FuPriority.CondAnd);
 				Write(" && ");
-				statement.Message.Accept(this, CiPriority.Argument);
+				statement.Message.Accept(this, FuPriority.Argument);
 			}
 			WriteLine(");");
 		}
@@ -184,33 +184,33 @@ public abstract class GenCCpp : GenCCppD
 			WriteUnreachable(statement);
 	}
 
-	public override void VisitSwitch!(CiSwitch statement)
+	internal override void VisitSwitch!(FuSwitch statement)
 	{
-		if (statement.Value.Type is CiStringType || statement.HasWhen())
+		if (statement.Value.Type is FuStringType || statement.HasWhen())
 			WriteSwitchAsIfsWithGoto(statement);
 		else
 			base.VisitSwitch(statement);
 	}
 
-	protected void WriteMethods!(CiClass klass)
+	protected void WriteMethods!(FuClass klass)
 	{
-		for (CiSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiMethod method) {
+		for (FuSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is FuMethod method) {
 				WriteMethod(method);
 				this.CurrentTemporaries.Clear();
 			}
 		}
 	}
 
-	protected abstract void WriteClassInternal!(CiClass klass);
+	protected abstract void WriteClassInternal!(FuClass klass);
 
-	protected override void WriteClass!(CiClass klass, CiProgram program)
+	protected override void WriteClass!(FuClass klass, FuProgram program)
 	{
 		// topological sorting of class hierarchy and class storage fields
 		if (!WriteBaseClass(klass, program))
 			return;
-		for (CiSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiField field && field.Type.GetBaseType() is CiStorageType storage && storage.Class.Id == CiId.None)
+		for (FuSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is FuField field && field.Type.GetBaseType() is FuStorageType storage && storage.Class.Id == FuId.None)
 				WriteClass(storage.Class, program);
 		}
 		WriteClassInternal(klass);
@@ -248,7 +248,7 @@ public abstract class GenCCpp : GenCCppD
 		return path.Substring(i, extIndex - i);
 	}
 
-	protected void CreateImplementationFile!(CiProgram program, string headerExt)
+	protected void CreateImplementationFile!(FuProgram program, string headerExt)
 	{
 		CreateOutputFile();
 		WriteTopLevelNatives(program);

@@ -31,13 +31,13 @@ using System.Reflection;
 namespace Fusion
 {
 
-public class FileResourceSema : CiSema
+public class FileResourceSema : FuSema
 {
 	readonly List<string> ResourceDirs = new List<string>();
 
 	public void AddResourceDir(string path) => this.ResourceDirs.Add(path);
 
-	List<byte> ReadResource(string name, CiPrefixExpr expr)
+	List<byte> ReadResource(string name, FuPrefixExpr expr)
 	{
 		foreach (string dir in this.ResourceDirs) {
 			string path = Path.Combine(dir, name);
@@ -50,7 +50,7 @@ public class FileResourceSema : CiSema
 		return new List<byte>();
 	}
 
-	protected override int GetResourceLength(string name, CiPrefixExpr expr)
+	protected override int GetResourceLength(string name, FuPrefixExpr expr)
 	{
 		if (!this.Program.Resources.TryGetValue(name, out List<byte> content)) {
 			content = ReadResource(name, expr);
@@ -60,7 +60,7 @@ public class FileResourceSema : CiSema
 	}
 }
 
-public class FileGenHost : CiConsoleHost
+public class FileGenHost : FuConsoleHost
 {
 	string Filename;
 	TextWriter CurrentFile;
@@ -102,15 +102,15 @@ public static class Fut
 		Console.WriteLine("-o FILE    Write to the specified file");
 		Console.WriteLine("-n NAME    Specify C++/C# namespace, Java package or C name prefix");
 		Console.WriteLine("-D NAME    Define conditional compilation symbol");
-		Console.WriteLine("-r FILE.ci Read the specified source file but don't emit code");
+		Console.WriteLine("-r FILE.fu Read the specified source file but don't emit code");
 		Console.WriteLine("-I DIR     Add directory to resource search path");
 		Console.WriteLine("--help     Display this information");
 		Console.WriteLine("--version  Display version information");
 	}
 
-	static CiProgram ParseAndResolve(CiParser parser, CiSystem system, CiScope parent, List<string> files, FileResourceSema sema, CiConsoleHost host)
+	static FuProgram ParseAndResolve(FuParser parser, FuSystem system, FuScope parent, List<string> files, FileResourceSema sema, FuConsoleHost host)
 	{
-		parser.Program = new CiProgram { Parent = parent, System = system };
+		parser.Program = new FuProgram { Parent = parent, System = system };
 		foreach (string file in files) {
 			byte[] input = File.ReadAllBytes(file);
 			parser.Parse(file, input, input.Length);
@@ -123,7 +123,7 @@ public static class Fut
 		return parser.Program;
 	}
 
-	static void Emit(CiProgram program, string lang, string namespace_, string outputFile, FileGenHost host)
+	static void Emit(FuProgram program, string lang, string namespace_, string outputFile, FileGenHost host)
 	{
 		GenBase gen;
 		switch (lang) {
@@ -177,7 +177,7 @@ public static class Fut
 	public static int Main(string[] args)
 	{
 		CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-		CiParser parser = new CiParser();
+		FuParser parser = new FuParser();
 		List<string> inputFiles = new List<string>();
 		List<string> referencedFiles = new List<string>();
 		FileResourceSema sema = new FileResourceSema();
@@ -239,15 +239,15 @@ public static class Fut
 		FileGenHost host = new FileGenHost();
 		parser.SetHost(host);
 		sema.SetHost(host);
-		CiSystem system = CiSystem.New();
-		CiScope parent = system;
+		FuSystem system = FuSystem.New();
+		FuScope parent = system;
 		try {
 			if (referencedFiles.Count > 0) {
 				parent = ParseAndResolve(parser, system, parent, referencedFiles, sema, host);
 				if (parent == null)
 					return 1;
 			}
-			CiProgram program = ParseAndResolve(parser, system, parent, inputFiles, sema, host);
+			FuProgram program = ParseAndResolve(parser, system, parent, inputFiles, sema, host);
 			if (program == null)
 				return 1;
 

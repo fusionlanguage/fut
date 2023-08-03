@@ -49,7 +49,7 @@ static void usage()
 		"-o FILE    Write to the specified file\n"
 		"-n NAME    Specify C++/C# namespace, Java package or C name prefix\n"
 		"-D NAME    Define conditional compilation symbol\n"
-		"-r FILE.ci Read the specified source file but don't emit code\n"
+		"-r FILE.fu Read the specified source file but don't emit code\n"
 		"-I DIR     Add directory to resource search path\n"
 		"--help     Display this information\n"
 		"--version  Display version information\n";
@@ -62,11 +62,11 @@ static std::string slurp(std::ifstream &stream)
 	return oss.str();
 }
 
-class FileResourceSema : public CiSema
+class FileResourceSema : public FuSema
 {
 	std::vector<const char *> resourceDirs;
 
-	void readResource(std::string_view name, const CiPrefixExpr *expr, std::vector<uint8_t> &content)
+	void readResource(std::string_view name, const FuPrefixExpr *expr, std::vector<uint8_t> &content)
 	{
 		std::ifstream stream;
 		for (const char *dir : resourceDirs) {
@@ -93,7 +93,7 @@ public:
 	}
 
 protected:
-	int getResourceLength(std::string_view name, const CiPrefixExpr *expr) override
+	int getResourceLength(std::string_view name, const FuPrefixExpr *expr) override
 	{
 		auto p = this->program->resources.try_emplace(std::string(name));
 		std::vector<uint8_t> &content = p.first->second;
@@ -103,7 +103,7 @@ protected:
 	}
 };
 
-class FileGenHost : public CiConsoleHost
+class FileGenHost : public FuConsoleHost
 {
 	std::string currentFilename;
 	std::ofstream currentFile;
@@ -128,8 +128,8 @@ public:
 	}
 };
 
-static bool parseAndResolve(CiParser *parser, CiProgram *program,
-	const std::vector<const char *> &files, FileResourceSema *sema, const CiConsoleHost *host)
+static bool parseAndResolve(FuParser *parser, FuProgram *program,
+	const std::vector<const char *> &files, FileResourceSema *sema, const FuConsoleHost *host)
 {
 	parser->program = program;
 	for (const char *file : files) {
@@ -147,7 +147,7 @@ static bool parseAndResolve(CiParser *parser, CiProgram *program,
 	return !host->hasErrors;
 }
 
-static void emit(CiProgram *program, const char *lang, const char *namespace_, const char *outputFile, FileGenHost *host)
+static void emit(FuProgram *program, const char *lang, const char *namespace_, const char *outputFile, FileGenHost *host)
 {
 	std::string dir;
 	std::unique_ptr<GenBase> gen;
@@ -194,7 +194,7 @@ static void emit(CiProgram *program, const char *lang, const char *namespace_, c
 
 int main(int argc, char **argv)
 {
-	CiParser parser;
+	FuParser parser;
 	std::vector<const char *> inputFiles;
 	std::vector<const char *> referencedFiles;
 	FileResourceSema sema;
@@ -257,9 +257,9 @@ int main(int argc, char **argv)
 	FileGenHost host;
 	parser.setHost(&host);
 	sema.setHost(&host);
-	std::shared_ptr<CiSystem> system = CiSystem::new_();
-	CiScope *parent = system.get();
-	CiProgram references;
+	std::shared_ptr<FuSystem> system = FuSystem::new_();
+	FuScope *parent = system.get();
+	FuProgram references;
 	if (!referencedFiles.empty()) {
 		references.parent = parent;
 		references.system = system.get();
@@ -267,7 +267,7 @@ int main(int argc, char **argv)
 			return 1;
 		parent = &references;
 	}
-	CiProgram program;
+	FuProgram program;
 	program.parent = parent;
 	program.system = system.get();
 	if (!parseAndResolve(&parser, &program, inputFiles, &sema, &host))

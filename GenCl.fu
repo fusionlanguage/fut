@@ -35,25 +35,25 @@ public class GenCl : GenC
 	{
 	}
 
-	protected override void WriteNumericType!(CiId id)
+	protected override void WriteNumericType!(FuId id)
 	{
 		switch (id) {
-		case CiId.SByteRange:
+		case FuId.SByteRange:
 			Write("char");
 			break;
-		case CiId.ByteRange:
+		case FuId.ByteRange:
 			Write("uchar");
 			break;
-		case CiId.ShortRange:
+		case FuId.ShortRange:
 			Write("short");
 			break;
-		case CiId.UShortRange:
+		case FuId.UShortRange:
 			Write("ushort");
 			break;
-		case CiId.IntType:
+		case FuId.IntType:
 			Write("int");
 			break;
-		case CiId.LongType:
+		case FuId.LongType:
 			Write("long");
 			break;
 		default:
@@ -66,17 +66,17 @@ public class GenCl : GenC
 		Write("constant char *");
 	}
 
-	protected override void WriteClassType!(CiClassType klass, bool space)
+	protected override void WriteClassType!(FuClassType klass, bool space)
 	{
 		switch (klass.Class.Id) {
-		case CiId.None:
-			if (klass is CiDynamicPtrType)
+		case FuId.None:
+			if (klass is FuDynamicPtrType)
 				NotSupported(klass, "Dynamic reference");
 			else
 				base.WriteClassType(klass, space);
 			break;
-		case CiId.StringClass:
-			if (klass.Id == CiId.StringStorageType)
+		case FuId.StringClass:
+			if (klass.Id == FuId.StringStorageType)
 				NotSupported(klass, "string()");
 			else
 				WriteStringPtrType();
@@ -92,12 +92,12 @@ public class GenCl : GenC
 		WriteChar('l');
 	}
 
-	protected override void WriteInterpolatedStringArgBase!(CiExpr expr)
+	protected override void WriteInterpolatedStringArgBase!(FuExpr expr)
 	{
-		expr.Accept(this, CiPriority.Argument);
+		expr.Accept(this, FuPriority.Argument);
 	}
 
-	public override void VisitInterpolatedString!(CiInterpolatedString expr, CiPriority parent)
+	internal override void VisitInterpolatedString!(FuInterpolatedString expr, FuPriority parent)
 	{
 		NotSupported(expr, "Interpolated strings");
 	}
@@ -124,9 +124,9 @@ public class GenCl : GenC
 		}
 	}
 
-	protected override string GetConst(CiArrayStorageType array) => array.PtrTaken ? "const " : "constant ";
+	protected override string GetConst(FuArrayStorageType array) => array.PtrTaken ? "const " : "constant ";
 
-	protected override void WriteSubstringEqual!(CiCallExpr call, string literal, CiPriority parent, bool not)
+	protected override void WriteSubstringEqual!(FuCallExpr call, string literal, FuPriority parent, bool not)
 	{
 		if (not)
 			WriteChar('!');
@@ -144,7 +144,7 @@ public class GenCl : GenC
 		WriteChar(')');
 	}
 
-	protected override void WriteEqualStringInternal!(CiExpr left, CiExpr right, CiPriority parent, bool not)
+	protected override void WriteEqualStringInternal!(FuExpr left, FuExpr right, FuPriority parent, bool not)
 	{
 		this.StringEquals = true;
 		if (not)
@@ -152,44 +152,44 @@ public class GenCl : GenC
 		WriteCall("FuString_Equals", left, right);
 	}
 
-	protected override void WriteStringLength!(CiExpr expr)
+	protected override void WriteStringLength!(FuExpr expr)
 	{
 		this.StringLength = true;
 		WriteCall("strlen", expr);
 	}
 
-	void WriteConsoleWrite!(List<CiExpr#> args, bool newLine)
+	void WriteConsoleWrite!(List<FuExpr#> args, bool newLine)
 	{
 		Write("printf(");
 		if (args.Count == 0)
 			Write("\"\\n\")");
-		else if (args[0] is CiInterpolatedString interpolated)
+		else if (args[0] is FuInterpolatedString interpolated)
 			WritePrintf(interpolated, newLine);
 		else
 			WritePrintfNotInterpolated(args, newLine);
 	}
 
-	protected override void WriteCallExpr!(CiExpr? obj, CiMethod method, List<CiExpr#> args, CiPriority parent)
+	protected override void WriteCallExpr!(FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
 	{
 		switch (method.Id) {
-		case CiId.None:
-		case CiId.ClassToString:
+		case FuId.None:
+		case FuId.ClassToString:
 			WriteCCall(obj, method, args);
 			break;
-		case CiId.EnumFromInt:
+		case FuId.EnumFromInt:
 			WriteStaticCast(method.Type, args[0]);
 			break;
-		case CiId.EnumHasFlag:
+		case FuId.EnumHasFlag:
 			WriteEnumHasFlag(obj, args, parent);
 			break;
-		case CiId.StringStartsWith:
+		case FuId.StringStartsWith:
 			int c = GetOneAscii(args[0]);
 			if (c >= 0) {
-				if (parent > CiPriority.Equality)
+				if (parent > FuPriority.Equality)
 					WriteChar('(');
 				WritePostfix(obj, "[0] == ");
 				VisitLiteralChar(c);
-				if (parent > CiPriority.Equality)
+				if (parent > FuPriority.Equality)
 					WriteChar(')');
 			}
 			else {
@@ -197,79 +197,79 @@ public class GenCl : GenC
 				WriteCall("FuString_StartsWith", obj, args[0]);
 			}
 			break;
-		case CiId.StringSubstring:
+		case FuId.StringSubstring:
 			WriteStringSubstring(obj, args, parent);
 			break;
-		case CiId.ArrayCopyTo:
+		case FuId.ArrayCopyTo:
 			Write("for (size_t _i = 0; _i < ");
-			args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
+			args[3].Accept(this, FuPriority.Rel); // FIXME: side effect in every iteration
 			WriteLine("; _i++)");
 			WriteChar('\t');
-			args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+			args[1].Accept(this, FuPriority.Primary); // FIXME: side effect in every iteration
 			WriteChar('[');
 			StartAdd(args[2]); // FIXME: side effect in every iteration
 			Write("_i] = ");
-			obj.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+			obj.Accept(this, FuPriority.Primary); // FIXME: side effect in every iteration
 			WriteChar('[');
 			StartAdd(args[0]); // FIXME: side effect in every iteration
 			Write("_i]");
 			break;
-		case CiId.ArrayFillAll:
-		case CiId.ArrayFillPart:
+		case FuId.ArrayFillAll:
+		case FuId.ArrayFillPart:
 			WriteArrayFill(obj, args);
 			break;
-		case CiId.ConsoleWrite:
+		case FuId.ConsoleWrite:
 			WriteConsoleWrite(args, false);
 			break;
-		case CiId.ConsoleWriteLine:
+		case FuId.ConsoleWriteLine:
 			WriteConsoleWrite(args, true);
 			break;
-		case CiId.UTF8GetByteCount:
+		case FuId.UTF8GetByteCount:
 			WriteStringLength(args[0]);
 			break;
-		case CiId.UTF8GetBytes:
+		case FuId.UTF8GetBytes:
 			Write("for (size_t _i = 0; ");
-			args[0].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+			args[0].Accept(this, FuPriority.Primary); // FIXME: side effect in every iteration
 			WriteLine("[_i] != '\\0'; _i++)");
 			WriteChar('\t');
-			args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+			args[1].Accept(this, FuPriority.Primary); // FIXME: side effect in every iteration
 			WriteChar('[');
 			StartAdd(args[2]); // FIXME: side effect in every iteration
 			Write("_i] = ");
 			WritePostfix(args[0], "[_i]"); // FIXME: side effect in every iteration
 			break;
-		case CiId.MathMethod:
-		case CiId.MathClamp:
-		case CiId.MathIsFinite:
-		case CiId.MathIsNaN:
-		case CiId.MathLog2:
-		case CiId.MathMaxInt:
-		case CiId.MathMinInt:
-		case CiId.MathRound:
+		case FuId.MathMethod:
+		case FuId.MathClamp:
+		case FuId.MathIsFinite:
+		case FuId.MathIsNaN:
+		case FuId.MathLog2:
+		case FuId.MathMaxInt:
+		case FuId.MathMinInt:
+		case FuId.MathRound:
 			WriteLowercase(method.Name);
 			WriteArgsInParentheses(method, args);
 			break;
-		case CiId.MathAbs:
-			if (args[0].Type is CiFloatingType)
+		case FuId.MathAbs:
+			if (args[0].Type is FuFloatingType)
 				WriteChar('f');
 			WriteCall("abs", args[0]);
 			break;
-		case CiId.MathCeiling:
+		case FuId.MathCeiling:
 			WriteCall("ceil", args[0]);
 			break;
-		case CiId.MathFusedMultiplyAdd:
+		case FuId.MathFusedMultiplyAdd:
 			WriteCall("fma", args[0], args[1], args[2]);
 			break;
-		case CiId.MathIsInfinity:
+		case FuId.MathIsInfinity:
 			WriteCall("isinf", args[0]);
 			break;
-		case CiId.MathMaxDouble:
+		case FuId.MathMaxDouble:
 			WriteCall("fmax", args[0], args[1]);
 			break;
-		case CiId.MathMinDouble:
+		case FuId.MathMinDouble:
 			WriteCall("fmin", args[0], args[1]);
 			break;
-		case CiId.MathTruncate:
+		case FuId.MathTruncate:
 			WriteCall("trunc", args[0]);
 			break;
 		default:
@@ -278,13 +278,13 @@ public class GenCl : GenC
 		}
 	}
 
-	protected override void WriteAssert!(CiAssert statement)
+	protected override void WriteAssert!(FuAssert statement)
 	{
 	}
 
-	protected override void WriteSwitchCaseBody!(List<CiStatement#> statements)
+	protected override void WriteSwitchCaseBody!(List<FuStatement#> statements)
 	{
-		if (statements.All(statement => statement is CiAssert))
+		if (statements.All(statement => statement is FuAssert))
 			WriteCharLine(';');
 		else
 			base.WriteSwitchCaseBody(statements);
@@ -337,7 +337,7 @@ public class GenCl : GenC
 		}
 	}
 
-	public override void WriteProgram!(CiProgram program)
+	public override void WriteProgram!(FuProgram program)
 	{
 		this.WrittenClasses.Clear();
 		this.StringLength = false;
@@ -345,7 +345,7 @@ public class GenCl : GenC
 		this.StringStartsWith = false;
 		this.BytesEqualsString = false;
 		OpenStringWriter();
-		foreach (CiClass klass in program.Classes) {
+		foreach (FuClass klass in program.Classes) {
 			this.CurrentClass = klass;
 			WriteConstructor(klass);
 			WriteDestructor(klass);
@@ -356,10 +356,10 @@ public class GenCl : GenC
 		WriteTopLevelNatives(program);
 		WriteRegexOptionsEnum(program);
 		WriteTypedefs(program, true);
-		foreach (CiClass klass in program.Classes)
+		foreach (FuClass klass in program.Classes)
 			WriteSignatures(klass, true);
 		WriteTypedefs(program, false);
-		foreach (CiClass klass in program.Classes)
+		foreach (FuClass klass in program.Classes)
 			WriteClass(klass, program);
 		WriteResources(program.Resources);
 		WriteLibrary();

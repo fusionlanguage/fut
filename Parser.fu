@@ -18,24 +18,24 @@
 // You should have received a copy of the GNU General Public License
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
-public class CiParser : CiLexer
+public class FuParser : FuLexer
 {
-	internal CiProgram! Program;
+	internal FuProgram! Program;
 	string? XcrementParent = null;
-	CiLoop? CurrentLoop = null;
-	CiCondCompletionStatement!? CurrentLoopOrSwitch = null;
+	FuLoop? CurrentLoop = null;
+	FuCondCompletionStatement!? CurrentLoopOrSwitch = null;
 
-	bool DocParseLine!(CiDocPara! para)
+	bool DocParseLine!(FuDocPara! para)
 	{
 		if (para.Children.Count > 0)
-			para.Children.Add(new CiDocLine());
+			para.Children.Add(new FuDocLine());
 		this.LexemeOffset = this.CharOffset;
 		for (int lastNonWhitespace = 0;;) {
 			switch (PeekChar()) {
 			case -1:
 			case '\n':
 			case '\r':
-				para.Children.Add(new CiDocText { Text = GetLexeme() });
+				para.Children.Add(new FuDocText { Text = GetLexeme() });
 				return lastNonWhitespace == '.';
 			case '\t':
 			case ' ':
@@ -43,13 +43,13 @@ public class CiParser : CiLexer
 				break;
 			case '`':
 				if (this.CharOffset > this.LexemeOffset)
-					para.Children.Add(new CiDocText { Text = GetLexeme() });
+					para.Children.Add(new FuDocText { Text = GetLexeme() });
 				ReadChar();
 				this.LexemeOffset = this.CharOffset;
 				for (;;) {
 					int c = PeekChar();
 					if (c == '`') {
-						para.Children.Add(new CiDocCode { Text = GetLexeme() });
+						para.Children.Add(new FuDocCode { Text = GetLexeme() });
 						ReadChar();
 						break;
 					}
@@ -69,40 +69,40 @@ public class CiParser : CiLexer
 		}
 	}
 
-	void DocParsePara!(CiDocPara! para)
+	void DocParsePara!(FuDocPara! para)
 	{
 		do {
 			DocParseLine(para);
 			NextToken();
-		} while (See(CiToken.DocRegular));
+		} while (See(FuToken.DocRegular));
 	}
 
-	CiCodeDoc#? ParseDoc!()
+	FuCodeDoc#? ParseDoc!()
 	{
-		if (!See(CiToken.DocRegular))
+		if (!See(FuToken.DocRegular))
 			return null;
-		CiCodeDoc# doc = new CiCodeDoc();
+		FuCodeDoc# doc = new FuCodeDoc();
 		bool period;
 		do {
 			period = DocParseLine(doc.Summary);
 			NextToken();
-		} while (!period && See(CiToken.DocRegular));
+		} while (!period && See(FuToken.DocRegular));
 		for (;;) {
 			switch (this.CurrentToken) {
-			case CiToken.DocRegular:
-				CiDocPara# para = new CiDocPara();
+			case FuToken.DocRegular:
+				FuDocPara# para = new FuDocPara();
 				DocParsePara(para);
 				doc.Details.Add(para);
 				break;
-			case CiToken.DocBullet:
-				CiDocList# list = new CiDocList();
+			case FuToken.DocBullet:
+				FuDocList# list = new FuDocList();
 				do {
 					list.Items.Add();
 					DocParsePara(list.Items.Last());
-				} while (See(CiToken.DocBullet));
+				} while (See(FuToken.DocBullet));
 				doc.Details.Add(list);
 				break;
-			case CiToken.DocBlank:
+			case FuToken.DocBlank:
 				NextToken();
 				break;
 			default:
@@ -114,17 +114,17 @@ public class CiParser : CiLexer
 	void CheckXcrementParent!()
 	{
 		if (this.XcrementParent != null) {
-			string op = See(CiToken.Increment) ? "++" : "--";
+			string op = See(FuToken.Increment) ? "++" : "--";
 			ReportError($"{op} not allowed on the right side of {this.XcrementParent}");
 		}
 	}
 
-	CiLiteralDouble# ParseDouble!()
+	FuLiteralDouble# ParseDouble!()
 	{
 		double d;
 		if (!d.TryParse(GetLexeme().Replace("_", "")))
 			ReportError("Invalid floating-point number");
-		CiLiteralDouble# result = new CiLiteralDouble { Line = this.Line, Type = this.Program.System.DoubleType, Value = d };
+		FuLiteralDouble# result = new FuLiteralDouble { Line = this.Line, Type = this.Program.System.DoubleType, Value = d };
 		NextToken();
 		return result;
 	}
@@ -135,17 +135,17 @@ public class CiParser : CiLexer
 		return c >= '0' && c <= '9';
 	}
 
-	CiInterpolatedString# ParseInterpolatedString!()
+	FuInterpolatedString# ParseInterpolatedString!()
 	{
-		CiInterpolatedString# result = new CiInterpolatedString { Line = this.Line };
+		FuInterpolatedString# result = new FuInterpolatedString { Line = this.Line };
 		do {
 			string() prefix = this.StringValue.Replace("{{", "{");
 			NextToken();
-			CiExpr# arg = ParseExpr();
-			CiExpr# width = Eat(CiToken.Comma) ? ParseExpr() : null;
+			FuExpr# arg = ParseExpr();
+			FuExpr# width = Eat(FuToken.Comma) ? ParseExpr() : null;
 			int format = ' ';
 			int precision = -1;
-			if (See(CiToken.Colon)) {
+			if (See(FuToken.Colon)) {
 				format = ReadChar();
 				if (SeeDigit()) {
 					precision = ReadChar() - '0';
@@ -155,121 +155,121 @@ public class CiParser : CiLexer
 				NextToken();
 			}
 			result.AddPart(prefix, arg, width, format, precision);
-			Check(CiToken.RightBrace);
-		} while (ReadString(true) == CiToken.InterpolatedString);
+			Check(FuToken.RightBrace);
+		} while (ReadString(true) == FuToken.InterpolatedString);
 		result.Suffix = this.StringValue.Replace("{{", "{");
 		NextToken();
 		return result;
 	}
 
-	CiExpr# ParseParenthesized!()
+	FuExpr# ParseParenthesized!()
 	{
-		Expect(CiToken.LeftParenthesis);
-		CiExpr# result = ParseExpr();
-		Expect(CiToken.RightParenthesis);
+		Expect(FuToken.LeftParenthesis);
+		FuExpr# result = ParseExpr();
+		Expect(FuToken.RightParenthesis);
 		return result;
 	}
 
-	CiSymbolReference# ParseSymbolReference!(CiExpr#? left)
+	FuSymbolReference# ParseSymbolReference!(FuExpr#? left)
 	{
-		Check(CiToken.Id);
-		CiSymbolReference# result = new CiSymbolReference { Line = this.Line, Left = left, Name = this.StringValue };
+		Check(FuToken.Id);
+		FuSymbolReference# result = new FuSymbolReference { Line = this.Line, Left = left, Name = this.StringValue };
 		NextToken();
 		return result;
 	}
 
-	void ParseCollection!(List<CiExpr#>! result, CiToken closing)
+	void ParseCollection!(List<FuExpr#>! result, FuToken closing)
 	{
 		if (!See(closing)) {
 			do
 				result.Add(ParseExpr());
-			while (Eat(CiToken.Comma));
+			while (Eat(FuToken.Comma));
 		}
 		ExpectOrSkip(closing);
 	}
 
-	CiExpr# ParsePrimaryExpr!(bool type)
+	FuExpr# ParsePrimaryExpr!(bool type)
 	{
-		CiExpr#? result;
+		FuExpr#? result;
 		switch (this.CurrentToken) {
-		case CiToken.Increment:
-		case CiToken.Decrement:
+		case FuToken.Increment:
+		case FuToken.Decrement:
 			CheckXcrementParent();
-			return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParsePrimaryExpr(false) };
-		case CiToken.Minus:
-		case CiToken.Tilde:
-		case CiToken.ExclamationMark:
-			return new CiPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParsePrimaryExpr(false) };
-		case CiToken.New:
-			CiPrefixExpr# newResult = new CiPrefixExpr { Line = this.Line, Op = NextToken() };
+			return new FuPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParsePrimaryExpr(false) };
+		case FuToken.Minus:
+		case FuToken.Tilde:
+		case FuToken.ExclamationMark:
+			return new FuPrefixExpr { Line = this.Line, Op = NextToken(), Inner = ParsePrimaryExpr(false) };
+		case FuToken.New:
+			FuPrefixExpr# newResult = new FuPrefixExpr { Line = this.Line, Op = NextToken() };
 			result = ParseType();
-			if (Eat(CiToken.LeftBrace))
-				result = new CiBinaryExpr { Line = this.Line, Left = result, Op = CiToken.LeftBrace, Right = ParseObjectLiteral() };
+			if (Eat(FuToken.LeftBrace))
+				result = new FuBinaryExpr { Line = this.Line, Left = result, Op = FuToken.LeftBrace, Right = ParseObjectLiteral() };
 			newResult.Inner = result;
 			return newResult;
-		case CiToken.LiteralLong:
+		case FuToken.LiteralLong:
 			result = this.Program.System.NewLiteralLong(this.LongValue, this.Line);
 			NextToken();
 			break;
-		case CiToken.LiteralDouble:
+		case FuToken.LiteralDouble:
 			result = ParseDouble();
 			break;
-		case CiToken.LiteralChar:
-			result = CiLiteralChar.New(this.LongValue, this.Line);
+		case FuToken.LiteralChar:
+			result = FuLiteralChar.New(this.LongValue, this.Line);
 			NextToken();
 			break;
-		case CiToken.LiteralString:
+		case FuToken.LiteralString:
 			result = this.Program.System.NewLiteralString(this.StringValue, this.Line);
 			NextToken();
 			break;
-		case CiToken.False:
-			result = new CiLiteralFalse { Line = this.Line, Type = this.Program.System.BoolType };
+		case FuToken.False:
+			result = new FuLiteralFalse { Line = this.Line, Type = this.Program.System.BoolType };
 			NextToken();
 			break;
-		case CiToken.True:
-			result = new CiLiteralTrue { Line = this.Line, Type = this.Program.System.BoolType };
+		case FuToken.True:
+			result = new FuLiteralTrue { Line = this.Line, Type = this.Program.System.BoolType };
 			NextToken();
 			break;
-		case CiToken.Null:
-			result = new CiLiteralNull { Line = this.Line, Type = this.Program.System.NullType };
+		case FuToken.Null:
+			result = new FuLiteralNull { Line = this.Line, Type = this.Program.System.NullType };
 			NextToken();
 			break;
-		case CiToken.InterpolatedString:
+		case FuToken.InterpolatedString:
 			result = ParseInterpolatedString();
 			break;
-		case CiToken.LeftParenthesis:
+		case FuToken.LeftParenthesis:
 			result = ParseParenthesized();
 			break;
-		case CiToken.Id:
-			CiSymbolReference# symbol = ParseSymbolReference(null);
-			if (Eat(CiToken.FatArrow)) {
-				CiLambdaExpr# lambda = new CiLambdaExpr { Line = symbol.Line };
-				lambda.Add(CiVar.New(null, symbol.Name));
+		case FuToken.Id:
+			FuSymbolReference# symbol = ParseSymbolReference(null);
+			if (Eat(FuToken.FatArrow)) {
+				FuLambdaExpr# lambda = new FuLambdaExpr { Line = symbol.Line };
+				lambda.Add(FuVar.New(null, symbol.Name));
 				lambda.Body = ParseExpr();
 				return lambda;
 			}
-			if (type && Eat(CiToken.Less)) {
-				CiAggregateInitializer# typeArgs = new CiAggregateInitializer();
+			if (type && Eat(FuToken.Less)) {
+				FuAggregateInitializer# typeArgs = new FuAggregateInitializer();
 				bool saveTypeArg = this.ParsingTypeArg;
 				this.ParsingTypeArg = true;
 				do
 					typeArgs.Items.Add(ParseType());
-				while (Eat(CiToken.Comma));
-				Expect(CiToken.RightAngle);
+				while (Eat(FuToken.Comma));
+				Expect(FuToken.RightAngle);
 				this.ParsingTypeArg = saveTypeArg;
 				symbol.Left = typeArgs;
 			}
 			result = symbol;
 			break;
-		case CiToken.Resource:
+		case FuToken.Resource:
 			NextToken();
-			if (Eat(CiToken.Less)
+			if (Eat(FuToken.Less)
 			 && this.StringValue == "byte"
-			 && Eat(CiToken.Id)
-			 && Eat(CiToken.LeftBracket)
-			 && Eat(CiToken.RightBracket)
-			 && Eat(CiToken.Greater))
-				result = new CiPrefixExpr { Line = this.Line, Op = CiToken.Resource, Inner = ParseParenthesized() };
+			 && Eat(FuToken.Id)
+			 && Eat(FuToken.LeftBracket)
+			 && Eat(FuToken.RightBracket)
+			 && Eat(FuToken.Greater))
+				result = new FuPrefixExpr { Line = this.Line, Op = FuToken.Resource, Inner = ParseParenthesized() };
 			else {
 				ReportError("Expected 'resource<byte[]>'");
 				result = null;
@@ -282,37 +282,37 @@ public class CiParser : CiLexer
 		}
 		for (;;) {
 			switch (this.CurrentToken) {
-			case CiToken.Dot:
+			case FuToken.Dot:
 				NextToken();
 				result = ParseSymbolReference(result);
 				break;
-			case CiToken.LeftParenthesis:
+			case FuToken.LeftParenthesis:
 				NextToken();
-				if (result is CiSymbolReference# method) {
-					CiCallExpr# call = new CiCallExpr { Line = this.Line, Method = method };
-					ParseCollection(call.Arguments, CiToken.RightParenthesis);
+				if (result is FuSymbolReference# method) {
+					FuCallExpr# call = new FuCallExpr { Line = this.Line, Method = method };
+					ParseCollection(call.Arguments, FuToken.RightParenthesis);
 					result = call;
 				}
 				else
 					ReportError("Expected a method");
 				break;
-			case CiToken.LeftBracket:
-				result = new CiBinaryExpr { Line = this.Line, Left = result, Op = NextToken(), Right = See(CiToken.RightBracket) ? null : ParseExpr() };
-				Expect(CiToken.RightBracket);
+			case FuToken.LeftBracket:
+				result = new FuBinaryExpr { Line = this.Line, Left = result, Op = NextToken(), Right = See(FuToken.RightBracket) ? null : ParseExpr() };
+				Expect(FuToken.RightBracket);
 				break;
-			case CiToken.Increment:
-			case CiToken.Decrement:
+			case FuToken.Increment:
+			case FuToken.Decrement:
 				CheckXcrementParent();
-				result = new CiPostfixExpr { Line = this.Line, Inner = result, Op = NextToken() };
+				result = new FuPostfixExpr { Line = this.Line, Inner = result, Op = NextToken() };
 				break;
-			case CiToken.ExclamationMark:
-			case CiToken.Hash:
-				result = new CiPostfixExpr { Line = this.Line, Inner = result, Op = NextToken() };
+			case FuToken.ExclamationMark:
+			case FuToken.Hash:
+				result = new FuPostfixExpr { Line = this.Line, Inner = result, Op = NextToken() };
 				break;
-			case CiToken.QuestionMark:
+			case FuToken.QuestionMark:
 				if (!type)
 					return result;
-				result = new CiPostfixExpr { Line = this.Line, Inner = result, Op = NextToken() };
+				result = new FuPostfixExpr { Line = this.Line, Inner = result, Op = NextToken() };
 				break;
 			default:
 				return result;
@@ -320,15 +320,15 @@ public class CiParser : CiLexer
 		}
 	}
 
-	CiExpr# ParseMulExpr!()
+	FuExpr# ParseMulExpr!()
 	{
-		CiExpr# left = ParsePrimaryExpr(false);
+		FuExpr# left = ParsePrimaryExpr(false);
 		for (;;) {
 			switch (this.CurrentToken) {
-			case CiToken.Asterisk:
-			case CiToken.Slash:
-			case CiToken.Mod:
-				left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(false) };
+			case FuToken.Asterisk:
+			case FuToken.Slash:
+			case FuToken.Mod:
+				left = new FuBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(false) };
 				break;
 			default:
 				return left;
@@ -336,37 +336,37 @@ public class CiParser : CiLexer
 		}
 	}
 
-	CiExpr# ParseAddExpr!()
+	FuExpr# ParseAddExpr!()
 	{
-		CiExpr# left = ParseMulExpr();
-		while (See(CiToken.Plus) || See(CiToken.Minus))
-			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseMulExpr() };
+		FuExpr# left = ParseMulExpr();
+		while (See(FuToken.Plus) || See(FuToken.Minus))
+			left = new FuBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseMulExpr() };
 		return left;
 	}
 
-	CiExpr# ParseShiftExpr!()
+	FuExpr# ParseShiftExpr!()
 	{
-		CiExpr# left = ParseAddExpr();
-		while (See(CiToken.ShiftLeft) || See(CiToken.ShiftRight))
-			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAddExpr() };
+		FuExpr# left = ParseAddExpr();
+		while (See(FuToken.ShiftLeft) || See(FuToken.ShiftRight))
+			left = new FuBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAddExpr() };
 		return left;
 	}
 
-	CiExpr# ParseRelExpr!()
+	FuExpr# ParseRelExpr!()
 	{
-		CiExpr# left = ParseShiftExpr();
+		FuExpr# left = ParseShiftExpr();
 		for (;;) {
 			switch (this.CurrentToken) {
-			case CiToken.Less:
-			case CiToken.LessOrEqual:
-			case CiToken.Greater:
-			case CiToken.GreaterOrEqual:
-				left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseShiftExpr() };
+			case FuToken.Less:
+			case FuToken.LessOrEqual:
+			case FuToken.Greater:
+			case FuToken.GreaterOrEqual:
+				left = new FuBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseShiftExpr() };
 				break;
-			case CiToken.Is:
-				CiBinaryExpr# isExpr = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(false) };
-				if (See(CiToken.Id)) {
-					isExpr.Right = new CiVar { Line = this.Line, TypeExpr = isExpr.Right, Name = this.StringValue };
+			case FuToken.Is:
+				FuBinaryExpr# isExpr = new FuBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(false) };
+				if (See(FuToken.Id)) {
+					isExpr.Right = new FuVar { Line = this.Line, TypeExpr = isExpr.Right, Name = this.StringValue };
 					NextToken();
 				}
 				return isExpr;
@@ -376,72 +376,72 @@ public class CiParser : CiLexer
 		}
 	}
 
-	CiExpr# ParseEqualityExpr!()
+	FuExpr# ParseEqualityExpr!()
 	{
-		CiExpr# left = ParseRelExpr();
-		while (See(CiToken.Equal) || See(CiToken.NotEqual))
-			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseRelExpr() };
+		FuExpr# left = ParseRelExpr();
+		while (See(FuToken.Equal) || See(FuToken.NotEqual))
+			left = new FuBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseRelExpr() };
 		return left;
 	}
 
-	CiExpr# ParseAndExpr!()
+	FuExpr# ParseAndExpr!()
 	{
-		CiExpr# left = ParseEqualityExpr();
-		while (See(CiToken.And))
-			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseEqualityExpr() };
+		FuExpr# left = ParseEqualityExpr();
+		while (See(FuToken.And))
+			left = new FuBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseEqualityExpr() };
 		return left;
 	}
 
-	CiExpr# ParseXorExpr!()
+	FuExpr# ParseXorExpr!()
 	{
-		CiExpr# left = ParseAndExpr();
-		while (See(CiToken.Xor))
-			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAndExpr() };
+		FuExpr# left = ParseAndExpr();
+		while (See(FuToken.Xor))
+			left = new FuBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAndExpr() };
 		return left;
 	}
 
-	CiExpr# ParseOrExpr!()
+	FuExpr# ParseOrExpr!()
 	{
-		CiExpr# left = ParseXorExpr();
-		while (See(CiToken.Or))
-			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseXorExpr() };
+		FuExpr# left = ParseXorExpr();
+		while (See(FuToken.Or))
+			left = new FuBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseXorExpr() };
 		return left;
 	}
 
-	CiExpr# ParseCondAndExpr!()
+	FuExpr# ParseCondAndExpr!()
 	{
-		CiExpr# left = ParseOrExpr();
-		while (See(CiToken.CondAnd)) {
+		FuExpr# left = ParseOrExpr();
+		while (See(FuToken.CondAnd)) {
 			string saveXcrementParent = this.XcrementParent;
 			this.XcrementParent = "&&";
-			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseOrExpr() };
+			left = new FuBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseOrExpr() };
 			this.XcrementParent = saveXcrementParent;
 		}
 		return left;
 	}
 
-	CiExpr# ParseCondOrExpr!()
+	FuExpr# ParseCondOrExpr!()
 	{
-		CiExpr# left = ParseCondAndExpr();
-		while (See(CiToken.CondOr)) {
+		FuExpr# left = ParseCondAndExpr();
+		while (See(FuToken.CondOr)) {
 			string saveXcrementParent = this.XcrementParent;
 			this.XcrementParent = "||";
-			left = new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseCondAndExpr() };
+			left = new FuBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseCondAndExpr() };
 			this.XcrementParent = saveXcrementParent;
 		}
 		return left;
 	}
 
-	CiExpr# ParseExpr!()
+	FuExpr# ParseExpr!()
 	{
-		CiExpr# left = ParseCondOrExpr();
-		if (See(CiToken.QuestionMark)) {
-			CiSelectExpr# result = new CiSelectExpr { Line = this.Line, Cond = left };
+		FuExpr# left = ParseCondOrExpr();
+		if (See(FuToken.QuestionMark)) {
+			FuSelectExpr# result = new FuSelectExpr { Line = this.Line, Cond = left };
 			NextToken();
 			string saveXcrementParent = this.XcrementParent;
 			this.XcrementParent = "?";
 			result.OnTrue = ParseExpr();
-			Expect(CiToken.Colon);
+			Expect(FuToken.Colon);
 			result.OnFalse = ParseExpr();
 			this.XcrementParent = saveXcrementParent;
 			return result;
@@ -449,47 +449,47 @@ public class CiParser : CiLexer
 		return left;
 	}
 
-	CiExpr# ParseType!()
+	FuExpr# ParseType!()
 	{
-		CiExpr# left = ParsePrimaryExpr(true);
-		if (Eat(CiToken.Range))
-			return new CiBinaryExpr { Line = this.Line, Left = left, Op = CiToken.Range, Right = ParsePrimaryExpr(true) };
+		FuExpr# left = ParsePrimaryExpr(true);
+		if (Eat(FuToken.Range))
+			return new FuBinaryExpr { Line = this.Line, Left = left, Op = FuToken.Range, Right = ParsePrimaryExpr(true) };
 		return left;
 	}
 
-	CiExpr# ParseConstInitializer!()
+	FuExpr# ParseConstInitializer!()
 	{
-		if (Eat(CiToken.LeftBrace)) {
-			CiAggregateInitializer# result = new CiAggregateInitializer { Line = this.Line };
-			ParseCollection(result.Items, CiToken.RightBrace);
+		if (Eat(FuToken.LeftBrace)) {
+			FuAggregateInitializer# result = new FuAggregateInitializer { Line = this.Line };
+			ParseCollection(result.Items, FuToken.RightBrace);
 			return result;
 		}
 		return ParseExpr();
 	}
 
-	CiAggregateInitializer# ParseObjectLiteral!()
+	FuAggregateInitializer# ParseObjectLiteral!()
 	{
-		CiAggregateInitializer# result = new CiAggregateInitializer { Line = this.Line };
+		FuAggregateInitializer# result = new FuAggregateInitializer { Line = this.Line };
 		do {
 			int line = this.Line;
-			CiExpr# field = ParseSymbolReference(null);
-			Expect(CiToken.Assign);
-			result.Items.Add(new CiBinaryExpr { Line = line, Left = field, Op = CiToken.Assign, Right = ParseExpr() });
-		} while (Eat(CiToken.Comma));
-		Expect(CiToken.RightBrace);
+			FuExpr# field = ParseSymbolReference(null);
+			Expect(FuToken.Assign);
+			result.Items.Add(new FuBinaryExpr { Line = line, Left = field, Op = FuToken.Assign, Right = ParseExpr() });
+		} while (Eat(FuToken.Comma));
+		Expect(FuToken.RightBrace);
 		return result;
 	}
 
-	CiExpr#? ParseInitializer!()
+	FuExpr#? ParseInitializer!()
 	{
-		if (!Eat(CiToken.Assign))
+		if (!Eat(FuToken.Assign))
 			return null;
-		if (Eat(CiToken.LeftBrace))
+		if (Eat(FuToken.LeftBrace))
 			return ParseObjectLiteral();
 		return ParseExpr();
 	}
 
-	void AddSymbol!(CiScope! scope, CiSymbol# symbol)
+	void AddSymbol!(FuScope! scope, FuSymbol# symbol)
 	{
 		if (scope.Contains(symbol))
 			ReportError("Duplicate symbol");
@@ -497,42 +497,42 @@ public class CiParser : CiLexer
 			scope.Add(symbol);
 	}
 
-	CiVar# ParseVar!(CiExpr# type)
+	FuVar# ParseVar!(FuExpr# type)
 	{
-		CiVar# result = new CiVar { Line = this.Line, TypeExpr = type, Name = this.StringValue };
+		FuVar# result = new FuVar { Line = this.Line, TypeExpr = type, Name = this.StringValue };
 		NextToken();
 		result.Value = ParseInitializer();
 		return result;
 	}
 
-	CiConst# ParseConst!(CiVisibility visibility)
+	FuConst# ParseConst!(FuVisibility visibility)
 	{
-		Expect(CiToken.Const);
-		CiConst# konst = new CiConst { Line = this.Line, Visibility = visibility, TypeExpr = ParseType(), Name = this.StringValue };
+		Expect(FuToken.Const);
+		FuConst# konst = new FuConst { Line = this.Line, Visibility = visibility, TypeExpr = ParseType(), Name = this.StringValue };
 		NextToken();
-		Expect(CiToken.Assign);
+		Expect(FuToken.Assign);
 		konst.Value = ParseConstInitializer();
-		Expect(CiToken.Semicolon);
+		Expect(FuToken.Semicolon);
 		return konst;
 	}
 
-	CiExpr# ParseAssign!(bool allowVar)
+	FuExpr# ParseAssign!(bool allowVar)
 	{
-		CiExpr# left = allowVar ? ParseType() : ParseExpr();
+		FuExpr# left = allowVar ? ParseType() : ParseExpr();
 		switch (this.CurrentToken) {
-		case CiToken.Assign:
-		case CiToken.AddAssign:
-		case CiToken.SubAssign:
-		case CiToken.MulAssign:
-		case CiToken.DivAssign:
-		case CiToken.ModAssign:
-		case CiToken.AndAssign:
-		case CiToken.OrAssign:
-		case CiToken.XorAssign:
-		case CiToken.ShiftLeftAssign:
-		case CiToken.ShiftRightAssign:
-			return new CiBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAssign(false) };
-		case CiToken.Id:
+		case FuToken.Assign:
+		case FuToken.AddAssign:
+		case FuToken.SubAssign:
+		case FuToken.MulAssign:
+		case FuToken.DivAssign:
+		case FuToken.ModAssign:
+		case FuToken.AndAssign:
+		case FuToken.OrAssign:
+		case FuToken.XorAssign:
+		case FuToken.ShiftLeftAssign:
+		case FuToken.ShiftRightAssign:
+			return new FuBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAssign(false) };
+		case FuToken.Id:
 			if (allowVar)
 				return ParseVar(left);
 			return left;
@@ -541,53 +541,53 @@ public class CiParser : CiLexer
 		}
 	}
 
-	CiBlock# ParseBlock!()
+	FuBlock# ParseBlock!()
 	{
-		CiBlock# result = new CiBlock { Line = this.Line };
-		Expect(CiToken.LeftBrace);
-		while (!See(CiToken.RightBrace) && !See(CiToken.EndOfFile))
+		FuBlock# result = new FuBlock { Line = this.Line };
+		Expect(FuToken.LeftBrace);
+		while (!See(FuToken.RightBrace) && !See(FuToken.EndOfFile))
 			result.Statements.Add(ParseStatement());
-		Expect(CiToken.RightBrace);
+		Expect(FuToken.RightBrace);
 		return result;
 	}
 
-	CiAssert# ParseAssert!()
+	FuAssert# ParseAssert!()
 	{
-		CiAssert# result = new CiAssert { Line = this.Line };
-		Expect(CiToken.Assert);
+		FuAssert# result = new FuAssert { Line = this.Line };
+		Expect(FuToken.Assert);
 		result.Cond = ParseExpr();
-		if (Eat(CiToken.Comma))
+		if (Eat(FuToken.Comma))
 			result.Message = ParseExpr();
-		Expect(CiToken.Semicolon);
+		Expect(FuToken.Semicolon);
 		return result;
 	}
 
-	CiBreak# ParseBreak!()
+	FuBreak# ParseBreak!()
 	{
 		if (this.CurrentLoopOrSwitch == null)
 			ReportError("break outside loop or switch");
-		CiBreak# result = new CiBreak { Line = this.Line, LoopOrSwitch = this.CurrentLoopOrSwitch };
-		Expect(CiToken.Break);
-		Expect(CiToken.Semicolon);
-		if (this.CurrentLoopOrSwitch is CiLoop! loop)
+		FuBreak# result = new FuBreak { Line = this.Line, LoopOrSwitch = this.CurrentLoopOrSwitch };
+		Expect(FuToken.Break);
+		Expect(FuToken.Semicolon);
+		if (this.CurrentLoopOrSwitch is FuLoop! loop)
 			loop.HasBreak = true;
 		return result;
 	}
 
-	CiContinue# ParseContinue!()
+	FuContinue# ParseContinue!()
 	{
 		if (this.CurrentLoop == null)
 			ReportError("continue outside loop");
-		CiContinue# result = new CiContinue { Line = this.Line, Loop = this.CurrentLoop };
-		Expect(CiToken.Continue);
-		Expect(CiToken.Semicolon);
+		FuContinue# result = new FuContinue { Line = this.Line, Loop = this.CurrentLoop };
+		Expect(FuToken.Continue);
+		Expect(FuToken.Semicolon);
 		return result;
 	}
 
-	void ParseLoopBody!(CiLoop! loop)
+	void ParseLoopBody!(FuLoop! loop)
 	{
-		CiLoop outerLoop = this.CurrentLoop;
-		CiCondCompletionStatement! outerLoopOrSwitch = this.CurrentLoopOrSwitch;
+		FuLoop outerLoop = this.CurrentLoop;
+		FuCondCompletionStatement! outerLoopOrSwitch = this.CurrentLoopOrSwitch;
 		this.CurrentLoop = loop;
 		this.CurrentLoopOrSwitch = loop;
 		loop.Body = ParseStatement();
@@ -595,99 +595,99 @@ public class CiParser : CiLexer
 		this.CurrentLoop = outerLoop;
 	}
 
-	CiDoWhile# ParseDoWhile!()
+	FuDoWhile# ParseDoWhile!()
 	{
-		CiDoWhile# result = new CiDoWhile { Line = this.Line };
-		Expect(CiToken.Do);
+		FuDoWhile# result = new FuDoWhile { Line = this.Line };
+		Expect(FuToken.Do);
 		ParseLoopBody(result);
-		Expect(CiToken.While);
+		Expect(FuToken.While);
 		result.Cond = ParseParenthesized();
-		Expect(CiToken.Semicolon);
+		Expect(FuToken.Semicolon);
 		return result;
 	}
 
-	CiFor# ParseFor!()
+	FuFor# ParseFor!()
 	{
-		CiFor# result = new CiFor { Line = this.Line };
-		Expect(CiToken.For);
-		Expect(CiToken.LeftParenthesis);
-		if (!See(CiToken.Semicolon))
+		FuFor# result = new FuFor { Line = this.Line };
+		Expect(FuToken.For);
+		Expect(FuToken.LeftParenthesis);
+		if (!See(FuToken.Semicolon))
 			result.Init = ParseAssign(true);
-		Expect(CiToken.Semicolon);
-		if (!See(CiToken.Semicolon))
+		Expect(FuToken.Semicolon);
+		if (!See(FuToken.Semicolon))
 			result.Cond = ParseExpr();
-		Expect(CiToken.Semicolon);
-		if (!See(CiToken.RightParenthesis))
+		Expect(FuToken.Semicolon);
+		if (!See(FuToken.RightParenthesis))
 			result.Advance = ParseAssign(false);
-		Expect(CiToken.RightParenthesis);
+		Expect(FuToken.RightParenthesis);
 		ParseLoopBody(result);
 		return result;
 	}
 
-	void ParseForeachIterator!(CiForeach! result)
+	void ParseForeachIterator!(FuForeach! result)
 	{
-		AddSymbol(result, new CiVar { Line = this.Line, TypeExpr = ParseType(), Name = this.StringValue });
+		AddSymbol(result, new FuVar { Line = this.Line, TypeExpr = ParseType(), Name = this.StringValue });
 		NextToken();
 	}
 
-	CiForeach# ParseForeach!()
+	FuForeach# ParseForeach!()
 	{
-		CiForeach# result = new CiForeach { Line = this.Line };
-		Expect(CiToken.Foreach);
-		Expect(CiToken.LeftParenthesis);
-		if (Eat(CiToken.LeftParenthesis)) {
+		FuForeach# result = new FuForeach { Line = this.Line };
+		Expect(FuToken.Foreach);
+		Expect(FuToken.LeftParenthesis);
+		if (Eat(FuToken.LeftParenthesis)) {
 			ParseForeachIterator(result);
-			Expect(CiToken.Comma);
+			Expect(FuToken.Comma);
 			ParseForeachIterator(result);
-			Expect(CiToken.RightParenthesis);
+			Expect(FuToken.RightParenthesis);
 		}
 		else
 			ParseForeachIterator(result);
-		Expect(CiToken.In);
+		Expect(FuToken.In);
 		result.Collection = ParseExpr();
-		Expect(CiToken.RightParenthesis);
+		Expect(FuToken.RightParenthesis);
 		ParseLoopBody(result);
 		return result;
 	}
 
-	CiIf# ParseIf!()
+	FuIf# ParseIf!()
 	{
-		CiIf# result = new CiIf { Line = this.Line };
-		Expect(CiToken.If);
+		FuIf# result = new FuIf { Line = this.Line };
+		Expect(FuToken.If);
 		result.Cond = ParseParenthesized();
 		result.OnTrue = ParseStatement();
-		if (Eat(CiToken.Else))
+		if (Eat(FuToken.Else))
 			result.OnFalse = ParseStatement();
 		return result;
 	}
 
-	CiLock# ParseLock!()
+	FuLock# ParseLock!()
 	{
-		CiLock# result = new CiLock { Line = this.Line };
-		Expect(CiToken.Lock_);
+		FuLock# result = new FuLock { Line = this.Line };
+		Expect(FuToken.Lock_);
 		result.Lock = ParseParenthesized();
 		result.Body = ParseStatement();
 		return result;
 	}
 
-	CiNative# ParseNative!()
+	FuNative# ParseNative!()
 	{
-		CiNative# result = new CiNative { Line = this.Line };
-		Expect(CiToken.Native);
-		if (See(CiToken.LiteralString))
+		FuNative# result = new FuNative { Line = this.Line };
+		Expect(FuToken.Native);
+		if (See(FuToken.LiteralString))
 			result.Content = this.StringValue;
 		else {
 			int offset = this.CharOffset;
-			Expect(CiToken.LeftBrace);
+			Expect(FuToken.LeftBrace);
 			int nesting = 1;
 			for (;;) {
-				if (See(CiToken.EndOfFile)) {
-					Expect(CiToken.RightBrace);
+				if (See(FuToken.EndOfFile)) {
+					Expect(FuToken.RightBrace);
 					return result;
 				}
-				if (See(CiToken.LeftBrace))
+				if (See(FuToken.LeftBrace))
 					nesting++;
-				else if (See(CiToken.RightBrace)) {
+				else if (See(FuToken.RightBrace)) {
 					if (--nesting == 0)
 						break;
 				}
@@ -700,48 +700,48 @@ public class CiParser : CiLexer
 		return result;
 	}
 
-	CiReturn# ParseReturn!()
+	FuReturn# ParseReturn!()
 	{
-		CiReturn# result = new CiReturn { Line = this.Line };
+		FuReturn# result = new FuReturn { Line = this.Line };
 		NextToken();
-		if (!See(CiToken.Semicolon))
+		if (!See(FuToken.Semicolon))
 			result.Value = ParseExpr();
-		Expect(CiToken.Semicolon);
+		Expect(FuToken.Semicolon);
 		return result;
 	}
 
-	CiSwitch# ParseSwitch!()
+	FuSwitch# ParseSwitch!()
 	{
-		CiSwitch# result = new CiSwitch { Line = this.Line };
-		Expect(CiToken.Switch);
+		FuSwitch# result = new FuSwitch { Line = this.Line };
+		Expect(FuToken.Switch);
 		result.Value = ParseParenthesized();
-		Expect(CiToken.LeftBrace);
+		Expect(FuToken.LeftBrace);
 
-		CiCondCompletionStatement! outerLoopOrSwitch = this.CurrentLoopOrSwitch;
+		FuCondCompletionStatement! outerLoopOrSwitch = this.CurrentLoopOrSwitch;
 		this.CurrentLoopOrSwitch = result;
-		while (Eat(CiToken.Case)) {
+		while (Eat(FuToken.Case)) {
 			result.Cases.Add();
-			CiCase! kase = result.Cases.Last();
+			FuCase! kase = result.Cases.Last();
 			do {
-				CiExpr# expr = ParseExpr();
-				if (See(CiToken.Id))
+				FuExpr# expr = ParseExpr();
+				if (See(FuToken.Id))
 					expr = ParseVar(expr);
-				if (Eat(CiToken.When))
-					expr = new CiBinaryExpr { Line = this.Line, Left = expr, Op = CiToken.When, Right = ParseExpr() };
+				if (Eat(FuToken.When))
+					expr = new FuBinaryExpr { Line = this.Line, Left = expr, Op = FuToken.When, Right = ParseExpr() };
 				kase.Values.Add(expr);
-				Expect(CiToken.Colon);
-			} while (Eat(CiToken.Case));
-			if (See(CiToken.Default)) {
+				Expect(FuToken.Colon);
+			} while (Eat(FuToken.Case));
+			if (See(FuToken.Default)) {
 				ReportError("Please remove 'case' before 'default'");
 				break;
 			}
 
-			while (!See(CiToken.EndOfFile)) {
+			while (!See(FuToken.EndOfFile)) {
 				kase.Body.Add(ParseStatement());
 				switch (this.CurrentToken) {
-				case CiToken.Case:
-				case CiToken.Default:
-				case CiToken.RightBrace:
+				case FuToken.Case:
+				case FuToken.Default:
+				case FuToken.RightBrace:
 					break;
 				default:
 					continue;
@@ -752,206 +752,206 @@ public class CiParser : CiLexer
 		if (result.Cases.Count == 0)
 			ReportError("Switch with no cases");
 
-		if (Eat(CiToken.Default)) {
-			Expect(CiToken.Colon);
+		if (Eat(FuToken.Default)) {
+			Expect(FuToken.Colon);
 			do {
-				if (See(CiToken.EndOfFile))
+				if (See(FuToken.EndOfFile))
 					break;
 				result.DefaultBody.Add(ParseStatement());
-			} while (!See(CiToken.RightBrace));
+			} while (!See(FuToken.RightBrace));
 		}
 
-		Expect(CiToken.RightBrace);
+		Expect(FuToken.RightBrace);
 		this.CurrentLoopOrSwitch = outerLoopOrSwitch;
 		return result;
 	}
 
-	CiThrow# ParseThrow!()
+	FuThrow# ParseThrow!()
 	{
-		CiThrow# result = new CiThrow { Line = this.Line };
-		Expect(CiToken.Throw);
+		FuThrow# result = new FuThrow { Line = this.Line };
+		Expect(FuToken.Throw);
 		result.Message = ParseExpr();
-		Expect(CiToken.Semicolon);
+		Expect(FuToken.Semicolon);
 		return result;
 	}
 
-	CiWhile# ParseWhile!()
+	FuWhile# ParseWhile!()
 	{
-		CiWhile# result = new CiWhile { Line = this.Line };
-		Expect(CiToken.While);
+		FuWhile# result = new FuWhile { Line = this.Line };
+		Expect(FuToken.While);
 		result.Cond = ParseParenthesized();
 		ParseLoopBody(result);
 		return result;
 	}
 
-	CiStatement# ParseStatement!()
+	FuStatement# ParseStatement!()
 	{
 		switch (this.CurrentToken) {
-		case CiToken.LeftBrace:
+		case FuToken.LeftBrace:
 			return ParseBlock();
-		case CiToken.Assert:
+		case FuToken.Assert:
 			return ParseAssert();
-		case CiToken.Break:
+		case FuToken.Break:
 			return ParseBreak();
-		case CiToken.Const:
-			return ParseConst(CiVisibility.Private);
-		case CiToken.Continue:
+		case FuToken.Const:
+			return ParseConst(FuVisibility.Private);
+		case FuToken.Continue:
 			return ParseContinue();
-		case CiToken.Do:
+		case FuToken.Do:
 			return ParseDoWhile();
-		case CiToken.For:
+		case FuToken.For:
 			return ParseFor();
-		case CiToken.Foreach:
+		case FuToken.Foreach:
 			return ParseForeach();
-		case CiToken.If:
+		case FuToken.If:
 			return ParseIf();
-		case CiToken.Lock_:
+		case FuToken.Lock_:
 			return ParseLock();
-		case CiToken.Native:
+		case FuToken.Native:
 			return ParseNative();
-		case CiToken.Return:
+		case FuToken.Return:
 			return ParseReturn();
-		case CiToken.Switch:
+		case FuToken.Switch:
 			return ParseSwitch();
-		case CiToken.Throw:
+		case FuToken.Throw:
 			return ParseThrow();
-		case CiToken.While:
+		case FuToken.While:
 			return ParseWhile();
 		default:
-			CiExpr# expr = ParseAssign(true);
-			Expect(CiToken.Semicolon);
+			FuExpr# expr = ParseAssign(true);
+			Expect(FuToken.Semicolon);
 			return expr;
 		}
 	}
 
-	CiCallType ParseCallType!()
+	FuCallType ParseCallType!()
 	{
 		switch (this.CurrentToken) {
-		case CiToken.Static:
+		case FuToken.Static:
 			NextToken();
-			return CiCallType.Static;
-		case CiToken.Abstract:
+			return FuCallType.Static;
+		case FuToken.Abstract:
 			NextToken();
-			return CiCallType.Abstract;
-		case CiToken.Virtual:
+			return FuCallType.Abstract;
+		case FuToken.Virtual:
 			NextToken();
-			return CiCallType.Virtual;
-		case CiToken.Override:
+			return FuCallType.Virtual;
+		case FuToken.Override:
 			NextToken();
-			return CiCallType.Override;
-		case CiToken.Sealed:
+			return FuCallType.Override;
+		case FuToken.Sealed:
 			NextToken();
-			return CiCallType.Sealed;
+			return FuCallType.Sealed;
 		default:
-			return CiCallType.Normal;
+			return FuCallType.Normal;
 		}
 	}
 
-	void ParseMethod!(CiMethod! method)
+	void ParseMethod!(FuMethod! method)
 	{
-		method.IsMutator = Eat(CiToken.ExclamationMark);
-		Expect(CiToken.LeftParenthesis);
-		if (!See(CiToken.RightParenthesis)) {
+		method.IsMutator = Eat(FuToken.ExclamationMark);
+		Expect(FuToken.LeftParenthesis);
+		if (!See(FuToken.RightParenthesis)) {
 			do {
-				CiCodeDoc# doc = ParseDoc();
-				CiVar# param = ParseVar(ParseType());
+				FuCodeDoc# doc = ParseDoc();
+				FuVar# param = ParseVar(ParseType());
 				param.Documentation = doc;
 				AddSymbol(method.Parameters, param);
-			} while (Eat(CiToken.Comma));
+			} while (Eat(FuToken.Comma));
 		}
-		Expect(CiToken.RightParenthesis);
-		method.Throws = Eat(CiToken.Throws);
-		if (method.CallType == CiCallType.Abstract)
-			Expect(CiToken.Semicolon);
-		else if (See(CiToken.FatArrow))
+		Expect(FuToken.RightParenthesis);
+		method.Throws = Eat(FuToken.Throws);
+		if (method.CallType == FuCallType.Abstract)
+			Expect(FuToken.Semicolon);
+		else if (See(FuToken.FatArrow))
 			method.Body = ParseReturn();
-		else if (Check(CiToken.LeftBrace))
+		else if (Check(FuToken.LeftBrace))
 			method.Body = ParseBlock();
 	}
 
-	static string CallTypeToString(CiCallType callType)
+	static string CallTypeToString(FuCallType callType)
 	{
 		switch (callType) {
-		case CiCallType.Static: return "static";
-		case CiCallType.Normal: return "normal";
-		case CiCallType.Abstract: return "abstract";
-		case CiCallType.Virtual: return "virtual";
-		case CiCallType.Override: return "override";
-		case CiCallType.Sealed: return "sealed";
+		case FuCallType.Static: return "static";
+		case FuCallType.Normal: return "normal";
+		case FuCallType.Abstract: return "abstract";
+		case FuCallType.Virtual: return "virtual";
+		case FuCallType.Override: return "override";
+		case FuCallType.Sealed: return "sealed";
 		default: assert false;
 		}
 	}
 
-	void ParseClass!(CiCodeDoc# doc, bool isPublic, CiCallType callType)
+	void ParseClass!(FuCodeDoc# doc, bool isPublic, FuCallType callType)
 	{
-		Expect(CiToken.Class);
-		CiClass# klass = new CiClass { Filename = this.Filename, Line = this.Line, Documentation = doc, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
-		if (Expect(CiToken.Id))
+		Expect(FuToken.Class);
+		FuClass# klass = new FuClass { Filename = this.Filename, Line = this.Line, Documentation = doc, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
+		if (Expect(FuToken.Id))
 			AddSymbol(this.Program, klass);
-		if (Eat(CiToken.Colon)) {
+		if (Eat(FuToken.Colon)) {
 			klass.BaseClassName = this.StringValue;
-			Expect(CiToken.Id);
+			Expect(FuToken.Id);
 		}
-		Expect(CiToken.LeftBrace);
+		Expect(FuToken.LeftBrace);
 
-		while (!See(CiToken.RightBrace) && !See(CiToken.EndOfFile)) {
+		while (!See(FuToken.RightBrace) && !See(FuToken.EndOfFile)) {
 			doc = ParseDoc();
 
-			CiVisibility visibility;
+			FuVisibility visibility;
 			switch (this.CurrentToken) {
-			case CiToken.Internal:
-				visibility = CiVisibility.Internal;
+			case FuToken.Internal:
+				visibility = FuVisibility.Internal;
 				NextToken();
 				break;
-			case CiToken.Protected:
-				visibility = CiVisibility.Protected;
+			case FuToken.Protected:
+				visibility = FuVisibility.Protected;
 				NextToken();
 				break;
-			case CiToken.Public:
-				visibility = CiVisibility.Public;
+			case FuToken.Public:
+				visibility = FuVisibility.Public;
 				NextToken();
 				break;
 			default:
-				visibility = CiVisibility.Private;
+				visibility = FuVisibility.Private;
 				break;
 			}
 
-			if (See(CiToken.Const)) {
+			if (See(FuToken.Const)) {
 				// const
-				CiConst# konst = ParseConst(visibility);
+				FuConst# konst = ParseConst(visibility);
 				konst.Documentation = doc;
 				AddSymbol(klass, konst);
 				continue;
 			}
 
 			callType = ParseCallType();
-			CiExpr# type = Eat(CiToken.Void) ? this.Program.System.VoidType : ParseType();
-			if (See(CiToken.LeftBrace) && type is CiCallExpr call) {
+			FuExpr# type = Eat(FuToken.Void) ? this.Program.System.VoidType : ParseType();
+			if (See(FuToken.LeftBrace) && type is FuCallExpr call) {
 				// constructor
 				if (call.Method.Name != klass.Name)
 					ReportError("Method with no return type");
 				else {
-					if (klass.CallType == CiCallType.Static)
+					if (klass.CallType == FuCallType.Static)
 						ReportError("Constructor in a static class");
-					if (callType != CiCallType.Normal)
+					if (callType != FuCallType.Normal)
 						ReportError($"Constructor cannot be {CallTypeToString(callType)}");
 					if (call.Arguments.Count != 0)
 						ReportError("Constructor parameters not supported");
 					if (klass.Constructor != null)
 						ReportError($"Duplicate constructor, already defined in line {klass.Constructor.Line}");
 				}
-				if (visibility == CiVisibility.Private)
-					visibility = CiVisibility.Internal; // TODO
-				klass.Constructor = new CiMethodBase { Line = call.Line, Documentation = doc, Visibility = visibility, Parent = klass,
+				if (visibility == FuVisibility.Private)
+					visibility = FuVisibility.Internal; // TODO
+				klass.Constructor = new FuMethodBase { Line = call.Line, Documentation = doc, Visibility = visibility, Parent = klass,
 					Type = this.Program.System.VoidType, Name = klass.Name, IsMutator = true, Body = ParseBlock() };
 				continue;
 			}
 
 			int line = this.Line;
 			string() name = this.StringValue;
-			if (!Expect(CiToken.Id))
+			if (!Expect(FuToken.Id))
 				continue;
-			if (See(CiToken.LeftParenthesis) || See(CiToken.ExclamationMark)) {
+			if (See(FuToken.LeftParenthesis) || See(FuToken.ExclamationMark)) {
 				// method
 
 				// \ class | static | normal | abstract | sealed
@@ -963,19 +963,19 @@ public class CiParser : CiLexer
 				// virtual |   -    |   +    |    +     |   -
 				// override|   -    |   +    |    +     |   +
 				// sealed  |   -    |   +    |    +     |   +
-				if (callType == CiCallType.Static || klass.CallType == CiCallType.Abstract) {
+				if (callType == FuCallType.Static || klass.CallType == FuCallType.Abstract) {
 					// ok
 				}
-				else if (klass.CallType == CiCallType.Static)
+				else if (klass.CallType == FuCallType.Static)
 					ReportError("Only static methods allowed in a static class");
-				else if (callType == CiCallType.Abstract)
+				else if (callType == FuCallType.Abstract)
 					ReportError("Abstract methods allowed only in an abstract class");
-				else if (klass.CallType == CiCallType.Sealed && callType == CiCallType.Virtual)
+				else if (klass.CallType == FuCallType.Sealed && callType == FuCallType.Virtual)
 					ReportError("Virtual methods disallowed in a sealed class");
-				if (visibility == CiVisibility.Private && callType != CiCallType.Static && callType != CiCallType.Normal)
+				if (visibility == FuVisibility.Private && callType != FuCallType.Static && callType != FuCallType.Normal)
 					ReportError($"{CallTypeToString(callType)} method cannot be private");
 
-				CiMethod# method = new CiMethod { Line = line, Documentation = doc, Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
+				FuMethod# method = new FuMethod { Line = line, Documentation = doc, Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
 				AddSymbol(klass, method);
 				method.Parameters.Parent = klass;
 				ParseMethod(method);
@@ -983,68 +983,68 @@ public class CiParser : CiLexer
 			}
 
 			// field
-			if (visibility == CiVisibility.Public)
+			if (visibility == FuVisibility.Public)
 				ReportError("Field cannot be public");
-			if (callType != CiCallType.Normal)
+			if (callType != FuCallType.Normal)
 				ReportError($"Field cannot be {CallTypeToString(callType)}");
 			if (type == this.Program.System.VoidType)
 				ReportError("Field cannot be void");
-			CiField# field = new CiField { Line = line, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };
+			FuField# field = new FuField { Line = line, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };
 			AddSymbol(klass, field);
-			Expect(CiToken.Semicolon);
+			Expect(FuToken.Semicolon);
 		}
-		Expect(CiToken.RightBrace);
+		Expect(FuToken.RightBrace);
 	}
 
-	void ParseEnum!(CiCodeDoc# doc, bool isPublic)
+	void ParseEnum!(FuCodeDoc# doc, bool isPublic)
 	{
-		Expect(CiToken.Enum);
-		bool flags = Eat(CiToken.Asterisk);
-		CiEnum# enu = this.Program.System.NewEnum(flags);
+		Expect(FuToken.Enum);
+		bool flags = Eat(FuToken.Asterisk);
+		FuEnum# enu = this.Program.System.NewEnum(flags);
 		enu.Filename = this.Filename;
 		enu.Line = this.Line;
 		enu.Documentation = doc;
 		enu.IsPublic = isPublic;
 		enu.Name = this.StringValue;
-		if (Expect(CiToken.Id))
+		if (Expect(FuToken.Id))
 			AddSymbol(this.Program, enu);
-		Expect(CiToken.LeftBrace);
+		Expect(FuToken.LeftBrace);
 		do {
-			CiConst# konst = new CiConst { Visibility = CiVisibility.Public, Documentation = ParseDoc(), Line = this.Line, Name = this.StringValue, Type = enu };
-			Expect(CiToken.Id);
-			if (Eat(CiToken.Assign))
+			FuConst# konst = new FuConst { Visibility = FuVisibility.Public, Documentation = ParseDoc(), Line = this.Line, Name = this.StringValue, Type = enu };
+			Expect(FuToken.Id);
+			if (Eat(FuToken.Assign))
 				konst.Value = ParseExpr();
 			else if (flags)
 				ReportError("enum* symbol must be assigned a value");
 			AddSymbol(enu, konst);
-		} while (Eat(CiToken.Comma));
-		Expect(CiToken.RightBrace);
+		} while (Eat(FuToken.Comma));
+		Expect(FuToken.RightBrace);
 	}
 
 	public void Parse!(string filename, byte[] input, int inputLength)
 	{
 		Open(filename, input, inputLength);
-		while (!See(CiToken.EndOfFile)) {
-			CiCodeDoc# doc = ParseDoc();
-			bool isPublic = Eat(CiToken.Public);
+		while (!See(FuToken.EndOfFile)) {
+			FuCodeDoc# doc = ParseDoc();
+			bool isPublic = Eat(FuToken.Public);
 			switch (this.CurrentToken) {
 			// class
-			case CiToken.Class:
-				ParseClass(doc, isPublic, CiCallType.Normal);
+			case FuToken.Class:
+				ParseClass(doc, isPublic, FuCallType.Normal);
 				break;
-			case CiToken.Static:
-			case CiToken.Abstract:
-			case CiToken.Sealed:
+			case FuToken.Static:
+			case FuToken.Abstract:
+			case FuToken.Sealed:
 				ParseClass(doc, isPublic, ParseCallType());
 				break;
 
 			// enum
-			case CiToken.Enum:
+			case FuToken.Enum:
 				ParseEnum(doc, isPublic);
 				break;
 
 			// native
-			case CiToken.Native:
+			case FuToken.Native:
 				this.Program.TopLevelNatives.Add(ParseNative().Content);
 				break;
 

@@ -21,7 +21,7 @@
 
 public class GenTs : GenJs
 {
-	CiSystem System;
+	FuSystem System;
 
 	// GenFullCode = false: only generate TypeScript declarations (.d.ts files)
 	// GenFullCode = true: generate full TypeScript code
@@ -35,13 +35,13 @@ public class GenTs : GenJs
 		return this;
 	}
 
-	public override void VisitEnumValue!(CiConst konst, CiConst? previous)
+	internal override void VisitEnumValue!(FuConst konst, FuConst? previous)
 	{
 		WriteEnumValue(konst);
 		WriteCharLine(',');
 	}
 
-	protected override void WriteEnum!(CiEnum enu)
+	protected override void WriteEnum!(FuEnum enu)
 	{
 		// WARNING: TypeScript enums allow reverse lookup that the Js generator currently
 		// doesn't implement
@@ -55,33 +55,33 @@ public class GenTs : GenJs
 		CloseBlock();
 	}
 
-	protected override void WriteTypeAndName!(CiNamedValue value)
+	protected override void WriteTypeAndName!(FuNamedValue value)
 	{
 		WriteName(value);
 		Write(": ");
 		WriteType(value.Type);
 	}
 
-	void WriteType!(CiType type, bool readOnly = false)
+	void WriteType!(FuType type, bool readOnly = false)
 	{
 		switch (type) {
-		case CiNumericType _:
-			Write(type.Id == CiId.LongType ? "bigint" : "number");
+		case FuNumericType _:
+			Write(type.Id == FuId.LongType ? "bigint" : "number");
 			break;
-		case CiEnum enu:
-			Write(enu.Id == CiId.BoolType ? "boolean" : enu.Name);
+		case FuEnum enu:
+			Write(enu.Id == FuId.BoolType ? "boolean" : enu.Name);
 			break;
-		case CiClassType klass:
-			readOnly |= !(klass is CiReadWriteClassType);
+		case FuClassType klass:
+			readOnly |= !(klass is FuReadWriteClassType);
 			switch (klass.Class.Id) {
-			case CiId.StringClass:
+			case FuId.StringClass:
 				Write("string");
 				break;
-			case CiId.ArrayPtrClass when !(klass.GetElementType() is CiNumericType):
-			case CiId.ArrayStorageClass when !(klass.GetElementType() is CiNumericType):
-			case CiId.ListClass:
-			case CiId.QueueClass:
-			case CiId.StackClass:
+			case FuId.ArrayPtrClass when !(klass.GetElementType() is FuNumericType):
+			case FuId.ArrayStorageClass when !(klass.GetElementType() is FuNumericType):
+			case FuId.ListClass:
+			case FuId.QueueClass:
+			case FuId.StackClass:
 				if (readOnly)
 					Write("readonly ");
 				if (klass.GetElementType().Nullable)
@@ -95,40 +95,40 @@ public class GenTs : GenJs
 				if (readOnly && klass.Class.TypeParameterCount > 0)
 					Write("Readonly<");
 				switch (klass.Class.Id) {
-				case CiId.ArrayPtrClass:
-				case CiId.ArrayStorageClass:
+				case FuId.ArrayPtrClass:
+				case FuId.ArrayStorageClass:
 					WriteArrayElementType(klass.GetElementType());
 					Write("Array");
 					break;
-				case CiId.HashSetClass:
-				case CiId.SortedSetClass:
+				case FuId.HashSetClass:
+				case FuId.SortedSetClass:
 					Write("Set<");
 					WriteType(klass.GetElementType(), false);
 					WriteChar('>');
 					break;
-				case CiId.DictionaryClass:
-				case CiId.SortedDictionaryClass:
-					if (klass.GetKeyType() is CiEnum)
+				case FuId.DictionaryClass:
+				case FuId.SortedDictionaryClass:
+					if (klass.GetKeyType() is FuEnum)
 						Write("Partial<");
 					Write("Record<");
 					WriteType(klass.GetKeyType());
 					Write(", ");
 					WriteType(klass.GetValueType());
 					WriteChar('>');
-					if (klass.GetKeyType() is CiEnum)
+					if (klass.GetKeyType() is FuEnum)
 						WriteChar('>');
 					break;
-				case CiId.OrderedDictionaryClass:
+				case FuId.OrderedDictionaryClass:
 					Write("Map<");
 					WriteType(klass.GetKeyType());
 					Write(", ");
 					WriteType(klass.GetValueType());
 					WriteChar('>');
 					break;
-				case CiId.RegexClass:
+				case FuId.RegexClass:
 					Write("RegExp");
 					break;
-				case CiId.MatchClass:
+				case FuId.MatchClass:
 					Write("RegExpMatchArray");
 					break;
 				default:
@@ -148,44 +148,44 @@ public class GenTs : GenJs
 		}
 	}
 
-	protected override void WriteAsType!(CiVar def)
+	protected override void WriteAsType!(FuVar def)
 	{
 		Write(" as ");
 		Write(def.Type.Name);
 	}
 
-	protected override void WriteBinaryOperand!(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
+	protected override void WriteBinaryOperand!(FuExpr expr, FuPriority parent, FuBinaryExpr binary)
 	{
-		CiType type = binary.Type;
-		if (expr.Type is CiNumericType && binary.IsRel()) {
+		FuType type = binary.Type;
+		if (expr.Type is FuNumericType && binary.IsRel()) {
 			// work around https://github.com/microsoft/TypeScript/issues/30540
 			type = this.System.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
 		}
 		WriteCoerced(type, expr, parent);
 	}
 
-	protected override void WriteEqualOperand!(CiExpr expr, CiExpr other)
+	protected override void WriteEqualOperand!(FuExpr expr, FuExpr other)
 	{
-		if (expr.Type is CiNumericType)
-			WriteCoerced(this.System.PromoteNumericTypes(expr.Type, other.Type), expr, CiPriority.Equality);
+		if (expr.Type is FuNumericType)
+			WriteCoerced(this.System.PromoteNumericTypes(expr.Type, other.Type), expr, FuPriority.Equality);
 		else
-			expr.Accept(this, CiPriority.Equality);
+			expr.Accept(this, FuPriority.Equality);
 	}
 
-	protected override void WriteBoolAndOr!(CiBinaryExpr expr)
+	protected override void WriteBoolAndOr!(FuBinaryExpr expr)
 	{
 		Write("[ ");
-		expr.Left.Accept(this, CiPriority.Argument);
+		expr.Left.Accept(this, FuPriority.Argument);
 		Write(", ");
-		expr.Right.Accept(this, CiPriority.Argument);
+		expr.Right.Accept(this, FuPriority.Argument);
 		Write(" ].");
-		Write(expr.Op == CiToken.And ? "every" : "some");
+		Write(expr.Op == FuToken.And ? "every" : "some");
 		Write("(Boolean)");
 	}
 
-	protected override void DefineIsVar!(CiBinaryExpr binary)
+	protected override void DefineIsVar!(FuBinaryExpr binary)
 	{
-		if (binary.Right is CiVar def) {
+		if (binary.Right is FuVar def) {
 			EnsureChildBlock();
 			Write("let ");
 			WriteName(def);
@@ -195,16 +195,16 @@ public class GenTs : GenJs
 		}
 	}
 
-	void WriteVisibility!(CiVisibility visibility)
+	void WriteVisibility!(FuVisibility visibility)
 	{
 		switch (visibility) {
-		case CiVisibility.Private:
-		case CiVisibility.Internal:
+		case FuVisibility.Private:
+		case FuVisibility.Internal:
 			break;
-		case CiVisibility.Protected:
+		case FuVisibility.Protected:
 			Write("protected ");
 			break;
-		case CiVisibility.Public:
+		case FuVisibility.Public:
 			Write("public ");
 			break;
 		default:
@@ -212,7 +212,7 @@ public class GenTs : GenJs
 		}
 	}
 
-	protected override void WriteConst!(CiConst konst)
+	protected override void WriteConst!(FuConst konst)
 	{
 		WriteNewLine();
 		WriteDoc(konst.Documentation);
@@ -223,12 +223,12 @@ public class GenTs : GenJs
 		WriteType(konst.Type, true);
 		if (this.GenFullCode) {
 			Write(" = ");
-			konst.Value.Accept(this, CiPriority.Argument);
+			konst.Value.Accept(this, FuPriority.Argument);
 		}
 		WriteCharLine(';');
 	}
 
-	protected override void WriteField!(CiField field)
+	protected override void WriteField!(FuField field)
 	{
 		WriteDoc(field.Documentation);
 		WriteVisibility(field.Visibility);
@@ -240,26 +240,26 @@ public class GenTs : GenJs
 		WriteCharLine(';');
 	}
 
-	protected override void WriteMethod!(CiMethod method)
+	protected override void WriteMethod!(FuMethod method)
 	{
 		WriteNewLine();
 		WriteMethodDoc(method);
 		WriteVisibility(method.Visibility);
 		switch (method.CallType) {
-		case CiCallType.Static:
+		case FuCallType.Static:
 			Write("static ");
 			break;
-		case CiCallType.Virtual:
+		case FuCallType.Virtual:
 			break;
-		case CiCallType.Abstract:
+		case FuCallType.Abstract:
 			Write("abstract ");
 			break;
-		case CiCallType.Override:
+		case FuCallType.Override:
 			break;
-		case CiCallType.Normal:
+		case FuCallType.Normal:
 			// no final methods in TS
 			break;
-		case CiCallType.Sealed:
+		case FuCallType.Sealed:
 			// no final methods in TS
 			break;
 		default:
@@ -268,7 +268,7 @@ public class GenTs : GenJs
 		WriteName(method);
 		WriteChar('(');
 		int i = 0;
-		for (CiVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+		for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 			if (i > 0)
 				Write(", ");
 			WriteName(param);
@@ -288,20 +288,20 @@ public class GenTs : GenJs
 			WriteCharLine(';');
 	}
 
-	protected override void WriteClass!(CiClass klass, CiProgram program)
+	protected override void WriteClass!(FuClass klass, FuProgram program)
 	{
 		if (!WriteBaseClass(klass, program))
 			return;
 
 		StartContainerType(klass);
 		switch (klass.CallType) {
-		case CiCallType.Normal:
+		case FuCallType.Normal:
 			break;
-		case CiCallType.Abstract:
+		case FuCallType.Abstract:
 			Write("abstract ");
 			break;
-		case CiCallType.Static:
-		case CiCallType.Sealed:
+		case FuCallType.Static:
+		case FuCallType.Sealed:
 			// there's no final/sealed keyword, but we accomplish it by marking the constructor private
 			break;
 		default:
@@ -309,12 +309,12 @@ public class GenTs : GenJs
 		}
 		OpenClass(klass, "", " extends ");
 
-		if (NeedsConstructor(klass) || klass.CallType == CiCallType.Static) {
+		if (NeedsConstructor(klass) || klass.CallType == FuCallType.Static) {
 			if (klass.Constructor != null) {
 				WriteDoc(klass.Constructor.Documentation);
 				WriteVisibility(klass.Constructor.Visibility);
 			}
-			else if (klass.CallType == CiCallType.Static)
+			else if (klass.CallType == FuCallType.Static)
 				Write("private ");
 			if (this.GenFullCode)
 				WriteConstructor(klass);
@@ -326,7 +326,7 @@ public class GenTs : GenJs
 		CloseBlock();
 	}
 
-	public override void WriteProgram!(CiProgram program)
+	public override void WriteProgram!(FuProgram program)
 	{
 		this.System = program.System;
 		CreateOutputFile();

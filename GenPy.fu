@@ -36,20 +36,20 @@ public class GenPy : GenPySwift
 
 	protected override string GetDocBullet() => " * ";
 
-	void StartDoc!(CiCodeDoc doc)
+	void StartDoc!(FuCodeDoc doc)
 	{
 		Write("\"\"\"");
 		WriteDocPara(doc.Summary, false);
 		if (doc.Details.Count > 0) {
 			WriteNewLine();
-			foreach (CiDocBlock block in doc.Details) {
+			foreach (FuDocBlock block in doc.Details) {
 				WriteNewLine();
 				WriteDocBlock(block, false);
 			}
 		}
 	}
 
-	protected override void WriteDoc!(CiCodeDoc? doc)
+	protected override void WriteDoc!(FuCodeDoc? doc)
 	{
 		if (doc != null) {
 			StartDoc(doc);
@@ -57,7 +57,7 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	protected override void WriteParameterDoc!(CiVar param, bool first)
+	protected override void WriteParameterDoc!(FuVar param, bool first)
 	{
 		if (first) {
 			WriteNewLine();
@@ -70,7 +70,7 @@ public class GenPy : GenPySwift
 		WriteNewLine();
 	}
 
-	void WritePyDoc!(CiMethod method)
+	void WritePyDoc!(FuMethod method)
 	{
 		if (method.Documentation == null)
 			return;
@@ -79,17 +79,17 @@ public class GenPy : GenPySwift
 		WriteLine("\"\"\"");
 	}
 
-	public override void VisitLiteralNull!()
+	internal override void VisitLiteralNull!()
 	{
 		Write("None");
 	}
 
-	public override void VisitLiteralFalse!()
+	internal override void VisitLiteralFalse!()
 	{
 		Write("False");
 	}
 
-	public override void VisitLiteralTrue!()
+	internal override void VisitLiteralTrue!()
 	{
 		Write("True");
 	}
@@ -138,16 +138,16 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	protected override void WriteName!(CiSymbol symbol)
+	protected override void WriteName!(FuSymbol symbol)
 	{
 		switch (symbol) {
-		case CiContainerType container:
+		case FuContainerType container:
 			if (!container.IsPublic)
 				WriteChar('_');
 			Write(symbol.Name);
 			break;
-		case CiConst konst:
-			if (konst.Visibility != CiVisibility.Public)
+		case FuConst konst:
+			if (konst.Visibility != FuVisibility.Public)
 				WriteChar('_');
 			if (konst.InMethod != null) {
 				WriteUppercaseWithUnderscores(konst.InMethod.Name);
@@ -155,13 +155,13 @@ public class GenPy : GenPySwift
 			}
 			WriteUppercaseWithUnderscores(symbol.Name);
 			break;
-		case CiVar _:
+		case FuVar _:
 			WriteNameNotKeyword(symbol.Name);
 			break;
-		case CiMember member:
-			if (member.Id == CiId.ClassToString)
+		case FuMember member:
+			if (member.Id == FuId.ClassToString)
 				Write("__str__");
-			else if (member.Visibility == CiVisibility.Public)
+			else if (member.Visibility == FuVisibility.Public)
 				WriteNameNotKeyword(symbol.Name);
 			else {
 				WriteChar('_');
@@ -173,14 +173,14 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	protected override void WriteTypeAndName!(CiNamedValue value)
+	protected override void WriteTypeAndName!(FuNamedValue value)
 	{
 		WriteName(value);
 	}
 
-	protected override void WriteLocalName!(CiSymbol symbol, CiPriority parent)
+	protected override void WriteLocalName!(FuSymbol symbol, FuPriority parent)
 	{
-		if (symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiStringType) {
+		if (symbol.Parent is FuForeach forEach && forEach.Collection.Type is FuStringType) {
 			Write("ord(");
 			WriteNameNotKeyword(symbol.Name);
 			WriteChar(')');
@@ -189,34 +189,34 @@ public class GenPy : GenPySwift
 			base.WriteLocalName(symbol, parent);
 	}
 
-	static int GetArrayCode(CiType type)
+	static int GetArrayCode(FuType type)
 	{
 		switch (type.Id) {
-		case CiId.SByteRange:
+		case FuId.SByteRange:
 			return 'b';
-		case CiId.ByteRange:
+		case FuId.ByteRange:
 			return 'B';
-		case CiId.ShortRange:
+		case FuId.ShortRange:
 			return 'h';
-		case CiId.UShortRange:
+		case FuId.UShortRange:
 			return 'H';
-		case CiId.IntType:
+		case FuId.IntType:
 			return 'i';
-		case CiId.LongType:
+		case FuId.LongType:
 			return 'q';
-		case CiId.FloatType:
+		case FuId.FloatType:
 			return 'f';
-		case CiId.DoubleType:
+		case FuId.DoubleType:
 			return 'd';
 		default:
 			assert false;
 		}
 	}
 
-	public override void VisitAggregateInitializer!(CiAggregateInitializer expr)
+	internal override void VisitAggregateInitializer!(FuAggregateInitializer expr)
 	{
-		assert expr.Type is CiArrayStorageType array;
-		if (array.GetElementType() is CiNumericType number) {
+		assert expr.Type is FuArrayStorageType array;
+		if (array.GetElementType() is FuNumericType number) {
 			int c = GetArrayCode(number);
 			if (c == 'B')
 				Write("bytes(");
@@ -233,27 +233,27 @@ public class GenPy : GenPySwift
 			base.VisitAggregateInitializer(expr);
 	}
 
-	public override void VisitInterpolatedString!(CiInterpolatedString expr, CiPriority parent)
+	internal override void VisitInterpolatedString!(FuInterpolatedString expr, FuPriority parent)
 	{
 		Write("f\"");
-		foreach (CiInterpolatedPart part in expr.Parts) {
+		foreach (FuInterpolatedPart part in expr.Parts) {
 			WriteDoubling(part.Prefix, '{');
 			WriteChar('{');
-			part.Argument.Accept(this, CiPriority.Argument);
+			part.Argument.Accept(this, FuPriority.Argument);
 			WritePyFormat(part);
 		}
 		WriteDoubling(expr.Suffix, '{');
 		WriteChar('"');
 	}
 
-	public override void VisitPrefixExpr!(CiPrefixExpr expr, CiPriority parent)
+	internal override void VisitPrefixExpr!(FuPrefixExpr expr, FuPriority parent)
 	{
-		if (expr.Op == CiToken.ExclamationMark) {
-			if (parent > CiPriority.CondAnd)
+		if (expr.Op == FuToken.ExclamationMark) {
+			if (parent > FuPriority.CondAnd)
 				WriteChar('(');
 			Write("not ");
-			expr.Inner.Accept(this, CiPriority.Or);
-			if (parent > CiPriority.CondAnd)
+			expr.Inner.Accept(this, FuPriority.Or);
+			if (parent > FuPriority.CondAnd)
 				WriteChar(')');
 		}
 		else
@@ -262,44 +262,44 @@ public class GenPy : GenPySwift
 
 	protected override string GetReferenceEqOp(bool not) => not ? " is not " : " is ";
 
-	protected override void WriteCharAt!(CiBinaryExpr expr)
+	protected override void WriteCharAt!(FuBinaryExpr expr)
 	{
 		Write("ord(");
-		WriteIndexingExpr(expr, CiPriority.Argument);
+		WriteIndexingExpr(expr, FuPriority.Argument);
 		WriteChar(')');
 	}
 
-	protected override void WriteStringLength!(CiExpr expr)
+	protected override void WriteStringLength!(FuExpr expr)
 	{
 		WriteCall("len", expr);
 	}
 
-	public override void VisitSymbolReference!(CiSymbolReference expr, CiPriority parent)
+	internal override void VisitSymbolReference!(FuSymbolReference expr, FuPriority parent)
 	{
 		switch (expr.Symbol.Id) {
-		case CiId.ConsoleError:
+		case FuId.ConsoleError:
 			Include("sys");
 			Write("sys.stderr");
 			break;
-		case CiId.ListCount:
-		case CiId.QueueCount:
-		case CiId.StackCount:
-		case CiId.HashSetCount:
-		case CiId.SortedSetCount:
-		case CiId.DictionaryCount:
-		case CiId.SortedDictionaryCount:
-		case CiId.OrderedDictionaryCount:
+		case FuId.ListCount:
+		case FuId.QueueCount:
+		case FuId.StackCount:
+		case FuId.HashSetCount:
+		case FuId.SortedSetCount:
+		case FuId.DictionaryCount:
+		case FuId.SortedDictionaryCount:
+		case FuId.OrderedDictionaryCount:
 			WriteStringLength(expr.Left);
 			break;
-		case CiId.MathNaN:
+		case FuId.MathNaN:
 			Include("math");
 			Write("math.nan");
 			break;
-		case CiId.MathNegativeInfinity:
+		case FuId.MathNegativeInfinity:
 			Include("math");
 			Write("-math.inf");
 			break;
-		case CiId.MathPositiveInfinity:
+		case FuId.MathPositiveInfinity:
 			Include("math");
 			Write("math.inf");
 			break;
@@ -310,15 +310,15 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	public override void VisitBinaryExpr!(CiBinaryExpr expr, CiPriority parent)
+	internal override void VisitBinaryExpr!(FuBinaryExpr expr, FuPriority parent)
 	{
 		switch (expr.Op) {
-		case CiToken.Slash:
-			if (expr.Type is CiIntegerType) {
+		case FuToken.Slash:
+			if (expr.Type is FuIntegerType) {
 				bool floorDiv;
-				if (expr.Left is CiRangeType leftRange && leftRange.Min >= 0
-				 && expr.Right is CiRangeType rightRange && rightRange.Min >= 0) {
-					if (parent > CiPriority.Or)
+				if (expr.Left is FuRangeType leftRange && leftRange.Min >= 0
+				 && expr.Right is FuRangeType rightRange && rightRange.Min >= 0) {
+					if (parent > FuPriority.Or)
 						WriteChar('(');
 					floorDiv = true;
 				}
@@ -326,70 +326,70 @@ public class GenPy : GenPySwift
 					Write("int(");
 					floorDiv = false;
 				}
-				expr.Left.Accept(this, CiPriority.Mul);
+				expr.Left.Accept(this, FuPriority.Mul);
 				Write(floorDiv ? " // " : " / ");
-				expr.Right.Accept(this, CiPriority.Primary);
-				if (!floorDiv || parent > CiPriority.Or)
+				expr.Right.Accept(this, FuPriority.Primary);
+				if (!floorDiv || parent > FuPriority.Or)
 					WriteChar(')');
 			}
 			else
 				base.VisitBinaryExpr(expr, parent);
 			break;
 
-		case CiToken.CondAnd:
-			WriteBinaryExpr(expr, parent > CiPriority.CondAnd || parent == CiPriority.CondOr, CiPriority.CondAnd, " and ", CiPriority.CondAnd);
+		case FuToken.CondAnd:
+			WriteBinaryExpr(expr, parent > FuPriority.CondAnd || parent == FuPriority.CondOr, FuPriority.CondAnd, " and ", FuPriority.CondAnd);
 			break;
-		case CiToken.CondOr:
-			WriteBinaryExpr2(expr, parent, CiPriority.CondOr, " or ");
+		case FuToken.CondOr:
+			WriteBinaryExpr2(expr, parent, FuPriority.CondOr, " or ");
 			break;
 
-		case CiToken.Assign:
+		case FuToken.Assign:
 			if (this.AtLineStart) {
-				for (CiExpr right = expr.Right; right is CiBinaryExpr rightBinary && rightBinary.IsAssign(); right = rightBinary.Right) {
-					if (rightBinary.Op != CiToken.Assign) {
-						VisitBinaryExpr(rightBinary, CiPriority.Statement);
+				for (FuExpr right = expr.Right; right is FuBinaryExpr rightBinary && rightBinary.IsAssign(); right = rightBinary.Right) {
+					if (rightBinary.Op != FuToken.Assign) {
+						VisitBinaryExpr(rightBinary, FuPriority.Statement);
 						WriteNewLine();
 						break;
 					}
 				}
 			}
-			expr.Left.Accept(this, CiPriority.Assign);
+			expr.Left.Accept(this, FuPriority.Assign);
 			Write(" = ");
 			{
-				(expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign() && rightBinary.Op != CiToken.Assign ? rightBinary.Left /* FIXME: side effect*/ : expr.Right).Accept(this, CiPriority.Assign);
+				(expr.Right is FuBinaryExpr rightBinary && rightBinary.IsAssign() && rightBinary.Op != FuToken.Assign ? rightBinary.Left /* FIXME: side effect*/ : expr.Right).Accept(this, FuPriority.Assign);
 			}
 			break;
-		case CiToken.AddAssign:
-		case CiToken.SubAssign:
-		case CiToken.MulAssign:
-		case CiToken.DivAssign:
-		case CiToken.ModAssign:
-		case CiToken.ShiftLeftAssign:
-		case CiToken.ShiftRightAssign:
-		case CiToken.AndAssign:
-		case CiToken.OrAssign:
-		case CiToken.XorAssign:
+		case FuToken.AddAssign:
+		case FuToken.SubAssign:
+		case FuToken.MulAssign:
+		case FuToken.DivAssign:
+		case FuToken.ModAssign:
+		case FuToken.ShiftLeftAssign:
+		case FuToken.ShiftRightAssign:
+		case FuToken.AndAssign:
+		case FuToken.OrAssign:
+		case FuToken.XorAssign:
 			{
-				CiExpr right = expr.Right;
-				if (right is CiBinaryExpr rightBinary && rightBinary.IsAssign()) {
-					VisitBinaryExpr(rightBinary, CiPriority.Statement);
+				FuExpr right = expr.Right;
+				if (right is FuBinaryExpr rightBinary && rightBinary.IsAssign()) {
+					VisitBinaryExpr(rightBinary, FuPriority.Statement);
 					WriteNewLine();
 					right = rightBinary.Left; // FIXME: side effect
 				}
-				expr.Left.Accept(this, CiPriority.Assign);
+				expr.Left.Accept(this, FuPriority.Assign);
 				WriteChar(' ');
-				if (expr.Op == CiToken.DivAssign && expr.Type is CiIntegerType)
+				if (expr.Op == FuToken.DivAssign && expr.Type is FuIntegerType)
 					WriteChar('/');
 				Write(expr.GetOpString());
 				WriteChar(' ');
-				right.Accept(this, CiPriority.Argument);
+				right.Accept(this, FuPriority.Argument);
 			}
 			break;
 
-		case CiToken.Is:
-			if (expr.Right is CiSymbolReference symbol) {
+		case FuToken.Is:
+			if (expr.Right is FuSymbolReference symbol) {
 				Write("isinstance(");
-				expr.Left.Accept(this, CiPriority.Argument);
+				expr.Left.Accept(this, FuPriority.Argument);
 				Write(", ");
 				WriteName(symbol.Symbol);
 				WriteChar(')');
@@ -404,42 +404,42 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	protected override void WriteCoercedSelect!(CiType type, CiSelectExpr expr, CiPriority parent)
+	protected override void WriteCoercedSelect!(FuType type, FuSelectExpr expr, FuPriority parent)
 	{
-		if (parent > CiPriority.Select)
+		if (parent > FuPriority.Select)
 			WriteChar('(');
-		WriteCoerced(type, expr.OnTrue, CiPriority.Select);
+		WriteCoerced(type, expr.OnTrue, FuPriority.Select);
 		Write(" if ");
-		expr.Cond.Accept(this, CiPriority.SelectCond);
+		expr.Cond.Accept(this, FuPriority.SelectCond);
 		Write(" else ");
-		WriteCoerced(type, expr.OnFalse, CiPriority.Select);
-		if (parent > CiPriority.Select)
+		WriteCoerced(type, expr.OnFalse, FuPriority.Select);
+		if (parent > FuPriority.Select)
 			WriteChar(')');
 	}
 
-	void WriteDefaultValue!(CiType type)
+	void WriteDefaultValue!(FuType type)
 	{
-		if (type is CiNumericType)
+		if (type is FuNumericType)
 			WriteChar('0');
-		else if (type.Id == CiId.BoolType)
+		else if (type.Id == FuId.BoolType)
 			Write("False");
-		else if (type.Id == CiId.StringStorageType)
+		else if (type.Id == FuId.StringStorageType)
 			Write("\"\"");
 		else
 			Write("None");
 	}
 
-	void WritePyNewArray!(CiType elementType, CiExpr? value, CiExpr lengthExpr)
+	void WritePyNewArray!(FuType elementType, FuExpr? value, FuExpr lengthExpr)
 	{
 		switch (elementType) {
-		case CiStorageType _:
+		case FuStorageType _:
 			Write("[ ");
 			WriteNewStorage(elementType);
 			Write(" for _ in range(");
-			lengthExpr.Accept(this, CiPriority.Argument);
+			lengthExpr.Accept(this, FuPriority.Argument);
 			Write(") ]");
 			break;
-		case CiNumericType _:
+		case FuNumericType _:
 			int c = GetArrayCode(elementType);
 			if (c == 'B' && (value == null || value.IsLiteralZero()))
 				WriteCall("bytearray", lengthExpr);
@@ -451,9 +451,9 @@ public class GenPy : GenPySwift
 				if (value == null)
 					WriteChar('0');
 				else
-					value.Accept(this, CiPriority.Argument);
+					value.Accept(this, FuPriority.Argument);
 				Write(" ]) * ");
-				lengthExpr.Accept(this, CiPriority.Mul);
+				lengthExpr.Accept(this, FuPriority.Mul);
 			}
 			break;
 		default:
@@ -461,30 +461,30 @@ public class GenPy : GenPySwift
 			if (value == null)
 				WriteDefaultValue(elementType);
 			else
-				value.Accept(this, CiPriority.Argument);
+				value.Accept(this, FuPriority.Argument);
 			Write(" ] * ");
-			lengthExpr.Accept(this, CiPriority.Mul);
+			lengthExpr.Accept(this, FuPriority.Mul);
 			break;
 		}
 	}
 
-	protected override void WriteNewArray!(CiType elementType, CiExpr lengthExpr, CiPriority parent)
+	protected override void WriteNewArray!(FuType elementType, FuExpr lengthExpr, FuPriority parent)
 	{
 		WritePyNewArray(elementType, null, lengthExpr);
 	}
 
-	protected override void WriteArrayStorageInit!(CiArrayStorageType array, CiExpr value)
+	protected override void WriteArrayStorageInit!(FuArrayStorageType array, FuExpr value)
 	{
 		Write(" = ");
 		WritePyNewArray(array.GetElementType(), null, array.LengthExpr);
 	}
 
-	protected override void WriteNew!(CiReadWriteClassType klass, CiPriority parent)
+	protected override void WriteNew!(FuReadWriteClassType klass, FuPriority parent)
 	{
 		switch (klass.Class.Id) {
-		case CiId.ListClass:
-		case CiId.StackClass:
-			if (klass.GetElementType() is CiNumericType number) {
+		case FuId.ListClass:
+		case FuId.StackClass:
+			if (klass.GetElementType() is FuNumericType number) {
 				int c = GetArrayCode(number);
 				if (c == 'B')
 					Write("bytearray()");
@@ -498,27 +498,27 @@ public class GenPy : GenPySwift
 			else
 				Write("[]");
 			break;
-		case CiId.QueueClass:
+		case FuId.QueueClass:
 			Include("collections");
 			Write("collections.deque()");
 			break;
-		case CiId.HashSetClass:
-		case CiId.SortedSetClass:
+		case FuId.HashSetClass:
+		case FuId.SortedSetClass:
 			Write("set()");
 			break;
-		case CiId.DictionaryClass:
-		case CiId.SortedDictionaryClass:
+		case FuId.DictionaryClass:
+		case FuId.SortedDictionaryClass:
 			Write("{}");
 			break;
-		case CiId.OrderedDictionaryClass:
+		case FuId.OrderedDictionaryClass:
 			Include("collections");
 			Write("collections.OrderedDict()");
 			break;
-		case CiId.StringWriterClass:
+		case FuId.StringWriterClass:
 			Include("io");
 			Write("io.StringIO()");
 			break;
-		case CiId.LockClass:
+		case FuId.LockClass:
 			Include("threading");
 			Write("threading.RLock()");
 			break;
@@ -529,24 +529,24 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	void WriteContains!(CiExpr haystack, CiExpr needle)
+	void WriteContains!(FuExpr haystack, FuExpr needle)
 	{
-		needle.Accept(this, CiPriority.Rel);
+		needle.Accept(this, FuPriority.Rel);
 		Write(" in ");
-		haystack.Accept(this, CiPriority.Rel);
+		haystack.Accept(this, FuPriority.Rel);
 	}
 
-	void WriteSlice!(CiExpr startIndex, CiExpr? length)
+	void WriteSlice!(FuExpr startIndex, FuExpr? length)
 	{
 		WriteChar('[');
-		startIndex.Accept(this, CiPriority.Argument);
+		startIndex.Accept(this, FuPriority.Argument);
 		WriteChar(':');
 		if (length != null)
 			WriteAdd(startIndex, length); // FIXME: side effect
 		WriteChar(']');
 	}
 
-	void WriteAssignSorted!(CiExpr obj, string byteArray)
+	void WriteAssignSorted!(FuExpr obj, string byteArray)
 	{
 		Write(" = ");
 		int c = GetArrayCode(obj.Type.AsClassType().GetElementType());
@@ -563,99 +563,99 @@ public class GenPy : GenPySwift
 		Write("sorted(");
 	}
 
-	void WriteAllAny!(string function, CiExpr obj, List<CiExpr#> args)
+	void WriteAllAny!(string function, FuExpr obj, List<FuExpr#> args)
 	{
 		Write(function);
 		WriteChar('(');
-		assert args[0] is CiLambdaExpr lambda;
-		lambda.Body.Accept(this, CiPriority.Argument);
+		assert args[0] is FuLambdaExpr lambda;
+		lambda.Body.Accept(this, FuPriority.Argument);
 		Write(" for ");
 		WriteName(lambda.First);
 		Write(" in ");
-		obj.Accept(this, CiPriority.Argument);
+		obj.Accept(this, FuPriority.Argument);
 		WriteChar(')');
 	}
 
-	void WritePyRegexOptions!(List<CiExpr#> args)
+	void WritePyRegexOptions!(List<FuExpr#> args)
 	{
 		Include("re");
 		WriteRegexOptions(args, ", ", " | ", "", "re.I", "re.M", "re.S");
 	}
 
-	void WriteRegexSearch!(List<CiExpr#> args)
+	void WriteRegexSearch!(List<FuExpr#> args)
 	{
 		Write("re.search(");
-		args[1].Accept(this, CiPriority.Argument);
+		args[1].Accept(this, FuPriority.Argument);
 		Write(", ");
-		args[0].Accept(this, CiPriority.Argument);
+		args[0].Accept(this, FuPriority.Argument);
 		WritePyRegexOptions(args);
 		WriteChar(')');
 	}
 
-	protected override void WriteCallExpr!(CiExpr? obj, CiMethod method, List<CiExpr#> args, CiPriority parent)
+	protected override void WriteCallExpr!(FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
 	{
 		switch (method.Id) {
-		case CiId.EnumFromInt:
+		case FuId.EnumFromInt:
 			WriteName(method.Type);
 			WriteArgsInParentheses(method, args);
 			break;
-		case CiId.EnumHasFlag:
-		case CiId.StringContains:
-		case CiId.ArrayContains:
-		case CiId.ListContains:
-		case CiId.HashSetContains:
-		case CiId.SortedSetContains:
-		case CiId.DictionaryContainsKey:
-		case CiId.SortedDictionaryContainsKey:
-		case CiId.OrderedDictionaryContainsKey:
+		case FuId.EnumHasFlag:
+		case FuId.StringContains:
+		case FuId.ArrayContains:
+		case FuId.ListContains:
+		case FuId.HashSetContains:
+		case FuId.SortedSetContains:
+		case FuId.DictionaryContainsKey:
+		case FuId.SortedDictionaryContainsKey:
+		case FuId.OrderedDictionaryContainsKey:
 			WriteContains(obj, args[0]);
 			break;
-		case CiId.StringEndsWith:
+		case FuId.StringEndsWith:
 			WriteMethodCall(obj, "endswith", args[0]);
 			break;
-		case CiId.StringIndexOf:
+		case FuId.StringIndexOf:
 			WriteMethodCall(obj, "find", args[0]);
 			break;
-		case CiId.StringLastIndexOf:
+		case FuId.StringLastIndexOf:
 			WriteMethodCall(obj, "rfind", args[0]);
 			break;
-		case CiId.StringStartsWith:
+		case FuId.StringStartsWith:
 			WriteMethodCall(obj, "startswith", args[0]);
 			break;
-		case CiId.StringSubstring:
-			obj.Accept(this, CiPriority.Primary);
+		case FuId.StringSubstring:
+			obj.Accept(this, FuPriority.Primary);
 			WriteSlice(args[0], args.Count == 2 ? args[1] : null);
 			break;
-		case CiId.ArrayBinarySearchAll:
+		case FuId.ArrayBinarySearchAll:
 			Include("bisect");
 			WriteCall("bisect.bisect_left", obj, args[0]);
 			break;
-		case CiId.ArrayBinarySearchPart:
+		case FuId.ArrayBinarySearchPart:
 			Include("bisect");
 			Write("bisect.bisect_left(");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 			Write(", ");
-			args[1].Accept(this, CiPriority.Argument);
+			args[1].Accept(this, FuPriority.Argument);
 			Write(", ");
-			args[2].Accept(this, CiPriority.Argument);
+			args[2].Accept(this, FuPriority.Argument);
 			WriteChar(')');
 			break;
-		case CiId.ArrayCopyTo:
-		case CiId.ListCopyTo:
-			args[1].Accept(this, CiPriority.Primary);
+		case FuId.ArrayCopyTo:
+		case FuId.ListCopyTo:
+			args[1].Accept(this, FuPriority.Primary);
 			WriteSlice(args[2], args[3]);
 			Write(" = ");
-			obj.Accept(this, CiPriority.Primary);
+			obj.Accept(this, FuPriority.Primary);
 			WriteSlice(args[0], args[3]);
 			break;
-		case CiId.ArrayFillAll:
-		case CiId.ArrayFillPart:
-			obj.Accept(this, CiPriority.Primary);
+		case FuId.ArrayFillAll:
+		case FuId.ArrayFillPart:
+			obj.Accept(this, FuPriority.Primary);
 			if (args.Count == 1) {
 				Write("[:] = ");
-				assert obj.Type is CiArrayStorageType array;
+				assert obj.Type is FuArrayStorageType array;
 				WritePyNewArray(array.GetElementType(), args[0], array.LengthExpr);
 			}
 			else {
@@ -664,237 +664,237 @@ public class GenPy : GenPySwift
 				WritePyNewArray(obj.Type.AsClassType().GetElementType(), args[0], args[2]); // FIXME: side effect
 			}
 			break;
-		case CiId.ArraySortAll:
-		case CiId.ListSortAll:
-			obj.Accept(this, CiPriority.Assign);
+		case FuId.ArraySortAll:
+		case FuId.ListSortAll:
+			obj.Accept(this, FuPriority.Assign);
 			WriteAssignSorted(obj, "bytearray");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			Write("))");
 			break;
-		case CiId.ArraySortPart:
-		case CiId.ListSortPart:
-			obj.Accept(this, CiPriority.Primary);
+		case FuId.ArraySortPart:
+		case FuId.ListSortPart:
+			obj.Accept(this, FuPriority.Primary);
 			WriteSlice(args[0], args[1]);
 			WriteAssignSorted(obj, "bytes");
-			obj.Accept(this, CiPriority.Primary);
+			obj.Accept(this, FuPriority.Primary);
 			WriteSlice(args[0], args[1]);
 			Write("))");
 			break;
-		case CiId.ListAdd:
+		case FuId.ListAdd:
 			WriteListAdd(obj, "append", args);
 			break;
-		case CiId.ListAddRange:
-			obj.Accept(this, CiPriority.Assign);
+		case FuId.ListAddRange:
+			obj.Accept(this, FuPriority.Assign);
 			Write(" += ");
-			args[0].Accept(this, CiPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 			break;
-		case CiId.ListAll:
+		case FuId.ListAll:
 			WriteAllAny("all", obj, args);
 			break;
-		case CiId.ListAny:
+		case FuId.ListAny:
 			WriteAllAny("any", obj, args);
 			break;
-		case CiId.ListClear:
-		case CiId.StackClear:
-			if (obj.Type.AsClassType().GetElementType() is CiNumericType number && GetArrayCode(number) != 'B') {
+		case FuId.ListClear:
+		case FuId.StackClear:
+			if (obj.Type.AsClassType().GetElementType() is FuNumericType number && GetArrayCode(number) != 'B') {
 				Write("del ");
 				WritePostfix(obj, "[:]");
 			}
 			else
 				WritePostfix(obj, ".clear()");
 			break;
-		case CiId.ListIndexOf:
-			if (parent > CiPriority.Select)
+		case FuId.ListIndexOf:
+			if (parent > FuPriority.Select)
 				WriteChar('(');
 			WriteMethodCall(obj, "index", args[0]);
 			Write(" if ");
 			WriteContains(obj, args[0]); // FIXME: side effects
 			Write(" else -1");
-			if (parent > CiPriority.Select)
+			if (parent > FuPriority.Select)
 				WriteChar(')');
 			break;
-		case CiId.ListInsert:
+		case FuId.ListInsert:
 			WriteListInsert(obj, "insert", args);
 			break;
-		case CiId.ListLast:
-		case CiId.StackPeek:
+		case FuId.ListLast:
+		case FuId.StackPeek:
 			WritePostfix(obj, "[-1]");
 			break;
-		case CiId.ListRemoveAt:
-		case CiId.DictionaryRemove:
-		case CiId.SortedDictionaryRemove:
-		case CiId.OrderedDictionaryRemove:
+		case FuId.ListRemoveAt:
+		case FuId.DictionaryRemove:
+		case FuId.SortedDictionaryRemove:
+		case FuId.OrderedDictionaryRemove:
 			Write("del ");
 			WriteIndexing(obj, args[0]);
 			break;
-		case CiId.ListRemoveRange:
+		case FuId.ListRemoveRange:
 			Write("del ");
-			obj.Accept(this, CiPriority.Primary);
+			obj.Accept(this, FuPriority.Primary);
 			WriteSlice(args[0], args[1]);
 			break;
-		case CiId.QueueDequeue:
+		case FuId.QueueDequeue:
 			WritePostfix(obj, ".popleft()");
 			break;
-		case CiId.QueueEnqueue:
-		case CiId.StackPush:
+		case FuId.QueueEnqueue:
+		case FuId.StackPush:
 			WriteListAppend(obj, args);
 			break;
-		case CiId.QueuePeek:
+		case FuId.QueuePeek:
 			WritePostfix(obj, "[0]");
 			break;
-		case CiId.DictionaryAdd:
+		case FuId.DictionaryAdd:
 			WriteDictionaryAdd(obj, args);
 			break;
-		case CiId.TextWriterWrite:
+		case FuId.TextWriterWrite:
 			Write("print(");
-			args[0].Accept(this, CiPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 			Write(", end=\"\", file=");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			WriteChar(')');
 			break;
-		case CiId.TextWriterWriteChar:
-		case CiId.TextWriterWriteCodePoint:
+		case FuId.TextWriterWriteChar:
+		case FuId.TextWriterWriteCodePoint:
 			WriteMethodCall(obj, "write(chr", args[0]);
 			WriteChar(')');
 			break;
-		case CiId.TextWriterWriteLine:
+		case FuId.TextWriterWriteLine:
 			Write("print(");
 			if (args.Count == 1) {
-				args[0].Accept(this, CiPriority.Argument);
+				args[0].Accept(this, FuPriority.Argument);
 				Write(", ");
 			}
 			Write("file=");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			WriteChar(')');
 			break;
-		case CiId.ConsoleWrite:
+		case FuId.ConsoleWrite:
 			Write("print(");
-			args[0].Accept(this, CiPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 			Write(", end=\"\")");
 			break;
-		case CiId.ConsoleWriteLine:
+		case FuId.ConsoleWriteLine:
 			Write("print(");
 			if (args.Count == 1)
-				args[0].Accept(this, CiPriority.Argument);
+				args[0].Accept(this, FuPriority.Argument);
 			WriteChar(')');
 			break;
-		case CiId.StringWriterClear:
+		case FuId.StringWriterClear:
 			WritePostfix(obj, ".seek(0)");
 			WriteNewLine();
 			WritePostfix(obj, ".truncate(0)"); // FIXME: side effect
 			break;
-		case CiId.StringWriterToString:
+		case FuId.StringWriterToString:
 			WritePostfix(obj, ".getvalue()");
 			break;
-		case CiId.UTF8GetByteCount:
+		case FuId.UTF8GetByteCount:
 			Write("len(");
 			WritePostfix(args[0], ".encode(\"utf8\"))");
 			break;
-		case CiId.UTF8GetBytes:
+		case FuId.UTF8GetBytes:
 			Write("fubytes = ");
-			args[0].Accept(this, CiPriority.Primary);
+			args[0].Accept(this, FuPriority.Primary);
 			WriteLine(".encode(\"utf8\")");
-			args[1].Accept(this, CiPriority.Primary);
+			args[1].Accept(this, FuPriority.Primary);
 			WriteChar('[');
-			args[2].Accept(this, CiPriority.Argument);
+			args[2].Accept(this, FuPriority.Argument);
 			WriteChar(':');
 			StartAdd(args[2]); // FIXME: side effect
 			WriteLine("len(fubytes)] = fubytes");
 			break;
-		case CiId.UTF8GetString:
-			args[0].Accept(this, CiPriority.Primary);
+		case FuId.UTF8GetString:
+			args[0].Accept(this, FuPriority.Primary);
 			WriteSlice(args[1], args[2]);
 			Write(".decode(\"utf8\")");
 			break;
-		case CiId.EnvironmentGetEnvironmentVariable:
+		case FuId.EnvironmentGetEnvironmentVariable:
 			Include("os");
 			WriteCall("os.getenv", args[0]);
 			break;
-		case CiId.RegexCompile:
+		case FuId.RegexCompile:
 			Write("re.compile(");
-			args[0].Accept(this, CiPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 			WritePyRegexOptions(args);
 			WriteChar(')');
 			break;
-		case CiId.RegexEscape:
+		case FuId.RegexEscape:
 			Include("re");
 			WriteCall("re.escape", args[0]);
 			break;
-		case CiId.RegexIsMatchStr:
-			if (parent > CiPriority.Equality)
+		case FuId.RegexIsMatchStr:
+			if (parent > FuPriority.Equality)
 				WriteChar('(');
 			WriteRegexSearch(args);
 			Write(" is not None");
-			if (parent > CiPriority.Equality)
+			if (parent > FuPriority.Equality)
 				WriteChar(')');
 			break;
-		case CiId.RegexIsMatchRegex:
-			if (parent > CiPriority.Equality)
+		case FuId.RegexIsMatchRegex:
+			if (parent > FuPriority.Equality)
 				WriteChar('(');
 			WriteMethodCall(obj, "search", args[0]);
 			Write(" is not None");
-			if (parent > CiPriority.Equality)
+			if (parent > FuPriority.Equality)
 				WriteChar(')');
 			break;
-		case CiId.MatchFindStr:
-		case CiId.MatchFindRegex:
-			if (parent > CiPriority.Equality)
+		case FuId.MatchFindStr:
+		case FuId.MatchFindRegex:
+			if (parent > FuPriority.Equality)
 				WriteChar('(');
-			obj.Accept(this, CiPriority.Equality);
+			obj.Accept(this, FuPriority.Equality);
 			Write(" is not None");
-			if (parent > CiPriority.Equality)
+			if (parent > FuPriority.Equality)
 				WriteChar(')');
 			break;
-		case CiId.MatchGetCapture:
+		case FuId.MatchGetCapture:
 			WriteMethodCall(obj, "group", args[0]);
 			break;
-		case CiId.MathMethod:
-		case CiId.MathIsFinite:
-		case CiId.MathIsNaN:
-		case CiId.MathLog2:
+		case FuId.MathMethod:
+		case FuId.MathIsFinite:
+		case FuId.MathIsNaN:
+		case FuId.MathLog2:
 			Include("math");
 			Write("math.");
 			WriteLowercase(method.Name);
 			WriteArgsInParentheses(method, args);
 			break;
-		case CiId.MathAbs:
+		case FuId.MathAbs:
 			WriteCall("abs", args[0]);
 			break;
-		case CiId.MathCeiling:
+		case FuId.MathCeiling:
 			Include("math");
 			WriteCall("math.ceil", args[0]);
 			break;
-		case CiId.MathClamp:
+		case FuId.MathClamp:
 			Write("min(max(");
 			WriteClampAsMinMax(args);
 			break;
-		case CiId.MathFusedMultiplyAdd:
+		case FuId.MathFusedMultiplyAdd:
 			Include("pyfma");
 			WriteCall("pyfma.fma", args[0], args[1], args[2]);
 			break;
-		case CiId.MathIsInfinity:
+		case FuId.MathIsInfinity:
 			Include("math");
 			WriteCall("math.isinf", args[0]);
 			break;
-		case CiId.MathMaxInt:
-		case CiId.MathMaxDouble:
+		case FuId.MathMaxInt:
+		case FuId.MathMaxDouble:
 			WriteCall("max", args[0], args[1]);
 			break;
-		case CiId.MathMinInt:
-		case CiId.MathMinDouble:
+		case FuId.MathMinInt:
+		case FuId.MathMinDouble:
 			WriteCall("min", args[0], args[1]);
 			break;
-		case CiId.MathRound:
+		case FuId.MathRound:
 			WriteCall("round", args[0]);
 			break;
-		case CiId.MathTruncate:
+		case FuId.MathTruncate:
 			Include("math");
 			WriteCall("math.trunc", args[0]);
 			break;
 		default:
 			if (obj == null)
-				WriteLocalName(method, CiPriority.Primary);
-			else if (IsReferenceTo(obj, CiId.BasePtr)) {
+				WriteLocalName(method, FuPriority.Primary);
+			else if (IsReferenceTo(obj, FuId.BasePtr)) {
 				WriteName(method.Parent);
 				WriteChar('.');
 				WriteName(method);
@@ -907,7 +907,7 @@ public class GenPy : GenPySwift
 				break;
 			}
 			else {
-				obj.Accept(this, CiPriority.Primary);
+				obj.Accept(this, FuPriority.Primary);
 				WriteChar('.');
 				WriteName(method);
 			}
@@ -922,17 +922,17 @@ public class GenPy : GenPySwift
 		WriteResourceName(name);
 	}
 
-	protected override bool VisitPreCall!(CiCallExpr call)
+	protected override bool VisitPreCall!(FuCallExpr call)
 	{
 		switch (call.Method.Symbol.Id) {
-		case CiId.MatchFindStr:
-			call.Method.Left.Accept(this, CiPriority.Assign);
+		case FuId.MatchFindStr:
+			call.Method.Left.Accept(this, FuPriority.Assign);
 			Write(" = ");
 			WriteRegexSearch(call.Arguments);
 			WriteNewLine();
 			return true;
-		case CiId.MatchFindRegex:
-			call.Method.Left.Accept(this, CiPriority.Assign);
+		case FuId.MatchFindRegex:
+			call.Method.Left.Accept(this, FuPriority.Assign);
 			Write(" = ");
 			WriteMethodCall(call.Arguments[1], "search", call.Arguments[0]);
 			WriteNewLine();
@@ -942,15 +942,15 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	protected override void StartTemporaryVar!(CiType type)
+	protected override void StartTemporaryVar!(FuType type)
 	{
 	}
 
-	protected override bool HasInitCode(CiNamedValue def) => (def.Value != null || def.Type.IsFinal()) && !def.IsAssignableStorage();
+	protected override bool HasInitCode(FuNamedValue def) => (def.Value != null || def.Type.IsFinal()) && !def.IsAssignableStorage();
 
-	public override void VisitExpr!(CiExpr statement)
+	internal override void VisitExpr!(FuExpr statement)
 	{
-		if (!(statement is CiVar def) || HasInitCode(def)) {
+		if (!(statement is FuVar def) || HasInitCode(def)) {
 			WriteTemporaries(statement);
 			base.VisitExpr(statement);
 		}
@@ -976,64 +976,64 @@ public class GenPy : GenPySwift
 		this.Indent--;
 	}
 
-	public override void VisitLambdaExpr!(CiLambdaExpr expr)
+	internal override void VisitLambdaExpr!(FuLambdaExpr expr)
 	{
 		assert false;
 	}
 
-	protected override void WriteAssertCast!(CiBinaryExpr expr)
+	protected override void WriteAssertCast!(FuBinaryExpr expr)
 	{
-		assert expr.Right is CiVar def;
+		assert expr.Right is FuVar def;
 		Write(def.Name);
 		Write(" = ");
-		expr.Left.Accept(this, CiPriority.Argument);
+		expr.Left.Accept(this, FuPriority.Argument);
 		WriteNewLine();
 	}
 
-	protected override void WriteAssert!(CiAssert statement)
+	protected override void WriteAssert!(FuAssert statement)
 	{
 		Write("assert ");
-		statement.Cond.Accept(this, CiPriority.Argument);
+		statement.Cond.Accept(this, FuPriority.Argument);
 		if (statement.Message != null) {
 			Write(", ");
-			statement.Message.Accept(this, CiPriority.Argument);
+			statement.Message.Accept(this, FuPriority.Argument);
 		}
 		WriteNewLine();
 	}
 
-	public override void VisitBreak!(CiBreak statement)
+	internal override void VisitBreak!(FuBreak statement)
 	{
-		WriteLine(statement.LoopOrSwitch is CiSwitch ? "raise _CiBreak()" : "break");
+		WriteLine(statement.LoopOrSwitch is FuSwitch ? "raise _CiBreak()" : "break");
 	}
 
 	protected override string GetIfNot() => "if not ";
 
-	void WriteInclusiveLimit!(CiExpr limit, int increment, string incrementString)
+	void WriteInclusiveLimit!(FuExpr limit, int increment, string incrementString)
 	{
-		if (limit is CiLiteralLong literal)
+		if (limit is FuLiteralLong literal)
 			VisitLiteralLong(literal.Value + increment);
 		else {
-			limit.Accept(this, CiPriority.Add);
+			limit.Accept(this, FuPriority.Add);
 			Write(incrementString);
 		}
 	}
 
-	protected override void WriteForRange!(CiVar iter, CiBinaryExpr cond, long rangeStep)
+	protected override void WriteForRange!(FuVar iter, FuBinaryExpr cond, long rangeStep)
 	{
 		Write("range(");
 		if (rangeStep != 1 || !iter.Value.IsLiteralZero()) {
-			iter.Value.Accept(this, CiPriority.Argument);
+			iter.Value.Accept(this, FuPriority.Argument);
 			Write(", ");
 		}
 		switch (cond.Op) {
-		case CiToken.Less:
-		case CiToken.Greater:
-			cond.Right.Accept(this, CiPriority.Argument);
+		case FuToken.Less:
+		case FuToken.Greater:
+			cond.Right.Accept(this, FuPriority.Argument);
 			break;
-		case CiToken.LessOrEqual:
+		case FuToken.LessOrEqual:
 			WriteInclusiveLimit(cond.Right, 1, " + 1");
 			break;
-		case CiToken.GreaterOrEqual:
+		case FuToken.GreaterOrEqual:
 			WriteInclusiveLimit(cond.Right, -1, " - 1");
 			break;
 		default:
@@ -1046,16 +1046,16 @@ public class GenPy : GenPySwift
 		WriteChar(')');
 	}
 
-	public override void VisitForeach!(CiForeach statement)
+	internal override void VisitForeach!(FuForeach statement)
 	{
 		Write("for ");
 		WriteName(statement.GetVar());
-		assert statement.Collection.Type is CiClassType klass;
+		assert statement.Collection.Type is FuClassType klass;
 		if (klass.Class.TypeParameterCount == 2) {
 			Write(", ");
 			WriteName(statement.GetValueVar());
 			Write(" in ");
-			if (klass.Class.Id == CiId.SortedDictionaryClass) {
+			if (klass.Class.Id == FuId.SortedDictionaryClass) {
 				Write("sorted(");
 				WritePostfix(statement.Collection, ".items())");
 			}
@@ -1064,10 +1064,10 @@ public class GenPy : GenPySwift
 		}
 		else {
 			Write(" in ");
-			if (klass.Class.Id == CiId.SortedSetClass)
+			if (klass.Class.Id == FuId.SortedSetClass)
 				WriteCall("sorted", statement.Collection);
 			else
-				statement.Collection.Accept(this, CiPriority.Argument);
+				statement.Collection.Accept(this, FuPriority.Argument);
 		}
 		WriteChild(statement.Body);
 	}
@@ -1077,11 +1077,11 @@ public class GenPy : GenPySwift
 		Write("el");
 	}
 
-	public override void VisitLock!(CiLock statement)
+	internal override void VisitLock!(FuLock statement)
 	{
 		VisitXcrement(statement.Lock, false, true);
 		Write("with ");
-		statement.Lock.Accept(this, CiPriority.Argument);
+		statement.Lock.Accept(this, FuPriority.Argument);
 		OpenChild();
 		VisitXcrement(statement.Lock, true, true);
 		statement.Body.AcceptStatement(this);
@@ -1093,7 +1093,7 @@ public class GenPy : GenPySwift
 		Write("result");
 	}
 
-	void WriteSwitchCaseVar!(CiVar def)
+	void WriteSwitchCaseVar!(FuVar def)
 	{
 		WriteName(def.Type.AsClassType().Class);
 		Write("()");
@@ -1103,18 +1103,18 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	void WritePyCaseBody!(CiSwitch statement, List<CiStatement#> body)
+	void WritePyCaseBody!(FuSwitch statement, List<FuStatement#> body)
 	{
 		OpenChild();
 		VisitXcrement(statement.Value, true, true);
-		WriteFirstStatements(body, CiSwitch.LengthWithoutTrailingBreak(body));
+		WriteFirstStatements(body, FuSwitch.LengthWithoutTrailingBreak(body));
 		CloseChild();
 	}
 
-	public override void VisitSwitch!(CiSwitch statement)
+	internal override void VisitSwitch!(FuSwitch statement)
 	{
-		bool earlyBreak = statement.Cases.Any(kase => CiSwitch.HasEarlyBreak(kase.Body))
-			|| CiSwitch.HasEarlyBreak(statement.DefaultBody);
+		bool earlyBreak = statement.Cases.Any(kase => FuSwitch.HasEarlyBreak(kase.Body))
+			|| FuSwitch.HasEarlyBreak(statement.DefaultBody);
 		if (earlyBreak) {
 			this.SwitchBreak = true;
 			Write("try");
@@ -1123,26 +1123,26 @@ public class GenPy : GenPySwift
 
 		VisitXcrement(statement.Value, false, true);
 		Write("match ");
-		statement.Value.Accept(this, CiPriority.Argument);
+		statement.Value.Accept(this, FuPriority.Argument);
 		OpenChild();
-		foreach (CiCase kase in statement.Cases) {
+		foreach (FuCase kase in statement.Cases) {
 			string op = "case ";
-			foreach (CiExpr caseValue in kase.Values) {
+			foreach (FuExpr caseValue in kase.Values) {
 				Write(op);
 				switch (caseValue) {
-				case CiVar def:
+				case FuVar def:
 					WriteSwitchCaseVar(def);
 					break;
-				case CiBinaryExpr when1:
-					if (when1.Left is CiVar whenVar)
+				case FuBinaryExpr when1:
+					if (when1.Left is FuVar whenVar)
 						WriteSwitchCaseVar(whenVar);
 					else
-						when1.Left.Accept(this, CiPriority.Argument);
+						when1.Left.Accept(this, FuPriority.Argument);
 					Write(" if ");
-					when1.Right.Accept(this, CiPriority.Argument);
+					when1.Right.Accept(this, FuPriority.Argument);
 					break;
 				default:
-					caseValue.Accept(this, CiPriority.Or);
+					caseValue.Accept(this, FuPriority.Or);
 					break;
 				}
 				op = " | ";
@@ -1163,16 +1163,16 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	public override void VisitThrow!(CiThrow statement)
+	internal override void VisitThrow!(FuThrow statement)
 	{
 		VisitXcrement(statement.Message, false, true);
 		Write("raise Exception(");
-		statement.Message.Accept(this, CiPriority.Argument);
+		statement.Message.Accept(this, FuPriority.Argument);
 		WriteCharLine(')');
 		// FIXME: VisitXcrement(statement.Message, true, true);
 	}
 
-	public override void VisitEnumValue!(CiConst konst, CiConst? previous)
+	internal override void VisitEnumValue!(FuConst konst, FuConst? previous)
 	{
 		WriteUppercaseWithUnderscores(konst.Name);
 		Write(" = ");
@@ -1181,45 +1181,45 @@ public class GenPy : GenPySwift
 		WriteDoc(konst.Documentation);
 	}
 
-	protected override void WriteEnum!(CiEnum enu)
+	protected override void WriteEnum!(FuEnum enu)
 	{
 		Include("enum");
 		WriteNewLine();
 		Write("class ");
 		WriteName(enu);
-		Write(enu is CiEnumFlags ? "(enum.Flag)" : "(enum.Enum)");
+		Write(enu is FuEnumFlags ? "(enum.Flag)" : "(enum.Enum)");
 		OpenChild();
 		WriteDoc(enu.Documentation);
 		enu.AcceptValues(this);
 		CloseChild();
 	}
 
-	protected override void WriteConst!(CiConst konst)
+	protected override void WriteConst!(FuConst konst)
 	{
-		if (konst.Visibility != CiVisibility.Private || konst.Type is CiArrayStorageType) {
+		if (konst.Visibility != FuVisibility.Private || konst.Type is FuArrayStorageType) {
 			WriteNewLine();
 			WriteName(konst);
 			Write(" = ");
-			konst.Value.Accept(this, CiPriority.Argument);
+			konst.Value.Accept(this, FuPriority.Argument);
 			WriteNewLine();
 			WriteDoc(konst.Documentation);
 		}
 	}
 
-	protected override void WriteField!(CiField field)
+	protected override void WriteField!(FuField field)
 	{
 	}
 
-	protected override void WriteMethod!(CiMethod method)
+	protected override void WriteMethod!(FuMethod method)
 	{
-		if (method.CallType == CiCallType.Abstract)
+		if (method.CallType == FuCallType.Abstract)
 			return;
 		WriteNewLine();
-		if (method.CallType == CiCallType.Static)
+		if (method.CallType == FuCallType.Static)
 			WriteLine("@staticmethod");
 		Write("def ");
 		WriteName(method);
-		if (method.CallType == CiCallType.Static)
+		if (method.CallType == FuCallType.Static)
 			WriteParameters(method, true);
 		else {
 			Write("(self");
@@ -1233,9 +1233,9 @@ public class GenPy : GenPySwift
 		this.CurrentMethod = null;
 	}
 
-	bool InheritsConstructor(CiClass klass)
+	bool InheritsConstructor(FuClass klass)
 	{
-		while (klass.Parent is CiClass baseClass) {
+		while (klass.Parent is FuClass baseClass) {
 			if (NeedsConstructor(baseClass))
 				return true;
 			klass = baseClass;
@@ -1243,7 +1243,7 @@ public class GenPy : GenPySwift
 		return false;
 	}
 
-	protected override void WriteInitField!(CiField field)
+	protected override void WriteInitField!(FuField field)
 	{
 		if (HasInitCode(field)) {
 			Write("self.");
@@ -1253,7 +1253,7 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	protected override void WriteClass!(CiClass klass, CiProgram program)
+	protected override void WriteClass!(FuClass klass, FuProgram program)
 	{
 		if (!WriteBaseClass(klass, program))
 			return;
@@ -1261,7 +1261,7 @@ public class GenPy : GenPySwift
 		WriteNewLine();
 		Write("class ");
 		WriteName(klass);
-		if (klass.Parent is CiClass baseClass) {
+		if (klass.Parent is FuClass baseClass) {
 			WriteChar('(');
 			WriteName(baseClass);
 			WriteChar(')');
@@ -1317,7 +1317,7 @@ public class GenPy : GenPySwift
 		CloseChild();
 	}
 
-	public override void WriteProgram!(CiProgram program)
+	public override void WriteProgram!(FuProgram program)
 	{
 		this.SwitchBreak = false;
 		OpenStringWriter();

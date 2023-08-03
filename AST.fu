@@ -18,7 +18,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
-public enum CiVisibility
+public enum FuVisibility
 {
 	Private,
 	Internal,
@@ -28,7 +28,7 @@ public enum CiVisibility
 	FinalValueType
 }
 
-public enum CiCallType
+public enum FuCallType
 {
 	Static,
 	Normal,
@@ -38,7 +38,7 @@ public enum CiCallType
 	Sealed
 }
 
-public enum CiPriority
+public enum FuPriority
 {
 	Statement,
 	Argument,
@@ -58,7 +58,7 @@ public enum CiPriority
 	Primary
 }
 
-public enum CiId
+public enum FuId
 {
 	None,
 	VoidType,
@@ -211,154 +211,154 @@ public enum CiId
 	MathTruncate
 }
 
-abstract class CiDocInline
+abstract class FuDocInline
 {
 }
 
-class CiDocText : CiDocInline
+class FuDocText : FuDocInline
 {
 	internal string() Text;
 }
 
-class CiDocCode : CiDocInline
+class FuDocCode : FuDocInline
 {
 	internal string() Text;
 }
 
-class CiDocLine : CiDocInline
+class FuDocLine : FuDocInline
 {
 }
 
-public abstract class CiDocBlock
+public abstract class FuDocBlock
 {
 }
 
-public class CiDocPara : CiDocBlock
+public class FuDocPara : FuDocBlock
 {
-	internal List<CiDocInline#>() Children;
+	internal List<FuDocInline#>() Children;
 }
 
-public class CiDocList : CiDocBlock
+public class FuDocList : FuDocBlock
 {
-	internal List<CiDocPara()>() Items;
+	internal List<FuDocPara()>() Items;
 }
 
-public class CiCodeDoc
+public class FuCodeDoc
 {
-	internal CiDocPara() Summary;
-	internal List<CiDocBlock#>() Details;
+	internal FuDocPara() Summary;
+	internal List<FuDocBlock#>() Details;
 }
 
-public abstract class CiVisitor
+public abstract class FuVisitor
 {
-	protected void VisitOptionalStatement!(CiStatement? statement)
+	protected void VisitOptionalStatement!(FuStatement? statement)
 	{
 		if (statement != null)
 			statement.AcceptStatement(this);
 	}
 
-	public abstract void VisitConst!(CiConst statement);
-	public abstract void VisitExpr!(CiExpr statement);
-	public abstract void VisitBlock!(CiBlock statement);
-	public abstract void VisitAssert!(CiAssert statement);
-	public abstract void VisitBreak!(CiBreak statement);
-	public abstract void VisitContinue!(CiContinue statement);
-	public abstract void VisitDoWhile!(CiDoWhile statement);
-	public abstract void VisitFor!(CiFor statement);
-	public abstract void VisitForeach!(CiForeach statement);
-	public abstract void VisitIf!(CiIf statement);
-	public abstract void VisitLock!(CiLock statement);
-	public abstract void VisitNative!(CiNative statement);
-	public abstract void VisitReturn!(CiReturn statement);
-	public abstract void VisitSwitch!(CiSwitch statement);
-	public abstract void VisitThrow!(CiThrow statement);
-	public abstract void VisitWhile!(CiWhile statement);
-	public abstract void VisitEnumValue!(CiConst konst, CiConst? previous);
-	public abstract void VisitLiteralNull!();
-	public abstract void VisitLiteralFalse!();
-	public abstract void VisitLiteralTrue!();
-	public abstract void VisitLiteralLong!(long value);
-	public abstract void VisitLiteralChar!(int value);
-	public abstract void VisitLiteralDouble!(double value);
-	public abstract void VisitLiteralString!(string value);
-	public abstract void VisitAggregateInitializer!(CiAggregateInitializer expr);
-	public abstract void VisitInterpolatedString!(CiInterpolatedString expr, CiPriority parent);
-	public abstract void VisitSymbolReference!(CiSymbolReference expr, CiPriority parent);
-	public abstract void VisitPrefixExpr!(CiPrefixExpr expr, CiPriority parent);
-	public abstract void VisitPostfixExpr!(CiPostfixExpr expr, CiPriority parent);
-	public abstract void VisitBinaryExpr!(CiBinaryExpr expr, CiPriority parent);
-	public abstract void VisitSelectExpr!(CiSelectExpr expr, CiPriority parent);
-	public abstract void VisitCallExpr!(CiCallExpr expr, CiPriority parent);
-	public abstract void VisitLambdaExpr!(CiLambdaExpr expr);
-	public abstract void VisitVar!(CiVar expr);
+	internal abstract void VisitConst!(FuConst statement);
+	internal abstract void VisitExpr!(FuExpr statement);
+	internal abstract void VisitBlock!(FuBlock statement);
+	internal abstract void VisitAssert!(FuAssert statement);
+	internal abstract void VisitBreak!(FuBreak statement);
+	internal abstract void VisitContinue!(FuContinue statement);
+	internal abstract void VisitDoWhile!(FuDoWhile statement);
+	internal abstract void VisitFor!(FuFor statement);
+	internal abstract void VisitForeach!(FuForeach statement);
+	internal abstract void VisitIf!(FuIf statement);
+	internal abstract void VisitLock!(FuLock statement);
+	internal abstract void VisitNative!(FuNative statement);
+	internal abstract void VisitReturn!(FuReturn statement);
+	internal abstract void VisitSwitch!(FuSwitch statement);
+	internal abstract void VisitThrow!(FuThrow statement);
+	internal abstract void VisitWhile!(FuWhile statement);
+	internal abstract void VisitEnumValue!(FuConst konst, FuConst? previous);
+	internal abstract void VisitLiteralNull!();
+	internal abstract void VisitLiteralFalse!();
+	internal abstract void VisitLiteralTrue!();
+	internal abstract void VisitLiteralLong!(long value);
+	internal abstract void VisitLiteralChar!(int value);
+	internal abstract void VisitLiteralDouble!(double value);
+	internal abstract void VisitLiteralString!(string value);
+	internal abstract void VisitAggregateInitializer!(FuAggregateInitializer expr);
+	internal abstract void VisitInterpolatedString!(FuInterpolatedString expr, FuPriority parent);
+	internal abstract void VisitSymbolReference!(FuSymbolReference expr, FuPriority parent);
+	internal abstract void VisitPrefixExpr!(FuPrefixExpr expr, FuPriority parent);
+	internal abstract void VisitPostfixExpr!(FuPostfixExpr expr, FuPriority parent);
+	internal abstract void VisitBinaryExpr!(FuBinaryExpr expr, FuPriority parent);
+	internal abstract void VisitSelectExpr!(FuSelectExpr expr, FuPriority parent);
+	internal abstract void VisitCallExpr!(FuCallExpr expr, FuPriority parent);
+	internal abstract void VisitLambdaExpr!(FuLambdaExpr expr);
+	internal abstract void VisitVar!(FuVar expr);
 }
 
-public abstract class CiStatement
+public abstract class FuStatement
 {
 	internal int Line;
 	public abstract bool CompletesNormally();
-	public abstract void AcceptStatement(CiVisitor! visitor);
+	public abstract void AcceptStatement(FuVisitor! visitor);
 }
 
-public abstract class CiExpr : CiStatement
+public abstract class FuExpr : FuStatement
 {
-	internal CiType#? Type;
+	internal FuType#? Type;
 	public override bool CompletesNormally() => true;
 	public virtual string() ToString() { assert false; }
 	public virtual bool IsIndexing() => false;
 	public virtual bool IsLiteralZero() => false;
 	public virtual bool IsConstEnum() => false;
 	public virtual int IntValue() { assert false; }
-	public virtual void Accept(CiVisitor! visitor, CiPriority parent) { assert false; }
-	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitExpr(this); }
-	public virtual bool IsReferenceTo(CiSymbol symbol) => false;
+	public virtual void Accept(FuVisitor! visitor, FuPriority parent) { assert false; }
+	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitExpr(this); }
+	public virtual bool IsReferenceTo(FuSymbol symbol) => false;
 }
 
-public abstract class CiSymbol : CiExpr
+public abstract class FuSymbol : FuExpr
 {
-	internal CiId Id = CiId.None;
+	internal FuId Id = FuId.None;
 	internal string() Name;
-	internal CiSymbol!? Next;
-	internal CiScope!? Parent;
-	internal CiCodeDoc#? Documentation = null;
+	internal FuSymbol!? Next;
+	internal FuScope!? Parent;
+	internal FuCodeDoc#? Documentation = null;
 	public override string() ToString() => this.Name;
 }
 
-public class CiScope : CiSymbol
+public class FuScope : FuSymbol
 {
-	protected Dictionary<string, CiSymbol#>() Dict;
-	internal CiSymbol!? First = null;
-	CiSymbol!? Last;
+	protected Dictionary<string, FuSymbol#>() Dict;
+	internal FuSymbol!? First = null;
+	FuSymbol!? Last;
 
 	public int Count() => this.Dict.Count;
 
-	public CiVar!? FirstParameter()
+	public FuVar!? FirstParameter()
 	{
-		assert this.First is CiVar! result; // FIXME: CiVar!?
+		assert this.First is FuVar! result; // FIXME: FuVar!?
 		return result;
 	}
 
-	public CiContainerType! GetContainer!()
+	public FuContainerType! GetContainer!()
 	{
-		for (CiScope!? scope = this; scope != null; scope = scope.Parent) {
-			if (scope is CiContainerType! container)
+		for (FuScope!? scope = this; scope != null; scope = scope.Parent) {
+			if (scope is FuContainerType! container)
 				return container;
 		}
 		assert false;
 	}
 
-	public bool Contains(CiSymbol symbol) => this.Dict.ContainsKey(symbol.Name);
+	public bool Contains(FuSymbol symbol) => this.Dict.ContainsKey(symbol.Name);
 
-	public CiSymbol#? TryLookup(string name, bool global)
+	public FuSymbol#? TryLookup(string name, bool global)
 	{
-		for (CiScope? scope = this; scope != null && (global || !(scope is CiProgram || scope is CiSystem)); scope = scope.Parent) {
+		for (FuScope? scope = this; scope != null && (global || !(scope is FuProgram || scope is FuSystem)); scope = scope.Parent) {
 			if (scope.Dict.ContainsKey(name))
 				return scope.Dict[name];
 		}
 		return null;
 	}
 
-	public void Add!(CiSymbol# symbol)
+	public void Add!(FuSymbol# symbol)
 	{
 		this.Dict[symbol.Name] = symbol;
 		symbol.Next = null;
@@ -370,9 +370,9 @@ public class CiScope : CiSymbol
 		this.Last = symbol;
 	}
 
-	public bool Encloses(CiSymbol symbol)
+	public bool Encloses(FuSymbol symbol)
 	{
-		for (CiScope? scope = symbol.Parent; scope != null; scope = scope.Parent) {
+		for (FuScope? scope = symbol.Parent; scope != null; scope = scope.Parent) {
 			if (scope == this)
 				return true;
 		}
@@ -380,54 +380,54 @@ public class CiScope : CiSymbol
 	}
 }
 
-public class CiAggregateInitializer : CiExpr
+public class FuAggregateInitializer : FuExpr
 {
-	internal List<CiExpr#>() Items;
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitAggregateInitializer(this); }
+	internal List<FuExpr#>() Items;
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitAggregateInitializer(this); }
 }
 
-public abstract class CiLiteral : CiExpr
+public abstract class FuLiteral : FuExpr
 {
 	public abstract bool IsDefaultValue();
 	public virtual string() GetLiteralString() { assert false; }
 }
 
-public class CiLiteralNull : CiLiteral
+public class FuLiteralNull : FuLiteral
 {
 	public override bool IsDefaultValue() => true;
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitLiteralNull(); }
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralNull(); }
 	public override string() ToString() => "null";
 }
 
-public class CiLiteralFalse : CiLiteral
+public class FuLiteralFalse : FuLiteral
 {
 	public override bool IsDefaultValue() => true;
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitLiteralFalse(); }
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralFalse(); }
 	public override string() ToString() => "false";
 }
 
-public class CiLiteralTrue : CiLiteral
+public class FuLiteralTrue : FuLiteral
 {
 	public override bool IsDefaultValue() => false;
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitLiteralTrue(); }
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralTrue(); }
 	public override string() ToString() => "true";
 }
 
-public class CiLiteralLong : CiLiteral
+public class FuLiteralLong : FuLiteral
 {
 	internal long Value;
 	public override bool IsLiteralZero() => this.Value == 0;
 	public override int IntValue() => this.Value;
 	public override bool IsDefaultValue() => this.Value == 0;
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitLiteralLong(this.Value); }
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralLong(this.Value); }
 	public override string() GetLiteralString() => $"{this.Value}";
 	public override string() ToString() => $"{this.Value}";
 }
 
-public class CiLiteralChar : CiLiteralLong
+public class FuLiteralChar : FuLiteralLong
 {
-	public static CiLiteralChar# New(int value, int line) => new CiLiteralChar { Line = line, Type = CiRangeType.New(value, value), Value = value };
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitLiteralChar(this.Value); }
+	public static FuLiteralChar# New(int value, int line) => new FuLiteralChar { Line = line, Type = FuRangeType.New(value, value), Value = value };
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralChar(this.Value); }
 //	public override string() ToString()
 //	{
 //		switch (this.Value) {
@@ -441,20 +441,20 @@ public class CiLiteralChar : CiLiteralLong
 //	}
 }
 
-public class CiLiteralDouble : CiLiteral
+public class FuLiteralDouble : FuLiteral
 {
 	internal double Value;
 	public override bool IsDefaultValue() => this.Value == 0 && 1.0 / this.Value > 0; // rule out -0.0
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitLiteralDouble(this.Value); }
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralDouble(this.Value); }
 	public override string() GetLiteralString() => $"{this.Value}";
 	public override string() ToString() => $"{this.Value}";
 }
 
-public class CiLiteralString : CiLiteral
+public class FuLiteralString : FuLiteral
 {
 	internal string() Value;
 	public override bool IsDefaultValue() => false;
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitLiteralString(this.Value); }
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralString(this.Value); }
 	public override string() GetLiteralString() => this.Value;
 	public override string() ToString() => $"\"{this.Value}\"";
 	public int GetAsciiLength()
@@ -482,7 +482,7 @@ public class CiLiteralString : CiLiteral
 			if (!escaped && c == '\\')
 				escaped = true;
 			else if (i == 0)
-				return escaped ? CiLexer.GetEscapedChar(c) : c;
+				return escaped ? FuLexer.GetEscapedChar(c) : c;
 			else {
 				i--;
 				escaped = false;
@@ -497,43 +497,43 @@ public class CiLiteralString : CiLiteral
 			int c = this.Value[0];
 			return c >= 0 && c <= 127 ? c : -1;
 		case 2:
-			return this.Value[0] == '\\' ? CiLexer.GetEscapedChar(this.Value[1]) : -1;
+			return this.Value[0] == '\\' ? FuLexer.GetEscapedChar(this.Value[1]) : -1;
 		default:
 			return -1;
 		}
 	}
 }
 
-public class CiInterpolatedPart
+public class FuInterpolatedPart
 {
 	internal string() Prefix;
-	internal CiExpr# Argument;
-	internal CiExpr#? WidthExpr;
+	internal FuExpr# Argument;
+	internal FuExpr#? WidthExpr;
 	internal int Width;
 	internal int Format;
 	internal int Precision;
 }
 
-public class CiInterpolatedString : CiExpr
+public class FuInterpolatedString : FuExpr
 {
-	internal List<CiInterpolatedPart()>() Parts;
+	internal List<FuInterpolatedPart()>() Parts;
 	internal string() Suffix;
-	public void AddPart!(string prefix, CiExpr# arg, CiExpr#? widthExpr = null, int format = ' ', int precision = -1)
+	public void AddPart!(string prefix, FuExpr# arg, FuExpr#? widthExpr = null, int format = ' ', int precision = -1)
 	{
 		this.Parts.Add();
-		CiInterpolatedPart! part = this.Parts.Last();
+		FuInterpolatedPart! part = this.Parts.Last();
 		part.Prefix = prefix;
 		part.Argument = arg;
 		part.WidthExpr = widthExpr;
 		part.Format = format;
 		part.Precision = precision;
 	}
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitInterpolatedString(this, parent); }
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitInterpolatedString(this, parent); }
 //	public override string() ToString()
 //	{
 //		StringBuilder sb = new StringBuilder();
 //		sb.Append("$\"");
-//		foreach (CiInterpolatedPart part in this.Parts) {
+//		foreach (FuInterpolatedPart part in this.Parts) {
 //			sb.Append(part.Prefix.Replace("{", "{{"));
 //			sb.Append('{');
 //			sb.Append(part.Argument);
@@ -555,63 +555,63 @@ public class CiInterpolatedString : CiExpr
 //	}
 }
 
-public class CiImplicitEnumValue : CiExpr
+public class FuImplicitEnumValue : FuExpr
 {
 	internal int Value;
 	public override int IntValue() => this.Value;
 }
 
-public class CiSymbolReference : CiExpr
+public class FuSymbolReference : FuExpr
 {
-	internal CiExpr#? Left;
+	internal FuExpr#? Left;
 	internal string() Name;
-	internal CiSymbol!? Symbol;
-	public override bool IsConstEnum() => this.Symbol.Parent is CiEnum;
+	internal FuSymbol!? Symbol;
+	public override bool IsConstEnum() => this.Symbol.Parent is FuEnum;
 	public override int IntValue()
 	{
-		assert this.Symbol is CiConst konst;
+		assert this.Symbol is FuConst konst;
 		return konst.Value.IntValue();
 	}
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitSymbolReference(this, parent); }
-	public override bool IsReferenceTo(CiSymbol symbol) => this.Symbol == symbol;
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitSymbolReference(this, parent); }
+	public override bool IsReferenceTo(FuSymbol symbol) => this.Symbol == symbol;
 	public override string() ToString() => this.Left != null ? $"{this.Left}.{this.Name}" : this.Name;
 }
 
-public abstract class CiUnaryExpr : CiExpr
+public abstract class FuUnaryExpr : FuExpr
 {
-	internal CiToken Op;
-	internal CiExpr#? Inner;
+	internal FuToken Op;
+	internal FuExpr#? Inner;
 }
 
-public class CiPrefixExpr : CiUnaryExpr
+public class FuPrefixExpr : FuUnaryExpr
 {
-	public override bool IsConstEnum() => this.Type is CiEnumFlags && this.Inner.IsConstEnum(); // && this.Op == CiToken.Tilde
+	public override bool IsConstEnum() => this.Type is FuEnumFlags && this.Inner.IsConstEnum(); // && this.Op == FuToken.Tilde
 	public override int IntValue()
 	{
-		assert this.Op == CiToken.Tilde;
+		assert this.Op == FuToken.Tilde;
 		return ~this.Inner.IntValue();
 	}
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitPrefixExpr(this, parent); }
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitPrefixExpr(this, parent); }
 }
 
-public class CiPostfixExpr : CiUnaryExpr
+public class FuPostfixExpr : FuUnaryExpr
 {
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitPostfixExpr(this, parent); }
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitPostfixExpr(this, parent); }
 }
 
-public class CiBinaryExpr : CiExpr
+public class FuBinaryExpr : FuExpr
 {
-	internal CiExpr# Left;
-	internal CiToken Op;
-	internal CiExpr#? Right;
-	public override bool IsIndexing() => this.Op == CiToken.LeftBracket;
+	internal FuExpr# Left;
+	internal FuToken Op;
+	internal FuExpr#? Right;
+	public override bool IsIndexing() => this.Op == FuToken.LeftBracket;
 	public override bool IsConstEnum()
 	{
 		switch (this.Op) {
-		case CiToken.And:
-		case CiToken.Or:
-		case CiToken.Xor:
-			return this.Type is CiEnumFlags && this.Left.IsConstEnum() && this.Right.IsConstEnum();
+		case FuToken.And:
+		case FuToken.Or:
+		case FuToken.Xor:
+			return this.Type is FuEnumFlags && this.Left.IsConstEnum() && this.Right.IsConstEnum();
 		default:
 			return false;
 		}
@@ -619,26 +619,26 @@ public class CiBinaryExpr : CiExpr
 	public override int IntValue()
 	{
 		switch (this.Op) {
-		case CiToken.And:
+		case FuToken.And:
 			return this.Left.IntValue() & this.Right.IntValue();
-		case CiToken.Or:
+		case FuToken.Or:
 			return this.Left.IntValue() | this.Right.IntValue();
-		case CiToken.Xor:
+		case FuToken.Xor:
 			return this.Left.IntValue() ^ this.Right.IntValue();
 		default:
 			assert false;
 		}
 	}
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitBinaryExpr(this, parent); }
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitBinaryExpr(this, parent); }
 	public bool IsRel()
 	{
 		switch (this.Op) {
-		case CiToken.Equal:
-		case CiToken.NotEqual:
-		case CiToken.Less:
-		case CiToken.LessOrEqual:
-		case CiToken.Greater:
-		case CiToken.GreaterOrEqual:
+		case FuToken.Equal:
+		case FuToken.NotEqual:
+		case FuToken.Less:
+		case FuToken.LessOrEqual:
+		case FuToken.Greater:
+		case FuToken.GreaterOrEqual:
 			return true;
 		default:
 			return false;
@@ -647,17 +647,17 @@ public class CiBinaryExpr : CiExpr
 	public bool IsAssign()
 	{
 		switch (this.Op) {
-		case CiToken.Assign:
-		case CiToken.AddAssign:
-		case CiToken.SubAssign:
-		case CiToken.MulAssign:
-		case CiToken.DivAssign:
-		case CiToken.ModAssign:
-		case CiToken.ShiftLeftAssign:
-		case CiToken.ShiftRightAssign:
-		case CiToken.AndAssign:
-		case CiToken.OrAssign:
-		case CiToken.XorAssign:
+		case FuToken.Assign:
+		case FuToken.AddAssign:
+		case FuToken.SubAssign:
+		case FuToken.MulAssign:
+		case FuToken.DivAssign:
+		case FuToken.ModAssign:
+		case FuToken.ShiftLeftAssign:
+		case FuToken.ShiftRightAssign:
+		case FuToken.AndAssign:
+		case FuToken.OrAssign:
+		case FuToken.XorAssign:
 			return true;
 		default:
 			return false;
@@ -667,231 +667,231 @@ public class CiBinaryExpr : CiExpr
 	public string GetOpString()
 	{
 		switch (this.Op) {
-		case CiToken.Plus:
+		case FuToken.Plus:
 			return "+";
-		case CiToken.Minus:
+		case FuToken.Minus:
 			return "-";
-		case CiToken.Asterisk:
+		case FuToken.Asterisk:
 			return "*";
-		case CiToken.Slash:
+		case FuToken.Slash:
 			return "/";
-		case CiToken.Mod:
+		case FuToken.Mod:
 			return "%";
-		case CiToken.ShiftLeft:
+		case FuToken.ShiftLeft:
 			return "<<";
-		case CiToken.ShiftRight:
+		case FuToken.ShiftRight:
 			return ">>";
-		case CiToken.Less:
+		case FuToken.Less:
 			return "<";
-		case CiToken.LessOrEqual:
+		case FuToken.LessOrEqual:
 			return "<=";
-		case CiToken.Greater:
+		case FuToken.Greater:
 			return ">";
-		case CiToken.GreaterOrEqual:
+		case FuToken.GreaterOrEqual:
 			return ">=";
-		case CiToken.Equal:
+		case FuToken.Equal:
 			return "==";
-		case CiToken.NotEqual:
+		case FuToken.NotEqual:
 			return "!=";
-		case CiToken.And:
+		case FuToken.And:
 			return "&";
-		case CiToken.Or:
+		case FuToken.Or:
 			return "|";
-		case CiToken.Xor:
+		case FuToken.Xor:
 			return "^";
-		case CiToken.CondAnd:
+		case FuToken.CondAnd:
 			return "&&";
-		case CiToken.CondOr:
+		case FuToken.CondOr:
 			return "||";
-		case CiToken.Assign:
+		case FuToken.Assign:
 			return "=";
-		case CiToken.AddAssign:
+		case FuToken.AddAssign:
 			return "+=";
-		case CiToken.SubAssign:
+		case FuToken.SubAssign:
 			return "-=";
-		case CiToken.MulAssign:
+		case FuToken.MulAssign:
 			return "*=";
-		case CiToken.DivAssign:
+		case FuToken.DivAssign:
 			return "/=";
-		case CiToken.ModAssign:
+		case FuToken.ModAssign:
 			return "%=";
-		case CiToken.ShiftLeftAssign:
+		case FuToken.ShiftLeftAssign:
 			return "<<=";
-		case CiToken.ShiftRightAssign:
+		case FuToken.ShiftRightAssign:
 			return ">>=";
-		case CiToken.AndAssign:
+		case FuToken.AndAssign:
 			return "&=";
-		case CiToken.OrAssign:
+		case FuToken.OrAssign:
 			return "|=";
-		case CiToken.XorAssign:
+		case FuToken.XorAssign:
 			return "^=";
 		default:
 			assert false;
 		}
 	}
 
-	public override string() ToString() => this.Op == CiToken.LeftBracket ? $"{this.Left}[{this.Right}]" : $"({this.Left} {GetOpString()} {this.Right})";
+	public override string() ToString() => this.Op == FuToken.LeftBracket ? $"{this.Left}[{this.Right}]" : $"({this.Left} {GetOpString()} {this.Right})";
 }
 
-public class CiSelectExpr : CiExpr
+public class FuSelectExpr : FuExpr
 {
-	internal CiExpr# Cond;
-	internal CiExpr# OnTrue;
-	internal CiExpr# OnFalse;
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitSelectExpr(this, parent); }
+	internal FuExpr# Cond;
+	internal FuExpr# OnTrue;
+	internal FuExpr# OnFalse;
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitSelectExpr(this, parent); }
 	public override string() ToString() => $"({this.Cond} ? {this.OnTrue} : {this.OnFalse})";
 }
 
-public class CiCallExpr : CiExpr
+public class FuCallExpr : FuExpr
 {
-	internal CiSymbolReference# Method;
-	internal List<CiExpr#>() Arguments;
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitCallExpr(this, parent); }
+	internal FuSymbolReference# Method;
+	internal List<FuExpr#>() Arguments;
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitCallExpr(this, parent); }
 }
 
-public class CiLambdaExpr : CiScope
+public class FuLambdaExpr : FuScope
 {
-	internal CiExpr# Body;
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitLambdaExpr(this); }
+	internal FuExpr# Body;
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLambdaExpr(this); }
 }
 
-public abstract class CiCondCompletionStatement : CiScope
+public abstract class FuCondCompletionStatement : FuScope
 {
 	bool CompletesNormallyValue;
 	public override bool CompletesNormally() => this.CompletesNormallyValue;
 	public void SetCompletesNormally!(bool value) { this.CompletesNormallyValue = value; }
 }
 
-public class CiBlock : CiCondCompletionStatement
+public class FuBlock : FuCondCompletionStatement
 {
-	internal List<CiStatement#>() Statements;
-	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitBlock(this); }
+	internal List<FuStatement#>() Statements;
+	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitBlock(this); }
 }
 
-public class CiAssert : CiStatement
+public class FuAssert : FuStatement
 {
-	internal CiExpr# Cond;
-	internal CiExpr#? Message = null;
-	public override bool CompletesNormally() => !(this.Cond is CiLiteralFalse);
-	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitAssert(this); }
+	internal FuExpr# Cond;
+	internal FuExpr#? Message = null;
+	public override bool CompletesNormally() => !(this.Cond is FuLiteralFalse);
+	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitAssert(this); }
 }
 
-public abstract class CiLoop : CiCondCompletionStatement
+public abstract class FuLoop : FuCondCompletionStatement
 {
-	internal CiExpr#? Cond;
-	internal CiStatement# Body;
+	internal FuExpr#? Cond;
+	internal FuStatement# Body;
 	internal bool HasBreak = false;
 }
 
-public class CiBreak : CiStatement
+public class FuBreak : FuStatement
 {
-	internal CiCondCompletionStatement! LoopOrSwitch;
+	internal FuCondCompletionStatement! LoopOrSwitch;
 	public override bool CompletesNormally() => false;
-	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitBreak(this); }
+	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitBreak(this); }
 }
 
-public class CiContinue : CiStatement
+public class FuContinue : FuStatement
 {
-	internal CiLoop Loop;
+	internal FuLoop Loop;
 	public override bool CompletesNormally() => false;
-	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitContinue(this); }
+	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitContinue(this); }
 }
 
-public class CiDoWhile : CiLoop
+public class FuDoWhile : FuLoop
 {
-	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitDoWhile(this); }
+	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitDoWhile(this); }
 }
 
-public class CiFor : CiLoop
+public class FuFor : FuLoop
 {
-	internal CiExpr#? Init;
-	internal CiExpr#? Advance;
+	internal FuExpr#? Init;
+	internal FuExpr#? Advance;
 	internal bool IsRange = false;
 	internal bool IsIteratorUsed;
 	internal long RangeStep;
-	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitFor(this); }
+	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitFor(this); }
 }
 
-public class CiForeach : CiLoop
+public class FuForeach : FuLoop
 {
-	internal CiExpr# Collection;
-	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitForeach(this); }
-	public CiVar! GetVar() => this.FirstParameter();
-	public CiVar! GetValueVar() => this.FirstParameter().NextParameter();
+	internal FuExpr# Collection;
+	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitForeach(this); }
+	public FuVar! GetVar() => this.FirstParameter();
+	public FuVar! GetValueVar() => this.FirstParameter().NextParameter();
 }
 
-public class CiIf : CiCondCompletionStatement
+public class FuIf : FuCondCompletionStatement
 {
-	internal CiExpr# Cond;
-	internal CiStatement# OnTrue;
-	internal CiStatement#? OnFalse;
-	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitIf(this); }
+	internal FuExpr# Cond;
+	internal FuStatement# OnTrue;
+	internal FuStatement#? OnFalse;
+	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitIf(this); }
 }
 
-public class CiLock : CiStatement
+public class FuLock : FuStatement
 {
-	internal CiExpr# Lock;
-	internal CiStatement# Body;
+	internal FuExpr# Lock;
+	internal FuStatement# Body;
 	public override bool CompletesNormally() => this.Body.CompletesNormally();
-	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitLock(this); }
+	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitLock(this); }
 }
 
-public class CiNative : CiStatement
+public class FuNative : FuStatement
 {
 	internal string() Content;
 	public override bool CompletesNormally() => true;
-	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitNative(this); }
+	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitNative(this); }
 }
 
-public class CiReturn : CiStatement
+public class FuReturn : FuStatement
 {
-	internal CiExpr#? Value;
+	internal FuExpr#? Value;
 	public override bool CompletesNormally() => false;
-	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitReturn(this); }
+	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitReturn(this); }
 }
 
-public class CiCase
+public class FuCase
 {
-	internal List<CiExpr#>() Values;
-	internal List<CiStatement#>() Body;
+	internal List<FuExpr#>() Values;
+	internal List<FuStatement#>() Body;
 }
 
-public class CiSwitch : CiCondCompletionStatement
+public class FuSwitch : FuCondCompletionStatement
 {
-	internal CiExpr# Value;
-	internal List<CiCase()>() Cases;
-	internal List<CiStatement#>() DefaultBody;
-	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitSwitch(this); }
+	internal FuExpr# Value;
+	internal List<FuCase()>() Cases;
+	internal List<FuStatement#>() DefaultBody;
+	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitSwitch(this); }
 
-	public bool IsTypeMatching() => this.Value.Type is CiClassType klass && klass.Class.Id != CiId.StringClass;
+	public bool IsTypeMatching() => this.Value.Type is FuClassType klass && klass.Class.Id != FuId.StringClass;
 
-	public bool HasWhen() => this.Cases.Any(kase => kase.Values.Any(value => value is CiBinaryExpr when1 && when1.Op == CiToken.When));
+	public bool HasWhen() => this.Cases.Any(kase => kase.Values.Any(value => value is FuBinaryExpr when1 && when1.Op == FuToken.When));
 
-	public static int LengthWithoutTrailingBreak(List<CiStatement#> body)
+	public static int LengthWithoutTrailingBreak(List<FuStatement#> body)
 	{
 		int length = body.Count;
-		if (length > 0 && body[length - 1] is CiBreak)
+		if (length > 0 && body[length - 1] is FuBreak)
 			length--;
 		return length;
 	}
 
 	public bool HasDefault() => LengthWithoutTrailingBreak(this.DefaultBody) > 0;
 
-	static bool HasBreak(CiStatement statement)
+	static bool HasBreak(FuStatement statement)
 	{
 		switch (statement) {
-		case CiBreak _:
+		case FuBreak _:
 			return true;
-		case CiIf ifStatement:
+		case FuIf ifStatement:
 			return HasBreak(ifStatement.OnTrue) || (ifStatement.OnFalse != null && HasBreak(ifStatement.OnFalse));
-		case CiBlock block:
+		case FuBlock block:
 			return block.Statements.Any(child => HasBreak(child));
 		default:
 			return false;
 		}
 	}
 
-	public static bool HasEarlyBreak(List<CiStatement#> body)
+	public static bool HasEarlyBreak(List<FuStatement#> body)
 	{
 		int length = LengthWithoutTrailingBreak(body);
 		for (int i = 0; i < length; i++) {
@@ -901,89 +901,89 @@ public class CiSwitch : CiCondCompletionStatement
 		return false;
 	}
 
-	static bool ListHasContinue(List<CiStatement#> statements) => statements.Any(statement => HasContinue(statement));
+	static bool ListHasContinue(List<FuStatement#> statements) => statements.Any(statement => HasContinue(statement));
 
-	static bool HasContinue(CiStatement statement)
+	static bool HasContinue(FuStatement statement)
 	{
 		switch (statement) {
-		case CiContinue _:
+		case FuContinue _:
 			return true;
-		case CiIf ifStatement:
+		case FuIf ifStatement:
 			return HasContinue(ifStatement.OnTrue) || (ifStatement.OnFalse != null && HasContinue(ifStatement.OnFalse));
-		case CiSwitch switchStatement:
+		case FuSwitch switchStatement:
 			return switchStatement.Cases.Any(kase => ListHasContinue(kase.Body)) || ListHasContinue(switchStatement.DefaultBody);
-		case CiBlock block:
+		case FuBlock block:
 			return ListHasContinue(block.Statements);
 		default:
 			return false;
 		}
 	}
 
-	public static bool HasEarlyBreakAndContinue(List<CiStatement#> body) => HasEarlyBreak(body) && ListHasContinue(body);
+	public static bool HasEarlyBreakAndContinue(List<FuStatement#> body) => HasEarlyBreak(body) && ListHasContinue(body);
 }
 
-public class CiThrow : CiStatement
+public class FuThrow : FuStatement
 {
-	internal CiExpr# Message;
+	internal FuExpr# Message;
 	public override bool CompletesNormally() => false;
-	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitThrow(this); }
+	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitThrow(this); }
 }
 
-public class CiWhile : CiLoop
+public class FuWhile : FuLoop
 {
-	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitWhile(this); }
+	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitWhile(this); }
 }
 
-public class CiParameters : CiScope
+public class FuParameters : FuScope
 {
 }
 
-public class CiType : CiScope
+public class FuType : FuScope
 {
 	internal bool Nullable = false;
 	public virtual string() GetArraySuffix() => "";
-	public virtual bool IsAssignableFrom(CiType right) => this == right;
-	public virtual bool EqualsType(CiType right) => this == right;
+	public virtual bool IsAssignableFrom(FuType right) => this == right;
+	public virtual bool EqualsType(FuType right) => this == right;
 	public virtual bool IsArray() => false;
 	public virtual bool IsFinal() => false;
-	public virtual CiType GetBaseType() => this;
-	public virtual CiType GetStorageType() => this;
-	public CiClassType AsClassType()
+	public virtual FuType GetBaseType() => this;
+	public virtual FuType GetStorageType() => this;
+	public FuClassType AsClassType()
 	{
-		assert this is CiClassType klass;
+		assert this is FuClassType klass;
 		return klass;
 	}
 }
 
-public abstract class CiNumericType : CiType
+public abstract class FuNumericType : FuType
 {
 }
 
-public class CiIntegerType : CiNumericType
+public class FuIntegerType : FuNumericType
 {
-	public override bool IsAssignableFrom(CiType right) => right is CiIntegerType || right.Id == CiId.FloatIntType;
+	public override bool IsAssignableFrom(FuType right) => right is FuIntegerType || right.Id == FuId.FloatIntType;
 }
 
-public class CiRangeType : CiIntegerType
+public class FuRangeType : FuIntegerType
 {
 	internal int Min;
 	internal int Max;
 
-	static void AddMinMaxValue(CiRangeType# target, string name, int value)
+	static void AddMinMaxValue(FuRangeType# target, string name, int value)
 	{
-		CiRangeType# type = target.Min == target.Max ? target : new CiRangeType { Min = value, Max = value };
-		target.Add(new CiConst { Visibility = CiVisibility.Public, Name = name, Value = new CiLiteralLong { Type = type, Value = value }, VisitStatus = CiVisitStatus.Done });
+		FuRangeType# type = target.Min == target.Max ? target : new FuRangeType { Min = value, Max = value };
+		target.Add(new FuConst { Visibility = FuVisibility.Public, Name = name, Value = new FuLiteralLong { Type = type, Value = value }, VisitStatus = FuVisitStatus.Done });
 	}
 
-	public static CiRangeType# New(int min, int max)
+	public static FuRangeType# New(int min, int max)
 	{
 		assert min <= max;
-		CiRangeType# result = new CiRangeType { Id =
-			min >= 0 && max <= byte.MaxValue ? CiId.ByteRange :
- 			min >= -128 && max <= 127 ? CiId.SByteRange :
-			min >= short.MinValue && max <= short.MaxValue ? CiId.ShortRange :
-			min >= 0 && max <= ushort.MaxValue ? CiId.UShortRange :
-			CiId.IntType, Min = min, Max = max };
+		FuRangeType# result = new FuRangeType { Id =
+			min >= 0 && max <= byte.MaxValue ? FuId.ByteRange :
+ 			min >= -128 && max <= 127 ? FuId.SByteRange :
+			min >= short.MinValue && max <= short.MaxValue ? FuId.ShortRange :
+			min >= 0 && max <= ushort.MaxValue ? FuId.UShortRange :
+			FuId.IntType, Min = min, Max = max };
 		AddMinMaxValue(result, "MinValue", min);
 		AddMinMaxValue(result, "MaxValue", max);
 		return result;
@@ -991,19 +991,19 @@ public class CiRangeType : CiIntegerType
 
 	public override string() ToString() => this.Min == this.Max ? $"{this.Min}" : $"({this.Min} .. {this.Max})";
 
-	public override bool IsAssignableFrom(CiType right)
+	public override bool IsAssignableFrom(FuType right)
 	{
 		switch (right) {
-		case CiRangeType range:
+		case FuRangeType range:
 			return this.Min <= range.Max && this.Max >= range.Min;
-		case CiIntegerType _:
+		case FuIntegerType _:
 			return true;
 		default:
-			return right.Id == CiId.FloatIntType;
+			return right.Id == FuId.FloatIntType;
 		}
 	}
 
-	public override bool EqualsType(CiType right) => right is CiRangeType that && this.Min == that.Min && this.Max == that.Max;
+	public override bool EqualsType(FuType right) => right is FuRangeType that && this.Min == that.Min && this.Max == that.Max;
 
 	public static int GetMask(int v)
 	{
@@ -1019,92 +1019,92 @@ public class CiRangeType : CiIntegerType
 	public int GetVariableBits() => GetMask(this.Min ^ this.Max);
 }
 
-public class CiFloatingType : CiNumericType
+public class FuFloatingType : FuNumericType
 {
-	public override bool IsAssignableFrom(CiType right) => right is CiNumericType;
+	public override bool IsAssignableFrom(FuType right) => right is FuNumericType;
 }
 
-public abstract class CiNamedValue : CiSymbol
+public abstract class FuNamedValue : FuSymbol
 {
-	internal CiExpr#? TypeExpr;
-	internal CiExpr#? Value;
-	public bool IsAssignableStorage() => this.Type is CiStorageType && !(this.Type is CiArrayStorageType) && this.Value is CiLiteralNull;
+	internal FuExpr#? TypeExpr;
+	internal FuExpr#? Value;
+	public bool IsAssignableStorage() => this.Type is FuStorageType && !(this.Type is FuArrayStorageType) && this.Value is FuLiteralNull;
 }
 
-public abstract class CiMember : CiNamedValue
+public abstract class FuMember : FuNamedValue
 {
-	internal CiVisibility Visibility;
-	protected CiMember()
+	internal FuVisibility Visibility;
+	protected FuMember()
 	{
 	}
 	public abstract bool IsStatic();
 }
 
-public class CiVar : CiNamedValue
+public class FuVar : FuNamedValue
 {
 	internal bool IsAssigned = false;
-	public static CiVar# New(CiType#? type, string name, CiExpr#? defaultValue = null)
-		=> new CiVar { Type = type, Name = name, Value = defaultValue };
-	public override void Accept(CiVisitor! visitor, CiPriority parent) { visitor.VisitVar(this); }
-	public CiVar!? NextParameter()
+	public static FuVar# New(FuType#? type, string name, FuExpr#? defaultValue = null)
+		=> new FuVar { Type = type, Name = name, Value = defaultValue };
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitVar(this); }
+	public FuVar!? NextParameter()
 	{
-		assert this.Next is CiVar! def;
+		assert this.Next is FuVar! def;
 		return def;
 	}
 }
 
-public enum CiVisitStatus
+public enum FuVisitStatus
 {
 	NotYet,
 	InProgress,
 	Done
 }
 
-public class CiConst : CiMember
+public class FuConst : FuMember
 {
-	internal CiMethodBase? InMethod;
-	internal CiVisitStatus VisitStatus;
-	public override void AcceptStatement(CiVisitor! visitor) { visitor.VisitConst(this); }
+	internal FuMethodBase? InMethod;
+	internal FuVisitStatus VisitStatus;
+	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitConst(this); }
 	public override bool IsStatic() => true;
 }
 
-public class CiField : CiMember
+public class FuField : FuMember
 {
 	public override bool IsStatic() => false;
 }
 
-public class CiProperty : CiMember
+public class FuProperty : FuMember
 {
 	public override bool IsStatic() => false;
-	public static CiProperty# New(CiType# type, CiId id, string name)
-		=> new CiProperty { Visibility = CiVisibility.Public, Type = type, Id = id, Name = name };
+	public static FuProperty# New(FuType# type, FuId id, string name)
+		=> new FuProperty { Visibility = FuVisibility.Public, Type = type, Id = id, Name = name };
 }
 
-public class CiStaticProperty : CiMember
+public class FuStaticProperty : FuMember
 {
 	public override bool IsStatic() => true;
-	public static CiStaticProperty# New(CiType# type, CiId id, string name)
-		=> new CiStaticProperty { Visibility = CiVisibility.Public, Type = type, Id = id, Name = name };
+	public static FuStaticProperty# New(FuType# type, FuId id, string name)
+		=> new FuStaticProperty { Visibility = FuVisibility.Public, Type = type, Id = id, Name = name };
 }
 
-public class CiMethodBase : CiMember
+public class FuMethodBase : FuMember
 {
 	internal bool IsMutator = false;
 	internal bool Throws;
-	internal CiStatement#? Body;
+	internal FuStatement#? Body;
 	internal bool IsLive = false;
-	internal HashSet<CiMethod!>() Calls;
+	internal HashSet<FuMethod!>() Calls;
 	public override bool IsStatic() => false; // constructor
 }
 
-public class CiMethod : CiMethodBase
+public class FuMethod : FuMethodBase
 {
-	internal CiCallType CallType;
-	internal CiParameters() Parameters;
-	internal CiScope() MethodScope;
-	public static CiMethod# New(CiVisibility visibility, CiType# type, CiId id, string name, CiVar#? param0 = null, CiVar#? param1 = null, CiVar#? param2 = null, CiVar#? param3 = null)
+	internal FuCallType CallType;
+	internal FuParameters() Parameters;
+	internal FuScope() MethodScope;
+	public static FuMethod# New(FuVisibility visibility, FuType# type, FuId id, string name, FuVar#? param0 = null, FuVar#? param1 = null, FuVar#? param2 = null, FuVar#? param3 = null)
 	{
-		CiMethod# result = new CiMethod { Visibility = visibility, CallType = CiCallType.Normal, Type = type, Id = id, Name = name };
+		FuMethod# result = new FuMethod { Visibility = visibility, CallType = FuCallType.Normal, Type = type, Id = id, Name = name };
 		if (param0 != null) {
 			result.Parameters.Add(param0);
 			if (param1 != null) {
@@ -1118,69 +1118,69 @@ public class CiMethod : CiMethodBase
 		}
 		return result;
 	}
-	public static CiMethod# NewStatic(CiType# type, CiId id, string name, CiVar#? param0, CiVar#? param1 = null, CiVar#? param2 = null)
+	public static FuMethod# NewStatic(FuType# type, FuId id, string name, FuVar#? param0, FuVar#? param1 = null, FuVar#? param2 = null)
 	{
-		CiMethod# result = New(CiVisibility.Public, type, id, name, param0, param1, param2);
-		result.CallType = CiCallType.Static;
+		FuMethod# result = New(FuVisibility.Public, type, id, name, param0, param1, param2);
+		result.CallType = FuCallType.Static;
 		return result;
 	}
-	public static CiMethod# NewMutator(CiVisibility visibility, CiType# type, CiId id, string name, CiVar#? param0 = null, CiVar#? param1 = null, CiVar#? param2 = null)
+	public static FuMethod# NewMutator(FuVisibility visibility, FuType# type, FuId id, string name, FuVar#? param0 = null, FuVar#? param1 = null, FuVar#? param2 = null)
 	{
-		CiMethod# result = New(visibility, type, id, name, param0, param1, param2);
+		FuMethod# result = New(visibility, type, id, name, param0, param1, param2);
 		result.IsMutator = true;
 		return result;
 	}
-	public override bool IsStatic() => this.CallType == CiCallType.Static;
-	public bool IsAbstractOrVirtual() => this.CallType == CiCallType.Abstract || this.CallType == CiCallType.Virtual;
-	public CiMethod GetDeclaringMethod()
+	public override bool IsStatic() => this.CallType == FuCallType.Static;
+	public bool IsAbstractOrVirtual() => this.CallType == FuCallType.Abstract || this.CallType == FuCallType.Virtual;
+	public FuMethod GetDeclaringMethod()
 	{
-		CiMethod method = this;
-		while (method.CallType == CiCallType.Override) {
-			assert method.Parent.Parent.TryLookup(method.Name, false) is CiMethod baseMethod;
+		FuMethod method = this;
+		while (method.CallType == FuCallType.Override) {
+			assert method.Parent.Parent.TryLookup(method.Name, false) is FuMethod baseMethod;
 			method = baseMethod;
 		}
 		return method;
 	}
-	public bool IsToString() => this.Name == "ToString" && this.CallType != CiCallType.Static && this.Parameters.Count() == 0;
+	public bool IsToString() => this.Name == "ToString" && this.CallType != FuCallType.Static && this.Parameters.Count() == 0;
 }
 
-public class CiMethodGroup : CiMember
+public class FuMethodGroup : FuMember
 {
-	internal CiMethod#?[2] Methods;
-	CiMethodGroup()
+	internal FuMethod#?[2] Methods;
+	FuMethodGroup()
 	{
 	}
 	public override bool IsStatic() { assert false; }
-	public static CiMethodGroup# New(CiMethod# method0, CiMethod# method1)
+	public static FuMethodGroup# New(FuMethod# method0, FuMethod# method1)
 	{
-		CiMethodGroup# result = new CiMethodGroup { Visibility = method0.Visibility, Name = method0.Name };
+		FuMethodGroup# result = new FuMethodGroup { Visibility = method0.Visibility, Name = method0.Name };
 		result.Methods[0] = method0;
 		result.Methods[1] = method1;
 		return result;
 	}
 }
 
-public abstract class CiContainerType : CiType
+public abstract class FuContainerType : FuType
 {
 	internal bool IsPublic;
 	internal string() Filename;
 }
 
-public class CiEnum : CiContainerType
+public class FuEnum : FuContainerType
 {
 	internal bool HasExplicitValue = false;
-	public CiSymbol GetFirstValue()
+	public FuSymbol GetFirstValue()
 	{
-		CiSymbol symbol = this.First;
-		while (!(symbol is CiConst))
+		FuSymbol symbol = this.First;
+		while (!(symbol is FuConst))
 			symbol = symbol.Next;
 		return symbol;
 	}
-	public void AcceptValues(CiVisitor! visitor)
+	public void AcceptValues(FuVisitor! visitor)
 	{
-		CiConst? previous = null;
-		for (CiSymbol? symbol = this.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiConst konst) { // not HasFlag
+		FuConst? previous = null;
+		for (FuSymbol? symbol = this.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is FuConst konst) { // not HasFlag
 				visitor.VisitEnumValue(konst, previous);
 				previous = konst;
 			}
@@ -1188,40 +1188,40 @@ public class CiEnum : CiContainerType
 	}
 }
 
-public class CiEnumFlags : CiEnum
+public class FuEnumFlags : FuEnum
 {
 }
 
-public class CiClass : CiContainerType
+public class FuClass : FuContainerType
 {
-	internal CiCallType CallType;
+	internal FuCallType CallType;
 	internal int TypeParameterCount = 0;
 	internal bool HasSubclasses = false;
 	internal string() BaseClassName = "";
-	internal CiMethodBase#? Constructor;
-	internal List<CiConst>() ConstArrays;
+	internal FuMethodBase#? Constructor;
+	internal List<FuConst>() ConstArrays;
 	public bool HasBaseClass() => this.BaseClassName.Length > 0;
 	public bool AddsVirtualMethods()
 	{
-		for (CiSymbol? symbol = this.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiMethod method && method.IsAbstractOrVirtual())
+		for (FuSymbol? symbol = this.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is FuMethod method && method.IsAbstractOrVirtual())
 				return true;
 		}
 		return false;
 	}
 
-	public CiClass()
+	public FuClass()
 	{
-		Add(CiVar.New(new CiReadWriteClassType { Class = this }, "this")); // shadows "this" in base class
+		Add(FuVar.New(new FuReadWriteClassType { Class = this }, "this")); // shadows "this" in base class
 	}
 
-	public static CiClass# New(CiCallType callType, CiId id, string name, int typeParameterCount = 0)
-		=> new CiClass { CallType = callType, Id = id, Name = name, TypeParameterCount = typeParameterCount };
+	public static FuClass# New(FuCallType callType, FuId id, string name, int typeParameterCount = 0)
+		=> new FuClass { CallType = callType, Id = id, Name = name, TypeParameterCount = typeParameterCount };
 
-	public bool IsSameOrBaseOf(CiClass derived)
+	public bool IsSameOrBaseOf(FuClass derived)
 	{
 		while (derived != this) {
-			if (derived.Parent is CiClass parent)
+			if (derived.Parent is FuClass parent)
 				derived = parent;
 			else
 				return false;
@@ -1229,24 +1229,24 @@ public class CiClass : CiContainerType
 		return true;
 	}
 
-	public bool HasToString() => TryLookup("ToString", false) is CiMethod method && method.IsToString();
+	public bool HasToString() => TryLookup("ToString", false) is FuMethod method && method.IsToString();
 
-	public bool AddsToString() => this.Dict.ContainsKey("ToString") && this.Dict["ToString"] is CiMethod method && method.IsToString()
-		&& method.CallType != CiCallType.Override && method.CallType != CiCallType.Sealed;
+	public bool AddsToString() => this.Dict.ContainsKey("ToString") && this.Dict["ToString"] is FuMethod method && method.IsToString()
+		&& method.CallType != FuCallType.Override && method.CallType != FuCallType.Sealed;
 }
 
-public class CiClassType : CiType
+public class FuClassType : FuType
 {
-	internal CiClass Class;
-	internal CiType#? TypeArg0;
-	internal CiType#? TypeArg1;
-	public CiType# GetElementType() => this.TypeArg0;
-	public CiType GetKeyType() => this.TypeArg0;
-	public CiType# GetValueType() => this.TypeArg1;
-	public override bool IsArray() => this.Class.Id == CiId.ArrayPtrClass;
-	public override CiType GetBaseType() => IsArray() ? GetElementType().GetBaseType() : this;
+	internal FuClass Class;
+	internal FuType#? TypeArg0;
+	internal FuType#? TypeArg1;
+	public FuType# GetElementType() => this.TypeArg0;
+	public FuType GetKeyType() => this.TypeArg0;
+	public FuType# GetValueType() => this.TypeArg1;
+	public override bool IsArray() => this.Class.Id == FuId.ArrayPtrClass;
+	public override FuType GetBaseType() => IsArray() ? GetElementType().GetBaseType() : this;
 
-	internal bool EqualTypeArguments(CiClassType right)
+	internal bool EqualTypeArguments(FuClassType right)
 	{
 		switch (this.Class.TypeParameterCount) {
 		case 0: return true;
@@ -1256,18 +1256,18 @@ public class CiClassType : CiType
 		}
 	}
 
-	protected bool IsAssignableFromClass(CiClassType right) => this.Class.IsSameOrBaseOf(right.Class) && EqualTypeArguments(right);
+	protected bool IsAssignableFromClass(FuClassType right) => this.Class.IsSameOrBaseOf(right.Class) && EqualTypeArguments(right);
 
-	public override bool IsAssignableFrom(CiType right)
+	public override bool IsAssignableFrom(FuType right)
 	{
-		return (this.Nullable && right.Id == CiId.NullType)
-			|| (right is CiClassType rightClass && IsAssignableFromClass(rightClass));
+		return (this.Nullable && right.Id == FuId.NullType)
+			|| (right is FuClassType rightClass && IsAssignableFromClass(rightClass));
 	}
 
-	protected bool EqualsTypeInternal(CiClassType that) => this.Nullable == that.Nullable && this.Class == that.Class && EqualTypeArguments(that);
+	protected bool EqualsTypeInternal(FuClassType that) => this.Nullable == that.Nullable && this.Class == that.Class && EqualTypeArguments(that);
 
-	public override bool EqualsType(CiType right)
-		=> right is CiClassType that && !(right is CiReadWriteClassType) && EqualsTypeInternal(that);
+	public override bool EqualsType(FuType right)
+		=> right is FuClassType that && !(right is FuReadWriteClassType) && EqualsTypeInternal(that);
 
 	public override string() GetArraySuffix() => IsArray() ? "[]" : "";
 	public virtual string GetClassSuffix() => "";
@@ -1286,74 +1286,74 @@ public class CiClassType : CiType
 	}
 }
 
-public class CiReadWriteClassType : CiClassType
+public class FuReadWriteClassType : FuClassType
 {
-	public override bool IsAssignableFrom(CiType right)
+	public override bool IsAssignableFrom(FuType right)
 	{
-		return (this.Nullable && right.Id == CiId.NullType)
-			|| (right is CiReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
+		return (this.Nullable && right.Id == FuId.NullType)
+			|| (right is FuReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
 	}
 
-	public override bool EqualsType(CiType right)
-		=> right is CiReadWriteClassType that && !(right is CiStorageType) && !(right is CiDynamicPtrType) && EqualsTypeInternal(that);
+	public override bool EqualsType(FuType right)
+		=> right is FuReadWriteClassType that && !(right is FuStorageType) && !(right is FuDynamicPtrType) && EqualsTypeInternal(that);
 
 	public override string() GetArraySuffix() => IsArray() ? "[]!" : "";
 	public override string GetClassSuffix() => "!";
 }
 
-public class CiStorageType : CiReadWriteClassType
+public class FuStorageType : FuReadWriteClassType
 {
-	public override bool IsFinal() => this.Class.Id != CiId.MatchClass;
-	public override bool IsAssignableFrom(CiType right) => right is CiStorageType rightClass && this.Class == rightClass.Class && EqualTypeArguments(rightClass);
-	public override bool EqualsType(CiType right) => right is CiStorageType that && EqualsTypeInternal(that);
+	public override bool IsFinal() => this.Class.Id != FuId.MatchClass;
+	public override bool IsAssignableFrom(FuType right) => right is FuStorageType rightClass && this.Class == rightClass.Class && EqualTypeArguments(rightClass);
+	public override bool EqualsType(FuType right) => right is FuStorageType that && EqualsTypeInternal(that);
 	public override string GetClassSuffix() => "()";
 }
 
-public class CiDynamicPtrType : CiReadWriteClassType
+public class FuDynamicPtrType : FuReadWriteClassType
 {
-	public override bool IsAssignableFrom(CiType right)
+	public override bool IsAssignableFrom(FuType right)
 	{
-		return (this.Nullable && right.Id == CiId.NullType)
-			|| (right is CiDynamicPtrType rightClass && IsAssignableFromClass(rightClass));
+		return (this.Nullable && right.Id == FuId.NullType)
+			|| (right is FuDynamicPtrType rightClass && IsAssignableFromClass(rightClass));
 	}
-	public override bool EqualsType(CiType right) => right is CiDynamicPtrType that && EqualsTypeInternal(that);
+	public override bool EqualsType(FuType right) => right is FuDynamicPtrType that && EqualsTypeInternal(that);
 
 	public override string() GetArraySuffix() => IsArray() ? "[]#" : "";
 	public override string GetClassSuffix() => "#";
 }
 
-public class CiArrayStorageType : CiStorageType
+public class FuArrayStorageType : FuStorageType
 {
-	internal CiExpr# LengthExpr;
+	internal FuExpr# LengthExpr;
 	internal int Length;
 	internal bool PtrTaken = false;
 
-	public override CiType GetBaseType() => GetElementType().GetBaseType();
+	public override FuType GetBaseType() => GetElementType().GetBaseType();
 	public override bool IsArray() => true;
 	public override string() GetArraySuffix() => $"[{this.Length}]";
-	public override bool EqualsType(CiType right) => right is CiArrayStorageType that && GetElementType().EqualsType(that.GetElementType()) && this.Length == that.Length;
-	public override CiType GetStorageType() => GetElementType().GetStorageType();
+	public override bool EqualsType(FuType right) => right is FuArrayStorageType that && GetElementType().EqualsType(that.GetElementType()) && this.Length == that.Length;
+	public override FuType GetStorageType() => GetElementType().GetStorageType();
 }
 
-public class CiStringType : CiClassType
+public class FuStringType : FuClassType
 {
 }
 
-public class CiStringStorageType : CiStringType
+public class FuStringStorageType : FuStringType
 {
-	public override bool IsAssignableFrom(CiType right) => right is CiStringType;
+	public override bool IsAssignableFrom(FuType right) => right is FuStringType;
 	public override string GetClassSuffix() => "()";
 }
 
-public class CiPrintableType : CiType
+public class FuPrintableType : FuType
 {
-	public override bool IsAssignableFrom(CiType right)
+	public override bool IsAssignableFrom(FuType right)
 	{
 		switch (right) {
-		case CiNumericType _:
-		case CiStringType _:
+		case FuNumericType _:
+		case FuStringType _:
 			return true;
-		case CiClassType klass:
+		case FuClassType klass:
 			return klass.Class.HasToString();
 		default:
 			return false;
@@ -1361,322 +1361,322 @@ public class CiPrintableType : CiType
 	}
 }
 
-public class CiSystem : CiScope
+public class FuSystem : FuScope
 {
-	internal CiType# VoidType = new CiType { Id = CiId.VoidType, Name = "void" };
-	internal CiType# NullType = new CiType { Id = CiId.NullType, Name = "null", Nullable = true };
-	CiType# TypeParam0 = new CiType { Id = CiId.TypeParam0, Name = "T" };
-	internal CiIntegerType# IntType = new CiIntegerType { Id = CiId.IntType, Name = "int" };
-	CiRangeType# UIntType = CiRangeType.New(0, int.MaxValue);
-	internal CiIntegerType# LongType = new CiIntegerType { Id = CiId.LongType, Name = "long" };
-	internal CiRangeType# ByteType = CiRangeType.New(0, 0xff);
-	CiFloatingType# FloatType = new CiFloatingType { Id = CiId.FloatType, Name = "float" };
-	internal CiFloatingType# DoubleType = new CiFloatingType { Id = CiId.DoubleType, Name = "double" };
-	internal CiRangeType# CharType = CiRangeType.New(-0x80, 0xffff);
-	internal CiEnum# BoolType = new CiEnum { Id = CiId.BoolType, Name = "bool" };
-	CiClass# StringClass = CiClass.New(CiCallType.Normal, CiId.StringClass, "string");
-	internal CiStringType# StringPtrType = new CiStringType { Id = CiId.StringPtrType, Name = "string" };
-	internal CiStringType# StringNullablePtrType = new CiStringType { Id = CiId.StringPtrType, Name = "string", Nullable = true };
-	internal CiStringStorageType# StringStorageType = new CiStringStorageType { Id = CiId.StringStorageType };
-	internal CiType# PrintableType = new CiPrintableType { Name = "printable" };
-	internal CiClass# ArrayPtrClass = CiClass.New(CiCallType.Normal, CiId.ArrayPtrClass, "ArrayPtr", 1);
-	internal CiClass# ArrayStorageClass = CiClass.New(CiCallType.Normal, CiId.ArrayStorageClass, "ArrayStorage", 1);
-	internal CiEnum# RegexOptionsEnum;
-	internal CiReadWriteClassType# LockPtrType = new CiReadWriteClassType();
+	internal FuType# VoidType = new FuType { Id = FuId.VoidType, Name = "void" };
+	internal FuType# NullType = new FuType { Id = FuId.NullType, Name = "null", Nullable = true };
+	FuType# TypeParam0 = new FuType { Id = FuId.TypeParam0, Name = "T" };
+	internal FuIntegerType# IntType = new FuIntegerType { Id = FuId.IntType, Name = "int" };
+	FuRangeType# UIntType = FuRangeType.New(0, int.MaxValue);
+	internal FuIntegerType# LongType = new FuIntegerType { Id = FuId.LongType, Name = "long" };
+	internal FuRangeType# ByteType = FuRangeType.New(0, 0xff);
+	FuFloatingType# FloatType = new FuFloatingType { Id = FuId.FloatType, Name = "float" };
+	internal FuFloatingType# DoubleType = new FuFloatingType { Id = FuId.DoubleType, Name = "double" };
+	internal FuRangeType# CharType = FuRangeType.New(-0x80, 0xffff);
+	internal FuEnum# BoolType = new FuEnum { Id = FuId.BoolType, Name = "bool" };
+	FuClass# StringClass = FuClass.New(FuCallType.Normal, FuId.StringClass, "string");
+	internal FuStringType# StringPtrType = new FuStringType { Id = FuId.StringPtrType, Name = "string" };
+	internal FuStringType# StringNullablePtrType = new FuStringType { Id = FuId.StringPtrType, Name = "string", Nullable = true };
+	internal FuStringStorageType# StringStorageType = new FuStringStorageType { Id = FuId.StringStorageType };
+	internal FuType# PrintableType = new FuPrintableType { Name = "printable" };
+	internal FuClass# ArrayPtrClass = FuClass.New(FuCallType.Normal, FuId.ArrayPtrClass, "ArrayPtr", 1);
+	internal FuClass# ArrayStorageClass = FuClass.New(FuCallType.Normal, FuId.ArrayStorageClass, "ArrayStorage", 1);
+	internal FuEnum# RegexOptionsEnum;
+	internal FuReadWriteClassType# LockPtrType = new FuReadWriteClassType();
 
-	internal CiLiteralLong# NewLiteralLong(long value, int line = 0)
+	internal FuLiteralLong# NewLiteralLong(long value, int line = 0)
 	{
-		CiType# type = value >= int.MinValue && value <= int.MaxValue ? CiRangeType.New(value, value) : LongType;
-		return new CiLiteralLong { Line = line, Type = type, Value = value };
+		FuType# type = value >= int.MinValue && value <= int.MaxValue ? FuRangeType.New(value, value) : LongType;
+		return new FuLiteralLong { Line = line, Type = type, Value = value };
 	}
 
-	internal CiLiteralString# NewLiteralString(string value, int line = 0) => new CiLiteralString { Line = line, Type = StringPtrType, Value = value };
+	internal FuLiteralString# NewLiteralString(string value, int line = 0) => new FuLiteralString { Line = line, Type = StringPtrType, Value = value };
 
-	internal CiType# PromoteIntegerTypes(CiType left, CiType right)
+	internal FuType# PromoteIntegerTypes(FuType left, FuType right)
 	{
 		return left == LongType || right == LongType ? LongType : IntType;
 	}
 
-	internal CiType#? PromoteFloatingTypes(CiType left, CiType right)
+	internal FuType#? PromoteFloatingTypes(FuType left, FuType right)
 	{
-		if (left.Id == CiId.DoubleType || right.Id == CiId.DoubleType)
+		if (left.Id == FuId.DoubleType || right.Id == FuId.DoubleType)
 			return DoubleType;
-		if (left.Id == CiId.FloatType || right.Id == CiId.FloatType
-		 || left.Id == CiId.FloatIntType || right.Id == CiId.FloatIntType)
+		if (left.Id == FuId.FloatType || right.Id == FuId.FloatType
+		 || left.Id == FuId.FloatIntType || right.Id == FuId.FloatIntType)
 			return FloatType;
 		return null;
 	}
 
-	internal CiType# PromoteNumericTypes(CiType# left, CiType# right)
+	internal FuType# PromoteNumericTypes(FuType# left, FuType# right)
 	{
 		// TODO: PromoteFloatingTypes(left, right) ?? PromoteIntegerTypes(left, right);
-		CiType#? result = PromoteFloatingTypes(left, right);
+		FuType#? result = PromoteFloatingTypes(left, right);
 		return result != null ? result : PromoteIntegerTypes(left, right);
 	}
 
-	internal CiEnum# NewEnum(bool flags)
+	internal FuEnum# NewEnum(bool flags)
 	{
-		CiEnum# enu = flags ? new CiEnumFlags() : new CiEnum();
-		enu.Add(CiMethod.NewStatic(enu, CiId.EnumFromInt, "FromInt", CiVar.New(IntType, "value")));
+		FuEnum# enu = flags ? new FuEnumFlags() : new FuEnum();
+		enu.Add(FuMethod.NewStatic(enu, FuId.EnumFromInt, "FromInt", FuVar.New(IntType, "value")));
 		if (flags)
-			enu.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.EnumHasFlag, "HasFlag", CiVar.New(enu, "flag")));
+			enu.Add(FuMethod.New(FuVisibility.Public, BoolType, FuId.EnumHasFlag, "HasFlag", FuVar.New(enu, "flag")));
 		return enu;
 	}
 
-	CiClass! AddCollection!(CiId id, string name, int typeParameterCount, CiId clearId, CiId countId)
+	FuClass! AddCollection!(FuId id, string name, int typeParameterCount, FuId clearId, FuId countId)
 	{
-		CiClass# result = CiClass.New(CiCallType.Normal, id, name, typeParameterCount);
-		result.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, clearId, "Clear"));
-		result.Add(CiProperty.New(UIntType, countId, "Count"));
+		FuClass# result = FuClass.New(FuCallType.Normal, id, name, typeParameterCount);
+		result.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, clearId, "Clear"));
+		result.Add(FuProperty.New(UIntType, countId, "Count"));
 		Add(result);
 		return result;
 	}
 
-	void AddSet!(CiId id, string name, CiId addId, CiId clearId, CiId containsId, CiId countId, CiId removeId)
+	void AddSet!(FuId id, string name, FuId addId, FuId clearId, FuId containsId, FuId countId, FuId removeId)
 	{
-		CiClass! set = AddCollection(id, name, 1, clearId, countId);
-		set.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, addId, "Add", CiVar.New(TypeParam0, "value")));
-		set.Add(CiMethod.New(CiVisibility.Public, BoolType, containsId, "Contains", CiVar.New(TypeParam0, "value")));
-		set.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, removeId, "Remove", CiVar.New(TypeParam0, "value")));
+		FuClass! set = AddCollection(id, name, 1, clearId, countId);
+		set.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, addId, "Add", FuVar.New(TypeParam0, "value")));
+		set.Add(FuMethod.New(FuVisibility.Public, BoolType, containsId, "Contains", FuVar.New(TypeParam0, "value")));
+		set.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, removeId, "Remove", FuVar.New(TypeParam0, "value")));
 	}
 
-	void AddDictionary!(CiId id, string name, CiId clearId, CiId containsKeyId, CiId countId, CiId removeId)
+	void AddDictionary!(FuId id, string name, FuId clearId, FuId containsKeyId, FuId countId, FuId removeId)
 	{
-		CiClass! dict = AddCollection(id, name, 2, clearId, countId);
-		dict.Add(CiMethod.NewMutator(CiVisibility.FinalValueType, VoidType, CiId.DictionaryAdd, "Add", CiVar.New(TypeParam0, "key")));
-		dict.Add(CiMethod.New(CiVisibility.Public, BoolType, containsKeyId, "ContainsKey", CiVar.New(TypeParam0, "key")));
-		dict.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, removeId, "Remove", CiVar.New(TypeParam0, "key")));
+		FuClass! dict = AddCollection(id, name, 2, clearId, countId);
+		dict.Add(FuMethod.NewMutator(FuVisibility.FinalValueType, VoidType, FuId.DictionaryAdd, "Add", FuVar.New(TypeParam0, "key")));
+		dict.Add(FuMethod.New(FuVisibility.Public, BoolType, containsKeyId, "ContainsKey", FuVar.New(TypeParam0, "key")));
+		dict.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, removeId, "Remove", FuVar.New(TypeParam0, "key")));
 	}
 
-	static void AddEnumValue(CiEnum# enu, CiConst# value)
+	static void AddEnumValue(FuEnum# enu, FuConst# value)
 	{
 		value.Type = enu;
 		enu.Add(value);
 	}
 
-	CiConst# NewConstLong(string name, long value)
+	FuConst# NewConstLong(string name, long value)
 	{
-		CiConst# result = new CiConst { Visibility = CiVisibility.Public, Name = name, Value = NewLiteralLong(value), VisitStatus = CiVisitStatus.Done };
+		FuConst# result = new FuConst { Visibility = FuVisibility.Public, Name = name, Value = NewLiteralLong(value), VisitStatus = FuVisitStatus.Done };
 		result.Type = result.Value.Type;
 		return result;
 	}
 
-	CiConst# NewConstDouble(string name, double value)
-		=> new CiConst { Visibility = CiVisibility.Public, Name = name, Value = new CiLiteralDouble { Value = value, Type = DoubleType }, Type = DoubleType, VisitStatus = CiVisitStatus.Done };
+	FuConst# NewConstDouble(string name, double value)
+		=> new FuConst { Visibility = FuVisibility.Public, Name = name, Value = new FuLiteralDouble { Value = value, Type = DoubleType }, Type = DoubleType, VisitStatus = FuVisitStatus.Done };
 
-	void AddMinMaxValue(CiIntegerType! target, long min, long max)
+	void AddMinMaxValue(FuIntegerType! target, long min, long max)
 	{
 		target.Add(NewConstLong("MinValue", min));
 		target.Add(NewConstLong("MaxValue", max));
 	}
 
-	CiSystem()
+	FuSystem()
 	{
 		Parent = null;
-		CiSymbol# basePtr = CiVar.New(null, "base");
-		basePtr.Id = CiId.BasePtr;
+		FuSymbol# basePtr = FuVar.New(null, "base");
+		basePtr.Id = FuId.BasePtr;
 		Add(basePtr);
 		AddMinMaxValue(IntType, int.MinValue, int.MaxValue);
-		IntType.Add(CiMethod.NewMutator(CiVisibility.Public, BoolType, CiId.IntTryParse, "TryParse", CiVar.New(StringPtrType, "value"), CiVar.New(IntType, "radix", NewLiteralLong(0))));
+		IntType.Add(FuMethod.NewMutator(FuVisibility.Public, BoolType, FuId.IntTryParse, "TryParse", FuVar.New(StringPtrType, "value"), FuVar.New(IntType, "radix", NewLiteralLong(0))));
 		Add(IntType);
 		UIntType.Name = "uint";
 		Add(UIntType);
 		AddMinMaxValue(LongType, long.MinValue, long.MaxValue);
-		LongType.Add(CiMethod.NewMutator(CiVisibility.Public, BoolType, CiId.LongTryParse, "TryParse", CiVar.New(StringPtrType, "value"), CiVar.New(IntType, "radix", NewLiteralLong(0))));
+		LongType.Add(FuMethod.NewMutator(FuVisibility.Public, BoolType, FuId.LongTryParse, "TryParse", FuVar.New(StringPtrType, "value"), FuVar.New(IntType, "radix", NewLiteralLong(0))));
 		Add(LongType);
 		ByteType.Name = "byte";
 		Add(ByteType);
-		CiRangeType# shortType = CiRangeType.New(-0x8000, 0x7fff);
+		FuRangeType# shortType = FuRangeType.New(-0x8000, 0x7fff);
 		shortType.Name = "short";
 		Add(shortType);
-		CiRangeType# ushortType = CiRangeType.New(0, 0xffff);
+		FuRangeType# ushortType = FuRangeType.New(0, 0xffff);
 		ushortType.Name = "ushort";
 		Add(ushortType);
-		CiRangeType# minus1Type = CiRangeType.New(-1, int.MaxValue);
+		FuRangeType# minus1Type = FuRangeType.New(-1, int.MaxValue);
 		Add(FloatType);
-		DoubleType.Add(CiMethod.NewMutator(CiVisibility.Public, BoolType, CiId.DoubleTryParse, "TryParse", CiVar.New(StringPtrType, "value")));
+		DoubleType.Add(FuMethod.NewMutator(FuVisibility.Public, BoolType, FuId.DoubleTryParse, "TryParse", FuVar.New(StringPtrType, "value")));
 		Add(DoubleType);
 		Add(BoolType);
-		StringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringContains, "Contains", CiVar.New(StringPtrType, "value")));
-		StringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringEndsWith, "EndsWith", CiVar.New(StringPtrType, "value")));
-		StringClass.Add(CiMethod.New(CiVisibility.Public, minus1Type, CiId.StringIndexOf, "IndexOf", CiVar.New(StringPtrType, "value")));
-		StringClass.Add(CiMethod.New(CiVisibility.Public, minus1Type, CiId.StringLastIndexOf, "LastIndexOf", CiVar.New(StringPtrType, "value")));
-		StringClass.Add(CiProperty.New(UIntType, CiId.StringLength, "Length"));
-		StringClass.Add(CiMethod.New(CiVisibility.Public, StringStorageType, CiId.StringReplace, "Replace", CiVar.New(StringPtrType, "oldValue"), CiVar.New(StringPtrType, "newValue")));
-		StringClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.StringStartsWith, "StartsWith", CiVar.New(StringPtrType, "value")));
-		StringClass.Add(CiMethod.New(CiVisibility.Public, StringStorageType, CiId.StringSubstring, "Substring", CiVar.New(IntType, "offset"), CiVar.New(IntType, "length", NewLiteralLong(-1)))); // TODO: UIntType
+		StringClass.Add(FuMethod.New(FuVisibility.Public, BoolType, FuId.StringContains, "Contains", FuVar.New(StringPtrType, "value")));
+		StringClass.Add(FuMethod.New(FuVisibility.Public, BoolType, FuId.StringEndsWith, "EndsWith", FuVar.New(StringPtrType, "value")));
+		StringClass.Add(FuMethod.New(FuVisibility.Public, minus1Type, FuId.StringIndexOf, "IndexOf", FuVar.New(StringPtrType, "value")));
+		StringClass.Add(FuMethod.New(FuVisibility.Public, minus1Type, FuId.StringLastIndexOf, "LastIndexOf", FuVar.New(StringPtrType, "value")));
+		StringClass.Add(FuProperty.New(UIntType, FuId.StringLength, "Length"));
+		StringClass.Add(FuMethod.New(FuVisibility.Public, StringStorageType, FuId.StringReplace, "Replace", FuVar.New(StringPtrType, "oldValue"), FuVar.New(StringPtrType, "newValue")));
+		StringClass.Add(FuMethod.New(FuVisibility.Public, BoolType, FuId.StringStartsWith, "StartsWith", FuVar.New(StringPtrType, "value")));
+		StringClass.Add(FuMethod.New(FuVisibility.Public, StringStorageType, FuId.StringSubstring, "Substring", FuVar.New(IntType, "offset"), FuVar.New(IntType, "length", NewLiteralLong(-1)))); // TODO: UIntType
 		StringPtrType.Class = StringClass;
 		Add(StringPtrType);
 		StringNullablePtrType.Class = StringClass;
 		StringStorageType.Class = StringClass;
-		CiMethod# arrayBinarySearchPart = CiMethod.New(CiVisibility.NumericElementType, IntType, CiId.ArrayBinarySearchPart, "BinarySearch",
-			CiVar.New(TypeParam0, "value"), CiVar.New(IntType, "startIndex"), CiVar.New(IntType, "count"));
+		FuMethod# arrayBinarySearchPart = FuMethod.New(FuVisibility.NumericElementType, IntType, FuId.ArrayBinarySearchPart, "BinarySearch",
+			FuVar.New(TypeParam0, "value"), FuVar.New(IntType, "startIndex"), FuVar.New(IntType, "count"));
 		ArrayPtrClass.Add(arrayBinarySearchPart);
-		ArrayPtrClass.Add(CiMethod.New(CiVisibility.Public, VoidType, CiId.ArrayCopyTo, "CopyTo", CiVar.New(IntType, "sourceIndex"),
-			CiVar.New(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"), CiVar.New(IntType, "destinationIndex"), CiVar.New(IntType, "count")));
-		CiMethod# arrayFillPart = CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.ArrayFillPart, "Fill",
-			CiVar.New(TypeParam0, "value"), CiVar.New(IntType, "startIndex"), CiVar.New(IntType, "count"));
+		ArrayPtrClass.Add(FuMethod.New(FuVisibility.Public, VoidType, FuId.ArrayCopyTo, "CopyTo", FuVar.New(IntType, "sourceIndex"),
+			FuVar.New(new FuReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"), FuVar.New(IntType, "destinationIndex"), FuVar.New(IntType, "count")));
+		FuMethod# arrayFillPart = FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.ArrayFillPart, "Fill",
+			FuVar.New(TypeParam0, "value"), FuVar.New(IntType, "startIndex"), FuVar.New(IntType, "count"));
 		ArrayPtrClass.Add(arrayFillPart);
-		CiMethod# arraySortPart = CiMethod.NewMutator(CiVisibility.NumericElementType, VoidType, CiId.ArraySortPart, "Sort", CiVar.New(IntType, "startIndex"), CiVar.New(IntType, "count"));
+		FuMethod# arraySortPart = FuMethod.NewMutator(FuVisibility.NumericElementType, VoidType, FuId.ArraySortPart, "Sort", FuVar.New(IntType, "startIndex"), FuVar.New(IntType, "count"));
 		ArrayPtrClass.Add(arraySortPart);
 		ArrayStorageClass.Parent = ArrayPtrClass;
-		ArrayStorageClass.Add(CiMethodGroup.New(CiMethod.New(CiVisibility.NumericElementType, IntType, CiId.ArrayBinarySearchAll, "BinarySearch", CiVar.New(TypeParam0, "value")),
+		ArrayStorageClass.Add(FuMethodGroup.New(FuMethod.New(FuVisibility.NumericElementType, IntType, FuId.ArrayBinarySearchAll, "BinarySearch", FuVar.New(TypeParam0, "value")),
 			arrayBinarySearchPart));
-		ArrayStorageClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.ArrayContains, "Contains", CiVar.New(TypeParam0, "value")));
-		ArrayStorageClass.Add(CiMethodGroup.New(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.ArrayFillAll, "Fill", CiVar.New(TypeParam0, "value")),
+		ArrayStorageClass.Add(FuMethod.New(FuVisibility.Public, BoolType, FuId.ArrayContains, "Contains", FuVar.New(TypeParam0, "value")));
+		ArrayStorageClass.Add(FuMethodGroup.New(FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.ArrayFillAll, "Fill", FuVar.New(TypeParam0, "value")),
 			arrayFillPart));
-		ArrayStorageClass.Add(CiProperty.New(UIntType, CiId.ArrayLength, "Length"));
-		ArrayStorageClass.Add(CiMethodGroup.New(
-			CiMethod.NewMutator(CiVisibility.NumericElementType, VoidType, CiId.ArraySortAll, "Sort"),
+		ArrayStorageClass.Add(FuProperty.New(UIntType, FuId.ArrayLength, "Length"));
+		ArrayStorageClass.Add(FuMethodGroup.New(
+			FuMethod.NewMutator(FuVisibility.NumericElementType, VoidType, FuId.ArraySortAll, "Sort"),
 			arraySortPart));
 
-		CiType# typeParam0NotFinal = new CiType { Id = CiId.TypeParam0NotFinal, Name = "T" };
-		CiType# typeParam0Predicate = new CiType { Id = CiId.TypeParam0Predicate, Name = "Predicate<T>" };
-		CiClass! listClass = AddCollection(CiId.ListClass, "List", 1, CiId.ListClear, CiId.ListCount);
-		listClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.ListAdd, "Add", CiVar.New(typeParam0NotFinal, "value")));
-		listClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.ListAddRange, "AddRange", CiVar.New(new CiClassType { Class = listClass, TypeArg0 = TypeParam0 }, "source")));
-		listClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.ListAll, "All", CiVar.New(typeParam0Predicate, "predicate")));
-		listClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.ListAny, "Any", CiVar.New(typeParam0Predicate, "predicate")));
-		listClass.Add(CiMethod.New(CiVisibility.Public, BoolType, CiId.ListContains, "Contains", CiVar.New(TypeParam0, "value")));
-		listClass.Add(CiMethod.New(CiVisibility.Public, VoidType, CiId.ListCopyTo, "CopyTo", CiVar.New(IntType, "sourceIndex"),
-			CiVar.New(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"), CiVar.New(IntType, "destinationIndex"), CiVar.New(IntType, "count")));
-		listClass.Add(CiMethod.NewMutator(CiVisibility.Public, IntType, CiId.ListIndexOf, "IndexOf", CiVar.New(TypeParam0, "value")));
-		listClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.ListInsert, "Insert", CiVar.New(UIntType, "index"), CiVar.New(typeParam0NotFinal, "value")));
-		listClass.Add(CiMethod.NewMutator(CiVisibility.Public, TypeParam0, CiId.ListLast, "Last"));
-		listClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.ListRemoveAt, "RemoveAt", CiVar.New(IntType, "index")));
-		listClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.ListRemoveRange, "RemoveRange", CiVar.New(IntType, "index"), CiVar.New(IntType, "count")));
-		listClass.Add(CiMethodGroup.New(
-			CiMethod.NewMutator(CiVisibility.NumericElementType, VoidType, CiId.ListSortAll, "Sort"),
-			CiMethod.NewMutator(CiVisibility.NumericElementType, VoidType, CiId.ListSortPart, "Sort", CiVar.New(IntType, "startIndex"), CiVar.New(IntType, "count"))));
-		CiClass! queueClass = AddCollection(CiId.QueueClass, "Queue", 1, CiId.QueueClear, CiId.QueueCount);
-		queueClass.Add(CiMethod.NewMutator(CiVisibility.Public, TypeParam0, CiId.QueueDequeue, "Dequeue"));
-		queueClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.QueueEnqueue, "Enqueue", CiVar.New(TypeParam0, "value")));
-		queueClass.Add(CiMethod.New(CiVisibility.Public, TypeParam0, CiId.QueuePeek, "Peek"));
-		CiClass! stackClass = AddCollection(CiId.StackClass, "Stack", 1, CiId.StackClear, CiId.StackCount);
-		stackClass.Add(CiMethod.New(CiVisibility.Public, TypeParam0, CiId.StackPeek, "Peek"));
-		stackClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.StackPush, "Push", CiVar.New(TypeParam0, "value")));
-		stackClass.Add(CiMethod.NewMutator(CiVisibility.Public, TypeParam0, CiId.StackPop, "Pop"));
-		AddSet(CiId.HashSetClass, "HashSet", CiId.HashSetAdd, CiId.HashSetClear, CiId.HashSetContains, CiId.HashSetCount, CiId.HashSetRemove);
-		AddSet(CiId.SortedSetClass, "SortedSet", CiId.SortedSetAdd, CiId.SortedSetClear, CiId.SortedSetContains, CiId.SortedSetCount, CiId.SortedSetRemove);
-		AddDictionary(CiId.DictionaryClass, "Dictionary", CiId.DictionaryClear, CiId.DictionaryContainsKey, CiId.DictionaryCount, CiId.DictionaryRemove);
-		AddDictionary(CiId.SortedDictionaryClass, "SortedDictionary", CiId.SortedDictionaryClear, CiId.SortedDictionaryContainsKey, CiId.SortedDictionaryCount, CiId.SortedDictionaryRemove);
-		AddDictionary(CiId.OrderedDictionaryClass, "OrderedDictionary", CiId.OrderedDictionaryClear, CiId.OrderedDictionaryContainsKey, CiId.OrderedDictionaryCount, CiId.OrderedDictionaryRemove);
+		FuType# typeParam0NotFinal = new FuType { Id = FuId.TypeParam0NotFinal, Name = "T" };
+		FuType# typeParam0Predicate = new FuType { Id = FuId.TypeParam0Predicate, Name = "Predicate<T>" };
+		FuClass! listClass = AddCollection(FuId.ListClass, "List", 1, FuId.ListClear, FuId.ListCount);
+		listClass.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.ListAdd, "Add", FuVar.New(typeParam0NotFinal, "value")));
+		listClass.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.ListAddRange, "AddRange", FuVar.New(new FuClassType { Class = listClass, TypeArg0 = TypeParam0 }, "source")));
+		listClass.Add(FuMethod.New(FuVisibility.Public, BoolType, FuId.ListAll, "All", FuVar.New(typeParam0Predicate, "predicate")));
+		listClass.Add(FuMethod.New(FuVisibility.Public, BoolType, FuId.ListAny, "Any", FuVar.New(typeParam0Predicate, "predicate")));
+		listClass.Add(FuMethod.New(FuVisibility.Public, BoolType, FuId.ListContains, "Contains", FuVar.New(TypeParam0, "value")));
+		listClass.Add(FuMethod.New(FuVisibility.Public, VoidType, FuId.ListCopyTo, "CopyTo", FuVar.New(IntType, "sourceIndex"),
+			FuVar.New(new FuReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"), FuVar.New(IntType, "destinationIndex"), FuVar.New(IntType, "count")));
+		listClass.Add(FuMethod.NewMutator(FuVisibility.Public, IntType, FuId.ListIndexOf, "IndexOf", FuVar.New(TypeParam0, "value")));
+		listClass.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.ListInsert, "Insert", FuVar.New(UIntType, "index"), FuVar.New(typeParam0NotFinal, "value")));
+		listClass.Add(FuMethod.NewMutator(FuVisibility.Public, TypeParam0, FuId.ListLast, "Last"));
+		listClass.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.ListRemoveAt, "RemoveAt", FuVar.New(IntType, "index")));
+		listClass.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.ListRemoveRange, "RemoveRange", FuVar.New(IntType, "index"), FuVar.New(IntType, "count")));
+		listClass.Add(FuMethodGroup.New(
+			FuMethod.NewMutator(FuVisibility.NumericElementType, VoidType, FuId.ListSortAll, "Sort"),
+			FuMethod.NewMutator(FuVisibility.NumericElementType, VoidType, FuId.ListSortPart, "Sort", FuVar.New(IntType, "startIndex"), FuVar.New(IntType, "count"))));
+		FuClass! queueClass = AddCollection(FuId.QueueClass, "Queue", 1, FuId.QueueClear, FuId.QueueCount);
+		queueClass.Add(FuMethod.NewMutator(FuVisibility.Public, TypeParam0, FuId.QueueDequeue, "Dequeue"));
+		queueClass.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.QueueEnqueue, "Enqueue", FuVar.New(TypeParam0, "value")));
+		queueClass.Add(FuMethod.New(FuVisibility.Public, TypeParam0, FuId.QueuePeek, "Peek"));
+		FuClass! stackClass = AddCollection(FuId.StackClass, "Stack", 1, FuId.StackClear, FuId.StackCount);
+		stackClass.Add(FuMethod.New(FuVisibility.Public, TypeParam0, FuId.StackPeek, "Peek"));
+		stackClass.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.StackPush, "Push", FuVar.New(TypeParam0, "value")));
+		stackClass.Add(FuMethod.NewMutator(FuVisibility.Public, TypeParam0, FuId.StackPop, "Pop"));
+		AddSet(FuId.HashSetClass, "HashSet", FuId.HashSetAdd, FuId.HashSetClear, FuId.HashSetContains, FuId.HashSetCount, FuId.HashSetRemove);
+		AddSet(FuId.SortedSetClass, "SortedSet", FuId.SortedSetAdd, FuId.SortedSetClear, FuId.SortedSetContains, FuId.SortedSetCount, FuId.SortedSetRemove);
+		AddDictionary(FuId.DictionaryClass, "Dictionary", FuId.DictionaryClear, FuId.DictionaryContainsKey, FuId.DictionaryCount, FuId.DictionaryRemove);
+		AddDictionary(FuId.SortedDictionaryClass, "SortedDictionary", FuId.SortedDictionaryClear, FuId.SortedDictionaryContainsKey, FuId.SortedDictionaryCount, FuId.SortedDictionaryRemove);
+		AddDictionary(FuId.OrderedDictionaryClass, "OrderedDictionary", FuId.OrderedDictionaryClear, FuId.OrderedDictionaryContainsKey, FuId.OrderedDictionaryCount, FuId.OrderedDictionaryRemove);
 
-		CiClass# textWriterClass = CiClass.New(CiCallType.Normal, CiId.TextWriterClass, "TextWriter");
-		textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.TextWriterWrite, "Write", CiVar.New(PrintableType, "value")));
-		textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.TextWriterWriteChar, "WriteChar", CiVar.New(IntType, "c")));
-		textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.TextWriterWriteCodePoint, "WriteCodePoint", CiVar.New(IntType, "c")));
-		textWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.TextWriterWriteLine, "WriteLine", CiVar.New(PrintableType, "value", NewLiteralString(""))));
+		FuClass# textWriterClass = FuClass.New(FuCallType.Normal, FuId.TextWriterClass, "TextWriter");
+		textWriterClass.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.TextWriterWrite, "Write", FuVar.New(PrintableType, "value")));
+		textWriterClass.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.TextWriterWriteChar, "WriteChar", FuVar.New(IntType, "c")));
+		textWriterClass.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.TextWriterWriteCodePoint, "WriteCodePoint", FuVar.New(IntType, "c")));
+		textWriterClass.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.TextWriterWriteLine, "WriteLine", FuVar.New(PrintableType, "value", NewLiteralString(""))));
 		Add(textWriterClass);
-		CiClass# consoleClass = CiClass.New(CiCallType.Static, CiId.None, "Console");
-		consoleClass.Add(CiMethod.NewStatic(VoidType, CiId.ConsoleWrite, "Write", CiVar.New(PrintableType, "value")));
-		consoleClass.Add(CiMethod.NewStatic(VoidType, CiId.ConsoleWriteLine, "WriteLine", CiVar.New(PrintableType, "value", NewLiteralString(""))));
-		consoleClass.Add(CiStaticProperty.New(new CiStorageType { Class = textWriterClass }, CiId.ConsoleError, "Error"));
+		FuClass# consoleClass = FuClass.New(FuCallType.Static, FuId.None, "Console");
+		consoleClass.Add(FuMethod.NewStatic(VoidType, FuId.ConsoleWrite, "Write", FuVar.New(PrintableType, "value")));
+		consoleClass.Add(FuMethod.NewStatic(VoidType, FuId.ConsoleWriteLine, "WriteLine", FuVar.New(PrintableType, "value", NewLiteralString(""))));
+		consoleClass.Add(FuStaticProperty.New(new FuStorageType { Class = textWriterClass }, FuId.ConsoleError, "Error"));
 		Add(consoleClass);
-		CiClass# stringWriterClass = CiClass.New(CiCallType.Sealed, CiId.StringWriterClass, "StringWriter");
-		stringWriterClass.Add(CiMethod.NewMutator(CiVisibility.Public, VoidType, CiId.StringWriterClear, "Clear"));
-		stringWriterClass.Add(CiMethod.New(CiVisibility.Public, StringPtrType, CiId.StringWriterToString, "ToString"));
+		FuClass# stringWriterClass = FuClass.New(FuCallType.Sealed, FuId.StringWriterClass, "StringWriter");
+		stringWriterClass.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.StringWriterClear, "Clear"));
+		stringWriterClass.Add(FuMethod.New(FuVisibility.Public, StringPtrType, FuId.StringWriterToString, "ToString"));
 		Add(stringWriterClass);
 		stringWriterClass.Parent = textWriterClass;
-		CiClass# utf8EncodingClass = CiClass.New(CiCallType.Sealed, CiId.None, "UTF8Encoding");
-		utf8EncodingClass.Add(CiMethod.New(CiVisibility.Public, IntType, CiId.UTF8GetByteCount, "GetByteCount", CiVar.New(StringPtrType, "str")));
-		utf8EncodingClass.Add(CiMethod.New(CiVisibility.Public, VoidType, CiId.UTF8GetBytes, "GetBytes",
-			CiVar.New(StringPtrType, "str"), CiVar.New(new CiReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), CiVar.New(IntType, "byteIndex")));
-		utf8EncodingClass.Add(CiMethod.New(CiVisibility.Public, StringStorageType, CiId.UTF8GetString, "GetString",
-			CiVar.New(new CiClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), CiVar.New(IntType, "offset"), CiVar.New(IntType, "length"))); // TODO: UIntType
-		CiClass# encodingClass = CiClass.New(CiCallType.Static, CiId.None, "Encoding");
-		encodingClass.Add(CiStaticProperty.New(utf8EncodingClass, CiId.None, "UTF8"));
+		FuClass# utf8EncodingClass = FuClass.New(FuCallType.Sealed, FuId.None, "UTF8Encoding");
+		utf8EncodingClass.Add(FuMethod.New(FuVisibility.Public, IntType, FuId.UTF8GetByteCount, "GetByteCount", FuVar.New(StringPtrType, "str")));
+		utf8EncodingClass.Add(FuMethod.New(FuVisibility.Public, VoidType, FuId.UTF8GetBytes, "GetBytes",
+			FuVar.New(StringPtrType, "str"), FuVar.New(new FuReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), FuVar.New(IntType, "byteIndex")));
+		utf8EncodingClass.Add(FuMethod.New(FuVisibility.Public, StringStorageType, FuId.UTF8GetString, "GetString",
+			FuVar.New(new FuClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), FuVar.New(IntType, "offset"), FuVar.New(IntType, "length"))); // TODO: UIntType
+		FuClass# encodingClass = FuClass.New(FuCallType.Static, FuId.None, "Encoding");
+		encodingClass.Add(FuStaticProperty.New(utf8EncodingClass, FuId.None, "UTF8"));
 		Add(encodingClass);
-		CiClass# environmentClass = CiClass.New(CiCallType.Static, CiId.None, "Environment");
-		environmentClass.Add(CiMethod.NewStatic(StringNullablePtrType, CiId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", CiVar.New(StringPtrType, "name")));
+		FuClass# environmentClass = FuClass.New(FuCallType.Static, FuId.None, "Environment");
+		environmentClass.Add(FuMethod.NewStatic(StringNullablePtrType, FuId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", FuVar.New(StringPtrType, "name")));
 		Add(environmentClass);
 		RegexOptionsEnum = NewEnum(true);
 		RegexOptionsEnum.IsPublic = true;
-		RegexOptionsEnum.Id = CiId.RegexOptionsEnum;
+		RegexOptionsEnum.Id = FuId.RegexOptionsEnum;
 		RegexOptionsEnum.Name = "RegexOptions";
-		CiConst# regexOptionsNone = NewConstLong("None", 0);
+		FuConst# regexOptionsNone = NewConstLong("None", 0);
 		AddEnumValue(RegexOptionsEnum, regexOptionsNone);
 		AddEnumValue(RegexOptionsEnum, NewConstLong("IgnoreCase", 1));
 		AddEnumValue(RegexOptionsEnum, NewConstLong("Multiline", 2));
 		AddEnumValue(RegexOptionsEnum, NewConstLong("Singleline", 16));
 		Add(RegexOptionsEnum);
-		CiClass# regexClass = CiClass.New(CiCallType.Sealed, CiId.RegexClass, "Regex");
-		regexClass.Add(CiMethod.NewStatic(StringStorageType, CiId.RegexEscape, "Escape", CiVar.New(StringPtrType, "str")));
-		regexClass.Add(CiMethodGroup.New(
-			CiMethod.NewStatic(BoolType, CiId.RegexIsMatchStr, "IsMatch", CiVar.New(StringPtrType, "input"), CiVar.New(StringPtrType, "pattern"), CiVar.New(RegexOptionsEnum, "options", regexOptionsNone)),
-			CiMethod.New(CiVisibility.Public, BoolType, CiId.RegexIsMatchRegex, "IsMatch", CiVar.New(StringPtrType, "input"))));
-		regexClass.Add(CiMethod.NewStatic(new CiDynamicPtrType { Class = regexClass }, CiId.RegexCompile, "Compile", CiVar.New(StringPtrType, "pattern"), CiVar.New(RegexOptionsEnum, "options", regexOptionsNone)));
+		FuClass# regexClass = FuClass.New(FuCallType.Sealed, FuId.RegexClass, "Regex");
+		regexClass.Add(FuMethod.NewStatic(StringStorageType, FuId.RegexEscape, "Escape", FuVar.New(StringPtrType, "str")));
+		regexClass.Add(FuMethodGroup.New(
+			FuMethod.NewStatic(BoolType, FuId.RegexIsMatchStr, "IsMatch", FuVar.New(StringPtrType, "input"), FuVar.New(StringPtrType, "pattern"), FuVar.New(RegexOptionsEnum, "options", regexOptionsNone)),
+			FuMethod.New(FuVisibility.Public, BoolType, FuId.RegexIsMatchRegex, "IsMatch", FuVar.New(StringPtrType, "input"))));
+		regexClass.Add(FuMethod.NewStatic(new FuDynamicPtrType { Class = regexClass }, FuId.RegexCompile, "Compile", FuVar.New(StringPtrType, "pattern"), FuVar.New(RegexOptionsEnum, "options", regexOptionsNone)));
 		Add(regexClass);
-		CiClass# matchClass = CiClass.New(CiCallType.Sealed, CiId.MatchClass, "Match");
-		matchClass.Add(CiMethodGroup.New(
-			CiMethod.NewMutator(CiVisibility.Public, BoolType, CiId.MatchFindStr, "Find", CiVar.New(StringPtrType, "input"), CiVar.New(StringPtrType, "pattern"), CiVar.New(RegexOptionsEnum, "options", regexOptionsNone)),
-			CiMethod.NewMutator(CiVisibility.Public, BoolType, CiId.MatchFindRegex, "Find", CiVar.New(StringPtrType, "input"), CiVar.New(new CiClassType { Class = regexClass }, "pattern"))));
-		matchClass.Add(CiProperty.New(IntType, CiId.MatchStart, "Start"));
-		matchClass.Add(CiProperty.New(IntType, CiId.MatchEnd, "End"));
-		matchClass.Add(CiMethod.New(CiVisibility.Public, StringPtrType, CiId.MatchGetCapture, "GetCapture", CiVar.New(UIntType, "group")));
-		matchClass.Add(CiProperty.New(UIntType, CiId.MatchLength, "Length"));
-		matchClass.Add(CiProperty.New(StringPtrType, CiId.MatchValue, "Value"));
+		FuClass# matchClass = FuClass.New(FuCallType.Sealed, FuId.MatchClass, "Match");
+		matchClass.Add(FuMethodGroup.New(
+			FuMethod.NewMutator(FuVisibility.Public, BoolType, FuId.MatchFindStr, "Find", FuVar.New(StringPtrType, "input"), FuVar.New(StringPtrType, "pattern"), FuVar.New(RegexOptionsEnum, "options", regexOptionsNone)),
+			FuMethod.NewMutator(FuVisibility.Public, BoolType, FuId.MatchFindRegex, "Find", FuVar.New(StringPtrType, "input"), FuVar.New(new FuClassType { Class = regexClass }, "pattern"))));
+		matchClass.Add(FuProperty.New(IntType, FuId.MatchStart, "Start"));
+		matchClass.Add(FuProperty.New(IntType, FuId.MatchEnd, "End"));
+		matchClass.Add(FuMethod.New(FuVisibility.Public, StringPtrType, FuId.MatchGetCapture, "GetCapture", FuVar.New(UIntType, "group")));
+		matchClass.Add(FuProperty.New(UIntType, FuId.MatchLength, "Length"));
+		matchClass.Add(FuProperty.New(StringPtrType, FuId.MatchValue, "Value"));
 		Add(matchClass);
 
-		CiFloatingType# floatIntType = new CiFloatingType { Id = CiId.FloatIntType, Name = "float" };
-		CiClass# mathClass = CiClass.New(CiCallType.Static, CiId.None, "Math");
-		mathClass.Add(CiMethodGroup.New(
-			CiMethod.NewStatic(IntType, CiId.MathAbs, "Abs", CiVar.New(LongType, "a")),
-			CiMethod.NewStatic(FloatType, CiId.MathAbs, "Abs", CiVar.New(DoubleType, "a"))));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Acos", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Asin", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Atan", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Atan2", CiVar.New(DoubleType, "y"), CiVar.New(DoubleType, "x")));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Cbrt", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(floatIntType, CiId.MathCeiling, "Ceiling", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethodGroup.New(
-			CiMethod.NewStatic(IntType, CiId.MathClamp, "Clamp", CiVar.New(LongType, "value"), CiVar.New(LongType, "min"), CiVar.New(LongType, "max")),
-			CiMethod.NewStatic(FloatType, CiId.MathClamp, "Clamp", CiVar.New(DoubleType, "value"), CiVar.New(DoubleType, "min"), CiVar.New(DoubleType, "max"))));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Cos", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Cosh", CiVar.New(DoubleType, "a")));
+		FuFloatingType# floatIntType = new FuFloatingType { Id = FuId.FloatIntType, Name = "float" };
+		FuClass# mathClass = FuClass.New(FuCallType.Static, FuId.None, "Math");
+		mathClass.Add(FuMethodGroup.New(
+			FuMethod.NewStatic(IntType, FuId.MathAbs, "Abs", FuVar.New(LongType, "a")),
+			FuMethod.NewStatic(FloatType, FuId.MathAbs, "Abs", FuVar.New(DoubleType, "a"))));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathMethod, "Acos", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathMethod, "Asin", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathMethod, "Atan", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathMethod, "Atan2", FuVar.New(DoubleType, "y"), FuVar.New(DoubleType, "x")));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathMethod, "Cbrt", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(floatIntType, FuId.MathCeiling, "Ceiling", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethodGroup.New(
+			FuMethod.NewStatic(IntType, FuId.MathClamp, "Clamp", FuVar.New(LongType, "value"), FuVar.New(LongType, "min"), FuVar.New(LongType, "max")),
+			FuMethod.NewStatic(FloatType, FuId.MathClamp, "Clamp", FuVar.New(DoubleType, "value"), FuVar.New(DoubleType, "min"), FuVar.New(DoubleType, "max"))));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathMethod, "Cos", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathMethod, "Cosh", FuVar.New(DoubleType, "a")));
 		mathClass.Add(NewConstDouble("E", Math.E));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Exp", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(floatIntType, CiId.MathMethod, "Floor", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathFusedMultiplyAdd, "FusedMultiplyAdd", CiVar.New(DoubleType, "x"), CiVar.New(DoubleType, "y"), CiVar.New(DoubleType, "z")));
-		mathClass.Add(CiMethod.NewStatic(BoolType, CiId.MathIsFinite, "IsFinite", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(BoolType, CiId.MathIsInfinity, "IsInfinity", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(BoolType, CiId.MathIsNaN, "IsNaN", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Log", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathLog2, "Log2", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Log10", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethodGroup.New(
-			CiMethod.NewStatic(IntType, CiId.MathMaxInt, "Max", CiVar.New(LongType, "a"), CiVar.New(LongType, "b")),
-			CiMethod.NewStatic(FloatType, CiId.MathMaxDouble, "Max", CiVar.New(DoubleType, "a"), CiVar.New(DoubleType, "b"))));
-		mathClass.Add(CiMethodGroup.New(
-			CiMethod.NewStatic(IntType, CiId.MathMinInt, "Min", CiVar.New(LongType, "a"), CiVar.New(LongType, "b")),
-			CiMethod.NewStatic(FloatType, CiId.MathMinDouble, "Min", CiVar.New(DoubleType, "a"), CiVar.New(DoubleType, "b"))));
-		mathClass.Add(CiStaticProperty.New(FloatType, CiId.MathNaN, "NaN"));
-		mathClass.Add(CiStaticProperty.New(FloatType, CiId.MathNegativeInfinity, "NegativeInfinity"));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathMethod, "Exp", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(floatIntType, FuId.MathMethod, "Floor", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathFusedMultiplyAdd, "FusedMultiplyAdd", FuVar.New(DoubleType, "x"), FuVar.New(DoubleType, "y"), FuVar.New(DoubleType, "z")));
+		mathClass.Add(FuMethod.NewStatic(BoolType, FuId.MathIsFinite, "IsFinite", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(BoolType, FuId.MathIsInfinity, "IsInfinity", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(BoolType, FuId.MathIsNaN, "IsNaN", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathMethod, "Log", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathLog2, "Log2", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathMethod, "Log10", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethodGroup.New(
+			FuMethod.NewStatic(IntType, FuId.MathMaxInt, "Max", FuVar.New(LongType, "a"), FuVar.New(LongType, "b")),
+			FuMethod.NewStatic(FloatType, FuId.MathMaxDouble, "Max", FuVar.New(DoubleType, "a"), FuVar.New(DoubleType, "b"))));
+		mathClass.Add(FuMethodGroup.New(
+			FuMethod.NewStatic(IntType, FuId.MathMinInt, "Min", FuVar.New(LongType, "a"), FuVar.New(LongType, "b")),
+			FuMethod.NewStatic(FloatType, FuId.MathMinDouble, "Min", FuVar.New(DoubleType, "a"), FuVar.New(DoubleType, "b"))));
+		mathClass.Add(FuStaticProperty.New(FloatType, FuId.MathNaN, "NaN"));
+		mathClass.Add(FuStaticProperty.New(FloatType, FuId.MathNegativeInfinity, "NegativeInfinity"));
 		mathClass.Add(NewConstDouble("PI", Math.PI));
-		mathClass.Add(CiStaticProperty.New(FloatType, CiId.MathPositiveInfinity, "PositiveInfinity"));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Pow", CiVar.New(DoubleType, "x"), CiVar.New(DoubleType, "y")));
-		mathClass.Add(CiMethod.NewStatic(floatIntType, CiId.MathRound, "Round", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Sin", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Sinh", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Sqrt", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Tan", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(FloatType, CiId.MathMethod, "Tanh", CiVar.New(DoubleType, "a")));
-		mathClass.Add(CiMethod.NewStatic(floatIntType, CiId.MathTruncate, "Truncate", CiVar.New(DoubleType, "a")));
+		mathClass.Add(FuStaticProperty.New(FloatType, FuId.MathPositiveInfinity, "PositiveInfinity"));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathMethod, "Pow", FuVar.New(DoubleType, "x"), FuVar.New(DoubleType, "y")));
+		mathClass.Add(FuMethod.NewStatic(floatIntType, FuId.MathRound, "Round", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathMethod, "Sin", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathMethod, "Sinh", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathMethod, "Sqrt", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathMethod, "Tan", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(FloatType, FuId.MathMethod, "Tanh", FuVar.New(DoubleType, "a")));
+		mathClass.Add(FuMethod.NewStatic(floatIntType, FuId.MathTruncate, "Truncate", FuVar.New(DoubleType, "a")));
 		Add(mathClass);
 
-		CiClass# lockClass = CiClass.New(CiCallType.Sealed, CiId.LockClass, "Lock");
+		FuClass# lockClass = FuClass.New(FuCallType.Sealed, FuId.LockClass, "Lock");
 		Add(lockClass);
 		LockPtrType.Class = lockClass;
 	}
 
-	internal static CiSystem# New() => new CiSystem();
+	internal static FuSystem# New() => new FuSystem();
 }
 
-public class CiProgram : CiScope
+public class FuProgram : FuScope
 {
-	internal CiSystem System;
+	internal FuSystem System;
 	internal List<string()>() TopLevelNatives;
-	internal List<CiClass!>() Classes;
+	internal List<FuClass!>() Classes;
 	internal SortedDictionary<string(), List<byte>()>() Resources;
 	internal bool RegexOptionsEnum = false;
 }

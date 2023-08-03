@@ -18,13 +18,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
-public abstract class GenHost : CiSemaHost
+public abstract class GenHost : FuSemaHost
 {
 	public abstract TextWriter! CreateFile!(string? directory, string filename);
 	public abstract void CloseFile!();
 }
 
-public abstract class GenBase : CiVisitor
+public abstract class GenBase : FuVisitor
 {
 	internal string() Namespace;
 	internal string() OutputFile;
@@ -37,34 +37,34 @@ public abstract class GenBase : CiVisitor
 	bool InChildBlock = false;
 	protected bool InHeaderFile = false;
 	SortedDictionary<string(), bool>() Includes;
-	protected CiMethodBase? CurrentMethod = null;
-	protected HashSet<CiClass>() WrittenClasses;
-	protected List<CiExpr>() CurrentTemporaries; // CiExpr or CiType
+	protected FuMethodBase? CurrentMethod = null;
+	protected HashSet<FuClass>() WrittenClasses;
+	protected List<FuExpr>() CurrentTemporaries; // FuExpr or FuType
 
 	public void SetHost!(GenHost! host)
 	{
 		this.Host = host;
 	}
 
-	protected virtual CiContainerType GetCurrentContainer()
+	protected virtual FuContainerType GetCurrentContainer()
 	{
-		assert this.CurrentMethod.Parent is CiClass klass;
+		assert this.CurrentMethod.Parent is FuClass klass;
 		return klass;
 	}
 
 	protected abstract string GetTargetName();
 
-	void ReportError(CiStatement statement, string message)
+	void ReportError(FuStatement statement, string message)
 	{
 		this.Host.ReportError(GetCurrentContainer().Filename, statement.Line, 1, statement.Line, 1, message);
 	}
 
-	protected void NotSupported(CiStatement statement, string feature)
+	protected void NotSupported(FuStatement statement, string feature)
 	{
 		ReportError(statement, $"{feature} not supported when targeting {GetTargetName()}");
 	}
 
-	protected void NotYet(CiStatement statement, string feature)
+	protected void NotYet(FuStatement statement, string feature)
 	{
 		ReportError(statement, $"{feature} not supported yet when targeting {GetTargetName()}");
 	}
@@ -95,29 +95,29 @@ public abstract class GenBase : CiVisitor
 		this.Writer.Write(s);
 	}
 
-	public override void VisitLiteralNull!()
+	internal override void VisitLiteralNull!()
 	{
 		Write("null");
 	}
 
-	public override void VisitLiteralFalse!()
+	internal override void VisitLiteralFalse!()
 	{
 		Write("false");
 	}
 
-	public override void VisitLiteralTrue!()
+	internal override void VisitLiteralTrue!()
 	{
 		Write("true");
 	}
 
-	public override void VisitLiteralLong!(long i)
+	internal override void VisitLiteralLong!(long i)
 	{
 		this.Writer.Write(i);
 	}
 
 	protected virtual int GetLiteralChars() => 0;
 
-	public override void VisitLiteralChar!(int c)
+	internal override void VisitLiteralChar!(int c)
 	{
 		if (c < GetLiteralChars()) {
 			WriteChar('\'');
@@ -135,7 +135,7 @@ public abstract class GenBase : CiVisitor
 			this.Writer.Write(c);
 	}
 
-	public override void VisitLiteralDouble!(double value)
+	internal override void VisitLiteralDouble!(double value)
 	{
 		string() s = $"{value}";
 		Write(s);
@@ -160,7 +160,7 @@ public abstract class GenBase : CiVisitor
 		Write(".0"); // it looked like an integer
 	}
 
-	public override void VisitLiteralString!(string value)
+	internal override void VisitLiteralString!(string value)
 	{
 		WriteChar('"');
 		Write(value);
@@ -251,7 +251,7 @@ public abstract class GenBase : CiVisitor
 		WriteNewLine();
 	}
 
-	protected abstract void WriteName!(CiSymbol symbol);
+	protected abstract void WriteName!(FuSymbol symbol);
 
 	protected virtual void WriteBanner!()
 	{
@@ -329,23 +329,23 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected virtual void WriteDocPara!(CiDocPara para, bool many)
+	protected virtual void WriteDocPara!(FuDocPara para, bool many)
 	{
 		if (many) {
 			WriteNewLine();
 			Write(" * <p>");
 		}
-		foreach (CiDocInline inline in para.Children) {
+		foreach (FuDocInline inline in para.Children) {
 			switch (inline) {
-			case CiDocText text:
+			case FuDocText text:
 				WriteXmlDoc(text.Text);
 				break;
-			case CiDocCode code:
+			case FuDocCode code:
 				Write("<code>");
 				WriteXmlDoc(code.Text);
 				Write("</code>");
 				break;
-			case CiDocLine _:
+			case FuDocLine _:
 				WriteNewLine();
 				StartDocLine();
 				break;
@@ -355,11 +355,11 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected virtual void WriteDocList!(CiDocList list)
+	protected virtual void WriteDocList!(FuDocList list)
 	{
 		WriteNewLine();
 		WriteLine(" * <ul>");
-		foreach (CiDocPara item in list.Items) {
+		foreach (FuDocPara item in list.Items) {
 			Write(" * <li>");
 			WriteDocPara(item, false);
 			WriteLine("</li>");
@@ -367,13 +367,13 @@ public abstract class GenBase : CiVisitor
 		Write(" * </ul>");
 	}
 
-	protected void WriteDocBlock!(CiDocBlock block, bool many)
+	protected void WriteDocBlock!(FuDocBlock block, bool many)
 	{
 		switch (block) {
-		case CiDocPara para:
+		case FuDocPara para:
 			WriteDocPara(para, many);
 			break;
-		case CiDocList list:
+		case FuDocList list:
 			WriteDocList(list);
 			break;
 		default:
@@ -381,7 +381,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WriteContent!(CiCodeDoc doc)
+	protected void WriteContent!(FuCodeDoc doc)
 	{
 		StartDocLine();
 		WriteDocPara(doc.Summary, false);
@@ -391,14 +391,14 @@ public abstract class GenBase : CiVisitor
 			if (doc.Details.Count == 1)
 				WriteDocBlock(doc.Details[0], false);
 			else {
-				foreach (CiDocBlock block in doc.Details)
+				foreach (FuDocBlock block in doc.Details)
 					WriteDocBlock(block, true);
 			}
 			WriteNewLine();
 		}
 	}
 
-	protected virtual void WriteDoc!(CiCodeDoc? doc)
+	protected virtual void WriteDoc!(FuCodeDoc? doc)
 	{
 		if (doc != null) {
 			WriteLine("/**");
@@ -407,11 +407,11 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected virtual void WriteSelfDoc!(CiMethod method)
+	protected virtual void WriteSelfDoc!(FuMethod method)
 	{
 	}
 
-	protected virtual void WriteParameterDoc!(CiVar param, bool first)
+	protected virtual void WriteParameterDoc!(FuVar param, bool first)
 	{
 		Write(" * @param ");
 		WriteName(param);
@@ -420,10 +420,10 @@ public abstract class GenBase : CiVisitor
 		WriteNewLine();
 	}
 
-	protected void WriteParametersDoc!(CiMethod method)
+	protected void WriteParametersDoc!(FuMethod method)
 	{
 		bool first = true;
-		for (CiVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+		for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 			if (param.Documentation != null) {
 				WriteParameterDoc(param, first);
 				first = false;
@@ -431,7 +431,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WriteMethodDoc!(CiMethod method)
+	protected void WriteMethodDoc!(FuMethod method)
 	{
 		if (method.Documentation == null)
 			return;
@@ -442,7 +442,7 @@ public abstract class GenBase : CiVisitor
 		WriteLine(" */");
 	}
 
-	protected void WriteTopLevelNatives!(CiProgram program)
+	protected void WriteTopLevelNatives!(FuProgram program)
 	{
 		foreach (string content in program.TopLevelNatives)
 			Write(content);
@@ -486,13 +486,13 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected virtual CiId GetTypeId(CiType type, bool promote) => promote && type is CiRangeType  ? CiId.IntType : type.Id;
+	protected virtual FuId GetTypeId(FuType type, bool promote) => promote && type is FuRangeType  ? FuId.IntType : type.Id;
 
-	protected abstract void WriteTypeAndName!(CiNamedValue value);
+	protected abstract void WriteTypeAndName!(FuNamedValue value);
 
-	protected virtual void WriteLocalName!(CiSymbol symbol, CiPriority parent)
+	protected virtual void WriteLocalName!(FuSymbol symbol, FuPriority parent)
 	{
-		if (symbol is CiField)
+		if (symbol is FuField)
 			Write("this.");
 		WriteName(symbol);
 	}
@@ -506,7 +506,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected virtual void WritePrintfWidth!(CiInterpolatedPart part)
+	protected virtual void WritePrintfWidth!(FuInterpolatedPart part)
 	{
 		if (part.WidthExpr != null)
 			VisitLiteralLong(part.Width);
@@ -516,12 +516,12 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	static int GetPrintfFormat(CiType type, int format)
+	static int GetPrintfFormat(FuType type, int format)
 	{
 		switch (type) {
-		case CiIntegerType _:
+		case FuIntegerType _:
 			return format == 'x' || format == 'X' ? format : 'd';
-		case CiNumericType _:
+		case FuNumericType _:
 			switch (format) {
 			case 'E':
 			case 'e':
@@ -534,17 +534,17 @@ public abstract class GenBase : CiVisitor
 			default:
 				return 'g';
 			}
-		// case CiStringType _: - matched by CiClassType
-		case CiClassType _:
+		// case FuStringType _: - matched by FuClassType
+		case FuClassType _:
 			return 's';
 		default:
 			assert false;
 		}
 	}
 
-	protected void WritePrintfFormat!(CiInterpolatedString expr)
+	protected void WritePrintfFormat!(FuInterpolatedString expr)
 	{
-		foreach (CiInterpolatedPart part in expr.Parts) {
+		foreach (FuInterpolatedPart part in expr.Parts) {
 			WriteDoubling(part.Prefix, '%');
 			WriteChar('%');
 			WritePrintfWidth(part);
@@ -553,13 +553,13 @@ public abstract class GenBase : CiVisitor
 		WriteDoubling(expr.Suffix, '%');
 	}
 
-	protected void WritePyFormat!(CiInterpolatedPart part)
+	protected void WritePyFormat!(FuInterpolatedPart part)
 	{
 		if (part.WidthExpr != null || part.Precision >= 0 || (part.Format != ' ' && part.Format != 'D'))
 			WriteChar(':');
 		if (part.WidthExpr != null) {
 			if (part.Width >= 0) {
-				if (!(part.Argument.Type is CiNumericType))
+				if (!(part.Argument.Type is FuNumericType))
 					WriteChar('>');
 				VisitLiteralLong(part.Width);
 			}
@@ -569,7 +569,7 @@ public abstract class GenBase : CiVisitor
 			}
 		}
 		if (part.Precision >= 0) {
-			WriteChar(part.Argument.Type is CiIntegerType ? '0' : '.');
+			WriteChar(part.Argument.Type is FuIntegerType ? '0' : '.');
 			VisitLiteralLong(part.Precision);
 		}
 		if (part.Format != ' ' && part.Format != 'D')
@@ -577,20 +577,20 @@ public abstract class GenBase : CiVisitor
 		WriteChar('}');
 	}
 
-	protected virtual void WriteInterpolatedStringArg!(CiExpr expr)
+	protected virtual void WriteInterpolatedStringArg!(FuExpr expr)
 	{
-		expr.Accept(this, CiPriority.Argument);
+		expr.Accept(this, FuPriority.Argument);
 	}
 
-	protected void WriteInterpolatedStringArgs!(CiInterpolatedString expr)
+	protected void WriteInterpolatedStringArgs!(FuInterpolatedString expr)
 	{
-		foreach (CiInterpolatedPart part in expr.Parts) {
+		foreach (FuInterpolatedPart part in expr.Parts) {
 			Write(", ");
 			WriteInterpolatedStringArg(part.Argument);
 		}
 	}
 
-	protected void WritePrintf!(CiInterpolatedString expr, bool newLine)
+	protected void WritePrintf!(FuInterpolatedString expr, bool newLine)
 	{
 		WriteChar('"');
 		WritePrintfFormat(expr);
@@ -601,87 +601,87 @@ public abstract class GenBase : CiVisitor
 		WriteChar(')');
 	}
 
-	protected void WritePostfix!(CiExpr obj, string s)
+	protected void WritePostfix!(FuExpr obj, string s)
 	{
-		obj.Accept(this, CiPriority.Primary);
+		obj.Accept(this, FuPriority.Primary);
 		Write(s);
 	}
 
-	protected void WriteCall!(string function, CiExpr arg0, CiExpr? arg1 = null, CiExpr? arg2 = null)
+	protected void WriteCall!(string function, FuExpr arg0, FuExpr? arg1 = null, FuExpr? arg2 = null)
 	{
 		Write(function);
 		WriteChar('(');
-		arg0.Accept(this, CiPriority.Argument);
+		arg0.Accept(this, FuPriority.Argument);
 		if (arg1 != null) {
 			Write(", ");
-			arg1.Accept(this, CiPriority.Argument);
+			arg1.Accept(this, FuPriority.Argument);
 			if (arg2 != null) {
 				Write(", ");
-				arg2.Accept(this, CiPriority.Argument);
+				arg2.Accept(this, FuPriority.Argument);
 			}
 		}
 		WriteChar(')');
 	}
 
-	protected virtual void WriteMemberOp!(CiExpr left, CiSymbolReference? symbol)
+	protected virtual void WriteMemberOp!(FuExpr left, FuSymbolReference? symbol)
 	{
 		WriteChar('.');
 	}
 
-	protected void WriteMethodCall!(CiExpr obj, string method, CiExpr arg0, CiExpr? arg1 = null)
+	protected void WriteMethodCall!(FuExpr obj, string method, FuExpr arg0, FuExpr? arg1 = null)
 	{
-		obj.Accept(this, CiPriority.Primary);
+		obj.Accept(this, FuPriority.Primary);
 		WriteMemberOp(obj, null);
 		WriteCall(method, arg0, arg1);
 	}
 
-	protected virtual void WriteSelectValues!(CiType type, CiSelectExpr expr)
+	protected virtual void WriteSelectValues!(FuType type, FuSelectExpr expr)
 	{
-		WriteCoerced(type, expr.OnTrue, CiPriority.Select);
+		WriteCoerced(type, expr.OnTrue, FuPriority.Select);
 		Write(" : ");
-		WriteCoerced(type, expr.OnFalse, CiPriority.Select);
+		WriteCoerced(type, expr.OnFalse, FuPriority.Select);
 	}
 
-	protected virtual void WriteCoercedSelect!(CiType type, CiSelectExpr expr, CiPriority parent)
+	protected virtual void WriteCoercedSelect!(FuType type, FuSelectExpr expr, FuPriority parent)
 	{
-		if (parent > CiPriority.Select)
+		if (parent > FuPriority.Select)
 			WriteChar('(');
-		expr.Cond.Accept(this, CiPriority.SelectCond);
+		expr.Cond.Accept(this, FuPriority.SelectCond);
 		Write(" ? ");
 		WriteSelectValues(type, expr);
-		if (parent > CiPriority.Select)
+		if (parent > FuPriority.Select)
 			WriteChar(')');
 	}
 
-	protected virtual void WriteCoercedInternal!(CiType type, CiExpr expr, CiPriority parent)
+	protected virtual void WriteCoercedInternal!(FuType type, FuExpr expr, FuPriority parent)
 	{
 		expr.Accept(this, parent);
 	}
 
-	protected void WriteCoerced!(CiType type, CiExpr expr, CiPriority parent)
+	protected void WriteCoerced!(FuType type, FuExpr expr, FuPriority parent)
 	{
-		if (expr is CiSelectExpr select)
+		if (expr is FuSelectExpr select)
 			WriteCoercedSelect(type, select, parent);
 		else
 			WriteCoercedInternal(type, expr, parent);
 	}
 
-	protected virtual void WriteCoercedExpr!(CiType type, CiExpr expr)
+	protected virtual void WriteCoercedExpr!(FuType type, FuExpr expr)
 	{
-		WriteCoerced(type, expr, CiPriority.Argument);
+		WriteCoerced(type, expr, FuPriority.Argument);
 	}
 
-	protected virtual void WriteStronglyCoerced!(CiType type, CiExpr expr)
+	protected virtual void WriteStronglyCoerced!(FuType type, FuExpr expr)
 	{
-		WriteCoerced(type, expr, CiPriority.Argument);
+		WriteCoerced(type, expr, FuPriority.Argument);
 	}
 
-	protected virtual void WriteCoercedLiteral!(CiType? type, CiExpr expr)
+	protected virtual void WriteCoercedLiteral!(FuType? type, FuExpr expr)
 	{
-		expr.Accept(this, CiPriority.Argument);
+		expr.Accept(this, FuPriority.Argument);
 	}
 
-	protected void WriteCoercedLiterals!(CiType? type, List<CiExpr#> exprs)
+	protected void WriteCoercedLiterals!(FuType? type, List<FuExpr#> exprs)
 	{
 		for (int i = 0; i < exprs.Count; i++) {
 			WriteComma(i);
@@ -689,11 +689,11 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WriteArgs!(CiMethod method, List<CiExpr#> args)
+	protected void WriteArgs!(FuMethod method, List<FuExpr#> args)
 	{
-		CiVar param = method.Parameters.FirstParameter();
+		FuVar param = method.Parameters.FirstParameter();
 		bool first = true;
-		foreach (CiExpr arg in args) {
+		foreach (FuExpr arg in args) {
 			if (!first)
 				Write(", ");
 			first = false;
@@ -702,140 +702,140 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WriteArgsInParentheses!(CiMethod method, List<CiExpr#> args)
+	protected void WriteArgsInParentheses!(FuMethod method, List<FuExpr#> args)
 	{
 		WriteChar('(');
 		WriteArgs(method, args);
 		WriteChar(')');
 	}
 
-	protected abstract void WriteNewArray!(CiType elementType, CiExpr lengthExpr, CiPriority parent);
+	protected abstract void WriteNewArray!(FuType elementType, FuExpr lengthExpr, FuPriority parent);
 
-	protected virtual void WriteNewArrayStorage!(CiArrayStorageType array)
+	protected virtual void WriteNewArrayStorage!(FuArrayStorageType array)
 	{
-		WriteNewArray(array.GetElementType(), array.LengthExpr, CiPriority.Argument);
+		WriteNewArray(array.GetElementType(), array.LengthExpr, FuPriority.Argument);
 	}
 
-	protected abstract void WriteNew!(CiReadWriteClassType klass, CiPriority parent);
+	protected abstract void WriteNew!(FuReadWriteClassType klass, FuPriority parent);
 
-	protected void WriteNewStorage!(CiType type)
+	protected void WriteNewStorage!(FuType type)
 	{
 		switch (type) {
-		case CiArrayStorageType array:
+		case FuArrayStorageType array:
 			WriteNewArrayStorage(array);
 			break;
-		case CiStorageType storage:
-			WriteNew(storage, CiPriority.Argument);
+		case FuStorageType storage:
+			WriteNew(storage, FuPriority.Argument);
 			break;
 		default:
 			assert false;
 		}
 	}
 
-	protected virtual void WriteArrayStorageInit!(CiArrayStorageType array, CiExpr value)
+	protected virtual void WriteArrayStorageInit!(FuArrayStorageType array, FuExpr value)
 	{
 		Write(" = ");
 		WriteNewArrayStorage(array);
 	}
 
-	protected virtual void WriteNewWithFields!(CiReadWriteClassType type, CiAggregateInitializer init)
+	protected virtual void WriteNewWithFields!(FuReadWriteClassType type, FuAggregateInitializer init)
 	{
-		WriteNew(type, CiPriority.Argument);
+		WriteNew(type, FuPriority.Argument);
 	}
 
-	protected virtual void WriteStorageInit!(CiNamedValue def)
+	protected virtual void WriteStorageInit!(FuNamedValue def)
 	{
 		Write(" = ");
-		if (def.Value is CiAggregateInitializer init) {
-			assert def.Type is CiReadWriteClassType klass;
+		if (def.Value is FuAggregateInitializer init) {
+			assert def.Type is FuReadWriteClassType klass;
 			WriteNewWithFields(klass, init);
 		}
 		else
 			WriteNewStorage(def.Type);
 	}
 
-	protected virtual void WriteVarInit!(CiNamedValue def)
+	protected virtual void WriteVarInit!(FuNamedValue def)
 	{
 		if (def.IsAssignableStorage()) {
 		}
-		else if (def.Type is CiArrayStorageType array)
+		else if (def.Type is FuArrayStorageType array)
 			WriteArrayStorageInit(array, def.Value);
-		else if (def.Value != null && !(def.Value is CiAggregateInitializer)) {
+		else if (def.Value != null && !(def.Value is FuAggregateInitializer)) {
 			Write(" = ");
 			WriteCoercedExpr(def.Type, def.Value);
 		}
-		else if (def.Type.IsFinal() && !(def.Parent is CiParameters))
+		else if (def.Type.IsFinal() && !(def.Parent is FuParameters))
 			WriteStorageInit(def);
 	}
 
-	protected virtual void WriteVar!(CiNamedValue def)
+	protected virtual void WriteVar!(FuNamedValue def)
 	{
 		WriteTypeAndName(def);
 		WriteVarInit(def);
 	}
 
-	public override void VisitVar!(CiVar expr)
+	internal override void VisitVar!(FuVar expr)
 	{
 		WriteVar(expr);
 	}
 
-	protected void WriteObjectLiteral!(CiAggregateInitializer init, string separator)
+	protected void WriteObjectLiteral!(FuAggregateInitializer init, string separator)
 	{
 		string prefix = " { ";
-		foreach (CiExpr item in init.Items) {
+		foreach (FuExpr item in init.Items) {
 			Write(prefix);
-			assert item is CiBinaryExpr assign;
-			assert assign.Left is CiSymbolReference field;
+			assert item is FuBinaryExpr assign;
+			assert assign.Left is FuSymbolReference field;
 			WriteName(field.Symbol);
 			Write(separator);
-			WriteCoerced(assign.Left.Type, assign.Right, CiPriority.Argument);
+			WriteCoerced(assign.Left.Type, assign.Right, FuPriority.Argument);
 			prefix = ", ";
 		}
 		Write(" }");
 	}
 
-	static CiAggregateInitializer? GetAggregateInitializer!(CiNamedValue def)
+	static FuAggregateInitializer? GetAggregateInitializer!(FuNamedValue def)
 	{
-		CiExpr expr = def.Value;
-		if (expr is CiPrefixExpr unary)
+		FuExpr expr = def.Value;
+		if (expr is FuPrefixExpr unary)
 			expr = unary.Inner;
-		return expr is CiAggregateInitializer init ? init : null;
+		return expr is FuAggregateInitializer init ? init : null;
 	}
 
-	void WriteAggregateInitField!(CiExpr obj, CiExpr item)
+	void WriteAggregateInitField!(FuExpr obj, FuExpr item)
 	{
-		assert item is CiBinaryExpr assign;
-		assert assign.Left is CiSymbolReference field;
+		assert item is FuBinaryExpr assign;
+		assert assign.Left is FuSymbolReference field;
 		WriteMemberOp(obj, field);
 		WriteName(field.Symbol);
 		Write(" = ");
-		WriteCoerced(field.Type, assign.Right, CiPriority.Argument);
+		WriteCoerced(field.Type, assign.Right, FuPriority.Argument);
 		EndStatement();
 	}
 
-	protected virtual void WriteInitCode!(CiNamedValue def)
+	protected virtual void WriteInitCode!(FuNamedValue def)
 	{
-		CiAggregateInitializer? init = GetAggregateInitializer(def);
+		FuAggregateInitializer? init = GetAggregateInitializer(def);
 		if (init != null) {
-			foreach (CiExpr item in init.Items) {
-				WriteLocalName(def, CiPriority.Primary);
+			foreach (FuExpr item in init.Items) {
+				WriteLocalName(def, FuPriority.Primary);
 				WriteAggregateInitField(def, item);
 			}
 		}
 	}
 
-	protected virtual void DefineIsVar!(CiBinaryExpr binary)
+	protected virtual void DefineIsVar!(FuBinaryExpr binary)
 	{
-		if (binary.Right is CiVar def) {
+		if (binary.Right is FuVar def) {
 			EnsureChildBlock();
 			WriteVar(def);
 			EndStatement();
 		}
 	}
 
-	protected void WriteArrayElement!(CiNamedValue def, int nesting)
+	protected void WriteArrayElement!(FuNamedValue def, int nesting)
 	{
-		WriteLocalName(def, CiPriority.Primary);
+		WriteLocalName(def, FuPriority.Primary);
 		for (int i = 0; i < nesting; i++) {
 			Write("[_i");
 			VisitLiteralLong(i);
@@ -862,37 +862,37 @@ public abstract class GenBase : CiVisitor
 	protected void WriteResourceName!(string name)
 	{
 		foreach (int c in name)
-			WriteChar(CiLexer.IsLetterOrDigit(c) ? c : '_');
+			WriteChar(FuLexer.IsLetterOrDigit(c) ? c : '_');
 	}
 
 	protected abstract void WriteResource!(string name, int length);
 
-	public override void VisitPrefixExpr!(CiPrefixExpr expr, CiPriority parent)
+	internal override void VisitPrefixExpr!(FuPrefixExpr expr, FuPriority parent)
 	{
 		switch (expr.Op) {
-		case CiToken.Increment:
+		case FuToken.Increment:
 			Write("++");
 			break;
-		case CiToken.Decrement:
+		case FuToken.Decrement:
 			Write("--");
 			break;
-		case CiToken.Minus:
+		case FuToken.Minus:
 			WriteChar('-');
 			// FIXME: - --foo[bar]
-			if (expr.Inner is CiPrefixExpr inner && (inner.Op == CiToken.Minus || inner.Op == CiToken.Decrement))
+			if (expr.Inner is FuPrefixExpr inner && (inner.Op == FuToken.Minus || inner.Op == FuToken.Decrement))
 				WriteChar(' ');
 			break;
-		case CiToken.Tilde:
+		case FuToken.Tilde:
 			WriteChar('~');
 			break;
-		case CiToken.ExclamationMark:
+		case FuToken.ExclamationMark:
 			WriteChar('!');
 			break;
-		case CiToken.New:
-			assert expr.Type is CiDynamicPtrType dynamic;
-			if (dynamic.Class.Id == CiId.ArrayPtrClass)
+		case FuToken.New:
+			assert expr.Type is FuDynamicPtrType dynamic;
+			if (dynamic.Class.Id == FuId.ArrayPtrClass)
 				WriteNewArray(dynamic.GetElementType(), expr.Inner, parent);
-			else if (expr.Inner is CiAggregateInitializer init) {
+			else if (expr.Inner is FuAggregateInitializer init) {
 				int tempId = this.CurrentTemporaries.IndexOf(expr);
 				if (tempId >= 0) {
 					Write("futemp");
@@ -904,25 +904,25 @@ public abstract class GenBase : CiVisitor
 			else
 				WriteNew(dynamic, parent);
 			return;
-		case CiToken.Resource:
-			assert expr.Inner is CiLiteralString name;
-			assert expr.Type is CiArrayStorageType array;
+		case FuToken.Resource:
+			assert expr.Inner is FuLiteralString name;
+			assert expr.Type is FuArrayStorageType array;
 			WriteResource(name.Value, array.Length);
 			return;
 		default:
 			assert false;
 		}
-		expr.Inner.Accept(this, CiPriority.Primary);
+		expr.Inner.Accept(this, FuPriority.Primary);
 	}
 
-	public override void VisitPostfixExpr!(CiPostfixExpr expr, CiPriority parent)
+	internal override void VisitPostfixExpr!(FuPostfixExpr expr, FuPriority parent)
 	{
-		expr.Inner.Accept(this, CiPriority.Primary);
+		expr.Inner.Accept(this, FuPriority.Primary);
 		switch (expr.Op) {
-		case CiToken.Increment:
+		case FuToken.Increment:
 			Write("++");
 			break;
-		case CiToken.Decrement:
+		case FuToken.Decrement:
 			Write("--");
 			break;
 		default:
@@ -930,62 +930,62 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void StartAdd!(CiExpr expr)
+	protected void StartAdd!(FuExpr expr)
 	{
 		if (!expr.IsLiteralZero()) {
-			expr.Accept(this, CiPriority.Add);
+			expr.Accept(this, FuPriority.Add);
 			Write(" + ");
 		}
 	}
 
-	protected void WriteAdd!(CiExpr left, CiExpr right)
+	protected void WriteAdd!(FuExpr left, FuExpr right)
 	{
-		if (left is CiLiteralLong leftLiteral) {
+		if (left is FuLiteralLong leftLiteral) {
 			long leftValue = leftLiteral.Value;
 			if (leftValue == 0) {
-				right.Accept(this, CiPriority.Argument);
+				right.Accept(this, FuPriority.Argument);
 				return;
 			}
-			if (right is CiLiteralLong rightLiteral) {
+			if (right is FuLiteralLong rightLiteral) {
 				VisitLiteralLong(leftValue + rightLiteral.Value);
 				return;
 			}
 		}
 		else if (right.IsLiteralZero()) {
-			left.Accept(this, CiPriority.Argument);
+			left.Accept(this, FuPriority.Argument);
 			return;
 		}
-		left.Accept(this, CiPriority.Add);
+		left.Accept(this, FuPriority.Add);
 		Write(" + ");
-		right.Accept(this, CiPriority.Add);
+		right.Accept(this, FuPriority.Add);
 	}
 
-	protected void WriteStartEnd!(CiExpr startIndex, CiExpr length)
+	protected void WriteStartEnd!(FuExpr startIndex, FuExpr length)
 	{
-		startIndex.Accept(this, CiPriority.Argument);
+		startIndex.Accept(this, FuPriority.Argument);
 		Write(", ");
 		WriteAdd(startIndex, length); // FIXME: side effect
 	}
 
-	static bool IsBitOp(CiPriority parent)
+	static bool IsBitOp(FuPriority parent)
 	{
 		switch (parent) {
-		case CiPriority.Or:
-		case CiPriority.Xor:
-		case CiPriority.And:
-		case CiPriority.Shift:
+		case FuPriority.Or:
+		case FuPriority.Xor:
+		case FuPriority.And:
+		case FuPriority.Shift:
 			return true;
 		default:
 			return false;
 		}
 	}
 
-	protected virtual void WriteBinaryOperand!(CiExpr expr, CiPriority parent, CiBinaryExpr binary)
+	protected virtual void WriteBinaryOperand!(FuExpr expr, FuPriority parent, FuBinaryExpr binary)
 	{
 		expr.Accept(this, parent);
 	}
 
-	protected void WriteBinaryExpr!(CiBinaryExpr expr, bool parentheses, CiPriority left, string op, CiPriority right)
+	protected void WriteBinaryExpr!(FuBinaryExpr expr, bool parentheses, FuPriority left, string op, FuPriority right)
 	{
 		if (parentheses)
 			WriteChar('(');
@@ -996,186 +996,186 @@ public abstract class GenBase : CiVisitor
 			WriteChar(')');
 	}
 
-	protected void WriteBinaryExpr2!(CiBinaryExpr expr, CiPriority parent, CiPriority child, string op)
+	protected void WriteBinaryExpr2!(FuBinaryExpr expr, FuPriority parent, FuPriority child, string op)
 	{
 		WriteBinaryExpr(expr, parent > child, child, op, child);
 	}
 
 	protected static string GetEqOp(bool not) => not ? " != " : " == ";
 
-	protected virtual void WriteEqualOperand!(CiExpr expr, CiExpr other)
+	protected virtual void WriteEqualOperand!(FuExpr expr, FuExpr other)
 	{
-		expr.Accept(this, CiPriority.Equality);
+		expr.Accept(this, FuPriority.Equality);
 	}
 
-	protected void WriteEqualExpr!(CiExpr left, CiExpr right, CiPriority parent, string op)
+	protected void WriteEqualExpr!(FuExpr left, FuExpr right, FuPriority parent, string op)
 	{
-		if (parent > CiPriority.CondAnd)
+		if (parent > FuPriority.CondAnd)
 			WriteChar('(');
 		WriteEqualOperand(left, right);
 		Write(op);
 		WriteEqualOperand(right, left);
-		if (parent > CiPriority.CondAnd)
+		if (parent > FuPriority.CondAnd)
 			WriteChar(')');
 	}
 
-	protected virtual void WriteEqual!(CiExpr left, CiExpr right, CiPriority parent, bool not)
+	protected virtual void WriteEqual!(FuExpr left, FuExpr right, FuPriority parent, bool not)
 	{
 		WriteEqualExpr(left, right, parent, GetEqOp(not));
 	}
 
-	void WriteRel!(CiBinaryExpr expr, CiPriority parent, string op)
+	void WriteRel!(FuBinaryExpr expr, FuPriority parent, string op)
 	{
-		WriteBinaryExpr(expr, parent > CiPriority.CondAnd, CiPriority.Rel, op, CiPriority.Rel);
+		WriteBinaryExpr(expr, parent > FuPriority.CondAnd, FuPriority.Rel, op, FuPriority.Rel);
 	}
 
-	protected virtual void WriteAnd!(CiBinaryExpr expr, CiPriority parent)
+	protected virtual void WriteAnd!(FuBinaryExpr expr, FuPriority parent)
 	{
-		WriteBinaryExpr(expr, parent > CiPriority.CondAnd && parent != CiPriority.And, CiPriority.And, " & ", CiPriority.And);
+		WriteBinaryExpr(expr, parent > FuPriority.CondAnd && parent != FuPriority.And, FuPriority.And, " & ", FuPriority.And);
 	}
 
-	protected virtual void WriteAssignRight!(CiBinaryExpr expr)
+	protected virtual void WriteAssignRight!(FuBinaryExpr expr)
 	{
-		WriteCoerced(expr.Left.Type, expr.Right, CiPriority.Argument);
+		WriteCoerced(expr.Left.Type, expr.Right, FuPriority.Argument);
 	}
 
-	protected virtual void WriteAssign!(CiBinaryExpr expr, CiPriority parent)
+	protected virtual void WriteAssign!(FuBinaryExpr expr, FuPriority parent)
 	{
-		if (parent > CiPriority.Assign)
+		if (parent > FuPriority.Assign)
 			WriteChar('(');
-		expr.Left.Accept(this, CiPriority.Assign);
+		expr.Left.Accept(this, FuPriority.Assign);
 		Write(" = ");
 		WriteAssignRight(expr);
-		if (parent > CiPriority.Assign)
+		if (parent > FuPriority.Assign)
 			WriteChar(')');
 	}
 
-	protected void WriteIndexing!(CiExpr collection, CiExpr index)
+	protected void WriteIndexing!(FuExpr collection, FuExpr index)
 	{
-		collection.Accept(this, CiPriority.Primary);
+		collection.Accept(this, FuPriority.Primary);
 		WriteChar('[');
-		index.Accept(this, CiPriority.Argument);
+		index.Accept(this, FuPriority.Argument);
 		WriteChar(']');
 	}
 
-	protected virtual void WriteIndexingExpr!(CiBinaryExpr expr, CiPriority parent)
+	protected virtual void WriteIndexingExpr!(FuBinaryExpr expr, FuPriority parent)
 	{
 		WriteIndexing(expr.Left, expr.Right);
 	}
 
 	protected virtual string GetIsOperator() => " is ";
 
-	public override void VisitBinaryExpr!(CiBinaryExpr expr, CiPriority parent)
+	internal override void VisitBinaryExpr!(FuBinaryExpr expr, FuPriority parent)
 	{
 		switch (expr.Op) {
-		case CiToken.Plus:
-			WriteBinaryExpr(expr, parent > CiPriority.Add || IsBitOp(parent), CiPriority.Add, " + ", CiPriority.Add);
+		case FuToken.Plus:
+			WriteBinaryExpr(expr, parent > FuPriority.Add || IsBitOp(parent), FuPriority.Add, " + ", FuPriority.Add);
 			break;
-		case CiToken.Minus:
-			WriteBinaryExpr(expr, parent > CiPriority.Add || IsBitOp(parent), CiPriority.Add, " - ", CiPriority.Mul);
+		case FuToken.Minus:
+			WriteBinaryExpr(expr, parent > FuPriority.Add || IsBitOp(parent), FuPriority.Add, " - ", FuPriority.Mul);
 			break;
-		case CiToken.Asterisk:
-			WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " * ", CiPriority.Primary);
+		case FuToken.Asterisk:
+			WriteBinaryExpr(expr, parent > FuPriority.Mul, FuPriority.Mul, " * ", FuPriority.Primary);
 			break;
-		case CiToken.Slash:
-			WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " / ", CiPriority.Primary);
+		case FuToken.Slash:
+			WriteBinaryExpr(expr, parent > FuPriority.Mul, FuPriority.Mul, " / ", FuPriority.Primary);
 			break;
-		case CiToken.Mod:
-			WriteBinaryExpr(expr, parent > CiPriority.Mul, CiPriority.Mul, " % ", CiPriority.Primary);
+		case FuToken.Mod:
+			WriteBinaryExpr(expr, parent > FuPriority.Mul, FuPriority.Mul, " % ", FuPriority.Primary);
 			break;
-		case CiToken.ShiftLeft:
-			WriteBinaryExpr(expr, parent > CiPriority.Shift, CiPriority.Shift, " << ", CiPriority.Mul);
+		case FuToken.ShiftLeft:
+			WriteBinaryExpr(expr, parent > FuPriority.Shift, FuPriority.Shift, " << ", FuPriority.Mul);
 			break;
-		case CiToken.ShiftRight:
-			WriteBinaryExpr(expr, parent > CiPriority.Shift, CiPriority.Shift, " >> ", CiPriority.Mul);
+		case FuToken.ShiftRight:
+			WriteBinaryExpr(expr, parent > FuPriority.Shift, FuPriority.Shift, " >> ", FuPriority.Mul);
 			break;
-		case CiToken.Equal:
+		case FuToken.Equal:
 			WriteEqual(expr.Left, expr.Right, parent, false);
 			break;
-		case CiToken.NotEqual:
+		case FuToken.NotEqual:
 			WriteEqual(expr.Left, expr.Right, parent, true);
 			break;
-		case CiToken.Less:
+		case FuToken.Less:
 			WriteRel(expr, parent, " < ");
 			break;
-		case CiToken.LessOrEqual:
+		case FuToken.LessOrEqual:
 			WriteRel(expr, parent, " <= ");
 			break;
-		case CiToken.Greater:
+		case FuToken.Greater:
 			WriteRel(expr, parent, " > ");
 			break;
-		case CiToken.GreaterOrEqual:
+		case FuToken.GreaterOrEqual:
 			WriteRel(expr, parent, " >= ");
 			break;
-		case CiToken.And:
+		case FuToken.And:
 			WriteAnd(expr, parent);
 			break;
-		case CiToken.Or:
-			WriteBinaryExpr2(expr, parent, CiPriority.Or, " | ");
+		case FuToken.Or:
+			WriteBinaryExpr2(expr, parent, FuPriority.Or, " | ");
 			break;
-		case CiToken.Xor:
-			WriteBinaryExpr(expr, parent > CiPriority.Xor || parent == CiPriority.Or, CiPriority.Xor, " ^ ", CiPriority.Xor);
+		case FuToken.Xor:
+			WriteBinaryExpr(expr, parent > FuPriority.Xor || parent == FuPriority.Or, FuPriority.Xor, " ^ ", FuPriority.Xor);
 			break;
-		case CiToken.CondAnd:
-			WriteBinaryExpr(expr, parent > CiPriority.CondAnd || parent == CiPriority.CondOr, CiPriority.CondAnd, " && ", CiPriority.CondAnd);
+		case FuToken.CondAnd:
+			WriteBinaryExpr(expr, parent > FuPriority.CondAnd || parent == FuPriority.CondOr, FuPriority.CondAnd, " && ", FuPriority.CondAnd);
 			break;
-		case CiToken.CondOr:
-			WriteBinaryExpr2(expr, parent, CiPriority.CondOr, " || ");
+		case FuToken.CondOr:
+			WriteBinaryExpr2(expr, parent, FuPriority.CondOr, " || ");
 			break;
-		case CiToken.Assign:
+		case FuToken.Assign:
 			WriteAssign(expr, parent);
 			break;
-		case CiToken.AddAssign:
-		case CiToken.SubAssign:
-		case CiToken.MulAssign:
-		case CiToken.DivAssign:
-		case CiToken.ModAssign:
-		case CiToken.ShiftLeftAssign:
-		case CiToken.ShiftRightAssign:
-		case CiToken.AndAssign:
-		case CiToken.OrAssign:
-		case CiToken.XorAssign:
-			if (parent > CiPriority.Assign)
+		case FuToken.AddAssign:
+		case FuToken.SubAssign:
+		case FuToken.MulAssign:
+		case FuToken.DivAssign:
+		case FuToken.ModAssign:
+		case FuToken.ShiftLeftAssign:
+		case FuToken.ShiftRightAssign:
+		case FuToken.AndAssign:
+		case FuToken.OrAssign:
+		case FuToken.XorAssign:
+			if (parent > FuPriority.Assign)
 				WriteChar('(');
-			expr.Left.Accept(this, CiPriority.Assign);
+			expr.Left.Accept(this, FuPriority.Assign);
 			WriteChar(' ');
 			Write(expr.GetOpString());
 			WriteChar(' ');
-			expr.Right.Accept(this, CiPriority.Argument);
-			if (parent > CiPriority.Assign)
+			expr.Right.Accept(this, FuPriority.Argument);
+			if (parent > FuPriority.Assign)
 				WriteChar(')');
 			break;
 
-		case CiToken.LeftBracket:
-			if (expr.Left.Type is CiStringType)
+		case FuToken.LeftBracket:
+			if (expr.Left.Type is FuStringType)
 				WriteCharAt(expr);
 			else
 				WriteIndexingExpr(expr, parent);
 			break;
 
-		case CiToken.Is:
-			if (parent > CiPriority.Rel)
+		case FuToken.Is:
+			if (parent > FuPriority.Rel)
 				WriteChar('(');
-			expr.Left.Accept(this, CiPriority.Rel);
+			expr.Left.Accept(this, FuPriority.Rel);
 			Write(GetIsOperator());
 			switch (expr.Right) {
-			case CiSymbolReference symbol:
+			case FuSymbolReference symbol:
 				WriteName(symbol.Symbol);
 				break;
-			case CiVar def:
+			case FuVar def:
 				WriteTypeAndName(def);
 				break;
 			default:
 				assert false;
 			}
-			if (parent > CiPriority.Rel)
+			if (parent > FuPriority.Rel)
 				WriteChar(')');
 			break;
 
-		case CiToken.When:
-			expr.Left.Accept(this, CiPriority.Argument);
+		case FuToken.When:
+			expr.Left.Accept(this, FuPriority.Argument);
 			Write(" when ");
-			expr.Right.Accept(this, CiPriority.Argument);
+			expr.Right.Accept(this, FuPriority.Argument);
 			break;
 
 		default:
@@ -1183,28 +1183,28 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected abstract void WriteStringLength!(CiExpr expr);
+	protected abstract void WriteStringLength!(FuExpr expr);
 
-	protected static bool IsReferenceTo(CiExpr expr, CiId id) => expr is CiSymbolReference symbol && symbol.Symbol.Id == id;
+	protected static bool IsReferenceTo(FuExpr expr, FuId id) => expr is FuSymbolReference symbol && symbol.Symbol.Id == id;
 
-	protected bool WriteJavaMatchProperty!(CiSymbolReference expr, CiPriority parent)
+	protected bool WriteJavaMatchProperty!(FuSymbolReference expr, FuPriority parent)
 	{
 		switch (expr.Symbol.Id) {
-		case CiId.MatchStart:
+		case FuId.MatchStart:
 			WritePostfix(expr.Left, ".start()");
 			return true;
-		case CiId.MatchEnd:
+		case FuId.MatchEnd:
 			WritePostfix(expr.Left, ".end()");
 			return true;
-		case CiId.MatchLength:
-			if (parent > CiPriority.Add)
+		case FuId.MatchLength:
+			if (parent > FuPriority.Add)
 				WriteChar('(');
 			WritePostfix(expr.Left, ".end() - ");
 			WritePostfix(expr.Left, ".start()"); // FIXME: side effect
-			if (parent > CiPriority.Add)
+			if (parent > FuPriority.Add)
 				WriteChar(')');
 			return true;
-		case CiId.MatchValue:
+		case FuId.MatchValue:
 			WritePostfix(expr.Left, ".group()");
 			return true;
 		default:
@@ -1212,70 +1212,70 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	public override void VisitSymbolReference!(CiSymbolReference expr, CiPriority parent)
+	internal override void VisitSymbolReference!(FuSymbolReference expr, FuPriority parent)
 	{
 		if (expr.Left == null)
 			WriteLocalName(expr.Symbol, parent);
-		else if (expr.Symbol.Id == CiId.StringLength)
+		else if (expr.Symbol.Id == FuId.StringLength)
 			WriteStringLength(expr.Left);
 		else {
-			expr.Left.Accept(this, CiPriority.Primary);
+			expr.Left.Accept(this, FuPriority.Primary);
 			WriteMemberOp(expr.Left, expr);
 			WriteName(expr.Symbol);
 		}
 	}
 
-	protected abstract void WriteCharAt!(CiBinaryExpr expr);
+	protected abstract void WriteCharAt!(FuBinaryExpr expr);
 
-	protected virtual void WriteNotPromoted!(CiType type, CiExpr expr)
+	protected virtual void WriteNotPromoted!(FuType type, FuExpr expr)
 	{
-		expr.Accept(this, CiPriority.Argument);
+		expr.Accept(this, FuPriority.Argument);
 	}
 
-	protected virtual void WriteEnumAsInt!(CiExpr expr, CiPriority parent)
+	protected virtual void WriteEnumAsInt!(FuExpr expr, FuPriority parent)
 	{
 		expr.Accept(this, parent);
 	}
 
-	protected void WriteEnumHasFlag!(CiExpr obj, List<CiExpr#> args, CiPriority parent)
+	protected void WriteEnumHasFlag!(FuExpr obj, List<FuExpr#> args, FuPriority parent)
 	{
-		if (parent > CiPriority.Equality)
+		if (parent > FuPriority.Equality)
 			WriteChar('(');
 		int i = args[0].IntValue();
 		if ((i & i - 1) == 0 && i != 0) { // TODO: BitOperations.IsPow2
 			WriteChar('(');
-			WriteEnumAsInt(obj, CiPriority.And);
+			WriteEnumAsInt(obj, FuPriority.And);
 			Write(" & ");
-			WriteEnumAsInt(args[0], CiPriority.And);
+			WriteEnumAsInt(args[0], FuPriority.And);
 			Write(") != 0");
 		}
 		else {
 			Write("(~");
-			WriteEnumAsInt(obj, CiPriority.Primary);
+			WriteEnumAsInt(obj, FuPriority.Primary);
 			Write(" & ");
-			WriteEnumAsInt(args[0], CiPriority.And);
+			WriteEnumAsInt(args[0], FuPriority.And);
 			Write(") == 0");
 		}
-		if (parent > CiPriority.Equality)
+		if (parent > FuPriority.Equality)
 			WriteChar(')');
 	}
 
-	protected void WriteTryParseRadix!(List<CiExpr#> args)
+	protected void WriteTryParseRadix!(List<FuExpr#> args)
 	{
 		Write(", ");
 		if (args.Count == 2)
-			args[1].Accept(this, CiPriority.Argument);
+			args[1].Accept(this, FuPriority.Argument);
 		else
 			Write("10");
 	}
 
-	protected void WriteListAdd!(CiExpr obj, string method, List<CiExpr#> args)
+	protected void WriteListAdd!(FuExpr obj, string method, List<FuExpr#> args)
 	{
-		obj.Accept(this, CiPriority.Primary);
+		obj.Accept(this, FuPriority.Primary);
 		WriteChar('.');
 		Write(method);
 		WriteChar('(');
-		CiType elementType = obj.Type.AsClassType().GetElementType();
+		FuType elementType = obj.Type.AsClassType().GetElementType();
 		if (args.Count == 0)
 			WriteNewStorage(elementType);
 		else
@@ -1283,15 +1283,15 @@ public abstract class GenBase : CiVisitor
 		WriteChar(')');
 	}
 
-	protected void WriteListInsert!(CiExpr obj, string method, List<CiExpr#> args, string separator = ", ")
+	protected void WriteListInsert!(FuExpr obj, string method, List<FuExpr#> args, string separator = ", ")
 	{
-		obj.Accept(this, CiPriority.Primary);
+		obj.Accept(this, FuPriority.Primary);
 		WriteChar('.');
 		Write(method);
 		WriteChar('(');
-		args[0].Accept(this, CiPriority.Argument);
+		args[0].Accept(this, FuPriority.Argument);
 		Write(separator);
-		CiType elementType = obj.Type.AsClassType().GetElementType();
+		FuType elementType = obj.Type.AsClassType().GetElementType();
 		if (args.Count == 1)
 			WriteNewStorage(elementType);
 		else
@@ -1299,32 +1299,32 @@ public abstract class GenBase : CiVisitor
 		WriteChar(')');
 	}
 
-	protected void WriteDictionaryAdd!(CiExpr obj, List<CiExpr#> args)
+	protected void WriteDictionaryAdd!(FuExpr obj, List<FuExpr#> args)
 	{
 		WriteIndexing(obj, args[0]);
 		Write(" = ");
 		WriteNewStorage(obj.Type.AsClassType().GetValueType());
 	}
 
-	protected void WriteClampAsMinMax!(List<CiExpr#> args)
+	protected void WriteClampAsMinMax!(List<FuExpr#> args)
 	{
-		args[0].Accept(this, CiPriority.Argument);
+		args[0].Accept(this, FuPriority.Argument);
 		Write(", ");
-		args[1].Accept(this, CiPriority.Argument);
+		args[1].Accept(this, FuPriority.Argument);
 		Write("), ");
-		args[2].Accept(this, CiPriority.Argument);
+		args[2].Accept(this, FuPriority.Argument);
 		WriteChar(')');
 	}
 
-	protected RegexOptions GetRegexOptions(List<CiExpr#> args)
+	protected RegexOptions GetRegexOptions(List<FuExpr#> args)
 	{
-		CiExpr expr = args.Last();
-		if (expr.Type is CiEnum)
+		FuExpr expr = args.Last();
+		if (expr.Type is FuEnum)
 			return RegexOptions.FromInt(expr.IntValue());
 		return RegexOptions.None;
 	}
 
-	protected bool WriteRegexOptions!(List<CiExpr#> args, string prefix, string separator, string suffix, string i, string m, string s)
+	protected bool WriteRegexOptions!(List<FuExpr#> args, string prefix, string separator, string suffix, string i, string m, string s)
 	{
 		RegexOptions options = GetRegexOptions(args);
 		if (options == RegexOptions.None)
@@ -1346,15 +1346,15 @@ public abstract class GenBase : CiVisitor
 		return true;
 	}
 
-	protected abstract void WriteCallExpr!(CiExpr? obj, CiMethod method, List<CiExpr#> args, CiPriority parent);
+	protected abstract void WriteCallExpr!(FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent);
 
-	public override void VisitCallExpr!(CiCallExpr expr, CiPriority parent)
+	internal override void VisitCallExpr!(FuCallExpr expr, FuPriority parent)
 	{
-		assert expr.Method.Symbol is CiMethod method;
+		assert expr.Method.Symbol is FuMethod method;
 		WriteCallExpr(expr.Method.Left, method, expr.Arguments, parent);
 	}
 
-	public override void VisitSelectExpr!(CiSelectExpr expr, CiPriority parent)
+	internal override void VisitSelectExpr!(FuSelectExpr expr, FuPriority parent)
 	{
 		WriteCoercedSelect(expr.Type, expr, parent);
 	}
@@ -1370,40 +1370,40 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected static bool HasTemporaries(CiExpr expr)
+	protected static bool HasTemporaries(FuExpr expr)
 	{
 		switch (expr) {
-		case CiAggregateInitializer init:
+		case FuAggregateInitializer init:
 			return init.Items.Any(item => HasTemporaries(item));
-		case CiLiteral _:
-		case CiLambdaExpr _:
+		case FuLiteral _:
+		case FuLambdaExpr _:
 			return false;
-		case CiInterpolatedString interp:
+		case FuInterpolatedString interp:
 			return interp.Parts.Any(part => HasTemporaries(part.Argument));
-		case CiSymbolReference symbol:
+		case FuSymbolReference symbol:
 			return symbol.Left != null && HasTemporaries(symbol.Left);
-		case CiUnaryExpr unary:
-			return unary.Inner != null && (HasTemporaries(unary.Inner) || unary.Inner is CiAggregateInitializer);
-		case CiBinaryExpr binary:
+		case FuUnaryExpr unary:
+			return unary.Inner != null && (HasTemporaries(unary.Inner) || unary.Inner is FuAggregateInitializer);
+		case FuBinaryExpr binary:
 			if (HasTemporaries(binary.Left))
 				return true;
-			if (binary.Op == CiToken.Is)
-				return binary.Right is CiVar;
+			if (binary.Op == FuToken.Is)
+				return binary.Right is FuVar;
 			return HasTemporaries(binary.Right);
-		case CiSelectExpr select:
+		case FuSelectExpr select:
 			return HasTemporaries(select.Cond) || HasTemporaries(select.OnTrue) || HasTemporaries(select.OnFalse);
-		case CiCallExpr call:
+		case FuCallExpr call:
 			return HasTemporaries(call.Method) || call.Arguments.Any(arg => HasTemporaries(arg));
 		default:
 			assert false;
 		}
 	}
 
-	protected abstract void StartTemporaryVar!(CiType type);
+	protected abstract void StartTemporaryVar!(FuType type);
 
-	protected virtual void DefineObjectLiteralTemporary!(CiUnaryExpr expr)
+	protected virtual void DefineObjectLiteralTemporary!(FuUnaryExpr expr)
 	{
-		if (expr.Inner is CiAggregateInitializer init) {
+		if (expr.Inner is FuAggregateInitializer init) {
 			EnsureChildBlock();
 			int id = this.CurrentTemporaries.IndexOf(expr.Type);
 			if (id < 0) {
@@ -1416,10 +1416,10 @@ public abstract class GenBase : CiVisitor
 			Write("futemp");
 			VisitLiteralLong(id);
 			Write(" = ");
-			assert expr.Type is CiDynamicPtrType dynamic;
-			WriteNew(dynamic, CiPriority.Argument);
+			assert expr.Type is FuDynamicPtrType dynamic;
+			WriteNew(dynamic, FuPriority.Argument);
 			EndStatement();
-			foreach (CiExpr item in init.Items) {
+			foreach (FuExpr item in init.Items) {
 				Write("futemp");
 				VisitLiteralLong(id);
 				WriteAggregateInitField(expr, item);
@@ -1427,55 +1427,55 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WriteTemporaries!(CiExpr expr)
+	protected void WriteTemporaries!(FuExpr expr)
 	{
 		switch (expr) {
-		case CiVar def:
+		case FuVar def:
 			if (def.Value != null) {
-				if (def.Value is CiUnaryExpr unary && unary.Inner is CiAggregateInitializer)
+				if (def.Value is FuUnaryExpr unary && unary.Inner is FuAggregateInitializer)
 					WriteTemporaries(unary.Inner);
 				else
 					WriteTemporaries(def.Value);
 			}
 			break;
-		case CiAggregateInitializer init:
-			foreach (CiExpr item in init.Items) {
-				assert item is CiBinaryExpr assign;
+		case FuAggregateInitializer init:
+			foreach (FuExpr item in init.Items) {
+				assert item is FuBinaryExpr assign;
 				WriteTemporaries(assign.Right);
 			}
 			break;
-		case CiLiteral _:
-		case CiLambdaExpr _:
+		case FuLiteral _:
+		case FuLambdaExpr _:
 			break;
-		case CiInterpolatedString interp:
-			foreach (CiInterpolatedPart part in interp.Parts)
+		case FuInterpolatedString interp:
+			foreach (FuInterpolatedPart part in interp.Parts)
 				WriteTemporaries(part.Argument);
 			break;
-		case CiSymbolReference symbol:
+		case FuSymbolReference symbol:
 			if (symbol.Left != null)
 				WriteTemporaries(symbol.Left);
 			break;
-		case CiUnaryExpr unary:
+		case FuUnaryExpr unary:
 			if (unary.Inner != null) {
 				WriteTemporaries(unary.Inner);
 				DefineObjectLiteralTemporary(unary);
 			}
 			break;
-		case CiBinaryExpr binary:
+		case FuBinaryExpr binary:
 			WriteTemporaries(binary.Left);
-			if (binary.Op == CiToken.Is)
+			if (binary.Op == FuToken.Is)
 				DefineIsVar(binary);
 			else
 				WriteTemporaries(binary.Right);
 			break;
-		case CiSelectExpr select:
+		case FuSelectExpr select:
 			WriteTemporaries(select.Cond);
 			WriteTemporaries(select.OnTrue);
 			WriteTemporaries(select.OnFalse);
 			break;
-		case CiCallExpr call:
+		case FuCallExpr call:
 			WriteTemporaries(call.Method);
-			foreach (CiExpr arg in call.Arguments)
+			foreach (FuExpr arg in call.Arguments)
 				WriteTemporaries(arg);
 			break;
 		default:
@@ -1483,63 +1483,63 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected virtual void CleanupTemporary!(int i, CiExpr temp)
+	protected virtual void CleanupTemporary!(int i, FuExpr temp)
 	{
 	}
 
 	protected void CleanupTemporaries!()
 	{
 		for (int i = this.CurrentTemporaries.Count; --i >= 0; ) {
-			CiExpr temp = this.CurrentTemporaries[i];
-			if (!(temp is CiType)) {
+			FuExpr temp = this.CurrentTemporaries[i];
+			if (!(temp is FuType)) {
 				CleanupTemporary(i, temp);
 				this.CurrentTemporaries[i] = temp.Type;
 			}
 		}
 	}
 
-	public override void VisitExpr!(CiExpr statement)
+	internal override void VisitExpr!(FuExpr statement)
 	{
 		WriteTemporaries(statement);
-		statement.Accept(this, CiPriority.Statement);
+		statement.Accept(this, FuPriority.Statement);
 		WriteCharLine(';');
-		if (statement is CiVar def)
+		if (statement is FuVar def)
 			WriteInitCode(def);
 		CleanupTemporaries();
 	}
 
-	public override void VisitConst!(CiConst statement)
+	internal override void VisitConst!(FuConst statement)
 	{
 	}
 
-	protected abstract void WriteAssertCast!(CiBinaryExpr expr);
+	protected abstract void WriteAssertCast!(FuBinaryExpr expr);
 
-	protected abstract void WriteAssert!(CiAssert statement);
+	protected abstract void WriteAssert!(FuAssert statement);
 
-	public override void VisitAssert!(CiAssert statement)
+	internal override void VisitAssert!(FuAssert statement)
 	{
-		if (statement.Cond is CiBinaryExpr binary && binary.Op == CiToken.Is && binary.Right is CiVar)
+		if (statement.Cond is FuBinaryExpr binary && binary.Op == FuToken.Is && binary.Right is FuVar)
 			WriteAssertCast(binary);
 		else
 			WriteAssert(statement);
 	}
 
-	protected void WriteFirstStatements!(List<CiStatement#> statements, int count)
+	protected void WriteFirstStatements!(List<FuStatement#> statements, int count)
 	{
 		for (int i = 0; i < count; i++)
 			statements[i].AcceptStatement(this);
 	}
 
-	protected virtual void WriteStatements!(List<CiStatement#> statements)
+	protected virtual void WriteStatements!(List<FuStatement#> statements)
 	{
 		WriteFirstStatements(statements, statements.Count);
 	}
 
-	protected virtual void CleanupBlock!(CiBlock statement)
+	protected virtual void CleanupBlock!(FuBlock statement)
 	{
 	}
 
-	public override void VisitBlock!(CiBlock statement)
+	internal override void VisitBlock!(FuBlock statement)
 	{
 		if (this.AtChildStart) {
 			this.AtLineStart = false;
@@ -1554,7 +1554,7 @@ public abstract class GenBase : CiVisitor
 		CloseBlock();
 	}
 
-	protected virtual void WriteChild!(CiStatement! statement)
+	protected virtual void WriteChild!(FuStatement! statement)
 	{
 		bool wasInChildBlock = this.InChildBlock;
 		this.AtLineStart = true;
@@ -1563,68 +1563,68 @@ public abstract class GenBase : CiVisitor
 		statement.AcceptStatement(this);
 		if (this.InChildBlock)
 			CloseBlock();
-		else if (!(statement is CiBlock))
+		else if (!(statement is FuBlock))
 			this.Indent--;
 		this.InChildBlock = wasInChildBlock;
 	}
 
-	public override void VisitBreak!(CiBreak statement)
+	internal override void VisitBreak!(FuBreak statement)
 	{
 		WriteLine("break;");
 	}
 
-	public override void VisitContinue!(CiContinue statement)
+	internal override void VisitContinue!(FuContinue statement)
 	{
 		WriteLine("continue;");
 	}
 
-	public override void VisitDoWhile!(CiDoWhile statement)
+	internal override void VisitDoWhile!(FuDoWhile statement)
 	{
 		Write("do");
 		WriteChild(statement.Body);
 		Write("while (");
-		statement.Cond.Accept(this, CiPriority.Argument);
+		statement.Cond.Accept(this, FuPriority.Argument);
 		WriteLine(");");
 	}
 
-	public override void VisitFor!(CiFor statement)
+	internal override void VisitFor!(FuFor statement)
 	{
 		if (statement.Cond != null)
 			WriteTemporaries(statement.Cond);
 		Write("for (");
 		if (statement.Init != null)
-			statement.Init.Accept(this, CiPriority.Statement);
+			statement.Init.Accept(this, FuPriority.Statement);
 		WriteChar(';');
 		if (statement.Cond != null) {
 			WriteChar(' ');
-			statement.Cond.Accept(this, CiPriority.Argument);
+			statement.Cond.Accept(this, FuPriority.Argument);
 		}
 		WriteChar(';');
 		if (statement.Advance != null) {
 			WriteChar(' ');
-			statement.Advance.Accept(this, CiPriority.Statement);
+			statement.Advance.Accept(this, FuPriority.Statement);
 		}
 		WriteChar(')');
 		WriteChild(statement.Body);
 	}
 
-	protected virtual bool EmbedIfWhileIsVar!(CiExpr expr, bool write) => false;
+	protected virtual bool EmbedIfWhileIsVar!(FuExpr expr, bool write) => false;
 
-	void StartIfWhile!(CiExpr expr)
+	void StartIfWhile!(FuExpr expr)
 	{
 		EmbedIfWhileIsVar(expr, true);
-		expr.Accept(this, CiPriority.Argument);
+		expr.Accept(this, FuPriority.Argument);
 		WriteChar(')');
 	}
 
-	void WriteIf!(CiIf statement)
+	void WriteIf!(FuIf statement)
 	{
 		Write("if (");
 		StartIfWhile(statement.Cond);
 		WriteChild(statement.OnTrue);
 		if (statement.OnFalse != null) {
 			Write("else");
-			if (statement.OnFalse is CiIf! elseIf) {
+			if (statement.OnFalse is FuIf! elseIf) {
 				bool wasInChildBlock = this.InChildBlock;
 				this.AtLineStart = true;
 				this.AtChildStart = true;
@@ -1648,19 +1648,19 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	public override void VisitIf!(CiIf statement)
+	internal override void VisitIf!(FuIf statement)
 	{
 		if (!EmbedIfWhileIsVar(statement.Cond, false)) // FIXME: IsVar but not object literal
 			WriteTemporaries(statement.Cond);
 		WriteIf(statement);
 	}
 
-	public override void VisitNative!(CiNative statement)
+	internal override void VisitNative!(FuNative statement)
 	{
 		Write(statement.Content);
 	}
 
-	public override void VisitReturn!(CiReturn statement)
+	internal override void VisitReturn!(FuReturn statement)
 	{
 		if (statement.Value == null)
 			WriteLine("return;");
@@ -1673,31 +1673,31 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void DefineVar!(CiExpr value)
+	protected void DefineVar!(FuExpr value)
 	{
-		if (value is CiVar def && def.Name != "_") {
+		if (value is FuVar def && def.Name != "_") {
 			WriteVar(def);
 			EndStatement();
 		}
 	}
 
-	protected virtual void WriteSwitchCaseTypeVar!(CiExpr value)
+	protected virtual void WriteSwitchCaseTypeVar!(FuExpr value)
 	{
 	}
 
-	protected virtual void WriteSwitchValue!(CiExpr expr)
+	protected virtual void WriteSwitchValue!(FuExpr expr)
 	{
-		expr.Accept(this, CiPriority.Argument);
+		expr.Accept(this, FuPriority.Argument);
 	}
 
-	protected virtual void WriteSwitchCaseBody!(List<CiStatement#> statements)
+	protected virtual void WriteSwitchCaseBody!(List<FuStatement#> statements)
 	{
 		WriteStatements(statements);
 	}
 
-	protected virtual void WriteSwitchCase!(CiSwitch statement, CiCase kase)
+	protected virtual void WriteSwitchCase!(FuSwitch statement, FuCase kase)
 	{
-		foreach (CiExpr value in kase.Values) {
+		foreach (FuExpr value in kase.Values) {
 			Write("case ");
 			WriteCoercedLiteral(statement.Value.Type, value);
 			WriteCharLine(':');
@@ -1707,34 +1707,34 @@ public abstract class GenBase : CiVisitor
 		this.Indent--;
 	}
 
-	protected void StartSwitch!(CiSwitch statement)
+	protected void StartSwitch!(FuSwitch statement)
 	{
 		Write("switch (");
 		WriteSwitchValue(statement.Value);
 		WriteLine(") {");
-		foreach (CiCase kase in statement.Cases)
+		foreach (FuCase kase in statement.Cases)
 			WriteSwitchCase(statement, kase);
 	}
 
-	protected virtual void WriteSwitchCaseCond!(CiSwitch statement, CiExpr value, CiPriority parent)
+	protected virtual void WriteSwitchCaseCond!(FuSwitch statement, FuExpr value, FuPriority parent)
 	{
-		if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
-			if (parent > CiPriority.SelectCond)
+		if (value is FuBinaryExpr when1 && when1.Op == FuToken.When) {
+			if (parent > FuPriority.SelectCond)
 				WriteChar('(');
-			WriteSwitchCaseCond(statement, when1.Left, CiPriority.CondAnd); // FIXME: side effect in every if
+			WriteSwitchCaseCond(statement, when1.Left, FuPriority.CondAnd); // FIXME: side effect in every if
 			Write(" && ");
-			when1.Right.Accept(this, CiPriority.CondAnd);
-			if (parent > CiPriority.SelectCond)
+			when1.Right.Accept(this, FuPriority.CondAnd);
+			if (parent > FuPriority.SelectCond)
 				WriteChar(')');
 		}
 		else
 			WriteEqual(statement.Value, value, parent, false); // FIXME: side effect in every if
 	}
 
-	protected virtual void WriteIfCaseBody!(List<CiStatement#> body, bool doWhile, CiSwitch statement, CiCase? kase)
+	protected virtual void WriteIfCaseBody!(List<FuStatement#> body, bool doWhile, FuSwitch statement, FuCase? kase)
 	{
-		int length = CiSwitch.LengthWithoutTrailingBreak(body);
-		if (doWhile && CiSwitch.HasEarlyBreak(body)) {
+		int length = FuSwitch.LengthWithoutTrailingBreak(body);
+		if (doWhile && FuSwitch.HasEarlyBreak(body)) {
 			this.Indent++;
 			WriteNewLine();
 			Write("do ");
@@ -1744,7 +1744,7 @@ public abstract class GenBase : CiVisitor
 			WriteLine("while (0);");
 			this.Indent--;
 		}
-		else if (length != 1 || body[0] is CiIf || body[0] is CiSwitch /* potentially as ifs */) {
+		else if (length != 1 || body[0] is FuIf || body[0] is FuSwitch /* potentially as ifs */) {
 			WriteChar(' ');
 			OpenBlock();
 			WriteFirstStatements(body, length);
@@ -1754,11 +1754,11 @@ public abstract class GenBase : CiVisitor
 			WriteChild(body[0]);
 	}
 
-	protected void WriteSwitchAsIfs!(CiSwitch statement, bool doWhile)
+	protected void WriteSwitchAsIfs!(FuSwitch statement, bool doWhile)
 	{
-		foreach (CiCase kase in statement.Cases) {
-			foreach (CiExpr value in kase.Values) {
-				if (value is CiBinaryExpr when1 && when1.Op == CiToken.When) {
+		foreach (FuCase kase in statement.Cases) {
+			foreach (FuExpr value in kase.Values) {
+				if (value is FuBinaryExpr when1 && when1.Op == FuToken.When) {
 					DefineVar(when1.Left);
 					WriteTemporaries(when1);
 				}
@@ -1767,9 +1767,9 @@ public abstract class GenBase : CiVisitor
 			}
 		}
 		string op = "if (";
-		foreach (CiCase kase in statement.Cases) {
-			CiPriority parent = kase.Values.Count == 1 ? CiPriority.Argument : CiPriority.CondOr;
-			foreach (CiExpr value in kase.Values) {
+		foreach (FuCase kase in statement.Cases) {
+			FuPriority parent = kase.Values.Count == 1 ? FuPriority.Argument : FuPriority.CondOr;
+			foreach (FuExpr value in kase.Values) {
 				Write(op);
 				WriteSwitchCaseCond(statement, value, parent);
 				op = " || ";
@@ -1784,7 +1784,7 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	public override void VisitSwitch!(CiSwitch statement)
+	internal override void VisitSwitch!(FuSwitch statement)
 	{
 		WriteTemporaries(statement.Value);
 		StartSwitch(statement);
@@ -1797,7 +1797,7 @@ public abstract class GenBase : CiVisitor
 		WriteCharLine('}');
 	}
 
-	public override void VisitWhile!(CiWhile statement)
+	internal override void VisitWhile!(FuWhile statement)
 	{
 		if (!EmbedIfWhileIsVar(statement.Cond, false)) // FIXME: IsVar but not object literal
 			WriteTemporaries(statement.Cond);
@@ -1806,53 +1806,53 @@ public abstract class GenBase : CiVisitor
 		WriteChild(statement.Body);
 	}
 
-	protected void FlattenBlock!(CiStatement! statement)
+	protected void FlattenBlock!(FuStatement! statement)
 	{
-		if (statement is CiBlock block)
+		if (statement is FuBlock block)
 			WriteStatements(block.Statements);
 		else
 			statement.AcceptStatement(this);
 	}
 
-	protected virtual bool HasInitCode(CiNamedValue def) => GetAggregateInitializer(def) != null;
+	protected virtual bool HasInitCode(FuNamedValue def) => GetAggregateInitializer(def) != null;
 
-	protected virtual bool NeedsConstructor(CiClass klass)
+	protected virtual bool NeedsConstructor(FuClass klass)
 	{
-		for (CiSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiField field && HasInitCode(field))
+		for (FuSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is FuField field && HasInitCode(field))
 				return true;
 		}
 		return klass.Constructor != null;
 	}
 
-	protected virtual void WriteInitField!(CiField field)
+	protected virtual void WriteInitField!(FuField field)
 	{
 		WriteInitCode(field);
 	}
 
-	protected void WriteConstructorBody!(CiClass klass)
+	protected void WriteConstructorBody!(FuClass klass)
 	{
-		for (CiSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiField field)
+		for (FuSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is FuField field)
 				WriteInitField(field);
 		}
 		if (klass.Constructor != null) {
 			this.CurrentMethod = klass.Constructor;
-			assert klass.Constructor.Body is CiBlock block;
+			assert klass.Constructor.Body is FuBlock block;
 			WriteStatements(block.Statements);
 			this.CurrentMethod = null;
 		}
 		this.CurrentTemporaries.Clear();
 	}
 
-	protected virtual void WriteParameter!(CiVar param)
+	protected virtual void WriteParameter!(FuVar param)
 	{
 		WriteTypeAndName(param);
 	}
 
-	protected void WriteRemainingParameters!(CiMethod method, bool first, bool defaultArguments)
+	protected void WriteRemainingParameters!(FuMethod method, bool first, bool defaultArguments)
 	{
-		for (CiVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+		for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 			if (!first)
 				Write(", ");
 			first = false;
@@ -1863,15 +1863,15 @@ public abstract class GenBase : CiVisitor
 		WriteChar(')');
 	}
 
-	protected void WriteParameters!(CiMethod method, bool defaultArguments)
+	protected void WriteParameters!(FuMethod method, bool defaultArguments)
 	{
 		WriteChar('(');
 		WriteRemainingParameters(method, true, defaultArguments);
 	}
 
-	protected void WriteBody!(CiMethod method)
+	protected void WriteBody!(FuMethod method)
 	{
-		if (method.CallType == CiCallType.Abstract)
+		if (method.CallType == FuCallType.Abstract)
 			WriteCharLine(';');
 		else {
 			WriteNewLine();
@@ -1883,38 +1883,38 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void WritePublic!(CiContainerType container)
+	protected void WritePublic!(FuContainerType container)
 	{
 		if (container.IsPublic)
 			Write("public ");
 	}
 
-	protected void WriteEnumValue!(CiConst konst)
+	protected void WriteEnumValue!(FuConst konst)
 	{
 		WriteDoc(konst.Documentation);
 		WriteName(konst);
-		if (!(konst.Value is CiImplicitEnumValue)) {
+		if (!(konst.Value is FuImplicitEnumValue)) {
 			Write(" = ");
-			konst.Value.Accept(this, CiPriority.Argument);
+			konst.Value.Accept(this, FuPriority.Argument);
 		}
 	}
 
-	public override void VisitEnumValue!(CiConst konst, CiConst? previous)
+	internal override void VisitEnumValue!(FuConst konst, FuConst? previous)
 	{
 		if (previous != null)
 			WriteCharLine(',');
 		WriteEnumValue(konst);
 	}
 
-	protected abstract void WriteEnum!(CiEnum enu);
+	protected abstract void WriteEnum!(FuEnum enu);
 
-	protected virtual void WriteRegexOptionsEnum!(CiProgram program)
+	protected virtual void WriteRegexOptionsEnum!(FuProgram program)
 	{
 		if (program.RegexOptionsEnum)
 			WriteEnum(program.System.RegexOptionsEnum);
 	}
 
-	protected void StartClass!(CiClass klass, string suffix, string extendsClause)
+	protected void StartClass!(FuClass klass, string suffix, string extendsClause)
 	{
 		Write("class ");
 		Write(klass.Name);
@@ -1925,67 +1925,67 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	protected void OpenClass!(CiClass klass, string suffix, string extendsClause)
+	protected void OpenClass!(FuClass klass, string suffix, string extendsClause)
 	{
 		StartClass(klass, suffix, extendsClause);
 		WriteNewLine();
 		OpenBlock();
 	}
 
-	protected abstract void WriteConst!(CiConst konst);
+	protected abstract void WriteConst!(FuConst konst);
 
-	protected abstract void WriteField!(CiField field);
+	protected abstract void WriteField!(FuField field);
 
-	protected abstract void WriteMethod!(CiMethod method);
+	protected abstract void WriteMethod!(FuMethod method);
 
-	protected void WriteMembers!(CiClass klass, bool constArrays)
+	protected void WriteMembers!(FuClass klass, bool constArrays)
 	{
-		for (CiSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
+		for (FuSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
 			switch (symbol) {
-			case CiConst konst:
+			case FuConst konst:
 				WriteConst(konst);
 				break;
-			case CiField field:
+			case FuField field:
 				WriteField(field);
 				break;
-			case CiMethod method:
+			case FuMethod method:
 				WriteMethod(method);
 				this.CurrentTemporaries.Clear();
 				break;
-			case CiVar _: // "this"
+			case FuVar _: // "this"
 				break;
 			default:
 				assert false;
 			}
 		}
 		if (constArrays) {
-			foreach (CiConst konst in klass.ConstArrays)
+			foreach (FuConst konst in klass.ConstArrays)
 				WriteConst(konst);
 		}
 	}
 
-	protected bool WriteBaseClass!(CiClass klass, CiProgram program)
+	protected bool WriteBaseClass!(FuClass klass, FuProgram program)
 	{
 		// topological sorting of class hierarchy
 		if (this.WrittenClasses.Contains(klass))
 			return false;
 		this.WrittenClasses.Add(klass);
-		if (klass.Parent is CiClass baseClass)
+		if (klass.Parent is FuClass baseClass)
 			WriteClass(baseClass, program);
 		return true;
 	}
 
-	protected abstract void WriteClass!(CiClass klass, CiProgram program);
+	protected abstract void WriteClass!(FuClass klass, FuProgram program);
 
-	protected void WriteTypes!(CiProgram program)
+	protected void WriteTypes!(FuProgram program)
 	{
 		WriteRegexOptionsEnum(program);
-		for (CiSymbol? type = program.First; type != null; type = type.Next) {
+		for (FuSymbol? type = program.First; type != null; type = type.Next) {
 			switch (type) {
-			case CiClass klass:
+			case FuClass klass:
 				WriteClass(klass, program);
 				break;
-			case CiEnum enu:
+			case FuEnum enu:
 				WriteEnum(enu);
 				break;
 			default:
@@ -1994,5 +1994,5 @@ public abstract class GenBase : CiVisitor
 		}
 	}
 
-	public abstract void WriteProgram!(CiProgram program);
+	public abstract void WriteProgram!(FuProgram program);
 }

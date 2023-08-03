@@ -18,43 +18,43 @@
 // You should have received a copy of the GNU General Public License
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
-public abstract class CiSemaHost : CiParserHost
+public abstract class FuSemaHost : FuParserHost
 {
 }
 
-public class CiSema
+public class FuSema
 {
-	protected CiProgram! Program;
-	CiSemaHost! Host;
-	CiMethodBase!? CurrentMethod = null;
-	CiScope!? CurrentScope;
-	HashSet<CiMethod>() CurrentPureMethods;
-	Dictionary<CiVar, CiExpr#>() CurrentPureArguments;
-	CiType# Poison = new CiType { Name = "poison" };
+	protected FuProgram! Program;
+	FuSemaHost! Host;
+	FuMethodBase!? CurrentMethod = null;
+	FuScope!? CurrentScope;
+	HashSet<FuMethod>() CurrentPureMethods;
+	Dictionary<FuVar, FuExpr#>() CurrentPureArguments;
+	FuType# Poison = new FuType { Name = "poison" };
 
-	public void SetHost!(CiSemaHost! host)
+	public void SetHost!(FuSemaHost! host)
 	{
 		this.Host = host;
 	}
 
-	CiContainerType GetCurrentContainer() => this.CurrentScope.GetContainer();
+	FuContainerType GetCurrentContainer() => this.CurrentScope.GetContainer();
 
-	protected void ReportError(CiStatement statement, string message)
+	protected void ReportError(FuStatement statement, string message)
 	{
 		this.Host.ReportError(GetCurrentContainer().Filename, statement.Line, 1, statement.Line, 1,message);
 	}
 
-	CiType# PoisonError(CiStatement statement, string message)
+	FuType# PoisonError(FuStatement statement, string message)
 	{
 		ReportError(statement, message);
 		return this.Poison;
 	}
 
-	void ResolveBase!(CiClass! klass)
+	void ResolveBase!(FuClass! klass)
 	{
 		if (klass.HasBaseClass()) {
 			this.CurrentScope = klass;
-			if (this.Program.TryLookup(klass.BaseClassName, true) is CiClass! baseClass) {
+			if (this.Program.TryLookup(klass.BaseClassName, true) is FuClass! baseClass) {
 				if (klass.IsPublic && !baseClass.IsPublic)
 					ReportError(klass, "Public class cannot derive from an internal class");
 				baseClass.HasSubclasses = true;
@@ -66,11 +66,11 @@ public class CiSema
 		this.Program.Classes.Add(klass);
 	}
 
-	void CheckBaseCycle!(CiClass! klass)
+	void CheckBaseCycle!(FuClass! klass)
 	{
 		// Floyd's tortoise and hare cycle-finding algorithm
-		CiSymbol? hare = klass;
-		CiSymbol tortoise = klass;
+		FuSymbol? hare = klass;
+		FuSymbol tortoise = klass;
 		do {
 			hare = hare.Parent;
 			if (hare == null)
@@ -84,13 +84,13 @@ public class CiSema
 		ReportError(klass, $"Circular inheritance for class {klass.Name}");
 	}
 
-	static void TakePtr(CiExpr expr)
+	static void TakePtr(FuExpr expr)
 	{
-		if (expr.Type is CiArrayStorageType! arrayStg)
+		if (expr.Type is FuArrayStorageType! arrayStg)
 			arrayStg.PtrTaken = true;
 	}
 
-	bool Coerce(CiExpr expr, CiType type)
+	bool Coerce(FuExpr expr, FuType type)
 	{
 		if (expr == this.Poison)
 			return false;
@@ -98,9 +98,9 @@ public class CiSema
 			ReportError(expr, $"Cannot coerce {expr.Type} to {type}");
 			return false;
 		}
-		if (expr is CiPrefixExpr prefix && prefix.Op == CiToken.New && !(type is CiDynamicPtrType)) {
-			assert expr.Type is CiDynamicPtrType newType;
-			string kind = newType.Class.Id == CiId.ArrayPtrClass ? "array" : "object";
+		if (expr is FuPrefixExpr prefix && prefix.Op == FuToken.New && !(type is FuDynamicPtrType)) {
+			assert expr.Type is FuDynamicPtrType newType;
+			string kind = newType.Class.Id == FuId.ArrayPtrClass ? "array" : "object";
 			ReportError(expr, $"Dynamically allocated {kind} must be assigned to a {expr.Type} reference");
 			return false;
 		}
@@ -108,20 +108,20 @@ public class CiSema
 		return true;
 	}
 
-	CiExpr# VisitInterpolatedString!(CiInterpolatedString# expr)
+	FuExpr# VisitInterpolatedString!(FuInterpolatedString# expr)
 	{
 		int partsCount = 0;
 		string() s = "";
 		for (int partsIndex = 0; partsIndex < expr.Parts.Count; partsIndex++) {
-			CiInterpolatedPart part = expr.Parts[partsIndex];
+			FuInterpolatedPart part = expr.Parts[partsIndex];
 			s += part.Prefix;
-			CiExpr# arg = VisitExpr(part.Argument);
+			FuExpr# arg = VisitExpr(part.Argument);
 			Coerce(arg, this.Program.System.PrintableType);
 			switch (arg.Type) {
-			case CiIntegerType _:
+			case FuIntegerType _:
 				switch (part.Format) {
 				case ' ':
-					if (arg is CiLiteralLong literalLong && part.WidthExpr == null) {
+					if (arg is FuLiteralLong literalLong && part.WidthExpr == null) {
 						s += $"{literalLong.Value}";
 						continue;
 					}
@@ -138,7 +138,7 @@ public class CiSema
 					break;
 				}
 				break;
-			case CiFloatingType _:
+			case FuFloatingType _:
 				switch (part.Format) {
 				case ' ':
 				case 'F':
@@ -154,13 +154,13 @@ public class CiSema
 			default:
 				if (part.Format != ' ')
 					ReportError(arg, "Invalid format");
-				else if (arg is CiLiteralString literalString && part.WidthExpr == null) {
+				else if (arg is FuLiteralString literalString && part.WidthExpr == null) {
 					s += literalString.Value;
 					continue;
 				}
 				break;
 			}
-			CiInterpolatedPart! targetPart = expr.Parts[partsCount++];
+			FuInterpolatedPart! targetPart = expr.Parts[partsCount++];
 			targetPart.Prefix = s;
 			targetPart.Argument = arg;
 			targetPart.WidthExpr = part.WidthExpr;
@@ -178,7 +178,7 @@ public class CiSema
 		return expr;
 	}
 
-	CiExpr# Lookup!(CiSymbolReference# expr, CiScope scope)
+	FuExpr# Lookup!(FuSymbolReference# expr, FuScope scope)
 	{
 		if (expr.Symbol == null) {
 			expr.Symbol = scope.TryLookup(expr.Name, expr.Left == null);
@@ -186,91 +186,91 @@ public class CiSema
 				return PoisonError(expr, $"{expr.Name} not found");
 			expr.Type = expr.Symbol.Type;
 		}
-		if (!(scope is CiEnum) && expr.Symbol is CiConst! konst) {
+		if (!(scope is FuEnum) && expr.Symbol is FuConst! konst) {
 			ResolveConst(konst);
-			if (konst.Value is CiLiteral || konst.Value is CiSymbolReference)
+			if (konst.Value is FuLiteral || konst.Value is FuSymbolReference)
 				return konst.Value;
 		}
 		return expr;
 	}
 
-	CiExpr# VisitSymbolReference!(CiSymbolReference# expr)
+	FuExpr# VisitSymbolReference!(FuSymbolReference# expr)
 	{
 		if (expr.Left == null) {
-			CiExpr# resolved = Lookup(expr, this.CurrentScope);
-			if (expr.Symbol is CiMember nearMember) {
-				if (nearMember.Visibility == CiVisibility.Private
-				 && nearMember.Parent is CiClass memberClass // not local const
+			FuExpr# resolved = Lookup(expr, this.CurrentScope);
+			if (expr.Symbol is FuMember nearMember) {
+				if (nearMember.Visibility == FuVisibility.Private
+				 && nearMember.Parent is FuClass memberClass // not local const
 				 && memberClass != GetCurrentContainer())
 					ReportError(expr, $"Cannot access private member {expr.Name}");
 				if (!nearMember.IsStatic()
 				 && (this.CurrentMethod == null || this.CurrentMethod.IsStatic()))
 					ReportError(expr, $"Cannot use instance member {expr.Name} from static context");
 			}
-			if (resolved is CiSymbolReference symbol) {
-				if (symbol.Symbol is CiVar v) {
-					if (v.Parent is CiFor! loop)
+			if (resolved is FuSymbolReference symbol) {
+				if (symbol.Symbol is FuVar v) {
+					if (v.Parent is FuFor! loop)
 						loop.IsIteratorUsed = true;
 					else if (this.CurrentPureArguments.ContainsKey(v)) // TryGetValue
 						return this.CurrentPureArguments[v];
 				}
-				else if (symbol.Symbol.Id == CiId.RegexOptionsEnum)
+				else if (symbol.Symbol.Id == FuId.RegexOptionsEnum)
 					this.Program.RegexOptionsEnum = true;
 			}
 			return resolved;
 		}
 
-		CiExpr# left = VisitExpr(expr.Left);
+		FuExpr# left = VisitExpr(expr.Left);
 		if (left == this.Poison)
 			return left;
-		CiScope scope;
-		bool isBase = left is CiSymbolReference baseSymbol && baseSymbol.Symbol.Id == CiId.BasePtr;
+		FuScope scope;
+		bool isBase = left is FuSymbolReference baseSymbol && baseSymbol.Symbol.Id == FuId.BasePtr;
 		if (isBase) {
-			if (this.CurrentMethod == null || !(this.CurrentMethod.Parent.Parent is CiClass baseClass))
+			if (this.CurrentMethod == null || !(this.CurrentMethod.Parent.Parent is FuClass baseClass))
 				return PoisonError(expr, "No base class");
 			scope = baseClass;
 			// TODO: static?
 		}
-		else if (left is CiSymbolReference leftSymbol && leftSymbol.Symbol is CiScope obj)
+		else if (left is FuSymbolReference leftSymbol && leftSymbol.Symbol is FuScope obj)
 			scope = obj;
 		else {
 			scope = left.Type;
-			if (scope is CiClassType klass)
+			if (scope is FuClassType klass)
 				scope = klass.Class;
 		}
-		CiExpr# result = Lookup(expr, scope);
+		FuExpr# result = Lookup(expr, scope);
 		if (result != expr)
 			return result;
-		if (expr.Symbol is CiMember member) {
+		if (expr.Symbol is FuMember member) {
 			switch (member.Visibility) {
-			case CiVisibility.Private:
+			case FuVisibility.Private:
 				if (member.Parent != this.CurrentMethod.Parent
 				 || this.CurrentMethod.Parent != scope) // enforced by Java, but not C++/C#/TS
 					ReportError(expr, $"Cannot access private member {expr.Name}");
 				break;
-			case CiVisibility.Protected:
+			case FuVisibility.Protected:
 				if (isBase)
 					break;
-				assert this.CurrentMethod.Parent is CiClass currentClass;
-				assert scope is CiClass scopeClass;
+				assert this.CurrentMethod.Parent is FuClass currentClass;
+				assert scope is FuClass scopeClass;
 				if (!currentClass.IsSameOrBaseOf(scopeClass)) // enforced by C++/C#/TS but not Java 
 					ReportError(expr, $"Cannot access protected member {expr.Name}");
 				break;
-			case CiVisibility.NumericElementType:
-				if (left.Type is CiClassType klass && !(klass.GetElementType() is CiNumericType))
+			case FuVisibility.NumericElementType:
+				if (left.Type is FuClassType klass && !(klass.GetElementType() is FuNumericType))
 					ReportError(expr, "Method restricted to collections of numbers");
 				break;
-			case CiVisibility.FinalValueType: // DictionaryAdd
+			case FuVisibility.FinalValueType: // DictionaryAdd
 				if (!left.Type.AsClassType().GetValueType().IsFinal())
 					ReportError(expr, "Method restricted to dictionaries with storage values");
 				break;
 			default:
 				switch (expr.Symbol.Id) {
-				case CiId.ArrayLength:
-					assert left.Type is CiArrayStorageType arrayStorage;
+				case FuId.ArrayLength:
+					assert left.Type is FuArrayStorageType arrayStorage;
 					return ToLiteralLong(expr, arrayStorage.Length);
-				case CiId.StringLength:
-					if (left is CiLiteralString leftLiteral) {
+				case FuId.StringLength:
+					if (left is FuLiteralString leftLiteral) {
 						int length = leftLiteral.GetAsciiLength();
 						if (length >= 0)
 							return ToLiteralLong(expr, length);
@@ -281,8 +281,8 @@ public class CiSema
 				}
 				break;
 			}
-			if (!(member is CiMethodGroup)) {
-				if (left is CiSymbolReference leftContainer && leftContainer.Symbol is CiContainerType) {
+			if (!(member is FuMethodGroup)) {
+				if (left is FuSymbolReference leftContainer && leftContainer.Symbol is FuContainerType) {
 					if (!member.IsStatic())
 						ReportError(expr, $"Cannot use instance member {expr.Name} without an object");
 				}
@@ -290,46 +290,46 @@ public class CiSema
 					ReportError(expr, $"{expr.Name} is static");
 			}
 		}
-		return new CiSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
+		return new FuSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
 	}
 
-	static CiRangeType# Union(CiRangeType# left, CiRangeType#? right)
+	static FuRangeType# Union(FuRangeType# left, FuRangeType#? right)
 	{
 		if (right == null)
 			return left;
 		if (right.Min < left.Min) {
 			if (right.Max >= left.Max)
 				return right;
-			return CiRangeType.New(right.Min, left.Max);
+			return FuRangeType.New(right.Min, left.Max);
 		}
 		if (right.Max > left.Max)
-			return CiRangeType.New(left.Min, right.Max);
+			return FuRangeType.New(left.Min, right.Max);
 		return left;
 	}
 
-	CiType# GetIntegerType(CiExpr left, CiExpr right)
+	FuType# GetIntegerType(FuExpr left, FuExpr right)
 	{
-		CiType# type = this.Program.System.PromoteIntegerTypes(left.Type, right.Type);
+		FuType# type = this.Program.System.PromoteIntegerTypes(left.Type, right.Type);
 		Coerce(left, type);
 		Coerce(right, type);
 		return type;
 	}
 
-	CiIntegerType# GetShiftType(CiExpr left, CiExpr right)
+	FuIntegerType# GetShiftType(FuExpr left, FuExpr right)
 	{
-		CiIntegerType# intType = this.Program.System.IntType;
+		FuIntegerType# intType = this.Program.System.IntType;
 		Coerce(right, intType);
-		if (left.Type.Id == CiId.LongType) {
-			assert left.Type is CiIntegerType# longType;
+		if (left.Type.Id == FuId.LongType) {
+			assert left.Type is FuIntegerType# longType;
 			return longType;
 		}
 		Coerce(left, intType);
 		return intType;
 	}
 
-	CiType# GetNumericType(CiExpr left, CiExpr right)
+	FuType# GetNumericType(FuExpr left, FuExpr right)
 	{
-		CiType# type = this.Program.System.PromoteNumericTypes(left.Type, right.Type);
+		FuType# type = this.Program.System.PromoteNumericTypes(left.Type, right.Type);
 		Coerce(left, type);
 		Coerce(right, type);
 		return type;
@@ -383,15 +383,15 @@ public class CiSema
 
 	static int SaturatedShiftRight(int a, int b) => a >> (b >= 31 || b < 0 ? 31 : b);
 
-	static CiRangeType# BitwiseUnsignedOp(CiRangeType left, CiToken op, CiRangeType right)
+	static FuRangeType# BitwiseUnsignedOp(FuRangeType left, FuToken op, FuRangeType right)
 	{
 		int leftVariableBits = left.GetVariableBits();
 		int rightVariableBits = right.GetVariableBits();
 		int min;
 		int max;
 		switch (op) {
-		case CiToken.And:
-			min = left.Min & right.Min & ~CiRangeType.GetMask(~left.Min & ~right.Min & (leftVariableBits | rightVariableBits));
+		case FuToken.And:
+			min = left.Min & right.Min & ~FuRangeType.GetMask(~left.Min & ~right.Min & (leftVariableBits | rightVariableBits));
 			// Calculate upper bound with variable bits set
 			max = (left.Max | leftVariableBits) & (right.Max | rightVariableBits);
 			// The upper bound will never exceed the input
@@ -400,16 +400,16 @@ public class CiSema
 			if (max > right.Max)
 				max = right.Max;
 			break;
-		case CiToken.Or:
+		case FuToken.Or:
 			min = (left.Min & ~leftVariableBits) | (right.Min & ~rightVariableBits);
-			max = left.Max | right.Max | CiRangeType.GetMask(left.Max & right.Max & CiRangeType.GetMask(leftVariableBits | rightVariableBits));
+			max = left.Max | right.Max | FuRangeType.GetMask(left.Max & right.Max & FuRangeType.GetMask(leftVariableBits | rightVariableBits));
 			// The lower bound will never be less than the input
 			if (min < left.Min)
 				min = left.Min;
 			if (min < right.Min)
 				min = right.Min;
 			break;
-		case CiToken.Xor:
+		case FuToken.Xor:
 			int variableBits = leftVariableBits | rightVariableBits;
 			min = (left.Min ^ right.Min) & ~variableBits;
 			max = (left.Max ^ right.Max) | variableBits;
@@ -418,14 +418,14 @@ public class CiSema
 			assert false;
 		}
 		if (min > max)
-			return CiRangeType.New(max, min); // FIXME: this is wrong! e.g. min=0 max=0x8000000_00000000 then 5 should be in range
-		return CiRangeType.New(min, max);
+			return FuRangeType.New(max, min); // FIXME: this is wrong! e.g. min=0 max=0x8000000_00000000 then 5 should be in range
+		return FuRangeType.New(min, max);
 	}
 
-	bool IsEnumOp(CiExpr left, CiExpr right)
+	bool IsEnumOp(FuExpr left, FuExpr right)
 	{
-		if (left.Type is CiEnum) {
-			if (left.Type.Id != CiId.BoolType && !(left.Type is CiEnumFlags))
+		if (left.Type is FuEnum) {
+			if (left.Type.Id != FuId.BoolType && !(left.Type is FuEnumFlags))
 				ReportError(left, $"Define flags enumeration as: enum* {left.Type}");
 			Coerce(right, left.Type);
 			return true;
@@ -433,12 +433,12 @@ public class CiSema
 		return false;
 	}
 
-	CiType# BitwiseOp(CiExpr left, CiToken op, CiExpr right)
+	FuType# BitwiseOp(FuExpr left, FuToken op, FuExpr right)
 	{
-		if (left.Type is CiRangeType# leftRange && right.Type is CiRangeType# rightRange) {
-			CiRangeType#? range = null;
-			CiRangeType#? rightNegative;
-			CiRangeType#? rightPositive;
+		if (left.Type is FuRangeType# leftRange && right.Type is FuRangeType# rightRange) {
+			FuRangeType#? range = null;
+			FuRangeType#? rightNegative;
+			FuRangeType#? rightPositive;
 			if (rightRange.Min >= 0) {
 				rightNegative = null;
 				rightPositive = rightRange;
@@ -448,18 +448,18 @@ public class CiSema
 				rightPositive = null;
 			}
 			else {
-				rightNegative = CiRangeType.New(rightRange.Min, -1);
-				rightPositive = CiRangeType.New(0, rightRange.Max);
+				rightNegative = FuRangeType.New(rightRange.Min, -1);
+				rightPositive = FuRangeType.New(0, rightRange.Max);
 			}
 			if (leftRange.Min < 0) {
-				CiRangeType leftNegative = leftRange.Max < 0 ? leftRange : CiRangeType.New(leftRange.Min, -1);
+				FuRangeType leftNegative = leftRange.Max < 0 ? leftRange : FuRangeType.New(leftRange.Min, -1);
 				if (rightNegative != null)
 					range = BitwiseUnsignedOp(leftNegative, op, rightNegative);
 				if (rightPositive != null)
 					range = Union(BitwiseUnsignedOp(leftNegative, op, rightPositive), range);
 			}
 			if (leftRange.Max >= 0) {
-				CiRangeType leftPositive = leftRange.Min >= 0 ? leftRange : CiRangeType.New(0, leftRange.Max);
+				FuRangeType leftPositive = leftRange.Min >= 0 ? leftRange : FuRangeType.New(0, leftRange.Max);
 				if (rightNegative != null)
 					range = Union(BitwiseUnsignedOp(leftPositive, op, rightNegative), range);
 				if (rightPositive != null)
@@ -472,7 +472,7 @@ public class CiSema
 		return GetIntegerType(left, right);
 	}
 
-	static CiRangeType# NewRangeType(int a, int b, int c, int d)
+	static FuRangeType# NewRangeType(int a, int b, int c, int d)
 	{
 		if (a > b) {
 			int t = a;
@@ -484,59 +484,59 @@ public class CiSema
 			c = d;
 			d = t;
 		}
-		return CiRangeType.New(a <= c ? a : c, b >= d ? b : d);
+		return FuRangeType.New(a <= c ? a : c, b >= d ? b : d);
 	}
 
-	CiLiteral# ToLiteralBool(CiExpr expr, bool value)
+	FuLiteral# ToLiteralBool(FuExpr expr, bool value)
 	{
-		CiLiteral# result = value ? new CiLiteralTrue() : new CiLiteralFalse();
+		FuLiteral# result = value ? new FuLiteralTrue() : new FuLiteralFalse();
 		result.Line = expr.Line;
 		result.Type = this.Program.System.BoolType;
 		return result;
 	}
 
-	CiLiteralLong# ToLiteralLong(CiExpr expr, long value) => this.Program.System.NewLiteralLong(value, expr.Line);
+	FuLiteralLong# ToLiteralLong(FuExpr expr, long value) => this.Program.System.NewLiteralLong(value, expr.Line);
 
-	CiLiteralDouble# ToLiteralDouble(CiExpr expr, double value) => new CiLiteralDouble { Line = expr.Line, Type = this.Program.System.DoubleType, Value = value };
+	FuLiteralDouble# ToLiteralDouble(FuExpr expr, double value) => new FuLiteralDouble { Line = expr.Line, Type = this.Program.System.DoubleType, Value = value };
 
-	void CheckLValue(CiExpr expr)
+	void CheckLValue(FuExpr expr)
 	{
 		switch (expr) {
-		case CiSymbolReference symbol:
+		case FuSymbolReference symbol:
 			switch (symbol.Symbol) {
-			case CiVar! def:
+			case FuVar! def:
 				def.IsAssigned = true;
 				switch (symbol.Symbol.Parent) {
-				case CiFor! forLoop:
+				case FuFor! forLoop:
 					forLoop.IsRange = false;
 					break;
-				case CiForeach _:
+				case FuForeach _:
 					ReportError(expr, "Cannot assign a foreach iteration variable");
 					break;
 				default:
 					break;
 				}
-				for (CiScope! scope = this.CurrentScope; !(scope is CiClass); scope = scope.Parent) {
-					if (scope is CiFor! forLoop
+				for (FuScope! scope = this.CurrentScope; !(scope is FuClass); scope = scope.Parent) {
+					if (scope is FuFor! forLoop
 					 && forLoop.IsRange
-					 && forLoop.Cond is CiBinaryExpr binaryCond
+					 && forLoop.Cond is FuBinaryExpr binaryCond
 					 && binaryCond.Right.IsReferenceTo(symbol.Symbol))
 						forLoop.IsRange = false;
 				}
 				break;
-			case CiField _:
+			case FuField _:
 				if (symbol.Left == null) {
 					if (!this.CurrentMethod.IsMutator)
 						ReportError(expr, "Cannot modify field in a non-mutating method");
 				}
 				else {
 					switch (symbol.Left.Type) {
-					case CiStorageType _:
+					case FuStorageType _:
 						// TODO
 						break;
-					case CiReadWriteClassType _:
+					case FuReadWriteClassType _:
 						break;
-					case CiClassType _:
+					case FuClassType _:
 						ReportError(expr, "Cannot modify field through a read-only reference");
 						break;
 					default:
@@ -549,14 +549,14 @@ public class CiSema
 				break;
 			}
 			break;
-		case CiBinaryExpr indexing when indexing.Op == CiToken.LeftBracket:
+		case FuBinaryExpr indexing when indexing.Op == FuToken.LeftBracket:
 			switch (indexing.Left.Type) {
-			case CiStorageType _:
+			case FuStorageType _:
 				// TODO
 				break;
-			case CiReadWriteClassType _:
+			case FuReadWriteClassType _:
 				break;
-			case CiClassType _:
+			case FuClassType _:
 				ReportError(expr, "Cannot modify array through a read-only reference");
 				break;
 			default:
@@ -569,27 +569,27 @@ public class CiSema
 		}
 	}
 
-	CiInterpolatedString# Concatenate(CiInterpolatedString left, CiInterpolatedString right)
+	FuInterpolatedString# Concatenate(FuInterpolatedString left, FuInterpolatedString right)
 	{
-		CiInterpolatedString# result = new CiInterpolatedString { Line = left.Line, Type = this.Program.System.StringStorageType };
+		FuInterpolatedString# result = new FuInterpolatedString { Line = left.Line, Type = this.Program.System.StringStorageType };
 		result.Parts.AddRange(left.Parts);
 		if (right.Parts.Count == 0)
 			result.Suffix = left.Suffix + right.Suffix;
 		else {
 			result.Parts.AddRange(right.Parts);
-			CiInterpolatedPart! middle = result.Parts[left.Parts.Count];
+			FuInterpolatedPart! middle = result.Parts[left.Parts.Count];
 			middle.Prefix = left.Suffix + middle.Prefix;
 			result.Suffix = right.Suffix;
 		}
 		return result;
 	}
 
-	CiInterpolatedString# ToInterpolatedString(CiExpr# expr)
+	FuInterpolatedString# ToInterpolatedString(FuExpr# expr)
 	{
-		if (expr is CiInterpolatedString# interpolated)
+		if (expr is FuInterpolatedString# interpolated)
 			return interpolated;
-		CiInterpolatedString# result = new CiInterpolatedString { Line = expr.Line, Type = this.Program.System.StringStorageType };
-		if (expr is CiLiteral literal)
+		FuInterpolatedString# result = new FuInterpolatedString { Line = expr.Line, Type = this.Program.System.StringStorageType };
+		if (expr is FuLiteral literal)
 			result.Suffix = literal.GetLiteralString();
 		else {
 			result.AddPart("", expr);
@@ -598,18 +598,18 @@ public class CiSema
 		return result;
 	}
 
-	void CheckComparison(CiExpr left, CiExpr right)
+	void CheckComparison(FuExpr left, FuExpr right)
 	{
-		if (left.Type is CiEnum)
+		if (left.Type is FuEnum)
 			Coerce(right, left.Type);
 		else {
-			CiType doubleType = this.Program.System.DoubleType;
+			FuType doubleType = this.Program.System.DoubleType;
 			Coerce(left, doubleType);
 			Coerce(right, doubleType);
 		}
 	}
 
-	void OpenScope!(CiScope! scope)
+	void OpenScope!(FuScope! scope)
 	{
 		scope.Parent = this.CurrentScope;
 		this.CurrentScope = scope;
@@ -620,29 +620,29 @@ public class CiSema
 		this.CurrentScope = this.CurrentScope.Parent;
 	}
 
-	CiExpr# ResolveNew!(CiPrefixExpr# expr)
+	FuExpr# ResolveNew!(FuPrefixExpr# expr)
 	{
 		if (expr.Type != null)
 			return expr;
-		CiType# type;
-		if (expr.Inner is CiBinaryExpr binaryNew && binaryNew.Op == CiToken.LeftBrace) {
+		FuType# type;
+		if (expr.Inner is FuBinaryExpr binaryNew && binaryNew.Op == FuToken.LeftBrace) {
 			type = ToType(binaryNew.Left, true);
-			if (!(type is CiClassType klass) || klass is CiReadWriteClassType)
+			if (!(type is FuClassType klass) || klass is FuReadWriteClassType)
 				return PoisonError(expr, "Invalid argument to new");
-			assert binaryNew.Right is CiAggregateInitializer# init;
+			assert binaryNew.Right is FuAggregateInitializer# init;
 			ResolveObjectLiteral(klass, init);
-			expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = klass.Class };
+			expr.Type = new FuDynamicPtrType { Line = expr.Line, Class = klass.Class };
 			expr.Inner = init;
 			return expr;
 		}
 		type = ToType(expr.Inner, true);
 		switch (type) {
-		case CiArrayStorageType array:
-			expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = this.Program.System.ArrayPtrClass, TypeArg0 = array.GetElementType() };
+		case FuArrayStorageType array:
+			expr.Type = new FuDynamicPtrType { Line = expr.Line, Class = this.Program.System.ArrayPtrClass, TypeArg0 = array.GetElementType() };
 			expr.Inner = array.LengthExpr;
 			return expr;
-		case CiStorageType klass:
-			expr.Type = new CiDynamicPtrType { Line = expr.Line, Class = klass.Class };
+		case FuStorageType klass:
+			expr.Type = new FuDynamicPtrType { Line = expr.Line, Class = klass.Class };
 			expr.Inner = null;
 			return expr;
 		default:
@@ -650,161 +650,161 @@ public class CiSema
 		}
 	}
 
-	protected virtual int GetResourceLength!(string name, CiPrefixExpr expr) => 0;
+	protected virtual int GetResourceLength!(string name, FuPrefixExpr expr) => 0;
 
-	CiExpr# VisitPrefixExpr!(CiPrefixExpr# expr)
+	FuExpr# VisitPrefixExpr!(FuPrefixExpr# expr)
 	{
-		CiExpr# inner;
-		CiType# type;
+		FuExpr# inner;
+		FuType# type;
 		switch (expr.Op) {
-		case CiToken.Increment:
-		case CiToken.Decrement:
+		case FuToken.Increment:
+		case FuToken.Decrement:
 			inner = VisitExpr(expr.Inner);
 			CheckLValue(inner);
 			Coerce(inner, this.Program.System.DoubleType);
-			if (inner.Type is CiRangeType xcrementRange) {
-				int delta = expr.Op == CiToken.Increment ? 1 : -1;
-				type = CiRangeType.New(xcrementRange.Min + delta, xcrementRange.Max + delta); // FIXME: overflow
+			if (inner.Type is FuRangeType xcrementRange) {
+				int delta = expr.Op == FuToken.Increment ? 1 : -1;
+				type = FuRangeType.New(xcrementRange.Min + delta, xcrementRange.Max + delta); // FIXME: overflow
 			}
 			else
 				type = inner.Type;
 			expr.Inner = inner;
 			expr.Type = type;
 			return expr;
-		case CiToken.Minus:
+		case FuToken.Minus:
 			inner = VisitExpr(expr.Inner);
 			Coerce(inner, this.Program.System.DoubleType);
-			if (inner.Type is CiRangeType negRange) {
+			if (inner.Type is FuRangeType negRange) {
 				if (negRange.Min == negRange.Max)
 					return ToLiteralLong(expr, -negRange.Min);
-				type = CiRangeType.New(SaturatedNeg(negRange.Max), SaturatedNeg(negRange.Min));
+				type = FuRangeType.New(SaturatedNeg(negRange.Max), SaturatedNeg(negRange.Min));
 			}
-			else if (inner is CiLiteralDouble d)
+			else if (inner is FuLiteralDouble d)
 				return ToLiteralDouble(expr, -d.Value);
-			else if (inner is CiLiteralLong l)
+			else if (inner is FuLiteralLong l)
 				return ToLiteralLong(expr, -l.Value);
 			else
 				type = inner.Type;
 			break;
-		case CiToken.Tilde:
+		case FuToken.Tilde:
 			inner = VisitExpr(expr.Inner);
-			if (inner.Type is CiEnumFlags)
+			if (inner.Type is FuEnumFlags)
 				type = inner.Type;
 			else {
 				Coerce(inner, this.Program.System.IntType);
-				if (inner.Type is CiRangeType notRange)
-					type = CiRangeType.New(~notRange.Max, ~notRange.Min);
+				if (inner.Type is FuRangeType notRange)
+					type = FuRangeType.New(~notRange.Max, ~notRange.Min);
 				else
 					type = inner.Type;
 			}
 			break;
-		case CiToken.ExclamationMark:
+		case FuToken.ExclamationMark:
 			inner = ResolveBool(expr.Inner);
-			return new CiPrefixExpr { Line = expr.Line, Op = CiToken.ExclamationMark, Inner = inner, Type = this.Program.System.BoolType };
-		case CiToken.New:
+			return new FuPrefixExpr { Line = expr.Line, Op = FuToken.ExclamationMark, Inner = inner, Type = this.Program.System.BoolType };
+		case FuToken.New:
 			return ResolveNew(expr);
-		case CiToken.Resource:
-			if (!(FoldConst(expr.Inner) is CiLiteralString# resourceName))
+		case FuToken.Resource:
+			if (!(FoldConst(expr.Inner) is FuLiteralString# resourceName))
 				return PoisonError(expr, "Resource name must be a string");
 			inner = resourceName;
-			type = new CiArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = this.Program.System.ByteType, Length = GetResourceLength(resourceName.Value, expr) };
+			type = new FuArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = this.Program.System.ByteType, Length = GetResourceLength(resourceName.Value, expr) };
 			break;
 		default:
 			assert false;
 		}
-		return new CiPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
+		return new FuPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
 	}
 
-	CiExpr# VisitPostfixExpr!(CiPostfixExpr# expr)
+	FuExpr# VisitPostfixExpr!(FuPostfixExpr# expr)
 	{
 		expr.Inner = VisitExpr(expr.Inner);
 		switch (expr.Op) {
-		case CiToken.Increment:
-		case CiToken.Decrement:
+		case FuToken.Increment:
+		case FuToken.Decrement:
 			CheckLValue(expr.Inner);
 			Coerce(expr.Inner, this.Program.System.DoubleType);
 			expr.Type = expr.Inner.Type;
 			return expr;
 		default:
-			return PoisonError(expr, $"Unexpected {CiLexer.TokenToString(expr.Op)}");
+			return PoisonError(expr, $"Unexpected {FuLexer.TokenToString(expr.Op)}");
 		}
 	}
 
-	static bool CanCompareEqual(CiType left, CiType right)
+	static bool CanCompareEqual(FuType left, FuType right)
 	{
 		switch (left) {
-		case CiNumericType _:
-			return right is CiNumericType;
-		case CiEnum _:
+		case FuNumericType _:
+			return right is FuNumericType;
+		case FuEnum _:
 			return left == right;
-		case CiClassType leftClass:
-			if (left.Nullable && right.Id == CiId.NullType)
+		case FuClassType leftClass:
+			if (left.Nullable && right.Id == FuId.NullType)
 				return true;
-			 if ((left is CiStorageType && (right is CiStorageType || right is CiDynamicPtrType))
-			 || (left is CiDynamicPtrType && right is CiStorageType))
+			 if ((left is FuStorageType && (right is FuStorageType || right is FuDynamicPtrType))
+			 || (left is FuDynamicPtrType && right is FuStorageType))
 				return false;
-			return right is CiClassType rightClass
+			return right is FuClassType rightClass
 				&& (leftClass.Class.IsSameOrBaseOf(rightClass.Class) || rightClass.Class.IsSameOrBaseOf(leftClass.Class))
 				&& leftClass.EqualTypeArguments(rightClass);
 		default:
-			return left.Id == CiId.NullType && right.Nullable;
+			return left.Id == FuId.NullType && right.Nullable;
 		}
 	}
 
-	CiExpr# ResolveEquality(CiBinaryExpr expr, CiExpr# left, CiExpr# right)
+	FuExpr# ResolveEquality(FuBinaryExpr expr, FuExpr# left, FuExpr# right)
 	{
 		if (!CanCompareEqual(left.Type, right.Type))
 			return PoisonError(expr, $"Cannot compare {left.Type} with {right.Type}");
-		if (left.Type is CiRangeType leftRange && right.Type is CiRangeType rightRange) {
+		if (left.Type is FuRangeType leftRange && right.Type is FuRangeType rightRange) {
 			if (leftRange.Min == leftRange.Max && leftRange.Min == rightRange.Min && leftRange.Min == rightRange.Max)
-				return ToLiteralBool(expr, expr.Op == CiToken.Equal);
+				return ToLiteralBool(expr, expr.Op == FuToken.Equal);
 			if (leftRange.Max < rightRange.Min || leftRange.Min > rightRange.Max)
-				return ToLiteralBool(expr, expr.Op == CiToken.NotEqual);
+				return ToLiteralBool(expr, expr.Op == FuToken.NotEqual);
 		}
 		else {
 			switch (left) {
-			case CiLiteralLong leftLong when right is CiLiteralLong rightLong:
-				return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ (leftLong.Value == rightLong.Value));
-			case CiLiteralDouble leftDouble when right is CiLiteralDouble rightDouble:
-				return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ (leftDouble.Value == rightDouble.Value));
-			case CiLiteralString leftString when right is CiLiteralString rightString:
-				return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ (leftString.Value == rightString.Value));
-			case CiLiteralNull _ when right is CiLiteralNull:
-			case CiLiteralFalse _ when right is CiLiteralFalse:
-			case CiLiteralTrue _ when right is CiLiteralTrue:
-				return ToLiteralBool(expr, expr.Op == CiToken.Equal);
-			case CiLiteralFalse _ when right is CiLiteralTrue:
-			case CiLiteralTrue _ when right is CiLiteralFalse:
-				return ToLiteralBool(expr, expr.Op == CiToken.NotEqual);
+			case FuLiteralLong leftLong when right is FuLiteralLong rightLong:
+				return ToLiteralBool(expr, (expr.Op == FuToken.NotEqual) ^ (leftLong.Value == rightLong.Value));
+			case FuLiteralDouble leftDouble when right is FuLiteralDouble rightDouble:
+				return ToLiteralBool(expr, (expr.Op == FuToken.NotEqual) ^ (leftDouble.Value == rightDouble.Value));
+			case FuLiteralString leftString when right is FuLiteralString rightString:
+				return ToLiteralBool(expr, (expr.Op == FuToken.NotEqual) ^ (leftString.Value == rightString.Value));
+			case FuLiteralNull _ when right is FuLiteralNull:
+			case FuLiteralFalse _ when right is FuLiteralFalse:
+			case FuLiteralTrue _ when right is FuLiteralTrue:
+				return ToLiteralBool(expr, expr.Op == FuToken.Equal);
+			case FuLiteralFalse _ when right is FuLiteralTrue:
+			case FuLiteralTrue _ when right is FuLiteralFalse:
+				return ToLiteralBool(expr, expr.Op == FuToken.NotEqual);
 			default:
 				break;
 			}
 			if (left.IsConstEnum() && right.IsConstEnum())
-				return ToLiteralBool(expr, (expr.Op == CiToken.NotEqual) ^ (left.IntValue() == right.IntValue()));
+				return ToLiteralBool(expr, (expr.Op == FuToken.NotEqual) ^ (left.IntValue() == right.IntValue()));
 		}
 		TakePtr(left);
 		TakePtr(right);
-		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = this.Program.System.BoolType };
+		return new FuBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = this.Program.System.BoolType };
 	}
 
-	CiExpr# ResolveIs(CiBinaryExpr# expr, CiExpr# left, CiExpr right)
+	FuExpr# ResolveIs(FuBinaryExpr# expr, FuExpr# left, FuExpr right)
 	{
-		if (!(left.Type is CiClassType leftPtr) || left.Type is CiStorageType)
+		if (!(left.Type is FuClassType leftPtr) || left.Type is FuStorageType)
 			return PoisonError(expr, "Left hand side of the 'is' operator must be an object reference");
-		CiClass klass;
+		FuClass klass;
 		switch (right) {
-		case CiSymbolReference symbol:
-			if (symbol.Symbol is CiClass klass2)
+		case FuSymbolReference symbol:
+			if (symbol.Symbol is FuClass klass2)
 				klass = klass2;
 			else
 				return PoisonError(expr, "Right hand side of the 'is' operator must be a class name");
 			break;
-		case CiVar def:
-			if (!(def.Type is CiClassType rightPtr))
+		case FuVar def:
+			if (!(def.Type is FuClassType rightPtr))
 				return PoisonError(expr, "Right hand side of the 'is' operator must be an object reference definition");
-			if (rightPtr is CiReadWriteClassType
-			 && !(leftPtr is CiDynamicPtrType)
-			 && (rightPtr is CiDynamicPtrType || !(leftPtr is CiReadWriteClassType)))
+			if (rightPtr is FuReadWriteClassType
+			 && !(leftPtr is FuDynamicPtrType)
+			 && (rightPtr is FuDynamicPtrType || !(leftPtr is FuReadWriteClassType)))
 				return PoisonError(expr, $"{leftPtr} cannot be casted to {rightPtr}");
 			// TODO: outside assert NotSupported(expr, "'is' operator", "c", "cpp", "js", "py", "swift", "ts", "cl");
 			klass = rightPtr.Class;
@@ -821,40 +821,40 @@ public class CiSema
 		return expr;
 	}
 
-	CiExpr# VisitBinaryExpr!(CiBinaryExpr# expr)
+	FuExpr# VisitBinaryExpr!(FuBinaryExpr# expr)
 	{
-		CiExpr# left = VisitExpr(expr.Left);
-		CiExpr# right = VisitExpr(expr.Right);
+		FuExpr# left = VisitExpr(expr.Left);
+		FuExpr# right = VisitExpr(expr.Right);
 		if (left == this.Poison || right == this.Poison)
 			return this.Poison;
-		CiType# type;
+		FuType# type;
 
 		switch (expr.Op) {
-		case CiToken.LeftBracket:
-			if (!(left.Type is CiClassType klass))
+		case FuToken.LeftBracket:
+			if (!(left.Type is FuClassType klass))
 				return PoisonError(expr, "Cannot index this object");
 			switch (klass.Class.Id) {
-			case CiId.StringClass:
+			case FuId.StringClass:
 				Coerce(right, this.Program.System.IntType);
-				if (left is CiLiteralString stringLiteral && right is CiLiteralLong indexLiteral) {
+				if (left is FuLiteralString stringLiteral && right is FuLiteralLong indexLiteral) {
 					long i = indexLiteral.Value;
 					if (i >= 0 && i <= int.MaxValue) {
 						int c = stringLiteral.GetAsciiAt(i);
 						if (c >= 0)
-							return CiLiteralChar.New(c, expr.Line);
+							return FuLiteralChar.New(c, expr.Line);
 					}
 				}
 				type = this.Program.System.CharType;
 				break;
-			case CiId.ArrayPtrClass:
-			case CiId.ArrayStorageClass:
-			case CiId.ListClass:
+			case FuId.ArrayPtrClass:
+			case FuId.ArrayStorageClass:
+			case FuId.ListClass:
 				Coerce(right, this.Program.System.IntType);
 				type = klass.GetElementType();
 				break;
-			case CiId.DictionaryClass:
-			case CiId.SortedDictionaryClass:
-			case CiId.OrderedDictionaryClass:
+			case FuId.DictionaryClass:
+			case FuId.SortedDictionaryClass:
+			case FuId.OrderedDictionaryClass:
 				Coerce(right, klass.GetKeyType());
 				type = klass.GetValueType();
 				break;
@@ -863,34 +863,34 @@ public class CiSema
 			}
 			break;
 
-		case CiToken.Plus:
-			if (left.Type is CiRangeType leftAdd && right.Type is CiRangeType rightAdd) {
-				type = CiRangeType.New(
+		case FuToken.Plus:
+			if (left.Type is FuRangeType leftAdd && right.Type is FuRangeType rightAdd) {
+				type = FuRangeType.New(
 					SaturatedAdd(leftAdd.Min, rightAdd.Min),
 					SaturatedAdd(leftAdd.Max, rightAdd.Max));
 			}
-			else if (left.Type is CiStringType) {
+			else if (left.Type is FuStringType) {
 				Coerce(right, this.Program.System.StringPtrType);
-				if (left is CiLiteral leftLiteral && right is CiLiteral rightLiteral)
+				if (left is FuLiteral leftLiteral && right is FuLiteral rightLiteral)
 					return this.Program.System.NewLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString(), expr.Line);
-				if (left is CiInterpolatedString || right is CiInterpolatedString)
+				if (left is FuInterpolatedString || right is FuInterpolatedString)
 					return Concatenate(ToInterpolatedString(left), ToInterpolatedString(right));
 				type = this.Program.System.StringStorageType;
 			}
 			else
 				type = GetNumericType(left, right);
 			break;
-		case CiToken.Minus:
-			if (left.Type is CiRangeType leftSub && right.Type is CiRangeType rightSub) {
-				type = CiRangeType.New(
+		case FuToken.Minus:
+			if (left.Type is FuRangeType leftSub && right.Type is FuRangeType rightSub) {
+				type = FuRangeType.New(
 					SaturatedSub(leftSub.Min, rightSub.Max),
 					SaturatedSub(leftSub.Max, rightSub.Min));
 			}
 			else
 				type = GetNumericType(left, right);
 			break;
-		case CiToken.Asterisk:
-			if (left.Type is CiRangeType leftMul && right.Type is CiRangeType rightMul) {
+		case FuToken.Asterisk:
+			if (left.Type is FuRangeType leftMul && right.Type is FuRangeType rightMul) {
 				type = NewRangeType(
 					SaturatedMul(leftMul.Min, rightMul.Min),
 					SaturatedMul(leftMul.Min, rightMul.Max),
@@ -900,8 +900,8 @@ public class CiSema
 			else
 				type = GetNumericType(left, right);
 			break;
-		case CiToken.Slash:
-			if (left.Type is CiRangeType leftDiv && right.Type is CiRangeType rightDiv) {
+		case FuToken.Slash:
+			if (left.Type is FuRangeType leftDiv && right.Type is FuRangeType rightDiv) {
 				int denMin = rightDiv.Min;
 				if (denMin == 0)
 					denMin = 1;
@@ -917,12 +917,12 @@ public class CiSema
 			else
 				type = GetNumericType(left, right);
 			break;
-		case CiToken.Mod:
-			if (left.Type is CiRangeType leftMod && right.Type is CiRangeType rightMod) {
+		case FuToken.Mod:
+			if (left.Type is FuRangeType leftMod && right.Type is FuRangeType rightMod) {
 				int den = ~Math.Min(rightMod.Min, -rightMod.Max); // max(abs(rightRange))-1
 				if (den < 0)
 					return PoisonError(expr, "Mod zero");
-				type = CiRangeType.New(
+				type = FuRangeType.New(
 					leftMod.Min >= 0 ? 0 : Math.Max(leftMod.Min, -den),
 					leftMod.Max < 0 ? 0 : Math.Min(leftMod.Max, den));
 			}
@@ -930,26 +930,26 @@ public class CiSema
 				type = GetIntegerType(left, right);
 			break;
 
-		case CiToken.And:
-		case CiToken.Or:
-		case CiToken.Xor:
+		case FuToken.And:
+		case FuToken.Or:
+		case FuToken.Xor:
 			type = BitwiseOp(left, expr.Op, right);
 			break;
 
-		case CiToken.ShiftLeft:
-			if (left.Type is CiRangeType leftShl && right.Type is CiRangeType rightShl && leftShl.Min == leftShl.Max && rightShl.Min == rightShl.Max) {
+		case FuToken.ShiftLeft:
+			if (left.Type is FuRangeType leftShl && right.Type is FuRangeType rightShl && leftShl.Min == leftShl.Max && rightShl.Min == rightShl.Max) {
 				// TODO: improve
 				int result = leftShl.Min << rightShl.Min;
-				type = CiRangeType.New(result, result);
+				type = FuRangeType.New(result, result);
 			}
 			else
 				type = GetShiftType(left, right);
 			break;
-		case CiToken.ShiftRight:
-			if (left.Type is CiRangeType leftShr && right.Type is CiRangeType rightShr) {
+		case FuToken.ShiftRight:
+			if (left.Type is FuRangeType leftShr && right.Type is FuRangeType rightShr) {
 				if (rightShr.Min < 0)
-					rightShr = CiRangeType.New(0, 32);
-				type = CiRangeType.New(
+					rightShr = FuRangeType.New(0, 32);
+				type = FuRangeType.New(
 					SaturatedShiftRight(leftShr.Min, leftShr.Min < 0 ? rightShr.Min : rightShr.Max),
 					SaturatedShiftRight(leftShr.Max, leftShr.Max < 0 ? rightShr.Max : rightShr.Min));
 			}
@@ -957,11 +957,11 @@ public class CiSema
 				type = GetShiftType(left, right);
 			break;
 
-		case CiToken.Equal:
-		case CiToken.NotEqual:
+		case FuToken.Equal:
+		case FuToken.NotEqual:
 			return ResolveEquality(expr, left, right);
-		case CiToken.Less:
-			if (left.Type is CiRangeType leftLess && right.Type is CiRangeType rightLess) {
+		case FuToken.Less:
+			if (left.Type is FuRangeType leftLess && right.Type is FuRangeType rightLess) {
 				if (leftLess.Max < rightLess.Min)
 					return ToLiteralBool(expr, true);
 				if (leftLess.Min >= rightLess.Max)
@@ -971,8 +971,8 @@ public class CiSema
 				CheckComparison(left, right);
 			type = this.Program.System.BoolType;
 			break;
-		case CiToken.LessOrEqual:
-			if (left.Type is CiRangeType leftLeq && right.Type is CiRangeType rightLeq) {
+		case FuToken.LessOrEqual:
+			if (left.Type is FuRangeType leftLeq && right.Type is FuRangeType rightLeq) {
 				if (leftLeq.Max <= rightLeq.Min)
 					return ToLiteralBool(expr, true);
 				if (leftLeq.Min > rightLeq.Max)
@@ -982,8 +982,8 @@ public class CiSema
 				CheckComparison(left, right);
 			type = this.Program.System.BoolType;
 			break;
-		case CiToken.Greater:
-			if (left.Type is CiRangeType leftGreater && right.Type is CiRangeType rightGreater) {
+		case FuToken.Greater:
+			if (left.Type is FuRangeType leftGreater && right.Type is FuRangeType rightGreater) {
 				if (leftGreater.Min > rightGreater.Max)
 					return ToLiteralBool(expr, true);
 				if (leftGreater.Max <= rightGreater.Min)
@@ -993,8 +993,8 @@ public class CiSema
 				CheckComparison(left, right);
 			type = this.Program.System.BoolType;
 			break;
-		case CiToken.GreaterOrEqual:
-			if (left.Type is CiRangeType leftGeq && right.Type is CiRangeType rightGeq) {
+		case FuToken.GreaterOrEqual:
+			if (left.Type is FuRangeType leftGeq && right.Type is FuRangeType rightGeq) {
 				if (leftGeq.Min >= rightGeq.Max)
 					return ToLiteralBool(expr, true);
 				if (leftGeq.Max < rightGeq.Min)
@@ -1005,26 +1005,26 @@ public class CiSema
 			type = this.Program.System.BoolType;
 			break;
 
-		case CiToken.CondAnd:
+		case FuToken.CondAnd:
 			Coerce(left, this.Program.System.BoolType);
 			Coerce(right, this.Program.System.BoolType);
-			if (left is CiLiteralTrue)
+			if (left is FuLiteralTrue)
 				return right;
-			if (left is CiLiteralFalse || right is CiLiteralTrue)
+			if (left is FuLiteralFalse || right is FuLiteralTrue)
 				return left;
 			type = this.Program.System.BoolType;
 			break;
-		case CiToken.CondOr:
+		case FuToken.CondOr:
 			Coerce(left, this.Program.System.BoolType);
 			Coerce(right, this.Program.System.BoolType);
-			if (left is CiLiteralTrue || right is CiLiteralFalse)
+			if (left is FuLiteralTrue || right is FuLiteralFalse)
 				return left;
-			if (left is CiLiteralFalse)
+			if (left is FuLiteralFalse)
 				return right;
 			type = this.Program.System.BoolType;
 			break;
 
-		case CiToken.Assign:
+		case FuToken.Assign:
 			CheckLValue(left);
 			Coerce(right, left.Type);
 			expr.Left = left;
@@ -1032,9 +1032,9 @@ public class CiSema
 			expr.Type = left.Type;
 			return expr;
 
-		case CiToken.AddAssign:
+		case FuToken.AddAssign:
 			CheckLValue(left);
-			if (left.Type.Id == CiId.StringStorageType)
+			if (left.Type.Id == FuId.StringStorageType)
 				Coerce(right, this.Program.System.StringPtrType);
 			else {
 				Coerce(left, this.Program.System.DoubleType);
@@ -1045,9 +1045,9 @@ public class CiSema
 			expr.Type = left.Type;
 			return expr;
 
-		case CiToken.SubAssign:
-		case CiToken.MulAssign:
-		case CiToken.DivAssign:
+		case FuToken.SubAssign:
+		case FuToken.MulAssign:
+		case FuToken.DivAssign:
 			CheckLValue(left);
 			Coerce(left, this.Program.System.DoubleType);
 			Coerce(right, left.Type);
@@ -1056,9 +1056,9 @@ public class CiSema
 			expr.Type = left.Type;
 			return expr;
 
-		case CiToken.ModAssign:
-		case CiToken.ShiftLeftAssign:
-		case CiToken.ShiftRightAssign:
+		case FuToken.ModAssign:
+		case FuToken.ShiftLeftAssign:
+		case FuToken.ShiftRightAssign:
 			CheckLValue(left);
 			Coerce(left, this.Program.System.IntType);
 			Coerce(right, this.Program.System.IntType);
@@ -1067,9 +1067,9 @@ public class CiSema
 			expr.Type = left.Type;
 			return expr;
 
-		case CiToken.AndAssign:
-		case CiToken.OrAssign:
-		case CiToken.XorAssign:
+		case FuToken.AndAssign:
+		case FuToken.OrAssign:
+		case FuToken.XorAssign:
 			CheckLValue(left);
 			if (!IsEnumOp(left, right)) {
 				Coerce(left, this.Program.System.IntType);
@@ -1080,33 +1080,33 @@ public class CiSema
 			expr.Type = left.Type;
 			return expr;
 
-		case CiToken.Is:
+		case FuToken.Is:
 			return ResolveIs(expr, left, right);
 
-		case CiToken.Range:
+		case FuToken.Range:
 			return PoisonError(expr, "Range within an expression");
 		default:
 			assert false;
 		}
-		if (type is CiRangeType range && range.Min == range.Max)
+		if (type is FuRangeType range && range.Min == range.Max)
 			return ToLiteralLong(expr, range.Min);
-		return new CiBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = type };
+		return new FuBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = type };
 	}
 
-	CiType# TryGetPtr(CiType# type, bool nullable)
+	FuType# TryGetPtr(FuType# type, bool nullable)
 	{
-		if (type.Id == CiId.StringStorageType)
+		if (type.Id == FuId.StringStorageType)
 			return nullable ? this.Program.System.StringNullablePtrType : this.Program.System.StringPtrType;
-		if (type is CiStorageType storage)
-			return new CiReadWriteClassType { Class = storage.Class.Id == CiId.ArrayStorageClass ? this.Program.System.ArrayPtrClass : storage.Class, Nullable = nullable, TypeArg0 = storage.TypeArg0, TypeArg1 = storage.TypeArg1 };
-		if (nullable && type is CiClassType ptr && !ptr.Nullable) {
-			CiClassType# result;
-			if (type is CiDynamicPtrType)
-				result = new CiDynamicPtrType();
-			else if (type is CiReadWriteClassType)
-				result = new CiReadWriteClassType();
+		if (type is FuStorageType storage)
+			return new FuReadWriteClassType { Class = storage.Class.Id == FuId.ArrayStorageClass ? this.Program.System.ArrayPtrClass : storage.Class, Nullable = nullable, TypeArg0 = storage.TypeArg0, TypeArg1 = storage.TypeArg1 };
+		if (nullable && type is FuClassType ptr && !ptr.Nullable) {
+			FuClassType# result;
+			if (type is FuDynamicPtrType)
+				result = new FuDynamicPtrType();
+			else if (type is FuReadWriteClassType)
+				result = new FuReadWriteClassType();
 			else
-				result = new CiClassType();
+				result = new FuClassType();
 			result.Class = ptr.Class;
 			result.Nullable = true;
 			result.TypeArg0 = ptr.TypeArg0;
@@ -1116,39 +1116,39 @@ public class CiSema
 		return type;
 	}
 
-	static CiClass? GetLowestCommonAncestor(CiClass left, CiClass right)
+	static FuClass? GetLowestCommonAncestor(FuClass left, FuClass right)
 	{
 		for (;;) {
 			if (left.IsSameOrBaseOf(right))
 				return left;
-			if (left.Parent is CiClass parent)
+			if (left.Parent is FuClass parent)
 				left = parent;
 			else
 				return null;
 		}
 	}
 
-	CiType# GetCommonType(CiExpr left, CiExpr right)
+	FuType# GetCommonType(FuExpr left, FuExpr right)
 	{
-		if (left.Type is CiRangeType# leftRange && right.Type is CiRangeType# rightRange)
+		if (left.Type is FuRangeType# leftRange && right.Type is FuRangeType# rightRange)
 			return Union(leftRange, rightRange);
 		bool nullable = left.Type.Nullable || right.Type.Nullable;
-		CiType# ptr = TryGetPtr(left.Type, nullable);
+		FuType# ptr = TryGetPtr(left.Type, nullable);
 		if (ptr.IsAssignableFrom(right.Type))
 			return ptr;
 		ptr = TryGetPtr(right.Type, nullable);
 		if (ptr.IsAssignableFrom(left.Type))
 			return ptr;
-		if (left.Type is CiClassType leftClass && right.Type is CiClassType rightClass && leftClass.EqualTypeArguments(rightClass)) {
-			CiClass? klass = GetLowestCommonAncestor(leftClass.Class, rightClass.Class);
+		if (left.Type is FuClassType leftClass && right.Type is FuClassType rightClass && leftClass.EqualTypeArguments(rightClass)) {
+			FuClass? klass = GetLowestCommonAncestor(leftClass.Class, rightClass.Class);
 			if (klass != null) {
-				CiClassType# result;
-				if (!(leftClass is CiReadWriteClassType) || !(rightClass is CiReadWriteClassType))
-					result = new CiClassType();
-				else if (leftClass is CiDynamicPtrType && rightClass is CiDynamicPtrType)
-					result = new CiDynamicPtrType();
+				FuClassType# result;
+				if (!(leftClass is FuReadWriteClassType) || !(rightClass is FuReadWriteClassType))
+					result = new FuClassType();
+				else if (leftClass is FuDynamicPtrType && rightClass is FuDynamicPtrType)
+					result = new FuDynamicPtrType();
 				else
-					result = new CiReadWriteClassType();
+					result = new FuReadWriteClassType();
 				result.Class = klass;
 				result.Nullable = nullable;
 				result.TypeArg0 = leftClass.TypeArg0;
@@ -1159,31 +1159,31 @@ public class CiSema
 		return PoisonError(left, $"Incompatible types: {left.Type} and {right.Type}");
 	}
 
-	CiExpr# VisitSelectExpr!(CiSelectExpr expr)
+	FuExpr# VisitSelectExpr!(FuSelectExpr expr)
 	{
-		CiExpr# cond = ResolveBool(expr.Cond);
-		CiExpr# onTrue = VisitExpr(expr.OnTrue);
-		CiExpr# onFalse = VisitExpr(expr.OnFalse);
+		FuExpr# cond = ResolveBool(expr.Cond);
+		FuExpr# onTrue = VisitExpr(expr.OnTrue);
+		FuExpr# onFalse = VisitExpr(expr.OnFalse);
 		if (onTrue == this.Poison || onFalse == this.Poison)
 			return this.Poison;
-		CiType# type = GetCommonType(onTrue, onFalse);
+		FuType# type = GetCommonType(onTrue, onFalse);
 		Coerce(onTrue, type);
 		Coerce(onFalse, type);
-		if (cond is CiLiteralTrue)
+		if (cond is FuLiteralTrue)
 			return onTrue;
-		if (cond is CiLiteralFalse)
+		if (cond is FuLiteralFalse)
 			return onFalse;
-		return new CiSelectExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
+		return new FuSelectExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
 	}
 
-	CiType# EvalType(CiClassType generic, CiType# type)
+	FuType# EvalType(FuClassType generic, FuType# type)
 	{
-		if (type.Id == CiId.TypeParam0)
+		if (type.Id == FuId.TypeParam0)
 			return generic.TypeArg0;
-		if (type.Id == CiId.TypeParam0NotFinal)
+		if (type.Id == FuId.TypeParam0NotFinal)
 			return generic.TypeArg0.IsFinal() ? null : generic.TypeArg0;
-		if (type is CiClassType collection && collection.Class.TypeParameterCount == 1 && collection.TypeArg0.Id == CiId.TypeParam0) {
-			CiClassType# result = type is CiReadWriteClassType ? new CiReadWriteClassType() : new CiClassType();
+		if (type is FuClassType collection && collection.Class.TypeParameterCount == 1 && collection.TypeArg0.Id == FuId.TypeParam0) {
+			FuClassType# result = type is FuReadWriteClassType ? new FuReadWriteClassType() : new FuClassType();
 			result.Class = collection.Class;
 			result.TypeArg0 = generic.TypeArg0;
 			return result;
@@ -1191,14 +1191,14 @@ public class CiSema
 		return type;
 	}
 
-	bool CanCall(CiExpr? obj, CiMethod method, List<CiExpr#> arguments)
+	bool CanCall(FuExpr? obj, FuMethod method, List<FuExpr#> arguments)
 	{
-		CiVar? param = method.Parameters.FirstParameter();
-		foreach (CiExpr arg in arguments) {
+		FuVar? param = method.Parameters.FirstParameter();
+		foreach (FuExpr arg in arguments) {
 			if (param == null)
 				return false;
-			CiType# type = param.Type;
-			if (obj != null && obj.Type is CiClassType generic)
+			FuType# type = param.Type;
+			if (obj != null && obj.Type is FuClassType generic)
 				type = EvalType(generic, type);
 			if (!type.IsAssignableFrom(arg.Type))
 				return false;
@@ -1207,18 +1207,18 @@ public class CiSema
 		return param == null || param.Value != null;
 	}
 
-	CiExpr# ResolveCallWithArguments!(CiCallExpr# expr, List<CiExpr#> arguments)
+	FuExpr# ResolveCallWithArguments!(FuCallExpr# expr, List<FuExpr#> arguments)
 	{
-		if (!(VisitExpr(expr.Method) is CiSymbolReference# symbol))
+		if (!(VisitExpr(expr.Method) is FuSymbolReference# symbol))
 			return this.Poison;
-		CiMethod! method;
+		FuMethod! method;
 		switch (symbol.Symbol) {
 		case null:
 			return this.Poison;
-		case CiMethod! m:
+		case FuMethod! m:
 			method = m;
 			break;
-		case CiMethodGroup group:
+		case FuMethodGroup group:
 			method = group.Methods[0];
 			if (!CanCall(symbol.Left, method, arguments))
 				method = group.Methods[1];
@@ -1229,9 +1229,9 @@ public class CiSema
 
 		// TODO: check static
 		int i = 0;
-		for (CiVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
-			CiType#? type = param.Type;
-			if (symbol.Left != null && symbol.Left.Type is CiClassType generic) {
+		for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+			FuType#? type = param.Type;
+			if (symbol.Left != null && symbol.Left.Type is FuClassType generic) {
 				type = EvalType(generic, type);
 				if (type == null)
 					continue;
@@ -1241,8 +1241,8 @@ public class CiSema
 					break;
 				return PoisonError(expr, $"Too few arguments for '{method.Name}'");
 			}
-			CiExpr! arg = arguments[i++];
-			if (type.Id == CiId.TypeParam0Predicate && arg is CiLambdaExpr! lambda) {
+			FuExpr! arg = arguments[i++];
+			if (type.Id == FuId.TypeParam0Predicate && arg is FuLambdaExpr! lambda) {
 				lambda.First.Type = symbol.Left.Type.AsClassType().TypeArg0;
 				OpenScope(lambda);
 				lambda.Body = VisitExpr(lambda.Body);
@@ -1264,23 +1264,23 @@ public class CiSema
 
 		symbol.Symbol = method;
 
-		if (method.CallType == CiCallType.Static
-		 && method.Body is CiReturn ret
-		 && arguments.All(arg => arg is CiLiteral)
+		if (method.CallType == FuCallType.Static
+		 && method.Body is FuReturn ret
+		 && arguments.All(arg => arg is FuLiteral)
 		 && !this.CurrentPureMethods.Contains(method)) {
 			this.CurrentPureMethods.Add(method);
 			i = 0;
-			for (CiVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+			for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 				if (i < arguments.Count)
 					this.CurrentPureArguments[param] = arguments[i++];
 				else
 					this.CurrentPureArguments[param] = param.Value;
 			}
-			CiExpr# result = VisitExpr(ret.Value);
-			for (CiVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter())
+			FuExpr# result = VisitExpr(ret.Value);
+			for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter())
 				this.CurrentPureArguments.Remove(param);
 			this.CurrentPureMethods.Remove(method);
-			if (result is CiLiteral)
+			if (result is FuLiteral)
 				return result;
 		}
 
@@ -1288,40 +1288,40 @@ public class CiSema
 			this.CurrentMethod.Calls.Add(method);
 		if (this.CurrentPureArguments.Count == 0) {
 			expr.Method = symbol;
-			CiType# type = method.Type;
-			if (symbol.Left != null && symbol.Left.Type is CiClassType generic)
+			FuType# type = method.Type;
+			if (symbol.Left != null && symbol.Left.Type is FuClassType generic)
 				type = EvalType(generic, type);
 			expr.Type = type;
 		}
 		return expr;
 	}
 
-	CiExpr# VisitCallExpr!(CiCallExpr# expr)
+	FuExpr# VisitCallExpr!(FuCallExpr# expr)
 	{
 		if (this.CurrentPureArguments.Count == 0) {
-			List<CiExpr#>! arguments = expr.Arguments;
+			List<FuExpr#>! arguments = expr.Arguments;
 			for (int i = 0; i < arguments.Count; i++) {
-				if (!(arguments[i] is CiLambdaExpr))
+				if (!(arguments[i] is FuLambdaExpr))
 					arguments[i] = VisitExpr(arguments[i]);
 			}
 			return ResolveCallWithArguments(expr, arguments);
 		}
 		else {
-			List<CiExpr#>() arguments;
-			foreach (CiExpr# arg in expr.Arguments)
+			List<FuExpr#>() arguments;
+			foreach (FuExpr# arg in expr.Arguments)
 				arguments.Add(VisitExpr(arg));
 			return ResolveCallWithArguments(expr, arguments);
 		}
 	}
 
-	void ResolveObjectLiteral!(CiClassType klass, CiAggregateInitializer init)
+	void ResolveObjectLiteral!(FuClassType klass, FuAggregateInitializer init)
 	{
-		foreach (CiExpr! item in init.Items) {
-			assert item is CiBinaryExpr! field;
-			assert field.Op == CiToken.Assign;
-			assert field.Left is CiSymbolReference# symbol;
+		foreach (FuExpr! item in init.Items) {
+			assert item is FuBinaryExpr! field;
+			assert field.Op == FuToken.Assign;
+			assert field.Left is FuSymbolReference# symbol;
 			Lookup(symbol, klass.Class);
-			if (symbol.Symbol is CiField) {
+			if (symbol.Symbol is FuField) {
 				field.Right = VisitExpr(field.Right);
 				Coerce(field.Right, symbol.Type);
 			}
@@ -1330,18 +1330,18 @@ public class CiSema
 		}
 	}
 
-	void VisitVar!(CiVar# expr)
+	void VisitVar!(FuVar# expr)
 	{
-		CiType type = ResolveType(expr);
+		FuType type = ResolveType(expr);
 		if (expr.Value != null) {
-			if (type is CiStorageType storage && expr.Value is CiAggregateInitializer init)
+			if (type is FuStorageType storage && expr.Value is FuAggregateInitializer init)
 				ResolveObjectLiteral(storage, init);
 			else {
 				expr.Value = VisitExpr(expr.Value);
 				if (!expr.IsAssignableStorage()) {
-					if (type is CiArrayStorageType array) {
+					if (type is FuArrayStorageType array) {
 						type = array.GetElementType();
-						if (!(expr.Value is CiLiteral literal) || !literal.IsDefaultValue())
+						if (!(expr.Value is FuLiteral literal) || !literal.IsDefaultValue())
 							ReportError(expr.Value, "Only null, zero and false supported as an array initializer");
 					}
 					Coerce(expr.Value, type);
@@ -1351,34 +1351,34 @@ public class CiSema
 		this.CurrentScope.Add(expr);
 	}
 
-	CiExpr# VisitExpr!(CiExpr# expr)
+	FuExpr# VisitExpr!(FuExpr# expr)
 	{
 		switch (expr) {
-		case CiAggregateInitializer! aggregate:
-			List<CiExpr#>! items = aggregate.Items;
+		case FuAggregateInitializer! aggregate:
+			List<FuExpr#>! items = aggregate.Items;
 			for (int i = 0; i < items.Count; i++)
 				items[i] = VisitExpr(items[i]);
 			return expr;
-		case CiLiteral _:
+		case FuLiteral _:
 			return expr;
-		case CiInterpolatedString# interpolated:
+		case FuInterpolatedString# interpolated:
 			return VisitInterpolatedString(interpolated);
-		case CiSymbolReference# symbol:
+		case FuSymbolReference# symbol:
 			return VisitSymbolReference(symbol);
-		case CiPrefixExpr# prefix:
+		case FuPrefixExpr# prefix:
 			return VisitPrefixExpr(prefix);
-		case CiPostfixExpr# postfix:
+		case FuPostfixExpr# postfix:
 			return VisitPostfixExpr(postfix);
-		case CiBinaryExpr# binary:
+		case FuBinaryExpr# binary:
 			return VisitBinaryExpr(binary);
-		case CiSelectExpr select:
+		case FuSelectExpr select:
 			return VisitSelectExpr(select);
-		case CiCallExpr# call:
+		case FuCallExpr# call:
 			return VisitCallExpr(call);
-		case CiLambdaExpr _:
+		case FuLambdaExpr _:
 			ReportError(expr, "Unexpected lambda expression");
 			return expr;
-		case CiVar# def:
+		case FuVar# def:
 			VisitVar(def);
 			return expr;
 		default:
@@ -1386,25 +1386,25 @@ public class CiSema
 		}
 	}
 
-	CiExpr# ResolveBool!(CiExpr# expr)
+	FuExpr# ResolveBool!(FuExpr# expr)
 	{
 		expr = VisitExpr(expr);
 		Coerce(expr, this.Program.System.BoolType);
 		return expr;
 	}
 
-	static CiClassType# CreateClassPtr(CiClass klass, CiToken ptrModifier, bool nullable)
+	static FuClassType# CreateClassPtr(FuClass klass, FuToken ptrModifier, bool nullable)
 	{
-		CiClassType# ptr;
+		FuClassType# ptr;
 		switch (ptrModifier) {
-		case CiToken.EndOfFile:
-			ptr = new CiClassType();
+		case FuToken.EndOfFile:
+			ptr = new FuClassType();
 			break;
-		case CiToken.ExclamationMark:
-			ptr = new CiReadWriteClassType();
+		case FuToken.ExclamationMark:
+			ptr = new FuReadWriteClassType();
 			break;
-		case CiToken.Hash:
-			ptr = new CiDynamicPtrType();
+		case FuToken.Hash:
+			ptr = new FuDynamicPtrType();
 			break;
 		default:
 			assert false;
@@ -1414,10 +1414,10 @@ public class CiSema
 		return ptr;
 	}
 
-	void FillGenericClass!(CiClassType! result, CiClass klass, CiAggregateInitializer typeArgExprs)
+	void FillGenericClass!(FuClassType! result, FuClass klass, FuAggregateInitializer typeArgExprs)
 	{
-		List<CiType#>() typeArgs;
-		foreach (CiExpr# typeArgExpr in typeArgExprs.Items)
+		List<FuType#>() typeArgs;
+		foreach (FuExpr# typeArgExpr in typeArgExprs.Items)
 			typeArgs.Add(ToType(typeArgExpr, false));
 		if (typeArgs.Count != klass.TypeParameterCount) {
 			ReportError(result, $"Expected {klass.TypeParameterCount} type arguments for {klass.Name}, got {typeArgs.Count}");
@@ -1429,25 +1429,25 @@ public class CiSema
 			result.TypeArg1 = typeArgs[1];
 	}
 
-	void ExpectNoPtrModifier(CiExpr expr, CiToken ptrModifier, bool nullable)
+	void ExpectNoPtrModifier(FuExpr expr, FuToken ptrModifier, bool nullable)
 	{
-		if (ptrModifier != CiToken.EndOfFile)
-			ReportError(expr, $"Unexpected {CiLexer.TokenToString(ptrModifier)} on a non-reference type");
+		if (ptrModifier != FuToken.EndOfFile)
+			ReportError(expr, $"Unexpected {FuLexer.TokenToString(ptrModifier)} on a non-reference type");
 		if (nullable)
 			ReportError(expr, "Nullable value types not supported");
 	}
 
-	CiType# ToBaseType!(CiExpr expr, CiToken ptrModifier, bool nullable)
+	FuType# ToBaseType!(FuExpr expr, FuToken ptrModifier, bool nullable)
 	{
 		switch (expr) {
-		case CiSymbolReference symbol:
+		case FuSymbolReference symbol:
 			// built-in, string?, MyEnum, MyClass, MyClass?, MyClass!, MyClass!?, MyClass#, MyClass#?
-			if (this.Program.TryLookup(symbol.Name, true) is CiType# type) {
-				if (type is CiClass klass) {
-					if (klass.Id == CiId.MatchClass && ptrModifier != CiToken.EndOfFile)
+			if (this.Program.TryLookup(symbol.Name, true) is FuType# type) {
+				if (type is FuClass klass) {
+					if (klass.Id == FuId.MatchClass && ptrModifier != FuToken.EndOfFile)
 						ReportError(expr, "Read-write references to the built-in class Match are not supported");
-					CiClassType# ptr = CreateClassPtr(klass, ptrModifier, nullable);
-					if (symbol.Left is CiAggregateInitializer typeArgExprs)
+					FuClassType# ptr = CreateClassPtr(klass, ptrModifier, nullable);
+					if (symbol.Left is FuAggregateInitializer typeArgExprs)
 						FillGenericClass(ptr, klass, typeArgExprs);
 					else if (symbol.Left != null)
 						return PoisonError(expr, "Invalid type");
@@ -1457,7 +1457,7 @@ public class CiSema
 				}
 				else if (symbol.Left != null)
 					return PoisonError(expr, "Invalid type");
-				if (type.Id == CiId.StringPtrType && nullable) {
+				if (type.Id == FuId.StringPtrType && nullable) {
 					type = this.Program.System.StringNullablePtrType;
 					nullable = false;
 				}
@@ -1466,14 +1466,14 @@ public class CiSema
 			}
 			return PoisonError(expr, $"Type {symbol.Name} not found");
 
-		case CiCallExpr call:
+		case FuCallExpr call:
 			// string(), MyClass()
 			ExpectNoPtrModifier(expr, ptrModifier, nullable);
 			if (call.Arguments.Count != 0)
 				ReportError(call, "Expected empty parentheses for storage type");
-			if (call.Method.Left is CiAggregateInitializer typeArgExprs2) {
-				CiStorageType# storage = new CiStorageType { Line = call.Line };
-				if (this.Program.TryLookup(call.Method.Name, true) is CiClass klass) {
+			if (call.Method.Left is FuAggregateInitializer typeArgExprs2) {
+				FuStorageType# storage = new FuStorageType { Line = call.Line };
+				if (this.Program.TryLookup(call.Method.Name, true) is FuClass klass) {
 					FillGenericClass(storage, klass, typeArgExprs2);
 					return storage;
 				}
@@ -1483,8 +1483,8 @@ public class CiSema
 				return PoisonError(expr, "Invalid type");
 			if (call.Method.Name == "string")
 				return this.Program.System.StringStorageType;
-			if (this.Program.TryLookup(call.Method.Name, true) is CiClass klass2)
-				return new CiStorageType { Class = klass2 };
+			if (this.Program.TryLookup(call.Method.Name, true) is FuClass klass2)
+				return new FuStorageType { Class = klass2 };
 			return PoisonError(expr, $"Class {call.Method.Name} not found");
 
 		default:
@@ -1492,38 +1492,38 @@ public class CiSema
 		}
 	}
 
-	CiType# ToType!(CiExpr# expr, bool dynamic)
+	FuType# ToType!(FuExpr# expr, bool dynamic)
 	{
-		CiExpr#? minExpr = null;
-		if (expr is CiBinaryExpr range && range.Op == CiToken.Range) {
+		FuExpr#? minExpr = null;
+		if (expr is FuBinaryExpr range && range.Op == FuToken.Range) {
 			minExpr = range.Left;
 			expr = range.Right;
 		}
 
 		bool nullable;
-		CiToken ptrModifier;
-		CiClassType#? outerArray = null; // leftmost in source
-		CiClassType!? innerArray = null; // rightmost in source
+		FuToken ptrModifier;
+		FuClassType#? outerArray = null; // leftmost in source
+		FuClassType!? innerArray = null; // rightmost in source
 		for (;;) {
-			if (expr is CiPostfixExpr question && question.Op == CiToken.QuestionMark) {
+			if (expr is FuPostfixExpr question && question.Op == FuToken.QuestionMark) {
 				expr = question.Inner;
 				nullable = true;
 			}
 			else
 				nullable = false;
-			if (expr is CiPostfixExpr postfix && (postfix.Op == CiToken.ExclamationMark || postfix.Op == CiToken.Hash)) {
+			if (expr is FuPostfixExpr postfix && (postfix.Op == FuToken.ExclamationMark || postfix.Op == FuToken.Hash)) {
 				expr = postfix.Inner;
 				ptrModifier = postfix.Op;
 			}
 			else
-				ptrModifier = CiToken.EndOfFile;
-			if (expr is CiBinaryExpr binary && binary.Op == CiToken.LeftBracket) {
+				ptrModifier = FuToken.EndOfFile;
+			if (expr is FuBinaryExpr binary && binary.Op == FuToken.LeftBracket) {
 				if (binary.Right != null) {
 					ExpectNoPtrModifier(expr, ptrModifier, nullable);
-					CiExpr# lengthExpr = VisitExpr(binary.Right);
-					CiArrayStorageType# arrayStorage = new CiArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = outerArray, LengthExpr = lengthExpr, Length = 0 };
+					FuExpr# lengthExpr = VisitExpr(binary.Right);
+					FuArrayStorageType# arrayStorage = new FuArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = outerArray, LengthExpr = lengthExpr, Length = 0 };
 					if (Coerce(lengthExpr, this.Program.System.IntType) && (!dynamic || binary.Left.IsIndexing())) {
-						if (lengthExpr is CiLiteralLong literal) {
+						if (lengthExpr is FuLiteralLong literal) {
 							long length = literal.Value;
 							if (length < 0)
 								ReportError(expr, "Expected non-negative integer");
@@ -1538,7 +1538,7 @@ public class CiSema
 					outerArray = arrayStorage;
 				}
 				else {
-					CiType# elementType = outerArray;
+					FuType# elementType = outerArray;
 					outerArray = CreateClassPtr(this.Program.System.ArrayPtrClass, ptrModifier, nullable);
 					outerArray.TypeArg0 = elementType;
 				}
@@ -1550,14 +1550,14 @@ public class CiSema
 				break;
 		}
 
-		CiType# baseType;
+		FuType# baseType;
 		if (minExpr != null) {
 			ExpectNoPtrModifier(expr, ptrModifier, nullable);
 			int min = FoldConstInt(minExpr);
 			int max = FoldConstInt(expr);
 			if (min > max)
 				return PoisonError(expr, "Range min greater than max");
-			baseType = CiRangeType.New(min, max);
+			baseType = FuRangeType.New(min, max);
 		}
 		else
 			baseType = ToBaseType(expr, ptrModifier, nullable);
@@ -1569,31 +1569,31 @@ public class CiSema
 		return outerArray;
 	}
 
-	CiType# ResolveType!(CiNamedValue! def)
+	FuType# ResolveType!(FuNamedValue! def)
 	{
 		def.Type = ToType(def.TypeExpr, false);
 		return def.Type;
 	}
 
-	void VisitAssert!(CiAssert! statement)
+	void VisitAssert!(FuAssert! statement)
 	{
 		statement.Cond = ResolveBool(statement.Cond);
 		if (statement.Message != null) {
 			statement.Message = VisitExpr(statement.Message);
-			if (!(statement.Message.Type is CiStringType))
+			if (!(statement.Message.Type is FuStringType))
 				ReportError(statement, "The second argument of 'assert' must be a string");
 		}
 	}
 
-	bool ResolveStatements!(List<CiStatement#> statements)
+	bool ResolveStatements!(List<FuStatement#> statements)
 	{
 		bool reachable = true;
-		foreach (CiStatement# statement in statements) {
-			if (statement is CiConst# konst) {
+		foreach (FuStatement# statement in statements) {
+			if (statement is FuConst# konst) {
 				ResolveConst(konst);
 				this.CurrentScope.Add(konst);
-				if (konst.Type is CiArrayStorageType) {
-					assert this.CurrentScope.GetContainer() is CiClass! klass;
+				if (konst.Type is FuArrayStorageType) {
+					assert this.CurrentScope.GetContainer() is FuClass! klass;
 					klass.ConstArrays.Add(konst);
 				}
 			}
@@ -1608,24 +1608,24 @@ public class CiSema
 		return reachable;
 	}
 
-	void VisitBlock!(CiBlock! statement)
+	void VisitBlock!(FuBlock! statement)
 	{
 		OpenScope(statement);
 		statement.SetCompletesNormally(ResolveStatements(statement.Statements));
 		CloseScope();
 	}
 
-	void ResolveLoopCond!(CiLoop! statement)
+	void ResolveLoopCond!(FuLoop! statement)
 	{
 		if (statement.Cond != null) {
 			statement.Cond = ResolveBool(statement.Cond);
-			statement.SetCompletesNormally(!(statement.Cond is CiLiteralTrue));
+			statement.SetCompletesNormally(!(statement.Cond is FuLiteralTrue));
 		}
 		else
 			statement.SetCompletesNormally(false);
 	}
 
-	void VisitDoWhile!(CiDoWhile! statement)
+	void VisitDoWhile!(FuDoWhile! statement)
 	{
 		OpenScope(statement);
 		ResolveLoopCond(statement);
@@ -1633,7 +1633,7 @@ public class CiSema
 		CloseScope();
 	}
 
-	void VisitFor!(CiFor! statement)
+	void VisitFor!(FuFor! statement)
 	{
 		OpenScope(statement);
 		if (statement.Init != null)
@@ -1641,32 +1641,32 @@ public class CiSema
 		ResolveLoopCond(statement);
 		if (statement.Advance != null)
 			VisitStatement(statement.Advance);
-		if (statement.Init is CiVar iter
-			&& iter.Type is CiIntegerType
+		if (statement.Init is FuVar iter
+			&& iter.Type is FuIntegerType
 			&& iter.Value != null
-			&& statement.Cond is CiBinaryExpr cond
+			&& statement.Cond is FuBinaryExpr cond
 			&& cond.Left.IsReferenceTo(iter)
-			&& (cond.Right is CiLiteral || (cond.Right is CiSymbolReference limitSymbol && limitSymbol.Symbol is CiVar))) {
+			&& (cond.Right is FuLiteral || (cond.Right is FuSymbolReference limitSymbol && limitSymbol.Symbol is FuVar))) {
 			long step = 0;
 			switch (statement.Advance) {
-			case CiUnaryExpr unary when unary.Inner != null && unary.Inner.IsReferenceTo(iter):
+			case FuUnaryExpr unary when unary.Inner != null && unary.Inner.IsReferenceTo(iter):
 				switch (unary.Op) {
-				case CiToken.Increment:
+				case FuToken.Increment:
 					step = 1;
 					break;
-				case CiToken.Decrement:
+				case FuToken.Decrement:
 					step = -1;
 					break;
 				default:
 					break;
 				}
 				break;
-			case CiBinaryExpr binary when binary.Left.IsReferenceTo(iter) && binary.Right is CiLiteralLong literalStep:
+			case FuBinaryExpr binary when binary.Left.IsReferenceTo(iter) && binary.Right is FuLiteralLong literalStep:
 				switch (binary.Op) {
-				case CiToken.AddAssign:
+				case FuToken.AddAssign:
 					step = literalStep.Value;
 					break;
-				case CiToken.SubAssign:
+				case FuToken.SubAssign:
 					step = -literalStep.Value;
 					break;
 				default:
@@ -1676,8 +1676,8 @@ public class CiSema
 			default:
 				break;
 			}
-			if ((step > 0 && (cond.Op == CiToken.Less || cond.Op == CiToken.LessOrEqual))
-			 || (step < 0 && (cond.Op == CiToken.Greater || cond.Op == CiToken.GreaterOrEqual))) {
+			if ((step > 0 && (cond.Op == FuToken.Less || cond.Op == FuToken.LessOrEqual))
+			 || (step < 0 && (cond.Op == FuToken.Greater || cond.Op == FuToken.GreaterOrEqual))) {
 				statement.IsRange = true;
 				statement.RangeStep = step;
 			}
@@ -1687,34 +1687,34 @@ public class CiSema
 		CloseScope();
 	}
 
-	void VisitForeach!(CiForeach! statement)
+	void VisitForeach!(FuForeach! statement)
 	{
 		OpenScope(statement);
-		CiVar! element = statement.GetVar();
+		FuVar! element = statement.GetVar();
 		ResolveType(element);
 		VisitExpr(statement.Collection);
-		if (statement.Collection.Type is CiClassType klass) {
+		if (statement.Collection.Type is FuClassType klass) {
 			switch (klass.Class.Id) {
-			case CiId.StringClass:
+			case FuId.StringClass:
 				if (statement.Count() != 1 || !element.Type.IsAssignableFrom(this.Program.System.IntType))
 					ReportError(statement, "Expected int iterator variable");
 				break;
-			case CiId.ArrayStorageClass:
-			case CiId.ListClass:
-			case CiId.HashSetClass:
-			case CiId.SortedSetClass:
+			case FuId.ArrayStorageClass:
+			case FuId.ListClass:
+			case FuId.HashSetClass:
+			case FuId.SortedSetClass:
 				if (statement.Count() != 1)
 					ReportError(statement, "Expected one iterator variable");
 				else if (!element.Type.IsAssignableFrom(klass.GetElementType()))
 					ReportError(statement, $"Cannot coerce {klass.GetElementType()} to {element.Type}");
 				break;
-			case CiId.DictionaryClass:
-			case CiId.SortedDictionaryClass:
-			case CiId.OrderedDictionaryClass:
+			case FuId.DictionaryClass:
+			case FuId.SortedDictionaryClass:
+			case FuId.OrderedDictionaryClass:
 				if (statement.Count() != 2)
 					ReportError(statement, "Expected (TKey key, TValue value) iterator");
 				else {
-					CiVar! value = statement.GetValueVar();
+					FuVar! value = statement.GetValueVar();
 					ResolveType(value);
 					if (!element.Type.IsAssignableFrom(klass.GetKeyType()))
 						ReportError(statement, $"Cannot coerce {klass.GetKeyType()} to {element.Type}");
@@ -1734,7 +1734,7 @@ public class CiSema
 		CloseScope();
 	}
 
-	void VisitIf!(CiIf! statement)
+	void VisitIf!(FuIf! statement)
 	{
 		statement.Cond = ResolveBool(statement.Cond);
 		VisitStatement(statement.OnTrue);
@@ -1746,16 +1746,16 @@ public class CiSema
 			statement.SetCompletesNormally(true);
 	}
 
-	void VisitLock!(CiLock! statement)
+	void VisitLock!(FuLock! statement)
 	{
 		statement.Lock = VisitExpr(statement.Lock);
 		Coerce(statement.Lock, this.Program.System.LockPtrType);
 		VisitStatement(statement.Body);
 	}
 
-	void VisitReturn!(CiReturn! statement)
+	void VisitReturn!(FuReturn! statement)
 	{
-		if (this.CurrentMethod.Type.Id == CiId.VoidType) {
+		if (this.CurrentMethod.Type.Id == FuId.VoidType) {
 			if (statement.Value != null)
 				ReportError(statement, "Void method cannot return a value");
 		}
@@ -1764,45 +1764,45 @@ public class CiSema
 		else {
 			statement.Value = VisitExpr(statement.Value);
 			Coerce(statement.Value, this.CurrentMethod.Type);
-			if (statement.Value is CiSymbolReference symbol
-			 && symbol.Symbol is CiVar local
-			 && ((local.Type.IsFinal() && !(this.CurrentMethod.Type is CiStorageType))
-				|| (local.Type.Id == CiId.StringStorageType && this.CurrentMethod.Type.Id != CiId.StringStorageType)))
+			if (statement.Value is FuSymbolReference symbol
+			 && symbol.Symbol is FuVar local
+			 && ((local.Type.IsFinal() && !(this.CurrentMethod.Type is FuStorageType))
+				|| (local.Type.Id == FuId.StringStorageType && this.CurrentMethod.Type.Id != FuId.StringStorageType)))
 				ReportError(statement, "Returning dangling reference to local storage");
 		}
 	}
 
-	void VisitSwitch!(CiSwitch! statement)
+	void VisitSwitch!(FuSwitch! statement)
 	{
 		OpenScope(statement);
 		statement.Value = VisitExpr(statement.Value);
 		switch (statement.Value.Type) {
-		case CiIntegerType i when i.Id != CiId.LongType:
-		case CiEnum _:
-		// case CiStringType _: matched by case CiClassType
+		case FuIntegerType i when i.Id != FuId.LongType:
+		case FuEnum _:
+		// case FuStringType _: matched by case FuClassType
 			break;
-		case CiClassType klass when !(klass is CiStorageType):
+		case FuClassType klass when !(klass is FuStorageType):
 			break;
 		default:
 			ReportError(statement.Value, $"Switch on type {statement.Value.Type} - expected int, enum, string or object reference");
 			return;
 		}
 		statement.SetCompletesNormally(false);
-		foreach (CiCase! kase in statement.Cases) {
+		foreach (FuCase! kase in statement.Cases) {
 			for (int i = 0; i < kase.Values.Count; i++) {
-				if (statement.Value.Type is CiClassType switchPtr && switchPtr.Class.Id != CiId.StringClass) {
-					CiExpr# value = kase.Values[i];
-					if (value is CiBinaryExpr when1 && when1.Op == CiToken.When)
+				if (statement.Value.Type is FuClassType switchPtr && switchPtr.Class.Id != FuId.StringClass) {
+					FuExpr# value = kase.Values[i];
+					if (value is FuBinaryExpr when1 && when1.Op == FuToken.When)
 						value = when1.Left;
-					if (value is CiLiteralNull) {
+					if (value is FuLiteralNull) {
 					}
-					else if (!(value is CiVar# def) || def.Value != null)
+					else if (!(value is FuVar# def) || def.Value != null)
 						ReportError(kase.Values[i], "Expected 'case Type name'");
-					else if (!(ResolveType(def) is CiClassType casePtr) || casePtr is CiStorageType)
+					else if (!(ResolveType(def) is FuClassType casePtr) || casePtr is FuStorageType)
 						ReportError(def, "'case' with non-reference type");
-					else if (casePtr is CiReadWriteClassType
-					 && !(switchPtr is CiDynamicPtrType)
-					 && (casePtr is CiDynamicPtrType || !(switchPtr is CiReadWriteClassType)))
+					else if (casePtr is FuReadWriteClassType
+					 && !(switchPtr is FuDynamicPtrType)
+					 && (casePtr is FuDynamicPtrType || !(switchPtr is FuReadWriteClassType)))
 						ReportError(def, $"{switchPtr} cannot be casted to {casePtr}");
 					else if (casePtr.Class.IsSameOrBaseOf(switchPtr.Class))
 						ReportError(def, $"{statement.Value} is {switchPtr}, 'case {casePtr}' would always match");
@@ -1810,11 +1810,11 @@ public class CiSema
 						ReportError(def, $"{switchPtr} is not base class of {casePtr.Class.Name}, 'case {casePtr}' would never match");
 					else {
 						statement.Add(def);
-						if (kase.Values[i] is CiBinaryExpr! when2 && when2.Op == CiToken.When)
+						if (kase.Values[i] is FuBinaryExpr! when2 && when2.Op == FuToken.When)
 							when2.Right = ResolveBool(when2.Right);
 					}
 				}
-				else if (kase.Values[i] is CiBinaryExpr! when1 && when1.Op == CiToken.When) {
+				else if (kase.Values[i] is FuBinaryExpr! when1 && when1.Op == FuToken.When) {
 					when1.Left = FoldConst(when1.Left);
 					Coerce(when1.Left, statement.Value.Type);
 					when1.Right = ResolveBool(when1.Right);
@@ -1835,16 +1835,16 @@ public class CiSema
 		CloseScope();
 	}
 
-	void VisitThrow!(CiThrow! statement)
+	void VisitThrow!(FuThrow! statement)
 	{
 		if (!this.CurrentMethod.Throws)
 			ReportError(statement, "'throw' in a method not marked 'throws'");
 		statement.Message = VisitExpr(statement.Message);
-		if (!(statement.Message.Type is CiStringType))
+		if (!(statement.Message.Type is FuStringType))
 			ReportError(statement, "The argument of 'throw' must be a string");
 	}
 
-	void VisitWhile!(CiWhile! statement)
+	void VisitWhile!(FuWhile! statement)
 	{
 		OpenScope(statement);
 		ResolveLoopCond(statement);
@@ -1852,49 +1852,49 @@ public class CiSema
 		CloseScope();
 	}
 
-	void VisitStatement!(CiStatement# statement)
+	void VisitStatement!(FuStatement# statement)
 	{
 		switch (statement) {
-		case CiAssert! asrt:
+		case FuAssert! asrt:
 			VisitAssert(asrt);
 			break;
-		case CiBlock! block:
+		case FuBlock! block:
 			VisitBlock(block);
 			break;
-		case CiBreak brk:
+		case FuBreak brk:
 			brk.LoopOrSwitch.SetCompletesNormally(true);
 			break;
-		case CiContinue _:
-		case CiNative _:
+		case FuContinue _:
+		case FuNative _:
 			break;
-		case CiDoWhile! doWhile:
+		case FuDoWhile! doWhile:
 			VisitDoWhile(doWhile);
 			break;
-		case CiFor! forLoop:
+		case FuFor! forLoop:
 			VisitFor(forLoop);
 			break;
-		case CiForeach! foreachLoop:
+		case FuForeach! foreachLoop:
 			VisitForeach(foreachLoop);
 			break;
-		case CiIf! ifStatement:
+		case FuIf! ifStatement:
 			VisitIf(ifStatement);
 			break;
-		case CiLock! lockStatement:
+		case FuLock! lockStatement:
 			VisitLock(lockStatement);
 			break;
-		case CiReturn! ret:
+		case FuReturn! ret:
 			VisitReturn(ret);
 			break;
-		case CiSwitch! switchStatement:
+		case FuSwitch! switchStatement:
 			VisitSwitch(switchStatement);
 			break;
-		case CiThrow! throwStatement:
+		case FuThrow! throwStatement:
 			VisitThrow(throwStatement);
 			break;
-		case CiWhile! whileStatement:
+		case FuWhile! whileStatement:
 			VisitWhile(whileStatement);
 			break;
-		case CiExpr# expr:
+		case FuExpr# expr:
 			VisitExpr(expr);
 			break;
 		default:
@@ -1902,18 +1902,18 @@ public class CiSema
 		}
 	}
 
-	CiExpr# FoldConst!(CiExpr# expr)
+	FuExpr# FoldConst!(FuExpr# expr)
 	{
 		expr = VisitExpr(expr);
-		if (expr is CiLiteral || expr.IsConstEnum())
+		if (expr is FuLiteral || expr.IsConstEnum())
 			return expr;
 		ReportError(expr, "Expected constant value");
 		return expr;
 	}
 
-	int FoldConstInt!(CiExpr# expr)
+	int FoldConstInt!(FuExpr# expr)
 	{
-		if (FoldConst(expr) is CiLiteralLong literal) {
+		if (FoldConst(expr) is FuLiteralLong literal) {
 			long l = literal.Value;
 			if (l < int.MinValue || l > int.MaxValue) {
 				ReportError(expr, "Only 32-bit ranges supported");
@@ -1925,70 +1925,70 @@ public class CiSema
 		return 0;
 	}
 
-	void ResolveConst!(CiConst! konst)
+	void ResolveConst!(FuConst! konst)
 	{
 		switch (konst.VisitStatus) {
-		case CiVisitStatus.NotYet:
+		case FuVisitStatus.NotYet:
 			break;
-		case CiVisitStatus.InProgress:
+		case FuVisitStatus.InProgress:
 			konst.Value = PoisonError(konst, $"Circular dependency in value of constant {konst.Name}");
-			konst.VisitStatus = CiVisitStatus.Done;
+			konst.VisitStatus = FuVisitStatus.Done;
 			return;
-		case CiVisitStatus.Done:
+		case FuVisitStatus.Done:
 			return;
 		}
-		konst.VisitStatus = CiVisitStatus.InProgress;
-		if (!(this.CurrentScope is CiEnum))
+		konst.VisitStatus = FuVisitStatus.InProgress;
+		if (!(this.CurrentScope is FuEnum))
 			ResolveType(konst);
 		konst.Value = VisitExpr(konst.Value);
-		if (konst.Value is CiAggregateInitializer! coll) {
-			if (konst.Type is CiClassType array) {
-				CiType# elementType = array.GetElementType();
-				if (array is CiArrayStorageType arrayStg) {
+		if (konst.Value is FuAggregateInitializer! coll) {
+			if (konst.Type is FuClassType array) {
+				FuType# elementType = array.GetElementType();
+				if (array is FuArrayStorageType arrayStg) {
 					if (arrayStg.Length != coll.Items.Count)
 						ReportError(konst, $"Declared {arrayStg.Length} elements, initialized {coll.Items.Count}");
 				}
-				else if (array is CiReadWriteClassType)
+				else if (array is FuReadWriteClassType)
 					ReportError(konst, "Invalid constant type");
 				else
-					konst.Type = new CiArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = elementType, Length = coll.Items.Count };
+					konst.Type = new FuArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = elementType, Length = coll.Items.Count };
 				coll.Type = konst.Type;
-				foreach (CiExpr item in coll.Items)
+				foreach (FuExpr item in coll.Items)
 					Coerce(item, elementType);
 			}
 			else
 				ReportError(konst, $"Array initializer for scalar constant {konst.Name}");
 		}
-		else if (this.CurrentScope is CiEnum && konst.Value.Type is CiRangeType && konst.Value is CiLiteral) {
+		else if (this.CurrentScope is FuEnum && konst.Value.Type is FuRangeType && konst.Value is FuLiteral) {
 		}
-		else if (konst.Value is CiLiteral || konst.Value.IsConstEnum())
+		else if (konst.Value is FuLiteral || konst.Value.IsConstEnum())
 			Coerce(konst.Value, konst.Type);
 		else if (konst.Value != this.Poison)
 			ReportError(konst.Value, $"Value for constant {konst.Name} is not constant");
 		konst.InMethod = this.CurrentMethod;
-		konst.VisitStatus = CiVisitStatus.Done;
+		konst.VisitStatus = FuVisitStatus.Done;
 	}
 
-	void ResolveConsts!(CiContainerType! container)
+	void ResolveConsts!(FuContainerType! container)
 	{
 		this.CurrentScope = container;
 		switch (container) {
-		case CiClass klass:
-			for (CiSymbol!? symbol = klass.First; symbol != null; symbol = symbol.Next) {
-				if (symbol is CiConst! konst)
+		case FuClass klass:
+			for (FuSymbol!? symbol = klass.First; symbol != null; symbol = symbol.Next) {
+				if (symbol is FuConst! konst)
 					ResolveConst(konst);
 			}
 			break;
-		case CiEnum! enu:
-			CiConst? previous = null;
-			for (CiSymbol!? symbol = enu.First; symbol != null; symbol = symbol.Next) {
-				if (symbol is CiConst! konst) { // not HasFlag
+		case FuEnum! enu:
+			FuConst? previous = null;
+			for (FuSymbol!? symbol = enu.First; symbol != null; symbol = symbol.Next) {
+				if (symbol is FuConst! konst) { // not HasFlag
 					if (konst.Value != null) {
 						ResolveConst(konst);
 						enu.HasExplicitValue = true;
 					}
 					else
-						konst.Value = new CiImplicitEnumValue { Value = previous == null ? 0 : previous.Value.IntValue() + 1 };
+						konst.Value = new FuImplicitEnumValue { Value = previous == null ? 0 : previous.Value.IntValue() + 1 };
 					previous = konst;
 				}
 			}
@@ -1998,25 +1998,25 @@ public class CiSema
 		}
 	}
 
-	void ResolveTypes!(CiClass! klass)
+	void ResolveTypes!(FuClass! klass)
 	{
 		this.CurrentScope = klass;
-		for (CiSymbol!? symbol = klass.First; symbol != null; symbol = symbol.Next) {
+		for (FuSymbol!? symbol = klass.First; symbol != null; symbol = symbol.Next) {
 			switch (symbol) {
-			case CiField! field:
-				CiType! type = ResolveType(field);
+			case FuField! field:
+				FuType! type = ResolveType(field);
 				if (field.Value != null) {
 					field.Value = VisitExpr(field.Value);
 					if (!field.IsAssignableStorage())
-						Coerce(field.Value, type is CiArrayStorageType array ? array.GetElementType() : type);
+						Coerce(field.Value, type is FuArrayStorageType array ? array.GetElementType() : type);
 				}
 				break;
-			case CiMethod! method:
+			case FuMethod! method:
 				if (method.TypeExpr == this.Program.System.VoidType)
 					method.Type = this.Program.System.VoidType;
 				else
 					ResolveType(method);
-				for (CiVar!? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+				for (FuVar!? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 					ResolveType(param);
 					if (param.Value != null) {
 						param.Value = FoldConst(param.Value);
@@ -2030,7 +2030,7 @@ public class CiSema
 		}
 	}
 
-	void ResolveCode!(CiClass! klass)
+	void ResolveCode!(FuClass! klass)
 	{
 		if (klass.Constructor != null) {
 			this.CurrentScope = klass;
@@ -2038,18 +2038,18 @@ public class CiSema
 			VisitStatement(klass.Constructor.Body);
 			this.CurrentMethod = null;
 		}
-		for (CiSymbol!? symbol = klass.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiMethod! method) {
-				if (method.Name == "ToString" && method.CallType != CiCallType.Static && method.Parameters.Count() == 0)
-					method.Id = CiId.ClassToString;
+		for (FuSymbol!? symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is FuMethod! method) {
+				if (method.Name == "ToString" && method.CallType != FuCallType.Static && method.Parameters.Count() == 0)
+					method.Id = FuId.ClassToString;
 				if (method.Body != null) {
-					if (method.CallType == CiCallType.Override || method.CallType == CiCallType.Sealed) {
-						if (klass.Parent.TryLookup(method.Name, false) is CiMethod! baseMethod) {
+					if (method.CallType == FuCallType.Override || method.CallType == FuCallType.Sealed) {
+						if (klass.Parent.TryLookup(method.Name, false) is FuMethod! baseMethod) {
 							// TODO: check private
 							switch (baseMethod.CallType) {
-							case CiCallType.Abstract:
-							case CiCallType.Virtual:
-							case CiCallType.Override:
+							case FuCallType.Abstract:
+							case FuCallType.Virtual:
+							case FuCallType.Override:
 								break;
 							default:
 								ReportError(method, "Base method is not abstract or virtual");
@@ -2063,8 +2063,8 @@ public class CiSema
 								else
 									ReportError(method, "Non-mutating method cannot override a mutating method");
 							}
-							CiVar? baseParam = baseMethod.Parameters.FirstParameter();
-							for (CiVar? param = method.Parameters.FirstParameter(); ; param = param.NextParameter()) {
+							FuVar? baseParam = baseMethod.Parameters.FirstParameter();
+							for (FuVar? param = method.Parameters.FirstParameter(); ; param = param.NextParameter()) {
 								if (param == null) {
 									if (baseParam != null)
 										ReportError(method, "Fewer parameters than the overridden method");
@@ -2087,10 +2087,10 @@ public class CiSema
 					}
 					this.CurrentScope = method.Parameters;
 					this.CurrentMethod = method;
-					if (!(method.Body is CiScope))
+					if (!(method.Body is FuScope))
 						OpenScope(method.MethodScope); // don't add "is Derived d" to parameters
 					VisitStatement(method.Body);
-					if (method.Type.Id != CiId.VoidType && method.Body.CompletesNormally())
+					if (method.Type.Id != FuId.VoidType && method.Body.CompletesNormally())
 						ReportError(method.Body, "Method can complete without a return value");
 					this.CurrentMethod = null;
 				}
@@ -2098,21 +2098,21 @@ public class CiSema
 		}
 	}
 
-	static void MarkMethodLive(CiMethodBase! method)
+	static void MarkMethodLive(FuMethodBase! method)
 	{
 		if (method.IsLive)
 			return;
 		method.IsLive = true;
-		foreach (CiMethod! called in method.Calls)
+		foreach (FuMethod! called in method.Calls)
 			MarkMethodLive(called);
 	}
 
-	static void MarkClassLive(CiClass klass)
+	static void MarkClassLive(FuClass klass)
 	{
 		if (klass.IsPublic) {
-			for (CiSymbol!? symbol = klass.First; symbol != null; symbol = symbol.Next) {
-				if (symbol is CiMethod! method
-				 && (method.Visibility == CiVisibility.Public || method.Visibility == CiVisibility.Protected))
+			for (FuSymbol!? symbol = klass.First; symbol != null; symbol = symbol.Next) {
+				if (symbol is FuMethod! method
+				 && (method.Visibility == FuVisibility.Public || method.Visibility == FuVisibility.Protected))
 					MarkMethodLive(method);
 			}
 		}
@@ -2120,24 +2120,24 @@ public class CiSema
 			MarkMethodLive(klass.Constructor);
 	}
 
-	public void Process!(CiProgram! program)
+	public void Process!(FuProgram! program)
 	{
 		this.Program = program;
-		for (CiSymbol!? type = program.First; type != null; type = type.Next) {
-			if (type is CiClass! klass)
+		for (FuSymbol!? type = program.First; type != null; type = type.Next) {
+			if (type is FuClass! klass)
 				ResolveBase(klass);
 		}
-		foreach (CiClass! klass in program.Classes)
+		foreach (FuClass! klass in program.Classes)
 			CheckBaseCycle(klass);
-		for (CiSymbol!? type = program.First; type != null; type = type.Next) {
-			assert type is CiContainerType! container;
+		for (FuSymbol!? type = program.First; type != null; type = type.Next) {
+			assert type is FuContainerType! container;
 			ResolveConsts(container);
 		}
-		foreach (CiClass! klass in program.Classes)
+		foreach (FuClass! klass in program.Classes)
 			ResolveTypes(klass);
-		foreach (CiClass! klass in program.Classes)
+		foreach (FuClass! klass in program.Classes)
 			ResolveCode(klass);
-		foreach (CiClass klass in program.Classes)
+		foreach (FuClass klass in program.Classes)
 			MarkClassLive(klass);
 	}
 }

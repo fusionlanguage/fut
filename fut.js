@@ -20,9 +20,9 @@
 
 import fs from "fs";
 import path from "path";
-import { CiParser, CiProgram, CiSema, CiSystem, CiConsoleHost, GenC, GenCpp, GenCs, GenD, GenJava, GenJs, GenPy, GenSwift, GenTs, GenCl } from "./Transpiled.js";
+import { FuParser, FuProgram, FuSema, FuSystem, FuConsoleHost, GenC, GenCpp, GenCs, GenD, GenJava, GenJs, GenPy, GenSwift, GenTs, GenCl } from "./Transpiled.js";
 
-class FileResourceSema extends CiSema
+class FileResourceSema extends FuSema
 {
 	#resourceDirs = []
 
@@ -59,7 +59,7 @@ class FileResourceSema extends CiSema
 	}
 }
 
-class FileGenHost extends CiConsoleHost
+class FileGenHost extends FuConsoleHost
 {
 	#currentFile;
 
@@ -104,7 +104,7 @@ function usage()
 	console.log("-o FILE    Write to the specified file");
 	console.log("-n NAME    Specify C++/C# namespace, Java package or C name prefix");
 	console.log("-D NAME    Define conditional compilation symbol");
-	console.log("-r FILE.ci Read the specified source file but don't emit code");
+	console.log("-r FILE.fu Read the specified source file but don't emit code");
 	console.log("-I DIR     Add directory to resource search path");
 	console.log("--help     Display this information");
 	console.log("--version  Display version information");
@@ -112,7 +112,7 @@ function usage()
 
 function parseAndResolve(parser, system, parent, files, sema, host)
 {
-	parser.program = new CiProgram();
+	parser.program = new FuProgram();
 	parser.program.parent = parent;
 	parser.program.system = system;
 	for (const file of files) {
@@ -211,7 +211,7 @@ function emitImplicitLang(program, namespace, outputFile, host)
 	process.exitCode = 1;
 }
 
-const parser = new CiParser();
+const parser = new FuParser();
 const inputFiles = [];
 const referencedFiles = [];
 const sema = new FileResourceSema();
@@ -273,7 +273,7 @@ if (outputFile == null || inputFiles.length == 0) {
 const host = new FileGenHost();
 parser.setHost(host);
 sema.setHost(host);
-const system = CiSystem.new();
+const system = FuSystem.new();
 let parent = system;
 try {
 	if (referencedFiles.length > 0)

@@ -24,7 +24,7 @@ public class GenJava : GenTyped
 
 	protected override string GetTargetName() => "Java";
 
-	public override void VisitLiteralLong!(long value)
+	internal override void VisitLiteralLong!(long value)
 	{
 		base.VisitLiteralLong(value);
 		if (value < int.MinValue || value > int.MaxValue)
@@ -33,27 +33,27 @@ public class GenJava : GenTyped
 
 	protected override int GetLiteralChars() => 0x10000;
 
-	void WriteToString!(CiExpr expr, CiPriority parent)
+	void WriteToString!(FuExpr expr, FuPriority parent)
 	{
 		switch (expr.Type.Id) {
-		case CiId.LongType:
+		case FuId.LongType:
 			Write("Long");
 			break;
-		case CiId.FloatType:
+		case FuId.FloatType:
 			Write("Float");
 			break;
-		case CiId.DoubleType:
-		case CiId.FloatIntType:
+		case FuId.DoubleType:
+		case FuId.FloatIntType:
 			Write("Double");
 			break;
-		case CiId.StringPtrType:
-		case CiId.StringStorageType:
+		case FuId.StringPtrType:
+		case FuId.StringStorageType:
 			expr.Accept(this, parent);
 			return;
 		default:
-			if (expr.Type is CiIntegerType)
+			if (expr.Type is FuIntegerType)
 				Write("Integer");
-			else if (expr.Type is CiClassType) {
+			else if (expr.Type is FuClassType) {
 				WritePostfix(expr, ".toString()");
 				return;
 			}
@@ -64,9 +64,9 @@ public class GenJava : GenTyped
 		WriteCall(".toString", expr);
 	}
 
-	protected override void WritePrintfWidth!(CiInterpolatedPart part)
+	protected override void WritePrintfWidth!(FuInterpolatedPart part)
 	{
-		if (part.Precision >= 0 && part.Argument.Type is CiIntegerType) {
+		if (part.Precision >= 0 && part.Argument.Type is FuIntegerType) {
 			WriteChar('0');
 			VisitLiteralLong(part.Precision);
 		}
@@ -74,7 +74,7 @@ public class GenJava : GenTyped
 			base.WritePrintfWidth(part);
 	}
 
-	public override void VisitInterpolatedString!(CiInterpolatedString expr, CiPriority parent)
+	internal override void VisitInterpolatedString!(FuInterpolatedString expr, FuPriority parent)
 	{
 		if (expr.Suffix.Length == 0
 		 && expr.Parts.Count == 1
@@ -174,29 +174,29 @@ public class GenJava : GenTyped
 		}
 	}
 
-	protected override void WriteName!(CiSymbol symbol)
+	protected override void WriteName!(FuSymbol symbol)
 	{
 		switch (symbol) {
-		case CiContainerType _:
+		case FuContainerType _:
 			Write(symbol.Name);
 			break;
-		case CiConst konst:
+		case FuConst konst:
 			if (konst.InMethod != null) {
 				WriteUppercaseWithUnderscores(konst.InMethod.Name);
 				WriteChar('_');
 			}
 			WriteUppercaseWithUnderscores(symbol.Name);
 			break;
-		case CiVar _:
-			if (symbol.Parent is CiForeach forEach && forEach.Count() == 2) {
-				CiVar element = forEach.GetVar();
+		case FuVar _:
+			if (symbol.Parent is FuForeach forEach && forEach.Count() == 2) {
+				FuVar element = forEach.GetVar();
 				WriteCamelCaseNotKeyword(element.Name);
 				Write(symbol == element ? ".getKey()" : ".getValue()");
 			}
 			else
 				WriteCamelCaseNotKeyword(symbol.Name);
 			break;
-		case CiMember _:
+		case FuMember _:
 			WriteCamelCaseNotKeyword(symbol.Name);
 			break;
 		default:
@@ -204,18 +204,18 @@ public class GenJava : GenTyped
 		}
 	}
 
-	void WriteVisibility!(CiVisibility visibility)
+	void WriteVisibility!(FuVisibility visibility)
 	{
 		switch (visibility) {
-		case CiVisibility.Private:
+		case FuVisibility.Private:
 			Write("private ");
 			break;
-		case CiVisibility.Internal:
+		case FuVisibility.Internal:
 			break;
-		case CiVisibility.Protected:
+		case FuVisibility.Protected:
 			Write("protected ");
 			break;
-		case CiVisibility.Public:
+		case FuVisibility.Public:
 			Write("public ");
 			break;
 		default:
@@ -223,20 +223,20 @@ public class GenJava : GenTyped
 		}
 	}
 
-	protected override CiId GetTypeId(CiType type, bool promote)
+	protected override FuId GetTypeId(FuType type, bool promote)
 	{
-		CiId id = base.GetTypeId(type, promote);
+		FuId id = base.GetTypeId(type, promote);
 		switch (id) {
-		case CiId.ByteRange:
-			return CiId.SByteRange; // store unsigned bytes in Java signed bytes
-		case CiId.UShortRange:
-			return CiId.IntType;
+		case FuId.ByteRange:
+			return FuId.SByteRange; // store unsigned bytes in Java signed bytes
+		case FuId.UShortRange:
+			return FuId.IntType;
 		default:
 			return id;
 		}
 	}
 
-	void WriteCollectionType!(string name, CiType elementType)
+	void WriteCollectionType!(string name, FuType elementType)
 	{
 		Include("java.util." + name);
 		Write(name);
@@ -245,7 +245,7 @@ public class GenJava : GenTyped
 		WriteChar('>');
 	}
 
-	void WriteDictType!(string name, CiClassType dict)
+	void WriteDictType!(string name, FuClassType dict)
 	{
 		Write(name);
 		WriteChar('<');
@@ -255,87 +255,87 @@ public class GenJava : GenTyped
 		WriteChar('>');
 	}
 
-	void WriteJavaType!(CiType type, bool promote, bool needClass)
+	void WriteJavaType!(FuType type, bool promote, bool needClass)
 	{
 		switch (type) {
-		case CiNumericType _:
+		case FuNumericType _:
 			switch (GetTypeId(type, promote)) {
-			case CiId.SByteRange:
+			case FuId.SByteRange:
 				Write(needClass ? "Byte" : "byte");
 				break;
-			case CiId.ShortRange:
+			case FuId.ShortRange:
 				Write(needClass ? "Short" : "short");
 				break;
-			case CiId.IntType:
+			case FuId.IntType:
 				Write(needClass ? "Integer" : "int");
 				break;
-			case CiId.LongType:
+			case FuId.LongType:
 				Write(needClass ? "Long" : "long");
 				break;
-			case CiId.FloatType:
+			case FuId.FloatType:
 				Write(needClass ? "Float" : "float");
 				break;
-			case CiId.DoubleType:
+			case FuId.DoubleType:
 				Write(needClass ? "Double" : "double");
 				break;
 			default:
 				assert false;
 			}
 			break;
-		case CiEnum enu:
-			Write(enu.Id == CiId.BoolType
+		case FuEnum enu:
+			Write(enu.Id == FuId.BoolType
 				? needClass ? "Boolean" : "boolean"
 				: needClass ? "Integer" : "int");
 			break;
- 		case CiClassType klass:
+ 		case FuClassType klass:
 			switch (klass.Class.Id) {
-			case CiId.StringClass:
+			case FuId.StringClass:
 				Write("String");
 				break;
-			case CiId.ArrayPtrClass:
-			case CiId.ArrayStorageClass:
+			case FuId.ArrayPtrClass:
+			case FuId.ArrayStorageClass:
 				WriteType(klass.GetElementType(), false);
 				Write("[]");
 				break;
-			case CiId.ListClass:
+			case FuId.ListClass:
 				WriteCollectionType("ArrayList", klass.GetElementType());
 				break;
-			case CiId.QueueClass:
+			case FuId.QueueClass:
 				WriteCollectionType("ArrayDeque", klass.GetElementType());
 				break;
-			case CiId.StackClass:
+			case FuId.StackClass:
 				WriteCollectionType("Stack", klass.GetElementType());
 				break;
-			case CiId.HashSetClass:
+			case FuId.HashSetClass:
 				WriteCollectionType("HashSet", klass.GetElementType());
 				break;
-			case CiId.SortedSetClass:
+			case FuId.SortedSetClass:
 				WriteCollectionType("TreeSet", klass.GetElementType());
 				break;
-			case CiId.DictionaryClass:
+			case FuId.DictionaryClass:
 				Include("java.util.HashMap");
 				WriteDictType("HashMap", klass);
 				break;
-			case CiId.SortedDictionaryClass:
+			case FuId.SortedDictionaryClass:
 				Include("java.util.TreeMap");
 				WriteDictType("TreeMap", klass);
 				break;
-			case CiId.OrderedDictionaryClass:
+			case FuId.OrderedDictionaryClass:
 				Include("java.util.LinkedHashMap");
 				WriteDictType("LinkedHashMap", klass);
 				break;
-			case CiId.TextWriterClass:
+			case FuId.TextWriterClass:
 				Write("Appendable");
 				break;
-			case CiId.RegexClass:
+			case FuId.RegexClass:
 				Include("java.util.regex.Pattern");
 				Write("Pattern");
 				break;
-			case CiId.MatchClass:
+			case FuId.MatchClass:
 				Include("java.util.regex.Matcher");
 				Write("Matcher");
 				break;
-			case CiId.LockClass:
+			case FuId.LockClass:
 				Write("Object");
 				break;
 			default:
@@ -349,12 +349,12 @@ public class GenJava : GenTyped
 		}
 	}
 
-	protected override void WriteType!(CiType type, bool promote)
+	protected override void WriteType!(FuType type, bool promote)
 	{
 		WriteJavaType(type, promote, false);
 	}
 
-	protected override void WriteNew!(CiReadWriteClassType klass, CiPriority parent)
+	protected override void WriteNew!(FuReadWriteClassType klass, FuPriority parent)
 	{
 		Write("new ");
 		WriteType(klass, false);
@@ -370,146 +370,146 @@ public class GenJava : GenTyped
 		WriteChar(')');
 	}
 
-	static bool IsUnsignedByte(CiType type) => type.Id == CiId.ByteRange && type is CiRangeType range && range.Max > 127;
+	static bool IsUnsignedByte(FuType type) => type.Id == FuId.ByteRange && type is FuRangeType range && range.Max > 127;
 
-	static bool IsUnsignedByteIndexing(CiExpr expr) => expr.IsIndexing() && IsUnsignedByte(expr.Type);
+	static bool IsUnsignedByteIndexing(FuExpr expr) => expr.IsIndexing() && IsUnsignedByte(expr.Type);
 
-	void WriteIndexingInternal!(CiBinaryExpr expr)
+	void WriteIndexingInternal!(FuBinaryExpr expr)
 	{
 		if (expr.Left.Type.IsArray())
-			base.WriteIndexingExpr(expr, CiPriority.And /* don't care */);
+			base.WriteIndexingExpr(expr, FuPriority.And /* don't care */);
 		else
 			WriteMethodCall(expr.Left, "get", expr.Right);
 	}
 
-	public override void VisitPrefixExpr!(CiPrefixExpr expr, CiPriority parent)
+	internal override void VisitPrefixExpr!(FuPrefixExpr expr, FuPriority parent)
 	{
-		if ((expr.Op == CiToken.Increment || expr.Op == CiToken.Decrement)
+		if ((expr.Op == FuToken.Increment || expr.Op == FuToken.Decrement)
 		 && IsUnsignedByteIndexing(expr.Inner)) {
-			if (parent > CiPriority.And)
+			if (parent > FuPriority.And)
 				WriteChar('(');
-			Write(expr.Op == CiToken.Increment ? "++" : "--");
-			assert expr.Inner is CiBinaryExpr indexing;
+			Write(expr.Op == FuToken.Increment ? "++" : "--");
+			assert expr.Inner is FuBinaryExpr indexing;
 			WriteIndexingInternal(indexing);
-			if (parent != CiPriority.Statement)
+			if (parent != FuPriority.Statement)
 				Write(" & 0xff");
-			if (parent > CiPriority.And)
+			if (parent > FuPriority.And)
 				WriteChar(')');
 		}
 		else
 			base.VisitPrefixExpr(expr, parent);
 	}
 
-	public override void VisitPostfixExpr!(CiPostfixExpr expr, CiPriority parent)
+	internal override void VisitPostfixExpr!(FuPostfixExpr expr, FuPriority parent)
 	{
-		if ((expr.Op == CiToken.Increment || expr.Op == CiToken.Decrement)
+		if ((expr.Op == FuToken.Increment || expr.Op == FuToken.Decrement)
 		 && IsUnsignedByteIndexing(expr.Inner)) {
-			if (parent > CiPriority.And)
+			if (parent > FuPriority.And)
 				WriteChar('(');
-			assert expr.Inner is CiBinaryExpr indexing;
+			assert expr.Inner is FuBinaryExpr indexing;
 			WriteIndexingInternal(indexing);
-			Write(expr.Op == CiToken.Increment ? "++" : "--");
-			if (parent != CiPriority.Statement)
+			Write(expr.Op == FuToken.Increment ? "++" : "--");
+			if (parent != FuPriority.Statement)
 				Write(" & 0xff");
-			if (parent > CiPriority.And)
+			if (parent > FuPriority.And)
 				WriteChar(')');
 		}
 		else
 			base.VisitPostfixExpr(expr, parent);
 	}
 
-	void WriteSByteLiteral!(CiLiteralLong literal)
+	void WriteSByteLiteral!(FuLiteralLong literal)
 	{
 		if (literal.Value >= 0x80)
 			Write("(byte) ");
-		literal.Accept(this, CiPriority.Primary);
+		literal.Accept(this, FuPriority.Primary);
 	}
 
-	protected override void WriteEqual!(CiExpr left, CiExpr right, CiPriority parent, bool not)
+	protected override void WriteEqual!(FuExpr left, FuExpr right, FuPriority parent, bool not)
 	{
-		if ((left.Type is CiStringType && right.Type.Id != CiId.NullType)
-		 || (right.Type is CiStringType && left.Type.Id != CiId.NullType)) {
+		if ((left.Type is FuStringType && right.Type.Id != FuId.NullType)
+		 || (right.Type is FuStringType && left.Type.Id != FuId.NullType)) {
 			if (not)
 				WriteChar('!');
 			WriteMethodCall(left, "equals", right);
 		}
 		else if (IsUnsignedByteIndexing(left)
-			&& right is CiLiteralLong rightLiteral && rightLiteral.Type.Id == CiId.ByteRange) {
-			if (parent > CiPriority.Equality)
+			&& right is FuLiteralLong rightLiteral && rightLiteral.Type.Id == FuId.ByteRange) {
+			if (parent > FuPriority.Equality)
 				WriteChar('(');
-			assert left is CiBinaryExpr indexing;
+			assert left is FuBinaryExpr indexing;
 			WriteIndexingInternal(indexing); // omit "& 0xff"
 			Write(GetEqOp(not));
 			WriteSByteLiteral(rightLiteral);
-			if (parent > CiPriority.Equality)
+			if (parent > FuPriority.Equality)
 				WriteChar(')');
 		}
 		else
 			base.WriteEqual(left, right, parent, not);
 	}
 
-	protected override void WriteCoercedLiteral!(CiType? type, CiExpr expr)
+	protected override void WriteCoercedLiteral!(FuType? type, FuExpr expr)
 	{
 		if (IsUnsignedByte(type)) {
-			assert expr is CiLiteralLong literal;
+			assert expr is FuLiteralLong literal;
 			WriteSByteLiteral(literal);
 		}
 		else
 			base.WriteCoercedLiteral(type, expr);
 	}
 
-	protected override void WriteAnd!(CiBinaryExpr expr, CiPriority parent)
+	protected override void WriteAnd!(FuBinaryExpr expr, FuPriority parent)
 	{
 		if (IsUnsignedByteIndexing(expr.Left)
-		 && expr.Right is CiLiteralLong rightLiteral) {
-			if (parent > CiPriority.CondAnd && parent != CiPriority.And)
+		 && expr.Right is FuLiteralLong rightLiteral) {
+			if (parent > FuPriority.CondAnd && parent != FuPriority.And)
 				WriteChar('(');
-			assert expr.Left is CiBinaryExpr indexing;
+			assert expr.Left is FuBinaryExpr indexing;
 			WriteIndexingInternal(indexing); // omit "& 0xff"
 			Write(" & ");
 			VisitLiteralLong(0xff & rightLiteral.Value);
-			if (parent > CiPriority.CondAnd && parent != CiPriority.And)
+			if (parent > FuPriority.CondAnd && parent != FuPriority.And)
 				WriteChar(')');
 		}
 		else
 			base.WriteAnd(expr, parent);
 	}
 
-	protected override void WriteStringLength!(CiExpr expr)
+	protected override void WriteStringLength!(FuExpr expr)
 	{
 		WritePostfix(expr, ".length()");
 	}
 
-	protected override void WriteCharAt!(CiBinaryExpr expr)
+	protected override void WriteCharAt!(FuBinaryExpr expr)
 	{
 		WriteMethodCall(expr.Left, "charAt", expr.Right);
 	}
 
-	public override void VisitSymbolReference!(CiSymbolReference expr, CiPriority parent)
+	internal override void VisitSymbolReference!(FuSymbolReference expr, FuPriority parent)
 	{
 		switch (expr.Symbol.Id) {
-		case CiId.ConsoleError:
+		case FuId.ConsoleError:
 			Write("System.err");
 			break;
-		case CiId.ListCount:
-		case CiId.QueueCount:
-		case CiId.StackCount:
-		case CiId.HashSetCount:
-		case CiId.SortedSetCount:
-		case CiId.DictionaryCount:
-		case CiId.SortedDictionaryCount:
-		case CiId.OrderedDictionaryCount:
-			expr.Left.Accept(this, CiPriority.Primary);
+		case FuId.ListCount:
+		case FuId.QueueCount:
+		case FuId.StackCount:
+		case FuId.HashSetCount:
+		case FuId.SortedSetCount:
+		case FuId.DictionaryCount:
+		case FuId.SortedDictionaryCount:
+		case FuId.OrderedDictionaryCount:
+			expr.Left.Accept(this, FuPriority.Primary);
 			WriteMemberOp(expr.Left, expr);
 			Write("size()");
 			break;
-		case CiId.MathNaN:
+		case FuId.MathNaN:
 			Write("Float.NaN");
 			break;
-		case CiId.MathNegativeInfinity:
+		case FuId.MathNegativeInfinity:
 			Write("Float.NEGATIVE_INFINITY");
 			break;
-		case CiId.MathPositiveInfinity:
+		case FuId.MathPositiveInfinity:
 			Write("Float.POSITIVE_INFINITY");
 			break;
 		default:
@@ -519,13 +519,13 @@ public class GenJava : GenTyped
 		}
 	}
 
-	void WriteArrayBinarySearchFill!(CiExpr obj, string method, List<CiExpr#> args)
+	void WriteArrayBinarySearchFill!(FuExpr obj, string method, List<FuExpr#> args)
 	{
 		Include("java.util.Arrays");
 		Write("Arrays.");
 		Write(method);
 		WriteChar('(');
-		obj.Accept(this, CiPriority.Argument);
+		obj.Accept(this, FuPriority.Argument);
 		Write(", ");
 		if (args.Count == 3) {
 			WriteStartEnd(args[1], args[2]);
@@ -535,9 +535,9 @@ public class GenJava : GenTyped
 		WriteChar(')');
 	}
 
-	void WriteWrite!(CiMethod method, List<CiExpr#> args, bool newLine)
+	void WriteWrite!(FuMethod method, List<FuExpr#> args, bool newLine)
 	{
-		if (args.Count == 1 && args[0] is CiInterpolatedString interpolated) {
+		if (args.Count == 1 && args[0] is FuInterpolatedString interpolated) {
 			Write(".format(");
 			WritePrintf(interpolated, newLine);
 		}
@@ -549,145 +549,145 @@ public class GenJava : GenTyped
 		}
 	}
 
-	void WriteCompileRegex!(List<CiExpr#> args, int argIndex)
+	void WriteCompileRegex!(List<FuExpr#> args, int argIndex)
 	{
 		Include("java.util.regex.Pattern");
 		Write("Pattern.compile(");
-		args[argIndex].Accept(this, CiPriority.Argument);
+		args[argIndex].Accept(this, FuPriority.Argument);
 		WriteRegexOptions(args, ", ", " | ", "", "Pattern.CASE_INSENSITIVE", "Pattern.MULTILINE", "Pattern.DOTALL");
 		WriteChar(')');
 	}
 
-	protected override void WriteCallExpr!(CiExpr? obj, CiMethod method, List<CiExpr#> args, CiPriority parent)
+	protected override void WriteCallExpr!(FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
 	{
 		switch (method.Id) {
-		case CiId.None:
-		case CiId.ClassToString:
-		case CiId.StringContains:
-		case CiId.StringEndsWith:
-		case CiId.StringIndexOf:
-		case CiId.StringLastIndexOf:
-		case CiId.StringReplace:
-		case CiId.StringStartsWith:
-		case CiId.ListClear:
-		case CiId.ListContains:
-		case CiId.ListIndexOf:
-		case CiId.QueueClear:
-		case CiId.StackClear:
-		case CiId.StackPeek:
-		case CiId.StackPush:
-		case CiId.StackPop:
-		case CiId.HashSetAdd:
-		case CiId.HashSetClear:
-		case CiId.HashSetContains:
-		case CiId.HashSetRemove:
-		case CiId.SortedSetAdd:
-		case CiId.SortedSetClear:
-		case CiId.SortedSetContains:
-		case CiId.SortedSetRemove:
-		case CiId.DictionaryClear:
-		case CiId.DictionaryContainsKey:
-		case CiId.DictionaryRemove:
-		case CiId.SortedDictionaryClear:
-		case CiId.SortedDictionaryContainsKey:
-		case CiId.SortedDictionaryRemove:
-		case CiId.OrderedDictionaryClear:
-		case CiId.OrderedDictionaryContainsKey:
-		case CiId.OrderedDictionaryRemove:
-		case CiId.StringWriterToString:
-		case CiId.MathMethod:
-		case CiId.MathAbs:
-		case CiId.MathMaxInt:
-		case CiId.MathMaxDouble:
-		case CiId.MathMinInt:
-		case CiId.MathMinDouble:
+		case FuId.None:
+		case FuId.ClassToString:
+		case FuId.StringContains:
+		case FuId.StringEndsWith:
+		case FuId.StringIndexOf:
+		case FuId.StringLastIndexOf:
+		case FuId.StringReplace:
+		case FuId.StringStartsWith:
+		case FuId.ListClear:
+		case FuId.ListContains:
+		case FuId.ListIndexOf:
+		case FuId.QueueClear:
+		case FuId.StackClear:
+		case FuId.StackPeek:
+		case FuId.StackPush:
+		case FuId.StackPop:
+		case FuId.HashSetAdd:
+		case FuId.HashSetClear:
+		case FuId.HashSetContains:
+		case FuId.HashSetRemove:
+		case FuId.SortedSetAdd:
+		case FuId.SortedSetClear:
+		case FuId.SortedSetContains:
+		case FuId.SortedSetRemove:
+		case FuId.DictionaryClear:
+		case FuId.DictionaryContainsKey:
+		case FuId.DictionaryRemove:
+		case FuId.SortedDictionaryClear:
+		case FuId.SortedDictionaryContainsKey:
+		case FuId.SortedDictionaryRemove:
+		case FuId.OrderedDictionaryClear:
+		case FuId.OrderedDictionaryContainsKey:
+		case FuId.OrderedDictionaryRemove:
+		case FuId.StringWriterToString:
+		case FuId.MathMethod:
+		case FuId.MathAbs:
+		case FuId.MathMaxInt:
+		case FuId.MathMaxDouble:
+		case FuId.MathMinInt:
+		case FuId.MathMinDouble:
 			if (obj != null) {
-				if (IsReferenceTo(obj, CiId.BasePtr))
+				if (IsReferenceTo(obj, FuId.BasePtr))
 					Write("super");
 				else
-					obj.Accept(this, CiPriority.Primary);
+					obj.Accept(this, FuPriority.Primary);
 				WriteChar('.');
 			}
 			WriteName(method);
 			WriteArgsInParentheses(method, args);
 			break;
-		case CiId.EnumFromInt:
+		case FuId.EnumFromInt:
 			args[0].Accept(this, parent);
 			break;
-		case CiId.EnumHasFlag:
+		case FuId.EnumHasFlag:
 			WriteEnumHasFlag(obj, args, parent);
 			break;
-		case CiId.DoubleTryParse:
+		case FuId.DoubleTryParse:
 			Include("java.util.function.DoubleSupplier");
 			Write("!Double.isNaN(");
-			obj.Accept(this, CiPriority.Assign);
+			obj.Accept(this, FuPriority.Assign);
 			Write(" = ((DoubleSupplier) () -> { try { return Double.parseDouble(");
-			args[0].Accept(this, CiPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 			Write("); } catch (NumberFormatException e) { return Double.NaN; } }).getAsDouble())");
 			break;
-		case CiId.StringSubstring:
+		case FuId.StringSubstring:
 			WritePostfix(obj, ".substring(");
-			args[0].Accept(this, CiPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 			if (args.Count == 2) {
 				Write(", ");
 				WriteAdd(args[0], args[1]); // FIXME: side effect
 			}
 			WriteChar(')');
 			break;
-		case CiId.ArrayBinarySearchAll:
-		case CiId.ArrayBinarySearchPart:
+		case FuId.ArrayBinarySearchAll:
+		case FuId.ArrayBinarySearchPart:
 			WriteArrayBinarySearchFill(obj, "binarySearch", args);
 			break;
 // fails for "int" etc.
-//		case CiId.ArrayContains:
+//		case FuId.ArrayContains:
 //			Include("java.util.List");
 //			Write("List.of(");
-//			obj.Accept(this, CiPriority.Argument);
+//			obj.Accept(this, FuPriority.Argument);
 //			Write(").contains(");
-//			args[0].Accept(this, CiPriority.Argument);
+//			args[0].Accept(this, FuPriority.Argument);
 //			WriteChar(')');
 //			break;
-		case CiId.ArrayCopyTo:
+		case FuId.ArrayCopyTo:
 			Write("System.arraycopy(");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			Write(", ");
 			WriteArgs(method, args);
 			WriteChar(')');
 			break;
-		case CiId.ArrayFillAll:
-		case CiId.ArrayFillPart:
+		case FuId.ArrayFillAll:
+		case FuId.ArrayFillPart:
 			WriteArrayBinarySearchFill(obj, "fill", args);
 			break;
-		case CiId.ArraySortAll:
+		case FuId.ArraySortAll:
 			Include("java.util.Arrays");
 			WriteCall("Arrays.sort", obj);
 			break;
-		case CiId.ArraySortPart:
+		case FuId.ArraySortPart:
 			Include("java.util.Arrays");
 			Write("Arrays.sort(");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			Write(", ");
 			WriteStartEnd(args[0], args[1]);
 			WriteChar(')');
 			break;
-		case CiId.ListAdd:
+		case FuId.ListAdd:
 			WriteListAdd(obj, "add", args);
 			break;
-		case CiId.ListAddRange:
+		case FuId.ListAddRange:
 			WriteMethodCall(obj, "addAll", args[0]);
 			break;
-		case CiId.ListAll:
+		case FuId.ListAll:
 			WriteMethodCall(obj, "stream().allMatch", args[0]);
 			break;
-		case CiId.ListAny:
+		case FuId.ListAny:
 			WriteMethodCall(obj, "stream().anyMatch", args[0]);
 			break;
-		case CiId.ListCopyTo:
+		case FuId.ListCopyTo:
 			Write("for (int _i = 0; _i < ");
-			args[3].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
+			args[3].Accept(this, FuPriority.Rel); // FIXME: side effect in every iteration
 			WriteLine("; _i++)");
 			Write("\t");
-			args[1].Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+			args[1].Accept(this, FuPriority.Primary); // FIXME: side effect in every iteration
 			WriteChar('[');
 			StartAdd(args[2]); // FIXME: side effect in every iteration
 			Write("_i] = ");
@@ -695,60 +695,60 @@ public class GenJava : GenTyped
 			StartAdd(args[0]); // FIXME: side effect in every iteration
 			Write("_i)");
 			break;
-		case CiId.ListInsert:
+		case FuId.ListInsert:
 			WriteListInsert(obj, "add", args);
 			break;
-		case CiId.ListLast:
+		case FuId.ListLast:
 			WritePostfix(obj, ".get(");
 			WritePostfix(obj, ".size() - 1)"); // FIXME: side effect
 			break;
-		case CiId.ListRemoveAt:
+		case FuId.ListRemoveAt:
 			WriteMethodCall(obj, "remove", args[0]);
 			break;
-		case CiId.ListRemoveRange:
+		case FuId.ListRemoveRange:
 			WritePostfix(obj, ".subList(");
 			WriteStartEnd(args[0], args[1]);
 			Write(").clear()");
 			break;
-		case CiId.ListSortAll:
+		case FuId.ListSortAll:
 			WritePostfix(obj, ".sort(null)");
 			break;
-		case CiId.ListSortPart:
+		case FuId.ListSortPart:
 			WritePostfix(obj, ".subList(");
 			WriteStartEnd(args[0], args[1]);
 			Write(").sort(null)");
 			break;
-		case CiId.QueueDequeue:
+		case FuId.QueueDequeue:
 			WritePostfix(obj, ".remove()");
 			break;
-		case CiId.QueueEnqueue:
+		case FuId.QueueEnqueue:
 			WriteMethodCall(obj, "add", args[0]);
 			break;
-		case CiId.QueuePeek:
+		case FuId.QueuePeek:
 			WritePostfix(obj, ".element()");
 			break;
-		case CiId.DictionaryAdd:
+		case FuId.DictionaryAdd:
 			WritePostfix(obj, ".put(");
-			args[0].Accept(this, CiPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 			Write(", ");
 			WriteNewStorage(obj.Type.AsClassType().GetValueType());
 			WriteChar(')');
 			break;
-		case CiId.TextWriterWrite:
-			if (IsReferenceTo(obj, CiId.ConsoleError)) {
+		case FuId.TextWriterWrite:
+			if (IsReferenceTo(obj, FuId.ConsoleError)) {
 				Write("System.err");
 				WriteWrite(method, args, false);
 			}
 			else {
 				Write("try { ");
 				WritePostfix(obj, ".append(");
-				WriteToString(args[0], CiPriority.Argument);
+				WriteToString(args[0], FuPriority.Argument);
 				Include("java.io.IOException");
 				Write("); } catch (IOException e) { throw new RuntimeException(e); }");
 			}
 			break;
-		case CiId.TextWriterWriteChar:
-			if (IsReferenceTo(obj, CiId.ConsoleError))
+		case FuId.TextWriterWriteChar:
+			if (IsReferenceTo(obj, FuId.ConsoleError))
 				WriteCharMethodCall(obj, "print", args[0]);
 			else {
 				Write("try { ");
@@ -757,8 +757,8 @@ public class GenJava : GenTyped
 				Write("; } catch (IOException e) { throw new RuntimeException(e); }");
 			}
 			break;
-		case CiId.TextWriterWriteCodePoint:
-			if (IsReferenceTo(obj, CiId.ConsoleError)) {
+		case FuId.TextWriterWriteCodePoint:
+			if (IsReferenceTo(obj, FuId.ConsoleError)) {
 				WriteCall("System.err.print(Character.toChars", args[0]);
 				WriteChar(')');
 			}
@@ -769,8 +769,8 @@ public class GenJava : GenTyped
 				Write("); } catch (IOException e) { throw new RuntimeException(e); }");
 			}
 			break;
-		case CiId.TextWriterWriteLine:
-			if (IsReferenceTo(obj, CiId.ConsoleError)) {
+		case FuId.TextWriterWriteLine:
+			if (IsReferenceTo(obj, FuId.ConsoleError)) {
 				Write("System.err");
 				WriteWrite(method, args, true);
 			}
@@ -779,119 +779,119 @@ public class GenJava : GenTyped
 				WritePostfix(obj, ".append(");
 				if (args.Count == 0)
 					Write("'\\n'");
-				else if (args[0] is CiInterpolatedString interpolated) {
+				else if (args[0] is FuInterpolatedString interpolated) {
 					Write("String.format(");
 					WritePrintf(interpolated, true);
 				}
 				else {
-					WriteToString(args[0], CiPriority.Argument);
+					WriteToString(args[0], FuPriority.Argument);
 					Write(").append('\\n'");
 				}
 				Include("java.io.IOException");
 				Write("); } catch (IOException e) { throw new RuntimeException(e); }");
 			}
 			break;
-		case CiId.StringWriterClear:
+		case FuId.StringWriterClear:
 			WritePostfix(obj, ".getBuffer().setLength(0)");
 			break;
-		case CiId.ConsoleWrite:
+		case FuId.ConsoleWrite:
 			Write("System.out");
 			WriteWrite(method, args, false);
 			break;
-		case CiId.ConsoleWriteLine:
+		case FuId.ConsoleWriteLine:
 			Write("System.out");
 			WriteWrite(method, args, true);
 			break;
-		case CiId.UTF8GetByteCount:
+		case FuId.UTF8GetByteCount:
 			Include("java.nio.charset.StandardCharsets");
 			WritePostfix(args[0], ".getBytes(StandardCharsets.UTF_8).length"); // FIXME: quick&dirty!
 			break;
-		case CiId.UTF8GetBytes:
+		case FuId.UTF8GetBytes:
 			Include("java.nio.ByteBuffer");
 			Include("java.nio.CharBuffer");
 			Include("java.nio.charset.StandardCharsets");
 			Write("StandardCharsets.UTF_8.newEncoder().encode(CharBuffer.wrap(");
-			args[0].Accept(this, CiPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 			Write("), ByteBuffer.wrap(");
-			args[1].Accept(this, CiPriority.Argument);
+			args[1].Accept(this, FuPriority.Argument);
 			Write(", ");
-			args[2].Accept(this, CiPriority.Argument);
+			args[2].Accept(this, FuPriority.Argument);
 			Write(", ");
 			WritePostfix(args[1], ".length"); // FIXME: side effect
 			if (!args[2].IsLiteralZero()) {
 				Write(" - ");
-				args[2].Accept(this, CiPriority.Mul); // FIXME: side effect
+				args[2].Accept(this, FuPriority.Mul); // FIXME: side effect
 			}
 			Write("), true)");
 			break;
-		case CiId.UTF8GetString:
+		case FuId.UTF8GetString:
 			Include("java.nio.charset.StandardCharsets");
 			Write("new String(");
 			WriteArgs(method, args);
 			Write(", StandardCharsets.UTF_8)");
 			break;
-		case CiId.EnvironmentGetEnvironmentVariable:
+		case FuId.EnvironmentGetEnvironmentVariable:
 			WriteCall("System.getenv", args[0]);
 			break;
-		case CiId.RegexCompile:
+		case FuId.RegexCompile:
 			WriteCompileRegex(args, 0);
 			break;
-		case CiId.RegexEscape:
+		case FuId.RegexEscape:
 			Include("java.util.regex.Pattern");
 			WriteCall("Pattern.quote", args[0]);
 			break;
-		case CiId.RegexIsMatchStr:
+		case FuId.RegexIsMatchStr:
 			WriteCompileRegex(args, 1);
 			WriteCall(".matcher", args[0]);
 			Write(".find()");
 			break;
-		case CiId.RegexIsMatchRegex:
+		case FuId.RegexIsMatchRegex:
 			WriteMethodCall(obj, "matcher", args[0]);
 			Write(".find()");
 			break;
-		case CiId.MatchFindStr:
-		case CiId.MatchFindRegex:
+		case FuId.MatchFindStr:
+		case FuId.MatchFindRegex:
 			WriteChar('(');
-			obj.Accept(this, CiPriority.Assign);
+			obj.Accept(this, FuPriority.Assign);
 			Write(" = ");
-			if (method.Id == CiId.MatchFindStr)
+			if (method.Id == FuId.MatchFindStr)
 				WriteCompileRegex(args, 1);
 			else
-				args[1].Accept(this, CiPriority.Primary);
+				args[1].Accept(this, FuPriority.Primary);
 			WriteCall(".matcher", args[0]);
 			Write(").find()");
 			break;
-		case CiId.MatchGetCapture:
+		case FuId.MatchGetCapture:
 			WriteMethodCall(obj, "group", args[0]);
 			break;
-		case CiId.MathCeiling:
+		case FuId.MathCeiling:
 			WriteCall("Math.ceil", args[0]);
 			break;
-		case CiId.MathClamp:
+		case FuId.MathClamp:
 			Write("Math.min(Math.max(");
 			WriteClampAsMinMax(args);
 			break;
-		case CiId.MathFusedMultiplyAdd:
+		case FuId.MathFusedMultiplyAdd:
 			WriteCall("Math.fma", args[0], args[1], args[2]);
 			break;
-		case CiId.MathIsFinite:
+		case FuId.MathIsFinite:
 			WriteCall("Double.isFinite", args[0]);
 			break;
-		case CiId.MathIsInfinity:
+		case FuId.MathIsInfinity:
 			WriteCall("Double.isInfinite", args[0]);
 			break;
-		case CiId.MathIsNaN:
+		case FuId.MathIsNaN:
 			WriteCall("Double.isNaN", args[0]);
 			break;
-		case CiId.MathLog2:
-			if (parent > CiPriority.Mul)
+		case FuId.MathLog2:
+			if (parent > FuPriority.Mul)
 				WriteChar('(');
 			WriteCall("Math.log", args[0]);
 			Write(" * 1.4426950408889635");
-			if (parent > CiPriority.Mul)
+			if (parent > FuPriority.Mul)
 				WriteChar(')');
 			break;
-		case CiId.MathRound:
+		case FuId.MathRound:
 			WriteCall("Math.rint", args[0]);
 			break;
 		default:
@@ -900,26 +900,26 @@ public class GenJava : GenTyped
 		}
 	}
 
-	protected override void WriteIndexingExpr!(CiBinaryExpr expr, CiPriority parent)
+	protected override void WriteIndexingExpr!(FuBinaryExpr expr, FuPriority parent)
 	{
-		if (parent != CiPriority.Assign && IsUnsignedByte(expr.Type)) {
-			if (parent > CiPriority.And)
+		if (parent != FuPriority.Assign && IsUnsignedByte(expr.Type)) {
+			if (parent > FuPriority.And)
 				WriteChar('(');
 			WriteIndexingInternal(expr);
 			Write(" & 0xff");
-			if (parent > CiPriority.And)
+			if (parent > FuPriority.And)
 				WriteChar(')');
 		}
 		else
 			WriteIndexingInternal(expr);
 	}
 
-	protected override bool IsPromoted(CiExpr expr) => base.IsPromoted(expr) || IsUnsignedByteIndexing(expr);
+	protected override bool IsPromoted(FuExpr expr) => base.IsPromoted(expr) || IsUnsignedByteIndexing(expr);
 
-	protected override void WriteAssignRight!(CiBinaryExpr expr)
+	protected override void WriteAssignRight!(FuBinaryExpr expr)
 	{
 		if (!IsUnsignedByteIndexing(expr.Left)
-		 && expr.Right is CiBinaryExpr rightBinary && rightBinary.IsAssign() && IsUnsignedByte(expr.Right.Type)) {
+		 && expr.Right is FuBinaryExpr rightBinary && rightBinary.IsAssign() && IsUnsignedByte(expr.Right.Type)) {
 			WriteChar('(');
 			base.WriteAssignRight(expr);
 			Write(") & 0xff");
@@ -928,14 +928,14 @@ public class GenJava : GenTyped
 			base.WriteAssignRight(expr);
 	}
 
-	protected override void WriteAssign!(CiBinaryExpr expr, CiPriority parent)
+	protected override void WriteAssign!(FuBinaryExpr expr, FuPriority parent)
 	{
-		if (expr.Left is CiBinaryExpr indexing
-		 && indexing.Op == CiToken.LeftBracket
-		 && indexing.Left.Type is CiClassType klass
+		if (expr.Left is FuBinaryExpr indexing
+		 && indexing.Op == FuToken.LeftBracket
+		 && indexing.Left.Type is FuClassType klass
 		 && !klass.IsArray()) {
-			WritePostfix(indexing.Left, klass.Class.Id == CiId.ListClass ? ".set(" : ".put(");
-			indexing.Right.Accept(this, CiPriority.Argument);
+			WritePostfix(indexing.Left, klass.Class.Id == FuId.ListClass ? ".set(" : ".put(");
+			indexing.Right.Accept(this, FuPriority.Argument);
 			Write(", ");
 			WriteNotPromoted(expr.Type, expr.Right);
 			WriteChar(')');
@@ -946,30 +946,30 @@ public class GenJava : GenTyped
 
 	protected override string GetIsOperator() => " instanceof ";
 
-	protected override void WriteVar!(CiNamedValue def)
+	protected override void WriteVar!(FuNamedValue def)
 	{
 		if (def.Type.IsFinal() && !def.IsAssignableStorage())
 			Write("final ");
 		base.WriteVar(def);
 	}
 
-	protected override bool HasInitCode(CiNamedValue def) => (def.Type is CiArrayStorageType && def.Type.GetStorageType() is CiStorageType) || base.HasInitCode(def);
+	protected override bool HasInitCode(FuNamedValue def) => (def.Type is FuArrayStorageType && def.Type.GetStorageType() is FuStorageType) || base.HasInitCode(def);
 
-	protected override void WriteInitCode!(CiNamedValue def)
+	protected override void WriteInitCode!(FuNamedValue def)
 	{
 		if (!HasInitCode(def))
 			return;
-		if (def.Type is CiArrayStorageType array) {
+		if (def.Type is FuArrayStorageType array) {
 			int nesting = 0;
-			while (array.GetElementType() is CiArrayStorageType innerArray) {
+			while (array.GetElementType() is FuArrayStorageType innerArray) {
 				OpenLoop("int", nesting++, array.Length);
 				array = innerArray;
 			}
 			OpenLoop("int", nesting++, array.Length);
 			WriteArrayElement(def, nesting);
 			Write(" = ");
-			assert array.GetElementType() is CiStorageType storage;
-			WriteNew(storage, CiPriority.Argument);
+			assert array.GetElementType() is FuStorageType storage;
+			WriteNew(storage, FuPriority.Argument);
 			WriteCharLine(';');
 			while (--nesting >= 0)
 				CloseBlock();
@@ -978,57 +978,57 @@ public class GenJava : GenTyped
 			base.WriteInitCode(def);
 	}
 
-	public override void VisitLambdaExpr!(CiLambdaExpr expr)
+	internal override void VisitLambdaExpr!(FuLambdaExpr expr)
 	{
 		WriteName(expr.First);
 		Write(" -> ");
-		expr.Body.Accept(this, CiPriority.Statement);
+		expr.Body.Accept(this, FuPriority.Statement);
 	}
 
-	protected override void DefineIsVar!(CiBinaryExpr binary)
+	protected override void DefineIsVar!(FuBinaryExpr binary)
 	{
 	}
 
-	protected override void WriteAssert!(CiAssert statement)
+	protected override void WriteAssert!(FuAssert statement)
 	{
 		if (statement.CompletesNormally()) {
 			Write("assert ");
-			statement.Cond.Accept(this, CiPriority.Argument);
+			statement.Cond.Accept(this, FuPriority.Argument);
 			if (statement.Message != null) {
 				Write(" : ");
-				statement.Message.Accept(this, CiPriority.Argument);
+				statement.Message.Accept(this, FuPriority.Argument);
 			}
 		}
 		else {
 			// assert false;
 			Write("throw new AssertionError(");
 			if (statement.Message != null)
-				statement.Message.Accept(this, CiPriority.Argument);
+				statement.Message.Accept(this, FuPriority.Argument);
 			WriteChar(')');
 		}
 		WriteCharLine(';');
 	}
 
-	public override void VisitForeach!(CiForeach statement)
+	internal override void VisitForeach!(FuForeach statement)
 	{
 		Write("for (");
-		assert statement.Collection.Type is CiClassType klass;
+		assert statement.Collection.Type is FuClassType klass;
 		switch (klass.Class.Id) {
-		case CiId.StringClass:
+		case FuId.StringClass:
 			Write("int _i = 0; _i < ");
 			WriteStringLength(statement.Collection); // FIXME: side effect in every iteration
 			Write("; _i++) ");
 			OpenBlock();
 			WriteTypeAndName(statement.GetVar());
 			Write(" = ");
-			statement.Collection.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+			statement.Collection.Accept(this, FuPriority.Primary); // FIXME: side effect in every iteration
 			WriteLine(".charAt(_i);");
 			FlattenBlock(statement.Body);
 			CloseBlock();
 			return;
-		case CiId.DictionaryClass:
-		case CiId.SortedDictionaryClass:
-		case CiId.OrderedDictionaryClass:
+		case FuId.DictionaryClass:
+		case FuId.SortedDictionaryClass:
+		case FuId.OrderedDictionaryClass:
 			Include("java.util.Map");
 			WriteDictType("Map.Entry", klass);
 			WriteChar(' ');
@@ -1039,33 +1039,33 @@ public class GenJava : GenTyped
 		default:
 			WriteTypeAndName(statement.GetVar());
 			Write(" : ");
-			statement.Collection.Accept(this, CiPriority.Argument);
+			statement.Collection.Accept(this, FuPriority.Argument);
 			break;
 		}
 		WriteChar(')');
 		WriteChild(statement.Body);
 	}
 
-	public override void VisitLock!(CiLock statement)
+	internal override void VisitLock!(FuLock statement)
 	{
 		WriteCall("synchronized ", statement.Lock);
 		WriteChild(statement.Body);
 	}
 
-	protected override void WriteSwitchValue!(CiExpr expr)
+	protected override void WriteSwitchValue!(FuExpr expr)
 	{
 		if (IsUnsignedByteIndexing(expr)) {
-			assert expr is CiBinaryExpr indexing;
+			assert expr is FuBinaryExpr indexing;
 			WriteIndexingInternal(indexing); // omit "& 0xff"
 		}
 		else
 			base.WriteSwitchValue(expr);
 	}
 
-	bool WriteSwitchCaseVar!(CiExpr expr)
+	bool WriteSwitchCaseVar!(FuExpr expr)
 	{
-		expr.Accept(this, CiPriority.Argument);
-		if (expr is CiVar def && def.Name == "_") {
+		expr.Accept(this, FuPriority.Argument);
+		if (expr is FuVar def && def.Name == "_") {
 			// javac: "as of release 9, '_' is a keyword, and may not be used as an identifier"
 			VisitLiteralLong(this.SwitchCaseDiscards++);
 			return true;
@@ -1073,16 +1073,16 @@ public class GenJava : GenTyped
 		return false;
 	}
 
-	protected override void WriteSwitchCase!(CiSwitch statement, CiCase kase)
+	protected override void WriteSwitchCase!(FuSwitch statement, FuCase kase)
 	{
 		if (statement.IsTypeMatching()) {
-			foreach (CiExpr expr in kase.Values) {
+			foreach (FuExpr expr in kase.Values) {
 				Write("case ");
 				bool discard;
-				if (expr is CiBinaryExpr when1) {
+				if (expr is FuBinaryExpr when1) {
 					discard = WriteSwitchCaseVar(when1.Left);
 					Write(" when ");
-					when1.Right.Accept(this, CiPriority.Argument);
+					when1.Right.Accept(this, FuPriority.Argument);
 				}
 				else
 					discard = WriteSwitchCaseVar(expr);
@@ -1098,10 +1098,10 @@ public class GenJava : GenTyped
 			base.WriteSwitchCase(statement, kase);
 	}
 
-	public override void VisitThrow!(CiThrow statement)
+	internal override void VisitThrow!(FuThrow statement)
 	{
 		Write("throw new Exception(");
-		statement.Message.Accept(this, CiPriority.Argument);
+		statement.Message.Accept(this, FuPriority.Argument);
 		WriteLine(");");
 	}
 
@@ -1115,20 +1115,20 @@ public class GenJava : GenTyped
 		}
 	}
 
-	public override void VisitEnumValue!(CiConst konst, CiConst? previous)
+	internal override void VisitEnumValue!(FuConst konst, FuConst? previous)
 	{
 		WriteDoc(konst.Documentation);
 		Write("int ");
 		WriteUppercaseWithUnderscores(konst.Name);
 		Write(" = ");
-		if (konst.Value is CiImplicitEnumValue imp)
+		if (konst.Value is FuImplicitEnumValue imp)
 			VisitLiteralLong(imp.Value);
 		else
-			konst.Value.Accept(this, CiPriority.Argument);
+			konst.Value.Accept(this, FuPriority.Argument);
 		WriteCharLine(';');
 	}
 
-	protected override void WriteEnum!(CiEnum enu)
+	protected override void WriteEnum!(FuEnum enu)
 	{
 		CreateJavaFile(enu.Name);
 		WriteNewLine();
@@ -1142,28 +1142,28 @@ public class GenJava : GenTyped
 		CloseFile();
 	}
 
-	void WriteSignature!(CiMethod method, int paramCount)
+	void WriteSignature!(FuMethod method, int paramCount)
 	{
 		WriteNewLine();
 		WriteMethodDoc(method);
 		WriteVisibility(method.Visibility);
 		switch (method.CallType) {
-		case CiCallType.Static:
+		case FuCallType.Static:
 			Write("static ");
 			break;
-		case CiCallType.Virtual:
+		case FuCallType.Virtual:
 			break;
-		case CiCallType.Abstract:
+		case FuCallType.Abstract:
 			Write("abstract ");
 			break;
-		case CiCallType.Override:
+		case FuCallType.Override:
 			Write("@Override ");
 			break;
-		case CiCallType.Normal:
-			if (method.Visibility != CiVisibility.Private)
+		case FuCallType.Normal:
+			if (method.Visibility != FuVisibility.Private)
 				Write("final ");
 			break;
-		case CiCallType.Sealed:
+		case FuCallType.Sealed:
 			Write("final @Override ");
 			break;
 		default:
@@ -1171,7 +1171,7 @@ public class GenJava : GenTyped
 		}
 		WriteTypeAndName(method);
 		WriteChar('(');
-		CiVar param = method.Parameters.FirstParameter();
+		FuVar param = method.Parameters.FirstParameter();
 		for (int i = 0; i < paramCount; i++) {
 			if (i > 0)
 				Write(", ");
@@ -1183,29 +1183,29 @@ public class GenJava : GenTyped
 			Write(" throws Exception");
 	}
 
-	void WriteOverloads!(CiMethod method, int paramCount)
+	void WriteOverloads!(FuMethod method, int paramCount)
 	{
 		if (paramCount + 1 < method.Parameters.Count())
 			WriteOverloads(method, paramCount + 1);
 		WriteSignature(method, paramCount);
 		WriteNewLine();
 		OpenBlock();
-		if (method.Type.Id != CiId.VoidType)
+		if (method.Type.Id != FuId.VoidType)
 			Write("return ");
 		WriteName(method);
 		WriteChar('(');
-		CiVar param = method.Parameters.FirstParameter();
+		FuVar param = method.Parameters.FirstParameter();
 		for (int i = 0; i < paramCount; i++) {
 			WriteName(param);
 			Write(", ");
 			param = param.NextParameter();
 		}
-		param.Value.Accept(this, CiPriority.Argument);
+		param.Value.Accept(this, FuPriority.Argument);
 		WriteLine(");");
 		CloseBlock();
 	}
 
-	protected override void WriteConst!(CiConst konst)
+	protected override void WriteConst!(FuConst konst)
 	{
 		WriteNewLine();
 		WriteDoc(konst.Documentation);
@@ -1217,7 +1217,7 @@ public class GenJava : GenTyped
 		WriteCharLine(';');
 	}
 
-	protected override void WriteField!(CiField field)
+	protected override void WriteField!(FuField field)
 	{
 		WriteDoc(field.Documentation);
 		WriteVisibility(field.Visibility);
@@ -1225,12 +1225,12 @@ public class GenJava : GenTyped
 		WriteCharLine(';');
 	}
 
-	protected override void WriteMethod!(CiMethod method)
+	protected override void WriteMethod!(FuMethod method)
 	{
 		WriteSignature(method, method.Parameters.Count());
 		WriteBody(method);
 		int i = 0;
-		for (CiVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+		for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 			if (param.Value != null) {
 				WriteOverloads(method, i);
 				break;
@@ -1239,20 +1239,20 @@ public class GenJava : GenTyped
 		}
 	}
 
-	protected override void WriteClass!(CiClass klass, CiProgram program)
+	protected override void WriteClass!(FuClass klass, FuProgram program)
 	{
 		OpenStringWriter();
 
 		WriteDoc(klass.Documentation);
 		WritePublic(klass);
 		switch (klass.CallType) {
-		case CiCallType.Normal:
+		case FuCallType.Normal:
 			break;
-		case CiCallType.Abstract:
+		case FuCallType.Abstract:
 			Write("abstract ");
 			break;
-		case CiCallType.Static:
-		case CiCallType.Sealed:
+		case FuCallType.Static:
+		case FuCallType.Sealed:
 			Write("final ");
 			break;
 		default:
@@ -1260,7 +1260,7 @@ public class GenJava : GenTyped
 		}
 		OpenClass(klass, "", " extends ");
 
-		if (klass.CallType == CiCallType.Static) {
+		if (klass.CallType == FuCallType.Static) {
 			Write("private ");
 			Write(klass.Name);
 			WriteLine("()");
@@ -1326,7 +1326,7 @@ public class GenJava : GenTyped
 		CloseFile();
 	}
 
-	public override void WriteProgram!(CiProgram program)
+	public override void WriteProgram!(FuProgram program)
 	{
 		this.SwitchCaseDiscards = 0;
 		WriteTypes(program);

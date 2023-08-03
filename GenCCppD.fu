@@ -20,9 +20,9 @@
 
 public abstract class GenCCppD : GenTyped
 {
-	protected List<CiSwitch>() SwitchesWithGoto;
+	protected List<FuSwitch>() SwitchesWithGoto;
 
-	public override void VisitLiteralLong!(long i)
+	internal override void VisitLiteralLong!(long i)
 	{
 		if (i == long.MinValue)
 			Write("(-9223372036854775807 - 1)");
@@ -30,11 +30,11 @@ public abstract class GenCCppD : GenTyped
 			base.VisitLiteralLong(i);
 	}
 
-	static bool IsPtrTo(CiExpr ptr, CiExpr other) => ptr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass && klass.IsAssignableFrom(other.Type);
+	static bool IsPtrTo(FuExpr ptr, FuExpr other) => ptr.Type is FuClassType klass && klass.Class.Id != FuId.StringClass && klass.IsAssignableFrom(other.Type);
 
-	protected override void WriteEqual!(CiExpr left, CiExpr right, CiPriority parent, bool not)
+	protected override void WriteEqual!(FuExpr left, FuExpr right, FuPriority parent, bool not)
 	{
-		CiType coercedType;
+		FuType coercedType;
 		if (IsPtrTo(left, right))
 			coercedType = left.Type;
 		else if (IsPtrTo(right, left))
@@ -43,24 +43,24 @@ public abstract class GenCCppD : GenTyped
 			base.WriteEqual(left, right, parent, not);
 			return;
 		}
-		if (parent > CiPriority.Equality)
+		if (parent > FuPriority.Equality)
 			WriteChar('(');
-		WriteCoerced(coercedType, left, CiPriority.Equality);
+		WriteCoerced(coercedType, left, FuPriority.Equality);
 		Write(GetEqOp(not));
-		WriteCoerced(coercedType, right, CiPriority.Equality);
-		if (parent > CiPriority.Equality)
+		WriteCoerced(coercedType, right, FuPriority.Equality);
+		if (parent > FuPriority.Equality)
 			WriteChar(')');
 	}
 
-	public override void VisitConst!(CiConst statement)
+	internal override void VisitConst!(FuConst statement)
 	{
-		if (statement.Type is CiArrayStorageType)
+		if (statement.Type is FuArrayStorageType)
 			WriteConst(statement);
 	}
 
-	public override void VisitBreak!(CiBreak statement)
+	internal override void VisitBreak!(FuBreak statement)
 	{
-		if (statement.LoopOrSwitch is CiSwitch switchStatement) {
+		if (statement.LoopOrSwitch is FuSwitch switchStatement) {
 			int gotoId = this.SwitchesWithGoto.IndexOf(switchStatement);
 			if (gotoId >= 0) {
 				Write("goto fuafterswitch");
@@ -72,10 +72,10 @@ public abstract class GenCCppD : GenTyped
 		base.VisitBreak(statement);
 	}
 
-	protected void WriteSwitchAsIfsWithGoto!(CiSwitch statement)
+	protected void WriteSwitchAsIfsWithGoto!(FuSwitch statement)
 	{
-		if (statement.Cases.Any(kase => CiSwitch.HasEarlyBreakAndContinue(kase.Body))
-		 || CiSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
+		if (statement.Cases.Any(kase => FuSwitch.HasEarlyBreakAndContinue(kase.Body))
+		 || FuSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
 			int gotoId = this.SwitchesWithGoto.Count;
 			this.SwitchesWithGoto.Add(statement);
 			WriteSwitchAsIfs(statement, false);

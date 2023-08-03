@@ -41,17 +41,17 @@ public class GenC : GenCCpp
 	SortedDictionary<string, string>() ListFrees;
 	bool TreeCompareInteger;
 	bool TreeCompareString;
-	SortedSet<CiId>() Compares;
-	SortedSet<CiId>() Contains;
-	List<CiVar>() VarsToDestruct;
-	protected CiClass CurrentClass;
+	SortedSet<FuId>() Compares;
+	SortedSet<FuId>() Contains;
+	List<FuVar>() VarsToDestruct;
+	protected FuClass CurrentClass;
 
-	protected override CiContainerType GetCurrentContainer() => this.CurrentClass;
+	protected override FuContainerType GetCurrentContainer() => this.CurrentClass;
 	protected override string GetTargetName() => "C";
 
-	protected override void WriteSelfDoc!(CiMethod method)
+	protected override void WriteSelfDoc!(FuMethod method)
 	{
-		if (method.CallType == CiCallType.Static)
+		if (method.CallType == FuCallType.Static)
 			return;
 		Write(" * @param self This <code>");
 		WriteName(method.Parent);
@@ -78,7 +78,7 @@ public class GenC : GenCCpp
 		Include("stdbool.h");
 	}
 
-	public override void VisitLiteralNull!()
+	internal override void VisitLiteralNull!()
 	{
 		Write("NULL");
 	}
@@ -88,44 +88,44 @@ public class GenC : GenCCpp
 		Write("ll");
 	}
 
-	protected override void WritePrintfWidth!(CiInterpolatedPart part)
+	protected override void WritePrintfWidth!(FuInterpolatedPart part)
 	{
 		base.WritePrintfWidth(part);
 		if (IsStringSubstring(part.Argument) != null) {
 			assert part.Precision < 0;
 			Write(".*");
 		}
-		if (part.Argument.Type.Id == CiId.LongType)
+		if (part.Argument.Type.Id == FuId.LongType)
 			WritePrintfLongPrefix();
 	}
 
-	protected virtual void WriteInterpolatedStringArgBase!(CiExpr expr)
+	protected virtual void WriteInterpolatedStringArgBase!(FuExpr expr)
 	{
-		if (expr.Type.Id == CiId.LongType) {
+		if (expr.Type.Id == FuId.LongType) {
 			Write("(long long) ");
-			expr.Accept(this, CiPriority.Primary);
+			expr.Accept(this, FuPriority.Primary);
 		}
 		else
-			expr.Accept(this, CiPriority.Argument);
+			expr.Accept(this, FuPriority.Argument);
 	}
 
-	void WriteStringPtrAddCast!(CiCallExpr call)
+	void WriteStringPtrAddCast!(FuCallExpr call)
 	{
 		if (IsUTF8GetString(call))
 			Write("(const char *) ");
 		WriteStringPtrAdd(call);
 	}
 
-	static bool IsDictionaryClassStgIndexing(CiExpr expr)
+	static bool IsDictionaryClassStgIndexing(FuExpr expr)
 	{
-		return expr is CiBinaryExpr indexing
-			&& indexing.Op == CiToken.LeftBracket
-			&& indexing.Left.Type is CiClassType dict
+		return expr is FuBinaryExpr indexing
+			&& indexing.Op == FuToken.LeftBracket
+			&& indexing.Left.Type is FuClassType dict
 			&& dict.Class.TypeParameterCount == 2
-			&& dict.GetValueType() is CiStorageType;
+			&& dict.GetValueType() is FuStorageType;
 	}
 
-	void WriteTemporaryOrExpr!(CiExpr expr, CiPriority parent)
+	void WriteTemporaryOrExpr!(FuExpr expr, FuPriority parent)
 	{
 		int tempId = this.CurrentTemporaries.IndexOf(expr);
 		if (tempId >= 0) {
@@ -136,21 +136,21 @@ public class GenC : GenCCpp
 			expr.Accept(this, parent);
 	}
 
-	void WriteUpcast!(CiClass resultClass, CiSymbol klass)
+	void WriteUpcast!(FuClass resultClass, FuSymbol klass)
 	{
 		for (; klass != resultClass; klass = klass.Parent)
 			Write(".base");
 	}
 
-	void WriteClassPtr!(CiClass resultClass, CiExpr expr, CiPriority parent)
+	void WriteClassPtr!(FuClass resultClass, FuExpr expr, FuPriority parent)
 	{
 		switch (expr.Type) {
-		case CiStorageType storage when storage.Class.Id == CiId.None && !IsDictionaryClassStgIndexing(expr):
+		case FuStorageType storage when storage.Class.Id == FuId.None && !IsDictionaryClassStgIndexing(expr):
 			WriteChar('&');
-			WriteTemporaryOrExpr(expr, CiPriority.Primary);
+			WriteTemporaryOrExpr(expr, FuPriority.Primary);
 			WriteUpcast(resultClass, storage.Class);
 			break;
-		case CiClassType ptr when ptr.Class != resultClass:
+		case FuClassType ptr when ptr.Class != resultClass:
 			WriteChar('&');
 			WritePostfix(expr, "->base");
 			WriteUpcast(resultClass, ptr.Class.Parent);
@@ -161,27 +161,27 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected override void WriteInterpolatedStringArg!(CiExpr expr)
+	protected override void WriteInterpolatedStringArg!(FuExpr expr)
 	{
-		CiCallExpr? call = IsStringSubstring(expr);
+		FuCallExpr? call = IsStringSubstring(expr);
 		if (call != null) {
-			GetStringSubstringLength(call).Accept(this, CiPriority.Argument);
+			GetStringSubstringLength(call).Accept(this, FuPriority.Argument);
 			Write(", ");
 			WriteStringPtrAddCast(call);
 		}
-		else if (expr.Type is CiClassType klass && klass.Class.Id != CiId.StringClass) {
+		else if (expr.Type is FuClassType klass && klass.Class.Id != FuId.StringClass) {
 			// TODO: abstract, virtual, override
 			Write(this.Namespace);
 			Write(klass.Class.Name);
 			Write("_ToString(");
-			WriteClassPtr(klass.Class, expr, CiPriority.Argument);
+			WriteClassPtr(klass.Class, expr, FuPriority.Argument);
 			WriteChar(')');
 		}
 		else
 			WriteInterpolatedStringArgBase(expr);
 	}
 
-	public override void VisitInterpolatedString!(CiInterpolatedString expr, CiPriority parent)
+	internal override void VisitInterpolatedString!(FuInterpolatedString expr, FuPriority parent)
 	{
 		Include("stdarg.h");
 		Include("stdio.h");
@@ -264,21 +264,21 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected override void WriteName!(CiSymbol symbol)
+	protected override void WriteName!(FuSymbol symbol)
 	{
 		switch (symbol) {
-		case CiContainerType _:
+		case FuContainerType _:
 			Write(this.Namespace);
 			Write(symbol.Name);
 			break;
-		case CiMethod _:
+		case FuMethod _:
 			Write(this.Namespace);
 			Write(symbol.Parent.Name);
 			WriteChar('_');
 			Write(symbol.Name);
 			break;
-		case CiConst _:
-			if (symbol.Parent is CiContainerType) {
+		case FuConst _:
+			if (symbol.Parent is FuContainerType) {
 				Write(this.Namespace);
 				Write(symbol.Parent.Name);
 				WriteChar('_');
@@ -291,43 +291,43 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteForeachArrayIndexing!(CiForeach forEach, CiSymbol symbol)
+	void WriteForeachArrayIndexing!(FuForeach forEach, FuSymbol symbol)
 	{
-		forEach.Collection.Accept(this, CiPriority.Primary);
+		forEach.Collection.Accept(this, FuPriority.Primary);
 		WriteChar('[');
 		WriteCamelCaseNotKeyword(symbol.Name);
 		WriteChar(']');
 	}
 
-	void WriteSelfForField!(CiSymbol fieldClass) // CiClass
+	void WriteSelfForField!(FuSymbol fieldClass) // FuClass
 	{
 		Write("self->");
-		for (CiSymbol klass = this.CurrentClass; klass != fieldClass; klass = klass.Parent)
+		for (FuSymbol klass = this.CurrentClass; klass != fieldClass; klass = klass.Parent)
 			Write("base.");
 	}
 
-	protected override void WriteLocalName!(CiSymbol symbol, CiPriority parent)
+	protected override void WriteLocalName!(FuSymbol symbol, FuPriority parent)
 	{
-		if (symbol.Parent is CiForeach forEach) {
-			assert forEach.Collection.Type is CiClassType klass;
+		if (symbol.Parent is FuForeach forEach) {
+			assert forEach.Collection.Type is FuClassType klass;
 			switch (klass.Class.Id) {
-			case CiId.StringClass:
-			case CiId.ListClass:
-				if (parent == CiPriority.Primary)
+			case FuId.StringClass:
+			case FuId.ListClass:
+				if (parent == FuPriority.Primary)
 					WriteChar('(');
 				WriteChar('*');
 				WriteCamelCaseNotKeyword(symbol.Name);
-				if (parent == CiPriority.Primary)
+				if (parent == FuPriority.Primary)
 					WriteChar(')');
 				return;
-			case CiId.ArrayStorageClass:
-				if (klass.GetElementType() is CiStorageType) {
-					if (parent > CiPriority.Add)
+			case FuId.ArrayStorageClass:
+				if (klass.GetElementType() is FuStorageType) {
+					if (parent > FuPriority.Add)
 						WriteChar('(');
-					forEach.Collection.Accept(this, CiPriority.Add);
+					forEach.Collection.Accept(this, FuPriority.Add);
 					Write(" + ");
 					WriteCamelCaseNotKeyword(symbol.Name);
-					if (parent > CiPriority.Add)
+					if (parent > FuPriority.Add)
 						WriteChar(')');
 				}
 				else
@@ -337,73 +337,73 @@ public class GenC : GenCCpp
 				break;
 			}
 		}
-		if (symbol is CiField)
+		if (symbol is FuField)
 			WriteSelfForField(symbol.Parent);
 		WriteName(symbol);
 	}
 
-	void WriteMatchProperty!(CiSymbolReference expr, int which)
+	void WriteMatchProperty!(FuSymbolReference expr, int which)
 	{
 		this.MatchPos = true;
 		Write("FuMatch_GetPos(");
-		expr.Left.Accept(this, CiPriority.Argument);
+		expr.Left.Accept(this, FuPriority.Argument);
 		Write(", ");
 		VisitLiteralLong(which);
 		WriteChar(')');
 	}
 
-	public override void VisitSymbolReference!(CiSymbolReference expr, CiPriority parent)
+	internal override void VisitSymbolReference!(FuSymbolReference expr, FuPriority parent)
 	{
 		switch (expr.Symbol.Id) {
-		case CiId.StringLength:
+		case FuId.StringLength:
 			WriteStringLength(expr.Left);
 			break;
-		case CiId.ConsoleError:
+		case FuId.ConsoleError:
 			Include("stdio.h");
 			Write("stderr");
 			break;
-		case CiId.ListCount:
-		case CiId.StackCount:
+		case FuId.ListCount:
+		case FuId.StackCount:
 			WritePostfix(expr.Left, "->len");
 			break;
-		case CiId.QueueCount:
-			expr.Left.Accept(this, CiPriority.Primary);
-			if (expr.Left.Type is CiStorageType)
+		case FuId.QueueCount:
+			expr.Left.Accept(this, FuPriority.Primary);
+			if (expr.Left.Type is FuStorageType)
 				WriteChar('.');
 			else
 				Write("->");
 			Write("length");
 			break;
-		case CiId.HashSetCount:
-		case CiId.DictionaryCount:
+		case FuId.HashSetCount:
+		case FuId.DictionaryCount:
 			WriteCall("g_hash_table_size", expr.Left);
 			break;
-		case CiId.SortedSetCount:
-		case CiId.SortedDictionaryCount:
+		case FuId.SortedSetCount:
+		case FuId.SortedDictionaryCount:
 			WriteCall("g_tree_nnodes", expr.Left);
 			break;
-		case CiId.MatchStart:
+		case FuId.MatchStart:
 			WriteMatchProperty(expr, 0);
 			break;
-		case CiId.MatchEnd:
+		case FuId.MatchEnd:
 			WriteMatchProperty(expr, 1);
 			break;
-		case CiId.MatchLength:
+		case FuId.MatchLength:
 			WriteMatchProperty(expr, 2);
 			break;
-		case CiId.MatchValue:
+		case FuId.MatchValue:
 			Write("g_match_info_fetch(");
-			expr.Left.Accept(this, CiPriority.Argument);
+			expr.Left.Accept(this, FuPriority.Argument);
 			Write(", 0)");
 			break;
 		default:
-			if (expr.Left == null || expr.Symbol is CiConst)
+			if (expr.Left == null || expr.Symbol is FuConst)
 				WriteLocalName(expr.Symbol, parent);
 			else if (IsDictionaryClassStgIndexing(expr.Left)) {
 				WritePostfix(expr.Left, "->");
 				WriteName(expr.Symbol);
 			}
-			else if (expr.Left is CiSymbolReference symbol && symbol.Symbol.Parent is CiForeach forEach && forEach.Collection.Type is CiArrayStorageType array) {
+			else if (expr.Left is FuSymbolReference symbol && symbol.Symbol.Parent is FuForeach forEach && forEach.Collection.Type is FuArrayStorageType array) {
 				// not essential, but a[i].foo looks better than (a + i)->foo
 				WriteForeachArrayIndexing(forEach, symbol.Symbol);
 				WriteMemberAccess(array.GetElementType(), expr.Symbol.Parent);
@@ -426,56 +426,56 @@ public class GenC : GenCCpp
 		Write("const char *");
 	}
 
-	protected virtual void WriteClassType!(CiClassType klass, bool space)
+	protected virtual void WriteClassType!(FuClassType klass, bool space)
 	{
 		switch (klass.Class.Id) {
-		case CiId.None:
-			if (!(klass is CiReadWriteClassType))
+		case FuId.None:
+			if (!(klass is FuReadWriteClassType))
 				Write("const ");
 			WriteName(klass.Class);
-			if (!(klass is CiStorageType))
+			if (!(klass is FuStorageType))
 				Write(" *");
 			else if (space)
 				WriteChar(' ');
 			break;
-		case CiId.StringClass:
-			if (klass.Id == CiId.StringStorageType)
+		case FuId.StringClass:
+			if (klass.Id == FuId.StringStorageType)
 				Write("char *");
 			else
 				WriteStringPtrType();
 			break;
-		case CiId.ListClass:
-		case CiId.StackClass:
+		case FuId.ListClass:
+		case FuId.StackClass:
 			WriteGlib("GArray *");
 			break;
-		case CiId.QueueClass:
+		case FuId.QueueClass:
 			WriteGlib("GQueue ");
-			if (!(klass is CiStorageType))
+			if (!(klass is FuStorageType))
 				WriteChar('*');
 			break;
-		case CiId.HashSetClass:
-		case CiId.DictionaryClass:
+		case FuId.HashSetClass:
+		case FuId.DictionaryClass:
 			WriteGlib("GHashTable *");
 			break;
-		case CiId.SortedSetClass:
-		case CiId.SortedDictionaryClass:
+		case FuId.SortedSetClass:
+		case FuId.SortedDictionaryClass:
 			WriteGlib("GTree *");
 			break;
-		case CiId.TextWriterClass:
+		case FuId.TextWriterClass:
 			Include("stdio.h");
 			Write("FILE *");
 			break;
-		case CiId.RegexClass:
-			if (!(klass is CiReadWriteClassType))
+		case FuId.RegexClass:
+			if (!(klass is FuReadWriteClassType))
 				Write("const ");
 			WriteGlib("GRegex *");
 			break;
-		case CiId.MatchClass:
-			if (!(klass is CiReadWriteClassType))
+		case FuId.MatchClass:
+			if (!(klass is FuReadWriteClassType))
 				Write("const ");
 			WriteGlib("GMatchInfo *");
 			break;
-		case CiId.LockClass:
+		case FuId.LockClass:
 			NotYet(klass, "Lock");
 			Include("threads.h");
 			Write("mtx_t ");
@@ -486,31 +486,31 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteArrayPrefix!(CiType type)
+	void WriteArrayPrefix!(FuType type)
 	{
-		if (type is CiClassType array && array.IsArray()) {
+		if (type is FuClassType array && array.IsArray()) {
 			WriteArrayPrefix(array.GetElementType());
-			if (!(type is CiArrayStorageType)) {
-				if (array.GetElementType() is CiArrayStorageType)
+			if (!(type is FuArrayStorageType)) {
+				if (array.GetElementType() is FuArrayStorageType)
 					WriteChar('(');
-				if (!(type is CiReadWriteClassType))
+				if (!(type is FuReadWriteClassType))
 					Write("const ");
 				WriteChar('*');
 			}
 		}
 	}
 
-	void StartDefinition!(CiType type, bool promote, bool space)
+	void StartDefinition!(FuType type, bool promote, bool space)
 	{
-		CiType baseType = type.GetBaseType();
+		FuType baseType = type.GetBaseType();
 		switch (baseType) {
-		case CiIntegerType _:
+		case FuIntegerType _:
 			WriteNumericType(GetTypeId(baseType, promote && type == baseType));
 			if (space)
 				WriteChar(' ');
 			break;
-		case CiEnum _:
-			if (baseType.Id == CiId.BoolType) {
+		case FuEnum _:
+			if (baseType.Id == FuId.BoolType) {
 				IncludeStdBool();
 				Write("bool");
 			}
@@ -519,7 +519,7 @@ public class GenC : GenCCpp
 			if (space)
 				WriteChar(' ');
 			break;
-		case CiClassType klass:
+		case FuClassType klass:
 			WriteClassType(klass, space);
 			break;
 		default:
@@ -531,24 +531,24 @@ public class GenC : GenCCpp
 		WriteArrayPrefix(type);
 	}
 
-	void EndDefinition!(CiType type)
+	void EndDefinition!(FuType type)
 	{
 		while (type.IsArray()) {
-			CiType elementType = type.AsClassType().GetElementType();
-			if (type is CiArrayStorageType arrayStorage) {
+			FuType elementType = type.AsClassType().GetElementType();
+			if (type is FuArrayStorageType arrayStorage) {
 				WriteChar('[');
 				VisitLiteralLong(arrayStorage.Length);
 				WriteChar(']');
 			}
-			else if (elementType is CiArrayStorageType)
+			else if (elementType is FuArrayStorageType)
 				WriteChar(')');
 			type = elementType;
 		}
 	}
 
-	void WriteReturnType!(CiMethod method)
+	void WriteReturnType!(FuMethod method)
 	{
-		if (method.Type.Id == CiId.VoidType && method.Throws) {
+		if (method.Type.Id == FuId.VoidType && method.Throws) {
 			IncludeStdBool();
 			Write("bool ");
 		}
@@ -556,20 +556,20 @@ public class GenC : GenCCpp
 			StartDefinition(method.Type, true, true);
 	}
 
-	protected override void WriteType!(CiType type, bool promote)
+	protected override void WriteType!(FuType type, bool promote)
 	{
-		StartDefinition(type, promote, type is CiClassType arrayPtr && arrayPtr.Class.Id == CiId.ArrayPtrClass);
+		StartDefinition(type, promote, type is FuClassType arrayPtr && arrayPtr.Class.Id == FuId.ArrayPtrClass);
 		EndDefinition(type);
 	}
 
-	protected override void WriteTypeAndName!(CiNamedValue value)
+	protected override void WriteTypeAndName!(FuNamedValue value)
 	{
 		StartDefinition(value.Type, true, true);
 		WriteName(value);
 		EndDefinition(value.Type);
 	}
 
-	void WriteDynamicArrayCast!(CiType elementType)
+	void WriteDynamicArrayCast!(FuType elementType)
 	{
 		WriteChar('(');
 		StartDefinition(elementType, false, true);
@@ -578,7 +578,7 @@ public class GenC : GenCCpp
 		Write(") ");
 	}
 
-	void WriteXstructorPtr!(bool need, CiClass klass, string name)
+	void WriteXstructorPtr!(bool need, FuClass klass, string name)
 	{
 		if (need) {
 			Write("(FuMethodPtr) ");
@@ -590,22 +590,22 @@ public class GenC : GenCCpp
 			Write("NULL");
 	}
 
-	static bool IsHeapAllocated(CiType type) => type.Id == CiId.StringStorageType || type is CiDynamicPtrType;
+	static bool IsHeapAllocated(FuType type) => type.Id == FuId.StringStorageType || type is FuDynamicPtrType;
 
-	static bool NeedToDestructType(CiType type)
+	static bool NeedToDestructType(FuType type)
 	{
 		if (IsHeapAllocated(type))
 			return true;
-		if (type is CiStorageType storage) {
+		if (type is FuStorageType storage) {
 			switch (storage.Class.Id) {
-			case CiId.ListClass:
-			case CiId.StackClass:
-			case CiId.HashSetClass:
-			case CiId.SortedSetClass:
-			case CiId.DictionaryClass:
-			case CiId.SortedDictionaryClass:
-			case CiId.MatchClass:
-			case CiId.LockClass:
+			case FuId.ListClass:
+			case FuId.StackClass:
+			case FuId.HashSetClass:
+			case FuId.SortedSetClass:
+			case FuId.DictionaryClass:
+			case FuId.SortedDictionaryClass:
+			case FuId.MatchClass:
+			case FuId.LockClass:
 				return true;
 			default:
 				return NeedsDestructor(storage.Class);
@@ -614,51 +614,51 @@ public class GenC : GenCCpp
 		return false;
 	}
 
-	static bool NeedToDestruct(CiSymbol symbol)
+	static bool NeedToDestruct(FuSymbol symbol)
 	{
-		CiType type = symbol.Type;
-		while (type is CiArrayStorageType array)
+		FuType type = symbol.Type;
+		while (type is FuArrayStorageType array)
 			type = array.GetElementType();
 		return NeedToDestructType(type);
 	}
 
-	static bool NeedsDestructor(CiClass klass)
+	static bool NeedsDestructor(FuClass klass)
 	{
-		for (CiSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiField field && NeedToDestruct(field))
+		for (FuSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is FuField field && NeedToDestruct(field))
 				return true;
 		}
-		return klass.Parent is CiClass baseClass && NeedsDestructor(baseClass);
+		return klass.Parent is FuClass baseClass && NeedsDestructor(baseClass);
 	}
 
-	void WriteXstructorPtrs!(CiClass klass)
+	void WriteXstructorPtrs!(FuClass klass)
 	{
 		WriteXstructorPtr(NeedsConstructor(klass), klass, "Construct");
 		Write(", ");
 		WriteXstructorPtr(NeedsDestructor(klass), klass, "Destruct");
 	}
 
-	protected override void WriteNewArray!(CiType elementType, CiExpr lengthExpr, CiPriority parent)
+	protected override void WriteNewArray!(FuType elementType, FuExpr lengthExpr, FuPriority parent)
 	{
 		this.SharedMake = true;
-		if (parent > CiPriority.Mul)
+		if (parent > FuPriority.Mul)
 			WriteChar('(');
 		WriteDynamicArrayCast(elementType);
 		Write("FuShared_Make(");
-		lengthExpr.Accept(this, CiPriority.Argument);
+		lengthExpr.Accept(this, FuPriority.Argument);
 		Write(", sizeof(");
 		WriteType(elementType, false);
 		Write("), ");
 		switch (elementType) {
-		case CiStringStorageType _:
+		case FuStringStorageType _:
 			this.PtrConstruct = true;
 			this.ListFrees["String"] = "free(*(void **) ptr)";
 			Write("(FuMethodPtr) FuPtr_Construct, FuList_FreeString");
 			break;
-		case CiStorageType storage:
+		case FuStorageType storage:
 			WriteXstructorPtrs(storage.Class);
 			break;
-		case CiDynamicPtrType _:
+		case FuDynamicPtrType _:
 			this.PtrConstruct = true;
 			this.SharedRelease = true;
 			this.ListFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
@@ -669,46 +669,46 @@ public class GenC : GenCCpp
 			break;
 		}
 		WriteChar(')');
-		if (parent > CiPriority.Mul)
+		if (parent > FuPriority.Mul)
 			WriteChar(')');
 	}
 
-	static bool IsNewString(CiExpr expr)
+	static bool IsNewString(FuExpr expr)
 	{
-		return expr is CiInterpolatedString
-			|| (expr is CiCallExpr call && expr.Type.Id == CiId.StringStorageType && (call.Method.Symbol.Id != CiId.StringSubstring || call.Arguments.Count == 2));
+		return expr is FuInterpolatedString
+			|| (expr is FuCallExpr call && expr.Type.Id == FuId.StringStorageType && (call.Method.Symbol.Id != FuId.StringSubstring || call.Arguments.Count == 2));
 	}
 
-	void WriteStringStorageValue!(CiExpr expr)
+	void WriteStringStorageValue!(FuExpr expr)
 	{
-		CiCallExpr? call = IsStringSubstring(expr);
+		FuCallExpr? call = IsStringSubstring(expr);
 		if (call != null) {
 			Include("string.h");
 			this.StringSubstring = true;
 			Write("FuString_Substring(");
 			WriteStringPtrAddCast(call);
 			Write(", ");
-			GetStringSubstringLength(call).Accept(this, CiPriority.Argument);
+			GetStringSubstringLength(call).Accept(this, FuPriority.Argument);
 			WriteChar(')');
 		}
 		else if (IsNewString(expr))
-			expr.Accept(this, CiPriority.Argument);
+			expr.Accept(this, FuPriority.Argument);
 		else {
 			Include("string.h");
 			WriteCall("strdup", expr);
 		}
 	}
 
-	protected override void WriteArrayStorageInit!(CiArrayStorageType array, CiExpr value)
+	protected override void WriteArrayStorageInit!(FuArrayStorageType array, FuExpr value)
 	{
 		switch (value) {
 		case null:
 			if (IsHeapAllocated(array.GetStorageType()))
 				Write(" = { NULL }");
 			break;
-		case CiLiteral literal when literal.IsDefaultValue():
+		case FuLiteral literal when literal.IsDefaultValue():
 			Write(" = { ");
-			literal.Accept(this, CiPriority.Argument);
+			literal.Accept(this, FuPriority.Argument);
 			Write(" }");
 			break;
 		default:
@@ -716,27 +716,27 @@ public class GenC : GenCCpp
 		}
 	}
 
-	string() GetDictionaryDestroy!(CiType type)
+	string() GetDictionaryDestroy!(FuType type)
 	{
 		switch (type) {
-		case CiStringStorageType _:
-		case CiArrayStorageType _:
+		case FuStringStorageType _:
+		case FuArrayStorageType _:
 			return "free";
-		case CiStorageType storage:
+		case FuStorageType storage:
 			switch (storage.Class.Id) {
-			case CiId.ListClass:
-			case CiId.StackClass:
+			case FuId.ListClass:
+			case FuId.StackClass:
 				return "(GDestroyNotify) g_array_unref";
-			case CiId.HashSetClass:
-			case CiId.DictionaryClass:
+			case FuId.HashSetClass:
+			case FuId.DictionaryClass:
 				return "(GDestroyNotify) g_hash_table_unref";
-			case CiId.SortedSetClass:
-			case CiId.SortedDictionaryClass:
+			case FuId.SortedSetClass:
+			case FuId.SortedDictionaryClass:
 				return "(GDestroyNotify) g_tree_unref";
 			default:
 				return NeedsDestructor(storage.Class) ? $"(GDestroyNotify) {storage.Class.Name}_Delete" /* TODO: emit */ : "free";
 			}
-		case CiDynamicPtrType _:
+		case FuDynamicPtrType _:
 			this.SharedRelease = true;
 			return "FuShared_Release";
 		default:
@@ -744,12 +744,12 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteHashEqual!(CiType keyType)
+	void WriteHashEqual!(FuType keyType)
 	{
-		Write(keyType is CiStringType ? "g_str_hash, g_str_equal" : "NULL, NULL");
+		Write(keyType is FuStringType ? "g_str_hash, g_str_equal" : "NULL, NULL");
 	}
 
-	void WriteNewHashTable!(CiType keyType, string valueDestroy)
+	void WriteNewHashTable!(FuType keyType, string valueDestroy)
 	{
 		Write("g_hash_table_new");
 		string() keyDestroy = GetDictionaryDestroy(keyType);
@@ -768,18 +768,18 @@ public class GenC : GenCCpp
 		WriteChar(')');
 	}
 
-	void WriteNewTree!(CiType keyType, string valueDestroy)
+	void WriteNewTree!(FuType keyType, string valueDestroy)
 	{
-		if (keyType.Id == CiId.StringPtrType && valueDestroy == "NULL")
+		if (keyType.Id == FuId.StringPtrType && valueDestroy == "NULL")
 			Write("g_tree_new((GCompareFunc) strcmp");
 		else {
 			Write("g_tree_new_full(FuTree_Compare");
 			switch (keyType) {
-			case CiIntegerType _:
+			case FuIntegerType _:
 				this.TreeCompareInteger = true;
 				Write("Integer");
 				break;
-			case CiStringType _:
+			case FuStringType _:
 				this.TreeCompareString = true;
 				Write("String");
 				break;
@@ -795,33 +795,33 @@ public class GenC : GenCCpp
 		WriteChar(')');
 	}
 
-	protected override void WriteNew!(CiReadWriteClassType klass, CiPriority parent)
+	protected override void WriteNew!(FuReadWriteClassType klass, FuPriority parent)
 	{
 		switch (klass.Class.Id) {
-		case CiId.ListClass:
-		case CiId.StackClass:
+		case FuId.ListClass:
+		case FuId.StackClass:
 			Write("g_array_new(FALSE, FALSE, sizeof(");
 			WriteType(klass.GetElementType(), false);
 			Write("))");
 			break;
-		case CiId.QueueClass:
+		case FuId.QueueClass:
 			Write("G_QUEUE_INIT");
 			break;
-		case CiId.HashSetClass:
+		case FuId.HashSetClass:
 			WriteNewHashTable(klass.GetElementType(), "NULL");
 			break;
-		case CiId.SortedSetClass:
+		case FuId.SortedSetClass:
 			WriteNewTree(klass.GetElementType(), "NULL");
 			break;
-		case CiId.DictionaryClass:
+		case FuId.DictionaryClass:
 			WriteNewHashTable(klass.GetKeyType(), GetDictionaryDestroy(klass.GetValueType()));
 			break;
-		case CiId.SortedDictionaryClass:
+		case FuId.SortedDictionaryClass:
 			WriteNewTree(klass.GetKeyType(), GetDictionaryDestroy(klass.GetValueType()));
 			break;
 		default:
 			this.SharedMake = true;
-			if (parent > CiPriority.Mul)
+			if (parent > FuPriority.Mul)
 				WriteChar('(');
 			WriteStaticCastType(klass);
 			Write("FuShared_Make(1, sizeof(");
@@ -829,19 +829,19 @@ public class GenC : GenCCpp
 			Write("), ");
 			WriteXstructorPtrs(klass.Class);
 			WriteChar(')');
-			if (parent > CiPriority.Mul)
+			if (parent > FuPriority.Mul)
 				WriteChar(')');
 			break;
 		}
 	}
 
-	protected override void WriteStorageInit!(CiNamedValue def)
+	protected override void WriteStorageInit!(FuNamedValue def)
 	{
 		if (def.Type.AsClassType().Class.TypeParameterCount > 0) // built-in collections
 			base.WriteStorageInit(def);
 	}
 
-	protected override void WriteVarInit!(CiNamedValue def)
+	protected override void WriteVarInit!(FuNamedValue def)
 	{
 		if (def.Value == null && IsHeapAllocated(def.Type))
 			Write(" = NULL");
@@ -849,19 +849,19 @@ public class GenC : GenCCpp
 			base.WriteVarInit(def);
 	}
 
-	void WriteAssignTemporary!(CiType type, CiExpr? expr)
+	void WriteAssignTemporary!(FuType type, FuExpr? expr)
 	{
 		Write(" = ");
 		if (expr != null)
-			WriteCoerced(type, expr, CiPriority.Argument);
+			WriteCoerced(type, expr, FuPriority.Argument);
 		else
 			WriteNewStorage(type);
 	}
 
-	int WriteCTemporary!(CiType type, CiExpr? expr)
+	int WriteCTemporary!(FuType type, FuExpr? expr)
 	{
 		EnsureChildBlock();
-		bool assign = expr != null || (type is CiClassType klass && (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.DictionaryClass || klass.Class.Id == CiId.SortedDictionaryClass));
+		bool assign = expr != null || (type is FuClassType klass && (klass.Class.Id == FuId.ListClass || klass.Class.Id == FuId.DictionaryClass || klass.Class.Id == FuId.SortedDictionaryClass));
 		int id = this.CurrentTemporaries.IndexOf(type);
 		if (id < 0) {
 			id = this.CurrentTemporaries.Count;
@@ -884,62 +884,62 @@ public class GenC : GenCCpp
 		return id;
 	}
 
-	void WriteStorageTemporary!(CiExpr expr)
+	void WriteStorageTemporary!(FuExpr expr)
 	{
 		if (IsNewString(expr)
-		 || (expr is CiCallExpr && expr.Type is CiStorageType))
+		 || (expr is FuCallExpr && expr.Type is FuStorageType))
 			WriteCTemporary(expr.Type, expr);
 	}
 
-	void WriteCTemporaries!(CiExpr expr)
+	void WriteCTemporaries!(FuExpr expr)
 	{
 		switch (expr) {
-		case CiVar def:
+		case FuVar def:
 			if (def.Value != null)
 				WriteCTemporaries(def.Value);
 			break;
-		case CiAggregateInitializer init:
-			foreach (CiExpr item in init.Items) {
-				assert item is CiBinaryExpr assign;
+		case FuAggregateInitializer init:
+			foreach (FuExpr item in init.Items) {
+				assert item is FuBinaryExpr assign;
 				WriteCTemporaries(assign.Right);
 			}
 			break;
-		case CiLiteral _:
-		case CiLambdaExpr _:
+		case FuLiteral _:
+		case FuLambdaExpr _:
 			break;
-		case CiInterpolatedString interp:
-			foreach (CiInterpolatedPart part in interp.Parts)
+		case FuInterpolatedString interp:
+			foreach (FuInterpolatedPart part in interp.Parts)
 				WriteCTemporaries(part.Argument);
 			break;
-		case CiSymbolReference symbol:
+		case FuSymbolReference symbol:
 			if (symbol.Left != null)
 				WriteCTemporaries(symbol.Left);
 			break;
-		case CiUnaryExpr unary:
+		case FuUnaryExpr unary:
 			if (unary.Inner != null) // new C()
 				WriteCTemporaries(unary.Inner);
 			break;
-		case CiBinaryExpr binary:
+		case FuBinaryExpr binary:
 			WriteCTemporaries(binary.Left);
 			if (IsStringSubstring(binary.Left) == null)
 				WriteStorageTemporary(binary.Left);
 			WriteCTemporaries(binary.Right);
-			if (binary.Op != CiToken.Assign)
+			if (binary.Op != FuToken.Assign)
 				WriteStorageTemporary(binary.Right);
 			break;
-		case CiSelectExpr select:
+		case FuSelectExpr select:
 			WriteCTemporaries(select.Cond);
 			break;
-		case CiCallExpr call:
+		case FuCallExpr call:
 			if (call.Method.Left != null) {
 				WriteCTemporaries(call.Method.Left);
 				WriteStorageTemporary(call.Method.Left);
 			}
-			assert call.Method.Symbol is CiMethod method;
-			CiVar? param = method.Parameters.FirstParameter();
-			foreach (CiExpr arg in call.Arguments) {
+			assert call.Method.Symbol is FuMethod method;
+			FuVar? param = method.Parameters.FirstParameter();
+			foreach (FuExpr arg in call.Arguments) {
 				WriteCTemporaries(arg);
-				if (call.Method.Symbol.Id != CiId.ConsoleWrite && call.Method.Symbol.Id != CiId.ConsoleWriteLine && !(param.Type is CiStorageType))
+				if (call.Method.Symbol.Id != FuId.ConsoleWrite && call.Method.Symbol.Id != FuId.ConsoleWriteLine && !(param.Type is FuStorageType))
 					WriteStorageTemporary(arg);
 				param = param.NextParameter();
 			}
@@ -949,25 +949,25 @@ public class GenC : GenCCpp
 		}
 	}
 
-	static bool HasTemporariesToDestruct(CiExpr expr)
+	static bool HasTemporariesToDestruct(FuExpr expr)
 	{
 		switch (expr) {
-		case CiAggregateInitializer init:
+		case FuAggregateInitializer init:
 			return init.Items.Any(field => HasTemporariesToDestruct(field));
-		case CiLiteral _:
-		case CiLambdaExpr _:
+		case FuLiteral _:
+		case FuLambdaExpr _:
 			return false;
-		case CiInterpolatedString interp:
+		case FuInterpolatedString interp:
 			return interp.Parts.Any(part => HasTemporariesToDestruct(part.Argument));
-		case CiSymbolReference symbol:
+		case FuSymbolReference symbol:
 			return symbol.Left != null && HasTemporariesToDestruct(symbol.Left);
-		case CiUnaryExpr unary:
+		case FuUnaryExpr unary:
 			return unary.Inner != null && HasTemporariesToDestruct(unary.Inner);
-		case CiBinaryExpr binary:
-			return HasTemporariesToDestruct(binary.Left) || (binary.Op != CiToken.Is && HasTemporariesToDestruct(binary.Right));
-		case CiSelectExpr select:
+		case FuBinaryExpr binary:
+			return HasTemporariesToDestruct(binary.Left) || (binary.Op != FuToken.Is && HasTemporariesToDestruct(binary.Right));
+		case FuSelectExpr select:
 			return HasTemporariesToDestruct(select.Cond);
-		case CiCallExpr call:
+		case FuCallExpr call:
 			return (call.Method.Left != null && (HasTemporariesToDestruct(call.Method.Left) || IsNewString(call.Method.Left)))
 				|| call.Arguments.Any(arg => HasTemporariesToDestruct(arg) || IsNewString(arg));
 		default:
@@ -975,71 +975,71 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected override void CleanupTemporary!(int i, CiExpr temp)
+	protected override void CleanupTemporary!(int i, FuExpr temp)
 	{
-		if (temp.Type.Id == CiId.StringStorageType) {
+		if (temp.Type.Id == FuId.StringStorageType) {
 			Write("free(futemp");
 			VisitLiteralLong(i);
 			WriteLine(");");
 		}
 	}
 
-	protected override void WriteVar!(CiNamedValue def)
+	protected override void WriteVar!(FuNamedValue def)
 	{
 		base.WriteVar(def);
 		if (NeedToDestruct(def)) {
-			assert def is CiVar local;
+			assert def is FuVar local;
 			this.VarsToDestruct.Add(local);
 		}
 	}
 
-	void WriteGPointerCast!(CiType type, CiExpr expr)
+	void WriteGPointerCast!(FuType type, FuExpr expr)
 	{
-		if (type is CiNumericType || type is CiEnum) {
+		if (type is FuNumericType || type is FuEnum) {
 			Write("GINT_TO_POINTER(");
-			expr.Accept(this, CiPriority.Argument);
+			expr.Accept(this, FuPriority.Argument);
 			WriteChar(')');
 		}
-		else if (type.Id == CiId.StringPtrType && expr.Type.Id == CiId.StringPtrType) {
+		else if (type.Id == FuId.StringPtrType && expr.Type.Id == FuId.StringPtrType) {
 			Write("(gpointer) ");
-			expr.Accept(this, CiPriority.Primary);
+			expr.Accept(this, FuPriority.Primary);
 		}
 		else
-			WriteCoerced(type, expr, CiPriority.Argument);
+			WriteCoerced(type, expr, FuPriority.Argument);
 	}
 
-	void WriteGConstPointerCast!(CiExpr expr)
+	void WriteGConstPointerCast!(FuExpr expr)
 	{
-		if (expr.Type is CiClassType && !(expr.Type is CiStorageType))
-			expr.Accept(this, CiPriority.Argument);
+		if (expr.Type is FuClassType && !(expr.Type is FuStorageType))
+			expr.Accept(this, FuPriority.Argument);
 		else {
 			Write("(gconstpointer) ");
-			expr.Accept(this, CiPriority.Primary);
+			expr.Accept(this, FuPriority.Primary);
 		}
 	}
 
-	void WriteQueueObject!(CiExpr obj)
+	void WriteQueueObject!(FuExpr obj)
 	{
-		if (obj.Type is CiStorageType) {
+		if (obj.Type is FuStorageType) {
 			WriteChar('&');
-			obj.Accept(this, CiPriority.Primary);
+			obj.Accept(this, FuPriority.Primary);
 		}
 		else
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 	}
 
-	void WriteQueueGet!(string function, CiExpr obj, CiPriority parent)
+	void WriteQueueGet!(string function, FuExpr obj, FuPriority parent)
 	{
-		CiType elementType = obj.Type.AsClassType().GetElementType();
+		FuType elementType = obj.Type.AsClassType().GetElementType();
 		bool parenthesis;
-		if (parent == CiPriority.Statement)
+		if (parent == FuPriority.Statement)
 			parenthesis = false;
-		else if (elementType is CiIntegerType && elementType.Id != CiId.LongType) {
+		else if (elementType is FuIntegerType && elementType.Id != FuId.LongType) {
 			Write("GPOINTER_TO_INT(");
 			parenthesis = true;
 		}
 		else {
-			parenthesis = parent > CiPriority.Mul;
+			parenthesis = parent > FuPriority.Mul;
 			if (parenthesis)
 				WriteChar('(');
 			WriteStaticCastType(elementType);
@@ -1052,62 +1052,62 @@ public class GenC : GenCCpp
 			WriteChar(')');
 	}
 
-	void StartDictionaryInsert!(CiExpr dict, CiExpr key)
+	void StartDictionaryInsert!(FuExpr dict, FuExpr key)
 	{
-		assert dict.Type is CiClassType type;
-		Write(type.Class.Id == CiId.SortedDictionaryClass ? "g_tree_insert(" : "g_hash_table_insert(");
-		dict.Accept(this, CiPriority.Argument);
+		assert dict.Type is FuClassType type;
+		Write(type.Class.Id == FuId.SortedDictionaryClass ? "g_tree_insert(" : "g_hash_table_insert(");
+		dict.Accept(this, FuPriority.Argument);
 		Write(", ");
 		WriteGPointerCast(type.GetKeyType(), key);
 		Write(", ");
 	}
 
-	protected override void WriteAssign!(CiBinaryExpr expr, CiPriority parent)
+	protected override void WriteAssign!(FuBinaryExpr expr, FuPriority parent)
 	{
-		if (expr.Left is CiBinaryExpr indexing
-		 && indexing.Op == CiToken.LeftBracket
-		 && indexing.Left.Type is CiClassType dict
+		if (expr.Left is FuBinaryExpr indexing
+		 && indexing.Op == FuToken.LeftBracket
+		 && indexing.Left.Type is FuClassType dict
 		 && dict.Class.TypeParameterCount == 2) {
 			StartDictionaryInsert(indexing.Left, indexing.Right);
 			WriteGPointerCast(dict.GetValueType(), expr.Right);
 			WriteChar(')');
 		}
-		else if (expr.Left.Type.Id == CiId.StringStorageType) {
-			CiExpr? length = IsTrimSubstring(expr);
-			if (length != null && parent == CiPriority.Statement) {
+		else if (expr.Left.Type.Id == FuId.StringStorageType) {
+			FuExpr? length = IsTrimSubstring(expr);
+			if (length != null && parent == FuPriority.Statement) {
 				WriteIndexing(expr.Left, length);
 				Write(" = '\\0'");
 			}
 			else {
 				this.StringAssign = true;
 				Write("FuString_Assign(&");
-				expr.Left.Accept(this, CiPriority.Primary);
+				expr.Left.Accept(this, FuPriority.Primary);
 				Write(", ");
 				WriteStringStorageValue(expr.Right);
 				WriteChar(')');
 			}
 		}
-		else if (expr.Left.Type is CiDynamicPtrType dynamic) {
-			if (dynamic.Class.Id == CiId.RegexClass) {
+		else if (expr.Left.Type is FuDynamicPtrType dynamic) {
+			if (dynamic.Class.Id == FuId.RegexClass) {
 				// TODO: only if previously assigned non-null
 				// Write("g_regex_unref(");
-				// expr.Left.Accept(this, CiPriority.Argument);
+				// expr.Left.Accept(this, FuPriority.Argument);
 				// WriteLine(");");
 				base.WriteAssign(expr, parent);
 			}
 			else {
 				this.SharedAssign = true;
 				Write("FuShared_Assign((void **) &");
-				expr.Left.Accept(this, CiPriority.Primary);
+				expr.Left.Accept(this, FuPriority.Primary);
 				Write(", ");
-				if (expr.Right is CiSymbolReference) {
+				if (expr.Right is FuSymbolReference) {
 					this.SharedAddRef = true;
 					Write("FuShared_AddRef(");
-					expr.Right.Accept(this, CiPriority.Argument);
+					expr.Right.Accept(this, FuPriority.Argument);
 					WriteChar(')');
 				}
 				else
-					expr.Right.Accept(this, CiPriority.Argument);
+					expr.Right.Accept(this, FuPriority.Argument);
 				WriteChar(')');
 			}
 		}
@@ -1115,62 +1115,62 @@ public class GenC : GenCCpp
 			base.WriteAssign(expr, parent);
 	}
 
-	static CiMethod? GetThrowingMethod(CiExpr expr)
+	static FuMethod? GetThrowingMethod(FuExpr expr)
 	{
 		switch (expr) {
-		case CiBinaryExpr binary when binary.Op == CiToken.Assign:
+		case FuBinaryExpr binary when binary.Op == FuToken.Assign:
 			return GetThrowingMethod(binary.Right);
-		case CiCallExpr call:
-			assert call.Method.Symbol is CiMethod method;
+		case FuCallExpr call:
+			assert call.Method.Symbol is FuMethod method;
 			return method.Throws ? method : null;
 		default:
 			return null;
 		}
 	}
 
-	static bool HasListDestroy(CiType type)
+	static bool HasListDestroy(FuType type)
 	{
-		return type is CiStorageType list
-			&& (list.Class.Id == CiId.ListClass || list.Class.Id == CiId.StackClass)
+		return type is FuStorageType list
+			&& (list.Class.Id == FuId.ListClass || list.Class.Id == FuId.StackClass)
 			&& NeedToDestructType(list.GetElementType());
 	}
 
-	protected override bool HasInitCode(CiNamedValue def)
+	protected override bool HasInitCode(FuNamedValue def)
 	{
 		if (def.IsAssignableStorage())
 			return false;
-		return (def is CiField && (def.Value != null || IsHeapAllocated(def.Type.GetStorageType()) || (def.Type is CiClassType klass && (klass.Class.Id == CiId.ListClass || klass.Class.Id == CiId.DictionaryClass || klass.Class.Id == CiId.SortedDictionaryClass))))
+		return (def is FuField && (def.Value != null || IsHeapAllocated(def.Type.GetStorageType()) || (def.Type is FuClassType klass && (klass.Class.Id == FuId.ListClass || klass.Class.Id == FuId.DictionaryClass || klass.Class.Id == FuId.SortedDictionaryClass))))
 			|| GetThrowingMethod(def.Value) != null
-			|| (def.Type.GetStorageType() is CiStorageType storage && (storage.Class.Id == CiId.LockClass || NeedsConstructor(storage.Class)))
+			|| (def.Type.GetStorageType() is FuStorageType storage && (storage.Class.Id == FuId.LockClass || NeedsConstructor(storage.Class)))
 			|| HasListDestroy(def.Type)
 			|| base.HasInitCode(def);
 	}
 
-	CiPriority StartForwardThrow!(CiMethod throwingMethod)
+	FuPriority StartForwardThrow!(FuMethod throwingMethod)
 	{
 		Write("if (");
 		switch (throwingMethod.Type.Id) {
-		case CiId.FloatType:
-		case CiId.DoubleType:
+		case FuId.FloatType:
+		case FuId.DoubleType:
 			IncludeMath();
 			Write("isnan(");
-			return CiPriority.Argument;
-		case CiId.VoidType:
+			return FuPriority.Argument;
+		case FuId.VoidType:
 			WriteChar('!');
-			return CiPriority.Primary;
+			return FuPriority.Primary;
 		default:
-			return CiPriority.Equality;
+			return FuPriority.Equality;
 		}
 	}
 
-	void WriteDestruct!(CiSymbol symbol)
+	void WriteDestruct!(FuSymbol symbol)
 	{
 		if (!NeedToDestruct(symbol))
 			return;
 		EnsureChildBlock();
-		CiType type = symbol.Type;
+		FuType type = symbol.Type;
 		int nesting = 0;
-		while (type is CiArrayStorageType array) {
+		while (type is FuArrayStorageType array) {
 			Write("for (int _i");
 			VisitLiteralLong(nesting);
 			Write(" = ");
@@ -1186,36 +1186,36 @@ public class GenC : GenCCpp
 		}
 		bool arrayFree = false;
 		switch (type) {
-		case CiDynamicPtrType dynamic:
-			if (dynamic.Class.Id == CiId.RegexClass)
+		case FuDynamicPtrType dynamic:
+			if (dynamic.Class.Id == FuId.RegexClass)
 				Write("g_regex_unref(");
 			else {
 				this.SharedRelease = true;
 				Write("FuShared_Release(");
 			}
 			break;
-		case CiStorageType storage:
+		case FuStorageType storage:
 			switch (storage.Class.Id) {
-			case CiId.ListClass:
-			case CiId.StackClass:
+			case FuId.ListClass:
+			case FuId.StackClass:
 				Write("g_array_free(");
 				arrayFree = true;
 				break;
-			case CiId.QueueClass:
+			case FuId.QueueClass:
 				Write("g_queue_clear(&");
 				break;
-			case CiId.HashSetClass:
-			case CiId.DictionaryClass:
+			case FuId.HashSetClass:
+			case FuId.DictionaryClass:
 				Write("g_hash_table_unref(");
 				break;
-			case CiId.SortedSetClass:
-			case CiId.SortedDictionaryClass:
+			case FuId.SortedSetClass:
+			case FuId.SortedDictionaryClass:
 				Write("g_tree_unref(");
 				break;
-			case CiId.MatchClass:
+			case FuId.MatchClass:
 				Write("g_match_info_free(");
 				break;
-			case CiId.LockClass:
+			case FuId.LockClass:
 				Write("mtx_destroy(&");
 				break;
 			default:
@@ -1228,7 +1228,7 @@ public class GenC : GenCCpp
 			Write("free(");
 			break;
 		}
-		WriteLocalName(symbol, CiPriority.Primary);
+		WriteLocalName(symbol, FuPriority.Primary);
 		for (int i = 0; i < nesting; i++) {
 			Write("[_i");
 			VisitLiteralLong(i);
@@ -1240,10 +1240,10 @@ public class GenC : GenCCpp
 		this.Indent -= nesting;
 	}
 
-	void WriteDestructAll!(CiVar? exceptVar = null)
+	void WriteDestructAll!(FuVar? exceptVar = null)
 	{
 		for (int i = this.VarsToDestruct.Count; --i >= 0; ) {
-			CiVar def = this.VarsToDestruct[i];
+			FuVar def = this.VarsToDestruct[i];
 			if (def != exceptVar)
 				WriteDestruct(def);
 		}
@@ -1251,15 +1251,15 @@ public class GenC : GenCCpp
 
 	void WriteThrowReturnValue!()
 	{
-		if (this.CurrentMethod.Type is CiNumericType) {
-			if (this.CurrentMethod.Type is CiIntegerType)
+		if (this.CurrentMethod.Type is FuNumericType) {
+			if (this.CurrentMethod.Type is FuIntegerType)
 				Write("-1");
 			else {
 				IncludeMath();
 				Write("NAN");
 			}
 		}
-		else if (this.CurrentMethod.Type.Id == CiId.VoidType)
+		else if (this.CurrentMethod.Type.Id == FuId.VoidType)
 			Write("false");
 		else
 			Write("NULL");
@@ -1273,17 +1273,17 @@ public class GenC : GenCCpp
 		WriteCharLine(';');
 	}
 
-	void EndForwardThrow!(CiMethod throwingMethod)
+	void EndForwardThrow!(FuMethod throwingMethod)
 	{
 		switch (throwingMethod.Type.Id) {
-		case CiId.FloatType:
-		case CiId.DoubleType:
+		case FuId.FloatType:
+		case FuId.DoubleType:
 			WriteChar(')');
 			break;
-		case CiId.VoidType:
+		case FuId.VoidType:
 			break;
 		default:
-			Write(throwingMethod.Type is CiIntegerType ? " == -1" : " == NULL");
+			Write(throwingMethod.Type is FuIntegerType ? " == -1" : " == NULL");
 			break;
 		}
 		WriteChar(')');
@@ -1301,42 +1301,42 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected override void WriteInitCode!(CiNamedValue def)
+	protected override void WriteInitCode!(FuNamedValue def)
 	{
 		if (!HasInitCode(def))
 			return;
-		CiType type = def.Type;
+		FuType type = def.Type;
 		int nesting = 0;
-		while (type is CiArrayStorageType array) {
+		while (type is FuArrayStorageType array) {
 			OpenLoop("int", nesting++, array.Length);
 			type = array.GetElementType();
 		}
-		if (type is CiStorageType lok && lok.Class.Id == CiId.LockClass) {
+		if (type is FuStorageType lok && lok.Class.Id == FuId.LockClass) {
 			Write("mtx_init(&");
 			WriteArrayElement(def, nesting);
 			WriteLine(", mtx_plain | mtx_recursive);");
 		}
-		else if (type is CiStorageType storage && NeedsConstructor(storage.Class)) {
+		else if (type is FuStorageType storage && NeedsConstructor(storage.Class)) {
 			WriteName(storage.Class);
 			Write("_Construct(&");
 			WriteArrayElement(def, nesting);
 			WriteLine(");");
 		}
 		else {
-			if (def is CiField) {
+			if (def is FuField) {
 				WriteArrayElement(def, nesting);
 				if (nesting > 0) {
 					Write(" = ");
 					if (IsHeapAllocated(type))
 						Write("NULL");
 					else
-						def.Value.Accept(this, CiPriority.Argument);
+						def.Value.Accept(this, FuPriority.Argument);
 				}
 				else
 					WriteVarInit(def);
 				WriteCharLine(';');
 			}
-			CiMethod? throwingMethod = GetThrowingMethod(def.Value);
+			FuMethod? throwingMethod = GetThrowingMethod(def.Value);
 			if (throwingMethod != null) {
 				StartForwardThrow(throwingMethod);
 				WriteArrayElement(def, nesting);
@@ -1348,29 +1348,29 @@ public class GenC : GenCCpp
 			WriteArrayElement(def, nesting);
 			Write(", ");
 			switch (type.AsClassType().GetElementType()) {
-			case CiStringStorageType _:
+			case FuStringStorageType _:
 				this.ListFrees["String"] = "free(*(void **) ptr)";
 				Write("FuList_FreeString");
 				break;
-			case CiDynamicPtrType _:
+			case FuDynamicPtrType _:
 				this.SharedRelease = true;
 				this.ListFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
 				Write("FuList_FreeShared");
 				break;
-			case CiStorageType storage:
+			case FuStorageType storage:
 				switch (storage.Class.Id) {
-				case CiId.ListClass:
-				case CiId.StackClass:
+				case FuId.ListClass:
+				case FuId.StackClass:
 					this.ListFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
 					Write("FuList_FreeList");
 					break;
-				case CiId.HashSetClass:
-				case CiId.DictionaryClass:
+				case FuId.HashSetClass:
+				case FuId.DictionaryClass:
 					this.ListFrees["HashTable"] = "g_hash_table_unref(*(GHashTable **) ptr)";
 					Write("FuList_FreeHashTable");
 					break;
-				case CiId.SortedSetClass:
-				case CiId.SortedDictionaryClass:
+				case FuId.SortedSetClass:
+				case FuId.SortedDictionaryClass:
 					this.ListFrees["Tree"] = "g_tree_unref(*(GTree **) ptr)";
 					Write("FuList_FreeTree");
 					break;
@@ -1391,24 +1391,24 @@ public class GenC : GenCCpp
 		base.WriteInitCode(def);
 	}
 
-	void WriteMemberAccess!(CiType leftType, CiSymbol /* CiClass */ symbolClass)
+	void WriteMemberAccess!(FuType leftType, FuSymbol /* FuClass */ symbolClass)
 	{
-		if (leftType is CiStorageType)
+		if (leftType is FuStorageType)
 			WriteChar('.');
 		else
 			Write("->");
-		for (CiSymbol klass = leftType.AsClassType().Class; klass != symbolClass; klass = klass.Parent)
+		for (FuSymbol klass = leftType.AsClassType().Class; klass != symbolClass; klass = klass.Parent)
 			Write("base.");
 	}
 
-	protected override void WriteMemberOp!(CiExpr left, CiSymbolReference? symbol)
+	protected override void WriteMemberOp!(FuExpr left, FuSymbolReference? symbol)
 	{
 		WriteMemberAccess(left.Type, symbol.Symbol.Parent);
 	}
 
-	protected override void WriteArrayPtr!(CiExpr expr, CiPriority parent)
+	protected override void WriteArrayPtr!(FuExpr expr, FuPriority parent)
 	{
-		if (expr.Type is CiClassType list && list.Class.Id == CiId.ListClass) {
+		if (expr.Type is FuClassType list && list.Class.Id == FuId.ListClass) {
 			WriteChar('(');
 			WriteType(list.GetElementType(), false);
 			Write(" *) ");
@@ -1418,12 +1418,12 @@ public class GenC : GenCCpp
 			expr.Accept(this, parent);
 	}
 
-	protected override void WriteCoercedInternal!(CiType type, CiExpr expr, CiPriority parent)
+	protected override void WriteCoercedInternal!(FuType type, FuExpr expr, FuPriority parent)
 	{
 		switch (type) {
-		case CiDynamicPtrType dynamic when expr is CiSymbolReference && parent != CiPriority.Equality:
+		case FuDynamicPtrType dynamic when expr is FuSymbolReference && parent != FuPriority.Equality:
 			this.SharedAddRef = true;
-			if (dynamic.Class.Id == CiId.ArrayPtrClass)
+			if (dynamic.Class.Id == FuId.ArrayPtrClass)
 				WriteDynamicArrayCast(dynamic.GetElementType());
 			else {
 				WriteChar('(');
@@ -1432,18 +1432,18 @@ public class GenC : GenCCpp
 			}
 			WriteCall("FuShared_AddRef", expr);
 			break;
-		case CiClassType klass when klass.Class.Id != CiId.StringClass && klass.Class.Id != CiId.ArrayPtrClass && !(klass is CiStorageType):
-			if (klass.Class.Id == CiId.QueueClass && expr.Type is CiStorageType) {
+		case FuClassType klass when klass.Class.Id != FuId.StringClass && klass.Class.Id != FuId.ArrayPtrClass && !(klass is FuStorageType):
+			if (klass.Class.Id == FuId.QueueClass && expr.Type is FuStorageType) {
 				WriteChar('&');
-				expr.Accept(this, CiPriority.Primary);
+				expr.Accept(this, FuPriority.Primary);
 			}
 			else
 				WriteClassPtr(klass.Class, expr, parent);
 			break;
 		default:
-			if (type.Id == CiId.StringStorageType)
+			if (type.Id == FuId.StringStorageType)
 				WriteStringStorageValue(expr);
-			else if (expr.Type.Id == CiId.StringStorageType)
+			else if (expr.Type.Id == FuId.StringStorageType)
 				WriteTemporaryOrExpr(expr, parent);
 			else
 				base.WriteCoercedInternal(type, expr, parent);
@@ -1451,9 +1451,9 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected virtual void WriteSubstringEqual!(CiCallExpr call, string literal, CiPriority parent, bool not)
+	protected virtual void WriteSubstringEqual!(FuCallExpr call, string literal, FuPriority parent, bool not)
 	{
-		if (parent > CiPriority.Equality)
+		if (parent > FuPriority.Equality)
 			WriteChar('(');
 		Include("string.h");
 		Write("memcmp(");
@@ -1465,64 +1465,64 @@ public class GenC : GenCCpp
 		WriteChar(')');
 		Write(GetEqOp(not));
 		WriteChar('0');
-		if (parent > CiPriority.Equality)
+		if (parent > FuPriority.Equality)
 			WriteChar(')');
 	}
 
-	protected virtual void WriteEqualStringInternal!(CiExpr left, CiExpr right, CiPriority parent, bool not)
+	protected virtual void WriteEqualStringInternal!(FuExpr left, FuExpr right, FuPriority parent, bool not)
 	{
-		if (parent > CiPriority.Equality)
+		if (parent > FuPriority.Equality)
 			WriteChar('(');
 		Include("string.h");
 		Write("strcmp("); // TODO: WriteCall("strcmp", left, right);
-		WriteTemporaryOrExpr(left, CiPriority.Argument);
+		WriteTemporaryOrExpr(left, FuPriority.Argument);
 		Write(", ");
-		WriteTemporaryOrExpr(right, CiPriority.Argument);
+		WriteTemporaryOrExpr(right, FuPriority.Argument);
 		WriteChar(')');
 		Write(GetEqOp(not));
 		WriteChar('0');
-		if (parent > CiPriority.Equality)
+		if (parent > FuPriority.Equality)
 			WriteChar(')');
 	}
 
-	protected override void WriteEqual!(CiExpr left, CiExpr right, CiPriority parent, bool not)
+	protected override void WriteEqual!(FuExpr left, FuExpr right, FuPriority parent, bool not)
 	{
-		if (left.Type is CiStringType && right.Type is CiStringType) {
-			CiCallExpr? call = IsStringSubstring(left);
-			if (call != null && right is CiLiteralString literal) {
-				CiExpr lengthExpr = GetStringSubstringLength(call);
+		if (left.Type is FuStringType && right.Type is FuStringType) {
+			FuCallExpr? call = IsStringSubstring(left);
+			if (call != null && right is FuLiteralString literal) {
+				FuExpr lengthExpr = GetStringSubstringLength(call);
 				int rightLength = literal.GetAsciiLength();
 				if (rightLength >= 0) {
 					string rightValue = literal.Value;
-					if (lengthExpr is CiLiteralLong leftLength) {
+					if (lengthExpr is FuLiteralLong leftLength) {
 						if (leftLength.Value != rightLength)
 							NotYet(left, "String comparison with unmatched length"); // TODO: evaluate compile-time
 						WriteSubstringEqual(call, rightValue, parent, not);
 					}
 					else if (not) {
-						if (parent > CiPriority.CondOr)
+						if (parent > FuPriority.CondOr)
 							WriteChar('(');
-						lengthExpr.Accept(this, CiPriority.Equality);
+						lengthExpr.Accept(this, FuPriority.Equality);
 						Write(" != ");
 						VisitLiteralLong(rightLength);
 						if (rightLength > 0) {
 							Write(" || ");
-							WriteSubstringEqual(call, rightValue, CiPriority.CondOr, true);
+							WriteSubstringEqual(call, rightValue, FuPriority.CondOr, true);
 						}
-						if (parent > CiPriority.CondOr)
+						if (parent > FuPriority.CondOr)
 							WriteChar(')');
 					}
 					else {
-						if (parent > CiPriority.CondAnd || parent == CiPriority.CondOr)
+						if (parent > FuPriority.CondAnd || parent == FuPriority.CondOr)
 							WriteChar('(');
-						lengthExpr.Accept(this, CiPriority.Equality);
+						lengthExpr.Accept(this, FuPriority.Equality);
 						Write(" == ");
 						VisitLiteralLong(rightLength);
 						if (rightLength > 0) {
 							Write(" && ");
-							WriteSubstringEqual(call, rightValue, CiPriority.CondAnd, false);
+							WriteSubstringEqual(call, rightValue, FuPriority.CondAnd, false);
 						}
-						if (parent > CiPriority.CondAnd || parent == CiPriority.CondOr)
+						if (parent > FuPriority.CondAnd || parent == FuPriority.CondOr)
 							WriteChar(')');
 					}
 					return;
@@ -1534,23 +1534,23 @@ public class GenC : GenCCpp
 			base.WriteEqual(left, right, parent, not);
 	}
 
-	protected override void WriteStringLength!(CiExpr expr)
+	protected override void WriteStringLength!(FuExpr expr)
 	{
 		Include("string.h");
 		WriteCall("(int) strlen", expr);
 	}
 
-	void WriteStringMethod!(string name, CiExpr obj, List<CiExpr#> args)
+	void WriteStringMethod!(string name, FuExpr obj, List<FuExpr#> args)
 	{
 		Include("string.h");
 		Write("FuString_");
 		WriteCall(name, obj, args[0]);
 	}
 
-	void WriteSizeofCompare!(CiType elementType)
+	void WriteSizeofCompare!(FuType elementType)
 	{
 		Write(", sizeof(");
-		CiId typeId = elementType.Id;
+		FuId typeId = elementType.Id;
 		WriteNumericType(typeId);
 		Write("), FuCompare_");
 		WriteNumericType(typeId);
@@ -1558,29 +1558,29 @@ public class GenC : GenCCpp
 		this.Compares.Add(typeId);
 	}
 
-	protected void WriteArrayFill!(CiExpr obj, List<CiExpr#> args)
+	protected void WriteArrayFill!(FuExpr obj, List<FuExpr#> args)
 	{
 		Write("for (int _i = 0; _i < ");
 		if (args.Count == 1)
 			WriteArrayStorageLength(obj);
 		else
-			args[2].Accept(this, CiPriority.Rel); // FIXME: side effect in every iteration
+			args[2].Accept(this, FuPriority.Rel); // FIXME: side effect in every iteration
 		WriteLine("; _i++)");
 		WriteChar('\t');
-		obj.Accept(this, CiPriority.Primary); // FIXME: side effect in every iteration
+		obj.Accept(this, FuPriority.Primary); // FIXME: side effect in every iteration
 		WriteChar('[');
 		if (args.Count > 1)
 			StartAdd(args[1]); // FIXME: side effect in every iteration
 		Write("_i] = ");
-		args[0].Accept(this, CiPriority.Argument); // FIXME: side effect in every iteration
+		args[0].Accept(this, FuPriority.Argument); // FIXME: side effect in every iteration
 	}
 
-	void WriteListAddInsert!(CiExpr obj, bool insert, string function, List<CiExpr#> args)
+	void WriteListAddInsert!(FuExpr obj, bool insert, string function, List<FuExpr#> args)
 	{
-		CiType elementType = obj.Type.AsClassType().GetElementType();
+		FuType elementType = obj.Type.AsClassType().GetElementType();
 		// TODO: don't emit temporary variable if already a var/field of matching type - beware of integer promotions!
 		int id = WriteCTemporary(elementType, elementType.IsFinal() ? null : args.Last());
-		if (elementType is CiStorageType storage && NeedsConstructor(storage.Class)) {
+		if (elementType is FuStorageType storage && NeedsConstructor(storage.Class)) {
 			WriteName(storage.Class);
 			Write("_Construct(&futemp");
 			VisitLiteralLong(id);
@@ -1588,10 +1588,10 @@ public class GenC : GenCCpp
 		}
 		Write(function);
 		WriteChar('(');
-		obj.Accept(this, CiPriority.Argument);
+		obj.Accept(this, FuPriority.Argument);
 		if (insert) {
 			Write(", ");
-			args[0].Accept(this, CiPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 		}
 		Write(", futemp");
 		VisitLiteralLong(id);
@@ -1599,47 +1599,47 @@ public class GenC : GenCCpp
 		this.CurrentTemporaries[id] = elementType;
 	}
 
-	void WriteDictionaryLookup!(CiExpr obj, string function, CiExpr key)
+	void WriteDictionaryLookup!(FuExpr obj, string function, FuExpr key)
 	{
 		Write(function);
 		WriteChar('(');
-		obj.Accept(this, CiPriority.Argument);
+		obj.Accept(this, FuPriority.Argument);
 		Write(", ");
 		WriteGConstPointerCast(key);
 		WriteChar(')');
 	}
 
-	void WriteArgsAndRightParenthesis!(CiMethod method, List<CiExpr#> args)
+	void WriteArgsAndRightParenthesis!(FuMethod method, List<FuExpr#> args)
 	{
 		int i = 0;
-		for (CiVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
-			if (i > 0 || method.CallType != CiCallType.Static)
+		for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+			if (i > 0 || method.CallType != FuCallType.Static)
 				Write(", ");
 			if (i >= args.Count)
-				param.Value.Accept(this, CiPriority.Argument);
+				param.Value.Accept(this, FuPriority.Argument);
 			else
-				WriteCoerced(param.Type, args[i], CiPriority.Argument);
+				WriteCoerced(param.Type, args[i], FuPriority.Argument);
 			i++;
 		}
 		WriteChar(')');
 	}
 
-	void WriteCRegexOptions!(List<CiExpr#> args)
+	void WriteCRegexOptions!(List<FuExpr#> args)
 	{
 		if (!WriteRegexOptions(args, "", " | ", "", "G_REGEX_CASELESS", "G_REGEX_MULTILINE", "G_REGEX_DOTALL"))
 			WriteChar('0');
 	}
 
-	protected void WritePrintfNotInterpolated!(List<CiExpr#> args, bool newLine)
+	protected void WritePrintfNotInterpolated!(List<FuExpr#> args, bool newLine)
 	{
 		Write("\"%");
 		switch (args[0].Type) {
-		case CiIntegerType intType:
-			if (intType.Id == CiId.LongType)
+		case FuIntegerType intType:
+			if (intType.Id == FuId.LongType)
 				WritePrintfLongPrefix();
 			WriteChar('d');
 			break;
-		case CiFloatingType _:
+		case FuFloatingType _:
 			WriteChar('g');
 			break;
 		default:
@@ -1653,120 +1653,120 @@ public class GenC : GenCCpp
 		WriteChar(')');
 	}
 
-	void WriteTextWriterWrite!(CiExpr obj, List<CiExpr#> args, bool newLine)
+	void WriteTextWriterWrite!(FuExpr obj, List<FuExpr#> args, bool newLine)
 	{
 		if (args.Count == 0) {
 			Write("putc('\\n', ");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			WriteChar(')');
 		}
-		else if (args[0] is CiInterpolatedString interpolated) {
+		else if (args[0] is FuInterpolatedString interpolated) {
 			Write("fprintf(");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			Write(", ");
 			WritePrintf(interpolated, newLine);
 		}
-		else if (args[0].Type is CiNumericType) {
+		else if (args[0].Type is FuNumericType) {
 			Write("fprintf(");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			Write(", ");
 			WritePrintfNotInterpolated(args, newLine);
 		}
 		else if (!newLine) {
 			Write("fputs(");
-			args[0].Accept(this, CiPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 			Write(", ");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			WriteChar(')');
 		}
-		else if (args[0] is CiLiteralString literal) {
+		else if (args[0] is FuLiteralString literal) {
 			Write("fputs(");
 			WriteStringLiteralWithNewLine(literal.Value);
 			Write(", ");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			WriteChar(')');
 		}
 		else {
 			Write("fprintf(");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			Write(", \"%s\\n\", ");
-			args[0].Accept(this, CiPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 			WriteChar(')');
 		}
 	}
 
-	void WriteConsoleWrite!(List<CiExpr#> args, bool newLine)
+	void WriteConsoleWrite!(List<FuExpr#> args, bool newLine)
 	{
 		Include("stdio.h");
 		if (args.Count == 0)
 			Write("putchar('\\n')");
-		else if (args[0] is CiInterpolatedString interpolated) {
+		else if (args[0] is FuInterpolatedString interpolated) {
 			Write("printf(");
 			WritePrintf(interpolated, newLine);
 		}
-		else if (args[0].Type is CiNumericType) {
+		else if (args[0].Type is FuNumericType) {
 			Write("printf(");
 			WritePrintfNotInterpolated(args, newLine);
 		}
 		else if (!newLine) {
 			Write("fputs(");
-			args[0].Accept(this, CiPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 			Write(", stdout)");
 		}
 		else
 			WriteCall("puts", args[0]);
 	}
 
-	static CiClass GetVtblStructClass(CiClass klass)
+	static FuClass GetVtblStructClass(FuClass klass)
 	{
 		while (!klass.AddsVirtualMethods()) {
-			assert klass.Parent is CiClass baseClass;
+			assert klass.Parent is FuClass baseClass;
 			klass = baseClass;
 		}
 		return klass;
 	}
 
-	static CiClass GetVtblPtrClass(CiClass klass)
+	static FuClass GetVtblPtrClass(FuClass klass)
 	{
-		for (CiClass? result = null;;) {
+		for (FuClass? result = null;;) {
 			if (klass.AddsVirtualMethods())
 				result = klass;
-			if (!(klass.Parent is CiClass baseClass))
+			if (!(klass.Parent is FuClass baseClass))
 				return result;
 			klass = baseClass;
 		}
 	}
 
-	protected void WriteCCall!(CiExpr? obj, CiMethod method, List<CiExpr#> args)
+	protected void WriteCCall!(FuExpr? obj, FuMethod method, List<FuExpr#> args)
 	{
-		CiClass klass = this.CurrentClass;
-		assert method.Parent is CiClass declaringClass;
-		if (IsReferenceTo(obj, CiId.BasePtr)) {
+		FuClass klass = this.CurrentClass;
+		assert method.Parent is FuClass declaringClass;
+		if (IsReferenceTo(obj, FuId.BasePtr)) {
 			WriteName(method);
 			Write("(&self->base");
 			WriteUpcast(declaringClass, klass.Parent);
 		}
 		else {
-			CiClass definingClass = declaringClass;
+			FuClass definingClass = declaringClass;
 			switch (method.CallType) {
-			case CiCallType.Abstract:
-			case CiCallType.Virtual:
-			case CiCallType.Override:
-				if (method.CallType == CiCallType.Override) {
-					assert method.GetDeclaringMethod().Parent is CiClass declaringClass1;
+			case FuCallType.Abstract:
+			case FuCallType.Virtual:
+			case FuCallType.Override:
+				if (method.CallType == FuCallType.Override) {
+					assert method.GetDeclaringMethod().Parent is FuClass declaringClass1;
 					declaringClass = declaringClass1;
 				}
 				if (obj != null)
 					klass = obj.Type.AsClassType().Class;
-				CiClass ptrClass = GetVtblPtrClass(klass);
-				CiClass structClass = GetVtblStructClass(definingClass);
+				FuClass ptrClass = GetVtblPtrClass(klass);
+				FuClass structClass = GetVtblStructClass(definingClass);
 				if (structClass != ptrClass) {
 					Write("((const ");
 					WriteName(structClass);
 					Write("Vtbl *) ");
 				}
 				if (obj != null) {
-					obj.Accept(this, CiPriority.Primary);
+					obj.Accept(this, FuPriority.Primary);
 					WriteMemberAccess(obj.Type, ptrClass);
 				}
 				else
@@ -1782,9 +1782,9 @@ public class GenC : GenCCpp
 				break;
 			}
 			WriteChar('(');
-			if (method.CallType != CiCallType.Static) {
+			if (method.CallType != FuCallType.Static) {
 				if (obj != null)
-					WriteClassPtr(declaringClass, obj, CiPriority.Argument);
+					WriteClassPtr(declaringClass, obj, FuPriority.Argument);
 				else if (klass == declaringClass)
 					Write("self");
 				else {
@@ -1796,42 +1796,42 @@ public class GenC : GenCCpp
 		WriteArgsAndRightParenthesis(method, args);
 	}
 
-	void WriteTryParse!(CiExpr obj, List<CiExpr#> args)
+	void WriteTryParse!(FuExpr obj, List<FuExpr#> args)
 	{
 		IncludeStdBool();
 		Write("_TryParse(&");
-		obj.Accept(this, CiPriority.Primary);
+		obj.Accept(this, FuPriority.Primary);
 		Write(", ");
-		args[0].Accept(this, CiPriority.Argument);
-		if (obj.Type is CiIntegerType)
+		args[0].Accept(this, FuPriority.Argument);
+		if (obj.Type is FuIntegerType)
 			WriteTryParseRadix(args);
 		WriteChar(')');
 	}
 
-	protected void WriteStringSubstring!(CiExpr obj, List<CiExpr#> args, CiPriority parent)
+	protected void WriteStringSubstring!(FuExpr obj, List<FuExpr#> args, FuPriority parent)
 	{
 		if (args.Count == 1) {
-			if (parent > CiPriority.Add)
+			if (parent > FuPriority.Add)
 				WriteChar('(');
 			WriteAdd(obj, args[0]);
-			if (parent > CiPriority.Add)
+			if (parent > FuPriority.Add)
 				WriteChar(')');
 		}
 		else
 			NotSupported(obj, "Substring");
 	}
 
-	void StartArrayContains!(CiExpr obj)
+	void StartArrayContains!(FuExpr obj)
 	{
 		Write("FuArray_Contains_");
-		CiId typeId = obj.Type.AsClassType().GetElementType().Id;
+		FuId typeId = obj.Type.AsClassType().GetElementType().Id;
 		switch (typeId) {
-		case CiId.None:
+		case FuId.None:
 			Write("object(");
 			break;
-		case CiId.StringStorageType:
-		case CiId.StringPtrType:
-			typeId = CiId.StringPtrType;
+		case FuId.StringStorageType:
+		case FuId.StringPtrType:
+			typeId = FuId.StringPtrType;
 			Include("string.h");
 			Write("string((const char * const *) ");
 			break;
@@ -1845,51 +1845,51 @@ public class GenC : GenCCpp
 		this.Contains.Add(typeId);
 	}
 
-	void StartArrayIndexing!(CiExpr obj, CiType elementType)
+	void StartArrayIndexing!(FuExpr obj, FuType elementType)
 	{
 		Write("g_array_index(");
-		obj.Accept(this, CiPriority.Argument);
+		obj.Accept(this, FuPriority.Argument);
 		Write(", ");
 		WriteType(elementType, false);
 		Write(", ");
 	}
 
-	protected override void WriteCallExpr!(CiExpr? obj, CiMethod method, List<CiExpr#> args, CiPriority parent)
+	protected override void WriteCallExpr!(FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
 	{
 		switch (method.Id) {
-		case CiId.None:
-		case CiId.ClassToString:
+		case FuId.None:
+		case FuId.ClassToString:
 			WriteCCall(obj, method, args);
 			break;
-		case CiId.EnumFromInt:
+		case FuId.EnumFromInt:
 			WriteStaticCast(method.Type, args[0]);
 			break;
-		case CiId.EnumHasFlag:
+		case FuId.EnumHasFlag:
 			WriteEnumHasFlag(obj, args, parent);
 			break;
-		case CiId.IntTryParse:
+		case FuId.IntTryParse:
 			this.IntTryParse = true;
 			Write("FuInt");
 			WriteTryParse(obj, args);
 			break;
-		case CiId.LongTryParse:
+		case FuId.LongTryParse:
 			this.LongTryParse = true;
 			Write("FuLong");
 			WriteTryParse(obj, args);
 			break;
-		case CiId.DoubleTryParse:
+		case FuId.DoubleTryParse:
 			this.DoubleTryParse = true;
 			Write("FuDouble");
 			WriteTryParse(obj, args);
 			break;
-		case CiId.StringContains:
+		case FuId.StringContains:
 			Include("string.h");
-			if (parent > CiPriority.Equality)
+			if (parent > FuPriority.Equality)
 				WriteChar('(');
 			int c = GetOneAscii(args[0]);
 			if (c >= 0) {
 				Write("strchr(");
-				obj.Accept(this, CiPriority.Argument);
+				obj.Accept(this, FuPriority.Argument);
 				Write(", ");
 				VisitLiteralChar(c);
 				WriteChar(')');
@@ -1897,29 +1897,29 @@ public class GenC : GenCCpp
 			else
 				WriteCall("strstr", obj, args[0]);
 			Write(" != NULL");
-			if (parent > CiPriority.Equality)
+			if (parent > FuPriority.Equality)
 				WriteChar(')');
 			break;
-		case CiId.StringEndsWith:
+		case FuId.StringEndsWith:
 			this.StringEndsWith = true;
 			WriteStringMethod("EndsWith", obj, args);
 			break;
-		case CiId.StringIndexOf:
+		case FuId.StringIndexOf:
 			this.StringIndexOf = true;
 			WriteStringMethod("IndexOf", obj, args);
 			break;
-		case CiId.StringLastIndexOf:
+		case FuId.StringLastIndexOf:
 			this.StringLastIndexOf = true;
 			WriteStringMethod("LastIndexOf", obj, args);
 			break;
-		case CiId.StringReplace:
+		case FuId.StringReplace:
 			Include("string.h");
 			this.StringAppend = true;
 			this.StringReplace = true;
 			WriteCall("FuString_Replace", obj, args[0], args[1]);
 			break;
-		case CiId.StringStartsWith:
-			if (parent > CiPriority.Equality)
+		case FuId.StringStartsWith:
+			if (parent > FuPriority.Equality)
 				WriteChar('(');
 			int c2 = GetOneAscii(args[0]);
 			if (c2 >= 0) {
@@ -1929,57 +1929,57 @@ public class GenC : GenCCpp
 			else {
 				Include("string.h");
 				Write("strncmp(");
-				obj.Accept(this, CiPriority.Argument);
+				obj.Accept(this, FuPriority.Argument);
 				Write(", ");
-				args[0].Accept(this, CiPriority.Argument);
+				args[0].Accept(this, FuPriority.Argument);
 				Write(", strlen(");
-				args[0].Accept(this, CiPriority.Argument); // FIXME: side effect
+				args[0].Accept(this, FuPriority.Argument); // FIXME: side effect
 				Write(")) == 0");
 			}
-			if (parent > CiPriority.Equality)
+			if (parent > FuPriority.Equality)
 				WriteChar(')');
 			break;
-		case CiId.StringSubstring:
+		case FuId.StringSubstring:
 			WriteStringSubstring(obj, args, parent);
 			break;
-		case CiId.ArrayBinarySearchAll:
-		case CiId.ArrayBinarySearchPart:
-			if (parent > CiPriority.Add)
+		case FuId.ArrayBinarySearchAll:
+		case FuId.ArrayBinarySearchPart:
+			if (parent > FuPriority.Add)
 				WriteChar('(');
 			Write("(const ");
-			CiType elementType2 = obj.Type.AsClassType().GetElementType();
+			FuType elementType2 = obj.Type.AsClassType().GetElementType();
 			WriteType(elementType2, false);
 			Write(" *) bsearch(&");
-			args[0].Accept(this, CiPriority.Primary); // TODO: not lvalue, promoted
+			args[0].Accept(this, FuPriority.Primary); // TODO: not lvalue, promoted
 			Write(", ");
 			if (args.Count == 1)
-				WriteArrayPtr(obj, CiPriority.Argument);
+				WriteArrayPtr(obj, FuPriority.Argument);
 			else
 				WriteArrayPtrAdd(obj, args[1]);
 			Write(", ");
 			if (args.Count == 1)
 				WriteArrayStorageLength(obj);
 			else
-				args[2].Accept(this, CiPriority.Argument);
+				args[2].Accept(this, FuPriority.Argument);
 			WriteSizeofCompare(elementType2);
 			Write(" - ");
-			WriteArrayPtr(obj, CiPriority.Mul);
-			if (parent > CiPriority.Add)
+			WriteArrayPtr(obj, FuPriority.Mul);
+			if (parent > FuPriority.Add)
 				WriteChar(')');
 			break;
-		case CiId.ArrayContains:
+		case FuId.ArrayContains:
 			StartArrayContains(obj);
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			Write(", ");
 			WriteArrayStorageLength(obj);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 			WriteChar(')');
 			break;
-		case CiId.ArrayCopyTo:
-		case CiId.ListCopyTo:
+		case FuId.ArrayCopyTo:
+		case FuId.ListCopyTo:
 			Include("string.h");
-			CiType elementType = obj.Type.AsClassType().GetElementType();
+			FuType elementType = obj.Type.AsClassType().GetElementType();
 			if (IsHeapAllocated(elementType))
 				NotYet(obj, "CopyTo for this type"); // TODO
 			Write("memcpy(");
@@ -1987,32 +1987,32 @@ public class GenC : GenCCpp
 			Write(", ");
 			WriteArrayPtrAdd(obj, args[0]);
 			Write(", ");
-			if (elementType.Id == CiId.SByteRange || elementType.Id == CiId.ByteRange)
-				args[3].Accept(this, CiPriority.Argument);
+			if (elementType.Id == FuId.SByteRange || elementType.Id == FuId.ByteRange)
+				args[3].Accept(this, FuPriority.Argument);
 			else {
-				args[3].Accept(this, CiPriority.Mul);
+				args[3].Accept(this, FuPriority.Mul);
 				Write(" * sizeof(");
 				WriteType(elementType, false);
 				WriteChar(')');
 			}
 			WriteChar(')');
 			break;
-		case CiId.ArrayFillAll:
-		case CiId.ArrayFillPart:
+		case FuId.ArrayFillAll:
+		case FuId.ArrayFillPart:
 			// TODO: IsHeapAllocated
-			if (args[0] is CiLiteral literal && literal.IsDefaultValue()) {
+			if (args[0] is FuLiteral literal && literal.IsDefaultValue()) {
 				Include("string.h");
 				Write("memset(");
 				if (args.Count == 1) {
-					obj.Accept(this, CiPriority.Argument);
+					obj.Accept(this, FuPriority.Argument);
 					Write(", 0, sizeof(");
-					obj.Accept(this, CiPriority.Argument);
+					obj.Accept(this, FuPriority.Argument);
 					WriteChar(')');
 				}
 				else {
 					WriteArrayPtrAdd(obj, args[1]);
 					Write(", 0, ");
-					args[2].Accept(this, CiPriority.Mul);
+					args[2].Accept(this, FuPriority.Mul);
 					Write(" * sizeof(");
 					WriteType(obj.Type.AsClassType().GetElementType(), false);
 					WriteChar(')');
@@ -2022,28 +2022,28 @@ public class GenC : GenCCpp
 			else
 				WriteArrayFill(obj, args);
 			break;
-		case CiId.ArraySortAll:
+		case FuId.ArraySortAll:
 			Write("qsort(");
-			WriteArrayPtr(obj, CiPriority.Argument);
+			WriteArrayPtr(obj, FuPriority.Argument);
 			Write(", ");
 			WriteArrayStorageLength(obj);
 			WriteSizeofCompare(obj.Type.AsClassType().GetElementType());
 			break;
-		case CiId.ArraySortPart:
-		case CiId.ListSortPart:
+		case FuId.ArraySortPart:
+		case FuId.ListSortPart:
 			Write("qsort(");
 			WriteArrayPtrAdd(obj, args[0]);
 			Write(", ");
-			args[1].Accept(this, CiPriority.Argument);
+			args[1].Accept(this, FuPriority.Argument);
 			WriteSizeofCompare(obj.Type.AsClassType().GetElementType());
 			break;
-		case CiId.ListAdd:
-		case CiId.StackPush:
+		case FuId.ListAdd:
+		case FuId.StackPush:
 			switch (obj.Type.AsClassType().GetElementType()) {
-			case CiArrayStorageType _:
-			case CiStorageType storage when storage.Class.Id == CiId.None && !NeedsConstructor(storage.Class):
+			case FuArrayStorageType _:
+			case FuStorageType storage when storage.Class.Id == FuId.None && !NeedsConstructor(storage.Class):
 				Write("g_array_set_size(");
-				obj.Accept(this, CiPriority.Argument);
+				obj.Accept(this, FuPriority.Argument);
 				Write(", ");
 				WritePostfix(obj, "->len + 1)"); // FIXME: side effect
 				break;
@@ -2052,63 +2052,63 @@ public class GenC : GenCCpp
 				break;
 			}
 			break;
-		case CiId.ListClear:
-		case CiId.StackClear:
+		case FuId.ListClear:
+		case FuId.StackClear:
 			Write("g_array_set_size(");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			Write(", 0)");
 			break;
-		case CiId.ListContains:
+		case FuId.ListContains:
 			StartArrayContains(obj);
 			WritePostfix(obj, "->data, ");
 			WritePostfix(obj, "->len, "); // FIXME: side effect
-			args[0].Accept(this, CiPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 			WriteChar(')');
 			break;
-		case CiId.ListInsert:
+		case FuId.ListInsert:
 			WriteListAddInsert(obj, true, "g_array_insert_val", args);
 			break;
-		case CiId.ListLast:
-		case CiId.StackPeek:
+		case FuId.ListLast:
+		case FuId.StackPeek:
 			StartArrayIndexing(obj, obj.Type.AsClassType().GetElementType());
 			WritePostfix(obj, "->len - 1)"); // FIXME: side effect
 			break;
-		case CiId.ListRemoveAt:
+		case FuId.ListRemoveAt:
 			WriteCall("g_array_remove_index", obj, args[0]);
 			break;
-		case CiId.ListRemoveRange:
+		case FuId.ListRemoveRange:
 			WriteCall("g_array_remove_range", obj, args[0], args[1]);
 			break;
-		case CiId.ListSortAll:
+		case FuId.ListSortAll:
 			Write("g_array_sort(");
-			obj.Accept(this, CiPriority.Argument);
-			CiId typeId2 = obj.Type.AsClassType().GetElementType().Id;
+			obj.Accept(this, FuPriority.Argument);
+			FuId typeId2 = obj.Type.AsClassType().GetElementType().Id;
 			Write(", FuCompare_");
 			WriteNumericType(typeId2);
 			WriteChar(')');
 			this.Compares.Add(typeId2);
 			break;
-		case CiId.QueueClear:
+		case FuId.QueueClear:
 			Write("g_queue_clear("); // TODO: g_queue_clear_full
 			WriteQueueObject(obj);
 			WriteChar(')');
 			break;
-		case CiId.QueueDequeue:
+		case FuId.QueueDequeue:
 			WriteQueueGet("g_queue_pop_head", obj, parent);
 			break;
-		case CiId.QueueEnqueue:
+		case FuId.QueueEnqueue:
 			Write("g_queue_push_tail(");
 			WriteQueueObject(obj);
 			Write(", ");
 			WriteGPointerCast(obj.Type.AsClassType().GetElementType(), args[0]);
 			WriteChar(')');
 			break;
-		case CiId.QueuePeek:
+		case FuId.QueuePeek:
 			WriteQueueGet("g_queue_peek_head", obj, parent);
 			break;
-		case CiId.StackPop:
+		case FuId.StackPop:
 			// FIXME: destroy
-			if (parent == CiPriority.Statement)
+			if (parent == FuPriority.Statement)
 				WritePostfix(obj, "->len--");
 			else {
 				StartArrayIndexing(obj, obj.Type.AsClassType().GetElementType());
@@ -2116,44 +2116,44 @@ public class GenC : GenCCpp
 				WritePostfix(obj, "->len)"); // FIXME: side effect
 			}
 			break;
-		case CiId.HashSetAdd:
+		case FuId.HashSetAdd:
 			Write("g_hash_table_add(");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			Write(", ");
 			WriteGPointerCast(obj.Type.AsClassType().GetElementType(), args[0]);
 			WriteChar(')');
 			break;
-		case CiId.HashSetClear:
-		case CiId.DictionaryClear:
+		case FuId.HashSetClear:
+		case FuId.DictionaryClear:
 			WriteCall("g_hash_table_remove_all", obj);
 			break;
-		case CiId.HashSetContains:
-		case CiId.DictionaryContainsKey:
+		case FuId.HashSetContains:
+		case FuId.DictionaryContainsKey:
 			WriteDictionaryLookup(obj, "g_hash_table_contains", args[0]);
 			break;
-		case CiId.HashSetRemove:
-		case CiId.DictionaryRemove:
+		case FuId.HashSetRemove:
+		case FuId.DictionaryRemove:
 			WriteDictionaryLookup(obj, "g_hash_table_remove", args[0]);
 			break;
-		case CiId.SortedSetAdd:
+		case FuId.SortedSetAdd:
 			Write("g_tree_insert(");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			Write(", ");
 			WriteGPointerCast(obj.Type.AsClassType().GetKeyType(), args[0]);
 			Write(", NULL)");
 			break;
-		case CiId.DictionaryAdd:
+		case FuId.DictionaryAdd:
 			StartDictionaryInsert(obj, args[0]);
-			CiClassType valueType = obj.Type.AsClassType().GetValueType().AsClassType(); // CiStorageType
+			FuClassType valueType = obj.Type.AsClassType().GetValueType().AsClassType(); // FuStorageType
 			switch (valueType.Class.Id) {
-			case CiId.ListClass:
-			case CiId.StackClass:
-			case CiId.DictionaryClass:
-			case CiId.SortedDictionaryClass:
+			case FuId.ListClass:
+			case FuId.StackClass:
+			case FuId.DictionaryClass:
+			case FuId.SortedDictionaryClass:
 				WriteNewStorage(valueType);
 				break;
 			default:
-				if (valueType.Class.IsPublic && valueType.Class.Constructor != null && valueType.Class.Constructor.Visibility == CiVisibility.Public) { // FIXME: construct fields if no public constructor
+				if (valueType.Class.IsPublic && valueType.Class.Constructor != null && valueType.Class.Constructor.Visibility == FuVisibility.Public) { // FIXME: construct fields if no public constructor
 					WriteName(valueType.Class);
 					Write("_New()");
 				}
@@ -2166,127 +2166,127 @@ public class GenC : GenCCpp
 			}
 			WriteChar(')');
 			break;
-		case CiId.SortedSetClear:
-		case CiId.SortedDictionaryClear:
+		case FuId.SortedSetClear:
+		case FuId.SortedDictionaryClear:
 			// TODO: since glib-2.70: WriteCall("g_tree_remove_all", obj);
 			Write("g_tree_destroy(g_tree_ref(");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			Write("))");
 			break;
-		case CiId.SortedSetContains:
-		case CiId.SortedDictionaryContainsKey:
+		case FuId.SortedSetContains:
+		case FuId.SortedDictionaryContainsKey:
 			Write("g_tree_lookup_extended(");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			Write(", ");
 			WriteGConstPointerCast(args[0]);
 			Write(", NULL, NULL)");
 			break;
-		case CiId.SortedSetRemove:
-		case CiId.SortedDictionaryRemove:
+		case FuId.SortedSetRemove:
+		case FuId.SortedDictionaryRemove:
 			WriteDictionaryLookup(obj, "g_tree_remove", args[0]);
 			break;
-		case CiId.TextWriterWrite:
+		case FuId.TextWriterWrite:
 			WriteTextWriterWrite(obj, args, false);
 			break;
-		case CiId.TextWriterWriteChar:
+		case FuId.TextWriterWriteChar:
 			WriteCall("putc", args[0], obj);
 			break;
-		case CiId.TextWriterWriteLine:
+		case FuId.TextWriterWriteLine:
 			WriteTextWriterWrite(obj, args, true);
 			break;
-		case CiId.ConsoleWrite:
+		case FuId.ConsoleWrite:
 			WriteConsoleWrite(args, false);
 			break;
-		case CiId.ConsoleWriteLine:
+		case FuId.ConsoleWriteLine:
 			WriteConsoleWrite(args, true);
 			break;
-		case CiId.UTF8GetByteCount:
+		case FuId.UTF8GetByteCount:
 			WriteStringLength(args[0]);
 			break;
-		case CiId.UTF8GetBytes:
+		case FuId.UTF8GetBytes:
 			Include("string.h");
 			Write("memcpy("); // NOT strcpy because without the NUL terminator
 			WriteArrayPtrAdd(args[1], args[2]);
 			Write(", ");
-			args[0].Accept(this, CiPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 			Write(", strlen(");
-			args[0].Accept(this, CiPriority.Argument); // FIXME: side effect
+			args[0].Accept(this, FuPriority.Argument); // FIXME: side effect
 			Write("))");
 			break;
-		case CiId.EnvironmentGetEnvironmentVariable:
+		case FuId.EnvironmentGetEnvironmentVariable:
 			WriteCall("getenv", args[0]);
 			break;
-		case CiId.RegexCompile:
+		case FuId.RegexCompile:
 			WriteGlib("g_regex_new(");
-			WriteTemporaryOrExpr(args[0], CiPriority.Argument);
+			WriteTemporaryOrExpr(args[0], FuPriority.Argument);
 			Write(", ");
 			WriteCRegexOptions(args);
 			Write(", 0, NULL)");
 			break;
-		case CiId.RegexEscape:
+		case FuId.RegexEscape:
 			WriteGlib("g_regex_escape_string(");
-			WriteTemporaryOrExpr(args[0], CiPriority.Argument);
+			WriteTemporaryOrExpr(args[0], FuPriority.Argument);
 			Write(", -1)");
 			break;
-		case CiId.RegexIsMatchStr:
+		case FuId.RegexIsMatchStr:
 			WriteGlib("g_regex_match_simple(");
-			WriteTemporaryOrExpr(args[1], CiPriority.Argument);
+			WriteTemporaryOrExpr(args[1], FuPriority.Argument);
 			Write(", ");
-			WriteTemporaryOrExpr(args[0], CiPriority.Argument);
+			WriteTemporaryOrExpr(args[0], FuPriority.Argument);
 			Write(", ");
 			WriteCRegexOptions(args);
 			Write(", 0)");
 			break;
-		case CiId.RegexIsMatchRegex:
+		case FuId.RegexIsMatchRegex:
 			Write("g_regex_match(");
-			obj.Accept(this, CiPriority.Argument);
+			obj.Accept(this, FuPriority.Argument);
 			Write(", ");
-			WriteTemporaryOrExpr(args[0], CiPriority.Argument);
+			WriteTemporaryOrExpr(args[0], FuPriority.Argument);
 			Write(", 0, NULL)");
 			break;
-		case CiId.MatchFindStr:
+		case FuId.MatchFindStr:
 			this.MatchFind = true;
 			Write("FuMatch_Find(&");
-			obj.Accept(this, CiPriority.Primary);
+			obj.Accept(this, FuPriority.Primary);
 			Write(", ");
-			WriteTemporaryOrExpr(args[0], CiPriority.Argument);
+			WriteTemporaryOrExpr(args[0], FuPriority.Argument);
 			Write(", ");
-			WriteTemporaryOrExpr(args[1], CiPriority.Argument);
+			WriteTemporaryOrExpr(args[1], FuPriority.Argument);
 			Write(", ");
 			WriteCRegexOptions(args);
 			WriteChar(')');
 			break;
-		case CiId.MatchFindRegex:
+		case FuId.MatchFindRegex:
 			Write("g_regex_match(");
-			args[1].Accept(this, CiPriority.Argument);
+			args[1].Accept(this, FuPriority.Argument);
 			Write(", ");
-			WriteTemporaryOrExpr(args[0], CiPriority.Argument);
+			WriteTemporaryOrExpr(args[0], FuPriority.Argument);
 			Write(", 0, &");
-			obj.Accept(this, CiPriority.Primary);
+			obj.Accept(this, FuPriority.Primary);
 			WriteChar(')');
 			break;
-		case CiId.MatchGetCapture:
+		case FuId.MatchGetCapture:
 			WriteCall("g_match_info_fetch", obj, args[0]);
 			break;
-		case CiId.MathMethod:
-		case CiId.MathIsFinite:
-		case CiId.MathIsNaN:
-		case CiId.MathLog2:
+		case FuId.MathMethod:
+		case FuId.MathIsFinite:
+		case FuId.MathIsNaN:
+		case FuId.MathLog2:
 			IncludeMath();
 			WriteLowercase(method.Name);
 			WriteArgsInParentheses(method, args);
 			break;
-		case CiId.MathAbs:
+		case FuId.MathAbs:
 			switch (args[0].Type.Id) {
-			case CiId.LongType:
+			case FuId.LongType:
 				WriteCall("llabs", args[0]);
 				break;
-			case CiId.FloatType:
+			case FuId.FloatType:
 				IncludeMath();
 				WriteCall("fabsf", args[0]);
 				break;
-			case CiId.FloatIntType:
-			case CiId.DoubleType:
+			case FuId.FloatIntType:
+			case FuId.DoubleType:
 				IncludeMath();
 				WriteCall("fabs", args[0]);
 				break;
@@ -2295,31 +2295,31 @@ public class GenC : GenCCpp
 				break;
 			}
 			break;
-		case CiId.MathCeiling:
+		case FuId.MathCeiling:
 			IncludeMath();
 			WriteCall("ceil", args[0]);
 			break;
-		case CiId.MathFusedMultiplyAdd:
+		case FuId.MathFusedMultiplyAdd:
 			IncludeMath();
 			WriteCall("fma", args[0], args[1], args[2]);
 			break;
-		case CiId.MathIsInfinity:
+		case FuId.MathIsInfinity:
 			IncludeMath();
 			WriteCall("isinf", args[0]);
 			break;
-		case CiId.MathMaxDouble:
+		case FuId.MathMaxDouble:
 			IncludeMath();
 			WriteCall("fmax", args[0], args[1]);
 			break;
-		case CiId.MathMinDouble:
+		case FuId.MathMinDouble:
 			IncludeMath();
 			WriteCall("fmin", args[0], args[1]);
 			break;
-		case CiId.MathRound:
+		case FuId.MathRound:
 			IncludeMath();
 			WriteCall("round", args[0]);
 			break;
-		case CiId.MathTruncate:
+		case FuId.MathTruncate:
 			IncludeMath();
 			WriteCall("trunc", args[0]);
 			break;
@@ -2329,54 +2329,54 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteDictionaryIndexing!(string function, CiBinaryExpr expr, CiPriority parent)
+	void WriteDictionaryIndexing!(string function, FuBinaryExpr expr, FuPriority parent)
 	{
-		CiType valueType = expr.Left.Type.AsClassType().GetValueType();
-		if (valueType is CiIntegerType && valueType.Id != CiId.LongType) {
+		FuType valueType = expr.Left.Type.AsClassType().GetValueType();
+		if (valueType is FuIntegerType && valueType.Id != FuId.LongType) {
 			Write("GPOINTER_TO_INT(");
 			WriteDictionaryLookup(expr.Left, function, expr.Right);
 			WriteChar(')');
 		}
 		else {
-			if (parent > CiPriority.Mul)
+			if (parent > FuPriority.Mul)
 				WriteChar('(');
-			if (valueType is CiStorageType storage && (storage.Class.Id == CiId.None || storage.Class.Id == CiId.ArrayStorageClass))
+			if (valueType is FuStorageType storage && (storage.Class.Id == FuId.None || storage.Class.Id == FuId.ArrayStorageClass))
 				WriteDynamicArrayCast(valueType);
 			else {
 				WriteStaticCastType(valueType);
-				if (valueType is CiEnum) {
-					assert parent <= CiPriority.Mul, "Should close two parens";
+				if (valueType is FuEnum) {
+					assert parent <= FuPriority.Mul, "Should close two parens";
 					Write("GPOINTER_TO_INT(");
 				}
 			}
 			WriteDictionaryLookup(expr.Left, function, expr.Right);
-			if (parent > CiPriority.Mul || valueType is CiEnum)
+			if (parent > FuPriority.Mul || valueType is FuEnum)
 				WriteChar(')');
 		}
 	}
 
-	protected override void WriteIndexingExpr!(CiBinaryExpr expr, CiPriority parent)
+	protected override void WriteIndexingExpr!(FuBinaryExpr expr, FuPriority parent)
 	{
-		if (expr.Left.Type is CiClassType klass) {
+		if (expr.Left.Type is FuClassType klass) {
 			switch (klass.Class.Id) {
-			case CiId.ListClass:
-				if (klass.GetElementType() is CiArrayStorageType) {
+			case FuId.ListClass:
+				if (klass.GetElementType() is FuArrayStorageType) {
 					WriteChar('(');
 					WriteDynamicArrayCast(klass.GetElementType());
 					WritePostfix(expr.Left, "->data)[");
-					expr.Right.Accept(this, CiPriority.Argument);
+					expr.Right.Accept(this, FuPriority.Argument);
 					WriteChar(']');
 				}
 				else {
 					StartArrayIndexing(expr.Left, klass.GetElementType());
-					expr.Right.Accept(this, CiPriority.Argument);
+					expr.Right.Accept(this, FuPriority.Argument);
 					WriteChar(')');
 				}
 				return;
-			case CiId.DictionaryClass:
+			case FuId.DictionaryClass:
 				WriteDictionaryIndexing("g_hash_table_lookup", expr, parent);
 				return;
-			case CiId.SortedDictionaryClass:
+			case FuId.SortedDictionaryClass:
 				WriteDictionaryIndexing("g_tree_lookup", expr, parent);
 				return;
 			default:
@@ -2386,35 +2386,35 @@ public class GenC : GenCCpp
 		base.WriteIndexingExpr(expr, parent);
 	}
 
-	public override void VisitBinaryExpr!(CiBinaryExpr expr, CiPriority parent)
+	internal override void VisitBinaryExpr!(FuBinaryExpr expr, FuPriority parent)
 	{
 		switch (expr.Op) {
-		case CiToken.Plus:
-			if (expr.Type.Id == CiId.StringStorageType)
+		case FuToken.Plus:
+			if (expr.Type.Id == FuId.StringStorageType)
 				NotSupported(expr, "String concatenation");
 			break;
-		case CiToken.Equal:
-		case CiToken.NotEqual:
-		case CiToken.Greater:
-			CiExpr? str = IsStringEmpty(expr);
+		case FuToken.Equal:
+		case FuToken.NotEqual:
+		case FuToken.Greater:
+			FuExpr? str = IsStringEmpty(expr);
 			if (str != null) {
-				WritePostfix(str, expr.Op == CiToken.Equal ? "[0] == '\\0'" : "[0] != '\\0'");
+				WritePostfix(str, expr.Op == FuToken.Equal ? "[0] == '\\0'" : "[0] != '\\0'");
 				return;
 			}
 			break;
-		case CiToken.AddAssign:
-			if (expr.Left.Type.Id == CiId.StringStorageType) {
-				if (expr.Right is CiInterpolatedString rightInterpolated) {
+		case FuToken.AddAssign:
+			if (expr.Left.Type.Id == FuId.StringStorageType) {
+				if (expr.Right is FuInterpolatedString rightInterpolated) {
 					this.StringAssign = true;
 					Write("FuString_Assign(&");
-					expr.Left.Accept(this, CiPriority.Primary);
+					expr.Left.Accept(this, FuPriority.Primary);
 					this.StringFormat = true;
 					Include("stdarg.h");
 					Include("stdio.h");
 					Write(", FuString_Format(\"%s");
 					WritePrintfFormat(rightInterpolated);
 					Write("\", ");
-					expr.Left.Accept(this, CiPriority.Argument); // FIXME: side effect
+					expr.Left.Accept(this, FuPriority.Argument); // FIXME: side effect
 					WriteInterpolatedStringArgs(rightInterpolated);
 					WriteChar(')');
 				}
@@ -2422,15 +2422,15 @@ public class GenC : GenCCpp
 					Include("string.h");
 					this.StringAppend = true;
 					Write("FuString_Append(&");
-					expr.Left.Accept(this, CiPriority.Primary);
+					expr.Left.Accept(this, FuPriority.Primary);
 					Write(", ");
-					expr.Right.Accept(this, CiPriority.Argument);
+					expr.Right.Accept(this, FuPriority.Argument);
 				}
 				WriteChar(')');
 				return;
 			}
 			break;
-		case CiToken.Is:
+		case FuToken.Is:
 			NotSupported(expr, "'is' operator");
 			break;
 		default:
@@ -2445,15 +2445,15 @@ public class GenC : GenCCpp
 		WriteResourceName(name);
 	}
 
-	public override void VisitLambdaExpr!(CiLambdaExpr expr)
+	internal override void VisitLambdaExpr!(FuLambdaExpr expr)
 	{
 		NotSupported(expr, "Lambda expression");
 	}
 
-	void WriteDestructLoopOrSwitch!(CiCondCompletionStatement loopOrSwitch)
+	void WriteDestructLoopOrSwitch!(FuCondCompletionStatement loopOrSwitch)
 	{
 		for (int i = this.VarsToDestruct.Count; --i >= 0; ) {
-			CiVar def = this.VarsToDestruct[i];
+			FuVar def = this.VarsToDestruct[i];
 			if (!loopOrSwitch.Encloses(def))
 				break;
 			WriteDestruct(def);
@@ -2465,11 +2465,11 @@ public class GenC : GenCCpp
 		this.VarsToDestruct.RemoveRange(i, this.VarsToDestruct.Count - i);
 	}
 
-	protected override void CleanupBlock!(CiBlock statement)
+	protected override void CleanupBlock!(FuBlock statement)
 	{
 		int i = this.VarsToDestruct.Count;
 		for (; i > 0; i--) {
-			CiVar def = this.VarsToDestruct[i - 1];
+			FuVar def = this.VarsToDestruct[i - 1];
 			if (def.Parent != statement) // destroy only the variables in this block
 				break;
 			if (statement.CompletesNormally())
@@ -2478,38 +2478,38 @@ public class GenC : GenCCpp
 		TrimVarsToDestruct(i);
 	}
 
-	public override void VisitBreak!(CiBreak statement)
+	internal override void VisitBreak!(FuBreak statement)
 	{
 		WriteDestructLoopOrSwitch(statement.LoopOrSwitch);
 		base.VisitBreak(statement);
 	}
 
-	public override void VisitContinue!(CiContinue statement)
+	internal override void VisitContinue!(FuContinue statement)
 	{
 		WriteDestructLoopOrSwitch(statement.Loop);
 		base.VisitContinue(statement);
 	}
 
-	public override void VisitExpr!(CiExpr statement)
+	internal override void VisitExpr!(FuExpr statement)
 	{
 		WriteCTemporaries(statement);
-		CiMethod? throwingMethod = GetThrowingMethod(statement);
+		FuMethod? throwingMethod = GetThrowingMethod(statement);
 		if (throwingMethod != null) {
 			EnsureChildBlock();
 			statement.Accept(this, StartForwardThrow(throwingMethod));
 			EndForwardThrow(throwingMethod);
 			CleanupTemporaries();
 		}
-		else if (statement is CiCallExpr && statement.Type.Id == CiId.StringStorageType) {
+		else if (statement is FuCallExpr && statement.Type.Id == FuId.StringStorageType) {
 			Write("free(");
-			statement.Accept(this, CiPriority.Argument);
+			statement.Accept(this, FuPriority.Argument);
 			WriteLine(");");
 			CleanupTemporaries();
 		}
-		else if (statement is CiCallExpr && statement.Type is CiDynamicPtrType) {
+		else if (statement is FuCallExpr && statement.Type is FuDynamicPtrType) {
 			this.SharedRelease = true;
 			Write("FuShared_Release(");
-			statement.Accept(this, CiPriority.Argument);
+			statement.Accept(this, FuPriority.Argument);
 			WriteLine(");");
 			CleanupTemporaries();
 		}
@@ -2517,20 +2517,20 @@ public class GenC : GenCCpp
 			base.VisitExpr(statement);
 	}
 
-	void StartForeachHashTable!(CiForeach statement)
+	void StartForeachHashTable!(FuForeach statement)
 	{
 		OpenBlock();
 		WriteLine("GHashTableIter fudictit;");
 		Write("g_hash_table_iter_init(&fudictit, ");
-		statement.Collection.Accept(this, CiPriority.Argument);
+		statement.Collection.Accept(this, FuPriority.Argument);
 		WriteLine(");");
 	}
 
-	void WriteDictIterVar!(CiNamedValue iter, string value)
+	void WriteDictIterVar!(FuNamedValue iter, string value)
 	{
 		WriteTypeAndName(iter);
 		Write(" = ");
-		if (iter.Type is CiIntegerType && iter.Type.Id != CiId.LongType) {
+		if (iter.Type is FuIntegerType && iter.Type.Id != FuId.LongType) {
 			Write("GPOINTER_TO_INT(");
 			Write(value);
 			WriteChar(')');
@@ -2542,11 +2542,11 @@ public class GenC : GenCCpp
 		WriteCharLine(';');
 	}
 
-	public override void VisitForeach!(CiForeach statement)
+	internal override void VisitForeach!(FuForeach statement)
 	{
 		string element = statement.GetVar().Name;
 		switch (statement.Collection.Type) {
-		case CiArrayStorageType array:
+		case FuArrayStorageType array:
 			Write("for (int ");
 			WriteCamelCaseNotKeyword(element);
 			Write(" = 0; ");
@@ -2558,14 +2558,14 @@ public class GenC : GenCCpp
 			Write("++)");
 			WriteChild(statement.Body);
 			break;
-		case CiClassType klass:
+		case FuClassType klass:
 			switch (klass.Class.Id) {
-			case CiId.StringClass:
+			case FuId.StringClass:
 				Write("for (");
 				WriteStringPtrType();
 				WriteCamelCaseNotKeyword(element);
 				Write(" = ");
-				statement.Collection.Accept(this, CiPriority.Argument);
+				statement.Collection.Accept(this, FuPriority.Argument);
 				Write("; *");
 				WriteCamelCaseNotKeyword(element);
 				Write(" != '\\0'; ");
@@ -2573,9 +2573,9 @@ public class GenC : GenCCpp
 				Write("++)");
 				WriteChild(statement.Body);
 				break;
-			case CiId.ListClass:
+			case FuId.ListClass:
 				Write("for (");
-				CiType elementType = klass.GetElementType();
+				FuType elementType = klass.GetElementType();
 				WriteType(elementType, false);
 				Write(" const *");
 				WriteCamelCaseNotKeyword(element);
@@ -2585,19 +2585,19 @@ public class GenC : GenCCpp
 				WritePostfix(statement.Collection, "->data, ");
 				for (; elementType.IsArray(); elementType = elementType.AsClassType().GetElementType())
 					WriteChar('*');
-				if (elementType is CiClassType)
+				if (elementType is FuClassType)
 					Write("* const ");
-				Write("*ciend = ");
+				Write("*fuend = ");
 				WriteCamelCaseNotKeyword(element);
 				Write(" + ");
 				WritePostfix(statement.Collection, "->len; "); // FIXME: side effect
 				WriteCamelCaseNotKeyword(element);
-				Write(" < ciend; ");
+				Write(" < fuend; ");
 				WriteCamelCaseNotKeyword(element);
 				Write("++)");
 				WriteChild(statement.Body);
 				break;
-			case CiId.HashSetClass:
+			case FuId.HashSetClass:
 				StartForeachHashTable(statement);
 				WriteLine("gpointer fukey;");
 				Write("while (g_hash_table_iter_next(&fudictit, &fukey, NULL)) ");
@@ -2607,16 +2607,16 @@ public class GenC : GenCCpp
 				CloseBlock();
 				CloseBlock();
 				break;
-			case CiId.SortedSetClass:
+			case FuId.SortedSetClass:
 				Write("for (GTreeNode *fusetit = g_tree_node_first(");
-				statement.Collection.Accept(this, CiPriority.Argument);
+				statement.Collection.Accept(this, FuPriority.Argument);
 				Write("); fusetit != NULL; fusetit = g_tree_node_next(fusetit)) ");
 				OpenBlock();
 				WriteDictIterVar(statement.GetVar(), "g_tree_node_key(fusetit)");
 				FlattenBlock(statement.Body);
 				CloseBlock();
 				break;
-			case CiId.DictionaryClass:
+			case FuId.DictionaryClass:
 				StartForeachHashTable(statement);
 				WriteLine("gpointer fukey, fuvalue;");
 				Write("while (g_hash_table_iter_next(&fudictit, &fukey, &fuvalue)) ");
@@ -2627,9 +2627,9 @@ public class GenC : GenCCpp
 				CloseBlock();
 				CloseBlock();
 				break;
-			case CiId.SortedDictionaryClass:
+			case FuId.SortedDictionaryClass:
 				Write("for (GTreeNode *fudictit = g_tree_node_first(");
-				statement.Collection.Accept(this, CiPriority.Argument);
+				statement.Collection.Accept(this, FuPriority.Argument);
 				Write("); fudictit != NULL; fudictit = g_tree_node_next(fudictit)) ");
 				OpenBlock();
 				WriteDictIterVar(statement.GetVar(), "g_tree_node_key(fudictit)");
@@ -2648,39 +2648,39 @@ public class GenC : GenCCpp
 		}
 	}
 
-	public override void VisitLock!(CiLock statement)
+	internal override void VisitLock!(FuLock statement)
 	{
 		Write("mtx_lock(&");
-		statement.Lock.Accept(this, CiPriority.Primary);
+		statement.Lock.Accept(this, FuPriority.Primary);
 		WriteLine(");");
 		// TODO
 		statement.Body.AcceptStatement(this);
 		Write("mtx_unlock(&");
-		statement.Lock.Accept(this, CiPriority.Primary);
+		statement.Lock.Accept(this, FuPriority.Primary);
 		WriteLine(");");
 	}
 
-	public override void VisitReturn!(CiReturn statement)
+	internal override void VisitReturn!(FuReturn statement)
 	{
 		if (statement.Value == null) {
 			WriteDestructAll();
 			WriteLine(this.CurrentMethod.Throws ? "return true;" : "return;");
 		}
-		else if (statement.Value is CiLiteral || (this.VarsToDestruct.Count == 0 && !HasTemporariesToDestruct(statement.Value))) {
+		else if (statement.Value is FuLiteral || (this.VarsToDestruct.Count == 0 && !HasTemporariesToDestruct(statement.Value))) {
 			WriteDestructAll();
 			WriteCTemporaries(statement.Value);
 			base.VisitReturn(statement);
 		}
 		else {
-			if (statement.Value is CiSymbolReference symbol && symbol.Symbol is CiVar local) {
+			if (statement.Value is FuSymbolReference symbol && symbol.Symbol is FuVar local) {
 				if (this.VarsToDestruct.Contains(local)) {
 					// Optimization: avoid copy
 					WriteDestructAll(local);
 					Write("return ");
-					if (this.CurrentMethod.Type is CiClassType resultPtr)
-						WriteClassPtr(resultPtr.Class, symbol, CiPriority.Argument); // upcast, but don't AddRef
+					if (this.CurrentMethod.Type is FuClassType resultPtr)
+						WriteClassPtr(resultPtr.Class, symbol, FuPriority.Argument); // upcast, but don't AddRef
 					else
-						symbol.Accept(this, CiPriority.Argument);
+						symbol.Accept(this, FuPriority.Argument);
 					WriteCharLine(';');
 					return;
 				}
@@ -2693,7 +2693,7 @@ public class GenC : GenCCpp
 			EnsureChildBlock();
 			StartDefinition(this.CurrentMethod.Type, true, true);
 			Write("returnValue = ");
-			WriteCoerced(this.CurrentMethod.Type, statement.Value, CiPriority.Argument);
+			WriteCoerced(this.CurrentMethod.Type, statement.Value, FuPriority.Argument);
 			WriteCharLine(';');
 			CleanupTemporaries();
 			WriteDestructAll();
@@ -2701,17 +2701,17 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected override void WriteSwitchCaseBody!(List<CiStatement#> statements)
+	protected override void WriteSwitchCaseBody!(List<FuStatement#> statements)
 	{
-		if (statements[0] is CiVar
-		 || (statements[0] is CiConst konst && konst.Type is CiArrayStorageType))
+		if (statements[0] is FuVar
+		 || (statements[0] is FuConst konst && konst.Type is FuArrayStorageType))
 			WriteCharLine(';');
 		int varsToDestructCount = this.VarsToDestruct.Count;
 		WriteStatements(statements);
 		TrimVarsToDestruct(varsToDestructCount);
 	}
 
-	public override void VisitSwitch!(CiSwitch statement)
+	internal override void VisitSwitch!(FuSwitch statement)
 	{
 		if (statement.IsTypeMatching())
 			NotSupported(statement, "Type-matching 'switch'");
@@ -2719,48 +2719,48 @@ public class GenC : GenCCpp
 			base.VisitSwitch(statement);
 	}
 
-	public override void VisitThrow!(CiThrow statement)
+	internal override void VisitThrow!(FuThrow statement)
 	{
 		WriteThrow();
 	}
 
-	bool TryWriteCallAndReturn!(List<CiStatement#> statements, int lastCallIndex, CiExpr? returnValue)
+	bool TryWriteCallAndReturn!(List<FuStatement#> statements, int lastCallIndex, FuExpr? returnValue)
 	{
 		if (this.VarsToDestruct.Count > 0)
 			return false;
 		for (int i = 0; i < lastCallIndex; i++) {
-			if (statements[i] is CiVar def && NeedToDestruct(def))
+			if (statements[i] is FuVar def && NeedToDestruct(def))
 				return false;
 		}
-		if (!(statements[lastCallIndex] is CiExpr call))
+		if (!(statements[lastCallIndex] is FuExpr call))
 			return false;
-		CiMethod? throwingMethod = GetThrowingMethod(call);
+		FuMethod? throwingMethod = GetThrowingMethod(call);
 		if (throwingMethod == null)
 			return false;
 
 		WriteFirstStatements(statements, lastCallIndex);
 		Write("return ");
-		if (throwingMethod.Type is CiNumericType) {
-			if (throwingMethod.Type is CiIntegerType) {
-				call.Accept(this, CiPriority.Equality);
+		if (throwingMethod.Type is FuNumericType) {
+			if (throwingMethod.Type is FuIntegerType) {
+				call.Accept(this, FuPriority.Equality);
 				Write(" != -1");
 			}
 			else {
 				IncludeMath();
 				Write("!isnan(");
-				call.Accept(this, CiPriority.Argument);
+				call.Accept(this, FuPriority.Argument);
 				WriteChar(')');
 			}
 		}
-		else if (throwingMethod.Type.Id == CiId.VoidType)
-			call.Accept(this, CiPriority.Select);
+		else if (throwingMethod.Type.Id == FuId.VoidType)
+			call.Accept(this, FuPriority.Select);
 		else {
-			call.Accept(this, CiPriority.Equality);
+			call.Accept(this, FuPriority.Equality);
 			Write(" != NULL");
 		}
 		if (returnValue != null) {
 			Write(" ? ");
-			returnValue.Accept(this, CiPriority.Select);
+			returnValue.Accept(this, FuPriority.Select);
 			Write(" : ");
 			WriteThrowReturnValue();
 		}
@@ -2768,15 +2768,15 @@ public class GenC : GenCCpp
 		return true;
 	}
 
-	protected override void WriteStatements!(List<CiStatement#> statements)
+	protected override void WriteStatements!(List<FuStatement#> statements)
 	{
 		int i = statements.Count - 2;
-		if (i >= 0 && statements[i + 1] is CiReturn ret && TryWriteCallAndReturn(statements, i, ret.Value))
+		if (i >= 0 && statements[i + 1] is FuReturn ret && TryWriteCallAndReturn(statements, i, ret.Value))
 			return;
 		base.WriteStatements(statements);
 	}
 
-	protected override void WriteEnum!(CiEnum enu)
+	protected override void WriteEnum!(FuEnum enu)
 	{
 		WriteNewLine();
 		WriteDoc(enu.Documentation);
@@ -2790,9 +2790,9 @@ public class GenC : GenCCpp
 		WriteCharLine(';');
 	}
 
-	void WriteTypedef!(CiClass klass)
+	void WriteTypedef!(FuClass klass)
 	{
-		if (klass.CallType == CiCallType.Static)
+		if (klass.CallType == FuCallType.Static)
 			return;
 		Write("typedef struct ");
 		WriteName(klass);
@@ -2801,15 +2801,15 @@ public class GenC : GenCCpp
 		WriteCharLine(';');
 	}
 
-	protected void WriteTypedefs!(CiProgram program, bool pub)
+	protected void WriteTypedefs!(FuProgram program, bool pub)
 	{
-		for (CiSymbol? type = program.First; type != null; type = type.Next) {
+		for (FuSymbol? type = program.First; type != null; type = type.Next) {
 			switch (type) {
-			case CiClass klass:
+			case FuClass klass:
 				if (klass.IsPublic == pub)
 					WriteTypedef(klass);
 				break;
-			case CiEnum enu:
+			case FuEnum enu:
 				if (enu.IsPublic == pub)
 					WriteEnum(enu);
 				break;
@@ -2819,7 +2819,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteInstanceParameters!(CiMethod method)
+	void WriteInstanceParameters!(FuMethod method)
 	{
 		WriteChar('(');
 		if (!method.IsMutator)
@@ -2829,16 +2829,16 @@ public class GenC : GenCCpp
 		WriteRemainingParameters(method, false, false);
 	}
 
-	void WriteSignature!(CiMethod method)
+	void WriteSignature!(FuMethod method)
 	{
-		assert method.Parent is CiClass klass;
-		if (!klass.IsPublic || method.Visibility != CiVisibility.Public)
+		assert method.Parent is FuClass klass;
+		if (!klass.IsPublic || method.Visibility != FuVisibility.Public)
 			Write("static ");
 		WriteReturnType(method);
 		WriteName(klass);
 		WriteChar('_');
 		Write(method.Name);
-		if (method.CallType != CiCallType.Static)
+		if (method.CallType != FuCallType.Static)
 			WriteInstanceParameters(method);
 		else if (method.Parameters.Count() == 0)
 			Write("(void)");
@@ -2846,12 +2846,12 @@ public class GenC : GenCCpp
 			WriteParameters(method, false);
 	}
 
-	void WriteVtblFields!(CiClass klass)
+	void WriteVtblFields!(FuClass klass)
 	{
-		if (klass.Parent is CiClass baseClass)
+		if (klass.Parent is FuClass baseClass)
 			WriteVtblFields(baseClass);
-		for (CiSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiMethod method && method.IsAbstractOrVirtual()) {
+		for (FuSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is FuMethod method && method.IsAbstractOrVirtual()) {
 				WriteReturnType(method);
 				Write("(*");
 				WriteCamelCase(method.Name);
@@ -2862,7 +2862,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteVtblStruct!(CiClass klass)
+	void WriteVtblStruct!(FuClass klass)
 	{
 		Write("typedef struct ");
 		OpenBlock();
@@ -2873,43 +2873,43 @@ public class GenC : GenCCpp
 		WriteLine("Vtbl;");
 	}
 
-	protected virtual string GetConst(CiArrayStorageType array) => "const ";
+	protected virtual string GetConst(FuArrayStorageType array) => "const ";
 
-	protected override void WriteConst!(CiConst konst)
+	protected override void WriteConst!(FuConst konst)
 	{
-		if (konst.Type is CiArrayStorageType array) {
+		if (konst.Type is FuArrayStorageType array) {
 			Write("static ");
 			// FIXME: array of strings
 			Write(GetConst(array));
 			WriteTypeAndName(konst);
 			Write(" = ");
-			konst.Value.Accept(this, CiPriority.Argument);
+			konst.Value.Accept(this, FuPriority.Argument);
 			WriteCharLine(';');
 		}
-		else if (konst.Visibility == CiVisibility.Public) {
+		else if (konst.Visibility == FuVisibility.Public) {
 			Write("#define ");
 			WriteName(konst);
 			WriteChar(' ');
-			konst.Value.Accept(this, CiPriority.Argument);
+			konst.Value.Accept(this, FuPriority.Argument);
 			WriteNewLine();
 		}
 	}
 
-	protected override void WriteField!(CiField field)
+	protected override void WriteField!(FuField field)
 	{
 		assert false;
 	}
 
-	static bool HasVtblValue(CiClass klass)
+	static bool HasVtblValue(FuClass klass)
 	{
-		if (klass.CallType == CiCallType.Static || klass.CallType == CiCallType.Abstract)
+		if (klass.CallType == FuCallType.Static || klass.CallType == FuCallType.Abstract)
 			return false;
-		for (CiSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiMethod method) {
+		for (FuSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is FuMethod method) {
 				switch (method.CallType) {
-				case CiCallType.Virtual:
-				case CiCallType.Override:
-				case CiCallType.Sealed:
+				case FuCallType.Virtual:
+				case FuCallType.Override:
+				case FuCallType.Sealed:
 					return true;
 				default:
 					break;
@@ -2919,16 +2919,16 @@ public class GenC : GenCCpp
 		return false;
 	}
 
-	protected override bool NeedsConstructor(CiClass klass)
+	protected override bool NeedsConstructor(FuClass klass)
 	{
-		if (klass.Id == CiId.MatchClass)
+		if (klass.Id == FuId.MatchClass)
 			return false;
 		return base.NeedsConstructor(klass)
 			|| HasVtblValue(klass)
-			|| (klass.Parent is CiClass baseClass && NeedsConstructor(baseClass));
+			|| (klass.Parent is FuClass baseClass && NeedsConstructor(baseClass));
 	}
 
-	void WriteXstructorSignature!(string name, CiClass klass)
+	void WriteXstructorSignature!(string name, FuClass klass)
 	{
 		Write("static void ");
 		WriteName(klass);
@@ -2939,18 +2939,18 @@ public class GenC : GenCCpp
 		Write(" *self)");
 	}
 
-	protected void WriteSignatures!(CiClass klass, bool pub)
+	protected void WriteSignatures!(FuClass klass, bool pub)
 	{
-		for (CiSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
+		for (FuSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
 			switch (symbol) {
-			case CiConst konst when (konst.Visibility == CiVisibility.Public) == pub:
+			case FuConst konst when (konst.Visibility == FuVisibility.Public) == pub:
 				if (pub) {
 					WriteNewLine();
 					WriteDoc(konst.Documentation);
 				}
 				WriteConst(konst);
 				break;
-			case CiMethod method when method.IsLive && (method.Visibility == CiVisibility.Public) == pub && method.CallType != CiCallType.Abstract:
+			case FuMethod method when method.IsLive && (method.Visibility == FuVisibility.Public) == pub && method.CallType != FuCallType.Abstract:
 				WriteNewLine();
 				WriteMethodDoc(method);
 				WriteSignature(method);
@@ -2962,10 +2962,10 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected override void WriteClassInternal!(CiClass klass)
+	protected override void WriteClassInternal!(FuClass klass)
 	{
 		this.CurrentClass = klass;
-		if (klass.CallType != CiCallType.Static) {
+		if (klass.CallType != FuCallType.Static) {
 			WriteNewLine();
 			if (klass.AddsVirtualMethods())
 				WriteVtblStruct(klass);
@@ -2979,12 +2979,12 @@ public class GenC : GenCCpp
 				WriteName(klass);
 				WriteLine("Vtbl *vtbl;");
 			}
-			if (klass.Parent is CiClass) {
+			if (klass.Parent is FuClass) {
 				WriteName(klass.Parent);
 				WriteLine(" base;");
 			}
-			for (CiSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
-				if (symbol is CiField field) {
+			for (FuSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
+				if (symbol is FuField field) {
 					WriteDoc(field.Documentation);
 					WriteTypeAndName(field);
 					WriteCharLine(';');
@@ -3004,13 +3004,13 @@ public class GenC : GenCCpp
 		WriteSignatures(klass, false);
 	}
 
-	void WriteVtbl!(CiClass definingClass, CiClass declaringClass)
+	void WriteVtbl!(FuClass definingClass, FuClass declaringClass)
 	{
-		if (declaringClass.Parent is CiClass baseClass)
+		if (declaringClass.Parent is FuClass baseClass)
 			WriteVtbl(definingClass, baseClass);
-		for (CiSymbol? symbol = declaringClass.First; symbol != null; symbol = symbol.Next) {
-			if (symbol is CiMethod declaredMethod && declaredMethod.IsAbstractOrVirtual()) {
-				CiSymbol definedMethod = definingClass.TryLookup(declaredMethod.Name, false);
+		for (FuSymbol? symbol = declaringClass.First; symbol != null; symbol = symbol.Next) {
+			if (symbol is FuMethod declaredMethod && declaredMethod.IsAbstractOrVirtual()) {
+				FuSymbol definedMethod = definingClass.TryLookup(declaredMethod.Name, false);
 				if (declaredMethod != definedMethod) {
 					WriteChar('(');
 					WriteReturnType(declaredMethod);
@@ -3024,7 +3024,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected void WriteConstructor!(CiClass klass)
+	protected void WriteConstructor!(FuClass klass)
 	{
 		if (!NeedsConstructor(klass))
 			return;
@@ -3033,12 +3033,12 @@ public class GenC : GenCCpp
 		WriteXstructorSignature("Construct", klass);
 		WriteNewLine();
 		OpenBlock();
-		if (klass.Parent is CiClass baseClass && NeedsConstructor(baseClass)) {
+		if (klass.Parent is FuClass baseClass && NeedsConstructor(baseClass)) {
 			WriteName(baseClass);
 			WriteLine("_Construct(&self->base);");
 		}
 		if (HasVtblValue(klass)) {
-			CiClass structClass = GetVtblStructClass(klass);
+			FuClass structClass = GetVtblStructClass(klass);
 			Write("static const ");
 			WriteName(structClass);
 			Write("Vtbl vtbl = ");
@@ -3046,7 +3046,7 @@ public class GenC : GenCCpp
 			WriteVtbl(klass, structClass);
 			this.Indent--;
 			WriteLine("};");
-			CiClass ptrClass = GetVtblPtrClass(klass);
+			FuClass ptrClass = GetVtblPtrClass(klass);
 			WriteSelfForField(ptrClass);
 			Write("vtbl = ");
 			if (ptrClass != structClass) {
@@ -3060,16 +3060,16 @@ public class GenC : GenCCpp
 		CloseBlock();
 	}
 
-	void WriteDestructFields!(CiSymbol? symbol)
+	void WriteDestructFields!(FuSymbol? symbol)
 	{
 		if (symbol != null) {
 			WriteDestructFields(symbol.Next);
-			if (symbol is CiField field)
+			if (symbol is FuField field)
 				WriteDestruct(field);
 		}
 	}
 
-	protected void WriteDestructor!(CiClass klass)
+	protected void WriteDestructor!(FuClass klass)
 	{
 		if (!NeedsDestructor(klass))
 			return;
@@ -3078,16 +3078,16 @@ public class GenC : GenCCpp
 		WriteNewLine();
 		OpenBlock();
 		WriteDestructFields(klass.First);
-		if (klass.Parent is CiClass baseClass && NeedsDestructor(baseClass)) {
+		if (klass.Parent is FuClass baseClass && NeedsDestructor(baseClass)) {
 			WriteName(baseClass);
 			WriteLine("_Destruct(&self->base);");
 		}
 		CloseBlock();
 	}
 
-	void WriteNewDelete!(CiClass klass, bool define)
+	void WriteNewDelete!(FuClass klass, bool define)
 	{
-		if (!klass.IsPublic || klass.Constructor == null || klass.Constructor.Visibility != CiVisibility.Public)
+		if (!klass.IsPublic || klass.Constructor == null || klass.Constructor.Visibility != FuVisibility.Public)
 			return;
 
 		WriteNewLine();
@@ -3141,25 +3141,25 @@ public class GenC : GenCCpp
 			WriteCharLine(';');
 	}
 
-	protected override void WriteMethod!(CiMethod method)
+	protected override void WriteMethod!(FuMethod method)
 	{
-		if (!method.IsLive || method.CallType == CiCallType.Abstract)
+		if (!method.IsLive || method.CallType == FuCallType.Abstract)
 			return;
 		this.SwitchesWithGoto.Clear();
 		WriteNewLine();
 		WriteSignature(method);
-		for (CiVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+		for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 			if (NeedToDestruct(param))
 				this.VarsToDestruct.Add(param);
 		}
 		WriteNewLine();
 		this.CurrentMethod = method;
 		OpenBlock();
-		if (method.Body is CiBlock block) {
-			List<CiStatement#> statements = block.Statements;
+		if (method.Body is FuBlock block) {
+			List<FuStatement#> statements = block.Statements;
 			if (!block.CompletesNormally())
 				WriteStatements(statements);
-			else if (method.Throws && method.Type.Id == CiId.VoidType) {
+			else if (method.Throws && method.Type.Id == FuId.VoidType) {
 				if (statements.Count == 0 || !TryWriteCallAndReturn(statements, statements.Count - 1, null)) {
 					WriteStatements(statements);
 					WriteDestructAll();
@@ -3426,7 +3426,7 @@ public class GenC : GenCCpp
 			WriteLine("return strcmp((const char *) a, (const char *) b);");
 			CloseBlock();
 		}
-		foreach (CiId typeId in this.Compares) {
+		foreach (FuId typeId in this.Compares) {
 			WriteNewLine();
 			Write("static int FuCompare_");
 			WriteNumericType(typeId);
@@ -3441,10 +3441,10 @@ public class GenC : GenCCpp
 			WriteNumericType(typeId);
 			WriteLine(" *) pb;");
 			switch (typeId) {
-			case CiId.ByteRange:
-			case CiId.SByteRange:
-			case CiId.ShortRange:
-			case CiId.UShortRange:
+			case FuId.ByteRange:
+			case FuId.SByteRange:
+			case FuId.ShortRange:
+			case FuId.UShortRange:
 				// subtraction can't overflow int
 				WriteLine("return a - b;");
 				break;
@@ -3454,12 +3454,12 @@ public class GenC : GenCCpp
 			}
 			CloseBlock();
 		}
-		foreach (CiId typeId in this.Contains) {
+		foreach (FuId typeId in this.Contains) {
 			WriteNewLine();
 			Write("static bool FuArray_Contains_");
-			if (typeId == CiId.None)
+			if (typeId == FuId.None)
 				Write("object(const void * const *a, size_t len, const void *");
-			else if (typeId == CiId.StringPtrType)
+			else if (typeId == FuId.StringPtrType)
 				Write("string(const char * const *a, size_t len, const char *");
 			else {
 				WriteNumericType(typeId);
@@ -3471,7 +3471,7 @@ public class GenC : GenCCpp
 			WriteLine(" value)");
 			OpenBlock();
 			WriteLine("for (size_t i = 0; i < len; i++)");
-			if (typeId == CiId.StringPtrType)
+			if (typeId == FuId.StringPtrType)
 				WriteLine("\tif (strcmp(a[i], value) == 0)");
 			else
 				WriteLine("\tif (a[i] == value)");
@@ -3488,7 +3488,7 @@ public class GenC : GenCCpp
 		WriteNewLine();
 		foreach ((string name, List<byte> content) in resources) {
 			Write("static const ");
-			WriteNumericType(CiId.ByteRange);
+			WriteNumericType(FuId.ByteRange);
 			WriteChar(' ');
 			WriteResource(name, -1);
 			WriteChar('[');
@@ -3500,12 +3500,12 @@ public class GenC : GenCCpp
 		}
 	}
 
-	public override void WriteProgram!(CiProgram program)
+	public override void WriteProgram!(FuProgram program)
 	{
 		this.WrittenClasses.Clear();
 		this.InHeaderFile = true;
 		OpenStringWriter();
-		foreach (CiClass klass in program.Classes) {
+		foreach (FuClass klass in program.Classes) {
 			WriteNewDelete(klass, false);
 			WriteSignatures(klass, true);
 		}
@@ -3547,10 +3547,10 @@ public class GenC : GenCCpp
 		this.Compares.Clear();
 		this.Contains.Clear();
 		OpenStringWriter();
-		foreach (CiClass klass in program.Classes)
+		foreach (FuClass klass in program.Classes)
 			WriteClass(klass, program);
 		WriteResources(program.Resources);
-		foreach (CiClass klass in program.Classes) {
+		foreach (FuClass klass in program.Classes) {
 			this.CurrentClass = klass;
 			WriteConstructor(klass);
 			WriteDestructor(klass);
