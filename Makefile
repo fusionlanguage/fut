@@ -13,7 +13,7 @@ TEST_CXXFLAGS = -std=c++20 -Wall -Werror
 SWIFTC = swiftc
 ifeq ($(OS),Windows_NT)
 JAVACPSEP = ;
-SWIFTC += -no-color-diagnostics -sdk '$(SDKROOT)' -Xlinker -noexp -Xlinker -noimplib
+SWIFTC += -no-color-diagnostics -Xlinker -noexp -Xlinker -noimplib
 else
 JAVACPSEP = :
 TEST_CFLAGS += -fsanitize=address -g
