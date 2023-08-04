@@ -260,7 +260,8 @@ in it - starting with really small ones:
 - [a toy ray-tracer](https://github.com/pfusik/ray-ci)
 - [encoder of Data Matrix barcodes](https://github.com/pfusik/datamatrix-fu)
 - [encoder/decoder of the Quite OK Image format](https://github.com/pfusik/qoi-ci)
-- [decoder of PNG, GIF and JPEG](https://github.com/pfusik/image-ci)
+- [encoder/decoder of the Quite OK Audio format](https://github.com/pfusik/qoa-ci)
+- [decoder of PNG, GIF and JPEG](https://github.com/pfusik/image-fu)
 
 Then there's a [very portable chiptune player](https://asap.sourceforge.net):
 
@@ -270,7 +271,7 @@ and a [decoder of 500+ retro image formats](https://recoil.sourceforge.net):
 
 ![RECOIL architecture](https://recoil.sourceforge.net/recoil-internals.png)
 
-`cito` itself was initially written in C#, but is getting [rewritten in Fusion](https://github.com/pfusik/cito/issues/48).
+Last, but not least, `fut` itself is implemented in Fusion.
 
 ## Community
 

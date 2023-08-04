@@ -1,25 +1,25 @@
-﻿# The Ć Programming Language
+# The Fusion Programming Language
 
 Welcome to the description of yet another programming language!
-Unlike most languages that you may have learned before, Ć does _not_ claim
+Unlike most languages that you may have learned before, Fusion does _not_ claim
 to be the best universal programming language.
 Instead, it solves one specific problem: how to create code that can be
 _simultaneously_ used with C, C++, C#, Java, JavaScript, Python, Swift,
 TypeScript and OpenCL.
 For example, if you invented a new compression format, you could implement
-it in Ć and have the automatic translator `cito` generate the source code
+it in Fusion and have the automatic translator `fut` generate the source code
 in the aforementioned languages, allowing programmers of those languages
 to use your code.
 
-Ć is a language for programmers with vast experience in several other languages.
-Ć follows the [Principle of least astonishment (POLA)](https://en.wikipedia.org/wiki/Principle_of_least_astonishment).
+Fusion is a language for programmers with vast experience in several other languages.
+Fusion follows the [Principle of least astonishment (POLA)](https://en.wikipedia.org/wiki/Principle_of_least_astonishment).
 The syntax is akin to C#.
-In fact, C# syntax highlighting works quite well for Ć.
-However, Ć is not a C# clone or a subset of it.
+In fact, C# syntax highlighting works quite well for Fusion.
+However, Fusion is not a C# clone or a subset of it.
 The differences stem from the need to have _completely automated_ translation
 to _efficient_ C and JavaScript code in particular.
 
-Ć is object-oriented because most of the target languages are object-oriented,
+Fusion is object-oriented because most of the target languages are object-oriented,
 and you are probably familiar with this paradigm. This can be seen as
 an improvement over C. Nevertheless, C programmers will find using
 the object-oriented C output fairly straightforward.
@@ -29,7 +29,7 @@ pair of `.c`/`.h` files containing portable, human-readable C99 code.
 Similarly, the outputs in other languages do _not_ rely on anything except
 the standard language. There are two exceptions:
 
-1. If the Ć code uses regular expressions, `List`, `Queue`, `Stack`, `HashSet`,
+1. If the Fusion code uses regular expressions, `List`, `Queue`, `Stack`, `HashSet`,
    `SortedSet`, `Dictionary` or `SortedDictionary`, the C output relies
    on [GLib](https://wiki.gnome.org/Projects/GLib) implementations of these.
 2. `Math.FusedMultiplyAdd` is implemented in Python
@@ -43,14 +43,11 @@ Heap allocations use C++ smart pointers.
 
 ## Source files
 
-Programmers tend to avoid Unicode in filenames.
-Therefore, Ć source files have the `.ci` filename extension instead of `.ć`.
-
-> In Polish, the pronunciation of "ci" and "ć" is identical.
+Fusion source files have the `.fu` filename extension.
 
 Source file contents must be UTF-8 encoded with an optional BOM.
 
-Most of the time, whitespace is insignificant in Ć source code.
+Most of the time, whitespace is insignificant in Fusion source code.
 Let's continue indentation style flame wars!
 
 There are single-line comments from `//` till the end of line
@@ -75,7 +72,7 @@ For larger numbers, use the 64-bit `long`.
 you want to conserve storage space and use smaller types where possible.
 Not only reduces it memory footprint, but it's also cache-friendly,
 which is essential for good performance.
-Small integers are implemented in Ć in terms of _ranges_ specifying
+Small integers are implemented in Fusion in terms of _ranges_ specifying
 the lower and upper bounds, both of which are inclusive.
 For example:
 
@@ -84,7 +81,7 @@ For example:
 ```
 
 is a definition of an array of a thousand integers between zero
-and one hundred. `cito` figures out the best data type in the target language
+and one hundred. `fut` figures out the best data type in the target language
 to represent a range. It is the programmer's responsibility to assign
 only the values that are in the given range.
 This is _not_ verified during compilation or runtime.
@@ -102,7 +99,7 @@ Note that a `uint` is _not_ a 32-bit unsigned integer, but a 31-bit one.
 As such, it doesn't provide extended range over an `int`.
 It serves as documentation that a negative number is not allowed.
 `byte` corresponds to `byte` in Java, even though the Java type is _signed_.
-To accomplish this, `cito` injects `& 0xff` in every retrieval
+To accomplish this, `fut` injects `& 0xff` in every retrieval
 of a `byte` value.
 
 Integer literals may be written as:
@@ -113,7 +110,7 @@ Integer literals may be written as:
 * octal (`0o777`)
 
 Character literals (such as `'x'`) represent the Unicode codepoint
-of the character as an `int` (not `char` because there's no such type in Ć).
+of the character as an `int` (not `char` because there's no such type in Fusion).
 You may also use the following escape sequences:
 
 * `'\''` - apostrophe
@@ -231,8 +228,8 @@ assert Number.FromInt(5) == Number.Five;
 ```
 
 `enum` may be preceded with the keyword `public` to extend the visibility
-of the type outside Ć, that is, make the enumerated type part
-of the public interface of the library implemented in Ć.
+of the type outside Fusion, that is, make the enumerated type part
+of the public interface of the library implemented in Fusion.
 
 When referencing a value of an enumerated type, you need to include
 the type name, for example `DayOfWeek.Friday`.
@@ -265,7 +262,7 @@ bool ok = s.HasFlag(Seasons.Summer);
 
 ### Strings
 
-In Ć there are three string data types:
+In Fusion there are three string data types:
 
 * String storage, written as `string()`.
 * String reference, written simply as `string`.
@@ -293,7 +290,7 @@ Possible string operations include the following:
 
 * Assignment with `=`. For string storage in C and C++, a copy is made.
 * Concatenation with `+` and `+=`.
-* Comparison with `==` and `!=`. `cito` translates this to `strcmp` in C
+* Comparison with `==` and `!=`. `fut` translates this to `strcmp` in C
   and `str1.equals(str2)` in Java.
   The two comparison operators can also be used to check nullable references
   for the `null` value - use `str == null` or `str != null`.
@@ -323,7 +320,7 @@ An ASCII character is encoded as a single code unit, but Unicode _code points_
 can be stored in several code units, typically encoded
 as [UTF-8](https://en.wikipedia.org/wiki/UTF-8)
 or [UTF-16](https://en.wikipedia.org/wiki/UTF-16).
-However, Ć doesn't enforce any encoding.
+However, Fusion doesn't enforce any encoding.
 
 #### Interpolated strings
 
@@ -433,7 +430,7 @@ if (match.Find(s, re)) {
 
 Arrays are fixed-size collections, where every element has the same type
 and can be accessed in O(1) time.
-Ć array types are:
+Fusion array types are:
 
 * Array storage, written as `T[n]` where `T` is the element type
   and `n` is the compile-time constant length.
@@ -465,7 +462,7 @@ It is not possible to modify the array via a read-only reference:
 ```csharp
 int[10] arrayStorage;
 int[] readOnlyArrayRef = arrayStorage;
-readOnlyArrayRef[0] = 42; // cito error
+readOnlyArrayRef[0] = 42; // fut error
 ```
 
 Array size is only available for array storage, via `arrayStorage.Length`.
@@ -534,8 +531,8 @@ multiDimArray[1][2] = 1;
 ```
 
 You may declare constant `byte` arrays, initialized with the contents of a file
-provided to `cito`. For example, `resource<byte[]>("foo.bar")`
-is an array consisting of bytes of the file `foo.bar` read while running `cito`.
+provided to `fut`. For example, `resource<byte[]>("foo.bar")`
+is an array consisting of bytes of the file `foo.bar` read while running `fut`.
 
 ### Classes
 
@@ -550,7 +547,7 @@ class Animal
 
 Note to C++ programmers: do _not_ place a semicolon after the closing brace.
 
-Ć supports single inheritance. Put _base class_ name after a colon:
+Fusion supports single inheritance. Put _base class_ name after a colon:
 
 ```csharp
 class Cat : Animal
@@ -582,7 +579,7 @@ Every member has a _visibility_:
 * _private_ is the default visibility, meaning the member is only visible
   to other members of the class. There is _no_ `private` keyword.
 * `protected` means the member is visible to this class and its subclasses.
-* `internal` means the member is visible to the Ć code compiled with it.
+* `internal` means the member is visible to the Fusion code compiled with it.
 * `public` means the visibility is unrestricted.
 
 #### Fields
@@ -600,7 +597,7 @@ class Car
 ```
 
 Languages such as Java and C# initialize every field, even if you don't provide
-the initial value. In Ć fields are uninitialized unless initialized explicitly:
+the initial value. In Fusion fields are uninitialized unless initialized explicitly:
 
 ```csharp
 class Point
@@ -677,9 +674,9 @@ public class Foo
 }
 ```
 
-A public constructor is also required to enable object creation outside Ć.
+A public constructor is also required to enable object creation outside Fusion.
 
-Constructors in Ć _never_ take arguments. This promotes reuse of existing
+Constructors in Fusion _never_ take arguments. This promotes reuse of existing
 objects instead of creating a bunch of single-use objects.
 If you need to initialize the object with some outside data,
 create a method such as `Init`.
@@ -707,7 +704,7 @@ A `virtual` or `override` method can be called from a class that overrides
 this method via `base.MethodName(arguments)`.
 
 The method name must identify the method within the class.
-Ć does _not_ support overloading.
+Fusion does _not_ support overloading.
 It does support _default argument values_, though:
 
 ```csharp
@@ -726,7 +723,7 @@ public int GetWidth() => Width;
 
 A method is called _pure_ if its only effect is the return value
 (that is, no state is modified).
-`cito` can evaluate such methods at compile time:
+`fut` can evaluate such methods at compile time:
 
 ```csharp
 static int Square(int x) => x * x;
@@ -813,8 +810,8 @@ that is, modify its fields or call a mutator method.
 ```csharp
 Circle() circle;
 Shape readOnlyReference = circle;
-readOnlyReference.Color = 0x00ff00; // cito error
-readOnlyReference.Move(100, 100); // cito error
+readOnlyReference.Color = 0x00ff00; // fut error
+readOnlyReference.Move(100, 100); // fut error
 ```
 
 A mutator method of class `C` is a method where `this` is of type `C!`.
@@ -887,7 +884,7 @@ The `is` operator cannot be used for:
 
 ### Collections
 
-In addition to arrays, Ć has eight built-in collection types:
+In addition to arrays, Fusion has eight built-in collection types:
 
 * `List<T>` is a resizable array (`std::vector` in C++, `ArrayList` in Java)
 * `Queue<T>` is a FIFO (first in, first out) collection
@@ -903,7 +900,7 @@ In addition to arrays, Ć has eight built-in collection types:
 
 #### List
 
-A list must specify element type. This can be any Ć type.
+A list must specify element type. This can be any Fusion type.
 
 ```csharp
 List<int>() listOfInts;
@@ -1054,9 +1051,9 @@ iterates in the insertion order.
 ## Statements
 
 Statements are used in methods and constructors.
-Their syntax in Ć is nearly identical to the languages you already know.
+Their syntax in Fusion is nearly identical to the languages you already know.
 
-In Ć there's no empty statement consisting of the sole semicolon.
+In Fusion there's no empty statement consisting of the sole semicolon.
 You may use an empty block instead: `{ }`.
 
 ### Blocks
@@ -1143,7 +1140,7 @@ i++;
 i + 2; // ERROR: useless computation
 ```
 
-There is no _comma operator_ in Ć.
+There is no _comma operator_ in Fusion.
 
 ### Returning method result
 
@@ -1275,12 +1272,12 @@ default:
 
 ### Exceptions
 
-Ć can throw exceptions, but cannot handle them at the moment.
+Fusion can throw exceptions, but cannot handle them at the moment.
 The idea is that exceptions will be handled by the code
-using the library written in Ć.
+using the library written in Fusion.
 
 An exception can be thrown with the `throw` statement with a string argument.
-You cannot specify the class of the exception, it's hardcoded in `cito`
+You cannot specify the class of the exception, it's hardcoded in `fut`
 (for example `java.lang.Exception`).
 
 The translation of exceptions to C needs an explanation.
@@ -1341,7 +1338,7 @@ in called methods) do not cause deadlocks.
 
 ### Native blocks
 
-Code which cannot be expressed in Ć can be written in the target language
+Code which cannot be expressed in Fusion can be written in the target language
 using the following syntax:
 
 ```java
@@ -1357,8 +1354,8 @@ Native blocks are allowed as statements in method bodies and at the top level
 
 ## Conditional compilation
 
-Conditional compilation in Ć is modeled after C#.
-Conditional compilation symbols can only be given on the `cito` command line.
+Conditional compilation in Fusion is modeled after C#.
+Conditional compilation symbols can only be given on the `fut` command line.
 Conditional compilation symbols have no assigned value;
 they are either present or not.
 
@@ -1448,7 +1445,7 @@ public void SetDate(string value)
 
 ## Naming conventions
 
-It is advised to use the following naming conventions in Ć code:
+It is advised to use the following naming conventions in Fusion code:
 
 * Local variables, parameters and local constants start with a lowercase letter,
   capitalize the first letter of the following words - that is, `camelCase`.
