@@ -4133,8 +4133,12 @@ std::shared_ptr<FuExpr> FuSema::lookup(std::shared_ptr<FuSymbolReference> expr, 
 	FuConst * konst;
 	if (!dynamic_cast<const FuEnum *>(scope) && (konst = dynamic_cast<FuConst *>(expr->symbol))) {
 		resolveConst(konst);
-		if (dynamic_cast<const FuLiteral *>(konst->value.get()) || dynamic_cast<const FuSymbolReference *>(konst->value.get()))
+		if (dynamic_cast<const FuLiteral *>(konst->value.get()) || dynamic_cast<const FuSymbolReference *>(konst->value.get())) {
+			const FuLiteralLong * intValue;
+			if (dynamic_cast<const FuFloatingType *>(konst->type.get()) && (intValue = dynamic_cast<const FuLiteralLong *>(konst->value.get())))
+				return toLiteralDouble(expr.get(), intValue->value);
 			return konst->value;
+		}
 	}
 	return expr;
 }

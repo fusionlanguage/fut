@@ -1,11 +1,12 @@
 public static class Test
 {
 	public const float Foo = -10.5;
+	const float Two = 2;
 	public const float[] Array = { -1.0, -2, 0.1 };
 
 	public static bool Run()
 	{
 		float f = Foo;
-		return f == -10.5 && Array[1] == -2;
+		return f == -10.5 && 1 / Two == 0.5 && Array[1] == -2;
 	}
 }

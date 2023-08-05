@@ -4455,8 +4455,11 @@ namespace Fusion
 			}
 			if (!(scope is FuEnum) && expr.Symbol is FuConst konst) {
 				ResolveConst(konst);
-				if (konst.Value is FuLiteral || konst.Value is FuSymbolReference)
+				if (konst.Value is FuLiteral || konst.Value is FuSymbolReference) {
+					if (konst.Type is FuFloatingType && konst.Value is FuLiteralLong intValue)
+						return ToLiteralDouble(expr, intValue.Value);
 					return konst.Value;
+				}
 			}
 			return expr;
 		}

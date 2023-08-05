@@ -4586,8 +4586,12 @@ export class FuSema
 		let konst;
 		if (!(scope instanceof FuEnum) && (konst = expr.symbol) instanceof FuConst) {
 			this.#resolveConst(konst);
-			if (konst.value instanceof FuLiteral || konst.value instanceof FuSymbolReference)
+			if (konst.value instanceof FuLiteral || konst.value instanceof FuSymbolReference) {
+				let intValue;
+				if (konst.type instanceof FuFloatingType && (intValue = konst.value) instanceof FuLiteralLong)
+					return this.#toLiteralDouble(expr, Number(intValue.value));
 				return konst.value;
+			}
 		}
 		return expr;
 	}
