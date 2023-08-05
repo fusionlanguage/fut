@@ -4,7 +4,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <format>
-#include "Transpiled.hpp"
+#include "libfut.hpp"
 
 static std::string FuString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)
 {

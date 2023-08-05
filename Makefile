@@ -34,7 +34,7 @@ DO_SUMMARY = $(DO)perl test/summary.pl $(filter %.txt, $^)
 DO_FUT = $(DO)mkdir -p $(@D) && ($(FUT) -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 SOURCE_FU = Lexer.fu AST.fu Parser.fu ConsoleHost.fu Sema.fu GenBase.fu GenTyped.fu GenCCppD.fu GenCCpp.fu GenC.fu GenCl.fu GenCpp.fu GenCs.fu GenD.fu GenJava.fu GenJs.fu GenTs.fu GenPySwift.fu GenSwift.fu GenPy.fu
 
-all: fut Transpiled.cpp Transpiled.cs Transpiled.js
+all: fut libfut.cpp libfut.cs libfut.js
 
 ifeq ($(FUT_HOST),cpp)
 
@@ -44,12 +44,12 @@ ifeq ($(OS),Windows_NT)
 
 fut: fut.exe
 
-fut.exe: fut.cpp Transpiled.cpp
+fut.exe: fut.cpp libfut.cpp
 	$(DO)$(CXX) -o $@ -std=c++20 $(CXXFLAGS) -s -static $^
 
 else
 
-fut: fut.cpp Transpiled.cpp
+fut: fut.cpp libfut.cpp
 	$(DO)$(CXX) -o $@ -std=c++20 $(CXXFLAGS) $^
 
 endif
@@ -60,23 +60,23 @@ FUT = dotnet run --no-build --
 
 fut: bin/Debug/net6.0/fut.dll
 
-bin/Debug/net6.0/fut.dll: $(addprefix $(srcdir),AssemblyInfo.cs Transpiled.cs fut.cs)
+bin/Debug/net6.0/fut.dll: $(addprefix $(srcdir),AssemblyInfo.cs fut.cs libfut.cs)
 	dotnet build
 
 else ifeq ($(FUT_HOST),node)
 
 FUT = node fut.js
 
-fut: Transpiled.js
+fut: libfut.js
 
 else
 $(error FUT_HOST must be "cpp", "cs" or "node")
 endif
 
-Transpiled.cpp Transpiled.js: $(SOURCE_FU)
+libfut.cpp libfut.js: $(SOURCE_FU)
 	$(DO)$(FUT) -o $@ $^
 
-Transpiled.cs: $(SOURCE_FU)
+libfut.cs: $(SOURCE_FU)
 	$(DO)$(FUT) -o $@ -n Fusion $^
 
 test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error
@@ -85,10 +85,10 @@ test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swif
 test-c test-GenC.fu: $(patsubst test/%.fu, test/bin/%/c.txt, $(wildcard test/*.fu))
 	$(DO_SUMMARY)
 
-test-cpp test-GenCpp.fu: $(patsubst test/%.fu, test/bin/%/cpp.txt, $(wildcard test/*.fu)) Transpiled.cpp
+test-cpp test-GenCpp.fu: $(patsubst test/%.fu, test/bin/%/cpp.txt, $(wildcard test/*.fu)) libfut.cpp
 	$(DO_SUMMARY)
 
-test-cs test-GenCs.fu: $(patsubst test/%.fu, test/bin/%/cs.txt, $(wildcard test/*.fu)) Transpiled.cs
+test-cs test-GenCs.fu: $(patsubst test/%.fu, test/bin/%/cs.txt, $(wildcard test/*.fu)) libfut.cs
 	$(DO_SUMMARY)
 
 test-d test-GenD.fu: $(patsubst test/%.fu, test/bin/%/d.txt, $(wildcard test/*.fu))
@@ -97,7 +97,7 @@ test-d test-GenD.fu: $(patsubst test/%.fu, test/bin/%/d.txt, $(wildcard test/*.f
 test-java test-GenJava.fu: $(patsubst test/%.fu, test/bin/%/java.txt, $(wildcard test/*.fu))
 	$(DO_SUMMARY)
 
-test-js test-GenJs.fu: $(patsubst test/%.fu, test/bin/%/js.txt, $(wildcard test/*.fu)) Transpiled.js
+test-js test-GenJs.fu: $(patsubst test/%.fu, test/bin/%/js.txt, $(wildcard test/*.fu)) libfut.js
 	$(DO_SUMMARY)
 
 test-ts test-GenTs.fu: $(patsubst test/%.fu, test/bin/%/ts.txt, $(wildcard test/*.fu))

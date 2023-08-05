@@ -20,7 +20,7 @@
 
 import fs from "fs";
 import path from "path";
-import { FuParser, FuProgram, FuSema, FuSystem, FuConsoleHost, GenC, GenCpp, GenCs, GenD, GenJava, GenJs, GenPy, GenSwift, GenTs, GenCl } from "./Transpiled.js";
+import { FuParser, FuProgram, FuSema, FuSystem, FuConsoleHost, GenC, GenCpp, GenCs, GenD, GenJava, GenJs, GenPy, GenSwift, GenTs, GenCl } from "./libfut.js";
 
 class FileResourceSema extends FuSema
 {
