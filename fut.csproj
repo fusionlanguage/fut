@@ -1,27 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>3.0.0</Version>
-    <Description>Transpiles the Fusion programming language to C, C++, C#, D, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.</Description>
-    <PackageTags>Programming Language;Transpiler</PackageTags>
-    <PackageProjectUrl>https://github.com/fusionlanguage/fut</PackageProjectUrl>
-    <PackageIcon>ci-logo.png</PackageIcon>
-    <PackageReadmeFile>dotnet-tool.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/fusionlanguage/fut.git</RepositoryUrl>
-    <Authors>Piotr Fusik</Authors>
-    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <RollForward>LatestMajor</RollForward>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <PackAsTool>true</PackAsTool>
-    <PackRelease>true</PackRelease>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="test\**" />
-    <None Include="doc\dotnet-tool.md" Pack="true" PackagePath="\" />
-    <None Include="editors\vscode\ci-logo.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

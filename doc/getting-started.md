@@ -1,24 +1,11 @@
 # Getting started with Fusion
 
-## Installing cito
+## Installing fut
 
-The transpiler `cito` runs on Windows, macOS and Linux.
+The transpiler `fut` runs on Windows, macOS and Linux.
 
-First, install [.NET SDK](https://dotnet.microsoft.com/en-us/download), version 7.0 or 6.0.
-If you are on Windows, .NET SDK is included in Visual Studio 2022.
-On macOS you might use:
-
-    brew install dotnet-sdk
-
-Then issue this command:
-
-    dotnet tool install -g cito
-
-If it displays instructions on how to configure your PATH variable, please follow them.
-
-## Syntax highlighting
-
-To install Fusion syntax highlighting in your IDE or text editor, follow the [instructions](editors.md).
+A release is coming soon.
+Meanwhile, you can [build from sources](building-fut.md).
 
 ## Hello, world!
 
@@ -37,13 +24,14 @@ public static class HelloFu
 
 Save the above in `hello.fu`, then issue this command:
 
-    cito -o hello.c,cpp,cs,java,js,py,swift,ts,cl hello.fu
+    fut -o hello.c,cpp,cs,d,java,js,py,swift,ts,cl hello.fu
 
-This will translate the Fusion code to C, C++, C#, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.
-The `cito` command accepts one or more Fusion source files (here, just `hello.fu`)
+This will translate the Fusion code to
+C, C++, C#, D, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.
+The `fut` command accepts one or more Fusion source files (here, just `hello.fu`)
 and outputs the transpiled source files as specified by the mandatory `-o` option.
 Here we specified several languages, comma-separated.
-In a real-world scenario, you would integrate the `cito` command into your build system.
+In a real-world scenario, you would integrate the `fut` command into your build system.
 
 Now let's look at the outputs. `hello.cs`:
 
@@ -224,7 +212,7 @@ constant char *HelloFu_GetMessage(void)
 }
 ```
 
-As you can see, `cito` simply rewrites your code in different languages.
+As you can see, `fut` simply rewrites your code in different languages.
 
 Now, you may wonder why the code _does not print_ the message in the console?
 That's because Fusion was never intended to be used to write complete programs.
@@ -257,10 +245,10 @@ Fusion is explained in depth in its [reference documentation](reference.md).
 It's always good to study the language by looking at projects written
 in it - starting with really small ones:
 
-- [a toy ray-tracer](https://github.com/pfusik/ray-ci)
+- [a toy ray-tracer](https://github.com/pfusik/ray-fu)
 - [encoder of Data Matrix barcodes](https://github.com/pfusik/datamatrix-fu)
-- [encoder/decoder of the Quite OK Image format](https://github.com/pfusik/qoi-ci)
-- [encoder/decoder of the Quite OK Audio format](https://github.com/pfusik/qoa-ci)
+- [encoder/decoder of the Quite OK Image format](https://github.com/pfusik/qoi-fu)
+- [encoder/decoder of the Quite OK Audio format](https://github.com/pfusik/qoa-fu)
 - [decoder of PNG, GIF and JPEG](https://github.com/pfusik/image-fu)
 
 Then there's a [very portable chiptune player](https://asap.sourceforge.net):
