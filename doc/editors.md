@@ -23,4 +23,4 @@ Copy `fusion.properties` to the installation directory.
 
 ## Notepad++
 
-    copy editors\notepad-plus-plus\ci.udl.xml %AppData%\"Notepad++"\userDefineLangs\
+    copy editors\notepad-plus-plus\Fusion.udl.xml %AppData%\"Notepad++"\userDefineLangs\
