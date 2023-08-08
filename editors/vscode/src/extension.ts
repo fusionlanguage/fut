@@ -13,7 +13,7 @@ class VsCodeHost extends FuParserHost
 
 	updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: vscode.DiagnosticCollection): void
 	{
-		if (document.languageId != "fu")
+		if (document.languageId != "fusion")
 			return;
 		this.#diagnostics.length = 0;
 		const parser = new FuParser();
@@ -29,7 +29,7 @@ class VsCodeHost extends FuParserHost
 
 export function activate(context: vscode.ExtensionContext): void {
 	const host = new VsCodeHost();
-	const diagnosticCollection = vscode.languages.createDiagnosticCollection("fu");
+	const diagnosticCollection = vscode.languages.createDiagnosticCollection("fusion");
 	if (vscode.window.activeTextEditor)
 		host.updateDiagnostics(vscode.window.activeTextEditor.document, diagnosticCollection);
 	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => {

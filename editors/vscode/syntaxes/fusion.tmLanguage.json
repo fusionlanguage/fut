@@ -1,5 +1,5 @@
 {
-	"scopeName": "source.ci",
+	"scopeName": "source.fu",
 	"patterns": [
 		{
 			"include": "#preprocessor"
@@ -8,7 +8,7 @@
 			"include": "#comment"
 		},
 		{
-			"name": "storage.modifier.ci",
+			"name": "storage.modifier.fu",
 			"match": "\\bpublic\\b"
 		},
 		{
@@ -40,10 +40,10 @@
 							"match": "(enum)\\s+([A-Z][0-9A-Za-z_]*)",
 							"captures": {
 								"1": {
-									"name": "keyword.other.enum.ci"
+									"name": "keyword.other.enum.fu"
 								},
 								"2": {
-									"name": "entity.name.type.enum.ci"
+									"name": "entity.name.type.enum.fu"
 								}
 							}
 						}
@@ -53,13 +53,13 @@
 					"begin": "\\{",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.curlybrace.open.ci"
+							"name": "punctuation.curlybrace.open.fu"
 						}
 					},
 					"end": "\\}",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.curlybrace.close.ci"
+							"name": "punctuation.curlybrace.close.fu"
 						}
 					},
 					"patterns": [
@@ -76,7 +76,7 @@
 							"begin": "[A-Z][0-9A-Za-z_]*",
 							"beginCaptures": {
 								"0": {
-									"name": "entity.name.variable.enum-member.ci"
+									"name": "entity.name.variable.enum-member.fu"
 								}
 							},
 							"end": "(?=(,|\\}))",
@@ -110,16 +110,16 @@
 					"begin": "\\b(?:(static|abstract|sealed)\\s+)?(class)\\s+([A-Z][0-9A-Za-z_]*)\\s*(?:(:)\\s*[A-Z][0-9A-Za-z_]*)?",
 					"beginCaptures": {
 						"1": {
-							"name": "storage.modifier.ci"
+							"name": "storage.modifier.fu"
 						},
 						"2": {
-							"name": "keyword.other.class.ci"
+							"name": "keyword.other.class.fu"
 						},
 						"3": {
-							"name": "entity.name.type.class.ci"
+							"name": "entity.name.type.class.fu"
 						},
 						"4": {
-							"name": "punctuation.separator.colon.ci"
+							"name": "punctuation.separator.colon.fu"
 						}
 					},
 					"end": "(?=\\{)",
@@ -136,13 +136,13 @@
 					"begin": "\\{",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.curlybrace.open.ci"
+							"name": "punctuation.curlybrace.open.fu"
 						}
 					},
 					"end": "\\}",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.curlybrace.close.ci"
+							"name": "punctuation.curlybrace.close.fu"
 						}
 					},
 					"patterns": [
@@ -178,14 +178,14 @@
 			]
 		},
 		"storage-modifier": {
-			"name": "storage.modifier.ci",
+			"name": "storage.modifier.fu",
 			"match": "\\b(internal|protected|public|static|abstract|virtual|override|sealed|const)\\b"
 		},
 		"field": {
 			"match": "([A-Z][0-9A-Za-z_]*)(?=\\s*[=;])",
 			"captures": {
 				"0": {
-					"name": "entity.name.variable.field.ci"
+					"name": "entity.name.variable.field.fu"
 				}
 			}
 		},
@@ -193,7 +193,7 @@
 			"begin": "([A-Z][0-9A-Za-z_]*)!?(?=\\()",
 			"beginCaptures": {
 				"1": {
-					"name": "entity.name.function.ci"
+					"name": "entity.name.function.fu"
 				}
 			},
 			"end": "(?<=\\})|;",
@@ -208,13 +208,13 @@
 					"begin": "\\(",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.parenthesis.open.ci"
+							"name": "punctuation.parenthesis.open.fu"
 						}
 					},
 					"end": "\\)",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.parenthesis.close.ci"
+							"name": "punctuation.parenthesis.close.fu"
 						}
 					},
 					"patterns": [
@@ -239,7 +239,7 @@
 					]
 				},
 				{
-					"name": "keyword.other.throws.ci",
+					"name": "keyword.other.throws.fu",
 					"match": "\\bthrows\\b"
 				},
 				{
@@ -254,7 +254,7 @@
 			"match": "([a-z][0-9A-Za-z_]*)(?=\\s*[=,)])",
 			"captures": {
 				"0": {
-					"name": "entity.name.variable.parameter.ci"
+					"name": "entity.name.variable.parameter.fu"
 				}
 			}
 		},
@@ -326,7 +326,7 @@
 			"begin": "\\bassert\\b",
 			"beginCaptures": {
 				"0": {
-					"name": "keyword.control.assert.ci"
+					"name": "keyword.control.assert.fu"
 				}
 			},
 			"end": "(?=;)",
@@ -343,7 +343,7 @@
 			"match": "\\bbreak\\b",
 			"captures": {
 				"0": {
-					"name": "keyword.control.flow.break.ci"
+					"name": "keyword.control.flow.break.fu"
 				}
 			}
 		},
@@ -351,7 +351,7 @@
 			"match": "\\bcontinue\\b",
 			"captures": {
 				"0": {
-					"name": "keyword.control.flow.continue.ci"
+					"name": "keyword.control.flow.continue.fu"
 				}
 			}
 		},
@@ -359,7 +359,7 @@
 			"begin": "\\bdo\\b",
 			"beginCaptures": {
 				"0": {
-					"name": "keyword.control.loop.do.ci"
+					"name": "keyword.control.loop.do.fu"
 				}
 			},
 			"end": "(?=;|})",
@@ -373,7 +373,7 @@
 			"begin": "\\b(for)\\s*(?=\\()",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.control.loop.for.ci"
+					"name": "keyword.control.loop.for.fu"
 				}
 			},
 			"end": "(?<=\\})|(?=;)",
@@ -382,13 +382,13 @@
 					"begin": "\\(",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.parenthesis.open.ci"
+							"name": "punctuation.parenthesis.open.fu"
 						}
 					},
 					"end": "\\)",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.parenthesis.close.ci"
+							"name": "punctuation.parenthesis.close.fu"
 						}
 					},
 					"patterns": [
@@ -412,7 +412,7 @@
 			"begin": "\\b(foreach)\\s*(?=\\()",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.control.loop.foreach.ci"
+					"name": "keyword.control.loop.foreach.fu"
 				}
 			},
 			"end": "(?<=\\})|(?=;)",
@@ -421,13 +421,13 @@
 					"begin": "\\(",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.parenthesis.open.ci"
+							"name": "punctuation.parenthesis.open.fu"
 						}
 					},
 					"end": "\\)",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.parenthesis.close.ci"
+							"name": "punctuation.parenthesis.close.fu"
 						}
 					},
 					"patterns": [
@@ -435,7 +435,7 @@
 							"include": "#type"
 						},
 						{
-							"name": "keyword.control.loop.in.ci",
+							"name": "keyword.control.loop.in.fu",
 							"match": "\\bin\\b"
 						},
 						{
@@ -452,7 +452,7 @@
 			"begin": "\\b(if)\\s*(?=\\()",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.control.conditional.if.ci"
+					"name": "keyword.control.conditional.if.fu"
 				}
 			},
 			"end": "(?<=\\})|(?=;)",
@@ -461,13 +461,13 @@
 					"begin": "\\(",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.parenthesis.open.ci"
+							"name": "punctuation.parenthesis.open.fu"
 						}
 					},
 					"end": "\\)",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.parenthesis.close.ci"
+							"name": "punctuation.parenthesis.close.fu"
 						}
 					},
 					"patterns": [
@@ -485,7 +485,7 @@
 			"begin": "\\belse\\b",
 			"beginCaptures": {
 				"0": {
-					"name": "keyword.control.conditional.else.ci"
+					"name": "keyword.control.conditional.else.fu"
 				}
 			},
 			"end": "(?<=\\})|(?=;)",
@@ -499,7 +499,7 @@
 			"begin": "\\b(lock)\\s*(?=\\()",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.other.lock.ci"
+					"name": "keyword.other.lock.fu"
 				}
 			},
 			"end": "(?<=\\})|(?=;)",
@@ -508,13 +508,13 @@
 					"begin": "\\(",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.parenthesis.open.ci"
+							"name": "punctuation.parenthesis.open.fu"
 						}
 					},
 					"end": "\\)",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.parenthesis.close.ci"
+							"name": "punctuation.parenthesis.close.fu"
 						}
 					},
 					"patterns": [
@@ -532,7 +532,7 @@
 			"begin": "\\bnative\\b",
 			"beginCaptures": {
 				"0": {
-					"name": "keyword.other.native.ci"
+					"name": "keyword.other.native.fu"
 				}
 			},
 			"end": "(?<=\\})",
@@ -552,13 +552,13 @@
 			"begin": "\\{",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.curlybrace.open.ci"
+					"name": "punctuation.curlybrace.open.fu"
 				}
 			},
 			"end": "\\}",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.curlybrace.close.ci"
+					"name": "punctuation.curlybrace.close.fu"
 				}
 			},
 			"patterns": [
@@ -577,7 +577,7 @@
 			"begin": "\\breturn\\b",
 			"beginCaptures": {
 				"0": {
-					"name": "keyword.control.flow.return.ci"
+					"name": "keyword.control.flow.return.fu"
 				}
 			},
 			"end": "(?=;)",
@@ -591,7 +591,7 @@
 			"begin": "\\b(switch)\\s*(?=\\()",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.control.switch.ci"
+					"name": "keyword.control.switch.fu"
 				}
 			},
 			"end": "(?<=\\})",
@@ -600,13 +600,13 @@
 					"begin": "\\(",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.parenthesis.open.ci"
+							"name": "punctuation.parenthesis.open.fu"
 						}
 					},
 					"end": "\\)",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.parenthesis.close.ci"
+							"name": "punctuation.parenthesis.close.fu"
 						}
 					},
 					"patterns": [
@@ -619,13 +619,13 @@
 					"begin": "\\{",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.curlybrace.open.ci"
+							"name": "punctuation.curlybrace.open.fu"
 						}
 					},
 					"end": "\\}",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.curlybrace.close.ci"
+							"name": "punctuation.curlybrace.close.fu"
 						}
 					},
 					"patterns": [
@@ -645,13 +645,13 @@
 					"begin": "\\b(case)\\s+",
 					"beginCaptures": {
 						"1": {
-							"name": "keyword.control.case.ci"
+							"name": "keyword.control.case.fu"
 						}
 					},
 					"end": ":",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.separator.colon.ci"
+							"name": "punctuation.separator.colon.fu"
 						}
 					},
 					"patterns": [
@@ -667,10 +667,10 @@
 					"match": "\\b(default)\\s*(:)",
 					"captures": {
 						"1": {
-							"name": "keyword.control.default.ci"
+							"name": "keyword.control.default.fu"
 						},
 						"2": {
-							"name": "punctuation.separator.colon.ci"
+							"name": "punctuation.separator.colon.fu"
 						}
 					}
 				}
@@ -680,7 +680,7 @@
 			"match": "\\bwhen\\b",
 			"captures": {
 				"0": {
-					"name": "keyword.control.when.ci"
+					"name": "keyword.control.when.fu"
 				}
 			}
 		},
@@ -688,7 +688,7 @@
 			"begin": "\\bthrow\\b",
 			"beginCaptures": {
 				"0": {
-					"name": "keyword.control.flow.throw.ci"
+					"name": "keyword.control.flow.throw.fu"
 				}
 			},
 			"end": "(?=;)",
@@ -702,7 +702,7 @@
 			"begin": "\\b(while)\\s*(?=\\()",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.control.loop.while.ci"
+					"name": "keyword.control.loop.while.fu"
 				}
 			},
 			"end": "(?<=\\})|(?=;)",
@@ -711,13 +711,13 @@
 					"begin": "\\(",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.parenthesis.open.ci"
+							"name": "punctuation.parenthesis.open.fu"
 						}
 					},
 					"end": "\\)",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.parenthesis.close.ci"
+							"name": "punctuation.parenthesis.close.fu"
 						}
 					},
 					"patterns": [
@@ -735,13 +735,13 @@
 			"begin": "\\{",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.curlybrace.open.ci"
+					"name": "punctuation.curlybrace.open.fu"
 				}
 			},
 			"end": "\\}",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.curlybrace.close.ci"
+					"name": "punctuation.curlybrace.close.fu"
 				}
 			},
 			"patterns": [
@@ -754,13 +754,13 @@
 			"begin": "\\bconst\\b",
 			"beginCaptures": {
 				"0": {
-					"name": "storage.modifier.ci"
+					"name": "storage.modifier.fu"
 				}
 			},
 			"end": "(?=;)",
 			"patterns": [
 				{
-					"name": "entity.name.variable.local.ci",
+					"name": "entity.name.variable.local.fu",
 					"match": "@?[_[:alpha:]][_[:alnum:]]*"
 				},
 				{
@@ -781,7 +781,7 @@
 			"begin": "(?<!=|!)=(?!=|>)",
 			"beginCaptures": {
 				"0": {
-					"name": "keyword.operator.assignment.ci"
+					"name": "keyword.operator.assignment.fu"
 				}
 			},
 			"end": "(?=[,);}])",
@@ -798,13 +798,13 @@
 			"begin": "\\{",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.curlybrace.open.ci"
+					"name": "punctuation.curlybrace.open.fu"
 				}
 			},
 			"end": "\\}",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.curlybrace.close.ci"
+					"name": "punctuation.curlybrace.close.fu"
 				}
 			},
 			"patterns": [
@@ -820,7 +820,7 @@
 			"begin": "=>",
 			"beginCaptures": {
 				"0": {
-					"name": "keyword.operator.arrow.ci"
+					"name": "keyword.operator.arrow.fu"
 				}
 			},
 			"end": "(?=;)",
@@ -831,7 +831,7 @@
 			]
 		},
 		"type": {
-			"name": "meta.type.ci",
+			"name": "meta.type.fu",
 			"patterns": [
 				{
 					"include": "#preprocessor"
@@ -854,7 +854,7 @@
 			"match": "\\b(bool|byte|double|float|int|long|sbyte|short|string|uint|ulong|ushort|void)\\b",
 			"captures": {
 				"1": {
-					"name": "keyword.type.ci"
+					"name": "keyword.type.fu"
 				}
 			}
 		},
@@ -862,7 +862,7 @@
 			"match": "\\b(Console|Dictionary|Encoding|Environment|HashSet|List|Lock|Match|Math|Regex|RegexOptions|SortedDictionary|SortedSet|Stack|StringWriter|TextWriter)\\b",
 			"captures": {
 				"1": {
-					"name": "support.class.ci"
+					"name": "support.class.fu"
 				}
 			}
 		},
@@ -870,13 +870,13 @@
 			"begin": "<",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.typeparameters.begin.ci"
+					"name": "punctuation.definition.typeparameters.begin.fu"
 				}
 			},
 			"end": ">",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.typeparameters.end.ci"
+					"name": "punctuation.definition.typeparameters.end.fu"
 				}
 			},
 			"patterns": [
@@ -898,13 +898,13 @@
 			"begin": "\\[",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.squarebracket.open.ci"
+					"name": "punctuation.squarebracket.open.fu"
 				}
 			},
 			"end": "(\\])\\s*([!#])?",
 			"endCaptures": {
 				"1": {
-					"name": "punctuation.squarebracket.close.ci"
+					"name": "punctuation.squarebracket.close.fu"
 				}
 			},
 			"patterns": [
@@ -945,7 +945,7 @@
 			"begin": "\\bnew\\b",
 			"beginCaptures": {
 				"0": {
-					"name": "keyword.other.new.ci"
+					"name": "keyword.other.new.fu"
 				}
 			},
 			"end": "(?=[;,)])",
@@ -968,30 +968,30 @@
 			"begin": "\\b(resource)\\s*(<)\\s*(byte)\\s*([)\\s*(])\\s*(>)\\s*(\\()",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.other.resource.ci"
+					"name": "keyword.other.resource.fu"
 				},
 				"2": {
-					"name": "punctuation.definition.typeparameters.begin.ci"
+					"name": "punctuation.definition.typeparameters.begin.fu"
 				},
 				"3": {
-					"name": "keyword.type.ci"
+					"name": "keyword.type.fu"
 				},
 				"4": {
-					"name": "punctuation.squarebracket.open.ci"
+					"name": "punctuation.squarebracket.open.fu"
 				},
 				"5": {
-					"name": "punctuation.squarebracket.close.ci"
+					"name": "punctuation.squarebracket.close.fu"
 				},
 				"6": {
-					"name": "punctuation.definition.typeparameters.end.ci"
+					"name": "punctuation.definition.typeparameters.end.fu"
 				},
 				"7": {
-					"name": "punctuation.parenthesis.open.ci"
+					"name": "punctuation.parenthesis.open.fu"
 				}
 			},
 			"end": "\\)",
 			"endCaptures": {
-				"name": "punctuation.parenthesis.close.ci"
+				"name": "punctuation.parenthesis.close.fu"
 			},
 			"patterns": [
 				{
@@ -1002,47 +1002,47 @@
 		"expression-operators": {
 			"patterns": [
 				{
-					"name": "keyword.operator.assignment.compound.ci",
+					"name": "keyword.operator.assignment.compound.fu",
 					"match": "[-+*/%]="
 				},
 				{
-					"name": "keyword.operator.assignment.compound.bitwise.ci",
+					"name": "keyword.operator.assignment.compound.bitwise.fu",
 					"match": "[&|^]=|<<=|>>="
 				},
 				{
-					"name": "keyword.operator.bitwise.shift.ci",
+					"name": "keyword.operator.bitwise.shift.fu",
 					"match": "<<|>>"
 				},
 				{
-					"name": "keyword.operator.comparison.ci",
+					"name": "keyword.operator.comparison.fu",
 					"match": "==|!="
 				},
 				{
-					"name": "keyword.operator.relational.ci",
+					"name": "keyword.operator.relational.fu",
 					"match": "<=|>=|<|>"
 				},
 				{
-					"name": "keyword.operator.logical.ci",
+					"name": "keyword.operator.logical.fu",
 					"match": "\\!|&&|\\|\\|"
 				},
 				{
-					"name": "keyword.operator.bitwise.ci",
+					"name": "keyword.operator.bitwise.fu",
 					"match": "~|\\&|\\||\\^"
 				},
 				{
-					"name": "keyword.operator.assignment.ci",
+					"name": "keyword.operator.assignment.fu",
 					"match": "\\="
 				},
 				{
-					"name": "keyword.operator.decrement.ci",
+					"name": "keyword.operator.decrement.fu",
 					"match": "--"
 				},
 				{
-					"name": "keyword.operator.increment.ci",
+					"name": "keyword.operator.increment.fu",
 					"match": "\\+\\+"
 				},
 				{
-					"name": "keyword.operator.arithmetic.ci",
+					"name": "keyword.operator.arithmetic.fu",
 					"match": "[-+*/%]"
 				}
 			]
@@ -1051,7 +1051,7 @@
 			"match": "\\bbase\\b",
 			"captures": {
 				"0": {
-					"name": "keyword.other.base.ci"
+					"name": "keyword.other.base.fu"
 				}
 			}
 		},
@@ -1059,7 +1059,7 @@
 			"match": "\\bthis\\b",
 			"captures": {
 				"0": {
-					"name": "keyword.other.this.ci"
+					"name": "keyword.other.this.fu"
 				}
 			}
 		},
@@ -1082,34 +1082,34 @@
 		"boolean-literal": {
 			"patterns": [
 				{
-					"name": "constant.language.boolean.true.ci",
+					"name": "constant.language.boolean.true.fu",
 					"match": "\\btrue\\b"
 				},
 				{
-					"name": "constant.language.boolean.false.ci",
+					"name": "constant.language.boolean.false.fu",
 					"match": "\\bfalse\\b"
 				}
 			]
 		},
 		"null-literal": {
-			"name": "constant.language.null.ci",
+			"name": "constant.language.null.fu",
 			"match": "\\bnull\\b"
 		},
 		"char-literal": {
-			"name": "string.quoted.single.ci",
+			"name": "string.quoted.single.fu",
 			"begin": "'",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.char.begin.ci"
+					"name": "punctuation.definition.char.begin.fu"
 				}
 			},
 			"end": "(')|((?:[^\\\\\\n])$)",
 			"endCaptures": {
 				"1": {
-					"name": "punctuation.definition.char.end.ci"
+					"name": "punctuation.definition.char.end.fu"
 				},
 				"2": {
-					"name": "invalid.illegal.newline.ci"
+					"name": "invalid.illegal.newline.fu"
 				}
 			},
 			"patterns": [
@@ -1119,20 +1119,20 @@
 			]
 		},
 		"string-literal": {
-			"name": "string.quoted.double.ci",
+			"name": "string.quoted.double.fu",
 			"begin": "\"",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.string.begin.ci"
+					"name": "punctuation.definition.string.begin.fu"
 				}
 			},
 			"end": "(\")|((?:[^\\\\\\n])$)",
 			"endCaptures": {
 				"1": {
-					"name": "punctuation.definition.string.end.ci"
+					"name": "punctuation.definition.string.end.fu"
 				},
 				"2": {
-					"name": "invalid.illegal.newline.ci"
+					"name": "invalid.illegal.newline.fu"
 				}
 			},
 			"patterns": [
@@ -1142,23 +1142,23 @@
 			]
 		},
 		"char-character-escape": {
-			"name": "constant.character.escape.ci",
+			"name": "constant.character.escape.fu",
 			"match": "\\\\(['\"\\\\0abfnrtv])"
 		},
 		"punctuation-comma": {
-			"name": "punctuation.separator.comma.ci",
+			"name": "punctuation.separator.comma.fu",
 			"match": ","
 		},
 		"punctuation-semicolon": {
-			"name": "punctuation.terminator.statement.ci",
+			"name": "punctuation.terminator.statement.fu",
 			"match": ";"
 		},
 		"preprocessor": {
-			"name": "meta.preprocessor.ci",
+			"name": "meta.preprocessor.fu",
 			"begin": "^\\s*(#)\\s*",
 			"beginCaptures": {
 				"1": {
-					"name": "punctuation.separator.hash.ci"
+					"name": "punctuation.separator.hash.fu"
 				}
 			},
 			"end": "(?<=$)",
@@ -1181,10 +1181,10 @@
 			"begin": "\\b(?:(if)|(elif))\\b",
 			"beginCaptures": {
 				"1": {
-					"name": "keyword.preprocessor.if.ci"
+					"name": "keyword.preprocessor.if.fu"
 				},
 				"2": {
-					"name": "keyword.preprocessor.elif.ci"
+					"name": "keyword.preprocessor.elif.fu"
 				}
 			},
 			"end": "(?=$)",
@@ -1201,7 +1201,7 @@
 			"match": "\\belse\\b",
 			"captures": {
 				"0": {
-					"name": "keyword.preprocessor.else.ci"
+					"name": "keyword.preprocessor.else.fu"
 				}
 			}
 		},
@@ -1209,7 +1209,7 @@
 			"match": "\\bendif\\b",
 			"captures": {
 				"0": {
-					"name": "keyword.preprocessor.endif.ci"
+					"name": "keyword.preprocessor.endif.fu"
 				}
 			}
 		},
@@ -1219,13 +1219,13 @@
 					"begin": "\\(",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.parenthesis.open.ci"
+							"name": "punctuation.parenthesis.open.fu"
 						}
 					},
 					"end": "\\)",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.parenthesis.close.ci"
+							"name": "punctuation.parenthesis.close.fu"
 						}
 					},
 					"patterns": [
@@ -1238,13 +1238,13 @@
 					"match": "\\b(?:(true)|(false)|([A-Za-z_][0-9A-Za-z_]*))\\b",
 					"captures": {
 						"1": {
-							"name": "constant.language.boolean.true.ci"
+							"name": "constant.language.boolean.true.fu"
 						},
 						"2": {
-							"name": "constant.language.boolean.false.ci"
+							"name": "constant.language.boolean.false.fu"
 						},
 						"3": {
-							"name": "entity.name.variable.preprocessor.symbol.ci"
+							"name": "entity.name.variable.preprocessor.symbol.fu"
 						}
 					}
 				},
@@ -1252,7 +1252,7 @@
 					"match": "!|&&|\\|\\|",
 					"captures": {
 						"0": {
-							"name": "keyword.operator.logical.ci"
+							"name": "keyword.operator.logical.fu"
 						}
 					}
 				},
@@ -1260,7 +1260,7 @@
 					"match": "[=!]=",
 					"captures": {
 						"0": {
-							"name": "keyword.operator.comparison.ci"
+							"name": "keyword.operator.comparison.fu"
 						}
 					}
 				}
@@ -1269,17 +1269,17 @@
 		"comment": {
 			"patterns": [
 				{
-					"name": "comment.block.ci",
+					"name": "comment.block.fu",
 					"begin": "/\\*",
 					"beginCaptures": {
 						"0": {
-							"name": "punctuation.definition.comment.ci"
+							"name": "punctuation.definition.comment.fu"
 						}
 					},
 					"end": "\\*/",
 					"endCaptures": {
 						"0": {
-							"name": "punctuation.definition.comment.ci"
+							"name": "punctuation.definition.comment.fu"
 						}
 					}
 				},
@@ -1287,27 +1287,27 @@
 					"begin": "(^\\s+)?(?=//)",
 					"beginCaptures": {
 						"1": {
-							"name": "punctuation.whitespace.comment.leading.ci"
+							"name": "punctuation.whitespace.comment.leading.fu"
 						}
 					},
 					"end": "(?=$)",
 					"patterns": [
 						{
-							"name": "comment.block.documentation.ci",
+							"name": "comment.block.documentation.fu",
 							"begin": "(?<!/)///(?!/)",
 							"beginCaptures": {
 								"0": {
-									"name": "punctuation.definition.comment.ci"
+									"name": "punctuation.definition.comment.fu"
 								}
 							},
 							"end": "(?=$)"
 						},
 						{
-							"name": "comment.line.double-slash.ci",
+							"name": "comment.line.double-slash.fu",
 							"begin": "(?<!/)//(?:(?!/)|(?=//))",
 							"beginCaptures": {
 								"0": {
-									"name": "punctuation.definition.comment.ci"
+									"name": "punctuation.definition.comment.fu"
 								}
 							},
 							"end": "(?=$)"

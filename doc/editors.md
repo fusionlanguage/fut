@@ -1,8 +1,8 @@
-﻿# Fusion Syntax Highlighting
+# Fusion Syntax Highlighting
 
 ## Visual Studio Code
 
-Install the extension "Ć" from the VS Code Extension Marketplace.
+Install the "Fusion" extension from the VS Code Extension Marketplace.
 
 ## SciTE
 

@@ -1,5 +1,4 @@
-/ci-*.vsix
+/fusion-*.vsix
 /node_modules
 /out
-/package-lock.json
 /src/parser.js

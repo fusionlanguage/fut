@@ -1,11 +1,11 @@
 {
-  "name": "ci",
+  "name": "fusion",
   "version": "3.0.0",
-  "publisher": "pfusik",
+  "publisher": "fusionlanguage",
   "license": "MIT",
   "displayName": "Fusion",
   "description": "Fusion language syntax highlighting",
-  "icon": "ci-logo.png",
+  "icon": "fu-logo.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/fusionlanguage/fut.git"
@@ -24,27 +24,27 @@
   "contributes": {
     "languages": [
       {
-        "id": "ci",
+        "id": "fusion",
         "extensions": [
           ".fu"
         ],
         "icon": {
-          "light": "./ci-file.svg",
-          "dark": "./ci-file.svg"
+          "light": "./fu-file.svg",
+          "dark": "./fu-file.svg"
         },
         "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
       {
-        "language": "ci",
-        "scopeName": "source.ci",
-        "path": "./syntaxes/ci.tmLanguage.json"
+        "language": "fusion",
+        "scopeName": "source.fu",
+        "path": "./syntaxes/fusion.tmLanguage.json"
       }
     ]
   },
   "activationEvents": [
-    "onLanguage:ci"
+    "onLanguage:fusion"
   ],
   "main": "./out/extension.js",
   "scripts": {
@@ -53,6 +53,6 @@
   },
   "devDependencies": {
     "@types/vscode": "^1.0.0",
-    "typescript": "^4.9.4"
+    "typescript": "^5.1.6"
   }
 }
