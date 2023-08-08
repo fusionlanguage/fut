@@ -1,3 +1,5 @@
 /*.msi
 /*.wixobj
 /*.wixpdb
+/signed
+/signed-msi
