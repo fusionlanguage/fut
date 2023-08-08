@@ -1,15 +1,11 @@
 {
-  "name": "cito-test-ts",
+  "name": "fut-test-ts",
   "private": true,
-  "version": "2.2.0-development",
-  "repository": "https://github.com/pfusik/cito.git",
+  "version": "3.0.0-development",
+  "repository": "https://github.com/fusionlanguage/fut.git",
   "author": "Piotr Fusik",
   "type": "module",
   "dependencies": {
-    "ts-node": "^10.9.1",
-    "typescript": "^5.0.4"
-  },
-  "devDependencies": {
-    "@types/node": "^18.15.11"
+    "ts-node": "^10.9.1"
   }
 }
