@@ -80,7 +80,7 @@
 				</Control>
 				<!-- higher license box because of the removed checkbox -->
 				<Control Id="LicenseText" Type="ScrollableText" X="20" Y="60" Width="330" Height="155" Sunken="yes" TabSkip="no">
-					<Text SourceFile="COPYING" />
+					<Text SourceFile="license.rtf" />
 				</Control>
 			</Dialog>
 		</UI>
