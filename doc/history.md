@@ -1,6 +1,6 @@
-﻿# History of Ć
+﻿# History of Fusion
 
-The story of the Ć programming language starts in 2007.
+The story of the Fusion programming language starts in 2007.
 I had a [chiptune player](https://asap.sourceforge.net) coded as my hobby project.
 It was written in portable C and worked on several desktop operating systems.
 You could surely call it cross-platform. Mind you, this was before the iPhone and Android era.
@@ -93,12 +93,13 @@ I was happy of being able to produce C, Java, C#, JavaScript and ActionScript fr
 The weak point was how this source code looked like.
 
 I realized that if I want to have good-looking source code, I need to design a programming language
-instead of just a set of macros. This is how Ć and its transpiler `cito` came to life in 2011.
+instead of just a set of macros. I called this language Ć, which is a letter next to C in the Polish alphabet.
+Ć and its transpiler `cito` came to life in 2011.
 
 The initial goal was very modest: just transpile my chiptune player, but with a clean syntax
 instead of obscure C macros. I chose C# as the implementation language for `cito`.
 
-In 2011 I released `cito` 0.1.0 with backends to C, C#, Java, JavaScript, ActionScript
+In 2011, I released `cito` 0.1.0 with backends to C, C#, Java, JavaScript, ActionScript
 and [D](https://dlang.org).
 There were two flavors of the C backend: one that emitted C99 and the other that emitted C89,
 because at that point Visual Studio did not even support C99.
@@ -107,7 +108,7 @@ The D backend was contributed by [Adrian Matoga](https://github.com/epi).
 Also in 2011 there was `cito` 0.2.0 with a simple editor called CiPad that was showing
 the translations as you typed.
 
-In 2013 I decided to rewrite in Ć my other open-source project with a fancy name: FAIL
+In 2013, I decided to rewrite in Ć my other open-source project with a fancy name: FAIL
 (later renamed to [RECOIL](https://recoil.sourceforge.net)).
 In the process, the Ć language received class inheritance and dynamic allocation,
 in version 0.3.0.
@@ -118,9 +119,9 @@ In 0.4.0 it got a Perl backend.
 Ć was good enough for my projects, but generally speaking it was quite a limited language.
 For instance, there were no floating-point numbers, just two integer types (`int` and `byte`)
 and string storage had a fixed capacity which directly translated into a C array of characters.
-I realized that in order for the language to be applicable for a wider variety of projects,
+I realized that in order for the language to be applicable to a wider variety of projects,
 it must be more expressive.
-I decided that "version 1.0" will be designed and written from scratch which I started in 2014.
+I decided that "version 1.0" will be designed and written from scratch, which I started in 2014.
 
 The result was that "version 1" was largely only in my head, because "version 0" worked very well
 for my own purposes. Also, I expected corporations to create a language similar to what I envisioned.
@@ -128,16 +129,16 @@ While I was coding a lot _in_ Ć, I wasn't really _developing_ Ć until 2019.
 
 ## Version 1.0
 
-In 2019 I decided to materialize my ideas on version 1.0. `cito` got a C++ backend, collections,
+In 2019, I decided to materialize my ideas on version 1.0. `cito` got a C++ backend, collections,
 interpolated strings and a testsuite run in [Travis CI](https://www.travis-ci.com).
 I updated my projects to version 1.0.
 
-In 2020 I added Python, Swift and OpenCL backends.
+In 2020, I added Python, Swift and OpenCL backends.
 The latter meant that you could run Ć code on your GPU!
 [Andy Edwards](https://github.com/jedwards1211) contributed a TypeScript backend.
 
 There were no binary releases of version 1.
-I expected users to build `cito` themselves. It's a developer's tool after all!
+I expected users to build `cito` themselves. It was a developer's tool after all!
 
 ## Version 2.0
 
@@ -145,7 +146,13 @@ Starting with 2.0.0, new versions were released as a .NET tool, so if you had a 
 you could install `cito` with one command.
 I also added [syntax highlighting](editors.md) to a couple of editors.
 
+I started [rewriting Ć in Ć](https://github.com/fusionlanguage/fut/issues/48), part by part.
+First the lexer, then the AST, parser, semantic pass and finally the backends.
+The lexer, the AST and the parser were incorporated in the Visual Studio Code extension
+to report syntax errors.
+
 ## Version 3.0
 
-`cito` 3.0 is self-hosted, transpiling itself to C++, C# and JavaScript.
-This means it no longer requires .NET.
+Once the rewrite was complete, I renamed the language to Fusion and its transpiler to `fut`.
+
+`fut` 3.0.0 is self-hosted, transpiling itself to C++, C# and JavaScript. It no longer requires .NET.
