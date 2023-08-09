@@ -9858,8 +9858,9 @@ export class GenC extends GenCCpp
 
 	static #isNewString(expr)
 	{
+		let binary;
 		let call;
-		return expr instanceof FuInterpolatedString || ((call = expr) instanceof FuCallExpr && expr.type.id == FuId.STRING_STORAGE_TYPE && (call.method.symbol.id != FuId.STRING_SUBSTRING || call.arguments.length == 2));
+		return expr instanceof FuInterpolatedString || ((binary = expr) instanceof FuBinaryExpr && expr.type.id == FuId.STRING_STORAGE_TYPE && binary.op == FuToken.PLUS) || ((call = expr) instanceof FuCallExpr && expr.type.id == FuId.STRING_STORAGE_TYPE && (call.method.symbol.id != FuId.STRING_SUBSTRING || call.arguments.length == 2));
 	}
 
 	#writeStringStorageValue(expr)

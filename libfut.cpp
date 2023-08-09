@@ -9231,8 +9231,9 @@ void GenC::writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, 
 
 bool GenC::isNewString(const FuExpr * expr)
 {
+	const FuBinaryExpr * binary;
 	const FuCallExpr * call;
-	return dynamic_cast<const FuInterpolatedString *>(expr) || ((call = dynamic_cast<const FuCallExpr *>(expr)) && expr->type->id == FuId::stringStorageType && (call->method->symbol->id != FuId::stringSubstring || call->arguments.size() == 2));
+	return dynamic_cast<const FuInterpolatedString *>(expr) || ((binary = dynamic_cast<const FuBinaryExpr *>(expr)) && expr->type->id == FuId::stringStorageType && binary->op == FuToken::plus) || ((call = dynamic_cast<const FuCallExpr *>(expr)) && expr->type->id == FuId::stringStorageType && (call->method->symbol->id != FuId::stringSubstring || call->arguments.size() == 2));
 }
 
 void GenC::writeStringStorageValue(const FuExpr * expr)

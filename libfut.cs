@@ -9543,7 +9543,7 @@ namespace Fusion
 
 		static bool IsNewString(FuExpr expr)
 		{
-			return expr is FuInterpolatedString || (expr is FuCallExpr call && expr.Type.Id == FuId.StringStorageType && (call.Method.Symbol.Id != FuId.StringSubstring || call.Arguments.Count == 2));
+			return expr is FuInterpolatedString || (expr is FuBinaryExpr binary && expr.Type.Id == FuId.StringStorageType && binary.Op == FuToken.Plus) || (expr is FuCallExpr call && expr.Type.Id == FuId.StringStorageType && (call.Method.Symbol.Id != FuId.StringSubstring || call.Arguments.Count == 2));
 		}
 
 		void WriteStringStorageValue(FuExpr expr)
