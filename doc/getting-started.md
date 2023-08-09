@@ -4,8 +4,8 @@
 
 The transpiler `fut` runs on Windows, macOS and Linux.
 
-A release is coming soon.
-Meanwhile, you can [build from sources](building-fut.md).
+Download the [release](https://github.com/fusionlanguage/fut/releases/tag/fut-3.0.0)
+or [build from sources](building-fut.md).
 
 ## Syntax highlighting
 
