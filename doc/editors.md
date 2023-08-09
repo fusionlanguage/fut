@@ -2,7 +2,8 @@
 
 ## Visual Studio Code
 
-Install the "Fusion" extension from the VS Code Extension Marketplace.
+Install the [Fusion](https://marketplace.visualstudio.com/items?itemName=fusionlanguage.fusion)
+extension from the VS Code Extension Marketplace.
 
 ## SciTE
 

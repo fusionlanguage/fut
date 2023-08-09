@@ -7,6 +7,10 @@ The transpiler `fut` runs on Windows, macOS and Linux.
 A release is coming soon.
 Meanwhile, you can [build from sources](building-fut.md).
 
+## Syntax highlighting
+
+To install Fusion syntax highlighting in your IDE or text editor, follow the [instructions](editors.md).
+
 ## Hello, world!
 
 Now you are ready to try out your first Fusion code:
