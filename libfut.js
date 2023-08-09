@@ -11591,8 +11591,17 @@ export class GenC extends GenCCpp
 	{
 		switch (expr.op) {
 		case FuToken.PLUS:
-			if (expr.type.id == FuId.STRING_STORAGE_TYPE)
-				this.notSupported(expr, "String concatenation");
+			if (expr.type.id == FuId.STRING_STORAGE_TYPE) {
+				this.#stringFormat = true;
+				this.include("stdarg.h");
+				this.include("stdio.h");
+				this.write("FuString_Format(\"%s%s\", ");
+				expr.left.accept(this, FuPriority.ARGUMENT);
+				this.write(", ");
+				expr.right.accept(this, FuPriority.ARGUMENT);
+				this.writeChar(41);
+				return;
+			}
 			break;
 		case FuToken.EQUAL:
 		case FuToken.NOT_EQUAL:

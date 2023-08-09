@@ -10933,8 +10933,17 @@ void GenC::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 {
 	switch (expr->op) {
 	case FuToken::plus:
-		if (expr->type->id == FuId::stringStorageType)
-			notSupported(expr, "String concatenation");
+		if (expr->type->id == FuId::stringStorageType) {
+			this->stringFormat = true;
+			include("stdarg.h");
+			include("stdio.h");
+			write("FuString_Format(\"%s%s\", ");
+			expr->left->accept(this, FuPriority::argument);
+			write(", ");
+			expr->right->accept(this, FuPriority::argument);
+			writeChar(')');
+			return;
+		}
 		break;
 	case FuToken::equal:
 	case FuToken::notEqual:

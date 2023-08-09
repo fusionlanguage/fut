@@ -11238,8 +11238,17 @@ namespace Fusion
 		{
 			switch (expr.Op) {
 			case FuToken.Plus:
-				if (expr.Type.Id == FuId.StringStorageType)
-					NotSupported(expr, "String concatenation");
+				if (expr.Type.Id == FuId.StringStorageType) {
+					this.StringFormat = true;
+					Include("stdarg.h");
+					Include("stdio.h");
+					Write("FuString_Format(\"%s%s\", ");
+					expr.Left.Accept(this, FuPriority.Argument);
+					Write(", ");
+					expr.Right.Accept(this, FuPriority.Argument);
+					WriteChar(')');
+					return;
+				}
 				break;
 			case FuToken.Equal:
 			case FuToken.NotEqual:

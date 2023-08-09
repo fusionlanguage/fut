@@ -4,7 +4,7 @@ public static class Test
 	{
 		string() s = "foo"; //FAIL: cl
 		string p = "bar";
-		return s + s == "foofoo" //FAIL: c
+		return s + s == "foofoo"
 			&& s + p == "foobar"
 			&& p + s == "barfoo"
 			&& p + p == "barbar"
