@@ -7824,6 +7824,11 @@ void GenBase::writeSwitchValue(const FuExpr * expr)
 	expr->accept(this, FuPriority::argument);
 }
 
+void GenBase::writeSwitchCaseValue(const FuSwitch * statement, const FuExpr * value)
+{
+	writeCoercedLiteral(statement->value->type.get(), value);
+}
+
 void GenBase::writeSwitchCaseBody(const std::vector<std::shared_ptr<FuStatement>> * statements)
 {
 	writeStatements(statements);
@@ -7833,7 +7838,7 @@ void GenBase::writeSwitchCase(const FuSwitch * statement, const FuCase * kase)
 {
 	for (const std::shared_ptr<FuExpr> &value : kase->values) {
 		write("case ");
-		writeCoercedLiteral(statement->value->type.get(), value.get());
+		writeSwitchCaseValue(statement, value.get());
 		writeCharLine(':');
 	}
 	this->indent++;
@@ -16608,6 +16613,16 @@ FuId GenJava::getTypeId(const FuType * type, bool promote) const
 	}
 }
 
+bool GenJava::isJavaEnum(const FuEnum * enu)
+{
+	for (const FuSymbol * symbol = enu->first; symbol != nullptr; symbol = symbol->next) {
+		const FuConst * konst;
+		if ((konst = dynamic_cast<const FuConst *>(symbol)) && !dynamic_cast<const FuImplicitEnumValue *>(konst->value.get()))
+			return false;
+	}
+	return true;
+}
+
 void GenJava::writeCollectionType(std::string_view name, const FuType * elementType)
 {
 	include("java.util." + std::string(name));
@@ -16654,7 +16669,7 @@ void GenJava::writeJavaType(const FuType * type, bool promote, bool needClass)
 		}
 	}
 	else if (const FuEnum *enu = dynamic_cast<const FuEnum *>(type))
-		write(enu->id == FuId::boolType ? needClass ? "Boolean" : "boolean" : needClass ? "Integer" : "int");
+		write(enu->id == FuId::boolType ? needClass ? "Boolean" : "boolean" : isJavaEnum(enu) ? enu->name : needClass ? "Integer" : "int");
 	else if (const FuClassType *klass = dynamic_cast<const FuClassType *>(type)) {
 		switch (klass->class_->id) {
 		case FuId::stringClass:
@@ -16828,6 +16843,22 @@ void GenJava::writeCoercedLiteral(const FuType * type, const FuExpr * expr)
 	}
 	else
 		GenTyped::writeCoercedLiteral(type, expr);
+}
+
+void GenJava::writeRel(const FuBinaryExpr * expr, FuPriority parent, std::string_view op)
+{
+	const FuEnum * enu;
+	if ((enu = dynamic_cast<const FuEnum *>(expr->left->type.get())) && isJavaEnum(enu)) {
+		if (parent > FuPriority::condAnd)
+			writeChar('(');
+		writeMethodCall(expr->left.get(), "compareTo", expr->right.get());
+		write(op);
+		writeChar('0');
+		if (parent > FuPriority::condAnd)
+			writeChar(')');
+	}
+	else
+		GenBase::writeRel(expr, parent, op);
 }
 
 void GenJava::writeAnd(const FuBinaryExpr * expr, FuPriority parent)
@@ -17433,6 +17464,16 @@ void GenJava::writeSwitchValue(const FuExpr * expr)
 		GenBase::writeSwitchValue(expr);
 }
 
+void GenJava::writeSwitchCaseValue(const FuSwitch * statement, const FuExpr * value)
+{
+	const FuSymbolReference * symbol;
+	const FuEnum * enu;
+	if ((symbol = dynamic_cast<const FuSymbolReference *>(value)) && (enu = dynamic_cast<const FuEnum *>(symbol->symbol->parent)) && isJavaEnum(enu))
+		writeUppercaseWithUnderscores(symbol->name);
+	else
+		GenBase::writeSwitchCaseValue(statement, value);
+}
+
 bool GenJava::writeSwitchCaseVar(const FuExpr * expr)
 {
 	expr->accept(this, FuPriority::argument);
@@ -17505,10 +17546,23 @@ void GenJava::writeEnum(const FuEnum * enu)
 	writeNewLine();
 	writeDoc(enu->documentation.get());
 	writePublic(enu);
-	write("interface ");
+	bool javaEnum = isJavaEnum(enu);
+	write(javaEnum ? "enum " : "interface ");
 	writeLine(enu->name);
 	openBlock();
-	enu->acceptValues(this);
+	if (javaEnum) {
+		for (const FuSymbol * symbol = enu->getFirstValue();;) {
+			writeDoc(symbol->documentation.get());
+			writeUppercaseWithUnderscores(symbol->name);
+			symbol = symbol->next;
+			if (symbol == nullptr)
+				break;
+			writeCharLine(',');
+		}
+		writeNewLine();
+	}
+	else
+		enu->acceptValues(this);
 	closeBlock();
 	closeFile();
 }

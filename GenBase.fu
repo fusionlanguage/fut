@@ -1024,7 +1024,7 @@ public abstract class GenBase : FuVisitor
 		WriteEqualExpr(left, right, parent, GetEqOp(not));
 	}
 
-	void WriteRel!(FuBinaryExpr expr, FuPriority parent, string op)
+	protected virtual void WriteRel!(FuBinaryExpr expr, FuPriority parent, string op)
 	{
 		WriteBinaryExpr(expr, parent > FuPriority.CondAnd, FuPriority.Rel, op, FuPriority.Rel);
 	}
@@ -1690,6 +1690,11 @@ public abstract class GenBase : FuVisitor
 		expr.Accept(this, FuPriority.Argument);
 	}
 
+	protected virtual void WriteSwitchCaseValue!(FuSwitch statement, FuExpr value)
+	{
+		WriteCoercedLiteral(statement.Value.Type, value);
+	}
+
 	protected virtual void WriteSwitchCaseBody!(List<FuStatement#> statements)
 	{
 		WriteStatements(statements);
@@ -1699,7 +1704,7 @@ public abstract class GenBase : FuVisitor
 	{
 		foreach (FuExpr value in kase.Values) {
 			Write("case ");
-			WriteCoercedLiteral(statement.Value.Type, value);
+			WriteSwitchCaseValue(statement, value);
 			WriteCharLine(':');
 		}
 		this.Indent++;

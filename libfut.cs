@@ -7364,7 +7364,7 @@ namespace Fusion
 			WriteEqualExpr(left, right, parent, GetEqOp(not));
 		}
 
-		void WriteRel(FuBinaryExpr expr, FuPriority parent, string op)
+		protected virtual void WriteRel(FuBinaryExpr expr, FuPriority parent, string op)
 		{
 			WriteBinaryExpr(expr, parent > FuPriority.CondAnd, FuPriority.Rel, op, FuPriority.Rel);
 		}
@@ -8026,6 +8026,11 @@ namespace Fusion
 			expr.Accept(this, FuPriority.Argument);
 		}
 
+		protected virtual void WriteSwitchCaseValue(FuSwitch statement, FuExpr value)
+		{
+			WriteCoercedLiteral(statement.Value.Type, value);
+		}
+
 		protected virtual void WriteSwitchCaseBody(List<FuStatement> statements)
 		{
 			WriteStatements(statements);
@@ -8035,7 +8040,7 @@ namespace Fusion
 		{
 			foreach (FuExpr value in kase.Values) {
 				Write("case ");
-				WriteCoercedLiteral(statement.Value.Type, value);
+				WriteSwitchCaseValue(statement, value);
 				WriteCharLine(':');
 			}
 			this.Indent++;
@@ -17302,6 +17307,15 @@ namespace Fusion
 			}
 		}
 
+		static bool IsJavaEnum(FuEnum enu)
+		{
+			for (FuSymbol symbol = enu.First; symbol != null; symbol = symbol.Next) {
+				if (symbol is FuConst konst && !(konst.Value is FuImplicitEnumValue))
+					return false;
+			}
+			return true;
+		}
+
 		void WriteCollectionType(string name, FuType elementType)
 		{
 			Include("java.util." + name);
@@ -17349,7 +17363,7 @@ namespace Fusion
 				}
 				break;
 			case FuEnum enu:
-				Write(enu.Id == FuId.BoolType ? needClass ? "Boolean" : "boolean" : needClass ? "Integer" : "int");
+				Write(enu.Id == FuId.BoolType ? needClass ? "Boolean" : "boolean" : IsJavaEnum(enu) ? enu.Name : needClass ? "Integer" : "int");
 				break;
 			case FuClassType klass:
 				switch (klass.Class.Id) {
@@ -17516,6 +17530,21 @@ namespace Fusion
 			}
 			else
 				base.WriteCoercedLiteral(type, expr);
+		}
+
+		protected override void WriteRel(FuBinaryExpr expr, FuPriority parent, string op)
+		{
+			if (expr.Left.Type is FuEnum enu && IsJavaEnum(enu)) {
+				if (parent > FuPriority.CondAnd)
+					WriteChar('(');
+				WriteMethodCall(expr.Left, "compareTo", expr.Right);
+				Write(op);
+				WriteChar('0');
+				if (parent > FuPriority.CondAnd)
+					WriteChar(')');
+			}
+			else
+				base.WriteRel(expr, parent, op);
 		}
 
 		protected override void WriteAnd(FuBinaryExpr expr, FuPriority parent)
@@ -18107,6 +18136,14 @@ namespace Fusion
 				base.WriteSwitchValue(expr);
 		}
 
+		protected override void WriteSwitchCaseValue(FuSwitch statement, FuExpr value)
+		{
+			if (value is FuSymbolReference symbol && symbol.Symbol.Parent is FuEnum enu && IsJavaEnum(enu))
+				WriteUppercaseWithUnderscores(symbol.Name);
+			else
+				base.WriteSwitchCaseValue(statement, value);
+		}
+
 		bool WriteSwitchCaseVar(FuExpr expr)
 		{
 			expr.Accept(this, FuPriority.Argument);
@@ -18178,10 +18215,23 @@ namespace Fusion
 			WriteNewLine();
 			WriteDoc(enu.Documentation);
 			WritePublic(enu);
-			Write("interface ");
+			bool javaEnum = IsJavaEnum(enu);
+			Write(javaEnum ? "enum " : "interface ");
 			WriteLine(enu.Name);
 			OpenBlock();
-			enu.AcceptValues(this);
+			if (javaEnum) {
+				for (FuSymbol symbol = enu.GetFirstValue();;) {
+					WriteDoc(symbol.Documentation);
+					WriteUppercaseWithUnderscores(symbol.Name);
+					symbol = symbol.Next;
+					if (symbol == null)
+						break;
+					WriteCharLine(',');
+				}
+				WriteNewLine();
+			}
+			else
+				enu.AcceptValues(this);
 			CloseBlock();
 			CloseFile();
 		}

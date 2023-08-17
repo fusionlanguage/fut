@@ -1769,6 +1769,7 @@ protected:
 	virtual void writeEqualOperand(const FuExpr * expr, const FuExpr * other);
 	void writeEqualExpr(const FuExpr * left, const FuExpr * right, FuPriority parent, std::string_view op);
 	virtual void writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_);
+	virtual void writeRel(const FuBinaryExpr * expr, FuPriority parent, std::string_view op);
 	virtual void writeAnd(const FuBinaryExpr * expr, FuPriority parent);
 	virtual void writeAssignRight(const FuBinaryExpr * expr);
 	virtual void writeAssign(const FuBinaryExpr * expr, FuPriority parent);
@@ -1807,6 +1808,7 @@ protected:
 	void defineVar(const FuExpr * value);
 	virtual void writeSwitchCaseTypeVar(const FuExpr * value);
 	virtual void writeSwitchValue(const FuExpr * expr);
+	virtual void writeSwitchCaseValue(const FuSwitch * statement, const FuExpr * value);
 	virtual void writeSwitchCaseBody(const std::vector<std::shared_ptr<FuStatement>> * statements);
 	virtual void writeSwitchCase(const FuSwitch * statement, const FuCase * kase);
 	void startSwitch(const FuSwitch * statement);
@@ -1880,7 +1882,6 @@ private:
 	static const FuAggregateInitializer * getAggregateInitializer(const FuNamedValue * def);
 	void writeAggregateInitField(const FuExpr * obj, const FuExpr * item);
 	static bool isBitOp(FuPriority parent);
-	void writeRel(const FuBinaryExpr * expr, FuPriority parent, std::string_view op);
 	void startIfWhile(const FuExpr * expr);
 	void writeIf(const FuIf * statement);
 };
@@ -2407,6 +2408,7 @@ protected:
 	void writeResource(std::string_view name, int length) override;
 	void writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_) override;
 	void writeCoercedLiteral(const FuType * type, const FuExpr * expr) override;
+	void writeRel(const FuBinaryExpr * expr, FuPriority parent, std::string_view op) override;
 	void writeAnd(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeStringLength(const FuExpr * expr) override;
 	void writeCharAt(const FuBinaryExpr * expr) override;
@@ -2422,6 +2424,7 @@ protected:
 	void defineIsVar(const FuBinaryExpr * binary) override;
 	void writeAssert(const FuAssert * statement) override;
 	void writeSwitchValue(const FuExpr * expr) override;
+	void writeSwitchCaseValue(const FuSwitch * statement, const FuExpr * value) override;
 	void writeSwitchCase(const FuSwitch * statement, const FuCase * kase) override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeConst(const FuConst * konst) override;
@@ -2444,6 +2447,7 @@ private:
 	void writeToString(const FuExpr * expr, FuPriority parent);
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeVisibility(FuVisibility visibility);
+	static bool isJavaEnum(const FuEnum * enu);
 	void writeCollectionType(std::string_view name, const FuType * elementType);
 	void writeDictType(std::string_view name, const FuClassType * dict);
 	void writeJavaType(const FuType * type, bool promote, bool needClass);
