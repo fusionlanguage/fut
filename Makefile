@@ -2,7 +2,7 @@ prefix := /usr/local
 bindir = $(prefix)/bin
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
 FUT_HOST = cpp
-CXXFLAGS = -Wall -O2
+CXXFLAGS = -Wall -Wno-sign-compare -O2
 DOTNET_BASE_DIR := $(shell dotnet --info 2>/dev/null | sed -n 's/ Base Path:   //p')
 ifdef DOTNET_BASE_DIR
 DOTNET_REF_DIR := $(shell realpath '$(DOTNET_BASE_DIR)../../packs/Microsoft.NETCore.App.Ref'/*/ref/net* | head -1)
