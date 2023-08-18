@@ -1372,7 +1372,7 @@ int FuLiteralString::getAsciiAt(int i) const
 
 int FuLiteralString::getOneAscii() const
 {
-	switch (this->value.length()) {
+	switch (std::ssize(this->value)) {
 	case 1:
 		{
 			int c = this->value[0];
@@ -8621,7 +8621,7 @@ void GenCCpp::writeClass(const FuClass * klass, const FuProgram * program)
 
 std::string GenCCpp::changeExtension(std::string_view path, std::string_view ext)
 {
-	int extIndex = path.length();
+	int extIndex = std::ssize(path);
 	for (int i = extIndex; --i >= 0 && path[i] != '/' && path[i] != '\\';) {
 		if (path[i] == '.') {
 			extIndex = i;
@@ -8640,7 +8640,7 @@ void GenCCpp::createHeaderFile(std::string_view headerExt)
 
 std::string GenCCpp::getFilenameWithoutExtension(std::string_view path)
 {
-	int pathLength = path.length();
+	int pathLength = std::ssize(path);
 	int extIndex = pathLength;
 	int i = pathLength;
 	while (--i >= 0 && path[i] != '/' && path[i] != '\\') {
@@ -10000,7 +10000,7 @@ void GenC::writeSubstringEqual(const FuCallExpr * call, std::string_view literal
 	write(", ");
 	visitLiteralString(literal);
 	write(", ");
-	visitLiteralLong(literal.length());
+	visitLiteralLong(std::ssize(literal));
 	writeChar(')');
 	write(getEqOp(not_));
 	writeChar('0');
@@ -13627,8 +13627,9 @@ void GenCpp::writeSelectValues(const FuType * type, const FuSelectExpr * expr)
 
 void GenCpp::writeStringLength(const FuExpr * expr)
 {
-	writeNotRawStringLiteral(expr, FuPriority::primary);
-	write(".length()");
+	write("std::ssize(");
+	writeNotRawStringLiteral(expr, FuPriority::argument);
+	writeChar(')');
 }
 
 void GenCpp::writeMatchProperty(const FuSymbolReference * expr, std::string_view name)
@@ -17901,7 +17902,7 @@ void GenJsNoModule::writeInterpolatedLiteral(std::string_view s)
 	int i = 0;
 	for (int c : s) {
 		i++;
-		if (c == '`' || (c == '$' && i < s.length() && s[i] == '{'))
+		if (c == '`' || (c == '$' && i < std::ssize(s) && s[i] == '{'))
 			writeChar('\\');
 		writeChar(c);
 	}

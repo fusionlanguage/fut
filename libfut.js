@@ -14415,8 +14415,9 @@ export class GenCpp extends GenCCpp
 
 	writeStringLength(expr)
 	{
-		this.#writeNotRawStringLiteral(expr, FuPriority.PRIMARY);
-		this.write(".length()");
+		this.write("std::ssize(");
+		this.#writeNotRawStringLiteral(expr, FuPriority.ARGUMENT);
+		this.writeChar(41);
 	}
 
 	#writeMatchProperty(expr, name)

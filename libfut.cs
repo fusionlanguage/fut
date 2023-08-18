@@ -14028,8 +14028,9 @@ namespace Fusion
 
 		protected override void WriteStringLength(FuExpr expr)
 		{
-			WriteNotRawStringLiteral(expr, FuPriority.Primary);
-			Write(".length()");
+			Write("std::ssize(");
+			WriteNotRawStringLiteral(expr, FuPriority.Argument);
+			WriteChar(')');
 		}
 
 		void WriteMatchProperty(FuSymbolReference expr, string name)
