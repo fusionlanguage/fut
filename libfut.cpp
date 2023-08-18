@@ -964,7 +964,7 @@ void FuLexer::expectEndOfLine(std::string_view directive)
 
 bool FuLexer::popPreElse(std::string_view directive)
 {
-	if (this->preElseStack.size() == 0) {
+	if (std::ssize(this->preElseStack) == 0) {
 		reportError(std::format("'{}' with no matching '#if'", directive));
 		return false;
 	}
@@ -1020,7 +1020,7 @@ FuToken FuLexer::readToken()
 		bool matched;
 		switch (token) {
 		case FuToken::endOfFile:
-			if (this->preElseStack.size() != 0)
+			if (std::ssize(this->preElseStack) != 0)
 				reportError("Expected '#endif', got end-of-file");
 			return FuToken::endOfFile;
 		case FuToken::preIf:
@@ -1143,7 +1143,7 @@ std::string FuSymbol::toString() const
 
 int FuScope::count() const
 {
-	return this->dict.size();
+	return std::ssize(this->dict);
 }
 
 FuVar * FuScope::firstParameter() const
@@ -1739,7 +1739,7 @@ bool FuSwitch::hasWhen() const
 
 int FuSwitch::lengthWithoutTrailingBreak(const std::vector<std::shared_ptr<FuStatement>> * body)
 {
-	int length = body->size();
+	int length = std::ssize(*body);
 	if (length > 0 && dynamic_cast<const FuBreak *>((*body)[length - 1].get()))
 		length--;
 	return length;
@@ -2699,7 +2699,7 @@ std::shared_ptr<FuSystem> FuSystem::new_()
 
 bool FuParser::docParseLine(FuDocPara * para)
 {
-	if (para->children.size() > 0)
+	if (std::ssize(para->children) > 0)
 		para->children.push_back(std::make_shared<FuDocLine>());
 	this->lexemeOffset = this->charOffset;
 	for (int lastNonWhitespace = 0;;) {
@@ -3635,7 +3635,7 @@ std::shared_ptr<FuSwitch> FuParser::parseSwitch()
 			break;
 		}
 	}
-	if (result->cases.size() == 0)
+	if (std::ssize(result->cases) == 0)
 		reportError("Switch with no cases");
 	if (eat(FuToken::default_)) {
 		expect(FuToken::colon);
@@ -3833,7 +3833,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallT
 					reportError("Constructor in a static class");
 				if (callType != FuCallType::normal)
 					reportError(std::format("Constructor cannot be {}", callTypeToString(callType)));
-				if (call->arguments.size() != 0)
+				if (std::ssize(call->arguments) != 0)
 					reportError("Constructor parameters not supported");
 				if (klass->constructor != nullptr)
 					reportError(std::format("Duplicate constructor, already defined in line {}", klass->constructor->line));
@@ -4052,7 +4052,7 @@ std::shared_ptr<FuExpr> FuSema::visitInterpolatedString(std::shared_ptr<FuInterp
 {
 	int partsCount = 0;
 	std::string s{""};
-	for (int partsIndex = 0; partsIndex < expr->parts.size(); partsIndex++) {
+	for (int partsIndex = 0; partsIndex < std::ssize(expr->parts); partsIndex++) {
 		const FuInterpolatedPart * part = &expr->parts[partsIndex];
 		s += part->prefix;
 		std::shared_ptr<FuExpr> arg = visitExpr(part->argument);
@@ -4117,7 +4117,7 @@ std::shared_ptr<FuExpr> FuSema::visitInterpolatedString(std::shared_ptr<FuInterp
 	if (partsCount == 0)
 		return this->program->system->newLiteralString(s, expr->line);
 	expr->type = this->program->system->stringStorageType;
-	expr->parts.erase(expr->parts.begin() + partsCount, expr->parts.begin() + partsCount + (expr->parts.size() - partsCount));
+	expr->parts.erase(expr->parts.begin() + partsCount, expr->parts.begin() + partsCount + (std::ssize(expr->parts) - partsCount));
 	expr->suffix = s;
 	return expr;
 }
@@ -4533,11 +4533,11 @@ std::shared_ptr<FuInterpolatedString> FuSema::concatenate(const FuInterpolatedSt
 	result->line = left->line;
 	result->type = this->program->system->stringStorageType;
 	result->parts.insert(result->parts.end(), left->parts.begin(), left->parts.end());
-	if (right->parts.size() == 0)
+	if (std::ssize(right->parts) == 0)
 		result->suffix = left->suffix + right->suffix;
 	else {
 		result->parts.insert(result->parts.end(), right->parts.begin(), right->parts.end());
-		FuInterpolatedPart * middle = &result->parts[left->parts.size()];
+		FuInterpolatedPart * middle = &result->parts[std::ssize(left->parts)];
 		middle->prefix = left->suffix + middle->prefix;
 		result->suffix = right->suffix;
 	}
@@ -5279,7 +5279,7 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 			if (type == nullptr)
 				continue;
 		}
-		if (i >= arguments->size()) {
+		if (i >= std::ssize(*arguments)) {
 			if (param->value != nullptr)
 				break;
 			return poisonError(expr.get(), std::format("Too few arguments for '{}'", method->name));
@@ -5296,7 +5296,7 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 		else
 			coerce(arg, type.get());
 	}
-	if (i < arguments->size())
+	if (i < std::ssize(*arguments))
 		return poisonError((*arguments)[i].get(), std::format("Too many arguments for '{}'", method->name));
 	if (method->throws) {
 		if (this->currentMethod == nullptr)
@@ -5310,7 +5310,7 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 		this->currentPureMethods.insert(method);
 		i = 0;
 		for (const FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
-			if (i < arguments->size())
+			if (i < std::ssize(*arguments))
 				this->currentPureArguments[param] = (*arguments)[i++];
 			else
 				this->currentPureArguments[param] = param->value;
@@ -5324,7 +5324,7 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 	}
 	if (this->currentMethod != nullptr)
 		this->currentMethod->calls.insert(method);
-	if (this->currentPureArguments.size() == 0) {
+	if (std::ssize(this->currentPureArguments) == 0) {
 		expr->method = symbol;
 		std::shared_ptr<FuType> type = method->type;
 		const FuClassType * generic;
@@ -5337,9 +5337,9 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 
 std::shared_ptr<FuExpr> FuSema::visitCallExpr(std::shared_ptr<FuCallExpr> expr)
 {
-	if (this->currentPureArguments.size() == 0) {
+	if (std::ssize(this->currentPureArguments) == 0) {
 		std::vector<std::shared_ptr<FuExpr>> * arguments = &expr->arguments;
-		for (int i = 0; i < arguments->size(); i++) {
+		for (int i = 0; i < std::ssize(*arguments); i++) {
 			if (!dynamic_cast<const FuLambdaExpr *>((*arguments)[i].get()))
 				(*arguments)[i] = visitExpr((*arguments)[i]);
 		}
@@ -5397,7 +5397,7 @@ std::shared_ptr<FuExpr> FuSema::visitExpr(std::shared_ptr<FuExpr> expr)
 {
 	if (FuAggregateInitializer *aggregate = dynamic_cast<FuAggregateInitializer *>(expr.get())) {
 		std::vector<std::shared_ptr<FuExpr>> * items = &aggregate->items;
-		for (int i = 0; i < items->size(); i++)
+		for (int i = 0; i < std::ssize(*items); i++)
 			(*items)[i] = visitExpr((*items)[i]);
 		return expr;
 	}
@@ -5462,13 +5462,13 @@ void FuSema::fillGenericClass(FuClassType * result, const FuClass * klass, const
 	std::vector<std::shared_ptr<FuType>> typeArgs;
 	for (const std::shared_ptr<FuExpr> &typeArgExpr : typeArgExprs->items)
 		typeArgs.push_back(toType(typeArgExpr, false));
-	if (typeArgs.size() != klass->typeParameterCount) {
-		reportError(result, std::format("Expected {} type arguments for {}, got {}", klass->typeParameterCount, klass->name, typeArgs.size()));
+	if (std::ssize(typeArgs) != klass->typeParameterCount) {
+		reportError(result, std::format("Expected {} type arguments for {}, got {}", klass->typeParameterCount, klass->name, std::ssize(typeArgs)));
 		return;
 	}
 	result->class_ = klass;
 	result->typeArg0 = typeArgs[0];
-	if (typeArgs.size() == 2)
+	if (std::ssize(typeArgs) == 2)
 		result->typeArg1 = typeArgs[1];
 }
 
@@ -5509,7 +5509,7 @@ std::shared_ptr<FuType> FuSema::toBaseType(const FuExpr * expr, FuToken ptrModif
 	}
 	else if (const FuCallExpr *call = dynamic_cast<const FuCallExpr *>(expr)) {
 		expectNoPtrModifier(expr, ptrModifier, nullable);
-		if (call->arguments.size() != 0)
+		if (std::ssize(call->arguments) != 0)
 			reportError(call, "Expected empty parentheses for storage type");
 		if (const FuAggregateInitializer *typeArgExprs2 = dynamic_cast<const FuAggregateInitializer *>(call->method->left.get())) {
 			std::shared_ptr<FuStorageType> storage = std::make_shared<FuStorageType>();
@@ -5831,7 +5831,7 @@ void FuSema::visitSwitch(FuSwitch * statement)
 	}
 	statement->setCompletesNormally(false);
 	for (FuCase &kase : statement->cases) {
-		for (int i = 0; i < kase.values.size(); i++) {
+		for (int i = 0; i < std::ssize(kase.values); i++) {
 			const FuClassType * switchPtr;
 			if ((switchPtr = dynamic_cast<const FuClassType *>(statement->value->type.get())) && switchPtr->class_->id != FuId::stringClass) {
 				std::shared_ptr<FuExpr> value = kase.values[i];
@@ -5879,7 +5879,7 @@ void FuSema::visitSwitch(FuSwitch * statement)
 		if (resolveStatements(&kase.body))
 			reportError(kase.body.back().get(), "Case must end with break, continue, return or throw");
 	}
-	if (statement->defaultBody.size() > 0) {
+	if (std::ssize(statement->defaultBody) > 0) {
 		bool reachable = resolveStatements(&statement->defaultBody);
 		if (reachable)
 			reportError(statement->defaultBody.back().get(), "Default must end with break, continue, return or throw");
@@ -5981,8 +5981,8 @@ void FuSema::resolveConst(FuConst * konst)
 		if (const FuClassType *array = dynamic_cast<const FuClassType *>(konst->type.get())) {
 			std::shared_ptr<FuType> elementType = array->getElementType();
 			if (const FuArrayStorageType *arrayStg = dynamic_cast<const FuArrayStorageType *>(array)) {
-				if (arrayStg->length != coll->items.size())
-					reportError(konst, std::format("Declared {} elements, initialized {}", arrayStg->length, coll->items.size()));
+				if (arrayStg->length != std::ssize(coll->items))
+					reportError(konst, std::format("Declared {} elements, initialized {}", arrayStg->length, std::ssize(coll->items)));
 			}
 			else if (dynamic_cast<const FuReadWriteClassType *>(array))
 				reportError(konst, "Invalid constant type");
@@ -5990,7 +5990,7 @@ void FuSema::resolveConst(FuConst * konst)
 				std::shared_ptr<FuArrayStorageType> futemp0 = std::make_shared<FuArrayStorageType>();
 				futemp0->class_ = this->program->system->arrayStorageClass.get();
 				futemp0->typeArg0 = elementType;
-				futemp0->length = coll->items.size();
+				futemp0->length = std::ssize(coll->items);
 				konst->type = futemp0;
 			}
 			coll->type = konst->type;
@@ -6535,9 +6535,9 @@ void GenBase::writeContent(const FuCodeDoc * doc)
 	startDocLine();
 	writeDocPara(&doc->summary, false);
 	writeNewLine();
-	if (doc->details.size() > 0) {
+	if (std::ssize(doc->details) > 0) {
 		startDocLine();
-		if (doc->details.size() == 1)
+		if (std::ssize(doc->details) == 1)
 			writeDocBlock(doc->details[0].get(), false);
 		else {
 			for (const std::shared_ptr<FuDocBlock> &block : doc->details)
@@ -6831,7 +6831,7 @@ void GenBase::writeCoercedLiteral(const FuType * type, const FuExpr * expr)
 
 void GenBase::writeCoercedLiterals(const FuType * type, const std::vector<std::shared_ptr<FuExpr>> * exprs)
 {
-	for (int i = 0; i < exprs->size(); i++) {
+	for (int i = 0; i < std::ssize(*exprs); i++) {
 		writeComma(i);
 		writeCoercedLiteral(type, (*exprs)[i].get());
 	}
@@ -7406,7 +7406,7 @@ void GenBase::writeEnumHasFlag(const FuExpr * obj, const std::vector<std::shared
 void GenBase::writeTryParseRadix(const std::vector<std::shared_ptr<FuExpr>> * args)
 {
 	write(", ");
-	if (args->size() == 2)
+	if (std::ssize(*args) == 2)
 		(*args)[1]->accept(this, FuPriority::argument);
 	else
 		write("10");
@@ -7419,7 +7419,7 @@ void GenBase::writeListAdd(const FuExpr * obj, std::string_view method, const st
 	write(method);
 	writeChar('(');
 	const FuType * elementType = obj->type->asClassType()->getElementType().get();
-	if (args->size() == 0)
+	if (std::ssize(*args) == 0)
 		writeNewStorage(elementType);
 	else
 		writeNotPromoted(elementType, (*args)[0].get());
@@ -7435,7 +7435,7 @@ void GenBase::writeListInsert(const FuExpr * obj, std::string_view method, const
 	(*args)[0]->accept(this, FuPriority::argument);
 	write(separator);
 	const FuType * elementType = obj->type->asClassType()->getElementType().get();
-	if (args->size() == 1)
+	if (std::ssize(*args) == 1)
 		writeNewStorage(elementType);
 	else
 		writeNotPromoted(elementType, (*args)[1].get());
@@ -7544,7 +7544,7 @@ void GenBase::defineObjectLiteralTemporary(const FuUnaryExpr * expr)
 		ensureChildBlock();
 		int id = [](const std::vector<const FuExpr *> &v, const FuExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, expr->type.get());
 		if (id < 0) {
-			id = this->currentTemporaries.size();
+			id = std::ssize(this->currentTemporaries);
 			startTemporaryVar(expr->type.get());
 			this->currentTemporaries.push_back(expr);
 		}
@@ -7622,7 +7622,7 @@ void GenBase::cleanupTemporary(int i, const FuExpr * temp)
 
 void GenBase::cleanupTemporaries()
 {
-	for (int i = this->currentTemporaries.size(); --i >= 0;) {
+	for (int i = std::ssize(this->currentTemporaries); --i >= 0;) {
 		const FuExpr * temp = this->currentTemporaries[i];
 		if (!dynamic_cast<const FuType *>(temp)) {
 			cleanupTemporary(i, temp);
@@ -7662,7 +7662,7 @@ void GenBase::writeFirstStatements(const std::vector<std::shared_ptr<FuStatement
 
 void GenBase::writeStatements(const std::vector<std::shared_ptr<FuStatement>> * statements)
 {
-	writeFirstStatements(statements, statements->size());
+	writeFirstStatements(statements, std::ssize(*statements));
 }
 
 void GenBase::cleanupBlock(const FuBlock * statement)
@@ -7677,10 +7677,10 @@ void GenBase::visitBlock(const FuBlock * statement)
 		writeChar(' ');
 	}
 	openBlock();
-	int temporariesCount = this->currentTemporaries.size();
+	int temporariesCount = std::ssize(this->currentTemporaries);
 	writeStatements(&statement->statements);
 	cleanupBlock(statement);
-	this->currentTemporaries.erase(this->currentTemporaries.begin() + temporariesCount, this->currentTemporaries.begin() + temporariesCount + (this->currentTemporaries.size() - temporariesCount));
+	this->currentTemporaries.erase(this->currentTemporaries.begin() + temporariesCount, this->currentTemporaries.begin() + temporariesCount + (std::ssize(this->currentTemporaries) - temporariesCount));
 	closeBlock();
 }
 
@@ -7909,7 +7909,7 @@ void GenBase::writeSwitchAsIfs(const FuSwitch * statement, bool doWhile)
 	}
 	std::string_view op = "if (";
 	for (const FuCase &kase : statement->cases) {
-		FuPriority parent = kase.values.size() == 1 ? FuPriority::argument : FuPriority::condOr;
+		FuPriority parent = std::ssize(kase.values) == 1 ? FuPriority::argument : FuPriority::condOr;
 		for (const std::shared_ptr<FuExpr> &value : kase.values) {
 			write(op);
 			writeSwitchCaseCond(statement, value.get(), parent);
@@ -7929,7 +7929,7 @@ void GenBase::visitSwitch(const FuSwitch * statement)
 {
 	writeTemporaries(statement->value.get());
 	startSwitch(statement);
-	if (statement->defaultBody.size() > 0) {
+	if (std::ssize(statement->defaultBody) > 0) {
 		writeLine("default:");
 		this->indent++;
 		writeSwitchCaseBody(&statement->defaultBody);
@@ -8410,7 +8410,7 @@ void GenCCppD::visitBreak(const FuBreak * statement)
 void GenCCppD::writeSwitchAsIfsWithGoto(const FuSwitch * statement)
 {
 	if (std::any_of(statement->cases.begin(), statement->cases.end(), [](const FuCase &kase) { return FuSwitch::hasEarlyBreakAndContinue(&kase.body); }) || FuSwitch::hasEarlyBreakAndContinue(&statement->defaultBody)) {
-		int gotoId = this->switchesWithGoto.size();
+		int gotoId = std::ssize(this->switchesWithGoto);
 		this->switchesWithGoto.push_back(statement);
 		writeSwitchAsIfs(statement, false);
 		write("fuafterswitch");
@@ -8512,7 +8512,7 @@ const FuCallExpr * GenCCpp::isStringSubstring(const FuExpr * expr)
 {
 	if (const FuCallExpr *call = dynamic_cast<const FuCallExpr *>(expr)) {
 		FuId id = call->method->symbol->id;
-		if ((id == FuId::stringSubstring && call->arguments.size() == 2) || id == FuId::uTF8GetString)
+		if ((id == FuId::stringSubstring && std::ssize(call->arguments) == 2) || id == FuId::uTF8GetString)
 			return call;
 	}
 	return nullptr;
@@ -9238,7 +9238,7 @@ bool GenC::isNewString(const FuExpr * expr)
 {
 	const FuBinaryExpr * binary;
 	const FuCallExpr * call;
-	return dynamic_cast<const FuInterpolatedString *>(expr) || ((binary = dynamic_cast<const FuBinaryExpr *>(expr)) && expr->type->id == FuId::stringStorageType && binary->op == FuToken::plus) || ((call = dynamic_cast<const FuCallExpr *>(expr)) && expr->type->id == FuId::stringStorageType && (call->method->symbol->id != FuId::stringSubstring || call->arguments.size() == 2));
+	return dynamic_cast<const FuInterpolatedString *>(expr) || ((binary = dynamic_cast<const FuBinaryExpr *>(expr)) && expr->type->id == FuId::stringStorageType && binary->op == FuToken::plus) || ((call = dynamic_cast<const FuCallExpr *>(expr)) && expr->type->id == FuId::stringStorageType && (call->method->symbol->id != FuId::stringSubstring || std::ssize(call->arguments) == 2));
 }
 
 void GenC::writeStringStorageValue(const FuExpr * expr)
@@ -9422,7 +9422,7 @@ int GenC::writeCTemporary(const FuType * type, const FuExpr * expr)
 	bool assign = expr != nullptr || ((klass = dynamic_cast<const FuClassType *>(type)) && (klass->class_->id == FuId::listClass || klass->class_->id == FuId::dictionaryClass || klass->class_->id == FuId::sortedDictionaryClass));
 	int id = [](const std::vector<const FuExpr *> &v, const FuExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, type);
 	if (id < 0) {
-		id = this->currentTemporaries.size();
+		id = std::ssize(this->currentTemporaries);
 		startDefinition(type, false, true);
 		write("futemp");
 		visitLiteralLong(id);
@@ -9778,7 +9778,7 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 
 void GenC::writeDestructAll(const FuVar * exceptVar)
 {
-	for (int i = this->varsToDestruct.size(); --i >= 0;) {
+	for (int i = std::ssize(this->varsToDestruct); --i >= 0;) {
 		const FuVar * def = this->varsToDestruct[i];
 		if (def != exceptVar)
 			writeDestruct(def);
@@ -9823,7 +9823,7 @@ void GenC::endForwardThrow(const FuMethod * throwingMethod)
 		break;
 	}
 	writeChar(')');
-	if (this->varsToDestruct.size() > 0) {
+	if (std::ssize(this->varsToDestruct) > 0) {
 		writeChar(' ');
 		openBlock();
 		writeThrow();
@@ -10101,7 +10101,7 @@ void GenC::writeSizeofCompare(const FuType * elementType)
 void GenC::writeArrayFill(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
 	write("for (int _i = 0; _i < ");
-	if (args->size() == 1)
+	if (std::ssize(*args) == 1)
 		writeArrayStorageLength(obj);
 	else
 		(*args)[2]->accept(this, FuPriority::rel);
@@ -10109,7 +10109,7 @@ void GenC::writeArrayFill(const FuExpr * obj, const std::vector<std::shared_ptr<
 	writeChar('\t');
 	obj->accept(this, FuPriority::primary);
 	writeChar('[');
-	if (args->size() > 1)
+	if (std::ssize(*args) > 1)
 		startAdd((*args)[1].get());
 	write("_i] = ");
 	(*args)[0]->accept(this, FuPriority::argument);
@@ -10155,7 +10155,7 @@ void GenC::writeArgsAndRightParenthesis(const FuMethod * method, const std::vect
 	for (const FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
 		if (i > 0 || method->callType != FuCallType::static_)
 			write(", ");
-		if (i >= args->size())
+		if (i >= std::ssize(*args))
 			param->value->accept(this, FuPriority::argument);
 		else
 			writeCoerced(param->type.get(), (*args)[i].get(), FuPriority::argument);
@@ -10191,7 +10191,7 @@ void GenC::writePrintfNotInterpolated(const std::vector<std::shared_ptr<FuExpr>>
 
 void GenC::writeTextWriterWrite(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine)
 {
-	if (args->size() == 0) {
+	if (std::ssize(*args) == 0) {
 		write("putc('\\n', ");
 		obj->accept(this, FuPriority::argument);
 		writeChar(')');
@@ -10234,7 +10234,7 @@ void GenC::writeTextWriterWrite(const FuExpr * obj, const std::vector<std::share
 void GenC::writeConsoleWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine)
 {
 	include("stdio.h");
-	if (args->size() == 0)
+	if (std::ssize(*args) == 0)
 		write("putchar('\\n')");
 	else if (const FuInterpolatedString *interpolated = dynamic_cast<const FuInterpolatedString *>((*args)[0].get())) {
 		write("printf(");
@@ -10349,7 +10349,7 @@ void GenC::writeTryParse(const FuExpr * obj, const std::vector<std::shared_ptr<F
 
 void GenC::writeStringSubstring(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
-	if (args->size() == 1) {
+	if (std::ssize(*args) == 1) {
 		if (parent > FuPriority::add)
 			writeChar('(');
 		writeAdd(obj, (*args)[0].get());
@@ -10496,12 +10496,12 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 			write(" *) bsearch(&");
 			(*args)[0]->accept(this, FuPriority::primary);
 			write(", ");
-			if (args->size() == 1)
+			if (std::ssize(*args) == 1)
 				writeArrayPtr(obj, FuPriority::argument);
 			else
 				writeArrayPtrAdd(obj, (*args)[1].get());
 			write(", ");
-			if (args->size() == 1)
+			if (std::ssize(*args) == 1)
 				writeArrayStorageLength(obj);
 			else
 				(*args)[2]->accept(this, FuPriority::argument);
@@ -10551,7 +10551,7 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 			if ((literal = dynamic_cast<const FuLiteral *>((*args)[0].get())) && literal->isDefaultValue()) {
 				include("string.h");
 				write("memset(");
-				if (args->size() == 1) {
+				if (std::ssize(*args) == 1) {
 					obj->accept(this, FuPriority::argument);
 					write(", 0, sizeof(");
 					obj->accept(this, FuPriority::argument);
@@ -11012,7 +11012,7 @@ void GenC::visitLambdaExpr(const FuLambdaExpr * expr)
 
 void GenC::writeDestructLoopOrSwitch(const FuCondCompletionStatement * loopOrSwitch)
 {
-	for (int i = this->varsToDestruct.size(); --i >= 0;) {
+	for (int i = std::ssize(this->varsToDestruct); --i >= 0;) {
 		const FuVar * def = this->varsToDestruct[i];
 		if (!loopOrSwitch->encloses(def))
 			break;
@@ -11022,12 +11022,12 @@ void GenC::writeDestructLoopOrSwitch(const FuCondCompletionStatement * loopOrSwi
 
 void GenC::trimVarsToDestruct(int i)
 {
-	this->varsToDestruct.erase(this->varsToDestruct.begin() + i, this->varsToDestruct.begin() + i + (this->varsToDestruct.size() - i));
+	this->varsToDestruct.erase(this->varsToDestruct.begin() + i, this->varsToDestruct.begin() + i + (std::ssize(this->varsToDestruct) - i));
 }
 
 void GenC::cleanupBlock(const FuBlock * statement)
 {
-	int i = this->varsToDestruct.size();
+	int i = std::ssize(this->varsToDestruct);
 	for (; i > 0; i--) {
 		const FuVar * def = this->varsToDestruct[i - 1];
 		if (def->parent != statement)
@@ -11224,7 +11224,7 @@ void GenC::visitReturn(const FuReturn * statement)
 		writeDestructAll();
 		writeLine(this->currentMethod->throws ? "return true;" : "return;");
 	}
-	else if (dynamic_cast<const FuLiteral *>(statement->value.get()) || (this->varsToDestruct.size() == 0 && !hasTemporariesToDestruct(statement->value.get()))) {
+	else if (dynamic_cast<const FuLiteral *>(statement->value.get()) || (std::ssize(this->varsToDestruct) == 0 && !hasTemporariesToDestruct(statement->value.get()))) {
 		writeDestructAll();
 		writeCTemporaries(statement->value.get());
 		GenBase::visitReturn(statement);
@@ -11264,7 +11264,7 @@ void GenC::writeSwitchCaseBody(const std::vector<std::shared_ptr<FuStatement>> *
 	const FuConst * konst;
 	if (dynamic_cast<const FuVar *>((*statements)[0].get()) || ((konst = dynamic_cast<const FuConst *>((*statements)[0].get())) && dynamic_cast<const FuArrayStorageType *>(konst->type.get())))
 		writeCharLine(';');
-	int varsToDestructCount = this->varsToDestruct.size();
+	int varsToDestructCount = std::ssize(this->varsToDestruct);
 	writeStatements(statements);
 	trimVarsToDestruct(varsToDestructCount);
 }
@@ -11284,7 +11284,7 @@ void GenC::visitThrow(const FuThrow * statement)
 
 bool GenC::tryWriteCallAndReturn(const std::vector<std::shared_ptr<FuStatement>> * statements, int lastCallIndex, const FuExpr * returnValue)
 {
-	if (this->varsToDestruct.size() > 0)
+	if (std::ssize(this->varsToDestruct) > 0)
 		return false;
 	for (int i = 0; i < lastCallIndex; i++) {
 		const FuVar * def;
@@ -11329,7 +11329,7 @@ bool GenC::tryWriteCallAndReturn(const std::vector<std::shared_ptr<FuStatement>>
 
 void GenC::writeStatements(const std::vector<std::shared_ptr<FuStatement>> * statements)
 {
-	int i = statements->size() - 2;
+	int i = std::ssize(*statements) - 2;
 	const FuReturn * ret;
 	if (i >= 0 && (ret = dynamic_cast<const FuReturn *>((*statements)[i + 1].get())) && tryWriteCallAndReturn(statements, i, ret->value.get()))
 		return;
@@ -11719,7 +11719,7 @@ void GenC::writeMethod(const FuMethod * method)
 		if (!block->completesNormally())
 			writeStatements(statements);
 		else if (method->throws && method->type->id == FuId::voidType) {
-			if (statements->size() == 0 || !tryWriteCallAndReturn(statements, statements->size() - 1, nullptr)) {
+			if (std::ssize(*statements) == 0 || !tryWriteCallAndReturn(statements, std::ssize(*statements) - 1, nullptr)) {
 				writeStatements(statements);
 				writeDestructAll();
 				writeLine("return true;");
@@ -12041,7 +12041,7 @@ void GenC::writeLibrary()
 
 void GenC::writeResources(const std::map<std::string, std::vector<uint8_t>> * resources)
 {
-	if (resources->size() == 0)
+	if (std::ssize(*resources) == 0)
 		return;
 	writeNewLine();
 	for (const auto &[name, content] : *resources) {
@@ -12050,7 +12050,7 @@ void GenC::writeResources(const std::map<std::string, std::vector<uint8_t>> * re
 		writeChar(' ');
 		writeResource(name, -1);
 		writeChar('[');
-		visitLiteralLong(content.size());
+		visitLiteralLong(std::ssize(content));
 		writeLine("] = {");
 		writeChar('\t');
 		writeBytes(&content);
@@ -12252,7 +12252,7 @@ void GenCl::writeStringLength(const FuExpr * expr)
 void GenCl::writeConsoleWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine)
 {
 	write("printf(");
-	if (args->size() == 0)
+	if (std::ssize(*args) == 0)
 		write("\"\\n\")");
 	else if (const FuInterpolatedString *interpolated = dynamic_cast<const FuInterpolatedString *>((*args)[0].get()))
 		writePrintf(interpolated, newLine);
@@ -12928,7 +12928,7 @@ void GenCpp::writeRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int a
 void GenCpp::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine)
 {
 	include("iostream");
-	if (args->size() == 1) {
+	if (std::ssize(*args) == 1) {
 		if (const FuInterpolatedString *interpolated = dynamic_cast<const FuInterpolatedString *>((*args)[0].get())) {
 			bool uppercase = false;
 			bool hex = false;
@@ -13130,7 +13130,7 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		if (parent > FuPriority::add)
 			writeChar('(');
 		write("std::lower_bound(");
-		if (args->size() == 1)
+		if (std::ssize(*args) == 1)
 			writeBeginEnd(obj);
 		else
 			writePtrRange(obj, (*args)[1].get(), (*args)[2].get());
@@ -13195,7 +13195,7 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		break;
 	case FuId::listAdd:
 		startMethodCall(obj);
-		if (args->size() == 0)
+		if (std::ssize(*args) == 0)
 			write("emplace_back()");
 		else {
 			write("push_back(");
@@ -13235,7 +13235,7 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		break;
 	case FuId::listInsert:
 		startMethodCall(obj);
-		if (args->size() == 1) {
+		if (std::ssize(*args) == 1) {
 			write("emplace(");
 			writeArrayPtrAdd(obj, (*args)[0].get());
 		}
@@ -13652,9 +13652,9 @@ void GenCpp::visitSymbolReference(const FuSymbolReference * expr, FuPriority par
 	case FuId::dictionaryCount:
 	case FuId::sortedDictionaryCount:
 	case FuId::orderedDictionaryCount:
-		expr->left->accept(this, FuPriority::primary);
-		writeMemberOp(expr->left.get(), expr);
-		write("size()");
+		write("std::ssize(");
+		writeCollectionObject(expr->left.get(), FuPriority::argument);
+		writeChar(')');
 		break;
 	case FuId::matchStart:
 		writeMatchProperty(expr, "position");
@@ -14139,7 +14139,7 @@ void GenCpp::writeMethod(const FuMethod * method)
 
 void GenCpp::writeResources(const std::map<std::string, std::vector<uint8_t>> * resources, bool define)
 {
-	if (resources->size() == 0)
+	if (std::ssize(*resources) == 0)
 		return;
 	writeNewLine();
 	writeLine("namespace");
@@ -14152,7 +14152,7 @@ void GenCpp::writeResources(const std::map<std::string, std::vector<uint8_t>> * 
 		include("array");
 		include("cstdint");
 		write("const std::array<uint8_t, ");
-		visitLiteralLong(content.size());
+		visitLiteralLong(std::ssize(content));
 		write("> ");
 		writeResourceName(name);
 		if (define) {
@@ -14302,9 +14302,9 @@ void GenCs::writeDoc(const FuCodeDoc * doc)
 	write("/// <summary>");
 	writeDocPara(&doc->summary, false);
 	writeLine("</summary>");
-	if (doc->details.size() > 0) {
+	if (std::ssize(doc->details) > 0) {
 		write("/// <remarks>");
-		if (doc->details.size() == 1)
+		if (std::ssize(doc->details) == 1)
 			writeDocBlock(doc->details[0].get(), false);
 		else {
 			for (const std::shared_ptr<FuDocBlock> &block : doc->details)
@@ -14630,7 +14630,7 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		write(obj->type->name);
 		write(".TryParse(");
 		(*args)[0]->accept(this, FuPriority::argument);
-		if (args->size() == 2) {
+		if (std::ssize(*args) == 2) {
 			const FuLiteralLong * radix;
 			if (!(radix = dynamic_cast<const FuLiteralLong *>((*args)[1].get())) || radix->value != 16)
 				notSupported((*args)[1].get(), "Radix");
@@ -14662,7 +14662,7 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		write("Array.BinarySearch(");
 		obj->accept(this, FuPriority::argument);
 		write(", ");
-		if (args->size() == 3) {
+		if (std::ssize(*args) == 3) {
 			(*args)[1]->accept(this, FuPriority::argument);
 			write(", ");
 			(*args)[2]->accept(this, FuPriority::argument);
@@ -14691,7 +14691,7 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 			if ((literal = dynamic_cast<const FuLiteral *>((*args)[0].get())) && literal->isDefaultValue()) {
 				write("Array.Clear(");
 				obj->accept(this, FuPriority::argument);
-				if (args->size() == 1) {
+				if (std::ssize(*args) == 1) {
 					write(", 0, ");
 					writeArrayStorageLength(obj);
 				}
@@ -14702,7 +14702,7 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 				write(", ");
 				writeNotPromoted(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
 			}
-			if (args->size() == 3) {
+			if (std::ssize(*args) == 3) {
 				write(", ");
 				(*args)[1]->accept(this, FuPriority::argument);
 				write(", ");
@@ -14760,7 +14760,7 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		writeChar('.');
 		write(method->name);
 		writeChar('(');
-		if (args->size() != 0) {
+		if (std::ssize(*args) != 0) {
 			if (dynamic_cast<const FuLiteralChar *>((*args)[0].get())) {
 				write("(int) ");
 				(*args)[0]->accept(this, FuPriority::primary);
@@ -15151,7 +15151,7 @@ void GenCs::writeProgram(const FuProgram * program)
 	}
 	writeTopLevelNatives(program);
 	writeTypes(program);
-	if (program->resources.size() > 0)
+	if (std::ssize(program->resources) > 0)
 		writeResources(&program->resources);
 	if (!this->namespace_.empty())
 		closeBlock();
@@ -15229,9 +15229,9 @@ void GenD::writeDoc(const FuCodeDoc * doc)
 	startDocLine();
 	writeDocPara(&doc->summary, false);
 	writeNewLine();
-	if (doc->details.size() > 0) {
+	if (std::ssize(doc->details) > 0) {
 		startDocLine();
-		if (doc->details.size() == 1)
+		if (std::ssize(doc->details) == 1)
 			writeDocBlock(doc->details[0].get(), false);
 		else {
 			for (const std::shared_ptr<FuDocBlock> &block : doc->details)
@@ -15645,7 +15645,7 @@ void GenD::visitSymbolReference(const FuSymbolReference * expr, FuPriority paren
 void GenD::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine)
 {
 	include("std.stdio");
-	if (args->size() == 0)
+	if (std::ssize(*args) == 0)
 		write("writeln()");
 	else if (const FuInterpolatedString *interpolated = dynamic_cast<const FuInterpolatedString *>((*args)[0].get())) {
 		write(newLine ? "writefln(" : "writef(");
@@ -15657,7 +15657,7 @@ void GenD::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool ne
 
 void GenD::writeInsertedArg(const FuType * type, const std::vector<std::shared_ptr<FuExpr>> * args, int index)
 {
-	if (args->size() <= index) {
+	if (std::ssize(*args) <= index) {
 		const FuReadWriteClassType * klass = static_cast<const FuReadWriteClassType *>(type);
 		writeNew(klass, FuPriority::argument);
 	}
@@ -15683,7 +15683,7 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		writePostfix(obj, " = ");
 		writePostfix((*args)[0].get(), ".to!");
 		write(obj->type->name);
-		if (args->size() == 2) {
+		if (std::ssize(*args) == 2) {
 			writeChar('(');
 			(*args)[1]->accept(this, FuPriority::argument);
 			writeChar(')');
@@ -15719,7 +15719,7 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		obj->accept(this, FuPriority::primary);
 		writeChar('[');
 		writePostfix((*args)[0].get(), " .. $]");
-		if (args->size() > 1) {
+		if (std::ssize(*args) > 1) {
 			write("[0 .. ");
 			(*args)[1]->accept(this, FuPriority::argument);
 			writeChar(']');
@@ -15729,14 +15729,14 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 	case FuId::arrayBinarySearchPart:
 		include("std.range");
 		write("() { size_t fubegin = ");
-		if (args->size() == 3)
+		if (std::ssize(*args) == 3)
 			(*args)[1]->accept(this, FuPriority::argument);
 		else
 			writeChar('0');
 		write("; auto fusearch = ");
 		writeClassReference(obj);
 		writeChar('[');
-		if (args->size() == 3) {
+		if (std::ssize(*args) == 3) {
 			write("fubegin .. fubegin + ");
 			(*args)[2]->accept(this, FuPriority::add);
 		}
@@ -15769,7 +15769,7 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		include("std.algorithm");
 		writeClassReference(obj);
 		writeChar('[');
-		if (args->size() == 3) {
+		if (std::ssize(*args) == 3) {
 			(*args)[1]->accept(this, FuPriority::argument);
 			write(" .. $][0 .. ");
 			(*args)[2]->accept(this, FuPriority::argument);
@@ -15785,7 +15785,7 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		include("std.algorithm");
 		writeClassReference(obj);
 		writeChar('[');
-		if (args->size() == 2) {
+		if (std::ssize(*args) == 2) {
 			(*args)[0]->accept(this, FuPriority::argument);
 			write(" .. $][0 .. ");
 			(*args)[1]->accept(this, FuPriority::argument);
@@ -15971,7 +15971,7 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 	case FuId::regexIsMatchRegex:
 		include("std.regex");
 		writePostfix((*args)[0].get(), ".matchFirst(");
-		(args->size() > 1 ? (*args)[1].get() : obj)->accept(this, FuPriority::argument);
+		(std::ssize(*args) > 1 ? (*args)[1].get() : obj)->accept(this, FuPriority::argument);
 		writeChar(')');
 		break;
 	case FuId::regexIsMatchStr:
@@ -15979,7 +15979,7 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		writePostfix((*args)[0].get(), ".matchFirst(");
 		if (getRegexOptions(args) != RegexOptions::none)
 			write("regex(");
-		(args->size() > 1 ? (*args)[1].get() : obj)->accept(this, FuPriority::argument);
+		(std::ssize(*args) > 1 ? (*args)[1].get() : obj)->accept(this, FuPriority::argument);
 		writeRegexOptions(args, ", \"", "", "\")", "i", "m", "s");
 		writeChar(')');
 		break;
@@ -16248,7 +16248,7 @@ void GenD::visitSwitch(const FuSwitch * statement)
 		startSwitch(statement);
 		writeLine("default:");
 		this->indent++;
-		if (statement->defaultBody.size() > 0)
+		if (std::ssize(statement->defaultBody) > 0)
 			writeSwitchCaseBody(&statement->defaultBody);
 		else
 			writeLine("assert(false);");
@@ -16420,7 +16420,7 @@ void GenD::writeProgram(const FuProgram * program)
 	}
 	writeTopLevelNatives(program);
 	writeTypes(program);
-	if (program->resources.size() > 0)
+	if (std::ssize(program->resources) > 0)
 		writeResources(&program->resources);
 	if (!this->namespace_.empty())
 		closeBlock();
@@ -16539,7 +16539,7 @@ void GenJava::writePrintfWidth(const FuInterpolatedPart * part)
 
 void GenJava::visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent)
 {
-	if (expr->suffix.empty() && expr->parts.size() == 1 && expr->parts[0].prefix.empty() && expr->parts[0].widthExpr == nullptr && expr->parts[0].format == ' ')
+	if (expr->suffix.empty() && std::ssize(expr->parts) == 1 && expr->parts[0].prefix.empty() && expr->parts[0].widthExpr == nullptr && expr->parts[0].format == ' ')
 		writeToString(expr->parts[0].argument.get(), parent);
 	else {
 		write("String.format(");
@@ -16930,7 +16930,7 @@ void GenJava::writeArrayBinarySearchFill(const FuExpr * obj, std::string_view me
 	writeChar('(');
 	obj->accept(this, FuPriority::argument);
 	write(", ");
-	if (args->size() == 3) {
+	if (std::ssize(*args) == 3) {
 		writeStartEnd((*args)[1].get(), (*args)[2].get());
 		write(", ");
 	}
@@ -16941,7 +16941,7 @@ void GenJava::writeArrayBinarySearchFill(const FuExpr * obj, std::string_view me
 void GenJava::writeWrite(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine)
 {
 	const FuInterpolatedString * interpolated;
-	if (args->size() == 1 && (interpolated = dynamic_cast<const FuInterpolatedString *>((*args)[0].get()))) {
+	if (std::ssize(*args) == 1 && (interpolated = dynamic_cast<const FuInterpolatedString *>((*args)[0].get()))) {
 		write(".format(");
 		writePrintf(interpolated, newLine);
 	}
@@ -17032,7 +17032,7 @@ void GenJava::writeCallExpr(const FuExpr * obj, const FuMethod * method, const s
 	case FuId::stringSubstring:
 		writePostfix(obj, ".substring(");
 		(*args)[0]->accept(this, FuPriority::argument);
-		if (args->size() == 2) {
+		if (std::ssize(*args) == 2) {
 			write(", ");
 			writeAdd((*args)[0].get(), (*args)[1].get());
 		}
@@ -17172,7 +17172,7 @@ void GenJava::writeCallExpr(const FuExpr * obj, const FuMethod * method, const s
 		else {
 			write("try { ");
 			writePostfix(obj, ".append(");
-			if (args->size() == 0)
+			if (std::ssize(*args) == 0)
 				write("'\\n'");
 			else if (const FuInterpolatedString *interpolated = dynamic_cast<const FuInterpolatedString *>((*args)[0].get())) {
 				write("String.format(");
@@ -17750,7 +17750,7 @@ void GenJava::writeProgram(const FuProgram * program)
 {
 	this->switchCaseDiscards = 0;
 	writeTypes(program);
-	if (program->resources.size() > 0)
+	if (std::ssize(program->resources) > 0)
 		writeResources();
 }
 
@@ -18264,7 +18264,7 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 		write("))");
 		break;
 	case FuId::longTryParse:
-		if (args->size() != 1)
+		if (std::ssize(*args) != 1)
 			notSupported((*args)[1].get(), "Radix");
 		write("(() => { try { ");
 		obj->accept(this, FuPriority::assign);
@@ -18290,7 +18290,7 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 	case FuId::stringSubstring:
 		writePostfix(obj, ".substring(");
 		(*args)[0]->accept(this, FuPriority::argument);
-		if (args->size() == 2) {
+		if (std::ssize(*args) == 2) {
 			write(", ");
 			writeAdd((*args)[0].get(), (*args)[1].get());
 		}
@@ -18300,7 +18300,7 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 	case FuId::arrayFillPart:
 		writePostfix(obj, ".fill(");
 		(*args)[0]->accept(this, FuPriority::argument);
-		if (args->size() == 3) {
+		if (std::ssize(*args) == 3) {
 			write(", ");
 			writeStartEnd((*args)[1].get(), (*args)[2].get());
 		}
@@ -18453,7 +18453,7 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 	case FuId::textWriterWriteLine:
 		if (isReferenceTo(obj, FuId::consoleError)) {
 			write("console.error(");
-			if (args->size() == 0)
+			if (std::ssize(*args) == 0)
 				write("\"\"");
 			else
 				(*args)[0]->accept(this, FuPriority::argument);
@@ -18461,7 +18461,7 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 		}
 		else {
 			writePostfix(obj, ".write(");
-			if (args->size() != 0) {
+			if (std::ssize(*args) != 0) {
 				(*args)[0]->accept(this, FuPriority::add);
 				write(" + ");
 			}
@@ -18478,7 +18478,7 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 		break;
 	case FuId::consoleWriteLine:
 		write("console.log(");
-		if (args->size() == 0)
+		if (std::ssize(*args) == 0)
 			write("\"\"");
 		else
 			(*args)[0]->accept(this, FuPriority::argument);
@@ -18885,7 +18885,7 @@ void GenJsNoModule::visitSwitch(const FuSwitch * statement)
 	if (statement->isTypeMatching() || statement->hasWhen()) {
 		if (std::any_of(statement->cases.begin(), statement->cases.end(), [](const FuCase &kase) { return FuSwitch::hasEarlyBreak(&kase.body); }) || FuSwitch::hasEarlyBreak(&statement->defaultBody)) {
 			write("fuswitch");
-			visitLiteralLong(this->switchesWithLabel.size());
+			visitLiteralLong(std::ssize(this->switchesWithLabel));
 			this->switchesWithLabel.push_back(statement);
 			write(": ");
 			openBlock();
@@ -19018,7 +19018,7 @@ void GenJsNoModule::writeLib(const std::map<std::string, std::vector<uint8_t>> *
 		closeBlock();
 		closeBlock();
 	}
-	if (resources->size() == 0)
+	if (std::ssize(*resources) == 0)
 		return;
 	writeNewLine();
 	writeLine("class Fu");
@@ -19457,7 +19457,7 @@ void GenPySwift::writeListAppend(const FuExpr * obj, const std::vector<std::shar
 {
 	writePostfix(obj, ".append(");
 	const FuType * elementType = obj->type->asClassType()->getElementType().get();
-	if (args->size() == 0)
+	if (std::ssize(*args) == 0)
 		writeNewStorage(elementType);
 	else
 		writeCoerced(elementType, (*args)[0].get(), FuPriority::argument);
@@ -20121,7 +20121,7 @@ void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const 
 			writeCoerced(this->system->intType.get(), (*args)[0].get(), FuPriority::argument);
 			writeChar(')');
 		}
-		if (args->size() == 2) {
+		if (std::ssize(*args) == 2) {
 			write(".prefix(");
 			writeCoerced(this->system->intType.get(), (*args)[1].get(), FuPriority::argument);
 			writeChar(')');
@@ -20229,7 +20229,7 @@ void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const 
 		writePostfix(obj, ".insert(");
 		{
 			const FuType * elementType = obj->type->asClassType()->getElementType().get();
-			if (args->size() == 1)
+			if (std::ssize(*args) == 1)
 				writeNewStorage(elementType);
 			else
 				writeCoerced(elementType, (*args)[1].get(), FuPriority::argument);
@@ -20292,7 +20292,7 @@ void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const 
 		break;
 	case FuId::consoleWriteLine:
 		write("print(");
-		if (args->size() == 1)
+		if (std::ssize(*args) == 1)
 			writeUnwrapped((*args)[0].get(), FuPriority::argument, true);
 		writeChar(')');
 		break;
@@ -20703,7 +20703,7 @@ void GenSwift::visitExpr(const FuExpr * statement)
 
 void GenSwift::initVarsAtIndent()
 {
-	while (this->varsAtIndent.size() <= this->indent) {
+	while (std::ssize(this->varsAtIndent) <= this->indent) {
 		this->varsAtIndent.emplace_back();
 		this->varBytesAtIndent.push_back(false);
 	}
@@ -20969,7 +20969,7 @@ void GenSwift::visitSwitch(const FuSwitch * statement)
 	writeLine(" {");
 	for (const FuCase &kase : statement->cases) {
 		write("case ");
-		for (int i = 0; i < kase.values.size(); i++) {
+		for (int i = 0; i < std::ssize(kase.values); i++) {
 			writeComma(i);
 			const FuBinaryExpr * when1;
 			if ((when1 = dynamic_cast<const FuBinaryExpr *>(kase.values[i].get())) && when1->op == FuToken::when) {
@@ -20988,7 +20988,7 @@ void GenSwift::visitSwitch(const FuSwitch * statement)
 		writeCharLine(':');
 		writeSwiftSwitchCaseBody(statement, &kase.body);
 	}
-	if (statement->defaultBody.size() > 0) {
+	if (std::ssize(statement->defaultBody) > 0) {
 		writeLine("default:");
 		writeSwiftSwitchCaseBody(statement, &statement->defaultBody);
 	}
@@ -21342,7 +21342,7 @@ void GenSwift::writeLibrary()
 
 void GenSwift::writeResources(const std::map<std::string, std::vector<uint8_t>> * resources)
 {
-	if (resources->size() == 0)
+	if (std::ssize(*resources) == 0)
 		return;
 	this->arrayRef = true;
 	writeNewLine();
@@ -21401,7 +21401,7 @@ void GenPy::startDoc(const FuCodeDoc * doc)
 {
 	write("\"\"\"");
 	writeDocPara(&doc->summary, false);
-	if (doc->details.size() > 0) {
+	if (std::ssize(doc->details) > 0) {
 		writeNewLine();
 		for (const std::shared_ptr<FuDocBlock> &block : doc->details) {
 			writeNewLine();
@@ -21952,7 +21952,7 @@ void GenPy::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		break;
 	case FuId::stringSubstring:
 		obj->accept(this, FuPriority::primary);
-		writeSlice((*args)[0].get(), args->size() == 2 ? (*args)[1].get() : nullptr);
+		writeSlice((*args)[0].get(), std::ssize(*args) == 2 ? (*args)[1].get() : nullptr);
 		break;
 	case FuId::arrayBinarySearchAll:
 		include("bisect");
@@ -21981,7 +21981,7 @@ void GenPy::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 	case FuId::arrayFillAll:
 	case FuId::arrayFillPart:
 		obj->accept(this, FuPriority::primary);
-		if (args->size() == 1) {
+		if (std::ssize(*args) == 1) {
 			write("[:] = ");
 			const FuArrayStorageType * array = static_cast<const FuArrayStorageType *>(obj->type.get());
 			writePyNewArray(array->getElementType().get(), (*args)[0].get(), array->lengthExpr.get());
@@ -22090,7 +22090,7 @@ void GenPy::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		break;
 	case FuId::textWriterWriteLine:
 		write("print(");
-		if (args->size() == 1) {
+		if (std::ssize(*args) == 1) {
 			(*args)[0]->accept(this, FuPriority::argument);
 			write(", ");
 		}
@@ -22105,7 +22105,7 @@ void GenPy::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		break;
 	case FuId::consoleWriteLine:
 		write("print(");
-		if (args->size() == 1)
+		if (std::ssize(*args) == 1)
 			(*args)[0]->accept(this, FuPriority::argument);
 		writeChar(')');
 		break;
@@ -22230,7 +22230,7 @@ void GenPy::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 			writeChar('.');
 			writeName(method);
 			write("(self");
-			if (args->size() > 0) {
+			if (std::ssize(*args) > 0) {
 				write(", ");
 				writeArgs(method, args);
 			}
@@ -22621,7 +22621,7 @@ void GenPy::writeResourceByte(int b)
 
 void GenPy::writeResources(const std::map<std::string, std::vector<uint8_t>> * resources)
 {
-	if (resources->size() == 0)
+	if (std::ssize(*resources) == 0)
 		return;
 	writeNewLine();
 	write("class _FuResource");

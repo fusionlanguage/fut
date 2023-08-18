@@ -14053,9 +14053,9 @@ namespace Fusion
 			case FuId.DictionaryCount:
 			case FuId.SortedDictionaryCount:
 			case FuId.OrderedDictionaryCount:
-				expr.Left.Accept(this, FuPriority.Primary);
-				WriteMemberOp(expr.Left, expr);
-				Write("size()");
+				Write("std::ssize(");
+				WriteCollectionObject(expr.Left, FuPriority.Argument);
+				WriteChar(')');
 				break;
 			case FuId.MatchStart:
 				WriteMatchProperty(expr, "position");

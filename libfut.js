@@ -14440,9 +14440,9 @@ export class GenCpp extends GenCCpp
 		case FuId.DICTIONARY_COUNT:
 		case FuId.SORTED_DICTIONARY_COUNT:
 		case FuId.ORDERED_DICTIONARY_COUNT:
-			expr.left.accept(this, FuPriority.PRIMARY);
-			this.writeMemberOp(expr.left, expr);
-			this.write("size()");
+			this.write("std::ssize(");
+			this.#writeCollectionObject(expr.left, FuPriority.ARGUMENT);
+			this.writeChar(41);
 			break;
 		case FuId.MATCH_START:
 			this.#writeMatchProperty(expr, "position");
