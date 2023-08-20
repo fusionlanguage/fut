@@ -6,7 +6,7 @@ public class Test
 	{
 		Test() o1;
 		Test() o2;
-		Test?[]# a = new Test?[2]; //FAIL: cpp C++20; cl
+		Test?[]# a = new Test?[2]; //FAIL: cl
 		a[0] = o1;
 		a[1] = o2;
 

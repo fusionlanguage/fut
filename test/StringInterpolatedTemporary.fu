@@ -5,7 +5,7 @@ public static class Test
 	public static bool Run()
 	{
 		int i = 42;
-		Accept($"{i}"); //FAIL: cpp C++20; cl
+		Accept($"{i}"); //FAIL: cl
 		bool b = Accept($"{i}");
 		if (!b)
 			return false;

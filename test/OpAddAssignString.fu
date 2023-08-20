@@ -7,7 +7,7 @@ public static class Test
 		string() s2 = "quux";
 		s2 += s;
 		s2 += p;
-		s2 += p + $"{p}" + s; //FAIL: cpp C++20
+		s2 += p + $"{p}" + s;
 		return s2 == "quuxfoobar" + "barbarfoo";
 	}
 }

@@ -4,7 +4,7 @@ public static class Test
 	{
 		string s = "foo";
 		int i = 15;
-		string() s1 = $"{i,3} {s,4}"; //FAIL: cpp C++20; swift TODO; cl
+		string() s1 = $"{i,3} {s,4}"; //FAIL: swift TODO; cl
 		string() s2 = $"{i,-3}{s,-5}";
 		string() s3 = $"{i:X} {i:x}";
 		string() s4 = $"{i:D3} {i:d03} {i:X2} {i:x2}";

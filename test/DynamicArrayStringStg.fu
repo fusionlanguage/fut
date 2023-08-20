@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		string()[]# a = new string()[2]; //FAIL: cpp C++20; cl
+		string()[]# a = new string()[2]; //FAIL: cl
 		a[0] = "foo";
 		a[1] = "bar";
 		return a[0] == "foo" && a[1] == "bar";

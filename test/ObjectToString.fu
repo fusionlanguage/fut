@@ -2,7 +2,7 @@ public class Point
 {
 	internal int X;
 	internal int Y;
-	public string() ToString() => $"{X},{Y}"; //FAIL: cpp C++20; cl
+	public string() ToString() => $"{X},{Y}"; //FAIL: cl
 }
 
 public class Test
