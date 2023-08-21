@@ -15,9 +15,11 @@ ifeq ($(OS),Windows_NT)
 JAVACPSEP = ;
 SWIFTC += -no-color-diagnostics -Xlinker -noexp -Xlinker -noimplib
 else
-JAVACPSEP = :
+ifeq ($(shell uname),Linux)
 TEST_CFLAGS += -fsanitize=address -g
 TEST_CXXFLAGS += -fsanitize=address -g
+endif
+JAVACPSEP = :
 SWIFTC += -sanitize=address
 endif
 DC = dmd
