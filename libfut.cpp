@@ -5949,7 +5949,7 @@ std::shared_ptr<FuExpr> FuSema::foldConst(std::shared_ptr<FuExpr> expr)
 
 int FuSema::foldConstInt(std::shared_ptr<FuExpr> expr)
 {
-	if (const FuLiteralLong *literal = dynamic_cast<const FuLiteralLong *>(foldConst(expr).get())) {
+	if (std::shared_ptr<FuLiteralLong>literal = std::dynamic_pointer_cast<FuLiteralLong>(foldConst(expr))) {
 		int64_t l = literal->value;
 		if (l < -2147483648 || l > 2147483647) {
 			reportError(expr.get(), "Only 32-bit ranges supported");

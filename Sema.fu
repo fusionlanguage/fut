@@ -1916,7 +1916,7 @@ public class FuSema
 
 	int FoldConstInt!(FuExpr# expr)
 	{
-		if (FoldConst(expr) is FuLiteralLong literal) {
+		if (FoldConst(expr) is FuLiteralLong# literal) {
 			long l = literal.Value;
 			if (l < int.MinValue || l > int.MaxValue) {
 				ReportError(expr, "Only 32-bit ranges supported");
