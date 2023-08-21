@@ -26,7 +26,6 @@ DC = dmd
 PYTHON = python3 -B
 INSTALL = install
 
-MAKEFLAGS = -r
 ifdef V
 DO =
 else
@@ -270,3 +269,5 @@ clean:
 .PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov host-diff install uninstall clean
 
 .DELETE_ON_ERROR:
+
+.SUFFIXES:
