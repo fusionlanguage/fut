@@ -1,3 +1,9 @@
+fut (3.0.1-1) UNRELEASED; urgency=low
+
+  * New release.
+
+ -- Piotr Fusik <piotr@fusion-lang.org>  Tue, 22 Aug 2023 12:25:06 +0200
+
 fut (3.0.0-1) UNRELEASED; urgency=low
 
   * First deb packaging.
