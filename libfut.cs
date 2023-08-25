@@ -15924,6 +15924,18 @@ namespace Fusion
 			return false;
 		}
 
+		static bool IsTransitiveConst(FuClassType array)
+		{
+			while (!(array is FuReadWriteClassType)) {
+				if (!(array.GetElementType() is FuClassType element))
+					return true;
+				if (element.Class.Id != FuId.ArrayPtrClass)
+					return false;
+				array = element;
+			}
+			return false;
+		}
+
 		static bool IsStructPtr(FuType type) => type is FuClassType ptr && (ptr.Class.Id == FuId.ListClass || ptr.Class.Id == FuId.StackClass || ptr.Class.Id == FuId.QueueClass);
 
 		void WriteElementType(FuType type)
@@ -15967,7 +15979,13 @@ namespace Fusion
 					break;
 				case FuId.ArrayStorageClass:
 				case FuId.ArrayPtrClass:
-					WriteElementType(klass.GetElementType());
+					if (promote && IsTransitiveConst(klass)) {
+						Write("const(");
+						WriteElementType(klass.GetElementType());
+						WriteChar(')');
+					}
+					else
+						WriteElementType(klass.GetElementType());
 					WriteChar('[');
 					if (klass is FuArrayStorageType arrayStorage)
 						VisitLiteralLong(arrayStorage.Length);
@@ -16893,7 +16911,7 @@ namespace Fusion
 		protected override void WriteConst(FuConst konst)
 		{
 			WriteDoc(konst.Documentation);
-			Write("static ");
+			Write("static immutable ");
 			WriteTypeAndName(konst);
 			Write(" = ");
 			WriteCoercedExpr(konst.Type, konst.Value);

@@ -16356,6 +16356,19 @@ export class GenD extends GenCCppD
 		return false;
 	}
 
+	static #isTransitiveConst(array)
+	{
+		while (!(array instanceof FuReadWriteClassType)) {
+			let element;
+			if (!((element = array.getElementType()) instanceof FuClassType))
+				return true;
+			if (element.class.id != FuId.ARRAY_PTR_CLASS)
+				return false;
+			array = element;
+		}
+		return false;
+	}
+
 	static #isStructPtr(type)
 	{
 		let ptr;
@@ -16403,7 +16416,13 @@ export class GenD extends GenCCppD
 				break;
 			case FuId.ARRAY_STORAGE_CLASS:
 			case FuId.ARRAY_PTR_CLASS:
-				this.#writeElementType(klass.getElementType());
+				if (promote && GenD.#isTransitiveConst(klass)) {
+					this.write("const(");
+					this.#writeElementType(klass.getElementType());
+					this.writeChar(41);
+				}
+				else
+					this.#writeElementType(klass.getElementType());
 				this.writeChar(91);
 				let arrayStorage;
 				if ((arrayStorage = klass) instanceof FuArrayStorageType)
@@ -17346,7 +17365,7 @@ export class GenD extends GenCCppD
 	writeConst(konst)
 	{
 		this.writeDoc(konst.documentation);
-		this.write("static ");
+		this.write("static immutable ");
 		this.writeTypeAndName(konst);
 		this.write(" = ");
 		this.writeCoercedExpr(konst.type, konst.value);

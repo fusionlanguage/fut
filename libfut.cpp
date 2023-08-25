@@ -15307,6 +15307,19 @@ bool GenD::isCreateWithNew(const FuType * type)
 	return false;
 }
 
+bool GenD::isTransitiveConst(const FuClassType * array)
+{
+	while (!dynamic_cast<const FuReadWriteClassType *>(array)) {
+		const FuClassType * element;
+		if (!(element = dynamic_cast<const FuClassType *>(array->getElementType().get())))
+			return true;
+		if (element->class_->id != FuId::arrayPtrClass)
+			return false;
+		array = element;
+	}
+	return false;
+}
+
 bool GenD::isStructPtr(const FuType * type)
 {
 	const FuClassType * ptr;
@@ -15353,7 +15366,13 @@ void GenD::writeType(const FuType * type, bool promote)
 			break;
 		case FuId::arrayStorageClass:
 		case FuId::arrayPtrClass:
-			writeElementType(klass->getElementType().get());
+			if (promote && isTransitiveConst(klass)) {
+				write("const(");
+				writeElementType(klass->getElementType().get());
+				writeChar(')');
+			}
+			else
+				writeElementType(klass->getElementType().get());
 			writeChar('[');
 			if (const FuArrayStorageType *arrayStorage = dynamic_cast<const FuArrayStorageType *>(klass))
 				visitLiteralLong(arrayStorage->length);
@@ -16282,7 +16301,7 @@ void GenD::writeEnum(const FuEnum * enu)
 void GenD::writeConst(const FuConst * konst)
 {
 	writeDoc(konst->documentation.get());
-	write("static ");
+	write("static immutable ");
 	writeTypeAndName(konst);
 	write(" = ");
 	writeCoercedExpr(konst->type.get(), konst->value.get());
