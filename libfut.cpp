@@ -16413,7 +16413,7 @@ void GenD::writeResources(const std::map<std::string, std::vector<uint8_t>> * re
 	writeLine("private static struct FuResource");
 	openBlock();
 	for (const auto &[name, content] : *resources) {
-		write("private static ubyte[] ");
+		write("private static immutable ubyte[] ");
 		writeResourceName(name);
 		writeLine(" = [");
 		writeChar('\t');

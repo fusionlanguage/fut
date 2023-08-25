@@ -17024,7 +17024,7 @@ namespace Fusion
 			WriteLine("private static struct FuResource");
 			OpenBlock();
 			foreach ((string name, List<byte> content) in resources) {
-				Write("private static ubyte[] ");
+				Write("private static immutable ubyte[] ");
 				WriteResourceName(name);
 				WriteLine(" = [");
 				WriteChar('\t');

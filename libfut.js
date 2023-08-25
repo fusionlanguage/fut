@@ -17482,7 +17482,7 @@ export class GenD extends GenCCppD
 		this.writeLine("private static struct FuResource");
 		this.openBlock();
 		for (const [name, content] of Object.entries(resources).sort((a, b) => a[0].localeCompare(b[0]))) {
-			this.write("private static ubyte[] ");
+			this.write("private static immutable ubyte[] ");
 			this.writeResourceName(name);
 			this.writeLine(" = [");
 			this.writeChar(9);
