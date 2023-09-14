@@ -14,6 +14,7 @@ public class Test
 		t = new Test();
 		t.Value = 10;
 		list.Add(t);
-		return list.All(it => it.Value > 4); //FAIL: c
+		List<int>() empty;
+		return list.All(it => it.Value > 4) && empty.All(it => false); //FAIL: c
 	}
 }
