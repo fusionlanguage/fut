@@ -529,12 +529,10 @@ public class GenCs : GenTyped
 			WriteListAdd(obj, "Add", args);
 			break;
 		case FuId.ListAll:
-			Include("System.Linq");
-			WriteMethodCall(obj, "All", args[0]);
+			WriteMethodCall(obj, "TrueForAll", args[0]);
 			break;
 		case FuId.ListAny:
-			Include("System.Linq");
-			WriteMethodCall(obj, "Any", args[0]);
+			WriteMethodCall(obj, "Exists", args[0]);
 			break;
 		case FuId.ListInsert:
 			WriteListInsert(obj, "Insert", args);

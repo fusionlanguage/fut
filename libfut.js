@@ -15579,12 +15579,10 @@ export class GenCs extends GenTyped
 			this.writeListAdd(obj, "Add", args);
 			break;
 		case FuId.LIST_ALL:
-			this.include("System.Linq");
-			this.writeMethodCall(obj, "All", args[0]);
+			this.writeMethodCall(obj, "TrueForAll", args[0]);
 			break;
 		case FuId.LIST_ANY:
-			this.include("System.Linq");
-			this.writeMethodCall(obj, "Any", args[0]);
+			this.writeMethodCall(obj, "Exists", args[0]);
 			break;
 		case FuId.LIST_INSERT:
 			this.writeListInsert(obj, "Insert", args);

@@ -14724,12 +14724,10 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		writeListAdd(obj, "Add", args);
 		break;
 	case FuId::listAll:
-		include("System.Linq");
-		writeMethodCall(obj, "All", (*args)[0].get());
+		writeMethodCall(obj, "TrueForAll", (*args)[0].get());
 		break;
 	case FuId::listAny:
-		include("System.Linq");
-		writeMethodCall(obj, "Any", (*args)[0].get());
+		writeMethodCall(obj, "Exists", (*args)[0].get());
 		break;
 	case FuId::listInsert:
 		writeListInsert(obj, "Insert", args);

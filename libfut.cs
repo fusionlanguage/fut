@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 namespace Fusion
@@ -2334,7 +2333,7 @@ namespace Fusion
 
 		public bool IsTypeMatching() => this.Value.Type is FuClassType klass && klass.Class.Id != FuId.StringClass;
 
-		public bool HasWhen() => this.Cases.Any(kase => kase.Values.Any(value => value is FuBinaryExpr when1 && when1.Op == FuToken.When));
+		public bool HasWhen() => this.Cases.Exists(kase => kase.Values.Exists(value => value is FuBinaryExpr when1 && when1.Op == FuToken.When));
 
 		public static int LengthWithoutTrailingBreak(List<FuStatement> body)
 		{
@@ -2354,7 +2353,7 @@ namespace Fusion
 			case FuIf ifStatement:
 				return HasBreak(ifStatement.OnTrue) || (ifStatement.OnFalse != null && HasBreak(ifStatement.OnFalse));
 			case FuBlock block:
-				return block.Statements.Any(child => HasBreak(child));
+				return block.Statements.Exists(child => HasBreak(child));
 			default:
 				return false;
 			}
@@ -2370,7 +2369,7 @@ namespace Fusion
 			return false;
 		}
 
-		static bool ListHasContinue(List<FuStatement> statements) => statements.Any(statement => HasContinue(statement));
+		static bool ListHasContinue(List<FuStatement> statements) => statements.Exists(statement => HasContinue(statement));
 
 		static bool HasContinue(FuStatement statement)
 		{
@@ -2380,7 +2379,7 @@ namespace Fusion
 			case FuIf ifStatement:
 				return HasContinue(ifStatement.OnTrue) || (ifStatement.OnFalse != null && HasContinue(ifStatement.OnFalse));
 			case FuSwitch switchStatement:
-				return switchStatement.Cases.Any(kase => ListHasContinue(kase.Body)) || ListHasContinue(switchStatement.DefaultBody);
+				return switchStatement.Cases.Exists(kase => ListHasContinue(kase.Body)) || ListHasContinue(switchStatement.DefaultBody);
 			case FuBlock block:
 				return ListHasContinue(block.Statements);
 			default:
@@ -5479,7 +5478,7 @@ namespace Fusion
 					return PoisonError(expr, "Method marked 'throws' called from a method not marked 'throws'");
 			}
 			symbol.Symbol = method;
-			if (method.CallType == FuCallType.Static && method.Body is FuReturn ret && arguments.All(arg => arg is FuLiteral) && !this.CurrentPureMethods.Contains(method)) {
+			if (method.CallType == FuCallType.Static && method.Body is FuReturn ret && arguments.TrueForAll(arg => arg is FuLiteral) && !this.CurrentPureMethods.Contains(method)) {
 				this.CurrentPureMethods.Add(method);
 				i = 0;
 				for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
@@ -7710,12 +7709,12 @@ namespace Fusion
 		{
 			switch (expr) {
 			case FuAggregateInitializer init:
-				return init.Items.Any(item => HasTemporaries(item));
+				return init.Items.Exists(item => HasTemporaries(item));
 			case FuLiteral _:
 			case FuLambdaExpr _:
 				return false;
 			case FuInterpolatedString interp:
-				return interp.Parts.Any(part => HasTemporaries(part.Argument));
+				return interp.Parts.Exists(part => HasTemporaries(part.Argument));
 			case FuSymbolReference symbol:
 				return symbol.Left != null && HasTemporaries(symbol.Left);
 			case FuUnaryExpr unary:
@@ -7729,7 +7728,7 @@ namespace Fusion
 			case FuSelectExpr select:
 				return HasTemporaries(select.Cond) || HasTemporaries(select.OnTrue) || HasTemporaries(select.OnFalse);
 			case FuCallExpr call:
-				return HasTemporaries(call.Method) || call.Arguments.Any(arg => HasTemporaries(arg));
+				return HasTemporaries(call.Method) || call.Arguments.Exists(arg => HasTemporaries(arg));
 			default:
 				throw new NotImplementedException();
 			}
@@ -8622,7 +8621,7 @@ namespace Fusion
 
 		protected void WriteSwitchAsIfsWithGoto(FuSwitch statement)
 		{
-			if (statement.Cases.Any(kase => FuSwitch.HasEarlyBreakAndContinue(kase.Body)) || FuSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
+			if (statement.Cases.Exists(kase => FuSwitch.HasEarlyBreakAndContinue(kase.Body)) || FuSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
 				int gotoId = this.SwitchesWithGoto.Count;
 				this.SwitchesWithGoto.Add(statement);
 				WriteSwitchAsIfs(statement, false);
@@ -9824,12 +9823,12 @@ namespace Fusion
 		{
 			switch (expr) {
 			case FuAggregateInitializer init:
-				return init.Items.Any(field => HasTemporariesToDestruct(field));
+				return init.Items.Exists(field => HasTemporariesToDestruct(field));
 			case FuLiteral _:
 			case FuLambdaExpr _:
 				return false;
 			case FuInterpolatedString interp:
-				return interp.Parts.Any(part => HasTemporariesToDestruct(part.Argument));
+				return interp.Parts.Exists(part => HasTemporariesToDestruct(part.Argument));
 			case FuSymbolReference symbol:
 				return symbol.Left != null && HasTemporariesToDestruct(symbol.Left);
 			case FuUnaryExpr unary:
@@ -9839,7 +9838,7 @@ namespace Fusion
 			case FuSelectExpr select:
 				return HasTemporariesToDestruct(select.Cond);
 			case FuCallExpr call:
-				return (call.Method.Left != null && (HasTemporariesToDestruct(call.Method.Left) || IsNewString(call.Method.Left))) || call.Arguments.Any(arg => HasTemporariesToDestruct(arg) || IsNewString(arg));
+				return (call.Method.Left != null && (HasTemporariesToDestruct(call.Method.Left) || IsNewString(call.Method.Left))) || call.Arguments.Exists(arg => HasTemporariesToDestruct(arg) || IsNewString(arg));
 			default:
 				throw new NotImplementedException();
 			}
@@ -12686,7 +12685,7 @@ namespace Fusion
 
 		protected override void WriteSwitchCaseBody(List<FuStatement> statements)
 		{
-			if (statements.All(statement => statement is FuAssert))
+			if (statements.TrueForAll(statement => statement is FuAssert))
 				WriteCharLine(';');
 			else
 				base.WriteSwitchCaseBody(statements);
@@ -15155,12 +15154,10 @@ namespace Fusion
 				WriteListAdd(obj, "Add", args);
 				break;
 			case FuId.ListAll:
-				Include("System.Linq");
-				WriteMethodCall(obj, "All", args[0]);
+				WriteMethodCall(obj, "TrueForAll", args[0]);
 				break;
 			case FuId.ListAny:
-				Include("System.Linq");
-				WriteMethodCall(obj, "Any", args[0]);
+				WriteMethodCall(obj, "Exists", args[0]);
 				break;
 			case FuId.ListInsert:
 				WriteListInsert(obj, "Insert", args);
@@ -18914,7 +18911,7 @@ namespace Fusion
 			}
 		}
 
-		static bool HasLong(List<FuExpr> args) => args.Any(arg => arg.Type.Id == FuId.LongType);
+		static bool HasLong(List<FuExpr> args) => args.Exists(arg => arg.Type.Id == FuId.LongType);
 
 		void WriteMathMaxMin(FuMethod method, string name, int op, List<FuExpr> args)
 		{
@@ -19598,7 +19595,7 @@ namespace Fusion
 		internal override void VisitSwitch(FuSwitch statement)
 		{
 			if (statement.IsTypeMatching() || statement.HasWhen()) {
-				if (statement.Cases.Any(kase => FuSwitch.HasEarlyBreak(kase.Body)) || FuSwitch.HasEarlyBreak(statement.DefaultBody)) {
+				if (statement.Cases.Exists(kase => FuSwitch.HasEarlyBreak(kase.Body)) || FuSwitch.HasEarlyBreak(statement.DefaultBody)) {
 					Write("fuswitch");
 					VisitLiteralLong(this.SwitchesWithLabel.Count);
 					this.SwitchesWithLabel.Add(statement);
@@ -20781,7 +20778,7 @@ namespace Fusion
 
 		internal override void VisitInterpolatedString(FuInterpolatedString expr, FuPriority parent)
 		{
-			if (expr.Parts.Any(part => part.WidthExpr != null || part.Format != ' ' || part.Precision >= 0)) {
+			if (expr.Parts.Exists(part => part.WidthExpr != null || part.Format != ' ' || part.Precision >= 0)) {
 				Include("Foundation");
 				Write("String(format: ");
 				WritePrintf(expr, false);
@@ -21510,9 +21507,9 @@ namespace Fusion
 			case FuLambdaExpr _:
 				return false;
 			case FuAggregateInitializer init:
-				return init.Items.Any(field => Throws(field));
+				return init.Items.Exists(field => Throws(field));
 			case FuInterpolatedString interp:
-				return interp.Parts.Any(part => Throws(part.Argument));
+				return interp.Parts.Exists(part => Throws(part.Argument));
 			case FuSymbolReference symbol:
 				return symbol.Left != null && Throws(symbol.Left);
 			case FuUnaryExpr unary:
@@ -21523,7 +21520,7 @@ namespace Fusion
 				return Throws(select.Cond) || Throws(select.OnTrue) || Throws(select.OnFalse);
 			case FuCallExpr call:
 				FuMethod method = (FuMethod) call.Method.Symbol;
-				return method.Throws || (call.Method.Left != null && Throws(call.Method.Left)) || call.Arguments.Any(arg => Throws(arg));
+				return method.Throws || (call.Method.Left != null && Throws(call.Method.Left)) || call.Arguments.Exists(arg => Throws(arg));
 			default:
 				throw new NotImplementedException();
 			}
@@ -23318,7 +23315,7 @@ namespace Fusion
 
 		internal override void VisitSwitch(FuSwitch statement)
 		{
-			bool earlyBreak = statement.Cases.Any(kase => FuSwitch.HasEarlyBreak(kase.Body)) || FuSwitch.HasEarlyBreak(statement.DefaultBody);
+			bool earlyBreak = statement.Cases.Exists(kase => FuSwitch.HasEarlyBreak(kase.Body)) || FuSwitch.HasEarlyBreak(statement.DefaultBody);
 			if (earlyBreak) {
 				this.SwitchBreak = true;
 				Write("try");
