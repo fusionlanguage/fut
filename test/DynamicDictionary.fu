@@ -1,0 +1,13 @@
+public static class Test
+{
+	static Dictionary<int, int># GetMap()
+	{
+		Dictionary<int, int># map = new Dictionary<int, int>(); //FAIL: cl
+		return map;
+	}
+
+	public static bool Run()
+	{
+		return GetMap().Count == 0; //FAIL: c leak TODO
+	}
+}

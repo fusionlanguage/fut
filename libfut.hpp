@@ -2240,6 +2240,7 @@ private:
 	void startMethodCall(const FuExpr * obj);
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeCollectionType(std::string_view name, const FuType * elementType);
+	void writeClassType(const FuClassType * klass);
 	static bool isSharedPtr(const FuExpr * expr);
 	static bool needStringPtrData(const FuExpr * expr);
 	static bool isClassPtr(const FuType * type);

@@ -4616,6 +4616,8 @@ std::shared_ptr<FuExpr> FuSema::resolveNew(std::shared_ptr<FuPrefixExpr> expr)
 		std::shared_ptr<FuDynamicPtrType> futemp1 = std::make_shared<FuDynamicPtrType>();
 		futemp1->line = expr->line;
 		futemp1->class_ = klass->class_;
+		futemp1->typeArg0 = klass->typeArg0;
+		futemp1->typeArg1 = klass->typeArg1;
 		expr->type = futemp1;
 		expr->inner = nullptr;
 		return expr;
@@ -12550,10 +12552,100 @@ void GenCpp::writeCollectionType(std::string_view name, const FuType * elementTy
 	writeChar('>');
 }
 
+void GenCpp::writeClassType(const FuClassType * klass)
+{
+	if (klass->class_->typeParameterCount == 0) {
+		if (!dynamic_cast<const FuReadWriteClassType *>(klass))
+			write("const ");
+		switch (klass->class_->id) {
+		case FuId::textWriterClass:
+			include("iostream");
+			write("std::ostream");
+			break;
+		case FuId::stringWriterClass:
+			include("sstream");
+			write("std::ostringstream");
+			break;
+		case FuId::regexClass:
+			include("regex");
+			write("std::regex");
+			break;
+		case FuId::matchClass:
+			include("regex");
+			write("std::cmatch");
+			break;
+		case FuId::lockClass:
+			include("mutex");
+			write("std::recursive_mutex");
+			break;
+		default:
+			write(klass->class_->name);
+			break;
+		}
+	}
+	else {
+		std::string_view cppType;
+		switch (klass->class_->id) {
+		case FuId::arrayStorageClass:
+			cppType = "array";
+			break;
+		case FuId::listClass:
+			cppType = "vector";
+			break;
+		case FuId::queueClass:
+			cppType = "queue";
+			break;
+		case FuId::stackClass:
+			cppType = "stack";
+			break;
+		case FuId::hashSetClass:
+			cppType = "unordered_set";
+			break;
+		case FuId::sortedSetClass:
+			cppType = "set";
+			break;
+		case FuId::dictionaryClass:
+			cppType = "unordered_map";
+			break;
+		case FuId::sortedDictionaryClass:
+			cppType = "map";
+			break;
+		default:
+			notSupported(klass, klass->class_->name);
+			cppType = "NOT_SUPPORTED";
+			break;
+		}
+		include(cppType);
+		if (!dynamic_cast<const FuReadWriteClassType *>(klass))
+			write("const ");
+		write("std::");
+		write(cppType);
+		writeChar('<');
+		writeType(klass->typeArg0.get(), false);
+		if (const FuArrayStorageType *arrayStorage = dynamic_cast<const FuArrayStorageType *>(klass)) {
+			write(", ");
+			visitLiteralLong(arrayStorage->length);
+		}
+		else if (klass->class_->typeParameterCount == 2) {
+			write(", ");
+			writeType(klass->getValueType().get(), false);
+		}
+		writeChar('>');
+	}
+}
+
 void GenCpp::writeType(const FuType * type, bool promote)
 {
 	if (dynamic_cast<const FuIntegerType *>(type))
 		writeNumericType(getTypeId(type, promote));
+	else if (dynamic_cast<const FuStringStorageType *>(type)) {
+		include("string");
+		write("std::string");
+	}
+	else if (dynamic_cast<const FuStringType *>(type)) {
+		include("string_view");
+		write("std::string_view");
+	}
 	else if (const FuDynamicPtrType *dynamic = dynamic_cast<const FuDynamicPtrType *>(type)) {
 		switch (dynamic->class_->id) {
 		case FuId::regexClass:
@@ -12569,107 +12661,22 @@ void GenCpp::writeType(const FuType * type, bool promote)
 		default:
 			include("memory");
 			write("std::shared_ptr<");
-			write(dynamic->class_->name);
+			writeClassType(dynamic);
 			writeChar('>');
 			break;
 		}
 	}
-	else if (const FuClassType *klass = dynamic_cast<const FuClassType *>(type))
-		do {
-			if (klass->class_->typeParameterCount == 0) {
-				if (klass->class_->id == FuId::stringClass) {
-					std::string_view cppType = klass->id == FuId::stringStorageType ? "string" : "string_view";
-					include(cppType);
-					write("std::");
-					write(cppType);
-					break;
-				}
-				if (!dynamic_cast<const FuReadWriteClassType *>(klass))
-					write("const ");
-				switch (klass->class_->id) {
-				case FuId::textWriterClass:
-					include("iostream");
-					write("std::ostream");
-					break;
-				case FuId::stringWriterClass:
-					include("sstream");
-					write("std::ostringstream");
-					break;
-				case FuId::regexClass:
-					include("regex");
-					write("std::regex");
-					break;
-				case FuId::matchClass:
-					include("regex");
-					write("std::cmatch");
-					break;
-				case FuId::lockClass:
-					include("mutex");
-					write("std::recursive_mutex");
-					break;
-				default:
-					write(klass->class_->name);
-					break;
-				}
-			}
-			else if (klass->class_->id == FuId::arrayPtrClass) {
-				writeType(klass->getElementType().get(), false);
-				if (!dynamic_cast<const FuReadWriteClassType *>(klass))
-					write(" const");
-			}
-			else {
-				std::string_view cppType;
-				switch (klass->class_->id) {
-				case FuId::arrayStorageClass:
-					cppType = "array";
-					break;
-				case FuId::listClass:
-					cppType = "vector";
-					break;
-				case FuId::queueClass:
-					cppType = "queue";
-					break;
-				case FuId::stackClass:
-					cppType = "stack";
-					break;
-				case FuId::hashSetClass:
-					cppType = "unordered_set";
-					break;
-				case FuId::sortedSetClass:
-					cppType = "set";
-					break;
-				case FuId::dictionaryClass:
-					cppType = "unordered_map";
-					break;
-				case FuId::sortedDictionaryClass:
-					cppType = "map";
-					break;
-				default:
-					notSupported(type, klass->class_->name);
-					cppType = "NOT_SUPPORTED";
-					break;
-				}
-				include(cppType);
-				if (!dynamic_cast<const FuReadWriteClassType *>(klass))
-					write("const ");
-				write("std::");
-				write(cppType);
-				writeChar('<');
-				writeType(klass->typeArg0.get(), false);
-				if (const FuArrayStorageType *arrayStorage = dynamic_cast<const FuArrayStorageType *>(klass)) {
-					write(", ");
-					visitLiteralLong(arrayStorage->length);
-				}
-				else if (klass->class_->typeParameterCount == 2) {
-					write(", ");
-					writeType(klass->getValueType().get(), false);
-				}
-				writeChar('>');
-			}
-			if (!dynamic_cast<const FuStorageType *>(klass))
-				write(" *");
+	else if (const FuClassType *klass = dynamic_cast<const FuClassType *>(type)) {
+		if (klass->class_->id == FuId::arrayPtrClass) {
+			writeType(klass->getElementType().get(), false);
+			if (!dynamic_cast<const FuReadWriteClassType *>(klass))
+				write(" const");
 		}
-		while (0);
+		else
+			writeClassType(klass);
+		if (!dynamic_cast<const FuStorageType *>(klass))
+			write(" *");
+	}
 	else
 		write(type->name);
 }
@@ -12688,7 +12695,7 @@ void GenCpp::writeNew(const FuReadWriteClassType * klass, FuPriority parent)
 {
 	include("memory");
 	write("std::make_shared<");
-	write(klass->class_->name);
+	writeClassType(klass);
 	write(">()");
 }
 

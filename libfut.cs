@@ -4897,7 +4897,7 @@ namespace Fusion
 				expr.Inner = array.LengthExpr;
 				return expr;
 			case FuStorageType klass:
-				expr.Type = new FuDynamicPtrType { Line = expr.Line, Class = klass.Class };
+				expr.Type = new FuDynamicPtrType { Line = expr.Line, Class = klass.Class, TypeArg0 = klass.TypeArg0, TypeArg1 = klass.TypeArg1 };
 				expr.Inner = null;
 				return expr;
 			default:
@@ -12960,11 +12960,101 @@ namespace Fusion
 			WriteChar('>');
 		}
 
+		void WriteClassType(FuClassType klass)
+		{
+			if (klass.Class.TypeParameterCount == 0) {
+				if (!(klass is FuReadWriteClassType))
+					Write("const ");
+				switch (klass.Class.Id) {
+				case FuId.TextWriterClass:
+					Include("iostream");
+					Write("std::ostream");
+					break;
+				case FuId.StringWriterClass:
+					Include("sstream");
+					Write("std::ostringstream");
+					break;
+				case FuId.RegexClass:
+					Include("regex");
+					Write("std::regex");
+					break;
+				case FuId.MatchClass:
+					Include("regex");
+					Write("std::cmatch");
+					break;
+				case FuId.LockClass:
+					Include("mutex");
+					Write("std::recursive_mutex");
+					break;
+				default:
+					Write(klass.Class.Name);
+					break;
+				}
+			}
+			else {
+				string cppType;
+				switch (klass.Class.Id) {
+				case FuId.ArrayStorageClass:
+					cppType = "array";
+					break;
+				case FuId.ListClass:
+					cppType = "vector";
+					break;
+				case FuId.QueueClass:
+					cppType = "queue";
+					break;
+				case FuId.StackClass:
+					cppType = "stack";
+					break;
+				case FuId.HashSetClass:
+					cppType = "unordered_set";
+					break;
+				case FuId.SortedSetClass:
+					cppType = "set";
+					break;
+				case FuId.DictionaryClass:
+					cppType = "unordered_map";
+					break;
+				case FuId.SortedDictionaryClass:
+					cppType = "map";
+					break;
+				default:
+					NotSupported(klass, klass.Class.Name);
+					cppType = "NOT_SUPPORTED";
+					break;
+				}
+				Include(cppType);
+				if (!(klass is FuReadWriteClassType))
+					Write("const ");
+				Write("std::");
+				Write(cppType);
+				WriteChar('<');
+				WriteType(klass.TypeArg0, false);
+				if (klass is FuArrayStorageType arrayStorage) {
+					Write(", ");
+					VisitLiteralLong(arrayStorage.Length);
+				}
+				else if (klass.Class.TypeParameterCount == 2) {
+					Write(", ");
+					WriteType(klass.GetValueType(), false);
+				}
+				WriteChar('>');
+			}
+		}
+
 		protected override void WriteType(FuType type, bool promote)
 		{
 			switch (type) {
 			case FuIntegerType _:
 				WriteNumericType(GetTypeId(type, promote));
+				break;
+			case FuStringStorageType _:
+				Include("string");
+				Write("std::string");
+				break;
+			case FuStringType _:
+				Include("string_view");
+				Write("std::string_view");
 				break;
 			case FuDynamicPtrType dynamic:
 				switch (dynamic.Class.Id) {
@@ -12981,102 +13071,19 @@ namespace Fusion
 				default:
 					Include("memory");
 					Write("std::shared_ptr<");
-					Write(dynamic.Class.Name);
+					WriteClassType(dynamic);
 					WriteChar('>');
 					break;
 				}
 				break;
 			case FuClassType klass:
-				if (klass.Class.TypeParameterCount == 0) {
-					if (klass.Class.Id == FuId.StringClass) {
-						string cppType = klass.Id == FuId.StringStorageType ? "string" : "string_view";
-						Include(cppType);
-						Write("std::");
-						Write(cppType);
-						break;
-					}
-					if (!(klass is FuReadWriteClassType))
-						Write("const ");
-					switch (klass.Class.Id) {
-					case FuId.TextWriterClass:
-						Include("iostream");
-						Write("std::ostream");
-						break;
-					case FuId.StringWriterClass:
-						Include("sstream");
-						Write("std::ostringstream");
-						break;
-					case FuId.RegexClass:
-						Include("regex");
-						Write("std::regex");
-						break;
-					case FuId.MatchClass:
-						Include("regex");
-						Write("std::cmatch");
-						break;
-					case FuId.LockClass:
-						Include("mutex");
-						Write("std::recursive_mutex");
-						break;
-					default:
-						Write(klass.Class.Name);
-						break;
-					}
-				}
-				else if (klass.Class.Id == FuId.ArrayPtrClass) {
+				if (klass.Class.Id == FuId.ArrayPtrClass) {
 					WriteType(klass.GetElementType(), false);
 					if (!(klass is FuReadWriteClassType))
 						Write(" const");
 				}
-				else {
-					string cppType;
-					switch (klass.Class.Id) {
-					case FuId.ArrayStorageClass:
-						cppType = "array";
-						break;
-					case FuId.ListClass:
-						cppType = "vector";
-						break;
-					case FuId.QueueClass:
-						cppType = "queue";
-						break;
-					case FuId.StackClass:
-						cppType = "stack";
-						break;
-					case FuId.HashSetClass:
-						cppType = "unordered_set";
-						break;
-					case FuId.SortedSetClass:
-						cppType = "set";
-						break;
-					case FuId.DictionaryClass:
-						cppType = "unordered_map";
-						break;
-					case FuId.SortedDictionaryClass:
-						cppType = "map";
-						break;
-					default:
-						NotSupported(type, klass.Class.Name);
-						cppType = "NOT_SUPPORTED";
-						break;
-					}
-					Include(cppType);
-					if (!(klass is FuReadWriteClassType))
-						Write("const ");
-					Write("std::");
-					Write(cppType);
-					WriteChar('<');
-					WriteType(klass.TypeArg0, false);
-					if (klass is FuArrayStorageType arrayStorage) {
-						Write(", ");
-						VisitLiteralLong(arrayStorage.Length);
-					}
-					else if (klass.Class.TypeParameterCount == 2) {
-						Write(", ");
-						WriteType(klass.GetValueType(), false);
-					}
-					WriteChar('>');
-				}
+				else
+					WriteClassType(klass);
 				if (!(klass is FuStorageType))
 					Write(" *");
 				break;
@@ -13100,7 +13107,7 @@ namespace Fusion
 		{
 			Include("memory");
 			Write("std::make_shared<");
-			Write(klass.Class.Name);
+			WriteClassType(klass);
 			Write(">()");
 		}
 

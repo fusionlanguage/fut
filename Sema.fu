@@ -645,7 +645,7 @@ public class FuSema
 			expr.Inner = array.LengthExpr;
 			return expr;
 		case FuStorageType klass:
-			expr.Type = new FuDynamicPtrType { Line = expr.Line, Class = klass.Class };
+			expr.Type = new FuDynamicPtrType { Line = expr.Line, Class = klass.Class, TypeArg0 = klass.TypeArg0, TypeArg1 = klass.TypeArg1 };
 			expr.Inner = null;
 			return expr;
 		default:

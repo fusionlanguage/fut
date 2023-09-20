@@ -5052,7 +5052,7 @@ export class FuSema
 		}
 		else if (type instanceof FuStorageType) {
 			const klass = type;
-			expr.type = Object.assign(new FuDynamicPtrType(), { line: expr.line, class: klass.class });
+			expr.type = Object.assign(new FuDynamicPtrType(), { line: expr.line, class: klass.class, typeArg0: klass.typeArg0, typeArg1: klass.typeArg1 });
 			expr.inner = null;
 			return expr;
 		}
@@ -13337,131 +13337,136 @@ export class GenCpp extends GenCCpp
 		this.writeChar(62);
 	}
 
+	#writeClassType(klass)
+	{
+		if (klass.class.typeParameterCount == 0) {
+			if (!(klass instanceof FuReadWriteClassType))
+				this.write("const ");
+			switch (klass.class.id) {
+			case FuId.TEXT_WRITER_CLASS:
+				this.include("iostream");
+				this.write("std::ostream");
+				break;
+			case FuId.STRING_WRITER_CLASS:
+				this.include("sstream");
+				this.write("std::ostringstream");
+				break;
+			case FuId.REGEX_CLASS:
+				this.include("regex");
+				this.write("std::regex");
+				break;
+			case FuId.MATCH_CLASS:
+				this.include("regex");
+				this.write("std::cmatch");
+				break;
+			case FuId.LOCK_CLASS:
+				this.include("mutex");
+				this.write("std::recursive_mutex");
+				break;
+			default:
+				this.write(klass.class.name);
+				break;
+			}
+		}
+		else {
+			let cppType;
+			switch (klass.class.id) {
+			case FuId.ARRAY_STORAGE_CLASS:
+				cppType = "array";
+				break;
+			case FuId.LIST_CLASS:
+				cppType = "vector";
+				break;
+			case FuId.QUEUE_CLASS:
+				cppType = "queue";
+				break;
+			case FuId.STACK_CLASS:
+				cppType = "stack";
+				break;
+			case FuId.HASH_SET_CLASS:
+				cppType = "unordered_set";
+				break;
+			case FuId.SORTED_SET_CLASS:
+				cppType = "set";
+				break;
+			case FuId.DICTIONARY_CLASS:
+				cppType = "unordered_map";
+				break;
+			case FuId.SORTED_DICTIONARY_CLASS:
+				cppType = "map";
+				break;
+			default:
+				this.notSupported(klass, klass.class.name);
+				cppType = "NOT_SUPPORTED";
+				break;
+			}
+			this.include(cppType);
+			if (!(klass instanceof FuReadWriteClassType))
+				this.write("const ");
+			this.write("std::");
+			this.write(cppType);
+			this.writeChar(60);
+			this.writeType(klass.typeArg0, false);
+			let arrayStorage;
+			if ((arrayStorage = klass) instanceof FuArrayStorageType) {
+				this.write(", ");
+				this.visitLiteralLong(BigInt(arrayStorage.length));
+			}
+			else if (klass.class.typeParameterCount == 2) {
+				this.write(", ");
+				this.writeType(klass.getValueType(), false);
+			}
+			this.writeChar(62);
+		}
+	}
+
 	writeType(type, promote)
 	{
-		fuswitch0: {
-			if (type instanceof FuIntegerType)
-				this.writeNumericType(this.getTypeId(type, promote));
-			else if (type instanceof FuDynamicPtrType) {
-				const dynamic = type;
-				switch (dynamic.class.id) {
-				case FuId.REGEX_CLASS:
-					this.include("regex");
-					this.write("std::regex");
-					break;
-				case FuId.ARRAY_PTR_CLASS:
-					this.include("memory");
-					this.write("std::shared_ptr<");
-					this.writeType(dynamic.getElementType(), false);
-					this.write("[]>");
-					break;
-				default:
-					this.include("memory");
-					this.write("std::shared_ptr<");
-					this.write(dynamic.class.name);
-					this.writeChar(62);
-					break;
-				}
+		if (type instanceof FuIntegerType)
+			this.writeNumericType(this.getTypeId(type, promote));
+		else if (type instanceof FuStringStorageType) {
+			this.include("string");
+			this.write("std::string");
+		}
+		else if (type instanceof FuStringType) {
+			this.include("string_view");
+			this.write("std::string_view");
+		}
+		else if (type instanceof FuDynamicPtrType) {
+			const dynamic = type;
+			switch (dynamic.class.id) {
+			case FuId.REGEX_CLASS:
+				this.include("regex");
+				this.write("std::regex");
+				break;
+			case FuId.ARRAY_PTR_CLASS:
+				this.include("memory");
+				this.write("std::shared_ptr<");
+				this.writeType(dynamic.getElementType(), false);
+				this.write("[]>");
+				break;
+			default:
+				this.include("memory");
+				this.write("std::shared_ptr<");
+				this.#writeClassType(dynamic);
+				this.writeChar(62);
+				break;
 			}
-			else if (type instanceof FuClassType) {
-				const klass = type;
-				if (klass.class.typeParameterCount == 0) {
-					if (klass.class.id == FuId.STRING_CLASS) {
-						let cppType = klass.id == FuId.STRING_STORAGE_TYPE ? "string" : "string_view";
-						this.include(cppType);
-						this.write("std::");
-						this.write(cppType);
-						break fuswitch0;
-					}
-					if (!(klass instanceof FuReadWriteClassType))
-						this.write("const ");
-					switch (klass.class.id) {
-					case FuId.TEXT_WRITER_CLASS:
-						this.include("iostream");
-						this.write("std::ostream");
-						break;
-					case FuId.STRING_WRITER_CLASS:
-						this.include("sstream");
-						this.write("std::ostringstream");
-						break;
-					case FuId.REGEX_CLASS:
-						this.include("regex");
-						this.write("std::regex");
-						break;
-					case FuId.MATCH_CLASS:
-						this.include("regex");
-						this.write("std::cmatch");
-						break;
-					case FuId.LOCK_CLASS:
-						this.include("mutex");
-						this.write("std::recursive_mutex");
-						break;
-					default:
-						this.write(klass.class.name);
-						break;
-					}
-				}
-				else if (klass.class.id == FuId.ARRAY_PTR_CLASS) {
-					this.writeType(klass.getElementType(), false);
-					if (!(klass instanceof FuReadWriteClassType))
-						this.write(" const");
-				}
-				else {
-					let cppType;
-					switch (klass.class.id) {
-					case FuId.ARRAY_STORAGE_CLASS:
-						cppType = "array";
-						break;
-					case FuId.LIST_CLASS:
-						cppType = "vector";
-						break;
-					case FuId.QUEUE_CLASS:
-						cppType = "queue";
-						break;
-					case FuId.STACK_CLASS:
-						cppType = "stack";
-						break;
-					case FuId.HASH_SET_CLASS:
-						cppType = "unordered_set";
-						break;
-					case FuId.SORTED_SET_CLASS:
-						cppType = "set";
-						break;
-					case FuId.DICTIONARY_CLASS:
-						cppType = "unordered_map";
-						break;
-					case FuId.SORTED_DICTIONARY_CLASS:
-						cppType = "map";
-						break;
-					default:
-						this.notSupported(type, klass.class.name);
-						cppType = "NOT_SUPPORTED";
-						break;
-					}
-					this.include(cppType);
-					if (!(klass instanceof FuReadWriteClassType))
-						this.write("const ");
-					this.write("std::");
-					this.write(cppType);
-					this.writeChar(60);
-					this.writeType(klass.typeArg0, false);
-					let arrayStorage;
-					if ((arrayStorage = klass) instanceof FuArrayStorageType) {
-						this.write(", ");
-						this.visitLiteralLong(BigInt(arrayStorage.length));
-					}
-					else if (klass.class.typeParameterCount == 2) {
-						this.write(", ");
-						this.writeType(klass.getValueType(), false);
-					}
-					this.writeChar(62);
-				}
-				if (!(klass instanceof FuStorageType))
-					this.write(" *");
+		}
+		else if (type instanceof FuClassType) {
+			const klass = type;
+			if (klass.class.id == FuId.ARRAY_PTR_CLASS) {
+				this.writeType(klass.getElementType(), false);
+				if (!(klass instanceof FuReadWriteClassType))
+					this.write(" const");
 			}
 			else
-				this.write(type.name);
+				this.#writeClassType(klass);
+			if (!(klass instanceof FuStorageType))
+				this.write(" *");
 		}
+		else
+			this.write(type.name);
 	}
 
 	writeNewArray(elementType, lengthExpr, parent)
@@ -13478,7 +13483,7 @@ export class GenCpp extends GenCCpp
 	{
 		this.include("memory");
 		this.write("std::make_shared<");
-		this.write(klass.class.name);
+		this.#writeClassType(klass);
 		this.write(">()");
 	}
 
