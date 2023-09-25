@@ -2534,9 +2534,9 @@ FuSystem::FuSystem()
 	matchClass->add(FuMethodGroup::new_(FuMethod::newMutator(FuVisibility::public_, this->boolType, FuId::matchFindStr, "Find", FuVar::new_(this->stringPtrType, "input"), FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), FuMethod::newMutator(FuVisibility::public_, this->boolType, FuId::matchFindRegex, "Find", FuVar::new_(this->stringPtrType, "input"), FuVar::new_(futemp7, "pattern"))));
 	matchClass->add(FuProperty::new_(this->intType, FuId::matchStart, "Start"));
 	matchClass->add(FuProperty::new_(this->intType, FuId::matchEnd, "End"));
-	matchClass->add(FuMethod::new_(FuVisibility::public_, this->stringPtrType, FuId::matchGetCapture, "GetCapture", FuVar::new_(this->uIntType, "group")));
+	matchClass->add(FuMethod::new_(FuVisibility::public_, this->stringStorageType, FuId::matchGetCapture, "GetCapture", FuVar::new_(this->uIntType, "group")));
 	matchClass->add(FuProperty::new_(this->uIntType, FuId::matchLength, "Length"));
-	matchClass->add(FuProperty::new_(this->stringPtrType, FuId::matchValue, "Value"));
+	matchClass->add(FuProperty::new_(this->stringStorageType, FuId::matchValue, "Value"));
 	add(matchClass);
 	std::shared_ptr<FuFloatingType> floatIntType = std::make_shared<FuFloatingType>();
 	floatIntType->id = FuId::floatIntType;
@@ -9240,7 +9240,8 @@ bool GenC::isNewString(const FuExpr * expr)
 {
 	const FuBinaryExpr * binary;
 	const FuCallExpr * call;
-	return dynamic_cast<const FuInterpolatedString *>(expr) || ((binary = dynamic_cast<const FuBinaryExpr *>(expr)) && expr->type->id == FuId::stringStorageType && binary->op == FuToken::plus) || ((call = dynamic_cast<const FuCallExpr *>(expr)) && expr->type->id == FuId::stringStorageType && (call->method->symbol->id != FuId::stringSubstring || std::ssize(call->arguments) == 2));
+	const FuSymbolReference * symbol;
+	return dynamic_cast<const FuInterpolatedString *>(expr) || ((binary = dynamic_cast<const FuBinaryExpr *>(expr)) && expr->type->id == FuId::stringStorageType && binary->op == FuToken::plus) || ((call = dynamic_cast<const FuCallExpr *>(expr)) && expr->type->id == FuId::stringStorageType && (call->method->symbol->id != FuId::stringSubstring || std::ssize(call->arguments) == 2)) || ((symbol = dynamic_cast<const FuSymbolReference *>(expr)) && symbol->symbol->id == FuId::matchValue);
 }
 
 void GenC::writeStringStorageValue(const FuExpr * expr)

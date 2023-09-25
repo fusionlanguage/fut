@@ -5,7 +5,7 @@ public class Test
 		return m.Start == 10
 			&& m.End == 19
 			&& m.Length == 9
-			&& m.Value == "brown fox" //FAIL: c TODO memleak
+			&& m.Value == "brown fox"
 			&& m.GetCapture(1) == "brown" && m.GetCapture(2) == "fox";
 	}
 

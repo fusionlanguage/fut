@@ -3058,9 +3058,9 @@ namespace Fusion
 			matchClass.Add(FuMethodGroup.New(FuMethod.NewMutator(FuVisibility.Public, this.BoolType, FuId.MatchFindStr, "Find", FuVar.New(this.StringPtrType, "input"), FuVar.New(this.StringPtrType, "pattern"), FuVar.New(this.RegexOptionsEnum, "options", regexOptionsNone)), FuMethod.NewMutator(FuVisibility.Public, this.BoolType, FuId.MatchFindRegex, "Find", FuVar.New(this.StringPtrType, "input"), FuVar.New(new FuClassType { Class = regexClass }, "pattern"))));
 			matchClass.Add(FuProperty.New(this.IntType, FuId.MatchStart, "Start"));
 			matchClass.Add(FuProperty.New(this.IntType, FuId.MatchEnd, "End"));
-			matchClass.Add(FuMethod.New(FuVisibility.Public, this.StringPtrType, FuId.MatchGetCapture, "GetCapture", FuVar.New(this.UIntType, "group")));
+			matchClass.Add(FuMethod.New(FuVisibility.Public, this.StringStorageType, FuId.MatchGetCapture, "GetCapture", FuVar.New(this.UIntType, "group")));
 			matchClass.Add(FuProperty.New(this.UIntType, FuId.MatchLength, "Length"));
-			matchClass.Add(FuProperty.New(this.StringPtrType, FuId.MatchValue, "Value"));
+			matchClass.Add(FuProperty.New(this.StringStorageType, FuId.MatchValue, "Value"));
 			Add(matchClass);
 			FuFloatingType floatIntType = new FuFloatingType { Id = FuId.FloatIntType, Name = "float" };
 			FuClass mathClass = FuClass.New(FuCallType.Static, FuId.None, "Math");
@@ -9547,7 +9547,7 @@ namespace Fusion
 
 		static bool IsNewString(FuExpr expr)
 		{
-			return expr is FuInterpolatedString || (expr is FuBinaryExpr binary && expr.Type.Id == FuId.StringStorageType && binary.Op == FuToken.Plus) || (expr is FuCallExpr call && expr.Type.Id == FuId.StringStorageType && (call.Method.Symbol.Id != FuId.StringSubstring || call.Arguments.Count == 2));
+			return expr is FuInterpolatedString || (expr is FuBinaryExpr binary && expr.Type.Id == FuId.StringStorageType && binary.Op == FuToken.Plus) || (expr is FuCallExpr call && expr.Type.Id == FuId.StringStorageType && (call.Method.Symbol.Id != FuId.StringSubstring || call.Arguments.Count == 2)) || (expr is FuSymbolReference symbol && symbol.Symbol.Id == FuId.MatchValue);
 		}
 
 		void WriteStringStorageValue(FuExpr expr)

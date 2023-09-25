@@ -1613,9 +1613,9 @@ public class FuSystem : FuScope
 			FuMethod.NewMutator(FuVisibility.Public, BoolType, FuId.MatchFindRegex, "Find", FuVar.New(StringPtrType, "input"), FuVar.New(new FuClassType { Class = regexClass }, "pattern"))));
 		matchClass.Add(FuProperty.New(IntType, FuId.MatchStart, "Start"));
 		matchClass.Add(FuProperty.New(IntType, FuId.MatchEnd, "End"));
-		matchClass.Add(FuMethod.New(FuVisibility.Public, StringPtrType, FuId.MatchGetCapture, "GetCapture", FuVar.New(UIntType, "group")));
+		matchClass.Add(FuMethod.New(FuVisibility.Public, StringStorageType, FuId.MatchGetCapture, "GetCapture", FuVar.New(UIntType, "group")));
 		matchClass.Add(FuProperty.New(UIntType, FuId.MatchLength, "Length"));
-		matchClass.Add(FuProperty.New(StringPtrType, FuId.MatchValue, "Value"));
+		matchClass.Add(FuProperty.New(StringStorageType, FuId.MatchValue, "Value"));
 		Add(matchClass);
 
 		FuFloatingType# floatIntType = new FuFloatingType { Id = FuId.FloatIntType, Name = "float" };

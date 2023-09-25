@@ -3202,9 +3202,9 @@ export class FuSystem extends FuScope
 		matchClass.add(FuMethodGroup.new(FuMethod.newMutator(FuVisibility.PUBLIC, this.boolType, FuId.MATCH_FIND_STR, "Find", FuVar.new(this.stringPtrType, "input"), FuVar.new(this.stringPtrType, "pattern"), FuVar.new(this.regexOptionsEnum, "options", regexOptionsNone)), FuMethod.newMutator(FuVisibility.PUBLIC, this.boolType, FuId.MATCH_FIND_REGEX, "Find", FuVar.new(this.stringPtrType, "input"), FuVar.new(Object.assign(new FuClassType(), { class: regexClass }), "pattern"))));
 		matchClass.add(FuProperty.new(this.intType, FuId.MATCH_START, "Start"));
 		matchClass.add(FuProperty.new(this.intType, FuId.MATCH_END, "End"));
-		matchClass.add(FuMethod.new(FuVisibility.PUBLIC, this.stringPtrType, FuId.MATCH_GET_CAPTURE, "GetCapture", FuVar.new(this.#uIntType, "group")));
+		matchClass.add(FuMethod.new(FuVisibility.PUBLIC, this.stringStorageType, FuId.MATCH_GET_CAPTURE, "GetCapture", FuVar.new(this.#uIntType, "group")));
 		matchClass.add(FuProperty.new(this.#uIntType, FuId.MATCH_LENGTH, "Length"));
-		matchClass.add(FuProperty.new(this.stringPtrType, FuId.MATCH_VALUE, "Value"));
+		matchClass.add(FuProperty.new(this.stringStorageType, FuId.MATCH_VALUE, "Value"));
 		this.add(matchClass);
 		let floatIntType = Object.assign(new FuFloatingType(), { id: FuId.FLOAT_INT_TYPE, name: "float" });
 		let mathClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Math");
@@ -9865,7 +9865,8 @@ export class GenC extends GenCCpp
 	{
 		let binary;
 		let call;
-		return expr instanceof FuInterpolatedString || ((binary = expr) instanceof FuBinaryExpr && expr.type.id == FuId.STRING_STORAGE_TYPE && binary.op == FuToken.PLUS) || ((call = expr) instanceof FuCallExpr && expr.type.id == FuId.STRING_STORAGE_TYPE && (call.method.symbol.id != FuId.STRING_SUBSTRING || call.arguments.length == 2));
+		let symbol;
+		return expr instanceof FuInterpolatedString || ((binary = expr) instanceof FuBinaryExpr && expr.type.id == FuId.STRING_STORAGE_TYPE && binary.op == FuToken.PLUS) || ((call = expr) instanceof FuCallExpr && expr.type.id == FuId.STRING_STORAGE_TYPE && (call.method.symbol.id != FuId.STRING_SUBSTRING || call.arguments.length == 2)) || ((symbol = expr) instanceof FuSymbolReference && symbol.symbol.id == FuId.MATCH_VALUE);
 	}
 
 	#writeStringStorageValue(expr)
