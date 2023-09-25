@@ -9547,7 +9547,7 @@ namespace Fusion
 
 		static bool IsNewString(FuExpr expr)
 		{
-			return expr is FuInterpolatedString || (expr is FuBinaryExpr binary && expr.Type.Id == FuId.StringStorageType && binary.Op == FuToken.Plus) || (expr is FuCallExpr call && expr.Type.Id == FuId.StringStorageType && (call.Method.Symbol.Id != FuId.StringSubstring || call.Arguments.Count == 2)) || (expr is FuSymbolReference symbol && symbol.Symbol.Id == FuId.MatchValue);
+			return expr is FuInterpolatedString || (expr is FuBinaryExpr binary && binary.Op == FuToken.Plus && binary.Type.Id == FuId.StringStorageType) || (expr is FuCallExpr call && expr.Type.Id == FuId.StringStorageType && (call.Method.Symbol.Id != FuId.StringSubstring || call.Arguments.Count == 2)) || (expr is FuSymbolReference symbol && symbol.Symbol.Id == FuId.MatchValue);
 		}
 
 		void WriteStringStorageValue(FuExpr expr)
@@ -9819,7 +9819,9 @@ namespace Fusion
 			}
 		}
 
-		static bool HasTemporariesToDestruct(FuExpr expr)
+		static bool HasTemporariesToDestruct(FuExpr expr) => ContainsTemporariesToDestruct(expr) || IsNewString(expr);
+
+		static bool ContainsTemporariesToDestruct(FuExpr expr)
 		{
 			switch (expr) {
 			case FuAggregateInitializer init:
@@ -9832,13 +9834,13 @@ namespace Fusion
 			case FuSymbolReference symbol:
 				return symbol.Left != null && HasTemporariesToDestruct(symbol.Left);
 			case FuUnaryExpr unary:
-				return unary.Inner != null && HasTemporariesToDestruct(unary.Inner);
+				return unary.Inner != null && ContainsTemporariesToDestruct(unary.Inner);
 			case FuBinaryExpr binary:
 				return HasTemporariesToDestruct(binary.Left) || (binary.Op != FuToken.Is && HasTemporariesToDestruct(binary.Right));
 			case FuSelectExpr select:
-				return HasTemporariesToDestruct(select.Cond);
+				return ContainsTemporariesToDestruct(select.Cond);
 			case FuCallExpr call:
-				return (call.Method.Left != null && (HasTemporariesToDestruct(call.Method.Left) || IsNewString(call.Method.Left))) || call.Arguments.Exists(arg => HasTemporariesToDestruct(arg) || IsNewString(arg));
+				return (call.Method.Left != null && HasTemporariesToDestruct(call.Method.Left)) || call.Arguments.Exists(arg => HasTemporariesToDestruct(arg));
 			default:
 				throw new NotImplementedException();
 			}
@@ -11526,7 +11528,7 @@ namespace Fusion
 				WriteDestructAll();
 				WriteLine(this.CurrentMethod.Throws ? "return true;" : "return;");
 			}
-			else if (statement.Value is FuLiteral || (this.VarsToDestruct.Count == 0 && !HasTemporariesToDestruct(statement.Value))) {
+			else if (statement.Value is FuLiteral || (this.VarsToDestruct.Count == 0 && !ContainsTemporariesToDestruct(statement.Value))) {
 				WriteDestructAll();
 				WriteCTemporaries(statement.Value);
 				base.VisitReturn(statement);

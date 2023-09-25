@@ -9241,7 +9241,7 @@ bool GenC::isNewString(const FuExpr * expr)
 	const FuBinaryExpr * binary;
 	const FuCallExpr * call;
 	const FuSymbolReference * symbol;
-	return dynamic_cast<const FuInterpolatedString *>(expr) || ((binary = dynamic_cast<const FuBinaryExpr *>(expr)) && expr->type->id == FuId::stringStorageType && binary->op == FuToken::plus) || ((call = dynamic_cast<const FuCallExpr *>(expr)) && expr->type->id == FuId::stringStorageType && (call->method->symbol->id != FuId::stringSubstring || std::ssize(call->arguments) == 2)) || ((symbol = dynamic_cast<const FuSymbolReference *>(expr)) && symbol->symbol->id == FuId::matchValue);
+	return dynamic_cast<const FuInterpolatedString *>(expr) || ((binary = dynamic_cast<const FuBinaryExpr *>(expr)) && binary->op == FuToken::plus && binary->type->id == FuId::stringStorageType) || ((call = dynamic_cast<const FuCallExpr *>(expr)) && expr->type->id == FuId::stringStorageType && (call->method->symbol->id != FuId::stringSubstring || std::ssize(call->arguments) == 2)) || ((symbol = dynamic_cast<const FuSymbolReference *>(expr)) && symbol->symbol->id == FuId::matchValue);
 }
 
 void GenC::writeStringStorageValue(const FuExpr * expr)
@@ -9505,6 +9505,11 @@ void GenC::writeCTemporaries(const FuExpr * expr)
 
 bool GenC::hasTemporariesToDestruct(const FuExpr * expr)
 {
+	return containsTemporariesToDestruct(expr) || isNewString(expr);
+}
+
+bool GenC::containsTemporariesToDestruct(const FuExpr * expr)
+{
 	if (const FuAggregateInitializer *init = dynamic_cast<const FuAggregateInitializer *>(expr))
 		return std::any_of(init->items.begin(), init->items.end(), [](const std::shared_ptr<FuExpr> &field) { return hasTemporariesToDestruct(field.get()); });
 	else if (dynamic_cast<const FuLiteral *>(expr) || dynamic_cast<const FuLambdaExpr *>(expr))
@@ -9514,13 +9519,13 @@ bool GenC::hasTemporariesToDestruct(const FuExpr * expr)
 	else if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(expr))
 		return symbol->left != nullptr && hasTemporariesToDestruct(symbol->left.get());
 	else if (const FuUnaryExpr *unary = dynamic_cast<const FuUnaryExpr *>(expr))
-		return unary->inner != nullptr && hasTemporariesToDestruct(unary->inner.get());
+		return unary->inner != nullptr && containsTemporariesToDestruct(unary->inner.get());
 	else if (const FuBinaryExpr *binary = dynamic_cast<const FuBinaryExpr *>(expr))
 		return hasTemporariesToDestruct(binary->left.get()) || (binary->op != FuToken::is && hasTemporariesToDestruct(binary->right.get()));
 	else if (const FuSelectExpr *select = dynamic_cast<const FuSelectExpr *>(expr))
-		return hasTemporariesToDestruct(select->cond.get());
+		return containsTemporariesToDestruct(select->cond.get());
 	else if (const FuCallExpr *call = dynamic_cast<const FuCallExpr *>(expr))
-		return (call->method->left != nullptr && (hasTemporariesToDestruct(call->method->left.get()) || isNewString(call->method->left.get()))) || std::any_of(call->arguments.begin(), call->arguments.end(), [](const std::shared_ptr<FuExpr> &arg) { return hasTemporariesToDestruct(arg.get()) || isNewString(arg.get()); });
+		return (call->method->left != nullptr && hasTemporariesToDestruct(call->method->left.get())) || std::any_of(call->arguments.begin(), call->arguments.end(), [](const std::shared_ptr<FuExpr> &arg) { return hasTemporariesToDestruct(arg.get()); });
 	else
 		std::abort();
 }
@@ -11227,7 +11232,7 @@ void GenC::visitReturn(const FuReturn * statement)
 		writeDestructAll();
 		writeLine(this->currentMethod->throws ? "return true;" : "return;");
 	}
-	else if (dynamic_cast<const FuLiteral *>(statement->value.get()) || (std::ssize(this->varsToDestruct) == 0 && !hasTemporariesToDestruct(statement->value.get()))) {
+	else if (dynamic_cast<const FuLiteral *>(statement->value.get()) || (std::ssize(this->varsToDestruct) == 0 && !containsTemporariesToDestruct(statement->value.get()))) {
 		writeDestructAll();
 		writeCTemporaries(statement->value.get());
 		GenBase::visitReturn(statement);

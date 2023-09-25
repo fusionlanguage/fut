@@ -9866,7 +9866,7 @@ export class GenC extends GenCCpp
 		let binary;
 		let call;
 		let symbol;
-		return expr instanceof FuInterpolatedString || ((binary = expr) instanceof FuBinaryExpr && expr.type.id == FuId.STRING_STORAGE_TYPE && binary.op == FuToken.PLUS) || ((call = expr) instanceof FuCallExpr && expr.type.id == FuId.STRING_STORAGE_TYPE && (call.method.symbol.id != FuId.STRING_SUBSTRING || call.arguments.length == 2)) || ((symbol = expr) instanceof FuSymbolReference && symbol.symbol.id == FuId.MATCH_VALUE);
+		return expr instanceof FuInterpolatedString || ((binary = expr) instanceof FuBinaryExpr && binary.op == FuToken.PLUS && binary.type.id == FuId.STRING_STORAGE_TYPE) || ((call = expr) instanceof FuCallExpr && expr.type.id == FuId.STRING_STORAGE_TYPE && (call.method.symbol.id != FuId.STRING_SUBSTRING || call.arguments.length == 2)) || ((symbol = expr) instanceof FuSymbolReference && symbol.symbol.id == FuId.MATCH_VALUE);
 	}
 
 	#writeStringStorageValue(expr)
@@ -10142,6 +10142,11 @@ export class GenC extends GenCCpp
 
 	static #hasTemporariesToDestruct(expr)
 	{
+		return GenC.#containsTemporariesToDestruct(expr) || GenC.#isNewString(expr);
+	}
+
+	static #containsTemporariesToDestruct(expr)
+	{
 		if (expr instanceof FuAggregateInitializer) {
 			const init = expr;
 			return init.items.some(field => GenC.#hasTemporariesToDestruct(field));
@@ -10158,7 +10163,7 @@ export class GenC extends GenCCpp
 		}
 		else if (expr instanceof FuUnaryExpr) {
 			const unary = expr;
-			return unary.inner != null && GenC.#hasTemporariesToDestruct(unary.inner);
+			return unary.inner != null && GenC.#containsTemporariesToDestruct(unary.inner);
 		}
 		else if (expr instanceof FuBinaryExpr) {
 			const binary = expr;
@@ -10166,11 +10171,11 @@ export class GenC extends GenCCpp
 		}
 		else if (expr instanceof FuSelectExpr) {
 			const select = expr;
-			return GenC.#hasTemporariesToDestruct(select.cond);
+			return GenC.#containsTemporariesToDestruct(select.cond);
 		}
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
-			return (call.method.left != null && (GenC.#hasTemporariesToDestruct(call.method.left) || GenC.#isNewString(call.method.left))) || call.arguments.some(arg => GenC.#hasTemporariesToDestruct(arg) || GenC.#isNewString(arg));
+			return (call.method.left != null && GenC.#hasTemporariesToDestruct(call.method.left)) || call.arguments.some(arg => GenC.#hasTemporariesToDestruct(arg));
 		}
 		else
 			throw new Error();
@@ -11882,7 +11887,7 @@ export class GenC extends GenCCpp
 			this.#writeDestructAll();
 			this.writeLine(this.currentMethod.throws ? "return true;" : "return;");
 		}
-		else if (statement.value instanceof FuLiteral || (this.#varsToDestruct.length == 0 && !GenC.#hasTemporariesToDestruct(statement.value))) {
+		else if (statement.value instanceof FuLiteral || (this.#varsToDestruct.length == 0 && !GenC.#containsTemporariesToDestruct(statement.value))) {
 			this.#writeDestructAll();
 			this.#writeCTemporaries(statement.value);
 			super.visitReturn(statement);

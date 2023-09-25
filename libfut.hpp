@@ -2104,6 +2104,7 @@ private:
 	void writeStorageTemporary(const FuExpr * expr);
 	void writeCTemporaries(const FuExpr * expr);
 	static bool hasTemporariesToDestruct(const FuExpr * expr);
+	static bool containsTemporariesToDestruct(const FuExpr * expr);
 	void writeGPointerCast(const FuType * type, const FuExpr * expr);
 	void writeGConstPointerCast(const FuExpr * expr);
 	void writeQueueObject(const FuExpr * obj);
