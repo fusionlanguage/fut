@@ -1,0 +1,18 @@
+#if C
+native {
+#include <stdio.h>
+}
+#endif
+
+public static class Test
+{
+	public static bool Run()
+	{
+#if C
+		native {
+			puts("Hello");
+		}
+#endif
+		return true;
+	}
+}

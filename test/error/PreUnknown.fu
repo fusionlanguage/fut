@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-#foo //ERROR: Unknown preprocessor directive
-		return true;
+#foo //ERROR: Invalid expression //ERROR: Expected ';', got unknown preprocessor directive
+		return true; //ERROR: Expected ';', got 'return'
 	}
 }

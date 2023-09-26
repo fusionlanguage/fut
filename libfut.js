@@ -108,10 +108,11 @@ export const FuToken = {
 	WHEN : 93,
 	WHILE : 94,
 	END_OF_LINE : 95,
-	PRE_IF : 96,
-	PRE_EL_IF : 97,
-	PRE_ELSE : 98,
-	PRE_END_IF : 99
+	PRE_UNKNOWN : 96,
+	PRE_IF : 97,
+	PRE_EL_IF : 98,
+	PRE_ELSE : 99,
+	PRE_END_IF : 100
 }
 
 const FuPreState = {
@@ -473,19 +474,6 @@ export class FuLexer
 		return new TextDecoder().decode(this.input.subarray(this.lexemeOffset, this.lexemeOffset + this.charOffset - this.lexemeOffset));
 	}
 
-	#readId(c)
-	{
-		if (FuLexer.isLetterOrDigit(c)) {
-			while (FuLexer.isLetterOrDigit(this.peekChar()))
-				this.readChar();
-			this.stringValue = this.getLexeme();
-		}
-		else {
-			this.reportError("Invalid character");
-			this.stringValue = "";
-		}
-	}
-
 	#readPreToken()
 	{
 		for (;;) {
@@ -507,20 +495,33 @@ export class FuLexer
 			case 35:
 				if (!atLineStart)
 					return FuToken.HASH;
-				this.lexemeOffset = this.charOffset;
-				this.#readId(this.readChar());
-				switch (this.stringValue) {
-				case "if":
-					return FuToken.PRE_IF;
-				case "elif":
-					return FuToken.PRE_EL_IF;
-				case "else":
-					return FuToken.PRE_ELSE;
-				case "endif":
-					return FuToken.PRE_END_IF;
+				switch (this.peekChar()) {
+				case 105:
+					this.readChar();
+					return this.#eatChar(102) ? FuToken.PRE_IF : FuToken.PRE_UNKNOWN;
+				case 101:
+					this.readChar();
+					switch (this.peekChar()) {
+					case 108:
+						this.readChar();
+						switch (this.peekChar()) {
+						case 105:
+							this.readChar();
+							return this.#eatChar(102) ? FuToken.PRE_EL_IF : FuToken.PRE_UNKNOWN;
+						case 115:
+							this.readChar();
+							return this.#eatChar(101) ? FuToken.PRE_ELSE : FuToken.PRE_UNKNOWN;
+						default:
+							return FuToken.PRE_UNKNOWN;
+						}
+					case 110:
+						this.readChar();
+						return this.#eatChar(100) && this.#eatChar(105) && this.#eatChar(102) ? FuToken.PRE_END_IF : FuToken.PRE_UNKNOWN;
+					default:
+						return FuToken.PRE_UNKNOWN;
+					}
 				default:
-					this.reportError("Unknown preprocessor directive");
-					continue;
+					return FuToken.PRE_UNKNOWN;
 				}
 			case 59:
 				return FuToken.SEMICOLON;
@@ -697,10 +698,14 @@ export class FuLexer
 			case 57:
 				return this.#readNumberLiteral(BigInt(c - 48));
 			default:
-				this.#readId(c);
-				switch (this.stringValue) {
-				case "":
+				if (!FuLexer.isLetterOrDigit(c)) {
+					this.reportError("Invalid character");
 					continue;
+				}
+				while (FuLexer.isLetterOrDigit(this.peekChar()))
+					this.readChar();
+				this.stringValue = this.getLexeme();
+				switch (this.stringValue) {
 				case "abstract":
 					return FuToken.ABSTRACT;
 				case "assert":
@@ -985,6 +990,8 @@ export class FuLexer
 			return "'while'";
 		case FuToken.END_OF_LINE:
 			return "end-of-line";
+		case FuToken.PRE_UNKNOWN:
+			return "unknown preprocessor directive";
 		case FuToken.PRE_IF:
 			return "'#if'";
 		case FuToken.PRE_EL_IF:

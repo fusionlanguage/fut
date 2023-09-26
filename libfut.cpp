@@ -352,19 +352,6 @@ std::string FuLexer::getLexeme() const
 	return std::string(reinterpret_cast<const char *>(this->input + this->lexemeOffset), this->charOffset - this->lexemeOffset);
 }
 
-void FuLexer::readId(int c)
-{
-	if (isLetterOrDigit(c)) {
-		while (isLetterOrDigit(peekChar()))
-			readChar();
-		this->stringValue = getLexeme();
-	}
-	else {
-		reportError("Invalid character");
-		this->stringValue = "";
-	}
-}
-
 FuToken FuLexer::readPreToken()
 {
 	for (;;) {
@@ -386,19 +373,33 @@ FuToken FuLexer::readPreToken()
 		case '#':
 			if (!atLineStart)
 				return FuToken::hash;
-			this->lexemeOffset = this->charOffset;
-			readId(readChar());
-			if (this->stringValue == "if")
-				return FuToken::preIf;
-			else if (this->stringValue == "elif")
-				return FuToken::preElIf;
-			else if (this->stringValue == "else")
-				return FuToken::preElse;
-			else if (this->stringValue == "endif")
-				return FuToken::preEndIf;
-			else {
-				reportError("Unknown preprocessor directive");
-				continue;
+			switch (peekChar()) {
+			case 'i':
+				readChar();
+				return eatChar('f') ? FuToken::preIf : FuToken::preUnknown;
+			case 'e':
+				readChar();
+				switch (peekChar()) {
+				case 'l':
+					readChar();
+					switch (peekChar()) {
+					case 'i':
+						readChar();
+						return eatChar('f') ? FuToken::preElIf : FuToken::preUnknown;
+					case 's':
+						readChar();
+						return eatChar('e') ? FuToken::preElse : FuToken::preUnknown;
+					default:
+						return FuToken::preUnknown;
+					}
+				case 'n':
+					readChar();
+					return eatChar('d') && eatChar('i') && eatChar('f') ? FuToken::preEndIf : FuToken::preUnknown;
+				default:
+					return FuToken::preUnknown;
+				}
+			default:
+				return FuToken::preUnknown;
 			}
 		case ';':
 			return FuToken::semicolon;
@@ -575,10 +576,14 @@ FuToken FuLexer::readPreToken()
 		case '9':
 			return readNumberLiteral(c - '0');
 		default:
-			readId(c);
-			if (this->stringValue == "")
+			if (!isLetterOrDigit(c)) {
+				reportError("Invalid character");
 				continue;
-			else if (this->stringValue == "abstract")
+			}
+			while (isLetterOrDigit(peekChar()))
+				readChar();
+			this->stringValue = getLexeme();
+			if (this->stringValue == "abstract")
 				return FuToken::abstract;
 			else if (this->stringValue == "assert")
 				return FuToken::assert;
@@ -861,6 +866,8 @@ std::string_view FuLexer::tokenToString(FuToken token)
 		return "'while'";
 	case FuToken::endOfLine:
 		return "end-of-line";
+	case FuToken::preUnknown:
+		return "unknown preprocessor directive";
 	case FuToken::preIf:
 		return "'#if'";
 	case FuToken::preElIf:

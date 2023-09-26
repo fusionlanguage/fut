@@ -112,6 +112,7 @@ namespace Fusion
 		When,
 		While,
 		EndOfLine,
+		PreUnknown,
 		PreIf,
 		PreElIf,
 		PreElse,
@@ -494,19 +495,6 @@ namespace Fusion
 
 		protected string GetLexeme() => Encoding.UTF8.GetString(this.Input, this.LexemeOffset, this.CharOffset - this.LexemeOffset);
 
-		void ReadId(int c)
-		{
-			if (IsLetterOrDigit(c)) {
-				while (IsLetterOrDigit(PeekChar()))
-					ReadChar();
-				this.StringValue = GetLexeme();
-			}
-			else {
-				ReportError("Invalid character");
-				this.StringValue = "";
-			}
-		}
-
 		FuToken ReadPreToken()
 		{
 			for (;;) {
@@ -528,20 +516,33 @@ namespace Fusion
 				case '#':
 					if (!atLineStart)
 						return FuToken.Hash;
-					this.LexemeOffset = this.CharOffset;
-					ReadId(ReadChar());
-					switch (this.StringValue) {
-					case "if":
-						return FuToken.PreIf;
-					case "elif":
-						return FuToken.PreElIf;
-					case "else":
-						return FuToken.PreElse;
-					case "endif":
-						return FuToken.PreEndIf;
+					switch (PeekChar()) {
+					case 'i':
+						ReadChar();
+						return EatChar('f') ? FuToken.PreIf : FuToken.PreUnknown;
+					case 'e':
+						ReadChar();
+						switch (PeekChar()) {
+						case 'l':
+							ReadChar();
+							switch (PeekChar()) {
+							case 'i':
+								ReadChar();
+								return EatChar('f') ? FuToken.PreElIf : FuToken.PreUnknown;
+							case 's':
+								ReadChar();
+								return EatChar('e') ? FuToken.PreElse : FuToken.PreUnknown;
+							default:
+								return FuToken.PreUnknown;
+							}
+						case 'n':
+							ReadChar();
+							return EatChar('d') && EatChar('i') && EatChar('f') ? FuToken.PreEndIf : FuToken.PreUnknown;
+						default:
+							return FuToken.PreUnknown;
+						}
 					default:
-						ReportError("Unknown preprocessor directive");
-						continue;
+						return FuToken.PreUnknown;
 					}
 				case ';':
 					return FuToken.Semicolon;
@@ -718,10 +719,14 @@ namespace Fusion
 				case '9':
 					return ReadNumberLiteral(c - '0');
 				default:
-					ReadId(c);
-					switch (this.StringValue) {
-					case "":
+					if (!IsLetterOrDigit(c)) {
+						ReportError("Invalid character");
 						continue;
+					}
+					while (IsLetterOrDigit(PeekChar()))
+						ReadChar();
+					this.StringValue = GetLexeme();
+					switch (this.StringValue) {
 					case "abstract":
 						return FuToken.Abstract;
 					case "assert":
@@ -1003,6 +1008,8 @@ namespace Fusion
 				return "'while'";
 			case FuToken.EndOfLine:
 				return "end-of-line";
+			case FuToken.PreUnknown:
+				return "unknown preprocessor directive";
 			case FuToken.PreIf:
 				return "'#if'";
 			case FuToken.PreElIf:

@@ -121,6 +121,7 @@ public enum FuToken
 	When,
 	While,
 	EndOfLine,
+	PreUnknown,
 	PreIf,
 	PreElIf,
 	PreElse,
@@ -478,19 +479,6 @@ public abstract class FuLexer
 
 	protected string() GetLexeme() => Encoding.UTF8.GetString(this.Input, this.LexemeOffset, this.CharOffset - this.LexemeOffset);
 
-	void ReadId!(int c)
-	{
-		if (IsLetterOrDigit(c)) {
-			while (IsLetterOrDigit(PeekChar()))
-				ReadChar();
-			this.StringValue = GetLexeme();
-		}
-		else {
-			ReportError("Invalid character");
-			this.StringValue = "";
-		}
-	}
-
 	FuToken ReadPreToken!()
 	{
 		for (;;) {
@@ -512,16 +500,33 @@ public abstract class FuLexer
 			case '#':
 				if (!atLineStart)
 					return FuToken.Hash;
-				this.LexemeOffset = this.CharOffset;
-				ReadId(ReadChar());
-				switch (this.StringValue) {
-				case "if": return FuToken.PreIf;
-				case "elif": return FuToken.PreElIf;
-				case "else": return FuToken.PreElse;
-				case "endif": return FuToken.PreEndIf;
+				switch (PeekChar()) {
+				case 'i':
+					ReadChar();
+					return EatChar('f') ? FuToken.PreIf : FuToken.PreUnknown;
+				case 'e':
+					ReadChar();
+					switch (PeekChar()) {
+					case 'l':
+						ReadChar();
+						switch (PeekChar()) {
+						case 'i':
+							ReadChar();
+							return EatChar('f') ? FuToken.PreElIf : FuToken.PreUnknown;
+						case 's':
+							ReadChar();
+							return EatChar('e') ? FuToken.PreElse : FuToken.PreUnknown;
+						default:
+							return FuToken.PreUnknown;
+						}
+					case 'n':
+						ReadChar();
+						return EatChar('d') && EatChar('i') && EatChar('f') ? FuToken.PreEndIf : FuToken.PreUnknown;
+					default:
+						return FuToken.PreUnknown;
+					}
 				default:
-					ReportError("Unknown preprocessor directive");
-					continue;
+					return FuToken.PreUnknown;
 				}
 			case ';': return FuToken.Semicolon;
 			case '.':
@@ -664,9 +669,14 @@ public abstract class FuLexer
 			case '9':
 				return ReadNumberLiteral(c - '0');
 			default:
-				ReadId(c);
+				if (!IsLetterOrDigit(c)) {
+					ReportError("Invalid character");
+					continue;
+				}
+				while (IsLetterOrDigit(PeekChar()))
+					ReadChar();
+				this.StringValue = GetLexeme();
 				switch (this.StringValue) {
-				case "": continue; // invalid character
 				case "abstract": return FuToken.Abstract;
 				case "assert": return FuToken.Assert;
 				case "break": return FuToken.Break;
@@ -817,6 +827,7 @@ public abstract class FuLexer
 		case FuToken.When: return "'when'";
 		case FuToken.While: return "'while'";
 		case FuToken.EndOfLine: return "end-of-line";
+		case FuToken.PreUnknown: return "unknown preprocessor directive";
 		case FuToken.PreIf: return "'#if'";
 		case FuToken.PreElIf: return "'#elif'";
 		case FuToken.PreElse: return "'#else'";
