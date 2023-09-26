@@ -4,34 +4,34 @@ Welcome to the description of yet another programming language!
 Unlike most languages that you may have learned before, Fusion does _not_ claim
 to be the best universal programming language.
 Instead, it solves one specific problem: how to create code that can be
-_simultaneously_ used with C, C++, C#, Java, JavaScript, Python, Swift,
+_simultaneously_ used with C, C++, C#, D, Java, JavaScript, Python, Swift,
 TypeScript and OpenCL.
 For example, if you invented a new compression format, you could implement
 it in Fusion and have the automatic translator `fut` generate the source code
 in the aforementioned languages, allowing programmers of those languages
 to use your code.
 
-Fusion is a language for programmers with vast experience in several other languages.
-Fusion follows the [Principle of least astonishment (POLA)](https://en.wikipedia.org/wiki/Principle_of_least_astonishment).
-The syntax is akin to C#.
+Fusion is a language for programmers with vast experience in several other
+languages. The syntax is akin to C#.
 In fact, C# syntax highlighting works quite well for Fusion.
 However, Fusion is not a C# clone or a subset of it.
 The differences stem from the need to have _completely automated_ translation
 to _efficient_ C and JavaScript code in particular.
 
-Fusion is object-oriented because most of the target languages are object-oriented,
-and you are probably familiar with this paradigm. This can be seen as
-an improvement over C. Nevertheless, C programmers will find using
-the object-oriented C output fairly straightforward.
+Fusion is object-oriented because most of the target languages
+are object-oriented, and you are probably familiar with this paradigm.
+This can be seen as an improvement over C. Nevertheless, C programmers will
+find using the object-oriented C output fairly straightforward.
 
 Runtime library dependencies are minimal. The C output is often a self-contained
 pair of `.c`/`.h` files containing portable, human-readable C99 code.
 Similarly, the outputs in other languages do _not_ rely on anything except
 the standard language. There are two exceptions:
 
-1. If the Fusion code uses regular expressions, `List`, `Queue`, `Stack`, `HashSet`,
-   `SortedSet`, `Dictionary` or `SortedDictionary`, the C output relies
-   on [GLib](https://wiki.gnome.org/Projects/GLib) implementations of these.
+1. If the Fusion code uses regular expressions, `List`, `Queue`, `Stack`,
+   `HashSet`, `SortedSet`, `Dictionary` or `SortedDictionary`, the C output
+   relies on [GLib](https://wiki.gnome.org/Projects/GLib) implementations
+   of these.
 2. `Math.FusedMultiplyAdd` is implemented in Python
    with [pyfma](https://pypi.org/project/pyfma/).
 
@@ -109,8 +109,8 @@ Integer literals may be written as:
 * binary (`0b101`)
 * octal (`0o777`)
 
-Character literals (such as `'x'`) represent the Unicode codepoint
-of the character as an `int` (not `char` because there's no such type in Fusion).
+Character literals (such as `'c'`) represent the Unicode codepoint of the
+character as an `int` (not `char` because there's no such type in Fusion).
 You may also use the following escape sequences:
 
 * `'\''` - apostrophe
@@ -215,18 +215,6 @@ enum DayOfWeek
 }
 ```
 
-Convert an integer to an enumeration with the `FromInt` method:
-
-```csharp
-enum Number
-{
-    One = 1,
-    Five = 5
-}
-
-assert Number.FromInt(5) == Number.Five;
-```
-
 `enum` may be preceded with the keyword `public` to extend the visibility
 of the type outside Fusion, that is, make the enumerated type part
 of the public interface of the library implemented in Fusion.
@@ -258,6 +246,18 @@ has all the specified flags:
 ```csharp
 Seasons s = Seasons.Warm;
 bool ok = s.HasFlag(Seasons.Summer);
+```
+
+Convert an integer to an enumeration with the `FromInt` method:
+
+```csharp
+enum Magic
+{
+    One = 1,
+    Answer = 42
+}
+
+assert Magic.FromInt(42) == Magic.Answer;
 ```
 
 ### Strings
@@ -304,8 +304,8 @@ Possible string operations include the following:
 * `str.Substring(offset, length)` evaluates to the selected part of the string.
 * `str.Substring(offset)` returns the part of the string
   from the specified position until the end of the string.
-* `str.Replace(old, new)` returns `str` with all occurrences of `old`
-  substituted with `new`.
+* `str.Replace(old, new)` returns the contents of `str` with all occurrences
+  of `old` substituted with `new`.
 * `Encoding.UTF8.GetByteCount(str)` calculates the number of bytes needed
   for UTF-8 encoding of the string.
 * `Encoding.UTF8.GetBytes(str, byteArray, byteArrayIndex)` writes UTF-8
@@ -316,8 +316,8 @@ Possible string operations include the following:
 Different target languages have different character encodings.
 `str.Length` and index/offset are defined in terms of _code units_,
 which might be 8-bit or 16-bit.
-An ASCII character is encoded as a single code unit, but Unicode _code points_
-can be stored in several code units, typically encoded
+An ASCII character is always encoded as a single code unit, but Unicode
+_code points_ can be stored in several code units, typically encoded
 as [UTF-8](https://en.wikipedia.org/wiki/UTF-8)
 or [UTF-16](https://en.wikipedia.org/wiki/UTF-16).
 However, Fusion doesn't enforce any encoding.
@@ -503,7 +503,7 @@ list.Sort();
 arrayRef.Sort(startIndex, count);
 ```
 
-To retrieve the index of a number in a sorted array, use `BinarySearch`:
+To retrieve the index of a number in a _sorted_ array, use `BinarySearch`:
 
 ```csharp
 int index = sortedArray.BinarySearch(value, startIndex, count);
@@ -642,8 +642,8 @@ constants. Constants are implicitly `static`.
 public class RECOIL
 {
     public const int VersionMajor = 6;
-    public const int VersionMinor = 1;
-    public const int VersionMicro = 0;
+    public const int VersionMinor = 3;
+    public const int VersionMicro = 4;
     public const string Version = $"{VersionMajor}.{VersionMinor}.{VersionMicro}";
 }
 ```
@@ -654,7 +654,7 @@ Constant arrays are also allowed:
 public class Foo
 {
     public const string[] Metasyntactic = { "foo", "bar", "baz", "quux" }; // implicit length
-    public const byte[4] SmallPrimes = { 2, 3, 5, 7 }; // length must match
+    public const byte[4] SmallPrimes = { 2, 3, 5, 7 }; // explicit length must match
 }
 ```
 
@@ -677,7 +677,7 @@ public class Foo
 A public constructor is also required to enable object creation outside Fusion.
 
 Constructors in Fusion _never_ take arguments. This promotes reuse of existing
-objects instead of creating a bunch of single-use objects.
+objects instead of allocating a lot of single-use objects.
 If you need to initialize the object with some outside data,
 create a method such as `Init`.
 
@@ -688,7 +688,7 @@ Methods are defined by specifying the following in order:
 * visibility (`public`, `internal`, `protected` or the default private)
 * _call type_ (`static`, `abstract`, `virtual`, `override`, `sealed`
   or the default normal)
-* return type (or `void` if no return value)
+* return type (or `void` for no return value)
 * method name
 * an exclamation mark (`!`) if the method is a _mutator_ (see below)
 * a comma-separated parameter list in parentheses
@@ -700,10 +700,10 @@ called `this`.
 Abstract methods have no body. They must be overridden in a derived class.
 The `override` specifier is mandatory (unlike in C++ and Java).
 A `sealed` method (`final` in Java terms) is implicitly `override`.
-A `virtual` or `override` method can be called from a class that overrides
-this method via `base.MethodName(arguments)`.
+To call a `virtual` or `override` method from a class that overrides
+this method, use `base.MethodName(arguments)`.
 
-The method name must identify the method within the class.
+The method name identifies the method within the class.
 Fusion does _not_ support overloading.
 It does support _default argument values_, though:
 
@@ -770,16 +770,16 @@ Cat alik; // C++
 Cat alik; // C, potentially followed by construction code
 ```
 
-Note that in C and C++ object storage is created on the _stack_
+Note that in C and C++, object storage variables are placed on the _stack_
 for maximum performance.
 
-You can have array storage of object storage:
+Array storage of object storage:
 
 ```csharp
 Wheel()[4] wheels;
 ```
 
-which creates an array of 4 objects of class `Wheel`.
+creates an array of 4 objects of class `Wheel`.
 
 A more powerful (but costly) way is to allocate an object dynamically:
 
@@ -814,7 +814,7 @@ readOnlyReference.Color = 0x00ff00; // fut error
 readOnlyReference.Move(100, 100); // fut error
 ```
 
-A mutator method of class `C` is a method where `this` is of type `C!`.
+A _mutator method_ of class `C` is a method where `this` is of type `C!`.
 In a non-mutator method, `this` is of type `C` (a read-only reference).
 Static methods do not have `this`, so the mutator/non-mutator
 classification doesn't apply.
@@ -845,14 +845,14 @@ if (baseDynamicReference is Derived# derivedDynamicRef) {
 ```
 
 The `is` operator can be used in any boolean expressions, but the introduced
-derived reference variable can only be used when the `is` operator returns `true`.
-That is, the following code is invalid:
+derived reference variable can only be used when the `is` operator returns
+`true`. That is, the following code is invalid:
 
 ```csharp
 if (animal is Cat cat) {
 }
 else {
-    cat.Miaow(); // ERROR
+    cat.Miaow(); // ERROR, "cat" undefined
 }
 ```
 
@@ -920,14 +920,15 @@ listOfInts.Add(42);
 listOfInts.Insert(0, 1337); // insert at the beginning
 ```
 
-Object or array _storage_ must be added/inserted without specifying the value.
+Object or array _storage_ must be added/inserted to the list
+without specifying the value.
 
 ```csharp
 listOfCircles.Add();
 listOfIntPairs.Insert(0); // insert at the beginning
 ```
 
-Use indexing to retrieve and overwrite list elements.
+Use indexing to retrieve or overwrite list elements.
 
 ```csharp
 Circle! firstCircle = listOfCircles[0];
@@ -1167,7 +1168,7 @@ There are four kinds of loops:
 * `do/while` - checking the condition after the first run.
 * `for` - which contains an initial statement, the condition
   and a statement executed after each run.
-* `foreach` - to iterate over array storage, `List`
+* `foreach` - to iterate over array storage, `List`, `HashSet`, `SortedSet`,
   `Dictionary`, `SortedDictionary`, `OrderedDictionary`
   or a string.
 
@@ -1226,7 +1227,7 @@ The `default` clause, if present, must be specified last.
 
 Object references are matched by their _runtime type_:
 
-```
+```csharp
 static double CalculateArea(Shape? s)
 {
     switch (s) {
@@ -1246,9 +1247,7 @@ static double CalculateArea(Shape? s)
 
 C, C++ and OpenCL do not support `switch` on strings,
 so `if`/`else if` with string comparisons are generated.
-Object reference matching is currently implemented only for C++, C#, Java
-and Swift. As of Java 17, the transpiled code must be compiled
-with the `--enable-preview` option.
+Object reference matching is not implemented for C and OpenCL.
 
 ### Assert statement
 
@@ -1273,7 +1272,7 @@ default:
 ### Exceptions
 
 Fusion can throw exceptions, but cannot handle them at the moment.
-The idea is that exceptions will be handled by the code
+The intention is that exceptions will be handled by the code
 using the library written in Fusion.
 
 An exception can be thrown with the `throw` statement with a string argument.
@@ -1285,6 +1284,7 @@ The string argument is lost in the translation and the `throw` statement
 is replaced with `return` with a magic value representing an error:
 
 * `-1` in a method returning an integer.
+* `NAN` in a method returning a floating-point number.
 * `NULL` in a method returning a pointer.
 * `false` in a `void` method. The method will be translated to `bool`,
   and `true` will be returned if the method succeeds.
@@ -1320,7 +1320,7 @@ For JavaScript, this is only available in Node.js, not the web browsers.
 ### Locks
 
 Currently there is very limited support for multi-threading. It consists
-of the `lock` statement, which is translated to `synchronized` in Java.
+of the `lock` statement (translated to `synchronized` in Java).
 Unlike in C# and Java, not every object can be used for mutual exclusion.
 Instead, locks must be explicitly defined as storage of class `Lock`.
 
@@ -1371,9 +1371,9 @@ A more complicated one:
 
 ```csharp
 #if WINDOWS
-    DeleteFile(filename);
+    native { DeleteFile(filename); }
 #elif LINUX || UNIX
-    unlink(filename);
+    native { unlink(filename); }
 #else
     UNKNOWN OPERATING SYSTEM!
 #endif
@@ -1381,7 +1381,7 @@ A more complicated one:
 
 The operators allowed in `#if` and `#elif` are `!`, `&&`, `||`, `==` and `!=`.
 You may reference `true`, which is a symbol that is always defined.
-`false` should never be defined.
+`false` is never defined.
 
 ## Documentation comments
 
@@ -1449,9 +1449,9 @@ It is advised to use the following naming conventions in Fusion code:
 
 * Local variables, parameters and local constants start with a lowercase letter,
   capitalize the first letter of the following words - that is, `camelCase`.
-* All other identifiers should start with an uppercase letter
-  - that is, `PascalCase`.
+* All other identifiers should start with an uppercase letter - that is,
+  `PascalCase`.
 
 Generators will translate the above convention
 to that which is native to the output language,
-for instance, constants written as `UPPERCASE_WITH_UNDERSCORES`.
+for instance, constants as `UPPERCASE_WITH_UNDERSCORES`.

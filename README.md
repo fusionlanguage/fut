@@ -5,9 +5,11 @@
 Fusion Programming Language
 ===========================
 
-Fusion is a programming language which can be translated automatically to
-C, C++, C#, D, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.
-Instead of writing code in all these languages, you can write it once in Fusion:
+Fusion is a programming language designed for implementing reusable components
+(libraries) for C, C++, C#, D, Java, JavaScript, Python, Swift, TypeScript
+and OpenCL C, all from single codebase.
+
+A "Hello, world" library:
 
 ```csharp
 public class HelloFu
@@ -19,26 +21,15 @@ public class HelloFu
 }
 ```
 
-Then translate into target languages using `fut` on the command line:
+can be translated to all the listed languages with:
 ```
-fut -o hello.c hello.fu
-fut -o hello.cpp hello.fu
-fut -o hello.cs hello.fu
-fut -o hello.d hello.fu
-fut -o HelloFu.java hello.fu # Java enforces filenames for public classes
-fut -o hello.js hello.fu
-fut -o hello.py hello.fu
-fut -o hello.swift hello.fu
-fut -o hello.ts hello.fu
-fut -o hello.d.ts hello.fu # TypeScript declarations only
-fut -o hello.cl hello.fu
+fut -o hello.c,cpp,cs,d,java,js,py,swift,ts,cl hello.fu
 ```
 
 The translated code is lightweight (no virtual machine, emulation nor
 dependencies), human-readable and fits well with the target language,
 including naming conventions and documentation comments.
 
-Fusion is _not_ a general-purpose programming language.
-Instead, it is meant for implementing portable reusable libraries.
+Check out [Fusion Playground](https://fusion-lang.org) in your browser.
 
-See [Getting Started](doc/getting-started.md).
+For further instructions, see [Getting Started](doc/getting-started.md).

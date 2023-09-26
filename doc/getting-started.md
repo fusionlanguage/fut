@@ -2,7 +2,7 @@
 
 ## Installing fut
 
-The transpiler `fut` runs on Windows, macOS and Linux.
+The command-line transpiler `fut` runs on Windows, macOS and Linux.
 
 Download the [release](https://github.com/fusionlanguage/fut/releases/tag/fut-3.0.1)
 or [build from sources](building-fut.md).
@@ -73,7 +73,7 @@ public final class HelloFu
 }
 ```
 
-Since Java has no concept of static classes, this is emulated with `final` and a private constructor.
+Since Java has no concept of static classes, it's emulated with `final` and a private constructor.
 The documentation comment is in JavaDoc syntax and `String` is spelled with an uppercase `S`.
 
 The C++ translation consists of two files: `hello.hpp` defines the class and _declares_ the method:
@@ -218,9 +218,9 @@ constant char *HelloFu_GetMessage(void)
 
 As you can see, `fut` simply rewrites your code in different languages.
 
-Now, you may wonder why the code _does not print_ the message in the console?
-That's because Fusion was never intended to be used to write complete programs.
-What you write are reusable components aka libraries.
+Now, you may wonder why the "Hello, world" code _does not print_ the message
+in the console? That's because Fusion was never intended to be used to write
+complete programs. What you write are reusable components aka libraries.
 In this minimal example we have a class with one method that returns a string.
 All the languages mentioned above can easily call this method.
 For example, this is how you could use it from C:
@@ -267,4 +267,6 @@ Last, but not least, `fut` itself is implemented in Fusion.
 
 ## Community
 
-Please join our Discussions and submit Issues and Pull requests on GitHub!
+Please join our [Discussions](https://github.com/fusionlanguage/fut/discussions)
+and submit [Issues](https://github.com/fusionlanguage/fut/issues)
+and [Pull requests](https://github.com/fusionlanguage/fut/pulls) on GitHub!
