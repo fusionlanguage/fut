@@ -2,7 +2,8 @@ public static class Test
 {
 	public static bool Run()
 	{
-#foo //ERROR: Invalid expression //ERROR: Expected ';', got unknown preprocessor directive
+#iftrue //ERROR: Invalid expression //ERROR: Expected ';', got unknown preprocessor directive
+#foo //ERROR: Expected ';', got unknown preprocessor directive
 		return true; //ERROR: Expected ';', got 'return'
 	}
 }

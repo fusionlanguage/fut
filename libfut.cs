@@ -493,6 +493,8 @@ namespace Fusion
 			}
 		}
 
+		bool EndWord(int c) => EatChar(c) && !IsLetterOrDigit(PeekChar());
+
 		protected string GetLexeme() => Encoding.UTF8.GetString(this.Input, this.LexemeOffset, this.CharOffset - this.LexemeOffset);
 
 		FuToken ReadPreToken()
@@ -519,7 +521,7 @@ namespace Fusion
 					switch (PeekChar()) {
 					case 'i':
 						ReadChar();
-						return EatChar('f') ? FuToken.PreIf : FuToken.PreUnknown;
+						return EndWord('f') ? FuToken.PreIf : FuToken.PreUnknown;
 					case 'e':
 						ReadChar();
 						switch (PeekChar()) {
@@ -528,16 +530,16 @@ namespace Fusion
 							switch (PeekChar()) {
 							case 'i':
 								ReadChar();
-								return EatChar('f') ? FuToken.PreElIf : FuToken.PreUnknown;
+								return EndWord('f') ? FuToken.PreElIf : FuToken.PreUnknown;
 							case 's':
 								ReadChar();
-								return EatChar('e') ? FuToken.PreElse : FuToken.PreUnknown;
+								return EndWord('e') ? FuToken.PreElse : FuToken.PreUnknown;
 							default:
 								return FuToken.PreUnknown;
 							}
 						case 'n':
 							ReadChar();
-							return EatChar('d') && EatChar('i') && EatChar('f') ? FuToken.PreEndIf : FuToken.PreUnknown;
+							return EatChar('d') && EatChar('i') && EndWord('f') ? FuToken.PreEndIf : FuToken.PreUnknown;
 						default:
 							return FuToken.PreUnknown;
 						}

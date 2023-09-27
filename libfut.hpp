@@ -511,6 +511,7 @@ private:
 	FuToken readFloatLiteral(bool needDigit);
 	FuToken readNumberLiteral(int64_t i);
 	int readCharLiteral();
+	bool endWord(int c);
 	FuToken readPreToken();
 	void nextPreToken();
 	bool eatPre(FuToken token);

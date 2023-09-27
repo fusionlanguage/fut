@@ -347,6 +347,11 @@ FuToken FuLexer::readString(bool interpolated)
 	}
 }
 
+bool FuLexer::endWord(int c)
+{
+	return eatChar(c) && !isLetterOrDigit(peekChar());
+}
+
 std::string FuLexer::getLexeme() const
 {
 	return std::string(reinterpret_cast<const char *>(this->input + this->lexemeOffset), this->charOffset - this->lexemeOffset);
@@ -376,7 +381,7 @@ FuToken FuLexer::readPreToken()
 			switch (peekChar()) {
 			case 'i':
 				readChar();
-				return eatChar('f') ? FuToken::preIf : FuToken::preUnknown;
+				return endWord('f') ? FuToken::preIf : FuToken::preUnknown;
 			case 'e':
 				readChar();
 				switch (peekChar()) {
@@ -385,16 +390,16 @@ FuToken FuLexer::readPreToken()
 					switch (peekChar()) {
 					case 'i':
 						readChar();
-						return eatChar('f') ? FuToken::preElIf : FuToken::preUnknown;
+						return endWord('f') ? FuToken::preElIf : FuToken::preUnknown;
 					case 's':
 						readChar();
-						return eatChar('e') ? FuToken::preElse : FuToken::preUnknown;
+						return endWord('e') ? FuToken::preElse : FuToken::preUnknown;
 					default:
 						return FuToken::preUnknown;
 					}
 				case 'n':
 					readChar();
-					return eatChar('d') && eatChar('i') && eatChar('f') ? FuToken::preEndIf : FuToken::preUnknown;
+					return eatChar('d') && eatChar('i') && endWord('f') ? FuToken::preEndIf : FuToken::preUnknown;
 				default:
 					return FuToken::preUnknown;
 				}

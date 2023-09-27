@@ -469,6 +469,11 @@ export class FuLexer
 		}
 	}
 
+	#endWord(c)
+	{
+		return this.#eatChar(c) && !FuLexer.isLetterOrDigit(this.peekChar());
+	}
+
 	getLexeme()
 	{
 		return new TextDecoder().decode(this.input.subarray(this.lexemeOffset, this.lexemeOffset + this.charOffset - this.lexemeOffset));
@@ -498,7 +503,7 @@ export class FuLexer
 				switch (this.peekChar()) {
 				case 105:
 					this.readChar();
-					return this.#eatChar(102) ? FuToken.PRE_IF : FuToken.PRE_UNKNOWN;
+					return this.#endWord(102) ? FuToken.PRE_IF : FuToken.PRE_UNKNOWN;
 				case 101:
 					this.readChar();
 					switch (this.peekChar()) {
@@ -507,16 +512,16 @@ export class FuLexer
 						switch (this.peekChar()) {
 						case 105:
 							this.readChar();
-							return this.#eatChar(102) ? FuToken.PRE_EL_IF : FuToken.PRE_UNKNOWN;
+							return this.#endWord(102) ? FuToken.PRE_EL_IF : FuToken.PRE_UNKNOWN;
 						case 115:
 							this.readChar();
-							return this.#eatChar(101) ? FuToken.PRE_ELSE : FuToken.PRE_UNKNOWN;
+							return this.#endWord(101) ? FuToken.PRE_ELSE : FuToken.PRE_UNKNOWN;
 						default:
 							return FuToken.PRE_UNKNOWN;
 						}
 					case 110:
 						this.readChar();
-						return this.#eatChar(100) && this.#eatChar(105) && this.#eatChar(102) ? FuToken.PRE_END_IF : FuToken.PRE_UNKNOWN;
+						return this.#eatChar(100) && this.#eatChar(105) && this.#endWord(102) ? FuToken.PRE_END_IF : FuToken.PRE_UNKNOWN;
 					default:
 						return FuToken.PRE_UNKNOWN;
 					}
