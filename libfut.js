@@ -8016,11 +8016,7 @@ export class GenBase extends FuVisitor
 		}
 		else if (expr instanceof FuBinaryExpr) {
 			const binary = expr;
-			if (GenBase.hasTemporaries(binary.left))
-				return true;
-			if (binary.op == FuToken.IS)
-				return binary.right instanceof FuVar;
-			return GenBase.hasTemporaries(binary.right);
+			return GenBase.hasTemporaries(binary.left) || (binary.op == FuToken.IS ? binary.right instanceof FuVar : GenBase.hasTemporaries(binary.right));
 		}
 		else if (expr instanceof FuSelectExpr) {
 			const select = expr;
@@ -8525,16 +8521,29 @@ export class GenBase extends FuVisitor
 		this.writeRemainingParameters(method, true, defaultArguments);
 	}
 
+	isShortMethod(method)
+	{
+		return false;
+	}
+
 	writeBody(method)
 	{
 		if (method.callType == FuCallType.ABSTRACT)
 			this.writeCharLine(59);
 		else {
-			this.writeNewLine();
 			this.currentMethod = method;
-			this.openBlock();
-			this.flattenBlock(method.body);
-			this.closeBlock();
+			if (this.isShortMethod(method)) {
+				this.write(" => ");
+				const ret = method.body;
+				this.writeCoerced(method.type, ret.value, FuPriority.ARGUMENT);
+				this.writeCharLine(59);
+			}
+			else {
+				this.writeNewLine();
+				this.openBlock();
+				this.flattenBlock(method.body);
+				this.closeBlock();
+			}
 			this.currentMethod = null;
 		}
 	}
@@ -15953,6 +15962,11 @@ export class GenCs extends GenTyped
 		this.writeLine("</param>");
 	}
 
+	isShortMethod(method)
+	{
+		return method.body instanceof FuReturn;
+	}
+
 	writeMethod(method)
 	{
 		if (method.id == FuId.CLASS_TO_STRING && method.callType == FuCallType.ABSTRACT)
@@ -15967,14 +15981,7 @@ export class GenCs extends GenTyped
 			this.#writeCallType(method.callType, "sealed override ");
 		this.writeTypeAndName(method);
 		this.writeParameters(method, true);
-		let ret;
-		if ((ret = method.body) instanceof FuReturn) {
-			this.write(" => ");
-			this.writeCoerced(method.type, ret.value, FuPriority.ARGUMENT);
-			this.writeCharLine(59);
-		}
-		else
-			this.writeBody(method);
+		this.writeBody(method);
 	}
 
 	writeClass(klass, program)
@@ -17404,6 +17411,12 @@ export class GenD extends GenCCppD
 			this.writeCoercedExpr(field.type, field.value);
 		}
 		this.writeCharLine(59);
+	}
+
+	isShortMethod(method)
+	{
+		let ret;
+		return (ret = method.body) instanceof FuReturn && !GenD.hasTemporaries(ret.value);
 	}
 
 	writeMethod(method)

@@ -7729,11 +7729,7 @@ namespace Fusion
 			case FuUnaryExpr unary:
 				return unary.Inner != null && (HasTemporaries(unary.Inner) || unary.Inner is FuAggregateInitializer);
 			case FuBinaryExpr binary:
-				if (HasTemporaries(binary.Left))
-					return true;
-				if (binary.Op == FuToken.Is)
-					return binary.Right is FuVar;
-				return HasTemporaries(binary.Right);
+				return HasTemporaries(binary.Left) || (binary.Op == FuToken.Is ? binary.Right is FuVar : HasTemporaries(binary.Right));
 			case FuSelectExpr select:
 				return HasTemporaries(select.Cond) || HasTemporaries(select.OnTrue) || HasTemporaries(select.OnFalse);
 			case FuCallExpr call:
@@ -8218,16 +8214,26 @@ namespace Fusion
 			WriteRemainingParameters(method, true, defaultArguments);
 		}
 
+		protected virtual bool IsShortMethod(FuMethod method) => false;
+
 		protected void WriteBody(FuMethod method)
 		{
 			if (method.CallType == FuCallType.Abstract)
 				WriteCharLine(';');
 			else {
-				WriteNewLine();
 				this.CurrentMethod = method;
-				OpenBlock();
-				FlattenBlock(method.Body);
-				CloseBlock();
+				if (IsShortMethod(method)) {
+					Write(" => ");
+					FuReturn ret = (FuReturn) method.Body;
+					WriteCoerced(method.Type, ret.Value, FuPriority.Argument);
+					WriteCharLine(';');
+				}
+				else {
+					WriteNewLine();
+					OpenBlock();
+					FlattenBlock(method.Body);
+					CloseBlock();
+				}
 				this.CurrentMethod = null;
 			}
 		}
@@ -15518,6 +15524,8 @@ namespace Fusion
 			WriteLine("</param>");
 		}
 
+		protected override bool IsShortMethod(FuMethod method) => method.Body is FuReturn;
+
 		protected override void WriteMethod(FuMethod method)
 		{
 			if (method.Id == FuId.ClassToString && method.CallType == FuCallType.Abstract)
@@ -15532,13 +15540,7 @@ namespace Fusion
 				WriteCallType(method.CallType, "sealed override ");
 			WriteTypeAndName(method);
 			WriteParameters(method, true);
-			if (method.Body is FuReturn ret) {
-				Write(" => ");
-				WriteCoerced(method.Type, ret.Value, FuPriority.Argument);
-				WriteCharLine(';');
-			}
-			else
-				WriteBody(method);
+			WriteBody(method);
 		}
 
 		protected override void WriteClass(FuClass klass, FuProgram program)
@@ -16945,6 +16947,8 @@ namespace Fusion
 			}
 			WriteCharLine(';');
 		}
+
+		protected override bool IsShortMethod(FuMethod method) => method.Body is FuReturn ret && !HasTemporaries(ret.Value);
 
 		protected override void WriteMethod(FuMethod method)
 		{

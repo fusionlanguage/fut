@@ -1385,11 +1385,7 @@ public abstract class GenBase : FuVisitor
 		case FuUnaryExpr unary:
 			return unary.Inner != null && (HasTemporaries(unary.Inner) || unary.Inner is FuAggregateInitializer);
 		case FuBinaryExpr binary:
-			if (HasTemporaries(binary.Left))
-				return true;
-			if (binary.Op == FuToken.Is)
-				return binary.Right is FuVar;
-			return HasTemporaries(binary.Right);
+			return HasTemporaries(binary.Left) || (binary.Op == FuToken.Is ?  binary.Right is FuVar : HasTemporaries(binary.Right));
 		case FuSelectExpr select:
 			return HasTemporaries(select.Cond) || HasTemporaries(select.OnTrue) || HasTemporaries(select.OnFalse);
 		case FuCallExpr call:
@@ -1874,16 +1870,26 @@ public abstract class GenBase : FuVisitor
 		WriteRemainingParameters(method, true, defaultArguments);
 	}
 
+	protected virtual bool IsShortMethod(FuMethod method) => false;
+
 	protected void WriteBody!(FuMethod method)
 	{
 		if (method.CallType == FuCallType.Abstract)
 			WriteCharLine(';');
 		else {
-			WriteNewLine();
 			this.CurrentMethod = method;
-			OpenBlock();
-			FlattenBlock(method.Body);
-			CloseBlock();
+			if (IsShortMethod(method)) {
+				Write(" => ");
+				assert method.Body is FuReturn ret;
+				WriteCoerced(method.Type, ret.Value, FuPriority.Argument);
+				WriteCharLine(';');
+			}
+			else {
+				WriteNewLine();
+				OpenBlock();
+				FlattenBlock(method.Body);
+				CloseBlock();
+			}
 			this.CurrentMethod = null;
 		}
 	}

@@ -1824,6 +1824,7 @@ protected:
 	virtual void writeParameter(const FuVar * param);
 	void writeRemainingParameters(const FuMethod * method, bool first, bool defaultArguments);
 	void writeParameters(const FuMethod * method, bool defaultArguments);
+	virtual bool isShortMethod(const FuMethod * method) const;
 	void writeBody(const FuMethod * method);
 	void writePublic(const FuContainerType * container);
 	void writeEnumValue(const FuConst * konst);
@@ -2306,6 +2307,7 @@ protected:
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;
 	void writeParameterDoc(const FuVar * param, bool first) override;
+	bool isShortMethod(const FuMethod * method) const override;
 	void writeMethod(const FuMethod * method) override;
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
 public:
@@ -2360,6 +2362,7 @@ protected:
 	void writeEnum(const FuEnum * enu) override;
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;
+	bool isShortMethod(const FuMethod * method) const override;
 	void writeMethod(const FuMethod * method) override;
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
 	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;

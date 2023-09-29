@@ -879,6 +879,8 @@ public class GenCs : GenTyped
 		WriteLine("</param>");
 	}
 
+	protected override bool IsShortMethod(FuMethod method) => method.Body is FuReturn;
+
 	protected override void WriteMethod!(FuMethod method)
 	{
 		if (method.Id == FuId.ClassToString && method.CallType == FuCallType.Abstract)
@@ -893,13 +895,7 @@ public class GenCs : GenTyped
 			WriteCallType(method.CallType, "sealed override ");
 		WriteTypeAndName(method);
 		WriteParameters(method, true);
-		if (method.Body is FuReturn ret) {
-			Write(" => ");
-			WriteCoerced(method.Type, ret.Value, FuPriority.Argument);
-			WriteCharLine(';');
-		}
-		else
-			WriteBody(method);
+		WriteBody(method);
 	}
 
 	protected override void WriteClass!(FuClass klass, FuProgram program)

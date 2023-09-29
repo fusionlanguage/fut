@@ -7537,13 +7537,8 @@ bool GenBase::hasTemporaries(const FuExpr * expr)
 		return symbol->left != nullptr && hasTemporaries(symbol->left.get());
 	else if (const FuUnaryExpr *unary = dynamic_cast<const FuUnaryExpr *>(expr))
 		return unary->inner != nullptr && (hasTemporaries(unary->inner.get()) || dynamic_cast<const FuAggregateInitializer *>(unary->inner.get()));
-	else if (const FuBinaryExpr *binary = dynamic_cast<const FuBinaryExpr *>(expr)) {
-		if (hasTemporaries(binary->left.get()))
-			return true;
-		if (binary->op == FuToken::is)
-			return dynamic_cast<const FuVar *>(binary->right.get());
-		return hasTemporaries(binary->right.get());
-	}
+	else if (const FuBinaryExpr *binary = dynamic_cast<const FuBinaryExpr *>(expr))
+		return hasTemporaries(binary->left.get()) || (binary->op == FuToken::is ? !!dynamic_cast<const FuVar *>(binary->right.get()) : hasTemporaries(binary->right.get()));
 	else if (const FuSelectExpr *select = dynamic_cast<const FuSelectExpr *>(expr))
 		return hasTemporaries(select->cond.get()) || hasTemporaries(select->onTrue.get()) || hasTemporaries(select->onFalse.get());
 	else if (const FuCallExpr *call = dynamic_cast<const FuCallExpr *>(expr))
@@ -8028,16 +8023,29 @@ void GenBase::writeParameters(const FuMethod * method, bool defaultArguments)
 	writeRemainingParameters(method, true, defaultArguments);
 }
 
+bool GenBase::isShortMethod(const FuMethod * method) const
+{
+	return false;
+}
+
 void GenBase::writeBody(const FuMethod * method)
 {
 	if (method->callType == FuCallType::abstract)
 		writeCharLine(';');
 	else {
-		writeNewLine();
 		this->currentMethod = method;
-		openBlock();
-		flattenBlock(method->body.get());
-		closeBlock();
+		if (isShortMethod(method)) {
+			write(" => ");
+			const FuReturn * ret = static_cast<const FuReturn *>(method->body.get());
+			writeCoerced(method->type.get(), ret->value.get(), FuPriority::argument);
+			writeCharLine(';');
+		}
+		else {
+			writeNewLine();
+			openBlock();
+			flattenBlock(method->body.get());
+			closeBlock();
+		}
 		this->currentMethod = nullptr;
 	}
 }
@@ -15102,6 +15110,11 @@ void GenCs::writeParameterDoc(const FuVar * param, bool first)
 	writeLine("</param>");
 }
 
+bool GenCs::isShortMethod(const FuMethod * method) const
+{
+	return dynamic_cast<const FuReturn *>(method->body.get());
+}
+
 void GenCs::writeMethod(const FuMethod * method)
 {
 	if (method->id == FuId::classToString && method->callType == FuCallType::abstract)
@@ -15116,13 +15129,7 @@ void GenCs::writeMethod(const FuMethod * method)
 		writeCallType(method->callType, "sealed override ");
 	writeTypeAndName(method);
 	writeParameters(method, true);
-	if (const FuReturn *ret = dynamic_cast<const FuReturn *>(method->body.get())) {
-		write(" => ");
-		writeCoerced(method->type.get(), ret->value.get(), FuPriority::argument);
-		writeCharLine(';');
-	}
-	else
-		writeBody(method);
+	writeBody(method);
 }
 
 void GenCs::writeClass(const FuClass * klass, const FuProgram * program)
@@ -16342,6 +16349,12 @@ void GenD::writeField(const FuField * field)
 		writeCoercedExpr(field->type.get(), field->value.get());
 	}
 	writeCharLine(';');
+}
+
+bool GenD::isShortMethod(const FuMethod * method) const
+{
+	const FuReturn * ret;
+	return (ret = dynamic_cast<const FuReturn *>(method->body.get())) && !hasTemporaries(ret->value.get());
 }
 
 void GenD::writeMethod(const FuMethod * method)
