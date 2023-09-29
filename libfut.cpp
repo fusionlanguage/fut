@@ -13777,7 +13777,7 @@ void GenCpp::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 		}
 	case FuToken::is:
 		if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(expr->right.get())) {
-			if (parent >= FuPriority::or_ && parent <= FuPriority::mul)
+			if (parent == FuPriority::select || (parent >= FuPriority::or_ && parent <= FuPriority::mul))
 				write("!!");
 			write("dynamic_cast<const ");
 			write(symbol->symbol->name);

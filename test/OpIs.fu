@@ -17,7 +17,9 @@ public static class Test
 	{
 		Derived() d;
 		Base b = d;
-		return b is Derived //FAIL: c cl TODO
+		if (b == d ? false : b is Derived) //FAIL: c cl TODO
+			return false;
+		return b is Derived
 			&& !(b is NotThis) & b is Derived;
 	}
 }

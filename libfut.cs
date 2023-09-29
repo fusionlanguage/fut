@@ -14167,7 +14167,7 @@ namespace Fusion
 			case FuToken.Is:
 				switch (expr.Right) {
 				case FuSymbolReference symbol:
-					if (parent >= FuPriority.Or && parent <= FuPriority.Mul)
+					if (parent == FuPriority.Select || (parent >= FuPriority.Or && parent <= FuPriority.Mul))
 						Write("!!");
 					Write("dynamic_cast<const ");
 					Write(symbol.Symbol.Name);

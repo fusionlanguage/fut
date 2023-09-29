@@ -14561,7 +14561,7 @@ export class GenCpp extends GenCCpp
 		case FuToken.IS:
 			if (expr.right instanceof FuSymbolReference) {
 				const symbol = expr.right;
-				if (parent >= FuPriority.OR && parent <= FuPriority.MUL)
+				if (parent == FuPriority.SELECT || (parent >= FuPriority.OR && parent <= FuPriority.MUL))
 					this.write("!!");
 				this.write("dynamic_cast<const ");
 				this.write(symbol.symbol.name);
