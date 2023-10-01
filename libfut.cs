@@ -8999,7 +8999,7 @@ namespace Fusion
 				expr.Accept(this, FuPriority.Primary);
 			}
 			else
-				expr.Accept(this, FuPriority.Argument);
+				WriteTemporaryOrExpr(expr, FuPriority.Argument);
 		}
 
 		void WriteStringPtrAddCast(FuCallExpr call)
@@ -9793,8 +9793,11 @@ namespace Fusion
 			case FuLambdaExpr _:
 				break;
 			case FuInterpolatedString interp:
-				foreach (FuInterpolatedPart part in interp.Parts)
+				foreach (FuInterpolatedPart part in interp.Parts) {
 					WriteCTemporaries(part.Argument);
+					if (IsStringSubstring(part.Argument) == null)
+						WriteStorageTemporary(part.Argument);
+				}
 				break;
 			case FuSymbolReference symbol:
 				if (symbol.Left != null)

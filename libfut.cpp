@@ -8751,7 +8751,7 @@ void GenC::writeInterpolatedStringArgBase(const FuExpr * expr)
 		expr->accept(this, FuPriority::primary);
 	}
 	else
-		expr->accept(this, FuPriority::argument);
+		writeTemporaryOrExpr(expr, FuPriority::argument);
 }
 
 void GenC::writeStringPtrAddCast(const FuCallExpr * call)
@@ -9485,8 +9485,11 @@ void GenC::writeCTemporaries(const FuExpr * expr)
 	else if (dynamic_cast<const FuLiteral *>(expr) || dynamic_cast<const FuLambdaExpr *>(expr)) {
 	}
 	else if (const FuInterpolatedString *interp = dynamic_cast<const FuInterpolatedString *>(expr))
-		for (const FuInterpolatedPart &part : interp->parts)
+		for (const FuInterpolatedPart &part : interp->parts) {
 			writeCTemporaries(part.argument.get());
+			if (isStringSubstring(part.argument.get()) == nullptr)
+				writeStorageTemporary(part.argument.get());
+		}
 	else if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(expr)) {
 		if (symbol->left != nullptr)
 			writeCTemporaries(symbol->left.get());

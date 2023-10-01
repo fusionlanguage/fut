@@ -9307,7 +9307,7 @@ export class GenC extends GenCCpp
 			expr.accept(this, FuPriority.PRIMARY);
 		}
 		else
-			expr.accept(this, FuPriority.ARGUMENT);
+			this.#writeTemporaryOrExpr(expr, FuPriority.ARGUMENT);
 	}
 
 	#writeStringPtrAddCast(call)
@@ -10116,8 +10116,11 @@ export class GenC extends GenCCpp
 		}
 		else if (expr instanceof FuInterpolatedString) {
 			const interp = expr;
-			for (const part of interp.parts)
+			for (const part of interp.parts) {
 				this.#writeCTemporaries(part.argument);
+				if (GenC.isStringSubstring(part.argument) == null)
+					this.#writeStorageTemporary(part.argument);
+			}
 		}
 		else if (expr instanceof FuSymbolReference) {
 			const symbol = expr;

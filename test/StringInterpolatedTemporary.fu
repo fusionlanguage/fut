@@ -1,14 +1,17 @@
 public static class Test
 {
+	static string() Produce(int i) => $"{i}"; //FAIL: cl
+
 	static bool Accept(string s) => s == "42";
 
 	public static bool Run()
 	{
 		int i = 42;
-		Accept($"{i}"); //FAIL: cl
+		Accept($"{i}");
 		bool b = Accept($"{i}");
 		if (!b)
 			return false;
+		Accept($"{Produce(i)}");
 		return Accept($"{i}");
 	}
 }
