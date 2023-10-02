@@ -1,0 +1,9 @@
+public static class Test
+{
+    public static string() GetMessage(string str) => $"First character: {CharToString(str[0])}"; //ERROR: CharToString not found
+
+    public static void Run()
+	{
+        Console.WriteLine(GetMessage("Hi"));
+    }
+}

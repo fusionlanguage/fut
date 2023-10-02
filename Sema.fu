@@ -1385,6 +1385,8 @@ public class FuSema
 			VisitVar(def);
 			return expr;
 		default:
+			if (expr == this.Poison)
+				return expr;
 			assert false;
 		}
 	}

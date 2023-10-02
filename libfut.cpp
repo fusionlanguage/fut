@@ -5439,8 +5439,11 @@ std::shared_ptr<FuExpr> FuSema::visitExpr(std::shared_ptr<FuExpr> expr)
 		visitVar(def);
 		return expr;
 	}
-	else
+	else {
+		if (expr == this->poison)
+			return expr;
 		std::abort();
+	}
 }
 
 std::shared_ptr<FuExpr> FuSema::resolveBool(std::shared_ptr<FuExpr> expr)

@@ -5601,6 +5601,8 @@ namespace Fusion
 				VisitVar(def);
 				return expr;
 			default:
+				if (expr == this.Poison)
+					return expr;
 				throw new NotImplementedException();
 			}
 		}

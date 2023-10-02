@@ -5840,8 +5840,11 @@ export class FuSema
 			this.#visitVar(def);
 			return expr;
 		}
-		else
+		else {
+			if (expr == this.#poison)
+				return expr;
 			throw new Error();
+		}
 	}
 
 	#resolveBool(expr)
