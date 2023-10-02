@@ -1596,6 +1596,8 @@ namespace Fusion
 		}
 
 		public virtual bool IsReferenceTo(FuSymbol symbol) => false;
+
+		public virtual bool IsNewString(bool substringOffset) => false;
 	}
 
 	public abstract class FuSymbol : FuExpr
@@ -1886,6 +1888,8 @@ namespace Fusion
 		{
 			visitor.VisitInterpolatedString(this, parent);
 		}
+
+		public override bool IsNewString(bool substringOffset) => true;
 	}
 
 	class FuImplicitEnumValue : FuExpr
@@ -1919,6 +1923,8 @@ namespace Fusion
 		}
 
 		public override bool IsReferenceTo(FuSymbol symbol) => this.Symbol == symbol;
+
+		public override bool IsNewString(bool substringOffset) => this.Symbol.Id == FuId.MatchValue;
 
 		public override string ToString() => this.Left != null ? $"{this.Left}.{this.Name}" : this.Name;
 	}
@@ -1998,6 +2004,8 @@ namespace Fusion
 		{
 			visitor.VisitBinaryExpr(this, parent);
 		}
+
+		public virtual bool IsNewString(bool substringOffset) => this.Op == FuToken.Plus && this.Type.Id == FuId.StringStorageType;
 
 		public bool IsRel()
 		{
@@ -2131,6 +2139,8 @@ namespace Fusion
 		{
 			visitor.VisitCallExpr(this, parent);
 		}
+
+		public override bool IsNewString(bool substringOffset) => this.Type.Id == FuId.StringStorageType && (substringOffset || this.Method.Symbol.Id != FuId.StringSubstring || this.Arguments.Count != 1);
 	}
 
 	class FuLambdaExpr : FuScope
@@ -9562,11 +9572,6 @@ namespace Fusion
 				WriteChar(')');
 		}
 
-		static bool IsNewString(FuExpr expr)
-		{
-			return expr is FuInterpolatedString || (expr is FuBinaryExpr binary && binary.Op == FuToken.Plus && binary.Type.Id == FuId.StringStorageType) || (expr is FuCallExpr call && expr.Type.Id == FuId.StringStorageType && (call.Method.Symbol.Id != FuId.StringSubstring || call.Arguments.Count == 2)) || (expr is FuSymbolReference symbol && symbol.Symbol.Id == FuId.MatchValue);
-		}
-
 		void WriteStringStorageValue(FuExpr expr)
 		{
 			FuCallExpr call = IsStringSubstring(expr);
@@ -9579,7 +9584,7 @@ namespace Fusion
 				GetStringSubstringLength(call).Accept(this, FuPriority.Argument);
 				WriteChar(')');
 			}
-			else if (IsNewString(expr))
+			else if (expr.IsNewString(false))
 				expr.Accept(this, FuPriority.Argument);
 			else {
 				Include("string.h");
@@ -9774,7 +9779,7 @@ namespace Fusion
 
 		void WriteStorageTemporary(FuExpr expr)
 		{
-			if (IsNewString(expr) || (expr is FuCallExpr && expr.Type is FuStorageType))
+			if (expr.IsNewString(false) || (expr is FuCallExpr && expr.Type is FuStorageType))
 				WriteCTemporary(expr.Type, expr);
 		}
 
@@ -9839,7 +9844,7 @@ namespace Fusion
 			}
 		}
 
-		static bool HasTemporariesToDestruct(FuExpr expr) => ContainsTemporariesToDestruct(expr) || IsNewString(expr);
+		static bool HasTemporariesToDestruct(FuExpr expr) => ContainsTemporariesToDestruct(expr) || expr.IsNewString(false);
 
 		static bool ContainsTemporariesToDestruct(FuExpr expr)
 		{

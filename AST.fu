@@ -312,6 +312,7 @@ public abstract class FuExpr : FuStatement
 	public virtual void Accept(FuVisitor! visitor, FuPriority parent) { assert false; }
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitExpr(this); }
 	public virtual bool IsReferenceTo(FuSymbol symbol) => false;
+	public virtual bool IsNewString(bool substringOffset) => false;
 }
 
 public abstract class FuSymbol : FuExpr
@@ -529,6 +530,7 @@ public class FuInterpolatedString : FuExpr
 		part.Precision = precision;
 	}
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitInterpolatedString(this, parent); }
+	public override bool IsNewString(bool substringOffset) => true;
 //	public override string() ToString()
 //	{
 //		StringBuilder sb = new StringBuilder();
@@ -574,6 +576,7 @@ public class FuSymbolReference : FuExpr
 	}
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitSymbolReference(this, parent); }
 	public override bool IsReferenceTo(FuSymbol symbol) => this.Symbol == symbol;
+	public override bool IsNewString(bool substringOffset) => this.Symbol.Id == FuId.MatchValue;
 	public override string() ToString() => this.Left != null ? $"{this.Left}.{this.Name}" : this.Name;
 }
 
@@ -630,6 +633,7 @@ public class FuBinaryExpr : FuExpr
 		}
 	}
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitBinaryExpr(this, parent); }
+	public virtual bool IsNewString(bool substringOffset) => this.Op == FuToken.Plus && this.Type.Id == FuId.StringStorageType;
 	public bool IsRel()
 	{
 		switch (this.Op) {
@@ -747,6 +751,8 @@ public class FuCallExpr : FuExpr
 	internal FuSymbolReference# Method;
 	internal List<FuExpr#>() Arguments;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitCallExpr(this, parent); }
+	public override bool IsNewString(bool substringOffset)
+		=> this.Type.Id == FuId.StringStorageType && (substringOffset || this.Method.Symbol.Id != FuId.StringSubstring || this.Arguments.Count != 1);
 }
 
 class FuLambdaExpr : FuScope

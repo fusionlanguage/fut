@@ -1148,6 +1148,11 @@ bool FuExpr::isReferenceTo(const FuSymbol * symbol) const
 	return false;
 }
 
+bool FuExpr::isNewString(bool substringOffset) const
+{
+	return false;
+}
+
 std::string FuSymbol::toString() const
 {
 	return this->name;
@@ -1413,6 +1418,11 @@ void FuInterpolatedString::accept(FuVisitor * visitor, FuPriority parent) const
 	visitor->visitInterpolatedString(this, parent);
 }
 
+bool FuInterpolatedString::isNewString(bool substringOffset) const
+{
+	return true;
+}
+
 int FuImplicitEnumValue::intValue() const
 {
 	return this->value;
@@ -1437,6 +1447,11 @@ void FuSymbolReference::accept(FuVisitor * visitor, FuPriority parent) const
 bool FuSymbolReference::isReferenceTo(const FuSymbol * symbol) const
 {
 	return this->symbol == symbol;
+}
+
+bool FuSymbolReference::isNewString(bool substringOffset) const
+{
+	return this->symbol->id == FuId::matchValue;
 }
 
 std::string FuSymbolReference::toString() const
@@ -1499,6 +1514,11 @@ int FuBinaryExpr::intValue() const
 void FuBinaryExpr::accept(FuVisitor * visitor, FuPriority parent) const
 {
 	visitor->visitBinaryExpr(this, parent);
+}
+
+bool FuBinaryExpr::isNewString(bool substringOffset) const
+{
+	return this->op == FuToken::plus && this->type->id == FuId::stringStorageType;
 }
 
 bool FuBinaryExpr::isRel() const
@@ -1620,6 +1640,11 @@ std::string FuSelectExpr::toString() const
 void FuCallExpr::accept(FuVisitor * visitor, FuPriority parent) const
 {
 	visitor->visitCallExpr(this, parent);
+}
+
+bool FuCallExpr::isNewString(bool substringOffset) const
+{
+	return this->type->id == FuId::stringStorageType && (substringOffset || this->method->symbol->id != FuId::stringSubstring || std::ssize(this->arguments) != 1);
 }
 
 void FuLambdaExpr::accept(FuVisitor * visitor, FuPriority parent) const
@@ -9259,14 +9284,6 @@ void GenC::writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, 
 		writeChar(')');
 }
 
-bool GenC::isNewString(const FuExpr * expr)
-{
-	const FuBinaryExpr * binary;
-	const FuCallExpr * call;
-	const FuSymbolReference * symbol;
-	return dynamic_cast<const FuInterpolatedString *>(expr) || ((binary = dynamic_cast<const FuBinaryExpr *>(expr)) && binary->op == FuToken::plus && binary->type->id == FuId::stringStorageType) || ((call = dynamic_cast<const FuCallExpr *>(expr)) && expr->type->id == FuId::stringStorageType && (call->method->symbol->id != FuId::stringSubstring || std::ssize(call->arguments) == 2)) || ((symbol = dynamic_cast<const FuSymbolReference *>(expr)) && symbol->symbol->id == FuId::matchValue);
-}
-
 void GenC::writeStringStorageValue(const FuExpr * expr)
 {
 	const FuCallExpr * call = isStringSubstring(expr);
@@ -9279,7 +9296,7 @@ void GenC::writeStringStorageValue(const FuExpr * expr)
 		getStringSubstringLength(call)->accept(this, FuPriority::argument);
 		writeChar(')');
 	}
-	else if (isNewString(expr))
+	else if (expr->isNewString(false))
 		expr->accept(this, FuPriority::argument);
 	else {
 		include("string.h");
@@ -9470,7 +9487,7 @@ int GenC::writeCTemporary(const FuType * type, const FuExpr * expr)
 
 void GenC::writeStorageTemporary(const FuExpr * expr)
 {
-	if (isNewString(expr) || (dynamic_cast<const FuCallExpr *>(expr) && dynamic_cast<const FuStorageType *>(expr->type.get())))
+	if (expr->isNewString(false) || (dynamic_cast<const FuCallExpr *>(expr) && dynamic_cast<const FuStorageType *>(expr->type.get())))
 		writeCTemporary(expr->type.get(), expr);
 }
 
@@ -9531,7 +9548,7 @@ void GenC::writeCTemporaries(const FuExpr * expr)
 
 bool GenC::hasTemporariesToDestruct(const FuExpr * expr)
 {
-	return containsTemporariesToDestruct(expr) || isNewString(expr);
+	return containsTemporariesToDestruct(expr) || expr->isNewString(false);
 }
 
 bool GenC::containsTemporariesToDestruct(const FuExpr * expr)

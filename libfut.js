@@ -1514,6 +1514,11 @@ export class FuExpr extends FuStatement
 	{
 		return false;
 	}
+
+	isNewString(substringOffset)
+	{
+		return false;
+	}
 }
 
 export class FuSymbol extends FuExpr
@@ -1846,6 +1851,11 @@ export class FuInterpolatedString extends FuExpr
 	{
 		visitor.visitInterpolatedString(this, parent);
 	}
+
+	isNewString(substringOffset)
+	{
+		return true;
+	}
 }
 
 class FuImplicitEnumValue extends FuExpr
@@ -1883,6 +1893,11 @@ export class FuSymbolReference extends FuExpr
 	isReferenceTo(symbol)
 	{
 		return this.symbol == symbol;
+	}
+
+	isNewString(substringOffset)
+	{
+		return this.symbol.id == FuId.MATCH_VALUE;
 	}
 
 	toString()
@@ -1966,6 +1981,11 @@ export class FuBinaryExpr extends FuExpr
 	accept(visitor, parent)
 	{
 		visitor.visitBinaryExpr(this, parent);
+	}
+
+	isNewString(substringOffset)
+	{
+		return this.op == FuToken.PLUS && this.type.id == FuId.STRING_STORAGE_TYPE;
 	}
 
 	isRel()
@@ -2100,6 +2120,11 @@ export class FuCallExpr extends FuExpr
 	accept(visitor, parent)
 	{
 		visitor.visitCallExpr(this, parent);
+	}
+
+	isNewString(substringOffset)
+	{
+		return this.type.id == FuId.STRING_STORAGE_TYPE && (substringOffset || this.method.symbol.id != FuId.STRING_SUBSTRING || this.arguments.length != 1);
 	}
 }
 
@@ -9885,14 +9910,6 @@ export class GenC extends GenCCpp
 			this.writeChar(41);
 	}
 
-	static #isNewString(expr)
-	{
-		let binary;
-		let call;
-		let symbol;
-		return expr instanceof FuInterpolatedString || ((binary = expr) instanceof FuBinaryExpr && binary.op == FuToken.PLUS && binary.type.id == FuId.STRING_STORAGE_TYPE) || ((call = expr) instanceof FuCallExpr && expr.type.id == FuId.STRING_STORAGE_TYPE && (call.method.symbol.id != FuId.STRING_SUBSTRING || call.arguments.length == 2)) || ((symbol = expr) instanceof FuSymbolReference && symbol.symbol.id == FuId.MATCH_VALUE);
-	}
-
 	#writeStringStorageValue(expr)
 	{
 		let call = GenC.isStringSubstring(expr);
@@ -9905,7 +9922,7 @@ export class GenC extends GenCCpp
 			GenC.getStringSubstringLength(call).accept(this, FuPriority.ARGUMENT);
 			this.writeChar(41);
 		}
-		else if (GenC.#isNewString(expr))
+		else if (expr.isNewString(false))
 			expr.accept(this, FuPriority.ARGUMENT);
 		else {
 			this.include("string.h");
@@ -10097,7 +10114,7 @@ export class GenC extends GenCCpp
 
 	#writeStorageTemporary(expr)
 	{
-		if (GenC.#isNewString(expr) || (expr instanceof FuCallExpr && expr.type instanceof FuStorageType))
+		if (expr.isNewString(false) || (expr instanceof FuCallExpr && expr.type instanceof FuStorageType))
 			this.#writeCTemporary(expr.type, expr);
 	}
 
@@ -10169,7 +10186,7 @@ export class GenC extends GenCCpp
 
 	static #hasTemporariesToDestruct(expr)
 	{
-		return GenC.#containsTemporariesToDestruct(expr) || GenC.#isNewString(expr);
+		return GenC.#containsTemporariesToDestruct(expr) || expr.isNewString(false);
 	}
 
 	static #containsTemporariesToDestruct(expr)

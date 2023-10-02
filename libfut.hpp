@@ -658,6 +658,7 @@ public:
 	virtual void accept(FuVisitor * visitor, FuPriority parent) const;
 	void acceptStatement(FuVisitor * visitor) const override;
 	virtual bool isReferenceTo(const FuSymbol * symbol) const;
+	virtual bool isNewString(bool substringOffset) const;
 protected:
 	FuExpr() = default;
 public:
@@ -814,6 +815,7 @@ public:
 	FuInterpolatedString() = default;
 	void addPart(std::string_view prefix, std::shared_ptr<FuExpr> arg, std::shared_ptr<FuExpr> widthExpr = nullptr, int format = ' ', int precision = -1);
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
+	bool isNewString(bool substringOffset) const override;
 public:
 	std::vector<FuInterpolatedPart> parts;
 	std::string suffix;
@@ -836,6 +838,7 @@ public:
 	int intValue() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isReferenceTo(const FuSymbol * symbol) const override;
+	bool isNewString(bool substringOffset) const override;
 	std::string toString() const override;
 public:
 	std::shared_ptr<FuExpr> left;
@@ -874,10 +877,12 @@ class FuBinaryExpr : public FuExpr
 {
 public:
 	FuBinaryExpr() = default;
+	virtual ~FuBinaryExpr() = default;
 	bool isIndexing() const override;
 	bool isConstEnum() const override;
 	int intValue() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
+	virtual bool isNewString(bool substringOffset) const;
 	bool isRel() const;
 	bool isAssign() const;
 	std::string_view getOpString() const;
@@ -905,6 +910,7 @@ class FuCallExpr : public FuExpr
 public:
 	FuCallExpr() = default;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
+	bool isNewString(bool substringOffset) const override;
 public:
 	std::shared_ptr<FuSymbolReference> method;
 	std::vector<std::shared_ptr<FuExpr>> arguments;
@@ -2095,7 +2101,6 @@ private:
 	static bool needToDestruct(const FuSymbol * symbol);
 	static bool needsDestructor(const FuClass * klass);
 	void writeXstructorPtrs(const FuClass * klass);
-	static bool isNewString(const FuExpr * expr);
 	void writeStringStorageValue(const FuExpr * expr);
 	std::string getDictionaryDestroy(const FuType * type);
 	void writeHashEqual(const FuType * keyType);
