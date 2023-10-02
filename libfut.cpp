@@ -4085,6 +4085,16 @@ bool FuSema::coerce(const FuExpr * expr, const FuType * type) const
 	return true;
 }
 
+bool FuSema::coercePermanent(const FuExpr * expr, const FuType * type) const
+{
+	bool ok = coerce(expr, type);
+	if (ok && type->id == FuId::stringPtrType && expr->isNewString(true)) {
+		reportError(expr, "New string must be assigned to string()");
+		return false;
+	}
+	return ok;
+}
+
 std::shared_ptr<FuExpr> FuSema::visitInterpolatedString(std::shared_ptr<FuInterpolatedString> expr)
 {
 	int partsCount = 0;
@@ -5091,7 +5101,7 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 		break;
 	case FuToken::assign:
 		checkLValue(left.get());
-		coerce(right.get(), left->type.get());
+		coercePermanent(right.get(), left->type.get());
 		expr->left = left;
 		expr->right = right;
 		expr->type = left->type;
@@ -5425,7 +5435,7 @@ void FuSema::visitVar(std::shared_ptr<FuVar> expr)
 					if (!(literal = dynamic_cast<const FuLiteral *>(expr->value.get())) || !literal->isDefaultValue())
 						reportError(expr->value.get(), "Only null, zero and false supported as an array initializer");
 				}
-				coerce(expr->value.get(), type);
+				coercePermanent(expr->value.get(), type);
 			}
 		}
 	}
@@ -5849,7 +5859,7 @@ void FuSema::visitReturn(FuReturn * statement)
 		reportError(statement, "Missing return value");
 	else {
 		statement->value = visitExpr(statement->value);
-		coerce(statement->value.get(), this->currentMethod->type.get());
+		coercePermanent(statement->value.get(), this->currentMethod->type.get());
 		const FuSymbolReference * symbol;
 		const FuVar * local;
 		if ((symbol = dynamic_cast<const FuSymbolReference *>(statement->value.get())) && (local = dynamic_cast<const FuVar *>(symbol->symbol)) && ((local->type->isFinal() && !dynamic_cast<const FuStorageType *>(this->currentMethod->type.get())) || (local->type->id == FuId::stringStorageType && this->currentMethod->type->id != FuId::stringStorageType)))

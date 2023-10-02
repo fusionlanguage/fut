@@ -4393,6 +4393,16 @@ namespace Fusion
 			return true;
 		}
 
+		bool CoercePermanent(FuExpr expr, FuType type)
+		{
+			bool ok = Coerce(expr, type);
+			if (ok && type.Id == FuId.StringPtrType && expr.IsNewString(true)) {
+				ReportError(expr, "New string must be assigned to string()");
+				return false;
+			}
+			return ok;
+		}
+
 		FuExpr VisitInterpolatedString(FuInterpolatedString expr)
 		{
 			int partsCount = 0;
@@ -5270,7 +5280,7 @@ namespace Fusion
 				break;
 			case FuToken.Assign:
 				CheckLValue(left);
-				Coerce(right, left.Type);
+				CoercePermanent(right, left.Type);
 				expr.Left = left;
 				expr.Right = right;
 				expr.Type = left.Type;
@@ -5573,7 +5583,7 @@ namespace Fusion
 							if (!(expr.Value is FuLiteral literal) || !literal.IsDefaultValue())
 								ReportError(expr.Value, "Only null, zero and false supported as an array initializer");
 						}
-						Coerce(expr.Value, type);
+						CoercePermanent(expr.Value, type);
 					}
 				}
 			}
@@ -5981,7 +5991,7 @@ namespace Fusion
 				ReportError(statement, "Missing return value");
 			else {
 				statement.Value = VisitExpr(statement.Value);
-				Coerce(statement.Value, this.CurrentMethod.Type);
+				CoercePermanent(statement.Value, this.CurrentMethod.Type);
 				if (statement.Value is FuSymbolReference symbol && symbol.Symbol is FuVar local && ((local.Type.IsFinal() && !(this.CurrentMethod.Type is FuStorageType)) || (local.Type.Id == FuId.StringStorageType && this.CurrentMethod.Type.Id != FuId.StringStorageType)))
 					ReportError(statement, "Returning dangling reference to local storage");
 			}

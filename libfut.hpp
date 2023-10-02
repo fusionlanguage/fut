@@ -1595,6 +1595,7 @@ private:
 	void checkBaseCycle(FuClass * klass);
 	static void takePtr(const FuExpr * expr);
 	bool coerce(const FuExpr * expr, const FuType * type) const;
+	bool coercePermanent(const FuExpr * expr, const FuType * type) const;
 	std::shared_ptr<FuExpr> visitInterpolatedString(std::shared_ptr<FuInterpolatedString> expr);
 	std::shared_ptr<FuExpr> lookup(std::shared_ptr<FuSymbolReference> expr, const FuScope * scope);
 	std::shared_ptr<FuExpr> visitSymbolReference(std::shared_ptr<FuSymbolReference> expr);

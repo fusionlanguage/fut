@@ -4540,6 +4540,16 @@ export class FuSema
 		return true;
 	}
 
+	#coercePermanent(expr, type)
+	{
+		let ok = this.#coerce(expr, type);
+		if (ok && type.id == FuId.STRING_PTR_TYPE && expr.isNewString(true)) {
+			this.reportError(expr, "New string must be assigned to string()");
+			return false;
+		}
+		return ok;
+	}
+
 	#visitInterpolatedString(expr)
 	{
 		let partsCount = 0;
@@ -5488,7 +5498,7 @@ export class FuSema
 			break;
 		case FuToken.ASSIGN:
 			this.#checkLValue(left);
-			this.#coerce(right, left.type);
+			this.#coercePermanent(right, left.type);
 			expr.left = left;
 			expr.right = right;
 			expr.type = left.type;
@@ -5810,7 +5820,7 @@ export class FuSema
 						if (!((literal = expr.value) instanceof FuLiteral) || !literal.isDefaultValue())
 							this.reportError(expr.value, "Only null, zero and false supported as an array initializer");
 					}
-					this.#coerce(expr.value, type);
+					this.#coercePermanent(expr.value, type);
 				}
 			}
 		}
@@ -6253,7 +6263,7 @@ export class FuSema
 			this.reportError(statement, "Missing return value");
 		else {
 			statement.value = this.#visitExpr(statement.value);
-			this.#coerce(statement.value, this.#currentMethod.type);
+			this.#coercePermanent(statement.value, this.#currentMethod.type);
 			let symbol;
 			let local;
 			if ((symbol = statement.value) instanceof FuSymbolReference && (local = symbol.symbol) instanceof FuVar && ((local.type.isFinal() && !(this.#currentMethod.type instanceof FuStorageType)) || (local.type.id == FuId.STRING_STORAGE_TYPE && this.#currentMethod.type.id != FuId.STRING_STORAGE_TYPE)))
