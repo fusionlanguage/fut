@@ -2005,7 +2005,7 @@ namespace Fusion
 			visitor.VisitBinaryExpr(this, parent);
 		}
 
-		public virtual bool IsNewString(bool substringOffset) => this.Op == FuToken.Plus && this.Type.Id == FuId.StringStorageType;
+		public override bool IsNewString(bool substringOffset) => this.Op == FuToken.Plus && this.Type.Id == FuId.StringStorageType;
 
 		public bool IsRel()
 		{

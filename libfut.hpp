@@ -877,12 +877,11 @@ class FuBinaryExpr : public FuExpr
 {
 public:
 	FuBinaryExpr() = default;
-	virtual ~FuBinaryExpr() = default;
 	bool isIndexing() const override;
 	bool isConstEnum() const override;
 	int intValue() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
-	virtual bool isNewString(bool substringOffset) const;
+	bool isNewString(bool substringOffset) const override;
 	bool isRel() const;
 	bool isAssign() const;
 	std::string_view getOpString() const;
