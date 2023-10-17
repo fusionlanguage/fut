@@ -2140,7 +2140,7 @@ namespace Fusion
 			visitor.VisitCallExpr(this, parent);
 		}
 
-		public override bool IsNewString(bool substringOffset) => this.Type.Id == FuId.StringStorageType && (substringOffset || this.Method.Symbol.Id != FuId.StringSubstring || this.Arguments.Count != 1);
+		public override bool IsNewString(bool substringOffset) => this.Type.Id == FuId.StringStorageType && this.Method.Symbol.Id != FuId.ListLast && this.Method.Symbol.Id != FuId.QueuePeek && this.Method.Symbol.Id != FuId.StackPeek && (substringOffset || this.Method.Symbol.Id != FuId.StringSubstring || this.Arguments.Count != 1);
 	}
 
 	class FuLambdaExpr : FuScope
@@ -9508,8 +9508,8 @@ namespace Fusion
 			if (type is FuStorageType storage) {
 				switch (storage.Class.Id) {
 				case FuId.ListClass:
-				case FuId.StackClass:
 				case FuId.QueueClass:
+				case FuId.StackClass:
 				case FuId.HashSetClass:
 				case FuId.SortedSetClass:
 				case FuId.DictionaryClass:

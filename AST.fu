@@ -752,7 +752,9 @@ public class FuCallExpr : FuExpr
 	internal List<FuExpr#>() Arguments;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitCallExpr(this, parent); }
 	public override bool IsNewString(bool substringOffset)
-		=> this.Type.Id == FuId.StringStorageType && (substringOffset || this.Method.Symbol.Id != FuId.StringSubstring || this.Arguments.Count != 1);
+		=> this.Type.Id == FuId.StringStorageType
+			&& this.Method.Symbol.Id != FuId.ListLast && this.Method.Symbol.Id != FuId.QueuePeek && this.Method.Symbol.Id != FuId.StackPeek
+			&& (substringOffset || this.Method.Symbol.Id != FuId.StringSubstring || this.Arguments.Count != 1);
 }
 
 class FuLambdaExpr : FuScope

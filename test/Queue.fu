@@ -12,6 +12,6 @@ public static class Test
 		Queue<string()>() q2;
 		q2.Enqueue("foo");
 		return q.Count == 2 && q.Dequeue() == 10 && q.Peek() == 15
-			&& q2.Dequeue() == "foo";
+			&& q2.Peek() == "foo";
 	}
 }

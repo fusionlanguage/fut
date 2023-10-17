@@ -2124,7 +2124,7 @@ export class FuCallExpr extends FuExpr
 
 	isNewString(substringOffset)
 	{
-		return this.type.id == FuId.STRING_STORAGE_TYPE && (substringOffset || this.method.symbol.id != FuId.STRING_SUBSTRING || this.arguments.length != 1);
+		return this.type.id == FuId.STRING_STORAGE_TYPE && this.method.symbol.id != FuId.LIST_LAST && this.method.symbol.id != FuId.QUEUE_PEEK && this.method.symbol.id != FuId.STACK_PEEK && (substringOffset || this.method.symbol.id != FuId.STRING_SUBSTRING || this.arguments.length != 1);
 	}
 }
 
@@ -9845,8 +9845,8 @@ export class GenC extends GenCCpp
 		if ((storage = type) instanceof FuStorageType) {
 			switch (storage.class.id) {
 			case FuId.LIST_CLASS:
-			case FuId.STACK_CLASS:
 			case FuId.QUEUE_CLASS:
+			case FuId.STACK_CLASS:
 			case FuId.HASH_SET_CLASS:
 			case FuId.SORTED_SET_CLASS:
 			case FuId.DICTIONARY_CLASS:

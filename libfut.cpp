@@ -1644,7 +1644,7 @@ void FuCallExpr::accept(FuVisitor * visitor, FuPriority parent) const
 
 bool FuCallExpr::isNewString(bool substringOffset) const
 {
-	return this->type->id == FuId::stringStorageType && (substringOffset || this->method->symbol->id != FuId::stringSubstring || std::ssize(this->arguments) != 1);
+	return this->type->id == FuId::stringStorageType && this->method->symbol->id != FuId::listLast && this->method->symbol->id != FuId::queuePeek && this->method->symbol->id != FuId::stackPeek && (substringOffset || this->method->symbol->id != FuId::stringSubstring || std::ssize(this->arguments) != 1);
 }
 
 void FuLambdaExpr::accept(FuVisitor * visitor, FuPriority parent) const
@@ -9222,8 +9222,8 @@ bool GenC::needToDestructType(const FuType * type)
 	if (const FuStorageType *storage = dynamic_cast<const FuStorageType *>(type)) {
 		switch (storage->class_->id) {
 		case FuId::listClass:
-		case FuId::stackClass:
 		case FuId::queueClass:
+		case FuId::stackClass:
 		case FuId::hashSetClass:
 		case FuId::sortedSetClass:
 		case FuId::dictionaryClass:

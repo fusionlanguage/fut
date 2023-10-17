@@ -599,8 +599,8 @@ public class GenC : GenCCpp
 		if (type is FuStorageType storage) {
 			switch (storage.Class.Id) {
 			case FuId.ListClass:
-			case FuId.StackClass:
 			case FuId.QueueClass:
+			case FuId.StackClass:
 			case FuId.HashSetClass:
 			case FuId.SortedSetClass:
 			case FuId.DictionaryClass:

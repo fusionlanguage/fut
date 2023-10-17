@@ -2,10 +2,10 @@ public static class Test
 {
 	public static bool Run()
 	{
-		List<int>() list; //FAIL: cl
-		list.Add(5);
-		list.Add(10);
-		list.Add(15);
-		return list.Last() == 15;
+		List<string()>() list; //FAIL: cl
+		list.Add("foo");
+		list.Add("bar");
+		list.Add("quux");
+		return list.Last() == "quux";
 	}
 }
