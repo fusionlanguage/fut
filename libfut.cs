@@ -10077,7 +10077,6 @@ namespace Fusion
 				nesting++;
 				type = array.GetElementType();
 			}
-			bool arrayFree = false;
 			switch (type) {
 			case FuDynamicPtrType dynamic:
 				if (dynamic.Class.Id == FuId.RegexClass)
@@ -10091,8 +10090,7 @@ namespace Fusion
 				switch (storage.Class.Id) {
 				case FuId.ListClass:
 				case FuId.StackClass:
-					Write("g_array_free(");
-					arrayFree = true;
+					Write("g_array_unref(");
 					break;
 				case FuId.QueueClass:
 					Write("g_queue_clear(&");
@@ -10127,8 +10125,6 @@ namespace Fusion
 				VisitLiteralLong(i);
 				WriteChar(']');
 			}
-			if (arrayFree)
-				Write(", TRUE");
 			WriteLine(");");
 			this.Indent -= nesting;
 		}

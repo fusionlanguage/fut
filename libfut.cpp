@@ -9784,7 +9784,6 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 		nesting++;
 		type = array->getElementType().get();
 	}
-	bool arrayFree = false;
 	if (const FuDynamicPtrType *dynamic = dynamic_cast<const FuDynamicPtrType *>(type)) {
 		if (dynamic->class_->id == FuId::regexClass)
 			write("g_regex_unref(");
@@ -9797,8 +9796,7 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 		switch (storage->class_->id) {
 		case FuId::listClass:
 		case FuId::stackClass:
-			write("g_array_free(");
-			arrayFree = true;
+			write("g_array_unref(");
 			break;
 		case FuId::queueClass:
 			write("g_queue_clear(&");
@@ -9831,8 +9829,6 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 		visitLiteralLong(i);
 		writeChar(']');
 	}
-	if (arrayFree)
-		write(", TRUE");
 	writeLine(");");
 	this->indent -= nesting;
 }

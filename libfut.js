@@ -10441,7 +10441,6 @@ export class GenC extends GenCCpp
 			nesting++;
 			type = array.getElementType();
 		}
-		let arrayFree = false;
 		if (type instanceof FuDynamicPtrType) {
 			const dynamic = type;
 			if (dynamic.class.id == FuId.REGEX_CLASS)
@@ -10456,8 +10455,7 @@ export class GenC extends GenCCpp
 			switch (storage.class.id) {
 			case FuId.LIST_CLASS:
 			case FuId.STACK_CLASS:
-				this.write("g_array_free(");
-				arrayFree = true;
+				this.write("g_array_unref(");
 				break;
 			case FuId.QUEUE_CLASS:
 				this.write("g_queue_clear(&");
@@ -10490,8 +10488,6 @@ export class GenC extends GenCCpp
 			this.visitLiteralLong(BigInt(i));
 			this.writeChar(93);
 		}
-		if (arrayFree)
-			this.write(", TRUE");
 		this.writeLine(");");
 		this.indent -= nesting;
 	}
