@@ -2120,6 +2120,7 @@ private:
 	static const FuMethod * getThrowingMethod(const FuExpr * expr);
 	static bool hasListDestroy(const FuType * type);
 	FuPriority startForwardThrow(const FuMethod * throwingMethod);
+	void writeDestructElement(const FuSymbol * symbol, int nesting);
 	void writeDestruct(const FuSymbol * symbol);
 	void writeDestructAll(const FuVar * exceptVar = nullptr);
 	void writeThrowReturnValue();

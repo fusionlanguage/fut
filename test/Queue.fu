@@ -9,7 +9,7 @@ public static class Test
 		q.Enqueue(10);
 		q.Enqueue(15);
 		q.Dequeue();
-		Queue<string>() q2;
+		Queue<string()>() q2;
 		q2.Enqueue("foo");
 		return q.Count == 2 && q.Dequeue() == 10 && q.Peek() == 15
 			&& q2.Dequeue() == "foo";

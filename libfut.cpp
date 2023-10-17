@@ -9223,6 +9223,7 @@ bool GenC::needToDestructType(const FuType * type)
 		switch (storage->class_->id) {
 		case FuId::listClass:
 		case FuId::stackClass:
+		case FuId::queueClass:
 		case FuId::hashSetClass:
 		case FuId::sortedSetClass:
 		case FuId::dictionaryClass:
@@ -9763,6 +9764,16 @@ FuPriority GenC::startForwardThrow(const FuMethod * throwingMethod)
 	}
 }
 
+void GenC::writeDestructElement(const FuSymbol * symbol, int nesting)
+{
+	writeLocalName(symbol, FuPriority::primary);
+	for (int i = 0; i < nesting; i++) {
+		write("[_i");
+		visitLiteralLong(i);
+		writeChar(']');
+	}
+}
+
 void GenC::writeDestruct(const FuSymbol * symbol)
 {
 	if (!needToDestruct(symbol))
@@ -9799,8 +9810,20 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 			write("g_array_unref(");
 			break;
 		case FuId::queueClass:
-			write("g_queue_clear(&");
-			break;
+			{
+				std::string destroy{getDictionaryDestroy(storage->getElementType().get())};
+				if (destroy != "NULL") {
+					write("g_queue_clear_full(&");
+					writeDestructElement(symbol, nesting);
+					write(", ");
+					write(destroy);
+					writeLine(");");
+					this->indent -= nesting;
+					return;
+				}
+				write("g_queue_clear(&");
+				break;
+			}
 		case FuId::hashSetClass:
 		case FuId::dictionaryClass:
 			write("g_hash_table_unref(");
@@ -9823,12 +9846,7 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 	}
 	else
 		write("free(");
-	writeLocalName(symbol, FuPriority::primary);
-	for (int i = 0; i < nesting; i++) {
-		write("[_i");
-		visitLiteralLong(i);
-		writeChar(']');
-	}
+	writeDestructElement(symbol, nesting);
 	writeLine(");");
 	this->indent -= nesting;
 }
@@ -10694,10 +10712,21 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 			break;
 		}
 	case FuId::queueClear:
-		write("g_queue_clear(");
-		writeQueueObject(obj);
-		writeChar(')');
-		break;
+		{
+			std::string destroy{getDictionaryDestroy(obj->type->asClassType()->getElementType().get())};
+			if (destroy == "NULL") {
+				write("g_queue_clear(");
+				writeQueueObject(obj);
+			}
+			else {
+				write("g_queue_clear_full(");
+				writeQueueObject(obj);
+				write(", ");
+				write(destroy);
+			}
+			writeChar(')');
+			break;
+		}
 	case FuId::queueDequeue:
 		writeQueueGet("g_queue_pop_head", obj, parent);
 		break;

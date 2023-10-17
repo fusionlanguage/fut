@@ -9846,6 +9846,7 @@ export class GenC extends GenCCpp
 			switch (storage.class.id) {
 			case FuId.LIST_CLASS:
 			case FuId.STACK_CLASS:
+			case FuId.QUEUE_CLASS:
 			case FuId.HASH_SET_CLASS:
 			case FuId.SORTED_SET_CLASS:
 			case FuId.DICTIONARY_CLASS:
@@ -10419,6 +10420,16 @@ export class GenC extends GenCCpp
 		}
 	}
 
+	#writeDestructElement(symbol, nesting)
+	{
+		this.writeLocalName(symbol, FuPriority.PRIMARY);
+		for (let i = 0; i < nesting; i++) {
+			this.write("[_i");
+			this.visitLiteralLong(BigInt(i));
+			this.writeChar(93);
+		}
+	}
+
 	#writeDestruct(symbol)
 	{
 		if (!GenC.#needToDestruct(symbol))
@@ -10458,6 +10469,16 @@ export class GenC extends GenCCpp
 				this.write("g_array_unref(");
 				break;
 			case FuId.QUEUE_CLASS:
+				let destroy = this.#getDictionaryDestroy(storage.getElementType());
+				if (destroy != "NULL") {
+					this.write("g_queue_clear_full(&");
+					this.#writeDestructElement(symbol, nesting);
+					this.write(", ");
+					this.write(destroy);
+					this.writeLine(");");
+					this.indent -= nesting;
+					return;
+				}
 				this.write("g_queue_clear(&");
 				break;
 			case FuId.HASH_SET_CLASS:
@@ -10482,12 +10503,7 @@ export class GenC extends GenCCpp
 		}
 		else
 			this.write("free(");
-		this.writeLocalName(symbol, FuPriority.PRIMARY);
-		for (let i = 0; i < nesting; i++) {
-			this.write("[_i");
-			this.visitLiteralLong(BigInt(i));
-			this.writeChar(93);
-		}
+		this.#writeDestructElement(symbol, nesting);
 		this.writeLine(");");
 		this.indent -= nesting;
 	}
@@ -11352,8 +11368,17 @@ export class GenC extends GenCCpp
 			this.#compares.add(typeId2);
 			break;
 		case FuId.QUEUE_CLEAR:
-			this.write("g_queue_clear(");
-			this.#writeQueueObject(obj);
+			let destroy = this.#getDictionaryDestroy(obj.type.asClassType().getElementType());
+			if (destroy == "NULL") {
+				this.write("g_queue_clear(");
+				this.#writeQueueObject(obj);
+			}
+			else {
+				this.write("g_queue_clear_full(");
+				this.#writeQueueObject(obj);
+				this.write(", ");
+				this.write(destroy);
+			}
 			this.writeChar(41);
 			break;
 		case FuId.QUEUE_DEQUEUE:

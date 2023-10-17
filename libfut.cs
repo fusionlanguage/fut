@@ -9509,6 +9509,7 @@ namespace Fusion
 				switch (storage.Class.Id) {
 				case FuId.ListClass:
 				case FuId.StackClass:
+				case FuId.QueueClass:
 				case FuId.HashSetClass:
 				case FuId.SortedSetClass:
 				case FuId.DictionaryClass:
@@ -10056,6 +10057,16 @@ namespace Fusion
 			}
 		}
 
+		void WriteDestructElement(FuSymbol symbol, int nesting)
+		{
+			WriteLocalName(symbol, FuPriority.Primary);
+			for (int i = 0; i < nesting; i++) {
+				Write("[_i");
+				VisitLiteralLong(i);
+				WriteChar(']');
+			}
+		}
+
 		void WriteDestruct(FuSymbol symbol)
 		{
 			if (!NeedToDestruct(symbol))
@@ -10093,6 +10104,16 @@ namespace Fusion
 					Write("g_array_unref(");
 					break;
 				case FuId.QueueClass:
+					string destroy = GetDictionaryDestroy(storage.GetElementType());
+					if (destroy != "NULL") {
+						Write("g_queue_clear_full(&");
+						WriteDestructElement(symbol, nesting);
+						Write(", ");
+						Write(destroy);
+						WriteLine(");");
+						this.Indent -= nesting;
+						return;
+					}
 					Write("g_queue_clear(&");
 					break;
 				case FuId.HashSetClass:
@@ -10119,12 +10140,7 @@ namespace Fusion
 				Write("free(");
 				break;
 			}
-			WriteLocalName(symbol, FuPriority.Primary);
-			for (int i = 0; i < nesting; i++) {
-				Write("[_i");
-				VisitLiteralLong(i);
-				WriteChar(']');
-			}
+			WriteDestructElement(symbol, nesting);
 			WriteLine(");");
 			this.Indent -= nesting;
 		}
@@ -10976,8 +10992,17 @@ namespace Fusion
 				this.Compares.Add(typeId2);
 				break;
 			case FuId.QueueClear:
-				Write("g_queue_clear(");
-				WriteQueueObject(obj);
+				string destroy = GetDictionaryDestroy(obj.Type.AsClassType().GetElementType());
+				if (destroy == "NULL") {
+					Write("g_queue_clear(");
+					WriteQueueObject(obj);
+				}
+				else {
+					Write("g_queue_clear_full(");
+					WriteQueueObject(obj);
+					Write(", ");
+					Write(destroy);
+				}
 				WriteChar(')');
 				break;
 			case FuId.QueueDequeue:
