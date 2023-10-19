@@ -20,8 +20,6 @@
 
 public abstract class GenTyped : GenBase
 {
-	protected List<FuSwitch>() SwitchesWithGoto;
-
 	protected abstract void WriteType!(FuType type, bool promote);
 
 	protected override void WriteCoercedLiteral!(FuType? type, FuExpr expr)
@@ -246,24 +244,5 @@ public abstract class GenTyped : GenBase
 		Write(" = ");
 		WriteStaticCast(def.Type, expr.Left);
 		WriteCharLine(';');
-	}
-
-	protected virtual void StartBreakGoto!()
-	{
-		Write("goto fuafterswitch");
-	}
-
-	internal override void VisitBreak!(FuBreak statement)
-	{
-		if (statement.LoopOrSwitch is FuSwitch switchStatement) {
-			int gotoId = this.SwitchesWithGoto.IndexOf(switchStatement);
-			if (gotoId >= 0) {
-				StartBreakGoto();
-				VisitLiteralLong(gotoId);
-				WriteCharLine(';');
-				return;
-			}
-		}
-		base.VisitBreak(statement);
 	}
 }

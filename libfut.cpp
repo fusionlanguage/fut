@@ -7745,8 +7745,22 @@ void GenBase::writeChild(FuStatement * statement)
 	this->inChildBlock = wasInChildBlock;
 }
 
+void GenBase::startBreakGoto()
+{
+	write("goto fuafterswitch");
+}
+
 void GenBase::visitBreak(const FuBreak * statement)
 {
+	if (const FuSwitch *switchStatement = dynamic_cast<const FuSwitch *>(statement->loopOrSwitch)) {
+		int gotoId = [](const std::vector<const FuSwitch *> &v, const FuSwitch * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->switchesWithGoto, switchStatement);
+		if (gotoId >= 0) {
+			startBreakGoto();
+			visitLiteralLong(gotoId);
+			writeCharLine(';');
+			return;
+		}
+	}
 	writeLine("break;");
 }
 
@@ -8034,6 +8048,7 @@ void GenBase::writeConstructorBody(const FuClass * klass)
 		writeStatements(&block->statements);
 		this->currentMethod = nullptr;
 	}
+	this->switchesWithGoto.clear();
 	this->currentTemporaries.clear();
 }
 
@@ -8144,6 +8159,7 @@ void GenBase::writeMembers(const FuClass * klass, bool constArrays)
 			writeField(field);
 		else if (const FuMethod *method = dynamic_cast<const FuMethod *>(symbol)) {
 			writeMethod(method);
+			this->switchesWithGoto.clear();
 			this->currentTemporaries.clear();
 		}
 		else if (dynamic_cast<const FuVar *>(symbol)) {
@@ -8411,25 +8427,6 @@ void GenTyped::writeAssertCast(const FuBinaryExpr * expr)
 	write(" = ");
 	writeStaticCast(def->type.get(), expr->left.get());
 	writeCharLine(';');
-}
-
-void GenTyped::startBreakGoto()
-{
-	write("goto fuafterswitch");
-}
-
-void GenTyped::visitBreak(const FuBreak * statement)
-{
-	if (const FuSwitch *switchStatement = dynamic_cast<const FuSwitch *>(statement->loopOrSwitch)) {
-		int gotoId = [](const std::vector<const FuSwitch *> &v, const FuSwitch * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->switchesWithGoto, switchStatement);
-		if (gotoId >= 0) {
-			startBreakGoto();
-			visitLiteralLong(gotoId);
-			writeCharLine(';');
-			return;
-		}
-	}
-	GenBase::visitBreak(statement);
 }
 
 void GenCCppD::visitLiteralLong(int64_t i)
@@ -11132,7 +11129,7 @@ void GenC::cleanupBlock(const FuBlock * statement)
 void GenC::visitBreak(const FuBreak * statement)
 {
 	writeDestructLoopOrSwitch(statement->loopOrSwitch);
-	GenTyped::visitBreak(statement);
+	GenBase::visitBreak(statement);
 }
 
 void GenC::visitContinue(const FuContinue * statement)
@@ -11678,7 +11675,6 @@ void GenC::writeConstructor(const FuClass * klass)
 {
 	if (!needsConstructor(klass))
 		return;
-	this->switchesWithGoto.clear();
 	writeNewLine();
 	writeXstructorSignature("Construct", klass);
 	writeNewLine();
@@ -11795,7 +11791,6 @@ void GenC::writeMethod(const FuMethod * method)
 {
 	if (!method->isLive || method->callType == FuCallType::abstract)
 		return;
-	this->switchesWithGoto.clear();
 	writeNewLine();
 	writeSignature(method);
 	for (const FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
@@ -14209,7 +14204,6 @@ void GenCpp::writeConstructor(const FuClass * klass)
 {
 	if (!needsConstructor(klass))
 		return;
-	this->switchesWithGoto.clear();
 	write(klass->name);
 	write("::");
 	write(klass->name);
@@ -14223,7 +14217,6 @@ void GenCpp::writeMethod(const FuMethod * method)
 {
 	if (method->callType == FuCallType::abstract)
 		return;
-	this->switchesWithGoto.clear();
 	writeNewLine();
 	writeType(method->type.get(), true);
 	writeChar(' ');
@@ -18931,18 +18924,9 @@ void GenJsNoModule::writeAssert(const FuAssert * statement)
 	writeLine(");");
 }
 
-void GenJsNoModule::visitBreak(const FuBreak * statement)
+void GenJsNoModule::startBreakGoto()
 {
-	if (const FuSwitch *switchStatement = dynamic_cast<const FuSwitch *>(statement->loopOrSwitch)) {
-		int label = [](const std::vector<const FuSwitch *> &v, const FuSwitch * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->switchesWithLabel, switchStatement);
-		if (label >= 0) {
-			write("break fuswitch");
-			visitLiteralLong(label);
-			writeCharLine(';');
-			return;
-		}
-	}
-	GenBase::visitBreak(statement);
+	write("break fuswitch");
 }
 
 void GenJsNoModule::visitForeach(const FuForeach * statement)
@@ -19037,8 +19021,8 @@ void GenJsNoModule::visitSwitch(const FuSwitch * statement)
 	if (statement->isTypeMatching() || statement->hasWhen()) {
 		if (std::any_of(statement->cases.begin(), statement->cases.end(), [](const FuCase &kase) { return FuSwitch::hasEarlyBreak(&kase.body); }) || FuSwitch::hasEarlyBreak(&statement->defaultBody)) {
 			write("fuswitch");
-			visitLiteralLong(std::ssize(this->switchesWithLabel));
-			this->switchesWithLabel.push_back(statement);
+			visitLiteralLong(std::ssize(this->switchesWithGoto));
+			this->switchesWithGoto.push_back(statement);
 			write(": ");
 			openBlock();
 			writeSwitchAsIfs(statement, false);
@@ -19110,7 +19094,6 @@ void GenJsNoModule::writeMethod(const FuMethod * method)
 {
 	if (method->callType == FuCallType::abstract)
 		return;
-	this->switchesWithLabel.clear();
 	writeNewLine();
 	writeMethodDoc(method);
 	if (method->callType == FuCallType::static_)
@@ -19122,7 +19105,6 @@ void GenJsNoModule::writeMethod(const FuMethod * method)
 
 void GenJsNoModule::writeConstructor(const FuClass * klass)
 {
-	this->switchesWithLabel.clear();
 	writeLine("constructor()");
 	openBlock();
 	if (dynamic_cast<const FuClass *>(klass->parent))

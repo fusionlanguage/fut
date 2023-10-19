@@ -1793,7 +1793,6 @@ public class GenCpp : GenCCpp
 	{
 		if (!NeedsConstructor(klass))
 			return;
-		this.SwitchesWithGoto.Clear();
 		Write(klass.Name);
 		Write("::");
 		Write(klass.Name);
@@ -1807,7 +1806,6 @@ public class GenCpp : GenCCpp
 	{
 		if (method.CallType == FuCallType.Abstract)
 			return;
-		this.SwitchesWithGoto.Clear();
 		WriteNewLine();
 		WriteType(method.Type, true);
 		WriteChar(' ');

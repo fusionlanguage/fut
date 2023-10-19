@@ -3057,7 +3057,6 @@ public class GenC : GenCCpp
 	{
 		if (!NeedsConstructor(klass))
 			return;
-		this.SwitchesWithGoto.Clear();
 		WriteNewLine();
 		WriteXstructorSignature("Construct", klass);
 		WriteNewLine();
@@ -3174,7 +3173,6 @@ public class GenC : GenCCpp
 	{
 		if (!method.IsLive || method.CallType == FuCallType.Abstract)
 			return;
-		this.SwitchesWithGoto.Clear();
 		WriteNewLine();
 		WriteSignature(method);
 		for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {

@@ -1683,6 +1683,7 @@ protected:
 	bool inHeaderFile = false;
 	const FuMethodBase * currentMethod = nullptr;
 	std::unordered_set<const FuClass *> writtenClasses;
+	std::vector<const FuSwitch *> switchesWithGoto;
 	std::vector<const FuExpr *> currentTemporaries;
 	virtual const FuContainerType * getCurrentContainer() const;
 	virtual std::string_view getTargetName() const = 0;
@@ -1811,6 +1812,7 @@ protected:
 	virtual void writeStatements(const std::vector<std::shared_ptr<FuStatement>> * statements);
 	virtual void cleanupBlock(const FuBlock * statement);
 	virtual void writeChild(FuStatement * statement);
+	virtual void startBreakGoto();
 	virtual bool embedIfWhileIsVar(const FuExpr * expr, bool write);
 	void defineVar(const FuExpr * value);
 	virtual void writeSwitchCaseTypeVar(const FuExpr * value);
@@ -1900,7 +1902,6 @@ public:
 	virtual ~GenTyped() = default;
 protected:
 	GenTyped() = default;
-	std::vector<const FuSwitch *> switchesWithGoto;
 	virtual void writeType(const FuType * type, bool promote) = 0;
 	void writeCoercedLiteral(const FuType * type, const FuExpr * expr) override;
 	void writeTypeAndName(const FuNamedValue * value) override;
@@ -1919,10 +1920,8 @@ protected:
 	void writeCharAt(const FuBinaryExpr * expr) override;
 	void startTemporaryVar(const FuType * type) override;
 	void writeAssertCast(const FuBinaryExpr * expr) override;
-	virtual void startBreakGoto();
 public:
 	void visitAggregateInitializer(const FuAggregateInitializer * expr) override;
-	void visitBreak(const FuBreak * statement) override;
 };
 
 class GenCCppD : public GenTyped
@@ -2514,6 +2513,7 @@ protected:
 	virtual void writeAsType(const FuVar * def);
 	void writeAssertCast(const FuBinaryExpr * expr) override;
 	void writeAssert(const FuAssert * statement) override;
+	void startBreakGoto() override;
 	void writeSwitchCaseCond(const FuSwitch * statement, const FuExpr * value, FuPriority parent) override;
 	void writeIfCaseBody(const std::vector<std::shared_ptr<FuStatement>> * body, bool doWhile, const FuSwitch * statement, const FuCase * kase) override;
 	virtual void startContainerType(const FuContainerType * container);
@@ -2531,14 +2531,12 @@ public:
 	void visitSymbolReference(const FuSymbolReference * expr, FuPriority parent) override;
 	void visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	void visitLambdaExpr(const FuLambdaExpr * expr) override;
-	void visitBreak(const FuBreak * statement) override;
 	void visitForeach(const FuForeach * statement) override;
 	void visitLock(const FuLock * statement) override;
 	void visitSwitch(const FuSwitch * statement) override;
 	void visitThrow(const FuThrow * statement) override;
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;
 private:
-	std::vector<const FuSwitch *> switchesWithLabel;
 	bool stringWriter = false;
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeInterpolatedLiteral(std::string_view s);

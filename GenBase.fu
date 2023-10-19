@@ -39,6 +39,7 @@ public abstract class GenBase : FuVisitor
 	SortedDictionary<string(), bool>() Includes;
 	protected FuMethodBase? CurrentMethod = null;
 	protected HashSet<FuClass>() WrittenClasses;
+	protected List<FuSwitch>() SwitchesWithGoto;
 	protected List<FuExpr>() CurrentTemporaries; // FuExpr or FuType
 
 	public void SetHost!(GenHost! host)
@@ -1564,8 +1565,22 @@ public abstract class GenBase : FuVisitor
 		this.InChildBlock = wasInChildBlock;
 	}
 
+	protected virtual void StartBreakGoto!()
+	{
+		Write("goto fuafterswitch");
+	}
+
 	internal override void VisitBreak!(FuBreak statement)
 	{
+		if (statement.LoopOrSwitch is FuSwitch switchStatement) {
+			int gotoId = this.SwitchesWithGoto.IndexOf(switchStatement);
+			if (gotoId >= 0) {
+				StartBreakGoto();
+				VisitLiteralLong(gotoId);
+				WriteCharLine(';');
+				return;
+			}
+		}
 		WriteLine("break;");
 	}
 
@@ -1843,6 +1858,7 @@ public abstract class GenBase : FuVisitor
 			WriteStatements(block.Statements);
 			this.CurrentMethod = null;
 		}
+		this.SwitchesWithGoto.Clear();
 		this.CurrentTemporaries.Clear();
 	}
 
@@ -1961,6 +1977,7 @@ public abstract class GenBase : FuVisitor
 				break;
 			case FuMethod method:
 				WriteMethod(method);
+				this.SwitchesWithGoto.Clear();
 				this.CurrentTemporaries.Clear();
 				break;
 			case FuVar _: // "this"

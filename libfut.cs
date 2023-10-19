@@ -6399,6 +6399,8 @@ namespace Fusion
 
 		protected readonly HashSet<FuClass> WrittenClasses = new HashSet<FuClass>();
 
+		protected readonly List<FuSwitch> SwitchesWithGoto = new List<FuSwitch>();
+
 		protected readonly List<FuExpr> CurrentTemporaries = new List<FuExpr>();
 
 		public void SetHost(GenHost host)
@@ -7930,8 +7932,22 @@ namespace Fusion
 			this.InChildBlock = wasInChildBlock;
 		}
 
+		protected virtual void StartBreakGoto()
+		{
+			Write("goto fuafterswitch");
+		}
+
 		internal override void VisitBreak(FuBreak statement)
 		{
+			if (statement.LoopOrSwitch is FuSwitch switchStatement) {
+				int gotoId = this.SwitchesWithGoto.IndexOf(switchStatement);
+				if (gotoId >= 0) {
+					StartBreakGoto();
+					VisitLiteralLong(gotoId);
+					WriteCharLine(';');
+					return;
+				}
+			}
 			WriteLine("break;");
 		}
 
@@ -8209,6 +8225,7 @@ namespace Fusion
 				WriteStatements(block.Statements);
 				this.CurrentMethod = null;
 			}
+			this.SwitchesWithGoto.Clear();
 			this.CurrentTemporaries.Clear();
 		}
 
@@ -8327,6 +8344,7 @@ namespace Fusion
 					break;
 				case FuMethod method:
 					WriteMethod(method);
+					this.SwitchesWithGoto.Clear();
 					this.CurrentTemporaries.Clear();
 					break;
 				case FuVar _:
@@ -8375,8 +8393,6 @@ namespace Fusion
 
 	public abstract class GenTyped : GenBase
 	{
-
-		protected readonly List<FuSwitch> SwitchesWithGoto = new List<FuSwitch>();
 
 		protected abstract void WriteType(FuType type, bool promote);
 
@@ -8600,25 +8616,6 @@ namespace Fusion
 			Write(" = ");
 			WriteStaticCast(def.Type, expr.Left);
 			WriteCharLine(';');
-		}
-
-		protected virtual void StartBreakGoto()
-		{
-			Write("goto fuafterswitch");
-		}
-
-		internal override void VisitBreak(FuBreak statement)
-		{
-			if (statement.LoopOrSwitch is FuSwitch switchStatement) {
-				int gotoId = this.SwitchesWithGoto.IndexOf(switchStatement);
-				if (gotoId >= 0) {
-					StartBreakGoto();
-					VisitLiteralLong(gotoId);
-					WriteCharLine(';');
-					return;
-				}
-			}
-			base.VisitBreak(statement);
 		}
 	}
 
@@ -11944,7 +11941,6 @@ namespace Fusion
 		{
 			if (!NeedsConstructor(klass))
 				return;
-			this.SwitchesWithGoto.Clear();
 			WriteNewLine();
 			WriteXstructorSignature("Construct", klass);
 			WriteNewLine();
@@ -12059,7 +12055,6 @@ namespace Fusion
 		{
 			if (!method.IsLive || method.CallType == FuCallType.Abstract)
 				return;
-			this.SwitchesWithGoto.Clear();
 			WriteNewLine();
 			WriteSignature(method);
 			for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
@@ -14585,7 +14580,6 @@ namespace Fusion
 		{
 			if (!NeedsConstructor(klass))
 				return;
-			this.SwitchesWithGoto.Clear();
 			Write(klass.Name);
 			Write("::");
 			Write(klass.Name);
@@ -14599,7 +14593,6 @@ namespace Fusion
 		{
 			if (method.CallType == FuCallType.Abstract)
 				return;
-			this.SwitchesWithGoto.Clear();
 			WriteNewLine();
 			WriteType(method.Type, true);
 			WriteChar(' ');
@@ -18544,8 +18537,6 @@ namespace Fusion
 	public class GenJsNoModule : GenBase
 	{
 
-		readonly List<FuSwitch> SwitchesWithLabel = new List<FuSwitch>();
-
 		bool StringWriter = false;
 
 		protected override string GetTargetName() => "JavaScript";
@@ -19586,18 +19577,9 @@ namespace Fusion
 			WriteLine(");");
 		}
 
-		internal override void VisitBreak(FuBreak statement)
+		protected override void StartBreakGoto()
 		{
-			if (statement.LoopOrSwitch is FuSwitch switchStatement) {
-				int label = this.SwitchesWithLabel.IndexOf(switchStatement);
-				if (label >= 0) {
-					Write("break fuswitch");
-					VisitLiteralLong(label);
-					WriteCharLine(';');
-					return;
-				}
-			}
-			base.VisitBreak(statement);
+			Write("break fuswitch");
 		}
 
 		internal override void VisitForeach(FuForeach statement)
@@ -19698,8 +19680,8 @@ namespace Fusion
 			if (statement.IsTypeMatching() || statement.HasWhen()) {
 				if (statement.Cases.Exists(kase => FuSwitch.HasEarlyBreak(kase.Body)) || FuSwitch.HasEarlyBreak(statement.DefaultBody)) {
 					Write("fuswitch");
-					VisitLiteralLong(this.SwitchesWithLabel.Count);
-					this.SwitchesWithLabel.Add(statement);
+					VisitLiteralLong(this.SwitchesWithGoto.Count);
+					this.SwitchesWithGoto.Add(statement);
 					Write(": ");
 					OpenBlock();
 					WriteSwitchAsIfs(statement, false);
@@ -19771,7 +19753,6 @@ namespace Fusion
 		{
 			if (method.CallType == FuCallType.Abstract)
 				return;
-			this.SwitchesWithLabel.Clear();
 			WriteNewLine();
 			WriteMethodDoc(method);
 			if (method.CallType == FuCallType.Static)
@@ -19783,7 +19764,6 @@ namespace Fusion
 
 		protected void WriteConstructor(FuClass klass)
 		{
-			this.SwitchesWithLabel.Clear();
 			WriteLine("constructor()");
 			OpenBlock();
 			if (klass.Parent is FuClass)

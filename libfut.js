@@ -6683,6 +6683,7 @@ export class GenBase extends FuVisitor
 	#includes = {};
 	currentMethod = null;
 	writtenClasses = new Set();
+	switchesWithGoto = [];
 	currentTemporaries = [];
 
 	setHost(host)
@@ -8240,8 +8241,23 @@ export class GenBase extends FuVisitor
 		this.#inChildBlock = wasInChildBlock;
 	}
 
+	startBreakGoto()
+	{
+		this.write("goto fuafterswitch");
+	}
+
 	visitBreak(statement)
 	{
+		let switchStatement;
+		if ((switchStatement = statement.loopOrSwitch) instanceof FuSwitch) {
+			let gotoId = this.switchesWithGoto.indexOf(switchStatement);
+			if (gotoId >= 0) {
+				this.startBreakGoto();
+				this.visitLiteralLong(BigInt(gotoId));
+				this.writeCharLine(59);
+				return;
+			}
+		}
 		this.writeLine("break;");
 	}
 
@@ -8532,6 +8548,7 @@ export class GenBase extends FuVisitor
 			this.writeStatements(block.statements);
 			this.currentMethod = null;
 		}
+		this.switchesWithGoto.length = 0;
 		this.currentTemporaries.length = 0;
 	}
 
@@ -8647,6 +8664,7 @@ export class GenBase extends FuVisitor
 			else if (symbol instanceof FuMethod) {
 				const method = symbol;
 				this.writeMethod(method);
+				this.switchesWithGoto.length = 0;
 				this.currentTemporaries.length = 0;
 			}
 			else if (symbol instanceof FuVar) {
@@ -8691,7 +8709,6 @@ export class GenBase extends FuVisitor
 
 export class GenTyped extends GenBase
 {
-	switchesWithGoto = [];
 
 	writeCoercedLiteral(type, expr)
 	{
@@ -8927,26 +8944,6 @@ export class GenTyped extends GenBase
 		this.write(" = ");
 		this.writeStaticCast(def.type, expr.left);
 		this.writeCharLine(59);
-	}
-
-	startBreakGoto()
-	{
-		this.write("goto fuafterswitch");
-	}
-
-	visitBreak(statement)
-	{
-		let switchStatement;
-		if ((switchStatement = statement.loopOrSwitch) instanceof FuSwitch) {
-			let gotoId = this.switchesWithGoto.indexOf(switchStatement);
-			if (gotoId >= 0) {
-				this.startBreakGoto();
-				this.visitLiteralLong(BigInt(gotoId));
-				this.writeCharLine(59);
-				return;
-			}
-		}
-		super.visitBreak(statement);
 	}
 }
 
@@ -12338,7 +12335,6 @@ export class GenC extends GenCCpp
 	{
 		if (!this.needsConstructor(klass))
 			return;
-		this.switchesWithGoto.length = 0;
 		this.writeNewLine();
 		this.#writeXstructorSignature("Construct", klass);
 		this.writeNewLine();
@@ -12456,7 +12452,6 @@ export class GenC extends GenCCpp
 	{
 		if (!method.isLive || method.callType == FuCallType.ABSTRACT)
 			return;
-		this.switchesWithGoto.length = 0;
 		this.writeNewLine();
 		this.#writeSignature(method);
 		for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
@@ -15010,7 +15005,6 @@ export class GenCpp extends GenCCpp
 	{
 		if (!this.needsConstructor(klass))
 			return;
-		this.switchesWithGoto.length = 0;
 		this.write(klass.name);
 		this.write("::");
 		this.write(klass.name);
@@ -15024,7 +15018,6 @@ export class GenCpp extends GenCCpp
 	{
 		if (method.callType == FuCallType.ABSTRACT)
 			return;
-		this.switchesWithGoto.length = 0;
 		this.writeNewLine();
 		this.writeType(method.type, true);
 		this.writeChar(32);
@@ -19067,7 +19060,6 @@ export class GenJava extends GenTyped
 
 export class GenJsNoModule extends GenBase
 {
-	#switchesWithLabel = [];
 	#stringWriter = false;
 
 	getTargetName()
@@ -20128,19 +20120,9 @@ export class GenJsNoModule extends GenBase
 		this.writeLine(");");
 	}
 
-	visitBreak(statement)
+	startBreakGoto()
 	{
-		let switchStatement;
-		if ((switchStatement = statement.loopOrSwitch) instanceof FuSwitch) {
-			let label = this.#switchesWithLabel.indexOf(switchStatement);
-			if (label >= 0) {
-				this.write("break fuswitch");
-				this.visitLiteralLong(BigInt(label));
-				this.writeCharLine(59);
-				return;
-			}
-		}
-		super.visitBreak(statement);
+		this.write("break fuswitch");
 	}
 
 	visitForeach(statement)
@@ -20237,8 +20219,8 @@ export class GenJsNoModule extends GenBase
 		if (statement.isTypeMatching() || statement.hasWhen()) {
 			if (statement.cases.some(kase => FuSwitch.hasEarlyBreak(kase.body)) || FuSwitch.hasEarlyBreak(statement.defaultBody)) {
 				this.write("fuswitch");
-				this.visitLiteralLong(BigInt(this.#switchesWithLabel.length));
-				this.#switchesWithLabel.push(statement);
+				this.visitLiteralLong(BigInt(this.switchesWithGoto.length));
+				this.switchesWithGoto.push(statement);
 				this.write(": ");
 				this.openBlock();
 				this.writeSwitchAsIfs(statement, false);
@@ -20310,7 +20292,6 @@ export class GenJsNoModule extends GenBase
 	{
 		if (method.callType == FuCallType.ABSTRACT)
 			return;
-		this.#switchesWithLabel.length = 0;
 		this.writeNewLine();
 		this.writeMethodDoc(method);
 		if (method.callType == FuCallType.STATIC)
@@ -20322,7 +20303,6 @@ export class GenJsNoModule extends GenBase
 
 	writeConstructor(klass)
 	{
-		this.#switchesWithLabel.length = 0;
 		this.writeLine("constructor()");
 		this.openBlock();
 		if (klass.parent instanceof FuClass)

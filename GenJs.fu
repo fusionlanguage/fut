@@ -20,7 +20,6 @@
 
 public class GenJsNoModule : GenBase
 {
-	List<FuSwitch>() SwitchesWithLabel;
 	bool StringWriter = false;
 
 	protected override string GetTargetName() => "JavaScript";
@@ -1068,18 +1067,9 @@ public class GenJsNoModule : GenBase
 		WriteLine(");");
 	}
 
-	internal override void VisitBreak!(FuBreak statement)
+	protected override void StartBreakGoto!()
 	{
-		if (statement.LoopOrSwitch is FuSwitch switchStatement) {
-			int label = this.SwitchesWithLabel.IndexOf(switchStatement);
-			if (label >= 0) {
-				Write("break fuswitch");
-				VisitLiteralLong(label);
-				WriteCharLine(';');
-				return;
-			}
-		}
-		base.VisitBreak(statement);
+		Write("break fuswitch");
 	}
 
 	internal override void VisitForeach!(FuForeach statement)
@@ -1181,8 +1171,8 @@ public class GenJsNoModule : GenBase
 			if (statement.Cases.Any(kase => FuSwitch.HasEarlyBreak(kase.Body))
 			 || FuSwitch.HasEarlyBreak(statement.DefaultBody)) {
 				Write("fuswitch");
-				VisitLiteralLong(this.SwitchesWithLabel.Count);
-				this.SwitchesWithLabel.Add(statement);
+				VisitLiteralLong(this.SwitchesWithGoto.Count);
+				this.SwitchesWithGoto.Add(statement);
 				Write(": ");
 				OpenBlock();
 				WriteSwitchAsIfs(statement, false);
@@ -1254,7 +1244,6 @@ public class GenJsNoModule : GenBase
 	{
 		if (method.CallType == FuCallType.Abstract)
 			return;
-		this.SwitchesWithLabel.Clear();
 		WriteNewLine();
 		WriteMethodDoc(method);
 		if (method.CallType == FuCallType.Static)
@@ -1266,7 +1255,6 @@ public class GenJsNoModule : GenBase
 
 	protected void WriteConstructor!(FuClass klass)
 	{
-		this.SwitchesWithLabel.Clear();
 		WriteLine("constructor()");
 		OpenBlock();
 		if (klass.Parent is FuClass)
