@@ -19,6 +19,13 @@ Build with:
 
     make FUT_HOST=cs
 
+## Building a Java fut
+
+You need JDK 21.
+Build with:
+
+    make FUT_HOST=java
+
 ## Building a Node.js fut
 
 You need [Node.js](nodejs.org).

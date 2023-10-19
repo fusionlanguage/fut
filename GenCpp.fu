@@ -1467,38 +1467,43 @@ public class GenCpp : GenCCpp
 	{
 		FuVar element = statement.GetVar();
 		Write("for (");
-		if (statement.Count() == 2) {
-			Write("const auto &[");
-			WriteCamelCaseNotKeyword(element.Name);
-			Write(", ");
-			WriteCamelCaseNotKeyword(statement.GetValueVar().Name);
-			WriteChar(']');
+		assert statement.Collection.Type is FuClassType collectionType;
+		if (collectionType.Class.Id == FuId.StringClass) {
+			WriteTypeAndName(element);
+			Write(" : ");
+			WriteNotRawStringLiteral(statement.Collection, FuPriority.Argument);
 		}
 		else {
-			switch (statement.Collection.Type.AsClassType().GetElementType()) {
-			case FuStorageType storage:
-				if (!(element.Type is FuReadWriteClassType))
-					Write("const ");
-				Write(storage.Class.Name);
-				Write(" &");
+			if (statement.Count() == 2) {
+				Write("const auto &[");
 				WriteCamelCaseNotKeyword(element.Name);
-				break;
-			case FuDynamicPtrType dynamic:
-				Write("const ");
-				WriteType(dynamic, true);
-				Write(" &");
-				WriteCamelCaseNotKeyword(element.Name);
-				break;
-			default:
-				WriteTypeAndName(element);
-				break;
+				Write(", ");
+				WriteCamelCaseNotKeyword(statement.GetValueVar().Name);
+				WriteChar(']');
 			}
-		}
-		Write(" : ");
-		if (statement.Collection.Type is FuStringType)
-			WriteNotRawStringLiteral(statement.Collection, FuPriority.Argument);
-		else
+			else {
+				switch (collectionType.GetElementType()) {
+				case FuStorageType storage:
+					if (!(element.Type is FuReadWriteClassType))
+						Write("const ");
+					Write(storage.Class.Name);
+					Write(" &");
+					WriteCamelCaseNotKeyword(element.Name);
+					break;
+				case FuDynamicPtrType dynamic:
+					Write("const ");
+					WriteType(dynamic, true);
+					Write(" &");
+					WriteCamelCaseNotKeyword(element.Name);
+					break;
+				default:
+					WriteTypeAndName(element);
+					break;
+				}
+			}
+			Write(" : ");
 			WriteCollectionObject(statement.Collection, FuPriority.Argument);
+		}
 		WriteChar(')');
 		WriteChild(statement.Body);
 	}

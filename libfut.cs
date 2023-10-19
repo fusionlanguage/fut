@@ -3757,7 +3757,7 @@ namespace Fusion
 		FuConst ParseConst(FuVisibility visibility)
 		{
 			Expect(FuToken.Const);
-			FuConst konst = new FuConst { Line = this.Line, Visibility = visibility, TypeExpr = ParseType(), Name = this.StringValue };
+			FuConst konst = new FuConst { Line = this.Line, Visibility = visibility, TypeExpr = ParseType(), Name = this.StringValue, VisitStatus = FuVisitStatus.NotYet };
 			NextToken();
 			Expect(FuToken.Assign);
 			konst.Value = ParseConstInitializer();
@@ -4242,7 +4242,7 @@ namespace Fusion
 				AddSymbol(this.Program, enu);
 			Expect(FuToken.LeftBrace);
 			do {
-				FuConst konst = new FuConst { Visibility = FuVisibility.Public, Documentation = ParseDoc(), Line = this.Line, Name = this.StringValue, Type = enu };
+				FuConst konst = new FuConst { Visibility = FuVisibility.Public, Documentation = ParseDoc(), Line = this.Line, Name = this.StringValue, Type = enu, VisitStatus = FuVisitStatus.NotYet };
 				Expect(FuToken.Id);
 				if (Eat(FuToken.Assign))
 					konst.Value = ParseExpr();
@@ -4411,49 +4411,50 @@ namespace Fusion
 				FuInterpolatedPart part = expr.Parts[partsIndex];
 				s += part.Prefix;
 				FuExpr arg = VisitExpr(part.Argument);
-				Coerce(arg, this.Program.System.PrintableType);
-				switch (arg.Type) {
-				case FuIntegerType _:
-					switch (part.Format) {
-					case ' ':
-						if (arg is FuLiteralLong literalLong && part.WidthExpr == null) {
-							s += $"{literalLong.Value}";
+				if (Coerce(arg, this.Program.System.PrintableType)) {
+					switch (arg.Type) {
+					case FuIntegerType _:
+						switch (part.Format) {
+						case ' ':
+							if (arg is FuLiteralLong literalLong && part.WidthExpr == null) {
+								s += $"{literalLong.Value}";
+								continue;
+							}
+							break;
+						case 'D':
+						case 'd':
+						case 'X':
+						case 'x':
+							if (part.WidthExpr != null && part.Precision >= 0)
+								ReportError(part.WidthExpr, "Cannot format an integer with both width and precision");
+							break;
+						default:
+							ReportError(arg, "Invalid format");
+							break;
+						}
+						break;
+					case FuFloatingType _:
+						switch (part.Format) {
+						case ' ':
+						case 'F':
+						case 'f':
+						case 'E':
+						case 'e':
+							break;
+						default:
+							ReportError(arg, "Invalid format");
+							break;
+						}
+						break;
+					default:
+						if (part.Format != ' ')
+							ReportError(arg, "Invalid format");
+						else if (arg is FuLiteralString literalString && part.WidthExpr == null) {
+							s += literalString.Value;
 							continue;
 						}
 						break;
-					case 'D':
-					case 'd':
-					case 'X':
-					case 'x':
-						if (part.WidthExpr != null && part.Precision >= 0)
-							ReportError(part.WidthExpr, "Cannot format an integer with both width and precision");
-						break;
-					default:
-						ReportError(arg, "Invalid format");
-						break;
 					}
-					break;
-				case FuFloatingType _:
-					switch (part.Format) {
-					case ' ':
-					case 'F':
-					case 'f':
-					case 'E':
-					case 'e':
-						break;
-					default:
-						ReportError(arg, "Invalid format");
-						break;
-					}
-					break;
-				default:
-					if (part.Format != ' ')
-						ReportError(arg, "Invalid format");
-					else if (arg is FuLiteralString literalString && part.WidthExpr == null) {
-						s += literalString.Value;
-						continue;
-					}
-					break;
 				}
 				FuInterpolatedPart targetPart = expr.Parts[partsCount++];
 				targetPart.Prefix = s;
@@ -5875,7 +5876,7 @@ namespace Fusion
 			ResolveLoopCond(statement);
 			if (statement.Advance != null)
 				VisitStatement(statement.Advance);
-			if (statement.Init is FuVar iter && iter.Type is FuIntegerType && iter.Value != null && statement.Cond is FuBinaryExpr cond && cond.Left.IsReferenceTo(iter) && (cond.Right is FuLiteral || (cond.Right is FuSymbolReference limitSymbol && limitSymbol.Symbol is FuVar))) {
+			if (statement.Init is FuVar iter && iter.Type is FuIntegerType && iter.Value != null && statement.Cond is FuBinaryExpr cond && cond.Left.IsReferenceTo(iter) && (cond.Right is FuLiteral || (cond.Right is FuSymbolReference limitSymbol && limitSymbol.Symbol is FuVar)) && statement.Advance != null) {
 				long step = 0;
 				switch (statement.Advance) {
 				case FuUnaryExpr unary when unary.Inner != null && unary.Inner.IsReferenceTo(iter):
@@ -5908,8 +5909,8 @@ namespace Fusion
 				if ((step > 0 && (cond.Op == FuToken.Less || cond.Op == FuToken.LessOrEqual)) || (step < 0 && (cond.Op == FuToken.Greater || cond.Op == FuToken.GreaterOrEqual))) {
 					statement.IsRange = true;
 					statement.RangeStep = step;
+					statement.IsIteratorUsed = false;
 				}
-				statement.IsIteratorUsed = false;
 			}
 			VisitStatement(statement.Body);
 			CloseScope();
@@ -10039,7 +10040,7 @@ namespace Fusion
 		{
 			if (def.IsAssignableStorage())
 				return false;
-			return (def is FuField && (def.Value != null || IsHeapAllocated(def.Type.GetStorageType()) || (def.Type is FuClassType klass && (klass.Class.Id == FuId.ListClass || klass.Class.Id == FuId.DictionaryClass || klass.Class.Id == FuId.SortedDictionaryClass)))) || GetThrowingMethod(def.Value) != null || (def.Type.GetStorageType() is FuStorageType storage && (storage.Class.Id == FuId.LockClass || NeedsConstructor(storage.Class))) || HasListDestroy(def.Type) || base.HasInitCode(def);
+			return (def is FuField && (def.Value != null || IsHeapAllocated(def.Type.GetStorageType()) || (def.Type is FuClassType klass && (klass.Class.Id == FuId.ListClass || klass.Class.Id == FuId.DictionaryClass || klass.Class.Id == FuId.SortedDictionaryClass)))) || (def.Value != null && GetThrowingMethod(def.Value) != null) || (def.Type.GetStorageType() is FuStorageType storage && (storage.Class.Id == FuId.LockClass || NeedsConstructor(storage.Class))) || HasListDestroy(def.Type) || base.HasInitCode(def);
 		}
 
 		FuPriority StartForwardThrow(FuMethod throwingMethod)
@@ -10243,11 +10244,13 @@ namespace Fusion
 						WriteVarInit(def);
 					WriteCharLine(';');
 				}
-				FuMethod throwingMethod = GetThrowingMethod(def.Value);
-				if (throwingMethod != null) {
-					StartForwardThrow(throwingMethod);
-					WriteArrayElement(def, nesting);
-					EndForwardThrow(throwingMethod);
+				if (def.Value != null) {
+					FuMethod throwingMethod = GetThrowingMethod(def.Value);
+					if (throwingMethod != null) {
+						StartForwardThrow(throwingMethod);
+						WriteArrayElement(def, nesting);
+						EndForwardThrow(throwingMethod);
+					}
 				}
 			}
 			if (HasListDestroy(type)) {
@@ -14266,38 +14269,43 @@ namespace Fusion
 		{
 			FuVar element = statement.GetVar();
 			Write("for (");
-			if (statement.Count() == 2) {
-				Write("const auto &[");
-				WriteCamelCaseNotKeyword(element.Name);
-				Write(", ");
-				WriteCamelCaseNotKeyword(statement.GetValueVar().Name);
-				WriteChar(']');
+			FuClassType collectionType = (FuClassType) statement.Collection.Type;
+			if (collectionType.Class.Id == FuId.StringClass) {
+				WriteTypeAndName(element);
+				Write(" : ");
+				WriteNotRawStringLiteral(statement.Collection, FuPriority.Argument);
 			}
 			else {
-				switch (statement.Collection.Type.AsClassType().GetElementType()) {
-				case FuStorageType storage:
-					if (!(element.Type is FuReadWriteClassType))
-						Write("const ");
-					Write(storage.Class.Name);
-					Write(" &");
+				if (statement.Count() == 2) {
+					Write("const auto &[");
 					WriteCamelCaseNotKeyword(element.Name);
-					break;
-				case FuDynamicPtrType dynamic:
-					Write("const ");
-					WriteType(dynamic, true);
-					Write(" &");
-					WriteCamelCaseNotKeyword(element.Name);
-					break;
-				default:
-					WriteTypeAndName(element);
-					break;
+					Write(", ");
+					WriteCamelCaseNotKeyword(statement.GetValueVar().Name);
+					WriteChar(']');
 				}
-			}
-			Write(" : ");
-			if (statement.Collection.Type is FuStringType)
-				WriteNotRawStringLiteral(statement.Collection, FuPriority.Argument);
-			else
+				else {
+					switch (collectionType.GetElementType()) {
+					case FuStorageType storage:
+						if (!(element.Type is FuReadWriteClassType))
+							Write("const ");
+						Write(storage.Class.Name);
+						Write(" &");
+						WriteCamelCaseNotKeyword(element.Name);
+						break;
+					case FuDynamicPtrType dynamic:
+						Write("const ");
+						WriteType(dynamic, true);
+						Write(" &");
+						WriteCamelCaseNotKeyword(element.Name);
+						break;
+					default:
+						WriteTypeAndName(element);
+						break;
+					}
+				}
+				Write(" : ");
 				WriteCollectionObject(statement.Collection, FuPriority.Argument);
+			}
 			WriteChar(')');
 			WriteChild(statement.Body);
 		}

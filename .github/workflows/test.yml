@@ -70,8 +70,13 @@ jobs:
       - uses: actions/setup-dotnet@main
         with:
           dotnet-version: 6
+      - uses: actions/setup-java@main
+        with:
+          distribution: temurin
+          java-version: 21
       - uses: actions/setup-node@main
       - uses: actions/checkout@main
       - run: make -j3 host-diff
       - run: make -j3 test-error FUT_HOST=cs
+      - run: make -j3 test-error FUT_HOST=java
       - run: make -j3 test-error FUT_HOST=node

@@ -31,7 +31,7 @@ using System.Reflection;
 namespace Fusion
 {
 
-public class FileResourceSema : FuSema
+class FileResourceSema : FuSema
 {
 	readonly List<string> ResourceDirs = new List<string>();
 
@@ -60,7 +60,7 @@ public class FileResourceSema : FuSema
 	}
 }
 
-public class FileGenHost : FuConsoleHost
+class FileGenHost : FuConsoleHost
 {
 	string Filename;
 	TextWriter CurrentFile;

@@ -8,6 +8,7 @@ ifdef DOTNET_BASE_DIR
 DOTNET_REF_DIR := $(shell realpath '$(DOTNET_BASE_DIR)../../packs/Microsoft.NETCore.App.Ref'/*/ref/net* | head -1)
 CSC := dotnet '$(DOTNET_BASE_DIR)Roslyn/bincore/csc.dll' -nologo $(patsubst %,'-r:$(DOTNET_REF_DIR)/System.%.dll', Collections Collections.Specialized Console Linq Runtime Text.RegularExpressions Threading)
 endif
+JAVAC = javac
 TEST_CFLAGS = -Wall -Werror
 TEST_CXXFLAGS = -std=c++20 -Wall -Werror
 SWIFTC = swiftc
@@ -64,6 +65,15 @@ fut: bin/Debug/net6.0/fut.dll
 bin/Debug/net6.0/fut.dll: $(addprefix $(srcdir),AssemblyInfo.cs fut.cs libfut.cs)
 	dotnet build
 
+else ifeq ($(FUT_HOST),java)
+
+FUT = java -cp java org.fusionlanguage.Fut
+
+fut: java/org/fusionlanguage/Fut.class
+
+java/org/fusionlanguage/Fut.class: Fut.java java/GenBase.java
+	$(DO)$(JAVAC) -d java Fut.java java/*.java
+
 else ifeq ($(FUT_HOST),node)
 
 FUT = node fut.js
@@ -71,7 +81,7 @@ FUT = node fut.js
 fut: libfut.js
 
 else
-$(error FUT_HOST must be "cpp", "cs" or "node")
+$(error FUT_HOST must be "cpp", "cs", "java" or "node")
 endif
 
 libfut.cpp libfut.js: $(SOURCE_FU)
@@ -79,6 +89,9 @@ libfut.cpp libfut.js: $(SOURCE_FU)
 
 libfut.cs: $(SOURCE_FU)
 	$(DO)$(FUT) -o $@ -n Fusion $^
+
+java/GenBase.java: $(SOURCE_FU)
+	$(DO)mkdir -p $(@D) && $(FUT) -o $@ -n org.fusionlanguage $^
 
 test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error
 	$(DO)perl test/summary.pl test/bin/*/*.txt

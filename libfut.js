@@ -3900,7 +3900,7 @@ export class FuParser extends FuLexer
 	#parseConst(visibility)
 	{
 		this.expect(FuToken.CONST);
-		let konst = Object.assign(new FuConst(), { line: this.line, visibility: visibility, typeExpr: this.#parseType(), name: this.stringValue });
+		let konst = Object.assign(new FuConst(), { line: this.line, visibility: visibility, typeExpr: this.#parseType(), name: this.stringValue, visitStatus: FuVisitStatus.NOT_YET });
 		this.nextToken();
 		this.expect(FuToken.ASSIGN);
 		konst.value = this.#parseConstInitializer();
@@ -4387,7 +4387,7 @@ export class FuParser extends FuLexer
 			this.#addSymbol(this.program, enu);
 		this.expect(FuToken.LEFT_BRACE);
 		do {
-			let konst = Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, documentation: this.#parseDoc(), line: this.line, name: this.stringValue, type: enu });
+			let konst = Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, documentation: this.#parseDoc(), line: this.line, name: this.stringValue, type: enu, visitStatus: FuVisitStatus.NOT_YET });
 			this.expect(FuToken.ID);
 			if (this.eat(FuToken.ASSIGN))
 				konst.value = this.#parseExpr();
@@ -4558,49 +4558,50 @@ export class FuSema
 			let part = expr.parts[partsIndex];
 			s += part.prefix;
 			let arg = this.#visitExpr(part.argument);
-			this.#coerce(arg, this.program.system.printableType);
-			if (arg.type instanceof FuIntegerType) {
-				switch (part.format) {
-				case 32:
-					let literalLong;
-					if ((literalLong = arg) instanceof FuLiteralLong && part.widthExpr == null) {
-						s += `${literalLong.value}`;
-						continue;
+			if (this.#coerce(arg, this.program.system.printableType)) {
+				if (arg.type instanceof FuIntegerType) {
+					switch (part.format) {
+					case 32:
+						let literalLong;
+						if ((literalLong = arg) instanceof FuLiteralLong && part.widthExpr == null) {
+							s += `${literalLong.value}`;
+							continue;
+						}
+						break;
+					case 68:
+					case 100:
+					case 88:
+					case 120:
+						if (part.widthExpr != null && part.precision >= 0)
+							this.reportError(part.widthExpr, "Cannot format an integer with both width and precision");
+						break;
+					default:
+						this.reportError(arg, "Invalid format");
+						break;
 					}
-					break;
-				case 68:
-				case 100:
-				case 88:
-				case 120:
-					if (part.widthExpr != null && part.precision >= 0)
-						this.reportError(part.widthExpr, "Cannot format an integer with both width and precision");
-					break;
-				default:
-					this.reportError(arg, "Invalid format");
-					break;
 				}
-			}
-			else if (arg.type instanceof FuFloatingType) {
-				switch (part.format) {
-				case 32:
-				case 70:
-				case 102:
-				case 69:
-				case 101:
-					break;
-				default:
-					this.reportError(arg, "Invalid format");
-					break;
+				else if (arg.type instanceof FuFloatingType) {
+					switch (part.format) {
+					case 32:
+					case 70:
+					case 102:
+					case 69:
+					case 101:
+						break;
+					default:
+						this.reportError(arg, "Invalid format");
+						break;
+					}
 				}
-			}
-			else {
-				if (part.format != 32)
-					this.reportError(arg, "Invalid format");
 				else {
-					let literalString;
-					if ((literalString = arg) instanceof FuLiteralString && part.widthExpr == null) {
-						s += literalString.value;
-						continue;
+					if (part.format != 32)
+						this.reportError(arg, "Invalid format");
+					else {
+						let literalString;
+						if ((literalString = arg) instanceof FuLiteralString && part.widthExpr == null) {
+							s += literalString.value;
+							continue;
+						}
 					}
 				}
 			}
@@ -6147,7 +6148,7 @@ export class FuSema
 		let iter;
 		let cond;
 		let limitSymbol;
-		if ((iter = statement.init) instanceof FuVar && iter.type instanceof FuIntegerType && iter.value != null && (cond = statement.cond) instanceof FuBinaryExpr && cond.left.isReferenceTo(iter) && (cond.right instanceof FuLiteral || ((limitSymbol = cond.right) instanceof FuSymbolReference && limitSymbol.symbol instanceof FuVar))) {
+		if ((iter = statement.init) instanceof FuVar && iter.type instanceof FuIntegerType && iter.value != null && (cond = statement.cond) instanceof FuBinaryExpr && cond.left.isReferenceTo(iter) && (cond.right instanceof FuLiteral || ((limitSymbol = cond.right) instanceof FuSymbolReference && limitSymbol.symbol instanceof FuVar)) && statement.advance != null) {
 			let step = 0n;
 			let unary;
 			let binary;
@@ -6179,8 +6180,8 @@ export class FuSema
 			if ((step > 0 && (cond.op == FuToken.LESS || cond.op == FuToken.LESS_OR_EQUAL)) || (step < 0 && (cond.op == FuToken.GREATER || cond.op == FuToken.GREATER_OR_EQUAL))) {
 				statement.isRange = true;
 				statement.rangeStep = step;
+				statement.isIteratorUsed = false;
 			}
-			statement.isIteratorUsed = false;
 		}
 		this.#visitStatement(statement.body);
 		this.#closeScope();
@@ -10402,7 +10403,7 @@ export class GenC extends GenCCpp
 			return false;
 		let klass;
 		let storage;
-		return (def instanceof FuField && (def.value != null || GenC.#isHeapAllocated(def.type.getStorageType()) || ((klass = def.type) instanceof FuClassType && (klass.class.id == FuId.LIST_CLASS || klass.class.id == FuId.DICTIONARY_CLASS || klass.class.id == FuId.SORTED_DICTIONARY_CLASS)))) || GenC.#getThrowingMethod(def.value) != null || ((storage = def.type.getStorageType()) instanceof FuStorageType && (storage.class.id == FuId.LOCK_CLASS || this.needsConstructor(storage.class))) || GenC.#hasListDestroy(def.type) || super.hasInitCode(def);
+		return (def instanceof FuField && (def.value != null || GenC.#isHeapAllocated(def.type.getStorageType()) || ((klass = def.type) instanceof FuClassType && (klass.class.id == FuId.LIST_CLASS || klass.class.id == FuId.DICTIONARY_CLASS || klass.class.id == FuId.SORTED_DICTIONARY_CLASS)))) || (def.value != null && GenC.#getThrowingMethod(def.value) != null) || ((storage = def.type.getStorageType()) instanceof FuStorageType && (storage.class.id == FuId.LOCK_CLASS || this.needsConstructor(storage.class))) || GenC.#hasListDestroy(def.type) || super.hasInitCode(def);
 	}
 
 	#startForwardThrow(throwingMethod)
@@ -10610,11 +10611,13 @@ export class GenC extends GenCCpp
 						this.writeVarInit(def);
 					this.writeCharLine(59);
 				}
-				let throwingMethod = GenC.#getThrowingMethod(def.value);
-				if (throwingMethod != null) {
-					this.#startForwardThrow(throwingMethod);
-					this.writeArrayElement(def, nesting);
-					this.#endForwardThrow(throwingMethod);
+				if (def.value != null) {
+					let throwingMethod = GenC.#getThrowingMethod(def.value);
+					if (throwingMethod != null) {
+						this.#startForwardThrow(throwingMethod);
+						this.writeArrayElement(def, nesting);
+						this.#endForwardThrow(throwingMethod);
+					}
 				}
 			}
 		}
@@ -14678,37 +14681,42 @@ export class GenCpp extends GenCCpp
 	{
 		let element = statement.getVar();
 		this.write("for (");
-		if (statement.count() == 2) {
-			this.write("const auto &[");
-			this.#writeCamelCaseNotKeyword(element.name);
-			this.write(", ");
-			this.#writeCamelCaseNotKeyword(statement.getValueVar().name);
-			this.writeChar(93);
+		const collectionType = statement.collection.type;
+		if (collectionType.class.id == FuId.STRING_CLASS) {
+			this.writeTypeAndName(element);
+			this.write(" : ");
+			this.#writeNotRawStringLiteral(statement.collection, FuPriority.ARGUMENT);
 		}
 		else {
-			if (statement.collection.type.asClassType().getElementType() instanceof FuStorageType) {
-				const storage = statement.collection.type.asClassType().getElementType();
-				if (!(element.type instanceof FuReadWriteClassType))
+			if (statement.count() == 2) {
+				this.write("const auto &[");
+				this.#writeCamelCaseNotKeyword(element.name);
+				this.write(", ");
+				this.#writeCamelCaseNotKeyword(statement.getValueVar().name);
+				this.writeChar(93);
+			}
+			else {
+				if (collectionType.getElementType() instanceof FuStorageType) {
+					const storage = collectionType.getElementType();
+					if (!(element.type instanceof FuReadWriteClassType))
+						this.write("const ");
+					this.write(storage.class.name);
+					this.write(" &");
+					this.#writeCamelCaseNotKeyword(element.name);
+				}
+				else if (collectionType.getElementType() instanceof FuDynamicPtrType) {
+					const dynamic = collectionType.getElementType();
 					this.write("const ");
-				this.write(storage.class.name);
-				this.write(" &");
-				this.#writeCamelCaseNotKeyword(element.name);
+					this.writeType(dynamic, true);
+					this.write(" &");
+					this.#writeCamelCaseNotKeyword(element.name);
+				}
+				else
+					this.writeTypeAndName(element);
 			}
-			else if (statement.collection.type.asClassType().getElementType() instanceof FuDynamicPtrType) {
-				const dynamic = statement.collection.type.asClassType().getElementType();
-				this.write("const ");
-				this.writeType(dynamic, true);
-				this.write(" &");
-				this.#writeCamelCaseNotKeyword(element.name);
-			}
-			else
-				this.writeTypeAndName(element);
-		}
-		this.write(" : ");
-		if (statement.collection.type instanceof FuStringType)
-			this.#writeNotRawStringLiteral(statement.collection, FuPriority.ARGUMENT);
-		else
+			this.write(" : ");
 			this.#writeCollectionObject(statement.collection, FuPriority.ARGUMENT);
+		}
 		this.writeChar(41);
 		this.writeChild(statement.body);
 	}

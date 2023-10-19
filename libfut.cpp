@@ -3402,6 +3402,7 @@ std::shared_ptr<FuConst> FuParser::parseConst(FuVisibility visibility)
 	konst->visibility = visibility;
 	konst->typeExpr = parseType();
 	konst->name = this->stringValue;
+	konst->visitStatus = FuVisitStatus::notYet;
 	nextToken();
 	expect(FuToken::assign);
 	konst->value = parseConstInitializer();
@@ -3955,6 +3956,7 @@ void FuParser::parseEnum(std::shared_ptr<FuCodeDoc> doc, bool isPublic)
 		konst->line = this->line;
 		konst->name = this->stringValue;
 		konst->type = enu;
+		konst->visitStatus = FuVisitStatus::notYet;
 		expect(FuToken::id);
 		if (eat(FuToken::assign))
 			konst->value = parseExpr();
@@ -4103,51 +4105,52 @@ std::shared_ptr<FuExpr> FuSema::visitInterpolatedString(std::shared_ptr<FuInterp
 		const FuInterpolatedPart * part = &expr->parts[partsIndex];
 		s += part->prefix;
 		std::shared_ptr<FuExpr> arg = visitExpr(part->argument);
-		coerce(arg.get(), this->program->system->printableType.get());
-		if (dynamic_cast<const FuIntegerType *>(arg->type.get())) {
-			switch (part->format) {
-			case ' ':
-				{
-					const FuLiteralLong * literalLong;
-					if ((literalLong = dynamic_cast<const FuLiteralLong *>(arg.get())) && part->widthExpr == nullptr) {
-						s += std::format("{}", literalLong->value);
-						continue;
+		if (coerce(arg.get(), this->program->system->printableType.get())) {
+			if (dynamic_cast<const FuIntegerType *>(arg->type.get())) {
+				switch (part->format) {
+				case ' ':
+					{
+						const FuLiteralLong * literalLong;
+						if ((literalLong = dynamic_cast<const FuLiteralLong *>(arg.get())) && part->widthExpr == nullptr) {
+							s += std::format("{}", literalLong->value);
+							continue;
+						}
+						break;
 					}
+				case 'D':
+				case 'd':
+				case 'X':
+				case 'x':
+					if (part->widthExpr != nullptr && part->precision >= 0)
+						reportError(part->widthExpr.get(), "Cannot format an integer with both width and precision");
+					break;
+				default:
+					reportError(arg.get(), "Invalid format");
 					break;
 				}
-			case 'D':
-			case 'd':
-			case 'X':
-			case 'x':
-				if (part->widthExpr != nullptr && part->precision >= 0)
-					reportError(part->widthExpr.get(), "Cannot format an integer with both width and precision");
-				break;
-			default:
-				reportError(arg.get(), "Invalid format");
-				break;
 			}
-		}
-		else if (dynamic_cast<const FuFloatingType *>(arg->type.get())) {
-			switch (part->format) {
-			case ' ':
-			case 'F':
-			case 'f':
-			case 'E':
-			case 'e':
-				break;
-			default:
-				reportError(arg.get(), "Invalid format");
-				break;
+			else if (dynamic_cast<const FuFloatingType *>(arg->type.get())) {
+				switch (part->format) {
+				case ' ':
+				case 'F':
+				case 'f':
+				case 'E':
+				case 'e':
+					break;
+				default:
+					reportError(arg.get(), "Invalid format");
+					break;
+				}
 			}
-		}
-		else {
-			if (part->format != ' ')
-				reportError(arg.get(), "Invalid format");
 			else {
-				const FuLiteralString * literalString;
-				if ((literalString = dynamic_cast<const FuLiteralString *>(arg.get())) && part->widthExpr == nullptr) {
-					s += literalString->value;
-					continue;
+				if (part->format != ' ')
+					reportError(arg.get(), "Invalid format");
+				else {
+					const FuLiteralString * literalString;
+					if ((literalString = dynamic_cast<const FuLiteralString *>(arg.get())) && part->widthExpr == nullptr) {
+						s += literalString->value;
+						continue;
+					}
 				}
 			}
 		}
@@ -5744,7 +5747,7 @@ void FuSema::visitFor(FuFor * statement)
 	const FuVar * iter;
 	const FuBinaryExpr * cond;
 	const FuSymbolReference * limitSymbol;
-	if ((iter = dynamic_cast<const FuVar *>(statement->init.get())) && dynamic_cast<const FuIntegerType *>(iter->type.get()) && iter->value != nullptr && (cond = dynamic_cast<const FuBinaryExpr *>(statement->cond.get())) && cond->left->isReferenceTo(iter) && (dynamic_cast<const FuLiteral *>(cond->right.get()) || ((limitSymbol = dynamic_cast<const FuSymbolReference *>(cond->right.get())) && dynamic_cast<const FuVar *>(limitSymbol->symbol)))) {
+	if ((iter = dynamic_cast<const FuVar *>(statement->init.get())) && dynamic_cast<const FuIntegerType *>(iter->type.get()) && iter->value != nullptr && (cond = dynamic_cast<const FuBinaryExpr *>(statement->cond.get())) && cond->left->isReferenceTo(iter) && (dynamic_cast<const FuLiteral *>(cond->right.get()) || ((limitSymbol = dynamic_cast<const FuSymbolReference *>(cond->right.get())) && dynamic_cast<const FuVar *>(limitSymbol->symbol))) && statement->advance != nullptr) {
 		int64_t step = 0;
 		const FuUnaryExpr * unary;
 		const FuBinaryExpr * binary;
@@ -5776,8 +5779,8 @@ void FuSema::visitFor(FuFor * statement)
 		if ((step > 0 && (cond->op == FuToken::less || cond->op == FuToken::lessOrEqual)) || (step < 0 && (cond->op == FuToken::greater || cond->op == FuToken::greaterOrEqual))) {
 			statement->isRange = true;
 			statement->rangeStep = step;
+			statement->isIteratorUsed = false;
 		}
-		statement->isIteratorUsed = false;
 	}
 	visitStatement(statement->body);
 	closeScope();
@@ -9746,7 +9749,7 @@ bool GenC::hasInitCode(const FuNamedValue * def) const
 		return false;
 	const FuClassType * klass;
 	const FuStorageType * storage;
-	return (dynamic_cast<const FuField *>(def) && (def->value != nullptr || isHeapAllocated(def->type->getStorageType()) || ((klass = dynamic_cast<const FuClassType *>(def->type.get())) && (klass->class_->id == FuId::listClass || klass->class_->id == FuId::dictionaryClass || klass->class_->id == FuId::sortedDictionaryClass)))) || getThrowingMethod(def->value.get()) != nullptr || ((storage = dynamic_cast<const FuStorageType *>(def->type->getStorageType())) && (storage->class_->id == FuId::lockClass || needsConstructor(storage->class_))) || hasListDestroy(def->type.get()) || GenBase::hasInitCode(def);
+	return (dynamic_cast<const FuField *>(def) && (def->value != nullptr || isHeapAllocated(def->type->getStorageType()) || ((klass = dynamic_cast<const FuClassType *>(def->type.get())) && (klass->class_->id == FuId::listClass || klass->class_->id == FuId::dictionaryClass || klass->class_->id == FuId::sortedDictionaryClass)))) || (def->value != nullptr && getThrowingMethod(def->value.get()) != nullptr) || ((storage = dynamic_cast<const FuStorageType *>(def->type->getStorageType())) && (storage->class_->id == FuId::lockClass || needsConstructor(storage->class_))) || hasListDestroy(def->type.get()) || GenBase::hasInitCode(def);
 }
 
 FuPriority GenC::startForwardThrow(const FuMethod * throwingMethod)
@@ -9952,11 +9955,13 @@ void GenC::writeInitCode(const FuNamedValue * def)
 					writeVarInit(def);
 				writeCharLine(';');
 			}
-			const FuMethod * throwingMethod = getThrowingMethod(def->value.get());
-			if (throwingMethod != nullptr) {
-				startForwardThrow(throwingMethod);
-				writeArrayElement(def, nesting);
-				endForwardThrow(throwingMethod);
+			if (def->value != nullptr) {
+				const FuMethod * throwingMethod = getThrowingMethod(def->value.get());
+				if (throwingMethod != nullptr) {
+					startForwardThrow(throwingMethod);
+					writeArrayElement(def, nesting);
+					endForwardThrow(throwingMethod);
+				}
 			}
 		}
 	}
@@ -13896,35 +13901,40 @@ void GenCpp::visitForeach(const FuForeach * statement)
 {
 	const FuVar * element = statement->getVar();
 	write("for (");
-	if (statement->count() == 2) {
-		write("const auto &[");
-		writeCamelCaseNotKeyword(element->name);
-		write(", ");
-		writeCamelCaseNotKeyword(statement->getValueVar()->name);
-		writeChar(']');
+	const FuClassType * collectionType = static_cast<const FuClassType *>(statement->collection->type.get());
+	if (collectionType->class_->id == FuId::stringClass) {
+		writeTypeAndName(element);
+		write(" : ");
+		writeNotRawStringLiteral(statement->collection.get(), FuPriority::argument);
 	}
 	else {
-		if (const FuStorageType *storage = dynamic_cast<const FuStorageType *>(statement->collection->type->asClassType()->getElementType().get())) {
-			if (!dynamic_cast<const FuReadWriteClassType *>(element->type.get()))
+		if (statement->count() == 2) {
+			write("const auto &[");
+			writeCamelCaseNotKeyword(element->name);
+			write(", ");
+			writeCamelCaseNotKeyword(statement->getValueVar()->name);
+			writeChar(']');
+		}
+		else {
+			if (const FuStorageType *storage = dynamic_cast<const FuStorageType *>(collectionType->getElementType().get())) {
+				if (!dynamic_cast<const FuReadWriteClassType *>(element->type.get()))
+					write("const ");
+				write(storage->class_->name);
+				write(" &");
+				writeCamelCaseNotKeyword(element->name);
+			}
+			else if (const FuDynamicPtrType *dynamic = dynamic_cast<const FuDynamicPtrType *>(collectionType->getElementType().get())) {
 				write("const ");
-			write(storage->class_->name);
-			write(" &");
-			writeCamelCaseNotKeyword(element->name);
+				writeType(dynamic, true);
+				write(" &");
+				writeCamelCaseNotKeyword(element->name);
+			}
+			else
+				writeTypeAndName(element);
 		}
-		else if (const FuDynamicPtrType *dynamic = dynamic_cast<const FuDynamicPtrType *>(statement->collection->type->asClassType()->getElementType().get())) {
-			write("const ");
-			writeType(dynamic, true);
-			write(" &");
-			writeCamelCaseNotKeyword(element->name);
-		}
-		else
-			writeTypeAndName(element);
-	}
-	write(" : ");
-	if (dynamic_cast<const FuStringType *>(statement->collection->type.get()))
-		writeNotRawStringLiteral(statement->collection.get(), FuPriority::argument);
-	else
+		write(" : ");
 		writeCollectionObject(statement->collection.get(), FuPriority::argument);
+	}
 	writeChar(')');
 	writeChild(statement->body.get());
 }

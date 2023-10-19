@@ -508,7 +508,7 @@ public class FuParser : FuLexer
 	FuConst# ParseConst!(FuVisibility visibility)
 	{
 		Expect(FuToken.Const);
-		FuConst# konst = new FuConst { Line = this.Line, Visibility = visibility, TypeExpr = ParseType(), Name = this.StringValue };
+		FuConst# konst = new FuConst { Line = this.Line, Visibility = visibility, TypeExpr = ParseType(), Name = this.StringValue, VisitStatus = FuVisitStatus.NotYet };
 		NextToken();
 		Expect(FuToken.Assign);
 		konst.Value = ParseConstInitializer();
@@ -1010,7 +1010,7 @@ public class FuParser : FuLexer
 			AddSymbol(this.Program, enu);
 		Expect(FuToken.LeftBrace);
 		do {
-			FuConst# konst = new FuConst { Visibility = FuVisibility.Public, Documentation = ParseDoc(), Line = this.Line, Name = this.StringValue, Type = enu };
+			FuConst# konst = new FuConst { Visibility = FuVisibility.Public, Documentation = ParseDoc(), Line = this.Line, Name = this.StringValue, Type = enu, VisitStatus = FuVisitStatus.NotYet };
 			Expect(FuToken.Id);
 			if (Eat(FuToken.Assign))
 				konst.Value = ParseExpr();

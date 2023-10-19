@@ -1140,7 +1140,7 @@ public class GenC : GenCCpp
 		if (def.IsAssignableStorage())
 			return false;
 		return (def is FuField && (def.Value != null || IsHeapAllocated(def.Type.GetStorageType()) || (def.Type is FuClassType klass && (klass.Class.Id == FuId.ListClass || klass.Class.Id == FuId.DictionaryClass || klass.Class.Id == FuId.SortedDictionaryClass))))
-			|| GetThrowingMethod(def.Value) != null
+			|| (def.Value != null && GetThrowingMethod(def.Value) != null)
 			|| (def.Type.GetStorageType() is FuStorageType storage && (storage.Class.Id == FuId.LockClass || NeedsConstructor(storage.Class)))
 			|| HasListDestroy(def.Type)
 			|| base.HasInitCode(def);
@@ -1347,11 +1347,13 @@ public class GenC : GenCCpp
 					WriteVarInit(def);
 				WriteCharLine(';');
 			}
-			FuMethod? throwingMethod = GetThrowingMethod(def.Value);
-			if (throwingMethod != null) {
-				StartForwardThrow(throwingMethod);
-				WriteArrayElement(def, nesting);
-				EndForwardThrow(throwingMethod);
+			if (def.Value != null) {
+				FuMethod? throwingMethod = GetThrowingMethod(def.Value);
+				if (throwingMethod != null) {
+					StartForwardThrow(throwingMethod);
+					WriteArrayElement(def, nesting);
+					EndForwardThrow(throwingMethod);
+				}
 			}
 		}
 		if (HasListDestroy(type)) {

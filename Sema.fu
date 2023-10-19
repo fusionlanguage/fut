@@ -126,49 +126,50 @@ public class FuSema
 			FuInterpolatedPart part = expr.Parts[partsIndex];
 			s += part.Prefix;
 			FuExpr# arg = VisitExpr(part.Argument);
-			Coerce(arg, this.Program.System.PrintableType);
-			switch (arg.Type) {
-			case FuIntegerType _:
-				switch (part.Format) {
-				case ' ':
-					if (arg is FuLiteralLong literalLong && part.WidthExpr == null) {
-						s += $"{literalLong.Value}";
+			if (Coerce(arg, this.Program.System.PrintableType)) {
+				switch (arg.Type) {
+				case FuIntegerType _:
+					switch (part.Format) {
+					case ' ':
+						if (arg is FuLiteralLong literalLong && part.WidthExpr == null) {
+							s += $"{literalLong.Value}";
+							continue;
+						}
+						break;
+					case 'D':
+					case 'd':
+					case 'X':
+					case 'x':
+						if (part.WidthExpr != null && part.Precision >= 0)
+							ReportError(part.WidthExpr, "Cannot format an integer with both width and precision");
+						break;
+					default:
+						ReportError(arg, "Invalid format");
+						break;
+					}
+					break;
+				case FuFloatingType _:
+					switch (part.Format) {
+					case ' ':
+					case 'F':
+					case 'f':
+					case 'E':
+					case 'e':
+						break;
+					default:
+						ReportError(arg, "Invalid format");
+						break;
+					}
+					break;
+				default:
+					if (part.Format != ' ')
+						ReportError(arg, "Invalid format");
+					else if (arg is FuLiteralString literalString && part.WidthExpr == null) {
+						s += literalString.Value;
 						continue;
 					}
 					break;
-				case 'D':
-				case 'd':
-				case 'X':
-				case 'x':
-					if (part.WidthExpr != null && part.Precision >= 0)
-						ReportError(part.WidthExpr, "Cannot format an integer with both width and precision");
-					break;
-				default:
-					ReportError(arg, "Invalid format");
-					break;
 				}
-				break;
-			case FuFloatingType _:
-				switch (part.Format) {
-				case ' ':
-				case 'F':
-				case 'f':
-				case 'E':
-				case 'e':
-					break;
-				default:
-					ReportError(arg, "Invalid format");
-					break;
-				}
-				break;
-			default:
-				if (part.Format != ' ')
-					ReportError(arg, "Invalid format");
-				else if (arg is FuLiteralString literalString && part.WidthExpr == null) {
-					s += literalString.Value;
-					continue;
-				}
-				break;
 			}
 			FuInterpolatedPart! targetPart = expr.Parts[partsCount++];
 			targetPart.Prefix = s;
@@ -1661,7 +1662,8 @@ public class FuSema
 			&& iter.Value != null
 			&& statement.Cond is FuBinaryExpr cond
 			&& cond.Left.IsReferenceTo(iter)
-			&& (cond.Right is FuLiteral || (cond.Right is FuSymbolReference limitSymbol && limitSymbol.Symbol is FuVar))) {
+			&& (cond.Right is FuLiteral || (cond.Right is FuSymbolReference limitSymbol && limitSymbol.Symbol is FuVar))
+			&& statement.Advance != null) {
 			long step = 0;
 			switch (statement.Advance) {
 			case FuUnaryExpr unary when unary.Inner != null && unary.Inner.IsReferenceTo(iter):
@@ -1695,8 +1697,8 @@ public class FuSema
 			 || (step < 0 && (cond.Op == FuToken.Greater || cond.Op == FuToken.GreaterOrEqual))) {
 				statement.IsRange = true;
 				statement.RangeStep = step;
+				statement.IsIteratorUsed = false;
 			}
-			statement.IsIteratorUsed = false;
 		}
 		VisitStatement(statement.Body);
 		CloseScope();
