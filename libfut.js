@@ -17975,6 +17975,10 @@ export class GenJava extends GenTyped
 			case FuId.TEXT_WRITER_CLASS:
 				this.write("Appendable");
 				break;
+			case FuId.STRING_WRITER_CLASS:
+				this.include("java.io.StringWriter");
+				this.write("StringWriter");
+				break;
 			case FuId.REGEX_CLASS:
 				this.include("java.util.regex.Pattern");
 				this.write("Pattern");
@@ -18399,6 +18403,11 @@ export class GenJava extends GenTyped
 				this.write("System.err");
 				this.#writeWrite(method, args, false);
 			}
+			else if (obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS) {
+				this.writePostfix(obj, ".append(");
+				this.#writeToString(args[0], FuPriority.ARGUMENT);
+				this.writeChar(41);
+			}
 			else {
 				this.write("try { ");
 				this.writePostfix(obj, ".append(");
@@ -18410,6 +18419,8 @@ export class GenJava extends GenTyped
 		case FuId.TEXT_WRITER_WRITE_CHAR:
 			if (GenJava.isReferenceTo(obj, FuId.CONSOLE_ERROR))
 				this.writeCharMethodCall(obj, "print", args[0]);
+			else if (obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS)
+				this.writeCharMethodCall(obj, "append", args[0]);
 			else {
 				this.write("try { ");
 				this.writeCharMethodCall(obj, "append", args[0]);

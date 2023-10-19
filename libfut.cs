@@ -17484,6 +17484,10 @@ namespace Fusion
 				case FuId.TextWriterClass:
 					Write("Appendable");
 					break;
+				case FuId.StringWriterClass:
+					Include("java.io.StringWriter");
+					Write("StringWriter");
+					break;
 				case FuId.RegexClass:
 					Include("java.util.regex.Pattern");
 					Write("Pattern");
@@ -17897,6 +17901,11 @@ namespace Fusion
 					Write("System.err");
 					WriteWrite(method, args, false);
 				}
+				else if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass) {
+					WritePostfix(obj, ".append(");
+					WriteToString(args[0], FuPriority.Argument);
+					WriteChar(')');
+				}
 				else {
 					Write("try { ");
 					WritePostfix(obj, ".append(");
@@ -17908,6 +17917,8 @@ namespace Fusion
 			case FuId.TextWriterWriteChar:
 				if (IsReferenceTo(obj, FuId.ConsoleError))
 					WriteCharMethodCall(obj, "print", args[0]);
+				else if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass)
+					WriteCharMethodCall(obj, "append", args[0]);
 				else {
 					Write("try { ");
 					WriteCharMethodCall(obj, "append", args[0]);

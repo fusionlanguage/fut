@@ -16824,6 +16824,10 @@ void GenJava::writeJavaType(const FuType * type, bool promote, bool needClass)
 		case FuId::textWriterClass:
 			write("Appendable");
 			break;
+		case FuId::stringWriterClass:
+			include("java.io.StringWriter");
+			write("StringWriter");
+			break;
 		case FuId::regexClass:
 			include("java.util.regex.Pattern");
 			write("Pattern");
@@ -17248,6 +17252,11 @@ void GenJava::writeCallExpr(const FuExpr * obj, const FuMethod * method, const s
 			write("System.err");
 			writeWrite(method, args, false);
 		}
+		else if (obj->type->asClassType()->class_->id == FuId::stringWriterClass) {
+			writePostfix(obj, ".append(");
+			writeToString((*args)[0].get(), FuPriority::argument);
+			writeChar(')');
+		}
 		else {
 			write("try { ");
 			writePostfix(obj, ".append(");
@@ -17259,6 +17268,8 @@ void GenJava::writeCallExpr(const FuExpr * obj, const FuMethod * method, const s
 	case FuId::textWriterWriteChar:
 		if (isReferenceTo(obj, FuId::consoleError))
 			writeCharMethodCall(obj, "print", (*args)[0].get());
+		else if (obj->type->asClassType()->class_->id == FuId::stringWriterClass)
+			writeCharMethodCall(obj, "append", (*args)[0].get());
 		else {
 			write("try { ");
 			writeCharMethodCall(obj, "append", (*args)[0].get());
