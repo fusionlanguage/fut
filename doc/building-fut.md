@@ -24,6 +24,7 @@ Build with:
 You need JDK 21.
 Build with:
 
+    make java/GenBase.java
     make FUT_HOST=java
 
 ## Building a Node.js fut
