@@ -1045,6 +1045,11 @@ public class GenJava : GenTyped
 		WriteCharLine(';');
 	}
 
+	protected override void StartBreakGoto!()
+	{
+		Write("break fuswitch");
+	}
+
 	internal override void VisitForeach!(FuForeach statement)
 	{
 		Write("for (");
@@ -1140,6 +1145,24 @@ public class GenJava : GenTyped
 		}
 		else
 			base.WriteSwitchCase(statement, kase);
+	}
+
+	internal override void VisitSwitch!(FuSwitch statement)
+	{
+		if (!statement.IsTypeMatching() && statement.HasWhen()) {
+			if (statement.Cases.Any(kase => FuSwitch.HasEarlyBreakAndContinue(kase.Body))
+			 || FuSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
+				Write("fuswitch");
+				VisitLiteralLong(this.SwitchesWithGoto.Count);
+				Write(": ");
+				this.SwitchesWithGoto.Add(statement);
+				WriteSwitchAsIfs(statement, false);
+			}
+			else
+				WriteSwitchAsIfs(statement, true);
+		}
+		else
+			base.VisitSwitch(statement);
 	}
 
 	internal override void VisitThrow!(FuThrow statement)

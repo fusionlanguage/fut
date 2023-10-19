@@ -20,8 +20,6 @@
 
 public abstract class GenCCppD : GenTyped
 {
-	protected List<FuSwitch>() SwitchesWithGoto;
-
 	internal override void VisitLiteralLong!(long i)
 	{
 		if (i == long.MinValue)
@@ -56,20 +54,6 @@ public abstract class GenCCppD : GenTyped
 	{
 		if (statement.Type is FuArrayStorageType)
 			WriteConst(statement);
-	}
-
-	internal override void VisitBreak!(FuBreak statement)
-	{
-		if (statement.LoopOrSwitch is FuSwitch switchStatement) {
-			int gotoId = this.SwitchesWithGoto.IndexOf(switchStatement);
-			if (gotoId >= 0) {
-				Write("goto fuafterswitch");
-				VisitLiteralLong(gotoId);
-				WriteCharLine(';');
-				return;
-			}
-		}
-		base.VisitBreak(statement);
 	}
 
 	protected void WriteSwitchAsIfsWithGoto!(FuSwitch statement)

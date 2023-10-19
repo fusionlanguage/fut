@@ -8376,6 +8376,8 @@ namespace Fusion
 	public abstract class GenTyped : GenBase
 	{
 
+		protected readonly List<FuSwitch> SwitchesWithGoto = new List<FuSwitch>();
+
 		protected abstract void WriteType(FuType type, bool promote);
 
 		protected override void WriteCoercedLiteral(FuType type, FuExpr expr)
@@ -8599,12 +8601,29 @@ namespace Fusion
 			WriteStaticCast(def.Type, expr.Left);
 			WriteCharLine(';');
 		}
+
+		protected virtual void StartBreakGoto()
+		{
+			Write("goto fuafterswitch");
+		}
+
+		internal override void VisitBreak(FuBreak statement)
+		{
+			if (statement.LoopOrSwitch is FuSwitch switchStatement) {
+				int gotoId = this.SwitchesWithGoto.IndexOf(switchStatement);
+				if (gotoId >= 0) {
+					StartBreakGoto();
+					VisitLiteralLong(gotoId);
+					WriteCharLine(';');
+					return;
+				}
+			}
+			base.VisitBreak(statement);
+		}
 	}
 
 	public abstract class GenCCppD : GenTyped
 	{
-
-		protected readonly List<FuSwitch> SwitchesWithGoto = new List<FuSwitch>();
 
 		internal override void VisitLiteralLong(long i)
 		{
@@ -8640,20 +8659,6 @@ namespace Fusion
 		{
 			if (statement.Type is FuArrayStorageType)
 				WriteConst(statement);
-		}
-
-		internal override void VisitBreak(FuBreak statement)
-		{
-			if (statement.LoopOrSwitch is FuSwitch switchStatement) {
-				int gotoId = this.SwitchesWithGoto.IndexOf(switchStatement);
-				if (gotoId >= 0) {
-					Write("goto fuafterswitch");
-					VisitLiteralLong(gotoId);
-					WriteCharLine(';');
-					return;
-				}
-			}
-			base.VisitBreak(statement);
 		}
 
 		protected void WriteSwitchAsIfsWithGoto(FuSwitch statement)
@@ -18173,6 +18178,11 @@ namespace Fusion
 			WriteCharLine(';');
 		}
 
+		protected override void StartBreakGoto()
+		{
+			Write("break fuswitch");
+		}
+
 		internal override void VisitForeach(FuForeach statement)
 		{
 			Write("for (");
@@ -18267,6 +18277,23 @@ namespace Fusion
 			}
 			else
 				base.WriteSwitchCase(statement, kase);
+		}
+
+		internal override void VisitSwitch(FuSwitch statement)
+		{
+			if (!statement.IsTypeMatching() && statement.HasWhen()) {
+				if (statement.Cases.Exists(kase => FuSwitch.HasEarlyBreakAndContinue(kase.Body)) || FuSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
+					Write("fuswitch");
+					VisitLiteralLong(this.SwitchesWithGoto.Count);
+					Write(": ");
+					this.SwitchesWithGoto.Add(statement);
+					WriteSwitchAsIfs(statement, false);
+				}
+				else
+					WriteSwitchAsIfs(statement, true);
+			}
+			else
+				base.VisitSwitch(statement);
 		}
 
 		internal override void VisitThrow(FuThrow statement)

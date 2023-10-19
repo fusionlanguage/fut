@@ -8413,6 +8413,25 @@ void GenTyped::writeAssertCast(const FuBinaryExpr * expr)
 	writeCharLine(';');
 }
 
+void GenTyped::startBreakGoto()
+{
+	write("goto fuafterswitch");
+}
+
+void GenTyped::visitBreak(const FuBreak * statement)
+{
+	if (const FuSwitch *switchStatement = dynamic_cast<const FuSwitch *>(statement->loopOrSwitch)) {
+		int gotoId = [](const std::vector<const FuSwitch *> &v, const FuSwitch * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->switchesWithGoto, switchStatement);
+		if (gotoId >= 0) {
+			startBreakGoto();
+			visitLiteralLong(gotoId);
+			writeCharLine(';');
+			return;
+		}
+	}
+	GenBase::visitBreak(statement);
+}
+
 void GenCCppD::visitLiteralLong(int64_t i)
 {
 	if (i == (-9223372036854775807 - 1))
@@ -8451,20 +8470,6 @@ void GenCCppD::visitConst(const FuConst * statement)
 {
 	if (dynamic_cast<const FuArrayStorageType *>(statement->type.get()))
 		writeConst(statement);
-}
-
-void GenCCppD::visitBreak(const FuBreak * statement)
-{
-	if (const FuSwitch *switchStatement = dynamic_cast<const FuSwitch *>(statement->loopOrSwitch)) {
-		int gotoId = [](const std::vector<const FuSwitch *> &v, const FuSwitch * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->switchesWithGoto, switchStatement);
-		if (gotoId >= 0) {
-			write("goto fuafterswitch");
-			visitLiteralLong(gotoId);
-			writeCharLine(';');
-			return;
-		}
-	}
-	GenBase::visitBreak(statement);
 }
 
 void GenCCppD::writeSwitchAsIfsWithGoto(const FuSwitch * statement)
@@ -11127,7 +11132,7 @@ void GenC::cleanupBlock(const FuBlock * statement)
 void GenC::visitBreak(const FuBreak * statement)
 {
 	writeDestructLoopOrSwitch(statement->loopOrSwitch);
-	GenCCppD::visitBreak(statement);
+	GenTyped::visitBreak(statement);
 }
 
 void GenC::visitContinue(const FuContinue * statement)
@@ -17536,6 +17541,11 @@ void GenJava::writeAssert(const FuAssert * statement)
 	writeCharLine(';');
 }
 
+void GenJava::startBreakGoto()
+{
+	write("break fuswitch");
+}
+
 void GenJava::visitForeach(const FuForeach * statement)
 {
 	write("for (");
@@ -17633,6 +17643,23 @@ void GenJava::writeSwitchCase(const FuSwitch * statement, const FuCase * kase)
 	}
 	else
 		GenBase::writeSwitchCase(statement, kase);
+}
+
+void GenJava::visitSwitch(const FuSwitch * statement)
+{
+	if (!statement->isTypeMatching() && statement->hasWhen()) {
+		if (std::any_of(statement->cases.begin(), statement->cases.end(), [](const FuCase &kase) { return FuSwitch::hasEarlyBreakAndContinue(&kase.body); }) || FuSwitch::hasEarlyBreakAndContinue(&statement->defaultBody)) {
+			write("fuswitch");
+			visitLiteralLong(std::ssize(this->switchesWithGoto));
+			write(": ");
+			this->switchesWithGoto.push_back(statement);
+			writeSwitchAsIfs(statement, false);
+		}
+		else
+			writeSwitchAsIfs(statement, true);
+	}
+	else
+		GenBase::visitSwitch(statement);
 }
 
 void GenJava::visitThrow(const FuThrow * statement)

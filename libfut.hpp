@@ -1900,6 +1900,7 @@ public:
 	virtual ~GenTyped() = default;
 protected:
 	GenTyped() = default;
+	std::vector<const FuSwitch *> switchesWithGoto;
 	virtual void writeType(const FuType * type, bool promote) = 0;
 	void writeCoercedLiteral(const FuType * type, const FuExpr * expr) override;
 	void writeTypeAndName(const FuNamedValue * value) override;
@@ -1918,8 +1919,10 @@ protected:
 	void writeCharAt(const FuBinaryExpr * expr) override;
 	void startTemporaryVar(const FuType * type) override;
 	void writeAssertCast(const FuBinaryExpr * expr) override;
+	virtual void startBreakGoto();
 public:
 	void visitAggregateInitializer(const FuAggregateInitializer * expr) override;
+	void visitBreak(const FuBreak * statement) override;
 };
 
 class GenCCppD : public GenTyped
@@ -1928,13 +1931,11 @@ public:
 	virtual ~GenCCppD() = default;
 protected:
 	GenCCppD() = default;
-	std::vector<const FuSwitch *> switchesWithGoto;
 	void writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_) override;
 	void writeSwitchAsIfsWithGoto(const FuSwitch * statement);
 public:
 	void visitLiteralLong(int64_t i) override;
 	void visitConst(const FuConst * statement) override;
-	void visitBreak(const FuBreak * statement) override;
 private:
 	static bool isPtrTo(const FuExpr * ptr, const FuExpr * other);
 };
@@ -2436,6 +2437,7 @@ protected:
 	void writeInitCode(const FuNamedValue * def) override;
 	void defineIsVar(const FuBinaryExpr * binary) override;
 	void writeAssert(const FuAssert * statement) override;
+	void startBreakGoto() override;
 	void writeSwitchValue(const FuExpr * expr) override;
 	void writeSwitchCaseValue(const FuSwitch * statement, const FuExpr * value) override;
 	void writeSwitchCase(const FuSwitch * statement, const FuCase * kase) override;
@@ -2453,6 +2455,7 @@ public:
 	void visitLambdaExpr(const FuLambdaExpr * expr) override;
 	void visitForeach(const FuForeach * statement) override;
 	void visitLock(const FuLock * statement) override;
+	void visitSwitch(const FuSwitch * statement) override;
 	void visitThrow(const FuThrow * statement) override;
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;
 private:

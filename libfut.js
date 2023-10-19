@@ -8691,6 +8691,7 @@ export class GenBase extends FuVisitor
 
 export class GenTyped extends GenBase
 {
+	switchesWithGoto = [];
 
 	writeCoercedLiteral(type, expr)
 	{
@@ -8927,11 +8928,30 @@ export class GenTyped extends GenBase
 		this.writeStaticCast(def.type, expr.left);
 		this.writeCharLine(59);
 	}
+
+	startBreakGoto()
+	{
+		this.write("goto fuafterswitch");
+	}
+
+	visitBreak(statement)
+	{
+		let switchStatement;
+		if ((switchStatement = statement.loopOrSwitch) instanceof FuSwitch) {
+			let gotoId = this.switchesWithGoto.indexOf(switchStatement);
+			if (gotoId >= 0) {
+				this.startBreakGoto();
+				this.visitLiteralLong(BigInt(gotoId));
+				this.writeCharLine(59);
+				return;
+			}
+		}
+		super.visitBreak(statement);
+	}
 }
 
 export class GenCCppD extends GenTyped
 {
-	switchesWithGoto = [];
 
 	visitLiteralLong(i)
 	{
@@ -8971,21 +8991,6 @@ export class GenCCppD extends GenTyped
 	{
 		if (statement.type instanceof FuArrayStorageType)
 			this.writeConst(statement);
-	}
-
-	visitBreak(statement)
-	{
-		let switchStatement;
-		if ((switchStatement = statement.loopOrSwitch) instanceof FuSwitch) {
-			let gotoId = this.switchesWithGoto.indexOf(switchStatement);
-			if (gotoId >= 0) {
-				this.write("goto fuafterswitch");
-				this.visitLiteralLong(BigInt(gotoId));
-				this.writeCharLine(59);
-				return;
-			}
-		}
-		super.visitBreak(statement);
 	}
 
 	writeSwitchAsIfsWithGoto(statement)
@@ -18692,6 +18697,11 @@ export class GenJava extends GenTyped
 		this.writeCharLine(59);
 	}
 
+	startBreakGoto()
+	{
+		this.write("break fuswitch");
+	}
+
 	visitForeach(statement)
 	{
 		this.write("for (");
@@ -18790,6 +18800,23 @@ export class GenJava extends GenTyped
 		}
 		else
 			super.writeSwitchCase(statement, kase);
+	}
+
+	visitSwitch(statement)
+	{
+		if (!statement.isTypeMatching() && statement.hasWhen()) {
+			if (statement.cases.some(kase => FuSwitch.hasEarlyBreakAndContinue(kase.body)) || FuSwitch.hasEarlyBreakAndContinue(statement.defaultBody)) {
+				this.write("fuswitch");
+				this.visitLiteralLong(BigInt(this.switchesWithGoto.length));
+				this.write(": ");
+				this.switchesWithGoto.push(statement);
+				this.writeSwitchAsIfs(statement, false);
+			}
+			else
+				this.writeSwitchAsIfs(statement, true);
+		}
+		else
+			super.visitSwitch(statement);
 	}
 
 	visitThrow(statement)
