@@ -108,7 +108,7 @@ test-cs test-GenCs.fu: $(patsubst test/%.fu, test/bin/%/cs.txt, $(wildcard test/
 test-d test-GenD.fu: $(patsubst test/%.fu, test/bin/%/d.txt, $(wildcard test/*.fu))
 	$(DO_SUMMARY)
 
-test-java test-GenJava.fu: $(patsubst test/%.fu, test/bin/%/java.txt, $(wildcard test/*.fu))
+test-java test-GenJava.fu: $(patsubst test/%.fu, test/bin/%/java.txt, $(wildcard test/*.fu)) java/GenBase.java
 	$(DO_SUMMARY)
 
 test-js test-GenJs.fu: $(patsubst test/%.fu, test/bin/%/js.txt, $(wildcard test/*.fu)) libfut.js
@@ -251,7 +251,7 @@ test/$(FUT_HOST)/%/all: test/%.fu fut
 	$(DO)mkdir -p $(@D) && $(FUT) -o $(@D)/Test.c,cpp,cs,d,java,js,d.ts,ts,py,swift,cl $< || true
 
 test/$(FUT_HOST)/fut/all: $(SOURCE_FU) fut
-	$(DO)mkdir -p $(@D) && $(FUT) -o $(@D)/Test.cpp,cs,d,js,d.ts,ts $(SOURCE_FU)
+	$(DO)mkdir -p $(@D) && $(FUT) -o $(@D)/Test.cpp,cs,d,java,js,d.ts,ts $(SOURCE_FU)
 
 test/$(FUT_HOST)/Resource/all: test/Resource.fu fut
 	$(DO)mkdir -p $(@D) && $(FUT) -o $(@D)/Test.c,cpp,cs,d,java,js,d.ts,ts,py,swift,cl -I $(<D) $<
