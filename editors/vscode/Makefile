@@ -1,4 +1,4 @@
-VERSION = 3.0.0
+VERSION = 3.0.2
 
 run: fusion-$(VERSION).vsix
 	'$(LOCALAPPDATA)\Programs\Microsoft VS Code\bin\code' --extensionDevelopmentPath=$(abspath .)
