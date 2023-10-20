@@ -108,7 +108,7 @@ test-cs test-GenCs.fu: $(patsubst test/%.fu, test/bin/%/cs.txt, $(wildcard test/
 test-d test-GenD.fu: $(patsubst test/%.fu, test/bin/%/d.txt, $(wildcard test/*.fu))
 	$(DO_SUMMARY)
 
-test-java test-GenJava.fu: $(patsubst test/%.fu, test/bin/%/java.txt, $(wildcard test/*.fu)) java/GenBase.java
+test-java test-GenJava.fu: $(patsubst test/%.fu, test/bin/%/java.txt, $(wildcard test/*.fu))
 	$(DO_SUMMARY)
 
 test-js test-GenJs.fu: $(patsubst test/%.fu, test/bin/%/js.txt, $(wildcard test/*.fu)) libfut.js
