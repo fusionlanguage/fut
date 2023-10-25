@@ -157,7 +157,7 @@ test/bin/%/js.txt: test/bin/%/Test.js test/bin/%/Runner.js
 	$(DO)(cd $(@D) && node Runner.js >$(@F)) || grep '//FAIL:.*\<js\>' test/$*.fu
 
 test/bin/%/ts.txt: test/bin/%/Test.ts test/node_modules test/tsconfig.json
-	$(DO)test/node_modules/.bin/ts-node $< >$@ || grep '//FAIL:.*\<ts\>' test/$*.fu
+	$(DO)npx tsx $< >$@ || grep '//FAIL:.*\<ts\>' test/$*.fu
 
 test/bin/%/py.txt: test/Runner.py test/bin/%/Test.py
 	$(DO)PYTHONPATH=$(@D) $(PYTHON) $< >$@ || grep '//FAIL:.*\<py\>' test/$*.fu

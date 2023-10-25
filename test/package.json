@@ -6,6 +6,6 @@
   "author": "Piotr Fusik",
   "type": "module",
   "dependencies": {
-    "ts-node": "^10.9.1"
+    "tsx": "^3.14.0"
   }
 }
