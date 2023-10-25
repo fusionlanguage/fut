@@ -272,6 +272,10 @@ host-diff:
 	diff -ruI "[0-9][Ee][-+][0-9]\|\.0" test/cpp test/cs
 	diff -ruI "[0-9][Ee][-+][0-9]" test/cs test/node
 
+host-diff-java:
+	$(MAKE) test-transpile FUT_HOST=java
+	diff -ruI "[0-9][Ee][-+][0-9]\|\.0" test/cpp test/java
+
 install: fut
 	$(INSTALL) -D $< $(DESTDIR)$(bindir)/fut
 
@@ -282,7 +286,7 @@ clean:
 	$(RM) fut fut.exe
 	$(RM) -r test/bin test/cpp test/cs test/node
 
-.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov host-diff install uninstall clean
+.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov host-diff host-diff-java install uninstall clean
 
 .DELETE_ON_ERROR:
 
