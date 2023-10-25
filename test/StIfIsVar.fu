@@ -14,7 +14,7 @@ public static class Test
 	{
 		Derived() d;
 		Base! b = d;
-		if (b is Derived ro) //FAIL: c js py swift ts cl TODO; java 17
+		if (b is Derived ro) //FAIL: c py swift cl TODO; java 17
 			return ro.IsDerived();
 		return false;
 	}
