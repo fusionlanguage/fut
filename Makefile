@@ -152,8 +152,8 @@ test/bin/%/cs.txt: test/bin/%/cs.dll test/cs.runtimeconfig.json
 test/bin/%/d.txt: test/bin/%/d.exe
 	$(DO)./$< >$@ || grep '//FAIL:.*\<d\>' test/$*.fu
 
-test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
-	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)" Runner >$@ || grep '//FAIL:.*\<java\>' test/$*.fu
+test/bin/%/java.txt: test/bin/%/Test.class
+	$(DO)java -cp $(<D) Runner >$@ || grep '//FAIL:.*\<java\>' test/$*.fu
 
 test/bin/%/js.txt: test/bin/%/Test.js
 	$(DO)node $< >$@ || grep '//FAIL:.*\<js\>' test/$*.fu
@@ -206,7 +206,7 @@ test/bin/%/Test.cs: test/%.fu test/Runner.fu fut
 test/bin/%/Test.d: test/%.fu test/Runner.fu fut
 	$(DO_FUT)
 
-test/bin/%/Test.java: test/%.fu fut
+test/bin/%/Test.java: test/%.fu test/Runner.fu fut
 	$(DO_FUT)
 
 test/bin/%/Test.js: test/%.fu test/Runner.fu fut
@@ -224,13 +224,10 @@ test/bin/%/Test.swift: test/%.fu test/Runner.fu fut
 test/bin/%/Test.cl: test/%.fu fut
 	$(DO_FUT)
 
-test/bin/Resource/java.txt: test/bin/Resource/Test.class test/bin/Runner.class
-	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)$(JAVACPSEP)test" Runner >$@
+test/bin/Resource/java.txt: test/bin/Resource/Test.class
+	$(DO)java -cp "$(<D)$(JAVACPSEP)test" Runner >$@
 
 .PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.d test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.ts test/bin/%/Test.d.ts test/bin/%/Test.py test/bin/%/Test.swift test/bin/%/Test.cl
-
-test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
-	$(DO)javac -d $(@D) -cp test/bin/Basic $<
 
 test/node_modules: test/package.json
 	cd $(<D) && npm i --no-package-lock

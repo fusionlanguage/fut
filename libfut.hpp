@@ -2457,6 +2457,7 @@ public:
 	void visitLambdaExpr(const FuLambdaExpr * expr) override;
 	void visitForeach(const FuForeach * statement) override;
 	void visitLock(const FuLock * statement) override;
+	void visitReturn(const FuReturn * statement) override;
 	void visitSwitch(const FuSwitch * statement) override;
 	void visitThrow(const FuThrow * statement) override;
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;

@@ -6,6 +6,10 @@ public class Runner
 		native {
 			System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 		}
+#elif JAVA
+		native {
+			java.util.Locale.setDefault(java.util.Locale.ROOT);
+		}
 #endif
 		if (Test.Run()) {
 			Console.WriteLine("PASSED");

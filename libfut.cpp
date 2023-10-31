@@ -17655,6 +17655,21 @@ void GenJava::visitLock(const FuLock * statement)
 	writeChild(statement->body.get());
 }
 
+void GenJava::visitReturn(const FuReturn * statement)
+{
+	if (statement->value != nullptr && this->currentMethod->id == FuId::main) {
+		if (!statement->value->isLiteralZero()) {
+			ensureChildBlock();
+			write("System.exit(");
+			statement->value->accept(this, FuPriority::argument);
+			writeLine(");");
+		}
+		writeLine("return;");
+	}
+	else
+		GenBase::visitReturn(statement);
+}
+
 void GenJava::writeSwitchValue(const FuExpr * expr)
 {
 	if (isUnsignedByteIndexing(expr)) {
@@ -17812,14 +17827,21 @@ void GenJava::writeSignature(const FuMethod * method, int paramCount)
 	default:
 		std::abort();
 	}
-	writeTypeAndName(method);
+	if (method->id == FuId::main)
+		write("void main");
+	else
+		writeTypeAndName(method);
 	writeChar('(');
-	const FuVar * param = method->parameters.firstParameter();
-	for (int i = 0; i < paramCount; i++) {
-		if (i > 0)
-			write(", ");
-		writeTypeAndName(param);
-		param = param->nextParameter();
+	if (method->id == FuId::main && paramCount == 0)
+		write("String[] args");
+	else {
+		const FuVar * param = method->parameters.firstParameter();
+		for (int i = 0; i < paramCount; i++) {
+			if (i > 0)
+				write(", ");
+			writeTypeAndName(param);
+			param = param->nextParameter();
+		}
 	}
 	writeChar(')');
 	if (method->throws)

@@ -18290,6 +18290,21 @@ namespace Fusion
 			WriteChild(statement.Body);
 		}
 
+		internal override void VisitReturn(FuReturn statement)
+		{
+			if (statement.Value != null && this.CurrentMethod.Id == FuId.Main) {
+				if (!statement.Value.IsLiteralZero()) {
+					EnsureChildBlock();
+					Write("System.exit(");
+					statement.Value.Accept(this, FuPriority.Argument);
+					WriteLine(");");
+				}
+				WriteLine("return;");
+			}
+			else
+				base.VisitReturn(statement);
+		}
+
 		protected override void WriteSwitchValue(FuExpr expr)
 		{
 			if (IsUnsignedByteIndexing(expr)) {
@@ -18444,14 +18459,21 @@ namespace Fusion
 			default:
 				throw new NotImplementedException();
 			}
-			WriteTypeAndName(method);
+			if (method.Id == FuId.Main)
+				Write("void main");
+			else
+				WriteTypeAndName(method);
 			WriteChar('(');
-			FuVar param = method.Parameters.FirstParameter();
-			for (int i = 0; i < paramCount; i++) {
-				if (i > 0)
-					Write(", ");
-				WriteTypeAndName(param);
-				param = param.NextParameter();
+			if (method.Id == FuId.Main && paramCount == 0)
+				Write("String[] args");
+			else {
+				FuVar param = method.Parameters.FirstParameter();
+				for (int i = 0; i < paramCount; i++) {
+					if (i > 0)
+						Write(", ");
+					WriteTypeAndName(param);
+					param = param.NextParameter();
+				}
 			}
 			WriteChar(')');
 			if (method.Throws)

@@ -18812,6 +18812,21 @@ export class GenJava extends GenTyped
 		this.writeChild(statement.body);
 	}
 
+	visitReturn(statement)
+	{
+		if (statement.value != null && this.currentMethod.id == FuId.MAIN) {
+			if (!statement.value.isLiteralZero()) {
+				this.ensureChildBlock();
+				this.write("System.exit(");
+				statement.value.accept(this, FuPriority.ARGUMENT);
+				this.writeLine(");");
+			}
+			this.writeLine("return;");
+		}
+		else
+			super.visitReturn(statement);
+	}
+
 	writeSwitchValue(expr)
 	{
 		if (GenJava.#isUnsignedByteIndexing(expr)) {
@@ -18971,14 +18986,21 @@ export class GenJava extends GenTyped
 		default:
 			throw new Error();
 		}
-		this.writeTypeAndName(method);
+		if (method.id == FuId.MAIN)
+			this.write("void main");
+		else
+			this.writeTypeAndName(method);
 		this.writeChar(40);
-		let param = method.parameters.firstParameter();
-		for (let i = 0; i < paramCount; i++) {
-			if (i > 0)
-				this.write(", ");
-			this.writeTypeAndName(param);
-			param = param.nextParameter();
+		if (method.id == FuId.MAIN && paramCount == 0)
+			this.write("String[] args");
+		else {
+			let param = method.parameters.firstParameter();
+			for (let i = 0; i < paramCount; i++) {
+				if (i > 0)
+					this.write(", ");
+				this.writeTypeAndName(param);
+				param = param.nextParameter();
+			}
 		}
 		this.writeChar(41);
 		if (method.throws)
