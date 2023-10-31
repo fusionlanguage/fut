@@ -224,9 +224,6 @@ test/bin/%/Test.swift: test/%.fu fut
 test/bin/%/Test.cl: test/%.fu fut
 	$(DO_FUT)
 
-test/bin/StNativeInclude/Test.c: test/StNativeInclude.fu fut
-	$(DO)mkdir -p $(@D) && $(FUT) -o $@ -D C $<
-
 test/bin/Resource/java.txt: test/bin/Resource/Test.class test/bin/Runner.class
 	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)$(JAVACPSEP)test" Runner >$@
 
