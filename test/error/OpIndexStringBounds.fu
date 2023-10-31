@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		string s = "foo";
+		int i = s[-2]; //ERROR: Negative index
+		return true;
+	}
+}

@@ -1,0 +1,10 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int[5] a;
+		int i = a[-2]; //ERROR: Negative index
+		int j = a[5]; //ERROR: Array index out of bounds
+		return true;
+	}
+}

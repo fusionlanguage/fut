@@ -5114,7 +5114,9 @@ namespace Fusion
 				switch (klass.Class.Id) {
 				case FuId.StringClass:
 					Coerce(right, this.Program.System.IntType);
-					if (left is FuLiteralString stringLiteral && right is FuLiteralLong indexLiteral) {
+					if (right.Type is FuRangeType stringIndexRange && stringIndexRange.Max < 0)
+						ReportError(expr, "Negative index");
+					else if (left is FuLiteralString stringLiteral && right is FuLiteralLong indexLiteral) {
 						long i = indexLiteral.Value;
 						if (i >= 0 && i <= 2147483647) {
 							int c = stringLiteral.GetAsciiAt((int) i);
@@ -5128,6 +5130,12 @@ namespace Fusion
 				case FuId.ArrayStorageClass:
 				case FuId.ListClass:
 					Coerce(right, this.Program.System.IntType);
+					if (right.Type is FuRangeType indexRange) {
+						if (indexRange.Max < 0)
+							ReportError(expr, "Negative index");
+						else if (klass is FuArrayStorageType array && indexRange.Min >= array.Length)
+							ReportError(expr, "Array index out of bounds");
+					}
 					type = klass.GetElementType();
 					break;
 				case FuId.DictionaryClass:

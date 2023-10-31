@@ -4887,14 +4887,19 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 			case FuId::stringClass:
 				coerce(right.get(), this->program->system->intType.get());
 				{
-					const FuLiteralString * stringLiteral;
-					const FuLiteralLong * indexLiteral;
-					if ((stringLiteral = dynamic_cast<const FuLiteralString *>(left.get())) && (indexLiteral = dynamic_cast<const FuLiteralLong *>(right.get()))) {
-						int64_t i = indexLiteral->value;
-						if (i >= 0 && i <= 2147483647) {
-							int c = stringLiteral->getAsciiAt(static_cast<int>(i));
-							if (c >= 0)
-								return FuLiteralChar::new_(c, expr->line);
+					const FuRangeType * stringIndexRange;
+					if ((stringIndexRange = dynamic_cast<const FuRangeType *>(right->type.get())) && stringIndexRange->max < 0)
+						reportError(expr.get(), "Negative index");
+					else {
+						const FuLiteralString * stringLiteral;
+						const FuLiteralLong * indexLiteral;
+						if ((stringLiteral = dynamic_cast<const FuLiteralString *>(left.get())) && (indexLiteral = dynamic_cast<const FuLiteralLong *>(right.get()))) {
+							int64_t i = indexLiteral->value;
+							if (i >= 0 && i <= 2147483647) {
+								int c = stringLiteral->getAsciiAt(static_cast<int>(i));
+								if (c >= 0)
+									return FuLiteralChar::new_(c, expr->line);
+							}
 						}
 					}
 					type = this->program->system->charType;
@@ -4904,6 +4909,15 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 			case FuId::arrayStorageClass:
 			case FuId::listClass:
 				coerce(right.get(), this->program->system->intType.get());
+				if (const FuRangeType *indexRange = dynamic_cast<const FuRangeType *>(right->type.get())) {
+					if (indexRange->max < 0)
+						reportError(expr.get(), "Negative index");
+					else {
+						const FuArrayStorageType * array;
+						if ((array = dynamic_cast<const FuArrayStorageType *>(klass)) && indexRange->min >= array->length)
+							reportError(expr.get(), "Array index out of bounds");
+					}
+				}
 				type = klass->getElementType();
 				break;
 			case FuId::dictionaryClass:

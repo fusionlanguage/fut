@@ -5306,14 +5306,19 @@ export class FuSema
 			switch (klass.class.id) {
 			case FuId.STRING_CLASS:
 				this.#coerce(right, this.program.system.intType);
-				let stringLiteral;
-				let indexLiteral;
-				if ((stringLiteral = left) instanceof FuLiteralString && (indexLiteral = right) instanceof FuLiteralLong) {
-					let i = indexLiteral.value;
-					if (i >= 0 && i <= 2147483647) {
-						let c = stringLiteral.getAsciiAt(Number(i));
-						if (c >= 0)
-							return FuLiteralChar.new(c, expr.line);
+				let stringIndexRange;
+				if ((stringIndexRange = right.type) instanceof FuRangeType && stringIndexRange.max < 0)
+					this.reportError(expr, "Negative index");
+				else {
+					let stringLiteral;
+					let indexLiteral;
+					if ((stringLiteral = left) instanceof FuLiteralString && (indexLiteral = right) instanceof FuLiteralLong) {
+						let i = indexLiteral.value;
+						if (i >= 0 && i <= 2147483647) {
+							let c = stringLiteral.getAsciiAt(Number(i));
+							if (c >= 0)
+								return FuLiteralChar.new(c, expr.line);
+						}
 					}
 				}
 				type = this.program.system.charType;
@@ -5322,6 +5327,16 @@ export class FuSema
 			case FuId.ARRAY_STORAGE_CLASS:
 			case FuId.LIST_CLASS:
 				this.#coerce(right, this.program.system.intType);
+				let indexRange;
+				if ((indexRange = right.type) instanceof FuRangeType) {
+					if (indexRange.max < 0)
+						this.reportError(expr, "Negative index");
+					else {
+						let array;
+						if ((array = klass) instanceof FuArrayStorageType && indexRange.min >= array.length)
+							this.reportError(expr, "Array index out of bounds");
+					}
+				}
 				type = klass.getElementType();
 				break;
 			case FuId.DICTIONARY_CLASS:
