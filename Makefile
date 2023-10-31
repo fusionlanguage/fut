@@ -185,7 +185,7 @@ test/bin/%/d.exe: test/bin/%/Test.d
 test/bin/%/Test.class: test/bin/%/Test.java
 	$(DO)javac -d $(@D) -encoding utf8 $(<D)/*.java || grep '//FAIL:.*\<java\>' test/$*.fu
 
-test/bin/%/swift.exe: test/bin/%/Test.swift test/main.swift
+test/bin/%/swift.exe: test/bin/%/Test.swift
 	$(DO)$(SWIFTC) -o $@ $^ || grep '//FAIL:.*\<swift\>' test/$*.fu
 
 test/bin/%/cl.exe: test/bin/%/cl.o test/Runner-cl.cpp
@@ -218,7 +218,7 @@ test/bin/%/Test.ts: test/%.fu test/Runner.fu fut
 test/bin/%/Test.py: test/%.fu test/Runner.fu fut
 	$(DO_FUT)
 
-test/bin/%/Test.swift: test/%.fu fut
+test/bin/%/Test.swift: test/%.fu test/Runner.fu fut
 	$(DO_FUT)
 
 test/bin/%/Test.cl: test/%.fu fut

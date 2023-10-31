@@ -22931,6 +22931,20 @@ export class GenSwift extends GenPySwift
 		this.closeBlock();
 	}
 
+	#writeMain(main)
+	{
+		this.writeNewLine();
+		if (main.type.id == FuId.INT_TYPE)
+			this.write("exit(Int32(");
+		this.write(main.parent.name);
+		this.write(".main(");
+		if (main.parameters.count() == 1)
+			this.write("Array(CommandLine.arguments[1...])");
+		if (main.type.id == FuId.INT_TYPE)
+			this.write("))");
+		this.writeCharLine(41);
+	}
+
 	writeProgram(program)
 	{
 		this.#system = program.system;
@@ -22943,10 +22957,14 @@ export class GenSwift extends GenPySwift
 		this.writeTypes(program);
 		this.createOutputFile();
 		this.writeTopLevelNatives(program);
+		if (program.main != null && program.main.type.id == FuId.INT_TYPE)
+			this.include("Foundation");
 		this.writeIncludes("import ", "");
 		this.closeStringWriter();
 		this.#writeLibrary();
 		this.#writeResources(program.resources);
+		if (program.main != null)
+			this.#writeMain(program.main);
 		this.closeFile();
 	}
 }

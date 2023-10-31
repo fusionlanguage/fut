@@ -22368,6 +22368,20 @@ namespace Fusion
 			CloseBlock();
 		}
 
+		void WriteMain(FuMethod main)
+		{
+			WriteNewLine();
+			if (main.Type.Id == FuId.IntType)
+				Write("exit(Int32(");
+			Write(main.Parent.Name);
+			Write(".main(");
+			if (main.Parameters.Count() == 1)
+				Write("Array(CommandLine.arguments[1...])");
+			if (main.Type.Id == FuId.IntType)
+				Write("))");
+			WriteCharLine(')');
+		}
+
 		public override void WriteProgram(FuProgram program)
 		{
 			this.System = program.System;
@@ -22380,10 +22394,14 @@ namespace Fusion
 			WriteTypes(program);
 			CreateOutputFile();
 			WriteTopLevelNatives(program);
+			if (program.Main != null && program.Main.Type.Id == FuId.IntType)
+				Include("Foundation");
 			WriteIncludes("import ", "");
 			CloseStringWriter();
 			WriteLibrary();
 			WriteResources(program.Resources);
+			if (program.Main != null)
+				WriteMain(program.Main);
 			CloseFile();
 		}
 	}

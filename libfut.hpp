@@ -2731,6 +2731,7 @@ private:
 	void writeVisibility(FuVisibility visibility);
 	void writeLibrary();
 	void writeResources(const std::map<std::string, std::vector<uint8_t>> * resources);
+	void writeMain(const FuMethod * main);
 };
 
 class GenPy : public GenPySwift

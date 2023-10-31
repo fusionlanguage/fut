@@ -21580,6 +21580,20 @@ void GenSwift::writeResources(const std::map<std::string, std::vector<uint8_t>> 
 	closeBlock();
 }
 
+void GenSwift::writeMain(const FuMethod * main)
+{
+	writeNewLine();
+	if (main->type->id == FuId::intType)
+		write("exit(Int32(");
+	write(main->parent->name);
+	write(".main(");
+	if (main->parameters.count() == 1)
+		write("Array(CommandLine.arguments[1...])");
+	if (main->type->id == FuId::intType)
+		write("))");
+	writeCharLine(')');
+}
+
 void GenSwift::writeProgram(const FuProgram * program)
 {
 	this->system = program->system;
@@ -21592,10 +21606,14 @@ void GenSwift::writeProgram(const FuProgram * program)
 	writeTypes(program);
 	createOutputFile();
 	writeTopLevelNatives(program);
+	if (program->main != nullptr && program->main->type->id == FuId::intType)
+		include("Foundation");
 	writeIncludes("import ", "");
 	closeStringWriter();
 	writeLibrary();
 	writeResources(&program->resources);
+	if (program->main != nullptr)
+		writeMain(program->main);
 	closeFile();
 }
 
