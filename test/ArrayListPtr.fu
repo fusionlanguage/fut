@@ -2,14 +2,14 @@ public static class Test
 {
 	public static bool Run()
 	{
-		List<int>() l1; //FAIL: swift TODO; java cl
+		List<int>() l1; //FAIL: cl
 		List<int>() l2;
 		l1.Add(5);
 		l1.Add(10);
 		l1.Add(15);
 		l2.Add(3);
 		l2.Add(6);
-		List<int>![2] a;
+		List<int>![2] a; //FAIL: swift TODO; java
 		a[0] = l1;
 		a[1] = l2;
 		return a[0] == l1 && a[0].Count == 3
