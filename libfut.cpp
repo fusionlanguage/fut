@@ -6140,7 +6140,7 @@ void FuSema::resolveTypes(FuClass * klass)
 				if (method->type->id != FuId::voidType && method->type->id != FuId::intType)
 					reportError(method, "Main method must return 'void' or 'int'");
 				const FuClassType * argsType;
-				if (method->parameters.count() == 0 || (method->parameters.count() == 1 && (argsType = dynamic_cast<const FuClassType *>(method->parameters.first->type.get())) && argsType->isArray() && !dynamic_cast<const FuReadWriteClassType *>(argsType) && argsType->getElementType()->id == FuId::stringPtrType && argsType->getElementType()->nullable == false && method->parameters.firstParameter()->value == nullptr)) {
+				if (method->parameters.count() == 0 || (method->parameters.count() == 1 && (argsType = dynamic_cast<const FuClassType *>(method->parameters.first->type.get())) && argsType->isArray() && !dynamic_cast<const FuReadWriteClassType *>(argsType) && !argsType->nullable && argsType->getElementType()->id == FuId::stringPtrType && !argsType->getElementType()->nullable && method->parameters.firstParameter()->value == nullptr)) {
 				}
 				else
 					reportError(method, "Main method must have no parameters or one 'string[]' parameter");

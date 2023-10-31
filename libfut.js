@@ -6573,7 +6573,7 @@ export class FuSema
 					if (method.type.id != FuId.VOID_TYPE && method.type.id != FuId.INT_TYPE)
 						this.reportError(method, "Main method must return 'void' or 'int'");
 					let argsType;
-					if (method.parameters.count() == 0 || (method.parameters.count() == 1 && (argsType = method.parameters.first.type) instanceof FuClassType && argsType.isArray() && !(argsType instanceof FuReadWriteClassType) && argsType.getElementType().id == FuId.STRING_PTR_TYPE && argsType.getElementType().nullable == false && method.parameters.firstParameter().value == null)) {
+					if (method.parameters.count() == 0 || (method.parameters.count() == 1 && (argsType = method.parameters.first.type) instanceof FuClassType && argsType.isArray() && !(argsType instanceof FuReadWriteClassType) && !argsType.nullable && argsType.getElementType().id == FuId.STRING_PTR_TYPE && !argsType.getElementType().nullable && method.parameters.firstParameter().value == null)) {
 					}
 					else
 						this.reportError(method, "Main method must have no parameters or one 'string[]' parameter");

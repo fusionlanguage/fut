@@ -6263,7 +6263,7 @@ namespace Fusion
 							ReportError(method, "Main method must return 'void' or 'int'");
 						switch (method.Parameters.Count()) {
 						case 0:
-						case 1 when method.Parameters.First.Type is FuClassType argsType && argsType.IsArray() && !(argsType is FuReadWriteClassType) && argsType.GetElementType().Id == FuId.StringPtrType && argsType.GetElementType().Nullable == false && method.Parameters.FirstParameter().Value == null:
+						case 1 when method.Parameters.First.Type is FuClassType argsType && argsType.IsArray() && !(argsType is FuReadWriteClassType) && !argsType.Nullable && argsType.GetElementType().Id == FuId.StringPtrType && !argsType.GetElementType().Nullable && method.Parameters.FirstParameter().Value == null:
 							break;
 						default:
 							ReportError(method, "Main method must have no parameters or one 'string[]' parameter");
