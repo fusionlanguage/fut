@@ -1685,6 +1685,7 @@ public class FuProgram : FuScope
 	internal FuSystem System;
 	internal List<string()>() TopLevelNatives;
 	internal List<FuClass!>() Classes;
+	internal FuMethod? Main = null;
 	internal SortedDictionary<string(), List<byte>()>() Resources;
 	internal bool RegexOptionsEnum = false;
 }

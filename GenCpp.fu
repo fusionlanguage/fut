@@ -1812,12 +1812,20 @@ public class GenCpp : GenCCpp
 		if (method.CallType == FuCallType.Abstract)
 			return;
 		WriteNewLine();
-		WriteType(method.Type, true);
-		WriteChar(' ');
-		Write(method.Parent.Name);
-		Write("::");
-		WriteCamelCaseNotKeyword(method.Name);
-		WriteParametersAndConst(method, false);
+		if (method.Name == "Main") {
+			Write("int main(");
+			if (method.Parameters.Count() == 1)
+				Write("int argc, char **argv");
+			WriteChar(')');
+		}
+		else {
+			WriteType(method.Type, true);
+			WriteChar(' ');
+			Write(method.Parent.Name);
+			Write("::");
+			WriteCamelCaseNotKeyword(method.Name);
+			WriteParametersAndConst(method, false);
+		}
 		WriteBody(method);
 	}
 

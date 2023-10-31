@@ -2048,6 +2048,26 @@ public class FuSema
 						Coerce(param.Value, param.Type);
 					}
 				}
+				if (method.Name == "Main") {
+					if (method.Visibility != FuVisibility.Public || method.CallType != FuCallType.Static)
+						ReportError(method, "Main method must be 'public static'");
+					if (method.Type.Id != FuId.VoidType && method.Type.Id != FuId.IntType)
+						ReportError(method, "Main method must return 'void' or 'int'");
+					switch (method.Parameters.Count()) {
+					case 0:
+					case 1 when method.Parameters.First.Type is FuClassType argsType && argsType.IsArray() && !(argsType is FuReadWriteClassType)
+							&& argsType.GetElementType().Id == FuId.StringPtrType && argsType.GetElementType().Nullable == false
+							&& method.Parameters.FirstParameter().Value == null:
+						break;
+					default:
+						ReportError(method, "Main method must have no parameters or one 'string[]' parameter");
+						break;
+					}
+					if (this.Program.Main != null)
+						ReportError(method, "Duplicate Main method");
+					else
+						this.Program.Main = method;
+				}
 				break;
 			default:
 				break;

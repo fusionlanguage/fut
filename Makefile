@@ -33,8 +33,10 @@ else
 DO = @echo $@ &&
 endif
 DO_SUMMARY = $(DO)perl test/summary.pl $(filter %.txt, $^)
-DO_FUT = $(DO)mkdir -p $(@D) && ($(FUT) -o $@ $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
+UC_TARGET_EXT = $(subst a,A,$(subst c,C,$(subst d,D,$(subst f,F,$(subst i,I,$(subst j,J,$(subst l,L,$(subst p,P,$(subst s,S,$(subst t,T,$(subst v,V,$(subst w,W,$(subst y,Y,$(subst .,,$(suffix $@)))))))))))))))
+DO_FUT = $(DO)mkdir -p $(@D) && ($(FUT) -o $@ -D $(UC_TARGET_EXT) -I $(<D) $(filter %.fu, $^) || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
 SOURCE_FU = Lexer.fu AST.fu Parser.fu ConsoleHost.fu Sema.fu GenBase.fu GenTyped.fu GenCCppD.fu GenCCpp.fu GenC.fu GenCl.fu GenCpp.fu GenCs.fu GenD.fu GenJava.fu GenJs.fu GenTs.fu GenPySwift.fu GenSwift.fu GenPy.fu
+TESTS = $(filter-out test/Runner.fu, $(wildcard test/*.fu))
 
 all: fut libfut.cpp libfut.cs libfut.js
 
@@ -96,34 +98,34 @@ java/GenBase.java: $(SOURCE_FU)
 test: test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error
 	$(DO)perl test/summary.pl test/bin/*/*.txt
 
-test-c test-GenC.fu: $(patsubst test/%.fu, test/bin/%/c.txt, $(wildcard test/*.fu))
+test-c test-GenC.fu: $(TESTS:test/%.fu=test/bin/%/c.txt)
 	$(DO_SUMMARY)
 
-test-cpp test-GenCpp.fu: $(patsubst test/%.fu, test/bin/%/cpp.txt, $(wildcard test/*.fu)) libfut.cpp
+test-cpp test-GenCpp.fu: $(TESTS:test/%.fu=test/bin/%/cpp.txt) libfut.cpp
 	$(DO_SUMMARY)
 
-test-cs test-GenCs.fu: $(patsubst test/%.fu, test/bin/%/cs.txt, $(wildcard test/*.fu)) libfut.cs
+test-cs test-GenCs.fu: $(TESTS:test/%.fu=test/bin/%/cs.txt) libfut.cs
 	$(DO_SUMMARY)
 
-test-d test-GenD.fu: $(patsubst test/%.fu, test/bin/%/d.txt, $(wildcard test/*.fu))
+test-d test-GenD.fu: $(TESTS:test/%.fu=test/bin/%/d.txt)
 	$(DO_SUMMARY)
 
-test-java test-GenJava.fu: $(patsubst test/%.fu, test/bin/%/java.txt, $(wildcard test/*.fu))
+test-java test-GenJava.fu: $(TESTS:test/%.fu=test/bin/%/java.txt)
 	$(DO_SUMMARY)
 
-test-js test-GenJs.fu: $(patsubst test/%.fu, test/bin/%/js.txt, $(wildcard test/*.fu)) libfut.js
+test-js test-GenJs.fu: $(TESTS:test/%.fu=test/bin/%/js.txt) libfut.js
 	$(DO_SUMMARY)
 
-test-ts test-GenTs.fu: $(patsubst test/%.fu, test/bin/%/ts.txt, $(wildcard test/*.fu))
+test-ts test-GenTs.fu: $(TESTS:test/%.fu=test/bin/%/ts.txt)
 	$(DO_SUMMARY)
 
-test-py test-GenPy.fu: $(patsubst test/%.fu, test/bin/%/py.txt, $(wildcard test/*.fu))
+test-py test-GenPy.fu: $(TESTS:test/%.fu=test/bin/%/py.txt)
 	$(DO_SUMMARY)
 
-test-swift test-GenSwift.fu: $(patsubst test/%.fu, test/bin/%/swift.txt, $(wildcard test/*.fu))
+test-swift test-GenSwift.fu: $(TESTS:test/%.fu=test/bin/%/swift.txt)
 	$(DO_SUMMARY)
 
-test-cl test-GenCl.fu: $(patsubst test/%.fu, test/bin/%/cl.txt, $(wildcard test/*.fu))
+test-cl test-GenCl.fu: $(TESTS:test/%.fu=test/bin/%/cl.txt)
 	$(DO_SUMMARY)
 
 test-GenCCpp.fu: test-c test-cpp
@@ -153,14 +155,14 @@ test/bin/%/d.txt: test/bin/%/d.exe
 test/bin/%/java.txt: test/bin/%/Test.class test/bin/Runner.class
 	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)" Runner >$@ || grep '//FAIL:.*\<java\>' test/$*.fu
 
-test/bin/%/js.txt: test/bin/%/Test.js test/bin/%/Runner.js
-	$(DO)(cd $(@D) && node Runner.js >$(@F)) || grep '//FAIL:.*\<js\>' test/$*.fu
+test/bin/%/js.txt: test/bin/%/Test.js
+	$(DO)node $< >$@ || grep '//FAIL:.*\<js\>' test/$*.fu
 
 test/bin/%/ts.txt: test/bin/%/Test.ts test/node_modules test/tsconfig.json
 	$(DO)(cd test && node --loader ts-node/esm ../$< >../$@) || grep '//FAIL:.*\<ts\>' test/$*.fu
 
-test/bin/%/py.txt: test/Runner.py test/bin/%/Test.py
-	$(DO)PYTHONPATH=$(@D) $(PYTHON) $< >$@ || grep '//FAIL:.*\<py\>' test/$*.fu
+test/bin/%/py.txt: test/bin/%/Test.py
+	$(DO)$(PYTHON) $< >$@ || grep '//FAIL:.*\<py\>' test/$*.fu
 
 test/bin/%/swift.txt: test/bin/%/swift.exe
 	$(DO)./$< >$@ || grep '//FAIL:.*\<swift\>' test/$*.fu
@@ -168,23 +170,20 @@ test/bin/%/swift.txt: test/bin/%/swift.exe
 test/bin/%/cl.txt: test/bin/%/cl.exe
 	$(DO)./$< >$@ || grep '//FAIL:.*\<cl\>' test/$*.fu
 
-test/bin/%/c.exe: test/bin/%/Test.c test/Runner.c
+test/bin/%/c.exe: test/bin/%/Test.c
 	$(DO)$(CC) -o $@ $(TEST_CFLAGS) -Wno-unused-function -I $(<D) $^ `pkg-config --cflags --libs glib-2.0` -lm || grep '//FAIL:.*\<c\>' test/$*.fu
 
-test/bin/%/cpp.exe: test/bin/%/Test.cpp test/Runner.cpp
+test/bin/%/cpp.exe: test/bin/%/Test.cpp
 	$(DO)$(CXX) -o $@ $(TEST_CXXFLAGS) -I $(<D) $^ || grep '//FAIL:.*\<cpp\>' test/$*.fu
 
-test/bin/%/cs.dll: test/bin/%/Test.cs test/Runner.cs
+test/bin/%/cs.dll: test/bin/%/Test.cs
 	$(DO)$(CSC) -out:$@ $^ || grep '//FAIL:.*\<cs\>' test/$*.fu
 
-test/bin/%/d.exe: test/bin/%/Test.d test/Runner.d
+test/bin/%/d.exe: test/bin/%/Test.d
 	$(DO)$(DC) -of$@ $(DFLAGS) -I$(<D) $^ || grep '//FAIL:.*\<d\>' test/$*.fu
 
 test/bin/%/Test.class: test/bin/%/Test.java
 	$(DO)javac -d $(@D) -encoding utf8 $(<D)/*.java || grep '//FAIL:.*\<java\>' test/$*.fu
-
-test/bin/%/Runner.js: test/Runner.js
-	$(DO)mkdir -p $(@D) && cp $< $@
 
 test/bin/%/swift.exe: test/bin/%/Test.swift test/main.swift
 	$(DO)$(SWIFTC) -o $@ $^ || grep '//FAIL:.*\<swift\>' test/$*.fu
@@ -195,28 +194,28 @@ test/bin/%/cl.exe: test/bin/%/cl.o test/Runner-cl.cpp
 test/bin/%/cl.o: test/bin/%/Test.cl
 	$(DO)clang -c -o $@ $(TEST_CFLAGS) -Wno-constant-logical-operand -cl-std=CL2.0 -include opencl-c.h $< || grep '//FAIL:.*\<cl\>' test/$*.fu
 
-test/bin/%/Test.c: test/%.fu fut
+test/bin/%/Test.c: test/%.fu test/Runner.fu fut
 	$(DO_FUT)
 
-test/bin/%/Test.cpp: test/%.fu fut
+test/bin/%/Test.cpp: test/%.fu test/Runner.fu fut
 	$(DO_FUT)
 
-test/bin/%/Test.cs: test/%.fu fut
+test/bin/%/Test.cs: test/%.fu test/Runner.fu fut
 	$(DO_FUT)
 
-test/bin/%/Test.d: test/%.fu fut
+test/bin/%/Test.d: test/%.fu test/Runner.fu fut
 	$(DO_FUT)
 
 test/bin/%/Test.java: test/%.fu fut
 	$(DO_FUT)
 
-test/bin/%/Test.js: test/%.fu fut
+test/bin/%/Test.js: test/%.fu test/Runner.fu fut
 	$(DO_FUT)
 
-test/bin/%/Test.ts: test/%.fu fut test/Runner.ts
-	$(DO)mkdir -p $(@D) && ($(FUT) -D TS -o $@ $< && cat test/Runner.ts >>$@ || grep '//FAIL:.*\<ts\>' $<)
+test/bin/%/Test.ts: test/%.fu test/Runner.fu fut
+	$(DO_FUT)
 
-test/bin/%/Test.py: test/%.fu fut
+test/bin/%/Test.py: test/%.fu test/Runner.fu fut
 	$(DO_FUT)
 
 test/bin/%/Test.swift: test/%.fu fut
@@ -231,9 +230,6 @@ test/bin/StNativeInclude/Test.c: test/StNativeInclude.fu fut
 test/bin/Resource/java.txt: test/bin/Resource/Test.class test/bin/Runner.class
 	$(DO)java -cp "test/bin$(JAVACPSEP)$(<D)$(JAVACPSEP)test" Runner >$@
 
-$(addprefix test/bin/Resource/Test., c cpp cs d java js ts py swift cl): test/Resource.fu fut
-	$(DO)mkdir -p $(@D) && ($(FUT) -o $@ -I $(<D) $< || grep '//FAIL:.*\<$(subst .,,$(suffix $@))\>' $<)
-
 .PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.d test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.ts test/bin/%/Test.d.ts test/bin/%/Test.py test/bin/%/Test.swift test/bin/%/Test.cl
 
 test/bin/Runner.class: test/Runner.java test/bin/Basic/Test.class
@@ -245,7 +241,7 @@ test/node_modules: test/package.json
 test/bin/%/error.txt: test/error/%.fu fut
 	$(DO)mkdir -p $(@D) && ! $(FUT) -o $(@:%.txt=%.cs) $< 2>$@ && perl -ne 'print "$$ARGV($$.): $$1\n" while m!//(ERROR: .+?)(?=$$| //)!g' $< | diff -u --strip-trailing-cr - $@ && echo PASSED >$@
 
-test-transpile: $(patsubst test/%.fu, test/$(FUT_HOST)/%/all, $(wildcard test/*.fu)) test/$(FUT_HOST)/fut/all
+test-transpile: $(patsubst test/%.fu, test/$(FUT_HOST)/%/all, $(TESTS)) test/$(FUT_HOST)/fut/all
 
 test/$(FUT_HOST)/%/all: test/%.fu fut
 	$(DO)mkdir -p $(@D) && $(FUT) -o $(@D)/Test.c,cpp,cs,d,java,js,d.ts,ts,py,swift,cl $< || true

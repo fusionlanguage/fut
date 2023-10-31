@@ -6134,6 +6134,21 @@ void FuSema::resolveTypes(FuClass * klass)
 					coerce(param->value.get(), param->type.get());
 				}
 			}
+			if (method->name == "Main") {
+				if (method->visibility != FuVisibility::public_ || method->callType != FuCallType::static_)
+					reportError(method, "Main method must be 'public static'");
+				if (method->type->id != FuId::voidType && method->type->id != FuId::intType)
+					reportError(method, "Main method must return 'void' or 'int'");
+				const FuClassType * argsType;
+				if (method->parameters.count() == 0 || (method->parameters.count() == 1 && (argsType = dynamic_cast<const FuClassType *>(method->parameters.first->type.get())) && argsType->isArray() && !dynamic_cast<const FuReadWriteClassType *>(argsType) && argsType->getElementType()->id == FuId::stringPtrType && argsType->getElementType()->nullable == false && method->parameters.firstParameter()->value == nullptr)) {
+				}
+				else
+					reportError(method, "Main method must have no parameters or one 'string[]' parameter");
+				if (this->program->main != nullptr)
+					reportError(method, "Duplicate Main method");
+				else
+					this->program->main = method;
+			}
 		}
 	}
 }
@@ -11811,10 +11826,16 @@ void GenC::writeMethod(const FuMethod * method)
 	if (!method->isLive || method->callType == FuCallType::abstract)
 		return;
 	writeNewLine();
-	writeSignature(method);
-	for (const FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
-		if (needToDestruct(param))
-			this->varsToDestruct.push_back(param);
+	if (method->name == "Main") {
+		write("int main(");
+		write(method->parameters.count() == 1 ? "int argc, char **argv)" : "void)");
+	}
+	else {
+		writeSignature(method);
+		for (const FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
+			if (needToDestruct(param))
+				this->varsToDestruct.push_back(param);
+		}
 	}
 	writeNewLine();
 	this->currentMethod = method;
@@ -14242,12 +14263,20 @@ void GenCpp::writeMethod(const FuMethod * method)
 	if (method->callType == FuCallType::abstract)
 		return;
 	writeNewLine();
-	writeType(method->type.get(), true);
-	writeChar(' ');
-	write(method->parent->name);
-	write("::");
-	writeCamelCaseNotKeyword(method->name);
-	writeParametersAndConst(method, false);
+	if (method->name == "Main") {
+		write("int main(");
+		if (method->parameters.count() == 1)
+			write("int argc, char **argv");
+		writeChar(')');
+	}
+	else {
+		writeType(method->type.get(), true);
+		writeChar(' ');
+		write(method->parent->name);
+		write("::");
+		writeCamelCaseNotKeyword(method->name);
+		writeParametersAndConst(method, false);
+	}
 	writeBody(method);
 }
 
@@ -16539,6 +16568,22 @@ void GenD::writeResources(const std::map<std::string, std::vector<uint8_t>> * re
 	closeBlock();
 }
 
+void GenD::writeMain(const FuMethod * main)
+{
+	writeNewLine();
+	writeType(main->type.get(), true);
+	if (main->parameters.count() == 1) {
+		write(" main(string[] args) => ");
+		writeName(main->parent);
+		writeLine(".main(args[1 .. $]);");
+	}
+	else {
+		write(" main() => ");
+		writeName(main->parent);
+		writeLine(".main();");
+	}
+}
+
 void GenD::writeProgram(const FuProgram * program)
 {
 	this->hasListInsert = false;
@@ -16612,6 +16657,8 @@ void GenD::writeProgram(const FuProgram * program)
 		closeBlock();
 	}
 	closeStringWriter();
+	if (program->main != nullptr)
+		writeMain(program->main);
 	closeFile();
 }
 
@@ -19152,7 +19199,21 @@ void GenJsNoModule::writeClass(const FuClass * klass, const FuProgram * program)
 	closeBlock();
 }
 
-void GenJsNoModule::writeLib(const std::map<std::string, std::vector<uint8_t>> * resources)
+void GenJsNoModule::writeMain(const FuMethod * main)
+{
+	writeNewLine();
+	if (main->type->id == FuId::intType)
+		write("process.exit(");
+	write(main->parent->name);
+	write(".main(");
+	if (main->parameters.count() == 1)
+		write("process.argv.slice(2)");
+	if (main->type->id == FuId::intType)
+		writeChar(')');
+	writeCharLine(')');
+}
+
+void GenJsNoModule::writeLib(const FuProgram * program)
 {
 	if (this->stringWriter) {
 		writeNewLine();
@@ -19176,21 +19237,23 @@ void GenJsNoModule::writeLib(const std::map<std::string, std::vector<uint8_t>> *
 		closeBlock();
 		closeBlock();
 	}
-	if (std::ssize(*resources) == 0)
-		return;
-	writeNewLine();
-	writeLine("class Fu");
-	openBlock();
-	for (const auto &[name, content] : *resources) {
-		write("static ");
-		writeResourceName(name);
-		writeLine(" = new Uint8Array([");
-		writeChar('\t');
-		writeBytes(&content);
-		writeLine(" ]);");
+	if (std::ssize(program->resources) > 0) {
+		writeNewLine();
+		writeLine("class Fu");
+		openBlock();
+		for (const auto &[name, content] : program->resources) {
+			write("static ");
+			writeResourceName(name);
+			writeLine(" = new Uint8Array([");
+			writeChar('\t');
+			writeBytes(&content);
+			writeLine(" ]);");
+		}
+		writeNewLine();
+		closeBlock();
 	}
-	writeNewLine();
-	closeBlock();
+	if (program->main != nullptr)
+		writeMain(program->main);
 }
 
 void GenJsNoModule::writeUseStrict()
@@ -19204,7 +19267,7 @@ void GenJsNoModule::writeProgram(const FuProgram * program)
 	createOutputFile();
 	writeTopLevelNatives(program);
 	writeTypes(program);
-	writeLib(&program->resources);
+	writeLib(program);
 	closeFile();
 }
 
@@ -19507,7 +19570,7 @@ void GenTs::writeProgram(const FuProgram * program)
 		writeTopLevelNatives(program);
 	writeTypes(program);
 	if (this->genFullCode)
-		writeLib(&program->resources);
+		writeLib(program);
 	closeFile();
 }
 
@@ -22804,6 +22867,22 @@ void GenPy::writeResources(const std::map<std::string, std::vector<uint8_t>> * r
 	closeChild();
 }
 
+void GenPy::writeMain(const FuMethod * main)
+{
+	writeNewLine();
+	writeLine("if __name__ == '__main__':");
+	writeChar('\t');
+	if (main->type->id == FuId::intType)
+		write("sys.exit(");
+	writeName(main->parent);
+	write(".main(");
+	if (main->parameters.count() == 1)
+		write("sys.argv[1:]");
+	if (main->type->id == FuId::intType)
+		writeChar(')');
+	writeCharLine(')');
+}
+
 void GenPy::writeProgram(const FuProgram * program)
 {
 	this->switchBreak = false;
@@ -22811,6 +22890,8 @@ void GenPy::writeProgram(const FuProgram * program)
 	writeTypes(program);
 	createOutputFile();
 	writeTopLevelNatives(program);
+	if (program->main != nullptr && (program->main->type->id == FuId::intType || program->main->parameters.count() == 1))
+		include("sys");
 	writeIncludes("import ", "");
 	if (this->switchBreak) {
 		writeNewLine();
@@ -22818,5 +22899,7 @@ void GenPy::writeProgram(const FuProgram * program)
 	}
 	closeStringWriter();
 	writeResources(&program->resources);
+	if (program->main != nullptr)
+		writeMain(program->main);
 	closeFile();
 }

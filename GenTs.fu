@@ -334,7 +334,7 @@ public class GenTs : GenJs
 			WriteTopLevelNatives(program);
 		WriteTypes(program);
 		if (this.GenFullCode)
-			WriteLib(program.Resources);
+			WriteLib(program);
 		CloseFile();
 	}
 }

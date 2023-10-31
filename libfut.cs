@@ -3258,6 +3258,8 @@ namespace Fusion
 
 		internal readonly List<FuClass> Classes = new List<FuClass>();
 
+		internal FuMethod Main = null;
+
 		internal readonly SortedDictionary<string, List<byte>> Resources = new SortedDictionary<string, List<byte>>();
 
 		internal bool RegexOptionsEnum = false;
@@ -6253,6 +6255,24 @@ namespace Fusion
 							param.Value = FoldConst(param.Value);
 							Coerce(param.Value, param.Type);
 						}
+					}
+					if (method.Name == "Main") {
+						if (method.Visibility != FuVisibility.Public || method.CallType != FuCallType.Static)
+							ReportError(method, "Main method must be 'public static'");
+						if (method.Type.Id != FuId.VoidType && method.Type.Id != FuId.IntType)
+							ReportError(method, "Main method must return 'void' or 'int'");
+						switch (method.Parameters.Count()) {
+						case 0:
+						case 1 when method.Parameters.First.Type is FuClassType argsType && argsType.IsArray() && !(argsType is FuReadWriteClassType) && argsType.GetElementType().Id == FuId.StringPtrType && argsType.GetElementType().Nullable == false && method.Parameters.FirstParameter().Value == null:
+							break;
+						default:
+							ReportError(method, "Main method must have no parameters or one 'string[]' parameter");
+							break;
+						}
+						if (this.Program.Main != null)
+							ReportError(method, "Duplicate Main method");
+						else
+							this.Program.Main = method;
 					}
 					break;
 				default:
@@ -12067,10 +12087,16 @@ namespace Fusion
 			if (!method.IsLive || method.CallType == FuCallType.Abstract)
 				return;
 			WriteNewLine();
-			WriteSignature(method);
-			for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
-				if (NeedToDestruct(param))
-					this.VarsToDestruct.Add(param);
+			if (method.Name == "Main") {
+				Write("int main(");
+				Write(method.Parameters.Count() == 1 ? "int argc, char **argv)" : "void)");
+			}
+			else {
+				WriteSignature(method);
+				for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+					if (NeedToDestruct(param))
+						this.VarsToDestruct.Add(param);
+				}
 			}
 			WriteNewLine();
 			this.CurrentMethod = method;
@@ -14610,12 +14636,20 @@ namespace Fusion
 			if (method.CallType == FuCallType.Abstract)
 				return;
 			WriteNewLine();
-			WriteType(method.Type, true);
-			WriteChar(' ');
-			Write(method.Parent.Name);
-			Write("::");
-			WriteCamelCaseNotKeyword(method.Name);
-			WriteParametersAndConst(method, false);
+			if (method.Name == "Main") {
+				Write("int main(");
+				if (method.Parameters.Count() == 1)
+					Write("int argc, char **argv");
+				WriteChar(')');
+			}
+			else {
+				WriteType(method.Type, true);
+				WriteChar(' ');
+				Write(method.Parent.Name);
+				Write("::");
+				WriteCamelCaseNotKeyword(method.Name);
+				WriteParametersAndConst(method, false);
+			}
 			WriteBody(method);
 		}
 
@@ -17108,6 +17142,22 @@ namespace Fusion
 			CloseBlock();
 		}
 
+		void WriteMain(FuMethod main)
+		{
+			WriteNewLine();
+			WriteType(main.Type, true);
+			if (main.Parameters.Count() == 1) {
+				Write(" main(string[] args) => ");
+				WriteName(main.Parent);
+				WriteLine(".main(args[1 .. $]);");
+			}
+			else {
+				Write(" main() => ");
+				WriteName(main.Parent);
+				WriteLine(".main();");
+			}
+		}
+
 		public override void WriteProgram(FuProgram program)
 		{
 			this.HasListInsert = false;
@@ -17181,6 +17231,8 @@ namespace Fusion
 				CloseBlock();
 			}
 			CloseStringWriter();
+			if (program.Main != null)
+				WriteMain(program.Main);
 			CloseFile();
 		}
 	}
@@ -19803,7 +19855,21 @@ namespace Fusion
 			CloseBlock();
 		}
 
-		protected void WriteLib(SortedDictionary<string, List<byte>> resources)
+		void WriteMain(FuMethod main)
+		{
+			WriteNewLine();
+			if (main.Type.Id == FuId.IntType)
+				Write("process.exit(");
+			Write(main.Parent.Name);
+			Write(".main(");
+			if (main.Parameters.Count() == 1)
+				Write("process.argv.slice(2)");
+			if (main.Type.Id == FuId.IntType)
+				WriteChar(')');
+			WriteCharLine(')');
+		}
+
+		protected void WriteLib(FuProgram program)
 		{
 			if (this.StringWriter) {
 				WriteNewLine();
@@ -19827,21 +19893,23 @@ namespace Fusion
 				CloseBlock();
 				CloseBlock();
 			}
-			if (resources.Count == 0)
-				return;
-			WriteNewLine();
-			WriteLine("class Fu");
-			OpenBlock();
-			foreach ((string name, List<byte> content) in resources) {
-				Write("static ");
-				WriteResourceName(name);
-				WriteLine(" = new Uint8Array([");
-				WriteChar('\t');
-				WriteBytes(content);
-				WriteLine(" ]);");
+			if (program.Resources.Count > 0) {
+				WriteNewLine();
+				WriteLine("class Fu");
+				OpenBlock();
+				foreach ((string name, List<byte> content) in program.Resources) {
+					Write("static ");
+					WriteResourceName(name);
+					WriteLine(" = new Uint8Array([");
+					WriteChar('\t');
+					WriteBytes(content);
+					WriteLine(" ]);");
+				}
+				WriteNewLine();
+				CloseBlock();
 			}
-			WriteNewLine();
-			CloseBlock();
+			if (program.Main != null)
+				WriteMain(program.Main);
 		}
 
 		protected virtual void WriteUseStrict()
@@ -19855,7 +19923,7 @@ namespace Fusion
 			CreateOutputFile();
 			WriteTopLevelNatives(program);
 			WriteTypes(program);
-			WriteLib(program.Resources);
+			WriteLib(program);
 			CloseFile();
 		}
 	}
@@ -20179,7 +20247,7 @@ namespace Fusion
 				WriteTopLevelNatives(program);
 			WriteTypes(program);
 			if (this.GenFullCode)
-				WriteLib(program.Resources);
+				WriteLib(program);
 			CloseFile();
 		}
 	}
@@ -23611,6 +23679,22 @@ namespace Fusion
 			CloseChild();
 		}
 
+		void WriteMain(FuMethod main)
+		{
+			WriteNewLine();
+			WriteLine("if __name__ == '__main__':");
+			WriteChar('\t');
+			if (main.Type.Id == FuId.IntType)
+				Write("sys.exit(");
+			WriteName(main.Parent);
+			Write(".main(");
+			if (main.Parameters.Count() == 1)
+				Write("sys.argv[1:]");
+			if (main.Type.Id == FuId.IntType)
+				WriteChar(')');
+			WriteCharLine(')');
+		}
+
 		public override void WriteProgram(FuProgram program)
 		{
 			this.SwitchBreak = false;
@@ -23618,6 +23702,8 @@ namespace Fusion
 			WriteTypes(program);
 			CreateOutputFile();
 			WriteTopLevelNatives(program);
+			if (program.Main != null && (program.Main.Type.Id == FuId.IntType || program.Main.Parameters.Count() == 1))
+				Include("sys");
 			WriteIncludes("import ", "");
 			if (this.SwitchBreak) {
 				WriteNewLine();
@@ -23625,6 +23711,8 @@ namespace Fusion
 			}
 			CloseStringWriter();
 			WriteResources(program.Resources);
+			if (program.Main != null)
+				WriteMain(program.Main);
 			CloseFile();
 		}
 	}

@@ -1473,6 +1473,7 @@ public:
 	const FuSystem * system;
 	std::vector<std::string> topLevelNatives;
 	std::vector<FuClass *> classes;
+	const FuMethod * main = nullptr;
 	std::map<std::string, std::vector<uint8_t>> resources;
 	bool regexOptionsEnum = false;
 };
@@ -2403,6 +2404,7 @@ private:
 	void writeIsVar(const FuExpr * expr, const FuVar * def, FuPriority parent);
 	static bool isLong(const FuSymbolReference * expr);
 	void writeResources(const std::map<std::string, std::vector<uint8_t>> * resources);
+	void writeMain(const FuMethod * main);
 };
 
 class GenJava : public GenTyped
@@ -2523,7 +2525,7 @@ protected:
 	void writeMethod(const FuMethod * method) override;
 	void writeConstructor(const FuClass * klass);
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
-	void writeLib(const std::map<std::string, std::vector<uint8_t>> * resources);
+	void writeLib(const FuProgram * program);
 	virtual void writeUseStrict();
 public:
 	void visitAggregateInitializer(const FuAggregateInitializer * expr) override;
@@ -2547,6 +2549,7 @@ private:
 	void writeBoolAndOrAssign(const FuBinaryExpr * expr, FuPriority parent);
 	void writeIsVar(const FuExpr * expr, const FuVar * def, bool assign, FuPriority parent);
 	void writeVarCast(const FuVar * def, const FuExpr * value);
+	void writeMain(const FuMethod * main);
 };
 
 class GenJs : public GenJsNoModule
@@ -2810,4 +2813,5 @@ private:
 	bool inheritsConstructor(const FuClass * klass) const;
 	void writeResourceByte(int b);
 	void writeResources(const std::map<std::string, std::vector<uint8_t>> * resources);
+	void writeMain(const FuMethod * main);
 };

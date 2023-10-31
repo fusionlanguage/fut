@@ -3176,10 +3176,16 @@ public class GenC : GenCCpp
 		if (!method.IsLive || method.CallType == FuCallType.Abstract)
 			return;
 		WriteNewLine();
-		WriteSignature(method);
-		for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
-			if (NeedToDestruct(param))
-				this.VarsToDestruct.Add(param);
+		if (method.Name == "Main") {
+			Write("int main(");
+			Write(method.Parameters.Count() == 1 ? "int argc, char **argv)" : "void)");
+		}
+		else {
+			WriteSignature(method);
+			for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+				if (NeedToDestruct(param))
+					this.VarsToDestruct.Add(param);
+			}
 		}
 		WriteNewLine();
 		this.CurrentMethod = method;

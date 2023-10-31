@@ -3405,6 +3405,7 @@ export class FuProgram extends FuScope
 	system;
 	topLevelNatives = [];
 	classes = [];
+	main = null;
 	resources = {};
 	regexOptionsEnum = false;
 }
@@ -6565,6 +6566,21 @@ export class FuSema
 						param.value = this.#foldConst(param.value);
 						this.#coerce(param.value, param.type);
 					}
+				}
+				if (method.name == "Main") {
+					if (method.visibility != FuVisibility.PUBLIC || method.callType != FuCallType.STATIC)
+						this.reportError(method, "Main method must be 'public static'");
+					if (method.type.id != FuId.VOID_TYPE && method.type.id != FuId.INT_TYPE)
+						this.reportError(method, "Main method must return 'void' or 'int'");
+					let argsType;
+					if (method.parameters.count() == 0 || (method.parameters.count() == 1 && (argsType = method.parameters.first.type) instanceof FuClassType && argsType.isArray() && !(argsType instanceof FuReadWriteClassType) && argsType.getElementType().id == FuId.STRING_PTR_TYPE && argsType.getElementType().nullable == false && method.parameters.firstParameter().value == null)) {
+					}
+					else
+						this.reportError(method, "Main method must have no parameters or one 'string[]' parameter");
+					if (this.program.main != null)
+						this.reportError(method, "Duplicate Main method");
+					else
+						this.program.main = method;
 				}
 			}
 		}
@@ -12471,10 +12487,16 @@ export class GenC extends GenCCpp
 		if (!method.isLive || method.callType == FuCallType.ABSTRACT)
 			return;
 		this.writeNewLine();
-		this.#writeSignature(method);
-		for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
-			if (GenC.#needToDestruct(param))
-				this.#varsToDestruct.push(param);
+		if (method.name == "Main") {
+			this.write("int main(");
+			this.write(method.parameters.count() == 1 ? "int argc, char **argv)" : "void)");
+		}
+		else {
+			this.#writeSignature(method);
+			for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
+				if (GenC.#needToDestruct(param))
+					this.#varsToDestruct.push(param);
+			}
 		}
 		this.writeNewLine();
 		this.currentMethod = method;
@@ -15042,12 +15064,20 @@ export class GenCpp extends GenCCpp
 		if (method.callType == FuCallType.ABSTRACT)
 			return;
 		this.writeNewLine();
-		this.writeType(method.type, true);
-		this.writeChar(32);
-		this.write(method.parent.name);
-		this.write("::");
-		this.#writeCamelCaseNotKeyword(method.name);
-		this.#writeParametersAndConst(method, false);
+		if (method.name == "Main") {
+			this.write("int main(");
+			if (method.parameters.count() == 1)
+				this.write("int argc, char **argv");
+			this.writeChar(41);
+		}
+		else {
+			this.writeType(method.type, true);
+			this.writeChar(32);
+			this.write(method.parent.name);
+			this.write("::");
+			this.#writeCamelCaseNotKeyword(method.name);
+			this.#writeParametersAndConst(method, false);
+		}
 		this.writeBody(method);
 	}
 
@@ -17601,6 +17631,22 @@ export class GenD extends GenCCppD
 		this.closeBlock();
 	}
 
+	#writeMain(main)
+	{
+		this.writeNewLine();
+		this.writeType(main.type, true);
+		if (main.parameters.count() == 1) {
+			this.write(" main(string[] args) => ");
+			this.writeName(main.parent);
+			this.writeLine(".main(args[1 .. $]);");
+		}
+		else {
+			this.write(" main() => ");
+			this.writeName(main.parent);
+			this.writeLine(".main();");
+		}
+	}
+
 	writeProgram(program)
 	{
 		this.#hasListInsert = false;
@@ -17674,6 +17720,8 @@ export class GenD extends GenCCppD
 			this.closeBlock();
 		}
 		this.closeStringWriter();
+		if (program.main != null)
+			this.#writeMain(program.main);
 		this.closeFile();
 	}
 }
@@ -20349,7 +20397,21 @@ export class GenJsNoModule extends GenBase
 		this.closeBlock();
 	}
 
-	writeLib(resources)
+	#writeMain(main)
+	{
+		this.writeNewLine();
+		if (main.type.id == FuId.INT_TYPE)
+			this.write("process.exit(");
+		this.write(main.parent.name);
+		this.write(".main(");
+		if (main.parameters.count() == 1)
+			this.write("process.argv.slice(2)");
+		if (main.type.id == FuId.INT_TYPE)
+			this.writeChar(41);
+		this.writeCharLine(41);
+	}
+
+	writeLib(program)
 	{
 		if (this.#stringWriter) {
 			this.writeNewLine();
@@ -20373,21 +20435,23 @@ export class GenJsNoModule extends GenBase
 			this.closeBlock();
 			this.closeBlock();
 		}
-		if (Object.keys(resources).length == 0)
-			return;
-		this.writeNewLine();
-		this.writeLine("class Fu");
-		this.openBlock();
-		for (const [name, content] of Object.entries(resources).sort((a, b) => a[0].localeCompare(b[0]))) {
-			this.write("static ");
-			this.writeResourceName(name);
-			this.writeLine(" = new Uint8Array([");
-			this.writeChar(9);
-			this.writeBytes(content);
-			this.writeLine(" ]);");
+		if (Object.keys(program.resources).length > 0) {
+			this.writeNewLine();
+			this.writeLine("class Fu");
+			this.openBlock();
+			for (const [name, content] of Object.entries(program.resources).sort((a, b) => a[0].localeCompare(b[0]))) {
+				this.write("static ");
+				this.writeResourceName(name);
+				this.writeLine(" = new Uint8Array([");
+				this.writeChar(9);
+				this.writeBytes(content);
+				this.writeLine(" ]);");
+			}
+			this.writeNewLine();
+			this.closeBlock();
 		}
-		this.writeNewLine();
-		this.closeBlock();
+		if (program.main != null)
+			this.#writeMain(program.main);
 	}
 
 	writeUseStrict()
@@ -20401,7 +20465,7 @@ export class GenJsNoModule extends GenBase
 		this.createOutputFile();
 		this.writeTopLevelNatives(program);
 		this.writeTypes(program);
-		this.writeLib(program.resources);
+		this.writeLib(program);
 		this.closeFile();
 	}
 }
@@ -20719,7 +20783,7 @@ export class GenTs extends GenJs
 			this.writeTopLevelNatives(program);
 		this.writeTypes(program);
 		if (this.#genFullCode)
-			this.writeLib(program.resources);
+			this.writeLib(program);
 		this.closeFile();
 	}
 }
@@ -24203,6 +24267,22 @@ export class GenPy extends GenPySwift
 		this.closeChild();
 	}
 
+	#writeMain(main)
+	{
+		this.writeNewLine();
+		this.writeLine("if __name__ == '__main__':");
+		this.writeChar(9);
+		if (main.type.id == FuId.INT_TYPE)
+			this.write("sys.exit(");
+		this.writeName(main.parent);
+		this.write(".main(");
+		if (main.parameters.count() == 1)
+			this.write("sys.argv[1:]");
+		if (main.type.id == FuId.INT_TYPE)
+			this.writeChar(41);
+		this.writeCharLine(41);
+	}
+
 	writeProgram(program)
 	{
 		this.#switchBreak = false;
@@ -24210,6 +24290,8 @@ export class GenPy extends GenPySwift
 		this.writeTypes(program);
 		this.createOutputFile();
 		this.writeTopLevelNatives(program);
+		if (program.main != null && (program.main.type.id == FuId.INT_TYPE || program.main.parameters.count() == 1))
+			this.include("sys");
 		this.writeIncludes("import ", "");
 		if (this.#switchBreak) {
 			this.writeNewLine();
@@ -24217,6 +24299,8 @@ export class GenPy extends GenPySwift
 		}
 		this.closeStringWriter();
 		this.#writeResources(program.resources);
+		if (program.main != null)
+			this.#writeMain(program.main);
 		this.closeFile();
 	}
 }

@@ -1468,6 +1468,22 @@ public class GenD : GenCCppD
 		CloseBlock();
 	}
 
+	void WriteMain!(FuMethod main)
+	{
+		WriteNewLine();
+		WriteType(main.Type, true);
+		if (main.Parameters.Count() == 1) {
+			Write(" main(string[] args) => ");
+			WriteName(main.Parent);
+			WriteLine(".main(args[1 .. $]);");
+		}
+		else {
+			Write(" main() => ");
+			WriteName(main.Parent);
+			WriteLine(".main();");
+		}
+	}
+
 	public override void WriteProgram!(FuProgram program)
 	{
 		this.HasListInsert = false;
@@ -1543,6 +1559,8 @@ public class GenD : GenCCppD
 			CloseBlock();
 		}
 		CloseStringWriter();
+		if (program.Main != null)
+			WriteMain(program.Main);
 		CloseFile();
 	}
 }

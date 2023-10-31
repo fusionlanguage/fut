@@ -1317,6 +1317,22 @@ public class GenPy : GenPySwift
 		CloseChild();
 	}
 
+	void WriteMain!(FuMethod main)
+	{
+		WriteNewLine();
+		WriteLine("if __name__ == '__main__':");
+		WriteChar('\t');
+		if (main.Type.Id == FuId.IntType)
+			Write("sys.exit(");
+		WriteName(main.Parent);
+		Write(".main(");
+		if (main.Parameters.Count() == 1)
+			Write("sys.argv[1:]");
+		if (main.Type.Id == FuId.IntType)
+			WriteChar(')');
+		WriteCharLine(')');
+	}
+
 	public override void WriteProgram!(FuProgram program)
 	{
 		this.SwitchBreak = false;
@@ -1324,6 +1340,8 @@ public class GenPy : GenPySwift
 		WriteTypes(program);
 		CreateOutputFile();
 		WriteTopLevelNatives(program);
+		if (program.Main != null && (program.Main.Type.Id == FuId.IntType || program.Main.Parameters.Count() == 1))
+			Include("sys");
 		WriteIncludes("import ", "");
 		if (this.SwitchBreak) {
 			WriteNewLine();
@@ -1331,6 +1349,8 @@ public class GenPy : GenPySwift
 		}
 		CloseStringWriter();
 		WriteResources(program.Resources);
+		if (program.Main != null)
+			WriteMain(program.Main);
 		CloseFile();
 	}
 }

@@ -1278,7 +1278,21 @@ public class GenJsNoModule : GenBase
 		CloseBlock();
 	}
 
-	protected void WriteLib!(SortedDictionary<string(), List<byte>()> resources)
+	void WriteMain!(FuMethod main)
+	{
+		WriteNewLine();
+		if (main.Type.Id == FuId.IntType)
+			Write("process.exit(");
+		Write(main.Parent.Name);
+		Write(".main(");
+		if (main.Parameters.Count() == 1)
+			Write("process.argv.slice(2)");
+		if (main.Type.Id == FuId.IntType)
+			WriteChar(')');
+		WriteCharLine(')');
+	}
+
+	protected void WriteLib!(FuProgram program)
 	{
 		if (this.StringWriter) {
 			WriteNewLine();
@@ -1302,21 +1316,23 @@ public class GenJsNoModule : GenBase
 			CloseBlock();
 			CloseBlock();
 		}
-		if (resources.Count == 0)
-			return;
-		WriteNewLine();
-		WriteLine("class Fu");
-		OpenBlock();
-		foreach ((string name, List<byte> content) in resources) {
-			Write("static ");
-			WriteResourceName(name);
-			WriteLine(" = new Uint8Array([");
-			WriteChar('\t');
-			WriteBytes(content);
-			WriteLine(" ]);");
+		if (program.Resources.Count > 0) {
+			WriteNewLine();
+			WriteLine("class Fu");
+			OpenBlock();
+			foreach ((string name, List<byte> content) in program.Resources) {
+				Write("static ");
+				WriteResourceName(name);
+				WriteLine(" = new Uint8Array([");
+				WriteChar('\t');
+				WriteBytes(content);
+				WriteLine(" ]);");
+			}
+			WriteNewLine();
+			CloseBlock();
 		}
-		WriteNewLine();
-		CloseBlock();
+		if (program.Main != null)
+			WriteMain(program.Main);
 	}
 
 	protected virtual void WriteUseStrict!()
@@ -1330,7 +1346,7 @@ public class GenJsNoModule : GenBase
 		CreateOutputFile();
 		WriteTopLevelNatives(program);
 		WriteTypes(program);
-		WriteLib(program.Resources);
+		WriteLib(program);
 		CloseFile();
 	}
 }
