@@ -1733,7 +1733,7 @@ public class GenCpp : GenCCpp
 		}
 
 		for (FuSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
-			if (!(symbol is FuMember member) || member.Visibility != visibility)
+			if (!(symbol is FuMember member) || member.Visibility != visibility || member.Id == FuId.Main)
 				continue;
 			switch (member) {
 			case FuConst konst:
@@ -1812,7 +1812,7 @@ public class GenCpp : GenCCpp
 		if (method.CallType == FuCallType.Abstract)
 			return;
 		WriteNewLine();
-		if (method.Name == "Main") {
+		if (method.Id == FuId.Main) {
 			Write("int main(");
 			if (method.Parameters.Count() == 1)
 				Write("int argc, char **argv");

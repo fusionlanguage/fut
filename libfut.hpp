@@ -227,6 +227,7 @@ enum class FuId
 	stringLength,
 	arrayLength,
 	consoleError,
+	main,
 	classToString,
 	matchStart,
 	matchEnd,

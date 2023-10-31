@@ -2981,7 +2981,7 @@ public class GenC : GenCCpp
 				}
 				WriteConst(konst);
 				break;
-			case FuMethod method when method.IsLive && (method.Visibility == FuVisibility.Public) == pub && method.CallType != FuCallType.Abstract:
+			case FuMethod method when method.IsLive && (method.Visibility == FuVisibility.Public) == pub && method.CallType != FuCallType.Abstract && method.Id != FuId.Main:
 				WriteNewLine();
 				WriteMethodDoc(method);
 				WriteSignature(method);
@@ -3176,7 +3176,7 @@ public class GenC : GenCCpp
 		if (!method.IsLive || method.CallType == FuCallType.Abstract)
 			return;
 		WriteNewLine();
-		if (method.Name == "Main") {
+		if (method.Id == FuId.Main) {
 			Write("int main(");
 			Write(method.Parameters.Count() == 1 ? "int argc, char **argv)" : "void)");
 		}

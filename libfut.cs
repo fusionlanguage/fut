@@ -1318,6 +1318,7 @@ namespace Fusion
 		StringLength,
 		ArrayLength,
 		ConsoleError,
+		Main,
 		ClassToString,
 		MatchStart,
 		MatchEnd,
@@ -6271,8 +6272,10 @@ namespace Fusion
 						}
 						if (this.Program.Main != null)
 							ReportError(method, "Duplicate Main method");
-						else
+						else {
+							method.Id = FuId.Main;
 							this.Program.Main = method;
+						}
 					}
 					break;
 				default:
@@ -11894,7 +11897,7 @@ namespace Fusion
 					}
 					WriteConst(konst);
 					break;
-				case FuMethod method when method.IsLive && (method.Visibility == FuVisibility.Public) == pub && method.CallType != FuCallType.Abstract:
+				case FuMethod method when method.IsLive && (method.Visibility == FuVisibility.Public) == pub && method.CallType != FuCallType.Abstract && method.Id != FuId.Main:
 					WriteNewLine();
 					WriteMethodDoc(method);
 					WriteSignature(method);
@@ -12087,7 +12090,7 @@ namespace Fusion
 			if (!method.IsLive || method.CallType == FuCallType.Abstract)
 				return;
 			WriteNewLine();
-			if (method.Name == "Main") {
+			if (method.Id == FuId.Main) {
 				Write("int main(");
 				Write(method.Parameters.Count() == 1 ? "int argc, char **argv)" : "void)");
 			}
@@ -14558,7 +14561,7 @@ namespace Fusion
 				WriteLine("() = default;");
 			}
 			for (FuSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
-				if (!(symbol is FuMember member) || member.Visibility != visibility)
+				if (!(symbol is FuMember member) || member.Visibility != visibility || member.Id == FuId.Main)
 					continue;
 				switch (member) {
 				case FuConst konst:
@@ -14636,7 +14639,7 @@ namespace Fusion
 			if (method.CallType == FuCallType.Abstract)
 				return;
 			WriteNewLine();
-			if (method.Name == "Main") {
+			if (method.Id == FuId.Main) {
 				Write("int main(");
 				if (method.Parameters.Count() == 1)
 					Write("int argc, char **argv");

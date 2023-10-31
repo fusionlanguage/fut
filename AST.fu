@@ -99,6 +99,7 @@ public enum FuId
 	StringLength,
 	ArrayLength,
 	ConsoleError,
+	Main,
 	ClassToString,
 	MatchStart,
 	MatchEnd,

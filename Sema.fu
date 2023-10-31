@@ -2065,8 +2065,10 @@ public class FuSema
 					}
 					if (this.Program.Main != null)
 						ReportError(method, "Duplicate Main method");
-					else
+					else {
+						method.Id = FuId.Main;
 						this.Program.Main = method;
+					}
 				}
 				break;
 			default:

@@ -6146,8 +6146,10 @@ void FuSema::resolveTypes(FuClass * klass)
 					reportError(method, "Main method must have no parameters or one 'string[]' parameter");
 				if (this->program->main != nullptr)
 					reportError(method, "Duplicate Main method");
-				else
+				else {
+					method->id = FuId::main;
 					this->program->main = method;
+				}
 			}
 		}
 	}
@@ -11633,7 +11635,7 @@ void GenC::writeSignatures(const FuClass * klass, bool pub)
 			}
 			writeConst(konst);
 		}
-		else if ((method = dynamic_cast<const FuMethod *>(symbol)) && method->isLive && (method->visibility == FuVisibility::public_) == pub && method->callType != FuCallType::abstract) {
+		else if ((method = dynamic_cast<const FuMethod *>(symbol)) && method->isLive && (method->visibility == FuVisibility::public_) == pub && method->callType != FuCallType::abstract && method->id != FuId::main) {
 			writeNewLine();
 			writeMethodDoc(method);
 			writeSignature(method);
@@ -11826,7 +11828,7 @@ void GenC::writeMethod(const FuMethod * method)
 	if (!method->isLive || method->callType == FuCallType::abstract)
 		return;
 	writeNewLine();
-	if (method->name == "Main") {
+	if (method->id == FuId::main) {
 		write("int main(");
 		write(method->parameters.count() == 1 ? "int argc, char **argv)" : "void)");
 	}
@@ -14188,7 +14190,7 @@ void GenCpp::writeDeclarations(const FuClass * klass, FuVisibility visibility, s
 	}
 	for (const FuSymbol * symbol = klass->first; symbol != nullptr; symbol = symbol->next) {
 		const FuMember * member;
-		if (!(member = dynamic_cast<const FuMember *>(symbol)) || member->visibility != visibility)
+		if (!(member = dynamic_cast<const FuMember *>(symbol)) || member->visibility != visibility || member->id == FuId::main)
 			continue;
 		if (const FuConst *konst = dynamic_cast<const FuConst *>(member)) {
 			writeDoc(konst->documentation.get());
@@ -14263,7 +14265,7 @@ void GenCpp::writeMethod(const FuMethod * method)
 	if (method->callType == FuCallType::abstract)
 		return;
 	writeNewLine();
-	if (method->name == "Main") {
+	if (method->id == FuId::main) {
 		write("int main(");
 		if (method->parameters.count() == 1)
 			write("int argc, char **argv");
