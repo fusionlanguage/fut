@@ -6148,6 +6148,7 @@ void FuSema::resolveTypes(FuClass * klass)
 						if ((argsType = dynamic_cast<FuClassType *>(args->type.get())) && argsType->isArray() && !dynamic_cast<const FuReadWriteClassType *>(argsType) && !argsType->nullable) {
 							const FuType * argsElement = argsType->getElementType().get();
 							if (argsElement->id == FuId::stringPtrType && !argsElement->nullable && args->value == nullptr) {
+								argsType->id = FuId::mainArgsType;
 								argsType->class_ = this->program->system->arrayStorageClass.get();
 								break;
 							}
@@ -8997,8 +8998,7 @@ void GenC::writeName(const FuSymbol * symbol)
 
 void GenC::writeForeachArrayIndexing(const FuForeach * forEach, const FuSymbol * symbol)
 {
-	const FuClassType * klass = static_cast<const FuClassType *>(forEach->collection->type.get());
-	if (klass->class_->id == FuId::arrayStorageClass && !dynamic_cast<const FuArrayStorageType *>(klass))
+	if (forEach->collection->type->id == FuId::mainArgsType)
 		write("argv");
 	else
 		forEach->collection->accept(this, FuPriority::primary);
@@ -11088,10 +11088,11 @@ void GenC::writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent)
 	if (const FuClassType *klass = dynamic_cast<const FuClassType *>(expr->left->type.get())) {
 		switch (klass->class_->id) {
 		case FuId::arrayStorageClass:
-			if (dynamic_cast<const FuArrayStorageType *>(klass))
-				break;
-			writeArgsIndexing(expr->right.get());
-			return;
+			if (klass->id == FuId::mainArgsType) {
+				writeArgsIndexing(expr->right.get());
+				return;
+			}
+			break;
 		case FuId::listClass:
 			if (dynamic_cast<const FuArrayStorageType *>(klass->getElementType().get())) {
 				writeChar('(');
@@ -11288,20 +11289,8 @@ void GenC::writeDictIterVar(const FuNamedValue * iter, std::string_view value)
 
 void GenC::visitForeach(const FuForeach * statement)
 {
-	std::string_view element = statement->getVar()->name;
-	if (const FuArrayStorageType *array = dynamic_cast<const FuArrayStorageType *>(statement->collection->type.get())) {
-		write("for (int ");
-		writeCamelCaseNotKeyword(element);
-		write(" = 0; ");
-		writeCamelCaseNotKeyword(element);
-		write(" < ");
-		visitLiteralLong(array->length);
-		write("; ");
-		writeCamelCaseNotKeyword(element);
-		write("++)");
-		writeChild(statement->body.get());
-	}
-	else if (const FuClassType *klass = dynamic_cast<const FuClassType *>(statement->collection->type.get())) {
+	if (const FuClassType *klass = dynamic_cast<const FuClassType *>(statement->collection->type.get())) {
+		std::string_view element = statement->getVar()->name;
 		switch (klass->class_->id) {
 		case FuId::stringClass:
 			write("for (");
@@ -11319,9 +11308,18 @@ void GenC::visitForeach(const FuForeach * statement)
 		case FuId::arrayStorageClass:
 			write("for (int ");
 			writeCamelCaseNotKeyword(element);
-			write(" = 1; ");
-			writeCamelCaseNotKeyword(element);
-			write(" < argc; ");
+			if (const FuArrayStorageType *array = dynamic_cast<const FuArrayStorageType *>(klass)) {
+				write(" = 0; ");
+				writeCamelCaseNotKeyword(element);
+				write(" < ");
+				visitLiteralLong(array->length);
+			}
+			else {
+				write(" = 1; ");
+				writeCamelCaseNotKeyword(element);
+				write(" < argc");
+			}
+			write("; ");
 			writeCamelCaseNotKeyword(element);
 			write("++)");
 			writeChild(statement->body.get());
@@ -13001,10 +12999,11 @@ void GenCpp::writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent)
 	if (parent != FuPriority::assign) {
 		switch (klass->class_->id) {
 		case FuId::arrayStorageClass:
-			if (dynamic_cast<const FuArrayStorageType *>(klass))
-				break;
-			writeArgsIndexing(expr->right.get());
-			return;
+			if (klass->id == FuId::mainArgsType) {
+				writeArgsIndexing(expr->right.get());
+				return;
+			}
+			break;
 		case FuId::dictionaryClass:
 		case FuId::sortedDictionaryClass:
 		case FuId::orderedDictionaryClass:
@@ -14048,7 +14047,7 @@ void GenCpp::visitForeach(const FuForeach * statement)
 				writeTypeAndName(element);
 		}
 		write(" : ");
-		if (collectionType->class_->id == FuId::arrayStorageClass && !dynamic_cast<const FuArrayStorageType *>(collectionType)) {
+		if (collectionType->id == FuId::mainArgsType) {
 			include("span");
 			write("std::span(argv + 1, argc - 1)");
 		}

@@ -80,6 +80,7 @@ public enum FuId
 	StringClass,
 	StringPtrType,
 	StringStorageType,
+	MainArgsType,
 	ArrayPtrClass,
 	ArrayStorageClass,
 	ListClass,

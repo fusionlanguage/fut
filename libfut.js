@@ -1282,136 +1282,137 @@ export const FuId = {
 	STRING_CLASS : 17,
 	STRING_PTR_TYPE : 18,
 	STRING_STORAGE_TYPE : 19,
-	ARRAY_PTR_CLASS : 20,
-	ARRAY_STORAGE_CLASS : 21,
-	LIST_CLASS : 22,
-	QUEUE_CLASS : 23,
-	STACK_CLASS : 24,
-	HASH_SET_CLASS : 25,
-	SORTED_SET_CLASS : 26,
-	DICTIONARY_CLASS : 27,
-	SORTED_DICTIONARY_CLASS : 28,
-	ORDERED_DICTIONARY_CLASS : 29,
-	TEXT_WRITER_CLASS : 30,
-	STRING_WRITER_CLASS : 31,
-	REGEX_OPTIONS_ENUM : 32,
-	REGEX_CLASS : 33,
-	MATCH_CLASS : 34,
-	LOCK_CLASS : 35,
-	STRING_LENGTH : 36,
-	ARRAY_LENGTH : 37,
-	CONSOLE_ERROR : 38,
-	MAIN : 39,
-	CLASS_TO_STRING : 40,
-	MATCH_START : 41,
-	MATCH_END : 42,
-	MATCH_LENGTH : 43,
-	MATCH_VALUE : 44,
-	MATH_NA_N : 45,
-	MATH_NEGATIVE_INFINITY : 46,
-	MATH_POSITIVE_INFINITY : 47,
-	ENUM_FROM_INT : 48,
-	ENUM_HAS_FLAG : 49,
-	INT_TRY_PARSE : 50,
-	LONG_TRY_PARSE : 51,
-	DOUBLE_TRY_PARSE : 52,
-	STRING_CONTAINS : 53,
-	STRING_ENDS_WITH : 54,
-	STRING_INDEX_OF : 55,
-	STRING_LAST_INDEX_OF : 56,
-	STRING_REPLACE : 57,
-	STRING_STARTS_WITH : 58,
-	STRING_SUBSTRING : 59,
-	ARRAY_BINARY_SEARCH_ALL : 60,
-	ARRAY_BINARY_SEARCH_PART : 61,
-	ARRAY_CONTAINS : 62,
-	ARRAY_COPY_TO : 63,
-	ARRAY_FILL_ALL : 64,
-	ARRAY_FILL_PART : 65,
-	ARRAY_SORT_ALL : 66,
-	ARRAY_SORT_PART : 67,
-	LIST_ADD : 68,
-	LIST_ADD_RANGE : 69,
-	LIST_ALL : 70,
-	LIST_ANY : 71,
-	LIST_CLEAR : 72,
-	LIST_CONTAINS : 73,
-	LIST_COPY_TO : 74,
-	LIST_COUNT : 75,
-	LIST_INDEX_OF : 76,
-	LIST_INSERT : 77,
-	LIST_LAST : 78,
-	LIST_REMOVE_AT : 79,
-	LIST_REMOVE_RANGE : 80,
-	LIST_SORT_ALL : 81,
-	LIST_SORT_PART : 82,
-	QUEUE_CLEAR : 83,
-	QUEUE_COUNT : 84,
-	QUEUE_DEQUEUE : 85,
-	QUEUE_ENQUEUE : 86,
-	QUEUE_PEEK : 87,
-	STACK_CLEAR : 88,
-	STACK_COUNT : 89,
-	STACK_PEEK : 90,
-	STACK_PUSH : 91,
-	STACK_POP : 92,
-	HASH_SET_ADD : 93,
-	HASH_SET_CLEAR : 94,
-	HASH_SET_CONTAINS : 95,
-	HASH_SET_COUNT : 96,
-	HASH_SET_REMOVE : 97,
-	SORTED_SET_ADD : 98,
-	SORTED_SET_CLEAR : 99,
-	SORTED_SET_CONTAINS : 100,
-	SORTED_SET_COUNT : 101,
-	SORTED_SET_REMOVE : 102,
-	DICTIONARY_ADD : 103,
-	DICTIONARY_CLEAR : 104,
-	DICTIONARY_CONTAINS_KEY : 105,
-	DICTIONARY_COUNT : 106,
-	DICTIONARY_REMOVE : 107,
-	SORTED_DICTIONARY_CLEAR : 108,
-	SORTED_DICTIONARY_CONTAINS_KEY : 109,
-	SORTED_DICTIONARY_COUNT : 110,
-	SORTED_DICTIONARY_REMOVE : 111,
-	ORDERED_DICTIONARY_CLEAR : 112,
-	ORDERED_DICTIONARY_CONTAINS_KEY : 113,
-	ORDERED_DICTIONARY_COUNT : 114,
-	ORDERED_DICTIONARY_REMOVE : 115,
-	TEXT_WRITER_WRITE : 116,
-	TEXT_WRITER_WRITE_CHAR : 117,
-	TEXT_WRITER_WRITE_CODE_POINT : 118,
-	TEXT_WRITER_WRITE_LINE : 119,
-	CONSOLE_WRITE : 120,
-	CONSOLE_WRITE_LINE : 121,
-	STRING_WRITER_CLEAR : 122,
-	STRING_WRITER_TO_STRING : 123,
-	U_T_F8_GET_BYTE_COUNT : 124,
-	U_T_F8_GET_BYTES : 125,
-	U_T_F8_GET_STRING : 126,
-	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 127,
-	REGEX_COMPILE : 128,
-	REGEX_ESCAPE : 129,
-	REGEX_IS_MATCH_STR : 130,
-	REGEX_IS_MATCH_REGEX : 131,
-	MATCH_FIND_STR : 132,
-	MATCH_FIND_REGEX : 133,
-	MATCH_GET_CAPTURE : 134,
-	MATH_METHOD : 135,
-	MATH_ABS : 136,
-	MATH_CEILING : 137,
-	MATH_CLAMP : 138,
-	MATH_FUSED_MULTIPLY_ADD : 139,
-	MATH_IS_FINITE : 140,
-	MATH_IS_INFINITY : 141,
-	MATH_IS_NA_N : 142,
-	MATH_LOG2 : 143,
-	MATH_MAX_INT : 144,
-	MATH_MAX_DOUBLE : 145,
-	MATH_MIN_INT : 146,
-	MATH_MIN_DOUBLE : 147,
-	MATH_ROUND : 148,
-	MATH_TRUNCATE : 149
+	MAIN_ARGS_TYPE : 20,
+	ARRAY_PTR_CLASS : 21,
+	ARRAY_STORAGE_CLASS : 22,
+	LIST_CLASS : 23,
+	QUEUE_CLASS : 24,
+	STACK_CLASS : 25,
+	HASH_SET_CLASS : 26,
+	SORTED_SET_CLASS : 27,
+	DICTIONARY_CLASS : 28,
+	SORTED_DICTIONARY_CLASS : 29,
+	ORDERED_DICTIONARY_CLASS : 30,
+	TEXT_WRITER_CLASS : 31,
+	STRING_WRITER_CLASS : 32,
+	REGEX_OPTIONS_ENUM : 33,
+	REGEX_CLASS : 34,
+	MATCH_CLASS : 35,
+	LOCK_CLASS : 36,
+	STRING_LENGTH : 37,
+	ARRAY_LENGTH : 38,
+	CONSOLE_ERROR : 39,
+	MAIN : 40,
+	CLASS_TO_STRING : 41,
+	MATCH_START : 42,
+	MATCH_END : 43,
+	MATCH_LENGTH : 44,
+	MATCH_VALUE : 45,
+	MATH_NA_N : 46,
+	MATH_NEGATIVE_INFINITY : 47,
+	MATH_POSITIVE_INFINITY : 48,
+	ENUM_FROM_INT : 49,
+	ENUM_HAS_FLAG : 50,
+	INT_TRY_PARSE : 51,
+	LONG_TRY_PARSE : 52,
+	DOUBLE_TRY_PARSE : 53,
+	STRING_CONTAINS : 54,
+	STRING_ENDS_WITH : 55,
+	STRING_INDEX_OF : 56,
+	STRING_LAST_INDEX_OF : 57,
+	STRING_REPLACE : 58,
+	STRING_STARTS_WITH : 59,
+	STRING_SUBSTRING : 60,
+	ARRAY_BINARY_SEARCH_ALL : 61,
+	ARRAY_BINARY_SEARCH_PART : 62,
+	ARRAY_CONTAINS : 63,
+	ARRAY_COPY_TO : 64,
+	ARRAY_FILL_ALL : 65,
+	ARRAY_FILL_PART : 66,
+	ARRAY_SORT_ALL : 67,
+	ARRAY_SORT_PART : 68,
+	LIST_ADD : 69,
+	LIST_ADD_RANGE : 70,
+	LIST_ALL : 71,
+	LIST_ANY : 72,
+	LIST_CLEAR : 73,
+	LIST_CONTAINS : 74,
+	LIST_COPY_TO : 75,
+	LIST_COUNT : 76,
+	LIST_INDEX_OF : 77,
+	LIST_INSERT : 78,
+	LIST_LAST : 79,
+	LIST_REMOVE_AT : 80,
+	LIST_REMOVE_RANGE : 81,
+	LIST_SORT_ALL : 82,
+	LIST_SORT_PART : 83,
+	QUEUE_CLEAR : 84,
+	QUEUE_COUNT : 85,
+	QUEUE_DEQUEUE : 86,
+	QUEUE_ENQUEUE : 87,
+	QUEUE_PEEK : 88,
+	STACK_CLEAR : 89,
+	STACK_COUNT : 90,
+	STACK_PEEK : 91,
+	STACK_PUSH : 92,
+	STACK_POP : 93,
+	HASH_SET_ADD : 94,
+	HASH_SET_CLEAR : 95,
+	HASH_SET_CONTAINS : 96,
+	HASH_SET_COUNT : 97,
+	HASH_SET_REMOVE : 98,
+	SORTED_SET_ADD : 99,
+	SORTED_SET_CLEAR : 100,
+	SORTED_SET_CONTAINS : 101,
+	SORTED_SET_COUNT : 102,
+	SORTED_SET_REMOVE : 103,
+	DICTIONARY_ADD : 104,
+	DICTIONARY_CLEAR : 105,
+	DICTIONARY_CONTAINS_KEY : 106,
+	DICTIONARY_COUNT : 107,
+	DICTIONARY_REMOVE : 108,
+	SORTED_DICTIONARY_CLEAR : 109,
+	SORTED_DICTIONARY_CONTAINS_KEY : 110,
+	SORTED_DICTIONARY_COUNT : 111,
+	SORTED_DICTIONARY_REMOVE : 112,
+	ORDERED_DICTIONARY_CLEAR : 113,
+	ORDERED_DICTIONARY_CONTAINS_KEY : 114,
+	ORDERED_DICTIONARY_COUNT : 115,
+	ORDERED_DICTIONARY_REMOVE : 116,
+	TEXT_WRITER_WRITE : 117,
+	TEXT_WRITER_WRITE_CHAR : 118,
+	TEXT_WRITER_WRITE_CODE_POINT : 119,
+	TEXT_WRITER_WRITE_LINE : 120,
+	CONSOLE_WRITE : 121,
+	CONSOLE_WRITE_LINE : 122,
+	STRING_WRITER_CLEAR : 123,
+	STRING_WRITER_TO_STRING : 124,
+	U_T_F8_GET_BYTE_COUNT : 125,
+	U_T_F8_GET_BYTES : 126,
+	U_T_F8_GET_STRING : 127,
+	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 128,
+	REGEX_COMPILE : 129,
+	REGEX_ESCAPE : 130,
+	REGEX_IS_MATCH_STR : 131,
+	REGEX_IS_MATCH_REGEX : 132,
+	MATCH_FIND_STR : 133,
+	MATCH_FIND_REGEX : 134,
+	MATCH_GET_CAPTURE : 135,
+	MATH_METHOD : 136,
+	MATH_ABS : 137,
+	MATH_CEILING : 138,
+	MATH_CLAMP : 139,
+	MATH_FUSED_MULTIPLY_ADD : 140,
+	MATH_IS_FINITE : 141,
+	MATH_IS_INFINITY : 142,
+	MATH_IS_NA_N : 143,
+	MATH_LOG2 : 144,
+	MATH_MAX_INT : 145,
+	MATH_MAX_DOUBLE : 146,
+	MATH_MIN_INT : 147,
+	MATH_MIN_DOUBLE : 148,
+	MATH_ROUND : 149,
+	MATH_TRUNCATE : 150
 }
 
 class FuDocInline
@@ -6584,6 +6585,7 @@ export class FuSema
 						if ((argsType = args.type) instanceof FuClassType && argsType.isArray() && !(argsType instanceof FuReadWriteClassType) && !argsType.nullable) {
 							let argsElement = argsType.getElementType();
 							if (argsElement.id == FuId.STRING_PTR_TYPE && !argsElement.nullable && args.value == null) {
+								argsType.id = FuId.MAIN_ARGS_TYPE;
 								argsType.class = this.program.system.arrayStorageClass;
 								break;
 							}
@@ -9618,8 +9620,7 @@ export class GenC extends GenCCpp
 
 	#writeForeachArrayIndexing(forEach, symbol)
 	{
-		const klass = forEach.collection.type;
-		if (klass.class.id == FuId.ARRAY_STORAGE_CLASS && !(klass instanceof FuArrayStorageType))
+		if (forEach.collection.type.id == FuId.MAIN_ARGS_TYPE)
 			this.write("argv");
 		else
 			forEach.collection.accept(this, FuPriority.PRIMARY);
@@ -11744,10 +11745,11 @@ export class GenC extends GenCCpp
 		if ((klass = expr.left.type) instanceof FuClassType) {
 			switch (klass.class.id) {
 			case FuId.ARRAY_STORAGE_CLASS:
-				if (klass instanceof FuArrayStorageType)
-					break;
-				this.writeArgsIndexing(expr.right);
-				return;
+				if (klass.id == FuId.MAIN_ARGS_TYPE) {
+					this.writeArgsIndexing(expr.right);
+					return;
+				}
+				break;
 			case FuId.LIST_CLASS:
 				if (klass.getElementType() instanceof FuArrayStorageType) {
 					this.writeChar(40);
@@ -11943,22 +11945,9 @@ export class GenC extends GenCCpp
 
 	visitForeach(statement)
 	{
-		let element = statement.getVar().name;
-		if (statement.collection.type instanceof FuArrayStorageType) {
-			const array = statement.collection.type;
-			this.write("for (int ");
-			this.writeCamelCaseNotKeyword(element);
-			this.write(" = 0; ");
-			this.writeCamelCaseNotKeyword(element);
-			this.write(" < ");
-			this.visitLiteralLong(BigInt(array.length));
-			this.write("; ");
-			this.writeCamelCaseNotKeyword(element);
-			this.write("++)");
-			this.writeChild(statement.body);
-		}
-		else if (statement.collection.type instanceof FuClassType) {
-			const klass = statement.collection.type;
+		let klass;
+		if ((klass = statement.collection.type) instanceof FuClassType) {
+			let element = statement.getVar().name;
 			switch (klass.class.id) {
 			case FuId.STRING_CLASS:
 				this.write("for (");
@@ -11976,9 +11965,19 @@ export class GenC extends GenCCpp
 			case FuId.ARRAY_STORAGE_CLASS:
 				this.write("for (int ");
 				this.writeCamelCaseNotKeyword(element);
-				this.write(" = 1; ");
-				this.writeCamelCaseNotKeyword(element);
-				this.write(" < argc; ");
+				let array;
+				if ((array = klass) instanceof FuArrayStorageType) {
+					this.write(" = 0; ");
+					this.writeCamelCaseNotKeyword(element);
+					this.write(" < ");
+					this.visitLiteralLong(BigInt(array.length));
+				}
+				else {
+					this.write(" = 1; ");
+					this.writeCamelCaseNotKeyword(element);
+					this.write(" < argc");
+				}
+				this.write("; ");
 				this.writeCamelCaseNotKeyword(element);
 				this.write("++)");
 				this.writeChild(statement.body);
@@ -13790,10 +13789,11 @@ export class GenCpp extends GenCCpp
 		if (parent != FuPriority.ASSIGN) {
 			switch (klass.class.id) {
 			case FuId.ARRAY_STORAGE_CLASS:
-				if (klass instanceof FuArrayStorageType)
-					break;
-				this.writeArgsIndexing(expr.right);
-				return;
+				if (klass.id == FuId.MAIN_ARGS_TYPE) {
+					this.writeArgsIndexing(expr.right);
+					return;
+				}
+				break;
 			case FuId.DICTIONARY_CLASS:
 			case FuId.SORTED_DICTIONARY_CLASS:
 			case FuId.ORDERED_DICTIONARY_CLASS:
@@ -14835,7 +14835,7 @@ export class GenCpp extends GenCCpp
 					this.writeTypeAndName(element);
 			}
 			this.write(" : ");
-			if (collectionType.class.id == FuId.ARRAY_STORAGE_CLASS && !(collectionType instanceof FuArrayStorageType)) {
+			if (collectionType.id == FuId.MAIN_ARGS_TYPE) {
 				this.include("span");
 				this.write("std::span(argv + 1, argc - 1)");
 			}

@@ -208,6 +208,7 @@ enum class FuId
 	stringClass,
 	stringPtrType,
 	stringStorageType,
+	mainArgsType,
 	arrayPtrClass,
 	arrayStorageClass,
 	listClass,

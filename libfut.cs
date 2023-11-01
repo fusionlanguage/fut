@@ -1299,6 +1299,7 @@ namespace Fusion
 		StringClass,
 		StringPtrType,
 		StringStorageType,
+		MainArgsType,
 		ArrayPtrClass,
 		ArrayStorageClass,
 		ListClass,
@@ -6271,6 +6272,7 @@ namespace Fusion
 							if (args.Type is FuClassType argsType && argsType.IsArray() && !(argsType is FuReadWriteClassType) && !argsType.Nullable) {
 								FuType argsElement = argsType.GetElementType();
 								if (argsElement.Id == FuId.StringPtrType && !argsElement.Nullable && args.Value == null) {
+									argsType.Id = FuId.MainArgsType;
 									argsType.Class = this.Program.System.ArrayStorageClass;
 									break;
 								}
@@ -9284,8 +9286,7 @@ namespace Fusion
 
 		void WriteForeachArrayIndexing(FuForeach forEach, FuSymbol symbol)
 		{
-			FuClassType klass = (FuClassType) forEach.Collection.Type;
-			if (klass.Class.Id == FuId.ArrayStorageClass && !(klass is FuArrayStorageType))
+			if (forEach.Collection.Type.Id == FuId.MainArgsType)
 				Write("argv");
 			else
 				forEach.Collection.Accept(this, FuPriority.Primary);
@@ -11357,10 +11358,11 @@ namespace Fusion
 			if (expr.Left.Type is FuClassType klass) {
 				switch (klass.Class.Id) {
 				case FuId.ArrayStorageClass:
-					if (klass is FuArrayStorageType)
-						break;
-					WriteArgsIndexing(expr.Right);
-					return;
+					if (klass.Id == FuId.MainArgsType) {
+						WriteArgsIndexing(expr.Right);
+						return;
+					}
+					break;
 				case FuId.ListClass:
 					if (klass.GetElementType() is FuArrayStorageType) {
 						WriteChar('(');
@@ -11555,21 +11557,8 @@ namespace Fusion
 
 		internal override void VisitForeach(FuForeach statement)
 		{
-			string element = statement.GetVar().Name;
-			switch (statement.Collection.Type) {
-			case FuArrayStorageType array:
-				Write("for (int ");
-				WriteCamelCaseNotKeyword(element);
-				Write(" = 0; ");
-				WriteCamelCaseNotKeyword(element);
-				Write(" < ");
-				VisitLiteralLong(array.Length);
-				Write("; ");
-				WriteCamelCaseNotKeyword(element);
-				Write("++)");
-				WriteChild(statement.Body);
-				break;
-			case FuClassType klass:
+			if (statement.Collection.Type is FuClassType klass) {
+				string element = statement.GetVar().Name;
 				switch (klass.Class.Id) {
 				case FuId.StringClass:
 					Write("for (");
@@ -11587,9 +11576,18 @@ namespace Fusion
 				case FuId.ArrayStorageClass:
 					Write("for (int ");
 					WriteCamelCaseNotKeyword(element);
-					Write(" = 1; ");
-					WriteCamelCaseNotKeyword(element);
-					Write(" < argc; ");
+					if (klass is FuArrayStorageType array) {
+						Write(" = 0; ");
+						WriteCamelCaseNotKeyword(element);
+						Write(" < ");
+						VisitLiteralLong(array.Length);
+					}
+					else {
+						Write(" = 1; ");
+						WriteCamelCaseNotKeyword(element);
+						Write(" < argc");
+					}
+					Write("; ");
 					WriteCamelCaseNotKeyword(element);
 					Write("++)");
 					WriteChild(statement.Body);
@@ -11662,11 +11660,9 @@ namespace Fusion
 					NotSupported(statement.Collection, klass.Class.Name);
 					break;
 				}
-				break;
-			default:
-				NotSupported(statement.Collection, statement.Collection.Type.ToString());
-				break;
 			}
+			else
+				NotSupported(statement.Collection, statement.Collection.Type.ToString());
 		}
 
 		internal override void VisitLock(FuLock statement)
@@ -13374,10 +13370,11 @@ namespace Fusion
 			if (parent != FuPriority.Assign) {
 				switch (klass.Class.Id) {
 				case FuId.ArrayStorageClass:
-					if (klass is FuArrayStorageType)
-						break;
-					WriteArgsIndexing(expr.Right);
-					return;
+					if (klass.Id == FuId.MainArgsType) {
+						WriteArgsIndexing(expr.Right);
+						return;
+					}
+					break;
 				case FuId.DictionaryClass:
 				case FuId.SortedDictionaryClass:
 				case FuId.OrderedDictionaryClass:
@@ -14415,7 +14412,7 @@ namespace Fusion
 					}
 				}
 				Write(" : ");
-				if (collectionType.Class.Id == FuId.ArrayStorageClass && !(collectionType is FuArrayStorageType)) {
+				if (collectionType.Id == FuId.MainArgsType) {
 					Include("span");
 					Write("std::span(argv + 1, argc - 1)");
 				}

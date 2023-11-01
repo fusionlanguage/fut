@@ -293,8 +293,7 @@ public class GenC : GenCCpp
 
 	void WriteForeachArrayIndexing!(FuForeach forEach, FuSymbol symbol)
 	{
-		assert forEach.Collection.Type is FuClassType klass;
-		if (klass.Class.Id == FuId.ArrayStorageClass && !(klass is FuArrayStorageType))
+		if (forEach.Collection.Type.Id == FuId.MainArgsType)
 			Write("argv");
 		else
 			forEach.Collection.Accept(this, FuPriority.Primary);
@@ -2386,10 +2385,11 @@ public class GenC : GenCCpp
 		if (expr.Left.Type is FuClassType klass) {
 			switch (klass.Class.Id) {
 			case FuId.ArrayStorageClass:
-				if (klass is FuArrayStorageType)
-					break;
-				WriteArgsIndexing(expr.Right);
-				return;
+				if (klass.Id == FuId.MainArgsType) {
+					WriteArgsIndexing(expr.Right);
+					return;
+				}
+				break;
 			case FuId.ListClass:
 				if (klass.GetElementType() is FuArrayStorageType) {
 					WriteChar('(');
@@ -2584,21 +2584,8 @@ public class GenC : GenCCpp
 
 	internal override void VisitForeach!(FuForeach statement)
 	{
-		string element = statement.GetVar().Name;
-		switch (statement.Collection.Type) {
-		case FuArrayStorageType array:
-			Write("for (int ");
-			WriteCamelCaseNotKeyword(element);
-			Write(" = 0; ");
-			WriteCamelCaseNotKeyword(element);
-			Write(" < ");
-			VisitLiteralLong(array.Length);
-			Write("; ");
-			WriteCamelCaseNotKeyword(element);
-			Write("++)");
-			WriteChild(statement.Body);
-			break;
-		case FuClassType klass:
+		if (statement.Collection.Type is FuClassType klass) {
+			string element = statement.GetVar().Name;
 			switch (klass.Class.Id) {
 			case FuId.StringClass:
 				Write("for (");
@@ -2616,9 +2603,18 @@ public class GenC : GenCCpp
 			case FuId.ArrayStorageClass:
 				Write("for (int ");
 				WriteCamelCaseNotKeyword(element);
-				Write(" = 1; ");
-				WriteCamelCaseNotKeyword(element);
-				Write(" < argc; ");
+				if (klass is FuArrayStorageType array) {
+					Write(" = 0; ");
+					WriteCamelCaseNotKeyword(element);
+					Write(" < ");
+					VisitLiteralLong(array.Length);
+				}
+				else {
+					Write(" = 1; ");
+					WriteCamelCaseNotKeyword(element);
+					Write(" < argc");
+				}
+				Write("; ");
 				WriteCamelCaseNotKeyword(element);
 				Write("++)");
 				WriteChild(statement.Body);
@@ -2691,11 +2687,9 @@ public class GenC : GenCCpp
 				NotSupported(statement.Collection, klass.Class.Name);
 				break;
 			}
-			break;
-		default:
-			NotSupported(statement.Collection, statement.Collection.Type.ToString());
-			break;
 		}
+		else
+			NotSupported(statement.Collection, statement.Collection.Type.ToString());
 	}
 
 	internal override void VisitLock!(FuLock statement)
