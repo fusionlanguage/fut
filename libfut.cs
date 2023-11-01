@@ -2808,7 +2808,7 @@ namespace Fusion
 
 		public FuType GetValueType() => this.TypeArg1;
 
-		public override bool IsArray() => this.Class.Id == FuId.ArrayPtrClass;
+		public override bool IsArray() => this.Class.Id == FuId.ArrayPtrClass || this.Class.Id == FuId.ArrayStorageClass;
 
 		public override FuType GetBaseType() => IsArray() ? GetElementType().GetBaseType() : this;
 
@@ -8785,6 +8785,18 @@ namespace Fusion
 				WriteChar(')');
 		}
 
+		protected void WriteArgsIndexing(FuExpr index)
+		{
+			Write("argv[");
+			if (index is FuLiteralLong literal)
+				VisitLiteralLong(1 + literal.Value);
+			else {
+				Write("1 + ");
+				index.Accept(this, FuPriority.Add);
+			}
+			WriteChar(']');
+		}
+
 		internal override void VisitSymbolReference(FuSymbolReference expr, FuPriority parent)
 		{
 			switch (expr.Symbol.Id) {
@@ -9272,7 +9284,11 @@ namespace Fusion
 
 		void WriteForeachArrayIndexing(FuForeach forEach, FuSymbol symbol)
 		{
-			forEach.Collection.Accept(this, FuPriority.Primary);
+			FuClassType klass = (FuClassType) forEach.Collection.Type;
+			if (klass.Class.Id == FuId.ArrayStorageClass && !(klass is FuArrayStorageType))
+				Write("argv");
+			else
+				forEach.Collection.Accept(this, FuPriority.Primary);
 			WriteChar('[');
 			WriteCamelCaseNotKeyword(symbol.Name);
 			WriteChar(']');
@@ -11340,6 +11356,11 @@ namespace Fusion
 		{
 			if (expr.Left.Type is FuClassType klass) {
 				switch (klass.Class.Id) {
+				case FuId.ArrayStorageClass:
+					if (klass is FuArrayStorageType)
+						break;
+					WriteArgsIndexing(expr.Right);
+					return;
 				case FuId.ListClass:
 					if (klass.GetElementType() is FuArrayStorageType) {
 						WriteChar('(');
@@ -11559,6 +11580,16 @@ namespace Fusion
 					Write("; *");
 					WriteCamelCaseNotKeyword(element);
 					Write(" != '\\0'; ");
+					WriteCamelCaseNotKeyword(element);
+					Write("++)");
+					WriteChild(statement.Body);
+					break;
+				case FuId.ArrayStorageClass:
+					Write("for (int ");
+					WriteCamelCaseNotKeyword(element);
+					Write(" = 1; ");
+					WriteCamelCaseNotKeyword(element);
+					Write(" < argc; ");
 					WriteCamelCaseNotKeyword(element);
 					Write("++)");
 					WriteChild(statement.Body);
@@ -13342,6 +13373,11 @@ namespace Fusion
 			FuClassType klass = (FuClassType) expr.Left.Type;
 			if (parent != FuPriority.Assign) {
 				switch (klass.Class.Id) {
+				case FuId.ArrayStorageClass:
+					if (klass is FuArrayStorageType)
+						break;
+					WriteArgsIndexing(expr.Right);
+					return;
 				case FuId.DictionaryClass:
 				case FuId.SortedDictionaryClass:
 				case FuId.OrderedDictionaryClass:
@@ -14379,7 +14415,12 @@ namespace Fusion
 					}
 				}
 				Write(" : ");
-				WriteCollectionObject(statement.Collection, FuPriority.Argument);
+				if (collectionType.Class.Id == FuId.ArrayStorageClass && !(collectionType is FuArrayStorageType)) {
+					Include("span");
+					Write("std::span(argv + 1, argc - 1)");
+				}
+				else
+					WriteCollectionObject(statement.Collection, FuPriority.Argument);
 			}
 			WriteChar(')');
 			WriteChild(statement.Body);

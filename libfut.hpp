@@ -1954,6 +1954,7 @@ protected:
 	int getLiteralChars() const override;
 	virtual void writeNumericType(FuId id);
 	void writeArrayLength(const FuExpr * expr, FuPriority parent) override;
+	void writeArgsIndexing(const FuExpr * index);
 	static const FuExpr * isStringEmpty(const FuBinaryExpr * expr);
 	virtual void writeArrayPtr(const FuExpr * expr, FuPriority parent) = 0;
 	void writeArrayPtrAdd(const FuExpr * array, const FuExpr * index);

@@ -79,6 +79,18 @@ public abstract class GenCCpp : GenCCppD
 			WriteChar(')');
 	}
 
+	protected void WriteArgsIndexing!(FuExpr index)
+	{
+		Write("argv[");
+		if (index is FuLiteralLong literal)
+			VisitLiteralLong(1 + literal.Value);
+		else {
+			Write("1 + ");
+			index.Accept(this, FuPriority.Add);
+		}
+		WriteChar(']');
+	}
+
 	internal override void VisitSymbolReference!(FuSymbolReference expr, FuPriority parent)
 	{
 		switch (expr.Symbol.Id) {

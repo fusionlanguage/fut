@@ -457,6 +457,11 @@ public class GenCpp : GenCCpp
 		assert expr.Left.Type is FuClassType klass;
 		if (parent != FuPriority.Assign) {
 			switch (klass.Class.Id) {
+			case FuId.ArrayStorageClass:
+				if (klass is FuArrayStorageType)
+					break;
+				WriteArgsIndexing(expr.Right);
+				return;
 			case FuId.DictionaryClass:
 			case FuId.SortedDictionaryClass:
 			case FuId.OrderedDictionaryClass:
@@ -1502,7 +1507,12 @@ public class GenCpp : GenCCpp
 				}
 			}
 			Write(" : ");
-			WriteCollectionObject(statement.Collection, FuPriority.Argument);
+			if (collectionType.Class.Id == FuId.ArrayStorageClass && !(collectionType is FuArrayStorageType)) {
+				Include("span");
+				Write("std::span(argv + 1, argc - 1)");
+			}
+			else
+				WriteCollectionObject(statement.Collection, FuPriority.Argument);
 		}
 		WriteChar(')');
 		WriteChild(statement.Body);

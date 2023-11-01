@@ -1252,7 +1252,7 @@ public class FuClassType : FuType
 	public FuType# GetElementType() => this.TypeArg0;
 	public FuType GetKeyType() => this.TypeArg0;
 	public FuType# GetValueType() => this.TypeArg1;
-	public override bool IsArray() => this.Class.Id == FuId.ArrayPtrClass;
+	public override bool IsArray() => this.Class.Id == FuId.ArrayPtrClass || this.Class.Id == FuId.ArrayStorageClass;
 	public override FuType GetBaseType() => IsArray() ? GetElementType().GetBaseType() : this;
 
 	internal bool EqualTypeArguments(FuClassType right)

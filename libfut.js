@@ -2891,7 +2891,7 @@ export class FuClassType extends FuType
 
 	isArray()
 	{
-		return this.class.id == FuId.ARRAY_PTR_CLASS;
+		return this.class.id == FuId.ARRAY_PTR_CLASS || this.class.id == FuId.ARRAY_STORAGE_CLASS;
 	}
 
 	getBaseType()
@@ -9122,6 +9122,19 @@ export class GenCCpp extends GenCCppD
 			this.writeChar(41);
 	}
 
+	writeArgsIndexing(index)
+	{
+		this.write("argv[");
+		let literal;
+		if ((literal = index) instanceof FuLiteralLong)
+			this.visitLiteralLong(1n + literal.value);
+		else {
+			this.write("1 + ");
+			index.accept(this, FuPriority.ADD);
+		}
+		this.writeChar(93);
+	}
+
 	visitSymbolReference(expr, parent)
 	{
 		switch (expr.symbol.id) {
@@ -9605,7 +9618,11 @@ export class GenC extends GenCCpp
 
 	#writeForeachArrayIndexing(forEach, symbol)
 	{
-		forEach.collection.accept(this, FuPriority.PRIMARY);
+		const klass = forEach.collection.type;
+		if (klass.class.id == FuId.ARRAY_STORAGE_CLASS && !(klass instanceof FuArrayStorageType))
+			this.write("argv");
+		else
+			forEach.collection.accept(this, FuPriority.PRIMARY);
 		this.writeChar(91);
 		this.writeCamelCaseNotKeyword(symbol.name);
 		this.writeChar(93);
@@ -11726,6 +11743,11 @@ export class GenC extends GenCCpp
 		let klass;
 		if ((klass = expr.left.type) instanceof FuClassType) {
 			switch (klass.class.id) {
+			case FuId.ARRAY_STORAGE_CLASS:
+				if (klass instanceof FuArrayStorageType)
+					break;
+				this.writeArgsIndexing(expr.right);
+				return;
 			case FuId.LIST_CLASS:
 				if (klass.getElementType() instanceof FuArrayStorageType) {
 					this.writeChar(40);
@@ -11947,6 +11969,16 @@ export class GenC extends GenCCpp
 				this.write("; *");
 				this.writeCamelCaseNotKeyword(element);
 				this.write(" != '\\0'; ");
+				this.writeCamelCaseNotKeyword(element);
+				this.write("++)");
+				this.writeChild(statement.body);
+				break;
+			case FuId.ARRAY_STORAGE_CLASS:
+				this.write("for (int ");
+				this.writeCamelCaseNotKeyword(element);
+				this.write(" = 1; ");
+				this.writeCamelCaseNotKeyword(element);
+				this.write(" < argc; ");
 				this.writeCamelCaseNotKeyword(element);
 				this.write("++)");
 				this.writeChild(statement.body);
@@ -13757,6 +13789,11 @@ export class GenCpp extends GenCCpp
 		const klass = expr.left.type;
 		if (parent != FuPriority.ASSIGN) {
 			switch (klass.class.id) {
+			case FuId.ARRAY_STORAGE_CLASS:
+				if (klass instanceof FuArrayStorageType)
+					break;
+				this.writeArgsIndexing(expr.right);
+				return;
 			case FuId.DICTIONARY_CLASS:
 			case FuId.SORTED_DICTIONARY_CLASS:
 			case FuId.ORDERED_DICTIONARY_CLASS:
@@ -14798,7 +14835,12 @@ export class GenCpp extends GenCCpp
 					this.writeTypeAndName(element);
 			}
 			this.write(" : ");
-			this.#writeCollectionObject(statement.collection, FuPriority.ARGUMENT);
+			if (collectionType.class.id == FuId.ARRAY_STORAGE_CLASS && !(collectionType instanceof FuArrayStorageType)) {
+				this.include("span");
+				this.write("std::span(argv + 1, argc - 1)");
+			}
+			else
+				this.#writeCollectionObject(statement.collection, FuPriority.ARGUMENT);
 		}
 		this.writeChar(41);
 		this.writeChild(statement.body);

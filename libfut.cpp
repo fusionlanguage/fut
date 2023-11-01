@@ -2211,7 +2211,7 @@ std::shared_ptr<FuType> FuClassType::getValueType() const
 
 bool FuClassType::isArray() const
 {
-	return this->class_->id == FuId::arrayPtrClass;
+	return this->class_->id == FuId::arrayPtrClass || this->class_->id == FuId::arrayStorageClass;
 }
 
 const FuType * FuClassType::getBaseType() const
@@ -8595,6 +8595,18 @@ void GenCCpp::writeArrayLength(const FuExpr * expr, FuPriority parent)
 		writeChar(')');
 }
 
+void GenCCpp::writeArgsIndexing(const FuExpr * index)
+{
+	write("argv[");
+	if (const FuLiteralLong *literal = dynamic_cast<const FuLiteralLong *>(index))
+		visitLiteralLong(1 + literal->value);
+	else {
+		write("1 + ");
+		index->accept(this, FuPriority::add);
+	}
+	writeChar(']');
+}
+
 void GenCCpp::visitSymbolReference(const FuSymbolReference * expr, FuPriority parent)
 {
 	switch (expr->symbol->id) {
@@ -8985,7 +8997,11 @@ void GenC::writeName(const FuSymbol * symbol)
 
 void GenC::writeForeachArrayIndexing(const FuForeach * forEach, const FuSymbol * symbol)
 {
-	forEach->collection->accept(this, FuPriority::primary);
+	const FuClassType * klass = static_cast<const FuClassType *>(forEach->collection->type.get());
+	if (klass->class_->id == FuId::arrayStorageClass && !dynamic_cast<const FuArrayStorageType *>(klass))
+		write("argv");
+	else
+		forEach->collection->accept(this, FuPriority::primary);
 	writeChar('[');
 	writeCamelCaseNotKeyword(symbol->name);
 	writeChar(']');
@@ -11071,6 +11087,11 @@ void GenC::writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent)
 {
 	if (const FuClassType *klass = dynamic_cast<const FuClassType *>(expr->left->type.get())) {
 		switch (klass->class_->id) {
+		case FuId::arrayStorageClass:
+			if (dynamic_cast<const FuArrayStorageType *>(klass))
+				break;
+			writeArgsIndexing(expr->right.get());
+			return;
 		case FuId::listClass:
 			if (dynamic_cast<const FuArrayStorageType *>(klass->getElementType().get())) {
 				writeChar('(');
@@ -11291,6 +11312,16 @@ void GenC::visitForeach(const FuForeach * statement)
 			write("; *");
 			writeCamelCaseNotKeyword(element);
 			write(" != '\\0'; ");
+			writeCamelCaseNotKeyword(element);
+			write("++)");
+			writeChild(statement->body.get());
+			break;
+		case FuId::arrayStorageClass:
+			write("for (int ");
+			writeCamelCaseNotKeyword(element);
+			write(" = 1; ");
+			writeCamelCaseNotKeyword(element);
+			write(" < argc; ");
 			writeCamelCaseNotKeyword(element);
 			write("++)");
 			writeChild(statement->body.get());
@@ -12969,6 +13000,11 @@ void GenCpp::writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent)
 	const FuClassType * klass = static_cast<const FuClassType *>(expr->left->type.get());
 	if (parent != FuPriority::assign) {
 		switch (klass->class_->id) {
+		case FuId::arrayStorageClass:
+			if (dynamic_cast<const FuArrayStorageType *>(klass))
+				break;
+			writeArgsIndexing(expr->right.get());
+			return;
 		case FuId::dictionaryClass:
 		case FuId::sortedDictionaryClass:
 		case FuId::orderedDictionaryClass:
@@ -14012,7 +14048,12 @@ void GenCpp::visitForeach(const FuForeach * statement)
 				writeTypeAndName(element);
 		}
 		write(" : ");
-		writeCollectionObject(statement->collection.get(), FuPriority::argument);
+		if (collectionType->class_->id == FuId::arrayStorageClass && !dynamic_cast<const FuArrayStorageType *>(collectionType)) {
+			include("span");
+			write("std::span(argv + 1, argc - 1)");
+		}
+		else
+			writeCollectionObject(statement->collection.get(), FuPriority::argument);
 	}
 	writeChar(')');
 	writeChild(statement->body.get());

@@ -293,7 +293,11 @@ public class GenC : GenCCpp
 
 	void WriteForeachArrayIndexing!(FuForeach forEach, FuSymbol symbol)
 	{
-		forEach.Collection.Accept(this, FuPriority.Primary);
+		assert forEach.Collection.Type is FuClassType klass;
+		if (klass.Class.Id == FuId.ArrayStorageClass && !(klass is FuArrayStorageType))
+			Write("argv");
+		else
+			forEach.Collection.Accept(this, FuPriority.Primary);
 		WriteChar('[');
 		WriteCamelCaseNotKeyword(symbol.Name);
 		WriteChar(']');
@@ -2381,6 +2385,11 @@ public class GenC : GenCCpp
 	{
 		if (expr.Left.Type is FuClassType klass) {
 			switch (klass.Class.Id) {
+			case FuId.ArrayStorageClass:
+				if (klass is FuArrayStorageType)
+					break;
+				WriteArgsIndexing(expr.Right);
+				return;
 			case FuId.ListClass:
 				if (klass.GetElementType() is FuArrayStorageType) {
 					WriteChar('(');
@@ -2600,6 +2609,16 @@ public class GenC : GenCCpp
 				Write("; *");
 				WriteCamelCaseNotKeyword(element);
 				Write(" != '\\0'; ");
+				WriteCamelCaseNotKeyword(element);
+				Write("++)");
+				WriteChild(statement.Body);
+				break;
+			case FuId.ArrayStorageClass:
+				Write("for (int ");
+				WriteCamelCaseNotKeyword(element);
+				Write(" = 1; ");
+				WriteCamelCaseNotKeyword(element);
+				Write(" < argc; ");
 				WriteCamelCaseNotKeyword(element);
 				Write("++)");
 				WriteChild(statement.Body);
