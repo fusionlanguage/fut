@@ -21623,7 +21623,7 @@ void GenSwift::writeMain(const FuMethod * main)
 	write(main->parent->name);
 	write(".main(");
 	if (main->parameters.count() == 1)
-		write("Array(CommandLine.arguments[1...])");
+		write("ArrayRef(Array(CommandLine.arguments[1...]))");
 	if (main->type->id == FuId::intType)
 		write("))");
 	writeCharLine(')');

@@ -22412,7 +22412,7 @@ namespace Fusion
 			Write(main.Parent.Name);
 			Write(".main(");
 			if (main.Parameters.Count() == 1)
-				Write("Array(CommandLine.arguments[1...])");
+				Write("ArrayRef(Array(CommandLine.arguments[1...]))");
 			if (main.Type.Id == FuId.IntType)
 				Write("))");
 			WriteCharLine(')');

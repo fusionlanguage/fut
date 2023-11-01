@@ -22975,7 +22975,7 @@ export class GenSwift extends GenPySwift
 		this.write(main.parent.name);
 		this.write(".main(");
 		if (main.parameters.count() == 1)
-			this.write("Array(CommandLine.arguments[1...])");
+			this.write("ArrayRef(Array(CommandLine.arguments[1...]))");
 		if (main.type.id == FuId.INT_TYPE)
 			this.write("))");
 		this.writeCharLine(41);
