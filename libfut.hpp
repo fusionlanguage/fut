@@ -1972,6 +1972,7 @@ protected:
 	void createImplementationFile(const FuProgram * program, std::string_view headerExt);
 public:
 	void visitSymbolReference(const FuSymbolReference * expr, FuPriority parent) override;
+	void visitReturn(const FuReturn * statement) override;
 	void visitSwitch(const FuSwitch * statement) override;
 private:
 	void writeCIncludes();

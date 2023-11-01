@@ -2695,7 +2695,10 @@ public class GenC : GenCCpp
 	{
 		if (statement.Value == null) {
 			WriteDestructAll();
-			WriteLine(this.CurrentMethod.Throws ? "return true;" : "return;");
+			if (this.CurrentMethod.Throws)
+				WriteLine("return true;");
+			else
+				base.VisitReturn(statement);
 		}
 		else if (statement.Value is FuLiteral || (this.VarsToDestruct.Count == 0 && !ContainsTemporariesToDestruct(statement.Value))) {
 			WriteDestructAll();

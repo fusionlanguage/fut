@@ -8866,6 +8866,14 @@ namespace Fusion
 				WriteUnreachable(statement);
 		}
 
+		internal override void VisitReturn(FuReturn statement)
+		{
+			if (statement.Value == null && this.CurrentMethod.Id == FuId.Main)
+				WriteLine("return 0;");
+			else
+				base.VisitReturn(statement);
+		}
+
 		internal override void VisitSwitch(FuSwitch statement)
 		{
 			if (statement.Value.Type is FuStringType || statement.HasWhen())
@@ -11618,7 +11626,10 @@ namespace Fusion
 		{
 			if (statement.Value == null) {
 				WriteDestructAll();
-				WriteLine(this.CurrentMethod.Throws ? "return true;" : "return;");
+				if (this.CurrentMethod.Throws)
+					WriteLine("return true;");
+				else
+					base.VisitReturn(statement);
 			}
 			else if (statement.Value is FuLiteral || (this.VarsToDestruct.Count == 0 && !ContainsTemporariesToDestruct(statement.Value))) {
 				WriteDestructAll();

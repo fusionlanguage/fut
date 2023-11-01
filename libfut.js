@@ -9211,6 +9211,14 @@ export class GenCCpp extends GenCCppD
 			this.writeUnreachable(statement);
 	}
 
+	visitReturn(statement)
+	{
+		if (statement.value == null && this.currentMethod.id == FuId.MAIN)
+			this.writeLine("return 0;");
+		else
+			super.visitReturn(statement);
+	}
+
 	visitSwitch(statement)
 	{
 		if (statement.value.type instanceof FuStringType || statement.hasWhen())
@@ -11999,7 +12007,10 @@ export class GenC extends GenCCpp
 	{
 		if (statement.value == null) {
 			this.#writeDestructAll();
-			this.writeLine(this.currentMethod.throws ? "return true;" : "return;");
+			if (this.currentMethod.throws)
+				this.writeLine("return true;");
+			else
+				super.visitReturn(statement);
 		}
 		else if (statement.value instanceof FuLiteral || (this.#varsToDestruct.length == 0 && !GenC.#containsTemporariesToDestruct(statement.value))) {
 			this.#writeDestructAll();

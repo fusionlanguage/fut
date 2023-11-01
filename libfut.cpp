@@ -8684,6 +8684,14 @@ void GenCCpp::writeAssert(const FuAssert * statement)
 		writeUnreachable(statement);
 }
 
+void GenCCpp::visitReturn(const FuReturn * statement)
+{
+	if (statement->value == nullptr && this->currentMethod->id == FuId::main)
+		writeLine("return 0;");
+	else
+		GenBase::visitReturn(statement);
+}
+
 void GenCCpp::visitSwitch(const FuSwitch * statement)
 {
 	if (dynamic_cast<const FuStringType *>(statement->value->type.get()) || statement->hasWhen())
@@ -11346,12 +11354,15 @@ void GenC::visitReturn(const FuReturn * statement)
 {
 	if (statement->value == nullptr) {
 		writeDestructAll();
-		writeLine(this->currentMethod->throws ? "return true;" : "return;");
+		if (this->currentMethod->throws)
+			writeLine("return true;");
+		else
+			GenCCpp::visitReturn(statement);
 	}
 	else if (dynamic_cast<const FuLiteral *>(statement->value.get()) || (std::ssize(this->varsToDestruct) == 0 && !containsTemporariesToDestruct(statement->value.get()))) {
 		writeDestructAll();
 		writeCTemporaries(statement->value.get());
-		GenBase::visitReturn(statement);
+		GenCCpp::visitReturn(statement);
 	}
 	else {
 		const FuSymbolReference * symbol;
@@ -11368,7 +11379,7 @@ void GenC::visitReturn(const FuReturn * statement)
 				return;
 			}
 			writeDestructAll();
-			GenBase::visitReturn(statement);
+			GenCCpp::visitReturn(statement);
 			return;
 		}
 		writeCTemporaries(statement->value.get());
