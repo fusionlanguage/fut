@@ -1282,27 +1282,27 @@ export const FuId = {
 	STRING_CLASS : 17,
 	STRING_PTR_TYPE : 18,
 	STRING_STORAGE_TYPE : 19,
-	ARRAY_PTR_CLASS : 20,
-	ARRAY_STORAGE_CLASS : 21,
-	LIST_CLASS : 22,
-	QUEUE_CLASS : 23,
-	STACK_CLASS : 24,
-	HASH_SET_CLASS : 25,
-	SORTED_SET_CLASS : 26,
-	DICTIONARY_CLASS : 27,
-	SORTED_DICTIONARY_CLASS : 28,
-	ORDERED_DICTIONARY_CLASS : 29,
-	TEXT_WRITER_CLASS : 30,
-	STRING_WRITER_CLASS : 31,
-	REGEX_OPTIONS_ENUM : 32,
-	REGEX_CLASS : 33,
-	MATCH_CLASS : 34,
-	LOCK_CLASS : 35,
-	STRING_LENGTH : 36,
-	ARRAY_LENGTH : 37,
-	CONSOLE_ERROR : 38,
-	MAIN : 39,
-	MAIN_ARGS : 40,
+	MAIN_ARGS_TYPE : 20,
+	ARRAY_PTR_CLASS : 21,
+	ARRAY_STORAGE_CLASS : 22,
+	LIST_CLASS : 23,
+	QUEUE_CLASS : 24,
+	STACK_CLASS : 25,
+	HASH_SET_CLASS : 26,
+	SORTED_SET_CLASS : 27,
+	DICTIONARY_CLASS : 28,
+	SORTED_DICTIONARY_CLASS : 29,
+	ORDERED_DICTIONARY_CLASS : 30,
+	TEXT_WRITER_CLASS : 31,
+	STRING_WRITER_CLASS : 32,
+	REGEX_OPTIONS_ENUM : 33,
+	REGEX_CLASS : 34,
+	MATCH_CLASS : 35,
+	LOCK_CLASS : 36,
+	STRING_LENGTH : 37,
+	ARRAY_LENGTH : 38,
+	CONSOLE_ERROR : 39,
+	MAIN : 40,
 	CLASS_TO_STRING : 41,
 	MATCH_START : 42,
 	MATCH_END : 43,
@@ -6585,7 +6585,7 @@ export class FuSema
 						if ((argsType = args.type) instanceof FuClassType && argsType.isArray() && !(argsType instanceof FuReadWriteClassType) && !argsType.nullable) {
 							let argsElement = argsType.getElementType();
 							if (argsElement.id == FuId.STRING_PTR_TYPE && !argsElement.nullable && args.value == null) {
-								args.id = FuId.MAIN_ARGS;
+								argsType.id = FuId.MAIN_ARGS_TYPE;
 								argsType.class = this.program.system.arrayStorageClass;
 								break;
 							}
@@ -9620,7 +9620,7 @@ export class GenC extends GenCCpp
 
 	#writeForeachArrayIndexing(forEach, symbol)
 	{
-		if (GenC.isReferenceTo(forEach.collection, FuId.MAIN_ARGS))
+		if (forEach.collection.type.id == FuId.MAIN_ARGS_TYPE)
 			this.write("argv");
 		else
 			forEach.collection.accept(this, FuPriority.PRIMARY);
@@ -9692,9 +9692,6 @@ export class GenC extends GenCCpp
 		case FuId.CONSOLE_ERROR:
 			this.include("stdio.h");
 			this.write("stderr");
-			break;
-		case FuId.MAIN_ARGS:
-			this.write("(const char * const *) (argv + 1)");
 			break;
 		case FuId.LIST_COUNT:
 		case FuId.STACK_COUNT:
@@ -11748,7 +11745,7 @@ export class GenC extends GenCCpp
 		if ((klass = expr.left.type) instanceof FuClassType) {
 			switch (klass.class.id) {
 			case FuId.ARRAY_STORAGE_CLASS:
-				if (GenC.isReferenceTo(expr.left, FuId.MAIN_ARGS)) {
+				if (klass.id == FuId.MAIN_ARGS_TYPE) {
 					this.writeArgsIndexing(expr.right);
 					return;
 				}
@@ -13792,7 +13789,7 @@ export class GenCpp extends GenCCpp
 		if (parent != FuPriority.ASSIGN) {
 			switch (klass.class.id) {
 			case FuId.ARRAY_STORAGE_CLASS:
-				if (GenCpp.isReferenceTo(expr.left, FuId.MAIN_ARGS)) {
+				if (klass.id == FuId.MAIN_ARGS_TYPE) {
 					this.writeArgsIndexing(expr.right);
 					return;
 				}
@@ -14645,9 +14642,6 @@ export class GenCpp extends GenCCpp
 		case FuId.CONSOLE_ERROR:
 			this.write("std::cerr");
 			break;
-		case FuId.MAIN_ARGS:
-			this.notSupported(expr, "args");
-			break;
 		case FuId.LIST_COUNT:
 		case FuId.QUEUE_COUNT:
 		case FuId.STACK_COUNT:
@@ -14841,7 +14835,7 @@ export class GenCpp extends GenCCpp
 					this.writeTypeAndName(element);
 			}
 			this.write(" : ");
-			if (GenCpp.isReferenceTo(statement.collection, FuId.MAIN_ARGS)) {
+			if (collectionType.id == FuId.MAIN_ARGS_TYPE) {
 				this.include("span");
 				this.write("std::span(argv + 1, argc - 1)");
 			}

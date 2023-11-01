@@ -1299,6 +1299,7 @@ namespace Fusion
 		StringClass,
 		StringPtrType,
 		StringStorageType,
+		MainArgsType,
 		ArrayPtrClass,
 		ArrayStorageClass,
 		ListClass,
@@ -1319,7 +1320,6 @@ namespace Fusion
 		ArrayLength,
 		ConsoleError,
 		Main,
-		MainArgs,
 		ClassToString,
 		MatchStart,
 		MatchEnd,
@@ -6272,7 +6272,7 @@ namespace Fusion
 							if (args.Type is FuClassType argsType && argsType.IsArray() && !(argsType is FuReadWriteClassType) && !argsType.Nullable) {
 								FuType argsElement = argsType.GetElementType();
 								if (argsElement.Id == FuId.StringPtrType && !argsElement.Nullable && args.Value == null) {
-									args.Id = FuId.MainArgs;
+									argsType.Id = FuId.MainArgsType;
 									argsType.Class = this.Program.System.ArrayStorageClass;
 									break;
 								}
@@ -9286,7 +9286,7 @@ namespace Fusion
 
 		void WriteForeachArrayIndexing(FuForeach forEach, FuSymbol symbol)
 		{
-			if (IsReferenceTo(forEach.Collection, FuId.MainArgs))
+			if (forEach.Collection.Type.Id == FuId.MainArgsType)
 				Write("argv");
 			else
 				forEach.Collection.Accept(this, FuPriority.Primary);
@@ -9357,9 +9357,6 @@ namespace Fusion
 			case FuId.ConsoleError:
 				Include("stdio.h");
 				Write("stderr");
-				break;
-			case FuId.MainArgs:
-				Write("(const char * const *) (argv + 1)");
 				break;
 			case FuId.ListCount:
 			case FuId.StackCount:
@@ -11361,7 +11358,7 @@ namespace Fusion
 			if (expr.Left.Type is FuClassType klass) {
 				switch (klass.Class.Id) {
 				case FuId.ArrayStorageClass:
-					if (IsReferenceTo(expr.Left, FuId.MainArgs)) {
+					if (klass.Id == FuId.MainArgsType) {
 						WriteArgsIndexing(expr.Right);
 						return;
 					}
@@ -13373,7 +13370,7 @@ namespace Fusion
 			if (parent != FuPriority.Assign) {
 				switch (klass.Class.Id) {
 				case FuId.ArrayStorageClass:
-					if (IsReferenceTo(expr.Left, FuId.MainArgs)) {
+					if (klass.Id == FuId.MainArgsType) {
 						WriteArgsIndexing(expr.Right);
 						return;
 					}
@@ -14224,9 +14221,6 @@ namespace Fusion
 			case FuId.ConsoleError:
 				Write("std::cerr");
 				break;
-			case FuId.MainArgs:
-				NotSupported(expr, "args");
-				break;
 			case FuId.ListCount:
 			case FuId.QueueCount:
 			case FuId.StackCount:
@@ -14418,7 +14412,7 @@ namespace Fusion
 					}
 				}
 				Write(" : ");
-				if (IsReferenceTo(statement.Collection, FuId.MainArgs)) {
+				if (collectionType.Id == FuId.MainArgsType) {
 					Include("span");
 					Write("std::span(argv + 1, argc - 1)");
 				}

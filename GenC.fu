@@ -293,7 +293,7 @@ public class GenC : GenCCpp
 
 	void WriteForeachArrayIndexing!(FuForeach forEach, FuSymbol symbol)
 	{
-		if (IsReferenceTo(forEach.Collection, FuId.MainArgs))
+		if (forEach.Collection.Type.Id == FuId.MainArgsType)
 			Write("argv");
 		else
 			forEach.Collection.Accept(this, FuPriority.Primary);
@@ -364,9 +364,6 @@ public class GenC : GenCCpp
 		case FuId.ConsoleError:
 			Include("stdio.h");
 			Write("stderr");
-			break;
-		case FuId.MainArgs:
-			Write("(const char * const *) (argv + 1)");
 			break;
 		case FuId.ListCount:
 		case FuId.StackCount:
@@ -2388,7 +2385,7 @@ public class GenC : GenCCpp
 		if (expr.Left.Type is FuClassType klass) {
 			switch (klass.Class.Id) {
 			case FuId.ArrayStorageClass:
-				if (IsReferenceTo(expr.Left, FuId.MainArgs)) {
+				if (klass.Id == FuId.MainArgsType) {
 					WriteArgsIndexing(expr.Right);
 					return;
 				}

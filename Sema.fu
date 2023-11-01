@@ -2058,11 +2058,11 @@ public class FuSema
 					case 0:
 						break;
 					case 1:
-						FuVar! args = method.Parameters.FirstParameter();
+						FuVar args = method.Parameters.FirstParameter();
 						if (args.Type is FuClassType! argsType && argsType.IsArray() && !(argsType is FuReadWriteClassType) && !argsType.Nullable) {
 							FuType argsElement = argsType.GetElementType();
 							if (argsElement.Id == FuId.StringPtrType && !argsElement.Nullable && args.Value == null) {
-								args.Id = FuId.MainArgs;
+								argsType.Id = FuId.MainArgsType;
 								argsType.Class = this.Program.System.ArrayStorageClass;
 								break;
 							}
