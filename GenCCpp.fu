@@ -70,6 +70,15 @@ public abstract class GenCCpp : GenCCppD
 		}
 	}
 
+	protected override void WriteArrayLength!(FuExpr expr, FuPriority parent)
+	{
+		if (parent > FuPriority.Add)
+			WriteChar('(');
+		Write("argc - 1");
+		if (parent > FuPriority.Add)
+			WriteChar(')');
+	}
+
 	internal override void VisitSymbolReference!(FuSymbolReference expr, FuPriority parent)
 	{
 		switch (expr.Symbol.Id) {

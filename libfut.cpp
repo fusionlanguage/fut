@@ -4272,10 +4272,9 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 		default:
 			switch (expr->symbol->id) {
 			case FuId::arrayLength:
-				{
-					const FuArrayStorageType * arrayStorage = static_cast<const FuArrayStorageType *>(left->type.get());
+				if (const FuArrayStorageType *arrayStorage = dynamic_cast<const FuArrayStorageType *>(left->type.get()))
 					return toLiteralLong(expr.get(), arrayStorage->length);
-				}
+				break;
 			case FuId::stringLength:
 				if (const FuLiteralString *leftLiteral = dynamic_cast<const FuLiteralString *>(left.get())) {
 					int length = leftLiteral->getAsciiLength();
@@ -6139,11 +6138,27 @@ void FuSema::resolveTypes(FuClass * klass)
 					reportError(method, "Main method must be 'public static'");
 				if (method->type->id != FuId::voidType && method->type->id != FuId::intType)
 					reportError(method, "Main method must return 'void' or 'int'");
-				const FuClassType * argsType;
-				if (method->parameters.count() == 0 || (method->parameters.count() == 1 && (argsType = dynamic_cast<const FuClassType *>(method->parameters.first->type.get())) && argsType->isArray() && !dynamic_cast<const FuReadWriteClassType *>(argsType) && !argsType->nullable && argsType->getElementType()->id == FuId::stringPtrType && !argsType->getElementType()->nullable && method->parameters.firstParameter()->value == nullptr)) {
-				}
-				else
+				switch (method->parameters.count()) {
+				case 0:
+					break;
+				case 1:
+					{
+						const FuVar * args = method->parameters.firstParameter();
+						FuClassType * argsType;
+						if ((argsType = dynamic_cast<FuClassType *>(args->type.get())) && argsType->isArray() && !dynamic_cast<const FuReadWriteClassType *>(argsType) && !argsType->nullable) {
+							const FuType * argsElement = argsType->getElementType().get();
+							if (argsElement->id == FuId::stringPtrType && !argsElement->nullable && args->value == nullptr) {
+								argsType->class_ = this->program->system->arrayStorageClass.get();
+								break;
+							}
+						}
+						reportError(method, "Main method parameter must be 'string[]'");
+						break;
+					}
+				default:
 					reportError(method, "Main method must have no parameters or one 'string[]' parameter");
+					break;
+				}
 				if (this->program->main != nullptr)
 					reportError(method, "Duplicate Main method");
 				else {
@@ -7412,6 +7427,11 @@ void GenBase::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 	}
 }
 
+void GenBase::writeArrayLength(const FuExpr * expr, FuPriority parent)
+{
+	writePostfix(expr, ".length");
+}
+
 bool GenBase::isReferenceTo(const FuExpr * expr, FuId id)
 {
 	const FuSymbolReference * symbol;
@@ -7449,6 +7469,8 @@ void GenBase::visitSymbolReference(const FuSymbolReference * expr, FuPriority pa
 		writeLocalName(expr->symbol, parent);
 	else if (expr->symbol->id == FuId::stringLength)
 		writeStringLength(expr->left.get());
+	else if (expr->symbol->id == FuId::arrayLength)
+		writeArrayLength(expr->left.get(), parent);
 	else {
 		expr->left->accept(this, FuPriority::primary);
 		writeMemberOp(expr->left.get(), expr);
@@ -8562,6 +8584,15 @@ void GenCCpp::writeNumericType(FuId id)
 	default:
 		std::abort();
 	}
+}
+
+void GenCCpp::writeArrayLength(const FuExpr * expr, FuPriority parent)
+{
+	if (parent > FuPriority::add)
+		writeChar('(');
+	write("argc - 1");
+	if (parent > FuPriority::add)
+		writeChar(')');
 }
 
 void GenCCpp::visitSymbolReference(const FuSymbolReference * expr, FuPriority parent)
@@ -14722,6 +14753,11 @@ void GenCs::writeStringLength(const FuExpr * expr)
 	writePostfix(expr, ".Length");
 }
 
+void GenCs::writeArrayLength(const FuExpr * expr, FuPriority parent)
+{
+	writePostfix(expr, ".Length");
+}
+
 void GenCs::visitSymbolReference(const FuSymbolReference * expr, FuPriority parent)
 {
 	switch (expr->symbol->id) {
@@ -20063,6 +20099,7 @@ void GenSwift::writeClassName(const FuClassType * klass)
 		write("String");
 		break;
 	case FuId::arrayPtrClass:
+	case FuId::arrayStorageClass:
 		this->arrayRef = true;
 		write("ArrayRef<");
 		writeType(klass->getElementType().get());
@@ -20230,6 +20267,11 @@ void GenSwift::writeStringLength(const FuExpr * expr)
 {
 	writeUnwrapped(expr, FuPriority::primary, true);
 	write(".count");
+}
+
+void GenSwift::writeArrayLength(const FuExpr * expr, FuPriority parent)
+{
+	writePostfix(expr, ".array.count");
 }
 
 void GenSwift::writeCharAt(const FuBinaryExpr * expr)
@@ -21874,6 +21916,11 @@ void GenPy::writeCharAt(const FuBinaryExpr * expr)
 }
 
 void GenPy::writeStringLength(const FuExpr * expr)
+{
+	writeCall("len", expr);
+}
+
+void GenPy::writeArrayLength(const FuExpr * expr, FuPriority parent)
 {
 	writeCall("len", expr);
 }

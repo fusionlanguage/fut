@@ -281,8 +281,9 @@ public class FuSema
 			default:
 				switch (expr.Symbol.Id) {
 				case FuId.ArrayLength:
-					assert left.Type is FuArrayStorageType arrayStorage;
-					return ToLiteralLong(expr, arrayStorage.Length);
+					if (left.Type is FuArrayStorageType arrayStorage)
+						return ToLiteralLong(expr, arrayStorage.Length);
+					break;
 				case FuId.StringLength:
 					if (left is FuLiteralString leftLiteral) {
 						int length = leftLiteral.GetAsciiLength();
@@ -2055,9 +2056,17 @@ public class FuSema
 						ReportError(method, "Main method must return 'void' or 'int'");
 					switch (method.Parameters.Count()) {
 					case 0:
-					case 1 when method.Parameters.First.Type is FuClassType argsType && argsType.IsArray() && !(argsType is FuReadWriteClassType) && !argsType.Nullable
-							&& argsType.GetElementType().Id == FuId.StringPtrType && !argsType.GetElementType().Nullable
-							&& method.Parameters.FirstParameter().Value == null:
+						break;
+					case 1:
+						FuVar args = method.Parameters.FirstParameter();
+						if (args.Type is FuClassType! argsType && argsType.IsArray() && !(argsType is FuReadWriteClassType) && !argsType.Nullable) {
+							FuType argsElement = argsType.GetElementType();
+							if (argsElement.Id == FuId.StringPtrType && !argsElement.Nullable && args.Value == null) {
+								argsType.Class = this.Program.System.ArrayStorageClass;
+								break;
+							}
+						}
+						ReportError(method, "Main method parameter must be 'string[]'");
 						break;
 					default:
 						ReportError(method, "Main method must have no parameters or one 'string[]' parameter");

@@ -1787,6 +1787,7 @@ protected:
 	virtual void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent);
 	virtual std::string_view getIsOperator() const;
 	virtual void writeStringLength(const FuExpr * expr) = 0;
+	virtual void writeArrayLength(const FuExpr * expr, FuPriority parent);
 	static bool isReferenceTo(const FuExpr * expr, FuId id);
 	bool writeJavaMatchProperty(const FuSymbolReference * expr, FuPriority parent);
 	virtual void writeCharAt(const FuBinaryExpr * expr) = 0;
@@ -1952,6 +1953,7 @@ protected:
 	virtual void includeMath() = 0;
 	int getLiteralChars() const override;
 	virtual void writeNumericType(FuId id);
+	void writeArrayLength(const FuExpr * expr, FuPriority parent) override;
 	static const FuExpr * isStringEmpty(const FuBinaryExpr * expr);
 	virtual void writeArrayPtr(const FuExpr * expr, FuPriority parent) = 0;
 	void writeArrayPtrAdd(const FuExpr * array, const FuExpr * index);
@@ -2305,6 +2307,7 @@ protected:
 	void writeInitCode(const FuNamedValue * def) override;
 	void writeResource(std::string_view name, int length) override;
 	void writeStringLength(const FuExpr * expr) override;
+	void writeArrayLength(const FuExpr * expr, FuPriority parent) override;
 	void writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeAssign(const FuBinaryExpr * expr, FuPriority parent) override;
@@ -2656,6 +2659,7 @@ protected:
 	void writeTypeAndName(const FuNamedValue * value) override;
 	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;
 	void writeStringLength(const FuExpr * expr) override;
+	void writeArrayLength(const FuExpr * expr, FuPriority parent) override;
 	void writeCharAt(const FuBinaryExpr * expr) override;
 	std::string_view getReferenceEqOp(bool not_) const override;
 	void writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
@@ -2755,6 +2759,7 @@ protected:
 	std::string_view getReferenceEqOp(bool not_) const override;
 	void writeCharAt(const FuBinaryExpr * expr) override;
 	void writeStringLength(const FuExpr * expr) override;
+	void writeArrayLength(const FuExpr * expr, FuPriority parent) override;
 	void writeCoercedSelect(const FuType * type, const FuSelectExpr * expr, FuPriority parent) override;
 	void writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, FuPriority parent) override;
 	void writeArrayStorageInit(const FuArrayStorageType * array, const FuExpr * value) override;

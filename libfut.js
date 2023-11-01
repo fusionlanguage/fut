@@ -4727,8 +4727,10 @@ export class FuSema
 			default:
 				switch (expr.symbol.id) {
 				case FuId.ARRAY_LENGTH:
-					const arrayStorage = left.type;
-					return this.#toLiteralLong(expr, BigInt(arrayStorage.length));
+					let arrayStorage;
+					if ((arrayStorage = left.type) instanceof FuArrayStorageType)
+						return this.#toLiteralLong(expr, BigInt(arrayStorage.length));
+					break;
 				case FuId.STRING_LENGTH:
 					let leftLiteral;
 					if ((leftLiteral = left) instanceof FuLiteralString) {
@@ -6573,11 +6575,25 @@ export class FuSema
 						this.reportError(method, "Main method must be 'public static'");
 					if (method.type.id != FuId.VOID_TYPE && method.type.id != FuId.INT_TYPE)
 						this.reportError(method, "Main method must return 'void' or 'int'");
-					let argsType;
-					if (method.parameters.count() == 0 || (method.parameters.count() == 1 && (argsType = method.parameters.first.type) instanceof FuClassType && argsType.isArray() && !(argsType instanceof FuReadWriteClassType) && !argsType.nullable && argsType.getElementType().id == FuId.STRING_PTR_TYPE && !argsType.getElementType().nullable && method.parameters.firstParameter().value == null)) {
-					}
-					else
+					switch (method.parameters.count()) {
+					case 0:
+						break;
+					case 1:
+						let args = method.parameters.firstParameter();
+						let argsType;
+						if ((argsType = args.type) instanceof FuClassType && argsType.isArray() && !(argsType instanceof FuReadWriteClassType) && !argsType.nullable) {
+							let argsElement = argsType.getElementType();
+							if (argsElement.id == FuId.STRING_PTR_TYPE && !argsElement.nullable && args.value == null) {
+								argsType.class = this.program.system.arrayStorageClass;
+								break;
+							}
+						}
+						this.reportError(method, "Main method parameter must be 'string[]'");
+						break;
+					default:
 						this.reportError(method, "Main method must have no parameters or one 'string[]' parameter");
+						break;
+					}
 					if (this.program.main != null)
 						this.reportError(method, "Duplicate Main method");
 					else {
@@ -7883,6 +7899,11 @@ export class GenBase extends FuVisitor
 		}
 	}
 
+	writeArrayLength(expr, parent)
+	{
+		this.writePostfix(expr, ".length");
+	}
+
 	static isReferenceTo(expr, id)
 	{
 		let symbol;
@@ -7920,6 +7941,8 @@ export class GenBase extends FuVisitor
 			this.writeLocalName(expr.symbol, parent);
 		else if (expr.symbol.id == FuId.STRING_LENGTH)
 			this.writeStringLength(expr.left);
+		else if (expr.symbol.id == FuId.ARRAY_LENGTH)
+			this.writeArrayLength(expr.left, parent);
 		else {
 			expr.left.accept(this, FuPriority.PRIMARY);
 			this.writeMemberOp(expr.left, expr);
@@ -9088,6 +9111,15 @@ export class GenCCpp extends GenCCppD
 		default:
 			throw new Error();
 		}
+	}
+
+	writeArrayLength(expr, parent)
+	{
+		if (parent > FuPriority.ADD)
+			this.writeChar(40);
+		this.write("argc - 1");
+		if (parent > FuPriority.ADD)
+			this.writeChar(41);
 	}
 
 	visitSymbolReference(expr, parent)
@@ -15579,6 +15611,11 @@ export class GenCs extends GenTyped
 		this.writePostfix(expr, ".Length");
 	}
 
+	writeArrayLength(expr, parent)
+	{
+		this.writePostfix(expr, ".Length");
+	}
+
 	visitSymbolReference(expr, parent)
 	{
 		switch (expr.symbol.id) {
@@ -21400,6 +21437,7 @@ export class GenSwift extends GenPySwift
 			this.write("String");
 			break;
 		case FuId.ARRAY_PTR_CLASS:
+		case FuId.ARRAY_STORAGE_CLASS:
 			this.#arrayRef = true;
 			this.write("ArrayRef<");
 			this.#writeType(klass.getElementType());
@@ -21569,6 +21607,11 @@ export class GenSwift extends GenPySwift
 	{
 		this.#writeUnwrapped(expr, FuPriority.PRIMARY, true);
 		this.write(".count");
+	}
+
+	writeArrayLength(expr, parent)
+	{
+		this.writePostfix(expr, ".array.count");
 	}
 
 	writeCharAt(expr)
@@ -23268,6 +23311,11 @@ export class GenPy extends GenPySwift
 	}
 
 	writeStringLength(expr)
+	{
+		this.writeCall("len", expr);
+	}
+
+	writeArrayLength(expr, parent)
 	{
 		this.writeCall("len", expr);
 	}

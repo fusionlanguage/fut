@@ -4563,8 +4563,9 @@ namespace Fusion
 				default:
 					switch (expr.Symbol.Id) {
 					case FuId.ArrayLength:
-						FuArrayStorageType arrayStorage = (FuArrayStorageType) left.Type;
-						return ToLiteralLong(expr, arrayStorage.Length);
+						if (left.Type is FuArrayStorageType arrayStorage)
+							return ToLiteralLong(expr, arrayStorage.Length);
+						break;
 					case FuId.StringLength:
 						if (left is FuLiteralString leftLiteral) {
 							int length = leftLiteral.GetAsciiLength();
@@ -6264,7 +6265,17 @@ namespace Fusion
 							ReportError(method, "Main method must return 'void' or 'int'");
 						switch (method.Parameters.Count()) {
 						case 0:
-						case 1 when method.Parameters.First.Type is FuClassType argsType && argsType.IsArray() && !(argsType is FuReadWriteClassType) && !argsType.Nullable && argsType.GetElementType().Id == FuId.StringPtrType && !argsType.GetElementType().Nullable && method.Parameters.FirstParameter().Value == null:
+							break;
+						case 1:
+							FuVar args = method.Parameters.FirstParameter();
+							if (args.Type is FuClassType argsType && argsType.IsArray() && !(argsType is FuReadWriteClassType) && !argsType.Nullable) {
+								FuType argsElement = argsType.GetElementType();
+								if (argsElement.Id == FuId.StringPtrType && !argsElement.Nullable && args.Value == null) {
+									argsType.Class = this.Program.System.ArrayStorageClass;
+									break;
+								}
+							}
+							ReportError(method, "Main method parameter must be 'string[]'");
 							break;
 						default:
 							ReportError(method, "Main method must have no parameters or one 'string[]' parameter");
@@ -7585,6 +7596,11 @@ namespace Fusion
 
 		protected abstract void WriteStringLength(FuExpr expr);
 
+		protected virtual void WriteArrayLength(FuExpr expr, FuPriority parent)
+		{
+			WritePostfix(expr, ".length");
+		}
+
 		protected static bool IsReferenceTo(FuExpr expr, FuId id) => expr is FuSymbolReference symbol && symbol.Symbol.Id == id;
 
 		protected bool WriteJavaMatchProperty(FuSymbolReference expr, FuPriority parent)
@@ -7618,6 +7634,8 @@ namespace Fusion
 				WriteLocalName(expr.Symbol, parent);
 			else if (expr.Symbol.Id == FuId.StringLength)
 				WriteStringLength(expr.Left);
+			else if (expr.Symbol.Id == FuId.ArrayLength)
+				WriteArrayLength(expr.Left, parent);
 			else {
 				expr.Left.Accept(this, FuPriority.Primary);
 				WriteMemberOp(expr.Left, expr);
@@ -8756,6 +8774,15 @@ namespace Fusion
 			default:
 				throw new NotImplementedException();
 			}
+		}
+
+		protected override void WriteArrayLength(FuExpr expr, FuPriority parent)
+		{
+			if (parent > FuPriority.Add)
+				WriteChar('(');
+			Write("argc - 1");
+			if (parent > FuPriority.Add)
+				WriteChar(')');
 		}
 
 		internal override void VisitSymbolReference(FuSymbolReference expr, FuPriority parent)
@@ -15134,6 +15161,11 @@ namespace Fusion
 			WritePostfix(expr, ".Length");
 		}
 
+		protected override void WriteArrayLength(FuExpr expr, FuPriority parent)
+		{
+			WritePostfix(expr, ".Length");
+		}
+
 		internal override void VisitSymbolReference(FuSymbolReference expr, FuPriority parent)
 		{
 			switch (expr.Symbol.Id) {
@@ -20852,6 +20884,7 @@ namespace Fusion
 				Write("String");
 				break;
 			case FuId.ArrayPtrClass:
+			case FuId.ArrayStorageClass:
 				this.ArrayRef = true;
 				Write("ArrayRef<");
 				WriteType(klass.GetElementType());
@@ -21018,6 +21051,11 @@ namespace Fusion
 		{
 			WriteUnwrapped(expr, FuPriority.Primary, true);
 			Write(".count");
+		}
+
+		protected override void WriteArrayLength(FuExpr expr, FuPriority parent)
+		{
+			WritePostfix(expr, ".array.count");
 		}
 
 		protected override void WriteCharAt(FuBinaryExpr expr)
@@ -22696,6 +22734,11 @@ namespace Fusion
 		}
 
 		protected override void WriteStringLength(FuExpr expr)
+		{
+			WriteCall("len", expr);
+		}
+
+		protected override void WriteArrayLength(FuExpr expr, FuPriority parent)
 		{
 			WriteCall("len", expr);
 		}

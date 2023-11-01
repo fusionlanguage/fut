@@ -379,6 +379,11 @@ public class GenCs : GenTyped
 		WritePostfix(expr, ".Length");
 	}
 
+	protected override void WriteArrayLength!(FuExpr expr, FuPriority parent)
+	{
+		WritePostfix(expr, ".Length");
+	}
+
 	internal override void VisitSymbolReference!(FuSymbolReference expr, FuPriority parent)
 	{
 		switch (expr.Symbol.Id) {

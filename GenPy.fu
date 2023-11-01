@@ -274,6 +274,11 @@ public class GenPy : GenPySwift
 		WriteCall("len", expr);
 	}
 
+	protected override void WriteArrayLength!(FuExpr expr, FuPriority parent)
+	{
+		WriteCall("len", expr);
+	}
+
 	internal override void VisitSymbolReference!(FuSymbolReference expr, FuPriority parent)
 	{
 		switch (expr.Symbol.Id) {

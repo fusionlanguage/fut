@@ -197,6 +197,7 @@ public class GenSwift : GenPySwift
 			Write("String");
 			break;
 		case FuId.ArrayPtrClass:
+		case FuId.ArrayStorageClass: // Main(string[] args)
 			this.ArrayRef = true;
 			Write("ArrayRef<");
 			WriteType(klass.GetElementType());
@@ -364,6 +365,11 @@ public class GenSwift : GenPySwift
 	{
 		WriteUnwrapped(expr, FuPriority.Primary, true);
 		Write(".count");
+	}
+
+	protected override void WriteArrayLength!(FuExpr expr, FuPriority parent)
+	{
+		WritePostfix(expr, ".array.count");
 	}
 
 	protected override void WriteCharAt!(FuBinaryExpr expr)
