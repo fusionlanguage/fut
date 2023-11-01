@@ -458,7 +458,7 @@ public class GenCpp : GenCCpp
 		if (parent != FuPriority.Assign) {
 			switch (klass.Class.Id) {
 			case FuId.ArrayStorageClass:
-				if (klass.Id == FuId.MainArgsType) {
+				if (IsReferenceTo(expr.Left, FuId.MainArgs)) {
 					WriteArgsIndexing(expr.Right);
 					return;
 				}
@@ -1316,6 +1316,9 @@ public class GenCpp : GenCCpp
 		case FuId.ConsoleError:
 			Write("std::cerr");
 			break;
+		case FuId.MainArgs:
+			NotSupported(expr, "args");
+			break;
 		case FuId.ListCount:
 		case FuId.QueueCount:
 		case FuId.StackCount:
@@ -1508,7 +1511,7 @@ public class GenCpp : GenCCpp
 				}
 			}
 			Write(" : ");
-			if (collectionType.Id == FuId.MainArgsType) {
+			if (IsReferenceTo(statement.Collection, FuId.MainArgs)) {
 				Include("span");
 				Write("std::span(argv + 1, argc - 1)");
 			}
