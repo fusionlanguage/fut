@@ -21479,11 +21479,13 @@ export class GenSwift extends GenPySwift
 			this.write("String");
 			break;
 		case FuId.ARRAY_PTR_CLASS:
-		case FuId.ARRAY_STORAGE_CLASS:
 			this.#arrayRef = true;
 			this.write("ArrayRef<");
 			this.#writeType(klass.getElementType());
 			this.writeChar(62);
+			break;
+		case FuId.ARRAY_STORAGE_CLASS:
+			this.write("ArraySlice<String>");
 			break;
 		case FuId.LIST_CLASS:
 		case FuId.QUEUE_CLASS:
@@ -21653,7 +21655,7 @@ export class GenSwift extends GenPySwift
 
 	writeArrayLength(expr, parent)
 	{
-		this.writePostfix(expr, ".array.count");
+		this.writePostfix(expr, ".count");
 	}
 
 	writeCharAt(expr)
@@ -23060,7 +23062,7 @@ export class GenSwift extends GenPySwift
 		this.write(main.parent.name);
 		this.write(".main(");
 		if (main.parameters.count() == 1)
-			this.write("ArrayRef(Array(CommandLine.arguments[1...]))");
+			this.write("CommandLine.arguments[1...]");
 		if (main.type.id == FuId.INT_TYPE)
 			this.write("))");
 		this.writeCharLine(41);

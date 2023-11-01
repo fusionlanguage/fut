@@ -20139,11 +20139,13 @@ void GenSwift::writeClassName(const FuClassType * klass)
 		write("String");
 		break;
 	case FuId::arrayPtrClass:
-	case FuId::arrayStorageClass:
 		this->arrayRef = true;
 		write("ArrayRef<");
 		writeType(klass->getElementType().get());
 		writeChar('>');
+		break;
+	case FuId::arrayStorageClass:
+		write("ArraySlice<String>");
 		break;
 	case FuId::listClass:
 	case FuId::queueClass:
@@ -20311,7 +20313,7 @@ void GenSwift::writeStringLength(const FuExpr * expr)
 
 void GenSwift::writeArrayLength(const FuExpr * expr, FuPriority parent)
 {
-	writePostfix(expr, ".array.count");
+	writePostfix(expr, ".count");
 }
 
 void GenSwift::writeCharAt(const FuBinaryExpr * expr)
@@ -21705,7 +21707,7 @@ void GenSwift::writeMain(const FuMethod * main)
 	write(main->parent->name);
 	write(".main(");
 	if (main->parameters.count() == 1)
-		write("ArrayRef(Array(CommandLine.arguments[1...]))");
+		write("CommandLine.arguments[1...]");
 	if (main->type->id == FuId::intType)
 		write("))");
 	writeCharLine(')');

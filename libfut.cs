@@ -20922,11 +20922,13 @@ namespace Fusion
 				Write("String");
 				break;
 			case FuId.ArrayPtrClass:
-			case FuId.ArrayStorageClass:
 				this.ArrayRef = true;
 				Write("ArrayRef<");
 				WriteType(klass.GetElementType());
 				WriteChar('>');
+				break;
+			case FuId.ArrayStorageClass:
+				Write("ArraySlice<String>");
 				break;
 			case FuId.ListClass:
 			case FuId.QueueClass:
@@ -21093,7 +21095,7 @@ namespace Fusion
 
 		protected override void WriteArrayLength(FuExpr expr, FuPriority parent)
 		{
-			WritePostfix(expr, ".array.count");
+			WritePostfix(expr, ".count");
 		}
 
 		protected override void WriteCharAt(FuBinaryExpr expr)
@@ -22488,7 +22490,7 @@ namespace Fusion
 			Write(main.Parent.Name);
 			Write(".main(");
 			if (main.Parameters.Count() == 1)
-				Write("ArrayRef(Array(CommandLine.arguments[1...]))");
+				Write("CommandLine.arguments[1...]");
 			if (main.Type.Id == FuId.IntType)
 				Write("))");
 			WriteCharLine(')');
