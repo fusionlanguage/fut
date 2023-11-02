@@ -1317,6 +1317,30 @@ if (homeDir == null)
 
 For JavaScript, this is only available in Node.js, not the web browsers.
 
+### Main method
+
+Fusion is a language designed specifically for implementing libraries.
+It was _never_ meant for building whole programs.
+However, occassionally you might want to experiment with console applications.
+For that, you need an entry point in the form of a `Main` method in any of your
+public classes. This method should have one of the four possible signatures:
+
+```csharp
+public static void Main()
+public static void Main(string[] args)
+public static int Main()
+public static int Main(string[] args)
+```
+
+The `args` array contains the command-line arguments, but not the program name.
+This array is different from regular array references in that you can:
+
+* Read `args.Length`.
+* Run a `foreach (string arg in args)` loop.
+
+The `int` returned from `Main` is a process exit code, which is traditionally
+zero for a successful execution and non-zero for an error.
+
 ### Locks
 
 Currently there is very limited support for multi-threading. It consists
