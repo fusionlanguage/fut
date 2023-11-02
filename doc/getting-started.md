@@ -145,7 +145,7 @@ public class HelloFu
 {
 
 	/// Returns a greeting message.
-	public static func getMessage() -> String?
+	public static func getMessage() -> String
 	{
 		return "Hello, world!"
 	}
@@ -184,7 +184,7 @@ export class HelloFu
 	/**
 	 * Returns a greeting message.
 	 */
-	public static getMessage(): string | null
+	public static getMessage(): string
 	{
 		return "Hello, world!";
 	}
