@@ -1,0 +1,13 @@
+public static class Test
+{
+	public static void Main()
+	{
+	}
+}
+
+public static class Foo
+{
+	public static void Main() //ERROR: Duplicate Main method
+	{
+	}
+}

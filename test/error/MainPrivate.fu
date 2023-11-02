@@ -1,0 +1,7 @@
+public static class Test
+{
+	static void Main() //ERROR: Main method must be 'public static'
+	{
+	}
+}
+

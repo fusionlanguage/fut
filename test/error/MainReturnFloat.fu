@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static float //ERROR: Main method must return 'void' or 'int'
+		Main()
+	{
+		return 0;
+	}
+}
+

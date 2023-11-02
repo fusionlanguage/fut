@@ -6575,7 +6575,7 @@ export class FuSema
 					if (method.visibility != FuVisibility.PUBLIC || method.callType != FuCallType.STATIC)
 						this.reportError(method, "Main method must be 'public static'");
 					if (method.type.id != FuId.VOID_TYPE && method.type.id != FuId.INT_TYPE)
-						this.reportError(method, "Main method must return 'void' or 'int'");
+						this.reportError(method.type, "Main method must return 'void' or 'int'");
 					switch (method.parameters.count()) {
 					case 0:
 						break;
@@ -6590,7 +6590,7 @@ export class FuSema
 								break;
 							}
 						}
-						this.reportError(method, "Main method parameter must be 'string[]'");
+						this.reportError(args, "Main method parameter must be 'string[]'");
 						break;
 					default:
 						this.reportError(method, "Main method must have no parameters or one 'string[]' parameter");

@@ -6263,7 +6263,7 @@ namespace Fusion
 						if (method.Visibility != FuVisibility.Public || method.CallType != FuCallType.Static)
 							ReportError(method, "Main method must be 'public static'");
 						if (method.Type.Id != FuId.VoidType && method.Type.Id != FuId.IntType)
-							ReportError(method, "Main method must return 'void' or 'int'");
+							ReportError(method.Type, "Main method must return 'void' or 'int'");
 						switch (method.Parameters.Count()) {
 						case 0:
 							break;
@@ -6277,7 +6277,7 @@ namespace Fusion
 									break;
 								}
 							}
-							ReportError(method, "Main method parameter must be 'string[]'");
+							ReportError(args, "Main method parameter must be 'string[]'");
 							break;
 						default:
 							ReportError(method, "Main method must have no parameters or one 'string[]' parameter");

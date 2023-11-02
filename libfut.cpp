@@ -6137,7 +6137,7 @@ void FuSema::resolveTypes(FuClass * klass)
 				if (method->visibility != FuVisibility::public_ || method->callType != FuCallType::static_)
 					reportError(method, "Main method must be 'public static'");
 				if (method->type->id != FuId::voidType && method->type->id != FuId::intType)
-					reportError(method, "Main method must return 'void' or 'int'");
+					reportError(method->type.get(), "Main method must return 'void' or 'int'");
 				switch (method->parameters.count()) {
 				case 0:
 					break;
@@ -6153,7 +6153,7 @@ void FuSema::resolveTypes(FuClass * klass)
 								break;
 							}
 						}
-						reportError(method, "Main method parameter must be 'string[]'");
+						reportError(args, "Main method parameter must be 'string[]'");
 						break;
 					}
 				default:

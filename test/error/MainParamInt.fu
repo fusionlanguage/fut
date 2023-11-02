@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static void Main(
+		int argc) //ERROR: Main method parameter must be 'string[]'
+	{
+	}
+}
+
