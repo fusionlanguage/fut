@@ -1387,32 +1387,33 @@ export const FuId = {
 	CONSOLE_WRITE_LINE : 122,
 	STRING_WRITER_CLEAR : 123,
 	STRING_WRITER_TO_STRING : 124,
-	U_T_F8_GET_BYTE_COUNT : 125,
-	U_T_F8_GET_BYTES : 126,
-	U_T_F8_GET_STRING : 127,
-	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 128,
-	REGEX_COMPILE : 129,
-	REGEX_ESCAPE : 130,
-	REGEX_IS_MATCH_STR : 131,
-	REGEX_IS_MATCH_REGEX : 132,
-	MATCH_FIND_STR : 133,
-	MATCH_FIND_REGEX : 134,
-	MATCH_GET_CAPTURE : 135,
-	MATH_METHOD : 136,
-	MATH_ABS : 137,
-	MATH_CEILING : 138,
-	MATH_CLAMP : 139,
-	MATH_FUSED_MULTIPLY_ADD : 140,
-	MATH_IS_FINITE : 141,
-	MATH_IS_INFINITY : 142,
-	MATH_IS_NA_N : 143,
-	MATH_LOG2 : 144,
-	MATH_MAX_INT : 145,
-	MATH_MAX_DOUBLE : 146,
-	MATH_MIN_INT : 147,
-	MATH_MIN_DOUBLE : 148,
-	MATH_ROUND : 149,
-	MATH_TRUNCATE : 150
+	CONVERT_TO_BASE64_STRING : 125,
+	U_T_F8_GET_BYTE_COUNT : 126,
+	U_T_F8_GET_BYTES : 127,
+	U_T_F8_GET_STRING : 128,
+	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 129,
+	REGEX_COMPILE : 130,
+	REGEX_ESCAPE : 131,
+	REGEX_IS_MATCH_STR : 132,
+	REGEX_IS_MATCH_REGEX : 133,
+	MATCH_FIND_STR : 134,
+	MATCH_FIND_REGEX : 135,
+	MATCH_GET_CAPTURE : 136,
+	MATH_METHOD : 137,
+	MATH_ABS : 138,
+	MATH_CEILING : 139,
+	MATH_CLAMP : 140,
+	MATH_FUSED_MULTIPLY_ADD : 141,
+	MATH_IS_FINITE : 142,
+	MATH_IS_INFINITY : 143,
+	MATH_IS_NA_N : 144,
+	MATH_LOG2 : 145,
+	MATH_MAX_INT : 146,
+	MATH_MAX_DOUBLE : 147,
+	MATH_MIN_INT : 148,
+	MATH_MIN_DOUBLE : 149,
+	MATH_ROUND : 150,
+	MATH_TRUNCATE : 151
 }
 
 class FuDocInline
@@ -3212,6 +3213,9 @@ export class FuSystem extends FuScope
 		stringWriterClass.add(FuMethod.new(FuVisibility.PUBLIC, this.stringPtrType, FuId.STRING_WRITER_TO_STRING, "ToString"));
 		this.add(stringWriterClass);
 		stringWriterClass.parent = textWriterClass;
+		let convertClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Convert");
+		convertClass.add(FuMethod.newStatic(this.stringStorageType, FuId.CONVERT_TO_BASE64_STRING, "ToBase64String", FuVar.new(Object.assign(new FuClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.intType, "offset"), FuVar.new(this.intType, "length")));
+		this.add(convertClass);
 		let utf8EncodingClass = FuClass.new(FuCallType.SEALED, FuId.NONE, "UTF8Encoding");
 		utf8EncodingClass.add(FuMethod.new(FuVisibility.PUBLIC, this.intType, FuId.U_T_F8_GET_BYTE_COUNT, "GetByteCount", FuVar.new(this.stringPtrType, "str")));
 		utf8EncodingClass.add(FuMethod.new(FuVisibility.PUBLIC, this.voidType, FuId.U_T_F8_GET_BYTES, "GetBytes", FuVar.new(this.stringPtrType, "str"), FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.intType, "byteIndex")));
@@ -11583,6 +11587,13 @@ export class GenC extends GenCCpp
 		case FuId.CONSOLE_WRITE_LINE:
 			this.#writeConsoleWrite(args, true);
 			break;
+		case FuId.CONVERT_TO_BASE64_STRING:
+			this.#writeGlib("g_base64_encode(");
+			this.writeArrayPtrAdd(args[0], args[1]);
+			this.write(", ");
+			args[2].accept(this, FuPriority.ARGUMENT);
+			this.writeChar(41);
+			break;
 		case FuId.U_T_F8_GET_BYTE_COUNT:
 			this.writeStringLength(args[0]);
 			break;
@@ -17243,6 +17254,16 @@ export class GenD extends GenCCppD
 			this.write("environment.get");
 			this.writeArgsInParentheses(method, args);
 			break;
+		case FuId.CONVERT_TO_BASE64_STRING:
+			this.include("std.base64");
+			this.write("Base64.encode(");
+			args[0].accept(this, FuPriority.PRIMARY);
+			this.writeChar(91);
+			args[1].accept(this, FuPriority.ARGUMENT);
+			this.write(" .. $][0 .. ");
+			args[2].accept(this, FuPriority.ARGUMENT);
+			this.write("])");
+			break;
 		case FuId.U_T_F8_GET_BYTE_COUNT:
 			this.writePostfix(args[0], ".length");
 			break;
@@ -18638,6 +18659,12 @@ export class GenJava extends GenTyped
 			this.write("System.out");
 			this.#writeWrite(method, args, true);
 			break;
+		case FuId.CONVERT_TO_BASE64_STRING:
+			this.include("java.nio.ByteBuffer");
+			this.include("java.util.Base64");
+			this.writeCall("new String(Base64.getEncoder().encode(ByteBuffer.wrap", args[0], args[1], args[2]);
+			this.write(").array())");
+			break;
 		case FuId.U_T_F8_GET_BYTE_COUNT:
 			this.include("java.nio.charset.StandardCharsets");
 			this.writePostfix(args[0], ".getBytes(StandardCharsets.UTF_8).length");
@@ -20012,6 +20039,12 @@ export class GenJsNoModule extends GenBase
 			else
 				args[0].accept(this, FuPriority.ARGUMENT);
 			this.writeChar(41);
+			break;
+		case FuId.CONVERT_TO_BASE64_STRING:
+			this.write("btoa(String.fromCodePoint(...");
+			this.writePostfix(args[0], ".subarray(");
+			this.writeStartEnd(args[1], args[2]);
+			this.write(")))");
 			break;
 		case FuId.U_T_F8_GET_BYTE_COUNT:
 			this.write("new TextEncoder().encode(");
@@ -21970,6 +22003,12 @@ export class GenSwift extends GenPySwift
 				this.#writeUnwrapped(args[0], FuPriority.ARGUMENT, true);
 			this.writeChar(41);
 			break;
+		case FuId.CONVERT_TO_BASE64_STRING:
+			this.write("Data(");
+			this.#openIndexing(args[0]);
+			this.#writeRange(args[1], args[2]);
+			this.write("]).base64EncodedString()");
+			break;
 		case FuId.U_T_F8_GET_BYTE_COUNT:
 			this.#writeUnwrapped(args[0], FuPriority.PRIMARY, true);
 			this.write(".utf8.count");
@@ -23876,6 +23915,13 @@ export class GenPy extends GenPySwift
 			break;
 		case FuId.STRING_WRITER_TO_STRING:
 			this.writePostfix(obj, ".getvalue()");
+			break;
+		case FuId.CONVERT_TO_BASE64_STRING:
+			this.include("base64");
+			this.write("base64.b64encode(");
+			args[0].accept(this, FuPriority.PRIMARY);
+			this.#writeSlice(args[1], args[2]);
+			this.write(").decode(\"utf8\")");
 			break;
 		case FuId.U_T_F8_GET_BYTE_COUNT:
 			this.write("len(");

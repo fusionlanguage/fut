@@ -2532,16 +2532,22 @@ FuSystem::FuSystem()
 	stringWriterClass->add(FuMethod::new_(FuVisibility::public_, this->stringPtrType, FuId::stringWriterToString, "ToString"));
 	add(stringWriterClass);
 	stringWriterClass->parent = textWriterClass.get();
-	std::shared_ptr<FuClass> utf8EncodingClass = FuClass::new_(FuCallType::sealed, FuId::none, "UTF8Encoding");
-	utf8EncodingClass->add(FuMethod::new_(FuVisibility::public_, this->intType, FuId::uTF8GetByteCount, "GetByteCount", FuVar::new_(this->stringPtrType, "str")));
-	std::shared_ptr<FuReadWriteClassType> futemp4 = std::make_shared<FuReadWriteClassType>();
+	std::shared_ptr<FuClass> convertClass = FuClass::new_(FuCallType::static_, FuId::none, "Convert");
+	std::shared_ptr<FuClassType> futemp4 = std::make_shared<FuClassType>();
 	futemp4->class_ = this->arrayPtrClass.get();
 	futemp4->typeArg0 = this->byteType;
-	utf8EncodingClass->add(FuMethod::new_(FuVisibility::public_, this->voidType, FuId::uTF8GetBytes, "GetBytes", FuVar::new_(this->stringPtrType, "str"), FuVar::new_(futemp4, "bytes"), FuVar::new_(this->intType, "byteIndex")));
-	std::shared_ptr<FuClassType> futemp5 = std::make_shared<FuClassType>();
+	convertClass->add(FuMethod::newStatic(this->stringStorageType, FuId::convertToBase64String, "ToBase64String", FuVar::new_(futemp4, "bytes"), FuVar::new_(this->intType, "offset"), FuVar::new_(this->intType, "length")));
+	add(convertClass);
+	std::shared_ptr<FuClass> utf8EncodingClass = FuClass::new_(FuCallType::sealed, FuId::none, "UTF8Encoding");
+	utf8EncodingClass->add(FuMethod::new_(FuVisibility::public_, this->intType, FuId::uTF8GetByteCount, "GetByteCount", FuVar::new_(this->stringPtrType, "str")));
+	std::shared_ptr<FuReadWriteClassType> futemp5 = std::make_shared<FuReadWriteClassType>();
 	futemp5->class_ = this->arrayPtrClass.get();
 	futemp5->typeArg0 = this->byteType;
-	utf8EncodingClass->add(FuMethod::new_(FuVisibility::public_, this->stringStorageType, FuId::uTF8GetString, "GetString", FuVar::new_(futemp5, "bytes"), FuVar::new_(this->intType, "offset"), FuVar::new_(this->intType, "length")));
+	utf8EncodingClass->add(FuMethod::new_(FuVisibility::public_, this->voidType, FuId::uTF8GetBytes, "GetBytes", FuVar::new_(this->stringPtrType, "str"), FuVar::new_(futemp5, "bytes"), FuVar::new_(this->intType, "byteIndex")));
+	std::shared_ptr<FuClassType> futemp6 = std::make_shared<FuClassType>();
+	futemp6->class_ = this->arrayPtrClass.get();
+	futemp6->typeArg0 = this->byteType;
+	utf8EncodingClass->add(FuMethod::new_(FuVisibility::public_, this->stringStorageType, FuId::uTF8GetString, "GetString", FuVar::new_(futemp6, "bytes"), FuVar::new_(this->intType, "offset"), FuVar::new_(this->intType, "length")));
 	std::shared_ptr<FuClass> encodingClass = FuClass::new_(FuCallType::static_, FuId::none, "Encoding");
 	encodingClass->add(FuStaticProperty::new_(utf8EncodingClass, FuId::none, "UTF8"));
 	add(encodingClass);
@@ -2561,14 +2567,14 @@ FuSystem::FuSystem()
 	std::shared_ptr<FuClass> regexClass = FuClass::new_(FuCallType::sealed, FuId::regexClass, "Regex");
 	regexClass->add(FuMethod::newStatic(this->stringStorageType, FuId::regexEscape, "Escape", FuVar::new_(this->stringPtrType, "str")));
 	regexClass->add(FuMethodGroup::new_(FuMethod::newStatic(this->boolType, FuId::regexIsMatchStr, "IsMatch", FuVar::new_(this->stringPtrType, "input"), FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), FuMethod::new_(FuVisibility::public_, this->boolType, FuId::regexIsMatchRegex, "IsMatch", FuVar::new_(this->stringPtrType, "input"))));
-	std::shared_ptr<FuDynamicPtrType> futemp6 = std::make_shared<FuDynamicPtrType>();
-	futemp6->class_ = regexClass.get();
-	regexClass->add(FuMethod::newStatic(futemp6, FuId::regexCompile, "Compile", FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)));
+	std::shared_ptr<FuDynamicPtrType> futemp7 = std::make_shared<FuDynamicPtrType>();
+	futemp7->class_ = regexClass.get();
+	regexClass->add(FuMethod::newStatic(futemp7, FuId::regexCompile, "Compile", FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)));
 	add(regexClass);
 	std::shared_ptr<FuClass> matchClass = FuClass::new_(FuCallType::sealed, FuId::matchClass, "Match");
-	std::shared_ptr<FuClassType> futemp7 = std::make_shared<FuClassType>();
-	futemp7->class_ = regexClass.get();
-	matchClass->add(FuMethodGroup::new_(FuMethod::newMutator(FuVisibility::public_, this->boolType, FuId::matchFindStr, "Find", FuVar::new_(this->stringPtrType, "input"), FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), FuMethod::newMutator(FuVisibility::public_, this->boolType, FuId::matchFindRegex, "Find", FuVar::new_(this->stringPtrType, "input"), FuVar::new_(futemp7, "pattern"))));
+	std::shared_ptr<FuClassType> futemp8 = std::make_shared<FuClassType>();
+	futemp8->class_ = regexClass.get();
+	matchClass->add(FuMethodGroup::new_(FuMethod::newMutator(FuVisibility::public_, this->boolType, FuId::matchFindStr, "Find", FuVar::new_(this->stringPtrType, "input"), FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), FuMethod::newMutator(FuVisibility::public_, this->boolType, FuId::matchFindRegex, "Find", FuVar::new_(this->stringPtrType, "input"), FuVar::new_(futemp8, "pattern"))));
 	matchClass->add(FuProperty::new_(this->intType, FuId::matchStart, "Start"));
 	matchClass->add(FuProperty::new_(this->intType, FuId::matchEnd, "End"));
 	matchClass->add(FuMethod::new_(FuVisibility::public_, this->stringStorageType, FuId::matchGetCapture, "GetCapture", FuVar::new_(this->uIntType, "group")));
@@ -10927,6 +10933,13 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 	case FuId::consoleWriteLine:
 		writeConsoleWrite(args, true);
 		break;
+	case FuId::convertToBase64String:
+		writeGlib("g_base64_encode(");
+		writeArrayPtrAdd((*args)[0].get(), (*args)[1].get());
+		write(", ");
+		(*args)[2]->accept(this, FuPriority::argument);
+		writeChar(')');
+		break;
 	case FuId::uTF8GetByteCount:
 		writeStringLength((*args)[0].get());
 		break;
@@ -16185,6 +16198,16 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		write("environment.get");
 		writeArgsInParentheses(method, args);
 		break;
+	case FuId::convertToBase64String:
+		include("std.base64");
+		write("Base64.encode(");
+		(*args)[0]->accept(this, FuPriority::primary);
+		writeChar('[');
+		(*args)[1]->accept(this, FuPriority::argument);
+		write(" .. $][0 .. ");
+		(*args)[2]->accept(this, FuPriority::argument);
+		write("])");
+		break;
 	case FuId::uTF8GetByteCount:
 		writePostfix((*args)[0].get(), ".length");
 		break;
@@ -17479,6 +17502,12 @@ void GenJava::writeCallExpr(const FuExpr * obj, const FuMethod * method, const s
 	case FuId::consoleWriteLine:
 		write("System.out");
 		writeWrite(method, args, true);
+		break;
+	case FuId::convertToBase64String:
+		include("java.nio.ByteBuffer");
+		include("java.util.Base64");
+		writeCall("new String(Base64.getEncoder().encode(ByteBuffer.wrap", (*args)[0].get(), (*args)[1].get(), (*args)[2].get());
+		write(").array())");
 		break;
 	case FuId::uTF8GetByteCount:
 		include("java.nio.charset.StandardCharsets");
@@ -18810,6 +18839,12 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 		else
 			(*args)[0]->accept(this, FuPriority::argument);
 		writeChar(')');
+		break;
+	case FuId::convertToBase64String:
+		write("btoa(String.fromCodePoint(...");
+		writePostfix((*args)[0].get(), ".subarray(");
+		writeStartEnd((*args)[1].get(), (*args)[2].get());
+		write(")))");
 		break;
 	case FuId::uTF8GetByteCount:
 		write("new TextEncoder().encode(");
@@ -20635,6 +20670,12 @@ void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const 
 		if (std::ssize(*args) == 1)
 			writeUnwrapped((*args)[0].get(), FuPriority::argument, true);
 		writeChar(')');
+		break;
+	case FuId::convertToBase64String:
+		write("Data(");
+		openIndexing((*args)[0].get());
+		writeRange((*args)[1].get(), (*args)[2].get());
+		write("]).base64EncodedString()");
 		break;
 	case FuId::uTF8GetByteCount:
 		writeUnwrapped((*args)[0].get(), FuPriority::primary, true);
@@ -22479,6 +22520,13 @@ void GenPy::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		break;
 	case FuId::stringWriterToString:
 		writePostfix(obj, ".getvalue()");
+		break;
+	case FuId::convertToBase64String:
+		include("base64");
+		write("base64.b64encode(");
+		(*args)[0]->accept(this, FuPriority::primary);
+		writeSlice((*args)[1].get(), (*args)[2].get());
+		write(").decode(\"utf8\")");
 		break;
 	case FuId::uTF8GetByteCount:
 		write("len(");

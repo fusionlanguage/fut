@@ -1002,6 +1002,16 @@ public class GenD : GenCCppD
 			Write("environment.get");
 			WriteArgsInParentheses(method, args);
 			break;
+		case FuId.ConvertToBase64String:
+			Include("std.base64");
+			Write("Base64.encode(");
+			args[0].Accept(this, FuPriority.Primary);
+			WriteChar('[');
+			args[1].Accept(this, FuPriority.Argument);
+			Write(" .. $][0 .. ");
+			args[2].Accept(this, FuPriority.Argument);
+			Write("])");
+			break;
 		case FuId.UTF8GetByteCount:
 			WritePostfix(args[0], ".length");
 			break;

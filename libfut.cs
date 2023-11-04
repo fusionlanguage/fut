@@ -1404,6 +1404,7 @@ namespace Fusion
 		ConsoleWriteLine,
 		StringWriterClear,
 		StringWriterToString,
+		ConvertToBase64String,
 		UTF8GetByteCount,
 		UTF8GetBytes,
 		UTF8GetString,
@@ -3050,6 +3051,9 @@ namespace Fusion
 			stringWriterClass.Add(FuMethod.New(FuVisibility.Public, this.StringPtrType, FuId.StringWriterToString, "ToString"));
 			Add(stringWriterClass);
 			stringWriterClass.Parent = textWriterClass;
+			FuClass convertClass = FuClass.New(FuCallType.Static, FuId.None, "Convert");
+			convertClass.Add(FuMethod.NewStatic(this.StringStorageType, FuId.ConvertToBase64String, "ToBase64String", FuVar.New(new FuClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, "bytes"), FuVar.New(this.IntType, "offset"), FuVar.New(this.IntType, "length")));
+			Add(convertClass);
 			FuClass utf8EncodingClass = FuClass.New(FuCallType.Sealed, FuId.None, "UTF8Encoding");
 			utf8EncodingClass.Add(FuMethod.New(FuVisibility.Public, this.IntType, FuId.UTF8GetByteCount, "GetByteCount", FuVar.New(this.StringPtrType, "str")));
 			utf8EncodingClass.Add(FuMethod.New(FuVisibility.Public, this.VoidType, FuId.UTF8GetBytes, "GetBytes", FuVar.New(this.StringPtrType, "str"), FuVar.New(new FuReadWriteClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, "bytes"), FuVar.New(this.IntType, "byteIndex")));
@@ -11198,6 +11202,13 @@ namespace Fusion
 			case FuId.ConsoleWriteLine:
 				WriteConsoleWrite(args, true);
 				break;
+			case FuId.ConvertToBase64String:
+				WriteGlib("g_base64_encode(");
+				WriteArrayPtrAdd(args[0], args[1]);
+				Write(", ");
+				args[2].Accept(this, FuPriority.Argument);
+				WriteChar(')');
+				break;
 			case FuId.UTF8GetByteCount:
 				WriteStringLength(args[0]);
 				break;
@@ -16762,6 +16773,16 @@ namespace Fusion
 				Write("environment.get");
 				WriteArgsInParentheses(method, args);
 				break;
+			case FuId.ConvertToBase64String:
+				Include("std.base64");
+				Write("Base64.encode(");
+				args[0].Accept(this, FuPriority.Primary);
+				WriteChar('[');
+				args[1].Accept(this, FuPriority.Argument);
+				Write(" .. $][0 .. ");
+				args[2].Accept(this, FuPriority.Argument);
+				Write("])");
+				break;
 			case FuId.UTF8GetByteCount:
 				WritePostfix(args[0], ".length");
 				break;
@@ -18121,6 +18142,12 @@ namespace Fusion
 				Write("System.out");
 				WriteWrite(method, args, true);
 				break;
+			case FuId.ConvertToBase64String:
+				Include("java.nio.ByteBuffer");
+				Include("java.util.Base64");
+				WriteCall("new String(Base64.getEncoder().encode(ByteBuffer.wrap", args[0], args[1], args[2]);
+				Write(").array())");
+				break;
 			case FuId.UTF8GetByteCount:
 				Include("java.nio.charset.StandardCharsets");
 				WritePostfix(args[0], ".getBytes(StandardCharsets.UTF_8).length");
@@ -19458,6 +19485,12 @@ namespace Fusion
 				else
 					args[0].Accept(this, FuPriority.Argument);
 				WriteChar(')');
+				break;
+			case FuId.ConvertToBase64String:
+				Write("btoa(String.fromCodePoint(...");
+				WritePostfix(args[0], ".subarray(");
+				WriteStartEnd(args[1], args[2]);
+				Write(")))");
 				break;
 			case FuId.UTF8GetByteCount:
 				Write("new TextEncoder().encode(");
@@ -21405,6 +21438,12 @@ namespace Fusion
 					WriteUnwrapped(args[0], FuPriority.Argument, true);
 				WriteChar(')');
 				break;
+			case FuId.ConvertToBase64String:
+				Write("Data(");
+				OpenIndexing(args[0]);
+				WriteRange(args[1], args[2]);
+				Write("]).base64EncodedString()");
+				break;
 			case FuId.UTF8GetByteCount:
 				WriteUnwrapped(args[0], FuPriority.Primary, true);
 				Write(".utf8.count");
@@ -23289,6 +23328,13 @@ namespace Fusion
 				break;
 			case FuId.StringWriterToString:
 				WritePostfix(obj, ".getvalue()");
+				break;
+			case FuId.ConvertToBase64String:
+				Include("base64");
+				Write("base64.b64encode(");
+				args[0].Accept(this, FuPriority.Primary);
+				WriteSlice(args[1], args[2]);
+				Write(").decode(\"utf8\")");
 				break;
 			case FuId.UTF8GetByteCount:
 				Write("len(");

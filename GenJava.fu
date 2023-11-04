@@ -838,6 +838,13 @@ public class GenJava : GenTyped
 			Write("System.out");
 			WriteWrite(method, args, true);
 			break;
+		case FuId.ConvertToBase64String:
+			Include("java.nio.ByteBuffer");
+			Include("java.util.Base64");
+			// TODO Base64.getEncoder().encodeToString(bytes)
+			WriteCall("new String(Base64.getEncoder().encode(ByteBuffer.wrap", args[0], args[1], args[2]);
+			Write(").array())");
+			break;
 		case FuId.UTF8GetByteCount:
 			Include("java.nio.charset.StandardCharsets");
 			WritePostfix(args[0], ".getBytes(StandardCharsets.UTF_8).length"); // FIXME: quick&dirty!

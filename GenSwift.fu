@@ -683,6 +683,12 @@ public class GenSwift : GenPySwift
 				WriteUnwrapped(args[0], FuPriority.Argument, true);
 			WriteChar(')');
 			break;
+		case FuId.ConvertToBase64String:
+			Write("Data(");
+			OpenIndexing(args[0]);
+			WriteRange(args[1], args[2]);
+			Write("]).base64EncodedString()");
+			break;
 		case FuId.UTF8GetByteCount:
 			WriteUnwrapped(args[0], FuPriority.Primary, true);
 			Write(".utf8.count");

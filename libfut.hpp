@@ -313,6 +313,7 @@ enum class FuId
 	consoleWriteLine,
 	stringWriterClear,
 	stringWriterToString,
+	convertToBase64String,
 	uTF8GetByteCount,
 	uTF8GetBytes,
 	uTF8GetString,

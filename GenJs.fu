@@ -772,6 +772,12 @@ public class GenJsNoModule : GenBase
 				args[0].Accept(this, FuPriority.Argument);
 			WriteChar(')');
 			break;
+		case FuId.ConvertToBase64String:
+			Write("btoa(String.fromCodePoint(...");
+			WritePostfix(args[0], ".subarray("); // TODO: without subarray
+			WriteStartEnd(args[1], args[2]); // FIXME: side effect
+			Write(")))");
+			break;
 		case FuId.UTF8GetByteCount:
 			Write("new TextEncoder().encode(");
 			args[0].Accept(this, FuPriority.Argument);

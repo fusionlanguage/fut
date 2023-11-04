@@ -306,6 +306,8 @@ Possible string operations include the following:
   from the specified position until the end of the string.
 * `str.Replace(old, new)` returns the contents of `str` with all occurrences
   of `old` substituted with `new`.
+* `Convert.ToBase64String(byteArray, offset, length)` encodes the specified
+  array part as a Base64 string.
 * `Encoding.UTF8.GetByteCount(str)` calculates the number of bytes needed
   for UTF-8 encoding of the string.
 * `Encoding.UTF8.GetBytes(str, byteArray, byteArrayIndex)` writes UTF-8

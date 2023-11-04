@@ -2225,6 +2225,13 @@ public class GenC : GenCCpp
 		case FuId.ConsoleWriteLine:
 			WriteConsoleWrite(args, true);
 			break;
+		case FuId.ConvertToBase64String:
+			WriteGlib("g_base64_encode(");
+			WriteArrayPtrAdd(args[0], args[1]);
+			Write(", ");
+			args[2].Accept(this, FuPriority.Argument);
+			WriteChar(')');
+			break;
 		case FuId.UTF8GetByteCount:
 			WriteStringLength(args[0]);
 			break;

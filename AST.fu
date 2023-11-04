@@ -185,6 +185,7 @@ public enum FuId
 	ConsoleWriteLine,
 	StringWriterClear,
 	StringWriterToString,
+	ConvertToBase64String,
 	UTF8GetByteCount,
 	UTF8GetBytes,
 	UTF8GetString,
@@ -1588,6 +1589,10 @@ public class FuSystem : FuScope
 		stringWriterClass.Add(FuMethod.New(FuVisibility.Public, StringPtrType, FuId.StringWriterToString, "ToString"));
 		Add(stringWriterClass);
 		stringWriterClass.Parent = textWriterClass;
+		FuClass# convertClass = FuClass.New(FuCallType.Static, FuId.None, "Convert");
+		convertClass.Add(FuMethod.NewStatic(StringStorageType, FuId.ConvertToBase64String, "ToBase64String",
+			FuVar.New(new FuClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), FuVar.New(IntType, "offset"), FuVar.New(IntType, "length")));
+		Add(convertClass);
 		FuClass# utf8EncodingClass = FuClass.New(FuCallType.Sealed, FuId.None, "UTF8Encoding");
 		utf8EncodingClass.Add(FuMethod.New(FuVisibility.Public, IntType, FuId.UTF8GetByteCount, "GetByteCount", FuVar.New(StringPtrType, "str")));
 		utf8EncodingClass.Add(FuMethod.New(FuVisibility.Public, VoidType, FuId.UTF8GetBytes, "GetBytes",

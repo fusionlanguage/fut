@@ -791,6 +791,13 @@ public class GenPy : GenPySwift
 		case FuId.StringWriterToString:
 			WritePostfix(obj, ".getvalue()");
 			break;
+		case FuId.ConvertToBase64String:
+			Include("base64");
+			Write("base64.b64encode(");
+			args[0].Accept(this, FuPriority.Primary);
+			WriteSlice(args[1], args[2]);
+			Write(").decode(\"utf8\")");
+			break;
 		case FuId.UTF8GetByteCount:
 			Write("len(");
 			WritePostfix(args[0], ".encode(\"utf8\"))");
