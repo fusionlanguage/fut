@@ -1771,6 +1771,7 @@ protected:
 	void openLoop(std::string_view intString, int nesting, int count);
 	void writeResourceName(std::string_view name);
 	virtual void writeResource(std::string_view name, int length) = 0;
+	bool isWholeArray(const FuExpr * array, const FuExpr * offset, const FuExpr * length) const;
 	void startAdd(const FuExpr * expr);
 	void writeAdd(const FuExpr * left, const FuExpr * right);
 	void writeStartEnd(const FuExpr * startIndex, const FuExpr * length);
@@ -2407,6 +2408,8 @@ private:
 	void writeStaticInitializer(const FuType * type);
 	void writeClassReference(const FuExpr * expr, FuPriority priority = FuPriority::primary);
 	void writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine);
+	void writeOffset(const FuExpr * obj, const FuExpr * offset, FuPriority parent);
+	void writeSlice(const FuExpr * obj, const FuExpr * offset, const FuExpr * length);
 	void writeInsertedArg(const FuType * type, const std::vector<std::shared_ptr<FuExpr>> * args, int index = 0);
 	static bool isIsComparable(const FuExpr * expr);
 	void writeIsVar(const FuExpr * expr, const FuVar * def, FuPriority parent);
@@ -2551,6 +2554,7 @@ private:
 	bool stringWriter = false;
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeInterpolatedLiteral(std::string_view s);
+	void writeSlice(const FuExpr * array, const FuExpr * offset, const FuExpr * length, FuPriority parent, std::string_view method);
 	static bool isIdentifier(std::string_view s);
 	void writeNewRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex);
 	static bool hasLong(const std::vector<std::shared_ptr<FuExpr>> * args);

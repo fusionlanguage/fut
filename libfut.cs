@@ -7351,6 +7351,8 @@ namespace Fusion
 			}
 		}
 
+		protected bool IsWholeArray(FuExpr array, FuExpr offset, FuExpr length) => array.Type is FuArrayStorageType arrayStorage && offset.IsLiteralZero() && length is FuLiteralLong literalLength && arrayStorage.Length == literalLength.Value;
+
 		protected void StartAdd(FuExpr expr)
 		{
 			if (!expr.IsLiteralZero()) {
@@ -16491,6 +16493,26 @@ namespace Fusion
 				WriteCall(newLine ? "writeln" : "write", args[0]);
 		}
 
+		void WriteOffset(FuExpr obj, FuExpr offset, FuPriority parent)
+		{
+			if (offset.IsLiteralZero())
+				WriteClassReference(obj, parent);
+			else {
+				WriteClassReference(obj, FuPriority.Primary);
+				WriteChar('[');
+				offset.Accept(this, FuPriority.Argument);
+				Write(" .. $]");
+			}
+		}
+
+		void WriteSlice(FuExpr obj, FuExpr offset, FuExpr length)
+		{
+			WriteOffset(obj, offset, FuPriority.Primary);
+			Write("[0 .. ");
+			length.Accept(this, FuPriority.Argument);
+			WriteChar(']');
+		}
+
 		void WriteInsertedArg(FuType type, List<FuExpr> args, int index = 0)
 		{
 			if (args.Count <= index) {
@@ -16552,14 +16574,10 @@ namespace Fusion
 				WriteMethodCall(obj, "startsWith", args[0]);
 				break;
 			case FuId.StringSubstring:
-				obj.Accept(this, FuPriority.Primary);
-				WriteChar('[');
-				WritePostfix(args[0], " .. $]");
-				if (args.Count > 1) {
-					Write("[0 .. ");
-					args[1].Accept(this, FuPriority.Argument);
-					WriteChar(']');
-				}
+				if (args.Count == 2)
+					WriteSlice(obj, args[0], args[1]);
+				else
+					WriteOffset(obj, args[0], parent);
 				break;
 			case FuId.ArrayBinarySearchAll:
 			case FuId.ArrayBinarySearchPart:
@@ -16589,16 +16607,17 @@ namespace Fusion
 			case FuId.ArrayCopyTo:
 			case FuId.ListCopyTo:
 				Include("std.algorithm");
-				WriteClassReference(obj);
-				WriteChar('[');
-				args[0].Accept(this, FuPriority.Argument);
-				Write(" .. $][0 .. ");
-				args[3].Accept(this, FuPriority.Argument);
-				Write("].copy(");
-				args[1].Accept(this, FuPriority.Argument);
-				WriteChar('[');
-				args[2].Accept(this, FuPriority.Argument);
-				Write(" .. $])");
+				WriteSlice(obj, args[0], args[3]);
+				Write(".copy(");
+				if (args[2].IsLiteralZero())
+					WritePostfix(args[1], "[]");
+				else {
+					args[1].Accept(this, FuPriority.Primary);
+					WriteChar('[');
+					args[2].Accept(this, FuPriority.Argument);
+					Write(" .. $]");
+				}
+				WriteChar(')');
 				break;
 			case FuId.ArrayFillAll:
 			case FuId.ArrayFillPart:
@@ -16776,12 +16795,11 @@ namespace Fusion
 			case FuId.ConvertToBase64String:
 				Include("std.base64");
 				Write("Base64.encode(");
-				args[0].Accept(this, FuPriority.Primary);
-				WriteChar('[');
-				args[1].Accept(this, FuPriority.Argument);
-				Write(" .. $][0 .. ");
-				args[2].Accept(this, FuPriority.Argument);
-				Write("])");
+				if (IsWholeArray(args[0], args[1], args[2]))
+					args[0].Accept(this, FuPriority.Argument);
+				else
+					WriteSlice(args[0], args[1], args[2]);
+				WriteChar(')');
 				break;
 			case FuId.UTF8GetByteCount:
 				WritePostfix(args[0], ".length");
@@ -16790,17 +16808,12 @@ namespace Fusion
 				Include("std.string");
 				Include("std.algorithm");
 				WritePostfix(args[0], ".representation.copy(");
-				WritePostfix(args[1], "[");
-				args[2].Accept(this, FuPriority.Argument);
-				Write(" .. $])");
+				WriteOffset(args[1], args[2], FuPriority.Argument);
+				WriteChar(')');
 				break;
 			case FuId.UTF8GetString:
-				Write("cast(string) (");
-				WritePostfix(args[0], "[");
-				args[1].Accept(this, FuPriority.Argument);
-				Write(" .. $][0 .. ");
-				args[2].Accept(this, FuPriority.Argument);
-				Write("])");
+				Write("cast(string) ");
+				WriteSlice(args[0], args[1], args[2]);
 				break;
 			case FuId.RegexCompile:
 				Include("std.regex");
@@ -18143,10 +18156,14 @@ namespace Fusion
 				WriteWrite(method, args, true);
 				break;
 			case FuId.ConvertToBase64String:
-				Include("java.nio.ByteBuffer");
 				Include("java.util.Base64");
-				WriteCall("new String(Base64.getEncoder().encode(ByteBuffer.wrap", args[0], args[1], args[2]);
-				Write(").array())");
+				if (IsWholeArray(args[0], args[1], args[2]))
+					WriteCall("Base64.getEncoder().encodeToString", args[0]);
+				else {
+					Include("java.nio.ByteBuffer");
+					WriteCall("new String(Base64.getEncoder().encode(ByteBuffer.wrap", args[0], args[1], args[2]);
+					Write(").array())");
+				}
 				break;
 			case FuId.UTF8GetByteCount:
 				Include("java.nio.charset.StandardCharsets");
@@ -19151,6 +19168,20 @@ namespace Fusion
 			WriteCoerced(binary.IsRel() ? expr.Type : binary.Type, expr, parent);
 		}
 
+		void WriteSlice(FuExpr array, FuExpr offset, FuExpr length, FuPriority parent, string method)
+		{
+			if (IsWholeArray(array, offset, length))
+				array.Accept(this, parent);
+			else {
+				array.Accept(this, FuPriority.Primary);
+				WriteChar('.');
+				Write(method);
+				WriteChar('(');
+				WriteStartEnd(offset, length);
+				WriteChar(')');
+			}
+		}
+
 		static bool IsIdentifier(string s)
 		{
 			if (s.Length == 0 || s[0] < 'A')
@@ -19315,16 +19346,9 @@ namespace Fusion
 			case FuId.ArrayCopyTo:
 			case FuId.ListCopyTo:
 				args[1].Accept(this, FuPriority.Primary);
-				bool wholeSource = obj.Type is FuArrayStorageType sourceStorage && args[0].IsLiteralZero() && args[3] is FuLiteralLong literalLength && literalLength.Value == sourceStorage.Length;
 				if (obj.Type.AsClassType().GetElementType() is FuNumericType) {
 					Write(".set(");
-					if (wholeSource)
-						obj.Accept(this, FuPriority.Argument);
-					else {
-						WritePostfix(obj, method.Id == FuId.ArrayCopyTo ? ".subarray(" : ".slice(");
-						WriteStartEnd(args[0], args[3]);
-						WriteChar(')');
-					}
+					WriteSlice(obj, args[0], args[3], FuPriority.Argument, method.Id == FuId.ArrayCopyTo ? "subarray" : "slice");
 					if (!args[2].IsLiteralZero()) {
 						Write(", ");
 						args[2].Accept(this, FuPriority.Argument);
@@ -19336,12 +19360,7 @@ namespace Fusion
 					Write(", ");
 					args[3].Accept(this, FuPriority.Argument);
 					Write(", ...");
-					obj.Accept(this, FuPriority.Primary);
-					if (!wholeSource) {
-						Write(".slice(");
-						WriteStartEnd(args[0], args[3]);
-						WriteChar(')');
-					}
+					WriteSlice(obj, args[0], args[3], FuPriority.Primary, "slice");
 				}
 				WriteChar(')');
 				break;
@@ -19393,9 +19412,8 @@ namespace Fusion
 				Write(", ");
 				args[1].Accept(this, FuPriority.Argument);
 				Write(", ...");
-				WritePostfix(obj, ".slice(");
-				WriteStartEnd(args[0], args[1]);
-				Write(").sort((a, b) => a - b))");
+				WriteSlice(obj, args[0], args[1], FuPriority.Primary, "slice");
+				Write(".sort((a, b) => a - b))");
 				break;
 			case FuId.QueueDequeue:
 				WritePostfix(obj, ".shift()");
@@ -19488,9 +19506,8 @@ namespace Fusion
 				break;
 			case FuId.ConvertToBase64String:
 				Write("btoa(String.fromCodePoint(...");
-				WritePostfix(args[0], ".subarray(");
-				WriteStartEnd(args[1], args[2]);
-				Write(")))");
+				WriteSlice(args[0], args[1], args[2], FuPriority.Primary, "subarray");
+				Write("))");
 				break;
 			case FuId.UTF8GetByteCount:
 				Write("new TextEncoder().encode(");
@@ -19509,11 +19526,8 @@ namespace Fusion
 				break;
 			case FuId.UTF8GetString:
 				Write("new TextDecoder().decode(");
-				WritePostfix(args[0], ".subarray(");
-				args[1].Accept(this, FuPriority.Argument);
-				Write(", ");
-				WriteAdd(args[1], args[2]);
-				Write("))");
+				WriteSlice(args[0], args[1], args[2], FuPriority.Argument, "subarray");
+				WriteChar(')');
 				break;
 			case FuId.EnvironmentGetEnvironmentVariable:
 				if (args[0] is FuLiteralString literal && IsIdentifier(literal.Value)) {

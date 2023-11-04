@@ -7648,6 +7648,13 @@ export class GenBase extends FuVisitor
 		}
 	}
 
+	isWholeArray(array, offset, length)
+	{
+		let arrayStorage;
+		let literalLength;
+		return (arrayStorage = array.type) instanceof FuArrayStorageType && offset.isLiteralZero() && (literalLength = length) instanceof FuLiteralLong && arrayStorage.length == literalLength.value;
+	}
+
 	startAdd(expr)
 	{
 		if (!expr.isLiteralZero()) {
@@ -16972,6 +16979,26 @@ export class GenD extends GenCCppD
 		}
 	}
 
+	#writeOffset(obj, offset, parent)
+	{
+		if (offset.isLiteralZero())
+			this.#writeClassReference(obj, parent);
+		else {
+			this.#writeClassReference(obj, FuPriority.PRIMARY);
+			this.writeChar(91);
+			offset.accept(this, FuPriority.ARGUMENT);
+			this.write(" .. $]");
+		}
+	}
+
+	#writeSlice(obj, offset, length)
+	{
+		this.#writeOffset(obj, offset, FuPriority.PRIMARY);
+		this.write("[0 .. ");
+		length.accept(this, FuPriority.ARGUMENT);
+		this.writeChar(93);
+	}
+
 	#writeInsertedArg(type, args, index = 0)
 	{
 		if (args.length <= index) {
@@ -17033,14 +17060,10 @@ export class GenD extends GenCCppD
 			this.writeMethodCall(obj, "startsWith", args[0]);
 			break;
 		case FuId.STRING_SUBSTRING:
-			obj.accept(this, FuPriority.PRIMARY);
-			this.writeChar(91);
-			this.writePostfix(args[0], " .. $]");
-			if (args.length > 1) {
-				this.write("[0 .. ");
-				args[1].accept(this, FuPriority.ARGUMENT);
-				this.writeChar(93);
-			}
+			if (args.length == 2)
+				this.#writeSlice(obj, args[0], args[1]);
+			else
+				this.#writeOffset(obj, args[0], parent);
 			break;
 		case FuId.ARRAY_BINARY_SEARCH_ALL:
 		case FuId.ARRAY_BINARY_SEARCH_PART:
@@ -17070,16 +17093,17 @@ export class GenD extends GenCCppD
 		case FuId.ARRAY_COPY_TO:
 		case FuId.LIST_COPY_TO:
 			this.include("std.algorithm");
-			this.#writeClassReference(obj);
-			this.writeChar(91);
-			args[0].accept(this, FuPriority.ARGUMENT);
-			this.write(" .. $][0 .. ");
-			args[3].accept(this, FuPriority.ARGUMENT);
-			this.write("].copy(");
-			args[1].accept(this, FuPriority.ARGUMENT);
-			this.writeChar(91);
-			args[2].accept(this, FuPriority.ARGUMENT);
-			this.write(" .. $])");
+			this.#writeSlice(obj, args[0], args[3]);
+			this.write(".copy(");
+			if (args[2].isLiteralZero())
+				this.writePostfix(args[1], "[]");
+			else {
+				args[1].accept(this, FuPriority.PRIMARY);
+				this.writeChar(91);
+				args[2].accept(this, FuPriority.ARGUMENT);
+				this.write(" .. $]");
+			}
+			this.writeChar(41);
 			break;
 		case FuId.ARRAY_FILL_ALL:
 		case FuId.ARRAY_FILL_PART:
@@ -17257,12 +17281,11 @@ export class GenD extends GenCCppD
 		case FuId.CONVERT_TO_BASE64_STRING:
 			this.include("std.base64");
 			this.write("Base64.encode(");
-			args[0].accept(this, FuPriority.PRIMARY);
-			this.writeChar(91);
-			args[1].accept(this, FuPriority.ARGUMENT);
-			this.write(" .. $][0 .. ");
-			args[2].accept(this, FuPriority.ARGUMENT);
-			this.write("])");
+			if (this.isWholeArray(args[0], args[1], args[2]))
+				args[0].accept(this, FuPriority.ARGUMENT);
+			else
+				this.#writeSlice(args[0], args[1], args[2]);
+			this.writeChar(41);
 			break;
 		case FuId.U_T_F8_GET_BYTE_COUNT:
 			this.writePostfix(args[0], ".length");
@@ -17271,17 +17294,12 @@ export class GenD extends GenCCppD
 			this.include("std.string");
 			this.include("std.algorithm");
 			this.writePostfix(args[0], ".representation.copy(");
-			this.writePostfix(args[1], "[");
-			args[2].accept(this, FuPriority.ARGUMENT);
-			this.write(" .. $])");
+			this.#writeOffset(args[1], args[2], FuPriority.ARGUMENT);
+			this.writeChar(41);
 			break;
 		case FuId.U_T_F8_GET_STRING:
-			this.write("cast(string) (");
-			this.writePostfix(args[0], "[");
-			args[1].accept(this, FuPriority.ARGUMENT);
-			this.write(" .. $][0 .. ");
-			args[2].accept(this, FuPriority.ARGUMENT);
-			this.write("])");
+			this.write("cast(string) ");
+			this.#writeSlice(args[0], args[1], args[2]);
 			break;
 		case FuId.REGEX_COMPILE:
 			this.include("std.regex");
@@ -18660,10 +18678,14 @@ export class GenJava extends GenTyped
 			this.#writeWrite(method, args, true);
 			break;
 		case FuId.CONVERT_TO_BASE64_STRING:
-			this.include("java.nio.ByteBuffer");
 			this.include("java.util.Base64");
-			this.writeCall("new String(Base64.getEncoder().encode(ByteBuffer.wrap", args[0], args[1], args[2]);
-			this.write(").array())");
+			if (this.isWholeArray(args[0], args[1], args[2]))
+				this.writeCall("Base64.getEncoder().encodeToString", args[0]);
+			else {
+				this.include("java.nio.ByteBuffer");
+				this.writeCall("new String(Base64.getEncoder().encode(ByteBuffer.wrap", args[0], args[1], args[2]);
+				this.write(").array())");
+			}
 			break;
 		case FuId.U_T_F8_GET_BYTE_COUNT:
 			this.include("java.nio.charset.StandardCharsets");
@@ -19699,6 +19721,20 @@ export class GenJsNoModule extends GenBase
 		this.writeCoerced(binary.isRel() ? expr.type : binary.type, expr, parent);
 	}
 
+	#writeSlice(array, offset, length, parent, method)
+	{
+		if (this.isWholeArray(array, offset, length))
+			array.accept(this, parent);
+		else {
+			array.accept(this, FuPriority.PRIMARY);
+			this.writeChar(46);
+			this.write(method);
+			this.writeChar(40);
+			this.writeStartEnd(offset, length);
+			this.writeChar(41);
+		}
+	}
+
 	static #isIdentifier(s)
 	{
 		if (s.length == 0 || s.charCodeAt(0) < 65)
@@ -19867,18 +19903,9 @@ export class GenJsNoModule extends GenBase
 		case FuId.ARRAY_COPY_TO:
 		case FuId.LIST_COPY_TO:
 			args[1].accept(this, FuPriority.PRIMARY);
-			let sourceStorage;
-			let literalLength;
-			let wholeSource = (sourceStorage = obj.type) instanceof FuArrayStorageType && args[0].isLiteralZero() && (literalLength = args[3]) instanceof FuLiteralLong && literalLength.value == sourceStorage.length;
 			if (obj.type.asClassType().getElementType() instanceof FuNumericType) {
 				this.write(".set(");
-				if (wholeSource)
-					obj.accept(this, FuPriority.ARGUMENT);
-				else {
-					this.writePostfix(obj, method.id == FuId.ARRAY_COPY_TO ? ".subarray(" : ".slice(");
-					this.writeStartEnd(args[0], args[3]);
-					this.writeChar(41);
-				}
+				this.#writeSlice(obj, args[0], args[3], FuPriority.ARGUMENT, method.id == FuId.ARRAY_COPY_TO ? "subarray" : "slice");
 				if (!args[2].isLiteralZero()) {
 					this.write(", ");
 					args[2].accept(this, FuPriority.ARGUMENT);
@@ -19890,12 +19917,7 @@ export class GenJsNoModule extends GenBase
 				this.write(", ");
 				args[3].accept(this, FuPriority.ARGUMENT);
 				this.write(", ...");
-				obj.accept(this, FuPriority.PRIMARY);
-				if (!wholeSource) {
-					this.write(".slice(");
-					this.writeStartEnd(args[0], args[3]);
-					this.writeChar(41);
-				}
+				this.#writeSlice(obj, args[0], args[3], FuPriority.PRIMARY, "slice");
 			}
 			this.writeChar(41);
 			break;
@@ -19947,9 +19969,8 @@ export class GenJsNoModule extends GenBase
 			this.write(", ");
 			args[1].accept(this, FuPriority.ARGUMENT);
 			this.write(", ...");
-			this.writePostfix(obj, ".slice(");
-			this.writeStartEnd(args[0], args[1]);
-			this.write(").sort((a, b) => a - b))");
+			this.#writeSlice(obj, args[0], args[1], FuPriority.PRIMARY, "slice");
+			this.write(".sort((a, b) => a - b))");
 			break;
 		case FuId.QUEUE_DEQUEUE:
 			this.writePostfix(obj, ".shift()");
@@ -20042,9 +20063,8 @@ export class GenJsNoModule extends GenBase
 			break;
 		case FuId.CONVERT_TO_BASE64_STRING:
 			this.write("btoa(String.fromCodePoint(...");
-			this.writePostfix(args[0], ".subarray(");
-			this.writeStartEnd(args[1], args[2]);
-			this.write(")))");
+			this.#writeSlice(args[0], args[1], args[2], FuPriority.PRIMARY, "subarray");
+			this.write("))");
 			break;
 		case FuId.U_T_F8_GET_BYTE_COUNT:
 			this.write("new TextEncoder().encode(");
@@ -20063,11 +20083,8 @@ export class GenJsNoModule extends GenBase
 			break;
 		case FuId.U_T_F8_GET_STRING:
 			this.write("new TextDecoder().decode(");
-			this.writePostfix(args[0], ".subarray(");
-			args[1].accept(this, FuPriority.ARGUMENT);
-			this.write(", ");
-			this.writeAdd(args[1], args[2]);
-			this.write("))");
+			this.#writeSlice(args[0], args[1], args[2], FuPriority.ARGUMENT, "subarray");
+			this.writeChar(41);
 			break;
 		case FuId.ENVIRONMENT_GET_ENVIRONMENT_VARIABLE:
 			let literal;

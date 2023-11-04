@@ -931,6 +931,9 @@ public abstract class GenBase : FuVisitor
 		}
 	}
 
+	protected bool IsWholeArray(FuExpr array, FuExpr offset, FuExpr length) => array.Type is FuArrayStorageType arrayStorage
+		&& offset.IsLiteralZero() && length is FuLiteralLong literalLength && arrayStorage.Length == literalLength.Value;
+
 	protected void StartAdd!(FuExpr expr)
 	{
 		if (!expr.IsLiteralZero()) {

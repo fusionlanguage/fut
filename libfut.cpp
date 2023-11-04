@@ -7183,6 +7183,13 @@ void GenBase::visitPostfixExpr(const FuPostfixExpr * expr, FuPriority parent)
 	}
 }
 
+bool GenBase::isWholeArray(const FuExpr * array, const FuExpr * offset, const FuExpr * length) const
+{
+	const FuArrayStorageType * arrayStorage;
+	const FuLiteralLong * literalLength;
+	return (arrayStorage = dynamic_cast<const FuArrayStorageType *>(array->type.get())) && offset->isLiteralZero() && (literalLength = dynamic_cast<const FuLiteralLong *>(length)) && arrayStorage->length == literalLength->value;
+}
+
 void GenBase::startAdd(const FuExpr * expr)
 {
 	if (!expr->isLiteralZero()) {
@@ -15916,6 +15923,26 @@ void GenD::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool ne
 		writeCall(newLine ? "writeln" : "write", (*args)[0].get());
 }
 
+void GenD::writeOffset(const FuExpr * obj, const FuExpr * offset, FuPriority parent)
+{
+	if (offset->isLiteralZero())
+		writeClassReference(obj, parent);
+	else {
+		writeClassReference(obj, FuPriority::primary);
+		writeChar('[');
+		offset->accept(this, FuPriority::argument);
+		write(" .. $]");
+	}
+}
+
+void GenD::writeSlice(const FuExpr * obj, const FuExpr * offset, const FuExpr * length)
+{
+	writeOffset(obj, offset, FuPriority::primary);
+	write("[0 .. ");
+	length->accept(this, FuPriority::argument);
+	writeChar(']');
+}
+
 void GenD::writeInsertedArg(const FuType * type, const std::vector<std::shared_ptr<FuExpr>> * args, int index)
 {
 	if (std::ssize(*args) <= index) {
@@ -15977,14 +16004,10 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		writeMethodCall(obj, "startsWith", (*args)[0].get());
 		break;
 	case FuId::stringSubstring:
-		obj->accept(this, FuPriority::primary);
-		writeChar('[');
-		writePostfix((*args)[0].get(), " .. $]");
-		if (std::ssize(*args) > 1) {
-			write("[0 .. ");
-			(*args)[1]->accept(this, FuPriority::argument);
-			writeChar(']');
-		}
+		if (std::ssize(*args) == 2)
+			writeSlice(obj, (*args)[0].get(), (*args)[1].get());
+		else
+			writeOffset(obj, (*args)[0].get(), parent);
 		break;
 	case FuId::arrayBinarySearchAll:
 	case FuId::arrayBinarySearchPart:
@@ -16014,16 +16037,17 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 	case FuId::arrayCopyTo:
 	case FuId::listCopyTo:
 		include("std.algorithm");
-		writeClassReference(obj);
-		writeChar('[');
-		(*args)[0]->accept(this, FuPriority::argument);
-		write(" .. $][0 .. ");
-		(*args)[3]->accept(this, FuPriority::argument);
-		write("].copy(");
-		(*args)[1]->accept(this, FuPriority::argument);
-		writeChar('[');
-		(*args)[2]->accept(this, FuPriority::argument);
-		write(" .. $])");
+		writeSlice(obj, (*args)[0].get(), (*args)[3].get());
+		write(".copy(");
+		if ((*args)[2]->isLiteralZero())
+			writePostfix((*args)[1].get(), "[]");
+		else {
+			(*args)[1]->accept(this, FuPriority::primary);
+			writeChar('[');
+			(*args)[2]->accept(this, FuPriority::argument);
+			write(" .. $]");
+		}
+		writeChar(')');
 		break;
 	case FuId::arrayFillAll:
 	case FuId::arrayFillPart:
@@ -16201,12 +16225,11 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 	case FuId::convertToBase64String:
 		include("std.base64");
 		write("Base64.encode(");
-		(*args)[0]->accept(this, FuPriority::primary);
-		writeChar('[');
-		(*args)[1]->accept(this, FuPriority::argument);
-		write(" .. $][0 .. ");
-		(*args)[2]->accept(this, FuPriority::argument);
-		write("])");
+		if (isWholeArray((*args)[0].get(), (*args)[1].get(), (*args)[2].get()))
+			(*args)[0]->accept(this, FuPriority::argument);
+		else
+			writeSlice((*args)[0].get(), (*args)[1].get(), (*args)[2].get());
+		writeChar(')');
 		break;
 	case FuId::uTF8GetByteCount:
 		writePostfix((*args)[0].get(), ".length");
@@ -16215,17 +16238,12 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		include("std.string");
 		include("std.algorithm");
 		writePostfix((*args)[0].get(), ".representation.copy(");
-		writePostfix((*args)[1].get(), "[");
-		(*args)[2]->accept(this, FuPriority::argument);
-		write(" .. $])");
+		writeOffset((*args)[1].get(), (*args)[2].get(), FuPriority::argument);
+		writeChar(')');
 		break;
 	case FuId::uTF8GetString:
-		write("cast(string) (");
-		writePostfix((*args)[0].get(), "[");
-		(*args)[1]->accept(this, FuPriority::argument);
-		write(" .. $][0 .. ");
-		(*args)[2]->accept(this, FuPriority::argument);
-		write("])");
+		write("cast(string) ");
+		writeSlice((*args)[0].get(), (*args)[1].get(), (*args)[2].get());
 		break;
 	case FuId::regexCompile:
 		include("std.regex");
@@ -17504,10 +17522,14 @@ void GenJava::writeCallExpr(const FuExpr * obj, const FuMethod * method, const s
 		writeWrite(method, args, true);
 		break;
 	case FuId::convertToBase64String:
-		include("java.nio.ByteBuffer");
 		include("java.util.Base64");
-		writeCall("new String(Base64.getEncoder().encode(ByteBuffer.wrap", (*args)[0].get(), (*args)[1].get(), (*args)[2].get());
-		write(").array())");
+		if (isWholeArray((*args)[0].get(), (*args)[1].get(), (*args)[2].get()))
+			writeCall("Base64.getEncoder().encodeToString", (*args)[0].get());
+		else {
+			include("java.nio.ByteBuffer");
+			writeCall("new String(Base64.getEncoder().encode(ByteBuffer.wrap", (*args)[0].get(), (*args)[1].get(), (*args)[2].get());
+			write(").array())");
+		}
 		break;
 	case FuId::uTF8GetByteCount:
 		include("java.nio.charset.StandardCharsets");
@@ -18498,6 +18520,20 @@ void GenJsNoModule::writeBinaryOperand(const FuExpr * expr, FuPriority parent, c
 	writeCoerced(binary->isRel() ? expr->type.get() : binary->type.get(), expr, parent);
 }
 
+void GenJsNoModule::writeSlice(const FuExpr * array, const FuExpr * offset, const FuExpr * length, FuPriority parent, std::string_view method)
+{
+	if (isWholeArray(array, offset, length))
+		array->accept(this, parent);
+	else {
+		array->accept(this, FuPriority::primary);
+		writeChar('.');
+		write(method);
+		writeChar('(');
+		writeStartEnd(offset, length);
+		writeChar(')');
+	}
+}
+
 bool GenJsNoModule::isIdentifier(std::string_view s)
 {
 	if (s.empty() || s[0] < 'A')
@@ -18665,40 +18701,24 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 	case FuId::arrayCopyTo:
 	case FuId::listCopyTo:
 		(*args)[1]->accept(this, FuPriority::primary);
-		{
-			const FuArrayStorageType * sourceStorage;
-			const FuLiteralLong * literalLength;
-			bool wholeSource = (sourceStorage = dynamic_cast<const FuArrayStorageType *>(obj->type.get())) && (*args)[0]->isLiteralZero() && (literalLength = dynamic_cast<const FuLiteralLong *>((*args)[3].get())) && literalLength->value == sourceStorage->length;
-			if (dynamic_cast<const FuNumericType *>(obj->type->asClassType()->getElementType().get())) {
-				write(".set(");
-				if (wholeSource)
-					obj->accept(this, FuPriority::argument);
-				else {
-					writePostfix(obj, method->id == FuId::arrayCopyTo ? ".subarray(" : ".slice(");
-					writeStartEnd((*args)[0].get(), (*args)[3].get());
-					writeChar(')');
-				}
-				if (!(*args)[2]->isLiteralZero()) {
-					write(", ");
-					(*args)[2]->accept(this, FuPriority::argument);
-				}
-			}
-			else {
-				write(".splice(");
-				(*args)[2]->accept(this, FuPriority::argument);
+		if (dynamic_cast<const FuNumericType *>(obj->type->asClassType()->getElementType().get())) {
+			write(".set(");
+			writeSlice(obj, (*args)[0].get(), (*args)[3].get(), FuPriority::argument, method->id == FuId::arrayCopyTo ? "subarray" : "slice");
+			if (!(*args)[2]->isLiteralZero()) {
 				write(", ");
-				(*args)[3]->accept(this, FuPriority::argument);
-				write(", ...");
-				obj->accept(this, FuPriority::primary);
-				if (!wholeSource) {
-					write(".slice(");
-					writeStartEnd((*args)[0].get(), (*args)[3].get());
-					writeChar(')');
-				}
+				(*args)[2]->accept(this, FuPriority::argument);
 			}
-			writeChar(')');
-			break;
 		}
+		else {
+			write(".splice(");
+			(*args)[2]->accept(this, FuPriority::argument);
+			write(", ");
+			(*args)[3]->accept(this, FuPriority::argument);
+			write(", ...");
+			writeSlice(obj, (*args)[0].get(), (*args)[3].get(), FuPriority::primary, "slice");
+		}
+		writeChar(')');
+		break;
 	case FuId::arraySortPart:
 		writePostfix(obj, ".subarray(");
 		writeStartEnd((*args)[0].get(), (*args)[1].get());
@@ -18747,9 +18767,8 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 		write(", ");
 		(*args)[1]->accept(this, FuPriority::argument);
 		write(", ...");
-		writePostfix(obj, ".slice(");
-		writeStartEnd((*args)[0].get(), (*args)[1].get());
-		write(").sort((a, b) => a - b))");
+		writeSlice(obj, (*args)[0].get(), (*args)[1].get(), FuPriority::primary, "slice");
+		write(".sort((a, b) => a - b))");
 		break;
 	case FuId::queueDequeue:
 		writePostfix(obj, ".shift()");
@@ -18842,9 +18861,8 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 		break;
 	case FuId::convertToBase64String:
 		write("btoa(String.fromCodePoint(...");
-		writePostfix((*args)[0].get(), ".subarray(");
-		writeStartEnd((*args)[1].get(), (*args)[2].get());
-		write(")))");
+		writeSlice((*args)[0].get(), (*args)[1].get(), (*args)[2].get(), FuPriority::primary, "subarray");
+		write("))");
 		break;
 	case FuId::uTF8GetByteCount:
 		write("new TextEncoder().encode(");
@@ -18863,11 +18881,8 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 		break;
 	case FuId::uTF8GetString:
 		write("new TextDecoder().decode(");
-		writePostfix((*args)[0].get(), ".subarray(");
-		(*args)[1]->accept(this, FuPriority::argument);
-		write(", ");
-		writeAdd((*args)[1].get(), (*args)[2].get());
-		write("))");
+		writeSlice((*args)[0].get(), (*args)[1].get(), (*args)[2].get(), FuPriority::argument, "subarray");
+		writeChar(')');
 		break;
 	case FuId::environmentGetEnvironmentVariable:
 		{

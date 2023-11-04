@@ -435,6 +435,20 @@ public class GenJsNoModule : GenBase
 		WriteCoerced(binary.IsRel() ? expr.Type : binary.Type, expr, parent);
 	}
 
+	void WriteSlice!(FuExpr array, FuExpr offset, FuExpr length, FuPriority parent, string method)
+	{
+		if (IsWholeArray(array, offset, length))
+			array.Accept(this, parent);
+		else {
+			array.Accept(this, FuPriority.Primary);
+			WriteChar('.');
+			Write(method);
+			WriteChar('(');
+			WriteStartEnd(offset, length);
+			WriteChar(')');
+		}
+	}
+
 	static bool IsIdentifier(string s)
 	{
 		if (s.Length == 0 || s[0] < 'A')
@@ -599,17 +613,9 @@ public class GenJsNoModule : GenBase
 		case FuId.ArrayCopyTo:
 		case FuId.ListCopyTo:
 			args[1].Accept(this, FuPriority.Primary);
-			bool wholeSource = obj.Type is FuArrayStorageType sourceStorage && args[0].IsLiteralZero()
-				&& args[3] is FuLiteralLong literalLength && literalLength.Value == sourceStorage.Length;
 			if (obj.Type.AsClassType().GetElementType() is FuNumericType) {
 				Write(".set(");
-				if (wholeSource)
-					obj.Accept(this, FuPriority.Argument);
-				else {
-					WritePostfix(obj, method.Id == FuId.ArrayCopyTo ? ".subarray(" : ".slice(");
-					WriteStartEnd(args[0], args[3]);
-					WriteChar(')');
-				}
+				WriteSlice(obj, args[0], args[3], FuPriority.Argument, method.Id == FuId.ArrayCopyTo ? "subarray" : "slice");
 				if (!args[2].IsLiteralZero()) {
 					Write(", ");
 					args[2].Accept(this, FuPriority.Argument);
@@ -621,12 +627,7 @@ public class GenJsNoModule : GenBase
 				Write(", ");
 				args[3].Accept(this, FuPriority.Argument);
 				Write(", ...");
-				obj.Accept(this, FuPriority.Primary);
-				if (!wholeSource) {
-					Write(".slice(");
-					WriteStartEnd(args[0], args[3]);
-					WriteChar(')');
-				}
+				WriteSlice(obj, args[0], args[3], FuPriority.Primary, "slice");
 			}
 			WriteChar(')');
 			break;
@@ -678,9 +679,8 @@ public class GenJsNoModule : GenBase
 			Write(", ");
 			args[1].Accept(this, FuPriority.Argument);
 			Write(", ...");
-			WritePostfix(obj, ".slice(");
-			WriteStartEnd(args[0], args[1]); // FIXME: side effect
-			Write(").sort((a, b) => a - b))");
+			WriteSlice(obj, args[0], args[1], FuPriority.Primary, "slice");
+			Write(".sort((a, b) => a - b))");
 			break;
 		case FuId.QueueDequeue:
 			WritePostfix(obj, ".shift()");
@@ -774,9 +774,8 @@ public class GenJsNoModule : GenBase
 			break;
 		case FuId.ConvertToBase64String:
 			Write("btoa(String.fromCodePoint(...");
-			WritePostfix(args[0], ".subarray("); // TODO: without subarray
-			WriteStartEnd(args[1], args[2]); // FIXME: side effect
-			Write(")))");
+			WriteSlice(args[0], args[1], args[2], FuPriority.Primary, "subarray");
+			Write("))");
 			break;
 		case FuId.UTF8GetByteCount:
 			Write("new TextEncoder().encode(");
@@ -795,11 +794,8 @@ public class GenJsNoModule : GenBase
 			break;
 		case FuId.UTF8GetString:
 			Write("new TextDecoder().decode(");
-			WritePostfix(args[0], ".subarray(");
-			args[1].Accept(this, FuPriority.Argument);
-			Write(", ");
-			WriteAdd(args[1], args[2]); // FIXME: side effect
-			Write("))");
+			WriteSlice(args[0], args[1], args[2], FuPriority.Argument, "subarray");
+			WriteChar(')');
 			break;
 		case FuId.EnvironmentGetEnvironmentVariable:
 			if (args[0] is FuLiteralString literal && IsIdentifier(literal.Value)) {

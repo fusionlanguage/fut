@@ -720,6 +720,26 @@ public class GenD : GenCCppD
 			WriteCall(newLine ? "writeln" : "write", args[0]);
 	}
 
+	void WriteOffset!(FuExpr obj, FuExpr offset, FuPriority parent)
+	{
+		if (offset.IsLiteralZero())
+			WriteClassReference(obj, parent);
+		else {
+			WriteClassReference(obj, FuPriority.Primary);
+			WriteChar('[');
+			offset.Accept(this, FuPriority.Argument);
+			Write(" .. $]");
+		}
+	}
+
+	void WriteSlice!(FuExpr obj, FuExpr offset, FuExpr length)
+	{
+		WriteOffset(obj, offset, FuPriority.Primary);
+		Write("[0 .. ");
+		length.Accept(this, FuPriority.Argument);
+		WriteChar(']');
+	}
+
 	void WriteInsertedArg!(FuType type, List<FuExpr#> args, int index = 0)
 	{
 		if (args.Count <= index) {
@@ -781,14 +801,10 @@ public class GenD : GenCCppD
 			WriteMethodCall(obj, "startsWith", args[0]);
 			break;
 		case FuId.StringSubstring:
-			obj.Accept(this, FuPriority.Primary);
-			WriteChar('[');
-			WritePostfix(args[0], " .. $]");
-			if (args.Count > 1) {
-				Write("[0 .. ");
-				args[1].Accept(this, FuPriority.Argument);
-				WriteChar(']');
-			}
+			if (args.Count == 2)
+				WriteSlice(obj, args[0], args[1]);
+			else
+				WriteOffset(obj, args[0], parent);
 			break;
 		case FuId.ArrayBinarySearchAll:
 		case FuId.ArrayBinarySearchPart:
@@ -818,16 +834,17 @@ public class GenD : GenCCppD
 		case FuId.ArrayCopyTo:
 		case FuId.ListCopyTo:
 			Include("std.algorithm");
-			WriteClassReference(obj);
-			WriteChar('[');
-			args[0].Accept(this, FuPriority.Argument);
-			Write(" .. $][0 .. ");
-			args[3].Accept(this, FuPriority.Argument);
-			Write("].copy(");
-			args[1].Accept(this, FuPriority.Argument);
-			WriteChar('[');
-			args[2].Accept(this, FuPriority.Argument);
-			Write(" .. $])");
+			WriteSlice(obj, args[0], args[3]);
+			Write(".copy(");
+			if (args[2].IsLiteralZero())
+				WritePostfix(args[1], "[]");
+			else {
+				args[1].Accept(this, FuPriority.Primary);
+				WriteChar('[');
+				args[2].Accept(this, FuPriority.Argument);
+				Write(" .. $]");
+			}
+			WriteChar(')');
 			break;
 		case FuId.ArrayFillAll:
 		case FuId.ArrayFillPart:
@@ -1005,12 +1022,11 @@ public class GenD : GenCCppD
 		case FuId.ConvertToBase64String:
 			Include("std.base64");
 			Write("Base64.encode(");
-			args[0].Accept(this, FuPriority.Primary);
-			WriteChar('[');
-			args[1].Accept(this, FuPriority.Argument);
-			Write(" .. $][0 .. ");
-			args[2].Accept(this, FuPriority.Argument);
-			Write("])");
+			if (IsWholeArray(args[0], args[1], args[2]))
+				args[0].Accept(this, FuPriority.Argument);
+			else
+				WriteSlice(args[0], args[1], args[2]);
+			WriteChar(')');
 			break;
 		case FuId.UTF8GetByteCount:
 			WritePostfix(args[0], ".length");
@@ -1019,17 +1035,12 @@ public class GenD : GenCCppD
 			Include("std.string");
 			Include("std.algorithm");
 			WritePostfix(args[0], ".representation.copy(");
-			WritePostfix(args[1], "[");
-			args[2].Accept(this, FuPriority.Argument);
-			Write(" .. $])");
+			WriteOffset(args[1], args[2], FuPriority.Argument);
+			WriteChar(')');
 			break;
 		case FuId.UTF8GetString:
-			Write("cast(string) (");
-			WritePostfix(args[0], "[");
-			args[1].Accept(this, FuPriority.Argument);
-			Write(" .. $][0 .. ");
-			args[2].Accept(this, FuPriority.Argument);
-			Write("])");
+			Write("cast(string) ");
+			WriteSlice(args[0], args[1], args[2]);
 			break;
 		case FuId.RegexCompile:
 			Include("std.regex");
