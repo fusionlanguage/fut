@@ -2408,7 +2408,6 @@ private:
 	void writeStaticInitializer(const FuType * type);
 	void writeClassReference(const FuExpr * expr, FuPriority priority = FuPriority::primary);
 	void writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine);
-	void writeOffset(const FuExpr * obj, const FuExpr * offset, FuPriority parent);
 	void writeSlice(const FuExpr * obj, const FuExpr * offset, const FuExpr * length);
 	void writeInsertedArg(const FuType * type, const std::vector<std::shared_ptr<FuExpr>> * args, int index = 0);
 	static bool isIsComparable(const FuExpr * expr);

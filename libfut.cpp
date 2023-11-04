@@ -15923,23 +15923,22 @@ void GenD::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool ne
 		writeCall(newLine ? "writeln" : "write", (*args)[0].get());
 }
 
-void GenD::writeOffset(const FuExpr * obj, const FuExpr * offset, FuPriority parent)
-{
-	if (offset->isLiteralZero())
-		writeClassReference(obj, parent);
-	else {
-		writeClassReference(obj, FuPriority::primary);
-		writeChar('[');
-		offset->accept(this, FuPriority::argument);
-		write(" .. $]");
-	}
-}
-
 void GenD::writeSlice(const FuExpr * obj, const FuExpr * offset, const FuExpr * length)
 {
-	writeOffset(obj, offset, FuPriority::primary);
-	write("[0 .. ");
-	length->accept(this, FuPriority::argument);
+	writeClassReference(obj, FuPriority::primary);
+	writeChar('[');
+	if (!offset->isLiteralZero() || length != nullptr) {
+		offset->accept(this, FuPriority::argument);
+		write(" .. ");
+		if (length == nullptr)
+			writeChar('$');
+		else if (dynamic_cast<const FuLiteralLong *>(offset))
+			writeAdd(offset, length);
+		else {
+			write("$][0 .. ");
+			length->accept(this, FuPriority::argument);
+		}
+	}
 	writeChar(']');
 }
 
@@ -16004,10 +16003,7 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		writeMethodCall(obj, "startsWith", (*args)[0].get());
 		break;
 	case FuId::stringSubstring:
-		if (std::ssize(*args) == 2)
-			writeSlice(obj, (*args)[0].get(), (*args)[1].get());
-		else
-			writeOffset(obj, (*args)[0].get(), parent);
+		writeSlice(obj, (*args)[0].get(), std::ssize(*args) == 2 ? (*args)[1].get() : nullptr);
 		break;
 	case FuId::arrayBinarySearchAll:
 	case FuId::arrayBinarySearchPart:
@@ -16039,27 +16035,19 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		include("std.algorithm");
 		writeSlice(obj, (*args)[0].get(), (*args)[3].get());
 		write(".copy(");
-		if ((*args)[2]->isLiteralZero())
-			writePostfix((*args)[1].get(), "[]");
-		else {
-			(*args)[1]->accept(this, FuPriority::primary);
-			writeChar('[');
-			(*args)[2]->accept(this, FuPriority::argument);
-			write(" .. $]");
-		}
+		writeSlice((*args)[1].get(), (*args)[2].get(), nullptr);
 		writeChar(')');
 		break;
 	case FuId::arrayFillAll:
 	case FuId::arrayFillPart:
 		include("std.algorithm");
-		writeClassReference(obj);
-		writeChar('[');
-		if (std::ssize(*args) == 3) {
-			(*args)[1]->accept(this, FuPriority::argument);
-			write(" .. $][0 .. ");
-			(*args)[2]->accept(this, FuPriority::argument);
+		if (std::ssize(*args) == 3)
+			writeSlice(obj, (*args)[1].get(), (*args)[2].get());
+		else {
+			writeClassReference(obj);
+			write("[]");
 		}
-		write("].fill(");
+		write(".fill(");
 		writeNotPromoted(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
 		writeChar(')');
 		break;
@@ -16068,14 +16056,13 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 	case FuId::listSortAll:
 	case FuId::listSortPart:
 		include("std.algorithm");
-		writeClassReference(obj);
-		writeChar('[');
-		if (std::ssize(*args) == 2) {
-			(*args)[0]->accept(this, FuPriority::argument);
-			write(" .. $][0 .. ");
-			(*args)[1]->accept(this, FuPriority::argument);
+		if (std::ssize(*args) == 2)
+			writeSlice(obj, (*args)[0].get(), (*args)[1].get());
+		else {
+			writeClassReference(obj);
+			write("[]");
 		}
-		write("].sort");
+		write(".sort");
 		break;
 	case FuId::listAdd:
 	case FuId::queueEnqueue:
@@ -16238,7 +16225,7 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		include("std.string");
 		include("std.algorithm");
 		writePostfix((*args)[0].get(), ".representation.copy(");
-		writeOffset((*args)[1].get(), (*args)[2].get(), FuPriority::argument);
+		writeSlice((*args)[1].get(), (*args)[2].get(), nullptr);
 		writeChar(')');
 		break;
 	case FuId::uTF8GetString:

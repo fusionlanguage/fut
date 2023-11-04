@@ -16979,23 +16979,22 @@ export class GenD extends GenCCppD
 		}
 	}
 
-	#writeOffset(obj, offset, parent)
-	{
-		if (offset.isLiteralZero())
-			this.#writeClassReference(obj, parent);
-		else {
-			this.#writeClassReference(obj, FuPriority.PRIMARY);
-			this.writeChar(91);
-			offset.accept(this, FuPriority.ARGUMENT);
-			this.write(" .. $]");
-		}
-	}
-
 	#writeSlice(obj, offset, length)
 	{
-		this.#writeOffset(obj, offset, FuPriority.PRIMARY);
-		this.write("[0 .. ");
-		length.accept(this, FuPriority.ARGUMENT);
+		this.#writeClassReference(obj, FuPriority.PRIMARY);
+		this.writeChar(91);
+		if (!offset.isLiteralZero() || length != null) {
+			offset.accept(this, FuPriority.ARGUMENT);
+			this.write(" .. ");
+			if (length == null)
+				this.writeChar(36);
+			else if (offset instanceof FuLiteralLong)
+				this.writeAdd(offset, length);
+			else {
+				this.write("$][0 .. ");
+				length.accept(this, FuPriority.ARGUMENT);
+			}
+		}
 		this.writeChar(93);
 	}
 
@@ -17060,10 +17059,7 @@ export class GenD extends GenCCppD
 			this.writeMethodCall(obj, "startsWith", args[0]);
 			break;
 		case FuId.STRING_SUBSTRING:
-			if (args.length == 2)
-				this.#writeSlice(obj, args[0], args[1]);
-			else
-				this.#writeOffset(obj, args[0], parent);
+			this.#writeSlice(obj, args[0], args.length == 2 ? args[1] : null);
 			break;
 		case FuId.ARRAY_BINARY_SEARCH_ALL:
 		case FuId.ARRAY_BINARY_SEARCH_PART:
@@ -17095,27 +17091,19 @@ export class GenD extends GenCCppD
 			this.include("std.algorithm");
 			this.#writeSlice(obj, args[0], args[3]);
 			this.write(".copy(");
-			if (args[2].isLiteralZero())
-				this.writePostfix(args[1], "[]");
-			else {
-				args[1].accept(this, FuPriority.PRIMARY);
-				this.writeChar(91);
-				args[2].accept(this, FuPriority.ARGUMENT);
-				this.write(" .. $]");
-			}
+			this.#writeSlice(args[1], args[2], null);
 			this.writeChar(41);
 			break;
 		case FuId.ARRAY_FILL_ALL:
 		case FuId.ARRAY_FILL_PART:
 			this.include("std.algorithm");
-			this.#writeClassReference(obj);
-			this.writeChar(91);
-			if (args.length == 3) {
-				args[1].accept(this, FuPriority.ARGUMENT);
-				this.write(" .. $][0 .. ");
-				args[2].accept(this, FuPriority.ARGUMENT);
+			if (args.length == 3)
+				this.#writeSlice(obj, args[1], args[2]);
+			else {
+				this.#writeClassReference(obj);
+				this.write("[]");
 			}
-			this.write("].fill(");
+			this.write(".fill(");
 			this.writeNotPromoted(obj.type.asClassType().getElementType(), args[0]);
 			this.writeChar(41);
 			break;
@@ -17124,14 +17112,13 @@ export class GenD extends GenCCppD
 		case FuId.LIST_SORT_ALL:
 		case FuId.LIST_SORT_PART:
 			this.include("std.algorithm");
-			this.#writeClassReference(obj);
-			this.writeChar(91);
-			if (args.length == 2) {
-				args[0].accept(this, FuPriority.ARGUMENT);
-				this.write(" .. $][0 .. ");
-				args[1].accept(this, FuPriority.ARGUMENT);
+			if (args.length == 2)
+				this.#writeSlice(obj, args[0], args[1]);
+			else {
+				this.#writeClassReference(obj);
+				this.write("[]");
 			}
-			this.write("].sort");
+			this.write(".sort");
 			break;
 		case FuId.LIST_ADD:
 		case FuId.QUEUE_ENQUEUE:
@@ -17294,7 +17281,7 @@ export class GenD extends GenCCppD
 			this.include("std.string");
 			this.include("std.algorithm");
 			this.writePostfix(args[0], ".representation.copy(");
-			this.#writeOffset(args[1], args[2], FuPriority.ARGUMENT);
+			this.#writeSlice(args[1], args[2], null);
 			this.writeChar(41);
 			break;
 		case FuId.U_T_F8_GET_STRING:

@@ -16493,23 +16493,22 @@ namespace Fusion
 				WriteCall(newLine ? "writeln" : "write", args[0]);
 		}
 
-		void WriteOffset(FuExpr obj, FuExpr offset, FuPriority parent)
-		{
-			if (offset.IsLiteralZero())
-				WriteClassReference(obj, parent);
-			else {
-				WriteClassReference(obj, FuPriority.Primary);
-				WriteChar('[');
-				offset.Accept(this, FuPriority.Argument);
-				Write(" .. $]");
-			}
-		}
-
 		void WriteSlice(FuExpr obj, FuExpr offset, FuExpr length)
 		{
-			WriteOffset(obj, offset, FuPriority.Primary);
-			Write("[0 .. ");
-			length.Accept(this, FuPriority.Argument);
+			WriteClassReference(obj, FuPriority.Primary);
+			WriteChar('[');
+			if (!offset.IsLiteralZero() || length != null) {
+				offset.Accept(this, FuPriority.Argument);
+				Write(" .. ");
+				if (length == null)
+					WriteChar('$');
+				else if (offset is FuLiteralLong)
+					WriteAdd(offset, length);
+				else {
+					Write("$][0 .. ");
+					length.Accept(this, FuPriority.Argument);
+				}
+			}
 			WriteChar(']');
 		}
 
@@ -16574,10 +16573,7 @@ namespace Fusion
 				WriteMethodCall(obj, "startsWith", args[0]);
 				break;
 			case FuId.StringSubstring:
-				if (args.Count == 2)
-					WriteSlice(obj, args[0], args[1]);
-				else
-					WriteOffset(obj, args[0], parent);
+				WriteSlice(obj, args[0], args.Count == 2 ? args[1] : null);
 				break;
 			case FuId.ArrayBinarySearchAll:
 			case FuId.ArrayBinarySearchPart:
@@ -16609,27 +16605,19 @@ namespace Fusion
 				Include("std.algorithm");
 				WriteSlice(obj, args[0], args[3]);
 				Write(".copy(");
-				if (args[2].IsLiteralZero())
-					WritePostfix(args[1], "[]");
-				else {
-					args[1].Accept(this, FuPriority.Primary);
-					WriteChar('[');
-					args[2].Accept(this, FuPriority.Argument);
-					Write(" .. $]");
-				}
+				WriteSlice(args[1], args[2], null);
 				WriteChar(')');
 				break;
 			case FuId.ArrayFillAll:
 			case FuId.ArrayFillPart:
 				Include("std.algorithm");
-				WriteClassReference(obj);
-				WriteChar('[');
-				if (args.Count == 3) {
-					args[1].Accept(this, FuPriority.Argument);
-					Write(" .. $][0 .. ");
-					args[2].Accept(this, FuPriority.Argument);
+				if (args.Count == 3)
+					WriteSlice(obj, args[1], args[2]);
+				else {
+					WriteClassReference(obj);
+					Write("[]");
 				}
-				Write("].fill(");
+				Write(".fill(");
 				WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
 				WriteChar(')');
 				break;
@@ -16638,14 +16626,13 @@ namespace Fusion
 			case FuId.ListSortAll:
 			case FuId.ListSortPart:
 				Include("std.algorithm");
-				WriteClassReference(obj);
-				WriteChar('[');
-				if (args.Count == 2) {
-					args[0].Accept(this, FuPriority.Argument);
-					Write(" .. $][0 .. ");
-					args[1].Accept(this, FuPriority.Argument);
+				if (args.Count == 2)
+					WriteSlice(obj, args[0], args[1]);
+				else {
+					WriteClassReference(obj);
+					Write("[]");
 				}
-				Write("].sort");
+				Write(".sort");
 				break;
 			case FuId.ListAdd:
 			case FuId.QueueEnqueue:
@@ -16808,7 +16795,7 @@ namespace Fusion
 				Include("std.string");
 				Include("std.algorithm");
 				WritePostfix(args[0], ".representation.copy(");
-				WriteOffset(args[1], args[2], FuPriority.Argument);
+				WriteSlice(args[1], args[2], null);
 				WriteChar(')');
 				break;
 			case FuId.UTF8GetString:
