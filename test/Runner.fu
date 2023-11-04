@@ -1,4 +1,4 @@
-public class Runner
+public static class Runner
 {
 	public static int Main()
 	{
