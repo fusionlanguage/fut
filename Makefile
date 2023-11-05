@@ -159,7 +159,7 @@ test/bin/%/js.txt: test/bin/%/Test.js
 	$(DO)node $< >$@ || grep '//FAIL:.*\<js\>' test/$*.fu
 
 test/bin/%/ts.txt: test/bin/%/Test.ts test/node_modules test/tsconfig.json
-	$(DO)(cd test && node --loader ts-node/esm ../$< >../$@) || grep '//FAIL:.*\<ts\>' test/$*.fu
+	$(DO)test/node_modules/.bin/ts-node $< >$@ || grep '//FAIL:.*\<ts\>' test/$*.fu
 
 test/bin/%/py.txt: test/bin/%/Test.py
 	$(DO)$(PYTHON) $< >$@ || grep '//FAIL:.*\<py\>' test/$*.fu
