@@ -4,6 +4,7 @@
   "version": "3.0.2-development",
   "repository": "https://github.com/fusionlanguage/fut.git",
   "author": "Piotr Fusik",
+  "type": "module",
   "dependencies": {
     "ts-node": "^10.9.1"
   }

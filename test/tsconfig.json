@@ -1,8 +1,12 @@
 {
   "compilerOptions": {
     "target": "es2021",
+    "module": "ESNext",
     "noEmit": true,
     "strictNullChecks": false,
     "forceConsistentCasingInFileNames": true
+  },
+  "ts-node": {
+    "esm": true
   }
 }
