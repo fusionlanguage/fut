@@ -24373,6 +24373,18 @@ export class GenPy extends GenPySwift
 		}
 	}
 
+	#writeCollectionTypeAnnotation(name, klass)
+	{
+		this.write(name);
+		this.writeChar(91);
+		this.#writeTypeAnnotation(klass.getElementType());
+		if (klass.class.typeParameterCount == 2) {
+			this.write(", ");
+			this.#writeTypeAnnotation(klass.getValueType());
+		}
+		this.writeChar(93);
+	}
+
 	#writeTypeAnnotation(type)
 	{
 		if (type instanceof FuIntegerType)
@@ -24409,31 +24421,23 @@ export class GenPy extends GenPySwift
 				break;
 			case FuId.LIST_CLASS:
 			case FuId.STACK_CLASS:
-				this.write("list[");
-				this.#writeTypeAnnotation(klass.getElementType());
-				this.writeChar(93);
+				this.#writeCollectionTypeAnnotation("list", klass);
 				break;
 			case FuId.QUEUE_CLASS:
 				this.include("collections");
-				this.write("collections.deque");
+				this.#writeCollectionTypeAnnotation("collections.deque", klass);
 				break;
 			case FuId.HASH_SET_CLASS:
 			case FuId.SORTED_SET_CLASS:
-				this.write("set[");
-				this.#writeTypeAnnotation(klass.getElementType());
-				this.writeChar(93);
+				this.#writeCollectionTypeAnnotation("set", klass);
 				break;
 			case FuId.DICTIONARY_CLASS:
 			case FuId.SORTED_DICTIONARY_CLASS:
-				this.write("dict[");
-				this.#writeTypeAnnotation(klass.getKeyType());
-				this.write(", ");
-				this.#writeTypeAnnotation(klass.getValueType());
-				this.writeChar(93);
+				this.#writeCollectionTypeAnnotation("dict", klass);
 				break;
 			case FuId.ORDERED_DICTIONARY_CLASS:
 				this.include("collections");
-				this.write("collections.OrderedDict");
+				this.#writeCollectionTypeAnnotation("collections.OrderedDict", klass);
 				break;
 			case FuId.STRING_WRITER_CLASS:
 				this.include("io");

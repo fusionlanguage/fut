@@ -2829,6 +2829,7 @@ private:
 	void writePyCaseBody(const FuSwitch * statement, const std::vector<std::shared_ptr<FuStatement>> * body);
 	void writePyClass(const FuContainerType * type);
 	void writePyClassAnnotation(const FuContainerType * type);
+	void writeCollectionTypeAnnotation(std::string_view name, const FuClassType * klass);
 	void writeTypeAnnotation(const FuType * type);
 	bool inheritsConstructor(const FuClass * klass) const;
 	void writeResourceByte(int b);

@@ -23776,6 +23776,18 @@ namespace Fusion
 			}
 		}
 
+		void WriteCollectionTypeAnnotation(string name, FuClassType klass)
+		{
+			Write(name);
+			WriteChar('[');
+			WriteTypeAnnotation(klass.GetElementType());
+			if (klass.Class.TypeParameterCount == 2) {
+				Write(", ");
+				WriteTypeAnnotation(klass.GetValueType());
+			}
+			WriteChar(']');
+		}
+
 		void WriteTypeAnnotation(FuType type)
 		{
 			switch (type) {
@@ -23813,31 +23825,23 @@ namespace Fusion
 					break;
 				case FuId.ListClass:
 				case FuId.StackClass:
-					Write("list[");
-					WriteTypeAnnotation(klass.GetElementType());
-					WriteChar(']');
+					WriteCollectionTypeAnnotation("list", klass);
 					break;
 				case FuId.QueueClass:
 					Include("collections");
-					Write("collections.deque");
+					WriteCollectionTypeAnnotation("collections.deque", klass);
 					break;
 				case FuId.HashSetClass:
 				case FuId.SortedSetClass:
-					Write("set[");
-					WriteTypeAnnotation(klass.GetElementType());
-					WriteChar(']');
+					WriteCollectionTypeAnnotation("set", klass);
 					break;
 				case FuId.DictionaryClass:
 				case FuId.SortedDictionaryClass:
-					Write("dict[");
-					WriteTypeAnnotation(klass.GetKeyType());
-					Write(", ");
-					WriteTypeAnnotation(klass.GetValueType());
-					WriteChar(']');
+					WriteCollectionTypeAnnotation("dict", klass);
 					break;
 				case FuId.OrderedDictionaryClass:
 					Include("collections");
-					Write("collections.OrderedDict");
+					WriteCollectionTypeAnnotation("collections.OrderedDict", klass);
 					break;
 				case FuId.StringWriterClass:
 					Include("io");

@@ -22970,6 +22970,18 @@ void GenPy::writePyClassAnnotation(const FuContainerType * type)
 	}
 }
 
+void GenPy::writeCollectionTypeAnnotation(std::string_view name, const FuClassType * klass)
+{
+	write(name);
+	writeChar('[');
+	writeTypeAnnotation(klass->getElementType().get());
+	if (klass->class_->typeParameterCount == 2) {
+		write(", ");
+		writeTypeAnnotation(klass->getValueType().get());
+	}
+	writeChar(']');
+}
+
 void GenPy::writeTypeAnnotation(const FuType * type)
 {
 	if (dynamic_cast<const FuIntegerType *>(type))
@@ -23004,31 +23016,23 @@ void GenPy::writeTypeAnnotation(const FuType * type)
 			break;
 		case FuId::listClass:
 		case FuId::stackClass:
-			write("list[");
-			writeTypeAnnotation(klass->getElementType().get());
-			writeChar(']');
+			writeCollectionTypeAnnotation("list", klass);
 			break;
 		case FuId::queueClass:
 			include("collections");
-			write("collections.deque");
+			writeCollectionTypeAnnotation("collections.deque", klass);
 			break;
 		case FuId::hashSetClass:
 		case FuId::sortedSetClass:
-			write("set[");
-			writeTypeAnnotation(klass->getElementType().get());
-			writeChar(']');
+			writeCollectionTypeAnnotation("set", klass);
 			break;
 		case FuId::dictionaryClass:
 		case FuId::sortedDictionaryClass:
-			write("dict[");
-			writeTypeAnnotation(klass->getKeyType());
-			write(", ");
-			writeTypeAnnotation(klass->getValueType().get());
-			writeChar(']');
+			writeCollectionTypeAnnotation("dict", klass);
 			break;
 		case FuId::orderedDictionaryClass:
 			include("collections");
-			write("collections.OrderedDict");
+			writeCollectionTypeAnnotation("collections.OrderedDict", klass);
 			break;
 		case FuId::stringWriterClass:
 			include("io");
