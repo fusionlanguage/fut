@@ -22915,6 +22915,13 @@ void GenPy::visitThrow(const FuThrow * statement)
 	writeCharLine(')');
 }
 
+void GenPy::writePyClass(const FuContainerType * type)
+{
+	writeNewLine();
+	write("class ");
+	writeName(type);
+}
+
 void GenPy::visitEnumValue(const FuConst * konst, const FuConst * previous)
 {
 	writeUppercaseWithUnderscores(konst->name);
@@ -22926,15 +22933,14 @@ void GenPy::visitEnumValue(const FuConst * konst, const FuConst * previous)
 
 void GenPy::writeEnum(const FuEnum * enu)
 {
+	writePyClass(enu);
 	include("enum");
-	writeNewLine();
-	write("class ");
-	writeName(enu);
 	write(dynamic_cast<const FuEnumFlags *>(enu) ? "(enum.Flag)" : "(enum.Enum)");
 	openChild();
 	writeDoc(enu->documentation.get());
 	enu->acceptValues(this);
 	closeChild();
+	this->writtenTypes.insert(enu);
 }
 
 void GenPy::writeConst(const FuConst * konst)
@@ -22953,6 +22959,106 @@ void GenPy::writeField(const FuField * field)
 {
 }
 
+void GenPy::writePyClassAnnotation(const FuContainerType * type)
+{
+	if (this->writtenTypes.contains(type))
+		writeName(type);
+	else {
+		writeChar('"');
+		writeName(type);
+		writeChar('"');
+	}
+}
+
+void GenPy::writeTypeAnnotation(const FuType * type)
+{
+	if (dynamic_cast<const FuIntegerType *>(type))
+		write("int");
+	else if (dynamic_cast<const FuFloatingType *>(type))
+		write("float");
+	else if (const FuEnum *enu = dynamic_cast<const FuEnum *>(type)) {
+		if (enu->id == FuId::boolType)
+			write("bool");
+		else
+			writePyClassAnnotation(enu);
+	}
+	else if (const FuClassType *klass = dynamic_cast<const FuClassType *>(type)) {
+		switch (klass->class_->id) {
+		case FuId::none:
+			writePyClassAnnotation(klass->class_);
+			break;
+		case FuId::stringClass:
+			write("str");
+			break;
+		case FuId::arrayPtrClass:
+		case FuId::arrayStorageClass:
+			if (klass->getElementType()->id == FuId::byteRange) {
+				write("bytearray");
+				if (!dynamic_cast<const FuReadWriteClassType *>(klass))
+					write(" | bytes");
+			}
+			else {
+				include("array");
+				write("array.array");
+			}
+			break;
+		case FuId::listClass:
+		case FuId::stackClass:
+			write("list[");
+			writeTypeAnnotation(klass->getElementType().get());
+			writeChar(']');
+			break;
+		case FuId::queueClass:
+			include("collections");
+			write("collections.deque");
+			break;
+		case FuId::hashSetClass:
+		case FuId::sortedSetClass:
+			write("set[");
+			writeTypeAnnotation(klass->getElementType().get());
+			writeChar(']');
+			break;
+		case FuId::dictionaryClass:
+		case FuId::sortedDictionaryClass:
+			write("dict[");
+			writeTypeAnnotation(klass->getKeyType());
+			write(", ");
+			writeTypeAnnotation(klass->getValueType().get());
+			writeChar(']');
+			break;
+		case FuId::orderedDictionaryClass:
+			include("collections");
+			write("collections.OrderedDict");
+			break;
+		case FuId::stringWriterClass:
+			include("io");
+			write("io.StringIO");
+			break;
+		case FuId::matchClass:
+			include("re");
+			write("re.Match");
+			break;
+		case FuId::lockClass:
+			include("threading");
+			write("threading.RLock");
+			break;
+		default:
+			std::abort();
+		}
+		if (klass->nullable)
+			write(" | None");
+	}
+	else
+		std::abort();
+}
+
+void GenPy::writeParameter(const FuVar * param)
+{
+	writeNameNotKeyword(param->name);
+	write(" : ");
+	writeTypeAnnotation(param->type.get());
+}
+
 void GenPy::writeMethod(const FuMethod * method)
 {
 	if (method->callType == FuCallType::abstract)
@@ -22968,6 +23074,11 @@ void GenPy::writeMethod(const FuMethod * method)
 		write("(self");
 		writeRemainingParameters(method, false, true);
 	}
+	write(" -> ");
+	if (method->type->id == FuId::voidType)
+		write("None");
+	else
+		writeTypeAnnotation(method->type.get());
 	this->currentMethod = method;
 	openChild();
 	writePyDoc(method);
@@ -23000,9 +23111,7 @@ void GenPy::writeClass(const FuClass * klass, const FuProgram * program)
 {
 	if (!writeBaseClass(klass, program))
 		return;
-	writeNewLine();
-	write("class ");
-	writeName(klass);
+	writePyClass(klass);
 	if (const FuClass *baseClass = dynamic_cast<const FuClass *>(klass->parent)) {
 		writeChar('(');
 		writeName(baseClass);
@@ -23025,6 +23134,7 @@ void GenPy::writeClass(const FuClass * klass, const FuProgram * program)
 	}
 	writeMembers(klass, true);
 	closeChild();
+	this->writtenTypes.insert(klass);
 }
 
 void GenPy::writeResourceByte(int b)
@@ -23077,6 +23187,7 @@ void GenPy::writeMain(const FuMethod * main)
 
 void GenPy::writeProgram(const FuProgram * program)
 {
+	this->writtenTypes.clear();
 	this->switchBreak = false;
 	openStringWriter();
 	writeTypes(program);

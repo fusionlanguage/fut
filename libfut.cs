@@ -22563,6 +22563,8 @@ namespace Fusion
 	public class GenPy : GenPySwift
 	{
 
+		readonly HashSet<FuContainerType> WrittenTypes = new HashSet<FuContainerType>();
+
 		bool ChildPass;
 
 		bool SwitchBreak;
@@ -23719,6 +23721,13 @@ namespace Fusion
 			WriteCharLine(')');
 		}
 
+		void WritePyClass(FuContainerType type)
+		{
+			WriteNewLine();
+			Write("class ");
+			WriteName(type);
+		}
+
 		internal override void VisitEnumValue(FuConst konst, FuConst previous)
 		{
 			WriteUppercaseWithUnderscores(konst.Name);
@@ -23730,15 +23739,14 @@ namespace Fusion
 
 		protected override void WriteEnum(FuEnum enu)
 		{
+			WritePyClass(enu);
 			Include("enum");
-			WriteNewLine();
-			Write("class ");
-			WriteName(enu);
 			Write(enu is FuEnumFlags ? "(enum.Flag)" : "(enum.Enum)");
 			OpenChild();
 			WriteDoc(enu.Documentation);
 			enu.AcceptValues(this);
 			CloseChild();
+			this.WrittenTypes.Add(enu);
 		}
 
 		protected override void WriteConst(FuConst konst)
@@ -23757,6 +23765,110 @@ namespace Fusion
 		{
 		}
 
+		void WritePyClassAnnotation(FuContainerType type)
+		{
+			if (this.WrittenTypes.Contains(type))
+				WriteName(type);
+			else {
+				WriteChar('"');
+				WriteName(type);
+				WriteChar('"');
+			}
+		}
+
+		void WriteTypeAnnotation(FuType type)
+		{
+			switch (type) {
+			case FuIntegerType _:
+				Write("int");
+				break;
+			case FuFloatingType _:
+				Write("float");
+				break;
+			case FuEnum enu:
+				if (enu.Id == FuId.BoolType)
+					Write("bool");
+				else
+					WritePyClassAnnotation(enu);
+				break;
+			case FuClassType klass:
+				switch (klass.Class.Id) {
+				case FuId.None:
+					WritePyClassAnnotation(klass.Class);
+					break;
+				case FuId.StringClass:
+					Write("str");
+					break;
+				case FuId.ArrayPtrClass:
+				case FuId.ArrayStorageClass:
+					if (klass.GetElementType().Id == FuId.ByteRange) {
+						Write("bytearray");
+						if (!(klass is FuReadWriteClassType))
+							Write(" | bytes");
+					}
+					else {
+						Include("array");
+						Write("array.array");
+					}
+					break;
+				case FuId.ListClass:
+				case FuId.StackClass:
+					Write("list[");
+					WriteTypeAnnotation(klass.GetElementType());
+					WriteChar(']');
+					break;
+				case FuId.QueueClass:
+					Include("collections");
+					Write("collections.deque");
+					break;
+				case FuId.HashSetClass:
+				case FuId.SortedSetClass:
+					Write("set[");
+					WriteTypeAnnotation(klass.GetElementType());
+					WriteChar(']');
+					break;
+				case FuId.DictionaryClass:
+				case FuId.SortedDictionaryClass:
+					Write("dict[");
+					WriteTypeAnnotation(klass.GetKeyType());
+					Write(", ");
+					WriteTypeAnnotation(klass.GetValueType());
+					WriteChar(']');
+					break;
+				case FuId.OrderedDictionaryClass:
+					Include("collections");
+					Write("collections.OrderedDict");
+					break;
+				case FuId.StringWriterClass:
+					Include("io");
+					Write("io.StringIO");
+					break;
+				case FuId.MatchClass:
+					Include("re");
+					Write("re.Match");
+					break;
+				case FuId.LockClass:
+					Include("threading");
+					Write("threading.RLock");
+					break;
+				default:
+					throw new NotImplementedException();
+				}
+				if (klass.Nullable)
+					Write(" | None");
+				break;
+			default:
+				throw new NotImplementedException();
+			}
+		}
+
+		protected override void WriteParameter(FuVar param)
+		{
+			WriteNameNotKeyword(param.Name);
+			Write(" : ");
+			WriteTypeAnnotation(param.Type);
+		}
+
 		protected override void WriteMethod(FuMethod method)
 		{
 			if (method.CallType == FuCallType.Abstract)
@@ -23772,6 +23884,11 @@ namespace Fusion
 				Write("(self");
 				WriteRemainingParameters(method, false, true);
 			}
+			Write(" -> ");
+			if (method.Type.Id == FuId.VoidType)
+				Write("None");
+			else
+				WriteTypeAnnotation(method.Type);
 			this.CurrentMethod = method;
 			OpenChild();
 			WritePyDoc(method);
@@ -23804,9 +23921,7 @@ namespace Fusion
 		{
 			if (!WriteBaseClass(klass, program))
 				return;
-			WriteNewLine();
-			Write("class ");
-			WriteName(klass);
+			WritePyClass(klass);
 			if (klass.Parent is FuClass baseClass) {
 				WriteChar('(');
 				WriteName(baseClass);
@@ -23829,6 +23944,7 @@ namespace Fusion
 			}
 			WriteMembers(klass, true);
 			CloseChild();
+			this.WrittenTypes.Add(klass);
 		}
 
 		void WriteResourceByte(int b)
@@ -23881,6 +23997,7 @@ namespace Fusion
 
 		public override void WriteProgram(FuProgram program)
 		{
+			this.WrittenTypes.Clear();
 			this.SwitchBreak = false;
 			OpenStringWriter();
 			WriteTypes(program);

@@ -2787,6 +2787,7 @@ protected:
 	void writeEnum(const FuEnum * enu) override;
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;
+	void writeParameter(const FuVar * param) override;
 	void writeMethod(const FuMethod * method) override;
 	void writeInitField(const FuField * field) override;
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
@@ -2808,6 +2809,7 @@ public:
 	void visitThrow(const FuThrow * statement) override;
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;
 private:
+	std::unordered_set<const FuContainerType *> writtenTypes;
 	bool childPass;
 	bool switchBreak;
 	void startDoc(const FuCodeDoc * doc);
@@ -2825,6 +2827,9 @@ private:
 	void writeInclusiveLimit(const FuExpr * limit, int increment, std::string_view incrementString);
 	void writeSwitchCaseVar(const FuVar * def);
 	void writePyCaseBody(const FuSwitch * statement, const std::vector<std::shared_ptr<FuStatement>> * body);
+	void writePyClass(const FuContainerType * type);
+	void writePyClassAnnotation(const FuContainerType * type);
+	void writeTypeAnnotation(const FuType * type);
 	bool inheritsConstructor(const FuClass * klass) const;
 	void writeResourceByte(int b);
 	void writeResources(const std::map<std::string, std::vector<uint8_t>> * resources);

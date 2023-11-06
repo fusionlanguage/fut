@@ -23137,6 +23137,7 @@ export class GenSwift extends GenPySwift
 
 export class GenPy extends GenPySwift
 {
+	#writtenTypes = new Set();
 	#childPass;
 	#switchBreak;
 
@@ -24317,6 +24318,13 @@ export class GenPy extends GenPySwift
 		this.writeCharLine(41);
 	}
 
+	#writePyClass(type)
+	{
+		this.writeNewLine();
+		this.write("class ");
+		this.writeName(type);
+	}
+
 	visitEnumValue(konst, previous)
 	{
 		this.writeUppercaseWithUnderscores(konst.name);
@@ -24328,15 +24336,14 @@ export class GenPy extends GenPySwift
 
 	writeEnum(enu)
 	{
+		this.#writePyClass(enu);
 		this.include("enum");
-		this.writeNewLine();
-		this.write("class ");
-		this.writeName(enu);
 		this.write(enu instanceof FuEnumFlags ? "(enum.Flag)" : "(enum.Enum)");
 		this.openChild();
 		this.writeDoc(enu.documentation);
 		enu.acceptValues(this);
 		this.closeChild();
+		this.#writtenTypes.add(enu);
 	}
 
 	writeConst(konst)
@@ -24355,6 +24362,108 @@ export class GenPy extends GenPySwift
 	{
 	}
 
+	#writePyClassAnnotation(type)
+	{
+		if (this.#writtenTypes.has(type))
+			this.writeName(type);
+		else {
+			this.writeChar(34);
+			this.writeName(type);
+			this.writeChar(34);
+		}
+	}
+
+	#writeTypeAnnotation(type)
+	{
+		if (type instanceof FuIntegerType)
+			this.write("int");
+		else if (type instanceof FuFloatingType)
+			this.write("float");
+		else if (type instanceof FuEnum) {
+			const enu = type;
+			if (enu.id == FuId.BOOL_TYPE)
+				this.write("bool");
+			else
+				this.#writePyClassAnnotation(enu);
+		}
+		else if (type instanceof FuClassType) {
+			const klass = type;
+			switch (klass.class.id) {
+			case FuId.NONE:
+				this.#writePyClassAnnotation(klass.class);
+				break;
+			case FuId.STRING_CLASS:
+				this.write("str");
+				break;
+			case FuId.ARRAY_PTR_CLASS:
+			case FuId.ARRAY_STORAGE_CLASS:
+				if (klass.getElementType().id == FuId.BYTE_RANGE) {
+					this.write("bytearray");
+					if (!(klass instanceof FuReadWriteClassType))
+						this.write(" | bytes");
+				}
+				else {
+					this.include("array");
+					this.write("array.array");
+				}
+				break;
+			case FuId.LIST_CLASS:
+			case FuId.STACK_CLASS:
+				this.write("list[");
+				this.#writeTypeAnnotation(klass.getElementType());
+				this.writeChar(93);
+				break;
+			case FuId.QUEUE_CLASS:
+				this.include("collections");
+				this.write("collections.deque");
+				break;
+			case FuId.HASH_SET_CLASS:
+			case FuId.SORTED_SET_CLASS:
+				this.write("set[");
+				this.#writeTypeAnnotation(klass.getElementType());
+				this.writeChar(93);
+				break;
+			case FuId.DICTIONARY_CLASS:
+			case FuId.SORTED_DICTIONARY_CLASS:
+				this.write("dict[");
+				this.#writeTypeAnnotation(klass.getKeyType());
+				this.write(", ");
+				this.#writeTypeAnnotation(klass.getValueType());
+				this.writeChar(93);
+				break;
+			case FuId.ORDERED_DICTIONARY_CLASS:
+				this.include("collections");
+				this.write("collections.OrderedDict");
+				break;
+			case FuId.STRING_WRITER_CLASS:
+				this.include("io");
+				this.write("io.StringIO");
+				break;
+			case FuId.MATCH_CLASS:
+				this.include("re");
+				this.write("re.Match");
+				break;
+			case FuId.LOCK_CLASS:
+				this.include("threading");
+				this.write("threading.RLock");
+				break;
+			default:
+				throw new Error();
+			}
+			if (klass.nullable)
+				this.write(" | None");
+		}
+		else
+			throw new Error();
+	}
+
+	writeParameter(param)
+	{
+		this.#writeNameNotKeyword(param.name);
+		this.write(" : ");
+		this.#writeTypeAnnotation(param.type);
+	}
+
 	writeMethod(method)
 	{
 		if (method.callType == FuCallType.ABSTRACT)
@@ -24370,6 +24479,11 @@ export class GenPy extends GenPySwift
 			this.write("(self");
 			this.writeRemainingParameters(method, false, true);
 		}
+		this.write(" -> ");
+		if (method.type.id == FuId.VOID_TYPE)
+			this.write("None");
+		else
+			this.#writeTypeAnnotation(method.type);
 		this.currentMethod = method;
 		this.openChild();
 		this.#writePyDoc(method);
@@ -24403,9 +24517,7 @@ export class GenPy extends GenPySwift
 	{
 		if (!this.writeBaseClass(klass, program))
 			return;
-		this.writeNewLine();
-		this.write("class ");
-		this.writeName(klass);
+		this.#writePyClass(klass);
 		let baseClass;
 		if ((baseClass = klass.parent) instanceof FuClass) {
 			this.writeChar(40);
@@ -24429,6 +24541,7 @@ export class GenPy extends GenPySwift
 		}
 		this.writeMembers(klass, true);
 		this.closeChild();
+		this.#writtenTypes.add(klass);
 	}
 
 	#writeResourceByte(b)
@@ -24481,6 +24594,7 @@ export class GenPy extends GenPySwift
 
 	writeProgram(program)
 	{
+		this.#writtenTypes.clear();
 		this.#switchBreak = false;
 		this.openStringWriter();
 		this.writeTypes(program);
