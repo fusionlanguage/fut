@@ -13020,7 +13020,10 @@ void GenCpp::writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent)
 		switch (klass->class_->id) {
 		case FuId::arrayStorageClass:
 			if (klass->id == FuId::mainArgsType) {
+				include("string_view");
+				write("std::string_view(");
 				writeArgsIndexing(expr->right.get());
+				writeChar(')');
 				return;
 			}
 			break;

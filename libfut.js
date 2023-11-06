@@ -13808,7 +13808,10 @@ export class GenCpp extends GenCCpp
 			switch (klass.class.id) {
 			case FuId.ARRAY_STORAGE_CLASS:
 				if (klass.id == FuId.MAIN_ARGS_TYPE) {
+					this.include("string_view");
+					this.write("std::string_view(");
 					this.writeArgsIndexing(expr.right);
+					this.writeChar(41);
 					return;
 				}
 				break;

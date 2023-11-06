@@ -2,7 +2,7 @@ public static class Runner
 {
 	public static int Main(string[] args) //FAIL: cl
 	{
-		if (args.Length == 2 && args[0] == "foo" && args[1] == "bar") { //FAIL: cpp swift TODO
+		if (args.Length == 2 && args[0] == "foo" && args[1] == "bar") { //FAIL: swift TODO
 			int i = 0;
 			foreach (string arg in args) {
 				if (arg != (i == 0 ? "foo" : "bar"))

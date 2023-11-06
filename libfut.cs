@@ -13384,7 +13384,10 @@ namespace Fusion
 				switch (klass.Class.Id) {
 				case FuId.ArrayStorageClass:
 					if (klass.Id == FuId.MainArgsType) {
+						Include("string_view");
+						Write("std::string_view(");
 						WriteArgsIndexing(expr.Right);
+						WriteChar(')');
 						return;
 					}
 					break;
