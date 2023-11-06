@@ -203,8 +203,6 @@ public class GenSwift : GenPySwift
 			WriteChar('>');
 			break;
 		case FuId.ArrayStorageClass: // Main(string[] args)
-			Write("ArraySlice<String>");
-			break;
 		case FuId.ListClass:
 		case FuId.QueueClass:
 		case FuId.StackClass:
@@ -1790,7 +1788,7 @@ public class GenSwift : GenPySwift
 		Write(main.Parent.Name);
 		Write(".main(");
 		if (main.Parameters.Count() == 1)
-			Write("CommandLine.arguments[1...]");
+			Write("Array(CommandLine.arguments[1...])");
 		if (main.Type.Id == FuId.IntType)
 			Write("))");
 		WriteCharLine(')');

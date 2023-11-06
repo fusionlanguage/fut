@@ -20185,8 +20185,6 @@ void GenSwift::writeClassName(const FuClassType * klass)
 		writeChar('>');
 		break;
 	case FuId::arrayStorageClass:
-		write("ArraySlice<String>");
-		break;
 	case FuId::listClass:
 	case FuId::queueClass:
 	case FuId::stackClass:
@@ -21753,7 +21751,7 @@ void GenSwift::writeMain(const FuMethod * main)
 	write(main->parent->name);
 	write(".main(");
 	if (main->parameters.count() == 1)
-		write("CommandLine.arguments[1...]");
+		write("Array(CommandLine.arguments[1...])");
 	if (main->type->id == FuId::intType)
 		write("))");
 	writeCharLine(')');
