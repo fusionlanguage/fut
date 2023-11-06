@@ -35,9 +35,10 @@ endif
 DO_SUMMARY = $(DO)perl test/summary.pl $(filter %.txt, $^)
 TARGET_LANG = $(subst mjs,js,$(subst .,,$(suffix $@)))
 UC_TARGET_LANG = $(subst a,A,$(subst c,C,$(subst d,D,$(subst f,F,$(subst i,I,$(subst j,J,$(subst l,L,$(subst p,P,$(subst s,S,$(subst t,T,$(subst v,V,$(subst w,W,$(subst y,Y,$(TARGET_LANG))))))))))))))
-DO_FUT = $(DO)mkdir -p $(@D) && ($(FUT) -o $@ -D $(UC_TARGET_LANG) -I $(<D) $(filter %.fu, $^) || grep '//FAIL:.*\<$(TARGET_LANG)\>' $<)
+DO_FUT = $(DO)mkdir -p $(@D) && ($(FUT) -o $@ -D $(UC_TARGET_LANG) -I $(<D) $(if $(findstring $*, MainArgs), $<, $(filter %.fu, $^)) || grep '//FAIL:.*\<$(TARGET_LANG)\>' $<)
 SOURCE_FU = Lexer.fu AST.fu Parser.fu ConsoleHost.fu Sema.fu GenBase.fu GenTyped.fu GenCCppD.fu GenCCpp.fu GenC.fu GenCl.fu GenCpp.fu GenCs.fu GenD.fu GenJava.fu GenJs.fu GenTs.fu GenPySwift.fu GenSwift.fu GenPy.fu
 TESTS = $(filter-out test/Runner.fu, $(wildcard test/*.fu))
+END_RUN_TEST = $(if $(findstring $*, MainArgs), foo bar) >$@ || grep '//FAIL:.*\<$(basename $(@F))\>' test/$*.fu
 
 all: fut libfut.cpp libfut.cs libfut.js
 
@@ -142,34 +143,34 @@ test-%.fu: $(addsuffix .txt, $(addprefix test/bin/%/, c cpp cs d java js ts py s
 	#
 
 test/bin/%/c.txt: test/bin/%/c.exe
-	$(DO)./$< >$@ || grep '//FAIL:.*\<c\>' test/$*.fu
+	$(DO)./$< $(END_RUN_TEST)
 
 test/bin/%/cpp.txt: test/bin/%/cpp.exe
-	$(DO)./$< >$@ || grep '//FAIL:.*\<cpp\>' test/$*.fu
+	$(DO)./$< $(END_RUN_TEST)
 
 test/bin/%/cs.txt: test/bin/%/cs.dll test/cs.runtimeconfig.json
-	$(DO)dotnet exec --runtimeconfig test/cs.runtimeconfig.json $< >$@ || grep '//FAIL:.*\<cs\>' test/$*.fu
+	$(DO)dotnet exec --runtimeconfig test/cs.runtimeconfig.json $< $(END_RUN_TEST)
 
 test/bin/%/d.txt: test/bin/%/d.exe
-	$(DO)./$< >$@ || grep '//FAIL:.*\<d\>' test/$*.fu
+	$(DO)./$< $(END_RUN_TEST)
 
 test/bin/%/java.txt: test/bin/%/Test.class
-	$(DO)java -cp $(<D) Runner >$@ || grep '//FAIL:.*\<java\>' test/$*.fu
+	$(DO)java -cp $(<D) Runner $(END_RUN_TEST)
 
 test/bin/%/js.txt: test/bin/%/Test.mjs
-	$(DO)node $< >$@ || grep '//FAIL:.*\<js\>' test/$*.fu
+	$(DO)node $< $(END_RUN_TEST)
 
 test/bin/%/ts.txt: test/bin/%/Test.ts test/node_modules test/tsconfig.json
-	$(DO)test/node_modules/.bin/ts-node $< >$@ || grep '//FAIL:.*\<ts\>' test/$*.fu
+	$(DO)test/node_modules/.bin/ts-node $< $(END_RUN_TEST)
 
 test/bin/%/py.txt: test/bin/%/Test.py
-	$(DO)$(PYTHON) $< >$@ || grep '//FAIL:.*\<py\>' test/$*.fu
+	$(DO)$(PYTHON) $< $(END_RUN_TEST)
 
 test/bin/%/swift.txt: test/bin/%/swift.exe
-	$(DO)./$< >$@ || grep '//FAIL:.*\<swift\>' test/$*.fu
+	$(DO)./$< $(END_RUN_TEST)
 
 test/bin/%/cl.txt: test/bin/%/cl.exe
-	$(DO)./$< >$@ || grep '//FAIL:.*\<cl\>' test/$*.fu
+	$(DO)./$< $(END_RUN_TEST)
 
 test/bin/%/c.exe: test/bin/%/Test.c
 	$(DO)$(CC) -o $@ $(TEST_CFLAGS) -Wno-unused-function -I $(<D) $^ `pkg-config --cflags --libs glib-2.0` -lm || grep '//FAIL:.*\<c\>' test/$*.fu
