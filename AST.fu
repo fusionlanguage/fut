@@ -991,7 +991,7 @@ class FuRangeType : FuIntegerType
 		assert min <= max;
 		FuRangeType# result = new FuRangeType { Id =
 			min >= 0 && max <= byte.MaxValue ? FuId.ByteRange :
- 			min >= -128 && max <= 127 ? FuId.SByteRange :
+			min >= -128 && max <= 127 ? FuId.SByteRange :
 			min >= short.MinValue && max <= short.MaxValue ? FuId.ShortRange :
 			min >= 0 && max <= ushort.MaxValue ? FuId.UShortRange :
 			FuId.IntType, Min = min, Max = max };

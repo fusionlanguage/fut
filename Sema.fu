@@ -267,7 +267,7 @@ public class FuSema
 					break;
 				assert this.CurrentMethod.Parent is FuClass currentClass;
 				assert scope is FuClass scopeClass;
-				if (!currentClass.IsSameOrBaseOf(scopeClass)) // enforced by C++/C#/TS but not Java 
+				if (!currentClass.IsSameOrBaseOf(scopeClass)) // enforced by C++/C#/TS but not Java
 					ReportError(expr, $"Cannot access protected member {expr.Name}");
 				break;
 			case FuVisibility.NumericElementType:

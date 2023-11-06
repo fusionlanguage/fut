@@ -676,8 +676,8 @@ public class GenD : GenCCppD
 			WritePostfix(expr.Left, ".pre.length");
 			break;
 		case FuId.MatchEnd:
-		 	if (parent > FuPriority.Add)
-		 		WriteChar('(');
+			if (parent > FuPriority.Add)
+				WriteChar('(');
 			WritePostfix(expr.Left, ".pre.length + ");
 			WritePostfix(expr.Left, ".hit.length"); // FIXME: side effect
 			if (parent > FuPriority.Add)
@@ -691,17 +691,17 @@ public class GenD : GenCCppD
 			break;
 		case FuId.MathNaN:
 			Write("double.nan");
-		 	break;
+			break;
 		case FuId.MathNegativeInfinity:
 			Write("-double.infinity");
-		 	break;
+			break;
 		case FuId.MathPositiveInfinity:
-		 	Write("double.infinity");
-		 	break;
+			Write("double.infinity");
+			break;
 		default:
 			// assert !(expr.Symbol.Parent is FuForeach forEach
-			// 	&& forEach.Collection.Type is FuClassType dict
-			// 	&& dict.Class.Id == FuId.OrderedDictionaryClass);
+			// && forEach.Collection.Type is FuClassType dict
+			// && dict.Class.Id == FuId.OrderedDictionaryClass);
 			base.VisitSymbolReference(expr, parent);
 			break;
 		}

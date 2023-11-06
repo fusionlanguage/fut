@@ -297,7 +297,7 @@ public class GenJava : GenTyped
 				: IsJavaEnum(enu) ? enu.Name
 				: needClass ? "Integer" : "int");
 			break;
- 		case FuClassType klass:
+		case FuClassType klass:
 			switch (klass.Class.Id) {
 			case FuId.StringClass:
 				Write("String");
