@@ -23814,19 +23814,19 @@ namespace Fusion
 					break;
 				case FuId.ArrayPtrClass:
 				case FuId.ArrayStorageClass:
-					if (klass.GetElementType().Id == FuId.ByteRange) {
+				case FuId.ListClass:
+				case FuId.StackClass:
+					if (!(klass.GetElementType() is FuNumericType number))
+						WriteCollectionTypeAnnotation("list", klass);
+					else if (number.Id == FuId.ByteRange) {
 						Write("bytearray");
-						if (!(klass is FuReadWriteClassType))
+						if (klass.Class.Id == FuId.ArrayPtrClass && !(klass is FuReadWriteClassType))
 							Write(" | bytes");
 					}
 					else {
 						Include("array");
 						Write("array.array");
 					}
-					break;
-				case FuId.ListClass:
-				case FuId.StackClass:
-					WriteCollectionTypeAnnotation("list", klass);
 					break;
 				case FuId.QueueClass:
 					Include("collections");
@@ -23870,7 +23870,7 @@ namespace Fusion
 		protected override void WriteParameter(FuVar param)
 		{
 			WriteNameNotKeyword(param.Name);
-			Write(" : ");
+			Write(": ");
 			WriteTypeAnnotation(param.Type);
 		}
 

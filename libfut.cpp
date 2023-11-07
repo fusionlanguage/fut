@@ -23005,20 +23005,23 @@ void GenPy::writeTypeAnnotation(const FuType * type)
 			break;
 		case FuId::arrayPtrClass:
 		case FuId::arrayStorageClass:
-			if (klass->getElementType()->id == FuId::byteRange) {
-				write("bytearray");
-				if (!dynamic_cast<const FuReadWriteClassType *>(klass))
-					write(" | bytes");
-			}
-			else {
-				include("array");
-				write("array.array");
-			}
-			break;
 		case FuId::listClass:
 		case FuId::stackClass:
-			writeCollectionTypeAnnotation("list", klass);
-			break;
+			{
+				const FuNumericType * number;
+				if (!(number = dynamic_cast<const FuNumericType *>(klass->getElementType().get())))
+					writeCollectionTypeAnnotation("list", klass);
+				else if (number->id == FuId::byteRange) {
+					write("bytearray");
+					if (klass->class_->id == FuId::arrayPtrClass && !dynamic_cast<const FuReadWriteClassType *>(klass))
+						write(" | bytes");
+				}
+				else {
+					include("array");
+					write("array.array");
+				}
+				break;
+			}
 		case FuId::queueClass:
 			include("collections");
 			writeCollectionTypeAnnotation("collections.deque", klass);
@@ -23060,7 +23063,7 @@ void GenPy::writeTypeAnnotation(const FuType * type)
 void GenPy::writeParameter(const FuVar * param)
 {
 	writeNameNotKeyword(param->name);
-	write(" : ");
+	write(": ");
 	writeTypeAnnotation(param->type.get());
 }
 

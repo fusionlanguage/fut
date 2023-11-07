@@ -24410,19 +24410,20 @@ export class GenPy extends GenPySwift
 				break;
 			case FuId.ARRAY_PTR_CLASS:
 			case FuId.ARRAY_STORAGE_CLASS:
-				if (klass.getElementType().id == FuId.BYTE_RANGE) {
+			case FuId.LIST_CLASS:
+			case FuId.STACK_CLASS:
+				let number;
+				if (!((number = klass.getElementType()) instanceof FuNumericType))
+					this.#writeCollectionTypeAnnotation("list", klass);
+				else if (number.id == FuId.BYTE_RANGE) {
 					this.write("bytearray");
-					if (!(klass instanceof FuReadWriteClassType))
+					if (klass.class.id == FuId.ARRAY_PTR_CLASS && !(klass instanceof FuReadWriteClassType))
 						this.write(" | bytes");
 				}
 				else {
 					this.include("array");
 					this.write("array.array");
 				}
-				break;
-			case FuId.LIST_CLASS:
-			case FuId.STACK_CLASS:
-				this.#writeCollectionTypeAnnotation("list", klass);
 				break;
 			case FuId.QUEUE_CLASS:
 				this.include("collections");
@@ -24465,7 +24466,7 @@ export class GenPy extends GenPySwift
 	writeParameter(param)
 	{
 		this.#writeNameNotKeyword(param.name);
-		this.write(" : ");
+		this.write(": ");
 		this.#writeTypeAnnotation(param.type);
 	}
 
