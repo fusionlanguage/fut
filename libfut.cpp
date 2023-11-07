@@ -18142,7 +18142,7 @@ std::string_view GenJsNoModule::getTargetName() const
 void GenJsNoModule::writeCamelCaseNotKeyword(std::string_view name)
 {
 	writeCamelCase(name);
-	if (name == "Constructor" || name == "arguments" || name == "await" || name == "catch" || name == "debugger" || name == "delete" || name == "export" || name == "extends" || name == "finally" || name == "function" || name == "implements" || name == "import" || name == "instanceof" || name == "interface" || name == "let" || name == "package" || name == "private" || name == "super" || name == "try" || name == "typeof" || name == "var" || name == "with" || name == "yield")
+	if (name == "Arguments" || name == "Constructor" || name == "arguments" || name == "await" || name == "catch" || name == "debugger" || name == "delete" || name == "export" || name == "extends" || name == "finally" || name == "function" || name == "implements" || name == "import" || name == "instanceof" || name == "interface" || name == "let" || name == "package" || name == "private" || name == "super" || name == "try" || name == "typeof" || name == "var" || name == "with" || name == "yield")
 		writeChar('_');
 }
 

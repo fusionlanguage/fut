@@ -18768,6 +18768,7 @@ namespace Fusion
 		{
 			WriteCamelCase(name);
 			switch (name) {
+			case "Arguments":
 			case "Constructor":
 			case "arguments":
 			case "await":

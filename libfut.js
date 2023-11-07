@@ -2118,7 +2118,7 @@ export class FuSelectExpr extends FuExpr
 export class FuCallExpr extends FuExpr
 {
 	method;
-	arguments = [];
+	arguments_ = [];
 
 	accept(visitor, parent)
 	{
@@ -2127,7 +2127,7 @@ export class FuCallExpr extends FuExpr
 
 	isNewString(substringOffset)
 	{
-		return this.type.id == FuId.STRING_STORAGE_TYPE && this.method.symbol.id != FuId.LIST_LAST && this.method.symbol.id != FuId.QUEUE_PEEK && this.method.symbol.id != FuId.STACK_PEEK && (substringOffset || this.method.symbol.id != FuId.STRING_SUBSTRING || this.arguments.length != 1);
+		return this.type.id == FuId.STRING_STORAGE_TYPE && this.method.symbol.id != FuId.LIST_LAST && this.method.symbol.id != FuId.QUEUE_PEEK && this.method.symbol.id != FuId.STACK_PEEK && (substringOffset || this.method.symbol.id != FuId.STRING_SUBSTRING || this.arguments_.length != 1);
 	}
 }
 
@@ -3688,7 +3688,7 @@ export class FuParser extends FuLexer
 				let method;
 				if ((method = result) instanceof FuSymbolReference) {
 					let call = Object.assign(new FuCallExpr(), { line: this.line, method: method });
-					this.#parseCollection(call.arguments, FuToken.RIGHT_PARENTHESIS);
+					this.#parseCollection(call.arguments_, FuToken.RIGHT_PARENTHESIS);
 					result = call;
 				}
 				else
@@ -4336,7 +4336,7 @@ export class FuParser extends FuLexer
 						this.reportError("Constructor in a static class");
 					if (callType != FuCallType.NORMAL)
 						this.reportError(`Constructor cannot be ${FuParser.#callTypeToString(callType)}`);
-					if (call.arguments.length != 0)
+					if (call.arguments_.length != 0)
 						this.reportError("Constructor parameters not supported");
 					if (klass.constructor_ != null)
 						this.reportError(`Duplicate constructor, already defined in line ${klass.constructor_.line}`);
@@ -5796,7 +5796,7 @@ export class FuSema
 	#visitCallExpr(expr)
 	{
 		if (Object.keys(this.#currentPureArguments).length == 0) {
-			let arguments_ = expr.arguments;
+			let arguments_ = expr.arguments_;
 			for (let i = 0; i < arguments_.length; i++) {
 				if (!(arguments_[i] instanceof FuLambdaExpr))
 					arguments_[i] = this.#visitExpr(arguments_[i]);
@@ -5805,7 +5805,7 @@ export class FuSema
 		}
 		else {
 			const arguments_ = [];
-			for (const arg of expr.arguments)
+			for (const arg of expr.arguments_)
 				arguments_.push(this.#visitExpr(arg));
 			return this.#resolveCallWithArguments(expr, arguments_);
 		}
@@ -5992,7 +5992,7 @@ export class FuSema
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
 			this.#expectNoPtrModifier(expr, ptrModifier, nullable);
-			if (call.arguments.length != 0)
+			if (call.arguments_.length != 0)
 				this.reportError(call, "Expected empty parentheses for storage type");
 			let typeArgExprs2;
 			if ((typeArgExprs2 = call.method.left) instanceof FuAggregateInitializer) {
@@ -8085,7 +8085,7 @@ export class GenBase extends FuVisitor
 	visitCallExpr(expr, parent)
 	{
 		const method = expr.method.symbol;
-		this.writeCallExpr(expr.method.left, method, expr.arguments, parent);
+		this.writeCallExpr(expr.method.left, method, expr.arguments_, parent);
 	}
 
 	visitSelectExpr(expr, parent)
@@ -8134,7 +8134,7 @@ export class GenBase extends FuVisitor
 		}
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
-			return GenBase.hasTemporaries(call.method) || call.arguments.some(arg => GenBase.hasTemporaries(arg));
+			return GenBase.hasTemporaries(call.method) || call.arguments_.some(arg => GenBase.hasTemporaries(arg));
 		}
 		else
 			throw new Error();
@@ -8222,7 +8222,7 @@ export class GenBase extends FuVisitor
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
 			this.writeTemporaries(call.method);
-			for (const arg of call.arguments)
+			for (const arg of call.arguments_)
 				this.writeTemporaries(arg);
 		}
 		else
@@ -8984,7 +8984,7 @@ export class GenTyped extends GenBase
 		else if (type instanceof FuIntegerType && expr.type.id == FuId.FLOAT_INT_TYPE) {
 			let call;
 			if ((call = expr) instanceof FuCallExpr && call.method.symbol.id == FuId.MATH_TRUNCATE) {
-				expr = call.arguments[0];
+				expr = call.arguments_[0];
 				let literal;
 				if ((literal = expr) instanceof FuLiteralDouble) {
 					this.visitLiteralLong(BigInt(Math.trunc(literal.value)));
@@ -9193,7 +9193,7 @@ export class GenCCpp extends GenCCppD
 		let call;
 		if ((call = expr) instanceof FuCallExpr) {
 			let id = call.method.symbol.id;
-			if ((id == FuId.STRING_SUBSTRING && call.arguments.length == 2) || id == FuId.U_T_F8_GET_STRING)
+			if ((id == FuId.STRING_SUBSTRING && call.arguments_.length == 2) || id == FuId.U_T_F8_GET_STRING)
 				return call;
 		}
 		return null;
@@ -9206,17 +9206,17 @@ export class GenCCpp extends GenCCppD
 
 	static getStringSubstringPtr(call)
 	{
-		return GenCCpp.isUTF8GetString(call) ? call.arguments[0] : call.method.left;
+		return GenCCpp.isUTF8GetString(call) ? call.arguments_[0] : call.method.left;
 	}
 
 	static getStringSubstringOffset(call)
 	{
-		return call.arguments[GenCCpp.isUTF8GetString(call) ? 1 : 0];
+		return call.arguments_[GenCCpp.isUTF8GetString(call) ? 1 : 0];
 	}
 
 	static getStringSubstringLength(call)
 	{
-		return call.arguments[GenCCpp.isUTF8GetString(call) ? 2 : 1];
+		return call.arguments_[GenCCpp.isUTF8GetString(call) ? 2 : 1];
 	}
 
 	writeStringPtrAdd(call)
@@ -10290,7 +10290,7 @@ export class GenC extends GenCCpp
 			}
 			const method = call.method.symbol;
 			let param = method.parameters.firstParameter();
-			for (const arg of call.arguments) {
+			for (const arg of call.arguments_) {
 				this.#writeCTemporaries(arg);
 				if (call.method.symbol.id != FuId.CONSOLE_WRITE && call.method.symbol.id != FuId.CONSOLE_WRITE_LINE && !(param.type instanceof FuStorageType))
 					this.#writeStorageTemporary(arg);
@@ -10336,7 +10336,7 @@ export class GenC extends GenCCpp
 		}
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
-			return (call.method.left != null && GenC.#hasTemporariesToDestruct(call.method.left)) || call.arguments.some(arg => GenC.#hasTemporariesToDestruct(arg));
+			return (call.method.left != null && GenC.#hasTemporariesToDestruct(call.method.left)) || call.arguments_.some(arg => GenC.#hasTemporariesToDestruct(arg));
 		}
 		else
 			throw new Error();
@@ -19308,6 +19308,7 @@ export class GenJsNoModule extends GenBase
 	{
 		this.writeCamelCase(name);
 		switch (name) {
+		case "Arguments":
 		case "Constructor":
 		case "arguments":
 		case "await":
@@ -21135,7 +21136,7 @@ export class GenPySwift extends GenBase
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
 			seen = this.visitXcrement(call.method, postfix, write);
-			for (const arg of call.arguments)
+			for (const arg of call.arguments_)
 				if (this.visitXcrement(arg, postfix, write))
 					seen = true;
 			if (!postfix)
@@ -21686,7 +21687,7 @@ export class GenSwift extends GenPySwift
 			this.writeChar(40);
 			let call;
 			if (type instanceof FuIntegerType && (call = expr) instanceof FuCallExpr && call.method.symbol.id == FuId.MATH_TRUNCATE)
-				call.arguments[0].accept(this, FuPriority.ARGUMENT);
+				call.arguments_[0].accept(this, FuPriority.ARGUMENT);
 			else
 				expr.accept(this, FuPriority.ARGUMENT);
 			this.writeChar(41);
@@ -22414,7 +22415,7 @@ export class GenSwift extends GenPySwift
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
 			const method = call.method.symbol;
-			return method.throws || (call.method.left != null && GenSwift.#throws(call.method.left)) || call.arguments.some(arg => GenSwift.#throws(arg));
+			return method.throws || (call.method.left != null && GenSwift.#throws(call.method.left)) || call.arguments_.some(arg => GenSwift.#throws(arg));
 		}
 		else
 			throw new Error();
@@ -24244,13 +24245,13 @@ export class GenPy extends GenPySwift
 		case FuId.MATCH_FIND_STR:
 			call.method.left.accept(this, FuPriority.ASSIGN);
 			this.write(" = ");
-			this.#writeRegexSearch(call.arguments);
+			this.#writeRegexSearch(call.arguments_);
 			this.writeNewLine();
 			return true;
 		case FuId.MATCH_FIND_REGEX:
 			call.method.left.accept(this, FuPriority.ASSIGN);
 			this.write(" = ");
-			this.writeMethodCall(call.arguments[1], "search", call.arguments[0]);
+			this.writeMethodCall(call.arguments_[1], "search", call.arguments_[0]);
 			this.writeNewLine();
 			return true;
 		default:
