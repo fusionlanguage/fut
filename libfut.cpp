@@ -13288,7 +13288,6 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 	case FuId::none:
 	case FuId::classToString:
 	case FuId::listClear:
-	case FuId::stackPush:
 	case FuId::hashSetClear:
 	case FuId::sortedSetClear:
 	case FuId::dictionaryClear:
@@ -13549,6 +13548,9 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 			writeCollectionObject(obj, FuPriority::argument);
 			writeChar(')');
 		}
+		break;
+	case FuId::stackPush:
+		writeCollectionMethod(obj, "push", args);
 		break;
 	case FuId::hashSetAdd:
 	case FuId::sortedSetAdd:

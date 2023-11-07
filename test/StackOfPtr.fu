@@ -1,0 +1,10 @@
+public class Test
+{
+	public static bool Run()
+	{
+		Stack<Test>() s; //FAIL: cl
+		Test() o;
+		s.Push(o);
+		return s.Count == 1 && s.Pop() == o;
+	}
+}

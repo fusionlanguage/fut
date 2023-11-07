@@ -14077,7 +14077,6 @@ export class GenCpp extends GenCCpp
 		case FuId.NONE:
 		case FuId.CLASS_TO_STRING:
 		case FuId.LIST_CLEAR:
-		case FuId.STACK_PUSH:
 		case FuId.HASH_SET_CLEAR:
 		case FuId.SORTED_SET_CLEAR:
 		case FuId.DICTIONARY_CLEAR:
@@ -14338,6 +14337,9 @@ export class GenCpp extends GenCCpp
 				this.#writeCollectionObject(obj, FuPriority.ARGUMENT);
 				this.writeChar(41);
 			}
+			break;
+		case FuId.STACK_PUSH:
+			this.#writeCollectionMethod(obj, "push", args);
 			break;
 		case FuId.HASH_SET_ADD:
 		case FuId.SORTED_SET_ADD:

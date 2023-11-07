@@ -13654,7 +13654,6 @@ namespace Fusion
 			case FuId.None:
 			case FuId.ClassToString:
 			case FuId.ListClear:
-			case FuId.StackPush:
 			case FuId.HashSetClear:
 			case FuId.SortedSetClear:
 			case FuId.DictionaryClear:
@@ -13915,6 +13914,9 @@ namespace Fusion
 					WriteCollectionObject(obj, FuPriority.Argument);
 					WriteChar(')');
 				}
+				break;
+			case FuId.StackPush:
+				WriteCollectionMethod(obj, "push", args);
 				break;
 			case FuId.HashSetAdd:
 			case FuId.SortedSetAdd:
