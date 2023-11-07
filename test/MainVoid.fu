@@ -1,0 +1,10 @@
+public static class Runner
+{
+	public static void Main() //FAIL: cl
+	{
+		int i = 42;
+		if (i == 42)
+			return;
+		assert false;
+	}
+}
