@@ -21861,7 +21861,7 @@ void GenPy::writeNameNotKeyword(std::string_view name)
 {
 	if (name == "this")
 		write("self");
-	else if (name == "and" || name == "array" || name == "as" || name == "async" || name == "await" || name == "def" || name == "del" || name == "elif" || name == "enum" || name == "except" || name == "finally" || name == "from" || name == "global" || name == "import" || name == "is" || name == "lambda" || name == "len" || name == "math" || name == "nonlocal" || name == "not" || name == "or" || name == "pass" || name == "pyfma" || name == "raise" || name == "re" || name == "sys" || name == "try" || name == "with" || name == "yield") {
+	else if (name == "and" || name == "array" || name == "as" || name == "async" || name == "await" || name == "def" || name == "del" || name == "dict" || name == "elif" || name == "enum" || name == "except" || name == "finally" || name == "from" || name == "global" || name == "import" || name == "is" || name == "lambda" || name == "len" || name == "list" || name == "math" || name == "nonlocal" || name == "not" || name == "or" || name == "pass" || name == "pyfma" || name == "raise" || name == "re" || name == "sys" || name == "try" || name == "with" || name == "yield") {
 		write(name);
 		writeChar('_');
 	}
@@ -21901,9 +21901,125 @@ void GenPy::writeName(const FuSymbol * symbol)
 		std::abort();
 }
 
+void GenPy::writePyClassAnnotation(const FuContainerType * type)
+{
+	if (this->writtenTypes.contains(type))
+		writeName(type);
+	else {
+		writeChar('"');
+		writeName(type);
+		writeChar('"');
+	}
+}
+
+void GenPy::writeCollectionTypeAnnotation(std::string_view name, const FuClassType * klass)
+{
+	write(name);
+	writeChar('[');
+	writeTypeAnnotation(klass->getElementType().get());
+	if (klass->class_->typeParameterCount == 2) {
+		write(", ");
+		writeTypeAnnotation(klass->getValueType().get());
+	}
+	writeChar(']');
+}
+
+void GenPy::writeTypeAnnotation(const FuType * type)
+{
+	if (dynamic_cast<const FuIntegerType *>(type))
+		write("int");
+	else if (dynamic_cast<const FuFloatingType *>(type))
+		write("float");
+	else if (const FuEnum *enu = dynamic_cast<const FuEnum *>(type)) {
+		if (enu->id == FuId::boolType)
+			write("bool");
+		else
+			writePyClassAnnotation(enu);
+	}
+	else if (const FuClassType *klass = dynamic_cast<const FuClassType *>(type)) {
+		switch (klass->class_->id) {
+		case FuId::none:
+			if (klass->nullable && !this->writtenTypes.contains(klass->class_)) {
+				writeChar('"');
+				writeName(klass->class_);
+				write(" | None\"");
+				return;
+			}
+			writePyClassAnnotation(klass->class_);
+			break;
+		case FuId::stringClass:
+			write("str");
+			break;
+		case FuId::arrayPtrClass:
+		case FuId::arrayStorageClass:
+		case FuId::listClass:
+		case FuId::stackClass:
+			{
+				const FuNumericType * number;
+				if (!(number = dynamic_cast<const FuNumericType *>(klass->getElementType().get())))
+					writeCollectionTypeAnnotation("list", klass);
+				else if (number->id == FuId::byteRange) {
+					write("bytearray");
+					if (klass->class_->id == FuId::arrayPtrClass && !dynamic_cast<const FuReadWriteClassType *>(klass))
+						write(" | bytes");
+				}
+				else {
+					include("array");
+					write("array.array");
+				}
+				break;
+			}
+		case FuId::queueClass:
+			include("collections");
+			writeCollectionTypeAnnotation("collections.deque", klass);
+			break;
+		case FuId::hashSetClass:
+		case FuId::sortedSetClass:
+			writeCollectionTypeAnnotation("set", klass);
+			break;
+		case FuId::dictionaryClass:
+		case FuId::sortedDictionaryClass:
+			writeCollectionTypeAnnotation("dict", klass);
+			break;
+		case FuId::orderedDictionaryClass:
+			include("collections");
+			writeCollectionTypeAnnotation("collections.OrderedDict", klass);
+			break;
+		case FuId::textWriterClass:
+			include("io");
+			write("io.TextIOBase");
+			break;
+		case FuId::stringWriterClass:
+			include("io");
+			write("io.StringIO");
+			break;
+		case FuId::regexClass:
+			include("re");
+			write("re.Pattern");
+			break;
+		case FuId::matchClass:
+			include("re");
+			write("re.Match");
+			break;
+		case FuId::lockClass:
+			include("threading");
+			write("threading.RLock");
+			break;
+		default:
+			std::abort();
+		}
+		if (klass->nullable)
+			write(" | None");
+	}
+	else
+		std::abort();
+}
+
 void GenPy::writeTypeAndName(const FuNamedValue * value)
 {
 	writeName(value);
+	write(": ");
+	writeTypeAnnotation(value->type.get());
 }
 
 void GenPy::writeLocalName(const FuSymbol * symbol, FuPriority parent)
@@ -22160,7 +22276,7 @@ void GenPy::writeDefaultValue(const FuType * type)
 		writeChar('0');
 	else if (type->id == FuId::boolType)
 		write("False");
-	else if (type->id == FuId::stringStorageType)
+	else if ((type->id == FuId::stringPtrType && !type->nullable) || type->id == FuId::stringStorageType)
 		write("\"\"");
 	else
 		write("None");
@@ -22958,113 +23074,8 @@ void GenPy::writeConst(const FuConst * konst)
 
 void GenPy::writeField(const FuField * field)
 {
-}
-
-void GenPy::writePyClassAnnotation(const FuContainerType * type)
-{
-	if (this->writtenTypes.contains(type))
-		writeName(type);
-	else {
-		writeChar('"');
-		writeName(type);
-		writeChar('"');
-	}
-}
-
-void GenPy::writeCollectionTypeAnnotation(std::string_view name, const FuClassType * klass)
-{
-	write(name);
-	writeChar('[');
-	writeTypeAnnotation(klass->getElementType().get());
-	if (klass->class_->typeParameterCount == 2) {
-		write(", ");
-		writeTypeAnnotation(klass->getValueType().get());
-	}
-	writeChar(']');
-}
-
-void GenPy::writeTypeAnnotation(const FuType * type)
-{
-	if (dynamic_cast<const FuIntegerType *>(type))
-		write("int");
-	else if (dynamic_cast<const FuFloatingType *>(type))
-		write("float");
-	else if (const FuEnum *enu = dynamic_cast<const FuEnum *>(type)) {
-		if (enu->id == FuId::boolType)
-			write("bool");
-		else
-			writePyClassAnnotation(enu);
-	}
-	else if (const FuClassType *klass = dynamic_cast<const FuClassType *>(type)) {
-		switch (klass->class_->id) {
-		case FuId::none:
-			writePyClassAnnotation(klass->class_);
-			break;
-		case FuId::stringClass:
-			write("str");
-			break;
-		case FuId::arrayPtrClass:
-		case FuId::arrayStorageClass:
-		case FuId::listClass:
-		case FuId::stackClass:
-			{
-				const FuNumericType * number;
-				if (!(number = dynamic_cast<const FuNumericType *>(klass->getElementType().get())))
-					writeCollectionTypeAnnotation("list", klass);
-				else if (number->id == FuId::byteRange) {
-					write("bytearray");
-					if (klass->class_->id == FuId::arrayPtrClass && !dynamic_cast<const FuReadWriteClassType *>(klass))
-						write(" | bytes");
-				}
-				else {
-					include("array");
-					write("array.array");
-				}
-				break;
-			}
-		case FuId::queueClass:
-			include("collections");
-			writeCollectionTypeAnnotation("collections.deque", klass);
-			break;
-		case FuId::hashSetClass:
-		case FuId::sortedSetClass:
-			writeCollectionTypeAnnotation("set", klass);
-			break;
-		case FuId::dictionaryClass:
-		case FuId::sortedDictionaryClass:
-			writeCollectionTypeAnnotation("dict", klass);
-			break;
-		case FuId::orderedDictionaryClass:
-			include("collections");
-			writeCollectionTypeAnnotation("collections.OrderedDict", klass);
-			break;
-		case FuId::stringWriterClass:
-			include("io");
-			write("io.StringIO");
-			break;
-		case FuId::matchClass:
-			include("re");
-			write("re.Match");
-			break;
-		case FuId::lockClass:
-			include("threading");
-			write("threading.RLock");
-			break;
-		default:
-			std::abort();
-		}
-		if (klass->nullable)
-			write(" | None");
-	}
-	else
-		std::abort();
-}
-
-void GenPy::writeParameter(const FuVar * param)
-{
-	writeNameNotKeyword(param->name);
-	write(": ");
-	writeTypeAnnotation(param->type.get());
+	writeTypeAndName(field);
+	writeNewLine();
 }
 
 void GenPy::writeMethod(const FuMethod * method)
@@ -23109,7 +23120,8 @@ void GenPy::writeInitField(const FuField * field)
 {
 	if (hasInitCode(field)) {
 		write("self.");
-		writeVar(field);
+		writeName(field);
+		writeVarInit(field);
 		writeNewLine();
 		writeInitCode(field);
 	}

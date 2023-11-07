@@ -23232,6 +23232,7 @@ export class GenPy extends GenPySwift
 		case "await":
 		case "def":
 		case "del":
+		case "dict":
 		case "elif":
 		case "enum":
 		case "except":
@@ -23242,6 +23243,7 @@ export class GenPy extends GenPySwift
 		case "is":
 		case "lambda":
 		case "len":
+		case "list":
 		case "math":
 		case "nonlocal":
 		case "not":
@@ -23298,9 +23300,125 @@ export class GenPy extends GenPySwift
 			throw new Error();
 	}
 
+	#writePyClassAnnotation(type)
+	{
+		if (this.#writtenTypes.has(type))
+			this.writeName(type);
+		else {
+			this.writeChar(34);
+			this.writeName(type);
+			this.writeChar(34);
+		}
+	}
+
+	#writeCollectionTypeAnnotation(name, klass)
+	{
+		this.write(name);
+		this.writeChar(91);
+		this.#writeTypeAnnotation(klass.getElementType());
+		if (klass.class.typeParameterCount == 2) {
+			this.write(", ");
+			this.#writeTypeAnnotation(klass.getValueType());
+		}
+		this.writeChar(93);
+	}
+
+	#writeTypeAnnotation(type)
+	{
+		if (type instanceof FuIntegerType)
+			this.write("int");
+		else if (type instanceof FuFloatingType)
+			this.write("float");
+		else if (type instanceof FuEnum) {
+			const enu = type;
+			if (enu.id == FuId.BOOL_TYPE)
+				this.write("bool");
+			else
+				this.#writePyClassAnnotation(enu);
+		}
+		else if (type instanceof FuClassType) {
+			const klass = type;
+			switch (klass.class.id) {
+			case FuId.NONE:
+				if (klass.nullable && !this.#writtenTypes.has(klass.class)) {
+					this.writeChar(34);
+					this.writeName(klass.class);
+					this.write(" | None\"");
+					return;
+				}
+				this.#writePyClassAnnotation(klass.class);
+				break;
+			case FuId.STRING_CLASS:
+				this.write("str");
+				break;
+			case FuId.ARRAY_PTR_CLASS:
+			case FuId.ARRAY_STORAGE_CLASS:
+			case FuId.LIST_CLASS:
+			case FuId.STACK_CLASS:
+				let number;
+				if (!((number = klass.getElementType()) instanceof FuNumericType))
+					this.#writeCollectionTypeAnnotation("list", klass);
+				else if (number.id == FuId.BYTE_RANGE) {
+					this.write("bytearray");
+					if (klass.class.id == FuId.ARRAY_PTR_CLASS && !(klass instanceof FuReadWriteClassType))
+						this.write(" | bytes");
+				}
+				else {
+					this.include("array");
+					this.write("array.array");
+				}
+				break;
+			case FuId.QUEUE_CLASS:
+				this.include("collections");
+				this.#writeCollectionTypeAnnotation("collections.deque", klass);
+				break;
+			case FuId.HASH_SET_CLASS:
+			case FuId.SORTED_SET_CLASS:
+				this.#writeCollectionTypeAnnotation("set", klass);
+				break;
+			case FuId.DICTIONARY_CLASS:
+			case FuId.SORTED_DICTIONARY_CLASS:
+				this.#writeCollectionTypeAnnotation("dict", klass);
+				break;
+			case FuId.ORDERED_DICTIONARY_CLASS:
+				this.include("collections");
+				this.#writeCollectionTypeAnnotation("collections.OrderedDict", klass);
+				break;
+			case FuId.TEXT_WRITER_CLASS:
+				this.include("io");
+				this.write("io.TextIOBase");
+				break;
+			case FuId.STRING_WRITER_CLASS:
+				this.include("io");
+				this.write("io.StringIO");
+				break;
+			case FuId.REGEX_CLASS:
+				this.include("re");
+				this.write("re.Pattern");
+				break;
+			case FuId.MATCH_CLASS:
+				this.include("re");
+				this.write("re.Match");
+				break;
+			case FuId.LOCK_CLASS:
+				this.include("threading");
+				this.write("threading.RLock");
+				break;
+			default:
+				throw new Error();
+			}
+			if (klass.nullable)
+				this.write(" | None");
+		}
+		else
+			throw new Error();
+	}
+
 	writeTypeAndName(value)
 	{
 		this.writeName(value);
+		this.write(": ");
+		this.#writeTypeAnnotation(value.type);
 	}
 
 	writeLocalName(symbol, parent)
@@ -23559,7 +23677,7 @@ export class GenPy extends GenPySwift
 			this.writeChar(48);
 		else if (type.id == FuId.BOOL_TYPE)
 			this.write("False");
-		else if (type.id == FuId.STRING_STORAGE_TYPE)
+		else if ((type.id == FuId.STRING_PTR_TYPE && !type.nullable) || type.id == FuId.STRING_STORAGE_TYPE)
 			this.write("\"\"");
 		else
 			this.write("None");
@@ -24361,113 +24479,8 @@ export class GenPy extends GenPySwift
 
 	writeField(field)
 	{
-	}
-
-	#writePyClassAnnotation(type)
-	{
-		if (this.#writtenTypes.has(type))
-			this.writeName(type);
-		else {
-			this.writeChar(34);
-			this.writeName(type);
-			this.writeChar(34);
-		}
-	}
-
-	#writeCollectionTypeAnnotation(name, klass)
-	{
-		this.write(name);
-		this.writeChar(91);
-		this.#writeTypeAnnotation(klass.getElementType());
-		if (klass.class.typeParameterCount == 2) {
-			this.write(", ");
-			this.#writeTypeAnnotation(klass.getValueType());
-		}
-		this.writeChar(93);
-	}
-
-	#writeTypeAnnotation(type)
-	{
-		if (type instanceof FuIntegerType)
-			this.write("int");
-		else if (type instanceof FuFloatingType)
-			this.write("float");
-		else if (type instanceof FuEnum) {
-			const enu = type;
-			if (enu.id == FuId.BOOL_TYPE)
-				this.write("bool");
-			else
-				this.#writePyClassAnnotation(enu);
-		}
-		else if (type instanceof FuClassType) {
-			const klass = type;
-			switch (klass.class.id) {
-			case FuId.NONE:
-				this.#writePyClassAnnotation(klass.class);
-				break;
-			case FuId.STRING_CLASS:
-				this.write("str");
-				break;
-			case FuId.ARRAY_PTR_CLASS:
-			case FuId.ARRAY_STORAGE_CLASS:
-			case FuId.LIST_CLASS:
-			case FuId.STACK_CLASS:
-				let number;
-				if (!((number = klass.getElementType()) instanceof FuNumericType))
-					this.#writeCollectionTypeAnnotation("list", klass);
-				else if (number.id == FuId.BYTE_RANGE) {
-					this.write("bytearray");
-					if (klass.class.id == FuId.ARRAY_PTR_CLASS && !(klass instanceof FuReadWriteClassType))
-						this.write(" | bytes");
-				}
-				else {
-					this.include("array");
-					this.write("array.array");
-				}
-				break;
-			case FuId.QUEUE_CLASS:
-				this.include("collections");
-				this.#writeCollectionTypeAnnotation("collections.deque", klass);
-				break;
-			case FuId.HASH_SET_CLASS:
-			case FuId.SORTED_SET_CLASS:
-				this.#writeCollectionTypeAnnotation("set", klass);
-				break;
-			case FuId.DICTIONARY_CLASS:
-			case FuId.SORTED_DICTIONARY_CLASS:
-				this.#writeCollectionTypeAnnotation("dict", klass);
-				break;
-			case FuId.ORDERED_DICTIONARY_CLASS:
-				this.include("collections");
-				this.#writeCollectionTypeAnnotation("collections.OrderedDict", klass);
-				break;
-			case FuId.STRING_WRITER_CLASS:
-				this.include("io");
-				this.write("io.StringIO");
-				break;
-			case FuId.MATCH_CLASS:
-				this.include("re");
-				this.write("re.Match");
-				break;
-			case FuId.LOCK_CLASS:
-				this.include("threading");
-				this.write("threading.RLock");
-				break;
-			default:
-				throw new Error();
-			}
-			if (klass.nullable)
-				this.write(" | None");
-		}
-		else
-			throw new Error();
-	}
-
-	writeParameter(param)
-	{
-		this.#writeNameNotKeyword(param.name);
-		this.write(": ");
-		this.#writeTypeAnnotation(param.type);
+		this.writeTypeAndName(field);
+		this.writeNewLine();
 	}
 
 	writeMethod(method)
@@ -24513,7 +24526,8 @@ export class GenPy extends GenPySwift
 	{
 		if (this.hasInitCode(field)) {
 			this.write("self.");
-			this.writeVar(field);
+			this.writeName(field);
+			this.writeVarInit(field);
 			this.writeNewLine();
 			this.writeInitCode(field);
 		}

@@ -2787,7 +2787,6 @@ protected:
 	void writeEnum(const FuEnum * enu) override;
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;
-	void writeParameter(const FuVar * param) override;
 	void writeMethod(const FuMethod * method) override;
 	void writeInitField(const FuField * field) override;
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
@@ -2815,6 +2814,9 @@ private:
 	void startDoc(const FuCodeDoc * doc);
 	void writePyDoc(const FuMethod * method);
 	void writeNameNotKeyword(std::string_view name);
+	void writePyClassAnnotation(const FuContainerType * type);
+	void writeCollectionTypeAnnotation(std::string_view name, const FuClassType * klass);
+	void writeTypeAnnotation(const FuType * type);
 	static int getArrayCode(const FuType * type);
 	void writeDefaultValue(const FuType * type);
 	void writePyNewArray(const FuType * elementType, const FuExpr * value, const FuExpr * lengthExpr);
@@ -2828,9 +2830,6 @@ private:
 	void writeSwitchCaseVar(const FuVar * def);
 	void writePyCaseBody(const FuSwitch * statement, const std::vector<std::shared_ptr<FuStatement>> * body);
 	void writePyClass(const FuContainerType * type);
-	void writePyClassAnnotation(const FuContainerType * type);
-	void writeCollectionTypeAnnotation(std::string_view name, const FuClassType * klass);
-	void writeTypeAnnotation(const FuType * type);
 	bool inheritsConstructor(const FuClass * klass) const;
 	void writeResourceByte(int b);
 	void writeResources(const std::map<std::string, std::vector<uint8_t>> * resources);

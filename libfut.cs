@@ -22654,6 +22654,7 @@ namespace Fusion
 			case "await":
 			case "def":
 			case "del":
+			case "dict":
 			case "elif":
 			case "enum":
 			case "except":
@@ -22664,6 +22665,7 @@ namespace Fusion
 			case "is":
 			case "lambda":
 			case "len":
+			case "list":
 			case "math":
 			case "nonlocal":
 			case "not":
@@ -22720,9 +22722,126 @@ namespace Fusion
 			}
 		}
 
+		void WritePyClassAnnotation(FuContainerType type)
+		{
+			if (this.WrittenTypes.Contains(type))
+				WriteName(type);
+			else {
+				WriteChar('"');
+				WriteName(type);
+				WriteChar('"');
+			}
+		}
+
+		void WriteCollectionTypeAnnotation(string name, FuClassType klass)
+		{
+			Write(name);
+			WriteChar('[');
+			WriteTypeAnnotation(klass.GetElementType());
+			if (klass.Class.TypeParameterCount == 2) {
+				Write(", ");
+				WriteTypeAnnotation(klass.GetValueType());
+			}
+			WriteChar(']');
+		}
+
+		void WriteTypeAnnotation(FuType type)
+		{
+			switch (type) {
+			case FuIntegerType _:
+				Write("int");
+				break;
+			case FuFloatingType _:
+				Write("float");
+				break;
+			case FuEnum enu:
+				if (enu.Id == FuId.BoolType)
+					Write("bool");
+				else
+					WritePyClassAnnotation(enu);
+				break;
+			case FuClassType klass:
+				switch (klass.Class.Id) {
+				case FuId.None:
+					if (klass.Nullable && !this.WrittenTypes.Contains(klass.Class)) {
+						WriteChar('"');
+						WriteName(klass.Class);
+						Write(" | None\"");
+						return;
+					}
+					WritePyClassAnnotation(klass.Class);
+					break;
+				case FuId.StringClass:
+					Write("str");
+					break;
+				case FuId.ArrayPtrClass:
+				case FuId.ArrayStorageClass:
+				case FuId.ListClass:
+				case FuId.StackClass:
+					if (!(klass.GetElementType() is FuNumericType number))
+						WriteCollectionTypeAnnotation("list", klass);
+					else if (number.Id == FuId.ByteRange) {
+						Write("bytearray");
+						if (klass.Class.Id == FuId.ArrayPtrClass && !(klass is FuReadWriteClassType))
+							Write(" | bytes");
+					}
+					else {
+						Include("array");
+						Write("array.array");
+					}
+					break;
+				case FuId.QueueClass:
+					Include("collections");
+					WriteCollectionTypeAnnotation("collections.deque", klass);
+					break;
+				case FuId.HashSetClass:
+				case FuId.SortedSetClass:
+					WriteCollectionTypeAnnotation("set", klass);
+					break;
+				case FuId.DictionaryClass:
+				case FuId.SortedDictionaryClass:
+					WriteCollectionTypeAnnotation("dict", klass);
+					break;
+				case FuId.OrderedDictionaryClass:
+					Include("collections");
+					WriteCollectionTypeAnnotation("collections.OrderedDict", klass);
+					break;
+				case FuId.TextWriterClass:
+					Include("io");
+					Write("io.TextIOBase");
+					break;
+				case FuId.StringWriterClass:
+					Include("io");
+					Write("io.StringIO");
+					break;
+				case FuId.RegexClass:
+					Include("re");
+					Write("re.Pattern");
+					break;
+				case FuId.MatchClass:
+					Include("re");
+					Write("re.Match");
+					break;
+				case FuId.LockClass:
+					Include("threading");
+					Write("threading.RLock");
+					break;
+				default:
+					throw new NotImplementedException();
+				}
+				if (klass.Nullable)
+					Write(" | None");
+				break;
+			default:
+				throw new NotImplementedException();
+			}
+		}
+
 		protected override void WriteTypeAndName(FuNamedValue value)
 		{
 			WriteName(value);
+			Write(": ");
+			WriteTypeAnnotation(value.Type);
 		}
 
 		protected override void WriteLocalName(FuSymbol symbol, FuPriority parent)
@@ -22970,7 +23089,7 @@ namespace Fusion
 				WriteChar('0');
 			else if (type.Id == FuId.BoolType)
 				Write("False");
-			else if (type.Id == FuId.StringStorageType)
+			else if ((type.Id == FuId.StringPtrType && !type.Nullable) || type.Id == FuId.StringStorageType)
 				Write("\"\"");
 			else
 				Write("None");
@@ -23764,114 +23883,8 @@ namespace Fusion
 
 		protected override void WriteField(FuField field)
 		{
-		}
-
-		void WritePyClassAnnotation(FuContainerType type)
-		{
-			if (this.WrittenTypes.Contains(type))
-				WriteName(type);
-			else {
-				WriteChar('"');
-				WriteName(type);
-				WriteChar('"');
-			}
-		}
-
-		void WriteCollectionTypeAnnotation(string name, FuClassType klass)
-		{
-			Write(name);
-			WriteChar('[');
-			WriteTypeAnnotation(klass.GetElementType());
-			if (klass.Class.TypeParameterCount == 2) {
-				Write(", ");
-				WriteTypeAnnotation(klass.GetValueType());
-			}
-			WriteChar(']');
-		}
-
-		void WriteTypeAnnotation(FuType type)
-		{
-			switch (type) {
-			case FuIntegerType _:
-				Write("int");
-				break;
-			case FuFloatingType _:
-				Write("float");
-				break;
-			case FuEnum enu:
-				if (enu.Id == FuId.BoolType)
-					Write("bool");
-				else
-					WritePyClassAnnotation(enu);
-				break;
-			case FuClassType klass:
-				switch (klass.Class.Id) {
-				case FuId.None:
-					WritePyClassAnnotation(klass.Class);
-					break;
-				case FuId.StringClass:
-					Write("str");
-					break;
-				case FuId.ArrayPtrClass:
-				case FuId.ArrayStorageClass:
-				case FuId.ListClass:
-				case FuId.StackClass:
-					if (!(klass.GetElementType() is FuNumericType number))
-						WriteCollectionTypeAnnotation("list", klass);
-					else if (number.Id == FuId.ByteRange) {
-						Write("bytearray");
-						if (klass.Class.Id == FuId.ArrayPtrClass && !(klass is FuReadWriteClassType))
-							Write(" | bytes");
-					}
-					else {
-						Include("array");
-						Write("array.array");
-					}
-					break;
-				case FuId.QueueClass:
-					Include("collections");
-					WriteCollectionTypeAnnotation("collections.deque", klass);
-					break;
-				case FuId.HashSetClass:
-				case FuId.SortedSetClass:
-					WriteCollectionTypeAnnotation("set", klass);
-					break;
-				case FuId.DictionaryClass:
-				case FuId.SortedDictionaryClass:
-					WriteCollectionTypeAnnotation("dict", klass);
-					break;
-				case FuId.OrderedDictionaryClass:
-					Include("collections");
-					WriteCollectionTypeAnnotation("collections.OrderedDict", klass);
-					break;
-				case FuId.StringWriterClass:
-					Include("io");
-					Write("io.StringIO");
-					break;
-				case FuId.MatchClass:
-					Include("re");
-					Write("re.Match");
-					break;
-				case FuId.LockClass:
-					Include("threading");
-					Write("threading.RLock");
-					break;
-				default:
-					throw new NotImplementedException();
-				}
-				if (klass.Nullable)
-					Write(" | None");
-				break;
-			default:
-				throw new NotImplementedException();
-			}
-		}
-
-		protected override void WriteParameter(FuVar param)
-		{
-			WriteNameNotKeyword(param.Name);
-			Write(": ");
-			WriteTypeAnnotation(param.Type);
+			WriteTypeAndName(field);
+			WriteNewLine();
 		}
 
 		protected override void WriteMethod(FuMethod method)
@@ -23916,7 +23929,8 @@ namespace Fusion
 		{
 			if (HasInitCode(field)) {
 				Write("self.");
-				WriteVar(field);
+				WriteName(field);
+				WriteVarInit(field);
 				WriteNewLine();
 				WriteInitCode(field);
 			}
