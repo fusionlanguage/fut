@@ -2,7 +2,7 @@ public class Test
 {
 	public static bool Run()
 	{
-		HashSet<Test>() s; //FAIL: c swift TODO; cl
+		HashSet<Test>() s; //FAIL: swift TODO; cl
 		Test() o;
 		s.Add(o);
 		return s.Count == 1 && s.Contains(o);

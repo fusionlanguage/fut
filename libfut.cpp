@@ -9723,7 +9723,11 @@ void GenC::writeGPointerCast(const FuType * type, const FuExpr * expr)
 
 void GenC::writeGConstPointerCast(const FuExpr * expr)
 {
-	if (dynamic_cast<const FuClassType *>(expr->type.get()) && !dynamic_cast<const FuStorageType *>(expr->type.get()))
+	if (dynamic_cast<const FuStorageType *>(expr->type.get())) {
+		writeChar('&');
+		expr->accept(this, FuPriority::primary);
+	}
+	else if (dynamic_cast<const FuClassType *>(expr->type.get()))
 		expr->accept(this, FuPriority::argument);
 	else {
 		write("(gconstpointer) ");

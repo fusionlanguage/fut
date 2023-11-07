@@ -1013,11 +1013,18 @@ public class GenC : GenCCpp
 
 	void WriteGConstPointerCast!(FuExpr expr)
 	{
-		if (expr.Type is FuClassType && !(expr.Type is FuStorageType))
+		switch (expr.Type) {
+		case FuStorageType _:
+			WriteChar('&');
+			expr.Accept(this, FuPriority.Primary);
+			break;
+		case FuClassType _:
 			expr.Accept(this, FuPriority.Argument);
-		else {
+			break;
+		default:
 			Write("(gconstpointer) ");
 			expr.Accept(this, FuPriority.Primary);
+			break;
 		}
 	}
 

@@ -10377,7 +10377,11 @@ export class GenC extends GenCCpp
 
 	#writeGConstPointerCast(expr)
 	{
-		if (expr.type instanceof FuClassType && !(expr.type instanceof FuStorageType))
+		if (expr.type instanceof FuStorageType) {
+			this.writeChar(38);
+			expr.accept(this, FuPriority.PRIMARY);
+		}
+		else if (expr.type instanceof FuClassType)
 			expr.accept(this, FuPriority.ARGUMENT);
 		else {
 			this.write("(gconstpointer) ");
