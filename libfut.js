@@ -13929,6 +13929,15 @@ export class GenCpp extends GenCCpp
 		this.writeChar(41);
 	}
 
+	#writeCollectionMethod(obj, name, args)
+	{
+		this.#startMethodCall(obj);
+		this.write(name);
+		this.writeChar(40);
+		this.writeCoerced(obj.type.asClassType().getElementType(), args[0], FuPriority.ARGUMENT);
+		this.writeChar(41);
+	}
+
 	#writeCString(expr)
 	{
 		if (expr instanceof FuLiteralString)
@@ -14066,9 +14075,7 @@ export class GenCpp extends GenCCpp
 		case FuId.LIST_CLEAR:
 		case FuId.STACK_PUSH:
 		case FuId.HASH_SET_CLEAR:
-		case FuId.HASH_SET_CONTAINS:
 		case FuId.SORTED_SET_CLEAR:
-		case FuId.SORTED_SET_CONTAINS:
 		case FuId.DICTIONARY_CLEAR:
 		case FuId.SORTED_DICTIONARY_CLEAR:
 			if (obj != null) {
@@ -14186,10 +14193,7 @@ export class GenCpp extends GenCCpp
 			this.writeChar(41);
 			break;
 		case FuId.ARRAY_FILL_ALL:
-			this.#startMethodCall(obj);
-			this.write("fill(");
-			this.writeCoerced(obj.type.asClassType().getElementType(), args[0], FuPriority.ARGUMENT);
-			this.writeChar(41);
+			this.#writeCollectionMethod(obj, "fill", args);
 			break;
 		case FuId.ARRAY_FILL_PART:
 			this.include("algorithm");
@@ -14216,14 +14220,12 @@ export class GenCpp extends GenCCpp
 			this.writeChar(41);
 			break;
 		case FuId.LIST_ADD:
-			this.#startMethodCall(obj);
-			if (args.length == 0)
+			if (args.length == 0) {
+				this.#startMethodCall(obj);
 				this.write("emplace_back()");
-			else {
-				this.write("push_back(");
-				this.writeCoerced(obj.type.asClassType().getElementType(), args[0], FuPriority.ARGUMENT);
-				this.writeChar(41);
 			}
+			else
+				this.#writeCollectionMethod(obj, "push_back", args);
 			break;
 		case FuId.LIST_ADD_RANGE:
 			this.#startMethodCall(obj);
@@ -14335,7 +14337,11 @@ export class GenCpp extends GenCCpp
 			break;
 		case FuId.HASH_SET_ADD:
 		case FuId.SORTED_SET_ADD:
-			this.writeMethodCall(obj, obj.type.asClassType().getElementType().id == FuId.STRING_STORAGE_TYPE && args[0].type.id == FuId.STRING_PTR_TYPE ? "emplace" : "insert", args[0]);
+			this.#writeCollectionMethod(obj, obj.type.asClassType().getElementType().id == FuId.STRING_STORAGE_TYPE && args[0].type.id == FuId.STRING_PTR_TYPE ? "emplace" : "insert", args);
+			break;
+		case FuId.HASH_SET_CONTAINS:
+		case FuId.SORTED_SET_CONTAINS:
+			this.#writeCollectionMethod(obj, "contains", args);
 			break;
 		case FuId.HASH_SET_REMOVE:
 		case FuId.SORTED_SET_REMOVE:

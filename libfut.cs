@@ -13505,6 +13505,15 @@ namespace Fusion
 			WriteChar(')');
 		}
 
+		void WriteCollectionMethod(FuExpr obj, string name, List<FuExpr> args)
+		{
+			StartMethodCall(obj);
+			Write(name);
+			WriteChar('(');
+			WriteCoerced(obj.Type.AsClassType().GetElementType(), args[0], FuPriority.Argument);
+			WriteChar(')');
+		}
+
 		void WriteCString(FuExpr expr)
 		{
 			if (expr is FuLiteralString)
@@ -13640,9 +13649,7 @@ namespace Fusion
 			case FuId.ListClear:
 			case FuId.StackPush:
 			case FuId.HashSetClear:
-			case FuId.HashSetContains:
 			case FuId.SortedSetClear:
-			case FuId.SortedSetContains:
 			case FuId.DictionaryClear:
 			case FuId.SortedDictionaryClear:
 				if (obj != null) {
@@ -13760,10 +13767,7 @@ namespace Fusion
 				WriteChar(')');
 				break;
 			case FuId.ArrayFillAll:
-				StartMethodCall(obj);
-				Write("fill(");
-				WriteCoerced(obj.Type.AsClassType().GetElementType(), args[0], FuPriority.Argument);
-				WriteChar(')');
+				WriteCollectionMethod(obj, "fill", args);
 				break;
 			case FuId.ArrayFillPart:
 				Include("algorithm");
@@ -13790,14 +13794,12 @@ namespace Fusion
 				WriteChar(')');
 				break;
 			case FuId.ListAdd:
-				StartMethodCall(obj);
-				if (args.Count == 0)
+				if (args.Count == 0) {
+					StartMethodCall(obj);
 					Write("emplace_back()");
-				else {
-					Write("push_back(");
-					WriteCoerced(obj.Type.AsClassType().GetElementType(), args[0], FuPriority.Argument);
-					WriteChar(')');
 				}
+				else
+					WriteCollectionMethod(obj, "push_back", args);
 				break;
 			case FuId.ListAddRange:
 				StartMethodCall(obj);
@@ -13909,7 +13911,11 @@ namespace Fusion
 				break;
 			case FuId.HashSetAdd:
 			case FuId.SortedSetAdd:
-				WriteMethodCall(obj, obj.Type.AsClassType().GetElementType().Id == FuId.StringStorageType && args[0].Type.Id == FuId.StringPtrType ? "emplace" : "insert", args[0]);
+				WriteCollectionMethod(obj, obj.Type.AsClassType().GetElementType().Id == FuId.StringStorageType && args[0].Type.Id == FuId.StringPtrType ? "emplace" : "insert", args);
+				break;
+			case FuId.HashSetContains:
+			case FuId.SortedSetContains:
+				WriteCollectionMethod(obj, "contains", args);
 				break;
 			case FuId.HashSetRemove:
 			case FuId.SortedSetRemove:

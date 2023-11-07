@@ -13141,6 +13141,15 @@ void GenCpp::writeAllAnyContains(std::string_view function, const FuExpr * obj, 
 	writeChar(')');
 }
 
+void GenCpp::writeCollectionMethod(const FuExpr * obj, std::string_view name, const std::vector<std::shared_ptr<FuExpr>> * args)
+{
+	startMethodCall(obj);
+	write(name);
+	writeChar('(');
+	writeCoerced(obj->type->asClassType()->getElementType().get(), (*args)[0].get(), FuPriority::argument);
+	writeChar(')');
+}
+
 void GenCpp::writeCString(const FuExpr * expr)
 {
 	if (dynamic_cast<const FuLiteralString *>(expr))
@@ -13277,9 +13286,7 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 	case FuId::listClear:
 	case FuId::stackPush:
 	case FuId::hashSetClear:
-	case FuId::hashSetContains:
 	case FuId::sortedSetClear:
-	case FuId::sortedSetContains:
 	case FuId::dictionaryClear:
 	case FuId::sortedDictionaryClear:
 		if (obj != nullptr) {
@@ -13397,10 +13404,7 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		writeChar(')');
 		break;
 	case FuId::arrayFillAll:
-		startMethodCall(obj);
-		write("fill(");
-		writeCoerced(obj->type->asClassType()->getElementType().get(), (*args)[0].get(), FuPriority::argument);
-		writeChar(')');
+		writeCollectionMethod(obj, "fill", args);
 		break;
 	case FuId::arrayFillPart:
 		include("algorithm");
@@ -13427,14 +13431,12 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		writeChar(')');
 		break;
 	case FuId::listAdd:
-		startMethodCall(obj);
-		if (std::ssize(*args) == 0)
+		if (std::ssize(*args) == 0) {
+			startMethodCall(obj);
 			write("emplace_back()");
-		else {
-			write("push_back(");
-			writeCoerced(obj->type->asClassType()->getElementType().get(), (*args)[0].get(), FuPriority::argument);
-			writeChar(')');
 		}
+		else
+			writeCollectionMethod(obj, "push_back", args);
 		break;
 	case FuId::listAddRange:
 		startMethodCall(obj);
@@ -13546,7 +13548,11 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		break;
 	case FuId::hashSetAdd:
 	case FuId::sortedSetAdd:
-		writeMethodCall(obj, obj->type->asClassType()->getElementType()->id == FuId::stringStorageType && (*args)[0]->type->id == FuId::stringPtrType ? "emplace" : "insert", (*args)[0].get());
+		writeCollectionMethod(obj, obj->type->asClassType()->getElementType()->id == FuId::stringStorageType && (*args)[0]->type->id == FuId::stringPtrType ? "emplace" : "insert", args);
+		break;
+	case FuId::hashSetContains:
+	case FuId::sortedSetContains:
+		writeCollectionMethod(obj, "contains", args);
 		break;
 	case FuId::hashSetRemove:
 	case FuId::sortedSetRemove:
