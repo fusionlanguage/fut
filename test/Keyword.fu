@@ -1,3 +1,156 @@
+static class MethodTest
+{
+	public static bool Abstract(bool b) => b;
+	public static bool And(bool b) => b;
+	public static bool Arguments(bool b) => b;
+	public static bool As(bool b) => b;
+	public static bool Asm(bool b) => b;
+	public static bool Associatedtype(bool b) => b;
+	public static bool Assert(bool b) => b;
+	public static bool Async(bool b) => b;
+	public static bool Auto(bool b) => b;
+	public static bool Await(bool b) => b;
+	public static bool Bool(bool b) => b;
+	public static bool Boolean(bool b) => b;
+	public static bool Break(bool b) => b;
+	public static bool Byte(bool b) => b;
+	public static bool Case(bool b) => b;
+	public static bool Catch(bool b) => b;
+	public static bool Char(bool b) => b;
+	public static bool Checked(bool b) => b;
+	public static bool Class(bool b) => b;
+	public static bool Const(bool b) => b;
+	public static bool Constant(bool b) => b;
+	public static bool Constructor(bool b) => b;
+	public static bool Continue(bool b) => b;
+	public static bool Debugger(bool b) => b;
+	public static bool Decimal(bool b) => b;
+	public static bool Def(bool b) => b;
+	public static bool Default(bool b) => b;
+	public static bool Defer(bool b) => b;
+	public static bool Deinit(bool b) => b;
+	public static bool Del(bool b) => b;
+	public static bool Delegate(bool b) => b;
+	public static bool Delete(bool b) => b;
+	public static bool Do(bool b) => b;
+	public static bool Double(bool b) => b;
+	public static bool Elif(bool b) => b;
+	public static bool Else(bool b) => b;
+	public static bool Enum(bool b) => b;
+	public static bool Event(bool b) => b;
+	public static bool Except(bool b) => b;
+	public static bool Explicit(bool b) => b;
+	public static bool Export(bool b) => b;
+	public static bool Exports(bool b) => b;
+	public static bool Extends(bool b) => b;
+	public static bool Extension(bool b) => b;
+	public static bool Extern(bool b) => b;
+	public static bool Fallthrough(bool b) => b;
+	public static bool False(bool b) => b;
+	public static bool Fileprivate(bool b) => b;
+	public static bool Final(bool b) => b;
+	public static bool Finally(bool b) => b;
+	public static bool Fixed(bool b) => b;
+	public static bool Float(bool b) => b;
+	public static bool For(bool b) => b;
+	public static bool Foreach(bool b) => b;
+	public static bool From(bool b) => b;
+	public static bool Func(bool b) => b;
+	public static bool Function(bool b) => b;
+	public static bool Global(bool b) => b;
+	public static bool Goto(bool b) => b;
+	public static bool Guard(bool b) => b;
+	public static bool If(bool b) => b;
+	public static bool Implements(bool b) => b;
+	public static bool Implicit(bool b) => b;
+	public static bool Import(bool b) => b;
+	public static bool In(bool b) => b;
+	public static bool Init(bool b) => b;
+	public static bool Inline(bool b) => b;
+	public static bool Inout(bool b) => b;
+	public static bool Instanceof(bool b) => b;
+	public static bool Int(bool b) => b;
+	public static bool Interface(bool b) => b;
+	public static bool Internal(bool b) => b;
+	public static bool Is(bool b) => b;
+	public static bool Kernel(bool b) => b;
+	public static bool Lambda(bool b) => b;
+	public static bool Len(bool b) => b;
+	public static bool Let(bool b) => b;
+	public static bool Local(bool b) => b;
+	public static bool Long(bool b) => b;
+	public static bool Module(bool b) => b;
+	public static bool Namespace(bool b) => b;
+	public static bool Native(bool b) => b;
+	public static bool New(bool b) => b;
+	public static bool Nil(bool b) => b;
+	public static bool Nonlocal(bool b) => b;
+	public static bool Not(bool b) => b;
+	public static bool Null(bool b) => b;
+	public static bool Nullptr(bool b) => b;
+	public static bool Object(bool b) => b;
+	public static bool Operator(bool b) => b;
+	public static bool Or(bool b) => b;
+	public static bool Out(bool b) => b;
+	public static bool Override(bool b) => b;
+	public static bool Package(bool b) => b;
+	public static bool Params(bool b) => b;
+	public static bool Pass(bool b) => b;
+	public static bool Private(bool b) => b;
+	public static bool Protected(bool b) => b;
+	public static bool Protocol(bool b) => b;
+	public static bool Public(bool b) => b;
+	public static bool Raise(bool b) => b;
+	public static bool Readonly(bool b) => b;
+	public static bool Record(bool b) => b;
+	public static bool Ref(bool b) => b;
+	public static bool Register(bool b) => b;
+	public static bool Repeat(bool b) => b;
+	public static bool Restrict(bool b) => b;
+	public static bool Rethrows(bool b) => b;
+	public static bool Return(bool b) => b;
+	public static bool Sbyte(bool b) => b;
+	public static bool Sealed(bool b) => b;
+	public static bool Self(bool b) => b;
+	public static bool Short(bool b) => b;
+	public static bool Signed(bool b) => b;
+	public static bool Sizeof(bool b) => b;
+	public static bool Stackalloc(bool b) => b;
+	public static bool Static(bool b) => b;
+	public static bool Strictfp(bool b) => b;
+	public static bool String(bool b) => b;
+	public static bool Struct(bool b) => b;
+	public static bool Subscript(bool b) => b;
+	public static bool Super(bool b) => b;
+	public static bool Switch(bool b) => b;
+	public static bool Synchronized(bool b) => b;
+	public static bool Throw(bool b) => b;
+	public static bool Throws(bool b) => b;
+	public static bool Transient(bool b) => b;
+	public static bool True(bool b) => b;
+	public static bool Try(bool b) => b;
+	public static bool Typealias(bool b) => b;
+	public static bool Typedef(bool b) => b;
+	public static bool Typeof(bool b) => b;
+	public static bool Uint(bool b) => b;
+	public static bool Ulong(bool b) => b;
+	public static bool Unchecked(bool b) => b;
+	public static bool Ushort(bool b) => b;
+	public static bool Union(bool b) => b;
+	public static bool Unsafe(bool b) => b;
+	public static bool Unsigned(bool b) => b;
+	public static bool Using(bool b) => b;
+	public static bool Var(bool b) => b;
+	public static bool Virtual(bool b) => b;
+	public static bool Void(bool b) => b;
+	public static bool Volatile(bool b) => b;
+	public static bool Where(bool b) => b;
+	public static bool While(bool b) => b;
+	public static bool With(bool b) => b;
+	public static bool Xor(bool b) => b;
+	public static bool Yield(bool b) => b;
+}
+
 public class Test
 {
 	bool Abstract = true;
@@ -152,6 +305,7 @@ public class Test
 
 	public static bool Run()
 	{
+		bool t = true;
 		Test() o;
 		string s = "foo";
 		bool and = true;
@@ -176,6 +330,7 @@ public class Test
 		bool del = true;
 		bool delegate = true;
 		bool delete = true;
+		bool dict = true;
 		bool elif = true;
 		bool event = true;
 		bool except = true;
@@ -208,6 +363,7 @@ public class Test
 		bool lambda = true;
 		bool len = s.Length == 3;
 		bool let = true;
+		bool list = true;
 		bool local = true;
 		bool module = true;
 		bool namespace = true;
@@ -237,6 +393,7 @@ public class Test
 		bool signed = true;
 		bool sizeof = true;
 		bool stackalloc = true;
+		string? str = null;
 		bool strictfp = true;
 		bool struct = true;
 		bool subscript = true;
@@ -259,7 +416,156 @@ public class Test
 		bool with = true;
 		bool xor = true;
 		bool yield = true;
-		return o.Abstract
+		return MethodTest.Abstract(t)
+			&& MethodTest.And(t)
+			&& MethodTest.Arguments(t)
+			&& MethodTest.As(t)
+			&& MethodTest.Asm(t)
+			&& MethodTest.Assert(t)
+			&& MethodTest.Associatedtype(t)
+			&& MethodTest.Async(t)
+			&& MethodTest.Auto(t)
+			&& MethodTest.Await(t)
+			&& MethodTest.Bool(t)
+			&& MethodTest.Boolean(t)
+			&& MethodTest.Break(t)
+			&& MethodTest.Byte(t)
+			&& MethodTest.Case(t)
+			&& MethodTest.Catch(t)
+			&& MethodTest.Char(t)
+			&& MethodTest.Checked(t)
+			&& MethodTest.Class(t)
+			&& MethodTest.Const(t)
+			&& MethodTest.Constant(t)
+			&& MethodTest.Constructor(t)
+			&& MethodTest.Continue(t)
+			&& MethodTest.Decimal(t)
+			&& MethodTest.Debugger(t)
+			&& MethodTest.Def(t)
+			&& MethodTest.Default(t)
+			&& MethodTest.Defer(t)
+			&& MethodTest.Deinit(t)
+			&& MethodTest.Del(t)
+			&& MethodTest.Delegate(t)
+			&& MethodTest.Delete(t)
+			&& MethodTest.Do(t)
+			&& MethodTest.Double(t)
+			&& MethodTest.Elif(t)
+			&& MethodTest.Else(t)
+			&& MethodTest.Enum(t)
+			&& MethodTest.Event(t)
+			&& MethodTest.Except(t)
+			&& MethodTest.Explicit(t)
+			&& MethodTest.Export(t)
+			&& MethodTest.Exports(t)
+			&& MethodTest.Extends(t)
+			&& MethodTest.Extension(t)
+			&& MethodTest.Extern(t)
+			&& MethodTest.Fallthrough(t)
+			&& MethodTest.False(t)
+			&& MethodTest.Fileprivate(t)
+			&& MethodTest.Final(t)
+			&& MethodTest.Finally(t)
+			&& MethodTest.Fixed(t)
+			&& MethodTest.Float(t)
+			&& MethodTest.For(t)
+			&& MethodTest.Foreach(t)
+			&& MethodTest.From(t)
+			&& MethodTest.Func(t)
+			&& MethodTest.Function(t)
+			&& MethodTest.Global(t)
+			&& MethodTest.Goto(t)
+			&& MethodTest.Guard(t)
+			&& MethodTest.If(t)
+			&& MethodTest.Implements(t)
+			&& MethodTest.Implicit(t)
+			&& MethodTest.Import(t)
+			&& MethodTest.In(t)
+			&& MethodTest.Init(t)
+			&& MethodTest.Inline(t)
+			&& MethodTest.Inout(t)
+			&& MethodTest.Instanceof(t)
+			&& MethodTest.Int(t)
+			&& MethodTest.Interface(t)
+			&& MethodTest.Internal(t)
+			&& MethodTest.Is(t)
+			&& MethodTest.Kernel(t)
+			&& MethodTest.Lambda(t)
+			&& MethodTest.Len(t)
+			&& MethodTest.Let(t)
+			&& MethodTest.Local(t)
+			&& MethodTest.Long(t)
+			&& MethodTest.Module(t)
+			&& MethodTest.Namespace(t)
+			&& MethodTest.Native(t)
+			&& MethodTest.New(t)
+			&& MethodTest.Nil(t)
+			&& MethodTest.Nonlocal(t)
+			&& MethodTest.Not(t)
+			&& MethodTest.Null(t)
+			&& MethodTest.Nullptr(t)
+			&& MethodTest.Object(t)
+			&& MethodTest.Operator(t)
+			&& MethodTest.Or(t)
+			&& MethodTest.Out(t)
+			&& MethodTest.Override(t)
+			&& MethodTest.Package(t)
+			&& MethodTest.Params(t)
+			&& MethodTest.Pass(t)
+			&& MethodTest.Private(t)
+			&& MethodTest.Protected(t)
+			&& MethodTest.Protocol(t)
+			&& MethodTest.Public(t)
+			&& MethodTest.Raise(t)
+			&& MethodTest.Readonly(t)
+			&& MethodTest.Record(t)
+			&& MethodTest.Ref(t)
+			&& MethodTest.Register(t)
+			&& MethodTest.Repeat(t)
+			&& MethodTest.Restrict(t)
+			&& MethodTest.Rethrows(t)
+			&& MethodTest.Return(t)
+			&& MethodTest.Sbyte(t)
+			&& MethodTest.Sealed(t)
+			&& MethodTest.Self(t)
+			&& MethodTest.Short(t)
+			&& MethodTest.Signed(t)
+			&& MethodTest.Sizeof(t)
+			&& MethodTest.Static(t)
+			&& MethodTest.Stackalloc(t)
+			&& MethodTest.Strictfp(t)
+			&& MethodTest.String(t)
+			&& MethodTest.Struct(t)
+			&& MethodTest.Subscript(t)
+			&& MethodTest.Super(t)
+			&& MethodTest.Switch(t)
+			&& MethodTest.Synchronized(t)
+			&& MethodTest.Transient(t)
+			&& MethodTest.Throw(t)
+			&& MethodTest.Throws(t)
+			&& MethodTest.True(t)
+			&& MethodTest.Try(t)
+			&& MethodTest.Typealias(t)
+			&& MethodTest.Typedef(t)
+			&& MethodTest.Typeof(t)
+			&& MethodTest.Uint(t)
+			&& MethodTest.Ulong(t)
+			&& MethodTest.Ushort(t)
+			&& MethodTest.Unchecked(t)
+			&& MethodTest.Union(t)
+			&& MethodTest.Unsafe(t)
+			&& MethodTest.Unsigned(t)
+			&& MethodTest.Using(t)
+			&& MethodTest.Var(t)
+			&& MethodTest.Virtual(t)
+			&& MethodTest.Void(t)
+			&& MethodTest.Volatile(t)
+			&& MethodTest.Where(t)
+			&& MethodTest.While(t)
+			&& MethodTest.With(t)
+			&& MethodTest.Xor(t)
+			&& MethodTest.Yield(t)
+			&& o.Abstract
 			&& o.And
 			&& o.Arguments
 			&& o.As
@@ -430,6 +736,7 @@ public class Test
 			&& del
 			&& delegate
 			&& delete
+			&& dict
 			&& elif
 			&& event
 			&& except
@@ -462,6 +769,7 @@ public class Test
 			&& lambda
 			&& len
 			&& let
+			&& list
 			&& local
 			&& module
 			&& namespace
@@ -491,6 +799,7 @@ public class Test
 			&& signed
 			&& sizeof
 			&& stackalloc
+			&& str == null
 			&& strictfp
 			&& struct
 			&& subscript

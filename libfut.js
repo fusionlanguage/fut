@@ -23237,6 +23237,48 @@ export class GenPy extends GenPySwift
 		case "this":
 			this.write("self");
 			break;
+		case "And":
+		case "Array":
+		case "As":
+		case "Assert":
+		case "Async":
+		case "Await":
+		case "Break":
+		case "Class":
+		case "Continue":
+		case "Def":
+		case "Del":
+		case "Dict":
+		case "Elif":
+		case "Else":
+		case "Enum":
+		case "Except":
+		case "Finally":
+		case "For":
+		case "From":
+		case "Global":
+		case "If":
+		case "Import":
+		case "In":
+		case "Is":
+		case "Lambda":
+		case "Len":
+		case "List":
+		case "Math":
+		case "Nonlocal":
+		case "Not":
+		case "Or":
+		case "Pass":
+		case "Pyfma":
+		case "Raise":
+		case "Re":
+		case "Return":
+		case "Str":
+		case "Sys":
+		case "Try":
+		case "While":
+		case "With":
+		case "Yield":
 		case "and":
 		case "array":
 		case "as":
@@ -23264,11 +23306,12 @@ export class GenPy extends GenPySwift
 		case "pyfma":
 		case "raise":
 		case "re":
+		case "str":
 		case "sys":
 		case "try":
 		case "with":
 		case "yield":
-			this.write(name);
+			this.writeCamelCase(name);
 			this.writeChar(95);
 			break;
 		default:

@@ -101,6 +101,48 @@ public class GenPy : GenPySwift
 		case "this":
 			Write("self");
 			break;
+		case "And":
+		case "Array":
+		case "As":
+		case "Assert":
+		case "Async":
+		case "Await":
+		case "Break":
+		case "Class":
+		case "Continue":
+		case "Def":
+		case "Del":
+		case "Dict":
+		case "Elif":
+		case "Else":
+		case "Enum":
+		case "Except":
+		case "Finally":
+		case "For":
+		case "From":
+		case "Global":
+		case "If":
+		case "Import":
+		case "In":
+		case "Is":
+		case "Lambda":
+		case "Len":
+		case "List":
+		case "Math":
+		case "Nonlocal":
+		case "Not":
+		case "Or":
+		case "Pass":
+		case "Pyfma":
+		case "Raise":
+		case "Re":
+		case "Return":
+		case "Str":
+		case "Sys":
+		case "Try":
+		case "While":
+		case "With":
+		case "Yield":
 		case "and":
 		case "array":
 		case "as":
@@ -128,11 +170,12 @@ public class GenPy : GenPySwift
 		case "pyfma":
 		case "raise":
 		case "re":
+		case "str":
 		case "sys":
 		case "try":
 		case "with":
 		case "yield":
-			Write(name);
+			WriteCamelCase(name);
 			WriteChar('_');
 			break;
 		default:
