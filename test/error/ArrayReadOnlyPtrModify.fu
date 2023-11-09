@@ -4,7 +4,7 @@ public class Test
 	{
 		int[2] a;
 		int[] p = a;
-		p[1] = 4; //ERROR: Cannot modify array through a read-only reference
+		p[1] = 4; //ERROR: Cannot modify collection through a read-only reference
 		return true;
 	}
 }

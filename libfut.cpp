@@ -4574,7 +4574,7 @@ void FuSema::checkLValue(const FuExpr * expr) const
 		else if (dynamic_cast<const FuReadWriteClassType *>(indexing->left->type.get())) {
 		}
 		else if (dynamic_cast<const FuClassType *>(indexing->left->type.get()))
-			reportError(expr, "Cannot modify array through a read-only reference");
+			reportError(expr, "Cannot modify collection through a read-only reference");
 		else
 			std::abort();
 	}

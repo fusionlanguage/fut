@@ -5022,7 +5022,7 @@ export class FuSema
 			else if (indexing.left.type instanceof FuReadWriteClassType) {
 			}
 			else if (indexing.left.type instanceof FuClassType)
-				this.reportError(expr, "Cannot modify array through a read-only reference");
+				this.reportError(expr, "Cannot modify collection through a read-only reference");
 			else
 				throw new Error();
 		}

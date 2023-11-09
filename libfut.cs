@@ -4851,7 +4851,7 @@ namespace Fusion
 				case FuReadWriteClassType _:
 					break;
 				case FuClassType _:
-					ReportError(expr, "Cannot modify array through a read-only reference");
+					ReportError(expr, "Cannot modify collection through a read-only reference");
 					break;
 				default:
 					throw new NotImplementedException();
