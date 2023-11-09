@@ -1021,7 +1021,7 @@ with a _key_. The key must be a number, a string or an enumeration.
 Value can be of any type.
 
 ```csharp
-Dictionary<string(), int> dict;
+Dictionary<string(), int>() dict;
 ```
 
 Index the dictionary with a key to insert/overwrite and retrieve elements:
