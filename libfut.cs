@@ -23726,7 +23726,7 @@ namespace Fusion
 		protected override void WriteAssertCast(FuBinaryExpr expr)
 		{
 			FuVar def = (FuVar) expr.Right;
-			Write(def.Name);
+			WriteTypeAndName(def);
 			Write(" = ");
 			expr.Left.Accept(this, FuPriority.Argument);
 			WriteNewLine();

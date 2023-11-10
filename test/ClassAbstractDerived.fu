@@ -1,0 +1,23 @@
+class Base
+{
+	internal bool Foo() => true;
+}
+
+abstract class AbstractDerived : Base
+{
+	internal abstract bool Bar(); //FAIL: cl
+}
+
+class MostDerived : AbstractDerived
+{
+	internal override bool Bar() => Foo();
+}
+
+public static class Test
+{
+	public static bool Run()
+	{
+		AbstractDerived# d = new MostDerived();
+		return d.Bar();
+	}
+}

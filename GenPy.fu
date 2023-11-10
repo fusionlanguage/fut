@@ -1169,7 +1169,7 @@ public class GenPy : GenPySwift
 	protected override void WriteAssertCast!(FuBinaryExpr expr)
 	{
 		assert expr.Right is FuVar def;
-		Write(def.Name);
+		WriteTypeAndName(def);
 		Write(" = ");
 		expr.Left.Accept(this, FuPriority.Argument);
 		WriteNewLine();

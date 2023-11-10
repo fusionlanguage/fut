@@ -22870,7 +22870,7 @@ void GenPy::visitLambdaExpr(const FuLambdaExpr * expr)
 void GenPy::writeAssertCast(const FuBinaryExpr * expr)
 {
 	const FuVar * def = static_cast<const FuVar *>(expr->right.get());
-	write(def->name);
+	writeTypeAndName(def);
 	write(" = ");
 	expr->left->accept(this, FuPriority::argument);
 	writeNewLine();

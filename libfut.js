@@ -24318,7 +24318,7 @@ export class GenPy extends GenPySwift
 	writeAssertCast(expr)
 	{
 		const def = expr.right;
-		this.write(def.name);
+		this.writeTypeAndName(def);
 		this.write(" = ");
 		expr.left.accept(this, FuPriority.ARGUMENT);
 		this.writeNewLine();
