@@ -22796,7 +22796,7 @@ namespace Fusion
 		{
 			Write(name);
 			WriteChar('[');
-			WriteTypeAnnotation(klass.GetElementType());
+			WriteTypeAnnotation(klass.GetElementType(), klass.Class.Id == FuId.ArrayStorageClass);
 			if (klass.Class.TypeParameterCount == 2) {
 				Write(", ");
 				WriteTypeAnnotation(klass.GetValueType());
@@ -22804,7 +22804,7 @@ namespace Fusion
 			WriteChar(']');
 		}
 
-		void WriteTypeAnnotation(FuType type)
+		void WriteTypeAnnotation(FuType type, bool nullable = false)
 		{
 			switch (type) {
 			case FuIntegerType _:
@@ -22820,9 +22820,10 @@ namespace Fusion
 					WritePyClassAnnotation(enu);
 				break;
 			case FuClassType klass:
+				nullable = nullable ? !(klass is FuStorageType) : klass.Nullable;
 				switch (klass.Class.Id) {
 				case FuId.None:
-					if (klass.Nullable && !this.WrittenTypes.Contains(klass.Class)) {
+					if (nullable && !this.WrittenTypes.Contains(klass.Class)) {
 						WriteChar('"');
 						WriteName(klass.Class);
 						Write(" | None\"");
@@ -22832,6 +22833,7 @@ namespace Fusion
 					break;
 				case FuId.StringClass:
 					Write("str");
+					nullable = klass.Nullable;
 					break;
 				case FuId.ArrayPtrClass:
 				case FuId.ArrayStorageClass:
@@ -22888,7 +22890,7 @@ namespace Fusion
 				default:
 					throw new NotImplementedException();
 				}
-				if (klass.Nullable)
+				if (nullable)
 					Write(" | None");
 				break;
 			default:
@@ -23146,8 +23148,15 @@ namespace Fusion
 		{
 			if (type is FuNumericType)
 				WriteChar('0');
-			else if (type.Id == FuId.BoolType)
-				Write("False");
+			else if (type is FuEnum enu) {
+				if (type.Id == FuId.BoolType)
+					VisitLiteralFalse();
+				else {
+					WriteName(enu);
+					WriteChar('.');
+					WriteUppercaseWithUnderscores(enu.GetFirstValue().Name);
+				}
+			}
 			else if ((type.Id == FuId.StringPtrType && !type.Nullable) || type.Id == FuId.StringStorageType)
 				Write("\"\"");
 			else

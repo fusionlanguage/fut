@@ -2817,7 +2817,7 @@ private:
 	void writeNameNotKeyword(std::string_view name);
 	void writePyClassAnnotation(const FuContainerType * type);
 	void writeCollectionTypeAnnotation(std::string_view name, const FuClassType * klass);
-	void writeTypeAnnotation(const FuType * type);
+	void writeTypeAnnotation(const FuType * type, bool nullable = false);
 	static int getArrayCode(const FuType * type);
 	void writeDefaultValue(const FuType * type);
 	void writePyNewArray(const FuType * elementType, const FuExpr * value, const FuExpr * lengthExpr);

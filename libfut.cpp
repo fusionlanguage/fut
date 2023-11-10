@@ -21928,7 +21928,7 @@ void GenPy::writeCollectionTypeAnnotation(std::string_view name, const FuClassTy
 {
 	write(name);
 	writeChar('[');
-	writeTypeAnnotation(klass->getElementType().get());
+	writeTypeAnnotation(klass->getElementType().get(), klass->class_->id == FuId::arrayStorageClass);
 	if (klass->class_->typeParameterCount == 2) {
 		write(", ");
 		writeTypeAnnotation(klass->getValueType().get());
@@ -21936,7 +21936,7 @@ void GenPy::writeCollectionTypeAnnotation(std::string_view name, const FuClassTy
 	writeChar(']');
 }
 
-void GenPy::writeTypeAnnotation(const FuType * type)
+void GenPy::writeTypeAnnotation(const FuType * type, bool nullable)
 {
 	if (dynamic_cast<const FuIntegerType *>(type))
 		write("int");
@@ -21949,9 +21949,10 @@ void GenPy::writeTypeAnnotation(const FuType * type)
 			writePyClassAnnotation(enu);
 	}
 	else if (const FuClassType *klass = dynamic_cast<const FuClassType *>(type)) {
+		nullable = nullable ? !dynamic_cast<const FuStorageType *>(klass) : klass->nullable;
 		switch (klass->class_->id) {
 		case FuId::none:
-			if (klass->nullable && !this->writtenTypes.contains(klass->class_)) {
+			if (nullable && !this->writtenTypes.contains(klass->class_)) {
 				writeChar('"');
 				writeName(klass->class_);
 				write(" | None\"");
@@ -21961,6 +21962,7 @@ void GenPy::writeTypeAnnotation(const FuType * type)
 			break;
 		case FuId::stringClass:
 			write("str");
+			nullable = klass->nullable;
 			break;
 		case FuId::arrayPtrClass:
 		case FuId::arrayStorageClass:
@@ -22020,7 +22022,7 @@ void GenPy::writeTypeAnnotation(const FuType * type)
 		default:
 			std::abort();
 		}
-		if (klass->nullable)
+		if (nullable)
 			write(" | None");
 	}
 	else
@@ -22286,8 +22288,15 @@ void GenPy::writeDefaultValue(const FuType * type)
 {
 	if (dynamic_cast<const FuNumericType *>(type))
 		writeChar('0');
-	else if (type->id == FuId::boolType)
-		write("False");
+	else if (const FuEnum *enu = dynamic_cast<const FuEnum *>(type)) {
+		if (type->id == FuId::boolType)
+			visitLiteralFalse();
+		else {
+			writeName(enu);
+			writeChar('.');
+			writeUppercaseWithUnderscores(enu->getFirstValue()->name);
+		}
+	}
 	else if ((type->id == FuId::stringPtrType && !type->nullable) || type->id == FuId::stringStorageType)
 		write("\"\"");
 	else

@@ -23371,7 +23371,7 @@ export class GenPy extends GenPySwift
 	{
 		this.write(name);
 		this.writeChar(91);
-		this.#writeTypeAnnotation(klass.getElementType());
+		this.#writeTypeAnnotation(klass.getElementType(), klass.class.id == FuId.ARRAY_STORAGE_CLASS);
 		if (klass.class.typeParameterCount == 2) {
 			this.write(", ");
 			this.#writeTypeAnnotation(klass.getValueType());
@@ -23379,7 +23379,7 @@ export class GenPy extends GenPySwift
 		this.writeChar(93);
 	}
 
-	#writeTypeAnnotation(type)
+	#writeTypeAnnotation(type, nullable = false)
 	{
 		if (type instanceof FuIntegerType)
 			this.write("int");
@@ -23394,9 +23394,10 @@ export class GenPy extends GenPySwift
 		}
 		else if (type instanceof FuClassType) {
 			const klass = type;
+			nullable = nullable ? !(klass instanceof FuStorageType) : klass.nullable;
 			switch (klass.class.id) {
 			case FuId.NONE:
-				if (klass.nullable && !this.#writtenTypes.has(klass.class)) {
+				if (nullable && !this.#writtenTypes.has(klass.class)) {
 					this.writeChar(34);
 					this.writeName(klass.class);
 					this.write(" | None\"");
@@ -23406,6 +23407,7 @@ export class GenPy extends GenPySwift
 				break;
 			case FuId.STRING_CLASS:
 				this.write("str");
+				nullable = klass.nullable;
 				break;
 			case FuId.ARRAY_PTR_CLASS:
 			case FuId.ARRAY_STORAGE_CLASS:
@@ -23463,7 +23465,7 @@ export class GenPy extends GenPySwift
 			default:
 				throw new Error();
 			}
-			if (klass.nullable)
+			if (nullable)
 				this.write(" | None");
 		}
 		else
@@ -23731,12 +23733,22 @@ export class GenPy extends GenPySwift
 	{
 		if (type instanceof FuNumericType)
 			this.writeChar(48);
-		else if (type.id == FuId.BOOL_TYPE)
-			this.write("False");
-		else if ((type.id == FuId.STRING_PTR_TYPE && !type.nullable) || type.id == FuId.STRING_STORAGE_TYPE)
-			this.write("\"\"");
-		else
-			this.write("None");
+		else {
+			let enu;
+			if ((enu = type) instanceof FuEnum) {
+				if (type.id == FuId.BOOL_TYPE)
+					this.visitLiteralFalse();
+				else {
+					this.writeName(enu);
+					this.writeChar(46);
+					this.writeUppercaseWithUnderscores(enu.getFirstValue().name);
+				}
+			}
+			else if ((type.id == FuId.STRING_PTR_TYPE && !type.nullable) || type.id == FuId.STRING_STORAGE_TYPE)
+				this.write("\"\"");
+			else
+				this.write("None");
+		}
 	}
 
 	#writePyNewArray(elementType, value, lengthExpr)
