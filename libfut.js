@@ -23244,6 +23244,7 @@ export class GenPy extends GenPySwift
 		case "Assert":
 		case "Async":
 		case "Await":
+		case "Bool":
 		case "Break":
 		case "Class":
 		case "Continue":

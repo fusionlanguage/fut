@@ -22669,6 +22669,7 @@ namespace Fusion
 			case "Assert":
 			case "Async":
 			case "Await":
+			case "Bool":
 			case "Break":
 			case "Class":
 			case "Continue":
