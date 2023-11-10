@@ -23101,11 +23101,18 @@ void GenPy::writeField(const FuField * field)
 
 void GenPy::writeMethod(const FuMethod * method)
 {
-	if (method->callType == FuCallType::abstract)
-		return;
 	writeNewLine();
-	if (method->callType == FuCallType::static_)
+	switch (method->callType) {
+	case FuCallType::static_:
 		writeLine("@staticmethod");
+		break;
+	case FuCallType::abstract:
+		include("abc");
+		writeLine("@abc.abstractmethod");
+		break;
+	default:
+		break;
+	}
 	write("def ");
 	writeName(method);
 	if (method->callType == FuCallType::static_)
@@ -23122,7 +23129,8 @@ void GenPy::writeMethod(const FuMethod * method)
 	this->currentMethod = method;
 	openChild();
 	writePyDoc(method);
-	method->body->acceptStatement(this);
+	if (method->body != nullptr)
+		method->body->acceptStatement(this);
 	closeChild();
 	this->currentMethod = nullptr;
 }
@@ -23157,6 +23165,10 @@ void GenPy::writeClass(const FuClass * klass, const FuProgram * program)
 		writeChar('(');
 		writeName(baseClass);
 		writeChar(')');
+	}
+	else if (klass->callType == FuCallType::abstract) {
+		include("abc");
+		write("(abc.ABC)");
 	}
 	openChild();
 	writeDoc(klass->documentation.get());

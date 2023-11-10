@@ -23958,11 +23958,18 @@ namespace Fusion
 
 		protected override void WriteMethod(FuMethod method)
 		{
-			if (method.CallType == FuCallType.Abstract)
-				return;
 			WriteNewLine();
-			if (method.CallType == FuCallType.Static)
+			switch (method.CallType) {
+			case FuCallType.Static:
 				WriteLine("@staticmethod");
+				break;
+			case FuCallType.Abstract:
+				Include("abc");
+				WriteLine("@abc.abstractmethod");
+				break;
+			default:
+				break;
+			}
 			Write("def ");
 			WriteName(method);
 			if (method.CallType == FuCallType.Static)
@@ -23979,7 +23986,8 @@ namespace Fusion
 			this.CurrentMethod = method;
 			OpenChild();
 			WritePyDoc(method);
-			method.Body.AcceptStatement(this);
+			if (method.Body != null)
+				method.Body.AcceptStatement(this);
 			CloseChild();
 			this.CurrentMethod = null;
 		}
@@ -24014,6 +24022,10 @@ namespace Fusion
 				WriteChar('(');
 				WriteName(baseClass);
 				WriteChar(')');
+			}
+			else if (klass.CallType == FuCallType.Abstract) {
+				Include("abc");
+				Write("(abc.ABC)");
 			}
 			OpenChild();
 			WriteDoc(klass.Documentation);

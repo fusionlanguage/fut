@@ -24554,11 +24554,18 @@ export class GenPy extends GenPySwift
 
 	writeMethod(method)
 	{
-		if (method.callType == FuCallType.ABSTRACT)
-			return;
 		this.writeNewLine();
-		if (method.callType == FuCallType.STATIC)
+		switch (method.callType) {
+		case FuCallType.STATIC:
 			this.writeLine("@staticmethod");
+			break;
+		case FuCallType.ABSTRACT:
+			this.include("abc");
+			this.writeLine("@abc.abstractmethod");
+			break;
+		default:
+			break;
+		}
 		this.write("def ");
 		this.writeName(method);
 		if (method.callType == FuCallType.STATIC)
@@ -24575,7 +24582,8 @@ export class GenPy extends GenPySwift
 		this.currentMethod = method;
 		this.openChild();
 		this.#writePyDoc(method);
-		method.body.acceptStatement(this);
+		if (method.body != null)
+			method.body.acceptStatement(this);
 		this.closeChild();
 		this.currentMethod = null;
 	}
@@ -24612,6 +24620,10 @@ export class GenPy extends GenPySwift
 			this.writeChar(40);
 			this.writeName(baseClass);
 			this.writeChar(41);
+		}
+		else if (klass.callType == FuCallType.ABSTRACT) {
+			this.include("abc");
+			this.write("(abc.ABC)");
 		}
 		this.openChild();
 		this.writeDoc(klass.documentation);
