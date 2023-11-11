@@ -58,6 +58,7 @@ jobs:
       - uses: Totto16/setup-gcc@master
         with:
           version: 13
+      - run: pip install mypy
       - uses: swift-actions/setup-swift@main
       - uses: actions/checkout@main
       - run: make -j3 test-py test-swift
