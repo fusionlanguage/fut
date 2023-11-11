@@ -44,7 +44,8 @@ jobs:
     install:
       - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
       - sudo add-apt-repository -y ppa:deadsnakes/ppa
-      - sudo apt install g++-13 mypy python3.12
+      - sudo apt install g++-13 python3.12
+      - pip install mypy
       - wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2204/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu22.04.tar.gz
       - tar xf swift-$SWIFT_VERSION-RELEASE-ubuntu22.04.tar.gz -C ..
     script: make -j5 test-py test-swift CXX=g++-13 PYTHON=python3.12 SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu22.04/usr/bin/swiftc
