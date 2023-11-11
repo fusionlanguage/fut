@@ -197,7 +197,7 @@ export class HelloFu
 class HelloFu:
 
 	@staticmethod
-	def get_message():
+	def get_message() -> str:
 		"""Returns a greeting message."""
 		return "Hello, world!"
 ```

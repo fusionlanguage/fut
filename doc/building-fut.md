@@ -44,6 +44,7 @@ To run `fut` tests, you will need:
 * [Java compiler](https://www.oracle.com/java/technologies/downloads/)
 * [Node.js](https://nodejs.org/)
 * Python
+* mypy static type checker
 * [Swift](https://swift.org/)
 * [GLib](https://wiki.gnome.org/Projects/GLib)
 
@@ -51,7 +52,7 @@ To get GNU Make, perl, GNU diff, Clang, Python and GLib on Windows,
 install [MSYS2](https://www.msys2.org/), start "MSYS2 MinGW 64-bit"
 and add packages with:
 
-    pacman -S make perl diffutils mingw-w64-x86_64-gcc mingw-w64-x86_64-python mingw-w64-x86_64-glib2
+    pacman -S make perl diffutils mingw-w64-x86_64-gcc mingw-w64-x86_64-python mingw-w64-x86_64-mypy mingw-w64-x86_64-glib2
 
 On macOS:
 
