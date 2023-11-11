@@ -25,6 +25,7 @@ SWIFTC += -sanitize=address
 endif
 DC = dmd
 PYTHON = python3 -B
+MYPY = mypy
 INSTALL = install
 
 ifdef V
@@ -164,7 +165,11 @@ test/bin/%/ts.txt: test/bin/%/Test.ts test/node_modules test/tsconfig.json
 	$(DO)test/node_modules/.bin/ts-node $< $(END_RUN_TEST)
 
 test/bin/%/py.txt: test/bin/%/Test.py
+ifdef MYPY
+	$(DO)($(MYPY) --no-error-summary --allow-redefinition --disable-error-code=assignment --no-strict-optional $< && $(PYTHON) $< $(if $(findstring $*, MainArgs), foo bar)) >$@ || grep '//FAIL:.*\<$(basename $(@F))\>' test/$*.fu
+else
 	$(DO)$(PYTHON) $< $(END_RUN_TEST)
+endif
 
 test/bin/%/swift.txt: test/bin/%/swift.exe
 	$(DO)./$< $(END_RUN_TEST)

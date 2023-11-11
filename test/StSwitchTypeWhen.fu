@@ -33,7 +33,7 @@ public static class Test
 		case Cat c when c.Name == "Simba": //FAIL: java 19 --enable-preview
 			return true;
 		default:
-			return false;
+			return false; //FAIL: py mypy "Missing return statement"
 		}
 	}
 
