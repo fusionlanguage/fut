@@ -19923,9 +19923,9 @@ namespace Fusion
 
 		internal override void VisitThrow(FuThrow statement)
 		{
-			Write("throw ");
+			Write("throw new Error(");
 			statement.Message.Accept(this, FuPriority.Argument);
-			WriteCharLine(';');
+			WriteLine(");");
 		}
 
 		protected virtual void StartContainerType(FuContainerType container)

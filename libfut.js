@@ -20474,9 +20474,9 @@ export class GenJsNoModule extends GenBase
 
 	visitThrow(statement)
 	{
-		this.write("throw ");
+		this.write("throw new Error(");
 		statement.message.accept(this, FuPriority.ARGUMENT);
-		this.writeCharLine(59);
+		this.writeLine(");");
 	}
 
 	startContainerType(container)

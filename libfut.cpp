@@ -19271,9 +19271,9 @@ void GenJsNoModule::visitSwitch(const FuSwitch * statement)
 
 void GenJsNoModule::visitThrow(const FuThrow * statement)
 {
-	write("throw ");
+	write("throw new Error(");
 	statement->message->accept(this, FuPriority::argument);
-	writeCharLine(';');
+	writeLine(");");
 }
 
 void GenJsNoModule::startContainerType(const FuContainerType * container)
