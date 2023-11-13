@@ -11973,10 +11973,31 @@ void GenC::writeNewDelete(const FuClass * klass, bool define)
 		writeCharLine(';');
 }
 
+bool GenC::canThrow(const FuType * type)
+{
+	switch (type->id) {
+	case FuId::voidType:
+	case FuId::floatType:
+	case FuId::doubleType:
+		return true;
+	default:
+		if (dynamic_cast<const FuRangeType *>(type))
+			return true;
+		else if (dynamic_cast<const FuStorageType *>(type))
+			return false;
+		else if (dynamic_cast<const FuClassType *>(type))
+			return !type->nullable;
+		else
+			return false;
+	}
+}
+
 void GenC::writeMethod(const FuMethod * method)
 {
 	if (!method->isLive || method->callType == FuCallType::abstract)
 		return;
+	if (method->throws && !canThrow(method->type.get()))
+		notSupported(method, "Throwing from this method type");
 	writeNewLine();
 	if (method->id == FuId::main) {
 		write("int main(");

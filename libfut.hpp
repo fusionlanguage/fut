@@ -2167,6 +2167,7 @@ private:
 	void writeVtbl(const FuClass * definingClass, const FuClass * declaringClass);
 	void writeDestructFields(const FuSymbol * symbol);
 	void writeNewDelete(const FuClass * klass, bool define);
+	static bool canThrow(const FuType * type);
 	void writeTryParseLibrary(std::string_view signature, std::string_view call);
 	void writeLibrary();
 };

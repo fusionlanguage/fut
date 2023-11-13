@@ -4,7 +4,7 @@ public abstract class Base
 	{
 	}
 
-	public int Bar() throws
+	public uint Bar() throws
 	{
 		Foo();
 		return 42;

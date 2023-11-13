@@ -1,13 +1,13 @@
 public class Test
 {
-	static int IntThrow() throws
+	static uint UintThrow() throws
 	{
 		throw "Foo";
 	}
 
 	static void VoidThrow() throws
 	{
-		IntThrow();
+		UintThrow();
 	}
 
 	static float FloatThrow() throws
@@ -29,7 +29,7 @@ public class Test
 	public static void Outer() throws
 	{
 		VoidThrow();
-		IntThrow();
+		UintThrow();
 		FloatThrow();
 		StringPtrThrow();
 		ObjectPtrThrow();

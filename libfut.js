@@ -12633,10 +12633,31 @@ export class GenC extends GenCCpp
 			this.writeCharLine(59);
 	}
 
+	static #canThrow(type)
+	{
+		switch (type.id) {
+		case FuId.VOID_TYPE:
+		case FuId.FLOAT_TYPE:
+		case FuId.DOUBLE_TYPE:
+			return true;
+		default:
+			if (type instanceof FuRangeType)
+				return true;
+			else if (type instanceof FuStorageType)
+				return false;
+			else if (type instanceof FuClassType)
+				return !type.nullable;
+			else
+				return false;
+		}
+	}
+
 	writeMethod(method)
 	{
 		if (!method.isLive || method.callType == FuCallType.ABSTRACT)
 			return;
+		if (method.throws && !GenC.#canThrow(method.type))
+			this.notSupported(method, "Throwing from this method type");
 		this.writeNewLine();
 		if (method.id == FuId.MAIN) {
 			this.write("int main(");

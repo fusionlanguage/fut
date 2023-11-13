@@ -12216,10 +12216,33 @@ namespace Fusion
 				WriteCharLine(';');
 		}
 
+		static bool CanThrow(FuType type)
+		{
+			switch (type.Id) {
+			case FuId.VoidType:
+			case FuId.FloatType:
+			case FuId.DoubleType:
+				return true;
+			default:
+				switch (type) {
+				case FuRangeType _:
+					return true;
+				case FuStorageType _:
+					return false;
+				case FuClassType _:
+					return !type.Nullable;
+				default:
+					return false;
+				}
+			}
+		}
+
 		protected override void WriteMethod(FuMethod method)
 		{
 			if (!method.IsLive || method.CallType == FuCallType.Abstract)
 				return;
+			if (method.Throws && !CanThrow(method.Type))
+				NotSupported(method, "Throwing from this method type");
 			WriteNewLine();
 			if (method.Id == FuId.Main) {
 				Write("int main(");

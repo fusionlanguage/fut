@@ -1,6 +1,6 @@
 public class Test
 {
-	static int IntThrow() throws
+	static uint UintThrow() throws
 	{
 		throw "Foo";
 	}
@@ -8,7 +8,7 @@ public class Test
 	public static string() Outer() throws
 	{
 		string() s = "bar"; //FAIL: cl
-		IntThrow();
+		UintThrow();
 		return s;
 	}
 
