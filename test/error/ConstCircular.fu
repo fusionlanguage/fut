@@ -1,6 +1,6 @@
 public static class Test
 {
-	const int X = Y; //ERROR: Circular dependency in value of constant X
+	const int X = Y; //ERROR: Circular dependency in value of constant 'X'
 	// FIXME:
-	const int Y = X; //ERROR: Value for constant Y is not constant //ERROR: Value for constant X is not constant
+	const int Y = X; //ERROR: Value for constant 'Y' is not constant //ERROR: Value for constant 'X' is not constant
 }

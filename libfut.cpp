@@ -3475,7 +3475,7 @@ std::shared_ptr<FuAssert> FuParser::parseAssert()
 std::shared_ptr<FuBreak> FuParser::parseBreak()
 {
 	if (this->currentLoopOrSwitch == nullptr)
-		reportError("break outside loop or switch");
+		reportError("'break' outside loop or 'switch'");
 	std::shared_ptr<FuBreak> result = std::make_shared<FuBreak>();
 	result->line = this->line;
 	result->loopOrSwitch = this->currentLoopOrSwitch;
@@ -3489,7 +3489,7 @@ std::shared_ptr<FuBreak> FuParser::parseBreak()
 std::shared_ptr<FuContinue> FuParser::parseContinue()
 {
 	if (this->currentLoop == nullptr)
-		reportError("continue outside loop");
+		reportError("'continue' outside loop");
 	std::shared_ptr<FuContinue> result = std::make_shared<FuContinue>();
 	result->line = this->line;
 	result->loop = this->currentLoop;
@@ -4046,7 +4046,7 @@ void FuSema::resolveBase(FuClass * klass)
 			klass->parent = baseClass;
 		}
 		else
-			reportError(klass, std::format("Base class {} not found", klass->baseClassName));
+			reportError(klass, std::format("Base class '{}' not found", klass->baseClassName));
 	}
 	this->program->classes.push_back(klass);
 }
@@ -4066,7 +4066,7 @@ void FuSema::checkBaseCycle(FuClass * klass)
 	}
 	while (tortoise != hare);
 	this->currentScope = klass;
-	reportError(klass, std::format("Circular inheritance for class {}", klass->name));
+	reportError(klass, std::format("Circular inheritance for class '{}'", klass->name));
 }
 
 void FuSema::takePtr(const FuExpr * expr)
@@ -4080,14 +4080,14 @@ bool FuSema::coerce(const FuExpr * expr, const FuType * type) const
 	if (expr == this->poison.get() || type == this->poison.get())
 		return false;
 	if (!type->isAssignableFrom(expr->type.get())) {
-		reportError(expr, std::format("Cannot coerce {} to {}", expr->type->toString(), type->toString()));
+		reportError(expr, std::format("Cannot convert '{}' to '{}'", expr->type->toString(), type->toString()));
 		return false;
 	}
 	const FuPrefixExpr * prefix;
 	if ((prefix = dynamic_cast<const FuPrefixExpr *>(expr)) && prefix->op == FuToken::new_ && !dynamic_cast<const FuDynamicPtrType *>(type)) {
 		const FuDynamicPtrType * newType = static_cast<const FuDynamicPtrType *>(expr->type.get());
 		std::string_view kind = newType->class_->id == FuId::arrayPtrClass ? "array" : "object";
-		reportError(expr, std::format("Dynamically allocated {} must be assigned to a {} reference", kind, expr->type->toString()));
+		reportError(expr, std::format("Dynamically allocated {} must be assigned to a '{}' reference", kind, expr->type->toString()));
 		return false;
 	}
 	takePtr(expr);
@@ -4098,7 +4098,7 @@ bool FuSema::coercePermanent(const FuExpr * expr, const FuType * type) const
 {
 	bool ok = coerce(expr, type);
 	if (ok && type->id == FuId::stringPtrType && expr->isNewString(true)) {
-		reportError(expr, "New string must be assigned to string()");
+		reportError(expr, "New string must be assigned to 'string()'");
 		return false;
 	}
 	return ok;
@@ -4184,7 +4184,7 @@ std::shared_ptr<FuExpr> FuSema::lookup(std::shared_ptr<FuSymbolReference> expr, 
 	if (expr->symbol == nullptr) {
 		expr->symbol = scope->tryLookup(expr->name, expr->left == nullptr).get();
 		if (expr->symbol == nullptr)
-			return poisonError(expr.get(), std::format("{} not found", expr->name));
+			return poisonError(expr.get(), std::format("'{}' not found", expr->name));
 		expr->type = expr->symbol->type;
 	}
 	FuConst * konst;
@@ -4207,9 +4207,9 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 		if (const FuMember *nearMember = dynamic_cast<const FuMember *>(expr->symbol)) {
 			const FuClass * memberClass;
 			if (nearMember->visibility == FuVisibility::private_ && (memberClass = dynamic_cast<const FuClass *>(nearMember->parent)) && memberClass != getCurrentContainer())
-				reportError(expr.get(), std::format("Cannot access private member {}", expr->name));
+				reportError(expr.get(), std::format("Cannot access private member '{}'", expr->name));
 			if (!nearMember->isStatic() && (this->currentMethod == nullptr || this->currentMethod->isStatic()))
-				reportError(expr.get(), std::format("Cannot use instance member {} from static context", expr->name));
+				reportError(expr.get(), std::format("Cannot use instance member '{}' from static context", expr->name));
 		}
 		if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(resolved.get())) {
 			if (const FuVar *v = dynamic_cast<const FuVar *>(symbol->symbol)) {
@@ -4253,7 +4253,7 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 		switch (member->visibility) {
 		case FuVisibility::private_:
 			if (member->parent != this->currentMethod->parent || this->currentMethod->parent != scope)
-				reportError(expr.get(), std::format("Cannot access private member {}", expr->name));
+				reportError(expr.get(), std::format("Cannot access private member '{}'", expr->name));
 			break;
 		case FuVisibility::protected_:
 			if (isBase)
@@ -4262,7 +4262,7 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 				const FuClass * currentClass = static_cast<const FuClass *>(this->currentMethod->parent);
 				const FuClass * scopeClass = static_cast<const FuClass *>(scope);
 				if (!currentClass->isSameOrBaseOf(scopeClass))
-					reportError(expr.get(), std::format("Cannot access protected member {}", expr->name));
+					reportError(expr.get(), std::format("Cannot access protected member '{}'", expr->name));
 				break;
 			}
 		case FuVisibility::numericElementType:
@@ -4298,10 +4298,10 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 			const FuSymbolReference * leftContainer;
 			if ((leftContainer = dynamic_cast<const FuSymbolReference *>(left.get())) && dynamic_cast<const FuContainerType *>(leftContainer->symbol)) {
 				if (!member->isStatic())
-					reportError(expr.get(), std::format("Cannot use instance member {} without an object", expr->name));
+					reportError(expr.get(), std::format("Cannot use instance member '{}' without an object", expr->name));
 			}
 			else if (member->isStatic())
-				reportError(expr.get(), std::format("{} is static", expr->name));
+				reportError(expr.get(), std::format("'{}' is static", expr->name));
 		}
 	}
 	std::shared_ptr<FuSymbolReference> futemp0 = std::make_shared<FuSymbolReference>();
@@ -4448,7 +4448,7 @@ bool FuSema::isEnumOp(const FuExpr * left, const FuExpr * right) const
 {
 	if (dynamic_cast<const FuEnum *>(left->type.get())) {
 		if (left->type->id != FuId::boolType && !dynamic_cast<const FuEnumFlags *>(left->type.get()))
-			reportError(left, std::format("Define flags enumeration as: enum* {}", left->type->toString()));
+			reportError(left, std::format("Define flags enumeration as 'enum* {}'", left->type->toString()));
 		coerce(right, left->type.get());
 		return true;
 	}
@@ -4805,7 +4805,7 @@ bool FuSema::canCompareEqual(const FuType * left, const FuType * right)
 std::shared_ptr<FuExpr> FuSema::resolveEquality(const FuBinaryExpr * expr, std::shared_ptr<FuExpr> left, std::shared_ptr<FuExpr> right) const
 {
 	if (!canCompareEqual(left->type.get(), right->type.get()))
-		return poisonError(expr, std::format("Cannot compare {} with {}", left->type->toString(), right->type->toString()));
+		return poisonError(expr, std::format("Cannot compare '{}' with '{}'", left->type->toString(), right->type->toString()));
 	const FuRangeType * leftRange;
 	const FuRangeType * rightRange;
 	if ((leftRange = dynamic_cast<const FuRangeType *>(left->type.get())) && (rightRange = dynamic_cast<const FuRangeType *>(right->type.get()))) {
@@ -4868,9 +4868,9 @@ std::shared_ptr<FuExpr> FuSema::resolveIs(std::shared_ptr<FuBinaryExpr> expr, st
 	else
 		return poisonError(expr.get(), "Right hand side of the 'is' operator must be a class name");
 	if (klass->isSameOrBaseOf(leftPtr->class_))
-		return poisonError(expr.get(), std::format("{} is {}, the 'is' operator would always return 'true'", leftPtr->toString(), klass->name));
+		return poisonError(expr.get(), std::format("'{}' is '{}', the 'is' operator would always return 'true'", leftPtr->toString(), klass->name));
 	if (!leftPtr->class_->isSameOrBaseOf(klass))
-		return poisonError(expr.get(), std::format("{} is not base class of {}, the 'is' operator would always return 'false'", leftPtr->toString(), klass->name));
+		return poisonError(expr.get(), std::format("'{}' is not base class of '{}', the 'is' operator would always return 'false'", leftPtr->toString(), klass->name));
 	expr->left = left;
 	expr->type = this->program->system->boolType;
 	return expr;
@@ -5266,7 +5266,7 @@ std::shared_ptr<FuType> FuSema::getCommonType(const FuExpr * left, const FuExpr 
 			return result;
 		}
 	}
-	return poisonError(left, std::format("Incompatible types: {} and {}", left->type->toString(), right->type->toString()));
+	return poisonError(left, std::format("Incompatible types: '{}' and '{}'", left->type->toString(), right->type->toString()));
 }
 
 std::shared_ptr<FuExpr> FuSema::visitSelectExpr(const FuSelectExpr * expr)
@@ -5566,7 +5566,7 @@ void FuSema::fillGenericClass(FuClassType * result, const FuClass * klass, const
 	for (const std::shared_ptr<FuExpr> &typeArgExpr : typeArgExprs->items)
 		typeArgs.push_back(toType(typeArgExpr, false));
 	if (std::ssize(typeArgs) != klass->typeParameterCount) {
-		reportError(result, std::format("Expected {} type arguments for {}, got {}", klass->typeParameterCount, klass->name, std::ssize(typeArgs)));
+		reportError(result, std::format("Expected {} type arguments for '{}', got {}", klass->typeParameterCount, klass->name, std::ssize(typeArgs)));
 		return;
 	}
 	result->class_ = klass;
@@ -5610,7 +5610,7 @@ std::shared_ptr<FuType> FuSema::toBaseType(const FuExpr * expr, FuToken ptrModif
 			}
 			return expectNoPtrModifier(expr, ptrModifier, nullable) ? type : this->poison;
 		}
-		return poisonError(expr, std::format("Type {} not found", symbol->name));
+		return poisonError(expr, std::format("Type '{}' not found", symbol->name));
 	}
 	else if (const FuCallExpr *call = dynamic_cast<const FuCallExpr *>(expr)) {
 		if (!expectNoPtrModifier(expr, ptrModifier, nullable))
@@ -5624,7 +5624,7 @@ std::shared_ptr<FuType> FuSema::toBaseType(const FuExpr * expr, FuToken ptrModif
 				fillGenericClass(storage.get(), klass, typeArgExprs2);
 				return storage;
 			}
-			return poisonError(typeArgExprs2, std::format("{} is not a class", call->method->name));
+			return poisonError(typeArgExprs2, std::format("'{}' is not a class", call->method->name));
 		}
 		else if (call->method->left != nullptr)
 			return poisonError(expr, "Invalid type");
@@ -5635,7 +5635,7 @@ std::shared_ptr<FuType> FuSema::toBaseType(const FuExpr * expr, FuToken ptrModif
 			futemp0->class_ = klass2;
 			return futemp0;
 		}
-		return poisonError(expr, std::format("Class {} not found", call->method->name));
+		return poisonError(expr, std::format("Class '{}' not found", call->method->name));
 	}
 	else
 		return poisonError(expr, "Invalid type");
@@ -5855,7 +5855,7 @@ void FuSema::visitForeach(FuForeach * statement)
 		switch (klass->class_->id) {
 		case FuId::stringClass:
 			if (statement->count() != 1 || !element->type->isAssignableFrom(this->program->system->intType.get()))
-				reportError(statement, "Expected int iterator variable");
+				reportError(statement, "Expected 'int' iterator variable");
 			break;
 		case FuId::arrayStorageClass:
 		case FuId::listClass:
@@ -5864,29 +5864,29 @@ void FuSema::visitForeach(FuForeach * statement)
 			if (statement->count() != 1)
 				reportError(statement, "Expected one iterator variable");
 			else if (!element->type->isAssignableFrom(klass->getElementType().get()))
-				reportError(statement, std::format("Cannot coerce {} to {}", klass->getElementType()->toString(), element->type->toString()));
+				reportError(statement, std::format("Cannot convert '{}' to '{}'", klass->getElementType()->toString(), element->type->toString()));
 			break;
 		case FuId::dictionaryClass:
 		case FuId::sortedDictionaryClass:
 		case FuId::orderedDictionaryClass:
 			if (statement->count() != 2)
-				reportError(statement, "Expected (TKey key, TValue value) iterator");
+				reportError(statement, "Expected '(TKey key, TValue value)' iterator");
 			else {
 				FuVar * value = statement->getValueVar();
 				resolveType(value);
 				if (!element->type->isAssignableFrom(klass->getKeyType()))
-					reportError(statement, std::format("Cannot coerce {} to {}", klass->getKeyType()->toString(), element->type->toString()));
+					reportError(statement, std::format("Cannot convert '{}' to '{}'", klass->getKeyType()->toString(), element->type->toString()));
 				else if (!value->type->isAssignableFrom(klass->getValueType().get()))
-					reportError(statement, std::format("Cannot coerce {} to {}", klass->getValueType()->toString(), value->type->toString()));
+					reportError(statement, std::format("Cannot convert '{}' to '{}'", klass->getValueType()->toString(), value->type->toString()));
 			}
 			break;
 		default:
-			reportError(statement, std::format("'foreach' invalid on {}", klass->class_->name));
+			reportError(statement, std::format("'foreach' invalid on '{}'", klass->class_->name));
 			break;
 		}
 	}
 	else
-		reportError(statement, std::format("'foreach' invalid on {}", statement->collection->type->toString()));
+		reportError(statement, std::format("'foreach' invalid on '{}'", statement->collection->type->toString()));
 	statement->setCompletesNormally(true);
 	visitStatement(statement->body);
 	closeScope();
@@ -5940,7 +5940,7 @@ void FuSema::visitSwitch(FuSwitch * statement)
 	else if ((klass = dynamic_cast<const FuClassType *>(statement->value->type.get())) && !dynamic_cast<const FuStorageType *>(klass)) {
 	}
 	else {
-		reportError(statement->value.get(), std::format("Switch on type {} - expected int, enum, string or object reference", statement->value->type->toString()));
+		reportError(statement->value.get(), std::format("'switch' on type '{}' - expected 'int', 'enum', 'string' or object reference", statement->value->type->toString()));
 		return;
 	}
 	statement->setCompletesNormally(false);
@@ -5963,11 +5963,11 @@ void FuSema::visitSwitch(FuSwitch * statement)
 						if (!(casePtr = dynamic_cast<const FuClassType *>(resolveType(def.get()).get())) || dynamic_cast<const FuStorageType *>(casePtr))
 							reportError(def.get(), "'case' with non-reference type");
 						else if (dynamic_cast<const FuReadWriteClassType *>(casePtr) && !dynamic_cast<const FuDynamicPtrType *>(switchPtr) && (dynamic_cast<const FuDynamicPtrType *>(casePtr) || !dynamic_cast<const FuReadWriteClassType *>(switchPtr)))
-							reportError(def.get(), std::format("{} cannot be casted to {}", switchPtr->toString(), casePtr->toString()));
+							reportError(def.get(), std::format("'{}' cannot be casted to '{}'", switchPtr->toString(), casePtr->toString()));
 						else if (casePtr->class_->isSameOrBaseOf(switchPtr->class_))
-							reportError(def.get(), std::format("{} is {}, 'case {}' would always match", statement->value->toString(), switchPtr->toString(), casePtr->toString()));
+							reportError(def.get(), std::format("'{}' is '{}', 'case {}' would always match", statement->value->toString(), switchPtr->toString(), casePtr->toString()));
 						else if (!switchPtr->class_->isSameOrBaseOf(casePtr->class_))
-							reportError(def.get(), std::format("{} is not base class of {}, 'case {}' would never match", switchPtr->toString(), casePtr->class_->name, casePtr->toString()));
+							reportError(def.get(), std::format("'{}' is not base class of '{}', 'case {}' would never match", switchPtr->toString(), casePtr->class_->name, casePtr->toString()));
 						else {
 							statement->add(def);
 							FuBinaryExpr * when2;
@@ -5991,12 +5991,12 @@ void FuSema::visitSwitch(FuSwitch * statement)
 			}
 		}
 		if (resolveStatements(&kase.body))
-			reportError(kase.body.back().get(), "Case must end with break, continue, return or throw");
+			reportError(kase.body.back().get(), "'case' must end with 'break', 'continue', 'return' or 'throw'");
 	}
 	if (std::ssize(statement->defaultBody) > 0) {
 		bool reachable = resolveStatements(&statement->defaultBody);
 		if (reachable)
-			reportError(statement->defaultBody.back().get(), "Default must end with break, continue, return or throw");
+			reportError(statement->defaultBody.back().get(), "'default' must end with 'break', 'continue', 'return' or 'throw'");
 	}
 	closeScope();
 }
@@ -6081,7 +6081,7 @@ void FuSema::resolveConst(FuConst * konst)
 	case FuVisitStatus::notYet:
 		break;
 	case FuVisitStatus::inProgress:
-		konst->value = poisonError(konst, std::format("Circular dependency in value of constant {}", konst->name));
+		konst->value = poisonError(konst, std::format("Circular dependency in value of constant '{}'", konst->name));
 		konst->visitStatus = FuVisitStatus::done;
 		return;
 	case FuVisitStatus::done:
@@ -6112,14 +6112,14 @@ void FuSema::resolveConst(FuConst * konst)
 				coerce(item.get(), elementType.get());
 		}
 		else
-			reportError(konst, std::format("Array initializer for scalar constant {}", konst->name));
+			reportError(konst, std::format("Array initializer for scalar constant '{}'", konst->name));
 	}
 	else if (dynamic_cast<const FuEnum *>(this->currentScope) && dynamic_cast<const FuRangeType *>(konst->value->type.get()) && dynamic_cast<const FuLiteral *>(konst->value.get())) {
 	}
 	else if (dynamic_cast<const FuLiteral *>(konst->value.get()) || konst->value->isConstEnum())
 		coerce(konst->value.get(), konst->type.get());
 	else if (konst->value != this->poison)
-		reportError(konst->value.get(), std::format("Value for constant {} is not constant", konst->name));
+		reportError(konst->value.get(), std::format("Value for constant '{}' is not constant", konst->name));
 	konst->inMethod = this->currentMethod;
 	konst->visitStatus = FuVisitStatus::done;
 }
@@ -6183,9 +6183,9 @@ void FuSema::resolveTypes(FuClass * klass)
 			}
 			if (method->name == "Main") {
 				if (method->visibility != FuVisibility::public_ || method->callType != FuCallType::static_)
-					reportError(method, "Main method must be 'public static'");
+					reportError(method, "'Main' method must be 'public static'");
 				if (method->type->id != FuId::voidType && method->type->id != FuId::intType)
-					reportError(method->type.get(), "Main method must return 'void' or 'int'");
+					reportError(method->type.get(), "'Main' method must return 'void' or 'int'");
 				switch (method->parameters.count()) {
 				case 0:
 					break;
@@ -6201,15 +6201,15 @@ void FuSema::resolveTypes(FuClass * klass)
 								break;
 							}
 						}
-						reportError(args, "Main method parameter must be 'string[]'");
+						reportError(args, "'Main' method parameter must be 'string[]'");
 						break;
 					}
 				default:
-					reportError(method, "Main method must have no parameters or one 'string[]' parameter");
+					reportError(method, "'Main' method must have no parameters or one 'string[]' parameter");
 					break;
 				}
 				if (this->program->main != nullptr)
-					reportError(method, "Duplicate Main method");
+					reportError(method, "Duplicate 'Main' method");
 				else {
 					method->id = FuId::main;
 					this->program->main = method;

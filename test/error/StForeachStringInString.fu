@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		string s = "foo";
-		foreach (string c in s) { //ERROR: Expected int iterator variable
+		foreach (string c in s) { //ERROR: Expected 'int' iterator variable
 		}
 		return true;
 	}

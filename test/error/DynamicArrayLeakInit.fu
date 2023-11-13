@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		int[] p = new int[3]; //ERROR: Dynamically allocated array must be assigned to a int[]# reference
+		int[] p = new int[3]; //ERROR: Dynamically allocated array must be assigned to a 'int[]#' reference
 		return true;
 	}
 }

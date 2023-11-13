@@ -4,7 +4,7 @@ public class Test
 	{
 		Test() o;
 		Test p = o;
-		Console.WriteLine(p); //ERROR: Cannot coerce Test to printable
+		Console.WriteLine(p); //ERROR: Cannot convert 'Test' to 'printable'
 		return true;
 	}
 }

@@ -8,6 +8,6 @@ public class Test : Base
 	public static bool Run()
 	{
 		Base() o;
-		return o.Prot; //ERROR: Cannot access protected member Prot
+		return o.Prot; //ERROR: Cannot access protected member 'Prot'
 	}
 }

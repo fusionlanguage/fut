@@ -1,6 +1,6 @@
 public class Test
 {
-	public void Main() //ERROR: Main method must be 'public static'
+	public void Main() //ERROR: 'Main' method must be 'public static'
 	{
 	}
 }

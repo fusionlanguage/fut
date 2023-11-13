@@ -8,6 +8,6 @@ public class Test : Base
 	{
 		Test() o;
 		Test p = o;
-		return p is Base; //ERROR: Test is Base, the 'is' operator would always return 'true'
+		return p is Base; //ERROR: 'Test' is 'Base', the 'is' operator would always return 'true'
 	}
 }

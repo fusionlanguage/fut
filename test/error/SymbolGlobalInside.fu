@@ -5,6 +5,6 @@ public class Test
 		Test.Test.Test p; //ERROR: Invalid type
 		Test.Test.Test() o; //ERROR: Invalid type
 		long.int i; //ERROR: Invalid type
-		return long.int.MaxValue > 0; //ERROR: int not found
+		return long.int.MaxValue > 0; //ERROR: 'int' not found
 	}
 }

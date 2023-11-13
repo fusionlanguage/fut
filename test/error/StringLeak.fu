@@ -2,20 +2,20 @@ public static class Test
 {
 	public static string Bar(int i)
 	{
-		string s = $"{i}"; //ERROR: New string must be assigned to string()
-		s = $"{s}Bar"; //ERROR: New string must be assigned to string()
-		return s + "Bar"; //ERROR: New string must be assigned to string()
+		string s = $"{i}"; //ERROR: New string must be assigned to 'string()'
+		s = $"{s}Bar"; //ERROR: New string must be assigned to 'string()'
+		return s + "Bar"; //ERROR: New string must be assigned to 'string()'
 	}
 
-	public static string Concatenate(string a, string b) => a + b; //ERROR: New string must be assigned to string()
+	public static string Concatenate(string a, string b) => a + b; //ERROR: New string must be assigned to 'string()'
 
-	public static string ToString(int i) => $"{i}"; //ERROR: New string must be assigned to string()
+	public static string ToString(int i) => $"{i}"; //ERROR: New string must be assigned to 'string()'
 
 	public static string() Greet(string name) => "Hi, " + name;
 
-	public static string ReturnStringStg(string name) => Greet(name); //ERROR: New string must be assigned to string()
+	public static string ReturnStringStg(string name) => Greet(name); //ERROR: New string must be assigned to 'string()'
 
-	public static string GetValue(Match match) => match.Value; //ERROR: New string must be assigned to string()
+	public static string GetValue(Match match) => match.Value; //ERROR: New string must be assigned to 'string()'
 
 	public static bool Run()
 	{

@@ -3,6 +3,6 @@ public static class Test
 	public static bool Run()
 	{
 		int i = 0;
-		return false == i; //ERROR: Cannot compare bool with int
+		return false == i; //ERROR: Cannot compare 'bool' with 'int'
 	}
 }

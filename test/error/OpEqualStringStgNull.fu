@@ -3,6 +3,6 @@ public static class Test
 	public static bool Run()
 	{
 		string() s = "foo";
-		return s == null; //ERROR: Cannot compare string() with null
+		return s == null; //ERROR: Cannot compare 'string()' with 'null'
 	}
 }

@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		int[3] a;
-		foreach (string s in a) { //ERROR: Cannot coerce int to string
+		foreach (string s in a) { //ERROR: Cannot convert 'int' to 'string'
 		}
 		return true;
 	}

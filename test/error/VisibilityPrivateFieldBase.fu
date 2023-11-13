@@ -5,7 +5,7 @@ public class Base
 
 public class Test : Base
 {
-	bool Bar() => Priv; //ERROR: Cannot access private member Priv
+	bool Bar() => Priv; //ERROR: Cannot access private member 'Priv'
 
 	public static bool Run()
 	{

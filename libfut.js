@@ -3964,7 +3964,7 @@ export class FuParser extends FuLexer
 	#parseBreak()
 	{
 		if (this.#currentLoopOrSwitch == null)
-			this.reportError("break outside loop or switch");
+			this.reportError("'break' outside loop or 'switch'");
 		let result = Object.assign(new FuBreak(), { line: this.line, loopOrSwitch: this.#currentLoopOrSwitch });
 		this.expect(FuToken.BREAK);
 		this.expect(FuToken.SEMICOLON);
@@ -3977,7 +3977,7 @@ export class FuParser extends FuLexer
 	#parseContinue()
 	{
 		if (this.#currentLoop == null)
-			this.reportError("continue outside loop");
+			this.reportError("'continue' outside loop");
 		let result = Object.assign(new FuContinue(), { line: this.line, loop: this.#currentLoop });
 		this.expect(FuToken.CONTINUE);
 		this.expect(FuToken.SEMICOLON);
@@ -4498,7 +4498,7 @@ export class FuSema
 				klass.parent = baseClass;
 			}
 			else
-				this.reportError(klass, `Base class ${klass.baseClassName} not found`);
+				this.reportError(klass, `Base class '${klass.baseClassName}' not found`);
 		}
 		this.program.classes.push(klass);
 	}
@@ -4518,7 +4518,7 @@ export class FuSema
 		}
 		while (tortoise != hare);
 		this.#currentScope = klass;
-		this.reportError(klass, `Circular inheritance for class ${klass.name}`);
+		this.reportError(klass, `Circular inheritance for class '${klass.name}'`);
 	}
 
 	static #takePtr(expr)
@@ -4533,14 +4533,14 @@ export class FuSema
 		if (expr == this.#poison || type == this.#poison)
 			return false;
 		if (!type.isAssignableFrom(expr.type)) {
-			this.reportError(expr, `Cannot coerce ${expr.type} to ${type}`);
+			this.reportError(expr, `Cannot convert '${expr.type}' to '${type}'`);
 			return false;
 		}
 		let prefix;
 		if ((prefix = expr) instanceof FuPrefixExpr && prefix.op == FuToken.NEW && !(type instanceof FuDynamicPtrType)) {
 			let newType = expr.type;
 			let kind = newType.class.id == FuId.ARRAY_PTR_CLASS ? "array" : "object";
-			this.reportError(expr, `Dynamically allocated ${kind} must be assigned to a ${expr.type} reference`);
+			this.reportError(expr, `Dynamically allocated ${kind} must be assigned to a '${expr.type}' reference`);
 			return false;
 		}
 		FuSema.#takePtr(expr);
@@ -4551,7 +4551,7 @@ export class FuSema
 	{
 		let ok = this.#coerce(expr, type);
 		if (ok && type.id == FuId.STRING_PTR_TYPE && expr.isNewString(true)) {
-			this.reportError(expr, "New string must be assigned to string()");
+			this.reportError(expr, "New string must be assigned to 'string()'");
 			return false;
 		}
 		return ok;
@@ -4635,7 +4635,7 @@ export class FuSema
 		if (expr.symbol == null) {
 			expr.symbol = scope.tryLookup(expr.name, expr.left == null);
 			if (expr.symbol == null)
-				return this.#poisonError(expr, `${expr.name} not found`);
+				return this.#poisonError(expr, `'${expr.name}' not found`);
 			expr.type = expr.symbol.type;
 		}
 		let konst;
@@ -4659,9 +4659,9 @@ export class FuSema
 			if ((nearMember = expr.symbol) instanceof FuMember) {
 				let memberClass;
 				if (nearMember.visibility == FuVisibility.PRIVATE && (memberClass = nearMember.parent) instanceof FuClass && memberClass != this.#getCurrentContainer())
-					this.reportError(expr, `Cannot access private member ${expr.name}`);
+					this.reportError(expr, `Cannot access private member '${expr.name}'`);
 				if (!nearMember.isStatic() && (this.#currentMethod == null || this.#currentMethod.isStatic()))
-					this.reportError(expr, `Cannot use instance member ${expr.name} from static context`);
+					this.reportError(expr, `Cannot use instance member '${expr.name}' from static context`);
 			}
 			let symbol;
 			if ((symbol = resolved) instanceof FuSymbolReference) {
@@ -4710,7 +4710,7 @@ export class FuSema
 			switch (member.visibility) {
 			case FuVisibility.PRIVATE:
 				if (member.parent != this.#currentMethod.parent || this.#currentMethod.parent != scope)
-					this.reportError(expr, `Cannot access private member ${expr.name}`);
+					this.reportError(expr, `Cannot access private member '${expr.name}'`);
 				break;
 			case FuVisibility.PROTECTED:
 				if (isBase)
@@ -4718,7 +4718,7 @@ export class FuSema
 				let currentClass = this.#currentMethod.parent;
 				let scopeClass = scope;
 				if (!currentClass.isSameOrBaseOf(scopeClass))
-					this.reportError(expr, `Cannot access protected member ${expr.name}`);
+					this.reportError(expr, `Cannot access protected member '${expr.name}'`);
 				break;
 			case FuVisibility.NUMERIC_ELEMENT_TYPE:
 				let klass;
@@ -4753,10 +4753,10 @@ export class FuSema
 				let leftContainer;
 				if ((leftContainer = left) instanceof FuSymbolReference && leftContainer.symbol instanceof FuContainerType) {
 					if (!member.isStatic())
-						this.reportError(expr, `Cannot use instance member ${expr.name} without an object`);
+						this.reportError(expr, `Cannot use instance member '${expr.name}' without an object`);
 				}
 				else if (member.isStatic())
-					this.reportError(expr, `${expr.name} is static`);
+					this.reportError(expr, `'${expr.name}' is static`);
 			}
 		}
 		return Object.assign(new FuSymbolReference(), { line: expr.line, left: left, name: expr.name, symbol: expr.symbol, type: expr.type });
@@ -4895,7 +4895,7 @@ export class FuSema
 	{
 		if (left.type instanceof FuEnum) {
 			if (left.type.id != FuId.BOOL_TYPE && !(left.type instanceof FuEnumFlags))
-				this.reportError(left, `Define flags enumeration as: enum* ${left.type}`);
+				this.reportError(left, `Define flags enumeration as 'enum* ${left.type}'`);
 			this.#coerce(right, left.type);
 			return true;
 		}
@@ -5232,7 +5232,7 @@ export class FuSema
 	#resolveEquality(expr, left, right)
 	{
 		if (!FuSema.#canCompareEqual(left.type, right.type))
-			return this.#poisonError(expr, `Cannot compare ${left.type} with ${right.type}`);
+			return this.#poisonError(expr, `Cannot compare '${left.type}' with '${right.type}'`);
 		let leftRange;
 		let rightRange;
 		if ((leftRange = left.type) instanceof FuRangeType && (rightRange = right.type) instanceof FuRangeType) {
@@ -5292,9 +5292,9 @@ export class FuSema
 		else
 			return this.#poisonError(expr, "Right hand side of the 'is' operator must be a class name");
 		if (klass.isSameOrBaseOf(leftPtr.class))
-			return this.#poisonError(expr, `${leftPtr} is ${klass.name}, the 'is' operator would always return 'true'`);
+			return this.#poisonError(expr, `'${leftPtr}' is '${klass.name}', the 'is' operator would always return 'true'`);
 		if (!leftPtr.class.isSameOrBaseOf(klass))
-			return this.#poisonError(expr, `${leftPtr} is not base class of ${klass.name}, the 'is' operator would always return 'false'`);
+			return this.#poisonError(expr, `'${leftPtr}' is not base class of '${klass.name}', the 'is' operator would always return 'false'`);
 		expr.left = left;
 		expr.type = this.program.system.boolType;
 		return expr;
@@ -5655,7 +5655,7 @@ export class FuSema
 				return result;
 			}
 		}
-		return this.#poisonError(left, `Incompatible types: ${left.type} and ${right.type}`);
+		return this.#poisonError(left, `Incompatible types: '${left.type}' and '${right.type}'`);
 	}
 
 	#visitSelectExpr(expr)
@@ -5967,7 +5967,7 @@ export class FuSema
 		for (const typeArgExpr of typeArgExprs.items)
 			typeArgs.push(this.#toType(typeArgExpr, false));
 		if (typeArgs.length != klass.typeParameterCount) {
-			this.reportError(result, `Expected ${klass.typeParameterCount} type arguments for ${klass.name}, got ${typeArgs.length}`);
+			this.reportError(result, `Expected ${klass.typeParameterCount} type arguments for '${klass.name}', got ${typeArgs.length}`);
 			return;
 		}
 		result.class = klass;
@@ -6015,7 +6015,7 @@ export class FuSema
 				}
 				return this.#expectNoPtrModifier(expr, ptrModifier, nullable) ? type : this.#poison;
 			}
-			return this.#poisonError(expr, `Type ${symbol.name} not found`);
+			return this.#poisonError(expr, `Type '${symbol.name}' not found`);
 		}
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
@@ -6031,7 +6031,7 @@ export class FuSema
 					this.#fillGenericClass(storage, klass, typeArgExprs2);
 					return storage;
 				}
-				return this.#poisonError(typeArgExprs2, `${call.method.name} is not a class`);
+				return this.#poisonError(typeArgExprs2, `'${call.method.name}' is not a class`);
 			}
 			else if (call.method.left != null)
 				return this.#poisonError(expr, "Invalid type");
@@ -6040,7 +6040,7 @@ export class FuSema
 			let klass2;
 			if ((klass2 = this.program.tryLookup(call.method.name, true)) instanceof FuClass)
 				return Object.assign(new FuStorageType(), { class: klass2 });
-			return this.#poisonError(expr, `Class ${call.method.name} not found`);
+			return this.#poisonError(expr, `Class '${call.method.name}' not found`);
 		}
 		else
 			return this.#poisonError(expr, "Invalid type");
@@ -6259,7 +6259,7 @@ export class FuSema
 			switch (klass.class.id) {
 			case FuId.STRING_CLASS:
 				if (statement.count() != 1 || !element.type.isAssignableFrom(this.program.system.intType))
-					this.reportError(statement, "Expected int iterator variable");
+					this.reportError(statement, "Expected 'int' iterator variable");
 				break;
 			case FuId.ARRAY_STORAGE_CLASS:
 			case FuId.LIST_CLASS:
@@ -6268,29 +6268,29 @@ export class FuSema
 				if (statement.count() != 1)
 					this.reportError(statement, "Expected one iterator variable");
 				else if (!element.type.isAssignableFrom(klass.getElementType()))
-					this.reportError(statement, `Cannot coerce ${klass.getElementType()} to ${element.type}`);
+					this.reportError(statement, `Cannot convert '${klass.getElementType()}' to '${element.type}'`);
 				break;
 			case FuId.DICTIONARY_CLASS:
 			case FuId.SORTED_DICTIONARY_CLASS:
 			case FuId.ORDERED_DICTIONARY_CLASS:
 				if (statement.count() != 2)
-					this.reportError(statement, "Expected (TKey key, TValue value) iterator");
+					this.reportError(statement, "Expected '(TKey key, TValue value)' iterator");
 				else {
 					let value = statement.getValueVar();
 					this.#resolveType(value);
 					if (!element.type.isAssignableFrom(klass.getKeyType()))
-						this.reportError(statement, `Cannot coerce ${klass.getKeyType()} to ${element.type}`);
+						this.reportError(statement, `Cannot convert '${klass.getKeyType()}' to '${element.type}'`);
 					else if (!value.type.isAssignableFrom(klass.getValueType()))
-						this.reportError(statement, `Cannot coerce ${klass.getValueType()} to ${value.type}`);
+						this.reportError(statement, `Cannot convert '${klass.getValueType()}' to '${value.type}'`);
 				}
 				break;
 			default:
-				this.reportError(statement, `'foreach' invalid on ${klass.class.name}`);
+				this.reportError(statement, `'foreach' invalid on '${klass.class.name}'`);
 				break;
 			}
 		}
 		else
-			this.reportError(statement, `'foreach' invalid on ${statement.collection.type}`);
+			this.reportError(statement, `'foreach' invalid on '${statement.collection.type}'`);
 		statement.setCompletesNormally(true);
 		this.#visitStatement(statement.body);
 		this.#closeScope();
@@ -6344,7 +6344,7 @@ export class FuSema
 		else if ((klass = statement.value.type) instanceof FuClassType && !(klass instanceof FuStorageType)) {
 		}
 		else {
-			this.reportError(statement.value, `Switch on type ${statement.value.type} - expected int, enum, string or object reference`);
+			this.reportError(statement.value, `'switch' on type '${statement.value.type}' - expected 'int', 'enum', 'string' or object reference`);
 			return;
 		}
 		statement.setCompletesNormally(false);
@@ -6367,11 +6367,11 @@ export class FuSema
 							if (!((casePtr = this.#resolveType(def)) instanceof FuClassType) || casePtr instanceof FuStorageType)
 								this.reportError(def, "'case' with non-reference type");
 							else if (casePtr instanceof FuReadWriteClassType && !(switchPtr instanceof FuDynamicPtrType) && (casePtr instanceof FuDynamicPtrType || !(switchPtr instanceof FuReadWriteClassType)))
-								this.reportError(def, `${switchPtr} cannot be casted to ${casePtr}`);
+								this.reportError(def, `'${switchPtr}' cannot be casted to '${casePtr}'`);
 							else if (casePtr.class.isSameOrBaseOf(switchPtr.class))
-								this.reportError(def, `${statement.value} is ${switchPtr}, 'case ${casePtr}' would always match`);
+								this.reportError(def, `'${statement.value}' is '${switchPtr}', 'case ${casePtr}' would always match`);
 							else if (!switchPtr.class.isSameOrBaseOf(casePtr.class))
-								this.reportError(def, `${switchPtr} is not base class of ${casePtr.class.name}, 'case ${casePtr}' would never match`);
+								this.reportError(def, `'${switchPtr}' is not base class of '${casePtr.class.name}', 'case ${casePtr}' would never match`);
 							else {
 								statement.add(def);
 								let when2;
@@ -6395,12 +6395,12 @@ export class FuSema
 				}
 			}
 			if (this.#resolveStatements(kase.body))
-				this.reportError(kase.body.at(-1), "Case must end with break, continue, return or throw");
+				this.reportError(kase.body.at(-1), "'case' must end with 'break', 'continue', 'return' or 'throw'");
 		}
 		if (statement.defaultBody.length > 0) {
 			let reachable = this.#resolveStatements(statement.defaultBody);
 			if (reachable)
-				this.reportError(statement.defaultBody.at(-1), "Default must end with break, continue, return or throw");
+				this.reportError(statement.defaultBody.at(-1), "'default' must end with 'break', 'continue', 'return' or 'throw'");
 		}
 		this.#closeScope();
 	}
@@ -6512,7 +6512,7 @@ export class FuSema
 		case FuVisitStatus.NOT_YET:
 			break;
 		case FuVisitStatus.IN_PROGRESS:
-			konst.value = this.#poisonError(konst, `Circular dependency in value of constant ${konst.name}`);
+			konst.value = this.#poisonError(konst, `Circular dependency in value of constant '${konst.name}'`);
 			konst.visitStatus = FuVisitStatus.DONE;
 			return;
 		case FuVisitStatus.DONE:
@@ -6541,14 +6541,14 @@ export class FuSema
 					this.#coerce(item, elementType);
 			}
 			else
-				this.reportError(konst, `Array initializer for scalar constant ${konst.name}`);
+				this.reportError(konst, `Array initializer for scalar constant '${konst.name}'`);
 		}
 		else if (this.#currentScope instanceof FuEnum && konst.value.type instanceof FuRangeType && konst.value instanceof FuLiteral) {
 		}
 		else if (konst.value instanceof FuLiteral || konst.value.isConstEnum())
 			this.#coerce(konst.value, konst.type);
 		else if (konst.value != this.#poison)
-			this.reportError(konst.value, `Value for constant ${konst.name} is not constant`);
+			this.reportError(konst.value, `Value for constant '${konst.name}' is not constant`);
 		konst.inMethod = this.#currentMethod;
 		konst.visitStatus = FuVisitStatus.DONE;
 	}
@@ -6616,9 +6616,9 @@ export class FuSema
 				}
 				if (method.name == "Main") {
 					if (method.visibility != FuVisibility.PUBLIC || method.callType != FuCallType.STATIC)
-						this.reportError(method, "Main method must be 'public static'");
+						this.reportError(method, "'Main' method must be 'public static'");
 					if (method.type.id != FuId.VOID_TYPE && method.type.id != FuId.INT_TYPE)
-						this.reportError(method.type, "Main method must return 'void' or 'int'");
+						this.reportError(method.type, "'Main' method must return 'void' or 'int'");
 					switch (method.parameters.count()) {
 					case 0:
 						break;
@@ -6633,14 +6633,14 @@ export class FuSema
 								break;
 							}
 						}
-						this.reportError(args, "Main method parameter must be 'string[]'");
+						this.reportError(args, "'Main' method parameter must be 'string[]'");
 						break;
 					default:
-						this.reportError(method, "Main method must have no parameters or one 'string[]' parameter");
+						this.reportError(method, "'Main' method must have no parameters or one 'string[]' parameter");
 						break;
 					}
 					if (this.program.main != null)
-						this.reportError(method, "Duplicate Main method");
+						this.reportError(method, "Duplicate 'Main' method");
 					else {
 						method.id = FuId.MAIN;
 						this.program.main = method;

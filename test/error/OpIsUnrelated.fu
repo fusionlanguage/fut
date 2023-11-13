@@ -8,6 +8,6 @@ public class Test
 	{
 		Test() o;
 		Test p = o;
-		return p is Unrelated; //ERROR: Test is not base class of Unrelated, the 'is' operator would always return 'false'
+		return p is Unrelated; //ERROR: 'Test' is not base class of 'Unrelated', the 'is' operator would always return 'false'
 	}
 }

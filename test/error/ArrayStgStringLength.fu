@@ -1,4 +1,4 @@
 public class Test
 {
-	int["foo"] Array; //ERROR: Cannot coerce string to int
+	int["foo"] Array; //ERROR: Cannot convert 'string' to 'int'
 }

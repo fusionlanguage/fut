@@ -3,6 +3,6 @@ public static class Test
 	public static bool Run()
 	{
 		float f = 5;
-		return f & 1; //ERROR: Cannot coerce float to int //ERROR: Cannot coerce int to bool
+		return f & 1; //ERROR: Cannot convert 'float' to 'int' //ERROR: Cannot convert 'int' to 'bool'
 	}
 }

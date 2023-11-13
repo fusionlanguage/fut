@@ -7,7 +7,7 @@ public static class Test
 		case 5:
 			break;
 		default:
-			x++; //ERROR: Default must end with break, continue, return or throw
+			x++; //ERROR: 'default' must end with 'break', 'continue', 'return' or 'throw'
 		}
 		return true;
 	}

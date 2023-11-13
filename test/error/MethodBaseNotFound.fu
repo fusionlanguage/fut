@@ -6,6 +6,6 @@ public class Test : Base
 {
 	public static bool Run()
 	{
-		return base.Foo(); //ERROR: Foo not found
+		return base.Foo(); //ERROR: 'Foo' not found
 	}
 }

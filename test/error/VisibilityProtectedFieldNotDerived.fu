@@ -5,7 +5,7 @@ public class Base
 
 public static class Test
 {
-	static bool Foo(Base b) => b.Prot; //ERROR: Cannot access protected member Prot
+	static bool Foo(Base b) => b.Prot; //ERROR: Cannot access protected member 'Prot'
 
 	public static bool Run()
 	{

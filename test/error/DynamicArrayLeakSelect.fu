@@ -4,7 +4,7 @@ public static class Test
 	{
 		int size = 5;
 		int[10] FixedBuffer;
-		int[] p = size <= 10 ? FixedBuffer : new int[size]; //ERROR: Dynamically allocated array must be assigned to a int[]# reference
+		int[] p = size <= 10 ? FixedBuffer : new int[size]; //ERROR: Dynamically allocated array must be assigned to a 'int[]#' reference
 		return true;
 	}
 }

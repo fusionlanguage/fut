@@ -1,6 +1,6 @@
 public static class Test
 {
-	public static void Main( //ERROR: Main method must have no parameters or one 'string[]' parameter
+	public static void Main( //ERROR: 'Main' method must have no parameters or one 'string[]' parameter
 		int argc, string[] argv)
 	{
 	}

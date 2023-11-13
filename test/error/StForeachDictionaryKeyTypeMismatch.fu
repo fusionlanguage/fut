@@ -4,7 +4,7 @@ public static class Test
 	{
 		Dictionary<int, int>() dict;
 		dict[3] = 15;
-		foreach ((string key, int value) in dict) { //ERROR: Cannot coerce int to string
+		foreach ((string key, int value) in dict) { //ERROR: Cannot convert 'int' to 'string'
 		}
 		return true;
 	}

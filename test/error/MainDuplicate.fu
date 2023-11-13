@@ -7,7 +7,7 @@ public static class Test
 
 public static class Foo
 {
-	public static void Main() //ERROR: Duplicate Main method
+	public static void Main() //ERROR: Duplicate 'Main' method
 	{
 	}
 }

@@ -4,13 +4,13 @@ public static class Test
 	{
 	}
 
-	static string ReturnMismatch() => null; //ERROR: Cannot coerce null to string
+	static string ReturnMismatch() => null; //ERROR: Cannot convert 'null' to 'string'
 
 	public static bool Run()
 	{
-		string() s = null; //ERROR: Cannot coerce null to string()
-		string p = null; //ERROR: Cannot coerce null to string
-		Foo(null); //ERROR: Cannot coerce null to string
+		string() s = null; //ERROR: Cannot convert 'null' to 'string()'
+		string p = null; //ERROR: Cannot convert 'null' to 'string'
+		Foo(null); //ERROR: Cannot convert 'null' to 'string'
 		return true;
 	}
 }

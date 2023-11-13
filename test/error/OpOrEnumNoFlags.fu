@@ -8,7 +8,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		Foo e = Foo.Bar | Foo.Quux; //ERROR: Define flags enumeration as: enum* Foo
+		Foo e = Foo.Bar | Foo.Quux; //ERROR: Define flags enumeration as 'enum* Foo'
 		return true;
 	}
 }

@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		float f = 2.5;
-		switch (f) { //ERROR: Switch on type float - expected int, enum, string or object reference
+		switch (f) { //ERROR: 'switch' on type 'float' - expected 'int', 'enum', 'string' or object reference
 		case 1.5:
 			return false;
 		default:

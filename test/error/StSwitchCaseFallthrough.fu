@@ -5,7 +5,7 @@ public static class Test
 		int x = 42;
 		switch (x) {
 		case 42:
-			x++; //ERROR: Case must end with break, continue, return or throw
+			x++; //ERROR: 'case' must end with 'break', 'continue', 'return' or 'throw'
 		default:
 			return false;
 		}

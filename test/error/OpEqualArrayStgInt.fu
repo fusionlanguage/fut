@@ -5,6 +5,6 @@ public static class Test
 		int[2] a;
 		a[0] = 5;
 		a[1] = 5;
-		return a == 5; //ERROR: Cannot compare int[2] with 5
+		return a == 5; //ERROR: Cannot compare 'int[2]' with '5'
 	}
 }

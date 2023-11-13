@@ -565,7 +565,7 @@ public class FuParser : FuLexer
 	FuBreak# ParseBreak!()
 	{
 		if (this.CurrentLoopOrSwitch == null)
-			ReportError("break outside loop or switch");
+			ReportError("'break' outside loop or 'switch'");
 		FuBreak# result = new FuBreak { Line = this.Line, LoopOrSwitch = this.CurrentLoopOrSwitch };
 		Expect(FuToken.Break);
 		Expect(FuToken.Semicolon);
@@ -577,7 +577,7 @@ public class FuParser : FuLexer
 	FuContinue# ParseContinue!()
 	{
 		if (this.CurrentLoop == null)
-			ReportError("continue outside loop");
+			ReportError("'continue' outside loop");
 		FuContinue# result = new FuContinue { Line = this.Line, Loop = this.CurrentLoop };
 		Expect(FuToken.Continue);
 		Expect(FuToken.Semicolon);

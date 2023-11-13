@@ -8,6 +8,6 @@ public static class Test
 	public static bool Run()
 	{
 		Foo() o;
-		return o.Priv; //ERROR: Cannot access private member Priv
+		return o.Priv; //ERROR: Cannot access private member 'Priv'
 	}
 }

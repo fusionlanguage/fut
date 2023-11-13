@@ -3,7 +3,7 @@ public class Test
 	public static bool Run()
 	{
 		Test() o;
-		foreach (int i in o) { //ERROR: 'foreach' invalid on Test
+		foreach (int i in o) { //ERROR: 'foreach' invalid on 'Test'
 		}
 		return true;
 	}

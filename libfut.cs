@@ -3822,7 +3822,7 @@ namespace Fusion
 		FuBreak ParseBreak()
 		{
 			if (this.CurrentLoopOrSwitch == null)
-				ReportError("break outside loop or switch");
+				ReportError("'break' outside loop or 'switch'");
 			FuBreak result = new FuBreak { Line = this.Line, LoopOrSwitch = this.CurrentLoopOrSwitch };
 			Expect(FuToken.Break);
 			Expect(FuToken.Semicolon);
@@ -3834,7 +3834,7 @@ namespace Fusion
 		FuContinue ParseContinue()
 		{
 			if (this.CurrentLoop == null)
-				ReportError("continue outside loop");
+				ReportError("'continue' outside loop");
 			FuContinue result = new FuContinue { Line = this.Line, Loop = this.CurrentLoop };
 			Expect(FuToken.Continue);
 			Expect(FuToken.Semicolon);
@@ -4354,7 +4354,7 @@ namespace Fusion
 					klass.Parent = baseClass;
 				}
 				else
-					ReportError(klass, $"Base class {klass.BaseClassName} not found");
+					ReportError(klass, $"Base class '{klass.BaseClassName}' not found");
 			}
 			this.Program.Classes.Add(klass);
 		}
@@ -4374,7 +4374,7 @@ namespace Fusion
 			}
 			while (tortoise != hare);
 			this.CurrentScope = klass;
-			ReportError(klass, $"Circular inheritance for class {klass.Name}");
+			ReportError(klass, $"Circular inheritance for class '{klass.Name}'");
 		}
 
 		static void TakePtr(FuExpr expr)
@@ -4388,13 +4388,13 @@ namespace Fusion
 			if (expr == this.Poison || type == this.Poison)
 				return false;
 			if (!type.IsAssignableFrom(expr.Type)) {
-				ReportError(expr, $"Cannot coerce {expr.Type} to {type}");
+				ReportError(expr, $"Cannot convert '{expr.Type}' to '{type}'");
 				return false;
 			}
 			if (expr is FuPrefixExpr prefix && prefix.Op == FuToken.New && !(type is FuDynamicPtrType)) {
 				FuDynamicPtrType newType = (FuDynamicPtrType) expr.Type;
 				string kind = newType.Class.Id == FuId.ArrayPtrClass ? "array" : "object";
-				ReportError(expr, $"Dynamically allocated {kind} must be assigned to a {expr.Type} reference");
+				ReportError(expr, $"Dynamically allocated {kind} must be assigned to a '{expr.Type}' reference");
 				return false;
 			}
 			TakePtr(expr);
@@ -4405,7 +4405,7 @@ namespace Fusion
 		{
 			bool ok = Coerce(expr, type);
 			if (ok && type.Id == FuId.StringPtrType && expr.IsNewString(true)) {
-				ReportError(expr, "New string must be assigned to string()");
+				ReportError(expr, "New string must be assigned to 'string()'");
 				return false;
 			}
 			return ok;
@@ -4487,7 +4487,7 @@ namespace Fusion
 			if (expr.Symbol == null) {
 				expr.Symbol = scope.TryLookup(expr.Name, expr.Left == null);
 				if (expr.Symbol == null)
-					return PoisonError(expr, $"{expr.Name} not found");
+					return PoisonError(expr, $"'{expr.Name}' not found");
 				expr.Type = expr.Symbol.Type;
 			}
 			if (!(scope is FuEnum) && expr.Symbol is FuConst konst) {
@@ -4507,9 +4507,9 @@ namespace Fusion
 				FuExpr resolved = Lookup(expr, this.CurrentScope);
 				if (expr.Symbol is FuMember nearMember) {
 					if (nearMember.Visibility == FuVisibility.Private && nearMember.Parent is FuClass memberClass && memberClass != GetCurrentContainer())
-						ReportError(expr, $"Cannot access private member {expr.Name}");
+						ReportError(expr, $"Cannot access private member '{expr.Name}'");
 					if (!nearMember.IsStatic() && (this.CurrentMethod == null || this.CurrentMethod.IsStatic()))
-						ReportError(expr, $"Cannot use instance member {expr.Name} from static context");
+						ReportError(expr, $"Cannot use instance member '{expr.Name}' from static context");
 				}
 				if (resolved is FuSymbolReference symbol) {
 					if (symbol.Symbol is FuVar v) {
@@ -4547,7 +4547,7 @@ namespace Fusion
 				switch (member.Visibility) {
 				case FuVisibility.Private:
 					if (member.Parent != this.CurrentMethod.Parent || this.CurrentMethod.Parent != scope)
-						ReportError(expr, $"Cannot access private member {expr.Name}");
+						ReportError(expr, $"Cannot access private member '{expr.Name}'");
 					break;
 				case FuVisibility.Protected:
 					if (isBase)
@@ -4555,7 +4555,7 @@ namespace Fusion
 					FuClass currentClass = (FuClass) this.CurrentMethod.Parent;
 					FuClass scopeClass = (FuClass) scope;
 					if (!currentClass.IsSameOrBaseOf(scopeClass))
-						ReportError(expr, $"Cannot access protected member {expr.Name}");
+						ReportError(expr, $"Cannot access protected member '{expr.Name}'");
 					break;
 				case FuVisibility.NumericElementType:
 					if (left.Type is FuClassType klass && !(klass.GetElementType() is FuNumericType))
@@ -4586,10 +4586,10 @@ namespace Fusion
 				if (!(member is FuMethodGroup)) {
 					if (left is FuSymbolReference leftContainer && leftContainer.Symbol is FuContainerType) {
 						if (!member.IsStatic())
-							ReportError(expr, $"Cannot use instance member {expr.Name} without an object");
+							ReportError(expr, $"Cannot use instance member '{expr.Name}' without an object");
 					}
 					else if (member.IsStatic())
-						ReportError(expr, $"{expr.Name} is static");
+						ReportError(expr, $"'{expr.Name}' is static");
 				}
 			}
 			return new FuSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
@@ -4725,7 +4725,7 @@ namespace Fusion
 		{
 			if (left.Type is FuEnum) {
 				if (left.Type.Id != FuId.BoolType && !(left.Type is FuEnumFlags))
-					ReportError(left, $"Define flags enumeration as: enum* {left.Type}");
+					ReportError(left, $"Define flags enumeration as 'enum* {left.Type}'");
 				Coerce(right, left.Type);
 				return true;
 			}
@@ -5045,7 +5045,7 @@ namespace Fusion
 		FuExpr ResolveEquality(FuBinaryExpr expr, FuExpr left, FuExpr right)
 		{
 			if (!CanCompareEqual(left.Type, right.Type))
-				return PoisonError(expr, $"Cannot compare {left.Type} with {right.Type}");
+				return PoisonError(expr, $"Cannot compare '{left.Type}' with '{right.Type}'");
 			if (left.Type is FuRangeType leftRange && right.Type is FuRangeType rightRange) {
 				if (leftRange.Min == leftRange.Max && leftRange.Min == rightRange.Min && leftRange.Min == rightRange.Max)
 					return ToLiteralBool(expr, expr.Op == FuToken.Equal);
@@ -5101,9 +5101,9 @@ namespace Fusion
 				return PoisonError(expr, "Right hand side of the 'is' operator must be a class name");
 			}
 			if (klass.IsSameOrBaseOf(leftPtr.Class))
-				return PoisonError(expr, $"{leftPtr} is {klass.Name}, the 'is' operator would always return 'true'");
+				return PoisonError(expr, $"'{leftPtr}' is '{klass.Name}', the 'is' operator would always return 'true'");
 			if (!leftPtr.Class.IsSameOrBaseOf(klass))
-				return PoisonError(expr, $"{leftPtr} is not base class of {klass.Name}, the 'is' operator would always return 'false'");
+				return PoisonError(expr, $"'{leftPtr}' is not base class of '{klass.Name}', the 'is' operator would always return 'false'");
 			expr.Left = left;
 			expr.Type = this.Program.System.BoolType;
 			return expr;
@@ -5422,7 +5422,7 @@ namespace Fusion
 					return result;
 				}
 			}
-			return PoisonError(left, $"Incompatible types: {left.Type} and {right.Type}");
+			return PoisonError(left, $"Incompatible types: '{left.Type}' and '{right.Type}'");
 		}
 
 		FuExpr VisitSelectExpr(FuSelectExpr expr)
@@ -5700,7 +5700,7 @@ namespace Fusion
 			foreach (FuExpr typeArgExpr in typeArgExprs.Items)
 				typeArgs.Add(ToType(typeArgExpr, false));
 			if (typeArgs.Count != klass.TypeParameterCount) {
-				ReportError(result, $"Expected {klass.TypeParameterCount} type arguments for {klass.Name}, got {typeArgs.Count}");
+				ReportError(result, $"Expected {klass.TypeParameterCount} type arguments for '{klass.Name}', got {typeArgs.Count}");
 				return;
 			}
 			result.Class = klass;
@@ -5745,7 +5745,7 @@ namespace Fusion
 					}
 					return ExpectNoPtrModifier(expr, ptrModifier, nullable) ? type : this.Poison;
 				}
-				return PoisonError(expr, $"Type {symbol.Name} not found");
+				return PoisonError(expr, $"Type '{symbol.Name}' not found");
 			case FuCallExpr call:
 				if (!ExpectNoPtrModifier(expr, ptrModifier, nullable))
 					return this.Poison;
@@ -5757,7 +5757,7 @@ namespace Fusion
 						FillGenericClass(storage, klass, typeArgExprs2);
 						return storage;
 					}
-					return PoisonError(typeArgExprs2, $"{call.Method.Name} is not a class");
+					return PoisonError(typeArgExprs2, $"'{call.Method.Name}' is not a class");
 				}
 				else if (call.Method.Left != null)
 					return PoisonError(expr, "Invalid type");
@@ -5765,7 +5765,7 @@ namespace Fusion
 					return this.Program.System.StringStorageType;
 				if (this.Program.TryLookup(call.Method.Name, true) is FuClass klass2)
 					return new FuStorageType { Class = klass2 };
-				return PoisonError(expr, $"Class {call.Method.Name} not found");
+				return PoisonError(expr, $"Class '{call.Method.Name}' not found");
 			default:
 				return PoisonError(expr, "Invalid type");
 			}
@@ -5974,7 +5974,7 @@ namespace Fusion
 				switch (klass.Class.Id) {
 				case FuId.StringClass:
 					if (statement.Count() != 1 || !element.Type.IsAssignableFrom(this.Program.System.IntType))
-						ReportError(statement, "Expected int iterator variable");
+						ReportError(statement, "Expected 'int' iterator variable");
 					break;
 				case FuId.ArrayStorageClass:
 				case FuId.ListClass:
@@ -5983,29 +5983,29 @@ namespace Fusion
 					if (statement.Count() != 1)
 						ReportError(statement, "Expected one iterator variable");
 					else if (!element.Type.IsAssignableFrom(klass.GetElementType()))
-						ReportError(statement, $"Cannot coerce {klass.GetElementType()} to {element.Type}");
+						ReportError(statement, $"Cannot convert '{klass.GetElementType()}' to '{element.Type}'");
 					break;
 				case FuId.DictionaryClass:
 				case FuId.SortedDictionaryClass:
 				case FuId.OrderedDictionaryClass:
 					if (statement.Count() != 2)
-						ReportError(statement, "Expected (TKey key, TValue value) iterator");
+						ReportError(statement, "Expected '(TKey key, TValue value)' iterator");
 					else {
 						FuVar value = statement.GetValueVar();
 						ResolveType(value);
 						if (!element.Type.IsAssignableFrom(klass.GetKeyType()))
-							ReportError(statement, $"Cannot coerce {klass.GetKeyType()} to {element.Type}");
+							ReportError(statement, $"Cannot convert '{klass.GetKeyType()}' to '{element.Type}'");
 						else if (!value.Type.IsAssignableFrom(klass.GetValueType()))
-							ReportError(statement, $"Cannot coerce {klass.GetValueType()} to {value.Type}");
+							ReportError(statement, $"Cannot convert '{klass.GetValueType()}' to '{value.Type}'");
 					}
 					break;
 				default:
-					ReportError(statement, $"'foreach' invalid on {klass.Class.Name}");
+					ReportError(statement, $"'foreach' invalid on '{klass.Class.Name}'");
 					break;
 				}
 			}
 			else
-				ReportError(statement, $"'foreach' invalid on {statement.Collection.Type}");
+				ReportError(statement, $"'foreach' invalid on '{statement.Collection.Type}'");
 			statement.SetCompletesNormally(true);
 			VisitStatement(statement.Body);
 			CloseScope();
@@ -6057,7 +6057,7 @@ namespace Fusion
 			case FuClassType klass when !(klass is FuStorageType):
 				break;
 			default:
-				ReportError(statement.Value, $"Switch on type {statement.Value.Type} - expected int, enum, string or object reference");
+				ReportError(statement.Value, $"'switch' on type '{statement.Value.Type}' - expected 'int', 'enum', 'string' or object reference");
 				return;
 			}
 			statement.SetCompletesNormally(false);
@@ -6074,11 +6074,11 @@ namespace Fusion
 						else if (!(ResolveType(def) is FuClassType casePtr) || casePtr is FuStorageType)
 							ReportError(def, "'case' with non-reference type");
 						else if (casePtr is FuReadWriteClassType && !(switchPtr is FuDynamicPtrType) && (casePtr is FuDynamicPtrType || !(switchPtr is FuReadWriteClassType)))
-							ReportError(def, $"{switchPtr} cannot be casted to {casePtr}");
+							ReportError(def, $"'{switchPtr}' cannot be casted to '{casePtr}'");
 						else if (casePtr.Class.IsSameOrBaseOf(switchPtr.Class))
-							ReportError(def, $"{statement.Value} is {switchPtr}, 'case {casePtr}' would always match");
+							ReportError(def, $"'{statement.Value}' is '{switchPtr}', 'case {casePtr}' would always match");
 						else if (!switchPtr.Class.IsSameOrBaseOf(casePtr.Class))
-							ReportError(def, $"{switchPtr} is not base class of {casePtr.Class.Name}, 'case {casePtr}' would never match");
+							ReportError(def, $"'{switchPtr}' is not base class of '{casePtr.Class.Name}', 'case {casePtr}' would never match");
 						else {
 							statement.Add(def);
 							if (kase.Values[i] is FuBinaryExpr when2 && when2.Op == FuToken.When)
@@ -6096,12 +6096,12 @@ namespace Fusion
 					}
 				}
 				if (ResolveStatements(kase.Body))
-					ReportError(kase.Body[^1], "Case must end with break, continue, return or throw");
+					ReportError(kase.Body[^1], "'case' must end with 'break', 'continue', 'return' or 'throw'");
 			}
 			if (statement.DefaultBody.Count > 0) {
 				bool reachable = ResolveStatements(statement.DefaultBody);
 				if (reachable)
-					ReportError(statement.DefaultBody[^1], "Default must end with break, continue, return or throw");
+					ReportError(statement.DefaultBody[^1], "'default' must end with 'break', 'continue', 'return' or 'throw'");
 			}
 			CloseScope();
 		}
@@ -6202,7 +6202,7 @@ namespace Fusion
 			case FuVisitStatus.NotYet:
 				break;
 			case FuVisitStatus.InProgress:
-				konst.Value = PoisonError(konst, $"Circular dependency in value of constant {konst.Name}");
+				konst.Value = PoisonError(konst, $"Circular dependency in value of constant '{konst.Name}'");
 				konst.VisitStatus = FuVisitStatus.Done;
 				return;
 			case FuVisitStatus.Done:
@@ -6228,14 +6228,14 @@ namespace Fusion
 						Coerce(item, elementType);
 				}
 				else
-					ReportError(konst, $"Array initializer for scalar constant {konst.Name}");
+					ReportError(konst, $"Array initializer for scalar constant '{konst.Name}'");
 			}
 			else if (this.CurrentScope is FuEnum && konst.Value.Type is FuRangeType && konst.Value is FuLiteral) {
 			}
 			else if (konst.Value is FuLiteral || konst.Value.IsConstEnum())
 				Coerce(konst.Value, konst.Type);
 			else if (konst.Value != this.Poison)
-				ReportError(konst.Value, $"Value for constant {konst.Name} is not constant");
+				ReportError(konst.Value, $"Value for constant '{konst.Name}' is not constant");
 			konst.InMethod = this.CurrentMethod;
 			konst.VisitStatus = FuVisitStatus.Done;
 		}
@@ -6298,9 +6298,9 @@ namespace Fusion
 					}
 					if (method.Name == "Main") {
 						if (method.Visibility != FuVisibility.Public || method.CallType != FuCallType.Static)
-							ReportError(method, "Main method must be 'public static'");
+							ReportError(method, "'Main' method must be 'public static'");
 						if (method.Type.Id != FuId.VoidType && method.Type.Id != FuId.IntType)
-							ReportError(method.Type, "Main method must return 'void' or 'int'");
+							ReportError(method.Type, "'Main' method must return 'void' or 'int'");
 						switch (method.Parameters.Count()) {
 						case 0:
 							break;
@@ -6314,14 +6314,14 @@ namespace Fusion
 									break;
 								}
 							}
-							ReportError(args, "Main method parameter must be 'string[]'");
+							ReportError(args, "'Main' method parameter must be 'string[]'");
 							break;
 						default:
-							ReportError(method, "Main method must have no parameters or one 'string[]' parameter");
+							ReportError(method, "'Main' method must have no parameters or one 'string[]' parameter");
 							break;
 						}
 						if (this.Program.Main != null)
-							ReportError(method, "Duplicate Main method");
+							ReportError(method, "Duplicate 'Main' method");
 						else {
 							method.Id = FuId.Main;
 							this.Program.Main = method;
