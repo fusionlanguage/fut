@@ -366,7 +366,7 @@ public class FuParser : FuLexer
 			case FuToken.Is:
 				FuBinaryExpr# isExpr = new FuBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(false) };
 				if (See(FuToken.Id)) {
-					isExpr.Right = new FuVar { Line = this.Line, TypeExpr = isExpr.Right, Name = this.StringValue };
+					isExpr.Right = new FuVar { Line = this.Line, TypeExpr = isExpr.Right, Name = this.StringValue, IsAssigned = true };
 					NextToken();
 				}
 				return isExpr;

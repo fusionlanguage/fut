@@ -3207,6 +3207,7 @@ std::shared_ptr<FuExpr> FuParser::parseRelExpr()
 					futemp1->line = this->line;
 					futemp1->typeExpr = isExpr->right;
 					futemp1->name = this->stringValue;
+					futemp1->isAssigned = true;
 					isExpr->right = futemp1;
 					nextToken();
 				}
@@ -4076,7 +4077,7 @@ void FuSema::takePtr(const FuExpr * expr)
 
 bool FuSema::coerce(const FuExpr * expr, const FuType * type) const
 {
-	if (expr == this->poison.get())
+	if (expr == this->poison.get() || type == this->poison.get())
 		return false;
 	if (!type->isAssignableFrom(expr->type.get())) {
 		reportError(expr, std::format("Cannot coerce {} to {}", expr->type->toString(), type->toString()));
@@ -5375,6 +5376,20 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 		if (!this->currentMethod->throws)
 			return poisonError(expr.get(), "Method marked 'throws' called from a method not marked 'throws'");
 	}
+	switch (method->id) {
+	case FuId::intTryParse:
+	case FuId::longTryParse:
+	case FuId::doubleTryParse:
+		{
+			const FuSymbolReference * varRef;
+			FuVar * def;
+			if ((varRef = dynamic_cast<const FuSymbolReference *>(symbol->left.get())) && (def = dynamic_cast<FuVar *>(varRef->symbol)))
+				def->isAssigned = true;
+			break;
+		}
+	default:
+		break;
+	}
 	symbol->symbol = method;
 	const FuReturn * ret;
 	if (method->callType == FuCallType::static_ && (ret = dynamic_cast<const FuReturn *>(method->body.get())) && std::all_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return dynamic_cast<const FuLiteral *>(arg.get()); }) && !this->currentPureMethods.contains(method)) {
@@ -5546,12 +5561,15 @@ void FuSema::fillGenericClass(FuClassType * result, const FuClass * klass, const
 		result->typeArg1 = typeArgs[1];
 }
 
-void FuSema::expectNoPtrModifier(const FuExpr * expr, FuToken ptrModifier, bool nullable) const
+bool FuSema::expectNoPtrModifier(const FuExpr * expr, FuToken ptrModifier, bool nullable) const
 {
 	if (ptrModifier != FuToken::endOfFile)
 		reportError(expr, std::format("Unexpected {} on a non-reference type", FuLexer::tokenToString(ptrModifier)));
-	if (nullable)
+	if (nullable) {
 		reportError(expr, "Nullable value types not supported");
+		return false;
+	}
+	return ptrModifier == FuToken::endOfFile;
 }
 
 std::shared_ptr<FuType> FuSema::toBaseType(const FuExpr * expr, FuToken ptrModifier, bool nullable)
@@ -5576,15 +5594,15 @@ std::shared_ptr<FuType> FuSema::toBaseType(const FuExpr * expr, FuToken ptrModif
 				type = this->program->system->stringNullablePtrType;
 				nullable = false;
 			}
-			expectNoPtrModifier(expr, ptrModifier, nullable);
-			return type;
+			return expectNoPtrModifier(expr, ptrModifier, nullable) ? type : this->poison;
 		}
 		return poisonError(expr, std::format("Type {} not found", symbol->name));
 	}
 	else if (const FuCallExpr *call = dynamic_cast<const FuCallExpr *>(expr)) {
-		expectNoPtrModifier(expr, ptrModifier, nullable);
+		if (!expectNoPtrModifier(expr, ptrModifier, nullable))
+			return this->poison;
 		if (std::ssize(call->arguments) != 0)
-			reportError(call, "Expected empty parentheses for storage type");
+			return poisonError(call, "Expected empty parentheses for storage type");
 		if (const FuAggregateInitializer *typeArgExprs2 = dynamic_cast<const FuAggregateInitializer *>(call->method->left.get())) {
 			std::shared_ptr<FuStorageType> storage = std::make_shared<FuStorageType>();
 			storage->line = call->line;
@@ -5639,7 +5657,8 @@ std::shared_ptr<FuType> FuSema::toType(std::shared_ptr<FuExpr> expr, bool dynami
 		const FuBinaryExpr * binary;
 		if ((binary = dynamic_cast<const FuBinaryExpr *>(expr.get())) && binary->op == FuToken::leftBracket) {
 			if (binary->right != nullptr) {
-				expectNoPtrModifier(expr.get(), ptrModifier, nullable);
+				if (!expectNoPtrModifier(expr.get(), ptrModifier, nullable))
+					return this->poison;
 				std::shared_ptr<FuExpr> lengthExpr = visitExpr(binary->right);
 				std::shared_ptr<FuArrayStorageType> arrayStorage = std::make_shared<FuArrayStorageType>();
 				arrayStorage->class_ = this->program->system->arrayStorageClass.get();
@@ -5675,7 +5694,8 @@ std::shared_ptr<FuType> FuSema::toType(std::shared_ptr<FuExpr> expr, bool dynami
 	}
 	std::shared_ptr<FuType> baseType;
 	if (minExpr != nullptr) {
-		expectNoPtrModifier(expr.get(), ptrModifier, nullable);
+		if (!expectNoPtrModifier(expr.get(), ptrModifier, nullable))
+			return this->poison;
 		int min = foldConstInt(minExpr);
 		int max = foldConstInt(expr);
 		if (min > max)
@@ -5734,6 +5754,12 @@ void FuSema::visitBlock(FuBlock * statement)
 {
 	openScope(statement);
 	statement->setCompletesNormally(resolveStatements(&statement->statements));
+	for (const FuSymbol * symbol = statement->first; symbol != nullptr; symbol = symbol->next) {
+		const FuVar * def;
+		if ((def = dynamic_cast<const FuVar *>(symbol)) && !def->isAssigned && def->type != this->poison && (dynamic_cast<const FuStorageType *>(def->type.get()) ? !dynamic_cast<const FuArrayStorageType *>(def->type.get()) && dynamic_cast<const FuLiteralNull *>(def->value.get()) : def->value == nullptr)) {
+			reportError(def, "Uninitialized variable");
+		}
+	}
 	closeScope();
 }
 

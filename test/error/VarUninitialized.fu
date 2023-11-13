@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int x; //ERROR: Uninitialized variable
+		Dictionary<string(), int> dict; //ERROR: Uninitialized variable
+		return x == 5 && dict.ContainsKey("foo");
+	}
+}

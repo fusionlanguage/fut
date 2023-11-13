@@ -2,7 +2,7 @@ public static class Test
 {
 	public static string Bad()
 	{
-		string() s;
+		string() s = "foo";
 		return s; //ERROR: Returning dangling reference to local storage
 	}
 

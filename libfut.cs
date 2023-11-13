@@ -3622,7 +3622,7 @@ namespace Fusion
 				case FuToken.Is:
 					FuBinaryExpr isExpr = new FuBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(false) };
 					if (See(FuToken.Id)) {
-						isExpr.Right = new FuVar { Line = this.Line, TypeExpr = isExpr.Right, Name = this.StringValue };
+						isExpr.Right = new FuVar { Line = this.Line, TypeExpr = isExpr.Right, Name = this.StringValue, IsAssigned = true };
 						NextToken();
 					}
 					return isExpr;
@@ -4385,7 +4385,7 @@ namespace Fusion
 
 		bool Coerce(FuExpr expr, FuType type)
 		{
-			if (expr == this.Poison)
+			if (expr == this.Poison || type == this.Poison)
 				return false;
 			if (!type.IsAssignableFrom(expr.Type)) {
 				ReportError(expr, $"Cannot coerce {expr.Type} to {type}");
@@ -5524,6 +5524,16 @@ namespace Fusion
 				if (!this.CurrentMethod.Throws)
 					return PoisonError(expr, "Method marked 'throws' called from a method not marked 'throws'");
 			}
+			switch (method.Id) {
+			case FuId.IntTryParse:
+			case FuId.LongTryParse:
+			case FuId.DoubleTryParse:
+				if (symbol.Left is FuSymbolReference varRef && varRef.Symbol is FuVar def)
+					def.IsAssigned = true;
+				break;
+			default:
+				break;
+			}
 			symbol.Symbol = method;
 			if (method.CallType == FuCallType.Static && method.Body is FuReturn ret && arguments.TrueForAll(arg => arg is FuLiteral) && !this.CurrentPureMethods.Contains(method)) {
 				this.CurrentPureMethods.Add(method);
@@ -5688,12 +5698,15 @@ namespace Fusion
 				result.TypeArg1 = typeArgs[1];
 		}
 
-		void ExpectNoPtrModifier(FuExpr expr, FuToken ptrModifier, bool nullable)
+		bool ExpectNoPtrModifier(FuExpr expr, FuToken ptrModifier, bool nullable)
 		{
 			if (ptrModifier != FuToken.EndOfFile)
 				ReportError(expr, $"Unexpected {FuLexer.TokenToString(ptrModifier)} on a non-reference type");
-			if (nullable)
+			if (nullable) {
 				ReportError(expr, "Nullable value types not supported");
+				return false;
+			}
+			return ptrModifier == FuToken.EndOfFile;
 		}
 
 		FuType ToBaseType(FuExpr expr, FuToken ptrModifier, bool nullable)
@@ -5719,14 +5732,14 @@ namespace Fusion
 						type = this.Program.System.StringNullablePtrType;
 						nullable = false;
 					}
-					ExpectNoPtrModifier(expr, ptrModifier, nullable);
-					return type;
+					return ExpectNoPtrModifier(expr, ptrModifier, nullable) ? type : this.Poison;
 				}
 				return PoisonError(expr, $"Type {symbol.Name} not found");
 			case FuCallExpr call:
-				ExpectNoPtrModifier(expr, ptrModifier, nullable);
+				if (!ExpectNoPtrModifier(expr, ptrModifier, nullable))
+					return this.Poison;
 				if (call.Arguments.Count != 0)
-					ReportError(call, "Expected empty parentheses for storage type");
+					return PoisonError(call, "Expected empty parentheses for storage type");
 				if (call.Method.Left is FuAggregateInitializer typeArgExprs2) {
 					FuStorageType storage = new FuStorageType { Line = call.Line };
 					if (this.Program.TryLookup(call.Method.Name, true) is FuClass klass) {
@@ -5773,7 +5786,8 @@ namespace Fusion
 					ptrModifier = FuToken.EndOfFile;
 				if (expr is FuBinaryExpr binary && binary.Op == FuToken.LeftBracket) {
 					if (binary.Right != null) {
-						ExpectNoPtrModifier(expr, ptrModifier, nullable);
+						if (!ExpectNoPtrModifier(expr, ptrModifier, nullable))
+							return this.Poison;
 						FuExpr lengthExpr = VisitExpr(binary.Right);
 						FuArrayStorageType arrayStorage = new FuArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = outerArray, LengthExpr = lengthExpr, Length = 0 };
 						if (Coerce(lengthExpr, this.Program.System.IntType) && (!dynamic || binary.Left.IsIndexing())) {
@@ -5805,7 +5819,8 @@ namespace Fusion
 			}
 			FuType baseType;
 			if (minExpr != null) {
-				ExpectNoPtrModifier(expr, ptrModifier, nullable);
+				if (!ExpectNoPtrModifier(expr, ptrModifier, nullable))
+					return this.Poison;
 				int min = FoldConstInt(minExpr);
 				int max = FoldConstInt(expr);
 				if (min > max)
@@ -5864,6 +5879,11 @@ namespace Fusion
 		{
 			OpenScope(statement);
 			statement.SetCompletesNormally(ResolveStatements(statement.Statements));
+			for (FuSymbol symbol = statement.First; symbol != null; symbol = symbol.Next) {
+				if (symbol is FuVar def && !def.IsAssigned && def.Type != this.Poison && (def.Type is FuStorageType ? !(def.Type is FuArrayStorageType) && def.Value is FuLiteralNull : def.Value == null)) {
+					ReportError(def, "Uninitialized variable");
+				}
+			}
 			CloseScope();
 		}
 

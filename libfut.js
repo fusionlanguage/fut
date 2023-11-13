@@ -1551,7 +1551,7 @@ export class FuScope extends FuSymbol
 
 	firstParameter()
 	{
-		const result = this.first;
+		let result = this.first;
 		return result;
 	}
 
@@ -1884,7 +1884,7 @@ export class FuSymbolReference extends FuExpr
 
 	intValue()
 	{
-		const konst = this.symbol;
+		let konst = this.symbol;
 		return konst.value.intValue();
 	}
 
@@ -2491,7 +2491,7 @@ export class FuType extends FuScope
 
 	asClassType()
 	{
-		const klass = this;
+		let klass = this;
 		return klass;
 	}
 }
@@ -2613,7 +2613,7 @@ export class FuVar extends FuNamedValue
 
 	nextParameter()
 	{
-		const def = this.next;
+		let def = this.next;
 		return def;
 	}
 }
@@ -2742,7 +2742,7 @@ export class FuMethod extends FuMethodBase
 	{
 		let method = this;
 		while (method.callType == FuCallType.OVERRIDE) {
-			const baseMethod = method.parent.parent.tryLookup(method.name, false);
+			let baseMethod = method.parent.parent.tryLookup(method.name, false);
 			method = baseMethod;
 		}
 		return method;
@@ -3764,7 +3764,7 @@ export class FuParser extends FuLexer
 			case FuToken.IS:
 				let isExpr = Object.assign(new FuBinaryExpr(), { line: this.line, left: left, op: this.nextToken(), right: this.#parsePrimaryExpr(false) });
 				if (this.see(FuToken.ID)) {
-					isExpr.right = Object.assign(new FuVar(), { line: this.line, typeExpr: isExpr.right, name: this.stringValue });
+					isExpr.right = Object.assign(new FuVar(), { line: this.line, typeExpr: isExpr.right, name: this.stringValue, isAssigned: true });
 					this.nextToken();
 				}
 				return isExpr;
@@ -4530,7 +4530,7 @@ export class FuSema
 
 	#coerce(expr, type)
 	{
-		if (expr == this.#poison)
+		if (expr == this.#poison || type == this.#poison)
 			return false;
 		if (!type.isAssignableFrom(expr.type)) {
 			this.reportError(expr, `Cannot coerce ${expr.type} to ${type}`);
@@ -4538,7 +4538,7 @@ export class FuSema
 		}
 		let prefix;
 		if ((prefix = expr) instanceof FuPrefixExpr && prefix.op == FuToken.NEW && !(type instanceof FuDynamicPtrType)) {
-			const newType = expr.type;
+			let newType = expr.type;
 			let kind = newType.class.id == FuId.ARRAY_PTR_CLASS ? "array" : "object";
 			this.reportError(expr, `Dynamically allocated ${kind} must be assigned to a ${expr.type} reference`);
 			return false;
@@ -4715,8 +4715,8 @@ export class FuSema
 			case FuVisibility.PROTECTED:
 				if (isBase)
 					break;
-				const currentClass = this.#currentMethod.parent;
-				const scopeClass = scope;
+				let currentClass = this.#currentMethod.parent;
+				let scopeClass = scope;
 				if (!currentClass.isSameOrBaseOf(scopeClass))
 					this.reportError(expr, `Cannot access protected member ${expr.name}`);
 				break;
@@ -4789,7 +4789,7 @@ export class FuSema
 		let intType = this.program.system.intType;
 		this.#coerce(right, intType);
 		if (left.type.id == FuId.LONG_TYPE) {
-			const longType = left.type;
+			let longType = left.type;
 			return longType;
 		}
 		this.#coerce(left, intType);
@@ -5094,7 +5094,7 @@ export class FuSema
 			let klass;
 			if (!((klass = type) instanceof FuClassType) || klass instanceof FuReadWriteClassType)
 				return this.#poisonError(expr, "Invalid argument to new");
-			const init = binaryNew.right;
+			let init = binaryNew.right;
 			this.#resolveObjectLiteral(klass, init);
 			expr.type = Object.assign(new FuDynamicPtrType(), { line: expr.line, class: klass.class });
 			expr.inner = init;
@@ -5762,6 +5762,18 @@ export class FuSema
 			if (!this.#currentMethod.throws)
 				return this.#poisonError(expr, "Method marked 'throws' called from a method not marked 'throws'");
 		}
+		switch (method.id) {
+		case FuId.INT_TRY_PARSE:
+		case FuId.LONG_TRY_PARSE:
+		case FuId.DOUBLE_TRY_PARSE:
+			let varRef;
+			let def;
+			if ((varRef = symbol.left) instanceof FuSymbolReference && (def = varRef.symbol) instanceof FuVar)
+				def.isAssigned = true;
+			break;
+		default:
+			break;
+		}
 		symbol.symbol = method;
 		let ret;
 		if (method.callType == FuCallType.STATIC && (ret = method.body) instanceof FuReturn && arguments_.every(arg => arg instanceof FuLiteral) && !this.#currentPureMethods.has(method)) {
@@ -5814,9 +5826,9 @@ export class FuSema
 	#resolveObjectLiteral(klass, init)
 	{
 		for (const item of init.items) {
-			const field = item;
+			let field = item;
 			console.assert(field.op == FuToken.ASSIGN);
-			const symbol = field.left;
+			let symbol = field.left;
 			this.#lookup(symbol, klass.class);
 			if (symbol.symbol instanceof FuField) {
 				field.right = this.#visitExpr(field.right);
@@ -5954,8 +5966,11 @@ export class FuSema
 	{
 		if (ptrModifier != FuToken.END_OF_FILE)
 			this.reportError(expr, `Unexpected ${FuLexer.tokenToString(ptrModifier)} on a non-reference type`);
-		if (nullable)
+		if (nullable) {
 			this.reportError(expr, "Nullable value types not supported");
+			return false;
+		}
+		return ptrModifier == FuToken.END_OF_FILE;
 	}
 
 	#toBaseType(expr, ptrModifier, nullable)
@@ -5984,16 +5999,16 @@ export class FuSema
 					type = this.program.system.stringNullablePtrType;
 					nullable = false;
 				}
-				this.#expectNoPtrModifier(expr, ptrModifier, nullable);
-				return type;
+				return this.#expectNoPtrModifier(expr, ptrModifier, nullable) ? type : this.#poison;
 			}
 			return this.#poisonError(expr, `Type ${symbol.name} not found`);
 		}
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
-			this.#expectNoPtrModifier(expr, ptrModifier, nullable);
+			if (!this.#expectNoPtrModifier(expr, ptrModifier, nullable))
+				return this.#poison;
 			if (call.arguments_.length != 0)
-				this.reportError(call, "Expected empty parentheses for storage type");
+				return this.#poisonError(call, "Expected empty parentheses for storage type");
 			let typeArgExprs2;
 			if ((typeArgExprs2 = call.method.left) instanceof FuAggregateInitializer) {
 				let storage = Object.assign(new FuStorageType(), { line: call.line });
@@ -6047,7 +6062,8 @@ export class FuSema
 			let binary;
 			if ((binary = expr) instanceof FuBinaryExpr && binary.op == FuToken.LEFT_BRACKET) {
 				if (binary.right != null) {
-					this.#expectNoPtrModifier(expr, ptrModifier, nullable);
+					if (!this.#expectNoPtrModifier(expr, ptrModifier, nullable))
+						return this.#poison;
 					let lengthExpr = this.#visitExpr(binary.right);
 					let arrayStorage = Object.assign(new FuArrayStorageType(), { class: this.program.system.arrayStorageClass, typeArg0: outerArray, lengthExpr: lengthExpr, length: 0 });
 					if (this.#coerce(lengthExpr, this.program.system.intType) && (!dynamic || binary.left.isIndexing())) {
@@ -6080,7 +6096,8 @@ export class FuSema
 		}
 		let baseType;
 		if (minExpr != null) {
-			this.#expectNoPtrModifier(expr, ptrModifier, nullable);
+			if (!this.#expectNoPtrModifier(expr, ptrModifier, nullable))
+				return this.#poison;
 			let min = this.#foldConstInt(minExpr);
 			let max = this.#foldConstInt(expr);
 			if (min > max)
@@ -6121,7 +6138,7 @@ export class FuSema
 				this.#resolveConst(konst);
 				this.#currentScope.add(konst);
 				if (konst.type instanceof FuArrayStorageType) {
-					const klass = this.#currentScope.getContainer();
+					let klass = this.#currentScope.getContainer();
 					klass.constArrays.push(konst);
 				}
 			}
@@ -6140,6 +6157,12 @@ export class FuSema
 	{
 		this.#openScope(statement);
 		statement.setCompletesNormally(this.#resolveStatements(statement.statements));
+		for (let symbol = statement.first; symbol != null; symbol = symbol.next) {
+			let def;
+			if ((def = symbol) instanceof FuVar && !def.isAssigned && def.type != this.#poison && (def.type instanceof FuStorageType ? !(def.type instanceof FuArrayStorageType) && def.value instanceof FuLiteralNull : def.value == null)) {
+				this.reportError(def, "Uninitialized variable");
+			}
+		}
 		this.#closeScope();
 	}
 
@@ -6713,7 +6736,7 @@ export class FuSema
 		for (const klass of program.classes)
 			this.#checkBaseCycle(klass);
 		for (let type = program.first; type != null; type = type.next) {
-			const container = type;
+			let container = type;
 			this.#resolveConsts(container);
 		}
 		for (const klass of program.classes)
@@ -6750,7 +6773,7 @@ export class GenBase extends FuVisitor
 
 	getCurrentContainer()
 	{
-		const klass = this.currentMethod.parent;
+		let klass = this.currentMethod.parent;
 		return klass;
 	}
 
@@ -7458,7 +7481,7 @@ export class GenBase extends FuVisitor
 		this.write(" = ");
 		let init;
 		if ((init = def.value) instanceof FuAggregateInitializer) {
-			const klass = def.type;
+			let klass = def.type;
 			this.writeNewWithFields(klass, init);
 		}
 		else
@@ -7498,8 +7521,8 @@ export class GenBase extends FuVisitor
 		let prefix = " { ";
 		for (const item of init.items) {
 			this.write(prefix);
-			const assign = item;
-			const field = assign.left;
+			let assign = item;
+			let field = assign.left;
 			this.writeName(field.symbol);
 			this.write(separator);
 			this.writeCoerced(assign.left.type, assign.right, FuPriority.ARGUMENT);
@@ -7520,8 +7543,8 @@ export class GenBase extends FuVisitor
 
 	#writeAggregateInitField(obj, item)
 	{
-		const assign = item;
-		const field = assign.left;
+		let assign = item;
+		let field = assign.left;
 		this.writeMemberOp(obj, field);
 		this.writeName(field.symbol);
 		this.write(" = ");
@@ -7604,7 +7627,7 @@ export class GenBase extends FuVisitor
 			this.writeChar(33);
 			break;
 		case FuToken.NEW:
-			const dynamic = expr.type;
+			let dynamic = expr.type;
 			if (dynamic.class.id == FuId.ARRAY_PTR_CLASS)
 				this.writeNewArray(dynamic.getElementType(), expr.inner, parent);
 			else {
@@ -7623,8 +7646,8 @@ export class GenBase extends FuVisitor
 			}
 			return;
 		case FuToken.RESOURCE:
-			const name = expr.inner;
-			const array = expr.type;
+			let name = expr.inner;
+			let array = expr.type;
 			this.writeResource(name.value, array.length);
 			return;
 		default:
@@ -8084,7 +8107,7 @@ export class GenBase extends FuVisitor
 
 	visitCallExpr(expr, parent)
 	{
-		const method = expr.method.symbol;
+		let method = expr.method.symbol;
 		this.writeCallExpr(expr.method.left, method, expr.arguments_, parent);
 	}
 
@@ -8156,7 +8179,7 @@ export class GenBase extends FuVisitor
 			this.write("futemp");
 			this.visitLiteralLong(BigInt(id));
 			this.write(" = ");
-			const dynamic = expr.type;
+			let dynamic = expr.type;
 			this.writeNew(dynamic, FuPriority.ARGUMENT);
 			this.endStatement();
 			for (const item of init.items) {
@@ -8182,7 +8205,7 @@ export class GenBase extends FuVisitor
 		else if (expr instanceof FuAggregateInitializer) {
 			const init = expr;
 			for (const item of init.items) {
-				const assign = item;
+				let assign = item;
 				this.writeTemporaries(assign.right);
 			}
 		}
@@ -8615,7 +8638,7 @@ export class GenBase extends FuVisitor
 		}
 		if (klass.constructor_ != null) {
 			this.currentMethod = klass.constructor_;
-			const block = klass.constructor_.body;
+			let block = klass.constructor_.body;
 			this.writeStatements(block.statements);
 			this.currentMethod = null;
 		}
@@ -8660,7 +8683,7 @@ export class GenBase extends FuVisitor
 			this.currentMethod = method;
 			if (this.isShortMethod(method)) {
 				this.write(" => ");
-				const ret = method.body;
+				let ret = method.body;
 				this.writeCoerced(method.type, ret.value, FuPriority.ARGUMENT);
 				this.writeCharLine(59);
 			}
@@ -8804,7 +8827,7 @@ export class GenTyped extends GenBase
 
 	writeArrayStorageLength(expr)
 	{
-		const array = expr.type;
+		let array = expr.type;
 		this.visitLiteralLong(BigInt(array.length));
 	}
 
@@ -9010,7 +9033,7 @@ export class GenTyped extends GenBase
 
 	writeAssertCast(expr)
 	{
-		const def = expr.right;
+		let def = expr.right;
 		this.writeTypeAndName(def);
 		this.write(" = ");
 		this.writeStaticCast(def.type, expr.left);
@@ -9651,7 +9674,7 @@ export class GenC extends GenCCpp
 	{
 		let forEach;
 		if ((forEach = symbol.parent) instanceof FuForeach) {
-			const klass = forEach.collection.type;
+			let klass = forEach.collection.type;
 			switch (klass.class.id) {
 			case FuId.STRING_CLASS:
 			case FuId.LIST_CLASS:
@@ -10245,7 +10268,7 @@ export class GenC extends GenCCpp
 		else if (expr instanceof FuAggregateInitializer) {
 			const init = expr;
 			for (const item of init.items) {
-				const assign = item;
+				let assign = item;
 				this.#writeCTemporaries(assign.right);
 			}
 		}
@@ -10288,7 +10311,7 @@ export class GenC extends GenCCpp
 				this.#writeCTemporaries(call.method.left);
 				this.#writeStorageTemporary(call.method.left);
 			}
-			const method = call.method.symbol;
+			let method = call.method.symbol;
 			let param = method.parameters.firstParameter();
 			for (const arg of call.arguments_) {
 				this.#writeCTemporaries(arg);
@@ -10355,7 +10378,7 @@ export class GenC extends GenCCpp
 	{
 		super.writeVar(def);
 		if (GenC.#needToDestruct(def)) {
-			const local = def;
+			let local = def;
 			this.#varsToDestruct.push(local);
 		}
 	}
@@ -10425,7 +10448,7 @@ export class GenC extends GenCCpp
 
 	#startDictionaryInsert(dict, key)
 	{
-		const type = dict.type;
+		let type = dict.type;
 		this.write(type.class.id == FuId.SORTED_DICTIONARY_CLASS ? "g_tree_insert(" : "g_hash_table_insert(");
 		dict.accept(this, FuPriority.ARGUMENT);
 		this.write(", ");
@@ -10491,7 +10514,7 @@ export class GenC extends GenCCpp
 			return GenC.#getThrowingMethod(binary.right);
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
-			const method = call.method.symbol;
+			let method = call.method.symbol;
 			return method.throws ? method : null;
 		}
 		else
@@ -11113,7 +11136,7 @@ export class GenC extends GenCCpp
 	static #getVtblStructClass(klass)
 	{
 		while (!klass.addsVirtualMethods()) {
-			const baseClass = klass.parent;
+			let baseClass = klass.parent;
 			klass = baseClass;
 		}
 		return klass;
@@ -11147,7 +11170,7 @@ export class GenC extends GenCCpp
 			case FuCallType.VIRTUAL:
 			case FuCallType.OVERRIDE:
 				if (method.callType == FuCallType.OVERRIDE) {
-					const declaringClass1 = method.getDeclaringMethod().parent;
+					let declaringClass1 = method.getDeclaringMethod().parent;
 					declaringClass = declaringClass1;
 				}
 				if (obj != null)
@@ -12265,7 +12288,7 @@ export class GenC extends GenCCpp
 
 	#writeSignature(method)
 	{
-		const klass = method.parent;
+		let klass = method.parent;
 		if (!klass.isPublic || method.visibility != FuVisibility.PUBLIC)
 			this.write("static ");
 		this.#writeReturnType(method);
@@ -13807,7 +13830,7 @@ export class GenCpp extends GenCCpp
 
 	writeIndexingExpr(expr, parent)
 	{
-		const klass = expr.left.type;
+		let klass = expr.left.type;
 		if (parent != FuPriority.ASSIGN) {
 			switch (klass.class.id) {
 			case FuId.ARRAY_STORAGE_CLASS:
@@ -14834,7 +14857,7 @@ export class GenCpp extends GenCCpp
 	{
 		let element = statement.getVar();
 		this.write("for (");
-		const collectionType = statement.collection.type;
+		let collectionType = statement.collection.type;
 		if (collectionType.class.id == FuId.STRING_CLASS) {
 			this.writeTypeAndName(element);
 			this.write(" : ");
@@ -17016,7 +17039,7 @@ export class GenD extends GenCCppD
 	#writeInsertedArg(type, args, index = 0)
 	{
 		if (args.length <= index) {
-			const klass = type;
+			let klass = type;
 			this.writeNew(klass, FuPriority.ARGUMENT);
 		}
 		else
@@ -17404,7 +17427,7 @@ export class GenD extends GenCCppD
 	writeIndexingExpr(expr, parent)
 	{
 		this.#writeClassReference(expr.left);
-		const klass = expr.left.type;
+		let klass = expr.left.type;
 		switch (klass.class.id) {
 		case FuId.ARRAY_PTR_CLASS:
 		case FuId.ARRAY_STORAGE_CLASS:
@@ -18248,7 +18271,7 @@ export class GenJava extends GenTyped
 			if (parent > FuPriority.AND)
 				this.writeChar(40);
 			this.write(expr.op == FuToken.INCREMENT ? "++" : "--");
-			const indexing = expr.inner;
+			let indexing = expr.inner;
 			this.#writeIndexingInternal(indexing);
 			if (parent != FuPriority.STATEMENT)
 				this.write(" & 0xff");
@@ -18264,7 +18287,7 @@ export class GenJava extends GenTyped
 		if ((expr.op == FuToken.INCREMENT || expr.op == FuToken.DECREMENT) && GenJava.#isUnsignedByteIndexing(expr.inner)) {
 			if (parent > FuPriority.AND)
 				this.writeChar(40);
-			const indexing = expr.inner;
+			let indexing = expr.inner;
 			this.#writeIndexingInternal(indexing);
 			this.write(expr.op == FuToken.INCREMENT ? "++" : "--");
 			if (parent != FuPriority.STATEMENT)
@@ -18295,7 +18318,7 @@ export class GenJava extends GenTyped
 			if (GenJava.#isUnsignedByteIndexing(left) && (rightLiteral = right) instanceof FuLiteralLong && rightLiteral.type.id == FuId.BYTE_RANGE) {
 				if (parent > FuPriority.EQUALITY)
 					this.writeChar(40);
-				const indexing = left;
+				let indexing = left;
 				this.#writeIndexingInternal(indexing);
 				this.write(GenJava.getEqOp(not));
 				this.#writeSByteLiteral(rightLiteral);
@@ -18310,7 +18333,7 @@ export class GenJava extends GenTyped
 	writeCoercedLiteral(type, expr)
 	{
 		if (GenJava.#isUnsignedByte(type)) {
-			const literal = expr;
+			let literal = expr;
 			this.#writeSByteLiteral(literal);
 		}
 		else
@@ -18339,7 +18362,7 @@ export class GenJava extends GenTyped
 		if (GenJava.#isUnsignedByteIndexing(expr.left) && (rightLiteral = expr.right) instanceof FuLiteralLong) {
 			if (parent > FuPriority.COND_AND && parent != FuPriority.AND)
 				this.writeChar(40);
-			const indexing = expr.left;
+			let indexing = expr.left;
 			this.#writeIndexingInternal(indexing);
 			this.write(" & ");
 			this.visitLiteralLong(255n & rightLiteral.value);
@@ -18865,7 +18888,7 @@ export class GenJava extends GenTyped
 			this.openLoop("int", nesting++, array.length);
 			this.writeArrayElement(def, nesting);
 			this.write(" = ");
-			const storage = array.getElementType();
+			let storage = array.getElementType();
 			this.writeNew(storage, FuPriority.ARGUMENT);
 			this.writeCharLine(59);
 			while (--nesting >= 0)
@@ -18913,7 +18936,7 @@ export class GenJava extends GenTyped
 	visitForeach(statement)
 	{
 		this.write("for (");
-		const klass = statement.collection.type;
+		let klass = statement.collection.type;
 		switch (klass.class.id) {
 		case FuId.STRING_CLASS:
 			this.write("int _i = 0; _i < ");
@@ -18971,7 +18994,7 @@ export class GenJava extends GenTyped
 	writeSwitchValue(expr)
 	{
 		if (GenJava.#isUnsignedByteIndexing(expr)) {
-			const indexing = expr;
+			let indexing = expr;
 			this.#writeIndexingInternal(indexing);
 		}
 		else
@@ -19409,7 +19432,7 @@ export class GenJsNoModule extends GenBase
 
 	visitAggregateInitializer(expr)
 	{
-		const array = expr.type;
+		let array = expr.type;
 		let numeric = false;
 		let number;
 		if ((number = array.getElementType()) instanceof FuNumericType) {
@@ -20336,7 +20359,7 @@ export class GenJsNoModule extends GenBase
 
 	writeAssertCast(expr)
 	{
-		const def = expr.right;
+		let def = expr.right;
 		this.#writeVarCast(def, expr.left);
 	}
 
@@ -20367,7 +20390,7 @@ export class GenJsNoModule extends GenBase
 	visitForeach(statement)
 	{
 		this.write("for (const ");
-		const klass = statement.collection.type;
+		let klass = statement.collection.type;
 		switch (klass.class.id) {
 		case FuId.STRING_CLASS:
 		case FuId.ARRAY_STORAGE_CLASS:
@@ -21272,14 +21295,14 @@ export class GenPySwift extends GenBase
 	visitFor(statement)
 	{
 		if (statement.isRange) {
-			const iter = statement.init;
+			let iter = statement.init;
 			this.write("for ");
 			if (statement.isIteratorUsed)
 				this.writeName(iter);
 			else
 				this.writeChar(95);
 			this.write(" in ");
-			const cond = statement.cond;
+			let cond = statement.cond;
 			this.writeForRange(iter, cond, statement.rangeStep);
 			this.writeChild(statement.body);
 		}
@@ -21906,7 +21929,7 @@ export class GenSwift extends GenPySwift
 			break;
 		case FuId.ARRAY_SORT_ALL:
 			this.writePostfix(obj, "[0..<");
-			const array3 = obj.type;
+			let array3 = obj.type;
 			this.visitLiteralLong(BigInt(array3.length));
 			this.write("].sort()");
 			break;
@@ -22193,7 +22216,7 @@ export class GenSwift extends GenPySwift
 	writeIndexingExpr(expr, parent)
 	{
 		this.#openIndexing(expr.left);
-		const klass = expr.left.type;
+		let klass = expr.left.type;
 		let indexType;
 		switch (klass.class.id) {
 		case FuId.ARRAY_PTR_CLASS:
@@ -22414,7 +22437,7 @@ export class GenSwift extends GenPySwift
 		}
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
-			const method = call.method.symbol;
+			let method = call.method.symbol;
 			return method.throws || (call.method.left != null && GenSwift.#throws(call.method.left)) || call.arguments_.some(arg => GenSwift.#throws(arg));
 		}
 		else
@@ -22517,7 +22540,7 @@ export class GenSwift extends GenPySwift
 	writeAssertCast(expr)
 	{
 		this.write("let ");
-		const def = expr.right;
+		let def = expr.right;
 		this.#writeCamelCaseNotKeyword(def.name);
 		this.write(" = ");
 		expr.left.accept(this, FuPriority.EQUALITY);
@@ -22651,7 +22674,7 @@ export class GenSwift extends GenPySwift
 		else
 			this.writeName(statement.getVar());
 		this.write(" in ");
-		const klass = statement.collection.type;
+		let klass = statement.collection.type;
 		switch (klass.class.id) {
 		case FuId.STRING_CLASS:
 			this.writePostfix(statement.collection, ".unicodeScalars");
@@ -23518,7 +23541,7 @@ export class GenPy extends GenPySwift
 
 	visitAggregateInitializer(expr)
 	{
-		const array = expr.type;
+		let array = expr.type;
 		let number;
 		if ((number = array.getElementType()) instanceof FuNumericType) {
 			let c = GenPy.#getArrayCode(number);
@@ -23889,7 +23912,7 @@ export class GenPy extends GenPySwift
 	{
 		this.write(function_);
 		this.writeChar(40);
-		const lambda = args[0];
+		let lambda = args[0];
 		lambda.body.accept(this, FuPriority.ARGUMENT);
 		this.write(" for ");
 		this.writeName(lambda.first);
@@ -23977,7 +24000,7 @@ export class GenPy extends GenPySwift
 			obj.accept(this, FuPriority.PRIMARY);
 			if (args.length == 1) {
 				this.write("[:] = ");
-				const array = obj.type;
+				let array = obj.type;
 				this.#writePyNewArray(array.getElementType(), args[0], array.lengthExpr);
 			}
 			else {
@@ -24317,7 +24340,7 @@ export class GenPy extends GenPySwift
 
 	writeAssertCast(expr)
 	{
-		const def = expr.right;
+		let def = expr.right;
 		this.writeTypeAndName(def);
 		this.write(" = ");
 		expr.left.accept(this, FuPriority.ARGUMENT);
@@ -24388,7 +24411,7 @@ export class GenPy extends GenPySwift
 	{
 		this.write("for ");
 		this.writeName(statement.getVar());
-		const klass = statement.collection.type;
+		let klass = statement.collection.type;
 		if (klass.class.typeParameterCount == 2) {
 			this.write(", ");
 			this.writeName(statement.getValueVar());

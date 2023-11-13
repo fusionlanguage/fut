@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		0 .. 5000000000 i; //ERROR: Only 32-bit ranges supported
+		0 .. 5000000000 i = 0; //ERROR: Only 32-bit ranges supported
 		return true;
 	}
 }
