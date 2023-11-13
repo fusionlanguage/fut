@@ -1716,6 +1716,7 @@ protected:
 	void writeIncludes(std::string_view prefix, std::string_view suffix);
 	virtual void startDocLine();
 	void writeXmlDoc(std::string_view text);
+	virtual void writeDocCode(std::string_view s);
 	virtual void writeDocPara(const FuDocPara * para, bool many);
 	virtual void writeDocList(const FuDocList * list);
 	void writeDocBlock(const FuDocBlock * block, bool many);
@@ -1951,6 +1952,7 @@ public:
 	virtual ~GenCCpp() = default;
 protected:
 	GenCCpp() = default;
+	void writeDocCode(std::string_view s) override;
 	virtual void includeStdInt() = 0;
 	virtual void includeAssert() = 0;
 	virtual void includeMath() = 0;
@@ -2658,6 +2660,7 @@ public:
 protected:
 	std::string_view getTargetName() const override;
 	void startDocLine() override;
+	void writeDocCode(std::string_view s) override;
 	std::string_view getDocBullet() const override;
 	void writeDoc(const FuCodeDoc * doc) override;
 	void writeName(const FuSymbol * symbol) override;
@@ -2757,6 +2760,7 @@ protected:
 	std::string_view getTargetName() const override;
 	void writeBanner() override;
 	void startDocLine() override;
+	void writeDocCode(std::string_view s) override;
 	std::string_view getDocBullet() const override;
 	void writeDoc(const FuCodeDoc * doc) override;
 	void writeParameterDoc(const FuVar * param, bool first) override;

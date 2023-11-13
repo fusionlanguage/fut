@@ -7082,6 +7082,11 @@ export class GenBase extends FuVisitor
 		}
 	}
 
+	writeDocCode(s)
+	{
+		this.writeXmlDoc(s);
+	}
+
 	writeDocPara(para, many)
 	{
 		if (many) {
@@ -7096,7 +7101,7 @@ export class GenBase extends FuVisitor
 			else if (inline instanceof FuDocCode) {
 				const code = inline;
 				this.write("<code>");
-				this.writeXmlDoc(code.text);
+				this.writeDocCode(code.text);
 				this.write("</code>");
 			}
 			else if (inline instanceof FuDocLine) {
@@ -9117,6 +9122,14 @@ export class GenCCppD extends GenTyped
 
 export class GenCCpp extends GenCCppD
 {
+
+	writeDocCode(s)
+	{
+		if (s == "null")
+			this.visitLiteralNull();
+		else
+			this.writeXmlDoc(s);
+	}
 
 	#writeCIncludes()
 	{
@@ -21014,7 +21027,7 @@ export class GenPySwift extends GenBase
 			else if (inline instanceof FuDocCode) {
 				const code = inline;
 				this.writeChar(96);
-				this.write(code.text);
+				this.writeDocCode(code.text);
 				this.writeChar(96);
 			}
 			else if (inline instanceof FuDocLine) {
@@ -21405,6 +21418,11 @@ export class GenSwift extends GenPySwift
 	startDocLine()
 	{
 		this.write("/// ");
+	}
+
+	writeDocCode(s)
+	{
+		this.write(s == "null" ? "nil" : s);
 	}
 
 	getDocBullet()
@@ -23206,6 +23224,24 @@ export class GenPy extends GenPySwift
 
 	startDocLine()
 	{
+	}
+
+	writeDocCode(s)
+	{
+		switch (s) {
+		case "true":
+			this.write("True");
+			break;
+		case "false":
+			this.write("False");
+			break;
+		case "null":
+			this.write("None");
+			break;
+		default:
+			this.write(s);
+			break;
+		}
 	}
 
 	getDocBullet()

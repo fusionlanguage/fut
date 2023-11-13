@@ -20,6 +20,14 @@
 
 public abstract class GenCCpp : GenCCppD
 {
+	protected override void WriteDocCode!(string s)
+	{
+		if (s == "null")
+			VisitLiteralNull();
+		else
+			WriteXmlDoc(s);
+	}
+
 	protected abstract void IncludeStdInt!();
 
 	protected abstract void IncludeAssert!();

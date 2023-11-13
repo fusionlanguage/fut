@@ -35,6 +35,24 @@ public class GenPy : GenPySwift
 	{
 	}
 
+	protected override void WriteDocCode!(string s)
+	{
+		switch (s) {
+		case "true":
+			Write("True");
+			break;
+		case "false":
+			Write("False");
+			break;
+		case "null":
+			Write("None");
+			break;
+		default:
+			Write(s);
+			break;
+		}
+	}
+
 	protected override string GetDocBullet() => " * ";
 
 	void StartDoc!(FuCodeDoc doc)

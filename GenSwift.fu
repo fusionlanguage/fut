@@ -36,6 +36,11 @@ public class GenSwift : GenPySwift
 		Write("/// ");
 	}
 
+	protected override void WriteDocCode!(string s)
+	{
+		Write(s == "null" ? "nil" : s);
+	}
+
 	protected override string GetDocBullet() => "/// * ";
 
 	protected override void WriteDoc!(FuCodeDoc? doc)

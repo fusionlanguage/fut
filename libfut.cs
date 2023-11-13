@@ -6785,6 +6785,11 @@ namespace Fusion
 			}
 		}
 
+		protected virtual void WriteDocCode(string s)
+		{
+			WriteXmlDoc(s);
+		}
+
 		protected virtual void WriteDocPara(FuDocPara para, bool many)
 		{
 			if (many) {
@@ -6798,7 +6803,7 @@ namespace Fusion
 					break;
 				case FuDocCode code:
 					Write("<code>");
-					WriteXmlDoc(code.Text);
+					WriteDocCode(code.Text);
 					Write("</code>");
 					break;
 				case FuDocLine _:
@@ -8766,6 +8771,14 @@ namespace Fusion
 
 	public abstract class GenCCpp : GenCCppD
 	{
+
+		protected override void WriteDocCode(string s)
+		{
+			if (s == "null")
+				VisitLiteralNull();
+			else
+				WriteXmlDoc(s);
+		}
 
 		protected abstract void IncludeStdInt();
 
@@ -20462,7 +20475,7 @@ namespace Fusion
 					break;
 				case FuDocCode code:
 					WriteChar('`');
-					Write(code.Text);
+					WriteDocCode(code.Text);
 					WriteChar('`');
 					break;
 				case FuDocLine _:
@@ -20845,6 +20858,11 @@ namespace Fusion
 		protected override void StartDocLine()
 		{
 			Write("/// ");
+		}
+
+		protected override void WriteDocCode(string s)
+		{
+			Write(s == "null" ? "nil" : s);
 		}
 
 		protected override string GetDocBullet() => "/// * ";
@@ -22628,6 +22646,24 @@ namespace Fusion
 
 		protected override void StartDocLine()
 		{
+		}
+
+		protected override void WriteDocCode(string s)
+		{
+			switch (s) {
+			case "true":
+				Write("True");
+				break;
+			case "false":
+				Write("False");
+				break;
+			case "null":
+				Write("None");
+				break;
+			default:
+				Write(s);
+				break;
+			}
 		}
 
 		protected override string GetDocBullet() => " * ";

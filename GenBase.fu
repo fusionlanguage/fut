@@ -330,6 +330,11 @@ public abstract class GenBase : FuVisitor
 		}
 	}
 
+	protected virtual void WriteDocCode!(string s)
+	{
+		WriteXmlDoc(s);
+	}
+
 	protected virtual void WriteDocPara!(FuDocPara para, bool many)
 	{
 		if (many) {
@@ -343,7 +348,7 @@ public abstract class GenBase : FuVisitor
 				break;
 			case FuDocCode code:
 				Write("<code>");
-				WriteXmlDoc(code.Text);
+				WriteDocCode(code.Text);
 				Write("</code>");
 				break;
 			case FuDocLine _:

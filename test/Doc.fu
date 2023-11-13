@@ -1,4 +1,4 @@
-/// Test for `cito` documentation comments.
+/// Test for `fut` documentation comments.
 ///
 /// Detailed description follows. First paragraph.
 ///
@@ -33,4 +33,7 @@ public class Test
 		Test() o;
 		return true;
 	}
+
+	/// Returns `null`.
+	public static string? ReturnNull() => null;
 }

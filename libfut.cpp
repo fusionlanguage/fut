@@ -6635,6 +6635,11 @@ void GenBase::writeXmlDoc(std::string_view text)
 	}
 }
 
+void GenBase::writeDocCode(std::string_view s)
+{
+	writeXmlDoc(s);
+}
+
 void GenBase::writeDocPara(const FuDocPara * para, bool many)
 {
 	if (many) {
@@ -6646,7 +6651,7 @@ void GenBase::writeDocPara(const FuDocPara * para, bool many)
 			writeXmlDoc(text->text);
 		else if (const FuDocCode *code = dynamic_cast<const FuDocCode *>(inline_.get())) {
 			write("<code>");
-			writeXmlDoc(code->text);
+			writeDocCode(code->text);
 			write("</code>");
 		}
 		else if (dynamic_cast<const FuDocLine *>(inline_.get())) {
@@ -8593,6 +8598,14 @@ void GenCCppD::writeSwitchAsIfsWithGoto(const FuSwitch * statement)
 	}
 	else
 		writeSwitchAsIfs(statement, true);
+}
+
+void GenCCpp::writeDocCode(std::string_view s)
+{
+	if (s == "null")
+		visitLiteralNull();
+	else
+		writeXmlDoc(s);
 }
 
 void GenCCpp::writeCIncludes()
@@ -19792,7 +19805,7 @@ void GenPySwift::writeDocPara(const FuDocPara * para, bool many)
 			write(text->text);
 		else if (const FuDocCode *code = dynamic_cast<const FuDocCode *>(inline_.get())) {
 			writeChar('`');
-			write(code->text);
+			writeDocCode(code->text);
 			writeChar('`');
 		}
 		else if (dynamic_cast<const FuDocLine *>(inline_.get())) {
@@ -20154,6 +20167,11 @@ std::string_view GenSwift::getTargetName() const
 void GenSwift::startDocLine()
 {
 	write("/// ");
+}
+
+void GenSwift::writeDocCode(std::string_view s)
+{
+	write(s == "null" ? "nil" : s);
 }
 
 std::string_view GenSwift::getDocBullet() const
@@ -21846,6 +21864,18 @@ void GenPy::writeBanner()
 
 void GenPy::startDocLine()
 {
+}
+
+void GenPy::writeDocCode(std::string_view s)
+{
+	if (s == "true")
+		write("True");
+	else if (s == "false")
+		write("False");
+	else if (s == "null")
+		write("None");
+	else
+		write(s);
 }
 
 std::string_view GenPy::getDocBullet() const
