@@ -3016,9 +3016,9 @@ namespace Fusion
 			listClass.Add(FuMethod.New(FuVisibility.Public, this.BoolType, FuId.ListAny, "Any", FuVar.New(typeParam0Predicate, "predicate")));
 			listClass.Add(FuMethod.New(FuVisibility.Public, this.BoolType, FuId.ListContains, "Contains", FuVar.New(this.TypeParam0, "value")));
 			listClass.Add(FuMethod.New(FuVisibility.Public, this.VoidType, FuId.ListCopyTo, "CopyTo", FuVar.New(this.IntType, "sourceIndex"), FuVar.New(new FuReadWriteClassType { Class = this.ArrayPtrClass, TypeArg0 = this.TypeParam0 }, "destinationArray"), FuVar.New(this.IntType, "destinationIndex"), FuVar.New(this.IntType, "count")));
-			listClass.Add(FuMethod.NewMutator(FuVisibility.Public, this.IntType, FuId.ListIndexOf, "IndexOf", FuVar.New(this.TypeParam0, "value")));
+			listClass.Add(FuMethod.New(FuVisibility.Public, this.IntType, FuId.ListIndexOf, "IndexOf", FuVar.New(this.TypeParam0, "value")));
 			listClass.Add(FuMethod.NewMutator(FuVisibility.Public, this.VoidType, FuId.ListInsert, "Insert", FuVar.New(this.UIntType, "index"), FuVar.New(typeParam0NotFinal, "value")));
-			listClass.Add(FuMethod.NewMutator(FuVisibility.Public, this.TypeParam0, FuId.ListLast, "Last"));
+			listClass.Add(FuMethod.New(FuVisibility.Public, this.TypeParam0, FuId.ListLast, "Last"));
 			listClass.Add(FuMethod.NewMutator(FuVisibility.Public, this.VoidType, FuId.ListRemoveAt, "RemoveAt", FuVar.New(this.IntType, "index")));
 			listClass.Add(FuMethod.NewMutator(FuVisibility.Public, this.VoidType, FuId.ListRemoveRange, "RemoveRange", FuVar.New(this.IntType, "index"), FuVar.New(this.IntType, "count")));
 			listClass.Add(FuMethodGroup.New(FuMethod.NewMutator(FuVisibility.NumericElementType, this.VoidType, FuId.ListSortAll, "Sort"), FuMethod.NewMutator(FuVisibility.NumericElementType, this.VoidType, FuId.ListSortPart, "Sort", FuVar.New(this.IntType, "startIndex"), FuVar.New(this.IntType, "count"))));
@@ -5492,6 +5492,27 @@ namespace Fusion
 			default:
 				return PoisonError(symbol, "Expected a method");
 			}
+			if (method.IsMutator) {
+				if (symbol.Left == null) {
+					if (!this.CurrentMethod.IsMutator)
+						ReportError(expr, $"Cannot call mutating method '{method.Name}' from a non-mutating method");
+				}
+				else if (symbol.Left is FuSymbolReference baseRef && baseRef.Symbol.Id == FuId.BasePtr) {
+				}
+				else if (!(symbol.Left.Type is FuReadWriteClassType)) {
+					switch (method.Id) {
+					case FuId.IntTryParse:
+					case FuId.LongTryParse:
+					case FuId.DoubleTryParse:
+						if (symbol.Left is FuSymbolReference varRef && varRef.Symbol is FuVar def)
+							def.IsAssigned = true;
+						break;
+					default:
+						ReportError(symbol.Left, $"Cannot call mutating method '{method.Name}' on a read-only reference");
+						break;
+					}
+				}
+			}
 			int i = 0;
 			for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 				FuType type = param.Type;
@@ -5523,16 +5544,6 @@ namespace Fusion
 					return PoisonError(expr, $"Cannot call method '{method.Name}' here because it is marked 'throws'");
 				if (!this.CurrentMethod.Throws)
 					return PoisonError(expr, "Method marked 'throws' called from a method not marked 'throws'");
-			}
-			switch (method.Id) {
-			case FuId.IntTryParse:
-			case FuId.LongTryParse:
-			case FuId.DoubleTryParse:
-				if (symbol.Left is FuSymbolReference varRef && varRef.Symbol is FuVar def)
-					def.IsAssigned = true;
-				break;
-			default:
-				break;
 			}
 			symbol.Symbol = method;
 			if (method.CallType == FuCallType.Static && method.Body is FuReturn ret && arguments.TrueForAll(arg => arg is FuLiteral) && !this.CurrentPureMethods.Contains(method)) {
@@ -6276,6 +6287,8 @@ namespace Fusion
 						method.Type = this.Program.System.VoidType;
 					else
 						ResolveType(method);
+					if (method.CallType == FuCallType.Static && method.IsMutator)
+						ReportError(method, "Static method cannot be mutating ('!')");
 					for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 						ResolveType(param);
 						if (param.Value != null) {

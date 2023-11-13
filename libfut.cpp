@@ -2495,9 +2495,9 @@ FuSystem::FuSystem()
 	futemp2->class_ = this->arrayPtrClass.get();
 	futemp2->typeArg0 = this->typeParam0;
 	listClass->add(FuMethod::new_(FuVisibility::public_, this->voidType, FuId::listCopyTo, "CopyTo", FuVar::new_(this->intType, "sourceIndex"), FuVar::new_(futemp2, "destinationArray"), FuVar::new_(this->intType, "destinationIndex"), FuVar::new_(this->intType, "count")));
-	listClass->add(FuMethod::newMutator(FuVisibility::public_, this->intType, FuId::listIndexOf, "IndexOf", FuVar::new_(this->typeParam0, "value")));
+	listClass->add(FuMethod::new_(FuVisibility::public_, this->intType, FuId::listIndexOf, "IndexOf", FuVar::new_(this->typeParam0, "value")));
 	listClass->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::listInsert, "Insert", FuVar::new_(this->uIntType, "index"), FuVar::new_(typeParam0NotFinal, "value")));
-	listClass->add(FuMethod::newMutator(FuVisibility::public_, this->typeParam0, FuId::listLast, "Last"));
+	listClass->add(FuMethod::new_(FuVisibility::public_, this->typeParam0, FuId::listLast, "Last"));
 	listClass->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::listRemoveAt, "RemoveAt", FuVar::new_(this->intType, "index")));
 	listClass->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::listRemoveRange, "RemoveRange", FuVar::new_(this->intType, "index"), FuVar::new_(this->intType, "count")));
 	listClass->add(FuMethodGroup::new_(FuMethod::newMutator(FuVisibility::numericElementType, this->voidType, FuId::listSortAll, "Sort"), FuMethod::newMutator(FuVisibility::numericElementType, this->voidType, FuId::listSortPart, "Sort", FuVar::new_(this->intType, "startIndex"), FuVar::new_(this->intType, "count"))));
@@ -5342,6 +5342,34 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 	}
 	else
 		return poisonError(symbol.get(), "Expected a method");
+	if (method->isMutator) {
+		if (symbol->left == nullptr) {
+			if (!this->currentMethod->isMutator)
+				reportError(expr.get(), std::format("Cannot call mutating method '{}' from a non-mutating method", method->name));
+		}
+		else {
+			const FuSymbolReference * baseRef;
+			if ((baseRef = dynamic_cast<const FuSymbolReference *>(symbol->left.get())) && baseRef->symbol->id == FuId::basePtr) {
+			}
+			else if (!dynamic_cast<const FuReadWriteClassType *>(symbol->left->type.get())) {
+				switch (method->id) {
+				case FuId::intTryParse:
+				case FuId::longTryParse:
+				case FuId::doubleTryParse:
+					{
+						const FuSymbolReference * varRef;
+						FuVar * def;
+						if ((varRef = dynamic_cast<const FuSymbolReference *>(symbol->left.get())) && (def = dynamic_cast<FuVar *>(varRef->symbol)))
+							def->isAssigned = true;
+						break;
+					}
+				default:
+					reportError(symbol->left.get(), std::format("Cannot call mutating method '{}' on a read-only reference", method->name));
+					break;
+				}
+			}
+		}
+	}
 	int i = 0;
 	for (const FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
 		std::shared_ptr<FuType> type = param->type;
@@ -5375,20 +5403,6 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 			return poisonError(expr.get(), std::format("Cannot call method '{}' here because it is marked 'throws'", method->name));
 		if (!this->currentMethod->throws)
 			return poisonError(expr.get(), "Method marked 'throws' called from a method not marked 'throws'");
-	}
-	switch (method->id) {
-	case FuId::intTryParse:
-	case FuId::longTryParse:
-	case FuId::doubleTryParse:
-		{
-			const FuSymbolReference * varRef;
-			FuVar * def;
-			if ((varRef = dynamic_cast<const FuSymbolReference *>(symbol->left.get())) && (def = dynamic_cast<FuVar *>(varRef->symbol)))
-				def->isAssigned = true;
-			break;
-		}
-	default:
-		break;
 	}
 	symbol->symbol = method;
 	const FuReturn * ret;
@@ -6158,6 +6172,8 @@ void FuSema::resolveTypes(FuClass * klass)
 				method->type = this->program->system->voidType;
 			else
 				resolveType(method);
+			if (method->callType == FuCallType::static_ && method->isMutator)
+				reportError(method, "Static method cannot be mutating ('!')");
 			for (FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
 				resolveType(param);
 				if (param->value != nullptr) {

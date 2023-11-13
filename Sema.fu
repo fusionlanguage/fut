@@ -1251,6 +1251,27 @@ public class FuSema
 		}
 
 		// TODO: check static
+		if (method.IsMutator) {
+			if (symbol.Left == null) {
+				if (!this.CurrentMethod.IsMutator)
+					ReportError(expr, $"Cannot call mutating method '{method.Name}' from a non-mutating method");
+			}
+			else if (symbol.Left is FuSymbolReference baseRef && baseRef.Symbol.Id == FuId.BasePtr) {
+			}
+			else if (!(symbol.Left.Type is FuReadWriteClassType)) {
+				switch (method.Id) {
+				case FuId.IntTryParse:
+				case FuId.LongTryParse:
+				case FuId.DoubleTryParse:
+					if (symbol.Left is FuSymbolReference varRef && varRef.Symbol is FuVar! def)
+						def.IsAssigned = true;
+					break;
+				default:
+					ReportError(symbol.Left, $"Cannot call mutating method '{method.Name}' on a read-only reference");
+					break;
+				}
+			}
+		}
 		int i = 0;
 		for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 			FuType#? type = param.Type;
@@ -1285,16 +1306,6 @@ public class FuSema
 				return PoisonError(expr, "Method marked 'throws' called from a method not marked 'throws'");
 		}
 
-		switch (method.Id) {
-		case FuId.IntTryParse:
-		case FuId.LongTryParse:
-		case FuId.DoubleTryParse:
-			if (symbol.Left is FuSymbolReference varRef && varRef.Symbol is FuVar! def)
-				def.IsAssigned = true;
-			break;
-		default:
-			break;
-		}
 		symbol.Symbol = method;
 
 		if (method.CallType == FuCallType.Static
@@ -2064,6 +2075,8 @@ public class FuSema
 					method.Type = this.Program.System.VoidType;
 				else
 					ResolveType(method);
+				if (method.CallType == FuCallType.Static && method.IsMutator)
+					ReportError(method, "Static method cannot be mutating ('!')");
 				for (FuVar!? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 					ResolveType(param);
 					if (param.Value != null) {

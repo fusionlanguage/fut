@@ -1,0 +1,11 @@
+public class Test
+{
+	bool Foo!() => true;
+
+	public static bool Run()
+	{
+		Test() o;
+		Test r = o;
+		return r.Foo(); //ERROR: Cannot call mutating method 'Foo' on a read-only reference
+	}
+}

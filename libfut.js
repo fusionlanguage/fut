@@ -3178,9 +3178,9 @@ export class FuSystem extends FuScope
 		listClass.add(FuMethod.new(FuVisibility.PUBLIC, this.boolType, FuId.LIST_ANY, "Any", FuVar.new(typeParam0Predicate, "predicate")));
 		listClass.add(FuMethod.new(FuVisibility.PUBLIC, this.boolType, FuId.LIST_CONTAINS, "Contains", FuVar.new(this.#typeParam0, "value")));
 		listClass.add(FuMethod.new(FuVisibility.PUBLIC, this.voidType, FuId.LIST_COPY_TO, "CopyTo", FuVar.new(this.intType, "sourceIndex"), FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this.arrayPtrClass, typeArg0: this.#typeParam0 }), "destinationArray"), FuVar.new(this.intType, "destinationIndex"), FuVar.new(this.intType, "count")));
-		listClass.add(FuMethod.newMutator(FuVisibility.PUBLIC, this.intType, FuId.LIST_INDEX_OF, "IndexOf", FuVar.new(this.#typeParam0, "value")));
+		listClass.add(FuMethod.new(FuVisibility.PUBLIC, this.intType, FuId.LIST_INDEX_OF, "IndexOf", FuVar.new(this.#typeParam0, "value")));
 		listClass.add(FuMethod.newMutator(FuVisibility.PUBLIC, this.voidType, FuId.LIST_INSERT, "Insert", FuVar.new(this.#uIntType, "index"), FuVar.new(typeParam0NotFinal, "value")));
-		listClass.add(FuMethod.newMutator(FuVisibility.PUBLIC, this.#typeParam0, FuId.LIST_LAST, "Last"));
+		listClass.add(FuMethod.new(FuVisibility.PUBLIC, this.#typeParam0, FuId.LIST_LAST, "Last"));
 		listClass.add(FuMethod.newMutator(FuVisibility.PUBLIC, this.voidType, FuId.LIST_REMOVE_AT, "RemoveAt", FuVar.new(this.intType, "index")));
 		listClass.add(FuMethod.newMutator(FuVisibility.PUBLIC, this.voidType, FuId.LIST_REMOVE_RANGE, "RemoveRange", FuVar.new(this.intType, "index"), FuVar.new(this.intType, "count")));
 		listClass.add(FuMethodGroup.new(FuMethod.newMutator(FuVisibility.NUMERIC_ELEMENT_TYPE, this.voidType, FuId.LIST_SORT_ALL, "Sort"), FuMethod.newMutator(FuVisibility.NUMERIC_ELEMENT_TYPE, this.voidType, FuId.LIST_SORT_PART, "Sort", FuVar.new(this.intType, "startIndex"), FuVar.new(this.intType, "count"))));
@@ -5728,6 +5728,32 @@ export class FuSema
 		}
 		else
 			return this.#poisonError(symbol, "Expected a method");
+		if (method.isMutator) {
+			if (symbol.left == null) {
+				if (!this.#currentMethod.isMutator)
+					this.reportError(expr, `Cannot call mutating method '${method.name}' from a non-mutating method`);
+			}
+			else {
+				let baseRef;
+				if ((baseRef = symbol.left) instanceof FuSymbolReference && baseRef.symbol.id == FuId.BASE_PTR) {
+				}
+				else if (!(symbol.left.type instanceof FuReadWriteClassType)) {
+					switch (method.id) {
+					case FuId.INT_TRY_PARSE:
+					case FuId.LONG_TRY_PARSE:
+					case FuId.DOUBLE_TRY_PARSE:
+						let varRef;
+						let def;
+						if ((varRef = symbol.left) instanceof FuSymbolReference && (def = varRef.symbol) instanceof FuVar)
+							def.isAssigned = true;
+						break;
+					default:
+						this.reportError(symbol.left, `Cannot call mutating method '${method.name}' on a read-only reference`);
+						break;
+					}
+				}
+			}
+		}
 		let i = 0;
 		for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
 			let type = param.type;
@@ -5761,18 +5787,6 @@ export class FuSema
 				return this.#poisonError(expr, `Cannot call method '${method.name}' here because it is marked 'throws'`);
 			if (!this.#currentMethod.throws)
 				return this.#poisonError(expr, "Method marked 'throws' called from a method not marked 'throws'");
-		}
-		switch (method.id) {
-		case FuId.INT_TRY_PARSE:
-		case FuId.LONG_TRY_PARSE:
-		case FuId.DOUBLE_TRY_PARSE:
-			let varRef;
-			let def;
-			if ((varRef = symbol.left) instanceof FuSymbolReference && (def = varRef.symbol) instanceof FuVar)
-				def.isAssigned = true;
-			break;
-		default:
-			break;
 		}
 		symbol.symbol = method;
 		let ret;
@@ -6591,6 +6605,8 @@ export class FuSema
 					method.type = this.program.system.voidType;
 				else
 					this.#resolveType(method);
+				if (method.callType == FuCallType.STATIC && method.isMutator)
+					this.reportError(method, "Static method cannot be mutating ('!')");
 				for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
 					this.#resolveType(param);
 					if (param.value != null) {

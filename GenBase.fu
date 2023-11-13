@@ -795,7 +795,7 @@ public abstract class GenBase : FuVisitor
 		Write(" }");
 	}
 
-	static FuAggregateInitializer? GetAggregateInitializer!(FuNamedValue def)
+	static FuAggregateInitializer? GetAggregateInitializer(FuNamedValue def)
 	{
 		FuExpr expr = def.Value;
 		if (expr is FuPrefixExpr unary)

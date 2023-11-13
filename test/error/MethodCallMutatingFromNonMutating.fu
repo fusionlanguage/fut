@@ -1,0 +1,12 @@
+public class Test
+{
+	bool Foo!() => true;
+
+	bool Bar() => Foo(); //ERROR: Cannot call mutating method 'Foo' from a non-mutating method
+
+	public static bool Run()
+	{
+		Test() o;
+		return o.Bar();
+	}
+}

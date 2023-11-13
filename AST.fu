@@ -1551,9 +1551,9 @@ public class FuSystem : FuScope
 		listClass.Add(FuMethod.New(FuVisibility.Public, BoolType, FuId.ListContains, "Contains", FuVar.New(TypeParam0, "value")));
 		listClass.Add(FuMethod.New(FuVisibility.Public, VoidType, FuId.ListCopyTo, "CopyTo", FuVar.New(IntType, "sourceIndex"),
 			FuVar.New(new FuReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"), FuVar.New(IntType, "destinationIndex"), FuVar.New(IntType, "count")));
-		listClass.Add(FuMethod.NewMutator(FuVisibility.Public, IntType, FuId.ListIndexOf, "IndexOf", FuVar.New(TypeParam0, "value")));
+		listClass.Add(FuMethod.New(FuVisibility.Public, IntType, FuId.ListIndexOf, "IndexOf", FuVar.New(TypeParam0, "value")));
 		listClass.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.ListInsert, "Insert", FuVar.New(UIntType, "index"), FuVar.New(typeParam0NotFinal, "value")));
-		listClass.Add(FuMethod.NewMutator(FuVisibility.Public, TypeParam0, FuId.ListLast, "Last"));
+		listClass.Add(FuMethod.New(FuVisibility.Public, TypeParam0, FuId.ListLast, "Last"));
 		listClass.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.ListRemoveAt, "RemoveAt", FuVar.New(IntType, "index")));
 		listClass.Add(FuMethod.NewMutator(FuVisibility.Public, VoidType, FuId.ListRemoveRange, "RemoveRange", FuVar.New(IntType, "index"), FuVar.New(IntType, "count")));
 		listClass.Add(FuMethodGroup.New(

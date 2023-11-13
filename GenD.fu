@@ -340,7 +340,7 @@ public class GenD : GenCCppD
 		}
 	}
 
-	static bool IsCreateWithNew!(FuType type)
+	static bool IsCreateWithNew(FuType type)
 	{
 		if (type is FuClassType klass) {
 			if (klass is FuStorageType stg)

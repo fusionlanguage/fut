@@ -1,0 +1,7 @@
+public static class Test
+{
+	public static bool Run!() //ERROR: Static method cannot be mutating ('!')
+	{
+		return true;
+	}
+}
