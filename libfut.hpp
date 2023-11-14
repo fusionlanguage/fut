@@ -1260,9 +1260,9 @@ class FuMethod : public FuMethodBase
 {
 public:
 	FuMethod() = default;
-	static std::shared_ptr<FuMethod> new_(FuVisibility visibility, std::shared_ptr<FuType> type, FuId id, std::string_view name, std::shared_ptr<FuVar> param0 = nullptr, std::shared_ptr<FuVar> param1 = nullptr, std::shared_ptr<FuVar> param2 = nullptr, std::shared_ptr<FuVar> param3 = nullptr);
+	static std::shared_ptr<FuMethod> new_(FuVisibility visibility, FuCallType callType, std::shared_ptr<FuType> type, FuId id, std::string_view name, bool isMutator, std::shared_ptr<FuVar> param0 = nullptr, std::shared_ptr<FuVar> param1 = nullptr, std::shared_ptr<FuVar> param2 = nullptr, std::shared_ptr<FuVar> param3 = nullptr);
+	static std::shared_ptr<FuMethod> newPublicNormal(std::shared_ptr<FuType> type, FuId id, std::string_view name, bool isMutator, std::shared_ptr<FuVar> param0 = nullptr, std::shared_ptr<FuVar> param1 = nullptr, std::shared_ptr<FuVar> param2 = nullptr, std::shared_ptr<FuVar> param3 = nullptr);
 	static std::shared_ptr<FuMethod> newStatic(std::shared_ptr<FuType> type, FuId id, std::string_view name, std::shared_ptr<FuVar> param0, std::shared_ptr<FuVar> param1 = nullptr, std::shared_ptr<FuVar> param2 = nullptr);
-	static std::shared_ptr<FuMethod> newMutator(FuVisibility visibility, std::shared_ptr<FuType> type, FuId id, std::string_view name, std::shared_ptr<FuVar> param0 = nullptr, std::shared_ptr<FuVar> param1 = nullptr, std::shared_ptr<FuVar> param2 = nullptr);
 	bool isStatic() const override;
 	bool isAbstractOrVirtual() const;
 	const FuMethod * getDeclaringMethod() const;

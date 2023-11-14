@@ -2042,14 +2042,15 @@ bool FuMethodBase::isStatic() const
 	return false;
 }
 
-std::shared_ptr<FuMethod> FuMethod::new_(FuVisibility visibility, std::shared_ptr<FuType> type, FuId id, std::string_view name, std::shared_ptr<FuVar> param0, std::shared_ptr<FuVar> param1, std::shared_ptr<FuVar> param2, std::shared_ptr<FuVar> param3)
+std::shared_ptr<FuMethod> FuMethod::new_(FuVisibility visibility, FuCallType callType, std::shared_ptr<FuType> type, FuId id, std::string_view name, bool isMutator, std::shared_ptr<FuVar> param0, std::shared_ptr<FuVar> param1, std::shared_ptr<FuVar> param2, std::shared_ptr<FuVar> param3)
 {
 	std::shared_ptr<FuMethod> result = std::make_shared<FuMethod>();
 	result->visibility = visibility;
-	result->callType = FuCallType::normal;
+	result->callType = callType;
 	result->type = type;
 	result->id = id;
 	result->name = name;
+	result->isMutator = isMutator;
 	if (param0 != nullptr) {
 		result->parameters.add(param0);
 		if (param1 != nullptr) {
@@ -2064,18 +2065,14 @@ std::shared_ptr<FuMethod> FuMethod::new_(FuVisibility visibility, std::shared_pt
 	return result;
 }
 
-std::shared_ptr<FuMethod> FuMethod::newStatic(std::shared_ptr<FuType> type, FuId id, std::string_view name, std::shared_ptr<FuVar> param0, std::shared_ptr<FuVar> param1, std::shared_ptr<FuVar> param2)
+std::shared_ptr<FuMethod> FuMethod::newPublicNormal(std::shared_ptr<FuType> type, FuId id, std::string_view name, bool isMutator, std::shared_ptr<FuVar> param0, std::shared_ptr<FuVar> param1, std::shared_ptr<FuVar> param2, std::shared_ptr<FuVar> param3)
 {
-	std::shared_ptr<FuMethod> result = new_(FuVisibility::public_, type, id, name, param0, param1, param2);
-	result->callType = FuCallType::static_;
-	return result;
+	return new_(FuVisibility::public_, FuCallType::normal, type, id, name, isMutator, param0, param1, param2, param3);
 }
 
-std::shared_ptr<FuMethod> FuMethod::newMutator(FuVisibility visibility, std::shared_ptr<FuType> type, FuId id, std::string_view name, std::shared_ptr<FuVar> param0, std::shared_ptr<FuVar> param1, std::shared_ptr<FuVar> param2)
+std::shared_ptr<FuMethod> FuMethod::newStatic(std::shared_ptr<FuType> type, FuId id, std::string_view name, std::shared_ptr<FuVar> param0, std::shared_ptr<FuVar> param1, std::shared_ptr<FuVar> param2)
 {
-	std::shared_ptr<FuMethod> result = new_(visibility, type, id, name, param0, param1, param2);
-	result->isMutator = true;
-	return result;
+	return new_(FuVisibility::public_, FuCallType::static_, type, id, name, false, param0, param1, param2);
 }
 
 bool FuMethod::isStatic() const
@@ -2428,12 +2425,12 @@ FuSystem::FuSystem()
 	basePtr->id = FuId::basePtr;
 	add(basePtr);
 	addMinMaxValue(this->intType.get(), -2147483648, 2147483647);
-	this->intType->add(FuMethod::newMutator(FuVisibility::public_, this->boolType, FuId::intTryParse, "TryParse", FuVar::new_(this->stringPtrType, "value"), FuVar::new_(this->intType, "radix", newLiteralLong(0))));
+	this->intType->add(FuMethod::newPublicNormal(this->boolType, FuId::intTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value"), FuVar::new_(this->intType, "radix", newLiteralLong(0))));
 	add(this->intType);
 	this->uIntType->name = "uint";
 	add(this->uIntType);
 	addMinMaxValue(this->longType.get(), (-9223372036854775807 - 1), 9223372036854775807);
-	this->longType->add(FuMethod::newMutator(FuVisibility::public_, this->boolType, FuId::longTryParse, "TryParse", FuVar::new_(this->stringPtrType, "value"), FuVar::new_(this->intType, "radix", newLiteralLong(0))));
+	this->longType->add(FuMethod::newPublicNormal(this->boolType, FuId::longTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value"), FuVar::new_(this->intType, "radix", newLiteralLong(0))));
 	add(this->longType);
 	this->byteType->name = "byte";
 	add(this->byteType);
@@ -2445,37 +2442,37 @@ FuSystem::FuSystem()
 	add(ushortType);
 	std::shared_ptr<FuRangeType> minus1Type = FuRangeType::new_(-1, 2147483647);
 	add(this->floatType);
-	this->doubleType->add(FuMethod::newMutator(FuVisibility::public_, this->boolType, FuId::doubleTryParse, "TryParse", FuVar::new_(this->stringPtrType, "value")));
+	this->doubleType->add(FuMethod::newPublicNormal(this->boolType, FuId::doubleTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value")));
 	add(this->doubleType);
 	add(this->boolType);
-	this->stringClass->add(FuMethod::new_(FuVisibility::public_, this->boolType, FuId::stringContains, "Contains", FuVar::new_(this->stringPtrType, "value")));
-	this->stringClass->add(FuMethod::new_(FuVisibility::public_, this->boolType, FuId::stringEndsWith, "EndsWith", FuVar::new_(this->stringPtrType, "value")));
-	this->stringClass->add(FuMethod::new_(FuVisibility::public_, minus1Type, FuId::stringIndexOf, "IndexOf", FuVar::new_(this->stringPtrType, "value")));
-	this->stringClass->add(FuMethod::new_(FuVisibility::public_, minus1Type, FuId::stringLastIndexOf, "LastIndexOf", FuVar::new_(this->stringPtrType, "value")));
+	this->stringClass->add(FuMethod::newPublicNormal(this->boolType, FuId::stringContains, "Contains", false, FuVar::new_(this->stringPtrType, "value")));
+	this->stringClass->add(FuMethod::newPublicNormal(this->boolType, FuId::stringEndsWith, "EndsWith", false, FuVar::new_(this->stringPtrType, "value")));
+	this->stringClass->add(FuMethod::newPublicNormal(minus1Type, FuId::stringIndexOf, "IndexOf", false, FuVar::new_(this->stringPtrType, "value")));
+	this->stringClass->add(FuMethod::newPublicNormal(minus1Type, FuId::stringLastIndexOf, "LastIndexOf", false, FuVar::new_(this->stringPtrType, "value")));
 	this->stringClass->add(FuProperty::new_(this->uIntType, FuId::stringLength, "Length"));
-	this->stringClass->add(FuMethod::new_(FuVisibility::public_, this->stringStorageType, FuId::stringReplace, "Replace", FuVar::new_(this->stringPtrType, "oldValue"), FuVar::new_(this->stringPtrType, "newValue")));
-	this->stringClass->add(FuMethod::new_(FuVisibility::public_, this->boolType, FuId::stringStartsWith, "StartsWith", FuVar::new_(this->stringPtrType, "value")));
-	this->stringClass->add(FuMethod::new_(FuVisibility::public_, this->stringStorageType, FuId::stringSubstring, "Substring", FuVar::new_(this->intType, "offset"), FuVar::new_(this->intType, "length", newLiteralLong(-1))));
+	this->stringClass->add(FuMethod::newPublicNormal(this->stringStorageType, FuId::stringReplace, "Replace", false, FuVar::new_(this->stringPtrType, "oldValue"), FuVar::new_(this->stringPtrType, "newValue")));
+	this->stringClass->add(FuMethod::newPublicNormal(this->boolType, FuId::stringStartsWith, "StartsWith", false, FuVar::new_(this->stringPtrType, "value")));
+	this->stringClass->add(FuMethod::newPublicNormal(this->stringStorageType, FuId::stringSubstring, "Substring", false, FuVar::new_(this->intType, "offset"), FuVar::new_(this->intType, "length", newLiteralLong(-1))));
 	this->stringPtrType->class_ = this->stringClass.get();
 	add(this->stringPtrType);
 	this->stringNullablePtrType->class_ = this->stringClass.get();
 	this->stringStorageType->class_ = this->stringClass.get();
-	std::shared_ptr<FuMethod> arrayBinarySearchPart = FuMethod::new_(FuVisibility::numericElementType, this->intType, FuId::arrayBinarySearchPart, "BinarySearch", FuVar::new_(this->typeParam0, "value"), FuVar::new_(this->intType, "startIndex"), FuVar::new_(this->intType, "count"));
+	std::shared_ptr<FuMethod> arrayBinarySearchPart = FuMethod::new_(FuVisibility::numericElementType, FuCallType::normal, this->intType, FuId::arrayBinarySearchPart, "BinarySearch", false, FuVar::new_(this->typeParam0, "value"), FuVar::new_(this->intType, "startIndex"), FuVar::new_(this->intType, "count"));
 	this->arrayPtrClass->add(arrayBinarySearchPart);
 	std::shared_ptr<FuReadWriteClassType> futemp0 = std::make_shared<FuReadWriteClassType>();
 	futemp0->class_ = this->arrayPtrClass.get();
 	futemp0->typeArg0 = this->typeParam0;
-	this->arrayPtrClass->add(FuMethod::new_(FuVisibility::public_, this->voidType, FuId::arrayCopyTo, "CopyTo", FuVar::new_(this->intType, "sourceIndex"), FuVar::new_(futemp0, "destinationArray"), FuVar::new_(this->intType, "destinationIndex"), FuVar::new_(this->intType, "count")));
-	std::shared_ptr<FuMethod> arrayFillPart = FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::arrayFillPart, "Fill", FuVar::new_(this->typeParam0, "value"), FuVar::new_(this->intType, "startIndex"), FuVar::new_(this->intType, "count"));
+	this->arrayPtrClass->add(FuMethod::newPublicNormal(this->voidType, FuId::arrayCopyTo, "CopyTo", false, FuVar::new_(this->intType, "sourceIndex"), FuVar::new_(futemp0, "destinationArray"), FuVar::new_(this->intType, "destinationIndex"), FuVar::new_(this->intType, "count")));
+	std::shared_ptr<FuMethod> arrayFillPart = FuMethod::newPublicNormal(this->voidType, FuId::arrayFillPart, "Fill", true, FuVar::new_(this->typeParam0, "value"), FuVar::new_(this->intType, "startIndex"), FuVar::new_(this->intType, "count"));
 	this->arrayPtrClass->add(arrayFillPart);
-	std::shared_ptr<FuMethod> arraySortPart = FuMethod::newMutator(FuVisibility::numericElementType, this->voidType, FuId::arraySortPart, "Sort", FuVar::new_(this->intType, "startIndex"), FuVar::new_(this->intType, "count"));
+	std::shared_ptr<FuMethod> arraySortPart = FuMethod::new_(FuVisibility::numericElementType, FuCallType::normal, this->voidType, FuId::arraySortPart, "Sort", true, FuVar::new_(this->intType, "startIndex"), FuVar::new_(this->intType, "count"));
 	this->arrayPtrClass->add(arraySortPart);
 	this->arrayStorageClass->parent = this->arrayPtrClass.get();
-	this->arrayStorageClass->add(FuMethodGroup::new_(FuMethod::new_(FuVisibility::numericElementType, this->intType, FuId::arrayBinarySearchAll, "BinarySearch", FuVar::new_(this->typeParam0, "value")), arrayBinarySearchPart));
-	this->arrayStorageClass->add(FuMethod::new_(FuVisibility::public_, this->boolType, FuId::arrayContains, "Contains", FuVar::new_(this->typeParam0, "value")));
-	this->arrayStorageClass->add(FuMethodGroup::new_(FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::arrayFillAll, "Fill", FuVar::new_(this->typeParam0, "value")), arrayFillPart));
+	this->arrayStorageClass->add(FuMethodGroup::new_(FuMethod::new_(FuVisibility::numericElementType, FuCallType::normal, this->intType, FuId::arrayBinarySearchAll, "BinarySearch", false, FuVar::new_(this->typeParam0, "value")), arrayBinarySearchPart));
+	this->arrayStorageClass->add(FuMethod::newPublicNormal(this->boolType, FuId::arrayContains, "Contains", false, FuVar::new_(this->typeParam0, "value")));
+	this->arrayStorageClass->add(FuMethodGroup::new_(FuMethod::newPublicNormal(this->voidType, FuId::arrayFillAll, "Fill", true, FuVar::new_(this->typeParam0, "value")), arrayFillPart));
 	this->arrayStorageClass->add(FuProperty::new_(this->uIntType, FuId::arrayLength, "Length"));
-	this->arrayStorageClass->add(FuMethodGroup::new_(FuMethod::newMutator(FuVisibility::numericElementType, this->voidType, FuId::arraySortAll, "Sort"), arraySortPart));
+	this->arrayStorageClass->add(FuMethodGroup::new_(FuMethod::new_(FuVisibility::numericElementType, FuCallType::normal, this->voidType, FuId::arraySortAll, "Sort", true), arraySortPart));
 	std::shared_ptr<FuType> typeParam0NotFinal = std::make_shared<FuType>();
 	typeParam0NotFinal->id = FuId::typeParam0NotFinal;
 	typeParam0NotFinal->name = "T";
@@ -2483,42 +2480,42 @@ FuSystem::FuSystem()
 	typeParam0Predicate->id = FuId::typeParam0Predicate;
 	typeParam0Predicate->name = "Predicate<T>";
 	FuClass * listClass = addCollection(FuId::listClass, "List", 1, FuId::listClear, FuId::listCount);
-	listClass->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::listAdd, "Add", FuVar::new_(typeParam0NotFinal, "value")));
+	listClass->add(FuMethod::newPublicNormal(this->voidType, FuId::listAdd, "Add", true, FuVar::new_(typeParam0NotFinal, "value")));
 	std::shared_ptr<FuClassType> futemp1 = std::make_shared<FuClassType>();
 	futemp1->class_ = listClass;
 	futemp1->typeArg0 = this->typeParam0;
-	listClass->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::listAddRange, "AddRange", FuVar::new_(futemp1, "source")));
-	listClass->add(FuMethod::new_(FuVisibility::public_, this->boolType, FuId::listAll, "All", FuVar::new_(typeParam0Predicate, "predicate")));
-	listClass->add(FuMethod::new_(FuVisibility::public_, this->boolType, FuId::listAny, "Any", FuVar::new_(typeParam0Predicate, "predicate")));
-	listClass->add(FuMethod::new_(FuVisibility::public_, this->boolType, FuId::listContains, "Contains", FuVar::new_(this->typeParam0, "value")));
+	listClass->add(FuMethod::newPublicNormal(this->voidType, FuId::listAddRange, "AddRange", true, FuVar::new_(futemp1, "source")));
+	listClass->add(FuMethod::newPublicNormal(this->boolType, FuId::listAll, "All", false, FuVar::new_(typeParam0Predicate, "predicate")));
+	listClass->add(FuMethod::newPublicNormal(this->boolType, FuId::listAny, "Any", false, FuVar::new_(typeParam0Predicate, "predicate")));
+	listClass->add(FuMethod::newPublicNormal(this->boolType, FuId::listContains, "Contains", false, FuVar::new_(this->typeParam0, "value")));
 	std::shared_ptr<FuReadWriteClassType> futemp2 = std::make_shared<FuReadWriteClassType>();
 	futemp2->class_ = this->arrayPtrClass.get();
 	futemp2->typeArg0 = this->typeParam0;
-	listClass->add(FuMethod::new_(FuVisibility::public_, this->voidType, FuId::listCopyTo, "CopyTo", FuVar::new_(this->intType, "sourceIndex"), FuVar::new_(futemp2, "destinationArray"), FuVar::new_(this->intType, "destinationIndex"), FuVar::new_(this->intType, "count")));
-	listClass->add(FuMethod::new_(FuVisibility::public_, this->intType, FuId::listIndexOf, "IndexOf", FuVar::new_(this->typeParam0, "value")));
-	listClass->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::listInsert, "Insert", FuVar::new_(this->uIntType, "index"), FuVar::new_(typeParam0NotFinal, "value")));
-	listClass->add(FuMethod::new_(FuVisibility::public_, this->typeParam0, FuId::listLast, "Last"));
-	listClass->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::listRemoveAt, "RemoveAt", FuVar::new_(this->intType, "index")));
-	listClass->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::listRemoveRange, "RemoveRange", FuVar::new_(this->intType, "index"), FuVar::new_(this->intType, "count")));
-	listClass->add(FuMethodGroup::new_(FuMethod::newMutator(FuVisibility::numericElementType, this->voidType, FuId::listSortAll, "Sort"), FuMethod::newMutator(FuVisibility::numericElementType, this->voidType, FuId::listSortPart, "Sort", FuVar::new_(this->intType, "startIndex"), FuVar::new_(this->intType, "count"))));
+	listClass->add(FuMethod::newPublicNormal(this->voidType, FuId::listCopyTo, "CopyTo", false, FuVar::new_(this->intType, "sourceIndex"), FuVar::new_(futemp2, "destinationArray"), FuVar::new_(this->intType, "destinationIndex"), FuVar::new_(this->intType, "count")));
+	listClass->add(FuMethod::newPublicNormal(this->intType, FuId::listIndexOf, "IndexOf", false, FuVar::new_(this->typeParam0, "value")));
+	listClass->add(FuMethod::newPublicNormal(this->voidType, FuId::listInsert, "Insert", true, FuVar::new_(this->uIntType, "index"), FuVar::new_(typeParam0NotFinal, "value")));
+	listClass->add(FuMethod::newPublicNormal(this->typeParam0, FuId::listLast, "Last", false));
+	listClass->add(FuMethod::newPublicNormal(this->voidType, FuId::listRemoveAt, "RemoveAt", true, FuVar::new_(this->intType, "index")));
+	listClass->add(FuMethod::newPublicNormal(this->voidType, FuId::listRemoveRange, "RemoveRange", true, FuVar::new_(this->intType, "index"), FuVar::new_(this->intType, "count")));
+	listClass->add(FuMethodGroup::new_(FuMethod::new_(FuVisibility::numericElementType, FuCallType::normal, this->voidType, FuId::listSortAll, "Sort", true), FuMethod::new_(FuVisibility::numericElementType, FuCallType::normal, this->voidType, FuId::listSortPart, "Sort", true, FuVar::new_(this->intType, "startIndex"), FuVar::new_(this->intType, "count"))));
 	FuClass * queueClass = addCollection(FuId::queueClass, "Queue", 1, FuId::queueClear, FuId::queueCount);
-	queueClass->add(FuMethod::newMutator(FuVisibility::public_, this->typeParam0, FuId::queueDequeue, "Dequeue"));
-	queueClass->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::queueEnqueue, "Enqueue", FuVar::new_(this->typeParam0, "value")));
-	queueClass->add(FuMethod::new_(FuVisibility::public_, this->typeParam0, FuId::queuePeek, "Peek"));
+	queueClass->add(FuMethod::newPublicNormal(this->typeParam0, FuId::queueDequeue, "Dequeue", true));
+	queueClass->add(FuMethod::newPublicNormal(this->voidType, FuId::queueEnqueue, "Enqueue", true, FuVar::new_(this->typeParam0, "value")));
+	queueClass->add(FuMethod::newPublicNormal(this->typeParam0, FuId::queuePeek, "Peek", false));
 	FuClass * stackClass = addCollection(FuId::stackClass, "Stack", 1, FuId::stackClear, FuId::stackCount);
-	stackClass->add(FuMethod::new_(FuVisibility::public_, this->typeParam0, FuId::stackPeek, "Peek"));
-	stackClass->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::stackPush, "Push", FuVar::new_(this->typeParam0, "value")));
-	stackClass->add(FuMethod::newMutator(FuVisibility::public_, this->typeParam0, FuId::stackPop, "Pop"));
+	stackClass->add(FuMethod::newPublicNormal(this->typeParam0, FuId::stackPeek, "Peek", false));
+	stackClass->add(FuMethod::newPublicNormal(this->voidType, FuId::stackPush, "Push", true, FuVar::new_(this->typeParam0, "value")));
+	stackClass->add(FuMethod::newPublicNormal(this->typeParam0, FuId::stackPop, "Pop", true));
 	addSet(FuId::hashSetClass, "HashSet", FuId::hashSetAdd, FuId::hashSetClear, FuId::hashSetContains, FuId::hashSetCount, FuId::hashSetRemove);
 	addSet(FuId::sortedSetClass, "SortedSet", FuId::sortedSetAdd, FuId::sortedSetClear, FuId::sortedSetContains, FuId::sortedSetCount, FuId::sortedSetRemove);
 	addDictionary(FuId::dictionaryClass, "Dictionary", FuId::dictionaryClear, FuId::dictionaryContainsKey, FuId::dictionaryCount, FuId::dictionaryRemove);
 	addDictionary(FuId::sortedDictionaryClass, "SortedDictionary", FuId::sortedDictionaryClear, FuId::sortedDictionaryContainsKey, FuId::sortedDictionaryCount, FuId::sortedDictionaryRemove);
 	addDictionary(FuId::orderedDictionaryClass, "OrderedDictionary", FuId::orderedDictionaryClear, FuId::orderedDictionaryContainsKey, FuId::orderedDictionaryCount, FuId::orderedDictionaryRemove);
 	std::shared_ptr<FuClass> textWriterClass = FuClass::new_(FuCallType::normal, FuId::textWriterClass, "TextWriter");
-	textWriterClass->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::textWriterWrite, "Write", FuVar::new_(this->printableType, "value")));
-	textWriterClass->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::textWriterWriteChar, "WriteChar", FuVar::new_(this->intType, "c")));
-	textWriterClass->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::textWriterWriteCodePoint, "WriteCodePoint", FuVar::new_(this->intType, "c")));
-	textWriterClass->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::textWriterWriteLine, "WriteLine", FuVar::new_(this->printableType, "value", newLiteralString(""))));
+	textWriterClass->add(FuMethod::newPublicNormal(this->voidType, FuId::textWriterWrite, "Write", true, FuVar::new_(this->printableType, "value")));
+	textWriterClass->add(FuMethod::newPublicNormal(this->voidType, FuId::textWriterWriteChar, "WriteChar", true, FuVar::new_(this->intType, "c")));
+	textWriterClass->add(FuMethod::newPublicNormal(this->voidType, FuId::textWriterWriteCodePoint, "WriteCodePoint", true, FuVar::new_(this->intType, "c")));
+	textWriterClass->add(FuMethod::newPublicNormal(this->voidType, FuId::textWriterWriteLine, "WriteLine", true, FuVar::new_(this->printableType, "value", newLiteralString(""))));
 	add(textWriterClass);
 	std::shared_ptr<FuClass> consoleClass = FuClass::new_(FuCallType::static_, FuId::none, "Console");
 	consoleClass->add(FuMethod::newStatic(this->voidType, FuId::consoleWrite, "Write", FuVar::new_(this->printableType, "value")));
@@ -2528,8 +2525,8 @@ FuSystem::FuSystem()
 	consoleClass->add(FuStaticProperty::new_(futemp3, FuId::consoleError, "Error"));
 	add(consoleClass);
 	std::shared_ptr<FuClass> stringWriterClass = FuClass::new_(FuCallType::sealed, FuId::stringWriterClass, "StringWriter");
-	stringWriterClass->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, FuId::stringWriterClear, "Clear"));
-	stringWriterClass->add(FuMethod::new_(FuVisibility::public_, this->stringPtrType, FuId::stringWriterToString, "ToString"));
+	stringWriterClass->add(FuMethod::newPublicNormal(this->voidType, FuId::stringWriterClear, "Clear", true));
+	stringWriterClass->add(FuMethod::newPublicNormal(this->stringPtrType, FuId::stringWriterToString, "ToString", false));
 	add(stringWriterClass);
 	stringWriterClass->parent = textWriterClass.get();
 	std::shared_ptr<FuClass> convertClass = FuClass::new_(FuCallType::static_, FuId::none, "Convert");
@@ -2539,15 +2536,15 @@ FuSystem::FuSystem()
 	convertClass->add(FuMethod::newStatic(this->stringStorageType, FuId::convertToBase64String, "ToBase64String", FuVar::new_(futemp4, "bytes"), FuVar::new_(this->intType, "offset"), FuVar::new_(this->intType, "length")));
 	add(convertClass);
 	std::shared_ptr<FuClass> utf8EncodingClass = FuClass::new_(FuCallType::sealed, FuId::none, "UTF8Encoding");
-	utf8EncodingClass->add(FuMethod::new_(FuVisibility::public_, this->intType, FuId::uTF8GetByteCount, "GetByteCount", FuVar::new_(this->stringPtrType, "str")));
+	utf8EncodingClass->add(FuMethod::newPublicNormal(this->intType, FuId::uTF8GetByteCount, "GetByteCount", false, FuVar::new_(this->stringPtrType, "str")));
 	std::shared_ptr<FuReadWriteClassType> futemp5 = std::make_shared<FuReadWriteClassType>();
 	futemp5->class_ = this->arrayPtrClass.get();
 	futemp5->typeArg0 = this->byteType;
-	utf8EncodingClass->add(FuMethod::new_(FuVisibility::public_, this->voidType, FuId::uTF8GetBytes, "GetBytes", FuVar::new_(this->stringPtrType, "str"), FuVar::new_(futemp5, "bytes"), FuVar::new_(this->intType, "byteIndex")));
+	utf8EncodingClass->add(FuMethod::newPublicNormal(this->voidType, FuId::uTF8GetBytes, "GetBytes", false, FuVar::new_(this->stringPtrType, "str"), FuVar::new_(futemp5, "bytes"), FuVar::new_(this->intType, "byteIndex")));
 	std::shared_ptr<FuClassType> futemp6 = std::make_shared<FuClassType>();
 	futemp6->class_ = this->arrayPtrClass.get();
 	futemp6->typeArg0 = this->byteType;
-	utf8EncodingClass->add(FuMethod::new_(FuVisibility::public_, this->stringStorageType, FuId::uTF8GetString, "GetString", FuVar::new_(futemp6, "bytes"), FuVar::new_(this->intType, "offset"), FuVar::new_(this->intType, "length")));
+	utf8EncodingClass->add(FuMethod::newPublicNormal(this->stringStorageType, FuId::uTF8GetString, "GetString", false, FuVar::new_(futemp6, "bytes"), FuVar::new_(this->intType, "offset"), FuVar::new_(this->intType, "length")));
 	std::shared_ptr<FuClass> encodingClass = FuClass::new_(FuCallType::static_, FuId::none, "Encoding");
 	encodingClass->add(FuStaticProperty::new_(utf8EncodingClass, FuId::none, "UTF8"));
 	add(encodingClass);
@@ -2566,7 +2563,7 @@ FuSystem::FuSystem()
 	add(this->regexOptionsEnum);
 	std::shared_ptr<FuClass> regexClass = FuClass::new_(FuCallType::sealed, FuId::regexClass, "Regex");
 	regexClass->add(FuMethod::newStatic(this->stringStorageType, FuId::regexEscape, "Escape", FuVar::new_(this->stringPtrType, "str")));
-	regexClass->add(FuMethodGroup::new_(FuMethod::newStatic(this->boolType, FuId::regexIsMatchStr, "IsMatch", FuVar::new_(this->stringPtrType, "input"), FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), FuMethod::new_(FuVisibility::public_, this->boolType, FuId::regexIsMatchRegex, "IsMatch", FuVar::new_(this->stringPtrType, "input"))));
+	regexClass->add(FuMethodGroup::new_(FuMethod::newStatic(this->boolType, FuId::regexIsMatchStr, "IsMatch", FuVar::new_(this->stringPtrType, "input"), FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), FuMethod::newPublicNormal(this->boolType, FuId::regexIsMatchRegex, "IsMatch", false, FuVar::new_(this->stringPtrType, "input"))));
 	std::shared_ptr<FuDynamicPtrType> futemp7 = std::make_shared<FuDynamicPtrType>();
 	futemp7->class_ = regexClass.get();
 	regexClass->add(FuMethod::newStatic(futemp7, FuId::regexCompile, "Compile", FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)));
@@ -2574,10 +2571,10 @@ FuSystem::FuSystem()
 	std::shared_ptr<FuClass> matchClass = FuClass::new_(FuCallType::sealed, FuId::matchClass, "Match");
 	std::shared_ptr<FuClassType> futemp8 = std::make_shared<FuClassType>();
 	futemp8->class_ = regexClass.get();
-	matchClass->add(FuMethodGroup::new_(FuMethod::newMutator(FuVisibility::public_, this->boolType, FuId::matchFindStr, "Find", FuVar::new_(this->stringPtrType, "input"), FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), FuMethod::newMutator(FuVisibility::public_, this->boolType, FuId::matchFindRegex, "Find", FuVar::new_(this->stringPtrType, "input"), FuVar::new_(futemp8, "pattern"))));
+	matchClass->add(FuMethodGroup::new_(FuMethod::newPublicNormal(this->boolType, FuId::matchFindStr, "Find", true, FuVar::new_(this->stringPtrType, "input"), FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), FuMethod::newPublicNormal(this->boolType, FuId::matchFindRegex, "Find", true, FuVar::new_(this->stringPtrType, "input"), FuVar::new_(futemp8, "pattern"))));
 	matchClass->add(FuProperty::new_(this->intType, FuId::matchStart, "Start"));
 	matchClass->add(FuProperty::new_(this->intType, FuId::matchEnd, "End"));
-	matchClass->add(FuMethod::new_(FuVisibility::public_, this->stringStorageType, FuId::matchGetCapture, "GetCapture", FuVar::new_(this->uIntType, "group")));
+	matchClass->add(FuMethod::newPublicNormal(this->stringStorageType, FuId::matchGetCapture, "GetCapture", false, FuVar::new_(this->uIntType, "group")));
 	matchClass->add(FuProperty::new_(this->uIntType, FuId::matchLength, "Length"));
 	matchClass->add(FuProperty::new_(this->stringStorageType, FuId::matchValue, "Value"));
 	add(matchClass);
@@ -2669,14 +2666,14 @@ std::shared_ptr<FuEnum> FuSystem::newEnum(bool flags) const
 	std::shared_ptr<FuEnum> enu = flags ? std::make_shared<FuEnumFlags>() : std::make_shared<FuEnum>();
 	enu->add(FuMethod::newStatic(enu, FuId::enumFromInt, "FromInt", FuVar::new_(this->intType, "value")));
 	if (flags)
-		enu->add(FuMethod::new_(FuVisibility::public_, this->boolType, FuId::enumHasFlag, "HasFlag", FuVar::new_(enu, "flag")));
+		enu->add(FuMethod::newPublicNormal(this->boolType, FuId::enumHasFlag, "HasFlag", false, FuVar::new_(enu, "flag")));
 	return enu;
 }
 
 FuClass * FuSystem::addCollection(FuId id, std::string_view name, int typeParameterCount, FuId clearId, FuId countId)
 {
 	std::shared_ptr<FuClass> result = FuClass::new_(FuCallType::normal, id, name, typeParameterCount);
-	result->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, clearId, "Clear"));
+	result->add(FuMethod::newPublicNormal(this->voidType, clearId, "Clear", true));
 	result->add(FuProperty::new_(this->uIntType, countId, "Count"));
 	add(result);
 	return result.get();
@@ -2685,17 +2682,17 @@ FuClass * FuSystem::addCollection(FuId id, std::string_view name, int typeParame
 void FuSystem::addSet(FuId id, std::string_view name, FuId addId, FuId clearId, FuId containsId, FuId countId, FuId removeId)
 {
 	FuClass * set = addCollection(id, name, 1, clearId, countId);
-	set->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, addId, "Add", FuVar::new_(this->typeParam0, "value")));
-	set->add(FuMethod::new_(FuVisibility::public_, this->boolType, containsId, "Contains", FuVar::new_(this->typeParam0, "value")));
-	set->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, removeId, "Remove", FuVar::new_(this->typeParam0, "value")));
+	set->add(FuMethod::newPublicNormal(this->voidType, addId, "Add", true, FuVar::new_(this->typeParam0, "value")));
+	set->add(FuMethod::newPublicNormal(this->boolType, containsId, "Contains", false, FuVar::new_(this->typeParam0, "value")));
+	set->add(FuMethod::newPublicNormal(this->voidType, removeId, "Remove", true, FuVar::new_(this->typeParam0, "value")));
 }
 
 void FuSystem::addDictionary(FuId id, std::string_view name, FuId clearId, FuId containsKeyId, FuId countId, FuId removeId)
 {
 	FuClass * dict = addCollection(id, name, 2, clearId, countId);
-	dict->add(FuMethod::newMutator(FuVisibility::finalValueType, this->voidType, FuId::dictionaryAdd, "Add", FuVar::new_(this->typeParam0, "key")));
-	dict->add(FuMethod::new_(FuVisibility::public_, this->boolType, containsKeyId, "ContainsKey", FuVar::new_(this->typeParam0, "key")));
-	dict->add(FuMethod::newMutator(FuVisibility::public_, this->voidType, removeId, "Remove", FuVar::new_(this->typeParam0, "key")));
+	dict->add(FuMethod::new_(FuVisibility::finalValueType, FuCallType::normal, this->voidType, FuId::dictionaryAdd, "Add", true, FuVar::new_(this->typeParam0, "key")));
+	dict->add(FuMethod::newPublicNormal(this->boolType, containsKeyId, "ContainsKey", false, FuVar::new_(this->typeParam0, "key")));
+	dict->add(FuMethod::newPublicNormal(this->voidType, removeId, "Remove", true, FuVar::new_(this->typeParam0, "key")));
 }
 
 void FuSystem::addEnumValue(std::shared_ptr<FuEnum> enu, std::shared_ptr<FuConst> value)
