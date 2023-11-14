@@ -6337,60 +6337,62 @@ export class FuSema
 	{
 		this.#openScope(statement);
 		statement.value = this.#visitExpr(statement.value);
-		let i;
-		let klass;
-		if (((i = statement.value.type) instanceof FuIntegerType && i.id != FuId.LONG_TYPE) || statement.value.type instanceof FuEnum) {
-		}
-		else if ((klass = statement.value.type) instanceof FuClassType && !(klass instanceof FuStorageType)) {
-		}
-		else {
-			this.reportError(statement.value, `'switch' on type '${statement.value.type}' - expected 'int', 'enum', 'string' or object reference`);
-			return;
+		if (statement.value != this.#poison) {
+			let i;
+			let klass;
+			if (((i = statement.value.type) instanceof FuIntegerType && i.id != FuId.LONG_TYPE) || statement.value.type instanceof FuEnum) {
+			}
+			else if ((klass = statement.value.type) instanceof FuClassType && !(klass instanceof FuStorageType)) {
+			}
+			else
+				this.reportError(statement.value, `'switch' on type '${statement.value.type}' - expected 'int', 'enum', 'string' or object reference`);
 		}
 		statement.setCompletesNormally(false);
 		for (const kase of statement.cases) {
-			for (let i = 0; i < kase.values.length; i++) {
-				let switchPtr;
-				if ((switchPtr = statement.value.type) instanceof FuClassType && switchPtr.class.id != FuId.STRING_CLASS) {
-					let value = kase.values[i];
-					let when1;
-					if ((when1 = value) instanceof FuBinaryExpr && when1.op == FuToken.WHEN)
-						value = when1.left;
-					if (value instanceof FuLiteralNull) {
-					}
-					else {
-						let def;
-						if (!((def = value) instanceof FuVar) || def.value != null)
-							this.reportError(kase.values[i], "Expected 'case Type name'");
+			if (statement.value != this.#poison) {
+				for (let i = 0; i < kase.values.length; i++) {
+					let switchPtr;
+					if ((switchPtr = statement.value.type) instanceof FuClassType && switchPtr.class.id != FuId.STRING_CLASS) {
+						let value = kase.values[i];
+						let when1;
+						if ((when1 = value) instanceof FuBinaryExpr && when1.op == FuToken.WHEN)
+							value = when1.left;
+						if (value instanceof FuLiteralNull) {
+						}
 						else {
-							let casePtr;
-							if (!((casePtr = this.#resolveType(def)) instanceof FuClassType) || casePtr instanceof FuStorageType)
-								this.reportError(def, "'case' with non-reference type");
-							else if (casePtr instanceof FuReadWriteClassType && !(switchPtr instanceof FuDynamicPtrType) && (casePtr instanceof FuDynamicPtrType || !(switchPtr instanceof FuReadWriteClassType)))
-								this.reportError(def, `'${switchPtr}' cannot be casted to '${casePtr}'`);
-							else if (casePtr.class.isSameOrBaseOf(switchPtr.class))
-								this.reportError(def, `'${statement.value}' is '${switchPtr}', 'case ${casePtr}' would always match`);
-							else if (!switchPtr.class.isSameOrBaseOf(casePtr.class))
-								this.reportError(def, `'${switchPtr}' is not base class of '${casePtr.class.name}', 'case ${casePtr}' would never match`);
+							let def;
+							if (!((def = value) instanceof FuVar) || def.value != null)
+								this.reportError(kase.values[i], "Expected 'case Type name'");
 							else {
-								statement.add(def);
-								let when2;
-								if ((when2 = kase.values[i]) instanceof FuBinaryExpr && when2.op == FuToken.WHEN)
-									when2.right = this.#resolveBool(when2.right);
+								let casePtr;
+								if (!((casePtr = this.#resolveType(def)) instanceof FuClassType) || casePtr instanceof FuStorageType)
+									this.reportError(def, "'case' with non-reference type");
+								else if (casePtr instanceof FuReadWriteClassType && !(switchPtr instanceof FuDynamicPtrType) && (casePtr instanceof FuDynamicPtrType || !(switchPtr instanceof FuReadWriteClassType)))
+									this.reportError(def, `'${switchPtr}' cannot be casted to '${casePtr}'`);
+								else if (casePtr.class.isSameOrBaseOf(switchPtr.class))
+									this.reportError(def, `'${statement.value}' is '${switchPtr}', 'case ${casePtr}' would always match`);
+								else if (!switchPtr.class.isSameOrBaseOf(casePtr.class))
+									this.reportError(def, `'${switchPtr}' is not base class of '${casePtr.class.name}', 'case ${casePtr}' would never match`);
+								else {
+									statement.add(def);
+									let when2;
+									if ((when2 = kase.values[i]) instanceof FuBinaryExpr && when2.op == FuToken.WHEN)
+										when2.right = this.#resolveBool(when2.right);
+								}
 							}
 						}
 					}
-				}
-				else {
-					let when1;
-					if ((when1 = kase.values[i]) instanceof FuBinaryExpr && when1.op == FuToken.WHEN) {
-						when1.left = this.#foldConst(when1.left);
-						this.#coerce(when1.left, statement.value.type);
-						when1.right = this.#resolveBool(when1.right);
-					}
 					else {
-						kase.values[i] = this.#foldConst(kase.values[i]);
-						this.#coerce(kase.values[i], statement.value.type);
+						let when1;
+						if ((when1 = kase.values[i]) instanceof FuBinaryExpr && when1.op == FuToken.WHEN) {
+							when1.left = this.#foldConst(when1.left);
+							this.#coerce(when1.left, statement.value.type);
+							when1.right = this.#resolveBool(when1.right);
+						}
+						else {
+							kase.values[i] = this.#foldConst(kase.values[i]);
+							this.#coerce(kase.values[i], statement.value.type);
+						}
 					}
 				}
 			}

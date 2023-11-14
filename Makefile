@@ -240,7 +240,7 @@ test/node_modules: test/package.json
 	cd $(<D) && npm i --no-package-lock
 
 test/bin/%/error.txt: test/error/%.fu fut
-	$(DO)mkdir -p $(@D) && ! $(FUT) -o $(@:%.txt=%.cs) $< 2>$@ && perl -ne 'print "$$ARGV($$.): $$1\n" while m!//(ERROR: .+?)(?=$$| //)!g' $< | diff -u --strip-trailing-cr - $@ && echo PASSED >$@
+	$(DO)mkdir -p $(@D) && $(FUT) -o $(@:%.txt=%.cs) $< 2>$@ || test $$? -eq 1 && perl -ne 'print "$$ARGV($$.): $$1\n" while m!//(ERROR: .+?)(?=$$| //)!g' $< | diff -u --strip-trailing-cr - $@ && echo PASSED >$@
 
 test-transpile: $(patsubst test/%.fu, test/$(FUT_HOST)/%/all, $(TESTS)) test/$(FUT_HOST)/fut/all
 

@@ -6050,49 +6050,53 @@ namespace Fusion
 		{
 			OpenScope(statement);
 			statement.Value = VisitExpr(statement.Value);
-			switch (statement.Value.Type) {
-			case FuIntegerType i when i.Id != FuId.LongType:
-			case FuEnum _:
-				break;
-			case FuClassType klass when !(klass is FuStorageType):
-				break;
-			default:
-				ReportError(statement.Value, $"'switch' on type '{statement.Value.Type}' - expected 'int', 'enum', 'string' or object reference");
-				return;
+			if (statement.Value != this.Poison) {
+				switch (statement.Value.Type) {
+				case FuIntegerType i when i.Id != FuId.LongType:
+				case FuEnum _:
+					break;
+				case FuClassType klass when !(klass is FuStorageType):
+					break;
+				default:
+					ReportError(statement.Value, $"'switch' on type '{statement.Value.Type}' - expected 'int', 'enum', 'string' or object reference");
+					break;
+				}
 			}
 			statement.SetCompletesNormally(false);
 			foreach (FuCase kase in statement.Cases) {
-				for (int i = 0; i < kase.Values.Count; i++) {
-					if (statement.Value.Type is FuClassType switchPtr && switchPtr.Class.Id != FuId.StringClass) {
-						FuExpr value = kase.Values[i];
-						if (value is FuBinaryExpr when1 && when1.Op == FuToken.When)
-							value = when1.Left;
-						if (value is FuLiteralNull) {
+				if (statement.Value != this.Poison) {
+					for (int i = 0; i < kase.Values.Count; i++) {
+						if (statement.Value.Type is FuClassType switchPtr && switchPtr.Class.Id != FuId.StringClass) {
+							FuExpr value = kase.Values[i];
+							if (value is FuBinaryExpr when1 && when1.Op == FuToken.When)
+								value = when1.Left;
+							if (value is FuLiteralNull) {
+							}
+							else if (!(value is FuVar def) || def.Value != null)
+								ReportError(kase.Values[i], "Expected 'case Type name'");
+							else if (!(ResolveType(def) is FuClassType casePtr) || casePtr is FuStorageType)
+								ReportError(def, "'case' with non-reference type");
+							else if (casePtr is FuReadWriteClassType && !(switchPtr is FuDynamicPtrType) && (casePtr is FuDynamicPtrType || !(switchPtr is FuReadWriteClassType)))
+								ReportError(def, $"'{switchPtr}' cannot be casted to '{casePtr}'");
+							else if (casePtr.Class.IsSameOrBaseOf(switchPtr.Class))
+								ReportError(def, $"'{statement.Value}' is '{switchPtr}', 'case {casePtr}' would always match");
+							else if (!switchPtr.Class.IsSameOrBaseOf(casePtr.Class))
+								ReportError(def, $"'{switchPtr}' is not base class of '{casePtr.Class.Name}', 'case {casePtr}' would never match");
+							else {
+								statement.Add(def);
+								if (kase.Values[i] is FuBinaryExpr when2 && when2.Op == FuToken.When)
+									when2.Right = ResolveBool(when2.Right);
+							}
 						}
-						else if (!(value is FuVar def) || def.Value != null)
-							ReportError(kase.Values[i], "Expected 'case Type name'");
-						else if (!(ResolveType(def) is FuClassType casePtr) || casePtr is FuStorageType)
-							ReportError(def, "'case' with non-reference type");
-						else if (casePtr is FuReadWriteClassType && !(switchPtr is FuDynamicPtrType) && (casePtr is FuDynamicPtrType || !(switchPtr is FuReadWriteClassType)))
-							ReportError(def, $"'{switchPtr}' cannot be casted to '{casePtr}'");
-						else if (casePtr.Class.IsSameOrBaseOf(switchPtr.Class))
-							ReportError(def, $"'{statement.Value}' is '{switchPtr}', 'case {casePtr}' would always match");
-						else if (!switchPtr.Class.IsSameOrBaseOf(casePtr.Class))
-							ReportError(def, $"'{switchPtr}' is not base class of '{casePtr.Class.Name}', 'case {casePtr}' would never match");
+						else if (kase.Values[i] is FuBinaryExpr when1 && when1.Op == FuToken.When) {
+							when1.Left = FoldConst(when1.Left);
+							Coerce(when1.Left, statement.Value.Type);
+							when1.Right = ResolveBool(when1.Right);
+						}
 						else {
-							statement.Add(def);
-							if (kase.Values[i] is FuBinaryExpr when2 && when2.Op == FuToken.When)
-								when2.Right = ResolveBool(when2.Right);
+							kase.Values[i] = FoldConst(kase.Values[i]);
+							Coerce(kase.Values[i], statement.Value.Type);
 						}
-					}
-					else if (kase.Values[i] is FuBinaryExpr when1 && when1.Op == FuToken.When) {
-						when1.Left = FoldConst(when1.Left);
-						Coerce(when1.Left, statement.Value.Type);
-						when1.Right = ResolveBool(when1.Right);
-					}
-					else {
-						kase.Values[i] = FoldConst(kase.Values[i]);
-						Coerce(kase.Values[i], statement.Value.Type);
 					}
 				}
 				if (ResolveStatements(kase.Body))

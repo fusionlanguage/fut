@@ -5933,60 +5933,62 @@ void FuSema::visitSwitch(FuSwitch * statement)
 {
 	openScope(statement);
 	statement->value = visitExpr(statement->value);
-	const FuIntegerType * i;
-	const FuClassType * klass;
-	if (((i = dynamic_cast<const FuIntegerType *>(statement->value->type.get())) && i->id != FuId::longType) || dynamic_cast<const FuEnum *>(statement->value->type.get())) {
-	}
-	else if ((klass = dynamic_cast<const FuClassType *>(statement->value->type.get())) && !dynamic_cast<const FuStorageType *>(klass)) {
-	}
-	else {
-		reportError(statement->value.get(), std::format("'switch' on type '{}' - expected 'int', 'enum', 'string' or object reference", statement->value->type->toString()));
-		return;
+	if (statement->value != this->poison) {
+		const FuIntegerType * i;
+		const FuClassType * klass;
+		if (((i = dynamic_cast<const FuIntegerType *>(statement->value->type.get())) && i->id != FuId::longType) || dynamic_cast<const FuEnum *>(statement->value->type.get())) {
+		}
+		else if ((klass = dynamic_cast<const FuClassType *>(statement->value->type.get())) && !dynamic_cast<const FuStorageType *>(klass)) {
+		}
+		else
+			reportError(statement->value.get(), std::format("'switch' on type '{}' - expected 'int', 'enum', 'string' or object reference", statement->value->type->toString()));
 	}
 	statement->setCompletesNormally(false);
 	for (FuCase &kase : statement->cases) {
-		for (int i = 0; i < std::ssize(kase.values); i++) {
-			const FuClassType * switchPtr;
-			if ((switchPtr = dynamic_cast<const FuClassType *>(statement->value->type.get())) && switchPtr->class_->id != FuId::stringClass) {
-				std::shared_ptr<FuExpr> value = kase.values[i];
-				const FuBinaryExpr * when1;
-				if ((when1 = dynamic_cast<const FuBinaryExpr *>(value.get())) && when1->op == FuToken::when)
-					value = when1->left;
-				if (dynamic_cast<const FuLiteralNull *>(value.get())) {
-				}
-				else {
-					std::shared_ptr<FuVar> def;
-					if (!(def = std::dynamic_pointer_cast<FuVar>(value)) || def->value != nullptr)
-						reportError(kase.values[i].get(), "Expected 'case Type name'");
+		if (statement->value != this->poison) {
+			for (int i = 0; i < std::ssize(kase.values); i++) {
+				const FuClassType * switchPtr;
+				if ((switchPtr = dynamic_cast<const FuClassType *>(statement->value->type.get())) && switchPtr->class_->id != FuId::stringClass) {
+					std::shared_ptr<FuExpr> value = kase.values[i];
+					const FuBinaryExpr * when1;
+					if ((when1 = dynamic_cast<const FuBinaryExpr *>(value.get())) && when1->op == FuToken::when)
+						value = when1->left;
+					if (dynamic_cast<const FuLiteralNull *>(value.get())) {
+					}
 					else {
-						const FuClassType * casePtr;
-						if (!(casePtr = dynamic_cast<const FuClassType *>(resolveType(def.get()).get())) || dynamic_cast<const FuStorageType *>(casePtr))
-							reportError(def.get(), "'case' with non-reference type");
-						else if (dynamic_cast<const FuReadWriteClassType *>(casePtr) && !dynamic_cast<const FuDynamicPtrType *>(switchPtr) && (dynamic_cast<const FuDynamicPtrType *>(casePtr) || !dynamic_cast<const FuReadWriteClassType *>(switchPtr)))
-							reportError(def.get(), std::format("'{}' cannot be casted to '{}'", switchPtr->toString(), casePtr->toString()));
-						else if (casePtr->class_->isSameOrBaseOf(switchPtr->class_))
-							reportError(def.get(), std::format("'{}' is '{}', 'case {}' would always match", statement->value->toString(), switchPtr->toString(), casePtr->toString()));
-						else if (!switchPtr->class_->isSameOrBaseOf(casePtr->class_))
-							reportError(def.get(), std::format("'{}' is not base class of '{}', 'case {}' would never match", switchPtr->toString(), casePtr->class_->name, casePtr->toString()));
+						std::shared_ptr<FuVar> def;
+						if (!(def = std::dynamic_pointer_cast<FuVar>(value)) || def->value != nullptr)
+							reportError(kase.values[i].get(), "Expected 'case Type name'");
 						else {
-							statement->add(def);
-							FuBinaryExpr * when2;
-							if ((when2 = dynamic_cast<FuBinaryExpr *>(kase.values[i].get())) && when2->op == FuToken::when)
-								when2->right = resolveBool(when2->right);
+							const FuClassType * casePtr;
+							if (!(casePtr = dynamic_cast<const FuClassType *>(resolveType(def.get()).get())) || dynamic_cast<const FuStorageType *>(casePtr))
+								reportError(def.get(), "'case' with non-reference type");
+							else if (dynamic_cast<const FuReadWriteClassType *>(casePtr) && !dynamic_cast<const FuDynamicPtrType *>(switchPtr) && (dynamic_cast<const FuDynamicPtrType *>(casePtr) || !dynamic_cast<const FuReadWriteClassType *>(switchPtr)))
+								reportError(def.get(), std::format("'{}' cannot be casted to '{}'", switchPtr->toString(), casePtr->toString()));
+							else if (casePtr->class_->isSameOrBaseOf(switchPtr->class_))
+								reportError(def.get(), std::format("'{}' is '{}', 'case {}' would always match", statement->value->toString(), switchPtr->toString(), casePtr->toString()));
+							else if (!switchPtr->class_->isSameOrBaseOf(casePtr->class_))
+								reportError(def.get(), std::format("'{}' is not base class of '{}', 'case {}' would never match", switchPtr->toString(), casePtr->class_->name, casePtr->toString()));
+							else {
+								statement->add(def);
+								FuBinaryExpr * when2;
+								if ((when2 = dynamic_cast<FuBinaryExpr *>(kase.values[i].get())) && when2->op == FuToken::when)
+									when2->right = resolveBool(when2->right);
+							}
 						}
 					}
 				}
-			}
-			else {
-				FuBinaryExpr * when1;
-				if ((when1 = dynamic_cast<FuBinaryExpr *>(kase.values[i].get())) && when1->op == FuToken::when) {
-					when1->left = foldConst(when1->left);
-					coerce(when1->left.get(), statement->value->type.get());
-					when1->right = resolveBool(when1->right);
-				}
 				else {
-					kase.values[i] = foldConst(kase.values[i]);
-					coerce(kase.values[i].get(), statement->value->type.get());
+					FuBinaryExpr * when1;
+					if ((when1 = dynamic_cast<FuBinaryExpr *>(kase.values[i].get())) && when1->op == FuToken::when) {
+						when1->left = foldConst(when1->left);
+						coerce(when1->left.get(), statement->value->type.get());
+						when1->right = resolveBool(when1->right);
+					}
+					else {
+						kase.values[i] = foldConst(kase.values[i]);
+						coerce(kase.values[i].get(), statement->value->type.get());
+					}
 				}
 			}
 		}

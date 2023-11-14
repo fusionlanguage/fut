@@ -1,0 +1,12 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		switch (x) { //ERROR: 'x' not found
+		case 1:
+			return false;
+		default:
+			return true;
+		}
+	}
+}
