@@ -156,3 +156,4 @@ to report syntax errors.
 Once the rewrite was complete, I renamed the language to Fusion and its transpiler to `fut`.
 
 `fut` 3.0.0 is self-hosted, transpiling itself to C++, C# and JavaScript. It no longer requires .NET.
+3.0.2 additionally transpiles itself to Java.
