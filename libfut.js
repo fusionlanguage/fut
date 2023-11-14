@@ -2697,7 +2697,7 @@ export class FuMethod extends FuMethodBase
 	parameters = new FuParameters();
 	methodScope = new FuScope();
 
-	static new(visibility, callType, type, id, name, isMutator, param0 = null, param1 = null, param2 = null, param3 = null)
+	static new(klass, visibility, callType, type, id, name, isMutator, param0 = null, param1 = null, param2 = null, param3 = null)
 	{
 		let result = Object.assign(new FuMethod(), { visibility: visibility, callType: callType, type: type, id: id, name: name });
 		result.isMutator = isMutator;
@@ -2713,16 +2713,6 @@ export class FuMethod extends FuMethodBase
 			}
 		}
 		return result;
-	}
-
-	static newPublicNormal(type, id, name, isMutator, param0 = null, param1 = null, param2 = null, param3 = null)
-	{
-		return FuMethod.new(FuVisibility.PUBLIC, FuCallType.NORMAL, type, id, name, isMutator, param0, param1, param2, param3);
-	}
-
-	static newStatic(type, id, name, param0, param1 = null, param2 = null)
-	{
-		return FuMethod.new(FuVisibility.PUBLIC, FuCallType.STATIC, type, id, name, false, param0, param1, param2);
 	}
 
 	isStatic()
@@ -2840,6 +2830,16 @@ export class FuClass extends FuContainerType
 	static new(callType, id, name, typeParameterCount = 0)
 	{
 		return Object.assign(new FuClass(), { callType: callType, id: id, name: name, typeParameterCount: typeParameterCount });
+	}
+
+	addMethod(type, id, name, isMutator, param0 = null, param1 = null, param2 = null, param3 = null)
+	{
+		this.add(FuMethod.new(this, FuVisibility.PUBLIC, FuCallType.NORMAL, type, id, name, isMutator, param0, param1, param2, param3));
+	}
+
+	addStaticMethod(type, id, name, param0, param1 = null, param2 = null)
+	{
+		this.add(FuMethod.new(this, FuVisibility.PUBLIC, FuCallType.STATIC, type, id, name, false, param0, param1, param2));
 	}
 
 	isSameOrBaseOf(derived)
@@ -3121,12 +3121,12 @@ export class FuSystem extends FuScope
 		basePtr.id = FuId.BASE_PTR;
 		this.add(basePtr);
 		this.#addMinMaxValue(this.intType, -2147483648n, 2147483647n);
-		this.intType.add(FuMethod.newPublicNormal(this.boolType, FuId.INT_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value"), FuVar.new(this.intType, "radix", this.newLiteralLong(0n))));
+		this.intType.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.INT_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value"), FuVar.new(this.intType, "radix", this.newLiteralLong(0n))));
 		this.add(this.intType);
 		this.#uIntType.name = "uint";
 		this.add(this.#uIntType);
 		this.#addMinMaxValue(this.longType, -9223372036854775808n, 9223372036854775807n);
-		this.longType.add(FuMethod.newPublicNormal(this.boolType, FuId.LONG_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value"), FuVar.new(this.intType, "radix", this.newLiteralLong(0n))));
+		this.longType.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.LONG_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value"), FuVar.new(this.intType, "radix", this.newLiteralLong(0n))));
 		this.add(this.longType);
 		this.byteType.name = "byte";
 		this.add(this.byteType);
@@ -3138,90 +3138,90 @@ export class FuSystem extends FuScope
 		this.add(ushortType);
 		let minus1Type = FuRangeType.new(-1, 2147483647);
 		this.add(this.#floatType);
-		this.doubleType.add(FuMethod.newPublicNormal(this.boolType, FuId.DOUBLE_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value")));
+		this.doubleType.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.DOUBLE_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value")));
 		this.add(this.doubleType);
 		this.add(this.boolType);
-		this.#stringClass.add(FuMethod.newPublicNormal(this.boolType, FuId.STRING_CONTAINS, "Contains", false, FuVar.new(this.stringPtrType, "value")));
-		this.#stringClass.add(FuMethod.newPublicNormal(this.boolType, FuId.STRING_ENDS_WITH, "EndsWith", false, FuVar.new(this.stringPtrType, "value")));
-		this.#stringClass.add(FuMethod.newPublicNormal(minus1Type, FuId.STRING_INDEX_OF, "IndexOf", false, FuVar.new(this.stringPtrType, "value")));
-		this.#stringClass.add(FuMethod.newPublicNormal(minus1Type, FuId.STRING_LAST_INDEX_OF, "LastIndexOf", false, FuVar.new(this.stringPtrType, "value")));
+		this.#stringClass.addMethod(this.boolType, FuId.STRING_CONTAINS, "Contains", false, FuVar.new(this.stringPtrType, "value"));
+		this.#stringClass.addMethod(this.boolType, FuId.STRING_ENDS_WITH, "EndsWith", false, FuVar.new(this.stringPtrType, "value"));
+		this.#stringClass.addMethod(minus1Type, FuId.STRING_INDEX_OF, "IndexOf", false, FuVar.new(this.stringPtrType, "value"));
+		this.#stringClass.addMethod(minus1Type, FuId.STRING_LAST_INDEX_OF, "LastIndexOf", false, FuVar.new(this.stringPtrType, "value"));
 		this.#stringClass.add(FuProperty.new(this.#uIntType, FuId.STRING_LENGTH, "Length"));
-		this.#stringClass.add(FuMethod.newPublicNormal(this.stringStorageType, FuId.STRING_REPLACE, "Replace", false, FuVar.new(this.stringPtrType, "oldValue"), FuVar.new(this.stringPtrType, "newValue")));
-		this.#stringClass.add(FuMethod.newPublicNormal(this.boolType, FuId.STRING_STARTS_WITH, "StartsWith", false, FuVar.new(this.stringPtrType, "value")));
-		this.#stringClass.add(FuMethod.newPublicNormal(this.stringStorageType, FuId.STRING_SUBSTRING, "Substring", false, FuVar.new(this.intType, "offset"), FuVar.new(this.intType, "length", this.newLiteralLong(-1n))));
+		this.#stringClass.addMethod(this.stringStorageType, FuId.STRING_REPLACE, "Replace", false, FuVar.new(this.stringPtrType, "oldValue"), FuVar.new(this.stringPtrType, "newValue"));
+		this.#stringClass.addMethod(this.boolType, FuId.STRING_STARTS_WITH, "StartsWith", false, FuVar.new(this.stringPtrType, "value"));
+		this.#stringClass.addMethod(this.stringStorageType, FuId.STRING_SUBSTRING, "Substring", false, FuVar.new(this.intType, "offset"), FuVar.new(this.intType, "length", this.newLiteralLong(-1n)));
 		this.stringPtrType.class = this.#stringClass;
 		this.add(this.stringPtrType);
 		this.stringNullablePtrType.class = this.#stringClass;
 		this.stringStorageType.class = this.#stringClass;
-		let arrayBinarySearchPart = FuMethod.new(FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.intType, FuId.ARRAY_BINARY_SEARCH_PART, "BinarySearch", false, FuVar.new(this.#typeParam0, "value"), FuVar.new(this.intType, "startIndex"), FuVar.new(this.intType, "count"));
+		let arrayBinarySearchPart = FuMethod.new(null, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.intType, FuId.ARRAY_BINARY_SEARCH_PART, "BinarySearch", false, FuVar.new(this.#typeParam0, "value"), FuVar.new(this.intType, "startIndex"), FuVar.new(this.intType, "count"));
 		this.arrayPtrClass.add(arrayBinarySearchPart);
-		this.arrayPtrClass.add(FuMethod.newPublicNormal(this.voidType, FuId.ARRAY_COPY_TO, "CopyTo", false, FuVar.new(this.intType, "sourceIndex"), FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this.arrayPtrClass, typeArg0: this.#typeParam0 }), "destinationArray"), FuVar.new(this.intType, "destinationIndex"), FuVar.new(this.intType, "count")));
-		let arrayFillPart = FuMethod.newPublicNormal(this.voidType, FuId.ARRAY_FILL_PART, "Fill", true, FuVar.new(this.#typeParam0, "value"), FuVar.new(this.intType, "startIndex"), FuVar.new(this.intType, "count"));
+		this.arrayPtrClass.addMethod(this.voidType, FuId.ARRAY_COPY_TO, "CopyTo", false, FuVar.new(this.intType, "sourceIndex"), FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this.arrayPtrClass, typeArg0: this.#typeParam0 }), "destinationArray"), FuVar.new(this.intType, "destinationIndex"), FuVar.new(this.intType, "count"));
+		let arrayFillPart = FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.voidType, FuId.ARRAY_FILL_PART, "Fill", true, FuVar.new(this.#typeParam0, "value"), FuVar.new(this.intType, "startIndex"), FuVar.new(this.intType, "count"));
 		this.arrayPtrClass.add(arrayFillPart);
-		let arraySortPart = FuMethod.new(FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.voidType, FuId.ARRAY_SORT_PART, "Sort", true, FuVar.new(this.intType, "startIndex"), FuVar.new(this.intType, "count"));
+		let arraySortPart = FuMethod.new(null, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.voidType, FuId.ARRAY_SORT_PART, "Sort", true, FuVar.new(this.intType, "startIndex"), FuVar.new(this.intType, "count"));
 		this.arrayPtrClass.add(arraySortPart);
 		this.arrayStorageClass.parent = this.arrayPtrClass;
-		this.arrayStorageClass.add(FuMethodGroup.new(FuMethod.new(FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.intType, FuId.ARRAY_BINARY_SEARCH_ALL, "BinarySearch", false, FuVar.new(this.#typeParam0, "value")), arrayBinarySearchPart));
-		this.arrayStorageClass.add(FuMethod.newPublicNormal(this.boolType, FuId.ARRAY_CONTAINS, "Contains", false, FuVar.new(this.#typeParam0, "value")));
-		this.arrayStorageClass.add(FuMethodGroup.new(FuMethod.newPublicNormal(this.voidType, FuId.ARRAY_FILL_ALL, "Fill", true, FuVar.new(this.#typeParam0, "value")), arrayFillPart));
+		this.arrayStorageClass.add(FuMethodGroup.new(FuMethod.new(this.arrayStorageClass, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.intType, FuId.ARRAY_BINARY_SEARCH_ALL, "BinarySearch", false, FuVar.new(this.#typeParam0, "value")), arrayBinarySearchPart));
+		this.arrayStorageClass.addMethod(this.boolType, FuId.ARRAY_CONTAINS, "Contains", false, FuVar.new(this.#typeParam0, "value"));
+		this.arrayStorageClass.add(FuMethodGroup.new(FuMethod.new(this.arrayStorageClass, FuVisibility.PUBLIC, FuCallType.NORMAL, this.voidType, FuId.ARRAY_FILL_ALL, "Fill", true, FuVar.new(this.#typeParam0, "value")), arrayFillPart));
 		this.arrayStorageClass.add(FuProperty.new(this.#uIntType, FuId.ARRAY_LENGTH, "Length"));
-		this.arrayStorageClass.add(FuMethodGroup.new(FuMethod.new(FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.voidType, FuId.ARRAY_SORT_ALL, "Sort", true), arraySortPart));
+		this.arrayStorageClass.add(FuMethodGroup.new(FuMethod.new(this.arrayStorageClass, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.voidType, FuId.ARRAY_SORT_ALL, "Sort", true), arraySortPart));
 		let typeParam0NotFinal = Object.assign(new FuType(), { id: FuId.TYPE_PARAM0_NOT_FINAL, name: "T" });
 		let typeParam0Predicate = Object.assign(new FuType(), { id: FuId.TYPE_PARAM0_PREDICATE, name: "Predicate<T>" });
 		let listClass = this.#addCollection(FuId.LIST_CLASS, "List", 1, FuId.LIST_CLEAR, FuId.LIST_COUNT);
-		listClass.add(FuMethod.newPublicNormal(this.voidType, FuId.LIST_ADD, "Add", true, FuVar.new(typeParam0NotFinal, "value")));
-		listClass.add(FuMethod.newPublicNormal(this.voidType, FuId.LIST_ADD_RANGE, "AddRange", true, FuVar.new(Object.assign(new FuClassType(), { class: listClass, typeArg0: this.#typeParam0 }), "source")));
-		listClass.add(FuMethod.newPublicNormal(this.boolType, FuId.LIST_ALL, "All", false, FuVar.new(typeParam0Predicate, "predicate")));
-		listClass.add(FuMethod.newPublicNormal(this.boolType, FuId.LIST_ANY, "Any", false, FuVar.new(typeParam0Predicate, "predicate")));
-		listClass.add(FuMethod.newPublicNormal(this.boolType, FuId.LIST_CONTAINS, "Contains", false, FuVar.new(this.#typeParam0, "value")));
-		listClass.add(FuMethod.newPublicNormal(this.voidType, FuId.LIST_COPY_TO, "CopyTo", false, FuVar.new(this.intType, "sourceIndex"), FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this.arrayPtrClass, typeArg0: this.#typeParam0 }), "destinationArray"), FuVar.new(this.intType, "destinationIndex"), FuVar.new(this.intType, "count")));
-		listClass.add(FuMethod.newPublicNormal(this.intType, FuId.LIST_INDEX_OF, "IndexOf", false, FuVar.new(this.#typeParam0, "value")));
-		listClass.add(FuMethod.newPublicNormal(this.voidType, FuId.LIST_INSERT, "Insert", true, FuVar.new(this.#uIntType, "index"), FuVar.new(typeParam0NotFinal, "value")));
-		listClass.add(FuMethod.newPublicNormal(this.#typeParam0, FuId.LIST_LAST, "Last", false));
-		listClass.add(FuMethod.newPublicNormal(this.voidType, FuId.LIST_REMOVE_AT, "RemoveAt", true, FuVar.new(this.intType, "index")));
-		listClass.add(FuMethod.newPublicNormal(this.voidType, FuId.LIST_REMOVE_RANGE, "RemoveRange", true, FuVar.new(this.intType, "index"), FuVar.new(this.intType, "count")));
-		listClass.add(FuMethodGroup.new(FuMethod.new(FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.voidType, FuId.LIST_SORT_ALL, "Sort", true), FuMethod.new(FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.voidType, FuId.LIST_SORT_PART, "Sort", true, FuVar.new(this.intType, "startIndex"), FuVar.new(this.intType, "count"))));
+		listClass.addMethod(this.voidType, FuId.LIST_ADD, "Add", true, FuVar.new(typeParam0NotFinal, "value"));
+		listClass.addMethod(this.voidType, FuId.LIST_ADD_RANGE, "AddRange", true, FuVar.new(Object.assign(new FuClassType(), { class: listClass, typeArg0: this.#typeParam0 }), "source"));
+		listClass.addMethod(this.boolType, FuId.LIST_ALL, "All", false, FuVar.new(typeParam0Predicate, "predicate"));
+		listClass.addMethod(this.boolType, FuId.LIST_ANY, "Any", false, FuVar.new(typeParam0Predicate, "predicate"));
+		listClass.addMethod(this.boolType, FuId.LIST_CONTAINS, "Contains", false, FuVar.new(this.#typeParam0, "value"));
+		listClass.addMethod(this.voidType, FuId.LIST_COPY_TO, "CopyTo", false, FuVar.new(this.intType, "sourceIndex"), FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this.arrayPtrClass, typeArg0: this.#typeParam0 }), "destinationArray"), FuVar.new(this.intType, "destinationIndex"), FuVar.new(this.intType, "count"));
+		listClass.addMethod(this.intType, FuId.LIST_INDEX_OF, "IndexOf", false, FuVar.new(this.#typeParam0, "value"));
+		listClass.addMethod(this.voidType, FuId.LIST_INSERT, "Insert", true, FuVar.new(this.#uIntType, "index"), FuVar.new(typeParam0NotFinal, "value"));
+		listClass.addMethod(this.#typeParam0, FuId.LIST_LAST, "Last", false);
+		listClass.addMethod(this.voidType, FuId.LIST_REMOVE_AT, "RemoveAt", true, FuVar.new(this.intType, "index"));
+		listClass.addMethod(this.voidType, FuId.LIST_REMOVE_RANGE, "RemoveRange", true, FuVar.new(this.intType, "index"), FuVar.new(this.intType, "count"));
+		listClass.add(FuMethodGroup.new(FuMethod.new(listClass, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.voidType, FuId.LIST_SORT_ALL, "Sort", true), FuMethod.new(listClass, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.voidType, FuId.LIST_SORT_PART, "Sort", true, FuVar.new(this.intType, "startIndex"), FuVar.new(this.intType, "count"))));
 		let queueClass = this.#addCollection(FuId.QUEUE_CLASS, "Queue", 1, FuId.QUEUE_CLEAR, FuId.QUEUE_COUNT);
-		queueClass.add(FuMethod.newPublicNormal(this.#typeParam0, FuId.QUEUE_DEQUEUE, "Dequeue", true));
-		queueClass.add(FuMethod.newPublicNormal(this.voidType, FuId.QUEUE_ENQUEUE, "Enqueue", true, FuVar.new(this.#typeParam0, "value")));
-		queueClass.add(FuMethod.newPublicNormal(this.#typeParam0, FuId.QUEUE_PEEK, "Peek", false));
+		queueClass.addMethod(this.#typeParam0, FuId.QUEUE_DEQUEUE, "Dequeue", true);
+		queueClass.addMethod(this.voidType, FuId.QUEUE_ENQUEUE, "Enqueue", true, FuVar.new(this.#typeParam0, "value"));
+		queueClass.addMethod(this.#typeParam0, FuId.QUEUE_PEEK, "Peek", false);
 		let stackClass = this.#addCollection(FuId.STACK_CLASS, "Stack", 1, FuId.STACK_CLEAR, FuId.STACK_COUNT);
-		stackClass.add(FuMethod.newPublicNormal(this.#typeParam0, FuId.STACK_PEEK, "Peek", false));
-		stackClass.add(FuMethod.newPublicNormal(this.voidType, FuId.STACK_PUSH, "Push", true, FuVar.new(this.#typeParam0, "value")));
-		stackClass.add(FuMethod.newPublicNormal(this.#typeParam0, FuId.STACK_POP, "Pop", true));
+		stackClass.addMethod(this.#typeParam0, FuId.STACK_PEEK, "Peek", false);
+		stackClass.addMethod(this.voidType, FuId.STACK_PUSH, "Push", true, FuVar.new(this.#typeParam0, "value"));
+		stackClass.addMethod(this.#typeParam0, FuId.STACK_POP, "Pop", true);
 		this.#addSet(FuId.HASH_SET_CLASS, "HashSet", FuId.HASH_SET_ADD, FuId.HASH_SET_CLEAR, FuId.HASH_SET_CONTAINS, FuId.HASH_SET_COUNT, FuId.HASH_SET_REMOVE);
 		this.#addSet(FuId.SORTED_SET_CLASS, "SortedSet", FuId.SORTED_SET_ADD, FuId.SORTED_SET_CLEAR, FuId.SORTED_SET_CONTAINS, FuId.SORTED_SET_COUNT, FuId.SORTED_SET_REMOVE);
 		this.#addDictionary(FuId.DICTIONARY_CLASS, "Dictionary", FuId.DICTIONARY_CLEAR, FuId.DICTIONARY_CONTAINS_KEY, FuId.DICTIONARY_COUNT, FuId.DICTIONARY_REMOVE);
 		this.#addDictionary(FuId.SORTED_DICTIONARY_CLASS, "SortedDictionary", FuId.SORTED_DICTIONARY_CLEAR, FuId.SORTED_DICTIONARY_CONTAINS_KEY, FuId.SORTED_DICTIONARY_COUNT, FuId.SORTED_DICTIONARY_REMOVE);
 		this.#addDictionary(FuId.ORDERED_DICTIONARY_CLASS, "OrderedDictionary", FuId.ORDERED_DICTIONARY_CLEAR, FuId.ORDERED_DICTIONARY_CONTAINS_KEY, FuId.ORDERED_DICTIONARY_COUNT, FuId.ORDERED_DICTIONARY_REMOVE);
 		let textWriterClass = FuClass.new(FuCallType.NORMAL, FuId.TEXT_WRITER_CLASS, "TextWriter");
-		textWriterClass.add(FuMethod.newPublicNormal(this.voidType, FuId.TEXT_WRITER_WRITE, "Write", true, FuVar.new(this.printableType, "value")));
-		textWriterClass.add(FuMethod.newPublicNormal(this.voidType, FuId.TEXT_WRITER_WRITE_CHAR, "WriteChar", true, FuVar.new(this.intType, "c")));
-		textWriterClass.add(FuMethod.newPublicNormal(this.voidType, FuId.TEXT_WRITER_WRITE_CODE_POINT, "WriteCodePoint", true, FuVar.new(this.intType, "c")));
-		textWriterClass.add(FuMethod.newPublicNormal(this.voidType, FuId.TEXT_WRITER_WRITE_LINE, "WriteLine", true, FuVar.new(this.printableType, "value", this.newLiteralString(""))));
+		textWriterClass.addMethod(this.voidType, FuId.TEXT_WRITER_WRITE, "Write", true, FuVar.new(this.printableType, "value"));
+		textWriterClass.addMethod(this.voidType, FuId.TEXT_WRITER_WRITE_CHAR, "WriteChar", true, FuVar.new(this.intType, "c"));
+		textWriterClass.addMethod(this.voidType, FuId.TEXT_WRITER_WRITE_CODE_POINT, "WriteCodePoint", true, FuVar.new(this.intType, "c"));
+		textWriterClass.addMethod(this.voidType, FuId.TEXT_WRITER_WRITE_LINE, "WriteLine", true, FuVar.new(this.printableType, "value", this.newLiteralString("")));
 		this.add(textWriterClass);
 		let consoleClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Console");
-		consoleClass.add(FuMethod.newStatic(this.voidType, FuId.CONSOLE_WRITE, "Write", FuVar.new(this.printableType, "value")));
-		consoleClass.add(FuMethod.newStatic(this.voidType, FuId.CONSOLE_WRITE_LINE, "WriteLine", FuVar.new(this.printableType, "value", this.newLiteralString(""))));
+		consoleClass.addStaticMethod(this.voidType, FuId.CONSOLE_WRITE, "Write", FuVar.new(this.printableType, "value"));
+		consoleClass.addStaticMethod(this.voidType, FuId.CONSOLE_WRITE_LINE, "WriteLine", FuVar.new(this.printableType, "value", this.newLiteralString("")));
 		consoleClass.add(FuStaticProperty.new(Object.assign(new FuStorageType(), { class: textWriterClass }), FuId.CONSOLE_ERROR, "Error"));
 		this.add(consoleClass);
 		let stringWriterClass = FuClass.new(FuCallType.SEALED, FuId.STRING_WRITER_CLASS, "StringWriter");
-		stringWriterClass.add(FuMethod.newPublicNormal(this.voidType, FuId.STRING_WRITER_CLEAR, "Clear", true));
-		stringWriterClass.add(FuMethod.newPublicNormal(this.stringPtrType, FuId.STRING_WRITER_TO_STRING, "ToString", false));
+		stringWriterClass.addMethod(this.voidType, FuId.STRING_WRITER_CLEAR, "Clear", true);
+		stringWriterClass.addMethod(this.stringPtrType, FuId.STRING_WRITER_TO_STRING, "ToString", false);
 		this.add(stringWriterClass);
 		stringWriterClass.parent = textWriterClass;
 		let convertClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Convert");
-		convertClass.add(FuMethod.newStatic(this.stringStorageType, FuId.CONVERT_TO_BASE64_STRING, "ToBase64String", FuVar.new(Object.assign(new FuClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.intType, "offset"), FuVar.new(this.intType, "length")));
+		convertClass.addStaticMethod(this.stringStorageType, FuId.CONVERT_TO_BASE64_STRING, "ToBase64String", FuVar.new(Object.assign(new FuClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.intType, "offset"), FuVar.new(this.intType, "length"));
 		this.add(convertClass);
 		let utf8EncodingClass = FuClass.new(FuCallType.SEALED, FuId.NONE, "UTF8Encoding");
-		utf8EncodingClass.add(FuMethod.newPublicNormal(this.intType, FuId.U_T_F8_GET_BYTE_COUNT, "GetByteCount", false, FuVar.new(this.stringPtrType, "str")));
-		utf8EncodingClass.add(FuMethod.newPublicNormal(this.voidType, FuId.U_T_F8_GET_BYTES, "GetBytes", false, FuVar.new(this.stringPtrType, "str"), FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.intType, "byteIndex")));
-		utf8EncodingClass.add(FuMethod.newPublicNormal(this.stringStorageType, FuId.U_T_F8_GET_STRING, "GetString", false, FuVar.new(Object.assign(new FuClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.intType, "offset"), FuVar.new(this.intType, "length")));
+		utf8EncodingClass.addMethod(this.intType, FuId.U_T_F8_GET_BYTE_COUNT, "GetByteCount", false, FuVar.new(this.stringPtrType, "str"));
+		utf8EncodingClass.addMethod(this.voidType, FuId.U_T_F8_GET_BYTES, "GetBytes", false, FuVar.new(this.stringPtrType, "str"), FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.intType, "byteIndex"));
+		utf8EncodingClass.addMethod(this.stringStorageType, FuId.U_T_F8_GET_STRING, "GetString", false, FuVar.new(Object.assign(new FuClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.intType, "offset"), FuVar.new(this.intType, "length"));
 		let encodingClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Encoding");
 		encodingClass.add(FuStaticProperty.new(utf8EncodingClass, FuId.NONE, "UTF8"));
 		this.add(encodingClass);
 		let environmentClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Environment");
-		environmentClass.add(FuMethod.newStatic(this.stringNullablePtrType, FuId.ENVIRONMENT_GET_ENVIRONMENT_VARIABLE, "GetEnvironmentVariable", FuVar.new(this.stringPtrType, "name")));
+		environmentClass.addStaticMethod(this.stringNullablePtrType, FuId.ENVIRONMENT_GET_ENVIRONMENT_VARIABLE, "GetEnvironmentVariable", FuVar.new(this.stringPtrType, "name"));
 		this.add(environmentClass);
 		this.regexOptionsEnum = this.newEnum(true);
 		this.regexOptionsEnum.isPublic = true;
@@ -3234,54 +3234,54 @@ export class FuSystem extends FuScope
 		FuSystem.#addEnumValue(this.regexOptionsEnum, this.#newConstLong("Singleline", 16n));
 		this.add(this.regexOptionsEnum);
 		let regexClass = FuClass.new(FuCallType.SEALED, FuId.REGEX_CLASS, "Regex");
-		regexClass.add(FuMethod.newStatic(this.stringStorageType, FuId.REGEX_ESCAPE, "Escape", FuVar.new(this.stringPtrType, "str")));
-		regexClass.add(FuMethodGroup.new(FuMethod.newStatic(this.boolType, FuId.REGEX_IS_MATCH_STR, "IsMatch", FuVar.new(this.stringPtrType, "input"), FuVar.new(this.stringPtrType, "pattern"), FuVar.new(this.regexOptionsEnum, "options", regexOptionsNone)), FuMethod.newPublicNormal(this.boolType, FuId.REGEX_IS_MATCH_REGEX, "IsMatch", false, FuVar.new(this.stringPtrType, "input"))));
-		regexClass.add(FuMethod.newStatic(Object.assign(new FuDynamicPtrType(), { class: regexClass }), FuId.REGEX_COMPILE, "Compile", FuVar.new(this.stringPtrType, "pattern"), FuVar.new(this.regexOptionsEnum, "options", regexOptionsNone)));
+		regexClass.addStaticMethod(this.stringStorageType, FuId.REGEX_ESCAPE, "Escape", FuVar.new(this.stringPtrType, "str"));
+		regexClass.add(FuMethodGroup.new(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.boolType, FuId.REGEX_IS_MATCH_STR, "IsMatch", false, FuVar.new(this.stringPtrType, "input"), FuVar.new(this.stringPtrType, "pattern"), FuVar.new(this.regexOptionsEnum, "options", regexOptionsNone)), FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.REGEX_IS_MATCH_REGEX, "IsMatch", false, FuVar.new(this.stringPtrType, "input"))));
+		regexClass.addStaticMethod(Object.assign(new FuDynamicPtrType(), { class: regexClass }), FuId.REGEX_COMPILE, "Compile", FuVar.new(this.stringPtrType, "pattern"), FuVar.new(this.regexOptionsEnum, "options", regexOptionsNone));
 		this.add(regexClass);
 		let matchClass = FuClass.new(FuCallType.SEALED, FuId.MATCH_CLASS, "Match");
-		matchClass.add(FuMethodGroup.new(FuMethod.newPublicNormal(this.boolType, FuId.MATCH_FIND_STR, "Find", true, FuVar.new(this.stringPtrType, "input"), FuVar.new(this.stringPtrType, "pattern"), FuVar.new(this.regexOptionsEnum, "options", regexOptionsNone)), FuMethod.newPublicNormal(this.boolType, FuId.MATCH_FIND_REGEX, "Find", true, FuVar.new(this.stringPtrType, "input"), FuVar.new(Object.assign(new FuClassType(), { class: regexClass }), "pattern"))));
+		matchClass.add(FuMethodGroup.new(FuMethod.new(matchClass, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.MATCH_FIND_STR, "Find", true, FuVar.new(this.stringPtrType, "input"), FuVar.new(this.stringPtrType, "pattern"), FuVar.new(this.regexOptionsEnum, "options", regexOptionsNone)), FuMethod.new(matchClass, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.MATCH_FIND_REGEX, "Find", true, FuVar.new(this.stringPtrType, "input"), FuVar.new(Object.assign(new FuClassType(), { class: regexClass }), "pattern"))));
 		matchClass.add(FuProperty.new(this.intType, FuId.MATCH_START, "Start"));
 		matchClass.add(FuProperty.new(this.intType, FuId.MATCH_END, "End"));
-		matchClass.add(FuMethod.newPublicNormal(this.stringStorageType, FuId.MATCH_GET_CAPTURE, "GetCapture", false, FuVar.new(this.#uIntType, "group")));
+		matchClass.addMethod(this.stringStorageType, FuId.MATCH_GET_CAPTURE, "GetCapture", false, FuVar.new(this.#uIntType, "group"));
 		matchClass.add(FuProperty.new(this.#uIntType, FuId.MATCH_LENGTH, "Length"));
 		matchClass.add(FuProperty.new(this.stringStorageType, FuId.MATCH_VALUE, "Value"));
 		this.add(matchClass);
 		let floatIntType = Object.assign(new FuFloatingType(), { id: FuId.FLOAT_INT_TYPE, name: "float" });
 		let mathClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Math");
-		mathClass.add(FuMethodGroup.new(FuMethod.newStatic(this.intType, FuId.MATH_ABS, "Abs", FuVar.new(this.longType, "a")), FuMethod.newStatic(this.#floatType, FuId.MATH_ABS, "Abs", FuVar.new(this.doubleType, "a"))));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_METHOD, "Acos", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_METHOD, "Asin", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_METHOD, "Atan", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_METHOD, "Atan2", FuVar.new(this.doubleType, "y"), FuVar.new(this.doubleType, "x")));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_METHOD, "Cbrt", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(floatIntType, FuId.MATH_CEILING, "Ceiling", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethodGroup.new(FuMethod.newStatic(this.intType, FuId.MATH_CLAMP, "Clamp", FuVar.new(this.longType, "value"), FuVar.new(this.longType, "min"), FuVar.new(this.longType, "max")), FuMethod.newStatic(this.#floatType, FuId.MATH_CLAMP, "Clamp", FuVar.new(this.doubleType, "value"), FuVar.new(this.doubleType, "min"), FuVar.new(this.doubleType, "max"))));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_METHOD, "Cos", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_METHOD, "Cosh", FuVar.new(this.doubleType, "a")));
+		mathClass.add(FuMethodGroup.new(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.intType, FuId.MATH_ABS, "Abs", false, FuVar.new(this.longType, "a")), FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.#floatType, FuId.MATH_ABS, "Abs", false, FuVar.new(this.doubleType, "a"))));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_METHOD, "Acos", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_METHOD, "Asin", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_METHOD, "Atan", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_METHOD, "Atan2", FuVar.new(this.doubleType, "y"), FuVar.new(this.doubleType, "x"));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_METHOD, "Cbrt", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(floatIntType, FuId.MATH_CEILING, "Ceiling", FuVar.new(this.doubleType, "a"));
+		mathClass.add(FuMethodGroup.new(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.intType, FuId.MATH_CLAMP, "Clamp", false, FuVar.new(this.longType, "value"), FuVar.new(this.longType, "min"), FuVar.new(this.longType, "max")), FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.#floatType, FuId.MATH_CLAMP, "Clamp", false, FuVar.new(this.doubleType, "value"), FuVar.new(this.doubleType, "min"), FuVar.new(this.doubleType, "max"))));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_METHOD, "Cos", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_METHOD, "Cosh", FuVar.new(this.doubleType, "a"));
 		mathClass.add(this.#newConstDouble("E", 2.718281828459045));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_METHOD, "Exp", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(floatIntType, FuId.MATH_METHOD, "Floor", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_FUSED_MULTIPLY_ADD, "FusedMultiplyAdd", FuVar.new(this.doubleType, "x"), FuVar.new(this.doubleType, "y"), FuVar.new(this.doubleType, "z")));
-		mathClass.add(FuMethod.newStatic(this.boolType, FuId.MATH_IS_FINITE, "IsFinite", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(this.boolType, FuId.MATH_IS_INFINITY, "IsInfinity", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(this.boolType, FuId.MATH_IS_NA_N, "IsNaN", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_METHOD, "Log", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_LOG2, "Log2", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_METHOD, "Log10", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethodGroup.new(FuMethod.newStatic(this.intType, FuId.MATH_MAX_INT, "Max", FuVar.new(this.longType, "a"), FuVar.new(this.longType, "b")), FuMethod.newStatic(this.#floatType, FuId.MATH_MAX_DOUBLE, "Max", FuVar.new(this.doubleType, "a"), FuVar.new(this.doubleType, "b"))));
-		mathClass.add(FuMethodGroup.new(FuMethod.newStatic(this.intType, FuId.MATH_MIN_INT, "Min", FuVar.new(this.longType, "a"), FuVar.new(this.longType, "b")), FuMethod.newStatic(this.#floatType, FuId.MATH_MIN_DOUBLE, "Min", FuVar.new(this.doubleType, "a"), FuVar.new(this.doubleType, "b"))));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_METHOD, "Exp", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(floatIntType, FuId.MATH_METHOD, "Floor", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_FUSED_MULTIPLY_ADD, "FusedMultiplyAdd", FuVar.new(this.doubleType, "x"), FuVar.new(this.doubleType, "y"), FuVar.new(this.doubleType, "z"));
+		mathClass.addStaticMethod(this.boolType, FuId.MATH_IS_FINITE, "IsFinite", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(this.boolType, FuId.MATH_IS_INFINITY, "IsInfinity", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(this.boolType, FuId.MATH_IS_NA_N, "IsNaN", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_METHOD, "Log", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_LOG2, "Log2", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_METHOD, "Log10", FuVar.new(this.doubleType, "a"));
+		mathClass.add(FuMethodGroup.new(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.intType, FuId.MATH_MAX_INT, "Max", false, FuVar.new(this.longType, "a"), FuVar.new(this.longType, "b")), FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.#floatType, FuId.MATH_MAX_DOUBLE, "Max", false, FuVar.new(this.doubleType, "a"), FuVar.new(this.doubleType, "b"))));
+		mathClass.add(FuMethodGroup.new(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.intType, FuId.MATH_MIN_INT, "Min", false, FuVar.new(this.longType, "a"), FuVar.new(this.longType, "b")), FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.#floatType, FuId.MATH_MIN_DOUBLE, "Min", false, FuVar.new(this.doubleType, "a"), FuVar.new(this.doubleType, "b"))));
 		mathClass.add(FuStaticProperty.new(this.#floatType, FuId.MATH_NA_N, "NaN"));
 		mathClass.add(FuStaticProperty.new(this.#floatType, FuId.MATH_NEGATIVE_INFINITY, "NegativeInfinity"));
 		mathClass.add(this.#newConstDouble("PI", 3.141592653589793));
 		mathClass.add(FuStaticProperty.new(this.#floatType, FuId.MATH_POSITIVE_INFINITY, "PositiveInfinity"));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_METHOD, "Pow", FuVar.new(this.doubleType, "x"), FuVar.new(this.doubleType, "y")));
-		mathClass.add(FuMethod.newStatic(floatIntType, FuId.MATH_ROUND, "Round", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_METHOD, "Sin", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_METHOD, "Sinh", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_METHOD, "Sqrt", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_METHOD, "Tan", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(this.#floatType, FuId.MATH_METHOD, "Tanh", FuVar.new(this.doubleType, "a")));
-		mathClass.add(FuMethod.newStatic(floatIntType, FuId.MATH_TRUNCATE, "Truncate", FuVar.new(this.doubleType, "a")));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_METHOD, "Pow", FuVar.new(this.doubleType, "x"), FuVar.new(this.doubleType, "y"));
+		mathClass.addStaticMethod(floatIntType, FuId.MATH_ROUND, "Round", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_METHOD, "Sin", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_METHOD, "Sinh", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_METHOD, "Sqrt", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_METHOD, "Tan", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(this.#floatType, FuId.MATH_METHOD, "Tanh", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(floatIntType, FuId.MATH_TRUNCATE, "Truncate", FuVar.new(this.doubleType, "a"));
 		this.add(mathClass);
 		let lockClass = FuClass.new(FuCallType.SEALED, FuId.LOCK_CLASS, "Lock");
 		this.add(lockClass);
@@ -3342,16 +3342,16 @@ export class FuSystem extends FuScope
 	newEnum(flags)
 	{
 		let enu = flags ? new FuEnumFlags() : new FuEnum();
-		enu.add(FuMethod.newStatic(enu, FuId.ENUM_FROM_INT, "FromInt", FuVar.new(this.intType, "value")));
+		enu.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, enu, FuId.ENUM_FROM_INT, "FromInt", false, FuVar.new(this.intType, "value")));
 		if (flags)
-			enu.add(FuMethod.newPublicNormal(this.boolType, FuId.ENUM_HAS_FLAG, "HasFlag", false, FuVar.new(enu, "flag")));
+			enu.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.ENUM_HAS_FLAG, "HasFlag", false, FuVar.new(enu, "flag")));
 		return enu;
 	}
 
 	#addCollection(id, name, typeParameterCount, clearId, countId)
 	{
 		let result = FuClass.new(FuCallType.NORMAL, id, name, typeParameterCount);
-		result.add(FuMethod.newPublicNormal(this.voidType, clearId, "Clear", true));
+		result.addMethod(this.voidType, clearId, "Clear", true);
 		result.add(FuProperty.new(this.#uIntType, countId, "Count"));
 		this.add(result);
 		return result;
@@ -3360,17 +3360,17 @@ export class FuSystem extends FuScope
 	#addSet(id, name, addId, clearId, containsId, countId, removeId)
 	{
 		let set = this.#addCollection(id, name, 1, clearId, countId);
-		set.add(FuMethod.newPublicNormal(this.voidType, addId, "Add", true, FuVar.new(this.#typeParam0, "value")));
-		set.add(FuMethod.newPublicNormal(this.boolType, containsId, "Contains", false, FuVar.new(this.#typeParam0, "value")));
-		set.add(FuMethod.newPublicNormal(this.voidType, removeId, "Remove", true, FuVar.new(this.#typeParam0, "value")));
+		set.addMethod(this.voidType, addId, "Add", true, FuVar.new(this.#typeParam0, "value"));
+		set.addMethod(this.boolType, containsId, "Contains", false, FuVar.new(this.#typeParam0, "value"));
+		set.addMethod(this.voidType, removeId, "Remove", true, FuVar.new(this.#typeParam0, "value"));
 	}
 
 	#addDictionary(id, name, clearId, containsKeyId, countId, removeId)
 	{
 		let dict = this.#addCollection(id, name, 2, clearId, countId);
-		dict.add(FuMethod.new(FuVisibility.FINAL_VALUE_TYPE, FuCallType.NORMAL, this.voidType, FuId.DICTIONARY_ADD, "Add", true, FuVar.new(this.#typeParam0, "key")));
-		dict.add(FuMethod.newPublicNormal(this.boolType, containsKeyId, "ContainsKey", false, FuVar.new(this.#typeParam0, "key")));
-		dict.add(FuMethod.newPublicNormal(this.voidType, removeId, "Remove", true, FuVar.new(this.#typeParam0, "key")));
+		dict.add(FuMethod.new(dict, FuVisibility.FINAL_VALUE_TYPE, FuCallType.NORMAL, this.voidType, FuId.DICTIONARY_ADD, "Add", true, FuVar.new(this.#typeParam0, "key")));
+		dict.addMethod(this.boolType, containsKeyId, "ContainsKey", false, FuVar.new(this.#typeParam0, "key"));
+		dict.addMethod(this.voidType, removeId, "Remove", true, FuVar.new(this.#typeParam0, "key"));
 	}
 
 	static #addEnumValue(enu, value)
