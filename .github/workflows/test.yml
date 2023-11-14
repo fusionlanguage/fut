@@ -65,7 +65,6 @@ jobs:
       - uses: Totto16/setup-gcc@master
         with:
           version: 13
-      - run: dotnet --info
       - uses: actions/setup-java@main
         with:
           distribution: temurin
