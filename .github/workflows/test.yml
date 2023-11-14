@@ -47,7 +47,6 @@ jobs:
       - uses: Totto16/setup-gcc@master
         with:
           version: 13
-      - uses: actions/setup-node@main
       - uses: actions/checkout@main
       - run: make -j3 test-js test-ts
   py-swift:
@@ -66,7 +65,7 @@ jobs:
       - uses: Totto16/setup-gcc@master
         with:
           version: 13
-      - uses: actions/setup-dotnet@main
+      - run: dotnet --info
       - uses: actions/setup-java@main
         with:
           distribution: temurin
