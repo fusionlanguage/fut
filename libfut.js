@@ -4244,8 +4244,9 @@ export class FuParser extends FuLexer
 
 	#parseMethod(method)
 	{
-		method.isMutator = this.eat(FuToken.EXCLAMATION_MARK);
-		this.expect(FuToken.LEFT_PARENTHESIS);
+		if (method.callType != FuCallType.STATIC)
+			method.isMutator = this.eat(FuToken.EXCLAMATION_MARK);
+		this.expectOrSkip(FuToken.LEFT_PARENTHESIS);
 		if (!this.see(FuToken.RIGHT_PARENTHESIS)) {
 			do {
 				let doc = this.#parseDoc();
@@ -6614,8 +6615,6 @@ export class FuSema
 					method.type = this.program.system.voidType;
 				else
 					this.#resolveType(method);
-				if (method.callType == FuCallType.STATIC && method.isMutator)
-					this.reportError(method, "Static method cannot be mutating ('!')");
 				for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
 					this.#resolveType(param);
 					if (param.value != null) {

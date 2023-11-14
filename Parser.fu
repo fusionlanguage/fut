@@ -849,8 +849,9 @@ public class FuParser : FuLexer
 
 	void ParseMethod!(FuMethod! method)
 	{
-		method.IsMutator = Eat(FuToken.ExclamationMark);
-		Expect(FuToken.LeftParenthesis);
+		if (method.CallType != FuCallType.Static)
+			method.IsMutator = Eat(FuToken.ExclamationMark);
+		ExpectOrSkip(FuToken.LeftParenthesis);
 		if (!See(FuToken.RightParenthesis)) {
 			do {
 				FuCodeDoc# doc = ParseDoc();

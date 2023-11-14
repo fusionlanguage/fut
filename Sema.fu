@@ -2088,8 +2088,6 @@ public class FuSema
 					method.Type = this.Program.System.VoidType;
 				else
 					ResolveType(method);
-				if (method.CallType == FuCallType.Static && method.IsMutator)
-					ReportError(method, "Static method cannot be mutating ('!')");
 				for (FuVar!? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 					ResolveType(param);
 					if (param.Value != null) {

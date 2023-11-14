@@ -3780,8 +3780,9 @@ FuCallType FuParser::parseCallType()
 
 void FuParser::parseMethod(FuMethod * method)
 {
-	method->isMutator = eat(FuToken::exclamationMark);
-	expect(FuToken::leftParenthesis);
+	if (method->callType != FuCallType::static_)
+		method->isMutator = eat(FuToken::exclamationMark);
+	expectOrSkip(FuToken::leftParenthesis);
 	if (!see(FuToken::rightParenthesis)) {
 		do {
 			std::shared_ptr<FuCodeDoc> doc = parseDoc();
@@ -6179,8 +6180,6 @@ void FuSema::resolveTypes(FuClass * klass)
 				method->type = this->program->system->voidType;
 			else
 				resolveType(method);
-			if (method->callType == FuCallType::static_ && method->isMutator)
-				reportError(method, "Static method cannot be mutating ('!')");
 			for (FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
 				resolveType(param);
 				if (param->value != nullptr) {

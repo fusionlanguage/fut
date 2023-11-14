@@ -1,6 +1,6 @@
 public static class Test
 {
-	public static bool Run!() //ERROR: Static method cannot be mutating ('!')
+	public static bool Run!() //ERROR: Expected '(', got '!'
 	{
 		return true;
 	}

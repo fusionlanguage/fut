@@ -4101,8 +4101,9 @@ namespace Fusion
 
 		void ParseMethod(FuMethod method)
 		{
-			method.IsMutator = Eat(FuToken.ExclamationMark);
-			Expect(FuToken.LeftParenthesis);
+			if (method.CallType != FuCallType.Static)
+				method.IsMutator = Eat(FuToken.ExclamationMark);
+			ExpectOrSkip(FuToken.LeftParenthesis);
 			if (!See(FuToken.RightParenthesis)) {
 				do {
 					FuCodeDoc doc = ParseDoc();
@@ -6297,8 +6298,6 @@ namespace Fusion
 						method.Type = this.Program.System.VoidType;
 					else
 						ResolveType(method);
-					if (method.CallType == FuCallType.Static && method.IsMutator)
-						ReportError(method, "Static method cannot be mutating ('!')");
 					for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
 						ResolveType(param);
 						if (param.Value != null) {
