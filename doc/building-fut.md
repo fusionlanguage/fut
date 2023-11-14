@@ -13,7 +13,7 @@ Build with:
 
 ## Building a C# fut
 
-You need [.NET 7.0 or 6.0 SDK](https://dotnet.microsoft.com/en-us/download).
+You need [.NET 6.0 or newer SDK](https://dotnet.microsoft.com/en-us/download).
 On Windows, it is included in Visual Studio 2022.
 Build with:
 
