@@ -268,7 +268,7 @@ public class GenTs : GenJs
 		WriteName(method);
 		WriteChar('(');
 		int i = 0;
-		for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+		for (FuVar? param = method.FirstParameter(); param != null; param = param.NextVar()) {
 			if (i > 0)
 				Write(", ");
 			WriteName(param);

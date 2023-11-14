@@ -689,7 +689,6 @@ public:
 	FuScope() = default;
 	virtual ~FuScope() = default;
 	int count() const;
-	FuVar * firstParameter() const;
 	FuContainerType * getContainer();
 	bool contains(const FuSymbol * symbol) const;
 	std::shared_ptr<FuSymbol> tryLookup(std::string_view name, bool global) const;
@@ -1203,7 +1202,7 @@ public:
 	FuVar() = default;
 	static std::shared_ptr<FuVar> new_(std::shared_ptr<FuType> type, std::string_view name, std::shared_ptr<FuExpr> defaultValue = nullptr);
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
-	FuVar * nextParameter() const;
+	FuVar * nextVar() const;
 public:
 	bool isAssigned = false;
 };
@@ -1248,8 +1247,10 @@ public:
 	FuMethodBase() = default;
 	virtual ~FuMethodBase() = default;
 	bool isStatic() const override;
+	void addThis(const FuClass * klass, bool isMutator);
+	bool isMutator() const;
 public:
-	bool isMutator = false;
+	FuParameters parameters;
 	bool throws;
 	std::shared_ptr<FuStatement> body;
 	bool isLive = false;
@@ -1260,14 +1261,14 @@ class FuMethod : public FuMethodBase
 {
 public:
 	FuMethod() = default;
-	static std::shared_ptr<FuMethod> new_(FuClass * klass, FuVisibility visibility, FuCallType callType, std::shared_ptr<FuType> type, FuId id, std::string_view name, bool isMutator, std::shared_ptr<FuVar> param0 = nullptr, std::shared_ptr<FuVar> param1 = nullptr, std::shared_ptr<FuVar> param2 = nullptr, std::shared_ptr<FuVar> param3 = nullptr);
+	static std::shared_ptr<FuMethod> new_(const FuClass * klass, FuVisibility visibility, FuCallType callType, std::shared_ptr<FuType> type, FuId id, std::string_view name, bool isMutator, std::shared_ptr<FuVar> param0 = nullptr, std::shared_ptr<FuVar> param1 = nullptr, std::shared_ptr<FuVar> param2 = nullptr, std::shared_ptr<FuVar> param3 = nullptr);
 	bool isStatic() const override;
 	bool isAbstractOrVirtual() const;
+	FuVar * firstParameter() const;
+	int getParametersCount() const;
 	const FuMethod * getDeclaringMethod() const;
-	bool isToString() const;
 public:
 	FuCallType callType;
-	FuParameters parameters;
 	FuScope methodScope;
 };
 
@@ -1312,7 +1313,7 @@ public:
 class FuClass : public FuContainerType
 {
 public:
-	FuClass();
+	FuClass() = default;
 	bool hasBaseClass() const;
 	bool addsVirtualMethods() const;
 	static std::shared_ptr<FuClass> new_(FuCallType callType, FuId id, std::string_view name, int typeParameterCount = 0);
@@ -1540,7 +1541,7 @@ private:
 	std::shared_ptr<FuWhile> parseWhile();
 	std::shared_ptr<FuStatement> parseStatement();
 	FuCallType parseCallType();
-	void parseMethod(FuMethod * method);
+	void parseMethod(FuClass * klass, std::shared_ptr<FuMethod> method);
 	static std::string_view callTypeToString(FuCallType callType);
 	void parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallType callType);
 	void parseEnum(std::shared_ptr<FuCodeDoc> doc, bool isPublic);

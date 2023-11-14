@@ -847,10 +847,12 @@ public class FuParser : FuLexer
 		}
 	}
 
-	void ParseMethod!(FuMethod! method)
+	void ParseMethod!(FuClass! klass, FuMethod# method)
 	{
+		AddSymbol(klass, method);
+		method.Parameters.Parent = klass;
 		if (method.CallType != FuCallType.Static)
-			method.IsMutator = Eat(FuToken.ExclamationMark);
+			method.AddThis(klass, Eat(FuToken.ExclamationMark));
 		ExpectOrSkip(FuToken.LeftParenthesis);
 		if (!See(FuToken.RightParenthesis)) {
 			do {
@@ -944,7 +946,9 @@ public class FuParser : FuLexer
 				if (visibility == FuVisibility.Private)
 					visibility = FuVisibility.Internal; // TODO
 				klass.Constructor = new FuMethodBase { Line = call.Line, Documentation = doc, Visibility = visibility, Parent = klass,
-					Type = this.Program.System.VoidType, Name = klass.Name, IsMutator = true, Body = ParseBlock() };
+					Type = this.Program.System.VoidType, Name = klass.Name, Body = ParseBlock() };
+				klass.Constructor.Parameters.Parent = klass;
+				klass.Constructor.AddThis(klass, true);
 				continue;
 			}
 
@@ -977,9 +981,7 @@ public class FuParser : FuLexer
 					ReportError($"{CallTypeToString(callType)} method cannot be private");
 
 				FuMethod# method = new FuMethod { Line = line, Documentation = doc, Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
-				AddSymbol(klass, method);
-				method.Parameters.Parent = klass;
-				ParseMethod(method);
+				ParseMethod(klass, method);
 				continue;
 			}
 

@@ -4,7 +4,8 @@ public class Test
 
 	Test()
 	{
-		Foo = 42;
+		Foo = 41;
+		this.Foo++;
 	}
 
 	public static bool Run()

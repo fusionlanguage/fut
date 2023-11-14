@@ -1549,12 +1549,6 @@ export class FuScope extends FuSymbol
 		return Object.keys(this.dict).length;
 	}
 
-	firstParameter()
-	{
-		let result = this.first;
-		return result;
-	}
-
 	getContainer()
 	{
 		for (let scope = this; scope != null; scope = scope.parent) {
@@ -2253,12 +2247,13 @@ class FuForeach extends FuLoop
 
 	getVar()
 	{
-		return this.firstParameter();
+		let result = this.first;
+		return result;
 	}
 
 	getValueVar()
 	{
-		return this.firstParameter().nextParameter();
+		return this.getVar().nextVar();
 	}
 }
 
@@ -2611,7 +2606,7 @@ export class FuVar extends FuNamedValue
 		visitor.visitVar(this);
 	}
 
-	nextParameter()
+	nextVar()
 	{
 		let def = this.next;
 		return def;
@@ -2679,7 +2674,7 @@ class FuStaticProperty extends FuMember
 
 export class FuMethodBase extends FuMember
 {
-	isMutator = false;
+	parameters = new FuParameters();
 	throws;
 	body;
 	isLive = false;
@@ -2689,18 +2684,30 @@ export class FuMethodBase extends FuMember
 	{
 		return false;
 	}
+
+	addThis(klass, isMutator)
+	{
+		let type = isMutator ? new FuReadWriteClassType() : new FuClassType();
+		type.class = klass;
+		this.parameters.add(FuVar.new(type, "this"));
+	}
+
+	isMutator()
+	{
+		return this.parameters.first.type instanceof FuReadWriteClassType;
+	}
 }
 
 export class FuMethod extends FuMethodBase
 {
 	callType;
-	parameters = new FuParameters();
 	methodScope = new FuScope();
 
 	static new(klass, visibility, callType, type, id, name, isMutator, param0 = null, param1 = null, param2 = null, param3 = null)
 	{
 		let result = Object.assign(new FuMethod(), { visibility: visibility, callType: callType, type: type, id: id, name: name });
-		result.isMutator = isMutator;
+		if (callType != FuCallType.STATIC)
+			result.addThis(klass, isMutator);
 		if (param0 != null) {
 			result.parameters.add(param0);
 			if (param1 != null) {
@@ -2725,6 +2732,18 @@ export class FuMethod extends FuMethodBase
 		return this.callType == FuCallType.ABSTRACT || this.callType == FuCallType.VIRTUAL;
 	}
 
+	firstParameter()
+	{
+		let first = this.parameters.first;
+		return this.isStatic() ? first : first.nextVar();
+	}
+
+	getParametersCount()
+	{
+		let c = this.parameters.count();
+		return this.isStatic() ? c : c - 1;
+	}
+
 	getDeclaringMethod()
 	{
 		let method = this;
@@ -2733,11 +2752,6 @@ export class FuMethod extends FuMethodBase
 			method = baseMethod;
 		}
 		return method;
-	}
-
-	isToString()
-	{
-		return this.name == "ToString" && this.callType != FuCallType.STATIC && this.parameters.count() == 0;
 	}
 }
 
@@ -2800,11 +2814,6 @@ class FuEnumFlags extends FuEnum
 
 export class FuClass extends FuContainerType
 {
-	constructor()
-	{
-		super();
-		this.add(FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this }), "this"));
-	}
 	callType;
 	typeParameterCount = 0;
 	hasSubclasses = false;
@@ -2857,13 +2866,13 @@ export class FuClass extends FuContainerType
 	hasToString()
 	{
 		let method;
-		return (method = this.tryLookup("ToString", false)) instanceof FuMethod && method.isToString();
+		return (method = this.tryLookup("ToString", false)) instanceof FuMethod && method.id == FuId.CLASS_TO_STRING;
 	}
 
 	addsToString()
 	{
 		let method;
-		return this.dict.hasOwnProperty("ToString") && (method = this.dict["ToString"]) instanceof FuMethod && method.isToString() && method.callType != FuCallType.OVERRIDE && method.callType != FuCallType.SEALED;
+		return this.dict.hasOwnProperty("ToString") && (method = this.dict["ToString"]) instanceof FuMethod && method.id == FuId.CLASS_TO_STRING && method.callType != FuCallType.OVERRIDE && method.callType != FuCallType.SEALED;
 	}
 }
 
@@ -4242,10 +4251,12 @@ export class FuParser extends FuLexer
 		}
 	}
 
-	#parseMethod(method)
+	#parseMethod(klass, method)
 	{
+		this.#addSymbol(klass, method);
+		method.parameters.parent = klass;
 		if (method.callType != FuCallType.STATIC)
-			method.isMutator = this.eat(FuToken.EXCLAMATION_MARK);
+			method.addThis(klass, this.eat(FuToken.EXCLAMATION_MARK));
 		this.expectOrSkip(FuToken.LEFT_PARENTHESIS);
 		if (!this.see(FuToken.RIGHT_PARENTHESIS)) {
 			do {
@@ -4341,7 +4352,9 @@ export class FuParser extends FuLexer
 				}
 				if (visibility == FuVisibility.PRIVATE)
 					visibility = FuVisibility.INTERNAL;
-				klass.constructor_ = Object.assign(new FuMethodBase(), { line: call.line, documentation: doc, visibility: visibility, parent: klass, type: this.program.system.voidType, name: klass.name, isMutator: true, body: this.#parseBlock() });
+				klass.constructor_ = Object.assign(new FuMethodBase(), { line: call.line, documentation: doc, visibility: visibility, parent: klass, type: this.program.system.voidType, name: klass.name, body: this.#parseBlock() });
+				klass.constructor_.parameters.parent = klass;
+				klass.constructor_.addThis(klass, true);
 				continue;
 			}
 			let line = this.line;
@@ -4360,9 +4373,7 @@ export class FuParser extends FuLexer
 				if (visibility == FuVisibility.PRIVATE && callType != FuCallType.STATIC && callType != FuCallType.NORMAL)
 					this.reportError(`${FuParser.#callTypeToString(callType)} method cannot be private`);
 				let method = Object.assign(new FuMethod(), { line: line, documentation: doc, visibility: visibility, callType: callType, typeExpr: type, name: name });
-				this.#addSymbol(klass, method);
-				method.parameters.parent = klass;
-				this.#parseMethod(method);
+				this.#parseMethod(klass, method);
 				continue;
 			}
 			if (visibility == FuVisibility.PUBLIC)
@@ -4997,7 +5008,7 @@ export class FuSema
 			}
 			else if (symbol.symbol instanceof FuField) {
 				if (symbol.left == null) {
-					if (!this.#currentMethod.isMutator)
+					if (!this.#currentMethod.isMutator())
 						this.reportError(expr, "Cannot modify field in a non-mutating method");
 				}
 				else {
@@ -5691,7 +5702,7 @@ export class FuSema
 
 	#canCall(obj, method, arguments_)
 	{
-		let param = method.parameters.firstParameter();
+		let param = method.firstParameter();
 		for (const arg of arguments_) {
 			if (param == null)
 				return false;
@@ -5701,7 +5712,7 @@ export class FuSema
 				type = this.#evalType(generic, type);
 			if (!type.isAssignableFrom(arg.type))
 				return false;
-			param = param.nextParameter();
+			param = param.nextVar();
 		}
 		return param == null || param.value != null;
 	}
@@ -5726,9 +5737,9 @@ export class FuSema
 		}
 		else
 			return this.#poisonError(symbol, "Expected a method");
-		if (method.isMutator) {
+		if (!method.isStatic() && method.isMutator()) {
 			if (symbol.left == null) {
-				if (!this.#currentMethod.isMutator)
+				if (!this.#currentMethod.isMutator())
 					this.reportError(expr, `Cannot call mutating method '${method.name}' from a non-mutating method`);
 			}
 			else {
@@ -5753,7 +5764,7 @@ export class FuSema
 			}
 		}
 		let i = 0;
-		for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
+		for (let param = method.firstParameter(); param != null; param = param.nextVar()) {
 			let type = param.type;
 			let generic;
 			if (symbol.left != null && (generic = symbol.left.type) instanceof FuClassType) {
@@ -5791,14 +5802,14 @@ export class FuSema
 		if (method.callType == FuCallType.STATIC && (ret = method.body) instanceof FuReturn && arguments_.every(arg => arg instanceof FuLiteral) && !this.#currentPureMethods.has(method)) {
 			this.#currentPureMethods.add(method);
 			i = 0;
-			for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
+			for (let param = method.firstParameter(); param != null; param = param.nextVar()) {
 				if (i < arguments_.length)
 					this.#currentPureArguments[param] = arguments_[i++];
 				else
 					this.#currentPureArguments[param] = param.value;
 			}
 			let result = this.#visitExpr(ret.value);
-			for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter())
+			for (let param = method.firstParameter(); param != null; param = param.nextVar())
 				delete this.#currentPureArguments[param];
 			this.#currentPureMethods.delete(method);
 			if (result instanceof FuLiteral)
@@ -6615,7 +6626,7 @@ export class FuSema
 					method.type = this.program.system.voidType;
 				else
 					this.#resolveType(method);
-				for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
+				for (let param = method.firstParameter(); param != null; param = param.nextVar()) {
 					this.#resolveType(param);
 					if (param.value != null) {
 						param.value = this.#foldConst(param.value);
@@ -6627,11 +6638,11 @@ export class FuSema
 						this.reportError(method, "'Main' method must be 'public static'");
 					if (method.type.id != FuId.VOID_TYPE && method.type.id != FuId.INT_TYPE)
 						this.reportError(method.type, "'Main' method must return 'void' or 'int'");
-					switch (method.parameters.count()) {
+					switch (method.getParametersCount()) {
 					case 0:
 						break;
 					case 1:
-						let args = method.parameters.firstParameter();
+						let args = method.firstParameter();
 						let argsType;
 						if ((argsType = args.type) instanceof FuClassType && argsType.isArray() && !(argsType instanceof FuReadWriteClassType) && !argsType.nullable) {
 							let argsElement = argsType.getElementType();
@@ -6661,7 +6672,7 @@ export class FuSema
 	#resolveCode(klass)
 	{
 		if (klass.constructor_ != null) {
-			this.#currentScope = klass;
+			this.#currentScope = klass.constructor_.parameters;
 			this.#currentMethod = klass.constructor_;
 			this.#visitStatement(klass.constructor_.body);
 			this.#currentMethod = null;
@@ -6669,7 +6680,7 @@ export class FuSema
 		for (let symbol = klass.first; symbol != null; symbol = symbol.next) {
 			let method;
 			if ((method = symbol) instanceof FuMethod) {
-				if (method.name == "ToString" && method.callType != FuCallType.STATIC && method.parameters.count() == 0)
+				if (method.name == "ToString" && method.callType != FuCallType.STATIC && method.parameters.count() == 1)
 					method.id = FuId.CLASS_TO_STRING;
 				if (method.body != null) {
 					if (method.callType == FuCallType.OVERRIDE || method.callType == FuCallType.SEALED) {
@@ -6679,6 +6690,12 @@ export class FuSema
 							case FuCallType.ABSTRACT:
 							case FuCallType.VIRTUAL:
 							case FuCallType.OVERRIDE:
+								if (method.isMutator() != baseMethod.isMutator()) {
+									if (method.isMutator())
+										this.reportError(method, "Mutating method cannot override a non-mutating method");
+									else
+										this.reportError(method, "Non-mutating method cannot override a mutating method");
+								}
 								break;
 							default:
 								this.reportError(method, "Base method is not abstract or virtual");
@@ -6686,14 +6703,8 @@ export class FuSema
 							}
 							if (!method.type.equalsType(baseMethod.type))
 								this.reportError(method, "Base method has a different return type");
-							if (method.isMutator != baseMethod.isMutator) {
-								if (method.isMutator)
-									this.reportError(method, "Mutating method cannot override a non-mutating method");
-								else
-									this.reportError(method, "Non-mutating method cannot override a mutating method");
-							}
-							let baseParam = baseMethod.parameters.firstParameter();
-							for (let param = method.parameters.firstParameter();; param = param.nextParameter()) {
+							let baseParam = baseMethod.firstParameter();
+							for (let param = method.firstParameter();; param = param.nextVar()) {
 								if (param == null) {
 									if (baseParam != null)
 										this.reportError(method, "Fewer parameters than the overridden method");
@@ -6707,7 +6718,7 @@ export class FuSema
 									this.reportError(method, "Base method has a different parameter type");
 									break;
 								}
-								baseParam = baseParam.nextParameter();
+								baseParam = baseParam.nextVar();
 							}
 							baseMethod.calls.add(method);
 						}
@@ -7189,7 +7200,7 @@ export class GenBase extends FuVisitor
 	writeParametersDoc(method)
 	{
 		let first = true;
-		for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
+		for (let param = method.firstParameter(); param != null; param = param.nextVar()) {
 			if (param.documentation != null) {
 				this.writeParameterDoc(param, first);
 				first = false;
@@ -7457,14 +7468,14 @@ export class GenBase extends FuVisitor
 
 	writeArgs(method, args)
 	{
-		let param = method.parameters.firstParameter();
+		let param = method.firstParameter();
 		let first = true;
 		for (const arg of args) {
 			if (!first)
 				this.write(", ");
 			first = false;
 			this.writeStronglyCoerced(param.type, arg);
-			param = param.nextParameter();
+			param = param.nextVar();
 		}
 	}
 
@@ -8682,7 +8693,7 @@ export class GenBase extends FuVisitor
 
 	writeRemainingParameters(method, first, defaultArguments)
 	{
-		for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
+		for (let param = method.firstParameter(); param != null; param = param.nextVar()) {
 			if (!first)
 				this.write(", ");
 			first = false;
@@ -8789,8 +8800,6 @@ export class GenBase extends FuVisitor
 				this.writeMethod(method);
 				this.switchesWithGoto.length = 0;
 				this.currentTemporaries.length = 0;
-			}
-			else if (symbol instanceof FuVar) {
 			}
 			else
 				throw new Error();
@@ -10349,12 +10358,12 @@ export class GenC extends GenCCpp
 				this.#writeStorageTemporary(call.method.left);
 			}
 			let method = call.method.symbol;
-			let param = method.parameters.firstParameter();
+			let param = method.firstParameter();
 			for (const arg of call.arguments_) {
 				this.#writeCTemporaries(arg);
 				if (call.method.symbol.id != FuId.CONSOLE_WRITE && call.method.symbol.id != FuId.CONSOLE_WRITE_LINE && !(param.type instanceof FuStorageType))
 					this.#writeStorageTemporary(arg);
-				param = param.nextParameter();
+				param = param.nextVar();
 			}
 		}
 		else
@@ -11059,7 +11068,7 @@ export class GenC extends GenCCpp
 	#writeArgsAndRightParenthesis(method, args)
 	{
 		let i = 0;
-		for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
+		for (let param = method.firstParameter(); param != null; param = param.nextVar()) {
 			if (i > 0 || method.callType != FuCallType.STATIC)
 				this.write(", ");
 			if (i >= args.length)
@@ -12316,7 +12325,7 @@ export class GenC extends GenCCpp
 	#writeInstanceParameters(method)
 	{
 		this.writeChar(40);
-		if (!method.isMutator)
+		if (!method.isMutator())
 			this.write("const ");
 		this.writeName(method.parent);
 		this.write(" *self");
@@ -12673,7 +12682,7 @@ export class GenC extends GenCCpp
 		}
 		else {
 			this.#writeSignature(method);
-			for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
+			for (let param = method.firstParameter(); param != null; param = param.nextVar()) {
 				if (GenC.#needToDestruct(param))
 					this.#varsToDestruct.push(param);
 			}
@@ -15156,7 +15165,7 @@ export class GenCpp extends GenCCpp
 	#writeParametersAndConst(method, defaultArguments)
 	{
 		this.writeParameters(method, defaultArguments);
-		if (method.callType != FuCallType.STATIC && !method.isMutator)
+		if (method.callType != FuCallType.STATIC && !method.isMutator())
 			this.write(" const");
 	}
 
@@ -17791,8 +17800,6 @@ export class GenD extends GenCCppD
 				this.writeMethod(method);
 				this.currentTemporaries.length = 0;
 			}
-			else if (symbol instanceof FuVar) {
-			}
 			else
 				throw new Error();
 		}
@@ -19216,12 +19223,12 @@ export class GenJava extends GenTyped
 		if (method.id == FuId.MAIN && paramCount == 0)
 			this.write("String[] args");
 		else {
-			let param = method.parameters.firstParameter();
+			let param = method.firstParameter();
 			for (let i = 0; i < paramCount; i++) {
 				if (i > 0)
 					this.write(", ");
 				this.writeTypeAndName(param);
-				param = param.nextParameter();
+				param = param.nextVar();
 			}
 		}
 		this.writeChar(41);
@@ -19231,7 +19238,7 @@ export class GenJava extends GenTyped
 
 	#writeOverloads(method, paramCount)
 	{
-		if (paramCount + 1 < method.parameters.count())
+		if (paramCount + 1 < method.getParametersCount())
 			this.#writeOverloads(method, paramCount + 1);
 		this.#writeSignature(method, paramCount);
 		this.writeNewLine();
@@ -19240,11 +19247,11 @@ export class GenJava extends GenTyped
 			this.write("return ");
 		this.writeName(method);
 		this.writeChar(40);
-		let param = method.parameters.firstParameter();
+		let param = method.firstParameter();
 		for (let i = 0; i < paramCount; i++) {
 			this.writeName(param);
 			this.write(", ");
-			param = param.nextParameter();
+			param = param.nextVar();
 		}
 		param.value.accept(this, FuPriority.ARGUMENT);
 		this.writeLine(");");
@@ -19273,10 +19280,10 @@ export class GenJava extends GenTyped
 
 	writeMethod(method)
 	{
-		this.#writeSignature(method, method.parameters.count());
+		this.#writeSignature(method, method.getParametersCount());
 		this.writeBody(method);
 		let i = 0;
-		for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
+		for (let param = method.firstParameter(); param != null; param = param.nextVar()) {
 			if (param.value != null) {
 				this.#writeOverloads(method, i);
 				break;
@@ -20970,7 +20977,7 @@ export class GenTs extends GenJs
 		this.writeName(method);
 		this.writeChar(40);
 		let i = 0;
-		for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
+		for (let param = method.firstParameter(); param != null; param = param.nextVar()) {
 			if (i > 0)
 				this.write(", ");
 			this.writeName(param);
@@ -23035,7 +23042,7 @@ export class GenSwift extends GenPySwift
 		if (method.callType == FuCallType.ABSTRACT)
 			this.writeLine("preconditionFailure(\"Abstract method called\")");
 		else {
-			for (let param = method.parameters.firstParameter(); param != null; param = param.nextParameter()) {
+			for (let param = method.firstParameter(); param != null; param = param.nextVar()) {
 				if (param.isAssigned) {
 					this.write("var ");
 					this.writeTypeAndName(param);

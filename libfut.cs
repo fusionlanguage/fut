@@ -1630,12 +1630,6 @@ namespace Fusion
 
 		public int Count() => this.Dict.Count;
 
-		public FuVar FirstParameter()
-		{
-			FuVar result = (FuVar) this.First;
-			return result;
-		}
-
 		public FuContainerType GetContainer()
 		{
 			for (FuScope scope = this; scope != null; scope = scope.Parent) {
@@ -2270,9 +2264,13 @@ namespace Fusion
 			visitor.VisitForeach(this);
 		}
 
-		public FuVar GetVar() => this.FirstParameter();
+		public FuVar GetVar()
+		{
+			FuVar result = (FuVar) this.First;
+			return result;
+		}
 
-		public FuVar GetValueVar() => this.FirstParameter().NextParameter();
+		public FuVar GetValueVar() => this.GetVar().NextVar();
 	}
 
 	class FuIf : FuCondCompletionStatement
@@ -2564,7 +2562,7 @@ namespace Fusion
 			visitor.VisitVar(this);
 		}
 
-		public FuVar NextParameter()
+		public FuVar NextVar()
 		{
 			FuVar def = (FuVar) this.Next;
 			return def;
@@ -2618,7 +2616,7 @@ namespace Fusion
 	public class FuMethodBase : FuMember
 	{
 
-		internal bool IsMutator = false;
+		internal readonly FuParameters Parameters = new FuParameters();
 
 		internal bool Throws;
 
@@ -2629,6 +2627,15 @@ namespace Fusion
 		internal readonly HashSet<FuMethod> Calls = new HashSet<FuMethod>();
 
 		public override bool IsStatic() => false;
+
+		public void AddThis(FuClass klass, bool isMutator)
+		{
+			FuClassType type = isMutator ? new FuReadWriteClassType() : new FuClassType();
+			type.Class = klass;
+			this.Parameters.Add(FuVar.New(type, "this"));
+		}
+
+		public bool IsMutator() => this.Parameters.First.Type is FuReadWriteClassType;
 	}
 
 	public class FuMethod : FuMethodBase
@@ -2636,14 +2643,13 @@ namespace Fusion
 
 		internal FuCallType CallType;
 
-		internal readonly FuParameters Parameters = new FuParameters();
-
 		internal readonly FuScope MethodScope = new FuScope();
 
 		public static FuMethod New(FuClass klass, FuVisibility visibility, FuCallType callType, FuType type, FuId id, string name, bool isMutator, FuVar param0 = null, FuVar param1 = null, FuVar param2 = null, FuVar param3 = null)
 		{
 			FuMethod result = new FuMethod { Visibility = visibility, CallType = callType, Type = type, Id = id, Name = name };
-			result.IsMutator = isMutator;
+			if (callType != FuCallType.Static)
+				result.AddThis(klass, isMutator);
 			if (param0 != null) {
 				result.Parameters.Add(param0);
 				if (param1 != null) {
@@ -2662,6 +2668,18 @@ namespace Fusion
 
 		public bool IsAbstractOrVirtual() => this.CallType == FuCallType.Abstract || this.CallType == FuCallType.Virtual;
 
+		public FuVar FirstParameter()
+		{
+			FuVar first = (FuVar) this.Parameters.First;
+			return IsStatic() ? first : first.NextVar();
+		}
+
+		public int GetParametersCount()
+		{
+			int c = this.Parameters.Count();
+			return IsStatic() ? c : c - 1;
+		}
+
 		public FuMethod GetDeclaringMethod()
 		{
 			FuMethod method = this;
@@ -2671,8 +2689,6 @@ namespace Fusion
 			}
 			return method;
 		}
-
-		public bool IsToString() => this.Name == "ToString" && this.CallType != FuCallType.Static && this.Parameters.Count() == 0;
 	}
 
 	class FuMethodGroup : FuMember
@@ -2736,10 +2752,6 @@ namespace Fusion
 
 	public class FuClass : FuContainerType
 	{
-		public FuClass()
-		{
-			Add(FuVar.New(new FuReadWriteClassType { Class = this }, "this"));
-		}
 
 		internal FuCallType CallType;
 
@@ -2787,9 +2799,9 @@ namespace Fusion
 			return true;
 		}
 
-		public bool HasToString() => TryLookup("ToString", false) is FuMethod method && method.IsToString();
+		public bool HasToString() => TryLookup("ToString", false) is FuMethod method && method.Id == FuId.ClassToString;
 
-		public bool AddsToString() => this.Dict.ContainsKey("ToString") && this.Dict["ToString"] is FuMethod method && method.IsToString() && method.CallType != FuCallType.Override && method.CallType != FuCallType.Sealed;
+		public bool AddsToString() => this.Dict.ContainsKey("ToString") && this.Dict["ToString"] is FuMethod method && method.Id == FuId.ClassToString && method.CallType != FuCallType.Override && method.CallType != FuCallType.Sealed;
 	}
 
 	public class FuClassType : FuType
@@ -4099,10 +4111,12 @@ namespace Fusion
 			}
 		}
 
-		void ParseMethod(FuMethod method)
+		void ParseMethod(FuClass klass, FuMethod method)
 		{
+			AddSymbol(klass, method);
+			method.Parameters.Parent = klass;
 			if (method.CallType != FuCallType.Static)
-				method.IsMutator = Eat(FuToken.ExclamationMark);
+				method.AddThis(klass, Eat(FuToken.ExclamationMark));
 			ExpectOrSkip(FuToken.LeftParenthesis);
 			if (!See(FuToken.RightParenthesis)) {
 				do {
@@ -4197,7 +4211,9 @@ namespace Fusion
 					}
 					if (visibility == FuVisibility.Private)
 						visibility = FuVisibility.Internal;
-					klass.Constructor = new FuMethodBase { Line = call.Line, Documentation = doc, Visibility = visibility, Parent = klass, Type = this.Program.System.VoidType, Name = klass.Name, IsMutator = true, Body = ParseBlock() };
+					klass.Constructor = new FuMethodBase { Line = call.Line, Documentation = doc, Visibility = visibility, Parent = klass, Type = this.Program.System.VoidType, Name = klass.Name, Body = ParseBlock() };
+					klass.Constructor.Parameters.Parent = klass;
+					klass.Constructor.AddThis(klass, true);
 					continue;
 				}
 				int line = this.Line;
@@ -4216,9 +4232,7 @@ namespace Fusion
 					if (visibility == FuVisibility.Private && callType != FuCallType.Static && callType != FuCallType.Normal)
 						ReportError($"{CallTypeToString(callType)} method cannot be private");
 					FuMethod method = new FuMethod { Line = line, Documentation = doc, Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
-					AddSymbol(klass, method);
-					method.Parameters.Parent = klass;
-					ParseMethod(method);
+					ParseMethod(klass, method);
 					continue;
 				}
 				if (visibility == FuVisibility.Public)
@@ -4820,7 +4834,7 @@ namespace Fusion
 					break;
 				case FuField _:
 					if (symbol.Left == null) {
-						if (!this.CurrentMethod.IsMutator)
+						if (!this.CurrentMethod.IsMutator())
 							ReportError(expr, "Cannot modify field in a non-mutating method");
 					}
 					else {
@@ -5457,7 +5471,7 @@ namespace Fusion
 
 		bool CanCall(FuExpr obj, FuMethod method, List<FuExpr> arguments)
 		{
-			FuVar param = method.Parameters.FirstParameter();
+			FuVar param = method.FirstParameter();
 			foreach (FuExpr arg in arguments) {
 				if (param == null)
 					return false;
@@ -5466,7 +5480,7 @@ namespace Fusion
 					type = EvalType(generic, type);
 				if (!type.IsAssignableFrom(arg.Type))
 					return false;
-				param = param.NextParameter();
+				param = param.NextVar();
 			}
 			return param == null || param.Value != null;
 		}
@@ -5490,9 +5504,9 @@ namespace Fusion
 			default:
 				return PoisonError(symbol, "Expected a method");
 			}
-			if (method.IsMutator) {
+			if (!method.IsStatic() && method.IsMutator()) {
 				if (symbol.Left == null) {
-					if (!this.CurrentMethod.IsMutator)
+					if (!this.CurrentMethod.IsMutator())
 						ReportError(expr, $"Cannot call mutating method '{method.Name}' from a non-mutating method");
 				}
 				else if (symbol.Left is FuSymbolReference baseRef && baseRef.Symbol.Id == FuId.BasePtr) {
@@ -5512,7 +5526,7 @@ namespace Fusion
 				}
 			}
 			int i = 0;
-			for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+			for (FuVar param = method.FirstParameter(); param != null; param = param.NextVar()) {
 				FuType type = param.Type;
 				if (symbol.Left != null && symbol.Left.Type is FuClassType generic) {
 					type = EvalType(generic, type);
@@ -5547,14 +5561,14 @@ namespace Fusion
 			if (method.CallType == FuCallType.Static && method.Body is FuReturn ret && arguments.TrueForAll(arg => arg is FuLiteral) && !this.CurrentPureMethods.Contains(method)) {
 				this.CurrentPureMethods.Add(method);
 				i = 0;
-				for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+				for (FuVar param = method.FirstParameter(); param != null; param = param.NextVar()) {
 					if (i < arguments.Count)
 						this.CurrentPureArguments[param] = arguments[i++];
 					else
 						this.CurrentPureArguments[param] = param.Value;
 				}
 				FuExpr result = VisitExpr(ret.Value);
-				for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter())
+				for (FuVar param = method.FirstParameter(); param != null; param = param.NextVar())
 					this.CurrentPureArguments.Remove(param);
 				this.CurrentPureMethods.Remove(method);
 				if (result is FuLiteral)
@@ -6298,7 +6312,7 @@ namespace Fusion
 						method.Type = this.Program.System.VoidType;
 					else
 						ResolveType(method);
-					for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+					for (FuVar param = method.FirstParameter(); param != null; param = param.NextVar()) {
 						ResolveType(param);
 						if (param.Value != null) {
 							param.Value = FoldConst(param.Value);
@@ -6310,11 +6324,11 @@ namespace Fusion
 							ReportError(method, "'Main' method must be 'public static'");
 						if (method.Type.Id != FuId.VoidType && method.Type.Id != FuId.IntType)
 							ReportError(method.Type, "'Main' method must return 'void' or 'int'");
-						switch (method.Parameters.Count()) {
+						switch (method.GetParametersCount()) {
 						case 0:
 							break;
 						case 1:
-							FuVar args = method.Parameters.FirstParameter();
+							FuVar args = method.FirstParameter();
 							if (args.Type is FuClassType argsType && argsType.IsArray() && !(argsType is FuReadWriteClassType) && !argsType.Nullable) {
 								FuType argsElement = argsType.GetElementType();
 								if (argsElement.Id == FuId.StringPtrType && !argsElement.Nullable && args.Value == null) {
@@ -6346,14 +6360,14 @@ namespace Fusion
 		void ResolveCode(FuClass klass)
 		{
 			if (klass.Constructor != null) {
-				this.CurrentScope = klass;
+				this.CurrentScope = klass.Constructor.Parameters;
 				this.CurrentMethod = klass.Constructor;
 				VisitStatement(klass.Constructor.Body);
 				this.CurrentMethod = null;
 			}
 			for (FuSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
 				if (symbol is FuMethod method) {
-					if (method.Name == "ToString" && method.CallType != FuCallType.Static && method.Parameters.Count() == 0)
+					if (method.Name == "ToString" && method.CallType != FuCallType.Static && method.Parameters.Count() == 1)
 						method.Id = FuId.ClassToString;
 					if (method.Body != null) {
 						if (method.CallType == FuCallType.Override || method.CallType == FuCallType.Sealed) {
@@ -6362,6 +6376,12 @@ namespace Fusion
 								case FuCallType.Abstract:
 								case FuCallType.Virtual:
 								case FuCallType.Override:
+									if (method.IsMutator() != baseMethod.IsMutator()) {
+										if (method.IsMutator())
+											ReportError(method, "Mutating method cannot override a non-mutating method");
+										else
+											ReportError(method, "Non-mutating method cannot override a mutating method");
+									}
 									break;
 								default:
 									ReportError(method, "Base method is not abstract or virtual");
@@ -6369,14 +6389,8 @@ namespace Fusion
 								}
 								if (!method.Type.EqualsType(baseMethod.Type))
 									ReportError(method, "Base method has a different return type");
-								if (method.IsMutator != baseMethod.IsMutator) {
-									if (method.IsMutator)
-										ReportError(method, "Mutating method cannot override a non-mutating method");
-									else
-										ReportError(method, "Non-mutating method cannot override a mutating method");
-								}
-								FuVar baseParam = baseMethod.Parameters.FirstParameter();
-								for (FuVar param = method.Parameters.FirstParameter();; param = param.NextParameter()) {
+								FuVar baseParam = baseMethod.FirstParameter();
+								for (FuVar param = method.FirstParameter();; param = param.NextVar()) {
 									if (param == null) {
 										if (baseParam != null)
 											ReportError(method, "Fewer parameters than the overridden method");
@@ -6390,7 +6404,7 @@ namespace Fusion
 										ReportError(method, "Base method has a different parameter type");
 										break;
 									}
-									baseParam = baseParam.NextParameter();
+									baseParam = baseParam.NextVar();
 								}
 								baseMethod.Calls.Add(method);
 							}
@@ -6893,7 +6907,7 @@ namespace Fusion
 		protected void WriteParametersDoc(FuMethod method)
 		{
 			bool first = true;
-			for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+			for (FuVar param = method.FirstParameter(); param != null; param = param.NextVar()) {
 				if (param.Documentation != null) {
 					WriteParameterDoc(param, first);
 					first = false;
@@ -7160,14 +7174,14 @@ namespace Fusion
 
 		protected void WriteArgs(FuMethod method, List<FuExpr> args)
 		{
-			FuVar param = method.Parameters.FirstParameter();
+			FuVar param = method.FirstParameter();
 			bool first = true;
 			foreach (FuExpr arg in args) {
 				if (!first)
 					Write(", ");
 				first = false;
 				WriteStronglyCoerced(param.Type, arg);
-				param = param.NextParameter();
+				param = param.NextVar();
 			}
 		}
 
@@ -8341,7 +8355,7 @@ namespace Fusion
 
 		protected void WriteRemainingParameters(FuMethod method, bool first, bool defaultArguments)
 		{
-			for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+			for (FuVar param = method.FirstParameter(); param != null; param = param.NextVar()) {
 				if (!first)
 					Write(", ");
 				first = false;
@@ -8451,8 +8465,6 @@ namespace Fusion
 					WriteMethod(method);
 					this.SwitchesWithGoto.Clear();
 					this.CurrentTemporaries.Clear();
-					break;
-				case FuVar _:
 					break;
 				default:
 					throw new NotImplementedException();
@@ -9989,12 +10001,12 @@ namespace Fusion
 					WriteStorageTemporary(call.Method.Left);
 				}
 				FuMethod method = (FuMethod) call.Method.Symbol;
-				FuVar param = method.Parameters.FirstParameter();
+				FuVar param = method.FirstParameter();
 				foreach (FuExpr arg in call.Arguments) {
 					WriteCTemporaries(arg);
 					if (call.Method.Symbol.Id != FuId.ConsoleWrite && call.Method.Symbol.Id != FuId.ConsoleWriteLine && !(param.Type is FuStorageType))
 						WriteStorageTemporary(arg);
-					param = param.NextParameter();
+					param = param.NextVar();
 				}
 				break;
 			default:
@@ -10672,7 +10684,7 @@ namespace Fusion
 		void WriteArgsAndRightParenthesis(FuMethod method, List<FuExpr> args)
 		{
 			int i = 0;
-			for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+			for (FuVar param = method.FirstParameter(); param != null; param = param.NextVar()) {
 				if (i > 0 || method.CallType != FuCallType.Static)
 					Write(", ");
 				if (i >= args.Count)
@@ -11912,7 +11924,7 @@ namespace Fusion
 		void WriteInstanceParameters(FuMethod method)
 		{
 			WriteChar('(');
-			if (!method.IsMutator)
+			if (!method.IsMutator())
 				Write("const ");
 			WriteName(method.Parent);
 			Write(" *self");
@@ -12259,7 +12271,7 @@ namespace Fusion
 			}
 			else {
 				WriteSignature(method);
-				for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+				for (FuVar param = method.FirstParameter(); param != null; param = param.NextVar()) {
 					if (NeedToDestruct(param))
 						this.VarsToDestruct.Add(param);
 				}
@@ -14716,7 +14728,7 @@ namespace Fusion
 		void WriteParametersAndConst(FuMethod method, bool defaultArguments)
 		{
 			WriteParameters(method, defaultArguments);
-			if (method.CallType != FuCallType.Static && !method.IsMutator)
+			if (method.CallType != FuCallType.Static && !method.IsMutator())
 				Write(" const");
 		}
 
@@ -17290,8 +17302,6 @@ namespace Fusion
 					WriteMethod(method);
 					this.CurrentTemporaries.Clear();
 					break;
-				case FuVar _:
-					break;
 				default:
 					throw new NotImplementedException();
 				}
@@ -18675,12 +18685,12 @@ namespace Fusion
 			if (method.Id == FuId.Main && paramCount == 0)
 				Write("String[] args");
 			else {
-				FuVar param = method.Parameters.FirstParameter();
+				FuVar param = method.FirstParameter();
 				for (int i = 0; i < paramCount; i++) {
 					if (i > 0)
 						Write(", ");
 					WriteTypeAndName(param);
-					param = param.NextParameter();
+					param = param.NextVar();
 				}
 			}
 			WriteChar(')');
@@ -18690,7 +18700,7 @@ namespace Fusion
 
 		void WriteOverloads(FuMethod method, int paramCount)
 		{
-			if (paramCount + 1 < method.Parameters.Count())
+			if (paramCount + 1 < method.GetParametersCount())
 				WriteOverloads(method, paramCount + 1);
 			WriteSignature(method, paramCount);
 			WriteNewLine();
@@ -18699,11 +18709,11 @@ namespace Fusion
 				Write("return ");
 			WriteName(method);
 			WriteChar('(');
-			FuVar param = method.Parameters.FirstParameter();
+			FuVar param = method.FirstParameter();
 			for (int i = 0; i < paramCount; i++) {
 				WriteName(param);
 				Write(", ");
-				param = param.NextParameter();
+				param = param.NextVar();
 			}
 			param.Value.Accept(this, FuPriority.Argument);
 			WriteLine(");");
@@ -18732,10 +18742,10 @@ namespace Fusion
 
 		protected override void WriteMethod(FuMethod method)
 		{
-			WriteSignature(method, method.Parameters.Count());
+			WriteSignature(method, method.GetParametersCount());
 			WriteBody(method);
 			int i = 0;
-			for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+			for (FuVar param = method.FirstParameter(); param != null; param = param.NextVar()) {
 				if (param.Value != null) {
 					WriteOverloads(method, i);
 					break;
@@ -20422,7 +20432,7 @@ namespace Fusion
 			WriteName(method);
 			WriteChar('(');
 			int i = 0;
-			for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+			for (FuVar param = method.FirstParameter(); param != null; param = param.NextVar()) {
 				if (i > 0)
 					Write(", ");
 				WriteName(param);
@@ -22460,7 +22470,7 @@ namespace Fusion
 			if (method.CallType == FuCallType.Abstract)
 				WriteLine("preconditionFailure(\"Abstract method called\")");
 			else {
-				for (FuVar param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+				for (FuVar param = method.FirstParameter(); param != null; param = param.NextVar()) {
 					if (param.IsAssigned) {
 						Write("var ");
 						WriteTypeAndName(param);

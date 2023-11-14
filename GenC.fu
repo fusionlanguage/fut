@@ -937,12 +937,12 @@ public class GenC : GenCCpp
 				WriteStorageTemporary(call.Method.Left);
 			}
 			assert call.Method.Symbol is FuMethod method;
-			FuVar? param = method.Parameters.FirstParameter();
+			FuVar? param = method.FirstParameter();
 			foreach (FuExpr arg in call.Arguments) {
 				WriteCTemporaries(arg);
 				if (call.Method.Symbol.Id != FuId.ConsoleWrite && call.Method.Symbol.Id != FuId.ConsoleWriteLine && !(param.Type is FuStorageType))
 					WriteStorageTemporary(arg);
-				param = param.NextParameter();
+				param = param.NextVar();
 			}
 			break;
 		default:
@@ -1635,7 +1635,7 @@ public class GenC : GenCCpp
 	void WriteArgsAndRightParenthesis!(FuMethod method, List<FuExpr#> args)
 	{
 		int i = 0;
-		for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+		for (FuVar? param = method.FirstParameter(); param != null; param = param.NextVar()) {
 			if (i > 0 || method.CallType != FuCallType.Static)
 				Write(", ");
 			if (i >= args.Count)
@@ -2883,7 +2883,7 @@ public class GenC : GenCCpp
 	void WriteInstanceParameters!(FuMethod method)
 	{
 		WriteChar('(');
-		if (!method.IsMutator)
+		if (!method.IsMutator())
 			Write("const ");
 		WriteName(method.Parent);
 		Write(" *self");
@@ -3235,7 +3235,7 @@ public class GenC : GenCCpp
 		}
 		else {
 			WriteSignature(method);
-			for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+			for (FuVar? param = method.FirstParameter(); param != null; param = param.NextVar()) {
 				if (NeedToDestruct(param))
 					this.VarsToDestruct.Add(param);
 			}

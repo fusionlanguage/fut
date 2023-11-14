@@ -1,0 +1,17 @@
+public class Test
+{
+	bool Foo!()
+	{
+		Test() o;
+		this = o; // TODO
+		return true;
+	}
+
+	bool Bar() => this.Foo(); //ERROR: Cannot call mutating method 'Foo' on a read-only reference
+
+	public static bool Run()
+	{
+		Test o = this; //ERROR: 'this' not found
+		return true;
+	}
+}

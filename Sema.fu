@@ -541,7 +541,7 @@ public class FuSema
 				break;
 			case FuField _:
 				if (symbol.Left == null) {
-					if (!this.CurrentMethod.IsMutator)
+					if (!this.CurrentMethod.IsMutator())
 						ReportError(expr, "Cannot modify field in a non-mutating method");
 				}
 				else {
@@ -1216,7 +1216,7 @@ public class FuSema
 
 	bool CanCall(FuExpr? obj, FuMethod method, List<FuExpr#> arguments)
 	{
-		FuVar? param = method.Parameters.FirstParameter();
+		FuVar? param = method.FirstParameter();
 		foreach (FuExpr arg in arguments) {
 			if (param == null)
 				return false;
@@ -1225,7 +1225,7 @@ public class FuSema
 				type = EvalType(generic, type);
 			if (!type.IsAssignableFrom(arg.Type))
 				return false;
-			param = param.NextParameter();
+			param = param.NextVar();
 		}
 		return param == null || param.Value != null;
 	}
@@ -1251,9 +1251,9 @@ public class FuSema
 		}
 
 		// TODO: check static
-		if (method.IsMutator) {
+		if (!method.IsStatic() && method.IsMutator()) {
 			if (symbol.Left == null) {
-				if (!this.CurrentMethod.IsMutator)
+				if (!this.CurrentMethod.IsMutator())
 					ReportError(expr, $"Cannot call mutating method '{method.Name}' from a non-mutating method");
 			}
 			else if (symbol.Left is FuSymbolReference baseRef && baseRef.Symbol.Id == FuId.BasePtr) {
@@ -1273,7 +1273,7 @@ public class FuSema
 			}
 		}
 		int i = 0;
-		for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+		for (FuVar? param = method.FirstParameter(); param != null; param = param.NextVar()) {
 			FuType#? type = param.Type;
 			if (symbol.Left != null && symbol.Left.Type is FuClassType generic) {
 				type = EvalType(generic, type);
@@ -1314,14 +1314,14 @@ public class FuSema
 		 && !this.CurrentPureMethods.Contains(method)) {
 			this.CurrentPureMethods.Add(method);
 			i = 0;
-			for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+			for (FuVar? param = method.FirstParameter(); param != null; param = param.NextVar()) {
 				if (i < arguments.Count)
 					this.CurrentPureArguments[param] = arguments[i++];
 				else
 					this.CurrentPureArguments[param] = param.Value;
 			}
 			FuExpr# result = VisitExpr(ret.Value);
-			for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter())
+			for (FuVar? param = method.FirstParameter(); param != null; param = param.NextVar())
 				this.CurrentPureArguments.Remove(param);
 			this.CurrentPureMethods.Remove(method);
 			if (result is FuLiteral)
@@ -2088,7 +2088,7 @@ public class FuSema
 					method.Type = this.Program.System.VoidType;
 				else
 					ResolveType(method);
-				for (FuVar!? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+				for (FuVar!? param = method.FirstParameter(); param != null; param = param.NextVar()) {
 					ResolveType(param);
 					if (param.Value != null) {
 						param.Value = FoldConst(param.Value);
@@ -2100,11 +2100,11 @@ public class FuSema
 						ReportError(method, "'Main' method must be 'public static'");
 					if (method.Type.Id != FuId.VoidType && method.Type.Id != FuId.IntType)
 						ReportError(method.Type, "'Main' method must return 'void' or 'int'");
-					switch (method.Parameters.Count()) {
+					switch (method.GetParametersCount()) {
 					case 0:
 						break;
 					case 1:
-						FuVar args = method.Parameters.FirstParameter();
+						FuVar args = method.FirstParameter();
 						if (args.Type is FuClassType! argsType && argsType.IsArray() && !(argsType is FuReadWriteClassType) && !argsType.Nullable) {
 							FuType argsElement = argsType.GetElementType();
 							if (argsElement.Id == FuId.StringPtrType && !argsElement.Nullable && args.Value == null) {
@@ -2136,14 +2136,14 @@ public class FuSema
 	void ResolveCode!(FuClass! klass)
 	{
 		if (klass.Constructor != null) {
-			this.CurrentScope = klass;
+			this.CurrentScope = klass.Constructor.Parameters;
 			this.CurrentMethod = klass.Constructor;
 			VisitStatement(klass.Constructor.Body);
 			this.CurrentMethod = null;
 		}
 		for (FuSymbol!? symbol = klass.First; symbol != null; symbol = symbol.Next) {
 			if (symbol is FuMethod! method) {
-				if (method.Name == "ToString" && method.CallType != FuCallType.Static && method.Parameters.Count() == 0)
+				if (method.Name == "ToString" && method.CallType != FuCallType.Static && method.Parameters.Count() == 1)
 					method.Id = FuId.ClassToString;
 				if (method.Body != null) {
 					if (method.CallType == FuCallType.Override || method.CallType == FuCallType.Sealed) {
@@ -2153,6 +2153,12 @@ public class FuSema
 							case FuCallType.Abstract:
 							case FuCallType.Virtual:
 							case FuCallType.Override:
+								if (method.IsMutator() != baseMethod.IsMutator()) {
+									if (method.IsMutator())
+										ReportError(method, "Mutating method cannot override a non-mutating method");
+									else
+										ReportError(method, "Non-mutating method cannot override a mutating method");
+								}
 								break;
 							default:
 								ReportError(method, "Base method is not abstract or virtual");
@@ -2160,14 +2166,8 @@ public class FuSema
 							}
 							if (!method.Type.EqualsType(baseMethod.Type))
 								ReportError(method, "Base method has a different return type");
-							if (method.IsMutator != baseMethod.IsMutator) {
-								if (method.IsMutator)
-									ReportError(method, "Mutating method cannot override a non-mutating method");
-								else
-									ReportError(method, "Non-mutating method cannot override a mutating method");
-							}
-							FuVar? baseParam = baseMethod.Parameters.FirstParameter();
-							for (FuVar? param = method.Parameters.FirstParameter(); ; param = param.NextParameter()) {
+							FuVar? baseParam = baseMethod.FirstParameter();
+							for (FuVar? param = method.FirstParameter(); ; param = param.NextVar()) {
 								if (param == null) {
 									if (baseParam != null)
 										ReportError(method, "Fewer parameters than the overridden method");
@@ -2181,7 +2181,7 @@ public class FuSema
 									ReportError(method, "Base method has a different parameter type");
 									break;
 								}
-								baseParam = baseParam.NextParameter();
+								baseParam = baseParam.NextVar();
 							}
 							baseMethod.Calls.Add(method);
 						}

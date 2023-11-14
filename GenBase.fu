@@ -429,7 +429,7 @@ public abstract class GenBase : FuVisitor
 	protected void WriteParametersDoc!(FuMethod method)
 	{
 		bool first = true;
-		for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+		for (FuVar? param = method.FirstParameter(); param != null; param = param.NextVar()) {
 			if (param.Documentation != null) {
 				WriteParameterDoc(param, first);
 				first = false;
@@ -697,14 +697,14 @@ public abstract class GenBase : FuVisitor
 
 	protected void WriteArgs!(FuMethod method, List<FuExpr#> args)
 	{
-		FuVar param = method.Parameters.FirstParameter();
+		FuVar param = method.FirstParameter();
 		bool first = true;
 		foreach (FuExpr arg in args) {
 			if (!first)
 				Write(", ");
 			first = false;
 			WriteStronglyCoerced(param.Type, arg);
-			param = param.NextParameter();
+			param = param.NextVar();
 		}
 	}
 
@@ -1884,7 +1884,7 @@ public abstract class GenBase : FuVisitor
 
 	protected void WriteRemainingParameters!(FuMethod method, bool first, bool defaultArguments)
 	{
-		for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+		for (FuVar? param = method.FirstParameter(); param != null; param = param.NextVar()) {
 			if (!first)
 				Write(", ");
 			first = false;
@@ -1994,8 +1994,6 @@ public abstract class GenBase : FuVisitor
 				WriteMethod(method);
 				this.SwitchesWithGoto.Clear();
 				this.CurrentTemporaries.Clear();
-				break;
-			case FuVar _: // "this"
 				break;
 			default:
 				assert false;

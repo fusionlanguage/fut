@@ -336,12 +336,6 @@ public class FuScope : FuSymbol
 
 	public int Count() => this.Dict.Count;
 
-	public FuVar!? FirstParameter()
-	{
-		assert this.First is FuVar! result; // FIXME: FuVar!?
-		return result;
-	}
-
 	public FuContainerType! GetContainer!()
 	{
 		for (FuScope!? scope = this; scope != null; scope = scope.Parent) {
@@ -827,8 +821,12 @@ class FuForeach : FuLoop
 {
 	internal FuExpr# Collection;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitForeach(this); }
-	public FuVar! GetVar() => this.FirstParameter();
-	public FuVar! GetValueVar() => this.FirstParameter().NextParameter();
+	public FuVar! GetVar()
+	{
+		assert this.First is FuVar! result;
+		return result;
+	}
+	public FuVar! GetValueVar() => this.GetVar().NextVar();
 }
 
 class FuIf : FuCondCompletionStatement
@@ -1057,9 +1055,9 @@ public class FuVar : FuNamedValue
 	public static FuVar# New(FuType#? type, string name, FuExpr#? defaultValue = null)
 		=> new FuVar { Type = type, Name = name, Value = defaultValue };
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitVar(this); }
-	public FuVar!? NextParameter()
+	public FuVar!? NextVar()
 	{
-		assert this.Next is FuVar! def;
+		assert this.Next is FuVar! def; // FIXME: FuVar!?
 		return def;
 	}
 }
@@ -1100,23 +1098,30 @@ class FuStaticProperty : FuMember
 
 public class FuMethodBase : FuMember
 {
-	internal bool IsMutator = false;
+	internal FuParameters() Parameters;
 	internal bool Throws;
 	internal FuStatement#? Body;
 	internal bool IsLive = false;
 	internal HashSet<FuMethod!>() Calls;
 	public override bool IsStatic() => false; // constructor
+	public void AddThis!(FuClass? klass, bool isMutator)
+	{
+		FuClassType# type = isMutator ? new FuReadWriteClassType() : new FuClassType();
+		type.Class = klass;
+		this.Parameters.Add(FuVar.New(type, "this"));
+	}
+	public bool IsMutator() => this.Parameters.First.Type is FuReadWriteClassType;
 }
 
 public class FuMethod : FuMethodBase
 {
 	internal FuCallType CallType;
-	internal FuParameters() Parameters;
 	internal FuScope() MethodScope;
-	public static FuMethod# New(FuClass!? klass, FuVisibility visibility, FuCallType callType, FuType# type, FuId id, string name, bool isMutator, FuVar#? param0 = null, FuVar#? param1 = null, FuVar#? param2 = null, FuVar#? param3 = null)
+	public static FuMethod# New(FuClass? klass, FuVisibility visibility, FuCallType callType, FuType# type, FuId id, string name, bool isMutator, FuVar#? param0 = null, FuVar#? param1 = null, FuVar#? param2 = null, FuVar#? param3 = null)
 	{
 		FuMethod# result = new FuMethod { Visibility = visibility, CallType = callType, Type = type, Id = id, Name = name };
-		result.IsMutator = isMutator;
+		if (callType != FuCallType.Static)
+			result.AddThis(klass, isMutator);
 		if (param0 != null) {
 			result.Parameters.Add(param0);
 			if (param1 != null) {
@@ -1132,6 +1137,16 @@ public class FuMethod : FuMethodBase
 	}
 	public override bool IsStatic() => this.CallType == FuCallType.Static;
 	public bool IsAbstractOrVirtual() => this.CallType == FuCallType.Abstract || this.CallType == FuCallType.Virtual;
+	public FuVar!? FirstParameter()
+	{
+		assert this.Parameters.First is FuVar! first; // FIXME: FuVar!?
+		return IsStatic() ? first : first.NextVar();
+	}
+	public int GetParametersCount()
+	{
+		int c = this.Parameters.Count();
+		return IsStatic() ? c : c - 1;
+	}
 	public FuMethod GetDeclaringMethod()
 	{
 		FuMethod method = this;
@@ -1141,7 +1156,6 @@ public class FuMethod : FuMethodBase
 		}
 		return method;
 	}
-	public bool IsToString() => this.Name == "ToString" && this.CallType != FuCallType.Static && this.Parameters.Count() == 0;
 }
 
 class FuMethodGroup : FuMember
@@ -1210,11 +1224,6 @@ public class FuClass : FuContainerType
 		return false;
 	}
 
-	public FuClass()
-	{
-		Add(FuVar.New(new FuReadWriteClassType { Class = this }, "this")); // shadows "this" in base class
-	}
-
 	public static FuClass# New(FuCallType callType, FuId id, string name, int typeParameterCount = 0)
 		=> new FuClass { CallType = callType, Id = id, Name = name, TypeParameterCount = typeParameterCount };
 
@@ -1238,9 +1247,9 @@ public class FuClass : FuContainerType
 		return true;
 	}
 
-	public bool HasToString() => TryLookup("ToString", false) is FuMethod method && method.IsToString();
+	public bool HasToString() => TryLookup("ToString", false) is FuMethod method && method.Id == FuId.ClassToString;
 
-	public bool AddsToString() => this.Dict.ContainsKey("ToString") && this.Dict["ToString"] is FuMethod method && method.IsToString()
+	public bool AddsToString() => this.Dict.ContainsKey("ToString") && this.Dict["ToString"] is FuMethod method && method.Id == FuId.ClassToString
 		&& method.CallType != FuCallType.Override && method.CallType != FuCallType.Sealed;
 }
 

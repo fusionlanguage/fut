@@ -1423,8 +1423,6 @@ public class GenD : GenCCppD
 				WriteMethod(method);
 				this.CurrentTemporaries.Clear();
 				break;
-			case FuVar _: // "this"
-				break;
 			default:
 				assert false;
 			}

@@ -1620,7 +1620,7 @@ public class GenSwift : GenPySwift
 		if (method.CallType == FuCallType.Abstract)
 			WriteLine("preconditionFailure(\"Abstract method called\")");
 		else {
-			for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+			for (FuVar? param = method.FirstParameter(); param != null; param = param.NextVar()) {
 				if (param.IsAssigned) {
 					Write("var ");
 					WriteTypeAndName(param);

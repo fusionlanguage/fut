@@ -1163,12 +1163,6 @@ int FuScope::count() const
 	return std::ssize(this->dict);
 }
 
-FuVar * FuScope::firstParameter() const
-{
-	FuVar * result = static_cast<FuVar *>(this->first);
-	return result;
-}
-
 FuContainerType * FuScope::getContainer()
 {
 	for (FuScope * scope = this; scope != nullptr; scope = scope->parent) {
@@ -1714,12 +1708,13 @@ void FuForeach::acceptStatement(FuVisitor * visitor) const
 
 FuVar * FuForeach::getVar() const
 {
-	return this->firstParameter();
+	FuVar * result = static_cast<FuVar *>(this->first);
+	return result;
 }
 
 FuVar * FuForeach::getValueVar() const
 {
-	return this->firstParameter()->nextParameter();
+	return this->getVar()->nextVar();
 }
 
 void FuIf::acceptStatement(FuVisitor * visitor) const
@@ -1986,7 +1981,7 @@ void FuVar::accept(FuVisitor * visitor, FuPriority parent) const
 	visitor->visitVar(this);
 }
 
-FuVar * FuVar::nextParameter() const
+FuVar * FuVar::nextVar() const
 {
 	FuVar * def = static_cast<FuVar *>(this->next);
 	return def;
@@ -2042,7 +2037,19 @@ bool FuMethodBase::isStatic() const
 	return false;
 }
 
-std::shared_ptr<FuMethod> FuMethod::new_(FuClass * klass, FuVisibility visibility, FuCallType callType, std::shared_ptr<FuType> type, FuId id, std::string_view name, bool isMutator, std::shared_ptr<FuVar> param0, std::shared_ptr<FuVar> param1, std::shared_ptr<FuVar> param2, std::shared_ptr<FuVar> param3)
+void FuMethodBase::addThis(const FuClass * klass, bool isMutator)
+{
+	std::shared_ptr<FuClassType> type = isMutator ? std::make_shared<FuReadWriteClassType>() : std::make_shared<FuClassType>();
+	type->class_ = klass;
+	this->parameters.add(FuVar::new_(type, "this"));
+}
+
+bool FuMethodBase::isMutator() const
+{
+	return dynamic_cast<const FuReadWriteClassType *>(this->parameters.first->type.get());
+}
+
+std::shared_ptr<FuMethod> FuMethod::new_(const FuClass * klass, FuVisibility visibility, FuCallType callType, std::shared_ptr<FuType> type, FuId id, std::string_view name, bool isMutator, std::shared_ptr<FuVar> param0, std::shared_ptr<FuVar> param1, std::shared_ptr<FuVar> param2, std::shared_ptr<FuVar> param3)
 {
 	std::shared_ptr<FuMethod> result = std::make_shared<FuMethod>();
 	result->visibility = visibility;
@@ -2050,7 +2057,8 @@ std::shared_ptr<FuMethod> FuMethod::new_(FuClass * klass, FuVisibility visibilit
 	result->type = type;
 	result->id = id;
 	result->name = name;
-	result->isMutator = isMutator;
+	if (callType != FuCallType::static_)
+		result->addThis(klass, isMutator);
 	if (param0 != nullptr) {
 		result->parameters.add(param0);
 		if (param1 != nullptr) {
@@ -2075,6 +2083,18 @@ bool FuMethod::isAbstractOrVirtual() const
 	return this->callType == FuCallType::abstract || this->callType == FuCallType::virtual_;
 }
 
+FuVar * FuMethod::firstParameter() const
+{
+	FuVar * first = static_cast<FuVar *>(this->parameters.first);
+	return isStatic() ? first : first->nextVar();
+}
+
+int FuMethod::getParametersCount() const
+{
+	int c = this->parameters.count();
+	return isStatic() ? c : c - 1;
+}
+
 const FuMethod * FuMethod::getDeclaringMethod() const
 {
 	const FuMethod * method = this;
@@ -2083,11 +2103,6 @@ const FuMethod * FuMethod::getDeclaringMethod() const
 		method = baseMethod;
 	}
 	return method;
-}
-
-bool FuMethod::isToString() const
-{
-	return this->name == "ToString" && this->callType != FuCallType::static_ && this->parameters.count() == 0;
 }
 FuMethodGroup::FuMethodGroup()
 {
@@ -2125,12 +2140,6 @@ void FuEnum::acceptValues(FuVisitor * visitor) const
 			previous = konst;
 		}
 	}
-}
-FuClass::FuClass()
-{
-	std::shared_ptr<FuReadWriteClassType> futemp0 = std::make_shared<FuReadWriteClassType>();
-	futemp0->class_ = this;
-	add(FuVar::new_(futemp0, "this"));
 }
 
 bool FuClass::hasBaseClass() const
@@ -2182,13 +2191,13 @@ bool FuClass::isSameOrBaseOf(const FuClass * derived) const
 bool FuClass::hasToString() const
 {
 	const FuMethod * method;
-	return (method = dynamic_cast<const FuMethod *>(tryLookup("ToString", false).get())) && method->isToString();
+	return (method = dynamic_cast<const FuMethod *>(tryLookup("ToString", false).get())) && method->id == FuId::classToString;
 }
 
 bool FuClass::addsToString() const
 {
 	const FuMethod * method;
-	return this->dict.count("ToString") != 0 && (method = dynamic_cast<const FuMethod *>(this->dict.find("ToString")->second.get())) && method->isToString() && method->callType != FuCallType::override_ && method->callType != FuCallType::sealed;
+	return this->dict.count("ToString") != 0 && (method = dynamic_cast<const FuMethod *>(this->dict.find("ToString")->second.get())) && method->id == FuId::classToString && method->callType != FuCallType::override_ && method->callType != FuCallType::sealed;
 }
 
 std::shared_ptr<FuType> FuClassType::getElementType() const
@@ -3778,10 +3787,12 @@ FuCallType FuParser::parseCallType()
 	}
 }
 
-void FuParser::parseMethod(FuMethod * method)
+void FuParser::parseMethod(FuClass * klass, std::shared_ptr<FuMethod> method)
 {
+	addSymbol(klass, method);
+	method->parameters.parent = klass;
 	if (method->callType != FuCallType::static_)
-		method->isMutator = eat(FuToken::exclamationMark);
+		method->addThis(klass, eat(FuToken::exclamationMark));
 	expectOrSkip(FuToken::leftParenthesis);
 	if (!see(FuToken::rightParenthesis)) {
 		do {
@@ -3890,9 +3901,10 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallT
 			futemp0->parent = klass.get();
 			futemp0->type = this->program->system->voidType;
 			futemp0->name = klass->name;
-			futemp0->isMutator = true;
 			futemp0->body = parseBlock();
 			klass->constructor = futemp0;
+			klass->constructor->parameters.parent = klass.get();
+			klass->constructor->addThis(klass.get(), true);
 			continue;
 		}
 		int line = this->line;
@@ -3917,9 +3929,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallT
 			method->callType = callType;
 			method->typeExpr = type;
 			method->name = name;
-			addSymbol(klass.get(), method);
-			method->parameters.parent = klass.get();
-			parseMethod(method.get());
+			parseMethod(klass.get(), method);
 			continue;
 		}
 		if (visibility == FuVisibility::public_)
@@ -4550,7 +4560,7 @@ void FuSema::checkLValue(const FuExpr * expr) const
 		}
 		else if (dynamic_cast<const FuField *>(symbol->symbol)) {
 			if (symbol->left == nullptr) {
-				if (!this->currentMethod->isMutator)
+				if (!this->currentMethod->isMutator())
 					reportError(expr, "Cannot modify field in a non-mutating method");
 			}
 			else {
@@ -5308,7 +5318,7 @@ std::shared_ptr<FuType> FuSema::evalType(const FuClassType * generic, std::share
 
 bool FuSema::canCall(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * arguments) const
 {
-	const FuVar * param = method->parameters.firstParameter();
+	const FuVar * param = method->firstParameter();
 	for (const std::shared_ptr<FuExpr> &arg : *arguments) {
 		if (param == nullptr)
 			return false;
@@ -5318,7 +5328,7 @@ bool FuSema::canCall(const FuExpr * obj, const FuMethod * method, const std::vec
 			type = evalType(generic, type);
 		if (!type->isAssignableFrom(arg->type.get()))
 			return false;
-		param = param->nextParameter();
+		param = param->nextVar();
 	}
 	return param == nullptr || param->value != nullptr;
 }
@@ -5340,9 +5350,9 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 	}
 	else
 		return poisonError(symbol.get(), "Expected a method");
-	if (method->isMutator) {
+	if (!method->isStatic() && method->isMutator()) {
 		if (symbol->left == nullptr) {
-			if (!this->currentMethod->isMutator)
+			if (!this->currentMethod->isMutator())
 				reportError(expr.get(), std::format("Cannot call mutating method '{}' from a non-mutating method", method->name));
 		}
 		else {
@@ -5369,7 +5379,7 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 		}
 	}
 	int i = 0;
-	for (const FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
+	for (const FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar()) {
 		std::shared_ptr<FuType> type = param->type;
 		const FuClassType * generic;
 		if (symbol->left != nullptr && (generic = dynamic_cast<const FuClassType *>(symbol->left->type.get()))) {
@@ -5407,14 +5417,14 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 	if (method->callType == FuCallType::static_ && (ret = dynamic_cast<const FuReturn *>(method->body.get())) && std::all_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return dynamic_cast<const FuLiteral *>(arg.get()); }) && !this->currentPureMethods.contains(method)) {
 		this->currentPureMethods.insert(method);
 		i = 0;
-		for (const FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
+		for (const FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar()) {
 			if (i < std::ssize(*arguments))
 				this->currentPureArguments[param] = (*arguments)[i++];
 			else
 				this->currentPureArguments[param] = param->value;
 		}
 		std::shared_ptr<FuExpr> result = visitExpr(ret->value);
-		for (const FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter())
+		for (const FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar())
 			this->currentPureArguments.erase(param);
 		this->currentPureMethods.erase(method);
 		if (dynamic_cast<const FuLiteral *>(result.get()))
@@ -6180,7 +6190,7 @@ void FuSema::resolveTypes(FuClass * klass)
 				method->type = this->program->system->voidType;
 			else
 				resolveType(method);
-			for (FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
+			for (FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar()) {
 				resolveType(param);
 				if (param->value != nullptr) {
 					param->value = foldConst(param->value);
@@ -6192,12 +6202,12 @@ void FuSema::resolveTypes(FuClass * klass)
 					reportError(method, "'Main' method must be 'public static'");
 				if (method->type->id != FuId::voidType && method->type->id != FuId::intType)
 					reportError(method->type.get(), "'Main' method must return 'void' or 'int'");
-				switch (method->parameters.count()) {
+				switch (method->getParametersCount()) {
 				case 0:
 					break;
 				case 1:
 					{
-						const FuVar * args = method->parameters.firstParameter();
+						const FuVar * args = method->firstParameter();
 						FuClassType * argsType;
 						if ((argsType = dynamic_cast<FuClassType *>(args->type.get())) && argsType->isArray() && !dynamic_cast<const FuReadWriteClassType *>(argsType) && !argsType->nullable) {
 							const FuType * argsElement = argsType->getElementType().get();
@@ -6228,14 +6238,14 @@ void FuSema::resolveTypes(FuClass * klass)
 void FuSema::resolveCode(FuClass * klass)
 {
 	if (klass->constructor != nullptr) {
-		this->currentScope = klass;
+		this->currentScope = &klass->constructor->parameters;
 		this->currentMethod = klass->constructor.get();
 		visitStatement(klass->constructor->body);
 		this->currentMethod = nullptr;
 	}
 	for (FuSymbol * symbol = klass->first; symbol != nullptr; symbol = symbol->next) {
 		if (FuMethod *method = dynamic_cast<FuMethod *>(symbol)) {
-			if (method->name == "ToString" && method->callType != FuCallType::static_ && method->parameters.count() == 0)
+			if (method->name == "ToString" && method->callType != FuCallType::static_ && method->parameters.count() == 1)
 				method->id = FuId::classToString;
 			if (method->body != nullptr) {
 				if (method->callType == FuCallType::override_ || method->callType == FuCallType::sealed) {
@@ -6244,6 +6254,12 @@ void FuSema::resolveCode(FuClass * klass)
 						case FuCallType::abstract:
 						case FuCallType::virtual_:
 						case FuCallType::override_:
+							if (method->isMutator() != baseMethod->isMutator()) {
+								if (method->isMutator())
+									reportError(method, "Mutating method cannot override a non-mutating method");
+								else
+									reportError(method, "Non-mutating method cannot override a mutating method");
+							}
 							break;
 						default:
 							reportError(method, "Base method is not abstract or virtual");
@@ -6251,14 +6267,8 @@ void FuSema::resolveCode(FuClass * klass)
 						}
 						if (!method->type->equalsType(baseMethod->type.get()))
 							reportError(method, "Base method has a different return type");
-						if (method->isMutator != baseMethod->isMutator) {
-							if (method->isMutator)
-								reportError(method, "Mutating method cannot override a non-mutating method");
-							else
-								reportError(method, "Non-mutating method cannot override a mutating method");
-						}
-						const FuVar * baseParam = baseMethod->parameters.firstParameter();
-						for (const FuVar * param = method->parameters.firstParameter();; param = param->nextParameter()) {
+						const FuVar * baseParam = baseMethod->firstParameter();
+						for (const FuVar * param = method->firstParameter();; param = param->nextVar()) {
 							if (param == nullptr) {
 								if (baseParam != nullptr)
 									reportError(method, "Fewer parameters than the overridden method");
@@ -6272,7 +6282,7 @@ void FuSema::resolveCode(FuClass * klass)
 								reportError(method, "Base method has a different parameter type");
 								break;
 							}
-							baseParam = baseParam->nextParameter();
+							baseParam = baseParam->nextVar();
 						}
 						baseMethod->calls.insert(method);
 					}
@@ -6733,7 +6743,7 @@ void GenBase::writeParameterDoc(const FuVar * param, bool first)
 void GenBase::writeParametersDoc(const FuMethod * method)
 {
 	bool first = true;
-	for (const FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
+	for (const FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar()) {
 		if (param->documentation != nullptr) {
 			writeParameterDoc(param, first);
 			first = false;
@@ -7000,14 +7010,14 @@ void GenBase::writeCoercedLiterals(const FuType * type, const std::vector<std::s
 
 void GenBase::writeArgs(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
-	const FuVar * param = method->parameters.firstParameter();
+	const FuVar * param = method->firstParameter();
 	bool first = true;
 	for (const std::shared_ptr<FuExpr> &arg : *args) {
 		if (!first)
 			write(", ");
 		first = false;
 		writeStronglyCoerced(param->type.get(), arg.get());
-		param = param->nextParameter();
+		param = param->nextVar();
 	}
 }
 
@@ -8182,7 +8192,7 @@ void GenBase::writeParameter(const FuVar * param)
 
 void GenBase::writeRemainingParameters(const FuMethod * method, bool first, bool defaultArguments)
 {
-	for (const FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
+	for (const FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar()) {
 		if (!first)
 			write(", ");
 		first = false;
@@ -8284,8 +8294,6 @@ void GenBase::writeMembers(const FuClass * klass, bool constArrays)
 			writeMethod(method);
 			this->switchesWithGoto.clear();
 			this->currentTemporaries.clear();
-		}
-		else if (dynamic_cast<const FuVar *>(symbol)) {
 		}
 		else
 			std::abort();
@@ -9710,12 +9718,12 @@ void GenC::writeCTemporaries(const FuExpr * expr)
 			writeStorageTemporary(call->method->left.get());
 		}
 		const FuMethod * method = static_cast<const FuMethod *>(call->method->symbol);
-		const FuVar * param = method->parameters.firstParameter();
+		const FuVar * param = method->firstParameter();
 		for (const std::shared_ptr<FuExpr> &arg : call->arguments) {
 			writeCTemporaries(arg.get());
 			if (call->method->symbol->id != FuId::consoleWrite && call->method->symbol->id != FuId::consoleWriteLine && !dynamic_cast<const FuStorageType *>(param->type.get()))
 				writeStorageTemporary(arg.get());
-			param = param->nextParameter();
+			param = param->nextVar();
 		}
 	}
 	else
@@ -10398,7 +10406,7 @@ void GenC::writeDictionaryLookup(const FuExpr * obj, std::string_view function, 
 void GenC::writeArgsAndRightParenthesis(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
 	int i = 0;
-	for (const FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
+	for (const FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar()) {
 		if (i > 0 || method->callType != FuCallType::static_)
 			write(", ");
 		if (i >= std::ssize(*args))
@@ -11660,7 +11668,7 @@ void GenC::writeTypedefs(const FuProgram * program, bool pub)
 void GenC::writeInstanceParameters(const FuMethod * method)
 {
 	writeChar('(');
-	if (!method->isMutator)
+	if (!method->isMutator())
 		write("const ");
 	writeName(method->parent);
 	write(" *self");
@@ -12011,7 +12019,7 @@ void GenC::writeMethod(const FuMethod * method)
 	}
 	else {
 		writeSignature(method);
-		for (const FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
+		for (const FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar()) {
 			if (needToDestruct(param))
 				this->varsToDestruct.push_back(param);
 		}
@@ -14358,7 +14366,7 @@ void GenCpp::writeField(const FuField * field)
 void GenCpp::writeParametersAndConst(const FuMethod * method, bool defaultArguments)
 {
 	writeParameters(method, defaultArguments);
-	if (method->callType != FuCallType::static_ && !method->isMutator)
+	if (method->callType != FuCallType::static_ && !method->isMutator())
 		write(" const");
 }
 
@@ -16727,8 +16735,6 @@ void GenD::writeClass(const FuClass * klass, const FuProgram * program)
 			writeMethod(method);
 			this->currentTemporaries.clear();
 		}
-		else if (dynamic_cast<const FuVar *>(symbol)) {
-		}
 		else
 			std::abort();
 	}
@@ -18057,12 +18063,12 @@ void GenJava::writeSignature(const FuMethod * method, int paramCount)
 	if (method->id == FuId::main && paramCount == 0)
 		write("String[] args");
 	else {
-		const FuVar * param = method->parameters.firstParameter();
+		const FuVar * param = method->firstParameter();
 		for (int i = 0; i < paramCount; i++) {
 			if (i > 0)
 				write(", ");
 			writeTypeAndName(param);
-			param = param->nextParameter();
+			param = param->nextVar();
 		}
 	}
 	writeChar(')');
@@ -18072,7 +18078,7 @@ void GenJava::writeSignature(const FuMethod * method, int paramCount)
 
 void GenJava::writeOverloads(const FuMethod * method, int paramCount)
 {
-	if (paramCount + 1 < method->parameters.count())
+	if (paramCount + 1 < method->getParametersCount())
 		writeOverloads(method, paramCount + 1);
 	writeSignature(method, paramCount);
 	writeNewLine();
@@ -18081,11 +18087,11 @@ void GenJava::writeOverloads(const FuMethod * method, int paramCount)
 		write("return ");
 	writeName(method);
 	writeChar('(');
-	const FuVar * param = method->parameters.firstParameter();
+	const FuVar * param = method->firstParameter();
 	for (int i = 0; i < paramCount; i++) {
 		writeName(param);
 		write(", ");
-		param = param->nextParameter();
+		param = param->nextVar();
 	}
 	param->value->accept(this, FuPriority::argument);
 	writeLine(");");
@@ -18114,10 +18120,10 @@ void GenJava::writeField(const FuField * field)
 
 void GenJava::writeMethod(const FuMethod * method)
 {
-	writeSignature(method, method->parameters.count());
+	writeSignature(method, method->getParametersCount());
 	writeBody(method);
 	int i = 0;
-	for (const FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
+	for (const FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar()) {
 		if (param->value != nullptr) {
 			writeOverloads(method, i);
 			break;
@@ -19753,7 +19759,7 @@ void GenTs::writeMethod(const FuMethod * method)
 	writeName(method);
 	writeChar('(');
 	int i = 0;
-	for (const FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
+	for (const FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar()) {
 		if (i > 0)
 			write(", ");
 		writeName(param);
@@ -21680,7 +21686,7 @@ void GenSwift::writeMethod(const FuMethod * method)
 	if (method->callType == FuCallType::abstract)
 		writeLine("preconditionFailure(\"Abstract method called\")");
 	else {
-		for (const FuVar * param = method->parameters.firstParameter(); param != nullptr; param = param->nextParameter()) {
+		for (const FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar()) {
 			if (param->isAssigned) {
 				write("var ");
 				writeTypeAndName(param);

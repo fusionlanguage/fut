@@ -1721,7 +1721,7 @@ public class GenCpp : GenCCpp
 	void WriteParametersAndConst!(FuMethod method, bool defaultArguments)
 	{
 		WriteParameters(method, defaultArguments);
-		if (method.CallType != FuCallType.Static && !method.IsMutator)
+		if (method.CallType != FuCallType.Static && !method.IsMutator())
 			Write(" const");
 	}
 

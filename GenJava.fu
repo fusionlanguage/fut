@@ -1282,12 +1282,12 @@ public class GenJava : GenTyped
 		if (method.Id == FuId.Main && paramCount == 0)
 			Write("String[] args");
 		else {
-			FuVar param = method.Parameters.FirstParameter();
+			FuVar param = method.FirstParameter();
 			for (int i = 0; i < paramCount; i++) {
 				if (i > 0)
 					Write(", ");
 				WriteTypeAndName(param);
-				param = param.NextParameter();
+				param = param.NextVar();
 			}
 		}
 		WriteChar(')');
@@ -1297,7 +1297,7 @@ public class GenJava : GenTyped
 
 	void WriteOverloads!(FuMethod method, int paramCount)
 	{
-		if (paramCount + 1 < method.Parameters.Count())
+		if (paramCount + 1 < method.GetParametersCount())
 			WriteOverloads(method, paramCount + 1);
 		WriteSignature(method, paramCount);
 		WriteNewLine();
@@ -1306,11 +1306,11 @@ public class GenJava : GenTyped
 			Write("return ");
 		WriteName(method);
 		WriteChar('(');
-		FuVar param = method.Parameters.FirstParameter();
+		FuVar param = method.FirstParameter();
 		for (int i = 0; i < paramCount; i++) {
 			WriteName(param);
 			Write(", ");
-			param = param.NextParameter();
+			param = param.NextVar();
 		}
 		param.Value.Accept(this, FuPriority.Argument);
 		WriteLine(");");
@@ -1339,10 +1339,10 @@ public class GenJava : GenTyped
 
 	protected override void WriteMethod!(FuMethod method)
 	{
-		WriteSignature(method, method.Parameters.Count());
+		WriteSignature(method, method.GetParametersCount());
 		WriteBody(method);
 		int i = 0;
-		for (FuVar? param = method.Parameters.FirstParameter(); param != null; param = param.NextParameter()) {
+		for (FuVar? param = method.FirstParameter(); param != null; param = param.NextVar()) {
 			if (param.Value != null) {
 				WriteOverloads(method, i);
 				break;
