@@ -9,7 +9,7 @@ public class Test
 	public static bool Run()
 	{
 		Test() o;
-		if (o.Foo) // TODO: 'Foo' is static
+		if (o.Foo) //ERROR: 'Foo' is static
 			o.StaticMethod(); //ERROR: 'StaticMethod' is static
 		return true;
 	}

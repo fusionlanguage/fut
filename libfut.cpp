@@ -4247,8 +4247,6 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 		}
 	}
 	std::shared_ptr<FuExpr> result = lookup(expr, scope);
-	if (result != expr)
-		return result;
 	if (const FuMember *member = dynamic_cast<const FuMember *>(expr->symbol)) {
 		switch (member->visibility) {
 		case FuVisibility::private_:
@@ -4295,8 +4293,8 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 			break;
 		}
 		if (!dynamic_cast<const FuMethodGroup *>(member)) {
-			const FuSymbolReference * leftContainer;
-			if ((leftContainer = dynamic_cast<const FuSymbolReference *>(left.get())) && dynamic_cast<const FuContainerType *>(leftContainer->symbol)) {
+			const FuSymbolReference * leftType;
+			if ((leftType = dynamic_cast<const FuSymbolReference *>(left.get())) && dynamic_cast<const FuType *>(leftType->symbol)) {
 				if (!member->isStatic())
 					reportError(expr.get(), std::format("Cannot use instance member '{}' without an object", expr->name));
 			}
@@ -4304,6 +4302,8 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 				reportError(expr.get(), std::format("'{}' is static", expr->name));
 		}
 	}
+	if (result != expr)
+		return result;
 	std::shared_ptr<FuSymbolReference> futemp0 = std::make_shared<FuSymbolReference>();
 	futemp0->line = expr->line;
 	futemp0->left = left;

@@ -4541,8 +4541,6 @@ namespace Fusion
 					scope = klass.Class;
 			}
 			FuExpr result = Lookup(expr, scope);
-			if (result != expr)
-				return result;
 			if (expr.Symbol is FuMember member) {
 				switch (member.Visibility) {
 				case FuVisibility.Private:
@@ -4584,7 +4582,7 @@ namespace Fusion
 					break;
 				}
 				if (!(member is FuMethodGroup)) {
-					if (left is FuSymbolReference leftContainer && leftContainer.Symbol is FuContainerType) {
+					if (left is FuSymbolReference leftType && leftType.Symbol is FuType) {
 						if (!member.IsStatic())
 							ReportError(expr, $"Cannot use instance member '{expr.Name}' without an object");
 					}
@@ -4592,6 +4590,8 @@ namespace Fusion
 						ReportError(expr, $"'{expr.Name}' is static");
 				}
 			}
+			if (result != expr)
+				return result;
 			return new FuSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
 		}
 

@@ -1,0 +1,12 @@
+static class Foo
+{
+	const int Bar = 42;
+}
+
+public static class Test
+{
+	public static bool Run()
+	{
+		return Foo.Bar == 42; //ERROR: Cannot access private member 'Bar'
+	}
+}

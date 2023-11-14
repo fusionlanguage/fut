@@ -4703,8 +4703,6 @@ export class FuSema
 			}
 		}
 		let result = this.#lookup(expr, scope);
-		if (result != expr)
-			return result;
 		let member;
 		if ((member = expr.symbol) instanceof FuMember) {
 			switch (member.visibility) {
@@ -4750,8 +4748,8 @@ export class FuSema
 				break;
 			}
 			if (!(member instanceof FuMethodGroup)) {
-				let leftContainer;
-				if ((leftContainer = left) instanceof FuSymbolReference && leftContainer.symbol instanceof FuContainerType) {
+				let leftType;
+				if ((leftType = left) instanceof FuSymbolReference && leftType.symbol instanceof FuType) {
 					if (!member.isStatic())
 						this.reportError(expr, `Cannot use instance member '${expr.name}' without an object`);
 				}
@@ -4759,6 +4757,8 @@ export class FuSema
 					this.reportError(expr, `'${expr.name}' is static`);
 			}
 		}
+		if (result != expr)
+			return result;
 		return Object.assign(new FuSymbolReference(), { line: expr.line, left: left, name: expr.name, symbol: expr.symbol, type: expr.type });
 	}
 
