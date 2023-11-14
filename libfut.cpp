@@ -5764,15 +5764,21 @@ bool FuSema::resolveStatements(const std::vector<std::shared_ptr<FuStatement>> *
 	return reachable;
 }
 
+void FuSema::checkInitialized(const FuVar * def)
+{
+	if (def->type == this->poison || def->isAssigned)
+		return;
+	if (dynamic_cast<const FuStorageType *>(def->type.get()) ? !dynamic_cast<const FuArrayStorageType *>(def->type.get()) && dynamic_cast<const FuLiteralNull *>(def->value.get()) : def->value == nullptr)
+		reportError(def, "Uninitialized variable");
+}
+
 void FuSema::visitBlock(FuBlock * statement)
 {
 	openScope(statement);
 	statement->setCompletesNormally(resolveStatements(&statement->statements));
 	for (const FuSymbol * symbol = statement->first; symbol != nullptr; symbol = symbol->next) {
-		const FuVar * def;
-		if ((def = dynamic_cast<const FuVar *>(symbol)) && !def->isAssigned && def->type != this->poison && (dynamic_cast<const FuStorageType *>(def->type.get()) ? !dynamic_cast<const FuArrayStorageType *>(def->type.get()) && dynamic_cast<const FuLiteralNull *>(def->value.get()) : def->value == nullptr)) {
-			reportError(def, "Uninitialized variable");
-		}
+		if (const FuVar *def = dynamic_cast<const FuVar *>(symbol))
+			checkInitialized(def);
 	}
 	closeScope();
 }
@@ -5842,6 +5848,8 @@ void FuSema::visitFor(FuFor * statement)
 		}
 	}
 	visitStatement(statement->body);
+	if (const FuVar *initVar = dynamic_cast<const FuVar *>(statement->init.get()))
+		checkInitialized(initVar);
 	closeScope();
 }
 

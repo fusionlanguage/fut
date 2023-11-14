@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		for (int i; i < 10; ) { //ERROR: Uninitialized variable // TODO: with i++
+		}
+		return true;
+	}
+}

@@ -1652,6 +1652,7 @@ private:
 	std::shared_ptr<FuType> resolveType(FuNamedValue * def);
 	void visitAssert(FuAssert * statement);
 	bool resolveStatements(const std::vector<std::shared_ptr<FuStatement>> * statements);
+	void checkInitialized(const FuVar * def);
 	void visitBlock(FuBlock * statement);
 	void resolveLoopCond(FuLoop * statement);
 	void visitDoWhile(FuDoWhile * statement);

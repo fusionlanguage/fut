@@ -5886,14 +5886,21 @@ namespace Fusion
 			return reachable;
 		}
 
+		void CheckInitialized(FuVar def)
+		{
+			if (def.Type == this.Poison || def.IsAssigned)
+				return;
+			if (def.Type is FuStorageType ? !(def.Type is FuArrayStorageType) && def.Value is FuLiteralNull : def.Value == null)
+				ReportError(def, "Uninitialized variable");
+		}
+
 		void VisitBlock(FuBlock statement)
 		{
 			OpenScope(statement);
 			statement.SetCompletesNormally(ResolveStatements(statement.Statements));
 			for (FuSymbol symbol = statement.First; symbol != null; symbol = symbol.Next) {
-				if (symbol is FuVar def && !def.IsAssigned && def.Type != this.Poison && (def.Type is FuStorageType ? !(def.Type is FuArrayStorageType) && def.Value is FuLiteralNull : def.Value == null)) {
-					ReportError(def, "Uninitialized variable");
-				}
+				if (symbol is FuVar def)
+					CheckInitialized(def);
 			}
 			CloseScope();
 		}
@@ -5961,6 +5968,8 @@ namespace Fusion
 				}
 			}
 			VisitStatement(statement.Body);
+			if (statement.Init is FuVar initVar)
+				CheckInitialized(initVar);
 			CloseScope();
 		}
 

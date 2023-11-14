@@ -6167,15 +6167,22 @@ export class FuSema
 		return reachable;
 	}
 
+	#checkInitialized(def)
+	{
+		if (def.type == this.#poison || def.isAssigned)
+			return;
+		if (def.type instanceof FuStorageType ? !(def.type instanceof FuArrayStorageType) && def.value instanceof FuLiteralNull : def.value == null)
+			this.reportError(def, "Uninitialized variable");
+	}
+
 	#visitBlock(statement)
 	{
 		this.#openScope(statement);
 		statement.setCompletesNormally(this.#resolveStatements(statement.statements));
 		for (let symbol = statement.first; symbol != null; symbol = symbol.next) {
 			let def;
-			if ((def = symbol) instanceof FuVar && !def.isAssigned && def.type != this.#poison && (def.type instanceof FuStorageType ? !(def.type instanceof FuArrayStorageType) && def.value instanceof FuLiteralNull : def.value == null)) {
-				this.reportError(def, "Uninitialized variable");
-			}
+			if ((def = symbol) instanceof FuVar)
+				this.#checkInitialized(def);
 		}
 		this.#closeScope();
 	}
@@ -6245,6 +6252,9 @@ export class FuSema
 			}
 		}
 		this.#visitStatement(statement.body);
+		let initVar;
+		if ((initVar = statement.init) instanceof FuVar)
+			this.#checkInitialized(initVar);
 		this.#closeScope();
 	}
 
