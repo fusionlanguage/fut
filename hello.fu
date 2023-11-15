@@ -45,16 +45,16 @@ public static class HelloFu
 	}
 
 	/// Converts an unsigned integer from its decimal representation.
-	public static uint ParseUnsignedInt(string? s) throws
+	public static uint ParseUnsignedInt(string? s) throws Exception
 	{
 		if (s == null || s.Length == 0)
-			throw "Null or empty argument";
+			throw Exception("Null or empty argument");
 		uint r = 0;
 		foreach (int c in s) {
 			if (c < '0' || c > '9')
-				throw "Not a digit";
+				throw Exception("Not a digit");
 			if (r > 214748364 || (r == 214748364 && c >= '8'))
-				throw "Number too big";
+				throw Exception("Number too big");
 			r = r * 10 + c - '0';
 		}
 		return r;

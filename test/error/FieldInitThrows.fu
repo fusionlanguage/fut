@@ -1,6 +1,6 @@
 public class Test
 {
-	static int Foo() throws => 42;
+	static int Foo() throws Exception => 42;
 
 	int Bar = Foo(); //ERROR: Cannot call method 'Foo' here because it is marked 'throws'
 }

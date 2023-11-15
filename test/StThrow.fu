@@ -1,32 +1,32 @@
 public class Test
 {
-	static uint UintThrow() throws
+	static uint UintThrow() throws Exception
 	{
 		throw Exception("Foo");
 	}
 
-	static void VoidThrow() throws
+	static void VoidThrow() throws Exception
 	{
 		UintThrow();
 	}
 
-	static float FloatThrow() throws
+	static float FloatThrow() throws Exception
 	{
 		throw Exception("Foo");
 	}
 
-	static string StringPtrThrow() throws
+	static string StringPtrThrow() throws Exception
 	{
 		FloatThrow();
 		return "bar";
 	}
 
-	static Test! ObjectPtrThrow() throws
+	static Test! ObjectPtrThrow() throws Exception
 	{
 		throw Exception("Foo");
 	}
 
-	public static void Outer() throws
+	public static void Outer() throws Exception
 	{
 		VoidThrow();
 		UintThrow();

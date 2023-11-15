@@ -3811,6 +3811,12 @@ void FuParser::parseMethod(FuClass * klass, std::shared_ptr<FuMethod> method)
 	}
 	expect(FuToken::rightParenthesis);
 	method->throws = eat(FuToken::throws);
+	if (method->throws) {
+		do {
+			parseSymbolReference(nullptr);
+		}
+		while (eat(FuToken::comma));
+	}
 	if (method->callType == FuCallType::abstract)
 		expect(FuToken::semicolon);
 	else if (see(FuToken::fatArrow))

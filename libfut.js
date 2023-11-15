@@ -4277,6 +4277,12 @@ export class FuParser extends FuLexer
 		}
 		this.expect(FuToken.RIGHT_PARENTHESIS);
 		method.throws = this.eat(FuToken.THROWS);
+		if (method.throws) {
+			do {
+				this.#parseSymbolReference(null);
+			}
+			while (this.eat(FuToken.COMMA));
+		}
 		if (method.callType == FuCallType.ABSTRACT)
 			this.expect(FuToken.SEMICOLON);
 		else if (this.see(FuToken.FAT_ARROW))

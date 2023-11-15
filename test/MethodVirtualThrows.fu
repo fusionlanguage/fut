@@ -1,10 +1,10 @@
 public abstract class Base
 {
-	internal virtual void Foo() throws //FAIL: cl
+	internal virtual void Foo() throws Exception //FAIL: cl
 	{
 	}
 
-	public uint Bar() throws
+	public uint Bar() throws Exception
 	{
 		Foo();
 		return 42;
@@ -13,7 +13,7 @@ public abstract class Base
 
 public class Derived : Base
 {
-	internal override void Foo() throws
+	internal override void Foo() throws Exception
 	{
 	}
 }

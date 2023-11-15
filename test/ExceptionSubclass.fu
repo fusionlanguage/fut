@@ -4,7 +4,7 @@ public class FooException : Exception
 
 public static class Test
 {
-	public static void Throw() throws
+	public static void Throw() throws FooException
 	{
 		throw FooException("foo");
 	}

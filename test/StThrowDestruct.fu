@@ -1,11 +1,11 @@
 public class Test
 {
-	static uint UintThrow() throws
+	static uint UintThrow() throws Exception
 	{
 		throw Exception("Foo");
 	}
 
-	public static string() Outer() throws
+	public static string() Outer() throws Exception
 	{
 		string() s = "bar"; //FAIL: cl
 		UintThrow();

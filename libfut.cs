@@ -4138,6 +4138,12 @@ namespace Fusion
 			}
 			Expect(FuToken.RightParenthesis);
 			method.Throws = Eat(FuToken.Throws);
+			if (method.Throws) {
+				do {
+					ParseSymbolReference(null);
+				}
+				while (Eat(FuToken.Comma));
+			}
 			if (method.CallType == FuCallType.Abstract)
 				Expect(FuToken.Semicolon);
 			else if (See(FuToken.FatArrow))

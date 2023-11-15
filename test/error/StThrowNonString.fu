@@ -1,6 +1,6 @@
 public static class Test
 {
-	static void Foo() throws
+	static void Foo() throws Exception
 	{
 		throw Exception(42); //ERROR: Exception accepts a string argument
 	}
