@@ -932,7 +932,7 @@ public class FuSwitch : FuCondCompletionStatement
 	public static bool HasEarlyBreakAndContinue(List<FuStatement#> body) => HasEarlyBreak(body) && ListHasContinue(body);
 }
 
-class FuThrow : FuStatement
+public class FuThrow : FuStatement
 {
 	internal FuSymbolReference# Class;
 	internal FuExpr#? Message;
@@ -1101,7 +1101,7 @@ class FuStaticProperty : FuMember
 public class FuMethodBase : FuMember
 {
 	internal FuParameters() Parameters;
-	internal bool Throws;
+	internal List<FuSymbolReference#>() Throws;
 	internal FuStatement#? Body;
 	internal bool IsLive = false;
 	internal HashSet<FuMethod!>() Calls;

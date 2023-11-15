@@ -1090,7 +1090,7 @@ public class GenSwift : GenPySwift
 			return Throws(select.Cond) || Throws(select.OnTrue) || Throws(select.OnFalse);
 		case FuCallExpr call:
 			assert call.Method.Symbol is FuMethod method;
-			return method.Throws
+			return method.Throws.Count > 0
 				|| (call.Method.Left != null && Throws(call.Method.Left))
 				|| call.Arguments.Any(arg => Throws(arg));
 		default:
@@ -1611,7 +1611,7 @@ public class GenSwift : GenPySwift
 			Write("func ");
 			WriteName(method);
 			WriteParameters(method, true);
-			if (method.Throws)
+			if (method.Throws.Count > 0)
 				Write(" throws");
 			if (method.Type.Id != FuId.VoidType) {
 				Write(" -> ");

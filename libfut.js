@@ -2418,7 +2418,7 @@ export class FuSwitch extends FuCondCompletionStatement
 	}
 }
 
-class FuThrow extends FuStatement
+export class FuThrow extends FuStatement
 {
 	class;
 	message;
@@ -2677,7 +2677,7 @@ class FuStaticProperty extends FuMember
 export class FuMethodBase extends FuMember
 {
 	parameters = new FuParameters();
-	throws;
+	throws = [];
 	body;
 	isLive = false;
 	calls = new Set();
@@ -4276,11 +4276,9 @@ export class FuParser extends FuLexer
 			while (this.eat(FuToken.COMMA));
 		}
 		this.expect(FuToken.RIGHT_PARENTHESIS);
-		method.throws = this.eat(FuToken.THROWS);
-		if (method.throws) {
-			do {
-				this.#parseSymbolReference(null);
-			}
+		if (this.eat(FuToken.THROWS)) {
+			do
+				method.throws.push(this.#parseSymbolReference(null));
 			while (this.eat(FuToken.COMMA));
 		}
 		if (method.callType == FuCallType.ABSTRACT)
@@ -5735,6 +5733,16 @@ export class FuSema
 		return param == null || param.value != null;
 	}
 
+	static #methodHasThrows(method, exception)
+	{
+		for (const symbol of method.throws) {
+			let klass;
+			if ((klass = symbol.symbol) instanceof FuClass && klass.isSameOrBaseOf(exception))
+				return true;
+		}
+		return false;
+	}
+
 	#resolveCallWithArguments(expr, arguments_)
 	{
 		let symbol;
@@ -5809,11 +5817,14 @@ export class FuSema
 		}
 		if (i < arguments_.length)
 			return this.#poisonError(arguments_[i], `Too many arguments for '${method.name}'`);
-		if (method.throws) {
-			if (this.#currentMethod == null)
-				return this.#poisonError(expr, `Cannot call method '${method.name}' here because it is marked 'throws'`);
-			if (!this.#currentMethod.throws)
-				return this.#poisonError(expr, "Method marked 'throws' called from a method not marked 'throws'");
+		for (const exceptionDecl of method.throws) {
+			if (this.#currentMethod == null) {
+				this.reportError(expr, `Cannot call method '${method.name}' here because it is marked 'throws'`);
+				break;
+			}
+			let exception;
+			if ((exception = exceptionDecl.symbol) instanceof FuClass && !FuSema.#methodHasThrows(this.#currentMethod, exception))
+				this.reportError(expr, `Method marked 'throws ${exception.name}' called from a method without it`);
 		}
 		symbol.symbol = method;
 		let ret;
@@ -6444,15 +6455,20 @@ export class FuSema
 		this.#closeScope();
 	}
 
-	#visitThrow(statement)
+	#resolveException(symbol)
 	{
-		if (!this.#currentMethod.throws)
-			this.reportError(statement, "'throw' in a method not marked 'throws'");
-		let symbol;
-		if ((symbol = this.#visitSymbolReference(statement.class)) instanceof FuSymbolReference && symbol.symbol instanceof FuClass && symbol.symbol.id == FuId.EXCEPTION_CLASS) {
+		if (this.#visitSymbolReference(symbol) instanceof FuSymbolReference && symbol.symbol instanceof FuClass && symbol.symbol.id == FuId.EXCEPTION_CLASS) {
 		}
 		else
-			this.reportError(statement, "Expected 'throw Exception'");
+			this.reportError(symbol, "Expected an exception class");
+	}
+
+	#visitThrow(statement)
+	{
+		this.#resolveException(statement.class);
+		let klass;
+		if ((klass = statement.class.symbol) instanceof FuClass && !FuSema.#methodHasThrows(this.#currentMethod, klass))
+			this.reportError(statement, `Method must be marked 'throws ${klass.name}'`);
 		if (statement.message != null) {
 			statement.message = this.#visitExpr(statement.message);
 			if (!(statement.message.type instanceof FuStringType))
@@ -6690,6 +6706,8 @@ export class FuSema
 						this.program.main = method;
 					}
 				}
+				for (const exception of method.throws)
+					this.#resolveException(exception);
 			}
 		}
 	}
@@ -10022,7 +10040,7 @@ export class GenC extends GenCCpp
 
 	#writeReturnType(method)
 	{
-		if (method.type.id == FuId.VOID_TYPE && method.throws) {
+		if (method.type.id == FuId.VOID_TYPE && method.throws.length > 0) {
 			this.includeStdBool();
 			this.write("bool ");
 		}
@@ -10619,7 +10637,7 @@ export class GenC extends GenCCpp
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
 			let method = call.method.symbol;
-			return method.throws ? method : null;
+			return method.throws.length > 0 ? method : null;
 		}
 		else
 			return null;
@@ -12246,7 +12264,7 @@ export class GenC extends GenCCpp
 	{
 		if (statement.value == null) {
 			this.#writeDestructAll();
-			if (this.currentMethod.throws)
+			if (this.currentMethod.throws.length > 0)
 				this.writeLine("return true;");
 			else
 				super.visitReturn(statement);
@@ -12779,7 +12797,7 @@ export class GenC extends GenCCpp
 	{
 		if (!method.isLive || method.callType == FuCallType.ABSTRACT)
 			return;
-		if (method.throws && !GenC.#canThrow(method.type))
+		if (method.throws.length > 0 && !GenC.#canThrow(method.type))
 			this.notSupported(method, "Throwing from this method type");
 		this.writeNewLine();
 		if (method.id == FuId.MAIN) {
@@ -12801,7 +12819,7 @@ export class GenC extends GenCCpp
 			let statements = block.statements;
 			if (!block.completesNormally())
 				this.writeStatements(statements);
-			else if (method.throws && method.type.id == FuId.VOID_TYPE) {
+			else if (method.throws.length > 0 && method.type.id == FuId.VOID_TYPE) {
 				if (statements.length == 0 || !this.#tryWriteCallAndReturn(statements, statements.length - 1, null)) {
 					this.writeStatements(statements);
 					this.#writeDestructAll();
@@ -19358,8 +19376,12 @@ export class GenJava extends GenTyped
 			}
 		}
 		this.writeChar(41);
-		if (method.throws)
-			this.write(" throws Exception");
+		let separator = " throws ";
+		for (const exception of method.throws) {
+			this.write(separator);
+			this.writeExceptionClass(exception.symbol);
+			separator = ", ";
+		}
 	}
 
 	#writeOverloads(method, paramCount)
@@ -22637,7 +22659,7 @@ export class GenSwift extends GenPySwift
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
 			let method = call.method.symbol;
-			return method.throws || (call.method.left != null && GenSwift.#throws(call.method.left)) || call.arguments_.some(arg => GenSwift.#throws(arg));
+			return method.throws.length > 0 || (call.method.left != null && GenSwift.#throws(call.method.left)) || call.arguments_.some(arg => GenSwift.#throws(arg));
 		}
 		else
 			throw new Error();
@@ -23163,7 +23185,7 @@ export class GenSwift extends GenPySwift
 			this.write("func ");
 			this.writeName(method);
 			this.writeParameters(method, true);
-			if (method.throws)
+			if (method.throws.length > 0)
 				this.write(" throws");
 			if (method.type.id != FuId.VOID_TYPE) {
 				this.write(" -> ");

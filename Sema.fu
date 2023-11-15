@@ -1234,6 +1234,15 @@ public class FuSema
 		return param == null || param.Value != null;
 	}
 
+	static bool MethodHasThrows(FuMethodBase method, FuClass exception)
+	{
+		foreach (FuSymbolReference symbol in method.Throws) {
+			if (symbol.Symbol is FuClass klass && klass.IsSameOrBaseOf(exception))
+				return true;
+		}
+		return false;
+	}
+
 	FuExpr# ResolveCallWithArguments!(FuCallExpr# expr, List<FuExpr#> arguments)
 	{
 		if (!(VisitExpr(expr.Method) is FuSymbolReference# symbol))
@@ -1303,11 +1312,13 @@ public class FuSema
 		if (i < arguments.Count)
 			return PoisonError(arguments[i], $"Too many arguments for '{method.Name}'");
 
-		if (method.Throws) {
-			if (this.CurrentMethod == null)
-				return PoisonError(expr, $"Cannot call method '{method.Name}' here because it is marked 'throws'");
-			if (!this.CurrentMethod.Throws)
-				return PoisonError(expr, "Method marked 'throws' called from a method not marked 'throws'");
+		foreach (FuSymbolReference exceptionDecl in method.Throws) {
+			if (this.CurrentMethod == null) {
+				ReportError(expr, $"Cannot call method '{method.Name}' here because it is marked 'throws'");
+				break;
+			}
+			if (exceptionDecl.Symbol is FuClass exception && !MethodHasThrows(this.CurrentMethod, exception))
+				ReportError(expr, $"Method marked 'throws {exception.Name}' called from a method without it");
 		}
 
 		symbol.Symbol = method;
@@ -1911,15 +1922,20 @@ public class FuSema
 		CloseScope();
 	}
 
-	void VisitThrow!(FuThrow! statement)
+	void ResolveException!(FuSymbolReference# symbol)
 	{
-		if (!this.CurrentMethod.Throws)
-			ReportError(statement, "'throw' in a method not marked 'throws'");
-		if (VisitSymbolReference(statement.Class) is FuSymbolReference symbol
+		if (VisitSymbolReference(symbol) is FuSymbolReference
 		 && symbol.Symbol is FuClass && symbol.Symbol.Id == FuId.ExceptionClass) {
 		}
 		else
-			ReportError(statement, "Expected 'throw Exception'");
+			ReportError(symbol, "Expected an exception class");
+	}
+
+	void VisitThrow!(FuThrow! statement)
+	{
+		ResolveException(statement.Class);
+		if (statement.Class.Symbol is FuClass klass && !MethodHasThrows(this.CurrentMethod, klass))
+			ReportError(statement, $"Method must be marked 'throws {klass.Name}'");
 		if (statement.Message != null) {
 			statement.Message = VisitExpr(statement.Message);
 			if (!(statement.Message.Type is FuStringType))
@@ -2137,6 +2153,8 @@ public class FuSema
 						this.Program.Main = method;
 					}
 				}
+				foreach (FuSymbolReference# exception in method.Throws)
+					ResolveException(exception);
 				break;
 			default:
 				break;

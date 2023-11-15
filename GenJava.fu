@@ -1289,8 +1289,12 @@ public class GenJava : GenTyped
 			}
 		}
 		WriteChar(')');
-		if (method.Throws)
-			Write(" throws Exception");
+		string separator = " throws ";
+		foreach (FuSymbolReference exception in method.Throws) {
+			Write(separator);
+			WriteExceptionClass(exception.Symbol);
+			separator = ", ";
+		}
 	}
 
 	void WriteOverloads!(FuMethod method, int paramCount)

@@ -1253,7 +1253,7 @@ public:
 	bool isMutator() const;
 public:
 	FuParameters parameters;
-	bool throws;
+	std::vector<std::shared_ptr<FuSymbolReference>> throws;
 	std::shared_ptr<FuStatement> body;
 	bool isLive = false;
 	std::unordered_set<FuMethod *> calls;
@@ -1641,6 +1641,7 @@ private:
 	std::shared_ptr<FuExpr> visitSelectExpr(const FuSelectExpr * expr);
 	std::shared_ptr<FuType> evalType(const FuClassType * generic, std::shared_ptr<FuType> type) const;
 	bool canCall(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * arguments) const;
+	static bool methodHasThrows(const FuMethodBase * method, const FuClass * exception);
 	std::shared_ptr<FuExpr> resolveCallWithArguments(std::shared_ptr<FuCallExpr> expr, const std::vector<std::shared_ptr<FuExpr>> * arguments);
 	std::shared_ptr<FuExpr> visitCallExpr(std::shared_ptr<FuCallExpr> expr);
 	void resolveObjectLiteral(const FuClassType * klass, const FuAggregateInitializer * init);
@@ -1665,6 +1666,7 @@ private:
 	void visitLock(FuLock * statement);
 	void visitReturn(FuReturn * statement);
 	void visitSwitch(FuSwitch * statement);
+	void resolveException(std::shared_ptr<FuSymbolReference> symbol);
 	void visitThrow(FuThrow * statement);
 	void visitWhile(FuWhile * statement);
 	void visitStatement(std::shared_ptr<FuStatement> statement);

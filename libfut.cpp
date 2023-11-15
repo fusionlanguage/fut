@@ -3810,11 +3810,9 @@ void FuParser::parseMethod(FuClass * klass, std::shared_ptr<FuMethod> method)
 		while (eat(FuToken::comma));
 	}
 	expect(FuToken::rightParenthesis);
-	method->throws = eat(FuToken::throws);
-	if (method->throws) {
-		do {
-			parseSymbolReference(nullptr);
-		}
+	if (eat(FuToken::throws)) {
+		do
+			method->throws.push_back(parseSymbolReference(nullptr));
 		while (eat(FuToken::comma));
 	}
 	if (method->callType == FuCallType::abstract)
@@ -5349,6 +5347,16 @@ bool FuSema::canCall(const FuExpr * obj, const FuMethod * method, const std::vec
 	return param == nullptr || param->value != nullptr;
 }
 
+bool FuSema::methodHasThrows(const FuMethodBase * method, const FuClass * exception)
+{
+	for (const std::shared_ptr<FuSymbolReference> &symbol : method->throws) {
+		const FuClass * klass;
+		if ((klass = dynamic_cast<const FuClass *>(symbol->symbol)) && klass->isSameOrBaseOf(exception))
+			return true;
+	}
+	return false;
+}
+
 std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallExpr> expr, const std::vector<std::shared_ptr<FuExpr>> * arguments)
 {
 	std::shared_ptr<FuSymbolReference> symbol;
@@ -5422,11 +5430,14 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 	}
 	if (i < std::ssize(*arguments))
 		return poisonError((*arguments)[i].get(), std::format("Too many arguments for '{}'", method->name));
-	if (method->throws) {
-		if (this->currentMethod == nullptr)
-			return poisonError(expr.get(), std::format("Cannot call method '{}' here because it is marked 'throws'", method->name));
-		if (!this->currentMethod->throws)
-			return poisonError(expr.get(), "Method marked 'throws' called from a method not marked 'throws'");
+	for (const std::shared_ptr<FuSymbolReference> &exceptionDecl : method->throws) {
+		if (this->currentMethod == nullptr) {
+			reportError(expr.get(), std::format("Cannot call method '{}' here because it is marked 'throws'", method->name));
+			break;
+		}
+		const FuClass * exception;
+		if ((exception = dynamic_cast<const FuClass *>(exceptionDecl->symbol)) && !methodHasThrows(this->currentMethod, exception))
+			reportError(expr.get(), std::format("Method marked 'throws {}' called from a method without it", exception->name));
 	}
 	symbol->symbol = method;
 	const FuReturn * ret;
@@ -6035,15 +6046,20 @@ void FuSema::visitSwitch(FuSwitch * statement)
 	closeScope();
 }
 
-void FuSema::visitThrow(FuThrow * statement)
+void FuSema::resolveException(std::shared_ptr<FuSymbolReference> symbol)
 {
-	if (!this->currentMethod->throws)
-		reportError(statement, "'throw' in a method not marked 'throws'");
-	const FuSymbolReference * symbol;
-	if ((symbol = dynamic_cast<const FuSymbolReference *>(visitSymbolReference(statement->class_).get())) && dynamic_cast<const FuClass *>(symbol->symbol) && symbol->symbol->id == FuId::exceptionClass) {
+	if (dynamic_cast<const FuSymbolReference *>(visitSymbolReference(symbol).get()) && dynamic_cast<const FuClass *>(symbol->symbol) && symbol->symbol->id == FuId::exceptionClass) {
 	}
 	else
-		reportError(statement, "Expected 'throw Exception'");
+		reportError(symbol.get(), "Expected an exception class");
+}
+
+void FuSema::visitThrow(FuThrow * statement)
+{
+	resolveException(statement->class_);
+	const FuClass * klass;
+	if ((klass = dynamic_cast<const FuClass *>(statement->class_->symbol)) && !methodHasThrows(this->currentMethod, klass))
+		reportError(statement, std::format("Method must be marked 'throws {}'", klass->name));
 	if (statement->message != nullptr) {
 		statement->message = visitExpr(statement->message);
 		if (!dynamic_cast<const FuStringType *>(statement->message->type.get()))
@@ -6254,6 +6270,8 @@ void FuSema::resolveTypes(FuClass * klass)
 					this->program->main = method;
 				}
 			}
+			for (const std::shared_ptr<FuSymbolReference> &exception : method->throws)
+				resolveException(exception);
 		}
 	}
 }
@@ -9396,7 +9414,7 @@ void GenC::endDefinition(const FuType * type)
 
 void GenC::writeReturnType(const FuMethod * method)
 {
-	if (method->type->id == FuId::voidType && method->throws) {
+	if (method->type->id == FuId::voidType && std::ssize(method->throws) > 0) {
 		includeStdBool();
 		write("bool ");
 	}
@@ -9959,7 +9977,7 @@ const FuMethod * GenC::getThrowingMethod(const FuExpr * expr)
 		return getThrowingMethod(binary->right.get());
 	else if (const FuCallExpr *call = dynamic_cast<const FuCallExpr *>(expr)) {
 		const FuMethod * method = static_cast<const FuMethod *>(call->method->symbol);
-		return method->throws ? method : nullptr;
+		return std::ssize(method->throws) > 0 ? method : nullptr;
 	}
 	else
 		return nullptr;
@@ -11587,7 +11605,7 @@ void GenC::visitReturn(const FuReturn * statement)
 {
 	if (statement->value == nullptr) {
 		writeDestructAll();
-		if (this->currentMethod->throws)
+		if (std::ssize(this->currentMethod->throws) > 0)
 			writeLine("return true;");
 		else
 			GenCCpp::visitReturn(statement);
@@ -12110,7 +12128,7 @@ void GenC::writeMethod(const FuMethod * method)
 {
 	if (!method->isLive || method->callType == FuCallType::abstract)
 		return;
-	if (method->throws && !canThrow(method->type.get()))
+	if (std::ssize(method->throws) > 0 && !canThrow(method->type.get()))
 		notSupported(method, "Throwing from this method type");
 	writeNewLine();
 	if (method->id == FuId::main) {
@@ -12131,7 +12149,7 @@ void GenC::writeMethod(const FuMethod * method)
 		const std::vector<std::shared_ptr<FuStatement>> * statements = &block->statements;
 		if (!block->completesNormally())
 			writeStatements(statements);
-		else if (method->throws && method->type->id == FuId::voidType) {
+		else if (std::ssize(method->throws) > 0 && method->type->id == FuId::voidType) {
 			if (std::ssize(*statements) == 0 || !tryWriteCallAndReturn(statements, std::ssize(*statements) - 1, nullptr)) {
 				writeStatements(statements);
 				writeDestructAll();
@@ -18192,8 +18210,12 @@ void GenJava::writeSignature(const FuMethod * method, int paramCount)
 		}
 	}
 	writeChar(')');
-	if (method->throws)
-		write(" throws Exception");
+	std::string_view separator = " throws ";
+	for (const std::shared_ptr<FuSymbolReference> &exception : method->throws) {
+		write(separator);
+		writeExceptionClass(exception->symbol);
+		separator = ", ";
+	}
 }
 
 void GenJava::writeOverloads(const FuMethod * method, int paramCount)
@@ -21280,7 +21302,7 @@ bool GenSwift::throws(const FuExpr * expr)
 		return throws(select->cond.get()) || throws(select->onTrue.get()) || throws(select->onFalse.get());
 	else if (const FuCallExpr *call = dynamic_cast<const FuCallExpr *>(expr)) {
 		const FuMethod * method = static_cast<const FuMethod *>(call->method->symbol);
-		return method->throws || (call->method->left != nullptr && throws(call->method->left.get())) || std::any_of(call->arguments.begin(), call->arguments.end(), [](const std::shared_ptr<FuExpr> &arg) { return throws(arg.get()); });
+		return std::ssize(method->throws) > 0 || (call->method->left != nullptr && throws(call->method->left.get())) || std::any_of(call->arguments.begin(), call->arguments.end(), [](const std::shared_ptr<FuExpr> &arg) { return throws(arg.get()); });
 	}
 	else
 		std::abort();
@@ -21802,7 +21824,7 @@ void GenSwift::writeMethod(const FuMethod * method)
 		write("func ");
 		writeName(method);
 		writeParameters(method, true);
-		if (method->throws)
+		if (std::ssize(method->throws) > 0)
 			write(" throws");
 		if (method->type->id != FuId::voidType) {
 			write(" -> ");

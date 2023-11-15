@@ -2,7 +2,7 @@ public static class Test
 {
 	static void Foo()
 	{
-		throw Exception("foo"); //ERROR: 'throw' in a method not marked 'throws'
+		throw Exception("foo"); //ERROR: Method must be marked 'throws Exception'
 	}
 
 	public static bool Run()

@@ -1277,19 +1277,42 @@ Fusion can throw exceptions, but cannot handle them at the moment.
 The intention is that exceptions will be handled by the code
 using the library written in Fusion.
 
-An exception can be thrown with the `throw` statement with a string argument.
-You cannot specify the class of the exception, it's hardcoded in `fut`
-(for example `java.lang.Exception`).
+An exception can be thrown with the `throw` statement,
+passing an exception class and an optional string argument.
+Use `Exception` as a generic class or derive your own classes from it.
+It is recommended to do the latter.
+
+Methods potentially throwing exceptions (possibly indirectly via calling
+other methods) must specify the exception classes in the `throws` clause,
+similar to Java.
+
+```java
+public class MyException : Exception
+{
+    // constructor is auto-generated, do not specify it
+}
+
+public class MyObject
+{
+    public void DoWork() throws MyException
+    {
+        ...
+        throw MyException("Fire"); // no "new"
+    }
+}
+```
 
 The translation of exceptions to C needs an explanation.
 The string argument is lost in the translation and the `throw` statement
 is replaced with `return` with a magic value representing an error:
 
-* `-1` in a method returning an integer.
+* An out-of-range value in a method returning an integer range
+  (usually `-1` for unsigned ranges).
 * `NAN` in a method returning a floating-point number.
-* `NULL` in a method returning a pointer.
+* `NULL` in a method returning a non-nullable reference.
 * `false` in a `void` method. The method will be translated to `bool`,
   and `true` will be returned if the method succeeds.
+* Other method types cannot throw exceptions when translating to C.
 
 ### Standard output
 

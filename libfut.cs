@@ -2411,7 +2411,7 @@ namespace Fusion
 		public static bool HasEarlyBreakAndContinue(List<FuStatement> body) => HasEarlyBreak(body) && ListHasContinue(body);
 	}
 
-	class FuThrow : FuStatement
+	public class FuThrow : FuStatement
 	{
 
 		internal FuSymbolReference Class;
@@ -2621,7 +2621,7 @@ namespace Fusion
 
 		internal readonly FuParameters Parameters = new FuParameters();
 
-		internal bool Throws;
+		internal readonly List<FuSymbolReference> Throws = new List<FuSymbolReference>();
 
 		internal FuStatement Body;
 
@@ -4137,11 +4137,9 @@ namespace Fusion
 				while (Eat(FuToken.Comma));
 			}
 			Expect(FuToken.RightParenthesis);
-			method.Throws = Eat(FuToken.Throws);
-			if (method.Throws) {
-				do {
-					ParseSymbolReference(null);
-				}
+			if (Eat(FuToken.Throws)) {
+				do
+					method.Throws.Add(ParseSymbolReference(null));
 				while (Eat(FuToken.Comma));
 			}
 			if (method.CallType == FuCallType.Abstract)
@@ -5504,6 +5502,15 @@ namespace Fusion
 			return param == null || param.Value != null;
 		}
 
+		static bool MethodHasThrows(FuMethodBase method, FuClass exception)
+		{
+			foreach (FuSymbolReference symbol in method.Throws) {
+				if (symbol.Symbol is FuClass klass && klass.IsSameOrBaseOf(exception))
+					return true;
+			}
+			return false;
+		}
+
 		FuExpr ResolveCallWithArguments(FuCallExpr expr, List<FuExpr> arguments)
 		{
 			if (!(VisitExpr(expr.Method) is FuSymbolReference symbol))
@@ -5570,11 +5577,13 @@ namespace Fusion
 			}
 			if (i < arguments.Count)
 				return PoisonError(arguments[i], $"Too many arguments for '{method.Name}'");
-			if (method.Throws) {
-				if (this.CurrentMethod == null)
-					return PoisonError(expr, $"Cannot call method '{method.Name}' here because it is marked 'throws'");
-				if (!this.CurrentMethod.Throws)
-					return PoisonError(expr, "Method marked 'throws' called from a method not marked 'throws'");
+			foreach (FuSymbolReference exceptionDecl in method.Throws) {
+				if (this.CurrentMethod == null) {
+					ReportError(expr, $"Cannot call method '{method.Name}' here because it is marked 'throws'");
+					break;
+				}
+				if (exceptionDecl.Symbol is FuClass exception && !MethodHasThrows(this.CurrentMethod, exception))
+					ReportError(expr, $"Method marked 'throws {exception.Name}' called from a method without it");
 			}
 			symbol.Symbol = method;
 			if (method.CallType == FuCallType.Static && method.Body is FuReturn ret && arguments.TrueForAll(arg => arg is FuLiteral) && !this.CurrentPureMethods.Contains(method)) {
@@ -6150,14 +6159,19 @@ namespace Fusion
 			CloseScope();
 		}
 
-		void VisitThrow(FuThrow statement)
+		void ResolveException(FuSymbolReference symbol)
 		{
-			if (!this.CurrentMethod.Throws)
-				ReportError(statement, "'throw' in a method not marked 'throws'");
-			if (VisitSymbolReference(statement.Class) is FuSymbolReference symbol && symbol.Symbol is FuClass && symbol.Symbol.Id == FuId.ExceptionClass) {
+			if (VisitSymbolReference(symbol) is FuSymbolReference && symbol.Symbol is FuClass && symbol.Symbol.Id == FuId.ExceptionClass) {
 			}
 			else
-				ReportError(statement, "Expected 'throw Exception'");
+				ReportError(symbol, "Expected an exception class");
+		}
+
+		void VisitThrow(FuThrow statement)
+		{
+			ResolveException(statement.Class);
+			if (statement.Class.Symbol is FuClass klass && !MethodHasThrows(this.CurrentMethod, klass))
+				ReportError(statement, $"Method must be marked 'throws {klass.Name}'");
 			if (statement.Message != null) {
 				statement.Message = VisitExpr(statement.Message);
 				if (!(statement.Message.Type is FuStringType))
@@ -6375,6 +6389,8 @@ namespace Fusion
 							this.Program.Main = method;
 						}
 					}
+					foreach (FuSymbolReference exception in method.Throws)
+						ResolveException(exception);
 					break;
 				default:
 					break;
@@ -9676,7 +9692,7 @@ namespace Fusion
 
 		void WriteReturnType(FuMethod method)
 		{
-			if (method.Type.Id == FuId.VoidType && method.Throws) {
+			if (method.Type.Id == FuId.VoidType && method.Throws.Count > 0) {
 				IncludeStdBool();
 				Write("bool ");
 			}
@@ -10248,7 +10264,7 @@ namespace Fusion
 				return GetThrowingMethod(binary.Right);
 			case FuCallExpr call:
 				FuMethod method = (FuMethod) call.Method.Symbol;
-				return method.Throws ? method : null;
+				return method.Throws.Count > 0 ? method : null;
 			default:
 				return null;
 			}
@@ -11849,7 +11865,7 @@ namespace Fusion
 		{
 			if (statement.Value == null) {
 				WriteDestructAll();
-				if (this.CurrentMethod.Throws)
+				if (this.CurrentMethod.Throws.Count > 0)
 					WriteLine("return true;");
 				else
 					base.VisitReturn(statement);
@@ -12362,7 +12378,7 @@ namespace Fusion
 		{
 			if (!method.IsLive || method.CallType == FuCallType.Abstract)
 				return;
-			if (method.Throws && !CanThrow(method.Type))
+			if (method.Throws.Count > 0 && !CanThrow(method.Type))
 				NotSupported(method, "Throwing from this method type");
 			WriteNewLine();
 			if (method.Id == FuId.Main) {
@@ -12383,7 +12399,7 @@ namespace Fusion
 				List<FuStatement> statements = block.Statements;
 				if (!block.CompletesNormally())
 					WriteStatements(statements);
-				else if (method.Throws && method.Type.Id == FuId.VoidType) {
+				else if (method.Throws.Count > 0 && method.Type.Id == FuId.VoidType) {
 					if (statements.Count == 0 || !TryWriteCallAndReturn(statements, statements.Count - 1, null)) {
 						WriteStatements(statements);
 						WriteDestructAll();
@@ -18814,8 +18830,12 @@ namespace Fusion
 				}
 			}
 			WriteChar(')');
-			if (method.Throws)
-				Write(" throws Exception");
+			string separator = " throws ";
+			foreach (FuSymbolReference exception in method.Throws) {
+				Write(separator);
+				WriteExceptionClass(exception.Symbol);
+				separator = ", ";
+			}
 		}
 
 		void WriteOverloads(FuMethod method, int paramCount)
@@ -22071,7 +22091,7 @@ namespace Fusion
 				return Throws(select.Cond) || Throws(select.OnTrue) || Throws(select.OnFalse);
 			case FuCallExpr call:
 				FuMethod method = (FuMethod) call.Method.Symbol;
-				return method.Throws || (call.Method.Left != null && Throws(call.Method.Left)) || call.Arguments.Exists(arg => Throws(arg));
+				return method.Throws.Count > 0 || (call.Method.Left != null && Throws(call.Method.Left)) || call.Arguments.Exists(arg => Throws(arg));
 			default:
 				throw new NotImplementedException();
 			}
@@ -22584,7 +22604,7 @@ namespace Fusion
 				Write("func ");
 				WriteName(method);
 				WriteParameters(method, true);
-				if (method.Throws)
+				if (method.Throws.Count > 0)
 					Write(" throws");
 				if (method.Type.Id != FuId.VoidType) {
 					Write(" -> ");

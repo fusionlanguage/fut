@@ -2,7 +2,7 @@ public static class Test
 {
 	static void Foo()
 	{
-		Bar(); //ERROR: Method marked 'throws' called from a method not marked 'throws'
+		Bar(); //ERROR: Method marked 'throws Exception' called from a method without it
 	}
 
 	static void Bar() throws Exception

@@ -551,7 +551,7 @@ public class GenC : GenCCpp
 
 	void WriteReturnType!(FuMethod method)
 	{
-		if (method.Type.Id == FuId.VoidType && method.Throws) {
+		if (method.Type.Id == FuId.VoidType && method.Throws.Count > 0) {
 			IncludeStdBool();
 			Write("bool ");
 		}
@@ -1132,7 +1132,7 @@ public class GenC : GenCCpp
 			return GetThrowingMethod(binary.Right);
 		case FuCallExpr call:
 			assert call.Method.Symbol is FuMethod method;
-			return method.Throws ? method : null;
+			return method.Throws.Count > 0 ? method : null;
 		default:
 			return null;
 		}
@@ -2746,7 +2746,7 @@ public class GenC : GenCCpp
 	{
 		if (statement.Value == null) {
 			WriteDestructAll();
-			if (this.CurrentMethod.Throws)
+			if (this.CurrentMethod.Throws.Count > 0)
 				WriteLine("return true;");
 			else
 				base.VisitReturn(statement);
@@ -3272,7 +3272,7 @@ public class GenC : GenCCpp
 	{
 		if (!method.IsLive || method.CallType == FuCallType.Abstract)
 			return;
-		if (method.Throws && !CanThrow(method.Type))
+		if (method.Throws.Count > 0 && !CanThrow(method.Type))
 			NotSupported(method, "Throwing from this method type");
 		WriteNewLine();
 		if (method.Id == FuId.Main) {
@@ -3293,7 +3293,7 @@ public class GenC : GenCCpp
 			List<FuStatement#> statements = block.Statements;
 			if (!block.CompletesNormally())
 				WriteStatements(statements);
-			else if (method.Throws && method.Type.Id == FuId.VoidType) {
+			else if (method.Throws.Count > 0 && method.Type.Id == FuId.VoidType) {
 				if (statements.Count == 0 || !TryWriteCallAndReturn(statements, statements.Count - 1, null)) {
 					WriteStatements(statements);
 					WriteDestructAll();
