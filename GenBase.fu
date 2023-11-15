@@ -1956,20 +1956,26 @@ public abstract class GenBase : FuVisitor
 			WriteEnum(program.System.RegexOptionsEnum);
 	}
 
-	protected void StartClass!(FuClass klass, string suffix, string extendsClause)
+	protected void StartClass!(FuClass klass, string suffix, string extendsClause, string? exceptionInclude, string exceptionName)
 	{
 		Write("class ");
 		Write(klass.Name);
 		Write(suffix);
 		if (klass.HasBaseClass()) {
 			Write(extendsClause);
-			Write(klass.BaseClassName);
+			if (klass.Parent.Id == FuId.ExceptionClass) {
+				if (exceptionInclude != null)
+					Include(exceptionInclude);
+				Write(exceptionName);
+			}
+			else
+				Write(klass.BaseClassName);
 		}
 	}
 
-	protected void OpenClass!(FuClass klass, string suffix, string extendsClause)
+	protected void OpenClass!(FuClass klass, string suffix, string extendsClause, string? exceptionInclude, string exceptionName = "Exception")
 	{
-		StartClass(klass, suffix, extendsClause);
+		StartClass(klass, suffix, extendsClause, exceptionInclude, exceptionName);
 		WriteNewLine();
 		OpenBlock();
 	}
@@ -2007,6 +2013,8 @@ public abstract class GenBase : FuVisitor
 
 	protected bool WriteBaseClass!(FuClass klass, FuProgram program)
 	{
+		if (klass.Id == FuId.ExceptionClass)
+			return false;
 		// topological sorting of class hierarchy
 		if (this.WrittenClasses.Contains(klass))
 			return false;

@@ -1302,6 +1302,7 @@ namespace Fusion
 		MainArgsType,
 		ArrayPtrClass,
 		ArrayStorageClass,
+		ExceptionClass,
 		ListClass,
 		QueueClass,
 		StackClass,
@@ -3016,6 +3017,9 @@ namespace Fusion
 			this.ArrayStorageClass.Add(FuMethodGroup.New(FuMethod.New(this.ArrayStorageClass, FuVisibility.Public, FuCallType.Normal, this.VoidType, FuId.ArrayFillAll, "Fill", true, FuVar.New(this.TypeParam0, "value")), arrayFillPart));
 			this.ArrayStorageClass.Add(FuProperty.New(this.UIntType, FuId.ArrayLength, "Length"));
 			this.ArrayStorageClass.Add(FuMethodGroup.New(FuMethod.New(this.ArrayStorageClass, FuVisibility.NumericElementType, FuCallType.Normal, this.VoidType, FuId.ArraySortAll, "Sort", true), arraySortPart));
+			FuClass exceptionClass = FuClass.New(FuCallType.Normal, FuId.ExceptionClass, "Exception");
+			exceptionClass.IsPublic = true;
+			Add(exceptionClass);
 			FuType typeParam0NotFinal = new FuType { Id = FuId.TypeParam0NotFinal, Name = "T" };
 			FuType typeParam0Predicate = new FuType { Id = FuId.TypeParam0Predicate, Name = "Predicate<T>" };
 			FuClass listClass = AddCollection(FuId.ListClass, "List", 1, FuId.ListClear, FuId.ListCount);
@@ -8427,20 +8431,26 @@ namespace Fusion
 				WriteEnum(program.System.RegexOptionsEnum);
 		}
 
-		protected void StartClass(FuClass klass, string suffix, string extendsClause)
+		protected void StartClass(FuClass klass, string suffix, string extendsClause, string exceptionInclude, string exceptionName)
 		{
 			Write("class ");
 			Write(klass.Name);
 			Write(suffix);
 			if (klass.HasBaseClass()) {
 				Write(extendsClause);
-				Write(klass.BaseClassName);
+				if (klass.Parent.Id == FuId.ExceptionClass) {
+					if (exceptionInclude != null)
+						Include(exceptionInclude);
+					Write(exceptionName);
+				}
+				else
+					Write(klass.BaseClassName);
 			}
 		}
 
-		protected void OpenClass(FuClass klass, string suffix, string extendsClause)
+		protected void OpenClass(FuClass klass, string suffix, string extendsClause, string exceptionInclude, string exceptionName = "Exception")
 		{
-			StartClass(klass, suffix, extendsClause);
+			StartClass(klass, suffix, extendsClause, exceptionInclude, exceptionName);
 			WriteNewLine();
 			OpenBlock();
 		}
@@ -8478,6 +8488,8 @@ namespace Fusion
 
 		protected bool WriteBaseClass(FuClass klass, FuProgram program)
 		{
+			if (klass.Id == FuId.ExceptionClass)
+				return false;
 			if (this.WrittenClasses.Contains(klass))
 				return false;
 			this.WrittenClasses.Add(klass);
@@ -14842,7 +14854,7 @@ namespace Fusion
 		{
 			WriteNewLine();
 			WriteDoc(klass.Documentation);
-			OpenClass(klass, klass.CallType == FuCallType.Sealed ? " final" : "", " : public ");
+			OpenClass(klass, klass.CallType == FuCallType.Sealed ? " final" : "", " : public ", "exception", "std::exception");
 			this.Indent--;
 			WriteDeclarations(klass, FuVisibility.Public, "public");
 			WriteDeclarations(klass, FuVisibility.Protected, "protected");
@@ -15876,7 +15888,7 @@ namespace Fusion
 			WriteDoc(klass.Documentation);
 			WritePublic(klass);
 			WriteCallType(klass.CallType, "sealed ");
-			OpenClass(klass, "", " : ");
+			OpenClass(klass, "", " : ", "System");
 			if (NeedsConstructor(klass)) {
 				if (klass.Constructor != null) {
 					WriteDoc(klass.Constructor.Documentation);
@@ -17308,7 +17320,7 @@ namespace Fusion
 			WriteDoc(klass.Documentation);
 			if (klass.CallType == FuCallType.Sealed)
 				Write("final ");
-			OpenClass(klass, "", " : ");
+			OpenClass(klass, "", " : ", "std.exception");
 			if (NeedsConstructor(klass)) {
 				if (klass.Constructor != null) {
 					WriteDoc(klass.Constructor.Documentation);
@@ -18805,7 +18817,7 @@ namespace Fusion
 			default:
 				throw new NotImplementedException();
 			}
-			OpenClass(klass, "", " extends ");
+			OpenClass(klass, "", " extends ", null);
 			if (klass.CallType == FuCallType.Static) {
 				Write("private ");
 				Write(klass.Name);
@@ -20125,7 +20137,7 @@ namespace Fusion
 			if (!WriteBaseClass(klass, program))
 				return;
 			StartContainerType(klass);
-			OpenClass(klass, "", " extends ");
+			OpenClass(klass, "", " extends ", null, "Error");
 			if (NeedsConstructor(klass)) {
 				if (klass.Constructor != null)
 					WriteDoc(klass.Constructor.Documentation);
@@ -20502,7 +20514,7 @@ namespace Fusion
 			default:
 				throw new NotImplementedException();
 			}
-			OpenClass(klass, "", " extends ");
+			OpenClass(klass, "", " extends ", null, "Error");
 			if (NeedsConstructor(klass) || klass.CallType == FuCallType.Static) {
 				if (klass.Constructor != null) {
 					WriteDoc(klass.Constructor.Documentation);
@@ -22527,7 +22539,7 @@ namespace Fusion
 			WritePublic(klass);
 			if (klass.CallType == FuCallType.Sealed)
 				Write("final ");
-			StartClass(klass, "", " : ");
+			StartClass(klass, "", " : ", null, "");
 			if (klass.AddsToString()) {
 				Write(klass.HasBaseClass() ? ", " : " : ");
 				Write("CustomStringConvertible");

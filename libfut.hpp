@@ -211,6 +211,7 @@ enum class FuId
 	mainArgsType,
 	arrayPtrClass,
 	arrayStorageClass,
+	exceptionClass,
 	listClass,
 	queueClass,
 	stackClass,
@@ -1847,8 +1848,8 @@ protected:
 	void writeEnumValue(const FuConst * konst);
 	virtual void writeEnum(const FuEnum * enu) = 0;
 	virtual void writeRegexOptionsEnum(const FuProgram * program);
-	void startClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause);
-	void openClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause);
+	void startClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause, std::string_view exceptionInclude, std::string_view exceptionName);
+	void openClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause, std::string_view exceptionInclude, std::string_view exceptionName = "Exception");
 	virtual void writeConst(const FuConst * konst) = 0;
 	virtual void writeField(const FuField * field) = 0;
 	virtual void writeMethod(const FuMethod * method) = 0;

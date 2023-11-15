@@ -1807,7 +1807,7 @@ public class GenCpp : GenCCpp
 	{
 		WriteNewLine();
 		WriteDoc(klass.Documentation);
-		OpenClass(klass, klass.CallType == FuCallType.Sealed ? " final" : "", " : public ");
+		OpenClass(klass, klass.CallType == FuCallType.Sealed ? " final" : "", " : public ", "exception", "std::exception");
 		this.Indent--;
 		WriteDeclarations(klass, FuVisibility.Public, "public");
 		WriteDeclarations(klass, FuVisibility.Protected, "protected");

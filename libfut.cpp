@@ -2482,6 +2482,9 @@ FuSystem::FuSystem()
 	this->arrayStorageClass->add(FuMethodGroup::new_(FuMethod::new_(this->arrayStorageClass.get(), FuVisibility::public_, FuCallType::normal, this->voidType, FuId::arrayFillAll, "Fill", true, FuVar::new_(this->typeParam0, "value")), arrayFillPart));
 	this->arrayStorageClass->add(FuProperty::new_(this->uIntType, FuId::arrayLength, "Length"));
 	this->arrayStorageClass->add(FuMethodGroup::new_(FuMethod::new_(this->arrayStorageClass.get(), FuVisibility::numericElementType, FuCallType::normal, this->voidType, FuId::arraySortAll, "Sort", true), arraySortPart));
+	std::shared_ptr<FuClass> exceptionClass = FuClass::new_(FuCallType::normal, FuId::exceptionClass, "Exception");
+	exceptionClass->isPublic = true;
+	add(exceptionClass);
 	std::shared_ptr<FuType> typeParam0NotFinal = std::make_shared<FuType>();
 	typeParam0NotFinal->id = FuId::typeParam0NotFinal;
 	typeParam0NotFinal->name = "T";
@@ -8265,20 +8268,26 @@ void GenBase::writeRegexOptionsEnum(const FuProgram * program)
 		writeEnum(program->system->regexOptionsEnum.get());
 }
 
-void GenBase::startClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause)
+void GenBase::startClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause, std::string_view exceptionInclude, std::string_view exceptionName)
 {
 	write("class ");
 	write(klass->name);
 	write(suffix);
 	if (klass->hasBaseClass()) {
 		write(extendsClause);
-		write(klass->baseClassName);
+		if (klass->parent->id == FuId::exceptionClass) {
+			if (exceptionInclude.data() != nullptr)
+				include(exceptionInclude);
+			write(exceptionName);
+		}
+		else
+			write(klass->baseClassName);
 	}
 }
 
-void GenBase::openClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause)
+void GenBase::openClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause, std::string_view exceptionInclude, std::string_view exceptionName)
 {
-	startClass(klass, suffix, extendsClause);
+	startClass(klass, suffix, extendsClause, exceptionInclude, exceptionName);
 	writeNewLine();
 	openBlock();
 }
@@ -8306,6 +8315,8 @@ void GenBase::writeMembers(const FuClass * klass, bool constArrays)
 
 bool GenBase::writeBaseClass(const FuClass * klass, const FuProgram * program)
 {
+	if (klass->id == FuId::exceptionClass)
+		return false;
 	if (this->writtenClasses.contains(klass))
 		return false;
 	this->writtenClasses.insert(klass);
@@ -14482,7 +14493,7 @@ void GenCpp::writeClassInternal(const FuClass * klass)
 {
 	writeNewLine();
 	writeDoc(klass->documentation.get());
-	openClass(klass, klass->callType == FuCallType::sealed ? " final" : "", " : public ");
+	openClass(klass, klass->callType == FuCallType::sealed ? " final" : "", " : public ", "exception", "std::exception");
 	this->indent--;
 	writeDeclarations(klass, FuVisibility::public_, "public");
 	writeDeclarations(klass, FuVisibility::protected_, "protected");
@@ -15498,7 +15509,7 @@ void GenCs::writeClass(const FuClass * klass, const FuProgram * program)
 	writeDoc(klass->documentation.get());
 	writePublic(klass);
 	writeCallType(klass->callType, "sealed ");
-	openClass(klass, "", " : ");
+	openClass(klass, "", " : ", "System");
 	if (needsConstructor(klass)) {
 		if (klass->constructor != nullptr) {
 			writeDoc(klass->constructor->documentation.get());
@@ -16748,7 +16759,7 @@ void GenD::writeClass(const FuClass * klass, const FuProgram * program)
 	writeDoc(klass->documentation.get());
 	if (klass->callType == FuCallType::sealed)
 		write("final ");
-	openClass(klass, "", " : ");
+	openClass(klass, "", " : ", "std.exception");
 	if (needsConstructor(klass)) {
 		if (klass->constructor != nullptr) {
 			writeDoc(klass->constructor->documentation.get());
@@ -18187,7 +18198,7 @@ void GenJava::writeClass(const FuClass * klass, const FuProgram * program)
 	default:
 		std::abort();
 	}
-	openClass(klass, "", " extends ");
+	openClass(klass, "", " extends ", std::string_view());
 	if (klass->callType == FuCallType::static_) {
 		write("private ");
 		write(klass->name);
@@ -19477,7 +19488,7 @@ void GenJsNoModule::writeClass(const FuClass * klass, const FuProgram * program)
 	if (!writeBaseClass(klass, program))
 		return;
 	startContainerType(klass);
-	openClass(klass, "", " extends ");
+	openClass(klass, "", " extends ", std::string_view(), "Error");
 	if (needsConstructor(klass)) {
 		if (klass->constructor != nullptr)
 			writeDoc(klass->constructor->documentation.get());
@@ -19833,7 +19844,7 @@ void GenTs::writeClass(const FuClass * klass, const FuProgram * program)
 	default:
 		std::abort();
 	}
-	openClass(klass, "", " extends ");
+	openClass(klass, "", " extends ", std::string_view(), "Error");
 	if (needsConstructor(klass) || klass->callType == FuCallType::static_) {
 		if (klass->constructor != nullptr) {
 			writeDoc(klass->constructor->documentation.get());
@@ -21747,7 +21758,7 @@ void GenSwift::writeClass(const FuClass * klass, const FuProgram * program)
 	writePublic(klass);
 	if (klass->callType == FuCallType::sealed)
 		write("final ");
-	startClass(klass, "", " : ");
+	startClass(klass, "", " : ", std::string_view(), "");
 	if (klass->addsToString()) {
 		write(klass->hasBaseClass() ? ", " : " : ");
 		write("CustomStringConvertible");

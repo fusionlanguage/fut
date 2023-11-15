@@ -83,6 +83,7 @@ public enum FuId
 	MainArgsType,
 	ArrayPtrClass,
 	ArrayStorageClass,
+	ExceptionClass,
 	ListClass,
 	QueueClass,
 	StackClass,
@@ -1547,6 +1548,9 @@ public class FuSystem : FuScope
 		ArrayStorageClass.Add(FuMethodGroup.New(
 			FuMethod.New(ArrayStorageClass, FuVisibility.NumericElementType, FuCallType.Normal, VoidType, FuId.ArraySortAll, "Sort", true),
 			arraySortPart));
+		FuClass# exceptionClass = FuClass.New(FuCallType.Normal, FuId.ExceptionClass, "Exception");
+		exceptionClass.IsPublic = true;
+		Add(exceptionClass);
 
 		FuType# typeParam0NotFinal = new FuType { Id = FuId.TypeParam0NotFinal, Name = "T" };
 		FuType# typeParam0Predicate = new FuType { Id = FuId.TypeParam0Predicate, Name = "Predicate<T>" };

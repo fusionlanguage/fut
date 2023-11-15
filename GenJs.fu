@@ -1271,7 +1271,7 @@ public class GenJsNoModule : GenBase
 		if (!WriteBaseClass(klass, program))
 			return;
 		StartContainerType(klass);
-		OpenClass(klass, "", " extends ");
+		OpenClass(klass, "", " extends ", null, "Error");
 		if (NeedsConstructor(klass)) {
 			if (klass.Constructor != null)
 				WriteDoc(klass.Constructor.Documentation);

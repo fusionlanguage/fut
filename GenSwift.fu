@@ -1644,7 +1644,7 @@ public class GenSwift : GenPySwift
 		WritePublic(klass);
 		if (klass.CallType == FuCallType.Sealed)
 			Write("final ");
-		StartClass(klass, "", " : ");
+		StartClass(klass, "", " : ", null, "");
 		if (klass.AddsToString()) {
 			Write(klass.HasBaseClass() ? ", " : " : ");
 			Write("CustomStringConvertible");

@@ -1396,7 +1396,7 @@ public class GenD : GenCCppD
 		WriteDoc(klass.Documentation);
 		if (klass.CallType == FuCallType.Sealed)
 			Write("final ");
-		OpenClass(klass, "", " : ");
+		OpenClass(klass, "", " : ", "std.exception");
 		if (NeedsConstructor(klass)) {
 			if (klass.Constructor != null) {
 				WriteDoc(klass.Constructor.Documentation);

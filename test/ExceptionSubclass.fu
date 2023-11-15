@@ -1,0 +1,11 @@
+public class FooException : Exception //FAIL: c d swift cl TODO
+{
+}
+
+public static class Test
+{
+	public static bool Run()
+	{
+		return true;
+	}
+}

@@ -909,7 +909,7 @@ public class GenCs : GenTyped
 		WriteDoc(klass.Documentation);
 		WritePublic(klass);
 		WriteCallType(klass.CallType, "sealed ");
-		OpenClass(klass, "", " : ");
+		OpenClass(klass, "", " : ", "System");
 
 		if (NeedsConstructor(klass)) {
 			if (klass.Constructor != null) {
