@@ -19562,6 +19562,16 @@ void GenJsNoModule::writeMethod(const FuMethod * method)
 	writeBody(method);
 }
 
+void GenJsNoModule::openJsClass(const FuClass * klass)
+{
+	openClass(klass, "", " extends ");
+	if (klass->id == FuId::exceptionClass) {
+		write("name = \"");
+		write(klass->name);
+		writeLine("\";");
+	}
+}
+
 void GenJsNoModule::writeConstructor(const FuClass * klass)
 {
 	writeLine("constructor()");
@@ -19577,7 +19587,7 @@ void GenJsNoModule::writeClass(const FuClass * klass, const FuProgram * program)
 	if (!writeBaseClass(klass, program))
 		return;
 	startContainerType(klass);
-	openClass(klass, "", " extends ");
+	openJsClass(klass);
 	if (needsConstructor(klass)) {
 		if (klass->constructor != nullptr)
 			writeDoc(klass->constructor->documentation.get());
@@ -19933,7 +19943,7 @@ void GenTs::writeClass(const FuClass * klass, const FuProgram * program)
 	default:
 		std::abort();
 	}
-	openClass(klass, "", " extends ");
+	openJsClass(klass);
 	if (needsConstructor(klass) || klass->callType == FuCallType::static_) {
 		if (klass->constructor != nullptr) {
 			writeDoc(klass->constructor->documentation.get());

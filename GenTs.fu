@@ -307,7 +307,7 @@ public class GenTs : GenJs
 		default:
 			assert false;
 		}
-		OpenClass(klass, "", " extends ");
+		OpenJsClass(klass);
 
 		if (NeedsConstructor(klass) || klass.CallType == FuCallType.Static) {
 			if (klass.Constructor != null) {

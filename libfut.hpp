@@ -2551,6 +2551,7 @@ protected:
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;
 	void writeMethod(const FuMethod * method) override;
+	void openJsClass(const FuClass * klass);
 	void writeConstructor(const FuClass * klass);
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
 	void writeLib(const FuProgram * program);

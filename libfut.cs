@@ -20210,6 +20210,16 @@ namespace Fusion
 			WriteBody(method);
 		}
 
+		protected void OpenJsClass(FuClass klass)
+		{
+			OpenClass(klass, "", " extends ");
+			if (klass.Id == FuId.ExceptionClass) {
+				Write("name = \"");
+				Write(klass.Name);
+				WriteLine("\";");
+			}
+		}
+
 		protected void WriteConstructor(FuClass klass)
 		{
 			WriteLine("constructor()");
@@ -20225,7 +20235,7 @@ namespace Fusion
 			if (!WriteBaseClass(klass, program))
 				return;
 			StartContainerType(klass);
-			OpenClass(klass, "", " extends ");
+			OpenJsClass(klass);
 			if (NeedsConstructor(klass)) {
 				if (klass.Constructor != null)
 					WriteDoc(klass.Constructor.Documentation);
@@ -20602,7 +20612,7 @@ namespace Fusion
 			default:
 				throw new NotImplementedException();
 			}
-			OpenClass(klass, "", " extends ");
+			OpenJsClass(klass);
 			if (NeedsConstructor(klass) || klass.CallType == FuCallType.Static) {
 				if (klass.Constructor != null) {
 					WriteDoc(klass.Constructor.Documentation);

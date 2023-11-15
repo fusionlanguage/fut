@@ -20771,6 +20771,16 @@ export class GenJsNoModule extends GenBase
 		this.writeBody(method);
 	}
 
+	openJsClass(klass)
+	{
+		this.openClass(klass, "", " extends ");
+		if (klass.id == FuId.EXCEPTION_CLASS) {
+			this.write("name = \"");
+			this.write(klass.name);
+			this.writeLine("\";");
+		}
+	}
+
 	writeConstructor(klass)
 	{
 		this.writeLine("constructor()");
@@ -20786,7 +20796,7 @@ export class GenJsNoModule extends GenBase
 		if (!this.writeBaseClass(klass, program))
 			return;
 		this.startContainerType(klass);
-		this.openClass(klass, "", " extends ");
+		this.openJsClass(klass);
 		if (this.needsConstructor(klass)) {
 			if (klass.constructor_ != null)
 				this.writeDoc(klass.constructor_.documentation);
@@ -21157,7 +21167,7 @@ export class GenTs extends GenJs
 		default:
 			throw new Error();
 		}
-		this.openClass(klass, "", " extends ");
+		this.openJsClass(klass);
 		if (this.needsConstructor(klass) || klass.callType == FuCallType.STATIC) {
 			if (klass.constructor_ != null) {
 				this.writeDoc(klass.constructor_.documentation);

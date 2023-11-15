@@ -1254,6 +1254,16 @@ public class GenJsNoModule : GenBase
 		WriteBody(method);
 	}
 
+	protected void OpenJsClass!(FuClass klass)
+	{
+		OpenClass(klass, "", " extends ");
+		if (klass.Id == FuId.ExceptionClass) {
+			Write("name = \"");
+			Write(klass.Name);
+			WriteLine("\";");
+		}
+	}
+
 	protected void WriteConstructor!(FuClass klass)
 	{
 		WriteLine("constructor()");
@@ -1269,7 +1279,7 @@ public class GenJsNoModule : GenBase
 		if (!WriteBaseClass(klass, program))
 			return;
 		StartContainerType(klass);
-		OpenClass(klass, "", " extends ");
+		OpenJsClass(klass);
 		if (NeedsConstructor(klass)) {
 			if (klass.Constructor != null)
 				WriteDoc(klass.Constructor.Documentation);
