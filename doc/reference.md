@@ -1303,11 +1303,12 @@ public class MyObject
 ```
 
 The translation of exceptions to C needs an explanation.
-The string argument is lost in the translation and the `throw` statement
-is replaced with `return` with a magic value representing an error:
+The exception class and the string argument are lost in the translation.
+The `throw` statement is replaced with `return` with a magic value
+representing an error:
 
 * An out-of-range value in a method returning an integer range
-  (usually `-1` for unsigned ranges).
+  (most often, `-1` for unsigned ranges).
 * `NAN` in a method returning a floating-point number.
 * `NULL` in a method returning a non-nullable reference.
 * `false` in a `void` method. The method will be translated to `bool`,
