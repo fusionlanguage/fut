@@ -11772,6 +11772,19 @@ namespace Fusion
 			WriteLine(");");
 		}
 
+		bool IsReturnThrowingDifferent(FuReturn statement)
+		{
+			if (this.CurrentMethod.Type is FuNumericType methodType) {
+				FuMethod throwingMethod = GetThrowingMethod(statement.Value);
+				if (throwingMethod == null)
+					return false;
+				if (methodType is FuRangeType methodRange && throwingMethod.Type is FuRangeType throwingRange && methodRange.Min == throwingRange.Min)
+					return false;
+				return true;
+			}
+			return false;
+		}
+
 		internal override void VisitReturn(FuReturn statement)
 		{
 			if (statement.Value == null) {
@@ -11781,36 +11794,46 @@ namespace Fusion
 				else
 					base.VisitReturn(statement);
 			}
-			else if (statement.Value is FuLiteral || (this.VarsToDestruct.Count == 0 && !ContainsTemporariesToDestruct(statement.Value))) {
-				WriteDestructAll();
-				WriteCTemporaries(statement.Value);
-				base.VisitReturn(statement);
-			}
 			else {
-				if (statement.Value is FuSymbolReference symbol && symbol.Symbol is FuVar local) {
-					if (this.VarsToDestruct.Contains(local)) {
-						WriteDestructAll(local);
-						Write("return ");
-						if (this.CurrentMethod.Type is FuClassType resultPtr)
-							WriteClassPtr(resultPtr.Class, symbol, FuPriority.Argument);
-						else
-							symbol.Accept(this, FuPriority.Argument);
-						WriteCharLine(';');
+				FuMethod throwingMethod = this.CurrentMethod.Type is FuNumericType ? GetThrowingMethod(statement.Value) : null;
+				if (throwingMethod != null && (this.CurrentMethod.Type is FuRangeType methodRange ? throwingMethod.Type is FuRangeType throwingRange && methodRange.Min == throwingRange.Min : throwingMethod.Type is FuFloatingType))
+					throwingMethod = null;
+				if (statement.Value is FuLiteral || (throwingMethod == null && this.VarsToDestruct.Count == 0 && !ContainsTemporariesToDestruct(statement.Value))) {
+					WriteDestructAll();
+					WriteCTemporaries(statement.Value);
+					base.VisitReturn(statement);
+				}
+				else {
+					if (statement.Value is FuSymbolReference symbol && symbol.Symbol is FuVar local) {
+						if (this.VarsToDestruct.Contains(local)) {
+							WriteDestructAll(local);
+							Write("return ");
+							if (this.CurrentMethod.Type is FuClassType resultPtr)
+								WriteClassPtr(resultPtr.Class, symbol, FuPriority.Argument);
+							else
+								symbol.Accept(this, FuPriority.Argument);
+							WriteCharLine(';');
+							return;
+						}
+						WriteDestructAll();
+						base.VisitReturn(statement);
 						return;
 					}
+					WriteCTemporaries(statement.Value);
+					EnsureChildBlock();
+					StartDefinition(this.CurrentMethod.Type, true, true);
+					Write("returnValue = ");
+					WriteCoerced(this.CurrentMethod.Type, statement.Value, FuPriority.Argument);
+					WriteCharLine(';');
+					CleanupTemporaries();
 					WriteDestructAll();
-					base.VisitReturn(statement);
-					return;
+					if (throwingMethod != null) {
+						StartForwardThrow(throwingMethod);
+						Write("returnValue");
+						EndForwardThrow(throwingMethod);
+					}
+					WriteLine("return returnValue;");
 				}
-				WriteCTemporaries(statement.Value);
-				EnsureChildBlock();
-				StartDefinition(this.CurrentMethod.Type, true, true);
-				Write("returnValue = ");
-				WriteCoerced(this.CurrentMethod.Type, statement.Value, FuPriority.Argument);
-				WriteCharLine(';');
-				CleanupTemporaries();
-				WriteDestructAll();
-				WriteLine("return returnValue;");
 			}
 		}
 

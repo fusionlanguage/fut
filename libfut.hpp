@@ -2159,6 +2159,7 @@ private:
 	void trimVarsToDestruct(int i);
 	void startForeachHashTable(const FuForeach * statement);
 	void writeDictIterVar(const FuNamedValue * iter, std::string_view value);
+	bool isReturnThrowingDifferent(const FuReturn * statement) const;
 	bool tryWriteCallAndReturn(const std::vector<std::shared_ptr<FuStatement>> * statements, int lastCallIndex, const FuExpr * returnValue);
 	void writeTypedef(const FuClass * klass);
 	void writeInstanceParameters(const FuMethod * method);

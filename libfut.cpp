@@ -11512,6 +11512,21 @@ void GenC::visitLock(const FuLock * statement)
 	writeLine(");");
 }
 
+bool GenC::isReturnThrowingDifferent(const FuReturn * statement) const
+{
+	if (const FuNumericType *methodType = dynamic_cast<const FuNumericType *>(this->currentMethod->type.get())) {
+		const FuMethod * throwingMethod = getThrowingMethod(statement->value.get());
+		if (throwingMethod == nullptr)
+			return false;
+		const FuRangeType * methodRange;
+		const FuRangeType * throwingRange;
+		if ((methodRange = dynamic_cast<const FuRangeType *>(methodType)) && (throwingRange = dynamic_cast<const FuRangeType *>(throwingMethod->type.get())) && methodRange->min == throwingRange->min)
+			return false;
+		return true;
+	}
+	return false;
+}
+
 void GenC::visitReturn(const FuReturn * statement)
 {
 	if (statement->value == nullptr) {
@@ -11521,38 +11536,50 @@ void GenC::visitReturn(const FuReturn * statement)
 		else
 			GenCCpp::visitReturn(statement);
 	}
-	else if (dynamic_cast<const FuLiteral *>(statement->value.get()) || (std::ssize(this->varsToDestruct) == 0 && !containsTemporariesToDestruct(statement->value.get()))) {
-		writeDestructAll();
-		writeCTemporaries(statement->value.get());
-		GenCCpp::visitReturn(statement);
-	}
 	else {
-		const FuSymbolReference * symbol;
-		const FuVar * local;
-		if ((symbol = dynamic_cast<const FuSymbolReference *>(statement->value.get())) && (local = dynamic_cast<const FuVar *>(symbol->symbol))) {
-			if (std::find(this->varsToDestruct.begin(), this->varsToDestruct.end(), local) != this->varsToDestruct.end()) {
-				writeDestructAll(local);
-				write("return ");
-				if (const FuClassType *resultPtr = dynamic_cast<const FuClassType *>(this->currentMethod->type.get()))
-					writeClassPtr(resultPtr->class_, symbol, FuPriority::argument);
-				else
-					symbol->accept(this, FuPriority::argument);
-				writeCharLine(';');
+		const FuMethod * throwingMethod = dynamic_cast<const FuNumericType *>(this->currentMethod->type.get()) ? getThrowingMethod(statement->value.get()) : nullptr;
+		const FuRangeType * methodRange;
+		const FuRangeType * throwingRange;
+		if (throwingMethod != nullptr && ((methodRange = dynamic_cast<const FuRangeType *>(this->currentMethod->type.get())) ? (throwingRange = dynamic_cast<const FuRangeType *>(throwingMethod->type.get())) && methodRange->min == throwingRange->min : !!dynamic_cast<const FuFloatingType *>(throwingMethod->type.get())))
+			throwingMethod = nullptr;
+		if (dynamic_cast<const FuLiteral *>(statement->value.get()) || (throwingMethod == nullptr && std::ssize(this->varsToDestruct) == 0 && !containsTemporariesToDestruct(statement->value.get()))) {
+			writeDestructAll();
+			writeCTemporaries(statement->value.get());
+			GenCCpp::visitReturn(statement);
+		}
+		else {
+			const FuSymbolReference * symbol;
+			const FuVar * local;
+			if ((symbol = dynamic_cast<const FuSymbolReference *>(statement->value.get())) && (local = dynamic_cast<const FuVar *>(symbol->symbol))) {
+				if (std::find(this->varsToDestruct.begin(), this->varsToDestruct.end(), local) != this->varsToDestruct.end()) {
+					writeDestructAll(local);
+					write("return ");
+					if (const FuClassType *resultPtr = dynamic_cast<const FuClassType *>(this->currentMethod->type.get()))
+						writeClassPtr(resultPtr->class_, symbol, FuPriority::argument);
+					else
+						symbol->accept(this, FuPriority::argument);
+					writeCharLine(';');
+					return;
+				}
+				writeDestructAll();
+				GenCCpp::visitReturn(statement);
 				return;
 			}
+			writeCTemporaries(statement->value.get());
+			ensureChildBlock();
+			startDefinition(this->currentMethod->type.get(), true, true);
+			write("returnValue = ");
+			writeCoerced(this->currentMethod->type.get(), statement->value.get(), FuPriority::argument);
+			writeCharLine(';');
+			cleanupTemporaries();
 			writeDestructAll();
-			GenCCpp::visitReturn(statement);
-			return;
+			if (throwingMethod != nullptr) {
+				startForwardThrow(throwingMethod);
+				write("returnValue");
+				endForwardThrow(throwingMethod);
+			}
+			writeLine("return returnValue;");
 		}
-		writeCTemporaries(statement->value.get());
-		ensureChildBlock();
-		startDefinition(this->currentMethod->type.get(), true, true);
-		write("returnValue = ");
-		writeCoerced(this->currentMethod->type.get(), statement->value.get(), FuPriority::argument);
-		writeCharLine(';');
-		cleanupTemporaries();
-		writeDestructAll();
-		writeLine("return returnValue;");
 	}
 }
 

@@ -12168,6 +12168,22 @@ export class GenC extends GenCCpp
 		this.writeLine(");");
 	}
 
+	#isReturnThrowingDifferent(statement)
+	{
+		let methodType;
+		if ((methodType = this.currentMethod.type) instanceof FuNumericType) {
+			let throwingMethod = GenC.#getThrowingMethod(statement.value);
+			if (throwingMethod == null)
+				return false;
+			let methodRange;
+			let throwingRange;
+			if ((methodRange = methodType) instanceof FuRangeType && (throwingRange = throwingMethod.type) instanceof FuRangeType && methodRange.min == throwingRange.min)
+				return false;
+			return true;
+		}
+		return false;
+	}
+
 	visitReturn(statement)
 	{
 		if (statement.value == null) {
@@ -12177,39 +12193,51 @@ export class GenC extends GenCCpp
 			else
 				super.visitReturn(statement);
 		}
-		else if (statement.value instanceof FuLiteral || (this.#varsToDestruct.length == 0 && !GenC.#containsTemporariesToDestruct(statement.value))) {
-			this.#writeDestructAll();
-			this.#writeCTemporaries(statement.value);
-			super.visitReturn(statement);
-		}
 		else {
-			let symbol;
-			let local;
-			if ((symbol = statement.value) instanceof FuSymbolReference && (local = symbol.symbol) instanceof FuVar) {
-				if (this.#varsToDestruct.includes(local)) {
-					this.#writeDestructAll(local);
-					this.write("return ");
-					let resultPtr;
-					if ((resultPtr = this.currentMethod.type) instanceof FuClassType)
-						this.#writeClassPtr(resultPtr.class, symbol, FuPriority.ARGUMENT);
-					else
-						symbol.accept(this, FuPriority.ARGUMENT);
-					this.writeCharLine(59);
+			let throwingMethod = this.currentMethod.type instanceof FuNumericType ? GenC.#getThrowingMethod(statement.value) : null;
+			let methodRange;
+			let throwingRange;
+			if (throwingMethod != null && ((methodRange = this.currentMethod.type) instanceof FuRangeType ? (throwingRange = throwingMethod.type) instanceof FuRangeType && methodRange.min == throwingRange.min : throwingMethod.type instanceof FuFloatingType))
+				throwingMethod = null;
+			if (statement.value instanceof FuLiteral || (throwingMethod == null && this.#varsToDestruct.length == 0 && !GenC.#containsTemporariesToDestruct(statement.value))) {
+				this.#writeDestructAll();
+				this.#writeCTemporaries(statement.value);
+				super.visitReturn(statement);
+			}
+			else {
+				let symbol;
+				let local;
+				if ((symbol = statement.value) instanceof FuSymbolReference && (local = symbol.symbol) instanceof FuVar) {
+					if (this.#varsToDestruct.includes(local)) {
+						this.#writeDestructAll(local);
+						this.write("return ");
+						let resultPtr;
+						if ((resultPtr = this.currentMethod.type) instanceof FuClassType)
+							this.#writeClassPtr(resultPtr.class, symbol, FuPriority.ARGUMENT);
+						else
+							symbol.accept(this, FuPriority.ARGUMENT);
+						this.writeCharLine(59);
+						return;
+					}
+					this.#writeDestructAll();
+					super.visitReturn(statement);
 					return;
 				}
+				this.#writeCTemporaries(statement.value);
+				this.ensureChildBlock();
+				this.#startDefinition(this.currentMethod.type, true, true);
+				this.write("returnValue = ");
+				this.writeCoerced(this.currentMethod.type, statement.value, FuPriority.ARGUMENT);
+				this.writeCharLine(59);
+				this.cleanupTemporaries();
 				this.#writeDestructAll();
-				super.visitReturn(statement);
-				return;
+				if (throwingMethod != null) {
+					this.#startForwardThrow(throwingMethod);
+					this.write("returnValue");
+					this.#endForwardThrow(throwingMethod);
+				}
+				this.writeLine("return returnValue;");
 			}
-			this.#writeCTemporaries(statement.value);
-			this.ensureChildBlock();
-			this.#startDefinition(this.currentMethod.type, true, true);
-			this.write("returnValue = ");
-			this.writeCoerced(this.currentMethod.type, statement.value, FuPriority.ARGUMENT);
-			this.writeCharLine(59);
-			this.cleanupTemporaries();
-			this.#writeDestructAll();
-			this.writeLine("return returnValue;");
 		}
 	}
 
