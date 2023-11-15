@@ -17843,6 +17843,8 @@ export class GenD extends GenCCppD
 			this.writeConstructorBody(klass);
 			this.closeBlock();
 		}
+		else if (klass.id == FuId.EXCEPTION_CLASS)
+			this.writeLine("mixin basicExceptionCtors;");
 		for (let symbol = klass.first; symbol != null; symbol = symbol.next) {
 			if (!(symbol instanceof FuMember))
 				continue;
@@ -23125,7 +23127,7 @@ export class GenSwift extends GenPySwift
 		this.writePublic(klass);
 		if (klass.callType == FuCallType.SEALED)
 			this.write("final ");
-		this.startClass(klass, "", " : ", null, "");
+		this.startClass(klass, "", " : ", null, "Error");
 		if (klass.addsToString()) {
 			this.write(klass.hasBaseClass() ? ", " : " : ");
 			this.write("CustomStringConvertible");

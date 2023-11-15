@@ -16778,6 +16778,8 @@ void GenD::writeClass(const FuClass * klass, const FuProgram * program)
 		writeConstructorBody(klass);
 		closeBlock();
 	}
+	else if (klass->id == FuId::exceptionClass)
+		writeLine("mixin basicExceptionCtors;");
 	for (const FuSymbol * symbol = klass->first; symbol != nullptr; symbol = symbol->next) {
 		if (!dynamic_cast<const FuMember *>(symbol))
 			continue;
@@ -21764,7 +21766,7 @@ void GenSwift::writeClass(const FuClass * klass, const FuProgram * program)
 	writePublic(klass);
 	if (klass->callType == FuCallType::sealed)
 		write("final ");
-	startClass(klass, "", " : ", std::string_view(), "");
+	startClass(klass, "", " : ", std::string_view(), "Error");
 	if (klass->addsToString()) {
 		write(klass->hasBaseClass() ? ", " : " : ");
 		write("CustomStringConvertible");

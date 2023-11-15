@@ -17339,6 +17339,8 @@ namespace Fusion
 				WriteConstructorBody(klass);
 				CloseBlock();
 			}
+			else if (klass.Id == FuId.ExceptionClass)
+				WriteLine("mixin basicExceptionCtors;");
 			for (FuSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
 				if (!(symbol is FuMember))
 					continue;
@@ -22545,7 +22547,7 @@ namespace Fusion
 			WritePublic(klass);
 			if (klass.CallType == FuCallType.Sealed)
 				Write("final ");
-			StartClass(klass, "", " : ", null, "");
+			StartClass(klass, "", " : ", null, "Error");
 			if (klass.AddsToString()) {
 				Write(klass.HasBaseClass() ? ", " : " : ");
 				Write("CustomStringConvertible");

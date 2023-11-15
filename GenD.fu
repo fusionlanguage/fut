@@ -1409,6 +1409,8 @@ public class GenD : GenCCppD
 			WriteConstructorBody(klass);
 			CloseBlock();
 		}
+		else if (klass.Id == FuId.ExceptionClass)
+			WriteLine("mixin basicExceptionCtors;");
 		for (FuSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
 			if (!(symbol is FuMember))
 				continue;
