@@ -4070,9 +4070,13 @@ void FuSema::checkBaseCycle(FuClass * klass)
 		hare = hare->parent;
 		if (hare == nullptr)
 			return;
+		if (hare->id == FuId::exceptionClass)
+			klass->id = FuId::exceptionClass;
 		hare = hare->parent;
 		if (hare == nullptr)
 			return;
+		if (hare->id == FuId::exceptionClass)
+			klass->id = FuId::exceptionClass;
 		tortoise = tortoise->parent;
 	}
 	while (tortoise != hare);
@@ -8275,7 +8279,7 @@ void GenBase::startClass(const FuClass * klass, std::string_view suffix, std::st
 	write(suffix);
 	if (klass->hasBaseClass()) {
 		write(extendsClause);
-		if (klass->parent->id == FuId::exceptionClass) {
+		if (klass->baseClassName == "Exception") {
 			if (exceptionInclude.data() != nullptr)
 				include(exceptionInclude);
 			write(exceptionName);
@@ -8315,7 +8319,7 @@ void GenBase::writeMembers(const FuClass * klass, bool constArrays)
 
 bool GenBase::writeBaseClass(const FuClass * klass, const FuProgram * program)
 {
-	if (klass->id == FuId::exceptionClass)
+	if (klass->name == "Exception")
 		return false;
 	if (this->writtenClasses.contains(klass))
 		return false;
@@ -11688,7 +11692,7 @@ void GenC::writeEnum(const FuEnum * enu)
 
 void GenC::writeTypedef(const FuClass * klass)
 {
-	if (klass->callType == FuCallType::static_)
+	if (klass->callType == FuCallType::static_ || klass->id == FuId::exceptionClass)
 		return;
 	write("typedef struct ");
 	writeName(klass);
@@ -11858,6 +11862,8 @@ void GenC::writeSignatures(const FuClass * klass, bool pub)
 
 void GenC::writeClassInternal(const FuClass * klass)
 {
+	if (klass->id == FuId::exceptionClass)
+		return;
 	this->currentClass = klass;
 	if (klass->callType != FuCallType::static_) {
 		writeNewLine();

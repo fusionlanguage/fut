@@ -1,4 +1,4 @@
-public class FooException : Exception //FAIL: c d swift cl TODO
+public class FooException : Exception //FAIL: d swift TODO
 {
 }
 

@@ -4524,9 +4524,13 @@ export class FuSema
 			hare = hare.parent;
 			if (hare == null)
 				return;
+			if (hare.id == FuId.EXCEPTION_CLASS)
+				klass.id = FuId.EXCEPTION_CLASS;
 			hare = hare.parent;
 			if (hare == null)
 				return;
+			if (hare.id == FuId.EXCEPTION_CLASS)
+				klass.id = FuId.EXCEPTION_CLASS;
 			tortoise = tortoise.parent;
 		}
 		while (tortoise != hare);
@@ -8777,7 +8781,7 @@ export class GenBase extends FuVisitor
 		this.write(suffix);
 		if (klass.hasBaseClass()) {
 			this.write(extendsClause);
-			if (klass.parent.id == FuId.EXCEPTION_CLASS) {
+			if (klass.baseClassName == "Exception") {
 				if (exceptionInclude != null)
 					this.include(exceptionInclude);
 				this.write(exceptionName);
@@ -8822,7 +8826,7 @@ export class GenBase extends FuVisitor
 
 	writeBaseClass(klass, program)
 	{
-		if (klass.id == FuId.EXCEPTION_CLASS)
+		if (klass.name == "Exception")
 			return false;
 		if (this.writtenClasses.has(klass))
 			return false;
@@ -12348,7 +12352,7 @@ export class GenC extends GenCCpp
 
 	#writeTypedef(klass)
 	{
-		if (klass.callType == FuCallType.STATIC)
+		if (klass.callType == FuCallType.STATIC || klass.id == FuId.EXCEPTION_CLASS)
 			return;
 		this.write("typedef struct ");
 		this.writeName(klass);
@@ -12523,6 +12527,8 @@ export class GenC extends GenCCpp
 
 	writeClassInternal(klass)
 	{
+		if (klass.id == FuId.EXCEPTION_CLASS)
+			return;
 		this.currentClass = klass;
 		if (klass.callType != FuCallType.STATIC) {
 			this.writeNewLine();

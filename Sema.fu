@@ -75,9 +75,13 @@ public class FuSema
 			hare = hare.Parent;
 			if (hare == null)
 				return;
+			if (hare.Id == FuId.ExceptionClass)
+				klass.Id = FuId.ExceptionClass;
 			hare = hare.Parent;
 			if (hare == null)
 				return;
+			if (hare.Id == FuId.ExceptionClass)
+				klass.Id = FuId.ExceptionClass;
 			tortoise = tortoise.Parent;
 		} while (tortoise != hare);
 		this.CurrentScope = klass;

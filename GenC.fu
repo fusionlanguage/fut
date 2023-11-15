@@ -2892,7 +2892,7 @@ public class GenC : GenCCpp
 
 	void WriteTypedef!(FuClass klass)
 	{
-		if (klass.CallType == FuCallType.Static)
+		if (klass.CallType == FuCallType.Static || klass.Id == FuId.ExceptionClass)
 			return;
 		Write("typedef struct ");
 		WriteName(klass);
@@ -3064,6 +3064,8 @@ public class GenC : GenCCpp
 
 	protected override void WriteClassInternal!(FuClass klass)
 	{
+		if (klass.Id == FuId.ExceptionClass)
+			return;
 		this.CurrentClass = klass;
 		if (klass.CallType != FuCallType.Static) {
 			WriteNewLine();

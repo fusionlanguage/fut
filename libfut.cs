@@ -4383,9 +4383,13 @@ namespace Fusion
 				hare = hare.Parent;
 				if (hare == null)
 					return;
+				if (hare.Id == FuId.ExceptionClass)
+					klass.Id = FuId.ExceptionClass;
 				hare = hare.Parent;
 				if (hare == null)
 					return;
+				if (hare.Id == FuId.ExceptionClass)
+					klass.Id = FuId.ExceptionClass;
 				tortoise = tortoise.Parent;
 			}
 			while (tortoise != hare);
@@ -8438,7 +8442,7 @@ namespace Fusion
 			Write(suffix);
 			if (klass.HasBaseClass()) {
 				Write(extendsClause);
-				if (klass.Parent.Id == FuId.ExceptionClass) {
+				if (klass.BaseClassName == "Exception") {
 					if (exceptionInclude != null)
 						Include(exceptionInclude);
 					Write(exceptionName);
@@ -8488,7 +8492,7 @@ namespace Fusion
 
 		protected bool WriteBaseClass(FuClass klass, FuProgram program)
 		{
-			if (klass.Id == FuId.ExceptionClass)
+			if (klass.Name == "Exception")
 				return false;
 			if (this.WrittenClasses.Contains(klass))
 				return false;
@@ -11939,7 +11943,7 @@ namespace Fusion
 
 		void WriteTypedef(FuClass klass)
 		{
-			if (klass.CallType == FuCallType.Static)
+			if (klass.CallType == FuCallType.Static || klass.Id == FuId.ExceptionClass)
 				return;
 			Write("typedef struct ");
 			WriteName(klass);
@@ -12108,6 +12112,8 @@ namespace Fusion
 
 		protected override void WriteClassInternal(FuClass klass)
 		{
+			if (klass.Id == FuId.ExceptionClass)
+				return;
 			this.CurrentClass = klass;
 			if (klass.CallType != FuCallType.Static) {
 				WriteNewLine();
