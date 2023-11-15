@@ -1649,9 +1649,17 @@ public class GenCpp : GenCCpp
 
 	internal override void VisitThrow!(FuThrow statement)
 	{
-		Include("exception");
-		WriteLine("throw std::exception();");
-		// TODO: statement.Message.Accept(this, FuPriority.Argument);
+		Write("throw ");
+		if (statement.Class.Name == "Exception") {
+			Include("stdexcept");
+			Write("std::runtime_error");
+		}
+		else
+			Write(statement.Class.Name);
+		WriteChar('(');
+		if (statement.Message != null)
+			statement.Message.Accept(this, FuPriority.Argument);
+		WriteLine(");");
 	}
 
 	void OpenNamespace!()

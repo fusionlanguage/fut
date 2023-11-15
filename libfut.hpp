@@ -1101,6 +1101,7 @@ public:
 	bool completesNormally() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 public:
+	std::shared_ptr<FuSymbolReference> class_;
 	std::shared_ptr<FuExpr> message;
 };
 

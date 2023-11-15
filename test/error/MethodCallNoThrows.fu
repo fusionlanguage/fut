@@ -7,7 +7,7 @@ public static class Test
 
 	static void Bar() throws
 	{
-		throw "Exception";
+		throw Exception("bar");
 	}
 
 	public static bool Run()

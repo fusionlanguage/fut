@@ -2420,6 +2420,7 @@ export class FuSwitch extends FuCondCompletionStatement
 
 class FuThrow extends FuStatement
 {
+	class;
 	message;
 
 	completesNormally()
@@ -4178,7 +4179,10 @@ export class FuParser extends FuLexer
 	{
 		let result = Object.assign(new FuThrow(), { line: this.line });
 		this.expect(FuToken.THROW);
-		result.message = this.#parseExpr();
+		result.class = this.#parseSymbolReference(null);
+		this.expectOrSkip(FuToken.LEFT_PARENTHESIS);
+		result.message = this.see(FuToken.RIGHT_PARENTHESIS) ? null : this.#parseExpr();
+		this.expect(FuToken.RIGHT_PARENTHESIS);
 		this.expect(FuToken.SEMICOLON);
 		return result;
 	}
@@ -6438,9 +6442,16 @@ export class FuSema
 	{
 		if (!this.#currentMethod.throws)
 			this.reportError(statement, "'throw' in a method not marked 'throws'");
-		statement.message = this.#visitExpr(statement.message);
-		if (!(statement.message.type instanceof FuStringType))
-			this.reportError(statement, "The argument of 'throw' must be a string");
+		let symbol;
+		if ((symbol = this.#visitSymbolReference(statement.class)) instanceof FuSymbolReference && symbol.symbol instanceof FuClass && symbol.symbol.id == FuId.EXCEPTION_CLASS) {
+		}
+		else
+			this.reportError(statement, "Expected 'throw Exception'");
+		if (statement.message != null) {
+			statement.message = this.#visitExpr(statement.message);
+			if (!(statement.message.type instanceof FuStringType))
+				this.reportError(statement, "Exception accepts a string argument");
+		}
 	}
 
 	#visitWhile(statement)
@@ -15159,8 +15170,17 @@ export class GenCpp extends GenCCpp
 
 	visitThrow(statement)
 	{
-		this.include("exception");
-		this.writeLine("throw std::exception();");
+		this.write("throw ");
+		if (statement.class.name == "Exception") {
+			this.include("stdexcept");
+			this.write("std::runtime_error");
+		}
+		else
+			this.write(statement.class.name);
+		this.writeChar(40);
+		if (statement.message != null)
+			statement.message.accept(this, FuPriority.ARGUMENT);
+		this.writeLine(");");
 	}
 
 	#openNamespace()

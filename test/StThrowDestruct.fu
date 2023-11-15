@@ -2,7 +2,7 @@ public class Test
 {
 	static uint UintThrow() throws
 	{
-		throw "Foo";
+		throw Exception("Foo");
 	}
 
 	public static string() Outer() throws

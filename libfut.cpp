@@ -3710,7 +3710,10 @@ std::shared_ptr<FuThrow> FuParser::parseThrow()
 	std::shared_ptr<FuThrow> result = std::make_shared<FuThrow>();
 	result->line = this->line;
 	expect(FuToken::throw_);
-	result->message = parseExpr();
+	result->class_ = parseSymbolReference(nullptr);
+	expectOrSkip(FuToken::leftParenthesis);
+	result->message = see(FuToken::rightParenthesis) ? nullptr : parseExpr();
+	expect(FuToken::rightParenthesis);
 	expect(FuToken::semicolon);
 	return result;
 }
@@ -6030,9 +6033,16 @@ void FuSema::visitThrow(FuThrow * statement)
 {
 	if (!this->currentMethod->throws)
 		reportError(statement, "'throw' in a method not marked 'throws'");
-	statement->message = visitExpr(statement->message);
-	if (!dynamic_cast<const FuStringType *>(statement->message->type.get()))
-		reportError(statement, "The argument of 'throw' must be a string");
+	const FuSymbolReference * symbol;
+	if ((symbol = dynamic_cast<const FuSymbolReference *>(visitSymbolReference(statement->class_).get())) && dynamic_cast<const FuClass *>(symbol->symbol) && symbol->symbol->id == FuId::exceptionClass) {
+	}
+	else
+		reportError(statement, "Expected 'throw Exception'");
+	if (statement->message != nullptr) {
+		statement->message = visitExpr(statement->message);
+		if (!dynamic_cast<const FuStringType *>(statement->message->type.get()))
+			reportError(statement, "Exception accepts a string argument");
+	}
 }
 
 void FuSema::visitWhile(FuWhile * statement)
@@ -14355,8 +14365,17 @@ void GenCpp::visitSwitch(const FuSwitch * statement)
 
 void GenCpp::visitThrow(const FuThrow * statement)
 {
-	include("exception");
-	writeLine("throw std::exception();");
+	write("throw ");
+	if (statement->class_->name == "Exception") {
+		include("stdexcept");
+		write("std::runtime_error");
+	}
+	else
+		write(statement->class_->name);
+	writeChar('(');
+	if (statement->message != nullptr)
+		statement->message->accept(this, FuPriority::argument);
+	writeLine(");");
 }
 
 void GenCpp::openNamespace()

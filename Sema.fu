@@ -1915,9 +1915,16 @@ public class FuSema
 	{
 		if (!this.CurrentMethod.Throws)
 			ReportError(statement, "'throw' in a method not marked 'throws'");
-		statement.Message = VisitExpr(statement.Message);
-		if (!(statement.Message.Type is FuStringType))
-			ReportError(statement, "The argument of 'throw' must be a string");
+		if (VisitSymbolReference(statement.Class) is FuSymbolReference symbol
+		 && symbol.Symbol is FuClass && symbol.Symbol.Id == FuId.ExceptionClass) {
+		}
+		else
+			ReportError(statement, "Expected 'throw Exception'");
+		if (statement.Message != null) {
+			statement.Message = VisitExpr(statement.Message);
+			if (!(statement.Message.Type is FuStringType))
+				ReportError(statement, "Exception accepts a string argument");
+		}
 	}
 
 	void VisitWhile!(FuWhile! statement)

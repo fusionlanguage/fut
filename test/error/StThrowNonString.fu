@@ -2,7 +2,7 @@ public static class Test
 {
 	static void Foo() throws
 	{
-		throw new Test(); //ERROR: The argument of 'throw' must be a string
+		throw Exception(42); //ERROR: Exception accepts a string argument
 	}
 
 	public static bool Run()

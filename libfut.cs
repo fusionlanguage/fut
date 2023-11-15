@@ -2414,6 +2414,8 @@ namespace Fusion
 	class FuThrow : FuStatement
 	{
 
+		internal FuSymbolReference Class;
+
 		internal FuExpr Message;
 
 		public override bool CompletesNormally() => false;
@@ -4038,7 +4040,10 @@ namespace Fusion
 		{
 			FuThrow result = new FuThrow { Line = this.Line };
 			Expect(FuToken.Throw);
-			result.Message = ParseExpr();
+			result.Class = ParseSymbolReference(null);
+			ExpectOrSkip(FuToken.LeftParenthesis);
+			result.Message = See(FuToken.RightParenthesis) ? null : ParseExpr();
+			Expect(FuToken.RightParenthesis);
 			Expect(FuToken.Semicolon);
 			return result;
 		}
@@ -6143,9 +6148,15 @@ namespace Fusion
 		{
 			if (!this.CurrentMethod.Throws)
 				ReportError(statement, "'throw' in a method not marked 'throws'");
-			statement.Message = VisitExpr(statement.Message);
-			if (!(statement.Message.Type is FuStringType))
-				ReportError(statement, "The argument of 'throw' must be a string");
+			if (VisitSymbolReference(statement.Class) is FuSymbolReference symbol && symbol.Symbol is FuClass && symbol.Symbol.Id == FuId.ExceptionClass) {
+			}
+			else
+				ReportError(statement, "Expected 'throw Exception'");
+			if (statement.Message != null) {
+				statement.Message = VisitExpr(statement.Message);
+				if (!(statement.Message.Type is FuStringType))
+					ReportError(statement, "Exception accepts a string argument");
+			}
 		}
 
 		void VisitWhile(FuWhile statement)
@@ -14715,8 +14726,17 @@ namespace Fusion
 
 		internal override void VisitThrow(FuThrow statement)
 		{
-			Include("exception");
-			WriteLine("throw std::exception();");
+			Write("throw ");
+			if (statement.Class.Name == "Exception") {
+				Include("stdexcept");
+				Write("std::runtime_error");
+			}
+			else
+				Write(statement.Class.Name);
+			WriteChar('(');
+			if (statement.Message != null)
+				statement.Message.Accept(this, FuPriority.Argument);
+			WriteLine(");");
 		}
 
 		void OpenNamespace()

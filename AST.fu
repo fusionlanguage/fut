@@ -934,7 +934,8 @@ public class FuSwitch : FuCondCompletionStatement
 
 class FuThrow : FuStatement
 {
-	internal FuExpr# Message;
+	internal FuSymbolReference# Class;
+	internal FuExpr#? Message;
 	public override bool CompletesNormally() => false;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitThrow(this); }
 }

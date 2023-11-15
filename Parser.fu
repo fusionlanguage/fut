@@ -770,7 +770,10 @@ public class FuParser : FuLexer
 	{
 		FuThrow# result = new FuThrow { Line = this.Line };
 		Expect(FuToken.Throw);
-		result.Message = ParseExpr();
+		result.Class = ParseSymbolReference(null);
+		ExpectOrSkip(FuToken.LeftParenthesis);
+		result.Message = See(FuToken.RightParenthesis) ? null : ParseExpr();
+		Expect(FuToken.RightParenthesis);
 		Expect(FuToken.Semicolon);
 		return result;
 	}

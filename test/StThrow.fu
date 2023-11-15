@@ -2,7 +2,7 @@ public class Test
 {
 	static uint UintThrow() throws
 	{
-		throw "Foo";
+		throw Exception("Foo");
 	}
 
 	static void VoidThrow() throws
@@ -12,7 +12,7 @@ public class Test
 
 	static float FloatThrow() throws
 	{
-		throw "Foo";
+		throw Exception("Foo");
 	}
 
 	static string StringPtrThrow() throws
@@ -23,7 +23,7 @@ public class Test
 
 	static Test! ObjectPtrThrow() throws
 	{
-		throw "Foo";
+		throw Exception("Foo");
 	}
 
 	public static void Outer() throws
