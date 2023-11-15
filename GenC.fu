@@ -2818,6 +2818,11 @@ public class GenC : GenCCpp
 			base.VisitSwitch(statement);
 	}
 
+	protected override void WriteException!()
+	{
+		assert false;
+	}
+
 	internal override void VisitThrow!(FuThrow statement)
 	{
 		WriteThrow();

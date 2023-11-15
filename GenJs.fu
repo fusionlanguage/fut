@@ -1188,11 +1188,9 @@ public class GenJsNoModule : GenBase
 			base.VisitSwitch(statement);
 	}
 
-	internal override void VisitThrow!(FuThrow statement)
+	protected override void WriteException!()
 	{
-		Write("throw new Error(");
-		statement.Message.Accept(this, FuPriority.Argument);
-		WriteLine(");");
+		Write("Error");
 	}
 
 	protected virtual void StartContainerType!(FuContainerType container)
@@ -1271,7 +1269,7 @@ public class GenJsNoModule : GenBase
 		if (!WriteBaseClass(klass, program))
 			return;
 		StartContainerType(klass);
-		OpenClass(klass, "", " extends ", null, "Error");
+		OpenClass(klass, "", " extends ");
 		if (NeedsConstructor(klass)) {
 			if (klass.Constructor != null)
 				WriteDoc(klass.Constructor.Documentation);

@@ -1366,12 +1366,17 @@ public class GenPy : GenPySwift
 		}
 	}
 
+	protected override void WriteException!()
+	{
+		Write("Exception");
+	}
+
 	internal override void VisitThrow!(FuThrow statement)
 	{
 		VisitXcrement(statement.Message, false, true);
-		Write("raise Exception(");
-		statement.Message.Accept(this, FuPriority.Argument);
-		WriteCharLine(')');
+		Write("raise ");
+		WriteThrowArgument(statement);
+		WriteNewLine();
 		// FIXME: VisitXcrement(statement.Message, true, true);
 	}
 

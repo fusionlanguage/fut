@@ -8318,6 +8318,32 @@ namespace Fusion
 			WriteCharLine('}');
 		}
 
+		protected abstract void WriteException();
+
+		protected void WriteExceptionClass(FuSymbol klass)
+		{
+			if (klass.Name == "Exception")
+				WriteException();
+			else
+				WriteName(klass);
+		}
+
+		protected void WriteThrowArgument(FuThrow statement)
+		{
+			WriteExceptionClass(statement.Class.Symbol);
+			WriteChar('(');
+			if (statement.Message != null)
+				statement.Message.Accept(this, FuPriority.Argument);
+			WriteChar(')');
+		}
+
+		internal override void VisitThrow(FuThrow statement)
+		{
+			Write("throw new ");
+			WriteThrowArgument(statement);
+			WriteCharLine(';');
+		}
+
 		internal override void VisitWhile(FuWhile statement)
 		{
 			if (!EmbedIfWhileIsVar(statement.Cond, false))
@@ -8446,26 +8472,20 @@ namespace Fusion
 				WriteEnum(program.System.RegexOptionsEnum);
 		}
 
-		protected void StartClass(FuClass klass, string suffix, string extendsClause, string exceptionInclude, string exceptionName)
+		protected void StartClass(FuClass klass, string suffix, string extendsClause)
 		{
 			Write("class ");
 			Write(klass.Name);
 			Write(suffix);
 			if (klass.HasBaseClass()) {
 				Write(extendsClause);
-				if (klass.BaseClassName == "Exception") {
-					if (exceptionInclude != null)
-						Include(exceptionInclude);
-					Write(exceptionName);
-				}
-				else
-					Write(klass.BaseClassName);
+				WriteExceptionClass(klass.Parent);
 			}
 		}
 
-		protected void OpenClass(FuClass klass, string suffix, string extendsClause, string exceptionInclude, string exceptionName = "Exception")
+		protected void OpenClass(FuClass klass, string suffix, string extendsClause)
 		{
-			StartClass(klass, suffix, extendsClause, exceptionInclude, exceptionName);
+			StartClass(klass, suffix, extendsClause);
 			WriteNewLine();
 			OpenBlock();
 		}
@@ -11888,6 +11908,11 @@ namespace Fusion
 				base.VisitSwitch(statement);
 		}
 
+		protected override void WriteException()
+		{
+			throw new NotImplementedException();
+		}
+
 		internal override void VisitThrow(FuThrow statement)
 		{
 			WriteThrow();
@@ -14724,19 +14749,17 @@ namespace Fusion
 				base.VisitSwitch(statement);
 		}
 
+		protected override void WriteException()
+		{
+			Include("stdexcept");
+			Write("std::runtime_error");
+		}
+
 		internal override void VisitThrow(FuThrow statement)
 		{
 			Write("throw ");
-			if (statement.Class.Name == "Exception") {
-				Include("stdexcept");
-				Write("std::runtime_error");
-			}
-			else
-				Write(statement.Class.Name);
-			WriteChar('(');
-			if (statement.Message != null)
-				statement.Message.Accept(this, FuPriority.Argument);
-			WriteLine(");");
+			WriteThrowArgument(statement);
+			WriteCharLine(';');
 		}
 
 		void OpenNamespace()
@@ -14899,7 +14922,7 @@ namespace Fusion
 		{
 			WriteNewLine();
 			WriteDoc(klass.Documentation);
-			OpenClass(klass, klass.CallType == FuCallType.Sealed ? " final" : "", " : public ", "stdexcept", "std::runtime_error");
+			OpenClass(klass, klass.CallType == FuCallType.Sealed ? " final" : "", " : public ");
 			this.Indent--;
 			WriteDeclarations(klass, FuVisibility.Public, "public");
 			WriteDeclarations(klass, FuVisibility.Protected, "protected");
@@ -15845,12 +15868,10 @@ namespace Fusion
 			WriteChild(statement.Body);
 		}
 
-		internal override void VisitThrow(FuThrow statement)
+		protected override void WriteException()
 		{
 			Include("System");
-			Write("throw new Exception(");
-			statement.Message.Accept(this, FuPriority.Argument);
-			WriteLine(");");
+			Write("Exception");
 		}
 
 		protected override void WriteEnum(FuEnum enu)
@@ -15933,7 +15954,7 @@ namespace Fusion
 			WriteDoc(klass.Documentation);
 			WritePublic(klass);
 			WriteCallType(klass.CallType, "sealed ");
-			OpenClass(klass, "", " : ", "System");
+			OpenClass(klass, "", " : ");
 			if (NeedsConstructor(klass)) {
 				if (klass.Constructor != null) {
 					WriteDoc(klass.Constructor.Documentation);
@@ -17301,12 +17322,10 @@ namespace Fusion
 			}
 		}
 
-		internal override void VisitThrow(FuThrow statement)
+		protected override void WriteException()
 		{
 			Include("std.exception");
-			Write("throw new Exception(");
-			statement.Message.Accept(this, FuPriority.Argument);
-			WriteLine(");");
+			Write("Exception");
 		}
 
 		protected override void WriteEnum(FuEnum enu)
@@ -17370,7 +17389,7 @@ namespace Fusion
 			WriteDoc(klass.Documentation);
 			if (klass.CallType == FuCallType.Sealed)
 				Write("final ");
-			OpenClass(klass, "", " : ", "std.exception");
+			OpenClass(klass, "", " : ");
 			if (NeedsConstructor(klass)) {
 				if (klass.Constructor != null) {
 					WriteDoc(klass.Constructor.Documentation);
@@ -18690,11 +18709,9 @@ namespace Fusion
 				base.VisitSwitch(statement);
 		}
 
-		internal override void VisitThrow(FuThrow statement)
+		protected override void WriteException()
 		{
-			Write("throw new Exception(");
-			statement.Message.Accept(this, FuPriority.Argument);
-			WriteLine(");");
+			Write("Exception");
 		}
 
 		void CreateJavaFile(string className)
@@ -18869,7 +18886,7 @@ namespace Fusion
 			default:
 				throw new NotImplementedException();
 			}
-			OpenClass(klass, "", " extends ", null);
+			OpenClass(klass, "", " extends ");
 			if (klass.CallType == FuCallType.Static) {
 				Write("private ");
 				Write(klass.Name);
@@ -20112,11 +20129,9 @@ namespace Fusion
 				base.VisitSwitch(statement);
 		}
 
-		internal override void VisitThrow(FuThrow statement)
+		protected override void WriteException()
 		{
-			Write("throw new Error(");
-			statement.Message.Accept(this, FuPriority.Argument);
-			WriteLine(");");
+			Write("Error");
 		}
 
 		protected virtual void StartContainerType(FuContainerType container)
@@ -20195,7 +20210,7 @@ namespace Fusion
 			if (!WriteBaseClass(klass, program))
 				return;
 			StartContainerType(klass);
-			OpenClass(klass, "", " extends ", null, "Error");
+			OpenClass(klass, "", " extends ");
 			if (NeedsConstructor(klass)) {
 				if (klass.Constructor != null)
 					WriteDoc(klass.Constructor.Documentation);
@@ -20572,7 +20587,7 @@ namespace Fusion
 			default:
 				throw new NotImplementedException();
 			}
-			OpenClass(klass, "", " extends ", null, "Error");
+			OpenClass(klass, "", " extends ");
 			if (NeedsConstructor(klass) || klass.CallType == FuCallType.Static) {
 				if (klass.Constructor != null) {
 					WriteDoc(klass.Constructor.Documentation);
@@ -20983,8 +20998,6 @@ namespace Fusion
 	{
 
 		FuSystem System;
-
-		bool Throw;
 
 		bool ArrayRef;
 
@@ -22372,13 +22385,17 @@ namespace Fusion
 			WriteCharLine('}');
 		}
 
+		protected override void WriteException()
+		{
+			Write("Error");
+		}
+
 		internal override void VisitThrow(FuThrow statement)
 		{
-			this.Throw = true;
 			VisitXcrement(statement.Message, false, true);
-			Write("throw FuError.error(");
-			WriteExpr(statement.Message, FuPriority.Argument);
-			WriteCharLine(')');
+			Write("throw ");
+			WriteExceptionClass(statement.Class.Symbol);
+			WriteLine("()");
 		}
 
 		void WriteReadOnlyParameter(FuVar param)
@@ -22597,7 +22614,7 @@ namespace Fusion
 			WritePublic(klass);
 			if (klass.CallType == FuCallType.Sealed)
 				Write("final ");
-			StartClass(klass, "", " : ", null, "Error");
+			StartClass(klass, "", " : ");
 			if (klass.AddsToString()) {
 				Write(klass.HasBaseClass() ? ", " : " : ");
 				Write("CustomStringConvertible");
@@ -22625,13 +22642,6 @@ namespace Fusion
 
 		void WriteLibrary()
 		{
-			if (this.Throw) {
-				WriteNewLine();
-				WriteLine("public enum FuError : Error");
-				OpenBlock();
-				WriteLine("case error(String)");
-				CloseBlock();
-			}
 			if (this.ArrayRef) {
 				WriteNewLine();
 				WriteLine("public class ArrayRef<T> : Sequence");
@@ -22752,7 +22762,6 @@ namespace Fusion
 		public override void WriteProgram(FuProgram program)
 		{
 			this.System = program.System;
-			this.Throw = false;
 			this.ArrayRef = false;
 			this.StringCharAt = false;
 			this.StringIndexOf = false;
@@ -24116,12 +24125,17 @@ namespace Fusion
 			}
 		}
 
+		protected override void WriteException()
+		{
+			Write("Exception");
+		}
+
 		internal override void VisitThrow(FuThrow statement)
 		{
 			VisitXcrement(statement.Message, false, true);
-			Write("raise Exception(");
-			statement.Message.Accept(this, FuPriority.Argument);
-			WriteCharLine(')');
+			Write("raise ");
+			WriteThrowArgument(statement);
+			WriteNewLine();
 		}
 
 		void WritePyClass(FuContainerType type)

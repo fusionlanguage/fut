@@ -1327,12 +1327,10 @@ public class GenD : GenCCppD
 		}
 	}
 
-	internal override void VisitThrow!(FuThrow statement)
+	protected override void WriteException!()
 	{
 		Include("std.exception");
-		Write("throw new Exception(");
-		statement.Message.Accept(this, FuPriority.Argument);
-		WriteLine(");");
+		Write("Exception");
 	}
 
 	protected override void WriteEnum!(FuEnum enu)
@@ -1396,7 +1394,7 @@ public class GenD : GenCCppD
 		WriteDoc(klass.Documentation);
 		if (klass.CallType == FuCallType.Sealed)
 			Write("final ");
-		OpenClass(klass, "", " : ", "std.exception");
+		OpenClass(klass, "", " : ");
 		if (NeedsConstructor(klass)) {
 			if (klass.Constructor != null) {
 				WriteDoc(klass.Constructor.Documentation);

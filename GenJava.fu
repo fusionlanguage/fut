@@ -1190,11 +1190,9 @@ public class GenJava : GenTyped
 			base.VisitSwitch(statement);
 	}
 
-	internal override void VisitThrow!(FuThrow statement)
+	protected override void WriteException!()
 	{
-		Write("throw new Exception(");
-		statement.Message.Accept(this, FuPriority.Argument);
-		WriteLine(");");
+		Write("Exception");
 	}
 
 	void CreateJavaFile!(string className)
@@ -1370,7 +1368,7 @@ public class GenJava : GenTyped
 		default:
 			assert false;
 		}
-		OpenClass(klass, "", " extends ", null);
+		OpenClass(klass, "", " extends ");
 
 		if (klass.CallType == FuCallType.Static) {
 			Write("private ");

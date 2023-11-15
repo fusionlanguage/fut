@@ -821,12 +821,10 @@ public class GenCs : GenTyped
 		WriteChild(statement.Body);
 	}
 
-	internal override void VisitThrow!(FuThrow statement)
+	protected override void WriteException!()
 	{
 		Include("System");
-		Write("throw new Exception(");
-		statement.Message.Accept(this, FuPriority.Argument);
-		WriteLine(");");
+		Write("Exception");
 	}
 
 	protected override void WriteEnum!(FuEnum enu)
@@ -909,7 +907,7 @@ public class GenCs : GenTyped
 		WriteDoc(klass.Documentation);
 		WritePublic(klass);
 		WriteCallType(klass.CallType, "sealed ");
-		OpenClass(klass, "", " : ", "System");
+		OpenClass(klass, "", " : ");
 
 		if (NeedsConstructor(klass)) {
 			if (klass.Constructor != null) {

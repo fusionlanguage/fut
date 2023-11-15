@@ -1835,6 +1835,9 @@ protected:
 	virtual void writeSwitchCaseCond(const FuSwitch * statement, const FuExpr * value, FuPriority parent);
 	virtual void writeIfCaseBody(const std::vector<std::shared_ptr<FuStatement>> * body, bool doWhile, const FuSwitch * statement, const FuCase * kase);
 	void writeSwitchAsIfs(const FuSwitch * statement, bool doWhile);
+	virtual void writeException() = 0;
+	void writeExceptionClass(const FuSymbol * klass);
+	void writeThrowArgument(const FuThrow * statement);
 	void flattenBlock(FuStatement * statement);
 	virtual bool hasInitCode(const FuNamedValue * def) const;
 	virtual bool needsConstructor(const FuClass * klass) const;
@@ -1849,8 +1852,8 @@ protected:
 	void writeEnumValue(const FuConst * konst);
 	virtual void writeEnum(const FuEnum * enu) = 0;
 	virtual void writeRegexOptionsEnum(const FuProgram * program);
-	void startClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause, std::string_view exceptionInclude, std::string_view exceptionName);
-	void openClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause, std::string_view exceptionInclude, std::string_view exceptionName = "Exception");
+	void startClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause);
+	void openClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause);
 	virtual void writeConst(const FuConst * konst) = 0;
 	virtual void writeField(const FuField * field) = 0;
 	virtual void writeMethod(const FuMethod * method) = 0;
@@ -1887,6 +1890,7 @@ public:
 	void visitNative(const FuNative * statement) override;
 	void visitReturn(const FuReturn * statement) override;
 	void visitSwitch(const FuSwitch * statement) override;
+	void visitThrow(const FuThrow * statement) override;
 	void visitWhile(const FuWhile * statement) override;
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;
 private:
@@ -2045,6 +2049,7 @@ protected:
 	void writeResource(std::string_view name, int length) override;
 	void cleanupBlock(const FuBlock * statement) override;
 	void writeSwitchCaseBody(const std::vector<std::shared_ptr<FuStatement>> * statements) override;
+	void writeException() override;
 	void writeStatements(const std::vector<std::shared_ptr<FuStatement>> * statements) override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeTypedefs(const FuProgram * program, bool pub);
@@ -2247,6 +2252,7 @@ protected:
 	void writeStronglyCoerced(const FuType * type, const FuExpr * expr) override;
 	void writeSwitchCaseCond(const FuSwitch * statement, const FuExpr * value, FuPriority parent) override;
 	void writeSwitchCaseBody(const std::vector<std::shared_ptr<FuStatement>> * statements) override;
+	void writeException() override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeField(const FuField * field) override;
 	void writeClassInternal(const FuClass * klass) override;
@@ -2329,6 +2335,7 @@ protected:
 	void defineObjectLiteralTemporary(const FuUnaryExpr * expr) override;
 	void defineIsVar(const FuBinaryExpr * binary) override;
 	void writeAssert(const FuAssert * statement) override;
+	void writeException() override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeRegexOptionsEnum(const FuProgram * program) override;
 	void writeConst(const FuConst * konst) override;
@@ -2344,7 +2351,6 @@ public:
 	void visitLambdaExpr(const FuLambdaExpr * expr) override;
 	void visitForeach(const FuForeach * statement) override;
 	void visitLock(const FuLock * statement) override;
-	void visitThrow(const FuThrow * statement) override;
 private:
 	void writeVisibility(FuVisibility visibility);
 	void writeCallType(FuCallType callType, std::string_view sealedString);
@@ -2386,6 +2392,7 @@ protected:
 	void writeAssert(const FuAssert * statement) override;
 	void writeSwitchCaseTypeVar(const FuExpr * value) override;
 	void writeSwitchCaseCond(const FuSwitch * statement, const FuExpr * value, FuPriority parent) override;
+	void writeException() override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;
@@ -2402,7 +2409,6 @@ public:
 	void visitForeach(const FuForeach * statement) override;
 	void visitLock(const FuLock * statement) override;
 	void visitSwitch(const FuSwitch * statement) override;
-	void visitThrow(const FuThrow * statement) override;
 private:
 	bool hasListInsert;
 	bool hasListRemoveAt;
@@ -2463,6 +2469,7 @@ protected:
 	void writeSwitchValue(const FuExpr * expr) override;
 	void writeSwitchCaseValue(const FuSwitch * statement, const FuExpr * value) override;
 	void writeSwitchCase(const FuSwitch * statement, const FuCase * kase) override;
+	void writeException() override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;
@@ -2479,7 +2486,6 @@ public:
 	void visitLock(const FuLock * statement) override;
 	void visitReturn(const FuReturn * statement) override;
 	void visitSwitch(const FuSwitch * statement) override;
-	void visitThrow(const FuThrow * statement) override;
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;
 private:
 	int switchCaseDiscards;
@@ -2540,6 +2546,7 @@ protected:
 	void startBreakGoto() override;
 	void writeSwitchCaseCond(const FuSwitch * statement, const FuExpr * value, FuPriority parent) override;
 	void writeIfCaseBody(const std::vector<std::shared_ptr<FuStatement>> * body, bool doWhile, const FuSwitch * statement, const FuCase * kase) override;
+	void writeException() override;
 	virtual void startContainerType(const FuContainerType * container);
 	void writeEnum(const FuEnum * enu) override;
 	void writeConst(const FuConst * konst) override;
@@ -2558,7 +2565,6 @@ public:
 	void visitForeach(const FuForeach * statement) override;
 	void visitLock(const FuLock * statement) override;
 	void visitSwitch(const FuSwitch * statement) override;
-	void visitThrow(const FuThrow * statement) override;
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;
 private:
 	bool stringWriter = false;
@@ -2703,6 +2709,7 @@ protected:
 	void openWhile(const FuLoop * loop) override;
 	void writeForRange(const FuVar * iter, const FuBinaryExpr * cond, int64_t rangeStep) override;
 	void writeResultVar() override;
+	void writeException() override;
 	void writeParameter(const FuVar * param) override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeConst(const FuConst * konst) override;
@@ -2727,7 +2734,6 @@ public:
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;
 private:
 	const FuSystem * system;
-	bool throw_;
 	bool arrayRef;
 	bool stringCharAt;
 	bool stringIndexOf;
@@ -2797,6 +2803,7 @@ protected:
 	void writeForRange(const FuVar * iter, const FuBinaryExpr * cond, int64_t rangeStep) override;
 	void writeElseIf() override;
 	void writeResultVar() override;
+	void writeException() override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;

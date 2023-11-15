@@ -1828,6 +1828,32 @@ public abstract class GenBase : FuVisitor
 		WriteCharLine('}');
 	}
 
+	protected abstract void WriteException!();
+
+	protected void WriteExceptionClass!(FuSymbol klass)
+	{
+		if (klass.Name == "Exception")
+			WriteException();
+		else
+			WriteName(klass);
+	}
+
+	protected void WriteThrowArgument!(FuThrow statement)
+	{
+		WriteExceptionClass(statement.Class.Symbol);
+		WriteChar('(');
+		if (statement.Message != null)
+			statement.Message.Accept(this, FuPriority.Argument);
+		WriteChar(')');
+	}
+
+	internal override void VisitThrow!(FuThrow statement)
+	{
+		Write("throw new ");
+		WriteThrowArgument(statement);
+		WriteCharLine(';');
+	}
+
 	internal override void VisitWhile!(FuWhile statement)
 	{
 		if (!EmbedIfWhileIsVar(statement.Cond, false)) // FIXME: IsVar but not object literal
@@ -1956,26 +1982,20 @@ public abstract class GenBase : FuVisitor
 			WriteEnum(program.System.RegexOptionsEnum);
 	}
 
-	protected void StartClass!(FuClass klass, string suffix, string extendsClause, string? exceptionInclude, string exceptionName)
+	protected void StartClass!(FuClass klass, string suffix, string extendsClause)
 	{
 		Write("class ");
 		Write(klass.Name);
 		Write(suffix);
 		if (klass.HasBaseClass()) {
 			Write(extendsClause);
-			if (klass.BaseClassName == "Exception") {
-				if (exceptionInclude != null)
-					Include(exceptionInclude);
-				Write(exceptionName);
-			}
-			else
-				Write(klass.BaseClassName);
+			WriteExceptionClass(klass.Parent);
 		}
 	}
 
-	protected void OpenClass!(FuClass klass, string suffix, string extendsClause, string? exceptionInclude, string exceptionName = "Exception")
+	protected void OpenClass!(FuClass klass, string suffix, string extendsClause)
 	{
-		StartClass(klass, suffix, extendsClause, exceptionInclude, exceptionName);
+		StartClass(klass, suffix, extendsClause);
 		WriteNewLine();
 		OpenBlock();
 	}

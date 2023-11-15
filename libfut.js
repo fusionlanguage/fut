@@ -8650,6 +8650,30 @@ export class GenBase extends FuVisitor
 		this.writeCharLine(125);
 	}
 
+	writeExceptionClass(klass)
+	{
+		if (klass.name == "Exception")
+			this.writeException();
+		else
+			this.writeName(klass);
+	}
+
+	writeThrowArgument(statement)
+	{
+		this.writeExceptionClass(statement.class.symbol);
+		this.writeChar(40);
+		if (statement.message != null)
+			statement.message.accept(this, FuPriority.ARGUMENT);
+		this.writeChar(41);
+	}
+
+	visitThrow(statement)
+	{
+		this.write("throw new ");
+		this.writeThrowArgument(statement);
+		this.writeCharLine(59);
+	}
+
 	visitWhile(statement)
 	{
 		if (!this.embedIfWhileIsVar(statement.cond, false))
@@ -8785,26 +8809,20 @@ export class GenBase extends FuVisitor
 			this.writeEnum(program.system.regexOptionsEnum);
 	}
 
-	startClass(klass, suffix, extendsClause, exceptionInclude, exceptionName)
+	startClass(klass, suffix, extendsClause)
 	{
 		this.write("class ");
 		this.write(klass.name);
 		this.write(suffix);
 		if (klass.hasBaseClass()) {
 			this.write(extendsClause);
-			if (klass.baseClassName == "Exception") {
-				if (exceptionInclude != null)
-					this.include(exceptionInclude);
-				this.write(exceptionName);
-			}
-			else
-				this.write(klass.baseClassName);
+			this.writeExceptionClass(klass.parent);
 		}
 	}
 
-	openClass(klass, suffix, extendsClause, exceptionInclude, exceptionName = "Exception")
+	openClass(klass, suffix, extendsClause)
 	{
-		this.startClass(klass, suffix, extendsClause, exceptionInclude, exceptionName);
+		this.startClass(klass, suffix, extendsClause);
 		this.writeNewLine();
 		this.openBlock();
 	}
@@ -12293,6 +12311,11 @@ export class GenC extends GenCCpp
 			super.visitSwitch(statement);
 	}
 
+	writeException()
+	{
+		throw new Error();
+	}
+
 	visitThrow(statement)
 	{
 		this.#writeThrow();
@@ -15168,19 +15191,17 @@ export class GenCpp extends GenCCpp
 			super.visitSwitch(statement);
 	}
 
+	writeException()
+	{
+		this.include("stdexcept");
+		this.write("std::runtime_error");
+	}
+
 	visitThrow(statement)
 	{
 		this.write("throw ");
-		if (statement.class.name == "Exception") {
-			this.include("stdexcept");
-			this.write("std::runtime_error");
-		}
-		else
-			this.write(statement.class.name);
-		this.writeChar(40);
-		if (statement.message != null)
-			statement.message.accept(this, FuPriority.ARGUMENT);
-		this.writeLine(");");
+		this.writeThrowArgument(statement);
+		this.writeCharLine(59);
 	}
 
 	#openNamespace()
@@ -15346,7 +15367,7 @@ export class GenCpp extends GenCCpp
 	{
 		this.writeNewLine();
 		this.writeDoc(klass.documentation);
-		this.openClass(klass, klass.callType == FuCallType.SEALED ? " final" : "", " : public ", "stdexcept", "std::runtime_error");
+		this.openClass(klass, klass.callType == FuCallType.SEALED ? " final" : "", " : public ");
 		this.indent--;
 		this.#writeDeclarations(klass, FuVisibility.PUBLIC, "public");
 		this.#writeDeclarations(klass, FuVisibility.PROTECTED, "protected");
@@ -16318,12 +16339,10 @@ export class GenCs extends GenTyped
 		this.writeChild(statement.body);
 	}
 
-	visitThrow(statement)
+	writeException()
 	{
 		this.include("System");
-		this.write("throw new Exception(");
-		statement.message.accept(this, FuPriority.ARGUMENT);
-		this.writeLine(");");
+		this.write("Exception");
 	}
 
 	writeEnum(enu)
@@ -16409,7 +16428,7 @@ export class GenCs extends GenTyped
 		this.writeDoc(klass.documentation);
 		this.writePublic(klass);
 		this.#writeCallType(klass.callType, "sealed ");
-		this.openClass(klass, "", " : ", "System");
+		this.openClass(klass, "", " : ");
 		if (this.needsConstructor(klass)) {
 			if (klass.constructor_ != null) {
 				this.writeDoc(klass.constructor_.documentation);
@@ -17801,12 +17820,10 @@ export class GenD extends GenCCppD
 		}
 	}
 
-	visitThrow(statement)
+	writeException()
 	{
 		this.include("std.exception");
-		this.write("throw new Exception(");
-		statement.message.accept(this, FuPriority.ARGUMENT);
-		this.writeLine(");");
+		this.write("Exception");
 	}
 
 	writeEnum(enu)
@@ -17874,7 +17891,7 @@ export class GenD extends GenCCppD
 		this.writeDoc(klass.documentation);
 		if (klass.callType == FuCallType.SEALED)
 			this.write("final ");
-		this.openClass(klass, "", " : ", "std.exception");
+		this.openClass(klass, "", " : ");
 		if (this.needsConstructor(klass)) {
 			if (klass.constructor_ != null) {
 				this.writeDoc(klass.constructor_.documentation);
@@ -19235,11 +19252,9 @@ export class GenJava extends GenTyped
 			super.visitSwitch(statement);
 	}
 
-	visitThrow(statement)
+	writeException()
 	{
-		this.write("throw new Exception(");
-		statement.message.accept(this, FuPriority.ARGUMENT);
-		this.writeLine(");");
+		this.write("Exception");
 	}
 
 	#createJavaFile(className)
@@ -19415,7 +19430,7 @@ export class GenJava extends GenTyped
 		default:
 			throw new Error();
 		}
-		this.openClass(klass, "", " extends ", null);
+		this.openClass(klass, "", " extends ");
 		if (klass.callType == FuCallType.STATIC) {
 			this.write("private ");
 			this.write(klass.name);
@@ -20671,11 +20686,9 @@ export class GenJsNoModule extends GenBase
 			super.visitSwitch(statement);
 	}
 
-	visitThrow(statement)
+	writeException()
 	{
-		this.write("throw new Error(");
-		statement.message.accept(this, FuPriority.ARGUMENT);
-		this.writeLine(");");
+		this.write("Error");
 	}
 
 	startContainerType(container)
@@ -20754,7 +20767,7 @@ export class GenJsNoModule extends GenBase
 		if (!this.writeBaseClass(klass, program))
 			return;
 		this.startContainerType(klass);
-		this.openClass(klass, "", " extends ", null, "Error");
+		this.openClass(klass, "", " extends ");
 		if (this.needsConstructor(klass)) {
 			if (klass.constructor_ != null)
 				this.writeDoc(klass.constructor_.documentation);
@@ -21125,7 +21138,7 @@ export class GenTs extends GenJs
 		default:
 			throw new Error();
 		}
-		this.openClass(klass, "", " extends ", null, "Error");
+		this.openClass(klass, "", " extends ");
 		if (this.needsConstructor(klass) || klass.callType == FuCallType.STATIC) {
 			if (klass.constructor_ != null) {
 				this.writeDoc(klass.constructor_.documentation);
@@ -21549,7 +21562,6 @@ export class GenPySwift extends GenBase
 export class GenSwift extends GenPySwift
 {
 	#system;
-	#throw;
 	#arrayRef;
 	#stringCharAt;
 	#stringIndexOf;
@@ -22950,13 +22962,17 @@ export class GenSwift extends GenPySwift
 		this.writeCharLine(125);
 	}
 
+	writeException()
+	{
+		this.write("Error");
+	}
+
 	visitThrow(statement)
 	{
-		this.#throw = true;
 		this.visitXcrement(statement.message, false, true);
-		this.write("throw FuError.error(");
-		this.writeExpr(statement.message, FuPriority.ARGUMENT);
-		this.writeCharLine(41);
+		this.write("throw ");
+		this.writeExceptionClass(statement.class.symbol);
+		this.writeLine("()");
 	}
 
 	#writeReadOnlyParameter(param)
@@ -23177,7 +23193,7 @@ export class GenSwift extends GenPySwift
 		this.writePublic(klass);
 		if (klass.callType == FuCallType.SEALED)
 			this.write("final ");
-		this.startClass(klass, "", " : ", null, "Error");
+		this.startClass(klass, "", " : ");
 		if (klass.addsToString()) {
 			this.write(klass.hasBaseClass() ? ", " : " : ");
 			this.write("CustomStringConvertible");
@@ -23205,13 +23221,6 @@ export class GenSwift extends GenPySwift
 
 	#writeLibrary()
 	{
-		if (this.#throw) {
-			this.writeNewLine();
-			this.writeLine("public enum FuError : Error");
-			this.openBlock();
-			this.writeLine("case error(String)");
-			this.closeBlock();
-		}
 		if (this.#arrayRef) {
 			this.writeNewLine();
 			this.writeLine("public class ArrayRef<T> : Sequence");
@@ -23332,7 +23341,6 @@ export class GenSwift extends GenPySwift
 	writeProgram(program)
 	{
 		this.#system = program.system;
-		this.#throw = false;
 		this.#arrayRef = false;
 		this.#stringCharAt = false;
 		this.#stringIndexOf = false;
@@ -24720,12 +24728,17 @@ export class GenPy extends GenPySwift
 		}
 	}
 
+	writeException()
+	{
+		this.write("Exception");
+	}
+
 	visitThrow(statement)
 	{
 		this.visitXcrement(statement.message, false, true);
-		this.write("raise Exception(");
-		statement.message.accept(this, FuPriority.ARGUMENT);
-		this.writeCharLine(41);
+		this.write("raise ");
+		this.writeThrowArgument(statement);
+		this.writeNewLine();
 	}
 
 	#writePyClass(type)

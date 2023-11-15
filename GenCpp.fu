@@ -1647,19 +1647,17 @@ public class GenCpp : GenCCpp
 			base.VisitSwitch(statement);
 	}
 
+	protected override void WriteException!()
+	{
+		Include("stdexcept");
+		Write("std::runtime_error");
+	}
+
 	internal override void VisitThrow!(FuThrow statement)
 	{
 		Write("throw ");
-		if (statement.Class.Name == "Exception") {
-			Include("stdexcept");
-			Write("std::runtime_error");
-		}
-		else
-			Write(statement.Class.Name);
-		WriteChar('(');
-		if (statement.Message != null)
-			statement.Message.Accept(this, FuPriority.Argument);
-		WriteLine(");");
+		WriteThrowArgument(statement);
+		WriteCharLine(';');
 	}
 
 	void OpenNamespace!()
@@ -1827,7 +1825,7 @@ public class GenCpp : GenCCpp
 	{
 		WriteNewLine();
 		WriteDoc(klass.Documentation);
-		OpenClass(klass, klass.CallType == FuCallType.Sealed ? " final" : "", " : public ", "stdexcept", "std::runtime_error");
+		OpenClass(klass, klass.CallType == FuCallType.Sealed ? " final" : "", " : public ");
 		this.Indent--;
 		WriteDeclarations(klass, FuVisibility.Public, "public");
 		WriteDeclarations(klass, FuVisibility.Protected, "protected");

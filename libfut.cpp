@@ -8149,6 +8149,30 @@ void GenBase::visitSwitch(const FuSwitch * statement)
 	writeCharLine('}');
 }
 
+void GenBase::writeExceptionClass(const FuSymbol * klass)
+{
+	if (klass->name == "Exception")
+		writeException();
+	else
+		writeName(klass);
+}
+
+void GenBase::writeThrowArgument(const FuThrow * statement)
+{
+	writeExceptionClass(statement->class_->symbol);
+	writeChar('(');
+	if (statement->message != nullptr)
+		statement->message->accept(this, FuPriority::argument);
+	writeChar(')');
+}
+
+void GenBase::visitThrow(const FuThrow * statement)
+{
+	write("throw new ");
+	writeThrowArgument(statement);
+	writeCharLine(';');
+}
+
 void GenBase::visitWhile(const FuWhile * statement)
 {
 	if (!embedIfWhileIsVar(statement->cond.get(), false))
@@ -8282,26 +8306,20 @@ void GenBase::writeRegexOptionsEnum(const FuProgram * program)
 		writeEnum(program->system->regexOptionsEnum.get());
 }
 
-void GenBase::startClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause, std::string_view exceptionInclude, std::string_view exceptionName)
+void GenBase::startClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause)
 {
 	write("class ");
 	write(klass->name);
 	write(suffix);
 	if (klass->hasBaseClass()) {
 		write(extendsClause);
-		if (klass->baseClassName == "Exception") {
-			if (exceptionInclude.data() != nullptr)
-				include(exceptionInclude);
-			write(exceptionName);
-		}
-		else
-			write(klass->baseClassName);
+		writeExceptionClass(klass->parent);
 	}
 }
 
-void GenBase::openClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause, std::string_view exceptionInclude, std::string_view exceptionName)
+void GenBase::openClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause)
 {
-	startClass(klass, suffix, extendsClause, exceptionInclude, exceptionName);
+	startClass(klass, suffix, extendsClause);
 	writeNewLine();
 	openBlock();
 }
@@ -11633,6 +11651,11 @@ void GenC::visitSwitch(const FuSwitch * statement)
 		GenCCpp::visitSwitch(statement);
 }
 
+void GenC::writeException()
+{
+	std::abort();
+}
+
 void GenC::visitThrow(const FuThrow * statement)
 {
 	writeThrow();
@@ -14363,19 +14386,17 @@ void GenCpp::visitSwitch(const FuSwitch * statement)
 		GenCCpp::visitSwitch(statement);
 }
 
+void GenCpp::writeException()
+{
+	include("stdexcept");
+	write("std::runtime_error");
+}
+
 void GenCpp::visitThrow(const FuThrow * statement)
 {
 	write("throw ");
-	if (statement->class_->name == "Exception") {
-		include("stdexcept");
-		write("std::runtime_error");
-	}
-	else
-		write(statement->class_->name);
-	writeChar('(');
-	if (statement->message != nullptr)
-		statement->message->accept(this, FuPriority::argument);
-	writeLine(");");
+	writeThrowArgument(statement);
+	writeCharLine(';');
 }
 
 void GenCpp::openNamespace()
@@ -14537,7 +14558,7 @@ void GenCpp::writeClassInternal(const FuClass * klass)
 {
 	writeNewLine();
 	writeDoc(klass->documentation.get());
-	openClass(klass, klass->callType == FuCallType::sealed ? " final" : "", " : public ", "stdexcept", "std::runtime_error");
+	openClass(klass, klass->callType == FuCallType::sealed ? " final" : "", " : public ");
 	this->indent--;
 	writeDeclarations(klass, FuVisibility::public_, "public");
 	writeDeclarations(klass, FuVisibility::protected_, "protected");
@@ -15462,12 +15483,10 @@ void GenCs::visitLock(const FuLock * statement)
 	writeChild(statement->body.get());
 }
 
-void GenCs::visitThrow(const FuThrow * statement)
+void GenCs::writeException()
 {
 	include("System");
-	write("throw new Exception(");
-	statement->message->accept(this, FuPriority::argument);
-	writeLine(");");
+	write("Exception");
 }
 
 void GenCs::writeEnum(const FuEnum * enu)
@@ -15553,7 +15572,7 @@ void GenCs::writeClass(const FuClass * klass, const FuProgram * program)
 	writeDoc(klass->documentation.get());
 	writePublic(klass);
 	writeCallType(klass->callType, "sealed ");
-	openClass(klass, "", " : ", "System");
+	openClass(klass, "", " : ");
 	if (needsConstructor(klass)) {
 		if (klass->constructor != nullptr) {
 			writeDoc(klass->constructor->documentation.get());
@@ -16735,12 +16754,10 @@ void GenD::visitSwitch(const FuSwitch * statement)
 	}
 }
 
-void GenD::visitThrow(const FuThrow * statement)
+void GenD::writeException()
 {
 	include("std.exception");
-	write("throw new Exception(");
-	statement->message->accept(this, FuPriority::argument);
-	writeLine(");");
+	write("Exception");
 }
 
 void GenD::writeEnum(const FuEnum * enu)
@@ -16808,7 +16825,7 @@ void GenD::writeClass(const FuClass * klass, const FuProgram * program)
 	writeDoc(klass->documentation.get());
 	if (klass->callType == FuCallType::sealed)
 		write("final ");
-	openClass(klass, "", " : ", "std.exception");
+	openClass(klass, "", " : ");
 	if (needsConstructor(klass)) {
 		if (klass->constructor != nullptr) {
 			writeDoc(klass->constructor->documentation.get());
@@ -18070,11 +18087,9 @@ void GenJava::visitSwitch(const FuSwitch * statement)
 		GenBase::visitSwitch(statement);
 }
 
-void GenJava::visitThrow(const FuThrow * statement)
+void GenJava::writeException()
 {
-	write("throw new Exception(");
-	statement->message->accept(this, FuPriority::argument);
-	writeLine(");");
+	write("Exception");
 }
 
 void GenJava::createJavaFile(std::string_view className)
@@ -18249,7 +18264,7 @@ void GenJava::writeClass(const FuClass * klass, const FuProgram * program)
 	default:
 		std::abort();
 	}
-	openClass(klass, "", " extends ", std::string_view());
+	openClass(klass, "", " extends ");
 	if (klass->callType == FuCallType::static_) {
 		write("private ");
 		write(klass->name);
@@ -19462,11 +19477,9 @@ void GenJsNoModule::visitSwitch(const FuSwitch * statement)
 		GenBase::visitSwitch(statement);
 }
 
-void GenJsNoModule::visitThrow(const FuThrow * statement)
+void GenJsNoModule::writeException()
 {
-	write("throw new Error(");
-	statement->message->accept(this, FuPriority::argument);
-	writeLine(");");
+	write("Error");
 }
 
 void GenJsNoModule::startContainerType(const FuContainerType * container)
@@ -19545,7 +19558,7 @@ void GenJsNoModule::writeClass(const FuClass * klass, const FuProgram * program)
 	if (!writeBaseClass(klass, program))
 		return;
 	startContainerType(klass);
-	openClass(klass, "", " extends ", std::string_view(), "Error");
+	openClass(klass, "", " extends ");
 	if (needsConstructor(klass)) {
 		if (klass->constructor != nullptr)
 			writeDoc(klass->constructor->documentation.get());
@@ -19901,7 +19914,7 @@ void GenTs::writeClass(const FuClass * klass, const FuProgram * program)
 	default:
 		std::abort();
 	}
-	openClass(klass, "", " extends ", std::string_view(), "Error");
+	openClass(klass, "", " extends ");
 	if (needsConstructor(klass) || klass->callType == FuCallType::static_) {
 		if (klass->constructor != nullptr) {
 			writeDoc(klass->constructor->documentation.get());
@@ -21589,13 +21602,17 @@ void GenSwift::visitSwitch(const FuSwitch * statement)
 	writeCharLine('}');
 }
 
+void GenSwift::writeException()
+{
+	write("Error");
+}
+
 void GenSwift::visitThrow(const FuThrow * statement)
 {
-	this->throw_ = true;
 	visitXcrement(statement->message.get(), false, true);
-	write("throw FuError.error(");
-	writeExpr(statement->message.get(), FuPriority::argument);
-	writeCharLine(')');
+	write("throw ");
+	writeExceptionClass(statement->class_->symbol);
+	writeLine("()");
 }
 
 void GenSwift::writeReadOnlyParameter(const FuVar * param)
@@ -21815,7 +21832,7 @@ void GenSwift::writeClass(const FuClass * klass, const FuProgram * program)
 	writePublic(klass);
 	if (klass->callType == FuCallType::sealed)
 		write("final ");
-	startClass(klass, "", " : ", std::string_view(), "Error");
+	startClass(klass, "", " : ");
 	if (klass->addsToString()) {
 		write(klass->hasBaseClass() ? ", " : " : ");
 		write("CustomStringConvertible");
@@ -21843,13 +21860,6 @@ void GenSwift::writeClass(const FuClass * klass, const FuProgram * program)
 
 void GenSwift::writeLibrary()
 {
-	if (this->throw_) {
-		writeNewLine();
-		writeLine("public enum FuError : Error");
-		openBlock();
-		writeLine("case error(String)");
-		closeBlock();
-	}
 	if (this->arrayRef) {
 		writeNewLine();
 		writeLine("public class ArrayRef<T> : Sequence");
@@ -21970,7 +21980,6 @@ void GenSwift::writeMain(const FuMethod * main)
 void GenSwift::writeProgram(const FuProgram * program)
 {
 	this->system = program->system;
-	this->throw_ = false;
 	this->arrayRef = false;
 	this->stringCharAt = false;
 	this->stringIndexOf = false;
@@ -23255,12 +23264,17 @@ void GenPy::visitSwitch(const FuSwitch * statement)
 	}
 }
 
+void GenPy::writeException()
+{
+	write("Exception");
+}
+
 void GenPy::visitThrow(const FuThrow * statement)
 {
 	visitXcrement(statement->message.get(), false, true);
-	write("raise Exception(");
-	statement->message->accept(this, FuPriority::argument);
-	writeCharLine(')');
+	write("raise ");
+	writeThrowArgument(statement);
+	writeNewLine();
 }
 
 void GenPy::writePyClass(const FuContainerType * type)
