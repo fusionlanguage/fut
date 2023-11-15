@@ -21590,6 +21590,7 @@ export class GenPySwift extends GenBase
 export class GenSwift extends GenPySwift
 {
 	#system;
+	#throwException;
 	#arrayRef;
 	#stringCharAt;
 	#stringIndexOf;
@@ -22999,8 +23000,19 @@ export class GenSwift extends GenPySwift
 	{
 		this.visitXcrement(statement.message, false, true);
 		this.write("throw ");
-		this.writeExceptionClass(statement.class.symbol);
-		this.writeLine("()");
+		if (statement.class.name == "Exception") {
+			this.#throwException = true;
+			this.write("FuError.error(");
+			if (statement.message != null)
+				this.writeExpr(statement.message, FuPriority.ARGUMENT);
+			else
+				this.write("\"\"");
+		}
+		else {
+			this.write(statement.class.name);
+			this.writeChar(40);
+		}
+		this.writeCharLine(41);
 	}
 
 	#writeReadOnlyParameter(param)
@@ -23249,6 +23261,13 @@ export class GenSwift extends GenPySwift
 
 	#writeLibrary()
 	{
+		if (this.#throwException) {
+			this.writeNewLine();
+			this.writeLine("public enum FuError : Error");
+			this.openBlock();
+			this.writeLine("case error(String)");
+			this.closeBlock();
+		}
 		if (this.#arrayRef) {
 			this.writeNewLine();
 			this.writeLine("public class ArrayRef<T> : Sequence");
@@ -23369,6 +23388,7 @@ export class GenSwift extends GenPySwift
 	writeProgram(program)
 	{
 		this.#system = program.system;
+		this.#throwException = false;
 		this.#arrayRef = false;
 		this.#stringCharAt = false;
 		this.#stringIndexOf = false;

@@ -21639,8 +21639,19 @@ void GenSwift::visitThrow(const FuThrow * statement)
 {
 	visitXcrement(statement->message.get(), false, true);
 	write("throw ");
-	writeExceptionClass(statement->class_->symbol);
-	writeLine("()");
+	if (statement->class_->name == "Exception") {
+		this->throwException = true;
+		write("FuError.error(");
+		if (statement->message != nullptr)
+			writeExpr(statement->message.get(), FuPriority::argument);
+		else
+			write("\"\"");
+	}
+	else {
+		write(statement->class_->name);
+		writeChar('(');
+	}
+	writeCharLine(')');
 }
 
 void GenSwift::writeReadOnlyParameter(const FuVar * param)
@@ -21888,6 +21899,13 @@ void GenSwift::writeClass(const FuClass * klass, const FuProgram * program)
 
 void GenSwift::writeLibrary()
 {
+	if (this->throwException) {
+		writeNewLine();
+		writeLine("public enum FuError : Error");
+		openBlock();
+		writeLine("case error(String)");
+		closeBlock();
+	}
 	if (this->arrayRef) {
 		writeNewLine();
 		writeLine("public class ArrayRef<T> : Sequence");
@@ -22008,6 +22026,7 @@ void GenSwift::writeMain(const FuMethod * main)
 void GenSwift::writeProgram(const FuProgram * program)
 {
 	this->system = program->system;
+	this->throwException = false;
 	this->arrayRef = false;
 	this->stringCharAt = false;
 	this->stringIndexOf = false;

@@ -21025,6 +21025,8 @@ namespace Fusion
 
 		FuSystem System;
 
+		bool ThrowException;
+
 		bool ArrayRef;
 
 		bool StringCharAt;
@@ -22420,8 +22422,19 @@ namespace Fusion
 		{
 			VisitXcrement(statement.Message, false, true);
 			Write("throw ");
-			WriteExceptionClass(statement.Class.Symbol);
-			WriteLine("()");
+			if (statement.Class.Name == "Exception") {
+				this.ThrowException = true;
+				Write("FuError.error(");
+				if (statement.Message != null)
+					WriteExpr(statement.Message, FuPriority.Argument);
+				else
+					Write("\"\"");
+			}
+			else {
+				Write(statement.Class.Name);
+				WriteChar('(');
+			}
+			WriteCharLine(')');
 		}
 
 		void WriteReadOnlyParameter(FuVar param)
@@ -22668,6 +22681,13 @@ namespace Fusion
 
 		void WriteLibrary()
 		{
+			if (this.ThrowException) {
+				WriteNewLine();
+				WriteLine("public enum FuError : Error");
+				OpenBlock();
+				WriteLine("case error(String)");
+				CloseBlock();
+			}
 			if (this.ArrayRef) {
 				WriteNewLine();
 				WriteLine("public class ArrayRef<T> : Sequence");
@@ -22788,6 +22808,7 @@ namespace Fusion
 		public override void WriteProgram(FuProgram program)
 		{
 			this.System = program.System;
+			this.ThrowException = false;
 			this.ArrayRef = false;
 			this.StringCharAt = false;
 			this.StringIndexOf = false;

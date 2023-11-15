@@ -21,6 +21,7 @@
 public class GenSwift : GenPySwift
 {
 	FuSystem System;
+	bool ThrowException;
 	bool ArrayRef;
 	bool StringCharAt;
 	bool StringIndexOf;
@@ -1427,8 +1428,20 @@ public class GenSwift : GenPySwift
 	{
 		VisitXcrement(statement.Message, false, true);
 		Write("throw ");
-		WriteExceptionClass(statement.Class.Symbol);
-		WriteLine("()"); // TODO: message
+		if (statement.Class.Name == "Exception") {
+			this.ThrowException = true;
+			Write("FuError.error(");
+			if (statement.Message != null)
+				WriteExpr(statement.Message, FuPriority.Argument);
+			else
+				Write("\"\"");
+		}
+		else {
+			Write(statement.Class.Name);
+			WriteChar('(');
+			// TODO: message
+		}
+		WriteCharLine(')');
 	}
 
 	void WriteReadOnlyParameter!(FuVar param)
@@ -1678,6 +1691,13 @@ public class GenSwift : GenPySwift
 
 	void WriteLibrary!()
 	{
+		if (this.ThrowException) {
+			WriteNewLine();
+			WriteLine("public enum FuError : Error");
+			OpenBlock();
+			WriteLine("case error(String)");
+			CloseBlock();
+		}
 		if (this.ArrayRef) {
 			WriteNewLine();
 			WriteLine("public class ArrayRef<T> : Sequence");
@@ -1798,6 +1818,7 @@ public class GenSwift : GenPySwift
 	public override void WriteProgram!(FuProgram program)
 	{
 		this.System = program.System;
+		this.ThrowException = false;
 		this.ArrayRef = false;
 		this.StringCharAt = false;
 		this.StringIndexOf = false;

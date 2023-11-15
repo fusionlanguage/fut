@@ -2736,6 +2736,7 @@ public:
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;
 private:
 	const FuSystem * system;
+	bool throwException;
 	bool arrayRef;
 	bool stringCharAt;
 	bool stringIndexOf;
