@@ -8340,7 +8340,10 @@ namespace Fusion
 			WriteCharLine('}');
 		}
 
-		protected abstract void WriteException();
+		protected virtual void WriteException()
+		{
+			Write("Exception");
+		}
 
 		protected void WriteExceptionClass(FuSymbol klass)
 		{
@@ -11928,11 +11931,6 @@ namespace Fusion
 				NotSupported(statement, "Type-matching 'switch'");
 			else
 				base.VisitSwitch(statement);
-		}
-
-		protected override void WriteException()
-		{
-			throw new NotImplementedException();
 		}
 
 		internal override void VisitThrow(FuThrow statement)
@@ -17344,12 +17342,6 @@ namespace Fusion
 			}
 		}
 
-		protected override void WriteException()
-		{
-			Include("std.exception");
-			Write("Exception");
-		}
-
 		protected override void WriteEnum(FuEnum enu)
 		{
 			WriteNewLine();
@@ -17424,8 +17416,10 @@ namespace Fusion
 				WriteConstructorBody(klass);
 				CloseBlock();
 			}
-			else if (klass.Id == FuId.ExceptionClass)
+			else if (klass.Id == FuId.ExceptionClass) {
+				Include("std.exception");
 				WriteLine("mixin basicExceptionCtors;");
+			}
 			for (FuSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
 				if (!(symbol is FuMember))
 					continue;
@@ -18729,11 +18723,6 @@ namespace Fusion
 			}
 			else
 				base.VisitSwitch(statement);
-		}
-
-		protected override void WriteException()
-		{
-			Write("Exception");
 		}
 
 		void CreateJavaFile(string className)
@@ -24170,11 +24159,6 @@ namespace Fusion
 				OpenChild();
 				CloseChild();
 			}
-		}
-
-		protected override void WriteException()
-		{
-			Write("Exception");
 		}
 
 		internal override void VisitThrow(FuThrow statement)

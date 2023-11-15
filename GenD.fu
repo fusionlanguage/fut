@@ -1327,12 +1327,6 @@ public class GenD : GenCCppD
 		}
 	}
 
-	protected override void WriteException!()
-	{
-		Include("std.exception");
-		Write("Exception");
-	}
-
 	protected override void WriteEnum!(FuEnum enu)
 	{
 		WriteNewLine();
@@ -1407,8 +1401,10 @@ public class GenD : GenCCppD
 			WriteConstructorBody(klass);
 			CloseBlock();
 		}
-		else if (klass.Id == FuId.ExceptionClass)
+		else if (klass.Id == FuId.ExceptionClass) {
+			Include("std.exception");
 			WriteLine("mixin basicExceptionCtors;");
+		}
 		for (FuSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
 			if (!(symbol is FuMember))
 				continue;

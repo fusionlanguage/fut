@@ -8173,6 +8173,11 @@ void GenBase::visitSwitch(const FuSwitch * statement)
 	writeCharLine('}');
 }
 
+void GenBase::writeException()
+{
+	write("Exception");
+}
+
 void GenBase::writeExceptionClass(const FuSymbol * klass)
 {
 	if (klass->name == "Exception")
@@ -11673,11 +11678,6 @@ void GenC::visitSwitch(const FuSwitch * statement)
 		notSupported(statement, "Type-matching 'switch'");
 	else
 		GenCCpp::visitSwitch(statement);
-}
-
-void GenC::writeException()
-{
-	std::abort();
 }
 
 void GenC::visitThrow(const FuThrow * statement)
@@ -16778,12 +16778,6 @@ void GenD::visitSwitch(const FuSwitch * statement)
 	}
 }
 
-void GenD::writeException()
-{
-	include("std.exception");
-	write("Exception");
-}
-
 void GenD::writeEnum(const FuEnum * enu)
 {
 	writeNewLine();
@@ -16862,8 +16856,10 @@ void GenD::writeClass(const FuClass * klass, const FuProgram * program)
 		writeConstructorBody(klass);
 		closeBlock();
 	}
-	else if (klass->id == FuId::exceptionClass)
+	else if (klass->id == FuId::exceptionClass) {
+		include("std.exception");
 		writeLine("mixin basicExceptionCtors;");
+	}
 	for (const FuSymbol * symbol = klass->first; symbol != nullptr; symbol = symbol->next) {
 		if (!dynamic_cast<const FuMember *>(symbol))
 			continue;
@@ -18109,11 +18105,6 @@ void GenJava::visitSwitch(const FuSwitch * statement)
 	}
 	else
 		GenBase::visitSwitch(statement);
-}
-
-void GenJava::writeException()
-{
-	write("Exception");
 }
 
 void GenJava::createJavaFile(std::string_view className)
@@ -23309,11 +23300,6 @@ void GenPy::visitSwitch(const FuSwitch * statement)
 		openChild();
 		closeChild();
 	}
-}
-
-void GenPy::writeException()
-{
-	write("Exception");
 }
 
 void GenPy::visitThrow(const FuThrow * statement)

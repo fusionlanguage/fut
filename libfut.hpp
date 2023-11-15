@@ -1837,7 +1837,7 @@ protected:
 	virtual void writeSwitchCaseCond(const FuSwitch * statement, const FuExpr * value, FuPriority parent);
 	virtual void writeIfCaseBody(const std::vector<std::shared_ptr<FuStatement>> * body, bool doWhile, const FuSwitch * statement, const FuCase * kase);
 	void writeSwitchAsIfs(const FuSwitch * statement, bool doWhile);
-	virtual void writeException() = 0;
+	virtual void writeException();
 	void writeExceptionClass(const FuSymbol * klass);
 	void writeThrowArgument(const FuThrow * statement);
 	void flattenBlock(FuStatement * statement);
@@ -2051,7 +2051,6 @@ protected:
 	void writeResource(std::string_view name, int length) override;
 	void cleanupBlock(const FuBlock * statement) override;
 	void writeSwitchCaseBody(const std::vector<std::shared_ptr<FuStatement>> * statements) override;
-	void writeException() override;
 	void writeStatements(const std::vector<std::shared_ptr<FuStatement>> * statements) override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeTypedefs(const FuProgram * program, bool pub);
@@ -2394,7 +2393,6 @@ protected:
 	void writeAssert(const FuAssert * statement) override;
 	void writeSwitchCaseTypeVar(const FuExpr * value) override;
 	void writeSwitchCaseCond(const FuSwitch * statement, const FuExpr * value, FuPriority parent) override;
-	void writeException() override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;
@@ -2471,7 +2469,6 @@ protected:
 	void writeSwitchValue(const FuExpr * expr) override;
 	void writeSwitchCaseValue(const FuSwitch * statement, const FuExpr * value) override;
 	void writeSwitchCase(const FuSwitch * statement, const FuCase * kase) override;
-	void writeException() override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;
@@ -2806,7 +2803,6 @@ protected:
 	void writeForRange(const FuVar * iter, const FuBinaryExpr * cond, int64_t rangeStep) override;
 	void writeElseIf() override;
 	void writeResultVar() override;
-	void writeException() override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;

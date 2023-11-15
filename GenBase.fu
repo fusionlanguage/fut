@@ -1828,7 +1828,10 @@ public abstract class GenBase : FuVisitor
 		WriteCharLine('}');
 	}
 
-	protected abstract void WriteException!();
+	protected virtual void WriteException!()
+	{
+		Write("Exception");
+	}
 
 	protected void WriteExceptionClass!(FuSymbol klass)
 	{

@@ -8674,6 +8674,11 @@ export class GenBase extends FuVisitor
 		this.writeCharLine(125);
 	}
 
+	writeException()
+	{
+		this.write("Exception");
+	}
+
 	writeExceptionClass(klass)
 	{
 		if (klass.name == "Exception")
@@ -12333,11 +12338,6 @@ export class GenC extends GenCCpp
 			this.notSupported(statement, "Type-matching 'switch'");
 		else
 			super.visitSwitch(statement);
-	}
-
-	writeException()
-	{
-		throw new Error();
 	}
 
 	visitThrow(statement)
@@ -17844,12 +17844,6 @@ export class GenD extends GenCCppD
 		}
 	}
 
-	writeException()
-	{
-		this.include("std.exception");
-		this.write("Exception");
-	}
-
 	writeEnum(enu)
 	{
 		this.writeNewLine();
@@ -17928,8 +17922,10 @@ export class GenD extends GenCCppD
 			this.writeConstructorBody(klass);
 			this.closeBlock();
 		}
-		else if (klass.id == FuId.EXCEPTION_CLASS)
+		else if (klass.id == FuId.EXCEPTION_CLASS) {
+			this.include("std.exception");
 			this.writeLine("mixin basicExceptionCtors;");
+		}
 		for (let symbol = klass.first; symbol != null; symbol = symbol.next) {
 			if (!(symbol instanceof FuMember))
 				continue;
@@ -19274,11 +19270,6 @@ export class GenJava extends GenTyped
 		}
 		else
 			super.visitSwitch(statement);
-	}
-
-	writeException()
-	{
-		this.write("Exception");
 	}
 
 	#createJavaFile(className)
@@ -24774,11 +24765,6 @@ export class GenPy extends GenPySwift
 			this.openChild();
 			this.closeChild();
 		}
-	}
-
-	writeException()
-	{
-		this.write("Exception");
 	}
 
 	visitThrow(statement)

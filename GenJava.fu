@@ -1190,11 +1190,6 @@ public class GenJava : GenTyped
 			base.VisitSwitch(statement);
 	}
 
-	protected override void WriteException!()
-	{
-		Write("Exception");
-	}
-
 	void CreateJavaFile!(string className)
 	{
 		CreateFile(this.OutputFile, className + ".java");
