@@ -1930,6 +1930,7 @@ protected:
 	void writeCharAt(const FuBinaryExpr * expr) override;
 	void startTemporaryVar(const FuType * type) override;
 	void writeAssertCast(const FuBinaryExpr * expr) override;
+	void writeExceptionConstructor(const FuClass * klass, std::string_view s);
 public:
 	void visitAggregateInitializer(const FuAggregateInitializer * expr) override;
 };

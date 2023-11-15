@@ -9093,6 +9093,13 @@ export class GenTyped extends GenBase
 		this.writeStaticCast(def.type, expr.left);
 		this.writeCharLine(59);
 	}
+
+	writeExceptionConstructor(klass, s)
+	{
+		this.write("public ");
+		this.write(klass.name);
+		this.writeLine(s);
+	}
 }
 
 export class GenCCppD extends GenTyped
@@ -15238,14 +15245,26 @@ export class GenCpp extends GenCCpp
 		this.writeCharLine(58);
 		this.indent++;
 		if (constructor) {
-			if (klass.constructor_ != null)
-				this.writeDoc(klass.constructor_.documentation);
-			this.write(klass.name);
-			this.write("()");
-			if (klass.callType == FuCallType.STATIC)
-				this.write(" = delete");
-			else if (!this.needsConstructor(klass))
-				this.write(" = default");
+			if (klass.id == FuId.EXCEPTION_CLASS) {
+				this.write("using ");
+				if (klass.baseClassName == "Exception")
+					this.write("std::runtime_error::runtime_error");
+				else {
+					this.write(klass.baseClassName);
+					this.write("::");
+					this.write(klass.baseClassName);
+				}
+			}
+			else {
+				if (klass.constructor_ != null)
+					this.writeDoc(klass.constructor_.documentation);
+				this.write(klass.name);
+				this.write("()");
+				if (klass.callType == FuCallType.STATIC)
+					this.write(" = delete");
+				else if (!this.needsConstructor(klass))
+					this.write(" = default");
+			}
 			this.writeCharLine(59);
 		}
 		if (destructor) {
@@ -15307,7 +15326,7 @@ export class GenCpp extends GenCCpp
 	{
 		this.writeNewLine();
 		this.writeDoc(klass.documentation);
-		this.openClass(klass, klass.callType == FuCallType.SEALED ? " final" : "", " : public ", "exception", "std::exception");
+		this.openClass(klass, klass.callType == FuCallType.SEALED ? " final" : "", " : public ", "stdexcept", "std::runtime_error");
 		this.indent--;
 		this.#writeDeclarations(klass, FuVisibility.PUBLIC, "public");
 		this.#writeDeclarations(klass, FuVisibility.PROTECTED, "protected");
@@ -16383,6 +16402,11 @@ export class GenCs extends GenTyped
 			this.openBlock();
 			this.writeConstructorBody(klass);
 			this.closeBlock();
+		}
+		else if (klass.id == FuId.EXCEPTION_CLASS) {
+			this.writeExceptionConstructor(klass, "() { }");
+			this.writeExceptionConstructor(klass, "(String message) : base(message) { }");
+			this.writeExceptionConstructor(klass, "(String message, Exception innerException) : base(message, innerException) { }");
 		}
 		this.writeMembers(klass, true);
 		this.closeBlock();
@@ -19389,6 +19413,12 @@ export class GenJava extends GenTyped
 			this.openBlock();
 			this.writeConstructorBody(klass);
 			this.closeBlock();
+		}
+		else if (klass.id == FuId.EXCEPTION_CLASS) {
+			this.writeExceptionConstructor(klass, "() { }");
+			this.writeExceptionConstructor(klass, "(String message) { super(message); }");
+			this.writeExceptionConstructor(klass, "(String message, Throwable cause) { super(message, cause); }");
+			this.writeExceptionConstructor(klass, "(Throwable cause) { super(cause); }");
 		}
 		this.writeMembers(klass, true);
 		this.closeBlock();

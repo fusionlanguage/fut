@@ -1737,14 +1737,26 @@ public class GenCpp : GenCCpp
 		this.Indent++;
 
 		if (constructor) {
-			if (klass.Constructor != null)
-				WriteDoc(klass.Constructor.Documentation);
-			Write(klass.Name);
-			Write("()");
-			if (klass.CallType == FuCallType.Static)
-				Write(" = delete");
-			else if (!NeedsConstructor(klass))
-				Write(" = default");
+			if (klass.Id == FuId.ExceptionClass) {
+				Write("using ");
+				if (klass.BaseClassName == "Exception")
+					Write("std::runtime_error::runtime_error");
+				else {
+					Write(klass.BaseClassName);
+					Write("::");
+					Write(klass.BaseClassName);
+				}
+			}
+			else {
+				if (klass.Constructor != null)
+					WriteDoc(klass.Constructor.Documentation);
+				Write(klass.Name);
+				Write("()");
+				if (klass.CallType == FuCallType.Static)
+					Write(" = delete");
+				else if (!NeedsConstructor(klass))
+					Write(" = default");
+			}
 			WriteCharLine(';');
 		}
 
@@ -1807,7 +1819,7 @@ public class GenCpp : GenCCpp
 	{
 		WriteNewLine();
 		WriteDoc(klass.Documentation);
-		OpenClass(klass, klass.CallType == FuCallType.Sealed ? " final" : "", " : public ", "exception", "std::exception");
+		OpenClass(klass, klass.CallType == FuCallType.Sealed ? " final" : "", " : public ", "stdexcept", "std::runtime_error");
 		this.Indent--;
 		WriteDeclarations(klass, FuVisibility.Public, "public");
 		WriteDeclarations(klass, FuVisibility.Protected, "protected");

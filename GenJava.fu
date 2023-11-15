@@ -1390,6 +1390,12 @@ public class GenJava : GenTyped
 			WriteConstructorBody(klass);
 			CloseBlock();
 		}
+		else if (klass.Id == FuId.ExceptionClass) {
+			WriteExceptionConstructor(klass, "() { }");
+			WriteExceptionConstructor(klass, "(String message) { super(message); }");
+			WriteExceptionConstructor(klass, "(String message, Throwable cause) { super(message, cause); }");
+			WriteExceptionConstructor(klass, "(Throwable cause) { super(cause); }");
+		}
 
 		WriteMembers(klass, true);
 

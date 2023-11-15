@@ -8575,6 +8575,13 @@ void GenTyped::writeAssertCast(const FuBinaryExpr * expr)
 	writeCharLine(';');
 }
 
+void GenTyped::writeExceptionConstructor(const FuClass * klass, std::string_view s)
+{
+	write("public ");
+	write(klass->name);
+	writeLine(s);
+}
+
 void GenCCppD::visitLiteralLong(int64_t i)
 {
 	if (i == (-9223372036854775807 - 1))
@@ -14434,14 +14441,26 @@ void GenCpp::writeDeclarations(const FuClass * klass, FuVisibility visibility, s
 	writeCharLine(':');
 	this->indent++;
 	if (constructor) {
-		if (klass->constructor != nullptr)
-			writeDoc(klass->constructor->documentation.get());
-		write(klass->name);
-		write("()");
-		if (klass->callType == FuCallType::static_)
-			write(" = delete");
-		else if (!needsConstructor(klass))
-			write(" = default");
+		if (klass->id == FuId::exceptionClass) {
+			write("using ");
+			if (klass->baseClassName == "Exception")
+				write("std::runtime_error::runtime_error");
+			else {
+				write(klass->baseClassName);
+				write("::");
+				write(klass->baseClassName);
+			}
+		}
+		else {
+			if (klass->constructor != nullptr)
+				writeDoc(klass->constructor->documentation.get());
+			write(klass->name);
+			write("()");
+			if (klass->callType == FuCallType::static_)
+				write(" = delete");
+			else if (!needsConstructor(klass))
+				write(" = default");
+		}
 		writeCharLine(';');
 	}
 	if (destructor) {
@@ -14499,7 +14518,7 @@ void GenCpp::writeClassInternal(const FuClass * klass)
 {
 	writeNewLine();
 	writeDoc(klass->documentation.get());
-	openClass(klass, klass->callType == FuCallType::sealed ? " final" : "", " : public ", "exception", "std::exception");
+	openClass(klass, klass->callType == FuCallType::sealed ? " final" : "", " : public ", "stdexcept", "std::runtime_error");
 	this->indent--;
 	writeDeclarations(klass, FuVisibility::public_, "public");
 	writeDeclarations(klass, FuVisibility::protected_, "protected");
@@ -15528,6 +15547,11 @@ void GenCs::writeClass(const FuClass * klass, const FuProgram * program)
 		openBlock();
 		writeConstructorBody(klass);
 		closeBlock();
+	}
+	else if (klass->id == FuId::exceptionClass) {
+		writeExceptionConstructor(klass, "() { }");
+		writeExceptionConstructor(klass, "(String message) : base(message) { }");
+		writeExceptionConstructor(klass, "(String message, Exception innerException) : base(message, innerException) { }");
 	}
 	writeMembers(klass, true);
 	closeBlock();
@@ -18224,6 +18248,12 @@ void GenJava::writeClass(const FuClass * klass, const FuProgram * program)
 		openBlock();
 		writeConstructorBody(klass);
 		closeBlock();
+	}
+	else if (klass->id == FuId::exceptionClass) {
+		writeExceptionConstructor(klass, "() { }");
+		writeExceptionConstructor(klass, "(String message) { super(message); }");
+		writeExceptionConstructor(klass, "(String message, Throwable cause) { super(message, cause); }");
+		writeExceptionConstructor(klass, "(Throwable cause) { super(cause); }");
 	}
 	writeMembers(klass, true);
 	closeBlock();

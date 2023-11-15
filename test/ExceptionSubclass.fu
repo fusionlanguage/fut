@@ -4,6 +4,19 @@ public class FooException : Exception
 
 public static class Test
 {
+	public static void Throw() throws
+	{
+#if CPP
+		native { throw FooException("foo"); }
+#elif CS || D || JAVA || JS || TS
+		native { throw new FooException("foo"); }
+#elif PY
+		native { raise FooException("foo") }
+#elif SWIFT
+		native { throw FooException(); }
+#endif
+	}
+
 	public static bool Run()
 	{
 		return true;

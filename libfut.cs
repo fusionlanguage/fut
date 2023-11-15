@@ -8750,6 +8750,13 @@ namespace Fusion
 			WriteStaticCast(def.Type, expr.Left);
 			WriteCharLine(';');
 		}
+
+		protected void WriteExceptionConstructor(FuClass klass, string s)
+		{
+			Write("public ");
+			Write(klass.Name);
+			WriteLine(s);
+		}
 	}
 
 	public abstract class GenCCppD : GenTyped
@@ -14793,14 +14800,26 @@ namespace Fusion
 			WriteCharLine(':');
 			this.Indent++;
 			if (constructor) {
-				if (klass.Constructor != null)
-					WriteDoc(klass.Constructor.Documentation);
-				Write(klass.Name);
-				Write("()");
-				if (klass.CallType == FuCallType.Static)
-					Write(" = delete");
-				else if (!NeedsConstructor(klass))
-					Write(" = default");
+				if (klass.Id == FuId.ExceptionClass) {
+					Write("using ");
+					if (klass.BaseClassName == "Exception")
+						Write("std::runtime_error::runtime_error");
+					else {
+						Write(klass.BaseClassName);
+						Write("::");
+						Write(klass.BaseClassName);
+					}
+				}
+				else {
+					if (klass.Constructor != null)
+						WriteDoc(klass.Constructor.Documentation);
+					Write(klass.Name);
+					Write("()");
+					if (klass.CallType == FuCallType.Static)
+						Write(" = delete");
+					else if (!NeedsConstructor(klass))
+						Write(" = default");
+				}
 				WriteCharLine(';');
 			}
 			if (destructor) {
@@ -14860,7 +14879,7 @@ namespace Fusion
 		{
 			WriteNewLine();
 			WriteDoc(klass.Documentation);
-			OpenClass(klass, klass.CallType == FuCallType.Sealed ? " final" : "", " : public ", "exception", "std::exception");
+			OpenClass(klass, klass.CallType == FuCallType.Sealed ? " final" : "", " : public ", "stdexcept", "std::runtime_error");
 			this.Indent--;
 			WriteDeclarations(klass, FuVisibility.Public, "public");
 			WriteDeclarations(klass, FuVisibility.Protected, "protected");
@@ -15907,6 +15926,11 @@ namespace Fusion
 				OpenBlock();
 				WriteConstructorBody(klass);
 				CloseBlock();
+			}
+			else if (klass.Id == FuId.ExceptionClass) {
+				WriteExceptionConstructor(klass, "() { }");
+				WriteExceptionConstructor(klass, "(String message) : base(message) { }");
+				WriteExceptionConstructor(klass, "(String message, Exception innerException) : base(message, innerException) { }");
 			}
 			WriteMembers(klass, true);
 			CloseBlock();
@@ -18843,6 +18867,12 @@ namespace Fusion
 				OpenBlock();
 				WriteConstructorBody(klass);
 				CloseBlock();
+			}
+			else if (klass.Id == FuId.ExceptionClass) {
+				WriteExceptionConstructor(klass, "() { }");
+				WriteExceptionConstructor(klass, "(String message) { super(message); }");
+				WriteExceptionConstructor(klass, "(String message, Throwable cause) { super(message, cause); }");
+				WriteExceptionConstructor(klass, "(Throwable cause) { super(cause); }");
 			}
 			WriteMembers(klass, true);
 			CloseBlock();

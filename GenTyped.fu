@@ -245,4 +245,11 @@ public abstract class GenTyped : GenBase
 		WriteStaticCast(def.Type, expr.Left);
 		WriteCharLine(';');
 	}
+
+	protected void WriteExceptionConstructor!(FuClass klass, string s)
+	{
+		Write("public ");
+		Write(klass.Name);
+		WriteLine(s);
+	}
 }
