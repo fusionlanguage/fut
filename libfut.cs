@@ -10320,11 +10320,16 @@ namespace Fusion
 			}
 		}
 
+		void WriteRangeThrowReturnValue(FuRangeType range)
+		{
+			VisitLiteralLong(range.Min - 1);
+		}
+
 		void WriteThrowReturnValue()
 		{
 			if (this.CurrentMethod.Type is FuNumericType) {
-				if (this.CurrentMethod.Type is FuIntegerType)
-					Write("-1");
+				if (this.CurrentMethod.Type is FuRangeType range)
+					WriteRangeThrowReturnValue(range);
 				else {
 					IncludeMath();
 					Write("NAN");
@@ -10354,7 +10359,11 @@ namespace Fusion
 			case FuId.VoidType:
 				break;
 			default:
-				Write(throwingMethod.Type is FuIntegerType ? " == -1" : " == NULL");
+				Write(" == ");
+				if (throwingMethod.Type is FuRangeType range)
+					WriteRangeThrowReturnValue(range);
+				else
+					VisitLiteralNull();
 				break;
 			}
 			WriteChar(')');
@@ -11843,9 +11852,10 @@ namespace Fusion
 			WriteFirstStatements(statements, lastCallIndex);
 			Write("return ");
 			if (throwingMethod.Type is FuNumericType) {
-				if (throwingMethod.Type is FuIntegerType) {
+				if (throwingMethod.Type is FuRangeType range) {
 					call.Accept(this, FuPriority.Equality);
-					Write(" != -1");
+					Write(" != ");
+					WriteRangeThrowReturnValue(range);
 				}
 				else {
 					IncludeMath();

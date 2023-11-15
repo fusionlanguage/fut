@@ -10696,11 +10696,17 @@ export class GenC extends GenCCpp
 		}
 	}
 
+	#writeRangeThrowReturnValue(range)
+	{
+		this.visitLiteralLong(BigInt(range.min - 1));
+	}
+
 	#writeThrowReturnValue()
 	{
 		if (this.currentMethod.type instanceof FuNumericType) {
-			if (this.currentMethod.type instanceof FuIntegerType)
-				this.write("-1");
+			let range;
+			if ((range = this.currentMethod.type) instanceof FuRangeType)
+				this.#writeRangeThrowReturnValue(range);
 			else {
 				this.includeMath();
 				this.write("NAN");
@@ -10730,7 +10736,12 @@ export class GenC extends GenCCpp
 		case FuId.VOID_TYPE:
 			break;
 		default:
-			this.write(throwingMethod.type instanceof FuIntegerType ? " == -1" : " == NULL");
+			this.write(" == ");
+			let range;
+			if ((range = throwingMethod.type) instanceof FuRangeType)
+				this.#writeRangeThrowReturnValue(range);
+			else
+				this.visitLiteralNull();
 			break;
 		}
 		this.writeChar(41);
@@ -12243,9 +12254,11 @@ export class GenC extends GenCCpp
 		this.writeFirstStatements(statements, lastCallIndex);
 		this.write("return ");
 		if (throwingMethod.type instanceof FuNumericType) {
-			if (throwingMethod.type instanceof FuIntegerType) {
+			let range;
+			if ((range = throwingMethod.type) instanceof FuRangeType) {
 				call.accept(this, FuPriority.EQUALITY);
-				this.write(" != -1");
+				this.write(" != ");
+				this.#writeRangeThrowReturnValue(range);
 			}
 			else {
 				this.includeMath();

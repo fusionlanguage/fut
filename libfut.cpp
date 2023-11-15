@@ -10037,11 +10037,16 @@ void GenC::writeDestructAll(const FuVar * exceptVar)
 	}
 }
 
+void GenC::writeRangeThrowReturnValue(const FuRangeType * range)
+{
+	visitLiteralLong(range->min - 1);
+}
+
 void GenC::writeThrowReturnValue()
 {
 	if (dynamic_cast<const FuNumericType *>(this->currentMethod->type.get())) {
-		if (dynamic_cast<const FuIntegerType *>(this->currentMethod->type.get()))
-			write("-1");
+		if (const FuRangeType *range = dynamic_cast<const FuRangeType *>(this->currentMethod->type.get()))
+			writeRangeThrowReturnValue(range);
 		else {
 			includeMath();
 			write("NAN");
@@ -10071,7 +10076,11 @@ void GenC::endForwardThrow(const FuMethod * throwingMethod)
 	case FuId::voidType:
 		break;
 	default:
-		write(dynamic_cast<const FuIntegerType *>(throwingMethod->type.get()) ? " == -1" : " == NULL");
+		write(" == ");
+		if (const FuRangeType *range = dynamic_cast<const FuRangeType *>(throwingMethod->type.get()))
+			writeRangeThrowReturnValue(range);
+		else
+			visitLiteralNull();
 		break;
 	}
 	writeChar(')');
@@ -11588,9 +11597,10 @@ bool GenC::tryWriteCallAndReturn(const std::vector<std::shared_ptr<FuStatement>>
 	writeFirstStatements(statements, lastCallIndex);
 	write("return ");
 	if (dynamic_cast<const FuNumericType *>(throwingMethod->type.get())) {
-		if (dynamic_cast<const FuIntegerType *>(throwingMethod->type.get())) {
+		if (const FuRangeType *range = dynamic_cast<const FuRangeType *>(throwingMethod->type.get())) {
 			call->accept(this, FuPriority::equality);
-			write(" != -1");
+			write(" != ");
+			writeRangeThrowReturnValue(range);
 		}
 		else {
 			includeMath();

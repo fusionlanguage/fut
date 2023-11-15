@@ -2136,6 +2136,7 @@ private:
 	void writeDestructElement(const FuSymbol * symbol, int nesting);
 	void writeDestruct(const FuSymbol * symbol);
 	void writeDestructAll(const FuVar * exceptVar = nullptr);
+	void writeRangeThrowReturnValue(const FuRangeType * range);
 	void writeThrowReturnValue();
 	void writeThrow();
 	void endForwardThrow(const FuMethod * throwingMethod);
