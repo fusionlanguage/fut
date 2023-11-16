@@ -37,7 +37,7 @@
 							"include": "#comment"
 						},
 						{
-							"match": "(enum)\\s+([A-Z][0-9A-Za-z_]*)",
+							"match": "(enum)\\s*\\*?\\s+([A-Z][0-9A-Za-z_]*)",
 							"captures": {
 								"1": {
 									"name": "keyword.other.enum.fu"
@@ -239,8 +239,28 @@
 					]
 				},
 				{
-					"name": "keyword.other.throws.fu",
-					"match": "\\bthrows\\b"
+					"begin": "\\bthrows\\b",
+					"beginCaptures": {
+						"0": {
+							"name": "keyword.other.throws.fu"
+						}
+					},
+					"end": "(?=[{;])",
+					"patterns": [
+						{
+							"include": "#preprocessor"
+						},
+						{
+							"include": "#comment"
+						},
+						{
+							"name": "entity.name.type.class.fu",
+							"match": "[A-Z][0-9A-Za-z_]*"
+						},
+						{
+							"include": "#punctuation-comma"
+						}
+					]
 				},
 				{
 					"include": "#expression-body"
@@ -685,13 +705,24 @@
 			}
 		},
 		"throw-statement": {
-			"begin": "\\bthrow\\b",
+			"begin": "\\b(throw)\\s+([A-Z][0-9A-Za-z_]*)\\s*(\\()",
 			"beginCaptures": {
-				"0": {
+				"1": {
 					"name": "keyword.control.flow.throw.fu"
+				},
+				"2": {
+					"name": "entity.name.type.class.fu"
+				},
+				"3": {
+					"name": "punctuation.parenthesis.open.fu"
 				}
 			},
-			"end": "(?=;)",
+			"end": "\\)?(?=;)",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.parenthesis.close.fu"
+				}
+			},
 			"patterns": [
 				{
 					"include": "#expression"
