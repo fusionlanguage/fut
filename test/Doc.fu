@@ -36,4 +36,13 @@ public class Test
 
 	/// Returns `null`.
 	public static string? ReturnNull() => null;
+
+	/// Returns the passed number squared.
+	public static float Square(
+		/// Some number.
+		float x)
+		throws Exception
+	{
+		return x * x;
+	}
 }
