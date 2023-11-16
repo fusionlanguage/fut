@@ -1,7 +1,7 @@
 {
   "name": "fut-js",
   "private": true,
-  "version": "3.0.2-development",
+  "version": "3.1.0-development",
   "repository": "https://github.com/fusionlanguage/fut.git",
   "author": "Piotr Fusik",
   "type": "module"
