@@ -7251,6 +7251,10 @@ export class GenBase extends FuVisitor
 		}
 	}
 
+	writeReturnDoc(method)
+	{
+	}
+
 	writeMethodDoc(method)
 	{
 		if (method.documentation == null)
@@ -7259,6 +7263,7 @@ export class GenBase extends FuVisitor
 		this.writeContent(method.documentation);
 		this.writeSelfDoc(method);
 		this.writeParametersDoc(method);
+		this.writeReturnDoc(method);
 		this.writeLine(" */");
 	}
 
@@ -9550,6 +9555,15 @@ export class GenC extends GenCCpp
 		this.writeLine("</code>.");
 	}
 
+	writeReturnDoc(method)
+	{
+		if (method.throws.length == 0)
+			return;
+		this.write(" * @return <code>");
+		this.#writeThrowReturnValue(method.type, false);
+		this.writeLine("</code> on error.");
+	}
+
 	includeStdInt()
 	{
 		this.include("stdint.h");
@@ -10782,28 +10796,33 @@ export class GenC extends GenCCpp
 		this.visitLiteralLong(BigInt(range.min - 1));
 	}
 
-	#writeThrowReturnValue()
+	#writeThrowReturnValue(type, include)
 	{
-		if (this.currentMethod.type instanceof FuNumericType) {
-			let range;
-			if ((range = this.currentMethod.type) instanceof FuRangeType)
-				this.#writeRangeThrowReturnValue(range);
-			else {
-				this.includeMath();
-				this.write("NAN");
-			}
-		}
-		else if (this.currentMethod.type.id == FuId.VOID_TYPE)
+		switch (type.id) {
+		case FuId.VOID_TYPE:
 			this.write("false");
-		else
-			this.write("NULL");
+			break;
+		case FuId.FLOAT_TYPE:
+		case FuId.DOUBLE_TYPE:
+			if (include)
+				this.includeMath();
+			this.write("NAN");
+			break;
+		default:
+			let range;
+			if ((range = type) instanceof FuRangeType)
+				this.#writeRangeThrowReturnValue(range);
+			else
+				this.write("NULL");
+			break;
+		}
 	}
 
 	#writeThrow()
 	{
 		this.#writeDestructAll();
 		this.write("return ");
-		this.#writeThrowReturnValue();
+		this.#writeThrowReturnValue(this.currentMethod.type, true);
 		this.writeCharLine(59);
 	}
 
@@ -12386,7 +12405,7 @@ export class GenC extends GenCCpp
 			this.write(" ? ");
 			returnValue.accept(this, FuPriority.SELECT);
 			this.write(" : ");
-			this.#writeThrowReturnValue();
+			this.#writeThrowReturnValue(this.currentMethod.type, true);
 		}
 		this.writeCharLine(59);
 		return true;

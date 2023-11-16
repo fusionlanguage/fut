@@ -1731,6 +1731,7 @@ protected:
 	virtual void writeSelfDoc(const FuMethod * method);
 	virtual void writeParameterDoc(const FuVar * param, bool first);
 	void writeParametersDoc(const FuMethod * method);
+	virtual void writeReturnDoc(const FuMethod * method);
 	void writeMethodDoc(const FuMethod * method);
 	void writeTopLevelNatives(const FuProgram * program);
 	void openBlock();
@@ -2010,6 +2011,7 @@ protected:
 	const FuContainerType * getCurrentContainer() const override;
 	std::string_view getTargetName() const override;
 	void writeSelfDoc(const FuMethod * method) override;
+	void writeReturnDoc(const FuMethod * method) override;
 	void includeStdInt() override;
 	void includeAssert() override;
 	void includeMath() override;
@@ -2146,7 +2148,7 @@ private:
 	void writeDestruct(const FuSymbol * symbol);
 	void writeDestructAll(const FuVar * exceptVar = nullptr);
 	void writeRangeThrowReturnValue(const FuRangeType * range);
-	void writeThrowReturnValue();
+	void writeThrowReturnValue(const FuType * type, bool include);
 	void writeThrow();
 	void endForwardThrow(const FuMethod * throwingMethod);
 	void writeMemberAccess(const FuType * leftType, const FuSymbol * symbolClass);

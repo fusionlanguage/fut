@@ -6792,6 +6792,10 @@ void GenBase::writeParametersDoc(const FuMethod * method)
 	}
 }
 
+void GenBase::writeReturnDoc(const FuMethod * method)
+{
+}
+
 void GenBase::writeMethodDoc(const FuMethod * method)
 {
 	if (method->documentation == nullptr)
@@ -6800,6 +6804,7 @@ void GenBase::writeMethodDoc(const FuMethod * method)
 	writeContent(method->documentation.get());
 	writeSelfDoc(method);
 	writeParametersDoc(method);
+	writeReturnDoc(method);
 	writeLine(" */");
 }
 
@@ -8990,6 +8995,15 @@ void GenC::writeSelfDoc(const FuMethod * method)
 	writeLine("</code>.");
 }
 
+void GenC::writeReturnDoc(const FuMethod * method)
+{
+	if (std::ssize(method->throws) == 0)
+		return;
+	write(" * @return <code>");
+	writeThrowReturnValue(method->type.get(), false);
+	writeLine("</code> on error.");
+}
+
 void GenC::includeStdInt()
 {
 	include("stdint.h");
@@ -10121,27 +10135,32 @@ void GenC::writeRangeThrowReturnValue(const FuRangeType * range)
 	visitLiteralLong(range->min - 1);
 }
 
-void GenC::writeThrowReturnValue()
+void GenC::writeThrowReturnValue(const FuType * type, bool include)
 {
-	if (dynamic_cast<const FuNumericType *>(this->currentMethod->type.get())) {
-		if (const FuRangeType *range = dynamic_cast<const FuRangeType *>(this->currentMethod->type.get()))
-			writeRangeThrowReturnValue(range);
-		else {
-			includeMath();
-			write("NAN");
-		}
-	}
-	else if (this->currentMethod->type->id == FuId::voidType)
+	switch (type->id) {
+	case FuId::voidType:
 		write("false");
-	else
-		write("NULL");
+		break;
+	case FuId::floatType:
+	case FuId::doubleType:
+		if (include)
+			includeMath();
+		write("NAN");
+		break;
+	default:
+		if (const FuRangeType *range = dynamic_cast<const FuRangeType *>(type))
+			writeRangeThrowReturnValue(range);
+		else
+			write("NULL");
+		break;
+	}
 }
 
 void GenC::writeThrow()
 {
 	writeDestructAll();
 	write("return ");
-	writeThrowReturnValue();
+	writeThrowReturnValue(this->currentMethod->type.get(), true);
 	writeCharLine(';');
 }
 
@@ -11725,7 +11744,7 @@ bool GenC::tryWriteCallAndReturn(const std::vector<std::shared_ptr<FuStatement>>
 		write(" ? ");
 		returnValue->accept(this, FuPriority::select);
 		write(" : ");
-		writeThrowReturnValue();
+		writeThrowReturnValue(this->currentMethod->type.get(), true);
 	}
 	writeCharLine(';');
 	return true;

@@ -437,6 +437,10 @@ public abstract class GenBase : FuVisitor
 		}
 	}
 
+	protected virtual void WriteReturnDoc!(FuMethod method)
+	{
+	}
+
 	protected void WriteMethodDoc!(FuMethod method)
 	{
 		if (method.Documentation == null)
@@ -445,6 +449,7 @@ public abstract class GenBase : FuVisitor
 		WriteContent(method.Documentation);
 		WriteSelfDoc(method);
 		WriteParametersDoc(method);
+		WriteReturnDoc(method);
 		WriteLine(" */");
 	}
 

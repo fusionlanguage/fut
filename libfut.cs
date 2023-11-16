@@ -6956,6 +6956,10 @@ namespace Fusion
 			}
 		}
 
+		protected virtual void WriteReturnDoc(FuMethod method)
+		{
+		}
+
 		protected void WriteMethodDoc(FuMethod method)
 		{
 			if (method.Documentation == null)
@@ -6964,6 +6968,7 @@ namespace Fusion
 			WriteContent(method.Documentation);
 			WriteSelfDoc(method);
 			WriteParametersDoc(method);
+			WriteReturnDoc(method);
 			WriteLine(" */");
 		}
 
@@ -9208,6 +9213,15 @@ namespace Fusion
 			WriteLine("</code>.");
 		}
 
+		protected override void WriteReturnDoc(FuMethod method)
+		{
+			if (method.Throws.Count == 0)
+				return;
+			Write(" * @return <code>");
+			WriteThrowReturnValue(method.Type, false);
+			WriteLine("</code> on error.");
+		}
+
 		protected override void IncludeStdInt()
 		{
 			Include("stdint.h");
@@ -10404,27 +10418,32 @@ namespace Fusion
 			VisitLiteralLong(range.Min - 1);
 		}
 
-		void WriteThrowReturnValue()
+		void WriteThrowReturnValue(FuType type, bool include)
 		{
-			if (this.CurrentMethod.Type is FuNumericType) {
-				if (this.CurrentMethod.Type is FuRangeType range)
-					WriteRangeThrowReturnValue(range);
-				else {
-					IncludeMath();
-					Write("NAN");
-				}
-			}
-			else if (this.CurrentMethod.Type.Id == FuId.VoidType)
+			switch (type.Id) {
+			case FuId.VoidType:
 				Write("false");
-			else
-				Write("NULL");
+				break;
+			case FuId.FloatType:
+			case FuId.DoubleType:
+				if (include)
+					IncludeMath();
+				Write("NAN");
+				break;
+			default:
+				if (type is FuRangeType range)
+					WriteRangeThrowReturnValue(range);
+				else
+					Write("NULL");
+				break;
+			}
 		}
 
 		void WriteThrow()
 		{
 			WriteDestructAll();
 			Write("return ");
-			WriteThrowReturnValue();
+			WriteThrowReturnValue(this.CurrentMethod.Type, true);
 			WriteCharLine(';');
 		}
 
@@ -11976,7 +11995,7 @@ namespace Fusion
 				Write(" ? ");
 				returnValue.Accept(this, FuPriority.Select);
 				Write(" : ");
-				WriteThrowReturnValue();
+				WriteThrowReturnValue(this.CurrentMethod.Type, true);
 			}
 			WriteCharLine(';');
 			return true;
