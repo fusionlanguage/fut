@@ -6381,6 +6381,30 @@ export class FuSema
 		}
 	}
 
+	#resolveCaseType(statement, switchPtr, value)
+	{
+		if (value instanceof FuLiteralNull) {
+		}
+		else {
+			let def;
+			if (!((def = value) instanceof FuVar) || def.value != null)
+				this.reportError(value, "Expected 'case Type name'");
+			else {
+				let casePtr;
+				if (!((casePtr = this.#resolveType(def)) instanceof FuClassType) || casePtr instanceof FuStorageType)
+					this.reportError(def, "'case' with non-reference type");
+				else if (casePtr instanceof FuReadWriteClassType && !(switchPtr instanceof FuDynamicPtrType) && (casePtr instanceof FuDynamicPtrType || !(switchPtr instanceof FuReadWriteClassType)))
+					this.reportError(def, `'${switchPtr}' cannot be casted to '${casePtr}'`);
+				else if (casePtr.class.isSameOrBaseOf(switchPtr.class))
+					this.reportError(def, `'${statement.value}' is '${switchPtr}', 'case ${casePtr}' would always match`);
+				else if (!switchPtr.class.isSameOrBaseOf(casePtr.class))
+					this.reportError(def, `'${switchPtr}' is not base class of '${casePtr.class.name}', 'case ${casePtr}' would never match`);
+				else
+					statement.add(def);
+			}
+		}
+	}
+
 	#visitSwitch(statement)
 	{
 		this.#openScope(statement);
@@ -6403,32 +6427,12 @@ export class FuSema
 					if ((switchPtr = statement.value.type) instanceof FuClassType && switchPtr.class.id != FuId.STRING_CLASS) {
 						let value = kase.values[i];
 						let when1;
-						if ((when1 = value) instanceof FuBinaryExpr && when1.op == FuToken.WHEN)
-							value = when1.left;
-						if (value instanceof FuLiteralNull) {
+						if ((when1 = value) instanceof FuBinaryExpr && when1.op == FuToken.WHEN) {
+							this.#resolveCaseType(statement, switchPtr, when1.left);
+							when1.right = this.#resolveBool(when1.right);
 						}
-						else {
-							let def;
-							if (!((def = value) instanceof FuVar) || def.value != null)
-								this.reportError(kase.values[i], "Expected 'case Type name'");
-							else {
-								let casePtr;
-								if (!((casePtr = this.#resolveType(def)) instanceof FuClassType) || casePtr instanceof FuStorageType)
-									this.reportError(def, "'case' with non-reference type");
-								else if (casePtr instanceof FuReadWriteClassType && !(switchPtr instanceof FuDynamicPtrType) && (casePtr instanceof FuDynamicPtrType || !(switchPtr instanceof FuReadWriteClassType)))
-									this.reportError(def, `'${switchPtr}' cannot be casted to '${casePtr}'`);
-								else if (casePtr.class.isSameOrBaseOf(switchPtr.class))
-									this.reportError(def, `'${statement.value}' is '${switchPtr}', 'case ${casePtr}' would always match`);
-								else if (!switchPtr.class.isSameOrBaseOf(casePtr.class))
-									this.reportError(def, `'${switchPtr}' is not base class of '${casePtr.class.name}', 'case ${casePtr}' would never match`);
-								else {
-									statement.add(def);
-									let when2;
-									if ((when2 = kase.values[i]) instanceof FuBinaryExpr && when2.op == FuToken.WHEN)
-										when2.right = this.#resolveBool(when2.right);
-								}
-							}
-						}
+						else
+							this.#resolveCaseType(statement, switchPtr, value);
 					}
 					else {
 						let when1;

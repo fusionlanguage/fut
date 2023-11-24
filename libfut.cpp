@@ -5972,6 +5972,30 @@ void FuSema::visitReturn(FuReturn * statement)
 	}
 }
 
+void FuSema::resolveCaseType(FuSwitch * statement, const FuClassType * switchPtr, std::shared_ptr<FuExpr> value)
+{
+	if (dynamic_cast<const FuLiteralNull *>(value.get())) {
+	}
+	else {
+		std::shared_ptr<FuVar> def;
+		if (!(def = std::dynamic_pointer_cast<FuVar>(value)) || def->value != nullptr)
+			reportError(value.get(), "Expected 'case Type name'");
+		else {
+			const FuClassType * casePtr;
+			if (!(casePtr = dynamic_cast<const FuClassType *>(resolveType(def.get()).get())) || dynamic_cast<const FuStorageType *>(casePtr))
+				reportError(def.get(), "'case' with non-reference type");
+			else if (dynamic_cast<const FuReadWriteClassType *>(casePtr) && !dynamic_cast<const FuDynamicPtrType *>(switchPtr) && (dynamic_cast<const FuDynamicPtrType *>(casePtr) || !dynamic_cast<const FuReadWriteClassType *>(switchPtr)))
+				reportError(def.get(), std::format("'{}' cannot be casted to '{}'", switchPtr->toString(), casePtr->toString()));
+			else if (casePtr->class_->isSameOrBaseOf(switchPtr->class_))
+				reportError(def.get(), std::format("'{}' is '{}', 'case {}' would always match", statement->value->toString(), switchPtr->toString(), casePtr->toString()));
+			else if (!switchPtr->class_->isSameOrBaseOf(casePtr->class_))
+				reportError(def.get(), std::format("'{}' is not base class of '{}', 'case {}' would never match", switchPtr->toString(), casePtr->class_->name, casePtr->toString()));
+			else
+				statement->add(def);
+		}
+	}
+}
+
 void FuSema::visitSwitch(FuSwitch * statement)
 {
 	openScope(statement);
@@ -5993,33 +6017,13 @@ void FuSema::visitSwitch(FuSwitch * statement)
 				const FuClassType * switchPtr;
 				if ((switchPtr = dynamic_cast<const FuClassType *>(statement->value->type.get())) && switchPtr->class_->id != FuId::stringClass) {
 					std::shared_ptr<FuExpr> value = kase.values[i];
-					const FuBinaryExpr * when1;
-					if ((when1 = dynamic_cast<const FuBinaryExpr *>(value.get())) && when1->op == FuToken::when)
-						value = when1->left;
-					if (dynamic_cast<const FuLiteralNull *>(value.get())) {
+					FuBinaryExpr * when1;
+					if ((when1 = dynamic_cast<FuBinaryExpr *>(value.get())) && when1->op == FuToken::when) {
+						resolveCaseType(statement, switchPtr, when1->left);
+						when1->right = resolveBool(when1->right);
 					}
-					else {
-						std::shared_ptr<FuVar> def;
-						if (!(def = std::dynamic_pointer_cast<FuVar>(value)) || def->value != nullptr)
-							reportError(kase.values[i].get(), "Expected 'case Type name'");
-						else {
-							const FuClassType * casePtr;
-							if (!(casePtr = dynamic_cast<const FuClassType *>(resolveType(def.get()).get())) || dynamic_cast<const FuStorageType *>(casePtr))
-								reportError(def.get(), "'case' with non-reference type");
-							else if (dynamic_cast<const FuReadWriteClassType *>(casePtr) && !dynamic_cast<const FuDynamicPtrType *>(switchPtr) && (dynamic_cast<const FuDynamicPtrType *>(casePtr) || !dynamic_cast<const FuReadWriteClassType *>(switchPtr)))
-								reportError(def.get(), std::format("'{}' cannot be casted to '{}'", switchPtr->toString(), casePtr->toString()));
-							else if (casePtr->class_->isSameOrBaseOf(switchPtr->class_))
-								reportError(def.get(), std::format("'{}' is '{}', 'case {}' would always match", statement->value->toString(), switchPtr->toString(), casePtr->toString()));
-							else if (!switchPtr->class_->isSameOrBaseOf(casePtr->class_))
-								reportError(def.get(), std::format("'{}' is not base class of '{}', 'case {}' would never match", switchPtr->toString(), casePtr->class_->name, casePtr->toString()));
-							else {
-								statement->add(def);
-								FuBinaryExpr * when2;
-								if ((when2 = dynamic_cast<FuBinaryExpr *>(kase.values[i].get())) && when2->op == FuToken::when)
-									when2->right = resolveBool(when2->right);
-							}
-						}
-					}
+					else
+						resolveCaseType(statement, switchPtr, value);
 				}
 				else {
 					FuBinaryExpr * when1;

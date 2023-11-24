@@ -1,0 +1,14 @@
+public class Test
+{
+	public static bool Run()
+	{
+		Test() o;
+		Test p = o;
+		switch (p) {
+		case null when wtf: //ERROR: 'wtf' not found
+			return true;
+		default:
+			return false;
+		}
+	}
+}

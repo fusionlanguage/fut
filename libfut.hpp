@@ -1665,6 +1665,7 @@ private:
 	void visitIf(FuIf * statement);
 	void visitLock(FuLock * statement);
 	void visitReturn(FuReturn * statement);
+	void resolveCaseType(FuSwitch * statement, const FuClassType * switchPtr, std::shared_ptr<FuExpr> value);
 	void visitSwitch(FuSwitch * statement);
 	void resolveException(std::shared_ptr<FuSymbolReference> symbol);
 	void visitThrow(FuThrow * statement);
