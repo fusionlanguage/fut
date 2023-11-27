@@ -1889,6 +1889,7 @@ public class FuSema
 		if (statement.Value != this.Poison) {
 			switch (statement.Value.Type) {
 			case FuIntegerType i when i.Id != FuId.LongType:
+				break;
 			case FuEnum:
 			// case FuStringType: matched by case FuClassType
 				break;

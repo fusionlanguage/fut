@@ -6129,6 +6129,7 @@ namespace Fusion
 			if (statement.Value != this.Poison) {
 				switch (statement.Value.Type) {
 				case FuIntegerType i when i.Id != FuId.LongType:
+					break;
 				case FuEnum:
 					break;
 				case FuClassType klass when !(klass is FuStorageType):
@@ -11232,18 +11233,14 @@ namespace Fusion
 				break;
 			case FuId.ListAdd:
 			case FuId.StackPush:
-				switch (obj.Type.AsClassType().GetElementType()) {
-				case FuArrayStorageType:
-				case FuStorageType storage when storage.Class.Id == FuId.None && !NeedsConstructor(storage.Class):
+				if (obj.Type.AsClassType().GetElementType() is FuStorageType storage && (storage.Class.Id == FuId.ArrayStorageClass || (storage.Class.Id == FuId.None && !NeedsConstructor(storage.Class)))) {
 					Write("g_array_set_size(");
 					obj.Accept(this, FuPriority.Argument);
 					Write(", ");
 					WritePostfix(obj, "->len + 1)");
-					break;
-				default:
-					WriteListAddInsert(obj, false, "g_array_append_val", args);
-					break;
 				}
+				else
+					WriteListAddInsert(obj, false, "g_array_append_val", args);
 				break;
 			case FuId.ListClear:
 			case FuId.StackClear:
@@ -17351,6 +17348,8 @@ namespace Fusion
 		{
 			switch (value) {
 			case FuSymbolReference symbol when symbol.Symbol is FuClass:
+				WriteIsVar(statement.Value, value, parent);
+				break;
 			case FuVar:
 				WriteIsVar(statement.Value, value, parent);
 				break;

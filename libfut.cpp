@@ -5994,7 +5994,9 @@ void FuSema::visitSwitch(FuSwitch * statement)
 	if (statement->value != this->poison) {
 		const FuIntegerType * i;
 		const FuClassType * klass;
-		if (((i = dynamic_cast<const FuIntegerType *>(statement->value->type.get())) && i->id != FuId::longType) || dynamic_cast<const FuEnum *>(statement->value->type.get())) {
+		if ((i = dynamic_cast<const FuIntegerType *>(statement->value->type.get())) && i->id != FuId::longType) {
+		}
+		else if (dynamic_cast<const FuEnum *>(statement->value->type.get())) {
 		}
 		else if ((klass = dynamic_cast<const FuClassType *>(statement->value->type.get())) && !dynamic_cast<const FuStorageType *>(klass)) {
 		}
@@ -10945,16 +10947,18 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		break;
 	case FuId::listAdd:
 	case FuId::stackPush:
-		const FuStorageType * storage;
-		if (dynamic_cast<const FuArrayStorageType *>(obj->type->asClassType()->getElementType().get()) || ((storage = dynamic_cast<const FuStorageType *>(obj->type->asClassType()->getElementType().get())) && storage->class_->id == FuId::none && !needsConstructor(storage->class_))) {
-			write("g_array_set_size(");
-			obj->accept(this, FuPriority::argument);
-			write(", ");
-			writePostfix(obj, "->len + 1)");
+		{
+			const FuStorageType * storage;
+			if ((storage = dynamic_cast<const FuStorageType *>(obj->type->asClassType()->getElementType().get())) && (storage->class_->id == FuId::arrayStorageClass || (storage->class_->id == FuId::none && !needsConstructor(storage->class_)))) {
+				write("g_array_set_size(");
+				obj->accept(this, FuPriority::argument);
+				write(", ");
+				writePostfix(obj, "->len + 1)");
+			}
+			else
+				writeListAddInsert(obj, false, "g_array_append_val", args);
+			break;
 		}
-		else
-			writeListAddInsert(obj, false, "g_array_append_val", args);
-		break;
 	case FuId::listClear:
 	case FuId::stackClear:
 		write("g_array_set_size(");
@@ -16768,7 +16772,9 @@ void GenD::writeSwitchCaseTypeVar(const FuExpr * value)
 void GenD::writeSwitchCaseCond(const FuSwitch * statement, const FuExpr * value, FuPriority parent)
 {
 	const FuSymbolReference * symbol;
-	if (((symbol = dynamic_cast<const FuSymbolReference *>(value)) && dynamic_cast<const FuClass *>(symbol->symbol)) || dynamic_cast<const FuVar *>(value))
+	if ((symbol = dynamic_cast<const FuSymbolReference *>(value)) && dynamic_cast<const FuClass *>(symbol->symbol))
+		writeIsVar(statement->value.get(), value, parent);
+	else if (dynamic_cast<const FuVar *>(value))
 		writeIsVar(statement->value.get(), value, parent);
 	else
 		GenBase::writeSwitchCaseCond(statement, value, parent);

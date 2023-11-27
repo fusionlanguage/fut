@@ -1295,6 +1295,8 @@ public class GenD : GenCCppD
 	{
 		switch (value) {
 		case FuSymbolReference symbol when symbol.Symbol is FuClass:
+			WriteIsVar(statement.Value, value, parent); // FIXME: side effect in every if
+			break;
 		case FuVar:
 			WriteIsVar(statement.Value, value, parent); // FIXME: side effect in every if
 			break;

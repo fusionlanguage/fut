@@ -6413,7 +6413,9 @@ export class FuSema
 		if (statement.value != this.#poison) {
 			let i;
 			let klass;
-			if (((i = statement.value.type) instanceof FuIntegerType && i.id != FuId.LONG_TYPE) || statement.value.type instanceof FuEnum) {
+			if ((i = statement.value.type) instanceof FuIntegerType && i.id != FuId.LONG_TYPE) {
+			}
+			else if (statement.value.type instanceof FuEnum) {
 			}
 			else if ((klass = statement.value.type) instanceof FuClassType && !(klass instanceof FuStorageType)) {
 			}
@@ -11621,7 +11623,7 @@ export class GenC extends GenCCpp
 		case FuId.LIST_ADD:
 		case FuId.STACK_PUSH:
 			let storage;
-			if (obj.type.asClassType().getElementType() instanceof FuArrayStorageType || ((storage = obj.type.asClassType().getElementType()) instanceof FuStorageType && storage.class.id == FuId.NONE && !this.needsConstructor(storage.class))) {
+			if ((storage = obj.type.asClassType().getElementType()) instanceof FuStorageType && (storage.class.id == FuId.ARRAY_STORAGE_CLASS || (storage.class.id == FuId.NONE && !this.needsConstructor(storage.class)))) {
 				this.write("g_array_set_size(");
 				obj.accept(this, FuPriority.ARGUMENT);
 				this.write(", ");
@@ -17842,7 +17844,9 @@ export class GenD extends GenCCppD
 	writeSwitchCaseCond(statement, value, parent)
 	{
 		let symbol;
-		if (((symbol = value) instanceof FuSymbolReference && symbol.symbol instanceof FuClass) || value instanceof FuVar)
+		if ((symbol = value) instanceof FuSymbolReference && symbol.symbol instanceof FuClass)
+			this.#writeIsVar(statement.value, value, parent);
+		else if (value instanceof FuVar)
 			this.#writeIsVar(statement.value, value, parent);
 		else
 			super.writeSwitchCaseCond(statement, value, parent);
