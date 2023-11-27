@@ -72,7 +72,7 @@ bin/Debug/net6.0/fut.dll: $(addprefix $(srcdir),AssemblyInfo.cs fut.cs libfut.cs
 
 else ifeq ($(FUT_HOST),java)
 
-FUT = java -cp java org.fusionlanguage.Fut
+FUT = java --enable-preview -cp java org.fusionlanguage.Fut
 
 fut: java/org/fusionlanguage/Fut.class
 
