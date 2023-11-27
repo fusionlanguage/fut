@@ -7713,11 +7713,6 @@ namespace Fusion
 				if (parent > FuPriority.Rel)
 					WriteChar(')');
 				break;
-			case FuToken.When:
-				expr.Left.Accept(this, FuPriority.Argument);
-				Write(" when ");
-				expr.Right.Accept(this, FuPriority.Argument);
-				break;
 			default:
 				throw new NotImplementedException();
 			}
@@ -8249,7 +8244,13 @@ namespace Fusion
 
 		protected virtual void WriteSwitchCaseValue(FuSwitch statement, FuExpr value)
 		{
-			WriteCoercedLiteral(statement.Value.Type, value);
+			if (value is FuBinaryExpr when1 && when1.Op == FuToken.When) {
+				WriteSwitchCaseValue(statement, when1.Left);
+				Write(" when ");
+				when1.Right.Accept(this, FuPriority.Argument);
+			}
+			else
+				WriteCoercedLiteral(statement.Value.Type, value);
 		}
 
 		protected virtual void WriteSwitchCaseBody(List<FuStatement> statements)
@@ -18700,8 +18701,7 @@ namespace Fusion
 
 		protected override void WriteSwitchCaseValue(FuSwitch statement, FuExpr value)
 		{
-			switch (value) {
-			case FuSymbolReference symbol:
+			if (value is FuSymbolReference symbol) {
 				if (symbol.Symbol.Parent is FuEnum enu && IsJavaEnum(enu)) {
 					WriteUppercaseWithUnderscores(symbol.Name);
 					return;
@@ -18711,14 +18711,6 @@ namespace Fusion
 					Write(" _");
 					return;
 				}
-				break;
-			case FuBinaryExpr when1 when when1.Op == FuToken.When:
-				WriteSwitchCaseValue(statement, when1.Left);
-				Write(" when ");
-				when1.Right.Accept(this, FuPriority.Argument);
-				return;
-			default:
-				break;
 			}
 			base.WriteSwitchCaseValue(statement, value);
 		}

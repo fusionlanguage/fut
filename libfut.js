@@ -8018,11 +8018,6 @@ export class GenBase extends FuVisitor
 			if (parent > FuPriority.REL)
 				this.writeChar(41);
 			break;
-		case FuToken.WHEN:
-			expr.left.accept(this, FuPriority.ARGUMENT);
-			this.write(" when ");
-			expr.right.accept(this, FuPriority.ARGUMENT);
-			break;
 		default:
 			throw new Error();
 		}
@@ -8572,7 +8567,14 @@ export class GenBase extends FuVisitor
 
 	writeSwitchCaseValue(statement, value)
 	{
-		this.writeCoercedLiteral(statement.value.type, value);
+		let when1;
+		if ((when1 = value) instanceof FuBinaryExpr && when1.op == FuToken.WHEN) {
+			this.writeSwitchCaseValue(statement, when1.left);
+			this.write(" when ");
+			when1.right.accept(this, FuPriority.ARGUMENT);
+		}
+		else
+			this.writeCoercedLiteral(statement.value.type, value);
 	}
 
 	writeSwitchCaseBody(statements)
@@ -19229,9 +19231,8 @@ export class GenJava extends GenTyped
 
 	writeSwitchCaseValue(statement, value)
 	{
-		let when1;
-		if (value instanceof FuSymbolReference) {
-			const symbol = value;
+		let symbol;
+		if ((symbol = value) instanceof FuSymbolReference) {
 			let enu;
 			if ((enu = symbol.symbol.parent) instanceof FuEnum && GenJava.#isJavaEnum(enu)) {
 				this.writeUppercaseWithUnderscores(symbol.name);
@@ -19243,12 +19244,6 @@ export class GenJava extends GenTyped
 				this.write(" _");
 				return;
 			}
-		}
-		else if ((when1 = value) instanceof FuBinaryExpr && when1.op == FuToken.WHEN) {
-			this.writeSwitchCaseValue(statement, when1.left);
-			this.write(" when ");
-			when1.right.accept(this, FuPriority.ARGUMENT);
-			return;
 		}
 		super.writeSwitchCaseValue(statement, value);
 	}

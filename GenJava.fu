@@ -1128,8 +1128,7 @@ public class GenJava : GenTyped
 
 	protected override void WriteSwitchCaseValue!(FuSwitch statement, FuExpr value)
 	{
-		switch (value) {
-		case FuSymbolReference symbol:
+		if (value is FuSymbolReference symbol) {
 			if (symbol.Symbol.Parent is FuEnum enu && IsJavaEnum(enu)) {
 				WriteUppercaseWithUnderscores(symbol.Name);
 				return;
@@ -1139,14 +1138,6 @@ public class GenJava : GenTyped
 				Write(" _");
 				return;
 			}
-			break;
-		case FuBinaryExpr when1 when when1.Op == FuToken.When:
-			WriteSwitchCaseValue(statement, when1.Left);
-			Write(" when ");
-			when1.Right.Accept(this, FuPriority.Argument);
-			return;
-		default:
-			break;
 		}
 		base.WriteSwitchCaseValue(statement, value);
 	}

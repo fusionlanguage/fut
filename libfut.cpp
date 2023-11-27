@@ -7535,11 +7535,6 @@ void GenBase::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 		if (parent > FuPriority::rel)
 			writeChar(')');
 		break;
-	case FuToken::when:
-		expr->left->accept(this, FuPriority::argument);
-		write(" when ");
-		expr->right->accept(this, FuPriority::argument);
-		break;
 	default:
 		std::abort();
 	}
@@ -8060,7 +8055,14 @@ void GenBase::writeSwitchValue(const FuExpr * expr)
 
 void GenBase::writeSwitchCaseValue(const FuSwitch * statement, const FuExpr * value)
 {
-	writeCoercedLiteral(statement->value->type.get(), value);
+	const FuBinaryExpr * when1;
+	if ((when1 = dynamic_cast<const FuBinaryExpr *>(value)) && when1->op == FuToken::when) {
+		writeSwitchCaseValue(statement, when1->left.get());
+		write(" when ");
+		when1->right->accept(this, FuPriority::argument);
+	}
+	else
+		writeCoercedLiteral(statement->value->type.get(), value);
 }
 
 void GenBase::writeSwitchCaseBody(const std::vector<std::shared_ptr<FuStatement>> * statements)
@@ -18058,7 +18060,6 @@ void GenJava::writeSwitchValue(const FuExpr * expr)
 
 void GenJava::writeSwitchCaseValue(const FuSwitch * statement, const FuExpr * value)
 {
-	const FuBinaryExpr * when1;
 	if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(value)) {
 		const FuEnum * enu;
 		if ((enu = dynamic_cast<const FuEnum *>(symbol->symbol->parent)) && isJavaEnum(enu)) {
@@ -18070,12 +18071,6 @@ void GenJava::writeSwitchCaseValue(const FuSwitch * statement, const FuExpr * va
 			write(" _");
 			return;
 		}
-	}
-	else if ((when1 = dynamic_cast<const FuBinaryExpr *>(value)) && when1->op == FuToken::when) {
-		writeSwitchCaseValue(statement, when1->left.get());
-		write(" when ");
-		when1->right->accept(this, FuPriority::argument);
-		return;
 	}
 	GenBase::writeSwitchCaseValue(statement, value);
 }
