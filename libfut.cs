@@ -3637,8 +3637,9 @@ namespace Fusion
 				case FuToken.Is:
 					FuBinaryExpr isExpr = new FuBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(false) };
 					if (See(FuToken.Id)) {
-						isExpr.Right = new FuVar { Line = this.Line, TypeExpr = isExpr.Right, Name = this.StringValue, IsAssigned = true };
-						NextToken();
+						FuVar def = ParseVar(isExpr.Right, false);
+						def.IsAssigned = true;
+						isExpr.Right = def;
 					}
 					return isExpr;
 				default:
@@ -3769,11 +3770,11 @@ namespace Fusion
 				scope.Add(symbol);
 		}
 
-		FuVar ParseVar(FuExpr type)
+		FuVar ParseVar(FuExpr type, bool initializer)
 		{
 			FuVar result = new FuVar { Line = this.Line, TypeExpr = type, Name = this.StringValue };
 			NextToken();
-			result.Value = ParseInitializer();
+			result.Value = initializer ? ParseInitializer() : null;
 			return result;
 		}
 
@@ -3806,7 +3807,7 @@ namespace Fusion
 				return new FuBinaryExpr { Line = this.Line, Left = left, Op = NextToken(), Right = ParseAssign(false) };
 			case FuToken.Id:
 				if (allowVar)
-					return ParseVar(left);
+					return ParseVar(left, true);
 				return left;
 			default:
 				return left;
@@ -3898,8 +3899,7 @@ namespace Fusion
 
 		void ParseForeachIterator(FuForeach result)
 		{
-			AddSymbol(result, new FuVar { Line = this.Line, TypeExpr = ParseType(), Name = this.StringValue });
-			NextToken();
+			AddSymbol(result, ParseVar(ParseType(), false));
 		}
 
 		FuForeach ParseForeach()
@@ -3996,7 +3996,7 @@ namespace Fusion
 				do {
 					FuExpr expr = ParseExpr();
 					if (See(FuToken.Id))
-						expr = ParseVar(expr);
+						expr = ParseVar(expr, false);
 					if (Eat(FuToken.When))
 						expr = new FuBinaryExpr { Line = this.Line, Left = expr, Op = FuToken.When, Right = ParseExpr() };
 					kase.Values.Add(expr);
@@ -4130,7 +4130,7 @@ namespace Fusion
 			if (!See(FuToken.RightParenthesis)) {
 				do {
 					FuCodeDoc doc = ParseDoc();
-					FuVar param = ParseVar(ParseType());
+					FuVar param = ParseVar(ParseType(), true);
 					param.Documentation = doc;
 					AddSymbol(method.Parameters, param);
 				}
@@ -5107,32 +5107,42 @@ namespace Fusion
 			return new FuBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = this.Program.System.BoolType };
 		}
 
+		void CheckIsHierarchy(FuClassType leftPtr, FuExpr left, FuClass rightClass, FuExpr expr, string op, string alwaysMessage, string neverMessage)
+		{
+			if (rightClass.IsSameOrBaseOf(leftPtr.Class))
+				ReportError(expr, $"'{left}' is '{leftPtr.Class.Name}', '{op} {rightClass.Name}' would {alwaysMessage}");
+			else if (!leftPtr.Class.IsSameOrBaseOf(rightClass))
+				ReportError(expr, $"'{leftPtr.Class.Name}' is not base class of '{rightClass.Name}', '{op} {rightClass.Name}' would {neverMessage}");
+		}
+
+		void CheckIsVar(FuExpr left, FuVar def, FuExpr expr, string op, string alwaysMessage, string neverMessage)
+		{
+			if (!(def.Type is FuClassType rightPtr) || rightPtr is FuStorageType)
+				ReportError(expr, $"'{op}' with non-reference type");
+			else {
+				FuClassType leftPtr = (FuClassType) left.Type;
+				if (rightPtr is FuReadWriteClassType && !(leftPtr is FuDynamicPtrType) && (rightPtr is FuDynamicPtrType || !(leftPtr is FuReadWriteClassType)))
+					ReportError(expr, $"'{leftPtr}' cannot be casted to '{rightPtr}'");
+				else {
+					CheckIsHierarchy(leftPtr, left, rightPtr.Class, expr, op, alwaysMessage, neverMessage);
+				}
+			}
+		}
+
 		FuExpr ResolveIs(FuBinaryExpr expr, FuExpr left, FuExpr right)
 		{
 			if (!(left.Type is FuClassType leftPtr) || left.Type is FuStorageType)
 				return PoisonError(expr, "Left hand side of the 'is' operator must be an object reference");
-			FuClass klass;
 			switch (right) {
-			case FuSymbolReference symbol:
-				if (symbol.Symbol is FuClass klass2)
-					klass = klass2;
-				else
-					return PoisonError(expr, "Right hand side of the 'is' operator must be a class name");
+			case FuSymbolReference symbol when symbol.Symbol is FuClass klass:
+				CheckIsHierarchy(leftPtr, left, klass, expr, "is", "always equal 'true'", "always equal 'false'");
 				break;
 			case FuVar def:
-				if (!(def.Type is FuClassType rightPtr))
-					return PoisonError(expr, "Right hand side of the 'is' operator must be an object reference definition");
-				if (rightPtr is FuReadWriteClassType && !(leftPtr is FuDynamicPtrType) && (rightPtr is FuDynamicPtrType || !(leftPtr is FuReadWriteClassType)))
-					return PoisonError(expr, $"{leftPtr} cannot be casted to {rightPtr}");
-				klass = rightPtr.Class;
+				CheckIsVar(left, def, expr, "is", "always equal 'true'", "always equal 'false'");
 				break;
 			default:
 				return PoisonError(expr, "Right hand side of the 'is' operator must be a class name");
 			}
-			if (klass.IsSameOrBaseOf(leftPtr.Class))
-				return PoisonError(expr, $"'{leftPtr}' is '{klass.Name}', the 'is' operator would always return 'true'");
-			if (!leftPtr.Class.IsSameOrBaseOf(klass))
-				return PoisonError(expr, $"'{leftPtr}' is not base class of '{klass.Name}', the 'is' operator would always return 'false'");
 			expr.Left = left;
 			expr.Type = this.Program.System.BoolType;
 			return expr;
@@ -6095,22 +6105,17 @@ namespace Fusion
 			}
 		}
 
-		void ResolveCaseType(FuSwitch statement, FuClassType switchPtr, FuExpr value)
+		void ResolveCaseType(FuSwitch statement, FuExpr value)
 		{
 			if (value is FuLiteralNull) {
 			}
-			else if (!(value is FuVar def) || def.Value != null)
-				ReportError(value, "Expected 'case Type name'");
-			else if (!(ResolveType(def) is FuClassType casePtr) || casePtr is FuStorageType)
-				ReportError(def, "'case' with non-reference type");
-			else if (casePtr is FuReadWriteClassType && !(switchPtr is FuDynamicPtrType) && (casePtr is FuDynamicPtrType || !(switchPtr is FuReadWriteClassType)))
-				ReportError(def, $"'{switchPtr}' cannot be casted to '{casePtr}'");
-			else if (casePtr.Class.IsSameOrBaseOf(switchPtr.Class))
-				ReportError(def, $"'{statement.Value}' is '{switchPtr}', 'case {casePtr}' would always match");
-			else if (!switchPtr.Class.IsSameOrBaseOf(casePtr.Class))
-				ReportError(def, $"'{switchPtr}' is not base class of '{casePtr.Class.Name}', 'case {casePtr}' would never match");
-			else
+			else if (value is FuVar def) {
+				ResolveType(def);
+				CheckIsVar(statement.Value, def, def, "case", "always match", "never match");
 				statement.Add(def);
+			}
+			else
+				ReportError(value, "Expected 'case Type name'");
 		}
 
 		void VisitSwitch(FuSwitch statement)
@@ -6133,22 +6138,22 @@ namespace Fusion
 			foreach (FuCase kase in statement.Cases) {
 				if (statement.Value != this.Poison) {
 					for (int i = 0; i < kase.Values.Count; i++) {
+						FuExpr value = kase.Values[i];
 						if (statement.Value.Type is FuClassType switchPtr && switchPtr.Class.Id != FuId.StringClass) {
-							FuExpr value = kase.Values[i];
 							if (value is FuBinaryExpr when1 && when1.Op == FuToken.When) {
-								ResolveCaseType(statement, switchPtr, when1.Left);
+								ResolveCaseType(statement, when1.Left);
 								when1.Right = ResolveBool(when1.Right);
 							}
 							else
-								ResolveCaseType(statement, switchPtr, value);
+								ResolveCaseType(statement, value);
 						}
-						else if (kase.Values[i] is FuBinaryExpr when1 && when1.Op == FuToken.When) {
+						else if (value is FuBinaryExpr when1 && when1.Op == FuToken.When) {
 							when1.Left = FoldConst(when1.Left);
 							Coerce(when1.Left, statement.Value.Type);
 							when1.Right = ResolveBool(when1.Right);
 						}
 						else {
-							kase.Values[i] = FoldConst(kase.Values[i]);
+							kase.Values[i] = FoldConst(value);
 							Coerce(kase.Values[i], statement.Value.Type);
 						}
 					}

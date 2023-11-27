@@ -3775,8 +3775,9 @@ export class FuParser extends FuLexer
 			case FuToken.IS:
 				let isExpr = Object.assign(new FuBinaryExpr(), { line: this.line, left: left, op: this.nextToken(), right: this.#parsePrimaryExpr(false) });
 				if (this.see(FuToken.ID)) {
-					isExpr.right = Object.assign(new FuVar(), { line: this.line, typeExpr: isExpr.right, name: this.stringValue, isAssigned: true });
-					this.nextToken();
+					let def = this.#parseVar(isExpr.right, false);
+					def.isAssigned = true;
+					isExpr.right = def;
 				}
 				return isExpr;
 			default:
@@ -3907,11 +3908,11 @@ export class FuParser extends FuLexer
 			scope.add(symbol);
 	}
 
-	#parseVar(type)
+	#parseVar(type, initializer)
 	{
 		let result = Object.assign(new FuVar(), { line: this.line, typeExpr: type, name: this.stringValue });
 		this.nextToken();
-		result.value = this.#parseInitializer();
+		result.value = initializer ? this.#parseInitializer() : null;
 		return result;
 	}
 
@@ -3944,7 +3945,7 @@ export class FuParser extends FuLexer
 			return Object.assign(new FuBinaryExpr(), { line: this.line, left: left, op: this.nextToken(), right: this.#parseAssign(false) });
 		case FuToken.ID:
 			if (allowVar)
-				return this.#parseVar(left);
+				return this.#parseVar(left, true);
 			return left;
 		default:
 			return left;
@@ -4037,8 +4038,7 @@ export class FuParser extends FuLexer
 
 	#parseForeachIterator(result)
 	{
-		this.#addSymbol(result, Object.assign(new FuVar(), { line: this.line, typeExpr: this.#parseType(), name: this.stringValue }));
-		this.nextToken();
+		this.#addSymbol(result, this.#parseVar(this.#parseType(), false));
 	}
 
 	#parseForeach()
@@ -4135,7 +4135,7 @@ export class FuParser extends FuLexer
 			do {
 				let expr = this.#parseExpr();
 				if (this.see(FuToken.ID))
-					expr = this.#parseVar(expr);
+					expr = this.#parseVar(expr, false);
 				if (this.eat(FuToken.WHEN))
 					expr = Object.assign(new FuBinaryExpr(), { line: this.line, left: expr, op: FuToken.WHEN, right: this.#parseExpr() });
 				kase.values.push(expr);
@@ -4269,7 +4269,7 @@ export class FuParser extends FuLexer
 		if (!this.see(FuToken.RIGHT_PARENTHESIS)) {
 			do {
 				let doc = this.#parseDoc();
-				let param = this.#parseVar(this.#parseType());
+				let param = this.#parseVar(this.#parseType(), true);
 				param.documentation = doc;
 				this.#addSymbol(method.parameters, param);
 			}
@@ -5291,35 +5291,44 @@ export class FuSema
 		return Object.assign(new FuBinaryExpr(), { line: expr.line, left: left, op: expr.op, right: right, type: this.program.system.boolType });
 	}
 
+	#checkIsHierarchy(leftPtr, left, rightClass, expr, op, alwaysMessage, neverMessage)
+	{
+		if (rightClass.isSameOrBaseOf(leftPtr.class))
+			this.reportError(expr, `'${left}' is '${leftPtr.class.name}', '${op} ${rightClass.name}' would ${alwaysMessage}`);
+		else if (!leftPtr.class.isSameOrBaseOf(rightClass))
+			this.reportError(expr, `'${leftPtr.class.name}' is not base class of '${rightClass.name}', '${op} ${rightClass.name}' would ${neverMessage}`);
+	}
+
+	#checkIsVar(left, def, expr, op, alwaysMessage, neverMessage)
+	{
+		let rightPtr;
+		if (!((rightPtr = def.type) instanceof FuClassType) || rightPtr instanceof FuStorageType)
+			this.reportError(expr, `'${op}' with non-reference type`);
+		else {
+			let leftPtr = left.type;
+			if (rightPtr instanceof FuReadWriteClassType && !(leftPtr instanceof FuDynamicPtrType) && (rightPtr instanceof FuDynamicPtrType || !(leftPtr instanceof FuReadWriteClassType)))
+				this.reportError(expr, `'${leftPtr}' cannot be casted to '${rightPtr}'`);
+			else {
+				this.#checkIsHierarchy(leftPtr, left, rightPtr.class, expr, op, alwaysMessage, neverMessage);
+			}
+		}
+	}
+
 	#resolveIs(expr, left, right)
 	{
 		let leftPtr;
 		if (!((leftPtr = left.type) instanceof FuClassType) || left.type instanceof FuStorageType)
 			return this.#poisonError(expr, "Left hand side of the 'is' operator must be an object reference");
+		let symbol;
 		let klass;
-		if (right instanceof FuSymbolReference) {
-			const symbol = right;
-			let klass2;
-			if ((klass2 = symbol.symbol) instanceof FuClass)
-				klass = klass2;
-			else
-				return this.#poisonError(expr, "Right hand side of the 'is' operator must be a class name");
-		}
+		if ((symbol = right) instanceof FuSymbolReference && (klass = symbol.symbol) instanceof FuClass)
+			this.#checkIsHierarchy(leftPtr, left, klass, expr, "is", "always equal 'true'", "always equal 'false'");
 		else if (right instanceof FuVar) {
 			const def = right;
-			let rightPtr;
-			if (!((rightPtr = def.type) instanceof FuClassType))
-				return this.#poisonError(expr, "Right hand side of the 'is' operator must be an object reference definition");
-			if (rightPtr instanceof FuReadWriteClassType && !(leftPtr instanceof FuDynamicPtrType) && (rightPtr instanceof FuDynamicPtrType || !(leftPtr instanceof FuReadWriteClassType)))
-				return this.#poisonError(expr, `${leftPtr} cannot be casted to ${rightPtr}`);
-			klass = rightPtr.class;
+			this.#checkIsVar(left, def, expr, "is", "always equal 'true'", "always equal 'false'");
 		}
 		else
 			return this.#poisonError(expr, "Right hand side of the 'is' operator must be a class name");
-		if (klass.isSameOrBaseOf(leftPtr.class))
-			return this.#poisonError(expr, `'${leftPtr}' is '${klass.name}', the 'is' operator would always return 'true'`);
-		if (!leftPtr.class.isSameOrBaseOf(klass))
-			return this.#poisonError(expr, `'${leftPtr}' is not base class of '${klass.name}', the 'is' operator would always return 'false'`);
 		expr.left = left;
 		expr.type = this.program.system.boolType;
 		return expr;
@@ -6381,27 +6390,19 @@ export class FuSema
 		}
 	}
 
-	#resolveCaseType(statement, switchPtr, value)
+	#resolveCaseType(statement, value)
 	{
 		if (value instanceof FuLiteralNull) {
 		}
 		else {
 			let def;
-			if (!((def = value) instanceof FuVar) || def.value != null)
-				this.reportError(value, "Expected 'case Type name'");
-			else {
-				let casePtr;
-				if (!((casePtr = this.#resolveType(def)) instanceof FuClassType) || casePtr instanceof FuStorageType)
-					this.reportError(def, "'case' with non-reference type");
-				else if (casePtr instanceof FuReadWriteClassType && !(switchPtr instanceof FuDynamicPtrType) && (casePtr instanceof FuDynamicPtrType || !(switchPtr instanceof FuReadWriteClassType)))
-					this.reportError(def, `'${switchPtr}' cannot be casted to '${casePtr}'`);
-				else if (casePtr.class.isSameOrBaseOf(switchPtr.class))
-					this.reportError(def, `'${statement.value}' is '${switchPtr}', 'case ${casePtr}' would always match`);
-				else if (!switchPtr.class.isSameOrBaseOf(casePtr.class))
-					this.reportError(def, `'${switchPtr}' is not base class of '${casePtr.class.name}', 'case ${casePtr}' would never match`);
-				else
-					statement.add(def);
+			if ((def = value) instanceof FuVar) {
+				this.#resolveType(def);
+				this.#checkIsVar(statement.value, def, def, "case", "always match", "never match");
+				statement.add(def);
 			}
+			else
+				this.reportError(value, "Expected 'case Type name'");
 		}
 	}
 
@@ -6423,26 +6424,26 @@ export class FuSema
 		for (const kase of statement.cases) {
 			if (statement.value != this.#poison) {
 				for (let i = 0; i < kase.values.length; i++) {
+					let value = kase.values[i];
 					let switchPtr;
 					if ((switchPtr = statement.value.type) instanceof FuClassType && switchPtr.class.id != FuId.STRING_CLASS) {
-						let value = kase.values[i];
 						let when1;
 						if ((when1 = value) instanceof FuBinaryExpr && when1.op == FuToken.WHEN) {
-							this.#resolveCaseType(statement, switchPtr, when1.left);
+							this.#resolveCaseType(statement, when1.left);
 							when1.right = this.#resolveBool(when1.right);
 						}
 						else
-							this.#resolveCaseType(statement, switchPtr, value);
+							this.#resolveCaseType(statement, value);
 					}
 					else {
 						let when1;
-						if ((when1 = kase.values[i]) instanceof FuBinaryExpr && when1.op == FuToken.WHEN) {
+						if ((when1 = value) instanceof FuBinaryExpr && when1.op == FuToken.WHEN) {
 							when1.left = this.#foldConst(when1.left);
 							this.#coerce(when1.left, statement.value.type);
 							when1.right = this.#resolveBool(when1.right);
 						}
 						else {
-							kase.values[i] = this.#foldConst(kase.values[i]);
+							kase.values[i] = this.#foldConst(value);
 							this.#coerce(kase.values[i], statement.value.type);
 						}
 					}

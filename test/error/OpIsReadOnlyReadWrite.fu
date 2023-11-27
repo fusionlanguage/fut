@@ -8,6 +8,6 @@ public class Test : Base
 	{
 		Test() o;
 		Base p = o;
-		return p is Test! rw; //ERROR: Base cannot be casted to Test!
+		return p is Test! rw; //ERROR: 'Base' cannot be casted to 'Test!'
 	}
 }

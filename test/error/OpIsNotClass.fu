@@ -9,7 +9,7 @@ public class Test : Base
 		Test() o;
 		Base p = o;
 		return p is int //ERROR: Right hand side of the 'is' operator must be a class name
-			&& p is int i //ERROR: Right hand side of the 'is' operator must be an object reference definition
+			&& p is int i //ERROR: 'is' with non-reference type
 			&& p is 5; //ERROR: Right hand side of the 'is' operator must be a class name
 	}
 }

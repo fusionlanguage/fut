@@ -3212,13 +3212,9 @@ std::shared_ptr<FuExpr> FuParser::parseRelExpr()
 				isExpr->op = nextToken();
 				isExpr->right = parsePrimaryExpr(false);
 				if (see(FuToken::id)) {
-					std::shared_ptr<FuVar> futemp1 = std::make_shared<FuVar>();
-					futemp1->line = this->line;
-					futemp1->typeExpr = isExpr->right;
-					futemp1->name = this->stringValue;
-					futemp1->isAssigned = true;
-					isExpr->right = futemp1;
-					nextToken();
+					std::shared_ptr<FuVar> def = parseVar(isExpr->right, false);
+					def->isAssigned = true;
+					isExpr->right = def;
 				}
 				return isExpr;
 			}
@@ -3399,14 +3395,14 @@ void FuParser::addSymbol(FuScope * scope, std::shared_ptr<FuSymbol> symbol)
 		scope->add(symbol);
 }
 
-std::shared_ptr<FuVar> FuParser::parseVar(std::shared_ptr<FuExpr> type)
+std::shared_ptr<FuVar> FuParser::parseVar(std::shared_ptr<FuExpr> type, bool initializer)
 {
 	std::shared_ptr<FuVar> result = std::make_shared<FuVar>();
 	result->line = this->line;
 	result->typeExpr = type;
 	result->name = this->stringValue;
 	nextToken();
-	result->value = parseInitializer();
+	result->value = initializer ? parseInitializer() : nullptr;
 	return result;
 }
 
@@ -3451,7 +3447,7 @@ std::shared_ptr<FuExpr> FuParser::parseAssign(bool allowVar)
 		}
 	case FuToken::id:
 		if (allowVar)
-			return parseVar(left);
+			return parseVar(left, true);
 		return left;
 	default:
 		return left;
@@ -3551,12 +3547,7 @@ std::shared_ptr<FuFor> FuParser::parseFor()
 
 void FuParser::parseForeachIterator(FuForeach * result)
 {
-	std::shared_ptr<FuVar> futemp0 = std::make_shared<FuVar>();
-	futemp0->line = this->line;
-	futemp0->typeExpr = parseType();
-	futemp0->name = this->stringValue;
-	addSymbol(result, futemp0);
-	nextToken();
+	addSymbol(result, parseVar(parseType(), false));
 }
 
 std::shared_ptr<FuForeach> FuParser::parseForeach()
@@ -3659,7 +3650,7 @@ std::shared_ptr<FuSwitch> FuParser::parseSwitch()
 		do {
 			std::shared_ptr<FuExpr> expr = parseExpr();
 			if (see(FuToken::id))
-				expr = parseVar(expr);
+				expr = parseVar(expr, false);
 			if (eat(FuToken::when)) {
 				std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
 				futemp0->line = this->line;
@@ -3803,7 +3794,7 @@ void FuParser::parseMethod(FuClass * klass, std::shared_ptr<FuMethod> method)
 	if (!see(FuToken::rightParenthesis)) {
 		do {
 			std::shared_ptr<FuCodeDoc> doc = parseDoc();
-			std::shared_ptr<FuVar> param = parseVar(parseType());
+			std::shared_ptr<FuVar> param = parseVar(parseType(), true);
 			param->documentation = doc;
 			addSymbol(&method->parameters, param);
 		}
@@ -4867,32 +4858,42 @@ std::shared_ptr<FuExpr> FuSema::resolveEquality(const FuBinaryExpr * expr, std::
 	return futemp0;
 }
 
+void FuSema::checkIsHierarchy(const FuClassType * leftPtr, const FuExpr * left, const FuClass * rightClass, const FuExpr * expr, std::string_view op, std::string_view alwaysMessage, std::string_view neverMessage) const
+{
+	if (rightClass->isSameOrBaseOf(leftPtr->class_))
+		reportError(expr, std::format("'{}' is '{}', '{} {}' would {}", left->toString(), leftPtr->class_->name, op, rightClass->name, alwaysMessage));
+	else if (!leftPtr->class_->isSameOrBaseOf(rightClass))
+		reportError(expr, std::format("'{}' is not base class of '{}', '{} {}' would {}", leftPtr->class_->name, rightClass->name, op, rightClass->name, neverMessage));
+}
+
+void FuSema::checkIsVar(const FuExpr * left, const FuVar * def, const FuExpr * expr, std::string_view op, std::string_view alwaysMessage, std::string_view neverMessage) const
+{
+	const FuClassType * rightPtr;
+	if (!(rightPtr = dynamic_cast<const FuClassType *>(def->type.get())) || dynamic_cast<const FuStorageType *>(rightPtr))
+		reportError(expr, std::format("'{}' with non-reference type", op));
+	else {
+		const FuClassType * leftPtr = static_cast<const FuClassType *>(left->type.get());
+		if (dynamic_cast<const FuReadWriteClassType *>(rightPtr) && !dynamic_cast<const FuDynamicPtrType *>(leftPtr) && (dynamic_cast<const FuDynamicPtrType *>(rightPtr) || !dynamic_cast<const FuReadWriteClassType *>(leftPtr)))
+			reportError(expr, std::format("'{}' cannot be casted to '{}'", leftPtr->toString(), rightPtr->toString()));
+		else {
+			checkIsHierarchy(leftPtr, left, rightPtr->class_, expr, op, alwaysMessage, neverMessage);
+		}
+	}
+}
+
 std::shared_ptr<FuExpr> FuSema::resolveIs(std::shared_ptr<FuBinaryExpr> expr, std::shared_ptr<FuExpr> left, const FuExpr * right) const
 {
 	const FuClassType * leftPtr;
 	if (!(leftPtr = dynamic_cast<const FuClassType *>(left->type.get())) || dynamic_cast<const FuStorageType *>(left->type.get()))
 		return poisonError(expr.get(), "Left hand side of the 'is' operator must be an object reference");
+	const FuSymbolReference * symbol;
 	const FuClass * klass;
-	if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(right)) {
-		if (const FuClass *klass2 = dynamic_cast<const FuClass *>(symbol->symbol))
-			klass = klass2;
-		else
-			return poisonError(expr.get(), "Right hand side of the 'is' operator must be a class name");
-	}
-	else if (const FuVar *def = dynamic_cast<const FuVar *>(right)) {
-		const FuClassType * rightPtr;
-		if (!(rightPtr = dynamic_cast<const FuClassType *>(def->type.get())))
-			return poisonError(expr.get(), "Right hand side of the 'is' operator must be an object reference definition");
-		if (dynamic_cast<const FuReadWriteClassType *>(rightPtr) && !dynamic_cast<const FuDynamicPtrType *>(leftPtr) && (dynamic_cast<const FuDynamicPtrType *>(rightPtr) || !dynamic_cast<const FuReadWriteClassType *>(leftPtr)))
-			return poisonError(expr.get(), std::format("{} cannot be casted to {}", leftPtr->toString(), rightPtr->toString()));
-		klass = rightPtr->class_;
-	}
+	if ((symbol = dynamic_cast<const FuSymbolReference *>(right)) && (klass = dynamic_cast<const FuClass *>(symbol->symbol)))
+		checkIsHierarchy(leftPtr, left.get(), klass, expr.get(), "is", "always equal 'true'", "always equal 'false'");
+	else if (const FuVar *def = dynamic_cast<const FuVar *>(right))
+		checkIsVar(left.get(), def, expr.get(), "is", "always equal 'true'", "always equal 'false'");
 	else
 		return poisonError(expr.get(), "Right hand side of the 'is' operator must be a class name");
-	if (klass->isSameOrBaseOf(leftPtr->class_))
-		return poisonError(expr.get(), std::format("'{}' is '{}', the 'is' operator would always return 'true'", leftPtr->toString(), klass->name));
-	if (!leftPtr->class_->isSameOrBaseOf(klass))
-		return poisonError(expr.get(), std::format("'{}' is not base class of '{}', the 'is' operator would always return 'false'", leftPtr->toString(), klass->name));
 	expr->left = left;
 	expr->type = this->program->system->boolType;
 	return expr;
@@ -5972,28 +5973,17 @@ void FuSema::visitReturn(FuReturn * statement)
 	}
 }
 
-void FuSema::resolveCaseType(FuSwitch * statement, const FuClassType * switchPtr, std::shared_ptr<FuExpr> value)
+void FuSema::resolveCaseType(FuSwitch * statement, std::shared_ptr<FuExpr> value)
 {
 	if (dynamic_cast<const FuLiteralNull *>(value.get())) {
 	}
-	else {
-		std::shared_ptr<FuVar> def;
-		if (!(def = std::dynamic_pointer_cast<FuVar>(value)) || def->value != nullptr)
-			reportError(value.get(), "Expected 'case Type name'");
-		else {
-			const FuClassType * casePtr;
-			if (!(casePtr = dynamic_cast<const FuClassType *>(resolveType(def.get()).get())) || dynamic_cast<const FuStorageType *>(casePtr))
-				reportError(def.get(), "'case' with non-reference type");
-			else if (dynamic_cast<const FuReadWriteClassType *>(casePtr) && !dynamic_cast<const FuDynamicPtrType *>(switchPtr) && (dynamic_cast<const FuDynamicPtrType *>(casePtr) || !dynamic_cast<const FuReadWriteClassType *>(switchPtr)))
-				reportError(def.get(), std::format("'{}' cannot be casted to '{}'", switchPtr->toString(), casePtr->toString()));
-			else if (casePtr->class_->isSameOrBaseOf(switchPtr->class_))
-				reportError(def.get(), std::format("'{}' is '{}', 'case {}' would always match", statement->value->toString(), switchPtr->toString(), casePtr->toString()));
-			else if (!switchPtr->class_->isSameOrBaseOf(casePtr->class_))
-				reportError(def.get(), std::format("'{}' is not base class of '{}', 'case {}' would never match", switchPtr->toString(), casePtr->class_->name, casePtr->toString()));
-			else
-				statement->add(def);
-		}
+	else if (std::shared_ptr<FuVar>def = std::dynamic_pointer_cast<FuVar>(value)) {
+		resolveType(def.get());
+		checkIsVar(statement->value.get(), def.get(), def.get(), "case", "always match", "never match");
+		statement->add(def);
 	}
+	else
+		reportError(value.get(), "Expected 'case Type name'");
 }
 
 void FuSema::visitSwitch(FuSwitch * statement)
@@ -6014,26 +6004,26 @@ void FuSema::visitSwitch(FuSwitch * statement)
 	for (FuCase &kase : statement->cases) {
 		if (statement->value != this->poison) {
 			for (int i = 0; i < std::ssize(kase.values); i++) {
+				std::shared_ptr<FuExpr> value = kase.values[i];
 				const FuClassType * switchPtr;
 				if ((switchPtr = dynamic_cast<const FuClassType *>(statement->value->type.get())) && switchPtr->class_->id != FuId::stringClass) {
-					std::shared_ptr<FuExpr> value = kase.values[i];
 					FuBinaryExpr * when1;
 					if ((when1 = dynamic_cast<FuBinaryExpr *>(value.get())) && when1->op == FuToken::when) {
-						resolveCaseType(statement, switchPtr, when1->left);
+						resolveCaseType(statement, when1->left);
 						when1->right = resolveBool(when1->right);
 					}
 					else
-						resolveCaseType(statement, switchPtr, value);
+						resolveCaseType(statement, value);
 				}
 				else {
 					FuBinaryExpr * when1;
-					if ((when1 = dynamic_cast<FuBinaryExpr *>(kase.values[i].get())) && when1->op == FuToken::when) {
+					if ((when1 = dynamic_cast<FuBinaryExpr *>(value.get())) && when1->op == FuToken::when) {
 						when1->left = foldConst(when1->left);
 						coerce(when1->left.get(), statement->value->type.get());
 						when1->right = resolveBool(when1->right);
 					}
 					else {
-						kase.values[i] = foldConst(kase.values[i]);
+						kase.values[i] = foldConst(value);
 						coerce(kase.values[i].get(), statement->value->type.get());
 					}
 				}

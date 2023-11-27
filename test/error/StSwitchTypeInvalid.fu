@@ -24,6 +24,13 @@ public class Test : Base
 		case Unrelated _: //ERROR: 'Test' is not base class of 'Unrelated', 'case Unrelated' would never match
 			return false;
 		default:
+			break;
+		}
+		Base! w = o;
+		switch (w) {
+		case Test() _: //ERROR: 'case' with non-reference type
+			return true;
+		default:
 			return false;
 		}
 	}

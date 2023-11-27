@@ -1522,7 +1522,7 @@ private:
 	std::shared_ptr<FuAggregateInitializer> parseObjectLiteral();
 	std::shared_ptr<FuExpr> parseInitializer();
 	void addSymbol(FuScope * scope, std::shared_ptr<FuSymbol> symbol);
-	std::shared_ptr<FuVar> parseVar(std::shared_ptr<FuExpr> type);
+	std::shared_ptr<FuVar> parseVar(std::shared_ptr<FuExpr> type, bool initializer);
 	std::shared_ptr<FuConst> parseConst(FuVisibility visibility);
 	std::shared_ptr<FuExpr> parseAssign(bool allowVar);
 	std::shared_ptr<FuBlock> parseBlock();
@@ -1633,6 +1633,8 @@ private:
 	std::shared_ptr<FuExpr> visitPostfixExpr(std::shared_ptr<FuPostfixExpr> expr);
 	static bool canCompareEqual(const FuType * left, const FuType * right);
 	std::shared_ptr<FuExpr> resolveEquality(const FuBinaryExpr * expr, std::shared_ptr<FuExpr> left, std::shared_ptr<FuExpr> right) const;
+	void checkIsHierarchy(const FuClassType * leftPtr, const FuExpr * left, const FuClass * rightClass, const FuExpr * expr, std::string_view op, std::string_view alwaysMessage, std::string_view neverMessage) const;
+	void checkIsVar(const FuExpr * left, const FuVar * def, const FuExpr * expr, std::string_view op, std::string_view alwaysMessage, std::string_view neverMessage) const;
 	std::shared_ptr<FuExpr> resolveIs(std::shared_ptr<FuBinaryExpr> expr, std::shared_ptr<FuExpr> left, const FuExpr * right) const;
 	std::shared_ptr<FuExpr> visitBinaryExpr(std::shared_ptr<FuBinaryExpr> expr);
 	std::shared_ptr<FuType> tryGetPtr(std::shared_ptr<FuType> type, bool nullable) const;
@@ -1665,7 +1667,7 @@ private:
 	void visitIf(FuIf * statement);
 	void visitLock(FuLock * statement);
 	void visitReturn(FuReturn * statement);
-	void resolveCaseType(FuSwitch * statement, const FuClassType * switchPtr, std::shared_ptr<FuExpr> value);
+	void resolveCaseType(FuSwitch * statement, std::shared_ptr<FuExpr> value);
 	void visitSwitch(FuSwitch * statement);
 	void resolveException(std::shared_ptr<FuSymbolReference> symbol);
 	void visitThrow(FuThrow * statement);
