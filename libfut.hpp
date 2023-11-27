@@ -1667,7 +1667,7 @@ private:
 	void visitIf(FuIf * statement);
 	void visitLock(FuLock * statement);
 	void visitReturn(FuReturn * statement);
-	void resolveCaseType(FuSwitch * statement, std::shared_ptr<FuExpr> value);
+	void resolveCaseType(FuSwitch * statement, const FuClassType * switchPtr, std::shared_ptr<FuExpr> value);
 	void visitSwitch(FuSwitch * statement);
 	void resolveException(std::shared_ptr<FuSymbolReference> symbol);
 	void visitThrow(FuThrow * statement);
@@ -2433,7 +2433,7 @@ private:
 	void writeSlice(const FuExpr * obj, const FuExpr * offset, const FuExpr * length);
 	void writeInsertedArg(const FuType * type, const std::vector<std::shared_ptr<FuExpr>> * args, int index = 0);
 	static bool isIsComparable(const FuExpr * expr);
-	void writeIsVar(const FuExpr * expr, const FuVar * def, FuPriority parent);
+	void writeIsVar(const FuExpr * left, const FuExpr * right, FuPriority parent);
 	static bool isLong(const FuSymbolReference * expr);
 	void writeResources(const std::map<std::string, std::vector<uint8_t>> * resources);
 	void writeMain(const FuMethod * main);
@@ -2473,7 +2473,6 @@ protected:
 	void startBreakGoto() override;
 	void writeSwitchValue(const FuExpr * expr) override;
 	void writeSwitchCaseValue(const FuSwitch * statement, const FuExpr * value) override;
-	void writeSwitchCase(const FuSwitch * statement, const FuCase * kase) override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;
@@ -2492,7 +2491,6 @@ public:
 	void visitSwitch(const FuSwitch * statement) override;
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;
 private:
-	int switchCaseDiscards;
 	void writeToString(const FuExpr * expr, FuPriority parent);
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeVisibility(FuVisibility visibility);
@@ -2507,7 +2505,6 @@ private:
 	void writeArrayBinarySearchFill(const FuExpr * obj, std::string_view method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeWrite(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine);
 	void writeCompileRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex);
-	bool writeSwitchCaseVar(const FuExpr * expr);
 	void createJavaFile(std::string_view className);
 	void writeSignature(const FuMethod * method, int paramCount);
 	void writeOverloads(const FuMethod * method, int paramCount);
@@ -2581,7 +2578,7 @@ private:
 	static bool hasLong(const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeMathMaxMin(const FuMethod * method, std::string_view name, int op, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeBoolAndOrAssign(const FuBinaryExpr * expr, FuPriority parent);
-	void writeIsVar(const FuExpr * expr, const FuVar * def, bool assign, FuPriority parent);
+	void writeIsVar(const FuExpr * expr, std::string_view name, const FuSymbol * klass, FuPriority parent);
 	void writeVarCast(const FuVar * def, const FuExpr * value);
 	void writeMain(const FuMethod * main);
 };
@@ -2762,7 +2759,7 @@ private:
 	static bool throws(const FuExpr * expr);
 	void initVarsAtIndent();
 	static bool needsVarBytes(const std::vector<std::shared_ptr<FuStatement>> * statements);
-	void writeSwitchCaseVar(const FuVar * def);
+	void writeSwiftCaseValue(const FuSwitch * statement, const FuExpr * value);
 	void writeSwiftSwitchCaseBody(const FuSwitch * statement, const std::vector<std::shared_ptr<FuStatement>> * body);
 	void writeReadOnlyParameter(const FuVar * param);
 	void writeVisibility(FuVisibility visibility);
@@ -2852,7 +2849,7 @@ private:
 	void writePyRegexOptions(const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeRegexSearch(const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeInclusiveLimit(const FuExpr * limit, int increment, std::string_view incrementString);
-	void writeSwitchCaseVar(const FuVar * def);
+	void writePyCaseValue(const FuExpr * value);
 	void writePyCaseBody(const FuSwitch * statement, const std::vector<std::shared_ptr<FuStatement>> * body);
 	void writePyClass(const FuContainerType * type);
 	bool inheritsConstructor(const FuClass * klass) const;

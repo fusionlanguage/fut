@@ -51,7 +51,7 @@ public class GenD : GenCCppD
 				WriteXmlDoc(code.Text);
 				WriteChar('`');
 				break;
-			case FuDocLine _:
+			case FuDocLine:
 				WriteNewLine();
 				StartDocLine();
 				break;
@@ -375,7 +375,7 @@ public class GenD : GenCCppD
 	protected override void WriteType!(FuType type, bool promote)
 	{
 		switch (type) {
-		case FuIntegerType _:
+		case FuIntegerType:
 			switch (GetTypeId(type, promote)) {
 			case FuId.SByteRange:
 				Write("byte");
@@ -1188,20 +1188,31 @@ public class GenD : GenCCppD
 		base.WriteAssign(expr, parent);
 	}
 
-	void WriteIsVar!(FuExpr expr, FuVar def, FuPriority parent)
+	void WriteIsVar!(FuExpr left, FuExpr right, FuPriority parent)
 	{
-		FuPriority thisPriority = def.Name == "_" ? FuPriority.Primary : FuPriority.Assign;
-		if (parent > thisPriority)
+		if (parent > FuPriority.Equality)
 			WriteChar('(');
-		if (def.Name != "_") {
+		switch (right) {
+		case FuSymbolReference symbol when symbol.Symbol is FuClass klass:
+			Write("cast(");
+			Write(klass.Name);
+			Write(") ");
+			left.Accept(this, FuPriority.Primary);
+			break;
+		case FuVar def:
+			WriteChar('(');
 			WriteName(def);
-			Write(" = ");
+			Write(" = cast(");
+			Write(def.Type.Name);
+			Write(") ");
+			left.Accept(this, FuPriority.Primary);
+			WriteChar(')');
+			break;
+		default:
+			assert false;
 		}
-		Write("cast(");
-		WriteType(def.Type, true);
-		Write(") ");
-		expr.Accept(this, FuPriority.Primary);
-		if (parent > thisPriority)
+		Write(" !is null");
+		if (parent > FuPriority.Equality)
 			WriteChar(')');
 	}
 
@@ -1209,26 +1220,7 @@ public class GenD : GenCCppD
 	{
 		switch (expr.Op) {
 		case FuToken.Is:
-			if (parent >= FuPriority.Or && parent <= FuPriority.Mul)
-				parent = FuPriority.Primary;
-			if (parent > FuPriority.Equality)
-				WriteChar('(');
-			switch (expr.Right) {
-			case FuSymbolReference symbol:
-				Write("cast(");
-				Write(symbol.Symbol.Name);
-				Write(") ");
-				expr.Left.Accept(this, FuPriority.Primary);
-				break;
-			case FuVar def:
-				WriteIsVar(expr.Left, def, FuPriority.Equality);
-				break;
-			default:
-				assert false;
-			}
-			Write(" !is null");
-			if (parent > FuPriority.Equality)
-				WriteChar(')');
+			WriteIsVar(expr.Left, expr.Right, parent >= FuPriority.Or && parent <= FuPriority.Mul ? FuPriority.Primary : parent);
 			return;
 		case FuToken.Plus:
 			if (expr.Type.Id == FuId.StringStorageType) {
@@ -1301,12 +1293,15 @@ public class GenD : GenCCppD
 
 	protected override void WriteSwitchCaseCond!(FuSwitch statement, FuExpr value, FuPriority parent)
 	{
-		if (value is FuVar def) {
-			WriteIsVar(statement.Value, def, FuPriority.Equality); // FIXME: side effect in every if
-			Write(" !is null");
-		}
-		else
+		switch (value) {
+		case FuSymbolReference symbol when symbol.Symbol is FuClass:
+		case FuVar:
+			WriteIsVar(statement.Value, value, parent); // FIXME: side effect in every if
+			break;
+		default:
 			base.WriteSwitchCaseCond(statement, value, parent);
+			break;
+		}
 	}
 
 	internal override void VisitSwitch!(FuSwitch statement)

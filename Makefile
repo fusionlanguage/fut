@@ -77,7 +77,7 @@ FUT = java -cp java org.fusionlanguage.Fut
 fut: java/org/fusionlanguage/Fut.class
 
 java/org/fusionlanguage/Fut.class: Fut.java java/GenBase.java
-	$(DO)$(JAVAC) -d java Fut.java java/*.java
+	$(DO)$(JAVAC) -source 21 --enable-preview -d java Fut.java java/*.java
 
 else ifeq ($(FUT_HOST),node)
 

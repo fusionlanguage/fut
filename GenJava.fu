@@ -20,8 +20,6 @@
 
 public class GenJava : GenTyped
 {
-	int SwitchCaseDiscards;
-
 	protected override string GetTargetName() => "Java";
 
 	internal override void VisitLiteralLong!(long value)
@@ -177,7 +175,7 @@ public class GenJava : GenTyped
 	protected override void WriteName!(FuSymbol symbol)
 	{
 		switch (symbol) {
-		case FuContainerType _:
+		case FuContainerType:
 			Write(symbol.Name);
 			break;
 		case FuConst konst:
@@ -187,7 +185,7 @@ public class GenJava : GenTyped
 			}
 			WriteUppercaseWithUnderscores(symbol.Name);
 			break;
-		case FuVar _:
+		case FuVar:
 			if (symbol.Parent is FuForeach forEach && forEach.Count() == 2) {
 				FuVar element = forEach.GetVar();
 				WriteCamelCaseNotKeyword(element.Name);
@@ -196,7 +194,7 @@ public class GenJava : GenTyped
 			else
 				WriteCamelCaseNotKeyword(symbol.Name);
 			break;
-		case FuMember _:
+		case FuMember:
 			WriteCamelCaseNotKeyword(symbol.Name);
 			break;
 		default:
@@ -267,7 +265,7 @@ public class GenJava : GenTyped
 	void WriteJavaType!(FuType type, bool promote, bool needClass)
 	{
 		switch (type) {
-		case FuNumericType _:
+		case FuNumericType:
 			switch (GetTypeId(type, promote)) {
 			case FuId.SByteRange:
 				Write(needClass ? "Byte" : "byte");
@@ -1130,46 +1128,27 @@ public class GenJava : GenTyped
 
 	protected override void WriteSwitchCaseValue!(FuSwitch statement, FuExpr value)
 	{
-		if (value is FuSymbolReference symbol && symbol.Symbol.Parent is FuEnum enu && IsJavaEnum(enu))
-			WriteUppercaseWithUnderscores(symbol.Name);
-		else
-			base.WriteSwitchCaseValue(statement, value);
-	}
-
-	bool WriteSwitchCaseVar!(FuExpr expr)
-	{
-		expr.Accept(this, FuPriority.Argument);
-		if (expr is FuVar def && def.Name == "_") {
-			// javac: "as of release 9, '_' is a keyword, and may not be used as an identifier"
-			VisitLiteralLong(this.SwitchCaseDiscards++);
-			return true;
-		}
-		return false;
-	}
-
-	protected override void WriteSwitchCase!(FuSwitch statement, FuCase kase)
-	{
-		if (statement.IsTypeMatching()) {
-			foreach (FuExpr expr in kase.Values) {
-				Write("case ");
-				bool discard;
-				if (expr is FuBinaryExpr when1) {
-					discard = WriteSwitchCaseVar(when1.Left);
-					Write(" when ");
-					when1.Right.Accept(this, FuPriority.Argument);
-				}
-				else
-					discard = WriteSwitchCaseVar(expr);
-				WriteCharLine(':');
-				this.Indent++;
-				WriteSwitchCaseBody(kase.Body);
-				this.Indent--;
-				if (discard)
-					this.SwitchCaseDiscards--;
+		switch (value) {
+		case FuSymbolReference symbol:
+			if (symbol.Symbol.Parent is FuEnum enu && IsJavaEnum(enu)) {
+				WriteUppercaseWithUnderscores(symbol.Name);
+				return;
 			}
+			if (symbol.Symbol is FuClass klass) {
+				Write(klass.Name);
+				Write(" _");
+				return;
+			}
+			break;
+		case FuBinaryExpr when1 when when1.Op == FuToken.When:
+			WriteSwitchCaseValue(statement, when1.Left);
+			Write(" when ");
+			when1.Right.Accept(this, FuPriority.Argument);
+			return;
+		default:
+			break;
 		}
-		else
-			base.WriteSwitchCase(statement, kase);
+		base.WriteSwitchCaseValue(statement, value);
 	}
 
 	internal override void VisitSwitch!(FuSwitch statement)
@@ -1443,7 +1422,6 @@ public class GenJava : GenTyped
 
 	public override void WriteProgram!(FuProgram program)
 	{
-		this.SwitchCaseDiscards = 0;
 		WriteTypes(program);
 		if (program.Resources.Count > 0)
 			WriteResources();

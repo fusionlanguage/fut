@@ -276,17 +276,17 @@ public class GenC : GenCCpp
 	protected override void WriteName!(FuSymbol symbol)
 	{
 		switch (symbol) {
-		case FuContainerType _:
+		case FuContainerType:
 			Write(this.Namespace);
 			Write(symbol.Name);
 			break;
-		case FuMethod _:
+		case FuMethod:
 			Write(this.Namespace);
 			Write(symbol.Parent.Name);
 			WriteChar('_');
 			Write(symbol.Name);
 			break;
-		case FuConst _:
+		case FuConst:
 			if (symbol.Parent is FuContainerType) {
 				Write(this.Namespace);
 				Write(symbol.Parent.Name);
@@ -516,12 +516,12 @@ public class GenC : GenCCpp
 	{
 		FuType baseType = type.GetBaseType();
 		switch (baseType) {
-		case FuIntegerType _:
+		case FuIntegerType:
 			WriteNumericType(GetTypeId(baseType, promote && type == baseType));
 			if (space)
 				WriteChar(' ');
 			break;
-		case FuEnum _:
+		case FuEnum:
 			if (baseType.Id == FuId.BoolType) {
 				IncludeStdBool();
 				Write("bool");
@@ -663,7 +663,7 @@ public class GenC : GenCCpp
 		WriteType(elementType, false);
 		Write("), ");
 		switch (elementType) {
-		case FuStringStorageType _:
+		case FuStringStorageType:
 			this.PtrConstruct = true;
 			this.ListFrees["String"] = "free(*(void **) ptr)";
 			Write("(FuMethodPtr) FuPtr_Construct, FuList_FreeString");
@@ -671,7 +671,7 @@ public class GenC : GenCCpp
 		case FuStorageType storage:
 			WriteXstructorPtrs(storage.Class);
 			break;
-		case FuDynamicPtrType _:
+		case FuDynamicPtrType:
 			this.PtrConstruct = true;
 			this.SharedRelease = true;
 			this.ListFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
@@ -726,8 +726,8 @@ public class GenC : GenCCpp
 	string() GetDictionaryDestroy!(FuType type)
 	{
 		switch (type) {
-		case FuStringStorageType _:
-		case FuArrayStorageType _:
+		case FuStringStorageType:
+		case FuArrayStorageType:
 			return "free";
 		case FuStorageType storage:
 			switch (storage.Class.Id) {
@@ -743,7 +743,7 @@ public class GenC : GenCCpp
 			default:
 				return NeedsDestructor(storage.Class) ? $"(GDestroyNotify) {storage.Class.Name}_Delete" /* TODO: emit */ : "free";
 			}
-		case FuDynamicPtrType _:
+		case FuDynamicPtrType:
 			this.SharedRelease = true;
 			return "FuShared_Release";
 		default:
@@ -782,11 +782,11 @@ public class GenC : GenCCpp
 		else {
 			Write("g_tree_new_full(FuTree_Compare");
 			switch (keyType) {
-			case FuIntegerType _:
+			case FuIntegerType:
 				this.TreeCompareInteger = true;
 				Write("Integer");
 				break;
-			case FuStringType _:
+			case FuStringType:
 				this.TreeCompareString = true;
 				Write("String");
 				break;
@@ -911,8 +911,8 @@ public class GenC : GenCCpp
 				WriteCTemporaries(assign.Right);
 			}
 			break;
-		case FuLiteral _:
-		case FuLambdaExpr _:
+		case FuLiteral:
+		case FuLambdaExpr:
 			break;
 		case FuInterpolatedString interp:
 			foreach (FuInterpolatedPart part in interp.Parts) {
@@ -966,8 +966,8 @@ public class GenC : GenCCpp
 		switch (expr) {
 		case FuAggregateInitializer init:
 			return init.Items.Any(field => HasTemporariesToDestruct(field));
-		case FuLiteral _:
-		case FuLambdaExpr _:
+		case FuLiteral:
+		case FuLambdaExpr:
 			return false;
 		case FuInterpolatedString interp:
 			return interp.Parts.Any(part => HasTemporariesToDestruct(part.Argument));
@@ -1023,11 +1023,11 @@ public class GenC : GenCCpp
 	void WriteGConstPointerCast!(FuExpr expr)
 	{
 		switch (expr.Type) {
-		case FuStorageType _:
+		case FuStorageType:
 			WriteChar('&');
 			expr.Accept(this, FuPriority.Primary);
 			break;
-		case FuClassType _:
+		case FuClassType:
 			expr.Accept(this, FuPriority.Argument);
 			break;
 		default:
@@ -1394,11 +1394,11 @@ public class GenC : GenCCpp
 			WriteArrayElement(def, nesting);
 			Write(", ");
 			switch (type.AsClassType().GetElementType()) {
-			case FuStringStorageType _:
+			case FuStringStorageType:
 				this.ListFrees["String"] = "free(*(void **) ptr)";
 				Write("FuList_FreeString");
 				break;
-			case FuDynamicPtrType _:
+			case FuDynamicPtrType:
 				this.SharedRelease = true;
 				this.ListFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
 				Write("FuList_FreeShared");
@@ -1685,7 +1685,7 @@ public class GenC : GenCCpp
 				WritePrintfLongPrefix();
 			WriteChar('d');
 			break;
-		case FuFloatingType _:
+		case FuFloatingType:
 			WriteChar('g');
 			break;
 		default:
@@ -2086,7 +2086,7 @@ public class GenC : GenCCpp
 		case FuId.ListAdd:
 		case FuId.StackPush:
 			switch (obj.Type.AsClassType().GetElementType()) {
-			case FuArrayStorageType _:
+			case FuArrayStorageType:
 			case FuStorageType storage when storage.Class.Id == FuId.None && !NeedsConstructor(storage.Class):
 				Write("g_array_set_size(");
 				obj.Accept(this, FuPriority.Argument);
@@ -3265,11 +3265,11 @@ public class GenC : GenCCpp
 			return true;
 		default:
 			switch (type) {
-			case FuRangeType _:
+			case FuRangeType:
 				return true;
-			case FuStorageType _:
+			case FuStorageType:
 				return false;
-			case FuClassType _:
+			case FuClassType:
 				return !type.Nullable;
 			default:
 				return false;

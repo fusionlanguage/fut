@@ -890,7 +890,7 @@ public class FuSwitch : FuCondCompletionStatement
 	static bool HasBreak(FuStatement statement)
 	{
 		switch (statement) {
-		case FuBreak _:
+		case FuBreak:
 			return true;
 		case FuIf ifStatement:
 			return HasBreak(ifStatement.OnTrue) || (ifStatement.OnFalse != null && HasBreak(ifStatement.OnFalse));
@@ -916,7 +916,7 @@ public class FuSwitch : FuCondCompletionStatement
 	static bool HasContinue(FuStatement statement)
 	{
 		switch (statement) {
-		case FuContinue _:
+		case FuContinue:
 			return true;
 		case FuIf ifStatement:
 			return HasContinue(ifStatement.OnTrue) || (ifStatement.OnFalse != null && HasContinue(ifStatement.OnFalse));
@@ -1007,7 +1007,7 @@ class FuRangeType : FuIntegerType
 		switch (right) {
 		case FuRangeType range:
 			return this.Min <= range.Max && this.Max >= range.Min;
-		case FuIntegerType _:
+		case FuIntegerType:
 			return true;
 		default:
 			return right.Id == FuId.FloatIntType;
@@ -1370,8 +1370,8 @@ class FuPrintableType : FuType
 	public override bool IsAssignableFrom(FuType right)
 	{
 		switch (right) {
-		case FuNumericType _:
-		case FuStringType _:
+		case FuNumericType:
+		case FuStringType:
 			return true;
 		case FuClassType klass:
 			return klass.Class.HasToString();

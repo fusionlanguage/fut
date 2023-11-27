@@ -31,12 +31,12 @@ public static class Test
 			if (a == null)
 				return false;
 			break;
-		case Cow _: //FAIL: java 17 --enable-preview
-		case Dog _:
+		case Cow: //FAIL: java 21 --enable-preview
+		case Dog:
 			if (a == null)
 				break;
 			switch (a) {
-			case Dog _:
+			case Dog:
 				break;
 			default:
 				return false;

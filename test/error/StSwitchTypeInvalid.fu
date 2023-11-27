@@ -13,22 +13,22 @@ public class Test : Base
 		Test() o;
 		Test p = o;
 		switch (p) {
-		case 5: //ERROR: Expected 'case Type name'
+		case 5: //ERROR: Expected 'case Class'
 			return false;
 		case int i: //ERROR: 'case' with non-reference type
 			return false;
 		case Test! rw: //ERROR: 'Test' cannot be casted to 'Test!'
 			return false;
-		case Base _: //ERROR: 'p' is 'Test', 'case Base' would always match
+		case Base: //ERROR: 'p' is 'Test', 'case Base' would always match
 			return false;
-		case Unrelated _: //ERROR: 'Test' is not base class of 'Unrelated', 'case Unrelated' would never match
+		case Unrelated: //ERROR: 'Test' is not base class of 'Unrelated', 'case Unrelated' would never match
 			return false;
 		default:
 			break;
 		}
 		Base! w = o;
 		switch (w) {
-		case Test() _: //ERROR: 'case' with non-reference type
+		case Test() t: //ERROR: 'case' with non-reference type
 			return true;
 		default:
 			return false;

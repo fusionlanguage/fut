@@ -351,7 +351,7 @@ public abstract class GenBase : FuVisitor
 				WriteDocCode(code.Text);
 				Write("</code>");
 				break;
-			case FuDocLine _:
+			case FuDocLine:
 				WriteNewLine();
 				StartDocLine();
 				break;
@@ -530,9 +530,9 @@ public abstract class GenBase : FuVisitor
 	static int GetPrintfFormat(FuType type, int format)
 	{
 		switch (type) {
-		case FuIntegerType _:
+		case FuIntegerType:
 			return format == 'x' || format == 'X' ? format : 'd';
-		case FuNumericType _:
+		case FuNumericType:
 			switch (format) {
 			case 'E':
 			case 'e':
@@ -545,8 +545,8 @@ public abstract class GenBase : FuVisitor
 			default:
 				return 'g';
 			}
-		// case FuStringType _: - matched by FuClassType
-		case FuClassType _:
+		// case FuStringType: - matched by FuClassType
+		case FuClassType:
 			return 's';
 		default:
 			assert false;
@@ -1396,8 +1396,8 @@ public abstract class GenBase : FuVisitor
 		switch (expr) {
 		case FuAggregateInitializer init:
 			return init.Items.Any(item => HasTemporaries(item));
-		case FuLiteral _:
-		case FuLambdaExpr _:
+		case FuLiteral:
+		case FuLambdaExpr:
 			return false;
 		case FuInterpolatedString interp:
 			return interp.Parts.Any(part => HasTemporaries(part.Argument));
@@ -1461,8 +1461,8 @@ public abstract class GenBase : FuVisitor
 				WriteTemporaries(assign.Right);
 			}
 			break;
-		case FuLiteral _:
-		case FuLambdaExpr _:
+		case FuLiteral:
+		case FuLambdaExpr:
 			break;
 		case FuInterpolatedString interp:
 			foreach (FuInterpolatedPart part in interp.Parts)
@@ -1706,7 +1706,7 @@ public abstract class GenBase : FuVisitor
 
 	protected void DefineVar!(FuExpr value)
 	{
-		if (value is FuVar def && def.Name != "_") {
+		if (value is FuVar def) {
 			WriteVar(def);
 			EndStatement();
 		}

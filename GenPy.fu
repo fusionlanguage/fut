@@ -220,7 +220,7 @@ public class GenPy : GenPySwift
 			}
 			WriteUppercaseWithUnderscores(symbol.Name);
 			break;
-		case FuVar _:
+		case FuVar:
 			WriteNameNotKeyword(symbol.Name);
 			break;
 		case FuMember member:
@@ -264,10 +264,10 @@ public class GenPy : GenPySwift
 	void WriteTypeAnnotation!(FuType type, bool nullable = false)
 	{
 		switch (type) {
-		case FuIntegerType _:
+		case FuIntegerType:
 			Write("int");
 			break;
-		case FuFloatingType _:
+		case FuFloatingType:
 			Write("float");
 			break;
 		case FuEnum enu:
@@ -628,14 +628,14 @@ public class GenPy : GenPySwift
 	void WritePyNewArray!(FuType elementType, FuExpr? value, FuExpr lengthExpr)
 	{
 		switch (elementType) {
-		case FuStorageType _:
+		case FuStorageType:
 			Write("[ ");
 			WriteNewStorage(elementType);
 			Write(" for _ in range(");
 			lengthExpr.Accept(this, FuPriority.Argument);
 			Write(") ]");
 			break;
-		case FuNumericType _:
+		case FuNumericType:
 			int c = GetArrayCode(elementType);
 			if (c == 'B' && (value == null || value.IsLiteralZero()))
 				WriteCall("bytearray", lengthExpr);
@@ -1296,13 +1296,26 @@ public class GenPy : GenPySwift
 		Write("result");
 	}
 
-	void WriteSwitchCaseVar!(FuVar def)
+	void WritePyCaseValue!(FuExpr value)
 	{
-		WriteName(def.Type.AsClassType().Class);
-		Write("()");
-		if (def.Name != "_") {
-			Write(" as ");
+		switch (value) {
+		case FuSymbolReference symbol when symbol.Symbol is FuClass klass:
+			WriteName(klass);
+			Write("()");
+			break;
+		case FuVar def:
+			WriteName(def.Type.AsClassType().Class);
+			Write("() as ");
 			WriteNameNotKeyword(def.Name);
+			break;
+		case FuBinaryExpr when1 when when1.Op == FuToken.When:
+			WritePyCaseValue(when1.Left);
+			Write(" if ");
+			when1.Right.Accept(this, FuPriority.Argument);
+			break;
+		default:
+			value.Accept(this, FuPriority.Or);
+			break;
 		}
 	}
 
@@ -1332,22 +1345,7 @@ public class GenPy : GenPySwift
 			string op = "case ";
 			foreach (FuExpr caseValue in kase.Values) {
 				Write(op);
-				switch (caseValue) {
-				case FuVar def:
-					WriteSwitchCaseVar(def);
-					break;
-				case FuBinaryExpr when1:
-					if (when1.Left is FuVar whenVar)
-						WriteSwitchCaseVar(whenVar);
-					else
-						when1.Left.Accept(this, FuPriority.Argument);
-					Write(" if ");
-					when1.Right.Accept(this, FuPriority.Argument);
-					break;
-				default:
-					caseValue.Accept(this, FuPriority.Or);
-					break;
-				}
+				WritePyCaseValue(caseValue);
 				op = " | ";
 			}
 			WritePyCaseBody(statement, kase.Body);

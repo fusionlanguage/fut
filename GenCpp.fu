@@ -178,11 +178,11 @@ public class GenCpp : GenCCpp
 	protected override void WriteName!(FuSymbol symbol)
 	{
 		switch (symbol) {
-		case FuContainerType _:
+		case FuContainerType:
 			Write(symbol.Name);
 			break;
-		case FuVar _:
-		case FuMember _:
+		case FuVar:
+		case FuMember:
 			WriteCamelCaseNotKeyword(symbol.Name);
 			break;
 		default:
@@ -292,14 +292,14 @@ public class GenCpp : GenCCpp
 	protected override void WriteType!(FuType type, bool promote)
 	{
 		switch (type) {
-		case FuIntegerType _:
+		case FuIntegerType:
 			WriteNumericType(GetTypeId(type, promote));
 			break;
-		case FuStringStorageType _:
+		case FuStringStorageType:
 			Include("string");
 			Write("std::string");
 			break;
-		case FuStringType _:
+		case FuStringType:
 			Include("string_view");
 			Write("std::string_view");
 			break;
@@ -1234,11 +1234,11 @@ public class GenCpp : GenCCpp
 	protected override void WriteArrayPtr!(FuExpr expr, FuPriority parent)
 	{
 		switch (expr.Type) {
-		case FuArrayStorageType _:
-		case FuStringType _:
+		case FuArrayStorageType:
+		case FuStringType:
 			WritePostfix(expr, ".data()");
 			break;
-		case FuDynamicPtrType _:
+		case FuDynamicPtrType:
 			WritePostfix(expr, ".get()");
 			break;
 		case FuClassType klass when klass.Class.Id == FuId.ListClass:
@@ -1375,12 +1375,10 @@ public class GenCpp : GenCCpp
 
 	void WriteIsVar!(FuExpr expr, FuVar def, FuPriority parent)
 	{
-		if (def.Name != "_") {
-			if (parent > FuPriority.Assign)
-				WriteChar('(');
-			WriteName(def);
-			Write(" = ");
-		}
+		if (parent > FuPriority.Assign)
+			WriteChar('(');
+		WriteName(def);
+		Write(" = ");
 		if (def.Type is FuDynamicPtrType dynamic) {
 			Write("std::dynamic_pointer_cast<");
 			Write(dynamic.Class.Name);
@@ -1391,7 +1389,7 @@ public class GenCpp : GenCCpp
 			WriteType(def.Type, true);
 			WriteGtRawPtr(expr);
 		}
-		if (def.Name != "_" && parent > FuPriority.Assign)
+		if (parent > FuPriority.Assign)
 			WriteChar(')');
 	}
 
@@ -1584,13 +1582,22 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteSwitchCaseCond!(FuSwitch statement, FuExpr value, FuPriority parent)
 	{
-		if (value is FuVar def) {
-			if (parent == FuPriority.Argument && def.Name != "_")
+		switch (value) {
+		case FuSymbolReference symbol when symbol.Symbol is FuClass:
+			Write("dynamic_cast<const ");
+			Write(symbol.Symbol.Name);
+			Write(" *");
+			WriteGtRawPtr(statement.Value); // FIXME: side effect in every if
+			break;
+		case FuVar def:
+			if (parent == FuPriority.Argument)
 				WriteType(def.Type, true);
 			WriteIsVar(statement.Value, def, parent); // FIXME: side effect in every if
-		}
-		else
+			break;
+		default:
 			base.WriteSwitchCaseCond(statement, value, parent);
+			break;
+		}
 	}
 
 	static bool IsIsVar(FuExpr expr) => expr is FuBinaryExpr binary && binary.Op == FuToken.Is && binary.Right is FuVar;
@@ -1598,17 +1605,17 @@ public class GenCpp : GenCCpp
 	bool HasVariables(FuStatement statement)
 	{
 		switch (statement) {
-		case FuVar _:
+		case FuVar:
 			return true;
 		case FuAssert asrt:
 			return IsIsVar(asrt.Cond);
-		case FuBlock _:
-		case FuBreak _:
-		case FuConst _:
-		case FuContinue _:
-		case FuLock _:
-		case FuNative _:
-		case FuThrow _:
+		case FuBlock:
+		case FuBreak:
+		case FuConst:
+		case FuContinue:
+		case FuLock:
+		case FuNative:
+		case FuThrow:
 			return false;
 		case FuIf ifStatement:
 			return HasTemporaries(ifStatement.Cond) && !IsIsVar(ifStatement.Cond);

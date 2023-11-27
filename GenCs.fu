@@ -54,7 +54,7 @@ public class GenCs : GenTyped
 					break;
 				}
 				break;
-			case FuDocLine _:
+			case FuDocLine:
 				WriteNewLine();
 				StartDocLine();
 				break;
@@ -201,7 +201,7 @@ public class GenCs : GenTyped
 	protected override void WriteType!(FuType type, bool promote)
 	{
 		switch (type) {
-		case FuIntegerType _:
+		case FuIntegerType:
 			switch (GetTypeId(type, promote)) {
 			case FuId.SByteRange:
 				Write("sbyte");

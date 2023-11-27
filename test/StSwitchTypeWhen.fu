@@ -27,10 +27,10 @@ public static class Test
 	static bool IsCat(Animal a)
 	{
 		switch (a) { //FAIL: c cl
-		case Cow _:
-		case Dog _:
+		case Cow: //FAIL: java 21 --enable-preview
+		case Dog:
 			return false;
-		case Cat c when c.Name == "Simba": //FAIL: java 19 --enable-preview
+		case Cat c when c.Name == "Simba":
 			return true;
 		default:
 			return false;

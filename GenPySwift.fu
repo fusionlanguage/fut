@@ -38,7 +38,7 @@ public abstract class GenPySwift : GenBase
 				WriteDocCode(code.Text);
 				WriteChar('`');
 				break;
-			case FuDocLine _:
+			case FuDocLine:
 				WriteNewLine();
 				StartDocLine();
 				break;
@@ -142,9 +142,9 @@ public abstract class GenPySwift : GenBase
 		switch (expr) {
 		case FuVar def:
 			return def.Value != null && VisitXcrement(def.Value, postfix, write);
-		case FuAggregateInitializer _:
-		case FuLiteral _:
-		case FuLambdaExpr _:
+		case FuAggregateInitializer:
+		case FuLiteral:
+		case FuLambdaExpr:
 			return false;
 		case FuInterpolatedString interp:
 			seen = false;

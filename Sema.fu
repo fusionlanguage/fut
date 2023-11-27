@@ -132,7 +132,7 @@ public class FuSema
 			FuExpr# arg = VisitExpr(part.Argument);
 			if (Coerce(arg, this.Program.System.PrintableType)) {
 				switch (arg.Type) {
-				case FuIntegerType _:
+				case FuIntegerType:
 					switch (part.Format) {
 					case ' ':
 						if (arg is FuLiteralLong literalLong && part.WidthExpr == null) {
@@ -152,7 +152,7 @@ public class FuSema
 						break;
 					}
 					break;
-				case FuFloatingType _:
+				case FuFloatingType:
 					switch (part.Format) {
 					case ' ':
 					case 'F':
@@ -529,7 +529,7 @@ public class FuSema
 				case FuFor! forLoop:
 					forLoop.IsRange = false;
 					break;
-				case FuForeach _:
+				case FuForeach:
 					ReportError(expr, "Cannot assign a foreach iteration variable");
 					break;
 				default:
@@ -543,19 +543,19 @@ public class FuSema
 						forLoop.IsRange = false;
 				}
 				break;
-			case FuField _:
+			case FuField:
 				if (symbol.Left == null) {
 					if (!this.CurrentMethod.IsMutator())
 						ReportError(expr, "Cannot modify field in a non-mutating method");
 				}
 				else {
 					switch (symbol.Left.Type) {
-					case FuStorageType _:
+					case FuStorageType:
 						// TODO
 						break;
-					case FuReadWriteClassType _:
+					case FuReadWriteClassType:
 						break;
-					case FuClassType _:
+					case FuClassType:
 						ReportError(expr, "Cannot modify field through a read-only reference");
 						break;
 					default:
@@ -570,12 +570,12 @@ public class FuSema
 			break;
 		case FuBinaryExpr indexing when indexing.Op == FuToken.LeftBracket:
 			switch (indexing.Left.Type) {
-			case FuStorageType _:
+			case FuStorageType:
 				// TODO
 				break;
-			case FuReadWriteClassType _:
+			case FuReadWriteClassType:
 				break;
-			case FuClassType _:
+			case FuClassType:
 				ReportError(expr, "Cannot modify collection through a read-only reference");
 				break;
 			default:
@@ -752,9 +752,9 @@ public class FuSema
 	static bool CanCompareEqual(FuType left, FuType right)
 	{
 		switch (left) {
-		case FuNumericType _:
+		case FuNumericType:
 			return right is FuNumericType;
-		case FuEnum _:
+		case FuEnum:
 			return left == right;
 		case FuClassType leftClass:
 			if (left.Nullable && right.Id == FuId.NullType)
@@ -788,12 +788,12 @@ public class FuSema
 				return ToLiteralBool(expr, (expr.Op == FuToken.NotEqual) ^ (leftDouble.Value == rightDouble.Value));
 			case FuLiteralString leftString when right is FuLiteralString rightString:
 				return ToLiteralBool(expr, (expr.Op == FuToken.NotEqual) ^ (leftString.Value == rightString.Value));
-			case FuLiteralNull _ when right is FuLiteralNull:
-			case FuLiteralFalse _ when right is FuLiteralFalse:
-			case FuLiteralTrue _ when right is FuLiteralTrue:
+			case FuLiteralNull when right is FuLiteralNull:
+			case FuLiteralFalse when right is FuLiteralFalse:
+			case FuLiteralTrue when right is FuLiteralTrue:
 				return ToLiteralBool(expr, expr.Op == FuToken.Equal);
-			case FuLiteralFalse _ when right is FuLiteralTrue:
-			case FuLiteralTrue _ when right is FuLiteralFalse:
+			case FuLiteralFalse when right is FuLiteralTrue:
+			case FuLiteralTrue when right is FuLiteralFalse:
 				return ToLiteralBool(expr, expr.Op == FuToken.NotEqual);
 			default:
 				break;
@@ -1428,7 +1428,7 @@ public class FuSema
 			for (int i = 0; i < items.Count; i++)
 				items[i] = VisitExpr(items[i]);
 			return expr;
-		case FuLiteral _:
+		case FuLiteral:
 			return expr;
 		case FuInterpolatedString# interpolated:
 			return VisitInterpolatedString(interpolated);
@@ -1444,7 +1444,7 @@ public class FuSema
 			return VisitSelectExpr(select);
 		case FuCallExpr# call:
 			return VisitCallExpr(call);
-		case FuLambdaExpr _:
+		case FuLambdaExpr:
 			ReportError(expr, "Unexpected lambda expression");
 			return expr;
 		case FuVar# def:
@@ -1865,17 +1865,21 @@ public class FuSema
 		}
 	}
 
-	void ResolveCaseType!(FuSwitch! statement, FuExpr# value)
+	void ResolveCaseType!(FuSwitch! statement, FuClassType switchPtr, FuExpr# value)
 	{
-		if (value is FuLiteralNull) {
-		}
-		else if (value is FuVar# def) {
-			ResolveType(def);
+		switch (VisitExpr(value)) {
+		case FuLiteralNull:
+			break;
+		case FuSymbolReference symbol when symbol.Symbol is FuClass klass:
+			CheckIsHierarchy(switchPtr, statement.Value, klass, value, "case", "always match", "never match");
+			break;
+		case FuVar def:
 			CheckIsVar(statement.Value, def, def, "case", "always match", "never match");
-			statement.Add(def);
+			break;
+		default:
+			ReportError(value, "Expected 'case Class'");
+			break;
 		}
-		else
-			ReportError(value, "Expected 'case Type name'");
 	}
 
 	void VisitSwitch!(FuSwitch! statement)
@@ -1885,8 +1889,8 @@ public class FuSema
 		if (statement.Value != this.Poison) {
 			switch (statement.Value.Type) {
 			case FuIntegerType i when i.Id != FuId.LongType:
-			case FuEnum _:
-			// case FuStringType _: matched by case FuClassType
+			case FuEnum:
+			// case FuStringType: matched by case FuClassType
 				break;
 			case FuClassType klass when !(klass is FuStorageType):
 				break;
@@ -1902,11 +1906,11 @@ public class FuSema
 					FuExpr# value = kase.Values[i];
 					if (statement.Value.Type is FuClassType switchPtr && switchPtr.Class.Id != FuId.StringClass) {
 						if (value is FuBinaryExpr! when1 && when1.Op == FuToken.When) {
-							ResolveCaseType(statement, when1.Left);
+							ResolveCaseType(statement, switchPtr, when1.Left);
 							when1.Right = ResolveBool(when1.Right);
 						}
 						else
-							ResolveCaseType(statement, value);
+							ResolveCaseType(statement, switchPtr, value);
 					}
 					else if (value is FuBinaryExpr! when1 && when1.Op == FuToken.When) {
 						when1.Left = FoldConst(when1.Left);
@@ -1971,8 +1975,8 @@ public class FuSema
 		case FuBreak brk:
 			brk.LoopOrSwitch.SetCompletesNormally(true);
 			break;
-		case FuContinue _:
-		case FuNative _:
+		case FuContinue:
+		case FuNative:
 			break;
 		case FuDoWhile! doWhile:
 			VisitDoWhile(doWhile);

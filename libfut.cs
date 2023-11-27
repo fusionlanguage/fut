@@ -2369,7 +2369,7 @@ namespace Fusion
 		static bool HasBreak(FuStatement statement)
 		{
 			switch (statement) {
-			case FuBreak _:
+			case FuBreak:
 				return true;
 			case FuIf ifStatement:
 				return HasBreak(ifStatement.OnTrue) || (ifStatement.OnFalse != null && HasBreak(ifStatement.OnFalse));
@@ -2395,7 +2395,7 @@ namespace Fusion
 		static bool HasContinue(FuStatement statement)
 		{
 			switch (statement) {
-			case FuContinue _:
+			case FuContinue:
 				return true;
 			case FuIf ifStatement:
 				return HasContinue(ifStatement.OnTrue) || (ifStatement.OnFalse != null && HasContinue(ifStatement.OnFalse));
@@ -2504,7 +2504,7 @@ namespace Fusion
 			switch (right) {
 			case FuRangeType range:
 				return this.Min <= range.Max && this.Max >= range.Min;
-			case FuIntegerType _:
+			case FuIntegerType:
 				return true;
 			default:
 				return right.Id == FuId.FloatIntType;
@@ -2954,8 +2954,8 @@ namespace Fusion
 		public override bool IsAssignableFrom(FuType right)
 		{
 			switch (right) {
-			case FuNumericType _:
-			case FuStringType _:
+			case FuNumericType:
+			case FuStringType:
 				return true;
 			case FuClassType klass:
 				return klass.Class.HasToString();
@@ -4450,7 +4450,7 @@ namespace Fusion
 				FuExpr arg = VisitExpr(part.Argument);
 				if (Coerce(arg, this.Program.System.PrintableType)) {
 					switch (arg.Type) {
-					case FuIntegerType _:
+					case FuIntegerType:
 						switch (part.Format) {
 						case ' ':
 							if (arg is FuLiteralLong literalLong && part.WidthExpr == null) {
@@ -4470,7 +4470,7 @@ namespace Fusion
 							break;
 						}
 						break;
-					case FuFloatingType _:
+					case FuFloatingType:
 						switch (part.Format) {
 						case ' ':
 						case 'F':
@@ -4838,7 +4838,7 @@ namespace Fusion
 					case FuFor forLoop:
 						forLoop.IsRange = false;
 						break;
-					case FuForeach _:
+					case FuForeach:
 						ReportError(expr, "Cannot assign a foreach iteration variable");
 						break;
 					default:
@@ -4849,18 +4849,18 @@ namespace Fusion
 							forLoop.IsRange = false;
 					}
 					break;
-				case FuField _:
+				case FuField:
 					if (symbol.Left == null) {
 						if (!this.CurrentMethod.IsMutator())
 							ReportError(expr, "Cannot modify field in a non-mutating method");
 					}
 					else {
 						switch (symbol.Left.Type) {
-						case FuStorageType _:
+						case FuStorageType:
 							break;
-						case FuReadWriteClassType _:
+						case FuReadWriteClassType:
 							break;
-						case FuClassType _:
+						case FuClassType:
 							ReportError(expr, "Cannot modify field through a read-only reference");
 							break;
 						default:
@@ -4875,11 +4875,11 @@ namespace Fusion
 				break;
 			case FuBinaryExpr indexing when indexing.Op == FuToken.LeftBracket:
 				switch (indexing.Left.Type) {
-				case FuStorageType _:
+				case FuStorageType:
 					break;
-				case FuReadWriteClassType _:
+				case FuReadWriteClassType:
 					break;
-				case FuClassType _:
+				case FuClassType:
 					ReportError(expr, "Cannot modify collection through a read-only reference");
 					break;
 				default:
@@ -5056,9 +5056,9 @@ namespace Fusion
 		static bool CanCompareEqual(FuType left, FuType right)
 		{
 			switch (left) {
-			case FuNumericType _:
+			case FuNumericType:
 				return right is FuNumericType;
-			case FuEnum _:
+			case FuEnum:
 				return left == right;
 			case FuClassType leftClass:
 				if (left.Nullable && right.Id == FuId.NullType)
@@ -5089,12 +5089,12 @@ namespace Fusion
 					return ToLiteralBool(expr, (expr.Op == FuToken.NotEqual) ^ (leftDouble.Value == rightDouble.Value));
 				case FuLiteralString leftString when right is FuLiteralString rightString:
 					return ToLiteralBool(expr, (expr.Op == FuToken.NotEqual) ^ (leftString.Value == rightString.Value));
-				case FuLiteralNull _ when right is FuLiteralNull:
-				case FuLiteralFalse _ when right is FuLiteralFalse:
-				case FuLiteralTrue _ when right is FuLiteralTrue:
+				case FuLiteralNull when right is FuLiteralNull:
+				case FuLiteralFalse when right is FuLiteralFalse:
+				case FuLiteralTrue when right is FuLiteralTrue:
 					return ToLiteralBool(expr, expr.Op == FuToken.Equal);
-				case FuLiteralFalse _ when right is FuLiteralTrue:
-				case FuLiteralTrue _ when right is FuLiteralFalse:
+				case FuLiteralFalse when right is FuLiteralTrue:
+				case FuLiteralTrue when right is FuLiteralFalse:
 					return ToLiteralBool(expr, expr.Op == FuToken.NotEqual);
 				default:
 					break;
@@ -5687,7 +5687,7 @@ namespace Fusion
 				for (int i = 0; i < items.Count; i++)
 					items[i] = VisitExpr(items[i]);
 				return expr;
-			case FuLiteral _:
+			case FuLiteral:
 				return expr;
 			case FuInterpolatedString interpolated:
 				return VisitInterpolatedString(interpolated);
@@ -5703,7 +5703,7 @@ namespace Fusion
 				return VisitSelectExpr(select);
 			case FuCallExpr call:
 				return VisitCallExpr(call);
-			case FuLambdaExpr _:
+			case FuLambdaExpr:
 				ReportError(expr, "Unexpected lambda expression");
 				return expr;
 			case FuVar def:
@@ -6105,17 +6105,21 @@ namespace Fusion
 			}
 		}
 
-		void ResolveCaseType(FuSwitch statement, FuExpr value)
+		void ResolveCaseType(FuSwitch statement, FuClassType switchPtr, FuExpr value)
 		{
-			if (value is FuLiteralNull) {
-			}
-			else if (value is FuVar def) {
-				ResolveType(def);
+			switch (VisitExpr(value)) {
+			case FuLiteralNull:
+				break;
+			case FuSymbolReference symbol when symbol.Symbol is FuClass klass:
+				CheckIsHierarchy(switchPtr, statement.Value, klass, value, "case", "always match", "never match");
+				break;
+			case FuVar def:
 				CheckIsVar(statement.Value, def, def, "case", "always match", "never match");
-				statement.Add(def);
+				break;
+			default:
+				ReportError(value, "Expected 'case Class'");
+				break;
 			}
-			else
-				ReportError(value, "Expected 'case Type name'");
 		}
 
 		void VisitSwitch(FuSwitch statement)
@@ -6125,7 +6129,7 @@ namespace Fusion
 			if (statement.Value != this.Poison) {
 				switch (statement.Value.Type) {
 				case FuIntegerType i when i.Id != FuId.LongType:
-				case FuEnum _:
+				case FuEnum:
 					break;
 				case FuClassType klass when !(klass is FuStorageType):
 					break;
@@ -6141,11 +6145,11 @@ namespace Fusion
 						FuExpr value = kase.Values[i];
 						if (statement.Value.Type is FuClassType switchPtr && switchPtr.Class.Id != FuId.StringClass) {
 							if (value is FuBinaryExpr when1 && when1.Op == FuToken.When) {
-								ResolveCaseType(statement, when1.Left);
+								ResolveCaseType(statement, switchPtr, when1.Left);
 								when1.Right = ResolveBool(when1.Right);
 							}
 							else
-								ResolveCaseType(statement, value);
+								ResolveCaseType(statement, switchPtr, value);
 						}
 						else if (value is FuBinaryExpr when1 && when1.Op == FuToken.When) {
 							when1.Left = FoldConst(when1.Left);
@@ -6209,8 +6213,8 @@ namespace Fusion
 			case FuBreak brk:
 				brk.LoopOrSwitch.SetCompletesNormally(true);
 				break;
-			case FuContinue _:
-			case FuNative _:
+			case FuContinue:
+			case FuNative:
 				break;
 			case FuDoWhile doWhile:
 				VisitDoWhile(doWhile);
@@ -6880,7 +6884,7 @@ namespace Fusion
 					WriteDocCode(code.Text);
 					Write("</code>");
 					break;
-				case FuDocLine _:
+				case FuDocLine:
 					WriteNewLine();
 					StartDocLine();
 					break;
@@ -7059,9 +7063,9 @@ namespace Fusion
 		static int GetPrintfFormat(FuType type, int format)
 		{
 			switch (type) {
-			case FuIntegerType _:
+			case FuIntegerType:
 				return format == 'x' || format == 'X' ? format : 'd';
-			case FuNumericType _:
+			case FuNumericType:
 				switch (format) {
 				case 'E':
 				case 'e':
@@ -7074,7 +7078,7 @@ namespace Fusion
 				default:
 					return 'g';
 				}
-			case FuClassType _:
+			case FuClassType:
 				return 's';
 			default:
 				throw new NotImplementedException();
@@ -7918,8 +7922,8 @@ namespace Fusion
 			switch (expr) {
 			case FuAggregateInitializer init:
 				return init.Items.Exists(item => HasTemporaries(item));
-			case FuLiteral _:
-			case FuLambdaExpr _:
+			case FuLiteral:
+			case FuLambdaExpr:
 				return false;
 			case FuInterpolatedString interp:
 				return interp.Parts.Exists(part => HasTemporaries(part.Argument));
@@ -7983,8 +7987,8 @@ namespace Fusion
 					WriteTemporaries(assign.Right);
 				}
 				break;
-			case FuLiteral _:
-			case FuLambdaExpr _:
+			case FuLiteral:
+			case FuLambdaExpr:
 				break;
 			case FuInterpolatedString interp:
 				foreach (FuInterpolatedPart part in interp.Parts)
@@ -8228,7 +8232,7 @@ namespace Fusion
 
 		protected void DefineVar(FuExpr value)
 		{
-			if (value is FuVar def && def.Name != "_") {
+			if (value is FuVar def) {
 				WriteVar(def);
 				EndStatement();
 			}
@@ -9436,17 +9440,17 @@ namespace Fusion
 		protected override void WriteName(FuSymbol symbol)
 		{
 			switch (symbol) {
-			case FuContainerType _:
+			case FuContainerType:
 				Write(this.Namespace);
 				Write(symbol.Name);
 				break;
-			case FuMethod _:
+			case FuMethod:
 				Write(this.Namespace);
 				Write(symbol.Parent.Name);
 				WriteChar('_');
 				Write(symbol.Name);
 				break;
-			case FuConst _:
+			case FuConst:
 				if (symbol.Parent is FuContainerType) {
 					Write(this.Namespace);
 					Write(symbol.Parent.Name);
@@ -9675,12 +9679,12 @@ namespace Fusion
 		{
 			FuType baseType = type.GetBaseType();
 			switch (baseType) {
-			case FuIntegerType _:
+			case FuIntegerType:
 				WriteNumericType(GetTypeId(baseType, promote && type == baseType));
 				if (space)
 					WriteChar(' ');
 				break;
-			case FuEnum _:
+			case FuEnum:
 				if (baseType.Id == FuId.BoolType) {
 					IncludeStdBool();
 					Write("bool");
@@ -9822,7 +9826,7 @@ namespace Fusion
 			WriteType(elementType, false);
 			Write("), ");
 			switch (elementType) {
-			case FuStringStorageType _:
+			case FuStringStorageType:
 				this.PtrConstruct = true;
 				this.ListFrees["String"] = "free(*(void **) ptr)";
 				Write("(FuMethodPtr) FuPtr_Construct, FuList_FreeString");
@@ -9830,7 +9834,7 @@ namespace Fusion
 			case FuStorageType storage:
 				WriteXstructorPtrs(storage.Class);
 				break;
-			case FuDynamicPtrType _:
+			case FuDynamicPtrType:
 				this.PtrConstruct = true;
 				this.SharedRelease = true;
 				this.ListFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
@@ -9885,8 +9889,8 @@ namespace Fusion
 		string GetDictionaryDestroy(FuType type)
 		{
 			switch (type) {
-			case FuStringStorageType _:
-			case FuArrayStorageType _:
+			case FuStringStorageType:
+			case FuArrayStorageType:
 				return "free";
 			case FuStorageType storage:
 				switch (storage.Class.Id) {
@@ -9902,7 +9906,7 @@ namespace Fusion
 				default:
 					return NeedsDestructor(storage.Class) ? $"(GDestroyNotify) {storage.Class.Name}_Delete" : "free";
 				}
-			case FuDynamicPtrType _:
+			case FuDynamicPtrType:
 				this.SharedRelease = true;
 				return "FuShared_Release";
 			default:
@@ -9941,11 +9945,11 @@ namespace Fusion
 			else {
 				Write("g_tree_new_full(FuTree_Compare");
 				switch (keyType) {
-				case FuIntegerType _:
+				case FuIntegerType:
 					this.TreeCompareInteger = true;
 					Write("Integer");
 					break;
-				case FuStringType _:
+				case FuStringType:
 					this.TreeCompareString = true;
 					Write("String");
 					break;
@@ -10069,8 +10073,8 @@ namespace Fusion
 					WriteCTemporaries(assign.Right);
 				}
 				break;
-			case FuLiteral _:
-			case FuLambdaExpr _:
+			case FuLiteral:
+			case FuLambdaExpr:
 				break;
 			case FuInterpolatedString interp:
 				foreach (FuInterpolatedPart part in interp.Parts) {
@@ -10124,8 +10128,8 @@ namespace Fusion
 			switch (expr) {
 			case FuAggregateInitializer init:
 				return init.Items.Exists(field => HasTemporariesToDestruct(field));
-			case FuLiteral _:
-			case FuLambdaExpr _:
+			case FuLiteral:
+			case FuLambdaExpr:
 				return false;
 			case FuInterpolatedString interp:
 				return interp.Parts.Exists(part => HasTemporariesToDestruct(part.Argument));
@@ -10180,11 +10184,11 @@ namespace Fusion
 		void WriteGConstPointerCast(FuExpr expr)
 		{
 			switch (expr.Type) {
-			case FuStorageType _:
+			case FuStorageType:
 				WriteChar('&');
 				expr.Accept(this, FuPriority.Primary);
 				break;
-			case FuClassType _:
+			case FuClassType:
 				expr.Accept(this, FuPriority.Argument);
 				break;
 			default:
@@ -10538,11 +10542,11 @@ namespace Fusion
 				WriteArrayElement(def, nesting);
 				Write(", ");
 				switch (type.AsClassType().GetElementType()) {
-				case FuStringStorageType _:
+				case FuStringStorageType:
 					this.ListFrees["String"] = "free(*(void **) ptr)";
 					Write("FuList_FreeString");
 					break;
-				case FuDynamicPtrType _:
+				case FuDynamicPtrType:
 					this.SharedRelease = true;
 					this.ListFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
 					Write("FuList_FreeShared");
@@ -10828,7 +10832,7 @@ namespace Fusion
 					WritePrintfLongPrefix();
 				WriteChar('d');
 				break;
-			case FuFloatingType _:
+			case FuFloatingType:
 				WriteChar('g');
 				break;
 			default:
@@ -11228,7 +11232,7 @@ namespace Fusion
 			case FuId.ListAdd:
 			case FuId.StackPush:
 				switch (obj.Type.AsClassType().GetElementType()) {
-				case FuArrayStorageType _:
+				case FuArrayStorageType:
 				case FuStorageType storage when storage.Class.Id == FuId.None && !NeedsConstructor(storage.Class):
 					Write("g_array_set_size(");
 					obj.Accept(this, FuPriority.Argument);
@@ -12389,11 +12393,11 @@ namespace Fusion
 				return true;
 			default:
 				switch (type) {
-				case FuRangeType _:
+				case FuRangeType:
 					return true;
-				case FuStorageType _:
+				case FuStorageType:
 					return false;
-				case FuClassType _:
+				case FuClassType:
 					return !type.Nullable;
 				default:
 					return false;
@@ -13347,11 +13351,11 @@ namespace Fusion
 		protected override void WriteName(FuSymbol symbol)
 		{
 			switch (symbol) {
-			case FuContainerType _:
+			case FuContainerType:
 				Write(symbol.Name);
 				break;
-			case FuVar _:
-			case FuMember _:
+			case FuVar:
+			case FuMember:
 				WriteCamelCaseNotKeyword(symbol.Name);
 				break;
 			default:
@@ -13461,14 +13465,14 @@ namespace Fusion
 		protected override void WriteType(FuType type, bool promote)
 		{
 			switch (type) {
-			case FuIntegerType _:
+			case FuIntegerType:
 				WriteNumericType(GetTypeId(type, promote));
 				break;
-			case FuStringStorageType _:
+			case FuStringStorageType:
 				Include("string");
 				Write("std::string");
 				break;
-			case FuStringType _:
+			case FuStringType:
 				Include("string_view");
 				Write("std::string_view");
 				break;
@@ -14393,11 +14397,11 @@ namespace Fusion
 		protected override void WriteArrayPtr(FuExpr expr, FuPriority parent)
 		{
 			switch (expr.Type) {
-			case FuArrayStorageType _:
-			case FuStringType _:
+			case FuArrayStorageType:
+			case FuStringType:
 				WritePostfix(expr, ".data()");
 				break;
-			case FuDynamicPtrType _:
+			case FuDynamicPtrType:
 				WritePostfix(expr, ".get()");
 				break;
 			case FuClassType klass when klass.Class.Id == FuId.ListClass:
@@ -14533,12 +14537,10 @@ namespace Fusion
 
 		void WriteIsVar(FuExpr expr, FuVar def, FuPriority parent)
 		{
-			if (def.Name != "_") {
-				if (parent > FuPriority.Assign)
-					WriteChar('(');
-				WriteName(def);
-				Write(" = ");
-			}
+			if (parent > FuPriority.Assign)
+				WriteChar('(');
+			WriteName(def);
+			Write(" = ");
 			if (def.Type is FuDynamicPtrType dynamic) {
 				Write("std::dynamic_pointer_cast<");
 				Write(dynamic.Class.Name);
@@ -14549,7 +14551,7 @@ namespace Fusion
 				WriteType(def.Type, true);
 				WriteGtRawPtr(expr);
 			}
-			if (def.Name != "_" && parent > FuPriority.Assign)
+			if (parent > FuPriority.Assign)
 				WriteChar(')');
 		}
 
@@ -14735,13 +14737,22 @@ namespace Fusion
 
 		protected override void WriteSwitchCaseCond(FuSwitch statement, FuExpr value, FuPriority parent)
 		{
-			if (value is FuVar def) {
-				if (parent == FuPriority.Argument && def.Name != "_")
+			switch (value) {
+			case FuSymbolReference symbol when symbol.Symbol is FuClass:
+				Write("dynamic_cast<const ");
+				Write(symbol.Symbol.Name);
+				Write(" *");
+				WriteGtRawPtr(statement.Value);
+				break;
+			case FuVar def:
+				if (parent == FuPriority.Argument)
 					WriteType(def.Type, true);
 				WriteIsVar(statement.Value, def, parent);
-			}
-			else
+				break;
+			default:
 				base.WriteSwitchCaseCond(statement, value, parent);
+				break;
+			}
 		}
 
 		static bool IsIsVar(FuExpr expr) => expr is FuBinaryExpr binary && binary.Op == FuToken.Is && binary.Right is FuVar;
@@ -14749,17 +14760,17 @@ namespace Fusion
 		bool HasVariables(FuStatement statement)
 		{
 			switch (statement) {
-			case FuVar _:
+			case FuVar:
 				return true;
 			case FuAssert asrt:
 				return IsIsVar(asrt.Cond);
-			case FuBlock _:
-			case FuBreak _:
-			case FuConst _:
-			case FuContinue _:
-			case FuLock _:
-			case FuNative _:
-			case FuThrow _:
+			case FuBlock:
+			case FuBreak:
+			case FuConst:
+			case FuContinue:
+			case FuLock:
+			case FuNative:
+			case FuThrow:
 				return false;
 			case FuIf ifStatement:
 				return HasTemporaries(ifStatement.Cond) && !IsIsVar(ifStatement.Cond);
@@ -15157,7 +15168,7 @@ namespace Fusion
 						break;
 					}
 					break;
-				case FuDocLine _:
+				case FuDocLine:
 					WriteNewLine();
 					StartDocLine();
 					break;
@@ -15304,7 +15315,7 @@ namespace Fusion
 		protected override void WriteType(FuType type, bool promote)
 		{
 			switch (type) {
-			case FuIntegerType _:
+			case FuIntegerType:
 				switch (GetTypeId(type, promote)) {
 				case FuId.SByteRange:
 					Write("sbyte");
@@ -16101,7 +16112,7 @@ namespace Fusion
 					WriteXmlDoc(code.Text);
 					WriteChar('`');
 					break;
-				case FuDocLine _:
+				case FuDocLine:
 					WriteNewLine();
 					StartDocLine();
 					break;
@@ -16424,7 +16435,7 @@ namespace Fusion
 		protected override void WriteType(FuType type, bool promote)
 		{
 			switch (type) {
-			case FuIntegerType _:
+			case FuIntegerType:
 				switch (GetTypeId(type, promote)) {
 				case FuId.SByteRange:
 					Write("byte");
@@ -17232,20 +17243,31 @@ namespace Fusion
 			base.WriteAssign(expr, parent);
 		}
 
-		void WriteIsVar(FuExpr expr, FuVar def, FuPriority parent)
+		void WriteIsVar(FuExpr left, FuExpr right, FuPriority parent)
 		{
-			FuPriority thisPriority = def.Name == "_" ? FuPriority.Primary : FuPriority.Assign;
-			if (parent > thisPriority)
+			if (parent > FuPriority.Equality)
 				WriteChar('(');
-			if (def.Name != "_") {
+			switch (right) {
+			case FuSymbolReference symbol when symbol.Symbol is FuClass klass:
+				Write("cast(");
+				Write(klass.Name);
+				Write(") ");
+				left.Accept(this, FuPriority.Primary);
+				break;
+			case FuVar def:
+				WriteChar('(');
 				WriteName(def);
-				Write(" = ");
+				Write(" = cast(");
+				Write(def.Type.Name);
+				Write(") ");
+				left.Accept(this, FuPriority.Primary);
+				WriteChar(')');
+				break;
+			default:
+				throw new NotImplementedException();
 			}
-			Write("cast(");
-			WriteType(def.Type, true);
-			Write(") ");
-			expr.Accept(this, FuPriority.Primary);
-			if (parent > thisPriority)
+			Write(" !is null");
+			if (parent > FuPriority.Equality)
 				WriteChar(')');
 		}
 
@@ -17253,26 +17275,7 @@ namespace Fusion
 		{
 			switch (expr.Op) {
 			case FuToken.Is:
-				if (parent >= FuPriority.Or && parent <= FuPriority.Mul)
-					parent = FuPriority.Primary;
-				if (parent > FuPriority.Equality)
-					WriteChar('(');
-				switch (expr.Right) {
-				case FuSymbolReference symbol:
-					Write("cast(");
-					Write(symbol.Symbol.Name);
-					Write(") ");
-					expr.Left.Accept(this, FuPriority.Primary);
-					break;
-				case FuVar def:
-					WriteIsVar(expr.Left, def, FuPriority.Equality);
-					break;
-				default:
-					throw new NotImplementedException();
-				}
-				Write(" !is null");
-				if (parent > FuPriority.Equality)
-					WriteChar(')');
+				WriteIsVar(expr.Left, expr.Right, parent >= FuPriority.Or && parent <= FuPriority.Mul ? FuPriority.Primary : parent);
 				return;
 			case FuToken.Plus:
 				if (expr.Type.Id == FuId.StringStorageType) {
@@ -17345,12 +17348,15 @@ namespace Fusion
 
 		protected override void WriteSwitchCaseCond(FuSwitch statement, FuExpr value, FuPriority parent)
 		{
-			if (value is FuVar def) {
-				WriteIsVar(statement.Value, def, FuPriority.Equality);
-				Write(" !is null");
-			}
-			else
+			switch (value) {
+			case FuSymbolReference symbol when symbol.Symbol is FuClass:
+			case FuVar:
+				WriteIsVar(statement.Value, value, parent);
+				break;
+			default:
 				base.WriteSwitchCaseCond(statement, value, parent);
+				break;
+			}
 		}
 
 		internal override void VisitSwitch(FuSwitch statement)
@@ -17612,8 +17618,6 @@ namespace Fusion
 	public class GenJava : GenTyped
 	{
 
-		int SwitchCaseDiscards;
-
 		protected override string GetTargetName() => "Java";
 
 		internal override void VisitLiteralLong(long value)
@@ -17765,7 +17769,7 @@ namespace Fusion
 		protected override void WriteName(FuSymbol symbol)
 		{
 			switch (symbol) {
-			case FuContainerType _:
+			case FuContainerType:
 				Write(symbol.Name);
 				break;
 			case FuConst konst:
@@ -17775,7 +17779,7 @@ namespace Fusion
 				}
 				WriteUppercaseWithUnderscores(symbol.Name);
 				break;
-			case FuVar _:
+			case FuVar:
 				if (symbol.Parent is FuForeach forEach && forEach.Count() == 2) {
 					FuVar element = forEach.GetVar();
 					WriteCamelCaseNotKeyword(element.Name);
@@ -17784,7 +17788,7 @@ namespace Fusion
 				else
 					WriteCamelCaseNotKeyword(symbol.Name);
 				break;
-			case FuMember _:
+			case FuMember:
 				WriteCamelCaseNotKeyword(symbol.Name);
 				break;
 			default:
@@ -17855,7 +17859,7 @@ namespace Fusion
 		void WriteJavaType(FuType type, bool promote, bool needClass)
 		{
 			switch (type) {
-			case FuNumericType _:
+			case FuNumericType:
 				switch (GetTypeId(type, promote)) {
 				case FuId.SByteRange:
 					Write(needClass ? "Byte" : "byte");
@@ -18696,45 +18700,27 @@ namespace Fusion
 
 		protected override void WriteSwitchCaseValue(FuSwitch statement, FuExpr value)
 		{
-			if (value is FuSymbolReference symbol && symbol.Symbol.Parent is FuEnum enu && IsJavaEnum(enu))
-				WriteUppercaseWithUnderscores(symbol.Name);
-			else
-				base.WriteSwitchCaseValue(statement, value);
-		}
-
-		bool WriteSwitchCaseVar(FuExpr expr)
-		{
-			expr.Accept(this, FuPriority.Argument);
-			if (expr is FuVar def && def.Name == "_") {
-				VisitLiteralLong(this.SwitchCaseDiscards++);
-				return true;
-			}
-			return false;
-		}
-
-		protected override void WriteSwitchCase(FuSwitch statement, FuCase kase)
-		{
-			if (statement.IsTypeMatching()) {
-				foreach (FuExpr expr in kase.Values) {
-					Write("case ");
-					bool discard;
-					if (expr is FuBinaryExpr when1) {
-						discard = WriteSwitchCaseVar(when1.Left);
-						Write(" when ");
-						when1.Right.Accept(this, FuPriority.Argument);
-					}
-					else
-						discard = WriteSwitchCaseVar(expr);
-					WriteCharLine(':');
-					this.Indent++;
-					WriteSwitchCaseBody(kase.Body);
-					this.Indent--;
-					if (discard)
-						this.SwitchCaseDiscards--;
+			switch (value) {
+			case FuSymbolReference symbol:
+				if (symbol.Symbol.Parent is FuEnum enu && IsJavaEnum(enu)) {
+					WriteUppercaseWithUnderscores(symbol.Name);
+					return;
 				}
+				if (symbol.Symbol is FuClass klass) {
+					Write(klass.Name);
+					Write(" _");
+					return;
+				}
+				break;
+			case FuBinaryExpr when1 when when1.Op == FuToken.When:
+				WriteSwitchCaseValue(statement, when1.Left);
+				Write(" when ");
+				when1.Right.Accept(this, FuPriority.Argument);
+				return;
+			default:
+				break;
 			}
-			else
-				base.WriteSwitchCase(statement, kase);
+			base.WriteSwitchCaseValue(statement, value);
 		}
 
 		internal override void VisitSwitch(FuSwitch statement)
@@ -19002,7 +18988,6 @@ namespace Fusion
 
 		public override void WriteProgram(FuProgram program)
 		{
-			this.SwitchCaseDiscards = 0;
 			WriteTypes(program);
 			if (program.Resources.Count > 0)
 				WriteResources();
@@ -19054,7 +19039,7 @@ namespace Fusion
 		protected override void WriteName(FuSymbol symbol)
 		{
 			switch (symbol) {
-			case FuContainerType _:
+			case FuContainerType:
 				Write(symbol.Name);
 				break;
 			case FuConst konst:
@@ -19066,7 +19051,7 @@ namespace Fusion
 				}
 				WriteUppercaseWithUnderscores(symbol.Name);
 				break;
-			case FuVar _:
+			case FuVar:
 				WriteCamelCaseNotKeyword(symbol.Name);
 				break;
 			case FuMember member:
@@ -19917,13 +19902,13 @@ namespace Fusion
 			expr.Left.Accept(this, FuPriority.Assign);
 		}
 
-		void WriteIsVar(FuExpr expr, FuVar def, bool assign, FuPriority parent)
+		void WriteIsVar(FuExpr expr, string name, FuSymbol klass, FuPriority parent)
 		{
 			if (parent > FuPriority.Rel)
 				WriteChar('(');
-			if (assign) {
+			if (name != null) {
 				WriteChar('(');
-				WriteCamelCaseNotKeyword(def.Name);
+				WriteCamelCaseNotKeyword(name);
 				Write(" = ");
 				expr.Accept(this, FuPriority.Argument);
 				WriteChar(')');
@@ -19931,7 +19916,7 @@ namespace Fusion
 			else
 				expr.Accept(this, FuPriority.Rel);
 			Write(" instanceof ");
-			Write(def.Type.Name);
+			Write(klass.Name);
 			if (parent > FuPriority.Rel)
 				WriteChar(')');
 		}
@@ -19984,7 +19969,7 @@ namespace Fusion
 				WriteEqual(expr.Left, expr.Right, FuPriority.Argument, true);
 				break;
 			case FuToken.Is when expr.Right is FuVar def:
-				WriteIsVar(expr.Left, def, true, parent);
+				WriteIsVar(expr.Left, def.Name, def.Type, parent);
 				break;
 			default:
 				base.VisitBinaryExpr(expr, parent);
@@ -20083,7 +20068,7 @@ namespace Fusion
 					WriteArrayElementType(number);
 					Write("Array(");
 					break;
-				case FuEnum _:
+				case FuEnum:
 					Write("new Int32Array(");
 					break;
 				default:
@@ -20106,12 +20091,12 @@ namespace Fusion
 				else {
 					WriteCall("Object.entries", statement.Collection);
 					switch (statement.GetVar().Type) {
-					case FuStringType _:
+					case FuStringType:
 						if (klass.Class.Id == FuId.SortedDictionaryClass)
 							Write(".sort((a, b) => a[0].localeCompare(b[0]))");
 						break;
-					case FuNumericType _:
-					case FuEnum _:
+					case FuNumericType:
+					case FuEnum:
 						Write(".map(e => [+e[0], e[1]])");
 						if (klass.Class.Id == FuId.SortedDictionaryClass)
 							Write(".sort((a, b) => a[0] - b[0])");
@@ -20135,15 +20120,22 @@ namespace Fusion
 
 		protected override void WriteSwitchCaseCond(FuSwitch statement, FuExpr value, FuPriority parent)
 		{
-			if (value is FuVar def)
-				WriteIsVar(statement.Value, def, parent == FuPriority.CondAnd && def.Name != "_", parent);
-			else
+			switch (value) {
+			case FuSymbolReference symbol when symbol.Symbol is FuClass:
+				WriteIsVar(statement.Value, null, symbol.Symbol, parent);
+				break;
+			case FuVar def:
+				WriteIsVar(statement.Value, parent == FuPriority.CondAnd ? def.Name : null, def.Type, parent);
+				break;
+			default:
 				base.WriteSwitchCaseCond(statement, value, parent);
+				break;
+			}
 		}
 
 		protected override void WriteIfCaseBody(List<FuStatement> body, bool doWhile, FuSwitch statement, FuCase kase)
 		{
-			if (kase != null && kase.Values[0] is FuVar caseVar && caseVar.Name != "_") {
+			if (kase != null && kase.Values[0] is FuVar caseVar) {
 				WriteChar(' ');
 				OpenBlock();
 				WriteVarCast(caseVar, statement.Value);
@@ -20404,7 +20396,7 @@ namespace Fusion
 		void WriteType(FuType type, bool readOnly = false)
 		{
 			switch (type) {
-			case FuNumericType _:
+			case FuNumericType:
 				Write(type.Id == FuId.LongType ? "bigint" : "number");
 				break;
 			case FuEnum enu:
@@ -20692,7 +20684,7 @@ namespace Fusion
 					WriteDocCode(code.Text);
 					WriteChar('`');
 					break;
-				case FuDocLine _:
+				case FuDocLine:
 					WriteNewLine();
 					StartDocLine();
 					break;
@@ -20796,9 +20788,9 @@ namespace Fusion
 			switch (expr) {
 			case FuVar def:
 				return def.Value != null && VisitXcrement(def.Value, postfix, write);
-			case FuAggregateInitializer _:
-			case FuLiteral _:
-			case FuLambdaExpr _:
+			case FuAggregateInitializer:
+			case FuLiteral:
+			case FuLambdaExpr:
 				return false;
 			case FuInterpolatedString interp:
 				seen = false;
@@ -21189,15 +21181,15 @@ namespace Fusion
 		protected override void WriteName(FuSymbol symbol)
 		{
 			switch (symbol) {
-			case FuContainerType _:
+			case FuContainerType:
 				Write(symbol.Name);
 				break;
 			case FuConst konst when konst.InMethod != null:
 				WriteCamelCase(konst.InMethod.Name);
 				WritePascalCase(symbol.Name);
 				break;
-			case FuVar _:
-			case FuMember _:
+			case FuVar:
+			case FuMember:
 				WriteCamelCaseNotKeyword(symbol.Name);
 				break;
 			default:
@@ -21283,7 +21275,7 @@ namespace Fusion
 		void WriteType(FuType type)
 		{
 			switch (type) {
-			case FuNumericType _:
+			case FuNumericType:
 				switch (type.Id) {
 				case FuId.SByteRange:
 					Write("Int8");
@@ -21313,7 +21305,7 @@ namespace Fusion
 					throw new NotImplementedException();
 				}
 				break;
-			case FuEnum _:
+			case FuEnum:
 				Write(type.Id == FuId.BoolType ? "Bool" : type.Name);
 				break;
 			case FuArrayStorageType arrayStg:
@@ -21832,7 +21824,7 @@ namespace Fusion
 		void WriteDefaultValue(FuType type)
 		{
 			switch (type) {
-			case FuNumericType _:
+			case FuNumericType:
 				WriteChar('0');
 				break;
 			case FuEnum enu:
@@ -21844,7 +21836,7 @@ namespace Fusion
 					WriteName(enu.GetFirstValue());
 				}
 				break;
-			case FuStringType _ when !type.Nullable:
+			case FuStringType when !type.Nullable:
 				Write("\"\"");
 				break;
 			case FuArrayStorageType array:
@@ -21863,7 +21855,7 @@ namespace Fusion
 			WriteType(elementType);
 			Write(">(");
 			switch (elementType) {
-			case FuArrayStorageType _:
+			case FuArrayStorageType:
 				Write("factory: { ");
 				WriteNewStorage(elementType);
 				Write(" }");
@@ -22103,9 +22095,9 @@ namespace Fusion
 		static bool Throws(FuExpr expr)
 		{
 			switch (expr) {
-			case FuVar _:
-			case FuLiteral _:
-			case FuLambdaExpr _:
+			case FuVar:
+			case FuLiteral:
+			case FuLambdaExpr:
 				return false;
 			case FuAggregateInitializer init:
 				return init.Items.Exists(field => Throws(field));
@@ -22383,16 +22375,28 @@ namespace Fusion
 			WriteType(this.CurrentMethod.Type);
 		}
 
-		void WriteSwitchCaseVar(FuVar def)
+		void WriteSwiftCaseValue(FuSwitch statement, FuExpr value)
 		{
-			if (def.Name == "_")
+			switch (value) {
+			case FuSymbolReference symbol when symbol.Symbol is FuClass klass:
 				Write("is ");
-			else {
+				Write(klass.Name);
+				break;
+			case FuVar def:
 				Write("let ");
 				WriteCamelCaseNotKeyword(def.Name);
 				Write(" as ");
+				WriteType(def.Type);
+				break;
+			case FuBinaryExpr when1 when when1.Op == FuToken.When:
+				WriteSwiftCaseValue(statement, when1.Left);
+				Write(" where ");
+				WriteExpr(when1.Right, FuPriority.Argument);
+				break;
+			default:
+				WriteCoerced(statement.Value.Type, value, FuPriority.Argument);
+				break;
 			}
-			WriteType(def.Type);
 		}
 
 		void WriteSwiftSwitchCaseBody(FuSwitch statement, List<FuStatement> body)
@@ -22414,22 +22418,7 @@ namespace Fusion
 				Write("case ");
 				for (int i = 0; i < kase.Values.Count; i++) {
 					WriteComma(i);
-					switch (kase.Values[i]) {
-					case FuBinaryExpr when1 when when1.Op == FuToken.When:
-						if (when1.Left is FuVar whenVar)
-							WriteSwitchCaseVar(whenVar);
-						else
-							WriteCoerced(statement.Value.Type, when1.Left, FuPriority.Argument);
-						Write(" where ");
-						WriteExpr(when1.Right, FuPriority.Argument);
-						break;
-					case FuVar def:
-						WriteSwitchCaseVar(def);
-						break;
-					default:
-						WriteCoerced(statement.Value.Type, kase.Values[i], FuPriority.Argument);
-						break;
-					}
+					WriteSwiftCaseValue(statement, kase.Values[i]);
 				}
 				WriteCharLine(':');
 				WriteSwiftSwitchCaseBody(statement, kase.Body);
@@ -23062,7 +23051,7 @@ namespace Fusion
 				}
 				WriteUppercaseWithUnderscores(symbol.Name);
 				break;
-			case FuVar _:
+			case FuVar:
 				WriteNameNotKeyword(symbol.Name);
 				break;
 			case FuMember member:
@@ -23106,10 +23095,10 @@ namespace Fusion
 		void WriteTypeAnnotation(FuType type, bool nullable = false)
 		{
 			switch (type) {
-			case FuIntegerType _:
+			case FuIntegerType:
 				Write("int");
 				break;
-			case FuFloatingType _:
+			case FuFloatingType:
 				Write("float");
 				break;
 			case FuEnum enu:
@@ -23465,14 +23454,14 @@ namespace Fusion
 		void WritePyNewArray(FuType elementType, FuExpr value, FuExpr lengthExpr)
 		{
 			switch (elementType) {
-			case FuStorageType _:
+			case FuStorageType:
 				Write("[ ");
 				WriteNewStorage(elementType);
 				Write(" for _ in range(");
 				lengthExpr.Accept(this, FuPriority.Argument);
 				Write(") ]");
 				break;
-			case FuNumericType _:
+			case FuNumericType:
 				int c = GetArrayCode(elementType);
 				if (c == 'B' && (value == null || value.IsLiteralZero()))
 					WriteCall("bytearray", lengthExpr);
@@ -24133,13 +24122,26 @@ namespace Fusion
 			Write("result");
 		}
 
-		void WriteSwitchCaseVar(FuVar def)
+		void WritePyCaseValue(FuExpr value)
 		{
-			WriteName(def.Type.AsClassType().Class);
-			Write("()");
-			if (def.Name != "_") {
-				Write(" as ");
+			switch (value) {
+			case FuSymbolReference symbol when symbol.Symbol is FuClass klass:
+				WriteName(klass);
+				Write("()");
+				break;
+			case FuVar def:
+				WriteName(def.Type.AsClassType().Class);
+				Write("() as ");
 				WriteNameNotKeyword(def.Name);
+				break;
+			case FuBinaryExpr when1 when when1.Op == FuToken.When:
+				WritePyCaseValue(when1.Left);
+				Write(" if ");
+				when1.Right.Accept(this, FuPriority.Argument);
+				break;
+			default:
+				value.Accept(this, FuPriority.Or);
+				break;
 			}
 		}
 
@@ -24167,22 +24169,7 @@ namespace Fusion
 				string op = "case ";
 				foreach (FuExpr caseValue in kase.Values) {
 					Write(op);
-					switch (caseValue) {
-					case FuVar def:
-						WriteSwitchCaseVar(def);
-						break;
-					case FuBinaryExpr when1:
-						if (when1.Left is FuVar whenVar)
-							WriteSwitchCaseVar(whenVar);
-						else
-							when1.Left.Accept(this, FuPriority.Argument);
-						Write(" if ");
-						when1.Right.Accept(this, FuPriority.Argument);
-						break;
-					default:
-						caseValue.Accept(this, FuPriority.Or);
-						break;
-					}
+					WritePyCaseValue(caseValue);
 					op = " | ";
 				}
 				WritePyCaseBody(statement, kase.Body);

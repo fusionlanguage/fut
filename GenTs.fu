@@ -65,7 +65,7 @@ public class GenTs : GenJs
 	void WriteType!(FuType type, bool readOnly = false)
 	{
 		switch (type) {
-		case FuNumericType _:
+		case FuNumericType:
 			Write(type.Id == FuId.LongType ? "bigint" : "number");
 			break;
 		case FuEnum enu:

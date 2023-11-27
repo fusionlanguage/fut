@@ -151,15 +151,15 @@ public class GenSwift : GenPySwift
 	protected override void WriteName!(FuSymbol symbol)
 	{
 		switch (symbol) {
-		case FuContainerType _:
+		case FuContainerType:
 			Write(symbol.Name);
 			break;
 		case FuConst konst when konst.InMethod != null:
 			WriteCamelCase(konst.InMethod.Name);
 			WritePascalCase(symbol.Name);
 			break;
-		case FuVar _:
-		case FuMember _:
+		case FuVar:
+		case FuMember:
 			WriteCamelCaseNotKeyword(symbol.Name);
 			break;
 		default:
@@ -245,7 +245,7 @@ public class GenSwift : GenPySwift
 	void WriteType!(FuType type)
 	{
 		switch (type) {
-		case FuNumericType _:
+		case FuNumericType:
 			switch (type.Id) {
 			case FuId.SByteRange:
 				Write("Int8");
@@ -275,7 +275,7 @@ public class GenSwift : GenPySwift
 				assert false;
 			}
 			break;
-		case FuEnum _:
+		case FuEnum:
 			Write(type.Id == FuId.BoolType ? "Bool" : type.Name);
 			break;
 		case FuArrayStorageType arrayStg:
@@ -797,7 +797,7 @@ public class GenSwift : GenPySwift
 	void WriteDefaultValue!(FuType type)
 	{
 		switch (type) {
-		case FuNumericType _:
+		case FuNumericType:
 			WriteChar('0');
 			break;
 		case FuEnum enu:
@@ -809,7 +809,7 @@ public class GenSwift : GenPySwift
 				WriteName(enu.GetFirstValue());
 			}
 			break;
-		case FuStringType _ when !type.Nullable:
+		case FuStringType when !type.Nullable:
 			Write("\"\"");
 			break;
 		case FuArrayStorageType array:
@@ -828,7 +828,7 @@ public class GenSwift : GenPySwift
 		WriteType(elementType);
 		Write(">(");
 		switch (elementType) {
-		case FuArrayStorageType _:
+		case FuArrayStorageType:
 			Write("factory: { ");
 			WriteNewStorage(elementType);
 			Write(" }");
@@ -1073,9 +1073,9 @@ public class GenSwift : GenPySwift
 	static bool Throws(FuExpr expr)
 	{
 		switch (expr) {
-		case FuVar _:
-		case FuLiteral _:
-		case FuLambdaExpr _:
+		case FuVar:
+		case FuLiteral:
+		case FuLambdaExpr:
 			return false;
 		case FuAggregateInitializer init:
 			return init.Items.Any(field => Throws(field));
@@ -1361,16 +1361,28 @@ public class GenSwift : GenPySwift
 		WriteType(this.CurrentMethod.Type);
 	}
 
-	void WriteSwitchCaseVar!(FuVar def)
+	void WriteSwiftCaseValue!(FuSwitch statement, FuExpr value)
 	{
-		if (def.Name == "_")
+		switch (value) {
+		case FuSymbolReference symbol when symbol.Symbol is FuClass klass:
 			Write("is ");
-		else {
+			Write(klass.Name);
+			break;
+		case FuVar def:
 			Write("let ");
 			WriteCamelCaseNotKeyword(def.Name);
 			Write(" as ");
+			WriteType(def.Type);
+			break;
+		case FuBinaryExpr when1 when when1.Op == FuToken.When:
+			WriteSwiftCaseValue(statement, when1.Left);
+			Write(" where ");
+			WriteExpr(when1.Right, FuPriority.Argument);
+			break;
+		default:
+			WriteCoerced(statement.Value.Type, value, FuPriority.Argument);
+			break;
 		}
-		WriteType(def.Type);
 	}
 
 	void WriteSwiftSwitchCaseBody!(FuSwitch statement, List<FuStatement#> body)
@@ -1392,22 +1404,7 @@ public class GenSwift : GenPySwift
 			Write("case ");
 			for (int i = 0; i < kase.Values.Count; i++) {
 				WriteComma(i);
-				switch (kase.Values[i]) {
-				case FuBinaryExpr when1 when when1.Op == FuToken.When:
-					if (when1.Left is FuVar whenVar)
-						WriteSwitchCaseVar(whenVar);
-					else
-						WriteCoerced(statement.Value.Type, when1.Left, FuPriority.Argument);
-					Write(" where ");
-					WriteExpr(when1.Right, FuPriority.Argument);
-					break;
-				case FuVar def:
-					WriteSwitchCaseVar(def);
-					break;
-				default:
-					WriteCoerced(statement.Value.Type, kase.Values[i], FuPriority.Argument);
-					break;
-				}
+				WriteSwiftCaseValue(statement, kase.Values[i]);
 			}
 			WriteCharLine(':');
 			WriteSwiftSwitchCaseBody(statement, kase.Body);

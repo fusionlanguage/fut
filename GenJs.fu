@@ -62,7 +62,7 @@ public class GenJsNoModule : GenBase
 	protected override void WriteName!(FuSymbol symbol)
 	{
 		switch (symbol) {
-		case FuContainerType _:
+		case FuContainerType:
 			Write(symbol.Name);
 			break;
 		case FuConst konst:
@@ -74,7 +74,7 @@ public class GenJsNoModule : GenBase
 			}
 			WriteUppercaseWithUnderscores(symbol.Name);
 			break;
-		case FuVar _:
+		case FuVar:
 			WriteCamelCaseNotKeyword(symbol.Name);
 			break;
 		case FuMember member:
@@ -931,13 +931,13 @@ public class GenJsNoModule : GenBase
 		expr.Left.Accept(this, FuPriority.Assign);
 	}
 
-	void WriteIsVar!(FuExpr expr, FuVar def, bool assign, FuPriority parent)
+	void WriteIsVar!(FuExpr expr, string? name, FuSymbol klass, FuPriority parent)
 	{
 		if (parent > FuPriority.Rel)
 			WriteChar('(');
-		if (assign) {
+		if (name != null) {
 			WriteChar('(');
-			WriteCamelCaseNotKeyword(def.Name);
+			WriteCamelCaseNotKeyword(name);
 			Write(" = ");
 			expr.Accept(this, FuPriority.Argument);
 			WriteChar(')');
@@ -945,7 +945,7 @@ public class GenJsNoModule : GenBase
 		else
 			expr.Accept(this, FuPriority.Rel);
 		Write(" instanceof ");
-		Write(def.Type.Name);
+		Write(klass.Name);
 		if (parent > FuPriority.Rel)
 			WriteChar(')');
 	}
@@ -998,7 +998,7 @@ public class GenJsNoModule : GenBase
 			WriteEqual(expr.Left, expr.Right, FuPriority.Argument, true); // FIXME: side effect
 			break;
 		case FuToken.Is when expr.Right is FuVar def:
-			WriteIsVar(expr.Left, def, true, parent);
+			WriteIsVar(expr.Left, def.Name, def.Type, parent);
 			break;
 		default:
 			base.VisitBinaryExpr(expr, parent);
@@ -1097,7 +1097,7 @@ public class GenJsNoModule : GenBase
 				WriteArrayElementType(number);
 				Write("Array(");
 				break;
-			case FuEnum _:
+			case FuEnum:
 				Write("new Int32Array(");
 				break;
 			default:
@@ -1120,12 +1120,12 @@ public class GenJsNoModule : GenBase
 			else {
 				WriteCall("Object.entries", statement.Collection);
 				switch (statement.GetVar().Type) {
-				case FuStringType _:
+				case FuStringType:
 					if (klass.Class.Id == FuId.SortedDictionaryClass)
 						Write(".sort((a, b) => a[0].localeCompare(b[0]))");
 					break;
-				case FuNumericType _:
-				case FuEnum _:
+				case FuNumericType:
+				case FuEnum:
 					Write(".map(e => [+e[0], e[1]])");
 					if (klass.Class.Id == FuId.SortedDictionaryClass)
 						Write(".sort((a, b) => a[0] - b[0])");
@@ -1149,15 +1149,22 @@ public class GenJsNoModule : GenBase
 
 	protected override void WriteSwitchCaseCond!(FuSwitch statement, FuExpr value, FuPriority parent)
 	{
-		if (value is FuVar def)
-			WriteIsVar(statement.Value, def, parent == FuPriority.CondAnd && def.Name != "_", parent); // FIXME: side effect in every if
-		else
+		switch (value) {
+		case FuSymbolReference symbol when symbol.Symbol is FuClass:
+			WriteIsVar(statement.Value, null, symbol.Symbol, parent); // FIXME: side effect in every if
+			break;
+		case FuVar def:
+			WriteIsVar(statement.Value, parent == FuPriority.CondAnd ? def.Name : null, def.Type, parent); // FIXME: side effect in every if
+			break;
+		default:
 			base.WriteSwitchCaseCond(statement, value, parent);
+			break;
+		}
 	}
 
 	protected override void WriteIfCaseBody!(List<FuStatement#> body, bool doWhile, FuSwitch statement, FuCase? kase)
 	{
-		if (kase != null && kase.Values[0] is FuVar caseVar && caseVar.Name != "_") {
+		if (kase != null && kase.Values[0] is FuVar caseVar) {
 			WriteChar(' ');
 			OpenBlock();
 			WriteVarCast(caseVar, statement.Value); // FIXME: side effect
