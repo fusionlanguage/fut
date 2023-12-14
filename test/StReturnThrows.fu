@@ -1,0 +1,12 @@
+public static class Test
+{
+	public static void Foo() throws Exception
+	{
+		return;
+	}
+
+	public static bool Run()
+	{
+		return true;
+	}
+}

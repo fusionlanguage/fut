@@ -4,6 +4,7 @@ public static class Test
 	{
 		string s = "quux";
 		return Encoding.UTF8.GetByteCount("foo") == 3
+			&& Encoding.UTF8.GetByteCount("bar") * 2 == 6
 			&& Encoding.UTF8.GetByteCount(s) == 4;
 	}
 }

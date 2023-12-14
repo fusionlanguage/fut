@@ -11611,21 +11611,6 @@ void GenC::visitLock(const FuLock * statement)
 	writeLine(");");
 }
 
-bool GenC::isReturnThrowingDifferent(const FuReturn * statement) const
-{
-	if (const FuNumericType *methodType = dynamic_cast<const FuNumericType *>(this->currentMethod->type.get())) {
-		const FuMethod * throwingMethod = getThrowingMethod(statement->value.get());
-		if (throwingMethod == nullptr)
-			return false;
-		const FuRangeType * methodRange;
-		const FuRangeType * throwingRange;
-		if ((methodRange = dynamic_cast<const FuRangeType *>(methodType)) && (throwingRange = dynamic_cast<const FuRangeType *>(throwingMethod->type.get())) && methodRange->min == throwingRange->min)
-			return false;
-		return true;
-	}
-	return false;
-}
-
 void GenC::visitReturn(const FuReturn * statement)
 {
 	if (statement->value == nullptr) {

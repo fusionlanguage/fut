@@ -2,11 +2,15 @@ public class FooException : Exception
 {
 }
 
+public class BarException : FooException
+{
+}
+
 public static class Test
 {
 	public static void Throw() throws FooException
 	{
-		throw FooException("foo");
+		throw BarException("foo");
 	}
 
 	public static bool Run()

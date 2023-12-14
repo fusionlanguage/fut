@@ -10,19 +10,23 @@ public static class Test
 		byte[3] a;
 		a[1] = 200;
 		int[1] ia;
-		ia[0] = a[1];
+		ia[0] = a[1] & 0x1ffffffff;
 		short[1] sa;
-		sa[0] = a[1];
+		sa[0] = a[1] & 0x1ffff;
 		long[1] la;
 		la[0] = a[1];
 		float[1] fa;
 		fa[0] = a[1];
+		-128 .. 127[2] sb;
+		sb[0] = -3;
+		sb[1] = sb[0];
 		return a[1] == 200
 			&& (a[1] & 254) == 200
 			&& ia[0] == 200
 			&& Get(a, 1) == 200
 			&& sa[0] == 200
 			&& la[0] == 200
-			&& fa[0] == 200;
+			&& fa[0] == 200
+			&& sb[0] == -3;
 	}
 }

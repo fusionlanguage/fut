@@ -18,7 +18,8 @@ public static class Test
 		w.WriteChar('c');
 		int newLine = '\n';
 		w.WriteChar(newLine);
-		w.WriteCodePoint('🍺'); //FAIL: c
+		w.WriteCodePoint('2'); //FAIL: c
+		w.WriteCodePoint('🍺');
 		return true;
 	}
 }

@@ -11882,19 +11882,6 @@ namespace Fusion
 			WriteLine(");");
 		}
 
-		bool IsReturnThrowingDifferent(FuReturn statement)
-		{
-			if (this.CurrentMethod.Type is FuNumericType methodType) {
-				FuMethod throwingMethod = GetThrowingMethod(statement.Value);
-				if (throwingMethod == null)
-					return false;
-				if (methodType is FuRangeType methodRange && throwingMethod.Type is FuRangeType throwingRange && methodRange.Min == throwingRange.Min)
-					return false;
-				return true;
-			}
-			return false;
-		}
-
 		internal override void VisitReturn(FuReturn statement)
 		{
 			if (statement.Value == null) {

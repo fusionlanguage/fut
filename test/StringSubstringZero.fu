@@ -4,6 +4,7 @@ public static class Test
 	{
 		string() s = "barek"; //FAIL: cl
 		s = s.Substring(0, 3);
-		return s == "bar";
+		return s == "bar"
+			&& s.Substring(0) == "bar";
 	}
 }

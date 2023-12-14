@@ -12277,22 +12277,6 @@ export class GenC extends GenCCpp
 		this.writeLine(");");
 	}
 
-	#isReturnThrowingDifferent(statement)
-	{
-		let methodType;
-		if ((methodType = this.currentMethod.type) instanceof FuNumericType) {
-			let throwingMethod = GenC.#getThrowingMethod(statement.value);
-			if (throwingMethod == null)
-				return false;
-			let methodRange;
-			let throwingRange;
-			if ((methodRange = methodType) instanceof FuRangeType && (throwingRange = throwingMethod.type) instanceof FuRangeType && methodRange.min == throwingRange.min)
-				return false;
-			return true;
-		}
-		return false;
-	}
-
 	visitReturn(statement)
 	{
 		if (statement.value == null) {
