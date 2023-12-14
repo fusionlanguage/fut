@@ -2141,7 +2141,7 @@ private:
 	static bool containsTemporariesToDestruct(const FuExpr * expr);
 	void writeGPointerCast(const FuType * type, const FuExpr * expr);
 	void writeGConstPointerCast(const FuExpr * expr);
-	void writeQueueObject(const FuExpr * obj);
+	void writeUnstorage(const FuExpr * obj);
 	void writeQueueGet(std::string_view function, const FuExpr * obj, FuPriority parent);
 	void startDictionaryInsert(const FuExpr * dict, const FuExpr * key);
 	static const FuMethod * getThrowingMethod(const FuExpr * expr);

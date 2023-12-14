@@ -1037,7 +1037,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteQueueObject!(FuExpr obj)
+	void WriteUnstorage!(FuExpr obj)
 	{
 		if (obj.Type is FuStorageType) {
 			WriteChar('&');
@@ -1065,7 +1065,7 @@ public class GenC : GenCCpp
 		}
 		Write(function);
 		WriteChar('(');
-		WriteQueueObject(obj);
+		WriteUnstorage(obj);
 		WriteChar(')');
 		if (parenthesis)
 			WriteChar(')');
@@ -1873,7 +1873,7 @@ public class GenC : GenCCpp
 		FuId typeId = obj.Type.AsClassType().GetElementType().Id;
 		switch (typeId) {
 		case FuId.None:
-			Write("object(");
+			Write("object((const void * const *) ");
 			break;
 		case FuId.StringStorageType:
 		case FuId.StringPtrType:
@@ -2019,7 +2019,7 @@ public class GenC : GenCCpp
 			Write(", ");
 			WriteArrayStorageLength(obj);
 			Write(", ");
-			args[0].Accept(this, FuPriority.Argument);
+			WriteUnstorage(args[0]);
 			WriteChar(')');
 			break;
 		case FuId.ArrayCopyTo:
@@ -2105,7 +2105,7 @@ public class GenC : GenCCpp
 			StartArrayContains(obj);
 			WritePostfix(obj, "->data, ");
 			WritePostfix(obj, "->len, "); // FIXME: side effect
-			args[0].Accept(this, FuPriority.Argument);
+			WriteUnstorage(args[0]);
 			WriteChar(')');
 			break;
 		case FuId.ListInsert:
@@ -2135,11 +2135,11 @@ public class GenC : GenCCpp
 			string() destroy = GetDictionaryDestroy(obj.Type.AsClassType().GetElementType());
 			if (destroy == "NULL") {
 				Write("g_queue_clear(");
-				WriteQueueObject(obj);
+				WriteUnstorage(obj);
 			}
 			else {
 				Write("g_queue_clear_full(");
-				WriteQueueObject(obj);
+				WriteUnstorage(obj);
 				Write(", ");
 				Write(destroy);
 			}
@@ -2150,7 +2150,7 @@ public class GenC : GenCCpp
 			break;
 		case FuId.QueueEnqueue:
 			Write("g_queue_push_tail(");
-			WriteQueueObject(obj);
+			WriteUnstorage(obj);
 			Write(", ");
 			WriteGPointerCast(obj.Type.AsClassType().GetElementType(), args[0]);
 			WriteChar(')');

@@ -10562,7 +10562,7 @@ export class GenC extends GenCCpp
 		}
 	}
 
-	#writeQueueObject(obj)
+	#writeUnstorage(obj)
 	{
 		if (obj.type instanceof FuStorageType) {
 			this.writeChar(38);
@@ -10590,7 +10590,7 @@ export class GenC extends GenCCpp
 		}
 		this.write(function_);
 		this.writeChar(40);
-		this.#writeQueueObject(obj);
+		this.#writeUnstorage(obj);
 		this.writeChar(41);
 		if (parenthesis)
 			this.writeChar(41);
@@ -11410,7 +11410,7 @@ export class GenC extends GenCCpp
 		let typeId = obj.type.asClassType().getElementType().id;
 		switch (typeId) {
 		case FuId.NONE:
-			this.write("object(");
+			this.write("object((const void * const *) ");
 			break;
 		case FuId.STRING_STORAGE_TYPE:
 		case FuId.STRING_PTR_TYPE:
@@ -11556,7 +11556,7 @@ export class GenC extends GenCCpp
 			this.write(", ");
 			this.writeArrayStorageLength(obj);
 			this.write(", ");
-			args[0].accept(this, FuPriority.ARGUMENT);
+			this.#writeUnstorage(args[0]);
 			this.writeChar(41);
 			break;
 		case FuId.ARRAY_COPY_TO:
@@ -11642,7 +11642,7 @@ export class GenC extends GenCCpp
 			this.#startArrayContains(obj);
 			this.writePostfix(obj, "->data, ");
 			this.writePostfix(obj, "->len, ");
-			args[0].accept(this, FuPriority.ARGUMENT);
+			this.#writeUnstorage(args[0]);
 			this.writeChar(41);
 			break;
 		case FuId.LIST_INSERT:
@@ -11672,11 +11672,11 @@ export class GenC extends GenCCpp
 			let destroy = this.#getDictionaryDestroy(obj.type.asClassType().getElementType());
 			if (destroy == "NULL") {
 				this.write("g_queue_clear(");
-				this.#writeQueueObject(obj);
+				this.#writeUnstorage(obj);
 			}
 			else {
 				this.write("g_queue_clear_full(");
-				this.#writeQueueObject(obj);
+				this.#writeUnstorage(obj);
 				this.write(", ");
 				this.write(destroy);
 			}
@@ -11687,7 +11687,7 @@ export class GenC extends GenCCpp
 			break;
 		case FuId.QUEUE_ENQUEUE:
 			this.write("g_queue_push_tail(");
-			this.#writeQueueObject(obj);
+			this.#writeUnstorage(obj);
 			this.write(", ");
 			this.#writeGPointerCast(obj.type.asClassType().getElementType(), args[0]);
 			this.writeChar(41);
@@ -14171,7 +14171,10 @@ export class GenCpp extends GenCCpp
 		this.writeChar(40);
 		this.#writeBeginEnd(obj);
 		this.write(", ");
-		args[0].accept(this, FuPriority.ARGUMENT);
+		if (args[0].type == null)
+			args[0].accept(this, FuPriority.ARGUMENT);
+		else
+			this.writeCoerced(obj.type.asClassType().getElementType(), args[0], FuPriority.ARGUMENT);
 		this.writeChar(41);
 	}
 

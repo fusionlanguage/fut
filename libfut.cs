@@ -10200,7 +10200,7 @@ namespace Fusion
 			}
 		}
 
-		void WriteQueueObject(FuExpr obj)
+		void WriteUnstorage(FuExpr obj)
 		{
 			if (obj.Type is FuStorageType) {
 				WriteChar('&');
@@ -10228,7 +10228,7 @@ namespace Fusion
 			}
 			Write(function);
 			WriteChar('(');
-			WriteQueueObject(obj);
+			WriteUnstorage(obj);
 			WriteChar(')');
 			if (parenthesis)
 				WriteChar(')');
@@ -11022,7 +11022,7 @@ namespace Fusion
 			FuId typeId = obj.Type.AsClassType().GetElementType().Id;
 			switch (typeId) {
 			case FuId.None:
-				Write("object(");
+				Write("object((const void * const *) ");
 				break;
 			case FuId.StringStorageType:
 			case FuId.StringPtrType:
@@ -11168,7 +11168,7 @@ namespace Fusion
 				Write(", ");
 				WriteArrayStorageLength(obj);
 				Write(", ");
-				args[0].Accept(this, FuPriority.Argument);
+				WriteUnstorage(args[0]);
 				WriteChar(')');
 				break;
 			case FuId.ArrayCopyTo:
@@ -11252,7 +11252,7 @@ namespace Fusion
 				StartArrayContains(obj);
 				WritePostfix(obj, "->data, ");
 				WritePostfix(obj, "->len, ");
-				args[0].Accept(this, FuPriority.Argument);
+				WriteUnstorage(args[0]);
 				WriteChar(')');
 				break;
 			case FuId.ListInsert:
@@ -11282,11 +11282,11 @@ namespace Fusion
 				string destroy = GetDictionaryDestroy(obj.Type.AsClassType().GetElementType());
 				if (destroy == "NULL") {
 					Write("g_queue_clear(");
-					WriteQueueObject(obj);
+					WriteUnstorage(obj);
 				}
 				else {
 					Write("g_queue_clear_full(");
-					WriteQueueObject(obj);
+					WriteUnstorage(obj);
 					Write(", ");
 					Write(destroy);
 				}
@@ -11297,7 +11297,7 @@ namespace Fusion
 				break;
 			case FuId.QueueEnqueue:
 				Write("g_queue_push_tail(");
-				WriteQueueObject(obj);
+				WriteUnstorage(obj);
 				Write(", ");
 				WriteGPointerCast(obj.Type.AsClassType().GetElementType(), args[0]);
 				WriteChar(')');
@@ -13743,7 +13743,10 @@ namespace Fusion
 			WriteChar('(');
 			WriteBeginEnd(obj);
 			Write(", ");
-			args[0].Accept(this, FuPriority.Argument);
+			if (args[0].Type == null)
+				args[0].Accept(this, FuPriority.Argument);
+			else
+				WriteCoerced(obj.Type.AsClassType().GetElementType(), args[0], FuPriority.Argument);
 			WriteChar(')');
 		}
 

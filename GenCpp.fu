@@ -576,7 +576,10 @@ public class GenCpp : GenCCpp
 		WriteChar('(');
 		WriteBeginEnd(obj);
 		Write(", ");
-		args[0].Accept(this, FuPriority.Argument);
+		if (args[0].Type == null) // All, Any
+			args[0].Accept(this, FuPriority.Argument);
+		else
+			WriteCoerced(obj.Type.AsClassType().GetElementType(), args[0], FuPriority.Argument);
 		WriteChar(')');
 	}
 

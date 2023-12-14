@@ -9896,7 +9896,7 @@ void GenC::writeGConstPointerCast(const FuExpr * expr)
 	}
 }
 
-void GenC::writeQueueObject(const FuExpr * obj)
+void GenC::writeUnstorage(const FuExpr * obj)
 {
 	if (dynamic_cast<const FuStorageType *>(obj->type.get())) {
 		writeChar('&');
@@ -9924,7 +9924,7 @@ void GenC::writeQueueGet(std::string_view function, const FuExpr * obj, FuPriori
 	}
 	write(function);
 	writeChar('(');
-	writeQueueObject(obj);
+	writeUnstorage(obj);
 	writeChar(')');
 	if (parenthesis)
 		writeChar(')');
@@ -10726,7 +10726,7 @@ void GenC::startArrayContains(const FuExpr * obj)
 	FuId typeId = obj->type->asClassType()->getElementType()->id;
 	switch (typeId) {
 	case FuId::none:
-		write("object(");
+		write("object((const void * const *) ");
 		break;
 	case FuId::stringStorageType:
 	case FuId::stringPtrType:
@@ -10878,7 +10878,7 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		write(", ");
 		writeArrayStorageLength(obj);
 		write(", ");
-		(*args)[0]->accept(this, FuPriority::argument);
+		writeUnstorage((*args)[0].get());
 		writeChar(')');
 		break;
 	case FuId::arrayCopyTo:
@@ -10970,7 +10970,7 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		startArrayContains(obj);
 		writePostfix(obj, "->data, ");
 		writePostfix(obj, "->len, ");
-		(*args)[0]->accept(this, FuPriority::argument);
+		writeUnstorage((*args)[0].get());
 		writeChar(')');
 		break;
 	case FuId::listInsert:
@@ -11003,11 +11003,11 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 			std::string destroy{getDictionaryDestroy(obj->type->asClassType()->getElementType().get())};
 			if (destroy == "NULL") {
 				write("g_queue_clear(");
-				writeQueueObject(obj);
+				writeUnstorage(obj);
 			}
 			else {
 				write("g_queue_clear_full(");
-				writeQueueObject(obj);
+				writeUnstorage(obj);
 				write(", ");
 				write(destroy);
 			}
@@ -11019,7 +11019,7 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		break;
 	case FuId::queueEnqueue:
 		write("g_queue_push_tail(");
-		writeQueueObject(obj);
+		writeUnstorage(obj);
 		write(", ");
 		writeGPointerCast(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
 		writeChar(')');
@@ -13369,7 +13369,10 @@ void GenCpp::writeAllAnyContains(std::string_view function, const FuExpr * obj, 
 	writeChar('(');
 	writeBeginEnd(obj);
 	write(", ");
-	(*args)[0]->accept(this, FuPriority::argument);
+	if ((*args)[0]->type == nullptr)
+		(*args)[0]->accept(this, FuPriority::argument);
+	else
+		writeCoerced(obj->type->asClassType()->getElementType().get(), (*args)[0].get(), FuPriority::argument);
 	writeChar(')');
 }
 

@@ -1,0 +1,14 @@
+public class Test
+{
+	internal int X;
+
+	public static bool Run()
+	{
+		Test?[2] a;
+		Test() o = { X = 10 };
+		Test() o2 = { X = 20 };
+		a[0] = null;
+		a[1] = o;
+		return a.Contains(o) && !a.Contains(o2); //FAIL: java swift cl
+	}
+}
