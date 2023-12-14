@@ -3525,7 +3525,7 @@ namespace Fusion
 					return lambda;
 				}
 				if (type && Eat(FuToken.Less)) {
-					FuAggregateInitializer typeArgs = new FuAggregateInitializer();
+					FuAggregateInitializer typeArgs = new FuAggregateInitializer { Line = this.Line };
 					bool saveTypeArg = this.ParsingTypeArg;
 					this.ParsingTypeArg = true;
 					do

@@ -3662,7 +3662,7 @@ export class FuParser extends FuLexer
 				return lambda;
 			}
 			if (type && this.eat(FuToken.LESS)) {
-				let typeArgs = new FuAggregateInitializer();
+				let typeArgs = Object.assign(new FuAggregateInitializer(), { line: this.line });
 				let saveTypeArg = this.parsingTypeArg;
 				this.parsingTypeArg = true;
 				do

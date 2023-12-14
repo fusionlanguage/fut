@@ -1,0 +1,8 @@
+public class Test
+{
+	public static bool Run()
+	{
+		string<int>() o; //ERROR: 'string' is not a class
+		return true;
+	}
+}

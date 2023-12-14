@@ -3037,6 +3037,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 			}
 			if (type && eat(FuToken::less)) {
 				std::shared_ptr<FuAggregateInitializer> typeArgs = std::make_shared<FuAggregateInitializer>();
+				typeArgs->line = this->line;
 				bool saveTypeArg = this->parsingTypeArg;
 				this->parsingTypeArg = true;
 				do
