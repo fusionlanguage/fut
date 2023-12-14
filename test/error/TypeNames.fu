@@ -1,0 +1,11 @@
+public class Test
+{
+	public static bool Run()
+	{
+		List<int> l = 5; //ERROR: Cannot convert '5' to 'List<int>'
+		Dictionary<string, float> l = "wat"; //ERROR: Cannot convert 'string' to 'Dictionary<string, float>'
+		int[]! a = 42; //ERROR: Cannot convert '42' to 'int[]!'
+		int[]# da = 10; //ERROR: Cannot convert '10' to 'int[]#'
+		return true;
+	}
+}

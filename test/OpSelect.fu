@@ -23,6 +23,9 @@ public static class Test
 			return false;
 		if (!a ? true : false)
 			return false;
+		b = a ? b : null;
+		if (false ? a : !a)
+			return false;
 		return (a ? (true ? s : null) == r : b[0] == 5);
 	}
 }

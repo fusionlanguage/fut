@@ -1,0 +1,28 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int
+			10.5 //ERROR: Expected ';', got floating-point constant
+		string
+			'f' //ERROR: Expected ';', got character constant
+		] //ERROR: Invalid expression //ERROR: Expected ';', got ']'
+		& //ERROR: Invalid expression //ERROR: Expected ';', got '&'
+		/// //ERROR: Invalid expression //ERROR: Expected ';', got '///'
+		abstract //ERROR: Invalid expression //ERROR: Expected ';', got 'abstract'
+		case //ERROR: Invalid expression //ERROR: Expected ';', got 'case'
+		default //ERROR: Invalid expression //ERROR: Expected ';', got 'default'
+		else //ERROR: Invalid expression //ERROR: Expected ';', got 'else'
+		in //ERROR: Invalid expression //ERROR: Expected ';', got 'in'
+		internal //ERROR: Invalid expression //ERROR: Expected ';', got 'internal'
+		override //ERROR: Invalid expression //ERROR: Expected ';', got 'override'
+		protected //ERROR: Invalid expression //ERROR: Expected ';', got 'protected'
+		public //ERROR: Invalid expression //ERROR: Expected ';', got 'public'
+		sealed //ERROR: Invalid expression //ERROR: Expected ';', got 'sealed'
+		static //ERROR: Invalid expression //ERROR: Expected ';', got 'static'
+		throws //ERROR: Invalid expression //ERROR: Expected ';', got 'throws'
+		void //ERROR: Invalid expression //ERROR: Expected ';', got 'void'
+		when //ERROR: Invalid expression //ERROR: Expected ';', got 'when'
+		return true;
+	}
+}

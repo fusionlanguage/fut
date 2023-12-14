@@ -1,0 +1,9 @@
+public class Test
+{
+	public static bool Run()
+	{
+		Test()! o; //ERROR: Unexpected '!' on a non-reference type
+		int[5]! a; //ERROR: Unexpected '!' on a non-reference type
+		return true;
+	}
+}

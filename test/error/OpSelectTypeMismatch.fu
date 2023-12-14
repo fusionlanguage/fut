@@ -1,0 +1,8 @@
+public class Test
+{
+	public static bool Run()
+	{
+		string s = true ? "five" : 5; //ERROR: Incompatible types: 'string' and '5'
+		return true;
+	}
+}
