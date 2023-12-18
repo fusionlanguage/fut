@@ -1846,12 +1846,18 @@ public abstract class GenBase : FuVisitor
 			WriteName(klass);
 	}
 
+	protected virtual void WriteThrowNoMessage!()
+	{
+	}
+
 	protected void WriteThrowArgument!(FuThrow statement)
 	{
 		WriteExceptionClass(statement.Class.Symbol);
 		WriteChar('(');
 		if (statement.Message != null)
 			statement.Message.Accept(this, FuPriority.Argument);
+		else
+			WriteThrowNoMessage();
 		WriteChar(')');
 	}
 

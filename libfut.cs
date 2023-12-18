@@ -8374,12 +8374,18 @@ namespace Fusion
 				WriteName(klass);
 		}
 
+		protected virtual void WriteThrowNoMessage()
+		{
+		}
+
 		protected void WriteThrowArgument(FuThrow statement)
 		{
 			WriteExceptionClass(statement.Class.Symbol);
 			WriteChar('(');
 			if (statement.Message != null)
 				statement.Message.Accept(this, FuPriority.Argument);
+			else
+				WriteThrowNoMessage();
 			WriteChar(')');
 		}
 
@@ -8887,6 +8893,11 @@ namespace Fusion
 			}
 			else
 				WriteSwitchAsIfs(statement, true);
+		}
+
+		protected override void WriteThrowNoMessage()
+		{
+			Write("\"\"");
 		}
 	}
 
@@ -20317,6 +20328,7 @@ namespace Fusion
 		public override void WriteProgram(FuProgram program)
 		{
 			CreateOutputFile();
+			WriteUseStrict();
 			WriteTopLevelNatives(program);
 			WriteTypes(program);
 			WriteLib(program);
@@ -21312,8 +21324,7 @@ namespace Fusion
 					WriteChar('?');
 				break;
 			default:
-				Write(type.Name);
-				break;
+				throw new NotImplementedException();
 			}
 		}
 
@@ -22422,7 +22433,8 @@ namespace Fusion
 
 		internal override void VisitThrow(FuThrow statement)
 		{
-			VisitXcrement(statement.Message, false, true);
+			if (statement.Message != null)
+				VisitXcrement(statement.Message, false, true);
 			Write("throw ");
 			if (statement.Class.Name == "Exception") {
 				this.ThrowException = true;
@@ -24174,7 +24186,8 @@ namespace Fusion
 
 		internal override void VisitThrow(FuThrow statement)
 		{
-			VisitXcrement(statement.Message, false, true);
+			if (statement.Message != null)
+				VisitXcrement(statement.Message, false, true);
 			Write("raise ");
 			WriteThrowArgument(statement);
 			WriteNewLine();

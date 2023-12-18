@@ -1843,6 +1843,7 @@ protected:
 	void writeSwitchAsIfs(const FuSwitch * statement, bool doWhile);
 	virtual void writeException();
 	void writeExceptionClass(const FuSymbol * klass);
+	virtual void writeThrowNoMessage();
 	void writeThrowArgument(const FuThrow * statement);
 	void flattenBlock(FuStatement * statement);
 	virtual bool hasInitCode(const FuNamedValue * def) const;
@@ -1954,6 +1955,7 @@ protected:
 	GenCCppD() = default;
 	void writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_) override;
 	void writeSwitchAsIfsWithGoto(const FuSwitch * statement);
+	void writeThrowNoMessage() override;
 public:
 	void visitLiteralLong(int64_t i) override;
 	void visitConst(const FuConst * statement) override;

@@ -2,7 +2,7 @@ public class Test
 {
 	static uint UintThrow() throws Exception
 	{
-		throw Exception("Foo");
+		throw Exception();
 	}
 
 	static void VoidThrow() throws Exception

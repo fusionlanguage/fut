@@ -8701,12 +8701,18 @@ export class GenBase extends FuVisitor
 			this.writeName(klass);
 	}
 
+	writeThrowNoMessage()
+	{
+	}
+
 	writeThrowArgument(statement)
 	{
 		this.writeExceptionClass(statement.class.symbol);
 		this.writeChar(40);
 		if (statement.message != null)
 			statement.message.accept(this, FuPriority.ARGUMENT);
+		else
+			this.writeThrowNoMessage();
 		this.writeChar(41);
 	}
 
@@ -9229,6 +9235,11 @@ export class GenCCppD extends GenTyped
 		}
 		else
 			this.writeSwitchAsIfs(statement, true);
+	}
+
+	writeThrowNoMessage()
+	{
+		this.write("\"\"");
 	}
 }
 
@@ -20863,6 +20874,7 @@ export class GenJsNoModule extends GenBase
 	writeProgram(program)
 	{
 		this.createOutputFile();
+		this.writeUseStrict();
 		this.writeTopLevelNatives(program);
 		this.writeTypes(program);
 		this.writeLib(program);
@@ -21864,7 +21876,7 @@ export class GenSwift extends GenPySwift
 				this.writeChar(63);
 		}
 		else
-			this.write(type.name);
+			throw new Error();
 	}
 
 	writeTypeAndName(value)
@@ -22988,7 +23000,8 @@ export class GenSwift extends GenPySwift
 
 	visitThrow(statement)
 	{
-		this.visitXcrement(statement.message, false, true);
+		if (statement.message != null)
+			this.visitXcrement(statement.message, false, true);
 		this.write("throw ");
 		if (statement.class.name == "Exception") {
 			this.#throwException = true;
@@ -24767,7 +24780,8 @@ export class GenPy extends GenPySwift
 
 	visitThrow(statement)
 	{
-		this.visitXcrement(statement.message, false, true);
+		if (statement.message != null)
+			this.visitXcrement(statement.message, false, true);
 		this.write("raise ");
 		this.writeThrowArgument(statement);
 		this.writeNewLine();

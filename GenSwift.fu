@@ -297,8 +297,7 @@ public class GenSwift : GenPySwift
 				WriteChar('?');
 			break;
 		default:
-			Write(type.Name);
-			break;
+			assert false;
 		}
 	}
 
@@ -1423,7 +1422,8 @@ public class GenSwift : GenPySwift
 
 	internal override void VisitThrow!(FuThrow statement)
 	{
-		VisitXcrement(statement.Message, false, true);
+		if (statement.Message != null)
+			VisitXcrement(statement.Message, false, true);
 		Write("throw ");
 		if (statement.Class.Name == "Exception") {
 			this.ThrowException = true;

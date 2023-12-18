@@ -8190,12 +8190,18 @@ void GenBase::writeExceptionClass(const FuSymbol * klass)
 		writeName(klass);
 }
 
+void GenBase::writeThrowNoMessage()
+{
+}
+
 void GenBase::writeThrowArgument(const FuThrow * statement)
 {
 	writeExceptionClass(statement->class_->symbol);
 	writeChar('(');
 	if (statement->message != nullptr)
 		statement->message->accept(this, FuPriority::argument);
+	else
+		writeThrowNoMessage();
 	writeChar(')');
 }
 
@@ -8695,6 +8701,11 @@ void GenCCppD::writeSwitchAsIfsWithGoto(const FuSwitch * statement)
 	}
 	else
 		writeSwitchAsIfs(statement, true);
+}
+
+void GenCCppD::writeThrowNoMessage()
+{
+	write("\"\"");
 }
 
 void GenCCpp::writeDocCode(std::string_view s)
@@ -19649,6 +19660,7 @@ void GenJsNoModule::writeUseStrict()
 void GenJsNoModule::writeProgram(const FuProgram * program)
 {
 	createOutputFile();
+	writeUseStrict();
 	writeTopLevelNatives(program);
 	writeTypes(program);
 	writeLib(program);
@@ -20510,7 +20522,7 @@ void GenSwift::writeType(const FuType * type)
 			writeChar('?');
 	}
 	else
-		write(type->name);
+		std::abort();
 }
 
 void GenSwift::writeTypeAndName(const FuNamedValue * value)
@@ -21624,7 +21636,8 @@ void GenSwift::writeException()
 
 void GenSwift::visitThrow(const FuThrow * statement)
 {
-	visitXcrement(statement->message.get(), false, true);
+	if (statement->message != nullptr)
+		visitXcrement(statement->message.get(), false, true);
 	write("throw ");
 	if (statement->class_->name == "Exception") {
 		this->throwException = true;
@@ -23302,7 +23315,8 @@ void GenPy::visitSwitch(const FuSwitch * statement)
 
 void GenPy::visitThrow(const FuThrow * statement)
 {
-	visitXcrement(statement->message.get(), false, true);
+	if (statement->message != nullptr)
+		visitXcrement(statement->message.get(), false, true);
 	write("raise ");
 	writeThrowArgument(statement);
 	writeNewLine();
