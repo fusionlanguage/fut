@@ -234,7 +234,7 @@ test/bin/%/Test.cl: test/%.fu fut
 test/bin/Namespace/java.txt: test/bin/Namespace/Test.class
 	$(DO)java -cp "$(<D)$(JAVACPSEP)test" Ns.Runner >$@
 
-test/bin/Resource/java.txt: test/bin/Resource/Test.class
+test/bin/Resource/java.txt: test/bin/Resource/Test.class test/lipsum.txt
 	$(DO)java -cp "$(<D)$(JAVACPSEP)test" Runner >$@
 
 .PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.d test/bin/%/Test.java test/bin/%/Test.mjs test/bin/%/Test.ts test/bin/%/Test.d.ts test/bin/%/Test.py test/bin/%/Test.swift test/bin/%/Test.cl

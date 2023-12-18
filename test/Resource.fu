@@ -2,9 +2,9 @@ public static class Test
 {
 	public static bool Run()
 	{
-		if (resource<byte[]>("hi.txt").Length != 2)
+		if (resource<byte[]>("lipsum.txt").Length != 26)
 			return false;
-		byte[] r = resource<byte[]>("hi.txt");
-		return r[0] == 'h' && r[1] == 'i';
+		byte[] r = resource<byte[]>("lipsum.txt");
+		return Encoding.UTF8.GetString(r, 0, 26) == "Lorem ipsum dolor sit amet";
 	}
 }
