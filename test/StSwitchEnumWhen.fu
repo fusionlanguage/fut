@@ -16,10 +16,13 @@ public class Test
 			return true;
 		case Season.Fall when cold:
 		case Season.Winter when cold:
+			if (!cold)
+				break;
 			return true;
 		default:
-			return false;
+			break;
 		}
+		return false;
 	}
 
 	public static bool Run()

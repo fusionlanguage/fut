@@ -8120,7 +8120,7 @@ void GenBase::writeIfCaseBody(const std::vector<std::shared_ptr<FuStatement>> * 
 		openBlock();
 		writeFirstStatements(body, length);
 		closeBlock();
-		writeLine("while (0);");
+		writeLine("while (false);");
 		this->indent--;
 	}
 	else if (length != 1 || dynamic_cast<const FuIf *>((*body)[0].get()) || dynamic_cast<const FuSwitch *>((*body)[0].get())) {

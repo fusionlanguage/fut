@@ -8631,7 +8631,7 @@ export class GenBase extends FuVisitor
 			this.openBlock();
 			this.writeFirstStatements(body, length);
 			this.closeBlock();
-			this.writeLine("while (0);");
+			this.writeLine("while (false);");
 			this.indent--;
 		}
 		else if (length != 1 || body[0] instanceof FuIf || body[0] instanceof FuSwitch) {

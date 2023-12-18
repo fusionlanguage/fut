@@ -8305,7 +8305,7 @@ namespace Fusion
 				OpenBlock();
 				WriteFirstStatements(body, length);
 				CloseBlock();
-				WriteLine("while (0);");
+				WriteLine("while (false);");
 				this.Indent--;
 			}
 			else if (length != 1 || body[0] is FuIf || body[0] is FuSwitch) {
