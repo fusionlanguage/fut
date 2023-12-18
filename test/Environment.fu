@@ -5,6 +5,9 @@ public static class Test
 		string s = "HOME";
 		string? homeDir = Environment.GetEnvironmentVariable(s); //FAIL: cl
 		return homeDir != null
-			&& Environment.GetEnvironmentVariable("NOT_EXISTING_ENV_VAR") == null;
+			&& Environment.GetEnvironmentVariable("NOT_EXISTING_ENV_VAR") == null
+			&& Environment.GetEnvironmentVariable("") == null
+			&& Environment.GetEnvironmentVariable("123") == null
+			&& Environment.GetEnvironmentVariable("$*(&#($*&") == null;
 	}
 }

@@ -1362,6 +1362,7 @@ public class GenJsNoModule : GenBase
 	public override void WriteProgram!(FuProgram program)
 	{
 		CreateOutputFile();
+		WriteUseStrict();
 		WriteTopLevelNatives(program);
 		WriteTypes(program);
 		WriteLib(program);

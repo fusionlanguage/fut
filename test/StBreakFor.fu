@@ -1,0 +1,13 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int s = 0;
+		for (int i = 0;;) {
+			if (s > 9)
+				break;
+			s += i++;
+		}
+		return s == 10;
+	}
+}

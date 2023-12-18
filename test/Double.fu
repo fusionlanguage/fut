@@ -4,6 +4,8 @@ public static class Test
 	{
 		double d = Math.PI; //FAIL: cl if no double support
 		float f = d;
-		return f > 3.14 && f < 3.15;
+		double[2] a;
+		a[0] = 1e200;
+		return f > 3.14 && f < 3.15 && a[0] == 1e200;
 	}
 }

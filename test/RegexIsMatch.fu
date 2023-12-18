@@ -7,7 +7,7 @@ public class Test
 			&& Regex.IsMatch(s, "3")
 			&& !Regex.IsMatch(s, "x", RegexOptions.None)
 			&& Regex.IsMatch("1/\\2", "^\\d/\\\\\\d$")
-			&& Regex.IsMatch("foo", "FOO", RegexOptions.IgnoreCase)
+			&& Regex.IsMatch("f'o", "F'O", RegexOptions.IgnoreCase)
 			&& Regex.IsMatch("a\nb", "^B", RegexOptions.IgnoreCase | RegexOptions.Multiline)
 			&& Regex.IsMatch("\n", ".", RegexOptions.Singleline & ~RegexOptions.Multiline); //FAIL: cpp
 	}

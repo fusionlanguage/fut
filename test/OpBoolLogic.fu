@@ -5,6 +5,7 @@ public static class Test
 		bool t = true;
 		bool f = false;
 		t &= !f;
+		t &= t && !f;
 		f |= !t;
 		t ^= f;
 		int five = 5;
